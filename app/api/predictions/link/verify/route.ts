@@ -13,7 +13,7 @@ const Body = z
   .object({
     message: z.string().min(40).max(4_096),
     signature: z.string().min(16).max(512),
-    encoding: z.enum(["base64", "base58"]).optional(),
+    encoding: z.enum(["base64", "base58", "hex"]).optional(),
   })
   .strict();
 
@@ -33,7 +33,9 @@ export async function POST(request: Request) {
   if (!read.ok) return read.response;
   const { actor } = resolved;
   let signature = read.body.signature;
-  if ((read.body.encoding ?? "base64") === "base64") {
+  if (read.body.encoding === "hex") {
+    return predictionFailure(failure("SIGNATURE_INVALID", "A Solana signature is base64 or base58."));
+  } else if ((read.body.encoding ?? "base64") === "base64") {
     const bytes = Buffer.from(signature, "base64");
     if (bytes.length !== 64) return predictionFailure(failure("SIGNATURE_INVALID", "A Solana signature is 64 bytes."));
     signature = bs58.encode(bytes);

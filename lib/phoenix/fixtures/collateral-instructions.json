@@ -1,0 +1,294 @@
+{
+ "sdk": "@ellipsis-labs/rise@0.6.2",
+ "owner": "GmaDrppBC7P5ARKV8g3djiwP89vz1jLK23V2GBjuAEGB",
+ "amount": "2500000",
+ "takenAt": "2026-10-20",
+ "deposit": [
+  {
+   "programAddress": "ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL",
+   "accounts": [
+    {
+     "address": "GmaDrppBC7P5ARKV8g3djiwP89vz1jLK23V2GBjuAEGB",
+     "role": 3
+    },
+    {
+     "address": "B47LSj6jai4xihMm7yzYTLKpDjq49KTYLTgunx9g1e9L",
+     "role": 1
+    },
+    {
+     "address": "GmaDrppBC7P5ARKV8g3djiwP89vz1jLK23V2GBjuAEGB",
+     "role": 0
+    },
+    {
+     "address": "PhUsd11YkbjSaWjFncfAAmatntsjx3MgDR9B6g1ks3A",
+     "role": 0
+    },
+    {
+     "address": "11111111111111111111111111111111",
+     "role": 0
+    },
+    {
+     "address": "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA",
+     "role": 0
+    }
+   ],
+   "data": "01"
+  },
+  {
+   "programAddress": "EMBERpYNE6ehWmXymZZS2skiFmCa9V5dp14e1iduM5qy",
+   "accounts": [
+    {
+     "address": "GmaDrppBC7P5ARKV8g3djiwP89vz1jLK23V2GBjuAEGB",
+     "role": 2
+    },
+    {
+     "address": "6ur7v6AXNpnHeEb6xuk7PyezvZ1i5GrgYyWZkNCpzbRz",
+     "role": 0
+    },
+    {
+     "address": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+     "role": 0
+    },
+    {
+     "address": "PhUsd11YkbjSaWjFncfAAmatntsjx3MgDR9B6g1ks3A",
+     "role": 1
+    },
+    {
+     "address": "7woc3ajaGMMXczFYjxon4aQoHH3j126fMUR9c58eHRsK",
+     "role": 1
+    },
+    {
+     "address": "B47LSj6jai4xihMm7yzYTLKpDjq49KTYLTgunx9g1e9L",
+     "role": 1
+    },
+    {
+     "address": "FKcEb4TdPDTRuMnQDpSEPQBcrm15S73xiUD6Qf8ZLUkq",
+     "role": 1
+    },
+    {
+     "address": "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA",
+     "role": 0
+    }
+   ],
+   "data": "f223c68952e1f2b6a025260000000000"
+  },
+  {
+   "programAddress": "EtrnLzgbS7nMMy5fbD42kXiUzGg8XQzJ972Xtk1cjWih",
+   "accounts": [
+    {
+     "address": "EtrnLzgbS7nMMy5fbD42kXiUzGg8XQzJ972Xtk1cjWih",
+     "role": 0
+    },
+    {
+     "address": "GdxfTLSsdSY37G6fZoYtdGDSfgFnbT2EmRpuePZxWShS",
+     "role": 0
+    },
+    {
+     "address": "2zskx2iyCvb6Stg7RBZkt1f6MrF4dpYtMG3yMvKwqtUZ",
+     "role": 1
+    },
+    {
+     "address": "GmaDrppBC7P5ARKV8g3djiwP89vz1jLK23V2GBjuAEGB",
+     "role": 2
+    },
+    {
+     "address": "B47LSj6jai4xihMm7yzYTLKpDjq49KTYLTgunx9g1e9L",
+     "role": 1
+    },
+    {
+     "address": "BteLYAHGWEHAn4u3yBTrhon7cNsvJFCPeuqc1EyB5cJZ",
+     "role": 1
+    },
+    {
+     "address": "csZXgw2G58hbiWc9ndxaxrQVYVvqdXgQzYLuznEzHJu",
+     "role": 1
+    },
+    {
+     "address": "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA",
+     "role": 0
+    },
+    {
+     "address": "HCrPXLByGqRh2szQi3gj7oRdRVBNi1gccAyn4CQCT3HK",
+     "role": 1
+    },
+    {
+     "address": "2U32rSzzrQS3eVmGHsnbw5kcqKF3wQXpHGd3hMq5YJok",
+     "role": 1
+    }
+   ],
+   "data": "ca2734d33514fa58a025260000000000"
+  }
+ ],
+ "withdraw": [
+  {
+   "programAddress": "ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL",
+   "accounts": [
+    {
+     "address": "GmaDrppBC7P5ARKV8g3djiwP89vz1jLK23V2GBjuAEGB",
+     "role": 3
+    },
+    {
+     "address": "B47LSj6jai4xihMm7yzYTLKpDjq49KTYLTgunx9g1e9L",
+     "role": 1
+    },
+    {
+     "address": "GmaDrppBC7P5ARKV8g3djiwP89vz1jLK23V2GBjuAEGB",
+     "role": 0
+    },
+    {
+     "address": "PhUsd11YkbjSaWjFncfAAmatntsjx3MgDR9B6g1ks3A",
+     "role": 0
+    },
+    {
+     "address": "11111111111111111111111111111111",
+     "role": 0
+    },
+    {
+     "address": "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA",
+     "role": 0
+    }
+   ],
+   "data": "01"
+  },
+  {
+   "programAddress": "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA",
+   "accounts": [
+    {
+     "address": "B47LSj6jai4xihMm7yzYTLKpDjq49KTYLTgunx9g1e9L",
+     "role": 1
+    },
+    {
+     "address": "6ur7v6AXNpnHeEb6xuk7PyezvZ1i5GrgYyWZkNCpzbRz",
+     "role": 0
+    },
+    {
+     "address": "GmaDrppBC7P5ARKV8g3djiwP89vz1jLK23V2GBjuAEGB",
+     "role": 2
+    }
+   ],
+   "data": "04a025260000000000"
+  },
+  {
+   "programAddress": "ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL",
+   "accounts": [
+    {
+     "address": "GmaDrppBC7P5ARKV8g3djiwP89vz1jLK23V2GBjuAEGB",
+     "role": 3
+    },
+    {
+     "address": "7woc3ajaGMMXczFYjxon4aQoHH3j126fMUR9c58eHRsK",
+     "role": 1
+    },
+    {
+     "address": "GmaDrppBC7P5ARKV8g3djiwP89vz1jLK23V2GBjuAEGB",
+     "role": 0
+    },
+    {
+     "address": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+     "role": 0
+    },
+    {
+     "address": "11111111111111111111111111111111",
+     "role": 0
+    },
+    {
+     "address": "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA",
+     "role": 0
+    }
+   ],
+   "data": "01"
+  },
+  {
+   "programAddress": "EtrnLzgbS7nMMy5fbD42kXiUzGg8XQzJ972Xtk1cjWih",
+   "accounts": [
+    {
+     "address": "EtrnLzgbS7nMMy5fbD42kXiUzGg8XQzJ972Xtk1cjWih",
+     "role": 0
+    },
+    {
+     "address": "GdxfTLSsdSY37G6fZoYtdGDSfgFnbT2EmRpuePZxWShS",
+     "role": 0
+    },
+    {
+     "address": "2zskx2iyCvb6Stg7RBZkt1f6MrF4dpYtMG3yMvKwqtUZ",
+     "role": 1
+    },
+    {
+     "address": "GmaDrppBC7P5ARKV8g3djiwP89vz1jLK23V2GBjuAEGB",
+     "role": 2
+    },
+    {
+     "address": "BteLYAHGWEHAn4u3yBTrhon7cNsvJFCPeuqc1EyB5cJZ",
+     "role": 1
+    },
+    {
+     "address": "2nHGAaEw3D5dd4hVueaUNoygkQFmoeKqRQWnSPqSMFUC",
+     "role": 1
+    },
+    {
+     "address": "csZXgw2G58hbiWc9ndxaxrQVYVvqdXgQzYLuznEzHJu",
+     "role": 1
+    },
+    {
+     "address": "B47LSj6jai4xihMm7yzYTLKpDjq49KTYLTgunx9g1e9L",
+     "role": 1
+    },
+    {
+     "address": "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA",
+     "role": 0
+    },
+    {
+     "address": "HCrPXLByGqRh2szQi3gj7oRdRVBNi1gccAyn4CQCT3HK",
+     "role": 1
+    },
+    {
+     "address": "2U32rSzzrQS3eVmGHsnbw5kcqKF3wQXpHGd3hMq5YJok",
+     "role": 1
+    },
+    {
+     "address": "3c3NTwpg7yW91FxijkHBXwVH1xUifun3Z8TC5eW5Si3K",
+     "role": 1
+    }
+   ],
+   "data": "f1241d6fd01f68d9a025260000000000"
+  },
+  {
+   "programAddress": "EMBERpYNE6ehWmXymZZS2skiFmCa9V5dp14e1iduM5qy",
+   "accounts": [
+    {
+     "address": "GmaDrppBC7P5ARKV8g3djiwP89vz1jLK23V2GBjuAEGB",
+     "role": 2
+    },
+    {
+     "address": "6ur7v6AXNpnHeEb6xuk7PyezvZ1i5GrgYyWZkNCpzbRz",
+     "role": 0
+    },
+    {
+     "address": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+     "role": 0
+    },
+    {
+     "address": "PhUsd11YkbjSaWjFncfAAmatntsjx3MgDR9B6g1ks3A",
+     "role": 1
+    },
+    {
+     "address": "7woc3ajaGMMXczFYjxon4aQoHH3j126fMUR9c58eHRsK",
+     "role": 1
+    },
+    {
+     "address": "B47LSj6jai4xihMm7yzYTLKpDjq49KTYLTgunx9g1e9L",
+     "role": 1
+    },
+    {
+     "address": "FKcEb4TdPDTRuMnQDpSEPQBcrm15S73xiUD6Qf8ZLUkq",
+     "role": 1
+    },
+    {
+     "address": "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA",
+     "role": 0
+    }
+   ],
+   "data": "b712469c946da12201a025260000000000"
+  }
+ ]
+}

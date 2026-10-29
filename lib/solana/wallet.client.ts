@@ -15,7 +15,14 @@
  * The file is `.client.ts` because it only exists where `window` does. No key,
  * no seed, no secret of any kind passes through here; a wallet returns signed
  * bytes and that is the entire surface.
+ *
+ * Seeker Connect (SKR-1) is one more wallet in the same registry, registered
+ * here before discovery on Android; the only things this file knows about it
+ * are the ones it needs to keep that boundary — its network is the one it was
+ * registered with, its failures carry codes, and forgetting it is local.
  */
+import { countSeekerConnect, markSeekerLikely, onSeekerLikely, registerSeekerConnectOnce, seekerLikely } from "./seeker-connect.client.ts";
+import { SEEKER_CONNECT_WALLET, seekerFailureCode, type SeekerFailureCode } from "./seeker-connect.ts";
 
 export const WALLET_STATES = [
   "UNSUPPORTED",
@@ -26,6 +33,10 @@ export const WALLET_STATES = [
   "REFUSED",
   "PENDING",
   "FAILED",
+  /* The person closed the wallet's own overlay: an ordinary answer, never shown as a failure. */
+  "CANCELLED",
+  /* Nothing answered the wallet's launch — Seeker Connect on a phone that is not a Seeker. */
+  "UNREACHABLE",
 ] as const;
 export type WalletState = (typeof WALLET_STATES)[number];
 
@@ -58,6 +69,20 @@ const SIGN_FEATURE = "solana:signTransaction";
 const CONNECT_FEATURE = "standard:connect";
 const DEVNET_CHAIN = "solana:devnet";
 const WALLET_PROMPT_TIMEOUT_MS = 20_000;
+/**
+ * Seeker Connect opens the phone's wallet app for every question and has its
+ * own overlay with its own way to cancel, its own association timeout, and a
+ * transport that rejects a dropped session. Twenty seconds is an extension
+ * popup's patience, not a phone's: a person unlocking the wallet with a
+ * fingerprint would be told the request was "still waiting in its extension
+ * window". The outer bound stays, longer, so nothing waits forever.
+ */
+const SEEKER_PROMPT_TIMEOUT_MS = 180_000;
+
+/** How long a wallet's prompt may stay unanswered before it reads as pending. */
+export function promptTimeoutFor(walletName: string): number {
+  return walletName === SEEKER_CONNECT_WALLET ? SEEKER_PROMPT_TIMEOUT_MS : WALLET_PROMPT_TIMEOUT_MS;
+}
 
 export async function withWalletPromptTimeout<T>(
   pending: Promise<T>,
@@ -67,7 +92,9 @@ export async function withWalletPromptTimeout<T>(
   const timedOut = new Promise<never>((_resolve, reject) => {
     timeout = setTimeout(() => {
       const failure = new Error(
-        "The wallet is still waiting for an answer in its extension window.",
+        timeoutMs > WALLET_PROMPT_TIMEOUT_MS
+          ? "The wallet is still waiting for an answer in its app."
+          : "The wallet is still waiting for an answer in its extension window.",
       ) as Error & { code: number };
       failure.code = -32002;
       reject(failure);
@@ -171,6 +198,21 @@ function startDiscovery(): void {
     if (typeof callback === "function") callback(api);
   });
   window.dispatchEvent(new CustomEvent("wallet-standard:app-ready", { detail: api }));
+  /* Seeker Connect registers through the same two events, so it is found by
+     the listener above whichever side is ready first; its package arrives a
+     moment later (a dynamic import), and `subscribeWallets` hears it. Once per
+     page, Android only. The lists hear again when a Seeker turns out likely. */
+  onSeekerLikely(announce);
+  void registerSeekerConnectOnce();
+}
+
+/**
+ * Whether Seeker Connect is registered here at all — on Android — even where
+ * the lists leave it out because no Seeker is likely (`detectWallets`). The
+ * wallet panel offers it then as a quiet row of its own.
+ */
+export function seekerRegistered(): boolean {
+  return registry().some((wallet) => wallet.name === SEEKER_CONNECT_WALLET);
 }
 
 function registry(): readonly StandardWallet[] {
@@ -205,6 +247,16 @@ export function detectWallets(): readonly DetectedWallet[] {
   const seen = new Set<string>();
   return registry()
     .filter((wallet) => {
+      /* Seeker Connect is listed only where a Seeker is likely: elsewhere its
+         first connect leaves the page for Solana Mobile's link
+         (`seeker-connect.client.ts`). A connected Seeker that reports no
+         sign-only route stays listed, so the panel never says "no wallet"
+         beside its address; signing it is refused in `signTransaction`. */
+      if (wallet.name === SEEKER_CONNECT_WALLET) {
+        if (!seekerLikely() || seen.has(wallet.name)) return false;
+        seen.add(wallet.name);
+        return true;
+      }
       if (!(SIGN_FEATURE in wallet.features) || seen.has(wallet.name)) return false;
       seen.add(wallet.name);
       return true;
@@ -280,15 +332,34 @@ export function registeredWallet(name: string): Readonly<{
   return findWallet(name);
 }
 
+/**
+ * Whether the connected wallet signs v1 transactions (SIMD-0385) — the format Phantom asks a dApp to send, with the
+ * limits in the message itself; a wallet that does not say so gets the legacy bytes.
+ */
+export function walletSignsV1(walletName: string): boolean {
+  const feature = registeredWallet(walletName)?.features["solana:signTransaction"] as { supportedTransactionVersions?: readonly (string | number)[] } | undefined;
+  return feature?.supportedTransactionVersions?.includes(1) ?? false;
+}
+
 export type ConnectResult =
   | Readonly<{ ok: true; connection: WalletConnection }>
-  | Readonly<{ ok: false; state: WalletState; reason: string }>;
+  | Readonly<{
+      ok: false;
+      state: WalletState;
+      reason: string;
+      /**
+       * Seeker Connect's own code, when the failure is one of its answers. Its
+       * overlay has then already told the person (every code but `cancelled`
+       * and `association-failed`), so the panel does not say it twice.
+       */
+      code?: SeekerFailureCode;
+    }>;
 
 /**
  * What a wallet's own throw actually meant.
  *
  * The three answers are not interchangeable and calling them all `REFUSED` is
- * how this surface told a person a lie: a MetaMask with an unanswered popup
+ * how this surface told the founder a lie: a MetaMask with an unanswered popup
  * throws `-32002`, the panel titled it "The wallet refused", and `Try again`
  * re-sent the request the extension was already refusing to queue. Nobody had
  * refused anything and the one action that would have helped — open the
@@ -300,10 +371,21 @@ export type ConnectResult =
  * emit, and **anything else is `FAILED`** — an unclassified failure said out
  * loud, never a refusal inferred from silence.
  */
-function classifyFailure(failure: unknown): { state: WalletState; reason: string } | null {
+function classifyFailure(failure: unknown): { state: WalletState; reason: string; code?: SeekerFailureCode } | null {
   if (typeof failure !== "object" || failure === null) return null;
   const code = (failure as { code?: unknown }).code;
   const message = failure instanceof Error ? failure.message : String((failure as { message?: unknown }).message ?? "");
+  /* Seeker Connect's codes are strings and are its contract, not a hint: read
+     them first, by name. A plain `Error` from it has no code and falls through. */
+  const seeker = seekerFailureCode(failure);
+  if (seeker) {
+    const state: WalletState =
+      seeker === "cancelled" ? "CANCELLED"
+        : seeker === "association-failed" ? "UNREACHABLE"
+          : seeker === "authorization-declined" || seeker === "request-declined" ? "REFUSED"
+            : "FAILED";
+    return { state, reason: message, code: seeker };
+  }
   if (code === 4001) return { state: "REFUSED", reason: message };
   if (code === -32002) return { state: "PENDING", reason: message };
   return message ? { state: "FAILED", reason: message } : null;
@@ -317,6 +399,13 @@ function classifyFailure(failure: unknown): { state: WalletState; reason: string
  * banner. What it is *not* is the only answer: see `classifyFailure`.
  */
 export async function connectWallet(name: string): Promise<ConnectResult> {
+  const result = await askToConnect(name);
+  /* Seeker Connect's count (SKR-1): every connect the person asked for, by outcome. A silent restore is not counted. */
+  if (name === SEEKER_CONNECT_WALLET) countSeekerConnect(result.ok ? { ok: true } : result);
+  return result;
+}
+
+async function askToConnect(name: string): Promise<ConnectResult> {
   const wallet = findWallet(name);
   if (!wallet) {
     return { ok: false, state: "NO_WALLET", reason: `${name} is no longer registered in this browser.` };
@@ -329,8 +418,9 @@ export async function connectWallet(name: string): Promise<ConnectResult> {
   }
 
   try {
-    const { accounts } = await withWalletPromptTimeout(connect.connect());
+    const { accounts } = await withWalletPromptTimeout(connect.connect(), promptTimeoutFor(name));
     const account = selectSolanaAccount(accounts);
+    if (account && name === SEEKER_CONNECT_WALLET) markSeekerLikely();
     if (!account) {
       /* Connected and handed back nothing is a failure of the handshake, not a
          refusal. The person answered; the wallet did not. */
@@ -386,7 +476,7 @@ export async function reconnectWallet(name: string): Promise<ConnectResult> {
   }
 
   try {
-    const { accounts } = await withWalletPromptTimeout(connect.connect({ silent: true }));
+    const { accounts } = await withWalletPromptTimeout(connect.connect({ silent: true }), promptTimeoutFor(name));
     const account = selectSolanaAccount(accounts);
     if (!account) {
       /* Not trusted yet, or trusted for a chain we cannot sign on. Silence is
@@ -399,6 +489,53 @@ export async function reconnectWallet(name: string): Promise<ConnectResult> {
     if (classified) return { ok: false, ...classified };
     return { ok: false, state: "FAILED", reason: `${name} did not restore, and gave no reason.` };
   }
+}
+
+/**
+ * Forget a wallet's connection on Disconnect, where forgetting is local.
+ *
+ * Seeker Connect's `standard:disconnect` only drops the token it cached — it
+ * never launches the wallet to deauthorize — so Disconnect means it there too
+ * and the next Connect asks the wallet again. Other wallets are left exactly
+ * as they were: their disconnect is the extension's business, and this page
+ * has never called it.
+ */
+export async function forgetWallet(name: string): Promise<void> {
+  if (name !== SEEKER_CONNECT_WALLET) return;
+  const disconnect = findWallet(name)?.features["standard:disconnect"] as { disconnect?: () => Promise<void> } | undefined;
+  try {
+    await disconnect?.disconnect?.();
+  } catch {
+    /* Forgetting is best effort: the page has already let go of the address. */
+  }
+}
+
+/**
+ * The chain a signature is asked for.
+ *
+ * Seeker Connect ignores the chain of each call and signs for the network it
+ * was registered with (`chains[0]`), so a devnet request would be answered by
+ * a mainnet authorization without a word. It is asked for its own chain, and a
+ * request for another one is refused before the wallet opens. Every other
+ * wallet is asked for what the caller named, as before.
+ */
+function signingChain(wallet: StandardWallet, requested: string | undefined): { ok: true; chain: string } | { ok: false; reason: string } {
+  if (wallet.name !== SEEKER_CONNECT_WALLET) return { ok: true, chain: requested ?? DEVNET_CHAIN };
+  const registered = wallet.chains[0];
+  if (!registered) return { ok: false, reason: `${wallet.name} names no network. Nothing was signed.` };
+  if (requested && requested !== registered) {
+    return { ok: false, reason: `${wallet.name} signs on ${registered} only, and this transaction is for ${requested}. Nothing was signed.` };
+  }
+  return { ok: true, chain: registered };
+}
+
+/** A signing failure in words: a closed overlay is said plainly, never as an error message. */
+function signingFailure(failure: unknown, walletName: string): string {
+  const code = seekerFailureCode(failure);
+  if (code === "cancelled") return `${walletName} was closed before signing. Nothing was signed.`;
+  /* Its dialog for this one is left out (`seeker-connect.client.ts`), so it is said here, in words. */
+  if (code === "association-failed") return `${walletName} did not answer. Nothing was signed; try again.`;
+  return failure instanceof Error ? failure.message : `${walletName} refused to sign.`;
 }
 
 export type SignResult =
@@ -461,21 +598,21 @@ export async function signTransaction(args: {
     };
   }
 
+  const chain = signingChain(wallet, args.chain);
+  if (!chain.ok) return chain;
+
   try {
     const [output] = await feature.signTransaction({
       account,
       transaction: fromBase64(args.unsignedWireBase64),
-      chain: args.chain ?? DEVNET_CHAIN,
+      chain: chain.chain,
     });
     if (!output?.signedTransaction) {
       return { ok: false, reason: `${args.wallet} returned no signed transaction.` };
     }
     return { ok: true, signedWireBase64: toBase64(output.signedTransaction) };
   } catch (failure) {
-    return {
-      ok: false,
-      reason: failure instanceof Error ? failure.message : `${args.wallet} refused to sign.`,
-    };
+    return { ok: false, reason: signingFailure(failure, args.wallet) };
   }
 }
 
@@ -514,15 +651,17 @@ export async function signTransactions(args: {
   }
   const account = selectSolanaAccount(wallet.accounts.filter((entry) => entry.address === args.address));
   if (!account) return { ok: false, reason: `${args.wallet} no longer offers ${args.address}. Reconnect and check which account is selected.` };
+  const chain = signingChain(wallet, args.chain);
+  if (!chain.ok) return chain;
   try {
     const outputs = await feature.signTransaction(
-      ...args.unsignedWireBase64.map((wire) => ({ account, transaction: fromBase64(wire), chain: args.chain ?? DEVNET_CHAIN })),
+      ...args.unsignedWireBase64.map((wire) => ({ account, transaction: fromBase64(wire), chain: chain.chain })),
     );
     if (outputs.length !== args.unsignedWireBase64.length || outputs.some((output) => !output?.signedTransaction)) {
       return { ok: false, reason: `${args.wallet} returned fewer signed transactions than it was given.` };
     }
     return { ok: true, signedWireBase64: outputs.map((output) => toBase64(output.signedTransaction)) };
   } catch (failure) {
-    return { ok: false, reason: failure instanceof Error ? failure.message : `${args.wallet} refused to sign.` };
+    return { ok: false, reason: signingFailure(failure, args.wallet) };
   }
 }

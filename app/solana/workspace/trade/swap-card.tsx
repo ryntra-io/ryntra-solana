@@ -1,16 +1,17 @@
 "use client";
 
-import { ArrowUpRight, CheckCircle, Warning, XCircle } from "@phosphor-icons/react";
+import { Button, TradeTicket, costLines, newDraft, ticketModel, ticketSnapshot, type TicketDraft, type TicketInput, type TicketResult, type TicketReviewed } from "@ryntra/core/ui";
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import { usdValue, walletRowsForOwner } from "@/app/app/wallet-view-model";
-import { Panel } from "@/app/shell/panel";
 import { StatusChip } from "@/app/shell/status-chip";
+import { USDC_MINT, USDT_MINT } from "@/lib/spot/coin-shelf";
 import { displayAmount, parseHumanAmount, scaleRawAmount } from "@/lib/solana/amounts";
 import { swapFailureCopy } from "@/lib/solana/swap-failure-copy";
 import type { SolanaPolicyVerdict } from "@/lib/solana/contracts";
 import type { SwapPolicyFinding, SwapPolicyVerdict } from "@/lib/solana/swap-policy";
+import { MAX_SIGNABLE_WINDOW_MS } from "@/lib/solana/blockhash-life";
 import { explorerTxUrl } from "@/lib/solana/explorer";
 import { achievedPrice, classifySpotFill } from "@/lib/solana/fill-outcome";
 import { HOLDINGS_AFTER_FILL_DELAYS_MS, readWalletHoldingsUntilComplete, type HoldingsTokenRead } from "@/lib/solana/holdings.client";
@@ -26,16 +27,22 @@ import {
   type SwapClientAttempt,
 } from "@/lib/solana/swap-client-safety";
 import { assessSwapWalletAdoption } from "@/lib/solana/swap-adoption";
+import { askOnceMore, freshOrderWithinReview, pressRoute, renewAtMs, SWAP_TIMEOUT_MS, walletAnswerRoute, WORSE_FIGURES_SETTLE_MS } from "@/lib/solana/swap-press";
 import { inspectJupiterSwapTransaction } from "@/lib/solana/swap-transaction-check";
 import { signTransaction } from "@/lib/solana/wallet.client";
-import { serviceFeeReviewText, serviceFeeText, type RyntraServiceFee } from "@/lib/swap/service-fee";
+import { serviceFeeText, type RyntraServiceFee } from "@/lib/swap/service-fee";
+import { NETWORK_LABEL, SOL_COIN, assetOf, coinToken, jupiterFigures, plainRaw, quoteRank, rawAmount, referenceOf, settledReceipt, solGas, ticketBalances, ticketMarket, ticketPrices, ticketQuote, type TicketCoin } from "@/lib/ticket/solana-ticket";
 import { FEATURED_MINTS } from "../assets/featured.ts";
 import { useSolanaConnection } from "../connection.tsx";
 import { useSolanaI18n } from "../i18n/provider.tsx";
-import { WalletConnectRow } from "../wallet-connect.tsx";
+import { useWalletReach } from "../wallet-reach.ts";
 import { MarketIcon } from "../spot/market-list.tsx";
+import { useQuickBuySums } from "../spot/quick-buy.tsx";
 import { buildSwapAssetRows, type SwapHolding, type SwapTokenRow } from "./swap-assets.ts";
-import { SwapContext, type SwapFacts, type SwapSide } from "./swap-context.tsx";
+import { SwapPair, type SwapPairSide } from "./swap-pair.tsx";
+
+import { ExecutionTruth } from "../receipts/execution-truth.tsx";
+import { useOptionalWalletData } from "@/app/app/wallet-data";
 
 import styles from "./swap-card.module.css";
 
@@ -62,11 +69,18 @@ import styles from "./swap-card.module.css";
  */
 
 const NETWORK = "mainnet";
-const QUOTE_DEBOUNCE_MS = 450;
+/* 300 ms after the last key, as the phone settles it since ST-3 (SOL-S1: the estimate within a second). */
+const QUOTE_DEBOUNCE_MS = 300;
 const SEARCH_DEBOUNCE_MS = 250;
+/* SOL-C13, UX-907: the pair's prices are read again this often while the page is in sight and online — so their age is
+   the age of a read, and a price left on screen is never older than this without saying so. */
+const PRICE_REFRESH_MS = 30_000;
+/* USDC and USDT on Solana: the dollar side of a pair, never the market Spot opens on. */
+const DOLLAR_MINTS: ReadonlySet<string> = new Set([USDC_MINT, USDT_MINT]);
 const ATTEMPT_STORAGE_KEY = "ryntra.solana.m2.swap-client-attempt.v1";
 const MINT_ADDRESS = /^[1-9A-HJ-NP-Za-km-z]{32,44}$/;
-/* A blockhash lives about a minute and a half. Reading past that adds nothing
+/* A blockhash lives ~30 s on 200 ms slots (AG-1); this bound stays 150 s as a fallback, never the verdict — the chain
+   says when bytes can no longer land. Reading past that adds nothing
    the chain has not already decided, so the wait is bounded rather than
    endless — and what it waits for is an answer, not a button press. */
 const RECOVERY_DEADLINE_MS = 150_000;
@@ -137,10 +151,17 @@ type OrderResponse = Readonly<{
   proof: Readonly<{ status: "SIGNED" | "UNSIGNED"; digest?: string }>;
   preSign: Readonly<{ ready: boolean; code: string; reason: string }>;
   expiresAt: string;
+  /** AG-1: how long from arriving these bytes may still be signed. */
+  signableMs?: number;
 }>;
 
 /** One asset as Jupiter's catalogue describes it, plus what a swap needs. */
 type TokenRow = SwapTokenRow;
+
+/** How long from arriving an order's bytes may still be signed; a server from before AG-1 sent no figure. */
+function signableMsOfOrder(order: OrderResponse): number {
+  return typeof order.signableMs === "number" && Number.isFinite(order.signableMs) ? order.signableMs : MAX_SIGNABLE_WINDOW_MS;
+}
 
 type ExecuteResponse = Readonly<{
   state: string;
@@ -254,19 +275,44 @@ function describeToken(mint: string, known: Readonly<Record<string, TokenRow>>) 
   };
 }
 
-async function post<T>(url: string, payload: unknown, signal?: AbortSignal): Promise<{ ok: true; value: T } | { ok: false; failure: Failure }> {
+/**
+ * One request, bounded (SOL-S1). The card had no timeout at all, so a request
+ * that hung held «Готуємо обмін…» until the tab was closed. A bound that runs
+ * out answers `TIMEOUT`; an abort by the card itself still answers `NETWORK`
+ * to a caller that has already moved on.
+ */
+async function post<T>(url: string, payload: unknown, signal?: AbortSignal, timeoutMs?: number): Promise<{ ok: true; value: T } | { ok: false; failure: Failure }> {
+  const bound = new AbortController();
+  let timedOut = false;
+  const timer = timeoutMs === undefined ? null : window.setTimeout(() => {
+    timedOut = true;
+    bound.abort();
+  }, timeoutMs);
+  const forward = () => bound.abort();
+  signal?.addEventListener("abort", forward, { once: true });
+  if (signal?.aborted) bound.abort();
   let response: Response;
   try {
     response = await fetch(url, {
       method: "POST",
       headers: { "content-type": "application/json" },
       body: JSON.stringify(payload),
-      signal,
+      signal: bound.signal,
     });
   } catch {
-    return { ok: false, failure: { code: "NETWORK", message: "The request did not complete." } };
+    if (timer !== null) window.clearTimeout(timer);
+    signal?.removeEventListener("abort", forward);
+    return { ok: false, failure: timedOut ? { code: "TIMEOUT", message: "The server did not answer in time." } : { code: "NETWORK", message: "The request did not complete." } };
   }
-  const value = (await response.json().catch(() => ({}))) as Record<string, unknown>;
+  const parsedBody = await response.json().then((json: unknown) => ({ ok: true as const, json }), () => ({ ok: false as const }));
+  if (timer !== null) window.clearTimeout(timer);
+  signal?.removeEventListener("abort", forward);
+  /* A 2xx whose body was cut off — the bound ran out mid-read, the connection dropped — is no answer at all (SOL-S1):
+     never an empty success. An execute read this way is then recovered by its signature. */
+  if (!parsedBody.ok && (response.ok || response.status === 202)) {
+    return { ok: false, failure: timedOut ? { code: "TIMEOUT", message: "The server did not answer in time." } : { code: "NETWORK", message: "The answer did not arrive whole." } };
+  }
+  const value = (parsedBody.ok && parsedBody.json && typeof parsedBody.json === "object" ? parsedBody.json : {}) as Record<string, unknown>;
   if (!response.ok && response.status !== 202) {
     const error = (value.error ?? {}) as Partial<Failure>;
     return {
@@ -280,6 +326,33 @@ async function post<T>(url: string, payload: unknown, signal?: AbortSignal): Pro
     };
   }
   return { ok: true, value: value as T };
+}
+
+/**
+ * An estimate or an order, asked once more by itself when the first ask timed
+ * out or never reached the server (`askOnceMore`) — the one clear repeat. Never
+ * used for an execute.
+ */
+async function postAskingOnceMore<T>(url: string, payload: unknown, timeoutMs: number, signal?: AbortSignal): Promise<{ ok: true; value: T } | { ok: false; failure: Failure }> {
+  const first = await post<T>(url, payload, signal, timeoutMs);
+  if (first.ok || !askOnceMore(first.failure.code) || signal?.aborted) return first;
+  await new Promise((resolve) => window.setTimeout(resolve, 400));
+  if (signal?.aborted) return first;
+  return post<T>(url, payload, signal, timeoutMs);
+}
+
+/** The rules a Review warns on — a fresh order with a warning the Review did not carry is shown before any wallet (SOL-S1). */
+function reviewWarningRules(order: OrderResponse): readonly string[] {
+  return order.policy.verdict.findings.filter((finding) => finding.outcome === "REVIEW").map((finding) => finding.rule);
+}
+
+/** A moment of the swap, for reading each step's time on production (SOL-S1) — Performance marks, nothing sent anywhere. */
+function markSwap(step: string): void {
+  try {
+    performance.mark(`ryntra-swap:${step}`);
+  } catch {
+    /* A browser without User Timing still swaps. */
+  }
 }
 
 /**
@@ -378,8 +451,12 @@ export function SwapCard({ initialSell, initialBuy, initialAmount, embedded, onF
   embedded?: SwapCardEmbedded;
   onFacts?: (facts: SwapCardFacts) => void;
 }) {
-  const { text } = useSolanaI18n();
-  const { wallets, connection, connecting, connect } = useSolanaConnection();
+  const { text, locale } = useSolanaI18n();
+  const { connection, connecting } = useSolanaConnection();
+  /* B14: the one way to a wallet — the header's panel, or Phantom's browser on a phone that has none. */
+  const { openInWallet, reach } = useWalletReach();
+  const walletCashback = useOptionalWalletData()?.cashback ?? null;
+  const [quickSums] = useQuickBuySums();
 
   const [sellMint, setSellMint] = useState(initialSell && MINT_ADDRESS.test(initialSell) ? initialSell : WRAPPED_SOL_MINT);
   const [buyMint, setBuyMint] = useState(initialBuy && MINT_ADDRESS.test(initialBuy) ? initialBuy : SOLANA_MAINNET_USDC_MINT);
@@ -405,6 +482,18 @@ export function SwapCard({ initialSell, initialBuy, initialAmount, embedded, onF
   const [quoteFailure, setQuoteFailure] = useState<Failure | null>(null);
   const [holdingsRead, setHoldingsRead] = useState<{ owner: string; rows: readonly Holding[]; tokenRead: HoldingsTokenRead } | null>(null);
   const [holdingsFailed, setHoldingsFailed] = useState(false);
+  /* UX-907: the browser's own word on the connection. While it is down nothing is asked, the action says «Немає
+     зв'язку», and a price is never shown as read a moment ago. */
+  const [offline, setOffline] = useState(false);
+  /* The dollar price of each asset with the moment it was read (UX-907: the age is the read's, never the clock's). */
+  const [priceReads, setPriceReads] = useState<Readonly<Record<string, Readonly<{ usd: string; at: number }>>>>({});
+  const [priceTick, setPriceTick] = useState(0);
+  const recordPrices = useCallback((rows: readonly Readonly<{ mint: string | null; usd: string | null | undefined }>[]) => {
+    const at = Date.now();
+    const read: Record<string, { usd: string; at: number }> = {};
+    for (const row of rows) if (row.mint && typeof row.usd === "string" && Number(row.usd) > 0) read[row.mint] = { usd: row.usd, at };
+    if (Object.keys(read).length > 0) setPriceReads((current) => ({ ...current, ...read }));
+  }, []);
   const holdings = walletRowsForOwner(holdingsRead, connection?.address ?? null);
   /* Whether the balances on screen are the whole wallet. A partial read is
      shown as partial and offered again; it is never shown as the wallet. */
@@ -430,9 +519,22 @@ export function SwapCard({ initialSell, initialBuy, initialAmount, embedded, onF
   const [phase, setPhase] = useState<Phase>("IDLE");
   const [actionFailure, setActionFailure] = useState<Failure | null>(null);
   const [preparedRead, setPrepared] = useState<OrderResponse | null>(null);
+  /* What Review agreed to and the order it stood on, kept past the moment the order is let go — before the answer settles. */
+  const [agreedSwap, setAgreedSwap] = useState<Readonly<{ reviewed: TicketReviewed; order: OrderResponse["order"] }> | null>(null);
   const prepared = preparedRead?.order.taker === connection?.address && swapQuoteMatches(preparedRead?.order, currentInput) ? preparedRead : null;
   const [reviewInvalidated, setReviewInvalidated] = useState(false);
   const [attempt, setAttempt] = useState<SwapClientAttempt | null>(null);
+  const attemptState = attempt;
+  /* The recovery read, reachable from the sign step declared above it (SOL-S1). */
+  const recoverRef = useRef<(given?: SwapClientAttempt) => Promise<void>>(async () => undefined);
+  /* The Review's bytes were renewed (while read, or at the press) and a figure moved: "refreshed" when no worse, "worse" when the new figures are worse — said, never hidden. */
+  const [priceNote, setPriceNote] = useState<"renewed" | "refreshed" | "worse" | null>(null);
+  /* SOL-S1 — the bytes renewed while the Review is read: the renewal in flight (a press waits for it), how many this Review has had, and when the figures last got worse. */
+  const renewalRef = useRef<Promise<OrderResponse | null> | null>(null);
+  const renewalsRef = useRef(0);
+  const worseAtRef = useRef(0);
+  /* For a moment after worse figures appear, the action reads «Check the new figures» and waits — visibly, never a press swallowed. */
+  const [settlingFigures, setSettlingFigures] = useState(false);
   const [lockedReview, setLockedReview] = useState<Readonly<{ owner: string; requestId: string }> | null>(null);
   /* Set when a wallet handed back a transaction that is not the reviewed one.
      The Review is spent from that moment: the same bytes fail the same way
@@ -445,7 +547,9 @@ export function SwapCard({ initialSell, initialBuy, initialAmount, embedded, onF
      trade with the other pair's symbols and decimals. */
   const [settledPair, setSettledPair] = useState<Readonly<{ sell: { code: string; decimals: number }; buy: { code: string; decimals: number } }> | null>(null);
   const [secondsLeft, setSecondsLeft] = useState<number | null>(null);
-  const [reviewSecondsLeft, setReviewSecondsLeft] = useState<number | null>(null);
+  /* Ticks twice a second while a Review is open, so its readiness below is read against the clock (SOL-S1: the
+     button no longer turns on it — a Review past its window confirms in one press with fresh bytes). */
+  const [, setReviewSecondsLeft] = useState<number | null>(null);
   const [refreshTicket, setRefreshTicket] = useState(0);
   const quoteTicket = useRef(0);
   const searchTicket = useRef(0);
@@ -454,8 +558,11 @@ export function SwapCard({ initialSell, initialBuy, initialAmount, embedded, onF
   /* Consecutive automatic refreshes that produced another dead quote. */
   const chasedQuotes = useRef(0);
   const actionTicket = useRef(0);
-  const sellButtonRef = useRef<HTMLButtonElement>(null);
-  const buyButtonRef = useRef<HTMLButtonElement>(null);
+  /* When the Review on screen arrived, on this device's clock: its bytes' signable window counts from here (AG-1). */
+  const preparedAt = useRef(0);
+  /* The two legs' pickers: the focus comes back to the one that opened the list. */
+  const sellButtonRef = useRef<HTMLDivElement>(null);
+  const buyButtonRef = useRef<HTMLDivElement>(null);
   const pickerDialogRef = useRef<HTMLDivElement>(null);
 
   const sell = describeToken(sellMint, assetCatalog);
@@ -602,10 +709,11 @@ export function SwapCard({ initialSell, initialBuy, initialAmount, embedded, onF
           return;
         }
         setHoldingsRead({ owner, rows: read.rows, tokenRead: read.tokenRead });
+        recordPrices(read.rows.map((row) => ({ mint: row.kind === "NATIVE_SOL" ? WRAPPED_SOL_MINT : row.mint, usd: row.catalog?.usdPrice })));
       },
     });
     return () => controller.abort();
-  }, [connection, holdingsGeneration]);
+  }, [connection, holdingsGeneration, recordPrices]);
 
   /* Both legs must be named before either can be quoted. A mint arriving from
      a shared link has no decimals on this page yet, and a quote built on
@@ -680,6 +788,7 @@ export function SwapCard({ initialSell, initialBuy, initialAmount, embedded, onF
       if (!live) return;
       completed = true;
       if (Object.keys(found).length === 0) return;
+      recordPrices(Object.values(found).map((row) => ({ mint: row.mint, usd: row.usdPrice })));
       /* A fresher answer wins over a cached one that lacked decimals — the old
          order kept the useless row and discarded the useful one. */
       setKnown((current) => {
@@ -696,7 +805,65 @@ export function SwapCard({ initialSell, initialBuy, initialAmount, embedded, onF
       // An interrupted lookup is not a completed attempt (pair changes / Strict Mode).
       if (!completed) for (const mint of missing) attempted.delete(mint);
     };
-  }, [buyMint, known, sellMint]);
+  }, [buyMint, known, recordPrices, sellMint]);
+
+  /* The connection as the browser knows it; coming back reads the prices again at once (UX-907). */
+  const wasOffline = useRef(false);
+  useEffect(() => {
+    const update = () => {
+      const down = !window.navigator.onLine;
+      if (wasOffline.current && !down) setPriceTick((tick) => tick + 1);
+      wasOffline.current = down;
+      setOffline(down);
+    };
+    update();
+    window.addEventListener("online", update);
+    window.addEventListener("offline", update);
+    return () => {
+      window.removeEventListener("online", update);
+      window.removeEventListener("offline", update);
+    };
+  }, []);
+
+  /* The two legs' prices, read again while the page is in sight (UX-907). One catalogue row per leg — the same read
+     the card names an asset with — and nothing while the connection is down. */
+  useEffect(() => {
+    if (offline) return;
+    const timer = window.setInterval(() => {
+      if (document.visibilityState === "visible") setPriceTick((tick) => tick + 1);
+    }, PRICE_REFRESH_MS);
+    return () => window.clearInterval(timer);
+  }, [offline]);
+  /* A leg chosen again whose price is older than a refresh — or never read with its time — is read now, not at the next
+     tick; the first pair is the catalogue's own first ask. */
+  const pairSeen = useRef(false);
+  useEffect(() => {
+    if (!pairSeen.current) {
+      pairSeen.current = true;
+      return;
+    }
+    const old = (mint: string) => !priceReads[mint] || Date.now() - priceReads[mint].at > PRICE_REFRESH_MS;
+    if (old(sellMint) || old(buyMint)) setPriceTick((tick) => tick + 1);
+    // Only a change of the pair asks; the reads it compares against are not a reason to ask again.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [sellMint, buyMint]);
+  useEffect(() => {
+    if (priceTick === 0 || offline) return;
+    const controller = new AbortController();
+    void (async () => {
+      const rows: { mint: string; usd: string | null }[] = [];
+      for (const mint of new Set([sellMint, buyMint])) {
+        const response = await post<{ tokens?: readonly TokenRow[] }>("/api/solana/tokens/search", { query: mint, limit: 5 }, controller.signal);
+        if (controller.signal.aborted) return;
+        const row = response.ok ? response.value.tokens?.find((token) => token.mint === mint) : undefined;
+        if (row) rows.push({ mint, usd: row.usdPrice });
+      }
+      recordPrices(rows);
+    })();
+    return () => controller.abort();
+    // A new pair is read by the catalogue's own first ask; this follows the clock and the connection.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [priceTick, offline]);
 
   /* The picker's own search. Debounced for the same reason the quote is. */
   useEffect(() => {
@@ -726,7 +893,7 @@ export function SwapCard({ initialSell, initialBuy, initialAmount, embedded, onF
 
   useEffect(() => {
     if (!picker) return;
-    const trigger = picker === "sell" ? sellButtonRef.current : buyButtonRef.current;
+    const trigger = (picker === "sell" ? sellButtonRef.current : buyButtonRef.current)?.querySelector("button") ?? null;
 
     const onKeyDown = (event: KeyboardEvent) => {
       if (event.key === "Escape") {
@@ -785,7 +952,8 @@ export function SwapCard({ initialSell, initialBuy, initialAmount, embedded, onF
       return;
     }
     const parsed = parseHumanAmount(amount, sellDecimals);
-    if (!parsed.ok) {
+    /* Without a connection there is nothing to ask; the ticket says so, and coming back asks again (UX-907). */
+    if (!parsed.ok || offline) {
       setQuote(null);
       setQuoteFailure(null);
       return;
@@ -794,12 +962,14 @@ export function SwapCard({ initialSell, initialBuy, initialAmount, embedded, onF
     setQuoting(true);
     const timer = window.setTimeout(() => {
       void (async () => {
-        const response = await post<QuoteResponse>("/api/solana/swap/quote", {
+        markSwap("quote:ask");
+        const response = await postAskingOnceMore<QuoteResponse>("/api/solana/swap/quote", {
           inputMint: sellMint,
           outputMint: buyMint,
           amountRaw: parsed.raw,
           access: "production",
-        }, controller.signal);
+        }, SWAP_TIMEOUT_MS.quote, controller.signal);
+        markSwap("quote:answer");
         if (controller.signal.aborted || quoteTicket.current !== my) return;
         setQuoting(false);
         if (!response.ok) {
@@ -812,7 +982,7 @@ export function SwapCard({ initialSell, initialBuy, initialAmount, embedded, onF
       })();
     }, QUOTE_DEBOUNCE_MS);
     return () => { window.clearTimeout(timer); controller.abort(); };
-  }, [amount, buyMint, legsResolved, refreshTicket, sellDecimals, sellMint, text]);
+  }, [amount, buyMint, legsResolved, offline, refreshTicket, sellDecimals, sellMint, text]);
 
   /* A prepared order is exact to this wallet, pair and amount. Editing any of
      them cancels the in-flight request and removes the Review before a wallet
@@ -824,6 +994,7 @@ export function SwapCard({ initialSell, initialBuy, initialAmount, embedded, onF
     setReviewInvalidated(false);
     setReviewSecondsLeft(null);
     setBytesChanged(false);
+    setPriceNote(null);
     setPhase((current) => (current === "REVIEW" || current === "PREPARING" ? "IDLE" : current));
   }, [amount, buyMint, connection?.address, sellMint]);
 
@@ -925,27 +1096,6 @@ export function SwapCard({ initialSell, initialBuy, initialAmount, embedded, onF
     setAmount(quote ? plainAmount(quote.order.outAmountRaw, buyDecimals) : "");
   }, [buyDecimals, buyMint, quote, sellMint]);
 
-  /**
-   * Fill the sell leg from the spendable balance.
-   *
-   * The share is taken on the raw integer, never on the displayed decimal, so
-   * no rounding is introduced before the quote sees the amount. MAX passes the
-   * spendable figure through untouched — the route already withholds rent and
-   * the fee buffer, so the largest offered amount stays the largest signable
-   * one.
-   */
-  const fillShare = useCallback(
-    (numerator: bigint, denominator: bigint) => {
-      if (!sellHolding) return;
-      const spendable = BigInt(sellHolding.spendableRaw);
-      const share = denominator === 1n ? spendable : (spendable * numerator) / denominator;
-      setAmount(plainAmount(share.toString(), sellHolding.decimals));
-    },
-    [sellHolding],
-  );
-
-  const fillMax = useCallback(() => fillShare(1n, 1n), [fillShare]);
-
   const choose = useCallback(
     (row: TokenRow) => {
       setKnown((current) => ({
@@ -983,8 +1133,17 @@ export function SwapCard({ initialSell, initialBuy, initialAmount, embedded, onF
     if (!connection || attempt) return;
     const my = ++actionTicket.current;
     setActionFailure(null);
+    /* A new order is asked for: an earlier Review's figures speak for nothing after it. */
+    setAgreedSwap(null);
     setPrepared(null);
+    setPriceNote(null);
+    renewalsRef.current = 0;
+    worseAtRef.current = 0;
     setPhase("PREPARING");
+    /* A renewal of the previous Review still on its way is let land first: arriving after this order, it would
+       replace the Review asked for now. Its answer is dropped by the ticket. */
+    if (renewalRef.current) await renewalRef.current;
+    if (actionTicket.current !== my) return;
 
     const parsed = parseHumanAmount(amount, sellDecimals);
     if (!parsed.ok) {
@@ -994,15 +1153,19 @@ export function SwapCard({ initialSell, initialBuy, initialAmount, embedded, onF
     }
 
     /* Quote A is discovery only. This asks for executable order B and stops in
-       REVIEW; no wallet is opened by the same user action. */
-    const ordered = await post<OrderResponse>("/api/solana/swap/order", {
+       REVIEW; no wallet is opened by the same user action. A second order
+       replaces an unsigned Review of this wallet at once (SOL-S1), so the one
+       repeat after a timeout costs nothing but the wait. */
+    markSwap("review:press");
+    const ordered = await postAskingOnceMore<OrderResponse>("/api/solana/swap/order", {
       input: { inputMint: sellMint, outputMint: buyMint, amountRaw: parsed.raw, taker: connection.address },
-    });
+    }, SWAP_TIMEOUT_MS.order);
+    markSwap("review:answer");
     if (actionTicket.current !== my) return;
     if (!ordered.ok) {
       setActionFailure(ordered.failure);
       if (ordered.failure.ownerLock?.signature) {
-        rememberAttempt({
+        const outstanding: SwapClientAttempt = {
           schema: "ryntra.solana.swap-client-attempt",
           schemaVersion: "1.0.0",
           requestId: ordered.failure.ownerLock.requestId,
@@ -1010,8 +1173,11 @@ export function SwapCard({ initialSell, initialBuy, initialAmount, embedded, onF
           taker: connection.address,
           state: "SUBMITTED_UNKNOWN",
           recordedAt: new Date().toISOString(),
-        });
+        };
+        rememberAttempt(outstanding);
         setPhase("RECOVERY");
+        /* The wallet's earlier signature is read by itself (SOL-S1). */
+        void recoverRef.current(outstanding);
       } else if (ordered.failure.ownerLock?.state === "REVIEW_ISSUED") {
         setLockedReview({ owner: connection.address, requestId: ordered.failure.ownerLock.requestId });
         setPhase("REVIEW");
@@ -1032,16 +1198,116 @@ export function SwapCard({ initialSell, initialBuy, initialAmount, embedded, onF
       setPhase("IDLE");
       return;
     }
+    preparedAt.current = Date.now();
     setPrepared(ordered.value);
     setReviewInvalidated(false);
     setLockedReview(null);
     setPhase("REVIEW");
   }, [amount, attempt, buyMint, connection, rememberAttempt, sellDecimals, sellMint]);
 
-  const signReviewedOrder = useCallback(async () => {
-    if (!connection || !prepared || attempt) return;
+  /**
+   * AG-1 — fresh bytes at the moment of signing; SOL-S1 — at once.
+   *
+   * The Review stays readable for its window (at least thirty seconds, so a
+   * person can read it — `MINIMUM_HUMAN_REVIEW_WINDOW_MS`), but its bytes live
+   * only as long as their blockhash: ~150 blocks, about thirty seconds on
+   * 200 ms slots, part of it spent by Jupiter. When too little of the bytes'
+   * life is left at the press, a fresh order is asked for the same swap right
+   * then. The server replaces this wallet's unsigned Review with it in one
+   * compare-and-set, so
+   * nothing waits for the old bytes' death any more — that wait, its four
+   * cancellations and the order after them were up to ~17 s between the press
+   * and the wallet. Then:
+   *
+   * - `"sign"`: the wallet opens on the fresh bytes when they stay inside what
+   *   was reviewed (`freshOrderWithinReview`: the price inside the reviewed
+   *   slippage band, no fee higher) and the Review on screen turns to their
+   *   figures as it opens; otherwise the new Review is shown for one press;
+   * - `"review"`: the new Review is shown — the wallet already answered late.
+   *
+   * Returns the fresh order to sign, or null when the screen went back to Review.
+   */
+  const refreshReviewedBytes = useCallback(async (reviewed: OrderResponse, then: "sign" | "review"): Promise<OrderResponse | null> => {
+    if (!connection || attempt) return null;
+    const my = ++actionTicket.current;
+    setActionFailure(null);
+    setPriceNote(null);
+    setPhase("PREPARING");
+    markSwap("fresh:ask");
+    const ordered = await postAskingOnceMore<OrderResponse>("/api/solana/swap/order", {
+      input: {
+        inputMint: reviewed.order.inputMint,
+        outputMint: reviewed.order.outputMint,
+        amountRaw: reviewed.order.inAmountRaw,
+        taker: connection.address,
+      },
+    }, SWAP_TIMEOUT_MS.order);
+    markSwap("fresh:answer");
+    if (actionTicket.current !== my) return null;
+    setBytesChanged(false);
+    setReviewInvalidated(false);
+    setLockedReview(null);
+    if (!ordered.ok) {
+      setPrepared(null);
+      setActionFailure(ordered.failure);
+      /* The same lock answers the first order gets: a signature already out is recovered by it, an issued Review is held. */
+      if (ordered.failure.ownerLock?.signature) {
+        const outstanding: SwapClientAttempt = {
+          schema: "ryntra.solana.swap-client-attempt",
+          schemaVersion: "1.0.0",
+          requestId: ordered.failure.ownerLock.requestId,
+          signature: ordered.failure.ownerLock.signature,
+          taker: connection.address,
+          state: "SUBMITTED_UNKNOWN",
+          recordedAt: new Date().toISOString(),
+        };
+        rememberAttempt(outstanding);
+        setPhase("RECOVERY");
+        /* The wallet's earlier signature is read by itself (SOL-S1). */
+        void recoverRef.current(outstanding);
+      } else if (ordered.failure.ownerLock?.state === "REVIEW_ISSUED") {
+        setLockedReview({ owner: connection.address, requestId: ordered.failure.ownerLock.requestId });
+        setPhase("REVIEW");
+      } else {
+        setPhase("IDLE");
+      }
+      return null;
+    }
+    const assessment = assessSwapClientReview({
+      verdict: ordered.value.policy.verdict,
+      proofStatus: ordered.value.proof.status,
+      simulationStatus: ordered.value.simulation.status,
+      ownerEffectsStatus: ordered.value.simulation.ownerEffects?.status ?? "MISSING",
+      expiresAt: ordered.value.expiresAt,
+    });
+    if (!ordered.value.preSign.ready || !assessment.ready) {
+      setPrepared(null);
+      setActionFailure({ code: assessment.code, message: assessment.reason });
+      setPhase("IDLE");
+      return null;
+    }
+    preparedAt.current = Date.now();
+    renewalsRef.current = 0;
+    setPrepared(ordered.value);
+    if (then === "sign" && freshOrderWithinReview(reviewed.order, ordered.value.order, { reviewed: reviewWarningRules(reviewed), fresh: reviewWarningRules(ordered.value) })) {
+      /* Said, not hidden: the figures above are the fresh bytes' own as the wallet opens. */
+      setPriceNote(ordered.value.order.minReceivedRaw !== reviewed.order.minReceivedRaw || ordered.value.order.outAmountRaw !== reviewed.order.outAmountRaw ? "refreshed" : null);
+      return ordered.value;
+    }
+    setActionFailure({
+      code: "REVIEW_REFRESHED",
+      message: then === "review"
+        ? text("Your wallet answered after the price stopped holding (about 30 seconds). Nothing was sent. Check the new figures and confirm.")
+        : text("The price moved past what you reviewed. Nothing was sent. Check the new figures and confirm."),
+    });
+    setPhase("REVIEW");
+    return null;
+  }, [attempt, connection, rememberAttempt, text]);
+
+  const signOrder = useCallback(async (prepared: OrderResponse, fresh: boolean) => {
+    if (!connection || attempt) return;
     const readiness = assessSwapClientReview({
-      invalidated: reviewInvalidated || bytesChanged,
+      invalidated: !fresh && (reviewInvalidated || bytesChanged),
       verdict: prepared.policy.verdict,
       proofStatus: prepared.proof.status,
       simulationStatus: prepared.simulation.status,
@@ -1056,6 +1322,7 @@ export function SwapCard({ initialSell, initialBuy, initialAmount, embedded, onF
     setActionFailure(null);
 
     setPhase("SIGNING");
+    markSwap("wallet:ask");
     /*
      * A wallet that never answers used to freeze the card: nothing bounded the
      * prompt, so the button stayed "Waiting for the wallet…" until the tab was
@@ -1064,7 +1331,10 @@ export function SwapCard({ initialSell, initialBuy, initialAmount, embedded, onF
      * anyway. A short grace is added so a wallet answering on the last second
      * still wins the race rather than being thrown away.
      */
-    const signingDeadlineMs = Math.max(0, Date.parse(prepared.expiresAt) - Date.now()) + 5_000;
+    /* AG-1: the bytes' own signable window, never longer than the Review's. */
+    const bytesSignableMs = signableMsOfOrder(prepared);
+    const signingDeadlineMs = Math.max(0, Math.min(Date.parse(prepared.expiresAt), preparedAt.current + bytesSignableMs) - Date.now()) + 5_000;
+    let walletTimedOut = false;
     const signed = await Promise.race([
       signTransaction({
         wallet: connection.wallet,
@@ -1074,19 +1344,27 @@ export function SwapCard({ initialSell, initialBuy, initialAmount, embedded, onF
       }),
       new Promise<Awaited<ReturnType<typeof signTransaction>>>((resolve) =>
         window.setTimeout(
-          () =>
+          () => {
+            walletTimedOut = true;
             resolve({
               ok: false,
               reason: text(
                 "Your wallet did not answer before this Review's window closed. Nothing was signed or sent; ask for a fresh order.",
               ),
-            }),
+            });
+          },
           signingDeadlineMs,
         ),
       ),
     ]);
+    markSwap("wallet:answer");
     if (actionTicket.current !== my) return;
     if (!signed.ok) {
+      /* The wallet outlived the bytes: nothing was signed that can be sent — a fresh Review, not a refusal. */
+      if (walletTimedOut) {
+        await refreshReviewedBytes(prepared, "review");
+        return;
+      }
       setActionFailure({ code: "WALLET_REFUSED", message: signed.reason });
       setPhase("REVIEW");
       return;
@@ -1150,6 +1428,12 @@ export function SwapCard({ initialSell, initialBuy, initialAmount, embedded, onF
      * would trade a clean "too slow, try again" for a permanent dead end.
      * Check the window against the same predicate the server will use.
      */
+    /* AG-1: the bytes themselves aged out while the wallet was open — the network would refuse them. They are never
+       sent; the swap is built again and the person reads the fresh Review instead of a refusal. */
+    if (walletAnswerRoute({ receivedAtMs: preparedAt.current, signableMs: bytesSignableMs }) === "FRESH_REVIEW") {
+      await refreshReviewedBytes(prepared, "review");
+      return;
+    }
     const stillFresh = assessSwapClientReview({
       verdict: prepared.policy.verdict,
       proofStatus: prepared.proof.status,
@@ -1182,6 +1466,8 @@ export function SwapCard({ initialSell, initialBuy, initialAmount, embedded, onF
        is SUBMITTED_UNKNOWN for this signature, never a new order. */
     rememberAttempt(pending);
     setPhase("EXECUTING");
+    markSwap("execute:ask");
+    /* Bounded above the server's own landing wait; never asked again — a missing answer is recovered by the signature below. */
     const executed = await post<ExecuteResponse>("/api/solana/swap/execute", {
       bundle: prepared.bundle,
       proof: prepared.proof,
@@ -1190,15 +1476,31 @@ export function SwapCard({ initialSell, initialBuy, initialAmount, embedded, onF
          take the browser's word for what changed. It checks their hash against
          the issuer-signed bundle before using them. */
       reviewedTransactionBase64: prepared.order.transactionBase64,
-    });
+    }, undefined, SWAP_TIMEOUT_MS.execute);
+    markSwap("execute:answer");
     if (!executed.ok) {
       /* The server refused before it claimed the signature, so the network
          never saw these bytes. Keeping the attempt would lock this wallet
          behind a recovery that can only ever answer "I never heard of it". */
       if (executed.failure.submitBoundary === "NOT_CROSSED") {
         forgetAttempt();
-        setReviewInvalidated(true);
         refreshHoldings();
+        /* SOL-S1: the Review was replaced by another order of this wallet, or its window closed while the wallet was
+           open — nothing was sent, and the honest next step is a fresh Review for one press, not a button to find it. */
+        /* The window closed while the wallet was open: a fresh Review for one press. */
+        if (/^(ORDER_EXPIRED|REVIEW_NOT_FRESH)$/.test(executed.failure.code)) {
+          await refreshReviewedBytes(prepared, "review");
+          return;
+        }
+        /* Another order of this wallet — another tab, the phone — replaced the Review: it is not ordered again by
+           itself, which would replace the one the other surface may be signing; one press asks a new quote. */
+        if (executed.failure.code === "OWNER_SWAP_LOCK_MISMATCH") {
+          setReviewInvalidated(true);
+          setActionFailure({ code: "REVIEW_REFRESHED", message: text("A newer Review for this wallet replaced this one. Nothing was sent. Get a new quote to continue here.") });
+          setPhase("REVIEW");
+          return;
+        }
+        setReviewInvalidated(true);
         setActionFailure(executed.failure);
         setPhase("REVIEW");
         return;
@@ -1225,7 +1527,6 @@ export function SwapCard({ initialSell, initialBuy, initialAmount, embedded, onF
       }
       const unknown = transitionSwapClientAttempt(pending, { kind: "FAILURE" });
       rememberAttempt(unknown);
-      setActionFailure(executed.failure);
       recordSettlement({
         state: "SUBMITTED_UNKNOWN",
         signature,
@@ -1235,7 +1536,9 @@ export function SwapCard({ initialSell, initialBuy, initialAmount, embedded, onF
         receipt: null,
         recovery: text("The execute answer is unknown. Recover only by this signature; never request or sign another order."),
       }, connection.address);
+      /* SOL-S1: read the signature by itself, at once — never a second send, never a button to press first. */
       setPhase("RECOVERY");
+      void recoverRef.current(unknown);
       return;
     }
     const recorded = transitionSwapClientAttempt(pending, {
@@ -1249,12 +1552,161 @@ export function SwapCard({ initialSell, initialBuy, initialAmount, embedded, onF
     if (recorded.state === "SETTLED") forgetAttempt();
     else rememberAttempt(recorded);
     setPrepared(null);
+    setPriceNote(null);
     recordSettlement(executed.value, connection.address);
     if (recorded.state !== "SUBMITTED_UNKNOWN") setAmount("");
+    markSwap("done:shown");
     setPhase(
       recorded.state === "SUBMITTED_UNKNOWN" ? "RECOVERY" : "SETTLED",
     );
-  }, [attempt, bytesChanged, connection, forgetAttempt, prepared, recordSettlement, refreshHoldings, rememberAttempt, reviewInvalidated, text]);
+    /* An answer that is not yet the outcome (202) is read on by itself. */
+    if (recorded.state === "SUBMITTED_UNKNOWN") void recoverRef.current(recorded);
+  }, [attempt, bytesChanged, connection, forgetAttempt, recordSettlement, refreshHoldings, refreshReviewedBytes, rememberAttempt, reviewInvalidated, text]);
+
+  /**
+   * The person pressed sign. Bytes with enough of their life left go to the wallet as they are; bytes that are about
+   * to die — the Review was read for longer than they live — are fetched fresh first (AG-1, `refreshReviewedBytes`).
+   */
+  const signReviewedOrder = useCallback(async () => {
+    if (!connection || !prepared || attempt) return;
+    markSwap("wallet:press");
+    /* Worse figures that appeared a moment ago are read before they are confirmed. */
+    if (Date.now() - worseAtRef.current < WORSE_FIGURES_SETTLE_MS) return;
+    /* A renewal in flight is waited for, and its bytes are the ones the wallet sees — the old ones are being replaced.
+       The card is busy meanwhile (one press, no second prompt), and an edit of the pair or the amount in that moment
+       drops the press: the wallet only ever opens on the swap the screen shows. */
+    if (renewalRef.current) {
+      const pressTicket = actionTicket.current;
+      setPhase("PREPARING");
+      const renewed = await renewalRef.current;
+      if (actionTicket.current !== pressTicket) return;
+      if (renewed) {
+        if (Date.now() - worseAtRef.current < WORSE_FIGURES_SETTLE_MS) {
+          setPhase("REVIEW");
+          return;
+        }
+        await signOrder(renewed, true);
+        return;
+      }
+      setPhase("REVIEW");
+    }
+    const readiness = assessSwapClientReview({
+      invalidated: reviewInvalidated || bytesChanged,
+      verdict: prepared.policy.verdict,
+      proofStatus: prepared.proof.status,
+      simulationStatus: prepared.simulation.status,
+      ownerEffectsStatus: prepared.simulation.ownerEffects?.status ?? "MISSING",
+      expiresAt: prepared.expiresAt,
+    });
+    /* SOL-S1: one press — bytes with life left open the wallet now; aged bytes or a closed Review window are built
+       again at once (`swap-press.ts`). */
+    const route = pressRoute({ readinessCode: readiness.code, ready: readiness.ready, receivedAtMs: preparedAt.current, signableMs: signableMsOfOrder(prepared) });
+    if (route === "FRESH_BYTES") {
+      const fresh = await refreshReviewedBytes(prepared, "sign");
+      if (fresh) await signOrder(fresh, true);
+      return;
+    }
+    await signOrder(prepared, false);
+  }, [attempt, bytesChanged, connection, prepared, refreshReviewedBytes, reviewInvalidated, signOrder]);
+
+  /**
+   * SOL-S1 — the Review's bytes renewed while it is read.
+   *
+   * Bytes live ~30 s; a person reads a Review for longer than that often enough
+   * that the press used to find dead bytes and wait. Shortly before they fall
+   * short of a wallet's window (`renewAtMs`), the same swap is ordered again —
+   * the server replaces this unsigned Review — and the Review on screen turns
+   * to the renewed figures, with a line when they moved (`priceNote`). At most
+   * `MAX_RENEWALS` per Review, only while it is on screen in a visible tab;
+   * after that a press builds fresh bytes itself. A renewal that did not land
+   * cleanly leaves the press to build fresh bytes, whatever life the old ones
+   * seem to have — the server may already have replaced them.
+   */
+  const renewReviewedBytes = useCallback((current: OrderResponse): Promise<OrderResponse | null> => {
+    if (!connection || attempt) return Promise.resolve(null);
+    const my = actionTicket.current;
+    const owner = connection.address;
+    const running = (async (): Promise<OrderResponse | null> => {
+      try {
+        markSwap("renew:ask");
+        const ordered = await post<OrderResponse>("/api/solana/swap/order", {
+          input: { inputMint: current.order.inputMint, outputMint: current.order.outputMint, amountRaw: current.order.inAmountRaw, taker: owner },
+        }, undefined, SWAP_TIMEOUT_MS.order);
+        markSwap("renew:answer");
+        if (actionTicket.current !== my) return null;
+        const ready = ordered.ok && ordered.value.preSign.ready && assessSwapClientReview({
+          verdict: ordered.value.policy.verdict,
+          proofStatus: ordered.value.proof.status,
+          simulationStatus: ordered.value.simulation.status,
+          ownerEffectsStatus: ordered.value.simulation.ownerEffects?.status ?? "MISSING",
+          expiresAt: ordered.value.expiresAt,
+        }).ready;
+        if (!ordered.ok || !ready) {
+          /* Not adopted: the next press builds fresh bytes. */
+          preparedAt.current = 0;
+          return null;
+        }
+        preparedAt.current = Date.now();
+        setPrepared(ordered.value);
+        /* A refusal of the old bytes (a wallet cancelled, say) is not about these. */
+        setActionFailure(null);
+        const noWorse = freshOrderWithinReview(current.order, ordered.value.order, { reviewed: reviewWarningRules(current), fresh: reviewWarningRules(ordered.value) });
+        if (!noWorse) {
+          worseAtRef.current = Date.now();
+          setSettlingFigures(true);
+          window.setTimeout(() => setSettlingFigures(false), WORSE_FIGURES_SETTLE_MS);
+        }
+        const moved = ordered.value.order.minReceivedRaw !== current.order.minReceivedRaw ||
+          ordered.value.order.outAmountRaw !== current.order.outAmountRaw ||
+          ordered.value.order.priorityFeeLamports !== current.order.priorityFeeLamports ||
+          ordered.value.order.signatureFeeLamports !== current.order.signatureFeeLamports ||
+          ordered.value.order.rentFeeLamports !== current.order.rentFeeLamports;
+        setPriceNote(!noWorse ? "worse" : moved ? "renewed" : null);
+        return ordered.value;
+      } catch {
+        /* An answer the card could not read is not adopted: the next press builds fresh bytes. */
+        preparedAt.current = 0;
+        return null;
+      }
+    })();
+    renewalRef.current = running;
+    const clear = () => {
+      if (renewalRef.current === running) renewalRef.current = null;
+    };
+    void running.then(clear, clear);
+    return running;
+  }, [attempt, connection]);
+
+  /* A hidden tab renews nothing; coming back, the renewal is scheduled again. */
+  const [tabVisible, setTabVisible] = useState(true);
+  useEffect(() => {
+    const update = () => setTabVisible(document.visibilityState === "visible");
+    update();
+    document.addEventListener("visibilitychange", update);
+    return () => document.removeEventListener("visibilitychange", update);
+  }, []);
+  useEffect(() => {
+    if (!prepared || phase !== "REVIEW" || attempt || reviewInvalidated || bytesChanged || renewalRef.current || !tabVisible) return;
+    /* Only a Review the press could confirm: a structural refusal spends no order (and replaces nothing another surface may be signing). */
+    const readiness = assessSwapClientReview({
+      verdict: prepared.policy.verdict,
+      proofStatus: prepared.proof.status,
+      simulationStatus: prepared.simulation.status,
+      ownerEffectsStatus: prepared.simulation.ownerEffects?.status ?? "MISSING",
+      expiresAt: prepared.expiresAt,
+    });
+    if (!readiness.ready && readiness.code !== "ORDER_EXPIRED" && readiness.code !== "ORDER_TOO_SHORT") return;
+    /* A renewal that did not land cleanly left the press to build fresh bytes; no second renewal at once. */
+    if (preparedAt.current === 0) return;
+    const at = renewAtMs({ receivedAtMs: preparedAt.current, signableMs: signableMsOfOrder(prepared), renewals: renewalsRef.current });
+    if (at === null) return;
+    const timer = window.setTimeout(() => {
+      if (document.visibilityState !== "visible") return;
+      renewalsRef.current += 1;
+      void renewReviewedBytes(prepared);
+    }, Math.max(0, at - Date.now()));
+    return () => window.clearTimeout(timer);
+  }, [attempt, bytesChanged, phase, prepared, renewReviewedBytes, reviewInvalidated, tabVisible]);
 
   /**
    * Read one recorded signature until the chain gives a real answer.
@@ -1269,25 +1721,37 @@ export function SwapCard({ initialSell, initialBuy, initialAmount, embedded, onF
    * browser died between the signature and the answer. `/recover` submits
    * nothing; it reads.
    */
-  const recoverAttempt = useCallback(async () => {
+  const recoverAttempt = useCallback(async (given?: SwapClientAttempt) => {
+    /* The attempt just written is passed in: the state above may not hold it yet in this render (SOL-S1). */
+    const attempt = given ?? attemptState;
     if (!attempt || attempt.state === "SETTLED") return;
     const my = ++actionTicket.current;
     setActionFailure(null);
     setPhase("RECOVERING");
     const deadline = Date.now() + RECOVERY_DEADLINE_MS;
+    let missedReads = 0;
 
     for (;;) {
       const recovered = await post<RecoveryResponse>("/api/solana/swap/recover", {
         signature: attempt.signature,
         owner: attempt.taker,
         requestId: attempt.requestId,
-      });
+      }, undefined, SWAP_TIMEOUT_MS.recover);
       if (actionTicket.current !== my) return;
       if (!recovered.ok) {
-        setActionFailure(recovered.failure);
+        /* A read that did not arrive is read again by itself, once, before the person is asked to press (SOL-S1). */
+        if (askOnceMore(recovered.failure.code) && missedReads === 0 && Date.now() < deadline) {
+          missedReads += 1;
+          await new Promise((resolve) => window.setTimeout(resolve, RECOVERY_INTERVAL_MS));
+          if (actionTicket.current !== my) return;
+          continue;
+        }
+        /* The signature may be on the chain: never «nothing was sent» here, only that the check goes on. */
+        setActionFailure(askOnceMore(recovered.failure.code) ? { code: "RECOVERY_UNREACHABLE", message: recovered.failure.message } : recovered.failure);
         setPhase("RECOVERY");
         return;
       }
+      missedReads = 0;
 
       if (recovered.value.state === "UNKNOWN_TO_CHAIN") {
         /* Nothing was ever submitted under it. Let it go and let the person
@@ -1355,7 +1819,18 @@ export function SwapCard({ initialSell, initialBuy, initialAmount, embedded, onF
       setPhase("SETTLED");
       return;
     }
-  }, [attempt, forgetAttempt, recordSettlement, rememberAttempt, text]);
+  }, [attemptState, forgetAttempt, recordSettlement, rememberAttempt, text]);
+  recoverRef.current = recoverAttempt;
+
+  /* SOL-S1: a signature this tab left unresolved — a reload, a closed answer — is read by itself once the wallet is
+     back, never left behind a button. Once per signature; reading only. */
+  const autoRecovered = useRef<string | null>(null);
+  useEffect(() => {
+    if (!attemptState || attemptState.state === "SETTLED" || phase !== "IDLE") return;
+    if (connection?.address !== attemptState.taker || autoRecovered.current === attemptState.signature) return;
+    autoRecovered.current = attemptState.signature;
+    void recoverAttempt(attemptState);
+  }, [attemptState, connection?.address, phase, recoverAttempt]);
 
   /**
    * Start over after a wallet returned bytes that are not the reviewed ones.
@@ -1399,8 +1874,16 @@ export function SwapCard({ initialSell, initialBuy, initialAmount, embedded, onF
   }, [attempt, connection, prepared, requestExactReview, text]);
 
   const cancelIssuedReview = useCallback(async () => {
-    const owner = lockedReview?.owner ?? connection?.address ?? null;
-    const requestId = lockedReview?.requestId ?? prepared?.order.requestId ?? null;
+    /* An unsigned Review of this card's own is replaced by the next order on the server (SOL-S1): no cancel first. */
+    if (!lockedReview) {
+      if (attempt) return;
+      setPrepared(null);
+      setBytesChanged(false);
+      await requestExactReview();
+      return;
+    }
+    const owner = lockedReview.owner;
+    const requestId = lockedReview.requestId;
     if (!owner || !requestId || attempt) return;
     setActionFailure(null);
     setPhase("PREPARING");
@@ -1421,13 +1904,14 @@ export function SwapCard({ initialSell, initialBuy, initialAmount, embedded, onF
        step in front of it. Whether the lock came from this card or another
        tab, the next thing they need is an order they can sign. */
     await requestExactReview();
-  }, [attempt, connection?.address, lockedReview, prepared, requestExactReview]);
+  }, [attempt, lockedReview, requestExactReview]);
 
   const busy = phase === "PREPARING" || phase === "SIGNING" || phase === "EXECUTING" || phase === "RECOVERING";
   const amountParsed = parseHumanAmount(amount, sellDecimals).ok;
 
   /** After a settled swap: the same pair, an empty amount, fresh balances. */
   const newSwap = useCallback(() => {
+    setAgreedSwap(null);
     setSettled(null);
     setSettledOwner(null);
     setSettledPair(null);
@@ -1447,20 +1931,8 @@ export function SwapCard({ initialSell, initialBuy, initialAmount, embedded, onF
   const settledOut = settled?.observation ? Number(plainAmount(settled.observation.actualOutputRaw, settledBuy.decimals)) : null;
   const settledRate = achievedPrice(settledIn, settledOut);
   const settledFee = settled?.facts?.fees?.serviceFee ?? null;
-  const settledTone = settledOutcome === null ? "caution" : settledOutcome.kind === "FILLED" && settledOutcome.note === null ? "matched" : settledOutcome.kind === "NOT_FILLED" ? "risk" : settledOutcome.kind === "NOTHING_HAPPENED" ? "quiet" : "caution";
-  const settledHeadline = (() => {
-    if (!settledOutcome) return text("Finished with a note");
-    switch (settledOutcome.kind) {
-      case "FILLED":
-        return settledOutcome.note === null ? text("Swapped") : text("Filled, with a note");
-      case "NOTHING_HAPPENED":
-        return text("Nothing happened");
-      case "NOT_FILLED":
-        return text("Not filled");
-      default:
-        return text("Finished with a note");
-    }
-  })();
+  /* The trade's cashback is written as it settles; the history read before it does not hold it yet (SOL-X1). */
+  const settledCashback = walletCashback === null ? null : settled && walletCashback.some((row) => row.signature === settled.signature) ? walletCashback : "PENDING";
   const settledSentence = (() => {
     if (!settledOutcome || !settled) return null;
     switch (settledOutcome.kind) {
@@ -1488,38 +1960,26 @@ export function SwapCard({ initialSell, initialBuy, initialAmount, embedded, onF
       })
     : null;
 
-  const estimatedNetworkFeeSol = prepared
-    ? (
-        Number(
-          BigInt(prepared.order.signatureFeeLamports) +
-            BigInt(prepared.order.priorityFeeLamports),
-        ) / 1e9
-      ).toFixed(6)
-    : "0";
+  /* SOL-S1: a Review refused only by time (its window closed, too little left) still confirms in one press — the
+     press builds fresh bytes (`pressRoute`). A structural refusal still asks for a new quote. */
+  const preparedConfirmable = preparedReadiness !== null &&
+    (preparedReadiness.ready || preparedReadiness.code === "ORDER_EXPIRED" || preparedReadiness.code === "ORDER_TOO_SHORT");
+
+  /* The account a first purchase of a token opens: a reserve the wallet gets back when it closes it, not a cost — said
+     beside Review's costs, never counted in them (UX-263). */
   const accountReserveSol = prepared
     ? (Number(BigInt(prepared.order.rentFeeLamports)) / 1e9).toFixed(6)
     : "0";
-  /* The rate and the amount: exact where the fee is known before the swap
-     (`/build` takes it from what the person typed), else `≈` a share of the
-     side it is taken from — the settled card then states the chain's figure.
-     A route with no fee reads `0.00%`, not a blank. */
   const reviewServiceFee = prepared ? ryntraServiceFee(prepared.order) : null;
-  const reviewServiceFeeText =
-    prepared && reviewServiceFee
-      ? serviceFeeReviewText(
-          reviewServiceFee,
-          { inputMint: prepared.order.inputMint, outputMint: prepared.order.outputMint, inputRaw: prepared.order.inAmountRaw, quotedOutputRaw: prepared.order.outAmountRaw },
-          { [sellMint]: { decimals: sellDecimalsKnown, code: sell.code }, [buyMint]: { decimals: buyDecimalsKnown, code: buy.code } },
-          { none: "0.00%", usd: { input: Number(prepared.order.inUsdValue) || null, output: Number(prepared.order.outUsdValue) || null } },
-        )
-      : "0.00%";
-  const reviewHeading = preparedReadiness?.ready ? text("Ready to sign") : text("Review needs refreshing");
+  const reviewHeading = preparedConfirmable ? text("Ready to sign") : text("Review needs refreshing");
   const reviewWarnings = prepared
     ? prepared.policy.verdict.findings.filter((finding) => finding.outcome === "REVIEW")
     : [];
 
   let ctaLabel = text("Swap");
   let ctaDisabled = true;
+  /* The coin a shortfall is topped up with, when «Поповнити» can bring it (UX-902). */
+  let topUp: "sol" | "usdc" | null = null;
   if (attempt) {
     if (phase === "RECOVERING") {
       ctaLabel = text("Checking transaction…");
@@ -1530,11 +1990,13 @@ export function SwapCard({ initialSell, initialBuy, initialAmount, embedded, onF
   } else if (lockedReview) {
     ctaLabel = phase === "PREPARING" ? text("Refreshing…") : text("Get a new quote");
     ctaDisabled = phase === "PREPARING";
+  } else if (offline && !prepared && !busy) {
+    /* UX-907: nothing can be asked or sent, and the action says why rather than offering a press that fails. */
+    ctaLabel = text("No connection");
   } else if (!connection) {
-    /* With several wallets the tiles above are the action and this button is
-       not rendered at all. It used to say "Choose a wallet above" and sit
-       disabled — a control whose only job is to point at another control. */
-    ctaLabel = text("Connect wallet");
+    /* One action for a guest (B14): it opens the header's wallet panel — the choice, the install and the failure live
+       there — or, on a phone with no wallet, this page inside Phantom. */
+    ctaLabel = openInWallet ? text("Open in Phantom") : text("Connect wallet");
     ctaDisabled = connecting;
   } else if (busy) {
     ctaLabel =
@@ -1547,9 +2009,12 @@ export function SwapCard({ initialSell, initialBuy, initialAmount, embedded, onF
     ctaLabel = text("Get a new quote");
     ctaDisabled = false;
   } else if (prepared) {
-    if (!preparedReadiness?.ready || reviewSecondsLeft === null || reviewSecondsLeft <= 0) {
+    if (!preparedConfirmable) {
       ctaLabel = text("Get a new quote");
       ctaDisabled = false;
+    } else if (settlingFigures) {
+      ctaLabel = text("Check the new figures");
+      ctaDisabled = true;
     } else {
       ctaLabel = text("Confirm in wallet");
       ctaDisabled = false;
@@ -1558,12 +2023,17 @@ export function SwapCard({ initialSell, initialBuy, initialAmount, embedded, onF
     ctaLabel = text("Reading both assets…");
   } else if (!amountParsed) {
     ctaLabel = text("Enter an amount");
+  } else if (insufficientBalance) {
+    /* Short of the token itself first — the line under the amount says so with the number (SOL-C13: an empty wallet
+       is told about the dollars it lacks, not only about the fee). */
+    ctaLabel = text("Insufficient balance");
+    /* UX-902: short of SOL or of dollars, the way to more is the action itself; another token has no top-up. */
+    topUp = sellMint === WRAPPED_SOL_MINT ? "sol" : sellMint === USDC_MINT ? "usdc" : null;
   } else if (cannotPayNetworkFee) {
     /* Before the quote, before Review, and in the person's own terms: the
        shortfall is SOL, not the token they are selling. */
     ctaLabel = text("Add SOL for the network fee");
-  } else if (insufficientBalance) {
-    ctaLabel = text("Insufficient balance");
+    topUp = "sol";
   } else if (blocked) {
     ctaLabel = text("Unavailable for this asset");
   } else if (quoteFailure && !swapFailureCopy(quoteFailure.code, text).retryable) {
@@ -1590,15 +2060,12 @@ export function SwapCard({ initialSell, initialBuy, initialAmount, embedded, onF
       void startOverAfterBytesChanged();
       return;
     }
-    if (
-      lockedReview ||
-      (prepared && (!preparedReadiness?.ready || reviewSecondsLeft === null || reviewSecondsLeft <= 0))
-    ) {
+    if (lockedReview || (prepared && !preparedConfirmable)) {
       void cancelIssuedReview();
       return;
     }
     if (!connection) {
-      void connect(wallets[0]?.name);
+      reach();
       return;
     }
     if (prepared) {
@@ -1612,94 +2079,28 @@ export function SwapCard({ initialSell, initialBuy, initialAmount, embedded, onF
     void requestExactReview();
   };
 
-  const displayedOrder = prepared?.order ?? quote?.order ?? null;
-  const outDisplay = displayedOrder ? displayAmount(displayedOrder.outAmountRaw, buyDecimals) : "0.0";
-  const outState = displayedOrder ? "ready" : quoting ? "pending" : "empty";
-  const rate = displayedOrder
-    ? Number(plainAmount(displayedOrder.outAmountRaw, buyDecimals)) /
-      Number(plainAmount(displayedOrder.inAmountRaw, sellDecimals))
-    : null;
-
   /* ---------------------------------------------------------------- context */
 
-  /* The ticket used to be the whole page: one 720px card centred in 2236x1156
-     of empty canvas. The panels beside it read from the same order this card
-     would sign — the newest one available, so a Review shows the exact numbers
-     under the signature rather than the discovery quote behind it. */
+  /* The newest order on screen — the Review's exact one, else the estimate. A discovery quote has no taker, so the
+     venue answers slippage, the minimum and the network's fee with a zero it cannot yet know: those are not facts. */
   const contextOrder = prepared?.order ?? quote?.order ?? null;
-  /* A discovery quote has no taker, so the venue answers slippage, the minimum
-     and every fee with a zero it cannot yet know. Those zeros are not facts and
-     they do not render as any. */
   const priced = contextOrder !== null && contextOrder.taker !== null;
-  const tall = Boolean(prepared || settled);
-
-  const side = (mint: string, described: ReturnType<typeof describeToken>): SwapSide => {
-    const held = holdingFor(mint);
-    return {
-      mint,
-      code: described.code,
-      program: described.program,
-      listedUsd: assetCatalog[mint]?.usdPrice ?? null,
-      listedVerified: assetCatalog[mint]?.isVerified ?? null,
-      listedSuspicious: assetCatalog[mint]?.isSuspicious ?? false,
-      balance: held ? displayAmount(held.spendableRaw, held.decimals) : null,
-    };
-  };
-
-  const contextFacts: SwapFacts = {
-    rate,
-    priceImpactPct: contextOrder?.priceImpactPct ?? null,
-    slippageBps: priced ? contextOrder.slippageBps : null,
-    minReceivedRaw: priced ? contextOrder.minReceivedRaw : null,
-    tradeUsdValue: contextOrder?.swapUsdValue ?? null,
-    platformFeeBasisPoints: priced ? contextOrder.totalFeeBasisPoints : null,
-    /* Read from the order where it carries the field, and zero where it does
-       not: this adapter sends no referral or integrator parameter on either
-       path (`lib/solana/quotes.ts`), so an absent field is a zero rather
-       than an unknown. The day that stops being true, the field arrives and
-       this row changes with it. */
-    ryntraFee: priced ? ryntraServiceFee(contextOrder) : null,
-    feeQuote: priced
-      ? {
-          inputMint: contextOrder.inputMint,
-          outputMint: contextOrder.outputMint,
-          inputRaw: contextOrder.inAmountRaw,
-          quotedOutputRaw: contextOrder.outAmountRaw,
-          sides: { [sellMint]: { decimals: sellDecimalsKnown, code: sell.code }, [buyMint]: { decimals: buyDecimalsKnown, code: buy.code } },
-          usd: { input: Number(contextOrder.inUsdValue) || null, output: Number(contextOrder.outUsdValue) || null },
-        }
-      : null,
-    networkFeeSol: priced
-      ? (
-          Number(
-            BigInt(contextOrder.signatureFeeLamports) + BigInt(contextOrder.priorityFeeLamports),
-          ) / 1e9
-        ).toFixed(6)
-      : null,
-    accountReserveSol: priced
-      ? (Number(BigInt(contextOrder.rentFeeLamports)) / 1e9).toFixed(6)
-      : null,
-    provider: contextOrder?.source?.label ?? null,
-    route: contextOrder?.route ?? [],
-    secondsLeft,
-    quoting,
-  };
 
   /* The surface above this card states the Simple facts for every class in
      one place. Keyed by value, so a parent that stores them does not re-render
      this card into calling it again with the same numbers. */
   const surfaceFacts: SwapCardFacts = {
     expectedOutRaw: quote?.order.outAmountRaw ?? null,
-    minReceivedRaw: contextFacts.minReceivedRaw,
+    minReceivedRaw: priced ? contextOrder.minReceivedRaw : null,
     buyDecimals,
     sellDecimals,
-    networkFeeSol: contextFacts.networkFeeSol,
-    platformFeeBasisPoints: contextFacts.platformFeeBasisPoints,
-    priceImpactPct: contextFacts.priceImpactPct,
+    networkFeeSol: priced ? (Number(BigInt(contextOrder.signatureFeeLamports) + BigInt(contextOrder.priorityFeeLamports)) / 1e9).toFixed(6) : null,
+    platformFeeBasisPoints: priced ? contextOrder.totalFeeBasisPoints : null,
+    priceImpactPct: contextOrder?.priceImpactPct ?? null,
     secondsLeft,
     quoting,
-    provider: contextFacts.provider,
-    route: contextFacts.route.map((hop) => hop.label),
+    provider: contextOrder?.source?.label ?? null,
+    route: (contextOrder?.route ?? []).map((hop) => hop.label),
     reviewing: Boolean(prepared),
   };
   const surfaceFactsKey = JSON.stringify(surfaceFacts);
@@ -1708,138 +2109,270 @@ export function SwapCard({ initialSell, initialBuy, initialAmount, embedded, onF
     onFacts(JSON.parse(surfaceFactsKey) as SwapCardFacts);
   }, [surfaceFactsKey, onFacts]);
 
+  /* ---------------------------------------------------------------- the ticket */
+
+  /* The core's ticket on the swap's own path: the pair as a market — the asset bought or sold against the more
+     dollar-like of the two — so «Купити · Продати» is the direction and pressing the other side flips the pair, with
+     the quoted output as the new amount, as the flip always did. The figures are the venue's, said once. */
+  const lang = locale === "uk" ? "uk" : "en";
+  /* The catalogue's dollar price, a number where it has one — the latest read of it first. */
+  const usdOf = (mint: string): number | null => {
+    const listed = priceReads[mint]?.usd ?? assetCatalog[mint]?.usdPrice ?? null;
+    const value = listed === null ? null : Number(listed);
+    return value !== null && Number.isFinite(value) && value > 0 ? value : null;
+  };
+  const [amountUnit, setAmountUnit] = useState<"token" | "usd">("token");
+  const [usdText, setUsdText] = useState("");
+  /* A sum typed in dollars becomes the amount at the price of the moment it was typed, and the ticket keeps counting at
+     that price while the sum stands (SOL-C13): a price read again 30 s later must move neither the amount Jupiter is
+     asked for nor what the ticket says is paid — else the quote, and the Review built on it, no longer match the sum. */
+  const usdAsked = `${usdText}|${sellMint}|${sellDecimals}`;
+  /* The pin is the sum, the price it was converted at and the amount that conversion gave: it holds only while all three
+     still stand — a trip to the token's own unit, a new pair or a fresh swap converts again. */
+  const [usdPin, setUsdPin] = useState<Readonly<{ asked: string; usd: number; amount: string }> | null>(null);
+  const pinnedPay = amountUnit === "usd" && usdPin !== null && usdPin.asked === usdAsked && usdPin.amount === amount;
+  /* The dollar price `paid` is counted with: the pinned one for the leg that pays while a dollar sum stands. The
+     reference and the market keep the live prices, so the impact is measured against today's, not the pin's. */
+  const ticketUsd = (mint: string): number | null => (pinnedPay && mint === sellMint ? (usdPin?.usd ?? null) : usdOf(mint));
+  const sellCoin: TicketCoin = { mint: sellMint, symbol: sell.code, decimals: sellDecimals, digits: 4 };
+  const buyCoin: TicketCoin = { mint: buyMint, symbol: buy.code, decimals: buyDecimals, digits: 4 };
+  const ticketSide = quoteRank(buyMint) > quoteRank(sellMint) ? "sell" : "buy";
+  const baseCoin = ticketSide === "buy" ? buyCoin : sellCoin;
+  const quoteCoin = ticketSide === "buy" ? sellCoin : buyCoin;
+  const ticketMarketOf = ticketMarket({ id: `${sellMint}:${buyMint}`, base: baseCoin, quote: quoteCoin, price: usdOf(baseCoin.mint) });
+  const [ticketNow, setTicketNow] = useState(() => Date.now());
+  useEffect(() => {
+    const timer = window.setInterval(() => setTicketNow(Date.now()), 1_000);
+    return () => window.clearInterval(timer);
+  }, []);
+  /* When the prices on screen were read: the older of the two legs' reads (UX-907 — the age is the read's, never the
+     ticket's clock). Nothing read yet: the clock, with no price to age. */
+  const legReads = [priceReads[sellMint]?.at, priceReads[buyMint]?.at].filter((at): at is number => typeof at === "number");
+  const pricesAt = legReads.length > 0 ? Math.min(...legReads) : ticketNow;
+  /* The pair's price has an age only when both its legs were read: one leg alone prices nothing. */
+  const priceAge = legReads.length === 2 ? Math.max(0, Math.round((ticketNow - pricesAt) / 1000)) : null;
+  const ticketPricesOf = ticketPrices(
+    [
+      { coin: sellCoin, usd: ticketUsd(sellMint) },
+      { coin: buyCoin, usd: ticketUsd(buyMint) },
+      { coin: SOL_COIN, usd: ticketUsd(WRAPPED_SOL_MINT) },
+    ],
+    pricesAt,
+    "Jupiter",
+  );
+  const ticketReferenceOf = referenceOf(usdOf(baseCoin.mint), usdOf(quoteCoin.mint), "Jupiter", pricesAt);
+  /* What may be spent is the spendable balance — the network's reserve already withheld — so «Max» is exactly what MAX
+     always was; selling a token, the wallet needs SOL for the fee at all. */
+  const buyHolding = holdingFor(buyMint);
+  const ticketBalancesOf = !connection
+    ? null
+    : ticketBalances([
+        { coin: sellCoin, raw: sellHolding ? sellHolding.spendableRaw : balanceKnown ? "0" : null },
+        { coin: buyCoin, raw: buyHolding ? buyHolding.spendableRaw : null },
+        ...(sellMint === WRAPPED_SOL_MINT || buyMint === WRAPPED_SOL_MINT ? [] : [{ coin: SOL_COIN, raw: nativeHolding ? nativeHolding.spendableRaw : null }]),
+      ]);
+  const ticketGas = solGas(sellMint === WRAPPED_SOL_MINT ? 0n : 1n);
+  const draft: TicketDraft = newDraft({ side: ticketSide, unit: amountUnit, amount: amountUnit === "token" ? amount : usdText });
+  const ticketBase: TicketInput = {
+    market: ticketMarketOf,
+    draft,
+    balances: ticketBalancesOf,
+    prices: ticketPricesOf,
+    reference: ticketReferenceOf,
+    gas: ticketGas,
+    fees: [],
+    maxLegs: 1,
+    swap: blocked ? { status: "later", until: text("Unavailable for this asset") } : { status: "on" },
+    limit: { status: "off" },
+    slippageChoices: [],
+    /* No estimate is waited for first: Review is the venue's own fresh order (`onCta`). */
+    exactReview: true,
+    venue: "Jupiter",
+    venueId: "jupiter",
+    now: ticketNow,
+  };
+  /* A sum typed in dollars is the swap's amount in the token it pays with, every digit. */
+  const typedTicket = ticketModel(ticketBase, lang);
+  const typedUnits = typedTicket.paid ? BigInt(typedTicket.paid.units) : null;
+  /* …converted once per sum the person types (or per leg it pays with), at the price of that moment, which is then pinned
+     (`usdPin`) — never again because a price was read: a refresh that moved the amount would drop the Review on screen,
+     and with the wallet open, the signature with it. Until the dollar price is known the conversion waits for it. */
+  const payUsdNow = usdOf(sellMint);
+  useEffect(() => {
+    /* While the order is being prepared the form is still open: a new sum typed then converts, and the changed amount
+       cancels that request (the effect above) — the Review that opens is the sum on screen, never the one before it. */
+    if (amountUnit !== "usd" || pinnedPay || (busy && phase !== "PREPARING") || prepared) return;
+    /* No dollar price yet: nothing to convert at, nothing pinned and no amount left from before (a flip's, a former
+       sum's) — the price, when it comes, converts. */
+    if (payUsdNow === null) {
+      setAmount((current) => (current === "" ? current : ""));
+      return;
+    }
+    const next = typedUnits !== null ? plainRaw(typedUnits, sellDecimals) : "";
+    setUsdPin({ asked: usdAsked, usd: payUsdNow, amount: next });
+    setAmount((current) => (current === next ? current : next));
+  }, [amountUnit, pinnedPay, busy, phase, prepared, typedUnits, usdText, payUsdNow, usdAsked, sellDecimals]);
+  /* The order's figures in the ticket's words. Every cost the order states is counted — on a discovery quote too, as
+     Spot counts it (SOL-C13, UX-257): Ryntra's rate and Jupiter's own are known before a wallet, and a zero the venue
+     cannot know yet is simply not a line. The network's fee stands apart from the quote's fees so «Max», which already
+     keeps the reserve, never spends it twice. */
+  const figuresOf = (order: QuoteResponse["order"], expiresAt: number) => {
+    const figures = jupiterFigures(order, { pay: sellCoin, get: buyCoin }, expiresAt - 30_000, expiresAt);
+    const { gas, ...rest } = figures.fees;
+    return { figures: { ...figures, fees: rest }, gas };
+  };
+  const ticketQuoteOf = (order: QuoteResponse["order"], expiresAt: number) => {
+    const { figures } = figuresOf(order, expiresAt);
+    return ticketQuote({ figures, side: ticketSide, market: ticketMarketOf, pay: sellCoin, get: buyCoin, executor: "Jupiter", venueId: "jupiter" });
+  };
+  /* «Витрати» of an order and their lines — one count, so the lines Review prints add up to its total (UX-263). */
+  const costsOf = (order: QuoteResponse["order"] | null) => {
+    if (!order) return null;
+    const { figures, gas } = figuresOf(order, ticketNow);
+    const paidAmount = rawAmount(order.inAmountRaw, sellCoin);
+    if (!paidAmount) return null;
+    const tokens = new Map([sellCoin, buyCoin, SOL_COIN].map((coin) => [assetOf(coin.mint), coinToken(coin)] as const));
+    const counted = costLines({ ...figures.fees, ...(gas ? { gas } : {}) }, paidAmount, "Jupiter", tokens, ticketPricesOf, lang);
+    /* Ryntra's share is exact where the order states it and a rate of the quote otherwise: an estimate keeps its «≈». */
+    const fee = ryntraServiceFee(order);
+    const estimated = fee !== null && fee.amountRaw === null;
+    return estimated ? { ...counted, lines: counted.lines.map((line) => (line.label.startsWith("Ryntra") ? { ...line, value: `≈ ${line.value}` } : line)) } : counted;
+  };
+
+  const settledView = phase === "SETTLED" && settled && settledOutcome;
+  /* A signature whose answer is still looked for is a result, not a Review to sign again. */
+  const ticketStage = settledView || attempt ? "result" : prepared ? "review" : "form";
+  const liveQuote = !prepared && quote ? ticketQuoteOf(quote.order, Date.parse(quote.expiresAt)) : null;
+  /* Without a connection an amount gets no quote and the ticket says why, with nothing to retry yet (UX-907). */
+  const offlineQuote = offline && amountParsed;
+  const formInput: TicketInput = {
+    ...ticketBase,
+    ...(liveQuote && !quoting && !offline ? { quote: liveQuote } : {}),
+    ...(offlineQuote
+      ? { quoteFailed: text("No connection. The price and the quote come back when it does.") }
+      : quoteFailure && !quoting
+        ? { quoteFailed: failureCopy(quoteFailure.code, text) }
+        : {}),
+  };
+  /* The form's «Витрати»: the live quote's every cost, one count (UX-257). */
+  const formCosts = ticketStage === "form" && liveQuote && quote && !offline ? costsOf(quote.order) : null;
+  /* A quote that leaves the tolerance to the exact order (none stated, its minimum the expected amount): before Review
+     the ticket names neither a minimum nor a tolerance it does not have, as in Spot; the Review states both. */
+  const toleranceByReview = liveQuote !== null && quote !== null && quote.order.slippageBps === 0 && quote.order.minReceivedRaw === quote.order.outAmountRaw;
+  /* The person's quick sums on a purchase, as Spot offers them: in the dollar token itself (25 means 25 USDC), in
+     dollars when SOL pays; a sale offers its shares of the balance. */
+  const quick = ticketSide === "buy" && (DOLLAR_MINTS.has(sellMint) || sellMint === WRAPPED_SOL_MINT)
+    ? { unit: sellMint === WRAPPED_SOL_MINT ? ("usd" as const) : ("token" as const), values: quickSums.map((sum) => String(sum)) }
+    : undefined;
+  /* Review: the exact order, held as it arrived. A Review a press can still confirm — fresh bytes at the press if its
+     window closed — stands ready; one refused for more than time waits, grey, for a new quote below. */
+  const reviewReady = preparedConfirmable && !settlingFigures && !bytesChanged;
+  let ticketReviewed: TicketReviewed | undefined;
+  /* What was agreed to: the exact order over a wallet the ladder already checked (the venue checks it again), so a
+     Review never dies on the ticket's own count — and the result knows a sale from a purchase. */
+  const agreedOrder = ticketStage === "review" ? (prepared?.order ?? null) : null;
+  if (agreedOrder) {
+    const exact = ticketQuoteOf(agreedOrder, ticketNow + 60_000);
+    /* The Review reads the order itself — its amount in the token it pays with — so no dollar price, pinned or new, can
+       make the agreed sum and the exact order disagree. */
+    const orderDraft = newDraft({ side: ticketSide, unit: "token", amount: plainRaw(BigInt(agreedOrder.inAmountRaw), sellDecimals) });
+    const reviewInput: TicketInput = { ...ticketBase, draft: orderDraft, balances: {}, ...(exact ? { quote: exact } : {}) };
+    const snapshot = ticketSnapshot(ticketModel(reviewInput, lang), reviewInput, lang);
+    if (snapshot) ticketReviewed = { ...snapshot, quote: reviewReady ? null : snapshot.quote ? { ...snapshot.quote, expires_at: 0 } : null };
+  } else if (ticketStage === "result" && agreedSwap) {
+    ticketReviewed = { ...agreedSwap.reviewed, quote: agreedSwap.reviewed.quote ? { ...agreedSwap.reviewed.quote, expires_at: 0 } : null };
+  }
+  const reviewedNow = ticketReviewed;
+  useEffect(() => {
+    if (ticketStage === "review" && prepared && reviewedNow) setAgreedSwap({ reviewed: reviewedNow, order: prepared.order });
+    // Kept once per prepared order: the snapshot is a new object every render.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [preparedRead]);
+  /* The settled answer in the ticket's words, with the core's receipt when the chain was read. */
+  let ticketResult: TicketResult | undefined;
+  if (settledView && settled && settledOutcome) {
+    const filledNow = settledOutcome.kind === "FILLED";
+    const order = agreedSwap?.order ?? preparedRead?.order ?? null;
+    const paidIn = settled.observation ? rawAmount(settled.observation.actualInputRaw, { ...sellCoin, decimals: settledSell.decimals }) : null;
+    const gotOut = settled.observation ? rawAmount(settled.observation.actualOutputRaw, { ...buyCoin, decimals: settledBuy.decimals }) : null;
+    ticketResult = {
+      state: filledNow ? "filled" : settledOutcome.kind === "UNPLACED" ? "unknown" : "rejected",
+      time: new Intl.DateTimeFormat(lang === "uk" ? "uk-UA" : "en-US", { hour: "2-digit", minute: "2-digit" }).format(new Date(ticketNow)),
+      tx: settled.signature,
+      ...(settledSentence && !filledNow ? { reason: settledSentence } : {}),
+      ...(filledNow && paidIn && gotOut
+        ? {
+            receipt: settledReceipt({
+              intentId: settled.signature,
+              venueId: "jupiter",
+              marketId: ticketMarketOf.id,
+              side: ticketSide,
+              state: "filled",
+              paid: order ? (rawAmount(order.inAmountRaw, sellCoin) ?? paidIn) : paidIn,
+              expected: order ? (rawAmount(order.outAmountRaw, buyCoin) ?? gotOut) : gotOut,
+              atLeast: order ? rawAmount(order.minReceivedRaw, buyCoin) : null,
+              actualIn: paidIn,
+              actualOut: gotOut,
+              fees: order ? figuresOf(order, ticketNow).figures.fees : {},
+              signature: settled.signature,
+              signer: settledOwner ?? "",
+              executor: "Jupiter",
+              at: ticketNow,
+            }),
+          }
+        : {}),
+    };
+  } else if (ticketStage === "result") {
+    ticketResult = { state: "unknown", time: new Intl.DateTimeFormat(lang === "uk" ? "uk-UA" : "en-US", { hour: "2-digit", minute: "2-digit" }).format(new Date(ticketNow)) };
+  }
+  /* Review's costs from the same count as its total — Jupiter, Ryntra, the network (UX-263); the account's reserve is
+     its own row beside them, returned when the account closes. The form's «Витрати» is the live quote's total. */
+  const reviewCosts = ticketStage === "review" ? costsOf(prepared?.order ?? null) : null;
+  const reviewRows = prepared && BigInt(prepared.order.rentFeeLamports) > 0n ? [{ label: text("Account reserve, returned when the account closes"), value: `${accountReserveSol} SOL` }] : undefined;
+  /* The action the ticket does not own: the answer looked for, a Review to clear, a wallet that changed the bytes. */
+  const hostCta = Boolean(attempt) || Boolean(lockedReview) || bytesChanged || (prepared !== null && (!preparedConfirmable || settlingFigures));
+
+  /* The pair beside the converter (SOL-C13): its two assets as the catalogue and the wallet know them, the one price
+     with the age of its read, and the doors to Spot for this very pair and to «Між мережами». */
+  /* An amount as the page's language writes it: «2,397» in Ukrainian, «2.397» in English (UX-271). */
+  const localAmount = (value: string) => (lang === "uk" ? value.replace(/,/g, "\u00a0").replace(".", ",") : value);
+  const pairSide = (mint: string, described: ReturnType<typeof describeToken>): SwapPairSide => {
+    const held = holdingFor(mint);
+    const wholeRead = holdingsRead?.owner === connection?.address && holdingsRead?.tokenRead === "COMPLETE";
+    return {
+      mint,
+      code: described.code,
+      name: described.name,
+      icon: described.icon,
+      usd: usdOf(mint),
+      verified: assetCatalog[mint]?.isVerified ?? null,
+      suspicious: assetCatalog[mint]?.isSuspicious ?? false,
+      balance: !connection ? null : held ? `${localAmount(displayAmount(held.spendableRaw, held.decimals))} ${described.code}` : wholeRead ? `0 ${described.code}` : null,
+    };
+  };
+  /* Spot opens on the token bought here — or, when that is a dollar, on the one paid with (UX-017). */
+  const spotMint = [buyMint, sellMint].find((mint) => !DOLLAR_MINTS.has(mint));
+  const routeText = quote && !offline ? quote.order.route.map((hop) => hop.label).filter(Boolean).join(" → ") || null : null;
+  /* «Поповнити» brings the person back to Swap once the money is there (UX-902); the top-up takes a cabinet path only. */
+  const topUpHref = topUp ? `/app/top-up?${topUp === "sol" ? "need=sol&" : ""}from=${encodeURIComponent("/app/swap")}` : null;
+
   return (
     <>
-      <Panel
-        bare={Boolean(embedded)}
-        id="trade-swap"
-        title={text("Swap")}
-        w={4}
-        h={tall ? 8 : 6}
-        essential
-        badge={text("Solana mainnet")}
-        tone={settledOutcome?.kind === "FILLED" ? "verified" : "evidence"}
-      >
-        <div className={styles.card}>
-          {phase === "SETTLED" && settled && settledOutcome ? (
-            <div className={styles.settled} data-kind={settledOutcome.kind} data-tone={settledTone} role="status">
-              <div className={styles.settledMark} data-tone={settledTone} aria-hidden="true">
-                {settledTone === "matched" ? <CheckCircle size={26} weight="fill" /> : settledTone === "risk" ? <XCircle size={26} weight="fill" /> : <Warning size={26} weight="fill" />}
-              </div>
-              <div className={styles.settledHead} data-tone={settledTone}>
-                <span className={styles.settledKicker} translate="no">{settledSell.code} → {settledBuy.code}</span>
-                <b>{settledHeadline}</b>
-              </div>
-              {settledOutcome.kind === "FILLED" && settled.observation ? (
-                <div className={styles.fill}>
-                  <div className={styles.fillAmount} translate="no">
-                    +{displayAmount(settled.observation.actualOutputRaw, settledBuy.decimals)} <span>{settledBuy.code}</span>
-                  </div>
-                  <div className={styles.fillFor}>
-                    {text("for")} <b translate="no">{displayAmount(settled.observation.actualInputRaw, settledSell.decimals)} {settledSell.code}</b>
-                  </div>
-                  <dl className={styles.fillFacts}>
-                    {settledRate !== null && Number.isFinite(settledRate) ? (
-                      <div>
-                        <dt>{text("Price")}</dt>
-                        <dd translate="no">1 {settledSell.code} ≈ {settledRate.toLocaleString("en-US", { maximumSignificantDigits: 6 })} {settledBuy.code}</dd>
-                      </div>
-                    ) : null}
-                    <div>
-                      <dt>{text("Ryntra fee")}</dt>
-                      <dd translate="no">{settledFee ? serviceFeeText(settledFee, text("None")) : text("None")}</dd>
-                    </div>
-                  </dl>
-                </div>
-              ) : null}
-              {settledSentence ? <p className={styles.settledSentence}>{settledSentence}</p> : null}
-              {settledOutcome.kind !== "NOTHING_HAPPENED" ? (
-                <div className={styles.settledLinks}>
-                  <a className="rw-btn" href={explorerTxUrl(NETWORK, settled.signature)} target="_blank" rel="noreferrer">
-                    {text("Explorer")} <ArrowUpRight size={12} aria-hidden="true" />
-                  </a>
-                  {settled.receipt ? (
-                    <button className="rw-btn" type="button" onClick={() => downloadReceipt(settled.receipt)}>
-                      {text("Receipt")}
-                    </button>
-                  ) : null}
-                  <Link className="rw-btn" href="/app/activity">
-                    {text("History")}
-                  </Link>
-                </div>
-              ) : null}
-              <button className={settledOutcome.kind === "FILLED" ? styles.settledAgain : styles.cta} type="button" onClick={newSwap}>
-                {settledOutcome.kind === "NOTHING_HAPPENED" ? text("Trade again") : text("New swap")}
-              </button>
-            </div>
-          ) : (
-          <>
-          {embedded ? null : (
-          <div className={styles.legs}>
-            <div className={styles.leg}>
-              <div className={styles.legHead}>
+      <div className={embedded ? styles.embedded : styles.layout} data-swap-layout={embedded ? undefined : ""}>
+        <section
+          id="trade-swap"
+          className={styles.card}
+          aria-label={text("Swap")}
+          data-swap-converter
+          data-tone={settledOutcome?.kind === "FILLED" ? "verified" : undefined}
+        >
+          {ticketStage !== "form" ? null : embedded ? null : (
+            <div className={styles.legs}>
+              <div className={styles.leg} ref={sellButtonRef}>
                 <span className={styles.legLabel}>{text("You pay")}</span>
-                {!sellHolding && (holdingsPartial || holdingsFailed) && connection ? (
-                  /* The balance this leg needs did not come back in a partial
-                     read. Say so where the figure would be, and offer the read
-                     again — never an empty corner that reads as "no balance". */
-                  <span className={styles.balance}>
-                    <span className={styles.balanceLabel}>{holdingsFailed ? text("Balances could not be loaded just now. Try again in a moment.") : text("Some balances could not be read.")}</span>
-                    <button className={styles.shareButton} type="button" onClick={refreshHoldings} disabled={busy}>
-                      {text("Read again")}
-                    </button>
-                  </span>
-                ) : null}
-                {sellHolding ? (
-                  <span className={styles.balance}>
-                {/* `Available`, not `Balance`. The figure beneath this word is
-                    `spendableRaw` — the balance with the network-fee reserve
-                    already withheld — so a wallet holding 0.06046201 SOL read
-                    `Balance 0.05996201 SOL` here and matched nothing the person
-                    could see in their own wallet. A swap shows the
-                    *available* balance, which is exactly what this is. */}
-                    <span className={styles.balanceLabel}>{text("Available")}</span>
-                    <button
-                      className={styles.balanceValue}
-                      type="button"
-                      onClick={fillMax}
-                      disabled={busy}
-                      title={text("Use the full spendable balance")}
-                      translate="no"
-                    >
-                      {displayAmount(sellHolding.spendableRaw, sellHolding.decimals)} {sell.code}
-                    </button>
-                    <span className={styles.shareGroup}>
-                      <button className={styles.shareButton} type="button" onClick={() => fillShare(1n, 4n)} disabled={busy}>
-                        25%
-                      </button>
-                      <button className={styles.shareButton} type="button" onClick={() => fillShare(1n, 2n)} disabled={busy}>
-                        50%
-                      </button>
-                      <button className={styles.shareButton} type="button" onClick={() => fillShare(3n, 4n)} disabled={busy}>
-                        75%
-                      </button>
-                      <button className={styles.shareButton} type="button" onClick={fillMax} disabled={busy}>
-                        {text("MAX")}
-                      </button>
-                    </span>
-                  </span>
-                ) : null}
-              </div>
-              <div className={styles.legBody}>
-                <input
-                  className={styles.amountInput}
-                  value={amount}
-                  inputMode="decimal"
-                  aria-label={text("Amount to sell")}
-                  placeholder="0.0"
-                  disabled={busy}
-                  onChange={(event) => setAmount(event.target.value)}
-                />
-                <button
-                  ref={sellButtonRef}
+                <Button
+                  variant="secondary"
                   className={styles.tokenPill}
-                  type="button"
                   aria-label={`${text("You pay")}: ${sell.code}. ${text("Choose an asset")}`}
                   onClick={() => {
                     setSearch("");
@@ -1847,35 +2380,19 @@ export function SwapCard({ initialSell, initialBuy, initialAmount, embedded, onF
                     setPicker("sell");
                   }}
                   disabled={busy}
+                  lang={lang}
                 >
-                    <MarketIcon mint={sellMint} icon={sell.icon} symbol={sell.code} size={24} />
+                  <MarketIcon mint={sellMint} icon={sell.icon} symbol={sell.code} size={24} />
                   <span translate="no">{sell.code}</span>
                   <span className={styles.tokenCaret} aria-hidden>▾</span>
-                </button>
+                </Button>
               </div>
-              <span className={styles.usdLine} translate="no">
-                {displayedOrder?.inUsdValue ? `$${Number(displayedOrder.inUsdValue).toFixed(2)}` : ""}
-              </span>
-            </div>
-
-            <div className={styles.flipRow}>
-              <button className={styles.flipButton} type="button" onClick={flip} disabled={busy} aria-label={text("Flip the pair")}>
-                ⇅
-              </button>
-            </div>
-
-            <div className={styles.leg}>
-              <div className={styles.legHead}>
+              <Button variant="ghost" icon="arrow-down-up" className={styles.flipButton} onClick={flip} disabled={busy} aria-label={text("Flip the pair")} lang={lang} />
+              <div className={styles.leg} ref={buyButtonRef}>
                 <span className={styles.legLabel}>{text("You receive")}</span>
-              </div>
-              <div className={styles.legBody}>
-                <span className={styles.amountOut} data-state={outState} translate="no">
-                  {outDisplay}
-                </span>
-                <button
-                  ref={buyButtonRef}
+                <Button
+                  variant="secondary"
                   className={styles.tokenPill}
-                  type="button"
                   aria-label={`${text("You receive")}: ${buy.code}. ${text("Choose an asset")}`}
                   onClick={() => {
                     setSearch("");
@@ -1883,81 +2400,123 @@ export function SwapCard({ initialSell, initialBuy, initialAmount, embedded, onF
                     setPicker("buy");
                   }}
                   disabled={busy}
+                  lang={lang}
                 >
-                    <MarketIcon mint={buyMint} icon={buy.icon} symbol={buy.code} size={24} />
+                  <MarketIcon mint={buyMint} icon={buy.icon} symbol={buy.code} size={24} />
                   <span translate="no">{buy.code}</span>
                   <span className={styles.tokenCaret} aria-hidden>▾</span>
-                </button>
+                </Button>
               </div>
-              <span className={styles.usdLine} translate="no">
-                {displayedOrder?.outUsdValue ? `$${Number(displayedOrder.outUsdValue).toFixed(2)}` : ""}
-              </span>
             </div>
-          </div>
           )}
 
-          <div className={styles.rateRow}>
-            <span translate="no">
-              {quote && rate !== null && Number.isFinite(rate) ? (
-                <>
-                  1 {sell.code} ≈{" "}
-                  <span className={styles.rateValue}>
-                    {rate.toLocaleString("en-US", { maximumSignificantDigits: 6 })}
-                  </span>{" "}
-                  {buy.code}
-                </>
-              ) : quoting ? (
-                text("Quoting…")
-              ) : (
-                ""
-              )}
-            </span>
+          {ticketStage === "form" && !sellHolding && (holdingsPartial || holdingsFailed) && connection ? (
+            /* The balance this leg needs did not come back in a partial read. Say so where the figure would be, and offer
+               the read again — never an empty corner that reads as "no balance". */
+            <p className={styles.balance}>
+              <span className={styles.balanceLabel}>{holdingsFailed ? text("Balances could not be loaded just now. Try again in a moment.") : text("Some balances could not be read.")}</span>
+              <Button variant="ghost" onClick={refreshHoldings} disabled={busy} lang={lang}>
+                {text("Read again")}
+              </Button>
+            </p>
+          ) : null}
+
+          {/* The core's ticket as Spot draws it (UX-255): the pair is named by the legs above, so the ticket's own head, the
+              «Купити · Продати» switch (UX-259) and the market-only type (UX-260) are not drawn; the tolerance is the
+              route's, so there is nothing to choose before Review. */}
+          <div
+            className={styles.ticketHost}
+            data-tolerance={toleranceByReview ? "by-review" : undefined}
+            data-amount-ready={liveQuote ? "true" : undefined}
+          >
+            <TradeTicket
+              quietLegs
+              {...formInput}
+              sides={[ticketSide]}
+              quick={quick}
+              className={styles.ticket}
+              venue="Jupiter"
+              network={NETWORK_LABEL}
+              stage={ticketStage}
+              reviewed={ticketReviewed}
+              result={ticketResult}
+              signing={busy}
+              cancelWhileSigning={false}
+              {...(connection ? { signer: short(connection.address) } : {})}
+              costLines={reviewCosts ? reviewCosts.lines : []}
+              costsTotal={reviewCosts ? reviewCosts.total : (formCosts?.total ?? "—")}
+              reviewRows={ticketStage === "review" ? reviewRows : undefined}
+              titleAs="h3"
+              lang={lang}
+              onDraftChange={(next) => {
+                /* The other side is the pair the other way round: the flip, with the quoted output as the amount. */
+                if (next.side !== ticketSide) {
+                  flip();
+                  return;
+                }
+                if (next.unit !== amountUnit) {
+                  setAmountUnit(next.unit);
+                  if (next.unit === "usd") setUsdText(next.amount);
+                  else setAmount(next.amount.replace(",", "."));
+                  return;
+                }
+                if (next.unit === "usd") setUsdText(next.amount);
+                else setAmount(next.amount.replace(",", "."));
+              }}
+              onRetryQuote={offline ? undefined : () => setRefreshTicket((ticket) => ticket + 1)}
+              onConnect={reach}
+              onReview={onCta}
+              /* The form's action is the swap's own ladder, word for word: preparing, a refusal no press changes, the
+                 assets still being read — and for a guest, «Підключити гаманець», which opens the header's panel. */
+              action={
+                ticketStage === "form" && topUpHref ? (
+                  <Link className="ryntra-button ryntra-button--primary ryntra-button--block" href={topUpHref} data-top-up>
+                    {topUp === "sol" ? text("Top up SOL") : text("Top up USDC")}
+                  </Link>
+                ) : ticketStage === "form" ? (
+                  <Button variant="primary" block onClick={onCta} disabled={ctaDisabled} loading={phase === "PREPARING" || phase === "RECOVERING"} {...(!connection && !offline ? { icon: "wallet" as const } : {})} lang={lang} {...(!connection && !offline ? { "data-connect-wallet": "" } : {})}>
+                    {ctaLabel}
+                  </Button>
+                ) : undefined
+              }
+              onCancel={() => {
+                /* An unsigned Review is let go here; the next order replaces it on the server. A renewal still on its way
+                   for it answers no one. */
+                if (busy) return;
+                actionTicket.current += 1;
+                setAgreedSwap(null);
+                setPrepared(null);
+                setPriceNote(null);
+                setPhase("IDLE");
+              }}
+              /* Without a connection Review cannot be confirmed — nothing could be sent (UX-907, as Spot greys it). */
+              onConfirm={offline ? undefined : onCta}
+              onVerify={settled && settledOutcome?.kind !== "NOTHING_HAPPENED" ? () => window.open(explorerTxUrl(NETWORK, settled.signature), "_blank", "noopener,noreferrer") : undefined}
+              onAgain={newSwap}
+            />
           </div>
 
           {/* The estimate's refusal says nothing once the Review has answered for
               itself — its own refusal below, or its exact order — unless no
               press can change it: then it is the reason the button gives. */}
-          {quoteFailure && ((!prepared && !actionFailure && phase === "IDLE") || !swapFailureCopy(quoteFailure.code, text).retryable) ? (
+          {/* …and on the form it says nothing the ticket already says for this amount (UX-275). */}
+          {quoteFailure && !(ticketStage === "form" && amountParsed) && ((!prepared && !actionFailure && phase === "IDLE") || !swapFailureCopy(quoteFailure.code, text).retryable) ? (
             <div className={styles.errorRow}>{failureCopy(quoteFailure.code, text)}</div>
           ) : null}
 
           {prepared ? (
             <section className={styles.exactReview} aria-label={reviewHeading}>
-              <div className={styles.exactReviewHead}>
-                <span className={styles.legLabel}>{reviewHeading}</span>
-              </div>
-              <div className={styles.exactReviewGrid}>
-                <span>
-                  {text("You pay")}
-                  <b translate="no">{displayAmount(prepared.order.inAmountRaw, sellDecimals)} {sell.code}</b>
-                </span>
-                <span>
-                  {text("You receive at least")}
-                  <b translate="no">{displayAmount(prepared.order.minReceivedRaw, buyDecimals)} {buy.code}</b>
-                </span>
-                <span>
-                  {text("Network fee estimate")}
-                  <b translate="no">{estimatedNetworkFeeSol} SOL</b>
-                </span>
-                {BigInt(prepared.order.rentFeeLamports) > 0n ? (
-                  <span>
-                    {text("Account reserve")}
-                    <b translate="no">{accountReserveSol} SOL</b>
-                  </span>
-                ) : null}
-                {/* Ryntra's own fee, in the Review, beside the figures a person
-                    is deciding on, on a row of its own: the rate and the amount
-                    stay one figure. It is deliberately not folded into the
-                    network fee or the price: a service fee is what this company
-                    charges, and the one place it must never be is implicit.
-                    A route that carries none prints a zero rather than nothing. */}
-                <span data-wide="true">
-                  {text("Ryntra fee")}
-                  <b translate="no">{reviewServiceFeeText}</b>
-                </span>
-              </div>
               {reviewServiceFee?.mechanism === "JUPITER_REFERRAL" && reviewServiceFee.basisPoints > 0 ? (
-                <p className={styles.feeNote}>{text("Includes Jupiter's share. Already included in the quote.")}</p>
+                <p className={styles.feeNote}>{text("Jupiter's share is part of the Ryntra fee above.")}</p>
+              ) : null}
+              {priceNote ? (
+                <p className={styles.feeNote} role="status">
+                  {priceNote === "worse"
+                    ? text("The price moved while you read. The figures above are new — check them before you confirm.")
+                    : priceNote === "renewed"
+                      ? text("The price was refreshed while you read. The figures above are the ones your wallet will show.")
+                      : text("Price refreshed at signing. The figures above are the ones your wallet shows.")}
+                </p>
               ) : null}
               {reviewWarnings.length > 0 ? (
                 <ul className={styles.reviewWarnings} aria-label={text("Review before confirming")}>
@@ -1976,8 +2535,46 @@ export function SwapCard({ initialSell, initialBuy, initialAmount, embedded, onF
                helping them needs, and it rides along without adding a line of
                technical text to the card. */
             <div className={styles.errorRow} title={actionFailure.code}>
-              {failureCopy(actionFailure.code, text)}
+              {/* The card's own sentence where it wrote one for this moment; the shared map otherwise. */}
+              {actionFailure.code === "REVIEW_REFRESHED" ? actionFailure.message : failureCopy(actionFailure.code, text)}
             </div>
+          ) : null}
+
+          {settledView && settled && settledOutcome ? (
+            <>
+              {settledOutcome.kind === "FILLED" && settledSentence ? <p className={styles.settledSentence}>{settledSentence}</p> : null}
+              {settledOutcome.kind === "FILLED" && settled.observation && settledRate !== null && Number.isFinite(settledRate) ? (
+                <dl className={styles.fillFacts}>
+                  <div>
+                    <dt>{text("Price")}</dt>
+                    <dd translate="no">1 {settledSell.code} ≈ {settledRate.toLocaleString(lang === "uk" ? "uk-UA" : "en-US", { maximumSignificantDigits: 6 })} {settledBuy.code}</dd>
+                  </div>
+                  <div>
+                    <dt>{text("Ryntra fee")}</dt>
+                    <dd translate="no">{settledFee ? serviceFeeText(settledFee, text("None")) : text("None")}</dd>
+                  </div>
+                </dl>
+              ) : null}
+              {settledOutcome.kind === "FILLED" && settled.receipt ? (
+                <ExecutionTruth
+                  receipt={settled.receipt}
+                  sides={{ spent: { symbol: settledSell.code, decimals: settledSell.decimals }, received: { symbol: settledBuy.code, decimals: settledBuy.decimals } }}
+                  cashback={settledCashback}
+                />
+              ) : null}
+              {settledOutcome.kind !== "NOTHING_HAPPENED" ? (
+                <div className={styles.settledLinks}>
+                  {settled.receipt ? (
+                    <Button variant="secondary" icon="receipt" onClick={() => downloadReceipt(settled.receipt)} lang={lang}>
+                      {text("Receipt")}
+                    </Button>
+                  ) : null}
+                  <Link className={styles.settledLink} href="/app/activity">
+                    {text("History")}
+                  </Link>
+                </div>
+              ) : null}
+            </>
           ) : null}
 
           {/* A swap that landed says so. The reconciliation state is the
@@ -2001,15 +2598,15 @@ export function SwapCard({ initialSell, initialBuy, initialAmount, embedded, onF
                 </span>
               ) : null}
               <span translate="no">{short(settled.signature)}</span>
-              <a className="rw-btn" href={explorerTxUrl(NETWORK, settled.signature)} target="_blank" rel="noreferrer">
+              <a className={styles.settledLink} href={explorerTxUrl(NETWORK, settled.signature)} target="_blank" rel="noreferrer">
                 {text("Explorer")}
               </a>
               {settled.receipt ? (
                 <>
-                  <button className="rw-btn" type="button" onClick={() => downloadReceipt(settled.receipt)}>
+                  <Button variant="ghost" onClick={() => downloadReceipt(settled.receipt)} lang={lang}>
                     {text("Receipt")}
-                  </button>
-                  <Link className="rw-btn" href="/app/receipts">
+                  </Button>
+                  <Link className={styles.settledLink} href="/app/receipts">
                     {text("Open receipt")}
                   </Link>
                 </>
@@ -2017,29 +2614,27 @@ export function SwapCard({ initialSell, initialBuy, initialAmount, embedded, onF
             </div>
           ) : null}
 
-          {/* The wallet choice, the reason there is none, and the failure —
-              all beside the control that needs them, and identical on Send,
-              Swap and Bridge. */}
-          <WalletConnectRow hintClassName={styles.walletHint} errorClassName={styles.errorRow} />
 
-          {!connection && wallets.length > 1 ? null : (
-            <button className={styles.cta} type="button" onClick={onCta} disabled={ctaDisabled}>
+          {hostCta && ticketStage !== "form" ? (
+            <Button variant="primary" block onClick={onCta} disabled={ctaDisabled} loading={phase === "RECOVERING" || (phase === "PREPARING" && Boolean(lockedReview))} lang={lang}>
               {ctaLabel}
-            </button>
-          )}
-          </>
-          )}
+            </Button>
+          ) : null}
+        </section>
 
-        </div>
-      </Panel>
-
-      <SwapContext
-        sell={side(sellMint, sell)}
-        buy={side(buyMint, buy)}
-        buyDecimals={buyDecimals}
-        facts={contextFacts}
-        tall={tall}
-      />
+        {embedded ? null : (
+          <SwapPair
+            pay={pairSide(sellMint, sell)}
+            receive={pairSide(buyMint, buy)}
+            age={priceAge}
+            offline={offline}
+            route={routeText}
+            spotHref={`/app/spot${spotMint ? `?mint=${spotMint}` : ""}`}
+            text={text}
+            locale={lang}
+          />
+        )}
+      </div>
 
       {picker ? (
         <div
@@ -2052,9 +2647,9 @@ export function SwapCard({ initialSell, initialBuy, initialAmount, embedded, onF
           <div ref={pickerDialogRef} className={styles.picker} role="dialog" aria-modal="true" aria-label={text("Choose an asset")}>
             <div className={styles.pickerHead}>
               <span>{picker === "sell" ? text("You pay") : text("You receive")}</span>
-              <button className={styles.pickerClose} type="button" onClick={() => setPicker(null)}>
+              <Button variant="ghost" icon="x" className={styles.pickerClose} onClick={() => setPicker(null)} lang={lang}>
                 {text("Close")}
-              </button>
+              </Button>
             </div>
             <input
               className={styles.pickerSearch}
@@ -2068,7 +2663,7 @@ export function SwapCard({ initialSell, initialBuy, initialAmount, embedded, onF
             {connection && (holdingsPartial || holdingsFailed) ? (
               <p className={styles.ctaNote}>
                 {text("Some balances could not be read.")} {" "}
-                <button className={styles.shareButton} type="button" onClick={refreshHoldings}>{text("Read again")}</button>
+                <Button variant="ghost" onClick={refreshHoldings} lang={lang}>{text("Read again")}</Button>
               </p>
             ) : null}
             <ul className={styles.pickerList}>
@@ -2079,12 +2674,13 @@ export function SwapCard({ initialSell, initialBuy, initialAmount, embedded, onF
                 const selected = picker === "sell" ? entry.mint === sellMint : entry.mint === buyMint;
                 return (
                   <li key={entry.mint}>
-                    <button
+                    <Button
+                      variant="ghost"
                       className={styles.pickerItem}
-                      type="button"
                       data-selected={selected ? "true" : "false"}
                       disabled={taken}
                       onClick={() => choose(entry)}
+                      lang={lang}
                     >
                       {entry.symbol ? <MarketIcon mint={entry.mint} icon={entry.icon ?? null} symbol={label.code} /> :
                         <span className={styles.tokenGlyph} aria-hidden>{label.code.slice(0, 1)}</span>}
@@ -2102,7 +2698,7 @@ export function SwapCard({ initialSell, initialBuy, initialAmount, embedded, onF
                           <span>{displayAmount(held.amountRaw ?? held.spendableRaw, held.decimals)} {label.code}</span>
                         </span>
                       ) : null}
-                    </button>
+                    </Button>
                   </li>
                 );
               })}

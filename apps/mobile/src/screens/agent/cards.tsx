@@ -4,10 +4,12 @@ import { Pressable, View } from 'react-native'
 import { Button } from '@/components/button'
 import { Card } from '@/components/card'
 import { Chip } from '@/components/chip'
+import { HelpDot } from '@/components/help-dot'
 import { Icon } from '@/components/icon'
 import { Sheet } from '@/components/sheet'
 import { Txt } from '@/components/txt'
 import { destinationOfCard, figureView, ticketOfCard } from '@/features/agent/agent-model'
+import { openLink } from '@/lib/open-link'
 import type { AgentCopy } from '@/features/agent/copy'
 import { metricLabel, metricOf, thresholdText } from '@/features/plans/evidence-model'
 import type { PlansCopy } from '@/features/plans/copy'
@@ -15,6 +17,8 @@ import type { AgentCard, AgentFigure, AgentState, EvidenceMetricDefinition } fro
 import type { Locale } from '@/lib/i18n'
 import { cn } from '@/utils/cn'
 import { DASH, formatAmount, formatMoment, formatPrice, formatUsd } from '@/utils/format'
+
+import { MarkChip } from './marks'
 
 export type CardContext = Readonly<{
   copy: AgentCopy
@@ -75,11 +79,14 @@ function Head({
   kind,
   title,
   meta,
+  help,
   onPress,
 }: {
   kind: string
   title: string
   meta?: string | null
+  /** What the card is not — one tap deep behind «?», never a line on every card. */
+  help?: string | null
   onPress?: (() => void) | null
 }) {
   const body = (
@@ -97,6 +104,7 @@ function Head({
           </Txt>
         ) : null}
       </View>
+      {help ? <HelpDot title={kind} body={help} /> : null}
       {onPress ? <Icon name="chevron-forward" size={18} color="fgMuted" /> : null}
     </View>
   )
@@ -150,6 +158,105 @@ function Fact({ label, value }: { label: string; value: string }) {
       </Txt>
       <Txt variant="data">{value}</Txt>
     </View>
+  )
+}
+
+/** «Що зрушило ціну?» — every row marked by how sure it is; the cause itself is always among the unknown (1.44.0). */
+function MoveCard({ card, context }: { card: Extract<AgentCard, { kind: 'move' }>; context: CardContext }) {
+  const { copy } = context
+  const [legendOpen, setLegendOpen] = useState(false)
+  const change = card.change
+  const tone = change?.number === null || change?.number === undefined ? 'fg' : change.number > 0 ? 'success' : change.number < 0 ? 'danger' : 'fg'
+  return (
+    <Card className="gap-3">
+      <View className="flex-row items-start gap-3">
+        <View className="flex-1 gap-0.5">
+          <Txt variant="labelSm" tone="faint" caps>
+            {copy.cardMove}
+          </Txt>
+          <Txt variant="ui">{`${card.symbol} · ${card.window === '1h' ? copy.move1h : copy.move24h}`}</Txt>
+        </View>
+        <Txt variant="data" tone={tone} selectable>
+          {change?.value ?? DASH}
+        </Txt>
+      </View>
+      <View className="gap-3">
+        {card.rows.map((row, index) => (
+          <View key={index} className="gap-1.5">
+            <MarkChip mark={row.mark} copy={copy} />
+            <Txt variant="body" selectable>
+              {row.text}
+            </Txt>
+          </View>
+        ))}
+      </View>
+      <Pressable
+        accessibilityRole="button"
+        onPress={() => setLegendOpen(true)}
+        hitSlop={6}
+        className="flex-row items-center gap-1 self-start py-1 active:opacity-80"
+      >
+        <Txt variant="ui" tone="muted">
+          {copy.marksTitle}
+        </Txt>
+        <Icon name="chevron-forward" size={14} color="fgMuted" />
+      </Pressable>
+      <Sheet visible={legendOpen} title={copy.marksTitle} onClose={() => setLegendOpen(false)}>
+        <Txt variant="body" className="pb-3">
+          {copy.marksLegend}
+        </Txt>
+      </Sheet>
+    </Card>
+  )
+}
+
+/** A token's or the market's stories of the last 48 h, newest first; a headline is a publication's report (1.44.0). */
+function NewsCard({ card, context }: { card: Extract<AgentCard, { kind: 'news' }>; context: CardContext }) {
+  const { copy, locale, now } = context
+  return (
+    <Card className="gap-3">
+      <View className="gap-0.5">
+        <View className="flex-row items-center gap-2">
+          <Txt variant="labelSm" tone="faint" caps className="flex-1">
+            {card.symbol ? copy.cardNews(card.symbol) : copy.cardNewsMarket}
+          </Txt>
+          {card.state !== 'current' ? <Chip label={copy.state[card.state]} tone={STATE_TONE[card.state]} /> : null}
+          <HelpDot title={card.symbol ? copy.cardNews(card.symbol) : copy.cardNewsMarket} body={copy.newsReport} />
+        </View>
+        <Txt variant="labelSm" tone="faint">
+          {copy.newsDay(card.day.stories, card.day.sources)}
+        </Txt>
+      </View>
+      {card.items.length === 0 ? (
+        <Txt variant="ui" tone="muted">
+          {copy.newsNone}
+        </Txt>
+      ) : (
+        <View className="gap-3">
+          {card.items.map((item) => (
+            <Pressable
+              key={item.id}
+              accessibilityRole="link"
+              accessibilityLabel={`${item.title}, ${item.source}`}
+              onPress={() => openLink(item.url)}
+              className="gap-1 active:opacity-80"
+            >
+              <Txt variant="ui" numberOfLines={3}>
+                {item.title}
+              </Txt>
+              <Txt variant="labelSm" tone="faint">
+                {[item.source, formatMoment(item.publishedAt, now, locale), item.also > 0 ? copy.newsAlso(item.also) : null]
+                  .filter(Boolean)
+                  .join(' · ')}
+              </Txt>
+            </Pressable>
+          ))}
+        </View>
+      )}
+      <Txt variant="labelSm" tone="faint">
+        {copy.newsCollected(formatMoment(card.collectedAt, now, locale))}
+      </Txt>
+    </Card>
   )
 }
 
@@ -321,7 +428,11 @@ export function AgentCardView({ card, context, lead = false }: { card: AgentCard
       const budget = rules?.capital.budgetUsd ?? card.prefill.budgetUsd
       return (
         <Card level="elevated" className="gap-3 border-brand-line">
-          <Head kind={copy.card.planDraft} title={`${card.asset.symbol}${card.asset.underlying.name ? ` · ${card.asset.underlying.name}` : ''}`} />
+          <Head
+            kind={copy.card.planDraft}
+            title={`${card.asset.symbol}${card.asset.underlying.name ? ` · ${card.asset.underlying.name}` : ''}`}
+            help={copy.boundary}
+          />
           <View className="flex-row flex-wrap" style={{ rowGap: 10 }}>
             <Fact label={copy.entry} value={entry === null ? DASH : formatPrice(entry, locale)} />
             <Fact label={copy.maxPrice} value={maxPrice === null ? DASH : formatPrice(maxPrice, locale)} />
@@ -345,9 +456,6 @@ export function AgentCardView({ card, context, lead = false }: { card: AgentCard
               lines={card.assumptions}
             />
           </View>
-          <Txt variant="labelSm" tone="faint">
-            {copy.boundary}
-          </Txt>
           {open ? <Button title={copy.openDraft} variant={variant} onPress={open} /> : null}
         </Card>
       )
@@ -358,7 +466,7 @@ export function AgentCardView({ card, context, lead = false }: { card: AgentCard
       const rule = `${metricLabel(metric, card.condition.metric, locale)} ${copy.operator[card.condition.operator]} ${thresholdText(metric, card.condition.threshold, flags, locale)} · ${card.condition.window}`
       return (
         <Card level="elevated" className="gap-3 border-brand-line">
-          <Head kind={copy.card.monitoringDraft} title={card.subject.symbol} />
+          <Head kind={copy.card.monitoringDraft} title={card.subject.symbol} help={copy.boundary} />
           <View className="gap-1.5">
             <Txt variant="ui">{rule}</Txt>
             <View className="flex-row flex-wrap items-center gap-1.5">
@@ -371,9 +479,6 @@ export function AgentCardView({ card, context, lead = false }: { card: AgentCard
             </View>
           </View>
           <Disclosure label={copy.assumptions(card.assumptions.length)} title={copy.assumptionsTitle} lines={card.assumptions} />
-          <Txt variant="labelSm" tone="faint">
-            {copy.boundary}
-          </Txt>
           {open ? (
             <Button
               title={card.subject.kind === 'plan' ? copy.addRuleToPlan(card.subject.symbol) : copy.startPlanWithRule}
@@ -394,11 +499,8 @@ export function AgentCardView({ card, context, lead = false }: { card: AgentCard
             kind={copy.card.tradeDraft}
             title={`${copy.side[card.side]} ${card.symbol}${card.amountUsd !== null ? ` · ${formatUsd(card.amountUsd, locale)}` : ''}`}
             meta={card.plan ? copy.underPlan(card.plan.version) : null}
+            help={copy.boundary}
           />
-          {/* The server's longer boundary is the ticket's own to say; here the one line every draft carries. */}
-          <Txt variant="labelSm" tone="faint">
-            {copy.boundary}
-          </Txt>
           {open ? (
             <Button
               title={
@@ -425,6 +527,10 @@ export function AgentCardView({ card, context, lead = false }: { card: AgentCard
         </Card>
       )
     }
+    case 'move':
+      return <MoveCard card={card} context={context} />
+    case 'news':
+      return <NewsCard card={card} context={context} />
     default:
       return null
   }

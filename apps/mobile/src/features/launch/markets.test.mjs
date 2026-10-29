@@ -4,6 +4,11 @@ import { test } from 'node:test'
 import { LAUNCH_WORDS, launchWords } from './copy.ts'
 import {
   addressRows,
+  creatorFreeLine,
+  ladderHelp,
+  LADDER_STATES,
+  lockBoundBps,
+  lockedWhatLine,
   budgetRows,
   concentrationLines,
   creatorLockText,
@@ -23,6 +28,7 @@ import {
   READING_MS,
   rowDepth,
   rowReading,
+  rowTradeStatus,
   ruleText,
   rulesToShow,
   stateLine,
@@ -47,6 +53,9 @@ import {
   poolAddressOf,
   headerSince,
   holdersFloor,
+  rowHoldersView,
+  healthTradeStatus,
+  cabinetTradeStatus,
 } from './market-view.ts'
 import { SAMPLE_HEALTH_CURVE, SAMPLE_HEALTH_DEX, SAMPLE_MARKET_CARD, SAMPLE_MARKETS } from './market-samples.ts'
 
@@ -105,12 +114,12 @@ test("the web's words for the markets are the phone's, both languages, nothing e
   assert.equal(uk('marketsTitle'), 'Лаунчі на Ryntra')
   assert.equal(en('marketsTitle'), 'Markets launched on Ryntra')
   assert.equal(uk('tabMarkets'), 'Лаунчі на Ryntra')
-  assert.equal(uk('techChip'), 'Технічна валідація')
+  assert.equal(uk('techChip'), 'Тестовий запуск Ryntra')
   assert.equal(uk('notRead'), 'Не прочитано')
   assert.equal(uk('notCounted'), 'Ще не рахуємо')
   assert.equal(uk('hRules'), 'Що тримає цей ринок')
   assert.equal(uk('enforce_rule'), 'Правило')
-  assert.equal(uk('enforce_policy'), 'Політика')
+  assert.equal(uk('enforce_policy'), 'Від Ryntra')
 })
 
 test('the list from the contract: Ryntra’s own launch marked, the depth at −5 % as money, holders counted', () => {
@@ -163,7 +172,7 @@ test('a full curve takes no sale: its depth is «Крива повна», not a 
   assert.deepEqual(healthDepth5(curve({ state: { code: 'GRADUATION_READY', since: null } })), { kind: 'curveFull' })
   assert.equal(
     healthDoorLine(curve({ state: { code: 'MIGRATING', since: null } }), false, uk, 'uk'),
-    'Глибина на −5 %: Крива повна',
+    'Продаж до падіння на 5 %: Крива повна',
   )
 })
 
@@ -207,7 +216,7 @@ test('Ryntra’s ladder in one line: what the deepest drop reaches, else where i
   })
   assert.equal(
     ladderLine(used, uk, 'uk'),
-    'Драбина Ryntra зараз без USDC: продажі пройшли крізь її сходинки, і вони тримають токен',
+    'Купівлі Ryntra нижче ціни вже виконано: продажі пройшли крізь них, і куплений токен тримає Ryntra',
   )
   // No steps: nothing is said, as on the web — whether a ladder will ever stand here is not in the answer.
   const none = { ladder: null, budget: { ...SAMPLE_HEALTH_DEX.budget, ladder: 'NONE', deployed: null } }
@@ -224,7 +233,7 @@ test('Ryntra’s ladder in one line: what the deepest drop reaches, else where i
       uk,
       'uk',
     ),
-    'Драбину Ryntra зараз не прочитано',
+    'Купівлі Ryntra нижче ціни зараз не прочитано',
   )
 })
 
@@ -232,7 +241,7 @@ test('the state in words and what comes next — never a promise the data does n
   assert.equal(stateLine(SAMPLE_HEALTH_DEX.state, uk, 'uk', NOW), 'Сходинки Ryntra на купівлю стоять нижче ціни.')
   assert.equal(
     stateLine({ code: 'MAINTAINING', since: '2026-10-09T10:00:00.000Z' }, uk, 'uk', NOW),
-    'Ryntra востаннє піднімала чи поповнювала сходинки 2 год тому.',
+    'Востаннє піднято чи поповнено 2 год тому.',
   )
   // On the curve the way to the threshold says what comes next («До виходу ще …»): nothing said twice.
   assert.equal(nextLine(SAMPLE_HEALTH_CURVE, uk), null)
@@ -287,7 +296,7 @@ test('«Що тримає цей ринок»: rules and policies with their wor
     ],
   )
   const text = (rule) => ruleText(rule, SAMPLE_HEALTH_DEX.pair, uk, 'uk', NOW)
-  assert.equal(text(rules[1]), 'Перша покупка творця — не більше 5 % пропозиції')
+  assert.equal(text(rules[1]), 'Перша покупка творця — не більше 5 % емісії')
   assert.equal(text(rules[4]), 'Топ-10 понад 60 % — позначка')
   // Without the receipt's marks every rule is said here; each has a sentence, never its code.
   for (const rule of [...SAMPLE_HEALTH_DEX.rules, ...SAMPLE_HEALTH_CURVE.rules]) {
@@ -322,9 +331,9 @@ test('«Що тримає цей ринок»: rules and policies with their wor
 })
 
 test('one measure per name: «Топ-10» of the supply on the market, of circulating tokens in the health', () => {
-  assert.equal(uk('top10'), 'Топ-10 від пропозиції')
-  assert.equal(en('top10'), 'Top 10 of supply')
-  assert.equal(uk('risk_TOP10_HOLD', { pct: '38 %' }), '10 найбільших холдерів мають 38 % пропозиції')
+  assert.equal(uk('top10'), 'Топ-10 · частка емісії')
+  assert.equal(en('top10'), 'Top 10 · share of supply')
+  assert.equal(uk('risk_TOP10_HOLD', { pct: '38 %' }), '10 найбільших власників мають 38 % емісії')
   assert.match(uk('hTop10', { pct: '42 %' }), /в обігу$/)
 })
 
@@ -335,6 +344,35 @@ test('a crumb read is «< $0,01», never a false zero; a real zero stays a zero'
   assert.equal(pairMoney('3000', { symbol: 'COMM', decimals: 6, dollar: false }, 'uk'), '< 0,01 COMM')
   assert.equal(pairMoney('0', usdc, 'uk'), '$0')
   assert.equal(pairMoney('4949933', usdc, 'uk'), '$4,95')
+})
+
+test('money under a hundred keeps both cents — «$3,90», never «$3,9» — and a whole sum stays whole', () => {
+  const usdc = SAMPLE_HEALTH_DEX.pair
+  assert.equal(pairMoney('3900000', usdc, 'en'), '$3.90')
+  assert.equal(pairMoney('3900000', usdc, 'uk'), '$3,90')
+  assert.equal(pairMoney('90000000', usdc, 'en'), '$90')
+  assert.equal(pairMoney('3900000', { symbol: 'COMM', decimals: 6, dollar: false }, 'en'), '3.90 COMM')
+})
+
+test('a list card says one status — whether it trades now — never the cycle and «Live» beside it', () => {
+  const row = (code, venue, progress) => ({ state: code ? { code, since: null } : null, venue, progress })
+  // Ryntra's ladder at work on a DEX market: it trades, as Home's «Мої ринки» says.
+  assert.equal(rowTradeStatus(row('MAINTAINING', 'pool', { bps: 10_000, migrated: true })), 'trading')
+  assert.equal(rowTradeStatus(row('PRICE_DISCOVERY', 'curve', { bps: 4_200, migrated: false })), 'trading')
+  // A pause stops Ryntra, not the market.
+  assert.equal(rowTradeStatus(row('PAUSED_RISK', 'curve', { bps: 4_200, migrated: false })), 'trading')
+  // A full curve takes no trade until it is on the DEX.
+  assert.equal(rowTradeStatus(row('GRADUATION_READY', 'curve', { bps: 10_000, migrated: false })), 'moving')
+  assert.equal(rowTradeStatus(row('MIGRATING', null, null)), 'moving')
+  assert.equal(rowTradeStatus(row('PAUSED_RISK', 'curve', { bps: 10_000, migrated: false })), 'moving')
+  assert.equal(rowTradeStatus(row('MIGRATION_FAILED', 'curve', { bps: 10_000, migrated: false })), 'stalled')
+  // Not read is not read; a stage the server names still says it trades, a pause alone does not.
+  assert.equal(rowTradeStatus(row(null, null, null)), 'notRead')
+  assert.equal(rowTradeStatus(row('PAUSED_RISK', null, null)), 'notRead')
+  assert.equal(rowTradeStatus(row('CORE_MARKET_LIVE', null, null)), 'trading')
+  // The words are Home's.
+  assert.equal(uk('tradeStatus_trading'), 'Торгується')
+  assert.equal(en('tradeStatus_trading'), 'Trading')
 })
 
 test('the creator’s lock reads its dates: until the cliff, vesting after it; a row not read never says «no lock»', () => {
@@ -388,7 +426,7 @@ test('concentration: the top ten’s share and the mark above 60 % — a mark, n
 test('Ryntra’s executor: a pause first, idle said once, its last action with its transaction', () => {
   // Acting here: what it does on this market first, then what it last did — the web's lines.
   assert.deepEqual(engineLines(SAMPLE_HEALTH_DEX, uk), [
-    { text: 'Стежить за ринком — за політиками Ryntra.' },
+    { text: 'Стежить за ринком — так, як визначила Ryntra.' },
     {
       text: 'Остання дія: Ryntra розмістила драбину',
       tx: SAMPLE_HEALTH_DEX.engine.lastAction.signature,
@@ -397,7 +435,7 @@ test('Ryntra’s executor: a pause first, idle said once, its last action with i
   ])
   assert.deepEqual(engineLines(SAMPLE_HEALTH_CURVE, uk), [
     {
-      text: 'На цій мережі його ще немає — вихід на DEX може надіслати будь-хто, зокрема кіпери Meteora.',
+      text: 'На цій мережі Ryntra ще не діє — вихід на DEX може надіслати будь-хто, зокрема Meteora.',
       quiet: true,
     },
   ])
@@ -407,7 +445,7 @@ test('Ryntra’s executor: a pause first, idle said once, its last action with i
   })
   const lines = engineLines(paused, uk)
   assert.equal(lines[0].mark, true)
-  assert.equal(lines[0].text, 'Виконавець Ryntra зараз не діє на цьому ринку: драбина стоїть, але не рухається.')
+  assert.equal(lines[0].text, 'Ryntra зараз не діє на цьому ринку: драбина стоїть, але не рухається.')
   assert.equal(lines.length, 2)
   const idle = curve({ engine: { executor: 'X', acts: false, lastAction: null, pause: null } })
   assert.deepEqual(engineLines(idle, uk), [
@@ -429,7 +467,7 @@ test('the depth: the same figure three times on a thin curve is said once; all z
   )
   assert.equal(depthAllSame(SAMPLE_HEALTH_CURVE), null)
   assert.equal(depthAllSame(SAMPLE_HEALTH_DEX), null)
-  assert.equal(healthDoorLine(SAMPLE_HEALTH_DEX, false, uk, 'uk'), 'Глибина на −5 %: $373')
+  assert.equal(healthDoorLine(SAMPLE_HEALTH_DEX, false, uk, 'uk'), 'Продаж до падіння на 5 %: $373')
   assert.equal(
     healthDoorLine(
       health({ depth: SAMPLE_HEALTH_DEX.depth.map((level) => ({ ...level, pairRaw: null })) }),
@@ -437,7 +475,7 @@ test('the depth: the same figure three times on a thin curve is said once; all z
       uk,
       'uk',
     ),
-    'Глибина на −5 %: Не прочитано',
+    'Продаж до падіння на 5 %: Не прочитано',
   )
   assert.equal(healthDoorLine(null, false, uk, 'uk'), 'Читаємо здоров’я ринку…'.replace('’', "'"))
   assert.equal(healthDoorLine(null, true, uk, 'uk'), "Зараз не вдалося прочитати здоров'я ринку.")
@@ -498,17 +536,23 @@ test('no ladder is said on the curve; on the market’s card a ladder at work sa
   const acting = curve({ engine: { executor: 'X', acts: true, lastAction: null, pause: null } })
   assert.equal(ladderLine(acting, uk, 'uk'), null)
   assert.equal(ladderLine(acting, uk, 'uk', 'card'), null)
-  assert.equal(ladderLine(SAMPLE_HEALTH_DEX, uk, 'uk', 'card'), 'Драбина Ryntra працює: $90 у сходинках на купівлю')
+  assert.equal(ladderLine(SAMPLE_HEALTH_DEX, uk, 'uk', 'card'), 'Ryntra тримає $90 на купівлю нижче ціни')
   // Stopped, or no executor acting: what the steps hold, never «працює» beside «драбина стоїть».
   const stopped = health({ engine: { ...SAMPLE_HEALTH_DEX.engine, acts: false, pause: { code: 'STOPPED', at: null } } })
-  assert.equal(ladderLine(stopped, uk, 'uk', 'card'), 'У драбині Ryntra: $90 у сходинках на купівлю')
+  assert.equal(
+    ladderLine(stopped, uk, 'uk', 'card'),
+    '$90 від Ryntra стоїть на купівлю нижче ціни; зараз Ryntra її не рухає',
+  )
   const idle = health({ engine: { ...SAMPLE_HEALTH_DEX.engine, acts: false } })
-  assert.equal(ladderLine(idle, en, 'en', 'card'), "In Ryntra's ladder: $90 in its buy steps")
+  assert.equal(
+    ladderLine(idle, en, 'en', 'card'),
+    "$90 from Ryntra stands to buy below the price; Ryntra isn't moving it now",
+  )
   // Bought through — the steps hold the token: the card says so in the web's words, never «$0».
   const used = health({ ladder: { ...SAMPLE_HEALTH_DEX.ladder, pairRaw: '0', pairFrom: null, pairTo: null } })
   assert.equal(
     ladderLine(used, uk, 'uk', 'card'),
-    'Драбина Ryntra зараз без USDC: продажі пройшли крізь її сходинки, і вони тримають токен',
+    'Купівлі Ryntra нижче ціни вже виконано: продажі пройшли крізь них, і куплений токен тримає Ryntra',
   )
 })
 
@@ -653,7 +697,7 @@ test('a value a later contract adds never breaks the page: a stop is a stop, an 
     engine: { ...SAMPLE_HEALTH_DEX.engine, lastAction: { kind: 'SOMETHING_NEW', at: null, signature: 'S' } },
   })
   // It acted — what, the phone cannot say yet: never «На цьому ринку ще не діяв».
-  assert.deepEqual(engineLines(newAction, uk), [{ text: 'Стежить за ринком — за політиками Ryntra.' }])
+  assert.deepEqual(engineLines(newAction, uk), [{ text: 'Стежить за ринком — так, як визначила Ryntra.' }])
 })
 
 test('a date in a dense line says the year only where it differs', () => {
@@ -699,7 +743,7 @@ test('a full curve is full by its own progress too — a pause over it never sho
   assert.deepEqual(healthDepth5(pausedHealth, { bps: 10_000, migrated: false }), { kind: 'curveFull' })
   assert.equal(
     healthDoorLine(pausedHealth, false, uk, 'uk', { bps: 10_000, migrated: false }),
-    'Глибина на −5 %: Крива повна',
+    'Продаж до падіння на 5 %: Крива повна',
   )
 })
 
@@ -769,4 +813,93 @@ test('a pause over a full curve says what a full curve says; a failed move is no
     )[1].value,
     'Не прочитано',
   )
+})
+
+test('a bare zero of holders the market contradicts is not counted — «—», never «0»', () => {
+  const [owl] = SAMPLE_MARKETS.markets
+  const zero = { ...owl, holders: 0, holdersAtLeast: false }
+  // The curve moved: some wallet holds it, so the server's 0 was not a count.
+  assert.deepEqual(rowHoldersView({ ...zero, progress: { bps: 3, migrated: false } }), { kind: 'uncounted' })
+  assert.deepEqual(rowHoldersView({ ...zero, progress: { bps: 10_000, migrated: true } }), { kind: 'uncounted' })
+  assert.deepEqual(rowHoldersView({ ...zero, progress: null, traded24h: true }), { kind: 'uncounted' })
+  assert.deepEqual(rowHoldersView({ ...zero, progress: null, traded24h: null, creatorSold: true }), {
+    kind: 'uncounted',
+  })
+  // Nothing says anyone holds it: a zero stays a figure.
+  assert.deepEqual(
+    rowHoldersView({ ...zero, progress: { bps: 0, migrated: false }, traded24h: false, creatorSold: false }),
+    { kind: 'count', count: 0, atLeast: false },
+  )
+  // A real count is left as it is.
+  assert.deepEqual(rowHoldersView(owl), { kind: 'count', count: 5, atLeast: false })
+})
+
+test('one status everywhere: the page, the cabinet and the list say whether it trades; the stage is words', () => {
+  assert.equal(
+    healthTradeStatus({ state: { code: 'CREATED', since: null }, venue: 'curve' }, { bps: 3, migrated: false }),
+    'trading',
+  )
+  assert.equal(
+    healthTradeStatus(
+      { state: { code: 'GRADUATION_READY', since: null }, venue: 'curve' },
+      { bps: 10_000, migrated: false },
+    ),
+    'moving',
+  )
+  assert.equal(cabinetTradeStatus({ progressBps: 3, migrated: false }), 'trading')
+  assert.equal(cabinetTradeStatus({ progressBps: 10_000, migrated: false }), 'moving')
+  assert.equal(cabinetTradeStatus({ progressBps: 10_000, migrated: true }), 'trading')
+  assert.equal(cabinetTradeStatus({ progressBps: null, migrated: null }), 'notRead')
+  assert.equal(uk('filled', { pct: '0,03 %' }), 'заповнено 0,03 %')
+  assert.equal(en('colDepth'), 'Can sell before a 5% drop')
+  assert.equal(uk('holders'), 'Власники')
+})
+
+test('the ladder on the card is an outcome; how it works and when it last moved stand behind its «?»', () => {
+  for (const code of ['ENDOWMENT_FUNDED', 'LADDER_ACTIVE', 'MAINTAINING']) assert.ok(LADDER_STATES.has(code), code)
+  assert.ok(!LADDER_STATES.has('CREATED'))
+  const maintaining = health({ state: { code: 'MAINTAINING', since: '2026-10-09T10:00:00.000Z' } })
+  assert.deepEqual(ladderHelp(maintaining, uk, 'uk', NOW), [
+    uk('ladderHelp'),
+    'Востаннє піднято чи поповнено 2 год тому.',
+  ])
+  assert.deepEqual(ladderHelp(SAMPLE_HEALTH_DEX, en, 'en', NOW), [en('ladderHelp')])
+  // No state machine words on the card's face.
+  for (const key of ['ladderWorks', 'ladderHolds', 'hLadderUsed', 'ladderUnread', 'rule_FEE_FUNDED_LADDER'])
+    assert.doesNotMatch(uk(key), /[Дд]рабин|сходин|[Ее]тап/, key)
+})
+
+test("the creator's lock says what it holds, and a creator holding more is told apart — only from the data", () => {
+  const receipt = (patch) => ({
+    creatorFirstBuy: { quoteInRaw: '1', tokensOutRaw: '20000000', capRaw: '20000000' },
+    creatorLock: {
+      escrow: 'E',
+      lockedRaw: '20000000',
+      cliffAt: '2027-04-08T00:00:00.000Z',
+      endsAt: '2027-10-08T00:00:00.000Z',
+    },
+    token2022: { supplyRaw: '1000000000' },
+    ...patch,
+  })
+  const exact = lockBoundBps(receipt({}))
+  assert.deepEqual(exact, { bps: 200, exact: true })
+  assert.equal(lockedWhatLine(exact, uk, 'uk'), 'Заблоковано: перша покупка творця, 2 % емісії')
+  // The amount not in the receipt: the first buy without a figure, measured against its cap.
+  const capped = lockBoundBps(receipt({ creatorLock: null }))
+  assert.deepEqual(capped, { bps: 200, exact: false })
+  assert.equal(lockedWhatLine(capped, en, 'en'), "Locked: the creator's first buy")
+  assert.equal(lockBoundBps(receipt({ creatorLock: null, creatorFirstBuy: null })), null)
+  assert.equal(lockBoundBps(null), null)
+  // 86,09 % held against a 2 % lock: the part above it is said not locked; «bought more» only with more than one buy seen.
+  assert.equal(
+    creatorFreeLine({ creatorBps: 8609, bound: exact, creatorBuys: 3 }, uk),
+    'Творець докупив після запуску — ця частина не заблокована',
+  )
+  assert.equal(
+    creatorFreeLine({ creatorBps: 8609, bound: exact, creatorBuys: 1 }, uk),
+    'Творець тримає більше, ніж заблоковано, — ця частина не заблокована',
+  )
+  assert.equal(creatorFreeLine({ creatorBps: 201, bound: exact, creatorBuys: 3 }, uk), null)
+  assert.equal(creatorFreeLine({ creatorBps: null, bound: exact, creatorBuys: 3 }, uk), null)
+  assert.equal(creatorFreeLine({ creatorBps: 8609, bound: null, creatorBuys: 3 }, uk), null)
 })

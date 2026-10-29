@@ -7,6 +7,7 @@ import { useEffect, useRef, useState } from "react";
 
 import { useSolanaConnection } from "../connection.tsx";
 import { useSolanaI18n } from "../i18n/provider.tsx";
+import { useGrowthTouch } from "./growth-touch.ts";
 import { useReferral } from "./referral-card.tsx";
 import { referralCopy } from "./referral-copy.ts";
 import styles from "./invite.module.css";
@@ -30,7 +31,8 @@ import styles from "./invite.module.css";
  * untouched, and «Винагороди» still shows it.
  *
  * Mounted by the core's product shell (`app/app/product-shell.tsx`), which is
- * the core's file.
+ * the core line's file: the insertion is a request in the Growth line's
+ * handoff with a patch beside it.
  */
 export function InviteBanner() {
   const pathname = usePathname() ?? "";
@@ -40,6 +42,8 @@ export function InviteBanner() {
   const address = connection?.address ?? null;
   const onRewards = pathname.startsWith("/app/rewards");
   const { state, load } = useReferral(address, false, null, !onRewards);
+  /* The source that brought this browser meets its first wallet (Ріст 7) — on every page, «Винагороди» included. */
+  useGrowthTouch(address, pathname);
 
   /* The line lives in the shell and is not remounted between pages, so it
      asks again when something may have changed: a wallet proven anywhere on

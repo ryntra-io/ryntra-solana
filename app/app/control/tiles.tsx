@@ -26,7 +26,7 @@ import styles from "@/app/app/home-surface.module.css";
  * surface that owns the fact. The owner link is on the tile itself rather than
  * behind an info control, because it is what makes the tile a projection —
  * hiding it would leave a page of numbers with no way to check any of them,
- * which is exactly the second source of truth the projection rule refuses.
+ * which is exactly the second source of truth frozen decision 27 refuses.
  *
  * **There is no control here that acts.** No pause, no resume, no revoke, no
  * authorize, no kill switch. Those live in Agent Control, where the
@@ -73,7 +73,7 @@ const COPY = {
       MONITORING: "Нагляд",
       SOURCES: "Джерела",
       RISK: "Обмеження ризику",
-      WAITING: "Чекає на вас",
+      WAITING: "Чекає на тебе",
     },
     actionClasses: "Класи дій",
     authorizationModes: "Режими авторизації",

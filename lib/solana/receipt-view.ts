@@ -135,6 +135,17 @@ function sendFacts(receipt: ReceiptRecord): SendFacts | null {
   return { network: facts.network, sender: facts.sender, signature: facts.signature };
 }
 
+/**
+ * Who a mainnet send receipt paid, from its own signed facts (SKR-4) — the address the transaction credited, never a name: a
+ * name is read beside it at the moment it is shown, and only the primary one. `null` for any other receipt.
+ */
+export function sendRecipientOf(receipt: ReceiptRecord): string | null {
+  const facts = chunkedFacts(receipt, "ryntra.solana.send-receipt.facts@1:");
+  /* Names live on mainnet: a devnet transfer's counterparty is never given a mainnet name. */
+  if (!facts || facts.schema !== "ryntra.solana.send-receipt" || facts.network !== "mainnet") return null;
+  return typeof facts.recipient === "string" && /^[1-9A-HJ-NP-Za-km-z]{32,44}$/.test(facts.recipient) ? facts.recipient : null;
+}
+
 type SwapFacts = Readonly<{ signature: string }>;
 function swapFacts(receipt: ReceiptRecord): SwapFacts | null {
   const facts = chunkedFacts(receipt, "ryntra.solana.swap-receipt.facts@1:");

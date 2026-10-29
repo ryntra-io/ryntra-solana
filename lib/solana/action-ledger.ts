@@ -420,8 +420,9 @@ export async function recordSolanaAction(
   const key = solanaWalletActionKey(input);
   const collection = store.versioned<SolanaWalletAction>(COLLECTION);
 
+  let result: RecordSolanaActionResult;
   try {
-    return await withBoundedCasRetry(async () => {
+    result = await withBoundedCasRetry(async () => {
       const existing = await readOne(store, key);
       const base: z.input<typeof SolanaWalletActionSchema> = {
         schema: "ryntra.solana.wallet-action",
@@ -457,6 +458,23 @@ export async function recordSolanaAction(
     });
   } catch (failure) {
     return { ok: false, reason: failure instanceof Error ? failure.message : "SOLANA_ACTION_UNAVAILABLE" };
+  }
+  if (result.ok) await adoptIntoActionLedger(store, result.action);
+  return result;
+}
+
+/**
+ * EXE-2: the same row, recorded in the action ledger under its one `actionId` (`lib/core/actions/projections.ts`) —
+ * only with `RYNTRA_ACTION_LEDGER=adopt`, after the row is written, and never able to fail it. Off, nothing is
+ * imported and nothing else is written.
+ */
+async function adoptIntoActionLedger(store: GuardStore, row: SolanaWalletAction): Promise<void> {
+  if (process.env.RYNTRA_ACTION_LEDGER?.trim().toLowerCase() !== "adopt") return;
+  try {
+    const { adoptHistoryRow } = await import("../core/actions/projections.ts");
+    await adoptHistoryRow(store, row);
+  } catch {
+    /* The ledger is a projection here: a History row it could not record is still the person's History. */
   }
 }
 

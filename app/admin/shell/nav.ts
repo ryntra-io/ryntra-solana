@@ -4,12 +4,16 @@ export type AdminNavId =
   | "feedback"
   | "broadcasts"
   | "analytics"
+  | "finance"
   | "seo"
   | "operations"
   | "launch"
   | "audit"
   | "settings"
-  | "academy";
+  | "academy"
+  | "growthPanel"
+  | "growth"
+  | "pnl";
 
 export type AdminNavItem = {
   id: AdminNavId;
@@ -25,7 +29,11 @@ export const ADMIN_NAV: readonly AdminNavItem[] = [
   { id: "feedback", label: "Відгуки", href: "/admin/feedback", group: "people" },
   { id: "broadcasts", label: "Розсилки", href: "/admin/broadcasts", group: "communications" },
   { id: "analytics", label: "Аналітика", href: "/admin/analytics", group: "insights" },
+  { id: "finance", label: "Фінансова панель", href: "/admin/finance", group: "insights" },
+  { id: "pnl", label: "Чесний PnL", href: "/admin/pnl", group: "insights" },
   { id: "seo", label: "SEO і ріст", href: "/admin/seo", group: "insights" },
+  { id: "growthPanel", label: "Панель росту", href: "/admin/growth", group: "insights" },
+  { id: "growth", label: "Перевірка Росту", href: "/admin/growth/review", group: "insights" },
   { id: "operations", label: "Операції", href: "/admin/operations", group: "system" },
   { id: "launch", label: "Виконавець лаунчу", href: "/admin/launch", group: "system" },
   { id: "audit", label: "Журнал аудиту", href: "/admin/audit", group: "system" },

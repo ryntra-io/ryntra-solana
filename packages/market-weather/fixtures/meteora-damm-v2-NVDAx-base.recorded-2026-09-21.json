@@ -1,0 +1,109 @@
+{
+  "total": 1,
+  "pages": 1,
+  "current_page": 1,
+  "page_size": 5,
+  "data": [
+    {
+      "address": "6tKMbxufBSa6x5V2Cv6tA2YLmgng5eKKQ8E8zBQ7jqxL",
+      "name": "NVDAx-SOL",
+      "token_x": {
+        "address": "Xsc9qvGR1efVDFGLrVsmkzv3qi45LTBjeUKSPmx9qEh",
+        "name": "NVIDIA xStock",
+        "symbol": "NVDAx",
+        "decimals": 8,
+        "is_verified": true,
+        "holders": 96404,
+        "freeze_authority_disabled": false,
+        "total_supply": 321822.80706585915,
+        "price": 223.41807578709097,
+        "market_cap": 71901032.29905447
+      },
+      "token_y": {
+        "address": "So11111111111111111111111111111111111111112",
+        "name": "Wrapped SOL",
+        "symbol": "SOL",
+        "decimals": 9,
+        "is_verified": true,
+        "holders": 3820662,
+        "freeze_authority_disabled": true,
+        "total_supply": 634453806.3609109,
+        "price": 111.0934876926464,
+        "market_cap": 65260503093.80702
+      },
+      "token_x_amount": 0,
+      "token_y_amount": 0,
+      "created_at": 1788161306000,
+      "vault_x": "F34dri5pMG5k2DRDGzbe9tJsFxFyQwG7avbQ7pifahSf",
+      "vault_y": "MaF6tupkjpiNcyVC4yFkYdiqJSY3DX9oxaEFfMCopjc",
+      "alpha_vault": "11111111111111111111111111111111",
+      "pool_config": {
+        "collect_fee_mode": 1,
+        "base_fee_mode": 0,
+        "base_fee_pct": 6.0000008000000005,
+        "protocol_fee_pct": 20,
+        "partner_fee_pct": 0,
+        "referral_fee_pct": 20,
+        "dynamic_fee_initialized": true,
+        "compounding_fee_pct": 0,
+        "pool_type": 1,
+        "concentrated_liquidity": false,
+        "min_price": 5.4120077400148815e-21,
+        "max_price": 1841472364477879000,
+        "activation_type": 0,
+        "activation_point": 443094553,
+        "has_fee_scheduler": true,
+        "is_fee_scheduler_active": true
+      },
+      "tvl": 0,
+      "current_price": 0,
+      "has_farm": false,
+      "farm_apr": 0,
+      "farm_apy": 0,
+      "permanent_lock_liquidity": 0,
+      "vested_liquidity": {
+        "months_3": 0,
+        "months_6": 0
+      },
+      "volume": {
+        "30m": 0,
+        "1h": 0,
+        "2h": 0,
+        "4h": 0,
+        "12h": 0,
+        "24h": 0
+      },
+      "fees": {
+        "30m": 0,
+        "1h": 0,
+        "2h": 0,
+        "4h": 0,
+        "12h": 0,
+        "24h": 0
+      },
+      "protocol_fees": {
+        "30m": 0,
+        "1h": 0,
+        "2h": 0,
+        "4h": 0,
+        "12h": 0,
+        "24h": 0
+      },
+      "fee_tvl_ratio": {
+        "30m": 0,
+        "1h": 0,
+        "2h": 0,
+        "4h": 0,
+        "12h": 0,
+        "24h": 0
+      },
+      "cumulative_metrics": {
+        "volume": 0,
+        "fees": 0
+      },
+      "is_blacklisted": false,
+      "launchpad": "",
+      "tags": []
+    }
+  ]
+}

@@ -206,7 +206,7 @@ export type SwapRecoveryResult =
       receiptHash: string;
       receipt: OutcomeReceiptArtifact;
       /**
-       * Contract 1.11.0: the chain's figures the
+       * Contract 1.11.0, the mobile line's request 14: the chain's figures the
        * swap was reconciled on, as the fields a fresh recovery carries — read
        * back from the facts the receipt sealed, never from a second chain read.
        * Null only for a receipt that seals no facts.

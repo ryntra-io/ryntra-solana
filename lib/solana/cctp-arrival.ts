@@ -169,7 +169,7 @@ export async function observeSolanaCctpArrival(
   try {
     transaction = await withRpcDiscipline(handle, (abortSignal) =>
       handle.rpc
-        .getTransaction(signature as never, { commitment: "confirmed", maxSupportedTransactionVersion: 0, encoding: "jsonParsed" })
+        .getTransaction(signature as never, { commitment: "confirmed", maxSupportedTransactionVersion: 1, encoding: "jsonParsed" })
         .send({ abortSignal }),
     );
   } catch (cause) {

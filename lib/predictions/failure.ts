@@ -27,6 +27,10 @@ export const PREDICTION_FAILURE_CODES = [
   "WALLET_MISMATCH",
   /** The provider refused the signature or the nonce. */
   "SIGNATURE_INVALID",
+  /** The provider asks for its bot check before a sign-in starts: show the check with `siteKey`, then start again with its token. */
+  "CHALLENGE_REQUIRED",
+  /** The start carried the check's token and the provider still asked for the check: the token was refused — start again. */
+  "CHALLENGE_FAILED",
   /** A quote that expired or a route the provider could not fill. */
   "QUOTE_UNAVAILABLE",
   "QUOTE_EXPIRED",
@@ -36,6 +40,10 @@ export const PREDICTION_FAILURE_CODES = [
   "PLAN_NOT_FOUND",
   "PLAN_VERSION_CONFLICT",
   "PLAN_STATE_REFUSED",
+  /** Live money is switched off on this deployment: no deposit address, no withdrawal. */
+  "FUNDING_OFF",
+  /** A withdrawal whose state is not known yet stands for this wallet: it is checked before another is asked for. */
+  "WITHDRAWAL_OPEN",
   "UNAVAILABLE",
 ] as const;
 
@@ -53,6 +61,8 @@ export const PREDICTION_FAILURE_STATUS: Readonly<Record<PredictionFailureCode, n
   SESSION_EXPIRED: 401,
   WALLET_MISMATCH: 403,
   SIGNATURE_INVALID: 401,
+  CHALLENGE_REQUIRED: 428,
+  CHALLENGE_FAILED: 403,
   QUOTE_UNAVAILABLE: 422,
   QUOTE_EXPIRED: 409,
   ORDER_REFUSED: 422,
@@ -60,6 +70,8 @@ export const PREDICTION_FAILURE_STATUS: Readonly<Record<PredictionFailureCode, n
   PLAN_NOT_FOUND: 404,
   PLAN_VERSION_CONFLICT: 409,
   PLAN_STATE_REFUSED: 409,
+  FUNDING_OFF: 403,
+  WITHDRAWAL_OPEN: 409,
   UNAVAILABLE: 503,
 };
 
@@ -71,6 +83,8 @@ export type PredictionFailure = Readonly<{
   issues?: readonly Readonly<{ path: string; message: string }>[];
   /** When the provider says how long to wait (`RATE_LIMITED`), seconds. */
   retryAfterSeconds?: number;
+  /** The Turnstile site key the bot check is shown with (`CHALLENGE_REQUIRED`). */
+  siteKey?: string;
 }>;
 
 export function failure(code: PredictionFailureCode, message: string, extra: Partial<Omit<PredictionFailure, "ok" | "code" | "message">> = {}): PredictionFailure {
@@ -92,11 +106,12 @@ const ISSUE_MESSAGE_LIMIT = 512;
  * 32 KB key; the answer to a malformed request weighed more than the request.
  * The first thirty-two refused fields name what to fix; the rest add nothing.
  */
-export function failureBody(f: PredictionFailure): Readonly<{ error: Readonly<{ code: PredictionFailureCode; message: string; issues?: readonly Readonly<{ path: string; message: string }>[] }> }> {
+export function failureBody(f: PredictionFailure): Readonly<{ error: Readonly<{ code: PredictionFailureCode; message: string; issues?: readonly Readonly<{ path: string; message: string }>[]; siteKey?: string }> }> {
   const issues = f.issues && f.issues.length > 0
     ? f.issues.slice(0, FAILURE_ISSUE_LIMIT).map((issue) => ({ path: issue.path.slice(0, ISSUE_PATH_LIMIT), message: issue.message.slice(0, ISSUE_MESSAGE_LIMIT) || "Refused." }))
     : null;
-  return { error: { code: f.code, message: f.message.slice(0, FAILURE_MESSAGE_LIMIT) || f.code, ...(issues ? { issues } : {}) } };
+  const siteKey = f.code === "CHALLENGE_REQUIRED" && f.siteKey ? { siteKey: f.siteKey } : {};
+  return { error: { code: f.code, message: f.message.slice(0, FAILURE_MESSAGE_LIMIT) || f.code, ...(issues ? { issues } : {}), ...siteKey } };
 }
 
 export function isPredictionFailure(value: unknown): value is PredictionFailure {

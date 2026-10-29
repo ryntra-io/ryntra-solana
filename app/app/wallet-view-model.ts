@@ -39,11 +39,11 @@ export function decodeWalletCollection(ok:boolean,payload:unknown,kind:"holdings
      "Some activity could not be loaded".
 
      That sentence was written here on 2026-09-07, after the first `RECEIVE` row
-     — a paid payment request — turned every Activity, Home and
+     — the founder's own paid payment request — turned every Activity, Home and
      Portfolio read of that wallet into "could not be loaded". The fix at the
      time added one string to a list copied by hand from the ledger, because the
      ledger reaches the Guard store and a browser cannot import it. On
-     2026-09-08 the first `CROSS_SWAP` row did exactly the same thing,
+     2026-09-08 the founder's first `CROSS_SWAP` row did exactly the same thing,
      minutes after the swap itself had settled correctly on both chains. The
      list now lives in `action-lanes.ts`, which imports nothing and is imported
      here rather than retyped. */
@@ -93,6 +93,17 @@ export function usdValueIn(value:bigint,locale:"en"|"uk"):string {
   if(locale!=="uk") return english;
   const match=/^(<)?\$([\d,]+)\.(\d{2})$/.exec(english);
   return match?`${match[1]??""}$${match[2].replace(/,/g," ")},${match[3]}`:english;
+}
+
+/** USDC on Solana: the dollar the core's header counts. */
+export const USDC_MINT = "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v";
+
+/** `1 240,50` / `1,240.50`: two decimals, the reader's grouping — the core's header adds «USDC». */
+export function usdcFigure(raw: bigint, decimals: number, locale: "en" | "uk"): string {
+  const cents = decimals >= 2 ? raw / 10n ** BigInt(decimals - 2) : raw * 10n ** BigInt(2 - decimals);
+  const whole = (cents / 100n).toLocaleString("en-US");
+  const part = (cents % 100n).toString().padStart(2, "0");
+  return locale === "uk" ? `${whole.replace(/,/g, "\u00A0")},${part}` : `${whole}.${part}`;
 }
 
 export function holdingSymbol(holding:WalletHolding):string {

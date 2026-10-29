@@ -6,7 +6,9 @@
  * **The entry** is one transaction the wallet signs: its token accounts, Ryntra's
  * share at entry (when it is charged here — a transfer into Ryntra's fee wallet,
  * shown before the signature), a new position (its NFT's key is the server's,
- * a fresh one, and signs only the creation), Zap's own ledger and `zap_in_damm_v2`
+ * a fresh one, and signs only the creation — handed back with the build, so the
+ * caller can take that signature off the bytes the wallet sees and sign with it
+ * after the wallet: Phantom refuses bytes another key has already signed), Zap's own ledger and `zap_in_damm_v2`
  * — the program swaps what it must of the one coin and adds both sides to the
  * position — and, where the network has a collector, the permission: an SPL
  * Approve of 0 on the position NFT's account and `update_delegate_permission`
@@ -24,7 +26,7 @@
  * Nothing here sends; the wallet and the collector sign.
  */
 
-import { CpAmm, derivePositionAddress, derivePositionNftAccount, getTokenProgram, getUnClaimLpFee, SwapMode, type PoolState } from "@meteora-ag/cp-amm-sdk";
+import { derivePositionAddress, derivePositionNftAccount, getTokenProgram, getUnClaimLpFee, SwapMode, type PoolState } from "@meteora-ag/cp-amm-sdk";
 import { Zap } from "@meteora-ag/zap-sdk";
 import {
   createApproveInstruction,
@@ -38,6 +40,7 @@ import {
 import { ComputeBudgetProgram, Keypair, PublicKey, Transaction, type Connection, type TransactionInstruction } from "@solana/web3.js";
 import BN from "bn.js";
 
+import { cpAmmOf } from "../meteora-clients.server.ts";
 import { HOLDER_GRANT_BITMASK, holderEntryFeeRaw, zapPriceMoveBps } from "../../launch/holder.ts";
 import { dammPrice } from "../meteora-dbc/market.server.ts";
 
@@ -147,7 +150,7 @@ const COMPUTE_UNITS = 700_000;
 
 export function createHolderVenue(config: HolderVenueConfig) {
   const { connection } = config;
-  const cpAmm = new CpAmm(connection);
+  const cpAmm = cpAmmOf(connection);
   const program = cpAmm._program;
   const poolAuthority = (cpAmm as unknown as { poolAuthority: PublicKey }).poolAuthority;
 
@@ -421,7 +424,7 @@ export function createHolderVenue(config: HolderVenueConfig) {
     if (config.collector) ixs.push(...(await grantInstructions(owner, position, nftAccount)));
     const tx = new Transaction().add(...ixs);
     const sealed = await seal(tx, owner, [nft]);
-    return { ...sealed, position: position.toBase58(), nftMint: nft.publicKey.toBase58(), nftAccount: nftAccount.toBase58(), granted: Boolean(config.collector), quote: figures };
+    return { ...sealed, position: position.toBase58(), nftMint: nft.publicKey.toBase58(), nftAccount: nftAccount.toBase58(), nftKey: nft, granted: Boolean(config.collector), quote: figures };
   }
 
   /** «Увімкнути» on a position that has none of it: the same two bits, signed by the owner. */

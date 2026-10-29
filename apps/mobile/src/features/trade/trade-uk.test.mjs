@@ -19,7 +19,7 @@ import {
 import { TRADE_COPY } from './copy.ts'
 import { ApiError } from '../../lib/api.ts'
 
-/* Trade in Ukrainian: the Review's rows, its figures and notes, the
+/* Trade in Ukrainian (M22): the Review's rows, its figures and notes, the
    receipt and every refusal in the person's language — the web's Spot words —
    while the English stays word for word what it was. */
 
@@ -98,7 +98,7 @@ test('the Review’s rows in Ukrainian: the web’s labels, the figures with a c
       'Мінімум отримання',
       'Ціна',
       'Вплив на ціну',
-      'Сліпедж',
+      'Допустимий рух ціни',
       'Комісія мережі',
       'Резерв для рахунку',
       'Комісія Ryntra',
@@ -113,7 +113,7 @@ test('the Review’s rows in Ukrainian: the web’s labels, the figures with a c
   assert.equal(view.rows[5].value, '0,00002 SOL')
   assert.equal(view.rows[6].value, '0,002039 SOL')
   assert.equal(view.rows[7].value, '0,10% · 0,1 USDC')
-  assert.deepEqual(view.warnings, ['Котирування й мінімум отримання рахують різний сліпедж.'])
+  assert.deepEqual(view.warnings, ['Котирування й мінімум отримання допускають різний рух ціни.'])
   const estimate = reviewView(
     { order: order(), mode: 'sell', pay: NVDA, receive: USDC_ASSET, decimals: {}, exact: false },
     'uk',
@@ -167,7 +167,10 @@ test('every refusal has its words in both languages and the same answer to wheth
     message: 'Для цієї пари зараз немає маршруту.',
     retryable: true,
   })
-  assert.equal(tradeFailureCopy('WALLET_REFUSED', 'uk').message, 'Підтвердження в гаманці скасовано.')
+  assert.equal(
+    tradeFailureCopy('WALLET_REFUSED', 'uk').message,
+    'Підтвердження в гаманці скасовано. Нічого не надіслано.',
+  )
   assert.equal(tradeFailureCopy('UNAUTHORIZED', 'uk').message, 'Увійди гаманцем, щоб торгувати.')
   assert.equal(tradeFailureCopy('SWAP_PRE_SIGN_REFUSED', 'uk').retryable, false)
   assert.equal(tradeFailureCopy('SOMETHING_ELSE', 'uk').message, 'Операція не вдалася. Спробуй ще раз.')

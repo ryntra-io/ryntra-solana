@@ -12,6 +12,7 @@ import { spotListReadIncomplete, spotReadRetryDelayMs } from "@/lib/spot/read-re
 import { currentSpotSnapshot } from "@/lib/spot/ticket-state";
 import type { TokenAbout } from "@/lib/spot/token-about";
 import { createWatchlistWriter } from "@/lib/spot/watchlist-client";
+import { ensureWalletActs, walletFact } from "@/lib/account/wallet-proof-store.client";
 
 /**
  * The reads behind the Spot page, as hooks. Each one names the three things
@@ -104,7 +105,7 @@ export function useSpotList(view: SpotView | null, query: string, watchlist: rea
         }
         url = `/api/spot/markets?mints=${encodeURIComponent(watchlistKey)}`;
       } else url = `/api/spot/markets?view=${view}&limit=150`;
-      const read = await getJson<{ rows: SpotMarketListRow[]; observedAt: string; stale?: boolean; partial?: boolean }>(url, controller.signal);
+      const read = await getJson<{ rows: SpotMarketListRow[]; observedAt: string; stale?: boolean; lastGoodAt?: string; partial?: boolean }>(url, controller.signal);
       if (ticket.current !== my) return;
       const incomplete = read.ok && spotListReadIncomplete({ view, searching, partial: read.value.partial ?? false, rowCount: read.value.rows.length });
       if (!read.ok || incomplete) {
@@ -123,7 +124,9 @@ export function useSpotList(view: SpotView | null, query: string, watchlist: rea
         return;
       }
       failures = 0;
-      setState({ status: "ready", value: read.value.rows, observedAt: read.value.observedAt, stale: read.value.stale ?? false, partial: read.value.partial ?? false });
+      /* A stale list is dated by its last good read, not its newest (request 57 (b)). */
+      const stale = read.value.stale ?? false;
+      setState({ status: "ready", value: read.value.rows, observedAt: stale && read.value.lastGoodAt ? read.value.lastGoodAt : read.value.observedAt, stale, partial: read.value.partial ?? false });
     };
     setState((current) => ({ status: "loading", value: current.value }));
     const timer = window.setTimeout(() => void run(), searching ? 250 : 0);
@@ -346,6 +349,7 @@ export function useSpotWatchlist(owner: string | null, proven: boolean) {
   const localMints = useRef<{ owner: string | null; mints: readonly string[] }>({ owner: null, mints: [] });
   const writeVersion = useRef(0);
   const writer = useRef(createWatchlistWriter(async (value) => {
+    if (!(await ensureWalletActs())) return { ok: false, status: 401 };
     const response = await fetch("/api/spot/watchlist", {
       method: "PUT", headers: { "content-type": "application/json" },
       body: JSON.stringify({ address: value.owner, mints: value.mints }),
@@ -390,7 +394,9 @@ export function useSpotWatchlist(owner: string | null, proven: boolean) {
       setMints(union);
       writeLocal(owner, union);
       if (union.length !== read.value.mints.length) {
-        save(owner, union);
+        /* On a link alone the merge stays in this browser: only the person's own star asks the wallet to sign. */
+        if (walletFact().provenVia === "link") setSync("unproven");
+        else save(owner, union);
       } else setSync("synced");
     })();
     return () => {

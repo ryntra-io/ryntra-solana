@@ -52,6 +52,7 @@ export function ConnectionControl({
   manageHref,
   triggerId,
   unavailable,
+  featured,
   preferences,
   compact = false,
 }: {
@@ -67,6 +68,13 @@ export function ConnectionControl({
    * without it the panel only says why nothing can connect.
    */
   unavailable?: ReactNode;
+  /**
+   * A wallet the workspace puts first, as its own button above the list —
+   * Solana's «Connect with Seeker» on Android (SKR-1). With nothing else to
+   * choose it stands alone: no second button for the same wallet, so the
+   * panel keeps one main action. Optional.
+   */
+  featured?: ReactNode;
   /** Where `Manage connections` goes. Omitted when the workspace has no such page. */
   manageHref?: string;
   /** Stable target for a task-local Connect action that opens this same panel. */
@@ -110,7 +118,7 @@ export function ConnectionControl({
       : state === "ACTION_PENDING"
         ? copy.waiting
         : address
-          ? adapter.truncate(address)
+          ? (adapter.name ?? adapter.truncate(address))
           : copy.connect;
 
   /* The address is the one fact that decides whether the next tap can spend
@@ -158,13 +166,15 @@ export function ConnectionControl({
                 {hasChoice(adapter) ? copy.chooseTitle : copy.disconnectedTitle}
               </p>
               <p className="rs-menu-hint">{copy.disconnectedBody}</p>
-              <ConnectAction adapter={adapter} copy={copy} state={state} />
+              {featured}
+              {standsAlone(adapter, featured) ? null : <ConnectAction adapter={adapter} copy={copy} state={state} />}
             </section>
           ) : null}
 
           {address ? (
             <>
               <dl className="rs-menu-section">
+                {adapter.name ? <MenuRow label={copy.name ?? DEFAULT_COPY.name ?? "Name"} value={adapter.name} /> : null}
                 <MenuRow label={copy.address} value={adapter.truncate(address)} />
                 {compact && state !== "WRONG_NETWORK" ? null : (
                   <MenuRow
@@ -288,6 +298,8 @@ export function ConnectionControl({
                     {copy.retry}
                   </button>
                 ) : null
+              ) : standsAlone(adapter, featured) ? (
+                featured
               ) : (
                 <ConnectAction adapter={adapter} copy={copy} state={state} retry />
               )}
@@ -321,6 +333,11 @@ function CloseOnConnect({ address, close }: { address: string | null; close: () 
     if (atOpen.current === null && address !== null) close();
   }, [address, close]);
   return null;
+}
+
+/** Whether the featured wallet is the only way in, so no list or generic button is drawn beside it. */
+function standsAlone(adapter: ConnectionAdapter, featured: ReactNode): boolean {
+  return Boolean(featured) && (adapter.choices?.length ?? 0) === 0;
 }
 
 /** Whether this page found more than one connector, so the person picks. */
@@ -392,15 +409,22 @@ function ConnectAction({
     );
   }
 
+  /* One wallet in the browser: the button names it, so the person knows which wallet will open (B14). */
+  const only = adapter.choices?.length === 1 ? adapter.choices[0] : null;
+  const named = only && copy.continueWith && !busy && !retry;
   return (
     <button
       type="button"
       className="rs-menu-action"
       data-variant={retry ? undefined : "primary"}
-      onClick={() => void adapter.connect?.()}
+      onClick={() => void adapter.connect?.(only?.id)}
       disabled={busy}
     >
-      {busy ? copy.connecting : retry ? copy.retry : copy.connect}
+      {named && only.icon ? (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img className="rs-menu-choice-icon" src={only.icon} alt="" width={18} height={18} />
+      ) : null}
+      {busy ? copy.connecting : retry ? copy.retry : named ? `${copy.continueWith} ${only.label}` : copy.connect}
     </button>
   );
 }
@@ -440,6 +464,8 @@ function triggerAria(state: ConnectionState, copy: ConnectionCopy): string {
 export type ConnectionCopy = Readonly<{
   panelTitle: string;
   connect: string;
+  /** The row of the wallet's name (`adapter.name`), above its address. */
+  name?: string;
   /**
    * The one-word form, for the phone bar.
    *
@@ -449,6 +475,8 @@ export type ConnectionCopy = Readonly<{
    * sentence does not. Omitted, `connect` is used at both widths.
    */
   connectShort?: string;
+  /** With exactly one wallet in the browser: «Продовжити з» before its name (B14). Absent — the plain `connect`. */
+  continueWith?: string;
   connecting: string;
   waiting: string;
   unavailableTitle: string;
@@ -498,6 +526,7 @@ export type ConnectionCopy = Readonly<{
 export const DEFAULT_COPY: ConnectionCopy = {
   panelTitle: "Connection",
   connect: "Connect",
+  name: "Name",
   connectShort: "Wallet",
   connecting: "Connecting…",
   waiting: "Waiting…",

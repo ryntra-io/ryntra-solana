@@ -20,9 +20,9 @@
  */
 
 import { Connection, PublicKey } from "@solana/web3.js";
-import { DynamicBondingCurveClient } from "@meteora-ag/dynamic-bonding-curve-sdk";
 
 import type { LaunchMarketRow } from "../api/v1/contract.ts";
+import { createDbcClient, type DbcClient } from "../core/venues/meteora-dbc/sdk.server.ts";
 import { readLaunchMarkets } from "../launch/markets.server.ts";
 import { launchHealthDeps } from "../launch/runtime.server.ts";
 import { createSolanaRpcHandle, resolveEndpoint } from "../solana/rpc.ts";
@@ -38,8 +38,10 @@ import {
   pumpCurveOf,
   pulseRowOf,
   rawLaunchpadOf,
+  WATCHLIST_MAX,
   type PulseCurve,
   type PulseFeed,
+  type PulseMode,
   type PulseRow,
 } from "./pulse.ts";
 import type { TokenWindow } from "./token-page.ts";
@@ -50,12 +52,18 @@ export type PulseRead = Readonly<{
   ok: true;
   feed: PulseFeed;
   window: TokenWindow;
+  /** Meme mode (Market Radar) or every token. */
+  mode: PulseMode;
   rows: readonly PulseRow[];
   /** «Рухи» only: the window's largest falls; `rows` holds the rises. */
   down?: readonly PulseRow[];
+  /** «Обране» only: the watched mints no source lists as a coin (a company's token, or a mint nobody knows). */
+  unlisted?: number;
   observedAt: string;
   /** Some figures are a held copy, read minutes ago. */
   stale: boolean;
+  /** DSC-1: when the oldest of Jupiter's lists behind the rows was read — the time a figure is as old as; absent where none was. */
+  readAt?: string;
   /** A source did not answer: the feed is drawn from the others and may lack rows — never older figures. */
   partial: boolean;
   sources: readonly PulseSource[];
@@ -87,7 +95,10 @@ const HELD_MS = 3 * 60_000;
 /** Jupiter's lists a feed reads, by window. */
 function listsOf(feed: PulseFeed, window: TokenWindow): readonly string[] {
   const span = (value: TokenWindow) => (value === "m5" ? "5m" : value === "h1" ? "1h" : value === "h6" ? "6h" : "24h");
+  if (feed === "watchlist") return [];
   if (feed === "new") return ["/recent", "/toptrending/1h?limit=100", "/toptraded/1h?limit=100"];
+  /* Tokens an hour to a day old that the hour is trading: the hour's and the six hours' lists carry them. */
+  if (feed === "growing") return ["/toptraded/1h?limit=100", "/toptrending/1h?limit=100", "/toptrending/6h?limit=100"];
   if (feed === "soon") return ["/recent", "/toptrending/5m?limit=100", "/toptrending/1h?limit=100", "/toptraded/1h?limit=100"];
   if (feed === "dex") return ["/toptrending/1h?limit=100", "/toptrending/24h?limit=100", "/toptraded/1h?limit=100", "/toptraded/24h?limit=100", "/toporganicscore/24h?limit=100"];
   if (feed === "trending") return [`/toptrending/${span(window)}?limit=100`];
@@ -190,9 +201,9 @@ async function readAccounts(addresses: readonly string[]): Promise<{ out: Map<st
   return { out, failed };
 }
 
-let dbcClient: DynamicBondingCurveClient | null = null;
-function dbc(): DynamicBondingCurveClient {
-  dbcClient ??= new DynamicBondingCurveClient(new Connection(resolveEndpoint("mainnet"), "confirmed"), "confirmed");
+let dbcClient: DbcClient | null = null;
+function dbc(): DbcClient {
+  dbcClient ??= createDbcClient(new Connection(resolveEndpoint("mainnet"), "confirmed"));
   return dbcClient;
 }
 
@@ -322,17 +333,21 @@ export function ryntraRowOf(market: LaunchMarketRow, listed: PulseRow | null): P
     ? { venue: "meteora-dbc", progressPct: Math.min(100, market.progress.bps / 100), complete: market.progress.migrated || market.progress.bps >= 10_000 }
     : null;
   const ryntra = { preset: market.preset, technicalValidation: market.technicalValidation, launchedAt: market.launchedAt, traded24h: market.traded24h, daysSinceDex: market.daysSinceDex, dollarPair: market.pair.dollar };
+  /* Every launch on Ryntra is a Meteora DBC curve (a Ryntra config), on it or out of it. */
+  const graduated = market.progress?.migrated === true || (listed?.graduated ?? false);
   if (listed) {
     const own = listed.holders === null;
-    return { ...listed, curve: curve ?? listed.curve, ryntra, holders: own ? market.holders : listed.holders, holdersAtLeast: own && market.holdersAtLeast, launchpad: "Ryntra" };
+    return { ...listed, curve: curve ?? listed.curve, ryntra, holders: own ? market.holders : listed.holders, holdersAtLeast: own && market.holdersAtLeast, launchpad: "Ryntra", venue: "meteora-dbc", graduated };
   }
-  const empty = { changePct: null, volumeUsd: null };
+  const empty = { changePct: null, volumeUsd: null, holdersChangePct: null };
   return {
     mint: market.token,
     symbol: market.symbol,
     name: market.name,
     icon: market.image,
     launchpad: "Ryntra",
+    venue: "meteora-dbc",
+    graduated,
     price: null,
     marketCapUsd: null,
     liquidityUsd: market.poolLiquidity?.usd ?? null,
@@ -343,6 +358,8 @@ export function ryntraRowOf(market: LaunchMarketRow, listed: PulseRow | null): P
     graduatedAt: null,
     top10Pct: null,
     devPct: null,
+    creatorLaunches: null,
+    creatorGraduated: null,
     verified: false,
     organic: null,
     /* Jupiter does not list it: its rights and flags are not read here — never «no fact against it». */
@@ -357,13 +374,21 @@ export function ryntraRowOf(market: LaunchMarketRow, listed: PulseRow | null): P
 
 const answers = new Map<string, { value: Promise<PulseRead | SpotSourceFailure>; at: number }>();
 
-/** One feed, for everyone asking within a few seconds. */
-export function readPulse(feed: PulseFeed, window: TokenWindow): Promise<PulseRead | SpotSourceFailure> {
-  const key = `${feed}:${window}`;
+export type PulseAsk = Readonly<{ mode?: PulseMode; mints?: readonly string[] }>;
+
+/**
+ * One feed, for everyone asking within a few seconds. `mode: "meme"` is Market Radar's cut (SOL-R1); «Обране» reads
+ * the mints it is given, in their order.
+ */
+export function readPulse(feed: PulseFeed, window: TokenWindow, ask: PulseAsk = {}): Promise<PulseRead | SpotSourceFailure> {
+  const mode = ask.mode ?? "all";
+  const mints = feed === "watchlist" ? (ask.mints ?? []).slice(0, WATCHLIST_MAX) : [];
+  const key = `${feed}:${window}:${mode}${feed === "watchlist" ? `:${mints.join(",")}` : ""}`;
   const now = Date.now();
   const hit = answers.get(key);
   if (hit && now - hit.at < ANSWER_TTL_MS) return hit.value;
-  const value = assemble(feed, window);
+  const value = feed === "watchlist" ? assembleWatchlist(window, mode, mints) : assemble(feed, window, mode);
+  if (answers.size > 500) answers.clear();
   answers.set(key, { value, at: now });
   value.then((read) => {
     if (!read.ok && answers.get(key)?.value === value) answers.delete(key);
@@ -371,7 +396,7 @@ export function readPulse(feed: PulseFeed, window: TokenWindow): Promise<PulseRe
   return value;
 }
 
-async function assemble(feed: PulseFeed, window: TokenWindow): Promise<PulseRead | SpotSourceFailure> {
+async function assemble(feed: PulseFeed, window: TokenWindow, mode: PulseMode): Promise<PulseRead | SpotSourceFailure> {
   const now = Date.now();
   const [{ lists, failed, failure }, ryntraRead, gecko] = await Promise.all([
     readLists(listsOf(feed, window)),
@@ -402,7 +427,7 @@ async function assemble(feed: PulseFeed, window: TokenWindow): Promise<PulseRead
   if (ryntraMarkets && ryntraMarkets.length > 0) {
     sources.push("ryntra");
     const missing = ryntraMarkets.map((market) => market.token).filter((mint) => !rawByMint.has(mint));
-    const searched = await searchByMints(missing);
+    const { out: searched } = await searchByMints(missing);
     for (const [mint, raw] of searched) rawByMint.set(mint, raw);
     for (const market of ryntraMarkets) {
       const raw = rawByMint.get(market.token);
@@ -415,7 +440,7 @@ async function assemble(feed: PulseFeed, window: TokenWindow): Promise<PulseRead
     sources.push("geckoterminal", "chain");
     if (gecko.stale) partial = true;
     const geckoOnly = [...new Set(gecko.curves.map((curve) => curve.mint))].filter((mint) => !rawByMint.has(mint));
-    const searched = await searchByMints(geckoOnly);
+    const { out: searched } = await searchByMints(geckoOnly);
     for (const [mint, raw] of searched) {
       rawByMint.set(mint, raw);
       const row = pulseRowOf(raw, now);
@@ -444,26 +469,78 @@ async function assemble(feed: PulseFeed, window: TokenWindow): Promise<PulseRead
     }
   }
 
+  /* «Ростуть»: pump.fun curves read by their mint, so a curve already in «Майже на DEX» is not counted here too. */
+  if (feed === "growing") {
+    const pump = rows
+      .filter((row) => row.venue === "pump" && !graduatedOf(rawByMint.get(row.mint)))
+      .sort((a, b) => (b.windows.h1.volumeUsd ?? 0) - (a.windows.h1.volumeUsd ?? 0))
+      .slice(0, PUMP_CANDIDATES)
+      .map((row) => row.mint);
+    const read = await readCurves(pump, [], []);
+    if (read.partial) partial = true;
+    if (read.byMint.size > 0) sources.push("chain");
+    for (let index = 0; index < rows.length; index += 1) {
+      const row = rows[index] as PulseRow;
+      const curve = read.byMint.get(row.mint);
+      if (curve) rows[index] = { ...row, curve };
+    }
+  }
+
   const merged = mergeRows([...ryntraRows, ...rows]);
   const observedAt = new Date().toISOString();
+  const oldest = lists.length > 0 ? Math.min(...lists.map((list) => list.readAt)) : null;
+  const readAt = oldest === null ? {} : { readAt: new Date(oldest).toISOString() };
   if (feed === "movers") {
-    return { ok: true, feed, window, rows: feedRows(feed, merged, window, now), down: feedRows(feed, merged, window, now, true), observedAt, stale, partial, sources };
+    return { ok: true, feed, window, mode, rows: feedRows(feed, merged, window, now, false, mode), down: feedRows(feed, merged, window, now, true, mode), observedAt, ...readAt, stale, partial, sources };
   }
-  return { ok: true, feed, window, rows: feedRows(feed, merged, window, now), observedAt, stale, partial, sources };
+  return { ok: true, feed, window, mode, rows: feedRows(feed, merged, window, now, false, mode), observedAt, ...readAt, stale, partial, sources };
 }
 
-/** Full Jupiter rows for mints the lists do not carry, a hundred a read, a minute each. */
-async function searchByMints(mints: readonly string[]): Promise<Map<string, unknown>> {
+/**
+ * «Обране» (Market Radar): the watched mints, each as Jupiter states it today, a launch on Ryntra with Ryntra's own read
+ * beside it, in the person's order. A mint no source lists as a coin is counted, not drawn.
+ */
+async function assembleWatchlist(window: TokenWindow, mode: PulseMode, mints: readonly string[]): Promise<PulseRead | SpotSourceFailure> {
+  const now = Date.now();
+  const observedAt = new Date().toISOString();
+  if (mints.length === 0) return { ok: true, feed: "watchlist", window, mode, rows: [], unlisted: 0, observedAt, stale: false, partial: false, sources: ["jupiter"] };
+  const [{ out, failure, readAt, held }, ryntraRead] = await Promise.all([searchByMints(mints), readRyntraMarkets()]);
+  if (failure && out.size === 0) return failure;
+  const sources: PulseSource[] = ["jupiter"];
+  const ryntraBy = new Map((ryntraRead.rows ?? []).map((market) => [market.token, market]));
+  const rows: PulseRow[] = [];
+  for (const mint of mints) {
+    const raw = out.get(mint);
+    const listed = raw ? pulseRowOf(raw, now) : null;
+    const market = ryntraBy.get(mint);
+    if (market) {
+      if (!sources.includes("ryntra")) sources.push("ryntra");
+      rows.push(ryntraRowOf(market, listed));
+    } else if (listed) rows.push(listed);
+  }
+  const drawn = feedRows("watchlist", rows, window, now, false, mode);
+  /* The figures are Jupiter's search, as old as its read: a held copy says so, with its own time. */
+  const stale = held && readAt !== null && now - readAt > HELD_MS;
+  return { ok: true, feed: "watchlist", window, mode, rows: drawn, unlisted: mints.length - drawn.length, observedAt: readAt === null ? observedAt : new Date(readAt).toISOString(), stale, partial: failure !== null || ryntraRead.late, sources };
+}
+
+type Searched = { out: Map<string, unknown>; failure: SpotSourceFailure | null; readAt: number | null; held: boolean };
+
+/**
+ * Full Jupiter rows for mints the lists do not carry, a hundred a read, a minute each, held at most as long as a Pulse
+ * list ({@link LIST_GRACE_MS}); the failure when the read failed, and when the rows were read.
+ */
+async function searchByMints(mints: readonly string[]): Promise<Searched> {
   const out = new Map<string, unknown>();
   const unique = [...new Set(mints)].sort().slice(0, 100);
-  if (unique.length === 0) return out;
-  const read = await readJupiterList(`/search?query=${encodeURIComponent(unique.join(","))}`, LIST_TTL_MS);
-  if (!read.ok) return out;
+  if (unique.length === 0) return { out, failure: null, readAt: null, held: false };
+  const read = await readJupiterList(`/search?query=${encodeURIComponent(unique.join(","))}`, LIST_TTL_MS, LIST_GRACE_MS);
+  if (!read.ok) return { out, failure: read, readAt: null, held: false };
   for (const raw of read.raw) {
     const id = raw && typeof raw === "object" ? (raw as { id?: unknown }).id : null;
     if (typeof id === "string" && unique.includes(id) && !out.has(id)) out.set(id, raw);
   }
-  return out;
+  return { out, failure: null, readAt: read.readAt, held: read.stale };
 }
 
 /** Test seam: forget every cached read. */

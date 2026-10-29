@@ -98,26 +98,26 @@ const ORDER: readonly ProductMapLabel[] = ["AVAILABLE", "LIMITED", "BUILDING", "
 const PUBLIC_DETAILS: Readonly<Record<string, Readonly<Record<PublicLocale, { name: string; blurb: string; href: string }>>>> = {
   assets: {
     en: { name: "Asset details", blurb: "Inspect an asset's identity, issuer controls and transfer conditions in the product.", href: "/app/assets" },
-    uk: { name: "Відомості про актив", blurb: "Переглядайте дані активу, повноваження емітента й умови переказу в продукті.", href: "/app/assets" },
+    uk: { name: "Відомості про актив", blurb: "Переглядай дані активу, повноваження емітента й умови переказу в продукті.", href: "/app/assets" },
   },
   receipts: {
-    en: { name: "Transaction details", blurb: "Review transaction status, costs and observed outcomes from Activity.", href: "/app/activity" },
-    uk: { name: "Деталі операцій", blurb: "Переглядайте статус, витрати й спостережені результати в історії операцій.", href: "/app/activity" },
+    en: { name: "Transaction details", blurb: "Review transaction status, costs and observed outcomes from History.", href: "/app/activity" },
+    uk: { name: "Деталі операцій", blurb: "Переглядай статус, витрати й спостережені результати в історії операцій.", href: "/app/activity" },
   },
   send: {
     en: { name: "Send", blurb: "Review a supported Solana transfer, then confirm it with your own wallet.", href: "/app/send" },
-    uk: { name: "Надіслати", blurb: "Перегляньте умови підтримуваного переказу на Solana й підтвердьте його власним гаманцем.", href: "/app/send" },
+    uk: { name: "Надіслати", blurb: "Переглянь умови підтримуваного переказу на Solana й підтверди його власним гаманцем.", href: "/app/send" },
   },
   "sdk-mcp": {
     en: { name: "SDK & MCP", blurb: "Use documented Solana SDK and MCP interfaces in your own application.", href: "/docs" },
-    uk: { name: "SDK та MCP", blurb: "Використовуйте документовані інтерфейси Solana SDK та MCP у власному застосунку.", href: "/docs" },
+    uk: { name: "SDK та MCP", blurb: "Використовуй документовані інтерфейси Solana SDK та MCP у власному застосунку.", href: "/docs" },
   },
   /* The two TRADE pages the product's structure names on the map: Spot, live,
      and Predictions, visible and locked. Customer paths, because the
      registry's own route field predates the one-product shell. */
   spot: {
     en: { name: "Spot", blurb: "Find an asset, see its real price and chart, and buy or sell it with your own signature.", href: "/app/spot" },
-    uk: { name: "Спот", blurb: "Знайдіть актив, побачте його справжню ціну й графік, купіть або продайте його власним підписом.", href: "/app/spot" },
+    uk: { name: "Спот", blurb: "Знайди актив, побач його справжню ціну й графік, купи або продай його власним підписом.", href: "/app/spot" },
   },
   predictions: {
     en: { name: "Predictions", blurb: "Prediction markets — crypto, macro, business, politics, sports — through aggregated venues. Coming soon.", href: "/app/predictions" },

@@ -77,7 +77,7 @@ export const SHELL_CHROME_COPY: Readonly<Record<WorkspaceLocale, ShellChromeCopy
       compactBody: "Тісніші відступи і рядки таблиці 32px.",
       panelsFixed: "Панелі · фіксовані в Простому",
       panelsEditable: "Панелі · показ, приховування і порядок",
-      empty: "У цьому робочому просторі немає панелей, які можна налаштувати. Нічого від вас не сховано.",
+      empty: "У цьому робочому просторі немає панелей, які можна налаштувати. Нічого від тебе не сховано.",
       alwaysOn: "Завжди",
       advanced: "Розширені",
       moveUp: "Пересунути {panel} вгору",

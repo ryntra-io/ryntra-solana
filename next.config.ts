@@ -1,6 +1,11 @@
+import { HOME_ENGLISH_ONLY, HOME_TO_APP } from "./lib/site/home-to-app.ts";
 import type { NextConfig } from "next";
 import { ENABLED_LOCALE_CODES } from "./app/i18n/locales.ts";
 import { CUSTOMER_REDIRECTS } from "./lib/product/customer-routing.ts";
+import { treasuryNetworkFrom } from "./lib/solana/treasury/model.ts";
+import { onPredictHost, predictHostRedirects } from "./lib/predictions/predict-host.ts";
+import { seekerRelayCspSources } from "./lib/solana/seeker-connect.ts";
+import { appHostRedirects, appHostRewrites, atBothAddresses, everywhereButProxied, siteHostRedirects } from "./lib/product/app-address.ts";
 
 /* The landing is a page again — English at `/`, Ukrainian at `/uk`. What stays of it is the language map of the
    home page:
@@ -23,7 +28,11 @@ export const HOME_LANGUAGE_ADDRESSES = [
 ] as const;
 /** The parked languages: every language address but English, Ukrainian and their own short forms. */
 export const PARKED_LANGUAGE_ADDRESSES = HOME_LANGUAGE_ADDRESSES.filter((source) => !["/en", "/uk", "/ua"].includes(source));
+/* ryntra.io's home page and its door into the app, and the Ukrainian home leading to the English one (`lib/site/home-to-app.ts`). */
+export { HOME_ENGLISH_ONLY, HOME_TO_APP };
 export const LANDING_REDIRECTS = [
+  ...HOME_TO_APP,
+  ...HOME_ENGLISH_ONLY,
   { source: "/en", destination: LANDING_ADDRESSES.en, permanent: true },
   { source: "/ua", destination: LANDING_ADDRESSES.uk, permanent: true },
   ...PARKED_LANGUAGE_ADDRESSES.map((source) => ({ source, destination: LANDING_ADDRESSES.en, permanent: false })),
@@ -59,29 +68,46 @@ const DEPLOYMENT_HOSTS = ["(?<deployment>[a-z0-9-]+)\\.vercel\\.app"];
      the browser, not merely by our intent. `lib/stellar/transactions/lifecycle.test.mjs`
      asserts both halves. */
 const isDev = process.env.NODE_ENV === "development";
+const SEEKER_RELAY = seekerRelayCspSources(process.env.NEXT_PUBLIC_SEEKER_RELAY_DOMAIN);
 const CSP = [
   "default-src 'self'",
   /* `oauth.telegram.org` is Telegram Login: its library is loaded only when
      the Telegram door is open and the sheet shows the button, it opens the
      authorization in a popup on its own origin, and inside Telegram's in-app
      browser it fetches the result from that origin instead of a popup — hence
-     the same host under connect-src. No frame, no other Telegram host. */
-  `script-src 'self' 'unsafe-inline' https://oauth.telegram.org${isDev ? " 'unsafe-eval'" : ""}`,
+     the same host under connect-src. No frame, no other Telegram host.
+     `'wasm-unsafe-eval'` lets the city compile WebAssembly and nothing else (no
+     JavaScript eval): the skyline's Meshopt decoder and the guardian's model
+     need it (CITY-56, CITY-57). «Дозволяю». */
+  `script-src 'self' 'unsafe-inline' 'wasm-unsafe-eval' https://oauth.telegram.org${isDev ? " 'unsafe-eval'" : ""}`,
   "style-src 'self' 'unsafe-inline'",
   /* `i.ytimg.com` is the embedded player's own poster host. It is requested
      only after a visitor presses play — measured: a fresh load of the video
      page makes zero off-origin requests — but CSP is document-wide, so without it the
      embed logs a blocked-image violation on a public page. An image CDN is a
      far narrower grant than the frame it belongs to. */
-  "img-src 'self' data: https://branding.arcus.xyz https://i.ytimg.com",
+  "img-src 'self' data: blob: https://branding.arcus.xyz https://i.ytimg.com",
+  /* `blob:` (here and in img-src) is the city's own moment of a trade (`city/lib/trade/moment.ts`): the clip and its
+     still are recorded in this page and shown back from an object URL the page made itself. Without media-src the
+     player falls back to `default-src 'self'`, refuses the blob, and the done card shows an empty dark box. A blob
+     can only be made by a script this policy already runs; no remote media is allowed. */
+  "media-src 'self' blob:",
   "font-src 'self' data:",
-  `connect-src 'self' https://api.arcus.xyz wss://api.arcus.xyz https://rpc.mainnet.chain.robinhood.com https://horizon-testnet.stellar.org https://soroban-testnet.stellar.org https://oauth.telegram.org${isDev ? " ws:" : ""}`,
+  /* `SEEKER_RELAY` is the Nostr relays Seeker Connect may carry its wallet session over (SKR-1): ciphertext only, end
+     to end between this page and the phone's wallet. Primal's public relay (the default) and Solana Mobile's
+     `relay.solanamobile.com` (the target, used once `NEXT_PUBLIC_SEEKER_RELAY_DOMAIN` names it), plus any other host
+     the variable names (`lib/solana/seeker-connect.ts`), WebSocket only. */
+  `connect-src 'self' https://api.arcus.xyz wss://api.arcus.xyz https://rpc.mainnet.chain.robinhood.com https://horizon-testnet.stellar.org https://soroban-testnet.stellar.org https://oauth.telegram.org ${SEEKER_RELAY}${isDev ? " ws:" : ""}`,
   /* The only third-party frame this site embeds: a product film.
      `youtube-nocookie` rather than `youtube`, and the page renders a local
      poster with a play control instead of the iframe — so nothing is requested
      from Google until a visitor asks for the video. Without this directive the
      embed falls back to `default-src 'self'` and is blocked outright. */
   "frame-src https://www.youtube-nocookie.com",
+  /* The city's score (decision 70) keeps its beat in a worker that Tone.js builds from a blob of its own code, so a
+     background tab does not drift the music. A blob can only be made by a script this policy already runs; no
+     remote worker is allowed. Without it the browser refuses the worker and logs the refusal on every home visit. */
+  "worker-src 'self' blob:",
   "object-src 'none'",
   "base-uri 'self'",
   "form-action 'self'",
@@ -119,20 +145,18 @@ const AGG_LAB_CSP = [
    venues' event covers served from `assets.agg.market`. The customer route
    therefore carries the site policy with exactly those two origins added and
    nothing else widened; the REST origin stays out of every customer policy.
+   One more origin, Cloudflare's `challenges.cloudflare.com`, for its script
+   and its frame: when many people sign in at once the aggregator asks for its
+   bot check (Turnstile) before a sign-in starts, and the check is Cloudflare's
+   own box. The script is loaded only when that check is asked for.
    `lib/security-headers.test.mjs` pins it. */
-const PREDICTIONS_CSP = CSP.replace("img-src 'self' data:", "img-src 'self' data: https://assets.agg.market").replace("connect-src 'self'", "connect-src 'self' wss://ws.agg.market");
+const TURNSTILE = "https://challenges.cloudflare.com";
+const PREDICTIONS_CSP = CSP.replace("img-src 'self' data:", "img-src 'self' data: https://assets.agg.market").replace("connect-src 'self'", "connect-src 'self' wss://ws.agg.market").replace("script-src 'self'", `script-src 'self' ${TURNSTILE}`).replace("frame-src", `frame-src ${TURNSTILE}`);
 
-/* The landing (`/` and `/uk`) carries TradingView's Ticker Tape — a condition
-   of the free Advanced Charts licence (2026-10-09, `app/(home)/market-tape.tsx`).
-   Measured in a browser: the widget's module and its chunks come from one
-   host, which also serves the hidden frame that carries its prices; the
-   symbols' logos come from TradingView's logo CDN. Those two origins are
-   added here and nowhere else — the rest of the site keeps `CSP`. */
-const TRADINGVIEW_WIDGETS = "https://widgets.tradingview-widget.com";
-const TRADINGVIEW_LOGOS = "https://s3-symbol-logo.tradingview.com";
-const LANDING_CSP = CSP.replace("script-src 'self'", `script-src 'self' ${TRADINGVIEW_WIDGETS}`)
-  .replace("frame-src", `frame-src ${TRADINGVIEW_WIDGETS}`)
-  .replace("img-src 'self' data:", `img-src 'self' data: ${TRADINGVIEW_LOGOS}`);
+/* The landing (`/` and `/uk`) takes the site's policy: its market tape is
+   Ryntra's own since SOL-T4 (`app/(home)/market-tape.tsx`, the core's
+   sparkline on Solana's prices), so no third-party script, frame or image host
+   is added for it. `lib/security-headers.test.mjs` pins it. */
 
 const SECURITY_HEADERS = [
   { key: "Content-Security-Policy", value: CSP },
@@ -140,9 +164,14 @@ const SECURITY_HEADERS = [
   { key: "X-Content-Type-Options", value: "nosniff" },
   // no-referrer keeps token-bearing URLs (e.g. /beta?t=…) out of outbound Referer headers
   { key: "Referrer-Policy", value: "no-referrer" },
-  { key: "Permissions-Policy", value: "camera=(), microphone=(), geolocation=(), payment=()" },
+  /* The microphone is Ryntra's own (`self`) and no frame's: the question field's voice input (AI-06c, AI-08) — the
+     browser's recognition and the recording heard on the server — is refused by the browser under `microphone=()`. */
+  { key: "Permissions-Policy", value: "camera=(), microphone=(self), geolocation=(), payment=()" },
   { key: "Strict-Transport-Security", value: "max-age=63072000; includeSubDomains" },
 ];
+
+/* predict.ryntra.io, an address of the Solana cabinet's Predictions section (`lib/predictions/predict-host.ts`). */
+const PREDICT_HOST = onPredictHost();
 
 const nextConfig: NextConfig = {
   devIndicators: false,
@@ -196,7 +225,8 @@ const nextConfig: NextConfig = {
   },
   async headers() {
     return [
-      { source: "/:path*", headers: SECURITY_HEADERS },
+      /* Every path of every host — but not the cabinet's answers on app.ryntra.io, which carry their own. */
+      ...everywhereButProxied(SECURITY_HEADERS),
       /* The lab's own policy, declared after the site-wide one so that for this
          route the later Content-Security-Policy value replaces the earlier;
          every other security header above stays as it is. */
@@ -204,11 +234,11 @@ const nextConfig: NextConfig = {
       { source: "/preview/agg-lab/:path*", headers: [{ key: "Content-Security-Policy", value: AGG_LAB_CSP }] },
       /* The customer Predictions surface: the site policy plus the live feed
          and the event covers, for this route and its markets only. */
-      { source: "/app/predictions", headers: [{ key: "Content-Security-Policy", value: PREDICTIONS_CSP }] },
-      { source: "/app/predictions/:path*", headers: [{ key: "Content-Security-Policy", value: PREDICTIONS_CSP }] },
-      /* The landing, in both its languages: the site policy plus TradingView's widget host. */
-      { source: LANDING_ADDRESSES.en, headers: [{ key: "Content-Security-Policy", value: LANDING_CSP }] },
-      { source: LANDING_ADDRESSES.uk, headers: [{ key: "Content-Security-Policy", value: LANDING_CSP }] },
+      ...atBothAddresses("/app/predictions", [{ key: "Content-Security-Policy", value: PREDICTIONS_CSP }]),
+      ...atBothAddresses("/app/predictions/:path*", [{ key: "Content-Security-Policy", value: PREDICTIONS_CSP }]),
+      /* predict.ryntra.io only leads into the section (NAV-6c): nothing on it is
+         a page to index. */
+      { source: "/:path*", has: PREDICT_HOST, headers: [{ key: "X-Robots-Tag", value: "noindex, nofollow" }] },
       /* The deployment hosts answer the same pages as ryntra.io; a crawler
          that finds one of them must not index a second copy of the site.
          The canonical tag already points home — this is the same answer in
@@ -267,10 +297,12 @@ const nextConfig: NextConfig = {
          would leave search engines and bookmarks pointed at a folder that no
          longer exists. The `:path*` forms carry `[symbol]`, `screener/add` and
          `watchlist/observe` with them. */
-      { source: "/app/markets/:path+", destination: "/robinhood/workspace/:path+", permanent: true },
+      /* `/app/markets/pools` is Markets' own pools view again, so it is the one path these leave alone. */
+      { source: "/app/markets/:path((?!pools(?:/|$)).+)", destination: "/robinhood/workspace/:path", permanent: true },
       { source: "/app/terminal", destination: "/robinhood/workspace/terminal", permanent: true },
       { source: "/app/terminal/:path*", destination: "/robinhood/workspace/terminal/:path*", permanent: true },
-      { source: "/app/swap/:path+", destination: "/robinhood/workspace/swap/:path+", permanent: true },
+      /* SOL-C13, UX-010: a path under Swap is Swap — it no longer passes through Robinhood's workspace to the landing. */
+      { source: "/app/swap/:path+", destination: "/app/swap", permanent: true },
 
       /* The handbook chapters these once pointed at redirect to the guides
          themselves (`CUSTOMER_REDIRECTS`), so each row goes to `/docs`
@@ -285,6 +317,17 @@ const nextConfig: NextConfig = {
       { source: "/roadmap", destination: "/docs", permanent: true },
       /* Old shortcuts keep answering. */
       { source: "/guard", destination: "/docs/developers/guard", permanent: true },
+      /* «Points and levels» merged into «Rewards» on 2026-10-26 (SOL-C17,
+         audit card UX-751, following Ріст 19). It documented the Points V1
+         programme — levels, a lifetime total, a daily cap — which the server
+         counts and no screen a person can open draws, so the page described a
+         balance nobody could go and find. What a person has is the rank, and
+         the Rewards page explains it; the one sentence this page carried that
+         Rewards did not — what points are not — moved there with it. A 308
+         because it is not coming back, and the phone's deep links name the old
+         slug (`apps/mobile/src/features/monitoring/deep-link.ts`). */
+      { source: "/docs/money/points", destination: "/docs/money/rewards", permanent: true },
+      { source: "/uk/docs/money/points", destination: "/uk/docs/money/rewards", permanent: true },
       { source: "/proof", destination: "/verify", permanent: true },
 
       /* Public surface consolidation, 2026-08-26. Competing doors become
@@ -300,7 +343,15 @@ const nextConfig: NextConfig = {
          handed. */
       { source: "/agents", destination: "/agents/workspace", permanent: true },
       { source: "/beta", destination: "/app", permanent: true },
-      { source: "/app/beta", destination: "/app", permanent: true },
+      /* One hop to Home (B18): `/app` → `/app/home` was the second. */
+      { source: "/app/beta", destination: "/app/home", permanent: true },
+      /* `/app/agents` by its content (B18): the treasury where an agent's money and limits live, «Боти» where this
+         deployment does not serve it — never the recurring-buy rules. Not permanent: the answer follows the build. */
+      {
+        source: "/app/agents",
+        destination: treasuryNetworkFrom(process.env.NEXT_PUBLIC_RYNTRA_TREASURY_NETWORK) ? "/app/treasury" : "/app/bots",
+        permanent: false,
+      },
       { source: "/demo", destination: "/app", permanent: true },
       /* Addresses already given out keep answering as they did. */
       { source: "/arc/demo", destination: "/arc/workspace", permanent: true },
@@ -349,11 +400,27 @@ const nextConfig: NextConfig = {
          above, each in one hop. */
     ];
     const replaced = new Set([...LANDING_REDIRECTS, ...CUSTOMER_REDIRECTS].map((row) => row.source));
+    const table = [...LANDING_REDIRECTS, ...CUSTOMER_REDIRECTS, ...previous.filter((row) => !replaced.has(row.source))];
     return [
       ...LANDING_REDIRECTS,
-      ...CUSTOMER_REDIRECTS,
-      ...previous.filter((row) => !replaced.has(row.source)),
+      /* predict.ryntra.io only leads into the Solana cabinet's Predictions section; every other path there opens on
+         ryntra.io. Right after the landing's language map, ahead of every other row. */
+      ...predictHostRedirects(),
+      /* The application's own host, and — once it is live — the old
+         addresses on ryntra.io moving there with their path and query
+         (`lib/product/app-address.ts`). Each row names its host, so before
+         the switch ryntra.io answers exactly as below. */
+      ...appHostRedirects(table),
+      ...siteHostRedirects(table),
+      ...table.slice(LANDING_REDIRECTS.length),
     ];
+  },
+  /* On app.ryntra.io the Solana pages answer at `/solana/…`, served from
+     their `/app/…` routes; the other network's cabinet, its APIs and its
+     files reach its own deployment once it answers behind the proxy. Every
+     rule names that host. */
+  async rewrites() {
+    return { beforeFiles: [...appHostRewrites()], afterFiles: [], fallback: [] };
   },
 };
 

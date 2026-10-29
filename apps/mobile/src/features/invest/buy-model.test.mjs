@@ -5,6 +5,7 @@ import { test } from 'node:test'
 import { SOL_ASSET, USDC_ASSET } from '../trade/trade-model.ts'
 import { BUY_COPY } from './buy-copy.ts'
 import {
+  amountFieldInput,
   approxUsd,
   BUY_FAILURE_KEYS,
   BUY_SHARE_PRESETS_PCT,
@@ -24,6 +25,11 @@ import {
   isBuyableSum,
   isCompanyBuy,
   issuerFeeOf,
+  limitPause,
+  namedWaitSeconds,
+  QUOTE_LIMIT_BUDGET_MS,
+  quotedSpendUsd,
+  quoteForSum,
   MIN_BUY_USD,
   NO_FEE_CAP_RAW,
   offersPayChoice,
@@ -84,34 +90,42 @@ test('the truth is the issuer’s own line: a tracker is never called a share, a
   }
 })
 
-test('the exchange is open in the issuer’s market period and closed outside it; nothing is said without a period or a flag', () => {
+test('the exchange is open in the issuer’s market period, its extended and overnight hours named, closed otherwise; nothing is said without a period or a flag', () => {
   assert.equal(exchangeState({ period: 'market', exchangeOpen: null }), 'open')
-  for (const period of ['extended', 'overnight', 'closed'])
-    assert.equal(exchangeState({ period, exchangeOpen: true }), 'closed')
+  for (const period of ['extended', 'overnight']) assert.equal(exchangeState({ period, exchangeOpen: true }), period)
+  assert.equal(exchangeState({ period: 'closed', exchangeOpen: true }), 'closed')
   assert.equal(exchangeState({ period: 'unknown', exchangeOpen: true }), 'open')
   assert.equal(exchangeState({ period: 'unknown', exchangeOpen: false }), 'closed')
   assert.equal(exchangeState({ period: 'unknown', exchangeOpen: null }), null)
 })
 
-test('a sum of dollars as it is typed: a Ukrainian comma, an English thousands comma, cents and nothing past them', () => {
+test('a sum of dollars as it is typed: one decimal mark in either language, cents and nothing past them', () => {
   // From a dollar, opening on $10, the quick choices shares of the wallet.
   assert.deepEqual([...BUY_SHARE_PRESETS_PCT], [25, 50, 75, 100])
   assert.equal(DEFAULT_BUY_USD, 10)
   assert.equal(MIN_BUY_USD, 1)
-  assert.equal(parseDollars('25', 'uk'), 25)
-  assert.equal(parseDollars('$25', 'en'), 25)
-  assert.equal(parseDollars('25,50', 'uk'), 25.5)
-  assert.equal(parseDollars('1 000,50', 'uk'), 1000.5)
-  assert.equal(parseDollars(`1${String.fromCharCode(0xa0)}000`, 'uk'), 1000, 'a no-break space groups thousands')
-  assert.equal(parseDollars('1,000.50', 'en'), 1000.5)
-  assert.equal(parseDollars('1,000', 'en'), 1000)
-  assert.equal(parseDollars('25,5', 'en'), 25.5, 'a keypad’s decimal comma in English')
-  assert.equal(parseDollars('10.', 'en'), 10, 'a sum being typed')
-  assert.equal(parseDollars('1,000', 'uk'), null, 'three places past a Ukrainian comma are not cents')
-  assert.equal(parseDollars('25.555', 'en'), null)
-  assert.equal(parseDollars('0', 'uk'), null)
-  assert.equal(parseDollars('', 'uk'), null)
-  assert.equal(parseDollars('abc', 'en'), null)
+  for (const locale of ['uk', 'en']) {
+    assert.equal(parseDollars('25', locale), 25)
+    assert.equal(parseDollars('$25', locale), 25)
+    // ST-5: a single «,» or «.» is the decimal mark in both languages — a keypad offers either.
+    assert.equal(parseDollars('2,3', locale), 2.3, locale)
+    assert.equal(parseDollars('2,35', locale), 2.35, locale)
+    assert.equal(parseDollars('2.35', locale), 2.35, locale)
+    assert.equal(parseDollars('2,352', locale), null, `${locale}: a third digit past the mark is no amount, never 2 352`)
+    assert.equal(parseDollars('2.352', locale), null, locale)
+    assert.equal(parseDollars('1,000', locale), null, `${locale}: a lone comma never groups thousands`)
+    assert.equal(parseDollars('1 000', locale), 1000, locale)
+    assert.equal(parseDollars('1 000,50', locale), 1000.5, locale)
+    assert.equal(parseDollars(`1${String.fromCharCode(0xa0)}000`, locale), 1000, 'a no-break space groups thousands')
+    assert.equal(parseDollars('1,000.50', locale), 1000.5, 'a sum written whole, grouped the English way')
+    assert.equal(parseDollars('1,000,000', locale), 1_000_000)
+    assert.equal(parseDollars('10.', locale), 10, 'a sum being typed')
+    assert.equal(parseDollars('10,', locale), 10, 'a sum being typed')
+    assert.equal(parseDollars('2,3,5', locale), null, 'two marks are no amount')
+    assert.equal(parseDollars('0', locale), null)
+    assert.equal(parseDollars('', locale), null)
+    assert.equal(parseDollars('abc', locale), null)
+  }
   assert.equal(isBuyableSum(0.99), false)
   assert.equal(isBuyableSum(1), true)
   assert.equal(isBuyableSum(9.99), true)
@@ -124,6 +138,65 @@ test('a sum of dollars as it is typed: a Ukrainian comma, an English thousands c
   assert.equal(dollarsText(25.5, 'en'), '$25.50')
   assert.equal(dollarsText(1000, 'en'), '$1,000')
   assert.match(dollarsText(1000, 'uk'), /^\$1\s000$/)
+})
+
+test('the amount field: what is on screen is the sum that is read — a key past it is refused, never reinterpreted', () => {
+  // Typed key by key, as a phone's keypad sends the whole text each time.
+  const type = (keys, start = '') => {
+    let held = start
+    for (const key of keys) held = amountFieldInput(held, `$${held}${key}`)
+    return held
+  }
+  for (const mark of [',', '.']) {
+    assert.equal(type(['2', mark, '3']), `2${mark}3`)
+    assert.equal(type(['2', mark, '3', '5']), `2${mark}35`)
+    assert.equal(type(['2', mark, '3', '5', '2']), `2${mark}35`, 'a third digit of cents is refused')
+    assert.equal(parseDollars(type(['2', mark, '3', '5', '2']), 'en'), 2.35, 'and the sum read is the one on screen')
+    assert.equal(parseDollars(type(['2', mark, '3', '5', '2']), 'uk'), 2.35)
+    assert.equal(type(['2', mark, '3', mark]), `2${mark}3`, 'a second mark is refused')
+    assert.equal(type(['2', mark, '3', mark === ',' ? '.' : ',']), `2${mark}3`, 'so is the other one')
+    assert.equal(type([mark, '5']), `0${mark}5`, 'a mark typed first reads «0,»')
+  }
+  // No leading zeros.
+  assert.equal(type(['0', '0']), '0')
+  assert.equal(type(['0', '5']), '5')
+  assert.equal(type(['0', ',', '5']), '0,5')
+  assert.equal(amountFieldInput('', '$0005'), '5')
+  // A pasted or grouped sum loses its spaces and its «$»; a grouped English one is refused whole.
+  assert.equal(amountFieldInput('', '1 000'), '1000')
+  assert.equal(amountFieldInput('', `1${String.fromCharCode(0xa0)}000,5`), '1000,5')
+  assert.equal(amountFieldInput('10', '1,000.50'), '10')
+  // Deleting is always taken; the field holds twelve characters at most.
+  assert.equal(amountFieldInput('2,35', '$2,3'), '2,3')
+  assert.equal(amountFieldInput('2,35', ''), '')
+  assert.equal(amountFieldInput('123456789012', '1234567890123'), '123456789012')
+  // In both languages the field and the parser agree on every text the field can hold.
+  for (const text of ['1', '10', '2,3', '2.3', '2,35', '2.35', '0,5', '500000', '1000,5']) {
+    assert.equal(amountFieldInput('', text), text)
+    assert.equal(parseDollars(text, 'uk'), parseDollars(text, 'en'), text)
+    assert.equal(parseDollars(text, 'uk'), Number(text.replace(',', '.')), text)
+  }
+})
+
+test('the amount field writes the decimal mark as the language does, whichever the keypad sent (ST-5 r7)', () => {
+  const type = (keys, locale) => {
+    let held = ''
+    for (const key of keys) held = amountFieldInput(held, `$${held}${key}`, 2, locale)
+    return held
+  }
+  for (const mark of [',', '.']) {
+    assert.equal(type(['2', mark, '3', '5'], 'uk'), '2,35')
+    assert.equal(type(['2', mark, '3', '5'], 'en'), '2.35', 'an English reader never sees «2,35» and takes it for 235')
+    assert.equal(type([mark, '5'], 'en'), '0.5')
+    assert.equal(type(['2', mark, '3', '5', '2'], 'uk'), '2,35', 'a third digit of cents is still refused')
+    // The sum read is the one typed, in both languages.
+    assert.equal(parseDollars(type(['2', mark, '3', '5'], 'uk'), 'uk'), 2.35)
+    assert.equal(parseDollars(type(['2', mark, '3', '5'], 'en'), 'en'), 2.35)
+  }
+  // A second mark of the other kind is refused, as before.
+  assert.equal(amountFieldInput('2.3', '2.3,', 2, 'en'), '2.3')
+  assert.equal(amountFieldInput('', '1 000,5', 2, 'en'), '1000.5')
+  assert.equal(amountFieldInput('', '12', 2, 'uk'), '12')
 })
 
 test('what a sum buys: the chain’s raw amount through the scaled-UI multiplier once, in shares or tokens with the Ukrainian plural', () => {
@@ -244,7 +317,7 @@ test('«Перевірка» is exactly four rows — Спишеться · От
   assert.equal(rows[2].value, '≈ $0,05', 'the server’s figure, as the web prints it')
   assert.equal(rows[2].fee, null, 'a token its issuer charges nothing to move has no fee line')
   // The reserve is a line of its own under «Усі витрати», never joined to the costs.
-  assert.equal(rows[2].sub, '≈ $0,44 у SOL разово лишаються в гаманці на рахунку токена')
+  assert.equal(rows[2].sub, '≈ $0,44 у SOL лишаються в гаманці')
   assert.deepEqual(rows[3], {
     key: 'what',
     value: 'Токен, що відстежує ціну Apple · забезпечений 1:1 · без голосу',
@@ -529,7 +602,7 @@ test('every refusal has its sentence, in both languages, and the codes land wher
     REVIEW_INVALIDATED: 'priceExpired',
     INVALID_AMOUNT: 'amount',
     VALIDATION_ERROR: 'notAccepted',
-    // The order route's word on an autoinvest reminder.
+    // M16: the order route's word on an autoinvest reminder.
     RULE_NOT_DUE: 'ruleClosed',
     RULE_NOT_FOUND: 'ruleGone',
     RULE_MISMATCH: 'ruleMismatch',
@@ -561,7 +634,21 @@ test('the sheet’s one action follows what stands between the person and a Revi
   assert.deepEqual(composeAction(ready), { kind: 'buy', usd: 20 })
   assert.deepEqual(composeAction({ ...ready, lockedReview: true, connected: false }), { kind: 'release' })
   assert.deepEqual(composeAction({ ...ready, connected: false, signedIn: false }), { kind: 'connect' })
-  assert.deepEqual(composeAction({ ...ready, signedIn: false }), { kind: 'sign-in' })
+  assert.deepEqual(composeAction({ ...ready, signedIn: false }), { kind: 'sign-in', short: null })
+  // ST-5 r6: a balance already read that does not cover the sum is said before the wallet is asked to sign in.
+  assert.deepEqual(composeAction({ ...ready, signedIn: false, insufficient: true }), {
+    kind: 'sign-in',
+    short: { alsoSol: false },
+  })
+  assert.deepEqual(composeAction({ ...ready, signedIn: false, insufficient: true, needsSol: true }), {
+    kind: 'sign-in',
+    short: { alsoSol: true },
+  })
+  assert.deepEqual(
+    composeAction({ ...ready, signedIn: false, insufficient: true, amountUsd: 0.5 }),
+    { kind: 'sign-in', short: null },
+    'a sum under the minimum is no shortfall',
+  )
   assert.deepEqual(composeAction({ ...ready, amountUsd: 0.5 }), { kind: 'minimum' })
   assert.deepEqual(composeAction({ ...ready, amountUsd: 1 }), { kind: 'buy', usd: 1 }, 'a dollar is a purchase')
   assert.deepEqual(composeAction({ ...ready, amountUsd: null }), { kind: 'enter' })
@@ -581,14 +668,16 @@ test('the sheet’s one action follows what stands between the person and a Revi
   assert.deepEqual(composeAction({ ...ready, amountUsd: 1, route: { state: 'none' } }), { kind: 'unavailable' })
   assert.deepEqual(composeAction({ ...ready, route: { state: 'idle' } }), { kind: 'buy', usd: 20 })
   assert.deepEqual(composeAction({ ...ready, preparing: true, needsSol: true }), { kind: 'preparing' })
-  assert.deepEqual(composeAction({ ...ready, needsSol: true, insufficient: true }), { kind: 'need-sol' })
-  assert.deepEqual(composeAction({ ...ready, insufficient: true }), { kind: 'not-enough' })
+  // ST-5: both short — the dollars are named first, with the SOL beside them, never the SOL alone.
+  assert.deepEqual(composeAction({ ...ready, needsSol: true, insufficient: true }), { kind: 'not-enough', alsoSol: true })
+  assert.deepEqual(composeAction({ ...ready, needsSol: true }), { kind: 'need-sol' })
+  assert.deepEqual(composeAction({ ...ready, insufficient: true }), { kind: 'not-enough', alsoSol: false })
   assert.deepEqual(composeAction({ ...ready, unavailable: true }), { kind: 'unavailable' })
   assert.deepEqual(composeAction({ ...ready, priced: false }), { kind: 'settling', usd: 20 })
 })
 
 test('nothing on the purchase offers what does not work yet, and the wallet’s vault is never named', () => {
-  // The loss limit is not on the phone yet; «Автоінвест» and «Купувати щотижня» are.
+  // The loss limit is not on the phone yet; «Автоінвест» and «Купувати щотижня» are, since M16.
   const forbidden = /Seed Vault|межу збитку|loss limit/i
   const texts = []
   for (const locale of ['uk', 'en']) {
@@ -605,7 +694,7 @@ test('nothing on the purchase offers what does not work yet, and the wallet’s 
     .replace(/\/\*[\s\S]*?\*\//g, '')
     .replace(/^\s*\/\/.*$/gm, '')
   assert.doesNotMatch(sheet, /Seed Vault|lossLimit|loss limit/i)
-  // The receipt names the rule a purchase was made under and offers «Купувати щотижня» after a plain one.
+  // M16: the receipt names the rule a purchase was made under and offers «Купувати щотижня» after a plain one.
   assert.match(sheet, /ruleMark\.words\.byRule/)
   assert.match(sheet, /ruleWords\.buyWeekly/)
 })
@@ -700,19 +789,25 @@ test('the estimate under the sum is the quote’s check; without one, what arriv
   assert.deepEqual(buyEstimate({ order: { outAmountRaw: '1' }, decimals: {}, check: APPLE_CHECK }, company), {
     units: 0.04313729,
     costsUsd: 0.047778371999999646,
+    spendUsd: 10,
+    unit: 'share',
   })
   assert.deepEqual(
     buyEstimate({ order: { outAmountRaw: '1' }, decimals: {}, check: { ...APPLE_CHECK, costs: null } }, company),
-    { units: 0.04313729, costsUsd: null },
+    { units: 0.04313729, costsUsd: null, spendUsd: 10, unit: 'share' },
     'a cost the server could not count stays unknown',
   )
   assert.deepEqual(buyEstimate({ order: { outAmountRaw: '2980006' }, decimals: { [AAPLX]: 8 }, check: null }, company), {
     units: 0.02980006,
     costsUsd: null,
+    spendUsd: null,
+    unit: null,
   })
   assert.deepEqual(buyEstimate({ order: { outAmountRaw: '2980006' }, decimals: {}, check: null }, { ...company, decimals: null }), {
     units: null,
     costsUsd: null,
+    spendUsd: null,
+    unit: null,
   })
 })
 
@@ -720,4 +815,60 @@ test('«≈» and «<» never end a line apart from their figure', () => {
   assert.equal(keepTogether('≈ $0,07'), `≈${NB}$0,07`)
   assert.equal(keepTogether('< $0,01'), `<${NB}$0,01`)
   assert.equal(keepTogether('$0,07'), '$0,07')
+})
+
+test('only a quote for the typed sum says what it buys; its dollars are the quote’s own (ST-5 r10, SGOVx at $1 000)', () => {
+  const ten = { order: { inAmountRaw: '10000000' }, check: APPLE_CHECK }
+  // The quote for $10 while $1 000 is typed: not this sum — the sheet is pricing.
+  assert.equal(quoteForSum(ten, '1000000000', 6), false)
+  assert.equal(quoteForSum(ten, '10000000', 6), true)
+  assert.equal(quoteForSum(null, '10000000', 6), false)
+  assert.equal(quoteForSum(ten, null, 6), false)
+  // The order spends the typed sum but the server's count names another: no figure is said.
+  const mixed = { order: { inAmountRaw: '1000000000' }, check: APPLE_CHECK }
+  assert.equal(quoteForSum(mixed, '1000000000', 6), false)
+  // A count with no dollars stated, or none at all (paid in USDT): the order's own sum decides.
+  assert.equal(quoteForSum({ order: { inAmountRaw: '1000000000' }, check: null }, '1000000000', 6), true)
+  assert.equal(
+    quoteForSum(
+      { order: { inAmountRaw: '1000000000' }, check: { ...APPLE_CHECK, spend: { ...APPLE_CHECK.spend, amount: null } } },
+      '1000000000',
+      6,
+    ),
+    true,
+  )
+  // The dollars the estimate was made for: the server's count, else the order's own input — never the typed sum.
+  assert.equal(quotedSpendUsd(ten, { spendUsd: 10 }, 6), 10)
+  assert.equal(quotedSpendUsd({ order: { inAmountRaw: '1000000000' } }, { spendUsd: null }, 6), 1000)
+  assert.equal(quotedSpendUsd(null, { spendUsd: 10 }, 6), null)
+  assert.equal(quotedSpendUsd(ten, null, 6), null)
+})
+
+test('a quote the limiter held back is asked again at the server’s pace for about a minute, then said (ST-5 r10)', () => {
+  // The wait the refusal names is kept, with a margin past the window.
+  assert.equal(limitPause(0, 0, 7), 7_250)
+  assert.equal(limitPause(5, 20_000, 120), 60_250)
+  // Without one: 1,5 s, 3 s, then every 10 s.
+  assert.equal(limitPause(0, 0, null), 1_500)
+  assert.equal(limitPause(1, 1_500, null), 3_000)
+  assert.equal(limitPause(2, 4_500, null), 10_000)
+  assert.equal(limitPause(6, 54_500, null), 10_000)
+  // Past about a minute of asking, the refusal is said.
+  assert.equal(limitPause(7, QUOTE_LIMIT_BUDGET_MS, null), null)
+  assert.equal(limitPause(0, Number.NaN, null), null)
+  // The fallback asks fit in about a minute: 1,5 + 3 + 10 × 6.
+  let waited = 0
+  let asks = 0
+  for (let pause = limitPause(0, 0, null); pause !== null; pause = limitPause(asks, waited, null)) {
+    waited += pause
+    asks += 1
+  }
+  assert.equal(asks, 8)
+  assert.ok(waited <= 70_000)
+  // The wait is read defensively: only a positive finite number of seconds.
+  assert.equal(namedWaitSeconds({ retryAfterSeconds: 12 }), 12)
+  assert.equal(namedWaitSeconds({ retryAfterSeconds: '12' }), null)
+  assert.equal(namedWaitSeconds({ retryAfterSeconds: 0 }), null)
+  assert.equal(namedWaitSeconds({}), null)
+  assert.equal(namedWaitSeconds(null), null)
 })

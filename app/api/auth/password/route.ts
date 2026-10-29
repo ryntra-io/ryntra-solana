@@ -94,7 +94,7 @@ export async function POST(req: NextRequest) {
     revoked: revoked ?? null,
     identitySignedOut,
     legacy,
-    next: withAuthMarker(parsed.next && parsed.next.startsWith("/app") ? parsed.next : DEFAULT_RETURN_PATH, "ok"),
+    next: withAuthMarker(parsed.next && /^\/(?:uk\/)?(?:app|solana)(?:\/|$|\?|#)/.test(parsed.next) ? parsed.next : DEFAULT_RETURN_PATH, "ok"),
   });
   res.cookies.set(opened.cookie.name, opened.cookie.value, { ...cookieBase(req.url), maxAge: opened.cookie.maxAge });
   return res;

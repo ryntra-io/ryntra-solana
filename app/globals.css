@@ -1,6 +1,6 @@
 /* ============================================================
    Ryntra v3 design system — premium Arcus terminal landing
-   Dark default, light via [data-theme="light"]. Single cyan
+   Dark default, light via :is([data-theme="light"], [data-theme="porcelain"]). Single cyan
    accent. Risk colors locked. RTL-safe for Arabic.
    ============================================================ */
 
@@ -27,7 +27,7 @@
      (accent, success, warning and the -strong set) map to the `-fg` tokens:
      identical on dark, darkened to the readable set on mineral paper. Red and
      violet keep their solids for fills; their light-only text remap lives in
-     the [data-theme="light"] block below. */
+     the :is([data-theme="light"], [data-theme="porcelain"]) block below. */
   --bg: var(--rt-page);
   --bg-2: var(--rt-panel);
   --panel: var(--rt-panel);
@@ -119,7 +119,7 @@
   --maxw: 1320px;
 }
 
-[data-theme="light"] {
+:is([data-theme="light"], [data-theme="porcelain"]) {
   color-scheme: light;
   /* Mineral Paper (DESIGN.md). The `--rt-*` projection flips itself under
      this attribute and every re-pointed name above follows it — the
@@ -133,11 +133,23 @@
   --blue: var(--rt-action-blue-fg);
 }
 
+/* A page that loads the core's tokens (the core chart, SOL-T4) gets `:root { color-scheme: dark }` from them, at the
+   same weight as the rule above and later: the light theme keeps its light controls with one class of weight more. */
+:root:is([data-theme="light"], [data-theme="porcelain"]) {
+  color-scheme: light;
+}
+
 * { box-sizing: border-box; margin: 0; padding: 0; }
 /* `scroll-padding-top` is what stops an anchor landing under the 73px sticky
    bar. Without it the heading a reader asked for renders behind the chrome and
    they see the paragraph after it, which reads as the wrong anchor. */
 html { scroll-behavior: smooth; overflow-x: clip; scroll-padding-top: 88px; }
+/* And `scroll-padding-bottom` is what stops a field landing under the phone's bottom bar when the browser scrolls it
+   into view — the focus moving to the sum field of Обмін was the case: in view by the window's reckoning, under the bar
+   to the person typing. The bar's own height plus a breath where a bar is drawn, a breath alone where none is. */
+@media (max-width: 1023px) {
+  html { scroll-padding-bottom: calc(var(--sol-phonebar-h, 0px) + 16px); }
+}
 
 body {
   min-height: 100dvh;
@@ -173,7 +185,7 @@ a { color: inherit; text-decoration: none; }
     radial-gradient(760px 460px at 8% 6%, color-mix(in srgb, var(--rt-action-blue) 8%, transparent), transparent 58%),
     radial-gradient(700px 700px at 60% 110%, color-mix(in srgb, var(--rt-evidence-cyan) 5%, transparent), transparent 60%);
 }
-[data-theme="light"] .aurora {
+:is([data-theme="light"], [data-theme="porcelain"]) .aurora {
   background:
     radial-gradient(900px 520px at 80% -8%, color-mix(in srgb, var(--rt-evidence-cyan-fg) 10%, transparent), transparent 60%),
     radial-gradient(760px 460px at 6% 4%, color-mix(in srgb, var(--rt-action-blue-fg) 6%, transparent), transparent 58%);
@@ -256,9 +268,9 @@ a { color: inherit; text-decoration: none; }
 @media (max-width: 640px) {
   .btn { min-height: 44px; }
 }
-[data-theme="light"] .btn-primary { background: var(--accent-strong); }
-[data-theme="light"] .btn-primary:hover { background: color-mix(in srgb, var(--accent-strong) 82%, var(--rt-evidence-cyan-ink)); }
-[data-theme="light"] .btn-ghost:hover { color: var(--accent-strong); }
+:is([data-theme="light"], [data-theme="porcelain"]) .btn-primary { background: var(--accent-strong); }
+:is([data-theme="light"], [data-theme="porcelain"]) .btn-primary:hover { background: color-mix(in srgb, var(--accent-strong) 82%, var(--rt-evidence-cyan-ink)); }
+:is([data-theme="light"], [data-theme="porcelain"]) .btn-ghost:hover { color: var(--accent-strong); }
 
 /* sections + heads */
 section { padding: 78px 0; }
@@ -404,17 +416,17 @@ html[dir="rtl"] .footer p { text-align: start; }
   border-radius: var(--radius-sm); font-size: 0.8125rem; line-height: 1.5;
   text-align: start;
 }
-[data-theme="light"] .bg-auth-notice { color: #A8650A; }
-[data-theme="light"] .bg-eyebrow { color: var(--accent-strong); }
-[data-theme="light"] :is(
+:is([data-theme="light"], [data-theme="porcelain"]) .bg-auth-notice { color: #A8650A; }
+:is([data-theme="light"], [data-theme="porcelain"]) .bg-eyebrow { color: var(--accent-strong); }
+:is([data-theme="light"], [data-theme="porcelain"]) :is(
   .bg-logo em,
   .bg-num,
   .bg-rung.now .bg-rung-name,
   .bg-invite-link,
   .bg-legal-links a:hover
 ) { color: var(--accent-strong); }
-[data-theme="light"] .bg-step.done .bg-step-state { color: var(--success-strong); }
-[data-theme="light"] .legal a { color: var(--accent-strong); }
+:is([data-theme="light"], [data-theme="porcelain"]) .bg-step.done .bg-step-state { color: var(--success-strong); }
+:is([data-theme="light"], [data-theme="porcelain"]) .legal a { color: var(--accent-strong); }
 
 
 
@@ -663,7 +675,7 @@ a.bg-step:hover { border-color: var(--accent-line); background: var(--panel-hove
 .dm-riskpanel { display: grid; gap: 5px; margin-top: 2px; }
 .dm-riskline { font-size: var(--fs-13); color: var(--text-faint); line-height: 1.55; margin: 0; }
 .dm-warnline { font-size: var(--fs-13); color: var(--warning); line-height: 1.55; margin: 0; }
-[data-theme="light"] .dm-warnline { color: var(--warning-strong); }
+:is([data-theme="light"], [data-theme="porcelain"]) .dm-warnline { color: var(--warning-strong); }
 .dm-verdictrow { display: flex; align-items: center; gap: 8px; font-size: var(--fs-13); }
 .dm-verdictrow > span { color: var(--text-dim); font-weight: 700; }
 .dm-offguard { display: grid; gap: 5px; margin-top: 2px; border: 1px solid color-mix(in srgb, var(--warning) 35%, transparent); background: var(--warning-soft); border-radius: var(--radius-sm); padding: 9px 11px; }
@@ -775,7 +787,11 @@ a.bg-step:hover { border-color: var(--accent-line); background: var(--panel-hove
 .cb-onboard-steps p { font-size: 0.75rem; color: var(--text-dim); margin: 2px 0 0; line-height: 1.5; }
 .cb-onboard-mark { width: 24px; height: 24px; border-radius: 50%; display: grid; place-items: center; font-size: 0.75rem; font-weight: 700; color: var(--accent); background: var(--accent-soft); flex: none; }
 .cb-onboard-steps li.done .cb-onboard-mark { color: var(--success); background: var(--success-soft); }
-.dm-chart { height: 520px; width: 100%; }
+/* The core's chart (SOL-T4): its bar, the candles and its line of source and age share the box. */
+.dm-chart { height: 560px; width: 100%; min-width: 0; display: flex; flex-direction: column; }
+.dm-core-chart { flex: 1 1 auto; min-height: 0; }
+.dm-chart-head { display: inline-flex; align-items: baseline; gap: 10px; min-width: 0; flex-wrap: wrap; }
+.dm-chart-head .dm-chart-note { margin-inline-start: 0; }
 
 .dm-ticket {
   grid-area: ticket; background: var(--panel); border: 1px solid var(--border);
@@ -933,7 +949,7 @@ a.bg-step:hover { border-color: var(--accent-line); background: var(--panel-hove
 @media (max-width: 980px) {
   .dm-grid { grid-template-columns: minmax(0, 1fr); grid-template-areas: "chart" "ticket" "bottom"; }
   .dm-chart-wrap, .dm-ticket, .dm-bottom { min-width: 0; }
-  .dm-chart { height: 300px; }
+  .dm-chart { height: 440px; }
   .dm-stats { margin-inline-start: 0; width: 100%; }
 }
 
@@ -1416,10 +1432,10 @@ img.mp-logo { border: 1px solid var(--border); }
   border-radius: 999px; padding: 3px 10px;
 }
 .cb-badge-dim { color: var(--text-faint); background: var(--panel-2); border-color: var(--border); }
-[data-theme="light"] .cb-badge:not(.cb-badge-dim) { color: var(--accent-strong); }
+:is([data-theme="light"], [data-theme="porcelain"]) .cb-badge:not(.cb-badge-dim) { color: var(--accent-strong); }
 .cb-hint { font-size: 0.8125rem; color: var(--text-dim); }
 .cb-ok { font-size: 0.8125rem; color: var(--success); }
-[data-theme="light"] .cb-ok { color: var(--success-strong); }
+:is([data-theme="light"], [data-theme="porcelain"]) .cb-ok { color: var(--success-strong); }
 .cb-status { font-size: 0.8125rem; color: var(--text-dim); }
 .cb-lesson { max-width: 260px; white-space: normal; }
 .mono { font-family: var(--mono); }
@@ -2063,7 +2079,7 @@ button.pc-dot { width: 12px; height: 12px; border: 1px solid var(--border-strong
    theme wins inside its own subtree — so the island tracks the frozen palette
    instead of holding a private copy of a superseded one. Every value here is a
    key of the v2 palette, not a new shade. */
-[data-theme="light"] .sl-code {
+:is([data-theme="light"], [data-theme="porcelain"]) .sl-code {
   --ry-bg: #080D13;
   --ry-deep: #0B121A;
   --ry-card: #0E1620;
@@ -2072,7 +2088,7 @@ button.pc-dot { width: 12px; height: 12px; border: 1px solid var(--border-strong
   --ry-muted: #91A0B2;
   background: var(--bg);
 }
-[data-theme="light"] .sl-chart { background: var(--rt-paper-panel); }
+:is([data-theme="light"], [data-theme="porcelain"]) .sl-chart { background: var(--rt-paper-panel); }
 
 @media (max-width: 1380px) {
   .sl-local { display: none; }

@@ -26,6 +26,7 @@ import type { ActionFeeState, SolanaActionFee, SolanaActionLane, SolanaActionMov
 import type { SolanaActionDestination } from "../../solana/action-lanes.ts";
 import type { ArchivedReceipt, walletReceiptsPut } from "../../account/rpc.ts";
 import type { RewardRow, RewardRowKind, RewardsView } from "../../rewards/view.ts";
+import type { CashbackByTrade } from "../../core/execution-truth.ts";
 import type { RewardBalance, RewardPendingReason } from "../../rewards/balance.ts";
 import type { RewardClaim, RewardClaimState } from "../../rewards/claim.ts";
 import type { ReferralRefusalCode } from "../../rewards/referral.ts";
@@ -41,6 +42,7 @@ import type { QuietHours } from "../../monitoring/quiet-hours.ts";
 import type { OutcomeReceiptArtifact } from "../../agent-control/artifacts.ts";
 import type { SolanaActionOrigin, SolanaActionOriginRequest, SpotActionOrigin } from "../../solana/action-origin.ts";
 import type { SolanaAssetPassportSchema, SolanaPolicyVerdict, SplTransferPreflight } from "../../solana/contracts.ts";
+import type { TRADE_KINDS, TRADE_RISK_FACTS, TradeRiskVerdict } from "../../solana/trade-risk.ts";
 import type { JupiterExecutableOrder, JupiterExecutableOrderFailure, JupiterExecuteFailure, JupiterExecuteReport, JupiterOrderFailure, JupiterOrderQuote } from "../../solana/quotes.ts";
 import type { ReserveSendAttemptResult, SendAttemptState } from "../../solana/send-attempt.ts";
 import type { SwapAdoptionRefusalCode } from "../../solana/swap-adoption.ts";
@@ -298,6 +300,9 @@ import type {
   SwapSignedProofSchema,
   SwapSimulationSchema,
   SwapVerdictSchema,
+  TRADE_RISK_FACTS_V1,
+  TRADE_RISK_KINDS_V1,
+  TradeRiskSchema,
   PopularCompanySchema,
   SwapCheckSchema,
   PositionWatchViewSchema,
@@ -346,7 +351,7 @@ type Current<T> = T extends Historical ? never : T extends readonly (infer U)[] 
 type WireCandle = Omit<NormalizedCandle, "time"> & { time: number };
 
 /** `POST /api/solana/activity` builds its answer inline: the ledger's rows (the lane re-read and the symbol overlay keep the type), the view's rows or null. */
-type ActivityServed = { data: { actions: SolanaWalletAction[]; rewards: RewardRow[] | null; complete: boolean; coverage: "RYNTRA_ACTIONS" } };
+type ActivityServed = { data: { actions: SolanaWalletAction[]; rewards: RewardRow[] | null; cashback: CashbackByTrade[] | null; complete: boolean; coverage: "RYNTRA_ACTIONS" } };
 
 /**
  * `GET /api/rewards` builds its answer inline from `RewardsView`, the balance and
@@ -466,6 +471,10 @@ export type RouteChecks = [
   Same<z.output<typeof SwapPassportSchema>, SolanaAssetPassport>,
   Same<z.output<typeof SwapPassportSchema>, z.output<typeof SolanaAssetPassportSchema>>,
   Same<z.output<typeof SwapAssetVerdictSchema>, SolanaPolicyVerdict>,
+  /* 1.83.0 — the risk verdict the contract publishes is the one the engine builds, fact list and all */
+  Same<z.output<typeof TradeRiskSchema>, TradeRiskVerdict>,
+  Mutual<typeof TRADE_RISK_FACTS_V1, typeof TRADE_RISK_FACTS>,
+  Mutual<typeof TRADE_RISK_KINDS_V1, typeof TRADE_KINDS>,
   /* the route serves three of the preflight's six transfer-fee fields */
   Same<z.output<typeof SwapQuoteResponseSchema>["outputFee"], Pick<SplTransferPreflight["transferFee"], "basisPoints" | "feeRaw" | "capApplied">>,
   /* the exact bytes, the policy, the bundle, the proof */
@@ -620,7 +629,7 @@ export type RouteChecks = [
 ];
 
 /* Every entry must be `true`; a `never` anywhere fails this assignment. */
-export const routeChecks: RouteChecks = [true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true];
+export const routeChecks: RouteChecks = [true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true];
 
 /**
  * 1.22.0 — «Гроші»: the v1 money shapes equal the types their routes build from

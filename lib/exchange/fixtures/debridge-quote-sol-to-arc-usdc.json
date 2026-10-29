@@ -1,0 +1,115 @@
+{
+  "estimation": {
+    "srcChainTokenIn": {
+      "chainId": 7565164,
+      "address": "11111111111111111111111111111111",
+      "name": "Native SOL",
+      "symbol": "SOL",
+      "decimals": 9,
+      "amount": "100000000",
+      "approximateOperatingExpense": "6763790",
+      "mutatedWithOperatingExpense": false,
+      "approximateUsdValue": 10.60299438250278,
+      "originApproximateUsdValue": 10.60299438250278
+    },
+    "srcChainTokenOut": {
+      "chainId": 7565164,
+      "address": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+      "name": "USD Coin",
+      "symbol": "USDC",
+      "decimals": 6,
+      "amount": "10577459",
+      "maxRefundAmount": "31827",
+      "approximateUsdValue": 10.577459
+    },
+    "dstChainTokenOut": {
+      "chainId": 5042,
+      "address": "0x0000000000000000000000000000000000000000",
+      "name": "USD Coin",
+      "symbol": "USDC",
+      "decimals": 18,
+      "amount": "9824952774975101338",
+      "recommendedAmount": "9824952774975101338",
+      "maxTheoreticalAmount": "9854516323946942164",
+      "approximateUsdValue": 9.8249527749751,
+      "recommendedApproximateUsdValue": 9.8249527749751,
+      "maxTheoreticalApproximateUsdValue": 9.854516323946942
+    },
+    "costsDetails": [
+      {
+        "chain": "7565164",
+        "tokenIn": "11111111111111111111111111111111",
+        "tokenOut": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+        "amountIn": "100000000",
+        "amountOut": "10609286",
+        "type": "PreSwap"
+      },
+      {
+        "chain": "7565164",
+        "tokenIn": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+        "tokenOut": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+        "amountIn": "10609286",
+        "amountOut": "10577459",
+        "type": "PreSwapEstimatedSlippage",
+        "payload": {
+          "feeAmount": "31827",
+          "feeBps": "30",
+          "estimatedVolatilityBps": "16"
+        }
+      },
+      {
+        "chain": "7565164",
+        "tokenIn": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+        "tokenOut": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+        "amountIn": "10577459",
+        "amountOut": "10573229",
+        "type": "DlnProtocolFee",
+        "payload": {
+          "feeAmount": "4230",
+          "feeBps": "4",
+          "feeApproximateUsdValue": "0.00423"
+        }
+      },
+      {
+        "chain": "7565164",
+        "tokenIn": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+        "tokenOut": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+        "amountIn": "10573229",
+        "amountOut": "10546796",
+        "type": "AffiliateFee",
+        "payload": {
+          "feeAmount": "26433",
+          "feeBps": "25"
+        }
+      },
+      {
+        "chain": "5042",
+        "tokenIn": "0x0000000000000000000000000000000000000000",
+        "tokenOut": "0x0000000000000000000000000000000000000000",
+        "amountIn": "10546796000000000000",
+        "amountOut": "10542577281600000000",
+        "type": "TakerMargin",
+        "payload": {
+          "feeAmount": "4218718400000000",
+          "feeBps": "4"
+        }
+      },
+      {
+        "chain": "5042",
+        "tokenIn": "0x0000000000000000000000000000000000000000",
+        "tokenOut": "0x0000000000000000000000000000000000000000",
+        "amountIn": "10542577281600000000",
+        "amountOut": "9824952774975101338",
+        "type": "EstimatedOperatingExpenses",
+        "payload": {
+          "feeAmount": "717624506624898662"
+        }
+      }
+    ]
+  },
+  "order": {
+    "approximateFulfillmentDelay": 9
+  },
+  "fixFee": "15000000",
+  "protocolFee": "4230"
+}

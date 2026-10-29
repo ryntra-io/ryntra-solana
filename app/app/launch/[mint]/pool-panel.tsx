@@ -2,6 +2,7 @@
 
 import { ArrowSquareOut, CaretDown, CheckCircle, CircleNotch, Clock, Warning } from "@phosphor-icons/react";
 import Link from "next/link";
+import { Block, Button, Review } from "@ryntra/core/ui";
 import { useCallback, useEffect, useId, useMemo, useState } from "react";
 
 import { useWalletReach } from "@/app/app/invest/use-wallet-reach";
@@ -19,14 +20,17 @@ import type {
   LaunchWalletResponse,
 } from "@/lib/api/v1/contract";
 import { poolOutcomes } from "@/lib/core/launch/holder";
+import { signFreshBytes } from "@/lib/solana/sign-fresh";
 import { signTransactions } from "@/lib/solana/wallet.client";
+import { reviewNetworkFrom, reviewWord } from "@/lib/ticket/review-words";
 
+import { coreLang } from "../launch-blocks";
 import { explorerUrl, formatBps, formatDate, formatMove, formatNumber, formatRaw, formatWhen, fromRaw, rovingNext, toRaw } from "../launch-format";
 import { launchWords, type LaunchWordKey } from "../launch-words";
 import styles from "../launch.module.css";
 
 /**
- * «Заробляй у пулі» — a holder's position in a graduated launch's pool
+ * «Додати ліквідність» — a holder's position in a graduated launch's pool
  * (the decision of 2026-10-07: Ryntra's collector pays the fees to
  * the owner's wallet). Drawn for 390 px first: one coin and its amount, what
  * the position will hold, Ryntra's fee at entry, the collector and its bounds,
@@ -68,7 +72,20 @@ function pairMoney(raw: string | bigint, pair: LaunchHolderResponse["pair"], loc
   return `${negative ? "−" : ""}${pair.dollar ? `$${text}` : `${text} ${pair.symbol}`}`;
 }
 
-export function PoolPanel({ market, symbol, locale, paused = false }: { market: LaunchMarketResponse; symbol: string; locale: WorkspaceLocale; paused?: boolean }) {
+export function PoolPanel({
+  market,
+  symbol,
+  locale,
+  paused = false,
+  collectorRuns = null,
+}: {
+  market: LaunchMarketResponse;
+  symbol: string;
+  locale: WorkspaceLocale;
+  paused?: boolean;
+  /** Whether Ryntra's collector makes its rounds now — the freshness of the executor's passes; null while not read. */
+  collectorRuns?: boolean | null;
+}) {
   const word = launchWords(locale);
   const { connection } = useSolanaConnection();
   const { reach } = useWalletReach();
@@ -103,6 +120,8 @@ export function PoolPanel({ market, symbol, locale, paused = false }: { market: 
   const spendable = held ? BigInt(side === "pair" ? held.pairRaw : held.tokenRaw) : null;
   const over = amountRaw !== null && spendable !== null && amountRaw > spendable;
   const busy = phase === "prepare" || phase === "sign" || phase === "send";
+  /* The bytes were built a second time: the first signature came back after they had aged (AG-1). */
+  const [again, setAgain] = useState(false);
 
   /* The entry counted as the amount is typed. */
   const key = `${side}:${amountRaw ?? "x"}:${data?.observedAt ?? ""}`;
@@ -144,11 +163,33 @@ export function PoolPanel({ market, symbol, locale, paused = false }: { market: 
       setFailure({ code: answer.code, message: answer.message });
       setPhase("error");
     };
-    const built = await api<LaunchHolderBuildResponse>(`${base}/holder/build`, { method: "POST", body: JSON.stringify({ wallet: connection.address, input: side, amountRaw: amountRaw.toString(), slippageBps: SLIPPAGE_BPS }) });
-    if (!built.ok) return failed(built);
-    setPhase("sign");
-    const signed = await signTransactions({ wallet: connection.wallet, address: connection.address, unsignedWireBase64: [built.data.unsignedWireBase64], chain: built.data.network });
-    if (!signed.ok) return failed({ code: "WALLET_REFUSED", message: signed.reason });
+    setAgain(false);
+    /* Bytes live ~30 s (`lib/solana/blockhash-life.ts`): signed later, the entry is built again — never with a higher fee. */
+    let first: LaunchHolderBuildResponse | null = null;
+    const fresh = await signFreshBytes({
+      build: async () => {
+        setPhase("prepare");
+        const answer = await api<LaunchHolderBuildResponse>(`${base}/holder/build`, { method: "POST", body: JSON.stringify({ wallet: connection.address, input: side, amountRaw: amountRaw.toString(), slippageBps: SLIPPAGE_BPS }) });
+        if (!answer.ok) return answer;
+        if (first && BigInt(answer.data.quote.feeRaw) > BigInt(first.quote.feeRaw)) return { ok: false as const, code: "LAUNCH_QUOTE_MOVED", message: "" };
+        first ??= answer.data;
+        return answer;
+      },
+      signableMsOf: (data) => data.signableMs,
+      sign: async (data) => {
+        setPhase("sign");
+        const answer = await signTransactions({ wallet: connection.wallet, address: connection.address, unsignedWireBase64: [data.unsignedWireBase64], chain: data.network });
+        return answer.ok ? { ok: true, value: answer.signedWireBase64 } : answer;
+      },
+      onRebuild: (why) => setAgain(why === "late"),
+    });
+    if (!fresh.ok) {
+      if (fresh.stage === "build") return failed(fresh.failure);
+      if (fresh.stage === "sign") return failed({ code: "WALLET_REFUSED", message: fresh.reason });
+      return failed({ code: "LAUNCH_BUILD_EXPIRED", message: "" });
+    }
+    const built = { data: fresh.built };
+    const signed = { signedWireBase64: fresh.signed };
     setPhase("send");
     const sent = await api<LaunchHolderSubmitResponse>(`${base}/holder/submit`, { method: "POST", body: JSON.stringify({ buildId: built.data.buildId, wallet: connection.address, signedWireBase64: signed.signedWireBase64[0] }) });
     if (!sent.ok) return failed(sent);
@@ -167,6 +208,8 @@ export function PoolPanel({ market, symbol, locale, paused = false }: { market: 
           ? word("errNotGraduated")
           : code === "LAUNCH_BUILD_EXPIRED"
             ? word("errTradeExpired")
+            : code === "LAUNCH_QUOTE_MOVED"
+              ? word("errQuoteMoved")
             : code === "LAUNCH_SLIPPAGE"
               ? word("errEntrySlippage")
               : code === "LAUNCH_SUBMIT_FAILED"
@@ -191,13 +234,12 @@ export function PoolPanel({ market, symbol, locale, paused = false }: { market: 
   };
 
   return (
-    <section className={`${styles.card} ${styles.poolCard}`} aria-labelledby={`${ids.amount}-title`}>
-      <div className={styles.poolHead}>
-        <h2 id={`${ids.amount}-title`} className={styles.cardTitle}>
-          {word("poolTitle")}
-        </h2>
-        {data.network === "solana:devnet" ? <span className={styles.netChip}>{word("devnet")}</span> : null}
-      </div>
+    <Block title={word("poolTitle")} titleAs="h2" lang={coreLang(locale)} id={`${ids.amount}-title`} className={styles.poolCard}>
+      {data.network === "solana:devnet" ? (
+        <div className={styles.blockBar}>
+          <span className={styles.netChip}>{word("devnet")}</span>
+        </div>
+      ) : null}
 
       {data.open && !paused ? (
         phase === "done" && entered ? (
@@ -209,13 +251,13 @@ export function PoolPanel({ market, symbol, locale, paused = false }: { market: 
               {word("viewTx")} <ArrowSquareOut size={14} aria-hidden />
             </a>
             {entered.state === "CONFIRMED" ? (
-              <button type="button" className="rw-btn" onClick={() => setPhase("idle")}>
+              <Button variant="secondary" onClick={() => setPhase("idle")}>
                 {word("enterAgain")}
-              </button>
+              </Button>
             ) : (
-              <button type="button" className="rw-btn" onClick={() => void read()}>
+              <Button variant="secondary" onClick={() => void read()}>
                 {word("checkAgain")}
-              </button>
+              </Button>
             )}
           </div>
         ) : (
@@ -344,7 +386,7 @@ export function PoolPanel({ market, symbol, locale, paused = false }: { market: 
               </div>
             ) : null}
 
-            <Collector data={data} word={word} locale={locale} />
+            <Collector data={data} word={word} locale={locale} runs={collectorRuns} />
             {deposit !== null && shown ? <Simulator deposit={deposit} entered={Number(fromRaw(shown.quote.valuePairRaw, pair.decimals))} pair={pair} symbol={symbol} locale={locale} word={word} /> : null}
             <p className={styles.notDeposit}>
               <Warning size={16} weight="fill" aria-hidden />
@@ -376,25 +418,25 @@ export function PoolPanel({ market, symbol, locale, paused = false }: { market: 
             {busy ? (
               <p className={styles.tradeStep} aria-live="polite">
                 <CircleNotch size={16} className={styles.spin} aria-hidden />
-                {phase === "prepare" ? word("stepPrepareEntry") : phase === "sign" ? word("stepSign") : word("stepSendEntry")}
+                {phase === "prepare" ? word("stepPrepareEntry") : phase === "sign" ? word(again ? "stepSignAgain" : "stepSign") : word("stepSendEntry")}
               </p>
             ) : null}
 
             {/* Quiet: the page's one orange action is the trade's. */}
-            <button type="button" className={`rw-btn ${styles.poolAction}`} disabled={busy || amountRaw === null || amountRaw <= 0n || over || !shown || quote.loading} onClick={enter}>
+            <Button variant="secondary" block className={styles.poolAction} disabled={busy || amountRaw === null || amountRaw <= 0n || over || !shown || quote.loading} onClick={enter}>
               {collectorOn ? word("enterAction") : word("enterActionPlain")}
-            </button>
+            </Button>
           </>
         )
       ) : null}
 
-      {data.positions.length ? <Positions data={data} symbol={symbol} locale={locale} word={word} onChanged={() => void read()} /> : null}
+      {data.positions.length ? <Positions data={data} symbol={symbol} locale={locale} word={word} onChanged={() => void read()} collectorRuns={collectorRuns} /> : null}
       {data.positions.length ? (
         <Link className={styles.markLink} href="/app/launch/positions">
           {word("allPositions")}
         </Link>
       ) : null}
-    </section>
+    </Block>
   );
 }
 
@@ -406,11 +448,15 @@ function entryCostRaw(quote: LaunchHolderQuoteResponse["quote"], side: Side, pri
   return cost > 0n ? cost : 0n;
 }
 
-/** What Ryntra's collector does, and — behind one line — what the chain lets it and does not let it do. */
-function Collector({ data, word, locale }: { data: LaunchHolderResponse; word: Word; locale: WorkspaceLocale }) {
+/**
+ * What Ryntra's collector does, and — behind one line — what the chain lets it and does not let it do. Whether it makes
+ * its rounds now is the executor's passes' word, not the permission's: when they have stopped, that is said first.
+ */
+function Collector({ data, word, locale, runs }: { data: LaunchHolderResponse; word: Word; locale: WorkspaceLocale; runs: boolean | null }) {
   if (!data.collector) return <p className={styles.hint}>{word("collectorOff")}</p>;
   return (
     <div className={styles.collector}>
+      {runs === false ? <p className={styles.collectorIdle}>{word("collectorIdle")}</p> : null}
       {/* The permission in four lines, large, one column — the block's title. No badge beside it: it is a boundary, not a seal. */}
       <p className={styles.collectorPromise}>
         <span>{word("collectorPromise1")}</span> <span>{word("collectorPromise2")}</span> <span>{word("collectorPromise3")}</span> <span>{word("collectorPromise4")}</span>
@@ -489,6 +535,7 @@ export function Positions({
   word,
   onChanged,
   heading = true,
+  collectorRuns = null,
 }: {
   data: Pick<LaunchHolderResponse, "network" | "pair" | "tokenDecimals" | "collector" | "open"> & Readonly<{ positions: readonly LaunchHolderPositionView[] }>;
   symbol: string;
@@ -496,6 +543,8 @@ export function Positions({
   word: Word;
   onChanged: () => void;
   heading?: boolean;
+  /** Whether Ryntra's collector makes its rounds now; null where it is not read — the permission alone is then said. */
+  collectorRuns?: boolean | null;
 }) {
   return (
     <div className={styles.positions}>
@@ -503,7 +552,7 @@ export function Positions({
       <ul className={styles.positionList}>
         {data.positions.map((position) => (
           <li key={position.position}>
-            <PositionRow position={position} data={data} symbol={symbol} locale={locale} word={word} onChanged={onChanged} />
+            <PositionRow position={position} data={data} symbol={symbol} locale={locale} word={word} onChanged={onChanged} collectorRuns={collectorRuns} />
           </li>
         ))}
       </ul>
@@ -518,6 +567,7 @@ function PositionRow({
   locale,
   word,
   onChanged,
+  collectorRuns,
 }: {
   position: LaunchHolderPositionView;
   data: Pick<LaunchHolderResponse, "network" | "pair" | "tokenDecimals" | "collector" | "open">;
@@ -525,9 +575,17 @@ function PositionRow({
   locale: WorkspaceLocale;
   word: Word;
   onChanged: () => void;
+  collectorRuns: boolean | null;
 }) {
   const { connection } = useSolanaConnection();
   const [state, setState] = useState<{ phase: "idle" | "busy" | "done" | "error"; text: string | null }>({ phase: "idle", text: null });
+  /* «Увімкнути» and «Відкликати» open the core's Review first (SOL-C14); only its «Підписати в гаманці» builds the permission. */
+  const [review, setReviewState] = useState<"grant" | "revoke" | null>(null);
+  /* A Review opens clean: no line of an earlier permission's outcome stays under it. */
+  const setReview = (next: "grant" | "revoke" | null) => {
+    if (next) setState({ phase: "idle", text: null });
+    setReviewState(next);
+  };
   const money = (raw: string | bigint) => pairMoney(raw, data.pair, locale);
   const now = position.now;
   const change = now && now.state === "OPEN" ? BigInt(now.valuePairRaw) - BigInt(position.enteredPairRaw) : null;
@@ -536,18 +594,65 @@ function PositionRow({
   const act = async (action: "grant" | "revoke") => {
     if (!connection) return;
     setState({ phase: "busy", text: null });
-    const built = await api<LaunchHolderPermissionBuildResponse>(`/api/v1/launch/${position.token}/holder/permission/build`, { method: "POST", body: JSON.stringify({ wallet: connection.address, position: position.position, action }) });
-    if (!built.ok) return setState({ phase: "error", text: word("errPermission") });
-    const signed = await signTransactions({ wallet: connection.wallet, address: connection.address, unsignedWireBase64: [built.data.unsignedWireBase64], chain: built.data.network });
-    if (!signed.ok) return setState({ phase: "idle", text: word("walletCancelled") });
+    /* Bytes live ~30 s (`lib/solana/blockhash-life.ts`): a signature after that is not sent — the permission is built again. */
+    const fresh = await signFreshBytes({
+      build: () => api<LaunchHolderPermissionBuildResponse>(`/api/v1/launch/${position.token}/holder/permission/build`, { method: "POST", body: JSON.stringify({ wallet: connection.address, position: position.position, action }) }),
+      signableMsOf: (data) => data.signableMs,
+      sign: async (data) => {
+        const answer = await signTransactions({ wallet: connection.wallet, address: connection.address, unsignedWireBase64: [data.unsignedWireBase64], chain: data.network });
+        return answer.ok ? { ok: true, value: answer.signedWireBase64 } : answer;
+      },
+      onRebuild: (why) => setState({ phase: "busy", text: why === "late" ? word("stepSignAgain") : null }),
+    });
+    setReview(null);
+    if (!fresh.ok) return fresh.stage === "sign" ? setState({ phase: "idle", text: word("walletCancelled") }) : setState({ phase: "error", text: word("errPermission") });
+    const built = { data: fresh.built };
+    const signed = { signedWireBase64: fresh.signed };
     const sent = await api<LaunchHolderPermissionSubmitResponse>(`/api/v1/launch/${position.token}/holder/permission/submit`, { method: "POST", body: JSON.stringify({ buildId: built.data.buildId, wallet: connection.address, signedWireBase64: signed.signedWireBase64[0] }) });
     if (!sent.ok) return setState({ phase: "error", text: word("errPermission") });
     setState({ phase: "done", text: sent.data.state === "PENDING" ? word("permissionPending") : action === "revoke" ? word("permissionRevoked") : word("permissionGranted") });
     onChanged();
   };
 
+  const lang = locale === "uk" ? "uk" : "en";
+  const permissionReview = review ? (
+    <Review
+      className={styles.permissionReview}
+      lang={lang}
+      titleAs="h4"
+      data-permission-review={review}
+      title={word(review === "grant" ? "permReviewGrant" : "permReviewRevoke")}
+      pay={reviewWord(lang, "onlyNetwork")}
+      get={word(review === "grant" ? "permGetGrant" : "permGetRevoke")}
+      costs={[
+        { label: reviewWord(lang, "ryntra"), value: reviewWord(lang, "none") },
+        { label: reviewWord(lang, "network"), value: reviewNetworkFrom(lang) },
+      ]}
+      costsTotal={reviewNetworkFrom(lang)}
+      rows={[
+        { label: word("permPosition"), value: <span translate="no">{`${position.position.slice(0, 4)}…${position.position.slice(-4)}`}</span> },
+        ...(review === "grant" ? [{ label: word("permWhen"), value: word("permWhenValue") }, { label: word("permCannot"), value: word("collectorCannot") }] : []),
+      ]}
+      whatItIs={word(review === "grant" ? "permWhatGrant" : "permWhatRevoke")}
+      {...(connection ? { signer: <span translate="no">{`${connection.address.slice(0, 4)}…${connection.address.slice(-4)}`}</span> } : {})}
+      ready={Boolean(connection)}
+      signing={state.phase === "busy"}
+      {...(state.phase === "busy" ? {} : { onCancel: () => setReview(null) })}
+      onConfirm={() => void act(review)}
+      risk={reviewWord(lang, "walletShowsFee")}
+      details={
+        <dl className={styles.permissionDetails}>
+          <dt>{word("permPosition")}</dt>
+          <dd translate="no">{position.position}</dd>
+        </dl>
+      }
+    />
+  ) : null;
+
   const grant = now?.state === "OPEN" ? now.grant : null;
-  const tone = grant ? GRANT_TONE[grant] : null;
+  /* The permission is the chain's; whether the collector uses it now is the executor's passes': «on» only when both hold. */
+  const granted = grant === "GRANTED" ? (collectorRuns === true ? "GRANTED" : collectorRuns === false ? "GRANTED_IDLE" : "GRANTED_UNREAD") : grant;
+  const tone = granted === "GRANTED_IDLE" || granted === "GRANTED_UNREAD" ? null : grant ? GRANT_TONE[grant] : null;
   return (
     <article className={styles.positionRow}>
       <div className={styles.positionHead}>
@@ -555,7 +660,7 @@ function PositionRow({
         {grant ? (
           <span className={styles.grantChip} data-tone={tone}>
             {tone === "warn" ? <Warning size={14} weight="fill" aria-hidden /> : tone === "on" ? <CheckCircle size={14} weight="fill" aria-hidden /> : null}
-            {word(`grantChip_${grant}` as LaunchWordKey)}
+            {word(`grantChip_${granted}` as LaunchWordKey)}
           </span>
         ) : null}
       </div>
@@ -568,11 +673,13 @@ function PositionRow({
         <>
           <p className={styles.unread}>{word("posUnread")}</p>
           {/* Not read is not «nothing granted»: the revoke is the owner's whatever the read says. */}
-          <div className={styles.positionActions}>
-            <button type="button" className="rw-btn" disabled={state.phase === "busy" || !connection} onClick={() => void act("revoke")}>
-              {word("revoke")}
-            </button>
-          </div>
+          {permissionReview ?? (
+            <div className={styles.positionActions}>
+              <Button variant="secondary" disabled={state.phase === "busy" || !connection} onClick={() => setReview("revoke")}>
+                {word("revoke")}
+              </Button>
+            </div>
+          )}
         </>
       ) : now.state === "MOVED" ? (
         <p className={styles.hint}>{word("posMoved")}</p>
@@ -621,24 +728,26 @@ function PositionRow({
                   : word("posAccountClosed", { coins: now.closedAccounts[0] === "pair" ? data.pair.symbol : `$${symbol}` })}
               </span>
             </p>
-          ) : position.nextCollection ? (
+          ) : position.nextCollection && collectorRuns === true ? (
             <CollectorQueue next={position.nextCollection} locale={locale} />
           ) : null}
-          <div className={styles.positionActions}>
-            {grant && grant !== "NONE" ? (
-              <button type="button" className="rw-btn" disabled={state.phase === "busy" || !connection} onClick={() => void act("revoke")}>
-                {word("revoke")}
-              </button>
-            ) : data.collector && data.open ? (
-              <button type="button" className="rw-btn" disabled={state.phase === "busy" || !connection} onClick={() => void act("grant")}>
-                {word("turnOn")}
-              </button>
-            ) : null}
-            <a className={styles.markLink} href={explorerUrl(data.network, "account", position.position)} target="_blank" rel="noreferrer noopener">
-              {word("posOnChain")} <ArrowSquareOut size={12} aria-hidden />
-            </a>
-          </div>
-          {state.phase === "busy" ? (
+          {permissionReview ?? (
+            <div className={styles.positionActions}>
+              {grant && grant !== "NONE" ? (
+                <Button variant="secondary" disabled={state.phase === "busy" || !connection} onClick={() => setReview("revoke")}>
+                  {word("revoke")}
+                </Button>
+              ) : data.collector && data.open ? (
+                <Button variant="secondary" disabled={state.phase === "busy" || !connection} onClick={() => setReview("grant")}>
+                  {word("turnOn")}
+                </Button>
+              ) : null}
+              <a className={styles.markLink} href={explorerUrl(data.network, "account", position.position)} target="_blank" rel="noreferrer noopener">
+                {word("posOnChain")} <ArrowSquareOut size={12} aria-hidden />
+              </a>
+            </div>
+          )}
+          {state.phase === "busy" && !review ? (
             <p className={styles.tradeStep} aria-live="polite">
               <CircleNotch size={16} className={styles.spin} aria-hidden /> {word("stepPermission")}
             </p>

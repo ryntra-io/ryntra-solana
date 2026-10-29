@@ -288,6 +288,37 @@ test('dollars to the cent, cut and never rounded up; a crumb is «< $0.01», nev
   })
   assert.deepEqual(full(shareFace(docFromClaim(receipt('4999'), 'x', 'en'), true, 'en')).got, ['< $0.01'])
   assert.deepEqual(full(shareFace(docFromClaim(receipt('1239999'), 'x', 'en'), true, 'en')).got, ['$1.23'])
+  // A pair that is not a dollar keeps the same rule at its own places: a crumb of SOL is «< 0.000001», never «0».
+  const sol = (receivedRaw) => ({
+    ...receipt(receivedRaw),
+    pair: { mint: SOL, symbol: 'SOL', decimals: 9, dollar: false },
+  })
+  assert.deepEqual(full(shareFace(docFromClaim(sol('5'), 'x', 'en'), true, 'en')).got, ['< 0.000001 SOL'])
+  assert.deepEqual(full(shareFace(docFromClaim(sol('1500000'), 'x', 'uk'), true, 'uk')).got, ['0,0015 SOL'])
+})
+
+test('ST-5: a failed History row moves nothing in either view, and its title names no paid asset', () => {
+  const row = historyRow(
+    {
+      actionId: 'f-1',
+      lane: 'SWAP',
+      outcome: 'FAILED',
+      out: { mint: USDC_MINT, amountRaw: '310000', decimals: 6, symbol: 'USDC' },
+      in: null,
+      destination: null,
+      signature: null,
+      fee: null,
+      origin: { surface: 'SPOT', side: 'BUY' },
+      statedUsd: null,
+      startedAt: AT,
+      updatedAt: AT,
+    },
+    'uk',
+  )
+  const doc = docFromHistory(row, 'Купівля')
+  assert.equal(doc.status, 'failed')
+  assert.deepEqual(doc.gave, [])
+  assert.deepEqual(doc.got, [])
 })
 
 test('a transfer: the network’s fee and a new account’s rent — the recipient is nowhere on the picture', () => {

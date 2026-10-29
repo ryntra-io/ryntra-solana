@@ -8,7 +8,7 @@ import { AGENT_COPY } from './copy.ts'
 
 const APP = fileURLToPath(new URL('../../../', import.meta.url))
 const SRC = join(APP, 'src')
-// The contract client is the web app's pinned copy, kept byte for byte; its comments are not the app's words.
+// The contract client is the web line's pinned copy, kept byte for byte; its comments are not the app's words.
 const PINNED = join(SRC, 'lib', 'api', 'v1')
 
 /** Every file the app is built from: its source (not the tests, not the pinned contract copy) and its app config. */
@@ -43,9 +43,9 @@ test('where Ryntra speaks it is labelled an AI, and the decision and the signatu
   assert.equal(AGENT_COPY.uk.title, 'Ryntra · ШІ-помічник')
   assert.equal(AGENT_COPY.en.who, 'Ryntra')
   assert.equal(AGENT_COPY.uk.who, 'Ryntra')
-  // The product's own line under the title: «Ryntra — ШІ; рішення й підпис — твої».
-  assert.equal(AGENT_COPY.en.lead, 'Ryntra is an AI; the decision and the signature are yours.')
-  assert.equal(AGENT_COPY.uk.lead, 'Ryntra — ШІ; рішення й підпис — твої.')
+  // The product's own line under the title: «Ryntra — ШІ; вирішуєш і підписуєш ти».
+  assert.equal(AGENT_COPY.en.lead, 'Ryntra is an AI; you decide and sign.')
+  assert.equal(AGENT_COPY.uk.lead, 'Ryntra — ШІ; вирішуєш і підписуєш ти.')
   assert.equal(AGENT_COPY.en.askRyn, 'Ask Ryntra')
   assert.equal(AGENT_COPY.uk.askRyn, 'Спитати Ryntra')
 })

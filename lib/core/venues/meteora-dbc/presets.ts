@@ -1,6 +1,10 @@
 /**
  * Ryntra Launch presets on Meteora DBC — Класичний · Захищений · Спільнота ·
- * Micro, and the demo market Ryntra uses for its own technical validation.
+ * Micro, the demo market Ryntra uses for its own technical validation,
+ * «Розширений» — a creator's own numbers within the bounds the operator approves
+ * once (SOL-L5), its config made for that one launch — and «Правила на кривій»
+ * (SOL-L8), the one preset whose token carries Ryntra's verified transfer-hook
+ * rules until the DEX (`../../launch/curve-rules.ts`).
  *
  * A preset is the whole shape of a launch that a creator picks by name: the
  * pair currency, the curve, the fees on the curve and after it, who earns
@@ -19,6 +23,9 @@
  * enums are mirrored as plain numbers; `presets.test.mjs` checks the mirror
  * against the SDK so a renumbering upstream fails a test, not a launch.
  */
+
+import { type CurveRulesProgram } from "../../launch/curve-rules.ts";
+import { configTransferFeeProblems, type ConfigTransferFee } from "../../launch/transfer-fee.ts";
 
 /* ------------------------------------------------- the SDK's numbers */
 
@@ -43,7 +50,7 @@ export const DBC_ACTIVATION = { SLOT: 0, TIMESTAMP: 1 } as const;
 
 /* ----------------------------------------------------------- presets */
 
-export const LAUNCH_PRESET_IDS = ["classic", "protected", "community", "micro", "demo"] as const;
+export const LAUNCH_PRESET_IDS = ["classic", "protected", "community", "micro", "demo", "advanced", "rules"] as const;
 export type LaunchPresetId = (typeof LAUNCH_PRESET_IDS)[number];
 
 /**
@@ -63,8 +70,11 @@ export type PresetAudience = "people" | "internal";
  */
 export type PresetFeeClaimer = "multisig" | "executor";
 
-/** What the pair is quoted in: USDC, or — «Спільнота» — the community's own token. */
-export type PairCurrency = "USDC" | "COMMUNITY_TOKEN";
+/**
+ * What the pair is quoted in: USDC, «Спільнота»'s own community token, or — «Розширений» on a mint of the checked
+ * register (SOL-L11) — a pair currency whose price is read rather than taken for a dollar.
+ */
+export type PairCurrency = "USDC" | "COMMUNITY_TOKEN" | "QUOTE_ASSET";
 
 export type LaunchPreset = Readonly<{
   id: LaunchPresetId;
@@ -75,8 +85,8 @@ export type LaunchPreset = Readonly<{
     /** Token-2022 with its metadata in the mint; no transfer hook. */
     type: (typeof DBC_TOKEN_TYPE)["TOKEN_2022"];
     decimals: 6;
-    /** Whole tokens, fixed: the mint authority is revoked at creation. */
-    supply: 1_000_000_000;
+    /** Whole tokens, fixed: the mint authority is revoked at creation. 1 000 000 000 on every preset; «Розширений» — the creator's choice. */
+    supply: number;
     /** Metadata no one can change. */
     authority: (typeof DBC_TOKEN_AUTHORITY)["IMMUTABLE"];
   }>;
@@ -120,6 +130,17 @@ export type LaunchPreset = Readonly<{
   creatorLockMinDays: number | null;
   /** A creation fee paid by the person who launches; zero — launching costs only the network's rent. */
   poolCreationFeeLamports: 0;
+  /**
+   * «Комісія за переказ» (SOL-L10): the token's fee on every transfer until the DEX, basis points — «Розширений» only,
+   * and only when the creator chose it; absent on every preset, whose configs pass no transfer-fee parameters at all.
+   */
+  transferFeeBps?: number;
+  /**
+   * «Правила на кривій» (SOL-L8): this preset's launches carry Ryntra's verified transfer-hook rules until the DEX, so
+   * the mark «Без правил на переказах» is never drawn on them. Absent on every other preset. The rules a creator picked
+   * live in the launch's own record, never here: a preset only says that it has them.
+   */
+  curveRules?: true;
 }>;
 
 const TOKEN = { type: DBC_TOKEN_TYPE.TOKEN_2022, decimals: 6, supply: 1_000_000_000, authority: DBC_TOKEN_AUTHORITY.IMMUTABLE } as const;
@@ -265,10 +286,63 @@ export const LAUNCH_PRESETS: Readonly<Record<LaunchPresetId, LaunchPreset>> = Ob
     creatorLockMinDays: CREATOR_LOCK_SIX_MONTHS,
     poolCreationFeeLamports: 0,
   },
+  /*
+   * «Розширений»: the creator's own numbers within the operator's bounds (`lib/core/launch/advanced.ts`), on a config made
+   * for that one launch — the numbers here are only its template, Захищений's; a launch's own are its config's
+   * (`advancedPreset`). Never offered as a preset to pick: the form builds it from «Розширені параметри».
+   */
+  advanced: {
+    id: "advanced",
+    audience: "people",
+    feeClaimer: "multisig",
+    name: { uk: "Розширений", en: "Advanced" },
+    pair: "USDC",
+    token: TOKEN,
+    curve: CURVE,
+    sniperFee: { startBps: 5_000, endBps: 100, periods: 60, seconds: 600 },
+    dynamicFee: true,
+    creatorTradingFeePct: 40,
+    graduationFee: { pct: 2, creatorPct: 40 },
+    graduatedPool: GRADUATED_POOL,
+    lp: LP,
+    creatorFirstBuyCapBps: 200,
+    creatorLockMinDays: null,
+    poolCreationFeeLamports: 0,
+  },
+  /*
+   * «Правила на кривій» (SOL-L8): Захищений's shape with Ryntra's verified transfer-hook rules on top — the wallet's
+   * cap, the anti-bundle, the creator's vesting until the DEX, the ceiling for the first minutes
+   * (`../../launch/curve-rules.ts`). A preset of its own, because «Без правил на переказах» would be a lie on its
+   * token. Offered to nobody until the independent audit of the rule program (SEC-3), the flag
+   * `RYNTRA_LAUNCH_CURVE_RULES=open` and the operator's own word.
+   */
+  rules: {
+    id: "rules",
+    audience: "people",
+    feeClaimer: "multisig",
+    name: { uk: "Правила на кривій", en: "Rules on the curve" },
+    pair: "USDC",
+    token: TOKEN,
+    curve: CURVE,
+    sniperFee: { startBps: 5_000, endBps: 100, periods: 60, seconds: 600 },
+    dynamicFee: true,
+    creatorTradingFeePct: 40,
+    graduationFee: { pct: 2, creatorPct: 40 },
+    graduatedPool: GRADUATED_POOL,
+    lp: LP,
+    creatorFirstBuyCapBps: 200,
+    creatorLockMinDays: null,
+    poolCreationFeeLamports: 0,
+    curveRules: true,
+  },
 });
 
-/** The presets a person may pick in the form: every one but the demo market. */
-export const PEOPLE_PRESET_IDS: readonly LaunchPresetId[] = LAUNCH_PRESET_IDS.filter((id) => LAUNCH_PRESETS[id].audience === "people");
+/**
+ * The presets a person may pick in the form: every one but the demo market, «Розширений», whose numbers are the
+ * creator's own, and «Правила на кривій», which no deployment offers before the audit of its rule program opens it
+ * (SOL-L8, `../../launch/curve-rules.ts`).
+ */
+export const PEOPLE_PRESET_IDS: readonly LaunchPresetId[] = LAUNCH_PRESET_IDS.filter((id) => LAUNCH_PRESETS[id].audience === "people" && id !== "advanced" && id !== "rules");
 
 export function launchPreset(id: string): LaunchPreset | null {
   return (LAUNCH_PRESET_IDS as readonly string[]).includes(id) ? LAUNCH_PRESETS[id as LaunchPresetId] : null;
@@ -355,8 +429,10 @@ export function presetCurveInput(preset: LaunchPreset, quote: PresetQuote) {
  * stores them (`PoolConfig`), read back from the chain, numbers as numbers.
  */
 export type HonestConfigFields = Readonly<{
-  /** True for a `ConfigWithTransferHook`: a hook config is never a preset. */
+  /** True for a `ConfigWithTransferHook`: a hook config is a preset only for «Правила на кривій» (SOL-L8). */
   hasTransferHook: boolean;
+  /** `ConfigWithTransferHook.transferHookProgram` — the program the config fixes for ever; absent or null on every other config. */
+  transferHookProgram?: string | null;
   tokenType: number;
   tokenUpdateAuthority: number;
   migrationOption: number;
@@ -376,16 +452,25 @@ export type HonestConfigFields = Readonly<{
   /** The supply before and after graduation, raw: equal — graduation mints nothing. */
   preMigrationTokenSupply: string;
   postMigrationTokenSupply: string;
+  /** The base token's transfer fee (DBC 0.2.2, SOL-L10); null or absent — none, or a config read by an SDK that has no such fields. */
+  transferFee?: ConfigTransferFee | null;
 }>;
 
 /**
  * What would break «Чесний лаунч» in a config, each in a plain line; an empty
  * list means the config keeps every rule. Checked before the mainnet config
  * is offered for signature and again on the config read back from the chain.
+ *
+ * `curveRules` — «Правила на кривій» (SOL-L8): the audited rule program this deployment runs. Only with it, and only
+ * for that exact program, is a `ConfigWithTransferHook` a Ryntra config; without it a hook config is refused as it
+ * always was, because any other program could do anything on a transfer.
  */
-export function honestLaunchProblems(config: HonestConfigFields): readonly string[] {
+export function honestLaunchProblems(config: HonestConfigFields, options: Readonly<{ curveRules?: CurveRulesProgram | null }> = {}): readonly string[] {
   const problems: string[] = [];
-  if (config.hasTransferHook) problems.push("a transfer-hook config: the creator or partner could keep mint or update rights");
+  const audited = options.curveRules?.program ?? null;
+  if (config.hasTransferHook && audited === null) problems.push("a transfer-hook config: the creator or partner could keep mint or update rights");
+  else if (config.hasTransferHook && config.transferHookProgram !== audited) problems.push("a transfer-hook config whose program is not Ryntra's audited rule program");
+  else if (!config.hasTransferHook && (config.transferHookProgram ?? null) !== null) problems.push("a config that names a transfer-hook program but is not a transfer-hook config");
   if (config.tokenType !== DBC_TOKEN_TYPE.TOKEN_2022) problems.push("the token is not Token-2022");
   if (config.tokenUpdateAuthority !== DBC_TOKEN_AUTHORITY.IMMUTABLE) problems.push("the metadata can be changed");
   if (config.migrationOption !== DBC_MIGRATION_OPTION.DAMM_V2) problems.push("graduation is not to DAMM v2");
@@ -398,11 +483,15 @@ export function honestLaunchProblems(config: HonestConfigFields): readonly strin
   if (config.migratedPoolBaseFeeMode !== DAMM_V2_BASE_FEE_MODE.MARKET_CAP_EXPONENTIAL) problems.push("the graduated pool's fee does not fall with market cap");
   if (!config.enableFirstSwapWithMinFee) problems.push("the creator's first purchase would pay the sniper fee");
   if (config.preMigrationTokenSupply !== config.postMigrationTokenSupply) problems.push("the supply changes at graduation");
+  for (const line of configTransferFeeProblems(config.transferFee)) problems.push(`a transfer fee outside Ryntra's rule: ${line}`);
   return problems;
 }
 
-/** The most tokens, in raw units, the creator's first purchase may receive under a preset. */
-export function creatorFirstBuyCapRaw(preset: LaunchPreset): bigint {
-  const supplyRaw = BigInt(preset.token.supply) * 10n ** BigInt(preset.token.decimals);
+/**
+ * The most tokens, in raw units, the creator's first purchase may receive under a preset — of the preset's supply, or of
+ * `supplyRaw` where the launch's own config says it («Розширений»: the creator chose it).
+ */
+export function creatorFirstBuyCapRaw(preset: LaunchPreset, supplyRaw?: bigint): bigint {
+  supplyRaw ??= BigInt(preset.token.supply) * 10n ** BigInt(preset.token.decimals);
   return (supplyRaw * BigInt(preset.creatorFirstBuyCapBps)) / 10_000n;
 }

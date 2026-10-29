@@ -12,32 +12,34 @@ export const PORTFOLIO: DocPage = {
   pageId: "portfolio",
   title: { en: "Portfolio", uk: "Портфель" },
   summary: {
-    en: "What you own on Solana and what it is worth, read from the chain for your wallet: positions by company, Autoinvest rules and dollars.",
-    uk: "Що ти маєш на Solana і скільки це коштує, прочитане з ланцюга для твого гаманця: позиції за компаніями, правила «Автоінвесту» й долари.",
+    en: "What your wallet owns and what it is worth, read from the chain: tokens, stocks and memes, pool positions, open orders and Perps collateral in one total.",
+    uk: "Що має твій гаманець і скільки це коштує, прочитане з ланцюга: токени, акції й меми, позиції в пулах, відкриті ордери й застава Perps — в одній сумі.",
   },
   sections: [
     section("what", "What Portfolio shows", "Що показує Портфель", [
       p(
-        "Portfolio is the state of your money: what the connected wallet holds — each company by its name, with its value — your Autoinvest rules, and your dollars, then every other token. A price is shown where a reliable one exists, and the total says when part of it could not be valued.",
-        "Портфель — це стан твоїх грошей: що тримає під'єднаний гаманець — кожна компанія за назвою, з вартістю, — твої правила «Автоінвесту» й долари, а далі кожен інший токен. Ціну показано там, де є надійна, а загальна сума каже, коли частину не вдалося оцінити.",
+        "Money → Portfolio is the state of your money on Solana, read by your wallet's public address — no signature needed. The total value adds up the wallet, your positions in pools, what waits in your open orders and your collateral on Phoenix; the day's change beside it is the wallet's. Below it, the holdings as a broker would show them — price, the day's move, amount, value and share of the wallet — under All, Crypto, Stocks/RWA and Memes.",
+        "Гроші → Портфель — стан твоїх грошей на Solana, прочитаний за публічною адресою гаманця, без підпису. Загальна вартість складає гаманець, твої позиції в пулах, те, що чекає у відкритих ордерах, і твою заставу на Phoenix; денна зміна поруч — гаманця. Нижче — активи так, як їх показав би брокер: ціна, рух за день, кількість, вартість і частка гаманця — у вкладках «Усі», «Крипта», «Акції/RWA» й «Меми».",
       ),
       list(
         [
-          "Small and unpriced balances can be hidden with one switch; they are never deleted.",
-          "A balance that could not be read is shown as unavailable, never as zero. The page says when the list may be incomplete.",
-          "A company opens its page; any other asset opens its market in Spot or in Swap.",
+          "An unknown price is not zero: the total is the sum of what could be priced, it says how many assets it could not price, and an unpriced row shows a dash.",
+          "Small and unpriced balances fold under one line; they are never deleted.",
+          "When part of the wallet could not be read, the page says the list may be incomplete and the value is at least the figure shown.",
+          "Your pool positions, your Perps positions on Phoenix — entry, mark and result — and what is moving between networks have their own blocks; a row opens the asset, a company opens its page.",
         ],
         [
-          "Малі й неоцінені баланси можна сховати одним перемикачем; вони ніколи не видаляються.",
-          "Баланс, який не вдалося прочитати, показано як недоступний, а не як нуль. Сторінка каже, коли список може бути неповним.",
-          "Компанія відкриває свою сторінку; будь-який інший актив — свій ринок у Споті чи Обмін.",
+          "Невідома ціна — не нуль: сума складається з того, що вдалося оцінити, каже, скільки активів оцінити не вдалося, а рядок без ціни показує риску.",
+          "Малі й неоцінені баланси згорнуто в один рядок; вони ніколи не видаляються.",
+          "Коли частину гаманця не вдалося прочитати, сторінка каже, що список може бути неповним, а вартість — щонайменше показана.",
+          "Твої позиції в пулах, позиції Perps на Phoenix — вхід, марк і результат — і те, що рухається між мережами, мають свої блоки; рядок відкриває актив, компанія — свою сторінку.",
         ],
       ),
     ]),
     section("risk", "Portfolio risk on Home", "Ризик портфеля на Головній", [
       p(
-        "Home says one word for the whole wallet — beside «Allocation» on a wide screen, under the balance on a phone — by Ryntra's published rules, once the wallet is confirmed with a signature. «Normal»: no position has reached its loss limit or target, no asset is above 25% of the wallet, private companies together are at most 10%, and no company goes into the weekend without a loss limit. The 25% cap applies from a wallet of $500, the 10% at any size; dollars (USDC, USDT, PYUSD, USDS) count in the total and have no cap.",
-        "Головна каже одне слово про весь гаманець — поруч із «Розподілом» на широкому екрані, під балансом на телефоні — за опублікованими правилами Ryntra, щойно гаманець підтверджено підписом. «Нормальний»: жодна позиція не дійшла до межі збитку чи цілі, жоден актив не більший за 25% гаманця, приватні компанії разом — не більше 10%, і жодна компанія не йде на вихідні без межі збитку. Межа 25% діє з гаманця від $500, межа 10% — за будь-якої суми; долари (USDC, USDT, PYUSD, USDS) входять у суму, але межі не мають.",
+        "Home says one word for the whole wallet, by Ryntra's published rules, once the wallet is confirmed with a signature. «Normal»: no position has reached its loss limit or target, no asset is above 25% of the wallet, private companies together are at most 10%, and no company goes into the weekend without a loss limit. The 25% cap applies from a wallet of $500, the 10% at any size; dollars (USDC, USDT, PYUSD, USDS) count in the total and have no cap.",
+        "Головна каже одне слово про весь гаманець за опублікованими правилами Ryntra, щойно гаманець підтверджено підписом. «Нормальний»: жодна позиція не дійшла до межі збитку чи цілі, жоден актив не більший за 25% гаманця, приватні компанії разом — не більше 10%, і жодна компанія не йде на вихідні без межі збитку. Межа 25% діє з гаманця від $500, межа 10% — за будь-якої суми; долари (USDC, USDT, PYUSD, USDS) входять у суму, але межі не мають.",
       ),
       list(
         [
@@ -53,70 +55,101 @@ export const PORTFOLIO: DocPage = {
       ),
     ]),
   ],
-  related: ["manage/activity", "invest/autoinvest", "start/wallet"],
+  related: ["manage/pools", "manage/activity", "start/wallet"],
+};
+
+export const POOLS: DocPage = {
+  slug: "manage/pools",
+  group: "portfolio",
+  destination: "pools",
+  title: { en: "Pools", uk: "Пули" },
+  seoTitle: { en: "Pools: Meteora liquidity on Solana — Ryntra Docs", uk: "Пули: ліквідність Meteora на Solana — Документація Ryntra" },
+  summary: {
+    en: "Meteora's pools on Solana — how deep, what traded, what trades pay — and your own positions: add liquidity, collect fees, withdraw, each with your signature.",
+    uk: "Пули Meteora на Solana — глибина, обіг, комісія угоди — і твої власні позиції: додати ліквідність, забрати комісії, вилучити, кожне твоїм підписом.",
+  },
+  sections: [
+    section("what", "What Pools are", "Що таке Пули", [
+      p(
+        "Earning → Pools lists Meteora's pools on Solana of two kinds: stepped (DLMM — liquidity in the pool's price steps) and smooth (DAMM v2 — liquidity along a curve). Each row shows the pool's depth (TVL), its volume and fees over the past day, its fee now and fees against TVL — a fact of the day gone, never a projected yield. Search by a pair or an address, sort by any column; a pool's page shows how its liquidity is spread and a simulator of a position against simply holding.",
+        "Заробіток → Пули показує пули Meteora на Solana двох видів: покрокові (DLMM — ліквідність у кроках ціни пулу) і плавні (DAMM v2 — ліквідність уздовж кривої). Кожен рядок показує глибину пулу (TVL), обсяг і комісії за минулу добу, комісію зараз і комісії до TVL — факт минулого дня, ніколи не прогноз дохідності. Шукай за парою чи адресою, сортуй за будь-якою колонкою; сторінка пулу показує, як розкладено його ліквідність, і симулятор позиції проти «просто тримати».",
+      ),
+    ]),
+    section("act", "Your positions", "Твої позиції", [
+      steps(
+        [
+          "Open a pool and press Add liquidity. On a stepped pool choose the range around the price; on a smooth one the tokens go into the curve. The form shows what you put in, the range and the rent a new position keeps.",
+          "Read the Review and sign. The position appears under My positions with its holdings, its unclaimed fees and whether the price is inside its range.",
+          "Claim fees, add more, or withdraw part or all — each through its own Review and signature. Closing a position returns its rent.",
+        ],
+        [
+          "Відкрий пул і натисни «Додати ліквідність». На покроковому пулі обери діапазон навколо ціни; на плавному токени лягають у криву. Форма показує, що ти вносиш, діапазон і ренту, яку тримає нова позиція.",
+          "Прочитай «Перевірку» і підпиши. Позиція з'явиться в «Мої позиції» зі своїм вмістом, незабраними комісіями й тим, чи ціна в її діапазоні.",
+          "Забери комісії, додай ще або вилучи частину чи все — кожне через свою «Перевірку» і підпис. Закриття позиції повертає ренту.",
+        ],
+      ),
+      list(
+        [
+          "Ryntra adds no fee to adding, withdrawing or collecting; the pool's own fee is what traders pay and what your position earns.",
+          "A position earns while the price is inside its range. Outside it, the position holds one token and earns nothing, and against simply holding it can be worth less — the simulator shows both before you add.",
+          "A grid from Bots is a stepped position too, and shows here as well.",
+        ],
+        [
+          "Ryntra не додає комісії до внесення, вилучення чи збору; власна комісія пулу — це те, що платять трейдери й заробляє твоя позиція.",
+          "Позиція заробляє, поки ціна в її діапазоні. Поза ним позиція тримає один токен і нічого не заробляє, а проти «просто тримати» може коштувати менше — симулятор показує обидва варіанти до внесення.",
+          "Грід із Ботів — теж покрокова позиція, і вона видна тут також.",
+        ],
+      ),
+    ]),
+  ],
+  related: ["bots", "manage/portfolio", "reference/fees"],
 };
 
 export const ACTIVITY: DocPage = {
   slug: "manage/activity",
-  group: "portfolio",
+  group: "money",
   pageId: "activity",
-  title: { en: "History and receipts", uk: "Історія та квитанції" },
+  title: { en: "History", uk: "Історія" },
   summary: {
-    en: "Everything you did through Ryntra in one history — purchases, swaps, sends, claims — with a receipt that keeps the reviewed and the settled figures.",
-    uk: "Усі твої дії через Ryntra — в одній історії: купівлі, обміни, перекази, виплати — з квитанцією, що тримає перевірені й фактичні цифри.",
+    en: "Everything your wallet did through Ryntra in one list — swaps, Spot and Launch trades, bridges, sends and receipts — with a status in one word and an export.",
+    uk: "Усе, що твій гаманець зробив через Ryntra, — одним списком: обміни, угоди Споту й Лаунчу, мости, перекази й надходження — зі статусом одним словом і експортом.",
   },
   sections: [
     section("what", "What History is", "Що таке Історія", [
       p(
-        "History is the single record of your financial actions in Ryntra. Purchases, Autoinvest, Swap, Spot, Bridge, Send and Rewards do not keep separate histories; everything lands here, newest first, with a filter by kind. Each entry shows the action, the amounts, the network, the transaction, its status and — once it has settled — its receipt.",
-        "Історія — єдиний запис твоїх фінансових дій у Ryntra. Купівлі, «Автоінвест», Обмін, Спот, Міст, Надіслати й Винагороди не ведуть окремих історій; усе потрапляє сюди, найновіше зверху, з фільтром за видом. Кожен запис показує дію, суми, мережу, транзакцію, її статус і — після завершення — квитанцію.",
+        "Money → History is the record of your wallet's operations through Ryntra, newest first, filtered by kind: All, Spot, Launch, Swap, Between networks, Sent, Received and Needs you. Each entry shows what left, what arrived, the transaction and where it stands; opening it shows its receipt.",
+        "Гроші → Історія — запис операцій твого гаманця через Ryntra, найновіші зверху, з фільтром за видом: Усі, Спот, Лаунч, Обмін, Між мережами, Надіслано, Отримано й «Потрібна твоя дія». Кожен запис показує, що пішло, що надійшло, транзакцію й де вона зараз; відкритий запис показує квитанцію.",
       ),
       table(
         { en: ["Status", "Meaning"], uk: ["Статус", "Значення"] },
         {
           en: [
-            ["Pending", "Signed and submitted; the network has not confirmed the final result yet."],
-            ["Sent", "Left your wallet. For a bridge, the destination side is still on its way."],
+            ["On its way", "Signed and sent; the network or the provider has not finished yet."],
             ["Arrived", "Landed where it was going, in the amount the receipt records."],
-            ["Failed", "Did not go through. The reason is shown when the network or the provider gave one; a failure never becomes a zero balance or a missing entry."],
+            ["Did not happen", "Did not go through. The reason is shown when the network or the provider gave one; a failure never becomes a zero balance or a missing entry."],
+            ["Needs you", "Waits for your action — for example, a refund that arrived and is worth a look."],
           ],
           uk: [
-            ["Очікує", "Підписано й надіслано; мережа ще не підтвердила остаточного результату."],
-            ["Надіслано", "Пішло з твого гаманця. Для мосту сторона призначення ще в дорозі."],
-            ["Прибуло", "Дійшло, куди йшло, у сумі, яку записує квитанція."],
-            ["Помилка", "Не пройшло. Причину показано, коли її дали мережа чи провайдер; помилка ніколи не стає нульовим балансом чи зниклим записом."],
+            ["У дорозі", "Підписано й надіслано; мережа чи постачальник ще не завершили."],
+            ["Надійшло", "Дійшло, куди йшло, у сумі, яку записує квитанція."],
+            ["Не відбулося", "Не пройшло. Причину показано, коли її дали мережа чи провайдер; невдача ніколи не стає нульовим балансом чи зниклим записом."],
+            ["Потрібна твоя дія", "Чекає на тебе — наприклад, повернення, що надійшло й на яке варто глянути."],
           ],
         },
       ),
-    ]),
-    section("receipts", "Receipts", "Квитанції", [
       p(
-        "A receipt is the detail of an operation, not a separate app. It records what you reviewed — the amounts, the minimum, the fees, the network costs — and what the network then did: the actual amount, the transaction signature, the time. When less arrived than the reviewed minimum, the receipt keeps both figures side by side so the difference is visible, not averaged away.",
-        "Квитанція — це деталь операції, а не окремий застосунок. Вона записує перевірене — суми, мінімум, комісії, плату мережі — і те, що потім зробила мережа: фактичну суму, підпис транзакції, час. Коли надійшло менше за перевірений мінімум, квитанція тримає обидві цифри поруч, щоб різницю було видно, а не усереднено.",
-      ),
-      list(
-        [
-          "Every receipt links to the transaction on a public Solana explorer.",
-          "A purchase by an Autoinvest rule is marked Autoinvest, and its receipt names the rule.",
-          "A receipt is Ryntra's record of what it saw. The wallet and the network remain the record of what happened.",
-          "History, receipts and portfolio follow the signed-in wallet, so they are the same on every device.",
-        ],
-        [
-          "Кожна квитанція веде на транзакцію в публічному оглядачі Solana.",
-          "Купівлю за правилом позначено «Автоінвест», а її квитанція називає правило.",
-          "Квитанція — запис Ryntra про те, що вона бачила. Записом того, що сталося, лишаються гаманець і мережа.",
-          "Історія, квитанції й портфель ідуть за гаманцем після входу, тож вони однакові на кожному пристрої.",
-        ],
+        "Export downloads the list you see as a CSV — the date, the kind, the state, what was sent and received, the transactions and Ryntra's fee when it was collected.",
+        "«Експорт» завантажує видимий список як CSV — дата, вид, стан, що надіслано й отримано, транзакції й комісія Ryntra, коли її зібрано.",
       ),
     ]),
   ],
-  related: ["manage/portfolio", "reference/review", "reference/troubleshooting"],
+  related: ["reference/receipts", "manage/portfolio", "reference/troubleshooting"],
 };
 
 export const SETTINGS: DocPage = {
   slug: "manage/settings",
   group: "start",
-  title: { en: "Settings and notifications", uk: "Налаштування та сповіщення" },
+  title: { en: "Account and notifications", uk: "Акаунт і сповіщення" },
   summary: {
     en: "Your wallet and account, the Telegram notification channel, language and theme, and what clearing site data removes.",
     uk: "Твій гаманець і акаунт, канал сповіщень у Telegram, мова й тема і що прибирає очищення даних сайту.",
@@ -125,13 +158,13 @@ export const SETTINGS: DocPage = {
     section("account", "Wallet and account", "Гаманець і акаунт", [
       list(
         [
-          "The connected wallet, the account signed in with it, and Sign out and Sign out everywhere.",
+          "The connected wallet, the account signed in with it, and Sign out on this device and Sign out everywhere.",
           "What connecting a wallet allows — balances, prices, mints and your own operations — and why a signature sits beside every figure Ryntra prepares.",
           "Why there is no network switch: the app works on Solana Mainnet only.",
         ],
         [
-          "Під'єднаний гаманець, акаунт, у який ним увійдено, і «Вийти» та «Вийти всюди».",
-          "Що дозволяє під'єднання гаманця — баланси, ціни, mint-адреси й твої власні операції — і чому підпис стоїть біля кожної цифри, яку готує Ryntra.",
+          "Підключений гаманець, акаунт, у який ним увійдено, і «Вийти на цьому пристрої» та «Вийти всюди».",
+          "Що дозволяє підключення гаманця — баланси, ціни, mint-адреси й твої власні операції — і чому підпис стоїть біля кожної цифри, яку готує Ryntra.",
           "Чому немає перемикача мереж: застосунок працює лише на Solana Mainnet.",
         ],
       ),
@@ -139,14 +172,14 @@ export const SETTINGS: DocPage = {
     section("telegram", "Telegram as a notification channel", "Telegram як канал сповіщень", [
       steps(
         [
-          "Sign in with your wallet, then open Settings and choose Connect Telegram.",
+          "Sign in with your wallet, then open Account from your wallet's panel and choose Connect Telegram.",
           "Ryntra shows a one-time link to its bot. Open it in Telegram and press Start; the code in the link binds the chat to your account.",
-          "Autoinvest reminders and notes about your operations arrive in that chat. Disconnect from the same place at any time — it removes only the channel, never the account.",
+          "Recurring-buy reminders and notes about your operations arrive in that chat. Disconnect from the same place at any time — it removes only the channel, never the account.",
         ],
         [
-          "Увійди гаманцем, потім відкрий Налаштування й обери «Під'єднати Telegram».",
+          "Увійди гаманцем, потім відкрий «Акаунт» у панелі гаманця й обери «Підключити Telegram».",
           "Ryntra покаже одноразове посилання на свого бота. Відкрий його в Telegram і натисни Start; код у посиланні прив'язує чат до твого акаунта.",
-          "Нагадування «Автоінвесту» й нотатки про твої операції приходять у цей чат. Від'єднати можна там само будь-коли — це прибирає лише канал, ніколи не акаунт.",
+          "Нагадування регулярної купівлі й нотатки про твої операції приходять у цей чат. Від'єднати можна там само будь-коли — це прибирає лише канал, ніколи не акаунт.",
         ],
       ),
       note(
@@ -172,8 +205,8 @@ export const SETTINGS: DocPage = {
         },
       ),
       p(
-        "Clearing site data from Settings removes what this browser keeps — the theme, cached reads and the current session. It does not remove your account, your history or your rewards: those belong to the wallet and come back when you sign in again.",
-        "Очищення даних сайту в Налаштуваннях прибирає те, що зберігає цей браузер, — тему, кешовані читання й поточну сесію. Воно не видаляє твого акаунта, історії чи винагород: вони належать гаманцю й повертаються, щойно ти знову ввійдеш.",
+        "Clearing this site's data in your browser removes what the browser keeps — the theme, cached reads, the current session and the receipts kept here. It does not remove your account, your history or your rewards: those belong to the wallet and come back when you sign in again.",
+        "Очищення даних цього сайту у браузері прибирає те, що зберігає браузер, — тему, кешовані читання, поточну сесію й збережені тут квитанції. Воно не видаляє твого акаунта, історії чи винагород: вони належать гаманцю й повертаються, щойно ти знову ввійдеш.",
       ),
     ]),
   ],

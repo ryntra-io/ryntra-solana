@@ -27,28 +27,14 @@
   min-height: 44px;
 }
 
+/* The lockup of app/brand/ is one em tall: the link sets the em. */
 .brand {
   display: inline-flex;
   align-items: center;
-  gap: 8px;
+  min-height: 44px;
+  font-size: 20px;
   color: var(--ry-text);
   text-decoration: none;
-  font-family: var(--ry-font-display, var(--ry-font-sans, system-ui, sans-serif));
-  font-weight: 700;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  font-size: var(--ry-fs-label, 13px);
-}
-
-.brandMark {
-  display: inline-grid;
-  place-items: center;
-  width: 28px;
-  height: 28px;
-  border-radius: 8px;
-  background: var(--ry-accent);
-  color: #fff3e8;
-  font-weight: 800;
 }
 
 .lang {
@@ -351,6 +337,32 @@
 }
 
 .details dd {
+  margin: 0 0 8px;
+  font-family: var(--ry-font-mono, ui-monospace, monospace);
+  overflow-wrap: anywhere;
+}
+
+/* The core's Review before the wallet (SOL-C14): one column the card's width; its look is the core's. */
+.reviewWrap {
+  display: grid;
+  gap: var(--rt-space-sm, 12px);
+}
+
+.review {
+  min-width: 0;
+}
+
+.reviewDetails {
+  display: grid;
+  gap: 4px;
+  margin: 0;
+}
+
+.reviewDetails dt {
+  color: var(--ry-muted);
+}
+
+.reviewDetails dd {
   margin: 0 0 8px;
   font-family: var(--ry-font-mono, ui-monospace, monospace);
   overflow-wrap: anywhere;

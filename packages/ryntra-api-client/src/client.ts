@@ -22,9 +22,39 @@ import {
   type AgentMessageResponse,
   type AgentSessionOpenRequest,
   type AgentSessionResponse,
+  type AgentSessionListResponse,
+  type AgentGuestRequest,
+  type AgentGuestResponse,
   type AgentSuggestionsResponse,
+  type AssistantBriefResponse,
+  type AssistantBriefUpdate,
+  type AssistantCreditOrderRequest,
+  type AssistantCreditOrderResponse,
+  type AssistantCreditOrdersResponse,
+  type AssistantCreditsResponse,
+  type AssistantMemoryResponse,
+  type AssistantMemoryUpdate,
+  type AssistantPlanCreate,
+  type AssistantPlanRecheck,
+  type AssistantPlanResponse,
+  type AssistantPlansResponse,
+  type AssistantPlanStateRequest,
+  type AssistantPlanUpdate,
+  type AssistantProfileResponse,
+  type AssistantProfileUpdate,
+  type AssistantTaskCreate,
+  type AssistantTasksResponse,
+  type AssistantTaskUpdate,
+  type AssistantVoiceRequest,
+  type AssistantVoiceResponse,
+  type AssistantWatchCreate,
+  type AssistantWatchesResponse,
+  type AssistantWatchUpdate,
   type ApiError,
   type AddressEvidenceRead,
+  type SkrNameRead,
+  type MarketEventKind,
+  type MarketEventsResponse,
   type ApiErrorCode,
   type Capabilities,
   type ChallengeRequest,
@@ -67,6 +97,7 @@ import {
   type RuleStatusRequest,
   type SendReturnedRequest,
   type SendReturnedResponse,
+  type SeekerCheckResponse,
   type SessionResponse,
   type SpotCandlesResponse,
   type SpotCategory,
@@ -84,6 +115,7 @@ import {
   type PredictionDiscoverSort,
   type PredictionsAccountResponse,
   type PredictionsBookResponse,
+  type PredictionsLinkStartRequest,
   type PredictionsChartResponse,
   type PredictionsDiscoverResponse,
   type PredictionsEngineResponse,
@@ -112,6 +144,25 @@ import {
   type LaunchMarketCardResponse,
   type LaunchMarketHealthResponse,
   type LaunchMarketsResponse,
+  type LaunchSurvivalResponse,
+  type LaunchWindowsResponse,
+  type TeamRolesResponse,
+  type TeamsResponse,
+  type TeamCreateRequest,
+  type TeamResponse,
+  type TeamInviteRequest,
+  type TeamMemberChangeRequest,
+  type TeamMemberChangeResponse,
+  type TeamTreasuryRequest,
+  type TeamCheckResponse,
+  type TeamPermission,
+  type LaunchCrewResponse,
+  type LaunchCrewsResponse,
+  type LaunchCrewCreateRequest,
+  type LaunchCrewAnswerRequest,
+  type LaunchBoostView,
+  type LaunchSplitView,
+  type LaunchEarlyAccessViewResponse,
   type ActivityResponse,
   type MonitoringSurfaceResponse,
   type MonitoringWriteRequest,
@@ -216,7 +267,7 @@ export function createRyntraApiClient(options: RyntraApiClientOptions) {
   const base = options.baseUrl.replace(/\/+$/, "");
   const doFetch: FetchLike = options.fetch ?? ((input, init) => globalThis.fetch(input, init));
 
-  async function call<T>(method: "GET" | "POST" | "PUT" | "DELETE", path: string, body?: unknown, auth = false, extra: Readonly<Record<string, string>> = {}): Promise<T> {
+  async function call<T>(method: "GET" | "POST" | "PUT" | "PATCH" | "DELETE", path: string, body?: unknown, auth = false, extra: Readonly<Record<string, string>> = {}): Promise<T> {
     const headers: Record<string, string> = { accept: "application/json", [API_HEADER]: String(API_MAJOR), ...(options.headers ?? {}), ...extra };
     if (body !== undefined) headers["content-type"] = "application/json";
     if (auth) {
@@ -291,6 +342,8 @@ export function createRyntraApiClient(options: RyntraApiClientOptions) {
       session: () => call<SessionResponse>("GET", "/api/v1/auth/session", undefined, true),
       refresh: () => call<VerifyResponse>("POST", "/api/v1/auth/refresh", undefined, true),
       revoke: () => call<RevokeResponse>("DELETE", "/api/v1/auth/session", undefined, true),
+      /** 1.66.0 — «Перевірено Seeker»: whether the bearer's wallet holds a Seeker Genesis Token, read by the server. */
+      seeker: () => call<SeekerCheckResponse>("GET", "/api/v1/auth/seeker", undefined, true),
     },
     watchlist: {
       get: () => call<WatchlistResponse>("GET", "/api/v1/watchlist", undefined, true),
@@ -363,16 +416,90 @@ export function createRyntraApiClient(options: RyntraApiClientOptions) {
       message: (request: AgentMessageRequest) => call<AgentMessageResponse>("POST", "/api/v1/agent/message", request, true),
       draft: (draftId: string) => call<AgentDraftResponse>("GET", `/api/v1/agent/drafts/${encodeURIComponent(draftId)}`, undefined, true),
       budget: () => call<AgentBudgetState>("GET", "/api/v1/agent/budget", undefined, true),
+      /* 1.43.0 — the conversations with their dates and expiry; «Нова розмова» is `openSession({ fresh: true })`. */
+      sessions: () => call<AgentSessionListResponse>("GET", "/api/v1/agent/sessions", undefined, true),
+      /* 1.43.0 — a market question without a wallet; public, no bearer, nothing stored. */
+      guest: (request: AgentGuestRequest) => call<AgentGuestResponse>("POST", "/api/v1/assistant/guest", request),
       /* 1.10.0 — the two formats on a subject; `compose` defaults to `deterministic`, which never reaches a model and never spends. */
       brief: (request: AgentLensRequest) => call<AgentBriefResponse>("POST", "/api/v1/agent/brief", request, true),
       critic: (request: AgentLensRequest) => call<AgentCriticResponse>("POST", "/api/v1/agent/critic", request, true),
       /** Public: `context` as the route reads it (`asset:<mint>[:<symbol>]`, `plan:<id>`, `portfolio`, `note:<id>`, `page:<name>`). */
       suggestions: (context?: string, locale: "en" | "uk" = "en") => call<AgentSuggestionsResponse>("GET", `/api/v1/agent/suggestions?locale=${locale}${context ? `&context=${encodeURIComponent(context)}` : ""}`),
     },
+    /*
+     * The assistant Ryntra's own surfaces, the same routes the web calls
+     * (AI-13, the mobile line's request 68): every call needs the bearer; a
+     * price is spent only when the call carries the `acceptCredits` the person
+     * was shown. A credits order is a `lib/pay` request under the same id —
+     * it is paid with `pay.transaction(order.id, …)` and `pay.submit`, the
+     * wallet signing over MWA. Web Push (`/api/v1/assistant/push`) is a
+     * browser's; the phone's push is its device registration.
+     */
+    assistant: {
+      /* 1.46.0 — «Ранковий огляд»: the latest brief (or `day`), its settings; `put` turns it on or off at a time and zone. */
+      brief: (locale: "en" | "uk" = "en", day?: string) => call<AssistantBriefResponse>("GET", `/api/v1/assistant/brief${query({ locale, day })}`, undefined, true),
+      /** The answer's words follow `?locale` (the route reads the query); it defaults to the settings' own language, Ukrainian when unsaid — as the server stores it. */
+      setBrief: (request: AssistantBriefUpdate, locale: "en" | "uk" = request.locale ?? "uk") => call<AssistantBriefResponse>("PUT", `/api/v1/assistant/brief${query({ locale })}`, request, true),
+      /* 1.52.0, 1.54.0 — the balance, the day's free ones, the prices, the history and what is sold; the welcome credits once. */
+      credits: {
+        get: () => call<AssistantCreditsResponse>("GET", "/api/v1/assistant/credits", undefined, true),
+        welcome: () => call<AssistantCreditsResponse>("POST", "/api/v1/assistant/credits/welcome", {}, true),
+        orders: () => call<AssistantCreditOrdersResponse>("GET", "/api/v1/assistant/credits/orders", undefined, true),
+        order: (orderId: string) => call<AssistantCreditOrderResponse>("GET", `/api/v1/assistant/credits/orders/${encodeURIComponent(orderId)}`, undefined, true),
+        openOrder: (request: AssistantCreditOrderRequest) => call<AssistantCreditOrderResponse>("POST", "/api/v1/assistant/credits/orders", request, true),
+      },
+      /* 1.57.0 — «Стежу»: watches on a token by its mint, with the presets; every answer is the whole surface again. */
+      watches: {
+        list: (locale: "en" | "uk" = "en") => call<AssistantWatchesResponse>("GET", `/api/v1/assistant/watches${query({ locale })}`, undefined, true),
+        create: (request: AssistantWatchCreate, locale: "en" | "uk" = "en") => call<AssistantWatchesResponse>("POST", `/api/v1/assistant/watches${query({ locale })}`, request, true),
+        update: (watchId: string, request: AssistantWatchUpdate, locale: "en" | "uk" = "en") => call<AssistantWatchesResponse>("PATCH", `/api/v1/assistant/watches/${encodeURIComponent(watchId)}${query({ locale })}`, request, true),
+        remove: (watchId: string, locale: "en" | "uk" = "en") => call<AssistantWatchesResponse>("DELETE", `/api/v1/assistant/watches/${encodeURIComponent(watchId)}${query({ locale })}`, undefined, true),
+      },
+      /* 1.58.0 — «Знайомство»: the person's goal, experience, risk, horizon and delivery, or skipped. */
+      profile: () => call<AssistantProfileResponse>("GET", "/api/v1/assistant/profile", undefined, true),
+      setProfile: (request: AssistantProfileUpdate) => call<AssistantProfileResponse>("PUT", "/api/v1/assistant/profile", request, true),
+      /* 1.59.0 — «Що Ryntra знає про тебе»: «Про мене», the remembered lines, noticing on or off; `picture: false` skips the wallet's read. */
+      memory: {
+        get: (options: Readonly<{ picture?: boolean }> = {}) => call<AssistantMemoryResponse>("GET", `/api/v1/assistant/memory${query({ picture: options.picture === false ? 0 : undefined })}`, undefined, true),
+        update: (request: AssistantMemoryUpdate) => call<AssistantMemoryResponse>("PUT", "/api/v1/assistant/memory", request, true),
+        forget: (noteId: string) => call<AssistantMemoryResponse>("DELETE", `/api/v1/assistant/memory/${encodeURIComponent(noteId)}`, undefined, true),
+        forgetAll: () => call<AssistantMemoryResponse>("DELETE", "/api/v1/assistant/memory", undefined, true),
+      },
+      /* 1.59.0 — «Доручення»: what, how often, where; a price is turned on only with `acceptCredits`. */
+      tasks: {
+        list: () => call<AssistantTasksResponse>("GET", "/api/v1/assistant/tasks", undefined, true),
+        create: (request: AssistantTaskCreate) => call<AssistantTasksResponse>("POST", "/api/v1/assistant/tasks", request, true),
+        update: (taskId: string, request: AssistantTaskUpdate) => call<AssistantTasksResponse>("PATCH", `/api/v1/assistant/tasks/${encodeURIComponent(taskId)}`, request, true),
+        remove: (taskId: string) => call<AssistantTasksResponse>("DELETE", `/api/v1/assistant/tasks/${encodeURIComponent(taskId)}`, undefined, true),
+      },
+      /* 1.61.0 — «План угоди й критик»: a plan is written and judged here; a trade only in the person's own plan and Review, signed by the wallet. */
+      plans: {
+        list: (locale: "en" | "uk" = "en") => call<AssistantPlansResponse>("GET", `/api/v1/assistant/plans${query({ locale })}`, undefined, true),
+        create: (request: AssistantPlanCreate) => call<AssistantPlanResponse>("POST", "/api/v1/assistant/plans", request, true),
+        get: (planId: string, locale: "en" | "uk" = "en") => call<AssistantPlanResponse>("GET", `/api/v1/assistant/plans/${encodeURIComponent(planId)}${query({ locale })}`, undefined, true),
+        update: (planId: string, request: AssistantPlanUpdate) => call<AssistantPlanResponse>("PUT", `/api/v1/assistant/plans/${encodeURIComponent(planId)}`, request, true),
+        recheck: (planId: string, request: AssistantPlanRecheck) => call<AssistantPlanResponse>("POST", `/api/v1/assistant/plans/${encodeURIComponent(planId)}/critic`, request, true),
+        setState: (planId: string, request: AssistantPlanStateRequest) => call<AssistantPlanResponse>("POST", `/api/v1/assistant/plans/${encodeURIComponent(planId)}/state`, request, true),
+      },
+      /* 1.64.0 — the server's speech-to-text for a recording the device could not read itself: words for the field, never a question sent. */
+      voice: (request: AssistantVoiceRequest) => call<AssistantVoiceResponse>("POST", "/api/v1/assistant/voice", request, true),
+    },
     /* 1.5.0 — the observation a plan's evidence conditions are judged on; public, no bearer. 1.6.0 — the point-in-time window `now` (the security provider's) and the recipient check. */
     research: {
       evidence: (mint: string, window: EvidenceWindow = "24h") => call<MarketEvidenceRead>("GET", `/api/v1/research/evidence?mint=${encodeURIComponent(mint)}&window=${window}`),
       addressEvidence: (address: string) => call<AddressEvidenceRead>("GET", `/api/v1/research/address-evidence?address=${encodeURIComponent(address)}`),
+      /* 1.65.0 — a `.skr` name: `name` answers its address now (never cached), `address` the wallet's primary name. */
+      skrName: (query: Readonly<{ name: string }> | Readonly<{ address: string; self?: boolean }>) =>
+        call<SkrNameRead>("GET", `/api/v1/research/skr-name?${"name" in query ? `name=${encodeURIComponent(query.name)}` : `address=${encodeURIComponent(query.address)}${query.self ? "&self=1" : ""}`}`),
+      /* 1.68.0 — «Події ринку»: one public feed of market events, each with its source and its transaction. */
+      events: (query: Readonly<{ kinds?: readonly MarketEventKind[]; mint?: string; limit?: number }> = {}) => {
+        const params = new URLSearchParams();
+        if (query.kinds && query.kinds.length > 0) params.set("kinds", query.kinds.join(","));
+        if (query.mint) params.set("mint", query.mint);
+        if (query.limit !== undefined) params.set("limit", String(query.limit));
+        const search = params.toString();
+        return call<MarketEventsResponse>("GET", `/api/v1/events${search ? `?${search}` : ""}`);
+      },
     },
     /* 1.11.0 — the proven wallet's Telegram channel, the one Settings connects on ryntra.io; every call needs the bearer. */
     notifications: {
@@ -383,9 +510,35 @@ export function createRyntraApiClient(options: RyntraApiClientOptions) {
     /* 1.36.0 — the markets launched on Ryntra: the list, one market's card, its health by fixed definitions and its flight log; public, no bearer. Served where `capabilities.launch` is. */
     launch: {
       markets: () => call<LaunchMarketsResponse>("GET", "/api/v1/launch/markets"),
+      /** 1.55.0 — the survival of the markets launched on Ryntra at 7, 30 and 90 days. */
+      survival: () => call<LaunchSurvivalResponse>("GET", "/api/v1/launch/survival"),
+      /** 1.74.0 — the launch windows' published schedule. */
+      windows: () => call<LaunchWindowsResponse>("GET", "/api/v1/launch/windows"),
+      /** 1.74.0 — the crews in flight; one crew as anyone reads it; a crew made by the creator and answered by each invitee, behind the bearer. */
+      crews: () => call<LaunchCrewsResponse>("GET", "/api/v1/launch/crews"),
+      crew: (id: string) => call<LaunchCrewResponse>("GET", `/api/v1/launch/crews/${encodeURIComponent(id)}`),
+      createCrew: (request: LaunchCrewCreateRequest) => call<LaunchCrewResponse>("POST", "/api/v1/launch/crews", request, true),
+      answerCrew: (id: string, request: LaunchCrewAnswerRequest) => call<LaunchCrewResponse>("POST", `/api/v1/launch/crews/${encodeURIComponent(id)}/answer`, request, true),
       market: (mint: string) => call<LaunchMarketCardResponse>("GET", `/api/v1/launch/markets/${encodeURIComponent(mint)}`),
       health: (mint: string) => call<LaunchMarketHealthResponse>("GET", `/api/v1/launch/${encodeURIComponent(mint)}/health`),
       journal: (mint: string) => call<LaunchJournalResponse>("GET", `/api/v1/launch/${encodeURIComponent(mint)}/journal`),
+      /** 1.56.0 — the token's creator campaign (Launch Boost) as shown before a purchase. */
+      boost: (mint: string) => call<LaunchBoostView>("GET", `/api/v1/launch/${encodeURIComponent(mint)}/boost`),
+      /** 1.69.0 — the creator's division of their own share: the rule and its lines, what it owes and what was done, the steps and the rounds. */
+      split: (mint: string) => call<LaunchSplitView>("GET", `/api/v1/launch/${encodeURIComponent(mint)}/split`),
+      /** 1.56.0 — an early-access launch as the chain shows it; with `wallet`, that wallet's deposit, claim and refund. */
+      earlyAccess: (mint: string, wallet?: string) => call<LaunchEarlyAccessViewResponse>("GET", `/api/v1/launch/${encodeURIComponent(mint)}/early-access${query({ wallet })}`),
+    },
+    /** 1.75.0 — a team's roles and rights (TEAM-1): the matrix is public; everything else behind the bearer. */
+    teams: {
+      roles: () => call<TeamRolesResponse>("GET", "/api/v1/teams/roles"),
+      list: () => call<TeamsResponse>("GET", "/api/v1/teams", undefined, true),
+      create: (request: TeamCreateRequest) => call<TeamResponse>("POST", "/api/v1/teams", request, true),
+      get: (id: string) => call<TeamResponse>("GET", `/api/v1/teams/${encodeURIComponent(id)}`, undefined, true),
+      invite: (id: string, request: TeamInviteRequest) => call<TeamResponse>("POST", `/api/v1/teams/${encodeURIComponent(id)}/members`, request, true),
+      changeMember: (id: string, wallet: string, request: TeamMemberChangeRequest) => call<TeamMemberChangeResponse>("POST", `/api/v1/teams/${encodeURIComponent(id)}/members/${encodeURIComponent(wallet)}`, request, true),
+      linkTreasury: (id: string, request: TeamTreasuryRequest) => call<TeamResponse>("POST", `/api/v1/teams/${encodeURIComponent(id)}/treasury`, request, true),
+      check: (id: string, permission: TeamPermission, authority?: string) => call<TeamCheckResponse>("GET", `/api/v1/teams/${encodeURIComponent(id)}/check${query({ permission, authority })}`, undefined, true),
     },
     /* 1.11.0 — the consumed routes (not v1 paths); a refusal is a `RyntraRouteError` with the route's own code. Public reads carry no bearer. */
     markets: {
@@ -443,7 +596,7 @@ export function createRyntraApiClient(options: RyntraApiClientOptions) {
       chart: (outcomeId: string, resolution?: PredictionChartResolution, countBack?: number) => routeCall<PredictionsChartResponse>("GET", `/api/predictions/outcomes/${encodeURIComponent(outcomeId)}/chart${query({ resolution, countBack })}`),
       account: () => routeCall<PredictionsAccountResponse>("GET", "/api/predictions/account", undefined, "required"),
       link: {
-        start: () => routeCall<PredictionLinkChallenge>("POST", "/api/predictions/link/start", undefined, "required"),
+        start: (request?: PredictionsLinkStartRequest) => routeCall<PredictionLinkChallenge>("POST", "/api/predictions/link/start", request, "required"),
         verify: (request: PredictionsLinkVerifyRequest) => routeCall<PredictionsLinkResponse>("POST", "/api/predictions/link/verify", request, "required"),
         revoke: () => routeCall<PredictionsLinkResponse>("POST", "/api/predictions/link/revoke", undefined, "required"),
       },

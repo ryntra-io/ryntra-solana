@@ -23,6 +23,7 @@ import { LensPanel } from "@/app/app/lens/lens-panel";
 import { PlanResultCard } from "./plan-result-card";
 import { fmtDate, fmtUnits, fmtUsd, fmtWhen, planWordsFor, statusWord, type PlanWord } from "./plan-words";
 import styles from "./plans.module.css";
+import { ensureWalletActs } from "@/lib/account/wallet-proof-store.client";
 
 /**
  * One plan, as it stands, recomposed around decisions by the premium UI pass
@@ -248,6 +249,7 @@ export function PlanDetail({ planId, locale, fromMonitoring = false }: { planId:
   const setStatus = async (status: "active" | "cancelled", reason: string | null) => {
     const plan = state.plan;
     if (!plan) return false;
+    if (!(await ensureWalletActs())) return false;
     const response = await fetch(`/api/v1/plans/${encodeURIComponent(planId)}/status`, {
       method: "POST",
       headers: { "content-type": "application/json", accept: "application/json", "X-Ryntra-API": "1" },

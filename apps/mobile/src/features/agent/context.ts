@@ -1,6 +1,6 @@
 /**
  * Where a conversation with Ryntra was opened from, written as one parameter —
- * the web app's own format (`lib/agent/context.ts`), so a link from the
+ * the web line's own format (`lib/agent/context.ts`), so a link from the
  * site and a door in the app name the same thing: `asset:<mint>[:<symbol>]`,
  * `plan:<id>`, `portfolio`, `note:<id>` or `page:<name>`. The server reads a
  * context as context, never as authority; anything that is not one of these

@@ -9,7 +9,7 @@
  * with a navy undertone; a cool neutral light theme; green and red for the
  * market, amber for caution, orange only for the brand, the primary action,
  * the selected and the active. Dark is the presentation theme and lives on
- * :root; light activates via [data-theme="light"] on the application shell,
+ * :root; light activates via :is([data-theme="light"], [data-theme="porcelain"]) on the application shell,
  * [data-ry-theme="light"] on a public band, or locally via .rt-light so a
  * control surface can show both worlds on one page.
  *
@@ -155,7 +155,7 @@
 /* The short list of roles whose dark value is not legible as TEXT on a light
    ground — every one measured against #FFFFFF and #F5F7FA, not assumed. A fill
    or a line may keep the brand hue; a word may not. */
-[data-theme="light"],
+:is([data-theme="light"], [data-theme="porcelain"]),
 .rt-light {
   --rt-action-blue-fg: var(--ry-iris-sink);
   --rt-authorization-violet-fg: var(--ry-iris-sink);
@@ -291,7 +291,7 @@
 
 /* The cool neutral light theme — never cream, never a warm tint. */
 [data-ry-theme="light"],
-[data-theme="light"],
+:is([data-theme="light"], [data-theme="porcelain"]),
 .rt-light,
 .rx-paper,
 .rx [class*="boundaries"] {

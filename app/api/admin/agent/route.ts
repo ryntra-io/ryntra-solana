@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 
 import { readAgentUsage, resolveAgentBudgetConfig } from "@/lib/agent/budget";
-import { OPENAI_AGENT_MODEL_DEFAULT, OPENAI_AGENT_MODEL_ENV } from "@/lib/agent/model";
+import { modelFor } from "@/lib/assistant/models";
 import { toolNames } from "@/lib/agent/tools/registry";
 import { getGuardRuntime } from "@/lib/guard/runtime";
 import { getAdminSession } from "@/lib/session";
@@ -12,9 +12,9 @@ export const dynamic = "force-dynamic";
 /**
  * The agent's usage for the admin: the ceilings in force, today's and the
  * month's model calls from the durable meter, the receipts of the last
- * fortnight by day and by model (calls, tokens, distinct wallets counted —
- * never listed — and outcomes), whether the model is switched on and which
- * one, and the tools the agent has. Admin session only; never a key, never a
+ * fortnight by day and by model (calls, tokens, dollars, distinct wallets and
+ * guests counted — never listed — and outcomes), whether the model is switched
+ * on and which model each class calls (AI-02), and the tools the agent has. Admin session only; never a key, never a
  * word of a conversation.
  */
 export async function GET(request: Request) {
@@ -23,11 +23,11 @@ export async function GET(request: Request) {
   try {
     const days = Math.min(90, Math.max(1, Number(new URL(request.url).searchParams.get("days") ?? 14) || 14));
     const config = resolveAgentBudgetConfig(process.env);
-    const usage = await readAgentUsage(getGuardRuntime().store, config, Date.now(), days);
+    const usage = await readAgentUsage(getGuardRuntime().store, config, Date.now(), days, process.env);
     return NextResponse.json(
       {
         generatedAt: new Date().toISOString(),
-        model: { enabled: config.modelEnabled, name: process.env[OPENAI_AGENT_MODEL_ENV]?.trim() || OPENAI_AGENT_MODEL_DEFAULT, switch: "RYNTRA_AGENT_MODEL_ENABLED" },
+        model: { enabled: config.modelEnabled, name: modelFor("answer", process.env).name, switch: "RYNTRA_AGENT_MODEL_ENABLED" },
         tools: { research: toolNames("research"), prepare: toolNames("prepare"), execute: false },
         usage,
       },

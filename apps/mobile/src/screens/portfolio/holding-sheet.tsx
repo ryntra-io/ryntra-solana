@@ -25,6 +25,8 @@ export type HoldingSheetProps = {
   onClose: () => void
   /** A company's position sold on its own sheet, as on its page; crypto is sold in Trade. */
   onSell?: (row: PortfolioRow) => void
+  /** The position's history in «Портфель · Історія», on this asset — never the older History screen. */
+  onHistory?: (row: PortfolioRow) => void
 }
 
 /**
@@ -34,7 +36,17 @@ export type HoldingSheetProps = {
  * drawn (one version since: the plan is a quiet door here for
  * everyone).
  */
-export function HoldingSheet({ row, observedAt, now, locale, copy, event = null, onClose, onSell }: HoldingSheetProps) {
+export function HoldingSheet({
+  row,
+  observedAt,
+  now,
+  locale,
+  copy,
+  event = null,
+  onClose,
+  onSell,
+  onHistory,
+}: HoldingSheetProps) {
   const router = useRouter()
   if (!row) return null
   const go = (href: Parameters<typeof router.push>[0]) => {
@@ -132,7 +144,9 @@ export function HoldingSheet({ row, observedAt, now, locale, copy, event = null,
         <Button
           title={copy.assetHistory}
           variant="secondary"
-          onPress={() => go({ pathname: '/history', params: { mint: row.mint, symbol: row.symbol } })}
+          onPress={() =>
+            onHistory ? onHistory(row) : go({ pathname: '/history', params: { mint: row.mint, symbol: row.symbol } })
+          }
           className="flex-1"
         />
         {row.group === 'stock' && row.listed ? (

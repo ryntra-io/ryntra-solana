@@ -1,53 +1,67 @@
 import { useLocalSearchParams, useRouter } from 'expo-router'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { FlatList, Pressable, RefreshControl, View } from 'react-native'
-import { useSafeAreaInsets } from 'react-native-safe-area-context'
 
 import { AssetRow, type AssetRowAsset } from '@/components/asset-row'
 import { Chip } from '@/components/chip'
 import { ChoiceChips, type Choice } from '@/components/choice-chips'
 import { FilterSheet, type FilterOption } from '@/components/filter-sheet'
+import { HelpDot } from '@/components/help-dot'
 import { Icon } from '@/components/icon'
-import { ScreenHeader } from '@/components/screen'
-import { SearchBar } from '@/components/search-field'
 import { Skeleton } from '@/components/skeleton'
 import { StateView } from '@/components/state-view'
 import { Txt } from '@/components/txt'
 import { AskRyn } from '@/features/agent/ask-ryn'
 import { markPremium } from '@/features/invest/shelf'
+import { useCompanyShelf, useShelfNames } from '@/features/invest/use-shelf'
 import { MARKETS_COPY, type MarketsCopy } from '@/features/markets/copy'
 import {
+  askedPlaceChip,
+  kindsOfChip,
   marketScreenerRow,
-  rowsForTab,
-  SCREENER_TABS,
-  screenerTabOf,
+  openingChip,
+  PLACE_CHIPS,
+  PLACE_DEFAULT,
   sortRows,
   sortsFor,
   stockScreenerRow,
   uniqueRows,
   type ScreenerRow,
   type ScreenerSort,
-  type ScreenerTab,
+  type PlaceChip,
 } from '@/features/markets/screener'
+import { SHEET_COPY } from '@/features/trade/sheet-copy'
 import { useWatchlist } from '@/features/watchlist/watchlist'
 import { useMarkets, useStockUniverse, useWatchlistMarkets } from '@/hooks/use-markets'
 import { useNow } from '@/hooks/use-now'
+import { useRefreshOnOpen } from '@/hooks/use-refresh-on-open'
 import { isNetworkError, type MarketsResponse } from '@/lib/api'
 import { useCopy, useLocale, type Locale } from '@/lib/i18n'
-import { readPreference, writePreference } from '@/lib/preferences'
+import { readPreference, readPreferenceText, writePreference } from '@/lib/preferences'
 import { issuerLabel, sessionWord } from '@/lib/stocks'
-import { useTheme } from '@/theme'
+import { useSpace, useTheme } from '@/theme'
 import { formatAge, formatClock } from '@/utils/format'
+import { LaunchMarketsList } from '@/screens/launch/markets'
+import { Button } from '@/components/button'
 
-const TAB_KEY = 'markets.screener.tab'
+/**
+ * The chip the person chose last. Its key is new with the order of 2026-10-18 (Усі first, Обране last): a chip tapped
+ * under the older order, where «Обране» stood first, is not carried over — so the first visit after the update opens
+ * «Усі», and the next choice is remembered as before.
+ */
+const CHIP_KEY = 'markets.place.chip.v2'
+
+/** The room the pull-to-refresh spinner takes over the list while it spins, dp. */
+const PULL_ROOM = 56
 
 type Row = AssetRowAsset & Readonly<{ mint: string; source: ScreenerRow }>
 
 function LoadingRows({ label }: { label: string }) {
+  const space = useSpace()
   return (
     <View className="px-4" accessibilityLabel={label} accessibilityRole="progressbar">
       {Array.from({ length: 8 }, (_, index) => (
-        <View key={index} className="flex-row items-center gap-3 border-b border-line py-3">
+        <View key={index} className={`flex-row items-center gap-3 border-b border-line ${space.row}`}>
           <Skeleton className="h-10 w-10 rounded-pill" />
           <View className="flex-1 gap-2">
             <Skeleton className="h-3.5 w-16" />
@@ -74,26 +88,37 @@ function oldest(...times: readonly (string | null | undefined)[]): string | null
 }
 
 /**
- * «Ринки» — one screener for every asset (the web's `/app/markets`):
- * Усі · Меми · Крипта · Акції · Приватні · Обране over one list. A row is a
- * logo, the ticker, the name with the issuer and the exchange's session (or
- * «Це не акція» and the price against PreStocks' valuation), the price and the
- * day's change; it opens the token's page. The order is the person's own —
- * «У тренді» first, then «Зростають», «Падають», «Ліквідність», and «До біржі»
- * for stocks. The search above finds any token by its name, ticker or contract
- * address. Every list carries the time it was read; a stale or partial read
- * says so.
+ * «Торгівля · Ринки» — one screener for every asset, under the chips Усі · Акції · Крипто · Меми · Лаунчі · Обране, opened on «Усі» unless a link asks for a chip or the person chose one before. A row
+ * is a logo, the ticker, the name with the issuer and the exchange's session (or «Це не акція» and the price against
+ * PreStocks' valuation), the price and the day's change; it opens the token's own page — Купити, Продати with a
+ * position, Ліміт in the purchase's «Тип». «Лаунчі» lists the markets launched through Ryntra under «Запустити свій
+ * токен»; under «Акції» a «?» says what a tokenized stock is, under «Меми» one sentence says a meme's risk, and in
+ * «Усі» and «Обране» a meme's row says «Мем». The
+ * order is the person's own — «У тренді» first, then «Зростають», «Падають», «Ліквідність», and «До біржі» for stocks.
+ * Every list carries the time it was read; its prices stand and are read again quietly — every 60 s and when the screen
+ * opens — with no «Ціни не оновлюються» bar over them (ST-7); a list that never answered is «Ринки не завантажилися» with
+ * «Спробувати ще». The place's head — the segments and
+ * search — is «Торгівля»'s own (`screens/trade-place`).
  */
 export function MarketsScreen() {
-  const insets = useSafeAreaInsets()
   const router = useRouter()
   const { colors } = useTheme()
   const locale = useLocale()
   const words = useCopy(MARKETS_COPY)
+  const sheet = useCopy(SHEET_COPY)
   const now = useNow(15_000)
+  const watchlist = useWatchlist()
+  // The shelf this session read names a company as Stocks does; a watchlist read before it names the token.
+  useCompanyShelf()
+  const nameOf = useShelfNames()
   const params = useLocalSearchParams<{ tab?: string; kind?: string; mode?: string }>()
-  const asked = params.tab || params.kind || params.mode ? screenerTabOf(params) : null
-  const [tab, setTabState] = useState<ScreenerTab>(() => asked ?? readPreference(TAB_KEY, SCREENER_TABS, 'all'))
+  const asked = askedPlaceChip(params)
+  const [tab, setTabState] = useState<PlaceChip>(() =>
+    openingChip(
+      asked,
+      readPreferenceText(CHIP_KEY) === null ? null : readPreference(CHIP_KEY, PLACE_CHIPS, PLACE_DEFAULT),
+    ),
+  )
   const [sort, setSort] = useState<ScreenerSort>('volume')
   // A tab asked for while the screen is already mounted (Home → the watchlist) wins once, during render.
   const [askedSeen, setAskedSeen] = useState(asked)
@@ -109,18 +134,19 @@ export function MarketsScreen() {
     if (asked) router.setParams({ tab: undefined, kind: undefined, mode: undefined })
   }, [asked, router])
   const [sortOpen, setSortOpen] = useState(false)
-  const watchlist = useWatchlist()
 
-  const wantsCoins = tab === 'all' || tab === 'memes' || tab === 'crypto'
-  const wantsStocks = tab === 'all' || tab === 'stocks' || tab === 'private'
-  const crypto = useMarkets('crypto', tab === 'all' || tab === 'crypto')
-  const memes = useMarkets('meme', tab === 'all' || tab === 'memes')
+  const kinds = kindsOfChip(tab)
+  const wantsCrypto = kinds.includes('crypto')
+  const wantsMemes = kinds.includes('meme')
+  const wantsStocks = kinds.includes('stock')
+  const crypto = useMarkets('crypto', wantsCrypto)
+  const memes = useMarkets('meme', wantsMemes)
   const stocks = useStockUniverse(wantsStocks)
   const watched = useWatchlistMarkets(tab === 'watchlist' ? watchlist.mints : [])
 
-  const setTab = (next: ScreenerTab) => {
+  const setTab = (next: PlaceChip) => {
     setTabState(next)
-    writePreference(TAB_KEY, next)
+    writePreference(CHIP_KEY, next)
     if (next !== 'stocks' && sort === 'deviation') setSort('volume')
   }
 
@@ -128,12 +154,12 @@ export function MarketsScreen() {
     if (tab === 'watchlist') {
       const data = watched.data
       return {
+        // A company by the name the Stocks list gives it («NVIDIA»), not the token's own «NVIDIA xStock».
         rows: (data?.rows ?? [])
           .map((row) => marketScreenerRow(row, { stocks: true }))
-          .filter((row): row is ScreenerRow => row !== null),
+          .filter((row): row is ScreenerRow => row !== null)
+          .map((row) => (row.kind === 'stock' ? { ...row, name: nameOf(row.mint) ?? row.name } : row)),
         observedAt: data?.observedAt ?? null,
-        stale: data?.stale ?? false,
-        partial: false,
         missing: data?.missing.length ?? 0,
       }
     }
@@ -141,78 +167,94 @@ export function MarketsScreen() {
       (data?.rows ?? []).map((row) => marketScreenerRow(row)).filter((row): row is ScreenerRow => row !== null)
     const stockRows = (stocks.data?.rows ?? []).map(stockScreenerRow)
     const rows = uniqueRows(
-      tab === 'all' || tab === 'crypto' ? coinRows(crypto.data) : [],
-      tab === 'all' || tab === 'memes' ? coinRows(memes.data) : [],
+      wantsCrypto ? coinRows(crypto.data) : [],
+      wantsMemes ? coinRows(memes.data) : [],
       wantsStocks ? stockRows : [],
     )
     return {
-      rows: rowsForTab(rows, tab),
+      rows: rows.filter((row) => kinds.includes(row.kind)),
       observedAt: oldest(
-        tab === 'all' || tab === 'crypto' ? crypto.data?.observedAt : null,
-        tab === 'all' || tab === 'memes' ? memes.data?.observedAt : null,
+        wantsCrypto ? crypto.data?.observedAt : null,
+        wantsMemes ? memes.data?.observedAt : null,
         wantsStocks ? stocks.data?.fetchedAt : null,
       ),
-      stale: Boolean((tab !== 'memes' && crypto.data?.stale) || (tab !== 'crypto' && memes.data?.stale)) && wantsCoins,
-      partial:
-        Boolean((tab !== 'memes' && crypto.data?.partial) || (tab !== 'crypto' && memes.data?.partial)) && wantsCoins,
       missing: 0,
     }
-  }, [tab, watched.data, crypto.data, memes.data, stocks.data, wantsCoins, wantsStocks])
+  }, [tab, kinds, watched.data, crypto.data, memes.data, stocks.data, wantsCrypto, wantsMemes, wantsStocks, nameOf])
 
+  /* On «Акції» one session for every stock (the exchange's hours are one) is said once in the head, not on each row (ST-4). */
+  const sharedPeriod = useMemo(() => {
+    if (tab !== 'stocks') return null
+    const periods = list.rows.flatMap((row) => (row.kind === 'stock' && row.period !== null ? [row.period] : []))
+    return periods.length > 1 && periods.every((period) => period === periods[0]) ? periods[0] : null
+  }, [list.rows, tab])
   const rows = useMemo(
-    () => sortRows(list.rows, sort).map((row) => rowOf(row, locale, words)),
-    [list.rows, sort, locale, words],
+    () =>
+      sortRows(list.rows, sort).map((row) =>
+        rowOf(row, locale, words, tab === 'all' || tab === 'watchlist', sharedPeriod),
+      ),
+    [list.rows, sort, locale, words, tab, sharedPeriod],
   )
 
   /* the reads this tab stands on, and how each of them answered */
   const reads =
     tab === 'watchlist'
       ? [watched]
-      : [
-          ...(tab === 'all' || tab === 'crypto' ? [crypto] : []),
-          ...(tab === 'all' || tab === 'memes' ? [memes] : []),
-          ...(wantsStocks ? [stocks] : []),
-        ]
+      : [...(wantsCrypto ? [crypto] : []), ...(wantsMemes ? [memes] : []), ...(wantsStocks ? [stocks] : [])]
   const pending = reads.some((read) => read.isPending) && rows.length === 0
   const failed = reads.filter((read) => read.isError)
   const fetching = reads.some((read) => read.isFetching)
   const refetch = () => {
     for (const read of reads) void read.refetch()
   }
-  const coinsFailed = tab === 'all' && ((crypto.isError && !crypto.data) || (memes.isError && !memes.data))
-  const stocksFailed = tab === 'all' && stocks.isError && !stocks.data
+  // The tab's lists are read again, quietly, when «Ринки» opens and when the app comes back (ST-7).
+  useRefreshOnOpen(reads)
+  /* The spinner is the person's own pull, not every read in the background: a list refreshed on its own is not covered
+     by it (ST-5 r5). While it spins the list stands a spinner's height lower, so the first row is never under it. */
+  const [pulled, setPulled] = useState(false)
+  const pull = () => {
+    setPulled(true)
+    void Promise.allSettled(reads.map((read) => read.refetch())).finally(() => setPulled(false))
+  }
+  // A list drawn from several reads says which of them did not answer: the coins (crypto or memes) or the stocks.
+  const lost = (read: Readonly<{ isError: boolean; data?: unknown }>) => read.isError && read.data === undefined
+  const cryptoFailed = reads.length > 1 && wantsCrypto && lost(crypto)
+  const memesFailed = reads.length > 1 && wantsMemes && lost(memes)
+  const stocksFailed = reads.length > 1 && wantsStocks && lost(stocks)
 
   const sortOptions = useMemo(
-    (): FilterOption<ScreenerSort>[] => sortsFor(tab).map((value) => ({ value, ...words.sorts[value] })),
+    (): FilterOption<ScreenerSort>[] =>
+      sortsFor(tab === 'stocks' ? 'stocks' : 'all').map((value) => ({
+        value,
+        ...words.sorts[value],
+      })),
     [tab, words],
   )
 
-  const tabs: readonly Choice<ScreenerTab>[] = SCREENER_TABS.map((value) => ({
+  const chipWord = (chip: PlaceChip) => sheet.chips[chip]
+  const tabs: readonly Choice<PlaceChip>[] = PLACE_CHIPS.map((value) => ({
     value,
     label:
       value === 'watchlist' && watchlist.mints.length > 0
-        ? `${words.tabs.watchlist} · ${watchlist.mints.length}`
-        : words.tabs[value],
-    accessibilityLabel: words.tabs[value],
+        ? `${chipWord(value)} · ${watchlist.mints.length}`
+        : chipWord(value),
+    accessibilityLabel: chipWord(value),
   }))
 
   const emptyWatchlist = tab === 'watchlist' && watchlist.mints.length === 0
-  const watchlistNote = watchlist.onDevice
-    ? words.onDevice
-    : watchlist.pending
-      ? words.waitingSync
-      : watchlist.syncedAt
-        ? words.synced(formatClock(watchlist.syncedAt))
-        : words.walletList
-  const subtitle = emptyWatchlist
-    ? watchlist.onDevice
-      ? words.keptOnDevice
-      : words.walletListTitle
-    : list.observedAt
-      ? `${formatClock(list.observedAt)} · ${formatAge(list.observedAt, now, locale)}${tab === 'watchlist' ? ` · ${watchlistNote}` : ''}`
-      : failed.length > 0
-        ? words.notLoaded
-        : words.loading
+  /* The list's time and age. The prices stand and are read again quietly: no «Ціни не оновлюються» bar is drawn for the
+     server's `stale` flag, nor for a refresh that did not answer while the last read is on screen — its age says how old
+     it is.
+     Where the favourites are kept (the device, the wallet) and their sync are not drawn (ST-4): the list is the person's. */
+  // A list that never answered says so once, in its own screen below — not again in the head.
+  const subtitle =
+    emptyWatchlist || (rows.length === 0 && failed.length > 0)
+      ? ''
+      : list.observedAt
+        ? `${formatClock(list.observedAt)} · ${formatAge(list.observedAt, now, locale)}`
+        : failed.length > 0
+          ? words.notLoaded
+          : words.loading
 
   const open = useCallback(
     (row: Row) => {
@@ -235,8 +277,18 @@ export function MarketsScreen() {
   )
 
   let body
-  if (emptyWatchlist) {
-    body = <StateView icon="star-outline" title={words.watchEmpty} detail={words.watchEmptyLine} />
+  if (tab === 'launches') {
+    body = (
+      <LaunchMarketsList
+        head={
+          <View className="pb-3">
+            <Button title={sheet.launchOwn} variant="secondary" onPress={() => router.push('/launch' as never)} />
+          </View>
+        }
+      />
+    )
+  } else if (emptyWatchlist) {
+    body = <StateView icon="star-outline" title={words.watchEmpty} />
   } else if (pending) {
     body = <LoadingRows label={words.loadingA11y} />
   } else if (rows.length === 0 && failed.length > 0) {
@@ -255,22 +307,30 @@ export function MarketsScreen() {
       <StateView
         icon="list-outline"
         title={words.listEmpty}
-        detail={tab === 'watchlist' ? words.watchNoneListed : words.categoryEmpty}
+        detail={tab === 'watchlist' ? words.watchNoneListed : undefined}
         action={{ title: words.refresh, onPress: refetch, loading: fetching }}
       />
     )
   } else {
     const notices = [
-      list.stale ? (tab === 'all' ? words.coinsStale : words.stale) : null,
-      list.partial ? words.partial : null,
       list.missing > 0 ? words.notListed(list.missing) : null,
-      coinsFailed ? words.coinsDown : null,
+      // Both coin reads lost (one source) is one notice, not two.
+      cryptoFailed && memesFailed
+        ? words.coinsDown
+        : cryptoFailed
+          ? words.cryptoDown
+          : memesFailed
+            ? words.memesDown
+            : null,
       stocksFailed ? words.stocksDown : null,
-      failed.length > 0 && !coinsFailed && !stocksFailed ? words.refreshFailed : null,
     ].filter((notice): notice is string => notice !== null)
-    const line = tab === 'memes' ? words.memesRisk : tab === 'private' ? words.privateLine : null
+    // Under «Меми», a meme's risk — one sentence that guards money. What a tokenized stock is sits behind «?» in the
+    // head (ST-4). In «Усі» a meme's row says «Мем» instead, so the default list opens on the assets, not on a warning.
+    const line = tab === 'memes' ? words.memesRisk : null
     body = (
       <FlatList
+        // Each chip is its own list, opened at its top — not where the chip before it was scrolled to.
+        key={tab}
         data={rows}
         keyExtractor={(item) => item.mint}
         renderItem={renderItem}
@@ -279,10 +339,11 @@ export function MarketsScreen() {
         maxToRenderPerBatch={12}
         windowSize={7}
         keyboardShouldPersistTaps="handled"
+        contentContainerStyle={pulled ? { paddingTop: PULL_ROOM } : undefined}
         refreshControl={
           <RefreshControl
-            refreshing={fetching && !pending}
-            onRefresh={refetch}
+            refreshing={pulled}
+            onRefresh={pull}
             tintColor={colors.brand}
             colors={[colors.brand]}
             progressBackgroundColor={colors.surface}
@@ -310,31 +371,38 @@ export function MarketsScreen() {
     )
   }
 
+  // The head's time and session; a line with nothing to say is not drawn, so a screen reader finds no old words in it.
+  const headLine =
+    tab === 'launches'
+      ? ''
+      : [subtitle, sharedPeriod ? sessionWord(sharedPeriod, locale) : ''].filter(Boolean).join(' · ')
+
   return (
-    <View className="flex-1 bg-ground" style={{ paddingTop: insets.top }}>
-      <ScreenHeader
-        title={words.title}
-        subtitle={subtitle}
-        right={
-          <View className="flex-row items-center gap-2">
-            <AskRyn
-              context={{ kind: 'page', page: tab === 'stocks' || tab === 'private' ? 'stocks' : 'trends' }}
-              label={words.askRyntra}
-              className="h-9 w-9 border border-line bg-surface"
-            />
-            <Pressable
-              accessibilityRole="button"
-              accessibilityLabel={words.sortA11y(words.sorts[sort].label)}
-              onPress={() => setSortOpen(true)}
-              className="h-9 w-9 items-center justify-center rounded-btn border border-line bg-surface active:bg-hover"
-            >
-              <Icon name="swap-vertical" size={18} color="muted" />
-            </Pressable>
-          </View>
-        }
-      />
-      <View className="px-4 pb-3">
-        <SearchBar onPress={() => router.push('/search')} />
+    <View className="flex-1 bg-ground">
+      <View className="flex-row items-center gap-2 px-4 pb-2">
+        {headLine ? (
+          <Txt variant="labelSm" tone="faint" numberOfLines={1} className="flex-1">
+            {headLine}
+          </Txt>
+        ) : (
+          <View className="flex-1" />
+        )}
+        {tab === 'stocks' ? <HelpDot title={sheet.stocksTitle} body={sheet.stocksNote} /> : null}
+        <AskRyn
+          context={{ kind: 'page', page: tab === 'stocks' ? 'stocks' : 'trends' }}
+          label={words.askRyntra}
+          className="h-9 w-9 border border-line bg-surface"
+        />
+        {tab === 'launches' || emptyWatchlist ? null : (
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel={words.sortA11y(words.sorts[sort].label)}
+            onPress={() => setSortOpen(true)}
+            className="h-9 w-9 items-center justify-center rounded-btn border border-line bg-surface active:bg-hover"
+          >
+            <Icon name="swap-vertical" size={18} color="muted" />
+          </Pressable>
+        )}
       </View>
       <View accessibilityLabel={words.tabsA11y}>
         <ChoiceChips choices={tabs} value={tab} onChange={setTab} role="tablist" scroll quiet className="px-4 pb-3" />
@@ -370,14 +438,23 @@ function valuationNote(
 /**
  * A screener row as the list draws it: under the name, the issuer and the
  * session — or, for a private company, «Це не акція» and the token against
- * PreStocks' valuation (the tab's own line names PreStocks, so the row does not).
+ * PreStocks' valuation (the tab's own line names PreStocks, so the row does not);
+ * in a list of mixed kinds (`mixed`), a meme says «Мем».
  */
-function rowOf(row: ScreenerRow, locale: Locale, words: MarketsCopy): Row {
+function rowOf(
+  row: ScreenerRow,
+  locale: Locale,
+  words: MarketsCopy,
+  mixed: boolean,
+  sharedPeriod: ScreenerRow['period'],
+): Row {
   const stock = row.kind === 'stock' || row.kind === 'private'
   const notes =
     row.kind === 'private'
       ? [words.notAShare, valuationNote(row.markPremium, locale, words)]
-      : [row.period ? sessionWord(row.period, locale) : null]
+      : // The session is one word on a row: «Exchange closed» never breaks across two lines.
+        [row.period && row.period !== sharedPeriod ? sessionWord(row.period, locale).replace(/ /g, '\u00a0') : null]
+  if (mixed && row.kind === 'meme') notes.push(words.memeMark)
   if (stock && !row.tradable && !row.halted) notes.push(words.notOffered)
   return {
     mint: row.mint,
@@ -392,5 +469,6 @@ function rowOf(row: ScreenerRow, locale: Locale, words: MarketsCopy): Row {
     halted: row.halted,
     verified: stock ? undefined : row.verified,
     suspicious: row.suspicious,
+    poolFar: row.poolFar,
   }
 }

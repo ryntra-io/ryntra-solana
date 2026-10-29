@@ -25,6 +25,8 @@
  * Pure and client-safe: no clock unless given, no network.
  */
 
+import { poolClaimingSplit } from "../../launch/preset-terms.ts";
+
 export const LAUNCH_HOLDER_LABELS = ["creator", "sniper", "bundle", "curve", "pool", "lock"] as const;
 export type LaunchHolderLabel = (typeof LAUNCH_HOLDER_LABELS)[number];
 
@@ -64,6 +66,19 @@ export type LaunchTrade = Readonly<{
    * counted — never read as zero.
    */
   ryntraRaw?: string;
+  /**
+   * The creator role's part of a curve swap's trading fee, as the program splits it (rounded down); absent on a pool swap
+   * and on a swap decoded before it was counted — never read as zero.
+   */
+  creatorRaw?: string;
+  /** The part of a pool swap's fee its liquidity providers claim, in the pair currency; absent on a curve swap and where it was not counted. */
+  lpRaw?: string;
+  /**
+   * Of `ryntraRaw`, Ryntra's own fee moved into its fee wallet in the same transaction — the terminal's fee, which its
+   * operations ledger also records (Ryntra's financial panel counts it there once). Absent on a trade decoded before it
+   * was counted — never read as zero.
+   */
+  ownRaw?: string;
   /** The price the trade left, pair currency per token. */
   priceAfter: number;
 }>;
@@ -90,6 +105,10 @@ export type SwapSeen = Readonly<{
   partnerFeeRaw: bigint;
   /** Meteora's referral that went into Ryntra's referral account in the same transaction, raw in the pair currency; 0 when none. */
   referralToRyntraRaw: bigint;
+  /** The creator role's part of a curve swap's trading fee; null in the pool. */
+  creatorFeeRaw?: bigint | null;
+  /** The LP part of a pool swap's fee in the pair currency; null on the curve, or where the fee is not in the pair currency. */
+  lpFeeRaw?: bigint | null;
   priceAfter: number;
 }>;
 
@@ -116,6 +135,9 @@ export function tradeOf(seen: SwapSeen): LaunchTrade {
     pairRaw: (pair > 0n ? pair : 0n).toString(),
     feeRaw: (seen.feesRaw + seen.ryntraFeeRaw).toString(),
     ryntraRaw: (seen.partnerFeeRaw + seen.referralToRyntraRaw + seen.ryntraFeeRaw).toString(),
+    ownRaw: seen.ryntraFeeRaw.toString(),
+    ...(seen.creatorFeeRaw === undefined || seen.creatorFeeRaw === null ? {} : { creatorRaw: seen.creatorFeeRaw.toString() }),
+    ...(seen.lpFeeRaw === undefined || seen.lpFeeRaw === null ? {} : { lpRaw: seen.lpFeeRaw.toString() }),
     priceAfter: seen.priceAfter,
   };
 }
@@ -331,11 +353,16 @@ export function launchRiskFacts(
     tradesRead: number;
     /** DBC curves this creator opened anywhere, this one included; null when it could not be read. */
     creatorCurves: number | null;
+    /**
+     * Whether the creator's own trades were read whole (SOL-P1): a share sold counted from a part of them is a guess —
+     * not said; the page says the creator's sales were not read. Absent means whole, as every read before said.
+     */
+    creatorTradesWhole?: boolean;
   }>,
 ): LaunchRiskFact[] {
   const facts: LaunchRiskFact[] = [];
   const { activity, groups } = args;
-  const sold = creatorSoldShare(activity, args.supplyRaw);
+  const sold = args.creatorTradesWhole === false ? null : creatorSoldShare(activity, args.supplyRaw);
   if (sold) {
     const last = activity.sales.at(-1);
     facts.push({
@@ -458,10 +485,20 @@ export function chartMarkers(trades: readonly LaunchTrade[], creator: string, gr
  * fee splits between the creator (`creatorPct` of it) and Ryntra as the
  * config's partner, Meteora keeps the protocol fee, and the referral — Ryntra,
  * when the trade comes through Ryntra — a fifth of Meteora's. In the graduated
- * pool the fee goes to the pool's liquidity (the creator's and Ryntra's locked
- * positions, a share compounded back), Meteora's protocol fee and the referral.
+ * pool the fee goes to the pool's liquidity, Meteora's protocol fee and the
+ * referral; `liquidity` splits the liquidity's part — the creator's and
+ * Ryntra's locked positions of the move to the DEX, every other position, and
+ * the share compounded back into the pool (`../../launch/preset-terms.ts`).
  */
-export type LaunchFeeSplit = Readonly<{ totalRaw: string; creatorRaw: string | null; ryntraRaw: string; meteoraRaw: string; liquidityRaw: string | null }>;
+export type LaunchPoolLiquiditySplit = Readonly<{ creatorRaw: string; ryntraRaw: string; othersRaw: string; compoundingRaw: string }>;
+export type LaunchFeeSplit = Readonly<{
+  totalRaw: string;
+  creatorRaw: string | null;
+  ryntraRaw: string;
+  meteoraRaw: string;
+  liquidityRaw: string | null;
+  liquidity?: LaunchPoolLiquiditySplit | null;
+}>;
 
 export function curveFeeSplit(args: Readonly<{ tradingFeeRaw: bigint; protocolFeeRaw: bigint; referralFeeRaw: bigint; creatorPct: number }>): LaunchFeeSplit {
   const partner = partnerPartRaw(args.tradingFeeRaw, args.creatorPct);
@@ -474,13 +511,23 @@ export function curveFeeSplit(args: Readonly<{ tradingFeeRaw: bigint; protocolFe
   };
 }
 
-export function poolFeeSplit(args: Readonly<{ claimingFeeRaw: bigint; compoundingFeeRaw: bigint; protocolFeeRaw: bigint; referralFeeRaw: bigint }>): LaunchFeeSplit {
+export function poolFeeSplit(
+  args: Readonly<{ claimingFeeRaw: bigint; compoundingFeeRaw: bigint; protocolFeeRaw: bigint; referralFeeRaw: bigint; liquidity?: bigint; permanentLockedLiquidity?: bigint }>,
+): LaunchFeeSplit {
+  /* The claiming part by the pool's liquidity as read with the quote: none read — the liquidity's part stays whole. */
+  const positions =
+    args.liquidity !== undefined && args.permanentLockedLiquidity !== undefined
+      ? poolClaimingSplit({ claimingRaw: args.claimingFeeRaw, liquidity: args.liquidity, permanentLockedLiquidity: args.permanentLockedLiquidity })
+      : null;
   return {
     totalRaw: (args.claimingFeeRaw + args.compoundingFeeRaw + args.protocolFeeRaw + args.referralFeeRaw).toString(),
     creatorRaw: null,
     ryntraRaw: args.referralFeeRaw.toString(),
     meteoraRaw: args.protocolFeeRaw.toString(),
     liquidityRaw: (args.claimingFeeRaw + args.compoundingFeeRaw).toString(),
+    liquidity: positions
+      ? { creatorRaw: positions.creatorRaw.toString(), ryntraRaw: positions.ryntraRaw.toString(), othersRaw: positions.othersRaw.toString(), compoundingRaw: args.compoundingFeeRaw.toString() }
+      : null,
   };
 }
 

@@ -62,14 +62,15 @@ export const SESSION_WORDS: Readonly<Record<Locale, Readonly<Record<SessionPerio
     market: 'Market open',
     extended: 'Extended hours',
     overnight: 'Overnight',
-    closed: 'Closed',
+    // The exchange behind the token, not the token: it trades around the clock (M44.6).
+    closed: 'Exchange closed',
     unknown: 'Session —',
   },
   uk: {
     market: 'Сесія відкрита',
     extended: 'Подовжені години',
     overnight: 'Нічна сесія',
-    closed: 'Закрито',
+    closed: 'Біржа зачинена',
     unknown: 'Сесія —',
   },
 }

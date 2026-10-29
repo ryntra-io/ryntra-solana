@@ -17,11 +17,12 @@
  */
 
 import { CpAmm, getUnClaimLpFee } from "@meteora-ag/cp-amm-sdk";
-import { DAMM_V2_MIGRATION_FEE_ADDRESS, DynamicBondingCurveClient, deriveDammV2PoolAddress } from "@meteora-ag/dynamic-bonding-curve-sdk";
+import { DAMM_V2_MIGRATION_FEE_ADDRESS, deriveDammV2PoolAddress } from "@meteora-ag/dynamic-bonding-curve-sdk";
 import { TOKEN_2022_PROGRAM_ID, TOKEN_PROGRAM_ID } from "@solana/spl-token";
 import { PublicKey, Transaction, type Connection } from "@solana/web3.js";
 import BN from "bn.js";
 
+import { cpAmmOf, dbcClientOf } from "../meteora-clients.server.ts";
 import { partnerMigrationFeeRaw, partnerSurplusRaw, type BudgetSource } from "../../launch/budget.ts";
 
 /** The program's mask of the partner's withdrawal in `migration_fee_withdraw_status` (DBC: bit 2, 0b100). */
@@ -57,8 +58,13 @@ export type PartnerFeesRead = Readonly<{
  * failed the whole read after graduation, so the migration fee was never claimed. The lookup's failure now leaves only
  * the position unread.
  */
-export async function readPartnerFees(connection: Connection, args: Readonly<{ token: string; pool: string }>, options: Readonly<{ indexed?: Connection | null }> = {}): Promise<PartnerFeesRead> {
-  const client = new DynamicBondingCurveClient(connection, "confirmed");
+export async function readPartnerFees(
+  connection: Connection,
+  args: Readonly<{ token: string; pool: string }>,
+  /* `lpFromIndex: false` — the caller reads the locked position from the move to the DEX itself (SOL-L1d): no index lookup. */
+  options: Readonly<{ indexed?: Connection | null; lpFromIndex?: boolean }> = {},
+): Promise<PartnerFeesRead> {
+  const client = dbcClientOf(connection);
   const virtual = await client.state.getPool(new PublicKey(args.pool));
   if (!virtual) throw new Error(`No curve at ${args.pool}.`);
   const state = virtual.poolState;
@@ -76,38 +82,40 @@ export async function readPartnerFees(connection: Connection, args: Readonly<{ t
     if (dammConfig) {
       const address = deriveDammV2PoolAddress(dammConfig, new PublicKey(args.token), config.quoteMint);
       dammPool = address.toBase58();
-      try {
-        const poolState = await new CpAmm(connection).fetchPoolState(address);
-        /*
-         * The primary first, the indexed node only when it refuses: on mainnet the public primary refuses the lookup at
-         * once; the second node also checks the budget's price every pass, and a public one that is asked more answers
-         * «too many requests» to that check too (devnet, 10.10).
-         */
-        let found: Awaited<ReturnType<CpAmm["getUserPositionByPool"]>>[number] | null = null;
-        let lookedUp = false;
-        for (const node of options.indexed && options.indexed !== connection ? [connection, options.indexed] : [connection]) {
-          try {
-            found = (await new CpAmm(node).getUserPositionByPool(address, config.feeClaimer))[0] ?? null;
-            lookedUp = true;
-            break;
-          } catch {
-            /* the next node */
+      if (options.lpFromIndex !== false) {
+        try {
+          const poolState = await cpAmmOf(connection).fetchPoolState(address);
+          /*
+           * The primary first, the indexed node only when it refuses: on mainnet the public primary refuses the lookup at
+           * once; the second node also checks the budget's price every pass, and a public one that is asked more answers
+           * «too many requests» to that check too (devnet, 10.10).
+           */
+          let found: Awaited<ReturnType<CpAmm["getUserPositionByPool"]>>[number] | null = null;
+          let lookedUp = false;
+          for (const node of options.indexed && options.indexed !== connection ? [connection, options.indexed] : [connection]) {
+            try {
+              found = (await cpAmmOf(node).getUserPositionByPool(address, config.feeClaimer))[0] ?? null;
+              lookedUp = true;
+              break;
+            } catch {
+              /* the next node */
+            }
           }
+          if (!lookedUp) throw new Error("No node looked the position up.");
+          if (found) {
+            const pairIsB = poolState.tokenBMint.equals(config.quoteMint);
+            const unclaimed = getUnClaimLpFee(poolState, found.positionState);
+            lp = {
+              pool: dammPool,
+              position: found.position.toBase58(),
+              positionNftAccount: found.positionNftAccount.toBase58(),
+              pairRaw: BigInt((pairIsB ? unclaimed.feeTokenB : unclaimed.feeTokenA).toString()),
+              tokenRaw: BigInt((pairIsB ? unclaimed.feeTokenA : unclaimed.feeTokenB).toString()),
+            };
+          }
+        } catch {
+          lpUnread = true;
         }
-        if (!lookedUp) throw new Error("No node looked the position up.");
-        if (found) {
-          const pairIsB = poolState.tokenBMint.equals(config.quoteMint);
-          const unclaimed = getUnClaimLpFee(poolState, found.positionState);
-          lp = {
-            pool: dammPool,
-            position: found.position.toBase58(),
-            positionNftAccount: found.positionNftAccount.toBase58(),
-            pairRaw: BigInt((pairIsB ? unclaimed.feeTokenB : unclaimed.feeTokenA).toString()),
-            tokenRaw: BigInt((pairIsB ? unclaimed.feeTokenA : unclaimed.feeTokenB).toString()),
-          };
-        }
-      } catch {
-        lpUnread = true;
       }
     }
   }
@@ -153,7 +161,7 @@ export async function buildPartnerClaim(connection: Connection, args: Readonly<{
   if (read.feeClaimer !== args.claimer) throw new PartnerClaimRefusal("NOT_THE_CLAIMER", "Only a config whose fee claimer is this wallet is claimed by it.");
   const claimer = new PublicKey(args.claimer);
   const pool = new PublicKey(read.curve);
-  const client = new DynamicBondingCurveClient(connection, "confirmed");
+  const client = dbcClientOf(connection);
   if (source === "curve") {
     if (read.curveRaw <= 0n && read.curveTokenRaw <= 0n) throw new PartnerClaimRefusal("NOTHING_TO_CLAIM", "No partner fee waits on the curve.");
     return client.partner.claimPartnerTradingFee({ feeClaimer: claimer, payer: claimer, pool, maxBaseAmount: U64_MAX, maxQuoteAmount: U64_MAX });
@@ -168,7 +176,7 @@ export async function buildPartnerClaim(connection: Connection, args: Readonly<{
   }
   const lp = read.lp;
   if (!lp || (lp.pairRaw <= 0n && lp.tokenRaw <= 0n)) throw new PartnerClaimRefusal("NOTHING_TO_CLAIM", "No fee waits on the partner's locked position.");
-  const cpAmm = new CpAmm(connection);
+  const cpAmm = cpAmmOf(connection);
   const poolState = await cpAmm.fetchPoolState(new PublicKey(lp.pool));
   const programOf = async (mint: PublicKey) => ((await connection.getAccountInfo(mint, "confirmed"))?.owner.equals(TOKEN_2022_PROGRAM_ID) ? TOKEN_2022_PROGRAM_ID : TOKEN_PROGRAM_ID);
   const tx = await cpAmm.claimPositionFee({

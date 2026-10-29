@@ -2,21 +2,42 @@
  * The one door to the Ryntra API. The app has no financial logic of its own:
  * every figure, quote and receipt comes from `ryntra.io`. The public routes
  * are called as they are; the native contract (v1 — sign-in, session,
- * watchlist) goes through the client the web app publishes, pinned by
+ * watchlist) goes through the client the web line publishes, pinned by
  * content in `./api/v1` (see PIN.json) and never edited here.
  */
 
 import type { SiwsVerifyBody } from '@/features/session/siws'
 
+import { bearerOf } from './session-bearer.ts'
 import { createRyntraApiClient, RyntraApiError, RyntraRouteError, type RyntraApiClient } from './api/v1/client.ts'
 import {
   API_CONTRACT_VERSION,
   type AgentBudgetState,
   type AgentDraftResponse,
   type AgentMessageRequest,
+  type AgentGuestRequest,
+  type AgentGuestResponse,
   type AgentMessageResponse,
+  type AgentSessionListResponse,
   type AgentSessionOpenRequest,
   type AddressEvidenceRead,
+  type AgentBriefResponse,
+  type AgentCriticResponse,
+  type AgentLensRequest,
+  type AssistantBriefResponse,
+  type AssistantBriefUpdate,
+  type AssistantCreditOrderRequest,
+  type AssistantMemoryUpdate,
+  type AssistantPlanCreate,
+  type AssistantPlanRecheck,
+  type AssistantPlanStateRequest,
+  type AssistantPlanUpdate,
+  type AssistantProfileUpdate,
+  type AssistantTaskCreate,
+  type AssistantTaskUpdate,
+  type AssistantVoiceRequest,
+  type AssistantWatchCreate,
+  type AssistantWatchUpdate,
   type AgentSessionResponse,
   type ApiClient,
   type ApiSession,
@@ -54,8 +75,10 @@ import {
   type RuleAssetResponse,
   type RuleResponse,
   type RuleStatus,
+  type SeekerCheckResponse,
   type SendReturnedRequest,
   type SendReturnedResponse,
+  type SkrNameRead,
   type SwapCheck,
   type TelegramChannelResponse,
   type TransferAdoptResponse,
@@ -154,8 +177,43 @@ export type ApiInit = Readonly<{
  */
 export const READS_HEADER: Readonly<Record<string, string>> = { 'X-Ryntra-Reads': 'rule-reference-enabled' }
 
+/** The longest wait a refusal's headers may name that the phone carries on (seconds). */
+export const RETRY_AFTER_MAX_SECONDS = 60
+
+/**
+ * The wait a refused response names in its headers, in whole seconds (0 … `RETRY_AFTER_MAX_SECONDS`), or null.
+ * The server's limit answers 429 with the wait only in headers: `Retry-After` (seconds, or an HTTP date), else
+ * `Ratelimit-Reset` (seconds until the window resets; a Unix time in seconds is read as such).
+ */
+export function retryAfterSecondsOf(
+  headers: Readonly<{ get(name: string): string | null }> | null | undefined,
+  nowMs: number = Date.now(),
+): number | null {
+  if (!headers) return null
+  const fromRetryAfter = waitOf(headers.get('retry-after'), nowMs, true)
+  const seconds = fromRetryAfter ?? waitOf(headers.get('ratelimit-reset'), nowMs, false)
+  if (seconds === null) return null
+  return Math.min(RETRY_AFTER_MAX_SECONDS, Math.max(0, Math.ceil(seconds)))
+}
+
+/** Unix seconds beyond this are a moment, not a delay (2001-09-09). */
+const EPOCH_SECONDS_FLOOR = 1_000_000_000
+
+function waitOf(raw: string | null, nowMs: number, dateAllowed: boolean): number | null {
+  const value = raw?.trim()
+  if (!value) return null
+  if (/^\d+(\.\d+)?$/.test(value)) {
+    const n = Number(value)
+    if (!Number.isFinite(n)) return null
+    return n >= EPOCH_SECONDS_FLOOR ? n - nowMs / 1000 : n
+  }
+  if (!dateAllowed) return null
+  const at = Date.parse(value)
+  return Number.isFinite(at) ? (at - nowMs) / 1000 : null
+}
+
 export async function apiRequest<T>(
-  method: 'GET' | 'POST' | 'PUT' | 'DELETE',
+  method: 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE',
   path: string,
   body: unknown,
   init: ApiInit = {},
@@ -166,7 +224,7 @@ export async function apiRequest<T>(
   try {
     const headers: Record<string, string> = { accept: 'application/json', 'X-Ryntra-API': '1', ...READS_HEADER }
     if (body !== undefined) headers['content-type'] = 'application/json'
-    if (init.session) headers.authorization = `Bearer ${init.session.token}`
+    if (init.session) headers.authorization = `Bearer ${bearerOf(init.session)}`
     if (init.acceptLanguage) headers['accept-language'] = init.acceptLanguage
     const response = await fetch(`${API_BASE_URL}${path}`, {
       method,
@@ -184,7 +242,14 @@ export async function apiRequest<T>(
       const error = typeof failure.error === 'string' ? { code: undefined, message: failure.error } : failure.error
       const code = typeof error?.code === 'string' ? error.code : `HTTP_${response.status}`
       const message = typeof error?.message === 'string' ? error.message : 'The request did not succeed.'
-      const { code: _code, message: _message, ...details } = error ?? {}
+      const { code: _code, message: _message, ...bodyDetails } = error ?? {}
+      // A wait the body names is kept as the server said it; else the one its headers name (429 says it only there).
+      const headerWait = retryAfterSecondsOf(response.headers)
+      const details =
+        headerWait !== null &&
+        !(typeof bodyDetails.retryAfterSeconds === 'number' && Number.isFinite(bodyDetails.retryAfterSeconds))
+          ? { ...bodyDetails, retryAfterSeconds: headerWait }
+          : bodyDetails
       throw new ApiError(code, message, response.status, null, details)
     }
     if (response.status === 204) return undefined as T
@@ -366,7 +431,7 @@ export function fetchCandles(mint: string, timeframe: Timeframe, signal?: AbortS
   return apiGet<CandlesResponse>(`/api/spot/candles?mint=${mint}&tf=${timeframe}`, { signal })
 }
 
-/* ---- Stocks ---- */
+/* ---- Stocks (the web line's ---- */
 
 export type StockIssuerId = 'xstocks' | 'backpack' | 'ondo' | 'prestocks' | (string & {})
 
@@ -610,7 +675,8 @@ export function fetchStockQuote(
   input: Readonly<{ ticker: string; side: StockSide; usd: number }>,
   signal?: AbortSignal,
 ): Promise<StockQuote> {
-  const usd = Math.round(input.usd)
+  // Cents, as typed: the route takes a decimal sum, and the card says the sum it was quoted for (ST-5 r8).
+  const usd = Math.round(input.usd * 100) / 100
   return apiGet<StockQuote>(
     `/api/stocks/quote?ticker=${encodeURIComponent(input.ticker)}&side=${input.side}&usd=${usd}`,
     { signal },
@@ -636,7 +702,7 @@ export type StockUniverseRow = Readonly<{
   period: SessionPeriod
   volume: number | null
   liquidity: number | null
-  /** `listed-equity` or `pre-ipo` — a private company's token (PreStocks), «Це не акція» (served since 2026-09-23). */
+  /** `listed-equity` or `pre-ipo` — a private company's token (PreStocks), «Це не акція» (request 26, served since 2026-09-23). */
   kind?: 'listed-equity' | 'pre-ipo' | (string & {})
   /** Whether the issuer offers a new purchase; absent reads as offered. */
   tradable?: boolean
@@ -679,10 +745,16 @@ export function fetchStockUniverseFull(signal?: AbortSignal): Promise<StockUnive
  * code, and a network failure stays a plain error, so `isNetworkError` and
  * `isUnauthorized` read the same for every route in the app.
  */
-function v1Client(session: Session | null, signal?: AbortSignal, timeoutMs = REQUEST_TIMEOUT_MS): RyntraApiClient {
+function v1Client(
+  session: Session | null,
+  signal?: AbortSignal,
+  timeoutMs = REQUEST_TIMEOUT_MS,
+  headers?: Readonly<Record<string, string>>,
+): RyntraApiClient {
   return createRyntraApiClient({
     baseUrl: API_BASE_URL,
-    token: () => session?.token ?? null,
+    ...(headers ? { headers } : {}),
+    token: () => (session ? bearerOf(session) : null),
     fetch: async (input, init) => {
       const controller = new AbortController()
       const timer = setTimeout(() => controller.abort(), timeoutMs)
@@ -715,6 +787,45 @@ async function v1<T>(work: () => Promise<T>): Promise<T> {
     }
     throw error
   }
+}
+
+/**
+ * A model's own citation marker — `\uE200c1\uE202c2\uE201`, ids and their separators only — with the space before it;
+ * one that never closes (a server cut it short) ends at the next space or the text's end, so it takes no word with it.
+ * Then any character of the private-use area left over.
+ */
+const MODEL_MARKER = /[ \t]*\uE200[\w\uE202-]{0,200}(?:\uE201|(?=\s|$))/g
+const PRIVATE_USE = /[\uE000-\uF8FF]/g
+
+/**
+ * The words of a text as a person reads them: the markers a model writes for its sources sit in the private-use
+ * area, which every font draws as empty boxes — dropped with the space before them, nothing else touched. A sentence's
+ * sources are its own `cites`. Text without them comes back as it was.
+ */
+export function spokenText(text: string): string {
+  if (!/[\uE000-\uF8FF]/.test(text)) return text
+  return text.replace(MODEL_MARKER, '').replace(PRIVATE_USE, '')
+}
+
+/** Fields matched byte for byte against other routes (a plan's symbol, a trigger): never rewritten. */
+const KEPT_AS_SENT: ReadonlySet<string> = new Set(['id', 'label', 'context', 'triggerId', 'href'])
+
+/** Every string of an answer through `spokenText` — the assistant's routes and the notes, whose words a model may write. */
+export function spokenWords<T>(value: T): T {
+  if (typeof value === 'string') return spokenText(value) as T
+  if (Array.isArray(value)) return value.map((item) => spokenWords(item)) as T
+  // Plain objects only: bytes, dates and anything with a prototype of its own pass untouched.
+  if (value !== null && typeof value === 'object' && Object.getPrototypeOf(value) === Object.prototype) {
+    const out: Record<string, unknown> = {}
+    for (const [key, item] of Object.entries(value)) out[key] = KEPT_AS_SENT.has(key) ? item : spokenWords(item)
+    return out as T
+  }
+  return value
+}
+
+/** `v1` for the assistant's routes: the answer's words as a person reads them (`spokenWords`). */
+async function v1Words<T>(work: () => Promise<T>): Promise<T> {
+  return spokenWords(await v1(work))
 }
 
 /** Who is asking: the contract's `client` on the challenge and the verify — platform, the app's version, its package. */
@@ -770,6 +881,33 @@ export function createSessionApi(identity: ApiClientIdentity): SessionApi {
       await v1(() => v1Client(session, signal).auth.revoke())
     },
   }
+}
+
+/* ---- «Перевірено Seeker» and `.skr` names (contracts 1.66.0 §3bh and 1.65.0 §3bg — M41.2) ---- */
+
+export type { SeekerCheckResponse, SkrNameRead }
+
+/**
+ * Whether the wallet the session proved holds a Seeker Genesis Token, read by the server on mainnet. The address is
+ * the bearer's own — none is sent. A 503 (`UNAVAILABLE`) is the chain not answering, never `verified: false`.
+ */
+export function readSeekerCheck(session: Session, signal?: AbortSignal): Promise<SeekerCheckResponse> {
+  return v1(() => v1Client(session, signal).auth.seeker())
+}
+
+/** A `.skr` name to the address that owns it now — the server reads the chain every time; nothing here keeps it. */
+export function readSkrNameOwner(name: string, signal?: AbortSignal): Promise<SkrNameRead> {
+  return v1(() => v1Client(null, signal).research.skrName({ name }))
+}
+
+/**
+ * An address's `.skr` name — the primary one. With the session of exactly that wallet (`self`) the server may answer
+ * the first name it holds when it chose none, so the bearer goes along; for anyone else's address, no bearer.
+ */
+export function readSkrNameOf(address: string, own: Session | null, signal?: AbortSignal): Promise<SkrNameRead> {
+  if (own === null || own.address !== address) return v1(() => v1Client(null, signal).research.skrName({ address }))
+  const proof = { authorization: `Bearer ${bearerOf(own)}` }
+  return v1(() => v1Client(null, signal, REQUEST_TIMEOUT_MS, proof).research.skrName({ address, self: true }))
 }
 
 /* ---- Watchlist on the server: the session's wallet only (contract §3) ---- */
@@ -924,6 +1062,19 @@ export type SwapOrigin = Readonly<{
 }>
 
 /**
+ * ST-3: how long the phone waits for the swap routes that do the venue's work. The order route asks Jupiter again on its
+ * «too many requests» for up to ten seconds and then simulates the bytes; the execute route hands the signed bytes to
+ * Jupiter for up to thirty seconds and reads the chain after. Cut at the default twelve, a slow but ordinary swap read
+ * as «no network»: an order the server still made held the wallet, a send that landed waited for a press of
+ * «Перевірити транзакцію». The send waits a little past the venue's thirty — no longer, since the screen cannot be left
+ * while it waits: an answer that does not come by then is asked of the chain by itself (`checkAfterSend`), on a
+ * screen that can be closed. A check is a read and answers in a moment.
+ */
+export const SWAP_ORDER_TIMEOUT_MS = 25_000
+export const SWAP_SEND_TIMEOUT_MS = 35_000
+export const SWAP_CHECK_TIMEOUT_MS = 20_000
+
+/**
  * A signable Review for the session's wallet as the taker. Line A's routes
  * answer a browser by its origin and a native client by its bearer (request
  * 13); the bearer travels here so the route can tell the taker is proven.
@@ -938,7 +1089,7 @@ export function createSwapOrder(
     'POST',
     '/api/solana/swap/order',
     { input: { ...input, taker: session.address }, ...(origin ? { origin } : {}) },
-    { signal, session },
+    { signal, session, timeoutMs: SWAP_ORDER_TIMEOUT_MS },
   )
 }
 
@@ -973,14 +1124,22 @@ export type SwapExecuteInput = Readonly<{
 
 /** The one submission: the reviewed bundle back unchanged with the wallet's signed bytes; the server submits and observes. */
 export function executeSwap(session: Session, input: SwapExecuteInput, signal?: AbortSignal): Promise<SwapSettlement> {
-  return apiRequest<SwapSettlement>('POST', '/api/solana/swap/execute', input, { signal, session })
+  return apiRequest<SwapSettlement>('POST', '/api/solana/swap/execute', input, {
+    signal,
+    session,
+    timeoutMs: SWAP_SEND_TIMEOUT_MS,
+  })
 }
 
 export type SwapRecoveryInput = Readonly<{ signature: string; owner: string; requestId?: string }>
 
 /** The state the server observed for one signature; it never resubmits. */
 export function recoverSwap(session: Session, input: SwapRecoveryInput, signal?: AbortSignal): Promise<SwapSettlement> {
-  return apiRequest<SwapSettlement>('POST', '/api/solana/swap/recover', input, { signal, session })
+  return apiRequest<SwapSettlement>('POST', '/api/solana/swap/recover', input, {
+    signal,
+    session,
+    timeoutMs: SWAP_CHECK_TIMEOUT_MS,
+  })
 }
 
 /** Release an open Review nobody signed, so the wallet may ask for another; refused while its blockhash still lives. */
@@ -1370,11 +1529,18 @@ export type {
   AgentDraftCard,
   AgentDraftResponse,
   AgentFigure,
+  AgentGuestResponse,
   AgentHandoff,
   AgentMessageResponse,
+  AgentMoveMark,
   AgentSession,
   AgentSessionResponse,
+  AgentSessionSummary,
   AgentState,
+  AssistantBrief,
+  AssistantBriefLine,
+  AssistantBriefPart,
+  AssistantBriefResponse,
   AgentSuggestion,
   AgentTurn,
 } from './api/v1/types.ts'
@@ -1393,17 +1559,238 @@ export type AgentApi = Readonly<{
   /** A draft a turn prepared, read back while it lives (a week). */
   draft: (session: Session, draftId: string, signal?: AbortSignal) => Promise<AgentDraftResponse>
   budget: (session: Session, signal?: AbortSignal) => Promise<AgentBudgetState>
+  /** The wallet's conversations with a question in them, the most recent first (1.43.0). */
+  sessions: (session: Session, signal?: AbortSignal) => Promise<AgentSessionListResponse>
+  /** A market question without a wallet (1.43.0): public, no bearer; the server stores nothing but the meter. */
+  guest: (request: AgentGuestRequest, signal?: AbortSignal) => Promise<AgentGuestResponse>
+  /** The wallet's morning brief and its settings (1.46.0): the newest, or the one of a note's `day`, in `locale`. */
+  brief: (
+    session: Session,
+    locale: 'en' | 'uk',
+    day?: string | null,
+    signal?: AbortSignal,
+  ) => Promise<AssistantBriefResponse>
+  /** The brief's settings written; the answer is the same read, its words in `locale`. */
+  saveBrief: (
+    session: Session,
+    update: AssistantBriefUpdate,
+    locale: 'en' | 'uk',
+    signal?: AbortSignal,
+  ) => Promise<AssistantBriefResponse>
+  /** «Спитати Ryntra» on a subject (1.10.0): the overview; `deterministic` never reaches a model and never spends. */
+  lensBrief: (session: Session, request: AgentLensRequest, signal?: AbortSignal) => Promise<AgentBriefResponse>
+  /** «Спитати Ryntra» on a subject: the critic — what argues against it. */
+  lensCritic: (session: Session, request: AgentLensRequest, signal?: AbortSignal) => Promise<AgentCriticResponse>
 }>
 
 export const agentApi: AgentApi = {
   open: (session, request, signal) =>
-    v1(() => v1Client(session, signal, AGENT_READ_TIMEOUT_MS).agent.openSession(request)),
+    v1Words(() => v1Client(session, signal, AGENT_READ_TIMEOUT_MS).agent.openSession(request)),
   read: (session, sessionId, signal) =>
-    v1(() => v1Client(session, signal, AGENT_READ_TIMEOUT_MS).agent.session(sessionId)),
+    v1Words(() => v1Client(session, signal, AGENT_READ_TIMEOUT_MS).agent.session(sessionId)),
   message: (session, request, signal) =>
-    v1(() => v1Client(session, signal, AGENT_MESSAGE_TIMEOUT_MS).agent.message(request)),
-  draft: (session, draftId, signal) => v1(() => v1Client(session, signal).agent.draft(draftId)),
-  budget: (session, signal) => v1(() => v1Client(session, signal).agent.budget()),
+    v1Words(() => v1Client(session, signal, AGENT_MESSAGE_TIMEOUT_MS).agent.message(request)),
+  draft: (session, draftId, signal) => v1Words(() => v1Client(session, signal).agent.draft(draftId)),
+  budget: (session, signal) => v1Words(() => v1Client(session, signal).agent.budget()),
+  sessions: (session, signal) => v1Words(() => v1Client(session, signal, AGENT_READ_TIMEOUT_MS).agent.sessions()),
+  guest: (request, signal) => v1Words(() => v1Client(null, signal, AGENT_MESSAGE_TIMEOUT_MS).agent.guest(request)),
+  brief: (session, locale, day, signal) =>
+    v1Words(() => v1Client(session, signal, AGENT_READ_TIMEOUT_MS).assistant.brief(locale, day ?? undefined)),
+  saveBrief: (session, update, locale, signal) =>
+    v1Words(() => v1Client(session, signal).assistant.setBrief(update, locale)),
+  lensBrief: (session, request, signal) =>
+    v1Words(() => v1Client(session, signal, AGENT_MESSAGE_TIMEOUT_MS).agent.brief(request)),
+  lensCritic: (session, request, signal) =>
+    v1Words(() => v1Client(session, signal, AGENT_MESSAGE_TIMEOUT_MS).agent.critic(request)),
+}
+
+/* ---- The assistant's own surfaces (AI-13, request 68): the same routes the web calls, over the pinned client ---- */
+
+export type {
+  AgentBriefResponse,
+  AgentCriticResponse,
+  AgentLensRequest,
+  AssistantCreditEntry,
+  AssistantCreditOrder,
+  AssistantCreditOrderResponse,
+  AssistantCreditOrdersResponse,
+  AssistantCreditPackage,
+  AssistantCreditPurchase,
+  AssistantCredits,
+  AssistantCreditsResponse,
+  AssistantMemoryNote,
+  AssistantMemoryResponse,
+  AssistantMemoryUpdate,
+  AssistantPlan,
+  AssistantPlanCreate,
+  AssistantPlanFinding,
+  AssistantPlanLevel,
+  AssistantPlanRecheck,
+  AssistantPlanResponse,
+  AssistantPlansResponse,
+  AssistantPlanState,
+  AssistantPlanStateRequest,
+  AssistantPlanTrade,
+  AssistantPlanUpdate,
+  AssistantProfile,
+  AssistantProfileResponse,
+  AssistantProfileUpdate,
+  AssistantTask,
+  AssistantTaskAsk,
+  AssistantTaskCreate,
+  AssistantTaskEvery,
+  AssistantTasksResponse,
+  AssistantTaskUpdate,
+  AssistantVoiceRequest,
+  AssistantVoiceResponse,
+  AssistantWatch,
+  AssistantWatchCreate,
+  AssistantWatchesResponse,
+  AssistantWatchPreset,
+  AssistantWatchRule,
+  AssistantWatchUpdate,
+  TelegramChannelResponse,
+  TelegramConnectResponse,
+} from './api/v1/types.ts'
+
+/** A plan or a critic the strong model composes may take the route's whole minute; the phone waits a little longer. */
+const ASSISTANT_COMPOSE_TIMEOUT_MS = 95_000
+/** A recording of up to two minutes goes up as base64 and comes back as words. */
+const ASSISTANT_VOICE_TIMEOUT_MS = 60_000
+
+/**
+ * The assistant's surfaces for the proven wallet: credits and their purchase, «Стежу», «Знайомство», what Ryntra
+ * remembers, «Доручення», trade plans with the critic, voice heard on the server. Every paid call carries exactly the
+ * price the phone showed (`acceptCredits`); nothing here signs, sends, trades or reads a key — a credits order is paid
+ * through `lib/pay` with the wallet's own signature, as a payment link is.
+ */
+export const assistantApi = {
+  credits: (session: Session, signal?: AbortSignal) => v1Words(() => v1Client(session, signal).assistant.credits.get()),
+  welcome: (session: Session, signal?: AbortSignal) =>
+    v1Words(() => v1Client(session, signal).assistant.credits.welcome()),
+  orders: (session: Session, signal?: AbortSignal) =>
+    v1Words(() => v1Client(session, signal).assistant.credits.orders()),
+  order: (session: Session, orderId: string, signal?: AbortSignal) =>
+    v1Words(() => v1Client(session, signal).assistant.credits.order(orderId)),
+  openOrder: (session: Session, request: AssistantCreditOrderRequest, signal?: AbortSignal) =>
+    v1Words(() => v1Client(session, signal, 20_000).assistant.credits.openOrder(request)),
+  watches: (session: Session, locale: 'en' | 'uk', signal?: AbortSignal) =>
+    v1Words(() => v1Client(session, signal, AGENT_READ_TIMEOUT_MS).assistant.watches.list(locale)),
+  createWatch: (session: Session, request: AssistantWatchCreate, locale: 'en' | 'uk', signal?: AbortSignal) =>
+    v1Words(() => v1Client(session, signal, AGENT_READ_TIMEOUT_MS).assistant.watches.create(request, locale)),
+  updateWatch: (
+    session: Session,
+    watchId: string,
+    request: AssistantWatchUpdate,
+    locale: 'en' | 'uk',
+    signal?: AbortSignal,
+  ) =>
+    v1Words(() => v1Client(session, signal, AGENT_READ_TIMEOUT_MS).assistant.watches.update(watchId, request, locale)),
+  removeWatch: (session: Session, watchId: string, locale: 'en' | 'uk', signal?: AbortSignal) =>
+    v1Words(() => v1Client(session, signal, AGENT_READ_TIMEOUT_MS).assistant.watches.remove(watchId, locale)),
+  profile: (session: Session, signal?: AbortSignal) => v1Words(() => v1Client(session, signal).assistant.profile()),
+  setProfile: (session: Session, request: AssistantProfileUpdate, signal?: AbortSignal) =>
+    v1Words(() => v1Client(session, signal).assistant.setProfile(request)),
+  memory: (session: Session, signal?: AbortSignal) =>
+    v1Words(() => v1Client(session, signal, AGENT_READ_TIMEOUT_MS).assistant.memory.get()),
+  setMemory: (session: Session, request: AssistantMemoryUpdate, signal?: AbortSignal) =>
+    v1Words(() => v1Client(session, signal).assistant.memory.update(request)),
+  forget: (session: Session, noteId: string, signal?: AbortSignal) =>
+    v1Words(() => v1Client(session, signal).assistant.memory.forget(noteId)),
+  forgetAll: (session: Session, signal?: AbortSignal) =>
+    v1Words(() => v1Client(session, signal).assistant.memory.forgetAll()),
+  tasks: (session: Session, signal?: AbortSignal) =>
+    v1Words(() => v1Client(session, signal, AGENT_READ_TIMEOUT_MS).assistant.tasks.list()),
+  createTask: (session: Session, request: AssistantTaskCreate, signal?: AbortSignal) =>
+    v1Words(() => v1Client(session, signal, AGENT_READ_TIMEOUT_MS).assistant.tasks.create(request)),
+  updateTask: (session: Session, taskId: string, request: AssistantTaskUpdate, signal?: AbortSignal) =>
+    v1Words(() => v1Client(session, signal, AGENT_READ_TIMEOUT_MS).assistant.tasks.update(taskId, request)),
+  removeTask: (session: Session, taskId: string, signal?: AbortSignal) =>
+    v1Words(() => v1Client(session, signal).assistant.tasks.remove(taskId)),
+  plans: (session: Session, locale: 'en' | 'uk', signal?: AbortSignal) =>
+    v1Words(() => v1Client(session, signal, AGENT_READ_TIMEOUT_MS).assistant.plans.list(locale)),
+  plan: (session: Session, planId: string, locale: 'en' | 'uk', signal?: AbortSignal) =>
+    v1Words(() => v1Client(session, signal, AGENT_READ_TIMEOUT_MS).assistant.plans.get(planId, locale)),
+  createPlan: (session: Session, request: AssistantPlanCreate, signal?: AbortSignal) =>
+    v1Words(() => v1Client(session, signal, ASSISTANT_COMPOSE_TIMEOUT_MS).assistant.plans.create(request)),
+  updatePlan: (session: Session, planId: string, request: AssistantPlanUpdate, signal?: AbortSignal) =>
+    v1Words(() => v1Client(session, signal, ASSISTANT_COMPOSE_TIMEOUT_MS).assistant.plans.update(planId, request)),
+  recheckPlan: (session: Session, planId: string, request: AssistantPlanRecheck, signal?: AbortSignal) =>
+    v1Words(() => v1Client(session, signal, ASSISTANT_COMPOSE_TIMEOUT_MS).assistant.plans.recheck(planId, request)),
+  setPlanState: (session: Session, planId: string, request: AssistantPlanStateRequest, signal?: AbortSignal) =>
+    v1Words(() => v1Client(session, signal, AGENT_READ_TIMEOUT_MS).assistant.plans.setState(planId, request)),
+  voice: (session: Session, request: AssistantVoiceRequest, signal?: AbortSignal) =>
+    v1Words(() => v1Client(session, signal, ASSISTANT_VOICE_TIMEOUT_MS).assistant.voice(request)),
+  /** The wallet's Telegram channel (1.11.0) read, a connect link made for this wallet, or the channel let go. */
+  telegram: (session: Session, signal?: AbortSignal) =>
+    v1Words(() => v1Client(session, signal).notifications.telegram()),
+  connectTelegram: (session: Session, locale: 'en' | 'uk', signal?: AbortSignal) =>
+    v1Words(() => v1Client(session, signal).notifications.connectTelegram({ locale })),
+  disconnectTelegram: (session: Session, signal?: AbortSignal) =>
+    v1Words(() => v1Client(session, signal).notifications.disconnectTelegram()),
+} as const
+
+/** How a followed wallet's trades are told (SOL-R4, 1.63.0): every trade, only its sales, or none. */
+export type WalletWatchAlerts = 'all' | 'sells' | 'off'
+
+/** One wallet the person follows, as `/api/wallet-watch` lists it (outside v1, its own shape). */
+export type WalletFollowRow = Readonly<{
+  address: string
+  name: string | null
+  alerts: WalletWatchAlerts
+  since: string
+  /** Followed as a token's creator: the token. */
+  via: Readonly<{ mint: string; symbol: string }> | null
+}>
+
+export type WalletFollows = Readonly<{ ok: true; address: string; wallets: readonly WalletFollowRow[] }>
+
+/**
+ * The wallets the person follows (SOL-R4) — read, one's notes' mode changed, or one let go. The route lives outside
+ * `/api/v1` and reads the bearer for exactly the person's own address; the phone has no list of followed wallets, so
+ * these are reached only from a `wallet-watch` note.
+ */
+export function readWalletFollows(session: Session, signal?: AbortSignal): Promise<WalletFollows> {
+  return apiRequest<WalletFollows>(
+    'GET',
+    `/api/wallet-watch?address=${encodeURIComponent(session.address)}`,
+    undefined,
+    {
+      signal,
+      session,
+      timeoutMs: 20_000,
+    },
+  )
+}
+
+export function setWalletWatchAlerts(
+  session: Session,
+  wallet: string,
+  alerts: WalletWatchAlerts,
+  locale: 'en' | 'uk',
+  signal?: AbortSignal,
+): Promise<WalletFollows> {
+  return apiRequest<WalletFollows>(
+    'PATCH',
+    '/api/wallet-watch',
+    { address: session.address, wallet, alerts, locale },
+    { signal, session, timeoutMs: 20_000 },
+  )
+}
+
+/** The followed wallet let go — no more of its notes. */
+export function stopWalletWatch(
+  session: Session,
+  wallet: string,
+  locale: 'en' | 'uk',
+  signal?: AbortSignal,
+): Promise<WalletFollows> {
+  return apiRequest<WalletFollows>(
+    'DELETE',
+    `/api/wallet-watch?address=${encodeURIComponent(session.address)}&wallet=${encodeURIComponent(wallet)}&locale=${locale}`,
+    undefined,
+    { signal, session, timeoutMs: 20_000 },
+  )
 }
 
 /* ---- Monitoring: the owner's surface (released 2026-09-20; its own shape, read over the bearer) ---- */
@@ -1438,7 +1825,7 @@ export type MonitoringNote = Readonly<{
   paper: boolean
   unread: boolean
   createdAt: string
-  /** The language the note's own words are in. */
+  /** The language the note's own words are in (request 20). */
   locale?: 'en' | 'uk'
   /** The occurrence's identity — for a rule's reminder `autoinvest:<rule>:<due>@<symbol>` (1.12.0). */
   triggerId?: string
@@ -1473,7 +1860,12 @@ export function fetchMonitoring(
   locale: 'en' | 'uk',
   signal?: AbortSignal,
 ): Promise<MonitoringSurface> {
-  return apiRequest<MonitoringSurface>('GET', '/api/monitoring', undefined, { signal, session, acceptLanguage: locale })
+  // A «Доручення»'s note carries the model's words (its headline and sentences): read as a person reads them.
+  return apiRequest<MonitoringSurface>('GET', '/api/monitoring', undefined, {
+    signal,
+    session,
+    acceptLanguage: locale,
+  }).then((surface) => spokenWords(surface))
 }
 
 /** Mark one note read on the server; a note that is not this wallet's answers `VALIDATION_ERROR` (No such note). Idempotent. */

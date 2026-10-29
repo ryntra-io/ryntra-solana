@@ -11,10 +11,32 @@
  * disclosure deep; the resting surface is figures, states and the next act.
  */
 
+/* One column in the middle of the canvas: on a wide screen nothing runs from edge to edge. */
 .page {
   display: grid;
   gap: var(--ry-s4);
   min-width: 0;
+  width: 100%;
+  max-width: 1440px; /* width-law: one centred column, equal margins on a wide screen */
+  margin-inline: auto;
+}
+
+/* A market is a terminal: the whole canvas, as wide as the screen gives it. */
+.marketPage {
+  max-width: none;
+}
+
+/* The money form — deposit and withdraw — as the core's action column (`Page kind="action"`): 640 in the middle of the
+   canvas, never its whole width. */
+.moneyColumn {
+  width: 100%;
+  max-width: var(--ryntra-page-action, 640px);
+  margin-inline: auto;
+}
+
+/* A primary action as wide as its column: the ticket's. */
+.blockButton {
+  width: 100%;
 }
 
 /* ── Head ─────────────────────────────────────────────────────────────── */
@@ -73,29 +95,38 @@
   gap: var(--ry-s2);
 }
 
-/* The mode, always in view: paper, never live. */
+/* The mode, said once per screen: a quiet line under the title, never the orange of an action. */
+.simLine {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--ry-s1);
+  margin: 0;
+  font-size: var(--ry-fs-label);
+  font-weight: 600;
+  color: var(--ry-muted);
+}
+
+/* The mode inside the Review: a quiet tag, not a button. */
 .paperBadge {
   display: inline-flex;
   align-items: center;
   gap: var(--ry-s1);
-  min-height: 28px;
-  padding: 0 var(--ry-s3);
-  border: 1px solid var(--ry-brand-line);
+  min-height: 24px;
+  padding: 0 var(--ry-s2);
+  border: 1px solid var(--ry-border);
   border-radius: var(--ry-r-pill);
-  background: var(--ry-elevated);
-  color: var(--ry-accent-fg);
-  font-size: var(--ry-fs-label-sm);
-  font-weight: 700;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
+  background: transparent;
+  color: var(--ry-muted);
+  font-size: var(--ry-fs-label);
+  font-weight: 600;
   white-space: nowrap;
 }
 
-.paperBadge small {
-  font-weight: 500;
-  letter-spacing: 0.02em;
-  text-transform: none;
-  color: var(--ry-muted);
+/* Real money: the same tag, in the caution tone, so it is never read as the simulation. */
+.paperBadge[data-live="true"] {
+  border-color: var(--ry-caution);
+  background: var(--ry-caution-soft);
+  color: var(--ry-text);
 }
 
 /* ── Cards, the one surface ───────────────────────────────────────────── */
@@ -160,6 +191,11 @@
   gap: var(--ry-s2);
   padding: var(--ry-s5) var(--ry-s4);
   justify-items: start;
+}
+
+/* A gate (one sentence, one button) takes the card's width and stands in its middle. */
+.unavailable > :global(.ryntra-empty) {
+  justify-self: stretch;
 }
 
 .unavailable b {
@@ -278,9 +314,11 @@
 
 /* ── The event grid ───────────────────────────────────────────────────── */
 
+/* As many columns as the person chose, never narrower than a card reads: a small screen takes fewer. */
 .grid {
+  --pred-cols: 4;
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(max(260px, calc((100% - (var(--pred-cols) - 1) * var(--ry-s3)) / var(--pred-cols))), 1fr));
   gap: var(--ry-s3);
   padding: var(--ry-s4);
 }
@@ -425,26 +463,22 @@
   font-weight: 500;
 }
 
-.bar {
+/* The card's week: the core's compact probability line in the odds' place — its 0, 50 and 100 % lines without their
+   labels and its first and last time (the card's figure says the level, and the line is a week): at a tile's height the
+   labels lie on the line. */
+.cardLine {
   grid-column: 1 / -1;
-  height: 4px;
-  border-radius: 999px;
-  background: var(--ry-elevated);
-  overflow: hidden;
+  --ryntra-mini-height: 52px;
 }
 
-.bar i {
-  display: block;
-  height: 100%;
-  border-radius: inherit;
-  background: var(--ry-accent-fg);
-  opacity: 0.9;
-  transition: width var(--rt-duration-fast) var(--rt-ease);
+.cardLine :global(.ryntra-mini__tick),
+.cardLine :global(.ryntra-mini__axis) {
+  display: none;
 }
 
-.bar[data-tone="quiet"] i {
-  background: var(--ry-muted);
-  opacity: 0.55;
+/* The cards' one line of source and age, under them. */
+.gridCaption {
+  padding: 0 var(--ry-s4) var(--ry-s3);
 }
 
 .eventFoot {
@@ -494,6 +528,296 @@
 
 .delta[data-tone="neg"] {
   color: var(--ry-pnl-neg);
+}
+
+/* The card's figure: the leading probability large, its move over a day beside it. */
+.odds {
+  display: grid;
+  gap: var(--ry-s1);
+  align-content: start;
+  min-width: 0;
+}
+
+.oddsMarket {
+  min-width: 0;
+  font-size: var(--ry-fs-label-sm);
+  color: var(--ry-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.oddsLine {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0 var(--ry-s2);
+  min-width: 0;
+}
+
+.oddsValue {
+  font-family: var(--ry-font-mono);
+  font-variant-numeric: tabular-nums;
+  font-size: 28px;
+  line-height: 1.1;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  color: var(--ry-text);
+}
+
+.oddsValue[data-empty="true"] {
+  color: var(--ry-muted);
+}
+
+.oddsLabel {
+  font-size: var(--ry-fs-label);
+  font-weight: 600;
+  color: var(--ry-text);
+}
+
+.oddsMove {
+  margin-inline-start: auto;
+  font-family: var(--ry-font-mono);
+  font-variant-numeric: tabular-nums;
+  font-size: var(--ry-fs-label-sm);
+  font-weight: 600;
+  color: var(--ry-muted);
+  white-space: nowrap;
+}
+
+.oddsMove[data-tone="pos"] {
+  color: var(--ry-pnl-pos);
+}
+
+.oddsMove[data-tone="neg"] {
+  color: var(--ry-pnl-neg);
+}
+
+.oddsOthers {
+  font-size: var(--ry-fs-label-sm);
+  color: var(--ry-muted);
+}
+
+/* What the usual amount pays, under the estimate: always in view, never the large figure. */
+.oddsPays {
+  min-height: 1lh;
+  font-family: var(--ry-font-mono);
+  font-variant-numeric: tabular-nums;
+  font-size: var(--ry-fs-label);
+  color: var(--ry-muted);
+}
+
+/* An event past its close or settled: its state in words, the card quiet, no figure to act on. */
+.cardState {
+  justify-self: start;
+  padding: 2px var(--ry-s2);
+  border: 1px solid var(--ry-border);
+  border-radius: var(--ry-r-pill);
+  font-size: var(--ry-fs-label);
+  font-weight: 600;
+  color: var(--ry-muted);
+}
+
+.event[data-phase] .eventTitle {
+  color: var(--ry-muted);
+}
+
+/* A game under way: a dot and one word, in the live colour — a state, not an action. */
+.liveChip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: var(--ry-fs-label);
+  font-weight: 700;
+  color: var(--ry-pnl-neg);
+}
+
+.liveChip::before {
+  content: "";
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: currentColor;
+}
+
+/* A round's cadence beside its close: «5 min». */
+.cadenceChip {
+  display: inline-flex;
+  padding: 0 6px;
+  border: 1px solid var(--ry-border);
+  border-radius: var(--ry-r-pill);
+  font-size: var(--ry-fs-label);
+  font-weight: 600;
+  color: var(--ry-muted);
+}
+
+/* One act under a list: the rounds New held back. */
+.moreRow {
+  display: flex;
+  justify-content: center;
+  padding: 0 var(--ry-s4) var(--ry-s4);
+}
+
+/* Access as the provider states it: green open, amber account, a ring for view only, grey off. */
+.access {
+  position: relative;
+  z-index: 1;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  font-size: var(--ry-fs-label-sm);
+  font-weight: 600;
+  color: var(--ry-text-muted);
+  white-space: nowrap;
+}
+
+.access i {
+  flex: 0 0 auto;
+  width: 8px;
+  height: 8px;
+  border-radius: 999px;
+  background: var(--ry-verified);
+}
+
+.access[data-state="account"] i {
+  background: var(--ry-caution);
+}
+
+.access[data-state="view"] i {
+  background: transparent;
+  box-shadow: inset 0 0 0 1.5px var(--ry-text-muted);
+}
+
+.access[data-state="off"] i {
+  background: var(--ry-muted);
+  opacity: 0.6;
+}
+
+.access[data-state="off"] {
+  color: var(--ry-muted);
+}
+
+.access[data-state="unknown"] {
+  color: var(--ry-muted);
+}
+
+.access[data-state="unknown"] i {
+  background: transparent;
+  box-shadow: inset 0 0 0 1.5px var(--ry-muted);
+  opacity: 0.7;
+}
+
+/* «Where's the catch»: one line per difference, the comparison a tap deeper. */
+.catchLead {
+  margin: 0;
+  padding: var(--ry-s3) var(--ry-s4);
+  font-size: var(--ry-fs-label);
+  color: var(--ry-text);
+}
+
+.catchSummary {
+  display: inline-grid;
+  gap: 2px;
+  min-width: 0;
+  vertical-align: top;
+}
+
+.catchSummary b {
+  color: var(--ry-text);
+  font-weight: 600;
+}
+
+.catchSummary span {
+  color: var(--ry-muted);
+  font-weight: 500;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+/* The venue's words inside the summary line run on after the venues' names. */
+.catchSummary span span {
+  display: inline;
+}
+
+.catchGroups {
+  display: grid;
+  gap: var(--ry-s2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.catchGroups li {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+.catchGroups span {
+  font-size: var(--ry-fs-label-sm);
+  color: var(--ry-muted);
+}
+
+.catchGroups b {
+  font-size: var(--ry-fs-label);
+  font-weight: 500;
+  color: var(--ry-text);
+  overflow-wrap: anywhere;
+}
+
+.catchGroups b[data-silent="true"] {
+  color: var(--ry-muted);
+  font-style: italic;
+}
+
+/* The ticket's promise and the Review's cost lines. */
+.payoff {
+  display: grid;
+  gap: 2px;
+}
+
+.payoff b {
+  font-size: var(--ry-fs-label);
+  font-weight: 600;
+  color: var(--ry-text);
+}
+
+/* The worst case, right under the payout: the whole amount, in the loss colour. */
+.loss {
+  font-size: var(--ry-fs-label);
+  font-weight: 600;
+  color: var(--ry-pnl-neg);
+}
+
+.costNote {
+  display: block;
+  font-family: var(--ry-font-sans);
+  font-size: var(--ry-fs-label-sm);
+  font-weight: 500;
+  color: var(--ry-muted);
+}
+
+.saving {
+  margin: var(--ry-s2) 0 0;
+  font-size: var(--ry-fs-label);
+  font-weight: 600;
+  color: var(--ry-pnl-pos);
+}
+
+.routeAccess {
+  display: inline-flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 4px var(--ry-s3);
+}
+
+.routeAccess > span {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
 }
 
 /* ── Needs attention ──────────────────────────────────────────────────── */
@@ -756,6 +1080,17 @@
   color: var(--ry-verified);
 }
 
+/* What the usual amount pays on this outcome, under its estimate. */
+.outcomeButton small {
+  font-family: var(--ry-font-mono);
+  font-variant-numeric: tabular-nums;
+  font-size: var(--ry-fs-label);
+  color: var(--ry-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
 /* Sub-tabs inside the detail: Overview · Research · Market depth. */
 .subTabs {
   display: flex;
@@ -825,6 +1160,38 @@
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: var(--ry-s2);
+}
+
+.ticketAct {
+  display: grid;
+}
+
+/* Docked, the ticket's one action stays in sight at the foot of its panel, however small the panel is made; its strip
+   covers the panel's own margin under it, so nothing scrolls out beneath the button. */
+.workspace :global(.ryntra-dock__panel) .ticketAct {
+  --dock-pad: var(--ryntra-space-3);
+  position: sticky;
+  bottom: calc(-1 * var(--dock-pad));
+  z-index: 1;
+  margin-inline: calc(-1 * var(--ry-s4));
+  padding: var(--ry-s2) var(--ry-s4) calc(var(--ry-s2) + var(--dock-pad));
+  background: var(--ryntra-surface);
+}
+
+:global([data-density="compact"]) .workspace :global(.ryntra-dock__panel) .ticketAct {
+  --dock-pad: var(--ry-s2);
+}
+
+/* On a phone the same action stays in sight over the menu bar while the ticket is on screen. */
+@media (max-width: 767px) {
+  .workspace :global(.ryntra-terminal--stack) .ticketAct {
+    position: sticky;
+    bottom: calc(var(--sol-phonebar-h, 65px) + env(safe-area-inset-bottom, 0px));
+    z-index: 1;
+    margin-inline: calc(-1 * var(--ry-s4));
+    padding: var(--ry-s2) var(--ry-s4);
+    background: var(--ryntra-surface);
+  }
 }
 
 .sideButton {
@@ -1281,19 +1648,9 @@
 
 /* ── Research blocks ──────────────────────────────────────────────────── */
 
-.chartHost {
-  height: 280px;
-  padding: var(--ry-s2) var(--ry-s2) 0;
-}
-
-.chartTools {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--ry-s2);
-  padding: var(--ry-s2) var(--ry-s4);
-  border-bottom: 1px solid var(--ry-border);
+/* *What changed*: the core's compact chart of the week, inside the card's padding. */
+.weekLine {
+  padding: var(--ry-s3) var(--ry-s4);
 }
 
 .list {
@@ -1331,30 +1688,6 @@
   gap: var(--ry-s1) var(--ry-s3);
   font-size: var(--ry-fs-label-sm);
   color: var(--ry-muted);
-}
-
-.signalSide {
-  display: inline-flex;
-  align-items: center;
-  min-height: 20px;
-  padding: 0 8px;
-  border-radius: var(--ry-r-pill);
-  font-size: var(--ry-fs-label-sm);
-  font-weight: 700;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
-  background: var(--ry-elevated);
-  color: var(--ry-text-muted);
-}
-
-.signalSide[data-side="yes"] {
-  color: var(--ry-verified);
-  background: var(--ry-verified-soft);
-}
-
-.signalSide[data-side="no"] {
-  color: var(--ry-pnl-neg);
-  background: var(--ry-risk-soft);
 }
 
 .rules {
@@ -1421,6 +1754,17 @@
   justify-content: space-between;
   gap: var(--ry-s2);
   padding-top: var(--ry-s2);
+}
+
+/* In a sheet the act stays on screen however long the Review grows. */
+.sheet .formActions {
+  position: sticky;
+  bottom: 0;
+  z-index: 1;
+  margin: 0 calc(var(--ry-s4) * -1);
+  padding: var(--ry-s3) var(--ry-s4);
+  border-top: 1px solid var(--ry-border);
+  background: var(--ry-card);
 }
 
 .conditionRow {
@@ -1509,6 +1853,19 @@
   font-size: var(--ry-fs-dense);
   font-weight: 700;
   color: var(--ry-text);
+}
+
+/* The provider's bot check: Cloudflare draws its own box, 300 × 65, inside this frame. */
+.botCheck {
+  display: grid;
+  gap: var(--ry-s2);
+  min-height: 65px;
+  max-width: 100%;
+  overflow: hidden;
+}
+
+.botCheckBox {
+  min-height: 65px;
 }
 
 .positionRow {
@@ -1610,4 +1967,1100 @@
   .reviewFigures {
     grid-template-columns: 1fr 1fr;
   }
+}
+
+/* ── Units: «Купуєш на $10…» is longer than a percent, so it stands a size smaller ── */
+
+.oddsValue[data-units="payout"] {
+  font-size: 22px;
+}
+
+.metricValue[data-units="payout"] {
+  font-size: var(--ry-fs-value);
+}
+
+/* ── The market's workspace: the shared terminal in its «Стандарт», the core's row under it ── */
+
+.workspace {
+  display: grid;
+  gap: var(--ry-s2);
+  min-width: 0;
+  background: transparent;
+}
+
+.workActions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--ry-s1);
+}
+
+.workButton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--ry-s1);
+  min-width: 32px;
+  min-height: 32px;
+  padding: 0 var(--ry-s2);
+  border: 1px solid var(--ry-border);
+  border-radius: var(--ry-r-btn-sm);
+  background: transparent;
+  color: var(--ry-text);
+  font-family: var(--ry-font-sans);
+  font-size: var(--ry-fs-label);
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.workButton:hover {
+  background: var(--ry-hover);
+}
+
+.workButton[aria-expanded="true"] {
+  color: var(--ry-accent-fg);
+  background: var(--ry-elevated);
+  border-color: var(--ry-brand-line);
+}
+
+.workButton:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.workButton:focus-visible {
+  outline: 2px solid var(--ry-focus);
+  outline-offset: 2px;
+}
+
+.workNotice,
+.workOffer {
+  margin: 0;
+  padding: var(--ry-s2) var(--ry-s3);
+  border: 1px solid var(--ry-border);
+  border-radius: var(--ry-r-btn-sm);
+  font-size: var(--ry-fs-label);
+  line-height: 1.4;
+  color: var(--ry-text);
+}
+
+.workStatus {
+  display: grid;
+  gap: var(--ry-s1);
+}
+
+.workStatus:empty {
+  display: none;
+}
+
+.manualLink {
+  width: 100%;
+  min-height: 36px;
+  padding: 0 var(--ry-s2);
+  border: 1px solid var(--ry-border);
+  border-radius: var(--ry-r-btn-sm);
+  background: transparent;
+  color: var(--ry-text);
+  font-family: var(--ry-font-mono);
+  font-size: var(--ry-fs-label-sm);
+}
+
+.workOffer {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--ry-s2);
+  border-color: var(--ry-brand-line);
+}
+
+.workOffer p {
+  margin: 0;
+}
+
+/* The list of panels (or of the hub's categories): a name, then its arrows and its eye. */
+.panelList {
+  display: grid;
+  gap: var(--ry-s2);
+  padding: var(--ry-s3);
+  border: 1px solid var(--ry-border);
+  border-radius: var(--ry-r-btn-sm);
+}
+
+.panelList p {
+  margin: 0;
+  font-size: var(--ry-fs-label);
+}
+
+.panelList ul {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: var(--ry-s1) var(--ry-s3);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.panelList li {
+  display: flex;
+  align-items: center;
+  gap: var(--ry-s2);
+  min-height: 36px;
+}
+
+.panelList li > span {
+  flex: 1;
+  min-width: 0;
+  font-size: var(--ry-fs-label);
+  font-weight: 600;
+}
+
+.panelList li[data-hidden] > span {
+  color: var(--ry-muted);
+  text-decoration: line-through;
+}
+
+.panelList .iconButton {
+  margin: 0;
+}
+
+/* The terminal takes what the first screen leaves under the question (measured), the core's row («Додати панель»,
+   «Налаштувати», «Повернути стандарт») inside the same height; a phone stacks the panels and grows with them. */
+.terminal {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ry-s2);
+  height: var(--market-terminal-h, max(560px, calc(100dvh - 140px)));
+  min-width: 0;
+}
+
+.terminal > :global(.ryntra-terminal) {
+  flex: 1 1 auto;
+  height: auto;
+  min-height: 0;
+}
+
+@media (max-width: 767px) {
+  .terminal {
+    height: auto;
+  }
+
+  /* On a phone the ticket comes straight after the question; a word about a link waits under the blocks. */
+  .workspace > .workStatus {
+    order: 1;
+  }
+
+  /* Stacked blocks: thinner margins, and the ticket without a second title over its own. */
+  .workspace :global(.ryntra-terminal--stack .ryntra-block) {
+    padding: var(--ry-s2);
+    gap: var(--ry-s1);
+  }
+
+  .workspace :global(.ryntra-terminal--stack .ryntra-block):has([data-panel="ticket"]) :global(.ryntra-block__head) {
+    display: none;
+  }
+
+  .panelBody > .card > .cardHead,
+  .panelBody > .card > .cardBody {
+    padding-inline: var(--ry-s2);
+  }
+
+}
+
+/* Inside a panel the panel is the card: what stood as a card loses its own frame. */
+.panelBody {
+  display: grid;
+  gap: var(--ry-s3);
+  min-width: 0;
+  min-height: 100%;
+  align-content: start;
+}
+
+.panelBody > .card {
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+.panelBody > .card + .card,
+.panelBody > * + .card {
+  padding-top: var(--ry-s3);
+  border-top: 1px solid var(--ry-border);
+}
+
+/* The chart's panel: the figures at a glance over the chart, the chart taking the rest. */
+.panelBody[data-panel="chart"] {
+  height: 100%;
+  grid-template-rows: auto minmax(0, 1fr);
+}
+
+.panelBody[data-panel="chart"] > .strip .metric {
+  padding: var(--ry-s2) var(--ry-s3);
+}
+
+/* The core's chart fills the panel: its bar, the line, and the source and age under it. Below these heights the
+   chart's own rows would push its foot out of the box, so the panel grows instead. */
+.coreChart {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  height: 100%;
+  min-height: 400px;
+}
+
+.coreChart > :global(.ryntra-chart) {
+  flex: 1;
+  min-height: 0;
+}
+
+@media (max-width: 640px) {
+  .coreChart {
+    min-height: 440px;
+  }
+}
+
+/* A probability has its own axis: a log scale or a percent of the first bar would read as a different number. */
+.coreChart :global(.ryntra-chart__scale) {
+  display: none;
+}
+
+/* The chart's place while its source says which interval it opens on. */
+.coreChartWait {
+  flex: 1;
+  border-radius: var(--ry-r-card, 12px);
+  background: var(--ry-elevated);
+  opacity: 0.4;
+}
+
+/* «Yes» and «no» in the chart's bar: one switch, the same as the ticket's outcome. */
+.chartOutcomes {
+  display: inline-flex;
+  gap: 2px;
+  padding: 2px;
+  border: 1px solid var(--ry-border);
+  border-radius: var(--ry-r-btn-sm);
+}
+
+.chartOutcome {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 6px;
+  min-height: 32px;
+  padding: 0 var(--ry-s2);
+  border: 0;
+  border-radius: calc(var(--ry-r-btn-sm) - 2px);
+  background: transparent;
+  color: var(--ry-muted);
+  font: inherit;
+  font-size: var(--ry-fs-label);
+  cursor: pointer;
+  align-items: center;
+}
+
+.chartOutcomeName {
+  max-width: 12ch;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.chartOutcome b {
+  color: var(--ry-text);
+  font-variant-numeric: tabular-nums;
+}
+
+.chartOutcome[aria-pressed="true"] {
+  background: var(--ry-surface-2, var(--ry-bg));
+  color: var(--ry-text);
+  box-shadow: inset 0 0 0 1px var(--ry-border-strong);
+}
+
+.chartOutcome:focus-visible {
+  outline: 2px solid var(--ry-focus);
+  outline-offset: 2px;
+}
+
+/* ── Density: «Компактна» packs the same things closer ── */
+
+:global([data-density="compact"]) .card {
+  border-radius: var(--ry-r-btn);
+}
+
+:global([data-density="compact"]) .cardHead,
+:global([data-density="compact"]) .metric {
+  padding: var(--ry-s2) var(--ry-s3);
+}
+
+:global([data-density="compact"]) .cardBody,
+:global([data-density="compact"]) .grid {
+  padding: var(--ry-s3);
+  gap: var(--ry-s2);
+}
+
+:global([data-density="compact"]) .page,
+:global([data-density="compact"]) .stack,
+:global([data-density="compact"]) .panelBody {
+  gap: var(--ry-s2);
+}
+
+:global([data-density="compact"]) .event {
+  padding: var(--ry-s3);
+  gap: var(--ry-s2);
+}
+
+:global([data-density="compact"]) .oddsValue {
+  font-size: 22px;
+}
+
+:global([data-density="compact"]) .oddsValue[data-units="payout"] {
+  font-size: 18px;
+}
+
+:global([data-density="compact"]) .marketRow {
+  padding-block: var(--ry-s2);
+}
+
+:global([data-density="compact"]) .workspace :global(.ryntra-dock__panel) {
+  padding: var(--ry-s2);
+}
+
+/* The compact account card's way to the full portfolio and the plans: in a narrow column the title keeps its line and
+   the link and the state go under it. */
+.cardHeadWrap {
+  flex-wrap: wrap;
+  row-gap: var(--ry-s2);
+}
+
+.cardHeadWrap > h2 {
+  white-space: nowrap;
+}
+
+.cardHeadEnd {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--ry-s3);
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.cardLink {
+  color: var(--ry-text);
+  font-size: var(--ry-fs-label);
+  font-weight: 600;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.cardLink:hover {
+  color: var(--ry-accent-fg);
+}
+
+.cardLink:focus-visible {
+  outline: none;
+  border-radius: var(--ry-r-btn-sm);
+  box-shadow: var(--ry-focus);
+}
+
+/* ── «What you're paying for»: the rules read down to four facts ──────── */
+
+.brief {
+  display: grid;
+  gap: 2px;
+  padding: var(--ry-s2) var(--ry-s3);
+  border: 1px solid var(--ry-border);
+  border-radius: var(--ry-r-btn-sm);
+  background: var(--ry-elevated);
+}
+
+.briefLine {
+  margin: 0;
+  font-size: var(--ry-fs-label);
+  line-height: 1.4;
+  color: var(--ry-text);
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  overflow-wrap: anywhere;
+}
+
+.briefLine b {
+  font-weight: 600;
+}
+
+.hint[data-tone="caution"] {
+  color: var(--ry-caution);
+}
+
+.notice[data-tone="caution"] {
+  border-color: var(--ry-caution);
+  color: var(--ry-text);
+  background: var(--ry-caution-soft);
+}
+
+.notice[data-tone="bad"] {
+  border-color: var(--ry-pnl-neg);
+  color: var(--ry-text);
+  background: var(--ry-risk-soft);
+}
+
+.briefList {
+  display: grid;
+  grid-template-columns: minmax(96px, 30%) minmax(0, 1fr);
+  gap: var(--ry-s2) var(--ry-s3);
+  margin: 0;
+  font-size: var(--ry-fs-label);
+  line-height: 1.45;
+}
+
+.briefList dt {
+  color: var(--ry-muted);
+}
+
+.briefList dd {
+  margin: 0;
+  min-width: 0;
+  color: var(--ry-text);
+  overflow-wrap: anywhere;
+}
+
+.briefList a {
+  color: var(--ry-text);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  white-space: nowrap;
+}
+
+@media (max-width: 520px) {
+  .briefList {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 2px;
+  }
+
+  .briefList dd + dt {
+    margin-top: var(--ry-s2);
+  }
+}
+
+.briefExceptions {
+  display: grid;
+  gap: var(--ry-s2);
+  margin: 0;
+  padding-left: 1.1em;
+}
+
+.briefReview {
+  display: grid;
+  gap: var(--ry-s2);
+}
+
+.briefInline summary {
+  cursor: pointer;
+  color: var(--ry-text);
+  font-weight: 600;
+}
+
+.briefInline[open] summary {
+  margin-bottom: var(--ry-s2);
+}
+
+.briefMayDecide {
+  display: inline-flex;
+  align-items: center;
+  margin-left: 6px;
+  padding: 0 6px;
+  border-radius: var(--ry-r-pill);
+  font-size: var(--ry-fs-label-sm);
+  font-weight: 600;
+  color: var(--ry-caution);
+  background: var(--ry-caution-soft);
+  white-space: nowrap;
+  vertical-align: 1px;
+}
+
+.briefReview .briefMayDecide,
+.briefList .briefMayDecide {
+  margin-left: 0;
+  margin-right: 4px;
+}
+
+.briefChanged {
+  color: var(--ry-caution);
+}
+
+.briefChange {
+  display: grid;
+  gap: var(--ry-s1);
+  padding-top: var(--ry-s2);
+  border-top: 1px dashed var(--ry-border);
+}
+
+.briefChange b {
+  color: var(--ry-text);
+  font-weight: 600;
+}
+
+.briefChange p {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.briefChange p[data-change="removed"] span[lang] {
+  text-decoration: line-through;
+  text-decoration-color: var(--ry-muted);
+}
+
+/* ── «Related markets»: the model's links, each with its day and its terms ── */
+
+.mapNote {
+  margin: 0;
+  padding: var(--ry-s2) var(--ry-s4);
+  border-bottom: 1px solid var(--ry-border);
+  font-size: var(--ry-fs-label-sm);
+  line-height: 1.45;
+  color: var(--ry-text-muted);
+  background: var(--ry-elevated);
+}
+
+.mapGroup {
+  display: grid;
+  gap: var(--ry-s1);
+  padding: var(--ry-s3) var(--ry-s4) 0;
+}
+
+.mapGroup + .mapGroup {
+  border-top: 1px solid var(--ry-border);
+}
+
+.mapGroup > p:last-child {
+  padding-bottom: var(--ry-s3);
+}
+
+.mapList {
+  display: grid;
+  gap: 0;
+  margin: 0 calc(-1 * var(--ry-s4));
+  padding: 0;
+  list-style: none;
+}
+
+.mapLink {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+  padding: var(--ry-s3) var(--ry-s4);
+  border-top: 1px solid var(--ry-border);
+  font-size: var(--ry-fs-label);
+  line-height: 1.45;
+}
+
+.mapTitle {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  min-width: 0;
+  color: var(--ry-text);
+  font-weight: 600;
+  text-decoration: none;
+  overflow-wrap: anywhere;
+}
+
+.mapTitle small {
+  font-weight: 400;
+  font-size: var(--ry-fs-label-sm);
+  color: var(--ry-text-muted);
+}
+
+.mapTitle:hover {
+  color: var(--ry-accent-fg);
+}
+
+.mapTitle:focus-visible {
+  outline: none;
+  border-radius: var(--ry-r-btn-sm);
+  box-shadow: var(--ry-focus);
+}
+
+.mapFigure {
+  font-family: var(--ry-font-mono);
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+  color: var(--ry-text);
+}
+
+.mapLink .briefMayDecide {
+  margin-left: 0;
+  white-space: normal;
+}
+
+.mapWhy summary {
+  cursor: pointer;
+  width: fit-content;
+  font-size: var(--ry-fs-label-sm);
+  font-weight: 600;
+  color: var(--ry-text-muted);
+}
+
+.mapWhy summary:hover {
+  color: var(--ry-text);
+}
+
+.mapWhy[open] summary {
+  margin-bottom: var(--ry-s2);
+}
+
+.mapDomain {
+  display: inline-flex;
+  margin-left: 6px;
+  padding: 0 6px;
+  border-radius: var(--ry-r-pill);
+  font-size: var(--ry-fs-label-sm);
+  color: var(--ry-text-muted);
+  background: var(--ry-elevated);
+  vertical-align: 1px;
+}
+
+/* ── Ryntra on a market ───────────────────────────────────────────────── */
+
+.srOnly {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+.ryntra {
+  display: grid;
+  grid-template-rows: auto 1fr auto auto;
+  min-height: 100%;
+}
+
+.ryntraBody {
+  display: grid;
+  gap: var(--ry-s3);
+  align-content: start;
+  padding: var(--ry-s3) var(--ry-s4);
+  min-width: 0;
+}
+
+.askChips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--ry-s1);
+}
+
+.askChips .chip {
+  border-color: var(--ry-border);
+  min-height: 32px;
+  white-space: normal;
+  text-align: start;
+  line-height: 1.25;
+  padding-block: 6px;
+}
+
+.askChips .chip:disabled {
+  opacity: 0.55;
+  cursor: default;
+}
+
+.askThread {
+  display: grid;
+  gap: var(--ry-s4);
+  min-width: 0;
+}
+
+.askTurn {
+  display: grid;
+  gap: var(--ry-s2);
+  min-width: 0;
+}
+
+.askQuestion {
+  margin: 0;
+  justify-self: end;
+  max-width: 92%;
+  padding: var(--ry-s2) var(--ry-s3);
+  border-radius: var(--ry-r-btn-sm);
+  background: var(--ry-elevated);
+  border: 1px solid var(--ry-border);
+  font-size: var(--ry-fs-label);
+  line-height: 1.4;
+  color: var(--ry-text);
+  overflow-wrap: anywhere;
+}
+
+.askAnswer {
+  display: grid;
+  gap: var(--ry-s2);
+  min-width: 0;
+}
+
+.askHeadline {
+  margin: 0;
+  font-size: var(--ry-fs-dense);
+  font-weight: 700;
+  color: var(--ry-text);
+}
+
+.askBlock {
+  margin: 0;
+  font-size: var(--ry-fs-label);
+  line-height: 1.45;
+  color: var(--ry-text);
+  overflow-wrap: anywhere;
+}
+
+.askDetails {
+  border-top: 1px solid var(--ry-border);
+  padding-top: var(--ry-s2);
+  display: grid;
+  gap: var(--ry-s2);
+}
+
+.askDetails summary {
+  font-size: var(--ry-fs-label);
+  font-weight: 600;
+  color: var(--ry-text-muted);
+  cursor: pointer;
+}
+
+.askDetails summary:hover {
+  color: var(--ry-text);
+}
+
+.askSection {
+  display: grid;
+  gap: var(--ry-s1);
+}
+
+.askSection h3 {
+  margin: 0;
+  font-size: var(--ry-fs-label-sm);
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--ry-muted);
+}
+
+.askSources {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: var(--ry-s1);
+  font-size: var(--ry-fs-label-sm);
+  color: var(--ry-text-muted);
+}
+
+.askSources li {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px var(--ry-s2);
+  min-width: 0;
+}
+
+.askSources li span {
+  color: var(--ry-text);
+  overflow-wrap: anywhere;
+}
+
+.askSources time {
+  font-family: var(--ry-font-mono);
+  color: var(--ry-muted);
+}
+
+.askSources a {
+  display: inline-flex;
+  color: var(--ry-text-muted);
+}
+
+.askSources a:hover {
+  color: var(--ry-text);
+}
+
+.askDisclaimer {
+  margin: 0;
+  font-size: var(--ry-fs-label-sm);
+  line-height: 1.4;
+  color: var(--ry-muted);
+}
+
+.draftCard {
+  display: grid;
+  gap: var(--ry-s2);
+  padding: var(--ry-s3);
+  border: 1px solid var(--ry-border);
+  border-radius: var(--ry-r-btn-sm);
+  background: var(--ry-elevated);
+  font-size: var(--ry-fs-label);
+  color: var(--ry-text);
+}
+
+.draftCard dl {
+  margin: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(110px, 1fr));
+  gap: var(--ry-s2);
+}
+
+.draftCard dt {
+  font-size: var(--ry-fs-label-sm);
+  color: var(--ry-muted);
+}
+
+.draftCard dd {
+  margin: 0;
+  font-family: var(--ry-font-mono);
+  font-weight: 600;
+}
+
+.draftCard button {
+  justify-self: start;
+}
+
+.askForm {
+  display: flex;
+  gap: var(--ry-s2);
+  padding: var(--ry-s3) var(--ry-s4);
+  border-top: 1px solid var(--ry-border);
+  min-width: 0;
+}
+
+.askForm .input {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.askForm button {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  flex: 0 0 auto;
+}
+
+.askLink {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  justify-self: start;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  font-family: var(--ry-font-sans);
+  font-size: var(--ry-fs-label);
+  font-weight: 600;
+  color: var(--ry-text-muted);
+  text-align: start;
+  cursor: pointer;
+  text-decoration: underline;
+  text-decoration-color: var(--ry-border);
+  text-underline-offset: 3px;
+}
+
+.askLink:hover {
+  color: var(--ry-text);
+  text-decoration-color: currentColor;
+}
+
+.askLink:focus-visible {
+  outline: 2px solid var(--ry-focus);
+  outline-offset: 2px;
+}
+
+@media (max-width: 767px) {
+  .ryntraFold {
+    display: none;
+  }
+
+  .ryntraBody,
+  .askForm {
+    padding-inline: var(--ry-s2);
+  }
+}
+
+@media (max-width: 767px) {
+  /* The field takes the width; the button says «Ask» by its icon and its label. */
+  .askForm button span {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+}
+
+.askDetailsBody {
+  display: grid;
+  gap: var(--ry-s2);
+  padding-top: var(--ry-s2);
+}
+
+.askSection + .askSection {
+  margin-top: var(--ry-s1);
+}
+
+/* ── Money: deposit on Solana, withdraw to the person's Solana wallet ──── */
+
+/* One line over the hub's cards, in place of a chip on each. */
+.accessLine {
+  margin: 0;
+  padding: var(--ry-s3) var(--ry-s4) 0;
+  font-size: var(--ry-fs-label);
+  color: var(--ry-muted);
+}
+
+/* The line stands over the cards: the grid under it keeps its own margin at the sides and the bottom only. */
+.accessLine + .grid {
+  padding-top: var(--ry-s3);
+}
+
+.moneyActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--ry-s2);
+}
+
+/* The open step is marked by its edge, not by a second orange button. */
+.moneyActions > [aria-expanded="true"]:not(:global(.rw-btn--primary)) {
+  border-color: var(--ry-brand-line);
+}
+
+.moneyPanel {
+  display: grid;
+  gap: var(--ry-s2);
+  padding: var(--ry-s3);
+  border: 1px solid var(--ry-border);
+  border-radius: var(--ry-r-card);
+  background: var(--ry-elevated);
+}
+
+.moneyAddress {
+  display: flex;
+  align-items: center;
+  gap: var(--ry-s3);
+  min-width: 0;
+}
+
+/* The code stays dark on light in either theme: a scanner reads it that way. */
+.moneyQr {
+  flex: none;
+  width: 132px;
+  height: 132px;
+  padding: 6px;
+  border-radius: 8px;
+  background: #ffffff;
+}
+
+.moneyAddressText {
+  display: grid;
+  gap: var(--ry-s2);
+  min-width: 0;
+  justify-items: start;
+}
+
+.moneyAddressText code {
+  overflow-wrap: anywhere;
+  word-break: break-all;
+}
+
+.moneyAmountRow {
+  display: flex;
+  gap: var(--ry-s2);
+}
+
+.moneyAmountRow .input {
+  flex: 1;
+  min-width: 0;
+}
+
+.moneyList {
+  margin: 0;
+  padding: 0 var(--ry-s4) var(--ry-s3);
+  list-style: none;
+}
+
+.moneyList li {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--ry-s2);
+  padding: var(--ry-s2) 0;
+  border-bottom: 1px solid var(--ry-border);
+}
+
+.moneyList li:last-child {
+  border-bottom: 0;
+}
+
+.moneyList li > span:first-child {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+.moneyListLine {
+  display: block;
+}
+
+.moneyListEnd {
+  display: inline-flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: var(--ry-s2);
+}
+
+@media (max-width: 480px) {
+  .moneyAddress {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}
+
+/* The ticket's standing limit orders: the facts on one line, the state and the one act beside them. */
+.limitRows {
+  display: grid;
+  gap: var(--ry-s1);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.limitRow {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--ry-s1) var(--ry-s2);
+  padding: var(--ry-s2);
+  border: 1px solid var(--ry-border);
+  border-radius: var(--ry-r-btn-sm);
+  font-size: var(--ry-fs-label);
+  line-height: 1.4;
+  color: var(--ry-text-muted);
+}
+
+.limitFacts {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 2px var(--ry-s1);
+  min-width: 0;
+}
+
+.limitFacts b {
+  color: var(--ry-text);
+  font-weight: 600;
+}
+
+.limitActs {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--ry-s1);
+  flex-shrink: 0;
 }

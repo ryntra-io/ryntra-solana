@@ -1,0 +1,450 @@
+/* Moments over the city: the HUD's dark glass with chamfered corners and an inner violet edge, one amber action per
+   sheet, the display face for the big words. Tokens come from city/styles/city.module.css (the page's root). */
+
+.display {
+  font-family: var(--font-display, system-ui), system-ui, sans-serif;
+  font-stretch: 125%;
+  font-variation-settings: 'wdth' 125;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+/* ---------- The HUD's button ---------- */
+
+.button {
+  position: relative;
+  width: 44px;
+  height: 44px;
+  flex: none;
+  display: grid;
+  place-items: center;
+  padding: 0;
+  border: 0;
+  color: var(--warm);
+  background: linear-gradient(160deg, rgba(20, 16, 36, 0.86), rgba(8, 7, 15, 0.9));
+  clip-path: polygon(10px 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%, 0 10px);
+  box-shadow: inset 0 0 0 2px rgba(255, 178, 63, 0.38), inset 0 1px 18px rgba(153, 69, 255, 0.18);
+}
+
+.button svg {
+  width: 20px;
+  height: 20px;
+}
+
+/* A phone's top bar is full with the name, the data chip, sound and «i»: the button steps down under them. */
+@media (max-width: 460px) {
+  .button {
+    position: absolute;
+    right: 0;
+    top: 54px;
+  }
+}
+
+.badge {
+  position: absolute;
+  top: 5px;
+  right: 5px;
+  min-width: 16px;
+  height: 16px;
+  padding: 0 4px;
+  border-radius: 8px;
+  font-size: 10px;
+  font-weight: 900;
+  line-height: 16px;
+  text-align: center;
+  color: var(--ink);
+  background: var(--amber);
+  font-variant-numeric: tabular-nums;
+}
+
+/* ---------- Filming ---------- */
+
+.rec {
+  position: fixed;
+  inset: 0;
+  z-index: 40;
+  container-type: size;
+  pointer-events: auto;
+  cursor: progress;
+}
+
+/* The 9:16 frame being recorded: the rest of the screen dims, as in a viewfinder. */
+.finder {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: min(100cqw, 100cqh * 9 / 16);
+  height: min(100cqh, 100cqw * 16 / 9);
+  transform: translate(-50%, -50%);
+  box-shadow: 0 0 0 100vmax rgba(6, 5, 12, 0.6);
+  outline: 2px solid rgba(255, 178, 63, 0.55);
+  outline-offset: -2px;
+}
+
+.recBar {
+  position: absolute;
+  left: 50%;
+  top: max(14px, env(safe-area-inset-top));
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: min(440px, calc(100% - 2 * var(--gutter, 16px)));
+  height: 48px;
+  padding: 0 6px 0 16px;
+  font-size: 13px;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--ice);
+  background: linear-gradient(160deg, rgba(20, 16, 36, 0.92), rgba(8, 7, 15, 0.94));
+  clip-path: polygon(10px 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%, 0 10px);
+  box-shadow: inset 0 0 0 2px rgba(153, 69, 255, 0.3);
+}
+
+.recDot {
+  width: 10px;
+  height: 10px;
+  flex: none;
+  border-radius: 50%;
+  background: var(--flare);
+  box-shadow: 0 0 12px var(--flare);
+  animation: blink 1.2s infinite;
+}
+
+@keyframes blink {
+  50% {
+    opacity: 0.35;
+  }
+}
+
+.recLabel {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.recTrack {
+  position: relative;
+  flex: 1;
+  min-width: 40px;
+  height: 4px;
+  overflow: hidden;
+  background: rgba(238, 241, 255, 0.16);
+}
+
+.recTrack i {
+  position: absolute;
+  inset: 0;
+  background: var(--amber);
+  transform-origin: left center;
+  transition: transform 100ms linear;
+}
+
+.recCancel {
+  height: 36px;
+  padding: 0 12px;
+  border: 0;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+  background: rgba(238, 241, 255, 0.07);
+}
+
+/* A narrow screen: the bar stands right of the HUD's mark (the way home), never over it. */
+@media (max-width: 760px) {
+  .recBar {
+    left: auto;
+    right: var(--gutter, 16px);
+    transform: none;
+    width: min(440px, calc(100% - 2 * var(--gutter, 16px) - 52px));
+    gap: 8px;
+  }
+}
+
+/* ---------- Sheets ---------- */
+
+.backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 45;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  padding: 0 var(--gutter, 16px) max(14px, env(safe-area-inset-bottom));
+  background: rgba(6, 5, 12, 0.5);
+  pointer-events: auto;
+  animation: fade 200ms ease-out both;
+}
+
+@keyframes fade {
+  from {
+    opacity: 0;
+  }
+}
+
+@media (min-aspect-ratio: 1/1) {
+  .backdrop {
+    align-items: center;
+  }
+}
+
+.sheet {
+  width: min(560px, 100%);
+  max-height: calc(100% - 24px);
+  overflow-y: auto;
+  padding: 18px 20px 16px;
+  color: var(--ice);
+  background: linear-gradient(160deg, rgba(20, 16, 36, 0.96), rgba(8, 7, 15, 0.97));
+  clip-path: polygon(16px 0, 100% 0, 100% calc(100% - 16px), calc(100% - 16px) 100%, 0 100%, 0 16px);
+  box-shadow: inset 0 0 0 2px rgba(153, 69, 255, 0.3), inset 0 1px 22px rgba(153, 69, 255, 0.18);
+  animation: rise 320ms cubic-bezier(0.2, 1.3, 0.4, 1) both;
+}
+
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translateY(28px);
+  }
+}
+
+.head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.kicker {
+  font-size: 13px;
+  font-weight: 800;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--amber);
+}
+
+.close {
+  width: 44px;
+  height: 44px;
+  flex: none;
+  display: grid;
+  place-items: center;
+  border: 0;
+  background: rgba(255, 255, 255, 0.06);
+}
+
+/* The list of this visit's moments. */
+.list {
+  margin: 10px 0 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 8px;
+}
+
+.row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 12px 12px 16px;
+  background: rgba(255, 255, 255, 0.04);
+  box-shadow: inset 4px 0 0 var(--accent, var(--mint));
+}
+
+.rowText {
+  min-width: 0;
+  flex: 1;
+}
+
+.rowKicker {
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.2em;
+  color: var(--accent, var(--mint));
+}
+
+.rowTitle {
+  margin-top: 2px;
+  font-family: var(--font-display, system-ui), system-ui, sans-serif;
+  font-stretch: 125%;
+  font-variation-settings: 'wdth' 125;
+  font-weight: 900;
+  font-size: 22px;
+  line-height: 1.05;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.rowFigure {
+  margin-top: 4px;
+  font-size: 13px;
+  color: var(--text-dim);
+  font-variant-numeric: tabular-nums;
+}
+
+.rowAction {
+  height: 48px;
+  min-width: 76px;
+  padding: 0 16px;
+  flex: none;
+  border: 0;
+  font-family: var(--font-display, system-ui), system-ui, sans-serif;
+  font-stretch: 125%;
+  font-variation-settings: 'wdth' 125;
+  font-weight: 900;
+  font-size: 15px;
+  text-transform: uppercase;
+  color: var(--ink);
+  background: linear-gradient(100deg, var(--warm), var(--amber));
+  clip-path: polygon(10px 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%, 0 10px);
+}
+
+/* One moment made. */
+.made {
+  display: flex;
+  gap: 16px;
+  margin-top: 12px;
+}
+
+.preview {
+  width: 112px;
+  height: 199px;
+  flex: none;
+  background: var(--ink-deep);
+  box-shadow: 0 0 0 2px rgba(255, 178, 63, 0.4), 0 0 26px rgba(153, 69, 255, 0.35);
+}
+
+.madeText {
+  min-width: 0;
+  flex: 1;
+}
+
+.madeKicker {
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.2em;
+  color: var(--text-dim);
+}
+
+.madeTitle {
+  margin-top: 4px;
+  font-family: var(--font-display, system-ui), system-ui, sans-serif;
+  font-stretch: 125%;
+  font-variation-settings: 'wdth' 125;
+  font-weight: 900;
+  font-size: clamp(28px, 7vw, 40px);
+  line-height: 1;
+  overflow-wrap: anywhere;
+}
+
+.madeFigure {
+  margin-top: 6px;
+  font-size: 14px;
+  font-weight: 800;
+  color: var(--ice);
+}
+
+.madeMeta {
+  margin-top: 8px;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+}
+
+.words {
+  margin: 10px 0 0;
+  padding: 10px 12px;
+  font-size: 14px;
+  line-height: 1.4;
+  color: var(--text-dim);
+  background: rgba(238, 241, 255, 0.05);
+  overflow-wrap: anywhere;
+  max-height: 7.5em;
+  overflow: hidden;
+  user-select: text;
+}
+
+.actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 16px;
+}
+
+.actions > * {
+  flex: 1;
+}
+
+.actions > .primary {
+  flex: 1.5;
+}
+
+.primary {
+  height: 56px;
+  border: 0;
+  font-family: var(--font-display, system-ui), system-ui, sans-serif;
+  font-stretch: 125%;
+  font-variation-settings: 'wdth' 125;
+  font-weight: 900;
+  font-size: 16px;
+  text-transform: uppercase;
+  color: var(--ink);
+  background: linear-gradient(100deg, var(--warm), var(--amber) 55%, #ff9a3c);
+  clip-path: polygon(12px 0, 100% 0, 100% calc(100% - 12px), calc(100% - 12px) 100%, 0 100%, 0 12px);
+  box-shadow: 0 0 30px rgba(255, 178, 63, 0.4);
+}
+
+.secondary {
+  height: 56px;
+  padding: 0 10px;
+  border: 0;
+  font-size: 13px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ice);
+  background: rgba(238, 241, 255, 0.07);
+  clip-path: polygon(10px 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%, 0 10px);
+}
+
+.primary:focus-visible,
+.secondary:focus-visible,
+.rowAction:focus-visible,
+.close:focus-visible,
+.button:focus-visible {
+  outline: 2px solid var(--warm);
+  outline-offset: 2px;
+}
+
+.small {
+  margin: 12px 0 0;
+  font-size: 13px;
+  line-height: 1.45;
+  color: var(--text-dim);
+}
+
+@media (max-width: 420px) {
+  .actions {
+    flex-wrap: wrap;
+  }
+  .actions > .primary {
+    flex-basis: 100%;
+  }
+  .preview {
+    width: 96px;
+    height: 171px;
+  }
+}
+
+/* A narrow phone puts the button under the top bar, where an open window stands: it steps aside until the window
+   closes. */
+@media (max-width: 460px) {
+  :global([data-window]) .button {
+    visibility: hidden;
+  }
+}

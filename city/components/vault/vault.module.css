@@ -1,0 +1,416 @@
+/* The Vault's room over the city (CITY-47): the HUD's dark glass and chamfered corners, the guard's words at the
+   centre, one amber action. On a desk the room stands at the right and the vault is framed at the left; on a phone
+   it is a sheet over the lower part and the vault stands above it. Tokens from city/styles/city.module.css. */
+
+.room {
+  position: fixed;
+  z-index: 12;
+  right: var(--gutter);
+  top: calc(max(12px, env(safe-area-inset-top)) + 64px);
+  bottom: max(14px, env(safe-area-inset-bottom));
+  /* As wide as the card slot it stands over, so no card edge shows beside it. */
+  width: min(420px, calc(100% - 2 * var(--gutter)));
+  display: flex;
+  flex-direction: column;
+  padding: 16px 18px 14px;
+  --cut: 16px;
+  /* Solid: the cards and the dock it stands over never show through, and the city never fights the guard's words. */
+  background: linear-gradient(160deg, #141024, #08070f);
+  clip-path: polygon(var(--cut) 0, 100% 0, 100% calc(100% - var(--cut)), calc(100% - var(--cut)) 100%, 0 100%, 0 var(--cut));
+  box-shadow: inset 0 0 0 2px rgba(153, 69, 255, 0.32), inset 0 1px 18px rgba(153, 69, 255, 0.18);
+  font-family: var(--font-ui, system-ui), system-ui, sans-serif;
+  color: var(--ice);
+  animation: roomIn 280ms ease-out both;
+}
+
+@keyframes roomIn {
+  from {
+    opacity: 0;
+    transform: translateX(24px);
+  }
+}
+
+@media (max-width: 760px) {
+  .room {
+    left: var(--gutter);
+    right: var(--gutter);
+    top: auto;
+    width: auto;
+    height: min(60%, 560px);
+    padding: 14px 16px 12px;
+    /* A phone's sheet scrolls as a whole: the feed is below the action, a swipe away. */
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    animation-name: sheetIn;
+  }
+
+  .guard {
+    margin-top: 10px;
+  }
+
+  .feed {
+    flex: none;
+  }
+
+  .feedList {
+    overflow: visible;
+  }
+}
+
+@keyframes sheetIn {
+  from {
+    opacity: 0;
+    transform: translateY(24px);
+  }
+}
+
+.head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.kicker {
+  flex: 1;
+  min-width: 0;
+}
+
+.dot {
+  width: 8px;
+  height: 8px;
+  flex: none;
+  background: var(--amber);
+  box-shadow: 0 0 10px var(--amber);
+  transform: rotate(45deg);
+}
+
+.points {
+  font-size: var(--type-small);
+  font-weight: 700;
+  color: var(--text-dim);
+  white-space: nowrap;
+}
+
+.points b {
+  color: var(--amber);
+  font-variant-numeric: tabular-nums;
+}
+
+.tabs {
+  display: flex;
+  gap: 6px;
+  margin-top: 10px;
+}
+
+.tab {
+  position: relative;
+  min-width: 44px;
+  height: 34px;
+  padding: 0 12px;
+  border: 0;
+  font-size: var(--type-small);
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+  background: rgba(238, 241, 255, 0.06);
+  clip-path: polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+
+.tabOn {
+  color: var(--ink);
+  background: var(--warm);
+}
+
+.tabLocked {
+  opacity: 0.55;
+}
+
+.tabMark {
+  width: 12px;
+  height: 12px;
+}
+
+.tabMark svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.guard {
+  margin-top: 14px;
+}
+
+.guardName {
+  font-size: clamp(28px, 7vw, 40px);
+  line-height: 0.95;
+  color: var(--warm);
+}
+
+.guardLine {
+  margin-top: 6px;
+  font-size: var(--type-body);
+  line-height: 1.4;
+  color: var(--text-dim);
+}
+
+.phrase {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 10px;
+}
+
+.word {
+  width: 22px;
+  height: 6px;
+  background: rgba(238, 241, 255, 0.16);
+}
+
+.wordLit {
+  background: var(--amber);
+  box-shadow: 0 0 10px rgba(255, 178, 63, 0.7);
+}
+
+.wordOpen {
+  background: var(--warm);
+}
+
+.phraseLabel {
+  margin-left: 6px;
+  font-size: var(--type-caption);
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+}
+
+.said {
+  margin: 14px 0 0;
+  padding: 12px 14px;
+  font-size: var(--type-base);
+  line-height: 1.45;
+  background: rgba(42, 22, 64, 0.55);
+  box-shadow: inset 2px 0 0 var(--violet);
+}
+
+.saidIdle {
+  color: var(--text-dim);
+  background: rgba(238, 241, 255, 0.04);
+  box-shadow: none;
+}
+
+.saidRefused {
+  color: var(--warm);
+  background: rgba(255, 178, 63, 0.08);
+  box-shadow: inset 2px 0 0 var(--amber);
+}
+
+.quote {
+  display: block;
+  overflow-wrap: anywhere;
+}
+
+.slip {
+  display: block;
+  margin-top: 6px;
+  font-size: var(--type-caption);
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--amber);
+}
+
+.crack {
+  margin-top: 14px;
+  padding: 14px 16px;
+  background: rgba(255, 231, 194, 0.08);
+  box-shadow: inset 0 0 0 2px rgba(255, 231, 194, 0.4);
+}
+
+.crackWord {
+  font-size: clamp(34px, 9vw, 48px);
+  line-height: 0.95;
+  color: var(--warm);
+  text-shadow: 0 0 24px rgba(255, 178, 63, 0.6);
+}
+
+.crackLine {
+  margin-top: 8px;
+  font-size: var(--type-base);
+  color: var(--ice);
+}
+
+.crackLine b {
+  color: var(--amber);
+}
+
+.ask {
+  margin-top: 12px;
+}
+
+.field {
+  display: block;
+  width: 100%;
+  min-height: 64px;
+  max-height: 120px;
+  padding: 10px 12px;
+  border: 0;
+  resize: none;
+  font: inherit;
+  font-size: var(--type-base);
+  line-height: 1.4;
+  color: var(--ice);
+  background: rgba(6, 5, 12, 0.7);
+  box-shadow: inset 0 0 0 1px rgba(153, 69, 255, 0.45);
+  outline: none;
+}
+
+.field:focus-visible {
+  box-shadow: inset 0 0 0 2px rgba(255, 178, 63, 0.75);
+}
+
+.field::placeholder {
+  color: var(--text-dim);
+}
+
+.meta {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  margin-top: 6px;
+  font-size: var(--type-caption);
+  color: var(--text-dim);
+  font-variant-numeric: tabular-nums;
+}
+
+.metaNear {
+  color: var(--amber);
+}
+
+.action {
+  margin-top: 10px;
+}
+
+.action:disabled {
+  opacity: 0.45;
+}
+
+.feed {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  margin-top: 14px;
+}
+
+.feedHead {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: var(--type-micro);
+  font-weight: 800;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+}
+
+.feedList {
+  flex: 1;
+  min-height: 0;
+  margin: 8px 0 0;
+  padding: 0;
+  list-style: none;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+.entry {
+  padding: 8px 0;
+  border-top: 1px solid rgba(238, 241, 255, 0.07);
+}
+
+.entryHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.who {
+  font-size: var(--type-caption);
+  font-weight: 700;
+  color: var(--text-dim);
+}
+
+.tag {
+  padding: 1px 6px;
+  font-size: var(--type-micro);
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+  background: rgba(238, 241, 255, 0.06);
+}
+
+.tag_leaked {
+  color: var(--amber);
+}
+
+.tag_caught {
+  color: #c9a2ff;
+}
+
+.tag_cracked {
+  color: var(--ink);
+  background: var(--warm);
+}
+
+.entryReply,
+.entryTry {
+  margin: 4px 0 0;
+  font-size: var(--type-small);
+  line-height: 1.4;
+  overflow-wrap: anywhere;
+}
+
+.entryTry {
+  color: var(--text-dim);
+}
+
+.feedEmpty {
+  margin: 8px 0 0;
+  font-size: var(--type-small);
+  color: var(--text-dim);
+}
+
+.hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+/* The Vault in the dock. With it the dock holds six districts, as it did with the run before 27.10; on a phone the
+   districts' words then sit close, so while the Vault is in the dock they keep a little more apart. */
+.dockVault {
+  min-width: 0;
+}
+
+@media (max-width: 420px) {
+  :global(nav):has(> .dockVault) > button > span:last-child {
+    letter-spacing: 0.02em;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .room {
+    animation: none;
+  }
+}

@@ -28,8 +28,16 @@ export type PayCopy = Readonly<{
   statusUnknown: string;
   statusPending: string;
   noteUnderpaid: string;
+  /** Less arrived, with how much: `{received}` of `{amount}`. */
+  noteUnderpaidBy: string;
+  /** Less arrived only because the token's own transfer fee kept `{fee}` of what was sent. */
+  noteUnderpaidFee: string;
   noteWrongToken: string;
   noteOverpaid: string;
+  /** More arrived, with how much: `{received}` for `{amount}`. */
+  noteOverpaidBy: string;
+  /** An open request paid by more than one payment: `{received}` in all. */
+  noteOverpaidOpen: string;
   paidOn: string;
   viewTransaction: string;
 
@@ -52,13 +60,20 @@ export type PayCopy = Readonly<{
   connectedAs: string;
   change: string;
   preparing: string;
-  confirmInWallet: string;
   sending: string;
   sent: string;
   payButton: string;
   payAgainHint: string;
   feeNote: string;
   createsAccountNote: string;
+  /* The Review before the wallet (SOL-C14): what is paid, to whom, every cost, what happens after. */
+  reviewTitle: string;
+  reviewGet: string;
+  reviewGetLessFee: string;
+  reviewWhat: string;
+  reviewRecipient: string;
+  reviewToken: string;
+  reviewNativeSol: string;
   errorGeneric: string;
   errorSelf: string;
   errorRefused: string;
@@ -95,8 +110,12 @@ const EN: PayCopy = {
   statusUnknown: "Unknown",
   statusPending: "Payment sent, waiting for the network",
   noteUnderpaid: "A payment arrived, but less than this request asks for.",
+  noteUnderpaidBy: "{received} of {amount} has arrived — less than this request asks for.",
+  noteUnderpaidFee: "The full amount was sent, but the token's own transfer fee kept {fee} on the way: {received} of {amount} arrived.",
   noteWrongToken: "A payment arrived in a different token than this request asks for.",
   noteOverpaid: "More arrived than this request asked for.",
+  noteOverpaidBy: "{received} arrived for a request of {amount} — more than it asked for.",
+  noteOverpaidOpen: "This request was paid more than once: {received} arrived in all.",
   paidOn: "Paid on",
   viewTransaction: "View transaction",
 
@@ -119,13 +138,19 @@ const EN: PayCopy = {
   connectedAs: "Paying from",
   change: "Change",
   preparing: "Preparing the transaction…",
-  confirmInWallet: "Confirm in your wallet.",
   sending: "Sending…",
   sent: "Sent. Waiting for the network to confirm.",
   payButton: "Pay",
   payAgainHint: "The page updates on its own once the payment is confirmed.",
   feeNote: "Your wallet pays the network fee.",
   createsAccountNote: "The recipient's account for this token does not exist yet; this payment creates it and covers its rent.",
+  reviewTitle: "Pay {amount} to {to}",
+  reviewGet: "{to} receives {amount}",
+  reviewGetLessFee: "{to} receives {amount}, less the token's own fee if it has one",
+  reviewWhat: "A transfer from your wallet to the address that asked for this payment. Once the network confirms it, this page says «Paid». A payment cannot be taken back.",
+  reviewRecipient: "Recipient's address",
+  reviewToken: "Token",
+  reviewNativeSol: "SOL (native)",
   errorGeneric: "The payment could not be prepared.",
   errorSelf: "This request is addressed to the wallet you connected.",
   errorRefused: "The wallet did not sign. Nothing was sent.",
@@ -162,45 +187,55 @@ const UK: PayCopy = {
   statusUnknown: "Невідомо",
   statusPending: "Платіж надіслано, чекаємо мережу",
   noteUnderpaid: "Платіж надійшов, але менший за суму запиту.",
+  noteUnderpaidBy: "Надійшло {received} з {amount} — менше, ніж просить цей запит.",
+  noteUnderpaidFee: "Надіслано всю суму, але власна комісія токена за переказ утримала {fee}: надійшло {received} з {amount}.",
   noteWrongToken: "Платіж надійшов в іншому токені, ніж просить цей запит.",
   noteOverpaid: "Надійшло більше, ніж просив цей запит.",
+  noteOverpaidBy: "Надійшло {received} на запит {amount} — більше, ніж він просив.",
+  noteOverpaidOpen: "Цей запит оплатили більше одного разу: усього надійшло {received}.",
   paidOn: "Оплачено",
   viewTransaction: "Переглянути транзакцію",
 
   scanTitle: "Оплатити з телефона",
-  scanBody: "Наведіть камеру телефона на код. Ця сторінка відкриється там і передасть платіж застосунку гаманця.",
+  scanBody: "Наведи камеру телефона на код. Ця сторінка відкриється там і передасть платіж застосунку гаманця.",
   openInWallet: "Відкрити в застосунку гаманця",
   openInApp: "Відкрити в застосунку гаманця",
   openInPhantom: "Відкрити в Phantom",
   openInSolflare: "Відкрити в Solflare",
   otherWallet: "Інший гаманець Solana",
-  mobileHint: "Відкрийте цю сторінку в застосунку гаманця, щоб оплатити. Phantom і Solflare відкривають її всередині застосунку.",
+  mobileHint: "Відкрий цю сторінку в застосунку гаманця, щоб оплатити. Phantom і Solflare відкривають її всередині застосунку.",
   pageLinkLabel: "Посилання на сторінку",
 
   payWithWallet: "Оплатити гаманцем",
   amountLabel: "Сума",
   amountPlaceholder: "0.00",
-  chooseWallet: "Оберіть гаманець у цьому браузері",
-  noWallet: "У цьому браузері немає гаманця Solana. Оплатіть з телефона через код або встановіть тут Phantom, Solflare чи Backpack.",
-  connecting: "Перевірте гаманець…",
-  connectedAs: "Платите з",
+  chooseWallet: "Обери гаманець у цьому браузері",
+  noWallet: "У цьому браузері немає гаманця Solana. Оплати з телефона через код або встанови тут Phantom, Solflare чи Backpack.",
+  connecting: "Перевір гаманець…",
+  connectedAs: "Платиш з",
   change: "Змінити",
   preparing: "Готуємо транзакцію…",
-  confirmInWallet: "Підтвердьте в гаманці.",
   sending: "Надсилаємо…",
   sent: "Надіслано. Чекаємо підтвердження мережі.",
   payButton: "Оплатити",
   payAgainHint: "Сторінка оновиться сама, щойно платіж підтвердиться.",
-  feeNote: "Комісію мережі сплачує ваш гаманець.",
+  feeNote: "Комісію мережі сплачує твій гаманець.",
   createsAccountNote: "У отримувача ще немає рахунку для цього токена; цей платіж створить його і покриє оренду.",
+  reviewTitle: "Оплатити {amount} на {to}",
+  reviewGet: "{to} отримує {amount}",
+  reviewGetLessFee: "{to} отримує {amount} мінус власну комісію токена, якщо вона є",
+  reviewWhat: "Переказ з твого гаманця на адресу, що попросила цю оплату. Щойно мережа підтвердить його, сторінка покаже «Оплачено». Оплату не можна повернути.",
+  reviewRecipient: "Адреса отримувача",
+  reviewToken: "Токен",
+  reviewNativeSol: "SOL (нативний)",
   errorGeneric: "Не вдалося підготувати платіж.",
-  errorSelf: "Цей запит адресований гаманцю, який ви підключили.",
+  errorSelf: "Цей запит адресований гаманцю, який підключено.",
   errorRefused: "Гаманець не підписав. Нічого не надіслано.",
-  errorAmount: "Введіть суму для оплати.",
+  errorAmount: "Введи суму для оплати.",
   tryAgain: "Спробувати ще раз",
 
   notFoundTitle: "Такого посилання на оплату немає",
-  notFoundBody: "Перевірте посилання або попросіть у відправника нове.",
+  notFoundBody: "Перевір посилання або попроси у відправника нове.",
   poweredBy: "Запит на оплату від Ryntra",
   aboutRyntra: "Що таке Ryntra",
   language: "Мова",

@@ -1,6 +1,6 @@
 import type { MenuSectionId, ProductPageId } from "../../shell/domains.ts";
 
-/** Where a documentation page's primary button opens: a section of the menu, or the assistant. */
+/** Where a documentation page's primary button opens: a row of the menu, or the assistant. */
 export type DocsDestination = MenuSectionId | "agent";
 
 /**
@@ -39,17 +39,16 @@ export type DocSection = Readonly<{
 }>;
 
 /**
- * The documentation's sections are the menu's: Start, then Invest · Trade ·
- * Money · Portfolio · Ryntra · Rewards as the app draws them, then Reference and
- * Developers. A page keeps its address when it changes section — `money/rewards`
- * stands under Rewards, `strategies/*` and `manage/*` under Portfolio — so no
- * link anyone holds moves; a page that moved address answers by a 308.
+ * The documentation's sections are the products a person uses, then Reference — networks, fees, receipts — and one short
+ * section for teams, agents and developers. A page keeps its address when it changes section — `invest/*` stands
+ * under Trading, `strategies/*` under Bots, `start/wallet` under Money — so no link anyone holds moves; a page that
+ * moved address answers by a 308.
  */
-export const DOC_GROUP_IDS = ["start", "invest", "trade", "launch", "money", "portfolio", "ryntra", "rewards", "reference", "developers"] as const;
+export const DOC_GROUP_IDS = ["start", "trade", "perps", "predictions", "bots", "launch", "portfolio", "money", "rewards", "ryntra", "phone", "reference", "developers"] as const;
 export type DocGroupId = (typeof DOC_GROUP_IDS)[number];
 
 /** The first segment of a page's address: its section's own, or the one the page kept when it moved. */
-export const DOC_PATH_PREFIXES = ["start", "invest", "trade", "launch", "money", "strategies", "manage", "ryntra", "reference"] as const;
+export const DOC_PATH_PREFIXES = ["start", "invest", "trade", "bots", "launch", "money", "strategies", "manage", "ryntra", "phone", "reference", "soon"] as const;
 
 export type DocPage = Readonly<{
   /** The path under `/docs/` — `trade/swap` answers at `/docs/trade/swap`. */
@@ -71,15 +70,18 @@ export type DocPage = Readonly<{
 
 export const GROUP_TITLES: Readonly<Record<DocGroupId, Localized>> = {
   start: { en: "Start here", uk: "Почати" },
-  invest: { en: "Invest", uk: "Інвестувати" },
-  trade: { en: "Trade", uk: "Торгувати" },
+  trade: { en: "Trading", uk: "Торгівля" },
+  perps: { en: "Perps", uk: "Perps" },
+  predictions: { en: "Predictions", uk: "Прогнози" },
+  bots: { en: "Bots and grid", uk: "Боти й грід" },
   launch: { en: "Launch", uk: "Лаунч" },
-  money: { en: "Money", uk: "Гроші" },
-  portfolio: { en: "Portfolio", uk: "Портфель" },
-  ryntra: { en: "Ryntra", uk: "Ryntra" },
+  portfolio: { en: "Portfolio and pools", uk: "Портфель і пули" },
+  money: { en: "Money and wallet", uk: "Гроші й гаманець" },
   rewards: { en: "Rewards", uk: "Винагороди" },
+  ryntra: { en: "Ryntra assistant", uk: "Помічник Ryntra" },
+  phone: { en: "Phone", uk: "Телефон" },
   reference: { en: "Reference", uk: "Довідка" },
-  developers: { en: "Developers", uk: "Розробникам" },
+  developers: { en: "Teams, agents, developers", uk: "Команди, агенти, розробники" },
 };
 
 /* Small constructors so the content files read as content. */

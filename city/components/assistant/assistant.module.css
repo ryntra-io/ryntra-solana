@@ -1,0 +1,441 @@
+/* Ryntra in the city (CITY-10): one button in the top bar and one glass panel, in the HUD's own glass
+   (hud.module.css `.panel`); on a phone held upright the panel is a sheet at the bottom, under the thumb. Tokens from
+   city/styles/city.module.css. */
+
+/* «Ask Ryntra» in the top bar, beside the search, in the bar's own glass. */
+.entry {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  height: 44px;
+  padding: 0 16px 0 13px;
+  border: 0;
+  color: var(--ice);
+  --cut: 10px;
+  animation: assistantIn 260ms ease-out both;
+}
+
+.entry svg {
+  width: 20px;
+  height: 20px;
+  flex: none;
+  color: var(--amber);
+}
+
+.entryWord {
+  font-family: var(--font-display, system-ui), system-ui, sans-serif;
+  font-stretch: 125%;
+  font-variation-settings: 'wdth' 125;
+  font-size: var(--type-caption);
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.entry:hover,
+.entry:focus-visible {
+  box-shadow:
+    inset 0 0 0 2px rgba(255, 178, 63, 0.7),
+    inset 0 1px 18px rgba(153, 69, 255, 0.18);
+  outline: none;
+}
+
+@keyframes assistantIn {
+  from {
+    opacity: 0;
+    transform: translateY(-6px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* While open, the panel stands over the HUD and its cards: one window at a time. */
+.layer {
+  position: fixed;
+  inset: 0;
+  z-index: 12;
+  pointer-events: none;
+  font-family: var(--font-ui, system-ui), system-ui, sans-serif;
+  color: var(--ice);
+}
+
+.panel {
+  position: absolute;
+  top: calc(max(12px, env(safe-area-inset-top)) + 56px);
+  right: var(--gutter);
+  width: min(420px, calc(100% - 2 * var(--gutter)));
+  max-height: calc(100dvh - 96px - env(safe-area-inset-top));
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: 16px 16px 14px;
+  --cut: 16px;
+  /* The HUD's glass, made whole: the panel stands over the HUD's own cards, and nothing of them shows through. */
+  background: linear-gradient(160deg, rgb(20, 16, 36), rgb(8, 7, 15));
+  pointer-events: auto;
+  animation: assistantIn 220ms ease-out both;
+}
+
+.head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin: -4px -6px 10px 0;
+}
+
+.title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-family: var(--font-display, system-ui), system-ui, sans-serif;
+  font-stretch: 125%;
+  font-variation-settings: 'wdth' 125;
+  font-size: var(--type-small);
+  font-weight: 800;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--amber);
+}
+
+.title svg {
+  width: 18px;
+  height: 18px;
+}
+
+.close {
+  width: 44px;
+  height: 44px;
+  display: grid;
+  place-items: center;
+  border: 0;
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--ice);
+  clip-path: polygon(10px 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%, 0 10px);
+}
+
+.close svg {
+  width: 20px;
+  height: 20px;
+}
+
+.close:focus-visible {
+  outline: 2px solid var(--amber);
+  outline-offset: -2px;
+}
+
+/* ---------- The ready questions ---------- */
+
+.starters {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.starter {
+  min-height: 52px;
+  padding: 0 16px;
+  border: 0;
+  text-align: left;
+  font-size: var(--type-base);
+  font-weight: 600;
+  color: var(--ice);
+  background: linear-gradient(160deg, rgba(42, 22, 64, 0.85), rgba(20, 16, 36, 0.85));
+  box-shadow: inset 0 0 0 1px rgba(153, 69, 255, 0.4);
+  clip-path: polygon(10px 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%, 0 10px);
+  transition: box-shadow 160ms ease-out;
+}
+
+.starter:hover,
+.starter:focus-visible {
+  box-shadow: inset 0 0 0 2px var(--amber);
+  outline: none;
+}
+
+/* ---------- The answer ---------- */
+
+.line {
+  margin: 0 0 14px;
+  font-size: var(--type-lead);
+  font-weight: 600;
+  line-height: 1.4;
+  color: var(--ice);
+  animation: assistantIn 260ms ease-out both;
+}
+
+.thinking {
+  display: flex;
+  gap: 8px;
+  height: 24px;
+  align-items: center;
+  margin: 4px 0 16px;
+}
+
+.thinking span {
+  width: 8px;
+  height: 8px;
+  background: var(--amber);
+  transform: rotate(45deg);
+  animation: assistantBeat 900ms ease-in-out infinite;
+}
+
+.thinking span:nth-child(2) {
+  animation-delay: 150ms;
+}
+
+.thinking span:nth-child(3) {
+  animation-delay: 300ms;
+}
+
+@keyframes assistantBeat {
+  0%,
+  100% {
+    opacity: 0.25;
+    transform: rotate(45deg) scale(0.7);
+  }
+  50% {
+    opacity: 1;
+    transform: rotate(45deg) scale(1);
+  }
+}
+
+.towers {
+  list-style: none;
+  margin: 0 0 12px;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.chip {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 44px;
+  padding: 0 12px 0 6px;
+  border: 0;
+  background: rgba(255, 255, 255, 0.06);
+  box-shadow: inset 0 0 0 1px rgba(153, 69, 255, 0.35);
+  clip-path: polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px);
+  color: var(--ice);
+  animation: assistantIn 300ms ease-out both;
+}
+
+.chip:hover,
+.chip:focus-visible {
+  box-shadow: inset 0 0 0 2px var(--amber);
+  outline: none;
+}
+
+.chipIcon {
+  width: 30px;
+  height: 30px;
+  flex: none;
+  border-radius: 50%;
+  object-fit: cover;
+  background: radial-gradient(circle at 35% 30%, rgba(153, 69, 255, 0.55), rgba(42, 22, 64, 0.9));
+}
+
+.chipSym {
+  font-size: var(--type-base);
+  font-weight: 700;
+}
+
+.chipUp,
+.chipDown {
+  font-size: var(--type-small);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.chipUp {
+  color: var(--mint);
+}
+
+.chipDown {
+  color: var(--flare);
+}
+
+/* ---------- Details: one quiet control, everything else behind it ---------- */
+
+.more {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  min-height: 44px;
+  margin: -4px 0 6px -6px;
+  padding: 0 6px;
+  border: 0;
+  background: none;
+  font-size: var(--type-small);
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ice);
+}
+
+.more svg {
+  width: 18px;
+  height: 18px;
+  transition: transform 180ms ease-out;
+}
+
+.more[aria-expanded='true'] svg {
+  transform: rotate(180deg);
+}
+
+.more:focus-visible {
+  outline: 2px solid var(--amber);
+  outline-offset: 2px;
+}
+
+.details {
+  display: grid;
+  gap: 12px;
+  margin-bottom: 12px;
+  padding: 12px 14px;
+  background: rgba(255, 255, 255, 0.04);
+  box-shadow: inset 0 0 0 1px rgba(153, 69, 255, 0.25);
+  animation: assistantIn 200ms ease-out both;
+}
+
+.partTitle {
+  margin: 0 0 4px;
+  font-size: var(--type-micro);
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--amber);
+}
+
+.partList {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 4px;
+  font-size: var(--type-body);
+  line-height: 1.45;
+  color: var(--ice);
+}
+
+.mark {
+  font-weight: 700;
+  color: #c9a2ff;
+}
+
+/* ---------- The question field ---------- */
+
+.ask {
+  display: flex;
+  gap: 8px;
+}
+
+.input {
+  flex: 1;
+  min-width: 0;
+  height: 52px;
+  padding: 0 14px;
+  border: 0;
+  outline: none;
+  background: rgba(255, 255, 255, 0.06);
+  box-shadow: inset 0 0 0 1px rgba(153, 69, 255, 0.35);
+  color: var(--ice);
+  /* 16px keeps a phone from zooming in on the field. */
+  font: 600 16px var(--font-ui, system-ui), system-ui, sans-serif;
+}
+
+.input:focus {
+  box-shadow: inset 0 0 0 2px var(--amber);
+}
+
+.input::placeholder {
+  color: var(--text-dim);
+}
+
+.send {
+  width: 52px;
+  height: 52px;
+  flex: none;
+  display: grid;
+  place-items: center;
+  border: 0;
+  color: var(--ink);
+  background: linear-gradient(120deg, var(--warm), var(--amber));
+  clip-path: polygon(0 0, 100% 0, 100% calc(100% - 12px), calc(100% - 12px) 100%, 0 100%);
+  transition: opacity 160ms ease-out;
+}
+
+.send svg {
+  width: 22px;
+  height: 22px;
+}
+
+.send:disabled {
+  opacity: 0.35;
+  cursor: default;
+}
+
+.send:focus-visible {
+  outline: 2px solid var(--ice);
+  outline-offset: 2px;
+}
+
+/* A phone: the top bar has room for the spark alone; its words stay for screen readers. */
+@media (max-width: 560px) {
+  .entry {
+    width: 44px;
+    padding: 0;
+    justify-content: center;
+  }
+  .entryWord {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+}
+
+/* A phone held upright: the panel is a sheet at the bottom, over the dock, above the keyboard while it is up; the
+   towers it shows stand in the sky above it. */
+@media (max-width: 560px) and (orientation: portrait) {
+  .panel {
+    top: auto;
+    left: var(--gutter);
+    right: var(--gutter);
+    width: auto;
+    bottom: max(calc(var(--kb, 0px) + 8px), max(14px, env(safe-area-inset-bottom)));
+    max-height: calc(62dvh - var(--kb, 0px));
+    animation-name: assistantUp;
+  }
+  /* The towers of an answer in one row the thumb swipes, so the sheet stays low and the skyline above it. */
+  .towers {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    margin-right: -16px;
+    padding-right: 16px;
+    scrollbar-width: none;
+  }
+  .towers::-webkit-scrollbar {
+    display: none;
+  }
+  .towers > li {
+    flex: none;
+  }
+}
+
+@keyframes assistantUp {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}

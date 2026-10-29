@@ -1,0 +1,133 @@
+/* The four pages of «Гроші» (B18): the name once, a 560 px form and, from a desk's width, a side column of the page's
+   context beside it — one pair in the middle of the canvas, the heading on its left edge. */
+
+.page {
+  --money-form: 560px;
+  --money-aside: 360px;
+  --money-gap: var(--ryntra-space-8, 32px);
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  align-content: start;
+  gap: var(--ryntra-space-6, 24px);
+  box-sizing: border-box;
+  width: 100%;
+  max-width: var(--money-form); /* width-law: a single action — the 560 px form in the middle of the canvas (DESIGN.md «Page width») */
+  margin-inline: auto;
+  padding-top: var(--ryntra-space-2, 8px);
+}
+
+@media (min-width: 1280px) {
+  .page[data-has-aside="true"] {
+    max-width: calc(var(--money-form) + var(--money-gap) + var(--money-aside)); /* width-law: the form and its side column are one centred pair (B18, decision 64), never the canvas edge to edge */
+  }
+}
+
+.head {
+  min-width: 0;
+}
+
+.title {
+  margin: 0;
+  font-size: var(--ryntra-type-h1-size, 32px);
+  line-height: var(--ryntra-type-h1-line, 38px);
+  font-weight: var(--ryntra-weight-semibold, 600);
+  letter-spacing: -0.01em;
+}
+
+.pair {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  align-items: start;
+  gap: var(--ryntra-space-6, 24px);
+  min-width: 0;
+}
+
+@media (min-width: 1280px) {
+  .page[data-has-aside="true"] .pair {
+    grid-template-columns: minmax(0, var(--money-form)) minmax(0, var(--money-aside));
+    column-gap: var(--money-gap);
+  }
+}
+
+.form,
+.aside,
+.below {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  align-content: start;
+  gap: var(--ryntra-space-4, 16px);
+  min-width: 0;
+}
+
+/* The form's surface: the same card on every page of the section, no title of its own. */
+.card {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--ryntra-space-3, 12px);
+  box-sizing: border-box;
+  min-width: 0;
+  padding: 20px;
+  border: 1px solid var(--ryntra-border);
+  border-radius: var(--ryntra-radius-card, 16px);
+  background: var(--ryntra-surface);
+}
+
+.action {
+  display: grid;
+  gap: var(--ryntra-space-2, 8px);
+}
+
+/* A block that stands beside the form on a desk and has its own place inside the form below one (the top-up's address
+   and its «З іншого гаманця» row): each shows where it belongs, never both at once. */
+.besideOnly {
+  display: none;
+}
+
+@media (min-width: 1280px) {
+  .page[data-has-aside="true"] .besideOnly {
+    display: block;
+  }
+
+  .page[data-has-aside="true"] .inlineOnly {
+    display: none;
+  }
+}
+
+/* A phone: the heading smaller, the form's one action pinned above the bottom bar — in reach the moment the amount is
+   typed — and the page keeps room under its last block so nothing hides behind the action. Under the bar's own sheet
+   («Гроші» opens four actions over it), never over it. */
+@media (max-width: 767px) {
+  .page {
+    gap: var(--ryntra-space-4, 16px);
+    padding-top: 0;
+  }
+
+  .title {
+    font-size: var(--ryntra-type-h2-size, 22px);
+    line-height: var(--ryntra-type-h2-line, 28px);
+  }
+
+  .card {
+    padding: 16px;
+  }
+
+  .page:has([data-money-action]) {
+    padding-bottom: calc(var(--ryntra-size-button-touch, 48px) + var(--ryntra-space-3, 12px) * 2 + var(--ryntra-space-2, 8px));
+  }
+
+  .action {
+    position: fixed;
+    right: 0;
+    bottom: calc(var(--sol-phonebar-h, 65px) + env(safe-area-inset-bottom, 0px));
+    left: 0;
+    z-index: calc(var(--ryntra-z-sticky, 10) - 1);
+    box-sizing: border-box;
+    padding: var(--ryntra-space-3, 12px) var(--ryntra-space-4, 16px);
+    border-top: 1px solid var(--ryntra-border);
+    background: var(--ryntra-bg);
+  }
+
+  .action :is(button, a) {
+    min-height: var(--ryntra-size-button-touch, 48px);
+  }
+}

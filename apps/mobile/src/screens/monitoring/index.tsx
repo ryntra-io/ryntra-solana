@@ -13,6 +13,7 @@ import { Txt } from '@/components/txt'
 import { useOpenRyn } from '@/features/agent/ask-ryn'
 import { AGENT_COPY } from '@/features/agent/copy'
 import { MONITORING_COPY } from '@/features/monitoring/copy'
+import { CHANGES_PATH, PLACES_COPY } from '@/features/shell/places'
 import {
   lastCheckedAt,
   noteRefOfHref,
@@ -59,8 +60,10 @@ function SectionLabel({ title, count, right }: { title: string; count?: number; 
 }
 
 /**
- * The inbox: what needs attention (the server's cards, one tap to the exact
- * plan), what is watched, and the durable notes with their read state. The
+ * «Вхідні» (NEW-LOOK §3): the wallet's notes first — a limit filled, a buy
+ * waiting for its signature, a launch's fees — with their read state and
+ * «Позначити все прочитаним», then what needs attention (the server's cards,
+ * one tap to the exact plan) and what is watched; «Що змінилося» a tap away. The
  * count and every mark are the server's; a tap opens the plan the note is
  * about and marks the note read, the way the web's link does — it never
  * opens a Review, never refreshes a quote, never signs. The words of a
@@ -72,6 +75,7 @@ export function MonitoringScreen() {
   const { colors } = useTheme()
   const locale = useLocale()
   const copy = useCopy(MONITORING_COPY)
+  const places = useCopy(PLACES_COPY)
   const agentCopy = useCopy(AGENT_COPY)
   const openRyn = useOpenRyn()
   const shared = useSharedCopy()
@@ -130,7 +134,7 @@ export function MonitoringScreen() {
       <StateView
         icon="notifications-outline"
         title={copy.noPlansTitle}
-        detail={copy.noPlansDetail}
+        help={{ title: copy.noPlansTitle, body: copy.noPlansDetail }}
         action={{ title: copy.openPlans, onPress: () => router.push('/bots') }}
       />
     )
@@ -163,57 +167,12 @@ export function MonitoringScreen() {
             className="mt-3 flex-row items-center gap-3 rounded-sm border border-line bg-surface px-4 py-3 active:bg-hover"
           >
             <Icon name="phone-portrait-outline" size={20} color="brand" />
-            <View className="flex-1 gap-0.5">
-              <Txt variant="ui">{copy.promptTitle}</Txt>
-              <Txt variant="labelSm" tone="faint">
-                {copy.promptDetail}
-              </Txt>
-            </View>
+            <Txt variant="ui" className="flex-1">
+              {copy.promptTitle}
+            </Txt>
             <Icon name="chevron-forward" size={18} color="fgMuted" />
           </Pressable>
         ) : null}
-
-        <SectionLabel title={copy.attention} count={surface.attention.length} />
-        {surface.attention.length === 0 ? (
-          <Txt variant="ui" tone="faint" className="px-1">
-            {copy.emptyAttention}
-          </Txt>
-        ) : (
-          <View className="gap-2">
-            {surface.attention.map((card) => (
-              <AttentionCard
-                key={card.monitorId}
-                card={card}
-                lastChecked={copy.lastChecked}
-                locale={locale}
-                now={now}
-                onPress={() => openCard(card)}
-                paperLabel={copy.paper}
-              />
-            ))}
-          </View>
-        )}
-
-        <SectionLabel title={copy.watching} count={surface.watching.length} />
-        {surface.watching.length === 0 ? (
-          <Txt variant="ui" tone="faint" className="px-1">
-            {copy.emptyWatching}
-          </Txt>
-        ) : (
-          <Card padded={false} className="px-4">
-            {surface.watching.map((card, index) => (
-              <WatchRow
-                key={card.monitorId}
-                card={card}
-                copy={copy}
-                locale={locale}
-                now={now}
-                onPress={() => openCard(card)}
-                last={index === surface.watching.length - 1}
-              />
-            ))}
-          </Card>
-        )}
 
         <SectionLabel
           title={copy.recent}
@@ -252,6 +211,43 @@ export function MonitoringScreen() {
             ))}
           </Card>
         )}
+        <SectionLabel title={copy.attention} count={surface.attention.length} />
+        {surface.attention.length === 0 ? (
+          <Txt variant="ui" tone="faint" className="px-1">
+            {copy.emptyAttention}
+          </Txt>
+        ) : (
+          <View className="gap-2">
+            {surface.attention.map((card) => (
+              <AttentionCard
+                key={card.monitorId}
+                card={card}
+                lastChecked={copy.lastChecked}
+                locale={locale}
+                now={now}
+                onPress={() => openCard(card)}
+                paperLabel={copy.paper}
+              />
+            ))}
+          </View>
+        )}
+
+        <SectionLabel title={copy.watching} count={surface.watching.length} />
+        {surface.watching.length === 0 ? null : (
+          <Card padded={false} className="px-4">
+            {surface.watching.map((card, index) => (
+              <WatchRow
+                key={card.monitorId}
+                card={card}
+                copy={copy}
+                locale={locale}
+                now={now}
+                onPress={() => openCard(card)}
+                last={index === surface.watching.length - 1}
+              />
+            ))}
+          </Card>
+        )}
       </ScrollView>
     )
   }
@@ -270,7 +266,7 @@ export function MonitoringScreen() {
         </Pressable>
         <View className="flex-1">
           <ScreenHeader
-            title={copy.title}
+            title={copy.inboxTitle}
             subtitle={
               surface
                 ? `${unread > 0 ? copy.unread(unread) : copy.allRead}${checked ? ` · ${copy.checked} ${formatAge(checked, now, locale)}` : ''}`
@@ -278,20 +274,30 @@ export function MonitoringScreen() {
             }
             right={
               session ? (
-                <Pressable
-                  accessibilityRole="button"
-                  accessibilityLabel={copy.settings}
-                  onPress={settings}
-                  className="h-9 w-9 items-center justify-center rounded-btn border border-line bg-surface active:bg-hover"
-                >
-                  <Icon name="options-outline" size={20} color="fg" />
-                </Pressable>
+                <View className="flex-row gap-2">
+                  <Pressable
+                    accessibilityRole="button"
+                    accessibilityLabel={places.whatChanged}
+                    onPress={() => router.push(CHANGES_PATH as never)}
+                    className="h-9 w-9 items-center justify-center rounded-btn border border-line bg-surface active:bg-hover"
+                  >
+                    <Icon name="pulse-outline" size={20} color="fg" />
+                  </Pressable>
+                  <Pressable
+                    accessibilityRole="button"
+                    accessibilityLabel={copy.settings}
+                    onPress={settings}
+                    className="h-9 w-9 items-center justify-center rounded-btn border border-line bg-surface active:bg-hover"
+                  >
+                    <Icon name="options-outline" size={20} color="fg" />
+                  </Pressable>
+                </View>
               ) : undefined
             }
           />
         </View>
       </View>
-      <SessionGate what={copy.title}>{body}</SessionGate>
+      <SessionGate what={copy.inboxTitle}>{body}</SessionGate>
     </View>
   )
 }

@@ -213,6 +213,20 @@ export const AGENT_CONTROL_SURFACES: readonly AgentControlSurfaceRecord[] = Obje
     writeAuthority: NONE,
   }),
   Object.freeze<AgentControlSurfaceRecord>({
+    id: "procurement",
+    label: "Agents and payments",
+    href: "/agents/workspace/procurement",
+    question: "Who may an agent of Ryntra pay, and who has to authorize it?",
+    module: "lib/agent-control/procurement/policy.ts",
+    refuses: [
+      "Pays a registered provider or nobody: a URL from a prompt, a tool result or a page resolves to a named refusal.",
+      "Acts without a person's signature only where the program itself holds both the recipient and the end date.",
+      "Issues no quote for a service it cannot serve, so no payment is taken for an answer that does not exist.",
+    ],
+    capabilities: [],
+    writeAuthority: NONE,
+  }),
+  Object.freeze<AgentControlSurfaceRecord>({
     id: "tools",
     label: "Agent tools",
     href: "/agents/workspace/tools",

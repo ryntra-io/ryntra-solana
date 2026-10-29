@@ -7,6 +7,7 @@ import { storeSolanaReceipt, type StoredSendReceipt } from "@/lib/solana/send-re
 import { useSolanaI18n } from "../i18n/provider";
 import { useWalletProof } from "../wallet-proof";
 import styles from "./receipts.module.css";
+import { ensureWalletActs } from "@/lib/account/wallet-proof-store.client";
 
 /**
  * The server copy of a wallet's receipts — history class B beyond this device.
@@ -45,6 +46,7 @@ export function ArchivePanel({ owner, localRows, onImported }: { owner: string; 
       const rows = localRows
         .filter((row) => /^[0-9a-f]{64}$/.test(String(row.receipt.contentHash)))
         .map((row) => ({ kind: kindOf(row.receipt), contentHash: String(row.receipt.contentHash), payload: row.receipt, occurredAt: row.storedAt }));
+      if (!(await ensureWalletActs())) return;
       const r = await fetch("/api/solana/receipts/archive", { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ address: owner, rows }) });
       const data = (await r.json().catch(() => ({}))) as { inserted?: number; offered?: number };
       setLine(r.ok ? `${text("Saved")} · ${data.inserted ?? 0} ${text("new")}, ${data.offered ?? rows.length} ${text("receipts")}` : text("Archive unavailable right now."));

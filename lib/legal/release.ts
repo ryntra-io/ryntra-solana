@@ -10,19 +10,6 @@ export type LegalSignoff = {
   evidenceReference: string | null;
 };
 
-export const LEGAL_CONTENT_FILES = [
-  "lib/legal/release-facts.ts",
-  "lib/legal/candidate.ts",
-  "app/legal/review/layout.tsx",
-  "app/legal/review-notice.tsx",
-  "app/legal/review/candidate-document.tsx",
-  "app/legal/review/terms/page.tsx",
-  "app/legal/review/privacy/page.tsx",
-  "app/legal/review/disclosures/page.tsx",
-  "docs/legal/CANDIDATE-2026-09-26-DATA-MAP.md",
-  "docs/legal/CANDIDATE-2026-09-26-SIGNOFF.md",
-] as const;
-
 export const LEGAL_PACKAGE = {
   ...LEGAL_RELEASE_FACTS,
   contentDigest: "sha256:7406041118274517c4826b1506889ee09abc24350862336154684a8aab149c2c",

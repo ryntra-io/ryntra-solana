@@ -22,6 +22,38 @@ type SubmitRpcEnvelope = Readonly<{
   error?: Readonly<{ code?: unknown; message?: unknown; data?: unknown }>;
 }>;
 
+/**
+ * The same signed bytes once more, to the same primary (SOL-S1, `landing.ts`).
+ *
+ * Not a second transaction: identical bytes carry the identical signature,
+ * which the chain processes at most once. Preflight stays on, so bytes the
+ * cluster would refuse — already processed, expired, failing — are refused by
+ * the RPC and never forwarded. Bounded by a short timeout; the answer is not
+ * read for anything but a thrown error, which the caller ignores.
+ */
+export async function resendSameTransaction(args: {
+  handle: SolanaRpcHandle;
+  signedWireBase64: string;
+  timeoutMs?: number;
+}): Promise<void> {
+  const endpoint = args.handle.endpoints[0];
+  await fetch(endpoint.url, {
+    method: "POST",
+    headers: {
+      "content-type": "application/json",
+      accept: "application/json",
+      "solana-client": "ryntra/@solana/kit",
+    },
+    body: stringifyJsonWithBigInts({
+      jsonrpc: "2.0",
+      id: "ryntra-resend-same",
+      method: "sendTransaction",
+      params: [args.signedWireBase64, { encoding: "base64", skipPreflight: false, preflightCommitment: "confirmed", maxRetries: 0 }],
+    }),
+    signal: AbortSignal.timeout(Math.max(1, Math.min(args.handle.timeoutMs, args.timeoutMs ?? 2_500))),
+  }).then((response) => response.body?.cancel());
+}
+
 /** Exactly one POST to the reviewed primary. No fallback and no retry. */
 export async function sendTransactionOnce(args: {
   handle: SolanaRpcHandle;

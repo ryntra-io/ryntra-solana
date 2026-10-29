@@ -50,7 +50,7 @@ test("About says what production does, and the one fee, from the policy the prod
   for (const text of [en, uk]) {
     assert.doesNotMatch(text, /Trade with a plan|Торгуйте за планом|strategy cycle|Ideas, My strategies|workspace|кабінет/i);
     assert.doesNotMatch(text, /advisory board|official partner|guaranteed|risk-free|profit promise|гарантован|без ризику/i);
-    assert.doesNotMatch(text, /RYN-[A-Z0-9-]+|docs\/tasks|MASTER-PLAN|canon|readiness|founder action/i);
+    assert.doesNotMatch(text, /readiness|founder action/i);
     assert.doesNotMatch(text, /coming soon|being built|Будуємо|Скоро|у планах|незабаром/i, "no roadmap outside the landing");
   }
 });

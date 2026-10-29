@@ -1,0 +1,72 @@
+/* A mission's crew (MC-2): who is on it, each part and each answer — one line each, the creator first. */
+.rows {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 44px;
+  padding: 8px 14px;
+  border-radius: 10px;
+  border: 1px solid var(--ry-border, rgba(255, 255, 255, 0.08));
+}
+
+.row[data-you] {
+  background: var(--ry-surface-2, rgba(255, 255, 255, 0.03));
+}
+
+.handle {
+  flex: 1;
+  min-width: 0;
+  overflow-wrap: anywhere;
+  font-family: var(--font-geist-mono, "Geist Mono"), ui-monospace, monospace;
+}
+
+.wallet {
+  color: var(--ry-text-muted, #8a97a8);
+}
+
+.part {
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.state {
+  min-width: 72px;
+  text-align: right;
+  font-size: 12px;
+  color: var(--ry-text-muted, #8a97a8);
+}
+
+.state[data-state="ACCEPTED"] {
+  color: var(--ry-up, #22c55e);
+}
+
+.consent {
+  margin: 12px 0 0;
+  padding: 0 0 0 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  line-height: 1.5;
+}
+
+.note {
+  margin: 12px 0 0;
+  font-size: 13px;
+  color: var(--ry-text-muted, #8a97a8);
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 16px;
+}

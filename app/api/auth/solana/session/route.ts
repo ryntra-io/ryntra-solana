@@ -19,7 +19,7 @@ export const dynamic = "force-dynamic";
  * says «signed out», so nobody is signed out because the store blinked.
  */
 export async function GET(req: NextRequest) {
-  const [read, proof] = await Promise.all([readSession(), readWalletProof()]);
+  const [read, proof] = await Promise.all([readSession(), readWalletProof({ allowLink: true })]);
   if (read.status === "unavailable" || (read.status === "absent" && proof.status === "unavailable")) {
     return NextResponse.json({ checking: true }, { status: 503, headers: { ...privateNoStoreHeaders(), "Retry-After": "5" } });
   }
@@ -31,7 +31,7 @@ export async function GET(req: NextRequest) {
     signedIn: Boolean(session?.accountId),
     walletAddress,
     expiresAt: renewed?.expiresAt ?? session?.expiresAt ?? null,
-    proof: proof.status === "ok" ? { address: proof.proof.address, expiresAt: renewed && proof.proof.sessionId === session?.sessionId ? renewed.expiresAt : proof.proof.expiresAt } : null,
+    proof: proof.status === "ok" ? { address: proof.proof.address, via: proof.proof.via, expiresAt: renewed && proof.proof.sessionId === session?.sessionId ? renewed.expiresAt : proof.proof.expiresAt } : null,
     checking: proof.status === "unavailable",
     at: Date.now(),
   }, { headers: privateNoStoreHeaders() });

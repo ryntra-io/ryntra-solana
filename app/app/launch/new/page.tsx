@@ -2,7 +2,8 @@ import { notFound } from "next/navigation";
 
 import { solanaServerLocale } from "@/app/solana/workspace/i18n/server";
 import { launchNetwork } from "@/lib/launch/config.server";
-import { launchAccepting, launchPresetsView, launchTrading } from "@/lib/launch/runtime.server";
+import { getGuardRuntime } from "@/lib/guard/runtime";
+import { launchAccepting, launchPeopleServed, launchPresetsView, launchTrading } from "@/lib/launch/runtime.server";
 
 import { LAUNCH_WORDS } from "../launch-words";
 import { LaunchFlow } from "./launch-flow";
@@ -30,5 +31,7 @@ export default async function LaunchNewPage({ searchParams }: { searchParams: Pr
   const paused = launchAccepting(network) ? null : launchTrading() ? "launching" : "all";
   /* The demo market is never offered: Ryntra's own wallet opens it by its address, and the build refuses every other wallet. */
   const internal = (await searchParams).preset === "demo";
-  return <LaunchFlow locale={locale} presets={launchPresetsView(network, { internal })} paused={paused} initialPreset={internal ? "demo" : null} />;
+  /* Whether Ryntra's executor claims the budget on people's Micro markets here now — the form says what is (SOL-L6). */
+  const peopleServed = await launchPeopleServed(network, getGuardRuntime().store).catch(() => false);
+  return <LaunchFlow locale={locale} presets={launchPresetsView(network, { internal })} paused={paused} initialPreset={internal ? "demo" : null} peopleServed={peopleServed} />;
 }

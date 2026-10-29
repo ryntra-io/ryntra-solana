@@ -1,11 +1,12 @@
 "use client";
 
-import { Check } from "@phosphor-icons/react";
+import { Check, SealCheck } from "@phosphor-icons/react";
 
 import { useSolanaConnection } from "@/app/solana/workspace/connection";
 import { useWalletProof } from "@/app/solana/workspace/wallet-proof";
 
 import { useAccount } from "./account-context";
+import { useSeekerVerified } from "./seeker-check";
 
 /**
  * The account, inside the wallet's own panel.
@@ -18,8 +19,8 @@ import { useAccount } from "./account-context";
  *
  *   signed out   one sentence on what signing in opens and one button that
  *                asks the connected wallet for one signature — the same
- *                `signin` the sheet performed — then reloads with `auth=ok`
- *                so the server layout re-reads the session;
+ *                `signin` the sheet performed — then the server layout
+ *                re-reads the session in place, with no reload;
  *   signed in    the fact, the way into the account settings, the two ways
  *                out. The wallet stays connected through either.
  *
@@ -27,10 +28,12 @@ import { useAccount } from "./account-context";
  * open it in place, where the reason for signing in is on the page.
  */
 export function WalletAccountIdentity() {
-  const { signedIn, checking, walletAddress, copy, logout, logoutPending } = useAccount();
+  const { signedIn, checking, walletAddress, copy, logout, logoutPending, signedInHere } = useAccount();
   const { connection, paused } = useSolanaConnection();
   const proof = useWalletProof();
   const address = connection?.address ?? null;
+  /* «Перевірено Seeker» (SKR-3): the server's read of the signed-in wallet's Seeker Genesis Token. */
+  const seeker = useSeekerVerified(signedIn, walletAddress, address);
 
   if (signedIn) {
     const other = walletAddress && address && walletAddress !== address ? `${walletAddress.slice(0, 4)}…${walletAddress.slice(-4)}` : null;
@@ -40,6 +43,12 @@ export function WalletAccountIdentity() {
           <Check size={14} weight="bold" aria-hidden />
           {other ? `${copy.identity.signedInOther} ${other}` : copy.identity.signedIn}
         </p>
+        {seeker ? (
+          <p className="rs-menu-body ry-identity-fact" data-seeker="verified">
+            <SealCheck size={14} weight="fill" aria-hidden />
+            {copy.identity.seeker}
+          </p>
+        ) : null}
         {paused ? <p className="rs-menu-hint" role="status">{copy.identity.paused}</p> : null}
         {/* Settings is one row of the menu this block stands in, under the
             address — not a second link here. */}
@@ -68,11 +77,9 @@ export function WalletAccountIdentity() {
   const signIn = async () => {
     const ok = await proof.signIn();
     if (!ok) return;
-    /* The session is server-rendered into the layout; the sheet reloads the
-       same way once the cookie is set. */
-    const url = new URL(window.location.href);
-    url.searchParams.set("auth", "ok");
-    window.location.assign(url.href);
+    /* The session is server-rendered into the layout: it is re-read in place,
+       so the wallet that just signed stays connected. */
+    signedInHere();
   };
 
   return (

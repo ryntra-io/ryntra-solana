@@ -506,7 +506,7 @@ async function evmToSolanaFacts(args: {
     try {
       const transaction = (await withRpcDiscipline(solana, (abortSignal) =>
         solana.rpc
-          .getTransaction(arrivalHash as never, { commitment: "confirmed", maxSupportedTransactionVersion: 0, encoding: "json" })
+          .getTransaction(arrivalHash as never, { commitment: "confirmed", maxSupportedTransactionVersion: 1, encoding: "json" })
           .send({ abortSignal }),
       )) as { meta?: { fee?: bigint | number | string } } | null;
       if (transaction?.meta?.fee !== undefined) destinationNetworkFeeLamports = String(transaction.meta.fee);

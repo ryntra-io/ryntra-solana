@@ -1,34 +1,38 @@
 "use client";
 
-import Link from "next/link";
 import { useEffect, useState } from "react";
 
 import type { WorkspaceLocale } from "@/app/shell/locale";
 import type { PredictionEvent, PredictionMarket, PredictionMarketPrices, PredictionNews, PredictionRelatedMarket, PredictionRipple, PredictionSignals } from "@/lib/predictions/model";
+import { freshTheses } from "@/lib/predictions/theses";
 
 import { dateShort, pct } from "../format";
 import styles from "../predictions.module.css";
 import { venueName, wordsFor } from "../words";
-import { PredictionChartCard } from "./prediction-chart";
+import { OutcomeWeekCard } from "./prediction-chart";
 
 /**
  * Research — a Ryntra composition over everything the provider gives: *What
  * the market says* (each venue's live price), *What changed* (the chart with
- * its day and week), *Related markets*, *Signals* (generated, the model
- * named, advisory), *Ripple*, *News*, *Resolution* (each venue's own words
- * and where they differ), and *What is uncertain*. Every part answers on its
+ * its day and week), *Model theses* (the provider's model, not advice: no
+ * side they lean to, no model id, nothing older than two weeks — and no block
+ * at all without fresh ones),
+ * *News*, *Resolution* (each venue's own words and where they differ), and
+ * *What is uncertain*. The related markets and the ripple are a panel of
+ * their own (`market-map.tsx`). Every part answers on its
  * own; a part the provider does not have is a sentence, never a broken page.
  */
 
 type Part<T> = Readonly<{ ok: true; value: T }> | Readonly<{ ok: false; code: string }>;
 type ResearchAnswer = Readonly<{ signals: Part<PredictionSignals | null>; expand: Part<PredictionRipple>; hedge: Part<PredictionRipple>; news: Part<PredictionNews>; related: Part<readonly PredictionRelatedMarket[]>; readAt: string }>;
 
-export function useResearch(marketId: string, question: string): Readonly<{ status: "loading" | "ready" | "failed"; data: ResearchAnswer | null }> {
+/** Without the question: the related markets are the map panel's, which reads them itself. */
+export function useResearch(marketId: string): Readonly<{ status: "loading" | "ready" | "failed"; data: ResearchAnswer | null }> {
   const [state, setState] = useState<{ status: "loading" | "ready" | "failed"; data: ResearchAnswer | null }>({ status: "loading", data: null });
   useEffect(() => {
     let live = true;
     setState({ status: "loading", data: null });
-    void fetch(`/api/predictions/markets/${encodeURIComponent(marketId)}/research?text=${encodeURIComponent(question.slice(0, 300))}`, { headers: { accept: "application/json" }, cache: "no-store" })
+    void fetch(`/api/predictions/markets/${encodeURIComponent(marketId)}/research`, { headers: { accept: "application/json" }, cache: "no-store" })
       .then(async (r) => (r.ok ? ((await r.json()) as ResearchAnswer) : null))
       .then((data) => {
         if (live) setState(data ? { status: "ready", data } : { status: "failed", data: null });
@@ -39,112 +43,67 @@ export function useResearch(marketId: string, question: string): Readonly<{ stat
     return () => {
       live = false;
     };
-  }, [marketId, question]);
+  }, [marketId]);
   return state;
 }
 
-export function ResearchPanel({ event, market, outcomeId, outcomeLabel, prices, locale, theme }: { event: PredictionEvent; market: PredictionMarket; outcomeId: string; outcomeLabel: string; prices: PredictionMarketPrices | null; locale: WorkspaceLocale; theme: "dark" | "light" }) {
+export function ResearchPanel({
+  event,
+  market,
+  outcomeId,
+  outcomeLabel,
+  prices,
+  locale,
+  alone = true,
+}: {
+  event: PredictionEvent;
+  market: PredictionMarket;
+  outcomeId: string;
+  outcomeLabel: string;
+  prices: PredictionMarketPrices | null;
+  locale: WorkspaceLocale;
+  /** The page's theme; the core's charts read it from the page itself. */
+  theme?: "dark" | "light";
+  /** Drawn on its own; beside the workspace's chart, prices and rules panels it leaves those to them. */
+  alone?: boolean;
+}) {
   const word = wordsFor(locale);
-  const research = useResearch(market.id, market.question);
+  const research = useResearch(market.id);
   const data = research.data;
+  const theses = data?.signals.ok ? freshTheses(data.signals.value, Date.parse(data.readAt) || Date.now()) : null;
   return (
     <div className={styles.stack}>
-      <section className={styles.card} aria-label={word("whatMarketSays")}>
-        <div className={styles.cardHead}>
-          <h2 className={styles.cardTitle}>{word("whatMarketSays")}</h2>
-        </div>
-        <VenueTable prices={prices} market={market} locale={locale} />
-      </section>
-
-      <PredictionChartCard outcomeId={outcomeId} outcomeLabel={outcomeLabel} locale={locale} theme={theme} />
-
-      <section className={styles.card} aria-label={word("related")}>
-        <div className={styles.cardHead}>
-          <h2 className={styles.cardTitle}>{word("related")}</h2>
-        </div>
-        <ListOrState loading={research.status === "loading"} failed={research.status === "failed"} empty={data?.related.ok ? data.related.value.length === 0 : true} emptyText={word("noRelated")} locale={locale}>
-          {data?.related.ok
-            ? data.related.value.map((r) => (
-                <div key={`${r.venueMarketId}:${r.score}`} className={styles.item}>
-                  {r.venueEventId ? (
-                    <Link href={`/app/predictions/${encodeURIComponent(r.venueEventId)}`} prefetch={false}>
-                      {r.marketQuestion}
-                    </Link>
-                  ) : (
-                    <span style={{ fontWeight: 600 }}>{r.marketQuestion}</span>
-                  )}
-                  <span className={styles.itemMeta}>
-                    <span>{r.eventTitle}</span>
-                    <span>{venueName(r.venue)}</span>
-                    <span>{(r.score * 100).toFixed(0)}%</span>
-                    {r.matchedSignal ? <span>“{r.matchedSignal}”</span> : null}
-                  </span>
-                </div>
-              ))
-            : null}
-        </ListOrState>
-      </section>
-
-      <section className={styles.card} aria-label={word("signals")}>
-        <div className={styles.cardHead}>
-          <h2 className={styles.cardTitle}>{word("signals")}</h2>
-          {data?.signals.ok && data.signals.value ? <span className={styles.muted}>{data.signals.value.sourceModel} · v{String(data.signals.value.promptVersion)} · {dateShort(data.signals.value.createdAt, locale)}</span> : null}
-        </div>
-        <p className={styles.note} style={{ padding: "var(--ry-s3) var(--ry-s4) 0" }}>
-          {word("signalsNote")}
-        </p>
-        <ListOrState loading={research.status === "loading"} failed={research.status === "failed"} empty={data?.signals.ok ? !data.signals.value || data.signals.value.signals.length === 0 : true} emptyText={word("noSignals")} locale={locale}>
-          {data?.signals.ok && data.signals.value
-            ? data.signals.value.signals.map((s) => (
-                <div key={s.id} className={styles.item}>
-                  <span>{s.text}</span>
-                  <span className={styles.itemMeta}>
-                    <span className={styles.signalSide} data-side={s.side.toLowerCase()}>
-                      {s.side}
-                    </span>
-                    <span>{s.direction.replace(/_/g, " ")}</span>
-                    <span>{s.domain}</span>
-                  </span>
-                </div>
-              ))
-            : null}
-        </ListOrState>
-      </section>
-
-      <section className={styles.card} aria-label={word("ripple")}>
-        <div className={styles.cardHead}>
-          <h2 className={styles.cardTitle}>{word("ripple")}</h2>
-        </div>
-        <p className={styles.note} style={{ padding: "var(--ry-s3) var(--ry-s4) 0" }}>
-          {word("rippleNote")}
-        </p>
-        {(["expand", "hedge"] as const).map((mode) => {
-          const part = data?.[mode];
-          return (
-            <div key={mode}>
-              <h3 className={styles.sectionTitle} style={{ padding: "var(--ry-s3) var(--ry-s4) 0" }}>
-                {mode === "expand" ? word("expand") : word("hedge")}
-              </h3>
-              <ListOrState loading={research.status === "loading"} failed={research.status === "failed"} empty={part?.ok ? part.value.items.length === 0 : true} emptyText={word("noRipple")} locale={locale}>
-                {part?.ok
-                  ? part.value.items.map((r) => (
-                      <div key={`${r.eventId}:${r.action}`} className={styles.item}>
-                        <Link href={`/app/predictions/${encodeURIComponent(r.eventId)}`} prefetch={false}>
-                          {r.title}
-                        </Link>
-                        <span className={styles.itemMeta}>
-                          <span>{r.action}</span>
-                          <span>{(r.score * 100).toFixed(0)}%</span>
-                          <span>{r.reason}</span>
-                        </span>
-                      </div>
-                    ))
-                  : null}
-              </ListOrState>
+      {alone ? (
+        <>
+          <section className={styles.card} aria-label={word("whatMarketSays")}>
+            <div className={styles.cardHead}>
+              <h2 className={styles.cardTitle}>{word("whatMarketSays")}</h2>
             </div>
-          );
-        })}
-      </section>
+            <VenueTable prices={prices} market={market} locale={locale} />
+          </section>
+
+          <OutcomeWeekCard outcomeId={outcomeId} outcomeLabel={outcomeLabel} noLabel={null} locale={locale} />
+        </>
+      ) : null}
+
+      {theses ? (
+        <section className={styles.card} aria-label={word("signals")}>
+          <div className={styles.cardHead}>
+            <h2 className={styles.cardTitle}>{word("signals")}</h2>
+            <span className={styles.muted}>{dateShort(theses.writtenAt, locale)}</span>
+          </div>
+          <p className={styles.note} style={{ padding: "var(--ry-s3) var(--ry-s4) 0" }}>
+            {word("signalsNote")}
+          </p>
+          <div className={styles.list}>
+            {theses.texts.map((s) => (
+              <div key={s.id} className={styles.item}>
+                <span lang="en">{s.text}</span>
+              </div>
+            ))}
+          </div>
+        </section>
+      ) : null}
 
       <section className={styles.card} aria-label={word("news")}>
         <div className={styles.cardHead}>
@@ -173,7 +132,7 @@ export function ResearchPanel({ event, market, outcomeId, outcomeLabel, prices, 
         </ListOrState>
       </section>
 
-      <ResolutionCard event={event} market={market} locale={locale} />
+      {alone ? <ResolutionCard event={event} market={market} locale={locale} /> : null}
 
       <section className={styles.card} aria-label={word("uncertain")}>
         <div className={styles.cardHead}>
@@ -199,35 +158,8 @@ export function ResolutionCard({ event, market, locale }: { event: PredictionEve
       <p className={styles.note} style={{ padding: "var(--ry-s3) var(--ry-s4) 0" }}>
         {word("resolutionNote")}
       </p>
-      {event.settlement ? (
-        <div className={styles.cardBody}>
-          <h3 className={styles.sectionTitle}>{word("settlementShared")}</h3>
-          <p className={styles.rules}>{event.settlement.sharedSummary}</p>
-          {event.settlement.differences.length > 0 ? (
-            <>
-              <h3 className={styles.sectionTitle}>{word("settlementDifferences")}</h3>
-              {event.settlement.differences.map((d) => (
-                <div key={`${d.type}:${d.title}`} className={styles.field}>
-                  <b style={{ fontSize: "var(--ry-fs-label)" }}>{d.title}</b>
-                  {d.summary ? <p className={styles.rules}>{d.summary}</p> : null}
-                  <dl className={styles.kv}>
-                    {Object.entries(d.perVenue).map(([venue, text]) => (
-                      <div key={venue} style={{ display: "contents" }}>
-                        <dt>{venueName(venue)}</dt>
-                        <dd data-prose="true" style={{ textAlign: "left" }}>
-                          {text}
-                        </dd>
-                      </div>
-                    ))}
-                  </dl>
-                </div>
-              ))}
-            </>
-          ) : null}
-        </div>
-      ) : null}
-      {venues.map((v) => (
-        <details key={v.venue} className={styles.disclosure}>
+      {venues.map((v, i) => (
+        <details key={`${v.venue}:${i}`} className={styles.disclosure}>
           <summary>{venueName(v.venue)}</summary>
           <div className={styles.disclosureBody}>
             {v.description ? <p className={styles.rules}>{v.description}</p> : null}

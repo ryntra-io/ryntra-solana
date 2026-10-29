@@ -4,6 +4,8 @@ import test from "node:test";
 
 const read = (path) => readFileSync(new URL(path, import.meta.url), "utf8");
 const history = read("./history-card.tsx");
+/* A row's words live in `history-lines.ts` since B2b, shared with Home's «Останні операції». */
+const lines = read("./history-lines.ts");
 const receipts = read("../receipts/local-receipts.tsx");
 const holdings = read("../holdings/holdings-card.tsx");
 
@@ -31,6 +33,8 @@ test("routine receipts show operation facts without internal ids or correction r
 
 test("unknown bridge direction is not narrated as a guessed movement", () => {
   assert.doesNotMatch(history, /Moved between chains/);
-  assert.match(history, /action\.destination === "SOLANA"/);
-  assert.match(history, /action\.destination === "BASE"/);
+  assert.doesNotMatch(lines, /Moved between chains/);
+  assert.match(history, /describeAction\(action, text\)/);
+  assert.match(lines, /action\.destination === "SOLANA"/);
+  assert.match(lines, /action\.destination === "BASE"/);
 });

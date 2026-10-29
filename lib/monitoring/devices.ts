@@ -9,7 +9,7 @@ import {
 } from "./store.ts";
 
 /**
- * One owner per token: a token
+ * One owner per token (the mobile line's request 24b; 2026-09-22): a token
  * registered under this wallet is revoked under every other wallet that still
  * holds it — a shared phone whose sign-out never reached the server must not
  * keep receiving the previous wallet's notes. Bounded by the device table,

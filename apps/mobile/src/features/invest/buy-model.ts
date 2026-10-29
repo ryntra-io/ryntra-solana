@@ -1,6 +1,6 @@
 /**
  * A company and its purchase in dollars on the beginner's path — the pure half
- * (with the issuer's fee of a private company's token).
+ * (M15; the issuer's fee of a private company's token, M18).
  *
  * What a beginner reads about a company and about a purchase is decided here
  * once and tested: the one line of truth about what the token is (from the
@@ -8,7 +8,7 @@
  * a sum of dollars as it is typed, how much of the company it buys, the four
  * rows of «Перевірка» as the server counts them (contract 1.20.0), what the
  * server's answer after a signature means, and the one action the sheet
- * offers. The rules are the web app's own for the same page and the same
+ * offers. The rules are the web line's own for the same page and the same
  * sheet, so the phone and ryntra.io say the same thing; every figure is the
  * server's order — built, judged and priced by the Review route — read into the
  * person's words, never a figure of the phone's own. Nothing here reads the
@@ -84,13 +84,15 @@ export function truthLine(
 
 /* ---- the exchange ---- */
 
-export type ExchangeState = 'open' | 'closed'
+/** The exchange's regular session, its extended or overnight hours (the token trades, the exchange's own price may differ), or shut. */
+export type ExchangeState = 'open' | 'extended' | 'overnight' | 'closed'
 
 /**
  * Whether the exchange the share lists on is open now. The issuer's own period
  * decides — its «market» is the exchange's regular session; extended and
- * overnight hours are the token trading while the exchange is shut. Without a
- * period the exchange's own flag decides; with neither, nothing is said.
+ * overnight hours are named as such, the word a search row says beside the
+ * same stock (ST-5 r4: one stock, one status). Without a period the exchange's
+ * own flag decides; with neither, nothing is said.
  */
 export function exchangeState(
   session: Readonly<{ period: SessionPeriod; exchangeOpen: boolean | null }>,
@@ -100,6 +102,7 @@ export function exchangeState(
       return 'open'
     case 'extended':
     case 'overnight':
+      return session.period
     case 'closed':
       return 'closed'
     default:
@@ -110,7 +113,8 @@ export function exchangeState(
 /* ---- the sum ---- */
 
 /**
- * The least a purchase in dollars is — a dollar. It was $10 in an earlier
+ * The least a purchase in dollars is — a dollar («Може хтось
+ * хоче на долар купляти. Кожний день по долару»). It was $10, from the v5.0
  * draft, which had copied Jupiter's minimums for its DCA vault, Trigger orders
  * and the gasless swap; a plain swap order has none. The web's own.
  */
@@ -176,18 +180,47 @@ export function dollarsRaw(usd: number, decimals: number): string {
 }
 
 /**
- * A sum of dollars as a person types it: «25», «$25», «25,50», «1 000,50» in
- * Ukrainian, «1,000.50» in English (a lone comma before one or two digits is a
- * decimal comma in either, as a phone's keypad may type it); never more than
- * cents. Anything else is no amount.
+ * A sum of dollars as a person types it: «25», «$25», «25,50», «25.50», «1 000». One rule in both languages
+ * (ST-5): a single «,» or «.» is the decimal mark — a phone's keypad offers either — and never more than cents
+ * follow it, so «2,352» is no amount rather than 2 352 or 2.352. Spaces (a pasted or grouped sum) are dropped. A sum
+ * written whole with its thousands grouped the English way — «1,000.50», «1,000,000», every group three digits — is
+ * read as such; a lone comma never groups. Anything else is no amount. `locale` is kept for the callers; the rule
+ * does not depend on it.
  */
-export function parseDollars(text: string, locale: Locale): number | null {
+export function parseDollars(text: string, locale?: Locale): number | null {
+  void locale
   let cleaned = text.replace(/[\s$]/g, '')
-  if (locale === 'en') cleaned = cleaned.replace(/,(?=\d{3}(\D|$))/g, '')
+  const commas = cleaned.split(',').length - 1
+  if (/^\d{1,3}(,\d{3})+(\.\d{0,2})?$/.test(cleaned) && (commas > 1 || cleaned.includes('.')))
+    cleaned = cleaned.replace(/,/g, '')
   cleaned = cleaned.replace(',', '.')
   if (!/^\d+(\.\d{0,2})?$/.test(cleaned)) return null
   const value = Number(cleaned)
   return Number.isFinite(value) && value > 0 ? value : null
+}
+
+/** The longest text the amount field holds. */
+export const AMOUNT_FIELD_MAX = 12
+
+/**
+ * The amount field as the person types it (ST-5): digits and one decimal mark — «,» or «.», whichever the keypad
+ * offers, in either language — and no more digits past it than the currency has (cents for dollars). A key that
+ * would make it anything else — a second mark, a third digit of cents — is refused: the field keeps what it held, so
+ * the text on screen is always the sum that is read (`parseDollars`). Leading zeros go («00» → «0», «05» → «5»), a
+ * mark typed first reads «0,»; a «$», spaces and any other character are dropped. Given the person's language, the
+ * mark is written as that language writes it, whichever the keypad sent — «2,35» in Ukrainian, «2.35» in English,
+ * where «2,35» reads as 235 (ST-5 r7); the sum read is the same either way.
+ */
+export function amountFieldInput(previous: string, next: string, decimals = 2, locale?: Locale): string {
+  const typed = next.replace(/[^\d.,]/g, '')
+  const marks = typed.match(/[.,]/g) ?? []
+  if (marks.length > 1) return previous
+  const [whole = '', fraction] = typed.split(/[.,]/)
+  if (fraction !== undefined && fraction.length > decimals) return previous
+  const lead = whole.replace(/^0+(?=\d)/, '')
+  const mark = locale === 'uk' ? ',' : locale === 'en' ? '.' : marks[0]
+  const text = fraction === undefined ? lead : `${lead.length > 0 ? lead : '0'}${mark}${fraction}`
+  return text.length > AMOUNT_FIELD_MAX ? previous : text
 }
 
 /* ---- no route for the sum: the company's own minimum ---- */
@@ -443,9 +476,7 @@ function reserveUsdOf(rentFeeLamports: string | null, solUsd: number): number | 
  * server's own judgement; null when it said no reserve, no figure, or not more.
  * The reserve stays in the person's wallet; it is never a cost.
  */
-export function reserveFirstOf(
-  check: SwapCheck | null,
-): Readonly<{ reserveUsd: number; spendUsd: number }> | null {
+export function reserveFirstOf(check: SwapCheck | null): Readonly<{ reserveUsd: number; spendUsd: number }> | null {
   const reserve = check?.reserve ?? null
   const spendUsd = check?.spend.amount ?? null
   if (!reserve?.first || reserve.usd === null || spendUsd === null) return null
@@ -605,10 +636,23 @@ export function ryntraFeeFigures(order: RyntraFeeOrder | null | undefined, local
     if (fee.usd != null && fee.usd > 0) return `${rate}\u00a0· ${keepTogether(approxUsd(fee.usd, locale))}`
     return rate
   }
-  const figure = new Intl.NumberFormat(tag, { maximumFractionDigits: decimals }).format(Number(estimate.raw) / 10 ** decimals)
-  const sideUsd = asset === order.inputMint ? numeric(order.inUsdValue) : asset === order.outputMint ? numeric(order.outUsdValue) : null
+  const figure = new Intl.NumberFormat(tag, { maximumFractionDigits: decimals }).format(
+    Number(estimate.raw) / 10 ** decimals,
+  )
+  const sideUsd =
+    asset === order.inputMint
+      ? numeric(order.inUsdValue)
+      : asset === order.outputMint
+        ? numeric(order.outUsdValue)
+        : null
   const feeUsd =
-    asset && asset !== USDC_MINT && asset !== USDT_MINT && sideUsd !== null && sideUsd > 0 && sideRaw && Number(sideRaw) > 0
+    asset &&
+    asset !== USDC_MINT &&
+    asset !== USDT_MINT &&
+    sideUsd !== null &&
+    sideUsd > 0 &&
+    sideRaw &&
+    Number(sideRaw) > 0
       ? (sideUsd * Number(estimate.raw)) / Number(sideRaw)
       : null
   const dollars = feeUsd === null ? null : keepTogether(approxUsd(feeUsd, locale))
@@ -630,16 +674,67 @@ function feeLines(issuer: string | null, ryntra: string | null, words: BuyRowWor
  * that cannot be said is null, and the sheet says nothing in its place.
  */
 export function buyEstimate(
-  quote: Readonly<{ order: Pick<SwapOrderCore, 'outAmountRaw'>; decimals: Readonly<Record<string, number>>; check?: SwapCheck | null }> | null,
+  quote: Readonly<{
+    order: Pick<SwapOrderCore, 'outAmountRaw'>
+    decimals: Readonly<Record<string, number>>
+    check?: SwapCheck | null
+  }> | null,
   company: Readonly<{ mint: string; decimals: number | null; multiplier: number | null }>,
-): Readonly<{ units: number | null; costsUsd: number | null }> | null {
+): Readonly<{
+  units: number | null
+  costsUsd: number | null
+  /** The dollars the quote spends, as the server counted them; null where it did not. */
+  spendUsd: number | null
+  /** What `units` count — the company's shares or its tokens; null where the server did not say. */
+  unit: BuyUnit | null
+}> | null {
   if (!quote) return null
   const check = quote.check ?? null
-  if (check) return { units: check.get.amount, costsUsd: check.costs?.usd ?? null }
+  if (check)
+    return {
+      units: check.get.amount,
+      costsUsd: check.costs?.usd ?? null,
+      spendUsd: check.spend.usd ?? (check.spend.unit === 'usdc' ? check.spend.amount : null),
+      unit: check.get.unit === 'usdc' ? null : check.get.unit,
+    }
   return {
     units: unitsFromRaw(quote.order.outAmountRaw, quote.decimals[company.mint] ?? company.decimals, company.multiplier),
     costsUsd: null,
+    spendUsd: null,
+    unit: null,
   }
+}
+
+/**
+ * Whether a live quote is for the sum on screen (ST-5 r10: SGOVx at $1 000 said «≈ 0,0002 частки» — what $10 buys
+ * through the empty pool — beside «за $1 000»): the order spends exactly the typed sum, and the server's count, where it
+ * states the dollars that leave, says that same sum to the cent. A quote for any other sum — one the field has moved
+ * past, or a count that names another — never says what the typed sum buys: the sheet says «Рахуємо ціну…» until the
+ * quote for it comes.
+ */
+export function quoteForSum(
+  quote: Readonly<{ order: Pick<SwapOrderCore, 'inAmountRaw'>; check?: SwapCheck | null }> | null,
+  typedRaw: string | null,
+  payDecimals: number,
+): boolean {
+  if (!quote || typedRaw === null || !/^\d+$/.test(typedRaw) || quote.order.inAmountRaw !== typedRaw) return false
+  const spend = quote.check?.spend ?? null
+  if (!spend || spend.unit !== 'usdc' || spend.amount === null) return true
+  const typedUsd = unitsFromRaw(typedRaw, payDecimals, null)
+  return typedUsd !== null && Math.round(spend.amount * 100) === Math.round(typedUsd * 100)
+}
+
+/**
+ * The dollars a quote was made for — the server's count of what leaves, else the order's own input in the paying
+ * dollar's units; never the sum on screen standing in for it (ST-5 r10). Null where neither says it.
+ */
+export function quotedSpendUsd(
+  quote: Readonly<{ order: Pick<SwapOrderCore, 'inAmountRaw'> }> | null,
+  estimate: Readonly<{ spendUsd: number | null }> | null,
+  payDecimals: number,
+): number | null {
+  if (!quote || !estimate) return null
+  return estimate.spendUsd ?? unitsFromRaw(quote.order.inAmountRaw, payDecimals, null)
 }
 
 /**
@@ -691,7 +786,10 @@ export function buyCheckRows(
       value: check.costs ? approxUsd(check.costs.usd, locale) : DASH,
       fee: feeLines(
         issuerFee
-          ? words.issuerFee(feePercentText(issuerFee.basisPoints, locale), keepTogether(approxUsd(issuerFee.usd, locale)))
+          ? words.issuerFee(
+              feePercentText(issuerFee.basisPoints, locale),
+              keepTogether(approxUsd(issuerFee.usd, locale)),
+            )
           : null,
         input.ryntraFee ?? null,
         words,
@@ -730,7 +828,7 @@ export function buyOrderRows(
     company: string
     truth: string | null
     preIpo: boolean
-    /** The issuer's event said again under «Що це» (the IPO and conversion watch); null for none. */
+    /** The issuer's event said again under «Що це» (the IPO and conversion watch; M19); null for none. */
     eventLine?: string | null
     /** The mint's own fee on the transfer that delivers the token; null when it charges none. */
     issuerFee?: IssuerFee | null
@@ -802,7 +900,7 @@ const NOTHING_MOVED = new Set(['EXPIRED_BEFORE_SUBMIT', 'UNKNOWN_TO_CHAIN', 'EXP
 
 /**
  * A settled answer in the purchase's words — *У тебе є частинка*, *Нічого не
- * сталося*, *Мережа відхилила* — judged by Trade's own rule (the
+ * сталося*, *Мережа відхилила* — judged by Trade's own rule (M3's
  * `settledView`), so the receipt on the sheet and the card in Trade never
  * disagree on what happened; the figures are the chain's where the answer
  * carries them.
@@ -858,6 +956,9 @@ export const BUY_FAILURE_KEYS = [
   'walletTimeout',
   'walletFailed',
   'closedUnderWallet',
+  'bytesRebuilt',
+  'deviceConfirm',
+  'walletCannotSign',
   'signatureUnreadable',
   'paused',
   'notOffered',
@@ -892,7 +993,7 @@ export type BuyFailureKey = (typeof BUY_FAILURE_KEYS)[number]
 
 /**
  * A refusal's stable code — the server's, the wallet's or Trade's own — into
- * the sentence «Простий» says for it. The same codes Trade reads (the
+ * the sentence a company's purchase says for it. The same codes Trade reads (M3's
  * `tradeFailureCopy`), grouped by what the person can do next; the words live
  * in the copy, in both languages.
  */
@@ -909,6 +1010,12 @@ export function buyFailureKey(code: string): BuyFailureKey {
   if (code === 'WALLET_TIMEOUT') return 'walletTimeout'
   if (code === 'WALLET_FAILED') return 'walletFailed'
   if (code === 'REVIEW_CLOSED_UNDER_WALLET') return 'closedUnderWallet'
+  // AG-2: the price built again after the bytes aged out under the wallet; twice in a row, the plain «within 20 s».
+  if (code === 'BYTES_REBUILT') return 'bytesRebuilt'
+  // AG-2b: the bytes were renewed at the press and a figure moved — the fresh Review is looked at again.
+  if (code === 'REVIEW_RENEWED') return 'bytesRebuilt'
+  if (code === 'BYTES_AGED') return 'deviceConfirm'
+  if (code === 'WALLET_CANNOT_SIGN') return 'walletCannotSign'
   if (code === 'SIGNATURE_UNREADABLE') return 'signatureUnreadable'
   if (/SWAP_PAUSED/.test(code)) return 'paused'
   if (code === 'ASSET_NOT_OFFERED') return 'notOffered'
@@ -949,13 +1056,59 @@ export function buyFailureKey(code: string): BuyFailureKey {
   return 'failed'
 }
 
+/* ---- a quote the server's limiter held back ---- */
+
+/**
+ * The pauses before the sheet asks again by itself for a quote the server held back by its rate limit (ST-5): the
+ * limiter is a fixed window, so the ask comes after it — never at once — and «Рахуємо ціну…» stands meanwhile in place
+ * of «could not be read». The wait the refusal names (`retryAfterSeconds`, from the server's `Retry-After` /
+ * `Ratelimit-Reset`) is kept; without one, 1,5 s, then 3 s, then every 10 s while the sheet is open (ST-5 r10: a
+ * refusal said after 4,5 s stood for minutes, while the window had long reset). Past about a minute of asking the
+ * refusal is said, with «Спробувати ще».
+ */
+export const QUOTE_LIMIT_PAUSES_MS = [1_500, 3_000] as const
+/** The pause between asks once the first ones were refused too. */
+export const QUOTE_LIMIT_EVERY_MS = 10_000
+/** How long the sheet keeps asking by itself before the refusal is said. */
+export const QUOTE_LIMIT_BUDGET_MS = 60_000
+/** The longest wait a refusal may name that is kept, and the margin past it — the window's own edge is not raced. */
+const QUOTE_LIMIT_NAMED_MAX_S = 60
+const QUOTE_LIMIT_MARGIN_MS = 250
+
+/** Whether a quote's refusal is the limiter's — a refusal that passes with its window. */
+export function isRateLimited(code: string | null | undefined): boolean {
+  return typeof code === 'string' && buyFailureKey(code) === 'rateLimited'
+}
+
+/** The wait a refusal names, in seconds, read defensively from its details: a positive finite number, else null. */
+export function namedWaitSeconds(details: unknown): number | null {
+  if (!details || typeof details !== 'object') return null
+  const value = (details as Record<string, unknown>).retryAfterSeconds
+  return typeof value === 'number' && Number.isFinite(value) && value > 0 ? value : null
+}
+
+/**
+ * The pause before the next ask for a limited quote — after `asked` asks again, `waitedMs` since the first refusal,
+ * with the wait the latest refusal named (seconds; null for none) — or null when the refusal is to be said.
+ */
+export function limitPause(asked: number, waitedMs = 0, namedSeconds: number | null = null): number | null {
+  if (!Number.isFinite(waitedMs) || waitedMs >= QUOTE_LIMIT_BUDGET_MS) return null
+  if (namedSeconds !== null && Number.isFinite(namedSeconds) && namedSeconds > 0)
+    return Math.min(namedSeconds, QUOTE_LIMIT_NAMED_MAX_S) * 1000 + QUOTE_LIMIT_MARGIN_MS
+  return QUOTE_LIMIT_PAUSES_MS[asked] ?? QUOTE_LIMIT_EVERY_MS
+}
+
 /* ---- the sheet's one action ---- */
 
 export type ComposeAction =
   /** An open Review nobody signed holds the wallet: release it, then ask again. */
   | Readonly<{ kind: 'release' }>
   | Readonly<{ kind: 'connect' }>
-  | Readonly<{ kind: 'sign-in' }>
+  /**
+   * Not signed in. `short`: the wallet's balance, already read, does not cover the sum — said above the sign-in
+   * (ST-5 r6: the person learns the sum is too much before signing in, as Swap says it); null otherwise.
+   */
+  | Readonly<{ kind: 'sign-in'; short: Readonly<{ alsoSol: boolean }> | null }>
   | Readonly<{ kind: 'minimum' }>
   | Readonly<{ kind: 'enter' }>
   /** No route for the sum: the one action puts the company's own minimum in — never a dead button. */
@@ -964,7 +1117,8 @@ export type ComposeAction =
   | Readonly<{ kind: 'finding-minimum'; usd: number }>
   | Readonly<{ kind: 'preparing' }>
   | Readonly<{ kind: 'need-sol' }>
-  | Readonly<{ kind: 'not-enough' }>
+  /** The paying dollars are short — and, with `alsoSol`, so is the SOL for the network fee: both said at once (ST-5). */
+  | Readonly<{ kind: 'not-enough'; alsoSol: boolean }>
   | Readonly<{ kind: 'unavailable' }>
   /** The sum on screen is not yet the one an order would be asked for: the button names it and waits. */
   | Readonly<{ kind: 'settling'; usd: number }>
@@ -974,8 +1128,9 @@ export type ComposeAction =
  * The one orange button of the amount sheet, by what stands between the person
  * and a Review — in the order a person meets it: a Review held open elsewhere,
  * the wallet, the session, the sum, a sum with no route (the company's own
- * minimum put in with one tap, the web's own rule), the network fee, the
- * balance, the asset's own availability. Only `buy` asks the server for a
+ * minimum put in with one tap, the web's own rule), the balance — with the
+ * network fee said beside it when both are short — the network fee, the asset's
+ * own availability. Only `buy` asks the server for a
  * Review.
  */
 export function composeAction(
@@ -997,15 +1152,21 @@ export function composeAction(
   const route = input.route ?? { state: 'idle' }
   if (input.lockedReview) return { kind: 'release' }
   if (!input.connected) return { kind: 'connect' }
-  if (!input.signedIn) return { kind: 'sign-in' }
+  if (!input.signedIn)
+    return {
+      kind: 'sign-in',
+      short:
+        input.insufficient && isBuyableSum(input.amountUsd) ? { alsoSol: input.needsSol } : null,
+    }
   if (input.amountUsd !== null && input.amountUsd < MIN_BUY_USD) return { kind: 'minimum' }
   if (!isBuyableSum(input.amountUsd)) return { kind: 'enter' }
   if (route.state === 'found') return { kind: 'use-minimum', usd: route.minimumUsd }
   if (route.state === 'finding') return { kind: 'finding-minimum', usd: input.amountUsd }
   if (route.state === 'none') return { kind: 'unavailable' }
   if (input.preparing) return { kind: 'preparing' }
+  // The dollars first: a person who only adds SOL would meet a second blocker nobody named (ST-5).
+  if (input.insufficient) return { kind: 'not-enough', alsoSol: input.needsSol }
   if (input.needsSol) return { kind: 'need-sol' }
-  if (input.insufficient) return { kind: 'not-enough' }
   if (input.unavailable) return { kind: 'unavailable' }
   if (!input.priced) return { kind: 'settling', usd: input.amountUsd }
   return { kind: 'buy', usd: input.amountUsd }

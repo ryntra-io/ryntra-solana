@@ -2,6 +2,7 @@ import { Pressable, View } from 'react-native'
 
 import { Icon, type IconName } from '@/components/icon'
 import { Txt } from '@/components/txt'
+import { useSpace } from '@/theme'
 
 export type DoorRowProps = {
   icon: IconName
@@ -22,13 +23,14 @@ export type DoorRowProps = {
  * for, and where it goes — a chevron into the app, ↗ out to ryntra.io.
  */
 export function DoorRow({ icon, label, line, value, onPress, external = null, last = false }: DoorRowProps) {
+  const space = useSpace()
   return (
     <Pressable
       accessibilityRole={onPress ? 'button' : undefined}
       accessibilityLabel={[label, line, external].filter(Boolean).join(', ')}
       disabled={!onPress}
       onPress={onPress}
-      className={`flex-row items-center gap-3 px-4 py-3.5 ${onPress ? 'active:bg-hover' : ''} ${last ? '' : 'border-b border-line'}`}
+      className={`min-h-12 flex-row items-center gap-3 px-4 ${space.door} ${onPress ? 'active:bg-hover' : ''} ${last ? '' : 'border-b border-line'}`}
     >
       <Icon name={icon} size={20} />
       <View className="flex-1 gap-0.5">

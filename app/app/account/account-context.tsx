@@ -5,12 +5,13 @@ import { usePathname, useRouter, useSearchParams } from "next/navigation";
 
 import { useSolanaConnection } from "@/app/solana/workspace/connection";
 import { useWalletFact } from "@/app/solana/workspace/wallet-proof";
-import { clearWalletAccount } from "@/lib/account/wallet-auth.client";
+import { announceAccountChange, clearWalletAccount, clearWalletAccountSoon } from "@/lib/account/wallet-auth.client";
 import { ensureWalletFact, revalidateWalletFact } from "@/lib/account/wallet-proof-store.client";
 
 import type { AccountMethods } from "@/lib/account/config";
 import { clearIntent, dispatchIntent, rememberIntent, takeIntent, type IntentKind } from "@/lib/account/intent.client";
 import { useSolanaI18n } from "@/app/solana/workspace/i18n/provider";
+import { usePagePath } from "@/lib/site/use-page-path";
 
 import { accountCopyFor, type AccountCopy } from "./copy";
 import { LoginSheet } from "./login-sheet";
@@ -57,6 +58,8 @@ type AccountValue = AccountSummary &
     dismissNotice: () => void;
     logout: (scope: "this" | "all") => Promise<void>;
     logoutPending: boolean;
+    /** A sign-in finished on this page: the layout re-reads the session in place, with no reload. */
+    signedInHere: () => void;
     privacyBlocked: boolean;
   }>;
 
@@ -67,6 +70,9 @@ export function useAccount(): AccountValue {
   if (!value) throw new Error("useAccount must be used inside AccountProvider.");
   return value;
 }
+
+/** How long another address must stay before it counts as another wallet and the proof is cleared. */
+const WALLET_CHANGE_SETTLE_MS = 1500;
 
 const REASONS: readonly IntentKind[] = ["save_plan", "journal", "alerts", "settings", "link_wallet", "generic"];
 
@@ -82,8 +88,12 @@ export function AccountProvider({ summary, children }: { summary: AccountSummary
   const [noticeSticky, setNoticeSticky] = useState(false);
   const [logoutPending, setLogoutPending] = useState(false);
   const [attachMode, setAttachMode] = useState(false);
-  const { connection } = useSolanaConnection();
+  const { connection, connectedBy } = useSolanaConnection();
   const address = connection?.address ?? null;
+  const connectedByRef = useRef(connectedBy);
+  connectedByRef.current = connectedBy;
+  const loginOpenRef = useRef(loginOpen);
+  loginOpenRef.current = loginOpen;
   const fact = useWalletFact();
   /* The last address a wallet actually showed. A pause — locked, between two
      accounts, an extension restarting — shows none and changes nothing. */
@@ -109,19 +119,41 @@ export function AccountProvider({ summary, children }: { summary: AccountSummary
   useEffect(() => {
     if (address === null) return;
     const before = lastAddress.current;
-    lastAddress.current = address;
     const bound = latest.current.summary.walletAddress;
-    if (!(before && before !== address) && !(bound && address !== bound)) return;
-    if (latest.current.summary.signedIn) setBlocked(true);
-    setLoginOpen(false);
-    // Clear any private draft from the old account rather than replaying it as
-    // the next wallet. Cleanup queues behind an in-flight credential response.
-    clearIntent();
-    /* The wallet's own sign-in and proof close; a session opened by another
-       door stays. The server's answer afterwards says which happened. */
-    void clearWalletAccount().catch(() => undefined).finally(() => {
-      void revalidateWalletFact({ fresh: true }).finally(() => router.refresh());
-    });
+    if (!(before && before !== address) && !(bound && address !== bound)) {
+      lastAddress.current = address;
+      return;
+    }
+    /* Only a change that holds is a different person. A wallet restarting or
+       restoring can show another account for a moment and come back; the
+       private view hides at once (derived above), but the proof — the `rw`
+       and `rt` cookies — is cleared only once the other address has stayed.
+       Coming back within the moment changes nothing and asks for nothing.
+       The person's own Connect of another wallet is certain, so it clears at
+       once; and a sign-in that starts during the wait settles it first. */
+    const loginWasOpen = loginOpenRef.current;
+    const act = (settled: boolean, done: Promise<unknown>) => {
+      lastAddress.current = address;
+      if (latest.current.summary.signedIn) setBlocked(true);
+      /* A sign-in for the new wallet is what settled it: its sheet and its draft stay. */
+      if (!settled) {
+        if (loginWasOpen) setLoginOpen(false);
+        // Clear any private draft from the old account rather than replaying it as
+        // the next wallet. Cleanup queues behind an in-flight credential response.
+        clearIntent();
+      }
+      /* The wallet's own sign-in and proof close; a session opened by another
+         door stays. The server's answer afterwards says which happened. */
+      void done.finally(() => {
+        void revalidateWalletFact({ fresh: true }).finally(() => router.refresh());
+      });
+    };
+    if (connectedByRef.current === "chosen") {
+      setLoginOpen(false);
+      act(false, clearWalletAccount().catch(() => undefined));
+      return;
+    }
+    return clearWalletAccountSoon(WALLET_CHANGE_SETTLE_MS, act);
   }, [address, router]);
 
   /* One read of the session for the whole tab, shared with every proof on
@@ -192,6 +224,33 @@ export function AccountProvider({ summary, children }: { summary: AccountSummary
     [pathname],
   );
   const closeLogin = useCallback(() => setLoginOpen(false), []);
+
+  /* A sign-in on this page re-reads the layout in place instead of reloading
+     it: a reload remounted every provider, and the wallet had to come back
+     from the silent restore — the moment it dropped. The notice and the saved
+     action wait for the layout's answer, as they did after the reload. */
+  const [justSignedIn, setJustSignedIn] = useState(false);
+  const signedInHere = useCallback(() => {
+    setLoginOpen(false);
+    setJustSignedIn(true);
+    router.refresh();
+  }, [router]);
+  /* A layout that came back without the session (the store checking, the
+     cookie refused) ends the wait: a later sign-in from another tab must not
+     replay this one's notice and saved action. */
+  useEffect(() => {
+    if (!justSignedIn) return;
+    const timer = window.setTimeout(() => setJustSignedIn(false), 20_000);
+    return () => window.clearTimeout(timer);
+  }, [justSignedIn]);
+  useEffect(() => {
+    if (!justSignedIn || !signedIn) return;
+    setJustSignedIn(false);
+    setNoticeSticky(false);
+    setNotice(copy.returned.ok);
+    const intent = takeIntent(pathname);
+    if (intent) window.setTimeout(() => dispatchIntent(intent), 0);
+  }, [justSignedIn, signedIn, copy.returned.ok, pathname]);
   const dismissNotice = useCallback(() => {
     setNotice(null);
     setNoticeSticky(false);
@@ -209,7 +268,16 @@ export function AccountProvider({ summary, children }: { summary: AccountSummary
       });
       const outcome = await response.json().catch(() => null) as { ok?: unknown } | null;
       if (response.ok && outcome?.ok === true) {
-        window.location.assign("/app");
+        /* In place, not a reload: the page re-reads the layout against the
+           cleared cookie, the private view closes with the session, and the
+           wallet — a connection, not the account — stays connected. Other
+           tabs hear it and re-read too. */
+        setLogoutPending(false);
+        setBlocked(true);
+        /* A read from before the sign-out must not write «signed in» back. */
+        void revalidateWalletFact({ fresh: true });
+        announceAccountChange();
+        router.refresh();
         return;
       }
     } catch {
@@ -299,8 +367,9 @@ export function AccountProvider({ summary, children }: { summary: AccountSummary
       dismissNotice,
       logout,
       logoutPending,
+      signedInHere,
     }),
-    [summary, signedIn, checking, privacyBlocked, copy, locale, loginOpen, openLogin, attachMode, closeLogin, notice, dismissNotice, logout, logoutPending],
+    [summary, signedIn, checking, privacyBlocked, copy, locale, loginOpen, openLogin, attachMode, closeLogin, notice, dismissNotice, logout, logoutPending, signedInHere],
   );
 
   return (
@@ -319,14 +388,24 @@ export function AccountProvider({ summary, children }: { summary: AccountSummary
 
 
 // Public financial preparation stays available during a private-account reset.
-const PUBLIC_PAGES = new Set(["/app", "/app/swap", "/app/send", "/app/receive", "/app/top-up", "/app/portfolio", "/app/activity", "/app/spot", "/app/perps", "/app/trends", "/app/ideas", "/app/bots", "/app/bots/catalog", "/app/markets"]);
+const PUBLIC_PAGES = new Set(["/app", "/app/swap", "/app/send", "/app/receive", "/app/top-up", "/app/portfolio", "/app/activity", "/app/spot", "/app/perps", "/app/trends", "/app/ideas", "/app/bots", "/app/bots/catalog", "/app/markets", "/app/launch"]);
+/* Whole public catalogues: every pool and its pages, every launch and its pages — read from the chain for anyone, so a
+   blink of the sign-in store never swaps them for «Перевіряємо вхід…» (B15). A wallet's own pages under them — its
+   launches, its positions, the form that spends its balances — keep the gate: when the wallet changed, what is shown there is not this person's. */
+const PUBLIC_PREFIXES = ["/app/markets/", "/app/launch/"] as const;
+const PERSONAL_PAGES = [/^\/app\/launch\/(?:mine|positions)(?:\/|$)/, /^\/app\/markets\/pools\/[^/]+\/(?:position|add)(?:\/|$)/] as const;
+export function isPublicPage(pathname: string): boolean {
+  if (PUBLIC_PAGES.has(pathname)) return true;
+  return PUBLIC_PREFIXES.some((prefix) => pathname.startsWith(prefix)) && !PERSONAL_PAGES.some((page) => page.test(pathname));
+}
 export function AccountDataBoundary({ children }: { children: ReactNode }) {
   const { privacyBlocked, checking, sessionKey, copy, openLogin } = useAccount();
-  const pathname = usePathname();
+  /* The route, not the address: on app.ryntra.io `/solana/swap` is the page `/app/swap`. */
+  const pathname = usePagePath();
   /* The store blinked: the session is not known to be gone, so nobody is
      asked to sign again — the page says so and comes back by itself. */
-  if (checking && !PUBLIC_PAGES.has(pathname)) return <CheckingSignIn copy={copy.checkingPage} />;
-  if (privacyBlocked && !PUBLIC_PAGES.has(pathname)) return <section className="ry-wallet-entry">
+  if (checking && !isPublicPage(pathname)) return <CheckingSignIn copy={copy.checkingPage} />;
+  if (privacyBlocked && !isPublicPage(pathname)) return <section className="ry-wallet-entry">
     <p role="status">{copy.privateGate.lead}</p>
     <button type="button" className="rw-btn" onClick={() => openLogin("generic")}>{copy.privateGate.action}</button>
   </section>;

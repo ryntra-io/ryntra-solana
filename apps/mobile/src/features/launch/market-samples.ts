@@ -1,7 +1,7 @@
 /**
  * The contract's own examples of 1.36.0 (`docs/api/examples/v1/launch-markets.response.json`,
  * `launch-market.response.json`, `launch-health.response.json`, `launch-health-curve.response.json`,
- * `launch-journal.response.json` in the web app), word for word but for the transactions and the wallets: every signature and
+ * `launch-journal.response.json` on the web line), word for word but for the transactions and the wallets: every signature and
  * every wallet here is made up (`4SyntheticDemoSignatureFakeTx…`, `SyntheticDemo…FakeAddress…`), so none leads to a recorded act.
  * The tests read the market's words from them, and the development gallery draws the states
  * after the DEX that no market on mainnet has reached yet. Never shown in a release build.
@@ -272,6 +272,7 @@ export const SAMPLE_HEALTH_DEX: LaunchMarketHealthResponse = {
       cliffAt: '2026-12-30T08:00:00.000Z',
       endsAt: '2027-03-30T08:00:00.000Z',
     },
+    lockRequired: true,
     sold: false,
     soldBps: null,
     soldOf: null,
@@ -484,6 +485,7 @@ export const SAMPLE_HEALTH_CURVE: LaunchMarketHealthResponse = {
   creator: {
     address: 'SyntheticDemoCreatorTwoFakeAddress111111111',
     lock: null,
+    lockRequired: false,
     sold: false,
     soldBps: null,
     soldOf: null,

@@ -1,8 +1,8 @@
 "use client";
 
-import { ArrowRight, Plus, X } from "@phosphor-icons/react";
+import { ArrowRight, Plus } from "@phosphor-icons/react";
 import Link from "next/link";
-import { useCallback, useEffect, useId, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 
 import { AutoinvestSheet } from "@/app/app/stocks/[ticker]/autoinvest-sheet";
 import company from "@/app/app/stocks/[ticker]/company.module.css";
@@ -23,6 +23,7 @@ import { BudgetRow } from "./budget-row";
 import { BudgetSheet } from "./budget-sheet";
 import styles from "./invest.module.css";
 import { gatheredLine, gatheredShort, investWords } from "./invest-words";
+import { RuleTokenPicker, type RulePick } from "./rule-token-picker";
 import { readShelfCopy } from "./shelf-copy";
 import { isShelfCards, RowSkeleton } from "./shelf-ui";
 import { useAutoinvestRules } from "./use-rules";
@@ -42,9 +43,10 @@ import { useAutoinvestRules } from "./use-rules";
  * spent lands (`?budget=edit`); it shows once there is a rule or a ceiling,
  * so a wallet with neither reads one line and «Додати правило». «Додати
  * правило» asks for which token — what the wallet holds (a company, a coin, a
- * meme; 1.31.0) and the popular companies — and opens the same rule sheet the
- * company's page and Spot's «Регулярно» have; a token's card opens its market
- * in Spot. Nothing here is orange: the page's one orange action is «Купити»
+ * meme; 1.31.0), the popular companies and a search over the rest, the one
+ * picker «Боти» and «Каталог» open too (SOL-C15) — and opens the same rule
+ * sheet the company's page and Spot's «Регулярно» have; a token's card opens
+ * its market in Spot. Nothing here is orange: the page's one orange action is «Купити»
  * or the step before it.
  *
  * `compact` is Home's right column: the same rules with their switches, each
@@ -56,8 +58,8 @@ import { useAutoinvestRules } from "./use-rules";
 /** How many rules Home's column names; the rest are on «Автоінвест»'s own page. */
 const COMPACT_SHOWN = 3;
 
-/** A token a rule may be written for: a company, or (1.31.0) a coin, a meme or a new token of the venue's list. */
-type Pick = Readonly<{ mint: string; name: string; icon: string | null; ticker: string; price: number | null; token: boolean }>;
+/** A token a rule may be written for (`rule-token-picker.tsx`). */
+type Pick = RulePick;
 
 export function AutoinvestBlock({
   locale,
@@ -206,7 +208,7 @@ export function AutoinvestBlock({
         </div>
       )}
 
-      <CompanyPicker
+      <RuleTokenPicker
         open={picking}
         locale={locale}
         owned={owned}
@@ -310,87 +312,5 @@ function RuleCard({ rule, budget, icon, locale, busy, onToggle, compact = false 
         </span>
       </button>
     </li>
-  );
-}
-
-/** «Для якого токена?» — what the wallet holds, then the popular companies; every other token is on Markets, «Регулярно» in its order. */
-function CompanyPicker({ open, locale, owned, popular, onClose, onPick }: { open: boolean; locale: WorkspaceLocale; owned: readonly Pick[]; popular: readonly ShelfCard[]; onClose: () => void; onPick: (pick: Pick) => void }) {
-  const word = investWords(locale);
-  const dialog = useRef<HTMLDialogElement>(null);
-  const titleId = useId();
-
-  useEffect(() => {
-    const element = dialog.current;
-    if (!element) return;
-    if (open && !element.open) element.showModal();
-    if (!open && element.open) element.close();
-  }, [open]);
-
-  const choices = useMemo(() => {
-    const seen = new Set<string>();
-    const rows: { pick: Pick; group: "owned" | "popular" }[] = [];
-    for (const row of owned) {
-      if (seen.has(row.mint)) continue;
-      seen.add(row.mint);
-      rows.push({ pick: row, group: "owned" });
-    }
-    for (const card of popular) {
-      if (seen.has(card.mint)) continue;
-      seen.add(card.mint);
-      rows.push({ pick: { mint: card.mint, name: card.name, icon: card.icon, ticker: card.ticker, price: card.price, token: false }, group: "popular" });
-    }
-    return rows;
-  }, [owned, popular]);
-
-  return (
-    <dialog
-      ref={dialog}
-      className={company.sheet}
-      aria-labelledby={titleId}
-      onCancel={(event) => {
-        event.preventDefault();
-        onClose();
-      }}
-      onClose={() => {
-        if (open) onClose();
-      }}
-      onClick={(event) => {
-        if (event.target === event.currentTarget) onClose();
-      }}
-    >
-      {open ? (
-        <div className={company.sheetBody} data-sheet="pick-company">
-          <div className={`${company.sheetHead} ${company.sheetHeadPlain}`}>
-            <span className={company.grab} aria-hidden="true" />
-            <h2 id={titleId} className={company.sheetTitle}>
-              {word("pickToken")}
-            </h2>
-            <button type="button" className={company.sheetClose} onClick={onClose} aria-label={word("close")}>
-              <X size={18} weight="bold" aria-hidden="true" />
-            </button>
-          </div>
-          {choices.length === 0 ? (
-            <p className={company.sheetNote}>{word("pickTokenFromMarkets")}</p>
-          ) : (
-            <ul className={block.picks}>
-              {choices.map(({ pick, group }, index) => (
-                <li key={pick.mint}>
-                  {index === 0 || choices[index - 1].group !== group ? <p className={block.pickGroup}>{group === "owned" ? word("yourCompanies") : word("popularCompanies")}</p> : null}
-                  <button type="button" className={block.pick} onClick={() => onPick(pick)}>
-                    <MarketIcon mint={pick.mint} icon={pick.icon} symbol={pick.name} size={32} className={styles.rowLogo} />
-                    <span className={block.pickName}>{pick.name}</span>
-                  </button>
-                </li>
-              ))}
-            </ul>
-          )}
-          <div className={company.sheetActions}>
-            <Link className={company.quietButton} href="/app/markets" prefetch={false}>
-              {word("allTokens")}
-            </Link>
-          </div>
-        </div>
-      ) : null}
-    </dialog>
   );
 }

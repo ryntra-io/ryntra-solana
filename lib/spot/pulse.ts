@@ -2,7 +2,10 @@
  * Pulse — the five feeds of Home, the `pulse`
  * part of the `TokenData` adapter (plan §5.2): Нові · Майже на DEX · Вийшли на
  * DEX · Тренди · Рухи, each a list of rows with the same figures, and the
- * person's filters over them.
+ * person's filters over them. Market Radar's meme mode (SOL-R1, «Ринки» →
+ * «Меми») reads the same rows in six feeds — Нові · Ростуть · Майже на DEX ·
+ * Вийшли на DEX · Тренди · Обране — cut to the tokens born on the three
+ * launch programs it watches: Meteora DBC, pump.fun and Raydium LaunchLab.
  *
  * This file is pure: what a row is, how a Jupiter Tokens V2 row becomes one,
  * how a launch curve's account says how far it is to the DEX, how each feed
@@ -17,36 +20,56 @@
  * whose condition their own data meets.
  *
  * Nothing here is a verdict. A row carries the facts that count against a
- * token — a mint or freeze right still on, Jupiter's «suspicious» flag — as a
- * count and a list; a feed never calls a token safe.
+ * token — a mint or freeze right still on, Jupiter's «suspicious» flag — and,
+ * since SOL-C5, its card's risks past a threshold the same for every token
+ * (`pulseFlagsOf`), as a count and a list; a feed never calls a token safe.
  */
 
+import { launchNameHits } from "../core/launch/moderation.ts";
 import { normalizeSpotMarket, type SpotMarket } from "./markets.ts";
 import { riskFactsOf, tokenFactsOf, type TokenWindow } from "./token-page.ts";
 
+/** Home's five feeds. */
 export const PULSE_FEEDS = ["new", "soon", "dex", "trending", "movers"] as const;
-export type PulseFeed = (typeof PULSE_FEEDS)[number];
+export type HomePulseFeed = (typeof PULSE_FEEDS)[number];
+/** Market Radar's six (SOL-R1): New · Growing · Near Graduation · Graduated · Trending · Watchlist. */
+export const RADAR_FEEDS = ["new", "growing", "soon", "dex", "trending", "watchlist"] as const;
+export type RadarFeed = (typeof RADAR_FEEDS)[number];
+/** Every feed the server answers. */
+export const PULSE_READS = ["new", "growing", "soon", "dex", "trending", "movers", "watchlist"] as const;
+export type PulseFeed = (typeof PULSE_READS)[number];
 
 export function isPulseFeed(value: unknown): value is PulseFeed {
-  return typeof value === "string" && (PULSE_FEEDS as readonly string[]).includes(value);
+  return typeof value === "string" && (PULSE_READS as readonly string[]).includes(value);
+}
+
+/** What a feed is cut to: every token, or meme mode — the tokens born on the launch programs Market Radar watches. */
+export type PulseMode = "all" | "meme";
+
+export function pulseModeOf(value: unknown): PulseMode {
+  return value === "meme" ? "meme" : "all";
 }
 
 /** The windows a feed is read over: «Тренди» by any of Jupiter's four, «Рухи» by the hour or the day (plan §3.2). */
 export const PULSE_WINDOWS: Readonly<Record<PulseFeed, readonly TokenWindow[]>> = {
   new: ["m5"],
+  growing: ["h1"],
   soon: ["h1"],
   dex: ["h24"],
   trending: ["m5", "h1", "h6", "h24"],
   movers: ["h1", "h24"],
+  watchlist: ["m5", "h1", "h6", "h24"],
 };
 
 /** The window each feed opens on. */
 export const PULSE_DEFAULT_WINDOW: Readonly<Record<PulseFeed, TokenWindow>> = {
   new: "m5",
+  growing: "h1",
   soon: "h1",
   dex: "h24",
   trending: "h1",
   movers: "h24",
+  watchlist: "h24",
 };
 
 export function pulseWindowOf(feed: PulseFeed, value: unknown): TokenWindow {
@@ -65,8 +88,21 @@ export const NEW_SPAN_MS = 24 * 60 * 60 * 1000;
 export const NEW_TOKEN_SPAN_MS = 60 * 60 * 1000;
 /** «Рухи» counts only markets this deep: below it a few dollars move a price by half and the list would be noise. */
 export const MOVERS_MIN_LIQUIDITY_USD = 10_000;
+/** «Ростуть»: a token on its curve older than «Нові» and at most this old. */
+export const GROWING_SPAN_MS = 24 * 60 * 60 * 1000;
+/** «Ростуть»: at least this much traded in the hour, so a handful of wallets is not a rise. */
+export const GROWING_MIN_VOLUME_USD = 1_000;
+/** «Обране»: the most watched tokens one answer reads (Jupiter's search answers a hundred mints at a time). */
+export const WATCHLIST_MAX = 100;
 
-export type PulseWindowFigures = Readonly<{ changePct: number | null; volumeUsd: number | null }>;
+export type PulseWindowFigures = Readonly<{
+  changePct: number | null;
+  volumeUsd: number | null;
+  /** The change in the count of holders over the window, per cent, as Jupiter states it. */
+  holdersChangePct: number | null;
+  /** The change of the token's liquidity over the window, per cent, as Jupiter states it (DSC-1); absent where not read. */
+  liquidityChangePct?: number | null;
+}>;
 
 /** A launch curve's way to the DEX, as its own account states it. */
 export type PulseCurve = Readonly<{
@@ -102,6 +138,10 @@ export type PulseRow = Readonly<{
   icon: string | null;
   /** The launchpad by the name people know it by; null where Jupiter names none. */
   launchpad: string | null;
+  /** The launch program the token was born on, where it is one of the three Market Radar watches; null otherwise. */
+  venue: PulseCurveVenue | null;
+  /** Jupiter states the token left its curve for a DEX (a graduated pool or its date). */
+  graduated: boolean;
   price: number | null;
   marketCapUsd: number | null;
   liquidityUsd: number | null;
@@ -113,9 +153,14 @@ export type PulseRow = Readonly<{
   firstPoolAt: string | null;
   /** When the token left its curve for a DEX, as Jupiter states it. */
   graduatedAt: string | null;
+  /** The DEX pool it left its curve for, as Jupiter states it (DSC-1); absent where not read. */
+  graduatedPool?: string | null;
   /** 0–100, Jupiter's scale; null where it states none. */
   top10Pct: number | null;
   devPct: number | null;
+  /** The creator's history, as Jupiter counts it: how many tokens the creator's wallet made, and how many of them reached a DEX. */
+  creatorLaunches: number | null;
+  creatorGraduated: number | null;
   verified: boolean;
   organic: string | null;
   /** Jupiter stated the token's audit (its rights, its flag): without it the facts against the token are not read — never «none». */
@@ -128,7 +173,7 @@ export type PulseRow = Readonly<{
 /** The launchpads Jupiter names, by the names their own sites use. */
 const LAUNCHPAD_NAMES: Readonly<Record<string, string>> = {
   "pump.fun": "pump.fun",
-  "met-dbc": "Meteora DBC",
+  "met-dbc": "Meteora",
   "letsbonk.fun": "bonk.fun",
   "raydium-launchlab": "LaunchLab",
   launchlab: "LaunchLab",
@@ -144,6 +189,27 @@ const LAUNCHPAD_NAMES: Readonly<Record<string, string>> = {
 export function launchpadName(raw: string | null): string | null {
   if (!raw) return null;
   return LAUNCHPAD_NAMES[raw] ?? LAUNCHPAD_NAMES[raw.toLowerCase()] ?? raw.slice(0, 24);
+}
+
+/**
+ * The launch program under each launchpad Jupiter names, for the three Market
+ * Radar watches: pump.fun's own curve; Meteora's DBC — its own launches,
+ * Jupiter Studio's and Believe's; Raydium LaunchLab — its own and bonk.fun's.
+ * A launchpad not named here is not counted as any of the three.
+ */
+const LAUNCHPAD_VENUES: Readonly<Record<string, PulseCurveVenue>> = {
+  "pump.fun": "pump",
+  "met-dbc": "meteora-dbc",
+  "jup-studio": "meteora-dbc",
+  believe: "meteora-dbc",
+  "letsbonk.fun": "launchlab",
+  "raydium-launchlab": "launchlab",
+  launchlab: "launchlab",
+};
+
+export function launchVenueOf(raw: string | null): PulseCurveVenue | null {
+  if (!raw) return null;
+  return LAUNCHPAD_VENUES[raw] ?? LAUNCHPAD_VENUES[raw.toLowerCase()] ?? null;
 }
 
 const NOTICE_CODES: ReadonlySet<string> = new Set(["MINT_AUTHORITY", "FREEZE_AUTHORITY", "FLAGGED"]);
@@ -163,13 +229,17 @@ export function pulseRowOf(raw: unknown, now: number): PulseRow | null {
   /* A tokenized stock has its own place (the company's page); Pulse is the market of coins and new tokens. */
   if (market.category === "stock") return null;
   const windows = {} as Record<TokenWindow, PulseWindowFigures>;
-  for (const key of ["m5", "h1", "h6", "h24"] as const) windows[key] = { changePct: facts.windows[key].priceChangePct, volumeUsd: facts.windows[key].volumeUsd };
+  for (const key of ["m5", "h1", "h6", "h24"] as const) {
+    windows[key] = { changePct: facts.windows[key].priceChangePct, volumeUsd: facts.windows[key].volumeUsd, holdersChangePct: facts.windows[key].holderChangePct, liquidityChangePct: facts.windows[key].liquidityChangePct };
+  }
   return {
     mint: market.mint,
     symbol: market.symbol,
     name: market.name,
     icon: market.icon,
     launchpad: launchpadName(facts.launchpad),
+    venue: launchVenueOf(facts.launchpad),
+    graduated: graduatedOf(raw),
     price: market.price,
     marketCapUsd: market.marketCapUsd,
     liquidityUsd: market.liquidityUsd,
@@ -178,8 +248,11 @@ export function pulseRowOf(raw: unknown, now: number): PulseRow | null {
     windows,
     firstPoolAt: market.firstPoolAt,
     graduatedAt: facts.graduatedAt,
+    graduatedPool: graduatedPoolOf(raw),
     top10Pct: market.audit.topHoldersPct,
     devPct: market.audit.devBalancePct,
+    creatorLaunches: facts.devMints,
+    creatorGraduated: facts.devMigrations,
     verified: market.verified,
     organic: market.organicScoreLabel,
     /* Both rights stated, on or off: only then is «no fact against it» a statement. */
@@ -195,6 +268,13 @@ export function rawLaunchpadOf(raw: unknown): string | null {
   if (!raw || typeof raw !== "object") return null;
   const value = (raw as { launchpad?: unknown }).launchpad;
   return typeof value === "string" && value.length > 0 && value.length <= 48 ? value : null;
+}
+
+/** The DEX pool Jupiter states the token left its curve for, or null. */
+export function graduatedPoolOf(raw: unknown): string | null {
+  if (!raw || typeof raw !== "object") return null;
+  const pool = (raw as { graduatedPool?: unknown }).graduatedPool;
+  return typeof pool === "string" && /^[1-9A-HJ-NP-Za-km-z]{32,44}$/.test(pool) ? pool : null;
 }
 
 /** Whether Jupiter states the token has left its curve. */
@@ -276,6 +356,10 @@ export type PulseFilter = Readonly<{
   top10Max: number | null;
   /** The creator's share at most, per cent. */
   devMax: number | null;
+  /** The creator's history: at most this many tokens made by the creator's wallet… */
+  creatorLaunchesMax: number | null;
+  /** …and at least this many of them reached a DEX. */
+  creatorGraduatedMin: number | null;
   /** Leave out tokens with any fact against them. */
   noNotices: boolean;
 }>;
@@ -290,6 +374,8 @@ export const PULSE_FILTER_NONE: PulseFilter = Object.freeze({
   holdersMin: null,
   top10Max: null,
   devMax: null,
+  creatorLaunchesMax: null,
+  creatorGraduatedMin: null,
   noNotices: false,
 });
 
@@ -318,6 +404,8 @@ export function readPulseFilter(raw: unknown): PulseFilter {
     holdersMin: number("holdersMin"),
     top10Max: number("top10Max"),
     devMax: number("devMax"),
+    creatorLaunchesMax: number("creatorLaunchesMax"),
+    creatorGraduatedMin: number("creatorGraduatedMin"),
     noNotices: value.noNotices === true,
   };
 }
@@ -347,9 +435,104 @@ export function passesFilter(row: PulseRow, filter: PulseFilter, window: TokenWi
     atLeast(row.holders, filter.holdersMin) &&
     atMost(row.top10Pct, filter.top10Max) &&
     atMost(row.devPct, filter.devMax) &&
-    /* «No fact against it» asks for the facts read and none found — a token whose audit was not read does not pass. */
-    (!filter.noNotices || (row.auditRead && row.notices.length === 0))
+    atMost(row.creatorLaunches, filter.creatorLaunchesMax) &&
+    atLeast(row.creatorGraduated, filter.creatorGraduatedMin) &&
+    /* «No risk flag» asks for the facts read and none of the flags — a token whose audit was not read does not pass. */
+    (!filter.noNotices || (pulseUnstatedOf(row, now).length === 0 && pulseFlagsOf(row, now).length === 0))
   );
+}
+
+/* ------------------------------------------------------------ risk flags */
+
+/**
+ * A row's risk flags (SOL-C5; аудит UX 21.10: UX-101, UX-150): the token
+ * page's facts against it (a right still on, Jupiter's flag), then its card's
+ * risks past a threshold that is one rule for every token — a known brand's or
+ * person's name on a token Jupiter has not verified, a creator who made many
+ * tokens, a pool too thin or not stated, a handful of holders, minutes on the
+ * market. A figure nobody stated is not counted as a flag, except the pool: a
+ * token whose pool nobody states may have none to sell into — but neither is it
+ * counted as passed (`pulseUnstatedOf`): «0» is said only when every figure was
+ * read. Facts, never a score.
+ */
+export type PulseFlag = PulseNotice | "BORROWED_NAME" | "CREATOR_MANY" | "LIQUIDITY_THIN" | "HOLDERS_FEW" | "BRAND_NEW";
+
+/** The creator made at least this many tokens. */
+export const FLAG_CREATOR_LAUNCHES = 10;
+/** The pool holds less than this, in dollars. */
+export const FLAG_LIQUIDITY_USD = 1_000;
+/** Fewer holders than this. */
+export const FLAG_HOLDERS = 10;
+/** Younger than this on the market: ten minutes. */
+export const FLAG_AGE_HOURS = 10 / 60;
+
+const borrowedNames = new Map<string, string | null>();
+
+/**
+ * The known brand or person whose name or ticker a token borrows — by the same
+ * check that refuses such a name at a launch on Ryntra (`launchNameHits`) — or
+ * null. The token Jupiter verified is the original and borrows nothing; a launch
+ * on Ryntra passed the check before it was built.
+ */
+export function borrowedNameOf(row: Pick<PulseRow, "name" | "symbol" | "verified" | "ryntra">): string | null {
+  if (row.verified || row.ryntra) return null;
+  const key = `${row.symbol}\u0000${row.name}`;
+  let label = borrowedNames.get(key);
+  if (label === undefined) {
+    /* Whole words only: a mark on a token already trading must not catch «Waltman» for «Altman». */
+    label = launchNameHits({ name: row.name, symbol: row.symbol }, { wholeWords: true })[0]?.label ?? null;
+    /* A page reads a few hundred names; the memory never grows past a few thousand. */
+    if (borrowedNames.size >= 4_000) borrowedNames.clear();
+    borrowedNames.set(key, label);
+  }
+  return label;
+}
+
+export function pulseFlagsOf(row: PulseRow, now: number): PulseFlag[] {
+  const flags: PulseFlag[] = [...row.notices];
+  if (borrowedNameOf(row) !== null) flags.push("BORROWED_NAME");
+  if (row.creatorLaunches !== null && row.creatorLaunches >= FLAG_CREATOR_LAUNCHES) flags.push("CREATOR_MANY");
+  /* A launch on Ryntra still on its curve: the curve is its pool, read from the chain — no pool figure is missing. */
+  const curvePool = row.ryntra !== null && row.curve !== null && !row.curve.complete;
+  if ((row.liquidityUsd === null && !curvePool) || (row.liquidityUsd !== null && row.liquidityUsd < FLAG_LIQUIDITY_USD)) flags.push("LIQUIDITY_THIN");
+  if (row.holders !== null && !row.holdersAtLeast && row.holders < FLAG_HOLDERS) flags.push("HOLDERS_FEW");
+  const age = ageHoursOf(row, now);
+  if (age !== null && age < FLAG_AGE_HOURS) flags.push("BRAND_NEW");
+  return flags;
+}
+
+/** What a row's flags rest on that nobody stated: the rights, the holders, the creator's tokens, the age. */
+export type PulseUnstated = "RIGHTS" | "HOLDERS" | "CREATOR" | "AGE";
+
+export function pulseUnstatedOf(row: PulseRow, now: number): PulseUnstated[] {
+  const unstated: PulseUnstated[] = [];
+  if (!row.auditRead) unstated.push("RIGHTS");
+  if (row.holders === null) unstated.push("HOLDERS");
+  /* A launch on Ryntra was made through Ryntra's own flow, so its creator is known to Ryntra's records, not to Jupiter. */
+  if (row.creatorLaunches === null && row.ryntra === null) unstated.push("CREATOR");
+  if (ageHoursOf(row, now) === null) unstated.push("AGE");
+  return unstated;
+}
+
+const nameKeyOf = (row: Pick<PulseRow, "symbol" | "name">) => `${row.symbol.trim().toLowerCase()}\u0000${row.name.trim().toLowerCase()}`;
+
+/** For each row whose ticker and name another row of the feed shares (UX-154): how many others share them. */
+export function twinsOf(rows: readonly Pick<PulseRow, "mint" | "symbol" | "name">[]): Map<string, number> {
+  const byName = new Map<string, Set<string>>();
+  for (const row of rows) {
+    const key = nameKeyOf(row);
+    const mints = byName.get(key) ?? new Set<string>();
+    mints.add(row.mint);
+    byName.set(key, mints);
+  }
+  const twins = new Map<string, number>();
+  for (const mints of byName.values()) if (mints.size > 1) for (const mint of mints) twins.set(mint, mints.size - 1);
+  return twins;
+}
+
+/** A mint as a row has room for it: «7Rpf…pump». */
+export function shortMint(mint: string): string {
+  return mint.length > 10 ? `${mint.slice(0, 4)}…${mint.slice(-4)}` : mint;
 }
 
 /* ------------------------------------------------------------ feeds */
@@ -382,11 +565,31 @@ export function mergeRows(rows: readonly PulseRow[]): PulseRow[] {
  * - **Вийшли на DEX** — left their curve within a day, the latest first; Ryntra's that did first.
  * - **Тренди** — Jupiter's trending order for the window, as given; Ryntra's that traded within the day first.
  * - **Рухи** — the window's largest rise (or, with `down`, fall), markets of {@link MOVERS_MIN_LIQUIDITY_USD} and deeper.
+ * - **Ростуть** (Market Radar) — tokens still on their launch curve, older than «Нові» and at most {@link GROWING_SPAN_MS}
+ *   old, short of «Майже на DEX» where the curve was read (pump.fun's, by its mint), whose holders grew over the hour with {@link GROWING_MIN_VOLUME_USD} or more traded in
+ *   it — the hour's most traded first.
+ * - **Обране** — the person's watched tokens, in the order given.
+ *
+ * In meme mode (`mode: "meme"`) every feed keeps only the tokens born on the three launch programs — {@link isRadarRow}.
  */
-export function feedRows(feed: PulseFeed, rows: readonly PulseRow[], window: TokenWindow, now: number, down = false): PulseRow[] {
+export function feedRows(feed: PulseFeed, rows: readonly PulseRow[], window: TokenWindow, now: number, down = false, mode: PulseMode = "all"): PulseRow[] {
+  if (mode === "meme" && feed !== "watchlist") rows = rows.filter(isRadarRow);
   const ours = (row: PulseRow) => row.ryntra !== null;
   const first = (picked: PulseRow[], order: (a: PulseRow, b: PulseRow) => number) =>
     [...picked.filter(ours).sort(order), ...picked.filter((row) => !ours(row)).sort(order)].slice(0, PULSE_ROWS);
+  if (feed === "watchlist") return rows.slice(0, WATCHLIST_MAX);
+  if (feed === "growing") {
+    const picked = rows.filter((row) => {
+      if (!isRadarRow(row) || row.graduated || row.graduatedAt !== null || row.curve?.complete === true) return false;
+      /* A curve this far along is «Майже на DEX»: one token, one feed of the two. */
+      if (row.curve && row.curve.progressPct >= SOON_MIN_PCT) return false;
+      const born = stampOf(row.firstPoolAt ?? row.ryntra?.launchedAt);
+      if (born === 0 || now - born < NEW_TOKEN_SPAN_MS || now - born > GROWING_SPAN_MS) return false;
+      const hour = row.windows.h1;
+      return hour.holdersChangePct !== null && hour.holdersChangePct > 0 && hour.volumeUsd !== null && hour.volumeUsd >= GROWING_MIN_VOLUME_USD;
+    });
+    return first(picked, (a, b) => (b.windows.h1.volumeUsd ?? 0) - (a.windows.h1.volumeUsd ?? 0) || a.mint.localeCompare(b.mint));
+  }
   if (feed === "new") {
     const picked = rows.filter((row) => {
       if (ours(row)) return now - stampOf(row.ryntra!.launchedAt) <= NEW_SPAN_MS;
@@ -420,6 +623,23 @@ export function feedRows(feed: PulseFeed, rows: readonly PulseRow[], window: Tok
     return value !== null && (down ? value < 0 : value > 0) && row.liquidityUsd !== null && row.liquidityUsd >= MOVERS_MIN_LIQUIDITY_USD;
   });
   return first(picked, (a, b) => (down ? change(a)! - change(b)! : change(b)! - change(a)!) || a.mint.localeCompare(b.mint));
+}
+
+/** A token of Market Radar's meme mode: launched on Ryntra, born on one of the three launch programs, or on a curve read from one. */
+export function isRadarRow(row: Pick<PulseRow, "ryntra" | "venue" | "curve">): boolean {
+  return row.ryntra !== null || row.venue !== null || row.curve !== null;
+}
+
+/** The mints of a watchlist as the feed asks for them: addresses only, each once, at most {@link WATCHLIST_MAX}. */
+export function watchlistMintsOf(value: string | null): string[] {
+  if (!value) return [];
+  const out: string[] = [];
+  for (const part of value.split(",")) {
+    const mint = part.trim();
+    if (/^[1-9A-HJ-NP-Za-km-z]{32,44}$/.test(mint) && !out.includes(mint)) out.push(mint);
+    if (out.length >= WATCHLIST_MAX) break;
+  }
+  return out;
 }
 
 /** A row's own page: a market launched on Ryntra opens its launch page; every other token its token page. */

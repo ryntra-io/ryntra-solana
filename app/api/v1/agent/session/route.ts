@@ -15,7 +15,8 @@ export const maxDuration = 30;
  * `POST /api/v1/agent/session` — open or resume the proven wallet's
  * conversation for a context (contract 1.8.0). One route for the web (proof
  * cookie) and the phone (bearer). The session is durable: it needs a store
- * that outlives the instance, and says so.
+ * that outlives the instance, and says so. 1.43.0: `fresh` opens a new
+ * conversation even where one for the same context exists («Нова розмова»).
  */
 export async function POST(request: Request) {
   const refused = apiMajorRefusal(request.headers);
@@ -27,7 +28,7 @@ export async function POST(request: Request) {
   const guard = getGuardRuntime();
   if (!guard.writes.allowed || !storeSurvivesColdStart(guard.store)) return apiFailure("UNAVAILABLE", "The agent needs a durable store; this deployment does not have one.");
   const deps = await agentDepsFor(request, proof.address);
-  const opened = await openAgentSession(deps, { owner: proof.address, locale: read.body.locale, context: read.body.context, sessionId: read.body.sessionId });
+  const opened = await openAgentSession(deps, { owner: proof.address, locale: read.body.locale, context: read.body.context, sessionId: read.body.sessionId, fresh: read.body.fresh });
   if (!opened.ok) return apiFailure(opened.code, opened.code === "AGENT_SESSION_NOT_FOUND" ? "No session of this wallet has that id." : "The session could not be opened; try again.");
   return apiJson(opened.response satisfies AgentSessionResponse, opened.opened ? 201 : 200);
 }

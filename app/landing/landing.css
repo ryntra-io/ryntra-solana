@@ -1199,6 +1199,8 @@ html[dir="rtl"] .lp-final-inner { text-align: start; }
 .lp3-chg-down { color: var(--danger); }
 .lp3-chg-flat { color: var(--text-faint); }
 .lp3-chart-canvas { width: 100%; height: 296px; }
+/* The core's compact chart (SOL-T4) fills the plane, in the hero's accent. */
+.lp3-chart-canvas .ryntra-mini { --ryntra-mini-height: 100%; --ryntra-mini-line: var(--hero-accent); height: 100%; }
 .lp3-live {
   display: inline-flex;
   align-items: center;

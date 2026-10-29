@@ -1,5 +1,6 @@
 "use client";
 
+import { Button } from "@ryntra/core/ui";
 import { CheckCircle, X } from "@phosphor-icons/react";
 import Link from "next/link";
 import { useCallback, useEffect, useId, useRef, useState, type ReactNode } from "react";
@@ -86,6 +87,9 @@ import company from "./company.module.css";
  * the person sets one. The sheet also stands inside Spot's order
  * (`variant: "ticket"`): no head, no close — the ticket's own tab leaves it.
  */
+
+/** The failure that is the wallet's confirmation: its sentence is chosen when drawn, from the proof's own state. */
+const PROOF_MISSED = "\u0000proof";
 
 /** A new rule — on a sum (a receipt's), and how often it opens: daily unless said (a receipt's «Купувати щотижня» says weekly) — or an existing rule to manage. */
 export type AutoinvestMode = Readonly<{ kind: "compose"; amountUsd: number | null; cadence?: RuleCadence }> | Readonly<{ kind: "manage"; rule: AutoinvestRule }>;
@@ -338,6 +342,14 @@ function AutoinvestFlow({
   const [schedule, setSchedule] = useState<RuleSchedule>(() => openingSchedule(Date.now(), browserTimeZone(), mode.kind === "compose" ? mode.cadence : undefined));
   const [step, setStep] = useState<Step>("idle");
   const [failure, setFailure] = useState<string | null>(null);
+  /* A wallet that did not confirm: refused is the person's «no»; anything else is a confirmation that did not go through — read from the proof's state as it now stands. */
+  const proofWord =
+    proof.state.status === "refused"
+      ? word("walletDeclined")
+      : /* Another account already holds the wallet, or the wallet cannot sign a message: its own sentence — another press would not help. */
+        (proof.state.status === "taken" || proof.state.status === "unsupported") && "reason" in proof.state && proof.state.reason
+        ? proof.state.reason
+        : word("walletNotConfirmed");
   const [made, setMade] = useState<AutoinvestRule | null>(null);
   const [changing, setChanging] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
@@ -432,9 +444,9 @@ function AutoinvestFlow({
         <p className={company.rulePromise}>{word("autoinvestPromise")}</p>
         {channelLine}
         <div className={company.sheetActions}>
-          <button type="button" className="rw-btn rw-btn--primary" onClick={onClose}>
+          <Button variant="primary" block onClick={onClose} lang={lang}>
             {word("done")}
-          </button>
+          </Button>
         </div>
       </div>
     );
@@ -456,7 +468,7 @@ function AutoinvestFlow({
       if (!proven) {
         const ok = await proof.prove();
         if (ok !== true) {
-          setFailure(word("walletDeclined"));
+          setFailure(PROOF_MISSED);
           return;
         }
       }
@@ -580,13 +592,13 @@ function AutoinvestFlow({
         ) : null}
         <p className={company.rulePromise}>{word("autoinvestPromise")}</p>
         {channelLine}
-        {failure ? <p className={company.sheetError}>{failure}</p> : null}
+        {failure ? <p className={company.sheetError}>{failure === PROOF_MISSED ? proofWord : failure}</p> : null}
         {confirmDelete ? (
           <div className={company.sheetActions} data-confirm="delete">
             <p className={company.sheetNote}>{word("deleteConfirm")}</p>
-            <button type="button" className="rw-btn" disabled={changing} onClick={() => void change(() => onRemove(rule.id), onClose)}>
+            <Button variant="secondary" block disabled={changing} onClick={() => void change(() => onRemove(rule.id), onClose)} lang={lang}>
               {word("deleteYes")}
-            </button>
+            </Button>
             <button type="button" className={company.quietButton} disabled={changing} onClick={() => setConfirmDelete(false)}>
               {word("cancel")}
             </button>
@@ -594,23 +606,23 @@ function AutoinvestFlow({
         ) : (
           <div className={company.sheetActions}>
             {due ? (
-              <button type="button" className="rw-btn rw-btn--primary" disabled={changing} onClick={() => onBuyNow(rule, due)}>
+              <Button variant="primary" block disabled={changing} onClick={() => onBuyNow(rule, due)} lang={locale === "uk" ? "uk" : "en"}>
                 {buyByRuleWord(locale, purchaseSumUsd(rule, due))}
-              </button>
+              </Button>
             ) : paused ? (
-              <button type="button" className="rw-btn rw-btn--primary" disabled={changing} onClick={() => void change(() => onSetStatus(rule.id, "active"))}>
+              <Button variant="primary" block disabled={changing} onClick={() => void change(() => onSetStatus(rule.id, "active"))} lang={lang}>
                 {changing ? word("turningOn") : word("turnOnAgain")}
-              </button>
+              </Button>
             ) : ticket ? null : (
               /* In the ticket the rule simply stands: nothing to close, and the ticket's one orange action stays the order's. */
-              <button type="button" className="rw-btn rw-btn--primary" disabled={changing} onClick={onClose}>
+              <Button variant="primary" block disabled={changing} onClick={onClose} lang={lang}>
                 {word("done")}
-              </button>
+              </Button>
             )}
             {paused ? null : (
-              <button type="button" className="rw-btn" disabled={changing} onClick={() => void change(() => onSetStatus(rule.id, "paused"))}>
+              <Button variant="secondary" block disabled={changing} onClick={() => void change(() => onSetStatus(rule.id, "paused"))} lang={lang}>
                 {word("pause")}
-              </button>
+              </Button>
             )}
             <button type="button" className={company.quietButton} disabled={changing} onClick={() => setConfirmDelete(true)}>
               {word("deleteRule")}
@@ -654,7 +666,7 @@ function AutoinvestFlow({
       const ok = await proof.prove();
       setStep("idle");
       if (ok !== true) {
-        setFailure(word("walletDeclined"));
+        setFailure(PROOF_MISSED);
         return;
       }
     }
@@ -697,7 +709,7 @@ function AutoinvestFlow({
 
   const noRoute = valid && route === "no-route";
   const minimumUsd = noRoute && routeMinimum.state === "found" ? routeMinimum.minimumUsd : null;
-  const minimumLine = !noRoute || amount === null ? null : minimumUsd !== null ? routeMinimumLine(locale, dollars(amount, numbers), name, dollars(minimumUsd, numbers)) : routeMinimum.state === "finding" ? word("findingMinimum") : word("unavailableNow");
+  const minimumLine = !noRoute || amount === null ? null : minimumUsd !== null ? routeMinimumLine(locale, dollars(amount, numbers), name, dollars(minimumUsd, numbers)) : routeMinimum.state === "finding" ? word("findingMinimum") : word("ruleUnavailableNow");
 
   /* A token no rule can name now: under the floor, flagged, or unread — said before the button, and the button turns nothing on. */
   const tokenBlock: string | null = !token
@@ -721,7 +733,7 @@ function AutoinvestFlow({
     if (kind === "payments") {
       if (payMode === "fixed" && !fixedValid) return { label: word("turnOn"), disabled: true };
       /* The reminders' sums must route into the company: the minimum is raised to the company's own before the rule can be turned on. */
-      if (route === "no-route") return { label: routeMinimum.state === "finding" ? word("findingMinimum") : word("unavailableNow"), disabled: true };
+      if (route === "no-route") return { label: routeMinimum.state === "finding" ? word("findingMinimum") : word("ruleUnavailableNow"), disabled: true };
       if (step === "proving") return { label: word("confirming"), disabled: true };
       if (step === "saving") return { label: word("turningOn"), disabled: true };
       if (referencePending) return { label: word("reading"), disabled: true };
@@ -757,9 +769,9 @@ function AutoinvestFlow({
         </p>
         {ticket ? (
           <div className={company.sheetActions}>
-            <button type="button" className="rw-btn" onClick={onClose}>
+            <Button variant="secondary" block onClick={onClose} lang={lang}>
               {word("buyAtMarket")}
-            </button>
+            </Button>
           </div>
         ) : null}
       </div>
@@ -1013,15 +1025,15 @@ function AutoinvestFlow({
 
       <p className={company.rulePromise}>{word("autoinvestPromise")}</p>
       {channelLine}
-      {failure ? <p className={company.sheetError}>{failure}</p> : null}
+      {failure ? <p className={company.sheetError}>{failure === PROOF_MISSED ? proofWord : failure}</p> : null}
 
       <div className={company.sheetActions}>
         {!connection && connectAction ? (
           connectAction
         ) : (
-          <button type="button" className="rw-btn rw-btn--primary" disabled={cta.disabled} onClick={cta.run ?? (() => void enable())}>
+          <Button variant="primary" block disabled={cta.disabled} onClick={cta.run ?? (() => void enable())} lang={lang}>
             {cta.label}
-          </button>
+          </Button>
         )}
       </div>
     </div>
@@ -1097,9 +1109,9 @@ function PaymentEvents({
                   <div className={company.payConfirm} data-confirm="own">
                     <p className={company.sheetNote}>{word("myAccountConfirm")}</p>
                     <div className={company.payConfirmActions}>
-                      <button type="button" className="rw-btn" disabled={busy} onClick={() => onConfirm(event.signature)}>
+                      <Button variant="secondary" disabled={busy} onClick={() => onConfirm(event.signature)} lang={lang}>
                         {word("myAccountYes")}
-                      </button>
+                      </Button>
                       <button type="button" className={company.quietButton} disabled={busy} onClick={() => onAsk(null)}>
                         {word("cancel")}
                       </button>

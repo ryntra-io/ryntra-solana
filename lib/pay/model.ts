@@ -120,8 +120,19 @@ export const PaymentRequestSettlementSchema = z
     /** What the chain was seen to do. `PENDING` = a submit went out and is not yet observed. */
     state: z.enum(SETTLEMENT_STATES),
     signature: z.string().regex(SIGNATURE).nullable(),
-    /** Base units credited to the recipient in the matching mint, when seen. */
+    /** Base units credited to the recipient in the requested mint, summed over every payment seen. */
     creditedRaw: z.string().regex(RAW_AMOUNT).nullable(),
+    /**
+     * Of that, what a Token-2022 mint's own transfer fee withheld on the way
+     * (FIX-PAY-1). Absent on settlements written before it was read.
+     */
+    feeWithheldRaw: z.string().regex(RAW_AMOUNT).nullable().optional(),
+    /**
+     * True while transactions carrying the reference are still unread
+     * (FIX-PAY-1): the verdict is a lower bound, and the page says «checking»
+     * unless what was read already pays the request.
+     */
+    partial: z.boolean().optional(),
     /** The wallet that paid, when the transaction names one fee payer. */
     payer: z.string().regex(BASE58).nullable(),
     /** Block time of the settling transaction, when the ledger reports one. */
@@ -145,6 +156,7 @@ export function emptySettlement(id: string, checkedAt: string): PaymentRequestSe
     state: "NONE",
     signature: null,
     creditedRaw: null,
+    feeWithheldRaw: null,
     payer: null,
     paidAt: null,
     observedAt: null,
@@ -158,14 +170,24 @@ export function emptySettlement(id: string, checkedAt: string): PaymentRequestSe
  * Ids
  * ------------------------------------------------------------------ */
 
+/** Base58 of 12 bytes is at most 17 characters: 2^96 < 58^17. */
+export const PUBLIC_ID_LENGTH = 17;
+
 /**
- * The public id: 12 random bytes as base58, 16–17 characters. Nothing about
- * the creator, the wallet, the time or a row count is encoded in it, so
+ * The public id: 12 random bytes as base58, always 17 characters. Nothing
+ * about the creator, the wallet, the time or a row count is encoded in it, so
  * knowing one link says nothing about any other.
+ *
+ * Base58 spells a small value shorter: a draw whose first byte was zero and the
+ * rest small came out at 15 characters (about one in 16 000; the id test drew
+ * 200 and failed about once in 80 runs). The spelling is left-padded
+ * with "1", base58's zero, to the full length: still one id per byte string
+ * (a number's own spelling never starts with "1"), and the length never says
+ * anything about the bytes.
  */
 export function newPublicId(random: (bytes: Uint8Array) => Uint8Array = fillRandom): string {
   const bytes = random(new Uint8Array(12));
-  return base58Encode(bytes);
+  return base58Encode(bytes).padStart(PUBLIC_ID_LENGTH, "1");
 }
 
 export function isPublicId(value: unknown): value is string {
@@ -279,6 +301,19 @@ export type PublicPaymentStatusView = Readonly<{
   expired: boolean;
 }>;
 
+/**
+ * Whether a settlement says the request is paid: PAID or OVERPAID **with** a
+ * positive credit in the requested mint. Before FIX-PAY-1 a transaction that
+ * moved nothing could leave PAID with a credit of "0"; such a settlement is
+ * not a payment, is read again, and never shows «Paid».
+ */
+export function settlementPaid(
+  settlement: Pick<PaymentRequestSettlement, "state" | "creditedRaw"> | null | undefined,
+): settlement is Pick<PaymentRequestSettlement, "state" | "creditedRaw"> & { state: "PAID" | "OVERPAID"; creditedRaw: string } {
+  if (!settlement || !(settlement.state === "PAID" || settlement.state === "OVERPAID")) return false;
+  return typeof settlement.creditedRaw === "string" && /^[1-9][0-9]*$/.test(settlement.creditedRaw);
+}
+
 /** After this many consecutive failed reads the page stops saying "Checking". */
 export const UNKNOWN_AFTER_FAILURES = 3;
 
@@ -299,12 +334,14 @@ export function derivePaymentStatus(args: {
 }): PublicPaymentStatusView {
   const expired = args.now.getTime() >= Date.parse(args.request.expiresAt);
   const settlement = args.settlement;
-  if (settlement && (settlement.state === "PAID" || settlement.state === "OVERPAID")) {
+  if (settlementPaid(settlement)) {
     return { status: "PAID", note: settlement.state === "OVERPAID" ? "OVERPAID" : null, expired };
   }
   const note =
     settlement?.state === "UNDERPAID" ? "UNDERPAID" : settlement?.state === "WRONG_TOKEN" ? "WRONG_TOKEN" : null;
   if (expired) return { status: "EXPIRED", note, expired };
+  /* Part of the history unread: not «awaiting» — it may already be paid. */
+  if (settlement?.partial) return { status: "CHECKING", note, expired };
   if (settlement && settlement.observedAt === null && settlement.failures > 0) {
     return { status: settlement.failures >= UNKNOWN_AFTER_FAILURES ? "UNKNOWN" : "CHECKING", note, expired };
   }
@@ -323,7 +360,8 @@ export function derivePaymentStatus(args: {
  * The observation is a list of payments that carried this request's reference,
  * oldest first, already reduced to "what was credited to the recipient in
  * which mint". The pure `matchPayment` from the Receive lane decides what that
- * means; this function only records it. A read that failed keeps the previous
+ * means; this function only records it: the settling signature, and what
+ * arrived in the requested mint summed over every payment. A read that failed keeps the previous
  * verdict and counts the failure, so a page never regresses from Paid to
  * Awaiting because one RPC call timed out.
  */
@@ -332,6 +370,8 @@ export function settlementFromMatch(args: {
   request: Pick<PaymentRequestRecord, "amountRaw" | "mint" | "expiresAt">;
   observed: readonly (ObservedPayment & { payer: string | null; blockTime: string | null })[];
   now: Date;
+  /** Transactions carrying the reference are still unread: what was read is a lower bound. */
+  partial?: boolean;
 }): PaymentRequestSettlement {
   const nowIso = args.now.toISOString();
   const match = matchPayment({
@@ -342,17 +382,22 @@ export function settlementFromMatch(args: {
   });
   const state = settlementStateFrom(match.state, args.previous.state);
   const payment = match.payment ? args.observed.find((entry) => entry.signature === match.payment?.signature) ?? null : null;
+  /* What arrived in the requested mint, summed over every payment; another
+     token's amount is not a credit of this request. */
+  const counted = match.payments > 0;
   return {
     ...args.previous,
     state,
     signature: payment?.signature ?? (state === "PENDING" ? args.previous.signature : null),
-    creditedRaw: payment?.creditedRaw ?? null,
+    creditedRaw: counted ? match.receivedRaw : null,
+    feeWithheldRaw: counted && match.feeWithheldRaw !== "0" ? match.feeWithheldRaw : null,
     payer: payment?.payer ?? null,
     paidAt: payment?.blockTime ?? (payment ? nowIso : null),
     observedAt: nowIso,
     checkedAt: nowIso,
     failures: 0,
     lastError: null,
+    partial: args.partial === true && !(state === "PAID" || state === "OVERPAID"),
   };
 }
 
@@ -400,6 +445,14 @@ export type PublicPaymentRequest = Readonly<{
   createdAt: string;
   expiresAt: string;
   paid: Readonly<{ signature: string; creditedRaw: string; paidAt: string | null }> | null;
+  /**
+   * What reached the recipient in the requested token so far, summed over
+   * every payment that carried the reference, and what the token's own
+   * transfer fee withheld of it (null when it withheld nothing). Null while
+   * nothing in that token arrived. 1.78.0 (FIX-PAY-1): the page and the
+   * creator's list say how much came, not only a word.
+   */
+  received: Readonly<{ raw: string; feeWithheldRaw: string | null }> | null;
 }>;
 
 export function abbreviateAddress(address: string): string {
@@ -423,6 +476,11 @@ export function projectPublicPaymentRequest(args: {
     view.status === "PAID" && args.settlement?.signature && args.settlement.creditedRaw
       ? { signature: args.settlement.signature, creditedRaw: args.settlement.creditedRaw, paidAt: args.settlement.paidAt }
       : null;
+  const settled = args.settlement?.state;
+  const received =
+    args.settlement?.creditedRaw && args.settlement.creditedRaw !== "0" && (settled === "PAID" || settled === "OVERPAID" || settled === "UNDERPAID" || settled === "PENDING")
+      ? { raw: args.settlement.creditedRaw, feeWithheldRaw: args.settlement.feeWithheldRaw ?? null }
+      : null;
   return {
     id: args.request.id,
     network: args.request.network,
@@ -439,6 +497,7 @@ export function projectPublicPaymentRequest(args: {
     createdAt: args.request.createdAt,
     expiresAt: args.request.expiresAt,
     paid,
+    received,
   };
 }
 
@@ -453,4 +512,5 @@ export const FORBIDDEN_PUBLIC_KEYS: readonly string[] = [
   "lastError",
   "failures",
   "checkedAt",
+  "partial",
 ];

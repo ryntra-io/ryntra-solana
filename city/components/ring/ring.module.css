@@ -1,0 +1,710 @@
+/* The Ring in the city (CITY-50): an agent's garage and the screen that makes one. The HUD's dark glass and chamfered
+   corners, the visor's amber as the only light on a body, one amber action a screen, violet only as an edge. On a desk
+   the screen stands at the right, the quarter in view at the left; on a phone it is a sheet over the lower part.
+   Tokens from city/styles/city.module.css. */
+
+/* ------------------------------------------------------------- the body -- */
+
+.body {
+  display: block;
+  flex: none;
+  overflow: visible;
+}
+
+.breathe {
+  animation: breathe 3.6s ease-in-out infinite;
+}
+
+@keyframes breathe {
+  50% {
+    transform: translateY(1px);
+  }
+}
+
+.arm {
+  transform: rotate(var(--spread, 0deg));
+  transition: transform 420ms cubic-bezier(0.3, 1.4, 0.5, 1);
+}
+
+.head {
+  transition: transform 420ms ease;
+}
+
+.visor {
+  transition: opacity 300ms ease;
+}
+
+.scan {
+  opacity: 0;
+}
+
+.body_thinking .head {
+  transform: rotate(-7deg);
+}
+
+.body_thinking .scan {
+  animation: scan 1.1s ease-in-out infinite;
+}
+
+@keyframes scan {
+  0% {
+    opacity: 0.9;
+    transform: translateX(0);
+  }
+  50% {
+    opacity: 0.9;
+    transform: translateX(calc(var(--scan, 18px)));
+  }
+  100% {
+    opacity: 0.9;
+    transform: translateX(0);
+  }
+}
+
+.body_acting .armRaise {
+  transform: rotate(-118deg);
+}
+
+.body_acting .visor {
+  filter: brightness(1.35);
+}
+
+.body_done .head {
+  animation: nod 1.4s ease-in-out 1;
+}
+
+@keyframes nod {
+  40% {
+    transform: rotate(6deg) translateY(1px);
+  }
+}
+
+.bodyDim {
+  opacity: 0.55;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .breathe,
+  .body_thinking .scan,
+  .body_done .head {
+    animation: none;
+  }
+}
+
+/* ------------------------------------------------------------ the garage -- */
+
+.empty {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.card {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-top: 2px;
+}
+
+.cardWords {
+  min-width: 0;
+  flex: 1;
+}
+
+.brain {
+  margin-top: 3px;
+  font-size: var(--type-base);
+  font-weight: 700;
+  color: var(--ice);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.brain span {
+  font-weight: 500;
+  color: var(--text-dim);
+}
+
+.chips {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.chip {
+  padding: 4px 8px;
+  font-size: var(--type-micro);
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: #c9a2ff;
+  background: rgba(153, 69, 255, 0.12);
+  box-shadow: inset 0 0 0 1px rgba(153, 69, 255, 0.4);
+}
+
+.price {
+  font-size: var(--type-small);
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  color: var(--amber);
+}
+
+.line {
+  margin-top: 6px;
+  font-size: var(--type-small);
+  line-height: 1.35;
+  color: var(--text-dim);
+}
+
+.ratings {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+  margin: 12px 0 0;
+}
+
+.rating {
+  min-width: 0;
+  padding: 9px 10px 10px;
+  background: rgba(255, 255, 255, 0.05);
+  clip-path: polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px);
+}
+
+.rating dt {
+  font-size: var(--type-micro);
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.rating dd {
+  margin: 4px 0 0;
+  font-size: var(--type-lead);
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  color: var(--ice);
+  white-space: nowrap;
+}
+
+.rating .games {
+  margin-top: 2px;
+  font-size: var(--type-caption);
+  font-weight: 600;
+  color: var(--text-dim);
+  white-space: normal;
+}
+
+.ratingOff dd {
+  color: var(--text-dim);
+}
+
+/* On a phone the three ratings are rows: the format's whole name at the left, the rating at the right. */
+@media (max-width: 480px) {
+  .ratings {
+    grid-template-columns: 1fr;
+    gap: 6px;
+  }
+
+  .rating {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-areas: 'name value' 'games value';
+    align-items: center;
+    column-gap: 12px;
+    padding: 8px 12px;
+  }
+
+  .rating dt {
+    grid-area: name;
+  }
+
+  .rating dd {
+    grid-area: value;
+    margin: 0;
+  }
+
+  .rating .games {
+    grid-area: games;
+    margin: 2px 0 0;
+  }
+}
+
+.keyLine {
+  margin-top: 10px;
+  font-size: var(--type-small);
+  color: var(--text-dim);
+}
+
+/* ------------------------------------------------------------ the screen -- */
+
+.editor {
+  position: fixed;
+  z-index: 14;
+  right: var(--gutter);
+  top: calc(max(12px, env(safe-area-inset-top)) + 64px);
+  bottom: max(14px, env(safe-area-inset-bottom));
+  width: min(440px, calc(100% - 2 * var(--gutter)));
+  display: flex;
+  flex-direction: column;
+  padding: 16px 18px 14px;
+  --cut: 16px;
+  /* Solid: the quarter's sheets never show through the agent's words. */
+  background: linear-gradient(160deg, #141024, #08070f);
+  clip-path: polygon(var(--cut) 0, 100% 0, 100% calc(100% - var(--cut)), calc(100% - var(--cut)) 100%, 0 100%, 0 var(--cut));
+  box-shadow: inset 0 0 0 2px rgba(153, 69, 255, 0.32), inset 0 1px 18px rgba(153, 69, 255, 0.18);
+  font-family: var(--font-ui, system-ui), system-ui, sans-serif;
+  color: var(--ice);
+  animation: screenIn 280ms ease-out both;
+}
+
+@keyframes screenIn {
+  from {
+    opacity: 0;
+    transform: translateX(24px);
+  }
+}
+
+@media (max-width: 760px) {
+  .editor {
+    left: var(--gutter);
+    right: var(--gutter);
+    top: calc(max(12px, env(safe-area-inset-top)) + 56px);
+    width: auto;
+    padding: 14px 14px 12px;
+    animation-name: sheetIn;
+  }
+}
+
+@keyframes sheetIn {
+  from {
+    opacity: 0;
+    transform: translateY(24px);
+  }
+}
+
+.head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 44px;
+  margin: -6px -8px 0 0;
+}
+
+.kicker {
+  flex: 1;
+  min-width: 0;
+}
+
+.dot {
+  width: 8px;
+  height: 8px;
+  flex: none;
+  background: var(--amber);
+  box-shadow: 0 0 10px var(--amber);
+  transform: rotate(45deg);
+}
+
+.close {
+  width: 44px;
+  height: 44px;
+  flex: none;
+  border: 0;
+  padding: 0;
+  display: grid;
+  place-items: center;
+  color: var(--ice);
+  background: rgba(255, 255, 255, 0.06);
+  clip-path: polygon(10px 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%, 0 10px);
+}
+
+.steps {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 6px;
+  margin-top: 10px;
+}
+
+.step {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  height: 38px;
+  padding: 0 10px;
+  border: 0;
+  font-size: var(--type-small);
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+  background: rgba(238, 241, 255, 0.06);
+  clip-path: polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px);
+}
+
+.stepNo {
+  font-variant-numeric: tabular-nums;
+  color: rgba(238, 241, 255, 0.4);
+}
+
+.stepOn {
+  color: var(--ice);
+  background: rgba(153, 69, 255, 0.16);
+  box-shadow: inset 0 -2px 0 var(--amber);
+}
+
+.stepOn .stepNo {
+  color: var(--amber);
+}
+
+.pane {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  margin-top: 12px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+/* The body step: the picked body on its stage, the six below. */
+.stage {
+  display: flex;
+  align-items: flex-end;
+  gap: 16px;
+  padding: 8px 6px 4px;
+  background: radial-gradient(60% 70% at 30% 100%, rgba(153, 69, 255, 0.22), transparent 70%);
+}
+
+.stageWords {
+  min-width: 0;
+  padding-bottom: 14px;
+}
+
+.stageName {
+  font-family: var(--font-display, system-ui), system-ui, sans-serif;
+  font-stretch: 125%;
+  font-variation-settings: 'wdth' 125;
+  font-weight: 900;
+  text-transform: uppercase;
+  font-size: clamp(20px, 5.2vw, 30px);
+  line-height: 1;
+  color: var(--ice);
+  overflow-wrap: anywhere;
+}
+
+.bodies {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.bodyTile {
+  display: grid;
+  justify-items: center;
+  gap: 4px;
+  padding: 8px 4px 9px;
+  border: 0;
+  font-size: var(--type-caption);
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+  background: rgba(255, 255, 255, 0.05);
+  clip-path: polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px);
+}
+
+.bodyTileOn {
+  color: var(--ice);
+  background: rgba(153, 69, 255, 0.16);
+  box-shadow: inset 0 0 0 2px rgba(255, 178, 63, 0.7);
+}
+
+/* The brain step: a class, a search, the models with their price. */
+.classes {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 6px;
+}
+
+.classTab {
+  position: relative;
+  display: grid;
+  justify-items: start;
+  gap: 2px;
+  padding: 8px 10px 9px;
+  border: 0;
+  text-align: left;
+  color: var(--text-dim);
+  background: rgba(255, 255, 255, 0.05);
+  clip-path: polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px);
+}
+
+.classTab b {
+  font-size: var(--type-small);
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.classTab span {
+  font-size: var(--type-caption);
+  font-variant-numeric: tabular-nums;
+}
+
+.classTab i {
+  position: absolute;
+  top: 8px;
+  right: 10px;
+  font-style: normal;
+  font-size: var(--type-caption);
+  font-weight: 800;
+  color: rgba(238, 241, 255, 0.4);
+}
+
+.classTabOn {
+  color: var(--ice);
+  background: rgba(153, 69, 255, 0.16);
+  box-shadow: inset 0 -2px 0 var(--amber);
+}
+
+.search {
+  height: 42px;
+  margin-top: 8px;
+  padding: 0 12px;
+  border: 0;
+  font: inherit;
+  font-size: var(--type-base);
+  color: var(--ice);
+  background: rgba(255, 255, 255, 0.06);
+  box-shadow: inset 0 0 0 1px rgba(153, 69, 255, 0.28);
+  outline: none;
+}
+
+.search:focus {
+  box-shadow: inset 0 0 0 2px rgba(153, 69, 255, 0.6);
+}
+
+.models {
+  flex: 1;
+  min-height: 120px;
+  display: grid;
+  align-content: start;
+  gap: 6px;
+  margin-top: 8px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+.model {
+  display: grid;
+  gap: 2px;
+  padding: 9px 12px 10px;
+  border: 0;
+  text-align: left;
+  color: var(--ice);
+  background: rgba(255, 255, 255, 0.04);
+  clip-path: polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px);
+}
+
+.modelOn {
+  background: rgba(153, 69, 255, 0.14);
+  box-shadow: inset 0 0 0 2px rgba(255, 178, 63, 0.7);
+}
+
+.modelHead,
+.modelLine {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+  min-width: 0;
+}
+
+.modelHead b {
+  min-width: 0;
+  font-size: var(--type-base);
+  font-weight: 800;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.modelPrice {
+  flex: none;
+  font-size: var(--type-base);
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  color: var(--amber);
+}
+
+.modelLine {
+  font-size: var(--type-caption);
+  color: var(--text-dim);
+}
+
+.modelLine span:first-child {
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.modelLine span:last-child {
+  flex: none;
+}
+
+.pinned {
+  display: grid;
+  gap: 6px;
+  margin-top: 6px;
+  padding-top: 7px;
+  border-top: 1px solid rgba(153, 69, 255, 0.28);
+  font-size: var(--type-small);
+  color: var(--text-dim);
+}
+
+.pinned b {
+  color: var(--ice);
+}
+
+.formats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.formats i {
+  padding: 3px 7px;
+  font-style: normal;
+  font-size: var(--type-micro);
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: #c9a2ff;
+  box-shadow: inset 0 0 0 1px rgba(153, 69, 255, 0.4);
+}
+
+.moved {
+  color: var(--warm);
+}
+
+.refused {
+  color: #ffb3aa;
+}
+
+.note {
+  padding: 10px 2px;
+  font-size: var(--type-small);
+  line-height: 1.4;
+  color: var(--text-dim);
+}
+
+.retry {
+  margin-left: 10px;
+  padding: 6px 10px;
+  border: 0;
+  font-size: var(--type-caption);
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--ice);
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.stale {
+  margin-top: 6px;
+  font-size: var(--type-caption);
+  color: var(--amber);
+}
+
+/* The script step. */
+.script {
+  flex: 1;
+  min-height: 200px;
+  padding: 12px;
+  border: 0;
+  resize: none;
+  font: inherit;
+  font-size: var(--type-base);
+  line-height: 1.45;
+  color: var(--ice);
+  background: rgba(255, 255, 255, 0.05);
+  box-shadow: inset 0 0 0 1px rgba(153, 69, 255, 0.28);
+  outline: none;
+}
+
+.script:focus {
+  box-shadow: inset 0 0 0 2px rgba(153, 69, 255, 0.6);
+}
+
+.script::placeholder,
+.search::placeholder {
+  color: rgba(238, 241, 255, 0.38);
+}
+
+.count {
+  margin-top: 6px;
+  text-align: right;
+  font-size: var(--type-caption);
+  font-variant-numeric: tabular-nums;
+  color: var(--text-dim);
+}
+
+.countOver {
+  color: #ffb3aa;
+}
+
+/* What is being made, under every step. */
+.summary {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 10px;
+  padding: 8px 10px;
+  background: rgba(255, 255, 255, 0.04);
+  clip-path: polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px);
+}
+
+.summaryWords {
+  display: grid;
+  min-width: 0;
+  font-size: var(--type-small);
+}
+
+.summaryWords b {
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.summaryWords span {
+  color: var(--text-dim);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.error {
+  margin-top: 10px;
+  font-size: var(--type-small);
+  line-height: 1.4;
+  color: #ffb3aa;
+}
+
+.go {
+  margin-top: 10px;
+  flex: none;
+}
+
+.go:disabled {
+  color: var(--text-dim);
+  background: rgba(255, 255, 255, 0.07);
+}

@@ -5,6 +5,7 @@ import { useState } from "react";
 import { useSolanaI18n } from "../i18n/provider.tsx";
 import { AchievementBadge, RankAvatar, RankBadge, tilt } from "./badge.tsx";
 import { rankCopy, type AchievementWordId, type RankId } from "./rank-copy.ts";
+import { PaidAsChip } from "./programme-card.tsx";
 import styles from "./rewards.module.css";
 
 /**
@@ -70,9 +71,12 @@ export function BadgesCard({
     <section className={`${styles.panel} ${styles.badges}`} id="rewards-badges" aria-label={copy.badgesTitle}>
       <div className={styles.panelHead}>
         <h2 className={styles.title}>{copy.badgesTitle}</h2>
-        <span className={styles.chip} data-tone="quiet" translate="no">
-          <span aria-hidden="true">{copy.badgesHeld(held, total)}</span>
-          <span className={styles.srOnly}>{copy.badgesHeldAloud(held, total)}</span>
+        <span className={styles.chips}>
+          <span className={styles.chip} data-tone="quiet" translate="no">
+            <span aria-hidden="true">{copy.badgesHeld(held, total)}</span>
+            <span className={styles.srOnly}>{copy.badgesHeldAloud(held, total)}</span>
+          </span>
+          <PaidAsChip paidAs="STATUS" />
         </span>
       </div>
 

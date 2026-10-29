@@ -1,31 +1,10 @@
-.page {
-  display: grid;
-  gap: var(--ry-s5);
+/* Нагляд is the core's action page (SOL-C19): one column in the middle of the canvas — the notes, the positions and
+   where the notes go — the frame's canvas giving the edges. */
+.page:global(.ryntra-page--action) {
   width: 100%;
-  min-width: 0;
+  padding: 0;
 }
 
-.head {
-  display: grid;
-  gap: var(--ry-s2);
-}
-
-.head h1 {
-  margin: 0;
-  font-family: var(--ry-font-sans);
-  font-size: var(--ry-fs-page);
-  line-height: var(--ry-lh-tight);
-  letter-spacing: var(--ry-ls-head);
-  color: var(--ry-text);
-}
-
-.lead {
-  margin: 0;
-  max-width: 62ch;
-  font-size: var(--ry-fs-copy);
-  line-height: 1.55;
-  color: var(--ry-muted);
-}
 
 .section {
   display: grid;
@@ -56,12 +35,11 @@
   min-width: 0;
 }
 
-.card[data-tone="attention"] {
-  border-color: color-mix(in srgb, var(--ry-accent) 32%, var(--ry-border));
-}
-
+/* A card that needs the person, or a note not read yet, stands out by a firmer line — the orange is its one action's
+   (SOL-C19: the accent marks only the focus, the active step and the main action). */
+.card[data-tone="attention"],
 .card[data-unread="true"] {
-  border-color: color-mix(in srgb, var(--ry-accent) 22%, var(--ry-border));
+  border-color: var(--ry-border-strong);
 }
 
 .cardTop {
@@ -161,6 +139,12 @@
   border-radius: var(--ry-r-card);
 }
 
+/* The gate's action under its centred line, not at the card's left edge (UX-713): the page's buttons start at the
+   left everywhere else. */
+.page .gate :global(.rw-btn) {
+  justify-self: center;
+}
+
 .status {
   display: inline-flex;
   align-items: center;
@@ -174,8 +158,8 @@
 }
 
 .status[data-status="needs_attention"] {
-  color: var(--ry-accent);
-  border-color: color-mix(in srgb, var(--ry-accent) 45%, var(--ry-border));
+  color: var(--ry-text);
+  border-color: var(--ry-border-strong);
 }
 
 .status[data-status="watching"] {

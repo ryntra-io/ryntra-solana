@@ -7,7 +7,7 @@
  * default is the cabinet. Only a path is kept — no scheme, no host — so an
  * open redirect cannot be smuggled through a callback.
  */
-const ALLOWED = /^\/(app|solana|agents|admin)(\/|$|\?|#)/;
+const ALLOWED = /^\/(?:uk\/(?=app|solana))?(app|solana|agents|admin)(\/|$|\?|#)/;
 const MAX_LENGTH = 512;
 /* Whitespace and control characters never belong in a path we redirect to. */
 const UNSAFE = /[\s\u0000-\u001f]/;

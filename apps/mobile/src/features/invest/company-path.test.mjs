@@ -149,7 +149,7 @@ test('a holder on SPACEX’s own page is told to swap, with the issuer’s minut
   const en = companyPathView(spacexPath(), { mint: SPACEX, privateFeeBps: 100, holder: true, nowMs: NOW }, EN, 'en')
   assert.equal(
     en.line.text,
-    'Swap your SPACEX for SPCXx by Mar 12, 2027, 23:59 UTC — after the deadline the token expires worthless.',
+    'Swap your SPACEX for SPCXx by 12 Mar 2027, 23:59 UTC — after the deadline the token expires worthless.',
   )
 })
 
@@ -199,30 +199,30 @@ test('the same strip in English, as ryntra.io draws it', () => {
     {
       name: 'Private · PreStocks',
       state: 'passed',
-      lines: ['since Sep 16, 2025'],
+      lines: ['since 16 Sep 2025'],
       token: { symbol: 'SPACEX', here: false, nature: 'not a share · 1% fee' },
     },
-    { name: 'IPO', state: 'passed', lines: ['Jun 12, 2026', '$135 a share'], token: null },
-    { name: 'Exchange', state: 'passed', lines: ['Nasdaq · SPCX', 'since Jun 12, 2026'], token: null },
+    { name: 'IPO', state: 'passed', lines: ['12 Jun 2026', '$135 a share'], token: null },
+    { name: 'Exchange', state: 'passed', lines: ['Nasdaq · SPCX', 'since 12 Jun 2026'], token: null },
     {
       name: 'Solana',
       state: 'current',
-      lines: ['since Jun 12, 2026'],
+      lines: ['since 12 Jun 2026'],
       token: { symbol: 'SPCXx', here: true, nature: 'backed 1:1 · no vote' },
     },
   ])
   assert.equal(
     view.line.text,
-    'SPACEX holders: swap for SPCXx by Mar 12, 2027, 23:59 UTC — after the deadline SPACEX expires worthless.',
+    'SPACEX holders: swap for SPCXx by 12 Mar 2027, 23:59 UTC — after the deadline SPACEX expires worthless.',
   )
   assert.deepEqual(
     view.sources.map((source) => source.line),
     [
-      'SEC · FWP (pricing term sheet) · Jun 11, 2026 · read Sep 25, 2026',
-      'SEC · 424B4 (prospectus) · Jun 12, 2026 · read Sep 25, 2026',
-      'PreStocks · SpaceX · read Sep 25, 2026',
-      'The Cryptonomist · Jun 12, 2026 · read Sep 25, 2026',
-      'Jupiter · read Sep 25, 2026',
+      'SEC · FWP (pricing term sheet) · 11 Jun 2026 · read 25 Sep 2026',
+      'SEC · 424B4 (prospectus) · 12 Jun 2026 · read 25 Sep 2026',
+      'PreStocks · SpaceX · read 25 Sep 2026',
+      'The Cryptonomist · 12 Jun 2026 · read 25 Sep 2026',
+      'Jupiter · read 25 Sep 2026',
     ],
   )
 })
@@ -251,7 +251,7 @@ test('a company still private: its token at the first step, the rest not announc
       .slice(0, 2)
       .map((entry) => [entry.name, entry.lines, entry.token?.nature ?? null]),
     [
-      ['Private · PreStocks', ['since Sep 16, 2025'], 'not a share · 3% fee'],
+      ['Private · PreStocks', ['since 16 Sep 2025'], 'not a share · 3% fee'],
       ['IPO', ['not announced yet'], null],
     ],
   )
@@ -281,7 +281,7 @@ test('a closed window says so — by the server’s word or once the phone’s c
   )
   assert.deepEqual(byServer.line, {
     kind: 'swap',
-    text: 'The swap deadline for SPACEX passed on Mar 12, 2027 — the issuer no longer supports the token.',
+    text: 'The swap deadline for SPACEX passed on 12 Mar 2027 — the issuer no longer supports the token.',
     open: false,
   })
 })
@@ -326,7 +326,7 @@ test('what a token is: the chain’s fee as the web writes it, «не акція
 
 test('the deadline carries the issuer’s minute in UTC; a time that does not parse carries nothing', () => {
   assert.equal(pathDeadline('2027-03-12T23:59:00.000Z', 'uk'), '12.03.2027, 23:59 UTC')
-  assert.equal(pathDeadline('2027-03-12T23:59:00.000Z', 'en'), 'Mar 12, 2027, 23:59 UTC')
+  assert.equal(pathDeadline('2027-03-12T23:59:00.000Z', 'en'), '12 Mar 2027, 23:59 UTC')
   assert.equal(pathDeadline('later', 'uk'), null)
 })
 

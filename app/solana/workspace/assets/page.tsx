@@ -26,7 +26,7 @@ export default async function AssetPage({searchParams}:Props){
  const symbol=info?.symbol??FEATURED_MINTS.find(x=>x.mint===mint)?.code??(mint?mint.slice(0,4)+"…"+mint.slice(-4):null);
  const error=mint&&!valid?text("Check the token address"):raw&&"ok" in raw?text(READ_ERRORS[raw.code]):built&&!built.ok?text("The token's transfer rules could not be read"):null;
  return <div className={styles.asset}>
-   <header className={styles.header}><h1>{symbol??(text("Assets"))}</h1><Link className="rw-btn" href="/app/swap">{text("Back to Trade")}</Link></header>
+   <header className={styles.header}><h1>{symbol??(text("Assets"))}</h1><Link className="rw-btn" href="/app/swap">{text("Back to Terminal")}</Link></header>
    <form className={styles.find} action="/app/assets" method="get"><label htmlFor="asset-mint">{text("Token address")}</label><div><input id="asset-mint" name="mint" defaultValue={mint??""} autoComplete="off" spellCheck={false} required aria-describedby={error?"asset-error":undefined}/><button className="rw-btn" type="submit">{text("Open")}</button></div></form>
    {error?<p id="asset-error" role="alert" className={styles.error}>{error}</p>:null}
    {!mint?<nav className={styles.featured} aria-label={text("Assets")}>{FEATURED_MINTS.map(x=><Link key={x.mint} href={"/app/assets?mint="+x.mint}>{x.code}</Link>)}</nav>:null}

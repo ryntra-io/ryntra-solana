@@ -1,0 +1,122 @@
+/* The bridge stand (development only): plain glass panels on the city's night, tokens from city/styles/city.module.css. */
+
+.page {
+  position: absolute;
+  inset: 0;
+  overflow-y: auto;
+  padding: max(16px, env(safe-area-inset-top)) var(--gutter) 32px;
+  color: var(--ice);
+  font-family: var(--font-ui, system-ui), system-ui, sans-serif;
+  font-size: var(--type-body);
+}
+
+.title {
+  font-family: var(--font-display, system-ui), system-ui, sans-serif;
+  font-size: var(--type-headline);
+  font-weight: 900;
+  margin: 0 0 6px;
+}
+
+.note {
+  color: var(--text-dim);
+  margin: 0 0 16px;
+  line-height: 1.5;
+}
+
+.note a {
+  color: var(--amber);
+}
+
+.row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 0 0 16px;
+}
+
+.act,
+.quiet {
+  border: 1px solid var(--glass-edge);
+  background: var(--glass);
+  color: var(--ice);
+  padding: 10px 14px;
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+  text-decoration: none;
+}
+
+.act {
+  background: var(--amber);
+  border-color: var(--amber);
+  color: var(--ink-deep);
+}
+
+.panel {
+  border: 1px solid var(--glass-edge);
+  background: var(--glass);
+  padding: 12px 14px;
+  margin: 0 0 16px;
+  min-width: 0;
+}
+
+.head {
+  font-size: var(--type-small);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-dim);
+  margin: 0 0 10px;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 8px;
+  margin: 0 0 12px;
+}
+
+.mode {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  align-items: center;
+}
+
+.mode select {
+  background: var(--ink);
+  color: var(--ice);
+  border: 1px solid var(--graphite);
+  padding: 4px;
+}
+
+.columns {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 16px;
+}
+
+.log {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-family: ui-monospace, monospace;
+  font-size: var(--type-caption);
+  line-height: 1.6;
+  overflow-wrap: anywhere;
+}
+
+.log time {
+  color: var(--text-dim);
+}
+
+.ok {
+  color: var(--mint);
+}
+
+.no {
+  color: var(--flare);
+}
+
+.info {
+  color: var(--ice);
+}

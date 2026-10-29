@@ -2,13 +2,14 @@
 
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { NAV_WORDS } from "@ryntra/core/nav";
 
-import { Panel } from "@/app/shell/panel";
-import { connectEvmWallet, readEvmWalletAddress, readEvmWalletHint, watchEvmWalletAddress, writeEvmWalletHint } from "@/lib/base/wallet.client";
+import { NetworkDeposit } from "@/app/app/top-up/network-deposit";
 import { scaleRawAmount } from "@/lib/solana/amounts";
 import { readWalletHoldingsUntilComplete } from "@/lib/solana/holdings.client";
 import { catalogAssets, crossSwapOfferableRaw, crossSwapReserveRaw, defaultSwapAssetFor, POPULAR_BRIDGE_NETWORKS, displayRawAmount, parseHumanAmount, resolveSwapAsset, SOLANA_NATIVE_SOL_MINT, SOLANA_USDC_MINT, SWAP_NETWORKS, type SwapNetwork, type SwapSideRef } from "@/lib/swap/catalog";
 import { usdValueOfRaw } from "@/lib/swap/price";
+import { isDepositNetwork } from "@/lib/relay/deposit-address";
 import { classifySwapRoute } from "@/lib/swap/classify";
 import { bridgeTokenKey } from "@/lib/swap/bridge-client-state";
 import { buildSwapAssetRows, type SwapHolding } from "../trade/swap-assets.ts";
@@ -16,7 +17,14 @@ import { usdValue } from "../../../app/wallet-view-model.ts";
 import { FEATURED_MINTS } from "../assets/featured.ts";
 import { useSolanaConnection } from "../connection.tsx";
 import { useSolanaI18n } from "../i18n/provider.tsx";
-import { CrossSwapEngine, type EvmConnectOutcome } from "./cross-swap-engine.tsx";
+import { ConnectWalletButton } from "../wallet-gate.tsx";
+import { AssetMark, NetworkMark } from "../money/marks.tsx";
+import { formatUsdMoney } from "../spot/spot-format.ts";
+import { localFigure } from "../money/figures.ts";
+import { MoneyAction, MoneyCard, MoneyPage } from "../money/money-page.tsx";
+import { RecentTransfers } from "../money/recent-transfers.tsx";
+import { CrossSwapEngine } from "./cross-swap-engine.tsx";
+import { ResumeUnfinished } from "./resume-unfinished.tsx";
 import styles from "./bridge-surface.module.css";
 
 /**
@@ -84,12 +92,12 @@ function seedSide(network: string | undefined, asset: string | undefined, fallba
 }
 
 export function BridgeSurface({ seed }: { seed?: BridgeSurfaceSeed }) {
-  const { text } = useSolanaI18n();
+  const { text, locale } = useSolanaI18n();
   /* One version of the page: every fact of the quote — the route, its age,
      the approvals — and the source transaction are shown to everyone; a
      provider's failure code is not a customer's word and is shown to no one. */
   const pro = true;
-  const { wallets, connection, connect, disconnect } = useSolanaConnection();
+  const { connection, disconnect } = useSolanaConnection();
 
   const [from, setFrom] = useState<SwapSideRef>(() => seedSide(seed?.fromNetwork, seed?.fromAsset, { network: "solana", asset: SOLANA_NATIVE_SOL_MINT }));
   const [to, setTo] = useState<SwapSideRef>(() => seedSide(seed?.toNetwork, seed?.toAsset, { network: "solana", asset: SOLANA_USDC_MINT }));
@@ -110,15 +118,6 @@ export function BridgeSurface({ seed }: { seed?: BridgeSurfaceSeed }) {
   const refreshBalances = useCallback(() => setBalanceEpoch(value => value + 1), []);
   const pickerRef = useRef<HTMLDivElement>(null);
   const pickerTrigger = useRef<HTMLButtonElement | null>(null);
-  const [evmAddress, setEvmAddress] = useState<string | null>(null);
-  const [evmBalance, setEvmBalance] = useState<Readonly<{
-    network: SwapNetwork;
-    owner: string;
-    asset: string;
-    raw: string | null;
-    decimals: number | null;
-    nativeRaw: string | null;
-  }> | null>(null);
   /** Dollars per whole unit, by `network:asset`. Absent means "not known", which is a state this card renders. */
   const [unitUsd, setUnitUsd] = useState<Readonly<Record<string, number>>>({});
   /**
@@ -133,7 +132,7 @@ export function BridgeSurface({ seed }: { seed?: BridgeSurfaceSeed }) {
   const [networkStatus, setNetworkStatus] = useState<Readonly<Record<string, { offerable: boolean; reason: string | null }>> | null>(null);
   type QuoteFacts = Readonly<{ expectedRaw: string; decimals: number; rentRaw: string | null; expired: boolean }>;
   const [crossSnapshot, setCrossSnapshot] = useState<{ key: string; facts: QuoteFacts } | null>(null);
-  const selectionKey = JSON.stringify([from, to, amount, connection?.address, evmAddress]);
+  const selectionKey = JSON.stringify([from, to, amount, connection?.address]);
   const crossFacts = crossSnapshot?.key === selectionKey ? crossSnapshot.facts : null;
   const setCrossFacts = useCallback((facts: QuoteFacts | null) => setCrossSnapshot(facts ? { key: selectionKey, facts } : null), [selectionKey]);
   const searchTicket = useRef(0);
@@ -264,43 +263,6 @@ export function BridgeSurface({ seed }: { seed?: BridgeSurfaceSeed }) {
     return () => controller.abort();
   }, [connection, from.network, balanceEpoch]);
 
-  /* The EVM balance is read for the network and the asset actually chosen.
-     It used to be read from the bridge's CCTP route, which asks a *direction*
-     rather than a network and knows only USDC and the native coin. A
-     `robinhood` source therefore asked **Ethereum** — a chain the person does
-     not hold this money on — and USDG, the asset the entire Robinhood Chain
-     lane exists for, could not be read at all. No balance is no `Available`
-     line and no 25/50/75/MAX, which is exactly what a person saw. */
-  useEffect(() => {
-    if (!evmAddress || from.network === "solana") {
-      setEvmBalance(null);
-      return;
-    }
-    let live = true;
-    const network = from.network;
-    const asset = from.asset;
-    (async () => {
-      const response = await postJson<{ data?: { raw?: string | null; decimals?: number | null; nativeRaw?: string | null } }>("/api/swap/balance", {
-        network,
-        owner: evmAddress,
-        asset,
-      });
-      if (!live) return;
-      setBalanceFailed(response?.data?.raw == null);
-      setEvmBalance({
-        network,
-        owner: evmAddress,
-        asset,
-        raw: response?.data?.raw ?? null,
-        decimals: response?.data?.decimals ?? null,
-        nativeRaw: response?.data?.nativeRaw ?? null,
-      });
-    })();
-    return () => {
-      live = false;
-    };
-  }, [evmAddress, from.network, from.asset, balanceEpoch]);
-
   /* What the two assets are worth, so an amount is a sum of money rather than a
      number. Both legs are asked together because both change together, and the
      answer is deliberately allowed to be empty: a price decides nothing here —
@@ -333,57 +295,14 @@ export function BridgeSurface({ seed }: { seed?: BridgeSurfaceSeed }) {
     };
   }, [from.network, from.asset, to.network, to.asset]);
 
-  /**
-   * An EVM wallet that has already granted this origin is read back without a
-   * prompt — but only when this pair has an EVM side, and only when one was
-   * connected here before.
-   *
-   * The first version ran on mount, always. `eth_accounts` is documented as the
-   * silent half of `eth_requestAccounts`, and for a wallet that speaks only
-   * Ethereum it is. **Phantom is not that wallet.** It injects `window.ethereum`
-   * beside its Solana provider, and when the person's active Phantom account is
-   * a Solana one it answers the call with a modal of its own:
-   *
-   * > Unsupported account — This website is trying to use Ethereum, which this
-   * > Solana account doesn't support.
-   *
-   * A person met that on `ryntra.io` while doing a Solana-to-Solana swap, on
-   * a card where no Ethereum anything was on screen. A silent read is only
-   * silent in the wallets that were tested; the way to not interrupt somebody is
-   * not to ask.
-   *
-   * So two gates, and the pair is the important one: a Solana pair never touches
-   * `window.ethereum` at all. The hint is the second — a person who has never
-   * connected an EVM wallet here is never asked about one, exactly as the Solana
-   * side already works (`WALLET_HINT_KEY` in `connection.tsx`).
+  /*
+   * One wallet — Solana. This page asks no
+   * Ethereum-style wallet anything: money comes in from another network to a
+   * deposit address (`NetworkDeposit`), and money going out is signed by the
+   * Solana wallet with the receiving address typed as text. It also keeps the
+   * old lesson of this file — Phantom answers an Ethereum call with its own
+   * «Unsupported account» modal on a Solana account — moot: nothing here reads it.
    */
-  const pairTouchesEvm = from.network !== "solana" || to.network !== "solana";
-  const hasEvmAddress = evmAddress !== null;
-  useEffect(() => {
-    if (!pairTouchesEvm) return;
-    let live = true;
-    void (async () => {
-      if (!readEvmWalletHint()) return;
-      const address = await readEvmWalletAddress();
-      if (live && address) setEvmAddress(address);
-    })();
-    const stop = watchEvmWalletAddress((address) => { if (readEvmWalletHint()) setEvmAddress(address); });
-    return () => {
-      live = false;
-      stop();
-    };
-  }, [pairTouchesEvm, hasEvmAddress]);
-
-  /* The outcome goes back to the caller: a connect button that silently does
-     nothing when no wallet is installed is indistinguishable from a broken one. */
-  const connectEvm = useCallback(async (): Promise<EvmConnectOutcome> => {
-    const wallet = await connectEvmWallet();
-    if (wallet.ok) {
-      setEvmAddress(wallet.address);
-      return "CONNECTED";
-    }
-    return wallet.code === "NO_WALLET" ? "NO_WALLET" : wallet.code === "REFUSED" ? "REFUSED" : "FAILED";
-  }, []);
 
   const fromBalance: Readonly<{ raw: string; decimals: number }> | null = (() => {
     if (!fromAsset) return null;
@@ -395,17 +314,8 @@ export function BridgeSurface({ seed }: { seed?: BridgeSurfaceSeed }) {
           : holdings.rows.find((entry) => entry.mint === fromAsset.solanaMint) ?? null;
       return row ? { raw: row.spendableRaw, decimals: row.decimals } : holdings.complete && fromAsset.decimals !== null ? { raw: "0", decimals: fromAsset.decimals } : null;
     }
-    /* The reading has to be about this network, this wallet and this asset, or
-       it is about somebody else's money. The old test was the network alone,
-       which is how a figure read for one asset could survive a change to
-       another. */
-    if (!evmBalance || evmBalance.network !== from.network || evmBalance.asset !== from.asset || evmBalance.owner !== evmAddress) return null;
-    /* Decimals come from the catalogue when it knows the asset and from the
-       token itself when it does not; neither is ever guessed, so an unreadable
-       scale shows no balance rather than a wrong one. */
-    const decimals = fromAsset.decimals ?? evmBalance.decimals;
-    if (evmBalance.raw === null || decimals === null) return null;
-    return { raw: evmBalance.raw, decimals };
+    /* Another network's balance is not read: no wallet of that network is connected here. */
+    return null;
   })();
 
   /* ── Asset search, on every network ──
@@ -447,6 +357,17 @@ export function BridgeSurface({ seed }: { seed?: BridgeSurfaceSeed }) {
     const row = known[bridgeTokenKey(side.network, side.asset)];
     if (row?.symbol) return row.symbol;
     return `${side.asset.slice(0, 4)}…`;
+  };
+
+  /**
+   * What identifies a coin for its mark (B18): on Solana its mint; elsewhere nothing for a coin of the networks' own
+   * catalogue (it is drawn by its ticker), and its contract for anything else — a token found by search is known only
+   * by its address, so it never wears the picture of the coin whose ticker it copies.
+   */
+  const markMint = (side: SwapSideRef): string | null => {
+    const resolved = resolveSwapAsset(side);
+    if (side.network === "solana") return resolved?.solanaMint ?? side.asset;
+    return resolved?.catalog ? null : side.asset;
   };
 
   const optionsFor = (network: SwapNetwork): readonly Readonly<{ asset: string; code: string; note: string | null; unverified?: boolean }>[] => {
@@ -530,20 +451,9 @@ export function BridgeSurface({ seed }: { seed?: BridgeSurfaceSeed }) {
     polygon: text("Polygon"),
     bnb: text("BNB Chain"),
     robinhood: text("Robinhood Chain"),
+    arc: text("Arc"),
   };
   const networkName = (network: SwapNetwork) => networkLabel[network];
-  /* Keyed for the same reason as the labels above, and read out to assistive
-     technology while the chip itself shows the shorter word. */
-  const connectWalletLabel: Record<SwapNetwork, string> = {
-    solana: text("Connect a Solana wallet"),
-    base: text("Connect a Base wallet"),
-    ethereum: text("Connect an Ethereum wallet"),
-    arbitrum: text("Connect an Arbitrum wallet"),
-    optimism: text("Connect an Optimism wallet"),
-    polygon: text("Connect a Polygon wallet"),
-    bnb: text("Connect a BNB Chain wallet"),
-    robinhood: text("Connect a Robinhood Chain wallet"),
-  };
   const kindLabel = (() => {
     if (!classification.ok) {
       switch (classification.reason) {
@@ -556,16 +466,18 @@ export function BridgeSurface({ seed }: { seed?: BridgeSurfaceSeed }) {
           return text("Swaps inside one Ethereum-style network are not offered yet");
         case "ASSET_NOT_ROUTABLE_ON_NETWORK":
           return text("That network will not carry that asset");
+        case "ARRIVAL_ONLY_NETWORK":
+          return text("Arc receives here, it does not send");
         case "UNKNOWN_ASSET":
           return text("Pick an asset on both sides");
         default:
           return text("Not available for this pair");
       }
     }
-    return `${networkName(from.network)} → ${networkName(to.network)}`;
+    /* A pair that can be carried needs no line: the two legs already say the direction (B18 — no badge, no dotted row). */
+    return null;
   })();
 
-  const badge = classification.ok ? `${networkName(from.network)} → ${networkName(to.network)}` : text("Not available");
   const solanaSigner = connection ? { wallet: connection.wallet, address: connection.address } : null;
 
   /* What the receive leg will actually be, in raw units — kept as figures so
@@ -597,10 +509,10 @@ export function BridgeSurface({ seed }: { seed?: BridgeSurfaceSeed }) {
     const value = usdValueOfRaw(raw, decimals, unit);
     if (value === null || value <= 0) return null;
     /* A sum below a cent is a real sum, and rounding it to nothing would say
-       the opposite of what is true. */
-    if (value < 0.005) return "≈ < $0.01";
-    const [whole, cents] = value.toFixed(2).split(".");
-    return `≈ $${whole.replace(/\B(?=(\d{3})+(?!\d))/g, ",")}.${cents}`;
+       the opposite of what is true. In the page's own number language (B18). */
+    const numbers = locale === "uk" ? "uk-UA" : "en-US";
+    if (value < 0.005) return `≈ < ${formatUsdMoney(0.01, numbers)}`;
+    return `≈ ${formatUsdMoney(value, numbers)}`;
   };
 
   /**
@@ -617,6 +529,38 @@ export function BridgeSurface({ seed }: { seed?: BridgeSurfaceSeed }) {
    * layout: it is the same form pointed the other way.
    */
   const outbound = from.network === "solana";
+
+  /*
+   * A transfer already under way keeps its engine. Before SOL-W1 a transfer
+   * could start on another network; one saved in this browser
+   * (`ryntra.solana.cross-swap-run.v1`, the engine's own record) is still read
+   * back by the engine, which tracks it to its receipt and clears the record.
+   * While it exists the page shows the engine for it rather than the deposit
+   * address — «Незавершений переказ» leads exactly here. The engine clears the
+   * record the moment the transfer settles, so the view holds on until the
+   * person leaves the result («New swap»): the receipt stays on screen.
+   */
+  const [runOpen, setRunOpen] = useState(false);
+  useEffect(() => {
+    const read = () => {
+      try {
+        /* The engine's own test of a record (`readRun`): a digest and a pair, or it is not a transfer to show. */
+        const raw = window.localStorage.getItem("ryntra.solana.cross-swap-run.v1");
+        const run = raw ? (JSON.parse(raw) as { intentDigest?: unknown; tupleId?: unknown }) : null;
+        if (run && typeof run.intentDigest === "string" && /^0x[0-9a-f]{64}$/.test(run.intentDigest) && typeof run.tupleId === "string" && run.tupleId) setRunOpen(true);
+      } catch {
+        /* No storage, no saved transfer to show. */
+      }
+    };
+    read();
+    window.addEventListener("ryntra:bridge-run", read);
+    window.addEventListener("storage", read);
+    return () => {
+      window.removeEventListener("ryntra:bridge-run", read);
+      window.removeEventListener("storage", read);
+    };
+  }, []);
+  const depositView = !outbound && !runOpen;
 
   const flipDirection = () => {
     /* The pair is mirrored rather than reset. Somebody who chose Base USDC and
@@ -658,7 +602,7 @@ export function BridgeSurface({ seed }: { seed?: BridgeSurfaceSeed }) {
       <div className={styles.menuAnchor} data-menu-anchor>
         {fixed ? (
           <span className={styles.segmentFixed}>
-            <span className={`${styles.glyph} ${styles.glyphNetwork}`} aria-hidden>{networkName(ref.network).slice(0, 1)}</span>
+            <NetworkMark network={ref.network} size={20} />
             <span translate="no">{networkName(ref.network)}</span>
           </span>
         ) : (
@@ -671,7 +615,7 @@ export function BridgeSurface({ seed }: { seed?: BridgeSurfaceSeed }) {
           aria-label={`${side === "from" ? text("You send") : text("You receive")}: ${networkName(ref.network)}`}
           onClick={() => setMenu((current) => (current === side ? null : side))}
         >
-          <span className={`${styles.glyph} ${styles.glyphNetwork}`} aria-hidden>{networkName(ref.network).slice(0, 1)}</span>
+          <NetworkMark network={ref.network} size={20} />
           <span translate="no">{networkName(ref.network)}</span>
           <span className={styles.caret} aria-hidden>▾</span>
         </button>
@@ -694,7 +638,7 @@ export function BridgeSurface({ seed }: { seed?: BridgeSurfaceSeed }) {
                        that is visibly unavailable teaches them to come back. */
                     onClick={() => carrying && chooseNetwork(side, candidate)}
                   >
-                    <span className={`${styles.glyph} ${styles.glyphNetwork}`} aria-hidden>{networkName(candidate).slice(0, 1)}</span>
+                    <NetworkMark network={candidate} size={20} />
                     <span translate="no">{networkName(candidate)}</span>
                     {carrying ? null : <span className={styles.menuNote}>{text("Not carrying right now")}</span>}
                   </button>
@@ -717,7 +661,7 @@ export function BridgeSurface({ seed }: { seed?: BridgeSurfaceSeed }) {
         }}
         aria-label={`${side === "from" ? text("You send") : text("You receive")}: ${codeFor(ref)}. ${text("Choose an asset")}`}
       >
-        <span className={`${styles.glyph} ${styles.glyphAsset}`} aria-hidden>{codeFor(ref).slice(0, 1)}</span>
+        <AssetMark symbol={codeFor(ref)} mint={markMint(ref)} size={22} />
         <span translate="no">{codeFor(ref)}</span>
         <span className={styles.caret} aria-hidden>▾</span>
       </button>
@@ -726,73 +670,61 @@ export function BridgeSurface({ seed }: { seed?: BridgeSurfaceSeed }) {
   };
 
   /**
-   * Which wallet this leg is attached to, on the leg itself.
+   * The Solana wallet, on the leg it signs for.
    *
-   * A Solana wallet has always shown as a chip in the shell header. An
-   * Ethereum-style one showed **nowhere** — on pairs whose sending side is the
-   * EVM one, which is every Robinhood Chain pair. A person could not tell a
-   * connected wallet from an unconnected one, and with the balance missing too
-   * there was nothing on the surface that even implied a wallet existed.
-   *
-   * It sits on the leg rather than in one corner because a cross-chain swap has
-   * two of them, doing two different jobs: one signs, the other is paid. The
-   * network beside it names which chain it is on, so the chip carries only the
-   * address and the one action.
+   * Only the Solana leg carries one: the other network's leg is an address the
+   * person types (the engine's «To your … address»), never a wallet to connect.
    */
   const walletChip = (side: Side) => {
     const network = side === "from" ? from.network : to.network;
-    const evm = network !== "solana";
-    const address = evm ? evmAddress : connection?.address ?? null;
-    const label = connectWalletLabel[network];
-    if (!address) {
-      return (
-        <button
-          className={styles.walletConnect}
-          type="button"
-          aria-label={label}
-          onClick={() => (evm ? void connectEvm() : void connect(wallets.length === 1 ? wallets[0]?.name : undefined))}
-        >
-          {text("Connect")}
-        </button>
-      );
-    }
+    if (network !== "solana") return null;
+    const address = connection?.address ?? null;
+    /* No second connect control beside the leg (B14): the form's own action is the guest's one button. */
+    if (!address) return null;
     return (
       <span className={styles.wallet}>
         <span className={styles.walletDot} aria-hidden />
         <span className={styles.walletAddress} translate="no" title={address}>
           {address.length > 12 ? `${address.slice(0, 5)}…${address.slice(-4)}` : address}
         </span>
-        <button
-          className={styles.walletAction}
-          type="button"
-          aria-label={`${text("Disconnect")} · ${networkName(network)}`}
-          /* An EVM wallet cannot be disconnected from a page — the permission
-             lives in the extension — so this forgets the address here, which is
-             what every dapp means by the word and what a person expects it to
-             do: this surface stops acting for that account. */
-          onClick={() => {
-            if (!evm) {
-              disconnect();
-              return;
-            }
-            /* Forgetting the hint as well: otherwise the next page load asks the
-               wallet about a connection this person has just let go. */
-            writeEvmWalletHint(false);
-            setEvmAddress(null);
-          }}
-        >
+        <button className={styles.walletAction} type="button" aria-label={`${text("Disconnect")} · ${networkName(network)}`} onClick={() => disconnect()}>
           {text("Disconnect")}
         </button>
       </span>
     );
   };
 
-  return (
+  const lang = locale === "uk" ? "uk" : "en";
+  const form = (
     <>
-      <Panel id="bridge-surface" title={text("Bridge")} w={4} h={16} essential badge={badge} tone="evidence">
-        <div className={styles.card}>
+      {/* A transfer that outlived its tab comes first: it is older money and the more urgent question. */}
+      <ResumeUnfinished />
+      <MoneyCard className={styles.card}>
           {tokenFailed ? <p className={styles.note}>{text("Token details could not be loaded.")} <button type="button" className={styles.inlineAction} onClick={() => setTokenEpoch(value => value + 1)}>{text("Try again")}</button></p> : null}
-          {balanceFailed ? <p className={styles.note}>{text("Balance unavailable")} <button type="button" className={styles.inlineAction} onClick={refreshBalances}>{text("Try again")}</button></p> : null}
+          {!depositView && balanceFailed ? <p className={styles.note}>{text("Balance unavailable")} <button type="button" className={styles.inlineAction} onClick={refreshBalances}>{text("Try again")}</button></p> : null}
+          {depositView ? (
+            /* Into Solana: an address to send USDC to on the other network, no second wallet (SOL-W1). */
+            connection ? (
+              <NetworkDeposit
+                key={connection.address}
+                recipient={connection.address}
+                locale={locale}
+                primary
+                pinned
+                initial={isDepositNetwork(from.network) ? from.network : null}
+                onNetwork={(network) => setFrom({ network, asset: "USDC" })}
+              />
+            ) : (
+              <div className={styles.inbound}>
+                <p className={styles.note}>{text("Connect a Solana wallet to get an address for USDC from another network.")}</p>
+                {/* The guest's one button (B14), pinned on a phone (B18). */}
+                <MoneyAction>
+                  <ConnectWalletButton block />
+                </MoneyAction>
+              </div>
+            )
+          ) : (
+          <>
           <div className={styles.legs}>
             {/* You send */}
             <section className={styles.leg} data-side="from" aria-label={text("You send")}>
@@ -801,29 +733,6 @@ export function BridgeSurface({ seed }: { seed?: BridgeSurfaceSeed }) {
                   <span className={styles.legLabel}>{text("You send")}</span>
                   {walletChip("from")}
                 </span>
-                {fromBalance ? (
-                  <div className={styles.balanceRow}>
-                    <span className={styles.balanceText}>
-                      {/* `Available`, not `Balance`: the figure is the spendable
-                          one, with the fee reserve withheld, and on a cross-chain
-                          pair the provider's own cost as well. */}
-                      {text("Available")} <b translate="no">{displayRawAmount(fromBalance.raw, fromBalance.decimals)} {codeFor(from)}</b>
-                    </span>
-                    <div className={styles.shares} role="group" aria-label={text("Use part of the balance")}>
-                      <button className={styles.share} type="button" disabled={locked} onClick={() => fillShare(1n, 4n)}>25%</button>
-                      <button className={styles.share} type="button" disabled={locked} onClick={() => fillShare(1n, 2n)}>50%</button>
-                      <button className={styles.share} type="button" disabled={locked} onClick={() => fillShare(3n, 4n)}>75%</button>
-                      <button className={styles.share} type="button" disabled={locked} onClick={() => fillShare(1n, 1n)} title={text("Use the full spendable balance")}>
-                        {text("MAX")}
-                      </button>
-                    </div>
-                  </div>
-                ) : null}
-                {heldBack ? (
-                  <div className={styles.heldBack}>
-                    <span translate="no">{heldBack} {codeFor(from)}</span> {text("stays for the network fee")}
-                  </div>
-                ) : null}
               </div>
               <div className={styles.legRow}>
                 <div className={styles.amountCell}>
@@ -833,7 +742,7 @@ export function BridgeSurface({ seed }: { seed?: BridgeSurfaceSeed }) {
                     disabled={locked}
                     inputMode="decimal"
                     aria-label={text("Amount to send")}
-                    placeholder="0.0"
+                    placeholder="0"
                     /* The number itself carries the state; a person reads the figure, not the button. */
                     data-state={overBalance ? "over" : undefined}
                     aria-invalid={overBalance ? true : undefined}
@@ -847,6 +756,30 @@ export function BridgeSurface({ seed }: { seed?: BridgeSurfaceSeed }) {
                 </div>
                 {selector("from", from)}
               </div>
+              {/* Under the amount, as on «Надіслати» (B18): on a phone the figure itself stays in the top third. */}
+              {fromBalance ? (
+                <div className={styles.balanceRow}>
+                  <span className={styles.balanceText}>
+                    {/* `Available`, not `Balance`: the figure is the spendable
+                        one, with the fee reserve withheld, and on a cross-chain
+                        pair the provider's own cost as well. */}
+                    {text("Available")} <b translate="no">{localFigure(displayRawAmount(fromBalance.raw, fromBalance.decimals), locale)} {codeFor(from)}</b>
+                  </span>
+                  <div className={styles.shares} role="group" aria-label={text("Use part of the balance")}>
+                    <button className={styles.share} type="button" disabled={locked} onClick={() => fillShare(1n, 4n)}>25%</button>
+                    <button className={styles.share} type="button" disabled={locked} onClick={() => fillShare(1n, 2n)}>50%</button>
+                    <button className={styles.share} type="button" disabled={locked} onClick={() => fillShare(3n, 4n)}>75%</button>
+                    <button className={styles.share} type="button" disabled={locked} onClick={() => fillShare(1n, 1n)} title={text("Use the full spendable balance")}>
+                      {text("MAX")}
+                    </button>
+                  </div>
+                </div>
+              ) : null}
+              {heldBack ? (
+                <div className={styles.heldBack}>
+                  <span translate="no">{localFigure(heldBack, locale)} {codeFor(from)}</span> {text("stays for the network fee")}
+                </div>
+              ) : null}
             </section>
 
             <div className={styles.seam}>
@@ -874,7 +807,7 @@ export function BridgeSurface({ seed }: { seed?: BridgeSurfaceSeed }) {
                       rendering bug to anyone who has not been told. */}
                   <span className={styles.amountOut} data-state={quoteExpired ? "expired" : receiveDisplay ? "ready" : "waiting"} translate="no">
                     {receiveEstimated ? <span className={styles.approx}>≈</span> : null}
-                    {receiveDisplay ?? "0.0"}
+                    {receiveDisplay ? localFigure(receiveDisplay, locale) : "0"}
                   </span>
                   {quoteExpired ? <span className={styles.expiredMark}>{text("Expired")}</span> : null}
                   {receiveUsd ? (
@@ -888,10 +821,13 @@ export function BridgeSurface({ seed }: { seed?: BridgeSurfaceSeed }) {
             </section>
           </div>
 
-          <div className={styles.kind} data-tone={classification.ok ? "on" : "off"}>
-            <span className={styles.kindDot} aria-hidden />
-            <span className={styles.kindWord}>{kindLabel}</span>
-          </div>
+          {/* A pair that cannot be carried says why in one line; one that can needs no line (B18). */}
+          {kindLabel ? (
+            <div className={styles.kind} data-tone="off">
+              <span className={styles.kindDot} aria-hidden />
+              <span className={styles.kindWord}>{kindLabel}</span>
+            </div>
+          ) : null}
 
           {classification.ok && classification.kind === "CROSS_SWAP" ? (
             <CrossSwapEngine
@@ -899,21 +835,22 @@ export function BridgeSurface({ seed }: { seed?: BridgeSurfaceSeed }) {
               amount={amount}
               pro={pro}
               solana={solanaSigner}
-              evmAddress={evmAddress}
-              onConnectEvm={connectEvm}
-              onConnectSolana={() => void connect(wallets.length === 1 ? wallets[0]?.name : undefined)}
               onQuote={setCrossFacts}
               onLocked={setLocked}
               onSettled={refreshBalances}
-              onReset={() => setAmount("")}
+              onReset={() => {
+                setAmount("");
+                setRunOpen(false);
+              }}
               /* One correction, applied for the person rather than asked of
                  them. The engine knows the arithmetic, this side knows the
                  decimals, so the raw figure crosses and is scaled here. */
               onAmountCorrected={(raw) => setAmount(scaleRawAmount(raw, offerable?.decimals ?? fromAsset?.decimals ?? 0))}
               offerableRaw={offerable?.raw ?? null}
-              gasBalanceRaw={from.network === "solana" ? null : (evmBalance?.network === from.network && evmBalance.owner === evmAddress && evmBalance.asset === from.asset ? evmBalance.nativeRaw : null)}
             />
           ) : null}
+          </>
+          )}
 
           {/* The reverse journey, small and always available: bringing funds
               in is the page, and moving them out is a line under it rather than
@@ -924,14 +861,14 @@ export function BridgeSurface({ seed }: { seed?: BridgeSurfaceSeed }) {
             </button>
           </p>
 
-          {!classification.ok ? (
+          {!depositView && !classification.ok ? (
             classification.reason === "SAME_NETWORK_IS_SWAP" ? (
               /* Not a dead end: this is a real pair, and it has a page. Bridge
                  refuses it rather than carrying it, because Relay's own Solana
                  route is Jupiter with a toll in front — the person would pay
                  more for the same liquidity and be told nothing. */
               <p className={styles.note}>
-                {text("Both sides are on Solana, so this is a swap rather than a bridge.")}{" "}
+                {text("Both sides are on Solana, so this is a swap, not a move between networks.")}{" "}
                 <Link className={styles.noteLink} href="/app/swap">
                   {text("Swap it on Solana")}
                 </Link>
@@ -943,8 +880,12 @@ export function BridgeSurface({ seed }: { seed?: BridgeSurfaceSeed }) {
                        its router refuses every one of them, so "not carried" is
                        the truth and "no route today" would not be. */
                     text("This network's router refuses that asset outright, so no amount of it can be moved here.")
+                  : classification.reason === "ARRIVAL_ONLY_NETWORK"
+                    ? /* Arc pays its gas in the USDC being sent; leaving Arc is
+                         done in Ryntra on Arc, which reserves it properly. */
+                      text("Money arrives on Arc from here. To move it out of Arc, use Ryntra on Arc.")
                   : classification.reason === "EVM_SAME_NETWORK"
-                    ? text("Choose a different network on one side. Bridge moves value between networks.")
+                    ? text("Choose a different network on one side: this page moves money between networks.")
                     : classification.reason === "UNKNOWN_ASSET"
                       ? text("Pick an asset on both sides.")
                       : /* No written list of pairs: what can be done is whatever
@@ -953,8 +894,21 @@ export function BridgeSurface({ seed }: { seed?: BridgeSurfaceSeed }) {
               </p>
             )
           ) : null}
-        </div>
-      </Panel>
+      </MoneyCard>
+    </>
+  );
+
+  return (
+    <>
+      <MoneyPage
+        id="bridge"
+        title={NAV_WORDS[lang].items.bridge}
+        help={text("USDC from another network to your Solana wallet by an address, or from Solana to another network — signed by your Solana wallet.")}
+        lang={lang}
+        form={form}
+        aside={<RecentTransfers kind="networks" title={text("Recent moves between networks")} />}
+      />
+
 
       {picker ? (
         <div
@@ -1004,7 +958,7 @@ export function BridgeSurface({ seed }: { seed?: BridgeSurfaceSeed }) {
                 return (
                   <li key={entry.asset}>
                     <button className={styles.pickerItem} type="button" data-selected={selected ? "true" : "false"} onClick={() => chooseAsset(picker, entry.asset)}>
-                      <span className={`${styles.glyph} ${styles.glyphAsset}`} aria-hidden>{entry.code.slice(0, 1)}</span>
+                      <AssetMark symbol={entry.code} mint={markMint({ network: picker === "from" ? from.network : to.network, asset: entry.asset })} size={28} />
                       <span className={styles.pickerMeta}>
                         <span translate="no">{entry.code}</span>
                         {/* The address, always, and not only for the unvouched:

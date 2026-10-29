@@ -190,8 +190,8 @@ export function navigationFromManifest(
 
   /* Simple is one block of four; Pro is one block per module.
    *
-   * Both used to be a single group, and in Pro that made the rail read as
-   * one undivided heap — fourteen
+   * Both used to be a single group, and in Pro that is what the founder was
+   * looking at when they said the rail was *«вся в кучу змішане»* — fourteen
    * rows in one column, every module and every surface inside it sharing one
    * uninterrupted list, with no boundary between `Providers` and `Portfolio`.
    * Indenting the children was not enough: indentation says "under", and what

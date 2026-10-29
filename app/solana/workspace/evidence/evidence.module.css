@@ -92,9 +92,9 @@
 
 .lead {
   margin: 0;
-  font-size: var(--ry-fs-body);
-  line-height: var(--ry-lh-body);
-  color: var(--ry-text);
+  font-size: var(--ry-fs-dense);
+  line-height: 1.45;
+  color: var(--ry-muted);
 }
 
 .muted {

@@ -1,11 +1,12 @@
 import type { MetadataRoute } from "next";
 import { CUSTOMER_REDIRECTS } from "../lib/product/customer-routing.ts";
+import { LANDING_IS_LIVE } from "../lib/site/home-to-app.ts";
 import { hasUkAddress } from "../lib/site/localized.ts";
-import { COMPANY_PAGES_UPDATED, DOCS_UPDATED, HOME_UPDATED, LANDING_UPDATED, MARKETS_UPDATED } from "../lib/site/page-dates.ts";
+import { COMPANY_PAGES_UPDATED, DOCS_UPDATED, HOME_UPDATED, LANDING_UPDATED, MARKETS_UPDATED, MISSION_CONTROL_UPDATED } from "../lib/site/page-dates.ts";
 import { DOC_PAGES, docsHref } from "./docs/content/index.ts";
-import { APP_HOME_PATH, APP_MARKETS_PATH, languageAlternates, localizedUrl } from "./seo.ts";
+import { APP_HOME_PATH, APP_MARKETS_PATH, languageAlternates, localizedUrl, SITE } from "./seo.ts";
 
-export { COMPANY_PAGES_UPDATED, DOCS_UPDATED, HOME_UPDATED, LANDING_UPDATED, MARKETS_UPDATED };
+export { COMPANY_PAGES_UPDATED, DOCS_UPDATED, HOME_UPDATED, LANDING_UPDATED, MARKETS_UPDATED, MISSION_CONTROL_UPDATED };
 
 /**
  * The sitemap is where the site says what it wants found — and only that.
@@ -25,7 +26,8 @@ export { COMPANY_PAGES_UPDATED, DOCS_UPDATED, HOME_UPDATED, LANDING_UPDATED, MAR
  * `/uk` and the same path — each entry naming the pair and `x-default` as
  * `xhtml:link`: the landing, Home, Markets, the public pages, the
  * documentation and the companies' pages the shelf opens. The legal texts are
- * English only until a lawyer's word.
+ * English only until a lawyer's word. The creator partner Terms name their
+ * language in the query (`?lang=en|uk`) and are listed at both.
  *
  * What is deliberately absent: the rest of the cabinet (`/app/*`, `noindex`);
  * older pages kept for whoever holds their link, not offered to the index;
@@ -51,7 +53,7 @@ export const PUBLIC_PAGES: readonly PublicPage[] = [
   { path: "/docs", priority: 0.8, updated: DOCS_UPDATED, changeFrequency: "weekly" },
   ...DOC_PAGES.filter((page) => page.slug).map((page): PublicPage => ({
     path: docsHref(page.slug),
-    priority: page.group === "start" || page.group === "invest" ? 0.7 : 0.6,
+    priority: page.group === "start" || page.group === "trade" ? 0.7 : 0.6,
     updated: DOCS_UPDATED,
     changeFrequency: "monthly",
   })),
@@ -78,6 +80,26 @@ export const APP_PAGES: readonly PublicPage[] = [
   { path: APP_HOME_PATH, priority: 0.9, updated: HOME_UPDATED, changeFrequency: "weekly" },
   { path: APP_MARKETS_PATH, priority: 0.8, updated: MARKETS_UPDATED, changeFrequency: "weekly" },
 ];
+
+/**
+ * The creator partner programme's public Terms. Its
+ * language is in the query, not a `/uk` prefix — `?lang=en` and `?lang=uk`,
+ * each the canonical address the page itself names, the pair as alternates.
+ */
+export const PARTNER_TERMS_PATH = "/promo/partners/terms";
+export const PARTNER_TERMS_UPDATED = "2026-10-17";
+
+function partnerTermsEntries(): Entry[] {
+  const at = (locale: "en" | "uk") => `${SITE}${PARTNER_TERMS_PATH}?lang=${locale}`;
+  const languages = { en: at("en"), uk: at("uk"), "x-default": at("en") };
+  return (["en", "uk"] as const).map((locale) => ({
+    url: at(locale),
+    lastModified: new Date(`${PARTNER_TERMS_UPDATED}T00:00:00.000Z`),
+    changeFrequency: "monthly",
+    priority: 0.4,
+    alternates: { languages },
+  }));
+}
 
 const redirected = new Set(CUSTOMER_REDIRECTS.map((row) => row.source));
 
@@ -108,9 +130,11 @@ export function sitemapEntries(companyTickers: readonly string[]): MetadataRoute
     .map((ticker): PublicPage => ({ path: `/app/stocks/${ticker}`, priority: 0.6, updated: COMPANY_PAGES_UPDATED, changeFrequency: "weekly" }))
     .filter((page) => hasUkAddress(page.path));
   return [
-    ...entriesOf({ path: "/", priority: 1, updated: LANDING_UPDATED, changeFrequency: "weekly" }),
+    /* Mission Control at `/`, in English alone — the Ukrainian home leads to it; while ryntra.io's home page leads into the app (`lib/site/home-to-app.ts`) it is not advertised. */
+    ...(LANDING_IS_LIVE ? [{ url: localizedUrl("/", "en"), lastModified: new Date(`${MISSION_CONTROL_UPDATED}T00:00:00.000Z`), changeFrequency: "weekly" as const, priority: 1 }] : []),
     ...APP_PAGES.flatMap(entriesOf),
     ...PUBLIC_PAGES.filter((page) => !redirected.has(page.path)).flatMap(entriesOf),
+    ...partnerTermsEntries(),
     ...companies.flatMap(entriesOf),
   ];
 }

@@ -1,9 +1,15 @@
 /**
  * Where Ryntra Launch runs, and with what.
  *
- * On every deployment Launch runs on mainnet, on the configs created on
- * 2026-10-05 (Класичний and Захищений; «Спільнота» gets a config per
- * community token when one launches, so it is not offered here yet). A local
+ * On every deployment Launch runs on mainnet, on the configs of its presets —
+ * Класичний and Захищений (2026-10-05), Micro and the demo market Ryntra uses
+ * for its own technical validation. «Спільнота» has a config per community
+ * token, each signed by the operator (`scripts/launch/mainnet-config.mjs
+ * --presets community`) and offered only once the deployment names it in
+ * `RYNTRA_LAUNCH_COMMUNITY_CONFIGS` and the attribution registry lists it;
+ * «Розширений» makes a config per launch within the bounds the operator approves
+ * once (`RYNTRA_LAUNCH_ADVANCED_BOUNDS`) — without either, neither is offered
+ * on mainnet (SOL-L5). A local
  * server can run the devnet stand instead — `RYNTRA_LAUNCH_STAND=devnet`,
  * never on production — whose presets are the devnet rehearsal's configs: the
  * same fields, with a test USDC and a test community token.
@@ -28,7 +34,12 @@
 import { getBase58Encoder } from "@solana/kit";
 import { Connection, Keypair } from "@solana/web3.js";
 
-import { ATTRIBUTION_REGISTRY, SOLANA_FEE_WALLET } from "../attribution/registry.ts";
+import { ATTRIBUTION_REGISTRY, SOLANA_FEE_WALLET, type RegistryEntry } from "../attribution/registry.ts";
+import { DEVNET_ADVANCED_BOUNDS, parseAdvancedBounds, type AdvancedBounds } from "../core/launch/advanced.ts";
+import { curveRulesProgramOf, type CurveRulesProgram } from "../core/launch/curve-rules.ts";
+import { quoteAssetsOffered } from "../core/launch/quote-asset.ts";
+import { TRANSFER_FEE_MAX_BPS, transferFeeOffered } from "../core/launch/transfer-fee.ts";
+import { dbcSdkOf } from "../core/venues/meteora-dbc/sdk.server.ts";
 import { FEE_POLICY_V2 } from "../core/fee-policy.ts";
 import type { PresetConfigs } from "../core/venues/meteora-dbc/launch.server.ts";
 import type { LaunchPresetId } from "../core/venues/meteora-dbc/presets.ts";
@@ -44,13 +55,29 @@ export type LaunchCluster = "devnet" | "mainnet";
  */
 export type LaunchPair = Readonly<{ mint: string; symbol: string; decimals: number; usdPrice: number; dollar: boolean }>;
 
+/** One community's token as «Спільнота» pairs against it: its own config, made at the token's dollar price then. */
+export type CommunityPair = LaunchPair & Readonly<{ config: string }>;
+
 export type LaunchNetwork = Readonly<{
   cluster: LaunchCluster;
   /** The Wallet Standard chain a wallet signs for. */
   chain: "solana:devnet" | "solana:mainnet";
   configs: PresetConfigs;
-  /** The pair of each preset with a config here: USDC, or for «Спільнота» the community's token. */
+  /** The pair of each preset with a config here: USDC, or for «Спільнота» the first community's token. */
   pairs: Readonly<Partial<Record<LaunchPresetId, LaunchPair>>>;
+  /** «Спільнота»: every community token offered here, each with its config (SOL-L5); empty — not offered. */
+  communities: readonly CommunityPair[];
+  /**
+   * «Розширений»: the bounds the operator approved, and the partner's vault every such config names as its fee claimer and
+   * leftover receiver — the multisig's, as on Класичний and Захищений. Null — «Розширений» is not offered here.
+   */
+  advanced: Readonly<{ bounds: AdvancedBounds; feeClaimer: string }> | null;
+  /**
+   * «Правила на кривій» (SOL-L8): the audited rule program this deployment runs. Null everywhere by default — the
+   * preset is offered only with `RYNTRA_LAUNCH_CURVE_RULES=open`, the program's address, its published audit (SEC-3)
+   * and DBC SDK 2.0.0, all four of the operator's giving.
+   */
+  curveRules?: CurveRulesProgram | null;
   explorer: (kind: "tx" | "account", id: string) => string;
   /** Where the metadata, the pictures and the share links live — from configuration only. */
   origin: string;
@@ -89,13 +116,17 @@ export type LaunchNetwork = Readonly<{
 }>;
 
 /* The devnet rehearsals of 05.10 (run 3, creator's share 40 %) and 10.10 (Micro, the demo market): their configs and test pair currencies. */
+const DEVNET_COMMUNITY: CommunityPair = { config: "Ahh39x8jBcZxATVajcjfWUTsZBYmvwT6DwVTJLKEvr6v", mint: "8QwXVdfGjmnjZjF3TkzT4FZzA8J1gg9s8SfF9TUxFgEX", symbol: "COMM", decimals: 6, usdPrice: 0.01, dollar: false };
+/* The rehearsal's partner vault on devnet — the same role the multisig's vault has on mainnet. */
+const DEVNET_PARTNER_VAULT = "xkfpaFQnfBGposA1WnsU3miQ8L5sFAXv5Mck9Cjxjju";
+
 const DEVNET: Omit<LaunchNetwork, "origin"> = {
   cluster: "devnet",
   chain: "solana:devnet",
   configs: {
     classic: "9fRjQM1eDW6hNJRzeLoTZ1sub7tbuMcEbHEwd29UuDik",
     protected: "FWDh4JYHGBwZzDgjJP6VVt8cPkL2Xr7mKqyXEazvnYva",
-    community: ["Ahh39x8jBcZxATVajcjfWUTsZBYmvwT6DwVTJLKEvr6v"],
+    community: [DEVNET_COMMUNITY.config],
     /* The rehearsal of 2026-10-10: Micro and the demo market, the stand executor their fee claimer. */
     micro: "BAhCUHp2SzGXVZ4kRTKxe3mrxFTK9dKGF7iBJPDoYZ6G",
     demo: "3qwvEk69TGJupqGRXURfkQBJtGXh66pxcdAD4PpVEEAA",
@@ -103,13 +134,14 @@ const DEVNET: Omit<LaunchNetwork, "origin"> = {
   pairs: {
     classic: { mint: "9gCUiQwyGzSaV5tCvn3jQWJfCqwdKDkhbPYgAG5mZiHB", symbol: "USDC", decimals: 6, usdPrice: 1, dollar: true },
     protected: { mint: "9gCUiQwyGzSaV5tCvn3jQWJfCqwdKDkhbPYgAG5mZiHB", symbol: "USDC", decimals: 6, usdPrice: 1, dollar: true },
-    community: { mint: "8QwXVdfGjmnjZjF3TkzT4FZzA8J1gg9s8SfF9TUxFgEX", symbol: "COMM", decimals: 6, usdPrice: 0.01, dollar: false },
+    community: DEVNET_COMMUNITY,
     micro: { mint: "9gCUiQwyGzSaV5tCvn3jQWJfCqwdKDkhbPYgAG5mZiHB", symbol: "USDC", decimals: 6, usdPrice: 1, dollar: true },
     demo: { mint: "9gCUiQwyGzSaV5tCvn3jQWJfCqwdKDkhbPYgAG5mZiHB", symbol: "USDC", decimals: 6, usdPrice: 1, dollar: true },
   },
+  communities: [DEVNET_COMMUNITY],
+  advanced: { bounds: DEVNET_ADVANCED_BOUNDS, feeClaimer: DEVNET_PARTNER_VAULT },
   explorer: (kind, id) => `https://solscan.io/${kind}/${id}?cluster=devnet`,
-  /* The rehearsal's partner vault on devnet — the same role the multisig's vault has on mainnet. */
-  referralOwner: "xkfpaFQnfBGposA1WnsU3miQ8L5sFAXv5Mck9Cjxjju",
+  referralOwner: DEVNET_PARTNER_VAULT,
   jupiter: false,
   /* The rehearsal's owner on devnet stands in for Ryntra's fee wallet; on mainnet it is the attribution registry's. */
   feeWallet: "9WBQamBC9Amdzzrq8QANXweZCKpfhLMLvPQJzMBgFbbu",
@@ -141,6 +173,9 @@ const MAINNET: LaunchNetwork = {
     demo: registryAddress("solana-launch-config-demo") ?? "",
   },
   pairs: { classic: USDC, protected: USDC, micro: USDC, demo: USDC },
+  /* Offered only once the operator's configs are named and listed, and his bounds given (`withFormats`). */
+  communities: [],
+  advanced: null,
   explorer: (kind, id) => `https://solscan.io/${kind}/${id}`,
   origin: "https://ryntra.io",
   referralOwner: registryAddress("solana-launch-fee-claimer"),
@@ -158,9 +193,124 @@ const MAINNET: LaunchNetwork = {
  * without its public origin.
  */
 export function launchNetwork(env: NodeJS.ProcessEnv = process.env): LaunchNetwork | null {
-  if (env.RYNTRA_LAUNCH_STAND !== "devnet" || env.VERCEL_ENV === "production") return MAINNET;
+  if (env.RYNTRA_LAUNCH_STAND !== "devnet" || env.VERCEL_ENV === "production") return withFormats(MAINNET, env);
   const origin = publicOrigin(env.RYNTRA_LAUNCH_PUBLIC_ORIGIN);
-  return origin ? { ...DEVNET, origin } : null;
+  if (!origin) return null;
+  return withFormats(devnetStand(env, origin), env);
+}
+
+function devnetStand(env: NodeJS.ProcessEnv, origin: string): LaunchNetwork {
+  let stand: Omit<LaunchNetwork, "origin"> = DEVNET;
+  /*
+   * Класичний on a test USDC of the stand's own (SOL-L5, `scripts/launch-qa/stand-setup.mjs`): the rehearsal of 05.10's
+   * test USDC has no key left to mint it. Захищений's config is on that old USDC, so it is not offered then, and
+   * «Розширений» and early access trade the stand's own USDC. Both or neither.
+   */
+  const classicConfig = env.RYNTRA_LAUNCH_DEVNET_CLASSIC_CONFIG?.trim();
+  const classicPair = env.RYNTRA_LAUNCH_DEVNET_CLASSIC_PAIR?.trim();
+  if (classicConfig && classicPair) {
+    const { protected: _protectedConfig, ...configs } = stand.configs;
+    const { protected: _protectedPair, ...pairs } = stand.pairs;
+    stand = { ...stand, configs: { ...configs, classic: classicConfig }, pairs: { ...pairs, classic: { ...DEVNET.pairs.classic!, mint: classicPair } } };
+  }
+  /*
+   * A devnet rehearsal of its own (SOL-L6): a Micro config whose fee claimer is the stand's executor and its test USDC,
+   * named by the stand — the keys of the rehearsal of 10.10 are gone with its session. Both or neither.
+   */
+  const microConfig = env.RYNTRA_LAUNCH_DEVNET_MICRO_CONFIG?.trim();
+  const microPair = env.RYNTRA_LAUNCH_DEVNET_MICRO_PAIR?.trim();
+  if (microConfig && microPair) {
+    stand = { ...stand, configs: { ...stand.configs, micro: microConfig }, pairs: { ...stand.pairs, micro: { ...DEVNET.pairs.micro!, mint: microPair } } };
+  }
+  return { ...stand, origin };
+}
+
+/** The registry's rows of «Спільнота»'s mainnet configs: one per community token, its `mint` the community's. */
+export const COMMUNITY_REGISTRY_PREFIX = "solana-launch-config-community-";
+
+/**
+ * The community tokens a deployment names (`RYNTRA_LAUNCH_COMMUNITY_CONFIGS`, a JSON array of `{ config, mint, symbol,
+ * decimals, usdPrice }`): on mainnet only those whose config the attribution registry lists as one of «Спільнота»'s,
+ * for that very community token — a pool on a config the counter cannot attribute is never offered; on the stand any.
+ * Anything malformed is left out, never guessed.
+ */
+export function communityPairs(env: NodeJS.ProcessEnv, cluster: LaunchCluster, registry: readonly RegistryEntry[] = ATTRIBUTION_REGISTRY): CommunityPair[] {
+  const text = env.RYNTRA_LAUNCH_COMMUNITY_CONFIGS?.trim();
+  if (!text) return [];
+  let rows: unknown;
+  try {
+    rows = JSON.parse(text);
+  } catch {
+    return [];
+  }
+  if (!Array.isArray(rows)) return [];
+  const base58 = /^[1-9A-HJ-NP-Za-km-z]{32,44}$/;
+  const out: CommunityPair[] = [];
+  for (const row of rows as Record<string, unknown>[]) {
+    if (!row || typeof row !== "object") continue;
+    const { config, mint, symbol, decimals, usdPrice } = row;
+    if (typeof config !== "string" || !base58.test(config) || typeof mint !== "string" || !base58.test(mint)) continue;
+    if (typeof symbol !== "string" || !/^[A-Za-z0-9]{1,12}$/.test(symbol)) continue;
+    if (typeof decimals !== "number" || !Number.isInteger(decimals) || decimals < 0 || decimals > 18) continue;
+    if (typeof usdPrice !== "number" || !(usdPrice > 0) || !Number.isFinite(usdPrice)) continue;
+    if (cluster === "mainnet" && !registry.some((entry) => entry.id.startsWith(COMMUNITY_REGISTRY_PREFIX) && entry.end === null && entry.address === config && entry.mint === mint)) continue;
+    if (out.some((known) => known.config === config || known.mint === mint)) continue;
+    out.push({ config, mint, symbol, decimals, usdPrice, dollar: false });
+  }
+  return out;
+}
+
+/**
+ * The network with the formats this deployment offers: the community tokens it names, and «Розширений» — on mainnet
+ * only with the operator's bounds (`RYNTRA_LAUNCH_ADVANCED_BOUNDS`) and the partner's vault the registry publishes; on the
+ * stand with its own.
+ */
+function withFormats(network: LaunchNetwork, env: NodeJS.ProcessEnv): LaunchNetwork {
+  const named = communityPairs(env, network.cluster);
+  const communities = [...network.communities, ...named.filter((pair) => !network.communities.some((known) => known.mint === pair.mint || known.config === pair.config))];
+  const vault = network.cluster === "mainnet" ? registryAddress("solana-launch-fee-claimer") : network.advanced?.feeClaimer ?? null;
+  const owned = network.cluster === "mainnet" ? parseAdvancedBounds(env.RYNTRA_LAUNCH_ADVANCED_BOUNDS) : network.advanced?.bounds ?? null;
+  /* «Комісія за переказ» (SOL-L10) rides on «Розширений»: offered only with its flag open on SDK 2.0.0, at Ryntra's ceiling. */
+  const bounds = owned && transferFeeOffered(env, dbcSdkOf(env)) ? { ...owned, transferFeeMaxBps: TRANSFER_FEE_MAX_BPS } : owned;
+  const advanced = bounds && vault ? { bounds, feeClaimer: vault } : null;
+  /*
+   * «Правила на кривій» (SOL-L8): the rule program, with Ryntra's multisig as the one authority that may upgrade it
+   * where it is not frozen. Null until the operator opens the flag after the independent audit.
+   */
+  const multisig = registryAddress("solana-launch-fee-claimer");
+  const curveRules = curveRulesProgramOf(env, dbcSdkOf(env), { multisigs: multisig ? [multisig] : [], upgradeAuthority: env.RYNTRA_LAUNCH_CURVE_RULES_MULTISIG ?? null });
+  if (communities.length === network.communities.length && advanced === network.advanced && (curveRules?.program ?? null) === (network.curveRules?.program ?? null)) return network;
+  const [first] = communities;
+  return {
+    ...network,
+    communities,
+    configs: { ...network.configs, ...(first ? { community: communities.map((pair) => pair.config) } : {}) },
+    pairs: { ...network.pairs, ...(first ? { community: network.pairs.community ?? first } : {}) },
+    advanced,
+    curveRules,
+  };
+}
+
+/**
+ * The partner's vault on this network — the fee claimer every «Класичний», «Захищений», «Спільнота» and «Розширений»
+ * config names (SOL-L1d): on mainnet the attribution registry's; on the devnet stand the rehearsal's, or the stand's own
+ * (`RYNTRA_LAUNCH_DEVNET_PARTNER_VAULT`) when a rehearsal of its own made another multisig. Null — none known here.
+ */
+export function launchPartnerVault(network: Pick<LaunchNetwork, "cluster">, env: NodeJS.ProcessEnv = process.env): string | null {
+  if (network.cluster === "mainnet") return registryAddress("solana-launch-fee-claimer");
+  return env.RYNTRA_LAUNCH_DEVNET_PARTNER_VAULT?.trim() || DEVNET_PARTNER_VAULT;
+}
+
+/**
+ * SOL-L1d's claims on this network — the partner vault's claims proposed through Squads on the treasury page, and the
+ * creator's «Забрати» with the curve's surplus and the locked LP's fee from the exit position: the devnet stand always;
+ * mainnet only with `RYNTRA_LAUNCH_CLAIMS_V2=open`, the operator's switch. Closed, the treasury offers no launch claims and
+ * «Забрати» builds what it built before — the curve's, the graduation's and the LP's fees, the LP's position from the
+ * node's index, no surplus.
+ */
+export function launchClaimsV2Open(network: Pick<LaunchNetwork, "cluster">, env: NodeJS.ProcessEnv = process.env): boolean {
+  if (network.cluster === "devnet") return true;
+  return env.RYNTRA_LAUNCH_CLAIMS_V2?.trim() === "open";
 }
 
 /** Whether anything may be built or sent through Launch now: its lane's operator stop says `OPEN`. */
@@ -178,8 +328,31 @@ export function launchWritesHere(network: LaunchNetwork, env: NodeJS.ProcessEnv 
   return network.cluster !== "mainnet" || env.VERCEL_ENV === "production";
 }
 
-/** The pair a preset trades against here; a preset without a config here has none, and is refused before this is asked. */
-export function launchPair(network: LaunchNetwork, preset: LaunchPresetId): LaunchPair {
+/**
+ * The pair a preset trades against here; a preset without a config here has none, and is refused before this is asked.
+ * «Спільнота» has one per community token: `pairMint` names it (a launch's record carries it). «Розширений» trades
+ * against USDC, as Захищений — or, where its config was made on one, against a checked pair currency (SOL-L11), which
+ * its record names too.
+ */
+export function launchPair(network: LaunchNetwork, preset: LaunchPresetId, pairMint?: string, env: NodeJS.ProcessEnv = process.env): LaunchPair {
+  if (preset === "community" && pairMint) {
+    const community = network.communities.find((pair) => pair.mint === pairMint);
+    if (!community) throw new Error(`Launch has no community pair ${pairMint} on ${network.cluster}.`);
+    return community;
+  }
+  /*
+   * A launch made while the bounds were offered stays readable after: its pair is the network's own whatever the bounds
+   * are now — unless its config was made on a checked pair currency (SOL-L11), and then that mint's own record says the
+   * symbol and the decimals its figures are read in. Such a pair is not a dollar, so no surface turns it into one: its
+   * price is read at the moment it is needed, never carried here as a constant.
+   */
+  if (preset === "advanced") {
+    const own = network.pairs.protected ?? launchPair(network, "classic", undefined, env);
+    if (!pairMint || pairMint === own.mint) return own;
+    const asset = quoteAssetsOffered(env).find((record) => record.mint === pairMint);
+    if (!asset) throw new Error(`Launch has no checked pair ${pairMint} on ${network.cluster}.`);
+    return { mint: asset.mint, symbol: asset.symbol, decimals: asset.decimals, usdPrice: 0, dollar: false };
+  }
   const pair = network.pairs[preset];
   if (!pair) throw new Error(`Launch has no ${preset} preset on ${network.cluster}.`);
   return pair;
@@ -333,4 +506,12 @@ export const LAUNCHES_PER_HOUR = 60;
  */
 export function launchPoolFee(network: LaunchNetwork): Readonly<{ wallet: string; bps: number }> | null {
   return network.feeWallet && network.tradesRecorded && network.poolFeeCharged ? { wallet: network.feeWallet, bps: FEE_POLICY_V2.MEME.bps } : null;
+}
+
+/**
+ * The configs a launch's own reads go through: the network's, and — «Розширений» — the launch's own config, made for it
+ * alone, so its curve is found by its address and read as «Розширений» (SOL-L5).
+ */
+export function configsOfRecord(network: LaunchNetwork, record: Readonly<{ preset: LaunchPresetId; config: string }>): PresetConfigs {
+  return record.preset === "advanced" ? { ...network.configs, advanced: record.config } : network.configs;
 }

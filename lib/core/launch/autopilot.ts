@@ -17,8 +17,12 @@
  *   lock, the creator's sales — and the market's states and the executor's
  *   own watch, stops and resumes (`JournalMark`).
  *
- * The executor never takes the partner's fees — they go to the partner's
- * multisig, on the curve and from the locked LP — and pays no holder anything.
+ * On Класичний and Захищений the executor never takes the partner's fees —
+ * they wait for the partner's multisig, on the curve and from the locked LP.
+ * On Micro and the demo market it holds the partner's role and claims them
+ * for the market's budget, but only on the markets Ryntra launched itself; on
+ * a market launched by people they wait in Meteora's pool (`budget.ts`). It
+ * pays no holder anything.
  *
  * Pure and client-safe: the chain is read by `lib/launch/autopilot.server.ts`
  * and the DLMM adapter.
@@ -49,6 +53,13 @@ import type { MarketCycleState } from "./market-health.ts";
  *   what was already placed, never more than the executor's free balance, and
  *   nothing below `minPlaceRaw`.
  */
+/**
+ * The presets whose graduated markets get the ladder of Ryntra's own money — on the markets Ryntra launched itself, while
+ * the operator's ladder stop is open; Micro and the demo market have the budget's ladder instead, the others none. One
+ * list for the executor (`lib/launch/autopilot.server.ts`) and the Market Constitution that states it.
+ */
+export const OWNER_LADDER_PRESETS: ReadonlySet<string> = new Set(["classic", "protected"]);
+
 export const FLOOR_RULE = Object.freeze({
   binStep: 100,
   feeBps: 100,

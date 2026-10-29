@@ -1,5 +1,6 @@
 "use client";
 
+import { Page } from "@ryntra/core/ui";
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { ACTION_PASSPORT_HANDOFF_KEY, verifyArtifact } from "@/app/agents/agent-control-client";
@@ -17,13 +18,14 @@ export function FileVerifier() {
   async function verify(){
     request.current?.abort();setError(null);setResult(null);
     if(new TextEncoder().encode(source).length>MAX_BYTES){setError(uk?"Файл завеликий. Максимум 128 КБ.":"File is too large. Maximum 128 KB.");return;}
-    let parsed:unknown;try{parsed=JSON.parse(source);}catch{setError(uk?"Перевірте формат JSON":"Check the JSON format");return;}
+    let parsed:unknown;try{parsed=JSON.parse(source);}catch{setError(uk?"Перевір формат JSON":"Check the JSON format");return;}
     const controller=new AbortController();request.current=controller;setBusy(true);
-    try{const next=await verifyArtifact(parsed,controller.signal);if(request.current===controller)setResult(next);}catch{if(request.current===controller&&!controller.signal.aborted)setError(uk?"Перевірка недоступна. Спробуйте ще раз.":"Verification is unavailable. Try again.");}finally{if(request.current===controller)setBusy(false);}
+    try{const next=await verifyArtifact(parsed,controller.signal);if(request.current===controller)setResult(next);}catch{if(request.current===controller&&!controller.signal.aborted)setError(uk?"Перевірка недоступна. Спробуй ще раз.":"Verification is unavailable. Try again.");}finally{if(request.current===controller)setBusy(false);}
   }
   const yes=uk?"Підтверджено":"Confirmed",no=uk?"Не підтверджено":"Not confirmed",na=uk?"Не стосується":"Not applicable";
-  return <div className={styles.page}>
-    <header className={styles.header}><h1>{uk?"Перевірити файл":"Verify a file"}</h1><Link className="rw-btn" href="/app/agents">{uk?"До агентів":"Back to agents"}</Link></header>
+  /* A form: the core's action column in the middle of the canvas, the way back above it (SOL-C19). */
+  return <Page kind="action" className={styles.actionPage} title={uk?"Перевірити файл":"Verify a file"} lang={uk?"uk":"en"}>
+    <Link className={styles.back} href="/app/agents">← {uk?"До агентів":"Back to agents"}</Link>
     <form className={styles.form} onSubmit={e=>{e.preventDefault();void verify();}}>
       <label htmlFor="artifact-file">{uk?"Файл JSON":"JSON file"}</label><input id="artifact-file" type="file" accept=".json,application/json" onChange={async e=>{const file=e.target.files?.[0];if(!file)return;if(file.size>MAX_BYTES){setError(uk?"Файл завеликий. Максимум 128 КБ.":"File is too large. Maximum 128 KB.");return;}change(await file.text());}}/>
       <label htmlFor="artifact-content">{uk?"Вміст файлу":"File contents"}</label><textarea id="artifact-content" value={source} onChange={e=>change(e.target.value)} rows={7} spellCheck={false}/>
@@ -37,5 +39,5 @@ export function FileVerifier() {
       <div><dt>{uk?"Погодження":"Authorization"}</dt><dd>{result.authorization.verdict==="AUTHORIZED"?yes:result.authorization.verdict==="NOT_APPLICABLE"?na:no}</dd></div>
       <div><dt>{uk?"Спостереження результату":"Outcome observation"}</dt><dd>{result.observation.verdict==="OBSERVED"?yes:result.observation.verdict==="NOT_APPLICABLE"?na:no}</dd></div>
     </dl></section>:null}
-  </div>;
+  </Page>;
 }

@@ -14,9 +14,11 @@ import { PublicKey } from "@solana/web3.js";
 
 import type { MarketCycleState } from "../core/launch/market-health.ts";
 import type { GuardStore } from "../guard/store.ts";
-import { lastAutopilotPass } from "./autopilot.server.ts";
+import type { EngineAlertKey } from "../core/launch/engine.ts";
+import { lastAutopilotPass, type AutopilotStats } from "./autopilot.server.ts";
 import { readRevenue } from "./budget.server.ts";
 import { launchConnection, launchExecutor, launchExecutorAddress, launchFloorOpen, launchOpen, type LaunchNetwork } from "./config.server.ts";
+import { peopleOpenOf, readEngineAlerts, readPeopleSwitch, setPeopleSwitch } from "./engine.server.ts";
 import { readExecutorMarket, readExecutorStops, setExecutorStop, stopOn, type SwitchOutcome } from "./executor.server.ts";
 import type { LaunchRecord } from "./flow.server.ts";
 
@@ -55,6 +57,16 @@ export type ExecutorStatus = Readonly<{
    * operator; null before the first claim.
    */
   revenue: Readonly<{ claimedRaw: string; onWalletRaw: string; reservesRaw: string; alertedAt: string | null; delivered: boolean | null; at: string }> | null;
+  /**
+   * The engine at scale (SOL-L6): what the last pass counted — its time, the queue of budgets and ladders, the markets
+   * that failed — and the conditions the operator was told about that still hold.
+   */
+  engine: Readonly<{ stats: AutopilotStats | null; holding: readonly EngineAlertKey[] }>;
+  /**
+   * The budget and the ladder on people's Micro markets: the operator's switch as it holds now (never flipped — open on
+   * devnet, closed on mainnet; not read — closed), and its last flip; null before one.
+   */
+  people: Readonly<{ open: boolean; unread: boolean; at: string | null }>;
   observedAt: string;
 }>;
 
@@ -65,7 +77,7 @@ async function launchedRecords(store: GuardStore, cluster: string): Promise<Laun
 
 export async function executorStatus(network: LaunchNetwork, store: GuardStore, now: Date = new Date()): Promise<ExecutorStatus> {
   const executor = launchExecutorAddress(network);
-  const [records, stops, pass, lamports, revenue] = await Promise.all([
+  const [records, stops, pass, lamports, revenue, alerts, people] = await Promise.all([
     launchedRecords(store, network.cluster),
     readExecutorStops(store, network.cluster),
     lastAutopilotPass(store, network.cluster),
@@ -76,6 +88,8 @@ export async function executorStatus(network: LaunchNetwork, store: GuardStore, 
           .catch(() => null)
       : Promise.resolve(null),
     readRevenue(store, network.cluster),
+    readEngineAlerts(store, network.cluster),
+    readPeopleSwitch(store, network.cluster),
   ]);
   const markets = await Promise.all(
     records.map(async (record): Promise<ExecutorMarketRow> => {
@@ -105,6 +119,8 @@ export async function executorStatus(network: LaunchNetwork, store: GuardStore, 
     all: { stopped: stops.all?.stopped === true, at: stops.all?.at ?? null },
     markets,
     revenue: revenue ? { claimedRaw: revenue.claimedRaw, onWalletRaw: revenue.onWalletRaw, reservesRaw: revenue.reservesRaw, alertedAt: revenue.alertedAt, delivered: revenue.delivered, at: revenue.at } : null,
+    engine: { stats: pass?.stats ?? null, holding: Object.keys(alerts.active) as EngineAlertKey[] },
+    people: { open: peopleOpenOf(network.cluster, people), unread: people === undefined, at: people?.at ?? null },
     observedAt: now.toISOString(),
   };
 }
@@ -144,4 +160,10 @@ export async function flipExecutor(
   const tokens = records.map((record) => record.token);
   if (args.token !== null && !tokens.includes(args.token)) return "UNKNOWN_MARKET";
   return setExecutorStop(store, { cluster: network.cluster, token: args.token, stopped: args.stopped, by: args.by, now: args.now ?? new Date(), tokens });
+}
+
+/** The operator's flip of the budget and the ladder on people's Micro markets on this network (SOL-L6). */
+export async function flipPeople(network: LaunchNetwork, store: GuardStore, args: Readonly<{ open: boolean; by: string; now?: Date }>): Promise<Readonly<{ changed: boolean }>> {
+  const outcome = await setPeopleSwitch(store, { cluster: network.cluster, open: args.open, by: args.by, now: args.now ?? new Date() });
+  return { changed: outcome.changed };
 }

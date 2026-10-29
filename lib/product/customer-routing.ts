@@ -26,6 +26,7 @@
  * nothing, so every address answers every person and every guest the same.
  */
 
+
 /** Customer locations are independent of the settlement adapter. */
 export const CUSTOMER_PATHS = {
   /* The product root is Home — the first of the five places, for everyone. */
@@ -52,11 +53,18 @@ const settled: readonly (readonly [string, string])[] = [
   /* The last two workspace pages still served in their own old shell: the same Spot and the same
      Rewards the product has, at their product addresses. */
   ["/solana/workspace/spot", "/app/spot"], ["/solana/workspace/rewards", "/app/rewards"],
+  /* Perps, Phoenix inside Solana (B7), at the address of their row (SOL-C2, UX-952): the old workspace address drew
+     them in the old shell. A row here, not a `redirect()` in the page — `/app/perps` re-exports that page, so the
+     page cannot tell its two addresses apart and would send itself round in a loop. Straight to `/app/perps`, one hop. */
+  ["/solana/workspace/futures", "/app/perps"],
+  /* «Perps» instead of «Ф'ючерси»: the row's address is `/app/perps`, as Jupiter,
+     Drift and Phoenix name the place; every old link to `/app/futures` — a bookmark, a shared page, a receipt — keeps
+     working, for good. The API (`/api/solana/futures/*`) keeps its name. */
+  ["/app/futures", "/app/perps"],
   ["/agents/passport", "/app/agents/inspect"], ["/agents/workspace/passport", "/app/agents/inspect"],
   ["/agents/verify", "/app/agents/verify"], ["/agents/workspace/verify", "/app/agents/verify"],
   ["/agents/workspace/settings", "/app/settings"],
   ["/app/connect", "/app/settings#account"],
-  ["/app/operations", "/app/settings"],
   ["/app/holdings", "/app/portfolio"], ["/app/history", "/app/activity"],
   ["/app/map", "/app/portfolio"], ["/app/developers", "/docs/developers"],
   /* `/developers` left this list on 2026-09-26:
@@ -116,10 +124,6 @@ const moved: readonly (readonly [string, string])[] = [
 
   ["/preview/hero-ab", "/"],
 
-  /* Bridge. The menu entry and the page are both gone; the lane is not. */
-
-  ["/solana/workspace/bridge", "/app/swap"],
-
   /* `/app/markets` is a page again: Markets, companies
      first, for everyone. The Solana workspace's old address keeps its Trends
      answer. */
@@ -135,9 +139,7 @@ const moved: readonly (readonly [string, string])[] = [
      never re-ask. Redirecting `/app/plans` back would loop those browsers on
      the landing page of a whole group. It serves the same page instead; see
      `app/app/plans/page.tsx`. */
-  ["/app/action-cases", "/app/bots"],
   ["/app/control", "/app/bots"],
-  ["/app/agents", "/app/bots"],
   ["/agent-control", "/app/bots"], ["/agents", "/app/bots"],
   ["/agents/workspace", "/app/bots"], ["/agents/workspace/agents", "/app/bots"],
   ...["attention", "actions", "policies", "evidence", "lab", "operations", "team", "reviews", "authorize", "integrations", "commerce", "tools", "adoption"].map(
@@ -163,6 +165,20 @@ const moved: readonly (readonly [string, string])[] = [
   ["/app/trade", "/app/swap"],
   ["/app/launch", "/app/launch/new"],
 
+  /* The core's frame: the menu is the core's seven sections, and two of them are the addresses a
+     person may type for them. Термінал opens on Spot — `/app/terminal` was a permanent 308 into Robinhood's
+     workspace, which leads to the landing now; a browser that cached it still lands somewhere true. Гроші opens on
+     «Поповнити» — `/app/money` answered a «not here» page. Every page that moved section kept its own address:
+     Автоінвест is `/app/bots` inside Термінал, Винагороди `/app/rewards` inside Портфель, Лаунч `/app/launch/…`
+     inside Ринки, the assistant `/app/ryn` behind its button. */
+  ["/app/terminal", "/app/spot"],
+  ["/app/money", "/app/top-up"],
+
+  /* Menu 3: the old addresses lead to the place their work lives now. The register
+     of operations is History, not the theme and the language of Settings (it led there from 2026-09-14 as a 308; a
+     browser that cached it still lands somewhere true). */
+  ["/app/operations", "/app/activity"],
+
   /* Only what
      is built reaches a person. Three pages that are not built leave the
      surface by these rows, and their code stays where it is — the rows are
@@ -176,15 +192,10 @@ const moved: readonly (readonly [string, string])[] = [
   ["/app/ideas", "/app/ryn"],
   ["/app/research", "/app/ryn"],
   ["/app/adviser", "/app/ryn"],
-  /* Perps is not in the product; the nearest thing that works
-     is Spot. */
-  ["/app/perps", "/app/spot"],
-  /* The prediction demo leaves the surface: its pages, its paper account and its code stay, and
-     every address of it — a market, a plan — leads to Markets for now.
-     Temporary, so the demo can take its address back. */
-  ["/app/predictions", "/app/markets"],
-  ["/app/predictions/:path*", "/app/markets"],
-  ["/docs/trade/predictions", "/docs/start/cabinet"],
+  /* Predictions is a section of the Solana cabinet (decision 58, NAV-6c): its
+     pages answer here, and predict.ryntra.io leads into them
+     (`lib/predictions/predict-host.ts`). Its documentation page answers
+     itself since F3 (24.10). */
   /* The parked ecosystems. Stellar's and Robinhood's workspaces are
      history — their code preserved, their rows parked in the registry — and an
      old link to either lands on the landing rather than in an old shell, in one
@@ -198,15 +209,22 @@ const moved: readonly (readonly [string, string])[] = [
      menu by its own flag. */
   ["/app/strategy-lab", "/app/bots"],
 
-  /* Results takes plan-against-outcome. Journal used to answer to Activity,
-     which is the other half of the question. */
-  ["/app/journal", "/app/bots"],
-  ["/app/brief", "/app/bots"],
-  ["/app/coverage", "/app/bots"],
+  /* Old addresses by their content (B18, the B13 review's table `critics/money.md` §5 «Старі адреси»): the journal of
+     trades and the records of decisions are History; the daily brief is Home; the coverage of the data sources is the
+     documentation. Until B18 all four led to the recurring-buy rules. The old Bridge address of the Solana workspace
+     leads to «Між мережами» — the page is back since 2026-09-10 and the row still sent it to «Обмін». `/app/agents`
+     answers on its own page: the treasury, where an agent's multisig and limits are made, or «Боти» where the treasury
+     is not served (`app/app/agents/page.tsx`) — never the recurring-buy rules. */
+  ["/app/journal", "/app/activity"],
+  ["/app/action-cases", "/app/activity"],
+  ["/app/brief", "/app/home"],
+  ["/app/coverage", "/docs"],
+  ["/solana/workspace/bridge", "/app/bridge"],
 
-  /* Their addresses lead to the nearest page that
-     works, and stay temporary — the pages may come back when they are built. */
-  ["/docs/trade/perps", "/docs/trade/spot"],
+  /* Only what is built is
+     documented to a person. Its address leads to the nearest page that works,
+     and stays temporary — the page may come back when it is built. Perps came
+     back with F3 (24.10): `/docs/trade/perps` is its page again. */
   ["/docs/strategies/ideas", "/docs/strategies/overview"],
 ];
 

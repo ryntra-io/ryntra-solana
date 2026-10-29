@@ -5,7 +5,7 @@
  */
 
 /** The documentation last changed on this date (2026-10-06: the menu's section «Лаунч» and its page; before it 2026-09-26, the menu's sections, «Інвестувати», «ти» in Ukrainian); every page carries it until its next change. */
-export const DOCS_UPDATED = "2026-10-06";
+export const DOCS_UPDATED = "2026-10-24";
 
 /** Home's words of its own as the app's page, and its Ukrainian address. */
 export const HOME_UPDATED = "2026-09-27";
@@ -18,3 +18,5 @@ export const COMPANY_PAGES_UPDATED = "2026-09-27";
 
 /** The landing's content last changed on 2026-09-26 — the new site, in English and Ukrainian. */
 export const LANDING_UPDATED = "2026-09-26";
+/** Mission Control at `/` (MC-0, decision 68): the scene and the sections below it, English only. */
+export const MISSION_CONTROL_UPDATED = "2026-10-25";

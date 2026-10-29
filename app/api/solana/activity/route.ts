@@ -29,6 +29,7 @@ import { SOLANA_NETWORKS, createSolanaRpcHandle } from "@/lib/solana/rpc";
 import { listRewardEntries } from "@/lib/rewards/ledger";
 import { rewardsView } from "@/lib/rewards/view";
 import { unconfiguredReserve } from "@/lib/rewards/balance";
+import { cashbackByTrade } from "@/lib/solana/trade-cashback";
 import { readWalletProofFrom } from "@/lib/session";
 import { resolveRelayApiKey } from "@/lib/relay/api-key.server";
 import { byDeadline } from "@/lib/launch/flow.server";
@@ -279,12 +280,14 @@ export async function POST(request: Request) {
    */
   /* Rewards are an extra on this read: a store that blinked leaves them out
      rather than failing the history. */
-  const proofRead = await readWalletProofFrom(request.headers);
+  const proofRead = await readWalletProofFrom(request.headers, { allowLink: true });
   const proof = proofRead.status === "ok" ? proofRead.proof : null;
+  const proven = proof !== null && proof.chain === "solana" && proof.address === parsed.data.owner;
+  const entries = proven ? await listRewardEntries(store, parsed.data.owner) : null;
   const rewards =
-    proof && proof.chain === "solana" && proof.address === parsed.data.owner
+    entries
       ? rewardsView({
-          entries: await listRewardEntries(store, parsed.data.owner),
+          entries,
           reserve: unconfiguredReserve("Activity states settled rewards, not what is claimable."),
           heldUsdMicros: 0n,
           /* Activity lists rewards; the referral network belongs on Rewards. */
@@ -303,6 +306,9 @@ export async function POST(request: Request) {
         /* Null for an unproven read, which is different from an empty list:
            one means "not yours to see", the other means "nothing yet". */
         rewards,
+        /* The cashback each trade earned, by its signature (SOL-X1): a receipt's execution truth states the actual
+           figure beside its own facts. The same proof as `rewards`, and null on the same terms. */
+        cashback: entries ? cashbackByTrade(entries, parsed.data.owner) : null,
         /* Honest coverage. `complete` false means a row existed and could not
            be read — the surface says the list may be incomplete rather than
            presenting a short list as the whole truth. */

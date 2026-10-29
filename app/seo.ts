@@ -1,10 +1,14 @@
 import type { Metadata } from "next";
 import { PUBLIC_LOCALE_CODES } from "./i18n/locales.ts";
 import { HOMEPAGE_CATEGORY, HOMEPAGE_COPY } from "../lib/site/homepage-copy.ts";
+import { publicUrl } from "../lib/product/app-address.ts";
 import { hasUkAddress, localizedPath } from "../lib/site/localized.ts";
 import { HOMEPAGE_OG_VERSION } from "./brand/og-version.ts";
 import { cardAlt, cardPath, marketsCard, type CardLocale, type CardSpec } from "./brand/page-card.ts";
 import { LANDING_META } from "./(home)/landing-meta.ts";
+import { MISSION_CONTROL_WORDS } from "../lib/mission-control/words.ts";
+import { LANDING_IS_LIVE } from "../lib/site/home-to-app.ts";
+import { OG_CARD } from "../city/lib/art/frames.ts";
 
 export const SITE = "https://ryntra.io";
 /**
@@ -131,11 +135,12 @@ export const SEO_COPY = Object.fromEntries(
 /**
  * A page's absolute address in a language — `https://ryntra.io/uk/docs` for
  * the documentation's hub in Ukrainian — or its one address where it has only
- * one (`lib/site/localized.ts`). No query, no trailing slash.
+ * one (`lib/site/localized.ts`). No query, no trailing slash. Once
+ * app.ryntra.io is live, the app's pages are named there:
+ * `https://app.ryntra.io/uk/solana/home` (`lib/product/app-address.ts`).
  */
 export function localizedUrl(path: string, locale: string): string {
-  const local = localizedPath(path, locale);
-  return local === "/" ? SITE : `${SITE}${local}`;
+  return publicUrl(localizedPath(path, locale));
 }
 
 /**
@@ -221,6 +226,46 @@ export function buildLandingMetadata(localeInput: string): Metadata {
 }
 
 /**
+ * Mission Control's metadata — ryntra.io's home page since MC-0 (decision 68), in English only: decision 64's title and descriptor within 60 and 160 characters, and the scene's own card for X
+ * (1200 × 675). `path` and `card` name a mission's Control Room or Launch Night; the home page is `/` with its card,
+ * and `size` the card's own pixels where it is not 1200 × 675.
+ */
+export function buildMissionControlMetadata(
+  words: Readonly<{ title: string; description: string }> = MISSION_CONTROL_WORDS,
+  path = "/",
+  card = "/api/launch/mission-card",
+  size: Readonly<{ width: number; height: number }> = { width: 1200, height: 675 },
+): Metadata {
+  const canonical = path === "/" ? SITE : `${SITE}${path}`;
+  const image = { url: `${SITE}${card}`, width: size.width, height: size.height, alt: words.title };
+  return {
+    title: { absolute: words.title },
+    description: words.description,
+    keywords: [...KEYWORDS],
+    category: HOMEPAGE_CATEGORY,
+    /* In the index once ryntra.io answers with the scene (`LANDING_IS_LIVE`); out of it while `HOME_TO_APP` leads into the app. */
+    robots: { index: LANDING_IS_LIVE, follow: true },
+    alternates: { canonical },
+    openGraph: { type: "website", siteName: SITE_NAME, title: words.title, description: words.description, url: canonical, locale: OG_LOCALE.en, images: [image] },
+    twitter: { card: "summary_large_image", site: TWITTER, creator: TWITTER, title: words.title, description: words.description, images: [image.url] },
+  };
+}
+
+/**
+ * Ryntra City, the home at `/` since decision 70 (2026-10-26): the live Solana market as a night city. The words
+ * say what the city does today and grow with it; the share card is the city's cinematic still of 28.10, 1200 × 630
+ * (CITY-64, `public/city/art/og-1200x630.jpg`) — the shape Open Graph and X draw a large card at.
+ */
+export const CITY_WORDS = {
+  title: "Ryntra — the Solana market as a living city",
+  description: "Every Solana coin is a tower in a live night city: height from market cap, light from the day's move. Catch the hot ones and run the skyline.",
+} as const;
+
+export function buildCityMetadata(): Metadata {
+  return buildMissionControlMetadata(CITY_WORDS, "/", OG_CARD.src, { width: OG_CARD.width, height: OG_CARD.height });
+}
+
+/**
  * Home's metadata — the app's first place, in words of its own as the app's
  * page; it used to carry the site's line, from the days `ryntra.io/` led
  * here. Its address in each language — `/app/home` and `/uk/app/home` — names
@@ -238,7 +283,7 @@ const APP_HOME_WORDS: Readonly<Record<"en" | "uk", Readonly<{ title: string; des
   },
   uk: {
     title: "Застосунок Ryntra — акції, крипта, меми й свій токен",
-    description: "Під'єднай гаманець Solana, поповни й купуй токенізовані акції, крипту й меми — або запусти свій токен. Ринки, боти й сповіщення в одному застосунку.",
+    description: "Підключи гаманець Solana, поповни й купуй токенізовані акції, крипту й меми — або запусти свій токен. Ринки, боти й сповіщення в одному застосунку.",
   },
 };
 

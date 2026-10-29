@@ -1,6 +1,7 @@
 "use client";
 
-import { ArrowRight, Check } from "@phosphor-icons/react";
+import { Check } from "@phosphor-icons/react";
+import { Button } from "@ryntra/core/ui";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
@@ -18,6 +19,7 @@ import { LOSS_LIMIT_PRESETS, lossLimitPurchase, type LossLimitPreset } from "@/l
 import { wordsFor } from "../stock-model";
 import styles from "../stocks.module.css";
 import { announceBuyActions } from "./buy-actions";
+import { ensureWalletActs } from "@/lib/account/wallet-proof-store.client";
 
 /**
  * The purchase with a loss limit on the buy card — the loop made visible:
@@ -51,10 +53,9 @@ export function LossLimitPresets({ value, onChange, locale }: { value: LossLimit
       </span>
       <div className={styles.limitPresets} role="group" aria-labelledby="loss-limit-label">
         {options.map((option) => (
-          <button key={option.id ?? "none"} type="button" className={styles.limitPreset} aria-pressed={value === option.id} onClick={() => onChange(option.id)}>
-            <span>{option.label}</span>
-            {option.pct ? <span>{option.pct}</span> : null}
-          </button>
+          <Button key={option.id ?? "none"} variant={value === option.id ? "secondary" : "ghost"} aria-pressed={value === option.id} onClick={() => onChange(option.id)} lang={locale === "uk" ? "uk" : "en"}>
+            {option.pct ? `${option.label} ${option.pct}` : option.label}
+          </Button>
         ))}
       </div>
     </div>
@@ -162,6 +163,7 @@ export function LossLimitCard({
     if (!made) return;
     setPhase({ status: "writing", message: null });
     try {
+      if (!(await ensureWalletActs())) { setPhase({ status: "idle", message: null }); return; }
       const response = await fetch("/api/v1/plans", {
         method: "POST",
         headers: { ...API_HEADERS, "content-type": "application/json" },
@@ -280,17 +282,16 @@ export function LossLimitCard({
             <WalletChoices single="button" />
           )
         ) : !proven ? (
-          <button id={actionId} type="button" className="rw-btn rw-btn--primary" onClick={() => void proof.prove()} disabled={proof.state.status === "signing" || proof.state.status === "checking"}>
-            <span>{proof.state.status === "signing" ? word("confirmingWallet") : word("confirmWalletToAccept")}</span>
-          </button>
+          <Button id={actionId} variant="primary" onClick={() => void proof.prove()} disabled={proof.state.status === "signing" || proof.state.status === "checking"} lang={locale === "uk" ? "uk" : "en"}>
+            {proof.state.status === "signing" ? word("confirmingWallet") : word("confirmWalletToAccept")}
+          </Button>
         ) : (
-          <button id={actionId} type="button" className="rw-btn rw-btn--primary" onClick={() => void accept()} disabled={!made || phase.status === "writing"}>
-            <span>{phase.status === "writing" ? word("preparing") : word("acceptAndSign")}</span>
-            <ArrowRight size={16} weight="bold" aria-hidden="true" />
-          </button>
+          <Button id={actionId} variant="primary" icon="arrow-up-right" onClick={() => void accept()} disabled={!made || phase.status === "writing"} lang={locale === "uk" ? "uk" : "en"}>
+            {phase.status === "writing" ? word("preparing") : word("acceptAndSign")}
+          </Button>
         )}
-        <Link className="rw-btn" href={planHref} prefetch={false}>
-          {word("planThisPurchase")}
+        <Link className="ryntra-button ryntra-button--secondary" href={planHref} prefetch={false}>
+          <span className="ryntra-button__label">{word("planThisPurchase")}</span>
         </Link>
       </div>
     </div>

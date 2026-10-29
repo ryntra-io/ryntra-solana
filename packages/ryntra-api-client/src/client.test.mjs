@@ -262,7 +262,7 @@ test("1.23.0: «Ризик портфеля» is a v1 path behind the bearer; th
   assert.equal(read.risk.findings[0].watchReason, "limit", "the reason is the server's; the client judges none");
 });
 
-test("1.22.0: the package, its constant and the contract name one version", async () => {
+test("1.22.0 (request 38): the package, its constant and the contract name one version", async () => {
   const { readFileSync } = await import("node:fs");
   const pkg = JSON.parse(readFileSync(new URL("../package.json", import.meta.url), "utf8"));
   const { API_CONTRACT_VERSION: contract } = await import("../../../lib/api/v1/contract.ts");
@@ -272,7 +272,7 @@ test("1.22.0: the package, its constant and the contract name one version", asyn
 });
 
 test("1.22.0: payment links behind the bearer, one link for anyone; the recipient check and the returned bytes need no session; a link is paid on its page's routes as the session's wallet", async () => {
-  const link = { id: "7mKq3x9ZpQv2Lr5t", url: "https://ryntra.io/pay/7mKq3x9ZpQv2Lr5t", payUrl: `solana:${ADDRESS}?reference=${ADDRESS}`, status: "AWAITING", note: null, token: { symbol: "SOL", mint: null, decimals: 9 }, amount: null, description: null, recipient: { abbreviated: "36C2…1SPm", address: ADDRESS }, reference: ADDRESS, createdAt: "2026-09-29T09:00:00.000Z", expiresAt: "2026-09-30T09:00:00.000Z", paid: null };
+  const link = { id: "7mKq3x9ZpQv2Lr5t", url: "https://ryntra.io/pay/7mKq3x9ZpQv2Lr5t", payUrl: `solana:${ADDRESS}?reference=${ADDRESS}`, status: "AWAITING", note: null, token: { symbol: "SOL", mint: null, decimals: 9 }, amount: null, description: null, recipient: { abbreviated: "36C2…1SPm", address: ADDRESS }, reference: ADDRESS, createdAt: "2026-09-29T09:00:00.000Z", expiresAt: "2026-09-30T09:00:00.000Z", paid: null, received: null };
   const { fetch, calls } = fakeFetch({
     "POST /api/v1/pay/requests": () => ({ status: 201, body: { link } }),
     "GET /api/v1/pay/requests": () => ({ body: { address: ADDRESS, links: [link] } }),
@@ -330,4 +330,210 @@ test("1.36.0: the markets launched on Ryntra, one market's card, its health and 
     ["/api/v1/launch/markets", `/api/v1/launch/markets/${mint}`, `/api/v1/launch/${mint}/health`, `/api/v1/launch/${mint}/journal`],
   );
   assert.ok(calls.every((call) => call.init.headers.authorization === undefined), "a public read carries no bearer");
+});
+
+test("AI-13 (request 68): the assistant's surfaces are the web's own routes behind the bearer — the client adds no price, no field and no route of its own", async () => {
+  const at = "2026-10-21T21:00:00.000Z";
+  const credits = {
+    unit: "credits", balance: 120, welcome: 0, bought: 0, free: { used: 2, left: 3, daily: 5, resetsAt: "2026-10-22T00:00:00.000Z" }, reserved: 0,
+    dailySpend: { used: 0, cap: 1000, resetsAt: "2026-10-22T00:00:00.000Z" },
+    prices: { question: 10, alertExplain: 5, tokenReport: 20, priceMove: 10, voice: 6, deep: 40, plan: 130 }, welcomeOffer: "taken", holder: "account",
+  };
+  const treasury = { address: ADDRESS, abbreviated: "36C2…1SPm" };
+  const order = {
+    id: "7mKq3x9ZpQv2Lr5t", package: { id: "usdc-2", usdc: "2", credits: 2000, bonusPercent: 0 }, status: "awaiting",
+    amount: { raw: "2000000", display: "2", symbol: "USDC", mint: "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v" }, received: { raw: "0", display: "0" }, credited: 0,
+    payPage: "https://ryntra.io/pay/7mKq3x9ZpQv2Lr5t", payUrl: `solana:${ADDRESS}?amount=2&reference=${ADDRESS}`, reference: ADDRESS, treasury,
+    createdAt: at, expiresAt: "2026-10-21T21:15:00.000Z", payments: [], wrongToken: false,
+  };
+  const surface = (name) => () => ({ body: { surface: name } });
+  const { fetch, calls } = fakeFetch({
+    "GET /api/v1/assistant/brief": surface("brief"),
+    "PUT /api/v1/assistant/brief": surface("brief"),
+    "GET /api/v1/assistant/credits": () => ({ body: { credits, entries: [] } }),
+    "POST /api/v1/assistant/credits/welcome": () => ({ body: { credits, entries: [], granted: 100 } }),
+    "GET /api/v1/assistant/credits/orders": () => ({ body: { orders: [order], credits } }),
+    "POST /api/v1/assistant/credits/orders": () => ({ body: { order, credits } }),
+    "GET /api/v1/assistant/credits/orders/7mKq3x9ZpQv2Lr5t": () => ({ body: { order, credits } }),
+    "GET /api/v1/assistant/watches": surface("watches"),
+    "POST /api/v1/assistant/watches": surface("watches"),
+    "PATCH /api/v1/assistant/watches/wch_0123456789abcdef01234567": surface("watches"),
+    "DELETE /api/v1/assistant/watches/wch_0123456789abcdef01234567": surface("watches"),
+    "GET /api/v1/assistant/profile": surface("profile"),
+    "PUT /api/v1/assistant/profile": surface("profile"),
+    "GET /api/v1/assistant/memory": surface("memory"),
+    "PUT /api/v1/assistant/memory": surface("memory"),
+    "DELETE /api/v1/assistant/memory": surface("memory"),
+    "DELETE /api/v1/assistant/memory/m_0123456789ab": surface("memory"),
+    "GET /api/v1/assistant/tasks": surface("tasks"),
+    "POST /api/v1/assistant/tasks": surface("tasks"),
+    "PATCH /api/v1/assistant/tasks/t_0123456789ab": surface("tasks"),
+    "DELETE /api/v1/assistant/tasks/t_0123456789ab": surface("tasks"),
+    "GET /api/v1/assistant/plans": surface("plans"),
+    "POST /api/v1/assistant/plans": surface("plan"),
+    "GET /api/v1/assistant/plans/apl_0123456789abcdef01234567": surface("plan"),
+    "PUT /api/v1/assistant/plans/apl_0123456789abcdef01234567": surface("plan"),
+    "POST /api/v1/assistant/plans/apl_0123456789abcdef01234567/critic": surface("plan"),
+    "POST /api/v1/assistant/plans/apl_0123456789abcdef01234567/state": surface("plan"),
+    "POST /api/v1/assistant/voice": () => ({ body: { text: "що з SOL", seconds: 4, spent: 6, free: 0, repeat: false, credits } }),
+  });
+  const api = createRyntraApiClient({ baseUrl: "https://ryntra.io", fetch, token: () => "sess.token" });
+  const last = () => calls.at(-1);
+  const sent = () => (last().init.body === undefined ? undefined : JSON.parse(last().init.body));
+  const target = () => `${last().init.method} ${new URL(last().url).pathname}${new URL(last().url).search}`;
+
+  await api.assistant.brief("uk", "2026-10-21");
+  assert.equal(target(), "GET /api/v1/assistant/brief?locale=uk&day=2026-10-21");
+  await api.assistant.brief();
+  assert.equal(target(), "GET /api/v1/assistant/brief?locale=en", "no day: the latest brief");
+  await api.assistant.setBrief({ enabled: true, time: "08:30", zone: "Europe/Kyiv", locale: "uk" });
+  assert.deepEqual([target(), sent()], ["PUT /api/v1/assistant/brief?locale=uk", { enabled: true, time: "08:30", zone: "Europe/Kyiv", locale: "uk" }]);
+  await api.assistant.setBrief({ enabled: false });
+  assert.equal(target(), "PUT /api/v1/assistant/brief?locale=uk", "unsaid, the answer's language is the one the server stores — Ukrainian");
+  await api.assistant.setBrief({ enabled: false, locale: "en" });
+  assert.equal(target(), "PUT /api/v1/assistant/brief?locale=en");
+
+  assert.equal((await api.assistant.credits.get()).credits.balance, 120, "the balance is the server's");
+  assert.equal(target(), "GET /api/v1/assistant/credits");
+  assert.equal((await api.assistant.credits.welcome()).granted, 100);
+  assert.deepEqual([target(), sent()], ["POST /api/v1/assistant/credits/welcome", {}]);
+  await api.assistant.credits.orders();
+  assert.equal(target(), "GET /api/v1/assistant/credits/orders");
+  const opened = await api.assistant.credits.openOrder({ package: "usdc-2", locale: "uk" });
+  assert.deepEqual([target(), sent()], ["POST /api/v1/assistant/credits/orders", { package: "usdc-2", locale: "uk" }], "a package by its id: the price is the server's");
+  await api.assistant.credits.order(opened.order.id);
+  assert.equal(target(), "GET /api/v1/assistant/credits/orders/7mKq3x9ZpQv2Lr5t", "the order's id is the payment request's id the wallet pays over MWA");
+
+  await api.assistant.watches.list("uk");
+  assert.equal(target(), "GET /api/v1/assistant/watches?locale=uk");
+  await api.assistant.watches.create({ mint: ADDRESS, preset: "drop24h", channels: { telegram: false, push: true }, locale: "uk" }, "uk");
+  assert.deepEqual([target(), sent()], ["POST /api/v1/assistant/watches?locale=uk", { mint: ADDRESS, preset: "drop24h", channels: { telegram: false, push: true }, locale: "uk" }]);
+  await api.assistant.watches.update("wch_0123456789abcdef01234567", { status: "paused" });
+  assert.deepEqual([target(), sent()], ["PATCH /api/v1/assistant/watches/wch_0123456789abcdef01234567?locale=en", { status: "paused" }]);
+  await api.assistant.watches.remove("wch_0123456789abcdef01234567", "uk");
+  assert.deepEqual([target(), sent()], ["DELETE /api/v1/assistant/watches/wch_0123456789abcdef01234567?locale=uk", undefined]);
+
+  await api.assistant.profile();
+  assert.equal(target(), "GET /api/v1/assistant/profile");
+  await api.assistant.setProfile({ skipped: true });
+  assert.deepEqual([target(), sent()], ["PUT /api/v1/assistant/profile", { skipped: true }]);
+
+  await api.assistant.memory.get();
+  assert.equal(target(), "GET /api/v1/assistant/memory", "the wallet's picture is read unless asked not to");
+  await api.assistant.memory.get({ picture: false });
+  assert.equal(target(), "GET /api/v1/assistant/memory?picture=0");
+  await api.assistant.memory.update({ noticing: false });
+  assert.deepEqual([target(), sent()], ["PUT /api/v1/assistant/memory", { noticing: false }]);
+  await api.assistant.memory.forget("m_0123456789ab");
+  assert.equal(target(), "DELETE /api/v1/assistant/memory/m_0123456789ab");
+  await api.assistant.memory.forgetAll();
+  assert.equal(target(), "DELETE /api/v1/assistant/memory");
+
+  await api.assistant.tasks.list();
+  assert.equal(target(), "GET /api/v1/assistant/tasks");
+  const task = { ask: { kind: "portfolio" }, every: "1d", time: "09:00", zone: "Europe/Kyiv", onlyWhenNew: true, channels: { telegram: false, push: true }, acceptCredits: 4, locale: "uk" };
+  await api.assistant.tasks.create(task);
+  assert.deepEqual([target(), sent()], ["POST /api/v1/assistant/tasks", task], "the shown price travels as the person accepted it");
+  await api.assistant.tasks.update("t_0123456789ab", { ifVersion: 2, status: "paused" });
+  assert.deepEqual([target(), sent()], ["PATCH /api/v1/assistant/tasks/t_0123456789ab", { ifVersion: 2, status: "paused" }]);
+  await api.assistant.tasks.remove("t_0123456789ab");
+  assert.equal(target(), "DELETE /api/v1/assistant/tasks/t_0123456789ab");
+
+  await api.assistant.plans.list("uk");
+  assert.equal(target(), "GET /api/v1/assistant/plans?locale=uk");
+  await api.assistant.plans.create({ mint: ADDRESS, idea: "відскок від підтримки", riskUsd: 20, acceptCredits: 130, locale: "uk" });
+  assert.deepEqual([target(), sent()], ["POST /api/v1/assistant/plans", { mint: ADDRESS, idea: "відскок від підтримки", riskUsd: 20, acceptCredits: 130, locale: "uk" }]);
+  await api.assistant.plans.get("apl_0123456789abcdef01234567", "uk");
+  assert.equal(target(), "GET /api/v1/assistant/plans/apl_0123456789abcdef01234567?locale=uk");
+  await api.assistant.plans.update("apl_0123456789abcdef01234567", { ifVersion: 1, invalidationUsd: 120 });
+  assert.deepEqual([target(), sent()], ["PUT /api/v1/assistant/plans/apl_0123456789abcdef01234567", { ifVersion: 1, invalidationUsd: 120 }]);
+  await api.assistant.plans.recheck("apl_0123456789abcdef01234567", { ifVersion: 2, acceptCredits: 60 });
+  assert.deepEqual([target(), sent()], ["POST /api/v1/assistant/plans/apl_0123456789abcdef01234567/critic", { ifVersion: 2, acceptCredits: 60 }]);
+  await api.assistant.plans.setState("apl_0123456789abcdef01234567", { to: "watching", ifVersion: 2 });
+  assert.deepEqual([target(), sent()], ["POST /api/v1/assistant/plans/apl_0123456789abcdef01234567/state", { to: "watching", ifVersion: 2 }]);
+
+  const voice = { id: "6f1c2a5e-4b7d-4e2a-9c1f-3a8b5d7e9f01", audio: "T2dnUwACAAAAAAAAAAAAAA==", mime: "audio/ogg", seconds: 4, locale: "uk", acceptCredits: 6 };
+  const heard = await api.assistant.voice(voice);
+  assert.deepEqual([target(), sent()], ["POST /api/v1/assistant/voice", voice]);
+  assert.equal(heard.text, "що з SOL", "words for the field; nothing is asked");
+
+  const routes = calls.filter((call) => new URL(call.url).pathname.startsWith("/api/v1/assistant/"));
+  assert.equal(routes.length, calls.length);
+  for (const call of calls) {
+    assert.equal(call.init.headers.authorization, "Bearer sess.token", `${call.init.method} ${call.url} carries the bearer`);
+    assert.equal(call.init.headers[API_HEADER], "1");
+    const body = call.init.body === undefined ? {} : JSON.parse(call.init.body);
+    if ("acceptCredits" in body) assert.equal(typeof body.acceptCredits, "number", "a price only as the caller passed it");
+  }
+  /* Every body the client sent is one the server's own schema accepts — the test's bodies are the contract's, not invented. */
+  const contract = await import("../../../lib/api/v1/contract.ts");
+  const schemaOf = {
+    "PUT /api/v1/assistant/brief": contract.AssistantBriefUpdateSchema,
+    "POST /api/v1/assistant/credits/orders": contract.AssistantCreditOrderRequestSchema,
+    "POST /api/v1/assistant/watches": contract.AssistantWatchCreateSchema,
+    "PATCH /api/v1/assistant/watches/wch_0123456789abcdef01234567": contract.AssistantWatchUpdateSchema,
+    "PUT /api/v1/assistant/profile": contract.AssistantProfileUpdateSchema,
+    "PUT /api/v1/assistant/memory": contract.AssistantMemoryUpdateSchema,
+    "POST /api/v1/assistant/tasks": contract.AssistantTaskCreateSchema,
+    "PATCH /api/v1/assistant/tasks/t_0123456789ab": contract.AssistantTaskUpdateSchema,
+    "POST /api/v1/assistant/plans": contract.AssistantPlanCreateSchema,
+    "PUT /api/v1/assistant/plans/apl_0123456789abcdef01234567": contract.AssistantPlanUpdateSchema,
+    "POST /api/v1/assistant/plans/apl_0123456789abcdef01234567/critic": contract.AssistantPlanRecheckSchema,
+    "POST /api/v1/assistant/plans/apl_0123456789abcdef01234567/state": contract.AssistantPlanStateRequestSchema,
+    "POST /api/v1/assistant/voice": contract.AssistantVoiceRequestSchema,
+  };
+  /* The answers stand in the contract's shape too: the credits and an order as the server's schemas read them. */
+  assert.equal(contract.AssistantCreditsResponseSchema.safeParse({ credits, entries: [] }).success, true, "the credits fixture is the contract's");
+  assert.equal(contract.AssistantCreditOrderResponseSchema.safeParse({ order, credits }).success, true, "the order fixture is the contract's");
+  assert.equal(contract.AssistantCreditOrdersResponseSchema.safeParse({ orders: [order], credits }).success, true);
+  const judged = new Set();
+  for (const call of calls) {
+    const schema = schemaOf[`${call.init.method} ${new URL(call.url).pathname}`];
+    if (!schema) continue;
+    const parsed = schema.safeParse(JSON.parse(call.init.body));
+    assert.equal(parsed.success, true, `${call.init.method} ${call.url}: ${parsed.success ? "" : JSON.stringify(parsed.error.issues)}`);
+    judged.add(`${call.init.method} ${new URL(call.url).pathname}`);
+  }
+  assert.equal(judged.size, Object.keys(schemaOf).length, "every route's body was judged");
+  assert.equal(calls.filter((call) => "acceptCredits" in (call.init.body === undefined ? {} : JSON.parse(call.init.body))).length, 4, "only the four calls given a price carry one");
+  assert.equal("push" in api.assistant, false, "Web Push is a browser's; the phone's push is its device registration");
+});
+
+test("AI-13: without a session every assistant call refuses before the network", async () => {
+  const { fetch, calls } = fakeFetch({});
+  const api = createRyntraApiClient({ baseUrl: "https://ryntra.io", fetch, token: () => null });
+  for (const run of [() => api.assistant.credits.get(), () => api.assistant.watches.list(), () => api.assistant.plans.list(), () => api.assistant.tasks.list(), () => api.assistant.memory.get(), () => api.assistant.brief(), () => api.assistant.voice({ id: "x", audio: "", mime: "audio/ogg", seconds: 1, acceptCredits: 6 })]) {
+    await assert.rejects(run(), (error) => error instanceof RyntraApiError && error.code === "UNAUTHORIZED");
+  }
+  assert.equal(calls.length, 0);
+});
+
+test("1.66.0: «Перевірено Seeker» — the phone asks with its bearer and names no address; a chain the server could not read is an error, never «not verified»", async () => {
+  const { fetch, calls } = fakeFetch({
+    "GET /api/v1/auth/seeker": () => ({ body: { address: ADDRESS, verified: true, tokens: [{ mint: "EBeP4zvX59nNsXX489DyULVLTZxb6pW6x5EWSAgDYXCP", memberNumber: "41337" }], network: "solana:mainnet", checkedAt: "2026-10-22T10:00:00.000Z" } }),
+  });
+  const api = createRyntraApiClient({ baseUrl: "https://ryntra.io", fetch, token: () => "sess.token" });
+  const seeker = await api.auth.seeker();
+  assert.equal(seeker.verified, true);
+  assert.equal(calls[0].url, "https://ryntra.io/api/v1/auth/seeker");
+  assert.equal(calls[0].init.method, "GET");
+  assert.equal(calls[0].init.headers.authorization, "Bearer sess.token");
+  assert.equal(calls[0].init.body, undefined);
+
+  const down = fakeFetch({ "GET /api/v1/auth/seeker": () => ({ status: 503, body: { error: { code: "UNAVAILABLE", message: "The chain could not be read now. This is not «no Seeker» — try again in a moment." } } }) });
+  const downApi = createRyntraApiClient({ baseUrl: "https://ryntra.io", fetch: down.fetch, token: () => "sess.token" });
+  await assert.rejects(downApi.auth.seeker(), (error) => error instanceof RyntraApiError && error.code === "UNAVAILABLE" && error.status === 503);
+});
+
+test("1.68.0: «Події ринку» — public, no bearer; the kinds, the mint and the limit travel as the query", async () => {
+  const { fetch, calls } = fakeFetch({
+    "GET /api/v1/events": () => ({ body: { events: [], total: 0, observedAt: "2026-10-24T12:00:00.000Z", stale: false, partial: false, sources: ["jupiter"], coverage: [] } }),
+  });
+  const api = createRyntraApiClient({ baseUrl: "https://ryntra.io", fetch });
+  const feed = await api.research.events({ kinds: ["DEX_LISTED", "UNLOCK"], limit: 20 });
+  assert.equal(feed.total, 0);
+  assert.equal(calls[0].url, "https://ryntra.io/api/v1/events?kinds=DEX_LISTED%2CUNLOCK&limit=20");
+  assert.equal(calls[0].init.headers.authorization, undefined);
+  await api.research.events();
+  assert.equal(calls[1].url, "https://ryntra.io/api/v1/events");
 });

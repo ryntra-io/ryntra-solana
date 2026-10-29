@@ -12,7 +12,7 @@ export type ThemeWordId = "FIRST_STEPS" | "TOGETHER" | "HABIT";
 
 type Copy = Readonly<{
   /* The Rewards section's own tabs. */
-  tabs: Readonly<{ label: string; overview: string; boards: string; season: string }>;
+  tabs: Readonly<{ label: string; overview: string; boards: string; season: string; partners: string }>;
 
   boardsTitle: string;
   boardsLabel: string;
@@ -42,10 +42,6 @@ type Copy = Readonly<{
   showMe: string;
   showMeHint: string;
   connect: string;
-  /** Connected but not yet confirmed. */
-  confirmLead: string;
-  confirm: string;
-  confirming: string;
   unavailable: string;
   retry: string;
   loading: string;
@@ -97,7 +93,6 @@ type Copy = Readonly<{
   openSeason: string;
   otherSeasons: string;
   seasonConnect: string;
-  seasonConfirm: string;
   seasonUnavailable: string;
 }>;
 
@@ -119,7 +114,7 @@ const EN_BOARD: Readonly<Record<BoardWordId, string>> = { TRADERS: "Traders", FR
 const UK_BOARD: Readonly<Record<BoardWordId, string>> = { TRADERS: "Трейдери", FRIENDS: "Друзі", CREATORS: "Творці" };
 
 const EN: Copy = {
-  tabs: { label: "Rewards sections", overview: "Overview", boards: "Leaderboards", season: "Season" },
+  tabs: { label: "Rewards sections", overview: "Overview", boards: "Leaderboards", season: "Season", partners: "Creator partners" },
 
   boardsTitle: "Leaderboards",
   boardsLabel: "Leaderboards of the week",
@@ -159,9 +154,6 @@ const EN: Copy = {
   showMe: "Show me on the boards",
   showMeHint: "When hidden, your avatar wears no rank frame either.",
   connect: "Connect a wallet to see your place.",
-  confirmLead: "Confirm this wallet to see your place.",
-  confirm: "Confirm wallet",
-  confirming: "Confirming…",
   unavailable: "The boards are unavailable right now.",
   retry: "Try again",
   loading: "Loading the boards…",
@@ -228,12 +220,11 @@ const EN: Copy = {
   openSeason: "Season",
   otherSeasons: "Seasons",
   seasonConnect: "Connect a wallet to see your tasks.",
-  seasonConfirm: "Confirm this wallet to see your tasks.",
   seasonUnavailable: "The season is unavailable right now.",
 };
 
 const UK: Copy = {
-  tabs: { label: "Розділи винагород", overview: "Огляд", boards: "Таблиці", season: "Сезон" },
+  tabs: { label: "Розділи винагород", overview: "Огляд", boards: "Таблиці", season: "Сезон", partners: "Партнери творців" },
 
   boardsTitle: "Таблиці лідерів",
   boardsLabel: "Таблиці лідерів тижня",
@@ -273,9 +264,6 @@ const UK: Copy = {
   showMe: "Показувати мене в таблицях",
   showMeHint: "Прихований гаманець не має й рамки рангу на аватарі.",
   connect: "Підключіть гаманець, щоб побачити своє місце.",
-  confirmLead: "Підтвердьте гаманець, щоб побачити своє місце.",
-  confirm: "Підтвердити гаманець",
-  confirming: "Підтверджуємо…",
   unavailable: "Таблиці зараз недоступні.",
   retry: "Спробувати ще",
   loading: "Завантажуємо таблиці…",
@@ -342,7 +330,6 @@ const UK: Copy = {
   openSeason: "Сезон",
   otherSeasons: "Сезони",
   seasonConnect: "Підключіть гаманець, щоб побачити свої завдання.",
-  seasonConfirm: "Підтвердьте гаманець, щоб побачити свої завдання.",
   seasonUnavailable: "Сезон зараз недоступний.",
 };
 

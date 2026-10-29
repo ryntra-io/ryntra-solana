@@ -8,31 +8,14 @@
  * width»). Tokens only (DESIGN.md → app/design/tokens.css).
  */
 
-.page > * {
-  width: 100%;
-  max-width: 580px;
-  margin-inline: auto;
-}
-
-.head {
-  display: grid;
-  gap: var(--ry-s2);
-}
-
-/* ── A guest ─────────────────────────────────────────────────────────── */
-
-.emptyTitle {
-  margin: 0;
-  font-size: var(--ry-fs-section);
-  font-weight: 600;
-  line-height: var(--ry-lh-head);
-  color: var(--ry-text);
-  text-wrap: balance;
-}
+/* Since B18 the page is the frame of every page of «Гроші» (`app/solana/workspace/money/money-page.tsx`): the heading
+   once, the 560 px form — what the wallet holds, then the ways — and beside it on a desk the address with its code and
+   the latest money in. */
 
 /* ── What the wallet holds ───────────────────────────────────────────── */
 
 .status {
+  display: grid;
   gap: var(--ry-s3);
   /* Brought back into view when money arrives, clear of the sticky top bar. */
   scroll-margin-top: 80px;
@@ -137,22 +120,13 @@
   }
 }
 
-.ready {
-  display: grid;
-  gap: var(--ry-s3);
-  padding-top: var(--ry-s3);
-  border-top: 1px solid var(--ry-border);
-}
-
-.ready > :global(.rw-btn) {
-  min-height: 52px;
-}
-
 .readyLine {
   display: inline-flex;
   align-items: center;
   gap: var(--ry-s2);
   margin: 0;
+  padding-top: var(--ry-s3);
+  border-top: 1px solid var(--ry-border);
   font-size: var(--ry-fs-copy);
   font-weight: 600;
   color: var(--ry-text);
@@ -205,6 +179,14 @@
 .ways {
   display: grid;
   gap: var(--ry-s3);
+}
+
+.waysTitle {
+  margin: var(--ry-s2) 0 0;
+  font-size: var(--ry-fs-copy);
+  font-weight: 600;
+  line-height: var(--ry-lh-head);
+  color: var(--ry-text);
 }
 
 .way {
@@ -324,12 +306,33 @@
   gap: var(--ry-s3);
 }
 
-.address > :global(.rw-btn) {
+.address > :global(.ryntra-button) {
+  min-height: 48px;
+}
+
+.address :global(.ryntra-button__label) {
   display: inline-flex;
   align-items: center;
-  justify-content: center;
   gap: var(--ry-s2);
-  min-height: 48px;
+}
+
+/* A guest's side column: where the code will be, and the one line that says when. */
+.addressGuest {
+  display: grid;
+  justify-items: center;
+  gap: var(--ry-s3);
+  text-align: center;
+}
+
+.qrGuest {
+  display: grid;
+  place-items: center;
+  width: 160px;
+  height: 160px;
+  border: 1px dashed var(--ry-border-strong);
+  border-radius: var(--ry-r-card);
+  background: var(--ry-hover);
+  color: var(--ry-muted);
 }
 
 .qrWrap {
@@ -393,22 +396,116 @@
   color: var(--ry-text);
 }
 
+/* ── From another network (SOL-W1) ───────────────────────────────────── */
+
+.deposit {
+  display: grid;
+  gap: var(--ry-s3);
+}
+
+.networks {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--ry-s2);
+}
+
+.network {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--ry-s2);
+  min-height: 40px;
+  padding: 0 var(--ry-s4) 0 var(--ry-s2);
+  border: 1px solid var(--ry-border);
+  border-radius: var(--ry-r-pill);
+  background: var(--ry-bg);
+  font: inherit;
+  font-size: var(--ry-fs-dense);
+  font-weight: 500;
+  color: var(--ry-text);
+  cursor: pointer;
+}
+
+.network:hover {
+  background: var(--ry-hover);
+}
+
+.network[aria-checked="true"] {
+  border-color: var(--ry-iris);
+  background: color-mix(in srgb, var(--ry-iris) 12%, transparent);
+  font-weight: 600;
+}
+
+.network:focus-visible,
+.inline:focus-visible {
+  outline: 2px solid var(--ry-focus);
+  outline-offset: 2px;
+}
+
+.inline {
+  padding: 0;
+  border: 0;
+  background: none;
+  font: inherit;
+  font-weight: 600;
+  color: var(--ry-text);
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.depositNote {
+  margin: 0;
+  font-size: var(--ry-fs-data);
+  font-weight: 600;
+  line-height: var(--ry-lh-body);
+  color: var(--ry-text);
+}
+
+.depositState {
+  margin: 0;
+  padding: var(--ry-s3) var(--ry-s4);
+  border: 1px solid var(--ry-border);
+  border-radius: var(--ry-r-card);
+  font-size: var(--ry-fs-dense);
+  line-height: var(--ry-lh-body);
+  color: var(--ry-text);
+}
+
+.depositState[data-progress="ARRIVED"] {
+  border-color: color-mix(in srgb, var(--ry-verified) 45%, transparent);
+}
+
+.depositState[data-progress="FAILED"] {
+  border-color: color-mix(in srgb, var(--ry-caution) 45%, transparent);
+  background: var(--ry-caution-soft);
+}
+
 @media (min-width: 720px) {
-  .address[data-qr="true"] {
+  .address[data-qr="true"]:not([data-compact="true"]) {
     grid-template-columns: auto minmax(0, 1fr);
     align-items: start;
     column-gap: var(--ry-s5);
   }
 
-  .address[data-qr="true"] .qrWrap {
+  .address[data-qr="true"]:not([data-compact="true"]) .qrWrap {
     grid-row: span 3;
     justify-self: start;
   }
 
-  .address > :global(.rw-btn) {
+  .address:not([data-compact="true"]) > :global(.ryntra-button) {
     justify-self: start;
     min-width: 200px;
   }
+}
+
+/* The side column's address: the code at 160 px in the middle, the address under it, the copy as wide as the column. */
+.address[data-compact="true"] .qr,
+.address[data-compact="true"] .qrBone {
+  width: 160px;
+  height: 160px;
+}
+
+.address[data-compact="true"] .addressValue {
+  font-size: var(--ry-fs-data);
 }
 
 @media (prefers-reduced-motion: reduce) {

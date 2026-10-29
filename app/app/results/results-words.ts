@@ -32,7 +32,7 @@ export const RESULT_WORDS = {
   openPositions: bi("Open", "Відкриті"),
   closedPositions: bi("Closed", "Закриті"),
   noTradePlans: bi("No trade", "Без угоди"),
-  tradesMade: bi("Operations", "Операцій"),
+  tradesMade: bi("Trades", "Угод"),
   /* the sections */
   positionsTitle: bi("Positions under a plan", "Позиції за планом"),
   outcomesTitle: bi("Plans that made no trade", "Плани без угоди"),
@@ -61,10 +61,10 @@ export const RESULT_WORDS = {
   realisedMethod: bi("Proceeds minus the cost basis and the fees of both legs.", "Виручка мінус вартість входу і комісії обох ніг."),
   /* the difference */
   difference: bi("Where the difference went", "Куди пішла різниця"),
-  marketMove: bi("The market, before the Review", "Ринок, до Review"),
-  executionPart: bi("Execution, after the Review", "Виконання, після Review"),
+  marketMove: bi("The market, before the Review", "Ринок, до Перевірки"),
+  executionPart: bi("Execution, after the Review", "Виконання, після Перевірки"),
   feePart: bi("Ryntra's fee", "Комісія Ryntra"),
-  expectedAtReview: bi("What the Review modelled", "Що змоделював Review"),
+  expectedAtReview: bi("What the Review modelled", "Що змоделювала Перевірка"),
   slippageLabel: bi("Slippage allowed", "Дозволений сліпедж"),
   feeLabel: bi("Fee rate", "Ставка комісії"),
   priceImpactLabel: bi("Price impact", "Вплив на ціну"),
@@ -97,7 +97,7 @@ export const RESULT_WORDS = {
   citesReview: bi("Review", "Review"),
   citesExecution: bi("operation", "операція"),
   citesLedger: bi("History row", "рядок Історії"),
-  citesNote: bi("monitoring note", "нотатка Нагляду"),
+  citesNote: bi("monitoring note", "нотатка Сповіщень"),
 } as const;
 
 export function resultWordsFor(locale: WorkspaceLocale) {
@@ -134,14 +134,14 @@ export function noTradeSentence(outcome: PlanNoTradeOutcome, locale: WorkspaceLo
     ),
     "invalidated-before-entry": bi(
       "No trade: at the Review the price was already at or below your invalidation — the thesis was wrong before the entry.",
-      "Без угоди: на Review ціна вже була на рівні інвалідації або нижче — теза була хибною ще до входу.",
+      "Без угоди: на Перевірці ціна вже була на рівні інвалідації або нижче — теза була хибною ще до входу.",
     ),
     "review-blocked": bi("No trade: a rule of this plan refused the order; the rule and its figures are below.", "Без угоди: правило цього плану відмовило ордеру; саме правило і його цифри — нижче."),
     expired: bi("No trade: the entry window closed before a price the plan accepts appeared.", "Без угоди: вікно входу закрилося раніше, ніж з'явилася ціна, яку план приймає."),
     cancelled: bi("No trade: you cancelled this plan.", "Без угоди: ти скасував цей план."),
     "reviewed-not-taken": bi(
       `No trade: ${outcome.reviews === 1 ? "one Review" : `${outcome.reviews} Reviews`} passed and you did not proceed.`,
-      `Без угоди: ${outcome.reviews === 1 ? "один Review" : `${outcome.reviews} Review`} пройшов, і ти не став продовжувати.`,
+      `Без угоди: ${outcome.reviews === 1 ? "одна Перевірка" : `${outcome.reviews} Review`} пройшов, і ти не став продовжувати.`,
     ),
     "no-review": bi(`${symbol} is live and nothing has been reviewed under it yet.`, `${symbol} активний, і за ним ще нічого не перевіряли.`),
   };
@@ -178,7 +178,7 @@ export function costPartText(part: PlanCostPart, locale: WorkspaceLocale): strin
 export function costReasonText(reason: string | null, locale: WorkspaceLocale): string | null {
   if (!reason) return null;
   const say: Readonly<Record<string, Bi>> = {
-    "no-review": bi("no Review was kept for this operation", "для цієї операції не збережено Review"),
+    "no-review": bi("no Review was kept for this operation", "для цієї операції не збережено Перевірки"),
     "no-planned-price": bi("this version planned no price for this leg", "ця версія не планувала ціни для цієї ноги"),
     "no-fill-price": bi("the fill's price per unit could not be established", "ціну за одиницю на виконанні не встановлено"),
     "fee-not-recorded": bi("the operation recorded no fee", "операція не записала комісії"),
@@ -269,7 +269,7 @@ export function memorySentence(fact: PlanMemoryFact, locale: WorkspaceLocale): s
       /* The Review's own bound is an English phrase it wrote when it judged; it stands on the outcome's card as a figure, never inside a sentence that must read in one language. */
       const word = checkWord(rule as PlanCheckId, locale).toLowerCase();
       return uk
-        ? `${plans} ${plans === 1 ? "план" : "планів"} на ${symbol} так і не торгували: правило «${word}» відмовило кожному Review.`
+        ? `${plans} ${plans === 1 ? "план" : "планів"} на ${symbol} так і не торгували: правило «${word}» відмовило кожній Перевірці.`
         : `${plans} plan${plans === 1 ? "" : "s"} on ${symbol} never traded: the rule “${word}” refused every Review.`;
     }
     case "entry-vs-plan": {
@@ -308,7 +308,7 @@ export function memorySentence(fact: PlanMemoryFact, locale: WorkspaceLocale): s
       const outcome = textOf(fact, "outcome");
       if (!kind) return null;
       const said = findingWords(kind, outcome, locale);
-      return uk ? `Нагляд записав по ${symbol}: ${said}.` : `Monitoring wrote on ${symbol}: ${said}.`;
+      return uk ? `Сповіщення записали по ${symbol}: ${said}.` : `Alerts wrote on ${symbol}: ${said}.`;
     }
     default:
       return null;

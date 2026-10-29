@@ -191,7 +191,7 @@ export async function observeTransfer(
         .getTransaction(transactionSignature as never, {
           encoding: "json",
           commitment: "confirmed",
-          maxSupportedTransactionVersion: 0,
+          maxSupportedTransactionVersion: 1,
         })
         .send({ abortSignal }),
     );

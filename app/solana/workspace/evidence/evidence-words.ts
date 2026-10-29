@@ -15,7 +15,7 @@ const bi = (en: string, uk: string): Bi => ({ en, uk });
 
 export const EVIDENCE_WORDS = {
   title: bi("Onchain activity", "Активність у мережі"),
-  lead: bi("What the market did with this token on Solana — trades and movements, from an external source, on request.", "Що ринок робив із цим токеном у Solana — угоди й переміщення, із зовнішнього джерела, на запит."),
+  lead: bi("Trades and movements of this token, on request.", "Угоди й переміщення цього токена — на запит."),
   analyse: bi("Analysis", "Аналіз"),
   loading: bi("Reading the observation…", "Читаємо спостереження…"),
   refresh: bi("Refresh", "Оновити"),

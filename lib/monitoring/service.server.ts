@@ -6,7 +6,8 @@
 import { accountByWallet } from "../account/rpc.ts";
 import { reminderStates } from "../autoinvest/service.ts";
 import { tickAutoinvest } from "../autoinvest/tick.ts";
-import { sendPlainMessage } from "../telegram/api.ts";
+import { sendPlainMessage, type InlineKeyboard } from "../telegram/api.ts";
+import { assistantNoteButtons } from "../assistant/telegram/notes.ts";
 import { judgeEvidenceCondition } from "../evidence/conditions.ts";
 import { readMarketEvidence } from "../evidence/service.server.ts";
 import type { GuardStore } from "../guard/store.ts";
@@ -411,7 +412,9 @@ export async function tickMonitoring(store: GuardStore, nowMs: number, locale: "
 /** The production Telegram side: the account service for the wallet → account lookup, the bot for the send. */
 const PRODUCTION_TELEGRAM: TelegramDelivery = {
   accountByWallet: (chain, address) => accountByWallet(chain, address),
-  send: (chatId, text, keyboard) => sendPlainMessage(chatId, text, keyboard),
+  send: (chatId, text, keyboard) => sendPlainMessage(chatId, text, keyboard as InlineKeyboard),
+  /* AI-07: «Чому?», «Мій план», «Пауза» under the note's link — the assistant in the bot answers them. */
+  buttons: (inbox, link) => assistantNoteButtons(inbox, link),
 };
 
 /** Deliver the outbox with the production Telegram side; tests call `deliver.ts` with a fake. */

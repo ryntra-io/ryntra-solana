@@ -33,9 +33,13 @@ import type {
   LaunchWalletResponse,
 } from "../api/v1/contract.ts";
 import { priceMoveBps, uiAmount, type LaunchTrade } from "../core/venues/meteora-dbc/market.ts";
+import type { StepTiming } from "../core/pipeline.ts";
 import type { MarketState } from "../core/venues/meteora-dbc/market.server.ts";
 import { LaunchTradeRefusal, createLaunchTradeVenue, heldRaw, type LaunchTradeQuote } from "../core/venues/meteora-dbc/trade.server.ts";
 import { ensureRewardAccount } from "../rewards/ledger.ts";
+import { readBuildWindows, web3ChainReader } from "../solana/blockhash-life.ts";
+import { tradeRiskVerdict } from "../solana/trade-risk.server.ts";
+import type { TradeRiskSource, TradeRiskVerdict } from "../solana/trade-risk.ts";
 import { compareWalletTransaction } from "../solana/wallet-modification.ts";
 import type { LaunchDeps, LaunchReadDeps, LaunchRecord } from "./flow.server.ts";
 import { launchPair, launchPoolFee, launchWritesHere } from "./config.server.ts";
@@ -47,6 +51,10 @@ import { launchMarketReader } from "./trade-index.server.ts";
 export type TradeDeps = Pick<LaunchDeps, "network" | "connection" | "store" | "now"> & Pick<LaunchReadDeps, "second" | "adopt">;
 
 /** How long a built trade waits for the signature. */
+/**
+ * The longest a build waits for the signature. The real wait is the bytes' life — ~150 blocks ≈ 30 s on 200 ms slots,
+ * less a margin per transaction (`lib/solana/blockhash-life.ts`); signed later, the panel builds again.
+ */
 export const TRADE_BUILD_TTL_MS = 90 * 1000;
 const SEND_BUDGET = { confirmMs: 20_000, settleMs: 10_000 } as const;
 const TRADE_ROUTE_MS = 50_000;
@@ -83,10 +91,21 @@ type TradeBuildRecord = Readonly<{
 
 const buildKey = (cluster: string, id: string) => `${cluster}:${id}`;
 
-async function launchState(deps: TradeDeps, token: string): Promise<Readonly<{ record: LaunchRecord; state: MarketState }> | TradeFailure> {
-  const record = await readLaunchRecord(deps, deps.network.cluster, token);
+/** How long `run` took, pushed onto `timings` under `name` when they are kept (SOL-P1, `Server-Timing`). */
+async function timed<T>(timings: StepTiming[] | undefined, name: string, run: () => Promise<T>): Promise<T> {
+  const started = performance.now();
+  try {
+    return await run();
+  } finally {
+    timings?.push({ name, ms: performance.now() - started });
+  }
+}
+
+/** `shared`: a quote takes a read of the curve a second old at most (SOL-P1); a build reads it fresh. */
+async function launchState(deps: TradeDeps, token: string, timings?: StepTiming[], shared = false): Promise<Readonly<{ record: LaunchRecord; state: MarketState }> | TradeFailure> {
+  const record = await timed(timings, "record", () => readLaunchRecord(deps, deps.network.cluster, token));
   if (!record || record.state === "PENDING") return fail("LAUNCH_NOT_FOUND", "No Ryntra launch of this token here.");
-  const state = await launchMarketReader(deps).state({ token, pool: record.pool });
+  const state = await timed(timings, "state", () => launchMarketReader(deps).state({ token, pool: record.pool, shared }));
   return { record, state };
 }
 
@@ -100,10 +119,53 @@ function refused(error: unknown): TradeFailure {
   return fail("UNAVAILABLE", error instanceof Error ? error.message.slice(0, 300) : "The trade could not be prepared.");
 }
 
-function quoteView(deps: TradeDeps, record: LaunchRecord, state: MarketState, quote: LaunchTradeQuote): LaunchTradeQuoteResponse {
-  const pair = launchPair(deps.network, record.preset);
+/**
+ * The risk verdict over a trade of a launched token. The curve's own terms are
+ * what was just quoted — the price bound the chain will enforce, the venue the
+ * trade runs through, the moment it was read — and the token's chain facts
+ * come from the market-data gateway beside them.
+ *
+ * On devnet the gateway reads the main network, so its facts are not this
+ * token's: the reading says so in those words instead of serving a stranger's
+ * authorities as this mint's.
+ */
+async function launchTradeRisk(deps: TradeDeps, token: string, view: Omit<LaunchTradeQuoteResponse, "tradeRisk">): Promise<TradeRiskVerdict> {
+  const label = view.venue === "curve" ? "Ryntra Launch · the token's own curve" : "Ryntra Launch · the token's pool";
+  const source: TradeRiskSource = { ref: `ryntra.launch.trade:${view.venue}`, label, readAt: view.observedAt, slot: null };
+  const quoted = BigInt(view.amountOutRaw);
+  const minimum = BigInt(view.minimumOutRaw);
+  const enforcedBps = quoted > 0n ? Number(((quoted - minimum) * 10_000n) / quoted) : null;
+  const network = deps.network.cluster === "mainnet" ? "mainnet" : "devnet";
+  return tradeRiskVerdict({
+    trade: { kind: "LAUNCH", network, mint: token },
+    slippage: {
+      kind: "BOUNDED",
+      statedBps: view.slippageBps,
+      enforcedBps,
+      basis: `The quote is ${view.amountOutRaw} raw units and the least this trade may receive is ${view.minimumOutRaw}.`,
+      source,
+    },
+    path: { hops: [{ label: view.side === "buy" ? "buying into" : "selling into", venue: label }], source },
+    /* The curve prices every read afresh; there is no window of its own to state. */
+    quote: { readAt: view.observedAt, expiresAt: null, source },
+    venue: { id: view.venue, label, status: "LIVE", detail: `This trade moves the price by ${view.priceMoveBps} bps.`, source },
+    ...(network === "mainnet"
+      ? {}
+      : {
+          chain: {
+            state: "NOT_READ" as const,
+            mint: token,
+            why: "The market-data gateway reads the main network, and this trade is on devnet, so this token's chain facts were not read.",
+            readAt: view.observedAt,
+          },
+        }),
+  });
+}
+
+async function quoteView(deps: TradeDeps, record: LaunchRecord, state: MarketState, quote: LaunchTradeQuote, token: string): Promise<LaunchTradeQuoteResponse> {
+  const pair = launchPair(deps.network, record.preset, record.pairMint);
   const capPair = quote.priceAfter * uiAmount(state.supplyRaw, state.tokenDecimals);
-  return {
+  const view: Omit<LaunchTradeQuoteResponse, "tradeRisk"> = {
     venue: quote.venue,
     side: quote.side,
     amountInRaw: quote.amountInRaw,
@@ -118,6 +180,8 @@ function quoteView(deps: TradeDeps, record: LaunchRecord, state: MarketState, qu
     referral: quote.referral,
     observedAt: deps.now().toISOString(),
   };
+  /* 1.85.0: the risk verdict stands before this trade as before any other. */
+  return { ...view, tradeRisk: await launchTradeRisk(deps, token, view) };
 }
 
 /** What a wallet holds of a launched token and of its pair currency, raw, read from the chain now. */
@@ -140,13 +204,14 @@ export async function readLaunchWallet(deps: TradeDeps, token: string, wallet: s
   }
 }
 
-export async function quoteLaunchTrade(deps: TradeDeps, token: string, input: LaunchTradeQuoteRequest): Promise<Readonly<{ ok: true; quote: LaunchTradeQuoteResponse }> | TradeFailure> {
+/** `timings`, when given, receives how long each step took — the route's `Server-Timing` (SOL-P1). */
+export async function quoteLaunchTrade(deps: TradeDeps, token: string, input: LaunchTradeQuoteRequest, timings?: StepTiming[]): Promise<Readonly<{ ok: true; quote: LaunchTradeQuoteResponse }> | TradeFailure> {
   try {
-    const read = await launchState(deps, token);
+    const read = await launchState(deps, token, timings, true);
     if ("ok" in read) return read;
     const venue = createLaunchTradeVenue({ connection: deps.connection, referralOwner: deps.network.referralOwner, poolFee: launchPoolFee(deps.network) });
-    const quote = await venue.quote({ state: read.state, side: input.side, amountRaw: input.amountRaw, slippageBps: input.slippageBps });
-    return { ok: true, quote: quoteView(deps, read.record, read.state, quote) };
+    const quote = await timed(timings, "quote", () => venue.quote({ state: read.state, side: input.side, amountRaw: input.amountRaw, slippageBps: input.slippageBps }));
+    return { ok: true, quote: await quoteView(deps, read.record, read.state, quote, token) };
   } catch (error) {
     return refused(error);
   }
@@ -168,15 +233,18 @@ async function sweep(deps: TradeDeps): Promise<void> {
 /** A build that was sent: kept as long as its build, so a second press finds it used. */
 type TradeSend = Readonly<{ cluster: string; id: string; at: string }>;
 
-export async function buildLaunchTrade(deps: TradeDeps, token: string, input: LaunchTradeBuildRequest): Promise<Readonly<{ ok: true; build: LaunchTradeBuildResponse }> | TradeFailure> {
+/** `timings`, when given, receives how long each read of the build took — the route's `Server-Timing` (SOL-P1). */
+export async function buildLaunchTrade(deps: TradeDeps, token: string, input: LaunchTradeBuildRequest, timings?: StepTiming[]): Promise<Readonly<{ ok: true; build: LaunchTradeBuildResponse }> | TradeFailure> {
   try {
-    const read = await launchState(deps, token);
+    const read = await launchState(deps, token, timings);
     if ("ok" in read) return read;
     const venue = createLaunchTradeVenue({ connection: deps.connection, referralOwner: deps.network.referralOwner, poolFee: launchPoolFee(deps.network) });
-    const built = await venue.build({ state: read.state, token, side: input.side, amountRaw: input.amountRaw, slippageBps: input.slippageBps, wallet: input.wallet });
+    const built = await timed(timings, "build", () => venue.build({ state: read.state, token, side: input.side, amountRaw: input.amountRaw, slippageBps: input.slippageBps, wallet: input.wallet }));
     await sweep(deps).catch(() => undefined);
     const now = deps.now();
-    const pair = launchPair(deps.network, read.record.preset);
+    const windows = await timed(timings, "windows", () => readBuildWindows(web3ChainReader(deps.connection), built.validUntil, { capMs: TRADE_BUILD_TTL_MS }));
+    const signableMs = windows.signableMs;
+    const pair = launchPair(deps.network, read.record.preset, read.record.pairMint);
     const record: TradeBuildRecord = {
       id: randomBytes(16).toString("hex"),
       cluster: deps.network.cluster,
@@ -187,7 +255,7 @@ export async function buildLaunchTrade(deps: TradeDeps, token: string, input: La
       wireBase64: built.wireBase64,
       validUntil: built.validUntil,
       createdAt: now.toISOString(),
-      expiresAt: new Date(now.getTime() + TRADE_BUILD_TTL_MS).toISOString(),
+      expiresAt: new Date(now.getTime() + windows.lifeMs).toISOString(),
       trade: {
         venue: built.quote.venue,
         tokenInfo: { mint: token, symbol: read.record.symbol.slice(0, 24), decimals: read.state.tokenDecimals },
@@ -206,16 +274,18 @@ export async function buildLaunchTrade(deps: TradeDeps, token: string, input: La
       },
     };
     await deps.store.collection<TradeBuildRecord>("launchTradeBuilds").insertIfAbsent(buildKey(record.cluster, record.id), record);
+    const view = await quoteView(deps, read.record, read.state, built.quote, token);
     return {
       ok: true,
-      build: { buildId: record.id, network: deps.network.chain, unsignedWireBase64: built.wireBase64, quote: quoteView(deps, read.record, read.state, built.quote), expiresAt: record.expiresAt },
+      build: { buildId: record.id, network: deps.network.chain, unsignedWireBase64: built.wireBase64, quote: view, expiresAt: record.expiresAt, signableMs },
     };
   } catch (error) {
     return refused(error);
   }
 }
 
-export async function submitLaunchTrade(deps: TradeDeps, token: string, input: LaunchTradeSubmitRequest): Promise<Readonly<{ ok: true; submit: LaunchTradeSubmitResponse }> | TradeFailure> {
+/** `timings`, when given, receives how long the send and the confirmation took — the route's `Server-Timing` (SOL-P1). */
+export async function submitLaunchTrade(deps: TradeDeps, token: string, input: LaunchTradeSubmitRequest, timings?: StepTiming[]): Promise<Readonly<{ ok: true; submit: LaunchTradeSubmitResponse }> | TradeFailure> {
   /* The send and the fill's read inside the route's 60 s: a fill not read in time is said as the quote's «≈». */
   const deadline = deps.now().getTime() + TRADE_ROUTE_MS;
   const builds = deps.store.collection<TradeBuildRecord>("launchTradeBuilds");
@@ -259,7 +329,7 @@ export async function submitLaunchTrade(deps: TradeDeps, token: string, input: L
       quote: recorded.quote,
     }).catch(() => undefined);
   }
-  const sent = await sendOnce(deps.connection, tx, Number(build.validUntil), deps.now, { ...SEND_BUDGET, deadline }, { second: deps.second });
+  const sent = await sendOnce(deps.connection, tx, Number(build.validUntil), deps.now, { ...SEND_BUDGET, deadline }, { second: deps.second, timings });
   forgetLaunchMarket(deps.network.cluster, token);
   if (sent.outcome === "REJECTED" || sent.outcome === "FAILED") {
     if (recorded) await failLaunchTrade(deps, deps.network.cluster, sent.signature, sent.reason ?? "The network refused the trade.").catch(() => undefined);

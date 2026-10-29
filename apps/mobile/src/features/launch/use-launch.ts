@@ -161,15 +161,21 @@ export function useLaunchWallet(mint: string | null, address: string | null) {
 }
 
 /** A trade counted as the amount is typed. */
+/**
+ * A trade quoted as it is typed. `askedRaw` is the amount the quote in view was asked for (the typed one once the typing
+ * settles), so the panel tells its own answer from an older one by the request — never by the answer's amount, which on
+ * a curve near its threshold is less than the amount asked (`amountLeftRaw`).
+ */
 export function useTradeQuote(mint: string, side: LaunchTradeSide, amountRaw: bigint | null, slippageBps: number) {
   const key = useDebounced(amountRaw !== null && amountRaw > 0n ? amountRaw.toString() : null, 350)
-  return useQuery({
+  const quote = useQuery({
     queryKey: ['launch', 'trade-quote', mint, side, key ?? '', slippageBps],
     queryFn: ({ signal }) => quoteLaunchTrade(mint, { side, amountRaw: key!, slippageBps }, signal),
     enabled: key !== null,
     staleTime: 10_000,
     retry: (count, error) => !(error instanceof ApiError) && count < 1,
   })
+  return { quote, askedRaw: key }
 }
 
 /** «Мої лаунчі»: the wallet's launches and what they earned it — public data, read by the connected wallet's address. */

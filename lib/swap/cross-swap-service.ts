@@ -15,11 +15,11 @@
  * provider was named for which pair.
  */
 
-import { fetchRelayQuote, normalizeRelayQuote, relayApprovalCount, RELAY_SLIPPAGE_BPS } from "../relay/quote-api.ts";
+import { fetchRelayQuote, normalizeRelayQuote, relayApprovalCount, relayQuoteMatchesRequest, RELAY_SLIPPAGE_BPS } from "../relay/quote-api.ts";
 import { relayNativeAddress } from "../relay/chains.ts";
 import type { RelayAuth } from "../relay/http.ts";
 import { resolveSwapToken } from "../relay/currencies.ts";
-import { fetchMayanQuotes, isMayanServedNetwork, MAYAN_NATIVE_TOKEN, normalizeMayanQuote, selectMayanQuote, type MayanQuoteDependencies, type MayanRawQuote } from "../mayan/price-api.ts";
+import { fetchMayanQuotes, isMayanServedNetwork, MAYAN_NATIVE_TOKEN, mayanQuoteMatchesRequest, normalizeMayanQuote, selectMayanQuote, type MayanQuoteDependencies, type MayanRawQuote } from "../mayan/price-api.ts";
 import type { SolanaActionMovement } from "../solana/action-ledger.ts";
 import { formatRawAmount, type ResolvedSwapAsset, type SwapNetwork } from "./catalog.ts";
 import { classifySwapRoute, type SwapRouteClassification } from "./classify.ts";
@@ -305,6 +305,18 @@ export async function quoteViaMayan(route: CrossSwapRoute, amountRaw: string, op
   if (!selection.selected) {
     return { ok: false, status: 409, code: "QUOTE_NO_ADMISSIBLE_ROUTE", reason: "Not available for this pair right now.", detail: { declined: selection.declined } };
   }
+  /* The answer is read back against the question before anyone sees a price
+     from it: a quote for another token or chain is not this pair's quote. */
+  const matches = mayanQuoteMatchesRequest(selection.selected, {
+    fromChain: route.from.network,
+    fromToken: mayanTokenFor(route.from),
+    toChain: route.to.network,
+    toToken: mayanTokenFor(route.to),
+    amountInRaw: amountRaw,
+  });
+  if (!matches.ok) {
+    return { ok: false, status: 502, code: "QUOTE_MISMATCH", reason: "Not available for this pair right now.", detail: { reason: matches.reason } };
+  }
   const quote = normalizeMayanQuote(selection.selected, route.tuple, {
     fromDecimals: route.fromDecimals,
     toDecimals: route.toDecimals,
@@ -337,23 +349,28 @@ async function quoteViaRelay(route: CrossSwapRoute, amountRaw: string, options: 
     return { ok: false, status: 400, code: "QUOTE_ADDRESS_SHAPE", reason: "One of the addresses does not belong to its network.", detail: {} };
   }
 
-  const result = await fetchRelayQuote(
-    {
-      fromNetwork: route.from.network,
-      fromToken: relayTokenFor(route.from),
-      toNetwork: route.to.network,
-      toToken: relayTokenFor(route.to),
-      amountRaw,
-      user,
-      recipient,
-      slippageBps: RELAY_SLIPPAGE_BPS,
-      appFee: fee.relayAppFeeRecipient ? { recipient: fee.relayAppFeeRecipient, bps: serviceFeeRateFor("RELAY_APP_FEE") } : null,
-    },
-    options.deps,
-  );
+  const request = {
+    fromNetwork: route.from.network,
+    fromToken: relayTokenFor(route.from),
+    toNetwork: route.to.network,
+    toToken: relayTokenFor(route.to),
+    amountRaw,
+    user,
+    recipient,
+    slippageBps: RELAY_SLIPPAGE_BPS,
+    appFee: fee.relayAppFeeRecipient ? { recipient: fee.relayAppFeeRecipient, bps: serviceFeeRateFor("RELAY_APP_FEE") } : null,
+  } as const;
+  const result = await fetchRelayQuote(request, options.deps);
   if (!result.ok) {
     const status = result.code === "NO_ROUTE" ? 409 : result.code === "RATE_LIMITED" ? 429 : result.code === "UNAUTHORIZED" ? 502 : 502;
     return { ok: false, status, code: `QUOTE_${result.code}`, reason: result.reason, detail: { provider: { code: result.provider.code } } };
+  }
+  /* The recipient, both currencies, the amount and the refund, read back
+     against what was asked (FIX-XSWAP-1). On a Solana origin the bytes a wallet
+     signs do not name where the money lands; this is the check that does. */
+  const matches = relayQuoteMatchesRequest(result.quote, request);
+  if (!matches.ok) {
+    return { ok: false, status: 502, code: "QUOTE_MISMATCH", reason: "Not available for this pair right now.", detail: { field: matches.field, reason: matches.reason } };
   }
   const quote = normalizeRelayQuote(result.quote, route.tuple, {
     fromDecimals: route.fromDecimals,

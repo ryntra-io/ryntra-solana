@@ -1,0 +1,222 @@
+/* The city's search: an icon in the top bar and one compact panel under it, in the HUD's own glass; on a phone held
+   upright the panel is a sheet at the bottom, under the thumb (CITY-6a). */
+
+.wrap {
+  display: contents;
+}
+
+.on {
+  box-shadow:
+    inset 0 0 0 2px rgba(255, 178, 63, 0.7),
+    inset 0 1px 18px rgba(153, 69, 255, 0.18);
+}
+
+.panel {
+  position: absolute;
+  right: 0;
+  top: 54px;
+  width: min(440px, 100%);
+  padding: 12px;
+  --cut: 14px;
+  color: var(--ice);
+  animation: searchRise 200ms ease-out both;
+}
+
+@keyframes searchRise {
+  from {
+    opacity: 0;
+    transform: translateY(-6px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.field {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  height: 48px;
+  padding: 0 12px;
+  background: rgba(255, 255, 255, 0.06);
+  box-shadow: inset 0 0 0 1px rgba(153, 69, 255, 0.35);
+  color: var(--text-dim);
+}
+
+.field:focus-within {
+  box-shadow: inset 0 0 0 2px var(--amber);
+}
+
+.field svg {
+  width: 18px;
+  height: 18px;
+  flex: none;
+}
+
+.input {
+  flex: 1;
+  min-width: 0;
+  height: 100%;
+  border: 0;
+  outline: none;
+  background: transparent;
+  color: var(--ice);
+  /* 16px keeps a phone from zooming in on the field. */
+  font: 600 16px var(--font-ui, system-ui), system-ui, sans-serif;
+  letter-spacing: 0.01em;
+}
+
+.input::placeholder {
+  color: var(--text-dim);
+}
+
+.input::-webkit-search-cancel-button {
+  filter: invert(1) opacity(0.6);
+}
+
+.spinner {
+  width: 14px;
+  height: 14px;
+  flex: none;
+  border: 2px solid rgba(238, 241, 255, 0.25);
+  border-top-color: var(--amber);
+  border-radius: 50%;
+  animation: searchSpin 700ms linear infinite;
+}
+
+@keyframes searchSpin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.list {
+  list-style: none;
+  margin: 8px 0 0;
+  padding: 0;
+  max-height: min(420px, calc(100dvh - 190px));
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+.row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 56px;
+  padding: 8px 10px;
+  cursor: pointer;
+  user-select: none;
+}
+
+.active {
+  background: rgba(153, 69, 255, 0.2);
+  box-shadow: inset 3px 0 0 var(--amber);
+}
+
+.icon {
+  width: 36px;
+  height: 36px;
+  flex: none;
+  border-radius: 50%;
+  object-fit: cover;
+  background: radial-gradient(circle at 35% 30%, rgba(153, 69, 255, 0.55), rgba(42, 22, 64, 0.9));
+  box-shadow: inset 0 0 0 1px rgba(238, 241, 255, 0.12);
+}
+
+.words {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  flex: 1;
+}
+
+.symbol {
+  font-size: var(--type-base);
+  line-height: 1.15;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.name {
+  font-size: var(--type-small);
+  color: var(--text-dim);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.tags {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 4px;
+  flex: none;
+}
+
+.where {
+  font-size: var(--type-micro);
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+  white-space: nowrap;
+}
+
+.inCity {
+  color: var(--mint);
+}
+
+.status {
+  padding: 12px 6px 4px;
+  font-size: var(--type-small);
+  line-height: 1.45;
+  color: var(--text-dim);
+}
+
+@media (max-width: 400px) {
+  .panel {
+    top: 50px;
+    padding: 10px;
+  }
+  .where {
+    letter-spacing: 0.08em;
+  }
+}
+
+/* A phone held upright: the panel is a sheet at the bottom — the field lowest, under the thumb, the coins above it.
+   It stands above the dock while the keyboard is down and above the keyboard (`--kb`) while it is up. */
+@media (max-width: 560px) and (orientation: portrait) {
+  .panel {
+    position: fixed;
+    top: auto;
+    left: var(--gutter);
+    right: var(--gutter);
+    width: auto;
+    bottom: max(calc(var(--kb, 0px) + 8px), calc(max(14px, env(safe-area-inset-bottom)) + 86px));
+    display: flex;
+    flex-direction: column-reverse;
+    animation-name: searchUp;
+  }
+  .list {
+    margin: 0 0 8px;
+    /* The top bar, the field and the room above the dock or the keyboard stay clear. */
+    max-height: min(420px, calc(100dvh - var(--kb, 0px) - 260px - env(safe-area-inset-top)));
+  }
+  .status {
+    padding: 4px 6px 10px;
+  }
+}
+
+@keyframes searchUp {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}

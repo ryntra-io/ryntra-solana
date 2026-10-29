@@ -6,12 +6,12 @@
  * across LI.FI, Relay and Circle CCTP and found, on the live provider
  * endpoints of that day, exactly this:
  *
- * - **Solana ↔ Base, USDC** — Circle CCTP V2. Four owner-signed mainnet
+ * - **Solana ↔ Base, USDC** — Circle CCTP V2. Four founder-signed mainnet
  *   transfers settled and reconciled MATCHED. Open to people.
  * - **Solana ↔ Ethereum, USDC** — the same rail. Circle lists Ethereum as
  *   domain 0 with the identical V2 contracts, the whole lane is built through
  *   the same code as Base, and it has moved no money yet. It opens only after
- *   the first owner-signed transfer is read back from both chains and its
+ *   the first founder-signed transfer is read back from both chains and its
  *   own variable is set (`lane-state.ts`).
  * - **Solana ↔ Robinhood Chain, USDC** — no route exists. Circle has no
  *   domain for Robinhood Chain; LI.FI lists 295 tokens there and none of them

@@ -15,8 +15,7 @@ import test from "node:test";
 const read = (path) => readFileSync(new URL("../../../" + path, import.meta.url), "utf8");
 const code = (path) => read(path).replace(/\/\*[\s\S]*?\*\//g, " ").replace(/^\s*\/\/.*$/gm, " ").replace(/\{\s*\/\*[\s\S]*?\*\/\s*\}/g, " ");
 
-const HOME = code("app/app/home/home-surface.tsx");
-const ASIDE = code("app/app/home/home-aside.tsx");
+const PLACE = code("app/app/autoinvest/autoinvest-place.tsx");
 const BLOCK = code("app/app/invest/autoinvest-block.tsx");
 const ROW = code("app/app/invest/budget-row.tsx");
 const HOLDINGS = code("app/solana/workspace/holdings/holdings-card.tsx");
@@ -25,17 +24,16 @@ const ACTIONS = code("app/app/stocks/[ticker]/company-actions.tsx");
 const BUY = code("app/app/stocks/[ticker]/buy-sheet.tsx");
 const RULE_SHEET = code("app/app/stocks/[ticker]/autoinvest-sheet.tsx");
 const BUDGET_SHEET = code("app/app/invest/budget-sheet.tsx");
-const TICKET = code("app/solana/workspace/spot/order-ticket.tsx");
+const TICKET = code("app/solana/workspace/spot/spot-ticket.tsx");
 const NOTICE = code("app/app/invest/rule-reminder-notice.tsx");
 
-test("«Автоінвест» is on Home for every connected wallet — not held back until the wallet can buy", () => {
-  /* The block stands in Home's right column — beside the main one on a desk, under it on a phone. */
-  assert.match(HOME, /<HomeAside locale=\{locale\} \/>/, "Home draws its right column");
-  assert.match(ASIDE, /import \{ AutoinvestBlock \} from "@\/app\/app\/invest\/autoinvest-block"/);
-  const call = ASIDE.indexOf("<AutoinvestBlock locale={locale} compact />");
-  assert.ok(call > 0, "the column draws the block");
-  const line = ASIDE.slice(ASIDE.lastIndexOf("\n", call), call);
-  assert.match(line, /\{connection \? $/, "for a connected wallet; a guest reads what it is in one line");
+test("«Автоінвест» is a tab of Terminal for every connected wallet — not held back until the wallet can buy", () => {
+  /* Since the shell on the core the rules live in Terminal's «Автоінвест» tab; Home is one number, three blocks, one action. */
+  assert.match(PLACE, /import \{ AutoinvestBlock \} from "@\/app\/app\/invest\/autoinvest-block"/);
+  const call = PLACE.indexOf("<AutoinvestBlock locale={locale} heading={false} />");
+  assert.ok(call > 0, "the tab draws the block");
+  const line = PLACE.slice(PLACE.lastIndexOf("\n", PLACE.lastIndexOf("\n", call) - 1), call);
+  assert.match(line, /\{connection \? \($/m, "for a connected wallet");
   assert.doesNotMatch(line, /&&|funds|need/, "the block is drawn with no condition on the wallet's funds");
 });
 
@@ -43,9 +41,12 @@ test("Portfolio lists the rules — the same block, under the value on a desk an
   assert.match(HOLDINGS, /import \{ AutoinvestBlock \} from "@\/app\/app\/invest\/autoinvest-block"/);
   assert.match(HOLDINGS, /<div className=\{styles\.autoinvest\}>\s*<AutoinvestBlock locale=\{locale\} \/>\s*<\/div>/);
   assert.ok(HOLDINGS.indexOf("<AutoinvestBlock") > HOLDINGS.indexOf("<WalletGate"), "a guest reads the wallet gate; the rules are a connected wallet's");
+  /* Since B5 the side column holds «Винагороди» over the rules, and the main column the holdings with the pools and the receipts under them. */
   assert.match(HOLDINGS_CSS, /grid-template-areas:\s*"value holdings"\s*"rules holdings";/);
   assert.match(HOLDINGS_CSS, /grid-template-areas:\s*"value"\s*"holdings"\s*"rules";/);
-  assert.match(HOLDINGS_CSS, /\.autoinvest \{[^}]*grid-area: rules;/);
+  assert.match(HOLDINGS_CSS, /\.side \{[^}]*grid-area: rules;/);
+  assert.match(HOLDINGS_CSS, /\.main \{[^}]*grid-area: holdings;/);
+  assert.match(HOLDINGS, /<div className=\{styles\.side\}>\s*<RewardsBlock \/>\s*<div className=\{styles\.autoinvest\}>/);
 });
 
 test("the month's budget is its own line: «Бюджет не задано · Задати» or «Бюджет місяця $10 з $50 · Змінити»", () => {
@@ -78,11 +79,11 @@ test("while a rule's reminder is open, the company's first action is the rule's 
   assert.match(ACTIONS, /const ruleOffer: RuleOffer \| null = rule && due \? \{ amountUsd: purchaseSumUsd\(rule, due\), context: `\$\{word\("timeToBuy"\)\} · \$\{ruleWhenLine\(rule, lang\)\}`, onBuy: \(\) => buyNow\(rule, due\) \} : null;/);
   assert.match(ACTIONS, /ruleOffer=\{ruleOffer\}/);
   const offer = BUY.slice(BUY.indexOf("{ruleOffer ? ("), BUY.indexOf("<dialog"));
-  const first = offer.indexOf("rw-btn--primary");
+  const first = offer.indexOf('variant="primary"');
   const second = offer.indexOf('word("plainPurchase")');
   assert.ok(first > 0 && second > first, "the orange action first, the ordinary purchase after it");
   assert.match(offer, /onClick=\{ruleOffer\.onBuy\}[\s\S]*buyByRuleWord\(props\.locale, ruleOffer\.amountUsd\)/);
-  assert.match(offer, /className=\{`rw-btn \$\{company\.plainBuy\}`\}/, "the ordinary purchase is quiet — one orange action on the screen");
+  assert.match(offer, /<Button variant="secondary" block className=\{company\.plainBuy\}/, "the ordinary purchase is quiet — one orange action on the screen");
   assert.match(offer, /word\("reminderStaysOpen"\)/);
   /* Its sheet says so before any sum, and the reminder's own sheet buys «$X за правилом». */
   assert.match(BUY, /data-rule-open>\s*\{plainLeavesOpenLine\(locale, ruleOffer\.amountUsd\)\}/);
@@ -98,8 +99,8 @@ test("an ordinary purchase closed beside an open reminder does not end the rule'
 test("Spot says it too: a purchase there leaves the reminder open, with the way to the rule's own purchase", () => {
   assert.match(TICKET, /import \{ RuleReminderNotice \} from "@\/app\/app\/invest\/rule-reminder-notice"/);
   /* 1.31.0: not while the ticket is the rule's own purchase; on a token, the purchase opens in place. */
-  assert.match(TICKET, /connection && side === "BUY" && !ruleBinding \? <RuleReminderNotice mint=\{baseMint\} proven=\{proven\} locale=\{locale\} className=\{styles\.ruleReminder\} onBuy=\{!isStockMarket \? onRuleBuy : undefined\} \/> : null/);
-  assert.ok(TICKET.indexOf("<RuleReminderNotice") < TICKET.indexOf("className={styles.cta} data-terminal-cta data-dense disabled={cta.disabled}"), "said before the action");
+  assert.match(TICKET, /connection && draft\.side === "buy" && !ruleBinding && stage === "form" \? <RuleReminderNotice mint=\{baseMint\} proven=\{proven\} locale=\{locale\} className=\{styles\.ruleReminder\} onBuy=\{!isStockMarket \? onRuleBuy : undefined\} \/> : null/);
+  assert.ok(TICKET.indexOf("<RuleReminderNotice") < TICKET.indexOf("<TradeTicket"), "said before the action");
   assert.match(NOTICE, /useAutoinvestRules\(proven\)/);
   assert.match(NOTICE, /reminderOpenNow\(rule, nowMs\)/);
   assert.match(NOTICE, /word\("reminderOpenHere"\)[\s\S]*word\("plainHereLeavesOpen"\)[\s\S]*rulePurchaseHref\(rule, due\.dueAt\)[\s\S]*buyByRuleWord\(locale, purchaseSumUsd\(rule, due\)\)/);

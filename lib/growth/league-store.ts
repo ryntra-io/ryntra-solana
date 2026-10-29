@@ -24,7 +24,7 @@ import { DAY_MS, isWeekStart, seasonRange, weekRange, weekStartOf, type SeasonRa
  * {@link FINAL_AFTER_MS} ago is final and never computed again. Inside one
  * process the whole read is shared for {@link INPUTS_TTL_MS}. At this
  * product's volume that is right; when it stops being right, the figures
- * move to real tables — the shape of what a board
+ * move to real tables through a task of line A — the shape of what a board
  * reads does not change.
  *
  * ## Who decides who is shown

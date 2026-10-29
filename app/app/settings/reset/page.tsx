@@ -15,7 +15,7 @@ export default async function ResetPasswordPage() {
   return (
     <section className="ry-account-settings">
       <h1>{uk ? "Новий пароль" : "Set a new password"}</h1>
-      <p className="ry-muted">{uk ? "Це посилання надіслано на вашу адресу. Інші сесії цього облікового запису буде завершено." : "This link was sent to your address. Other sessions of this account will be signed out."}</p>
+      <p className="ry-muted">{uk ? "Це посилання надіслано на твою адресу. Інші сесії цього облікового запису буде завершено." : "This link was sent to your address. Other sessions of this account will be signed out."}</p>
       <ResetForm />
     </section>
   );

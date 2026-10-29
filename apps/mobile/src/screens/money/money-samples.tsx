@@ -6,6 +6,7 @@ import type { PayLink, TransferCheck } from '@/lib/api'
 
 import { LinkCard } from './link-card'
 import { PayLinkPanel } from './pay-link-panel'
+import { SendCheckStep, SendDoneStep } from './send'
 import { SendDoneCard, SendPendingCard, SendReview } from './send-parts'
 
 /*
@@ -18,6 +19,10 @@ const ME = '4MS4RQ3Vj2oYFHJz4EtLyxtq6panVcDUpDyXdoGxfQ1n'
 const THEM = '7xKXtg2CW87d97TXJSDpbD5jBkheTqA83TZRuJosgAsU'
 const SIG = '4Rj7nqXH1o8sS4mWfZtFj1o2hX6Qk1GfJb3Ue9yVJ3cQfHk2t7Wn8ZPaxLmYd5r6e9TqUu2iVb3NcKsRgAp1xYz'
 const AT = '2026-10-05T10:24:00.000Z'
+/* A `.skr` name THEM's transfer was sent to (M41.2) — a sample only. */
+const NAME = 'alice.skr'
+/* A recent address THEM imitates: the same first and last four characters, another middle — a sample only. */
+const LOOKALIKE_OF = `${THEM.slice(0, 4)}${'1'.repeat(THEM.length - 8)}${THEM.slice(-4)}`
 
 const CHECK: TransferCheck = {
   asset: { mint: 'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v', decimals: 6 },
@@ -96,6 +101,61 @@ const PENDING: PendingSend = {
   summary: { amount: '1', symbol: 'USDC', to: THEM },
 }
 
+/** The new look's send (M44.4): «Перевірка» to a new address, and «Готово» — on the same sample answers. */
+export function SendStepSamples() {
+  const none = () => undefined
+  return (
+    <View className="gap-3">
+      {/* The new look's steps (M44.4): «Перевірка» to a new address, and «Готово». */}
+      <Card level="elevated">
+        <SendCheckStep
+          check={CHECK}
+          symbol="USDC"
+          fresh
+          phase="review"
+          failure={null}
+          blocked={false}
+          onConfirm={none}
+          onCancel={none}
+        />
+      </Card>
+      {/* M41.2: sent to a `.skr` name — the name, then the whole address it points to now. */}
+      <Card level="elevated">
+        <SendCheckStep
+          check={CHECK}
+          symbol="USDC"
+          name={NAME}
+          fresh
+          phase="review"
+          failure={null}
+          blocked={false}
+          onConfirm={none}
+          onCancel={none}
+        />
+      </Card>
+      <Card level="elevated">
+        <SendCheckStep
+          check={CHECK}
+          symbol="USDC"
+          fresh
+          lookalikeOf={LOOKALIKE_OF}
+          phase="review"
+          failure={null}
+          blocked={false}
+          onConfirm={none}
+          onCancel={none}
+        />
+      </Card>
+      <Card level="elevated">
+        <SendDoneStep
+          done={{ outcome: 'sent', result: null, signature: SIG, amount: '1', symbol: 'USDC', to: THEM, toName: NAME, at: AT }}
+          onReceipt={none}
+        />
+      </Card>
+    </View>
+  )
+}
+
 export function MoneySamples() {
   const none = () => undefined
   return (
@@ -123,11 +183,11 @@ export function MoneySamples() {
         />
       </Card>
       <SendDoneCard
-        done={{ outcome: 'sent', result: null, signature: SIG, amount: '1', symbol: 'USDC', to: THEM, at: AT }}
+        done={{ outcome: 'sent', result: null, signature: SIG, amount: '1', symbol: 'USDC', to: THEM, toName: NAME, at: AT }}
         onAgain={none}
       />
       <SendDoneCard
-        done={{ outcome: 'open', result: null, signature: SIG, amount: '1', symbol: 'USDC', to: THEM, at: AT }}
+        done={{ outcome: 'open', result: null, signature: SIG, amount: '1', symbol: 'USDC', to: THEM, toName: null, at: AT }}
         onAgain={none}
       />
       <SendPendingCard pending={PENDING} show="UNKNOWN" signedIn={false} signingIn={false} onSignIn={none} />

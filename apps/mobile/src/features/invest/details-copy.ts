@@ -9,6 +9,18 @@ import type { Copy } from '../../lib/i18n.ts'
  * market header and stock context); the Ukrainian speaks «ти» and names a
  * figure in Ukrainian — the venue, the issuer and the chain keep their names.
  */
+/** «акції» after a fraction, «акція · акції · акцій» after a whole count — the Ukrainian noun after a number. */
+function ukShares(value: number): string {
+  if (typeof value !== 'number' || !Number.isFinite(value)) return 'акції'
+  const rounded = Number(value.toFixed(4))
+  if (!Number.isInteger(rounded)) return 'акції'
+  const ten = rounded % 10
+  const hundred = rounded % 100
+  if (ten === 1 && hundred !== 11) return 'акція'
+  if (ten >= 2 && ten <= 4 && (hundred < 12 || hundred > 14)) return 'акції'
+  return 'акцій'
+}
+
 /** The venue's three categories, the ones with words of their own. */
 export type AssetCategory = 'stock' | 'crypto' | 'meme'
 
@@ -23,7 +35,7 @@ export type DetailsCopy = Readonly<{
   refreshFailed: string
   categories: Readonly<Record<AssetCategory, string>>
   unverified: string
-  flaggedByVenue: string
+  flaggedByAudit: string
   /* the issuer's figures */
   issuerDown: string
   issuerRetry: string
@@ -33,8 +45,14 @@ export type DetailsCopy = Readonly<{
   notConfirmedLine: string
   referencePerShare: string
   unavailable: string
-  deviation: string
-  versus: (label: string) => string
+  /**
+   * Two distances on one page, named apart (ST-5 r8): the token's own price against the share — the issuer's list basis
+   * — and the price a quote for an amount executes at against it.
+   */
+  tokenVsShare: string
+  executionVsShare: string
+  /** «референс xStocks» — whose reference the token's price stands against. */
+  referenceBy: (label: string) => string
   haltedByIssuer: string
   unitsDiffer: string
   unitsChange: (time: string) => string
@@ -43,6 +61,8 @@ export type DetailsCopy = Readonly<{
   volume24h: string
   liquidity: string
   marketCap: string
+  /** A stock token's own market cap — the token's value on the chain, never the company's (ST-5 r7). */
+  tokenMarketCap: string
   holders: string
   /* the pool's chart */
   chart: string
@@ -73,17 +93,27 @@ export type DetailsCopy = Readonly<{
   quoteDownLine: string
   receiveFor: (usd: string) => string
   giveFor: (usd: string) => string
+  /**
+   * The shares the quoted tokens stand for, beside the tokens a person actually receives (ST-5 r10: «≈ 4,558 NVDAx
+   * (4,566 акції)», never the share count under the token's name): the figure as written, its value for the noun.
+   */
+  sharesBeside: (figure: string, value: number) => string
   perShareRow: string
   referenceDetail: (price: string, state: string) => string
   noReference: string
   priceImpact: string
+  /**
+   * A quote whose price for the share stands far from the reference (ST-5 r7): the distance is the figure that matters,
+   * said over the rows — the price impact is then no cost to read and is not shown.
+   */
+  quoteFar: (pct: string, above: boolean) => string
   feeInQuote: string
   units: string
   quotedAt: (time: string, source: string) => string
   quoteRefreshFailed: string
-  examples: string
   /* «Факти за цифрами» */
-  researchTitle: (symbol: string) => string
+  /** The sheet's title, its door's own words. */
+  researchTitle: string
   asOf: (time: string) => string
   sectionMarket: string
   sectionIssuer: string
@@ -102,7 +132,14 @@ export type DetailsCopy = Readonly<{
   mintAuthority: string
   freezeAuthority: string
   authorityOff: string
-  authorityOn: string
+  /** New tokens can still be minted — «Можливий». */
+  mintOn: string
+  /** The token can still be frozen in a wallet — «Можлива». */
+  freezeOn: string
+  /** Behind «?»: the address the chain records as able to mint, in full. */
+  mintBy: (address: string) => string
+  /** Behind «?»: the address the chain records as able to freeze, in full. */
+  freezeBy: (address: string) => string
   firstPool: string
   change1h: string
   trades24h: string
@@ -127,10 +164,14 @@ export type DetailsCopy = Readonly<{
   reservesDetail: (tokens: string, custodians: string, time: string) => string
   notAttested: string
   tokenAddress: string
-  program: string
-  decimals: string
+  copyAddress: string
+  copied: string
   supply: string
-  slot: (slot: string, time: string) => string
+  /** Behind «?» by the supply: what the supply, the reserves and the backing each count. */
+  supplyHelpTitle: string
+  supplyHelp: string
+  /** Said with the supply's «?» where the issuer reports reserves. */
+  reservesHelp: string
   none: string
   pool: string
   website: string
@@ -140,22 +181,23 @@ export type DetailsCopy = Readonly<{
 
 export const DETAILS_COPY: Copy<DetailsCopy> = {
   en: {
-    tokenPrice: (time, age) => `Token price · ${time} · ${age} · 24h`,
+    tokenPrice: (time, age) => `${time} · ${age} · 24h`,
     stale: 'Stale',
     refreshFailed: 'Refresh failed',
     categories: { stock: 'Stock', crypto: 'Crypto', meme: 'Meme' },
     unverified: 'Unverified',
-    flaggedByVenue: 'Flagged by the venue',
+    flaggedByAudit: 'Flagged by Jupiter',
     issuerDown: 'Issuer figures unavailable',
     issuerRetry: 'Try the issuer’s figures again',
     tryAgain: 'Try again',
     loadingIssuer: 'Loading the issuer’s figures',
     notConfirmed: 'Not a confirmed stock',
-    notConfirmedLine: 'No issuer names this token. Its figures are the venue’s only.',
+    notConfirmedLine: 'No issuer names this token.',
     referencePerShare: 'Reference per share',
     unavailable: 'Unavailable',
-    deviation: 'Deviation',
-    versus: (label) => `vs ${label}`,
+    tokenVsShare: 'Token price vs the share',
+    executionVsShare: 'Execution price vs the share',
+    referenceBy: (label) => `${label} reference`,
     haltedByIssuer: 'Halted by the issuer',
     unitsDiffer: 'Units differ on chain',
     unitsChange: (time) => `Units change at ${time}`,
@@ -163,6 +205,7 @@ export const DETAILS_COPY: Copy<DetailsCopy> = {
     volume24h: 'Volume 24h',
     liquidity: 'Liquidity',
     marketCap: 'Market cap',
+    tokenMarketCap: 'Token market cap',
     holders: 'Holders',
     chart: 'Chart',
     timeframes: {
@@ -196,34 +239,39 @@ export const DETAILS_COPY: Copy<DetailsCopy> = {
     quoteDownLine: 'The quote is not answering right now.',
     receiveFor: (usd) => `you receive for ${usd}`,
     giveFor: (usd) => `you give for ${usd}`,
+    sharesBeside: (figure, value) =>
+      `(${figure} ${value < 1 ? 'of a share' : Math.abs(value - 1) < 1e-9 ? 'share' : 'shares'})`,
     perShareRow: 'Per share',
     referenceDetail: (price, state) => `reference ${price} · ${state}`,
     noReference: 'no reference',
     priceImpact: 'Price impact',
+    quoteFar: (pct, above) => `For this sum the price is ${pct} ${above ? 'above' : 'below'} the share`,
     feeInQuote: 'Fee in the quote',
     units: 'Units',
     quotedAt: (time, source) => `Quoted ${time} · ${source}`,
     quoteRefreshFailed: 'Refresh failed · last quote shown',
-    examples: 'Example amounts for orientation. Trade quotes your real amount again before you sign.',
-    researchTitle: (symbol) => `Research · ${symbol}`,
+    researchTitle: 'The facts behind the figures',
     asOf: (time) => `As of ${time}`,
     sectionMarket: 'Market',
     sectionIssuer: 'Issuer',
-    sectionOnchain: 'Onchain',
+    sectionOnchain: 'On Solana',
     sectionLinks: 'Links',
     category: 'Category',
     researchCategories: { stock: 'Tokenized stock', crypto: 'Crypto', meme: 'Meme' },
-    verifiedByVenue: 'Verified by the venue',
+    verifiedByVenue: 'Verified by Jupiter',
     yes: 'Yes',
     no: 'No',
     organicScore: 'Organic score',
     organicLabel: (label) => label,
     topHolders: 'Top holders',
     shareOfSupply: 'share of supply',
-    mintAuthority: 'Mint authority',
-    freezeAuthority: 'Freeze authority',
-    authorityOff: 'Disabled',
-    authorityOn: 'Active',
+    mintAuthority: 'New tokens',
+    freezeAuthority: 'Freezing',
+    authorityOff: 'Off',
+    mintOn: 'Possible',
+    freezeOn: 'Possible',
+    mintBy: (address) => `The chain records this address as able to mint new tokens: ${address}`,
+    freezeBy: (address) => `The chain records this address as able to freeze the token in any wallet: ${address}`,
     firstPool: 'First pool',
     change1h: '1h change',
     trades24h: '24h trades',
@@ -235,11 +283,11 @@ export const DETAILS_COPY: Copy<DetailsCopy> = {
     exchange: 'Exchange',
     confirmedBy: 'Confirmed by',
     issuerCatalogue: 'The issuer’s catalogue',
-    venueTagOnly: 'The venue’s tag only',
+    venueTagOnly: 'Jupiter’s tag only',
     reference: 'Reference',
     noIssuerReference: 'no issuer reference',
     session: 'Session',
-    nextChange: (time) => `next change ${time}`,
+    nextChange: (time) => `next change at ${time}, your time`,
     chainIssuerAgree: 'chain and issuer agree',
     chainIssuerDiffer: 'chain and issuer differ',
     fromChain: 'from the chain',
@@ -247,11 +295,14 @@ export const DETAILS_COPY: Copy<DetailsCopy> = {
     sharesHeld: (count) => `${count} shares held`,
     reservesDetail: (tokens, custodians, time) => `${tokens} tokens · ${custodians} · ${time}`,
     notAttested: 'not attested by the issuer',
-    tokenAddress: 'Mint',
-    program: 'Program',
-    decimals: 'Decimals',
+    tokenAddress: 'Token address',
+    copyAddress: 'Copy the address',
+    copied: 'Address copied',
     supply: 'Supply',
-    slot: (slot, time) => `slot ${slot} · ${time}`,
+    supplyHelpTitle: 'Supply and reserves',
+    supplyHelp: 'Supply: every token at this address on Solana, as the chain counts it.',
+    reservesHelp:
+      'Reserves: the shares the custodian holds, as the issuer reports them, against the tokens in circulation the issuer counts (the line under Reserves); backing is those shares divided by those tokens. The chain’s supply and the issuer’s tokens in circulation come from different sources and moments; the data does not say why they differ.',
     none: 'None',
     pool: 'Pool',
     website: 'Website',
@@ -260,22 +311,23 @@ export const DETAILS_COPY: Copy<DetailsCopy> = {
       `Token figures and audit — Jupiter${issuer ? ` · reference, session and reserves — ${issuer}` : ''} · chain — Solana mainnet · chart — GeckoTerminal. Not advice; who may hold a token is the issuer’s rule.`,
   },
   uk: {
-    tokenPrice: (time, age) => `Ціна токена · ${time} · ${age} · 24 год`,
+    tokenPrice: (time, age) => `${time} · ${age} · 24 год`,
     stale: 'Застаріло',
     refreshFailed: 'Не оновилося',
     categories: { stock: 'Акція', crypto: 'Крипта', meme: 'Мем' },
     unverified: 'Не підтверджено',
-    flaggedByVenue: 'Позначено майданчиком',
+    flaggedByAudit: 'Позначено Jupiter',
     issuerDown: 'Цифри емітента недоступні',
     issuerRetry: 'Ще раз прочитати цифри емітента',
     tryAgain: 'Спробувати ще',
     loadingIssuer: 'Завантажуємо цифри емітента',
     notConfirmed: 'Не підтверджена акція',
-    notConfirmedLine: 'Жоден емітент не називає цей токен. Його цифри — лише майданчика.',
+    notConfirmedLine: 'Жоден емітент не називає цей токен.',
     referencePerShare: 'Референс за акцію',
     unavailable: 'Недоступно',
-    deviation: 'Відхилення',
-    versus: (label) => `проти ${label}`,
+    tokenVsShare: 'Ціна токена проти акції',
+    executionVsShare: 'Ціна виконання проти акції',
+    referenceBy: (label) => `референс ${label}`,
     haltedByIssuer: 'Торги зупинив емітент',
     unitsDiffer: 'Одиниці в мережі розходяться',
     unitsChange: (time) => `Одиниці зміняться о ${time}`,
@@ -283,6 +335,7 @@ export const DETAILS_COPY: Copy<DetailsCopy> = {
     volume24h: 'Обсяг за 24 год',
     liquidity: 'Ліквідність',
     marketCap: 'Капіталізація',
+    tokenMarketCap: 'Капіталізація токена',
     holders: 'Власники',
     chart: 'Графік',
     timeframes: {
@@ -294,7 +347,7 @@ export const DETAILS_COPY: Copy<DetailsCopy> = {
     chartNone: 'Для цього ринку графіка немає',
     chartNoConnection: 'Немає з’єднання',
     chartBusy: 'Джерело графіка зайняте',
-    chartNeedsNetwork: 'Графіку потрібна мережа.',
+    chartNeedsNetwork: 'Графіку потрібен інтернет.',
     chartBusyLine: 'Джерело графіка зараз не відповідає.',
     chartRetry: 'Ще раз завантажити графік',
     loadingChart: 'Завантажуємо графік',
@@ -312,28 +365,29 @@ export const DETAILS_COPY: Copy<DetailsCopy> = {
     quoteRange: (min, max) => `Від ${min} до ${max}.`,
     asking: 'Питаємо котирування',
     quoteDown: 'Котирування недоступне.',
-    quoteNeedsNetwork: 'Котируванню потрібна мережа.',
+    quoteNeedsNetwork: 'Котируванню потрібен інтернет.',
     quoteDownLine: 'Котирування зараз не відповідає.',
     receiveFor: (usd) => `отримаєш за ${usd}`,
     giveFor: (usd) => `віддаси за ${usd}`,
+    sharesBeside: (figure, value) => `(${figure} ${ukShares(value)})`,
     perShareRow: 'За акцію',
     referenceDetail: (price, state) => `референс ${price} · ${state}`,
     noReference: 'без референсу',
     priceImpact: 'Вплив на ціну',
+    quoteFar: (pct, above) => `За цю суму ціна на ${pct} ${above ? 'вища' : 'нижча'} за акцію`,
     feeInQuote: 'Комісія в котируванні',
     units: 'Одиниці',
     quotedAt: (time, source) => `Котирування о ${time} · ${source}`,
     quoteRefreshFailed: 'Не оновилося · показано останнє котирування',
-    examples: 'Приклади сум для орієнтації. Торгівля котирує твою реальну суму заново перед підписом.',
-    researchTitle: (symbol) => `Факти · ${symbol}`,
+    researchTitle: 'Факти за цифрами',
     asOf: (time) => `Станом на ${time}`,
     sectionMarket: 'Ринок',
     sectionIssuer: 'Емітент',
-    sectionOnchain: 'У мережі',
+    sectionOnchain: 'У мережі Solana',
     sectionLinks: 'Посилання',
     category: 'Категорія',
     researchCategories: { stock: 'Токенізована акція', crypto: 'Крипта', meme: 'Мем' },
-    verifiedByVenue: 'Перевірено майданчиком',
+    verifiedByVenue: 'Перевірено Jupiter',
     yes: 'Так',
     no: 'Ні',
     organicScore: 'Органічний бал',
@@ -343,10 +397,13 @@ export const DETAILS_COPY: Copy<DetailsCopy> = {
       ] ?? label,
     topHolders: 'Топ-власники',
     shareOfSupply: 'частка емісії',
-    mintAuthority: 'Право випуску',
-    freezeAuthority: 'Право заморозки',
+    mintAuthority: 'Випуск нових токенів',
+    freezeAuthority: 'Заморозка токенів',
     authorityOff: 'Вимкнено',
-    authorityOn: 'Активне',
+    mintOn: 'Можливий',
+    freezeOn: 'Можлива',
+    mintBy: (address) => `Мережа записує цю адресу як ту, що може випускати нові токени: ${address}`,
+    freezeBy: (address) => `Мережа записує цю адресу як ту, що може заморозити токен у будь-якому гаманці: ${address}`,
     firstPool: 'Перший пул',
     change1h: 'Зміна за 1 год',
     trades24h: 'Угоди за 24 год',
@@ -358,11 +415,11 @@ export const DETAILS_COPY: Copy<DetailsCopy> = {
     exchange: 'Біржа',
     confirmedBy: 'Підтверджено',
     issuerCatalogue: 'Каталогом емітента',
-    venueTagOnly: 'Лише тегом майданчика',
+    venueTagOnly: 'Лише тегом Jupiter',
     reference: 'Референс',
     noIssuerReference: 'референсу емітента немає',
     session: 'Сесія',
-    nextChange: (time) => `наступна зміна о ${time}`,
+    nextChange: (time) => `наступна зміна о ${time} за твоїм часом`,
     chainIssuerAgree: 'мережа й емітент збігаються',
     chainIssuerDiffer: 'мережа й емітент розходяться',
     fromChain: 'з мережі',
@@ -371,10 +428,13 @@ export const DETAILS_COPY: Copy<DetailsCopy> = {
     reservesDetail: (tokens, custodians, time) => `токенів: ${tokens} · ${custodians} · ${time}`,
     notAttested: 'емітент не засвідчив',
     tokenAddress: 'Адреса токена',
-    program: 'Програма',
-    decimals: 'Десяткові знаки',
+    copyAddress: 'Скопіювати адресу',
+    copied: 'Адресу скопійовано',
     supply: 'Емісія',
-    slot: (slot, time) => `слот ${slot} · ${time}`,
+    supplyHelpTitle: 'Емісія і резерви',
+    supplyHelp: 'Емісія — усі токени за цією адресою в мережі Solana, як їх рахує мережа.',
+    reservesHelp:
+      'Резерви — акції, які, за звітом емітента, тримає зберігач, проти токенів в обігу, які рахує емітент (рядок під «Резерви»); забезпечення — ці акції, поділені на ці токени. Емісія в мережі й токени в обігу за емітентом — з різних джерел і на різний час; чому вони різняться, дані не кажуть.',
     none: 'Немає',
     pool: 'Пул',
     website: 'Сайт',

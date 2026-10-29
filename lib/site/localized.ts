@@ -10,11 +10,14 @@
  * cookie every surface reads (`ryntra_hub_locale`) — and a visit to a `/uk`
  * address writes it (`middleware.ts`), so the pages beyond it follow.
  *
- * Plain functions over paths and no imports: the middleware runs this at the
+ * Plain functions over paths, importing only the address map's own plain
+ * functions (`lib/product/app-address.ts`): the middleware runs this at the
  * edge on every `/uk` request, and the documentation's text must not ride
  * along into that bundle — hence the documentation's addresses as a list of
  * slugs here, which `lib/site/localized.test.mjs` holds equal to `DOC_PAGES`.
  */
+
+import { APP_HOST, solanaRoute } from "../product/app-address.ts";
 
 export const UK_PREFIX = "/uk";
 
@@ -31,30 +34,39 @@ export const DOC_SLUGS = [
   "invest/company-page",
   "invest/private-companies",
   "invest/what-you-buy",
+  "trade/overview",
+  "trade/perps",
+  "trade/predictions",
+  "bots",
   "trade/swap",
   "trade/spot",
   "trade/screener",
   "trade/trends",
   "launch/launch-a-token",
+  "launch/creator",
   "money/top-up",
   "money/send",
   "money/receive",
   "money/bridge",
   "manage/portfolio",
+  "manage/pools",
   "strategies/my-strategies",
   "strategies/results",
   "strategies/overview",
   "manage/activity",
   "ryntra",
+  "phone",
   "money/rewards",
   "money/referrals",
-  "money/points",
+  "reference/networks",
+  "reference/receipts",
   "reference/review",
   "reference/fees",
   "reference/statuses",
   "reference/troubleshooting",
   "reference/faq",
   "reference/glossary",
+  "soon",
 ] as const;
 
 const DOC_SLUG_SET: ReadonlySet<string> = new Set(DOC_SLUGS);
@@ -62,7 +74,7 @@ const DOC_SLUG_SET: ReadonlySet<string> = new Set(DOC_SLUGS);
 /**
  * The pages with an address in each language: the landing, Home, Markets, the
  * public pages of the site and the documentation's hub. The legal texts are
- * English until a lawyer gives them Ukrainian, the reviewer
+ * English until a lawyer gives them Ukrainian (plan decision 7), the reviewer
  * and developer pages stay out of the index, and the rest of the app is a
  * person's own — none of them has a `/uk` twin.
  */
@@ -97,9 +109,27 @@ export function splitUkPrefix(pathname: string): Readonly<{ uk: boolean; path: s
   return { uk: false, path: pathname };
 }
 
-/** The page's address without its language — what the app's own routes are named by. */
+/**
+ * The page's address without its language and without its network — what
+ * the app's own routes are named by: `/uk/app/home`, and on app.ryntra.io
+ * `/solana/home` and `/uk/solana/home`, are all `/app/home`.
+ */
 export function pagePath(pathname: string): string {
-  return splitUkPrefix(pathname).path;
+  return solanaRoute(splitUkPrefix(pathname).path);
+}
+
+/**
+ * The route a `/uk` address is served from (`middleware.ts`), or null where
+ * the page has no Ukrainian twin: `/uk/docs` is `/docs`, and on app.ryntra.io
+ * — only there — `/uk/solana/home` is `/app/home`. The landing, `/uk`, is its
+ * own route and is not asked here.
+ */
+export function ukAddressRoute(pathname: string, host: string | null | undefined): string | null {
+  const { uk, path } = splitUkPrefix(pathname);
+  if (!uk) return null;
+  const onAppHost = (host ?? "").toLowerCase().split(":")[0] === APP_HOST;
+  const route = onAppHost ? solanaRoute(path) : path;
+  return hasUkAddress(route) ? route : null;
 }
 
 function splitSuffix(href: string): [string, string] {
@@ -138,7 +168,7 @@ export function withLanguageCookie(cookieHeader: string | null, value: AddressLo
  */
 export function languageSwitchHref(pathname: string, search: string, next: AddressLocale): string | null {
   const { path } = splitUkPrefix(pathname);
-  if (!hasUkAddress(path)) return null;
+  if (!hasUkAddress(solanaRoute(path))) return null;
   const target = next === "uk" ? (path === "/" ? UK_PREFIX : `${UK_PREFIX}${path}`) : path;
   return target + search;
 }

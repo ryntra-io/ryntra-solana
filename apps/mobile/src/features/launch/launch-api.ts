@@ -8,7 +8,6 @@
 
 import { apiGet, apiRequest } from '@/lib/api'
 import type {
-  LaunchBuildRequest,
   LaunchBuildResponse,
   LaunchClaimBuildResponse,
   LaunchClaimSubmitResponse,
@@ -34,7 +33,7 @@ import type {
   LaunchWalletResponse,
 } from '@/lib/api/v1/types'
 
-import type { ClaimApi, CreateApi, TradeApi } from './launch-flow'
+import type { ClaimApi, CreateApi, LaunchBuildRequestV1, TradeApi } from './launch-flow'
 
 /** A send waits on the network's confirmation; the server answers within its own window, the phone a little longer. */
 const SEND_TIMEOUT_MS = 75_000
@@ -107,7 +106,7 @@ export function fetchCreatorCabinet(address: string, signal?: AbortSignal): Prom
 export const createApi: CreateApi = {
   metadata: (request: LaunchMetadataRequest) =>
     apiRequest<LaunchMetadataResponse>('POST', '/api/v1/launch/metadata', request, { timeoutMs: 30_000 }),
-  build: (request: LaunchBuildRequest) =>
+  build: (request: LaunchBuildRequestV1) =>
     apiRequest<LaunchBuildResponse>('POST', '/api/v1/launch/build', request, { timeoutMs: 30_000 }),
   submit: (request: LaunchSubmitRequest) =>
     apiRequest<LaunchSubmitResponse>('POST', '/api/v1/launch/submit', request, { timeoutMs: SEND_TIMEOUT_MS }),

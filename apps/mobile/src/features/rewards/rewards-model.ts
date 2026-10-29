@@ -11,7 +11,7 @@
 
 import type { RewardRow, RewardsResponse } from '../../lib/api.ts'
 import type { Locale } from '../../lib/locale.ts'
-import { DASH, formatUsd, localizeFigures } from '../../utils/format.ts'
+import { DASH, formatCount, formatUsd, localizeFigures } from '../../utils/format.ts'
 
 export type RewardSourceId = 'cashback' | 'referralL1' | 'referralL2'
 export type RewardEntryKind = 'cashback' | 'referralL1' | 'referralL2' | 'claim' | 'other'
@@ -87,6 +87,15 @@ export function ungroup(text: string | null | undefined): number | null {
   return Number.isFinite(value) ? value : null
 }
 
+/**
+ * A count of points the server printed («1 000» in its own shape), said in the language's (ST-5 r8): «1,000» in
+ * English, «1 000» in Ukrainian. Anything that is not a whole count is left as it came.
+ */
+export function pointsFigure(text: string, locale: Locale): string {
+  const value = ungroup(text)
+  return value !== null && Number.isInteger(value) ? formatCount(value, locale) : text
+}
+
 export function entryKind(kind: RewardRow['kind']): RewardEntryKind {
   switch (kind) {
     case 'CASHBACK':
@@ -143,7 +152,15 @@ export function rewardsView(response: RewardsResponse, locale: Locale): RewardsV
     claimNote: response.claimable ? null : response.claimBlockedReason ? localizeFigures(response.claimBlockedReason, locale) : null,
     claimable: response.claimable === true,
     claim: response.claim ?? null,
-    points: points ? { ...points, volume: localizeFigures(points.volume, locale) } : null,
+    points: points
+      ? {
+          ...points,
+          points: pointsFigure(points.points, locale),
+          levelFrom: pointsFigure(points.levelFrom, locale),
+          nextLevelAt: points.nextLevelAt === null ? null : pointsFigure(points.nextLevelAt, locale),
+          volume: localizeFigures(points.volume, locale),
+        }
+      : null,
     referral: response.referral && response.referral.code && response.referral.link ? response.referral : null,
     invited: { level1: response.referrals?.level1 ?? 0, level2: response.referrals?.level2 ?? 0 },
     invitedBy: response.invitedBy ?? null,

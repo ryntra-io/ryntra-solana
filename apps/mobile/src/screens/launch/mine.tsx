@@ -36,7 +36,14 @@ import {
   toClaimByPair,
   unclaimedOf,
 } from '@/features/launch/launch-model'
-import { holdersView, pairMoney, rowDepth, sinceText } from '@/features/launch/market-view'
+import {
+  knownState,
+  pairMoney,
+  rowDepth,
+  rowHoldersView,
+  rowTradeStatus,
+  sinceText,
+} from '@/features/launch/market-view'
 import {
   useCreatorCabinet,
   useLaunchMarketCard,
@@ -48,6 +55,7 @@ import {
 import { RECEIPTS_COPY } from '@/features/receipts/copy'
 import { docFromClaim, docFromClaimResult } from '@/features/receipts/receipt-doc'
 import { useAccount } from '@/features/session/use-account'
+import { usePlaceHold } from '@/features/shell/open-place'
 import { useNow } from '@/hooks/use-now'
 import { useWallet } from '@/features/wallet/use-wallet'
 import type {
@@ -62,7 +70,7 @@ import { feel } from '@/lib/haptics'
 import { useCopy, useLocale, useSharedCopy, type Locale } from '@/lib/i18n'
 import { ShareReceiptButton } from '@/screens/receipts/share-receipt'
 
-import { holdersCell, StateChip, TechChip } from './market-parts'
+import { holdersCell, TechChip, TradeStatusChip } from './market-parts'
 import { ExplorerLink, LaunchTabs, PausedNote, Row, Steps, TokenPicture } from './parts'
 
 /**
@@ -100,7 +108,6 @@ export function LaunchMineScreen() {
       <StateView
         icon="wallet-outline"
         title={word('mineConnectTitle')}
-        detail={word('mineConnectLine')}
         action={{
           title: word('mineConnect'),
           onPress: () => void account.connect(),
@@ -122,19 +129,12 @@ export function LaunchMineScreen() {
       <StateView
         icon="rocket-outline"
         title={word('mineEmptyTitle')}
-        detail={word('mineEmptyLine')}
         action={{ title: word('mineLaunch'), onPress: () => router.replace('/launch' as never) }}
       />
     )
   else
     body = (
-      <Cabinet
-        data={data}
-        word={word}
-        locale={locale}
-        address={account.address}
-        marketsOpen={launchOpen.markets}
-      />
+      <Cabinet data={data} word={word} locale={locale} address={account.address} marketsOpen={launchOpen.markets} />
     )
 
   return (
@@ -147,9 +147,6 @@ export function LaunchMineScreen() {
       }
     >
       <LaunchTabs word={word} current="mine" />
-      <Txt variant="ui" tone="muted">
-        {word('mineLede')}
-      </Txt>
       {body}
     </Screen>
   )
@@ -335,6 +332,8 @@ function LaunchCard({
   const earnings = row.earnings
   const presetLabel = presetName(row.preset, presets.data?.presets, locale, word)
   const busy = phase === 'prepare' || phase === 'sign' || phase === 'send'
+  // While it is prepared, signed or sent, a note's tap or a quick action waits for it (`place-hold.ts`).
+  usePlaceHold(busy)
   const unclaimed = unclaimedOf(row)
 
   const claim = async () => {
@@ -408,7 +407,14 @@ function LaunchCard({
         <Icon name="chevron-forward" size={18} color="fgMuted" />
       </Pressable>
       <View className="flex-row flex-wrap items-center gap-1.5">
-        {typeof market === 'object' && market.state ? <StateChip code={market.state.code} word={word} standalone /> : null}
+        {/* One status, as on every list — can it be traded now; the stage, said to TalkBack, is the market's page's. */}
+        {typeof market === 'object' && market.read ? (
+          <TradeStatusChip
+            status={rowTradeStatus(market)}
+            word={word}
+            hint={market.state && knownState(market.state.code) ? word(`stateHint_${market.state.code}`) : undefined}
+          />
+        ) : null}
         {typeof market === 'object' && market.technicalValidation ? <TechChip word={word} standalone /> : null}
         {presetLabel ? <Chip label={word('presetChip', { name: presetLabel })} caps={false} /> : null}
         {row.role === 'recipient' && earnings ? (
@@ -506,9 +512,10 @@ function LaunchCard({
           ) : null}
         </View>
       ) : canClaim(row, paused) ? (
+        // One card of many: its claim is quiet, so the screen never stacks orange actions.
         <Button
           title={word('claim', { amount: exactPair(unclaimed, row.pair, locale) })}
-          size="lg"
+          variant="secondary"
           onPress={() => void claim()}
         />
       ) : earnings ? (
@@ -564,7 +571,7 @@ function MarketHealth({ market, word, locale }: { market: MarketRead; word: Laun
       </View>
     )
   const depth = rowDepth(market)
-  const holders = holdersView(market.holders, market.holdersAtLeast)
+  const holders = rowHoldersView(market)
   return (
     <View className="gap-1">
       <View className="flex-row items-center justify-between gap-2">
@@ -587,11 +594,7 @@ function MarketHealth({ market, word, locale }: { market: MarketRead; word: Laun
           }
           unread={depth.kind !== 'raw'}
         />
-        <Stat
-          label={word('colHolders')}
-          value={holdersCell(holders, word, locale)}
-          unread={holders.kind !== 'count'}
-        />
+        <Stat label={word('colHolders')} value={holdersCell(holders, word, locale)} unread={holders.kind !== 'count'} />
       </View>
     </View>
   )

@@ -28,6 +28,7 @@ import {
 } from '@/features/results/results-model'
 import { usePlanMemory, usePlanResults } from '@/features/results/use-results'
 import { useAccount } from '@/features/session/use-account'
+import { useOpenPlace } from '@/features/shell/open-place'
 import { SessionGate } from '@/features/wallet/wallet-gate'
 import { useNow } from '@/hooks/use-now'
 import { isNetworkError, type PlanMemoryFact, type PlanPositionRow, type PlanResult } from '@/lib/api'
@@ -90,7 +91,9 @@ function Row({
   return (
     <Pressable
       accessibilityRole="button"
-      accessibilityLabel={[title, ...(chips ?? []).map((chip) => chip.label), figure, line, foot].filter(Boolean).join(', ')}
+      accessibilityLabel={[title, ...(chips ?? []).map((chip) => chip.label), figure, line, foot]
+        .filter(Boolean)
+        .join(', ')}
       onPress={onPress}
       className={`flex-row items-center gap-3 py-3 active:bg-hover ${last ? '' : 'border-b border-line'}`}
     >
@@ -127,7 +130,13 @@ function Row({
 }
 
 /** The four figures of the summary in one card, with the time they were read. */
-function Summary({ figures, at }: { figures: readonly Readonly<{ label: string; spoken: string; value: number }>[]; at: string }) {
+function Summary({
+  figures,
+  at,
+}: {
+  figures: readonly Readonly<{ label: string; spoken: string; value: number }>[]
+  at: string
+}) {
   return (
     <View className="gap-1.5 pt-3">
       <Card padded={false} className="flex-row">
@@ -153,7 +162,7 @@ function Summary({ figures, at }: { figures: readonly Readonly<{ label: string; 
 }
 
 /**
- * Results — what happened against what was planned, the phone's own
+ * Results (M13) — what happened against what was planned, the phone's own
  * screen over the contract where a ↗ to ryntra.io stood: each «Автоінвест»
  * rule's reminders against what was bought; the positions under a plan; the
  * plans that made no trade and why; every operation against the plan it was
@@ -164,6 +173,7 @@ function Summary({ figures, at }: { figures: readonly Readonly<{ label: string; 
 export function ResultsScreen() {
   const insets = useSafeAreaInsets()
   const router = useRouter()
+  const openPlace = useOpenPlace()
   const { colors } = useTheme()
   const locale = useLocale()
   const copy = useCopy(RESULTS_COPY)
@@ -229,14 +239,20 @@ export function ResultsScreen() {
       <StateView
         icon="analytics-outline"
         title={copy.nothingTitle}
-        detail={planId ? copy.nothingForPlan : copy.nothingDetail}
-        action={planId ? { title: copy.openPlan, onPress: () => openPlan(planId) } : { title: copy.myStrategies, onPress: () => router.push('/bots') }}
+        detail={planId ? copy.nothingForPlan : undefined}
+        help={planId ? undefined : { title: copy.nothingTitle, body: copy.nothingDetail }}
+        action={
+          planId
+            ? { title: copy.openPlan, onPress: () => openPlan(planId) }
+            : { title: copy.myStrategies, onPress: () => router.push('/bots') }
+        }
       />
     )
   } else {
     const summary = feed?.summary
     const readAt = results.dataUpdatedAt > 0 ? new Date(results.dataUpdatedAt).toISOString() : null
-    const showSummary = !planId && summary && (feed!.results.length > 0 || feed!.outcomes.length > 0 || feed!.positions.length > 0)
+    const showSummary =
+      !planId && summary && (feed!.results.length > 0 || feed!.outcomes.length > 0 || feed!.positions.length > 0)
     body = (
       <ScrollView
         className="flex-1"
@@ -291,7 +307,11 @@ export function ResultsScreen() {
               figureWords
               line={tallyLine(tally, locale) || null}
               // A «З оплат» rule's line already names its terms; the others lead with their sum.
-              foot={tally.rule.payments ? ruleWhenLine(tally.rule, locale) : `${dollarsText(tally.rule.amountUsd, locale)} · ${ruleWhenLine(tally.rule, locale)}`}
+              foot={
+                tally.rule.payments
+                  ? ruleWhenLine(tally.rule, locale)
+                  : `${dollarsText(tally.rule.amountUsd, locale)} · ${ruleWhenLine(tally.rule, locale)}`
+              }
               onPress={() => setOpened({ kind: 'rule', tally })}
               last={index === tallies.length - 1}
             />
@@ -300,7 +320,12 @@ export function ResultsScreen() {
 
         <Section title={copy.positionsTitle} count={feed?.positions.length ?? 0}>
           {(feed?.positions ?? []).map((row, index, all) => (
-            <PositionItem key={row.planId} row={row} last={index === all.length - 1} onPress={() => setOpened({ kind: 'position', row })} />
+            <PositionItem
+              key={row.planId}
+              row={row}
+              last={index === all.length - 1}
+              onPress={() => setOpened({ kind: 'position', row })}
+            />
           ))}
         </Section>
 
@@ -332,7 +357,13 @@ export function ResultsScreen() {
 
         <Section title={copy.memoryTitle} count={lines.length}>
           {lines.map(({ fact, text }, index) => (
-            <MemoryItem key={fact.id} fact={fact} text={text} last={index === lines.length - 1} onPress={() => setOpened({ kind: 'memory', fact, text })} />
+            <MemoryItem
+              key={fact.id}
+              fact={fact}
+              text={text}
+              last={index === lines.length - 1}
+              onPress={() => setOpened({ kind: 'memory', fact, text })}
+            />
           ))}
         </Section>
       </ScrollView>
@@ -355,9 +386,11 @@ export function ResultsScreen() {
           <Txt variant="headline" accessibilityRole="header">
             {copy.title}
           </Txt>
-          <Txt variant="ui" tone="faint" numberOfLines={1}>
-            {planSymbol ? copy.forPlan(symbolOf(planSymbol)) : copy.lead}
-          </Txt>
+          {planSymbol ? (
+            <Txt variant="ui" tone="faint" numberOfLines={1}>
+              {copy.forPlan(symbolOf(planSymbol))}
+            </Txt>
+          ) : null}
         </View>
       </View>
       <SessionGate what={copy.title}>{body}</SessionGate>
@@ -368,7 +401,8 @@ export function ResultsScreen() {
         onOpenPlan={openPlan}
         onOpenAsset={(mint) => leave(() => router.push({ pathname: '/asset/[mint]', params: { mint } }))}
         onOpenTransaction={(url) => openLink(url)}
-        onOpenPath={(path) => leave(() => router.push(path as never))}
+        // A place of the bar (Портфель · Ордери, Історія, Home's budget) opens without a second bar over this screen.
+        onOpenPath={(path) => leave(() => (path.startsWith('/(tabs)') ? openPlace(path) : router.push(path as never)))}
       />
     </View>
   )
@@ -385,7 +419,9 @@ function PositionItem({ row, last, onPress }: { row: PlanPositionRow; last: bool
     <Row
       title={symbol}
       chips={[{ label: closed ? copy.positionClosed : copy.positionOpen, tone: closed ? 'neutral' : 'brand' }]}
-      figure={closed ? (realised === null ? null : formatUsd(realised, locale)) : formatUsd(position.costBasisUsd, locale)}
+      figure={
+        closed ? (realised === null ? null : formatUsd(realised, locale)) : formatUsd(position.costBasisUsd, locale)
+      }
       figureTone={closed && realised !== null ? (realised > 0 ? 'success' : realised < 0 ? 'danger' : 'fg') : 'fg'}
       line={positionSentence(position, symbol, locale)}
       foot={closed ? copy.realised : copy.costBasis}
@@ -395,7 +431,17 @@ function PositionItem({ row, last, onPress }: { row: PlanPositionRow; last: bool
   )
 }
 
-function OperationItem({ result, now, last, onPress }: { result: PlanResult; now: number; last: boolean; onPress: () => void }) {
+function OperationItem({
+  result,
+  now,
+  last,
+  onPress,
+}: {
+  result: PlanResult
+  now: number
+  last: boolean
+  onPress: () => void
+}) {
   const copy = useCopy(RESULTS_COPY)
   const locale = useLocale()
   const verdict = verdictOf(result, locale)
@@ -411,7 +457,10 @@ function OperationItem({ result, now, last, onPress }: { result: PlanResult; now
       ]}
       figure={sum === null ? null : formatUsd(sum, locale)}
       line={result.actual.matchedBy === 'asset' ? copy.matchedByAsset : null}
-      foot={[filled === null ? null : `${copy.filledPrice} ${formatUsd(filled, locale)}`, formatMoment(result.actual.settledAt, now, locale)]
+      foot={[
+        filled === null ? null : `${copy.filledPrice} ${formatUsd(filled, locale)}`,
+        formatMoment(result.actual.settledAt, now, locale),
+      ]
         .filter(Boolean)
         .join(' · ')}
       onPress={onPress}
@@ -420,7 +469,17 @@ function OperationItem({ result, now, last, onPress }: { result: PlanResult; now
   )
 }
 
-function MemoryItem({ fact, text, last, onPress }: { fact: PlanMemoryFact; text: string; last: boolean; onPress: () => void }) {
+function MemoryItem({
+  fact,
+  text,
+  last,
+  onPress,
+}: {
+  fact: PlanMemoryFact
+  text: string
+  last: boolean
+  onPress: () => void
+}) {
   const copy = useCopy(RESULTS_COPY)
   return (
     <Pressable

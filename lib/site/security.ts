@@ -124,7 +124,7 @@ export const BOUNDARIES: readonly Boundary[] = [
   {
     kind: "can",
     text: "Read public chain data and what a connected wallet shows: balances, token accounts, the wallet's own payments and the operations Ryntra made for it.",
-    uk: "Читати публічні дані ланцюга й те, що показує під'єднаний гаманець: баланси, рахунки токенів, власні оплати гаманця й операції, які Ryntra для нього зробила.",
+    uk: "Читати публічні дані ланцюга й те, що показує підключений гаманець: баланси, рахунки токенів, власні оплати гаманця й операції, які Ryntra для нього зробила.",
   },
   {
     kind: "can",

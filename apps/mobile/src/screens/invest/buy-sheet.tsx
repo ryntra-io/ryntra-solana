@@ -1,10 +1,10 @@
-import { useRouter } from 'expo-router'
 import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { Keyboard, Pressable, TextInput, View } from 'react-native'
 
 import { AssetIcon } from '@/components/asset-icon'
 import { Button } from '@/components/button'
 import { ChoiceChips, type Choice } from '@/components/choice-chips'
+import { HelpDot } from '@/components/help-dot'
 import { Icon, type IconName } from '@/components/icon'
 import { Sheet } from '@/components/sheet'
 import { Skeleton } from '@/components/skeleton'
@@ -54,18 +54,32 @@ import {
   type PayDollar,
 } from '@/features/invest/buy-model'
 import { INVEST_COPY } from '@/features/invest/copy'
+import {
+  BUY_ENGINE,
+  deviationOf,
+  fairFromOf,
+  heardLive,
+  liveAt,
+  poolWarningOf,
+  poolWarningText,
+  quoteFar,
+  shareWorthUsd,
+  type LiveShareQuote,
+} from '@/features/invest/pool-warning'
 import { useBuy, type BuyCompany, type BuyController } from '@/features/invest/use-buy'
 import { RECEIPTS_COPY } from '@/features/receipts/copy'
 import { docFromSwap, outcomeStatus } from '@/features/receipts/receipt-doc'
+import { useOpenPlace, usePlaceHold } from '@/features/shell/open-place'
+import { PORTFOLIO_HISTORY_PATH } from '@/features/shell/shell'
 import type { TradeContext } from '@/features/trade/trade-model'
 import { useNow } from '@/hooks/use-now'
 import type { AutoinvestRule } from '@/lib/api'
-import { useCopy, type Locale } from '@/lib/i18n'
+import { useCopy, useSharedCopy, type Locale } from '@/lib/i18n'
 import { TopUpSheet } from '@/screens/home/top-up-sheet'
 import { EventLine } from '@/screens/invest/event-ui'
 import { ShareReceiptSheet } from '@/screens/receipts/share-receipt'
 import { type, useTheme } from '@/theme'
-import { DASH } from '@/utils/format'
+import { DASH, formatClock } from '@/utils/format'
 import { openLink } from '@/lib/open-link'
 
 const QUOTE_UNREAD: ReadonlySet<BuyFailureKey> = new Set([
@@ -83,7 +97,7 @@ const PAY_CHOICES: readonly Choice<PayDollar>[] = [
 
 /**
  * The purchase in dollars — the one action on a company's page
- * drawn as a sheet over the company's page.
+ * (M15), drawn as a sheet over the company's page.
  *
  * **The sum.** A sum in dollars from $1 — typed freely,
  * the sheet opening on $10, a default and never advice — or a share of the
@@ -107,7 +121,7 @@ const PAY_CHOICES: readonly Choice<PayDollar>[] = [
  * «✓ У тебе є частинка Apple · $10» with what arrived. A signature whose
  * outcome is not known yet is checked here, never repeated.
  *
- * **За правилом.** A reminder of an autoinvest rule opens
+ * **За правилом (M16.** A reminder of an autoinvest rule opens
  * this sheet on the rule's sum: the rule is read afresh, and while its
  * reminder is open the fresh «Перевірка» is prepared at once — the same four
  * rows, the same signature, the order bound to the rule (`origin.rule`). A
@@ -119,7 +133,7 @@ const PAY_CHOICES: readonly Choice<PayDollar>[] = [
  * company's reminder is open says so before any sum — «Це звичайна купівля:
  * нагадування правила на $20 лишиться відкритим».
  *
- * **Умова ціни.** A rule with a price condition is
+ * **Умова ціни (M25.** A rule with a price condition is
  * judged again here on the company's figures, read afresh while the sheet is
  * open: met, its purchase carries the condition's line — the deviation, the
  * reference, the limit, the data's time — over the purchase and in
@@ -138,6 +152,8 @@ export function BuySheet({
   rule = null,
   openReminder = null,
   onBuyWeekly = null,
+  onLive = null,
+  onAmount = null,
 }: {
   company: BuyCompany
   visible: boolean
@@ -148,10 +164,22 @@ export function BuySheet({
   openReminder?: Readonly<{ amountUsd: number }> | null
   /** «Купувати щотижня» on a plain purchase's receipt — given only when the company has no rule. */
   onBuyWeekly?: ((amountUsd: number) => void) | null
+  /** The live estimate's price for one share, told to the page so its pool warning follows the freshest figure (ST-5 r8). */
+  onLive?: ((live: LiveShareQuote) => void) | null
+  /** The sum on screen, told to the page: its warning over «Купити» is judged at this sum alone (ST-5 r9). */
+  onAmount?: ((usd: number | null) => void) | null
 }) {
   if (!visible) return null
   return (
-    <BuyFlow company={company} onClose={onClose} rule={rule} openReminder={openReminder} onBuyWeekly={onBuyWeekly} />
+    <BuyFlow
+      company={company}
+      onClose={onClose}
+      rule={rule}
+      openReminder={openReminder}
+      onBuyWeekly={onBuyWeekly}
+      onLive={onLive}
+      onAmount={onAmount}
+    />
   )
 }
 
@@ -170,15 +198,20 @@ function BuyFlow({
   rule,
   openReminder,
   onBuyWeekly,
+  onLive,
+  onAmount,
 }: {
   company: BuyCompany
   onClose: () => void
   rule: RuleBuySheet | null
   openReminder: Readonly<{ amountUsd: number }> | null
   onBuyWeekly: ((amountUsd: number) => void) | null
+  onLive: ((live: LiveShareQuote) => void) | null
+  onAmount: ((usd: number | null) => void) | null
 }) {
-  const router = useRouter()
+  const openPlace = useOpenPlace()
   const words = useCopy(BUY_COPY)
+  const investWords = useCopy(INVEST_COPY)
   const ruleWords = useCopy(AUTOINVEST_COPY)
   const ruleState = rule?.state ?? null
   const read = ruleState && 'rule' in ruleState ? ruleState.rule : null
@@ -190,13 +223,44 @@ function BuyFlow({
     : null
   const buy = useBuy(company, ruleState ? { amountUsd: ruleSum, binding } : null)
   const { trade } = buy
+
+  /* The page's pool warning, said again over this sheet's action and judged on the freshest figure for the sum on
+     screen (ST-5 r9): the sheet's own live estimate, else a live quote the page saw for this very sum, wins over the
+     pool's listed price — a quote for another sum never softens it; a larger sum seen near the share is said beside.
+     Only figures from the engine this sheet buys through count (ST-5 r10): the quote card's never feed it. */
+  const now = useNow(15_000)
+  const pool = company.pool ?? null
+  const seen = pool ? (buy.paid ? heardLive(pool.seen, buy.paid) : pool.seen) : []
+  const poolWarning = pool
+    ? poolWarningOf({
+        deviationPct: pool.deviationPct,
+        referencePerShare: pool.referencePerShare,
+        liquidityUsd: pool.liquidityUsd,
+        live: liveAt(seen, buy.amountUsd, now),
+        fairFrom: fairFromOf(seen, buy.amountUsd, pool.referencePerShare, now),
+      })
+    : null
+  const poolLine = poolWarning ? poolWarningText(poolWarning, buy.locale, investWords, clockOfMs) : null
+  // The page hears the same figure and the same sum, so its warning over «Купити» is judged where this sheet stands.
+  const livePerShare = buy.paid?.perShare ?? null
+  const liveUsd = buy.paid?.usd ?? null
+  const liveAtMs = buy.paid?.at ?? null
+  useEffect(() => {
+    if (onLive && livePerShare !== null && liveUsd !== null && liveAtMs !== null)
+      onLive({ perShare: livePerShare, usd: liveUsd, at: liveAtMs, source: BUY_ENGINE })
+  }, [onLive, livePerShare, liveUsd, liveAtMs])
+  const sumOnScreen = buy.amountUsd
+  useEffect(() => {
+    onAmount?.(sumOnScreen)
+  }, [onAmount, sumOnScreen])
+  // While it is prepared, signed, sent or checked, a note's tap or a quick action waits for it (`place-hold.ts`).
+  usePlaceHold(trade.busy)
   const [topUp, setTopUp] = useState(false)
   const address = trade.account.address
 
   /* «Умова ціни» (1.18.0: a rule with a condition is judged again here on the company's figures, read
      afresh while the sheet is open — the order route judges the same facts the same way. Not met now, or the data old,
      and the purchase is said, never offered; met, it carries the condition's line. */
-  const now = useNow(15_000)
   const bounds = useConditionBounds()
   const conditionOf = ruleState?.kind === 'open' ? ruleState.rule.priceCondition : null
   const conditionRead = useConditionFacts(company.mint, conditionOf !== null)
@@ -255,9 +319,12 @@ function BuyFlow({
     else if (trade.phase === 'settled') trade.reset()
     onClose()
   }
-  const leave = (path: '/history') => {
+  // «Історія» is a segment of «Портфель» (NEW-LOOK §5): the sheet closes and the place opens on it.
+  const toHistory = () => {
+    // A purchase being prepared, signed, sent or checked keeps its sheet: History opens once it is not.
+    if (trade.busy) return
     close()
-    router.push(path)
+    openPlace(PORTFOLIO_HISTORY_PATH)
   }
 
   const logo = <AssetIcon symbol={company.name} icon={company.icon} size={32} />
@@ -274,7 +341,7 @@ function BuyFlow({
         byRule={boughtUnder ? { rule: read?.id === boughtUnder.id ? read : boughtUnder, words: ruleWords } : null}
         onBuyWeekly={ruleState ? null : onBuyWeekly}
         onDone={close}
-        onHistory={() => leave('/history')}
+        onHistory={toHistory}
       />
     )
   } else if (trade.phase === 'recovery' || trade.phase === 'recovering') {
@@ -289,7 +356,12 @@ function BuyFlow({
           </Txt>
         </View>
         {trade.failure ? (
-          <Txt variant="ui" tone="danger">
+          <Txt
+            variant="ui"
+            tone={
+              trade.failure.code === 'BYTES_REBUILT' || trade.failure.code === 'REVIEW_RENEWED' ? 'warning' : 'danger'
+            }
+          >
             {words.failures[buyFailureKey(trade.failure.code)]}
           </Txt>
         ) : null}
@@ -299,7 +371,7 @@ function BuyFlow({
           disabled={trade.phase === 'recovering'}
           onPress={() => void trade.recover()}
         />
-        <QuietLinks links={[{ label: words.history, onPress: () => leave('/history') }]} />
+        {trade.phase === 'recovering' ? null : <QuietLinks links={[{ label: words.history, onPress: toHistory }]} />}
       </View>
     )
   } else if ((trade.phase === 'review' || trade.phase === 'signing') && trade.prepared && buy.rows) {
@@ -309,6 +381,7 @@ function BuyFlow({
         buy={buy}
         words={words}
         byRule={boughtUnder ? `${ruleWords.byRule} · ${ruleWhenLine(boughtUnder, buy.locale)}` : null}
+        poolLine={poolLine}
         condition={
           boughtUnder && reviewedCondition
             ? wholeParts(
@@ -332,6 +405,7 @@ function BuyFlow({
         company={company}
         state={ruleState}
         condition={{ check: conditionCheck, holds: conditionHolds, pending: conditionPending, now }}
+        poolLine={poolLine}
         words={words}
         ruleWords={ruleWords}
         onBuy={startReview}
@@ -348,6 +422,7 @@ function BuyFlow({
         company={company}
         words={words}
         openLine={openReminder ? ruleWords.plainLeavesOpen(dollarsText(openReminder.amountUsd, buy.locale)) : null}
+        poolLine={poolLine}
         onTopUp={() => setTopUp(true)}
       />
     )
@@ -375,16 +450,28 @@ function estimateOf(buy: BuyController, company: BuyCompany, words: BuyCopy): st
   if (buy.noRoute && route.state === 'found')
     return words.routeMinimum(dollarsText(buy.amountUsd, locale), company.name, dollarsText(route.minimumUsd, locale))
   if (buy.noRoute && route.state === 'finding') return words.findingMinimum
+  // The limiter held the quote back and it is being asked again by itself: pricing, not a failure (ST-5).
+  if (buy.quoteHeld) return words.pricing
   if (trade.quoteFailure) {
     // A price that could not be read is said as that — no purchase was under way to say «nothing was sent» of.
     const key = buyFailureKey(trade.quoteFailure.code)
     return QUOTE_UNREAD.has(key) ? words.quoteDown : words.failures[key]
   }
   // The server's figures (1.20.0); «≈» never ends a line apart from its figure.
-  if (buy.estimate?.units !== null && buy.estimate?.units !== undefined)
-    return `${keepTogether(`≈ ${unitsPhrase(buy.estimate.units, company.unit, company.name, locale)}`)} · ${words.allCosts}\u00a0${
+  if (buy.estimate?.units !== null && buy.estimate?.units !== undefined) {
+    const units = keepTogether(`≈ ${unitsPhrase(buy.estimate.units, company.unit, company.name, locale)}`)
+    /* A price far from the share (ST-5 r8: SGOVx, $10 for ≈ 0,0002 of a share, «усі витрати ≈ $0,12»): the fees say
+       nothing of the loss, so what the shares are worth at the share's reference is said in their place. */
+    const reference = company.pool?.referencePerShare ?? null
+    const worth = buy.paid ? shareWorthUsd(buy.estimate.units, reference) : null
+    // The estimate's own time, quietly at its end (ST-5 r9): a route that changes between two asks reads as two moments.
+    const at = trade.quotedAt ? ` · ${words.quotedAt(formatClock(trade.quotedAt))}` : ''
+    if (buy.paid && worth !== null && quoteFar(deviationOf(buy.paid.perShare, reference), reference))
+      return `${units} · ${words.shareWorth(keepTogether(approxUsd(worth, locale)), dollarsText(buy.paid.usd, locale))}${at}`
+    return `${units} · ${words.allCosts}\u00a0${
       buy.estimate.costsUsd !== null ? keepTogether(approxUsd(buy.estimate.costsUsd, locale)) : DASH
-    }`
+    }${at}`
+  }
   // The server answered without a figure for what arrives: nothing is said in its place, as on the web.
   if (buy.estimate) return ' '
   return words.pricing
@@ -418,7 +505,10 @@ function buttonOf(buy: BuyController, words: BuyCopy, enter: string, onBuy: () =
     case 'need-sol':
       return { title: words.needSol, disabled: true }
     case 'not-enough':
-      return { title: words.notEnough(buy.payAsset.symbol), disabled: true }
+      return {
+        title: action.alsoSol ? words.notEnoughAndSol(buy.payAsset.symbol) : words.notEnough(buy.payAsset.symbol),
+        disabled: true,
+      }
     case 'unavailable':
       return { title: words.unavailable, disabled: true }
     case 'settling':
@@ -445,7 +535,13 @@ function failureOf(buy: BuyController, words: BuyCopy): string | null {
 /** What was, or was not, priced — a price that failed to read is asked for again with one tap. */
 function EstimateLine({ buy, estimate, words }: { buy: BuyController; estimate: string; words: BuyCopy }) {
   const { trade } = buy
-  if (!buy.noRoute && trade.quoteFailure?.retryable && buy.amountUsd !== null && buy.amountUsd >= MIN_BUY_USD)
+  if (
+    !buy.noRoute &&
+    !buy.quoteHeld &&
+    trade.quoteFailure?.retryable &&
+    buy.amountUsd !== null &&
+    buy.amountUsd >= MIN_BUY_USD
+  )
     // After a wallet's round trip, on a flaky network, the price is asked for again with one tap.
     return (
       <Pressable
@@ -470,16 +566,16 @@ function EstimateLine({ buy, estimate, words }: { buy: BuyController; estimate: 
   )
 }
 
-/** Under the button: signing in moves nothing; or what the wallet holds of the paying dollars, with «Поповнити» when short. */
+/**
+ * Under the button: that signing in moves nothing, behind «?» (ST-4); or what the wallet holds of the paying dollars,
+ * with «Поповнити» when short.
+ */
 function WalletLine({ buy, words, onTopUp }: { buy: BuyController; words: BuyCopy; onTopUp: () => void }) {
   const { action, locale } = buy
-  const short = action.kind === 'need-sol' || action.kind === 'not-enough'
-  if (action.kind === 'sign-in')
-    return (
-      <Txt variant="ui" tone="faint" className="text-center">
-        {words.signInLine}
-      </Txt>
-    )
+  const short =
+    action.kind === 'need-sol' || action.kind === 'not-enough' || (action.kind === 'sign-in' && action.short !== null)
+  // Short before signing in: what the wallet holds, with «Поповнити», says more than that signing in moves nothing.
+  if (action.kind === 'sign-in' && action.short === null) return <SignInHelp />
   if (!buy.trade.account.address || buy.payBalance === null) return null
   return (
     <View className="flex-row flex-wrap items-center justify-center gap-x-2 gap-y-1">
@@ -493,6 +589,41 @@ function WalletLine({ buy, words, onTopUp }: { buy: BuyController; words: BuyCop
           </Txt>
         </Pressable>
       ) : null}
+    </View>
+  )
+}
+
+/**
+ * Over «Увійти гаманцем»: the wallet's balance, already read, does not cover the sum (ST-5 r6) — said before the
+ * person signs in, in the words the disabled button says once signed in.
+ */
+function ShortfallLine({ buy, words }: { buy: BuyController; words: BuyCopy }) {
+  const { action } = buy
+  if (action.kind !== 'sign-in' || action.short === null) return null
+  const symbol = buy.payAsset.symbol
+  return (
+    <Txt variant="ui" tone="warning" className="text-center" accessibilityLiveRegion="polite">
+      {action.short.alsoSol ? words.notEnoughAndSol(symbol) : words.notEnough(symbol)}
+    </Txt>
+  )
+}
+
+/** A seen quote's time on the phone's clock («11:56»), as every figure's time is said. */
+function clockOfMs(ms: number): string {
+  return formatClock(new Date(ms).toISOString())
+}
+
+/** The page's pool warning over the sheet's action (ST-5 r8): the line the page says, in a box one cannot read past. */
+function PoolWarningLine({ text }: { text: string }) {
+  return (
+    <View
+      accessibilityRole="alert"
+      className="flex-row items-start gap-2 rounded-sm border border-warning-soft bg-warning-soft px-4 py-3"
+    >
+      <Icon name="warning-outline" size={18} color="warningInk" style={{ marginTop: 1 }} />
+      <Txt variant="ui" tone="warning" className="flex-1">
+        {text}
+      </Txt>
     </View>
   )
 }
@@ -518,6 +649,7 @@ function Compose({
   company,
   words,
   openLine,
+  poolLine,
   onTopUp,
 }: {
   buy: BuyController
@@ -525,6 +657,8 @@ function Compose({
   words: BuyCopy
   /** «Це звичайна купівля: нагадування правила на $20 лишиться відкритим.» while the company's reminder is open; null otherwise. */
   openLine: string | null
+  /** The page's pool warning, judged on this sheet's live estimate (ST-5 r8); null for none. */
+  poolLine: string | null
   onTopUp: () => void
 }) {
   const { colors } = useTheme()
@@ -544,6 +678,17 @@ function Compose({
     void trade.review()
   })
   const failure = failureOf(buy, words)
+  /* The pre-filled sum is replaced by what is typed, never typed into (ST-5 r6: «2» on «$1|0» made «$120»): a tap
+     selects the whole sum, and after every accepted key — or a quick share — the caret stands at the sum's end, past
+     the «$» the field draws in front of it. */
+  const shown = buy.amountText.length > 0 ? `$${buy.amountText}` : ''
+  const [focused, setFocused] = useState(false)
+  const [selectAll, setSelectAll] = useState(false)
+  const selection = focused
+    ? selectAll
+      ? { start: 0, end: shown.length }
+      : { start: shown.length, end: shown.length }
+    : undefined
 
   return (
     <View className="gap-4 pb-2">
@@ -559,8 +704,18 @@ function Compose({
       ) : null}
 
       <TextInput
-        value={buy.amountText.length > 0 ? `$${buy.amountText}` : ''}
-        onChangeText={buy.setAmountText}
+        value={shown}
+        onChangeText={(text) => {
+          setSelectAll(false)
+          buy.setAmountText(text)
+        }}
+        selectTextOnFocus
+        selection={selection}
+        onFocus={() => {
+          setFocused(true)
+          setSelectAll(true)
+        }}
+        onBlur={() => setFocused(false)}
         keyboardType="decimal-pad"
         placeholder="$0"
         placeholderTextColor={colors.fgMuted}
@@ -606,6 +761,8 @@ function Compose({
         </Txt>
       ) : null}
 
+      {poolLine ? <PoolWarningLine text={poolLine} /> : null}
+      <ShortfallLine buy={buy} words={words} />
       <Button
         title={button.title}
         size="lg"
@@ -640,6 +797,7 @@ function RuleCompose({
   company,
   state,
   condition,
+  poolLine,
   words,
   ruleWords,
   onBuy,
@@ -652,6 +810,8 @@ function RuleCompose({
   company: BuyCompany
   state: RuleBuyState
   condition: RuleCondition
+  /** The page's pool warning, judged on this sheet's live estimate (ST-5 r8); null for none. */
+  poolLine: string | null
   words: BuyCopy
   ruleWords: AutoinvestCopy
   onBuy: () => void
@@ -784,6 +944,8 @@ function RuleCompose({
         </Txt>
       ) : null}
 
+      {poolLine && offered ? <PoolWarningLine text={poolLine} /> : null}
+      <ShortfallLine buy={buy} words={words} />
       <Button
         title={button.title}
         size="lg"
@@ -809,6 +971,7 @@ function Review({
   buy,
   words,
   byRule,
+  poolLine = null,
   condition = null,
   onRefresh,
 }: {
@@ -816,6 +979,8 @@ function Review({
   words: BuyCopy
   /** «За правилом · Щотижня · чт о 19:00» under a reminder; null for a plain purchase. */
   byRule: string | null
+  /** The page's pool warning, said again over the signature (ST-5 r8); null for none. */
+  poolLine?: string | null
   /** «Умова ціни · +2,1 % до оцінки PreStocks $1 000,00 · ліміт 5 % · дані 10:32» — the rule's condition as judged for this Review (1.18.0). */
   condition?: string | null
   /** Ask for a fresh Review — under a reminder, bound to the same rule. */
@@ -836,21 +1001,29 @@ function Review({
   return (
     <View className="gap-4 pb-2">
       {reserveFirst ? (
-        // More than the purchase itself: said before the rows — it stays in the wallet, it is not a cost.
+        // More than the purchase itself: said before the rows; what it is — it stays in the wallet — behind «?».
         <ReserveFirstLine
           line={words.reserveFirst(
             approxUsd(reserveFirst.reserveUsd, buy.locale),
             dollarsText(reserveFirst.spendUsd, buy.locale),
           )}
+          help={{ title: words.reserveTitle, body: words.reserveHelp }}
         />
       ) : null}
       <BuyReviewTable rows={rows} words={words} />
       {byRule ? <RuleMarkLine line={byRule} next={condition} /> : null}
       {trade.failure ? (
-        <Txt variant="ui" tone="danger" className="text-center">
+        <Txt
+          variant="ui"
+          tone={
+            trade.failure.code === 'BYTES_REBUILT' || trade.failure.code === 'REVIEW_RENEWED' ? 'warning' : 'danger'
+          }
+          className="text-center"
+        >
           {words.failures[buyFailureKey(trade.failure.code)]}
         </Txt>
       ) : null}
+      {poolLine && !signing ? <PoolWarningLine text={poolLine} /> : null}
       <Txt variant="ui" tone="faint" className="text-center" tabular>
         {signing ? ' ' : signable ? words.priceHolds(left) : words.priceExpired}
       </Txt>
@@ -867,13 +1040,31 @@ function Review({
 }
 
 /** «Разовий резерв ≈ $1,20 у SOL більший за саму покупку. …» — said in amber before the rows. */
-export function ReserveFirstLine({ line }: { line: string }) {
+export function ReserveFirstLine({
+  line,
+  help = null,
+}: {
+  line: string
+  /** What the reserve is, one tap deep (ST-4). */
+  help?: Readonly<{ title: string; body: string }> | null
+}) {
   return (
-    <View className="flex-row items-start gap-2">
-      <Icon name="information-circle-outline" size={16} color="warningInk" style={{ marginTop: 1 }} />
+    <View className="flex-row items-center gap-2">
+      <Icon name="information-circle-outline" size={16} color="warningInk" />
       <Txt variant="ui" tone="warning" className="flex-1">
         {line}
       </Txt>
+      {help ? <HelpDot title={help.title} body={help.body} /> : null}
+    </View>
+  )
+}
+
+/** «?» under a sign-in button: that signing in proves the wallet and moves nothing — one tap deep, never a line. */
+export function SignInHelp() {
+  const shared = useSharedCopy()
+  return (
+    <View className="items-center">
+      <HelpDot title={shared.signInWhy} body={shared.signInHelp} label={shared.signInWhy} />
     </View>
   )
 }
@@ -891,6 +1082,8 @@ export function BuyReviewTable({ rows, words }: { rows: readonly BuyRow[]; words
         caution: row.caution,
         inlineSub: row.key === 'spend',
         tabular: row.key !== 'what',
+        // The reserve under «Усі витрати» is said as a figure; what it is sits behind «?» beside the label (ST-4).
+        help: row.key === 'costs' && row.sub ? { title: words.reserveTitle, body: words.reserveHelp } : null,
       }))}
     />
   )
@@ -908,6 +1101,8 @@ export type ReviewTableRow = Readonly<{
   /** The quieter line follows the figure on its own line's end, as what leaves the wallet does. */
   inlineSub?: boolean
   tabular?: boolean
+  /** What the row means, behind «?» beside its label (ST-4). */
+  help?: Readonly<{ title: string; body: string }> | null
 }>
 
 /** «Перевірка»'s rows — a purchase's four, a swap's four — drawn one way. */
@@ -947,6 +1142,12 @@ export function ReviewTable({ rows }: { rows: readonly ReviewTableRow[] }) {
               </>
             )}
           </View>
+          {/* What the row's figure means sits at the row's end, never squeezing its label (ST-4). */}
+          {row.help ? (
+            <View className="-my-1.5">
+              <HelpDot title={row.help.title} body={row.help.body} size={16} />
+            </View>
+          ) : null}
         </View>
       ))}
     </View>
@@ -984,7 +1185,8 @@ export function receiptFace(
         got === null
           ? null
           : `${outcome.fromReview ? '≈ ' : ''}${unitsPhrase(got, company.unit, company.name, locale)}`,
-      note: outcome.belowMinimum ? words.belowMinimum : outcome.fromReview ? words.fromReview : null,
+      // «≈» says the figure is the Review's; the receipt keeps the network's (ST-4: no line says so).
+      note: outcome.belowMinimum ? words.belowMinimum : null,
       noteTone: outcome.belowMinimum ? 'warning' : 'faint',
     }
   }

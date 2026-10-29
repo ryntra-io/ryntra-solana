@@ -3,18 +3,20 @@ import { markUpdate } from "@/lib/beta/rpc";
 import { handleUpdate, type TgUpdate } from "@/lib/telegram/handlers";
 import { isChannelAdmin, tg } from "@/lib/telegram/api";
 import { LINKS } from "@/lib/beta/types";
+import { ensureBotProfile, ensureBotProfileOnce } from "@/lib/assistant/telegram/profile";
 import { decideBearerAuth, decideWebhookSecret, LEGACY_KEY_ERROR } from "@/lib/security";
 import { reportError } from "@/lib/monitor";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
+/* AI-07: an update may be a question to the model or a voice message heard on the server — the agent's own minute. */
+export const maxDuration = 60;
 
 /**
- * Ryntra Beta bot ( @RyntraBeta_bot ) — Beta Access Gate webhook.
- *
- * Flow (demo-first): /start → checklist keyboard →
- * Telegram check (getChatMember) → Arcus wallet submit → X proof-code →
- * statuses Pending → Telegram Verified → Arcus Submitted → X Verified → Beta Approved → Priority.
+ * Ryntra's bot ( @RyntraBeta_bot ) webhook — since AI-07 the assistant «Ryntra»
+ * in Telegram (lib/telegram/handlers.ts → lib/assistant/telegram/**): /start,
+ * questions and voice for a chat bound to an account in Settings, /watch
+ * /plans /brief /credits /settings /help, the notifications' buttons.
  *
  * Ops:
  *   - env: TELEGRAM_BOT_TOKEN, TELEGRAM_WEBHOOK_SECRET, BETA_APP_SECRET, BETA_TOKEN_SECRET
@@ -36,6 +38,8 @@ async function ensureWebhookConfig(reqUrl: string) {
   webhookChecked = true;
   const target = new URL("/api/telegram", reqUrl);
   if (target.hostname !== "ryntra.io") return; // never re-point the webhook from preview deployments
+  /* AI-07: the bot's profile and commands, set by the bot itself once per instance (no BotFather). */
+  await ensureBotProfileOnce(tg);
   const wi = await tg<{ url?: string; allowed_updates?: string[] }>("getWebhookInfo", {});
   if (!wi) return;
   const allowed = wi.allowed_updates ?? [];
@@ -116,15 +120,10 @@ export async function GET(req: NextRequest) {
       secret_token: SECRET,
       allowed_updates: ["message", "callback_query"],
     });
-    const desc = await tg("setMyDescription", {
-      description:
-        "Ryntra Workspace is the reference client for the Ryntra Evidence Kernel: scoped evidence, paper-first planning, a decision journal, and human-authorized supported actions. Beta is free and non-custodial. Press Start to check access.",
-    });
-    const shortDesc = await tg("setMyShortDescription", {
-      short_description: "Free beta access for the non-custodial Ryntra Workspace reference client.",
-    });
+    /* AI-07: the assistant's profile and commands, read and written where they differ (lib/assistant/telegram/profile.ts). */
+    const profile = await ensureBotProfile(tg);
     const wi = await tg("getWebhookInfo", {});
-    return NextResponse.json({ ok: true, webhookUrl, setWebhook: wh !== null, desc: desc !== null, shortDesc: shortDesc !== null, webhookInfo: wi });
+    return NextResponse.json({ ok: true, webhookUrl, setWebhook: wh !== null, profile, webhookInfo: wi });
   }
 
   return NextResponse.json({ ok: true, bot: "@RyntraBeta_bot", configured: Boolean(process.env.TELEGRAM_BOT_TOKEN) });

@@ -1,0 +1,165 @@
+/* ============================================================
+   Admin · Панель росту (Ріст 7).
+
+   Звідки приходять люди й де відпадають: угорі ворота етапу й
+   воронка трафіку з мітками, далі джерела, коди постів, друзі,
+   гроші росту. Токени — з admin.module.css; тут лише геометрія.
+   ============================================================ */
+
+.top {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 2fr);
+  gap: 16px;
+  margin: 0 0 16px;
+}
+
+/* A card spans the admin's twelve columns; inside these two grids it takes one cell. */
+.top > *,
+.pair > * {
+  grid-column: auto;
+}
+
+.aimValue {
+  font-family: var(--mono);
+  font-size: 40px;
+  font-weight: 750;
+  line-height: 1;
+}
+
+.aimLine {
+  margin: 0;
+  font-size: 13px;
+  color: var(--text-dim);
+}
+
+.gateTrack {
+  height: 8px;
+  border-radius: 999px;
+  background: var(--panel-2);
+  overflow: hidden;
+}
+
+.gateFill {
+  height: 100%;
+  border-radius: 999px;
+  background: var(--accent);
+  min-width: 2px;
+}
+
+.gates {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.funnelRate {
+  display: block;
+  font-family: var(--mono);
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--text-faint);
+}
+
+/* A column, not a grid: a card's twelve-column span would open twelve implicit tracks here. */
+.sections {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.pair {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 16px;
+}
+
+.rowTotal td {
+  color: var(--text);
+  font-weight: 700;
+  background: var(--panel-2);
+}
+
+.sourceName {
+  display: grid;
+  gap: 2px;
+  min-width: 150px;
+}
+
+.sourceDetail {
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--text-faint);
+}
+
+.rate {
+  display: block;
+  font-size: 11px;
+  color: var(--text-faint);
+}
+
+.form {
+  display: grid;
+  grid-template-columns: 140px 150px minmax(0, 2fr) minmax(0, 1fr) auto;
+  gap: 10px;
+  align-items: end;
+}
+
+.issued {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--panel-2);
+}
+
+.link {
+  font-family: var(--mono);
+  font-size: 12px;
+  word-break: break-all;
+}
+
+.moneyBar {
+  display: flex;
+  height: 10px;
+  border-radius: 999px;
+  overflow: hidden;
+  background: var(--panel-2);
+}
+
+.moneySpent {
+  height: 100%;
+  background: var(--accent);
+}
+
+.csv {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.csv select {
+  width: auto;
+  padding: 6px 10px;
+  font-size: 13px;
+}
+
+@media (max-width: 900px) {
+  .top,
+  .pair {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .form {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  }
+
+  .formWide {
+    grid-column: 1 / -1;
+  }
+}

@@ -1,0 +1,780 @@
+/* «Торгівля → Ф'ючерси» (B7, SOL-C7): the page's first line says what can be done now; under it the core's blocks on
+   one grid — the strip with the market's figures, the chart, the book, the account and «Застава»; one column on a phone. */
+
+/* A terminal takes the whole width; only its height follows the content, so the account and «Застава» stay under the
+   chart. Doubled to outweigh the core's terminal rule whatever order the two sheets load in. */
+.page.page {
+  min-height: 0;
+  width: 100%;
+  height: auto;
+}
+
+/*
+ * Four widths (UX-351, B6b). A phone: one column, the market chosen from the strip, the order ticket under the chart.
+ * 768–1279: the chart across, the ticket and the book side by side under it. From 1280: the chart, the book and the
+ * ticket in a row — the terminal's own order. From 1680: the market list before them. The account and «Застава» under
+ * them. The market list stands only where it has room — the strip's choice does its work elsewhere.
+ */
+.grid {
+  display: grid;
+  gap: var(--ry-s2);
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-areas:
+    "strip"
+    "chart"
+    "ticket"
+    "book"
+    "account"
+    "collateral";
+}
+
+@media (min-width: 768px) {
+  .grid {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    grid-template-areas:
+      "strip strip"
+      "chart chart"
+      "ticket book"
+      "account account";
+  }
+
+  .grid[data-futures-collateral-shown] {
+    grid-template-areas:
+      "strip strip"
+      "chart chart"
+      "ticket book"
+      "account account"
+      "collateral .";
+  }
+}
+
+/* From 1280 beside the menu rail: the chart, the book and the ticket in a row (UX-351). */
+@media (min-width: 1280px) {
+  .grid,
+  .grid[data-futures-collateral-shown] {
+    grid-template-columns: minmax(0, 1fr) minmax(220px, 260px) minmax(340px, 380px);
+    grid-template-rows: auto minmax(480px, auto) auto;
+  }
+
+  .grid {
+    grid-template-areas:
+      "strip strip strip"
+      "chart book ticket"
+      "account account account";
+  }
+
+  .grid[data-futures-collateral-shown] {
+    grid-template-areas:
+      "strip strip strip"
+      "chart book ticket"
+      "account account collateral";
+  }
+}
+
+@media (min-width: 1680px) {
+  .grid,
+  .grid[data-futures-collateral-shown] {
+    grid-template-columns: minmax(260px, 300px) minmax(0, 1fr) minmax(220px, 260px) minmax(340px, 380px);
+  }
+
+  .grid {
+    grid-template-areas:
+      "strip strip strip strip"
+      "markets chart book ticket"
+      "account account account account";
+  }
+
+  .grid[data-futures-collateral-shown] {
+    grid-template-areas:
+      "strip strip strip strip"
+      "markets chart book ticket"
+      "account account account collateral";
+  }
+}
+
+/* The page's first line: what can be done here now. Readable — the body's muted colour, never dimmed. */
+.status {
+  display: flex;
+  align-items: center;
+  gap: var(--ry-s1);
+  margin: 0;
+  color: var(--ry-text);
+  font-size: var(--ry-fs-label);
+  line-height: var(--ry-lh-body);
+}
+
+.status::before {
+  content: "";
+  flex: 0 0 auto;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--ry-muted);
+}
+
+.skeleton {
+  margin-top: var(--ry-s3);
+}
+
+.strip {
+  grid-area: strip;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--ry-s2) var(--ry-s4);
+  min-width: 0;
+}
+
+.picker select {
+  font: inherit;
+  font-family: var(--ry-font-mono);
+  font-size: var(--ry-fs-label);
+  font-weight: 600;
+  color: var(--ry-text);
+  background: var(--ry-card);
+  border: 1px solid var(--ry-border);
+  border-radius: var(--ry-r-btn-sm);
+  padding: var(--ry-s1) var(--ry-s2);
+  min-height: 40px;
+}
+
+.picker select:focus-visible {
+  outline: 2px solid var(--ry-focus);
+  outline-offset: 2px;
+}
+
+.facts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--ry-s1) var(--ry-s4);
+  margin: 0;
+}
+
+.facts div {
+  display: grid;
+  gap: 2px;
+}
+
+.facts dt {
+  color: var(--ry-muted);
+  font-size: var(--ry-fs-label-sm);
+}
+
+.facts dd {
+  margin: 0;
+  color: var(--ry-text);
+  font-family: var(--ry-font-mono);
+  font-size: var(--ry-fs-dense);
+  font-variant-numeric: tabular-nums;
+}
+
+/* Words stay in the body's face; mono is for numbers only. */
+.facts dd[data-words] {
+  font-family: inherit;
+}
+
+/* From 1680 the market list is the choice: the strip's select would be a second one. */
+@media (min-width: 1680px) {
+  .picker {
+    display: none;
+  }
+}
+
+.page [data-tone="up"] {
+  color: var(--ry-pnl-pos);
+}
+
+.page [data-tone="down"] {
+  color: var(--ry-pnl-neg);
+}
+
+.notes,
+.stale,
+.muted {
+  margin: 0;
+  color: var(--ry-muted);
+  font-size: var(--ry-fs-label-sm);
+  line-height: var(--ry-lh-body);
+}
+
+.stale {
+  color: var(--ry-caution);
+}
+
+.notice {
+  margin: var(--ry-s4) 0;
+  color: var(--ry-muted);
+}
+
+.markets {
+  grid-area: markets;
+  display: none;
+  min-height: 0;
+}
+
+@media (min-width: 1680px) {
+  .markets {
+    display: flex;
+    overflow: auto;
+    /* Its size is the cell's, never its rows': sixty markets do not stretch the chart beside them. */
+    contain: size;
+  }
+}
+
+.chart {
+  grid-area: chart;
+  min-width: 0;
+  min-height: 360px;
+  height: 56vh;
+  max-height: 560px;
+  display: flex;
+  flex-direction: column;
+}
+
+@media (min-width: 1280px) {
+  .chart {
+    height: auto;
+    max-height: none;
+  }
+}
+
+.coreChart {
+  flex: 1;
+  height: 100%;
+  min-height: 0;
+}
+
+/*
+ * The book has a height of its own wherever it is not beside the chart: a canvas has none to give, and with none it
+ * either collapses to its title or grows without end (UX-351). Beside the chart, the row's height is its own.
+ */
+.book {
+  grid-area: book;
+  height: 380px;
+  min-height: 0;
+  min-width: 0;
+}
+
+@media (min-width: 1280px) {
+  .book {
+    height: auto;
+  }
+}
+
+/* The core's age line, then the columns' names, then the canvas: the names stand right over the numbers they name. */
+.book > :global(.ryntra-block__body) {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: var(--ry-s1);
+  min-height: 0;
+}
+
+.book .bookCanvas {
+  display: contents;
+}
+
+.bookCanvas > :global(.ryntra-book__age) {
+  order: 1;
+  margin: 0;
+}
+
+.bookHead {
+  order: 2;
+}
+
+.bookCanvas > :not(:global(.ryntra-book__age)) {
+  order: 3;
+}
+
+.bookCanvas > :global(.ryntra-book__canvas) {
+  flex: 1;
+  height: auto;
+  min-height: 0;
+}
+
+.bookHead {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  gap: var(--ry-s2);
+  color: var(--ry-muted);
+  font-size: var(--ry-fs-label-sm);
+}
+
+.bookHead span:nth-child(2) {
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}
+
+.bookHead span:last-child {
+  text-align: right;
+}
+
+
+.account {
+  grid-area: account;
+  min-width: 0;
+}
+
+.collateralBlock {
+  grid-area: collateral;
+  min-width: 0;
+}
+
+.accountBody {
+  display: grid;
+  gap: var(--ry-s2);
+  min-width: 0;
+}
+
+.line {
+  margin: 0;
+  color: var(--ry-text);
+  line-height: var(--ry-lh-body);
+}
+
+/* A table wider than a phone scrolls inside its block, never the page. */
+.scroll {
+  min-width: 0;
+  overflow-x: auto;
+}
+
+.liquidation {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 2px;
+}
+
+.liquidation[data-tone="down"] {
+  font-weight: 600;
+}
+
+.liquidationPrice {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.away,
+.unknown {
+  color: var(--ry-muted);
+  font-size: var(--ry-fs-label-sm);
+  font-weight: 400;
+}
+
+/* «Ризик ліквідації: низький · до межі 83 %» — one line over the margin's figures. */
+.risk {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0 var(--ry-s1);
+  margin: 0;
+  color: var(--ry-text);
+  font-size: var(--ry-fs-label);
+  font-variant-numeric: tabular-nums;
+}
+
+.riskLabel {
+  color: var(--ry-muted);
+}
+
+.subhead {
+  margin: var(--ry-s2) 0 0;
+  font-size: var(--ry-fs-label);
+  color: var(--ry-text);
+}
+
+.symbol {
+  font-family: var(--ry-font-mono);
+  font-weight: 600;
+}
+
+.change {
+  font-variant-numeric: tabular-nums;
+}
+
+.page [data-side="long"] {
+  color: var(--ry-pnl-pos);
+}
+
+.page [data-side="short"] {
+  color: var(--ry-pnl-neg);
+}
+
+/* The market on screen, lit in the list. */
+.markets tr[data-current] {
+  background: var(--ry-hover);
+}
+
+/* «Застава» (B6): the margin's figures, deposit or withdraw, the amount, Review — one column in the order block's cell. */
+.collateral {
+  display: grid;
+  gap: var(--ry-s2);
+  min-width: 0;
+}
+
+.marginFacts {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--ry-s2) var(--ry-s3);
+  margin: 0;
+}
+
+.marginFacts div {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+.marginFacts dt {
+  color: var(--ry-muted);
+  font-size: var(--ry-fs-label-sm);
+}
+
+.marginFacts dd {
+  margin: 0;
+  color: var(--ry-text);
+  font-family: var(--ry-font-mono);
+  font-size: var(--ry-fs-dense);
+  font-variant-numeric: tabular-nums;
+  overflow-wrap: anywhere;
+}
+
+.segment {
+  display: flex;
+  gap: var(--ry-s3);
+  border-bottom: 1px solid var(--ry-border);
+}
+
+.segment button {
+  min-height: 40px;
+  padding: 0 var(--ry-s1);
+  border: 0;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -1px;
+  background: transparent;
+  color: var(--ry-muted);
+  font: inherit;
+  font-size: var(--ry-fs-label);
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.segment button[aria-pressed="true"] {
+  color: var(--ry-text);
+  border-bottom-color: var(--ry-iris);
+  font-weight: 600;
+}
+
+.segment button:focus-visible,
+.max:focus-visible {
+  outline: none;
+  box-shadow: var(--ry-focus);
+}
+
+.amount {
+  display: grid;
+  gap: var(--ry-s1);
+  color: var(--ry-muted);
+  font-size: var(--ry-fs-label);
+}
+
+.amountRow {
+  display: flex;
+  gap: var(--ry-s1);
+  min-width: 0;
+}
+
+.amountRow input {
+  flex: 1;
+  width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+  height: 44px;
+  padding: 0 var(--ry-s3);
+  border: 1px solid var(--ry-border);
+  border-radius: var(--ry-r-btn);
+  background: var(--ry-bg, var(--ry-card));
+  color: var(--ry-text);
+  font-family: var(--ry-font-mono);
+  font-size: var(--ry-fs-dense);
+  font-variant-numeric: tabular-nums;
+}
+
+.amountRow input:focus-visible {
+  outline: none;
+  border-color: var(--ry-border-strong);
+  box-shadow: var(--ry-focus);
+}
+
+.amountRow input[aria-invalid="true"] {
+  border-color: var(--ry-caution);
+}
+
+.max {
+  flex: 0 0 auto;
+  min-width: 56px;
+  height: 44px;
+  padding: 0 var(--ry-s2);
+  border: 1px solid var(--ry-border);
+  border-radius: var(--ry-r-btn);
+  background: transparent;
+  color: var(--ry-text);
+  font: inherit;
+  font-size: var(--ry-fs-label);
+  cursor: pointer;
+}
+
+.max:disabled {
+  color: var(--ry-muted);
+  cursor: default;
+}
+
+.hint,
+.alert {
+  margin: 0;
+  font-size: var(--ry-fs-label-sm);
+  line-height: var(--ry-lh-body);
+}
+
+.hint {
+  color: var(--ry-caution);
+}
+
+.alert {
+  color: var(--ry-pnl-neg);
+}
+
+.details {
+  display: grid;
+  gap: var(--ry-s1);
+  margin: 0;
+}
+
+.details div {
+  display: grid;
+  gap: 2px;
+}
+
+.details dt {
+  color: var(--ry-muted);
+  font-size: var(--ry-fs-label-sm);
+}
+
+.details dd {
+  margin: 0;
+  font-family: var(--ry-font-mono);
+  font-size: var(--ry-fs-label-sm);
+  overflow-wrap: anywhere;
+}
+
+/* The order ticket (B6b): the core's trade ticket, its Review and its receipt, in the order block's cell. */
+.ticket {
+  grid-area: ticket;
+  min-width: 0;
+}
+
+.orderPanel {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--ry-s2);
+  min-width: 0;
+}
+
+.orderPanel > * {
+  min-width: 0;
+}
+
+.positionForm {
+  display: grid;
+  gap: var(--ry-s2);
+  min-width: 0;
+}
+
+.positionForm input {
+  width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+  height: 44px;
+  padding: 0 var(--ry-s3);
+  border: 1px solid var(--ry-border);
+  border-radius: var(--ry-r-btn);
+  background: var(--ry-bg, var(--ry-card));
+  color: var(--ry-text);
+  font-family: var(--ry-font-mono);
+  font-size: var(--ry-fs-dense);
+  font-variant-numeric: tabular-nums;
+}
+
+.positionForm input:focus-visible {
+  outline: none;
+  border-color: var(--ry-border-strong);
+  box-shadow: var(--ry-focus);
+}
+
+.positionForm input[aria-invalid="true"] {
+  border-color: var(--ry-caution);
+}
+
+/* A row's actions: small text buttons that fit a table cell; 32 px high, the cell's own height. */
+.rowActions {
+  display: inline-flex;
+  flex-wrap: nowrap;
+  gap: var(--ry-s1);
+  justify-content: flex-end;
+}
+
+.rowActions button {
+  min-height: 32px;
+  padding: 0 var(--ry-s2);
+  border: 1px solid var(--ry-border);
+  border-radius: var(--ry-r-btn-sm);
+  background: transparent;
+  color: var(--ry-text);
+  font: inherit;
+  font-size: var(--ry-fs-label-sm);
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.rowActions button:hover {
+  background: var(--ry-hover);
+}
+
+.rowActions button:focus-visible {
+  outline: none;
+  box-shadow: var(--ry-focus);
+}
+
+/* A position's three actions in the order panel, one row where it fits. */
+.positionActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--ry-s2);
+}
+
+.positionActions > * {
+  flex: 1 1 auto;
+}
+
+/* The ticket's action stays in reach while the page scrolls (the core's sticky action), on the block's own surface. */
+.ticket :global(.ryntra-ticket__action) {
+  background: var(--ryntra-surface);
+  /* A solid band of the block's surface around the action and a soft edge above it: when the ticket scrolls under it
+     (a tall head on a laptop), no line of the form shows half-cut around the button. */
+  box-shadow:
+    0 0 0 var(--ry-s2) var(--ryntra-surface),
+    0 calc(-1 * var(--ry-s5)) var(--ry-s4) calc(-1 * var(--ry-s1)) var(--ryntra-surface);
+}
+
+.ticket :global(.ryntra-review) {
+  box-shadow: none;
+}
+
+/* Below 1024 px Solana's phone bar is fixed at the bottom: the ticket's sticky action stops above it, not under it. */
+@media (max-width: 1023px) {
+  .ticket :global(.ryntra-ticket__action) {
+    bottom: calc(var(--sol-phonebar-h, 0px) + env(safe-area-inset-bottom, 0px));
+  }
+}
+
+/* The terminal's account panel, folded: «Поповнити · Вивести» side by side under the figures (PERP-2). */
+.collateralActions {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--ry-s2);
+}
+
+/* ------------------------------------------------- PERP-5: the deal's core */
+
+/* «Sent to Solana» (spec §10, step 3): signed, on its way, nothing open yet. */
+.sent {
+  display: grid;
+  gap: var(--ryntra-space-3);
+  padding: var(--ryntra-space-4);
+  border: 1px solid var(--ryntra-border);
+  border-radius: var(--ryntra-radius-block);
+  background: var(--ryntra-surface);
+}
+
+/* The receipt's costs, each on its own line: Phoenix, Ryntra, the network, the impact. */
+.receiptCosts {
+  display: grid;
+  gap: 2px;
+  margin: 0;
+}
+
+.receiptCosts > div {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--ryntra-space-3);
+}
+
+.receiptCosts dt {
+  color: var(--ryntra-muted);
+}
+
+.receiptCosts dd {
+  margin: 0;
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+
+/* ----------------------------------------------------------- Risk Guardian */
+
+/* The account's scale (PERP-7, spec §12): one compact block — the state in words, its reason, the actions it calls
+   for and «Що це означає?». The state is never carried by colour alone: every one of the five has its own word, and
+   the three that matter carry the warning sign beside it. */
+.guardian {
+  display: grid;
+  gap: var(--ry-s2);
+  padding: var(--ry-s2) var(--ry-s3);
+  border: 1px solid var(--ry-border);
+  border-radius: var(--ry-r-btn);
+}
+
+.guardian[data-futures-guardian="raised"],
+.guardian[data-futures-guardian="stale"] {
+  border-color: var(--ry-caution);
+}
+
+.guardian[data-futures-guardian="critical"],
+.guardian[data-futures-guardian="liquidation"] {
+  border-color: var(--ry-pnl-neg);
+}
+
+.guardianActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--ry-s2);
+}
+
+.guardianWhat {
+  justify-self: start;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--ry-muted);
+  font: inherit;
+  font-size: var(--ry-fs-label-sm);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  cursor: pointer;
+}
+
+.guardianWhat:hover,
+.guardianWhat:focus-visible {
+  color: var(--ry-text);
+}
+
+.guardianText {
+  display: grid;
+  gap: var(--ry-s2);
+}
+
+.guardianHelpTitle {
+  margin: 0;
+  color: var(--ry-text);
+  font-size: var(--ry-fs-label);
+}

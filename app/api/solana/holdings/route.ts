@@ -190,12 +190,16 @@ async function readHoldings(request: Request, rate: RateLimitDecision, signal: A
   /*
    * Read at `confirmed`, not at the endpoint's default of `finalized`.
    *
-   * Finalization is about thirteen seconds behind, and the moment a balance is
-   * read most often is the moment right after the person's own transfer
-   * settled. Observed on a real Token-2022 send: `Sent` with a receipt, and the
-   * balance beside it still the one from before the money left. A balance that
-   * is thirteen seconds stale is not caution, it is the card telling somebody
-   * their own transfer did not happen.
+   * Under TowerBFT finalization was about thirty slots behind (seven to
+   * thirteen seconds, by slot time), and the moment a balance is read most
+   * often is the moment right after the person's own transfer settled.
+   * Observed on a real Token-2022 send: `Sent` with a receipt, and the balance
+   * beside it still the one from before the money left. A balance that many
+   * seconds stale is not caution, it is the card telling somebody their own
+   * transfer did not happen. Since Alpenglow
+   * (2026-10-21) `confirmed` and `finalized` trail the tip by the same slot or
+   * two (AG-3, docs/perf/solana-speed.md); this stays on `confirmed` until the
+   * reads move together (`commitmentForNewReads`, lib/solana/alpenglow.ts).
    *
    * `confirmed` is what the rest of this lane already treats as settled — the
    * submit boundary resolves on it and receipts are minted from it — so this

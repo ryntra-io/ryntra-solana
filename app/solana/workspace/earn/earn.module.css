@@ -1,0 +1,199 @@
+/* «Earn» — an overview page rather than a terminal: one column up to 640 px of reading width, the markets as a
+   table that becomes a list of rows on a phone, the form last because it is the thing a person does after
+   reading rather than before. Every colour and space is a core token; nothing here invents one. */
+
+.head {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ry-s1);
+  margin-bottom: var(--ry-s3);
+}
+
+.lead {
+  margin: 0;
+  max-width: 62ch;
+  color: var(--ry-muted);
+}
+
+/* The one line a person cannot check for themselves, so it is stated plainly rather than tucked into a
+   disclosure: Ryntra takes nothing out of this. */
+.noFee {
+  margin: 0;
+  max-width: 68ch;
+  padding: var(--ry-s2);
+  border: 1px solid var(--ry-border);
+  border-radius: var(--ry-r-card);
+  background: var(--ry-elevated);
+}
+
+.help > summary {
+  cursor: pointer;
+  color: var(--ry-muted);
+}
+
+.help p {
+  max-width: 68ch;
+  color: var(--ry-muted);
+}
+
+.block {
+  margin-bottom: var(--ry-s4);
+}
+
+.blockTitle {
+  font-size: var(--ry-fs-app);
+  margin: 0 0 var(--ry-s2);
+}
+
+.muted {
+  color: var(--ry-muted);
+  margin: var(--ry-s1) 0 0;
+}
+
+.failure {
+  margin: var(--ry-s2) 0 0;
+  color: var(--ry-pnl-neg);
+}
+
+/* A table that cannot fit scrolls rather than clips: the ceiling, before the phone's own layout below. */
+.tableWrap {
+  overflow-x: auto;
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.table th,
+.table td {
+  text-align: left;
+  padding: var(--ry-s1) var(--ry-s2);
+  border-bottom: 1px solid var(--ry-border);
+  vertical-align: top;
+}
+
+.table thead th {
+  color: var(--ry-muted);
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+/* A market whose door is shut says so in the risk column; the row stays readable rather than greyed out,
+   because the rate it pays is still a true figure. */
+.table td[data-earn-band="none"],
+.table td[data-earn-band="partial"] {
+  color: var(--ry-text);
+}
+
+.positions {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: var(--ry-s2);
+}
+
+.position {
+  padding: var(--ry-s2);
+  border: 1px solid var(--ry-border);
+  border-radius: var(--ry-r-card);
+}
+
+.positionHead {
+  margin: 0 0 var(--ry-s1);
+}
+
+.figures {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--ry-s1) var(--ry-s2);
+  margin: 0;
+}
+
+.figures dt {
+  color: var(--ry-muted);
+  font-size: var(--ry-fs-label-sm);
+}
+
+.figures dd {
+  margin: 0;
+  font-variant-numeric: tabular-nums;
+}
+
+.tabs {
+  display: flex;
+  gap: var(--ry-s1);
+  margin-bottom: var(--ry-s2);
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ry-s1);
+  max-width: 24rem;
+  margin-bottom: var(--ry-s2);
+}
+
+.field > span {
+  color: var(--ry-muted);
+  font-size: var(--ry-fs-label-sm);
+}
+
+.field select,
+.field input {
+  padding: var(--ry-s1) var(--ry-s2);
+  border: 1px solid var(--ry-border);
+  border-radius: var(--ry-r-btn-sm);
+  background: var(--ry-card);
+  color: var(--ry-text);
+  font: inherit;
+}
+
+@media (min-width: 768px) {
+  .figures {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+
+/*
+ * On a phone the markets are not a table but a card each: five columns of figures at 390 px either clip or
+ * ask a person to scroll sideways to find out whether they can get their money out. The header row goes and
+ * each cell carries its own label, so the same markup reads as a list.
+ */
+@media (max-width: 767px) {
+  .table thead {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+  }
+
+  .table tr {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--ry-s1);
+    padding: var(--ry-s2) 0;
+    border-bottom: 1px solid var(--ry-border);
+  }
+
+  .table th,
+  .table td {
+    border: 0;
+    padding: 0;
+    display: flex;
+    justify-content: space-between;
+    gap: var(--ry-s2);
+  }
+
+  .table td::before {
+    content: attr(data-label);
+    color: var(--ry-muted);
+    font-size: var(--ry-fs-label-sm);
+  }
+
+  .table td {
+    text-align: right;
+  }
+}

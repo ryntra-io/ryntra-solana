@@ -18,7 +18,7 @@ const LAMPORTS_PER_SOL = 1_000_000_000;
 const usdc = (raw: string) => (Number(raw) / 1_000_000).toFixed(2);
 
 /** What the operator is about to flip, waiting for its second press. */
-type Pending = Readonly<{ token: string | null; action: "stop" | "resume" }>;
+type Pending = Readonly<{ token: string | null; action: "stop" | "resume" | "people-open" | "people-close" }>;
 
 const short = (address: string) => `${address.slice(0, 4)}…${address.slice(-4)}`;
 const solscan = (network: string, kind: "account" | "token", address: string) =>
@@ -77,11 +77,13 @@ export function LaunchExecutorPanel() {
       }
       if (json.status) setStatus(json.status);
       const where = next.token ? "на цьому ринку" : "на всіх ринках";
-      setMsg(
-        json.changed
-          ? { tone: "ok", text: `${next.action === "stop" ? "Виконавця зупинено" : "Виконавця відновлено"} ${where}. Записів у журналі: ${json.marked?.length ?? 0}.` }
-          : { tone: "ok", text: "Нічого не змінилось: так уже було." },
-      );
+      const done =
+        next.action === "people-open"
+          ? "Бюджет і драбину на ринках людей увімкнено: з наступного проходу виконавець збирає їхні бюджети."
+          : next.action === "people-close"
+            ? "Бюджет і драбину на ринках людей вимкнено: нічого нового там не підписується, бюджети чекають у пулах."
+            : `${next.action === "stop" ? "Виконавця зупинено" : "Виконавця відновлено"} ${where}. Записів у журналі: ${json.marked?.length ?? 0}.`;
+      setMsg(json.changed ? { tone: "ok", text: done } : { tone: "ok", text: "Нічого не змінилось: так уже було." });
     } catch {
       setMsg({ tone: "error", text: "Запит не дійшов до сервера." });
     } finally {
@@ -114,6 +116,30 @@ export function LaunchExecutorPanel() {
     );
   };
 
+  /** The budget and the ladder on people's Micro markets: the first press asks, the second flips — the money is Ryntra's. */
+  const PeopleSwitch = ({ open }: { open: boolean }) => {
+    const action = open ? "people-close" : "people-open";
+    const asking = pending !== null && pending.token === null && pending.action === action;
+    if (asking) {
+      return (
+        <span className={ext.inlineActions}>
+          <button type="button" className={`${styles.btn} ${styles.btnSm} ${open ? styles.btnDanger : styles.btnPrimary}`} disabled={busy} onClick={() => void flip({ token: null, action })}>
+            {busy ? "Зачекай…" : open ? "Так, вимкнути" : "Так, увімкнути — гроші Ryntra"}
+          </button>
+          <button type="button" className={`${styles.btn} ${styles.btnSm} ${styles.btnGhost}`} disabled={busy} onClick={() => setPending(null)}>
+            Скасувати
+          </button>
+        </span>
+      );
+    }
+    return (
+      <button type="button" className={`${styles.btn} ${styles.btnSm}`} disabled={busy} onClick={() => setPending({ token: null, action })}>
+        {open ? <Pause size={14} weight="bold" aria-hidden /> : <Play size={14} weight="bold" aria-hidden />}
+        {open ? "Вимкнути" : "Увімкнути"}
+      </button>
+    );
+  };
+
   const runs = status ? status.keyHere && status.laneOpen && !status.all.stopped && status.lastPassAt !== null && Date.now() - Date.parse(status.lastPassAt) < 15 * 60_000 : false;
 
   return (
@@ -123,8 +149,8 @@ export function LaunchExecutorPanel() {
         <InfoControl label="Що тут робиться">
           <p>
             Виконавець проходить по всіх ринках, запущених на Ryntra, щохвилини: надсилає вихід на DEX, щойно крива набрала
-            поріг, і повторює невдалий вихід сам. Драбина ліквідності з комісій — лише на ринках, які запустила сама Ryntra,
-            і лише коли її відкрито. Вимикач зупиняє виконавця на одному ринку чи на всіх: поки зупинено, він нічого там не
+            поріг, і повторює невдалий вихід сам. Бюджет і драбина з комісій — на ринках, які запустила сама Ryntra, а на
+            ринках людей на Micro — лише поки ввімкнено вимикач «Ринки людей». Вимикач зупиняє виконавця на одному ринку чи на всіх: поки зупинено, він нічого там не
             підписує. Кожна зупинка й кожне відновлення — запис у бортовому журналі ринку, який бачить кожен.
           </p>
         </InfoControl>
@@ -228,6 +254,69 @@ export function LaunchExecutorPanel() {
           </>
         ) : null}
       </section>
+
+      {status ? (
+        <section className={styles.card} aria-labelledby="executor-engine">
+          <div className={styles.cardHead}>
+            <h2 id="executor-engine" className={styles.cardTitle}>
+              Двигун ринків
+            </h2>
+            <span className={`${ext.chip} ${status.engine.holding.length ? ext.chipWarn : ext.chipOk}`}>
+              <i className={ext.chipDot} aria-hidden />
+              {status.engine.holding.length ? `збоїв: ${status.engine.holding.length}` : "без збоїв"}
+            </span>
+            <InfoControl label="Як двигун проходить сотні ринків">
+              <p>
+                Криві всіх ринків читаються пачками по сто. Бюджети й драбини йдуть чергою: спершу ті, чия черга давно
+                настала; чого прохід не встиг — першим у наступному. Ринок з помилкою чекає дедалі довше, інші не стоять.
+                Основний вузол не відповідає — читання йдуть через другий. Збої виконавець надсилає в Telegram.
+              </p>
+            </InfoControl>
+          </div>
+          {status.engine.stats ? (
+            <dl className={ext.kv}>
+              <div>
+                <dt>Прохід</dt>
+                <dd className={ext.kvMono}>{(status.engine.stats.ms / 1000).toFixed(1).replace(".", ",")} с · ринків {status.engine.stats.markets}</dd>
+              </div>
+              <div>
+                <dt>Бюджети в черзі</dt>
+                <dd className={ext.kvMono}>
+                  {status.engine.stats.budget.visited} з {status.engine.stats.budget.due}
+                  {status.engine.stats.budget.left ? ` · на наступний: ${status.engine.stats.budget.left}` : ""}
+                </dd>
+              </div>
+              <div>
+                <dt>Драбини в черзі</dt>
+                <dd className={ext.kvMono}>
+                  {status.engine.stats.floor.visited} з {status.engine.stats.floor.due}
+                  {status.engine.stats.floor.left ? ` · на наступний: ${status.engine.stats.floor.left}` : ""}
+                </dd>
+              </div>
+              <div>
+                <dt>Найдовше чекав</dt>
+                <dd className={ext.kvMono}>{Math.max(status.engine.stats.budget.lagSeconds, status.engine.stats.floor.lagSeconds)} с</dd>
+              </div>
+              <div>
+                <dt>Ринків з помилкою</dt>
+                <dd className={ext.kvMono}>{status.engine.stats.failing}</dd>
+              </div>
+            </dl>
+          ) : (
+            <p className={ext.emptyLine}>Прохід з лічильниками ще не записано.</p>
+          )}
+          <div className={styles.btnRow}>
+            <PeopleSwitch open={status.people.open} />
+            <span className={ext.subtle}>
+              {status.people.unread
+                ? "Ринки людей на Micro: вимикач не прочитано — закрито."
+                : status.people.open
+                  ? `Ринки людей на Micro: бюджет і драбина — як на ринках Ryntra${status.people.at ? `, увімкнено ${since(status.people.at)}` : ""}.`
+                  : `Ринки людей на Micro: бюджет чекає в пулі Meteora${status.people.at ? `, вимкнено ${since(status.people.at)}` : ""}.`}
+            </span>
+          </div>
+        </section>
+      ) : null}
 
       {status ? (
         <section className={styles.card} aria-labelledby="executor-markets">

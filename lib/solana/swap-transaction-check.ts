@@ -1,10 +1,10 @@
 /**
  * Pre-sign firewall for a provider-built swap transaction.
  *
- * The Send lane's byte discipline compares the wallet's returned bytes against a
+ * SEND-002's byte discipline compares the wallet's returned bytes against a
  * message Ryntra built itself. A Jupiter order inverts the trust direction:
  * the unsigned bytes arrive FROM the provider, so before anything reaches the
- * signer's wallet this module decodes the wire, proves the fee payer is the
+ * founder's wallet this module decodes the wire, proves the fee payer is the
  * taker, requires the taker among the signers, enumerates every program the
  * message can invoke (program ids must be static account keys in a v0
  * message — lookup tables cannot smuggle one in), and fingerprints the exact

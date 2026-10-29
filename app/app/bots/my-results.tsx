@@ -24,7 +24,6 @@ export function MyResults({ locale }: { locale: WorkspaceLocale }) {
         head={
           <div className={styles.blockHead}>
             <h2 id="bots-results" className={styles.blockTitle}>{word("results")}</h2>
-            <p className={styles.blockNote}>{word("resultsLead")}</p>
           </div>
         }
       />

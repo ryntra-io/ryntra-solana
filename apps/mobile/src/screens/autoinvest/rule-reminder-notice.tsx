@@ -1,6 +1,7 @@
 import { useRouter } from 'expo-router'
 import { Pressable, View } from 'react-native'
 
+import { HelpDot } from '@/components/help-dot'
 import { Icon } from '@/components/icon'
 import { Txt } from '@/components/txt'
 import { AUTOINVEST_COPY } from '@/features/autoinvest/copy'
@@ -48,15 +49,14 @@ export function RuleReminderNotice({
   }
   return (
     <View className="gap-1.5 rounded-sm border border-line bg-surface px-4 py-3">
-      <View className="flex-row items-center gap-1.5">
+      <View className="flex-row items-center gap-1">
         <Icon name="time-outline" size={14} color="brand" />
         <Txt variant="ui" tabular className="shrink">
           {`${copy.reminderOpenHere} · ${usd}`}
         </Txt>
+        {/* A purchase here does not close the reminder — said one tap deep, never as a line in the ticket. */}
+        <HelpDot title={copy.reminderOpenHere} body={copy.plainHereLeavesOpen} />
       </View>
-      <Txt variant="ui" tone="muted">
-        {copy.plainHereLeavesOpen}
-      </Txt>
       <Pressable
         accessibilityRole="button"
         accessibilityLabel={copy.buyByRule(usd)}

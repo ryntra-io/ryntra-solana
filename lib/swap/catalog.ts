@@ -54,7 +54,7 @@ import { solanaPreFlightReserveLamports } from "./gas-reserve.ts";
  * origin, which is the clearest possible statement that the chain index is
  * metadata and the quote is the gate.
  */
-export const SWAP_NETWORKS = ["solana", "base", "ethereum", "arbitrum", "optimism", "polygon", "bnb", "robinhood"] as const;
+export const SWAP_NETWORKS = ["solana", "base", "ethereum", "arbitrum", "optimism", "polygon", "bnb", "robinhood", "arc"] as const;
 export type SwapNetwork = (typeof SWAP_NETWORKS)[number];
 
 export const SWAP_NETWORK_META: Readonly<Record<SwapNetwork, { label: string; chainRef: string; addressFormat: "SOLANA_BASE58" | "EVM_HEX" }>> = {
@@ -66,6 +66,7 @@ export const SWAP_NETWORK_META: Readonly<Record<SwapNetwork, { label: string; ch
   polygon: { label: "Polygon", chainRef: "eip155:137", addressFormat: "EVM_HEX" },
   bnb: { label: "BNB Chain", chainRef: "eip155:56", addressFormat: "EVM_HEX" },
   robinhood: { label: "Robinhood Chain", chainRef: "eip155:4663", addressFormat: "EVM_HEX" },
+  arc: { label: "Arc", chainRef: "eip155:5042", addressFormat: "EVM_HEX" },
 };
 
 /**
@@ -90,6 +91,8 @@ export const EVM_EXPLORER_TX: Readonly<Record<Exclude<SwapNetwork, "solana">, st
   polygon: "https://polygonscan.com/tx/",
   bnb: "https://bscscan.com/tx/",
   robinhood: "https://robinhoodchain.blockscout.com/tx/",
+  /* Relay's chain index names it for chain 5042 (read 2026-10-15). */
+  arc: "https://explorer.arc.io/tx/",
 };
 
 /**
@@ -103,7 +106,8 @@ export const EVM_EXPLORER_TX: Readonly<Record<Exclude<SwapNetwork, "solana">, st
  * Solana is absent on purpose: it is the fixed side of every bridge, so it is
  * never one of the choices.
  */
-export const POPULAR_BRIDGE_NETWORKS: readonly SwapNetwork[] = ["base", "ethereum", "arbitrum", "optimism", "polygon", "bnb", "robinhood"];
+/* Arc last: it opens behind its own switch (`lane-state.ts`) and only as a destination. */
+export const POPULAR_BRIDGE_NETWORKS: readonly SwapNetwork[] = ["base", "ethereum", "arbitrum", "optimism", "polygon", "bnb", "robinhood", "arc"];
 
 export function isSwapNetwork(value: unknown): value is SwapNetwork {
   return typeof value === "string" && (SWAP_NETWORKS as readonly string[]).includes(value);
@@ -165,6 +169,24 @@ export const POLYGON_USDC_CONTRACT = "0x3c499c542cef5e3811e1192ce70d8cc03d5c3359
 export const BNB_USDC_CONTRACT = "0x8ac76a51cc950d9822d68b83fe1ad97b32cd580d";
 export const BNB_USDC_DECIMALS = 18;
 
+/*
+ * USDC on Arc (B9, 2026-10-15), from Relay's own `/chains` for chain 5042.
+ *
+ * Arc pays its gas in USDC, and that one balance has two faces: the native coin
+ * at eighteen decimals and the ERC-20 at `0x3600…` with six. They are the same
+ * money, so the catalogue names it once — the six-decimal ERC-20, the face every
+ * quote here arrives in — and never offers the native face beside it as a second
+ * asset a person could "swap" into the first.
+ *
+ * Arc is an **arrival** network on this page (`ARRIVAL_ONLY_NETWORKS`): leaving
+ * Arc means the gas comes out of the very balance being sent, in units the
+ * pre-flight reserve here does not speak, and Ryntra on Arc has its own way out.
+ */
+export const ARC_USDC_CONTRACT = "0x3600000000000000000000000000000000000000";
+export const ARC_USDC_DECIMALS = 6;
+/** Circle's wrapped bitcoin on Arc, eight decimals (Relay `/chains`, 2026-10-15). */
+export const ARC_CIRBTC_CONTRACT = "0x171a4217b86a807a64eb94757db6849fb4bdbaa0";
+
 export const SWAP_CATALOG: readonly SwapCatalogAsset[] = [
   { code: "SOL", network: "solana", symbol: "SOL", decimals: 9, kind: "NATIVE", address: null, economicAsset: "SOL", solanaMint: SOLANA_NATIVE_SOL_MINT },
   { code: "USDC", network: "solana", symbol: "USDC", decimals: 6, kind: "TOKEN", address: SOLANA_USDC_MINT, economicAsset: "USDC", solanaMint: SOLANA_USDC_MINT },
@@ -182,7 +204,18 @@ export const SWAP_CATALOG: readonly SwapCatalogAsset[] = [
   { code: "USDC", network: "bnb", symbol: "USDC", decimals: BNB_USDC_DECIMALS, kind: "TOKEN", address: BNB_USDC_CONTRACT, economicAsset: "USDC", solanaMint: null },
   { code: "ETH", network: "robinhood", symbol: "ETH", decimals: 18, kind: "NATIVE", address: null, economicAsset: "ETH", solanaMint: null },
   { code: "USDG", network: "robinhood", symbol: "USDG", decimals: 6, kind: "TOKEN", address: ROBINHOOD_USDG_CONTRACT, economicAsset: "USDG", solanaMint: null },
+  { code: "USDC", network: "arc", symbol: "USDC", decimals: ARC_USDC_DECIMALS, kind: "TOKEN", address: ARC_USDC_CONTRACT, economicAsset: "USDC", solanaMint: null },
 ];
+
+/**
+ * Networks this page delivers to and never sends from.
+ *
+ * Arc, because its gas coin is the USDC being sent: MAX would have to reserve
+ * eighteen-decimal gas out of a six-decimal amount, and a wrong unit there is a
+ * swap that cannot be signed. Refused before any quote with its own reason, so
+ * the surface can say where leaving Arc is done instead.
+ */
+export const ARRIVAL_ONLY_NETWORKS: readonly SwapNetwork[] = ["arc"];
 
 export function catalogAssets(network: SwapNetwork): readonly SwapCatalogAsset[] {
   return SWAP_CATALOG.filter((asset) => asset.network === network);
@@ -220,6 +253,10 @@ export const NETWORK_ROUTABLE_ASSETS: Partial<Record<SwapNetwork, readonly strin
     "0x0Bd7D308f8E1639FAb988df18A8011f41EAcAD73",
     ROBINHOOD_USDG_CONTRACT,
   ],
+  /* Relay's solver currencies on Arc, read 2026-10-15: USDC (its ERC-20 face)
+     and cirBTC. The native face of USDC is the same balance and is not offered
+     as a second asset. */
+  arc: [ARC_USDC_CONTRACT, ARC_CIRBTC_CONTRACT],
 };
 
 /**
@@ -376,6 +413,8 @@ const NETWORK_OPENING_ASSET: Readonly<Record<SwapNetwork, string>> = {
   bnb: "USDC",
   /* USDG is the point of this lane: it is what Arcus spot is quoted in. */
   robinhood: "USDG",
+  /* Arc's dollar, the one face of it this page names. */
+  arc: "USDC",
 };
 
 /** The second choice, for when the opening one is already on the other leg. */
@@ -390,6 +429,8 @@ const NETWORK_ALTERNATE_ASSET: Readonly<Record<SwapNetwork, string>> = {
   polygon: "POL",
   bnb: "BNB",
   robinhood: "ETH",
+  /* Arc names one catalogue asset; the other thing it carries is cirBTC, by its contract. */
+  arc: ARC_CIRBTC_CONTRACT,
 };
 
 /**
@@ -689,6 +730,9 @@ const EVM_NATIVE_GAS_RESERVE_WEI: Readonly<Record<Exclude<SwapNetwork, "solana">
   polygon: POLYGON_CROSS_SWAP_GAS_RESERVE_WEI,
   bnb: BNB_CROSS_SWAP_GAS_RESERVE_WEI,
   robinhood: ROBINHOOD_CROSS_SWAP_GAS_RESERVE_WEI,
+  /* Never read: Arc is never an origin here (`ARRIVAL_ONLY_NETWORKS`), and its
+     gas coin is USDC, which `NETWORK_GAS_ASSET` names, so no reserve is owed. */
+  arc: 0n,
 };
 
 /**
@@ -710,6 +754,7 @@ const NETWORK_GAS_ASSET: Readonly<Record<SwapNetwork, SwapEconomicAsset>> = {
   polygon: "POL",
   bnb: "BNB",
   robinhood: "ETH",
+  arc: "USDC",
 };
 
 /**

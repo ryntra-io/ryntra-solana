@@ -29,11 +29,11 @@ export default async function StockNotFound() {
         <h1 id="missing-title">{word("notFoundTitle")}</h1>
         <p>{word("notFoundBody")}</p>
         <div className={styles.missingActions}>
-          <Link className="rw-btn rw-btn--primary" href="/app/markets?tab=stocks" prefetch={false}>
-            {word("browseStocks")}
+          <Link className="ryntra-button ryntra-button--primary" href="/app/markets?tab=stocks" prefetch={false}>
+            <span className="ryntra-button__label">{word("browseStocks")}</span>
           </Link>
-          <Link className="rw-btn" href="/app/spot?view=stock" prefetch={false}>
-            {word("openSpot")}
+          <Link className="ryntra-button ryntra-button--secondary" href="/app/spot?view=stock" prefetch={false}>
+            <span className="ryntra-button__label">{word("openSpot")}</span>
           </Link>
         </div>
       </div>

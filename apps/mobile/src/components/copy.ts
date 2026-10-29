@@ -38,6 +38,9 @@ export type ComponentCopy = Readonly<{
   /* the price line */
   priceLine: string
   priceLineA11y: (first: string, last: string, low: string, high: string) => string
+  /* the candles */
+  candleReadout: (time: string, open: string, high: string, low: string, close: string) => string
+  candlesA11y: (first: string, last: string, low: string, high: string) => string
 }>
 
 export const COMPONENT_COPY: Copy<ComponentCopy> = {
@@ -47,7 +50,7 @@ export const COMPONENT_COPY: Copy<ComponentCopy> = {
     unverified: 'Unverified',
     rowA11y: (symbol, name, price, change, states) =>
       `${symbol}, ${name}, ${price}, ${change} in 24 hours${states.length ? `, ${states.join(', ')}` : ''}`,
-    searchPlaceholder: 'Name, ticker or contract address',
+    searchPlaceholder: 'Name, ticker or address',
     searchMarkets: 'Search markets',
     clearSearch: 'Clear search',
     quote: 'Quote',
@@ -66,6 +69,8 @@ export const COMPONENT_COPY: Copy<ComponentCopy> = {
     sessionA11y: (word, time) => `Market session ${word}${time ? `, until ${time}` : ''}`,
     priceLine: 'Price line',
     priceLineA11y: (first, last, low, high) => `Price line from ${first} to ${last}, low ${low}, high ${high}`,
+    candleReadout: (time, open, high, low, close) => `${time} · O ${open} · H ${high} · L ${low} · C ${close}`,
+    candlesA11y: (first, last, low, high) => `Candles from ${first} to ${last}, low ${low}, high ${high}`,
   },
   uk: {
     halted: 'Торги зупинено',
@@ -73,7 +78,7 @@ export const COMPONENT_COPY: Copy<ComponentCopy> = {
     unverified: 'Не підтверджено',
     rowA11y: (symbol, name, price, change, states) =>
       `${symbol}, ${name}, ${price}, ${change} за 24 год${states.length ? `, ${states.join(', ')}` : ''}`,
-    searchPlaceholder: 'Назва, тікер або адреса контракту',
+    searchPlaceholder: 'Назва, тікер або адреса',
     searchMarkets: 'Пошук на ринках',
     clearSearch: 'Очистити пошук',
     quote: 'Котирування',
@@ -92,5 +97,7 @@ export const COMPONENT_COPY: Copy<ComponentCopy> = {
     sessionA11y: (word, time) => `Біржова сесія: ${word}${time ? `, до ${time}` : ''}`,
     priceLine: 'Лінія ціни',
     priceLineA11y: (first, last, low, high) => `Лінія ціни від ${first} до ${last}, мінімум ${low}, максимум ${high}`,
+    candleReadout: (time, open, high, low, close) => `${time} · Відкр ${open} · Макс ${high} · Мін ${low} · Закр ${close}`,
+    candlesA11y: (first, last, low, high) => `Свічки від ${first} до ${last}, мінімум ${low}, максимум ${high}`,
   },
 }

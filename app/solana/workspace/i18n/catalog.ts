@@ -9,10 +9,29 @@ import type { WorkspaceLocale } from "@/app/shell/locale";
  * pass through this table.
  */
 export const SOLANA_UK_TEXT: Readonly<Record<string, string>> = {
+  /* `.skr` names in the wallet, «Надіслати», the Portfolio and the receipts; the look-alike address (SKR-4, SEC-2). */
+  "Name": "Ім'я",
+  "Solana address or .skr name": "Адреса Solana або ім'я .skr",
+  "Finding the name…": "Шукаю ім'я…",
+  "No such .skr name": "Такого імені .skr немає",
+  "The name could not be checked right now.": "Ім'я зараз не вдалося перевірити.",
+  "Check the name": "Перевір ім'я",
+  "Check the whole address": "Перевір усю адресу",
+  "Looks like your own address, but it is another. Check the whole address.": "Схожа на твою адресу, але інша. Перевір усю адресу.",
+  "Looks like a recent address, but it is another. Check the whole address.": "Схожа на адресу з нещодавніх, але інша. Перевір усю адресу.",
+  "It is the right address": "Адреса правильна",
+  /* The first transfer to a new address, and the standing fact of every Review (SEC-2) — the phone's words
+     (`apps/mobile/src/features/money/pay-copy.ts`, `features/wallet/signing-copy.ts`). */
+  "Nothing was sent to this address yet. Match its first and last characters with whoever gave it.":
+    "На цю адресу переказів ще не було. Звір перші й останні символи з тим, хто її дав.",
+  "Address checked": "Адресу звірено",
+  "Check the new address": "Звір нову адресу",
+  "Ryntra never sees your keys.": "Ryntra не бачить твоїх ключів.",
+  "The name now points to another address. Check it and review again.": "Ім'я тепер веде на іншу адресу. Перевір її й переглянь ще раз.",
+  "The name could not be checked again before signing. Nothing was sent.": "Ім'я не вдалося перевірити ще раз перед підписом. Нічого не надіслано.",
   /* The token page. */
   "GeckoTerminal's check could not be read just now; that is not a «no».": "Перевірку GeckoTerminal зараз не вдалося прочитати; це не означає «ні».",
   "Not read": "Не прочитано",
-  "on the chart, arrows mark the three largest trades read": "на графіку стрілки позначають три найбільші прочитані угоди",
   "Top holders, as Jupiter counts them": "Топ-холдери, за підрахунком Jupiter",
   "Program accounts among these 20": "Рахунки програм серед цих 20",
   "Total liquidity from Jupiter; pools by depth; trades 24h are buys / sells": "Загальна ліквідність — від Jupiter; пули за глибиною; угоди 24 год — купівлі / продажі",
@@ -28,7 +47,7 @@ export const SOLANA_UK_TEXT: Readonly<Record<string, string>> = {
   "Read": "Прочитано",
   "Could not refresh — showing the last read.": "Не вдалося оновити — показано останнє прочитане.",
   "This could not be read just now.": "Зараз це не вдалося прочитати.",
-  "You": "Ви",
+  "You": "Ти",
   "Creator": "Творець",
   "Pool": "Пул",
   "Top 10": "Топ-10",
@@ -73,7 +92,7 @@ export const SOLANA_UK_TEXT: Readonly<Record<string, string>> = {
   "Source": "Джерело",
   "Where the issuer does not offer it": "Де емітент його не пропонує",
   "Only for investors who pass the issuer's tests:": "Лише для інвесторів, що проходять перевірки емітента:",
-  "Ryntra blocks no country: these are the issuer's own terms, so you can check your case.": "Ryntra не блокує жодної країни: це власні умови емітента, щоб ви могли перевірити свій випадок.",
+  "Ryntra blocks no country: these are the issuer's own terms, so you can check your case.": "Ryntra не блокує жодної країни: це власні умови емітента, за якими можна перевірити свій випадок.",
   "The issuer's own terms for the token were not found; the list is its platform's.": "Власних умов емітента для токена не знайдено; список — його платформи.",
   "read": "прочитано",
   "Exchange price": "Біржова ціна",
@@ -111,7 +130,7 @@ export const SOLANA_UK_TEXT: Readonly<Record<string, string>> = {
   "The catalogue does not list this token.": "Каталог не містить цього токена.",
   "SOL is held by every wallet on the network; its holders are not listed.": "SOL тримає кожен гаманець мережі; його холдерів не перелічуємо.",
   "Trading": "Торгується",
-  "This wallet is marked as a test wallet and does not earn Points.": "Цей гаманець позначений як тестовий і не отримує поінти.",
+  "This wallet is marked as a test wallet and earns no rewards.": "Цей гаманець позначений як тестовий і не отримує винагород.",
   "Loading your rewards…": "Завантажуємо твої винагороди…",
   "The payout could not be checked right now. Refresh its status before trying again.": "Зараз не вдалося перевірити виплату. Онови її статус перед повторною спробою.",
   "The referral could not be updated. Try again.": "Не вдалося оновити запрошення. Спробуй ще раз.",
@@ -127,6 +146,13 @@ export const SOLANA_UK_TEXT: Readonly<Record<string, string>> = {
   /* Spot — the coin as a stock has it: what it is, its position, its capitalisation. */
   "Less": "Менше",
   "Your position": "Твоя позиція",
+  /* SOL-R2 — the exit plan's level named in its sale's Review. */
+  "Exit plan": "План виходу",
+  "This level's sale is already on its way or sold — see the exit plan.": "Продаж цього рівня вже в дорозі або завершений — дивись план виходу.",
+  "This level's sale is open in another tab.": "Продаж цього рівня відкрито в іншій вкладці.",
+  "Price is back below this level now.": "Ціна вже знову нижче цього рівня.",
+  "Price is back above this level now.": "Ціна вже знову вище цього рівня.",
+  "This order is not the exit plan's sale any more — nothing was signed. Ask for the level's sale again.": "Цей ордер уже не продаж за планом виходу — нічого не підписано. Попроси продаж рівня ще раз.",
   "The Solana network's own coin: every transaction's fee is paid in it.": "Рідна монета мережі Solana: нею платять комісію за кожну транзакцію.",
   "What the token says about itself could not be read just now.": "Що токен каже про себе, зараз не вдалося прочитати.",
   "The token's creator wrote no description.": "Творець токена не написав опису.",
@@ -134,15 +160,29 @@ export const SOLANA_UK_TEXT: Readonly<Record<string, string>> = {
   "The description and the links are set by the token's creator; Ryntra has not checked them.": "Опис і посилання задає творець токена; Ryntra їх не перевіряла.",
   "The chart shows": "Графік показує",
   "Market cap at today's circulating supply": "Капіталізація за нинішньої кількості в обігу",
+  /* The spot chart on the core's chart (CH-17): the marks' words, the look and full screen. */
+  "Large buy": "Велика купівля",
+  "Large sale": "Великий продаж",
+  "Chart look": "Вигляд графіка",
+  "Candle colours": "Кольори свічок",
+  "High contrast": "Контрастні",
+  "Colour-blind": "Для дальтонізму",
+  "Time labels": "Час на осі",
+  "My time": "Мій час",
+  "Full screen": "На весь екран",
+  "Exit full screen": "Вийти з повного екрана",
   "Tokenized": "Токенізований",
   "Tokenized asset": "Токенізований актив",
   "Meme": "Мем",
   "Market": "Ринок",
-  "Pick a market": "Оберіть ринок",
+  "Pick a market": "Обери ринок",
   "Remove from watchlist": "Прибрати зі списку спостереження",
   "Add to watchlist": "Додати до списку спостереження",
   "Price feed unavailable": "Ціна зараз недоступна",
   "Last known price": "Остання відома ціна",
+  "min ago": "хв тому",
+  "s ago": "с тому",
+  "h ago": "год тому",
   "Liquidity": "Ліквідність",
   "Volume 24h": "Обсяг за 24 год",
   "1h": "1 год",
@@ -154,22 +194,35 @@ export const SOLANA_UK_TEXT: Readonly<Record<string, string>> = {
   "On-chain, 24/7": "У мережі, 24/7",
   "Website": "Сайт",
   "decimals": "знаків",
-  "Verified by Jupiter": "Верифіковано Jupiter",
-  "Review needs refreshing": "Оновіть умови обміну",
+  "Verified by Jupiter": "Перевірено Jupiter",
+  "Minting on": "Випуск увімкнено",
+  "Freeze on": "Заморожування увімкнено",
+  "The issuer can still mint more of this token.": "Емітент досі може випустити більше цього токена.",
+  "The issuer can still freeze this token in any wallet.": "Емітент досі може заморозити цей токен у будь-якому гаманці.",
+  "More actions": "Ще дії",
+  "Listed today": "З'явився сьогодні",
+  "Facts from Jupiter, not a verdict. «Risk» has each one with its source.": "Факти Jupiter, не вердикт. У «Ризику» — кожен із джерелом.",
+  "Chart scale": "Шкала графіка",
+  "Candle type": "Вигляд свічок",
+  "Change over 24 hours": "Зміна за 24 години",
+  "Your history shows this trade as done.": "Історія гаманця показує цю угоду виконаною.",
+  "Your history shows this trade as failed.": "Історія гаманця показує, що ця угода не пройшла.",
+  "The order is in «Orders».": "Ордер — в «Ордерах».",
+  "Review needs refreshing": "Онови умови обміну",
   "Insufficient balance": "Недостатній баланс",
   "SOL's price is not read yet: pay in USDC or type the amount.": "Ціну SOL ще не прочитано: плати в USDC або впиши суму.",
-  "Connect a wallet to buy in SOL by the dollar, or pay in USDC.": "Під'єднай гаманець, щоб купувати за SOL у доларах, або плати в USDC.",
+  "Connect a wallet to buy in SOL by the dollar, or pay in USDC.": "Підключи гаманець, щоб купувати за SOL у доларах, або плати в USDC.",
   "Share a trade": "Поділитися угодою",
   "Caution": "Увага",
   "Flagged by Jupiter": "Позначено Jupiter як підозрілий",
-  "The previous transaction can still reach the network. Wait for it to expire, then get a new quote.": "Попередня транзакція ще може потрапити до мережі. Дочекайтеся завершення її строку дії й отримайте нову котировку.",
+  "The previous transaction can still reach the network. Wait for it to expire, then get a new quote.": "Попередня транзакція ще може потрапити до мережі. Дочекайся завершення її строку дії й отримай нову котировку.",
   "Includes Jupiter's share. Already included in the quote.": "Містить частку Jupiter. Уже враховано в котировці.",
   "Additional Jupiter fee": "Додаткова комісія Jupiter",
-  "The network has seen this transaction, but its receipt is unavailable. Check the explorer.": "Мережа побачила транзакцію, але квитанція недоступна. Перевірте її в експлорері.",
-  "The outcome is not yet known. Keep checking this transaction; do not send another.": "Результат ще невідомий. Продовжуйте перевіряти цю транзакцію; не надсилайте іншу.",
-  "The signed transaction failed its final check. Nothing was sent. Get a new quote.": "Підписана транзакція не пройшла фінальну перевірку. Нічого не надіслано. Отримайте нову котировку.",
-  "This route could not be confirmed. Nothing was sent. Get a new quote.": "Не вдалося підтвердити цей маршрут. Нічого не надіслано. Отримайте нову котировку.",
-  "Not verified by Jupiter": "Не верифіковано Jupiter",
+  "The network has seen this transaction, but its receipt is unavailable. Check the explorer.": "Мережа побачила транзакцію, але квитанція недоступна. Перевір її в експлорері.",
+  "The outcome is not yet known. Keep checking this transaction; do not send another.": "Результат ще невідомий. Продовжуй перевіряти цю транзакцію; не надсилай іншу.",
+  "The signed transaction failed its final check. Nothing was sent. Get a new quote.": "Підписана транзакція не пройшла фінальну перевірку. Нічого не надіслано. Отримай нову котировку.",
+  "This route could not be confirmed. Nothing was sent. Get a new quote.": "Не вдалося підтвердити цей маршрут. Нічого не надіслано. Отримай нову котировку.",
+  "Not verified by Jupiter": "Не перевірено Jupiter",
   "organic score": "органічний бал",
   "Authorities": "Повноваження",
   "revoked": "відкликано",
@@ -183,20 +236,20 @@ export const SOLANA_UK_TEXT: Readonly<Record<string, string>> = {
   "A tokenized asset: a Solana token issued against the underlying by its issuer, not a brokerage share. Trading is on-chain, 24/7, at the token's own price; the issuer's terms and eligibility rules apply.":
     "Токенізований актив: токен Solana, випущений емітентом під базовий актив, а не брокерська акція. Торгівля відбувається в мережі, 24/7, за власною ціною токена; діють умови емітента та його правила доступу.",
   "Not verified by the catalogue. Check the address before trading; a copy can borrow a name.":
-    "Не верифіковано каталогом. Перевірте адресу перед торгівлею: копія може позичити назву.",
+    "Не верифіковано каталогом. Перевір адресу перед торгівлею: копія може позичити назву.",
   "Crypto": "Крипто",
   "Memes": "Меми",
   "Stocks / RWA": "Акції / RWA",
   "Stocks/RWA": "Акції/RWA",
   "Search markets": "Пошук ринків",
   "The market list is unavailable right now.": "Список ринків зараз недоступний.",
-  "Search still works; try again in a moment.": "Пошук працює; спробуйте ще раз за хвилину.",
+  "Search still works; try again in a moment.": "Пошук працює; спробуй ще раз за хвилину.",
   "Loading markets…": "Завантажуємо ринки…",
   "Loading market…": "Завантажуємо ринок…",
   "Nothing found.": "Нічого не знайдено.",
-  "Try the ticker, the full name or the mint address.": "Спробуйте тікер, повну назву або адресу mint.",
-  "Your watchlist is empty.": "Ваш список спостереження порожній.",
-  "Star a market and it stays here.": "Позначте ринок зірочкою — і він залишиться тут.",
+  "Try the ticker, the full name or the mint address.": "Спробуй тікер, повну назву або адресу mint.",
+  "Your watchlist is empty.": "Твій список спостереження порожній.",
+  "Star a market and it stays here.": "Познач ринок зірочкою — і він залишиться тут.",
   "No markets in this category right now.": "У цій категорії зараз немає ринків.",
   "Vol": "Обсяг",
   "Kept in this browser.": "Зберігається в цьому браузері.",
@@ -222,14 +275,14 @@ export const SOLANA_UK_TEXT: Readonly<Record<string, string>> = {
     "Надійшло менше за мінімум із Review. Квитанція зберігає перевірені й фактичні цифри поруч.",
   "The chain's figures differ from the Review. The receipt keeps both.": "Цифри мережі відрізняються від Review. Квитанція зберігає обидві.",
   "The network rejected the transaction. Only the network fee was spent; what you were spending did not move.":
-    "Мережа відхилила транзакцію. Витрачено лише мережеву комісію; те, що ви витрачали, не зрушило з місця.",
+    "Мережа відхилила транзакцію. Витрачено лише мережеву комісію; те, що ти витрачаєш, не зрушило з місця.",
   "Landed and receipted earlier. The receipt holds the amounts.": "Виконано й підтверджено квитанцією раніше. Суми — у квитанції.",
   "Some balances could not be read.": "Частину балансів не вдалося прочитати.",
   /* Activity as a statement. */
   "Today": "Сьогодні",
   "Yesterday": "Вчора",
   "Open Spot": "Відкрити Спот",
-  "You paid": "Ви сплатили",
+  "You paid": "Сплачено",
   "Signed record": "Підписаний запис",
   /* Portfolio as a broker shows it. */
   "Other": "Інше",
@@ -261,11 +314,11 @@ export const SOLANA_UK_TEXT: Readonly<Record<string, string>> = {
   "Side": "Сторона",
   "Spend": "Витратити",
   "Pay with": "Платити в",
-  "You get": "Ви отримаєте",
+  "You get": "Ти отримаєш",
   "estimate": "оцінка",
   "Receive in": "Отримати в",
   "Exact Review": "Точна «Перевірка»",
-  "Review this order carefully.": "Уважно перевірте цей ордер.",
+  "Review this order carefully.": "Уважно перевір цей ордер.",
   "This asset did not pass Ryntra's checks, so no order is offered for it.": "Цей актив не пройшов перевірки Ryntra, тому ордер для нього не пропонується.",
   "The quote expired; a fresh one is on its way.": "Котирування закінчилося; нове вже в дорозі.",
   "Chart source paused — showing the last read": "Джерело графіка на паузі — показано останнє зчитування",
@@ -286,12 +339,12 @@ export const SOLANA_UK_TEXT: Readonly<Record<string, string>> = {
   "Trading state": "Стан торгівлі",
   "Holding": "Позиція",
   "Recent fills": "Останні виконання",
-  "Connect a wallet to see what you hold and what you have traded here.": "Підключіть гаманець, щоб бачити, що ви тримаєте і що торгували тут.",
+  "Connect a wallet to see what you hold and what you have traded here.": "Підключи гаманець, щоб бачити, що ти тримаєш і чим торгуєш тут.",
   "Balances are unavailable right now.": "Баланси зараз недоступні.",
   "Reading balances…": "Читаємо баланси…",
-  "You do not hold": "Ви не тримаєте",
+  "You do not hold": "Ти не тримаєш",
   "yet.": "поки що.",
-  "Pick a market.": "Оберіть ринок.",
+  "Pick a market.": "Обери ринок.",
   "Of wallet": "Частка гаманця",
   "History is unavailable right now.": "Історія зараз недоступна.",
   "Reading fills…": "Читаємо виконання…",
@@ -316,49 +369,49 @@ export const SOLANA_UK_TEXT: Readonly<Record<string, string>> = {
   "This swap did not pass Ryntra's own checks, so it was not offered.": "Цей обмін не пройшов власні перевірки Ryntra, тому не був запропонований.",
   "The transaction that came back was not the one that was reviewed, so it was not sent.":
     "Транзакція, що повернулася, не збігається з переглянутою, тому її не відправлено.",
-  "That took too long and was stopped. Nothing was sent — try again.": "Це тривало задовго і було зупинено. Нічого не відправлено — спробуйте ще раз.",
+  "That took too long and was stopped. Nothing was sent — try again.": "Це тривало задовго і було зупинено. Нічого не відправлено — спробуй ще раз.",
   "Ryntra could not be reached. Nothing was sent.": "Не вдалося зв'язатися з Ryntra. Нічого не відправлено.",
 
   /* Cross-chain swap lane. */
   "No route for this pair right now. Nothing was sent — try another amount, or another asset.":
-    "Зараз для цієї пари немає маршруту. Нічого не відправлено — спробуйте іншу суму або інший актив.",
+    "Зараз для цієї пари немає маршруту. Нічого не відправлено — спробуй іншу суму або інший актив.",
   "One of those addresses does not belong to its network.": "Одна з цих адрес не належить своїй мережі.",
   "The provider could not be reached. Nothing was sent.": "Не вдалося зв'язатися з провайдером. Нічого не відправлено.",
   "Connect the wallet you are sending from — this route is priced for the wallet that signs it.":
-    "Підключіть гаманець, з якого відправляєте: ціна цього маршруту рахується для гаманця, що його підписує.",
+    "Підключи гаманець, з якого відправляєш: ціна цього маршруту рахується для гаманця, що його підписує.",
   "Connect the sending wallet and add the destination address — this route is priced for both.":
-    "Підключіть гаманець-відправник і вкажіть адресу отримання: ціна цього маршруту рахується для обох.",
+    "Підключи гаманець-відправник і вкажи адресу отримання: ціна цього маршруту рахується для обох.",
   "The price could not be read right now. Nothing was sent.": "Зараз не вдалося прочитати ціну. Нічого не відправлено.",
   "This did not complete. Whatever was sent, if anything, is read from the chain below — nothing is ever sent twice.":
     "Крок не завершився. Що саме пішло в мережу, якщо взагалі пішло, читається з мережі нижче — двічі нічого не відправляється.",
   "Swaps inside one Ethereum-style network are not offered yet": "Обміни всередині однієї мережі Ethereum-типу поки не пропонуються",
   "That network will not carry that asset": "Ця мережа не приймає цей актив",
-  "Pick an asset on both sides": "Оберіть актив з обох боків",
+  "Pick an asset on both sides": "Обери актив з обох боків",
   "This network's router refuses that asset outright, so no amount of it can be swapped here.":
     "Роутер цієї мережі прямо відмовляє в цьому активі, тож обміняти тут не вийде жодної його кількості.",
   "Choose a different network on one side. Swapping within one Ethereum-style network is not offered here.":
-    "Оберіть іншу мережу з одного боку. Обмін усередині однієї мережі Ethereum-типу тут не пропонується.",
+    "Обери іншу мережу з одного боку. Обмін усередині однієї мережі Ethereum-типу тут не пропонується.",
   /* Feedback in the cabinet. */
   "Feedback": "Відгук",
   "Question": "Запитання",
   "Idea": "Ідея",
   "Bug": "Помилка",
   "Security": "Безпека",
-  "Ask anything about how Ryntra works.": "Запитайте будь-що про те, як працює Ryntra.",
-  "What would make the product better for you.": "Що зробило б продукт кращим для вас.",
-  "What you did, what you expected, what happened instead.": "Що ви робили, чого очікували і що сталося натомість.",
-  "Marked and read first. Do not include seed phrases or keys.": "Позначається і читається першим. Не надсилайте seed-фрази чи ключі.",
-  "Write a little more — at least ten characters.": "Напишіть трохи більше — щонайменше десять символів.",
-  "Too many messages in a row. Try again in a few minutes.": "Забагато повідомлень поспіль. Спробуйте за кілька хвилин.",
-  "The message could not be saved right now. Try again in a moment.": "Зараз не вдалося зберегти повідомлення. Спробуйте за хвилину.",
+  "Ask anything about how Ryntra works.": "Запитай будь-що про те, як працює Ryntra.",
+  "What would make the product better for you.": "Що зробило б продукт кращим для тебе.",
+  "What you did, what you expected, what happened instead.": "Що ти робиш, чого чекаєш і що стається натомість.",
+  "Marked and read first. Do not include seed phrases or keys.": "Позначається і читається першим. Не надсилай seed-фрази чи ключі.",
+  "Write a little more — at least ten characters.": "Напиши трохи більше — щонайменше десять символів.",
+  "Too many messages in a row. Try again in a few minutes.": "Забагато повідомлень поспіль. Спробуй за кілька хвилин.",
+  "The message could not be saved right now. Try again in a moment.": "Зараз не вдалося зберегти повідомлення. Спробуй за хвилину.",
   "Received. Thank you.": "Отримано. Дякуємо.",
   "Reference": "Номер звернення",
-  "We read every message. If you left a contact, the answer comes there.": "Ми читаємо кожне повідомлення. Якщо ви залишили контакт, відповідь прийде туди.",
+  "We read every message. If you left a contact, the answer comes there.": "Ми читаємо кожне повідомлення. Якщо в повідомленні є контакт, відповідь прийде туди.",
   "Done": "Готово",
   "What is it about": "Про що це",
-  "Your message": "Ваше повідомлення",
+  "Your message": "Твоє повідомлення",
   "What happened, or what should change": "Що сталося або що варто змінити",
-  "How to reach you": "Як з вами зв'язатися",
+  "How to reach you": "Як з тобою зв'язатися",
   "Telegram @name or email": "Telegram @name або email",
   "Attached": "Додано",
   "wallet": "гаманець",
@@ -368,23 +421,23 @@ export const SOLANA_UK_TEXT: Readonly<Record<string, string>> = {
   "Level": "Рівень",
   "points": "балів",
   "Points reflect your genuine activity on Ryntra. They have no cash value and cannot be transferred.":
-    "Бали відображають вашу справжню активність у Ryntra. Вони не мають грошової вартості й не передаються.",
-  "Your rank": "Ваше місце",
+    "Бали відображають твою справжню активність у Ryntra. Вони не мають грошової вартості й не передаються.",
+  "Your rank": "Твоє місце",
   "Not ranked yet": "Ще без місця",
   "Top level": "Найвищий рівень",
   "at": "від",
   "Lifetime eligible volume": "Зарахований обсяг за весь час",
   "Completed trades": "Завершених угод",
   "Active days": "Активних днів",
-  "Your first settled trade starts your points.": "Перша завершена угода відкриє ваші бали.",
-  "An eligible trade can earn you more Points.": "Угода, що відповідає умовам, може принести вам ще більше балів.",
+  "Your first settled trade starts your points.": "Перша завершена угода відкриє твої бали.",
+  "An eligible trade can earn you more Points.": "Угода, що відповідає умовам, може принести тобі ще більше балів.",
   "How points work": "Як працюють бали",
   "Only a settled trade earns — a Swap, a Spot order or a Bridge that arrived. A quote, a review, a failed or cancelled operation earns nothing.":
     "Бали дає лише завершена угода — Swap, Spot-ордер або Bridge, що дійшов. Котирування, перевірка, невдала чи скасована операція не дають нічого.",
   "The first $1,000 you trade in a day earns 1 point per dollar; the rate then steps down at $1,000, $5,000 and $25,000, with a daily ceiling.":
     "Перші $1,000 обсягу за день дають 1 бал за долар; далі ставка знижується на $1,000, $5,000 і $25,000, і є денна стеля.",
   "An active day — $10 or more traded — adds 10 points. When someone you invited has their first active day, you receive 100.":
-    "Активний день — $10 або більше обсягу — додає 10 балів. Коли запрошена вами людина має свій перший активний день, ви отримуєте 100.",
+    "Активний день — $10 або більше обсягу — додає 10 балів. Коли запрошена тобою людина має свій перший активний день, ти отримуєш 100.",
   "Points have no cash value and cannot be transferred. Nothing about leverage, profit or loss changes them.":
     "Бали не мають грошової вартості й не передаються. Плече, прибуток чи збиток на них не впливають.",
   /* Ryntra Rewards V1. */
@@ -394,19 +447,19 @@ export const SOLANA_UK_TEXT: Readonly<Record<string, string>> = {
   "Invited by": "Запросив",
   "Referral code": "Реферальний код",
   "Referral code not found": "Реферальний код не знайдено",
-  "Nothing is set until you confirm. Your inviter cannot be changed afterwards.": "Нічого не закріплюється, поки ви не підтвердите. Після підтвердження змінити запрошувача вже не можна.",
+  "Nothing is set until you confirm. Your inviter cannot be changed afterwards.": "Нічого не закріплюється, поки ти не підтвердиш. Після підтвердження змінити запрошувача вже не можна.",
   "Confirm inviter": "Підтвердити запрошувача",
   "Change code": "Змінити код",
   "Change referral code": "Змінити реферальний код",
   "Continue without referral": "Продовжити без реферала",
-  "Have a code or link?": "Маєте код чи посилання?",
+  "Have a code or link?": "Маєш код чи посилання?",
   "Enter code": "Ввести код",
   "Look up": "Знайти",
   "Use this code": "Взяти цей код",
   "Cancel": "Скасувати",
-  "Your inviter": "Ваш запрошувач",
-  "Confirm this wallet first, then set your inviter.": "Спочатку підтвердьте гаманець, потім задайте запрошувача.",
-  "That is your own link.": "Це ваше власне посилання.",
+  "Your inviter": "Твій запрошувач",
+  "Confirm this wallet first, then set your inviter.": "Спочатку підтверди гаманець, потім задай запрошувача.",
+  "That is your own link.": "Це твоє власне посилання.",
   "This wallet already has an inviter.": "У цього гаманця вже є запрошувач.",
   "Those two wallets cannot invite each other.": "Ці два гаманці не можуть запрошувати один одного.",
   "Earned from friends": "Зароблено з друзів",
@@ -414,36 +467,36 @@ export const SOLANA_UK_TEXT: Readonly<Record<string, string>> = {
   "Rewards have not started yet. Trades made before they do earn nothing.": "Винагороди ще не запущені. Операції, зроблені до запуску, нічого не дають.",
   "Open Rewards": "Відкрити Винагороди",
   "Rewards": "Винагороди",
-  "Earn cashback when you trade, and more when people you invite trade.": "Отримуйте кешбек за свої операції та більше — за операції тих, кого ви запросили.",
+  "Earn cashback when you trade, and more when people you invite trade.": "Отримуй кешбек за свої операції та більше — за операції запрошених тобою.",
   "Rewards could not be read right now.": "Зараз не вдалося прочитати винагороди.",
-  "Connect a wallet to see what you have earned.": "Підключіть гаманець, щоб побачити свої винагороди.",
-  "Confirm this wallet to see your rewards.": "Підтвердьте цей гаманець, щоб побачити винагороди.",
+  "Connect a wallet to see what you have earned.": "Підключи гаманець, щоб побачити свої винагороди.",
+  "Confirm this wallet to see your rewards.": "Підтверди цей гаманець, щоб побачити винагороди.",
   "Confirming…": "Підтверджуємо…",
   "Confirm wallet": "Підтвердити гаманець",
   "Pending": "Очікує",
   "Lifetime earned": "Зароблено за весь час",
   "Claim to wallet": "Отримати на гаманець",
-  "Where your rewards came from": "Звідки ваші винагороди",
+  "Where your rewards came from": "Звідки твої винагороди",
   "Cashback": "Кешбек",
-  "50% of the Ryntra fee on your trades": "50% комісії Ryntra з ваших операцій",
+  "50% of the Ryntra fee on your trades": "50% комісії Ryntra з твоїх операцій",
   "Referral L1": "Від друзів",
-  "10% from people you invited": "10% від тих, кого ви запросили",
+  "10% from people you invited": "10% від запрошених тобою",
   "Referral L2": "Від друзів друзів",
   "5% from the people they invited": "5% від тих, кого запросили вони",
-  "Invite and earn": "Запрошуйте та заробляйте",
+  "Invite a friend": "Запроси друга",
   "10% Level 1": "10% рівень 1",
   "5% Level 2": "5% рівень 2",
-  "Your referral link": "Ваше реферальне посилання",
+  "Your referral link": "Твоє реферальне посилання",
   "Copy": "Копіювати",
   "Friends": "Друзі",
   "Their friends": "Друзі друзів",
   "Recent rewards": "Останні винагороди",
-  "Your rewards will appear here after your first trade.": "Ваші винагороди з’являться тут після першої операції.",
+  "Your rewards will appear here after your first trade.": "Твої винагороди з’являться тут після першої операції.",
   "Claimed": "Отримано",
   "How rewards work": "Як працюють винагороди",
-  "50% cashback of the Ryntra service fee on your own trade.": "50% кешбеку від сервісної комісії Ryntra з вашої власної операції.",
-  "10% of the Ryntra service fee from someone you invited, and 5% from the people they invited.": "10% сервісної комісії Ryntra від того, кого ви запросили, і 5% — від тих, кого запросили вони.",
-  "Claim from $1.00 USDC, to the wallet you are signed in with.": "Отримання від $1.00 USDC — на гаманець, яким ви увійшли.",
+  "50% cashback of the Ryntra service fee on your own trade.": "50% кешбеку від сервісної комісії Ryntra з твоєї власної операції.",
+  "10% of the Ryntra service fee from someone you invited, and 5% from the people they invited.": "10% сервісної комісії Ryntra від запрошених тобою, і 5% — від тих, кого запросили вони.",
+  "Claim from $1.00 USDC, to the wallet you are signed in with.": "Отримання від $1.00 USDC — на гаманець, яким ти входиш.",
   "Only fees actually collected after Rewards launched are eligible. Routes with no Ryntra fee earn nothing.": "Зараховуються лише комісії, фактично отримані після запуску Винагород. Маршрути без комісії Ryntra не дають нічого.",
   /* Rewards as a canvas. */
   "Available to claim": "Доступно до отримання",
@@ -453,9 +506,9 @@ export const SOLANA_UK_TEXT: Readonly<Record<string, string>> = {
   "Pending rewards become claimable as the reward reserve covers them.": "Винагороди в очікуванні стають доступними, коли резерв винагород їх покриває.",
   "Make a trade": "Зробити угоду",
   "Eligible volume": "Зарахований обсяг",
-  "To your wallet": "На ваш гаманець",
-  "Your trade": "Ваша угода",
-  "A trade by someone you invited": "Угода того, кого ви запросили",
+  "To your wallet": "На твій гаманець",
+  "Your trade": "Твоя угода",
+  "A trade by someone you invited": "Угода запрошеної тобою людини",
   "A trade by someone they invited": "Угода того, кого запросили вони",
   "Grid": "Сітка ордерів (Grid)",
   "A strategy with defined price levels and a fixed budget.": "Стратегія з визначеними ціновими рівнями та фіксованим бюджетом.",
@@ -464,20 +517,20 @@ export const SOLANA_UK_TEXT: Readonly<Record<string, string>> = {
   "A grid specification, simulation, limits, execution provider and user-authorized lifecycle.": "Специфікація сітки, симуляція, ліміти, провайдер виконання та дії за дозволом користувача.",
   "Waits on the Grid builder, simulation and a separate execution acceptance.": "Чекає на конструктор Grid, симуляцію та окреме приймання виконання.",
   /* Unified Swap V1. */
-  "The approval is still confirming. Nothing else was sent; press Review when it lands.": "Дозвіл ще підтверджується. Більше нічого не відправлено; натисніть Перегляд, коли він завершиться.",
+  "The approval is still confirming. Nothing else was sent; press Review when it lands.": "Дозвіл ще підтверджується. Більше нічого не відправлено; натисни Перегляд, коли він завершиться.",
   "Swapping across chains": "Обмін між мережами…",
-  "Add the destination address": "Додайте адресу призначення",
-  "Check the destination address": "Перевірте адресу призначення",
+  "Add the destination address": "Додай адресу призначення",
+  "Check the destination address": "Перевір адресу призначення",
   "is the most this wallet can swap — the rest stays for the network fee and the order account the provider opens on Solana.": "— це найбільше, що цей гаманець може обміняти: решта лишається на комісію мережі та на рахунок ордера, який провайдер відкриває в Solana.",
   "is the most this wallet can swap — the rest stays for gas.": "— це найбільше, що цей гаманець може обміняти: решта лишається на газ.",
   "is the most this wallet can swap.": "— це найбільше, що цей гаманець може обміняти.",
-  "This wallet holds no ETH on Base, and gas is paid in ETH. Add a little ETH before swapping.": "У цьому гаманці немає ETH у Base, а газ оплачується в ETH. Додайте трохи ETH перед обміном.",
-  "This wallet holds no ETH for gas. Add a little ETH before swapping.": "У цьому гаманці немає ETH на газ. Додайте трохи ETH перед обміном.",
+  "This wallet holds no ETH on Base, and gas is paid in ETH. Add a little ETH before swapping.": "У цьому гаманці немає ETH у Base, а газ оплачується в ETH. Додай трохи ETH перед обміном.",
+  "This wallet holds no ETH for gas. Add a little ETH before swapping.": "У цьому гаманці немає ETH на газ. Додай трохи ETH перед обміном.",
   "Use my Base wallet": "Взяти з мого гаманця Base",
   "Use my Ethereum wallet": "Взяти з мого гаманця Ethereum",
-  "No Ethereum-style wallet is available in this browser. Paste the address instead.": "У цьому браузері немає гаманця Ethereum. Вставте адресу вручну.",
+  "No Ethereum-style wallet is available in this browser. Paste the address instead.": "У цьому браузері немає гаманця Ethereum. Встав адресу вручну.",
   "The wallet did not share an address.": "Гаманець не надав адресу.",
-  "The wallet could not be read. Paste the address instead.": "Гаманець не вдалося прочитати. Вставте адресу вручну.",
+  "The wallet could not be read. Paste the address instead.": "Гаманець не вдалося прочитати. Встав адресу вручну.",
   "Use part of the balance": "Використати частину балансу",
   "Solana": "Solana",
   "Base": "Base",
@@ -485,24 +538,31 @@ export const SOLANA_UK_TEXT: Readonly<Record<string, string>> = {
   /* Robinhood Chain. A chain name is a proper noun and stays in both
      languages; the words around it do not. */
   "Robinhood Chain": "Robinhood Chain",
-  "Add the destination address — this route is priced for the wallet it pays.":
-    "Додайте адресу призначення — цей маршрут котирується під гаманець, якому платить.",
-  "To your Robinhood Chain address": "На вашу адресу в Robinhood Chain",
+  "Add the address the money goes to — then you will see how much arrives.": "Вкажи адресу, куди прийдуть гроші, — і побачиш, скільки ти отримаєш.",
+  "To your Robinhood Chain address": "На твою адресу в Robinhood Chain",
   "Robinhood Chain address": "Адреса в Robinhood Chain",
   "Use my Robinhood Chain wallet": "Взяти з мого гаманця Robinhood Chain",
   "Connect a Robinhood Chain wallet": "Підключити гаманець Robinhood Chain",
+  /* Arc as a network money arrives on (B9, 15.10). */
+  "Arc": "Arc",
+  "To your Arc address": "На твою адресу в Arc",
+  "Arc address": "Адреса в Arc",
+  "Use my Arc wallet": "Взяти з мого гаманця Arc",
+  "Connect an Arc wallet": "Підключити гаманець Arc",
+  "Arc receives here, it does not send": "Arc тут лише отримує, не надсилає",
+  "Money arrives on Arc from here. To move it out of Arc, use Ryntra on Arc.": "Звідси гроші лише надходять в Arc. Щоб вивести їх з Arc, скористайся Ryntra on Arc.",
   "Use my Solana wallet": "Взяти з мого гаманця Solana",
   "s": "с",
   "min": "хв",
-  "The market moved. Look at the new figures before continuing.": "Ринок змінився. Перегляньте нові цифри, перш ніж продовжити.",
+  "The market moved. Look at the new figures before continuing.": "Ринок змінився. Переглянь нові цифри, перш ніж продовжити.",
   "Not available for this pair right now.": "Для цієї пари зараз недоступно.",
-  "The provider is busy. Try again in a moment.": "Провайдер зайнятий. Спробуйте за мить.",
+  "The provider is busy. Try again in a moment.": "Провайдер зайнятий. Спробуй за мить.",
   "Cross-chain swaps are not open yet.": "Крос-чейн обміни ще не відкриті.",
-  "The Review expired. Nothing left your wallet; look at the figures again.": "Перегляд вичерпано. З гаманця нічого не пішло; подивіться цифри ще раз.",
+  "The Review expired. Nothing left your wallet; look at the figures again.": "Перегляд вичерпано. З гаманця нічого не пішло; подивися цифри ще раз.",
   "The Review expired before sending. Nothing left your wallet.": "Перегляд вичерпано до відправлення. З гаманця нічого не пішло.",
   "The wallet did not sign. Nothing left your wallet.": "Гаманець не підписав. З гаманця нічого не пішло.",
   "The approval did not go through. Nothing left your wallet.": "Дозвіл не пройшов. З гаманця нічого не пішло.",
-  "Approval sent. Once it lands, press Review again to see the final figures.": "Дозвіл відправлено. Коли він підтвердиться, натисніть Перегляд ще раз, щоб побачити остаточні цифри.",
+  "Approval sent. Once it lands, press Review again to see the final figures.": "Дозвіл відправлено. Коли він підтвердиться, натисни Перегляд ще раз, щоб побачити остаточні цифри.",
   "This order would fail on chain as built, so it was not offered.": "Цей ордер зірвався б у мережі, тому його не запропоновано.",
   "The wallet returned a different transaction than the one reviewed, so it was not sent.": "Гаманець повернув іншу транзакцію, ніж переглянута, тому її не відправлено.",
   "The wallet rebuilt the transaction in a different format than the one reviewed, so it was not sent.":
@@ -522,18 +582,18 @@ export const SOLANA_UK_TEXT: Readonly<Record<string, string>> = {
   "The wallet changed what the transaction does, so it was not sent.":
     "Гаманець змінив те, що робить транзакція, тому її не відправлено.",
   "Nothing about the swap changed — the wallet refreshed the transaction while it waited. Press Review and confirm without pausing.":
-    "В обміні нічого не змінилося — гаманець оновив транзакцію, поки вона чекала. Натисніть Перегляд і підтвердьте без пауз.",
+    "В обміні нічого не змінилося — гаманець оновив транзакцію, поки вона чекала. Натисни Перегляд і підтверди без пауз.",
   "The network did not confirm whether the order was sent. Nothing is sent again; the status below is read from the chain.": "Мережа не підтвердила, чи ордер відправлено. Повторно нічого не відправляється; стан нижче читається з ланцюга.",
   "The order could not be prepared right now. Nothing left your wallet.": "Ордер зараз не вдалося підготувати. З гаманця нічого не пішло.",
   "This route is not offered from Solana right now.": "Цей маршрут із Solana зараз не пропонується.",
   "Ryntra could not be reached. Nothing left your wallet.": "Ryntra недосяжна. З гаманця нічого не пішло.",
   "Something did not go through. Nothing was sent twice.": "Щось не пройшло. Нічого не відправлено двічі.",
-  "Sent from your wallet": "Відправлено з вашого гаманця",
+  "Sent from your wallet": "Відправлено з твого гаманця",
   "Provider is filling the order": "Провайдер виконує ордер",
   "Refunded on the source network": "Повернено в мережі відправлення",
   "Being read from the chain": "Читається з ланцюга",
   "Preparing": "Підготовка",
-  "What you receive": "Що ви отримаєте",
+  "What you receive": "Що ти отримаєш",
   "At least": "Щонайменше",
   "Provider fees": "Комісії провайдера",
   /* The same line, named costs rather than fees, because what it holds is
@@ -554,7 +614,7 @@ export const SOLANA_UK_TEXT: Readonly<Record<string, string>> = {
   /* A quote whose own figures disagreed with each other. Refused rather than
      shown, because a price nothing can fill is worse than no price. */
   "This price did not check out, so it was not offered. Try again in a moment.":
-    "Ця ціна не збіглася сама з собою, тому її не запропоновано. Спробуйте ще раз за мить.",
+    "Ця ціна не збіглася сама з собою, тому її не запропоновано. Спробуй ще раз за мить.",
   "Wallet prompts": "Запитів гаманця",
   "Expected time": "Очікуваний час",
   "Destination": "Призначення",
@@ -565,8 +625,8 @@ export const SOLANA_UK_TEXT: Readonly<Record<string, string>> = {
   "Filling": "Виконання",
   "Refunded": "Повернено",
   "Status": "Стан",
-  "You sent": "Ви відправили",
-  "You received": "Ви отримали",
+  "You sent": "Відправлено",
+  "You received": "Отримано",
   "Refund": "Повернення",
   "Refund transaction": "Транзакція повернення",
   "New swap": "Новий обмін",
@@ -577,16 +637,29 @@ export const SOLANA_UK_TEXT: Readonly<Record<string, string>> = {
   "Approve in wallet": "Дозволити в гаманці",
   "Approving…": "Дозвіл…",
   "Native coin": "Нативна монета",
-  "Choose two different assets": "Оберіть два різні активи",
+  "Choose two different assets": "Обери два різні активи",
   "Swaps on Base and Ethereum are not offered yet": "Обміни на Base та Ethereum ще не пропонуються",
   "Not available for this pair": "Для цієї пари недоступно",
   /* Swap and Bridge became two pages on 2026-09-10, and these are the sentences
      that keep a person from walking into the wall between them. */
   "Funds on another network?": "Кошти в іншій мережі?",
+  /* SOL-C13: Swap as simple as Spot — the pair beside the converter, «Поповнити» for an empty wallet, «Немає зв'язку». */
+  "Swap one asset for another inside Solana at Jupiter's best route. Review shows every cost before your wallet signs.":
+    "Обмін одного активу на інший у Solana найкращим маршрутом Jupiter. Перевірка перед підписом гаманця показує всі витрати.",
+  "The pair": "Пара",
+  "About": "Про актив",
+  "Other sections": "Інші розділи",
+  "Account reserve, returned when the account closes": "Резерв рахунку — повертається, коли рахунок закривають",
+  "Chart and limit orders": "Графік і лімітні ордери",
+  "No connection": "Немає зв'язку",
+  "No connection. The price and the quote come back when it does.": "Немає зв'язку. Ціна й котирування повернуться разом із ним.",
+  "Top up SOL": "Поповнити SOL",
+  "Top up USDC": "Поповнити USDC",
+  "Jupiter's share is part of the Ryntra fee above.": "Частка Jupiter — у рядку «Ryntra» вище.",
   /* The mark on a quote that has outlived its 60 s and is no longer an offer.
      `Expired` and `Refreshing…` were already in this catalogue — reused rather
      than restated, so one English word never has two Ukrainian answers. */
-  "Try again shortly": "Спробуйте за мить",
+  "Try again shortly": "Спробуй за мить",
   "stays for the network fee": "лишається на комісію мережі",
   "This route now asks for more wallet approvals than it stated, so nothing was sent.":
     "Цей маршрут тепер просить більше підтверджень у гаманці, ніж заявляв, тож нічого не відправлено.",
@@ -594,22 +667,22 @@ export const SOLANA_UK_TEXT: Readonly<Record<string, string>> = {
   /* The four networks added on 2026-09-10. The names are proper nouns and
      stay as they are; everything wrapped around them is translated. */
   "Arbitrum": "Arbitrum",
-  "To your Arbitrum address": "На вашу адресу Arbitrum",
+  "To your Arbitrum address": "На твою адресу Arbitrum",
   "Arbitrum address": "Адреса Arbitrum",
   "Use my Arbitrum wallet": "Взяти з мого гаманця Arbitrum",
   "Connect an Arbitrum wallet": "Підключити гаманець Arbitrum",
   "Optimism": "Optimism",
-  "To your Optimism address": "На вашу адресу Optimism",
+  "To your Optimism address": "На твою адресу Optimism",
   "Optimism address": "Адреса Optimism",
   "Use my Optimism wallet": "Взяти з мого гаманця Optimism",
   "Connect an Optimism wallet": "Підключити гаманець Optimism",
   "Polygon": "Polygon",
-  "To your Polygon address": "На вашу адресу Polygon",
+  "To your Polygon address": "На твою адресу Polygon",
   "Polygon address": "Адреса Polygon",
   "Use my Polygon wallet": "Взяти з мого гаманця Polygon",
   "Connect a Polygon wallet": "Підключити гаманець Polygon",
   "BNB Chain": "BNB Chain",
-  "To your BNB Chain address": "На вашу адресу BNB Chain",
+  "To your BNB Chain address": "На твою адресу BNB Chain",
   "BNB Chain address": "Адреса BNB Chain",
   "Use my BNB Chain wallet": "Взяти з мого гаманця BNB Chain",
   "Connect a BNB Chain wallet": "Підключити гаманець BNB Chain",
@@ -617,7 +690,7 @@ export const SOLANA_UK_TEXT: Readonly<Record<string, string>> = {
   "Maximum updated to leave": "Максимум оновлено, лишається",
   "for network fees.": "на комісію мережі.",
   "The amount was lowered so the network fee is covered. Press Review again.":
-    "Суму зменшено, щоб покрити комісію мережі. Натисніть «Переглянути» ще раз.",
+    "Суму зменшено, щоб покрити комісію мережі. Натисни «Переглянути» ще раз.",
   "There is not enough": "Недостатньо",
   "in this wallet to pay the network fee. Nothing was sent.":
     "у цьому гаманці, щоб сплатити комісію мережі. Нічого не відправлено.",
@@ -626,15 +699,16 @@ export const SOLANA_UK_TEXT: Readonly<Record<string, string>> = {
     "на комісію мережі, а в гаманці менше. Нічого не відправлено.",
   "Bring funds to Solana instead": "Натомість завести кошти в Solana",
   "Need to move funds out of Solana?": "Потрібно вивести кошти з Solana?",
+  "Connect a Solana wallet to get an address for USDC from another network.": "Підключи гаманець Solana — і отримаєш адресу для USDC з іншої мережі.",
   "Bring them to Solana": "Перенести їх у Solana",
-  "Both sides are on Solana, so this is a swap rather than a bridge.":
-    "Обидві сторони в Solana — це обмін, а не міст.",
+  "Both sides are on Solana, so this is a swap, not a move between networks.":
+    "Обидві сторони в Solana — це обмін, а не переказ між мережами.",
   "Swap it on Solana": "Обміняти в Solana",
   "This network's router refuses that asset outright, so no amount of it can be moved here.":
     "Маршрутизатор цієї мережі відмовляє цьому активу повністю, тож жодну його кількість тут не перенести.",
-  "Choose a different network on one side. Bridge moves value between networks.":
-    "Оберіть іншу мережу з одного боку. Міст переносить вартість між мережами.",
-  "Pick an asset on both sides.": "Оберіть актив з обох боків.",
+  "Choose a different network on one side: this page moves money between networks.":
+    "Обери іншу мережу з одного боку: тут гроші переходять між мережами.",
+  "Pick an asset on both sides.": "Обери актив з обох боків.",
   "No route for this pair right now. Nothing was sent.":
     "Зараз для цієї пари немає маршруту. Нічого не відправлено.",
   "Prices are being refreshed too often right now. The figures above stand — a new one follows in a moment.":
@@ -649,12 +723,12 @@ export const SOLANA_UK_TEXT: Readonly<Record<string, string>> = {
   "Supported: USDC between Solana, Base and Ethereum; SOL ⇄ ETH; SOL ⇄ USDC on Base or Ethereum; any pair on Solana.": "Підтримується: USDC між Solana, Base та Ethereum; SOL ⇄ ETH; SOL ⇄ USDC на Base або Ethereum; будь-яка пара на Solana.",
   "Transfers run between Solana and another network. Base ⇄ Ethereum is not offered.": "Перекази йдуть між Solana та іншою мережею. Base ⇄ Ethereum не пропонується.",
   "Only USDC moves as the same asset between networks. ETH or SOL across networks is a cross-chain swap.": "Лише USDC переходить між мережами як той самий актив. ETH або SOL між мережами — це крос-чейн обмін.",
-  "Pick a different asset on one side.": "Оберіть інший актив з одного боку.",
+  "Pick a different asset on one side.": "Обери інший актив з одного боку.",
   "Two assets are offered on this network.": "У цій мережі пропонуються два активи.",
   "Swapped across chains": "Обміняно між мережами",
   "Across chains": "Між мережами",
   "Archive on Ryntra": "Архів у Ryntra",
-  "Prove this wallet to keep receipts on Ryntra and read them from another device.": "Підтвердьте гаманець, щоб зберігати квитанції в Ryntra й читати їх з іншого пристрою.",
+  "Prove this wallet to keep receipts on Ryntra and read them from another device.": "Підтверди гаманець, щоб зберігати квитанції в Ryntra й читати їх з іншого пристрою.",
   "Prove wallet": "Підтвердити гаманець",
   "Signing…": "Підписання…",
   "Saving…": "Збереження…",
@@ -673,12 +747,12 @@ export const SOLANA_UK_TEXT: Readonly<Record<string, string>> = {
   "No account was found at this address": "Акаунт за цією адресою не знайдено",
   "This address is not a token": "Ця адреса не належить токену",
   "This token could not be read": "Не вдалося прочитати цей токен",
-  "Check the token address": "Перевірте адресу токена",
-  "Could not load this asset. Try again.": "Не вдалося завантажити актив. Спробуйте ще раз.",
+  "Check the token address": "Перевір адресу токена",
+  "Could not load this asset. Try again.": "Не вдалося завантажити актив. Спробуй ще раз.",
   "No supported token was found at this address": "Токен за цією адресою не знайдено",
   "The token's transfer rules could not be read": "Не вдалося прочитати правила цього токена",
   "Assets": "Активи",
-  "Back to Trade": "До торгівлі",
+  "Back to Terminal": "До Терміналу",
   "Current price": "Поточна ціна",
   "Asset details": "Відомості про актив",
   /* The door from a holding to the plan it came from. */
@@ -693,16 +767,16 @@ export const SOLANA_UK_TEXT: Readonly<Record<string, string>> = {
   "Some transfer rules could not be read": "Частина правил цього токена не розпізнана",
   "Open in Solana Explorer": "Відкрити в Solana Explorer",
   "Your wallet did not complete this transfer, and Base shows activity on the account since it was prepared — so it is being read rather than sent again. Open Evidence and recovery below.":
-    "Ваш гаманець не завершив цей переказ, а Base показує активність на цьому акаунті після підготовки — тому його читають, а не надсилають знову. Відкрийте «Докази й відновлення» нижче.",
+    "Твій гаманець не завершив цей переказ, а Base показує активність на цьому акаунті після підготовки — тому його читають, а не надсилають знову. Відкрий «Докази й відновлення» нижче.",
   "Receiving is a second transaction you send on Solana and pay for in SOL, including a small deposit for the record that stops it being received twice. Its cost is read and shown at that step.":
-    "Отримання — це друга транзакція, яку ви надсилаєте в Solana і оплачуєте в SOL, разом із невеликим депозитом за запис, який не дає отримати його двічі. Вартість читається й показується на тому кроці.",
+    "Отримання — це друга транзакція, яку ти надсилаєш в Solana і оплачуєш в SOL, разом із невеликим депозитом за запис, який не дає отримати його двічі. Вартість читається й показується на тому кроці.",
   /* Bridge — the Ethereum lane and the network chooser, 2026-09-05. Every
      sentence that names a chain exists once per chain, as a whole sentence,
      so the noun is inflected here rather than glued in. */
   "Leaves Ethereum": "Залишає Ethereum",
   "Arrives on Ethereum": "Надходить на Ethereum",
-  "You send from Ethereum": "Ви надсилаєте з Ethereum",
-  "To your Ethereum address": "На вашу адресу Ethereum",
+  "You send from Ethereum": "Ти надсилаєш з Ethereum",
+  "To your Ethereum address": "На твою адресу Ethereum",
   "Ethereum address": "Адреса Ethereum",
   "That is not an Ethereum address. A Solana address here would send the money nowhere.":
     "Це не адреса Ethereum. Адреса Solana тут відправила б кошти в нікуди.",
@@ -712,8 +786,8 @@ export const SOLANA_UK_TEXT: Readonly<Record<string, string>> = {
     "Це не адреса Solana. Адреса іншої мережі тут відправила б кошти в нікуди.",
   "That is more USDC than this wallet holds on Ethereum.":
     "Це більше USDC, ніж цей гаманець має на Ethereum.",
-  "Connect your Ethereum wallet": "Підключіть гаманець Ethereum",
-  "Enter your Ethereum address": "Введіть свою адресу Ethereum",
+  "Connect your Ethereum wallet": "Підключити гаманець Ethereum",
+  "Enter your Ethereum address": "Введи свою адресу Ethereum",
   "to Ethereum": "на Ethereum",
   "To Solana": "На Solana",
   "Receive on Ethereum": "Отримати на Ethereum",
@@ -721,17 +795,17 @@ export const SOLANA_UK_TEXT: Readonly<Record<string, string>> = {
   "Ethereum transaction": "Транзакція Ethereum",
   "Cost on Ethereum": "Вартість на Ethereum",
   "Receiving is a second transaction you send on Ethereum and pay for in ETH. Its gas is read at that step, so it is not part of the total above.":
-    "Отримання — це друга транзакція, яку ви надсилаєте в Ethereum і оплачуєте в ETH. Її газ читається на тому кроці, тому він не входить у суму вище.",
+    "Отримання — це друга транзакція, яку ти надсилаєш в Ethereum і оплачуєш в ETH. Її газ читається на тому кроці, тому він не входить у суму вище.",
   "Standard speed settles when the sending chain does. Receiving on Ethereum is a second, separate step you take yourself.":
-    "Стандартна швидкість завершується разом із мережею-відправником. Отримання на Ethereum — другий, окремий крок, який ви робите самі.",
+    "Стандартна швидкість завершується разом із мережею-відправником. Отримання на Ethereum — другий, окремий крок, який ти робиш власноруч.",
   "Your wallet will open on Ethereum for the last step. Anyone holding this transfer's message can complete it, which is why it is not stuck if you stop here.":
-    "Для останнього кроку ваш гаманець відкриється на Ethereum. Завершити цей переказ може будь-хто, у кого є його повідомлення — тому він не зависає, якщо ви зупинитесь тут.",
+    "Для останнього кроку твій гаманець відкриється на Ethereum. Завершити цей переказ може будь-хто, у кого є його повідомлення — тому він не зависає, якщо ти зупинишся тут.",
   "The permission has not appeared on Ethereum yet. Nothing was sent — check your wallet and try the review again.":
-    "Дозвіл ще не з'явився на Ethereum. Нічого не надіслано — перевірте гаманець і поверніться до перевірки.",
+    "Дозвіл ще не з'явився на Ethereum. Нічого не надіслано — перевір гаманець і повернися до перевірки.",
   "Your wallet did not complete this transfer, and Ethereum shows activity on the account since it was prepared — so it is being read rather than sent again. Open Evidence and recovery below.":
-    "Ваш гаманець не завершив цей переказ, а Ethereum показує активність на цьому акаунті після підготовки — тому його читають, а не надсилають знову. Відкрийте «Докази й відновлення» нижче.",
+    "Твій гаманець не завершив цей переказ, а Ethereum показує активність на цьому акаунті після підготовки — тому його читають, а не надсилають знову. Відкрий «Докази й відновлення» нижче.",
   "The transfer did not go through on Ethereum and nothing left your wallet. You can prepare it again.":
-    "Переказ не пройшов на Ethereum, і з вашого гаманця нічого не вийшло. Ви можете підготувати його знову.",
+    "Переказ не пройшов на Ethereum, і з твого гаманця нічого не вийшло. Ти можеш підготувати його знову.",
   "Not open yet": "Ще не відкрито",
   "No route": "Немає маршруту",
   "USDC only. ETH and SOL would change asset on the way — that is a swap, not offered yet.":
@@ -745,17 +819,17 @@ export const SOLANA_UK_TEXT: Readonly<Record<string, string>> = {
     "Ця мережа відкриється після перевірки першого переказу в обох мережах.",
   "Robinhood Chain has no USDC route — only a swap into another token, not offered here.":
     "Robinhood Chain не має маршруту USDC — лише обмін в інший токен, який тут не пропонується.",
-  "Robinhood Chain has no USDC route. Its money is USDG, which Swap reaches as a cross-chain swap.":
-    "Robinhood Chain не має маршруту USDC. Її гроші — USDG, і Обмін дістає їх крос-чейн свопом.",
+  "Robinhood Chain has no USDC route. Its money is USDG, which Swap reaches as a swap between networks.":
+    "Robinhood Chain не має маршруту USDC. Її гроші — USDG, і Обмін дістає їх обміном між мережами.",
   "This network has no USDC route.": "Ця мережа не має маршруту USDC.",
   "If nobody fills the order, the deposit is refunded on the source network. There is no fixed deadline for that.":
     "Якщо ордер ніхто не виконає, депозит повернеться у вихідній мережі. Фіксованого строку для цього немає.",
   "The money arrived on Solana.": "Гроші прийшли на Solana.",
   "The money arrived on Ethereum.": "Гроші прийшли на Ethereum.",
   "Solana has accepted this transfer — the message is spent, so the money is there. The transaction that did it was not found in the range read, because anyone may relay it. Read the recipient's balance on Solana.":
-    "Solana прийняла цей переказ — повідомлення витрачено, отже гроші там. Транзакцію, яка це зробила, не знайдено в прочитаному діапазоні, бо відправити її міг будь-хто. Прочитайте баланс отримувача на Solana.",
+    "Solana прийняла цей переказ — повідомлення витрачено, отже гроші там. Транзакцію, яка це зробила, не знайдено в прочитаному діапазоні, бо відправити її міг будь-хто. Прочитай баланс отримувача на Solana.",
   "Ethereum has accepted this transfer — the message is spent, so the money is there. The transaction that did it was not found in the range read, because anyone may relay it. Widen the search or read the recipient's balance on Ethereum.":
-    "Ethereum прийняв цей переказ — повідомлення витрачено, отже гроші там. Транзакцію, яка це зробила, не знайдено в прочитаному діапазоні, бо відправити її міг будь-хто. Розширте пошук або прочитайте баланс отримувача на Ethereum.",
+    "Ethereum прийняв цей переказ — повідомлення витрачено, отже гроші там. Транзакцію, яка це зробила, не знайдено в прочитаному діапазоні, бо відправити її міг будь-хто. Розшир пошук або прочитай баланс отримувача на Ethereum.",
   "Solana has not received this transfer yet. Nothing is lost; the message is still waiting to be used.":
     "Solana ще не отримала цей переказ. Нічого не втрачено, повідомлення чекає на використання.",
   "Ethereum has not received this transfer yet. Nothing is lost; the message is still waiting to be used.":
@@ -763,17 +837,17 @@ export const SOLANA_UK_TEXT: Readonly<Record<string, string>> = {
   "Ethereum could not be read just now. Nothing changed on either chain — this is a read, and it can be repeated.":
     "Ethereum зараз не вдалося прочитати. В обох мережах нічого не змінилось — це читання, його можна повторити.",
   "The answer from Solana could not be understood, so nothing is claimed about where the money is. Try the read again.":
-    "Відповідь Solana не вдалося зрозуміти, тому про місцезнаходження грошей нічого не стверджується. Спробуйте прочитати ще раз.",
+    "Відповідь Solana не вдалося зрозуміти, тому про місцезнаходження грошей нічого не стверджується. Спробуй прочитати ще раз.",
   "The answer from Ethereum could not be understood, so nothing is claimed about where the money is. Try the read again.":
-    "Відповідь Ethereum не вдалося зрозуміти, тому про місцезнаходження грошей нічого не стверджується. Спробуйте прочитати ще раз.",
+    "Відповідь Ethereum не вдалося зрозуміти, тому про місцезнаходження грошей нічого не стверджується. Спробуй прочитати ще раз.",
   "Solana returned a state this page does not recognise, so nothing is claimed about where the money is.":
     "Solana повернула стан, якого ця сторінка не знає, тому про місцезнаходження грошей нічого не стверджується.",
   "Ethereum returned a state this page does not recognise, so nothing is claimed about where the money is.":
     "Ethereum повернув стан, якого ця сторінка не знає, тому про місцезнаходження грошей нічого не стверджується.",
   "The transaction was sent to Base. Reading it now.": "Транзакцію надіслано в Base. Читаємо її зараз.",
   "The transaction was sent to Ethereum. Reading it now.": "Транзакцію надіслано в Ethereum. Читаємо її зараз.",
-  "Your USDC has left Base and Circle is signing for it.": "Ваші USDC залишили Base, і Circle підписує їх.",
-  "Your USDC has left Ethereum and Circle is signing for it.": "Ваші USDC залишили Ethereum, і Circle підписує їх.",
+  "Your USDC has left Base and Circle is signing for it.": "Твої USDC залишили Base, і Circle підписує їх.",
+  "Your USDC has left Ethereum and Circle is signing for it.": "Твої USDC залишили Ethereum, і Circle підписує їх.",
   "Circle has signed. The last step is to receive it on Solana.": "Circle підписав. Останній крок — отримати кошти на Solana.",
   "Circle has signed. The last step is to receive it on Ethereum.": "Circle підписав. Останній крок — отримати кошти на Ethereum.",
   "Something was interrupted. Reading Base, then Circle, then Solana — in that order.":
@@ -784,53 +858,53 @@ export const SOLANA_UK_TEXT: Readonly<Record<string, string>> = {
     "Щось перервалось. Читаємо Solana, потім Circle, потім Ethereum — саме в такому порядку.",
   "The transaction on Solana was sent. Reading both chains now.": "Транзакцію на Solana надіслано. Читаємо обидва ланцюги.",
   "The transaction on Ethereum was sent. Reading both chains now.": "Транзакцію на Ethereum надіслано. Читаємо обидва ланцюги.",
-  "The money arrived on Solana. Writing your receipt.": "Кошти надійшли на Solana. Записуємо вашу квитанцію.",
-  "The money arrived on Ethereum. Writing your receipt.": "Кошти надійшли на Ethereum. Записуємо вашу квитанцію.",
+  "The money arrived on Solana. Writing your receipt.": "Кошти надійшли на Solana. Записуємо твою квитанцію.",
+  "The money arrived on Ethereum. Writing your receipt.": "Кошти надійшли на Ethereum. Записуємо твою квитанцію.",
   "Circle has the transaction and is waiting for Base to settle it.": "Circle має транзакцію й чекає, поки Base її завершить.",
   "Circle has the transaction and is waiting for Ethereum to settle it.": "Circle має транзакцію й чекає, поки Ethereum її завершить.",
-  "Circle has signed. You can receive it on Solana.": "Circle підписав. Ви можете отримати кошти на Solana.",
-  "Circle has signed. You can receive it on Ethereum.": "Circle підписав. Ви можете отримати кошти на Ethereum.",
+  "Circle has signed. You can receive it on Solana.": "Circle підписав. Ти можеш отримати кошти на Solana.",
+  "Circle has signed. You can receive it on Ethereum.": "Circle підписав. Ти можеш отримати кошти на Ethereum.",
   /* Bridge — the reverse lane, and everything the card had to learn to say
      about two directions rather than one. */
   "Leaves Base": "Залишає Base",
   "Arrives on Solana": "Надходить на Solana",
-  "You send from Solana": "Ви надсилаєте з Solana",
-  "You send from Base": "Ви надсилаєте з Base",
-  "To your Solana address": "На вашу адресу Solana",
+  "You send from Solana": "Ти надсилаєш з Solana",
+  "You send from Base": "Ти надсилаєш з Base",
+  "To your Solana address": "На твою адресу Solana",
   "Solana address": "Адреса Solana",
   "That is not a Solana address. A Base address here would send the money nowhere.":
     "Це не адреса Solana. Адреса Base тут відправила б кошти в нікуди.",
-  "Enter your Solana address": "Введіть свою адресу Solana",
+  "Enter your Solana address": "Введи свою адресу Solana",
   "Change direction": "Змінити напрямок",
   "MAX": "МАКС",
-  "You hold": "У вас є",
+  "You hold": "У тебе є",
   "Connect the sending wallet to see what you hold.":
-    "Підключіть гаманець-відправник, щоб побачити свій баланс.",
+    "Підключи гаманець-відправник, щоб побачити свій баланс.",
   "That is more USDC than this wallet holds on Solana.":
     "Це більше USDC, ніж цей гаманець має на Solana.",
   "That is more USDC than this wallet holds on Base.":
     "Це більше USDC, ніж цей гаманець має на Base.",
-  "More than you hold": "Більше, ніж у вас є",
+  "More than you hold": "Більше, ніж у тебе є",
   "Smallest": "Найменша сума",
   "Largest": "Найбільша сума",
   "Fast allowance at Circle": "Ліміт Fast у Circle",
-  "Connect your Base wallet": "Підключіть гаманець Base",
+  "Connect your Base wallet": "Підключити гаманець Base",
   "Connect your Solana wallet to receive this transfer.":
-    "Підключіть гаманець Solana, щоб отримати цей переказ.",
+    "Підключи гаманець Solana, щоб отримати цей переказ.",
   "Base wallet": "Гаманець Base",
   "Receiving USDC account": "USDC-акаунт отримувача",
   "This wallet has no USDC account yet. One is created in the same step that receives your transfer, and its small deposit is shown before you sign.":
-    "У цього гаманця ще немає USDC-акаунта. Його буде створено тим самим кроком, який отримує ваш переказ, і його невеликий депозит буде показано до підпису.",
+    "У цього гаманця ще немає USDC-акаунта. Його буде створено тим самим кроком, який отримує твій переказ, і його невеликий депозит буде показано до підпису.",
   "Wallet approvals": "Підтверджень у гаманці",
   "Circle's permission": "Дозвіл для Circle",
   "Allow Circle to move": "Дозволити Circle перемістити",
   "Waiting for the permission to appear…": "Чекаємо, поки дозвіл з'явиться…",
   "The permission has not appeared on Base yet. Nothing was sent — check your wallet and try the review again.":
-    "Дозвіл ще не з'явився на Base. Нічого не надіслано — перевірте гаманець і поверніться до перевірки.",
+    "Дозвіл ще не з'явився на Base. Нічого не надіслано — перевір гаманець і повернися до перевірки.",
   "The transfer did not go through on Base and nothing left your wallet. You can prepare it again.":
-    "Переказ не пройшов на Base, і з вашого гаманця нічого не вийшло. Ви можете підготувати його знову.",
+    "Переказ не пройшов на Base, і з твого гаманця нічого не вийшло. Ти можеш підготувати його знову.",
   "The last step is not ready yet. Your money is safe and this can be retried.":
-    "Останній крок ще не готовий. Ваші кошти в безпеці, спробу можна повторити.",
+    "Останній крок ще не готовий. Твої кошти в безпеці, спробу можна повторити.",
   "Solana could not be read just now. Nothing changed on either chain — this is a read, and it can be repeated.":
     "Solana зараз не вдалося прочитати. У жодній мережі нічого не змінилося — це читання, і його можна повторити.",
   "to Base": "на Base",
@@ -843,17 +917,17 @@ export const SOLANA_UK_TEXT: Readonly<Record<string, string>> = {
   "and Circle signs once the sending chain finalises.":
     "і Circle підписує після фіналізації мережі-відправника.",
   "This will open your wallet twice: once to let Circle move exactly this amount, and once to send it. The permission is for this amount only, never for your whole balance.":
-    "Гаманець відкриється двічі: один раз — щоб дозволити Circle перемістити саме цю суму, і один раз — щоб надіслати її. Дозвіл стосується лише цієї суми й ніколи не поширюється на весь ваш баланс.",
+    "Гаманець відкриється двічі: один раз — щоб дозволити Circle перемістити саме цю суму, і один раз — щоб надіслати її. Дозвіл стосується лише цієї суми й ніколи не поширюється на весь твій баланс.",
   "This will open your wallet once. Circle already has permission to move this much USDC from this wallet.":
     "Гаманець відкриється один раз. Circle уже має дозвіл перемістити стільки USDC із цього гаманця.",
   "Your USDC lands in the USDC account your Solana wallet owns. If it does not have one yet, it is created in the same step that receives the transfer.":
-    "Ваші USDC надходять на USDC-акаунт, яким володіє ваш гаманець Solana. Якщо його ще немає, його буде створено тим самим кроком, який отримує переказ.",
+    "Твої USDC надходять на USDC-акаунт, яким володіє твій гаманець Solana. Якщо його ще немає, його буде створено тим самим кроком, який отримує переказ.",
   "Standard speed settles when the sending chain does. Receiving on Base is a second, separate step you take yourself.":
-    "Стандартна швидкість завершується разом із мережею-відправником. Отримання на Base — другий, окремий крок, який ви робите самі.",
+    "Стандартна швидкість завершується разом із мережею-відправником. Отримання на Base — другий, окремий крок, який ти робиш власноруч.",
   "Standard speed settles when the sending chain does. Receiving on Solana is a second, separate step you take yourself.":
-    "Стандартна швидкість завершується разом із мережею-відправником. Отримання на Solana — другий, окремий крок, який ви робите самі.",
+    "Стандартна швидкість завершується разом із мережею-відправником. Отримання на Solana — другий, окремий крок, який ти робиш власноруч.",
   "Your wallet will open on Solana for the last step. Anyone holding this transfer's message can complete it, which is why it is not stuck if you stop here.":
-    "Для останнього кроку ваш гаманець відкриється на Solana. Завершити цей переказ може будь-хто, у кого є його повідомлення — тому він не зависає, якщо ви зупинитесь тут.",
+    "Для останнього кроку твій гаманець відкриється на Solana. Завершити цей переказ може будь-хто, у кого є його повідомлення — тому він не зависає, якщо ти зупинишся тут.",
   /* Bridge — one transfer between two chains. */
   "Leaves Solana": "Залишає Solana",
   "Circle signs": "Circle підписує",
@@ -861,23 +935,23 @@ export const SOLANA_UK_TEXT: Readonly<Record<string, string>> = {
   "Checked both sides": "Перевірено з двох боків",
   "Solana to Base": "Solana → Base",
   "Where this transfer is": "Де зараз цей переказ",
-  "From your Solana wallet": "З вашого гаманця Solana",
-  "To your Base address": "На вашу адресу Base",
+  "From your Solana wallet": "З твого гаманця Solana",
+  "To your Base address": "На твою адресу Base",
   "Base address": "Адреса Base",
   "That is not a Base address. A Solana address here would send the money nowhere.":
     "Це не адреса Base. Адреса Solana тут відправила б кошти в нікуди.",
   "Transfer fee": "Комісія переказу",
   "Refundable deposit": "Поворотний депозит",
   "Signing opens your wallet once. A second signature happens here in this tab, from a one-time key made for this transfer — it can create the message account and can never move money.":
-    "Підпис відкриє ваш гаманець один раз. Другий підпис відбувається тут, у цій вкладці, одноразовим ключем, створеним саме для цього переказу — він може створити акаунт повідомлення й ніколи не може рухати кошти.",
+    "Підпис відкриє твій гаманець один раз. Другий підпис відбувається тут, у цій вкладці, одноразовим ключем, створеним саме для цього переказу — він може створити акаунт повідомлення й ніколи не може рухати кошти.",
   "The deposit comes back to you, and not before five days.":
-    "Депозит повертається вам, і не раніше ніж через п'ять днів.",
+    "Депозит повертається тобі, і не раніше ніж через п'ять днів.",
   "Standard speed settles when Solana does. Receiving on Base is a second, separate step you take yourself.":
-    "Стандартна швидкість завершується разом із Solana. Отримання на Base — другий, окремий крок, який ви робите самі.",
+    "Стандартна швидкість завершується разом із Solana. Отримання на Base — другий, окремий крок, який ти робиш власноруч.",
   "On its way": "У дорозі",
   "Ready to receive": "Готово до отримання",
   "Your wallet will open on Base for the last step. Anyone holding this transfer's message can complete it, which is why it is not stuck if you stop here.":
-    "Для останнього кроку ваш гаманець відкриється на Base. Завершити цей переказ може будь-хто, у кого є його повідомлення — тому він не зависає, якщо ви зупинитесь тут.",
+    "Для останнього кроку твій гаманець відкриється на Base. Завершити цей переказ може будь-хто, у кого є його повідомлення — тому він не зависає, якщо ти зупинишся тут.",
   "Arrived": "Надійшло",
   "Evidence and recovery": "Докази й відновлення",
   "Solana wallet": "Гаманець Solana",
@@ -889,16 +963,16 @@ export const SOLANA_UK_TEXT: Readonly<Record<string, string>> = {
   "Both sides agree": "Обидва боки збігаються",
   "Receipt checked": "Квитанцію перевірено",
   "This transfer was already under way when you came back. Nothing was started again — the card picked it up where it stood.":
-    "Цей переказ уже тривав, коли ви повернулись. Нічого не починалося заново — картка підхопила його там, де він стояв.",
-  "A minute passed, so this review was rebuilt against the current network. The transfer is the same — check it once more and confirm.":
-    "Минула хвилина, тож цей перегляд перебудовано під поточний стан мережі. Переказ той самий — перевірте ще раз і підтвердьте.",
+    "Цей переказ уже тривав до твого повернення. Нічого не починалося заново — картка підхопила його там, де він стояв.",
+  "The transaction lives about 30 seconds, so this review was rebuilt against the current network. The transfer is the same — check it once more and confirm.":
+    "Транзакція живе близько 30 секунд, тож цей review зібрано наново за поточною мережею. Переказ той самий — перевір ще раз і підтверди.",
   "A difference was recorded": "Зафіксовано розбіжність",
-  "Opening your wallet…": "Відкриваємо ваш гаманець…",
-  "Enter your Base address": "Введіть свою адресу Base",
+  "Opening your wallet…": "Відкриваємо твій гаманець…",
+  "Enter your Base address": "Введи свою адресу Base",
   "Preparing…": "Готуємо…",
   "Send 2 USDC to Base": "Надіслати 2 USDC на Base",
   "Not available": "Недоступно",
-  "Waiting for your wallet…": "Чекаємо на ваш гаманець…",
+  "Waiting for your wallet…": "Чекаємо на твій гаманець…",
   "Check again": "Перевірити ще раз",
   "Waiting for Circle…": "Чекаємо на Circle…",
   "Receive on Base": "Отримати на Base",
@@ -908,33 +982,33 @@ export const SOLANA_UK_TEXT: Readonly<Record<string, string>> = {
   "This transfer could not be prepared. Nothing was sent.":
     "Цей переказ не вдалося підготувати. Нічого не надіслано.",
   "The last step could not be prepared just now. Your money is safe and this can be retried.":
-    "Останній крок зараз не вдалося підготувати. Ваші кошти в безпеці, спробу можна повторити.",
+    "Останній крок зараз не вдалося підготувати. Твої кошти в безпеці, спробу можна повторити.",
   "This wallet holds less USDC than this transfer would send.":
     "На цьому гаманці менше USDC, ніж потребує цей переказ.",
   "This wallet holds too little SOL for the network fee and the one-time message account.":
     "На цьому гаманці замало SOL для мережевої комісії та одноразового акаунта повідомлення.",
-  "Live Solana data, and what each token's issuer can still do to what you hold.": "Живі дані Solana — і що емітент кожного токена ще може зробити з тим, що ви тримаєте.",
-  "What each issuer can still do to your balance": "Що емітент ще може зробити з вашим балансом",
+  "Live Solana data, and what each token's issuer can still do to what you hold.": "Живі дані Solana — і що емітент кожного токена ще може зробити з тим, що ти тримаєш.",
+  "What each issuer can still do to your balance": "Що емітент ще може зробити з твоїм балансом",
   "Token": "Токен",
   "Can create more": "Може випустити ще",
-  "Can freeze your balance": "Може заморозити ваш баланс",
+  "Can freeze your balance": "Може заморозити твій баланс",
   "Extra transfer rules": "Додаткові правила переказу",
   "Get a live price for any pair": "Дізнатися живу ціну для будь-якої пари",
   "A token with strings attached": "Токен із застереженнями",
-  "PYUSD — the issuer can move or freeze your balance": "PYUSD — емітент може перемістити або заморозити ваш баланс",
+  "PYUSD — the issuer can move or freeze your balance": "PYUSD — емітент може перемістити або заморозити твій баланс",
   "A token that charges you to send it": "Токен, який бере комісію за переказ",
-  "BERN — you receive less than you send": "BERN — отримувач дістає менше, ніж ви надсилаєте",
-  "Your address to be paid, or a request for an exact amount of an exact token.": "Ваша адреса для оплати або запит на точну суму конкретного токена.",
+  "BERN — you receive less than you send": "BERN — отримувач дістає менше, ніж ти надсилаєш",
+  "Your address to be paid, or a request for an exact amount of an exact token.": "Твоя адреса для оплати або запит на точну суму конкретного токена.",
   "Two jobs on one card. The address, with a QR any Solana wallet can scan, is the one most people need. A payment request adds a token, an amount and a note, and carries a reference so this request can be told apart from any other for the same amount — which a wallet address alone cannot do.": "Дві задачі на одній картці. Адреса з QR-кодом, який зчитає будь-який гаманець Solana — це те, що потрібно більшості. Запит на оплату додає токен, суму й нотатку, і несе ідентифікатор, щоб цей запит можна було відрізнити від будь-якого іншого на ту саму суму — чого сама лише адреса гаманця не дозволяє.",
   "The address as a scannable code, and a payment request as a normal link — https://ryntra.io/pay/<id> — that opens in any browser with the amount, the token, what it is for, who is paid and until when, a code for phone wallets and Pay with wallet in the browser. Ryntra watches the request's own reference on chain and says Awaiting, Paid or Expired; a paid request appears in Activity. The payer signs with their own wallet; nothing here signs.": "Адреса як код для сканування і запит на оплату як звичайне посилання — https://ryntra.io/pay/<id>, — що відкривається в будь-якому браузері із сумою, токеном, призначенням, отримувачем і терміном дії, кодом для гаманця на телефоні та кнопкою «Оплатити гаманцем» у браузері. Ryntra стежить за власним ідентифікатором запиту в мережі й каже: очікує оплати, оплачено чи термін минув; оплачений запит з'являється в Операціях. Платник підписує власним гаманцем; тут нічого не підписується.",
-  "A Payment Receipt for what somebody else sent you: Activity shows the received payment with its transaction, and the receipt model does not yet describe an incoming transfer.": "Квитанція про те, що вам надіслав хтось інший: Операції показують отриманий платіж із його транзакцією, а модель квитанцій ще не описує вхідний переказ.",
+  "A Payment Receipt for what somebody else sent you: Activity shows the received payment with its transaction, and the receipt model does not yet describe an incoming transfer.": "Квитанція про те, що тобі надіслав хтось інший: Операції показують отриманий платіж із його транзакцією, а модель квитанцій ще не описує вхідний переказ.",
   "Incoming observation and the Payment Receipt arrive with the wallet-scoped action ledger.": "Вхідне спостереження і квитанція про оплату прийдуть разом із журналом дій, прив'язаним до гаманця.",
-  "Connect your wallet to show its address and accept payments.": "Підключіть гаманець, щоб показати його адресу й приймати платежі.",
+  "Connect your wallet to show its address and accept payments.": "Підключи гаманець, щоб показати його адресу й приймати платежі.",
   "My address": "Моя адреса",
   "Request a payment": "Запит на оплату",
-  "Your Solana address": "Ваша адреса Solana",
-  "Anything sent to this address arrives in your wallet. Scanning works in any Solana wallet.": "Усе, що надіслано на цю адресу, потрапляє у ваш гаманець. Сканування працює в будь-якому гаманці Solana.",
-  "Scan to pay this address": "Скануйте, щоб оплатити на цю адресу",
+  "Your Solana address": "Твоя адреса Solana",
+  "Anything sent to this address arrives in your wallet. Scanning works in any Solana wallet.": "Усе, що надіслано на цю адресу, потрапляє у твій гаманець. Сканування працює в будь-якому гаманці Solana.",
+  "Scan to pay this address": "Скануй, щоб оплатити на цю адресу",
   "optional": "необов'язково",
   "What is it for": "За що",
   "The payer chooses the amount.": "Платник обирає суму.",
@@ -951,13 +1025,14 @@ export const SOLANA_UK_TEXT: Readonly<Record<string, string>> = {
   "30 days": "30 днів",
   "Create payment link": "Створити посилання на оплату",
   "Creating…": "Створюємо…",
-  "Sign in with your wallet to create a payment link.": "Увійдіть через гаманець, щоб створити посилання на оплату.",
+  "Sign in with your wallet to create a payment link.": "Увійди через гаманець, щоб створити посилання на оплату.",
+  "Confirm in wallet to create a link": "Підтвердь у гаманці, щоб створити посилання",
   "Sign in with wallet": "Увійти через гаманець",
-  "Check your wallet…": "Перевірте гаманець…",
+  "Check your wallet…": "Перевір гаманець…",
   "The payment link could not be created.": "Не вдалося створити посилання на оплату.",
   "Copy payment link": "Копіювати посилання на оплату",
-  "Scan to open this payment link": "Скануйте, щоб відкрити посилання на оплату",
-  "Send this link to the person who should pay. It opens in any browser, no app needed.": "Надішліть це посилання тому, хто має заплатити. Воно відкривається в будь-якому браузері, без застосунку.",
+  "Scan to open this payment link": "Скануй, щоб відкрити посилання на оплату",
+  "Send this link to the person who should pay. It opens in any browser, no app needed.": "Надішли це посилання тому, хто має заплатити. Воно відкривається в будь-якому браузері, без застосунку.",
   "New request": "Новий запит",
   "Wallet link": "Посилання для гаманця",
   "Valid until": "Дійсне до",
@@ -969,30 +1044,28 @@ export const SOLANA_UK_TEXT: Readonly<Record<string, string>> = {
   "Live balances for the connected wallet, native SOL and every non-zero SPL and Token-2022 account, with search, a value total and an explicit count of what could not be priced. An unreadable balance renders as unreadable rather than as an empty wallet.": "Живі баланси підключеного гаманця — нативний SOL і кожен ненульовий SPL та Token-2022 акаунт, — із пошуком, сумою вартості та явною кількістю того, що не вдалося оцінити. Непрочитаний баланс показується як непрочитаний, а не як порожній гаманець.",
   "Funds currently in motion through Bridge or Swap, and per-chain totals for a linked EVM wallet. Both wait on the wallet-scoped action ledger and on explicit signed wallet linking.": "Кошти, що зараз рухаються через Bridge або Swap, і суми по мережах для прив'язаного EVM-гаманця. І те, і те чекає на журнал дій за гаманцем і на явне підписане зв'язування гаманців.",
   "Funds in motion and multi-chain totals arrive with the wallet-scoped action ledger.": "Кошти в русі й суми по мережах прийдуть разом із журналом дій, прив'язаним до гаманця.",
-  "Connect your wallet to see what it holds.": "Підключіть гаманець, щоб побачити, що він тримає.",
+  "Connect your wallet to see what it holds.": "Підключи гаманець, щоб побачити, що він тримає.",
   "Value": "Вартість",
   "plus": "плюс",
   "without a price": "без ціни",
   "Search": "Пошук",
-  "Search your holdings": "Пошук по ваших активах",
+  "Search your holdings": "Пошук по твоїх активах",
   "Refresh": "Оновити",
   "Some balances could not be read, so this list may be incomplete.": "Частину балансів не вдалося прочитати, тож цей список може бути неповним.",
   "Nothing here matches that.": "Нічого не збігається із цим запитом.",
-  "Enter an amount greater than zero.": "Введіть суму більшу за нуль.",
-  "Install Phantom, Solflare or Backpack to connect. You can look around without one.":
-    "Встановіть Phantom, Solflare або Backpack, щоб підключитися. Без нього можна просто дивитися.",
-  "Choose a wallet above": "Оберіть гаманець вище",
+  "Enter an amount greater than zero.": "Введи суму більшу за нуль.",
+  "Choose a wallet above": "Обери гаманець вище",
   "This wallet holds no tokens yet.": "На цьому гаманці ще немає токенів.",
   "Balances could not be loaded just now. Try again in a moment.":
-    "Баланси зараз не вдалося завантажити. Спробуйте за мить.",
-  "Too many attempts. Wait a minute.": "Забагато спроб. Зачекайте хвилину.",
+    "Баланси зараз не вдалося завантажити. Спробуй за мить.",
+  "Too many attempts. Wait a minute.": "Забагато спроб. Зачекай хвилину.",
   "Sign-in is unavailable right now.": "Вхід зараз недоступний.",
-  "Wallet changed. Start sign-in again.": "Гаманець змінився. Почніть вхід знову.",
-  "Another account already linked this wallet.": "Цей гаманець уже прив'язано до іншого акаунта.",
-  "Sign in to your account first, then link the wallet.": "Спершу увійдіть в акаунт, потім прив'яжіть гаманець.",
+  "Wallet changed. Start sign-in again.": "Гаманець змінився. Почни вхід знову.",
+  "This wallet belongs to another Ryntra account. Sign out, then sign in with this wallet to open it.": "Цей гаманець належить іншому акаунту Ryntra. Вийди й увійди цим гаманцем, щоб відкрити його.",
+  "Sign in to your account first, then link the wallet.": "Спершу увійди в акаунт, потім прив'яжи гаманець.",
   "That signature could not be verified.": "Цей підпис не вдалося перевірити.",
   "The request could not be completed.": "Запит не вдалося виконати.",
-  "Sign-in can't be checked right now. Try again in a moment.": "Вхід зараз не вдається перевірити. Спробуйте за мить.",
+  "Sign-in can't be checked right now. Try again in a moment.": "Вхід зараз не вдається перевірити. Спробуй за мить.",
   "This site is not set up to sign swaps right now.": "Цей сайт зараз не налаштований підписувати обміни.",
   "This swap was checked and not offered for signing.": "Цей обмін перевірено і не запропоновано до підпису.",
   "This swap did not simulate cleanly, so it was not offered for signing.":
@@ -1000,15 +1073,15 @@ export const SOLANA_UK_TEXT: Readonly<Record<string, string>> = {
   "No route for this pair right now.": "Для цієї пари зараз немає маршруту.",
   "This wallet does not hold enough for this swap.": "На цьому гаманці недостатньо коштів для цього обміну.",
   "This amount cannot be swapped.": "Цю суму не можна обміняти.",
-  "Too many requests just now. Try again in a moment.": "Забагато запитів. Спробуйте за мить.",
+  "Too many requests just now. Try again in a moment.": "Забагато запитів. Спробуй за мить.",
   "This request was not accepted.": "Цей запит не прийнято.",
   "Not available right now": "Зараз недоступно",
   "Amount in USDC": "Сума в USDC",
-  "USDC from your Solana wallet": "USDC з вашого гаманця Solana",
+  "USDC from your Solana wallet": "USDC з твого гаманця Solana",
   "Bridging is turned off right now.": "Переказ між мережами зараз вимкнено.",
   "Swapping is turned off right now.": "Обмін зараз вимкнено.",
   "This transfer needs a fresh one-time account. Try again.":
-    "Цьому переказу потрібен новий одноразовий акаунт. Спробуйте ще раз.",
+    "Цьому переказу потрібен новий одноразовий акаунт. Спробуй ще раз.",
   "Circle's fee for this route could not be read just now, so nothing can be quoted.":
     "Комісію Circle для цього маршруту зараз не вдалося прочитати, тому нічого не котирується.",
   "This wallet's USDC account could not be read.":
@@ -1018,20 +1091,20 @@ export const SOLANA_UK_TEXT: Readonly<Record<string, string>> = {
   "The owner rules could not be read, so nothing may be prepared.":
     "Правила власника не вдалося прочитати, тому нічого не готується.",
   "Too many requests. Wait a moment and try again.":
-    "Забагато запитів. Зачекайте трохи й спробуйте ще раз.",
+    "Забагато запитів. Зачекай трохи й спробуй ще раз.",
   "This exact transfer has already been started. Open recovery below — it is never started twice.":
-    "Саме цей переказ уже розпочато. Відкрийте відновлення нижче — двічі він не починається ніколи.",
+    "Саме цей переказ уже розпочато. Відкрий відновлення нижче — двічі він не починається ніколи.",
   "The transfer was sent and the answer was lost. Your money may already be moving; recovery below reads where it is.":
-    "Переказ надіслано, а відповідь загубилася. Ваші кошти вже можуть бути в русі; відновлення нижче читає, де вони.",
+    "Переказ надіслано, а відповідь загубилася. Твої кошти вже можуть бути в русі; відновлення нижче читає, де вони.",
   "The transfer stopped before anything was sent. Nothing moved.":
     "Переказ зупинився до того, як щось було надіслано. Нічого не рухалось.",
   "This review is too old to send. Prepare it again.":
-    "Цей перегляд застарів для надсилання. Підготуйте його знову.",
+    "Цей перегляд застарів для надсилання. Підготуй його знову.",
   "This transfer is not permitted right now.": "Цей переказ зараз не дозволено.",
   "The review changed after it was signed. Prepare it again.":
-    "Перегляд змінився після підписання. Підготуйте його знову.",
+    "Перегляд змінився після підписання. Підготуй його знову.",
   "Your wallet did not sign this transaction. Nothing was sent.":
-    "Ваш гаманець не підписав цю транзакцію. Нічого не надіслано.",
+    "Твій гаманець не підписав цю транзакцію. Нічого не надіслано.",
   "The one-time signature in this tab did not complete. Nothing was sent.":
     "Одноразовий підпис у цій вкладці не завершився. Нічого не надіслано.",
   "Only one network provider answered, so this transfer could not be checked twice. Nothing was sent.":
@@ -1039,24 +1112,24 @@ export const SOLANA_UK_TEXT: Readonly<Record<string, string>> = {
   "This request did not come from this site. Nothing was sent.":
     "Цей запит надійшов не з цього сайту. Нічого не надіслано.",
   "The network would not accept the transfer your wallet returned. Nothing was sent.":
-    "Мережа не прийняла переказ, який повернув ваш гаманець. Нічого не надіслано.",
+    "Мережа не прийняла переказ, який повернув твій гаманець. Нічого не надіслано.",
   "This transfer did not go through. Nothing was sent.":
     "Цей переказ не пройшов. Нічого не надіслано.",
   "You declined in your wallet. Nothing was sent.":
-    "Ви відхилили в гаманці. Нічого не надіслано.",
+    "Відхилено в гаманці. Нічого не надіслано.",
   "The wallet did not answer. Nothing was sent.": "Гаманець не відповів. Нічого не надіслано.",
   "Your wallet is locked. Unlock it and try again.":
-    "Ваш гаманець заблокований. Розблокуйте його й спробуйте ще раз.",
+    "Твій гаманець заблокований. Розблокуй його й спробуй ще раз.",
   "Your wallet could not complete this. Nothing was sent.":
-    "Ваш гаманець не зміг це завершити. Нічого не надіслано.",
+    "Твій гаманець не зміг це завершити. Нічого не надіслано.",
   /* Bridge — where the money is. */
   "Nothing has been sent yet.": "Ще нічого не надіслано.",
   "Nothing moved. You can prepare this transfer again.":
-    "Нічого не рухалось. Ви можете підготувати цей переказ знову.",
+    "Нічого не рухалось. Ти можеш підготувати цей переказ знову.",
   "The transaction was sent to Solana. Reading it now.":
     "Транзакцію надіслано в Solana. Читаємо її зараз.",
   "Your USDC has left Solana and Circle is signing for it.":
-    "Ваші USDC залишили Solana, і Circle підписує їх.",
+    "Твої USDC залишили Solana, і Circle підписує їх.",
   "Circle has signed. The last step is to receive it on Base.":
     "Circle підписав. Останній крок — отримати кошти на Base.",
   "Something was interrupted. Reading Solana, then Circle, then Base — in that order.":
@@ -1064,7 +1137,7 @@ export const SOLANA_UK_TEXT: Readonly<Record<string, string>> = {
   "The transaction on Base was sent. Reading both chains now.":
     "Транзакцію на Base надіслано. Читаємо обидва ланцюги.",
   "The money arrived on Base. Writing your receipt.":
-    "Кошти надійшли на Base. Записуємо вашу квитанцію.",
+    "Кошти надійшли на Base. Записуємо твою квитанцію.",
   "Finished. Both sides were read and they agree.":
     "Завершено. Обидва боки прочитано, і вони збігаються.",
   "Reading where this transfer stands.": "Читаємо, на чому стоїть цей переказ.",
@@ -1073,18 +1146,18 @@ export const SOLANA_UK_TEXT: Readonly<Record<string, string>> = {
   "Circle has the transaction and is waiting for Solana to settle it.":
     "Circle має транзакцію й чекає, поки Solana її завершить.",
   "Circle has signed. You can receive it on Base.":
-    "Circle підписав. Ви можете отримати кошти на Base.",
+    "Circle підписав. Ти можеш отримати кошти на Base.",
   "Circle could not be reached just now. Your transfer is unaffected and this will retry.":
-    "До Circle зараз не вдалося достукатись. На ваш переказ це не впливає, спроба повториться.",
+    "До Circle зараз не вдалося достукатись. На твій переказ це не впливає, спроба повториться.",
   "Not executed": "Не виконано",
   "Set on the exact order": "Встановлюється на точному ордері",
   "Default pair · not a recommendation": "Типова пара · не рекомендація",
   "The pair and amount, not this quote": "Пара й сума, а не це котирування",
   "Keyless lane · labelled degraded": "Лінія без ключа · позначено degraded",
   "Asset Passports": "Паспорти активів",
-  "Pick a pair and an amount.": "Оберіть пару й суму.",
+  "Pick a pair and an amount.": "Обери пару й суму.",
   "Start typing to search every mainnet asset.":
-    "Почніть вводити, щоб шукати серед усіх активів мейннету.",
+    "Почни вводити, щоб шукати серед усіх активів мейннету.",
   "Verified and Flagged are Jupiter's labels, not Ryntra's.":
     "Verified і Flagged — позначки Jupiter, не Ryntra.",
   "Provider-reported shares do not total 100%: these legs are sequential, so no bar is drawn.":
@@ -1093,15 +1166,33 @@ export const SOLANA_UK_TEXT: Readonly<Record<string, string>> = {
   "Your wallet returned different bytes. Nothing was submitted.":
     "Гаманець повернув інші байти. Нічого не надіслано.",
   "A signed attempt is unresolved. Recover it before a new order.":
-    "Є непідтверджена підписана спроба. Відновіть її перед новим ордером.",
+    "Є непідтверджена підписана спроба. Віднови її перед новим ордером.",
   "The transaction was sent but never reached the chain, and the block it needed has passed. Nothing moved, and nothing can now. You can trade again.":
     "Транзакцію надіслали, але вона не потрапила в мережу, а потрібний їй блок уже минув. Нічого не переміщено й переміститися вже не може. Можна торгувати далі.",
   "The transaction was never sent and the block it needed has passed. Nothing moved. You can trade again.":
     "Транзакцію не надсилали, а потрібний їй блок уже минув. Нічого не переміщено. Можна торгувати далі.",
-  "Bridge": "Міст",
+  /* One name for the work, «Між мережами» — never «Міст» (B18; the core's menu word). */
+  "Bridge": "Між мережами",
   "Cross-chain": "Між мережами",
+  "Between networks": "Між мережами",
+  /* «Гроші» (B18): the name once, the side column, the chips under «Кому». */
+  "One transfer on Solana: what leaves, where it goes and the network fee — all of it before your wallet signs.":
+    "Один переказ у Solana: що йде, куди й плата мережі — усе це до підпису в гаманці.",
+  "Paste": "Вставити",
+  "Recent recipients": "Останні отримувачі",
+  "Recent transfers": "Останні перекази",
+  "Recent incoming": "Останні надходження",
+  "Recent moves between networks": "Останні перекази між мережами",
+  "Send only on the Solana network.": "Надсилай лише в мережі Solana.",
+  "Connect a wallet — your Solana address and its code will be here.": "Підключи гаманець — тут буде твоя адреса Solana і її QR-код.",
+  "Connect a wallet — then ask for an exact amount with a link anyone can pay.":
+    "Підключи гаманець — і попроси точну суму посиланням, яке може оплатити будь-хто.",
+  "Your Solana address to be paid at, and a link that asks for an exact amount — it opens in any browser.":
+    "Твоя адреса Solana для оплати й посилання на точну суму — воно відкривається в будь-якому браузері.",
+  "USDC from another network to your Solana wallet by an address, or from Solana to another network — signed by your Solana wallet.":
+    "USDC з іншої мережі — у твій гаманець Solana за адресою; із Solana в іншу мережу — з підписом твого гаманця Solana.",
   "Transfer between networks": "Переказ між мережами",
-  "Review bridge": "Перевірити міст",
+  "Review bridge": "Перевірити переказ між мережами",
   "Mainnet · read only": "Мейннет · лише читання",
   "Mainnet · user-signed": "Мейннет · підпис користувача",
   "Mainnet · review required": "Мейннет · потрібна перевірка",
@@ -1124,64 +1215,64 @@ export const SOLANA_UK_TEXT: Readonly<Record<string, string>> = {
   "Watchlist": "Список спостереження",
   "Money": "Кошти",
   "Nothing is moving right now.": "Зараз нічого не рухається.",
-  "Everything you send, swap or bridge shows here while it travels.": "Усе, що ви надсилаєте, обмінюєте чи переводите, видно тут, поки воно в дорозі.",
+  "Everything you send, swap or bridge shows here while it travels.": "Усе, що ти надсилаєш, обмінюєш чи переводиш, видно тут, поки воно в дорозі.",
   "Portfolio value": "Вартість портфеля",
   "Priced assets": "Активи з ціною",
   "No price": "Без ціни",
   "In motion": "У дорозі",
   "Recent": "Останні",
   "See all": "Усі",
-  "Connect a wallet to see what you hold and what is moving.": "Підключіть гаманець, щоб побачити, що ви тримаєте і що в дорозі.",
+  "Connect a wallet to see what you hold and what is moving.": "Підключи гаманець, щоб побачити, що ти тримаєш і що в дорозі.",
   /* Markets — the risk column, the price column and the trades a wallet made
      on this surface. `Обмін` is the settled Ukrainian for Swap, so the control
      that opens it says the same word the page it opens is called. */
   "Price": "Ціна",
   "Open Swap": "Відкрити Обмін",
-  "Your trades": "Ваші угоди",
-  "You have not traded here yet.": "Ви ще не робили тут угод.",
-  "Connect a wallet to see the trades you have made here.": "Підключіть гаманець, щоб побачити свої угоди тут.",
+  "Your trades": "Твої угоди",
+  "You have not traded here yet.": "Тут ще немає твоїх угод.",
+  "Connect a wallet to see the trades you have made here.": "Підключи гаманець, щоб побачити свої угоди тут.",
   /* Settings — a short system surface, not documentation about the
      architecture. The long sentences are the ones that used to be printed at
      rest as panel values; they are unchanged, and they now live in the hint
      beside the row each explains. */
   "Every read here is Solana mainnet, because that is where the real mints are and mainnet is the only network this product treats as a release target. A devnet endpoint stays configured as an internal regression fixture; a switch between the two would offer a choice that means nothing.": "Тут усе читається з Solana mainnet, бо саме там справжні мінти, і mainnet — єдина мережа, яку цей продукт вважає релізною. Devnet лишається налаштованим лише як внутрішня регресійна фікстура; перемикач між ними давав би вибір, який нічого не означає.",
   "What is read": "Що читається",
-  "Balances, prices, mints and your own operations": "Баланси, ціни, мінти й ваші операції",
+  "Balances, prices, mints and your own operations": "Баланси, ціни, мінти й твої операції",
   "If a read fails": "Якщо читання не вдалося",
   "How a read is bounded": "Які межі має читання",
   "Ten seconds per endpoint, the primary asked first and an independent operator answering when it does not, one bounded retry, and the answering host stamped on every read. A read that could not complete says so rather than showing you a zero.": "Десять секунд на вузол: спершу основний, а якщо він мовчить — незалежний оператор; одна обмежена повторна спроба, і кожне читання позначене тим, хто відповів. Читання, яке не завершилось, каже про це, а не показує нуль.",
   "It says so, and never shows a zero": "Каже про це і ніколи не показує нуль",
   "Appearance and layout": "Вигляд і розкладка",
   "In the top bar": "У верхній панелі",
-  "Your wallet": "Ваш гаманець",
+  "Your wallet": "Твій гаманець",
   "What Ryntra never does": "Чого Ryntra не робить ніколи",
   "Holds none, requests none": "Не зберігає й не запитує",
   "Seed phrase": "Сід-фраза",
   "Never sees one, never asks": "Ніколи не бачить і не запитує",
   "The one named exception": "Єдиний названий виняток",
-  "Your own wallet signs every transfer, and no Ryntra server holds a key. A CCTP bridge needs a second signature no wallet can give — Circle's message account has to sign for its own creation — so the page makes a key for that one transaction, in this browser only. It can move no money, it is sent nowhere, and it is discarded once the burn is submitted. A boundary with an unnamed exception is not a boundary.": "Кожен переказ підписує ваш власний гаманець, і жоден сервер Ryntra не тримає ключа. Мосту CCTP потрібен другий підпис, якого не може дати жоден гаманець — акаунт повідомлення Circle мусить підписати власне створення — тому сторінка створює ключ для цієї однієї транзакції, лише в цьому браузері. Він не може перемістити кошти, нікуди не надсилається і зникає після подання burn. Межа з неназваним винятком — це не межа.",
-  "Your wallet, one transaction at a time": "Ваш гаманець, по одній транзакції",
+  "Your own wallet signs every transfer, and no Ryntra server holds a key. A CCTP bridge needs a second signature no wallet can give — Circle's message account has to sign for its own creation — so the page makes a key for that one transaction, in this browser only. It can move no money, it is sent nowhere, and it is discarded once the burn is submitted. A boundary with an unnamed exception is not a boundary.": "Кожен переказ підписує твій власний гаманець, і жоден сервер Ryntra не тримає ключа. Мосту CCTP потрібен другий підпис, якого не може дати жоден гаманець — акаунт повідомлення Circle мусить підписати власне створення — тому сторінка створює ключ для цієї однієї транзакції, лише в цьому браузері. Він не може перемістити кошти, нікуди не надсилається і зникає після подання burn. Межа з неназваним винятком — це не межа.",
+  "Your wallet, one transaction at a time": "Твій гаманець, по одній транзакції",
   "What is kept about an action": "Що зберігається про дію",
-  "What it did and what it cost, recorded against your wallet address — never a key, a seed phrase or signed bytes. That much is already public on the chain.": "Що вона зробила і скільки коштувала, записане за адресою вашого гаманця — ніколи ключ, сід-фраза чи підписані байти. Це й так публічне в мережі.",
+  "What it did and what it cost, recorded against your wallet address — never a key, a seed phrase or signed bytes. That much is already public on the chain.": "Що вона зробила і скільки коштувала, записане за адресою твого гаманця — ніколи ключ, сід-фраза чи підписані байти. Це й так публічне в мережі.",
   "What an action did and cost": "Що дія зробила і скільки коштувала",
   "Nothing to sign up for": "Реєструватися нема куди",
-  "Your data": "Ваші дані",
+  "Your data": "Твої дані",
   "Ryntra's access": "Доступ Ryntra",
   "What connecting a wallet allows": "Що дає підключення гаманця",
-  "Connecting lets this workspace read public balances and ask your wallet to show you a transaction. Every signature is yours, given in your own wallet, one transaction at a time. No Ryntra server holds a key and none can move anything on your behalf.": "Підключення дозволяє читати публічні баланси й попросити ваш гаманець показати вам транзакцію. Кожен підпис — ваш, зроблений у вашому гаманці, по одній транзакції. Жоден сервер Ryntra не тримає ключа і не може нічого перемістити за вас.",
-  "Read, and ask you to sign": "Читати й просити вас підписати",
+  "Connecting lets this workspace read public balances and ask your wallet to show you a transaction. Every signature is yours, given in your own wallet, one transaction at a time. No Ryntra server holds a key and none can move anything on your behalf.": "Підключення дозволяє читати публічні баланси й попросити твій гаманець показати тобі транзакцію. Кожен підпис — твій, зроблений у твоєму гаманці, по одній транзакції. Жоден сервер Ryntra не тримає ключа і не може нічого перемістити за тебе.",
+  "Read, and ask you to sign": "Читати й просити тебе підписати",
   "Managed in": "Керується в",
   "Ryntra account": "Акаунт Ryntra",
   "Two separate principals": "Два окремі суб'єкти",
-  "A Ryntra account and a Solana wallet are separate. Signing in does not authorize anything your wallet does, and connecting a wallet does not sign you in. The account exists for agents, policies and approvals.": "Акаунт Ryntra і гаманець Solana — окремі. Вхід не авторизує нічого, що робить ваш гаманець, а підключення гаманця не виконує вхід. Акаунт існує для агентів, політик і погоджень.",
+  "A Ryntra account and a Solana wallet are separate. Signing in does not authorize anything your wallet does, and connecting a wallet does not sign you in. The account exists for agents, policies and approvals.": "Акаунт Ryntra і гаманець Solana — окремі. Вхід не авторизує нічого, що робить твій гаманець, а підключення гаманця не виконує вхід. Акаунт існує для агентів, політик і погоджень.",
   "Separate from your wallet": "Окремо від гаманця",
   "Receipts in this browser": "Квитанцій у цьому браузері",
   "Kept where": "Де зберігаються",
   "What clearing site data removes": "Що видаляє очищення даних сайту",
-  "Receipts are stored in this browser, so clearing site data clears them. The signed file you download is the copy that outlives it, and it verifies without trusting this site. What an action did is also recorded against your wallet address on our side, because that much is already public on the chain.": "Квитанції зберігаються в цьому браузері, тож очищення даних сайту стирає їх. Підписаний файл, який ви завантажуєте, — це копія, що переживе браузер, і вона перевіряється без довіри до цього сайту. Що зробила дія, також записано за адресою вашого гаманця на нашому боці, бо це й так публічне в мережі.",
+  "Receipts are stored in this browser, so clearing site data clears them. The signed file you download is the copy that outlives it, and it verifies without trusting this site. What an action did is also recorded against your wallet address on our side, because that much is already public on the chain.": "Квитанції зберігаються в цьому браузері, тож очищення даних сайту стирає їх. Підписаний файл, який ти завантажуєш, — це копія, що переживе браузер, і вона перевіряється без довіри до цього сайту. Що зробила дія, також записано за адресою твого гаманця на нашому боці, бо це й так публічне в мережі.",
   "This browser": "Цей браузер",
   "All of them": "Усі",
-  "Export your operations": "Експорт ваших операцій",
+  "Export your operations": "Експорт твоїх операцій",
   /* Activity — the one timeline of the whole product. `Операції` is the settled
      domain word and `Активність` is forbidden vocabulary, so the page carries
      the domain name and the panels inside it carry their own. */
@@ -1197,14 +1288,14 @@ export const SOLANA_UK_TEXT: Readonly<Record<string, string>> = {
   /* Money — the domain around Send, Receive and Bridge. `Кошти` is the settled
      domain word; these are the panels every one of its three jobs carries. */
   "What you can move": "Що можна переказати",
-  "Connect a wallet to see what you can move.": "Підключіть гаманець, щоб побачити, що можна переказати.",
+  "Connect a wallet to see what you can move.": "Підключи гаманець, щоб побачити, що можна переказати.",
   "This wallet holds nothing to move yet.": "У цьому гаманці ще немає чого переказувати.",
   "You can move": "Доступно",
   "Held": "Усього",
   "Unnamed": "Без назви",
-  "Your transfers": "Ваші перекази",
-  "Connect a wallet to see the transfers you have made.": "Підключіть гаманець, щоб побачити свої перекази.",
-  "You have not moved anything yet.": "Ви ще нічого не переказували.",
+  "Your transfers": "Твої перекази",
+  "Connect a wallet to see the transfers you have made.": "Підключи гаманець, щоб побачити свої перекази.",
+  "You have not moved anything yet.": "Твоїх переказів ще немає.",
   "What": "Що",
   /* Swap — the panels beside the ticket. Jupiter's own claims are named as
      Jupiter's, because a bare "Verified" beside an asset would read as a
@@ -1213,7 +1304,7 @@ export const SOLANA_UK_TEXT: Readonly<Record<string, string>> = {
   "Rate": "Курс",
   "Trade value": "Сума угоди",
   "Quote valid for": "Котирування дійсне ще",
-  "Enter an amount to price this pair.": "Введіть суму, щоб отримати ціну для цієї пари.",
+  "Enter an amount to price this pair.": "Введи суму, щоб отримати ціну для цієї пари.",
   "Route and cost": "Маршрут і вартість",
   "Filled by": "Виконує",
   "Most you can lose to price movement": "Максимум втрат від руху ціни",
@@ -1231,7 +1322,7 @@ export const SOLANA_UK_TEXT: Readonly<Record<string, string>> = {
   "When": "Коли",
   "Traded": "Обміняно",
   "Nothing has moved yet.": "Ще нічого не рухалось.",
-  "Your first transfer appears here.": "Ваш перший переказ з'явиться тут.",
+  "Your first transfer appears here.": "Твій перший переказ з'явиться тут.",
   "Holdings": "Активи портфеля",
 
   "Check what happened": "Перевірити, що сталося",
@@ -1265,16 +1356,16 @@ export const SOLANA_UK_TEXT: Readonly<Record<string, string>> = {
   "still moving, and not counted below": "ще в русі й не враховано нижче",
 
   /* History — the wallet's own list of what it did here. */
-  "Your transfers, and where each one is.": "Ваші перекази й де зараз кожен із них.",
+  "Connect a wallet — your transfers will be here, and where each one is.": "Підключи гаманець — тут будуть твої перекази й де кожен із них.",
   "This history could not be read just now. Nothing is wrong with your transfers.":
-    "Цю історію зараз не вдалося прочитати. З вашими переказами все гаразд.",
+    "Цю історію зараз не вдалося прочитати. З твоїми переказами все гаразд.",
   "still moving. Money that has left and not yet settled shows here until it does.":
     "ще в русі. Кошти, які пішли й ще не завершились, показуються тут, доки не завершаться.",
   "Nothing yet.": "Поки нічого.",
   "Transfers you make here appear in this list, on any browser you connect this wallet from.":
-    "Перекази, які ви тут робите, з'являються в цьому списку — у будь-якому браузері, з якого ви підключите цей гаманець.",
+    "Перекази, які ти тут робиш, з'являються в цьому списку — у будь-якому браузері, з якого ти підключиш цей гаманець.",
   "This covers what you did here. Anything sent from another app is on the chain and not in this list.":
-    "Тут те, що ви робили в Ryntra. Надіслане з іншого застосунку є в мережі, але не в цьому списку.",
+    "Тут те, що ти робиш у Ryntra. Надіслане з іншого застосунку є в мережі, але не в цьому списку.",
   "Part of this history could not be read, so the list may be incomplete.":
     "Частину історії не вдалося прочитати, тож список може бути неповним.",
   "Moved": "Переведено",
@@ -1282,13 +1373,13 @@ export const SOLANA_UK_TEXT: Readonly<Record<string, string>> = {
   "between chains": "між мережами",
   "Moved to Base": "Переведено на Base",
   "Did not happen": "Не відбулося",
-  "Needs you": "Потрібні ви",
+  "Needs you": "Потрібна твоя дія",
 
   /* The wallet gate — the whole screen before a wallet is chosen. One line per
      surface, saying what that screen shows once it has one. */
-  "Your assets, and what they are worth.": "Ваші активи та їхня вартість.",
-  "Your address, and requests for an exact amount.": "Ваша адреса й запити на точну суму.",
-  "Every transfer you have made here.": "Усі перекази, які ви тут зробили.",
+  "Your assets, and what they are worth.": "Твої активи та їхня вартість.",
+  "Connect a wallet — your address and requests for an exact amount will be here.": "Підключи гаманець — тут будуть твоя адреса й запити на точну суму.",
+  "Connect a wallet — the receipts of your transfers will be here.": "Підключи гаманець — тут будуть квитанції твоїх переказів.",
   "No Solana wallet in this browser.": "У цьому браузері немає гаманця Solana.",
   "Phantom, Solflare and Backpack all work.": "Phantom, Solflare і Backpack підходять.",
   "Opening…": "Відкриваємо…",
@@ -1344,19 +1435,19 @@ export const SOLANA_UK_TEXT: Readonly<Record<string, string>> = {
   "The first owner-signed Solana Mainnet lifecycle is finalized and independently read back. Its signed Outcome Receipt is downloadable, verifier-valid and preserves the exact deviation it recorded.":
     "Перший owner-signed lifecycle Solana Mainnet фіналізовано й незалежно прочитано. Його підписану Outcome Receipt можна завантажити; verifier підтверджує її, а записане відхилення збережено без переписування.",
   "Choose an asset, a recipient and an amount. Ryntra reads the mint, simulates the exact bytes and judges them against policy. Your wallet signs; this site never holds a key. The exact ATA-create canary is finalized and receipted; every other mainnet transfer remains review-only until its own gate.":
-    "Оберіть актив, отримувача й суму. Ryntra читає mint, симулює точні bytes і оцінює їх за policy. Підписує ваш wallet; сайт ніколи не тримає ключ. Точний ATA-create canary фіналізовано й забезпечено Receipt; кожен інший mainnet-переказ лишається review-only до власного gate.",
+    "Обери актив, отримувача й суму. Ryntra читає mint, симулює точні bytes і оцінює їх за policy. Підписує твій wallet; сайт ніколи не тримає ключ. Точний ATA-create canary фіналізовано й забезпечено Receipt; кожен інший mainnet-переказ лишається review-only до власного gate.",
   "Paste a mint address to read what it structurally is: which program owns it, what its authorities and extensions can do to a holding, and what is not known. The page's address is the shareable link, and opening one re-reads the chain.":
-    "Вставте адресу mint, щоб прочитати його структуру: яка program ним володіє, що authorities і extensions можуть зробити з активом та що невідомо. Адреса сторінки є посиланням; відкриття повторно читає chain.",
+    "Встав адресу mint, щоб прочитати його структуру: яка program ним володіє, що authorities і extensions можуть зробити з активом та що невідомо. Адреса сторінки є посиланням; відкриття повторно читає chain.",
   "What this workspace reads, from which source, under which contract — and exactly what the kit refuses to do. The SDK, the local MCP server and the CLI are published: ryntra-io/ryntra-solana-evidence, Apache-2.0, v1.0.0, cloned and verified from GitHub as a stranger would. It holds no key and has no signing path, which is a property of the kit rather than a gap in it.":
     "Що простір читає, з якого джерела й за яким контрактом — та що саме kit відмовляється робити. SDK, локальний MCP server і CLI опубліковані: ryntra-io/ryntra-solana-evidence, Apache-2.0, v1.0.0; їх клоновано й перевірено з GitHub як стороннім користувачем. Kit не тримає ключа й не має signing path — це його властивість, а не прогалина.",
   "Owner policy unavailable": "Політика власника недоступна",
-  "Bridge unavailable": "Міст недоступний",
-  "Bridge pre-canary": "Міст до canary",
+  "Bridge unavailable": "Переказ між мережами недоступний",
+  "Bridge pre-canary": "Переказ між мережами до canary",
   "The owner-canary policy configuration could not be read. No bridge review was built.":
     "Конфігурацію owner-canary policy не вдалося прочитати. Bridge Review не побудовано.",
-  "Bridge plan": "План мосту",
+  "Bridge plan": "План переказу між мережами",
   "Pre-canary": "До canary",
-  "What Review bridge does": "Що робить перевірка мосту",
+  "What Review bridge does": "Що робить перевірка переказу між мережами",
   "It re-reads Circle's public mainnet fee and allowance facts and rebuilds this Review from the URL. No transaction bytes, approval, signature, burn or mint are created.":
     "Повторно читає публічні mainnet facts Circle щодо fee й allowance та перебудовує Review з URL. Transaction bytes, approval, підпис, burn і mint не створюються.",
   "Direction": "Напрямок",
@@ -1433,8 +1524,8 @@ export const SOLANA_UK_TEXT: Readonly<Record<string, string>> = {
   "Execution boundary": "Межа виконання",
   "No transaction is built, signed or submitted in the bridge preview":
     "У попередньому перегляді мосту транзакція не будується, не підписується й не надсилається",
-  "Choose Solana → Base or Base → Solana.": "Оберіть Solana → Base або Base → Solana.",
-  "Choose Standard or Fast.": "Оберіть Standard або Fast.",
+  "Choose Solana → Base or Base → Solana.": "Обери Solana → Base або Base → Solana.",
+  "Choose Standard or Fast.": "Обери Standard або Fast.",
   "Network": "Мережа",
   "Config fact": "Факт конфігурації",
   "Why there is no network switch": "Чому немає перемикача мережі",
@@ -1492,7 +1583,7 @@ export const SOLANA_UK_TEXT: Readonly<Record<string, string>> = {
   "Structural": "Структурно",
   "Cannot, not may-not": "Не може, а не просто не дозволено",
   "These are absences of code paths, not toggles set to off. Signing is the one worth stating exactly: your wallet signs, and this workspace only forwards bytes it has compared against the ones it built and showed you. The single exception is named below, because a boundary with an unnamed exception is not a boundary.":
-    "Це відсутні шляхи в коді, а не перемикачі, вимкнені в налаштуваннях. Підпис — те, що варто назвати точно: підписує ваш гаманець, а цей кабінет лише передає байти, які звірив із тими, що сам побудував і показав вам. Єдиний виняток названо нижче, бо межа з неназваним винятком — це не межа.",
+    "Це відсутні шляхи в коді, а не перемикачі, вимкнені в налаштуваннях. Підпис — те, що варто назвати точно: підписує твій гаманець, а цей кабінет лише передає байти, які звірив із тими, що сам побудував і показав тобі. Єдиний виняток названо нижче, бо межа з неназваним винятком — це не межа.",
   "Keys": "Ключі",
   "Holds none, requests none, never sees a seed phrase.":
     "Не тримає й не запитує ключів, ніколи не бачить seed phrase.",
@@ -1504,7 +1595,7 @@ export const SOLANA_UK_TEXT: Readonly<Record<string, string>> = {
     "Реєстрація не потрібна; робочий простір відкритий.",
   "Retention": "Зберігання",
   "Your receipts are kept in this browser, so clearing site data clears them — the signed JSON you download is the copy that outlives it. What an action did is also recorded against your wallet address on our side, because that much is already public on the chain.":
-    "Ваші квитанції зберігаються в цьому браузері, тож очищення даних сайту стирає їх — копія, яка це переживе, це підписаний JSON, який ви завантажуєте. Те, що зробила дія, ми додатково записуємо за адресою вашого гаманця, бо це вже й так публічний факт у мережі.",
+    "Твої квитанції зберігаються в цьому браузері, тож очищення даних сайту стирає їх — копія, яка це переживе, це підписаний JSON, який ти завантажуєш. Те, що зробила дія, ми додатково записуємо за адресою твого гаманця, бо це вже й так публічний факт у мережі.",
   "Canary ledger": "Canary ledger",
   "Only intent identity, budget exposure and later outcome state; never a key or signed bytes.":
     "Лише identity intent, budget exposure і майбутній outcome state; ніколи не ключ чи підписані bytes.",
@@ -1522,10 +1613,10 @@ export const SOLANA_UK_TEXT: Readonly<Record<string, string>> = {
   "Verification available": "Перевірка доступна",
   "Open receipt": "Відкрити квитанцію",
   "The transfer is finalized. The signed receipt preserves a reconciliation deviation; open Receipts for its exact evidence.":
-    "Переказ фіналізовано. Підписана receipt зберігає reconciliation deviation; відкрийте Receipts для точного доказу.",
+    "Переказ фіналізовано. Підписана receipt зберігає reconciliation deviation; відкрий Receipts для точного доказу.",
   "What a receipt binds": "Що зв'язує квитанція",
   "The intent that was authorized, the transaction the chain actually recorded, an independent read-back, the expected-versus-actual reconciliation — a deviation records as a deviation — and an Ed25519 signature over the exact bytes. Change one byte and verification says so.":
-    "Авторизований intent, транзакція, яку фактично записав chain, незалежний read-back, reconciliation очікуваного з фактичним — deviation записується як deviation — і підпис Ed25519 над точними bytes. Змініть один byte, і verification це покаже.",
+    "Авторизований intent, транзакція, яку фактично записав chain, незалежний read-back, reconciliation очікуваного з фактичним — deviation записується як deviation — і підпис Ed25519 над точними bytes. Зміни один byte, і verification це покаже.",
   "Verify any Ryntra artifact": "Перевірити будь-який артефакт Ryntra",
   "Live": "Працює",
   "Why this already works": "Чому це вже працює",
@@ -1577,7 +1668,7 @@ export const SOLANA_UK_TEXT: Readonly<Record<string, string>> = {
   "By construction": "За конструкцією",
   "Why refusals are listed": "Навіщо перелічені відмови",
   "A boundary that is not written down gets renegotiated by accident. These are structural: no code path here signs anything and no key reaches Ryntra. Send is the one surface that reaches the network at all, and it forwards bytes your own wallet signed, after comparing them to the ones that were built.":
-    "Межа, яку не записано, випадково переглядається. Ці межі структурні: жоден code path тут не підписує, жоден key не доходить до Ryntra. Send є єдиною поверхнею, що доходить до мережі, і передає bytes, підписані вашим wallet, після порівняння з побудованими.",
+    "Межа, яку не записано, випадково переглядається. Ці межі структурні: жоден code path тут не підписує, жоден key не доходить до Ryntra. Send є єдиною поверхнею, що доходить до мережі, і передає bytes, підписані твоїм wallet, після порівняння з побудованими.",
   "Keys and signing": "Ключі та підписання",
   "Never. No key reaches Ryntra and no code path here signs.":
     "Ніколи. Жоден key не доходить до Ryntra, жоден code path тут не підписує.",
@@ -1604,19 +1695,19 @@ export const SOLANA_UK_TEXT: Readonly<Record<string, string>> = {
   "One owner-signed mainnet action of that family ran, reconciled and receipted. None wears it yet.":
     "Одна підписана власником mainnet дія цієї family виконана, reconciled і має квитанцію. Поки жодна family не має цього стану.",
   "Preview": "Попередній перегляд",
-  "Bridge preview": "Попередній перегляд мосту",
+  "Bridge preview": "Попередній перегляд переказу між мережами",
   "Preview native USDC between Solana and Base through Circle CCTP V2. Transfers remain unavailable until the separately approved owner canary is completed.":
-    "Перегляньте маршрут native USDC між Solana та Base через Circle CCTP V2. Перекази залишаються недоступними до завершення окремо підтвердженого owner canary.",
+    "Переглянь маршрут native USDC між Solana та Base через Circle CCTP V2. Перекази залишаються недоступними до завершення окремо підтвердженого owner canary.",
   "What this preview does": "Що робить цей перегляд",
   "Technical details": "Технічні деталі",
   "Bridge transfers are not available yet. This preview never opens your wallet or moves funds.":
     "Перекази через міст ще недоступні. Цей перегляд не відкриває гаманець і не переміщує кошти.",
-  "Enter a valid USDC amount.": "Введіть коректну суму USDC.",
+  "Enter a valid USDC amount.": "Введи коректну суму USDC.",
   "Preview route": "Переглянути маршрут",
   "Route preview": "Попередній перегляд маршруту",
   "Preview only": "Лише перегляд",
-  "You send": "Ви надсилаєте",
-  "You receive": "Ви отримуєте",
+  "You send": "Ти надсилаєш",
+  "You receive": "Ти отримуєш",
   "Fast": "Швидкий",
   "Provider fee": "Комісія провайдера",
   "Availability": "Доступність",
@@ -1651,10 +1742,10 @@ export const SOLANA_UK_TEXT: Readonly<Record<string, string>> = {
   "None": "Немає",
   "extension": "extension",
   "extensions": "extensions",
-  "Start here": "Почніть тут",
+  "Start here": "Почни тут",
   "What to do on this workspace": "Що робити в цьому просторі",
   "Paste any mainnet mint address and read its passport — identity, issuer powers, extensions, and what is not known. The passport's address is a shareable link.":
-    "Вставте адресу будь-якого mainnet mint і прочитайте паспорт — identity, issuer powers, extensions і невідомі факти. Адреса паспорта є посиланням для поширення.",
+    "Встав адресу будь-якого mainnet mint і прочитай паспорт — identity, issuer powers, extensions і невідомі факти. Адреса паспорта є посиланням для поширення.",
   "Read any mint": "Прочитати будь-який mint",
   "Open the Asset Passport": "Відкрити паспорт активу",
   "Quote a swap, read-only": "Отримати swap quote, лише читання",
@@ -1697,7 +1788,7 @@ export const SOLANA_UK_TEXT: Readonly<Record<string, string>> = {
   "A retention decision — the same one Stellar answered with browser-local storage — registered with Phase B's watchlist.":
     "Рішення про зберігання — таке саме, яке Stellar закрив локальним сховищем браузера, — зареєстроване зі списком спостереження Phase B.",
   "Paste a mint address and read what it structurally is — and share the read as a link.":
-    "Вставте адресу мінта, прочитайте його структуру та поділіться читанням як посиланням.",
+    "Встав адресу мінта, прочитай його структуру та поділися читанням як посиланням.",
   "The Solana Asset Passport: exact identity, what the issuer can do to a holding (mint, freeze, and every transfer-affecting Token-2022 extension), every extension with its provenance, and a permanent unknowns rail. The page's address is the shareable deep link; opening it re-reads the chain.":
     "Паспорт активу Solana: точна ідентичність, що емітент може зробити з активом (додаткова емісія, замороження та кожне розширення Token-2022, що впливає на переказ), походження кожного розширення й постійний блок невідомого. Адреса сторінки є посиланням; відкриття повторно читає chain.",
   "The full passport over any mainnet mint — SPL or Token-2022 — with provenance on every field, plus six real mints to start from.":
@@ -1717,7 +1808,7 @@ export const SOLANA_UK_TEXT: Readonly<Record<string, string>> = {
   "Phase B — the data adapters, and separately the universes and watchlist.":
     "Phase B — адаптери даних, а окремо — всесвіти й список спостереження.",
   "Curated sets of tokenized assets, majors and stables — and a watchlist that stays in your browser.":
-    "Керовані набори токенізованих активів, основних активів і стейблкоїнів — та список спостереження, що лишається у вашому браузері.",
+    "Керовані набори токенізованих активів, основних активів і стейблкоїнів — та список спостереження, що лишається у твоєму браузері.",
   "Curated means curated: Solana has no asset index this product reads, so coverage is a set with a stated method, never a market. The watchlist follows the Stellar retention decision — browser-local, deletable, nowhere else.":
     "Керований означає керований: продукт не читає індекс активів Solana, тому покриття є набором з описаним методом, а не ринком. Список спостереження наслідує рішення Stellar — локальний у браузері, видаляється й ніде більше не зберігається.",
   "Nothing. The curated-scope discipline is inherited from the Stellar Observe slice, where it is enforced in the type.":
@@ -1734,9 +1825,9 @@ export const SOLANA_UK_TEXT: Readonly<Record<string, string>> = {
     "Шлях читання багатьох мінтів, фільтри й сховище збережених сканів.",
   "Phase B — the scanner itself.": "Фаза B — сам сканер.",
   "A live mainnet swap quote for any pair, and your own wallet's signature to execute it.":
-    "Живе котирування swap у мейннеті для будь-якої пари та власний підпис вашого гаманця для виконання.",
+    "Живе котирування swap у мейннеті для будь-якої пари та власний підпис твого гаманця для виконання.",
   "Jupiter Swap API V2's exact order fields — quote, minimum received, total/platform/priority fees, router, mode, route and a bounded Review window — beside both Asset Passports and the thirteen-rule policy verdict. Keyless access is explicit and degraded. The execute path adds a taker order, the exact-bytes firewall, a simulation whose proven deltas must equal the reviewed legs, the swap policy verdict, your own wallet signature, one execute and an independent chain read.":
-    "Точні поля order від Jupiter Swap API V2 — котирування, мінімальне отримання, загальні/platform/priority fees, router, mode, route й обмежене вікно Review — поруч з обома паспортами активів і verdict політики з 13 правил. Доступ без ключа явний і degraded. Шлях виконання додає taker order, firewall точних байтів, симуляцію, доведені дельти якої мають дорівнювати переглянутим сторонам, verdict політики swap, власний підпис вашого гаманця, одне виконання і незалежне читання ланцюга.",
+    "Точні поля order від Jupiter Swap API V2 — котирування, мінімальне отримання, загальні/platform/priority fees, router, mode, route й обмежене вікно Review — поруч з обома паспортами активів і verdict політики з 13 правил. Доступ без ключа явний і degraded. Шлях виконання додає taker order, firewall точних байтів, симуляцію, доведені дельти якої мають дорівнювати переглянутим сторонам, verdict політики swap, власний підпис твого гаманця, одне виконання і незалежне читання ланцюга.",
   "The full keyed production surface: any pair and any amount, live `/order` quotes, exact base-unit arithmetic, separate fee rows, hash-bound freshness, the tested policy verdict, explicit refusal/degraded states, and the signable execute path behind the swap policy.":
     "Повна keyed production поверхня: будь-яка пара і будь-яка сума, живі котирування `/order`, точна арифметика base units, окремі fee rows, свіжість, прив'язана hash, перевірений verdict політики, явні стани refusal/degraded і шлях виконання з підписом за політикою swap.",
   "A settled Receipt from this surface. Nothing here is promoted on the strength of the path alone.":
@@ -1744,7 +1835,7 @@ export const SOLANA_UK_TEXT: Readonly<Record<string, string>> = {
   "None. What can be signed is bounded by what the bytes prove, not by a pair or an amount.":
     "Немає. Те, що можна підписати, обмежене доведеним у байтах, а не парою чи сумою.",
   "Review native USDC across Solana and Base through Circle CCTP V2 before any burn can exist.":
-    "Перевірте native USDC між Solana і Base через Circle CCTP V2 до появи будь-якого burn.",
+    "Перевір native USDC між Solana і Base через Circle CCTP V2 до появи будь-якого burn.",
   "The CCTP V2 pre-canary desk: official domains/programs/contracts, exact native-USDC representation, live Iris fee and Fast-allowance reads, the ten-state burn-to-mint lifecycle, message-first recovery and the Bridge Receipt contract. It exposes no transaction builder or signer.":
     "Pre-canary desk CCTP V2: офіційні domains/programs/contracts, точне представлення native USDC, живі читання Iris fee та Fast allowance, десятистановий lifecycle burn-to-mint, recovery від наявного message і контракт Bridge Receipt. Builder транзакції та signer відсутні.",
   "The complete pre-canary Review and recovery architecture for both Solana ↔ Base directions, with provider-edge unreachability separated from refusal and every unknown kept explicit.":
@@ -1754,7 +1845,7 @@ export const SOLANA_UK_TEXT: Readonly<Record<string, string>> = {
   "One 2–5 USDC owner-signed CCTP mainnet canary, observed on both chains, reconciled and receipted.":
     "Один підписаний власником CCTP canary мейннету на 2–5 USDC, спостережений в обох chains, reconciled і з квитанцією.",
   "Formalize a strategy, test it on history, prove it on paper — before it touches a venue.":
-    "Формалізуйте стратегію, перевірте на історії та доведіть у paper-режимі до контакту з venue.",
+    "Формалізуй стратегію, перевір на історії та доведи у paper-режимі до контакту з venue.",
   "The Strategy Lab core exists in this product for other markets. Binding it to Solana instruments — specs, historical data with provenance, deterministic backtests, walk-forward, paper trading — is its own registered phase, and pretending a binding exists before it does is what this card exists to prevent.":
     "Ядро Strategy Lab уже існує для інших ринків. Прив'язка до інструментів Solana — specs, історичні дані з походженням, детерміновані backtests, walk-forward і paper trading — є окремою зареєстрованою фазою; ця картка не дозволяє вдавати, що прив'язка вже існує.",
   "The chain-neutral Strategy Lab kernel, live elsewhere in the product.":
@@ -1765,9 +1856,9 @@ export const SOLANA_UK_TEXT: Readonly<Record<string, string>> = {
   "One real transfer: built, simulated, signed in the owner's wallet, observed independently, reconciled, receipted.":
     "Один реальний переказ: побудований, симульований, підписаний у wallet власника, незалежно спостережений, reconciled і з квитанцією.",
   "The first Solana transaction this product stands behind. The wallet is yours, the signature is yours, and the observation is an independent read-back — Ryntra holds no key and asks the wallet to sign rather than to sign-and-send, so a comparison still happens between your approval and the network. A deviation records as a deviation, never rounded to a match.":
-    "Перша транзакція Solana, за доказ якої відповідає продукт. Wallet і підпис належать вам, а спостереження є незалежним read-back: Ryntra не тримає ключ і просить wallet підписати, а не sign-and-send, тому ваше approval порівнюється з мережею. Відхилення записується як відхилення, а не округлюється до match.",
+    "Перша транзакція Solana, за доказ якої відповідає продукт. Wallet і підпис належать тобі, а спостереження є незалежним read-back: Ryntra не тримає ключ і просить wallet підписати, а не sign-and-send, тому твоє approval порівнюється з мережею. Відхилення записується як відхилення, а не округлюється до match.",
   "Open the first signed Solana Outcome Receipt and independently check what it proves.":
-    "Відкрийте першу підписану Solana Outcome Receipt і незалежно перевірте, що саме вона доводить.",
+    "Відкрий першу підписану Solana Outcome Receipt і незалежно перевір, що саме вона доводить.",
   "M1B produced the first owner-signed Solana Mainnet Outcome Receipt. Its exact 0.5 USDC movement and ATA creation match two independent RPC reads; the immutable receipt remains DEVIATION_RECORDED because its issued fee split and expected program set were incomplete, and the public verifier returns valid integrity and issuer signature.":
     "M1B створив першу owner-signed Solana Mainnet Outcome Receipt. Точний рух 0.5 USDC і створення ATA збігаються у двох незалежних RPC-read; незмінна receipt лишається DEVIATION_RECORDED через неповний поділ fee та expected program set, а public verifier підтверджує integrity й issuer signature.",
   "The signed Outcome Receipt of the ATA-create canary, immutable JSON download, explorer proof, unified public verifier and the Bridge Receipt verifier.":
@@ -1793,7 +1884,7 @@ export const SOLANA_UK_TEXT: Readonly<Record<string, string>> = {
   "None for the kit — it shipped public. A registry release is its own separate operator decision.":
     "Для kit gate немає — його опубліковано. Реліз у registry потребує окремого рішення оператора.",
   "The same evidence, callable from your own code and readable by an assistant that cannot act on it.":
-    "Ті самі докази, доступні з вашого коду й читабельні асистентом, який не може діяти.",
+    "Ті самі докази, доступні з твого коду й читабельні асистентом, який не може діяти.",
   "`inspect_solana_mint`, `preflight_solana_action`, `verify_solana_receipt` — read tools only. An assistant may explain, formalize, compare and review; it never supplies a missing fact, decides a policy, authorizes, signs or executes.":
     "`inspect_solana_mint`, `preflight_solana_action`, `verify_solana_receipt` — лише read tools. Асистент може пояснювати, формалізувати, порівнювати й перевіряти; він не вигадує відсутній факт, не визначає політику, не авторизує, не підписує й не виконує.",
   "The whole kit, public and Apache-2.0 at `ryntra-io/ryntra-solana-evidence`: the typed SDK, the local stdio MCP server, the CLI, the four schemas and a green verify workflow. It holds no key and has no signing path — that is a property of the kit, not a gap in it.":
@@ -1895,14 +1986,14 @@ export const SOLANA_UK_TEXT: Readonly<Record<string, string>> = {
   "What an extension is": "Що таке extension",
   "What counts as an identity": "Що вважається ідентичністю",
   "What it is": "Що це",
-  "What the issuer can do to what you hold": "Що емітент може зробити з вашими активами",
+  "What the issuer can do to what you hold": "Що емітент може зробити з твоїми активами",
   "What this mint structurally is, who controls it, and what is not known — every field was read from the chain this visit and carries its claim type.":
     "Структура mint, хто ним керує та що невідомо: кожне поле прочитано з chain під час цього візиту й має позначений тип твердження.",
   "What we do not know": "Чого ми не знаємо",
   "Where these powers come from": "Звідки походять ці повноваження",
   "Why supply is stated twice": "Чому пропозицію вказано двічі",
   "Native SOL, traded through its SPL wrapper — the swap wraps and unwraps around the trade, and the balance shown is your native SOL. No mint authority":
-    "Нативний SOL, торгується через свій SPL wrapper — swap загортає і розгортає його навколо угоди, а показаний баланс є вашим нативним SOL. Без mint authority",
+    "Нативний SOL, торгується через свій SPL wrapper — swap загортає і розгортає його навколо угоди, а показаний баланс є твоїм нативним SOL. Без mint authority",
   "decimal places": "десяткових знаків",
   "observed": "спостережено",
   "open": "відкрито",
@@ -1976,7 +2067,7 @@ export const SOLANA_UK_TEXT: Readonly<Record<string, string>> = {
   "Anyone opening it gets a fresh order — the link shares the question, not this answer.":
     "Кожен, хто відкриє посилання, отримає новий order: посилання передає запит, а не цю відповідь.",
   "Asking again is a new quote, not a retry of this one — reload to re-ask.":
-    "Повторний запит створює нове котирування, а не повторює це; перезавантажте сторінку, щоб запитати знову.",
+    "Повторний запит створює нове котирування, а не повторює це; перезавантаж сторінку, щоб запитати знову.",
   "Asks Jupiter for a live mainnet quote, read-only, and judges what receiving the output token would subject any holder to. Both mints are re-read from the chain on every quote. Nothing here can sign or execute, and no wallet is asked for.":
     "Запитує в Jupiter живе котирування mainnet лише для читання та оцінює наслідки отримання вихідного token для будь-якого власника. Обидва mints повторно читаються з chain для кожного котирування. Тут нічого не підписує, не виконує й не запитує wallet.",
   "Base signature fee": "Базова fee підпису",
@@ -1984,13 +2075,13 @@ export const SOLANA_UK_TEXT: Readonly<Record<string, string>> = {
     "Для обох сторін потрібна адреса mint із 32–44 символів base58. Нічого не прочитано.",
   "Checking the Review window": "Перевіряється вікно Review",
   "Choose keyed production or the explicitly labelled keyless fallback.":
-    "Оберіть production із ключем або явно позначений fallback без ключа.",
+    "Обери production із ключем або явно позначений fallback без ключа.",
   "Chosen route": "Обраний маршрут",
   "Coverage": "Покриття",
   "Default pair": "Типова пара",
   "Each exercises a different consequence: a plain large-cap pair, a pair whose output carries a permanent delegate the review policy refuses, and a long-tail pair. What they are, never whether they are good.":
     "Кожна пара перевіряє інший наслідок: звичайну large-cap пару, пару з permanent delegate у вихідному активі, яку policy відхиляє, і long-tail пару. Описується, чим вони є, а не чи вони добрі.",
-  "Enter an amount to quote.": "Введіть суму для котирування.",
+  "Enter an amount to quote.": "Введи суму для котирування.",
   "Estimated receive": "Орієнтовне отримання",
   "Evaluated": "Оцінено",
   "Explicit keyless degraded": "Явний degraded-доступ без ключа",
@@ -2009,7 +2100,7 @@ export const SOLANA_UK_TEXT: Readonly<Record<string, string>> = {
   "Keyed production": "Production із ключем",
   "Keyless degraded": "Degraded без ключа",
   "Keyless degraded access · Review unavailable. Choose production and ask for a new quote.":
-    "Degraded-доступ без ключа · Review недоступний. Оберіть production і запросіть нове котирування.",
+    "Degraded-доступ без ключа · Review недоступний. Обери production і запроси нове котирування.",
   "Lower rate limit · not production access · Review unavailable.":
     "Нижчий rate limit · не production-доступ · Review недоступний.",
   "Managed order": "Керований order",
@@ -2022,7 +2113,7 @@ export const SOLANA_UK_TEXT: Readonly<Record<string, string>> = {
   "Not quoted": "Не котирується",
   "Not separately quoted by `/order`.": "Не котирується окремо в `/order`.",
   "Opened without a pair, this page quotes the first of the three below so the numbers and the verdict are on screen rather than behind a button. It is a default, not a recommendation. Change either side, or pick another pair, and the quote is re-read.":
-    "Якщо сторінку відкрито без пари, вона котирує першу з трьох нижче, щоб числа й verdict були одразу на екрані. Це типове значення, а не рекомендація. Змініть будь-яку сторону або оберіть іншу пару — котирування буде прочитано знову.",
+    "Якщо сторінку відкрито без пари, вона котирує першу з трьох нижче, щоб числа й verdict були одразу на екрані. Це типове значення, а не рекомендація. Зміни будь-яку сторону або обери іншу пару — котирування буде прочитано знову.",
   "Order reference": "Reference order",
   "Other pairs": "Інші пари",
   "Passports": "Паспорти",
@@ -2044,7 +2135,7 @@ export const SOLANA_UK_TEXT: Readonly<Record<string, string>> = {
   "Source split": "Розподіл джерел",
   "Balance": "Баланс",
   "Allowed": "Дозволено",
-  "Read over the mint you would receive, this visit. The engine has no word for safe.": "Прочитано щодо мінта, який ви отримаєте, цього візиту. Рушій не має слова «безпечно».",
+  "Read over the mint you would receive, this visit. The engine has no word for safe.": "Прочитано щодо мінта, який ти отримаєш, цього візиту. Рушій не має слова «безпечно».",
   "Every rule and its evidence": "Усі правила та їхні докази",
   "Use the full spendable balance": "Взяти весь доступний баланс",
   "Shares are provider-reported per leg and do not total 100%, so these legs are sequential rather than a parallel split. No bar is drawn for a total Ryntra cannot verify.": "Частки надає провайдер окремо для кожної гілки, і разом вони не дають 100%: отже гілки послідовні, а не паралельний розподіл. Смугу не намальовано, бо Ryntra не може підтвердити цю суму.",
@@ -2070,7 +2161,7 @@ export const SOLANA_UK_TEXT: Readonly<Record<string, string>> = {
   "Swap canary · operator signature only": "Swap canary · лише підпис оператора",
   "real funds": "реальні кошти",
   "Connect the owner wallet to ask for an executable order. Nothing signs without your visible confirmation.":
-    "Підключіть гаманець власника, щоб запросити виконуваний order. Ніщо не підписується без вашого видимого підтвердження.",
+    "Підключи гаманець власника, щоб запросити виконуваний order. Ніщо не підписується без твого видимого підтвердження.",
   "No Wallet Standard wallet is registered in this browser.":
     "У цьому браузері не зареєстровано жодного гаманця Wallet Standard.",
   "Swap direction": "Напрям swap",
@@ -2089,15 +2180,36 @@ export const SOLANA_UK_TEXT: Readonly<Record<string, string>> = {
   "Ask for a fresh order": "Запросити новий ордер",
   "Swapped": "Обміняно",
   "Ready to sign": "Готово до підпису",
-  "You receive at least": "Ви отримаєте щонайменше",
+  "You receive at least": "Ти отримаєш щонайменше",
   "Network cost": "Вартість мережі",
   "These exact bytes were decoded, simulated and proved to move only what is shown here. Your wallet signs them next.":
-    "Саме ці bytes розібрано, симульовано й доведено, що вони рухають лише показане тут. Далі їх підписує ваш wallet.",
+    "Саме ці bytes розібрано, симульовано й доведено, що вони рухають лише показане тут. Далі їх підписує твій wallet.",
   "Exact bytes checked": "Перевірені точні bytes",
+  "The Review was built again — its bytes live about 30 seconds. Check it and sign.":
+    "Review зібрано наново — його bytes живуть близько 30 секунд. Перевір і підпиши.",
+  "The transaction was built again — its bytes live about 30 seconds. Nothing left your wallet; check the fresh Review and sign.":
+    "Транзакцію зібрано наново — її bytes живуть близько 30 секунд. Нічого не пішло з гаманця; перевір свіжий Review і підпиши.",
+  "Your wallet answered after these bytes stopped living (about 30 seconds). Nothing was sent. Here is a fresh Review — check it and sign.":
+    "Гаманець відповів пізніше, ніж живуть ці bytes (близько 30 секунд). Нічого не надіслано. Ось свіжий Review — перевір і підпиши.",
+  "Your wallet answered after the price stopped holding (about 30 seconds). Nothing was sent. Check the new figures and confirm.":
+    "Гаманець відповів пізніше, ніж тримається ціна (близько 30 секунд). Нічого не надіслано. Перевір нові цифри й підтверди.",
+  "The price moved past what you reviewed. Nothing was sent. Check the new figures and confirm.":
+    "Ціна вийшла за межі переглянутого. Нічого не надіслано. Перевір нові цифри й підтверди.",
+  "A newer Review for this wallet replaced this one. Nothing was sent. Get a new quote to continue here.":
+    "Новіший перегляд для цього гаманця замінив цей. Нічого не надіслано. Онови котирування, щоб продовжити тут.",
+  "The price moved while you read. The figures above are new — check them before you confirm.":
+    "Ціна змінилась під час читання. Цифри вище — нові, перевір їх перед підтвердженням.",
+  "Check the new figures": "Перевір нові цифри",
+  "The price was refreshed while you read. The figures above are the ones your wallet will show.":
+    "Ціну оновлено під час читання. Цифри вище — ті, що покаже гаманець.",
+  "Price refreshed at signing. The figures above are the ones your wallet shows.":
+    "Ціну оновлено в мить підпису. Цифри вище — ті, що показує гаманець.",
+  "The bytes were built again at the moment of signing, and a figure changed. Check the fresh Review and sign.":
+    "У мить підпису bytes зібрано наново, і одна з цифр змінилась. Перевір свіжий Review і підпиши.",
   "Your wallet did not answer before this Review's window closed. Nothing was signed or sent; ask for a fresh order.":
-    "Ваш wallet не відповів до закриття вікна цього Review. Нічого не підписано й не надіслано; запросіть новий ордер.",
+    "Твій wallet не відповів до закриття вікна цього Review. Нічого не підписано й не надіслано; запроси новий ордер.",
   "The Review window closed while your wallet was open. That signature was never sent and cannot be — ask for a fresh order and sign that one.":
-    "Вікно Review закрилося, поки ваш wallet був відкритий. Той підпис не надсилали й надіслати не можна — запросіть новий ордер і підпишіть його.",
+    "Вікно Review закрилося, поки твій wallet був відкритий. Той підпис не надсилали й надіслати не можна — запроси новий ордер і підпиши його.",
   "An earlier Review for this wallet is still open. It is released as soon as its bytes can no longer reach the chain, and a fresh order follows.":
     "Попередній Review для цього гаманця ще відкритий. Він звільняється, щойно його bytes більше не зможуть потрапити в chain, і одразу готується новий ордер.",
   "This quote's window closed. A stale quote never reaches a signature, so the next one is asked for fresh.":
@@ -2106,11 +2218,11 @@ export const SOLANA_UK_TEXT: Readonly<Record<string, string>> = {
     "Встановлюється на точному ордері, за власною оцінкою slippage майданчика",
   "Priced on the exact order": "Оцінюється на точному ордері",
   "Your wallet returned a different transaction than the one reviewed. Nothing was submitted, and it could not be: this venue's execute lane accepts only the exact order it built.":
-    "Ваш wallet повернув іншу транзакцію, ніж переглянута. Нічого не надіслано — і не могло бути: lane виконання цього майданчика приймає лише той самий ордер, який він побудував.",
+    "Твій wallet повернув іншу транзакцію, ніж переглянута. Нічого не надіслано — і не могло бути: lane виконання цього майданчика приймає лише той самий ордер, який він побудував.",
   "The transaction you approved can still reach the chain, so a second one cannot be prepared yet. This clears itself when the blockhash expires — try again in a moment.":
-    "Транзакція, яку ви підтвердили, ще може потрапити в chain, тож другу поки не можна підготувати. Це минає само, щойно blockhash застаріє — спробуйте за мить.",
+    "Підтверджена тобою транзакція ще може потрапити в chain, тож другу поки не можна підготувати. Це минає само, щойно blockhash застаріє — спробуй за мить.",
   "Your wallet did not return the reviewed transaction, so nothing was submitted. A fresh order is prepared as soon as the one you approved can no longer reach the chain.":
-    "Ваш wallet не повернув переглянуту транзакцію, тож нічого не надіслано. Новий ордер готується, щойно та транзакція, яку ви підтвердили, більше не зможе потрапити в chain.",
+    "Твій wallet не повернув переглянуту транзакцію, тож нічого не надіслано. Новий ордер готується, щойно підтверджена тобою транзакція більше не зможе потрапити в chain.",
   "This Review's window closed before it was signed. Nothing was submitted; the next one starts clean.":
     "Вікно цього Review закрилося до підпису. Нічого не надіслано; наступний починається з чистого аркуша.",
   "Signed attempt recorded": "Підписану спробу записано",
@@ -2119,9 +2231,9 @@ export const SOLANA_UK_TEXT: Readonly<Record<string, string>> = {
   "Search by name, ticker or address": "Пошук за назвою, тікером або адресою",
   "Unverified": "Не підтверджено",
   "These are search results, not checked or recommended assets. Several tokens can share a ticker — match the address.":
-    "Це результати пошуку, а не перевірені чи рекомендовані активи. Кілька токенів можуть мати однаковий тікер — звіряйте адресу.",
+    "Це результати пошуку, а не перевірені чи рекомендовані активи. Кілька токенів можуть мати однаковий тікер — звіряй адресу.",
   "Start typing to search every mainnet asset, or pick one below.":
-    "Почніть вводити, щоб шукати серед усіх активів mainnet, або оберіть один зі списку нижче.",
+    "Почни вводити, щоб шукати серед усіх активів mainnet, або обери один зі списку нижче.",
   "Named by Jupiter's catalogue. Verified and flagged are its claims, not Ryntra's — and every mint you pick is re-read from the chain before any quote.":
     "Назви з каталогу Jupiter. «Перевірено» і «Позначено» — це його твердження, не Ryntra; кожен обраний mint перечитується з chain перед будь-яким quote.",
   "Verified": "Перевірено",
@@ -2131,11 +2243,11 @@ export const SOLANA_UK_TEXT: Readonly<Record<string, string>> = {
   "Reading the signature…": "Читання підпису…",
   "Owner canary attempt recorded": "Спробу owner canary зафіксовано",
   "First build and inspect the executable order. The wallet opens only after you review that exact order on this card.":
-    "Спочатку побудуйте й перевірте виконуваний order. Гаманець відкриється лише після перегляду саме цього order на картці.",
+    "Спочатку побудуй і перевір виконуваний order. Гаманець відкриється лише після перегляду саме цього order на картці.",
   "This second action approves the exact order shown above. One submit; recovery only by signature.":
     "Ця друга дія схвалює точний order, показаний вище. Один submit; відновлення лише за підписом.",
   "This signed attempt locks the card. Recover or verify by its signature; never create a second order from an unknown result.":
-    "Ця підписана спроба блокує картку. Відновлюйте або перевіряйте за її підписом; ніколи не створюйте другий order з невідомого результату.",
+    "Ця підписана спроба блокує картку. Відновлюй або перевіряй за її підписом; ніколи не створюй другий order з невідомого результату.",
   "This signed attempt locks the card. Recovery performs independent reads only; it never submits transaction bytes.":
     "Ця підписана спроба блокує картку. Recovery виконує лише незалежні читання й ніколи не надсилає байти транзакції.",
   "The server's durable owner lock holds the exact proof. Recovery performs independent reads only; it never submits transaction bytes.":
@@ -2147,13 +2259,13 @@ export const SOLANA_UK_TEXT: Readonly<Record<string, string>> = {
   "The wallet signature could not be recorded. Nothing was submitted.":
     "Підпис гаманця не вдалося зафіксувати. Нічого не було надіслано.",
   "The execute answer is unknown. Recover only by this signature; never request or sign another order.":
-    "Відповідь execute невідома. Відновлюйте лише за цим підписом; ніколи не запитуйте й не підписуйте інший order.",
+    "Відповідь execute невідома. Відновлюй лише за цим підписом; ніколи не запитуй і не підписуй інший order.",
   "The independent operator has not observed this signature yet.":
     "Незалежний оператор ще не спостерігав цей підпис.",
   "The durable ledger already records this Receipt hash; no transaction was submitted again.":
     "Durable ledger уже зберігає hash цієї Receipt; жодну транзакцію повторно не надсилали.",
   "A signed swap attempt is already recorded. Recover or verify it by signature before any new order.":
-    "Підписану спробу swap уже зафіксовано. Відновіть або перевірте її за підписом до будь-якого нового order.",
+    "Підписану спробу swap уже зафіксовано. Віднови або перевір її за підписом до будь-якого нового order.",
   "Quoted out": "Котирований вихід",
   "Price impact": "Вплив на ціну",
   "Review window": "Вікно Review",
@@ -2167,11 +2279,11 @@ export const SOLANA_UK_TEXT: Readonly<Record<string, string>> = {
   "Executing once…": "Виконання, один раз…",
   "Sign in the wallet · execute once": "Підписати в гаманці · виконати один раз",
   "Your visible wallet confirmation is the recorded human approval. One submit; recovery only by signature.":
-    "Ваше видиме підтвердження в гаманці — це зафіксоване людське схвалення. Один submit; відновлення лише за підписом.",
+    "Твоє видиме підтвердження в гаманці — це зафіксоване людське схвалення. Один submit; відновлення лише за підписом.",
   "The order expired before a signature. Ask for a fresh executable order; nothing was signed or submitted.":
-    "Order прострочився до підпису. Запросіть свіжий виконуваний order; ніщо не було підписано чи надіслано.",
+    "Order прострочився до підпису. Запроси свіжий виконуваний order; ніщо не було підписано чи надіслано.",
   "The wallet returned different bytes than the reviewed message. Nothing was submitted; ask for a fresh order.":
-    "Гаманець повернув інші байти, ніж перевірене повідомлення. Ніщо не було надіслано; запросіть свіжий order.",
+    "Гаманець повернув інші байти, ніж перевірене повідомлення. Ніщо не було надіслано; запроси свіжий order.",
   "Open in explorer": "Відкрити в explorer",
   "Open verifier": "Відкрити verifier",
   "The receipt preserves a reconciliation deviation":
@@ -2206,9 +2318,9 @@ export const SOLANA_UK_TEXT: Readonly<Record<string, string>> = {
   "Whose policy this is": "Чия це policy",
   "Why execution is a separate console": "Чому виконання — окрема консоль",
   "Why these three": "Чому саме ці три",
-  "You pay": "Ви сплачуєте",
-  "You pay (mint)": "Ви сплачуєте (mint)",
-  "You receive (mint)": "Ви отримуєте (mint)",
+  "You pay": "Ти платиш",
+  "You pay (mint)": "Ти сплачуєш (mint)",
+  "You receive (mint)": "Ти отримуєш (mint)",
   "`/order` is the managed Meta-Aggregator path. The quote request asks without taker, payer, referral, custom slippage or excluded routers, so it receives quote evidence and no transaction. `/build` is typed for the later allowlist path but has no network caller.":
     "`/order` є керованим шляхом Meta-Aggregator. Запит котирування йде без taker, payer, referral, custom slippage чи excluded routers, тому отримує evidence котирування без транзакції. `/build` типізовано для пізнішого allowlist-шляху, але він не має network caller.",
   "asset transfer fee": "transfer fee активу",
@@ -2226,12 +2338,12 @@ export const SOLANA_UK_TEXT: Readonly<Record<string, string>> = {
   "NO KNOWN BLOCKER": "НЕМАЄ ВІДОМОГО БЛОКЕРА",
   "Address": "Адреса",
   "An authorization is open in your wallet. Nothing proceeds until you answer it.":
-    "У вашому wallet відкрито запит на авторизацію. Нічого не продовжиться, доки ви не відповісте.",
-  "Choose a wallet": "Оберіть wallet",
-  "Connect": "Під'єднати",
+    "У твоєму гаманці відкрито запит на авторизацію. Нічого не продовжиться, доки ти не відповіси.",
+  "Choose a wallet": "Обери гаманець",
+  "Connect": "Підключити",
   "Connecting only reads your wallet's balances. Nothing is signed until you approve the exact transaction.":
-    "Підключення лише читає баланси гаманця. Нічого не підписується, доки ви не схвалите саме цю транзакцію.",
-  "Connecting…": "Під'єднуємо…",
+    "Підключення лише читає баланси гаманця. Нічого не підписується, доки ти не схвалиш саме цю транзакцію.",
+  "Connecting…": "Підключаємо…",
   "Connection": "Підключення",
   "Copied": "Скопійовано",
   "Copy address": "Скопіювати адресу",
@@ -2239,24 +2351,31 @@ export const SOLANA_UK_TEXT: Readonly<Record<string, string>> = {
   "Mainnet": "Мейннет",
   "Manage connections": "Керувати підключеннями",
   "No SPL or Token-2022 balance on this address.": "На цій адресі немає balance SPL або Token-2022.",
-  "No Solana wallet detected": "Гаманець Solana не виявлено",
   /* A browser with no wallet at all, and the way on. */
   "No wallet in this browser": "У цьому браузері немає гаманця",
   "On a phone, Ryntra opens inside your wallet app.": "На телефоні Ryntra відкривається всередині застосунку гаманця.",
-  "Install Phantom, Solflare or Backpack, then reload this page.": "Встановіть Phantom, Solflare або Backpack і оновіть сторінку.",
+  "Install Phantom, Solflare or Backpack, then reload this page.": "Встанови Phantom, Solflare або Backpack і онови сторінку.",
+  /* B14: the header's panel with no wallet in the browser. */
+  "Open in Solflare": "Відкрити в Solflare",
+  "On a Seeker? Connect with Seeker": "Маєш Seeker? Підключи через Seeker",
+  "Seeker didn't answer. This button opens the wallet on a Seeker phone; on another phone, open Ryntra in Phantom or Solflare.":
+    "Seeker не відповів. Ця кнопка відкриває гаманець на телефоні Seeker; на іншому телефоні відкрий Ryntra у Phantom чи Solflare.",
+  "Install Solflare": "Встановити Solflare",
+  "Install Backpack": "Встановити Backpack",
+  "Installed already? Reload the page": "Уже встановлено? Онови сторінку",
   "Open in Phantom": "Відкрити в Phantom",
   "Install Phantom": "Встановити Phantom",
   /* «Простий»'s empty Portfolio: a guest, and a wallet with nothing yet. */
-  "Connect a wallet — and see what you hold": "Під'єднай гаманець — і побач, що в тебе є",
+  "Connect a wallet — your assets and positions will be here.": "Підключи гаманець — тут будуть твої активи й позиції.",
   "Top up — and make your first buy.": "Поповни — і зроби першу купівлю.",
   "Top up": "Поповнити",
-  "Take your time. This review refreshes itself in": "Читайте спокійно. Цей огляд оновить себе через",
+  "Take your time. This review refreshes itself in": "Читай спокійно. Цей огляд оновить себе через",
   "rebuilding": "перебудовуємо",
   "The money arrived on Base.": "Гроші прийшли на Base.",
-  "Base has accepted this transfer — the message is spent, so the money is there. The transaction that did it was not found in the range read, because anyone may relay it. Widen the search or read the recipient's balance on Base.": "Base прийняв цей переказ — повідомлення витрачено, отже гроші там. Транзакцію, яка це зробила, не знайдено в прочитаному діапазоні, бо відправити її міг будь-хто. Розширте пошук або прочитайте баланс отримувача на Base.",
+  "Base has accepted this transfer — the message is spent, so the money is there. The transaction that did it was not found in the range read, because anyone may relay it. Widen the search or read the recipient's balance on Base.": "Base прийняв цей переказ — повідомлення витрачено, отже гроші там. Транзакцію, яка це зробила, не знайдено в прочитаному діапазоні, бо відправити її міг будь-хто. Розшир пошук або прочитай баланс отримувача на Base.",
   "Base has not received this transfer yet. Nothing is lost; the message is still waiting to be used.": "Base ще не отримав цей переказ. Нічого не втрачено, повідомлення чекає на використання.",
   "Base could not be read just now. Nothing changed on either chain — this is a read, and it can be repeated.": "Base зараз не вдалося прочитати. В обох мережах нічого не змінилось — це читання, його можна повторити.",
-  "The answer from Base could not be understood, so nothing is claimed about where the money is. Try the read again.": "Відповідь Base не вдалося зрозуміти, тому про місцезнаходження грошей нічого не стверджується. Спробуйте прочитати ще раз.",
+  "The answer from Base could not be understood, so nothing is claimed about where the money is. Try the read again.": "Відповідь Base не вдалося зрозуміти, тому про місцезнаходження грошей нічого не стверджується. Спробуй прочитати ще раз.",
   "Base returned a state this page does not recognise, so nothing is claimed about where the money is.": "Base повернув стан, якого ця сторінка не знає, тому про місцезнаходження грошей нічого не стверджується.",
   "Speed and fees": "Швидкість і комісії",
   "chosen": "обрано",
@@ -2266,12 +2385,12 @@ export const SOLANA_UK_TEXT: Readonly<Record<string, string>> = {
   "Circle did not answer for its fee tiers, so only the chosen speed above is known.": "Circle не відповів про свої тарифи, тому відома лише обрана швидкість вище.",
   "Fast allowance left at Circle": "Залишок ліміту Fast у Circle",
   "Cost on Base": "Вартість на Base",
-  "Receiving is a second transaction you send on Base and pay for in ETH. Its gas is read at that step, so it is not part of the total above.": "Отримання це друга транзакція, яку ви надсилаєте на Base і оплачуєте в ETH. Її газ читається на тому кроці, тому він не входить у суму вище.",
+  "Receiving is a second transaction you send on Base and pay for in ETH. Its gas is read at that step, so it is not part of the total above.": "Отримання це друга транзакція, яку ти надсилаєш на Base і оплачуєш в ETH. Її газ читається на тому кроці, тому він не входить у суму вище.",
   "No mainnet endpoint answered, so balances are unknown rather than zero.":
     "Жоден mainnet endpoint не відповів, тому balances невідомі, а не нульові.",
   "Not connected": "Не підключено",
   "Open the wallet extension and answer the request waiting there. Nothing new can be sent until that one is closed.":
-    "Відкрийте extension wallet і дайте відповідь на запит, що очікує там. Новий запит не можна надіслати, доки цей не закрито.",
+    "Відкрий extension wallet і дай відповідь на запит, що очікує там. Новий запит не можна надіслати, доки цей не закрито.",
   "Prove ownership": "Підтверджувати володіння",
   "Read balances": "Читати balances",
   "Read from": "Прочитано з",
@@ -2281,7 +2400,7 @@ export const SOLANA_UK_TEXT: Readonly<Record<string, string>> = {
   "Solana Mainnet": "Solana Mainnet",
   "Switch network": "Змінити мережу",
   "Switch to": "Перейти на",
-  "Switch to continue.": "Змініть мережу, щоб продовжити.",
+  "Switch to continue.": "Зміни мережу, щоб продовжити.",
   "The wallet did not connect": "Wallet не підключився",
   "The wallet refused": "Wallet відхилив запит",
   "This connection can": "Це підключення може",
@@ -2290,13 +2409,19 @@ export const SOLANA_UK_TEXT: Readonly<Record<string, string>> = {
   "Unavailable": "Недоступно",
   "Unknown": "Невідомо",
   "View on explorer": "Відкрити в explorer",
-  "Waiting for you": "Очікуємо на вас",
+  "Waiting for you": "Очікуємо на тебе",
   "Waiting…": "Очікування…",
   "Wallet": "Гаманець",
-  "Connect your wallet to send": "Підключіть гаманець, щоб надіслати",
+  "Pools": "Пули",
+  "In orders": "В ордерах",
+  "Phoenix collateral": "Застава Phoenix",
+  "Reading": "Читаємо",
+  "wallet today": "гаманця за день",
+  "Not everything answered: the value is at least this.": "Відповіло не все: вартість — щонайменше стільки.",
+  "Connect your wallet to send": "Підключи гаманець, щоб надіслати",
   "Connecting reads your balances. Nothing is signed until you approve the exact transfer in your wallet.":
-    "Підключення лише читає ваші баланси. Нічого не підписується, доки ви не підтвердите точний переказ у гаманці.",
-  "Your receipts": "Ваші квитанції",
+    "Підключення лише читає твої баланси. Нічого не підписується, доки ти не підтвердиш точний переказ у гаманці.",
+  "Your receipts": "Твої квитанції",
   "Receipts are the durable handoff after Send or Swap: what was authorized, what the chain recorded, how the two reconcile, and whether the signed artifact verifies.":
     "Квитанції — це довготривалий результат після Send або Swap: що було підтверджено, що записав ланцюг, як ці факти звіряються та чи проходить перевірку підписаний артефакт.",
   "Recorded receipt": "Зафіксована квитанція",
@@ -2308,14 +2433,14 @@ export const SOLANA_UK_TEXT: Readonly<Record<string, string>> = {
   "0.000005125 SOL platform": "0.000005125 SOL комісія платформи",
   "0.00001953 SOL network": "0.00001953 SOL комісія мережі",
   "Connect your wallet to see receipts saved in this browser.":
-    "Підключіть гаманець, щоб побачити квитанції, збережені в цьому браузері.",
+    "Підключи гаманець, щоб побачити квитанції, збережені в цьому браузері.",
   "Connecting only reads the receipt journal for that address.":
     "Підключення лише читає журнал квитанцій для цієї адреси.",
   "No receipts in this browser": "У цьому браузері квитанцій немає",
   "Completed Send and Swap receipts appear here after reconciliation.":
     "Квитанції завершених Send і Swap зʼявляються тут після звірки результату.",
   "This history stays in this browser. Download the signed JSON for a durable copy.":
-    "Ця історія зберігається лише в цьому браузері. Завантажте підписаний JSON для довготривалої копії.",
+    "Ця історія зберігається лише в цьому браузері. Завантаж підписаний JSON для довготривалої копії.",
   "Verification failed": "Не вдалося перевірити квитанцію",
   "The receipt could not be loaded.": "Не вдалося завантажити квитанцію.",
   "The provenance correction could not be loaded.": "Не вдалося завантажити виправлення походження.",
@@ -2345,7 +2470,7 @@ export const SOLANA_UK_TEXT: Readonly<Record<string, string>> = {
   "None. Swap is closed as a product; every later swap still requires a fresh route, an exact Review and the person's own visible wallet signature.":
     "Немає. Swap закрито як продукт; кожен наступний обмін і далі потребує свіжого маршруту, точного Review і власного видимого підпису людини в гаманці.",
   "Open signed Solana Outcome Receipts and independently check what each one proves.":
-    "Відкривайте підписані Solana Outcome Receipts і незалежно перевіряйте, що саме доводить кожна з них.",
+    "Відкривай підписані Solana Outcome Receipts і незалежно перевіряй, що саме доводить кожна з них.",
   "The swap canary is closed for its exact Swap action. The general Send canary and the bridge canary remain separate action-family gates.":
     "Swap canary закрито для його точної Swap-дії. Загальний Send canary і bridge canary залишаються окремими gates для своїх action families.",
   "Verifying…": "Перевіряємо…",
@@ -2411,7 +2536,7 @@ export const SOLANA_UK_TEXT: Readonly<Record<string, string>> = {
   "Phase B — the Solana RWA passport and the Pro view.":
     "Фаза B — паспорт RWA для Solana і вид Pro.",
   "Being told when something you hold changes, rather than finding out by opening a page.":
-    "Дізнаватися про зміну в тому, що ви тримаєте, а не відкривши сторінку.",
+    "Дізнаватися про зміну в тому, що ти тримаєш, а не відкривши сторінку.",
   "Alerts belong to Home, because the question is about a person's whole position and not one network's slice. What Solana owes is the projection: the events worth waking somebody for, and the freshness behind each one.":
     "Сповіщення належать Home, бо питання стоїть про цілу позицію людини, а не про зріз однієї мережі. Solana винна проєкцію: події, за які варто когось будити, і свіжість за кожною з них.",
   "A real Alerts surface, and it is Home's rather than Solana's: /app/alerts renders over lib/home/alerts/channels.ts with routing and delivery already built.":
@@ -2448,8 +2573,8 @@ export const SOLANA_UK_TEXT: Readonly<Record<string, string>> = {
     "Пошук по майданчиках, де одне питання оцінене поруч; позиція, відкрита й закрита через Review з власним підписом людини; її результат в Історії; сигнали прогнозів поряд із ринками, яких вони стосуються. Деталі прогнозу живуть усередині сторінки і ніколи не стають окремим рядком.",
   "A visible locked page at /app/predictions that states what it will own. No market, odd, balance or trading action is shown.":
     "Видима заблокована сторінка /app/predictions, яка каже, чим володітиме. Жодного ринку, коефіцієнта, балансу чи торгової дії не показано.",
-  "The aggregator integration: market discovery, pricing, order construction, settlement and the signals. Partner/API access has been requested and is pending.":
-    "Інтеграція агрегатора: пошук ринків, ціни, побудова ордера, розрахунок і сигнали. Партнерський/API-доступ запитано, очікуємо.",
+  "The aggregator integration: market discovery, pricing, order construction, settlement and the model's own notes. Partner/API access has been requested and is pending.":
+    "Інтеграція агрегатора: пошук ринків, ціни, побудова ордера, розрахунок і нотатки моделі. Партнерський/API-доступ запитано, очікуємо.",
   "A separate surface only after its own data, custody, risk and canary gate — and, before that, the aggregator's partner/API access, requested and pending.":
     "Окрема поверхня лише після власного гейта даних, кастодії, ризику й canary — а перед тим партнерський/API-доступ агрегатора, який запитано й очікується.",
   "Predictions": "Прогнози",
@@ -2492,7 +2617,7 @@ export const SOLANA_UK_TEXT: Readonly<Record<string, string>> = {
   "Phase B — Payments, subscriptions, x402 and agents, as Business Tools rather than a consumer hero.":
     "Фаза B — платежі, підписки, x402 і агенти, як Business Tools, а не як головна користувацька обіцянка.",
   "A recurring charge you can see, cap and stop.":
-    "Регулярне списання, яке ви бачите, можете обмежити й зупинити.",
+    "Регулярне списання, яке ти бачиш, можеш обмежити й зупинити.",
   "An allowance is a promise about the future, so the whole feature is the revoke path and the cap — not the charge. The shape is fixed: a delegate with a cap, a cadence, an expiry, and expected draws recorded against actual ones.":
     "Дозвіл на списання — це обіцянка про майбутнє, тому вся функція це шлях відкликання і межа, а не саме списання. Форма зафіксована: делегат з межею, періодичністю, строком дії та очікуваними списаннями, записаними проти фактичних.",
   "Nothing is built in the Solana lane. x402 and B402 appear nowhere under lib/solana or app/solana, and there is no allowance machinery.":
@@ -2502,7 +2627,7 @@ export const SOLANA_UK_TEXT: Readonly<Record<string, string>> = {
   "Phase B — the same work as Payments. It must implement the allowance shape described above.":
     "Фаза B — та сама робота, що й платежі. Вона мусить реалізувати описану вище форму дозволу.",
   "Something that acts while you are not looking — which is why it is a policy question, not a feature.":
-    "Те, що діє, коли ви не дивитеся, — і саме тому це питання політики, а не функція.",
+    "Те, що діє, коли ти не дивишся, — і саме тому це питання політики, а не функція.",
   "The ladder is fixed: watch, then paper, then prepare, and only then anything guarded. Agent Control is the product that would govern the last rung, and it currently pins execution off and human authorization on by contract.":
     "Драбина зафіксована: спостерігати, потім папір, потім підготовка — і лише тоді щось під охороною. Останнім щаблем керував би Agent Control, а він контрактом тримає виконання вимкненим і людську авторизацію обов'язковою.",
   "Nothing is built. There is no scheduler, recurring action or unattended execution path in this repository, and Agent Control is structurally incapable of executing: its policy contract pins execution disabled and human authorization required.":
@@ -2522,30 +2647,30 @@ export const SOLANA_UK_TEXT: Readonly<Record<string, string>> = {
   "No work is planned for the surface yet. The contract — the provider list, the four states and the degraded-read discipline — is fixed, and the engine already satisfies it.":
     "Для поверхні поки не заплановано жодної роботи. Контракт — список провайдерів, чотири стани й дисципліна деградованого читання — зафіксований, і рушій його вже задовольняє.",
   "A real, working thing today. Some of these only read; others move money, and always with your own wallet — the line beside the name says which.":
-    "Справжня робоча річ уже сьогодні. Одні лише читають, інші рухають гроші — і завжди вашим власним гаманцем; рядок біля назви каже, що саме.",
+    "Справжня робоча річ уже сьогодні. Одні лише читають, інші рухають гроші — і завжди твоїм власним гаманцем; рядок біля назви каже, що саме.",
   "Move native USDC between Solana and Base through Circle CCTP V2, signed in your own wallet.":
-    "Переміщення нативного USDC між Solana і Base через Circle CCTP V2, підписане вашим власним гаманцем.",
+    "Переміщення нативного USDC між Solana і Base через Circle CCTP V2, підписане твоїм власним гаманцем.",
   "A burn on the source chain, Circle's attestation, a mint on the destination, and a Bridge Receipt that reconciles both sides from endpoints that did not build the transfer. Recovery is message-first, so a closed tab or a slow confirmation is a state you can resume from rather than a transfer you have lost.":
     "Спалення на вихідному ланцюзі, атестація Circle, карбування на цільовому і квитанція мосту, яка звіряє обидві сторони з ендпоінтів, що не будували цей переказ. Відновлення йде від повідомлення, тож закрита вкладка чи повільне підтвердження — це стан, з якого можна продовжити, а не втрачений переказ.",
   "The Solana to Base direction, for any amount your balance and the provider allow. One owner-signed transfer of 2 USDC is finalized and reconciled MATCHED on both chains, with a receipt the public verifier reads as valid.":
-    "Напрямок Solana → Base, на будь-яку суму, яку дозволяють ваш баланс і провайдер. Один переказ на 2 USDC, підписаний власником, фіналізовано і звірено як MATCHED на обох ланцюгах, із квитанцією, яку публічний верифікатор читає як дійсну.",
+    "Напрямок Solana → Base, на будь-яку суму, яку дозволяють твій баланс і провайдер. Один переказ на 2 USDC, підписаний власником, фіналізовано і звірено як MATCHED на обох ланцюгах, із квитанцією, яку публічний верифікатор читає як дійсну.",
   "The Base to Solana direction, provider-driven token and route discovery, and live provider minimums and maximums.":
     "Напрямок Base → Solana, визначення токенів і маршрутів із боку провайдера та живі мінімуми й максимуми провайдера.",
   "Waits on the reverse leg, which is a build, not a switch: an ERC-20 approve, a Base depositForBurn encoder, a Solana receiveMessage builder and a chain-tagged duplicate-burn claim.":
     "Чекає на зворотне плече — це збірка, а не перемикач: approve для ERC-20, кодувальник depositForBurn на Base, будівник receiveMessage на Solana і заявка проти подвійного спалення з позначкою ланцюга.",
-  "below the quote, above your minimum": "менше за котирування, вище за ваш мінімум",
+  "below the quote, above your minimum": "менше за котирування, вище за твій мінімум",
   "above the quote": "більше за котирування",
   "Observed": "Спостережено",
   "Not observed": "Не спостережено",
-  "Bridge receipt": "Квитанція мосту",
+  "Bridge receipt": "Квитанція переказу між мережами",
   "This route has reached a limit Ryntra keeps on its own transfers. Nothing has been sent and your funds are untouched.":
-    "Цей маршрут досяг ліміту, який Ryntra тримає на власні перекази. Нічого не надіслано, ваші кошти недоторкані.",
+    "Цей маршрут досяг ліміту, який Ryntra тримає на власні перекази. Нічого не надіслано, твої кошти недоторкані.",
   "Transfers on this route are paused right now. Nothing has been sent and your funds are untouched.":
-    "Перекази цим маршрутом зараз призупинені. Нічого не надіслано, ваші кошти недоторкані.",
+    "Перекази цим маршрутом зараз призупинені. Нічого не надіслано, твої кошти недоторкані.",
   "This transfer could not be checked against Ryntra's own limits just now, so it was not offered to your wallet.":
-    "Цей переказ зараз не вдалося звірити з власними лімітами Ryntra, тому його не запропоновано вашому гаманцю.",
+    "Цей переказ зараз не вдалося звірити з власними лімітами Ryntra, тому його не запропоновано твоєму гаманцю.",
   "This transfer needs one more check before it can be offered to your wallet.":
-    "Цей переказ потребує ще однієї перевірки, перш ніж його можна запропонувати вашому гаманцю.",
+    "Цей переказ потребує ще однієї перевірки, перш ніж його можна запропонувати твоєму гаманцю.",
   "This transfer needs a valid sending and receiving address and an amount inside the allowed range.":
     "Цей переказ потребує коректної адреси відправника й отримувача та суми в дозволених межах.",
   "Ryntra's own internal transfer limits do not apply here. They are recorded as evidence and decide nothing about this transfer.":
@@ -2559,7 +2684,7 @@ export const SOLANA_UK_TEXT: Readonly<Record<string, string>> = {
   "Deviation recorded": "Відхилення зафіксовано",
   "Failed": "Не виконано",
   "Wrong network": "Неправильна мережа",
-  "Your wallet is already asking": "Ваш wallet уже очікує відповіді",
+  "Your wallet is already asking": "Твій wallet уже очікує відповіді",
   "and": "і",
   "connected": "підключено",
   "connected to the wrong network": "підключено до неправильної мережі",
@@ -2568,7 +2693,7 @@ export const SOLANA_UK_TEXT: Readonly<Record<string, string>> = {
   "no wallet detected": "гаманець не виявлено",
   "not connected": "не підключено",
   "the wallet did not connect": "wallet не підключився",
-  "waiting for your authorization": "очікується ваша авторизація",
+  "waiting for your authorization": "очікується твоя авторизація",
   "ALLOW": "ДОЗВОЛИТИ",
   "Asset": "Актив",
   "BASE FEE UNKNOWN": "БАЗОВА FEE НЕВІДОМА",
@@ -2580,16 +2705,14 @@ export const SOLANA_UK_TEXT: Readonly<Record<string, string>> = {
   "CANARY NOT CLEAR": "CANARY НЕ ДОЗВОЛЕНО",
   "CONFIRMED": "ПІДТВЕРДЖЕНО",
   "Choose": "Обрати",
-  "Choose an asset first.": "Спочатку оберіть актив.",
-  "Choose an asset.": "Оберіть актив.",
+  "Choose an asset first.": "Спочатку обери актив.",
+  "Choose an asset.": "Обери актив.",
   "Confirmed": "Підтверджено",
-  "Connect a wallet from the control at the top right.":
-    "Підключіть wallet через контроль у правому верхньому куті.",
   "EXPIRED": "ПРОСТРОЧЕНО",
   "Enter a plain decimal amount — digits, and at most one point.":
-    "Введіть звичайну десяткову суму: лише цифри й не більше однієї крапки.",
-  "Enter a recipient address.": "Введіть адресу отримувача.",
-  "Enter an amount.": "Введіть суму.",
+    "Введи звичайну десяткову суму: лише цифри й не більше однієї крапки.",
+  "Enter a recipient address.": "Введи адресу отримувача.",
+  "Enter an amount.": "Введи суму.",
   "Close asset selector": "Закрити вибір активу",
   "FAIL": "ПОМИЛКА",
   "MATCHED": "ЗБІГАЄТЬСЯ",
@@ -2603,7 +2726,7 @@ export const SOLANA_UK_TEXT: Readonly<Record<string, string>> = {
   "PASS": "ПРОЙДЕНО",
   "PAUSE": "ПАУЗА",
   "POLICY NOT CLEAR": "POLICY НЕ ДОЗВОЛЯЄ",
-  "Preview to see fees and the exact payload.": "Створіть preview, щоб побачити fees і точний payload.",
+  "Preview to see fees and the exact payload.": "Створи preview, щоб побачити fees і точний payload.",
   "Preview transfer": "Перевірити переказ",
   "READY": "ГОТОВО",
   "RECEIPTED": "КВИТАНЦІЮ СТВОРЕНО",
@@ -2615,7 +2738,7 @@ export const SOLANA_UK_TEXT: Readonly<Record<string, string>> = {
   "This action is review-only. Mainnet signing is open only for the exact M1B ATA canary.":
     "Ця дія лишається review-only. Підпис у мейннеті відкрито лише для точного M1B ATA canary.",
   "This ATA canary is capped at 0.5 USDC.": "Цей ATA canary обмежено сумою 0.5 USDC.",
-  "Preview again after applying the canary limit.": "Після застосування ліміту створіть preview ще раз.",
+  "Preview again after applying the canary limit.": "Після застосування ліміту створи preview ще раз.",
   "Use 0.5 USDC": "Використати 0.5 USDC",
   "SOLANA MAINNET · real funds": "SOLANA MAINNET · реальні кошти",
   "Exact wallet": "Точний wallet",
@@ -2648,7 +2771,7 @@ export const SOLANA_UK_TEXT: Readonly<Record<string, string>> = {
   "The adopted wallet transaction did not match its exact Review.":
     "Прийнята транзакція wallet не збіглася зі своїм точним Review.",
   "The transaction window expired. Sign & send again; Ryntra will rebuild it.":
-    "Час транзакції минув. Натисніть підписати й надіслати ще раз — Ryntra перебудує її.",
+    "Час транзакції минув. Натисни підписати й надіслати ще раз — Ryntra перебудує її.",
   "The signature is not submitted again. Recovery starts from its cluster status.":
     "Підпис не надсилається повторно. Recovery починається зі статусу в cluster.",
   "To": "Кому",
@@ -2674,7 +2797,7 @@ export const SOLANA_UK_TEXT: Readonly<Record<string, string>> = {
   "to": "кому",
   "unknown mint": "невідомий mint",
   "unknown mints": "невідомих mints",
-  "your wallet": "вашому wallet",
+  "your wallet": "твоєму wallet",
   "CCTP lifecycle states": "Стани lifecycle CCTP",
   "domain": "домен",
   "threshold": "поріг",
@@ -2702,13 +2825,13 @@ export const SOLANA_UK_TEXT: Readonly<Record<string, string>> = {
     "Wallet повернув інші байти, ніж перевірене повідомлення. Нічого не надіслано.",
   "Swap": "Обмін",
   "This pair or amount is unavailable.": "Ця пара або сума зараз недоступна.",
-  "The quote expired. Get a new quote.": "Котирування застаріло. Оновіть його.",
+  "The quote expired. Get a new quote.": "Котирування застаріло. Онови його.",
   "Wallet approval was cancelled.": "Підтвердження в гаманці скасовано.",
-  "Jupiter is busy. Try again in a moment.": "Jupiter зайнятий. Спробуйте за мить.",
-  "Checking the previous swap. Try again in a moment.": "Перевіряємо попередній обмін. Спробуйте за мить.",
-  "Swap could not continue. Try again.": "Обмін не вдалося продовжити. Спробуйте ще раз.",
+  "Jupiter is busy. Try again in a moment.": "Jupiter зайнятий. Спробуй за мить.",
+  "Checking the previous swap. Try again in a moment.": "Перевіряємо попередній обмін. Спробуй за мить.",
+  "Swap could not continue. Try again.": "Обмін не вдалося продовжити. Спробуй ще раз.",
   "Both sides are the same asset. Change one of them.":
-    "З обох боків той самий актив. Змініть один із них.",
+    "З обох боків той самий актив. Зміни один із них.",
   "Checking transaction…": "Перевіряємо транзакцію…",
   "Check transaction": "Перевірити транзакцію",
   "Refreshing…": "Оновлюємо…",
@@ -2716,26 +2839,26 @@ export const SOLANA_UK_TEXT: Readonly<Record<string, string>> = {
   "Preparing swap…": "Готуємо обмін…",
   "Swapping…": "Обмінюємо…",
   "Finding a route…": "Шукаємо маршрут…",
-  "Try another pair": "Оберіть іншу пару",
+  "Try another pair": "Обери іншу пару",
   "Unavailable for this asset": "Недоступно для цього активу",
   "Refresh quote": "Оновити котирування",
   "Review swap": "Переглянути обмін",
   "Verify receipt": "Перевірити квитанцію",
   "Network fee estimate": "Орієнтовна комісія мережі",
   "Account reserve": "Резерв для рахунку",
-  "Review before confirming": "Перевірте перед підтвердженням",
+  "Review before confirming": "Перевір перед підтвердженням",
   "This asset needs extra review.": "Цей актив потребує додаткової перевірки.",
   "The price may move by more than 3%.": "Ціна може змінитися більш ніж на 3%.",
   "The quote and minimum received use different slippage.": "Котирування й мінімальна сума отримання використовують різний slippage.",
   "This swap may move the market price.": "Цей обмін може вплинути на ринкову ціну.",
   "USD value is unavailable.": "Оцінка в USD недоступна.",
-  "Review this swap carefully.": "Уважно перевірте цей обмін.",
-  "Swap Solana tokens through Jupiter.": "Обмінюйте токени Solana через Jupiter.",
+  "Review this swap carefully.": "Уважно перевір цей обмін.",
+  "Swap Solana tokens through Jupiter.": "Обмінюй токени Solana через Jupiter.",
   "Asset checks passed": "Перевірки активів пройдено",
   "No wallet detected": "Гаманець не виявлено",
-  "Connect wallet": "Під'єднати гаманець",
-  "Add SOL for the network fee": "Додайте SOL на комісію мережі",
-  "Enter an amount": "Введіть суму",
+  "Connect wallet": "Підключити гаманець",
+  "Add SOL for the network fee": "Додай SOL на комісію мережі",
+  "Enter an amount": "Введи суму",
   "Finding the best route…": "Шукаємо найкращий route…",
   "No quote": "Немає котирування",
   "Blocked by the review policy": "Заблоковано policy перевірки",
@@ -2745,11 +2868,11 @@ export const SOLANA_UK_TEXT: Readonly<Record<string, string>> = {
   "The first signature is bounded to USDC ↔ SOL, 2–5 USDC.":
     "Перший підпис обмежено парою USDC ↔ SOL на 2–5 USDC.",
   "Change the amount to ask for a fresh one; a stale quote never reaches a signature.":
-    "Змініть суму, щоб запитати свіже; застаріле котирування ніколи не доходить до підпису.",
+    "Зміни суму, щоб запитати свіже; застаріле котирування ніколи не доходить до підпису.",
   "Preparing the exact transaction…": "Готуємо точну транзакцію…",
   "Review in wallet & swap": "Перевірити у wallet і обміняти",
   "Your visible wallet confirmation is the authorization. One submit; recovery only by signature.":
-    "Вашим дозволом є видиме підтвердження у wallet. Одне надсилання; recovery лише за підписом.",
+    "Твоїм дозволом є видиме підтвердження у wallet. Одне надсилання; recovery лише за підписом.",
   "Solana mainnet": "Solana mainnet",
   "Sell": "Продати",
   "Amount to sell": "Сума до продажу",
@@ -2758,7 +2881,7 @@ export const SOLANA_UK_TEXT: Readonly<Record<string, string>> = {
   "Quoting…": "Котирування…",
   "expired": "минуло",
   "All thirteen review rules passed over the asset you would receive.":
-    "Усі тринадцять правил перевірки пройдено для активу, який ви отримаєте.",
+    "Усі тринадцять правил перевірки пройдено для активу, який ти отримаєш.",
   "Explorer": "Explorer",
   "Receipt JSON": "JSON квитанції",
   "Verify": "Перевірити",
@@ -2775,19 +2898,19 @@ export const SOLANA_UK_TEXT: Readonly<Record<string, string>> = {
   "Asset Passports — every issuer power and extension, with its evidence.":
     "Паспорти активів — кожне повноваження емітента й кожне розширення разом із доказом.",
   "Pick a pair and an amount. Both mints are re-read from the chain on every quote, and the review policy judges the asset you would receive before any wallet is asked for anything.":
-    "Оберіть пару й суму. Обидва mints повторно читаються з chain для кожного котирування, а policy перевірки оцінює актив, який ви отримаєте, ще до будь-якого запиту до wallet.",
-  "Choose an asset": "Оберіть актив",
+    "Обери пару й суму. Обидва mints повторно читаються з chain для кожного котирування, а policy перевірки оцінює актив, який ти отримаєш, ще до будь-якого запиту до wallet.",
+  "Choose an asset": "Обери актив",
   "Close": "Закрити",
   "Six real mainnet mints, each decoded from its own on-chain bytes. Not a ranking.":
     "Шість справжніх mainnet mints, кожен декодовано з власних on-chain байтів. Це не рейтинг.",
   "Swap any pair on Solana mainnet through the keyed Jupiter Swap API V2 contract. Every quote is server-built, both mints are re-read from the chain, and the workspace's own review policy judges the asset you would receive before a wallet is asked for anything. Execution stays yours: the exact bytes are inspected and simulated, your own visible wallet signature approves them, one submit follows, then an independent chain read and a signed Receipt.":
-    "Обмін у Solana mainnet через контракт Jupiter Swap API V2 з ключем. Кожне котирування будується на сервері, обидва mints повторно читаються з chain, а власна policy перевірки простору оцінює актив, який ви отримаєте, ще до будь-якого запиту до wallet. Виконання лишається вашим: точні bytes перевіряються й симулюються, їх підтверджує власний видимий підпис вашого wallet, далі одне надсилання, незалежне читання chain і підписана квитанція.",
+    "Обмін у Solana mainnet через контракт Jupiter Swap API V2 з ключем. Кожне котирування будується на сервері, обидва mints повторно читаються з chain, а власна policy перевірки простору оцінює актив, який ти отримаєш, ще до будь-якого запиту до wallet. Виконання лишається твоїм: точні bytes перевіряються й симулюються, їх підтверджує власний видимий підпис твого wallet, далі одне надсилання, незалежне читання chain і підписана квитанція.",
   "A default pair, quoted so the numbers are on screen rather than behind a button. It is a default, not a recommendation.":
     "Типова пара, яку котирується, щоб числа були одразу на екрані, а не за кнопкою. Це типове значення, а не рекомендація.",
   "The address bar carries this pair and amount — the link shares the question, not this answer.":
     "Адресний рядок містить цю пару й суму — посилання передає запитання, а не цю відповідь.",
   "Its Review window closed. Ask for a fresh one; a stale quote never reaches a signature.":
-    "Його вікно Review закрилося. Запитайте свіже; застаріле котирування ніколи не доходить до підпису.",
+    "Його вікно Review закрилося. Запитай свіже; застаріле котирування ніколи не доходить до підпису.",
   "Ask without a key · degraded": "Запитати без ключа · degraded",
   "Asked on the public keyless lane: rate-limited, unkeyed and labelled degraded. It is the venue's own answer, never a cached one.":
     "Запит зроблено публічною смугою без ключа: rate-limited, без ключа й позначено degraded. Це власна відповідь venue, а не кешована.",
@@ -2800,18 +2923,18 @@ export const SOLANA_UK_TEXT: Readonly<Record<string, string>> = {
      power — a softened translation would be a different promise. */
   "Amount to send": "Сума до надсилання",
   "Recipient address": "Адреса отримувача",
-  "Your assets": "Ваші активи",
-  "No asset in your wallet matched that search.": "У вашому гаманці немає активу за цим запитом.",
+  "Your assets": "Твої активи",
+  "No asset in your wallet matched that search.": "У твоєму гаманці немає активу за цим запитом.",
   "From": "Звідки",
   "Account setup": "Створення account",
-  "Read before confirming": "Прочитайте перед підтвердженням",
+  "Read before confirming": "Прочитай перед підтвердженням",
 
-  "Reading your balances…": "Читаємо ваші баланси…",
+  "Reading your balances…": "Читаємо твої баланси…",
   "Preparing transfer…": "Готуємо переказ…",
   "Sending…": "Надсилаємо…",
-  "Enter a recipient": "Введіть отримувача",
-  "Enter a different recipient": "Введіть іншого отримувача",
-  "Check the recipient address": "Перевірте адресу отримувача",
+  "Enter a recipient": "Введи отримувача",
+  "Enter a different recipient": "Введи іншого отримувача",
+  "Check the recipient address": "Перевір адресу отримувача",
   "Not enough": "Недостатньо",
   "Review transfer": "Перевірити переказ",
   "Cannot be sent": "Надіслати неможливо",
@@ -2821,38 +2944,38 @@ export const SOLANA_UK_TEXT: Readonly<Record<string, string>> = {
   "Not confirmed": "Не підтверджено",
   "The recipient is ready to receive this token.": "Отримувач готовий прийняти цей токен.",
   "This address has no account for this token yet — you pay a one-time setup cost.":
-    "У цієї адреси ще немає account для цього токена — ви одноразово платите за його створення.",
+    "У цієї адреси ще немає account для цього токена — ти одноразово платиш за його створення.",
 
   "This transfer never reached the network. Nothing moved.":
     "Цей переказ так і не дійшов до мережі. Нічого не переміщено.",
   "The network rejected this transfer. Nothing moved.":
     "Мережа відхилила цей переказ. Нічого не переміщено.",
   "This transfer is not confirmed yet. Open it on the explorer before sending again.":
-    "Цей переказ ще не підтверджено. Відкрийте його в explorer, перш ніж надсилати ще раз.",
+    "Цей переказ ще не підтверджено. Відкрий його в explorer, перш ніж надсилати ще раз.",
 
   "That amount is unavailable.": "Ця сума недоступна.",
-  "Check the recipient address.": "Перевірте адресу отримувача.",
+  "Check the recipient address.": "Перевір адресу отримувача.",
   "The transfer window closed. Review it again.":
-    "Вікно переказу закрилося. Перевірте його ще раз.",
+    "Вікно переказу закрилося. Перевір його ще раз.",
   "Your wallet returned a different transaction. Nothing was sent.":
     "Гаманець повернув іншу транзакцію. Нічого не надіслано.",
   "An earlier transfer is still being confirmed. Do not send it again.":
-    "Попередній переказ ще підтверджується. Не надсилайте його вдруге.",
+    "Попередній переказ ще підтверджується. Не надсилай його вдруге.",
   "Sending is turned off right now.": "Надсилання зараз вимкнено.",
   "Sending is unavailable right now. Try again later.":
-    "Надсилання зараз недоступне. Спробуйте пізніше.",
-  "Too many requests. Try again in a moment.": "Забагато запитів. Спробуйте за мить.",
-  "The transfer could not continue. Try again.": "Переказ не вдалося продовжити. Спробуйте ще раз.",
+    "Надсилання зараз недоступне. Спробуй пізніше.",
+  "Too many requests. Try again in a moment.": "Забагато запитів. Спробуй за мить.",
+  "The transfer could not continue. Try again.": "Переказ не вдалося продовжити. Спробуй ще раз.",
   "Your wallet did not approve this transfer.": "Гаманець не підтвердив цей переказ.",
   "Something changed since you reviewed this transfer. Review it again.":
-    "Від моменту перевірки цього переказу дещо змінилося. Перевірте його ще раз.",
+    "Від моменту перевірки цього переказу дещо змінилося. Перевір його ще раз.",
 
   "This token cannot be transferred at all.": "Цей токен неможливо переказувати взагалі.",
   "The issuer has paused transfers of this token.": "Емітент призупинив перекази цього токена.",
   "Your account for this token is frozen, so nothing can leave it.":
-    "Ваш account для цього токена заморожено, тож із нього нічого не піде.",
+    "Твій account для цього токена заморожено, тож із нього нічого не піде.",
   "Your account for this token could not be read.":
-    "Ваш account для цього токена не вдалося прочитати.",
+    "Твій account для цього токена не вдалося прочитати.",
   "The recipient's account for this token is frozen.":
     "Account отримувача для цього токена заморожено.",
   "New accounts for this token start frozen, so the recipient may not be able to spend it.":
@@ -2890,13 +3013,13 @@ export const SOLANA_UK_TEXT: Readonly<Record<string, string>> = {
   "This transfer cannot be sent.": "Цей переказ неможливо надіслати.",
 
   "The network could not check this transfer. Review it again.":
-    "Мережа не змогла перевірити цей переказ. Перевірте його ще раз.",
+    "Мережа не змогла перевірити цей переказ. Перевір його ще раз.",
   "This transfer did not pass Ryntra's checks.": "Цей переказ не пройшов перевірок Ryntra.",
   "This transfer cannot succeed as built.": "Цей переказ у такому вигляді не може виконатися.",
   "Ryntra cannot yet explain how this token moves.":
     "Ryntra ще не може пояснити, як рухається цей токен.",
   "The network fee could not be read. Review it again.":
-    "Комісію мережі не вдалося прочитати. Перевірте переказ ще раз.",
+    "Комісію мережі не вдалося прочитати. Перевір переказ ще раз.",
   "This transfer is not ready to send.": "Цей переказ ще не готовий до надсилання.",
   /* ── The general Send proof ──────────────────────────────────────────── */
   "Three immutable observations. The M1 Send receipt reconciled MATCHED with no deviation to record. M1B's preserves the deviation it found rather than reissuing a cleaner one, and M2's carries a hash-bound public correction naming the two inaccurate provenance sentences it shipped with.":
@@ -2921,7 +3044,7 @@ export const SOLANA_UK_TEXT: Readonly<Record<string, string>> = {
      operator could reach them; the other four are on the panel every visitor
      sees, which is why the page failed for everyone rather than for staff. */
   "Your own wallet signs every transfer, and no Ryntra server holds a key. A CCTP bridge needs a second signature no wallet can give — Circle's message account has to sign for its own creation — so the page makes a key for that one transaction, in this browser only. It can move no money, it is sent nowhere, and it is discarded once the burn is submitted.":
-    "Кожен переказ підписує ваш власний гаманець, і жоден сервер Ryntra не тримає ключа. Міст CCTP потребує другого підпису, якого не може дати жоден гаманець — обліковий запис повідомлення Circle мусить підписати власне створення — тому сторінка створює ключ на цю одну транзакцію і лише в цьому браузері. Він не може рухати гроші, нікуди не надсилається і стирається, щойно burn відправлено.",
+    "Кожен переказ підписує твій власний гаманець, і жоден сервер Ryntra не тримає ключа. Міст CCTP потребує другого підпису, якого не може дати жоден гаманець — обліковий запис повідомлення Circle мусить підписати власне створення — тому сторінка створює ключ на цю одну транзакцію і лише в цьому браузері. Він не може рухати гроші, нікуди не надсилається і стирається, щойно burn відправлено.",
   "Records": "Записи",
   "What is kept about an action is what it did and what it cost — never a key, a seed phrase or signed bytes.":
     "Про дію зберігається те, що вона зробила і скільки коштувала — ніколи ключ, seed-фраза чи підписані байти.",
@@ -2931,7 +3054,7 @@ export const SOLANA_UK_TEXT: Readonly<Record<string, string>> = {
   "On chain": "У мережі",
   "Why a signature is beside every figure": "Чому біля кожної цифри стоїть підпис",
   "A budget that prints only a total asks to be believed. Each row below names the transaction the exposure was settled against, and that transaction is a public fact: read it back on the chain and the ledger is either telling the truth or it is not. A HELD row is money promised to an action whose outcome is not yet known; it is counted against the ceiling and never counted as a spend.":
-    "Бюджет, який друкує самий лише підсумок, просить вірити йому на слово. Кожен рядок нижче називає транзакцію, якою закрито експозицію, і ця транзакція — публічний факт: прочитайте її в мережі, і реєстр або каже правду, або ні. Рядок HELD — це гроші, обіцяні дії, результат якої ще не відомий; вони рахуються проти стелі й ніколи не рахуються як витрата.",
+    "Бюджет, який друкує самий лише підсумок, просить вірити йому на слово. Кожен рядок нижче називає транзакцію, якою закрито експозицію, і ця транзакція — публічний факт: прочитай її в мережі, і реєстр або каже правду, або ні. Рядок HELD — це гроші, обіцяні дії, результат якої ще не відомий; вони рахуються проти стелі й ніколи не рахуються як витрата.",
   "Entries": "Рядки",
   "None. No canary action has committed or held budget under this policy.":
     "Немає. Жодна канаркова дія не списала і не зарезервувала бюджет за цією політикою.",
@@ -3111,6 +3234,190 @@ export const SOLANA_UK_TEXT: Readonly<Record<string, string>> = {
   "The plan is no longer active, so nothing was sent under it.": "План уже не активний, тому за ним нічого не відправлено.",
   "The confirmed wallet is not the one placing this order.": "Підтверджений гаманець — не той, що робить цей ордер.",
   "The plan could not record the Review. Nothing was sent — try again.": "План не зміг записати Review. Нічого не відправлено — спробуй ще раз.",
+  /* Spot limits (B3): the «Ліміт» ticket and «Мої ордери» — app/solana/workspace/spot/limit-ticket.tsx, my-orders.tsx. */
+  "Limit": "Ліміт",
+  "Limit price": "Ціна ліміту",
+  "per": "за",
+  "Priced in": "Ціна в",
+  "from the market": "від ринку",
+  "Set the price.": "Вкажи ціну.",
+  "This price is already the market: use a market order.": "Ця ціна вже є ринковою: став ринковий ордер.",
+  "More than the wallet holds.": "Більше, ніж є в гаманці.",
+  "Where the order waits": "Де чекає ордер",
+  "Any pair · Ryntra fee by the pair": "Будь-яка пара · комісія Ryntra за парою",
+  "Checking pools…": "Перевіряємо пули…",
+  "No pool of this pair takes limits": "Немає пулу цієї пари з лімітами",
+  "On-chain bin · no fee, earns pool fees": "Бін у пулі · без комісії, заробляє комісії пулу",
+  "The order could not be prepared. Nothing was sent.": "Ордер не вдалося підготувати. Нічого не відправлено.",
+  "The wallet did not sign. Nothing was sent.": "Гаманець не підписав. Нічого не відправлено.",
+  "The order was not placed.": "Ордер не виставлено.",
+  "Limit order placed": "Ліміт виставлено",
+  "Sent — waiting for the network": "Надіслано — чекаємо мережу",
+  "Trading is turned off right now.": "Торгівлю зараз вимкнено.",
+  "Share of the available balance": "Частка доступного балансу",
+  "Distance from the market": "Відступ від ринку",
+  "Jupiter takes limit orders from 5 USD.": "Jupiter приймає ліміти від 5 USD.",
+  "The network would refuse this order: check the balance and the SOL for fees.": "Мережа відхилила б цей ордер: перевір баланс і SOL на комісії.",
+  "This order is already closed or being closed.": "Цей ордер уже закрито або закривається.",
+  "No answer from Ryntra. Nothing was sent.": "Ryntra не відповіла. Нічого не відправлено.",
+  "Waits for": "Чекає ціну",
+  "New limit order": "Новий ліміт",
+  "none": "немає",
+  "none — the order earns half of its bin's swap fees": "немає — ордер отримує половину комісій свого біна",
+  "Order account and pool bins, rent": "Рахунок ордера й біни пулу, рента",
+  "Order account, rent returned on close": "Рахунок ордера, рента повертається при закритті",
+  "at a limit on": "за лімітом на",
+  "of what you get": "від отриманого",
+  "Your price": "Твоя ціна",
+  "Fills at": "Спрацює за",
+  "Market now": "Ринок зараз",
+  "The amount waits in Jupiter's order account until the market pays this price; Jupiter's keeper then swaps it into your wallet. Cancel at any time.": "Сума чекає в рахунку ордера Jupiter, доки ринок не дасть цю ціну; тоді кіпер Jupiter обміняє її у твій гаманець. Скасувати можна будь-коли.",
+  "The amount sits in one price bin of the Meteora pool; when the market crosses it, the pool converts it at that price. Take it back at any time.": "Сума стоїть в одному ціновому біні пулу Meteora; коли ринок його перетне, пул обміняє її за цією ціною. Забрати можна будь-коли.",
+  "Order account": "Рахунок ордера",
+  "Ryntra fee account": "Рахунок комісії Ryntra",
+  "not charged on this order": "на цьому ордері не береться",
+  "A limit fills only if the market reaches its price.": "Ліміт спрацює, лише якщо ринок дійде до його ціни.",
+  "The order was not cancelled.": "Ордер не скасовано.",
+  "Taken back into your wallet.": "Повернуто у твій гаманець.",
+  "Cancelled. The amount is back in your wallet.": "Скасовано. Сума повернулась у гаманець.",
+  "Order": "Ордер",
+  "Take back": "Забрати",
+  /* The core's Review before a limit's cancellation (SOL-C14). */
+  "Cancel the limit order": "Скасувати лімітний ордер",
+  "Take back the converted order": "Забрати виконаний ордер",
+  "the order account's rent": "рента рахунку ордера",
+  "Filled so far": "Уже виконано",
+  "Jupiter closes the order: what has not filled comes back to your wallet with the order account's rent. What already filled stays in your wallet.":
+    "Jupiter закриває ордер: те, що не виконалось, повертається на твій гаманець разом з рентою рахунку ордера. Те, що вже виконалось, лишається на гаманці.",
+  "Meteora closes the order in the pool: what has not converted, what has converted, the fees it earned and the rent come back to your wallet in one signature.":
+    "Meteora закриває ордер у пулі: те, що не обмінялось, те, що обмінялось, зароблені ним комісії й рента повертаються на твій гаманець одним підписом.",
+  "Connect a wallet to see your orders.": "Підключи гаманець, щоб бачити свої ордери.",
+  "My orders": "Мої ордери",
+  "Your orders could not be read right now.": "Зараз не вдалося прочитати твої ордери.",
+  "No limit orders yet. Set one in the ticket: «Limit».": "Лімітних ордерів ще немає. Постав у тікеті: «Ліміт».",
+  "Some venues did not answer; the list may be incomplete.": "Частина майданчиків не відповіла; список може бути неповним.",
+  "Placing": "Виставляється",
+  "Waiting": "Чекає",
+  "Part filled": "Частково виконано",
+  "Cancelling": "Скасовується",
+  "Cancelled": "Скасовано",
+  /* B16 — the terminal as a workplace: the bottom panel's account tabs, «Аналітика», «Про токен». */
+  "Orders": "Ордери",
+  "Position": "Позиція",
+  "Mine": "Мої",
+  "Analytics": "Аналітика",
+  "About the token": "Про токен",
+  "Need the chart and the trades?": "Потрібні графік і угоди?",
+  /* B16, step 2: Spot on the core's terminal and its trade ticket — spot-terminal.tsx, spot-ticket.tsx, spot-workspace.tsx. */
+  "Back to the order": "Назад до ордера",
+  "Before you sign": "Перед підписом",
+  "Fills at, after fees": "Спрацює за, з комісією",
+  "Bin price": "Ціна біна",
+  "Layout": "Розкладка",
+  "needs an order book": "потрібен стакан",
+  "Buy / Sell": "Купити / Продати",
+  "No trades of this market were read yet.": "Угод цього ринку ще не прочитано.",
+  "SOL is the network's own coin: its holders are not listed.": "SOL — власна монета мережі: її холдерів не перелічують.",
+  "No holders were read yet.": "Холдерів ще не прочитано.",
+  "No pools of this market were read yet.": "Пулів цього ринку ще не прочитано.",
+  "No risk facts were read yet.": "Фактів ризику ще не прочитано.",
+  "The chain has not confirmed this order yet. Look for it in «Orders» before you place another.": "Мережа ще не підтвердила цей ордер. Перш ніж ставити новий, пошукай його в «Ордерах».",
+  "The outcome is not known. Check the transaction before you trade again.": "Підсумок невідомий. Перевір транзакцію, перш ніж торгувати далі.",
+
+  /* Developers — Ryntra API v1: the contract, the generated document, the
+     read-only client, its refusals, its cursors and what is deliberately not
+     there yet (DEV-1). */
+  "Ryntra API v1": "Ryntra API v1",
+  "The contract, and the document": "Контракт і документ",
+  "Why the document is generated": "Чому документ генерується",
+  "The zod schemas the routes validate with are the only description of this API. The OpenAPI document is generated from them and a test regenerates it and compares, so the document cannot describe a field the routes do not produce — and the worked answers beside it are built the same way and parsed back with the same schemas. A hand-written OpenAPI file is a second description, and second descriptions disagree silently.": "Схеми zod, якими маршрути перевіряють запити, — єдиний опис цього API. Документ OpenAPI генерується з них, а тест перегенеровує його й порівнює, тож документ не може описати поле, якого маршрути не віддають, — і готові відповіді поруч побудовані так само й розібрані тими самими схемами. Написаний руками файл OpenAPI — це другий опис, а другі описи розходяться тихо.",
+  "Contract version": "Версія контракту",
+  "major": "мажор",
+  "which every client names in": "який кожен клієнт називає в",
+  "Every answer carries": "Кожна відповідь несе",
+  "the exact version the route implements": "точну версію, яку реалізує маршрут",
+  "Source of truth": "Джерело правди",
+  "The document": "Документ",
+  "generated by": "генерує",
+  "Worked answers": "Готові відповіді",
+  "real bodies, generated from the same schemas": "справжні тіла відповідей, згенеровані з тих самих схем",
+  "Written reference": "Письмовий довідник",
+  "The client": "Клієнт",
+  "Reads only": "Лише читання",
+  "Where its surface comes from": "Звідки береться його поверхня",
+  "The client is generated from the document, and the document derives its read surface itself: every GET it serves without a bearer. Nothing is picked by hand, so a new public read joins the package the moment it joins the contract, and a read the document does not describe cannot be called from the package at all. The request discipline, the validator, the cursor walk and the error classes are written by hand beside it, because those are decisions rather than transcriptions.": "Клієнт генерується з документа, а документ сам виводить свою поверхню читання: кожен GET, який він віддає без bearer. Нічого не вибирається руками, тож нове публічне читання з'являється в пакеті тієї ж миті, коли з'являється в контракті, а читання, якого документ не описує, з пакета взагалі не викликати. Дисципліна запиту, перевірка, хід по курсору й класи помилок написані руками поруч, бо це рішення, а не перепис.",
+  "Package": "Пакет",
+  "no dependency beyond fetch, and no build step": "жодної залежності, крім fetch, і без кроку збірки",
+  "Reads it serves": "Читань віддає",
+  "Methods": "Методи",
+  "one answer, a page at a time, the cursor flattened": "одна відповідь, сторінка за сторінкою, курсор зведений у список",
+  "Answers are checked": "Відповіді перевіряються",
+  "Every answer is validated against the contract's own schema before the client returns it. A field the contract does not know about is not a failure: the point of an additive contract is that adding one is safe, so a client already in use must survive it.": "Кожну відповідь перевірено за власною схемою контракту, перш ніж клієнт її віддасть. Поле, якого контракт не знає, — не збій: сенс додаткового контракту саме в тому, що додати поле безпечно, тож клієнт, який уже працює, має це витримати.",
+  "Boundary": "Межа",
+  "Reads only, and structurally rather than by policy: every read is a GET the contract serves without a bearer, so there is nothing to sign in with and nothing to authorise. The package holds no key, builds no transaction and signs nothing, because none of that code is in it.": "Лише читання, і це властивість будови, а не правило: кожне читання — GET, який контракт віддає без bearer, тож нема чим входити й нема чого дозволяти. Пакет не тримає ключів, не будує транзакцій і нічого не підписує, бо такого коду в ньому немає.",
+  "Runnable example": "Приклад, який запускається",
+  "a clean npm install, then one command; its own test runs offline": "чистий npm install, потім одна команда; власний тест працює без мережі",
+  "Refusals, and whether to ask again": "Відмови й чи варто питати ще раз",
+  "From the contract": "З контракту",
+  "Why retryability is a table rather than a judgement": "Чому повторюваність — таблиця, а не здогад",
+  "A 409 is a decision and a 429 is a queue. The client reads which is which from the contract's own error table instead of guessing from the status, so «can I ask again?» has one answer in one place — and a code newer than the client is still an error with a code, never a crash. Branch on the class and the code; the message is for a person and may change.": "409 — це рішення, а 429 — черга. Клієнт читає, де що, з власної таблиці помилок контракту, а не вгадує зі статусу, тож «чи можна спитати ще раз?» має одну відповідь в одному місці — а код, новіший за клієнт, лишається помилкою з кодом, а не падінням. Розгалужуйся за класом і кодом; повідомлення написане для людини й може змінитися.",
+  "Codes": "Кодів",
+  "of them worth asking again": "з них варто спитати ще раз",
+  "Statuses used": "Використані статуси",
+  "The request never got an answer. Always worth asking again, because nothing was decided.": "Запит не отримав відповіді. Завжди варто спитати ще раз, бо нічого не вирішено.",
+  "A /api/v1 refusal with a stable code; its retryability comes from the contract's own table.": "Відмова /api/v1 зі стабільним кодом; чи варто повторювати — з власної таблиці контракту.",
+  "A route outside /api/v1 refused, with its own code rather than a borrowed one.": "Відмовив маршрут поза /api/v1 — із власним кодом, а не позиченим.",
+  "Something answered, but not with an answer.": "Щось відповіло, але не відповіддю.",
+  "A 200 that is not the shape the contract states. Never retryable: the server meant it, and it disagrees with the document.": "200, форма якого не та, яку називає контракт. Повторювати не варто: сервер зробив, що хотів, і це розходиться з документом.",
+  "Cursors, and the idempotency key": "Курсори й ключ ідемпотентності",
+  "Stated as it is": "Сказано як є",
+  "What the key does today": "Що ключ робить сьогодні",
+  "The client sends the header on everything that is not a GET, and the caller may fix it so a retry repeats the same key — the point of a key is that one intent keeps one key. No route reads it yet: the store that would remember a key belongs with the API keys of the developer console. The consequence is drawn rather than hidden — a write is never retried automatically, because until the server remembers the key, retrying a write is writing twice.": "Клієнт надсилає заголовок на все, що не GET, і той, хто викликає, може задати його сам, щоб повтор повторив той самий ключ, — сенс ключа в тому, що один намір тримає один ключ. Жоден маршрут його ще не читає: сховище, яке пам'ятало б ключ, належить до ключів API консолі розробника. Наслідок не схований, а названий: запис ніколи не повторюється автоматично, бо поки сервер не пам'ятає ключа, повторити запис означає записати двічі.",
+  "Paging": "Сторінки",
+  "in,": "всередину,",
+  "out; null means there is no next page. No total and no page number.": "назовні; null означає, що наступної сторінки немає. Ні загальної кількості, ні номера сторінки.",
+  "Reads that page today": "Читання, які сьогодні сторінкуються",
+  "Idempotency header": "Заголовок ідемпотентності",
+  "sent by the client on every request that is not a GET": "клієнт надсилає на кожному запиті, який не GET",
+  "Honoured by a route": "Чи читає його маршрут",
+  "yes": "так",
+  "Not yet — no route reads the header, so the client never retries a write on its own.": "Поки ні — жоден маршрут не читає заголовка, тож клієнт сам ніколи не повторює запис.",
+  "What is not here": "Чого тут немає",
+  "Absences, not plans": "Відсутності, не плани",
+  "Why absences are listed": "Чому відсутності перелічені",
+  "A developer surface that lists what it will have is a surface somebody tries to use. Each line below is an absence with the exact thing that would end it, and no date — because a date is a promise and a gate is a fact.": "Поверхня для розробників, яка перелічує те, що в неї буде, — це поверхня, якою хтось спробує скористатися. Кожен рядок нижче — відсутність із точною умовою, що її закриє, і без дати: дата — це обіцянка, а умова — факт.",
+  "No route reads the idempotency header.": "Жоден маршрут не читає заголовка ідемпотентності.",
+  "The client has no writes.": "У клієнті немає записів.",
+  "What would end it: an authority a key-free package has no way to carry.": "Що це закриє: повноваження, яких пакет без ключів не має чим нести.",
+  "The package is not published.": "Пакет не опубліковано.",
+  "What would end it: a store that remembers a key for the window a retry lives in. The console's keys gave it somewhere to belong; nothing reads the header yet, so the client still never retries a write on its own.": "Що це закриє: сховище, яке пам'ятає ключ стільки, скільки живе повтор. Ключі консолі дали йому де оселитися; заголовка поки не читає ніхто, тож клієнт сам досі не повторює запис.",
+  "A key reaches three reads, not the whole surface.": "Ключ дістає три читання, а не всю поверхню.",
+  "The console's scopes are enforced where a route asks for one, and three routes do. The other public reads take no key because they need none; the keyed surface grows as routes adopt the check, not as names are added to the scope list.": "Межі консолі діють там, де маршрут їх питає, а питають три маршрути. Решта публічних читань ключа не беруть, бо він їм не потрібен; поверхня під ключем росте тоді, коли маршрути беруть перевірку, а не тоді, коли в список меж дописують назви.",
+  "There is one webhook event, and it is the test one.": "Подія вебхука одна, і вона тестова.",
+  "Deliveries are signed, retried and logged for real, and a replay is refused on the server. What is missing is producers: a product event joins the catalogue with the task that emits it.": "Доставки справді підписуються, повторюються й пишуться в журнал, а повтор сервер відхиляє. Бракує джерел: продуктова подія з'явиться в переліку разом із задачею, яка її породжує.",
+  "No tariff is stated.": "Жодного тарифу не названо.",
+  "The console names the fields a tariff has and fills none of them, and a quota window with no number is counted rather than refused. What would end it: the figures being set.": "Консоль називає поля тарифу й жодного не заповнює, а вікно квоти без числа рахується, а не відмовляє. Що це закриє: задані числа.",
+
+  /* Developers — the console itself (DEV-2): projects, credentials, signed webhooks, quotas and the rights behind them. */
+  "The developer console": "Консоль розробника",
+  "Shipped, behind its switch": "Зроблено, за своїм перемикачем",
+  "Why a secret key is refused in a browser rather than allowed carefully": "Чому секретний ключ у браузері відхиляють, а не дозволяють обережно",
+  "An allowlist of origins is a rule about where a credential is used, and a secret key's problem is where it is kept. Once it is in a page it is in the reader's hands, and no list of origins changes that. So the console issues two different things: a secret key a server holds, which the server refuses outright on any request carrying an Origin, and a public key that has no secret at all — its id is the whole credential, and what bounds it is the origins it names.": "Перелік дозволених origin — це правило про те, звідки ключем користуються, а проблема секретного ключа в тому, де він лежить. Щойно він опинився на сторінці, він у руках читача, і жоден перелік origin цього не змінить. Тому консоль видає дві різні речі: секретний ключ, який тримає сервер і який сервер відхиляє на будь-якому запиті з Origin, і публічний ключ, у якого секрету немає зовсім, — його ідентифікатор і є весь ключ, а межі йому задають названі origin.",
+  "Projects and environments": "Проєкти й середовища",
+  "a project belongs to a team, and both environments exist from its first day; nothing is promoted between them": "проєкт належить команді, і обидва середовища є з першого дня; між ними нічого не переносять",
+  "Credentials": "Ключі",
+  "a secret key's token is returned in the answer that makes it and in no other, ever: the store keeps a SHA-256 of it and a key's read view has no field one could be in. Rotation leaves the predecessor answering for the hours you give it; revocation ends it from the next request on.": "токен секретного ключа повертається у відповіді, яка його створює, і в жодній іншій ніколи: сховище тримає його SHA-256, а в поданні ключа немає поля, де він міг би бути. Ротація лишає попередній ключ чинним на задані години; відкликання завершує його з наступного запиту.",
+  "Scopes and origins": "Межі й origin",
+  "each one gating a route that asks for it, so holding one changes an answer": "кожна закриває маршрут, який її питає, тож мати її — означає отримати іншу відповідь",
+  "Signed webhooks": "Підписані вебхуки",
+  "HMAC-SHA256 over the delivery's id, its second and the body. A receiver that checks only the signature is not protected from a replay: the same bytes verify for ever. The server refuses on a bad signature, a timestamp outside the window, or a delivery id this endpoint has already had verified.": "HMAC-SHA256 над ідентифікатором доставки, її секундою й тілом. Приймач, який перевіряє лише підпис, від повтору не захищений: ті самі байти перевіряються завжди. Сервер відхиляє хибний підпис, мітку часу поза вікном і ідентифікатор доставки, який для цього вебхука вже перевіряли.",
+  "Quotas": "Квоти",
+  "counted per project and environment, with what is left on the answer's headers. A window this deployment states no number for is counted and never refused.": "рахуємо на проєкт і середовище, а скільки лишилось — у заголовках відповіді. Вікно, для якого це розгортання числа не називає, рахується й ніколи не відмовляє.",
+  "Rights": "Права",
+  "Every action is one of the team's own rights, checked on the server on every request: reading is view, making a project is draft, issuing and revoking a credential is submit, the delivery log is receipts. The console invents no right and asks for no high-risk one.": "Кожна дія — це одне з прав самої команди, і сервер перевіряє його на кожному запиті: читання — перегляд, створення проєкту — чернетка, видача й відкликання ключа — подача, журнал доставок — квитанції. Консоль не вигадує прав і жодного високоризикового не просить.",
+  "Tariffs": "Тарифи",
+  "The fields a tariff has are named and none of them is filled: a price, an included call count and a ceiling are set outside this build.": "Поля тарифу названі, і жодне не заповнене: ціну, включені виклики й стелю задають поза цією збіркою.",
+  "What would end it: a publication, which is the owner's own act.": "Що це закриє: публікація, а це дія власника.",
 }
 
 
@@ -3151,13 +3458,13 @@ export function translateSolanaRuntime(locale: WorkspaceLocale, english: string)
   }
 
   const emptyAddress = /^Enter the (.+) — 32 to 44 base58 characters, copied from the wallet that owns it\.$/.exec(english);
-  if (emptyAddress) return "Введіть адресу отримувача: 32–44 символи base58, скопійовані з wallet, якому вона належить.";
+  if (emptyAddress) return "Введи адресу отримувача: 32–44 символи base58, скопійовані з wallet, якому вона належить.";
 
   const foreignAddress = /^That is not a (.+) — it contains (.+), and base58 uses only digits and letters\.$/.exec(english);
   if (foreignAddress) return `Це не адреса отримувача: вона містить ${foreignAddress[2]}, а base58 використовує лише цифри й літери.`;
 
   const confusableAddress = /^That (.+) contains "([0OIl])", which base58 leaves out — 0, O, I and l are excluded because they are the characters people misread\. Copy the key rather than retyping it\.$/.exec(english);
-  if (confusableAddress) return `Адреса отримувача містить «${confusableAddress[2]}», якого немає в base58. Символи 0, O, I та l виключені через схожість; скопіюйте ключ замість ручного введення.`;
+  if (confusableAddress) return `Адреса отримувача містить «${confusableAddress[2]}», якого немає в base58. Символи 0, O, I та l виключені через схожість; скопіюй ключ замість ручного введення.`;
 
   const lengthAddress = /^A (.+) is 32 to 44 base58 characters; that one is (\d+)\. A short one is usually a truncated paste\.$/.exec(english);
   if (lengthAddress) return `Адреса отримувача повинна містити 32–44 символи base58; тут їх ${lengthAddress[2]}. Коротка адреса зазвичай означає неповне вставлення.`;

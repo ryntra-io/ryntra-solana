@@ -13,7 +13,7 @@
  *   fee and guard instructions); sent once; the receipt is read back from the
  *   programs' own events and the wallet's own balance, and kept by wallet and
  *   signature.
- * - A launch the chain shows graduated earns its creator the growth module's
+ * - A launch the chain shows graduated earns its creator the Growth line's
  *   points, once per mint (`recordLaunchGraduation` in `lib/rewards`).
  *
  * Everything here is public on chain — who created a token, its fees, a
@@ -24,22 +24,28 @@
 import { randomBytes } from "node:crypto";
 
 import { getBase58Decoder } from "@solana/kit";
-import { Transaction } from "@solana/web3.js";
+import { PublicKey, Transaction } from "@solana/web3.js";
 
 import type {
   ApiErrorCode,
   LaunchCabinetRow,
   LaunchClaimBuildResponse,
+  LaunchClaimReviewResponse,
   LaunchClaimReceipt,
   LaunchClaimSubmitResponse,
   LaunchCreatorCabinetResponse,
 } from "../api/v1/contract.ts";
 import { creatorEarningsCard, type CreatorEarningsCard } from "../core/launch/earnings-card.ts";
-import { ClaimRefusal, buildCreatorClaim, earningsOf, mayClaim, observeCreatorClaim, readCreatorFees, type CreatorFeesObservation } from "../core/venues/meteora-dbc/claim.server.ts";
+import { claimBlockedBy, claimPlanTransactions, claimPockets, positionHolderRole, positionLockOf } from "../core/launch/claim-review.ts";
+import { ClaimRefusal, buildCreatorClaim, buildCreatorClaimBefore, earningsOf, mayClaim, observeCreatorClaim, readCreatorFees, readPositionHolder, surplusBreakdownOf, type CreatorFeesObservation, withoutSurplusRead } from "../core/venues/meteora-dbc/claim.server.ts";
+import { observeCreatorLock } from "../core/venues/meteora-dbc/creator-lock.server.ts";
+import { mintProfileOf } from "../solana/mint-profile.ts";
 import type { GuardStore } from "../guard/store.ts";
+import { NEXT_TRANSACTION_MARGIN_MS, readBuildWindows, web3ChainReader } from "../solana/blockhash-life.ts";
 import { compareWalletTransaction } from "../solana/wallet-modification.ts";
 import type { LaunchDeps, LaunchReadDeps, LaunchRecord } from "./flow.server.ts";
-import { launchPair } from "./config.server.ts";
+import { autopilotReceipts } from "./autopilot.server.ts";
+import { configsOfRecord, launchClaimsV2Open, launchHistoryConnection, launchPair } from "./config.server.ts";
 import { FEE_SHARE_INDEX, byDeadline, feeShareKey, readLaunchRecord, sendOnce, settleFeeSharing, type FeeShareIndex } from "./flow.server.ts";
 import { noteGraduation } from "./graduation.server.ts";
 import { forgetLaunchMarket } from "./market.server.ts";
@@ -53,6 +59,10 @@ const CABINET_BUDGET_MS = 40_000;
 const CABINET_LAUNCHES = 50;
 const RECEIPTS = 50;
 /** How long a built claim waits for the signature. */
+/**
+ * The longest a build waits for the signature. The real wait is the bytes' life — ~150 blocks ≈ 30 s on 200 ms slots,
+ * less a margin per transaction (`lib/solana/blockhash-life.ts`); signed later, the panel builds again.
+ */
 export const CLAIM_BUILD_TTL_MS = 90 * 1000;
 const SEND_BUDGET = { confirmMs: 20_000, settleMs: 8_000 } as const;
 const CLAIM_ROUTE_MS = 50_000;
@@ -62,16 +72,35 @@ const claimKey = (cluster: string, wallet: string, signature = "") => `solana:${
 const buildKey = (cluster: string, id: string) => `${cluster}:${id}`;
 
 
+/**
+ * A launch's creator fees as the chain counts them. After the DEX the creator role's locked-LP fee is read from the exit
+ * position the move to the DEX opened — found through the node with older transactions and the one whose signature
+ * lists reach back, and at once from the executor's receipt of the graduation when there is one —, never through a
+ * node's index of the wallet's positions, which the public node refuses.
+ */
+export async function creatorFeesOf(deps: CabinetDeps, record: Pick<LaunchRecord, "token" | "pool">): Promise<CreatorFeesObservation> {
+  const observation = await creatorFeesAsReadOf(deps, record);
+  /* SOL-L1d's claims closed here (mainnet without the operator's switch): the curve's surplus is not counted — «Забрати» does not take it. */
+  return launchClaimsV2Open(deps.network) ? observation : withoutSurplusRead(observation);
+}
+
+/** The same read with the surplus as the chain holds it, whether or not this network takes it: the Review says it is there. */
+async function creatorFeesAsReadOf(deps: CabinetDeps, record: Pick<LaunchRecord, "token" | "pool">): Promise<CreatorFeesObservation> {
+  /* Asked only once the curve has graduated. */
+  const exitSignature = async () => (await autopilotReceipts(deps.store, deps.network.cluster, record.token).catch(() => [])).find((receipt) => receipt.kind === "GRADUATED")?.signature ?? null;
+  return readCreatorFees(deps.connection, { token: record.token, pool: record.pool }, { readers: [deps.second ?? null, launchHistoryConnection(deps.network)], exitSignature });
+}
+
 type CabinetRead = Readonly<{ row: LaunchCabinetRow; card: Parameters<typeof creatorEarningsCard>[0]["rows"][number] | null }>;
 
 async function readRow(deps: CabinetDeps, record: LaunchRecord, wallet: string, deadline: number): Promise<CabinetRead> {
-  const pairOf = launchPair(deps.network, record.preset);
+  const pairOf = launchPair(deps.network, record.preset, record.pairMint);
   const stored = await metadataOfUri(deps.store, record.metadataUri, deps.network.origin).catch(() => null);
   let observation: CreatorFeesObservation | null = null;
   let settled = record;
   if (Date.now() < deadline - 3_000) {
     try {
-      observation = await readCreatorFees(deps.connection, { token: record.token, pool: record.pool });
+      observation = await creatorFeesOf(deps, record);
       settled = await settleFeeSharing(deps, record, observation.roleOwner);
       if (observation.migrated) await noteGraduation(deps.store, record, observation.graduatedAt, deps.now()).catch(() => undefined);
     } catch {
@@ -88,7 +117,7 @@ async function readRow(deps: CabinetDeps, record: LaunchRecord, wallet: string, 
     token: record.token,
     name: stored?.metadata.name ?? record.name,
     symbol: stored?.metadata.symbol ?? record.symbol,
-    image: stored?.metadata.image ?? null,
+    image: stored && !stored.takenDown ? stored.metadata.image : null,
     preset: record.preset,
     creator: record.creator,
     role: record.creator === wallet ? "creator" : "recipient",
@@ -139,7 +168,11 @@ async function cabinetRecords(deps: CabinetDeps, wallet: string): Promise<readon
 
 export async function listClaimReceipts(store: GuardStore, cluster: string, wallet: string): Promise<readonly LaunchClaimReceipt[]> {
   const rows = await store.collection<LaunchClaimReceipt>("launchClaims").valuesWithPrefix(claimKey(cluster, wallet));
-  return [...rows].sort((a, b) => Date.parse(b.at ?? "0") - Date.parse(a.at ?? "0")).slice(0, RECEIPTS);
+  /* A receipt kept before 1.70.0 names no surplus: its claim took none. */
+  return [...rows]
+    .map((row) => ({ ...row, paid: { ...row.paid, surplus: (row.paid as Partial<LaunchClaimReceipt["paid"]>).surplus ?? "0" } }))
+    .sort((a, b) => Date.parse(b.at ?? "0") - Date.parse(a.at ?? "0"))
+    .slice(0, RECEIPTS);
 }
 
 export async function readCreatorCabinet(deps: CabinetDeps, wallet: string): Promise<LaunchCreatorCabinetResponse> {
@@ -164,7 +197,7 @@ function cardView(card: CreatorEarningsCard, network: LaunchCreatorCabinetRespon
   return { ...card, network, period: { ...card.period }, amounts: card.amounts.map((amount) => ({ ...amount })), receipts: [...card.receipts] };
 }
 
-/** The creator earnings card's data for the growth module's card: the same figures the cabinet shows. */
+/** The creator earnings card's data for the Growth line's card: the same figures the cabinet shows. */
 export async function readCreatorEarningsCard(deps: CabinetDeps, wallet: string): Promise<LaunchCreatorCabinetResponse["card"]> {
   return (await readCreatorCabinet(deps, wallet)).card;
 }
@@ -203,15 +236,115 @@ async function sweep(deps: CabinetDeps): Promise<void> {
   for (const send of await sends.valuesWithPrefix(`${deps.network.cluster}:`)) if (Date.parse(send.at) < stale) await sends.delete(buildKey(send.cluster, send.id));
 }
 
+/**
+ * The claim this wallet would sign now, from the read given — the bytes «Забрати» builds and the Review counts.
+ *
+ * Open (SOL-L1d) — the same read the page's figures come from: after the DEX the locked LP's fee is taken from the creator
+ * role's exit position the move to the DEX opened — never from the first position a node's index lists for the wallet,
+ * which the public node refuses (403) and an entry of the creator's own into the pool makes ambiguous.
+ * SOL-L1d's claims closed here (`launchClaimsV2Open`: mainnet without the operator's switch): the claim to sign is built
+ * from the read it always was, as it always was — no surplus, the LP's position from the node's index.
+ */
+async function claimOf(deps: CabinetDeps, record: LaunchRecord, wallet: string) {
+  const built = launchClaimsV2Open(deps.network)
+    ? await buildCreatorClaim(deps.connection, { observation: await creatorFeesOf(deps, record), wallet, configs: configsOfRecord(deps.network, record) })
+    : await buildCreatorClaimBefore(deps.connection, { observation: await readCreatorFees(deps.connection, { token: record.token, pool: record.pool }), wallet, configs: configsOfRecord(deps.network, record) });
+  return built;
+}
+
+/**
+ * «Забрати все» — the Review before the signature (SOL-L12): every pocket of the creator's side of a launch, what each
+ * holds and whether this claim takes it; the transactions the wallet will sign and what each takes; the creator role's
+ * exit position as the NFT it is — who holds it, locked for ever; the surplus as Meteora splits it; and when the
+ * creator's own tokens unlock. Built from the same claim «Забрати» then builds — the client checks that the bytes it is
+ * handed are the claim it showed. Reads only; keeps nothing.
+ */
+export async function readLaunchClaimReview(deps: CabinetDeps, token: string, wallet: string): Promise<Readonly<{ ok: true; review: LaunchClaimReviewResponse }> | ClaimFailure> {
+  const record = await launchFor(deps, token);
+  if ("ok" in record) return record;
+  const open = launchClaimsV2Open(deps.network);
+  let asRead: CreatorFeesObservation;
+  try {
+    asRead = await creatorFeesAsReadOf(deps, record);
+  } catch (error) {
+    return fail("UNAVAILABLE", error instanceof Error ? error.message.slice(0, 300) : "The launch could not be read now.");
+  }
+  if (!mayClaim(asRead, wallet)) return fail("WALLET_MISMATCH", "This wallet takes no part of this launch's creator fees.");
+  let plan: Awaited<ReturnType<typeof claimOf>> | null = null;
+  try {
+    plan = await claimOf(deps, record, wallet);
+  } catch (error) {
+    if (!(error instanceof ClaimRefusal)) return fail("UNAVAILABLE", error instanceof Error ? error.message.slice(0, 300) : "The claim could not be prepared.");
+  }
+  const graduated = asRead.graduated;
+  const [holder, tokenMint, lock] = await Promise.all([
+    graduated?.positionNftAccount ? readPositionHolder(deps.connection, graduated.positionNftAccount).catch(() => null) : Promise.resolve(undefined),
+    deps.connection.getAccountInfo(new PublicKey(record.token), "confirmed").then((info) => mintProfileOf(record.token, info)).catch(() => null),
+    record.lock ? observeCreatorLock(deps.connection, record.lock.escrow).catch(() => null) : Promise.resolve(null),
+  ]);
+  const shared = asRead.sharing !== null;
+  const transactions = (plan?.txs ?? []).map((tx) => ({ sources: tx.sources }));
+  const pockets = claimPockets({
+    read: asRead.read,
+    migrated: asRead.migrated,
+    wallet,
+    claimsOpen: open,
+    transactions,
+    shared,
+    /* No position read (none found after the DEX) is «not read», never «no position». */
+    positionHolder: !asRead.migrated ? undefined : graduated?.positionNftAccount ? holder ?? null : null,
+    leftover: asRead.leftover ?? null,
+    transferFee: tokenMint === null || tokenMint.program === "missing" ? null : tokenMint.transferFee ? "PRESENT" : "NONE",
+  });
+  const pair = launchPair(deps.network, record.preset, record.pairMint);
+  const position =
+    graduated?.position && graduated.nftMint && graduated.liquidity
+      ? {
+          address: graduated.position,
+          pool: graduated.pool,
+          nftMint: graduated.nftMint,
+          holder: holder ?? null,
+          holderIs: positionHolderRole(holder ?? null, { wallet, roleOwner: asRead.roleOwner, shared }),
+          ...positionLockOf(graduated.liquidity),
+        }
+      : null;
+  return {
+    ok: true,
+    review: {
+      network: deps.network.chain,
+      token: record.token,
+      wallet,
+      pair: { mint: record.pairMint, symbol: pair.symbol, decimals: pair.decimals, dollar: pair.dollar },
+      shared,
+      claimsV2: open,
+      pockets,
+      blockedBy: claimBlockedBy(pockets),
+      transactions: claimPlanTransactions({ transactions, shared }).map((tx) => ({ ...tx, sources: [...tx.sources] })),
+      expectedRaw: plan?.expectedRaw ?? "0",
+      networkCostLamports: plan?.costLamports ?? null,
+      surplus: surplusBreakdownOf(asRead.read.surplus),
+      position,
+      lock:
+        record.lock && lock
+          ? { escrow: record.lock.escrow, cliffAt: new Date(lock.cliffAt * 1000).toISOString(), endAt: new Date(lock.endsAt * 1000).toISOString(), lockedRaw: lock.heldRaw }
+          : null,
+      observedAt: deps.now().toISOString(),
+    },
+  };
+}
+
 export async function buildLaunchClaim(deps: CabinetDeps, token: string, wallet: string): Promise<Readonly<{ ok: true; build: LaunchClaimBuildResponse }> | ClaimFailure> {
   const record = await launchFor(deps, token);
   if ("ok" in record) return record;
   try {
-    const observation = await readCreatorFees(deps.connection, { token, pool: record.pool });
-    const built = await buildCreatorClaim(deps.connection, { observation, wallet, configs: deps.network.configs });
-    const earnings = earningsOf(observation, wallet);
+    const built = await claimOf(deps, record, wallet);
     await sweep(deps).catch(() => undefined);
     const now = deps.now();
+    const validUntil = built.txs.map((tx) => tx.validUntil ?? "0");
+    /* Several claims in one go: the earliest blockhash decides, with a margin for each transaction sent after another. */
+    const earliest = validUntil.reduce((low, value) => (BigInt(value) < BigInt(low) ? value : low), validUntil[0] ?? "0");
+    const windows = await readBuildWindows(web3ChainReader(deps.connection), earliest, { transactions: validUntil.length, capMs: CLAIM_BUILD_TTL_MS });
+    const signableMs = windows.signableMs;
     const build: ClaimBuildRecord = {
       id: randomBytes(16).toString("hex"),
       cluster: deps.network.cluster,
@@ -220,10 +353,10 @@ export async function buildLaunchClaim(deps: CabinetDeps, token: string, wallet:
       wires: built.txs.map((tx) => tx.wireBase64),
       validUntil: built.txs.map((tx) => tx.validUntil ?? "0"),
       createdAt: now.toISOString(),
-      expiresAt: new Date(now.getTime() + CLAIM_BUILD_TTL_MS).toISOString(),
+      expiresAt: new Date(now.getTime() + Math.max(0, windows.lifeMs - NEXT_TRANSACTION_MARGIN_MS * (validUntil.length - 1))).toISOString(),
     };
     await deps.store.collection<ClaimBuildRecord>("launchClaimBuilds").insertIfAbsent(buildKey(build.cluster, build.id), build);
-    const pair = launchPair(deps.network, record.preset);
+    const pair = launchPair(deps.network, record.preset, record.pairMint);
     return {
       ok: true,
       build: {
@@ -231,10 +364,11 @@ export async function buildLaunchClaim(deps: CabinetDeps, token: string, wallet:
         network: deps.network.chain,
         unsignedWireBase64: [...build.wires],
         sources: [...built.sources],
-        expectedRaw: earnings.mine.unclaimedRaw,
+        expectedRaw: built.expectedRaw,
         networkCostLamports: built.costLamports,
         pair: { mint: record.pairMint, symbol: pair.symbol, decimals: pair.decimals, dollar: pair.dollar },
         expiresAt: build.expiresAt,
+        signableMs,
       },
     };
   } catch (error) {
@@ -316,11 +450,11 @@ const signatureOf = (tx: Transaction) => getBase58Decoder().decode(new Uint8Arra
  * wallet and signature. Null when it could not be read: the signature stands, and its transaction is on chain.
  */
 async function claimReceipt(deps: CabinetDeps, record: LaunchRecord, wallet: string, signature: string): Promise<LaunchClaimReceipt | null> {
-  const fees = await readCreatorFees(deps.connection, { token: record.token, pool: record.pool }).catch(() => null);
+  const fees = await creatorFeesOf(deps, record).catch(() => null);
   for (let attempt = 0; attempt < 4; attempt += 1) {
     const observed = await observeCreatorClaim(deps.connection, { signature, wallet, pairMint: record.pairMint, pool: record.pool, graduatedPool: fees?.graduated?.pool ?? null }).catch(() => null);
     if (observed && !observed.failed) {
-      const pair = launchPair(deps.network, record.preset);
+      const pair = launchPair(deps.network, record.preset, record.pairMint);
       const receipt: LaunchClaimReceipt = {
         token: record.token,
         name: record.name,

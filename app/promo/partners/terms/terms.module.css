@@ -1,0 +1,236 @@
+/* The creator partner Terms — a document page in the public frame: a head,
+   the contents beside the text on a desk, one column on a phone. Read
+   comfortably: a measure near 70 characters, the shares as a small table.
+   Colours from the site's tokens, so both themes hold. */
+
+.page {
+  display: grid;
+  gap: var(--ry-s6);
+  padding-block: var(--ry-s6) var(--ry-s8);
+}
+
+.head {
+  display: grid;
+  gap: var(--ry-s3);
+  max-width: 760px;
+}
+
+.eyebrow {
+  color: var(--ry-muted);
+  font-size: var(--ry-fs-dense);
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.title {
+  margin: 0;
+  color: var(--ry-text);
+  font-family: var(--ry-font-display);
+  font-size: clamp(2rem, 1.4rem + 2.4vw, 3rem);
+  font-weight: 600;
+  line-height: 1.08;
+  letter-spacing: -0.02em;
+}
+
+.promise {
+  margin: 0;
+  color: var(--ry-text);
+  font-size: var(--ry-fs-lead, 1.125rem);
+  line-height: 1.45;
+}
+
+.version {
+  margin: 0;
+  color: var(--ry-muted);
+  font-family: var(--ry-font-mono);
+  font-size: var(--ry-fs-dense);
+}
+
+.layout {
+  display: grid;
+  gap: var(--ry-s6);
+  grid-template-columns: minmax(0, 1fr);
+}
+
+@media (min-width: 960px) {
+  .layout {
+    grid-template-columns: 240px minmax(0, 1fr);
+    align-items: start;
+  }
+
+  .contents {
+    position: sticky;
+    top: var(--ry-s7);
+  }
+}
+
+.contents {
+  display: grid;
+  gap: var(--ry-s2);
+  padding: var(--ry-s4);
+  border: 1px solid var(--ry-border);
+  border-radius: var(--ry-r-btn, 12px);
+  background: var(--ry-card);
+}
+
+.contentsTitle {
+  color: var(--ry-muted);
+  font-size: var(--ry-fs-dense);
+  font-weight: 600;
+}
+
+.contents ol {
+  display: grid;
+  gap: 2px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.contents a {
+  display: block;
+  padding: 6px 0;
+  color: var(--ry-text);
+  font-size: var(--ry-fs-dense);
+  text-decoration: none;
+}
+
+.contents a:hover {
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.contents a:focus-visible,
+.body a:focus-visible {
+  outline: 2px solid var(--ry-focus);
+  outline-offset: 2px;
+}
+
+/* Below the desk width the contents fold to two columns of links, so the text starts sooner. */
+@media (max-width: 959px) {
+  .contents ol {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    column-gap: var(--ry-s4);
+  }
+}
+
+.body {
+  display: grid;
+  gap: var(--ry-s5);
+  max-width: 72ch;
+  min-width: 0;
+}
+
+.intro {
+  margin: 0;
+  color: var(--ry-text);
+  font-size: var(--ry-fs-body);
+  line-height: var(--ry-lh-body, 1.6);
+}
+
+/* The site's base rule pads every <section> by 78px; a clause of the Terms is not a page band. */
+.section {
+  display: grid;
+  gap: var(--ry-s2);
+  padding: 0;
+  scroll-margin-top: var(--ry-s8);
+}
+
+.section h2 {
+  margin: 0;
+  color: var(--ry-text);
+  font-size: var(--ry-fs-h3, 1.25rem);
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+.section p,
+.section li {
+  margin: 0;
+  color: var(--ry-muted);
+  font-size: var(--ry-fs-body);
+  line-height: var(--ry-lh-body, 1.6);
+}
+
+.section ul {
+  display: grid;
+  gap: var(--ry-s2);
+  margin: 0;
+  padding-left: 1.1em;
+}
+
+.rates {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--ry-fs-dense);
+}
+
+.rates th,
+.rates td {
+  padding: var(--ry-s3) var(--ry-s2);
+  border-bottom: 1px solid var(--ry-border);
+  color: var(--ry-text);
+  text-align: start;
+  vertical-align: top;
+}
+
+.rates thead th {
+  color: var(--ry-muted);
+  font-weight: 600;
+}
+
+.rates tbody th {
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.share {
+  font-family: var(--ry-font-mono);
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+@media (max-width: 520px) {
+  .rates thead {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+  }
+
+  .rates,
+  .rates tbody,
+  .rates tr,
+  .rates th,
+  .rates td {
+    display: block;
+  }
+
+  .rates tr {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    gap: 2px var(--ry-s3);
+    padding: var(--ry-s3) 0;
+    border-bottom: 1px solid var(--ry-border);
+  }
+
+  .rates th,
+  .rates td {
+    padding: 0;
+    border: 0;
+  }
+
+  .rates td:last-child {
+    grid-column: 1 / -1;
+    color: var(--ry-muted);
+  }
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--ry-s3);
+}

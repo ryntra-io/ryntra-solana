@@ -108,6 +108,19 @@ export function lifecycleEventFor(mint: string, events: ReadonlyMap<string, Life
   return events.get(mint) ?? null;
 }
 
+/**
+ * The verified event a company page's address names — the issuer's symbol as
+ * the watch writes it («SPACEX», in any case) or the mint — or null. Every
+ * link to a token with an event (the path strip, a holding's swap, a
+ * reminder) names it so, and the page answers it even when no catalogue lists
+ * the token any more (UX-503).
+ */
+export function lifecycleEventForTicker(ticker: string, events: readonly LifecycleEvent[] = LIFECYCLE_EVENTS): LifecycleEvent | null {
+  const wanted = ticker.trim().toLowerCase();
+  if (!wanted) return null;
+  return events.find((event) => event.mint === ticker.trim() || event.watch?.symbol.toLowerCase() === wanted) ?? null;
+}
+
 /* ------------------------------------------------------ the company's path */
 
 /** A document a step of a company's path was read from — its own words, dated by the document and by Ryntra's read. */

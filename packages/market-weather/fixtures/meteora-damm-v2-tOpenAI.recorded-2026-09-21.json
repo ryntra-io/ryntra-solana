@@ -1,0 +1,412 @@
+{
+  "total": 4,
+  "pages": 1,
+  "current_page": 1,
+  "page_size": 5,
+  "data": [
+    {
+      "address": "2bDQiRwzoeqLfZ2nQ8decjqhDyAp8f1kx8WW33jwhYXH",
+      "name": "tOpenAI-SOL",
+      "token_x": {
+        "address": "oPAiAikWTaFj9RYoRFD35ccfwhnMcB3ThgBZRHSkjTZ",
+        "name": "T-OpenAI",
+        "symbol": "tOpenAI",
+        "decimals": 9,
+        "is_verified": true,
+        "holders": 8454,
+        "freeze_authority_disabled": false,
+        "total_supply": 684.771903977,
+        "price": 966.3343044649404,
+        "market_cap": 661718.5815467472
+      },
+      "token_y": {
+        "address": "So11111111111111111111111111111111111111112",
+        "name": "Wrapped SOL",
+        "symbol": "SOL",
+        "decimals": 9,
+        "is_verified": true,
+        "holders": 3820662,
+        "freeze_authority_disabled": true,
+        "total_supply": 634453675.9034209,
+        "price": 112.52045072499524,
+        "market_cap": 66098740299.36634
+      },
+      "token_x_amount": 3.3e-8,
+      "token_y_amount": 3.06e-7,
+      "created_at": 1788776875000,
+      "vault_x": "8NfZKHqERxsvQpfyFDk9JiKVBPwK27VKVkG2F31BVbQW",
+      "vault_y": "2ZHtVvYu76tEp9Gwnhwr2H5uxDrcbgzu4X22DWiveFur",
+      "alpha_vault": "11111111111111111111111111111111",
+      "pool_config": {
+        "collect_fee_mode": 2,
+        "base_fee_mode": 0,
+        "base_fee_pct": 0.5,
+        "protocol_fee_pct": 20,
+        "partner_fee_pct": 0,
+        "referral_fee_pct": 20,
+        "dynamic_fee_initialized": true,
+        "compounding_fee_pct": 50,
+        "pool_type": 1,
+        "concentrated_liquidity": false,
+        "min_price": 0,
+        "max_price": 3.402823669209385e+38,
+        "activation_type": 1,
+        "activation_point": 1788776875,
+        "has_fee_scheduler": false,
+        "is_fee_scheduler_active": false
+      },
+      "tvl": 0.000066141875694939,
+      "current_price": 9.32925543739378,
+      "has_farm": false,
+      "farm_apr": 0,
+      "farm_apy": 0,
+      "permanent_lock_liquidity": 0,
+      "vested_liquidity": {
+        "months_3": 0,
+        "months_6": 0
+      },
+      "volume": {
+        "30m": 0,
+        "1h": 0,
+        "2h": 0,
+        "4h": 0,
+        "12h": 0,
+        "24h": 0.001709379608917873
+      },
+      "fees": {
+        "30m": 0,
+        "1h": 0,
+        "2h": 0,
+        "4h": 0,
+        "12h": 0,
+        "24h": 0.000022181467263461
+      },
+      "protocol_fees": {
+        "30m": 0,
+        "1h": 0,
+        "2h": 0,
+        "4h": 0,
+        "12h": 0,
+        "24h": 0.000005518316246031
+      },
+      "fee_tvl_ratio": {
+        "30m": 0,
+        "1h": 0,
+        "2h": 0,
+        "4h": 0,
+        "12h": 0,
+        "24h": 33.53619326698089
+      },
+      "cumulative_metrics": {
+        "volume": 5604.940311911479,
+        "fees": 71.97454826993831
+      },
+      "is_blacklisted": false,
+      "launchpad": "",
+      "tags": []
+    },
+    {
+      "address": "HuwFX25gdjJWQh6irfc9UQ5ZFDRYPzW8Ci4z5KpaVFjL",
+      "name": "tOpenAI-SOL",
+      "token_x": {
+        "address": "oPAiAikWTaFj9RYoRFD35ccfwhnMcB3ThgBZRHSkjTZ",
+        "name": "T-OpenAI",
+        "symbol": "tOpenAI",
+        "decimals": 9,
+        "is_verified": true,
+        "holders": 8456,
+        "freeze_authority_disabled": false,
+        "total_supply": 684.771903977,
+        "price": 966.3316290338034,
+        "market_cap": 661716.7494866736
+      },
+      "token_y": {
+        "address": "So11111111111111111111111111111111111111112",
+        "name": "Wrapped SOL",
+        "symbol": "SOL",
+        "decimals": 9,
+        "is_verified": true,
+        "holders": 3820662,
+        "freeze_authority_disabled": true,
+        "total_supply": 634453705.6578134,
+        "price": 111.6783756650174,
+        "market_cap": 65604077092.84199
+      },
+      "token_x_amount": 0,
+      "token_y_amount": 0,
+      "created_at": 1785909426000,
+      "vault_x": "Fgt6NjoALV73uexBoQZ6PrarSdFeB9mn6Vj4qmhJcEXU",
+      "vault_y": "BGUrrvv2tWDUJmLieKMNa9ukHMd3AdpQ48G11StWJGGH",
+      "alpha_vault": "11111111111111111111111111111111",
+      "pool_config": {
+        "collect_fee_mode": 1,
+        "base_fee_mode": 0,
+        "base_fee_pct": 5.9999936,
+        "protocol_fee_pct": 20,
+        "partner_fee_pct": 0,
+        "referral_fee_pct": 20,
+        "dynamic_fee_initialized": true,
+        "compounding_fee_pct": 0,
+        "pool_type": 0,
+        "concentrated_liquidity": false,
+        "min_price": 5.421214630269582e-20,
+        "max_price": 18446050713735950000,
+        "activation_type": 1,
+        "activation_point": 1785909426,
+        "has_fee_scheduler": true,
+        "is_fee_scheduler_active": false
+      },
+      "tvl": 0,
+      "current_price": 12.316383716893364,
+      "has_farm": false,
+      "farm_apr": 0,
+      "farm_apy": 0,
+      "permanent_lock_liquidity": 0,
+      "vested_liquidity": {
+        "months_3": 0,
+        "months_6": 0
+      },
+      "volume": {
+        "30m": 0,
+        "1h": 0,
+        "2h": 0,
+        "4h": 0,
+        "12h": 0,
+        "24h": 0
+      },
+      "fees": {
+        "30m": 0,
+        "1h": 0,
+        "2h": 0,
+        "4h": 0,
+        "12h": 0,
+        "24h": 0
+      },
+      "protocol_fees": {
+        "30m": 0,
+        "1h": 0,
+        "2h": 0,
+        "4h": 0,
+        "12h": 0,
+        "24h": 0
+      },
+      "fee_tvl_ratio": {
+        "30m": 0,
+        "1h": 0,
+        "2h": 0,
+        "4h": 0,
+        "12h": 0,
+        "24h": 0
+      },
+      "cumulative_metrics": {
+        "volume": 0.07406666640061152,
+        "fees": 0.029626666560244607
+      },
+      "is_blacklisted": false,
+      "launchpad": "",
+      "tags": []
+    },
+    {
+      "address": "DkcPA7RahGJAHer8wGJzfj8aGmbxiM6aCBJcu5CMB7ZY",
+      "name": "tOpenAI-USDC",
+      "token_x": {
+        "address": "oPAiAikWTaFj9RYoRFD35ccfwhnMcB3ThgBZRHSkjTZ",
+        "name": "T-OpenAI",
+        "symbol": "tOpenAI",
+        "decimals": 9,
+        "is_verified": true,
+        "holders": 8467,
+        "freeze_authority_disabled": false,
+        "total_supply": 684.771903977,
+        "price": 966.3049560683728,
+        "market_cap": 661698.484589351
+      },
+      "token_y": {
+        "address": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+        "name": "USD Coin",
+        "symbol": "USDC",
+        "decimals": 6,
+        "is_verified": true,
+        "holders": 5248202,
+        "freeze_authority_disabled": false,
+        "total_supply": 7937456010.933528,
+        "price": 0.999689258327771,
+        "market_cap": 7934989512.579447
+      },
+      "token_x_amount": 0,
+      "token_y_amount": 0,
+      "created_at": 1782368522000,
+      "vault_x": "D6kzmc843AcQAicLKmZ9AthmrhqTGU7ggGpKCYbgjDLH",
+      "vault_y": "RUBsCsmAhm2SjGr6ZMht8goLb8EHGGe3Sj99fdkSuPg",
+      "alpha_vault": "11111111111111111111111111111111",
+      "pool_config": {
+        "collect_fee_mode": 0,
+        "base_fee_mode": 0,
+        "base_fee_pct": 0.25,
+        "protocol_fee_pct": 20,
+        "partner_fee_pct": 0,
+        "referral_fee_pct": 20,
+        "dynamic_fee_initialized": false,
+        "compounding_fee_pct": 0,
+        "pool_type": 1,
+        "concentrated_liquidity": false,
+        "min_price": 5.421214630269582e-17,
+        "max_price": 1.844605071373595e+22,
+        "activation_type": 1,
+        "activation_point": 1782368522,
+        "has_fee_scheduler": true,
+        "is_fee_scheduler_active": false
+      },
+      "tvl": 0,
+      "current_price": 875.5580268806227,
+      "has_farm": false,
+      "farm_apr": 0,
+      "farm_apy": 0,
+      "permanent_lock_liquidity": 0,
+      "vested_liquidity": {
+        "months_3": 0,
+        "months_6": 0
+      },
+      "volume": {
+        "30m": 0,
+        "1h": 0,
+        "2h": 0,
+        "4h": 0,
+        "12h": 0,
+        "24h": 0
+      },
+      "fees": {
+        "30m": 0,
+        "1h": 0,
+        "2h": 0,
+        "4h": 0,
+        "12h": 0,
+        "24h": 0
+      },
+      "protocol_fees": {
+        "30m": 0,
+        "1h": 0,
+        "2h": 0,
+        "4h": 0,
+        "12h": 0,
+        "24h": 0
+      },
+      "fee_tvl_ratio": {
+        "30m": 0,
+        "1h": 0,
+        "2h": 0,
+        "4h": 0,
+        "12h": 0,
+        "24h": 0
+      },
+      "cumulative_metrics": {
+        "volume": 165.76277869207993,
+        "fees": 1.5721568583341088
+      },
+      "is_blacklisted": false,
+      "launchpad": "",
+      "tags": []
+    },
+    {
+      "address": "kcBzMBfmirRzuMCp14BAguqamyKi9r3SNFSoHomHkWF",
+      "name": "tOpenAI-ARK",
+      "token_x": {
+        "address": "oPAiAikWTaFj9RYoRFD35ccfwhnMcB3ThgBZRHSkjTZ",
+        "name": "T-OpenAI",
+        "symbol": "tOpenAI",
+        "decimals": 9,
+        "is_verified": true,
+        "holders": 8454,
+        "freeze_authority_disabled": false,
+        "total_supply": 684.771903977,
+        "price": 968.491046082228,
+        "market_cap": 663195.4576104038
+      },
+      "token_y": {
+        "address": "FyhMHc7gese1Qwn8tXsk1tVjEVdgqEqQJbPXrH69aw6i",
+        "name": "ARKive",
+        "symbol": "ARK",
+        "decimals": 6,
+        "is_verified": false,
+        "holders": 169,
+        "freeze_authority_disabled": true,
+        "total_supply": 11275237.346085,
+        "price": 0.0029807904820344172,
+        "market_cap": 33609.12016388917
+      },
+      "token_x_amount": 0,
+      "token_y_amount": 0,
+      "created_at": 1783644042000,
+      "vault_x": "xZD8ekfvFzmkCS9dgSgRR4gywYj1Go8AE1d6VT8znLc",
+      "vault_y": "AgaeiMv93TZJEeK2irLd8f43brQsXufnUmVNkuiDCrRa",
+      "alpha_vault": "11111111111111111111111111111111",
+      "pool_config": {
+        "collect_fee_mode": 1,
+        "base_fee_mode": 0,
+        "base_fee_pct": 1,
+        "protocol_fee_pct": 20,
+        "partner_fee_pct": 0,
+        "referral_fee_pct": 20,
+        "dynamic_fee_initialized": true,
+        "compounding_fee_pct": 0,
+        "pool_type": 0,
+        "concentrated_liquidity": false,
+        "min_price": 5.421214630269582e-17,
+        "max_price": 1.844605071373595e+22,
+        "activation_type": 1,
+        "activation_point": 1783644042,
+        "has_fee_scheduler": false,
+        "is_fee_scheduler_active": false
+      },
+      "tvl": 0,
+      "current_price": 646741.8354452387,
+      "has_farm": false,
+      "farm_apr": 0,
+      "farm_apy": 0,
+      "permanent_lock_liquidity": 0,
+      "vested_liquidity": {
+        "months_3": 0,
+        "months_6": 0
+      },
+      "volume": {
+        "30m": 0,
+        "1h": 0,
+        "2h": 0,
+        "4h": 0,
+        "12h": 0,
+        "24h": 0
+      },
+      "fees": {
+        "30m": 0,
+        "1h": 0,
+        "2h": 0,
+        "4h": 0,
+        "12h": 0,
+        "24h": 0
+      },
+      "protocol_fees": {
+        "30m": 0,
+        "1h": 0,
+        "2h": 0,
+        "4h": 0,
+        "12h": 0,
+        "24h": 0
+      },
+      "fee_tvl_ratio": {
+        "30m": 0,
+        "1h": 0,
+        "2h": 0,
+        "4h": 0,
+        "12h": 0,
+        "24h": 0
+      },
+      "cumulative_metrics": {
+        "volume": 0,
+        "fees": 0
+      },
+      "is_blacklisted": true,
+      "launchpad": "",
+      "tags": []
+    }
+  ]
+}

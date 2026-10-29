@@ -2,15 +2,13 @@
  * The pages of Ryntra, the sections of the menu that hold them, and the only
  * place their order is decided.
  *
- * **The menu v6.2, since 2026-10-06.** One menu for everyone, from the sections already on production:
- * on a desk «+ Запустити токен» on top, then Головна · Ринки — Торгувати ·
- * Лаунч · Боти — Портфель · Гроші · Винагороди in three groups without
- * headings, each row with its caption; the assistant Ryntra in the header; on a
- * phone Головна · Ринки · + · Портфель · Ще ({@link menuNavigation},
- * {@link mobileNavigation}). A section's pages are tabs at the top of its page
- * ({@link sectionTabs}). There is no «Простий»/«Профі» switch (since
- * 2026-09-24), and the fifteen registered pages stay the product's capability
- * modules: each lives in exactly one section ({@link MENU_SECTIONS}).
+ * **The core's Menu 3, since NAV-1 (decision 55).** One menu for everyone, the
+ * core's composition in the core's frame: Головна, then the groups Торгівля ·
+ * Автоматика · Заробіток · Гроші, each opened by its arrow, with the rows that
+ * live on Solana ({@link MENU_SECTIONS}, {@link menuNavigation}). Every place is
+ * a row; there are no tabs above a page. There is no «Простий»/«Профі» switch
+ * (since 2026-09-24), and the fifteen registered pages stay the product's
+ * capability modules: each lives in exactly one row.
  *
  * **PLANNED is hidden everywhere a person reads** (since 2026-09-23).
  * A planned page stays registered here as a target,
@@ -43,6 +41,8 @@
  * one absent string would 500 Ukrainian navigation on every page of the
  * product. Nothing in this file can throw for want of a translation.
  */
+
+import { NAV_GROUPS, NAV_WORDS, PHONE_BAR, groupOf, type NavGroupId, type NavItemId, type NavPaths, type PhoneBarPlace } from "@ryntra/core/nav";
 
 /**
  * The four kinds of work a page does, in the order the product first named them.
@@ -152,7 +152,7 @@ export const PAGE_LABELS: Readonly<Record<ProductPageId, DomainLabel>> = {
      stays a category word inside the page, not part of its name. */
   stocks: { en: "Stocks", uk: "Акції" },
   trends: { en: "Trends", uk: "Тренди" },
-  perps: { en: "Perps", uk: "Безстрокові" },
+  perps: { en: "Perps", uk: "Perps" },
   /* «Прогнози»: the page is about markets on outcomes, and the Ukrainian word
      for a forecast is the one a person already owns. */
   predictions: { en: "Predictions", uk: "Прогнози" },
@@ -161,10 +161,9 @@ export const PAGE_LABELS: Readonly<Record<ProductPageId, DomainLabel>> = {
   results: { en: "Results", uk: "Результати" },
   send: { en: "Send", uk: "Надіслати" },
   receive: { en: "Receive", uk: "Отримати" },
-  /* «Міст» rather than a transliterated «Бридж»: the Ukrainian word is the one
-     a person already owns, and the page is named after what somebody wants done
-     rather than after the mechanism that does it. */
-  bridge: { en: "Bridge", uk: "Міст" },
+  /* «Між мережами» — the core's menu word (Menu 3), and since B18 the one name of this work everywhere: the page is
+     named after what somebody wants done rather than after the mechanism that does it. */
+  bridge: { en: "Between networks", uk: "Між мережами" },
   rewards: { en: "Rewards", uk: "Винагороди" },
   portfolio: { en: "Portfolio", uk: "Портфель" },
   activity: { en: "History", uk: "Історія" },
@@ -315,171 +314,231 @@ export function pageActiveHref(
 /* --------------------------------------------------------------- the menu */
 
 /**
- * The menu v6.2, built from the sections already on
- * production: on a desk «+ Запустити токен» on top in a quiet style — the one
- * orange action stays the screen's — then three groups without headings,
- * divided by thin lines: Головна · Ринки — Торгувати · Лаунч · Боти —
- * Портфель · Гроші · Винагороди, each row with its caption; Відгук and
- * Налаштування at the foot. The assistant Ryntra is not a row: it is «Спитати
- * Ryntra» in the header, with the screen as its context. Pools and Perps are
- * not sections until their tasks are on production.
+ * Menu 3: the core's one menu — Головна, then the groups Торгівля · Автоматика ·
+ * Заробіток · Гроші · Казна, each opened and shut by its arrow — and on Solana only the rows that live here. Every
+ * place of the product is a row: no tabs above a page, no row of tools beside them. Надіслати and Отримати are rows
+ * of Гроші. «Мережа» and «Інші продукти» are off the foot of the menu for now: the
+ * menu names Solana only (the frame, `app/app/product-shell.tsx`).
  *
- * A section's pages are tabs at the top of its page, one component everywhere
- * ({@link sectionTabs}): Торгувати — Спот · Обмін; Лаунч — Запустити токен ·
- * Мої лаунчі; Боти — Мої боти · Каталог; Портфель — Позиції · Історія; Гроші —
- * Поповнити · Надіслати · Отримати · Між мережами. Ринки is one page, the
- * screener, with its own tabs over one table.
+ * The composition, its order and its words are the core's (`@ryntra/core/nav`), one for the web, the phone and every
+ * network; this file says only where each row opens here, which routes it owns and which registered pages it holds.
+ * Agents do not live on Solana yet, so they are simply not drawn (decision 55 replaces «Ще»
+ * with a caption). Perps (the core's `futures`) and Прогнози are rows of Торгівля inside Solana: the perpetuals of Phoenix (B7) and the predictions of AGG (NAV-6), without a way-out arrow — drawn once
+ * their pages live, each by its own task ({@link MENU_LIVE}). Ryntra Futures, the one Hyperliquid terminal, is not a row here and, while
+ * its line is paused (decision 58), not a link of the menu or the search either (decision 63).
  *
- * On a phone five places — Головна · Ринки · + · Портфель · Ще — and «Ще»
- * opens Торгувати, Боти, Гроші, Винагороди, Ryntra and Налаштування
- * ({@link mobileNavigation}).
+ * Every page that was a tab keeps its address and is a row now; the pages under a row (a token, a pool, a plan, «Мої
+ * лаунчі», the bots' catalogue) are reached from the row's page.
  */
-export const MENU_SECTION_IDS = ["home", "markets", "trade", "launch", "bots", "portfolio", "money", "rewards"] as const;
+const SOLANA_ROWS = [
+  "home",
+  "spot",
+  "swap",
+  "markets",
+  "launch",
+  "futures",
+  "predictions",
+  "bots",
+  "assistant",
+  "pools",
+  "rewards",
+  "portfolio",
+  "deposit",
+  "send",
+  "receive",
+  "bridge",
+  "history",
+] as const satisfies readonly NavItemId[];
 
-export type MenuSectionId = (typeof MENU_SECTION_IDS)[number];
+/**
+ * Казна (SOL-4, decision 47): the person's own Squads multisig. A row of the core's group «Казна» only where the
+ * deployment names the treasury's network; elsewhere its page is not served and the row is not drawn.
+ */
+export const TREASURY_IN_MENU = treasuryNamed(process.env.NEXT_PUBLIC_RYNTRA_TREASURY_NETWORK);
 
-/** The three groups, in order, without headings: a thin line stands between them. */
-export const MENU_GROUPS: readonly Readonly<{ id: string; sections: readonly MenuSectionId[] }>[] = [
-  { id: "discover", sections: ["home", "markets"] },
-  { id: "act", sections: ["trade", "launch", "bots"] },
-  { id: "own", sections: ["portfolio", "money", "rewards"] },
-];
+/** The same reading as the treasury's own (`lib/solana/treasury/model.ts` `treasuryNetworkFrom`), kept here so the rail depends on nothing. */
+export function treasuryNamed(value: string | undefined): boolean {
+  return ["devnet", "mainnet", "mainnet-beta"].includes(value?.trim().toLowerCase() ?? "");
+}
 
-/** One tab at the top of a section's page. `page` binds it to a registered page, so a page that is not drawn is not a tab. */
-export type MenuTab = Readonly<{
-  id: string;
-  label: DomainLabel;
-  href: string;
-  /** Every route the tab stands for, its landing included. */
-  match: readonly string[];
-  page?: ProductPageId;
-}>;
+/**
+ * Ліміти витрат (SOL-7, decision 58): limits on the person's USDC on the Subscriptions program — the core's row
+ * «Правила» of the group «Казна», the rules of what may be taken. Drawn only where the deployment names the limits'
+ * network (`NEXT_PUBLIC_RYNTRA_ALLOWANCES_NETWORK`: devnet first, mainnet by the operator's canary), as the treasury's.
+ */
+export const ALLOWANCES_IN_MENU = treasuryNamed(process.env.NEXT_PUBLIC_RYNTRA_ALLOWANCES_NETWORK);
+
+/**
+ * Earn (decision 47): the person's own asset in a lending market — Jupiter Lend first, Kamino Lend
+ * second and switched off. The core's row «Earn» of the group «Заробіток», drawn only where the deployment
+ * says Earn is reachable here (`NEXT_PUBLIC_RYNTRA_EARN=on`), as the treasury's row is.
+ *
+ * The flag and the key are one decision in two halves: reading the markets needs a Jupiter key with Lend
+ * access on the server, and a row that led to a provider nobody can ask would be a row that teaches people
+ * the section is broken. The page itself is served either way and says which provider is unavailable and
+ * why — an honest page nobody is sent to beats a row over an empty one.
+ */
+export const EARN_IN_MENU = earnNamed(process.env.NEXT_PUBLIC_RYNTRA_EARN);
+
+/** The same reading as Earn's own (`lib/earn/providers.ts` `earnNamed`), kept here so the rail depends on nothing. */
+export function earnNamed(value: string | undefined): boolean {
+  return value?.trim().toLowerCase() === "on";
+}
+
+/**
+ * Казна on mainnet is open to every wallet of 21.10 and early (SOL-C2, decision 63; UX-003, UX-703):
+ * its group in the menu says «Beta», its page the network and «Beta». No new gate — the deployment's variable still
+ * decides whether the row is drawn at all.
+ */
+export const TREASURY_ON_MAINNET = ["mainnet", "mainnet-beta"].includes(process.env.NEXT_PUBLIC_RYNTRA_TREASURY_NETWORK?.trim().toLowerCase() ?? "");
+
+/**
+ * «Perps» — the row of Phoenix's perpetuals (B7) in both languages, as Jupiter, Drift and Phoenix name theirs. The core's word for its `futures` row is still «Ф'ючерси» / «Futures», one for every
+ * network, and the other networks and the phone keep it; on Solana this word stands in its place: in the search and
+ * the page's registry here, and in the core's menu through `app/app/frame.css`, which the frame hands it as a custom
+ * property as it does the row's tag. Asked of the core as a network's own word for a row (handoff PERP-1); the frame's rule goes
+ * when the core takes one.
+ */
+export const PERPS_LABEL: DomainLabel = { en: "Perps", uk: "Perps" };
+
+/**
+ * The network Ryntra on Solana runs on, named on the plate beside the logo — the core's `network`: a plate, not a switch. One name in both languages, as the operator gave it.
+ */
+export const NETWORK_PLATE = "Solana Mainnet Beta";
+
+/**
+ * What Perps (Phoenix) let a person do now, in the search's hint (SOL-C2, UX-365, UX-350): since 22.10 orders are open
+ * from Ryntra, so the row in the menu carries no tag any more (PERP-2) — a tag stands only where
+ * a place lets a person do less than its word says.
+ */
+export const FUTURES_NOW: DomainLabel = { en: "orders open", uk: "ордери відкриті" };
+
+/** The tag in the menu beside a place's word — Казна's group — where it lets a person do less than its word says. */
+export const MENU_TAGS: Readonly<Partial<Record<MenuSectionId, DomainLabel>>> = {
+  ...(TREASURY_ON_MAINNET ? { treasury: { en: "Beta", uk: "Beta" } } : {}),
+};
+
+export type MenuSectionId = (typeof SOLANA_ROWS)[number] | "treasury" | "policies" | "lend";
+
+export const MENU_SECTION_IDS: readonly MenuSectionId[] = Object.freeze([
+  ...SOLANA_ROWS,
+  ...(EARN_IN_MENU ? (["lend"] as const) : []),
+  ...(TREASURY_IN_MENU ? (["treasury"] as const) : []),
+  ...(ALLOWANCES_IN_MENU ? (["policies"] as const) : []),
+]);
 
 export type MenuSectionDef = Readonly<{
   label: DomainLabel;
-  /** A second line that says what the section holds. Home carries none until it is Pulse. */
-  caption?: DomainLabel;
   href: string;
-  icon: string;
-  /** Every route the section stands for — its tabs' and the old addresses that lead into it. */
+  /** Every route the row stands for — its own and the old addresses that lead into it. */
   match: readonly string[];
-  /** The registered pages it holds, so every page lives in exactly one section. */
+  /** The registered pages it holds, so every page lives in exactly one row. */
   pages: readonly ProductPageId[];
-  tabs?: readonly MenuTab[];
 }>;
 
+/** A row's word in both languages, the core's own. */
+function navLabel(id: NavItemId): DomainLabel {
+  return { en: NAV_WORDS.en.items[id], uk: NAV_WORDS.uk.items[id] };
+}
+
+const row = (id: MenuSectionId, href: string, match: readonly string[], pages: readonly ProductPageId[] = []): MenuSectionDef => ({
+  label: navLabel(id),
+  href,
+  match,
+  pages,
+});
+
 export const MENU_SECTIONS: Readonly<Record<MenuSectionId, MenuSectionDef>> = {
-  home: { label: { en: "Home", uk: "Головна" }, href: "/app/home", icon: "home", match: ["/app/home"], pages: [] },
-  /* One screener for every asset: a company's page and an asset's page stand under it, and the two lists it
-     replaced — the stock screener and Trends — lead into it. */
-  markets: {
-    label: { en: "Markets", uk: "Ринки" },
-    caption: { en: "Stocks, crypto, memes", uk: "Акції, крипта, меми" },
-    href: "/app/markets",
-    icon: "explore",
-    match: ["/app/markets", "/app/stocks", "/app/trends", "/app/assets"],
-    pages: ["stocks", "trends", "predictions"],
-  },
-  trade: {
-    label: { en: "Trade", uk: "Торгувати" },
-    caption: { en: "Spot and swap", uk: "Спот і обмін" },
-    href: "/app/spot",
-    icon: "trade",
-    match: ["/app/spot", "/app/swap", "/app/trade"],
-    pages: ["spot", "swap", "perps"],
-    tabs: [
-      { id: "spot", label: { en: "Spot", uk: "Спот" }, href: "/app/spot", match: ["/app/spot"], page: "spot" },
-      { id: "swap", label: { en: "Swap", uk: "Обмін" }, href: "/app/swap", match: ["/app/swap", "/app/trade"], page: "swap" },
-    ],
-  },
-  /* Ryntra Launch: the form opens it; «Лаунчі на Ryntra» — every market launched on Ryntra, no wallet — and «Мої лаунчі» are tabs beside it; every launch's page stands under it. */
-  launch: {
-    label: { en: "Launch", uk: "Лаунч" },
-    caption: { en: "Your token", uk: "Свій токен" },
-    href: "/app/launch/new",
-    icon: "launch",
-    match: ["/app/launch"],
-    pages: [],
-    tabs: [
-      { id: "launch-new", label: { en: "Launch a token", uk: "Запустити токен" }, href: "/app/launch/new", match: ["/app/launch/new"] },
-      { id: "launch-markets", label: { en: "Launches on Ryntra", uk: "Лаунчі на Ryntra" }, href: "/app/launch/markets", match: ["/app/launch/markets"] },
-      { id: "launch-mine", label: { en: "My launches", uk: "Мої лаунчі" }, href: "/app/launch/mine", match: ["/app/launch/mine"] },
-    ],
-  },
-  /* Everything that runs on a person's rule: «Мої боти» gathers the recurring-buy rules and the plans with
-     their results; «Каталог» holds what can be set up. The plan builder and a plan's page stand under «Мої боти». */
-  bots: {
-    label: { en: "Bots", uk: "Боти" },
-    caption: { en: "Recurring buys, plans", uk: "Регулярна купівля, плани" },
-    href: "/app/bots",
-    icon: "bots",
-    match: ["/app/bots", "/app/strategies", "/app/plans", "/app/results", "/app/journal", "/app/brief", "/app/coverage", "/app/action-cases", "/app/control", "/app/agents", "/app/autoinvest"],
-    pages: ["my-strategies", "results"],
-    tabs: [
-      {
-        id: "bots-mine",
-        label: { en: "My bots", uk: "Мої боти" },
-        href: "/app/bots",
-        match: ["/app/bots", "/app/strategies", "/app/plans", "/app/action-cases", "/app/control", "/app/agents"],
-        page: "my-strategies",
-      },
-      { id: "bots-catalog", label: { en: "Catalog", uk: "Каталог" }, href: "/app/bots/catalog", match: ["/app/bots/catalog"] },
-    ],
-  },
-  portfolio: {
-    label: { en: "Portfolio", uk: "Портфель" },
-    caption: { en: "Positions and history", uk: "Позиції й історія" },
-    href: "/app/portfolio",
-    icon: "portfolio",
-    match: ["/app/portfolio", "/app/activity", "/app/receipts"],
-    pages: ["portfolio", "activity"],
-    tabs: [
-      { id: "positions", label: { en: "Positions", uk: "Позиції" }, href: "/app/portfolio", match: ["/app/portfolio"], page: "portfolio" },
-      { id: "history", label: { en: "History", uk: "Історія" }, href: "/app/activity", match: ["/app/activity", "/app/receipts"], page: "activity" },
-    ],
-  },
-  /* One page with four tabs; each keeps its address. */
-  money: {
-    label: { en: "Money", uk: "Гроші" },
-    caption: { en: "Top up and transfers", uk: "Поповнення й перекази" },
-    href: "/app/top-up",
-    icon: "money",
-    match: ["/app/top-up", "/app/send", "/app/receive", "/app/bridge"],
-    pages: ["send", "receive", "bridge"],
-    tabs: [
-      { id: "top-up", label: { en: "Top up", uk: "Поповнити" }, href: "/app/top-up", match: ["/app/top-up"] },
-      { id: "send", label: { en: "Send", uk: "Надіслати" }, href: "/app/send", match: ["/app/send"], page: "send" },
-      { id: "receive", label: { en: "Receive", uk: "Отримати" }, href: "/app/receive", match: ["/app/receive"], page: "receive" },
-      { id: "bridge", label: { en: "Cross-chain", uk: "Між мережами" }, href: "/app/bridge", match: ["/app/bridge"], page: "bridge" },
-    ],
-  },
-  rewards: {
-    label: { en: "Rewards", uk: "Винагороди" },
-    caption: { en: "Points, leaderboards, season", uk: "Бали, таблиці, сезон" },
-    href: "/app/rewards",
-    icon: "rewards",
-    match: ["/app/rewards"],
-    pages: ["rewards"],
-  },
+  home: row("home", "/app/home", ["/app/home"]),
+  /* The registered Perps page stays planned under Spot until trading from Ryntra comes with B6; its
+     address is the row Perps' own (PERP-1). */
+  spot: row("spot", "/app/spot", ["/app/spot"], ["spot", "perps"]),
+  swap: row("swap", "/app/swap", ["/app/swap", "/app/trade"], ["swap"]),
+  /* One screener for every asset: a company's page and an asset's page stand under it, and the two lists it replaced
+     — the stock screener and Trends — lead into it. Pools is a row of its own under Заробіток. */
+  markets: row("markets", "/app/markets", ["/app/markets", "/app/stocks", "/app/trends", "/app/assets"], ["stocks", "trends", "predictions"]),
+  /* Ryntra Launch: every market launched on Ryntra, no wallet; the form, «Мої лаунчі» and every launch's page stand
+     under it. */
+  launch: row("launch", "/app/launch/markets", ["/app/launch"]),
+  /* Perps: Phoenix's perpetuals inside Solana — the markets, the book, the core's
+     chart and the wallet's Phoenix account, in Solana's frame — at `/app/perps`, named «Perps» in both languages
+     ({@link PERPS_LABEL}, PERP-1); the old `/app/futures` leads here for good. The id stays the core's `futures`. Like
+     Прогнози, the row holds the route only: the registered Perps page stays planned (no documentation, no API
+     readiness yet) until trading from Ryntra comes with B6. */
+  futures: { ...row("futures", "/app/perps", ["/app/perps", "/app/futures"]), label: PERPS_LABEL },
+  /* Прогнози: the Predictions section on AGG inside Solana (NAV-6c, decision 58), a row of Торгівля without the
+     way-out arrow (`app/app/frame.css`); its hub, markets and paper portfolio light it. Its registered page stays off
+     the documented surface (no documentation page yet) and is still filed under Ринки, so this row holds the route
+     only: a row whose every page is off the surface would not be drawn. */
+  predictions: row("predictions", "/app/predictions", ["/app/predictions"]),
+  /* Everything that runs on a person's rule: the recurring-buy rules and the plans with their results (the old
+     «Автоінвест»); the plan builder, a plan's page and the catalogue stand under it. */
+  bots: row(
+    "bots",
+    "/app/bots",
+    ["/app/bots", "/app/strategies", "/app/plans", "/app/results", "/app/journal", "/app/brief", "/app/coverage", "/app/action-cases", "/app/control", "/app/agents", "/app/autoinvest"],
+    ["my-strategies", "results"],
+  ),
+  /* The assistant Ryntra: a row of Автоматика, and the button at the end of the header with the screen as its
+     context. Its older names lead here. */
+  assistant: row("assistant", "/app/ryn", ["/app/ryn", "/app/ideas", "/app/research", "/app/adviser"], ["ideas"]),
+  pools: row("pools", "/app/markets/pools", ["/app/markets/pools"]),
+  /* Earn: the lending markets, the wallet's position in them read from the chain, and one Review per
+     move. Registered here always and drawn only where {@link EARN_IN_MENU} says the section is reachable. */
+  lend: row("lend", "/app/earn", ["/app/earn"]),
+  rewards: row("rewards", "/app/rewards", ["/app/rewards"], ["rewards"]),
+  portfolio: row("portfolio", "/app/portfolio", ["/app/portfolio"], ["portfolio"]),
+  deposit: row("deposit", "/app/top-up", ["/app/top-up"]),
+  send: row("send", "/app/send", ["/app/send"], ["send"]),
+  receive: row("receive", "/app/receive", ["/app/receive"], ["receive"]),
+  bridge: row("bridge", "/app/bridge", ["/app/bridge"], ["bridge"]),
+  history: row("history", "/app/activity", ["/app/activity", "/app/receipts", "/app/fees"], ["activity"]),
+  /* The treasury's one page: the multisig, its proposals, payouts and limits; the agent's multisig is made there too. */
+  treasury: row("treasury", "/app/treasury", ["/app/treasury"]),
+  /* The spending limits' one page: give a limit, see who may take what, revoke in one tap. */
+  policies: row("policies", "/app/allowances", ["/app/allowances"]),
 };
 
-/** The section that holds each registered page — read off {@link MENU_SECTIONS}, never written twice. Ideas is the assistant's. */
+/** The group each row stands in, the core's; null for Home. */
+export function menuGroupOf(id: MenuSectionId): NavGroupId | null {
+  return groupOf(id);
+}
+
+/** Where each row opens, after the app's root — the frame hands it to the core's menu. */
+export const MENU_PATHS: NavPaths = Object.freeze(
+  Object.fromEntries(MENU_SECTION_IDS.map((id) => [id, MENU_SECTIONS[id].href.replace(/^\/app\/?/, "")])),
+) as NavPaths;
+
+/**
+ * The rows drawn here: every row of Solana — Perps (Phoenix, B7) and Прогнози (AGG) among them, both inside Solana's
+ * frame (decision 56).
+ */
+export const MENU_LIVE: readonly NavItemId[] = Object.freeze([...MENU_SECTION_IDS]);
+
+/** Every row's landing and the routes it owns, for `pageActiveHref`. */
+export const MENU_ROUTES: readonly Pick<PageRoute, "href" | "match">[] = MENU_SECTION_IDS.map((id) => ({ href: MENU_SECTIONS[id].href, match: MENU_SECTIONS[id].match }));
+
+/** The row a path stands in, or null: Settings, Нагляд and the other pages outside every row light none. */
+export function rowForPath(pathname: string): MenuSectionId | null {
+  const href = pageActiveHref(pathname, MENU_ROUTES);
+  return MENU_SECTION_IDS.find((id) => MENU_SECTIONS[id].href === href) ?? null;
+}
+
+/** The row that holds each registered page — read off {@link MENU_SECTIONS}, never written twice. */
 export const PAGE_SECTION: Readonly<Partial<Record<ProductPageId, MenuSectionId>>> = Object.freeze(
   Object.fromEntries(MENU_SECTION_IDS.flatMap((section) => MENU_SECTIONS[section].pages.map((page) => [page, section] as const))),
 ) as Readonly<Partial<Record<ProductPageId, MenuSectionId>>>;
 
-/** The assistant: «Спитати Ryntra» in the header on a desk, a row of «Ще» on a phone. Its older names lead here. */
+/** The assistant: a row of Автоматика, and «Спитати Ryntra» at the end of the header. */
 export const ASSISTANT = {
   label: { en: "Ryntra", uk: "Ryntra" },
   caption: { en: "AI assistant", uk: "ШІ-помічник" },
   ask: { en: "Ask Ryntra", uk: "Спитати Ryntra" },
-  href: "/app/ryn",
+  href: MENU_SECTIONS.assistant.href,
   icon: "ryntra",
-  match: ["/app/ryn", "/app/ideas", "/app/research", "/app/adviser"],
-  pages: ["ideas"] as readonly ProductPageId[],
 } as const;
 
-/** «+ Запустити токен» — on top of the menu on a desk, «+» in the middle of the phone's bar. */
+/** «Запустити токен» — the Launch page's own action, and an action of the search. */
 export const MENU_ACTION = {
   label: { en: "Launch a token", uk: "Запустити токен" },
   short: { en: "Launch", uk: "Лаунч" },
@@ -487,33 +546,36 @@ export const MENU_ACTION = {
   icon: "launch-plus",
 } as const;
 
-/** The foot of the menu: Відгук is a dialog the shell draws; Settings is a row. */
+/**
+ * What the wallet's panel holds: «Акаунт» — the page of the account, Telegram and the language; «Нагляд» — the page
+ * where every note and reminder lives, under the same name as its page; «Відгук». «Налаштування» is one place only:
+ * the row at the foot of the menu (the look, the density, the menu's place), so the panel's row carries another word.
+ */
 export const MENU_FOOT = {
   feedback: { en: "Feedback", uk: "Відгук" },
-  settings: { label: SECONDARY_LABELS.settings, href: "/app/settings", icon: "settings", match: ["/app/settings"] },
+  notifications: { label: { en: "Notifications", uk: "Сповіщення" }, href: "/app/alerts" },
+  settings: { label: { en: "Account", uk: "Акаунт" }, href: "/app/settings", icon: "settings", match: ["/app/settings"] },
 } as const;
 
 export type MenuRow = Readonly<{
-  /** A section's id, `agent` or `settings`. */
+  /** A row's id, or `settings`. */
   id: string;
   label: string;
-  caption?: string;
   href: string;
   icon: string;
 }>;
 
 export type MenuSection = Readonly<{ id: MenuSectionId; title: null; rows: readonly MenuRow[] }>;
 
-export type MenuGroup = Readonly<{ id: string; rows: readonly MenuRow[] }>;
+/** Home, then each of the core's groups that has a row here, in the core's order. */
+export type MenuGroup = Readonly<{ id: "home" | NavGroupId; label: string; rows: readonly MenuRow[] }>;
 
 export type MenuNavigation = Readonly<{
-  /** «+ Запустити токен». */
+  /** «Запустити токен». */
   action: Readonly<{ label: string; href: string; icon: string }>;
-  /** The three groups, in order. */
   groups: readonly MenuGroup[];
-  /** The same rows one section at a time — for the surfaces that list sections (search, documentation). */
+  /** The same rows one at a time — for the surfaces that list places (search, documentation). */
   sections: readonly MenuSection[];
-  /** The assistant's row, drawn in «Ще» on a phone only. */
   assistant: MenuRow;
   settings: MenuRow;
   feedbackLabel: string;
@@ -521,116 +583,96 @@ export type MenuNavigation = Readonly<{
   routes: readonly Pick<PageRoute, "href" | "match">[];
 }>;
 
-/** Whether a section is drawn: one with no registered page is a destination of its own; otherwise one of its pages must be drawn. */
+/**
+ * Whether a row is drawn: one that opens a page of its own — no registered page, or none at its address (the
+ * assistant, whose old Ideas page is planned) — is a destination of its own; otherwise one of its pages must be drawn.
+ */
 function sectionDrawn(section: MenuSectionDef, byId: ReadonlyMap<string, ProductNavEntry>): boolean {
-  if (section.pages.length === 0) return true;
+  if (!section.pages.some((id) => byId.get(id)?.href === section.href)) return true;
   return section.pages.some((id) => {
     const page = byId.get(id);
     return page !== undefined && drawn(page);
   });
 }
 
+/** The icon each group and Home carry in the surfaces drawn outside the core (the landing's picture of the menu). */
+const GROUP_ICON: Readonly<Record<"home" | NavGroupId, string>> = {
+  home: "home",
+  trading: "trade",
+  automation: "bots",
+  earning: "rewards",
+  money: "money",
+  treasury: "treasury",
+};
+
 /**
- * The menu, from the routes and a language and nothing else: a section whose
- * pages are all planned or off the surface is not a row, and a page missing
+ * The menu, from the routes and a language and nothing else: a row whose
+ * pages are all planned or off the surface is not drawn, and a page missing
  * from `routes` throws, as everywhere in this file.
  */
 export function menuNavigation(routes: readonly PageRoute[], locale: ProductLocale): MenuNavigation {
   const pages = new Map<string, ProductNavEntry>(projectPages(routes, locale).map((page) => [page.id, page]));
-  const row = (id: MenuSectionId): MenuRow => {
-    const section = MENU_SECTIONS[id];
-    return { id, label: section.label[locale], caption: section.caption?.[locale], href: section.href, icon: section.icon };
-  };
   const shown = (id: MenuSectionId) => sectionDrawn(MENU_SECTIONS[id], pages);
-  const groups = MENU_GROUPS.flatMap((group): MenuGroup[] => {
-    const rows = group.sections.filter(shown).map(row);
-    return rows.length === 0 ? [] : [{ id: group.id, rows }];
-  });
-  const assistant: MenuRow = { id: "agent", label: ASSISTANT.label[locale], caption: ASSISTANT.caption[locale], href: ASSISTANT.href, icon: ASSISTANT.icon };
+  const toRow = (id: MenuSectionId): MenuRow => ({ id, label: MENU_SECTIONS[id].label[locale], href: MENU_SECTIONS[id].href, icon: GROUP_ICON[groupOf(id) ?? "home"] });
+  const here = (id: NavItemId): id is MenuSectionId => (MENU_SECTION_IDS as readonly string[]).includes(id) && shown(id as MenuSectionId);
+  const groups: MenuGroup[] = [
+    { id: "home", label: NAV_WORDS[locale].items.home, rows: [toRow("home")] },
+    ...NAV_GROUPS.flatMap((group): MenuGroup[] => {
+      const rows = group.items.map((item) => item.id).filter(here).map(toRow);
+      return rows.length === 0 ? [] : [{ id: group.id, label: NAV_WORDS[locale].groups[group.id], rows }];
+    }),
+  ];
   return {
     action: { label: MENU_ACTION.label[locale], href: MENU_ACTION.href, icon: MENU_ACTION.icon },
     groups,
-    sections: MENU_SECTION_IDS.filter(shown).map((id) => ({ id, title: null, rows: [row(id)] })),
-    assistant,
+    sections: groups.flatMap((group) => group.rows).map((entry) => ({ id: entry.id as MenuSectionId, title: null, rows: [entry] })),
+    assistant: { id: "assistant", label: ASSISTANT.label[locale], href: ASSISTANT.href, icon: ASSISTANT.icon },
     settings: { id: "settings", label: MENU_FOOT.settings.label[locale], href: MENU_FOOT.settings.href, icon: MENU_FOOT.settings.icon },
     feedbackLabel: MENU_FOOT.feedback[locale],
     routes: [
       ...MENU_SECTION_IDS.filter(shown).map((id) => ({ href: MENU_SECTIONS[id].href, match: MENU_SECTIONS[id].match })),
-      { href: ASSISTANT.href, match: ASSISTANT.match },
       { href: MENU_FOOT.settings.href, match: MENU_FOOT.settings.match },
     ],
   };
 }
 
-export type SectionTabs = Readonly<{
-  section: MenuSectionId;
-  title: string;
-  tabs: readonly Readonly<{ id: string; label: string; href: string }>[];
-  /** The tab the path stands on. */
-  current: string;
-}>;
-
-/**
- * The tabs at the top of the page a path stands on, or null where the section
- * has none or the path is none of its tabs' (a launched token's page, a
- * company's page). A tab bound to a page that is not drawn is not a tab.
- */
-export function sectionTabs(pathname: string, routes: readonly PageRoute[], locale: ProductLocale): SectionTabs | null {
-  const pages = new Map<string, ProductNavEntry>(projectPages(routes, locale).map((page) => [page.id, page]));
-  for (const id of MENU_SECTION_IDS) {
-    const section = MENU_SECTIONS[id];
-    if (!section.tabs) continue;
-    const tabs = section.tabs.filter((tab) => {
-      if (!tab.page) return true;
-      const page = pages.get(tab.page);
-      return page !== undefined && drawn(page);
-    });
-    const current = pageActiveHref(pathname, tabs);
-    if (current === null) continue;
-    return { section: id, title: section.label[locale], tabs: tabs.map((tab) => ({ id: tab.id, label: tab.label[locale], href: tab.href })), current };
-  }
-  return null;
-}
-
 export type MobileNavEntry = Readonly<{
   id: string;
   label: string;
-  /** Null for `more`, which opens the menu rather than navigating. */
+  /** Null for `menu`, which opens the menu rather than navigating. */
   href: string | null;
   icon: string;
-  /** The landing hrefs this column stands for — its own, and for «Ще» every row it opens. */
+  /** The landing hrefs this column stands for — its own, and for «Меню» every row it opens. */
   matches: readonly string[];
-  /** The middle «+»: the launch of a token, drawn as an action rather than a place. */
+  /** Kept for the old frame's bar; Menu 3 has no action in the bar. */
   action?: boolean;
 }>;
 
-/** The sections the phone's bar holds; every other row opens from «Ще». */
-export const PHONE_BAR_SECTIONS: readonly MenuSectionId[] = ["home", "markets", "portfolio"];
+/** Where each place of the phone's bar opens on Solana: Торгівля on Spot, Гроші on Поповнити (the frame's bar opens its four actions instead). */
+export const PHONE_PLACES: Readonly<Record<Exclude<PhoneBarPlace, "menu">, MenuSectionId>> = {
+  home: "home",
+  trading: "spot",
+  money: "deposit",
+  portfolio: "portfolio",
+};
 
 /**
- * The phone's five: Головна · Ринки · + · Портфель · Ще. «Ще» opens the menu,
- * which on a phone draws Торгувати, Боти, Гроші, Винагороди, Ryntra and
- * Налаштування — the rows the bar does not hold.
+ * The phone's bar of Menu 3 — Головна · Торгівля · Гроші · Портфель · Меню (the core's `PHONE_BAR`). The product's
+ * own frame is the core's, whose menu opens in a bottom sheet; this bar is drawn only where a page still sits in the
+ * old frame.
  */
 export function mobileNavigation(routes: readonly PageRoute[], locale: ProductLocale): readonly MobileNavEntry[] {
   const menu = menuNavigation(routes, locale);
   const rows = menu.groups.flatMap((group) => group.rows);
-  const place = (id: MenuSectionId): MobileNavEntry[] => {
-    const found = rows.find((entry) => entry.id === id);
-    return found ? [{ id, label: found.label, href: found.href, icon: found.icon, matches: [found.href] }] : [];
-  };
-  const inMore = rows.filter((entry) => !PHONE_BAR_SECTIONS.includes(entry.id as MenuSectionId) && entry.id !== "launch");
-  return [
-    ...place("home"),
-    ...place("markets"),
-    { id: "launch", label: MENU_ACTION.short[locale], href: MENU_ACTION.href, icon: MENU_ACTION.icon, matches: [MENU_SECTIONS.launch.href], action: true },
-    ...place("portfolio"),
-    {
-      id: "more",
-      label: locale === "uk" ? "Ще" : "More",
-      href: null,
-      icon: "more",
-      matches: [...inMore.map((entry) => entry.href), menu.assistant.href, menu.settings.href],
-    },
-  ];
+  const words = NAV_WORDS[locale];
+  return PHONE_BAR.map((place): MobileNavEntry => {
+    if (place === "menu") {
+      return { id: "menu", label: words.menu, href: null, icon: "more", matches: [...rows.map((entry) => entry.href), menu.settings.href] };
+    }
+    const target = MENU_SECTIONS[PHONE_PLACES[place]];
+    const group = place === "trading" || place === "money" ? place : null;
+    const label = group ? words.groups[group] : words.items[place as "home" | "portfolio"];
+    const matches = group ? rows.filter((entry) => groupOf(entry.id as NavItemId) === group).map((entry) => entry.href) : [target.href];
+    return { id: place, label, href: target.href, icon: group ? GROUP_ICON[group] : place, matches };
+  });
 }

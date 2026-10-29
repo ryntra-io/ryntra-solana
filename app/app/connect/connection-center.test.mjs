@@ -22,7 +22,9 @@ test("the page gates the account and the venue credential independently", () => 
   assert.match(PAGE, /<ConnectionCenter/);
   assert.match(PAGE, /canManageVenue=\{session\.verified\}/);
   assert.match(CENTER, /canManageVenue \? [\s\S]*<ConnectFlow/);
-  assert.match(CENTER, /<WalletSignIn[\s\S]*action="link"/);
+  /* SOL-W1: no Ethereum sign-in on a Solana page — the wallet is linked in the account settings, by Solana. */
+  assert.doesNotMatch(CENTER, /WalletSignIn|wallet-signin/);
+  assert.match(CENTER, /href="\/app\/settings#account"/);
 });
 
 test("one operating surface makes all trust planes and connection families visible", () => {

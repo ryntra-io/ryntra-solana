@@ -12,8 +12,8 @@
  * The deployment may name a public dashboard (`RYNTRA_PUBLIC_DASHBOARD_URL`);
  * when it does not, the page says nothing about one.
  *
- * Cashback and friends' rewards are read from the reward ledger the growth
- * module writes — read only, through its own schema and its own rule for a
+ * Cashback and friends' rewards are read from the reward ledger the Growth
+ * line writes — read only, through its own schema and its own rule for a
  * later valuation — and matched to an operation by the reference the reward
  * names. A ledger that does not answer leaves every operation without rewards
  * rather than with zeros, and the page says so.

@@ -33,7 +33,7 @@ const COPY = {
   },
   uk: {
     windowWord: "Вікно",
-    sinceLastVisit: "Від вашого останнього візиту",
+    sinceLastVisit: "Від твого останнього візиту",
     lastDay: "Останні 24 години",
     reading: "Зчитування",
     coveringFrom: (from: string) => " Охоплює від " + from + " UTC.",

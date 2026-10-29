@@ -586,7 +586,7 @@
  * Ryntra's own RPC by the same `execute` route; its outcome receipt pins the
  * action `action:jupiter-swap/build-own-rpc-submit@1`. A `/order` order is unchanged, except that its referral
  * rate is now the flow's. The native carrier stayed on `/order` until its client
- * read this version; since 2026-10-05 it takes the same lanes as
+ * read this version (line B's M30); since 2026-10-05 it takes the same lanes as
  * the web, with no change to any shape: a client that sums a fee by mechanism adds the new one
  * beside `JUPITER_REFERRAL` — the fee is already inside Jupiter's total.
  *
@@ -778,16 +778,17 @@
  * referral — read from the swap event; the person paid nothing on top of the
  * curve's or the pool's fee. `POST /api/v1/launch/{mint}/trade/submit` answers
  * also `receiptHash` (the trade's Outcome Receipt, once the chain answered in
- * time; null otherwise) and `shareLink` (the launch's page through the
- * person's own referral code, for «Поділитися угодою»; null when it could not
- * be made). `POST /api/v1/launch/{mint}/trade/receipt` with `{ wallet,
+ * time; null otherwise) and `shareLink` (the token's short address
+ * `/t/<8>/<code>` with the person's own referral code — it previews the
+ * token's card and sends a person on to its page, SOL-L1e — for «Поділитися
+ * угодою»; null when it could not be made). `POST /api/v1/launch/{mint}/trade/receipt` with `{ wallet,
  * signature }` — the trade's issuer-signed Outcome Receipt
  * (`LaunchTradeReceiptResponseSchema`): its facts are chunked JSON under
  * `ryntra.solana.launch-trade-receipt.facts@1`, as a swap's; a trade still in
  * flight is settled from the chain first. `capabilities.launch.tradeReceipt`
  * names it. A client that does not know `LAUNCH` reads the row as a swap.
  *
- * **1.35.0 — the referral binds on its own.**
+ * **1.35.0 — the referral binds on its own (the Growth line's «Ріст v6-9»).**
  * `GET /api/rewards/referral` and `POST` share `RewardsReferralStateSchema`,
  * which gains three optional keys: `binding` (`{ open, until }` — with no
  * inviter yet, whether one can still be added: before the first trade `until`
@@ -889,6 +890,404 @@
  * /api/v1/launch/holders/{address}` is the same for every address: true wherever the entry is open to people; while it
  * is closed, true only for an operator's own wallet that the request proved it signs for (a wallet sign-in) — a named
  * address alone never tells whose it is. A client that skips unknown keys needs no release.
+ *
+ * **1.43.0 — the assistant's core v2 (AI-02, 2026-10-17).** Additive. `POST /api/v1/agent/session` takes `fresh`
+ * («Нова розмова»: a new conversation even where one for the same context exists). `GET /api/v1/agent/sessions` lists
+ * the proven wallet's conversations — the first question, the turn count, the dates and `expiresAt`: a conversation
+ * lives `AGENT_SESSION_RETENTION_DAYS` (90) days from its last turn and is then neither read back nor listed.
+ * `POST /api/v1/assistant/guest` answers a market question without a wallet — a price, a move, an asset's evidence, a
+ * comparison — the same tools and verifier as a conversation, nothing of anyone's own read and nothing stored; a
+ * question about a portfolio, a plan or a trade is answered with the way to connect a wallet. A guest's model answers
+ * are limited per day by a keyed digest of the request's address (`guest.day`), the request rate per minute
+ * (`RATE_LIMITED`); over the day the answer is still given, composed from the reads. No response shape changed.
+ * **1.42.0 — notes from the spot limits (2026-10-16).** Additive. A note's subject may be `limit-order`, `id` the order
+ * account of a spot limit order Ryntra recorded (Jupiter's Trigger or Meteora DLMM): «Ордер виконано» / "Limit order
+ * filled" when the order fills — on DLMM, converted and waiting to be taken back in «Мої ордери» — and «Квитанція
+ * готова» / "Receipt ready" when the reconciler settles a placement or a cancellation the request left without an answer
+ * (placed, not placed, cancelled, taken back to the wallet, or not cancelled — the order still waits). One note per event and order, in the language of the
+ * wallet's newest registered device, both languages in `text`; the words name the side, the token and the venue — never
+ * an amount or a price, so they stand on a lock screen. Its action is «Мої ордери»; its link opens the base token's
+ * Spot page (`/app/spot?mint=`), where the orders are, and so does its Telegram button. The limits routes `POST
+ * /api/solana/limits/{market,review,orders,cancel,submit}` answer the native bearer for its own wallet as they answer the
+ * site's own origin; the phone's limits go through them. A client that reads note subjects as a closed list adds
+ * `limit-order`; one that skips an unknown kind needs no release.
+ *
+ * **1.45.0 — Rewards 2.1.0 (Ріст 2, the Growth line, 2026-10-18).** Additive. `GET /api/rewards` gains an optional `programme`:
+ * the claim floor for this wallet now ($0.25 with a USDC account, $1 when the payout opens one or the account
+ * could not be read; `usdcAccount` says which), the offer «First $10 back» (cap, days from the first trade, new
+ * wallets a month), the wallet's own window when it holds one (open or closed, its check, what came back, the part
+ * waiting for the check, when it ends) and the inviter's window (share and days from a friend's first trade). The
+ * field is absent until rules 2.1.0 are in force. A client that does not read it needs no release.
+ *
+ * **1.46.0 — «Ранковий огляд» (the assistant line, AI-10, 2026-10-18).** Additive. `GET /api/v1/assistant/brief` reads
+ * the proven wallet's morning brief — whether it is on, its time and zone (09:00 Europe/Kyiv unless the person chose
+ * another quarter hour), when the next one comes (after the quiet hours of Нагляд when the time falls inside them),
+ * where it goes (the inbox always; Telegram and push as Нагляд's preferences say) and the latest brief: «Сьогодні на
+ * ринку», one for everyone, and the person's own changes in their tokens, positions and plans, each part the
+ * model's blocks over the server's lines, every line marked `fact` or `unverified` with its source and time. `PUT`
+ * turns it on or off and sets the time. A note's subject may be `assistant-brief`, `id` the person's day
+ * (`2026-10-18`): its words are the brief's text, its action «Відкрити огляд», its link the assistant's page with the
+ * day's brief open (`/app/ryn?brief=<day>`). `priceCredits` says what the brief will cost once credits exist; until
+ * then `charged` is false. A client that skips an unknown note kind needs no release.
+ *
+ * **1.47.0 — whether Ryntra's executor acts, not read (line A, SOL-L1a, 2026-10-18).** Additive. A market's health
+ * `engine.actsUnread` is `true` when the executor's switch or its passes could not be read now and no recent read stands
+ * in: `engine.acts` is then false by not knowing, not because the executor stopped — a client says «not read», never
+ * that Ryntra's collector or executor does not run. Absent when it was read. A client that does not read it needs no
+ * release.
+ *
+ * **1.50.0 — the price of a launch before the signature (line A, SOL-L1b, 2026-10-19).** Additive. A pool trade's quote
+ * `fee.liquidity` splits `fee.liquidityRaw`: the creator's and Ryntra's locked positions of the move to the DEX (half
+ * each of the pool's permanently locked liquidity, by the pool's liquidity read with the quote), every other position,
+ * and the share compounded back into the pool (it grows all of the pool's liquidity); null on the curve, or when the
+ * pool's liquidity was not read. The
+ * launch's build takes `partner` — the creator's partner as the review showed it («offered»), removed («none»), or
+ * another one by `{ code }` — and answers the partner it binds, masked; absent, nobody is bound. Each preset of
+ * `GET /api/v1/launch/presets` carries `terms`: who receives every fee on the curve, at the move to the DEX and in the
+ * DEX pool, in basis points. A launch refused because
+ * too many launches go out on the network this hour answers `LAUNCH_BUSY` (429) to a client that names 1.50.0 or later
+ * in `X-Ryntra-API-Version`, and `LAUNCH_PAUSED` as before to any other. A client that does not read them needs no
+ * release.
+ *
+ * **1.52.0 — the assistant's credits (the assistant line, AI-04, 2026-10-20).** Additive. A question that reaches the
+ * model is paid in credits, not counted against a call allowance: the day's free credits first (20 a UTC day, not
+ * carried over), then the welcome and the bought ones. `budget.credits` (`AssistantCredits`) says what there is — the
+ * free credits of the day, the balance, what is held, the day's cap, every action's price — and `budget.reason` says why
+ * the next question would be answered without the model. `acceptCredits` on `POST /api/v1/agent/message` and on the
+ * lens routes is the price the client showed before the question: past the free credits nothing of the balance is taken
+ * without it, and a price above it is refused; absent, only free credits are spent. Over the credits the answer is still
+ * given — composed from the reads. `GET /api/v1/assistant/credits` reads the credits and their latest entries;
+ * `POST /api/v1/assistant/credits/welcome` asks for the welcome credits once per wallet and per account —
+ * `WELCOME_TAKEN` (409), `WELCOME_NOT_ELIGIBLE` (403) for a wallet younger or quieter than the check. Credits are the
+ * service's own units, never a token, never paid out. A client that does not read them needs no release; a client that
+ * does not send `acceptCredits` gets the free credits of every day.
+ *
+ * **1.54.0 — buying credits for USDC (the assistant line, AI-12, 2026-10-20).** Additive. `GET /api/v1/assistant/credits`
+ * carries `purchase` — whether credits are sold on this deployment, the packages ($2 → 2 000, $5 → 5 250, $10 → 11 000,
+ * $25 → 28 750) and the treasury they are paid to. `POST /api/v1/assistant/credits/orders` opens an order for one
+ * package: a payment request to the treasury with its own Solana Pay reference, valid 15 minutes, paid on the page the
+ * product already has (`payPage`, `/pay/<id>`; the phone builds the transfer through `POST /api/pay/<id>/transaction`
+ * and signs it with MWA). `GET /api/v1/assistant/credits/orders` and `GET /api/v1/assistant/credits/orders/<id>` read
+ * the chain for the reference and credit once — USDC that reached the treasury in a successful transaction carrying it;
+ * each signature counts for one order. Less than the package is credited at 1 000 for 1 USDC without the bonus, more —
+ * the package and the rest at that rate; another token is not credited (`wrongToken`). `CREDIT_ORDER_NOT_FOUND` (404).
+ *
+ * **1.55.0 — Proof-of-Launch (line A, SOL-L3, 2026-10-20).** Additive. `GET /api/v1/launch/survival`: the survival of
+ * every market launched on Ryntra on this network at 7, 30 and 90 days — alive at day N when someone other than its
+ * creator and Ryntra's own wallets traded it in the week up to day N, each proven by that trade's transaction, quiet when
+ * that week was read whole without one, not read otherwise (a client gives no rate while any market at that age is not
+ * read: it is most often a busy one); people's markets and Ryntra's own apart. A token's
+ * `GET /api/v1/launch/{mint}` carries `storage`: its metadata and picture by sha256, their IPFS address and their pinned
+ * IPFS copy. A client that does not read them needs no release.
+ *
+ * **1.56.0 — Формати запуску 2 (line A, SOL-L5, 2026-10-20).** Additive. `GET /api/v1/launch/presets` carries
+ * `communities` — «Спільнота»'s community tokens, each with the operator's own config — and `formats`, the formats of
+ * «Розширені параметри» with their bounds, each null where it is not offered (on mainnet until the operator gives its
+ * bounds; early access also until his word). The preset `advanced` — «Розширений»: a config of one launch from the
+ * creator's choice within the operator's bounds, made by `POST /api/v1/launch/advanced/config/build|submit` and named by
+ * the launch's quote and build (`advancedConfig`); two signatures, the config's and the launch's. `pairMint` on the quote
+ * and the build names the community token «Спільнота» pairs against. `GET /api/v1/launch/{mint}` carries `advanced` (the
+ * launch's own numbers and what makes them unusual) and `pair`. Launch Boost — a creator's campaign for buyers from the
+ * creator's own money: `GET /api/v1/launch/{mint}/boost` shows its rules before a purchase; `POST
+ * /api/v1/launch/{mint}/boost/build|submit` locks its budget in Met Lock from the creator to the creator until the
+ * campaign and its hold are over; `POST /api/v1/launch/{mint}/boost/payout/build|submit` — the payout counted from the
+ * chain and signed by the creator. Ryntra takes 0. Early access — `POST /api/v1/launch/early-access/build|submit`: an
+ * honest Token-2022 mint, a DAMM v2 pool with the creator's position locked for ever and a Meteora Alpha Vault (FCFS or
+ * Pro Rata) people deposit USDC into before trading opens; `GET /api/v1/launch/{mint}/early-access[?wallet=]`, `POST
+ * /api/v1/launch/{mint}/early-access/deposit/build|submit`, and after the deposits `POST
+ * /api/v1/launch/{mint}/early-access/action/build|submit` — CLAIM the vested tokens, WITHDRAW_REMAINING the unspent USDC,
+ * WITHDRAW a Pro Rata deposit while deposits are open, FILL the vault's permissionless purchase. A client that does not
+ * read them needs no release.
+ *
+ * **1.57.0 — «Стежити за токеном» (the assistant line, AI-05, 2026-10-20).** Additive. `GET /api/v1/assistant/watches`
+ * lists the proven wallet's token watches — each its token by mint, its rule (`price` — the price crossed a level,
+ * with a 1 % band so a price on the line rings once; `move` — ±N % over 5 min, 1 h or 24 h; `volume` — the hour traded
+ * N times the day's hourly average; `liquidity` — the depth of the token's pools against USDC, USDT or SOL, or of one
+ * named pool, changed by N % over 1 h or 24 h), on or paused, its pause between notes, its channels, what it reads now
+ * and its latest note — with the presets a newcomer picks from, how many of the three free watches are left and the
+ * price of «Чому?» (`explain`: the question put to the assistant only when the person asks it, at that price). `POST`
+ * starts a watch from a preset or a rule; `PATCH /api/v1/assistant/watches/{id}` pauses, resumes or changes it (a
+ * changed rule starts afresh), `DELETE` removes it. `WATCH_LIMIT_REACHED` (409) past three, `WATCH_NOT_FOUND` (404),
+ * `WATCH_VERSION_CONFLICT` (409) on a stale `ifVersion`, `ASSET_UNCONFIRMED` (422) for a mint Jupiter does not know.
+ * Every token is read once for everyone who watches it; a note goes to the inbox always and to Telegram and push as
+ * Нагляд's preferences and the watch's channels say, at most 20 an hour, held through quiet hours. A note's subject
+ * may be `token-watch`, `id` the watch: its link is the assistant's page with the watch open (`/app/ryn?watch=<id>`). A
+ * client that skips an unknown note kind needs no release.
+ *
+ * **1.58.0 — «Знайомство» (the assistant line, AI-06, 2026-10-20).** Additive. `GET /api/v1/assistant/profile` reads
+ * the proven wallet's five answers — the goal (`learn`, `trade`, `hold`), the experience (`new`, `some`, `pro`), the
+ * risk per trade (0.5, 1 or 2 %), the horizon (`hours`, `days`, `weeks`) — or that the person skipped them, and where
+ * notes go (Нагляд's preferences: Telegram, push, quiet hours). `PUT` writes the four answers or `{ "skipped": true }`
+ * and, with `delivery`, the same preferences the monitoring settings write. The answers shape only how Ryntra words an
+ * answer (plainer for a newcomer, the horizon's window first); they never become a buy or a sell. A client that does not
+ * read them needs no release.
+ *
+ * **1.60.0 — execution truth (line A, SOL-X1, 2026-10-21).** Additive. `POST /api/solana/activity` answers `cashback`
+ * beside `rewards`, behind the same wallet proof: the cashback each trade earned, by the trade's signature (the
+ * wallet's CASHBACK accruals summed per operation, every trade that has one; `usdMicros` null while unvalued, `held` while part
+ * waits on «First $10 back»'s check). A receipt's execution truth states it beside its own facts. Read-only over the
+ * Rewards ledger — no rate, route or receipt changed. A client that does not read it needs no release.
+ *
+ * **1.61.0 — «План угоди й критик» (the assistant line, AI-11, 2026-10-21).** Additive. `POST /api/v1/assistant/plans`
+ * composes a trade plan with the strong model from the person's idea, their loss limit and budget and any level they
+ * know (or a conversation's draft, `draftId`) — a structure: the thesis, the entry and its bound, the invalidation, up to
+ * three targets, the fees and the size the plan engine computes, every assumption with who made it, the sources read —
+ * and the critic, the same strong model under its own instruction, argues with it beside the plan engine's own checks;
+ * at `prices.plan` credits, held before the first call and taken by what stood: the plan's part when its words did, the critic's part (`prices.recheck`) when its findings did, nothing otherwise (`acceptCredits`). `GET
+ * /api/v1/assistant/plans[/{id}]` reads the plans with their state (`draft` → `checked` → `approved` → `watching` →
+ * `done` / `cancelled` / `broken`), versions, journal, what Нагляд says of each and «План проти реальності» — every trade
+ * under the plan against it, its receipt and its risk in words. `PUT …/{id}` is the person's change: a new version,
+ * checked by the rules; `POST …/{id}/critic` the strong critic again at `prices.recheck`; `POST …/{id}/state` the
+ * person's word — `approved` writes their own Trading Plan from the version, `watching` activates it so Нагляд watches it,
+ * `cancelled` ends both while nothing was traded. Ryntra never trades: no route here quotes, builds, signs or sends. New
+ * error codes `ASSISTANT_PLAN_NOT_FOUND` (404), `ASSISTANT_PLAN_VERSION_CONFLICT` (409), `ASSISTANT_PLAN_STATE_REFUSED`
+ * (409). A client that does not call the routes needs no release.
+ *
+ * **1.62.0 — the Predictions failure vocabulary after PM-S1 (the predictions line, 2026-10-21).** Additive. The
+ * prediction failure codes add `FUNDING_OFF` (403 — live money is switched off on this deployment) and `WITHDRAWAL_OPEN`
+ * (409 — a withdrawal whose state is not known yet stands for this wallet), as `lib/predictions/failure.ts` has them
+ * since PM-S1; only the funding routes (`/api/predictions/funding/**`, live money behind `PREDICTIONS_LIVE_FUNDING`,
+ * not described in this contract yet) answer them. A prediction route acts only for a Solana wallet since PM-S1: an
+ * EVM proof is refused by the handler with UNAUTHORIZED 401. No described route's answer changed. A client that does
+ * not call the funding routes needs no release.
+ *
+ * **1.63.0 — a followed wallet's note (SOL-R4, line A, 2026-10-21).** Additive. A note's subject may be `wallet-watch`,
+ * `id` the followed wallet's address: a trade that wallet made, read from the chain — bought or sold a token, or «the
+ * creator of a token sells» — written by «Стеження за гаманцями» («Ринки» → «Гаманці», `/app/markets?tab=wallets`).
+ * The note opens the wallet there; it has no monitor and no «Чому?». The wallets a person follows are served outside
+ * v1 (`/api/wallet-watch`), not described here yet. A client that does not read the notes' subject needs no release;
+ * one that switches on it treats an unknown kind as a plain note.
+ *
+ * **1.64.0 — «Голос у вебі» (the assistant line, AI-08, 2026-10-21).** Additive. `POST /api/v1/assistant/voice` hears a
+ * recording on the server where the browser's own recognition is missing or failed: the recording's own `id` (a UUID
+ * the client makes when it stops — the same id is heard once and answered again with its words, never charged twice),
+ * the audio (base64, at most two minutes, its length read from its own WebM, MP4 or Ogg container before anything is
+ * paid), its type, the seconds the client counted, the language, and `acceptCredits` — the price the client showed,
+ * `prices.voice` credits for each started 30 seconds. The price is held, the recording heard (`gpt-transcribe` with the
+ * language and the product's tickers), and the hold kept only when words were heard. The answer is the words for the
+ * question field — `text`, `seconds`, `spent` (`free` of them the day's free credits), `repeat` and the credits
+ * after — never a question asked: the client puts them in the field for the person to correct and ask. Voice gives no
+ * permission and starts no action. New error codes `VOICE_TOO_LONG` (413 — over two minutes, heavier than its length
+ * allows, or longer than it says), `VOICE_NOT_HEARD` (422 — no words; nothing charged), `VOICE_PRICE_NOT_SHOWN` (409 —
+ * read `prices.voice` again), `VOICE_DAY_SPENT` (429 — the deployment's day of voice on the server is spent),
+ * `CREDITS_DAY_CAP` (429 — the holder's day's spending cap is reached). A client that does not call the route needs no
+ * release.
+ *
+ * **1.65.0 — «Імена .skr» (line A, SKR-4, 2026-10-22).** Additive. `GET /api/v1/research/skr-name` reads a Seeker
+ * owner's `.skr` name on mainnet through Solana Mobile's `@solana-mobile/skr-domain`: `?name=alice.skr` answers the
+ * address that owns the name now — read from the chain every time, never cached, because it is where money goes (a
+ * client asks again right before a signature and shows the whole address in Review); `?address=` answers the wallet's
+ * primary name, the one it chose, cached an hour; `&self=1` — only when the request proves that wallet (the proof
+ * cookie or the bearer), otherwise ignored — the first of the names it holds when it chose none, read on the server alone. `state` is `FOUND`, `NOT_FOUND` (no such name, or it
+ * expired; for an address: no name) or `UNAVAILABLE` (the chain did not answer — never «no name»). A name is one
+ * label of ASCII letters, digits, `-` and `_` before `.skr`. `capabilities.research.skrName` names the route. A client
+ * that does not call it needs no release.
+ *
+ * **1.66.0 — «Перевірено Seeker» (SKR-3, line A, 2026-10-22).** Additive. `GET /api/v1/auth/seeker` says whether the
+ * wallet the session proved by signature (the web's cookie or the phone's bearer — `requireWalletProof`, a read)
+ * holds a Seeker Genesis Token: `address`, `verified`, `tokens` (each `mint` and its `memberNumber` in the SGT group,
+ * as a string), `network` and `checkedAt`. The server reads it on mainnet with Solana Mobile's
+ * `@solana-mobile/skr-genesis-token` — membership in the SGT group from the mint's own bytes — and keeps a found
+ * answer an hour, «none» five minutes. A chain that could not be read is `UNAVAILABLE` (503), never `verified: false`.
+ * No new error codes. It is a mark, not a permission: nothing is paid or unlocked by it. A client that does not call
+ * the route needs no release.
+ *
+ * **1.66.0, words only (the assistant line, AI-21, 2026-10-24).** No shape changed, no version moves. (1) A recording
+ * heard as nothing but the recogniser's own word list («Ryntra, SOL, Solana, BONK, …» — what silence came back as) is
+ * `VOICE_NOT_HEARD` with nothing charged, on `POST /api/v1/assistant/voice` and for a voice in Telegram alike — a
+ * recording of a single ticker alone («SOL») included; the seconds the provider billed still count in the deployment's
+ * day. (2) An evidence card's `reason`, a note card's `reason`, and every sentence of the answer, the Brief and the
+ * Critic that says why an observation or a read is missing, is the server's words in the person's language — never a
+ * provider's status code or transport sentence («(422)», «The request was refused»). (3) The head of an answer to «what
+ * moved the price?» is the move card's own line: one figure, one source (DexScreener), its time; over 24 h, the moved
+ * token's catalogue change and candles' day move are not said beside it, by the composer or by the model. A client
+ * needs no release.
+ *
+ * **1.67.0 — «Матриця можливостей і повноважень» (EXE-1, line A, 2026-10-24).** Additive. `capabilities.authority`: one
+ * row per venue × action on Solana — its honest state on the deployment that answers, who holds the bound when the
+ * person is not signing, the mode, the signer and what runs alone; `automatic` is false on every row. No new route, no
+ * new error code. A client that does not read the field needs no release.
+ *
+ * **1.68.0 — «Події ринку» (DSC-1, line A, 2026-10-24).** Additive. `GET /api/v1/events` is one public feed of what
+ * happened on Solana's markets — a new token, a token out to a DEX (DBC → DAMM v2 for a launch on Ryntra), an Alpha
+ * Vault opened, a pool's liquidity changed, a mint or freeze right still on, a creator's lock opening, a creator's sale,
+ * an act of a launch's flight log — each with its type, `happenedAt` and `observedAt`, its `sources`, its `signature`
+ * or `account` with the explorer's link, its `finality` and whether its figures are `stale`, and the token's Pulse
+ * risk flags. One fact, one record: `id` is `signature:index` for a fact with a transaction, and a fact told twice —
+ * by two sources or by one twice — is one record. A suspicious token's event never stands above the first five clean
+ * ones, after any filter. `observedAt` is when the server first saw the fact. `coverage` says which kinds are read, in
+ * part or not yet; `logs` how many launches' flight logs were read. No wallet; no advice, no «signal», no trade. No new error codes. A
+ * client that does not call it needs no release.
+ *
+ * **1.69.0 — «Частка творця за його вибором» (line A, SOL-L2b, 2026-10-24).** Additive. `GET /api/v1/launch/{mint}/split`
+ * — the creator's division of their own share of the fees, собі · глибина · спільнота · холдерам: the rule in force and
+ * its lines (the token's page shows them before a purchase), what it owes by the chain's count of the creator's claims
+ * and what was done, the creator's depth steps in the token's DLMM pool as the chain holds them, each payout round with
+ * its rows and root; for a launch with no rule, the empty split. `POST /api/v1/launch/{mint}/split/rule/build|submit` —
+ * a rule the creator signs as a memo on chain, only raised once in force, its community wallet kept; `POST
+ * /api/v1/launch/{mint}/split/depth/build|submit` — after the DEX, the buy steps from what depth is owed, from the
+ * creator's wallet (the pool made first where there is none); `POST /api/v1/launch/{mint}/split/payout/build|submit` —
+ * the community's part and the holders' by a snapshot without the creator's wallets, the bundle, programs and Ryntra's
+ * wallets and of tokens not bought on the market, the round's root in a memo first. Only the creator signs; Ryntra takes
+ * 0. `open` is false on mainnet, and every build answers CAPABILITY_UNAVAILABLE there. No new
+ * error codes. A client that does not read
+ * them needs no release.
+ *
+ * **1.70.0 — Ryntra Launch: the curve's surplus in «Мої лаунчі» (SOL-L1d, line A, 2026-10-24).** Additive. The creator's
+ * side of a launch earns a fourth source, `surplus` — once the curve is full, the creator's part of what the last
+ * purchase raised above the threshold (Meteora's formula: 80 % of it to the partner and the creator, the creator's part
+ * by its trading share), withdrawn or not by the curve's own flag: `LaunchEarnings.role.surplus`, the claim's
+ * `sources` may name it, and a receipt's `paid.surplus` is what the program's `EvtCreatorWithdrawSurplus` says it paid.
+ * A claim may now take up to five transactions and name up to four sources. «Забрати» after the DEX takes the locked
+ * LP's fee from the creator role's exit position the move to the DEX opened (no longer from the first position a node's
+ * index lists for the wallet). No new routes, no new error codes. A client that reads `role` by its named sources needs
+ * no release; one that adds up `paid` should add `surplus`.
+ *
+ * **1.71.0 — Ryntra Launch: a safe launch (MC-1, line A, 2026-10-25).** Additive. On Micro and the demo market a
+ * creator's first purchase and its lock are one v1 transaction: `POST /api/v1/launch/build` takes `format: "v1"`, and
+ * then answers the creation with the lock inside it and `lockUnsignedWireBase64: null`; without it a first purchase there
+ * is refused `LAUNCH_WALLET_V1_REQUIRED` (422) — a launch without one is built as before. The token's picture is checked
+ * before it is stored: one Ryntra took down, or — when the operator switched the check on — one the moderation model reads as sexual, violent, graphic or self-harm,
+ * is `LAUNCH_IMAGE_REFUSED` (422); a check that could not run stores nothing, `LAUNCH_IMAGE_CHECK_UNAVAILABLE` (503). A
+ * token whose details Ryntra took down reads with no picture, no description, no links and no IPFS copies. No new routes. A client that
+ * launches Micro with a first purchase sends `format: "v1"` where its wallet signs v1.
+ *
+ * **1.72.0 — «Комісія за переказ» (SOL-L10, line A, 2026-10-25).** Additive. Where the format is offered (its flag
+ * `RYNTRA_LAUNCH_TRANSFER_FEE=open` on DBC SDK 2.0.0 — opened after devnet and the operator's canary), «Розширений»'s bounds carry
+ * `transferFeeMaxBps` (2 %) and its choice may carry `transferFeeBps`: the config is made by `createConfig2` with the
+ * token's `TransferFeeConfig` — RevokeZeroFee (the rate works on the curve; the move to the DEX sets 0 % two epochs on and
+ * revokes the authority), the creator withdraws what is withheld. Without `transferFeeBps` nothing changes and the token
+ * carries no such extension. A launch receipt may name `TransferFeeConfig` among the extensions, carries `transferFee`
+ * (the rate, the creator, the timeline's phase at the read) and the mark `TRANSFER_FEE_UNTIL_DEX` in place of
+ * `NO_TRANSFER_HOOK`; a market's rules may name it too. New routes: `GET /api/v1/launch/{mint}/transfer-fee` (the cycle —
+ * in holders' accounts, harvested to the mint, withdrawn — and the timeline by epoch, public) and
+ * `POST /api/v1/launch/{mint}/transfer-fee/build|submit` (the creator's harvest or withdraw, signed by the wallet alone).
+ * New error code `LAUNCH_NO_TRANSFER_FEE` (404). A client that draws marks by code should draw the new one by its words.
+ *
+ * **1.73.0 — Ryntra Launch: the pair-currency watch and «Забрати все» (SOL-L12, line A, 2026-10-25).** Additive. One
+ * new route, `GET /api/v1/launch/{mint}/claim/review?wallet=` — the Review before «Забрати»: every pocket of the
+ * creator's side (the curve's fee, the DEX exit's fee, the surplus, the locked position's fees, the curve's leftover,
+ * a transfer fee) with what it holds and whether this claim takes it, the transactions the wallet will sign and what
+ * each takes, the creator role's exit position as the NFT it is (who holds it, locked for ever), the surplus as Meteora
+ * splits it and the creator's own lock's dates. The token's read carries `pairWatch`: the pair currency's mint as Ryntra
+ * watches it — `CHANGED` with the fields that changed when its issuer changed the transfer fee, an authority or an
+ * extension. One new error code: a launch on a changed pair is refused `LAUNCH_QUOTE_PAUSED` (503) — to a client naming
+ * 1.73.0 or later; an older one gets `LAUNCH_PAUSED`. A note of kind `launch-creator` may now say the pair changed.
+ *
+ * **1.74.0 — Ryntra Launch: launch windows and crews (MC-2, line A, 2026-10-25).** Additive: five routes and one field.
+ * `GET /api/v1/launch/windows` — the windows' schedule (a small one at the top of every hour UTC, a big one every
+ * evening), the one open now and the next ones. `POST /api/v1/launch/crews` — the creator's proven wallet invites one to
+ * four people by X handle, each with a part of the creator's fees; `GET /api/v1/launch/crews/{id}` — the crew as anyone
+ * reads it, each invitee's words to say yes to; `POST /api/v1/launch/crews/{id}/answer` — an invitee's own yes, or that
+ * wallet taking it back; `GET /api/v1/launch/crews` — the crews in flight, the vault's rows by wallet. `POST
+ * /api/v1/launch/build` takes `crew` on Classic and Protected: the Dynamic Fee Sharing vault's rows are the creator and
+ * the members who said yes. Crew writes answer `CAPABILITY_UNAVAILABLE` where crews are not open. No new error codes. A client that does not make crews needs no release.
+ *
+ * **1.75.0 — a team's roles and rights (TEAM-1, line A, 2026-10-25).** Additive: eight routes and seven error codes.
+ * `GET /api/v1/teams/roles` — the matrix: nine roles (Owner · Admin · Finance · Launch Operator · Market Operator ·
+ * Developer · Analyst · Viewer · Agent) × the nine rights of spec §9.2 and `members`, each `ALLOW`, `MULTISIG` or `DENY`;
+ * a high-risk right (sign, deploy, payouts, withdraw, change rules) is never `ALLOW` — only a proposal on the team's
+ * Squads treasury, through an EXE-1 row signed by the multisig. `GET`/`POST /api/v1/teams` — the proven wallet's teams
+ * (one wallet, many teams) and a new one, its maker the first Owner; `GET /api/v1/teams/{id}` — the team as the wallet
+ * may read it: the list to an active member, the journal to one who reads receipts, the treasury's signers on chain
+ * beside the list; `POST /api/v1/teams/{id}/members` — an invitation; `POST /api/v1/teams/{id}/members/{wallet}` — the
+ * wallet's own yes, a new role, or removal; `POST /api/v1/teams/{id}/treasury` — an Owner links a multisig their wallet
+ * is on, once — a linked treasury changes only by its own multisig; `GET /api/v1/teams/{id}/check` — the server's decision for one right. Every right is checked on the server
+ * from the stored list. Writes answer `CAPABILITY_UNAVAILABLE` where teams are not open (`open: false` in the roles
+ * read). New codes: `TEAM_NOT_FOUND` 404, `TEAM_FORBIDDEN` 403, `TEAM_LIMIT` · `TEAM_MEMBER_EXISTS` · `TEAM_LAST_OWNER`
+ * · `TEAM_CHANGED` 409, `TEAM_TREASURY_REFUSED` 422. A client that does not show teams needs no release.
+ *
+ * **1.76.0 — Perps: the market's data and its life, and the ticket's margin by Phoenix's SDK (PERP-4, line A,
+ * 2026-10-25).** Additive, outside `/api/v1` (the routes the clients consume, as 1.11.0 describes them): the markets'
+ * rows carry `state`, `group`, `name`, `aliases`, `fundingIntervalSeconds` and `nextFundingAt`;
+ * `GET /api/solana/futures/funding?symbol=` — the funding rate now; `GET /api/solana/futures/ticket` — the margin, the
+ * most, the account's health and the estimated liquidation by the SDK's margin calculator. No new error codes.
+ *
+ * **1.78.0 — /pay counts only money that arrived (FIX-PAY-1, SEC-1, line A, 2026-10-25).** Additive: one field. A payment
+ * link's state is decided by what reached the recipient in the requested token, summed over every transaction that
+ * carried the reference: a transaction that moved nothing is no payment (an open request is no longer «Paid» by it, two
+ * of them are no overpayment), a top-up after a short payment completes it, and another token arriving first no longer
+ * stops the requested one being counted. `PayLink.received` and `PayPublicRequest.received` — what arrived so far and
+ * what a Token-2022 token's own transfer fee withheld of it — null while nothing in the token arrived. No new routes,
+ * states, notes or error codes.
+ *
+ * **1.79.0 — the cross-chain swap checked before the signature (FIX-XSWAP-1, line A, 2026-10-25).** No `/api/v1`
+ * schema changes; the web routes `/api/solana/cross-swap/*` refuse what they used to sign: a Mayan quote or a Relay
+ * quote that does not answer the request (`QUOTE_MISMATCH`), a Mayan order reaching a program a Swift order does not
+ * need (`UNEXPECTED_PROGRAM`), a simulated effect on the wallet beyond the amount, the fee and the order's rent
+ * (`SIMULATION_EFFECT_*`); `plan.ownerEffects` states what the simulation proved. `ABANDON` releases a crossed EVM
+ * order only with the chain's unchanged pending count (`RELEASE_NOT_ESTABLISHED`, `SOURCE_ACCOUNT_UNREADABLE`).
+ *
+ * **1.81.0 — Team Launch (MOS-2, line A, 2026-10-26).** Additive: two routes and one error code.
+ * `GET /api/v1/launch/team/plan` — the eight steps of the wizard, the rights each one needs, the bounds the steps obey
+ * and, with `team=`, the proven wallet's own decision for every step; `POST /api/v1/launch/team/step` — one step
+ * committed, answering with the `actionId` the EXE-2 journal recorded and, on step 08, the review the signature is
+ * made over (the simulation, every fee as its own row, the market's budget, the Constitution's fields and the
+ * chronicle). `LAUNCH_TEAM_CLOSED` — Team Launch is not open on this deployment, or not to this wallet. Nothing is
+ * built, signed or sent by either route.
+ *
+ * **1.82.0 — Perps: the deal's core (PERP-5, line A, 2026-10-26).** Additive, outside `/api/v1`:
+ * `GET /api/solana/futures/history?wallet=&kind=trades|orders|funding[&symbol=]` — one wallet's own fills, orders and
+ * funding settlements from Phoenix's public reads; the order routes take a time in force (`tif`) and the kinds
+ * `cancelAll` and `cancelConditional`, and a Review carries `tif`, `impact`, `book`, `cancelAll`, `conditional` and
+ * `fees.venueLiquidity`. New refusals of the order routes: `POST_ONLY_CROSS` 422, `NO_ORDERS` · `NO_CONDITIONAL` 409.
+ *
+ * **1.83.0 — Ryntra Launch: a launch in a pair with a checked pair currency (SOL-L11, line A, 2026-10-26).** Additive.
+ * One new route, `GET /api/v1/launch/quote-assets` — the pair currencies this deployment checked, each as any pair is
+ * said (the mint, the symbol, the decimals), with whether a launch in it is open now, the DBC version its own transfer
+ * fee needs (0.2.1, or 0.2.2 and `createConfig2`), the rate a transfer of it pays now, its price with the moment it was
+ * observed, and — where it is closed — the reasons in the register's own codes, the token badge among them: a pair
+ * Meteora has given no badge is never offered, and only Meteora can give one. Public; reads the chain. «Розширений»'s
+ * choice may name `quoteMint` (a mint of that register) and then the config is made in that pair: the build's answer
+ * carries `quote` — the pair, the version and the figures of this very config, the threshold and the liquidity that
+ * reaches the DEX after the move's fee and the fee the pair's mint withholds, each in the pair's own units and in
+ * dollars at the price read. Any difference between the mint as it reads now and as it was checked refuses the build
+ * `LAUNCH_QUOTE_PAUSED` (503, as 1.73.0 brought it) with the reasons said; a client before 1.73.0 reads `LAUNCH_PAUSED`.
+ * No new error codes. A launch in such a pair says nothing of what stands behind the pair currency, on any surface.
+ *
+ * **1.84.0 — «Кампанія розподілу»: vesting and a Merkle claim (DROP-2, line A, 2026-10-26).** Additive: nine routes, no
+ * new error codes. A campaign publishes a list and a root on Met Lock's root escrow, locks exactly what the list adds
+ * up to, and then does nothing — each recipient takes their own allocation with their own signature, and a second claim
+ * of a row cannot exist on chain (its escrow is created, not written to). `GET /api/v1/launch/{mint}/distribution` —
+ * the token's campaigns; `GET /api/v1/launch/{mint}/distribution/{id}` — one campaign with its Review, the chain against
+ * the list, what is left and the report; `POST …/distribution/build` and `…/submit` — the owner's one signature that
+ * writes the root and funds it; `GET …/distribution/{id}/claim/{address}` — the claim panel (what is owed, what was
+ * taken, what is left, the chain's receipts); `POST …/{id}/claim/build` and `…/claim/submit` — the recipient's own
+ * claim, in which they are the only signer and the only payer; `POST …/{id}/recover/build` and `…/recover/submit` —
+ * the owner's cancellation of a row where the campaign published that they may, which returns only what has not
+ * vested. A client that does not show campaigns needs no release.
+ *
+ * **1.85.0 — the risk verdict before a trade (line A, 2026-10-26).** Additive: `risk` on the answers of
+ * `POST /api/solana/swap/quote` and `POST /api/solana/swap/order` (outside `/api/v1`), and `tradeRisk` on
+ * `POST /api/v1/launch/{mint}/trade/quote` — and so inside the `quote` of `…/trade/build` — named apart there because
+ * that product's market read already has a `risk` of its own, the token's facts, a different list. The spot limit
+ * order's Review (`/api/solana/limits/review`) carries the same object. `TradeRiskSchema`: the four words `BLOCKED` ·
+ * `INCOMPLETE` · `REVIEW_REQUIRED` · `NO_KNOWN_BLOCKER` over thirteen named facts, each with the source that produced
+ * it and the time it was read, and the thresholds the measured ones were read against. One shape for every kind of
+ * trade; `NO_KNOWN_BLOCKER` is the absence of known blockers and never "safe"; a fact that was not read is
+ * `INCOMPLETE` naming what is missing rather than a quiet pass. Nothing is removed and no field changes meaning.
+ *
+ * **1.86.0 — the developer console (DEV-2, line A, 2026-10-26).** Additive: twelve routes and eight error codes.
+ * `GET /api/v1/developer/plan` — public: the two environments, the scopes, the events, the bounds, the quota windows
+ * with whichever numbers this deployment states, the webhook signing scheme, and the *shape* a tariff has with
+ * nothing filling it (`pricing.stated: false` — a price is set outside this build). `GET`/`POST
+ * /api/v1/developer/projects`, `GET /api/v1/developer/projects/{id}` — a team's projects and one of them, with its
+ * credentials, its endpoints, what each environment has spent and what the reading wallet may do. `POST
+ * …/{id}/keys` and `POST …/{id}/keys/{keyId}` — issuing, rotating (a successor, the predecessor on a clock),
+ * revoking, and changing scopes and origins. A **secret key** (`rsk_…`) is a server's: its token is returned once, in
+ * the answer that makes it, the store keeps only a SHA-256 of it, no read carries it again, and a request carrying
+ * an `Origin` is refused outright (`DEV_ORIGIN_REFUSED`) — it is never in a browser. A **public key** (`rpk_…`) has
+ * no secret at all and answers only the origins it names. `POST …/{id}/endpoints` and `POST
+ * …/{id}/endpoints/{endpointId}` — a signed-webhook endpoint (made off, its signing secret shown once), turning it
+ * on, its events, a new secret with the old one signing for one window, removal, a test delivery, and `verify`: the
+ * server's own check of a delivery a receiver got — signature, timestamp window, and the delivery id against what
+ * this endpoint already had verified, which is what makes a replayed copy fail (`refusal: "REPLAYED"`). `GET
+ * …/{id}/deliveries` — the log, for a role that reads receipts. Three routes are read by the credential itself in
+ * `X-Ryntra-Key` rather than a wallet: `GET /api/v1/developer/key`, `…/usage` and `…/events`, each needing its own
+ * scope, each counted against the project's quota and answering `X-Ryntra-Quota-*`. Every right is the team's
+ * (TEAM-1), checked on the server on every request. New codes: `DEV_NOT_FOUND` 404, `DEV_FORBIDDEN` ·
+ * `DEV_ORIGIN_REFUSED` · `DEV_SCOPE_REFUSED` 403, `DEV_LIMIT` · `DEV_CHANGED` 409, `DEV_KEY_INVALID` 401,
+ * `DEV_QUOTA_EXCEEDED` 429. A client that does not show the console needs no release.
  */
 
 import {
@@ -923,6 +1322,7 @@ import { EVIDENCE_READ_STATES } from "../../evidence/snapshot.ts";
 import { COMPANY_PATH_STEP_STATES, COMPANY_PATH_STEPS } from "../../stocks/company-path.ts";
 import { RISK_ASSET_KINDS, RISK_GAPS, RISK_REASONS, RISK_STATES } from "../../monitoring/portfolio-risk.ts";
 import { WATCH_ACTIONS, WATCH_REASONS, WATCH_SOURCES, WATCH_STATES } from "../../monitoring/watch-state.ts";
+import { WATCH_PRESETS, WatchRuleSchema } from "../../assistant/watch/rules.ts";
 import { POPULAR_LIMIT, POPULAR_LIMIT_MAX } from "../../stocks/popular.ts";
 import { STOCK_ISSUER_IDS } from "../../stocks/representations.ts";
 import { z } from "zod";
@@ -932,15 +1332,78 @@ import { FEE_SOURCES } from "../../core/launch/creator-earnings.ts";
 import { EARNINGS_CARD_SOURCE } from "../../core/launch/earnings-card.ts";
 import { FEE_SHARE_MAX_RECIPIENTS, FEE_SHARE_MIN_BPS, FEE_SHARE_MIN_RECIPIENTS, FEE_SHARE_TOTAL_BPS } from "../../core/launch/fee-shares.ts";
 import { JOURNAL_ACTORS, JOURNAL_KINDS, JOURNAL_MARK_ACTORS, JOURNAL_MARK_KINDS } from "../../core/launch/autopilot.ts";
+import {
+  AUTHORITY_SURFACES,
+  AUTHORITY_VENUES,
+  AUTOMATION_ELEMENTS,
+  ELIGIBILITY,
+  ENFORCEMENT_LEVELS,
+  EXECUTION_MODES,
+  HONEST_STATES,
+  PROVIDER_STATUSES,
+  RUNS_ALONE,
+  RYNTRA_READINESS,
+  SIGNERS,
+} from "../../core/authority-matrix.ts";
 import { BUDGET_RISKS, BUDGET_SOURCES } from "../../core/launch/budget.ts";
 import { CONCENTRATION_MARK_BPS, DEPTH_DROPS_BPS, HOLDER_MIN_USD, MARKET_CYCLE_STATES, MARKET_ENFORCEMENT, MARKET_KEEPERS, MARKET_RULE_CODES } from "../../core/launch/market-health.ts";
 import { HOLDER_CARD_SOURCE, HOLDER_GRANT_STATES, POSITION_PERMISSIONS } from "../../core/launch/holder.ts";
 import { LAUNCH_CHART_MARKERS, LAUNCH_HOLDER_LABELS, LAUNCH_RISK_CODES, LAUNCH_TRADE_SIDES, LAUNCH_TRADE_VENUES } from "../../core/venues/meteora-dbc/market.ts";
 import { LAUNCH_PRESET_IDS } from "../../core/venues/meteora-dbc/presets.ts";
+import { ADVANCED_SUPPLIES, SNIPER_STRENGTHS, UNUSUAL_REASONS } from "../../core/launch/advanced.ts";
+import { CURVE_RULES_SCOPE, CURVE_RULES_SIDE, CURVE_RULES_UPGRADE, CURVE_RULE_IDS, LOCKED_IN_RULE_IDS } from "../../core/launch/curve-rules.ts";
+import { TRANSFER_FEE_MAX_BPS, TRANSFER_FEE_PHASES } from "../../core/launch/transfer-fee.ts";
+import { QUOTE_ASSET_REFUSALS, QUOTE_CONFIG_VERSIONS } from "../../core/launch/quote-asset.ts";
+import { BOOST_CURRENCIES, BOOST_ROUTES } from "../../core/launch/boost.ts";
+import { EARLY_ACCESS_MODES, EARLY_ACCESS_PHASES, EARLY_ACCESS_TOKEN } from "../../core/launch/early-access.ts";
 import { LaunchReceiptFactsSchema } from "../../core/venues/meteora-dbc/receipt.ts";
+import { CLAIM_POCKET_STATES, CLAIM_POCKETS } from "../../core/launch/claim-review.ts";
+import { CALCULATION_MODES, ELIGIBILITY_REASONS, SNAPSHOT_EXCLUSIONS } from "../../core/launch/distribution-audience.ts";
+import { MET_LOCK_ACTORS } from "../../core/launch/distribution-merkle.ts";
+import {
+  CLAIM_STATES,
+  DISTRIBUTION_PROTOCOLS,
+  DISTRIBUTION_SCENARIOS,
+  DISTRIBUTION_STAGES,
+  DISTRIBUTION_WARNINGS,
+  LEFTOVER_KINDS,
+  PROTOCOL_REASONS,
+  RECONCILE_STATES,
+  VESTING_MAX_DAYS,
+} from "../../core/launch/distribution.ts";
+import { MINT_PROFILE_FIELDS } from "../../solana/mint-profile-fields.ts";
+import { TRADE_KINDS, TRADE_RISK_FACTS, TRADE_RISK_NETWORKS } from "../../solana/trade-risk.ts";
+import { SURVIVAL_HORIZONS_DAYS, SURVIVAL_STATES, SURVIVAL_WINDOW_DAYS } from "../../core/launch/survival-stats.ts";
+import { CREW_MAX_MEMBERS, CREW_MEMBER_STATES, CREW_MIN_BPS, CREW_MIN_MEMBERS, CREW_PRESETS } from "../../core/launch/crew.ts";
+import { EVENING_WINDOW_HOUR_UTC, EVENING_WINDOW_MINUTES, HOURLY_WINDOW_MINUTES, WINDOW_KINDS } from "../../core/launch/windows.ts";
+import { TEAM_GRANTS, TEAM_JOURNAL_ACTIONS, TEAM_KINDS, TEAM_MEMBER_STATUSES, TEAM_PERMISSIONS, TEAM_REFUSALS, TEAM_RISKS, TEAM_ROLES } from "../../core/team/roles.ts";
+import {
+  DEV_ACTIONS,
+  DEV_CREDENTIAL_KINDS,
+  DEV_DELIVERY_ID,
+  DEV_ENDPOINT_ID,
+  DEV_ENVIRONMENTS,
+  DEV_KEY_ID,
+  DEV_KEY_STATES,
+  DEV_LIMITS,
+  DEV_PLAN_FIELDS,
+  DEV_PROJECT_ID,
+  DEV_QUOTA_WINDOWS,
+  DEV_SCOPES,
+  DEV_WEBHOOK_EVENTS,
+} from "../../core/developer/console.ts";
+import { CONSTITUTION_ENFORCEMENT } from "../../core/launch/constitution.ts";
+import {
+  ALLOCATION_CATEGORIES,
+  ALLOCATION_MAX_DAYS,
+  ALLOCATION_TOTAL_PCT,
+  TEAM_LAUNCH_PROBLEMS,
+  TEAM_LAUNCH_STEP_KEYS,
+} from "../../core/launch/team-launch.ts";
+import { EVENT_FINALITY, EVENT_FLAGS, EVENT_KINDS, EVENT_SOURCES, EVENT_UNSTATED, EVENT_VENUES, EVENTS_MAX, SUSPICION_REASONS } from "../../events/market-events.ts";
 
 export const API_MAJOR = 1;
-export const API_CONTRACT_VERSION = "1.41.0";
+export const API_CONTRACT_VERSION = "1.86.0";
 export const API_HEADER = "X-Ryntra-API";
 export const API_VERSION_HEADER = "X-Ryntra-API-Version";
 export const NETWORK = "solana:mainnet";
@@ -991,6 +1454,54 @@ export const ERROR_CODES = [
   "AGENT_BUDGET_EXHAUSTED",
   /** A question of this wallet is being answered right now; ask again when it is done. */
   "AGENT_BUSY",
+  /* 1.52.0 — the assistant's credits */
+  /** The welcome credits were already given to this wallet or its account. */
+  "WELCOME_TAKEN",
+  /** The wallet is younger or quieter than the welcome check asks; the free credits of every day are its anyway. */
+  "WELCOME_NOT_ELIGIBLE",
+  /* 1.54.0 — buying credits */
+  /** No credit order of the proven wallet has that id. */
+  "CREDIT_ORDER_NOT_FOUND",
+  /* 1.57.0 — token watches */
+  /** No watch of the proven wallet has that id. */
+  "WATCH_NOT_FOUND",
+  /** Three watches are free and that is the ceiling for now: remove one first (pause is not remove). */
+  "WATCH_LIMIT_REACHED",
+  /** `ifVersion` is not the watch's current version: it changed meanwhile; read again and decide again. */
+  "WATCH_VERSION_CONFLICT",
+  /* 1.59.0: «Забути» a note this wallet's memory does not hold (AI-18). */
+  "MEMORY_NOTE_NOT_FOUND",
+  /** A note or «Про мене» that looks like a key, a password or a recovery phrase: never kept. */
+  "MEMORY_SECRET_REFUSED",
+  /* 1.59.0 — «Доручення» (AI-19) */
+  /** No task of the proven wallet has that id. */
+  "TASK_NOT_FOUND",
+  /** Five tasks a wallet: remove one first (pause is not remove). */
+  "TASK_LIMIT_REACHED",
+  /** The tasks together would run more times a day than this deployment allows (`runs.cap`): a slower rhythm, or pause one. */
+  "TASK_RUNS_CAP",
+  /** `ifVersion` is not the task's current version: it changed meanwhile (a run, another tab); read it again. */
+  "TASK_VERSION_CONFLICT",
+  /** `acceptCredits` is not the price of a run now: read the price again before turning the task on. */
+  "TASK_PRICE_NOT_SHOWN",
+  /* 1.61.0 — the trade plan and its critic */
+  /** No assistant plan of the proven wallet has that id. */
+  "ASSISTANT_PLAN_NOT_FOUND",
+  /** `ifVersion` is not the plan's current version: it changed meanwhile; read again and decide again. */
+  "ASSISTANT_PLAN_VERSION_CONFLICT",
+  /** The plan's state refuses the action — a plan already approved is changed on its own page, an ended one not at all. */
+  "ASSISTANT_PLAN_STATE_REFUSED",
+  /* 1.64.0 — voice heard on the server (AI-08) */
+  /** Over two minutes, heavier than its length allows, or longer than it says: not heard, nothing charged. */
+  "VOICE_TOO_LONG",
+  /** No words were heard in the recording; nothing was charged. */
+  "VOICE_NOT_HEARD",
+  /** `acceptCredits` is not the price of hearing this recording now: read `prices.voice` again before sending it. */
+  "VOICE_PRICE_NOT_SHOWN",
+  /** The deployment's day of voice heard on the server is spent; the browser's own recognition and typing still work. */
+  "VOICE_DAY_SPENT",
+  /** The credits' day's spending cap is reached (`dailySpend`): it starts again at `resetsAt`. Buying more does not lift it. */
+  "CREDITS_DAY_CAP",
   /* 1.12.0 — autoinvest rules */
   /** No rule of the proven wallet has that id. */
   "RULE_NOT_FOUND",
@@ -1017,10 +1528,20 @@ export const ERROR_CODES = [
   "LAUNCH_NAME_BORROWED",
   /** The picture is not a PNG, JPEG, WebP or GIF, or is above the size the presets' limits name. */
   "LAUNCH_IMAGE_INVALID",
+  /** 1.71.0: the picture was refused — Ryntra took it down before, or its check reads it as sexual, violent, graphic or self-harm. */
+  "LAUNCH_IMAGE_REFUSED",
+  /** 1.71.0: the picture could not be checked right now; nothing was stored — try again. */
+  "LAUNCH_IMAGE_CHECK_UNAVAILABLE",
+  /** 1.71.0: on Micro and the demo market a first purchase and its lock are one v1 transaction; this request did not ask for v1. */
+  "LAUNCH_WALLET_V1_REQUIRED",
   /** The wallet has launched as many tokens today as one wallet may. */
   "LAUNCH_LIMIT",
   /** Launch is paused on Ryntra's side — all of it, or new launches alone; nothing was built or sent. */
   "LAUNCH_PAUSED",
+  /** 1.50.0 — too many launches went out on the network this hour; nothing was sent; try again later. */
+  "LAUNCH_BUSY",
+  /** 1.73.0 (SOL-L12) — the pair currency's issuer changed its token's rules since Ryntra first read it; launches on it wait for Ryntra's check; nothing was built. */
+  "LAUNCH_QUOTE_PAUSED",
   /** The first purchase would receive more than the preset's cap. */
   "LAUNCH_FIRST_BUY_ABOVE_CAP",
   /** The build waited too long for the signature; build again. */
@@ -1045,11 +1566,47 @@ export const ERROR_CODES = [
   "LAUNCH_SHARES_INVALID",
   /** No source holds a fee for this wallet now; nothing was built. */
   "LAUNCH_NOTHING_TO_CLAIM",
+  /** 1.72.0 (SOL-L10): the launch's token takes no fee on transfers. */
+  "LAUNCH_NO_TRANSFER_FEE",
   /* 1.33.0 — a holder's position in the pool */
   /** Entering the pool is not open to this wallet yet; nothing was built. */
   "LAUNCH_HOLDER_CLOSED",
   /** The token is still on its curve: its pool opens when it reaches the DEX. */
   "LAUNCH_NOT_GRADUATED",
+  /** 1.81.0 (MOS-2): Team Launch is not open on this deployment, or not to this wallet — the owner's own canary and whitelist first. Nothing was built. */
+  "LAUNCH_TEAM_CLOSED",
+  /* 1.75.0 — a team's roles and rights (TEAM-1) */
+  /** No such team for this wallet — the same answer whether the team is not there or the wallet is not in it. */
+  "TEAM_NOT_FOUND",
+  /** The member's role does not hold this right, or does not keep this member's place. */
+  "TEAM_FORBIDDEN",
+  /** A limit of the team or of the wallet: members of a team, teams made, teams a wallet is in. */
+  "TEAM_LIMIT",
+  /** The wallet is already in the team or invited, or already holds what was asked. */
+  "TEAM_MEMBER_EXISTS",
+  /** The last active Owner neither leaves nor is demoted: ownership passes first. */
+  "TEAM_LAST_OWNER",
+  /** The team changed while this was decided, three times over; read it again. */
+  "TEAM_CHANGED",
+  /** Not a Squads v4 multisig on this network, or the operator's wallet is not one of its members. */
+  "TEAM_TREASURY_REFUSED",
+  /* 1.86.0 — the developer console (DEV-2) */
+  /** No such project, key or endpoint for this wallet — the same answer whether it is not there or the wallet's team does not own it. */
+  "DEV_NOT_FOUND",
+  /** The member's role in the project's team does not hold the right this action needs. */
+  "DEV_FORBIDDEN",
+  /** A bound of the console: projects a team holds, live keys of one kind in one environment, endpoints a project holds. */
+  "DEV_LIMIT",
+  /** The project changed while this was decided, three times over; read it again. */
+  "DEV_CHANGED",
+  /** The credential on the request does not answer: unknown, revoked, past its rotation, or the wrong secret. */
+  "DEV_KEY_INVALID",
+  /** A secret key on a request that carries an Origin (a browser: never), or a public key from an origin it does not name. */
+  "DEV_ORIGIN_REFUSED",
+  /** The credential does not hold the scope this read needs. */
+  "DEV_SCOPE_REFUSED",
+  /** The project has spent a quota window whose number this deployment states; the answer says when it starts again. */
+  "DEV_QUOTA_EXCEEDED",
 ] as const;
 export type ApiErrorCode = (typeof ERROR_CODES)[number];
 
@@ -1124,6 +1681,27 @@ export const ERROR_STATUS: Readonly<Record<ApiErrorCode, number>> = {
   AGENT_DRAFT_NOT_FOUND: 404,
   AGENT_BUDGET_EXHAUSTED: 429,
   AGENT_BUSY: 409,
+  WELCOME_TAKEN: 409,
+  WELCOME_NOT_ELIGIBLE: 403,
+  CREDIT_ORDER_NOT_FOUND: 404,
+  WATCH_NOT_FOUND: 404,
+  WATCH_LIMIT_REACHED: 409,
+  WATCH_VERSION_CONFLICT: 409,
+  MEMORY_NOTE_NOT_FOUND: 404,
+  MEMORY_SECRET_REFUSED: 400,
+  TASK_NOT_FOUND: 404,
+  TASK_LIMIT_REACHED: 409,
+  TASK_RUNS_CAP: 409,
+  TASK_VERSION_CONFLICT: 409,
+  TASK_PRICE_NOT_SHOWN: 409,
+  ASSISTANT_PLAN_NOT_FOUND: 404,
+  ASSISTANT_PLAN_VERSION_CONFLICT: 409,
+  ASSISTANT_PLAN_STATE_REFUSED: 409,
+  VOICE_TOO_LONG: 413,
+  VOICE_NOT_HEARD: 422,
+  VOICE_PRICE_NOT_SHOWN: 409,
+  VOICE_DAY_SPENT: 429,
+  CREDITS_DAY_CAP: 429,
   RULE_NOT_FOUND: 404,
   RULE_LIMIT_REACHED: 409,
   RULE_LIQUIDITY_LOW: 422,
@@ -1135,8 +1713,20 @@ export const ERROR_STATUS: Readonly<Record<ApiErrorCode, number>> = {
   LAUNCH_UNAVAILABLE: 404,
   LAUNCH_NAME_BORROWED: 422,
   LAUNCH_IMAGE_INVALID: 422,
+  LAUNCH_IMAGE_REFUSED: 422,
+  LAUNCH_IMAGE_CHECK_UNAVAILABLE: 503,
+  LAUNCH_WALLET_V1_REQUIRED: 422,
   LAUNCH_LIMIT: 429,
   LAUNCH_PAUSED: 503,
+  LAUNCH_BUSY: 429,
+  LAUNCH_QUOTE_PAUSED: 503,
+  TEAM_NOT_FOUND: 404,
+  TEAM_FORBIDDEN: 403,
+  TEAM_LIMIT: 409,
+  TEAM_MEMBER_EXISTS: 409,
+  TEAM_LAST_OWNER: 409,
+  TEAM_CHANGED: 409,
+  TEAM_TREASURY_REFUSED: 422,
   LAUNCH_FIRST_BUY_ABOVE_CAP: 422,
   LAUNCH_BUILD_EXPIRED: 410,
   LAUNCH_BUILD_USED: 409,
@@ -1148,8 +1738,18 @@ export const ERROR_STATUS: Readonly<Record<ApiErrorCode, number>> = {
   LAUNCH_SLIPPAGE: 409,
   LAUNCH_SHARES_INVALID: 422,
   LAUNCH_NOTHING_TO_CLAIM: 409,
+  LAUNCH_NO_TRANSFER_FEE: 404,
   LAUNCH_HOLDER_CLOSED: 403,
   LAUNCH_NOT_GRADUATED: 409,
+  LAUNCH_TEAM_CLOSED: 403,
+  DEV_NOT_FOUND: 404,
+  DEV_FORBIDDEN: 403,
+  DEV_LIMIT: 409,
+  DEV_CHANGED: 409,
+  DEV_KEY_INVALID: 401,
+  DEV_ORIGIN_REFUSED: 403,
+  DEV_SCOPE_REFUSED: 403,
+  DEV_QUOTA_EXCEEDED: 429,
 };
 
 /* ------------------------------------------------------------ capabilities */
@@ -1169,6 +1769,52 @@ export const SIGNING_MODES = [
   "WALLET_SENDS_SERVER_ADOPTS",
 ] as const;
 export type SigningMode = (typeof SIGNING_MODES)[number];
+
+/**
+ * 1.67.0 — the capability and authority matrix (EXE-1; spec §5.3, §6.1, §13.4): one row per venue × action, resolved
+ * on this deployment. `state` is one of the seven honest states, said as a word on every surface; `automatic` is true
+ * only with all seven elements of spec §6.1 — false on every row today.
+ */
+export const AUTHORITY_GATE_POSITIONS = ["OPEN", "CANARY", "DEVNET", "CLOSED", "NONE"] as const;
+export const AuthorityRowV1Schema = z
+  .object({
+    id: z.string().regex(/^[a-z0-9-]+\.[a-z0-9-]+$/),
+    venue: z.enum(AUTHORITY_VENUES),
+    action: z.string().min(1).max(32),
+    surface: z.enum(AUTHORITY_SURFACES),
+    /** What the venue itself offers. */
+    provider: z.enum(PROVIDER_STATUSES),
+    /** How far Ryntra has built it; `PROVEN` — a full mainnet cycle is recorded (`evidence`). */
+    readiness: z.enum(RYNTRA_READINESS),
+    /** The honest state on this deployment: the row's ceiling narrowed by its switch. */
+    state: z.enum(HONEST_STATES),
+    /** Who may act right now. */
+    eligibility: z.enum(ELIGIBILITY),
+    /** Where the row's switch stands; the variable itself is not named. */
+    gate: z.enum(AUTHORITY_GATE_POSITIONS),
+    enforcement: z.enum(ENFORCEMENT_LEVELS),
+    mode: z.enum(EXECUTION_MODES),
+    signer: z.enum(SIGNERS),
+    runsAlone: z.enum(RUNS_ALONE),
+    network: z.enum(["mainnet", "devnet"]),
+    automation: z.object(Object.fromEntries(AUTOMATION_ELEMENTS.map((element) => [element, z.boolean()])) as Record<(typeof AUTOMATION_ELEMENTS)[number], z.ZodBoolean>).strict(),
+    automatic: z.boolean(),
+    evidence: z.string().min(1).max(200).nullable(),
+    notCovered: z.string().min(1).max(200).nullable(),
+    note: z.string().min(1).max(200),
+  })
+  .strict();
+export type AuthorityRowV1 = z.infer<typeof AuthorityRowV1Schema>;
+
+export const AuthorityMatrixV1Schema = z
+  .object({
+    states: z.array(z.enum(HONEST_STATES)).length(HONEST_STATES.length),
+    enforcement: z.array(z.enum(ENFORCEMENT_LEVELS)).length(ENFORCEMENT_LEVELS.length),
+    modes: z.array(z.enum(EXECUTION_MODES)).length(EXECUTION_MODES.length),
+    rows: z.array(AuthorityRowV1Schema).min(1),
+  })
+  .strict();
+export type AuthorityMatrixV1 = z.infer<typeof AuthorityMatrixV1Schema>;
 
 export const CapabilitiesSchema = z
   .object({
@@ -1309,6 +1955,10 @@ export const CapabilitiesSchema = z
           .optional(),
         /** 1.6.0: the recipient check before a transfer. */
         addressEvidence: z.literal("/api/v1/research/address-evidence").optional(),
+        /** 1.65.0: a `.skr` name to its address and an address to its name (SKR-4). */
+        skrName: z.literal("/api/v1/research/skr-name").optional(),
+        /** 1.68.0: «Події ринку» — one feed of what happened on Solana's markets, each event with its source and its transaction (DSC-1). */
+        events: z.literal("/api/v1/events").optional(),
       })
       .strict(),
     /** 1.8.0: Ryn, the agent — its routes, whether a model composes the words here, and the boundary said as a fact. */
@@ -1402,6 +2052,8 @@ export const CapabilitiesSchema = z
         creators: z.literal("/api/v1/launch/creators/{address}").optional(),
         claimBuild: z.literal("/api/v1/launch/{mint}/claim/build").optional(),
         claimSubmit: z.literal("/api/v1/launch/{mint}/claim/submit").optional(),
+        /* 1.73.0 — «Забрати все»: the Review before the claim; absent on a deployment before it. */
+        claimReview: z.literal("/api/v1/launch/{mint}/claim/review").optional(),
         /* 1.32.0 — the flight log and the Fee-Funded Liquidity Ladder; absent on a deployment before it. */
         journal: z.literal("/api/v1/launch/{mint}/journal").optional(),
         /* 1.33.0 — a holder's position in the pool; absent on a deployment before it. */
@@ -1418,9 +2070,41 @@ export const CapabilitiesSchema = z
         markets: z.literal("/api/v1/launch/markets").optional(),
         marketCard: z.literal("/api/v1/launch/markets/{mint}").optional(),
         health: z.literal("/api/v1/launch/{mint}/health").optional(),
+        /* 1.49.0 — a launch's figures for its creator's cabinet and the creator's public profile; absent on a deployment before it. */
+        stats: z.literal("/api/v1/launch/{mint}/stats").optional(),
+        profile: z.literal("/api/v1/launch/creators/{address}/profile").optional(),
+        /** 1.55.0 — the survival of the markets launched on Ryntra at 7, 30 and 90 days (SOL-L3). */
+        survival: z.literal("/api/v1/launch/survival").optional(),
+        /** 1.56.0 — «Розширений»: the launch's own config, built and sent (SOL-L5). */
+        advancedConfigBuild: z.literal("/api/v1/launch/advanced/config/build").optional(),
+        advancedConfigSubmit: z.literal("/api/v1/launch/advanced/config/submit").optional(),
+        /** 1.56.0 — Launch Boost: a token's creator campaign, its commitment and its payout (SOL-L5). */
+        boost: z.literal("/api/v1/launch/{mint}/boost").optional(),
+        boostBuild: z.literal("/api/v1/launch/{mint}/boost/build").optional(),
+        boostSubmit: z.literal("/api/v1/launch/{mint}/boost/submit").optional(),
+        boostPayoutBuild: z.literal("/api/v1/launch/{mint}/boost/payout/build").optional(),
+        boostPayoutSubmit: z.literal("/api/v1/launch/{mint}/boost/payout/submit").optional(),
+        /** 1.69.0 — the creator's split: the rule, the depth steps and the payout (SOL-L2b). */
+        split: z.literal("/api/v1/launch/{mint}/split").optional(),
+        splitRuleBuild: z.literal("/api/v1/launch/{mint}/split/rule/build").optional(),
+        splitRuleSubmit: z.literal("/api/v1/launch/{mint}/split/rule/submit").optional(),
+        splitDepthBuild: z.literal("/api/v1/launch/{mint}/split/depth/build").optional(),
+        splitDepthSubmit: z.literal("/api/v1/launch/{mint}/split/depth/submit").optional(),
+        splitPayoutBuild: z.literal("/api/v1/launch/{mint}/split/payout/build").optional(),
+        splitPayoutSubmit: z.literal("/api/v1/launch/{mint}/split/payout/submit").optional(),
+        /** 1.56.0 — early access: the launch built and sent, its read and a deposit (SOL-L5). */
+        earlyAccessBuild: z.literal("/api/v1/launch/early-access/build").optional(),
+        earlyAccessSubmit: z.literal("/api/v1/launch/early-access/submit").optional(),
+        earlyAccess: z.literal("/api/v1/launch/{mint}/early-access").optional(),
+        earlyAccessDepositBuild: z.literal("/api/v1/launch/{mint}/early-access/deposit/build").optional(),
+        earlyAccessDepositSubmit: z.literal("/api/v1/launch/{mint}/early-access/deposit/submit").optional(),
+        earlyAccessActionBuild: z.literal("/api/v1/launch/{mint}/early-access/action/build").optional(),
+        earlyAccessActionSubmit: z.literal("/api/v1/launch/{mint}/early-access/action/submit").optional(),
       })
       .strict()
       .optional(),
+    /** 1.67.0 — the capability and authority matrix (EXE-1); absent on a deployment before it. */
+    authority: AuthorityMatrixV1Schema.optional(),
     observedAt: Iso,
   })
   .strict();
@@ -1547,6 +2231,34 @@ export const AddressEvidenceReadSchema = z
   .strict();
 export type AddressEvidenceReadDto = z.infer<typeof AddressEvidenceReadSchema>;
 
+/**
+ * 1.65.0 — a `.skr` name (`GET /api/v1/research/skr-name`, SKR-4). With `name`: the address that owns it now, read
+ * from the chain every time — never cached. With `address`: the wallet's primary name, cached an hour; with `self`
+ * also the first name it holds when it chose none. `UNAVAILABLE` is «the chain did not answer», never «no name».
+ */
+export const SKR_NAME = /^[a-z0-9_-]{1,63}\.skr$/;
+export const SkrNameReadSchema = z.discriminatedUnion("direction", [
+  z
+    .object({
+      direction: z.literal("name"),
+      state: z.enum(["FOUND", "NOT_FOUND", "UNAVAILABLE"]),
+      name: z.string().regex(SKR_NAME),
+      address: Address.nullable(),
+    })
+    .strict(),
+  z
+    .object({
+      direction: z.literal("address"),
+      state: z.enum(["FOUND", "NOT_FOUND", "UNAVAILABLE"]),
+      address: Address,
+      name: z.string().regex(SKR_NAME).nullable(),
+      /** `primary`: the name the wallet chose; `owned`: the first of the names it holds (only with `self`). */
+      source: z.enum(["primary", "owned"]).nullable(),
+    })
+    .strict(),
+]);
+export type SkrNameReadDto = z.infer<typeof SkrNameReadSchema>;
+
 /* ------------------------------------------------------------ auth */
 
 export const CHALLENGE_TTL_SECONDS = 300;
@@ -1634,6 +2346,37 @@ export type VerifyResponse = z.infer<typeof VerifyResponseSchema>;
 
 export const SessionResponseSchema = z.object({ session: SessionSchema }).strict();
 export type SessionResponse = z.infer<typeof SessionResponseSchema>;
+
+/* ---- 1.66.0 — «Перевірено Seeker» (SKR-3, line A) */
+
+/** One Seeker Genesis Token the proven wallet holds. */
+export const SeekerTokenSchema = z
+  .object({
+    mint: Address,
+    /** Its place in the SGT group, a decimal string (a u64 on chain). */
+    memberNumber: z.string().regex(/^\d{1,20}$/),
+  })
+  .strict();
+export type SeekerToken = z.infer<typeof SeekerTokenSchema>;
+
+/**
+ * `GET /api/v1/auth/seeker` — whether the proven wallet holds a Seeker Genesis Token, read on mainnet by the server.
+ * The same answer for the web (the cookie) and the phone (the bearer).
+ */
+export const SeekerCheckResponseSchema = z
+  .object({
+    /** The wallet the session proved by signature — never one a client names. */
+    address: Address,
+    /** «Перевірено Seeker»: at least one SGT on this address when it was read. */
+    verified: z.boolean(),
+    /** Every SGT on the address, by member number; empty when `verified` is false. */
+    tokens: z.array(SeekerTokenSchema).max(100),
+    network: z.literal(NETWORK),
+    /** When the chain was read; the server keeps a found answer an hour and «none» five minutes. */
+    checkedAt: Iso,
+  })
+  .strict();
+export type SeekerCheckResponse = z.infer<typeof SeekerCheckResponseSchema>;
 
 export const RevokeResponseSchema = z.object({ revoked: z.literal(true) }).strict();
 
@@ -2714,6 +3457,8 @@ export const AGENT_QUESTION_MAX = 2000;
 export const AGENT_TURNS_KEPT = 40;
 export const AGENT_CARDS_MAX = 12;
 export const AGENT_CITATIONS_MAX = 40;
+/** 1.43.0: how long a conversation is kept after its last turn; past it the session is neither read back nor listed. */
+export const AGENT_SESSION_RETENTION_DAYS = 90;
 
 const Sentence = z.string().min(1).max(400);
 const Words = z.string().min(1).max(160);
@@ -2723,7 +3468,8 @@ const AppHref = z.string().regex(/^\/app\/[A-Za-z0-9\-_./?=&%:+]{1,400}$/);
 
 /** Where a conversation was opened from; the agent reads it as context, never as authority. */
 export const AGENT_CONTEXT_KINDS = ["asset", "plan", "portfolio", "note", "page"] as const;
-export const AGENT_PAGES = ["spot", "stocks", "swap", "trends", "strategies", "results", "activity", "predictions"] as const;
+/* 1.59.0: `tasks` — the conversation «Доручення» write their runs into (AI-19), never a person's own. */
+export const AGENT_PAGES = ["spot", "stocks", "swap", "trends", "strategies", "results", "activity", "predictions", "tasks"] as const;
 export const AgentContextSchema = z.discriminatedUnion("kind", [
   z.object({ kind: z.literal("asset"), mint: Address, symbol: z.string().min(1).max(32).optional() }).strict(),
   z.object({ kind: z.literal("plan"), planId: z.string().regex(PLAN_ID) }).strict(),
@@ -2758,6 +3504,14 @@ export type AgentQuestionClass = (typeof AGENT_QUESTION_CLASSES)[number];
 /** The state of a figure or a read, decided by age against the source's own rule — never promoted by the conversation. */
 export const AGENT_STATES = ["current", "stale", "unavailable", "unknown"] as const;
 export type AgentState = (typeof AGENT_STATES)[number];
+
+/** 1.44.0 (AI-09): what kind of news an item is — a fixed list; the labeller chooses one, it never names one. */
+export const AGENT_NEWS_TOPICS = ["security", "etf", "regulation", "listing", "funding", "partnership", "upgrade", "launch", "macro", "market", "other"] as const;
+export type AgentNewsTopic = (typeof AGENT_NEWS_TOPICS)[number];
+
+/** 1.44.0 (AI-09): the mark on each line of «What moved the price?» — a stated figure, a publication's report, Ryntra's reading, or what no source says. */
+export const AGENT_MOVE_MARKS = ["fact", "unverified", "inference", "unknown"] as const;
+export type AgentMoveMark = (typeof AGENT_MOVE_MARKS)[number];
 
 /**
  * What a sentence stands on: the source that stated it, when it was observed
@@ -2998,6 +3752,61 @@ export const AgentCardSchema = z.discriminatedUnion("kind", [
       href: AppHref.nullable(),
     })
     .strict(),
+  /*
+   * 1.44.0 (AI-09): the news a token — or the market — carries: the stories
+   * Ryntra collected from its allow-listed feeds in the last 48 h, each with
+   * its publisher, its time and the publisher's own link, newest first. A
+   * headline is what a publisher reports, never a verified fact.
+   */
+  z
+    .object({
+      kind: z.literal("news"),
+      /** The token the stories are about; null for the market as a whole. */
+      mint: Address.nullable(),
+      symbol: z.string().min(1).max(32).nullable(),
+      items: z
+        .array(
+          z
+            .object({
+              id: z.string().regex(/^nw_[0-9a-f]{24}$/),
+              title: z.string().min(1).max(200),
+              source: z.string().min(1).max(48),
+              publishedAt: Iso,
+              /** The publisher's page — https, on that publisher's own host. */
+              url: z.string().url().max(600).regex(/^https:\/\//),
+              topic: z.enum(AGENT_NEWS_TOPICS),
+              /** Other sources that told the same story. */
+              also: z.number().int().min(0).max(20),
+              cite: CitationId,
+            })
+            .strict(),
+        )
+        .max(6),
+      /** The last 24 h: how many stories and how many sources. */
+      day: z.object({ stories: z.number().int().min(0), sources: z.number().int().min(0) }).strict(),
+      /** When the collector last read the feeds. */
+      collectedAt: Iso,
+      state: z.enum(AGENT_STATES),
+    })
+    .strict(),
+  /*
+   * 1.44.0 (AI-09): «What moved the price?» — the move as read, and each line
+   * of the explanation marked: a fact (a figure a source stated), unverified
+   * (what a publication reports), an inference (Ryntra's reading of the two —
+   * a coincidence in time is no proof of cause) or unknown (what no source
+   * says). The server writes and marks every line; a model never does.
+   */
+  z
+    .object({
+      kind: z.literal("move"),
+      mint: Address,
+      symbol: z.string().min(1).max(32),
+      window: z.enum(["1h", "24h"]),
+      /** The move itself, as the source states it; null when no source stated one. */
+      change: AgentFigureSchema.nullable(),
+      rows: z.array(z.object({ mark: z.enum(AGENT_MOVE_MARKS), text: Sentence, cites: z.array(CitationId).max(4) }).strict()).min(1).max(10),
+    })
+    .strict(),
   AgentPlanDraftCardSchema,
   AgentMonitoringDraftCardSchema,
   AgentTradeDraftCardSchema,
@@ -3167,6 +3976,131 @@ export const AgentSessionSchema = z
   .strict();
 export type AgentSession = z.infer<typeof AgentSessionSchema>;
 
+/**
+ * 1.52.0: the assistant's credits — the service's own units (1 000 = 1 USDC), never a token and never paid out. What a
+ * question costs is in `prices` before it is asked; free credits go first, then `welcome`, then `bought`.
+ */
+const CreditCount = z.number().int().min(0);
+export const AssistantCreditsSchema = z
+  .object({
+    unit: z.literal("credits"),
+    /** The welcome and the bought credits together: what is spent once the day's free ones are. */
+    balance: CreditCount,
+    welcome: CreditCount,
+    bought: CreditCount,
+    /** The day's free credits: not carried over; `resetsAt` is the next UTC midnight. */
+    free: z.object({ used: CreditCount, left: CreditCount, daily: CreditCount, resetsAt: Iso }).strict(),
+    /** Held for questions being answered now; given back if the model is not reached. */
+    reserved: CreditCount,
+    /** Credits of the balance spent today against the day's cap — no quiet overspend. */
+    dailySpend: z.object({ used: CreditCount, cap: CreditCount, resetsAt: Iso }).strict(),
+    /** Every paid action's price in credits. `voice` is per started 30 s heard on the server. */
+    prices: z.object({ question: CreditCount, alertExplain: CreditCount, tokenReport: CreditCount, priceMove: CreditCount, voice: CreditCount, deep: CreditCount, plan: CreditCount }).strict(),
+    /** Whether the welcome credits may still be asked for (`POST /api/v1/assistant/credits/welcome`). */
+    welcomeOffer: z.enum(["open", "taken"]),
+    /** Whose they are: the wallet's own, or its account's once the wallet is linked (a wallet's credits move into it). */
+    holder: z.enum(["wallet", "account"]),
+  })
+  .strict();
+export type AssistantCredits = z.infer<typeof AssistantCreditsSchema>;
+
+/** 1.52.0: one entry of the credits' history — what was given, held, kept or given back; never a word of the question. */
+export const AssistantCreditEntrySchema = z
+  .object({
+    at: Iso,
+    kind: z.enum(["grant", "hold", "capture", "release", "expire", "merge-out", "merge-in"]),
+    action: z.enum(["question", "alertExplain", "tokenReport", "priceMove", "voice", "deep", "plan"]).nullable(),
+    reason: z.enum(["welcome", "purchase", "adjust"]).nullable(),
+    /** What the entry did to the credits: negative taken, positive given or given back. */
+    credits: z.number().int(),
+    /** For a capture: the credits kept in the end. */
+    charged: CreditCount.nullable(),
+  })
+  .strict();
+export type AssistantCreditEntry = z.infer<typeof AssistantCreditEntrySchema>;
+
+/** 1.54.0: one package of credits for USDC (AI-12). */
+export const AssistantCreditPackageSchema = z
+  .object({
+    id: z.enum(["usdc-2", "usdc-5", "usdc-10", "usdc-25"]),
+    /** The price in USDC, as a decimal string. */
+    usdc: z.string().regex(/^[0-9]+(\.[0-9]+)?$/),
+    credits: CreditCount,
+    /** The bonus over 1 000 credits for 1 USDC, in percent. */
+    bonusPercent: z.number().int().min(0).max(100),
+  })
+  .strict();
+export type AssistantCreditPackage = z.infer<typeof AssistantCreditPackageSchema>;
+
+const CreditAddress = z.object({ address: z.string().regex(/^[1-9A-HJ-NP-Za-km-z]{32,44}$/), abbreviated: z.string().min(1).max(16) }).strict();
+
+/** 1.54.0: whether credits are sold here, for what, and to which treasury. */
+export const AssistantCreditPurchaseSchema = z
+  .object({
+    /** False until the treasury is set on this deployment: no order can be opened. */
+    available: z.boolean(),
+    packages: z.array(AssistantCreditPackageSchema).max(8),
+    treasury: CreditAddress.nullable(),
+    /** How long an order invites a payment; a payment that lands later still counts. */
+    orderMinutes: z.number().int().min(1),
+  })
+  .strict();
+export type AssistantCreditPurchase = z.infer<typeof AssistantCreditPurchaseSchema>;
+
+/**
+ * 1.54.0: one order of credits — what to pay, where, and what the chain says. `status`: `awaiting` (nothing yet),
+ * `checking` (the chain could not be read just now), `underpaid` (less arrived — credited at the base rate), `paid`,
+ * `expired` (nothing arrived in time; a late payment still counts). The receipt is `payments` with `credited`.
+ */
+export const AssistantCreditOrderSchema = z
+  .object({
+    id: z.string().regex(/^[1-9A-HJ-NP-Za-km-z]{14,20}$/),
+    package: AssistantCreditPackageSchema,
+    status: z.enum(["awaiting", "checking", "underpaid", "paid", "expired"]),
+    amount: z.object({ raw: z.string().regex(/^[0-9]+$/), display: z.string().min(1).max(40), symbol: z.literal("USDC"), mint: z.string().regex(/^[1-9A-HJ-NP-Za-km-z]{32,44}$/) }).strict(),
+    /** USDC counted for this order so far. */
+    received: z.object({ raw: z.string().regex(/^[0-9]+$/), display: z.string().min(1).max(40) }).strict(),
+    /** Credits added for this order so far. */
+    credited: CreditCount,
+    /** The payment page: QR for a phone camera, a wallet in the browser. */
+    payPage: z.string().url(),
+    /** The standard Solana Pay transfer request with this order's reference. */
+    payUrl: z.string().min(8).max(600),
+    reference: z.string().regex(/^[1-9A-HJ-NP-Za-km-z]{32,44}$/),
+    treasury: CreditAddress,
+    createdAt: Iso,
+    expiresAt: Iso,
+    payments: z.array(z.object({ signature: z.string().regex(/^[1-9A-HJ-NP-Za-km-z]{64,90}$/), amount: z.string().min(1).max(40), at: Iso.nullable() }).strict()).max(16),
+    /** Another token arrived under this reference: not credited; it goes back by hand to the paying wallet. */
+    wrongToken: z.boolean(),
+  })
+  .strict();
+export type AssistantCreditOrder = z.infer<typeof AssistantCreditOrderSchema>;
+
+export const AssistantCreditsResponseSchema = z
+  .object({
+    credits: AssistantCreditsSchema,
+    entries: z.array(AssistantCreditEntrySchema).max(50),
+    /** `POST …/welcome`: the credits just given. */
+    granted: CreditCount.optional(),
+    /** 1.54.0: buying credits for USDC. */
+    purchase: AssistantCreditPurchaseSchema.optional(),
+  })
+  .strict();
+export type AssistantCreditsResponse = z.infer<typeof AssistantCreditsResponseSchema>;
+
+/** 1.54.0: `POST /api/v1/assistant/credits/orders` and `GET …/orders/<id>` — the order and the credits after it. */
+export const AssistantCreditOrderResponseSchema = z.object({ order: AssistantCreditOrderSchema, credits: AssistantCreditsSchema }).strict();
+export type AssistantCreditOrderResponse = z.infer<typeof AssistantCreditOrderResponseSchema>;
+
+/** 1.54.0: `GET /api/v1/assistant/credits/orders` — the newest orders (the receipts) and the credits after reading them. */
+export const AssistantCreditOrdersResponseSchema = z.object({ orders: z.array(AssistantCreditOrderSchema).max(10), credits: AssistantCreditsSchema }).strict();
+export type AssistantCreditOrdersResponse = z.infer<typeof AssistantCreditOrdersResponseSchema>;
+
+/** 1.54.0: the body of `POST /api/v1/assistant/credits/orders`. */
+export const AssistantCreditOrderRequestSchema = z.object({ package: z.enum(["usdc-2", "usdc-5", "usdc-10", "usdc-25"]), locale: z.enum(["uk", "en"]).optional() }).strict();
+export type AssistantCreditOrderRequest = z.infer<typeof AssistantCreditOrderRequestSchema>;
+
 /** The wallet's allowance and what is spent of it, from the durable meter; a client shows it as it is. */
 export const AgentBudgetStateSchema = z
   .object({
@@ -3179,6 +4113,8 @@ export const AgentBudgetStateSchema = z
     /** Why the next model call would be refused, in a sentence; null while one would be allowed. */
     reason: Sentence.nullable(),
     model: z.enum(["configured", "absent"]),
+    /** 1.52.0: the credits a question that reaches the model is paid in; absent where credits are not served. */
+    credits: AssistantCreditsSchema.optional(),
   })
   .strict();
 export type AgentBudgetState = z.infer<typeof AgentBudgetStateSchema>;
@@ -3192,9 +4128,791 @@ export const AgentSessionOpenRequestSchema = z
     locale: z.enum(["en", "uk"]).default("en"),
     /** A session id to resume; absent, the wallet's latest session for the same context is resumed, else a new one is opened. */
     sessionId: z.string().regex(AGENT_SESSION_ID).optional(),
+    /** 1.43.0: «Нова розмова» — open a new session even where one for the same context exists; ignored beside `sessionId`. */
+    fresh: z.boolean().default(false),
   })
   .strict();
 export type AgentSessionOpenRequest = z.input<typeof AgentSessionOpenRequestSchema>;
+
+/** 1.43.0: one conversation as the list shows it — never its answers. `title` is the first question, null before one is asked. */
+export const AgentSessionSummarySchema = z
+  .object({
+    id: z.string().regex(AGENT_SESSION_ID),
+    locale: z.enum(["en", "uk"]),
+    context: AgentContextSchema.nullable(),
+    title: z.string().min(1).max(120).nullable(),
+    turnCount: z.number().int().min(0),
+    createdAt: Iso,
+    updatedAt: Iso,
+    /** When the conversation stops being kept: its last turn plus `AGENT_SESSION_RETENTION_DAYS`. */
+    expiresAt: Iso,
+  })
+  .strict();
+export type AgentSessionSummary = z.infer<typeof AgentSessionSummarySchema>;
+
+/** 1.43.0: `GET /api/v1/agent/sessions` — the proven wallet's conversations within their retention, the most recent first. */
+export const AgentSessionListResponseSchema = z
+  .object({
+    sessions: z.array(AgentSessionSummarySchema).max(20),
+    retentionDays: z.literal(AGENT_SESSION_RETENTION_DAYS),
+  })
+  .strict();
+export type AgentSessionListResponse = z.infer<typeof AgentSessionListResponseSchema>;
+
+/**
+ * 1.43.0: `POST /api/v1/assistant/guest` — a market question without a
+ * wallet. The context, when given, is an asset or a page — never a plan, a
+ * portfolio or a note, which are someone's own.
+ */
+export const AgentGuestRequestSchema = z
+  .object({
+    text: z.string().min(1).max(AGENT_QUESTION_MAX),
+    locale: z.enum(["en", "uk"]).default("en"),
+    context: z
+      .discriminatedUnion("kind", [
+        z.object({ kind: z.literal("asset"), mint: Address, symbol: z.string().min(1).max(32).optional() }).strict(),
+        z.object({ kind: z.literal("page"), page: z.enum(AGENT_PAGES) }).strict(),
+      ])
+      .nullable()
+      .default(null),
+  })
+  .strict();
+export type AgentGuestRequest = z.input<typeof AgentGuestRequestSchema>;
+
+export const AgentGuestResponseSchema = z
+  .object({
+    /** The two turns of the exchange, as a conversation's; nothing is stored — the client keeps them. */
+    person: AgentTurnSchema,
+    ryn: AgentTurnSchema,
+    guest: z
+      .object({
+        /** The guest's model answers today, counted by a keyed digest of the request's address and the day. */
+        day: z.object({ used: z.number().int().min(0), allowance: z.number().int().min(0), resetsAt: Iso }).strict(),
+        model: z.enum(["configured", "absent"]),
+        /** True when the words asked about something of one's own — a portfolio, a plan, a trade — and the answer is the way to connect a wallet. */
+        needsWallet: z.boolean(),
+      })
+      .strict(),
+  })
+  .strict();
+export type AgentGuestResponse = z.infer<typeof AgentGuestResponseSchema>;
+
+/* ---- 1.46.0: «Ранковий огляд» (AI-10) */
+
+/** A brief's time: a quarter hour on the person's clock. */
+const BriefClock = z.string().regex(/^([01]\d|2[0-3]):(00|15|30|45)$/);
+export const ASSISTANT_BRIEF_MARKS = ["fact", "unverified"] as const;
+export const ASSISTANT_BRIEF_LINE_KINDS = ["sol", "btc", "mover", "market-news", "token", "token-news", "plan"] as const;
+
+/** One line the server wrote from a read, in the reader's language: a claim — a figure, or a publication's report — and beside it its source and time. */
+export const AssistantBriefLineSchema = z
+  .object({
+    kind: z.enum(ASSISTANT_BRIEF_LINE_KINDS),
+    mark: z.enum(ASSISTANT_BRIEF_MARKS),
+    text: z.string().min(1).max(600),
+    source: z.string().min(1).max(48),
+    observedAt: Iso.nullable(),
+    /** Where the line opens — a token's page, a plan's note, a publication's story. */
+    href: z.string().max(600).nullable(),
+  })
+  .strict();
+export type AssistantBriefLine = z.infer<typeof AssistantBriefLineSchema>;
+
+/** A part of the brief: the model's blocks (none when it was off, busy or said nothing that held) over the server's lines. */
+const AssistantBriefPart = z
+  .object({
+    title: z.string().min(1).max(80),
+    words: z.array(z.string().min(1).max(400)).max(2),
+    lines: z.array(AssistantBriefLineSchema).max(12),
+    /** What the part says instead of lines, or beside them: the market not read, nothing of one's own changed, what of one's own was not read. */
+    note: z.string().max(200).nullable(),
+  })
+  .strict();
+
+export const AssistantBriefSchema = z
+  .object({
+    /** The person's day on their clock. */
+    day: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+    title: z.string().min(1).max(80),
+    market: AssistantBriefPart,
+    /** `changed` — lines below; `unchanged` — every read answered and nothing changed; `unread` — the wallet did not answer, nothing is claimed. */
+    personal: AssistantBriefPart.extend({ state: z.enum(["changed", "unchanged", "unread"]) }).strict(),
+    deliveredAt: Iso,
+  })
+  .strict();
+export type AssistantBrief = z.infer<typeof AssistantBriefSchema>;
+
+export const AssistantBriefSettingsSchema = z
+  .object({
+    enabled: z.boolean(),
+    time: BriefClock,
+    zone: z.string().min(1).max(64),
+    locale: z.enum(["en", "uk"]),
+  })
+  .strict();
+export type AssistantBriefSettings = z.infer<typeof AssistantBriefSettingsSchema>;
+
+export const AssistantBriefResponseSchema = z
+  .object({
+    settings: AssistantBriefSettingsSchema,
+    /** When the next brief comes; null while it is off. `quiet` — the time falls in the quiet hours and the brief comes when they end. */
+    next: z.object({ at: Iso.nullable(), quiet: z.boolean() }).strict(),
+    /** Where it goes: the inbox always, Telegram and push as Нагляд's preferences say. */
+    channels: z.object({ inbox: z.literal(true), telegram: z.boolean(), push: z.boolean() }).strict(),
+    /** What a brief costs in credits — 0 since 1.52.0: the morning brief is free every day; `charged` stays false. */
+    priceCredits: z.number().int().min(0),
+    charged: z.literal(false),
+    latest: AssistantBriefSchema.nullable(),
+  })
+  .strict();
+export type AssistantBriefResponse = z.infer<typeof AssistantBriefResponseSchema>;
+
+/** `PUT /api/v1/assistant/brief` — on or off, the time, the zone (the default Europe/Kyiv), the language the brief is written in. */
+export const AssistantBriefUpdateSchema = z
+  .object({
+    enabled: z.boolean(),
+    time: BriefClock.default("09:00"),
+    zone: z.string().min(1).max(64).default("Europe/Kyiv"),
+    locale: z.enum(["en", "uk"]).default("uk"),
+  })
+  .strict();
+export type AssistantBriefUpdate = z.input<typeof AssistantBriefUpdateSchema>;
+
+/* ---- 1.57.0 — «Стежити за токеном» (AI-05) */
+
+/** A watch's rule — the person's own threshold, judged without a model (`lib/assistant/watch/rules.ts`). */
+export const AssistantWatchRuleSchema = WatchRuleSchema;
+export type AssistantWatchRule = z.infer<typeof AssistantWatchRuleSchema>;
+export const ASSISTANT_WATCH_PRESETS = WATCH_PRESETS;
+/** `armed` — watching; `rang` — it rang and waits for the market to leave the threshold; `cooling` — past the threshold within its pause; `unread` — the market was not read now; `learning` — not enough history yet (a liquidity change over an hour needs an hour); `paused`. */
+export const ASSISTANT_WATCH_STATES = ["armed", "rang", "cooling", "unread", "learning", "paused"] as const;
+
+export const AssistantWatchSchema = z
+  .object({
+    id: z.string().regex(/^wch_[0-9a-f]{24}$/),
+    version: z.number().int().min(1),
+    mint: Address,
+    symbol: z.string().min(1).max(32),
+    rule: AssistantWatchRuleSchema,
+    /** The rule in the reader's language: «Падіння на 10 % за добу». */
+    ruleText: z.string().min(1).max(120),
+    status: z.enum(["active", "paused"]),
+    cooldownMinutes: z.number().int().min(5).max(1_440),
+    channels: z.object({ telegram: z.boolean(), push: z.boolean() }).strict(),
+    now: z
+      .object({
+        state: z.enum(ASSISTANT_WATCH_STATES),
+        /** The figure the rule reads now, in the reader's language («−3,2 % за добу», «$182,40»); null where it was not read. */
+        text: z.string().max(80).nullable(),
+        source: z.string().max(32).nullable(),
+        observedAt: Iso.nullable(),
+      })
+      .strict(),
+    /** The latest note: its words in the reader's language and its id in the inbox. */
+    last: z.object({ at: Iso, title: z.string().min(1).max(160), reason: z.string().min(1).max(400), inboxId: z.string().regex(/^inb_[0-9a-f]{24}$/) }).strict().nullable(),
+    /** «Чому?»: the question put to the assistant, only when the person asks it, at `priceCredits`; null before the first note. */
+    explain: z.object({ question: z.string().min(1).max(400), priceCredits: z.number().int().min(0) }).strict().nullable(),
+    createdAt: Iso,
+    updatedAt: Iso,
+  })
+  .strict();
+export type AssistantWatch = z.infer<typeof AssistantWatchSchema>;
+
+export const AssistantWatchesResponseSchema = z
+  .object({
+    watches: z.array(AssistantWatchSchema).max(20),
+    /** Three watches are free; that is the ceiling for now. */
+    limit: z.object({ free: z.number().int().min(0), used: z.number().int().min(0), left: z.number().int().min(0) }).strict(),
+    presets: z.array(z.object({ id: z.enum(ASSISTANT_WATCH_PRESETS), text: z.string().min(1).max(60) }).strict()).max(12),
+    /** What «Чому?» costs in credits — asked only when the person presses it. */
+    explainPriceCredits: z.number().int().min(0),
+    /** Where notes go: the inbox always, Telegram and push as Нагляд's preferences say. */
+    channels: z.object({ inbox: z.literal(true), telegram: z.boolean(), push: z.boolean() }).strict(),
+    deliveriesPerHour: z.number().int().min(1),
+  })
+  .strict();
+export type AssistantWatchesResponse = z.infer<typeof AssistantWatchesResponseSchema>;
+
+const WatchChannels = z.object({ telegram: z.boolean(), push: z.boolean() }).strict();
+
+/** `POST /api/v1/assistant/watches` — a token by mint and a preset or a rule; the notes in `locale`. */
+export const AssistantWatchCreateSchema = z
+  .object({
+    mint: Address,
+    preset: z.enum(ASSISTANT_WATCH_PRESETS).optional(),
+    rule: AssistantWatchRuleSchema.optional(),
+    cooldownMinutes: z.number().int().min(5).max(1_440).default(60),
+    channels: WatchChannels.default({ telegram: true, push: true }),
+    locale: z.enum(["en", "uk"]).default("uk"),
+  })
+  .strict()
+  .refine((body) => (body.preset === undefined) !== (body.rule === undefined), { message: "Name a preset or a rule, one of the two." });
+export type AssistantWatchCreate = z.input<typeof AssistantWatchCreateSchema>;
+
+/** `PATCH /api/v1/assistant/watches/{id}` — pause, resume or change; a changed rule starts afresh. */
+export const AssistantWatchUpdateSchema = z
+  .object({
+    ifVersion: z.number().int().min(1).optional(),
+    status: z.enum(["active", "paused"]).optional(),
+    rule: AssistantWatchRuleSchema.optional(),
+    cooldownMinutes: z.number().int().min(5).max(1_440).optional(),
+    channels: WatchChannels.optional(),
+  })
+  .strict();
+export type AssistantWatchUpdate = z.infer<typeof AssistantWatchUpdateSchema>;
+
+/* ---- 1.58.0 — «Знайомство» (AI-06) */
+
+export const ASSISTANT_GOALS = ["learn", "trade", "hold"] as const;
+export const ASSISTANT_EXPERIENCE = ["new", "some", "pro"] as const;
+export const ASSISTANT_HORIZONS = ["hours", "days", "weeks"] as const;
+/** The risk per trade a person names, in per cent of what they trade with; 1 % unless they pick another. */
+export const ASSISTANT_RISK_PCTS = [0.5, 1, 2] as const;
+
+const ProfileRisk = z.union([z.literal(0.5), z.literal(1), z.literal(2)]);
+const ProfileQuietHours = z.object({ start: ClockTime, end: ClockTime, timezone: z.string().min(1).max(64) }).strict();
+
+/** The five answers; `skipped` — the person pressed «Пропустити» and the answers are null. */
+export const AssistantProfileSchema = z
+  .object({
+    skipped: z.boolean(),
+    goal: z.enum(ASSISTANT_GOALS).nullable(),
+    experience: z.enum(ASSISTANT_EXPERIENCE).nullable(),
+    riskPct: ProfileRisk.nullable(),
+    horizon: z.enum(ASSISTANT_HORIZONS).nullable(),
+    updatedAt: Iso,
+  })
+  .strict();
+export type AssistantProfile = z.infer<typeof AssistantProfileSchema>;
+
+export const AssistantProfileResponseSchema = z
+  .object({
+    /** Null until the person answers or skips: the assistant then asks the five questions. */
+    profile: AssistantProfileSchema.nullable(),
+    /** Where notes go — Нагляд's preferences, the same the monitoring settings show: the inbox always. */
+    delivery: z.object({ inbox: z.literal(true), telegram: z.boolean(), push: z.boolean(), quietHours: ProfileQuietHours.nullable() }).strict(),
+  })
+  .strict();
+export type AssistantProfileResponse = z.infer<typeof AssistantProfileResponseSchema>;
+
+const ProfileDelivery = z.object({ telegram: z.boolean(), push: z.boolean(), quietHours: ProfileQuietHours.nullable() }).strict();
+
+/** `PUT /api/v1/assistant/profile` — the four answers, or `{ "skipped": true }`; `delivery` also writes where notes go. */
+export const AssistantProfileUpdateSchema = z.union([
+  z
+    .object({
+      goal: z.enum(ASSISTANT_GOALS),
+      experience: z.enum(ASSISTANT_EXPERIENCE),
+      riskPct: ProfileRisk,
+      horizon: z.enum(ASSISTANT_HORIZONS),
+      delivery: ProfileDelivery.optional(),
+    })
+    .strict(),
+  z.object({ skipped: z.literal(true) }).strict(),
+]);
+export type AssistantProfileUpdate = z.infer<typeof AssistantProfileUpdateSchema>;
+
+/* ---- 1.59.0 — what Ryntra knows about the person (AI-18) */
+
+export const ASSISTANT_MEMORY_NOTES_MAX = 30;
+export const ASSISTANT_MEMORY_NOTE_MAX = 160;
+export const ASSISTANT_MEMORY_ABOUT_MAX = 600;
+
+/** One thing Ryntra keeps about the person, in their own words: noticed in the conversation, asked for, or typed. */
+export const AssistantMemoryNoteSchema = z
+  .object({
+    id: z.string().regex(/^m_[0-9a-f]{12}$/),
+    text: z.string().min(2).max(ASSISTANT_MEMORY_NOTE_MAX),
+    source: z.enum(["said", "asked", "typed"]),
+    at: Iso,
+  })
+  .strict();
+export type AssistantMemoryNote = z.infer<typeof AssistantMemoryNoteSchema>;
+
+/** What the wallet shows, read now — never kept: the count of tokens and the largest by value. */
+export const AssistantWalletPictureSchema = z
+  .object({
+    state: z.enum(["current", "unavailable"]),
+    tokens: z.number().int().min(0).nullable(),
+    largest: z.array(z.object({ symbol: z.string().min(1).max(16), mint: z.string().min(32).max(44) }).strict()).max(5),
+  })
+  .strict();
+export type AssistantWalletPicture = z.infer<typeof AssistantWalletPictureSchema>;
+
+export const AssistantMemoryResponseSchema = z
+  .object({
+    /** «Про мене» in the person's own words; null until written. */
+    about: z.string().max(ASSISTANT_MEMORY_ABOUT_MAX).nullable(),
+    /** Whether Ryntra keeps what it notices about the person in the conversation. */
+    noticing: z.boolean(),
+    notes: z.array(AssistantMemoryNoteSchema).max(ASSISTANT_MEMORY_NOTES_MAX),
+    /** The answers of «Знайомство» (1.58.0), as they are. */
+    profile: AssistantProfileSchema.nullable(),
+    wallet: AssistantWalletPictureSchema,
+    updatedAt: Iso.nullable(),
+  })
+  .strict();
+export type AssistantMemoryResponse = z.infer<typeof AssistantMemoryResponseSchema>;
+
+/** `PUT /api/v1/assistant/memory` — «Про мене», whether to notice, or one note typed by hand; each optional. */
+export const AssistantMemoryUpdateSchema = z
+  .object({
+    about: z.string().max(ASSISTANT_MEMORY_ABOUT_MAX).nullable().optional(),
+    noticing: z.boolean().optional(),
+    note: z.string().min(2).max(ASSISTANT_MEMORY_NOTE_MAX).optional(),
+  })
+  .strict()
+  .refine((body) => body.about !== undefined || body.noticing !== undefined || body.note !== undefined, { message: "Nothing to change." });
+export type AssistantMemoryUpdate = z.infer<typeof AssistantMemoryUpdateSchema>;
+
+/* ---- 1.59.0 — «Доручення» (AI-19): a question the server asks on a schedule, its answer to the inbox, Telegram and push */
+
+export const ASSISTANT_TASK_EVERY = ["10m", "30m", "1h", "1d"] as const;
+export const ASSISTANT_TASKS_MAX = 5;
+const TaskMint = z.string().regex(/^[1-9A-HJ-NP-Za-km-z]{32,44}$/);
+
+export const AssistantTaskAskSchema = z.discriminatedUnion("kind", [
+  /** The person's own question, asked as typed. */
+  z.object({ kind: z.literal("question"), text: z.string().min(3).max(300) }).strict(),
+  z.object({ kind: z.literal("news"), mint: TaskMint, symbol: z.string().min(1).max(16) }).strict(),
+  z.object({ kind: z.literal("move"), mint: TaskMint, symbol: z.string().min(1).max(16) }).strict(),
+  z.object({ kind: z.literal("portfolio") }).strict(),
+]);
+export type AssistantTaskAsk = z.infer<typeof AssistantTaskAskSchema>;
+
+const TaskChannels = z.object({ telegram: z.boolean(), push: z.boolean() }).strict();
+/** A time zone the server can compute a day in — an unknown one is refused, never a failed run. */
+const TaskZone = z
+  .string()
+  .min(1)
+  .max(64)
+  .refine((zone) => {
+    try {
+      new Intl.DateTimeFormat("en", { timeZone: zone });
+      return true;
+    } catch {
+      return false;
+    }
+  }, "Unknown time zone.");
+
+export const AssistantTaskSchema = z
+  .object({
+    id: z.string().regex(/^t_[0-9a-f]{12}$/),
+    ask: AssistantTaskAskSchema,
+    /** «Новини SOL», «Рух ціни JUP», «Мій портфель», or the question's first words. */
+    name: z.string().min(1).max(80),
+    every: z.enum(ASSISTANT_TASK_EVERY),
+    /** For `1d`: the time on the person's clock (`zone`). */
+    time: ClockTime.nullable(),
+    zone: z.string().min(1).max(64),
+    /** «кожні 10 хв», «щодня о 09:00» — in the task's language. */
+    rhythm: z.string().min(1).max(40),
+    onlyWhenNew: z.boolean(),
+    channels: TaskChannels,
+    status: z.enum(["active", "paused"]),
+    /** `price` — the price of a question rose above the one shown: «Продовжити» shows the new one. */
+    pausedBy: z.enum(["person", "credits", "price"]).nullable(),
+    /** One run costs one question with the model, at the price shown when it was turned on. */
+    priceCredits: z.number().int().min(0),
+    perDayCredits: z.number().int().min(0),
+    nextRunAt: Iso.nullable(),
+    /** A slot passed today because every wallet's tasks spent their share of the deployment's day; null once it runs again. */
+    skippedAt: Iso.nullable(),
+    last: z.object({ at: Iso, headline: z.string().max(200), delivered: z.boolean() }).strict().nullable(),
+    runs: z.number().int().min(0),
+    /** The assistant's page with this task's conversation. */
+    href: z.string().startsWith("/app/ryn"),
+    /** The conversation the runs are written into — opened by `href`; null before the first run. */
+    sessionId: z.string().min(1).max(80).nullable(),
+    version: z.number().int().min(1),
+  })
+  .strict();
+export type AssistantTask = z.infer<typeof AssistantTaskSchema>;
+
+export const AssistantTasksResponseSchema = z
+  .object({
+    tasks: z.array(AssistantTaskSchema).max(ASSISTANT_TASKS_MAX),
+    limit: z.number().int().min(1),
+    /** The price of one run now, in credits — what `acceptCredits` must say. */
+    pricePerRun: z.number().int().min(0),
+    /** `fits` — a new task at this rhythm stays within `runs.cap`. */
+    rhythms: z.array(z.object({ every: z.enum(ASSISTANT_TASK_EVERY), runsPerDay: z.number().int().min(1), perDayCredits: z.number().int().min(0), fits: z.boolean() }).strict()),
+    /** How many runs a day the active tasks take together (`used`) and may take (`cap`) — the person's own questions keep the rest. */
+    runs: z.object({ used: z.number().int().min(0), cap: z.number().int().min(0) }).strict(),
+  })
+  .strict();
+export type AssistantTasksResponse = z.infer<typeof AssistantTasksResponseSchema>;
+
+/** `POST /api/v1/assistant/tasks` — a new task; `acceptCredits` is the price of a run the client showed. */
+export const AssistantTaskCreateSchema = z
+  .object({
+    ask: AssistantTaskAskSchema,
+    every: z.enum(ASSISTANT_TASK_EVERY),
+    time: ClockTime.optional(),
+    zone: TaskZone.default("Europe/Kyiv"),
+    locale: z.enum(["en", "uk"]).default("uk"),
+    onlyWhenNew: z.boolean().default(true),
+    channels: TaskChannels,
+    acceptCredits: z.number().int().min(0).max(1_000),
+  })
+  .strict();
+export type AssistantTaskCreate = z.infer<typeof AssistantTaskCreateSchema>;
+
+/** `PATCH /api/v1/assistant/tasks/<id>` — pause, resume (at the price shown), the rhythm, the channels, «лише коли є що сказати». */
+export const AssistantTaskUpdateSchema = z
+  .object({
+    ifVersion: z.number().int().min(1),
+    status: z.enum(["active", "paused"]).optional(),
+    every: z.enum(ASSISTANT_TASK_EVERY).optional(),
+    time: ClockTime.optional(),
+    channels: TaskChannels.optional(),
+    onlyWhenNew: z.boolean().optional(),
+    acceptCredits: z.number().int().min(0).max(1_000).optional(),
+  })
+  .strict();
+export type AssistantTaskUpdate = z.infer<typeof AssistantTaskUpdateSchema>;
+
+/* ---- 1.59.0 — push to a computer's browser (AI-19, Web Push without a payload) */
+
+export const AssistantPushStateSchema = z
+  .object({
+    /** Whether this deployment has its VAPID key: without it a browser cannot subscribe, and the inbox and Telegram carry every note. */
+    configured: z.boolean(),
+    /** The application server key a browser subscribes with (base64url, the uncompressed P-256 point); null when not configured. */
+    publicKey: z.string().min(80).max(100).nullable(),
+    /** How many browsers of this wallet receive push now. */
+    browsers: z.number().int().min(0),
+    /**
+     * Whether the browser that asked is one of them — `GET` with the header `x-ryntra-push-endpoint` (its subscription's
+     * endpoint, never in the URL), `POST` / `DELETE` for the endpoint sent; null when no endpoint was given.
+     */
+    thisBrowser: z.boolean().nullable(),
+  })
+  .strict();
+export type AssistantPushState = z.infer<typeof AssistantPushStateSchema>;
+
+/** `POST` / `DELETE /api/v1/assistant/push` — a browser's push subscription endpoint, as `PushSubscription.endpoint` gives it. */
+export const AssistantPushSubscriptionRequestSchema = z.object({ endpoint: z.string().url().max(1_000) }).passthrough();
+export type AssistantPushSubscriptionRequest = z.infer<typeof AssistantPushSubscriptionRequestSchema>;
+
+/** `GET /api/v1/assistant/push/latest` — what the service worker shows: the wallet's newest note of the last minutes, or null. */
+export const AssistantPushLatestSchema = z
+  .object({
+    note: z.object({ id: z.string().min(1).max(120), title: z.string().min(1).max(200), body: z.string().max(400), href: z.string().startsWith("/") }).strict().nullable(),
+  })
+  .strict();
+export type AssistantPushLatest = z.infer<typeof AssistantPushLatestSchema>;
+
+/* ---- 1.64.0 — «Голос у вебі» (AI-08) */
+
+/** The longest recording heard on the server, in seconds — and the most one may weigh: 24 KB a second of it. */
+export const ASSISTANT_VOICE_MAX_SECONDS = 120;
+export const ASSISTANT_VOICE_MAX_BYTES = ASSISTANT_VOICE_MAX_SECONDS * 24 * 1024;
+/** That many bytes in base64. */
+export const ASSISTANT_VOICE_MAX_BASE64 = Math.ceil(ASSISTANT_VOICE_MAX_BYTES / 3) * 4;
+
+/** `POST /api/v1/assistant/voice` — a recording for the question field; `acceptCredits` is the price the client showed. */
+export const AssistantVoiceRequestSchema = z
+  .object({
+    /** The recording's own id — a UUID the client makes when it stops; sent again, it is answered with the same words. */
+    id: z.string().uuid(),
+    audio: z.string().min(16).max(ASSISTANT_VOICE_MAX_BASE64).regex(/^[A-Za-z0-9+/]+={0,2}$/),
+    /** The recorder's type: `audio/webm;codecs=opus`, `audio/ogg;codecs=opus`, `audio/mp4`… */
+    mime: z.string().min(7).max(80).regex(/^audio\/[a-z0-9.+-]+(?:;\s*codecs="?[a-z0-9.,+ -]+"?)?$/i),
+    seconds: z.number().int().min(1).max(ASSISTANT_VOICE_MAX_SECONDS),
+    locale: z.enum(["en", "uk"]).default("uk"),
+    acceptCredits: z.number().int().min(0).max(1_000),
+  })
+  .strict();
+export type AssistantVoiceRequest = z.infer<typeof AssistantVoiceRequestSchema>;
+
+/** The words heard — for the field, never asked by themselves — what they cost, and the credits after. */
+export const AssistantVoiceResponseSchema = z
+  .object({
+    text: z.string().min(1).max(2_000),
+    seconds: z.number().int().min(1).max(ASSISTANT_VOICE_MAX_SECONDS),
+    spent: CreditCount,
+    /** How many of `spent` were the day's free credits. */
+    free: CreditCount,
+    /** The recording was heard before: these are its words, and nothing was charged this time. */
+    repeat: z.boolean(),
+    /** The credits after; null when they could not be read again — the client reads them itself then. */
+    credits: AssistantCreditsSchema.nullable(),
+  })
+  .strict();
+export type AssistantVoiceResponse = z.infer<typeof AssistantVoiceResponseSchema>;
+/* ---- 1.61.0 — «План угоди й критик» (AI-11) */
+
+/**
+ * A trade plan Ryntra composes with the person and a critic argues with
+ * (`lib/assistant/plans/`). It is a structure, never text in a conversation:
+ * the thesis, the entry, where the thesis is wrong, the person's own loss
+ * limit and budget, up to three targets, the fees and the size the plan
+ * engine computes, every assumption with who made it, and the sources read.
+ * Every change is a new version; the critic's findings stand on the version
+ * they were written for. The plan never trades: approving it writes the
+ * person's own Trading Plan (`/api/v1/plans`), which Нагляд watches, and the
+ * Review before any signature stays where it is.
+ */
+export const ASSISTANT_PLAN_ID = /^apl_[0-9a-f]{24}$/;
+/** `draft` — composed, the critic has not checked this version; `checked` — it has; `approved` — the person approved it and it is their plan, not watched; `watching` — Нагляд watches it; `done` — the position it opened is closed; `cancelled`; `broken` — the price reached the invalidation: the thesis is wrong. */
+export const ASSISTANT_PLAN_STATES = ["draft", "checked", "approved", "watching", "done", "cancelled", "broken"] as const;
+export type AssistantPlanState = (typeof ASSISTANT_PLAN_STATES)[number];
+/** Who set a level or an assumption: the person, Ryntra (a proposal the person replaces), the market read, or the plan engine's rule. */
+export const ASSISTANT_PLAN_AUTHORS = ["person", "ryntra", "market", "rules"] as const;
+/** Why a plan stands where it stands, when the state alone does not say: the invalidation reached, the entry window passed, the position closed, the person's own word. */
+export const ASSISTANT_PLAN_REASONS = ["invalidation", "expired", "position-closed", "person"] as const;
+export const ASSISTANT_PLAN_EVENTS = ["created", "edited", "checked", "approved", "watching", "synced", "broken", "done", "cancelled"] as const;
+/** A critic's finding is of one kind — what a person about to act will not look for themselves. */
+export const ASSISTANT_PLAN_FINDING_KINDS = ["fees", "loss-scenario", "contradiction", "level", "thesis", "data", "size", "liquidity"] as const;
+export const ASSISTANT_PLAN_FIELDS = ["thesis", "entry", "invalidation", "lossLimit", "targets", "fees", "sizing", "sources"] as const;
+export const ASSISTANT_PLAN_VERSIONS_LIMIT = 50;
+export const ASSISTANT_PLANS_LIMIT = 20;
+
+const PlanAuthor = z.enum(ASSISTANT_PLAN_AUTHORS);
+const PlanWhy = z.string().min(1).max(300);
+
+export const AssistantPlanLevelSchema = z.object({ priceUsd: Usd, by: PlanAuthor, why: PlanWhy.nullable() }).strict();
+export type AssistantPlanLevel = z.infer<typeof AssistantPlanLevelSchema>;
+
+/**
+ * The fees and the loss as the plan engine estimates them — never a quote.
+ * Ryntra's fee is the flow's under fee policy 2.0.0 (a major 0.10 %, a
+ * verified token 0.50 %, a new one 1.00 %), counted in and out; the cost
+ * buffer is the plan's own (slippage and price impact); the network's fee
+ * is a small fixed estimate. `lossAtInvalidationUsd` is what the sized
+ * position loses at the invalidation with every cost; `rewardAtTargetUsd`
+ * what it makes at the first target after them; `rewardToRisk` their ratio.
+ */
+export const AssistantPlanFeesSchema = z
+  .object({
+    model: z.literal("estimate-v1"),
+    feePolicy: z.string().min(1).max(16),
+    ryntraFeeBps: z.number().int().min(0).max(1_000),
+    costBufferBps: z.number().int().min(0).max(2_000),
+    notionalUsd: UsdOrZero,
+    ryntraFeeUsd: UsdOrZero,
+    costBufferUsd: UsdOrZero,
+    networkUsd: UsdOrZero,
+    totalUsd: UsdOrZero,
+    lossAtInvalidationUsd: UsdOrZero,
+    rewardAtTargetUsd: z.number().finite(),
+    rewardToRisk: z.number().finite().min(0).nullable(),
+  })
+  .strict();
+export type AssistantPlanFees = z.infer<typeof AssistantPlanFeesSchema>;
+
+export const AssistantPlanSourceSchema = z
+  .object({ id: z.string().min(1).max(16), source: z.string().min(1).max(80), observedAt: Iso, state: z.enum(AGENT_STATES), href: z.string().max(512).nullable() })
+  .strict();
+
+/** One version's plan. `lossLimit` is always the person's own money — a model never writes it. */
+export const AssistantPlanBodySchema = z
+  .object({
+    thesis: z.object({ text: z.string().min(1).max(600), whyNow: z.string().max(300).nullable(), horizonDays: z.number().int().min(1).max(365).nullable(), by: PlanAuthor }).strict(),
+    entry: z.object({ priceUsd: Usd, maxPriceUsd: Usd, validUntil: Iso, condition: z.string().max(300).nullable(), by: PlanAuthor }).strict(),
+    invalidation: AssistantPlanLevelSchema,
+    lossLimit: z.object({ riskUsd: Usd, budgetUsd: Usd }).strict(),
+    targets: z.array(AssistantPlanLevelSchema).min(1).max(3),
+    fees: AssistantPlanFeesSchema,
+    sizing: PlanSizingSchema,
+    assumptions: z.array(z.object({ text: Sentence, by: PlanAuthor }).strict()).max(12),
+    sources: z.array(AssistantPlanSourceSchema).max(12),
+  })
+  .strict();
+export type AssistantPlanBody = z.infer<typeof AssistantPlanBodySchema>;
+
+export const AssistantPlanFindingSchema = z
+  .object({
+    id: z.string().min(1).max(32),
+    severity: z.enum(["major", "minor", "note"]),
+    kind: z.enum(ASSISTANT_PLAN_FINDING_KINDS),
+    field: z.enum(ASSISTANT_PLAN_FIELDS),
+    text: Sentence,
+    cites: z.array(z.string().min(1).max(16)).max(6),
+    /** `rules` — the plan engine's own check, the same on every read; `model` — the critic's. */
+    by: z.enum(["rules", "model"]),
+  })
+  .strict();
+export type AssistantPlanFinding = z.infer<typeof AssistantPlanFindingSchema>;
+
+/** The critic on one version: the rules' checks always, the strong model's findings when it ran (`by: "model"`). Silence is never agreement: `gaps` says what was not challenged. */
+export const AssistantPlanCriticSchema = z
+  .object({
+    by: z.enum(["rules", "model"]),
+    model: z.string().max(64).nullable(),
+    findings: z.array(AssistantPlanFindingSchema).max(16),
+    summary: Sentence.nullable(),
+    gaps: z.array(Sentence).max(6),
+    checkedAt: Iso,
+  })
+  .strict();
+export type AssistantPlanCritic = z.infer<typeof AssistantPlanCriticSchema>;
+
+export const AssistantPlanVersionSchema = z
+  .object({
+    n: z.number().int().min(1),
+    body: AssistantPlanBodySchema,
+    critic: AssistantPlanCriticSchema,
+    createdAt: Iso,
+    /** Who wrote the version: Ryntra composed it, the person edited it here, or the person edited their plan on its own page (`plan-page`). */
+    by: z.enum(["ryntra", "person", "plan-page"]),
+    reason: z.string().max(240).nullable(),
+    /** The Trading Plan's version this one is, once the plan was approved. */
+    tradingPlanVersion: z.number().int().min(1).nullable(),
+  })
+  .strict();
+export type AssistantPlanVersion = z.infer<typeof AssistantPlanVersionSchema>;
+
+/**
+ * One trade of the plan against the plan — «План проти реальності» — and
+ * what its receipt says in words: what was paid, at what price against the
+ * plan's entry and its bound, the size against the sized one, the fees, and
+ * what the position risks now against the person's loss limit.
+ */
+export const AssistantPlanTradeSchema = z
+  .object({
+    signature: z.string().min(64).max(128),
+    at: Iso,
+    side: z.enum(["BUY", "SELL"]).nullable(),
+    outcome: z.enum(["DONE", "FAILED", "UNKNOWN"]),
+    planned: z.object({ priceUsd: Usd, maxPriceUsd: Usd.nullable(), units: Units }).strict(),
+    actual: z.object({ priceUsd: Usd.nullable(), units: z.number().finite().min(0).nullable(), usd: UsdOrZero.nullable(), feeUsd: UsdOrZero.nullable() }).strict(),
+    /** The fill's price against the plan's entry, per cent; null where the fill's price is not known. */
+    priceDeviationPct: z.number().finite().nullable(),
+    sizeDeviationPct: z.number().finite().nullable(),
+    verdict: z.enum(["followed", "deviated", "unknown"]),
+    /** The receipt in words — two lines at most each. */
+    receipt: z.array(Sentence).max(4),
+    /** The risk of the trade now, in words: the loss at the invalidation against the limit. */
+    risk: z.array(Sentence).max(3),
+    receiptHash: z.string().max(80).nullable(),
+  })
+  .strict();
+export type AssistantPlanTrade = z.infer<typeof AssistantPlanTradeSchema>;
+
+export const AssistantPlanRealitySchema = z
+  .object({
+    trades: z.array(AssistantPlanTradeSchema).max(20),
+    position: z.object({ state: z.enum(["open", "closed", "none"]), unitsHeld: z.number().finite().min(0).nullable(), costBasisUsd: UsdOrZero.nullable(), realisedUsd: z.number().finite().nullable() }).strict(),
+    summary: z.array(Sentence).max(4),
+    /** Whether every trade History holds under the plan is on it yet. */
+    complete: z.boolean(),
+  })
+  .strict();
+export type AssistantPlanReality = z.infer<typeof AssistantPlanRealitySchema>;
+
+export const AssistantPlanSchema = z
+  .object({
+    id: z.string().regex(ASSISTANT_PLAN_ID),
+    mint: Address,
+    symbol: z.string().min(1).max(32),
+    state: z.enum(ASSISTANT_PLAN_STATES),
+    stateReason: z.enum(ASSISTANT_PLAN_REASONS).nullable(),
+    /** The current version's number — also the `ifVersion` a change must name. */
+    version: z.number().int().min(1),
+    current: AssistantPlanVersionSchema,
+    versions: z.array(z.object({ n: z.number().int().min(1), createdAt: Iso, by: z.enum(["ryntra", "person", "plan-page"]), reason: z.string().max(240).nullable(), critic: z.enum(["rules", "model"]) }).strict()).min(1).max(ASSISTANT_PLAN_VERSIONS_LIMIT),
+    journal: z.array(z.object({ at: Iso, event: z.enum(ASSISTANT_PLAN_EVENTS), version: z.number().int().min(1), note: z.string().max(240).nullable() }).strict()).min(1).max(200),
+    /** The person's Trading Plan once they approved: its page holds the Review. */
+    tradingPlan: z.object({ id: z.string().regex(PLAN_ID), status: z.enum(PLAN_STATUSES), version: z.number().int().min(1), href: z.string().min(1).max(200) }).strict().nullable(),
+    /** What Нагляд says of the plan now; `none` before it is watched. */
+    watch: z.object({ status: z.enum(["none", "watching", "needs_attention", "paused", "unavailable"]), lastCheckedAt: Iso.nullable(), line: z.string().max(240).nullable() }).strict(),
+    reality: AssistantPlanRealitySchema.nullable(),
+    /** What the person may do now; the server refuses the rest. */
+    actions: z.object({ approve: z.boolean(), watch: z.boolean(), edit: z.boolean(), recheck: z.boolean(), cancel: z.boolean() }).strict(),
+    createdAt: Iso,
+    updatedAt: Iso,
+  })
+  .strict();
+export type AssistantPlan = z.infer<typeof AssistantPlanSchema>;
+
+const PlanPrices = z.object({ plan: z.number().int().min(0), recheck: z.number().int().min(0) }).strict();
+
+export const AssistantPlanResponseSchema = z
+  .object({
+    plan: AssistantPlanSchema,
+    /** What a plan with its critic and a re-check cost in credits — shown before the press. */
+    prices: PlanPrices,
+    /** What the call spent: the credits taken and whether the strong model ran for the plan and for the critic. */
+    spent: z.object({ credits: z.number().int().min(0), architect: z.enum(["model", "rules"]), critic: z.enum(["model", "rules"]) }).strict().nullable(),
+    budget: AgentBudgetStateSchema.nullable(),
+  })
+  .strict();
+export type AssistantPlanResponse = z.infer<typeof AssistantPlanResponseSchema>;
+
+export const AssistantPlansResponseSchema = z
+  .object({
+    plans: z.array(AssistantPlanSchema).max(ASSISTANT_PLANS_LIMIT),
+    prices: PlanPrices,
+    budget: AgentBudgetStateSchema.nullable(),
+  })
+  .strict();
+export type AssistantPlansResponse = z.infer<typeof AssistantPlansResponseSchema>;
+
+const PersonLevels = {
+  entryUsd: Usd.nullable().default(null),
+  maxPriceUsd: Usd.nullable().default(null),
+  invalidationUsd: Usd.nullable().default(null),
+  targetsUsd: z.array(Usd).max(3).default([]),
+};
+
+/**
+ * `POST /api/v1/assistant/plans` — compose a plan with its critic: the
+ * token by mint, the person's idea in their words, their loss limit and
+ * budget, any level they already know; or a draft the conversation made
+ * (`draftId`), whose figures stand in for the ones not given. The price
+ * (`prices.plan`) is held before the strong model runs and taken only when
+ * a plan came back — `acceptCredits` is the price the person was shown.
+ */
+export const AssistantPlanCreateSchema = z
+  .object({
+    mint: Address,
+    idea: z.string().min(1).max(600),
+    riskUsd: Usd.nullable().default(null),
+    budgetUsd: Usd.nullable().default(null),
+    ...PersonLevels,
+    horizonDays: z.number().int().min(1).max(365).nullable().default(null),
+    draftId: z.string().regex(AGENT_DRAFT_ID).nullable().default(null),
+    acceptCredits: z.number().int().min(0).max(100_000).nullable().default(null),
+    locale: z.enum(["en", "uk"]).default("uk"),
+  })
+  .strict();
+export type AssistantPlanCreate = z.input<typeof AssistantPlanCreateSchema>;
+
+/** `PUT /api/v1/assistant/plans/{id}` — the person's change: a new version, checked by the rules; the critic again only on `POST …/critic`. */
+export const AssistantPlanUpdateSchema = z
+  .object({
+    ifVersion: z.number().int().min(1),
+    thesis: z.string().min(1).max(600).optional(),
+    entryUsd: Usd.optional(),
+    maxPriceUsd: Usd.optional(),
+    invalidationUsd: Usd.optional(),
+    targetsUsd: z.array(Usd).min(1).max(3).optional(),
+    riskUsd: Usd.optional(),
+    budgetUsd: Usd.optional(),
+    reason: z.string().max(240).nullable().default(null),
+    locale: z.enum(["en", "uk"]).default("uk"),
+  })
+  .strict();
+export type AssistantPlanUpdate = z.input<typeof AssistantPlanUpdateSchema>;
+
+/** `POST /api/v1/assistant/plans/{id}/critic` — the strong model's critic again on the current version, at `prices.recheck`. */
+export const AssistantPlanRecheckSchema = z
+  .object({ ifVersion: z.number().int().min(1), acceptCredits: z.number().int().min(0).max(100_000).nullable().default(null), locale: z.enum(["en", "uk"]).default("uk") })
+  .strict();
+export type AssistantPlanRecheck = z.input<typeof AssistantPlanRecheckSchema>;
+
+/**
+ * `POST /api/v1/assistant/plans/{id}/state` — the person's word: `approved`
+ * writes their Trading Plan from the current version as a draft, `watching`
+ * makes it active so Нагляд watches it, `cancelled` ends the plan (and
+ * cancels their Trading Plan while it has no trade).
+ */
+export const AssistantPlanStateRequestSchema = z
+  .object({ to: z.enum(["approved", "watching", "cancelled"]), ifVersion: z.number().int().min(1), locale: z.enum(["en", "uk"]).default("uk") })
+  .strict();
+export type AssistantPlanStateRequest = z.input<typeof AssistantPlanStateRequestSchema>;
 
 export const AgentSessionResponseSchema = z
   .object({
@@ -3210,6 +4928,10 @@ export const AgentMessageRequestSchema = z
     sessionId: z.string().regex(AGENT_SESSION_ID),
     text: z.string().min(1).max(AGENT_QUESTION_MAX),
     locale: z.enum(["en", "uk"]).default("en"),
+    /** 1.52.0: the price in credits the client showed before the question; absent, only the day's free credits are spent. */
+    acceptCredits: z.number().int().min(0).max(100_000).optional(),
+    /** 1.59.0: the person typed these words in the field — only typed words may be kept in the memory (AI-18), never a link's or a starter's. */
+    typed: z.boolean().optional(),
   })
   .strict();
 export type AgentMessageRequest = z.input<typeof AgentMessageRequestSchema>;
@@ -3263,6 +4985,8 @@ export const AgentLensRequestSchema = z
     subject: AgentContextSchema,
     locale: z.enum(["en", "uk"]).default("en"),
     compose: z.enum(["deterministic", "model"]).default("deterministic"),
+    /** 1.52.0: with `compose: "model"`, the price in credits the client showed; absent, only the day's free credits are spent. */
+    acceptCredits: z.number().int().min(0).max(100_000).optional(),
   })
   .strict();
 export type AgentLensRequest = z.input<typeof AgentLensRequestSchema>;
@@ -3520,6 +5244,8 @@ export const SpotMarketsResponseSchema = z
     rows: z.array(SpotMarketListRowSchema).max(300),
     observedAt: Iso,
     stale: z.boolean(),
+    /** 1.53.0, additive (SOL-D1): the oldest read behind the rows shown, present when `stale` — the list's last good time. */
+    lastGoodAt: Iso.optional(),
     partial: z.boolean().optional(),
     source: z.object({ label: z.string().min(1).max(128), tier: z.enum(["lite", "pro"]) }).strict().optional(),
     missing: z.array(z.string().max(64)).max(300).optional(),
@@ -4141,6 +5867,24 @@ export const ActivityResponseSchema = z
         /** Unbounded in the code (every row of the wallet); the bound is a ceiling a wallet cannot reach through the product. */
         actions: z.array(ActivityActionSchema).max(100_000),
         rewards: z.array(RewardsRowSchema).max(25).nullable(),
+        /**
+         * Since 1.60.0 (SOL-X1): the cashback each trade earned, by the trade's signature — the wallet's CASHBACK
+         * accruals summed per operation, every trade that has one; `usdMicros` null while a row is unvalued, `held` when part
+         * waits on the wallet's «First $10 back» check. The same proof as `rewards`, null on the same terms. A
+         * receipt's execution truth reads its own signature here.
+         */
+        cashback: z
+          .array(
+            z
+              .object({
+                signature: z.string().min(1).max(200),
+                usdMicros: z.string().regex(/^-?(?:0|[1-9][0-9]*)$/).nullable(),
+                held: z.boolean(),
+              })
+              .strict(),
+          )
+          .max(100_000)
+          .nullable(),
         complete: z.boolean(),
         coverage: z.literal("RYNTRA_ACTIONS"),
       })
@@ -4265,7 +6009,7 @@ export type RewardsPoints = z.infer<typeof RewardsPointsSchema>;
 export const REWARD_RANKS_V1 = ["BRONZE", "SILVER", "GOLD", "SAPPHIRE", "DIAMOND"] as const;
 
 /**
- * The wallet's rank (rewards rules 2.0.0): Ryntra points over the last 30
+ * The wallet's rank (Growth line, rules 2.0.0): Ryntra points over the last 30
  * days — a dollar of fee Ryntra received on the wallet's own trades or its
  * invited friends' trades is a point, a launch that reached a DEX adds a fixed
  * number — and the share of the received fee a friend's trade pays at this rank.
@@ -4318,6 +6062,41 @@ export const RewardsAchievementsSchema = z
 export type RewardsAchievements = z.infer<typeof RewardsAchievementsSchema>;
 
 /**
+ * Rules 2.1.0 as the wallet meets them (the decision of 2026-10-17), present only once those rules are in force:
+ * the claim floor for this wallet now (`claimMinimum` — $0.25 when it holds a USDC account, $1 when the payout opens
+ * one or the account could not be read; `usdcAccount` says which), the offer «First $10 back» (`firstTenOffer`: the
+ * cap, the days from the first trade, the new wallets a month), the wallet's own window when it holds one (`firstTen`:
+ * open or closed, the cluster check, what came back of the cap, the part still waiting for the check, when the window
+ * ends; null otherwise), and the inviter's window (`inviterWindow`: the share of a friend's trades and its days from
+ * that friend's first trade). Additive: a client that does not read it needs no release.
+ */
+export const RewardsProgrammeSchema = z
+  .object({
+    /* Growth line, 2026-10-27: `2.2.0` moved the rank ladder one decade down and changed nothing else, so the
+       field widens rather than breaking — a client that pins the old value keeps reading every other field. */
+    rulesVersion: z.enum(["2.1.0", "2.2.0"]),
+    claimMinimum: RewUsdText,
+    claimMinimumWithAccount: RewUsdText,
+    claimMinimumWithoutAccount: RewUsdText,
+    usdcAccount: z.enum(["EXISTS", "MISSING", "UNKNOWN"]),
+    firstTenOffer: z.object({ cap: RewUsdText, days: z.number().int().min(1), walletsPerMonth: z.number().int().min(1) }).strict(),
+    firstTen: z
+      .object({
+        state: z.enum(["OPEN", "CLOSED"]),
+        check: z.enum(["PENDING", "PASSED", "FAILED"]),
+        returned: RewUsdText,
+        cap: RewUsdText,
+        held: RewUsdText,
+        endsAt: z.string().datetime({ offset: true }),
+      })
+      .strict()
+      .nullable(),
+    inviterWindow: z.object({ share: z.number().int().min(1).max(100), days: z.number().int().min(1) }).strict(),
+  })
+  .strict();
+export type RewardsProgramme = z.infer<typeof RewardsProgrammeSchema>;
+
+/**
  * `GET /api/rewards?address=&locale=en|uk` — what the proven wallet has earned,
  * behind a wallet proof (the `rw` cookie or the native bearer) for exactly
  * `address`, on the read limiter. The six figures are dollar text (`RewUsdText`);
@@ -4368,6 +6147,8 @@ export const RewardsResponseSchema = z
     /** Null when the badges could not be read. Absent from a deployment before badges. */
     achievements: RewardsAchievementsSchema.nullable().optional(),
     started: z.boolean(),
+    /** Absent before rules 2.1.0 are in force (`RewardsProgrammeSchema`). */
+    programme: RewardsProgrammeSchema.optional(),
   })
   .strict();
 export type RewardsResponse = z.infer<typeof RewardsResponseSchema>;
@@ -4384,7 +6165,7 @@ export type RewardsError = z.infer<typeof RewardsErrorSchema>;
 
 /* ---- rewards: the referral */
 
-/** `ALREADY_CHANGED` (1.35.0): the one change of inviter was already made. A new value — a strict client should treat unknown ones as a refusal. */
+/** `ALREADY_CHANGED` (Growth v6-9): the one change of inviter was already made. A new value — a strict client should treat unknown ones as a refusal. */
 export const REFERRAL_REFUSALS_V1 = ["SELF_REFERRAL", "UNKNOWN_CODE", "ALREADY_REFERRED", "ALREADY_EARNING", "CYCLE", "ALREADY_CHANGED"] as const;
 
 /** A code and whose it is, masked. */
@@ -4394,7 +6175,7 @@ export const RewardsReferralPreviewSchema = z
 export type RewardsReferralPreview = z.infer<typeof RewardsReferralPreviewSchema>;
 
 /**
- * A window on the proven wallet's own read (1.35.0; optional fields — a
+ * A window on the proven wallet's own read (Growth v6-9; optional fields — a
  * client that ignores unknown keys is unaffected, one that parses this state
  * strictly must take the new keys): `binding` — with no inviter yet, whether one can still be added:
  * always before the first trade (`until` null), for seven days after it
@@ -4448,7 +6229,7 @@ export const RewardsReferralRequestSchema = z.discriminatedUnion("action", [
   z.object({ action: z.literal("pending"), code: z.string().min(1).max(40) }),
   z.object({ action: z.literal("dismiss") }),
   z.object({ action: z.literal("confirm"), code: z.string().min(1).max(40), address: Address }),
-  /** 1.35.0: the one change of inviter, inside the window (a plain binding with none yet). */
+  /** Growth v6-9: the one change of inviter, inside the window (a plain binding with none yet). */
   z.object({ action: z.literal("change"), code: z.string().min(1).max(40), address: Address }),
 ]);
 export type RewardsReferralRequest = z.input<typeof RewardsReferralRequestSchema>;
@@ -4486,8 +6267,8 @@ export type RewardsReferralError = z.infer<typeof RewardsReferralErrorSchema>;
 export const MONITOR_STATUSES_V1 = ["watching", "needs_attention", "paused", "unavailable"] as const;
 /** 1.21.0: `position` — «Ryntra попередить» on a company the wallet holds, `id` the token's mint. */
 export const MONITOR_SUBJECT_KINDS_V1 = ["trading-plan", "prediction-plan", "position"] as const;
-/** 1.12.0: a note may also be an autoinvest rule's reminder — a note's subject, never a monitor's (the rule is not a monitor). 1.13.0: or the month's autoinvest budget, spent (`id` «budget:2026-09»). 1.15.0: or an issuer's event about a token the wallet holds (`id` the token's mint) — a window to swap it before the issuer's cut-off. */
-export const MONITOR_NOTE_SUBJECT_KINDS_V1 = [...MONITOR_SUBJECT_KINDS_V1, "autoinvest-rule", "autoinvest-budget", "issuer-event"] as const;
+/** 1.12.0: a note may also be an autoinvest rule's reminder — a note's subject, never a monitor's (the rule is not a monitor). 1.13.0: or the month's autoinvest budget, spent (`id` «budget:2026-09»). 1.15.0: or an issuer's event about a token the wallet holds (`id` the token's mint) — a window to swap it before the issuer's cut-off. 1.42.0: or a spot limit order Ryntra recorded (`id` its order account) — «Ордер виконано» and «Квитанція готова». */
+export const MONITOR_NOTE_SUBJECT_KINDS_V1 = [...MONITOR_SUBJECT_KINDS_V1, "autoinvest-rule", "autoinvest-budget", "issuer-event", "limit-order", "assistant-brief", "launch-creator", "token-watch", "assistant-task", "wallet-watch"] as const;
 export const MONITOR_CONDITION_KINDS_V1 = [
   "plan.price_bound",
   "plan.invalidation",
@@ -4590,7 +6371,7 @@ export const MonitoringNoteSchema = z
     unread: z.boolean(),
     createdAt: Iso,
     locale: z.enum(["en", "uk"]),
-    /** Absent on a note written before 2026-09-22, like `text` and `finding`. 1.12.0: `autoinvest-rule` on a rule's reminder. 1.13.0: `autoinvest-budget` on the note that the month's budget is spent. 1.15.0: `issuer-event` on a reminder of an issuer's swap deadline, `id` the token's mint. */
+    /** Absent on a note written before 2026-09-22, like `text` and `finding`. 1.12.0: `autoinvest-rule` on a rule's reminder. 1.13.0: `autoinvest-budget` on the note that the month's budget is spent. 1.15.0: `issuer-event` on a reminder of an issuer's swap deadline, `id` the token's mint. 1.42.0: `limit-order` on a spot limit order's note, `id` the order account. */
     subject: MonNoteSubject.optional(),
     text: z.object({ en: MonWords, uk: MonWords }).strict().optional(),
     /** Absent on a note whose finding carried no figures (every prediction plan's). */
@@ -5076,6 +6857,66 @@ export const SwapAssetVerdictSchema = z
   .strict();
 export type SwapAssetVerdict = z.infer<typeof SwapAssetVerdictSchema>;
 
+/* ---- 1.85.0: the risk verdict a trade is judged by before it is signed */
+
+export const TRADE_RISK_FACTS_V1 = TRADE_RISK_FACTS;
+export const TRADE_RISK_KINDS_V1 = TRADE_KINDS;
+
+/**
+ * The verdict over one trade (`lib/solana/trade-risk.ts`), in the four words
+ * the review over a mint already uses — `BLOCKED` outranks `INCOMPLETE`,
+ * which outranks `REVIEW_REQUIRED`, which outranks `NO_KNOWN_BLOCKER`.
+ *
+ * There is no score and no single number. Each of the thirteen facts carries
+ * the source that produced it and the time it was read, a fact that was not
+ * read is `INCOMPLETE` with `missing` naming what is absent, and `limits`
+ * states the thresholds the measured facts were read against — so a client can
+ * show a person exactly what put a trade where it is.
+ *
+ * `NO_KNOWN_BLOCKER` reports the absence of known blockers. It is not "safe",
+ * and a client that renders it as "safe" is wrong about this contract.
+ */
+export const TradeRiskSchema = z
+  .object({
+    schema: z.literal("ryntra.solana.trade-risk-verdict"),
+    schemaVersion: z.literal("1.0.0"),
+    trade: z.object({ kind: z.enum(TRADE_RISK_KINDS_V1), network: z.enum(TRADE_RISK_NETWORKS), mint: Address }).strict(),
+    verdict: z.enum(["NO_KNOWN_BLOCKER", "REVIEW_REQUIRED", "BLOCKED", "INCOMPLETE"]),
+    findings: z
+      .array(
+        z
+          .object({
+            fact: z.enum(TRADE_RISK_FACTS_V1),
+            outcome: z.enum(["ALLOWED", "REVIEW_REQUIRED", "BLOCKED", "INCOMPLETE"]),
+            detail: z.string().min(1).max(2_048),
+            /** Null only where nothing was read: an `INCOMPLETE` has no source to name. */
+            source: z
+              .object({ ref: z.string().min(1).max(128), label: z.string().min(1).max(256), readAt: Iso, slot: z.number().int().nonnegative().nullable() })
+              .strict()
+              .nullable(),
+            /** What exactly is missing, in the words a Review shows. Null unless `INCOMPLETE`. */
+            missing: z.string().min(1).max(512).nullable(),
+          })
+          .strict(),
+      )
+      .length(TRADE_RISK_FACTS_V1.length),
+    limits: z
+      .object({
+        slippageReviewBps: z.number().int().min(0).max(10_000),
+        slippageBlockBps: z.number().int().min(0).max(10_000),
+        quoteFreshSeconds: z.number().int().min(1),
+        factsFreshSeconds: z.number().int().min(1),
+        topPlainHolderReviewShare: z.number().min(0).max(1),
+        topFivePlainHoldersReviewShare: z.number().min(0).max(1),
+        creatorHoldsReviewShare: z.number().min(0).max(1),
+        transferFeeReviewBps: z.number().int().min(0).max(10_000),
+      })
+      .strict(),
+    evaluatedAt: Iso,
+  })
+  .strict();
+export type TradeRisk = z.infer<typeof TradeRiskSchema>;
+
 /* ---- «Перевірка», counted by the server (1.20.0) */
 
 export const CHECK_SIDES = ["buy", "sell"] as const;
@@ -5164,6 +7005,8 @@ export const SwapQuoteResponseSchema = z
     expiresAt: Iso,
     /** 1.20.0: «Перевірка» on the quote — no reserve here; null unless a company is bought with USDC or sold into it. */
     check: SwapCheckSchema.nullable(),
+    /** 1.85.0: the risk verdict over this trade — thirteen named facts, each with its source and its time. */
+    risk: TradeRiskSchema,
   })
   .strict();
 export type SwapQuoteResponse = z.infer<typeof SwapQuoteResponseSchema>;
@@ -5452,6 +7295,9 @@ const SwapPreSignRefusalSchema = z
  * sold into it. It reserves the wallet's durable owner lock and never
  * submits. Fails `SwapOrderErrorSchema` (statuses on the error schema).
  */
+/** Milliseconds a build's bytes stay signable from arriving (AG-1, `lib/solana/blockhash-life.ts`). */
+const SignableMs = z.number().int().min(0).max(120_000);
+
 export const SwapOrderResponseSchema = z
   .object({
     order: SwapJupiterOrderSchema,
@@ -5466,9 +7312,13 @@ export const SwapOrderResponseSchema = z
     proof: SwapSignedProofSchema,
     preSign: SwapPreSignSchema,
     expiresAt: Iso,
+    /** AG-1 (17.10): how long from arriving these exact bytes may still be signed — their blockhash's life less a margin. Inside the Review's reading window; past it, fresh bytes are fetched at the moment of signing. */
+    signableMs: SignableMs.optional(),
     planReview: PlanReviewSchema.nullable(),
     /** 1.20.0: «Перевірка» on this order — the four lines and the proven reserve; null unless a company is bought with USDC or sold into it. */
     check: SwapCheckSchema.nullable(),
+    /** 1.85.0: the risk verdict over this trade, built on the exact order the wallet will be asked to sign. */
+    risk: TradeRiskSchema,
   })
   .strict();
 export type SwapOrderResponse = z.infer<typeof SwapOrderResponseSchema>;
@@ -6028,9 +7878,12 @@ export const SWAP_ORDER_ERROR_CODES_V1 = [
  * message names up to three failing fields); 403 `WALLET_MISMATCH`; 409
  * `ASSET_NOT_OFFERED`; under a plan 401 `UNAUTHORIZED` (no proven wallet),
  * 404 `PLAN_NOT_FOUND`; 503 `STORE_NOT_DURABLE`; the owner lock — 409
- * `OWNER_SWAP_LOCKED` (with `ownerLock`), 503 `OWNER_SWAP_LOCK_UNAVAILABLE`
- * on the read and on the reservation, 409 on the expiry of a dead Review and
- * a lost reservation (with `ownerLock`, null when no record); 503
+ * `OWNER_SWAP_LOCKED` (with `ownerLock`) only while the wallet holds a
+ * signature the server claimed (since SOL-S1, 2026-10-19: an unsigned Review
+ * is replaced by the new order at once, and `execute` of the replaced bundle
+ * answers 409 `OWNER_SWAP_LOCK_MISMATCH` before any send), 503
+ * `OWNER_SWAP_LOCK_UNAVAILABLE` on the read and on the reservation, 409 on a
+ * lost reservation (with `ownerLock`, null when no record); 503
  * `PROVIDER_KEY_MISSING` · `PROOF_NOT_SIGNED`; 422 `MINT_UNREADABLE` ·
  * `PASSPORT_REFUSED`; `ORDER_*` with `provider` — 409 `ORDER_NO_ROUTE` ·
  * `ORDER_BUILD_FAILED`, 429 `ORDER_RATE_LIMITED`, 502 the others; 409
@@ -7379,6 +9232,15 @@ export type TransferRecoverError = z.infer<typeof TransferRecoverErrorSchema>;
  * that throws) is the platform's bare 500, in neither shape.
  */
 
+/**
+ * The wallet behind a prediction route. Since 1.62.0 (PM-S1) a prediction
+ * route acts only for a Solana wallet — an EVM proof the shared reader still
+ * accepts is refused by the handler with UNAUTHORIZED 401 — so a prediction
+ * answer names a Solana address; the schema still admits a lower-case EVM
+ * address because other shapes share it (a rule's owner, the recipient check).
+ */
+const PredictionWalletAddress = z.union([Address, z.string().regex(/^0x[0-9a-f]{40}$/)]);
+
 /** An id the provider states (an event, a market, an outcome, a quote, an order); the code does not check its form. */
 const PredId = z.string().max(256);
 /** A short token the provider states — a venue, a chain, a status, a kind; not bounded by the code. */
@@ -7414,6 +9276,10 @@ export const PREDICTION_FAILURE_CODES_V1 = [
   "WALLET_MISMATCH",
   /** The provider refused the signature or the nonce; or a base64 signature is not 64 bytes. */
   "SIGNATURE_INVALID",
+  /** The provider asks for its bot check before the sign-in starts: show Turnstile with `siteKey`, then start again with its token. */
+  "CHALLENGE_REQUIRED",
+  /** The start carried the bot check's token and the provider asked for the check again: the token was refused — start again from the beginning. */
+  "CHALLENGE_FAILED",
   /** Declared; no route produces it today. */
   "QUOTE_UNAVAILABLE",
   "QUOTE_EXPIRED",
@@ -7423,6 +9289,10 @@ export const PREDICTION_FAILURE_CODES_V1 = [
   "PLAN_NOT_FOUND",
   "PLAN_VERSION_CONFLICT",
   "PLAN_STATE_REFUSED",
+  /** 1.62.0 (PM-S1): live money is switched off on this deployment — only the funding routes answer it, which this contract does not describe yet. */
+  "FUNDING_OFF",
+  /** 1.62.0 (PM-S1): a withdrawal whose state is not known yet stands for this wallet — only the funding routes answer it. */
+  "WITHDRAWAL_OPEN",
   "UNAVAILABLE",
 ] as const;
 export const PREDICTION_MARKET_STATUSES_V1 = ["open", "closed", "resolved", "unknown"] as const;
@@ -7446,15 +9316,21 @@ const PredIssues = z.array(z.object({ path: z.string().max(256), message: z.stri
 /** The same list as a failure object holds it before it is answered — unbounded by the code (only a failure answered as an error is cut). */
 const PredRawIssues = z.array(z.object({ path: z.string().max(65_536), message: z.string().min(1).max(65_536) }).strict()).max(65_536);
 
+/** A Turnstile site key: `0x…`, or one of Cloudflare's test keys `1x…`–`3x…`. */
+const PredTurnstileSiteKey = z.string().regex(/^[0-9]x[0-9A-Za-z_-]{8,120}$/);
+
 /**
  * The error a prediction route's handler answers, with the status the code
  * maps to: VALIDATION_ERROR 400, PLAN_INVALID 400, UNAUTHORIZED 401,
  * SESSION_EXPIRED 401, SIGNATURE_INVALID 401, FORBIDDEN 403, WALLET_MISMATCH
- * 403, NOT_FOUND 404, PLAN_NOT_FOUND 404, NOT_LINKED 409, QUOTE_EXPIRED 409,
+ * 403, CHALLENGE_FAILED 403, NOT_FOUND 404, PLAN_NOT_FOUND 404, NOT_LINKED 409, QUOTE_EXPIRED 409,
  * PLAN_VERSION_CONFLICT 409, PLAN_STATE_REFUSED 409, QUOTE_UNAVAILABLE 422,
- * ORDER_REFUSED 422, RATE_LIMITED 429, PROVIDER_UNAVAILABLE 503,
- * LINK_UNAVAILABLE 503, UNAVAILABLE 503. `issues` only on VALIDATION_ERROR
- * (a body the schema refused, or an amount of zero) and PLAN_INVALID.
+ * ORDER_REFUSED 422, CHALLENGE_REQUIRED 428, RATE_LIMITED 429,
+ * PROVIDER_UNAVAILABLE 503, LINK_UNAVAILABLE 503, UNAVAILABLE 503; since
+ * 1.62.0 also FUNDING_OFF 403 and WITHDRAWAL_OPEN 409, from the funding
+ * routes alone (`/api/predictions/funding/**`, not described here). `issues`
+ * only on VALIDATION_ERROR (a body the schema refused, or an amount of zero)
+ * and PLAN_INVALID; `siteKey` only on CHALLENGE_REQUIRED.
  */
 export const PredictionsFailureSchema = z
   .object({
@@ -7464,6 +9340,8 @@ export const PredictionsFailureSchema = z
         /** Ryntra's sentence — or, on a VALIDATION_ERROR or ORDER_REFUSED passed on from the provider, the provider's own message, cut to 1,000 characters. */
         message: z.string().min(1).max(1000),
         issues: PredIssues.optional(),
+        /** The Cloudflare Turnstile site key the bot check is shown with; only on CHALLENGE_REQUIRED. */
+        siteKey: PredTurnstileSiteKey.optional(),
       })
       .strict(),
   })
@@ -7483,6 +9361,8 @@ export const PredictionFailureValueSchema = z
     issues: PredRawIssues.optional(),
     /** The wait the provider named on a RATE_LIMITED, in seconds. */
     retryAfterSeconds: z.number().positive().optional(),
+    /** The bot check's site key on a CHALLENGE_REQUIRED. */
+    siteKey: PredTurnstileSiteKey.optional(),
   })
   .strict();
 export type PredictionFailureValueV1 = z.infer<typeof PredictionFailureValueSchema>;
@@ -7585,6 +9465,14 @@ const PredEventSummaryShape = {
   arbReturn: z.number().nullable(),
   /** The first market's outcomes with their last price — the card's leading figures. */
   leading: z.array(z.object({ id: PredId, label: PredText, probability: PredProbability.nullable(), venueMarketId: PredId }).strict()).max(1024),
+  /** The first market's question when the event holds more than one market — what the leading figures are the odds of; null otherwise. */
+  leadingQuestion: PredText.nullable().optional(),
+  /** The provider's series cadence as an ISO-8601 duration (`PT5M`, `PT1H`, `P1D`…); null for a one-off event. */
+  recurrence: PredWord.nullable().optional(),
+  /** The provider's sport slug (`basketball`, `soccer`…); null for an event that is not a game. */
+  sport: PredWord.nullable().optional(),
+  /** The game's scheduled start, for a sports event; its markets may keep trading during play. */
+  gameStartTime: ProviderTime.nullable().optional(),
 } as const;
 
 /** An event as a list shows it. Lists leave out an event whose end passed more than two days ago. */
@@ -7838,7 +9726,7 @@ export const PredictionPlanSchema = z
   .object({
     id: PredictionPlanIdSchema,
     kind: z.literal("prediction"),
-    owner: Address,
+    owner: PredictionWalletAddress,
     /** Also `expired` when read: a draft or active plan whose resolution deadline passed reads as expired; the stored row is not rewritten. */
     status: z.enum(PREDICTION_PLAN_STATUSES_V1),
     createdAt: Iso,
@@ -7962,6 +9850,36 @@ export const PredictionRouteFillSchema = z
   })
   .strict();
 
+/** The route's own cost breakdown in USD, as the provider states it; `appFeeUsd` null when no partner fee is configured, `setupUsd` null when the quote did not estimate one-time setup. */
+const PredictionRouteCostsSchema = z
+  .object({
+    contractsUsd: z.number(),
+    venueFeesUsd: z.number(),
+    builderFeeUsd: z.number(),
+    bridgeUsd: z.number(),
+    gasUsd: z.number(),
+    appFeeUsd: z.number().nullable(),
+    appFeeBips: z.number().nullable(),
+    referralUsd: z.number().nullable(),
+    setupUsd: z.number().nullable(),
+    totalUsd: z.number(),
+  })
+  .strict();
+
+/** One venue's own quote for the same order: what it alone would fill, and its own total without a partner fee (null when it states none). */
+const PredictionSoloQuoteSchema = z
+  .object({
+    venue: PredWord,
+    status: PredWord,
+    shares: z.number(),
+    avgPrice: z.number().nullable(),
+    directCostUsd: z.number().nullable(),
+    unavailableReason: PredText.nullable(),
+    /** The price levels the venue's own quote fills, with the contracts taken at each; absent on a quote stored before they were kept. */
+    levels: z.array(z.object({ price: z.number(), qty: z.number() }).strict()).max(1024).optional(),
+  })
+  .strict();
+
 /** The provider's smart route for a paper order, priced for the wallet's own session. */
 export const PredictionRouteSchema = z
   .object({
@@ -7985,6 +9903,10 @@ export const PredictionRouteSchema = z
     fills: z.array(PredictionRouteFillSchema).max(256),
     /** Each venue's own quote: its scalar fields as the provider names them. */
     venueSolo: z.array(z.object({ venue: PredWord, fields: z.record(PredWord, z.union([PredText, z.number(), z.boolean(), z.null()])) }).strict()).max(64),
+    /** The route's cost breakdown; null when the provider stated none, absent on a route stored before it was kept. */
+    costs: PredictionRouteCostsSchema.nullable().optional(),
+    /** Each venue's own quote for the same order; absent on a route stored before it was kept. */
+    solos: z.array(PredictionSoloQuoteSchema).max(64).optional(),
     warnings: z.array(z.object({ venue: PredWord, reason: PredText }).strict()).max(256),
     matchedMarkets: z.array(z.object({ venue: PredWord, venueMarketId: PredId }).strict()).max(64),
     expiresAt: ProviderTime,
@@ -8019,7 +9941,8 @@ export type PredictionReviewCheck = z.infer<typeof PredictionReviewCheckSchema>;
  */
 export const PredictionPaperReviewSchema = z
   .object({
-    mode: z.literal("paper"),
+    /** `live` — real USDC from the managed account, reviewed only where live trading is open to the wallet; `paper` — simulated. */
+    mode: z.enum(["paper", "live"]),
     quoteId: PredId,
     event: z.object({ id: PredId, title: PredText, endDate: ProviderTime.nullable() }).strict(),
     /** The market reviewed; the event's title and venue with null dates and rules when the market is no longer in the event. */
@@ -8043,6 +9966,21 @@ export const PredictionPaperReviewSchema = z
         returnIfRightPct: z.number().nullable(),
       })
       .strict(),
+    /**
+     * A buy's cost line by line (`contracts`, `venue`, `ryntra`, `gas`, `bridge`, `setup`; a line the route does not state is null),
+     * Ryntra's fee (`charged` false when the Review states it and nothing takes it), the total the order takes, and `saving` against
+     * the least the same contracts cost on one venue alone (its own levels, before its fees) after Ryntra's fee — null unless it is a cent or more. Null on a sell; absent on a Review stored before it was kept.
+     */
+    costs: z
+      .object({
+        lines: z.array(z.object({ id: z.enum(["contracts", "venue", "ryntra", "gas", "bridge", "setup", "referral"]), usd: z.number().nullable() }).strict()).max(8),
+        ryntra: z.object({ bips: z.number().int().min(0).max(10_000), usd: z.number().min(0), charged: z.boolean() }).strict(),
+        totalUsd: z.number(),
+        saving: z.object({ usd: z.number().positive(), venue: PredWord, venueCostUsd: z.number() }).strict().nullable(),
+      })
+      .strict()
+      .nullable()
+      .optional(),
     /** `expired` past the provider's expiry or at 90 seconds, whichever comes first. */
     quote: z.object({ quotedAt: Iso, expiresAt: ProviderTime, ageSeconds: z.number().int().min(0), expired: z.boolean() }).strict(),
     venues: z.array(PredWord).max(256),
@@ -8065,7 +10003,7 @@ export type PredictionPaperReview = z.infer<typeof PredictionPaperReviewSchema>;
 export const PredictionOrderRecordSchema = z
   .object({
     version: z.number().int().min(1),
-    wallet: Address,
+    wallet: PredictionWalletAddress,
     quoteId: PredId,
     eventId: PredId,
     eventTitle: PredText,
@@ -8116,7 +10054,7 @@ export const PredictionLinkChallengeSchema = z
     nonce: PredWord,
     /** Ryntra's sentence the wallet shows, in the request's language. */
     statement: PredText.nullable(),
-    wallet: Address,
+    wallet: PredictionWalletAddress,
   })
   .strict();
 export type PredictionLinkChallenge = z.infer<typeof PredictionLinkChallengeSchema>;
@@ -8206,9 +10144,9 @@ export const PredictionsLinkVerifyRequestSchema = z
   .object({
     /** The challenge's `message`, exactly as signed. */
     message: z.string().min(40).max(4096),
-    /** The wallet's signature over it: 64 bytes as base64 (the default), or base58 with `encoding: "base58"`. */
+    /** The wallet's signature over it: a Solana wallet's 64 bytes as base64 (the default), or base58 with `encoding: "base58"`; an EVM wallet's 65 bytes as 0x-prefixed hex with `encoding: "hex"`. */
     signature: z.string().min(16).max(512),
-    encoding: z.enum(["base64", "base58"]).optional(),
+    encoding: z.enum(["base64", "base58", "hex"]).optional(),
   })
   .strict();
 export type PredictionsLinkVerifyRequest = z.infer<typeof PredictionsLinkVerifyRequestSchema>;
@@ -8226,6 +10164,8 @@ export const PredictionsQuoteRequestSchema = z
     planId: PredictionPlanIdSchema.nullable().optional(),
     /** The language the Review's sentences are written in, once; default `en`. */
     locale: z.enum(["en", "uk"]).optional(),
+    /** `live` asks for a real-money Review; refused (FORBIDDEN) where live trading is not open to the wallet. Default `paper`. */
+    mode: z.enum(["paper", "live"]).optional(),
   })
   .strict();
 export type PredictionsQuoteRequest = z.infer<typeof PredictionsQuoteRequestSchema>;
@@ -8291,7 +10231,7 @@ export const PredictionsDiscoverResponseSchema = z
     readAt: Iso,
     /** Every event id the wallet watches, on this page or not; empty without a wallet proof. */
     watched: z.array(PredictionRouteIdSchema).max(100),
-    wallet: Address.nullable(),
+    wallet: PredictionWalletAddress.nullable(),
   })
   .strict();
 export type PredictionsDiscoverResponse = z.infer<typeof PredictionsDiscoverResponseSchema>;
@@ -8320,7 +10260,7 @@ export type PredictionsEventsResponse = z.infer<typeof PredictionsEventsResponse
  * provider's failure (NOT_FOUND 404 for an event it does not have).
  */
 export const PredictionsEventResponseSchema = z
-  .object({ event: PredictionEventSchema, watch: PredictionWatchEntrySchema.nullable(), wallet: Address.nullable(), readAt: Iso })
+  .object({ event: PredictionEventSchema, watch: PredictionWatchEntrySchema.nullable(), wallet: PredictionWalletAddress.nullable(), readAt: Iso })
   .strict();
 export type PredictionsEventResponse = z.infer<typeof PredictionsEventResponseSchema>;
 
@@ -8376,10 +10316,21 @@ export const PredictionsChartResponseSchema = z.object({ chart: PredictionChartS
 export type PredictionsChartResponse = z.infer<typeof PredictionsChartResponseSchema>;
 
 /**
- * `POST /api/predictions/link/start` — the proven wallet; no body. The
- * challenge itself, not wrapped. Fails with LINK_UNAVAILABLE 503 (no session
- * secret or durable store here) or the provider's failure.
+ * `POST /api/predictions/link/start` — the proven wallet; no body, or
+ * `{ turnstileToken }` after a CHALLENGE_REQUIRED. The challenge itself, not
+ * wrapped. Fails with LINK_UNAVAILABLE 503 (no session secret or durable
+ * store here), CHALLENGE_REQUIRED 428 (the provider's bot check: show
+ * Turnstile with `error.siteKey`, then post again with its token),
+ * CHALLENGE_FAILED 403 (that token was refused — start again, no body),
+ * VALIDATION_ERROR 400 (not a token) or the provider's failure.
  */
+export const PredictionsLinkStartRequestSchema = z
+  .object({
+    /** The token Turnstile gave; at most 2,048 printable characters, no spaces. */
+    turnstileToken: z.string().min(1).max(2048).regex(/^[!-~]+$/).optional(),
+  })
+  .strict();
+export type PredictionsLinkStartRequest = z.infer<typeof PredictionsLinkStartRequestSchema>;
 export const PredictionsLinkStartResponseSchema = PredictionLinkChallengeSchema;
 export type PredictionsLinkStartResponse = z.infer<typeof PredictionsLinkStartResponseSchema>;
 
@@ -8391,7 +10342,7 @@ export type PredictionsLinkStartResponse = z.infer<typeof PredictionsLinkStartRe
  * request) or the provider's failure; revoke with NOT_LINKED 409 or
  * UNAVAILABLE 503.
  */
-export const PredictionsLinkResponseSchema = z.object({ wallet: Address, link: PredictionLinkStatusSchema }).strict();
+export const PredictionsLinkResponseSchema = z.object({ wallet: PredictionWalletAddress, link: PredictionLinkStatusSchema }).strict();
 export type PredictionsLinkResponse = z.infer<typeof PredictionsLinkResponseSchema>;
 
 /**
@@ -8405,7 +10356,7 @@ export type PredictionsLinkResponse = z.infer<typeof PredictionsLinkResponseSche
  */
 export const PredictionsAccountResponseSchema = z
   .object({
-    wallet: Address,
+    wallet: PredictionWalletAddress,
     link: PredictionLinkStatusSchema,
     balance: PredictionPaperBalanceSchema.nullable(),
     positions: z.array(PredictionPaperPositionSchema).max(500),
@@ -8415,6 +10366,15 @@ export const PredictionsAccountResponseSchema = z
     orders: z.array(PredictionOrderRecordSchema).max(50),
     readAt: Iso,
     providerFailure: PredictionFailureValueSchema.nullable(),
+    /** The provider's own word on whether this person may trade from where they are (its profile's location flag); null when not read. Ryntra adds no rule of its own. */
+    access: z
+      .object({
+        locationBlocked: z.boolean(),
+        /** The person's accounts on venues that trade only through one, with the provider's identity-check state; null when the profile lists none. */
+        venueAccounts: z.array(z.object({ venue: PredWord, status: PredWord, kycStatus: PredWord }).strict()).max(64).nullable().optional(),
+      })
+      .strict()
+      .nullable(),
     watchlist: z.array(PredictionWatchEntrySchema).max(100),
     plans: z.array(PredictionPlanSchema).max(50),
   })
@@ -8430,12 +10390,12 @@ export type PredictionsAccountResponse = z.infer<typeof PredictionsAccountRespon
  * or the route. A refusing Review is a 200 with `canPlace: false`.
  */
 export const PredictionsQuoteResponseSchema = z
-  .object({ wallet: Address, review: PredictionPaperReviewSchema, link: PredictionLinkStatusSchema, order: PredictionOrderRecordSchema })
+  .object({ wallet: PredictionWalletAddress, review: PredictionPaperReviewSchema, link: PredictionLinkStatusSchema, order: PredictionOrderRecordSchema })
   .strict();
 export type PredictionsQuoteResponse = z.infer<typeof PredictionsQuoteResponseSchema>;
 
 /** `GET /api/predictions/orders` — the proven wallet. Ryntra's paper-order records, newest first, at most 50. Fails only with the wallet-proof refusal. */
-export const PredictionsOrdersResponseSchema = z.object({ wallet: Address, orders: z.array(PredictionOrderRecordSchema).max(50) }).strict();
+export const PredictionsOrdersResponseSchema = z.object({ wallet: PredictionWalletAddress, orders: z.array(PredictionOrderRecordSchema).max(50) }).strict();
 export type PredictionsOrdersResponse = z.infer<typeof PredictionsOrdersResponseSchema>;
 
 /**
@@ -8446,7 +10406,7 @@ export type PredictionsOrdersResponse = z.infer<typeof PredictionsOrdersResponse
  * QUOTE_EXPIRED 409, NOT_LINKED 409, SESSION_EXPIRED 401, UNAVAILABLE 503 or
  * the provider's failure.
  */
-export const PredictionsOrderPlacedResponseSchema = z.object({ wallet: Address, order: PredictionOrderRecordSchema }).strict();
+export const PredictionsOrderPlacedResponseSchema = z.object({ wallet: PredictionWalletAddress, order: PredictionOrderRecordSchema }).strict();
 export type PredictionsOrderPlacedResponse = z.infer<typeof PredictionsOrderPlacedResponseSchema>;
 
 /**
@@ -8456,7 +10416,7 @@ export type PredictionsOrderPlacedResponse = z.infer<typeof PredictionsOrderPlac
  */
 export const PredictionsOrderResponseSchema = z
   .object({
-    wallet: Address,
+    wallet: PredictionWalletAddress,
     order: PredictionOrderRecordSchema,
     /** Present when the re-read failed: the stored record is answered, with the failure's code and message. */
     sync: z.object({ code: z.enum(PREDICTION_FAILURE_CODES_V1), message: z.string().min(1).max(4000) }).strict().optional(),
@@ -8465,7 +10425,7 @@ export const PredictionsOrderResponseSchema = z
 export type PredictionsOrderResponse = z.infer<typeof PredictionsOrderResponseSchema>;
 
 /** `GET /api/predictions/plans` — the proven wallet. Its Prediction Plans, the most recently updated first, at most 50. Fails only with the wallet-proof refusal. */
-export const PredictionsPlansResponseSchema = z.object({ wallet: Address, plans: z.array(PredictionPlanSchema).max(50) }).strict();
+export const PredictionsPlansResponseSchema = z.object({ wallet: PredictionWalletAddress, plans: z.array(PredictionPlanSchema).max(50) }).strict();
 export type PredictionsPlansResponse = z.infer<typeof PredictionsPlansResponseSchema>;
 
 /**
@@ -8477,11 +10437,11 @@ export type PredictionsPlansResponse = z.infer<typeof PredictionsPlansResponseSc
  * PLAN_INVALID 400 on an edit, PLAN_NOT_FOUND 404, PLAN_VERSION_CONFLICT 409,
  * PLAN_STATE_REFUSED 409, UNAVAILABLE 503).
  */
-export const PredictionsPlanResponseSchema = z.object({ wallet: Address, plan: PredictionPlanSchema }).strict();
+export const PredictionsPlanResponseSchema = z.object({ wallet: PredictionWalletAddress, plan: PredictionPlanSchema }).strict();
 export type PredictionsPlanResponse = z.infer<typeof PredictionsPlanResponseSchema>;
 
 /** `GET` and `PUT /api/predictions/watchlist` — the proven wallet. The watched events, newest first, at most 100. `PUT` fails with VALIDATION_ERROR 400 or UNAVAILABLE 503. */
-export const PredictionsWatchlistResponseSchema = z.object({ wallet: Address, entries: z.array(PredictionWatchEntrySchema).max(100) }).strict();
+export const PredictionsWatchlistResponseSchema = z.object({ wallet: PredictionWalletAddress, entries: z.array(PredictionWatchEntrySchema).max(100) }).strict();
 export type PredictionsWatchlistResponse = z.infer<typeof PredictionsWatchlistResponseSchema>;
 
 /* ------------------------------------------------------------ autoinvest rules (1.12.0) */
@@ -8767,7 +10727,7 @@ export type RulePayments = z.infer<typeof RulePaymentsSchema>;
 export const AutoinvestRuleSchema = z
   .object({
     id: z.string().regex(RULE_ID),
-    owner: Address,
+    owner: PredictionWalletAddress,
     network: z.literal(NETWORK),
     /** `schedule` — «Регулярно»; 1.13.0: `dip` — «Якщо впаде»; 1.19.0: `payments` — «З кожної оплати». */
     kind: z.enum(RULE_KINDS),
@@ -9138,6 +11098,15 @@ export const PayLinkSchema = z
     createdAt: Iso,
     expiresAt: Iso,
     paid: z.object({ signature: PaySignature, creditedRaw: RawAmount, credited: TransferDecimal, paidAt: Iso.nullable() }).strict().nullable(),
+    /**
+     * 1.78.0 (FIX-PAY-1): what reached the recipient in the requested token so far, summed over every transaction that
+     * carried the reference — raw and in the token's units — and what the token's own transfer fee withheld of it (null
+     * when it withheld nothing). Null while nothing in the token arrived; another token is never counted here.
+     */
+    received: z
+      .object({ raw: RawAmount, amount: TransferDecimal, feeWithheldRaw: RawAmount.nullable(), feeWithheld: TransferDecimal.nullable() })
+      .strict()
+      .nullable(),
   })
   .strict();
 export type PayLink = z.infer<typeof PayLinkSchema>;
@@ -9243,7 +11212,7 @@ export const RecipientCheckResponseSchema = z
     /** The asset the destination was checked for; `mint` null for SOL. */
     asset: z.object({ mint: Address.nullable() }).strict(),
     destination: z
-      .object({ kind: z.enum(["wallet", "token-account"]), owner: Address, account: Address, opensAccount: z.boolean() })
+      .object({ kind: z.enum(["wallet", "token-account"]), owner: PredictionWalletAddress, account: Address, opensAccount: z.boolean() })
       .strict()
       .nullable(),
     asked: z
@@ -9332,6 +11301,8 @@ export const PayPublicRequestSchema = z
     createdAt: Iso,
     expiresAt: Iso,
     paid: z.object({ signature: PaySignature, creditedRaw: RawAmount, paidAt: Iso.nullable() }).strict().nullable(),
+    /** 1.78.0 (FIX-PAY-1): what arrived in the requested token so far, and what its own transfer fee withheld of it. */
+    received: z.object({ raw: RawAmount, feeWithheldRaw: RawAmount.nullable() }).strict().nullable(),
   })
   .strict();
 export type PayPublicRequest = z.infer<typeof PayPublicRequestSchema>;
@@ -9372,6 +11343,8 @@ export const PayTransactionResponseSchema = z
         simulated: z.object({ succeeded: z.boolean(), error: z.string().max(4_096).nullable() }).strict().nullable(),
         createsRecipientAccount: z.boolean(),
         networkFeeLamports: RawAmount,
+        /** AG-1 (17.10): how long from arriving the payer may still sign — the bytes' life on the chain (~30 s on 200 ms slots) less a margin to land. Past it, prepare again rather than sign. */
+        signableMs: SignableMs,
       })
       .strict(),
   })
@@ -9475,6 +11448,32 @@ const LaunchRaw = z.string().regex(/^[0-9]{1,30}$/);
 const LaunchWords = z.object({ uk: z.string().min(1).max(64), en: z.string().min(1).max(64) }).strict();
 const LaunchNetworkId = z.enum(["solana:devnet", "solana:mainnet"]);
 const LaunchBuildId = z.string().regex(/^[0-9a-f]{32}$/);
+/** 1.74.0 (MC-2): a mission's crew. */
+const LaunchCrewId = z.string().regex(/^[0-9a-f]{24}$/);
+
+const LaunchBpsShare = z.number().int().min(0).max(10_000);
+/** One fee split, basis points of it; the three add up to 10 000 (1.50.0). */
+const LaunchFeeSharesSchema = z.object({ creatorBps: LaunchBpsShare, ryntraBps: LaunchBpsShare, meteoraBps: LaunchBpsShare }).strict();
+
+const LaunchCurveRuleRange = z.object({ min: z.number().int().nonnegative(), max: z.number().int().positive() }).strict();
+
+/**
+ * 1.80.0 — «Правила на кривій» (SOL-L8, `lib/core/launch/curve-rules.ts`): the four rules Ryntra allows on a curve with
+ * their bounds, the rules that lock a buyer in with the reason each is refused for, the scope the rules run in
+ * (`UNTIL_DEX`) and the side they act on (`PURCHASE`), and the audited program that keeps them with who may change it.
+ */
+export const LaunchCurveRulesFormatSchema = z
+  .object({
+    rules: z.array(z.object({ id: z.enum(CURVE_RULE_IDS), bounds: z.record(z.string(), LaunchCurveRuleRange) }).strict()).min(1),
+    forbidden: z.array(z.object({ id: z.enum(LOCKED_IN_RULE_IDS), reason: z.string().min(1).max(300) }).strict()).min(1),
+    scope: z.literal(CURVE_RULES_SCOPE),
+    side: z.literal(CURVE_RULES_SIDE),
+    program: z
+      .object({ program: Address, upgrade: z.enum(CURVE_RULES_UPGRADE), upgradeAuthority: Address.nullable(), audit: z.string().min(1).max(300) })
+      .strict(),
+  })
+  .strict();
+export type LaunchCurveRulesFormat = z.infer<typeof LaunchCurveRulesFormatSchema>;
 
 /** A preset as the form shows it: its numbers, each the config's own. */
 export const LaunchPresetSchema = z
@@ -9503,14 +11502,145 @@ export const LaunchPresetSchema = z
     technicalValidation: z.boolean(),
     /** Every share of the graduated pool's liquidity locked for ever. */
     lpLockedForeverPct: z.literal(100),
+    /**
+     * 1.80.0 — «Правила на кривій» (SOL-L8): this preset's token runs Ryntra's verified transfer-hook rules until the
+     * DEX, so no mark says «no rule on transfers» on it. Absent on every other preset.
+     */
+    curveRules: z.literal(true).optional(),
+    /**
+     * 1.50.0 — who receives every fee, basis points of it (`lib/core/launch/preset-terms.ts`): on the curve, the same
+     * through Ryntra's referral, the move to the DEX (of its fee; `toBudget` — Ryntra's part is the market's budget), and
+     * the DEX pool (its fee's schedule; Meteora's part, the compounding share, the two locked positions while they are the
+     * pool's only liquidity).
+     */
+    terms: z
+      .object({
+        curveSplit: LaunchFeeSharesSchema,
+        curveSplitThroughRyntra: LaunchFeeSharesSchema,
+        graduation: z.object({ feeBps: LaunchBpsShare, creatorBps: LaunchBpsShare, ryntraBps: LaunchBpsShare, toBudget: z.boolean() }).strict(),
+        pool: z
+          .object({
+            startFeeBps: LaunchBpsShare,
+            endFeeBps: LaunchBpsShare,
+            meteoraBps: LaunchBpsShare,
+            compoundingBps: LaunchBpsShare,
+            creatorPositionBps: LaunchBpsShare,
+            ryntraPositionBps: LaunchBpsShare,
+          })
+          .strict(),
+      })
+      .strict()
+      .optional(),
   })
   .strict();
 export type LaunchPresetView = z.infer<typeof LaunchPresetSchema>;
+
+/** 1.56.0 (SOL-L5) — «Розширений»: what the creator chooses in «Розширені параметри». */
+export const LaunchAdvancedChoiceSchema = z
+  .object({
+    /** Whole tokens, one of the bounds' supplies. */
+    supply: z.number().int().refine((value) => (ADVANCED_SUPPLIES as readonly number[]).includes(value), "one of the offered supplies"),
+    startMarketCapUsd: z.number().positive(),
+    graduationMarketCapUsd: z.number().positive(),
+    /** The creator's share of the curve's fee after Meteora's 20 %, percent. */
+    creatorTradingFeePct: z.number().int().min(0).max(100),
+    sniper: z.enum(SNIPER_STRENGTHS),
+    poolStartFeeBps: z.number().int().min(0).max(10_000),
+    poolEndFeeBps: z.number().int().min(0).max(10_000),
+    /**
+     * 1.72.0 (SOL-L10) — «Комісія за переказ»: the token's fee on every transfer until the DEX, basis points; absent — none
+     * (no extension on the token). Taken only where the bounds carry `transferFeeMaxBps`; RevokeZeroFee, the creator collects.
+     */
+    transferFeeBps: z.number().int().min(1).max(TRANSFER_FEE_MAX_BPS).optional(),
+    /**
+     * 1.83.0 (SOL-L11) — the pair currency the curve runs in: a mint of the register this deployment checked
+     * (`GET /api/v1/launch/quote-assets`); absent — the network's own pair. The mint is read again before anything is
+     * built, and a difference from what was checked refuses the build.
+     */
+    quoteMint: Address.optional(),
+  })
+  .strict();
+const LaunchRange = z.object({ min: z.number().nonnegative(), max: z.number().nonnegative() }).strict();
+const LaunchGraduationFeeSchema = z.object({ pct: z.number().min(0).max(100), creatorPct: z.number().int().min(0).max(100) }).strict();
+/** 1.56.0 — a launch's own numbers as kept: the choice and the bounds' part in force when its config was made. */
+export const LaunchAdvancedTermsSchema = LaunchAdvancedChoiceSchema.extend({ graduationFee: LaunchGraduationFeeSchema, firstBuyCapBps: z.number().int().positive().max(10_000) }).strict();
+/** 1.56.0 — the bounds the operator approved for «Розширений» on this network. */
+export const LaunchAdvancedBoundsSchema = z
+  .object({
+    supplies: z.array(z.number().int().positive()).min(1),
+    startMarketCapUsd: LaunchRange,
+    graduationMarketCapUsd: LaunchRange,
+    multiple: LaunchRange,
+    creatorTradingFeePct: LaunchRange,
+    snipers: z.array(z.enum(SNIPER_STRENGTHS)).min(1),
+    poolStartFeeBps: LaunchRange,
+    poolEndFeeBps: LaunchRange,
+    graduationFee: LaunchGraduationFeeSchema,
+    firstBuyCapBps: z.number().int().positive().max(10_000),
+    /** 1.72.0 (SOL-L10): the ceiling of «Комісія за переказ» where it is offered here; absent — not offered. */
+    transferFeeMaxBps: z.number().int().positive().max(TRANSFER_FEE_MAX_BPS).optional(),
+  })
+  .strict();
+
+/** 1.56.0 — the bounds a campaign stays inside on this network (the operator's, once). */
+export const LaunchBoostBoundsSchema = z
+  .object({
+    currencies: z.array(z.enum(BOOST_CURRENCIES)).min(1),
+    routes: z.array(z.enum(BOOST_ROUTES)).min(1),
+    minBonusBps: z.number().int().min(0).max(10_000),
+    maxBonusBps: z.number().int().min(0).max(10_000),
+    minMinutes: z.number().nonnegative(),
+    maxDays: z.number().nonnegative(),
+    maxStartDays: z.number().nonnegative(),
+    minHoldHours: z.number().nonnegative(),
+    maxHoldHours: z.number().nonnegative(),
+    minBuyFloorRaw: LaunchRaw,
+    maxCapShareBps: z.number().int().min(0).max(10_000),
+    maxBudgetRaw: z.object({ PAIR: LaunchRaw.nullable(), TOKEN: LaunchRaw.nullable() }).strict(),
+  })
+  .strict();
+
+/** 1.56.0 — the bounds early access stays inside on this network (the operator's, once; open to people only by his word). */
+export const LaunchEarlyAccessBoundsSchema = z
+  .object({
+    modes: z.array(z.enum(EARLY_ACCESS_MODES)).min(1),
+    minCapRaw: LaunchRaw,
+    maxCapRaw: LaunchRaw,
+    minIndividualCapRaw: LaunchRaw,
+    minDepositMinutes: z.number().nonnegative(),
+    maxDepositHours: z.number().nonnegative(),
+    maxStartDelayHours: z.number().nonnegative(),
+    minVestingHours: z.number().nonnegative(),
+    maxVestingHours: z.number().nonnegative(),
+    minStartMarketCapUsd: z.number().nonnegative(),
+    maxStartMarketCapUsd: z.number().nonnegative(),
+    maxPresaleBps: z.number().int().min(0).max(10_000),
+  })
+  .strict();
 
 export const LaunchPresetsResponseSchema = z
   .object({
     network: LaunchNetworkId,
     presets: z.array(LaunchPresetSchema).min(1),
+    /**
+     * 1.56.0 (SOL-L5): «Спільнота»'s community tokens, each with its own config; absent or empty — one pair, the
+     * preset's own.
+     */
+    communities: z.array(z.object({ config: Address, mint: Address, symbol: z.string().min(1).max(12), decimals: z.number().int().min(0).max(18) }).strict()).optional(),
+    /**
+     * 1.56.0 (SOL-L5): the formats of «Розширені параметри» offered here — each null where it is not (on mainnet until
+     * the operator gives its bounds).
+     */
+    formats: z
+      .object({
+        advanced: z.object({ bounds: LaunchAdvancedBoundsSchema }).strict().nullable(),
+        boost: z.object({ bounds: LaunchBoostBoundsSchema }).strict().nullable().optional(),
+        earlyAccess: z.object({ bounds: LaunchEarlyAccessBoundsSchema }).strict().nullable().optional(),
+        /** 1.80.0 — «Правила на кривій» (SOL-L8): null until the operator opens the format after the independent audit of its rule program. */
+        curveRules: LaunchCurveRulesFormatSchema.nullable().optional(),
+      })
+      .strict()
+      .optional(),
     locks: z.array(z.object({ id: z.enum(CREATOR_LOCK_IDS), cliffDays: z.number().int().positive(), vestDays: z.number().int().positive() }).strict()).min(1),
     limits: z
       .object({
@@ -9545,7 +11675,16 @@ export const LaunchMetadataResponseSchema = z
   .strict();
 export type LaunchMetadataResponse = z.infer<typeof LaunchMetadataResponseSchema>;
 
-export const LaunchQuoteRequestSchema = z.object({ preset: z.enum(LAUNCH_PRESET_IDS), amountRaw: LaunchRaw }).strict();
+export const LaunchQuoteRequestSchema = z
+  .object({
+    preset: z.enum(LAUNCH_PRESET_IDS),
+    amountRaw: LaunchRaw,
+    /** 1.56.0: «Спільнота» — the community token the curve pairs against. */
+    pairMint: Address.optional(),
+    /** 1.56.0: «Розширений» — the config the creator made for the launch. */
+    advancedConfig: Address.optional(),
+  })
+  .strict();
 export type LaunchQuoteRequest = z.infer<typeof LaunchQuoteRequestSchema>;
 export const LaunchQuoteResponseSchema = z
   .object({
@@ -9571,9 +11710,116 @@ export const LaunchBuildRequestSchema = z
     lock: z.enum(CREATOR_LOCK_IDS).nullable(),
     /** 1.29.0, «Спільнота» only: the creator's fees shared — the creator among the wallets; absent or empty, not shared. */
     feeShares: z.array(LaunchFeeShareSchema).max(FEE_SHARE_MAX_RECIPIENTS).optional(),
+    /**
+     * The creator's partner (the one who brought them): "offered" — the one the review showed; "none" — removed; a code
+     * or a link `/r/<code>` — another partner in its place. Absent — a client without the review: no partner is bound.
+     * Bound to the pool once the launch is signed, never after.
+     */
+    partner: z.union([z.literal("offered"), z.literal("none"), z.object({ code: z.string().min(1).max(200) }).strict()]).optional(),
+    /** 1.56.0 (SOL-L5), «Спільнота» only: the community token to pair against; may be absent where one is offered. */
+    pairMint: Address.optional(),
+    /** 1.56.0 (SOL-L5), «Розширений» only, and always: the config the creator made for this launch (`/api/v1/launch/advanced/config/*`). */
+    advancedConfig: Address.optional(),
+    /**
+     * 1.71.0 (MC-1): "v1" — the creator's wallet signs v1 transactions (SIMD-0385). On Micro and the demo market a first
+     * purchase is built only so: the purchase and its lock are one v1 transaction, `lockUnsignedWireBase64` is null.
+     * Absent — legacy bytes as before; a first purchase there is refused `LAUNCH_WALLET_V1_REQUIRED`.
+     */
+    format: z.literal("v1").optional(),
+    /**
+     * 1.74.0 (MC-2), Classic and Protected: the crew (`/api/v1/launch/crews`) that shares the creator's fees — the vault's
+     * rows are the creator and every member who said yes, read from the crew, never sent; with it, no `feeShares`.
+     */
+    crew: LaunchCrewId.optional(),
   })
   .strict();
 export type LaunchBuildRequest = z.infer<typeof LaunchBuildRequestSchema>;
+
+/**
+ * 1.83.0 (SOL-L11) — a checked pair currency: the pair as any pair is said, and beside it whether a launch in it is open
+ * now, the DBC version its own transfer fee needs, the rate a transfer of it pays, its price with the moment of the read
+ * and — where it is closed — the register's own reasons. Nothing of what stands behind the pair currency is said here.
+ */
+export const LaunchQuoteAssetSchema = z
+  .object({
+    mint: Address,
+    symbol: z.string().min(1).max(12),
+    decimals: z.number().int().min(0).max(18),
+    state: z.enum(["OPEN", "CLOSED"]),
+    /** `0.2.2` — its fee needs `createConfig2`; `0.2.1` — it does not; null — the mint was not read. */
+    configVersion: z.enum(QUOTE_CONFIG_VERSIONS).nullable(),
+    /** What one transfer of the pair currency pays now, and the mint's cap on one transfer's fee; null — no fee at all. */
+    feeNow: z.object({ epoch: z.string().regex(/^[0-9]{1,20}$/), bps: z.number().int().min(0).max(10_000), maxRaw: LaunchRaw }).strict().nullable(),
+    priceUsd: z.number().positive().nullable(),
+    priceAt: Iso.nullable(),
+    /** Why a launch in this pair is closed, each in the register's own code; empty while it is open. */
+    reasons: z.array(z.enum(QUOTE_ASSET_REFUSALS)),
+  })
+  .strict();
+export type LaunchQuoteAsset = z.infer<typeof LaunchQuoteAssetSchema>;
+
+export const LaunchQuoteAssetsResponseSchema = z
+  .object({ network: LaunchNetworkId, assets: z.array(LaunchQuoteAssetSchema), checkedAt: Iso })
+  .strict();
+export type LaunchQuoteAssetsResponse = z.infer<typeof LaunchQuoteAssetsResponseSchema>;
+
+/** 1.83.0 — one amount of a pair currency: raw, in the pair's own units, and in dollars at the price read. */
+const LaunchQuoteAmountSchema = z.object({ raw: LaunchRaw, units: z.string().min(1).max(40), usd: z.number().nonnegative().nullable() }).strict();
+
+/**
+ * 1.83.0 (SOL-L11) — what a launch in a checked pair raises and what of it reaches the DEX: the threshold of this very
+ * config, the fee of the move itself, what the pair's mint withholds on the transfer into the pool, and the liquidity
+ * left after both.
+ */
+export const LaunchQuoteFiguresSchema = z
+  .object({
+    threshold: LaunchQuoteAmountSchema,
+    graduationFee: LaunchQuoteAmountSchema,
+    transferFeeOnExit: LaunchQuoteAmountSchema,
+    exitLiquidity: LaunchQuoteAmountSchema,
+    priceUsd: z.number().positive().nullable(),
+    priceAt: Iso.nullable(),
+  })
+  .strict();
+export type LaunchQuoteFigures = z.infer<typeof LaunchQuoteFiguresSchema>;
+
+/**
+ * 1.56.0 (SOL-L5) — «Розширений»: the launch's own config, the creator's transaction before the launch's. The creator
+ * pays its rent; its fresh key signs after the creator's signature; its fee claimer is Ryntra's partner vault.
+ */
+export const LaunchAdvancedConfigBuildRequestSchema = z.object({ creator: Address, choice: LaunchAdvancedChoiceSchema }).strict();
+export type LaunchAdvancedConfigBuildRequest = z.infer<typeof LaunchAdvancedConfigBuildRequestSchema>;
+export const LaunchAdvancedConfigBuildResponseSchema = z
+  .object({
+    buildId: LaunchBuildId,
+    network: LaunchNetworkId,
+    config: Address,
+    unsignedWireBase64: z.string().min(1),
+    terms: LaunchAdvancedTermsSchema,
+    /** The creator's SOL the config takes as simulated — its rent and fee; null when the network would not say. */
+    creatorCostLamports: LaunchRaw.nullable(),
+    /** 1.83.0 (SOL-L11) — where the choice named a checked pair currency: the pair, the version its fee made this config, and its figures. */
+    quote: z
+      .object({
+        mint: Address,
+        symbol: z.string().min(1).max(12),
+        decimals: z.number().int().min(0).max(18),
+        configVersion: z.enum(QUOTE_CONFIG_VERSIONS),
+        figures: LaunchQuoteFiguresSchema,
+      })
+      .strict()
+      .optional(),
+    expiresAt: Iso,
+    signableMs: SignableMs,
+  })
+  .strict();
+export type LaunchAdvancedConfigBuildResponse = z.infer<typeof LaunchAdvancedConfigBuildResponseSchema>;
+export const LaunchAdvancedConfigSubmitRequestSchema = z.object({ buildId: LaunchBuildId, creator: Address, signedWireBase64: z.string().min(1).max(4_000) }).strict();
+export type LaunchAdvancedConfigSubmitRequest = z.infer<typeof LaunchAdvancedConfigSubmitRequestSchema>;
+export const LaunchAdvancedConfigSubmitResponseSchema = z
+  .object({ config: Address, signature: z.string(), state: z.enum(["CREATED", "PENDING"]), terms: LaunchAdvancedTermsSchema })
+  .strict();
+export type LaunchAdvancedConfigSubmitResponse = z.infer<typeof LaunchAdvancedConfigSubmitResponseSchema>;
 
 export const LaunchBuildResponseSchema = z
   .object({
@@ -9590,10 +11836,18 @@ export const LaunchBuildResponseSchema = z
     /** The creator's SOL both transactions take, simulated before the signature: what is handed to the pool payer, the creator's own token accounts, the lock's rent and fee. */
     creatorCostLamports: LaunchRaw,
     expiresAt: Iso,
+    /** AG-1 (17.10): how long from arriving the bytes may still be signed — their blockhash's life on the chain (~30 s on 200 ms slots) less a margin to send and land. Relative, so a device counts it on its own clock; past it, build again rather than sign. */
+    signableMs: SignableMs.optional(),
     /** 1.29.0: the sharing of the creator's fees, when asked — signed already by the new mint; the creator signs it too. */
     splitUnsignedWireBase64: z.string().min(1).nullable().optional(),
     /** The Dynamic Fee Sharing vault that will hold the curve's creator role. */
     feeVault: Address.nullable().optional(),
+    /** The partner this build will bind the pool to, masked as the review shows it; null — none; absent — no choice was asked. */
+    partner: z
+      .object({ partnerMasked: z.string().max(20), codeMasked: z.string().max(20), source: z.enum(["previous", "inviter", "carried", "chosen", "none"]) })
+      .strict()
+      .nullable()
+      .optional(),
   })
   .strict();
 export type LaunchBuildResponse = z.infer<typeof LaunchBuildResponseSchema>;
@@ -9639,6 +11893,29 @@ export const LaunchSubmitResponseSchema = z
   .strict();
 export type LaunchSubmitResponse = z.infer<typeof LaunchSubmitResponseSchema>;
 
+/** 1.55.0 (SOL-L3): a file Ryntra keeps for a launch — its sha256, its IPFS address, and its pinned IPFS copy (null until pinned). */
+export const LaunchStoredFileSchema = z
+  .object({
+    sha256: z.string().regex(/^[0-9a-f]{64}$/),
+    cid: z.string().regex(/^bafkrei[a-z2-7]{52}$/),
+    ipfs: z.object({ url: z.string().url(), pinnedAt: Iso }).strict().nullable(),
+  })
+  .strict();
+export type LaunchStoredFile = z.infer<typeof LaunchStoredFileSchema>;
+
+/** 1.73.0 (SOL-L12): a pair currency's watch — what its issuer changed, and since when. */
+export const LaunchPairWatchSchema = z
+  .object({
+    mint: Address,
+    symbol: z.string().min(1).max(12),
+    state: z.enum(["OK", "CHANGED"]),
+    changes: z.array(z.enum(MINT_PROFILE_FIELDS)).max(MINT_PROFILE_FIELDS.length),
+    since: Iso.nullable(),
+    checkedAt: Iso,
+  })
+  .strict();
+export type LaunchPairWatch = z.infer<typeof LaunchPairWatchSchema>;
+
 export const LaunchTokenResponseSchema = z
   .object({
     network: LaunchNetworkId,
@@ -9664,10 +11941,806 @@ export const LaunchTokenResponseSchema = z
     receiptProblems: z.array(z.string().max(512)),
     /** The link the creator shares — their referral code, landing on this token. */
     shareLink: z.string().url(),
+    /**
+     * 1.55.0 (SOL-L3): where the token's metadata and picture are kept — by Ryntra under the sha256 of their bytes, which
+     * is their IPFS address (`cid`, CID v1 raw) in other letters, and their IPFS copy once pinned. Absent or null when the
+     * mint's metadata is not one Ryntra keeps; `image` null when the metadata names no picture of Ryntra's.
+     */
+    storage: z.object({ metadata: LaunchStoredFileSchema, image: LaunchStoredFileSchema.nullable() }).strict().nullable().optional(),
+    /**
+     * 1.56.0 (SOL-L5): «Розширений» — the launch's own numbers and what makes its tokenomics unusual («Незвична
+     * токеноміка»); absent or null on a preset's launch.
+     */
+    advanced: z.object({ terms: LaunchAdvancedTermsSchema, unusual: z.array(z.enum(UNUSUAL_REASONS)) }).strict().nullable().optional(),
+    /** 1.56.0 (SOL-L5): «Спільнота» — the community token the curve pairs against; absent on another preset. */
+    pair: z.object({ mint: Address, symbol: z.string().min(1).max(12), decimals: z.number().int().min(0).max(18) }).strict().optional(),
+    /**
+     * 1.73.0 (SOL-L12): the pair currency's mint as Ryntra watches it — `CHANGED` when its issuer changed the transfer
+     * fee, an authority or an extension since Ryntra first read it (`changes` names what, `since` when it was first read
+     * so); new launches on it wait. Absent or null while the pair has not been read.
+     */
+    pairWatch: LaunchPairWatchSchema.nullable().optional(),
     observedAt: Iso,
   })
   .strict();
 export type LaunchTokenResponse = z.infer<typeof LaunchTokenResponseSchema>;
+
+/* ------------------------------------------------------------ Ryntra Launch — Launch Boost (1.56.0, SOL-L5) */
+
+/*
+ * `GET /api/v1/launch/{mint}/boost` and `POST /api/v1/launch/{mint}/boost/{build,submit,payout/build,payout/submit}`: a
+ * creator's campaign for buyers, from the creator's own money, its rules shown before a purchase. The budget is locked
+ * in Met Lock from the creator to the creator until the window and the hold are over; the payout is counted from the
+ * chain and signed by the creator. Ryntra takes 0.
+ */
+const BoostSignature = z.string().regex(/^[1-9A-HJ-NP-Za-km-z]{64,88}$/);
+const BoostWire = z.string().min(1).max(4_000);
+const BoostLines = z.object({ uk: z.array(z.string().max(600)).max(8), en: z.array(z.string().max(600)).max(8) }).strict();
+
+/** A Boost amount as a creator writes it: raw units without leading zeros ("0" only as zero), so one amount has one spelling. */
+const BoostRaw = z.string().regex(/^(0|[1-9][0-9]{0,29})$/);
+
+export const LaunchBoostRulesSchema = z
+  .object({
+    currency: z.enum(BOOST_CURRENCIES),
+    bonusBps: z.number().int().min(1).max(10_000),
+    minBuyRaw: BoostRaw,
+    capPerWalletRaw: BoostRaw,
+    budgetRaw: BoostRaw,
+    startsAt: z.number().int().nonnegative(),
+    endsAt: z.number().int().nonnegative(),
+    holdHours: z.number().min(0).max(24 * 366),
+    routes: z.enum(BOOST_ROUTES).default("ryntra"),
+  })
+  .strict();
+export type LaunchBoostRules = z.infer<typeof LaunchBoostRulesSchema>;
+
+const BoostCurrency = z.object({ mint: Address, symbol: z.string().min(1).max(24), decimals: z.number().int().min(0).max(12), program: Address }).strict();
+
+export const LaunchBoostBuildRequestSchema = z.object({ creator: Address, rules: LaunchBoostRulesSchema }).strict();
+export type LaunchBoostBuildRequest = z.infer<typeof LaunchBoostBuildRequestSchema>;
+
+export const LaunchBoostBuildResponseSchema = z
+  .object({
+    buildId: LaunchBuildId,
+    network: LaunchNetworkId,
+    /** The commitment for the creator to sign first — the fee payer; the escrow's fresh base key signs after. */
+    unsignedWireBase64: BoostWire,
+    escrow: Address,
+    currency: BoostCurrency,
+    budgetRaw: LaunchRaw,
+    /** From when purchases count, and when the budget unlocks for the payout (unix seconds). */
+    countsFrom: z.number().int(),
+    unlocksAt: z.number().int(),
+    lines: BoostLines,
+    expiresAt: Iso,
+    signableMs: z.number().int().nonnegative(),
+  })
+  .strict();
+export type LaunchBoostBuildResponse = z.infer<typeof LaunchBoostBuildResponseSchema>;
+
+export const LaunchBoostSubmitRequestSchema = z.object({ buildId: LaunchBuildId, creator: Address, signedWireBase64: BoostWire }).strict();
+export type LaunchBoostSubmitRequest = z.infer<typeof LaunchBoostSubmitRequestSchema>;
+
+export const LaunchBoostSubmitResponseSchema = z
+  .object({
+    /** LOCKED — the escrow is on chain; PENDING — sent, not confirmed in time: the page settles it from the escrow; FAILED — the network refused it. */
+    state: z.enum(["LOCKED", "PENDING", "FAILED"]),
+    signature: BoostSignature,
+    escrow: Address,
+    reason: z.string().max(300).nullable(),
+  })
+  .strict();
+export type LaunchBoostSubmitResponse = z.infer<typeof LaunchBoostSubmitResponseSchema>;
+
+export const LaunchBoostPayoutBuildRequestSchema = z.object({ creator: Address }).strict();
+export type LaunchBoostPayoutBuildRequest = z.infer<typeof LaunchBoostPayoutBuildRequestSchema>;
+
+const BoostPayoutRow = z.object({ wallet: Address, bonusRaw: LaunchRaw, firstBuyAt: z.number().int(), signature: BoostSignature }).strict();
+
+export const LaunchBoostPayoutBuildResponseSchema = z
+  .object({
+    buildId: LaunchBuildId,
+    network: LaunchNetworkId,
+    /** The payout for the creator to sign in one window — the only signer and fee payer: the escrow claimed back first, then the transfers. */
+    unsignedWireBase64: z.array(BoostWire).min(1).max(12),
+    /** The wallets this build pays, in order; `remaining` — eligible wallets left for a next build. */
+    rows: z.array(BoostPayoutRow).max(200),
+    remaining: z.number().int().nonnegative(),
+    totalRaw: LaunchRaw,
+    leftoverRaw: LaunchRaw,
+    claimsEscrow: z.boolean(),
+    currency: BoostCurrency,
+    expiresAt: Iso,
+    signableMs: z.number().int().nonnegative(),
+  })
+  .strict();
+export type LaunchBoostPayoutBuildResponse = z.infer<typeof LaunchBoostPayoutBuildResponseSchema>;
+
+export const LaunchBoostPayoutSubmitRequestSchema = z.object({ buildId: LaunchBuildId, creator: Address, signedWireBase64: z.array(BoostWire).min(1).max(12) }).strict();
+export type LaunchBoostPayoutSubmitRequest = z.infer<typeof LaunchBoostPayoutSubmitRequestSchema>;
+
+const BoostPayoutTx = z
+  .object({ signature: BoostSignature, state: z.enum(["CONFIRMED", "PENDING", "FAILED"]), wallets: z.number().int().nonnegative(), amountRaw: LaunchRaw, reason: z.string().max(300).nullable() })
+  .strict();
+
+export const LaunchBoostPayoutSubmitResponseSchema = z
+  .object({
+    /** PAID — every eligible wallet is paid; PARTIAL — some transactions did not land, or wallets wait for a next build; PENDING — sent, not confirmed in time. */
+    state: z.enum(["PAID", "PARTIAL", "PENDING"]),
+    txs: z.array(BoostPayoutTx).max(12),
+    paidRaw: LaunchRaw,
+  })
+  .strict();
+export type LaunchBoostPayoutSubmitResponse = z.infer<typeof LaunchBoostPayoutSubmitResponseSchema>;
+
+export const LaunchBoostViewSchema = z
+  .object({
+    network: LaunchNetworkId,
+    token: Address,
+    /** The commitment: PENDING — sent, its escrow not seen yet; LOCKED — the budget is in the escrow; FAILED — it never landed. */
+    state: z.enum(["PENDING", "LOCKED", "FAILED"]),
+    /** NOT_READ — a read of the chain failed: the figures below that need it are null, never zero. */
+    read: z.enum(["OK", "NOT_READ"]),
+    rules: LaunchBoostRulesSchema,
+    lines: BoostLines,
+    escrow: Address,
+    currency: BoostCurrency,
+    countsFrom: z.number().int(),
+    unlocksAt: z.number().int(),
+    /** The escrow as the chain stores it; null when not read. */
+    funded: z.object({ totalRaw: LaunchRaw, heldRaw: LaunchRaw, claimedRaw: LaunchRaw }).strict().nullable(),
+    payout: z
+      .object({
+        /** As counted from the chain now (NOT_READ, WAITING, READY), or as signed (PENDING, PARTIAL, PAID). */
+        state: z.enum(["NOT_READ", "WAITING", "READY", "PENDING", "PARTIAL", "PAID"]),
+        recipients: z.number().int().nonnegative().nullable(),
+        plannedRaw: LaunchRaw.nullable(),
+        paidRaw: LaunchRaw,
+        leftoverRaw: LaunchRaw.nullable(),
+        signatures: z.array(BoostSignature).max(200),
+      })
+      .strict(),
+    observedAt: Iso,
+  })
+  .strict();
+export type LaunchBoostView = z.infer<typeof LaunchBoostViewSchema>;
+
+/* ------------------------------------------------------------ Ryntra Launch — the creator's split (1.69.0, SOL-L2b) */
+
+/*
+ * 1.69.0 — «Частка творця за його вибором» (SOL-L2b). `GET /api/v1/launch/{mint}/split` and `POST
+ * /api/v1/launch/{mint}/split/{rule,depth,payout}/{build,submit}`: the creator divides their own share of the fees —
+ * собі · глибина · спільнота · холдерам — by a rule the creator signs on chain (a memo), shown on the token's page
+ * before a purchase; depth is the creator's buy steps in the token's DLMM pool, holders are paid by a snapshot of the
+ * chain whose root the creator's payout carries. Only the creator signs; Ryntra takes 0 and holds nothing.
+ */
+const SplitBps = z.number().int().min(0).max(10_000);
+const SplitTxState = z.enum(["PENDING", "CONFIRMED", "FAILED"]);
+const SplitLines = BoostLines;
+const SplitAmounts = z.object({ depth: LaunchRaw, community: LaunchRaw, holders: LaunchRaw }).strict();
+
+export const LaunchSplitRuleSchema = z
+  .object({
+    shares: z.object({ self: SplitBps, depth: SplitBps, community: SplitBps, holders: SplitBps }).strict(),
+    /** The community's wallet — named when the community takes a part, null otherwise. */
+    community: Address.nullable().default(null),
+  })
+  .strict();
+export type LaunchSplitRule = z.infer<typeof LaunchSplitRuleSchema>;
+
+export const LaunchSplitRuleBuildRequestSchema = z.object({ creator: Address, rule: LaunchSplitRuleSchema }).strict();
+export type LaunchSplitRuleBuildRequest = z.infer<typeof LaunchSplitRuleBuildRequestSchema>;
+
+export const LaunchSplitRuleBuildResponseSchema = z
+  .object({
+    buildId: LaunchBuildId,
+    network: LaunchNetworkId,
+    /** The rule's transaction for the creator to sign — its only signer and fee payer: a memo with the rule, the creator among its signers. */
+    unsignedWireBase64: BoostWire,
+    memo: z.string().max(300),
+    rule: LaunchSplitRuleSchema,
+    lines: SplitLines,
+    expiresAt: Iso,
+    signableMs: z.number().int().nonnegative(),
+  })
+  .strict();
+export type LaunchSplitRuleBuildResponse = z.infer<typeof LaunchSplitRuleBuildResponseSchema>;
+
+/** The creator's signed rule or depth act: one transaction. */
+export const LaunchSplitSubmitRequestSchema = z.object({ buildId: LaunchBuildId, creator: Address, signedWireBase64: BoostWire }).strict();
+export type LaunchSplitSubmitRequest = z.infer<typeof LaunchSplitSubmitRequestSchema>;
+
+export const LaunchSplitRuleSubmitResponseSchema = z
+  .object({
+    /** CONFIRMED — the rule is on chain and in force; PENDING — sent, not confirmed in time: the page settles it; FAILED — the network refused it. */
+    state: SplitTxState,
+    signature: BoostSignature,
+    reason: z.string().max(300).nullable(),
+  })
+  .strict();
+export type LaunchSplitRuleSubmitResponse = z.infer<typeof LaunchSplitRuleSubmitResponseSchema>;
+
+/** A depth act or a payout asked for: the creator only. */
+export const LaunchSplitActBuildRequestSchema = z.object({ creator: Address }).strict();
+export type LaunchSplitActBuildRequest = z.infer<typeof LaunchSplitActBuildRequestSchema>;
+
+const SplitLadder = z.object({ lowerBinId: z.number().int(), upperBinId: z.number().int(), fromPct: z.number(), toPct: z.number() }).strict();
+
+export const LaunchSplitDepthBuildResponseSchema = z
+  .object({
+    buildId: LaunchBuildId,
+    network: LaunchNetworkId,
+    /** POOL — the token's DLMM pool made first, on Ryntra's rule; SYNC — its price taken up to the market's through its empty bins; STEPS — the creator's buy steps placed or added to. */
+    phase: z.enum(["POOL", "SYNC", "STEPS"]),
+    /** The act for the creator to sign first; a new position's fresh key signs after, on the server. */
+    unsignedWireBase64: BoostWire,
+    pool: Address,
+    position: Address.nullable(),
+    amountRaw: LaunchRaw,
+    owedRaw: LaunchRaw,
+    ladder: SplitLadder.nullable(),
+    expiresAt: Iso,
+    signableMs: z.number().int().nonnegative(),
+  })
+  .strict();
+export type LaunchSplitDepthBuildResponse = z.infer<typeof LaunchSplitDepthBuildResponseSchema>;
+
+export const LaunchSplitDepthSubmitResponseSchema = LaunchSplitRuleSubmitResponseSchema.extend({ phase: z.enum(["POOL", "SYNC", "STEPS"]), position: Address.nullable(), amountRaw: LaunchRaw }).strict();
+export type LaunchSplitDepthSubmitResponse = z.infer<typeof LaunchSplitDepthSubmitResponseSchema>;
+
+const SplitPayoutRow = z.object({ wallet: Address, holdingRaw: LaunchRaw, amountRaw: LaunchRaw }).strict();
+const SplitCommunityRow = z.object({ wallet: Address, amountRaw: LaunchRaw }).strict();
+const SplitExcluded = z.object({ wallets: z.number().int().nonnegative(), amountRaw: LaunchRaw }).strict();
+const SplitSnapshot = z
+  .object({
+    eligible: z.number().int().nonnegative(),
+    /** Left out of the round, by why: `unbought` — tokens a wallet holds beyond what it bought on the market (received by a transfer). */
+    excluded: z.object({ creator: SplitExcluded, linked: SplitExcluded, bundle: SplitExcluded, program: SplitExcluded, ryntra: SplitExcluded, unbought: SplitExcluded }).strict(),
+  })
+  .strict();
+const SplitRoot = z.string().regex(/^[0-9a-f]{64}$/);
+const SplitPair = z.object({ mint: Address, symbol: z.string().min(1).max(24), decimals: z.number().int().min(0).max(12), dollar: z.boolean() }).strict();
+
+export const LaunchSplitPayoutBuildResponseSchema = z
+  .object({
+    buildId: LaunchBuildId,
+    network: LaunchNetworkId,
+    /** The round's root as a memo first, then the transfers — all for the creator to sign in one window, its only signer and fee payer. */
+    unsignedWireBase64: z.array(BoostWire).min(2).max(9),
+    round: z.number().int().positive(),
+    root: SplitRoot,
+    memo: z.string().max(300),
+    rows: z.array(SplitPayoutRow).max(60),
+    community: SplitCommunityRow.nullable(),
+    holdersRaw: LaunchRaw,
+    communityRaw: LaunchRaw,
+    owed: z.object({ holdersRaw: LaunchRaw, communityRaw: LaunchRaw }).strict(),
+    snapshot: SplitSnapshot.nullable(),
+    pair: z.object({ mint: Address, program: Address, decimals: z.number().int().min(0).max(12), symbol: z.string().min(1).max(24), usdPrice: z.number().nonnegative(), dollar: z.boolean() }).strict(),
+    expiresAt: Iso,
+    signableMs: z.number().int().nonnegative(),
+  })
+  .strict();
+export type LaunchSplitPayoutBuildResponse = z.infer<typeof LaunchSplitPayoutBuildResponseSchema>;
+
+export const LaunchSplitPayoutSubmitRequestSchema = z.object({ buildId: LaunchBuildId, creator: Address, signedWireBase64: z.array(BoostWire).min(2).max(9) }).strict();
+export type LaunchSplitPayoutSubmitRequest = z.infer<typeof LaunchSplitPayoutSubmitRequestSchema>;
+
+const SplitPayoutTx = z
+  .object({ signature: BoostSignature, state: SplitTxState, memo: z.boolean(), wallets: z.number().int().nonnegative(), amountRaw: LaunchRaw, reason: z.string().max(300).nullable() })
+  .strict();
+
+export const LaunchSplitPayoutSubmitResponseSchema = z
+  .object({
+    /** PAID — every transaction landed; PARTIAL — one did not, and those after it were not sent; PENDING — sent, not confirmed in time. */
+    state: z.enum(["PAID", "PARTIAL", "PENDING"]),
+    round: z.number().int().positive(),
+    txs: z.array(SplitPayoutTx).max(9),
+    paidRaw: LaunchRaw,
+  })
+  .strict();
+export type LaunchSplitPayoutSubmitResponse = z.infer<typeof LaunchSplitPayoutSubmitResponseSchema>;
+
+const SplitPlacement = z
+  .object({
+    kind: z.enum(["POOL", "SYNC", "STEPS"]),
+    signature: BoostSignature,
+    validUntil: z.string().max(24),
+    state: SplitTxState,
+    reason: z.string().max(300).nullable(),
+    pool: Address,
+    position: Address.nullable(),
+    amountRaw: LaunchRaw,
+    lowerBinId: z.number().int().nullable(),
+    upperBinId: z.number().int().nullable(),
+    at: Iso,
+  })
+  .strict();
+
+const SplitRoundTx = z
+  .object({ signature: BoostSignature, validUntil: z.string().max(24), state: SplitTxState, reason: z.string().max(300).nullable(), memo: z.boolean(), wallets: z.array(Address).max(60), holdersRaw: LaunchRaw, communityRaw: LaunchRaw })
+  .strict();
+
+export const LaunchSplitViewSchema = z
+  .object({
+    network: LaunchNetworkId,
+    token: Address,
+    creator: Address,
+    /** Whether a rule, a depth act or a payout may be signed here now — closed on mainnet. */
+    open: z.boolean(),
+    /** NOT_READ — a read of the chain failed: the figures that need it are null, never zero. */
+    read: z.enum(["OK", "NOT_READ"]),
+    /** The rule in force; null — the creator has not divided their share. */
+    rule: LaunchSplitRuleSchema.nullable(),
+    /** When the first rule came into force (unix seconds). */
+    since: z.number().int().nullable(),
+    /** A rule sent and not yet seen landed. */
+    pendingRule: LaunchSplitRuleSchema.nullable(),
+    segments: z.array(z.object({ rule: LaunchSplitRuleSchema, since: z.number().int(), signature: BoostSignature, fromEarnedRaw: LaunchRaw }).strict()).max(50),
+    /** The rule's lines as the token's page shows them before a purchase. */
+    lines: SplitLines,
+    pair: SplitPair,
+    ledger: z
+      .object({
+        earnedRaw: LaunchRaw,
+        claimedRaw: LaunchRaw,
+        subjectRaw: LaunchRaw,
+        due: z.object({ self: LaunchRaw, depth: LaunchRaw, community: LaunchRaw, holders: LaunchRaw }).strict(),
+        done: SplitAmounts,
+        owed: SplitAmounts,
+        /** ROLE_MOVED — the curve's creator role left the creator (and their fee-sharing vault); LP_MOVED — the locked LP position left the role: what the rules owe stops growing, and never falls. */
+        warnings: z.array(z.enum(["ROLE_MOVED", "LP_MOVED"])).max(2),
+      })
+      .strict()
+      .nullable(),
+    minimums: z.object({ depthRaw: LaunchRaw, communityRaw: LaunchRaw, holdersRoundRaw: LaunchRaw, perHolderRaw: LaunchRaw }).strict(),
+    depth: z
+      .object({
+        pool: Address.nullable(),
+        rule: z.object({ topGapPct: z.number(), deepestPct: z.number(), maxBins: z.number().int(), minBinStep: z.number().int() }).strict(),
+        placements: z.array(SplitPlacement).max(20),
+        steps: z
+          .array(z.object({ position: Address, pool: Address, lowerBinId: z.number().int(), upperBinId: z.number().int(), pairRaw: LaunchRaw.nullable(), tokenRaw: LaunchRaw.nullable(), feePairRaw: LaunchRaw.nullable() }).strict())
+          .max(20),
+      })
+      .strict(),
+    rounds: z
+      .array(
+        z
+          .object({
+            round: z.number().int().positive(),
+            root: SplitRoot,
+            rows: z.array(SplitPayoutRow).max(60),
+            community: SplitCommunityRow.nullable(),
+            snapshot: SplitSnapshot.nullable(),
+            txs: z.array(SplitRoundTx).max(9),
+            at: Iso,
+          })
+          .strict(),
+      )
+      .max(20),
+    observedAt: Iso,
+  })
+  .strict();
+export type LaunchSplitView = z.infer<typeof LaunchSplitViewSchema>;
+
+/* ------------------------------------------------------------ Ryntra Launch — a distribution campaign (1.84.0, DROP-2) */
+
+/*
+ * «Кампанія розподілу»: vesting and a Merkle claim on Met Lock (spec §10.2–§10.5, the operator's variant А of 25.10).
+ * The campaign publishes a list and a root, locks exactly what the list adds up to, and then does nothing — each
+ * recipient takes their own allocation with their own signature, and a second claim of a row cannot exist on chain.
+ */
+
+const DistributionRaw = z.string().regex(/^(0|[1-9][0-9]{0,29})$/);
+const DistributionHash = z.string().regex(/^[0-9a-f]{64}$/);
+const DistributionLines = z.object({ uk: z.array(z.string().max(600)).max(8), en: z.array(z.string().max(600)).max(8) }).strict();
+
+export const LaunchDistributionSnapshotSchema = z
+  .object({ mint: Address, slot: z.number().int().positive(), finality: z.enum(["finalized", "confirmed"]), takenAt: z.number().int().nonnegative(), exclusions: z.array(z.enum(SNAPSHOT_EXCLUSIONS)).max(6) })
+  .strict();
+
+export const LaunchDistributionEligibilitySchema = z
+  .object({
+    minHoldingRaw: DistributionRaw,
+    requireBought: z.boolean(),
+    heldSinceSlot: z.number().int().positive().nullable(),
+    oneWalletPerFundingSource: z.boolean(),
+    oneWalletPerDevice: z.boolean(),
+    maxPerCluster: z.number().int().min(0).max(100),
+    kyc: z.boolean(),
+    minTrust: z.number().int().min(0).max(100),
+  })
+  .strict();
+
+export const LaunchDistributionCalculationSchema = z
+  .object({
+    mode: z.enum(CALCULATION_MODES),
+    potRaw: DistributionRaw,
+    capPerWalletRaw: DistributionRaw.nullable(),
+    floorPerWalletRaw: DistributionRaw,
+    maxWallets: z.number().int().positive().max(2_000),
+    tiers: z.array(z.object({ fromRaw: DistributionRaw, weight: z.number().int().positive().max(1_000) }).strict()).max(8),
+  })
+  .strict();
+
+export const LaunchDistributionDraftSchema = z
+  .object({
+    scenario: z.enum(DISTRIBUTION_SCENARIOS),
+    token: Address,
+    owner: Address,
+    leftoverRecipient: Address,
+    currency: z.object({ mint: Address, decimals: z.number().int().min(0).max(12), symbol: z.string().min(1).max(24) }).strict(),
+    snapshot: LaunchDistributionSnapshotSchema.nullable(),
+    eligibility: LaunchDistributionEligibilitySchema,
+    calculation: LaunchDistributionCalculationSchema,
+    vesting: z
+      .object({ startsAt: z.number().int().nonnegative(), cliffDays: z.number().int().min(0).max(VESTING_MAX_DAYS), unlockDays: z.number().int().min(0).max(VESTING_MAX_DAYS), periodHours: z.number().positive().max(24 * 366) })
+      .strict(),
+    cancel: z.enum(MET_LOCK_ACTORS),
+    expiry: z.number().int().positive().nullable(),
+    kyc: z.boolean(),
+    afterDex: z.boolean(),
+  })
+  .strict();
+export type LaunchDistributionDraft = z.infer<typeof LaunchDistributionDraftSchema>;
+
+const DistributionFee = z.object({ what: z.string().max(200), payer: z.enum(["owner", "recipient"]), amountRaw: DistributionRaw.nullable(), currency: z.enum(["token", "sol"]) }).strict();
+const DistributionEnforced = z.object({ fact: z.string().max(300), by: z.enum(["program", "ryntra"]) }).strict();
+const DistributionHeldBack = z.object({ wallet: Address, reasons: z.array(z.enum(ELIGIBILITY_REASONS)).max(8) }).strict();
+
+export const LaunchDistributionReviewSchema = z
+  .object({
+    protocol: z
+      .object({ protocol: z.enum(DISTRIBUTION_PROTOCOLS), why: z.enum(PROTOCOL_REASONS), open: z.boolean(), missing: z.array(z.string().max(300)).max(8) })
+      .strict(),
+    root: DistributionHash.nullable(),
+    maxClaimAmountRaw: DistributionRaw,
+    maxEscrow: z.number().int().nonnegative(),
+    allocatedRaw: DistributionRaw,
+    fundingRaw: DistributionRaw,
+    leftoverRaw: DistributionRaw,
+    wallets: z.number().int().nonnegative(),
+    fees: z.array(DistributionFee).max(8),
+    enforced: z.array(DistributionEnforced).max(12),
+    warnings: z.array(z.enum(DISTRIBUTION_WARNINGS)).max(6),
+  })
+  .strict();
+export type LaunchDistributionReview = z.infer<typeof LaunchDistributionReviewSchema>;
+
+export const LaunchDistributionBuildRequestSchema = z.object({ owner: Address, draft: LaunchDistributionDraftSchema, list: z.array(z.object({ wallet: Address, holdingRaw: DistributionRaw }).strict()).max(2_000).optional() }).strict();
+export type LaunchDistributionBuildRequest = z.infer<typeof LaunchDistributionBuildRequestSchema>;
+
+export const LaunchDistributionBuildResponseSchema = z
+  .object({
+    buildId: LaunchBuildId,
+    campaignId: LaunchBuildId,
+    network: LaunchNetworkId,
+    /** The one transaction the owner signs: the root written and funded with exactly the list's total. */
+    unsignedWireBase64: z.string().min(1).max(4_000),
+    rootEscrow: Address,
+    root: DistributionHash,
+    wallets: z.number().int().positive(),
+    fundingRaw: DistributionRaw,
+    review: LaunchDistributionReviewSchema,
+    snapshotDigest: DistributionHash.nullable(),
+    heldBack: z.array(DistributionHeldBack).max(200),
+    expiresAt: Iso,
+    signableMs: z.number().int().nonnegative(),
+  })
+  .strict();
+export type LaunchDistributionBuildResponse = z.infer<typeof LaunchDistributionBuildResponseSchema>;
+
+export const LaunchDistributionSubmitRequestSchema = z.object({ buildId: LaunchBuildId, owner: Address, signedWireBase64: z.string().min(1).max(4_000) }).strict();
+export type LaunchDistributionSubmitRequest = z.infer<typeof LaunchDistributionSubmitRequestSchema>;
+
+export const LaunchDistributionSubmitResponseSchema = z
+  .object({
+    /** FUNDED — the root escrow is on chain and holds the list; PENDING — sent, not confirmed in time; FAILED — refused. */
+    state: z.enum(["FUNDED", "PENDING", "FAILED"]),
+    campaignId: LaunchBuildId,
+    signature: z.string().min(64).max(96),
+    rootEscrow: Address,
+    reason: z.string().max(300).nullable(),
+  })
+  .strict();
+export type LaunchDistributionSubmitResponse = z.infer<typeof LaunchDistributionSubmitResponseSchema>;
+
+const DistributionReconcile = z
+  .object({
+    state: z.enum(RECONCILE_STATES),
+    fundedRaw: DistributionRaw.nullable(),
+    distributedRaw: DistributionRaw.nullable(),
+    escrowsMade: z.number().int().nonnegative().nullable(),
+    listRaw: DistributionRaw,
+    listWallets: z.number().int().nonnegative(),
+    unassignedRaw: DistributionRaw.nullable(),
+  })
+  .strict();
+
+const DistributionLeftover = z.object({ kind: z.enum(LEFTOVER_KINDS), amountRaw: DistributionRaw, recoverable: z.boolean(), how: z.string().max(300) }).strict();
+
+export const LaunchDistributionViewSchema = z
+  .object({
+    campaignId: LaunchBuildId,
+    token: Address,
+    owner: Address,
+    stage: z.enum(DISTRIBUTION_STAGES),
+    protocol: z.enum(DISTRIBUTION_PROTOCOLS),
+    state: z.enum(["PENDING", "FUNDED", "FAILED"]),
+    /** NOT_READ — a read of the chain failed: the reconciliation's figures are null, never zero. */
+    read: z.enum(["OK", "NOT_READ"]),
+    currency: z.object({ mint: Address, program: Address, decimals: z.number().int().min(0).max(12), symbol: z.string().min(1).max(24) }).strict(),
+    root: DistributionHash,
+    rootEscrow: Address,
+    snapshotDigest: DistributionHash.nullable(),
+    wallets: z.number().int().nonnegative(),
+    fundingRaw: DistributionRaw,
+    review: LaunchDistributionReviewSchema,
+    reconcile: DistributionReconcile,
+    leftovers: z.array(DistributionLeftover).max(3),
+    heldBack: z.array(DistributionHeldBack).max(200),
+    claimed: z.object({ wallets: z.number().int().nonnegative(), amountRaw: DistributionRaw }).strict(),
+    report: DistributionLines,
+    observedAt: Iso,
+  })
+  .strict();
+export type LaunchDistributionView = z.infer<typeof LaunchDistributionViewSchema>;
+
+export const LaunchDistributionListSchema = z.object({ network: LaunchNetworkId, token: Address, campaigns: z.array(LaunchDistributionViewSchema).max(20), observedAt: Iso }).strict();
+export type LaunchDistributionList = z.infer<typeof LaunchDistributionListSchema>;
+
+const DistributionReceipt = z.object({ signature: z.string().min(64).max(96), amountRaw: DistributionRaw, at: z.number().int().nonnegative() }).strict();
+
+export const LaunchDistributionClaimPanelSchema = z
+  .object({
+    state: z.enum(CLAIM_STATES),
+    owedRaw: DistributionRaw.nullable(),
+    takenRaw: DistributionRaw.nullable(),
+    leftRaw: DistributionRaw.nullable(),
+    claimableRaw: DistributionRaw.nullable(),
+    nextUnlockAt: z.number().int().nullable(),
+    endsAt: z.number().int().nullable(),
+    receipts: z.array(DistributionReceipt).max(50),
+    escrow: Address.nullable(),
+  })
+  .strict();
+export type LaunchDistributionClaimPanel = z.infer<typeof LaunchDistributionClaimPanelSchema>;
+
+export const LaunchDistributionClaimViewSchema = z
+  .object({
+    campaignId: LaunchBuildId,
+    wallet: Address,
+    currency: z.object({ mint: Address, program: Address, decimals: z.number().int().min(0).max(12), symbol: z.string().min(1).max(24) }).strict(),
+    panel: LaunchDistributionClaimPanelSchema,
+    /** Why the row waits for a person, when it does — never a word about who they are. */
+    reviewReasons: z.array(z.enum(ELIGIBILITY_REASONS)).max(8),
+  })
+  .strict();
+export type LaunchDistributionClaimView = z.infer<typeof LaunchDistributionClaimViewSchema>;
+
+export const LaunchDistributionClaimBuildRequestSchema = z.object({ wallet: Address }).strict();
+export type LaunchDistributionClaimBuildRequest = z.infer<typeof LaunchDistributionClaimBuildRequestSchema>;
+
+export const LaunchDistributionClaimBuildResponseSchema = z
+  .object({
+    buildId: LaunchBuildId,
+    network: LaunchNetworkId,
+    /** The recipient's own transaction: they are the only signer and the only payer. */
+    unsignedWireBase64: z.string().min(1).max(4_000),
+    escrow: Address,
+    amountRaw: DistributionRaw,
+    panel: LaunchDistributionClaimPanelSchema,
+    expiresAt: Iso,
+    signableMs: z.number().int().nonnegative(),
+  })
+  .strict();
+export type LaunchDistributionClaimBuildResponse = z.infer<typeof LaunchDistributionClaimBuildResponseSchema>;
+
+export const LaunchDistributionClaimSubmitRequestSchema = z.object({ buildId: LaunchBuildId, wallet: Address, signedWireBase64: z.string().min(1).max(4_000) }).strict();
+export type LaunchDistributionClaimSubmitRequest = z.infer<typeof LaunchDistributionClaimSubmitRequestSchema>;
+
+export const LaunchDistributionClaimSubmitResponseSchema = z
+  .object({
+    state: z.enum(["CLAIMED", "PENDING", "FAILED"]),
+    signature: z.string().min(64).max(96),
+    amountRaw: DistributionRaw,
+    escrow: Address,
+    reason: z.string().max(300).nullable(),
+  })
+  .strict();
+export type LaunchDistributionClaimSubmitResponse = z.infer<typeof LaunchDistributionClaimSubmitResponseSchema>;
+
+export const LaunchDistributionRecoverBuildRequestSchema = z.object({ owner: Address, wallet: Address }).strict();
+export type LaunchDistributionRecoverBuildRequest = z.infer<typeof LaunchDistributionRecoverBuildRequestSchema>;
+
+export const LaunchDistributionRecoverBuildResponseSchema = z
+  .object({
+    buildId: LaunchBuildId,
+    network: LaunchNetworkId,
+    unsignedWireBase64: z.string().min(1).max(4_000),
+    escrow: Address,
+    /** What the cancellation returns to the owner, and what it leaves the recipient — everything that had vested. */
+    toOwnerRaw: DistributionRaw,
+    toRecipientRaw: DistributionRaw,
+    expiresAt: Iso,
+    signableMs: z.number().int().nonnegative(),
+  })
+  .strict();
+export type LaunchDistributionRecoverBuildResponse = z.infer<typeof LaunchDistributionRecoverBuildResponseSchema>;
+
+export const LaunchDistributionRecoverSubmitRequestSchema = z.object({ buildId: LaunchBuildId, owner: Address, signedWireBase64: z.string().min(1).max(4_000) }).strict();
+export type LaunchDistributionRecoverSubmitRequest = z.infer<typeof LaunchDistributionRecoverSubmitRequestSchema>;
+
+export const LaunchDistributionRecoverSubmitResponseSchema = z
+  .object({
+    state: z.enum(["RETURNED", "PENDING", "FAILED"]),
+    signature: z.string().min(64).max(96),
+    toOwnerRaw: DistributionRaw,
+    toRecipientRaw: DistributionRaw,
+    reason: z.string().max(300).nullable(),
+  })
+  .strict();
+export type LaunchDistributionRecoverSubmitResponse = z.infer<typeof LaunchDistributionRecoverSubmitResponseSchema>;
+
+
+/* ------------------------------------------------------------ Ryntra Launch — early access (1.56.0, SOL-L5) */
+
+/*
+ * «Пресейл і ранній доступ»: a kind of launch of its own on Meteora — an honest Token-2022 mint, a DAMM v2 pool whose
+ * creator's position is locked for ever, and an Alpha Vault (FCFS or Pro Rata) that collects deposits and buys first at
+ * the start price, its tokens released by a schedule. `POST /api/v1/launch/early-access/{build,submit}`,
+ * `GET /api/v1/launch/{mint}/early-access`, `POST /api/v1/launch/{mint}/early-access/deposit/{build,submit}`. Closed to
+ * people; on mainnet also until his bounds.
+ */
+const EaAddress = Address;
+/* A raw amount the chain can hold: up to 20 digits, and no more than a u64 — above it is a VALIDATION_ERROR, never a build. */
+const EaRaw = z
+  .string()
+  .regex(/^(0|[1-9]\d{0,19})$/)
+  .refine((value) => !/^\d{1,20}$/.test(value) || BigInt(value) <= 18_446_744_073_709_551_615n, "The amount is above what the chain can hold (2^64 − 1).");
+const EaBuildId = z.string().regex(/^[0-9a-f]{32}$/);
+const EaWire = z.string().min(1).max(4_000);
+const EaUnixSeconds = z.number().int().min(0).max(4_102_444_800);
+const EaLines = z.object({ uk: z.array(z.string()), en: z.array(z.string()) }).strict();
+
+export const LaunchEarlyAccessRulesSchema = z
+  .object({
+    mode: z.enum(EARLY_ACCESS_MODES),
+    depositStartsAt: EaUnixSeconds,
+    depositEndsAt: EaUnixSeconds,
+    maxCapRaw: EaRaw,
+    individualCapRaw: EaRaw.nullable(),
+    vestingHours: z.number().min(0).max(24 * 365),
+    startMarketCapUsd: z.number().positive().max(1e12),
+    supply: z.number().int().min(EARLY_ACCESS_TOKEN.minSupply).max(EARLY_ACCESS_TOKEN.maxSupply).default(EARLY_ACCESS_TOKEN.defaultSupply),
+  })
+  .strict();
+
+const EaScheduleSchema = z
+  .object({ depositStartsAt: EaUnixSeconds, depositEndsAt: EaUnixSeconds, fillStartsAt: EaUnixSeconds, activatesAt: EaUnixSeconds, vestingStartsAt: EaUnixSeconds, vestingEndsAt: EaUnixSeconds })
+  .strict();
+
+const EaStepSchema = z.object({ signature: z.string().nullable(), state: z.enum(["CONFIRMED", "PENDING", "FAILED", "NOT_SENT"]), reason: z.string().nullable() }).strict();
+const EaStepsSchema = z.object({ MINT: EaStepSchema, POOL: EaStepSchema, VAULT: EaStepSchema }).strict();
+
+const EaFillSchema = z
+  .object({
+    spentRaw: EaRaw,
+    feeRaw: EaRaw,
+    tokensOutRaw: EaRaw,
+    shareBps: z.number().int().min(0).max(10_000),
+    averagePriceUsd: z.number().min(0),
+    priceAfterUsd: z.number().min(0),
+    marketCapAfterUsd: z.number().min(0),
+    refundRaw: EaRaw,
+  })
+  .strict();
+
+export const LaunchEarlyAccessBuildRequestSchema = z.object({ creator: EaAddress, metadataUri: z.string().url().max(512), rules: LaunchEarlyAccessRulesSchema }).strict();
+export type LaunchEarlyAccessBuildRequest = z.infer<typeof LaunchEarlyAccessBuildRequestSchema>;
+
+export const LaunchEarlyAccessBuildResponseSchema = z
+  .object({
+    buildId: EaBuildId,
+    network: z.enum(["solana:devnet", "solana:mainnet"]),
+    /** MINT, POOL, VAULT — the creator's wallet signs all three; sent in this order, each after the one before lands. */
+    unsignedWireBase64: z.array(z.string().min(1)).length(3),
+    mint: EaAddress,
+    pool: EaAddress,
+    vault: EaAddress,
+    schedule: EaScheduleSchema,
+    lines: EaLines,
+    presaleBps: z.number().int().min(0).max(10_000),
+    expiresAt: z.string(),
+    signableMs: z.number().int().min(0),
+  })
+  .strict();
+export type LaunchEarlyAccessBuildResponse = z.infer<typeof LaunchEarlyAccessBuildResponseSchema>;
+
+export const LaunchEarlyAccessSubmitRequestSchema = z.object({ buildId: EaBuildId, creator: EaAddress, signedWireBase64: z.array(EaWire).length(3) }).strict();
+export type LaunchEarlyAccessSubmitRequest = z.infer<typeof LaunchEarlyAccessSubmitRequestSchema>;
+
+export const LaunchEarlyAccessSubmitResponseSchema = z
+  .object({ mint: EaAddress, pool: EaAddress, vault: EaAddress, state: z.enum(["PENDING", "OPEN", "PARTIAL"]), steps: EaStepsSchema, tokenPath: z.string() })
+  .strict();
+export type LaunchEarlyAccessSubmitResponse = z.infer<typeof LaunchEarlyAccessSubmitResponseSchema>;
+
+export const LaunchEarlyAccessDepositBuildRequestSchema = z.object({ wallet: EaAddress, amountRaw: EaRaw }).strict();
+export type LaunchEarlyAccessDepositBuildRequest = z.infer<typeof LaunchEarlyAccessDepositBuildRequestSchema>;
+
+export const LaunchEarlyAccessDepositBuildResponseSchema = z
+  .object({ buildId: EaBuildId, network: z.enum(["solana:devnet", "solana:mainnet"]), unsignedWireBase64: z.string().min(1), escrow: EaAddress, opensEscrow: z.boolean(), amountRaw: EaRaw, expiresAt: z.string(), signableMs: z.number().int().min(0) })
+  .strict();
+export type LaunchEarlyAccessDepositBuildResponse = z.infer<typeof LaunchEarlyAccessDepositBuildResponseSchema>;
+
+export const LaunchEarlyAccessDepositSubmitRequestSchema = z.object({ buildId: EaBuildId, wallet: EaAddress, signedWireBase64: EaWire }).strict();
+export type LaunchEarlyAccessDepositSubmitRequest = z.infer<typeof LaunchEarlyAccessDepositSubmitRequestSchema>;
+
+export const LaunchEarlyAccessDepositSubmitResponseSchema = z.object({ state: z.enum(["CONFIRMED", "PENDING"]), signature: z.string() }).strict();
+export type LaunchEarlyAccessDepositSubmitResponse = z.infer<typeof LaunchEarlyAccessDepositSubmitResponseSchema>;
+
+/**
+ * After the deposits: CLAIM — the tokens vested so far; WITHDRAW_REMAINING — the USDC the vault did not spend, once
+ * trading opens; WITHDRAW — Pro Rata, while deposits are open, the deposit back (all of it unless `amountRaw` names a
+ * part); FILL — the vault's purchase, a permissionless crank any wallet sends and pays for, in the hour before trading.
+ */
+const EaActionSchema = z.enum(["CLAIM", "WITHDRAW_REMAINING", "WITHDRAW", "FILL"]);
+export const LaunchEarlyAccessActionBuildRequestSchema = z.object({ wallet: EaAddress, action: EaActionSchema, amountRaw: EaRaw.nullable().optional() }).strict();
+export type LaunchEarlyAccessActionBuildRequest = z.infer<typeof LaunchEarlyAccessActionBuildRequestSchema>;
+
+export const LaunchEarlyAccessActionBuildResponseSchema = z
+  .object({
+    buildId: EaBuildId,
+    network: z.enum(["solana:devnet", "solana:mainnet"]),
+    /** For the wallet to sign as the fee payer and only signer. */
+    unsignedWireBase64: z.string().min(1),
+    action: EaActionSchema,
+    /** What it moves as read at the build — the tokens claimed, the USDC taken back; null for FILL. */
+    amountRaw: EaRaw.nullable(),
+    expiresAt: z.string(),
+    signableMs: z.number().int().min(0),
+  })
+  .strict();
+export type LaunchEarlyAccessActionBuildResponse = z.infer<typeof LaunchEarlyAccessActionBuildResponseSchema>;
+
+export const LaunchEarlyAccessActionSubmitRequestSchema = z.object({ buildId: EaBuildId, wallet: EaAddress, signedWireBase64: EaWire }).strict();
+export type LaunchEarlyAccessActionSubmitRequest = z.infer<typeof LaunchEarlyAccessActionSubmitRequestSchema>;
+
+export const LaunchEarlyAccessActionSubmitResponseSchema = z.object({ state: z.enum(["CONFIRMED", "PENDING"]), signature: z.string() }).strict();
+export type LaunchEarlyAccessActionSubmitResponse = z.infer<typeof LaunchEarlyAccessActionSubmitResponseSchema>;
+
+export const LaunchEarlyAccessViewSchema = z
+  .object({
+    network: z.enum(["solana:devnet", "solana:mainnet"]),
+    mint: EaAddress,
+    pool: EaAddress,
+    vault: EaAddress,
+    creator: EaAddress,
+    name: z.string(),
+    symbol: z.string(),
+    rules: LaunchEarlyAccessRulesSchema,
+    schedule: EaScheduleSchema,
+    lines: EaLines,
+    state: z.enum(EARLY_ACCESS_PHASES),
+    creation: z.object({ state: z.enum(["PENDING", "OPEN", "PARTIAL"]), steps: EaStepsSchema }).strict(),
+    terms: z.object({ startPriceUsd: z.number(), presaleBps: z.number().int(), ryntraShareBps: z.literal(0), atCap: EaFillSchema }).strict(),
+    read: z.enum(["OK", "MISSING", "FAILED"]),
+    depositedRaw: EaRaw.nullable(),
+    capRaw: EaRaw,
+    depositors: EaRaw.nullable(),
+    boughtRaw: EaRaw.nullable(),
+    filled: z.boolean().nullable(),
+    atDeposited: EaFillSchema.nullable(),
+    chainProblems: z.array(z.string()),
+    mine: z
+      .object({ depositedRaw: EaRaw, claimableRaw: EaRaw, claimedRaw: EaRaw, allocatedRaw: EaRaw, remainingQuoteRaw: EaRaw, roomRaw: EaRaw.nullable(), refunded: z.boolean() })
+      .strict()
+      .nullable(),
+  })
+  .strict();
+export type LaunchEarlyAccessViewResponse = z.infer<typeof LaunchEarlyAccessViewSchema>;
 
 /* ------------------------------------------------------------ Ryntra Launch — the market and trading (1.27.0) */
 
@@ -9859,13 +12932,32 @@ export const LaunchTradeQuoteResponseSchema = z
     feeBps: LaunchBps,
     /** Who gets the fee, in the pair currency: on the curve the creator, Ryntra (partner and referral) and Meteora; in the pool the locked liquidity, Meteora and Ryntra's referral. */
     fee: z
-      .object({ totalRaw: LaunchRaw, creatorRaw: LaunchRaw.nullable(), ryntraRaw: LaunchRaw, meteoraRaw: LaunchRaw, liquidityRaw: LaunchRaw.nullable() })
+      .object({
+        totalRaw: LaunchRaw,
+        creatorRaw: LaunchRaw.nullable(),
+        ryntraRaw: LaunchRaw,
+        meteoraRaw: LaunchRaw,
+        liquidityRaw: LaunchRaw.nullable(),
+        /**
+         * 1.50.0 — in the pool, `liquidityRaw` split: the creator's and Ryntra's locked positions of the move to the DEX,
+         * every other position, and the share compounded back into the pool; the four add up to `liquidityRaw`. Null on
+         * the curve or when the pool's liquidity was not read.
+         */
+        liquidity: z.object({ creatorRaw: LaunchRaw, ryntraRaw: LaunchRaw, othersRaw: LaunchRaw, compoundingRaw: LaunchRaw }).strict().nullable().optional(),
+      })
       .strict(),
     /** How far the trade moves the price, basis points, signed. */
     priceMoveBps: z.number().int(),
     marketCapAfter: LaunchMoney,
     referral: z.boolean(),
     observedAt: Iso,
+    /**
+     * 1.85.0 — the risk verdict over this trade: the four words over thirteen
+     * named facts, each with its source and its time. Named apart from the
+     * token's own `risk` facts on `/api/v1/launch/{mint}/market`, which are a
+     * different list about the token rather than about this trade.
+     */
+    tradeRisk: TradeRiskSchema,
   })
   .strict();
 export type LaunchTradeQuoteResponse = z.infer<typeof LaunchTradeQuoteResponseSchema>;
@@ -9881,6 +12973,8 @@ export const LaunchTradeBuildResponseSchema = z
     unsignedWireBase64: z.string().min(1),
     quote: LaunchTradeQuoteResponseSchema,
     expiresAt: Iso,
+    /** AG-1 (17.10): how long from arriving the bytes may still be signed — their blockhash's life on the chain (~30 s on 200 ms slots) less a margin to send and land. Relative, so a device counts it on its own clock; past it, build again rather than sign. */
+    signableMs: SignableMs.optional(),
   })
   .strict();
 export type LaunchTradeBuildResponse = z.infer<typeof LaunchTradeBuildResponseSchema>;
@@ -9929,7 +13023,7 @@ const LaunchPairView = z.object({ mint: Address, symbol: z.string().min(1).max(1
 /** What the creator's side of a launch earned by source, every figure a program's own counter, and one wallet's part of it. */
 export const LaunchEarningsSchema = z
   .object({
-    role: z.object({ curve: LaunchSourceEarnings, graduation: LaunchSourceEarnings, lp: LaunchSourceEarnings, earnedRaw: LaunchRaw, unclaimedRaw: LaunchRaw }).strict(),
+    role: z.object({ curve: LaunchSourceEarnings, graduation: LaunchSourceEarnings, lp: LaunchSourceEarnings, surplus: LaunchSourceEarnings, earnedRaw: LaunchRaw, unclaimedRaw: LaunchRaw }).strict(),
     mine: z.object({ shareBps: z.number().int().min(0).max(FEE_SHARE_TOTAL_BPS), earnedRaw: LaunchRaw, unclaimedRaw: LaunchRaw, claimedRaw: LaunchRaw }).strict(),
   })
   .strict();
@@ -9969,7 +13063,7 @@ export const LaunchClaimReceiptSchema = z
     at: Iso.nullable(),
     pair: LaunchPairView,
     /** By source, from the programs' events — to the wallet, or into the vault when shared. */
-    paid: z.object({ curve: LaunchRaw, graduation: LaunchRaw, lp: LaunchRaw }).strict(),
+    paid: z.object({ curve: LaunchRaw, graduation: LaunchRaw, lp: LaunchRaw, surplus: LaunchRaw }).strict(),
     /** What the vault paid this wallet of its share; null when the fees are not shared. */
     vaultPaidRaw: LaunchRaw.nullable(),
     /** The change of the wallet's own balance of the pair currency in the transaction. */
@@ -10010,6 +13104,95 @@ export const LaunchCreatorCabinetResponseSchema = z
   .strict();
 export type LaunchCreatorCabinetResponse = z.infer<typeof LaunchCreatorCabinetResponseSchema>;
 
+/* ------------------------------------------------------------ Ryntra Launch — the creator's cabinet in figures and the public profile (1.49.0, SOL-L2) */
+
+/** A figure over a window, raw in the pair currency: exact, a floor (`atLeast`), or not read (`raw: null`) — never a zero on a guess. */
+const LaunchWindowFigure = z.object({ raw: LaunchRaw.nullable(), atLeast: z.boolean() }).strict();
+/** A count: exact, a floor (`atLeast`), or not read (`count: null`). */
+const LaunchCountFigure = z.object({ count: z.number().int().nonnegative().nullable(), atLeast: z.boolean() }).strict();
+const LaunchSourceWindows = z.object({ curve: LaunchWindowFigure, graduation: LaunchWindowFigure, lp: LaunchWindowFigure }).strict();
+
+/**
+ * `GET /api/v1/launch/{mint}/stats` — a launch as its creator's cabinet and public profile read it: what the creator's
+ * side earned over the last day and week by source (all time is the cabinet's counters), the volume, the holders, the
+ * traders and those who came back, the liquidity, after the DEX the depth ±2 % and the pool's fees, the creator's own
+ * buys and sales and their lock. Every figure from the chain; public.
+ */
+export const LaunchStatsResponseSchema = z
+  .object({
+    network: LaunchNetworkId,
+    token: Address,
+    creator: Address,
+    pair: LaunchPairView,
+    tokenDecimals: z.number().int().min(0).max(18),
+    venue: LaunchTradeVenueSchema,
+    progressBps: LaunchBps,
+    migrated: z.boolean(),
+    /** Where each figure can be checked: the curve, the graduated pool, the creator role's position in it, the creator's lock. */
+    links: z.object({ curve: Address, pool: Address.nullable(), position: Address.nullable(), lock: Address.nullable() }).strict(),
+    /** The creator role's earnings, raw in the pair currency; a wallet sharing the role takes its share of each. */
+    revenue: z.object({ day: LaunchSourceWindows, week: LaunchSourceWindows }).strict(),
+    volume: z.object({ day: LaunchWindowFigure, week: LaunchWindowFigure, all: LaunchWindowFigure }).strict(),
+    /** People holding the token, from the mint's accounts. */
+    holders: LaunchCountFigure,
+    /** Wallets that traded, and those that traded in two transactions or more — the creator's own and Ryntra's left out. */
+    traders: LaunchCountFigure,
+    repeatTraders: LaunchCountFigure,
+    liquidity: LaunchMoney,
+    marketCap: LaunchMoney,
+    /** After the DEX; null on the curve. */
+    market: z
+      .object({
+        /** The pair currency that moves the price 2 % up and 2 % down, before the pool's fee; null when it could not be read. */
+        depth: z.object({ upRaw: LaunchRaw, downRaw: LaunchRaw }).strict().nullable(),
+        /** Every fee the pool's swaps paid. */
+        fees: z.object({ day: LaunchWindowFigure, week: LaunchWindowFigure }).strict(),
+        /** The creator role's share of the pool's liquidity — locked for ever at the move to the DEX; null when not read. */
+        lpShareBps: LaunchBps.nullable(),
+      })
+      .strict()
+      .nullable(),
+    /** The creator's own trades on the token; `complete` false: a sale may be missing, said as such. */
+    creatorTrades: z
+      .object({
+        boughtRaw: LaunchRaw,
+        soldRaw: LaunchRaw,
+        soldBps: LaunchBps.nullable(),
+        soldOf: z.enum(["bought", "supply"]).nullable(),
+        sales: z.array(z.object({ signature: LaunchSignature, at: Iso, tokensRaw: LaunchRaw, pairRaw: LaunchRaw }).strict()).max(5),
+        complete: z.boolean(),
+      })
+      .strict(),
+    /** The creator's lock of their first purchase; null when they made none. `lockedRaw` — what the escrow holds now, null when not read. */
+    lock: z
+      .object({ state: z.enum(["LOCKED", "PENDING", "FAILED"]), schedule: z.enum(CREATOR_LOCK_IDS), escrow: Address, lockedRaw: LaunchRaw.nullable(), cliffAt: Iso, endAt: Iso })
+      .strict()
+      .nullable(),
+    observedAt: Iso,
+  })
+  .strict();
+export type LaunchStatsResponse = z.infer<typeof LaunchStatsResponseSchema>;
+
+/** One of a creator's launches on the public profile; its figures come from `…/stats`. */
+export const LaunchProfileLaunchSchema = z
+  .object({
+    token: Address,
+    name: z.string(),
+    symbol: z.string(),
+    image: z.string().url().nullable(),
+    preset: z.enum(LAUNCH_PRESET_IDS),
+    launchedAt: Iso,
+    pair: LaunchPairView,
+  })
+  .strict();
+export type LaunchProfileLaunch = z.infer<typeof LaunchProfileLaunchSchema>;
+
+/** `GET /api/v1/launch/creators/{address}/profile` — the creator's public profile: the launches they made through Ryntra, the newest first. */
+export const LaunchCreatorProfileResponseSchema = z
+  .object({ network: LaunchNetworkId, creator: Address, launches: z.array(LaunchProfileLaunchSchema).max(50), observedAt: Iso })
+  .strict();
+export type LaunchCreatorProfileResponse = z.infer<typeof LaunchCreatorProfileResponseSchema>;
+
 export const LaunchClaimBuildRequestSchema = z.object({ wallet: Address }).strict();
 export type LaunchClaimBuildRequest = z.infer<typeof LaunchClaimBuildRequestSchema>;
 
@@ -10017,22 +13200,91 @@ export const LaunchClaimBuildResponseSchema = z
   .object({
     buildId: LaunchBuildId,
     network: LaunchNetworkId,
-    /** The claim for the wallet to sign — the fee payer and the only signer; one, or two when a pool's accounts do not fit one. */
-    unsignedWireBase64: z.array(z.string().min(1)).min(1).max(3),
+    /** The claim for the wallet to sign — the fee payer and the only signer; one, or more when a pool's accounts do not fit one (1.70.0: up to five). */
+    unsignedWireBase64: z.array(z.string().min(1)).min(1).max(5),
     /** The sources holding a fee now, each taken by the claim; empty when, shared, the wallet's part already sits in the vault. */
-    sources: z.array(LaunchFeeSourceSchema).max(3),
+    sources: z.array(LaunchFeeSourceSchema).max(4),
     /** What the wallet's part comes to as read now; the receipt says what the programs paid. */
     expectedRaw: LaunchRaw,
     /** The wallet's SOL the network simulated the claim taking — its fees and the rent of any account it opens; null when it could not be simulated, never zero on a guess. */
     networkCostLamports: LaunchRaw.nullable(),
     pair: LaunchPairView,
     expiresAt: Iso,
+    /** AG-1 (17.10): how long from arriving the bytes may still be signed — their blockhash's life on the chain (~30 s on 200 ms slots) less a margin to send and land. Relative, so a device counts it on its own clock; past it, build again rather than sign. */
+    signableMs: SignableMs.optional(),
   })
   .strict();
 export type LaunchClaimBuildResponse = z.infer<typeof LaunchClaimBuildResponseSchema>;
 
+/**
+ * `GET /api/v1/launch/{mint}/claim/review?wallet=` (1.73.0, SOL-L12) — «Забрати все»: the Review before the signature.
+ * Every pocket of the creator's side, the transactions the wallet will sign, the exit position as an NFT, the surplus as
+ * Meteora splits it, the creator's lock. Built from the same claim `…/claim/build` then builds; public data.
+ */
+export const LaunchClaimReviewResponseSchema = z
+  .object({
+    network: LaunchNetworkId,
+    token: Address,
+    wallet: Address,
+    pair: LaunchPairView,
+    /** The creator's fees are shared («Спільнота»): the claim funds the vault and the last transaction pays the wallet its share. */
+    shared: z.boolean(),
+    /** Whether SOL-L1d's claims are open here; closed, the surplus is said (`CLOSED`) and not taken. */
+    claimsV2: z.boolean(),
+    pockets: z
+      .array(
+        z
+          .object({
+            pocket: z.enum(CLAIM_POCKETS),
+            state: z.enum(CLAIM_POCKET_STATES),
+            /** What the pocket holds for the creator's side, raw — the pair currency; for `transferFee`, the token; null when not a figure here. */
+            amountRaw: LaunchRaw.nullable(),
+            /** 1-based: the transaction of this claim that takes it; null when this claim does not. */
+            transaction: z.number().int().min(1).max(5).nullable(),
+            /** Who takes it instead (`NOT_YOURS`). */
+            holder: Address.nullable(),
+          })
+          .strict(),
+      )
+      .length(CLAIM_POCKETS.length),
+    /**
+     * Why the claim must not be signed as built, or null: `POSITION_MOVED` — a transaction takes the locked position's
+     * fees while its NFT is with another wallet, and the program would refuse that whole transaction.
+     */
+    blockedBy: z.enum(["POSITION_MOVED"]).nullable(),
+    /** The transactions the wallet signs, in order; empty — nothing to take now. `payout`: the vault paying the wallet its share. */
+    transactions: z.array(z.object({ index: z.number().int().min(1).max(5), sources: z.array(LaunchFeeSourceSchema).max(4), payout: z.boolean() }).strict()).max(5),
+    /** What the wallet's part comes to; "0" with no transactions. */
+    expectedRaw: LaunchRaw,
+    networkCostLamports: LaunchRaw.nullable(),
+    /** The curve's surplus as Meteora splits it once the curve is full; null before. */
+    surplus: z.object({ totalRaw: LaunchRaw, creatorRaw: LaunchRaw, partnerRaw: LaunchRaw, protocolRaw: LaunchRaw }).strict().nullable(),
+    /**
+     * The creator role's exit position in the DAMM v2 pool — an NFT: who holds it now (`holderIs`: the wallet, the vault
+     * sharing the fees, someone else, or not read) and how much of it is locked for ever. Sending the NFT moves its fees,
+     * never its locked liquidity. Null before the DEX or when no position was found.
+     */
+    position: z
+      .object({
+        address: Address,
+        pool: Address,
+        nftMint: Address,
+        holder: Address.nullable(),
+        holderIs: z.enum(["YOU", "VAULT", "OTHER", "UNREAD"]),
+        permanentBps: LaunchBps,
+        forever: z.boolean(),
+      })
+      .strict()
+      .nullable(),
+    /** The creator's lock of their first purchase — when it starts and ends unlocking, what it holds now; null without one or not read. */
+    lock: z.object({ escrow: Address, cliffAt: Iso, endAt: Iso, lockedRaw: LaunchRaw }).strict().nullable(),
+    observedAt: Iso,
+  })
+  .strict();
+export type LaunchClaimReviewResponse = z.infer<typeof LaunchClaimReviewResponseSchema>;
+
 export const LaunchClaimSubmitRequestSchema = z
-  .object({ buildId: LaunchBuildId, wallet: Address, signedWireBase64: z.array(z.string().min(1).max(4_000)).min(1).max(3) })
+  .object({ buildId: LaunchBuildId, wallet: Address, signedWireBase64: z.array(z.string().min(1).max(4_000)).min(1).max(5) })
   .strict();
 export type LaunchClaimSubmitRequest = z.infer<typeof LaunchClaimSubmitRequestSchema>;
 
@@ -10044,12 +13296,104 @@ export const LaunchClaimSubmitResponseSchema = z
      * taken, the rest still waits at its source or in the vault.
      */
     state: z.enum(["CONFIRMED", "PENDING", "PARTIAL"]),
-    receipts: z.array(LaunchClaimReceiptSchema).max(3),
-    pending: z.array(LaunchSignature).max(3),
-    failed: z.array(z.object({ signature: LaunchSignature, reason: z.string().max(300) }).strict()).max(3),
+    receipts: z.array(LaunchClaimReceiptSchema).max(5),
+    pending: z.array(LaunchSignature).max(5),
+    failed: z.array(z.object({ signature: LaunchSignature, reason: z.string().max(300) }).strict()).max(5),
   })
   .strict();
 export type LaunchClaimSubmitResponse = z.infer<typeof LaunchClaimSubmitResponseSchema>;
+
+/* ------------------------------------------------------------ «Комісія за переказ» (1.72.0, SOL-L10) */
+
+/** A step of the withheld cycle the creator takes: harvest — holders' accounts to the mint; withdraw — the mint to the creator. */
+export const LaunchTransferFeeStepSchema = z.enum(["HARVEST", "WITHDRAW"]);
+export type LaunchTransferFeeStep = z.infer<typeof LaunchTransferFeeStepSchema>;
+
+/** One step taken through Ryntra, by its transaction on chain. */
+export const LaunchTransferFeeReceiptSchema = z
+  .object({
+    step: LaunchTransferFeeStepSchema,
+    signature: LaunchSignature,
+    /** The token moved, raw: withdrawn to the creator — what its transaction shows, 0 when the mint held nothing by then; harvested — what the accounts held when it was built. */
+    amountRaw: LaunchRaw,
+    /** Harvest: how many holders' accounts it named. */
+    accounts: z.number().int().nonnegative().nullable(),
+    at: Iso,
+  })
+  .strict();
+export type LaunchTransferFeeReceipt = z.infer<typeof LaunchTransferFeeReceiptSchema>;
+
+/**
+ * `GET /api/v1/launch/{mint}/transfer-fee` — a launch's transfer fee as the chain shows it now: the rate, the RevokeZeroFee
+ * timeline by epoch, and the withheld cycle — in holders' accounts, harvested to the mint, withdrawn by the creator — with
+ * each step's receipt. Public; LAUNCH_NO_TRANSFER_FEE for a launch whose token takes no fee on transfers.
+ */
+export const LaunchTransferFeeResponseSchema = z
+  .object({
+    network: LaunchNetworkId,
+    token: Address,
+    decimals: z.number().int().min(0).max(18),
+    /** The rate on the curve, basis points. */
+    bps: z.number().int().min(1).max(10_000),
+    mode: z.literal("REVOKE_ZERO_FEE"),
+    /** Who withdraws what is withheld — the creator's wallet. */
+    withdrawAuthority: Address.nullable(),
+    timeline: z
+      .object({
+        phase: z.enum(TRANSFER_FEE_PHASES),
+        bpsNow: z.number().int().min(0).max(10_000),
+        curveBps: z.number().int().min(0).max(10_000),
+        /** The first epoch at 0 %; null before the move to the DEX. */
+        zeroFromEpoch: LaunchRaw.nullable(),
+        authorityLive: z.boolean(),
+        epoch: LaunchRaw,
+      })
+      .strict(),
+    cycle: z
+      .object({
+        /** Withheld in holders' accounts; null — they were not read now. */
+        inAccountsRaw: LaunchRaw.nullable(),
+        accountsWithWithheld: z.number().int().nonnegative().nullable(),
+        onMintRaw: LaunchRaw,
+        withdrawnRaw: LaunchRaw,
+      })
+      .strict(),
+    actions: z.object({ harvest: z.boolean(), withdraw: z.boolean() }).strict(),
+    receipts: z.array(LaunchTransferFeeReceiptSchema).max(50),
+    observedAt: Iso,
+  })
+  .strict();
+export type LaunchTransferFeeResponse = z.infer<typeof LaunchTransferFeeResponseSchema>;
+
+/** `POST /api/v1/launch/{mint}/transfer-fee/build` — one step for the creator's wallet to sign as the only signer. */
+export const LaunchTransferFeeBuildRequestSchema = z.object({ wallet: Address, step: LaunchTransferFeeStepSchema }).strict();
+export type LaunchTransferFeeBuildRequest = z.infer<typeof LaunchTransferFeeBuildRequestSchema>;
+
+export const LaunchTransferFeeBuildResponseSchema = z
+  .object({
+    buildId: LaunchBuildId,
+    network: LaunchNetworkId,
+    step: LaunchTransferFeeStepSchema,
+    unsignedWireBase64: z.string().min(1),
+    /** What the step moves as read now; the receipt says what the token program moved. */
+    expectedRaw: LaunchRaw,
+    /** Harvest: the holders' accounts it names (at most a transaction's worth); withdraw: 0. */
+    accounts: z.number().int().nonnegative(),
+    networkCostLamports: LaunchRaw.nullable(),
+    expiresAt: Iso,
+    signableMs: z.number().int().nonnegative(),
+  })
+  .strict();
+export type LaunchTransferFeeBuildResponse = z.infer<typeof LaunchTransferFeeBuildResponseSchema>;
+
+export const LaunchTransferFeeSubmitRequestSchema = z.object({ buildId: LaunchBuildId, wallet: Address, signedWireBase64: z.string().min(1).max(4_000) }).strict();
+export type LaunchTransferFeeSubmitRequest = z.infer<typeof LaunchTransferFeeSubmitRequestSchema>;
+
+/** CONFIRMED with its receipt (null while its transaction is not read — the next read settles it); PENDING — sent and not confirmed in time: read the signature, never send again; a later read counts it once it lands. */
+export const LaunchTransferFeeSubmitResponseSchema = z
+  .object({ step: LaunchTransferFeeStepSchema, state: z.enum(["CONFIRMED", "PENDING"]), signature: LaunchSignature, receipt: LaunchTransferFeeReceiptSchema.nullable() })
+  .strict();
+export type LaunchTransferFeeSubmitResponse = z.infer<typeof LaunchTransferFeeSubmitResponseSchema>;
 
 /* ------------------------------------------------------------ the flight log (1.32.0) */
 
@@ -10291,6 +13635,8 @@ export const LaunchHolderBuildResponseSchema = z
     position: Address,
     quote: LaunchHolderQuoteSchema,
     expiresAt: Iso,
+    /** AG-1 (17.10): how long from arriving the bytes may still be signed — their blockhash's life on the chain (~30 s on 200 ms slots) less a margin to send and land. Relative, so a device counts it on its own clock; past it, build again rather than sign. */
+    signableMs: SignableMs.optional(),
   })
   .strict();
 export type LaunchHolderBuildResponse = z.infer<typeof LaunchHolderBuildResponseSchema>;
@@ -10305,7 +13651,7 @@ export const LaunchHolderPermissionBuildRequestSchema = z.object({ wallet: Addre
 export type LaunchHolderPermissionBuildRequest = z.infer<typeof LaunchHolderPermissionBuildRequestSchema>;
 
 export const LaunchHolderPermissionBuildResponseSchema = z
-  .object({ buildId: LaunchBuildId, network: LaunchNetworkId, unsignedWireBase64: z.string().min(1), action: z.enum(["grant", "revoke"]), expiresAt: Iso })
+  .object({ buildId: LaunchBuildId, network: LaunchNetworkId, unsignedWireBase64: z.string().min(1), action: z.enum(["grant", "revoke"]), expiresAt: Iso, signableMs: SignableMs.optional() })
   .strict();
 export type LaunchHolderPermissionBuildResponse = z.infer<typeof LaunchHolderPermissionBuildResponseSchema>;
 
@@ -10394,6 +13740,10 @@ const MarketStateView = z
  * steps from the budget (at most 70 % of `earnedRaw`); `revenueRaw` — the other three quarters, Ryntra's revenue,
  * never the market's; `inPoolRaw` — the budget's part still waiting in Meteora's pools; `exhausted` — the steps hold
  * none of the pair currency and the reserve is below one step (5 USDC). Absent before 1.39.0 and on `NOT_COUNTED`.
+ *
+ * 1.51.0, additive (SOL-L6): `claims` — Ryntra's executor claims this market's budget and keeps its ladder: on a market
+ * Ryntra launched, and on a person's Micro market while Ryntra's operator keeps people's markets open; false — what it
+ * earned waits in Meteora's pools. Absent before 1.51.0 and on `NOT_COUNTED`.
  */
 export const LaunchMarketBudgetSchema = z
   .object({
@@ -10408,6 +13758,7 @@ export const LaunchMarketBudgetSchema = z
     revenueRaw: LaunchRaw.nullable().optional(),
     inPoolRaw: LaunchRaw.nullable().optional(),
     exhausted: z.boolean().optional(),
+    claims: z.boolean().optional(),
   })
   .strict();
 export type LaunchMarketBudgetView = z.infer<typeof LaunchMarketBudgetSchema>;
@@ -10491,6 +13842,206 @@ export const LaunchMarketsResponseSchema = z
   })
   .strict();
 export type LaunchMarketsResponse = z.infer<typeof LaunchMarketsResponseSchema>;
+
+const LaunchSurvivalDays = z.union([z.literal(SURVIVAL_HORIZONS_DAYS[0]), z.literal(SURVIVAL_HORIZONS_DAYS[1]), z.literal(SURVIVAL_HORIZONS_DAYS[2])]);
+
+const LaunchSurvivalTallySchema = z
+  .object({
+    /** Markets at least this many days old. */
+    eligible: z.number().int().nonnegative(),
+    /** Someone other than the creator and Ryntra's own wallets traded it in the week up to that day. */
+    alive: z.number().int().nonnegative(),
+    /** That week was read whole and had no such trade. */
+    quiet: z.number().int().nonnegative(),
+    /** That week was not read whole — never counted as quiet. */
+    unread: z.number().int().nonnegative(),
+  })
+  .strict();
+
+/**
+ * `GET /api/v1/launch/survival` (1.55.0, SOL-L3) — the survival of every market launched on Ryntra on this network at
+ * 7, 30 and 90 days, from the chain: alive at day N when someone other than its creator and Ryntra's own wallets traded
+ * it in the `windowDays` up to day N, each proven by that trade's transaction; people's markets and Ryntra's own apart.
+ */
+export const LaunchSurvivalResponseSchema = z
+  .object({
+    network: LaunchNetworkId,
+    windowDays: z.literal(SURVIVAL_WINDOW_DAYS),
+    horizons: z
+      .array(z.object({ days: LaunchSurvivalDays, people: LaunchSurvivalTallySchema, ryntra: LaunchSurvivalTallySchema }).strict())
+      .length(SURVIVAL_HORIZONS_DAYS.length),
+    markets: z
+      .array(
+        z
+          .object({
+            token: Address,
+            symbol: z.string().max(16),
+            launchedAt: Iso,
+            /** Launched by one of Ryntra's own wallets: technical validation, never demand. */
+            own: z.boolean(),
+            outcomes: z
+              .array(
+                z
+                  .object({
+                    days: LaunchSurvivalDays,
+                    state: z.enum(SURVIVAL_STATES),
+                    /** The trade that proves «alive»; null otherwise. */
+                    proof: z.object({ signature: z.string().min(64).max(90), at: Iso }).strict().nullable(),
+                  })
+                  .strict(),
+              )
+              .length(SURVIVAL_HORIZONS_DAYS.length),
+          })
+          .strict(),
+      )
+      .max(500),
+    /** `markets` names every market counted; false — it names the newest 500, and the tallies count them all. */
+    listedAll: z.boolean(),
+    /** Every one of Ryntra's own wallets was known: false — a market's own flag and its outcomes may move once they are. */
+    ownWalletsComplete: z.boolean(),
+    /** No outcome is «not read». */
+    complete: z.boolean(),
+    observedAt: Iso,
+  })
+  .strict();
+export type LaunchSurvivalResponse = z.infer<typeof LaunchSurvivalResponseSchema>;
+
+/* ---------------------------------------------------------------- 1.74.0 (MC-2): launch windows and crews */
+
+const LaunchWindowId = z.string().regex(/^\d{4}-\d{2}-\d{2}T\d{2}:00Z$/);
+const LaunchWindowSchema = z
+  .object({
+    /** The opening to the minute, UTC — one window per hour, so it names the window. */
+    id: LaunchWindowId,
+    kind: z.enum(WINDOW_KINDS),
+    opensAt: Iso,
+    closesAt: Iso,
+  })
+  .strict();
+
+/**
+ * `GET /api/v1/launch/windows` (1.74.0, MC-2) — the launch windows' published schedule: a small window at the top of
+ * every hour UTC, a big one every evening; the one open now, the next and the next evening. A window is a time only:
+ * a launch whose launch time (taken when its creation is sent) falls while one is open is in it. The equal start inside it is each curve's own
+ * anti-sniper fee. Public; no read of the chain.
+ */
+export const LaunchWindowsResponseSchema = z
+  .object({
+    open: LaunchWindowSchema.nullable(),
+    next: LaunchWindowSchema,
+    nextEvening: LaunchWindowSchema,
+    schedule: z
+      .object({
+        hourlyMinutes: z.literal(HOURLY_WINDOW_MINUTES),
+        eveningHourUtc: z.literal(EVENING_WINDOW_HOUR_UTC),
+        eveningMinutes: z.literal(EVENING_WINDOW_MINUTES),
+      })
+      .strict(),
+    observedAt: Iso,
+  })
+  .strict();
+export type LaunchWindowsResponse = z.infer<typeof LaunchWindowsResponseSchema>;
+
+/** X's own handle rule, without the «@». Ryntra does not read X: a handle is the person's word, confirmed by their wallet. */
+const XHandle = z.string().regex(/^[A-Za-z0-9_]{1,15}$/);
+
+/** `POST /api/v1/launch/crews` (1.74.0, MC-2) — the creator's proven wallet invites one to four people by X handle. */
+export const LaunchCrewCreateRequestSchema = z
+  .object({
+    creator: Address,
+    creatorHandle: XHandle.nullable(),
+    symbol: z.string().min(1).max(16),
+    name: z.string().min(1).max(64),
+    preset: z.enum(CREW_PRESETS),
+    /** A launch window still ahead, or null — «now». */
+    window: LaunchWindowId.nullable(),
+    invites: z
+      .array(z.object({ handle: XHandle, bps: z.number().int().min(CREW_MIN_BPS).max(10_000) }).strict())
+      .min(CREW_MIN_MEMBERS)
+      .max(CREW_MAX_MEMBERS),
+  })
+  .strict();
+export type LaunchCrewCreateRequest = z.infer<typeof LaunchCrewCreateRequestSchema>;
+
+/** `POST /api/v1/launch/crews/{id}/answer` (1.74.0) — an invitee's own yes or no, with their proven wallet. */
+export const LaunchCrewAnswerRequestSchema = z.object({ handle: XHandle, answer: z.enum(["accept", "decline"]) }).strict();
+export type LaunchCrewAnswerRequest = z.infer<typeof LaunchCrewAnswerRequestSchema>;
+
+const LaunchCrewSchema = z
+  .object({
+    id: LaunchCrewId,
+    creator: Address,
+    creatorHandle: XHandle.nullable(),
+    symbol: z.string().max(16),
+    name: z.string().max(64),
+    preset: z.enum(CREW_PRESETS),
+    window: LaunchWindowId.nullable(),
+    members: z
+      .array(
+        z
+          .object({
+            handle: XHandle,
+            bps: LaunchBpsShare,
+            state: z.enum(CREW_MEMBER_STATES),
+            /** The wallet that said yes — the vault's row at liftoff; null otherwise. */
+            wallet: Address.nullable(),
+            answeredAt: Iso.nullable(),
+            /** The words the invitee says yes to, as the page shows them. */
+            consent: z.array(z.string().max(600)).max(8),
+          })
+          .strict(),
+      )
+      .max(CREW_MAX_MEMBERS),
+    /** The creator's part now: everything the members who said yes do not take. */
+    creatorBps: LaunchBpsShare,
+    createdAt: Iso,
+    expiresAt: Iso,
+    /** Its week passed before liftoff: nobody answers it, nobody launches with it. */
+    expired: z.boolean(),
+    /** The token it lifted off with; null until then. */
+    token: Address.nullable(),
+    launchedAt: Iso.nullable(),
+  })
+  .strict();
+
+/** A crew as anyone reads it (`GET /api/v1/launch/crews/{id}`), and as a write answers it. */
+export const LaunchCrewResponseSchema = z
+  .object({
+    network: LaunchNetworkId,
+    crew: LaunchCrewSchema,
+    /** Crews may be made and answered on this network now. */
+    open: z.boolean(),
+  })
+  .strict();
+export type LaunchCrewResponse = z.infer<typeof LaunchCrewResponseSchema>;
+
+/**
+ * `GET /api/v1/launch/crews` (1.74.0) — the crews in flight on this network: each launch whose Dynamic Fee Sharing
+ * vault holds the curve's creator role, with that vault's own rows by wallet and part. No handle: a handle is the
+ * person's word, never checked against X, and nothing public names a member by one.
+ */
+export const LaunchCrewsResponseSchema = z
+  .object({
+    network: LaunchNetworkId,
+    crews: z
+      .array(
+        z
+          .object({
+            token: Address,
+            symbol: z.string().max(16),
+            creator: Address,
+            creatorBps: LaunchBpsShare,
+            members: z.array(z.object({ wallet: Address, bps: LaunchBpsShare }).strict()).min(1).max(CREW_MAX_MEMBERS),
+            window: LaunchWindowId.nullable(),
+            launchedAt: Iso.nullable(),
+          })
+          .strict(),
+      )
+      .max(500),
+    observedAt: Iso,
+  })
+  .strict();
+export type LaunchCrewsResponse = z.infer<typeof LaunchCrewsResponseSchema>;
 
 /** `GET /api/v1/launch/markets/{mint}` — one market's row and the addresses it lives at. */
 export const LaunchMarketCardResponseSchema = z
@@ -10601,6 +14152,8 @@ export const LaunchMarketHealthResponseSchema = z
         executor: Address.nullable(),
         /** Whether it acts on this network now: its key on this server, Launch's operator stop open, a pass of its own finished in the last 15 minutes, every market not stopped by Ryntra's operator (1.37.0), and the switch read. */
         acts: z.boolean(),
+        /** 1.47.0: true when whether it acts could not be read now and no recent read stands in — `acts` is false by not knowing, never a stop; absent when read. */
+        actsUnread: z.boolean().optional(),
         /** Its last act on this market, from the flight log. */
         lastAction: z.object({ kind: z.enum(JOURNAL_KINDS), at: Iso.nullable(), signature: LaunchSignature }).strict().nullable(),
         /**
@@ -10626,3 +14179,733 @@ export const LaunchMarketHealthResponseSchema = z
   })
   .strict();
 export type LaunchMarketHealthResponse = z.infer<typeof LaunchMarketHealthResponseSchema>;
+
+/* ------------------------------------------------------------ «Події ринку» (1.68.0, DSC-1) */
+
+const EventSignature = z.string().regex(/^[1-9A-HJ-NP-Za-km-z]{64,90}$/);
+const EventRaw = z.string().regex(/^\d{1,40}$/);
+
+/** One event: one fact with its source, its time, its link on the chain and how final it is — never advice. */
+export const MarketEventSchema = z
+  .object({
+    /** `signature:index` for a fact with a transaction; `source:mint:kind[:key]` for a fact a provider states without one. */
+    id: z.string().min(1).max(200),
+    kind: z.enum(EVENT_KINDS),
+    network: z.enum(["mainnet", "devnet"]),
+    token: z
+      .object({
+        mint: Address,
+        symbol: z.string().max(32),
+        name: z.string().max(80),
+        /** A picture only for a token Jupiter verified. */
+        icon: z.string().url().nullable(),
+        /** The token's own page on Ryntra — its quote and Review are there. */
+        href: z.string().startsWith("/app/").max(200),
+        launchedOnRyntra: z.boolean(),
+      })
+      .strict(),
+    /** When it happened — the block's time, a provider's stated time or a lock's cliff; null when no source states it. */
+    happenedAt: Iso.nullable(),
+    /** A fact stated over a window rather than at a moment. */
+    happenedWithin: z.enum(["h1", "h24"]).nullable(),
+    /** When this server first saw it — or, for a figure from a held copy of a provider's list, when that list was read. */
+    observedAt: Iso,
+    sources: z.array(z.enum(EVENT_SOURCES)).min(1).max(EVENT_SOURCES.length),
+    /** `confirmed` — its transaction read at confirmed commitment; `reported` — a provider states it; `scheduled` — a time an account on the chain holds. */
+    finality: z.enum(EVENT_FINALITY),
+    /** Its figures are a held copy from an earlier read. */
+    stale: z.boolean(),
+    signature: EventSignature.nullable(),
+    /** The account to open where there is no transaction: the mint, the pool, the escrow, the vault. */
+    account: Address.nullable(),
+    /** The explorer's page of the transaction, or of the account where there is none. */
+    explorerUrl: z.string().url(),
+    route: z.object({ from: z.enum(EVENT_VENUES).nullable(), to: z.enum(["damm-v2"]).nullable() }).strict().nullable(),
+    actor: z.enum(JOURNAL_ACTORS).nullable(),
+    journalKind: z.enum(JOURNAL_KINDS).nullable(),
+    soldBps: z.number().int().min(0).max(1_000_000).nullable(),
+    soldOf: z.enum(["bought", "supply"]).nullable(),
+    changePct: z.number().finite().nullable(),
+    authority: z.enum(["MINT", "FREEZE"]).nullable(),
+    unlock: z.enum(["cliff", "end"]).nullable(),
+    pairRaw: EventRaw.nullable(),
+    tokensRaw: EventRaw.nullable(),
+    pair: z.object({ symbol: z.string().min(1).max(12), decimals: z.number().int().min(0).max(18) }).strict().nullable(),
+    tokenDecimals: z.number().int().min(0).max(18).nullable(),
+    /** The token's risk flags, as Pulse reads them — facts, never a score. */
+    flags: z.array(z.enum(EVENT_FLAGS)).max(EVENT_FLAGS.length),
+    /** The figures those flags rest on that nobody stated — never counted as passed. */
+    unstated: z.array(z.enum(EVENT_UNSTATED)).max(EVENT_UNSTATED.length),
+    borrowedLabel: z.string().max(80).nullable(),
+    /** Why the event is held below the top of the feed; empty for every other. */
+    suspicious: z.array(z.enum(SUSPICION_REASONS)).max(SUSPICION_REASONS.length),
+  })
+  .strict();
+export type MarketEventView = z.infer<typeof MarketEventSchema>;
+
+/** `GET /api/v1/events` — the feed, the newest first, a suspicious token's event never above the first five clean ones; public. */
+export const MarketEventsResponseSchema = z
+  .object({
+    events: z.array(MarketEventSchema).max(EVENTS_MAX),
+    /** The feed's events before `limit` — after the kinds and the mint asked for. */
+    total: z.number().int().nonnegative(),
+    observedAt: Iso,
+    stale: z.boolean(),
+    /** A source did not answer, or answered in part: events may be missing — never older ones in their place. */
+    partial: z.boolean(),
+    sources: z.array(z.enum(EVENT_SOURCES)).max(EVENT_SOURCES.length),
+    /** The flight logs read for this answer against the people's markets launched on Ryntra — the most active first; null where Launch is not served. */
+    logs: z.object({ read: z.number().int().nonnegative(), markets: z.number().int().nonnegative() }).strict().nullable(),
+    /** Every kind: read, read in part, or not read yet — a kind not read is never a quiet market. */
+    coverage: z.array(z.object({ kind: z.enum(EVENT_KINDS), state: z.enum(["read", "partial", "not-read"]), sources: z.array(z.enum(EVENT_SOURCES)).max(EVENT_SOURCES.length) }).strict()).length(EVENT_KINDS.length),
+  })
+  .strict();
+export type MarketEventsResponse = z.infer<typeof MarketEventsResponseSchema>;
+
+/* ---------------------------------------------------------------- 1.75.0 (TEAM-1): a team's roles and rights */
+
+const TeamId = z.string().regex(/^[0-9a-f]{24}$/);
+const TeamNetworkId = z.enum(["solana:devnet", "solana:mainnet"]);
+const TeamGrantsSchema = z.record(z.enum(TEAM_PERMISSIONS), z.enum(TEAM_GRANTS));
+
+/**
+ * `GET /api/v1/teams/roles` (1.75.0, TEAM-1) — the matrix every team check runs on: nine roles × the nine rights of spec
+ * §9.2 and `members`, each `ALLOW`, `MULTISIG` (only as a proposal on the team's Squads treasury, through the EXE-1
+ * rows named) or `DENY`. Public; the same on every deployment.
+ */
+export const TeamRolesResponseSchema = z
+  .object({
+    kinds: z.array(z.enum(TEAM_KINDS)).length(TEAM_KINDS.length),
+    roles: z.array(z.enum(TEAM_ROLES)).length(TEAM_ROLES.length),
+    permissions: z
+      .array(
+        z
+          .object({
+            id: z.enum(TEAM_PERMISSIONS),
+            risk: z.enum(TEAM_RISKS),
+            /** The EXE-1 rows a high-risk right runs through — each signed by the multisig; empty for a lower right, and for a high-risk one no team can use yet. */
+            authority: z.array(z.string().max(64)).max(8),
+            /** The Squads permission the acting wallet must hold on the treasury; null for a lower right. */
+            squadsPermission: z.enum(["initiate", "vote"]).nullable(),
+          })
+          .strict(),
+      )
+      .length(TEAM_PERMISSIONS.length),
+    matrix: z.record(z.enum(TEAM_ROLES), TeamGrantsSchema),
+    limits: z
+      .object({
+        membersPerTeam: z.number().int().positive(),
+        teamsCreatedPerWallet: z.number().int().positive(),
+        membershipsPerWallet: z.number().int().positive(),
+        invitationsPerWallet: z.number().int().positive(),
+        inviteDays: z.number().int().positive(),
+      })
+      .strict(),
+    /** Teams are served on this deployment now (the treasury's network named and the TEAM-1 store open). */
+    open: z.boolean(),
+    network: TeamNetworkId.nullable(),
+  })
+  .strict();
+export type TeamRolesResponse = z.infer<typeof TeamRolesResponseSchema>;
+
+const TeamSummarySchema = z
+  .object({
+    id: TeamId,
+    name: z.string().min(1).max(64),
+    kind: z.enum(TEAM_KINDS),
+    treasury: Address.nullable(),
+    role: z.enum(TEAM_ROLES),
+    status: z.enum(TEAM_MEMBER_STATUSES),
+    /** The list's length — to an active member; 0 to an invitation. */
+    members: z.number().int().nonnegative(),
+  })
+  .strict();
+
+/** `GET /api/v1/teams` (1.75.0) — the proven wallet's teams on this network, invitations within their week included: one wallet, many teams, a role in each. */
+export const TeamsResponseSchema = z.object({ network: TeamNetworkId, teams: z.array(TeamSummarySchema).max(100) }).strict();
+export type TeamsResponse = z.infer<typeof TeamsResponseSchema>;
+
+/** `POST /api/v1/teams` (1.75.0) — a team made by the proven wallet, which becomes its first Owner. */
+export const TeamCreateRequestSchema = z.object({ name: z.string().min(1).max(64), kind: z.enum(TEAM_KINDS) }).strict();
+export type TeamCreateRequest = z.infer<typeof TeamCreateRequestSchema>;
+
+const TeamMemberSchema = z
+  .object({
+    wallet: Address,
+    role: z.enum(TEAM_ROLES),
+    status: z.enum(TEAM_MEMBER_STATUSES),
+    label: z.string().max(40).nullable(),
+    invitedBy: Address,
+    invitedAt: Iso,
+    joinedAt: Iso.nullable(),
+  })
+  .strict();
+
+const TeamJournalRowSchema = z
+  .object({
+    at: Iso,
+    actor: Address,
+    action: z.enum(TEAM_JOURNAL_ACTIONS),
+    subject: Address.nullable(),
+    role: z.enum(TEAM_ROLES).nullable(),
+    previousRole: z.enum(TEAM_ROLES).nullable(),
+  })
+  .strict();
+
+const TeamSchema = z
+  .object({
+    id: TeamId,
+    network: TeamNetworkId,
+    name: z.string().min(1).max(64),
+    kind: z.enum(TEAM_KINDS),
+    treasury: Address.nullable(),
+    createdBy: Address,
+    createdAt: Iso,
+    version: z.number().int().nonnegative(),
+    you: z.object({ wallet: Address, role: z.enum(TEAM_ROLES), status: z.enum(TEAM_MEMBER_STATUSES), grants: TeamGrantsSchema }).strict(),
+    /** The list — to an active member only; null to an invitation. */
+    members: z.array(TeamMemberSchema).max(50).nullable(),
+    /** The newest rows of the append-only journal — to a member who reads receipts; null otherwise. */
+    journal: z.array(TeamJournalRowSchema).max(50).nullable(),
+    /**
+     * The treasury's members on chain beside the list (spec §9.6): `inTeam: false` is a key still on the multisig whose
+     * wallet is not an active member — removed from the team, it is removed from the multisig only by a proposal.
+     */
+    signers: z
+      .discriminatedUnion("read", [
+        z
+          .object({
+            read: z.literal("OK"),
+            rows: z
+              .array(z.object({ address: Address, initiate: z.boolean(), vote: z.boolean(), execute: z.boolean(), inTeam: z.boolean(), role: z.enum(TEAM_ROLES).nullable() }).strict())
+              .max(65),
+          })
+          .strict(),
+        z.object({ read: z.literal("UNREAD") }).strict(),
+      ])
+      .nullable(),
+  })
+  .strict();
+
+/** `GET /api/v1/teams/{id}` and every team write (1.75.0) — the team as the proven wallet may read it. */
+export const TeamResponseSchema = z.object({ team: TeamSchema }).strict();
+export type TeamResponse = z.infer<typeof TeamResponseSchema>;
+
+/** `POST /api/v1/teams/{id}/members` (1.75.0) — an invitation: a role for a wallet, held only once that wallet says yes. */
+export const TeamInviteRequestSchema = z.object({ wallet: Address, role: z.enum(TEAM_ROLES), label: z.string().max(40).nullable().optional() }).strict();
+export type TeamInviteRequest = z.infer<typeof TeamInviteRequestSchema>;
+
+/** `POST /api/v1/teams/{id}/members/{wallet}` (1.75.0) — the wallet's own yes, a new role, or removal (by the wallet itself: leaving). */
+export const TeamMemberChangeRequestSchema = z.discriminatedUnion("action", [
+  z.object({ action: z.literal("accept") }).strict(),
+  z.object({ action: z.literal("role"), role: z.enum(TEAM_ROLES) }).strict(),
+  z.object({ action: z.literal("remove") }).strict(),
+]);
+export type TeamMemberChangeRequest = z.infer<typeof TeamMemberChangeRequestSchema>;
+
+/** The answer to a member change: the team as the wallet reads it after, or null when the wallet left it. */
+export const TeamMemberChangeResponseSchema = z.object({ team: TeamSchema.nullable() }).strict();
+export type TeamMemberChangeResponse = z.infer<typeof TeamMemberChangeResponseSchema>;
+
+/** `POST /api/v1/teams/{id}/treasury` (1.75.0) — an Owner links, once, a Squads v4 multisig their wallet may propose on; a linked treasury changes only by its own multisig. */
+export const TeamTreasuryRequestSchema = z.object({ multisig: Address }).strict();
+export type TeamTreasuryRequest = z.infer<typeof TeamTreasuryRequestSchema>;
+
+/**
+ * `GET /api/v1/teams/{id}/check?permission=&authority=` (1.75.0) — the server's decision for the proven wallet, the
+ * same one every team action takes before anything is built: role, membership, treasury, the EXE-1 row's state on this
+ * deployment and, for a high-risk right, the wallet's Squads permission on the treasury read on chain.
+ */
+export const TeamCheckResponseSchema = z
+  .object({
+    teamId: TeamId,
+    wallet: Address,
+    allowed: z.boolean(),
+    permission: z.enum(TEAM_PERMISSIONS),
+    role: z.enum(TEAM_ROLES).nullable(),
+    grant: z.enum(TEAM_GRANTS),
+    risk: z.enum(TEAM_RISKS),
+    requires: z.enum(["NOTHING", "MULTISIG"]),
+    refusal: z.enum(TEAM_REFUSALS).nullable(),
+    authority: z.object({ id: z.string().max(64), state: z.enum(HONEST_STATES), enforcement: z.enum(ENFORCEMENT_LEVELS), signer: z.enum(SIGNERS) }).strict().nullable(),
+    multisig: Address.nullable(),
+    squadsPermission: z.enum(["initiate", "vote"]).nullable(),
+  })
+  .strict();
+export type TeamCheckResponse = z.infer<typeof TeamCheckResponseSchema>;
+
+/* ---------------------------------------------------------------- 1.81.0 (MOS-2): Team Launch */
+
+/** Whole base units as a string of decimal digits: no sign, no comma, no exponent — the chain holds no fraction of a unit. */
+const TeamLaunchRaw = z.string().regex(/^(0|[1-9][0-9]*)$/).max(40);
+
+/**
+ * `GET /api/v1/launch/team/plan?team=` (1.81.0, MOS-2) — what the wizard draws before anything is typed: the eight
+ * steps of spec §7.3 in their order, the TEAM-1 rights each one needs, the
+ * bounds the steps obey, and whether Team Launch is open here at all. A proven wallet is required with `team=` and
+ * welcome without it: with `team=` each step also carries that wallet's own decision, so the column marks what it may
+ * commit and what waits for the treasury, and a canary can answer `open` only to a wallet it can name.
+ * The first launch is the owner's canary on named wallets (`open: false` until then; `LAUNCH_TEAM_CLOSED` on a write).
+ */
+export const TeamLaunchPlanResponseSchema = z
+  .object({
+    /** Team Launch is served to this wallet on this deployment now. A canary names its wallets; closed is not announced. */
+    open: z.boolean(),
+    network: z.enum(["devnet", "mainnet"]),
+    /**
+     * Whether Ryntra's executor claims the market's budget on people's markets on this network now (SOL-L6). False —
+     * the fees wait in Meteora's pool, so the review's `budget.fundable` is false and no ladder is promised.
+     */
+    peopleServed: z.boolean(),
+    steps: z
+      .array(
+        z
+          .object({
+            n: z.number().int().min(1).max(TEAM_LAUNCH_STEP_KEYS.length),
+            key: z.enum(TEAM_LAUNCH_STEP_KEYS),
+            /** Every right the step needs — not the first: a step that needs two happens only when both are allowed. */
+            permissions: z.array(z.enum(TEAM_PERMISSIONS)).min(1).max(4),
+            name: z.object({ uk: z.string().min(1).max(64), en: z.string().min(1).max(64) }).strict(),
+            /** With `team=`: the server's decision for the proven wallet, right by right; absent without a team. */
+            decisions: z.array(TeamCheckResponseSchema.pick({ permission: true, allowed: true, grant: true, requires: true, refusal: true, multisig: true, squadsPermission: true })).max(4).optional(),
+          })
+          .strict(),
+      )
+      .length(TEAM_LAUNCH_STEP_KEYS.length),
+    /** The bounds the steps check, so a client never hard-codes them: the tokenomics' and the market budget's own. */
+    bounds: z
+      .object({
+        /** Shares are whole per cent of the supply and add up to this; the base units add up to the supply exactly. */
+        allocationTotalPct: z.literal(ALLOCATION_TOTAL_PCT),
+        allocationCategories: z.array(z.enum(ALLOCATION_CATEGORIES)).length(ALLOCATION_CATEGORIES.length),
+        allocationMaxDays: z.literal(ALLOCATION_MAX_DAYS),
+        budgetSources: z.array(z.enum(BUDGET_SOURCES)).length(BUDGET_SOURCES.length),
+        /** The most of the market's earned budget the ladder may hold at once, and the fall that stops new money — basis points. */
+        deployedBpsMax: z.number().int().positive(),
+        pauseOnDropBps: z.number().int().positive(),
+        feeShareMaxRecipients: z.literal(FEE_SHARE_MAX_RECIPIENTS),
+        feeShareMinBps: z.literal(FEE_SHARE_MIN_BPS),
+      })
+      .strict(),
+    /** The EXE-1 row every step of Team Launch runs through, resolved on this deployment. */
+    authority: z.object({ id: z.string().max(64), state: z.enum(HONEST_STATES), enforcement: z.enum(ENFORCEMENT_LEVELS), signer: z.enum(SIGNERS) }).strict(),
+  })
+  .strict();
+export type TeamLaunchPlanResponse = z.infer<typeof TeamLaunchPlanResponseSchema>;
+
+const TeamLaunchAllocationRowSchema = z
+  .object({
+    category: z.enum(ALLOCATION_CATEGORIES),
+    /** Whole per cent of the supply: no fraction anywhere, and the rows add up to 100. */
+    pct: z.number().int().min(1).max(ALLOCATION_TOTAL_PCT),
+    recipient: Address.nullable(),
+    cliffDays: z.number().int().min(0).max(ALLOCATION_MAX_DAYS),
+    unlockDays: z.number().int().min(0).max(ALLOCATION_MAX_DAYS),
+  })
+  .strict();
+
+const MintAuthorityChoice = z.enum(["revoked", "kept"]);
+
+/** The whole of the eight steps in one object: going back and forward loses nothing, because nothing is kept per step. */
+export const TeamLaunchDraftSchema = z
+  .object({
+    teamId: z.string().regex(/^[0-9a-f]{24}$/),
+    project: z.object({ name: z.string().max(64), summary: z.string().max(600), website: z.string().max(200), x: z.string().max(16) }).strict(),
+    token: z
+      .object({
+        name: z.string().max(32),
+        symbol: z.string().max(10),
+        decimals: z.number().int().min(0).max(9),
+        supply: z.number().int().min(1).max(1_000_000_000_000),
+        authorities: z.object({ mint: MintAuthorityChoice, freeze: MintAuthorityChoice, update: MintAuthorityChoice }).strict(),
+      })
+      .strict(),
+    allocation: z.array(TeamLaunchAllocationRowSchema).max(ALLOCATION_CATEGORIES.length),
+    curve: z
+      .object({
+        preset: z.enum(LAUNCH_PRESET_IDS),
+        /** Whole base units of the pair currency the team spends on its first purchase; `"0"` — the market opens with no trade. */
+        firstBuyQuoteRaw: TeamLaunchRaw,
+        firstBuyLockDays: z.number().int().min(0).max(ALLOCATION_MAX_DAYS),
+      })
+      .strict(),
+    liquidity: z.object({ lpLockedForEver: z.literal(true), budgetSources: z.array(z.enum(BUDGET_SOURCES)).max(BUDGET_SOURCES.length) }).strict(),
+    rights: z
+      .object({
+        /** The team's Squads multisig: step 06 and step 08 happen only through it. */
+        treasury: Address.nullable(),
+        feeShares: z.array(z.object({ address: Address, bps: z.number().int().min(FEE_SHARE_MIN_BPS).max(FEE_SHARE_TOTAL_BPS - FEE_SHARE_MIN_BPS) }).strict()).max(FEE_SHARE_MAX_RECIPIENTS - 1),
+        /** The market's rules are read after the launch, never rewritten: the Constitution is one document per market. */
+        rulesChangeable: z.literal(false),
+      })
+      .strict(),
+    automation: z
+      .object({
+        ladder: z.boolean(),
+        deployedBpsMax: z.number().int().min(1).max(FEE_SHARE_TOTAL_BPS),
+        pauseOnDropBps: z.number().int().min(1).max(FEE_SHARE_TOTAL_BPS),
+        stopByHand: z.boolean(),
+      })
+      .strict(),
+  })
+  .strict();
+export type TeamLaunchDraftBody = z.infer<typeof TeamLaunchDraftSchema>;
+
+/** `POST /api/v1/launch/team/step` (1.81.0, MOS-2) — one step of the wizard, committed by the proven wallet. */
+export const TeamLaunchStepRequestSchema = z.object({ step: z.enum(TEAM_LAUNCH_STEP_KEYS), draft: TeamLaunchDraftSchema }).strict();
+export type TeamLaunchStepRequest = z.infer<typeof TeamLaunchStepRequestSchema>;
+
+const TeamLaunchFeeLineSchema = z
+  .object({
+    /** `curve` — every trade on the curve; `graduation` — once, at the move to the DEX; `pool` — every trade after it. */
+    when: z.enum(["curve", "graduation", "pool"]),
+    key: z.string().max(48),
+    name: z.object({ uk: z.string().min(1).max(80), en: z.string().min(1).max(80) }).strict(),
+    /** Basis points of what `of` names — never summed with another row's. */
+    bps: z.number().int().min(0).max(FEE_SHARE_TOTAL_BPS),
+    party: z.enum(["creator", "team", "ryntra", "meteora", "budget", "pool", "positions"]),
+    of: z.enum(["fee", "raised", "liquidity"]),
+  })
+  .strict();
+
+/** Step 08's review: what the signature would do, before any wallet is asked. No price is promised in it. */
+export const TeamLaunchReviewSchema = z
+  .object({
+    simulation: z
+      .object({
+        preset: z.enum(LAUNCH_PRESET_IDS),
+        supplyRaw: TeamLaunchRaw,
+        circulatingRaw: TeamLaunchRaw,
+        lockedRaw: TeamLaunchRaw,
+        /** The rows as whole base units: they add up to `supplyRaw` exactly. */
+        allocation: z
+          .array(
+            TeamLaunchAllocationRowSchema.extend({ unitsRaw: TeamLaunchRaw, circulating: z.boolean() })
+              .strict(),
+          )
+          .max(ALLOCATION_CATEGORIES.length),
+        startMarketCapUsd: z.number().nonnegative(),
+        graduationMarketCapUsd: z.number().nonnegative(),
+        graduationQuote: z.number().nonnegative().nullable(),
+        firstBuyQuoteRaw: TeamLaunchRaw,
+        /** The most of the supply that first purchase may receive — the preset's own rule, in base units of the token. */
+        firstBuyCapRaw: TeamLaunchRaw,
+        sniperFee: z.object({ startBps: z.number().int(), endBps: z.number().int(), seconds: z.number().int() }).strict(),
+        exitLiquidity: z.object({ creatorPct: z.number(), ryntraPct: z.number() }).strict(),
+        /** What a day-one holder's share becomes once every lock has opened: arithmetic, not a forecast. */
+        dilutionBps: z.number().int().min(0).max(FEE_SHARE_TOTAL_BPS),
+      })
+      .strict(),
+    fees: z.array(TeamLaunchFeeLineSchema).max(32),
+    budget: z
+      .object({
+        sources: z.array(z.enum(BUDGET_SOURCES)).max(BUDGET_SOURCES.length),
+        feeShareBps: z.number().int().nullable(),
+        /** Whether anything funds this market's budget on this preset; false — the ladder does not run, whatever step 07 asked. */
+        fundable: z.boolean(),
+        deployedBpsMax: z.number().int(),
+        minStepRaw: TeamLaunchRaw,
+        maxSteps: z.number().int(),
+        pauseOnDropBps: z.number().int(),
+        ladder: z.boolean(),
+        /** The ladder is depth that can be eaten, never a floor under the price. */
+        notAFloor: z.literal(true),
+      })
+      .strict(),
+    /** The Market Constitution (MOS-1) as the steps filled it, every field with its enforcement source; null — not named yet. */
+    constitution: z
+      .array(z.object({ section: z.string().max(32), key: z.string().max(48), value: z.string().max(400).nullable(), enforcement: z.enum(CONSTITUTION_ENFORCEMENT) }).strict())
+      .max(64),
+    /** The market's chronicle as it will be written: who writes each row, and what nothing writes yet. */
+    chronicle: z
+      .array(
+        z
+          .object({ key: z.string().max(32), name: z.object({ uk: z.string().min(1).max(80), en: z.string().min(1).max(80) }).strict(), by: z.enum(["team", "venue", "executor"]), enforcement: z.enum(CONSTITUTION_ENFORCEMENT) })
+          .strict(),
+      )
+      .max(32),
+    problems: z.array(z.enum(TEAM_LAUNCH_PROBLEMS)).max(TEAM_LAUNCH_PROBLEMS.length),
+  })
+  .strict();
+export type TeamLaunchReviewBody = z.infer<typeof TeamLaunchReviewSchema>;
+
+/**
+ * The answer to a committed step: the one `actionId` the EXE-2 journal recorded for it, whether that row already held
+ * these fields (`replay` — nothing was written a second time), the decision for every right the step needed, and on
+ * step 08 the review. Nothing is built, signed or sent: `LAUNCH_TEAM_CLOSED` while the owner has not said the word.
+ */
+export const TeamLaunchStepResponseSchema = z
+  .object({
+    step: z.enum(TEAM_LAUNCH_STEP_KEYS),
+    actionId: z.string().max(64),
+    replay: z.boolean(),
+    decisions: z.array(TeamCheckResponseSchema.pick({ permission: true, allowed: true, grant: true, requires: true, refusal: true, multisig: true, squadsPermission: true })).max(4),
+    review: TeamLaunchReviewSchema.nullable(),
+  })
+  .strict();
+export type TeamLaunchStepResponse = z.infer<typeof TeamLaunchStepResponseSchema>;
+
+/* ---------------------------------------------------------------- 1.86.0 (DEV-2): the developer console */
+
+const DevProjectId = z.string().regex(DEV_PROJECT_ID);
+const DevEndpointId = z.string().regex(DEV_ENDPOINT_ID);
+const DevKeyId = z.string().regex(DEV_KEY_ID);
+const DevName = z.string().min(1).max(DEV_LIMITS.nameMax);
+const DevOrigin = z.string().min(1).max(200);
+
+const DevQuotaWindowSchema = z
+  .object({
+    window: z.enum(DEV_QUOTA_WINDOWS),
+    used: z.number().int().nonnegative(),
+    /** Null where this deployment states no number for the window: the calls are counted all the same, and nothing is refused on a guess. */
+    limit: z.number().int().positive().nullable(),
+    /** Null with no limit — what is left of a number nobody set is neither zero nor infinity. */
+    left: z.number().int().nonnegative().nullable(),
+    resetsAt: Iso,
+  })
+  .strict();
+
+/**
+ * `GET /api/v1/developer/plan` (1.86.0, DEV-2) — what the console is made of, before anything is made in it: the two
+ * environments, the scopes a credential may hold, the events an endpoint may subscribe to, the operational bounds,
+ * the quota windows with whichever numbers this deployment states, and the *shape* a tariff has. Public.
+ */
+export const DevPlanResponseSchema = z
+  .object({
+    open: z.boolean(),
+    network: TeamNetworkId.nullable(),
+    environments: z.array(z.enum(DEV_ENVIRONMENTS)).length(DEV_ENVIRONMENTS.length),
+    kinds: z
+      .array(
+        z
+          .object({
+            kind: z.enum(DEV_CREDENTIAL_KINDS),
+            /** A secret key is sent whole as `id.secret`; a public key is the id alone. */
+            sentAs: z.enum(["id.secret", "id"]),
+            /** True only for the secret key: its token is shown once, at the moment it is made, and no read ever carries it again. */
+            shownOnce: z.boolean(),
+            /** A secret key is refused outright on a request that carries an Origin; a public key answers only the origins it names. */
+            browser: z.enum(["REFUSED", "ORIGIN_BOUND"]),
+          })
+          .strict(),
+      )
+      .length(DEV_CREDENTIAL_KINDS.length),
+    scopes: z.array(z.enum(DEV_SCOPES)).length(DEV_SCOPES.length),
+    events: z.array(z.enum(DEV_WEBHOOK_EVENTS)).length(DEV_WEBHOOK_EVENTS.length),
+    limits: z
+      .object({
+        projectsPerTeam: z.number().int().positive(),
+        keysPerEnvironment: z.number().int().positive(),
+        endpointsPerProject: z.number().int().positive(),
+        originsPerKey: z.number().int().positive(),
+        rotationGraceHoursMax: z.number().int().nonnegative(),
+        webhookWindowSeconds: z.number().int().positive(),
+        deliveriesKept: z.number().int().positive(),
+        deliveryAttempts: z.number().int().positive(),
+      })
+      .strict(),
+    /** The quota this deployment enforces: a window with a null limit is counted and never refused. */
+    quota: z.array(z.object({ window: z.enum(DEV_QUOTA_WINDOWS), limit: z.number().int().positive().nullable() }).strict()).length(DEV_QUOTA_WINDOWS.length),
+    /** The signing scheme a receiver implements, stated rather than described in prose only. */
+    webhooks: z
+      .object({
+        idHeader: z.string().max(48),
+        timestampHeader: z.string().max(48),
+        signatureHeader: z.string().max(48),
+        version: z.string().max(8),
+        algorithm: z.literal("HMAC-SHA256"),
+        /** What is signed, written out: the delivery's id, its second and the exact body. */
+        signedPayload: z.literal("{id}.{timestamp}.{body}"),
+        windowSeconds: z.number().int().positive(),
+        /** The three grounds a receiver refuses on; a signature alone is not replay protection. */
+        refusals: z.array(z.string().max(32)).max(8),
+      })
+      .strict(),
+    /**
+     * The fields a tariff would have, and nothing filling them. `plans` is the ids of the tariffs this deployment
+     * states, and it is empty — that is the whole of it: a price, an included call count and a ceiling are set
+     * outside this build, so no figure of that kind is served from here. `stated: false` says so in one field.
+     */
+    pricing: z.object({ fields: z.array(z.enum(DEV_PLAN_FIELDS)).length(DEV_PLAN_FIELDS.length), plans: z.array(z.string().max(32)).max(0), stated: z.literal(false) }).strict(),
+    /** The key header a route reads; never `Authorization`, which is the wallet's. */
+    keyHeader: z.string().max(32),
+  })
+  .strict();
+export type DevPlanResponse = z.infer<typeof DevPlanResponseSchema>;
+
+const DevKeySchema = z
+  .object({
+    id: DevKeyId,
+    environment: z.enum(DEV_ENVIRONMENTS),
+    kind: z.enum(DEV_CREDENTIAL_KINDS),
+    name: DevName,
+    scopes: z.array(z.enum(DEV_SCOPES)).min(1).max(DEV_SCOPES.length),
+    origins: z.array(DevOrigin).max(DEV_LIMITS.originsPerKey),
+    state: z.enum(DEV_KEY_STATES),
+    createdAt: Iso,
+    createdBy: Address,
+    lastUsedAt: Iso.nullable(),
+    /** When a rotating key stops answering; null for one that is not rotating. */
+    expiresAt: Iso.nullable(),
+    revokedAt: Iso.nullable(),
+    rotatedTo: DevKeyId.nullable(),
+  })
+  .strict();
+
+const DevEndpointSchema = z
+  .object({
+    id: DevEndpointId,
+    environment: z.enum(DEV_ENVIRONMENTS),
+    url: z.string().max(DEV_LIMITS.urlMax),
+    events: z.array(z.enum(DEV_WEBHOOK_EVENTS)).min(1),
+    enabled: z.boolean(),
+    createdAt: Iso,
+    createdBy: Address,
+    /** A rotation is in flight until this moment: the old secret signs beside the new one. Null otherwise. */
+    previousUntil: Iso.nullable(),
+  })
+  .strict();
+
+const DevDeliverySchema = z
+  .object({
+    id: z.string().regex(DEV_DELIVERY_ID),
+    endpointId: DevEndpointId,
+    event: z.enum(DEV_WEBHOOK_EVENTS),
+    at: Iso,
+    state: z.enum(["DELIVERED", "FAILED"]),
+    attempts: z.number().int().positive(),
+    status: z.number().int().nullable(),
+    error: z.string().max(200).nullable(),
+  })
+  .strict();
+
+const DevProjectSchema = z
+  .object({
+    id: DevProjectId,
+    teamId: z.string().regex(/^[0-9a-f]{24}$/),
+    network: TeamNetworkId,
+    name: DevName,
+    createdAt: Iso,
+    createdBy: Address,
+    version: z.number().int().nonnegative(),
+    keys: z.array(DevKeySchema).max(64),
+    endpoints: z.array(DevEndpointSchema).max(DEV_LIMITS.endpointsPerProject),
+    usage: z.array(z.object({ environment: z.enum(DEV_ENVIRONMENTS), windows: z.array(DevQuotaWindowSchema).length(DEV_QUOTA_WINDOWS.length) }).strict()).length(DEV_ENVIRONMENTS.length),
+    /** What the reading wallet may do here — each one the team's own answer (TEAM-1), asked of the server, not guessed from the role. */
+    you: z.object({ role: z.enum(TEAM_ROLES).nullable(), may: z.record(z.enum(DEV_ACTIONS), z.boolean()) }).strict(),
+  })
+  .strict();
+
+/** `GET /api/v1/developer/projects/{id}` and every console write (1.86.0) — the project as the proven wallet may read it. */
+export const DevProjectResponseSchema = z.object({ project: DevProjectSchema }).strict();
+export type DevProjectResponse = z.infer<typeof DevProjectResponseSchema>;
+
+/** `GET /api/v1/developer/projects?team=` (1.86.0) — the team's projects on this network. */
+export const DevProjectsResponseSchema = z
+  .object({
+    network: TeamNetworkId,
+    projects: z.array(z.object({ id: DevProjectId, name: DevName, createdAt: Iso, keys: z.number().int().nonnegative(), endpoints: z.number().int().nonnegative() }).strict()).max(DEV_LIMITS.projectsPerTeam),
+  })
+  .strict();
+export type DevProjectsResponse = z.infer<typeof DevProjectsResponseSchema>;
+
+/** `POST /api/v1/developer/projects` (1.86.0) — a project for a team the proven wallet may draft in. */
+export const DevProjectCreateRequestSchema = z.object({ team: z.string().regex(/^[0-9a-f]{24}$/), name: DevName }).strict();
+export type DevProjectCreateRequest = z.infer<typeof DevProjectCreateRequestSchema>;
+
+/** `POST /api/v1/developer/projects/{id}/keys` (1.86.0) — a credential. A SECRET key names no origin; a PUBLIC key names at least one. */
+export const DevKeyIssueRequestSchema = z
+  .object({
+    environment: z.enum(DEV_ENVIRONMENTS),
+    kind: z.enum(DEV_CREDENTIAL_KINDS),
+    name: DevName,
+    scopes: z.array(z.enum(DEV_SCOPES)).min(1).max(DEV_SCOPES.length),
+    origins: z.array(DevOrigin).max(DEV_LIMITS.originsPerKey).optional(),
+  })
+  .strict();
+export type DevKeyIssueRequest = z.infer<typeof DevKeyIssueRequestSchema>;
+
+/**
+ * The answer to issuing or rotating a credential (1.86.0): the project as it now stands, and the token — **once**. A
+ * secret key's `secret` is here and nowhere else, ever; a public key's is null, because a public key has none. There
+ * is no route that returns it a second time, and no field on a key that could carry it.
+ */
+export const DevKeyIssuedResponseSchema = z
+  .object({ project: DevProjectSchema, issued: z.object({ key: DevKeySchema, secret: z.string().min(1).max(200).nullable(), shownOnce: z.literal(true) }).strict() })
+  .strict();
+export type DevKeyIssuedResponse = z.infer<typeof DevKeyIssuedResponseSchema>;
+
+/** `POST /api/v1/developer/projects/{id}/keys/{keyId}` (1.86.0) — rotate (a successor, the old one on a clock), revoke, or change the bounds. */
+export const DevKeyActionRequestSchema = z.discriminatedUnion("action", [
+  z.object({ action: z.literal("rotate"), graceHours: z.number().int().min(0).max(DEV_LIMITS.rotationGraceHoursMax) }).strict(),
+  z.object({ action: z.literal("revoke") }).strict(),
+  z.object({ action: z.literal("change"), scopes: z.array(z.enum(DEV_SCOPES)).min(1).max(DEV_SCOPES.length).optional(), origins: z.array(DevOrigin).max(DEV_LIMITS.originsPerKey).optional() }).strict(),
+]);
+export type DevKeyActionRequest = z.infer<typeof DevKeyActionRequestSchema>;
+
+/** `POST /api/v1/developer/projects/{id}/endpoints` (1.86.0) — where deliveries go. Made off, and its signing secret shown once. */
+export const DevEndpointCreateRequestSchema = z.object({ environment: z.enum(DEV_ENVIRONMENTS), url: z.string().min(1).max(DEV_LIMITS.urlMax), events: z.array(z.enum(DEV_WEBHOOK_EVENTS)).min(1) }).strict();
+export type DevEndpointCreateRequest = z.infer<typeof DevEndpointCreateRequestSchema>;
+
+export const DevEndpointCreatedResponseSchema = z.object({ project: DevProjectSchema, endpoint: DevEndpointSchema, secret: z.string().min(1).max(200), shownOnce: z.literal(true) }).strict();
+export type DevEndpointCreatedResponse = z.infer<typeof DevEndpointCreatedResponseSchema>;
+
+/**
+ * `POST /api/v1/developer/projects/{id}/endpoints/{endpointId}` (1.86.0) — turning it on or off, the events it takes,
+ * a new signing secret (the old one signs beside it for one window), removing it, a test delivery, and `verify` —
+ * Ryntra's own check of a delivery a receiver got, which is where the replay guard lives.
+ */
+export const DevEndpointActionRequestSchema = z.discriminatedUnion("action", [
+  z.object({ action: z.literal("enable") }).strict(),
+  z.object({ action: z.literal("disable") }).strict(),
+  z.object({ action: z.literal("events"), events: z.array(z.enum(DEV_WEBHOOK_EVENTS)).min(1) }).strict(),
+  z.object({ action: z.literal("rotateSecret") }).strict(),
+  z.object({ action: z.literal("remove") }).strict(),
+  z.object({ action: z.literal("test") }).strict(),
+  z.object({ action: z.literal("verify"), body: z.string().max(8_192), headers: z.record(z.string().max(64), z.string().max(512)) }).strict(),
+]);
+export type DevEndpointActionRequest = z.infer<typeof DevEndpointActionRequestSchema>;
+
+export const DevEndpointActionResponseSchema = z
+  .object({
+    /** Null when the endpoint was removed and there is nothing left to show. */
+    project: DevProjectSchema,
+    /** A new signing secret, shown once, only after `rotateSecret`; null otherwise. */
+    secret: z.string().min(1).max(200).nullable(),
+    /** What a `test` actually sent and what came back; null for every other action. */
+    delivery: DevDeliverySchema.nullable(),
+    /**
+     * What `verify` decided. `verified: false` with `refusal: "REPLAYED"` is the point of the whole scheme: the
+     * signature was right and the bytes were Ryntra's, and it is refused anyway because this delivery's id has
+     * already been verified for this endpoint.
+     */
+    verification: z.object({ verified: z.boolean(), refusal: z.enum(["MALFORMED", "TIMESTAMP_OUTSIDE_WINDOW", "SIGNATURE_INVALID", "REPLAYED"]).nullable(), deliveryId: z.string().regex(DEV_DELIVERY_ID).nullable() }).strict().nullable(),
+  })
+  .strict();
+export type DevEndpointActionResponse = z.infer<typeof DevEndpointActionResponseSchema>;
+
+/** `GET /api/v1/developer/projects/{id}/deliveries` (1.86.0) — what was sent and what came back, newest first. The right it needs is `receipts`. */
+export const DevDeliveriesResponseSchema = z.object({ deliveries: z.array(DevDeliverySchema).max(DEV_LIMITS.deliveriesKept) }).strict();
+export type DevDeliveriesResponse = z.infer<typeof DevDeliveriesResponseSchema>;
+
+/**
+ * `GET /api/v1/developer/key` (1.86.0) — the credential as the server reads it, for the credential itself: sent in
+ * `X-Ryntra-Key`, never `Authorization`. The answer never carries a secret, because the server holds only a hash of
+ * one.
+ */
+export const DevKeyResponseSchema = z
+  .object({
+    key: z.object({ id: DevKeyId, environment: z.enum(DEV_ENVIRONMENTS), kind: z.enum(DEV_CREDENTIAL_KINDS), name: DevName, scopes: z.array(z.enum(DEV_SCOPES)).min(1), origins: z.array(DevOrigin).max(DEV_LIMITS.originsPerKey), state: z.enum(DEV_KEY_STATES) }).strict(),
+    project: z.object({ id: DevProjectId, name: DevName }).strict(),
+    quota: z.array(DevQuotaWindowSchema).length(DEV_QUOTA_WINDOWS.length),
+  })
+  .strict();
+export type DevKeyResponse = z.infer<typeof DevKeyResponseSchema>;
+
+/** `GET /api/v1/developer/usage` (1.86.0) — what the key's own project has spent of its environment's windows, and what is left. Scope `read:usage`. */
+export const DevUsageResponseSchema = z.object({ project: z.object({ id: DevProjectId, name: DevName }).strict(), environment: z.enum(DEV_ENVIRONMENTS), windows: z.array(DevQuotaWindowSchema).length(DEV_QUOTA_WINDOWS.length) }).strict();
+export type DevUsageResponse = z.infer<typeof DevUsageResponseSchema>;
+
+/** `GET /api/v1/developer/events` (1.86.0) — the key's own project's delivery log. Scope `read:events`. */
+export const DevEventsResponseSchema = z.object({ deliveries: z.array(DevDeliverySchema).max(DEV_LIMITS.deliveriesKept) }).strict();
+export type DevEventsResponse = z.infer<typeof DevEventsResponseSchema>;

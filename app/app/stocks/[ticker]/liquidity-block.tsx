@@ -8,8 +8,10 @@ import { isMeaningful, isMoneyLikeOrStock, LISTED_TVL_USD, MEANINGFUL_TVL_USD, P
 import { readStockLiquidity } from "@/lib/liquidity/service.server";
 import { readStockUniverse } from "@/lib/stocks/universe.server";
 
-import { clockOf } from "../stock-model";
+import { clockOf, dexName } from "../stock-model";
 import styles from "../stocks.module.css";
+import { pathDay } from "./company-path-words";
+import { sayablePoolName, withoutOffensivePools } from "./pool-names";
 
 /**
  * Where the token actually trades, at rest one calm line: the primary Meteora
@@ -72,6 +74,7 @@ const WORDS = {
   noPrimary: { en: "No pool above $1,000 quotes this token in a stablecoin, SOL or another stock; the pools below price other tokens in it.", uk: "Жоден пул понад $1 000 не котирує цей токен у стейблкоїні, SOL чи іншій акції; пули нижче оцінюють у ньому інші токени." },
   partial: { en: "did not answer — its pools may be missing", uk: "не відповів — його пулів може бракувати" },
   stale: { en: "stale, from", uk: "застаріле, з" },
+  staleBare: { en: "stale", uk: "застаріле" },
   read: { en: "read", uk: "прочитано" },
   source: { en: "Source", uk: "Джерело" },
 } as const;
@@ -136,7 +139,10 @@ export async function LiquidityBlock({ mint, symbol, locale, routePool, defaultO
 }
 
 /** The card from a read; pure, so the stand and the tests can draw any state. */
-export function LiquidityView({ liquidity, symbol, locale, routePool = null, defaultOpen = false }: { liquidity: StockLiquidity; symbol: string; locale: WorkspaceLocale; routePool?: RoutePool | null; defaultOpen?: boolean }) {
+export function LiquidityView({ liquidity: read, symbol, locale, routePool: routeRead = null, defaultOpen = false }: { liquidity: StockLiquidity; symbol: string; locale: WorkspaceLocale; routePool?: RoutePool | null; defaultOpen?: boolean }) {
+  const liquidity = withoutOffensivePools(read);
+  /* The deeper pool elsewhere keeps its venue and its value; its name is said only when it may be. */
+  const routePool = routeRead ? { ...routeRead, name: sayablePoolName(routeRead.name) ?? "" } : null;
   const w = wordsFor(locale);
   const lang: Lang = locale === "uk" ? "uk" : "en";
   const usd = usdOf(lang);
@@ -156,8 +162,11 @@ export function LiquidityView({ liquidity, symbol, locale, routePool = null, def
     : (["dlmm", "damm-v2"] as const)
         .map((kind) => {
           const source = liquidity.sources[kind];
-          if (!source.ok) return `${POOL_KIND_LABEL[kind]} ${w("partial")}`;
-          if (source.stale) return `${POOL_KIND_LABEL[kind]} ${w("stale")} ${clockOf(source.fetchedAt, locale) ?? "—"} UTC`;
+          if (!source.ok) return `Meteora ${POOL_KIND_LABEL[kind]} ${w("partial")}`;
+          if (source.stale) {
+            const at = clockOf(source.fetchedAt, locale);
+            return at ? `Meteora ${POOL_KIND_LABEL[kind]} ${w("stale")} ${at} UTC` : `Meteora ${POOL_KIND_LABEL[kind]} ${w("staleBare")}`;
+          }
           return null;
         })
         .filter((note): note is string => note !== null);
@@ -251,7 +260,7 @@ export function LiquidityView({ liquidity, symbol, locale, routePool = null, def
           ) : null}
           {elsewhere ? (
             <p className={styles.liqHolds} data-testid="liquidity-elsewhere">
-              <b>{w("elsewhere")}:</b> {w("routeSees")} <span translate="no">{elsewhere.name}</span> {w("onVenue")} <span translate="no">{elsewhere.dex}</span> {w("withReserve")} <span translate="no">{usd(elsewhere.reserveUsd)}</span> — {w("routeSource")}.
+              <b>{w("elsewhere")}:</b> {w("routeSees")} {elsewhere.name ? <><span translate="no">{elsewhere.name}</span>{" "}</> : null}{w("onVenue")} <span translate="no">{elsewhere.dex ? dexName(elsewhere.dex) : null}</span> {w("withReserve")} <span translate="no">{usd(elsewhere.reserveUsd)}</span> — {w("routeSource")}.
             </p>
           ) : null}
           {/* Where the figures come from, and what they are and are not — one press on the `?`, never a paragraph on the card. */}
@@ -270,7 +279,7 @@ export function LiquidityView({ liquidity, symbol, locale, routePool = null, def
 
 function PrimaryPool({ pool, w, usd, numberLocale }: { pool: LiquidityPool; w: (word: Word) => string; usd: Usd; numberLocale: string }) {
   const holds = [amount(pool.stockAmount, pool.stock.symbol, numberLocale), amount(pool.counterAmount, pool.counter.symbol, numberLocale)].filter((part): part is string => part !== null);
-  const created = pool.createdAt ? pool.createdAt.slice(0, 10) : null;
+  const created = pool.createdAt && Number.isFinite(Date.parse(pool.createdAt)) ? pathDay(pool.createdAt, numberLocale === "uk-UA" ? "uk" : "en") : null;
   const fee = feeText(pool, w, numberLocale);
   return (
     <div className={styles.liqPrimary} data-testid="liquidity-primary">

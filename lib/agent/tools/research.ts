@@ -63,8 +63,12 @@ export function marketRun(market: SpotMarket, observedAt: string, stale: boolean
   const figures = [price, change, liquidity, volume, marketCap, holders, verified];
   const card: AgentCard = { kind: "market", mint: market.mint, symbol: market.symbol, name: market.name.slice(0, 128), category: market.category, verified: market.verified, figures, cite: cite.id, href: marketHref(market) };
   const when = whenText(at, locale);
+  const stateWord = state === "current" ? "актуально" : state === "stale" ? "застаріло" : "невідомо";
   const notes: ToolNote[] = [
-    note("observation", w(locale, `${market.symbol} (${market.name}) is ${category} on the Spot catalogue; price ${price.value}, 24h change ${change.value}, liquidity ${liquidity.value}, 24h volume ${volume.value} — observed ${when}, ${state}.`, `${market.symbol} (${market.name}) — ${category} у каталозі Spot; ціна ${price.value}, зміна за 24 год ${change.value}, ліквідність ${liquidity.value}, обсяг за 24 год ${volume.value} — спостережено ${when}, ${state === "current" ? "актуально" : state === "stale" ? "застаріло" : "невідомо"}.`), [cite.id]),
+    {
+      ...note("observation", w(locale, `${market.symbol} (${market.name}) is ${category} on the Spot catalogue; price ${price.value}, 24h change ${change.value}, liquidity ${liquidity.value}, 24h volume ${volume.value} — observed ${when}, ${state}.`, `${market.symbol} (${market.name}) — ${category} у каталозі Spot; ціна ${price.value}, зміна за 24 год ${change.value}, ліквідність ${liquidity.value}, обсяг за 24 год ${volume.value} — спостережено ${when}, ${stateWord}.`), [cite.id]),
+      withoutMove: w(locale, `${market.symbol} (${market.name}) is ${category} on the Spot catalogue; price ${price.value}, liquidity ${liquidity.value}, 24h volume ${volume.value} — observed ${when}, ${state}.`, `${market.symbol} (${market.name}) — ${category} у каталозі Spot; ціна ${price.value}, ліквідність ${liquidity.value}, обсяг за 24 год ${volume.value} — спостережено ${when}, ${stateWord}.`).slice(0, 400),
+    },
   ];
   if (!market.verified) notes.push(note("risks", w(locale, `${market.symbol} is not on Jupiter's verified list: a copy can borrow a name, and no plan can name an unverified token.`, `${market.symbol} не у верифікованому списку Jupiter: копія може позичити назву, і план не може назвати неверифікований токен.`), [cite.id]));
   if (market.audit.suspicious) notes.push(note("risks", w(locale, `The venue's own audit flags ${market.symbol} as suspicious.`, `Власний аудит майданчика позначає ${market.symbol} як підозрілий.`), [cite.id]));
@@ -172,37 +176,147 @@ function metricLabel(id: EvidenceMetricId, locale: Locale): string {
   return definition ? (locale === "uk" ? definition.words.uk.label : definition.words.en.label) : id;
 }
 
+/**
+ * AI-21 (the phone's request 71): why an observation is missing, in the
+ * person's words. The evidence layer says it as the provider's transport did
+ * — «The request was refused (422).», «The provider answered 503.» — and
+ * that sentence reached a person inside the Critic's finding, in English
+ * under Ukrainian words. The card, the note, the Brief and the Critic all
+ * say it through this: what kind of failure it was, never its code or the
+ * transport's words.
+ */
+export function evidenceReasonWords(reason: string | null, locale: Locale): string | null {
+  if (!reason) return null;
+  const kept = /last (observation|check) held/i.test(reason);
+  const kind =
+    /not configured|refused the key/i.test(reason)
+      ? w(locale, "the source is not connected here", "джерело тут не під'єднане")
+      : /budget is configured|ledger could not/i.test(reason)
+        ? w(locale, "the source is not available here right now", "джерело тут зараз недоступне")
+        : /budget for today/i.test(reason)
+          ? w(locale, "the source's allowance for today is used up", "ліміт джерела на сьогодні вичерпано")
+          : /credits left|payment|plan does not include|ceiling/i.test(reason)
+            ? w(locale, "the source's allowance is used up", "ліміт джерела вичерпано")
+            : /rate limit|\bbusy\b/i.test(reason)
+              ? w(locale, "the source is busy right now", "джерело зараз перевантажене")
+              : /region/i.test(reason)
+                ? w(locale, "the source does not serve this region", "джерело не обслуговує цей регіон")
+                : /not a token address|kind of address/i.test(reason)
+                  ? w(locale, "the source does not read this kind of address", "джерело не читає такої адреси")
+                  : /past its .* expiry/i.test(reason)
+                    ? w(locale, "the observation is out of date; a fresh read is needed", "спостереження вже застаріле; потрібне нове читання")
+                    : /another source than/i.test(reason)
+                      ? w(locale, "the observation is from another source than the rule needs", "спостереження з іншого джерела, ніж потрібне правилу")
+                      : /the observation is for/i.test(reason)
+                        ? w(locale, "the observation is for another window than the rule's", "спостереження за інше вікно, ніж у правилі")
+                        : /not one the evidence layer serves/i.test(reason)
+                          ? w(locale, "the evidence layer does not serve this figure", "шар доказів не дає цієї цифри")
+                  : /no data|no such subject|no such market|answered without|not analyse|cannot analyse|no point-in-time|point-in-time figures only|rolling window/i.test(reason)
+                    ? w(locale, "the source has no figures for this token", "джерело не має цифр для цього токена")
+                    : /refused/i.test(reason)
+                      ? w(locale, "the source declined this request", "джерело відхилило цей запит")
+                      : w(locale, "the source did not answer", "джерело не відповіло");
+  return kept ? w(locale, `${kind}; this is the last observation held`, `${kind}; це останнє збережене спостереження`) : kind;
+}
+
+/** An evidence window as a person says it: «now» is a moment, never «over now»; «24h» is «24 год» in Ukrainian (AI-21). */
+export function windowWords(window: string): readonly [string, string] {
+  if (window === "now") return ["at this moment", "на цей момент"];
+  if (window === "24h") return ["over 24 h", "за 24 год"];
+  if (window === "7d") return ["over 7 days", "за 7 днів"];
+  return [`over ${window}`, `за ${window}`];
+}
+
+/** A status code after a transport's words, or a transport's sentence — what a person never reads (AI-21). */
+const TRANSPORT = /\b(?:refused|answered|HTTP)\s*\(?\s*\d{3}\b|request was refused|refused the key|request failed|status code/i;
+/** A sentence the evidence layer writes about its source or its observation — English, whatever the reader's language. */
+const EVIDENCE_SENTENCE = /^(?:The provider|The request|Request failed|The source|This source|No (?:credit|usage) budget|The credit|The usage|No provider key|This is the last (?:observation|check) held|The observation (?:asked|is for|is from)|The metric is not one)\b/;
+/** Where a transport's words begin inside a sentence of the note's own. */
+const TRANSPORT_START = /(?:[—–-]\s*)?(?:The provider|The request|Request failed|HTTP)\b/;
+
+/**
+ * Words written elsewhere — a Monitoring note's reason, which repeats the
+ * evidence layer's — repeated to a person without the evidence layer's own
+ * sentences in them: those are said as `evidenceReasonWords` says them, in the
+ * reader's language (AI-21). The note's own words and figures stay.
+ */
+export function withoutTransport(text: string, locale: Locale): string {
+  const parts = text.split(/(?<=[.!?…])\s+/u);
+  const out: string[] = [];
+  let run: string[] = [];
+  const flush = () => {
+    if (run.length === 0) return;
+    const words = evidenceReasonWords(run.join(" "), locale) ?? "";
+    out.push(`${words.charAt(0).toUpperCase()}${words.slice(1)}.`);
+    run = [];
+  };
+  for (const part of parts) {
+    const at = EVIDENCE_SENTENCE.test(part) ? -1 : TRANSPORT.test(part) ? part.search(TRANSPORT_START) : null;
+    if (at === -1 || at === 0) run.push(part);
+    else if (at !== null && at > 0) {
+      /* The note's own clause stays; only the transport's words after it are said as words. */
+      flush();
+      const words = evidenceReasonWords(part.slice(at).replace(/^[—–-]\s*/, ""), locale) ?? "";
+      out.push(`${part.slice(0, at).trimEnd()} — ${words}.`);
+    } else {
+      flush();
+      out.push(part);
+    }
+  }
+  flush();
+  return out.join(" ");
+}
+
 export function evidenceRun(read: MarketEvidenceRead, input: z.output<typeof EvidenceInput>, ctx: ToolContext): ToolRun {
   const locale = ctx.locale;
   const provider = input.provider ?? (input.window === "now" ? "ddxyz" : "nansen");
   const rights = providerRights(provider);
   const symbol = input.symbol ?? read.snapshot?.subject.symbol ?? input.mint.slice(0, 6);
   const href = `/app/assets/${input.mint}`;
+  const reasonWords = evidenceReasonWords(read.reason, locale);
+  const span = windowWords(input.window);
   if (!read.snapshot) {
     const state = read.state === "UNKNOWN" ? "unknown" : "unavailable";
     const cite = ctx.citations.add({ tool: "evidence_read", source: rights.attribution.text, observedAt: null, state, ref: `${provider}:${input.window}`, href });
-    const card: AgentCard = { kind: "evidence", mint: input.mint, provider, window: input.window, state: read.state, reason: read.reason, figures: [], attribution: rights.attribution, cite: cite.id, href };
-    const reason = read.reason ?? "";
+    const card: AgentCard = { kind: "evidence", mint: input.mint, provider, window: input.window, state: read.state, reason: reasonWords, figures: [], attribution: rights.attribution, cite: cite.id, href };
+    const reason = reasonWords ?? w(locale, "the source did not answer", "джерело не відповіло");
     const notes: ToolNote[] = [
-      note("risks", read.state === "UNKNOWN" ? w(locale, `${rights.attribution.text} covers no observation for ${symbol} over ${input.window}: not enough data, not a clean bill.`, `${rights.attribution.text} не має спостереження для ${symbol} за ${input.window}: даних недостатньо, і це не чиста довідка.`) : w(locale, `The ${input.window} observation from ${rights.attribution.text} is unavailable (${reason}); nothing here is a zero.`, `Спостереження за ${input.window} від ${rights.attribution.text} недоступне (${reason}); ніщо тут не є нулем.`), [cite.id]),
+      note("risks", read.state === "UNKNOWN" ? w(locale, `${rights.attribution.text} covers no observation for ${symbol} ${span[0]}: not enough data, not a clean bill.`, `${rights.attribution.text} не має спостереження для ${symbol} ${span[1]}: даних недостатньо, і це не чиста довідка.`) : w(locale, `The observation ${span[0]} from ${rights.attribution.text} is unavailable (${reason}); nothing here is a zero.`, `Спостереження ${span[1]} від ${rights.attribution.text} недоступне (${reason}); ніщо тут не є нулем.`), [cite.id]),
     ];
     return { tool: "evidence_read", kind: "research", outcome: read.state === "UNKNOWN" ? "empty" : "unavailable", state, facts: [], notes, cards: [card], handoffs: [], draft: null };
   }
   const snapshot = read.snapshot;
   const state = read.state === "FRESH" ? "current" : "stale";
   const cite = ctx.citations.add({ tool: "evidence_read", source: `${rights.attribution.text} · ${input.window}`, observedAt: snapshot.observedAt ?? snapshot.fetchedAt, state, ref: `${provider}:${snapshot.subject.mint}:${input.window}:${snapshot.fetchedAt}`, href });
-  const figures: AgentFigure[] = snapshot.metrics.slice(0, 16).map((metric) => {
+  /*
+   * AI-03: a figure the source does not cover for this token is left out and
+   * named once, not drawn as a card of «unavailable» cells — Nansen's
+   * screener covers no wrapped SOL, and four empty cells were what a person
+   * saw beside «why is SOL moving?». Nothing is zero; the gap is said.
+   */
+  const answered = snapshot.metrics.filter((metric) => metric.value !== null);
+  const absent = snapshot.metrics.filter((metric) => metric.value === null);
+  if (answered.length === 0) {
+    const cite = ctx.citations.add({ tool: "evidence_read", source: `${rights.attribution.text} · ${input.window}`, observedAt: snapshot.observedAt ?? snapshot.fetchedAt, state: "unknown", ref: `${provider}:${input.mint}:${input.window}`, href });
+    const card: AgentCard = { kind: "evidence", mint: input.mint, provider, window: input.window, state: "UNKNOWN", reason: reasonWords, figures: [], attribution: snapshot.attribution, cite: cite.id, href };
+    return { tool: "evidence_read", kind: "research", outcome: "empty", state: "unknown", facts: [], notes: [note("risks", w(locale, `${rights.attribution.text} covers none of its figures for ${symbol} ${span[0]}: not enough data, not a clean bill.`, `${rights.attribution.text} не покриває жодної своєї цифри для ${symbol} ${span[1]}: даних недостатньо, і це не чиста довідка.`), [cite.id])], cards: [card], handoffs: [], draft: null };
+  }
+  const figures: AgentFigure[] = answered.slice(0, 16).map((metric) => {
     const definition = EVIDENCE_METRICS.find((entry) => entry.id === metric.id);
     const kind = metric.unit === "usd" ? "usdCompact" : metric.unit === "percent" ? (definition?.sign === "signed" ? "pct" : "text") : metric.unit === "flag" ? "text" : "count";
     const text = metric.unit === "flag" ? (metric.value === null ? undefined : metric.value >= 1 ? w(locale, "present", "є") : w(locale, "renounced", "відкликано")) : metric.unit === "percent" && definition?.sign !== "signed" && metric.value !== null ? pctText(metric.value, locale).replace(/^\+/, "") : undefined;
     return figure({ label: metricLabel(metric.id, locale), number: metric.value, kind, text, unit: metric.unit === "usd" ? "USD" : metric.unit === "percent" ? "%" : null, state: metric.value === null ? "unavailable" : state, cite: cite.id }, locale);
   });
-  const card: AgentCard = { kind: "evidence", mint: input.mint, provider, window: input.window, state: read.state, reason: read.reason, figures, attribution: snapshot.attribution, cite: cite.id, href };
-  const facts = snapshot.metrics.slice(0, 16).map((metric, i) => fact(figures[i], `evidence.${metric.id}`));
-  const said = figures.filter((f) => f.state !== "unavailable").slice(0, 5).map((f) => `${f.label.toLowerCase()} ${f.value}`).join(", ");
+  const card: AgentCard = { kind: "evidence", mint: input.mint, provider, window: input.window, state: read.state, reason: reasonWords, figures, attribution: snapshot.attribution, cite: cite.id, href };
+  const facts = answered.slice(0, 16).map((metric, i) => fact(figures[i], `evidence.${metric.id}`));
+  const said = figures.slice(0, 5).map((f) => `${f.label.toLowerCase()} ${f.value}`).join(", ");
   const notes: ToolNote[] = [
-    note("observation", w(locale, `${rights.attribution.text} over ${input.window} for ${symbol}: ${said || "no figure answered"} — observed ${whenText(snapshot.observedAt ?? snapshot.fetchedAt, locale)}, ${state}.`, `${rights.attribution.text} за ${input.window} для ${symbol}: ${said || "жодна цифра не відповіла"} — спостережено ${whenText(snapshot.observedAt ?? snapshot.fetchedAt, locale)}, ${state === "current" ? "актуально" : "застаріло"}.`), [cite.id]),
+    note("observation", w(locale, `${rights.attribution.text} ${span[0]} for ${symbol}: ${said} — observed ${whenText(snapshot.observedAt ?? snapshot.fetchedAt, locale)}, ${state}.`, `${rights.attribution.text} ${span[1]} для ${symbol}: ${said} — спостережено ${whenText(snapshot.observedAt ?? snapshot.fetchedAt, locale)}, ${state === "current" ? "актуально" : "застаріло"}.`), [cite.id]),
   ];
+  if (absent.length > 0) {
+    const gaps = absent.slice(0, 6).map((metric) => metricLabel(metric.id, locale).toLowerCase()).join(", ");
+    notes.push(note("risks", w(locale, `${rights.attribution.text} does not cover ${gaps} for ${symbol} ${span[0]}; those are left out, not zero.`, `${rights.attribution.text} не покриває для ${symbol} ${span[1]}: ${gaps}; їх не показано, і це не нуль.`), [cite.id]));
+  }
   const byId = new Map(snapshot.metrics.map((metric) => [metric.id, metric.value] as const));
   const top10 = byId.get("top10_holder_share_pct") ?? null;
   if (top10 !== null && top10 >= 50) notes.push(note("risks", w(locale, `The top ten holders hold ${pctText(top10, locale).replace("+", "")} of ${symbol}: a few wallets can move the price.`, `Десять найбільших тримачів тримають ${pctText(top10, locale).replace("+", "")} ${symbol}: кілька гаманців можуть зрушити ціну.`), [cite.id]));
@@ -215,10 +329,10 @@ export function evidenceRun(read: MarketEvidenceRead, input: z.output<typeof Evi
   const sniper = byId.get("sniper_holding_pct") ?? null;
   if (sniper !== null && sniper >= 10) notes.push(note("risks", w(locale, `Wallets the source labels as snipers hold ${pctText(sniper, locale).replace("+", "")} — a label, advisory only.`, `Гаманці, які джерело позначає як снайперів, тримають ${pctText(sniper, locale).replace("+", "")} — мітка, лише дорадчо.`), [cite.id]));
   const whales = byId.get("whale_net_flow_usd") ?? null;
-  if (whales !== null && whales !== 0) notes.push(note("meaning", w(locale, `Whale net flow over ${input.window} is ${usdCompactText(whales, locale)}: ${whales > 0 ? "large wallets bought more than they sold" : "large wallets sold more than they bought"} — a cohort figure, not a forecast.`, `Чистий потік китів за ${input.window} — ${usdCompactText(whales, locale)}: ${whales > 0 ? "великі гаманці купили більше, ніж продали" : "великі гаманці продали більше, ніж купили"} — цифра когорти, не прогноз.`), [cite.id]));
+  if (whales !== null && whales !== 0) notes.push(note("meaning", w(locale, `Whale net flow ${span[0]} is ${usdCompactText(whales, locale)}: ${whales > 0 ? "large wallets bought more than they sold" : "large wallets sold more than they bought"} — a cohort figure, not a forecast.`, `Чистий потік китів ${span[1]} — ${usdCompactText(whales, locale)}: ${whales > 0 ? "великі гаманці купили більше, ніж продали" : "великі гаманці продали більше, ніж купили"} — цифра когорти, не прогноз.`), [cite.id]));
   const netVolume = byId.get("dex_net_volume_usd") ?? null;
-  if (netVolume !== null) notes.push(note("meaning", w(locale, `DEX net volume over ${input.window} is ${usdCompactText(netVolume, locale)} (${netVolume >= 0 ? "more buying than selling" : "more selling than buying"} by volume).`, `Чистий обсяг DEX за ${input.window} — ${usdCompactText(netVolume, locale)} (${netVolume >= 0 ? "купівлі більше, ніж продажу" : "продажу більше, ніж купівлі"} за обсягом).`), [cite.id]));
-  if (state === "stale") notes.push(note("risks", w(locale, `This observation is stale (${read.reason ?? "past the provider's own rule"}); a condition on it would block until a fresh one.`, `Це спостереження застаріле (${read.reason ?? "поза власним правилом провайдера"}); умова на ньому блокувала б до свіжого.`), [cite.id]));
+  if (netVolume !== null) notes.push(note("meaning", w(locale, `DEX net volume ${span[0]} is ${usdCompactText(netVolume, locale)} (${netVolume >= 0 ? "more buying than selling" : "more selling than buying"} by volume).`, `Чистий обсяг DEX ${span[1]} — ${usdCompactText(netVolume, locale)} (${netVolume >= 0 ? "купівлі більше, ніж продажу" : "продажу більше, ніж купівлі"} за обсягом).`), [cite.id]));
+  if (state === "stale") notes.push(note("risks", w(locale, `This observation is stale (${reasonWords ?? "past the provider's own rule"}); a condition on it would block until a fresh one.`, `Це спостереження застаріле (${reasonWords ?? "поза власним правилом провайдера"}); умова на ньому блокувала б до свіжого.`), [cite.id]));
   notes.push(note("counter", w(locale, `Evidence describes the token's structure and flows at one moment; it does not say where the price goes, and a cohort label is the source's, not a fact about intent.`, `Докази описують структуру й потоки токена в один момент; вони не кажуть, куди піде ціна, а мітка когорти — джерела, не факт про намір.`), [cite.id]));
   notes.push(note("checks", w(locale, `Whether the figures hold on the next observation; a plan can carry them as conditions the Review judges (${symbol}).`, `Чи тримаються цифри на наступному спостереженні; план може нести їх як умови, які судить Review (${symbol}).`), [cite.id]));
   return { tool: "evidence_read", kind: "research", outcome: "ok", state, facts, notes, cards: [card], handoffs: [{ kind: "market", href, label: w(locale, `Open the asset passport`, `Відкрити паспорт активу`), primary: false }], draft: null };
@@ -248,7 +362,7 @@ export const holdingsRead: AgentTool<z.ZodObject<Record<string, never>>> = {
     const href = "/app/portfolio";
     if (!read.ok) {
       const cite = ctx.citations.add({ tool: "holdings_read", source: w(locale, "Wallet holdings (RPC)", "Активи гаманця (RPC)"), observedAt: null, state: "unavailable", ref: null, href });
-      return { ...emptyRun("holdings_read", "research", "unavailable", "unavailable"), notes: [note("risks", w(locale, `The wallet's holdings could not be read right now (${read.reason}); nothing here is an empty wallet.`, `Активи гаманця зараз не прочитати (${read.reason}); це не означає порожній гаманець.`), [cite.id])] };
+      return { ...emptyRun("holdings_read", "research", "unavailable", "unavailable"), notes: [note("risks", w(locale, `The wallet's holdings could not be read right now; nothing here is an empty wallet.`, `Активи гаманця зараз не прочитати; це не означає порожній гаманець.`), [cite.id])] };
     }
     const state = stateOf(read.observedAt, FRESHNESS_MS.holdings, ctx.nowMs);
     const cite = ctx.citations.add({ tool: "holdings_read", source: w(locale, `Wallet holdings (RPC${read.sourceHost ? ` · ${read.sourceHost}` : ""})`, `Активи гаманця (RPC${read.sourceHost ? ` · ${read.sourceHost}` : ""})`), observedAt: read.observedAt, state, ref: ctx.owner, href });
@@ -459,7 +573,7 @@ export const planRead: AgentTool<typeof PlanInput> = {
     const notesOnPlan = monitoring.recent.filter((row) => row.subject?.id === plan.id).slice(0, 3);
     for (const row of notesOnPlan) {
       const cite = ctx.citations.add({ tool: "monitoring_read", source: w(locale, "Monitoring note", "Нотатка Нагляду"), observedAt: row.finding?.facts.observedAt ?? row.createdAt, state: "current", ref: row.id, href: row.href });
-      notes.push(note("observation", w(locale, `Monitoring wrote ${whenText(row.createdAt, locale)}: ${row.title} — ${row.reason}`, `Нагляд записав ${whenText(row.createdAt, locale)}: ${row.title} — ${row.reason}`), [cite.id]));
+      notes.push(note("observation", w(locale, `Monitoring wrote ${whenText(row.createdAt, locale)}: ${row.title} — ${withoutTransport(row.reason, locale)}`, `Нагляд записав ${whenText(row.createdAt, locale)}: ${row.title} — ${withoutTransport(row.reason, locale)}`), [cite.id]));
     }
     if (plan.executions.length > 0) notes.push(note("observation", w(locale, `${plan.executions.length} execution${plan.executions.length === 1 ? "" : "s"} recorded under this plan.`, `Під цим планом записано ${plan.executions.length} ${plan.executions.length === 1 ? "виконання" : "виконань"}.`), [made.cite]));
     notes.push(note("counter", w(locale, `A note or a Review describes the moment it was written; whether the condition still holds is decided on a fresh read, not on the note.`, `Нотатка чи Review описують момент запису; чи тримається умова досі, вирішує свіже читання, а не нотатка.`), [made.cite]));
@@ -553,14 +667,20 @@ export const watchlistRead: AgentTool<z.ZodObject<Record<string, never>>> = {
   async run(_input, ctx) {
     const locale = ctx.locale;
     const mints = await ctx.readers.watchlist(ctx.owner);
-    const cite = ctx.citations.add({ tool: "watchlist_read", source: w(locale, "Watchlist", "Список спостереження"), observedAt: new Date(ctx.nowMs).toISOString(), state: "current", ref: null, href: "/app/spot?view=watchlist" });
+    const cite = ctx.citations.add({ tool: "watchlist_read", source: w(locale, "Watchlist", "Список спостереження"), observedAt: new Date(ctx.nowMs).toISOString(), state: "current", ref: null, href: "/app/markets?tab=watchlist" });
     if (mints.length === 0) return { ...emptyRun("watchlist_read", "research", "empty", "current"), notes: [note("observation", w(locale, "The watchlist is empty.", "Список спостереження порожній."), [cite.id])] };
+    /* AI-03: the first eight read at once, each with its own time; a token the catalogue could not read is counted, never dropped silently. */
+    const shown = mints.slice(0, 8);
+    const reads = await Promise.all(shown.map((mint) => ctx.readers.spotMarket(mint).catch(() => ({ ok: false as const, reason: "unreadable" }))));
     const runs: ToolRun[] = [];
-    for (const mint of mints.slice(0, 5)) {
-      const read = await ctx.readers.spotMarket(mint);
+    reads.forEach((read) => {
       if (read.ok && read.market) runs.push(marketRun(read.market, read.observedAt, read.stale, ctx));
-    }
-    return { tool: "watchlist_read", kind: "research", outcome: "ok", state: "current", facts: runs.flatMap((run) => run.facts), notes: [note("observation", w(locale, `The watchlist follows ${mints.length} token${mints.length === 1 ? "" : "s"}.`, `Список спостереження стежить за ${mints.length} ${mints.length === 1 ? "токеном" : "токенами"}.`), [cite.id]), ...runs.flatMap((run) => run.notes.filter((entry) => entry.section === "observation"))], cards: runs.flatMap((run) => run.cards).slice(0, 5), handoffs: [{ kind: "market", href: "/app/spot?view=watchlist", label: w(locale, "Open the watchlist", "Відкрити список спостереження"), primary: false }], draft: null };
+    });
+    const unread = shown.length - runs.length;
+    const facts = runs.flatMap((run) => run.facts.filter((entry) => entry.key === "price" || entry.key === "change24h" || entry.key === "volume24h").map((entry) => ({ ...entry, key: `${((run.cards[0] && "symbol" in run.cards[0] ? run.cards[0].symbol : null) ?? "token").slice(0, 16)}.${entry.key}` })));
+    const notes: ToolNote[] = [note("observation", w(locale, `The watchlist follows ${mints.length} token${mints.length === 1 ? "" : "s"}${mints.length > shown.length ? `; the first ${shown.length} are read here` : ""}.`, `Список спостереження стежить за ${mints.length} ${mints.length === 1 ? "токеном" : "токенами"}${mints.length > shown.length ? `; тут прочитано перші ${shown.length}` : ""}.`), [cite.id]), ...runs.flatMap((run) => run.notes.filter((entry) => entry.section === "observation"))];
+    if (unread > 0) notes.push(note("risks", w(locale, `${unread} token${unread === 1 ? "" : "s"} on the list could not be read from the catalogue right now; ${unread === 1 ? "it is" : "they are"} still on the list.`, `${unread} ${unread === 1 ? "токен зі списку" : "токенів зі списку"} зараз не прочитати з каталогу; у списку ${unread === 1 ? "він лишається" : "вони лишаються"}.`), [cite.id]));
+    return { tool: "watchlist_read", kind: "research", outcome: runs.length > 0 ? "ok" : "unavailable", state: runs.length > 0 ? "current" : "unavailable", facts, notes, cards: runs.flatMap((run) => run.cards).slice(0, 8), handoffs: [{ kind: "market", href: "/app/markets?tab=watchlist", label: w(locale, "Open the watchlist", "Відкрити список спостереження"), primary: false }], draft: null };
   },
 };
 
@@ -737,11 +857,11 @@ export const monitoringRead: AgentTool<typeof MonitoringInput> = {
       const facts0 = row.finding?.facts;
       /* A plan's note names its plan; autoinvest's notes — a rule's reminder (1.12.0), the month's budget (1.13.0) — are no plan's, so their cards name none. */
       const subject = row.subject && (row.subject.kind === "trading-plan" || row.subject.kind === "prediction-plan") ? { kind: row.subject.kind, id: row.subject.id } : null;
-      cards.push({ kind: "note", inboxId: row.id, subject, title: row.title.slice(0, 200), reason: row.reason.slice(0, 600), createdAt: row.createdAt, finding: row.finding ? { kind: row.finding.kind, outcome: row.finding.outcome, observedAt: facts0?.observedAt ?? null } : null, cite: cite.id, href: row.href });
+      cards.push({ kind: "note", inboxId: row.id, subject, title: row.title.slice(0, 200), reason: withoutTransport(row.reason, locale).slice(0, 600), createdAt: row.createdAt, finding: row.finding ? { kind: row.finding.kind, outcome: row.finding.outcome, observedAt: facts0?.observedAt ?? null } : null, cite: cite.id, href: row.href });
       if (facts0?.price !== undefined && facts0.price !== null) facts.push(fact(figure({ label: w(locale, "Price at the note", "Ціна на момент нотатки"), number: facts0.price, kind: "usd", unit: "USD", state: "current", cite: cite.id }, locale), `${row.id}.price`));
       if (facts0?.bound !== undefined && facts0.bound !== null) facts.push(fact(figure({ label: w(locale, "Plan's bound", "Межа плану"), number: facts0.bound, kind: "usd", unit: "USD", state: "current", cite: cite.id }, locale), `${row.id}.bound`));
       if (facts0?.invalidation !== undefined && facts0.invalidation !== null) facts.push(fact(figure({ label: w(locale, "Invalidation", "Інвалідація"), number: facts0.invalidation, kind: "usd", unit: "USD", state: "current", cite: cite.id }, locale), `${row.id}.invalidation`));
-      notes.push(note("observation", w(locale, `The note of ${whenText(row.createdAt, locale)}${subject ? ` about ${subject.kind === "trading-plan" ? "the plan" : "the prediction plan"} ${subject.id.slice(0, 13)}…` : ""}: ${row.title} — ${row.reason}${facts0?.price !== undefined && facts0.price !== null ? ` (price then ${usdText(facts0.price, locale)}${facts0.bound !== undefined && facts0.bound !== null ? `, bound ${usdText(facts0.bound, locale)}` : ""}${facts0.invalidation !== undefined && facts0.invalidation !== null ? `, invalidation ${usdText(facts0.invalidation, locale)}` : ""})` : ""}.`, `Нотатка від ${whenText(row.createdAt, locale)}${subject ? ` про ${subject.kind === "trading-plan" ? "план" : "прогнозний план"} ${subject.id.slice(0, 13)}…` : ""}: ${row.title} — ${row.reason}${facts0?.price !== undefined && facts0.price !== null ? ` (ціна тоді ${usdText(facts0.price, locale)}${facts0.bound !== undefined && facts0.bound !== null ? `, межа ${usdText(facts0.bound, locale)}` : ""}${facts0.invalidation !== undefined && facts0.invalidation !== null ? `, інвалідація ${usdText(facts0.invalidation, locale)}` : ""})` : ""}.`), [cite.id]));
+      notes.push(note("observation", w(locale, `The note of ${whenText(row.createdAt, locale)}${subject ? ` about ${subject.kind === "trading-plan" ? "the plan" : "the prediction plan"} ${subject.id.slice(0, 13)}…` : ""}: ${row.title} — ${withoutTransport(row.reason, locale).replace(/[.!?…]+\s*$/u, "")}${facts0?.price !== undefined && facts0.price !== null ? ` (price then ${usdText(facts0.price, locale)}${facts0.bound !== undefined && facts0.bound !== null ? `, bound ${usdText(facts0.bound, locale)}` : ""}${facts0.invalidation !== undefined && facts0.invalidation !== null ? `, invalidation ${usdText(facts0.invalidation, locale)}` : ""})` : ""}.`, `Нотатка від ${whenText(row.createdAt, locale)}${subject ? ` про ${subject.kind === "trading-plan" ? "план" : "прогнозний план"} ${subject.id.slice(0, 13)}…` : ""}: ${row.title} — ${withoutTransport(row.reason, locale).replace(/[.!?…]+\s*$/u, "")}${facts0?.price !== undefined && facts0.price !== null ? ` (ціна тоді ${usdText(facts0.price, locale)}${facts0.bound !== undefined && facts0.bound !== null ? `, межа ${usdText(facts0.bound, locale)}` : ""}${facts0.invalidation !== undefined && facts0.invalidation !== null ? `, інвалідація ${usdText(facts0.invalidation, locale)}` : ""})` : ""}.`), [cite.id]));
     }
     const attention = surface.attention.slice(0, 4);
     if (attention.length > 0) {

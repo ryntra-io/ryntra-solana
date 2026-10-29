@@ -1,0 +1,422 @@
+{
+  "source": "The aggregator's answers on the limit-order path, shaped by the @agg-build/sdk 4.26 types (AppClientConfigResponse, BatchOrderbooksResponse, PlaceLimitOrderResponse, ExecutionOrderItem, CancelManagedExecutionResponse). The *Raw fields are millionths — of a dollar for money, of a share for size. No key, no real account. {{expires}} and {{refresh}} are filled with a time ahead of the test's clock.",
+  "appConfigLive": {
+    "status": 200,
+    "body": {
+      "tradingMode": "live",
+      "paperStartingBalance": 10000,
+      "disabledVenues": [],
+      "disabledCategoryPresets": [],
+      "earlyAccessEnabled": false,
+      "authOptions": []
+    }
+  },
+  "appConfigPaper": {
+    "status": 200,
+    "body": {
+      "tradingMode": "paper",
+      "paperStartingBalance": 10000,
+      "disabledVenues": [],
+      "disabledCategoryPresets": [],
+      "earlyAccessEnabled": false,
+      "authOptions": []
+    }
+  },
+  "balancesPaper": {
+    "status": 200,
+    "body": {
+      "cash": [],
+      "positions": [],
+      "paper": {
+        "startingBalance": 10000,
+        "cashBalance": 9980,
+        "positionsValue": 20,
+        "realizedPnl": 0,
+        "unrealizedPnl": 0,
+        "earnings": 0
+      }
+    }
+  },
+  "balancesLive": {
+    "status": 200,
+    "body": {
+      "cash": [
+        {
+          "tokenSymbol": "USDC",
+          "totalRaw": "10000000",
+          "availableRaw": "10000000",
+          "reservedRaw": "0",
+          "decimals": 6,
+          "chains": [
+            {
+              "chainId": 792703809,
+              "tokenAddress": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+              "tokenSymbol": "USDC",
+              "balanceRaw": "10000000",
+              "decimals": 6,
+              "lastSyncedAt": "2026-10-26T09:00:00.000Z"
+            }
+          ]
+        }
+      ],
+      "positions": []
+    }
+  },
+  "balancesShort": {
+    "status": 200,
+    "body": {
+      "cash": [
+        {
+          "tokenSymbol": "USDC",
+          "totalRaw": "500000",
+          "availableRaw": "500000",
+          "reservedRaw": "0",
+          "decimals": 6,
+          "chains": [
+            {
+              "chainId": 792703809,
+              "tokenAddress": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+              "tokenSymbol": "USDC",
+              "balanceRaw": "500000",
+              "decimals": 6,
+              "lastSyncedAt": "2026-10-26T09:00:00.000Z"
+            }
+          ]
+        }
+      ],
+      "positions": []
+    }
+  },
+  "bookThin": {
+    "status": 200,
+    "body": {
+      "data": [
+        {
+          "venueMarketId": "m1",
+          "status": "ok",
+          "error": null,
+          "requestedMarket": {
+            "venueMarketId": "m1",
+            "venue": "polymarket",
+            "marketStatus": "open",
+            "tickSize": 0.01,
+            "endDate": null,
+            "resolutionDate": null
+          },
+          "venueOrderbooks": {
+            "polymarket": {
+              "venueMarketId": "m1",
+              "tickSize": 0.01,
+              "orderbook": {
+                "bids": [
+                  {
+                    "price": 0.39,
+                    "size": 500
+                  }
+                ],
+                "asks": [
+                  {
+                    "price": 0.45,
+                    "size": 500
+                  }
+                ]
+              }
+            }
+          },
+          "matchedMarkets": []
+        }
+      ]
+    }
+  },
+  "bookCrossesPartly": {
+    "status": 200,
+    "body": {
+      "data": [
+        {
+          "venueMarketId": "m1",
+          "status": "ok",
+          "error": null,
+          "requestedMarket": {
+            "venueMarketId": "m1",
+            "venue": "polymarket",
+            "marketStatus": "open",
+            "tickSize": 0.01,
+            "endDate": null,
+            "resolutionDate": null
+          },
+          "venueOrderbooks": {
+            "polymarket": {
+              "venueMarketId": "m1",
+              "tickSize": 0.01,
+              "orderbook": {
+                "bids": [
+                  {
+                    "price": 0.39,
+                    "size": 500
+                  }
+                ],
+                "asks": [
+                  {
+                    "price": 0.4,
+                    "size": 2
+                  },
+                  {
+                    "price": 0.46,
+                    "size": 500
+                  }
+                ]
+              }
+            }
+          },
+          "matchedMarkets": []
+        }
+      ]
+    }
+  },
+  "bookUnavailable": {
+    "status": 503,
+    "body": {
+      "message": "the orderbook service is unavailable"
+    }
+  },
+  "limitAccepted": {
+    "status": 200,
+    "body": {
+      "orderId": "lim_1",
+      "status": "open",
+      "venue": "polymarket",
+      "venueOrderId": "pm_1",
+      "reservedCostRaw": "1994018",
+      "limitPriceRaw": "400000",
+      "limitSizeRaw": "4980000",
+      "filledSizeRaw": "0",
+      "remainingSizeRaw": "4980000"
+    }
+  },
+  "limitRefused": {
+    "status": 400,
+    "body": {
+      "message": "sizeRaw is below the market minimum"
+    }
+  },
+  "limitTimeout": {
+    "status": 408,
+    "body": {
+      "message": "no answer"
+    }
+  },
+  "limitOrdersOpen": {
+    "status": 200,
+    "body": {
+      "data": [
+        {
+          "id": "lim_1",
+          "quoteId": null,
+          "externalId": null,
+          "clientOrderId": "{{clientOrderId}}",
+          "status": "open",
+          "venue": "polymarket",
+          "side": "buy",
+          "createdAt": "2026-10-26T10:00:00.000Z",
+          "updatedAt": "2026-10-26T10:00:01.000Z",
+          "amountRaw": "1992000",
+          "orderType": "limit",
+          "limitPriceRaw": "400000",
+          "limitSizeRaw": "4980000",
+          "timeInForce": "GTD",
+          "postOnly": false,
+          "expiresAt": "2026-11-02T10:00:00.000Z",
+          "reservedCostRaw": "1994018",
+          "filledSizeRaw": "0",
+          "filledCostRaw": "0",
+          "remainingSizeRaw": "4980000",
+          "averageFillPriceRaw": null,
+          "venueOrderId": "pm_1",
+          "cancelRequestedAt": null,
+          "cancelledAt": null,
+          "slippageBps": null,
+          "quotedPriceRaw": null,
+          "quotedCostRaw": null
+        }
+      ],
+      "nextCursor": null,
+      "hasMore": false
+    }
+  },
+  "limitOrdersPartial": {
+    "status": 200,
+    "body": {
+      "data": [
+        {
+          "id": "lim_1",
+          "quoteId": null,
+          "externalId": null,
+          "clientOrderId": "{{clientOrderId}}",
+          "status": "partially_filled_open",
+          "venue": "polymarket",
+          "side": "buy",
+          "createdAt": "2026-10-26T10:00:00.000Z",
+          "updatedAt": "2026-10-26T10:02:00.000Z",
+          "amountRaw": "1992000",
+          "orderType": "limit",
+          "limitPriceRaw": "400000",
+          "limitSizeRaw": "4980000",
+          "timeInForce": "GTD",
+          "postOnly": false,
+          "expiresAt": "2026-11-02T10:00:00.000Z",
+          "reservedCostRaw": "1994018",
+          "filledSizeRaw": "2000000",
+          "filledCostRaw": "800000",
+          "remainingSizeRaw": "2980000",
+          "averageFillPriceRaw": "400000",
+          "venueOrderId": "pm_1",
+          "cancelRequestedAt": null,
+          "cancelledAt": null,
+          "slippageBps": null,
+          "quotedPriceRaw": null,
+          "quotedCostRaw": null
+        }
+      ],
+      "nextCursor": null,
+      "hasMore": false
+    }
+  },
+  "limitOrdersCancelled": {
+    "status": 200,
+    "body": {
+      "data": [
+        {
+          "id": "lim_1",
+          "quoteId": null,
+          "externalId": null,
+          "clientOrderId": "{{clientOrderId}}",
+          "status": "cancelled",
+          "venue": "polymarket",
+          "side": "buy",
+          "createdAt": "2026-10-26T10:00:00.000Z",
+          "updatedAt": "2026-10-26T10:03:00.000Z",
+          "amountRaw": "1992000",
+          "orderType": "limit",
+          "limitPriceRaw": "400000",
+          "limitSizeRaw": "4980000",
+          "timeInForce": "GTD",
+          "postOnly": false,
+          "expiresAt": "2026-11-02T10:00:00.000Z",
+          "reservedCostRaw": "0",
+          "filledSizeRaw": "2000000",
+          "filledCostRaw": "800000",
+          "remainingSizeRaw": "0",
+          "averageFillPriceRaw": "400000",
+          "venueOrderId": "pm_1",
+          "cancelRequestedAt": "2026-10-26T10:02:50.000Z",
+          "cancelledAt": "2026-10-26T10:03:00.000Z",
+          "slippageBps": null,
+          "quotedPriceRaw": null,
+          "quotedCostRaw": null
+        }
+      ],
+      "nextCursor": null,
+      "hasMore": false
+    }
+  },
+  "limitOrdersExpired": {
+    "status": 200,
+    "body": {
+      "data": [
+        {
+          "id": "lim_1",
+          "quoteId": null,
+          "externalId": null,
+          "clientOrderId": "{{clientOrderId}}",
+          "status": "expired",
+          "venue": "polymarket",
+          "side": "buy",
+          "createdAt": "2026-10-26T10:00:00.000Z",
+          "updatedAt": "2026-10-26T11:00:00.000Z",
+          "amountRaw": "1992000",
+          "orderType": "limit",
+          "limitPriceRaw": "400000",
+          "limitSizeRaw": "4980000",
+          "timeInForce": "GTD",
+          "postOnly": false,
+          "expiresAt": "2026-10-26T11:00:00.000Z",
+          "reservedCostRaw": "0",
+          "filledSizeRaw": "0",
+          "filledCostRaw": "0",
+          "remainingSizeRaw": "0",
+          "averageFillPriceRaw": null,
+          "venueOrderId": "pm_1",
+          "cancelRequestedAt": null,
+          "cancelledAt": null,
+          "slippageBps": null,
+          "quotedPriceRaw": null,
+          "quotedCostRaw": null
+        }
+      ],
+      "nextCursor": null,
+      "hasMore": false
+    }
+  },
+  "limitOrdersFilled": {
+    "status": 200,
+    "body": {
+      "data": [
+        {
+          "id": "lim_1",
+          "quoteId": null,
+          "externalId": null,
+          "clientOrderId": "{{clientOrderId}}",
+          "status": "filled",
+          "venue": "polymarket",
+          "side": "buy",
+          "createdAt": "2026-10-26T10:00:00.000Z",
+          "updatedAt": "2026-10-26T10:05:00.000Z",
+          "amountRaw": "1992000",
+          "orderType": "limit",
+          "limitPriceRaw": "400000",
+          "limitSizeRaw": "4980000",
+          "timeInForce": "GTD",
+          "postOnly": false,
+          "expiresAt": "2026-11-02T10:00:00.000Z",
+          "reservedCostRaw": "0",
+          "filledSizeRaw": "4980000",
+          "filledCostRaw": "1992000",
+          "remainingSizeRaw": "0",
+          "averageFillPriceRaw": "400000",
+          "venueOrderId": "pm_1",
+          "cancelRequestedAt": null,
+          "cancelledAt": null,
+          "slippageBps": null,
+          "quotedPriceRaw": null,
+          "quotedCostRaw": null
+        }
+      ],
+      "nextCursor": null,
+      "hasMore": false
+    }
+  },
+  "limitOrdersNone": {
+    "status": 200,
+    "body": {
+      "data": [],
+      "nextCursor": null,
+      "hasMore": false
+    }
+  },
+  "limitOrdersUnread": {
+    "status": 503,
+    "body": {
+      "message": "the order list is unavailable"
+    }
+  },
+  "cancelAccepted": {
+    "status": 200,
+    "body": {
+      "quoteId": null,
+      "orderIds": [
+        "lim_1"
+      ],
+      "status": "cancelled"
+    }
+  }
+}

@@ -28,7 +28,10 @@ import type { SpotMarket, SpotMarketListRow } from "../spot/markets.ts";
 import { ISSUER_INSTRUMENT, STOCK_ISSUERS } from "../stocks/representations.ts";
 import { REFERENCE_UNAVAILABLE, UNKNOWN_SESSION } from "../stocks/session.ts";
 import type { StockRow, StockUniverse } from "../stocks/universe.server.ts";
-import type { AgentReaders, HoldingsRead } from "./tools/readers.ts";
+import type { DexPair } from "../assistant/data/dexscreener.ts";
+import type { RugCheckReport } from "../assistant/data/rugcheck.ts";
+import type { NewsDigest } from "../assistant/news/store.ts";
+import type { AgentReaders, CandleBar, HoldingsRead, MoverRow, NewsRead } from "./tools/readers.ts";
 
 export const FIXTURE_NOW = "2026-09-22T10:00:00.000Z";
 export const FIXTURE_NOW_MS = Date.parse(FIXTURE_NOW);
@@ -262,6 +265,129 @@ export function fixtureRules(overrides: Partial<PlanRules> = {}, token = false):
   });
 }
 
+/* ------------------------------------------------------------ the public sources (AI-03) */
+
+const READ_AT = "2026-09-22T09:59:00.000Z";
+
+function pair(input: Readonly<{ base: string; quote: string; dex: string; address: string; price: number | null; liquidity: number; volume: [number, number, number, number]; change: [number, number, number, number]; buys: number; sells: number; side?: "base" | "quote" }>): DexPair {
+  return {
+    dex: input.dex,
+    pairAddress: input.address,
+    baseSymbol: input.base,
+    quoteSymbol: input.quote,
+    side: input.side ?? "base",
+    major: true,
+    priceUsd: input.price,
+    liquidityUsd: input.liquidity,
+    volumeUsd: { m5: input.volume[0], h1: input.volume[1], h6: input.volume[2], h24: input.volume[3] },
+    changePct: input.side === "quote" ? { m5: null, h1: null, h6: null, h24: null } : { m5: input.change[0], h1: input.change[1], h6: input.change[2], h24: input.change[3] },
+    txns: { h1: { buys: Math.round(input.buys / 24), sells: Math.round(input.sells / 24) }, h24: { buys: input.buys, sells: input.sells } },
+    createdAt: "2023-06-30T06:20:58.000Z",
+  };
+}
+
+export const FIXTURE_DEX_PAIRS: Readonly<Record<string, readonly DexPair[]>> = {
+  [SOL]: [
+    pair({ base: "SOL", quote: "USDC", dex: "orca", address: "Czfq3xZZDmsdGdUyrNLtRhGc47cXcZtLG4crryfu44zE", price: 212.4, liquidity: 28_560_000, volume: [131_700, 6_200_000, 21_000_000, 59_200_000], change: [0.09, 1.1, 2.6, 3.3], buys: 41_200, sells: 33_000 }),
+    pair({ base: "SOL", quote: "USDT", dex: "raydium", address: "3nMFwZXwY1s1M5s8vYAHqd4wGs4iSxXE4LRoUMMYqEgF", price: 212.6, liquidity: 9_100_000, volume: [40_000, 1_900_000, 7_000_000, 18_400_000], change: [0.1, 1.0, 2.5, 3.2], buys: 12_000, sells: 10_500 }),
+  ],
+  [BONK]: [pair({ base: "Bonk", quote: "SOL", dex: "raydium", address: "6oFWm7KPLfxnwMb3z5xwBoXNSPP3JJyirAPqPSiVcnsp", price: 0.00001234, liquidity: 1_790_000, volume: [2_000, 18_000, 120_000, 425_000], change: [-0.2, -0.8, -3.1, -6.1], buys: 2_100, sells: 2_600 })],
+  /* AI-09: the market beside SOL in «what moved the price?». */
+  ["cbbtcf3aa214zXHbiAZQwf4122FBYbraNdFqgw4iMij"]: [pair({ base: "cbBTC", quote: "USDC", dex: "orca", address: "HxA6SKW5qA4o12fjVgTpXdq2YnZ5Zv1s7SB4FFomsyLM", price: 61_250, liquidity: 12_400_000, volume: [20_000, 900_000, 3_100_000, 9_800_000], change: [0.05, 0.4, 1.0, 1.4], buys: 3_100, sells: 2_900 })],
+  [COPY]: [pair({ base: "COPY", quote: "SOL", dex: "pumpswap", address: "9xQeWvG816bUx9EPjHmaT23yvVM2ZWbrrpZb9PusVFin", price: 0.5, liquidity: 1_000, volume: [0, 50, 300, 1_200], change: [0, -2, -10, -40], buys: 12, sells: 30 })],
+};
+
+export const FIXTURE_REPORTS: Readonly<Record<string, RugCheckReport | null>> = {
+  [SOL]: { risks: [], score: 1, lpLockedPct: null },
+  [BONK]: { risks: [{ name: "Mutable metadata", level: "warn" }], score: 7, lpLockedPct: 16.1 },
+  [COPY]: { risks: [{ name: "Mint Authority still enabled", level: "danger" }, { name: "Top 10 holders high ownership", level: "danger" }, { name: "Low Liquidity", level: "warn" }], score: 84, lpLockedPct: 0 },
+};
+
+/** Eight days of hourly SOL candles: a slow climb to $212.50 at the close of the fixture's hour. */
+export function fixtureSolCandles(): readonly CandleBar[] {
+  const last = Math.floor(Date.parse("2026-09-22T09:00:00.000Z") / 1000);
+  const bars: CandleBar[] = [];
+  for (let i = 191; i >= 0; i -= 1) {
+    const close = Number((212.5 - i * 0.06 + (i % 5 === 0 ? -0.4 : 0.2)).toFixed(2));
+    const open = Number((close - 0.05).toFixed(2));
+    bars.push({ time: last - i * 3600, open, high: Number((close + 0.6).toFixed(2)), low: Number((open - 0.6).toFixed(2)), close: i === 0 ? 212.5 : close });
+  }
+  return bars;
+}
+
+export const FIXTURE_MOVERS: readonly MoverRow[] = [
+  { mint: BONK, symbol: "Bonk", changePct: 18.4, volumeUsd: 42_000_000, liquidityUsd: 3_000_000, verified: true },
+  { mint: COPY, symbol: "COPY", changePct: 240, volumeUsd: 9_000, liquidityUsd: 1_000, verified: false },
+];
+
+export function fixtureMarketDataReaders(): Pick<AgentReaders, "dexPairs" | "tokenReport" | "candles" | "movers" | "pools" | "launchHealth"> {
+  return {
+    async dexPairs(mint) {
+      return { ok: true, pairs: FIXTURE_DEX_PAIRS[mint] ?? [], observedAt: READ_AT, stale: false };
+    },
+    async tokenReport(mint) {
+      return { ok: true, report: mint in FIXTURE_REPORTS ? FIXTURE_REPORTS[mint] : null, observedAt: READ_AT, stale: false };
+    },
+    async candles(mint, timeframe) {
+      if (mint !== SOL) return { ok: false, code: "THIN", reason: "No pool deep enough." };
+      return { ok: true, timeframe, candles: fixtureSolCandles(), pool: { name: "SOL / USDC", dex: "Orca", reserveUsd: 28_560_000 }, observedAt: READ_AT, stale: false };
+    },
+    async movers(window) {
+      return { ok: true, window, up: FIXTURE_MOVERS, down: [{ mint: SOL, symbol: "SOL", changePct: -1.2, volumeUsd: 1_250_000_000, liquidityUsd: 50_000_000, verified: true }], observedAt: READ_AT, stale: false };
+    },
+    async pools(mint) {
+      if (mint !== SOL && mint !== BONK) return { ok: true, state: "current", pools: [], meaningful: 0, totals: { tvlUsd: null, volume24hUsd: null, fees24hUsd: null }, observedAt: READ_AT };
+      return {
+        ok: true,
+        state: "current",
+        pools: [{ kind: "dlmm", name: mint === SOL ? "SOL-USDC" : "BONK-SOL", address: "5rCf1DM8LjKTw4YqhnoLcngyZYeNnQqztScTogYHAS6", tvlUsd: mint === SOL ? 14_200_000 : 640_000, volume24hUsd: mint === SOL ? 88_000_000 : 1_900_000, fees24hUsd: mint === SOL ? 31_000 : 4_100 }],
+        meaningful: mint === SOL ? 34 : 6,
+        totals: { tvlUsd: mint === SOL ? 41_000_000 : 1_100_000, volume24hUsd: mint === SOL ? 160_000_000 : 3_200_000, fees24hUsd: mint === SOL ? 58_000 : 7_400 },
+        observedAt: READ_AT,
+      };
+    },
+    async launchHealth() {
+      return { ok: true, health: null };
+    },
+  };
+}
+
+/* ------------------------------------------------------------ AI-09: the news */
+
+export const FIXTURE_NEWS_COLLECTED = "2026-09-22T09:55:00.000Z";
+
+const story = (id: string, title: string, source: string, publishedAt: string, topic: NewsDigest["stories"][number]["topic"], also = 0): NewsDigest["stories"][number] => ({ id, story: id, title, source, feedId: source.toLowerCase().replace(/\s+/g, ""), url: `https://www.theblock.co/news/${id}`, publishedAt, topic, also });
+
+export const FIXTURE_NEWS: Readonly<Record<string, NewsDigest>> = {
+  [SOL]: {
+    schema: "ryntra.assistant.news-digest",
+    schemaVersion: "1.0.0",
+    mint: SOL,
+    builtAt: FIXTURE_NEWS_COLLECTED,
+    day: { stories: 2, sources: 2, topics: [{ topic: "upgrade", stories: 1 }, { topic: "etf", stories: 1 }] },
+    stories: [
+      story("nw_000000000000000000000001", "Solana sets a date for its next major upgrade", "The Block", "2026-09-22T07:40:00.000Z", "upgrade", 1),
+      story("nw_000000000000000000000002", "Asset manager files for a staked SOL ETF", "CoinDesk", "2026-09-21T18:10:00.000Z", "etf"),
+    ],
+  },
+  market: {
+    schema: "ryntra.assistant.news-digest",
+    schemaVersion: "1.0.0",
+    mint: null,
+    builtAt: FIXTURE_NEWS_COLLECTED,
+    day: { stories: 1, sources: 1, topics: [{ topic: "macro", stories: 1 }] },
+    stories: [story("nw_000000000000000000000003", "Bitcoin slides as rate cut hopes fade", "Decrypt", "2026-09-22T06:05:00.000Z", "macro")],
+  },
+};
+
+/** The fixture news reader: a digest for SOL and the market, none for the rest; `stale` marks the collector late. */
+export function fixtureNews(mint: string | null, options: Readonly<{ stale?: boolean; digests?: Readonly<Record<string, NewsDigest>>; tracked?: boolean; feeds?: Readonly<{ ok: number; total: number }> }> = {}): Promise<NewsRead> {
+  const digests = options.digests ?? FIXTURE_NEWS;
+  /* SOL, BONK and the market are tracked in the fixture world; anything else is not looked for. */
+  const tracked = options.tracked ?? (mint === null || mint === SOL || mint === BONK);
+  return Promise.resolve({ ok: true, digest: digests[mint ?? "market"] ?? null, stale: options.stale ?? false, collectedAt: FIXTURE_NEWS_COLLECTED, tracked, feeds: options.feeds ?? { ok: 8, total: 8 } });
+}
+
 export type FixtureWorld = Readonly<{ store: GuardStore; readers: AgentReaders; plans: Readonly<{ nvdax: string; sol: string }>; note: MonitorNote }>;
 
 /**
@@ -377,6 +503,11 @@ export async function createFixtureWorld(options: Readonly<{ store?: GuardStore;
     },
     async inboxNote(owner, inboxId) {
       return owner === OWNER && inboxId === note.id ? note : null;
+    },
+    ...fixtureMarketDataReaders(),
+    /* AI-09: the news world — a digest for SOL and one of the market; BONK has none. */
+    async news(mint) {
+      return fixtureNews(mint);
     },
   };
   return { store, readers, plans: { nvdax: nvdax.plan.id, sol: sol.plan.id }, note };

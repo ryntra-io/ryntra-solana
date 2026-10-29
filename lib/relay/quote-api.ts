@@ -385,6 +385,65 @@ export async function fetchRelayQuote(
   return { ok: true, quote: parsed.data, observedAt: now().toISOString(), requestUrl };
 }
 
+function sameAddress(network: SwapNetwork, a: unknown, b: string): boolean {
+  if (typeof a !== "string") return false;
+  return network === "solana" ? a === b : a.toLowerCase() === b.toLowerCase();
+}
+
+function objectAt(value: unknown, key: string): Record<string, unknown> | null {
+  const inner = value && typeof value === "object" ? (value as Record<string, unknown>)[key] : null;
+  return inner && typeof inner === "object" ? (inner as Record<string, unknown>) : null;
+}
+
+/**
+ * Relay's answer, read back against the question before anything is built
+ * from it (FIX-XSWAP-1, SEC-1 P2).
+ *
+ * On a Solana origin the deposit goes into Relay's depository program, and
+ * where the solver pays out lives only in Relay's own record of the request —
+ * the bytes a wallet signs do not name it. So the recipient Relay states is
+ * the one place a wrong destination can be caught: a quote whose recipient is
+ * not the address the person entered is refused, as the deposit-address flow
+ * already refuses it (`deposit-address.ts`). The same for both currencies on
+ * both chains, an input above the amount asked, and a refund to anyone but the
+ * sending wallet.
+ */
+export function relayQuoteMatchesRequest(
+  quote: RelayRawQuote,
+  request: Pick<RelayQuoteRequest, "fromNetwork" | "fromToken" | "toNetwork" | "toToken" | "amountRaw" | "user" | "recipient">,
+): Readonly<{ ok: true }> | Readonly<{ ok: false; code: "QUOTE_MISMATCH"; field: string; reason: string }> {
+  const refuse = (field: string, reason: string) => ({ ok: false as const, code: "QUOTE_MISMATCH" as const, field, reason });
+  const details = quote.details;
+  if (!sameAddress(request.toNetwork, details.recipient, request.recipient)) {
+    return refuse("recipient", "Relay's quote pays out to an address other than the one you entered; nothing was built.");
+  }
+  if (details.sender !== undefined && !sameAddress(request.fromNetwork, details.sender, request.user)) {
+    return refuse("sender", "Relay's quote is for a different sending wallet; nothing was built.");
+  }
+  const input = details.currencyIn;
+  const output = details.currencyOut;
+  if (input.currency.chainId !== RELAY_CHAIN_IDS[request.fromNetwork] || !sameAddress(request.fromNetwork, input.currency.address, request.fromToken)) {
+    return refuse("currencyIn", "Relay's quote spends a different token or network from the one you chose; nothing was built.");
+  }
+  if (output.currency.chainId !== RELAY_CHAIN_IDS[request.toNetwork] || !sameAddress(request.toNetwork, output.currency.address, request.toToken)) {
+    return refuse("currencyOut", "Relay's quote delivers a different token or network from the one you chose; nothing was built.");
+  }
+  if (BigInt(input.amount) > BigInt(request.amountRaw)) {
+    return refuse("amount", "Relay's quote spends more than the amount you entered; nothing was built.");
+  }
+  /* Where a failed fill pays back. Absent is Relay's default — the sender; present, it must be the sender. */
+  const orderInputs = objectAt(objectAt(objectAt(quote, "protocol"), "v2"), "orderData")?.inputs;
+  const refunds = (Array.isArray(orderInputs) ? orderInputs : []).flatMap((entry) => {
+    const list = entry && typeof entry === "object" ? (entry as { refunds?: unknown }).refunds : null;
+    return Array.isArray(list) ? list : [];
+  });
+  const refundRecipient = (refund: unknown) => (refund && typeof refund === "object" ? (refund as { recipient?: unknown }).recipient : null);
+  if (refunds.some((refund) => !sameAddress(request.fromNetwork, refundRecipient(refund), request.user))) {
+    return refuse("refund", "Relay's quote refunds to an address other than your wallet; nothing was built.");
+  }
+  return { ok: true };
+}
+
 /** The step a wallet is asked to sign, and the approvals before it. */
 export function relayDepositStep(quote: RelayRawQuote): RelayStep | null {
   return quote.steps.find((step) => step.id === "deposit" || step.id === "swap") ?? quote.steps.at(-1) ?? null;

@@ -6,20 +6,22 @@ import { useEffect, useMemo, useState } from "react";
 
 import { useWalletData } from "@/app/app/wallet-data";
 import { Panel } from "@/app/shell/panel";
-import { crossSwapTarget } from "@/lib/solana/action-lanes";
 import { isLaunchOrigin, isSpotOrigin } from "@/lib/solana/action-origin";
 import type { SolanaWalletAction } from "@/lib/solana/action-ledger";
-import { displayAmount, scaleRawAmount } from "@/lib/solana/amounts";
+import { displayAmount } from "@/lib/solana/amounts";
 import { downloadTextFile } from "@/lib/solana/download.client";
 import { explorerTxUrl } from "@/lib/solana/explorer";
 import { filterHistory, HISTORY_FILTERS, historyCounts, historyExportName, historyPage, historyToCsv, type HistoryFilter } from "@/lib/solana/history-view";
 import { fetchReceiptForAction, launchReceiptRequest, receiptFetchable } from "@/lib/solana/receipt-fetch.client";
 import { findReceiptForAction, receiptBinding } from "@/lib/solana/receipt-view";
+import { assetsOfMovements } from "@/lib/solana/receipt-truth";
+import { ExecutionTruth } from "../receipts/execution-truth";
 import { downloadReceipt, storeBoundSolanaReceipt } from "@/lib/solana/send-receipt-vault.client";
 import { isRetiredMint } from "@/lib/stocks/retired";
 import { useSolanaConnection } from "../connection.tsx";
 import { useSolanaI18n } from "../i18n/provider.tsx";
 import { WalletGate } from "../wallet-gate.tsx";
+import { actionStateWord, describeAction, leg, legNumber } from "./history-lines.ts";
 import styles from "./history.module.css";
 
 const SOLANA_SIGNATURE = /^[1-9A-HJ-NP-Za-km-z]{64,90}$/;
@@ -38,36 +40,6 @@ function solanaTransactionOf(action: SolanaWalletAction): string | null {
     if (typeof candidate === "string" && SOLANA_SIGNATURE.test(candidate)) return candidate;
   }
   return null;
-}
-
-/** A leg as a person reads it, or null when its scale or identity is unknown. */
-function leg(movement: SolanaWalletAction["out"]): string | null {
-  if (movement === null) return null;
-  const name = movement.symbol;
-  if (movement.decimals === null) return name;
-  const amount = displayAmount(movement.amountRaw, movement.decimals);
-  return name === null ? amount : `${amount} ${name}`;
-}
-
-/**
- * A launched token's count as a row's title says it: 47.3K, 1.7M from ten thousand up, else a few places — a new token is
- * bought in hundreds of thousands, and its whole figure would push its name off a phone's line. The row's own details
- * keep the exact figure.
- */
-function tokenLeg(movement: SolanaWalletAction["out"]): string | null {
-  const value = legNumber(movement);
-  if (movement === null || value === null) return leg(movement);
-  const amount =
-    value >= 10_000
-      ? new Intl.NumberFormat("en-US", { notation: "compact", maximumFractionDigits: 1 }).format(value)
-      : value.toLocaleString("en-US", { maximumFractionDigits: value >= 1 ? 2 : 6 });
-  return movement.symbol === null ? amount : `${amount} ${movement.symbol}`;
-}
-
-function legNumber(movement: SolanaWalletAction["out"]): number | null {
-  if (movement === null || movement.decimals === null) return null;
-  const value = Number(scaleRawAmount(movement.amountRaw, movement.decimals).replace(/,/g, ""));
-  return Number.isFinite(value) && value > 0 ? value : null;
 }
 
 function short(value: string): string {
@@ -96,7 +68,7 @@ function PageGlyph({ page, side }: { page: Page; side: "BUY" | "SELL" | null }) 
 export function HistoryCard({ selectedAction = null, initialFilter = "ALL" }: { selectedAction?: string | null; initialFilter?: HistoryFilter }) {
   const { text, locale } = useSolanaI18n();
   const { connection } = useSolanaConnection();
-  const { owner, activity, rewards, receiptRows, refresh } = useWalletData();
+  const { owner, activity, rewards, cashback, receiptRows, refresh } = useWalletData();
   const [checking, setChecking] = useState<string | null>(null);
   const [opening, setOpening] = useState<string | null>(null);
   const [copied, setCopied] = useState<string | null>(null);
@@ -133,61 +105,9 @@ export function HistoryCard({ selectedAction = null, initialFilter = "ALL" }: { 
     };
   }, [owner, hasReceived]);
 
-  /* The row's two lines: what happened, and what it was against. */
-  const describe = (action: SolanaWalletAction): { title: string; sub: string; side: "BUY" | "SELL" | null } => {
-    const out = leg(action.out);
-    const got = leg(action.in);
-    const page = historyPage(action);
-    if (page === "BRIDGE" && action.lane === "BRIDGE") {
-      const amount = action.destination === "SOLANA" ? (got ?? out) : (out ?? got);
-      const where =
-        action.destination === "SOLANA" ? text("to Solana") : action.destination === "BASE" ? text("to Base") : action.destination === "ETHEREUM" ? text("to Ethereum") : null;
-      return { title: amount ? `${text("Moved")} ${amount}` : text("Moved"), sub: where ? `${text("Bridge")} · ${where}` : text("Bridge"), side: null };
-    }
-    if (page === "BRIDGE" && action.lane === "CROSS_SWAP") {
-      const target = crossSwapTarget(action.destination, text);
-      const title = out && got ? `${text("Swapped")} ${out} → ${got}` : out ? `${text("Swapped")} ${out}` : text("Swapped");
-      return { title, sub: target ? `${text("Bridge")} · ${target}` : text("Bridge"), side: null };
-    }
-    if (page === "SPOT" && isSpotOrigin(action.origin)) {
-      const buy = action.origin.side === "BUY";
-      const asset = buy ? got : out;
-      const counter = buy ? out : got;
-      const verb = buy ? text("Bought") : text("Sold");
-      /* A purchase under an autoinvest reminder says so — the receipt's mark of the rule (1.12.0). */
-      const where = action.origin.rule ? text("Recurring buy") : text("Spot");
-      return {
-        title: asset ? `${verb} ${asset}` : verb,
-        sub: counter ? `${buy ? text("for") : text("received")} ${counter} · ${where}` : where,
-        side: buy ? "BUY" : "SELL",
-      };
-    }
-    if (page === "LAUNCH" && isLaunchOrigin(action.origin)) {
-      /* A launch's trade reads like a purchase or a sale on Spot, under the place it was made. */
-      const buy = action.origin.side === "BUY";
-      const asset = tokenLeg(buy ? action.in : action.out);
-      const counter = buy ? out : got;
-      const verb = buy ? text("Bought") : text("Sold");
-      return {
-        title: asset ? `${verb} ${asset}` : verb,
-        sub: counter ? `${buy ? text("for") : text("received")} ${counter} · ${text("Launch")}` : text("Launch"),
-        side: buy ? "BUY" : "SELL",
-      };
-    }
-    if (page === "SWAP") {
-      const title = out && got ? `${text("Swapped")} ${out} → ${got}` : out ? `${text("Swapped")} ${out}` : text("Swapped");
-      return { title, sub: text("Swap"), side: null };
-    }
-    if (page === "RECEIVE") return { title: got ? `${text("Received")} ${got}` : text("Received"), sub: text("Receive"), side: null };
-    return { title: out ? `${text("Sent")} ${out}` : text("Sent"), sub: text("Send"), side: null };
-  };
-
-  const stateWord = (outcome: SolanaWalletAction["outcome"]): string => {
-    if (outcome === "DONE") return text("Arrived");
-    if (outcome === "FAILED") return text("Did not happen");
-    if (outcome === "NEEDS_YOU") return text("Needs you");
-    return text("On its way");
-  };
+  /* The row's two lines and its state — the same words Home's «Останні операції» use (`history-lines.ts`). */
+  const describe = (action: SolanaWalletAction) => describeAction(action, text);
+  const stateWord = (outcome: SolanaWalletAction["outcome"]): string => actionStateWord(outcome, text);
 
   const filterLabel = (option: HistoryFilter): string => {
     if (option === "ALL") return text("All");
@@ -274,7 +194,7 @@ export function HistoryCard({ selectedAction = null, initialFilter = "ALL" }: { 
   if (!connection) {
     return (
       <Panel id="activity-timeline" title={text("History")} w={12} h={6} essential stretch>
-        <WalletGate title={text("Your transfers, and where each one is.")} />
+        <WalletGate title={text("Connect a wallet — your transfers will be here, and where each one is.")} />
       </Panel>
     );
   }
@@ -427,6 +347,8 @@ export function HistoryCard({ selectedAction = null, initialFilter = "ALL" }: { 
                                 </div>
                               ) : null}
                             </dl>
+                            {/* The trade's execution truth, from its own receipt where this browser keeps it (SOL-X1). */}
+                            {receipt ? <ExecutionTruth receipt={receipt.receipt} known={assetsOfMovements([action.in, action.out])} cashback={cashback} /> : null}
                             <div className={styles.actions}>
                               {tx ? (
                                 <a className={styles.action} href={explorerTxUrl(action.network, tx)} target="_blank" rel="noreferrer noopener">

@@ -91,14 +91,13 @@ test("opening the cabinet to visitors changed what is shown, never what is allow
   const productShell = code("app/app/product-shell.tsx");
   /* One control in the header for
      the person — the wallet — with the account inside its panel; the separate
-     *Sign in* is gone. Since 2026-09-24 the panel is the person's menu
-     too: Налаштування, Мова, Тема, Від'єднати — Settings is one of its rows,
-     not a second link in the identity block. */
+     *Sign in* is gone. The panel holds Налаштування, then Від'єднати —
+     Settings is one of its rows, not a second link in the identity block; the
+     language and the theme are the core's «Налаштувати» since B1. */
   assert.equal((productShell.match(/<SolanaConnectionControl\s+identity=\{<WalletAccountIdentity \/>\}/g) ?? []).length, 1);
-  assert.match(productShell, /preferences=\{\(close\) => \(\s*<MenuPreferences/);
+  assert.match(productShell, /preferences=\{\(close\) => \(\s*(?:<>\s*)?<Link className="rs-menu-item" href="\/app\/settings"/);
   assert.doesNotMatch(productShell, /<AccountControl\s*\/>/);
   assert.doesNotMatch(code("app/app/account/account-control.tsx"), /href="\/app\/settings#account"/);
-  assert.match(code("app/shell/menu-preferences.tsx"), /href=\{settingsHref\}/);
   assert.doesNotMatch(productShell, /signedIn\s*\?\s*<SolanaConnectionControl/);
   assert.doesNotMatch(CABINET_LAYOUT, /VisitorAccount|CabinetAccount/);
 
@@ -765,19 +764,22 @@ test("the cabinet's theme control is one the shell actually answers", () => {
    * palette, two attributes, no copy — which is why most of the old override
    * block below is gone rather than translated.
    */
+  /* Since B1 the Solana app's light theme is the core's Porcelain (`data-theme="porcelain"`); every light rule of the
+     shared sheets answers both names in one selector, so the weight of each rule is the same. */
+  const LIGHT = ':is([data-theme="light"], [data-theme="porcelain"])';
   const tokens = read("app/design/tokens.css");
   const lightAt = tokens.indexOf('[data-ry-theme="light"],');
   const lightEnd = tokens.indexOf("}", lightAt);
   assert.ok(lightAt > 0);
   assert.ok(
-    tokens.slice(lightAt, lightEnd).includes('[data-theme="light"]'),
-    "the frozen light palette must answer the shell's own theme attribute",
+    tokens.slice(lightAt, lightEnd).includes(LIGHT),
+    "the frozen light palette must answer the shell's own theme attribute, Porcelain included",
   );
 
   /* And the shell must not restate it. A second light palette written beside
      the chrome is a copy, and a copy drifts. */
   const css = read("app/shell/shell.css");
-  const shellLight = css.slice(css.indexOf('[data-theme="light"]'));
+  const shellLight = css.slice(css.indexOf(LIGHT));
   for (const token of ["--ry-bg", "--ry-card", "--ry-text", "--ry-muted", "--ry-border", "--ry-sidebar"]) {
     assert.doesNotMatch(
       shellLight,
@@ -789,10 +791,10 @@ test("the cabinet's theme control is one the shell actually answers", () => {
   /* The surfaces still on legacy aliases keep their explicit light colours,
      because those do inherit and a missing one is invisible until someone
      switches theme. */
-  assert.match(css, /\[data-theme="light"\] \.rs \{/);
+  assert.ok(css.includes(`${LIGHT} .rs {`));
   for (const selector of [".rs-chip-v", ".rs-tag", ".rs-skip"]) {
     assert.ok(
-      css.includes(`[data-theme="light"] ${selector}`),
+      css.includes(`${LIGHT} ${selector}`),
       `${selector} has no light-theme colour and would inherit a dark one`,
     );
   }
@@ -802,7 +804,7 @@ test("the cabinet's theme control is one the shell actually answers", () => {
      comes from the root `-strong` tokens: the shell aliases into them instead
      of restating hex literals, so the chrome and the canvas can never disagree
      about what light-cyan is. A literal here would fork the palette again. */
-  const light = css.slice(css.indexOf('[data-theme="light"] .rs {'));
+  const light = css.slice(css.indexOf(`${LIGHT} .rs {`));
   assert.match(light, /--cyan: var\(--accent-strong\)/, "--cyan must alias the AA-safe root token");
   assert.match(light, /--mint: var\(--success-strong\)/, "--mint must alias the AA-safe root token");
   assert.match(light, /--amber: var\(--warning-strong\)/, "--amber must alias the AA-safe root token");
@@ -839,8 +841,14 @@ test("the cabinet's theme control is one the shell actually answers", () => {
   );
   assert.match(
     chip,
-    /\.rs-status\[data-family="descriptor"\][\s\S]*?background: var\(--ry-st-paper-bg\)[\s\S]*?color: var\(--ry-st-paper-tx\)/,
+    /\.rs-status\[data-family="descriptor"\][\s\S]*?background: var\(--ry-st-paper-bg\)[\s\S]*?color: var\(--ry-muted\)/,
   );
+  /* The descriptor's ink is the theme's secondary ink since CI-1b. On the
+     legacy palette `--ry-muted` and `--ry-st-paper-tx` are the same value in
+     both themes; under the core's tokens only `--ry-muted` follows Porcelain,
+     and the old pair measured 4.42:1 on its own ground. The environment chip
+     reads the same ink for the same reason. */
+  assert.match(chip, /\.rs-status\[data-family="environment"\][\s\S]*?color: var\(--ry-muted\)/);
   assert.ok(
     read("app/shell/status-chip.tsx").includes('import "./status-chip.css"'),
     "the chip must import its own rules, or a surface outside a hub renders it as bare text",
@@ -955,20 +963,21 @@ test("a workspace's own tools are added to the shared cluster, never a replaceme
   assert.doesNotMatch(read("app/app/nav.tsx"), /ThemeSwitch|applyThemePref/,
     "the cabinet rail footer writes no theme");
 
-  /* Settings has one persistent destination in the product rail: the menu's
-     foot, from the registry — and the wallet's menu opens the
-     same address. */
-  assert.match(read("app/shell/domains.ts"), /settings: \{ label: SECONDARY_LABELS\.settings, href: "\/app\/settings"/);
+  /* Settings has one persistent destination: the registry's, found by the search — and the wallet's panel opens
+     the same address. */
+  /* Since Menu 3 the wallet panel's row reads «Акаунт»: «Налаштування» is the menu's own row (NAV-1). */
+  assert.match(read("app/shell/domains.ts"), /settings: \{ label: \{ en: "Account", uk: "Акаунт" \}, href: "\/app\/settings"/);
   assert.match(code("app/shell/app-shell.tsx"), /const settingsEntry: NavEntry \| null \| undefined = menu/);
-  assert.match(read("app/app/product-shell.tsx"), /settingsHref="\/app\/settings"/);
+  assert.match(read("app/app/product-shell.tsx"), /<Link className="rs-menu-item" href="\/app\/settings"/);
   const settingsPage = read("app/app/settings/page.tsx");
   assert.equal((settingsPage.match(/<ProductSettings\b/g) ?? []).length, 1);
   assert.doesNotMatch(settingsPage, /\bredirect\(|if\s*\(\s*!session/);
   const settings = code("app/app/settings/product-settings.tsx");
   assert.match(settings, /aria-labelledby="appearance-title"/);
-  assert.match(settings, /applyThemePref\(value\)/);
-  assert.match(settings, /\["dark",\s*"light"\]/);
-  assert.doesNotMatch(settings, /localStorage/);
+  /* The product's look is the core's «Налаштувати» since B1 (the menu's own row since Menu 3): Settings opens it and
+     writes no theme of its own. */
+  assert.match(settings, /onClick=\{\(\)=>openCustomize\(\)\}/);
+  assert.doesNotMatch(settings, /applyThemePref|localStorage/);
 
   assert.doesNotMatch(shell, /Focus mode/);
   assert.doesNotMatch(shell, /rs-view-focus/);

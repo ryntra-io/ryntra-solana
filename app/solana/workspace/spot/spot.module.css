@@ -15,40 +15,61 @@
 }
 
 .workspace {
-  /* Measured on a 2 300 px screen (2026-09-11): 296 and 344 px
-     beside a 1 600 px chart read as two gutters, the category switch
-     clipped and every second line truncated. The side columns follow the
-     canvas and the chart takes the rest. On a desk the chart is as tall as
-     the first screen leaves it (`--spot-fit`, measured by the page); a phone
-     keeps its own height. Measured on laptops (2026-10-09): 248–496 px wide
-     and under the first screen before; the chart is now the widest panel and
-     ends on the first screen. */
+  /* B16 — the workplace on one screen: the strip across, the chart and under it the bottom panel (≈ 270 px, seen on
+     the first screen), the ticket's column on the right with «Про токен» under the ticket. The chart takes what the
+     first screen leaves above the panel (`--spot-fit`, measured by the page); a phone keeps its own height. Measured
+     on laptops (2026-10-09): the chart is the widest panel; the ticket 340 px, more on a wide screen. */
   --spot-ticket: clamp(340px, 24cqi, 440px);
-  --spot-chart-h: var(--spot-fit, clamp(360px, 52vh, 640px));
+  --spot-panel-h: 270px;
+  --spot-chart-h: var(--spot-fit, clamp(320px, 46vh, 520px));
   display: grid;
   grid-template-columns: minmax(0, 1fr) var(--spot-ticket);
-  grid-template-rows: auto minmax(0, 1fr) auto auto;
+  grid-template-rows: auto auto auto;
   grid-template-areas:
-    "header ticket"
-    "chart ticket"
-    "evidence ticket"
-    "state ticket";
+    "header header"
+    "chart side"
+    "state side";
   gap: var(--ry-s3);
   align-items: start;
   min-width: 0;
 }
 
-/* The two sensors of the selected token: their own row between the chart and the wallet's state — side by side where the column is wide enough, stacked where it is not. */
-.evidence {
-  grid-area: evidence;
+/* The workplace before the canvas has been measured: the strip, then one block as tall as the chart of the face that
+   is about to be drawn (`data-face="pending"`). The face is chosen by the frame's width at 760 px — the same boundary
+   the container queries below use — so the bones can name the right height without waiting for the measurement, and
+   the real chart lands where the block stood instead of a screen lower. */
+.pending {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(min(100%, 340px), 1fr));
+  grid-template-columns: minmax(0, 1fr);
   gap: var(--ry-s3);
-  align-items: start;
   min-width: 0;
 }
 
-/* The Brief and the Critic, once asked for: one full-width row under the two sensors, inside their area. */
+/* The strip is the one block above the bones; the grid has no named areas here, so it takes its own place. */
+.pending > .header {
+  grid-area: auto;
+}
+
+.bonesChart {
+  height: var(--spot-terminal-h, max(560px, calc(100dvh - 180px)));
+  border-radius: var(--ry-r-card);
+  background: var(--hairline);
+}
+
+/* A phone: the chart's own height, read from the property the chart reads, and the room the pinned «Купити | Продати»
+   takes under it. */
+@container spot (max-width: 759px) {
+  .pending {
+    gap: var(--ry-s2);
+    padding-bottom: 64px;
+  }
+
+  .bonesChart {
+    height: var(--spot-phone-fit, 200px);
+  }
+}
+
+/* The Brief and the Critic, once asked for: one full-width row under the workplace. */
 .lensRow {
   grid-column: 1 / -1;
   min-width: 0;
@@ -410,92 +431,38 @@
   font-size: var(--ry-fs-label);
 }
 
-/* ── Market header ───────────────────────────────────────────────────── */
+/* ── Instrument strip (B16) ─────────────────────────────────────────── */
 
+/* One line as a terminal reads it: the market's name (the press that opens the markets) and its chips, the price, the
+   change over the chosen window, the market's figures, the watch — 56 px. A canvas too narrow for the figures gives
+   them a second line rather than cut one; a stock's reference line and a retired token's state stand under it. */
 .header {
   grid-area: header;
-  display: grid;
-  gap: var(--ry-s2);
-  padding: var(--ry-s3) var(--ry-s4);
+  display: flex;
+  flex-wrap: wrap;
+  /* The figures take what the name, the price and the watch leave; only a stock's line or a retired state wraps. */
+  align-items: center;
+  gap: var(--ry-s1) var(--ry-s5);
+  min-height: 56px;
+  padding: var(--ry-s1) var(--ry-s3);
   min-width: 0;
-}
-
-/* Where the header has the room — a 1440 px laptop and wider beside the ticket —
-   it reads the market on one line: who it is (the press that opens the markets), its price, the watch, the figures under it, so the
-   chart starts high on the first screen. A narrower header keeps two lines: a long name (a company's token, a
-   meme with two chips) keeps its place rather than being squeezed under the price. */
-@container spot (min-width: 1072px) {
-  .header {
-    grid-template-columns: minmax(min(280px, 100%), max-content) minmax(max-content, 1fr) auto;
-    align-items: center;
-    column-gap: var(--ry-s5);
-  }
-
-  .header > * {
-    grid-column: 1 / -1;
-  }
-
-  .header > .headerTop {
-    display: contents;
-  }
-
-  .header .identity {
-    grid-column: 1;
-    grid-row: 1;
-    justify-self: start;
-  }
-
-  .header > .priceRow {
-    grid-column: 2;
-    grid-row: 1;
-    flex-wrap: nowrap;
-    min-width: 0;
-  }
-
-  /* «Поділитися угодою» in the one-line header: its icon, the words kept as its name and pushed past its edge — with
-     them the price line ran past the card and cut «Powered by». The two-line header and the phone keep the words. */
-  .header > .priceRow [data-share-trade] {
-    flex: 0 0 44px;
-    justify-content: flex-start;
-    gap: 44px;
-    width: 44px;
-    padding-inline: 13px;
-    overflow: hidden;
-    white-space: nowrap;
-  }
-
-  .header > .priceRow [data-share-trade] svg {
-    flex: none;
-  }
-
-  /* With it the line needs its room: a short name gives back what its column held for a long one, and the gaps close. */
-  .header:has(> .priceRow [data-share-trade]) {
-    grid-template-columns: max-content minmax(max-content, 1fr) auto;
-    column-gap: var(--ry-s3);
-  }
-
-  .header .headerActions {
-    grid-column: 3;
-    grid-row: 1;
-  }
 }
 
 .header > * {
   min-width: 0;
 }
 
-.headerTop {
-  display: flex;
-  align-items: center;
-  gap: var(--ry-s3);
-  min-width: 0;
+.header > .retiredState,
+.header > .stockLine,
+.header > .launchLine {
+  flex: 1 0 100%;
 }
 
 /* The market's name is the press that opens the markets: the icon, the name and its arrow as one control. */
 .identity {
   display: flex;
   align-items: center;
-  gap: var(--ry-s3);
+  gap: var(--ry-s2);
   min-width: 0;
   flex: 0 1 auto;
   margin: 0 calc(-1 * var(--ry-s2));
@@ -526,25 +493,16 @@
 
 .identity .icon,
 .identity .iconFallback {
-  width: 36px;
-  height: 36px;
-}
-
-.identityText {
-  display: grid;
-  min-width: 0;
-}
-
-.identityText > * {
-  min-width: 0;
+  width: 28px;
+  height: 28px;
 }
 
 /* A token Ryntra no longer supports: its state on a line of its own under the
    name — as wide as the header, set in from the icon so it reads under the
    name, and drawn close to it. */
 .retiredState {
-  margin: calc(-1 * var(--ry-s2)) 0 0;
-  padding-inline-start: calc(36px + var(--ry-s3));
+  margin: 0;
+  padding-inline-start: calc(28px + var(--ry-s2));
   font-size: var(--ry-fs-dense);
   font-weight: 600;
   line-height: 1.35;
@@ -555,22 +513,14 @@
 .identityTitle {
   margin: 0;
   font-family: var(--ry-font-sans);
-  font-size: var(--ry-fs-title);
+  font-size: var(--ry-fs-copy);
   font-weight: 700;
   letter-spacing: -0.01em;
   color: var(--ry-text);
-  display: flex;
+  display: inline-flex;
   align-items: center;
-  gap: var(--ry-s2);
-  flex-wrap: wrap;
-}
-
-.identityName {
-  font-size: var(--ry-fs-dense);
-  color: var(--ry-muted);
+  gap: var(--ry-s1);
   white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
 }
 
 .chip {
@@ -583,16 +533,25 @@
   font-family: var(--ry-font-sans);
   font-size: var(--ry-fs-label-sm);
   font-weight: 600;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
   white-space: nowrap;
   background: var(--ry-env-bg);
   color: var(--ry-env-tx);
 }
 
-.chip[data-tone="verified"] {
-  background: var(--ry-env-bg);
-  color: var(--ry-verified);
+/* «Перевірено Jupiter» is a fact about the catalogue, not a verdict: quiet, never the colour of «good» (UX-151). */
+.chip[data-tone="plain"] {
+  background: transparent;
+  box-shadow: inset 0 0 0 1px var(--ry-border);
+  color: var(--ry-muted);
+}
+
+/* The facts beside the name: the verification, the issuer's rights, the kind — their own group, not the name's press. */
+.chips {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--ry-s1);
+  min-width: 0;
 }
 
 .chip[data-tone="caution"] {
@@ -605,22 +564,169 @@
   color: var(--ry-risk);
 }
 
-/* The share button's slot is no box of its own: the button stays the price line's item. */
-.shareSlot {
-  display: contents;
+/* «⋯» at the strip's end (SOL-C12, UX-152): one quiet button, and under it what were five. */
+.more {
+  position: relative;
+  flex: 0 0 auto;
+  margin-inline-start: auto;
+}
+
+.more > summary {
+  list-style: none;
+}
+
+.more > summary::-webkit-details-marker {
+  display: none;
+}
+
+.moreButton {
+  display: inline-grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  border: 1px solid var(--ry-border);
+  border-radius: var(--ry-r-btn-sm);
+  background: transparent;
+  color: var(--ry-muted);
+  cursor: pointer;
+}
+
+.moreButton:hover,
+.more[open] > .moreButton {
+  color: var(--ry-text);
+  background: var(--ry-hover);
+}
+
+.moreButton:focus-visible {
+  outline: none;
+  box-shadow: var(--ry-focus);
+}
+
+.moreMenu {
+  position: absolute;
+  inset-block-start: calc(100% + 4px);
+  inset-inline-end: 0;
+  z-index: 30;
+  display: grid;
+  gap: 2px;
+  min-width: 240px;
+  max-width: calc(100vw - 2 * var(--ry-s4));
+  padding: var(--ry-s2);
+  border: 1px solid var(--ry-border);
+  border-radius: var(--ry-r-card);
+  background: var(--ry-card);
+  box-shadow: var(--ry-shadow-elevated);
+}
+
+/* The assistant's three keep their words here at every width (their own sheet keeps a phone's strip to the icons). */
+.moreMenu :global([data-assistant-actions]) {
+  display: grid;
+  gap: 2px;
+}
+
+.moreMenu :global([data-assistant-action]) > span {
+  position: static;
+  width: auto;
+  height: auto;
+  overflow: visible;
+  clip-path: none;
+}
+
+.moreMenu :global([data-assistant-action]) > svg {
+  color: var(--ry-accent);
+}
+
+.moreItem {
+  display: flex;
+  align-items: center;
+  gap: var(--ry-s2);
+  width: 100%;
+  min-height: 36px;
+  padding: 0 var(--ry-s2);
+  border: 1px solid transparent;
+  border-radius: var(--ry-r-chip);
+  background: transparent;
+  color: var(--ry-text);
+  font-family: var(--ry-font-sans);
+  font-size: var(--ry-fs-dense);
+  text-align: start;
+  cursor: pointer;
+}
+
+.moreItem:hover {
+  background: var(--ry-hover);
+}
+
+.moreItem:focus-visible {
+  outline: none;
+  box-shadow: var(--ry-focus);
+}
+
+.moreItem[aria-pressed="true"] {
+  background: var(--ry-elevated);
+  border-color: var(--ry-border);
+}
+
+.moreItem[aria-pressed="true"] > svg {
+  color: var(--ry-caution);
+}
+
+.moreItem:disabled {
+  cursor: default;
+  opacity: 0.6;
+}
+
+.moreItem small {
+  margin-inline-start: auto;
+  color: var(--ry-muted);
+  font-size: var(--ry-fs-label-sm);
+}
+
+/* A trade's card, when the wallet has one: the share button as a row of the menu. */
+.moreShare:empty {
+  display: none;
+}
+
+.moreShare :global([data-share-trade]) {
+  width: 100%;
+  justify-content: flex-start;
+}
+
+/* The layout's presets, a group of the menu under a rule — a desk only. */
+.layoutGroup {
+  display: grid;
+  gap: 2px;
+  margin-top: var(--ry-s1);
+  padding-top: var(--ry-s2);
+  border-top: 1px solid var(--ry-border);
+}
+
+.layoutGroup > p {
+  display: flex;
+  align-items: center;
+  gap: var(--ry-s1);
+  margin: 0 0 2px;
+  padding: 0 var(--ry-s2);
+  color: var(--ry-muted);
+  font-size: var(--ry-fs-label-sm);
+}
+
+.changeWindow {
+  color: var(--ry-muted);
+  font-weight: 400;
 }
 
 .priceRow {
   display: flex;
   align-items: baseline;
-  gap: var(--ry-s3);
-  flex-wrap: wrap;
+  gap: var(--ry-s2);
+  flex: 0 0 auto;
 }
 
 .price {
-  font-family: var(--ry-font-mono);
-  font-size: var(--ry-fs-key);
-  font-weight: 500;
+  font-family: var(--ry-font-sans);
+  font-size: var(--ry-fs-data-lg);
+  font-weight: 600;
   line-height: var(--ry-lh-tight);
   letter-spacing: -0.02em;
   color: var(--ry-text);
@@ -628,8 +734,8 @@
 }
 
 .change {
-  font-family: var(--ry-font-mono);
-  font-size: var(--ry-fs-copy);
+  font-family: var(--ry-font-sans);
+  font-size: var(--ry-fs-dense);
   font-weight: 500;
   white-space: nowrap;
   font-variant-numeric: tabular-nums;
@@ -638,36 +744,43 @@
 .priceMeta {
   color: var(--ry-muted);
   font-size: var(--ry-fs-label);
-  margin-inline-start: auto;
+  white-space: nowrap;
 }
 
+
+/* The market's figures, each a small label over its number, side by side in the strip and before «⋯» (UX-152): where
+   the line has no room for all of them, they move whole to a line of their own — and wrap there only if even that is
+   too narrow — rather than scroll out of reach: nothing a person reads before an order is hidden behind a scroll. */
 .stats {
   display: flex;
   flex-wrap: wrap;
-  gap: var(--ry-s2) var(--ry-s3);
+  gap: var(--ry-s1) var(--ry-s4);
+  flex: 1 1 auto;
+  min-width: 0;
   margin: 0;
-  padding: var(--ry-s2) 0 0;
-  border-top: 1px solid var(--ry-border);
+  padding: 0;
 }
 
 .stats > div {
   display: grid;
-  gap: 2px;
+  flex: 0 0 auto;
+  gap: 0;
   min-width: 0;
 }
 
 .stats dt {
   font-size: var(--ry-fs-label-sm);
-  font-weight: 600;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
+  font-weight: 500;
   color: var(--ry-muted);
+  white-space: nowrap;
 }
 
 .stats dd {
   margin: 0;
-  font-family: var(--ry-font-mono);
-  font-size: var(--ry-fs-data);
+  font-family: var(--ry-font-sans);
+  font-size: var(--ry-fs-dense);
+  font-weight: 500;
+  white-space: nowrap;
   color: var(--ry-text);
   font-variant-numeric: tabular-nums;
 }
@@ -680,13 +793,6 @@
   color: var(--ry-pnl-neg);
 }
 
-.headerActions {
-  display: flex;
-  align-items: center;
-  gap: var(--ry-s2);
-  flex: 0 0 auto;
-  margin-inline-start: auto;
-}
 
 .ghost {
   display: inline-flex;
@@ -817,8 +923,8 @@
 }
 
 /* On the light theme the brand's text value for light ground: the lift is ~3:1 on white, the sink 5.1:1. */
-:global([data-theme="light"]) .aboutLink,
-:global([data-theme="light"]) .aboutMore {
+:global(:is([data-theme="light"], [data-theme="porcelain"])) .aboutLink,
+:global(:is([data-theme="light"], [data-theme="porcelain"])) .aboutMore {
   color: var(--ry-iris-sink);
 }
 
@@ -835,13 +941,8 @@
 /* A laptop's short window (720–800 px tall): the header's rows stand closer, so the line about the coin costs the
    chart no more than it must and the chart still ends on the first screen. */
 @media (max-height: 800px) and (pointer: fine) {
-  .header {
-    gap: var(--ry-s1);
-    padding-block: var(--ry-s2);
-  }
-
-  .stats {
-    padding-top: var(--ry-s1);
+  .workspace {
+    --spot-panel-h: 240px;
   }
 }
 
@@ -972,46 +1073,98 @@
 
 .chartCanvas {
   width: 100%;
+  min-width: 0;
   height: var(--spot-chart-h);
 }
 
-.chart :global(.dm-tfs button) {
-  min-height: 28px;
-  padding: 0 var(--ry-s2);
-  border: 1px solid transparent;
-  border-radius: var(--ry-r-chip);
-  background: transparent;
-  color: var(--ry-muted);
-  font-family: var(--ry-font-mono);
-  font-size: var(--ry-fs-label);
-  cursor: pointer;
+/* The core's chart grows with its own bar, which wraps to as many rows as its words need in each language and at each
+   width: the candles keep the measured height and nothing under them — the chart's foot, the sources — is cut
+   (CH-17 on a phone; B16 at every width). */
+.chartCanvas:has(:global(.ryntra-chart)) {
+  height: auto;
 }
 
-/* The drawing tools stand tighter than the shared chart's, and the chart library's mark moves to the pane's
-   right foot: a laptop's shorter canvas keeps the mark in view, never under the tools. */
-.chart :global(.dt-toolbar) {
-  top: var(--ry-s1);
-  gap: 0;
-  padding: 2px;
+.chartCanvas :global(.ryntra-chart__stage) {
+  flex: none;
+  height: var(--spot-chart-h);
 }
 
-.chart :global(#tv-attr-logo) {
-  left: auto;
-  right: var(--ry-s2);
+/* The core's chart fills its box: its bar, the candles and the line of the source and age (CH-17). */
+.coreChart {
+  height: 100%;
+  min-height: 0;
 }
 
-.chart :global(.dm-tfs button:hover) {
-  color: var(--ry-text);
-  background: var(--ry-hover);
+/* SOL-C12, the clean standard: one interval switch — the core's row of quick intervals; its list of every interval only
+   where the chart is too narrow for the row (the core's own 640 px). */
+@container (min-width: 641px) {
+  .coreChart :global(.ryntra-chart__select--frames) {
+    display: none;
+  }
 }
 
-.chart :global(.dm-tfs button.on) {
-  color: var(--ry-text);
-  background: var(--ry-elevated);
-  border-color: var(--ry-border);
+/* One row of the chart's tools: the candles' type and the scale are chosen in «Вигляд графіка» (`spot-chart.tsx`). */
+.coreChart :global(.ryntra-chart__scale),
+.coreChart :global(.ryntra-chart__select:not(.ryntra-chart__select--frames)) {
+  display: none;
 }
 
-/* «Ціна · Капіталізація»: one more pair beside the timeframes, set off by a hairline. */
+/* The source and the age in one line: the age first, then the delay, the source's name last and cut short where the
+   line ends — never a second line; the sources' attribution at the line's end (`--spot-sources-w`, measured). */
+.coreChart :global(.ryntra-chart__foot) {
+  padding-inline-end: var(--spot-sources-w, 0px);
+}
+
+.coreChart :global(.ryntra-chart__status) {
+  flex-wrap: nowrap;
+  overflow: hidden;
+  white-space: nowrap;
+}
+
+.coreChart :global(.ryntra-chart__status > span) {
+  flex: none;
+}
+
+.coreChart :global(.ryntra-chart__age) {
+  order: -2;
+}
+
+/* A narrow chart: the sources under the line rather than at its end, so the age and the delay keep their room. */
+@container spotchart (max-width: 560px) {
+  .coreChart :global(.ryntra-chart__foot) {
+    padding-inline-end: 0;
+  }
+
+  .chartSources[data-chart-sources="chart"] {
+    position: static;
+    padding-inline-start: 0;
+  }
+}
+
+.coreChart :global(.ryntra-chart__status > span:first-child) {
+  order: 1;
+  flex: 0 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* The symbol's place in the core chart's bar: the symbol, «Ціна · Капіталізація», the look and full screen. */
+.chartHead {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--ry-s1);
+  min-width: 0;
+}
+
+.chartHead > b {
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+/* «Ціна · Капіталізація»: one pair beside the symbol, set off by a hairline. */
 .seriesSwitch {
   display: inline-flex;
   align-items: center;
@@ -1021,8 +1174,108 @@
   border-inline-start: 1px solid var(--ry-border);
 }
 
-/* The chart measures itself for the head below; the capitalisation's note sits on the chart, at the foot of the
-   plot by the drawing tools, so it is read at every width without taking a row of the first screen. */
+.seriesSwitch button,
+.chartLookMenu button {
+  min-height: 28px;
+  padding: 0 var(--ry-s2);
+  border: 1px solid transparent;
+  border-radius: var(--ry-r-chip);
+  background: transparent;
+  color: var(--ry-muted);
+  font-family: var(--ry-font-sans);
+  font-size: var(--ry-fs-label);
+  cursor: pointer;
+}
+
+.seriesSwitch button:hover,
+.chartLookMenu button:hover {
+  color: var(--ry-text);
+  background: var(--ry-hover);
+}
+
+.seriesSwitch button[aria-pressed="true"],
+.chartLookMenu button[aria-pressed="true"] {
+  color: var(--ry-text);
+  background: var(--ry-elevated);
+  border-color: var(--ry-border);
+}
+
+/* The look's and full screen's buttons: square, quiet, the size of the chart's own tools. */
+.chartIcon {
+  display: inline-grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border: 1px solid transparent;
+  border-radius: var(--ry-r-chip);
+  background: transparent;
+  color: var(--ry-muted);
+  cursor: pointer;
+}
+
+.chartIcon:hover,
+.chartIcon[aria-pressed="true"],
+.chartLook[open] > .chartIcon {
+  color: var(--ry-text);
+  background: var(--ry-hover);
+}
+
+.chartIcon:focus-visible {
+  outline: none;
+  box-shadow: var(--ry-focus);
+}
+
+/* The look — the candles' colours and the clock of the time labels — under one quiet button; its menu opens from the
+   head's own start, so on a phone it stays inside the chart. */
+.chartLook {
+  position: static;
+}
+
+.chartLook > summary {
+  list-style: none;
+  cursor: pointer;
+}
+
+.chartLook > summary::-webkit-details-marker {
+  display: none;
+}
+
+.chartLookMenu {
+  position: absolute;
+  inset-block-start: calc(100% + 4px);
+  inset-inline-start: 0;
+  z-index: 20;
+  display: grid;
+  gap: var(--ry-s1);
+  min-width: 220px;
+  max-width: calc(100cqi - 2 * var(--ry-s3));
+  padding: var(--ry-s2);
+  border: 1px solid var(--ry-border);
+  border-radius: var(--ry-r-card);
+  background: var(--ry-card);
+  box-shadow: var(--ry-shadow-elevated);
+}
+
+.chartLookMenu p {
+  margin: 0;
+  color: var(--ry-muted);
+  font-size: var(--ry-fs-label-sm);
+}
+
+.chartLookMenu span {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2px;
+}
+
+/* Full screen: the chart takes the whole screen, the page's ground behind it. */
+.chart:fullscreen {
+  --spot-chart-h: calc(100vh - 2 * var(--ry-s2));
+  background: var(--ry-bg);
+  border-radius: 0;
+}
+
+/* The pair of the series, and the cap's line, sit on the chart itself. */
 .chart {
   position: relative;
   container: spotchart / inline-size;
@@ -1043,35 +1296,24 @@
   z-index: 2;
 }
 
-/* A phone's chart: the pair shares the second row with the chart's tools, «Indicators» as its icon alone, and no
-   hairline at a row's start. */
+/* «Ціна · Капіталізація» beside the look on a wide chart; on a narrow one (a phone) in the look's menu, so the chart's
+   tools keep one row (SOL-C12). */
+.chartLookMenu > .seriesInMenu {
+  display: none;
+}
+
 @container spotchart (max-width: 560px) {
-  .seriesSwitch {
-    margin-inline-start: 0;
-    padding-inline-start: 0;
-    border-inline-start: 0;
+  .chartHead > .seriesSwitch {
+    display: none;
   }
 
-  /* The icon alone: a square as wide as the other tools, the word clipped after it (its title names it). */
-  .chart :global(.pc-actions .pc-btn[title="Indicators"]) {
-    justify-content: flex-start;
-    width: 44px;
-    padding-inline: 14px;
-    overflow: hidden;
-    white-space: nowrap;
+  .chartLookMenu > p.seriesInMenu {
+    display: block;
   }
-}
 
-/* Words, not figures: the pair is set in the sans, after the timeframes' mono rule. */
-.chart .seriesSwitch button {
-  font-family: var(--ry-font-sans);
-}
-
-.chartNote {
-  margin-inline-start: auto;
-  color: var(--ry-muted);
-  font-size: var(--ry-fs-label);
-  white-space: nowrap;
+  .chartLookMenu > span.seriesInMenu {
+    display: flex;
+  }
 }
 
 .chartState {
@@ -1084,6 +1326,42 @@
   padding: var(--ry-s4);
 }
 
+/* The page's sources, named once, at the end of the chart's line of its source and age (B16; SOL-C12). */
+.chartSources[data-chart-sources="chart"] {
+  position: absolute;
+  inset-inline-end: var(--ry-s3);
+  inset-block-end: calc(var(--ry-s2) + 1px);
+  flex-wrap: nowrap;
+  white-space: nowrap;
+  padding-inline-start: var(--ry-s2);
+}
+
+.chartSources {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--ry-s1);
+  margin: 0;
+  font-size: var(--ry-fs-label-sm);
+  color: var(--ry-muted);
+}
+
+.chartSources a {
+  color: var(--ry-muted);
+  text-decoration: underline;
+  text-decoration-color: var(--ry-border);
+  text-underline-offset: 2px;
+}
+
+.chartSources a:hover {
+  color: var(--ry-text);
+}
+
+/* The same line at the foot of «Про токен» is a phone's: a desk keeps it under the chart. */
+.aboutSources {
+  display: none;
+}
+
 .chartState b {
   display: block;
   color: var(--ry-text);
@@ -1093,20 +1371,75 @@
 
 /* ── Order ticket ─────────────────────────────────────────────────────── */
 
-/* Held in view under the top bar while the market scrolls, as Launch's column
-   is; a ticket taller than what the window leaves scrolls inside itself, so
-   its action is never under the window's edge. */
-.ticket {
-  grid-area: ticket;
+/* The ticket's column — the ticket, «Про токен» under it — held in view under the top bar while the market scrolls, as
+   Launch's column is; a column taller than what the window leaves scrolls inside itself, so the ticket's action is
+   never under the window's edge. */
+.sideColumn {
+  grid-area: side;
   display: grid;
   gap: var(--ry-s3);
-  padding: var(--ry-s4);
+  align-content: start;
   position: sticky;
   top: calc(var(--rs-top, 64px) + var(--ry-s3));
   max-height: var(--spot-ticket-fit, calc(100dvh - var(--rs-top, 64px) - 2 * var(--ry-s3)));
   overflow-y: auto;
   scrollbar-width: thin;
   min-width: 0;
+}
+
+/* On a desk the sheet is only the ticket's wrapper: its head is the phone's. */
+.tradeSheet {
+  min-width: 0;
+}
+
+.tradeSheetHead {
+  display: none;
+}
+
+.ticket {
+  display: grid;
+  gap: var(--ry-s3);
+  padding: var(--ry-s4);
+  min-width: 0;
+}
+
+/* «Про токен»: under the ticket, the token's own words, its addresses and its details. */
+.aboutCard {
+  display: grid;
+  gap: var(--ry-s2);
+  padding: var(--ry-s3) var(--ry-s4);
+  min-width: 0;
+}
+
+.aboutTitle {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--ry-s1) var(--ry-s2);
+  margin: 0;
+  font-size: var(--ry-fs-label);
+  font-weight: 600;
+  color: var(--ry-text);
+}
+
+.aboutName {
+  font-weight: 400;
+  color: var(--ry-muted);
+}
+
+.aboutCard .about {
+  display: grid;
+  gap: var(--ry-s1);
+}
+
+.aboutCard .aboutText {
+  -webkit-line-clamp: 3;
+  line-clamp: 3;
+}
+
+.aboutCard .detailGrid {
+  grid-template-columns: minmax(0, 1fr);
 }
 
 .ticket > * {
@@ -1259,9 +1592,11 @@
 }
 
 /* «Ринок · Регулярно» (1.31.0): the order types as one quiet segmented chip — the chosen one inked, the other muted; never orange. */
+/* The ticket's three kinds share its whole width — a segmented control, not a pill at the ticket's left edge. */
 .orderTypes {
-  display: inline-grid;
+  display: grid;
   grid-auto-flow: column;
+  grid-auto-columns: minmax(0, 1fr);
   gap: 2px;
   padding: 2px;
   border: 1px solid var(--ry-border);
@@ -1922,6 +2257,44 @@
   text-align: center;
 }
 
+/* A token its issuer set a swap deadline for: one red line under the action, the swap one press away (UX-504). */
+.deadlineLine {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--ry-s1) var(--ry-s3);
+  margin: 0;
+  padding: var(--ry-s2) var(--ry-s3);
+  border: 1px solid color-mix(in srgb, var(--ry-risk) 55%, transparent);
+  border-radius: var(--ry-r-chip);
+  background: var(--ry-risk-soft);
+  color: var(--ry-risk);
+  font-size: var(--ry-fs-dense);
+  font-weight: 600;
+  line-height: var(--ry-lh-body);
+}
+
+.tradeBar > .deadlineLine,
+.tradeBar > .riskLine {
+  grid-column: 1 / -1;
+}
+
+/* Over the pinned pair the risk is one line that ends short; the sheet the pair opens carries it whole. */
+.tradeBar > .riskLine {
+  overflow: hidden;
+  padding-block: 2px;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.deadlineLine > a {
+  color: var(--ry-text);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  white-space: nowrap;
+}
+
 /* A token Ryntra no longer supports: the ticket's place says so, and where it can be sold. */
 .retiredNotice {
   display: grid;
@@ -1959,17 +2332,68 @@
 
 /* ── Trading state ───────────────────────────────────────────────────── */
 
+/* The bottom panel: seen on the first screen at its own height, its body scrolling inside, as a terminal's does. */
 .state {
   grid-area: state;
   display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
   gap: 0;
+  height: var(--spot-panel-h);
 }
 
 .stateTabs {
   display: flex;
   gap: var(--ry-s1);
-  padding: var(--ry-s2) var(--ry-s3) 0;
+  padding: var(--ry-s1) var(--ry-s3) 0;
   border-bottom: 1px solid var(--ry-border);
+}
+
+.stateTab {
+  flex: 0 0 auto;
+  white-space: nowrap;
+}
+
+/* The account's tabs at the end of the row, after a rule: the market ‖ the account. */
+.stateTab[data-account-start="true"] {
+  position: relative;
+  margin-inline-start: auto;
+}
+
+.stateTab[data-account-start="true"]::before {
+  content: "";
+  position: absolute;
+  inset-block: 8px;
+  inset-inline-start: calc(-1 * var(--ry-s2));
+  border-inline-start: 1px solid var(--ry-border);
+}
+
+/* The bones of the panel's rows while the market is read. */
+.stateLoading {
+  display: grid;
+  gap: var(--ry-s3);
+  padding-top: var(--ry-s2);
+}
+
+.stateLoading > span {
+  width: 100%;
+  margin: 0;
+}
+
+/* «Мої» on a phone: the position, the orders and the history, one under another. */
+.mine {
+  display: grid;
+  gap: var(--ry-s2);
+}
+
+.mineTitle {
+  margin: var(--ry-s2) 0 0;
+  font-size: var(--ry-fs-label);
+  font-weight: 600;
+  color: var(--ry-muted);
+}
+
+.mineTitle:first-of-type {
+  margin-top: 0;
 }
 
 .stateTab {
@@ -1993,8 +2417,13 @@
 }
 
 .stateBody {
+  /* The containing block of what its rows hide for a reader of the screen: an absolute line inside it must scroll with
+     it, never stand past the page's end. */
+  position: relative;
   padding: var(--ry-s2) var(--ry-s3) var(--ry-s3);
-  min-height: 96px;
+  min-height: 0;
+  overflow-y: auto;
+  scrollbar-width: thin;
 }
 
 .fills {
@@ -2021,9 +2450,7 @@
   white-space: nowrap;
 }
 
-.fills td[data-mono="true"] {
-  font-family: var(--ry-font-mono);
-  font-size: var(--ry-fs-data);
+.fills td[data-num="true"] {
   font-variant-numeric: tabular-nums;
 }
 
@@ -2062,7 +2489,7 @@
 
 .holdingGrid dd {
   margin: 0;
-  font-family: var(--ry-font-mono);
+  font-family: var(--ry-font-sans);
   font-size: var(--ry-fs-data-m);
   font-weight: 500;
   color: var(--ry-text);
@@ -2161,24 +2588,181 @@
 /* A phone, and a canvas as narrow: one column in the order a person acts. */
 @container spot (max-width: 759px) {
   .workspace {
-    --spot-chart-h: 300px;
+    /* The candles' field takes what the first screen leaves once the segment's tabs stand above the pinned
+       «Купити | Продати» (`--spot-phone-fit`, measured by the page from the tabs themselves, so the chart's bar and its
+       source lines may wrap to any number of rows in either language); a one-row bar is the Charts line's to give. */
+    --spot-chart-h: var(--spot-phone-fit, 200px);
+    --spot-panel-h: auto;
     grid-template-columns: minmax(0, 1fr);
     grid-template-areas:
       "header"
       "chart"
-      "ticket"
-      "evidence"
-      "state";
+      "state"
+      "about";
     gap: var(--ry-s2);
+    /* Room for the pinned «Купити | Продати» over the page's last lines. */
+    padding-bottom: 64px;
   }
 
-  .ticket {
-    position: static;
-    max-height: none;
-    overflow: visible;
+  /* A swap deadline over the pinned buttons makes the bar taller: the page's last lines keep clear of it (UX-504). */
+  :global(body:has([data-trade-bar] [data-risk-line])) .workspace {
+    padding-bottom: 96px;
   }
 
-  .header,
+  :global(body:has([data-trade-bar] [data-swap-deadline])) .workspace {
+    padding-bottom: 152px;
+  }
+
+  /* The strip in four short lines: the name and «⋯», the facts beside the name on a line of their own — no press lies
+     over them (UX-153) — the price, the figures as chips that wrap. */
+  .header {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-areas:
+      "identity more"
+      "chips chips"
+      "price price"
+      "stats stats";
+    align-items: center;
+    gap: 2px var(--ry-s2);
+    min-height: 0;
+    padding: var(--ry-s2) var(--ry-s3);
+  }
+
+  .header > .identity { grid-area: identity; overflow: hidden; }
+  .header > .chips { grid-area: chips; }
+  .header > .more { grid-area: more; }
+  .header > .priceRow { grid-area: price; flex-wrap: wrap; }
+  .header > .stats { grid-area: stats; }
+  .header > .retiredState,
+  .header > .stockLine { grid-column: 1 / -1; }
+
+  /* The figures in three columns, each its label over its number: two short lines, every figure in view (UX-152). */
+  .stats {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: var(--ry-s1) var(--ry-s2);
+    padding-top: var(--ry-s1);
+  }
+
+  .header > .priceRow {
+    row-gap: 0;
+  }
+
+  .stats dt,
+  .stats dd {
+    line-height: 1.25;
+  }
+
+  /* The ticket's column comes apart: the ticket is the sheet the pinned bar opens, «Про токен» stands under the panel. */
+  .sideColumn {
+    display: contents;
+  }
+
+  .aboutCard {
+    grid-area: about;
+  }
+
+  .tradeSheet {
+    display: none;
+  }
+
+  /* The sources stand at the foot of «Про токен» on a phone: the row under the chart goes to the candles. */
+  .chartSources {
+    display: none;
+  }
+
+  .aboutSources {
+    display: flex;
+  }
+
+  /* The core's field keeps 240 px at least; a phone's takes what is left above the segment and the pinned pair. */
+  .chartCanvas :global(.ryntra-chart__stage) {
+    min-height: 0;
+  }
+
+  /* «Із затримкою» takes a row of its own in the core's bar on a phone and says what the chart's foot already says
+     («затримка 2 хв»): the candles get the row back. A warning state («Застаріле») stays. */
+  .chartCanvas :global(.ryntra-chart__state--info) {
+    display: none;
+  }
+
+  /* The sheet covers the frame's bottom bar: the ticket's pinned action stands at the sheet's foot, not a bar higher
+     (the core's `--shell-bottom`, SOL-C11). */
+  .tradeSheet[data-open="true"] {
+    --shell-bottom: 0px;
+    display: block;
+    position: fixed;
+    inset: auto 0 0;
+    z-index: 61;
+    max-height: 88dvh;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+    background: var(--ry-card);
+    border: 1px solid var(--ry-border);
+    border-radius: var(--ry-r-card) var(--ry-r-card) 0 0;
+    box-shadow: var(--ry-shadow-elevated);
+  }
+
+  .tradeSheet[data-open="true"] .tradeSheetHead {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--ry-s2);
+    padding: var(--ry-s3) var(--ry-s3) 0;
+  }
+
+  .tradeSheet[data-open="true"] .ticket {
+    border: 0;
+    border-radius: 0;
+  }
+
+  .state {
+    height: auto;
+    grid-template-rows: auto auto;
+  }
+
+  .stateBody {
+    max-height: 480px;
+    padding-inline: var(--ry-s2);
+  }
+}
+
+/* A phone's pinned «Купити | Продати», above the frame's bottom bar; the sheet's backdrop under the sheet. */
+.tradeBar {
+  position: fixed;
+  inset: auto 0 calc(var(--sol-phonebar-h, 64px) + env(safe-area-inset-bottom, 0px));
+  z-index: 30;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--ry-s2);
+  padding: var(--ry-s2) var(--ry-s3);
+  border-top: 1px solid var(--ry-border);
+  background: var(--ry-bg);
+}
+
+.tradeBar > button {
+  min-height: 48px;
+  justify-content: center;
+}
+
+@media (min-width: 1024px) {
+  .tradeBar {
+    bottom: env(safe-area-inset-bottom, 0px);
+  }
+}
+
+.tradeBackdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  background: color-mix(in srgb, var(--ry-bg) 55%, transparent);
+}
+
+@container spot (max-width: 759px) {
+
+
   .ticket {
     padding: var(--ry-s3);
   }
@@ -2187,16 +2771,8 @@
     font-size: var(--ry-fs-data-lg);
   }
 
-  .price {
-    font-size: var(--ry-fs-data-lg);
-  }
-
   .change {
     font-size: var(--ry-fs-data);
-  }
-
-  .stats {
-    gap: var(--ry-s2) var(--ry-s4);
   }
 
   .cta {
@@ -2285,6 +2861,10 @@
 .stockLine b { font-weight: 600; color: var(--ry-text); }
 .stockLine a { color: var(--ry-text); font-weight: 600; text-decoration: none; }
 .stockLine a:hover { color: var(--ry-accent); }
+/* A token launched on Ryntra: where it was launched, its price from its launch page's read, and the way there (SOL-C10). */
+.launchLine { display: flex; flex-wrap: wrap; gap: 6px 16px; margin: 0; font-size: 0.8125rem; color: var(--ry-muted); }
+.launchLine a { color: var(--ry-text); font-weight: 600; text-decoration: none; }
+.launchLine a:hover { color: var(--ry-accent); }
 /* The two chips a Portfolio row of a stock carries. */
 .stockChips { display: inline-flex; flex-wrap: wrap; gap: 4px; margin-top: 2px; }
 .stockChips .chip[data-tone="up"] { color: var(--ry-pnl-pos); }
@@ -2627,18 +3207,6 @@
 
 /* ── The token page ─────────────────────────── */
 
-/* The network beside the name: quiet, the name's own colour. */
-.network {
-  color: var(--ry-muted);
-}
-
-/* The header's window: one switch in the price line for the change beside it and the volume below. */
-
-.windowSwitch {
-  align-self: center;
-}
-
-.windowSwitch,
 .tokenFilters {
   display: inline-flex;
   gap: 2px;
@@ -2647,7 +3215,6 @@
   border-radius: var(--ry-r-chip);
 }
 
-.windowSwitch button,
 .tokenFilters button {
   min-height: 28px;
   padding: 0 var(--ry-s2);
@@ -2660,19 +3227,20 @@
   cursor: pointer;
 }
 
-.windowSwitch button:hover,
 .tokenFilters button:hover {
   color: var(--ry-text);
   background: var(--ry-hover);
 }
 
-.windowSwitch button.on,
-.tokenFilters button.on {
+/* The chosen window and filter, by the state the button states — `.on` is a literal class a CSS module renames, so it
+   never matched and nothing looked chosen (B15). */
+.tokenFilters button[aria-pressed="true"] {
   color: var(--ry-text);
   background: var(--ry-elevated);
+  box-shadow: inset 0 0 0 1px var(--ry-border);
+  font-weight: 600;
 }
 
-.windowSwitch button:focus-visible,
 .tokenFilters button:focus-visible {
   outline: none;
   box-shadow: var(--ry-focus);
@@ -2706,6 +3274,16 @@
   align-items: center;
   justify-content: space-between;
   gap: var(--ry-s2) var(--ry-s3);
+}
+
+/* On a phone the filters take their row's whole width in equal parts, not a short pill at its left edge. */
+@container spot (max-width: 599px) {
+  .tokenFilters {
+    display: grid;
+    grid-auto-flow: column;
+    grid-auto-columns: minmax(0, 1fr);
+    flex: 1 1 100%;
+  }
 }
 
 .tokenSummary {
@@ -3047,9 +3625,9 @@
   }
 }
 
-/* Under a finger the window, the filters and a trade's explorer link are a finger's size; under a mouse they stay dense. */
+/* Under a finger «⋯», the filters and a trade's explorer link are a finger's size; under a mouse they stay dense. */
 @media (pointer: coarse) {
-  .windowSwitch button,
+  .moreButton,
   .tokenFilters button {
     min-height: 44px;
     min-width: 44px;
@@ -3061,35 +3639,6 @@
     justify-content: center;
   }
 }
-
-/* The header's sources on the details' row, at its end; on a narrow canvas a line of their own. */
-.detailsRow {
-  position: relative;
-}
-
-.headerSources {
-  position: absolute;
-  inset-block-start: var(--ry-s1);
-  inset-inline-end: 0;
-  display: inline-flex;
-  align-items: center;
-  gap: var(--ry-s1);
-  min-height: 28px;
-  font-size: var(--ry-fs-label-sm);
-  color: var(--ry-muted);
-}
-
-.headerSources a {
-  color: var(--ry-muted);
-  text-decoration: underline;
-  text-decoration-color: var(--ry-border);
-  text-underline-offset: 2px;
-}
-
-.headerSources a:hover {
-  color: var(--ry-text);
-}
-
 
 /* A program's account is said quietly: it repeats down the list. */
 .tokenTag[data-tag="program"],
@@ -3123,11 +3672,371 @@
   .tokenShareTrack {
     display: none;
   }
+}
 
-  .headerSources {
-    position: static;
-    display: flex;
-    flex-wrap: wrap;
-    margin-block-start: var(--ry-s1);
+/* The count of a wallet's open limit orders on this market, on the «Ліміт» tab. */
+.tabCount {
+  display: inline-grid;
+  place-items: center;
+  min-width: 18px;
+  height: 18px;
+  margin-left: 6px;
+  padding: 0 5px;
+  border-radius: 999px;
+  background: var(--ry-iris);
+  /* Dark text on the orange, as on every orange control: white on #FF681C is under 3:1. */
+  color: var(--ry-midnight);
+  font-size: var(--ry-fs-label-sm);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+}
+
+/* ── B16, step 2: a desk is the core's terminal ─────────────────────────────────────────────────────────────────
+   The strip across, then the terminal — the chart, the ticket, the market's tabs, the account's and «Про токен» as
+   panels the person drags, splits, resizes, puts away and brings back (`spot-terminal.tsx`). Its height is what the
+   first screen leaves under the strip (`--spot-terminal-h`, measured by the page). Inside a panel Spot's own blocks
+   lose their frame: the dock's group is the frame. */
+
+.desk {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--ry-s3);
+  min-width: 0;
+}
+
+/* The strip's own area is the old grid's; here every block stands in the one column, in order. */
+.desk > .header {
+  grid-area: auto;
+}
+
+.terminalHost {
+  min-width: 0;
+}
+
+.terminal {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ry-s2);
+  height: var(--spot-terminal-h, max(560px, calc(100dvh - 180px)));
+  min-width: 0;
+}
+
+/* The docked panels take the height; a panel put away waits in the core's row under them, inside the same height. */
+.terminal > :global(.ryntra-terminal) {
+  flex: 1 1 auto;
+  height: auto;
+  min-height: 0;
+}
+
+.terminal :global(.ryntra-dock__panel) {
+  padding: var(--ry-s2) var(--ry-s3);
+}
+
+/* A tab's «×» on the tab in view: a row of five tabs keeps its words, and a panel is put away from its own face. */
+.terminal :global(.dv-tab:not(.dv-active-tab) .dv-default-tab-action) {
+  display: none;
+}
+
+.dockBody {
+  container: spotpanel / inline-size;
+  position: relative;
+  min-width: 0;
+  min-height: 100%;
+}
+
+/* A panel narrowed by the person (or by the arrangement) reads its tables as a phone does: what a person reads first. */
+@container spotpanel (max-width: 560px) {
+  /* A tape keeps time · price · size · dollars: the wallet, the side's word (the size carries its colour and sign) and
+     the capitalisation then wait for a wider panel. */
+  .tokenTable [data-optional],
+  .tokenTable [data-panel-hide],
+  .tokenTable [data-narrow-hide]:not([data-num]) {
+    display: none;
   }
+
+  .tokenTable td[data-num][data-side-cell="buy"]::before {
+    content: "+";
+  }
+
+  .tokenTable td[data-num][data-side-cell="sell"]::before {
+    content: "−";
+  }
+
+  .tokenShare {
+    grid-template-columns: auto;
+  }
+
+  .tokenShareTrack {
+    display: none;
+  }
+
+  .riskFacts li {
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+
+  .riskReason,
+  .riskSource {
+    grid-column: 1 / -1;
+    text-align: start;
+  }
+}
+
+.dockBody > .panel {
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+}
+
+/* The chart fills its panel: its bar, the candles, its foot and the sources' line. */
+.dockBody[data-dock-panel="chart"] {
+  height: 100%;
+}
+
+.dockBody .chart {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  padding: 0;
+}
+
+.dockBody .chartCanvas,
+.dockBody .chartCanvas:has(:global(.ryntra-chart)) {
+  flex: 1 1 auto;
+  height: auto;
+  min-height: 0;
+}
+
+.dockBody .chartCanvas :global(.ryntra-chart) {
+  min-height: 240px;
+}
+
+.dockBody .chartCanvas :global(.ryntra-chart__stage) {
+  flex: 1 1 auto;
+  height: auto;
+  min-height: 160px;
+}
+
+.dockBody .chartState {
+  height: 100%;
+  min-height: 200px;
+}
+
+/* The ticket and «Про токен» in their panels: no second padding inside the panel's own. */
+.dockBody .ticket,
+.dockBody .aboutCard {
+  padding: 0;
+}
+
+/* The core's ticket in a panel as narrow as a ticket's column: its Review keeps its two actions side by side with their
+   words whole, and its pinned action stands on the panel's own ground. */
+.dockBody .ticket :global(.ryntra-review) {
+  padding: var(--ry-s3);
+  box-shadow: none;
+}
+
+.dockBody .ticket :global(.ryntra-review__actions) > * {
+  flex: 1 1 auto;
+}
+
+.dockBody .ticket :global(.ryntra-ticket__action) {
+  background: var(--ryntra-surface);
+}
+
+/* On a desk the position has its own panel: in the ticket's panel its line and «Продати» stand after the order, so the
+   amount and the action are what the panel opens on. */
+.dockBody .ticket > [data-position] {
+  order: 1;
+}
+
+.aboutPanel {
+  display: grid;
+  gap: var(--ry-s3);
+  min-width: 0;
+}
+
+.accountPanel {
+  display: grid;
+  gap: var(--ry-s2);
+  min-width: 0;
+}
+
+
+
+/* The core's ticket in Spot. The engine sets each quote's price tolerance (its route decides it), so a market order has
+   no tolerance to choose: its line stands under the action and in Review, and the choice the core offers is not drawn. */
+.ticketHost {
+  min-width: 0;
+}
+
+.ticket[data-ticket-type="market"] :global(.ryntra-ticket__settings) {
+  display: none;
+}
+
+/* SOL-C12, UX-254: paid in dollars, the ticket's head prints no price of its own — the strip's one last price, with
+   its age and its source, is the page's; the ticket counts with the same figure. Paid in SOL, its price in SOL stays:
+   a price of its own unit, the one a limit is typed in. */
+.ticketHost[data-quote-usd="true"] :global(.ryntra-ticket__ref) {
+  display: none;
+}
+
+/* UX-253: in a narrow column the ticket's lines wrap rather than run past its edge — the amount's head, its unit. */
+.ticketHost :global(.ryntra-ticket__field-head) {
+  flex-wrap: wrap;
+  row-gap: var(--ry-s1);
+}
+
+/* The token's risk in one line by «Купити» (UX-156): the facts, the issuer's rights in the caution colour, no verdict. */
+.riskLine {
+  margin: 0;
+  padding: var(--ry-s1) var(--ry-s3);
+  border: 1px solid var(--ry-border);
+  border-radius: var(--ry-r-chip);
+  color: var(--ry-muted);
+  font-size: var(--ry-fs-label);
+  line-height: var(--ry-lh-body);
+  font-variant-numeric: tabular-nums;
+}
+
+.riskLine > b {
+  margin-inline-end: var(--ry-s2);
+  color: var(--ry-text);
+  font-weight: 600;
+}
+
+.riskLine > span + span::before {
+  content: " · ";
+  color: var(--ry-muted);
+  font-weight: 400;
+}
+
+.riskLine > [data-tone="caution"] {
+  color: var(--ry-caution);
+  font-weight: 600;
+}
+
+/* The ticket's own node and the places that take it in: as wide as their place, nothing of their own. */
+.ticketSlot,
+.ticketHome {
+  display: contents;
+}
+
+/* What leaves the wallet besides the trade and the venue's own facts, before the signature: a quiet card above the
+   core's Review, its figures in tabular digits. */
+.beforeSign {
+  display: grid;
+  gap: var(--ry-s2);
+  padding: var(--ry-s3);
+  border: 1px solid var(--ry-border);
+  border-radius: var(--ry-r-card);
+  background: var(--ry-elevated);
+}
+
+.beforeSign dl {
+  display: grid;
+  gap: var(--ry-s1);
+  margin: 0;
+}
+
+.beforeSign dl > div {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--ry-s2);
+  min-width: 0;
+}
+
+.beforeSign dt {
+  color: var(--ry-muted);
+  font-size: var(--ry-fs-label);
+}
+
+.beforeSign dd {
+  margin: 0;
+  min-width: 0;
+  overflow-wrap: anywhere;
+  text-align: end;
+  font-size: var(--ry-fs-label);
+  font-variant-numeric: tabular-nums;
+  color: var(--ry-text);
+}
+
+.beforeSign p {
+  margin: 0;
+  color: var(--ry-muted);
+  font-size: var(--ry-fs-label-sm);
+}
+
+.beforeSign summary {
+  cursor: pointer;
+  color: var(--ry-muted);
+  font-size: var(--ry-fs-label);
+}
+
+/* A quote that leaves the tolerance to the exact order: before Review neither a minimum nor a tolerance is named. */
+.ticketHost[data-tolerance="by-review"] :global(.ryntra-ticket__summary) > :nth-child(2),
+.ticketHost[data-tolerance="by-review"][data-amount-ready="true"] :global(.ryntra-ticket__note--risk) {
+  display: none;
+}
+
+/* In the terminal's ticket panel the ticket keeps its amount, its figures and its action on one screen: the quick sums
+   on one line, the venue's «no TP/SL with the order» one quiet line. */
+.dockBody .ticket :global(.ryntra-ticket__chips) {
+  flex-wrap: wrap;
+  gap: var(--ry-s1);
+}
+
+/* A column too narrow for the four sums takes them on two lines, each whole (UX-253). */
+.dockBody .ticket :global(.ryntra-ticket__chip) {
+  flex: 1 1 60px;
+  min-width: 0;
+  padding-inline: var(--ry-s1);
+  white-space: nowrap;
+}
+
+.dockBody .ticket :global(.ryntra-ticket__legs--off) {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--ry-s1) var(--ry-s2);
+  padding-block: var(--ry-s1);
+}
+
+/* A limit's choices stay small above the ticket, so its price, its amount and its action keep the first screen: the two
+   venues as one row of short buttons, the distance and its three steps on one line. */
+.ticket [data-limit-venues] > button {
+  min-height: 0;
+  padding: var(--ry-s1) var(--ry-s2);
+}
+
+.ticket [data-limit-venues] > button span {
+  font-size: var(--ry-fs-label-sm);
+  line-height: 1.25;
+}
+
+.ticket [data-limit-offsets] {
+  flex-wrap: nowrap;
+}
+
+.ticket [data-limit-offsets] > span:first-child {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.ticket [data-limit-offsets] button {
+  min-width: 0;
+  min-height: 26px;
+  padding-inline: var(--ry-s2);
+}
+
+/* The core's Review in a ticket-wide panel: a long figure — a meme's millions — moves under its label rather than past
+   the panel's edge. */
+.dockBody .ticket :global(.ryntra-review__row) {
+  flex-wrap: wrap;
+  gap: 2px var(--ry-s2);
+}
+
+.dockBody .ticket :global(.ryntra-review__row) dd {
+  min-width: 0;
+  margin-inline-start: auto;
+  overflow-wrap: anywhere;
 }

@@ -1,5 +1,6 @@
 "use client";
 
+import { Button } from "@ryntra/core/ui";
 import { Bell, CaretDown, CaretRight, CheckCircle, Eye, Pause, Warning, WarningCircle } from "@phosphor-icons/react";
 import Link from "next/link";
 import { useEffect, useId, useMemo, useRef, useState } from "react";
@@ -17,6 +18,7 @@ import { lifecycleEventFor } from "@/lib/stocks/lifecycle-events";
 
 import { acceptPosition } from "./use-positions";
 import styles from "./watch.module.css";
+import { ensureWalletActs } from "@/lib/account/wallet-proof-store.client";
 
 /**
  * Нагляд over one position, drawn: the state the server judged — «Все за
@@ -184,9 +186,9 @@ export function WatchLine({ view, locale, place, onSale, onWarn, primary = false
       case "open-sale":
         if (row && saleBeside) return null;
         return onSale ? (
-          <button type="button" className={actionClass} onClick={onSale} data-watch-action="open-sale">
+          <Button variant={row ? "ghost" : primary ? "primary" : "secondary"} className={row ? styles.inlineAction : styles.watchAction} onClick={onSale} data-watch-action="open-sale" lang={lang}>
             {word("open-sale")}
-          </button>
+          </Button>
         ) : (
           <Link className={actionClass} href={`${page}?sell=1`} prefetch={false} data-watch-action="open-sale">
             {word("open-sale")}
@@ -200,9 +202,9 @@ export function WatchLine({ view, locale, place, onSale, onWarn, primary = false
         );
       case "warn":
         return onWarn ? (
-          <button type="button" className={actionClass} onClick={onWarn} aria-haspopup="dialog" data-watch-action="warn">
+          <Button variant={row ? "ghost" : primary ? "primary" : "secondary"} className={row ? styles.inlineAction : styles.watchAction} onClick={onWarn} aria-haspopup="dialog" data-watch-action="warn" lang={lang}>
             {word("warn")}
-          </button>
+          </Button>
         ) : (
           <Link className={actionClass} href={page} prefetch={false} data-watch-action="warn">
             {word("warn")}
@@ -216,7 +218,7 @@ export function WatchLine({ view, locale, place, onSale, onWarn, primary = false
         );
       case "details":
         return (
-          <button type="button" className={row ? styles.inlineAction : `rw-btn ${styles.watchAction}`} aria-expanded={details} aria-controls={detailsId} onClick={() => setDetails((open) => !open)} data-watch-action="details">
+          <Button variant={row ? "ghost" : "secondary"} className={row ? styles.inlineAction : styles.watchAction} aria-expanded={details} aria-controls={detailsId} onClick={() => setDetails((open) => !open)} data-watch-action="details" lang={lang}>
             {row ? (
               <span className={styles.capsule}>
                 {watchActionWord("details", lang)}
@@ -228,7 +230,7 @@ export function WatchLine({ view, locale, place, onSale, onWarn, primary = false
                 <CaretDown size={14} weight="bold" aria-hidden="true" className={styles.caret} />
               </>
             )}
-          </button>
+          </Button>
         );
       default:
         return null;
@@ -350,6 +352,8 @@ function WarnBody({ view, locale, titleId, onClose }: Readonly<{ view: PositionW
   const turnOn = async () => {
     setPhase({ status: "writing", message: null });
     try {
+      /* A watch is a write: a wallet linked to an email account signs once for it (decision 62). */
+      if (!(await ensureWalletActs())) { setPhase({ status: "idle", message: null }); return; }
       const response = await fetch("/api/v1/positions/watch", {
         method: "PUT",
         headers: { accept: "application/json", "content-type": "application/json", "X-Ryntra-API": "1" },
@@ -381,9 +385,9 @@ function WarnBody({ view, locale, titleId, onClose }: Readonly<{ view: PositionW
         <WatchRange limit={watch.limitPerUnit} target={watch.targetPerUnit} price={price} size="full" lang={lang} format={format} limitNote={`−${watch.stopPct} %`} targetNote={`+${watch.targetPct} %`} />
         <p className={styles.warnNote}>{`${watchWord("channel", lang)}. ${WARN_HONEST_LIMIT[lang]}`}</p>
         <div className={company.sheetActions}>
-          <button type="button" className="rw-btn rw-btn--primary" onClick={onClose}>
+          <Button variant="primary" block onClick={onClose} lang={lang}>
             {watchWord("done", lang)}
-          </button>
+          </Button>
         </div>
       </div>
     );
@@ -425,9 +429,9 @@ function WarnBody({ view, locale, titleId, onClose }: Readonly<{ view: PositionW
         </p>
       ) : null}
       <div className={company.sheetActions}>
-        <button type="button" className="rw-btn rw-btn--primary" disabled={phase.status === "writing" || view.price === null} onClick={() => void turnOn()}>
+        <Button variant="primary" block disabled={phase.status === "writing" || view.price === null} onClick={() => void turnOn()} lang={lang}>
           {phase.status === "writing" ? watchWord("turning", lang) : watchWord("turnOn", lang)}
-        </button>
+        </Button>
       </div>
     </div>
   );

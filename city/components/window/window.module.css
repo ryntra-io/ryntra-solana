@@ -1,0 +1,733 @@
+/* The city's windows (CITY-65, macets M2 and M3): dark glass with a thin edge over the live city, Ryntra's orange
+   for what the hand can pull — the corner brackets, the seam grips, the guides of a drag. No blur over the canvas:
+   the city keeps its frames. Type and colours from city/styles/city.module.css. */
+
+.layer,
+.sheet {
+  --accent: #ff681c;
+  --accent-soft: rgba(255, 104, 28, 0.5);
+  --line: rgba(238, 241, 255, 0.07);
+}
+
+.layer {
+  position: fixed;
+  inset: 0;
+  z-index: 12;
+  pointer-events: none;
+  font-family: var(--font-ui, system-ui), system-ui, sans-serif;
+  color: var(--ice);
+}
+
+/* ---------- The frame ---------- */
+
+.window {
+  position: absolute;
+  left: 0;
+  top: 0;
+  pointer-events: auto;
+  outline: none;
+  animation: windowIn 180ms ease-out both;
+}
+
+@keyframes windowIn {
+  from {
+    opacity: 0;
+  }
+}
+
+.panel {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  border-radius: 3px;
+  /* Solid: what stands behind a window never shows through its figures. */
+  background: linear-gradient(165deg, #161228, #09080f);
+  box-shadow:
+    inset 0 0 0 1px rgba(153, 69, 255, 0.24),
+    0 22px 48px -22px rgba(0, 0, 0, 0.75);
+}
+
+/* The window in front has the keyboard: a window comes to the front when the pointer or the keyboard enters it. */
+.front .panel {
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 104, 28, 0.28),
+    0 26px 56px -20px rgba(0, 0, 0, 0.85);
+}
+
+/* ---------- The head ---------- */
+
+.head {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  height: 44px;
+  padding: 0 6px 0 14px;
+  border-bottom: 1px solid var(--line);
+  cursor: grab;
+  touch-action: none;
+  user-select: none;
+}
+
+.head:active {
+  cursor: grabbing;
+}
+
+.icon {
+  flex: none;
+  display: grid;
+  width: 18px;
+  height: 18px;
+  color: var(--accent);
+}
+
+.icon svg {
+  width: 100%;
+  height: 100%;
+}
+
+.title {
+  flex: 1;
+  min-width: 0;
+  margin: 0;
+  overflow: hidden;
+  font-size: var(--type-base);
+  font-weight: 700;
+  letter-spacing: 0.01em;
+  line-height: 1.2;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  color: var(--ice);
+}
+
+.tools {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.tool {
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border: 0;
+  border-radius: 2px;
+  background: transparent;
+  color: var(--text-dim);
+}
+
+.tool svg {
+  width: 16px;
+  height: 16px;
+}
+
+.tool:hover:not(:disabled) {
+  background: rgba(238, 241, 255, 0.08);
+  color: var(--ice);
+}
+
+.tool:focus-visible,
+.tab:focus-visible,
+.snap:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: -2px;
+}
+
+.tool:disabled {
+  opacity: 0.28;
+  cursor: default;
+}
+
+/* What the window brings: as large as the window under its head. A size container, so a window's contents can lay out
+   for its own width (`@container window (min-width: 900px)`, e.g. the form beside a large chart on the whole screen). */
+.body {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  overscroll-behavior: contain;
+  container: window / inline-size;
+}
+
+.body[hidden] {
+  display: none;
+}
+
+/* ---------- The whole screen (macet M3) ---------- */
+
+.full .panel {
+  border-radius: 6px;
+  box-shadow:
+    inset 0 0 0 1px rgba(153, 69, 255, 0.32),
+    0 30px 90px -24px rgba(0, 0, 0, 0.9);
+}
+
+.headFull {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  height: 64px;
+  padding: 0 16px 0 20px;
+  cursor: default;
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.word {
+  font-family: var(--font-display, system-ui), system-ui, sans-serif;
+  font-size: var(--type-title);
+  font-stretch: 125%;
+  font-variation-settings: 'wdth' 125;
+  font-weight: 900;
+  letter-spacing: 0.06em;
+}
+
+.titleFull {
+  flex: none;
+  font-size: var(--type-title);
+  text-align: center;
+}
+
+.headFull .tools {
+  justify-self: end;
+  gap: 8px;
+}
+
+.exit {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  height: 38px;
+  padding: 0 14px;
+  border: 1px solid var(--accent-soft);
+  border-radius: 3px;
+  background: rgba(255, 104, 28, 0.06);
+  color: var(--ice);
+  font-size: var(--type-small);
+  font-weight: 700;
+}
+
+.exit svg {
+  width: 16px;
+  height: 16px;
+}
+
+.exit:hover {
+  border-color: var(--accent);
+  background: rgba(255, 104, 28, 0.14);
+}
+
+.exit:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.scrim {
+  position: absolute;
+  inset: 0;
+  z-index: 999;
+  pointer-events: auto;
+  /* The city glows around the window; the top bar and the dock at the screen's edges fade out. */
+  background: radial-gradient(ellipse at 50% 50%, rgba(6, 5, 12, 0.4), rgba(6, 5, 12, 0.86) 78%);
+  animation: windowIn 160ms ease-out both;
+}
+
+/* While one window has the whole screen the others step out of sight, their contents kept. */
+.layerFull .window:not(.full) {
+  visibility: hidden;
+}
+
+/* ---------- Stretching: every edge and corner ---------- */
+
+.handle {
+  position: absolute;
+  z-index: 2;
+  touch-action: none;
+}
+
+.handleN,
+.handleS {
+  left: 12px;
+  right: 12px;
+  height: 8px;
+  cursor: ns-resize;
+}
+
+.handleN {
+  top: -4px;
+}
+
+.handleS {
+  bottom: -4px;
+}
+
+.handleE,
+.handleW {
+  top: 12px;
+  bottom: 12px;
+  width: 8px;
+  cursor: ew-resize;
+}
+
+.handleE {
+  right: -4px;
+}
+
+.handleW {
+  left: -4px;
+}
+
+.handleNw,
+.handleNe,
+.handleSw,
+.handleSe {
+  width: 18px;
+  height: 18px;
+}
+
+.handleNw {
+  left: -6px;
+  top: -6px;
+  cursor: nwse-resize;
+}
+
+.handleNe {
+  right: -6px;
+  top: -6px;
+  cursor: nesw-resize;
+}
+
+.handleSw {
+  left: -6px;
+  bottom: -6px;
+  cursor: nesw-resize;
+}
+
+.handleSe {
+  right: -6px;
+  bottom: -6px;
+  cursor: nwse-resize;
+}
+
+/* An edge under the pointer lights up along its length. */
+.handleN::after,
+.handleS::after,
+.handleE::after,
+.handleW::after {
+  content: '';
+  position: absolute;
+  background: var(--accent);
+  opacity: 0;
+  transition: opacity 120ms ease-out;
+}
+
+.handleN::after,
+.handleS::after {
+  left: 0;
+  right: 0;
+  top: 3px;
+  height: 2px;
+}
+
+.handleE::after,
+.handleW::after {
+  top: 0;
+  bottom: 0;
+  left: 3px;
+  width: 2px;
+}
+
+.handle:hover::after,
+.handle:active::after {
+  opacity: 0.9;
+}
+
+/* The corner brackets of macet M2: bright on windows that stick, faint on the free window in front. */
+.bracket {
+  position: absolute;
+  z-index: 1;
+  width: 12px;
+  height: 12px;
+  border: 0 solid var(--accent);
+  opacity: 0;
+  pointer-events: none;
+  transition:
+    opacity 160ms ease-out,
+    width 120ms ease-out,
+    height 120ms ease-out;
+}
+
+.front .bracket {
+  opacity: 0.45;
+}
+
+.docked .bracket {
+  opacity: 0.85;
+}
+
+.bracketNw {
+  left: -1px;
+  top: -1px;
+  border-left-width: 2px;
+  border-top-width: 2px;
+}
+
+.bracketNe {
+  right: -1px;
+  top: -1px;
+  border-right-width: 2px;
+  border-top-width: 2px;
+}
+
+.bracketSw {
+  left: -1px;
+  bottom: -1px;
+  border-left-width: 2px;
+  border-bottom-width: 2px;
+}
+
+.bracketSe {
+  right: -1px;
+  bottom: -1px;
+  border-right-width: 2px;
+  border-bottom-width: 2px;
+}
+
+.handleNw:hover ~ .bracketNw,
+.handleNe:hover ~ .bracketNe,
+.handleSw:hover ~ .bracketSw,
+.handleSe:hover ~ .bracketSe {
+  width: 18px;
+  height: 18px;
+  opacity: 1;
+}
+
+/* ---------- Seams and guides ---------- */
+
+/* The grip in the middle of a seam: what to pull to stretch both windows. */
+.grip {
+  position: absolute;
+  z-index: 0;
+  border-radius: 2px;
+  background: var(--accent);
+  box-shadow: 0 0 10px rgba(255, 104, 28, 0.55);
+  opacity: 0.9;
+  pointer-events: none;
+  transform: translate(-50%, -50%);
+}
+
+.gripUpright {
+  width: 3px;
+  height: 28px;
+}
+
+.gripLevel {
+  width: 28px;
+  height: 3px;
+}
+
+/* The orange line of an edge a dragged window sticks to. */
+.guide {
+  position: absolute;
+  z-index: 1100;
+  background: var(--accent);
+  box-shadow:
+    0 0 10px rgba(255, 104, 28, 0.8),
+    0 0 2px var(--accent);
+  pointer-events: none;
+}
+
+.guideUpright {
+  width: 2px;
+  margin-left: -1px;
+}
+
+.guideLevel {
+  height: 2px;
+  margin-top: -1px;
+}
+
+/* No text in the windows is picked up while one of them moves. */
+:global(html[data-window-drag]) .layer {
+  user-select: none;
+}
+
+/* «Snap together», low on the left beside the dock, where the city has no control of its own. */
+.snap {
+  position: absolute;
+  z-index: 1050;
+  bottom: max(34px, calc(env(safe-area-inset-bottom) + 20px));
+  left: var(--gutter);
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  height: 34px;
+  padding: 0 14px;
+  border: 1px solid var(--accent-soft);
+  border-radius: 3px;
+  background: rgba(11, 10, 20, 0.88);
+  color: var(--ice);
+  font-size: var(--type-small);
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  pointer-events: auto;
+}
+
+.snap svg {
+  width: 16px;
+  height: 16px;
+  color: var(--accent);
+}
+
+.snap:hover {
+  border-color: var(--accent);
+  background: rgba(255, 104, 28, 0.12);
+}
+
+/* ---------- The phone: the bottom sheet and the whole screen ---------- */
+
+.sheet {
+  position: fixed;
+  z-index: 12;
+  left: var(--gutter);
+  right: var(--gutter);
+  bottom: 0;
+  height: min(64dvh, calc(100dvh - 96px - env(safe-area-inset-top)));
+  display: flex;
+  flex-direction: column;
+  padding-bottom: env(safe-area-inset-bottom);
+  border-radius: 10px 10px 0 0;
+  background: linear-gradient(165deg, #161228, #09080f);
+  box-shadow:
+    inset 0 0 0 1px rgba(153, 69, 255, 0.3),
+    0 -18px 48px -20px rgba(0, 0, 0, 0.75);
+  font-family: var(--font-ui, system-ui), system-ui, sans-serif;
+  color: var(--ice);
+  outline: none;
+  animation: sheetIn 240ms ease-out both;
+}
+
+@keyframes sheetIn {
+  from {
+    opacity: 0;
+    transform: translateY(24px);
+  }
+}
+
+/* The grabber: this is a sheet. */
+.sheet::before {
+  content: '';
+  position: absolute;
+  top: 6px;
+  left: 50%;
+  width: 36px;
+  height: 4px;
+  margin-left: -18px;
+  border-radius: 2px;
+  background: rgba(238, 241, 255, 0.22);
+}
+
+.sheetFull {
+  inset: 0;
+  height: auto;
+  padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+  border-radius: 0;
+}
+
+.sheetFull::before {
+  display: none;
+}
+
+.sheetHead {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  height: 58px;
+  padding: 4px 4px 0 16px;
+  border-bottom: 1px solid var(--line);
+}
+
+.toolTouch {
+  width: 44px;
+  height: 44px;
+}
+
+.toolTouch svg {
+  width: 20px;
+  height: 20px;
+}
+
+.tabs {
+  flex: none;
+  display: flex;
+  gap: 6px;
+  padding: 8px 12px;
+  overflow-x: auto;
+  border-bottom: 1px solid var(--line);
+  scrollbar-width: none;
+}
+
+.tab {
+  flex: none;
+  height: 34px;
+  padding: 0 14px;
+  border: 1px solid rgba(238, 241, 255, 0.12);
+  border-radius: 17px;
+  background: transparent;
+  color: var(--text-dim);
+  font-size: var(--type-small);
+  font-weight: 700;
+}
+
+.tab[aria-selected='true'] {
+  border-color: var(--accent);
+  background: rgba(255, 104, 28, 0.12);
+  color: var(--ice);
+}
+
+
+/* ---------- On another screen (CITY-75) ---------- */
+
+/* The page of a window out there: Picture-in-Picture or a browser window of its own, the frame's glass filling it. */
+.outPage {
+  --accent: #ff681c;
+  --accent-soft: rgba(255, 104, 28, 0.5);
+  --line: rgba(238, 241, 255, 0.07);
+  position: fixed;
+  inset: 0;
+  margin: 0;
+  background: linear-gradient(165deg, #161228, #09080f);
+  font-family: var(--font-ui, system-ui), system-ui, sans-serif;
+  color: var(--ice);
+}
+
+.out {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  box-shadow: inset 0 0 0 1px rgba(255, 104, 28, 0.2);
+  animation: windowIn 180ms ease-out both;
+}
+
+.outHead {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  height: 44px;
+  padding: 0 6px 0 14px;
+  border-bottom: 1px solid var(--line);
+  user-select: none;
+}
+
+/* A signature asked from Picture-in-Picture: one quiet line while the wallet's own window asks over the city. */
+.outHeld {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+  padding: 8px 14px;
+  border-bottom: 1px solid var(--line);
+  background: rgba(255, 104, 28, 0.08);
+  font-size: var(--type-small);
+  font-weight: 600;
+  color: var(--ice);
+}
+
+.outDot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--accent);
+  box-shadow: 0 0 10px var(--accent);
+  animation: outPulse 1.4s ease-in-out infinite;
+}
+
+@keyframes outPulse {
+  50% {
+    opacity: 0.35;
+  }
+}
+
+/* In the city, the windows that are out: low on the right, one glass button each that brings its window back. */
+.tray {
+  --accent: #ff681c;
+  --accent-soft: rgba(255, 104, 28, 0.5);
+  position: fixed;
+  z-index: 13;
+  bottom: max(34px, calc(env(safe-area-inset-bottom) + 20px));
+  right: var(--gutter);
+  display: flex;
+  gap: 6px;
+}
+
+.trayItem {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 34px;
+  padding: 0 10px;
+  border: 1px solid var(--accent-soft);
+  border-radius: 3px;
+  background: rgba(11, 10, 20, 0.88);
+  color: var(--text-dim);
+  animation: windowIn 180ms ease-out both;
+}
+
+.trayItem > svg {
+  width: 16px;
+  height: 16px;
+}
+
+.trayItem:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+.trayItem:hover:not(:disabled) {
+  border-color: var(--accent);
+  background: rgba(255, 104, 28, 0.12);
+  color: var(--ice);
+}
+
+.trayItem:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: -2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .out,
+  .trayItem {
+    animation: none;
+  }
+
+  .outDot {
+    animation: none;
+  }
+}
+
+/* The page of a window on its own while its contents arrive: the glass, a quiet light sweeping across. */
+.outWait {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(100deg, transparent 30%, rgba(238, 241, 255, 0.05) 50%, transparent 70%) 0 0 / 220% 100%;
+  animation: outSweep 1.6s linear infinite;
+}
+
+@keyframes outSweep {
+  to {
+    background-position: -220% 0;
+  }
+}

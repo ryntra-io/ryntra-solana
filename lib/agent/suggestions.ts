@@ -5,13 +5,15 @@
  */
 
 import type { AgentContext, AgentSuggestion } from "../api/v1/contract.ts";
+import { shownText } from "../world/text-safety/clean.ts";
 
 type Locale = "en" | "uk";
 
 const pick = (locale: Locale, en: string, uk: string): string => (locale === "uk" ? uk : en);
 
 export function suggestionsFor(context: AgentContext | null, locale: Locale): AgentSuggestion[] {
-  const symbol = context?.kind === "asset" ? (context.symbol ?? pick(locale, "this asset", "цей актив")) : null;
+  /* The ticker came with the request: anyone's text (CITY-73), so a held one reads as «this asset». */
+  const symbol = context?.kind === "asset" ? (shownText(context.symbol, "symbol", 32) ?? pick(locale, "this asset", "цей актив")) : null;
   switch (context?.kind) {
     case "asset":
       return [

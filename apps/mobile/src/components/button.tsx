@@ -7,12 +7,15 @@ import { cn } from '@/utils/cn'
 export type ButtonVariant = 'primary' | 'secondary' | 'ghost' | 'danger'
 export type ButtonSize = 'sm' | 'md' | 'lg'
 
-const variants: Record<ButtonVariant, { classes: string; tone: 'onBrand' | 'fg' | 'muted' }> = {
+const variants: Record<ButtonVariant, { classes: string; tone: 'onBrand' | 'onDanger' | 'fg' | 'muted' }> = {
   primary: { classes: 'bg-brand active:bg-brand-pressed', tone: 'onBrand' },
   secondary: { classes: 'bg-surface border border-line active:bg-hover active:border-line-strong', tone: 'fg' },
   ghost: { classes: 'bg-transparent active:bg-hover', tone: 'muted' },
-  danger: { classes: 'bg-danger active:opacity-80', tone: 'onBrand' },
+  danger: { classes: 'bg-danger active:opacity-80', tone: 'onDanger' },
 }
+
+/** A primary that cannot be pressed: `hover` under `muted` reads 5.5:1 in Graphite and 5.4:1 in Porcelain. */
+const DISABLED_PRIMARY: (typeof variants)[ButtonVariant] = { classes: 'bg-hover border border-line', tone: 'muted' }
 
 const sizes: Record<ButtonSize, string> = {
   sm: 'h-9 px-3',
@@ -43,8 +46,12 @@ export function Button({
   ...props
 }: ButtonProps) {
   const { colors } = useTheme()
-  const spec = variants[variant]
   const inactive = Boolean(disabled || loading)
+  /* A primary that cannot be pressed is no longer orange (orange is an action that works): a quiet raised surface with
+     muted words — 5.4:1 or better in Graphite and Porcelain — so the reason written in it can be read. A loading
+     primary keeps its orange: it is the action at work, not one refused. */
+  const refused = variant === 'primary' && Boolean(disabled) && !loading
+  const spec = refused ? DISABLED_PRIMARY : variants[variant]
   return (
     <Pressable
       {...props}
@@ -57,12 +64,12 @@ export function Button({
         'flex-row items-center justify-center rounded-btn',
         sizes[size],
         spec.classes,
-        inactive && 'opacity-50',
+        inactive && !refused && 'opacity-50',
         className,
       )}
     >
       {loading ? (
-        <ActivityIndicator color={spec.tone === 'onBrand' ? colors.onBrand : colors.fg} />
+        <ActivityIndicator color={spec.tone === 'onBrand' || spec.tone === 'onDanger' ? colors[spec.tone] : colors.fg} />
       ) : (
         // One line: a button's height is fixed, and Android could wrap the last word out of its frame («Усі компанії» read «Усі»).
         <Txt variant="ui" tone={spec.tone} numberOfLines={1}>

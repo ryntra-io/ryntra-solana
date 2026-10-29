@@ -119,6 +119,21 @@ export function overBalance(amountRaw: string | null, asset: Pick<SendAsset, 'sp
   return BigInt(amountRaw) > BigInt(asset.spendableRaw)
 }
 
+/**
+ * «Можна надіслати»: what one asset can carry, in raw units, or null when it is unknown (a dash, never a zero).
+ * A row the read carries says its own spendable; a row absent says zero only when the read was complete — for a
+ * token, the token accounts read whole; for SOL, a native balance of zero.
+ */
+export function spendableOf(
+  row: Readonly<{ spendableRaw?: string | null; decimals?: number | null }> | null | undefined,
+  absentIsZero: boolean,
+): Readonly<{ raw: string; decimals: number | null }> | null {
+  if (!row) return absentIsZero ? { raw: '0', decimals: null } : null
+  const raw = row.spendableRaw
+  if (typeof raw !== 'string' || !/^\d+$/.test(raw)) return null
+  return { raw, decimals: typeof row.decimals === 'number' ? row.decimals : null }
+}
+
 /* ---- exact decimals, said in the person's language ---- */
 
 const EXACT = /^(\d+)(?:\.(\d+))?$/
@@ -135,6 +150,34 @@ export function decimalText(exact: string | null | undefined, locale: Locale): s
 /** A whole address in groups of four, as the eye checks it against what was pasted — a look-alike copies only the start and the end. */
 export function addressGroups(value: string): readonly string[] {
   return value.match(/.{1,4}/g) ?? []
+}
+
+/**
+ * Which groups of four «Кому» draws strongest (M44.4): an address's first and last groups — what a person compares —
+ * or, for a look-alike of a recent address, the groups where it differs from that address: its edges already match,
+ * so the edges are no comparison at all.
+ */
+export function strongGroups(value: string, lookalikeOf: string | null = null): readonly boolean[] {
+  const groups = addressGroups(value)
+  if (!lookalikeOf) return groups.map((_, index) => index === 0 || index === groups.length - 1)
+  // Where the two differ, counted from both ends — addresses run 32 to 44 characters, so a look-alike may be longer
+  // or shorter; a matching edge stays quiet whatever the lengths.
+  let head = 0
+  while (head < value.length && head < lookalikeOf.length && value[head] === lookalikeOf[head]) head += 1
+  let tail = 0
+  while (
+    tail < value.length - head &&
+    tail < lookalikeOf.length - head &&
+    value[value.length - 1 - tail] === lookalikeOf[lookalikeOf.length - 1 - tail]
+  )
+    tail += 1
+  const from = head
+  const to = value.length - tail
+  return groups.map((group, index) => {
+    const start = index * 4
+    const end = start + group.length
+    return start < to && end > from
+  })
 }
 
 export function shortAddress(value: string): string {
@@ -195,9 +238,19 @@ export type SendFailureKey = keyof MoneyCopy['failures']
 export function sendFailureKey(code: string | null): SendFailureKey {
   const value = code ?? ''
   if (value === 'NETWORK') return 'network'
+  // M41.2: a `.skr` name read again before a step — before the generic patterns, which would read «UNAVAILABLE» in them.
+  if (value === 'SKR_GONE') return 'nameGone'
+  if (value === 'SKR_CHANGED') return 'nameMoved'
+  if (value === 'SKR_UNREAD') return 'nameUnread'
+  if (value === 'SKR_UNREAD_SIGNED') return 'nameUnreadSigned'
+  if (value === 'SKR_UNCHECKED') return 'nameUnchecked'
   if (value === 'REVIEW_CHANGED') return 'changed'
   if (value === 'NOT_SENDABLE') return 'cannotSend'
   if (value === 'WALLET_REFUSED') return 'walletCancelled'
+  if (value === 'WALLET_TIMEOUT') return 'walletTimeout'
+  if (value === 'LEDGER_BLIND_SIGNING') return 'ledgerBlind'
+  if (value === 'TX_VERSION') return 'txVersion'
+  if (value === 'WALLET_CANNOT_SIGN') return 'cannotSign'
   if (value === 'WALLET_FAILED' || value === 'WALLET_NOT_FOUND') return 'walletFailed'
   if (/RATE_LIMITED/.test(value)) return 'rateLimited'
   if (/INSUFFICIENT|BALANCE|AMOUNT/.test(value)) return 'amount'
@@ -361,14 +414,66 @@ export type RecipientView =
   | Readonly<{ kind: 'pay-link'; link: PayLink }>
   | Readonly<{ kind: 'problem'; line: string }>
 
-/** The recipient check's one decision, in words. */
-export function recipientView(check: RecipientCheckResponse, locale: Locale = 'en'): RecipientView {
+const BASE58_ALPHABET = '123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz'
+
+/** How many bytes a base58 text decodes to — a Solana address is exactly 32; null when it is not base58 at all. */
+export function base58ByteLength(text: string): number | null {
+  if (text.length === 0) return null
+  let value = 0n
+  for (const char of text) {
+    const digit = BASE58_ALPHABET.indexOf(char)
+    if (digit < 0) return null
+    value = value * 58n + BigInt(digit)
+  }
+  // Each leading «1» is a zero byte of its own; the rest is the number's own bytes.
+  let zeros = 0
+  while (zeros < text.length && text[zeros] === '1') zeros += 1
+  let bytes = 0
+  while (value > 0n) {
+    value >>= 8n
+    bytes += 1
+  }
+  return zeros + bytes
+}
+
+/** The shortest a Solana address is written: 32 characters. */
+export const ADDRESS_MIN_CHARS = 32
+
+/**
+ * What the phone itself knows of a typed recipient before asking the server: a plain base58 text that cannot be
+ * an address is the wrong length — said without a request (the server's own answer for such text named something
+ * else). While the text is still short and being typed, nothing is said yet: `typing` until it is 32 characters, or
+ * the person left the field or pressed «Далі». Anything else — a link, a request, a full address — is the server's.
+ */
+export function recipientLocal(typed: string, finished: boolean): 'typing' | 'wrong-length' | null {
+  const text = typed.trim()
+  if (text === '') return null
+  const bytes = base58ByteLength(text)
+  if (bytes === null) return null
+  if (text.length < ADDRESS_MIN_CHARS && !finished) return 'typing'
+  return bytes === 32 ? null : 'wrong-length'
+}
+
+/** The wrong length in the recipient check's own words. */
+export function wrongLengthView(locale: Locale = 'en'): RecipientView {
+  return { kind: 'problem', line: MONEY_COPY[locale].recipientProblems.WRONG_LENGTH }
+}
+
+/** An Ethereum address: «0x» and forty hex digits. */
+const EVM_ADDRESS = /^0x[0-9a-fA-F]{40}$/
+
+/**
+ * The recipient check's one decision, in words. An Ethereum «0x…» address the
+ * server refused is named as one — not read as a Solana address mistyped.
+ */
+export function recipientView(check: RecipientCheckResponse, locale: Locale = 'en', typed = ''): RecipientView {
   const words = MONEY_COPY[locale]
   if (check.next === 'transfer' && check.address) {
     return { kind: 'transfer', address: check.address, opensAccount: check.destination?.opensAccount ?? false }
   }
   if (check.next === 'pay-link' && check.link) return { kind: 'pay-link', link: check.link }
   if (check.problem === 'SELF' && check.input === 'pay-link') return { kind: 'problem', line: words.selfLink }
+  if (EVM_ADDRESS.test(typed.trim())) return { kind: 'problem', line: words.evmAddress }
   return {
     kind: 'problem',
     line: words.recipientProblems[check.problem ?? 'NOT_AN_ADDRESS'] ?? words.failures.recipient,

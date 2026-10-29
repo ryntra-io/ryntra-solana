@@ -605,7 +605,7 @@ export function marketNow(
 
 /** The monitoring card that speaks of this plan: the surface names plans by their asset symbol, attention before watching. */
 export function attentionCard(plan: TradingPlan, surface: MonitoringSurface | null): MonitoringCard | null {
-  // The surface names a plan only by its symbol; only an active plan is watched, so a
+  // The surface names a plan only by its symbol (request 16); only an active plan is watched, so a
   // draft or a closed plan on the same stock never wears the other plan's card.
   if (!surface || plan.status !== 'active') return null
   const mine = (card: MonitoringCard) => !card.paper && card.label === plan.asset.symbol
@@ -622,7 +622,7 @@ export function plansForCard(card: MonitoringCard, plans: readonly TradingPlan[]
   return plans.filter((plan) => plan.asset.symbol === card.label && plan.status === 'active')
 }
 
-/** The symbols more than one active plan wears — a card on such a symbol cannot be attributed to one plan. */
+/** The symbols more than one active plan wears — a card on such a symbol cannot be attributed to one plan (request 22). */
 export function sharedSymbols(plans: readonly TradingPlan[]): ReadonlySet<string> {
   const counts = new Map<string, number>()
   for (const plan of plans) {

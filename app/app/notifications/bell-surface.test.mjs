@@ -29,7 +29,7 @@ test("an answer without notes reads as nothing unread", () => {
   assert.deepEqual(onSurface({ recent: undefined, unread: 3 }), { recent: [], unread: 0 });
 });
 
-test("the bell and Home read the one monitoring surface behind the wallet's proof, and «Усі сповіщення» opens Нагляд", () => {
+test("the bell reads the one monitoring surface behind the wallet's proof, and «Усі сповіщення» opens Нагляд", () => {
   const read = (name) => readFileSync(new URL(name, import.meta.url), "utf8");
   const notes = read("./use-notes.ts");
   assert.match(notes, /fetch\("\/api\/monitoring"/);
@@ -39,5 +39,4 @@ test("the bell and Home read the one monitoring surface behind the wallet's proo
   assert.match(read("./note-list.tsx"), /\/app\/alerts\/open/);
   assert.match(read("./bell.tsx"), /href="\/app\/alerts"/);
   assert.match(read("./bell.tsx"), /useNotes\(locale\)/);
-  assert.match(read("../home/home-aside.tsx"), /useNotes\(locale\)/);
 });

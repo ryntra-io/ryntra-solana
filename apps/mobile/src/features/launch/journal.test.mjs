@@ -158,7 +158,7 @@ test("who sent the move to the DEX, and a sale of the creator's with the share s
   )
   assert.match(
     journalDetail({ ...sold, soldBps: 1250, soldOf: 'supply' }, figures, uk, 'uk'),
-    /12,5 % пропозиції на той момент$/,
+    /12,5 % емісії на той момент$/,
   )
   // An amount the log did not read is not said — never a zero in its place.
   assert.equal(journalDetail({ ...sold, soldBps: null }, figures, uk, 'uk'), null)

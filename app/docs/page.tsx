@@ -19,7 +19,7 @@ export async function generateMetadata(): Promise<Metadata> {
     path: "/docs",
     title: OVERVIEW.seoTitle?.[locale] ?? (locale === "uk" ? "Документація Ryntra" : "Ryntra Docs"),
     description: OVERVIEW.summary[locale],
-    keywords: ["ryntra documentation", "how to buy tokenized stocks", "tokenized stocks from $1", "autoinvest", "xstocks", "prestocks"],
+    keywords: ["ryntra documentation", "solana trading", "phoenix perps", "launch a token on solana", "meteora grid", "tokenized stocks", "prediction markets"],
     locale,
     ...(card ? { image: pageCardImage(locale, ["docs"], card) } : {}),
   });

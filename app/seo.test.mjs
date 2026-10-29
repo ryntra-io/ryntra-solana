@@ -1,9 +1,11 @@
 import assert from "node:assert/strict";
+import { LANDING_IS_LIVE } from "../lib/site/home-to-app.ts";
 import { readFileSync } from "node:fs";
 import test from "node:test";
 import robots from "./robots.ts";
 import nextConfig from "../next.config.ts";
 import { CUSTOMER_REDIRECTS } from "../lib/product/customer-routing.ts";
+import { matchHas } from "next/dist/shared/lib/router/utils/prepare-destination.js";
 import {
   ALL_LOCALES,
   APP_HOME_PATH,
@@ -17,7 +19,7 @@ import {
   localizedUrl,
   urlForSurface,
 } from "./seo.ts";
-import { APP_PAGES, DOCS_UPDATED, HOME_UPDATED, LANDING_UPDATED, MARKETS_UPDATED, PUBLIC_PAGES, sitemapEntries } from "./sitemap.ts";
+import { APP_PAGES, DOCS_UPDATED, HOME_UPDATED, MARKETS_UPDATED, MISSION_CONTROL_UPDATED, PARTNER_TERMS_PATH, PARTNER_TERMS_UPDATED, PUBLIC_PAGES, sitemapEntries } from "./sitemap.ts";
 import { hasUkAddress } from "../lib/site/localized.ts";
 import { HOMEPAGE_CATEGORY } from "../lib/site/homepage-copy.ts";
 import { DOC_PAGES, docsHref } from "./docs/content/index.ts";
@@ -169,7 +171,8 @@ test("sitemap advertises only pages that answer, at both of their addresses, dat
   const twoLanguage = ADVERTISED_PATHS.filter((path) => hasUkAddress(path));
   const english = ADVERTISED_PATHS.filter((path) => !hasUkAddress(path));
   assert.deepEqual(english, ["/legal/terms", "/legal/privacy"], "only the legal texts have one address");
-  assert.equal(entries.length, 2 + APP_PAGES.length * 2 + twoLanguage.length * 2 + english.length + 2, "the landing, Home and Markets, the advertised pages and one company — each at its addresses — nothing else");
+  /* The landing's two addresses only while it is a page (`lib/site/home-to-app.ts`). */
+  assert.equal(entries.length, (LANDING_IS_LIVE ? 1 : 0) + APP_PAGES.length * 2 + twoLanguage.length * 2 + english.length + 2 + 2, "the landing, Home and Markets, the advertised pages, the partner Terms and one company — each at its addresses — nothing else");
   assert.equal(new Set(entries.map((entry) => entry.url)).size, entries.length);
   assert.deepEqual(PUBLIC_PAGES.map((page) => page.path), ADVERTISED_PATHS, "the advertised pages are exactly these, in this order");
   assert.deepEqual(APP_PAGES.map((page) => page.path), [APP_HOME_PATH, "/app/markets"], "of the cabinet, Home and Markets — and the companies the shelf opens");
@@ -177,7 +180,8 @@ test("sitemap advertises only pages that answer, at both of their addresses, dat
   /* No entry may be an address the app redirects: neither a customer
      alias nor one of next.config's own rows. Static, so it cannot go stale
      without this test noticing. */
-  const configured = await nextConfig.redirects();
+  /* Rows whose conditions never hold on ryntra.io (app.ryntra.io's, predict.ryntra.io's), by Next's own matcher. */
+  const configured = (await nextConfig.redirects()).filter((row) => !(row.has || row.missing) || matchHas({ headers: { host: "ryntra.io" }, cookies: {} }, {}, row.has, row.missing));
   const redirected = new Set([...CUSTOMER_REDIRECTS, ...configured].map((row) => row.source).filter((source) => !source.includes(":")));
   for (const entry of entries) {
     const path = entry.url.replace(SITE, "") || "/";
@@ -198,17 +202,20 @@ test("sitemap advertises only pages that answer, at both of their addresses, dat
     }
   }
 
-  /* The landing comes first, one entry per language, each naming the pair; then Home and Markets, each at both addresses. */
-  LANDING_LOCALES.forEach((locale, index) => {
-    const entry = entries[index];
-    assert.equal(entry.url, urlForSurface(locale, "landing"));
+  /* Mission Control comes first — `/` alone, in English; then Home and Markets, each at both addresses. While the home page leads into the app
+     (`lib/site/home-to-app.ts`) `/` is not advertised at all. */
+  assert.ok(!entries.some((entry) => entry.url === urlForSurface("uk", "landing")), "the Ukrainian home is a redirect, never advertised");
+  if (!LANDING_IS_LIVE) assert.ok(!entries.some((entry) => entry.url === urlForSurface("en", "landing")));
+  if (LANDING_IS_LIVE) {
+    const entry = entries[0];
+    assert.equal(entry.url, urlForSurface("en", "landing"));
     assert.equal(entry.priority, 1);
-    assert.equal(new Date(entry.lastModified).toISOString(), `${LANDING_UPDATED}T00:00:00.000Z`);
-    assert.deepEqual(entry.alternates?.languages, hreflangsFor("landing"));
-  });
+    assert.equal(new Date(entry.lastModified).toISOString(), `${MISSION_CONTROL_UPDATED}T00:00:00.000Z`);
+    assert.equal(entry.alternates, undefined, "one language, no pair");
+  }
   const home = entries.find((entry) => entry.url === SITE + APP_HOME_PATH);
   assert.ok(home, "missing Home");
-  assert.equal(entries[LANDING_LOCALES.length], home);
+  assert.equal(entries[LANDING_IS_LIVE ? 1 : 0], home);
   assert.equal(home.priority, 0.9);
   assert.equal(new Date(home.lastModified).toISOString(), `${HOME_UPDATED}T00:00:00.000Z`);
   assert.deepEqual(home.alternates?.languages, { en: SITE + APP_HOME_PATH, uk: `${SITE}/uk${APP_HOME_PATH}`, "x-default": SITE + APP_HOME_PATH });
@@ -216,6 +223,14 @@ test("sitemap advertises only pages that answer, at both of their addresses, dat
   assert.equal(new Date(markets.lastModified).toISOString(), `${MARKETS_UPDATED}T00:00:00.000Z`);
   const company = entries.find((entry) => entry.url === `${SITE}/uk/app/stocks/NVDAx`);
   assert.deepEqual(company?.alternates?.languages, languageAlternates("/app/stocks/NVDAx"), "a company the shelf opens, at both addresses");
+
+  /* The creator partner Terms (Ріст GR-08): the language in the query, both addresses, each naming the pair as the page does. */
+  for (const locale of ["en", "uk"]) {
+    const entry = entries.find((item) => item.url === `${SITE}${PARTNER_TERMS_PATH}?lang=${locale}`);
+    assert.ok(entry, `missing the partner Terms (${locale})`);
+    assert.equal(new Date(entry.lastModified).toISOString(), `${PARTNER_TERMS_UPDATED}T00:00:00.000Z`);
+    assert.deepEqual(entry.alternates?.languages, { en: `${SITE}${PARTNER_TERMS_PATH}?lang=en`, uk: `${SITE}${PARTNER_TERMS_PATH}?lang=uk`, "x-default": `${SITE}${PARTNER_TERMS_PATH}?lang=en` });
+  }
 
   for (const path of NEVER_ADVERTISED) {
     for (const url of [SITE + path, `${SITE}/uk${path}`]) {
@@ -251,10 +266,11 @@ test("robots keeps the public documents crawlable while blocking private, API, a
   const disallow = Array.isArray(rule.disallow) ? rule.disallow : [rule.disallow];
   const reviewLayout = readFileSync(new URL("./legal/review/layout.tsx", import.meta.url), "utf8");
 
-  assert.deepEqual(rule.allow, ["/", "/app/home$", "/app/markets$", "/app/stocks/", "/uk/app/home$", "/uk/app/markets$", "/uk/app/stocks/"]);
+  assert.deepEqual(rule.allow, ["/", "/app/home$", "/app/markets$", "/app/stocks/", "/uk/app/home$", "/uk/app/markets$", "/uk/app/stocks/", "/solana/home$", "/solana/markets$", "/solana/stocks/", "/uk/solana/home$", "/uk/solana/markets$", "/uk/solana/stocks/"]);
   assert.ok(disallow.includes("/api/"));
   assert.ok(disallow.includes("/app/"));
   assert.ok(disallow.includes("/uk/app/"), "the cabinet's Ukrainian addresses are closed as its English ones are");
+  assert.ok(disallow.includes("/solana/") && disallow.includes("/uk/solana/"), "and the same cabinet at its addresses on app.ryntra.io");
   assert.ok(!disallow.includes("/app$"), "/app is the front door's first hop");
   assert.ok(!disallow.includes("/legal/review/"), "review pages must remain crawlable so robots can observe noindex");
   assert.ok(!disallow.some((path) => String(path).startsWith("/strategy-lab-qa")), "robots names only what is live");
@@ -287,12 +303,12 @@ test("robots makes an explicit purpose-based decision for every currently tracke
     "Bytespider",
     "CCBot",
   ];
-  const protectedPaths = ["/api/", "/admin", "/app/", "/uk/app/"];
+  const protectedPaths = ["/api/", "/admin", "/app/", "/uk/app/", "/solana/", "/uk/solana/"];
 
   for (const agent of [...userTriggered, ...answerAndSearch]) {
     const rule = ruleFor(agent);
     assert.ok(rule, `${agent} falls through to the wildcard instead of receiving an explicit answer-time policy.`);
-    assert.deepEqual(rule.allow, ["/", "/app/home$", "/app/markets$", "/app/stocks/", "/uk/app/home$", "/uk/app/markets$", "/uk/app/stocks/"], `${agent} is not deliberately admitted to public Ryntra pages, Home, Markets and the companies.`);
+    assert.deepEqual(rule.allow, ["/", "/app/home$", "/app/markets$", "/app/stocks/", "/uk/app/home$", "/uk/app/markets$", "/uk/app/stocks/", "/solana/home$", "/solana/markets$", "/solana/stocks/", "/uk/solana/home$", "/uk/solana/markets$", "/uk/solana/stocks/"], `${agent} is not deliberately admitted to public Ryntra pages, Home, Markets and the companies.`);
     const disallow = pathsOf(rule.disallow);
     for (const path of protectedPaths) {
       assert.ok(disallow.includes(path), `${agent} escapes the existing protected path ${path}.`);
@@ -331,7 +347,7 @@ test("all locale summaries preserve the loop, WRRD, non-custody/human authority,
   }
 });
 
-test("the Handbook and structured data consume the identity and the registry without invented review or shipped-loop claims", () => {
+test("the Handbook and structured data consume the product's own facts without invented review or shipped-loop claims", () => {
   /* This used to read `/methodology`. That page is gone — it was one of four
      public documents restating the same boundaries — so the same obligations
      are checked against the document that replaced it. The terms below are the
@@ -399,13 +415,16 @@ test("the Handbook and structured data consume the identity and the registry wit
   assert.match(handbook, /truth\.capabilities/);
   assert.doesNotMatch(layout, /\bfeatureList\b/, "static root JSON-LD must not freeze drift-prone capability claims");
   assert.match(layout, /HOMEPAGE_COPY/);
-  assert.doesNotMatch(layout, /PRODUCT_IDENTITY\.(shippedLoopBoundary|northStar|arcusBoundary)/);
+  assert.doesNotMatch(layout, /PRODUCT_CANON\.(shippedLoopBoundary|northStar|arcusBoundary)/);
   assert.doesNotMatch(layout, /offers:\s*\{/);
   /* The landing's graph is the page's own words: the
      feature list is «Працює зараз», which `(home)/landing.test.mjs` ties item
      by item to the code that does it, so the graph can claim no more than the
      page — the property the registry helper of the landing before it held. */
-  for (const [route, locale] of [[landing, "en"], [localizedLanding, "uk"]]) {
+  /* `/` is Ryntra City since decision 70: the city's words, no landing feature list. */
+  assert.match(landing, /buildCityMetadata\(\)/);
+  assert.doesNotMatch(landing, /featureList|landingJsonLdScript|cookies\(\)/);
+  for (const [route, locale] of [[localizedLanding, "uk"]]) {
     assert.match(route, new RegExp(`landingJsonLdScript\\("${locale}"\\)`));
     assert.match(route, new RegExp(`buildLandingMetadata\\("${locale}"\\)`));
     assert.doesNotMatch(route, /featureList|cookies\(\)/);

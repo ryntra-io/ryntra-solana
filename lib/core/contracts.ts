@@ -109,8 +109,12 @@ export type SubmitMode = "fast" | "protected";
 
 export type Submission =
   | Readonly<{ state: "SENT"; signature: string; lane: string }>
-  /** The send did not answer. Never sent again: recovered by reading the signature. */
-  | Readonly<{ state: "UNKNOWN"; signature: string; lane: string; reason: string }>;
+  /**
+   * The send did not answer, or answered with a refusal. Never sent as a second transaction: recovered by reading the
+   * signature. `rejected` — the RPC answered with an error (preflight refused, so the bytes were not forwarded); the
+   * same bytes are then not sent again (SOL-S1), since an identical send is refused the same way.
+   */
+  | Readonly<{ state: "UNKNOWN"; signature: string; lane: string; reason: string; rejected?: boolean }>;
 
 export type Settlement =
   | Readonly<{ state: "SETTLED"; signature: string; finality: "confirmed" | "finalized" }>

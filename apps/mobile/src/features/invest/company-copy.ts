@@ -53,11 +53,9 @@ export type CompanyCopy = Readonly<{
   trades24h: string
   buys: (pct: string) => string
   sells: (pct: string) => string
-  byTrades: string
   pressureA11y: (buys: string, sells: string) => string
   onSolanaSince: (day: string) => string
   tradingUnread: string
-  marketSource: (time: string) => string
 }>
 
 const EN: CompanyCopy = {
@@ -102,11 +100,9 @@ const EN: CompanyCopy = {
   trades24h: 'Trades',
   buys: (pct) => `Buys ${pct}`,
   sells: (pct) => `Sells ${pct}`,
-  byTrades: 'by number of trades',
   pressureA11y: (buys, sells) => `Buys ${buys}, sells ${sells}`,
   onSolanaSince: (day) => `On Solana since ${day}`,
   tradingUnread: 'The day’s trading could not be read right now.',
-  marketSource: (time) => `Market data: Jupiter · ${time}`,
 }
 
 const UK: CompanyCopy = {
@@ -151,11 +147,9 @@ const UK: CompanyCopy = {
   trades24h: 'Угод',
   buys: (pct) => `Купівлі ${pct}`,
   sells: (pct) => `Продажі ${pct}`,
-  byTrades: 'за кількістю угод',
   pressureA11y: (buys, sells) => `Купівлі ${buys}, продажі ${sells}`,
   onSolanaSince: (day) => `На Solana з ${day}`,
   tradingUnread: 'Торги за добу зараз не вдалося прочитати.',
-  marketSource: (time) => `Дані ринку: Jupiter · ${time}`,
 }
 
 export const COMPANY_COPY: Copy<CompanyCopy> = { en: EN, uk: UK }

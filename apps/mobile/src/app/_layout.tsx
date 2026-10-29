@@ -1,70 +1,32 @@
 import '../global.css'
 
 import { Stack } from 'expo-router'
+import * as SplashScreen from 'expo-splash-screen'
 import { StatusBar } from 'expo-status-bar'
 import * as SystemUI from 'expo-system-ui'
 import { useEffect } from 'react'
 
-import { OfflineFrame } from '@/components/offline-frame'
-import { NotificationsBinder } from '@/features/notifications/notifications-binder'
-import { AppProviders } from '@/features/wallet/app-providers'
-import { applyStoredThemeMode, useTheme } from '@/theme'
+import { CITY_GROUND } from '@/features/city/city-look'
+import { CityProviders } from '@/features/city/city-providers'
 
-// The stored theme is applied before the first frame so the app never flashes the other one.
-applyStoredThemeMode()
+// The launch screen stays until the city's own picture is on screen (`screens/city`), so nothing flashes between them.
+SplashScreen.preventAutoHideAsync().catch(() => undefined)
+SplashScreen.setOptions({ fade: true, duration: 350 })
 
+/**
+ * The app is the city and nothing else (decision 75): one route, `index` — Ryntra City on ryntra.io, full screen.
+ * Every link the app is opened with lands there (`+native-intent`); an address it does not know does too (`+not-found`).
+ */
 export default function RootLayout() {
-  return (
-    <AppProviders>
-      <NotificationsBinder />
-      <OfflineFrame>
-        <RootStack />
-      </OfflineFrame>
-    </AppProviders>
-  )
-}
-
-function RootStack() {
-  const { colors, isDark } = useTheme()
-
   useEffect(() => {
-    SystemUI.setBackgroundColorAsync(colors.ground).catch(() => undefined)
-  }, [colors.ground])
-
+    SystemUI.setBackgroundColorAsync(CITY_GROUND).catch(() => undefined)
+  }, [])
   return (
-    <>
-      <StatusBar style={isDark ? 'light' : 'dark'} />
+    <CityProviders>
+      <StatusBar style="light" />
       <Stack
-        screenOptions={{ headerShown: false, contentStyle: { backgroundColor: colors.ground }, animation: 'fade' }}
-      >
-        <Stack.Screen name="(tabs)" />
-        <Stack.Screen name="asset/[mint]" options={{ animation: 'slide_from_right' }} />
-        <Stack.Screen name="search" options={{ animation: 'fade' }} />
-        <Stack.Screen name="changes" options={{ animation: 'slide_from_right' }} />
-        <Stack.Screen name="trade" options={{ animation: 'slide_from_right' }} />
-        <Stack.Screen name="ryn" options={{ animation: 'slide_from_right' }} />
-        <Stack.Screen name="history" options={{ animation: 'slide_from_right' }} />
-        <Stack.Screen name="receipts" options={{ animation: 'slide_from_right' }} />
-        <Stack.Screen name="rewards" options={{ animation: 'slide_from_right' }} />
-        <Stack.Screen name="bots/index" options={{ animation: 'slide_from_right' }} />
-        <Stack.Screen name="money/index" options={{ animation: 'slide_from_right' }} />
-        <Stack.Screen name="settings" options={{ animation: 'slide_from_right' }} />
-        <Stack.Screen name="token/[mint]" options={{ animation: 'fade' }} />
-        <Stack.Screen name="money/send" options={{ animation: 'slide_from_right' }} />
-        <Stack.Screen name="money/receive" options={{ animation: 'slide_from_right' }} />
-        <Stack.Screen name="launch/index" options={{ animation: 'fade' }} />
-        <Stack.Screen name="launch/markets" options={{ animation: 'fade' }} />
-        <Stack.Screen name="launch/mine" options={{ animation: 'fade' }} />
-        <Stack.Screen name="launch/[mint]" options={{ animation: 'slide_from_right' }} />
-        <Stack.Screen name="plans/index" options={{ animation: 'slide_from_right' }} />
-        <Stack.Screen name="plans/pick" options={{ animation: 'slide_from_right' }} />
-        <Stack.Screen name="plans/new" options={{ animation: 'slide_from_right' }} />
-        <Stack.Screen name="plans/[id]" options={{ animation: 'slide_from_right' }} />
-        <Stack.Screen name="monitoring/index" options={{ animation: 'slide_from_right' }} />
-        <Stack.Screen name="monitoring/preferences" options={{ animation: 'slide_from_right' }} />
-        <Stack.Screen name="monitoring/open" options={{ animation: 'fade' }} />
-        <Stack.Screen name="gallery" options={{ presentation: 'modal', animation: 'slide_from_bottom' }} />
-      </Stack>
-    </>
+        screenOptions={{ headerShown: false, animation: 'none', contentStyle: { backgroundColor: CITY_GROUND } }}
+      />
+    </CityProviders>
   )
 }

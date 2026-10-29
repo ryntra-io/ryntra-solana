@@ -4,7 +4,7 @@
 // Two independent, env-gated sinks (both optional; console.error always runs):
 //   • Sentry  — set SENTRY_DSN. Events are posted to Sentry's HTTP envelope endpoint
 //               directly (no @sentry/* SDK, no build changes, no source-map upload).
-//   • Telegram— set ALERT_TELEGRAM_ID to the operator's numeric Telegram id. Critical
+//   • Telegram— set ALERT_TELEGRAM_ID to the founder's numeric Telegram id. Critical
 //               errors are DM'd via the existing bot, rate-limited per signature.
 
 import { sendPlainMessage } from "@/lib/telegram/api";
@@ -73,7 +73,7 @@ async function toSentry(where: string, err: unknown, extra?: Extra): Promise<voi
   }
 }
 
-// Per-instance throttle: don't DM the operator more than once per signature per window.
+// Per-instance throttle: don't DM the founder more than once per signature per window.
 const lastAlert = new Map<string, number>();
 const ALERT_WINDOW_MS = 10 * 60 * 1000;
 
@@ -99,7 +99,7 @@ async function toTelegram(where: string, err: unknown, extra?: Extra): Promise<v
 
 /**
  * Report a server error. Always logs to console (preserving existing behavior);
- * additionally forwards to Sentry and/or the operator's Telegram when configured.
+ * additionally forwards to Sentry and/or the founder's Telegram when configured.
  * Fire-and-forget safe — awaiting is optional and it never rejects.
  */
 export async function reportError(where: string, err: unknown, extra?: Extra): Promise<void> {

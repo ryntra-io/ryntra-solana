@@ -1,4 +1,4 @@
-import { FEES, FEES_UK, POINTS, REWARDS, TOP_UP, levelRows, pointsTierRows, rankRows } from "./facts.ts";
+import { CLAIM_FLOOR, FEES, REFERRAL_BIND_WINDOW_DAYS, FEES_UK, REWARD_EXTRAS, REWARDS, TOP_UP, rankRows } from "./facts.ts";
 import { facts, list, note, p, section, steps, table, type DocPage } from "./model.ts";
 import { BRIDGE } from "./trade.ts";
 
@@ -13,18 +13,18 @@ import { BRIDGE } from "./trade.ts";
 export const TOP_UP_PAGE: DocPage = {
   slug: "money/top-up",
   group: "money",
-  destination: "money",
-  title: { en: "Top up", uk: "Поповнити" },
-  seoTitle: { en: "Top up: USDC and a little SOL — Ryntra Docs", uk: "Поповнити: USDC і трохи SOL — Документація Ryntra" },
+  destination: "deposit",
+  title: { en: "Add funds", uk: "Поповнити" },
+  seoTitle: { en: "Add funds: USDC and a little SOL — Ryntra Docs", uk: "Поповнити: USDC і трохи SOL — Документація Ryntra" },
   summary: {
-    en: "What your wallet needs to buy: USDC for the purchase and a little SOL for the network — and three ways to bring them.",
-    uk: "Що потрібно гаманцю для купівлі: USDC на покупку і трохи SOL на мережу — і три способи їх додати.",
+    en: "What your wallet needs to trade — USDC to spend, a little SOL for the network — and four ways to bring them: card, exchange, another network, another wallet.",
+    uk: "Що потрібно гаманцю для угод: USDC, щоб витрачати, і трохи SOL на мережу — і чотири способи їх додати: картка, біржа, інша мережа, інший гаманець.",
   },
   sections: [
     section("need", "What a purchase needs", "Що потрібно для купівлі", [
       p(
-        `A piece of a company is paid for in USDC, from ${TOP_UP.minimum}, and every transaction pays the network a small fee in SOL. Top up shows how much of each your wallet holds and three ways to bring them; Ryntra never takes a payment itself.`,
-        `Частинка компанії оплачується в USDC, від ${TOP_UP.minimum}, а кожна транзакція платить мережі невелику плату в SOL. «Поповнити» показує, скільки того й іншого у твоєму гаманці, і три способи їх додати; сама Ryntra платежів не приймає.`,
+        `A purchase is paid for in USDC or SOL, from ${TOP_UP.minimum}, and every transaction pays the network a small fee in SOL. Money → Add funds shows how much of each your wallet holds and four ways to bring them; Ryntra never takes a payment itself.`,
+        `Купівля оплачується в USDC чи SOL, від ${TOP_UP.minimum}, а кожна транзакція платить мережі невелику плату в SOL. Гроші → Поповнити показує, скільки того й іншого у твоєму гаманці, і чотири способи їх додати; сама Ryntra платежів не приймає.`,
       ),
       facts(
         [
@@ -39,17 +39,19 @@ export const TOP_UP_PAGE: DocPage = {
         ],
       ),
     ]),
-    section("ways", "Three ways to bring them", "Три способи їх додати", [
+    section("ways", "Four ways to bring them", "Чотири способи їх додати", [
       steps(
         [
-          "Receive USDC — another wallet sends to your address: the page shows its QR code, the address and the network, Solana.",
           "Buy with a card in your wallet — in Phantom, pay with a card, Apple Pay or Google Pay and buy USDC and a little SOL; Phantom's partner takes the payment, and the methods and fees depend on your country. On a phone, «Open in Phantom» opens Ryntra inside Phantom first.",
           "Transfer from an exchange — withdraw USDC on the Solana network to your address, and a little SOL with it for the network fee.",
+          "From another network — the page gives you a deposit address for USDC on Base, Ethereum, Arbitrum, Optimism, Polygon or BNB Chain, from $1; it arrives as USDC on Solana, with no Ryntra fee and the provider's cost shown before you send.",
+          "Receive — another wallet sends to your address: the page shows its QR code, the address and the network, Solana.",
         ],
         [
-          "Отримати USDC — інший гаманець надсилає на твою адресу: сторінка показує її QR-код, адресу й мережу — Solana.",
           "Купити карткою у своєму гаманці — у Phantom оплати карткою, Apple Pay чи Google Pay й купи USDC та трохи SOL; оплату приймає партнер Phantom, а способи й комісії залежать від країни. На телефоні «Відкрити в Phantom» спершу відкриває Ryntra всередині Phantom.",
           "Переказати з біржі — виведи USDC у мережі Solana на свою адресу, а з ними трохи SOL на плату мережі.",
+          "З іншої мережі — сторінка дає адресу поповнення для USDC на Base, Ethereum, Arbitrum, Optimism, Polygon чи BNB Chain, від $1; вони надходять як USDC на Solana, без комісії Ryntra, а витрату провайдера видно до надсилання.",
+          "Отримати — інший гаманець надсилає на твою адресу: сторінка показує її QR-код, адресу й мережу — Solana.",
         ],
       ),
       note(
@@ -75,15 +77,15 @@ export const SEND: DocPage = {
       steps(
         [
           "Choose the asset from what your wallet holds. Search by name, ticker or mint address.",
-          "Paste the recipient's Solana address and enter the amount. If the recipient needs a memo, the page asks for it.",
+          "Paste the recipient's Solana address or .skr name and enter the amount. Send adds no memo. If the recipient's token account itself requires one on chain, the check fails before your wallet opens and nothing is sent; but an exchange that asks for a memo or tag in its deposit instructions is not detected — use a deposit address that needs none, or another deposit method the exchange offers.",
           "Press Review. Ryntra shows the amount, the network fee and, when the recipient has no account for this token yet, the cost of creating one — and warns you about the token itself when there is something to know.",
-          "Confirm in your wallet. The transfer appears in History as Sent, then Arrived, with a receipt.",
+          "Confirm in your wallet. The transfer appears in History as On its way, then Arrived, with a receipt.",
         ],
         [
           "Обери актив із того, що є у твоєму гаманці. Шукай за назвою, тікером або адресою mint.",
-          "Встав Solana-адресу отримувача й введи суму. Якщо отримувачу потрібен memo, сторінка про це попросить.",
-          "Натисни «Перевірити». Ryntra покаже суму, плату мережі і — якщо в отримувача ще немає рахунку для цього токена — вартість його створення, а також попередить про сам токен, коли є про що знати.",
-          "Підтверди в гаманці. Переказ з'явиться в Історії як «Надіслано», потім «Прибуло», з квитанцією.",
+          "Встав Solana-адресу отримувача чи ім'я .skr і введи суму. «Надіслати» не додає memo. Якщо сам рахунок токена отримувача вимагає його ончейн, перевірка не пройде ще до того, як відкриється гаманець, і нічого не буде надіслано; але вимогу біржі вказати memo чи тег у її інструкціях поповнення Ryntra не розпізнає — бери адресу поповнення без memo або інший спосіб поповнення, який пропонує біржа.",
+          "Натисни «Перевірка». Ryntra покаже суму, плату мережі і — якщо в отримувача ще немає рахунку для цього токена — вартість його створення, а також попередить про сам токен, коли є про що знати.",
+          "Підтверди в гаманці. Переказ з'явиться в Історії як «У дорозі», потім «Надійшло», з квитанцією.",
         ],
       ),
     ]),
@@ -131,21 +133,21 @@ export const RECEIVE: DocPage = {
     section("address", "Your address", "Твоя адреса", [
       p(
         "Receive shows the connected wallet's Solana address and its QR code. Anything sent to this address on Solana arrives in your wallet; scanning works in any Solana wallet. Make sure the sender uses Solana for the asset — an asset sent on another network does not arrive here.",
-        "«Отримати» показує Solana-адресу під'єднаного гаманця та її QR-код. Усе, надіслане на цю адресу в Solana, приходить у твій гаманець; сканування працює в будь-якому гаманці Solana. Переконайся, що відправник використовує Solana для цього активу, — актив, надісланий в іншій мережі, сюди не прийде.",
+        "«Отримати» показує Solana-адресу підключеного гаманця та її QR-код. Усе, надіслане на цю адресу в Solana, приходить у твій гаманець; сканування працює в будь-якому гаманці Solana. Переконайся, що відправник використовує Solana для цього активу, — актив, надісланий в іншій мережі, сюди не прийде.",
       ),
     ]),
-    section("links", "Payment links", "Платіжні посилання", [
+    section("links", "Request a payment", "Запит на оплату", [
       steps(
         [
           "Sign in with your wallet — a payment link is tied to the account, not only to the browser.",
-          "Choose the asset and, if you want, an exact amount. Leave the amount open and the payer chooses it.",
-          "Create the link. Send it to the person who should pay: it opens in any browser, no app needed, and its QR opens the same link.",
+          "Choose the asset and, if you want, an exact amount, a note and how long the link lives — an hour, a day, a week or a month. Leave the amount open and the payer chooses it.",
+          "Press Create payment link. Send it to the person who should pay: it opens in any browser, no app needed, and its QR opens the same link.",
           "The payment arrives straight in your wallet; Portfolio shows the new balance.",
         ],
         [
           "Увійди гаманцем — платіжне посилання прив'язане до акаунта, а не лише до браузера.",
-          "Обери актив і, за бажанням, точну суму. Лиши суму відкритою — і її обере платник.",
-          "Створи посилання. Надішли його тому, хто має заплатити: воно відкривається в будь-якому браузері без застосунку, а його QR відкриває те саме посилання.",
+          "Обери актив і, за бажанням, точну суму, нотатку й скільки живе посилання — годину, добу, тиждень чи місяць. Лиши суму відкритою — і її обере платник.",
+          "Натисни «Створити посилання на оплату». Надішли його тому, хто має заплатити: воно відкривається в будь-якому браузері без застосунку, а його QR відкриває те саме посилання.",
           "Платіж приходить просто у твій гаманець; Портфель показує новий баланс.",
         ],
       ),
@@ -166,7 +168,7 @@ export const REWARDS_PAGE: DocPage = {
   sections: [
     section("how", "How Rewards work", "Як працюють Винагороди", [
       p(
-        "When Ryntra receives its service fee on your purchase, swap, Spot trade or bridge, a share of what it received comes back to you and to the people who invited you — the fee after any provider's own cut. Only a fee actually received counts: a route that carries no Ryntra fee earns nothing, and a quoted fee that was not collected earns nothing.",
+        "When Ryntra receives its service fee on your purchase, swap, Spot trade or transfer between networks, a share of what it received comes back to you and to the people who invited you — the fee after any provider's own cut. Only a fee actually received counts: a route that carries no Ryntra fee earns nothing, and a quoted fee that was not collected earns nothing.",
         "Коли Ryntra отримує свою комісію з твоєї купівлі, обміну, угоди на Споті чи мосту, частка отриманої комісії — тобто комісії після власної частки провайдера — повертається тобі й тим, хто тебе запросив. Рахується лише справді отримана комісія: маршрут без комісії Ryntra не дає нічого, і показана, але не зібрана комісія не дає нічого.",
       ),
       table(
@@ -177,51 +179,67 @@ export const REWARDS_PAGE: DocPage = {
             [`${REWARDS.referralL1Percent}%`, `The person who invited you — by their rank: ${REWARDS.referralL1Ladder.en}`],
             [`${REWARDS.referralL2Percent}%`, "The person who invited them"],
             ["The rest", "Ryntra. A missing inviter's share stays with Ryntra; it is never given to someone else"],
+            ...(REWARD_EXTRAS.inviterWindow ? [[`${REWARD_EXTRAS.inviterWindow.percent}%`, `The inviter, whatever their rank, for each friend's first ${REWARD_EXTRAS.inviterWindow.days} days`]] : []),
           ],
           uk: [
             [`${REWARDS.cashbackPercent}%`, "Тобі — кешбек із твоєї купівлі чи угоди"],
             [`${REWARDS.referralL1Percent}%`, `Тому, хто тебе запросив, — за його рангом: ${REWARDS.referralL1Ladder.uk}`],
             [`${REWARDS.referralL2Percent}%`, "Тому, хто запросив його"],
             ["Решта", "Ryntra. Частка відсутнього запрошувача лишається в Ryntra; її ніколи не віддають комусь іншому"],
+            ...(REWARD_EXTRAS.inviterWindow ? [[`${REWARD_EXTRAS.inviterWindow.percent}%`, `Запрошувачу, хоч який його ранг, — перші ${REWARD_EXTRAS.inviterWindow.days} днів кожного друга`]] : []),
           ],
         },
       ),
       facts(
         [
-          ["Eligible operations", `Purchases (${FEES.company} fee), Swap and Spot (${FEES.swap} fee), Bridge (${FEES.bridge} fee)`],
+          ["Eligible operations", `Purchases (${FEES.company} fee), Swap and Spot (${FEES.swap} fee), Between networks (${FEES.bridge} fee)`],
           ["Paid in", "USDC on Solana, to the wallet you are signed in with"],
-          ["Claim from", `$${REWARDS.claimFloorUsd.toFixed(2)} USDC`],
+          ["Claim from", `${CLAIM_FLOOR.en.withAccount} USDC when your wallet already has a USDC account, ${CLAIM_FLOOR.en.withoutAccount} when it does not; the claim's network fee is paid for you`],
           ["Timing", "A reward reads Pending until the operation has settled and its fee is confirmed, then Available"],
         ],
         [
-          ["Що зараховується", `Купівлі (комісія ${FEES_UK.company}), Обмін і Спот (комісія ${FEES_UK.swap}), Міст (комісія ${FEES_UK.bridge})`],
+          ["Що зараховується", `Купівлі (комісія ${FEES_UK.company}), Обмін і Спот (комісія ${FEES_UK.swap}), Між мережами (комісія ${FEES_UK.bridge})`],
           ["Виплата", "USDC на Solana — на гаманець, яким виконано вхід"],
-          ["Виплата від", `$${REWARDS.claimFloorUsd.toFixed(2).replace(".", ",")} USDC`],
+          ["Виплата від", `${CLAIM_FLOOR.uk.withAccount} USDC, якщо в гаманці вже є рахунок USDC, ${CLAIM_FLOOR.uk.withoutAccount} — якщо немає; плату мережі за виплату сплачено за тебе`],
           ["Час", "Винагорода читається як «Очікує», поки операція не завершена й комісія не підтверджена, потім — «Доступно»"],
         ],
       ),
+      ...(REWARD_EXTRAS.firstTen
+        ? [
+            note(
+              `«First ${REWARD_EXTRAS.firstTen.cap} back»: for the first ${REWARD_EXTRAS.firstTen.wallets} new wallets each month, the fee Ryntra receives on your trades comes back in full for up to ${REWARD_EXTRAS.firstTen.days} days, up to ${REWARD_EXTRAS.firstTen.cap} — half at once, the rest after a check. A wallet inside the window sees its progress on the Rewards page.`,
+              `«Перші ${REWARD_EXTRAS.firstTen.cap} назад»: для перших ${REWARD_EXTRAS.firstTen.wallets} нових гаманців щомісяця комісія, яку Ryntra отримує з твоїх угод, повертається повністю до ${REWARD_EXTRAS.firstTen.days} днів, до ${REWARD_EXTRAS.firstTen.cap} — половина одразу, решта після перевірки. Гаманець у цьому вікні бачить свій поступ на сторінці Винагород.`,
+            ),
+          ]
+        : []),
     ]),
     section("ranks", "Ranks", "Ранги", [
       p(
-        `Your rank is read from your rank points over the last ${REWARDS.rankWindowDays} days — not the Points programme's: a dollar of fee Ryntra received on your own trades or on trades of friends you invited is a rank point. The rank sets the share you earn from a friend's trade; the share is fixed at the moment of that trade. The rank has no cash value.`,
-        `Твій ранг рахується з очок за останні ${REWARDS.rankWindowDays} днів: долар комісії, яку Ryntra отримала з твоїх угод або з угод друзів, яких ти запросив, — це очко. Ранг задає частку, яку ти отримуєш з угоди друга; частка фіксується в момент цієї угоди. Ранг не має грошової вартості.`,
+        `Your rank is read from your rank points over the last ${REWARDS.rankWindowDays} days: a dollar of fee Ryntra received on your own trades or on trades of friends you invited is a rank point. The rank sets the share that comes to you from a friend's trade; the share is fixed at the moment of that trade. The rank has no cash value.`,
+        `Твій ранг рахується з очок за останні ${REWARDS.rankWindowDays} днів: долар комісії, яку Ryntra отримала з твоїх угод або з угод друзів, яких ти запросив, — це очко. Ранг задає частку, яка йде тобі з угоди друга; частка фіксується в момент цієї угоди. Ранг не має грошової вартості.`,
       ),
       table(
         { en: ["Rank", "From rank points", "Your share of a friend's trade"], uk: ["Ранг", "Від очок", "Твоя частка з угоди друга"] },
         { en: rankRows("en"), uk: rankRows("uk") },
+      ),
+      /* The one sentence the merged «Points and levels» page carried that this
+         page did not (UX-751): what points are not. */
+      note(
+        "Points have no cash value and cannot be transferred or exchanged. They carry no promise of a token, an airdrop or a conversion, and nothing about leverage, profit or loss changes them.",
+        "Очки не мають грошової вартості, їх не можна передати чи обміняти. Вони не несуть обіцянки токена, airdrop чи конвертації, а плече, прибуток чи збиток на них не впливають.",
       ),
     ]),
     section("claim", "How to claim", "Як отримати виплату", [
       steps(
         [
           "Open Rewards and confirm the wallet with a message signature, if the page asks — rewards are read for the signed-in wallet.",
-          "Available to claim shows what can be paid now. Press Claim to wallet.",
+          "Ready to claim shows what can be paid now. Press Claim to wallet.",
           "The USDC arrives in your wallet on Solana, and the claim reads Claimed on the Rewards page.",
         ],
         [
           "Відкрий Винагороди й, якщо сторінка попросить, підтверди гаманець підписом повідомлення — винагороди читаються для гаманця, яким виконано вхід.",
-          "«Доступно до виплати» показує, що можна виплатити зараз. Натисни «Виплатити на гаманець».",
-          "USDC приходять у твій гаманець на Solana, а виплата читається як «Виплачено» на сторінці Винагород.",
+          "«Можна забрати» показує, що можна отримати зараз. Натисни «Отримати на гаманець».",
+          "USDC приходять у твій гаманець на Solana, а на сторінці Винагород вона читається як «Отримано».",
         ],
       ),
       note(
@@ -230,7 +248,7 @@ export const REWARDS_PAGE: DocPage = {
       ),
     ]),
   ],
-  related: ["money/referrals", "money/points", "reference/fees"],
+  related: ["money/referrals", "reference/fees"],
 };
 
 export const REFERRALS: DocPage = {
@@ -239,97 +257,43 @@ export const REFERRALS: DocPage = {
   pageId: "rewards",
   title: { en: "Referrals", uk: "Реферали" },
   summary: {
-    en: "Your referral link, the two levels it pays, how an inviter is set, and why it cannot be changed afterwards.",
-    uk: "Твоє реферальне посилання, два рівні, які воно оплачує, як призначається запрошувач і чому його не можна змінити потім.",
+    en: "Your referral link, the two levels it pays, how an inviter is set, and the one change a new wallet may make.",
+    uk: "Твоє реферальне посилання, два рівні, які воно оплачує, як призначається запрошувач і єдина зміна, яку може зробити новий гаманець.",
   },
   sections: [
     section("how", "How referrals work", "Як працюють реферали", [
       p(
-        `Every signed-in wallet has a referral link. When someone opens Ryntra through it and confirms you as their inviter, you receive ${REWARDS.referralL1Percent}% of the Ryntra service fee received on their purchases and trades — the share your rank holds at the moment of their trade — and ${REWARDS.referralL2Percent}% on those of the people they invite in turn. The shares come out of Ryntra's fee, never out of anyone's amount.`,
-        `Кожен гаманець після входу має реферальне посилання. Коли хтось відкриває Ryntra за ним і підтверджує тебе як запрошувача, ти отримуєш ${REWARDS.referralL1Percent}% комісії Ryntra, отриманої з його купівель і угод, — частку, яку дає твій ранг у момент його угоди, — і ${REWARDS.referralL2Percent}% — з тих, кого запросить він. Частки йдуть із комісії Ryntra, а не із суми людини.`,
+        `Every signed-in wallet has a referral link. When someone opens Ryntra through it and then confirms a wallet, you become their inviter and receive ${REWARDS.referralL1Percent}% of the Ryntra service fee received on their purchases and trades — the share your rank holds at the moment of their trade — and ${REWARDS.referralL2Percent}% on those of the people they invite in turn. The shares come out of Ryntra's fee, never out of anyone's amount.`,
+        `Кожен гаманець після входу має реферальне посилання. Коли хтось відкриває Ryntra за ним і потім підтверджує гаманець, ти стаєш його запрошувачем і отримуєш ${REWARDS.referralL1Percent}% комісії Ryntra, отриманої з його купівель і угод, — частку, яку дає твій ранг у момент його угоди, — і ${REWARDS.referralL2Percent}% — з тих, кого запросить він. Частки йдуть із комісії Ryntra, а не із суми людини.`,
       ),
       steps(
         [
           "Open Rewards and copy your referral link or code.",
-          "The invited person opens Ryntra, connects and confirms their wallet, and confirms the inviter. Nothing is set until they confirm.",
+          "The invited person opens Ryntra through the link and connects and confirms a wallet: the inviter is set then, with no button to find. Opening the link alone sets nothing.",
           "From that moment their eligible operations accrue your share; the Rewards page shows your direct and second-level invitees and what each has earned you.",
         ],
         [
           "Відкрий Винагороди й скопіюй своє реферальне посилання чи код.",
-          "Запрошена людина відкриває Ryntra, під'єднує й підтверджує гаманець і підтверджує запрошувача. Нічого не призначено, поки вона не підтвердить.",
+          "Запрошена людина відкриває Ryntra за посиланням, підключає й підтверджує гаманець — тоді запрошувача й призначено, без жодної кнопки. Саме відкриття посилання нічого не призначає.",
           "Від цієї миті її операції, що зараховуються, накопичують твою частку; сторінка Винагород показує твоїх прямих запрошених і другий рівень, і скільки кожен тобі приніс.",
         ],
       ),
       list(
         [
-          "An inviter, once confirmed, cannot be changed. Choose before you confirm.",
+          `A new wallet may change its inviter once, while it is within ${REFERRAL_BIND_WINDOW_DAYS} days of its first earning; after that the inviter is final, and the earlier inviter keeps what settled before the change.`,
           "A wallet cannot invite itself, and a loop of invitations is refused.",
           "A qualified referral — an invited wallet's first active day — also earns you points.",
         ],
         [
-          "Підтвердженого запрошувача змінити не можна. Обирай до підтвердження.",
+          `Новий гаманець може один раз змінити запрошувача, поки не минуло ${REFERRAL_BIND_WINDOW_DAYS} днів від його першого заробітку; після цього запрошувач остаточний, а попередній лишає собі те, що завершилося до зміни.`,
           "Гаманець не може запросити сам себе, а коло запрошень відхиляється.",
-          "Кваліфікований реферал — перший активний день запрошеного гаманця — також дає тобі бали.",
+          "Кваліфікований реферал — перший активний день запрошеного гаманця — також дає тобі очки.",
         ],
       ),
     ]),
   ],
-  related: ["money/rewards", "money/points"],
-};
-
-export const POINTS_PAGE: DocPage = {
-  slug: "money/points",
-  group: "rewards",
-  pageId: "rewards",
-  title: { en: "Points and levels", uk: "Бали й рівні" },
-  summary: {
-    en: "Points reflect your genuine activity on Ryntra. How they are earned, the daily cap, the levels, and what they are not.",
-    uk: "Бали відображають твою справжню активність у Ryntra. Як вони нараховуються, денна межа, рівні і чим вони не є.",
-  },
-  sections: [
-    section("what", "What points are", "Що таке бали", [
-      p(
-        "Points are separate from Rewards. They have no cash value, cannot be transferred, and carry no promise of a token, an airdrop or a conversion. They record genuine activity — volume, active days, qualified referrals. Nothing about leverage, profit or loss changes them.",
-        "Бали — окремо від Винагород. Вони не мають грошової вартості, не передаються й не несуть обіцянки токена, airdrop чи конвертації. Вони фіксують справжню активність — обсяг, активні дні, кваліфіковані реферали. Плече, прибуток чи збиток на них не впливають.",
-      ),
-    ]),
-    section("earning", `How points are earned (policy ${POINTS.version})`, `Як нараховуються бали (політика ${POINTS.version})`, [
-      p(
-        "Volume points count eligible volume per wallet per UTC day, in marginal tiers:",
-        "Бали за обсяг рахують обсяг, що зараховується, на гаманець за добу UTC, за граничними рівнями:",
-      ),
-      table(
-        { en: ["Daily volume", "Rate"], uk: ["Денний обсяг", "Ставка"] },
-        { en: pointsTierRows("en"), uk: pointsTierRows("uk") },
-      ),
-      facts(
-        [
-          ["Daily cap", `${POINTS.dailyCap.toLocaleString("en-US")} volume points per day`],
-          ["Active day", `+${POINTS.activeDayPoints} points once a day reaches $${POINTS.activeDayMinimumUsd} of eligible volume`],
-          ["Qualified referral", `+${POINTS.qualifiedReferralPoints} points when a wallet you invited has its first active day`],
-          ["Strategy completed", `${POINTS.strategyCompletedPoints} points in this policy version`],
-        ],
-        [
-          ["Денна межа", `${POINTS.dailyCap.toLocaleString("uk-UA")} балів за обсяг на день`],
-          ["Активний день", `+${POINTS.activeDayPoints} балів, щойно день досягає $${POINTS.activeDayMinimumUsd} обсягу, що зараховується`],
-          ["Кваліфікований реферал", `+${POINTS.qualifiedReferralPoints} балів, коли запрошений тобою гаманець має перший активний день`],
-          ["Завершена стратегія", `${POINTS.strategyCompletedPoints} балів у цій версії політики`],
-        ],
-      ),
-    ]),
-    section("levels", "Levels and rank", "Рівні й ранг", [
-      table(
-        { en: ["Level", "Lifetime points"], uk: ["Рівень", "Бали за весь час"] },
-        { en: levelRows("en"), uk: levelRows("uk") },
-      ),
-      p(
-        "Points and their level are counted as before, and the phone shows them. On the web, Rewards shows your rank in their place — Bronze to Diamond by the fee Ryntra received over 30 days; see Rewards. There is no public leaderboard.",
-        "Бали та їхній рівень рахуються як і раніше, і телефон їх показує. На сайті Винагороди показують замість них твій ранг — від Бронзи до Діаманта за комісією, яку Ryntra отримала за 30 днів; дивись Винагороди. Публічної таблиці лідерів немає.",
-      ),
-    ]),
-  ],
-  related: ["money/rewards", "money/referrals"],
+  related: ["money/rewards", "reference/fees"],
 };
 
 export const MONEY_PAGES: readonly DocPage[] = [TOP_UP_PAGE, SEND, RECEIVE, BRIDGE];
-export const REWARDS_PAGES: readonly DocPage[] = [REWARDS_PAGE, REFERRALS, POINTS_PAGE];
+export const REWARDS_PAGES: readonly DocPage[] = [REWARDS_PAGE, REFERRALS];

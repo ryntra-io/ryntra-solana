@@ -16,7 +16,7 @@ const DOT = 22
 const SEMIBOLD = { fontFamily: fonts.sansSemibold } as const
 
 /**
- * «Шлях компанії» (the web's, as ryntra.io draws
+ * «Шлях компанії» (M24; the web's, as ryntra.io draws
  * it below 720 px) — one card under the company's name: Приватна · PreStocks →
  * IPO → Біржа → Solana, each step passed (a check), current (the orange dot)
  * or not announced (a dashed ring), with its day on the right. The page's own
@@ -24,7 +24,7 @@ const SEMIBOLD = { fontFamily: fonts.sansSemibold } as const
  * that opens its page — SPACEX and SPCXx lead to each other — each saying what
  * it is. Under the steps, the one line that matters to a holder: the private
  * token's swap deadline with the issuer's minute, and on the private token's
- * own page a holder's swap and sale under it; for a company
+ * own page a holder's swap and sale under it (M19's actions); for a company
  * still private, the issuer's rule. Where each fact was read is one tap
  * deeper, under «Джерела» — each source opens in the browser.
  */

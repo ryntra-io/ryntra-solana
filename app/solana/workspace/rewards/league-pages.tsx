@@ -6,6 +6,7 @@ import { leagueCopy } from "./league-copy.ts";
 import { LeaderboardView } from "./leaderboard-view.tsx";
 import { RewardsTabs } from "./rewards-tabs.tsx";
 import { SeasonView } from "./season-view.tsx";
+import styles from "./rewards.module.css";
 
 /**
  * The two pages beside Rewards — the week's boards and the season — thin on
@@ -22,14 +23,15 @@ export async function leaderboardMetadata() {
 export async function LeaderboardPage() {
   const { locale } = await solanaServerText();
   return (
-    <>
+    /* The title, the tabs and the page in one column in the middle (Ріст 19). */
+    <div className={styles.frameWide}>
       <header className="so-head">
         <h1 className="so-title">{leagueCopy(locale).boardsTitle}</h1>
       </header>
       <MoneyTabs current="rewards" />
       <RewardsTabs current="boards" />
       <LeaderboardView />
-    </>
+    </div>
   );
 }
 
@@ -52,13 +54,14 @@ export async function SeasonPage({ params }: { params?: Promise<{ season?: strin
   const season = seasonFrom((await params)?.season);
   const words = leagueCopy(locale);
   return (
-    <>
+    /* The title, the tabs and the page in one column in the middle (Ріст 19). */
+    <div className={styles.frameWide}>
       <header className="so-head">
         <h1 className="so-title">{season ? words.seasonTitle(season) : words.tabs.season}</h1>
       </header>
       <MoneyTabs current="rewards" />
       <RewardsTabs current="season" />
       <SeasonView season={season} />
-    </>
+    </div>
   );
 }

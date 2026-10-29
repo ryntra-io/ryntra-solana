@@ -1,15 +1,17 @@
 "use client";
 
-import { ArrowUpRight, CheckCircle, Warning, X, XCircle } from "@phosphor-icons/react";
+import { Warning } from "@phosphor-icons/react";
+import { Button, TradeTicket, amountForShare, newDraft, ticketModel, type TicketDraft, type TicketReviewed } from "@ryntra/core/ui";
 import { ryntraFeeOfWhich } from "./ryntra-fee-line";
 import Link from "next/link";
+import { pagePath } from "@/lib/site/localized";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useId, useMemo, useRef, useState } from "react";
 
-import { approxUsd, dollars, formatUnits, parseDollars, unitsFromRaw, unitsPhrase } from "@/app/app/invest/company-model";
-import { solShort } from "@/app/app/invest/funding-model";
+import { approxUsd, formatUnits, unitsFromRaw, unitsPhrase } from "@/app/app/invest/company-model";
+import { FIRST_PURCHASE_LAMPORTS, PURCHASE_FEE_LAMPORTS, solShort } from "@/app/app/invest/funding-model";
 import { heldLine, investWords, sellableSolLine, numberLocale, reserveLine, sellForWord } from "@/app/app/invest/invest-words";
-import { isOverPosition, solForSale, isWholePosition, MIN_SALE_USD, openingSaleUsd, positionUsd, rawForUsd, SALE_SHARE_PRESETS_PCT, saleAssetOf, shareRaw, shareUsd, unitsOf, type SaleAsset, type SaleLines } from "@/app/app/invest/sale-model";
+import { MIN_SALE_USD, isOverPosition, isWholePosition, solForSale, openingSaleUsd, positionUsd, saleAssetOf, unitsOf, type SaleAsset, type SaleLines } from "@/app/app/invest/sale-model";
 import { useWalletData } from "@/app/app/wallet-data";
 import type { WorkspaceLocale } from "@/app/shell/locale";
 import { useSolanaConnection } from "@/app/solana/workspace/connection";
@@ -21,15 +23,16 @@ import { useStockAsset } from "@/app/solana/workspace/spot/stock-context";
 import { useSpotMarket } from "@/app/solana/workspace/spot/use-spot-data";
 import { plainAmount, SPOT_QUOTE_ASSETS, useSpotTicket } from "@/app/solana/workspace/spot/use-spot-ticket";
 import { explorerTxUrl } from "@/lib/solana/explorer";
-import { classifySpotFill } from "@/lib/solana/fill-outcome";
 import { SOLANA_MAINNET_USDC_MINT } from "@/lib/solana/send-kinds";
 import { swapFailureCopy } from "@/lib/solana/swap-failure-copy";
 import { SPOT_SALE_SIDE } from "@/lib/spot/ticket-state";
 import type { CheckBasis, CheckOrderFigures } from "@/lib/stocks/check";
+import { NETWORK_LABEL, SOL_COIN, assetOf, chainUnits, referenceOf, solGas, ticketBalances, ticketMarket, ticketPrices, uiUnits, unitsOf as unitsOf_, type TicketCoin } from "@/lib/ticket/solana-ticket";
 
 import company from "./company.module.css";
-import { useSheetAboveKeyboard } from "./sheet-keyboard";
-import { SumField } from "./sum-field";
+import { useSheetAboveKeyboard, useSumReadyOnDesk } from "./sheet-keyboard";
+import { STOCK_VENUE, stockTicketBase, stockTicketView } from "./stock-ticket";
+import { tradeFailureLine } from "./trade-failure-words";
 
 /**
  * «Продати з позиції» — the sale of a company the wallet holds, drawn as the
@@ -64,6 +67,9 @@ import { SumField } from "./sum-field";
 
 const USDC = SPOT_QUOTE_ASSETS[0];
 const RAW = /^\d+$/;
+/* The dollars a sale brings, a USDC each, as every sum on the page; the smallest sale is a dollar, all of a position always is. */
+const USDC_COIN: TicketCoin = { mint: SOLANA_MAINNET_USDC_MINT, symbol: "USDC", decimals: 6, digits: 2 };
+const MIN_SALE_RAW = BigInt(MIN_SALE_USD * 10 ** 6);
 
 export type SellSheetProps = Readonly<{
   open: boolean;
@@ -114,6 +120,7 @@ export function SellSheet(props: SellSheetProps) {
 
   /* On a phone the sheet stands above the keyboard the sum raises: «Продати на $1» stays in sight. */
   useSheetAboveKeyboard(dialog, open);
+  useSumReadyOnDesk(dialog, open);
 
   /* Nothing closes the sheet while a Review is being prepared, signed or sent: the flow keeps running and says so. */
   const requestClose = useCallback(() => {
@@ -178,9 +185,7 @@ export function SheetHead({ mint, name, icon, title, titleId, onClose, disabled,
       <h2 id={titleId} className={company.sheetTitle}>
         {title}
       </h2>
-      <button type="button" className={company.sheetClose} onClick={onClose} disabled={disabled} aria-label={word("close")}>
-        <X size={18} weight="bold" aria-hidden="true" />
-      </button>
+      <Button variant="ghost" icon="x" className={company.sheetClose} onClick={onClose} disabled={disabled} aria-label={word("close")} lang={locale === "uk" ? "uk" : "en"} />
     </div>
   );
 }
@@ -197,9 +202,9 @@ function SellPending({ placeholder, failed, coin, locale, titleId, onClose }: Re
             {coin ? word("coinUnread") : word("companyUnread")}
           </p>
           <div className={company.sheetActions}>
-            <button type="button" className="rw-btn rw-btn--primary" onClick={onClose}>
+            <Button variant="primary" block onClick={onClose} lang={locale === "uk" ? "uk" : "en"}>
               {word("close")}
-            </button>
+            </Button>
           </div>
         </>
       ) : (
@@ -243,35 +248,67 @@ function SellFlow({ asset, linesOf, locale, titleId, quickShare = null, onBusy, 
   const valueUsd = heldRaw !== null && baseDecimals !== null ? positionUsd(heldRaw, baseDecimals, multiplier, price) : null;
   const heldUnits = heldRaw !== null && baseDecimals !== null ? unitsOf(heldRaw, baseDecimals, multiplier) : null;
 
+  /* ------------------------------------------------------------ the ticket's market */
+  /* What is sold counts in the units the wallet shows; the dollars arrive as USDC, a dollar each, as every sum on the page. */
+  const saleCoin: TicketCoin = useMemo(() => ({ mint, symbol, decimals: baseDecimals ?? 0, digits: 4, multiplier: native ? null : multiplier }), [mint, symbol, baseDecimals, native, multiplier]);
+  const [clock, setClock] = useState(() => Date.now());
+  useEffect(() => {
+    const timer = window.setInterval(() => setClock(Date.now()), 1_000);
+    return () => window.clearInterval(timer);
+  }, []);
+  const priceAt = useMemo(() => (price === null ? 0 : Date.now()), [price]);
+  const prices = useMemo(() => ticketPrices([{ coin: USDC_COIN, usd: 1 }, { coin: saleCoin, usd: price }], priceAt, "Jupiter"), [saleCoin, price, priceAt]);
+  const reference = useMemo(() => referenceOf(price, 1, "Jupiter", priceAt), [price, priceAt]);
+  const solRow = holdings.status === "ready" ? (holdings.data.find((row) => row.kind === "NATIVE_SOL") ?? null) : null;
+  /* The dollars arrive in the wallet's USDC account; a wallet without one opens it, and the network would refuse a sale its SOL cannot carry. */
+  const holdsUsdc = holdings.status === "ready" && holdings.data.some((row) => row.mint === SOLANA_MAINNET_USDC_MINT && RAW.test(row.amountRaw) && BigInt(row.amountRaw) > 0n);
+  const balances = !connection
+    ? null
+    : heldRaw === null
+      ? {}
+      : ticketBalances([
+          { coin: saleCoin, raw: heldRaw },
+          ...(native ? [] : [{ coin: SOL_COIN, raw: solRow?.amountRaw ?? (holdings.status === "ready" && holdings.complete ? "0" : null) }]),
+        ]);
+  /* SOL sold is already what the fee leaves; any other sale needs SOL for the fee, and the USDC account when the wallet has none. */
+  const gas = useMemo(() => (native ? solGas(0n) : solGas(holdsUsdc ? PURCHASE_FEE_LAMPORTS : FIRST_PURCHASE_LAMPORTS)), [native, holdsUsdc]);
+
   /* ------------------------------------------------------------ the sum */
   /* The sum opens once the position is read: $10 when it is worth that, else no sum — never a preselected sale of everything. */
   const [amountText, setAmountText] = useState<string | null>(null);
-  const [pct, setPct] = useState<number | null>(null);
+  const [amountUnit, setAmountUnit] = useState<"token" | "usd">("usd");
   useEffect(() => {
     if (amountText !== null || heldRaw === null || baseDecimals === null) return;
     const opening = openingSaleUsd(valueUsd);
     setAmountText(opening === null ? "" : String(opening));
   }, [amountText, heldRaw, baseDecimals, valueUsd]);
-
-  const typed = amountText === null ? null : parseDollars(amountText, lang);
-  const over = pct === null && typed !== null && isOverPosition(typed, valueUsd);
-  const whole = pct === 100 || (pct === null && typed !== null && !over && isWholePosition(typed, valueUsd));
-  const saleRaw = heldRaw === null || heldRaw <= 0n ? null : pct !== null ? shareRaw(heldRaw, pct) : typed !== null && !over ? rawForUsd(typed, heldRaw, baseDecimals, multiplier, price) : null;
-  /* A sum under a dollar is not a sale; the whole position always is. */
-  const belowMinimum = !whole && typed !== null && typed < MIN_SALE_USD - 1e-9;
-  const valid = saleRaw !== null && saleRaw > 0n && !over && !belowMinimum && baseDecimals !== null;
+  const draft: TicketDraft = newDraft({ side: "sell", unit: amountUnit, amount: amountText ?? "" });
+  const heldShown = heldRaw !== null ? uiUnits(heldRaw, saleCoin) : null;
+  /* Dollars typed within half a cent of the position's value are all of it — the value the page shows, typed back, sells
+     the whole position; beyond that half cent they are more than the position (`isWholePosition`, `isOverPosition`). */
+  const typedUsd = amountUnit === "usd" && (amountText ?? "").trim() !== "" ? Number((amountText ?? "").replace(/\s/g, "").replace(",", ".")) : null;
+  const usdOver = typedUsd !== null && isOverPosition(typedUsd, valueUsd);
+  const usdWhole = typedUsd !== null && !usdOver && isWholePosition(typedUsd, valueUsd) && heldShown !== null && heldShown > 0n;
+  /* So the ticket counts such a sum as all of the position, not as half a cent more than the wallet holds. */
+  const typedAsPaid = usdWhole ? unitsOf_(ticketModel(stockTicketBase({ side: "sell", market: ticketMarket({ id: mint, base: saleCoin, quote: USDC_COIN, price, minQuoteRaw: null }), base: saleCoin, quote: USDC_COIN, draft, balances: {}, prices, reference, gas, unavailable: null, now: clock }), lang).paid) : null;
+  const wholeRoom = heldShown !== null && typedAsPaid !== null && typedAsPaid > heldShown ? typedAsPaid : heldShown;
+  const saleBalances = usdWhole && balances && wholeRoom !== null ? { ...balances, [assetOf(saleCoin.mint)]: { units: wholeRoom.toString(), asset: assetOf(saleCoin.mint), decimals: saleCoin.decimals } } : balances;
+  /* A sale of all the ticket shows is the whole position: no smallest sum stands in its way. */
+  const draftModel = (minimum: boolean) =>
+    ticketModel(stockTicketBase({ side: "sell", market: ticketMarket({ id: mint, base: saleCoin, quote: USDC_COIN, price, minQuoteRaw: minimum ? MIN_SALE_RAW : null }), base: saleCoin, quote: USDC_COIN, draft, balances: saleBalances, prices, reference, gas, unavailable: null, now: clock }), lang);
+  const open = draftModel(false);
+  const typedShown = usdWhole ? heldShown : unitsOf_(open.paid);
+  const whole = usdWhole || (typedShown !== null && heldShown !== null && heldShown > 0n && typedShown >= heldShown);
+  const ticketMarketOf = useMemo(() => ticketMarket({ id: mint, base: saleCoin, quote: USDC_COIN, price, minQuoteRaw: whole ? null : MIN_SALE_RAW }), [mint, saleCoin, price, whole]);
+  const typed = whole ? open : draftModel(true);
+  /* What the chain moves for what was typed: never more than the position, all of it when all of it was typed. */
+  const saleRaw = typedShown === null || heldRaw === null || heldRaw <= 0n ? null : chainUnits(typedShown, saleCoin, heldRaw);
+  /* The smallest sale is the sum typed, as it always was: a $1 sale whose quote brings $0,99 after costs is still a $1 sale.
+     Once the typed sum passes, the venue's answer is not measured against it again. */
+  const viewMarket = useMemo(() => (typed.fieldError === null && price !== null ? ticketMarket({ id: mint, base: saleCoin, quote: USDC_COIN, price, minQuoteRaw: null }) : ticketMarketOf), [typed.fieldError, mint, saleCoin, price, ticketMarketOf]);
+  const over = usdOver || (!usdWhole && typedShown !== null && heldShown !== null && typedShown > heldShown);
+  const valid = saleRaw !== null && saleRaw > 0n && !over && typed.fieldError === null && baseDecimals !== null;
   const amount = valid && baseDecimals !== null ? plainAmount(saleRaw.toString(), baseDecimals) : "";
-
-  const pickShare = (value: number) => {
-    if (heldRaw === null || baseDecimals === null) return;
-    const usd = shareUsd(heldRaw, baseDecimals, multiplier, price, value);
-    setPct(value);
-    setAmountText(usd === null ? "" : String(usd));
-  };
-  const typeSum = (value: string) => {
-    setPct(null);
-    setAmountText(value);
-  };
 
   /* ------------------------------------------------------- the one execution path */
   const ticket = useSpotTicket({
@@ -287,6 +324,8 @@ function SellFlow({ asset, linesOf, locale, titleId, quickShare = null, onBusy, 
     onRefresh: refresh,
   });
   const { phase, quoted, prepared, settled, attempt } = ticket;
+  /* What Review agreed to, kept here: the hook lets the prepared order go before the answer settles. */
+  const [agreed, setAgreed] = useState<TicketReviewed | null>(null);
   const working = phase === "PREPARING" || phase === "SIGNING" || phase === "EXECUTING" || phase === "RECOVERING";
   useEffect(() => {
     onBusy(working);
@@ -294,12 +333,9 @@ function SellFlow({ asset, linesOf, locale, titleId, quickShare = null, onBusy, 
   useEffect(() => () => onBusy(false), [onBusy]);
 
   /* ------------------------------------------------------------ the wallet */
-  const solRow = holdings.status === "ready" ? (holdings.data.find((row) => row.kind === "NATIVE_SOL") ?? null) : null;
-  /* The dollars arrive in the wallet's USDC account; a wallet without one opens it, and the network would refuse a sale its SOL cannot carry. */
-  const holdsUsdc = holdings.status === "ready" && holdings.data.some((row) => row.mint === SOLANA_MAINNET_USDC_MINT && RAW.test(row.amountRaw) && BigInt(row.amountRaw) > 0n);
   const cannotPayFee = connection !== null && solRow !== null && RAW.test(solRow.amountRaw) && solShort(BigInt(solRow.amountRaw), holdsUsdc);
   const topUpSol = useCallback(() => {
-    const back = encodeURIComponent(window.location.pathname);
+    const back = encodeURIComponent(pagePath(window.location.pathname));
     router.push(`/app/top-up?need=sol&from=${back}`);
   }, [router]);
 
@@ -317,238 +353,116 @@ function SellFlow({ asset, linesOf, locale, titleId, quickShare = null, onBusy, 
     const order = prepared?.order ?? quoted?.order ?? null;
     return order ? linesOf(order, prepared ? "order" : "quote") : null;
   }, [linesOf, prepared, quoted]);
-  const outUsdc = check?.get.amount ?? null;
-  const costs = amount ? (check?.costs ?? null) : null;
-  /* «з них комісія емітента 3% ≈ $0,03» — the share of the sale the mint withholds on the transfer, at the rate the chain states. */
-  const ryntraFeeLine = ryntraFeeOfWhich(prepared?.order ?? quoted?.order ?? null, word("ryntraFeeOfWhich"), numbers);
-  const issuerFee = costs?.issuerFee ? `${word("issuerFeeOfWhich")} ${new Intl.NumberFormat(numbers, { maximumFractionDigits: 2 }).format(costs.issuerFee.basisPoints / 100)}% ${approxUsd(costs.issuerFee.usd, numbers).replace(" ", " ")}` : null;
-  /* The server answered the quote without its lines (the company could not be read): nothing is counted here in their place. */
-  const uncounted = Boolean(amount) && quoted !== null && outUsdc === null;
-  const quoteFailure = ticket.quoteFailure && amount ? ticket.quoteFailureMessage : null;
+  const quoteFailure = ticket.quoteFailure && amount ? tradeFailureLine(ticket.quoteFailure, ticket.quoteFailureMessage, "sell", lang) : null;
   const quoteStop = ticket.quoteFailure ? !swapFailureCopy(ticket.quoteFailure.code, text).retryable : false;
   const blocked = quoted?.verdict.verdict === "BLOCKED";
   const failure = (() => {
     const code = ticket.actionFailure?.code ?? null;
     if (code === "WALLET_REFUSED") return word("walletDeclined");
-    return ticket.actionFailureMessage ?? null;
+    return tradeFailureLine(ticket.actionFailure, ticket.actionFailureMessage, "sell", lang);
   })();
+  /* «Усі витрати» as the server counted them, with the issuer's and Ryntra's parts on their own lines. */
+  const countOf = (lines: SaleLines | null, order: Parameters<typeof ryntraFeeOfWhich>[0]) => {
+    if (!lines?.costs || !amount) return {};
+    const parts: { label: string; value: string }[] = [];
+    if (lines.costs.issuerFee) parts.push({ label: word("issuerFeeOfWhich"), value: `${new Intl.NumberFormat(numbers, { maximumFractionDigits: 2 }).format(lines.costs.issuerFee.basisPoints / 100)}% ${approxUsd(lines.costs.issuerFee.usd, numbers)}` });
+    const ryntra = ryntraFeeOfWhich(order, "", numbers);
+    if (ryntra) parts.push({ label: word("ryntraFeeOfWhich"), value: ryntra.trim() });
+    return { costLines: parts, costsTotal: approxUsd(lines.costs.usd, numbers) };
+  };
+
+  const view = stockTicketView({
+    agreed,
+    side: "sell",
+    market: viewMarket,
+    base: saleCoin,
+    quote: USDC_COIN,
+    draft,
+    balances: saleBalances,
+    prices,
+    reference,
+    gas,
+    spot: { phase, quoted, quoting: ticket.quoting, prepared, preparedReadiness: ticket.preparedReadiness, bytesChanged: ticket.bytesChanged, reviewSecondsLeft: ticket.reviewSecondsLeft, settled, attempt },
+    quoteFailed: amount ? quoteFailure : null,
+    unavailable: !asset.sellable || blocked || quoteStop ? word("saleUnavailable") : null,
+    holding: false,
+    time: new Intl.DateTimeFormat(numbers, { hour: "2-digit", minute: "2-digit" }).format(new Date(clock)),
+    lang,
+    now: clock,
+  });
+  useEffect(() => {
+    if (view.stage === "review" && view.reviewed) setAgreed(view.reviewed);
+    // Taken once per prepared order as Review shows it: `view.reviewed` is a new object every render.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [prepared, view.stage]);
+  /* Let go when a new order is asked for, a Review is put down or the sheet starts over: an answer that comes without a
+     Review of its own (another signature in flight) never reads an earlier Review's figures. */
+  useEffect(() => {
+    if (phase === "IDLE" || (phase === "PREPARING" && prepared === null)) setAgreed(null);
+  }, [phase, prepared]);
+  const outcome = view.outcome;
 
   /* One tap from a quick share: the share goes in once the position is read, and its Review is asked for once the sale can be judged — or the sheet says what stands in the way and waits for the person. */
   const quickPicked = useRef(0);
-  const [quickArmed, setQuickArmed] = useState(0);
+  const [quickArmed, setQuickArmed] = useState<Readonly<{ tap: number; text: string }> | null>(null);
   useEffect(() => {
     if (!quickShare || quickPicked.current === quickShare.tap || heldRaw === null || baseDecimals === null) return;
     quickPicked.current = quickShare.tap;
-    pickShare(quickShare.pct);
-    setQuickArmed(quickShare.tap);
+    const share = amountForShare(open, quickShare.pct, "token", prices, lang);
+    setAmountUnit("token");
+    setAmountText(share);
+    setQuickArmed({ tap: quickShare.tap, text: share });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [quickShare, heldRaw, baseDecimals]);
   const { review: openReview } = ticket;
   useEffect(() => {
-    if (quickArmed === 0 || !quickShare) return;
+    if (!quickArmed || !quickShare) return;
     /* The person chose another share before the sale could be judged: the tap is theirs no longer. */
-    if (pct !== quickShare.pct) {
-      setQuickArmed(0);
+    if (amountText !== quickArmed.text) {
+      setQuickArmed(null);
       return;
     }
     if (!connection || holdings.status !== "ready") return;
-    if (attempt || phase !== "IDLE" || !valid || belowMinimum || cannotPayFee || blocked || !asset.sellable) {
-      setQuickArmed(0);
+    if (attempt || phase !== "IDLE" || !valid || cannotPayFee || blocked || !asset.sellable) {
+      setQuickArmed(null);
       return;
     }
-    setQuickArmed(0);
+    setQuickArmed(null);
     void openReview();
-  }, [quickArmed, quickShare, pct, connection, holdings.status, attempt, phase, valid, belowMinimum, cannotPayFee, blocked, asset.sellable, openReview]);
+  }, [quickArmed, quickShare, amountText, connection, holdings.status, attempt, phase, valid, cannotPayFee, blocked, asset.sellable, openReview]);
 
   const head = (title: string) => <SheetHead mint={mint} name={name} icon={icon} title={title} titleId={titleId} onClose={onClose} disabled={working} locale={locale} />;
 
-  /* ------------------------------------------------------------ the receipt */
-  const outcome = phase === "SETTLED" && settled ? classifySpotFill(settled) : null;
-  if (outcome) {
-    const context = ticket.settledContext;
-    const gotRaw = settled?.observation?.actualOutputRaw ?? null;
-    const gaveRaw = settled?.observation?.actualInputRaw ?? null;
-    const got = gotRaw && RAW.test(gotRaw) ? Number(gotRaw) / 10 ** (context?.quoteDecimals ?? USDC.decimals) : null;
-    const gave = gaveRaw ? unitsFromRaw(gaveRaw, context?.baseDecimals ?? baseDecimals, multiplier) : null;
-    const tone = outcome.kind === "FILLED" ? (outcome.note === null ? "matched" : "caution") : outcome.kind === "NOT_FILLED" ? "risk" : outcome.kind === "NOTHING_HAPPENED" ? "quiet" : "caution";
-    const title =
-      outcome.kind === "FILLED"
-        ? `${word("sold")}${got !== null ? ` · ${formatUsdMoney(got, numbers)}` : ""}`
-        : outcome.kind === "NOTHING_HAPPENED"
-          ? word("nothingSold")
-          : outcome.kind === "NOT_FILLED"
-            ? word("saleRejected")
-            : word("saleUnknownTx");
-    return (
-      <div className={company.sheetBody} data-sheet="receipt" data-sale-receipt>
-        {head(name)}
-        <div className={company.receipt} data-tone={tone} role="status">
-          <span className={company.receiptMark} aria-hidden="true">
-            {tone === "matched" ? <CheckCircle size={44} weight="fill" /> : tone === "risk" ? <XCircle size={44} weight="fill" /> : <Warning size={44} weight="fill" />}
-          </span>
-          <p className={company.receiptTitle} translate="no">
-            {title}
-          </p>
-          {outcome.kind === "FILLED" && gave !== null ? <p className={company.receiptSub}>{amountWords(gave)}</p> : null}
-          {outcome.kind === "FILLED" && outcome.note ? <p className={company.receiptNote}>{outcome.note === "BELOW_MINIMUM" ? word("belowMinimum") : word("notAsReviewed")}</p> : null}
-        </div>
-        <div className={company.sheetActions}>
-          {outcome.kind === "FILLED" ? (
-            <button type="button" className="rw-btn rw-btn--primary" onClick={onClose}>
-              {word("done")}
-            </button>
-          ) : (
-            <button type="button" className="rw-btn rw-btn--primary" onClick={() => ticket.reset()}>
-              {word("tryAgain")}
-            </button>
-          )}
-          <p className={company.sheetLinks}>
-            <Link href="/app/activity" prefetch={false}>
-              {word("history")}
-            </Link>
-            {settled && outcome.kind !== "NOTHING_HAPPENED" ? (
-              <a href={explorerTxUrl("mainnet", settled.signature)} target="_blank" rel="noreferrer noopener">
-                {word("transaction")} <ArrowUpRight size={12} aria-hidden="true" />
-              </a>
-            ) : null}
-          </p>
-        </div>
-      </div>
-    );
-  }
+  /* The receipt's title, as the sheet's head. */
+  const context = ticket.settledContext;
+  const gotRaw = settled?.observation?.actualOutputRaw ?? null;
+  const gaveRaw = settled?.observation?.actualInputRaw ?? null;
+  const got = gotRaw && RAW.test(gotRaw) ? Number(gotRaw) / 10 ** (context?.quoteDecimals ?? USDC.decimals) : null;
+  const gave = gaveRaw ? unitsFromRaw(gaveRaw, context?.baseDecimals ?? baseDecimals, multiplier) : null;
+  const receiptTitle = outcome
+    ? outcome.kind === "FILLED"
+      ? `${word("sold")}${got !== null ? ` · ${formatUsdMoney(got, numbers)}` : ""}`
+      : outcome.kind === "NOTHING_HAPPENED"
+        ? word("nothingSold")
+        : outcome.kind === "NOT_FILLED"
+          ? word("saleRejected")
+          : word("saleUnknownTx")
+    : null;
 
-  if (phase === "RECOVERY" || phase === "RECOVERING" || attempt) {
-    return (
-      <div className={company.sheetBody} data-sheet="recovery">
-        {head(name)}
-        <p className={company.sheetNote} role="status">
-          {word("saleUnknownTx")}
-        </p>
-        {failure ? <p className={company.sheetError}>{failure}</p> : null}
-        <div className={company.sheetActions}>
-          <button type="button" className="rw-btn rw-btn--primary" disabled={phase === "RECOVERING"} onClick={() => void ticket.recover()}>
-            {phase === "RECOVERING" ? word("checkingTx") : word("checkTx")}
-          </button>
-          <p className={company.sheetLinks}>
-            <Link href="/app/activity" prefetch={false}>
-              {word("history")}
-            </Link>
-          </p>
-        </div>
-      </div>
-    );
-  }
-
-  /* ------------------------------------------------------------ the Review */
-  const inReview = (phase === "REVIEW" || phase === "SIGNING" || phase === "EXECUTING") && prepared !== null;
-  if (inReview && prepared) {
-    /* The order's own lines, as the server counted them on these exact bytes (1.20.0); a figure it could not count is a dash, never one counted here. */
-    const lines = check;
-    const sellUnits = lines?.spend.amount ?? null;
-    const sellUsd = lines?.spend.usd ?? null;
-    const minUsdc = lines?.get.atLeast ?? null;
-    const ready = ticket.preparedReadiness?.ready === true;
-    const seconds = ticket.reviewSecondsLeft;
-    /* The account the sale opens for the dollars, if the wallet has none: its own line, never a cost — it stays in the wallet. */
-    const reserve = lines?.reserve?.usd ? approxUsd(lines.reserve.usd, numbers) : null;
-    /* «Що це» as the server says it — the truth and, on a private company's token, «Продати може не вийти»; the page's own words only when the server could not read the company. */
-    const whatLine = lines ? lines.what.truth[lang] : truth;
-    const mayFail = lines ? (lines.what.note?.kind === "sale-may-fail" ? lines.what.note[lang] : null) : preIpo ? word("saleMayFail") : null;
-    const caution = lines ? lines.what.caution : preIpo;
-    return (
-      <div className={company.sheetBody} data-sheet="review" data-sale-review data-check={lines ? lines.basis : "none"}>
-        {head(word("review"))}
-        <dl className={company.review} aria-label={word("review")}>
-          <div>
-            <dt>{word("rowSell")}</dt>
-            <dd translate="no">
-              {sellUnits === null ? "—" : amountWords(sellUnits)}
-              {sellUsd !== null ? <span>{approxUsd(sellUsd, numbers)}</span> : null}
-            </dd>
-          </div>
-          <div>
-            <dt>{word("rowGet")}</dt>
-            <dd translate="no">
-              {outUsdc === null ? "—" : `≈ ${formatUsdMoney(outUsdc, numbers)} USDC`}
-              {minUsdc !== null ? <span>{`${word("atLeast")} ${formatUsdMoney(minUsdc, numbers)}`}</span> : null}
-            </dd>
-          </div>
-          <div>
-            <dt>{word("rowCosts")}</dt>
-            <dd translate="no">
-              {costs ? approxUsd(costs.usd, numbers) : "—"}
-              {issuerFee ? <span data-issuer-fee>{issuerFee}</span> : null}
-              {ryntraFeeLine ? <span data-ryntra-fee>{ryntraFeeLine}</span> : null}
-            </dd>
-            {reserve ? <dd data-reserve>{reserveLine(locale, reserve)}</dd> : null}
-          </div>
-          <div>
-            <dt>{word("rowWhat")}</dt>
-            <dd data-prose="true" data-caution={caution ? "true" : undefined}>
-              {whatLine}
-              {mayFail ? <span data-sale-may-fail>{mayFail}</span> : null}
-            </dd>
-          </div>
-        </dl>
-        {failure ? <p className={company.sheetError}>{failure}</p> : null}
-        <p className={company.sheetTimer} aria-live="off">
-          {ready && seconds !== null && seconds > 0 ? `${word("priceHolds")} ${seconds} ${word("seconds")}` : ready ? "" : word("priceExpired")}
-        </p>
-        <div className={company.sheetActions}>
-          {phase === "SIGNING" || phase === "EXECUTING" ? (
-            <button type="button" className="rw-btn rw-btn--primary" disabled>
-              {phase === "SIGNING" ? word("inWallet") : word("sending")}
-            </button>
-          ) : ready && !ticket.bytesChanged ? (
-            <button type="button" className="rw-btn rw-btn--primary" onClick={() => void ticket.sign()}>
-              {word("sign")}
-            </button>
-          ) : (
-            <button type="button" className="rw-btn rw-btn--primary" onClick={() => void ticket.cancelReview(true)}>
-              {word("refreshPrice")}
-            </button>
-          )}
-          <button type="button" className={company.quietButton} disabled={working} onClick={() => void ticket.cancelReview()}>
-            {word("cancel")}
-          </button>
-        </div>
-      </div>
-    );
-  }
-
-  /* ------------------------------------------------------------ compose */
+  /* The order's own lines in Review: «Що це» as the server says it — the truth and, on a private company's token, «Продати може не вийти». */
+  const inReview = view.stage === "review";
+  const lines = inReview ? check : null;
+  const reserve = lines?.reserve?.usd ? approxUsd(lines.reserve.usd, numbers) : null;
+  const whatLine = lines ? lines.what.truth[lang] : truth;
+  const mayFail = lines ? (lines.what.note?.kind === "sale-may-fail" ? lines.what.note[lang] : null) : preIpo ? word("saleMayFail") : null;
   const none = connection !== null && heldRaw === 0n;
-  const sumWord = typed !== null ? dollars(typed, numbers) : null;
-  const cta = (() => {
-    if (ticket.lockedReview) return { label: word("refreshPrice"), disabled: false, run: () => void ticket.cancelReview(true) };
-    if (!connection) return { label: word("connectWallet"), disabled: false, run: onConnect };
-    if (holdings.status !== "ready" || baseDecimals === null) return { label: word("reading"), disabled: true, run: undefined };
-    if (none) return { label: word("done"), disabled: false, run: onClose };
-    if (!asset.sellable) return { label: word("saleUnavailable"), disabled: true, run: undefined };
-    /* More than the position is never a dead button: the one action puts in all of it. */
-    if (over && valueUsd !== null) return { label: sellForWord(locale, formatUsdMoney(valueUsd, numbers), true), disabled: false, run: () => pickShare(100) };
-    if (belowMinimum) return { label: word("minimum"), disabled: true, run: undefined };
-    if (!valid || sumWord === null) return { label: word("sell"), disabled: true, run: undefined };
-    if (phase === "PREPARING") return { label: word("preparingReview"), disabled: true, run: undefined };
-    if (cannotPayFee) return { label: word("topUpSol"), disabled: false, run: topUpSol };
-    if (blocked || quoteStop) return { label: word("saleUnavailable"), disabled: true, run: undefined };
-    return { label: sellForWord(locale, sumWord, whole), disabled: false, run: () => void ticket.review() };
-  })();
-  const estimateLine = (() => {
-    if (none || amountText === null) return " ";
-    if (over && valueUsd !== null) return `${word("overPosition")} · ${formatUsdMoney(valueUsd, numbers)}`;
-    if (!valid) return " ";
-    /* The server's figures: what the sale brings and all costs; a cost it could not count is a dash. */
-    if (outUsdc !== null) return `≈ ${formatUsdMoney(outUsdc, numbers)} USDC · ${word("allCosts")} ${costs ? approxUsd(costs.usd, numbers) : "—"}`;
-    if (uncounted) return " ";
-    return quoteFailure ?? word("pricing");
-  })();
+  const sheetName = view.stage === "review" ? "review" : view.stage === "result" ? (outcome ? "receipt" : "recovery") : "compose";
 
   return (
-    <div className={company.sheetBody} data-sheet="compose" data-sale-compose>
-      {head(`${word("sell")} ${name}`)}
+    <div className={company.sheetBody} data-sheet={sheetName} data-sale-compose={view.stage === "form" ? true : undefined} data-sale-review={inReview ? true : undefined} data-sale-receipt={outcome ? true : undefined} data-check={inReview ? (lines ? lines.basis : "none") : undefined}>
+      {head(receiptTitle ?? (inReview ? word("review") : view.stage === "result" ? name : `${word("sell")} ${name}`))}
       {/* A private company's token: what it is, and that selling may not be possible, before any sum. */}
-      {preIpo ? (
+      {view.stage === "form" && preIpo ? (
         <div className={company.sheetWarning} data-sale-caution>
           <p data-company-truth>{truth}</p>
           <p className={company.warningEvent} data-sale-may-fail>
@@ -557,58 +471,186 @@ function SellFlow({ asset, linesOf, locale, titleId, quickShare = null, onBusy, 
           </p>
         </div>
       ) : null}
-      {none ? (
-        <p className={company.sheetNote} data-empty="token">
-          {native ? word("solKeptForFees") : coin ? word("nothingToSellCoin") : word("nothingToSell")}
-        </p>
-      ) : (
+      {view.stage === "form" && none ? (
         <>
-          {/* A press chooses the whole sum and the keyboard's own key is the one action (`sum-field.tsx`): $1 is a tap and a key from the sheet's $10. */}
-          <SumField
-            value={amountText ?? ""}
-            onChange={typeSum}
-            onGo={() => {
-              if (!cta.disabled) cta.run?.();
-            }}
-            label={word("amount")}
-            describedBy={`${titleId}-estimate`}
-            placeholder="0"
-            disabled={working || amountText === null}
-          />
-          {/* The quick choices are shares of the position — 25 · 50 · 75 · 100 %; a share under a dollar is not offered, all of it always is. */}
-          {heldRaw !== null && heldRaw > 0n && baseDecimals !== null ? (
-            <div className={company.presets} role="group" aria-label={word("quickPositionShares")}>
-              {SALE_SHARE_PRESETS_PCT.map((value) => {
-                const usd = shareUsd(heldRaw, baseDecimals, multiplier, price, value);
-                return (
-                  <button key={value} type="button" className={company.preset} aria-pressed={pct === value} disabled={working || (value < 100 && (usd === null || usd < MIN_SALE_USD))} onClick={() => pickShare(value)}>
-                    {`${value}%`}
-                  </button>
-                );
-              })}
-            </div>
-          ) : null}
-          <p id={`${titleId}-estimate`} className={company.estimate} aria-live="polite" data-sale-over={over ? "true" : undefined}>
-            {estimateLine}
+          <p className={company.sheetNote} data-empty="token">
+            {native ? word("solKeptForFees") : coin ? word("nothingToSellCoin") : word("nothingToSell")}
           </p>
+          <div className={company.sheetActions}>
+            <Button variant="primary" block onClick={onClose} lang={lang}>
+              {word("done")}
+            </Button>
+          </div>
+        </>
+      ) : (
+        <TradeTicket
+          quietLegs
+          {...view.input}
+          className={company.ticket}
+          venue={STOCK_VENUE}
+          network={NETWORK_LABEL}
+          stage={view.stage}
+          reviewed={view.reviewed}
+          result={view.result}
+          signing={view.signing}
+          cancelWhileSigning={false}
+          {...(connection ? { signer: `${connection.address.slice(0, 4)}…${connection.address.slice(-4)}` } : {})}
+          {...countOf(check, prepared?.order ?? quoted?.order ?? null)}
+          whatItIs={
+            inReview ? (
+              <>
+                {whatLine}
+                {mayFail ? <span data-sale-may-fail> {mayFail}</span> : null}
+              </>
+            ) : undefined
+          }
+          titleAs="h3"
+          lang={lang}
+          onDraftChange={(next) => {
+            if (next.unit !== amountUnit) setAmountUnit(next.unit);
+            setAmountText(next.amount);
+          }}
+          /* «Спробувати ще» only where another press can help: not on a refusal this deployment cannot pass, nor on a sum over the limit. */
+          onRetryQuote={quoteStop ? undefined : () => ticket.refreshQuote()}
+          onConnect={onConnect}
+          onReview={() => {
+            /* One press at a time: none while the order is prepared or signed; a Review let go for its age asks a fresh price. */
+            if (working) return;
+            if (ticket.lockedReview) void ticket.cancelReview(true);
+            else void ticket.review();
+          }}
+          {...(connection && view.stage === "form" && (phase === "PREPARING" || holdings.status !== "ready")
+            ? {
+                action:
+                  phase !== "PREPARING" && holdings.status === "error" ? (
+                    /* A wallet read that failed is read again on a press, never «Reading…» for good. */
+                    <>
+                      <p className={company.sheetError} role="status">
+                        {word("walletUnread")}
+                      </p>
+                      <Button variant="primary" block onClick={refresh} lang={lang} data-ticket-action="">
+                        {word("tryAgain")}
+                      </Button>
+                    </>
+                  ) : (
+                    <Button variant="primary" block disabled lang={lang} data-ticket-action="">
+                      {phase === "PREPARING" ? word("preparingReview") : word("reading")}
+                    </Button>
+                  ),
+              }
+            : {})}
+          onCancel={() => void ticket.cancelReview()}
+          onConfirm={() => void ticket.sign()}
+          onVerify={settled && outcome?.kind !== "NOTHING_HAPPENED" ? () => window.open(explorerTxUrl("mainnet", settled.signature), "_blank", "noopener,noreferrer") : undefined}
+          onAgain={() => ticket.reset()}
+        />
+      )}
+      {/* The step the held action names, said to a screen reader as it changes. */}
+      <p className={company.srOnly} role="status">
+        {view.stage === "form" && phase === "PREPARING" ? word("preparingReview") : ""}
+      </p>
+
+      {view.stage === "form" && !none ? (
+        <>
+          {ticket.lockedReview ? (
+            <Button variant="secondary" block onClick={() => void ticket.cancelReview(true)} lang={lang}>
+              {word("refreshPrice")}
+            </Button>
+          ) : null}
           {valid && cannotPayFee ? (
-            <p className={company.sheetNote} data-empty="sol">
-              {word("needSol")}
+            <>
+              <p className={company.sheetNote} data-empty="sol">
+                {word("needSol")}
+              </p>
+              <Button variant="secondary" block icon="wallet" onClick={topUpSol} lang={lang}>
+                {word("topUpSol")}
+              </Button>
+            </>
+          ) : null}
+          {over && valueUsd !== null && heldShown !== null && heldShown > 0n ? (
+            <>
+              <p className={company.sheetNote} data-sale-over="true">
+                {`${word("overPosition")} · ${formatUsdMoney(valueUsd, numbers)}`}
+              </p>
+              <Button
+                variant="secondary"
+                block
+                onClick={() => {
+                  setAmountUnit("token");
+                  setAmountText(amountForShare(open, 100, "token", prices, lang));
+                }}
+                lang={lang}
+              >
+                {sellForWord(locale, formatUsdMoney(valueUsd, numbers), true)}
+              </Button>
+            </>
+          ) : null}
+          {failure ? <p className={company.sheetError}>{failure}</p> : null}
+          {heldUnits !== null && heldUnits > 0 ? (
+            <p className={company.sheetLinks}>
+              <span translate="no">{(native ? sellableSolLine : heldLine)(locale, amountWords(heldUnits), valueUsd !== null ? formatUsdMoney(valueUsd, numbers) : null)}</span>
             </p>
           ) : null}
         </>
-      )}
-      {failure ? <p className={company.sheetError}>{failure}</p> : null}
-      <div className={company.sheetActions}>
-        <button type="button" className="rw-btn rw-btn--primary" disabled={cta.disabled} onClick={cta.run}>
-          {cta.label}
-        </button>
-        {heldUnits !== null && heldUnits > 0 ? (
-          <p className={company.sheetLinks}>
-            <span translate="no">{(native ? sellableSolLine : heldLine)(locale, amountWords(heldUnits), valueUsd !== null ? formatUsdMoney(valueUsd, numbers) : null)}</span>
+      ) : null}
+
+      {inReview ? (
+        <>
+          {/* The account the sale opens for the dollars, if the wallet has none: its own line, never a cost — it stays in the wallet. */}
+          {reserve ? <p className={company.sheetNote} data-reserve>{reserveLine(locale, reserve)}</p> : null}
+          {failure ? <p className={company.sheetError}>{failure}</p> : null}
+          {view.stale && !view.signing ? (
+            <Button variant="secondary" block onClick={() => void ticket.cancelReview(true)} lang={lang}>
+              {word("refreshPrice")}
+            </Button>
+          ) : null}
+        </>
+      ) : null}
+
+      {view.stage === "result" && outcome ? (
+        <>
+          {outcome.kind === "FILLED" && gave !== null ? <p className={company.receiptSub}>{amountWords(gave)}</p> : null}
+          {outcome.kind === "FILLED" && outcome.note ? <p className={company.receiptNote}>{outcome.note === "BELOW_MINIMUM" ? word("belowMinimum") : word("notAsReviewed")}</p> : null}
+          <div className={company.sheetActions}>
+            {outcome.kind === "FILLED" ? (
+              <Button variant="primary" block onClick={onClose} lang={lang}>
+                {word("done")}
+              </Button>
+            ) : null}
+            <p className={company.sheetLinks}>
+              <Link href="/app/activity" prefetch={false}>
+                {word("history")}
+              </Link>
+              {/* After a filled trade: the position as it now stands, among everything the wallet holds. */}
+              {outcome.kind === "FILLED" ? (
+                <Link href="/app/portfolio" prefetch={false}>
+                  {word("portfolio")}
+                </Link>
+              ) : null}
+            </p>
+          </div>
+        </>
+      ) : null}
+
+      {view.stage === "result" && !outcome ? (
+        /* An order whose answer is still being looked for: never sent again, only checked. */
+        <>
+          <p className={company.sheetNote} role="status">
+            {word("saleUnknownTx")}
           </p>
-        ) : null}
-      </div>
+          {failure ? <p className={company.sheetError}>{failure}</p> : null}
+          <div className={company.sheetActions}>
+            <Button variant="primary" block loading={phase === "RECOVERING"} disabled={phase === "RECOVERING"} onClick={() => void ticket.recover()} lang={lang}>
+              {phase === "RECOVERING" ? word("checkingTx") : word("checkTx")}
+            </Button>
+            <p className={company.sheetLinks}>
+              <Link href="/app/activity" prefetch={false}>
+                {word("history")}
+              </Link>
+            </p>
+          </div>
+        </>
+      ) : null}
     </div>
   );
 }

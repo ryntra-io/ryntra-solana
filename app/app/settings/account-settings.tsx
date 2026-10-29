@@ -4,11 +4,12 @@ import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
+import { revalidateWalletFact, setWalletFact } from "@/lib/account/wallet-proof-store.client";
 import { WalletEntry } from "../account/wallet-entry";
 import { useAccount } from "../account/account-context";
 
 /**
- * Settings → Wallets & notifications: the wallets that open this account,
+ * «Акаунт» → «Акаунт і сповіщення»: the wallets that open this account,
  * the Telegram chat it may write to, and where it is signed in.
  *
  * An account is the wallet that signed; a second proven wallet is the spare
@@ -38,6 +39,8 @@ const TELEGRAM_WAIT_MS = 15 * 60_000;
 
 const COPY = {
   en: {
+    signedOut: "Not signed in",
+    signInKeeps: "Sign-in keeps your plans, credits and alerts on every device. Your wallet always signs.",
     wallets: "Wallets of this account",
     walletsHint: "A wallet you have signed a message with opens this account. A second proven wallet is your spare key — link it while you can still sign with the first. Linking never gives Ryntra spending rights.",
     noWallets: "No wallet proven yet. Prove one from Holdings or Receipts.",
@@ -81,22 +84,24 @@ const COPY = {
     addFirst: "Add email, Google or Telegram sign-in",
   },
   uk: {
+    signedOut: "Вхід не виконано",
+    signInKeeps: "Вхід зберігає плани, кредити й сповіщення на всіх пристроях. Підписує завжди гаманець.",
     wallets: "Гаманці цього акаунта",
-    walletsHint: "Гаманець, яким ви підписали повідомлення, відкриває цей акаунт. Другий підтверджений гаманець — запасний ключ: привʼяжіть його, поки можете підписати першим. Привʼязка не дає Ryntra права витрачати.",
-    noWallets: "Гаманець ще не підтверджено. Підтвердьте його з Активів або Квитанцій.",
+    walletsHint: "Гаманець, яким підписано повідомлення, відкриває цей акаунт. Другий підтверджений гаманець — запасний ключ: привʼяжи його, поки можеш підписати першим. Привʼязка не дає Ryntra права витрачати.",
+    noWallets: "Гаманець ще не підтверджено. Підтверди його з Активів або Квитанцій.",
     linkWallet: "Прив’язати ще один гаманець",
     unlink: "Відвʼязати",
     legacyWallet: "Цей гаманець є старою ідентичністю входу й не видаляється тут.",
     telegramTitle: "Сповіщення в Telegram",
-    telegramHint: "Бот пише сюди лише те, що ви ввімкнете. Підключення не є способом входу й не дає доступу до гаманця.",
+    telegramHint: "Бот пише сюди лише те, що ти ввімкнеш. Підключення не є способом входу й не дає доступу до гаманця.",
     telegramOff: "Не підключено",
     telegramOn: "Підключено",
     telegramSince: "з",
     telegramConnect: "Підключити Telegram",
     telegramOpen: "Відкрити Telegram",
-    telegramWaiting: "Натисніть Start у боті — ця сторінка сама це помітить.",
+    telegramWaiting: "Натисни Start у боті — ця сторінка сама це помітить.",
     telegramDisconnect: "Відключити",
-    telegramExpired: "Посилання застаріло. Натисніть «Підключити» ще раз.",
+    telegramExpired: "Посилання застаріло. Натисни «Підключити» ще раз.",
     telegramUnavailable: "Зараз Telegram підключити не вдається.",
     telegramReading: "Перевіряю…",
     sessions: "Де виконано вхід",
@@ -107,7 +112,7 @@ const COPY = {
     lastSeen: "востаннє",
     loading: "Читаю…",
     failed: "Не вдалося прочитати обліковий запис.",
-    lastMethod: "Це останній спосіб входу; спочатку додайте інший.",
+    lastMethod: "Це останній спосіб входу; спочатку додай інший.",
     removed: "Видалено.",
     methods: "Наявні способи входу",
     methodsHint: "Способи, якими цей акаунт відкривали до входу гаманцем. Вони діють лише для цього акаунта.",
@@ -118,8 +123,8 @@ const COPY = {
     add: "Додати",
     remove: "Видалити",
     setPassword: "Встановити або змінити пароль",
-    identityExpired: "Щоб змінити способи входу, спочатку увійдіть знову.",
-    identityMismatch: "У цьому браузері провайдер входу тримає іншу особу. Вийдіть там і увійдіть як цей обліковий запис.",
+    identityExpired: "Щоб змінити способи входу, спочатку увійди знову.",
+    identityMismatch: "У цьому браузері провайдер входу тримає іншу особу. Вийди там і увійди як цей обліковий запис.",
     identityOff: "Способи облікового запису ще не ввімкнено.",
     addFirst: "Додати вхід через email, Google або Telegram",
   },
@@ -200,11 +205,16 @@ export function AccountSettings() {
     return () => clearInterval(timer);
   }, [telegramState]);
 
+  /* Not signed in: what a sign-in keeps, in one line, and the sign-in itself — secondary, the page's one orange action
+     is the wallet's (UX-015). */
   if (!signedIn) {
     return (
-      <div className="ry-settings-row">
-        <span className="ry-muted">{locale === "uk" ? "Вхід не виконано" : "Not signed in"}</span>
-        <button type="button" className="rw-btn" data-variant="primary" onClick={() => openLogin("settings")}>{copy.signIn}</button>
+      <div className="ry-account-settings-block">
+        <p className="ry-muted">{c.signInKeeps}</p>
+        <div className="ry-settings-row">
+          <span className="ry-muted">{c.signedOut}</span>
+          <button type="button" className="rw-btn" onClick={() => openLogin("settings")}>{copy.signIn}</button>
+        </div>
       </div>
     );
   }
@@ -220,6 +230,12 @@ export function AccountSettings() {
     const data = await r.json().catch(() => ({})) as { error?: string };
     setMsg(r.ok ? c.removed : data.error === "last_method" ? c.lastMethod : data.error === "legacy_wallet" ? c.legacyWallet : c.failed);
     void load();
+    /* The link was this account's proof of the wallet: every page and tab
+       hears at once that it is gone, not on its next read. */
+    if (r.ok) {
+      const fresh = await revalidateWalletFact({ fresh: true });
+      if (fresh.status === "known") setWalletFact(fresh);
+    }
   };
   const linkUrl = (provider: "google" | "telegram") => `/api/auth/oauth?provider=${provider}&purpose=link&next=${encodeURIComponent(`${pathname}#account`)}`;
   const has = (provider: IdentityRow["provider"]) => overview?.identities.some((i) => i.provider === provider) ?? false;

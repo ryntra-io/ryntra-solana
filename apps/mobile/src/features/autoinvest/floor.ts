@@ -12,7 +12,7 @@
  * or freeze it, its organic score and the venue's list — are said before the
  * button: facts as the venue states them, never a verdict.
  *
- * The words are the web app's own (`lib/autoinvest/floor.ts`,
+ * The words are the web line's own (`lib/autoinvest/floor.ts`,
  * `app/app/invest/invest-words.ts`), so the phone and ryntra.io say the same
  * thing of the same token. Pure: nothing here reads the network.
  */
@@ -81,17 +81,18 @@ export function floorLine(check: RuleFloorCheck, name: string, locale: Locale): 
   return locale === 'uk' ? `Поріг виконано: ${floorTerms('uk')}` : `On the floor: ${floorTerms('en')}`
 }
 
-/** A floor that is met, with what the token stands on: «Виконано · $7,2 млн · 1 022 дн. на ринку» · «Met · $7.2M · 1,022 d on the market». */
+/**
+ * A floor that is met, with what the token stands on, each figure with its word: «Виконано · ліквідність $7,2 млн ·
+ * 1 022 дн. на ринку» · «Met · liquidity $7.2M · 1,022 d on the market».
+ */
 export function floorMetLine(check: RuleFloorCheck, locale: Locale): string {
-  const liquidity = check.liquidityUsd === null ? null : compactUsd(check.liquidityUsd, locale)
+  const liquidity =
+    check.liquidityUsd === null
+      ? null
+      : `${locale === 'uk' ? 'ліквідність' : 'liquidity'} ${compactUsd(check.liquidityUsd, locale)}`
   const age =
     check.ageHours === null ? null : `${ageWord(check.ageHours, locale)} ${locale === 'uk' ? 'на ринку' : 'on the market'}`
   return [locale === 'uk' ? 'Виконано' : 'Met', liquidity, age].filter(Boolean).join(' · ')
-}
-
-/** A floor that is met, by its terms — where the token's own figures are already said above: «Виконано · ліквідність від $25 000 і від 24 годин на ринку». */
-export function floorTermsMet(locale: Locale): string {
-  return `${locale === 'uk' ? 'Виконано' : 'Met'} · ${floorTerms(locale)}`
 }
 
 /** The floor's line as a sheet says it under «Поріг регулярної купівлі»: what the token stands on, or why it does not. */

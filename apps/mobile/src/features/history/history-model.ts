@@ -109,6 +109,16 @@ function marketMint(movement: ActionMovement): string | null {
   return movement.mint
 }
 
+/**
+ * An amount in units, never a false zero: a crumb below the last place shown is «< 0,000001» — the rule every
+ * figure of History and the receipts keeps (a fee of 0,00000055 ETH is not «0 ETH»). Display only.
+ */
+export function unitsText(raw: string, decimals: number, places: number, locale: Locale): string {
+  const text = formatUnits(raw, decimals, places, locale)
+  if (!/^\d+$/.test(raw) || BigInt(raw) === 0n || /[1-9]/.test(text)) return text
+  return `< ${formatAmount(10 ** -places, places, locale)}`
+}
+
 function legOf(movement: ActionMovement | null, known: KnownMints, locale: Locale): HistoryLeg | null {
   if (movement === null) return null
   const mint = marketMint(movement)
@@ -120,7 +130,7 @@ function legOf(movement: ActionMovement | null, known: KnownMints, locale: Local
     symbol,
     amountRaw: movement.amountRaw,
     decimals,
-    amountText: decimals === null ? DASH : formatUnits(movement.amountRaw, decimals, Math.min(6, decimals), locale),
+    amountText: decimals === null ? DASH : unitsText(movement.amountRaw, decimals, Math.min(6, decimals), locale),
   }
 }
 
@@ -133,11 +143,17 @@ function feeOf(action: WalletAction, known: KnownMints, locale: Locale): History
   const symbol = fee.symbol ?? facts?.symbol ?? null
   let text = DASH
   if (fee.amountRaw && decimals !== null && symbol)
-    text = `${formatUnits(fee.amountRaw, decimals, Math.min(6, decimals), locale)} ${symbol}`
-  else if (fee.usd !== null && Number.isFinite(fee.usd))
-    text = fee.usd < 1 ? `$${formatAmount(fee.usd, 4, locale)}` : formatUsd(fee.usd, locale)
+    text = `${unitsText(fee.amountRaw, decimals, Math.min(6, decimals), locale)} ${symbol}`
+  else if (fee.usd !== null && Number.isFinite(fee.usd)) text = feeUsdText(fee.usd, locale)
   else if (fee.basisPoints !== null) text = `${formatAmount(fee.basisPoints / 100, 2, locale)}%`
   return { collected: fee.collected, text, basisPoints: fee.basisPoints, usd: fee.usd }
+}
+
+/** A dollar fee under a dollar to four places; a crumb below them is «< $0,0001», never «$0». */
+function feeUsdText(usd: number, locale: Locale): string {
+  if (usd >= 1) return formatUsd(usd, locale)
+  const text = formatAmount(usd, 4, locale)
+  return usd > 0 && !/[1-9]/.test(text) ? `< $${formatAmount(0.0001, 4, locale)}` : `$${text}`
 }
 
 export function historyRow(action: WalletAction, locale: Locale, known: KnownMints = BUILT_IN_MINTS): HistoryRow {
@@ -222,26 +238,45 @@ export type HistoryWords = Readonly<{
   received: (symbol: string) => string
   bridged: (to: string | null) => string
   crossSwapped: (from: string, to: string) => string
+  /**
+   * The operation as a noun, for one that has not happened — failed, pending or waiting on the person: «Купівля STAIR»,
+   * never «Куплено …». The asset is the one the operation is about; unknown, the noun stands alone.
+   */
+  purchase: (symbol: string | null) => string
+  sale: (symbol: string | null) => string
+  swap: (from: string, to: string) => string
+  transfer: (symbol: string) => string
+  incoming: (symbol: string) => string
+  bridge: (to: string | null) => string
   operation: string
 }>
 
-/** One line that says what happened, in the asset's names. */
+/**
+ * One line that says what happened, in the asset's names. Only a confirmed operation is said as done; any other is
+ * named by its noun. A purchase is named by what it bought and a sale by what it sold — never by the other side, so
+ * a failed STAIR buy paid in USDC is «Купівля» (or «Купівля STAIR»), never «Куплено USDC».
+ */
 export function historyTitle(row: HistoryRow, words: HistoryWords): string {
   const outSymbol = row.out?.symbol ?? DASH
   const inSymbol = row.in?.symbol ?? DASH
+  const done = row.status === 'done'
   switch (row.kind) {
-    case 'buy':
-      return words.bought(row.in?.symbol ?? outSymbol)
-    case 'sell':
-      return words.sold(row.out?.symbol ?? inSymbol)
+    case 'buy': {
+      const bought = row.in?.symbol ?? null
+      return done && bought !== null ? words.bought(bought) : words.purchase(bought)
+    }
+    case 'sell': {
+      const sold = row.out?.symbol ?? null
+      return done && sold !== null ? words.sold(sold) : words.sale(sold)
+    }
     case 'swap':
-      return words.swapped(outSymbol, inSymbol)
+      return done ? words.swapped(outSymbol, inSymbol) : words.swap(outSymbol, inSymbol)
     case 'send':
-      return words.sent(outSymbol)
+      return done ? words.sent(outSymbol) : words.transfer(outSymbol)
     case 'receive':
-      return words.received(inSymbol)
+      return done ? words.received(inSymbol) : words.incoming(inSymbol)
     case 'bridge':
-      return words.bridged(row.destination)
+      return done ? words.bridged(destinationNetwork(row)) : words.bridge(destinationNetwork(row))
     case 'crossSwap':
       return words.crossSwapped(outSymbol, inSymbol)
     default:
@@ -256,6 +291,34 @@ export function historyAmounts(row: HistoryRow): string {
   const arrived = leg(row.in)
   if (out && arrived) return `${out} → ${arrived}`
   return out ?? arrived ?? DASH
+}
+
+/** Which chain a transaction's identity is shaped for: an EVM hash, a Solana signature, or neither. */
+export function hashChain(hash: string | null): 'evm' | 'solana' | null {
+  if (hash === null) return null
+  if (/^0x[0-9a-fA-F]{64}$/.test(hash)) return 'evm'
+  if (/^[1-9A-HJ-NP-Za-km-z]{64,90}$/.test(hash)) return 'solana'
+  return null
+}
+
+const EVM_DESTINATIONS: ReadonlySet<string> = new Set(['BASE', 'ETHEREUM', 'ROBINHOOD'])
+
+/**
+ * The network the money went to, as the record names it — or none where the record contradicts itself: a row that
+ * says «Solana» while its destination transaction is an EVM hash (the ledger files a chain it has no word for under
+ * Solana), or an EVM chain with a Solana signature. A guessed network is never printed.
+ */
+export function destinationNetwork(row: Pick<HistoryRow, 'destination' | 'destinationTx'>): string | null {
+  if (row.destination === null) return null
+  const chain = hashChain(row.destinationTx)
+  if (row.destination === 'SOLANA' && chain === 'evm') return null
+  if (EVM_DESTINATIONS.has(row.destination) && chain === 'solana') return null
+  return row.destination
+}
+
+/** The source chain's transaction, when it is not the row's own signature already shown. */
+export function sourceTxShown(row: Pick<HistoryRow, 'signature' | 'sourceTx'>): string | null {
+  return row.sourceTx !== null && row.sourceTx !== row.signature ? row.sourceTx : null
 }
 
 /** The explorer page of a Solana signature — the proof, one tap deep. */

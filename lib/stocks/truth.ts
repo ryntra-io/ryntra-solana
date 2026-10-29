@@ -36,3 +36,21 @@ export function truthLine(issuer: StockIssuerId, company: string, lang: Lang, fe
     }
   }
 }
+
+/** The issuer as a person names it in one word, beside the token's symbol. */
+const ISSUER_SHORT: Readonly<Record<StockIssuerId, string>> = { xstocks: "xStocks", backpack: "Backpack", ondo: "Ondo", prestocks: "PreStocks" };
+
+/**
+ * The token under the company's name (UX-502): which token this page sells
+ * and whose it is — «SPCXx · token by xStocks · not a share» — so three
+ * «SpaceX» pages of three issuers never read the same. The company stays the
+ * page's name; the symbol is what the wallet will show.
+ */
+export function tokenLine(symbol: string, issuer: StockIssuerId, lang: Lang): string {
+  return lang === "uk" ? `${symbol} · токен ${ISSUER_SHORT[issuer]} · не акція` : `${symbol} · token by ${ISSUER_SHORT[issuer]} · not a share`;
+}
+
+/** A private company's rights at the purchase, in a chip's few words (UX-500): the token is not a share, and a sale may not go through. */
+export function preIpoRightsChip(lang: Lang): string {
+  return lang === "uk" ? "Не акція · продати може не вийти" : "Not a share · selling may fail";
+}

@@ -39,12 +39,13 @@ export function meteoraPoolsUrl(kind: LiquidityPoolKind, mint: string): string {
 
 const isTimeout = (error: unknown): boolean => error instanceof Error && (error.name === "TimeoutError" || error.name === "AbortError");
 
-/** Every pool of one kind that holds the mint, mapped; or the reason there is none. */
-export async function readMeteoraPools(kind: LiquidityPoolKind, mint: string, stockMints: ReadonlySet<string>, deps: MeteoraDeps = {}): Promise<MeteoraPoolsRead | MeteoraFailure> {
+export type MeteoraJsonRead = Readonly<{ ok: true; body: unknown }> | Readonly<{ ok: false; code: MeteoraFailure["code"]; reason: string }>;
+
+/** One bounded read of a Data API resource: one retry on a fast 5xx only, a byte ceiling, JSON or the reason there is none. */
+export async function readMeteoraJson(url: string, deps: MeteoraDeps = {}): Promise<MeteoraJsonRead> {
   const fetchImpl = deps.fetchImpl ?? fetch;
   const timeoutMs = deps.timeoutMs ?? METEORA_TIMEOUT_MS;
   const sleep = deps.sleep ?? ((ms: number) => new Promise<void>((resolve) => setTimeout(resolve, ms)));
-  const url = meteoraPoolsUrl(kind, mint);
   let response: Response | null = null;
   let lastError: unknown = null;
   for (let round = 0; round < 2; round += 1) {
@@ -60,23 +61,28 @@ export async function readMeteoraPools(kind: LiquidityPoolKind, mint: string, st
       lastError = null;
     } catch (error) {
       lastError = error;
-      if (isTimeout(error)) return { ok: false, kind, code: "TIMEOUT", reason: `Meteora did not answer within ${timeoutMs} ms.` };
+      if (isTimeout(error)) return { ok: false, code: "TIMEOUT", reason: `Meteora did not answer within ${timeoutMs} ms.` };
     }
   }
-  if (!response) return { ok: false, kind, code: "NETWORK", reason: lastError instanceof Error ? lastError.message : String(lastError) };
-  if (response.status === 429) return { ok: false, kind, code: "RATE_LIMITED", reason: "Meteora's rate limit was reached." };
-  if (!response.ok) return { ok: false, kind, code: "HTTP", reason: `Meteora answered ${response.status}.` };
+  if (!response) return { ok: false, code: "NETWORK", reason: lastError instanceof Error ? lastError.message : String(lastError) };
+  if (response.status === 429) return { ok: false, code: "RATE_LIMITED", reason: "Meteora's rate limit was reached." };
+  if (!response.ok) return { ok: false, code: "HTTP", reason: `Meteora answered ${response.status}.` };
   const length = Number(response.headers.get("content-length") ?? "0");
-  if (Number.isFinite(length) && length > METEORA_MAX_BYTES) return { ok: false, kind, code: "TOO_LARGE", reason: "Meteora's answer is larger than this reader accepts." };
-  let body: unknown;
+  if (Number.isFinite(length) && length > METEORA_MAX_BYTES) return { ok: false, code: "TOO_LARGE", reason: "Meteora's answer is larger than this reader accepts." };
   try {
     const raw = await response.text();
-    if (raw.length > METEORA_MAX_BYTES) return { ok: false, kind, code: "TOO_LARGE", reason: "Meteora's answer is larger than this reader accepts." };
-    body = JSON.parse(raw) as unknown;
+    if (raw.length > METEORA_MAX_BYTES) return { ok: false, code: "TOO_LARGE", reason: "Meteora's answer is larger than this reader accepts." };
+    return { ok: true, body: JSON.parse(raw) as unknown };
   } catch (error) {
-    return { ok: false, kind, code: "SHAPE", reason: `Meteora's answer is not JSON: ${error instanceof Error ? error.message : String(error)}` };
+    return { ok: false, code: "SHAPE", reason: `Meteora's answer is not JSON: ${error instanceof Error ? error.message : String(error)}` };
   }
-  const page = mapMeteoraPage(body, kind, mint, stockMints);
+}
+
+/** Every pool of one kind that holds the mint, mapped; or the reason there is none. */
+export async function readMeteoraPools(kind: LiquidityPoolKind, mint: string, stockMints: ReadonlySet<string>, deps: MeteoraDeps = {}): Promise<MeteoraPoolsRead | MeteoraFailure> {
+  const read = await readMeteoraJson(meteoraPoolsUrl(kind, mint), deps);
+  if (!read.ok) return { ok: false, kind, code: read.code, reason: read.reason };
+  const page = mapMeteoraPage(read.body, kind, mint, stockMints);
   if (!page) return { ok: false, kind, code: "SHAPE", reason: "Meteora's answer is not a pool list." };
   return { ok: true, kind, pools: page.pools, total: page.total, fetchedAt: (deps.now ?? (() => new Date()))().toISOString() };
 }

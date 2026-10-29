@@ -1,0 +1,484 @@
+/* «Казна» (SOL-4): the core's blocks carry the page; these are its forms, chips and rows. 390 px first. */
+
+.page {
+  width: 100%;
+  padding: 0;
+}
+
+.titleRow {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--ry-s2);
+}
+
+.netChip {
+  display: inline-flex;
+  align-items: center;
+  min-height: 24px;
+  padding: 2px 10px;
+  border: 1px solid var(--ry-caution);
+  border-radius: var(--ry-r-pill);
+  background: var(--ry-caution-soft);
+  color: var(--ry-text);
+  font-size: var(--ry-fs-label-sm);
+  font-weight: 500;
+}
+
+/* Mainnet: real money, an early product — the network and «Beta» in a quiet chip with the brand's edge, not a warning. */
+.netChipLive {
+  border-color: var(--ry-brand-line);
+  background: var(--ry-brand-soft);
+}
+
+.view {
+  display: grid;
+  gap: var(--ry-s4);
+  min-width: 0;
+}
+
+/* The page's content under a Review: the core page's own rhythm, hidden rather than unmounted. */
+.surface {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--ryntra-space-6);
+  min-width: 0;
+}
+
+.surface[hidden] {
+  display: none;
+}
+
+.figures {
+  display: inline-flex;
+  flex-wrap: wrap;
+  column-gap: var(--ry-s4);
+  row-gap: var(--ry-s1, 4px);
+}
+
+.vaultNote {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 6px;
+}
+
+.startRow,
+.backRow,
+.formActions,
+.actionsRow,
+.rowActions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--ry-s2);
+}
+
+.startRow {
+  margin-bottom: var(--ry-s4);
+}
+
+.backRow {
+  justify-content: space-between;
+  margin-bottom: var(--ry-s3);
+  color: var(--ry-muted);
+}
+
+.formActions {
+  justify-content: flex-end;
+}
+
+.openRow {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: var(--ry-s2);
+  margin-top: var(--ry-s3);
+}
+
+.form {
+  display: grid;
+  gap: var(--ry-s3);
+  min-width: 0;
+  margin-top: var(--ry-s3);
+}
+
+.formTitle {
+  margin: 0;
+  font-size: var(--ry-fs-copy);
+  font-weight: 600;
+  color: var(--ry-text);
+}
+
+.fieldset {
+  display: grid;
+  gap: var(--ry-s2);
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.field {
+  display: grid;
+  align-content: start;
+  gap: 6px;
+  min-width: 0;
+}
+
+.label {
+  font-size: var(--ry-fs-label);
+  font-weight: 500;
+  color: var(--ry-text);
+}
+
+.hint {
+  margin: 0;
+  font-size: var(--ry-fs-label);
+  line-height: var(--ry-lh-body);
+  color: var(--ry-muted);
+}
+
+.summary {
+  align-self: end;
+  margin: 0;
+  font-size: var(--ry-fs-label);
+  font-variant-numeric: tabular-nums;
+  color: var(--ry-text);
+}
+
+.input {
+  width: 100%;
+  min-width: 0;
+  min-height: 44px;
+  padding: 10px 12px;
+  border: 1px solid var(--ry-border);
+  border-radius: var(--ry-r-btn);
+  background: var(--ry-bg);
+  color: var(--ry-text);
+  font: inherit;
+  font-size: var(--ry-fs-copy);
+}
+
+.input::placeholder {
+  color: var(--ry-muted);
+  opacity: 0.7;
+}
+
+.input:hover {
+  border-color: var(--ry-border-strong);
+}
+
+.input:focus-visible {
+  outline: none;
+  border-color: var(--ry-text);
+  box-shadow: 0 0 0 1px var(--ry-text);
+}
+
+.textarea {
+  min-height: 96px;
+  resize: vertical;
+  line-height: var(--ry-lh-body);
+}
+
+.mono {
+  font-family: var(--ry-font-mono);
+  font-variant-numeric: tabular-nums;
+  overflow-wrap: anywhere;
+}
+
+.memberRow {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--ry-s2);
+  padding-bottom: var(--ry-s2);
+  border-bottom: 1px solid var(--ry-border);
+}
+
+.roles {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--ry-s3);
+}
+
+.role {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 32px;
+  font-size: var(--ry-fs-label);
+  color: var(--ry-text);
+}
+
+.role input {
+  width: 18px;
+  height: 18px;
+  accent-color: var(--ry-text);
+}
+
+.grid2,
+.grid3 {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--ry-s3);
+}
+
+.chips {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  min-height: 22px;
+  padding: 1px 8px;
+  border: 1px solid var(--ry-border);
+  border-radius: var(--ry-r-pill);
+  font-size: var(--ry-fs-label-sm);
+  color: var(--ry-text);
+}
+
+.you {
+  font-family: var(--ry-font-sans);
+  color: var(--ry-muted);
+}
+
+.rulesLine {
+  display: grid;
+  gap: 4px;
+  margin: 0 0 var(--ry-s3);
+  color: var(--ry-text);
+}
+
+.state {
+  font-size: var(--ry-fs-label);
+  color: var(--ry-text);
+}
+
+.state[data-state="approved"],
+.state[data-state="executed"] {
+  color: var(--ry-verified);
+}
+
+.state[data-state="rejected"],
+.state[data-state="cancelled"],
+.state[data-state="stale"] {
+  color: var(--ry-muted);
+}
+
+.warn {
+  color: var(--ry-caution);
+}
+
+.issues {
+  display: grid;
+  gap: 4px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-size: var(--ry-fs-label);
+  color: var(--ry-pnl-neg);
+}
+
+.failure {
+  display: grid;
+  gap: 4px;
+  margin: 0 0 var(--ry-s3);
+  font-size: var(--ry-fs-label);
+  color: var(--ry-pnl-neg);
+}
+
+.failure p,
+.pendingLine p {
+  margin: 0;
+}
+
+/* An outcome still unknown: not a failure's red — the caution of something to check. */
+.pendingLine {
+  display: grid;
+  gap: 4px;
+  margin: 0 0 var(--ry-s3);
+  font-size: var(--ry-fs-label);
+  color: var(--ry-caution);
+}
+
+/* A batch's recipients in the Review's details, one full address a line. */
+.recipient {
+  display: block;
+}
+
+/* The network's own text, folded: one line of words first, the raw text for whoever opens it. */
+.raw {
+  font-size: var(--ry-fs-label-sm);
+  color: var(--ry-muted);
+}
+
+/* A list item keeps the disclosure's own triangle: the line reads as something to open, not as a label. */
+.raw summary {
+  display: list-item;
+  width: fit-content;
+  padding-block: 7px;
+  cursor: pointer;
+}
+
+.raw p {
+  margin: 4px 0 0;
+  color: var(--ry-muted);
+}
+
+.linkButton {
+  min-height: 32px;
+  padding: 0 4px;
+  border: 0;
+  background: none;
+  color: var(--ry-text);
+  font: inherit;
+  font-size: var(--ry-fs-label);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  cursor: pointer;
+}
+
+.fieldset > .linkButton,
+.memberRow > .linkButton {
+  justify-self: start;
+}
+
+.list {
+  display: grid;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.item {
+  display: grid;
+  gap: var(--ry-s2);
+  padding: var(--ry-s3) 0;
+  border-top: 1px solid var(--ry-border);
+  min-width: 0;
+}
+
+.item:first-child {
+  border-top: 0;
+  padding-top: 0;
+}
+
+.itemHead,
+.itemMeta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  column-gap: var(--ry-s3);
+  row-gap: 4px;
+  min-width: 0;
+}
+
+.itemIndex {
+  font-size: var(--ry-fs-label);
+  font-variant-numeric: tabular-nums;
+  color: var(--ry-muted);
+}
+
+.itemWhat {
+  font-size: var(--ry-fs-copy);
+  font-variant-numeric: tabular-nums;
+  color: var(--ry-text);
+  overflow-wrap: anywhere;
+}
+
+.itemFacts {
+  display: grid;
+  gap: var(--ry-s2);
+  margin: 0;
+}
+
+.itemFacts div {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+.itemFacts dt {
+  font-size: var(--ry-fs-label-sm);
+  color: var(--ry-muted);
+}
+
+.itemFacts dd {
+  margin: 0;
+  font-size: var(--ry-fs-label);
+  color: var(--ry-text);
+}
+
+.linkButton:focus-visible {
+  outline: 2px solid var(--ry-text);
+  outline-offset: 2px;
+}
+
+.review,
+.receiptWrap {
+  margin-bottom: var(--ry-s4);
+}
+
+.receiptWrap {
+  display: grid;
+  gap: var(--ry-s2);
+}
+
+.details {
+  display: grid;
+  gap: var(--ry-s2);
+  margin: 0;
+}
+
+.details div {
+  display: grid;
+  gap: 2px;
+}
+
+.details dt {
+  font-size: var(--ry-fs-label-sm);
+  color: var(--ry-muted);
+}
+
+.details dd {
+  margin: 0;
+  font-size: var(--ry-fs-label);
+  color: var(--ry-text);
+  overflow-wrap: anywhere;
+}
+
+.details a {
+  color: inherit;
+}
+
+@media (min-width: 720px) {
+  /* The address whole on its own line — a member is read by it — and the roles with «Прибрати» under it. */
+  .memberRow {
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: center;
+  }
+
+  .memberRow > .input {
+    grid-column: 1 / -1;
+  }
+
+  .grid2 {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .grid3 {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .itemFacts {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .input {
+    transition: none;
+  }
+}

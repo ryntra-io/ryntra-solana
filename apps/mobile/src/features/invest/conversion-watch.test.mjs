@@ -274,7 +274,7 @@ test('«Перевірка» of the swap is four rows: what leaves, what arrives
   assert.equal(get.sub, 'щонайменше 0,0657')
   assert.equal(costs.value, '≈ $0,11', 'never below the stated fees, the issuer’s 1% among them, plus the network’s')
   assert.equal(costs.fee, 'з них комісія емітента 1% ≈ $0,10')
-  assert.equal(costs.sub, '≈ $0,31 у SOL разово лишаються в гаманці на рахунку токена')
+  assert.equal(costs.sub, '≈ $0,31 у SOL лишаються в гаманці')
   assert.equal(rate.value, '1 SPACEX → 0,7855 SPCXx')
   assert.equal(rate.sub, 'на 21% менше, ніж ціна SpaceX на біржі ($148,57)')
   const en = convertReviewRows({

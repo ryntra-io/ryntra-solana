@@ -17,36 +17,34 @@ const EN = {
   nothingNeedsYou: 'Nothing needs your attention',
   lastChecked: (moment: string) => `Last checked ${moment}`,
   notChecked: 'Your plans have not been checked yet',
-  recoveryTitle: 'A signed transaction awaits an answer',
-  recoveryDetail: 'Check it before anything else. Nothing is sent again.',
+  recoveryTitle: 'An operation is waiting for its answer',
+  recoveryDetail: 'Check it first. Nothing is sent again.',
   modes: { buy: 'Buy', sell: 'Sell', swap: 'Swap' },
   whichPlan: (symbol: string, count: number) => `Which ${symbol} plan? · ${count}`,
   paper: 'Paper',
   opensOnWeb: 'Opens on ryntra.io',
   entryExpired: 'Entry expired — write a new version or cancel the plan',
-  signInForPlans: 'Sign in with your wallet to see your plans and notes.',
   couldNotRead: 'Could not read right now',
   // the portfolio
   portfolio: 'Portfolio',
   hideAmounts: 'Hide amounts',
   showAmounts: 'Show amounts',
-  connectForPortfolio: 'Connect your wallet to see what it holds.',
   emptyPortfolio: 'This wallet holds no tokens yet.',
   // the plans
   plans: 'Plans',
   allPlans: (count: number) => `All plans · ${count}`,
   drafts: (count: number) => (count === 1 ? '1 draft' : `${count} drafts`),
   newPlan: 'New plan',
-  noPlans: 'No plans yet — a plan starts from a stock.',
+  noPlans: 'No plans yet',
   // the watchlist
-  watchlist: 'Watchlist',
+  watchlist: 'Favourites',
   since: (time: string) => `since ${time}`,
   over24h: '24h',
   allWatchlist: (count: number) => `All · ${count}`,
-  emptyWatchlist: 'Star an asset in Markets to keep it here.',
+  emptyWatchlist: 'Add from Markets',
   notPricedThen: 'not priced at your last look',
   stale: 'Stale · last known figures',
-  notListed: (count: number) => `${count} not listed by the venue`,
+  notListed: (count: number) => `${count} not listed`,
   // the markets
   movers: 'Biggest moves · 24h',
   classes: { stock: 'Stocks', crypto: 'Crypto', meme: 'Memes' } satisfies Record<TrendingClass, string>,
@@ -55,7 +53,6 @@ const EN = {
   // what changed
   changed: 'In brief',
   nothingChanged: (time: string) => `Nothing new since ${time}`,
-  firstLook: 'Your first look here. Next time this says what changed since.',
   notesLine: (count: number, since: string | null) =>
     since
       ? count === 1
@@ -65,7 +62,7 @@ const EN = {
         ? '1 unread note'
         : `${count} unread notes`,
   planLine: (symbol: string, version: string, moment: string) => `${symbol} ${version} changed ${moment}`,
-  portfolioLine: (change: string, pct: string) => `Portfolio ${change} · ${pct} today`,
+  portfolioLine: (change: string, pct: string) => `Portfolio ${change} · ${pct} in 24h`,
   watchLine: (symbol: string, pct: string, period: string) => `${symbol} ${pct} ${period}`,
   coverageLine: {
     COMPLETE: '',
@@ -73,10 +70,9 @@ const EN = {
     UNAVAILABLE: 'Balances could not be read',
   } satisfies Record<HoldingsCoverage, string>,
   // the account
-  guestDetail: 'Your portfolio, plans and notes follow the wallet you connect. Keys never leave it.',
-  connectedDetail: 'Connected · not signed in. Plans and notes need your wallet’s signature.',
+  connectedDetail: 'Plans and notes open after sign-in',
   trade: 'Trade',
-  monitoring: 'Monitoring',
+  monitoring: 'Inbox',
 } as const
 
 export type HomeCopy = {
@@ -95,41 +91,38 @@ const UK: HomeCopy = {
   nothingNeedsYou: 'Нічого не потребує твоєї уваги',
   lastChecked: (moment) => `Перевірено ${moment}`,
   notChecked: 'Твої плани ще не перевірялися',
-  recoveryTitle: 'Підписана транзакція чекає відповіді',
-  recoveryDetail: 'Перевір її перед усім іншим. Нічого не надсилається повторно.',
+  recoveryTitle: 'Операція чекає відповіді',
+  recoveryDetail: 'Спершу перевір її. Нічого не надсилається вдруге.',
   modes: { buy: 'Купівля', sell: 'Продаж', swap: 'Обмін' },
   whichPlan: (symbol, count) => `Який план ${symbol}? · ${count}`,
   paper: 'Паперовий',
   opensOnWeb: 'Відкривається на ryntra.io',
   entryExpired: 'Вхід прострочено — напиши нову версію або скасуй план',
-  signInForPlans: 'Увійди гаманцем, щоб бачити свої плани й нотатки.',
   couldNotRead: 'Зараз не вдалося прочитати',
   portfolio: 'Портфель',
   hideAmounts: 'Сховати суми',
   showAmounts: 'Показати суми',
-  connectForPortfolio: 'Під’єднай гаманець, щоб бачити його активи.',
   emptyPortfolio: 'У цьому гаманці ще немає токенів.',
   plans: 'Плани',
   allPlans: (count) => `Усі плани · ${count}`,
   drafts: (count) =>
     count === 1 ? '1 чернетка' : count >= 2 && count <= 4 ? `${count} чернетки` : `${count} чернеток`,
   newPlan: 'Новий план',
-  noPlans: 'Планів ще немає — план починається з акції.',
-  watchlist: 'Список спостереження',
+  noPlans: 'Планів ще немає',
+  watchlist: 'Обране',
   since: (time) => `з ${time}`,
   over24h: '24 год',
   allWatchlist: (count) => `Усі · ${count}`,
-  emptyWatchlist: 'Познач актив зіркою в Ринках, щоб тримати його тут.',
+  emptyWatchlist: 'Додати з Ринків',
   notPricedThen: 'не мав ціни під час останнього перегляду',
   stale: 'Застаріло · останні відомі цифри',
-  notListed: (count) => `${count} не в списку майданчика`,
+  notListed: (count) => `${count} немає в списку`,
   movers: 'Найбільші рухи · 24 год',
   classes: { stock: 'Акції', crypto: 'Крипто', meme: 'Меми' },
   openMarkets: 'Відкрити Ринки',
   noMovers: 'У списку зараз немає рухів, які варто показати.',
   changed: 'Коротко',
   nothingChanged: (time) => `Нічого нового з ${time}`,
-  firstLook: 'Твій перший перегляд. Наступного разу тут буде те, що змінилося відтоді.',
   notesLine: (count, since) =>
     since
       ? count === 1
@@ -143,17 +136,16 @@ const UK: HomeCopy = {
           ? `${count} непрочитані нотатки`
           : `${count} непрочитаних нотаток`,
   planLine: (symbol, version, moment) => `${symbol} ${version} змінено ${moment}`,
-  portfolioLine: (change, pct) => `Портфель ${change} · ${pct} сьогодні`,
+  portfolioLine: (change, pct) => `Портфель ${change} · ${pct} за добу`,
   watchLine: (symbol, pct, period) => `${symbol} ${pct} ${period}`,
   coverageLine: {
     COMPLETE: '',
     PARTIAL: 'Баланси прочитано частково',
     UNAVAILABLE: 'Баланси не вдалося прочитати',
   },
-  guestDetail: 'Твій портфель, плани й нотатки йдуть за гаманцем, який ти під’єднаєш. Ключі його не покидають.',
-  connectedDetail: 'Під’єднано · без входу. Планам і нотаткам потрібен підпис твого гаманця.',
+  connectedDetail: 'Плани й нотатки відкриються після входу',
   trade: 'Торгівля',
-  monitoring: 'Моніторинг',
+  monitoring: 'Вхідні',
 }
 
 export const HOME_COPY: Copy<HomeCopy> = { en: EN, uk: UK }

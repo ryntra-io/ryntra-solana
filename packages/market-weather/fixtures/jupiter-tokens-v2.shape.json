@@ -1,0 +1,269 @@
+[
+  {
+    "id": "Xsc9qvGR1efVDFGLrVsmkzv3qi45LTBjeUKSPmx9qEh",
+    "name": "NVIDIA xStock",
+    "symbol": "NVDAx",
+    "decimals": 8,
+    "holderCount": 95685,
+    "audit": {
+      "mintAuthorityDisabled": false,
+      "freezeAuthorityDisabled": false,
+      "topHoldersPercentage": 41.2
+    },
+    "organicScore": 88.1,
+    "organicScoreLabel": "high",
+    "isVerified": true,
+    "tags": [
+      "verified",
+      "stocks"
+    ],
+    "fdv": 72040330,
+    "mcap": 72040330,
+    "usdPrice": 223.8509,
+    "liquidity": 1240000,
+    "stats1h": {
+      "priceChange": 0.4166666666666667,
+      "buyVolume": 12400.0,
+      "sellVolume": 11160.0,
+      "numBuys": 13,
+      "numSells": 11,
+      "numTraders": 40,
+      "holderChange": 0.1,
+      "liquidityChange": 0.4
+    },
+    "stats24h": {
+      "priceChange": 2.5,
+      "buyVolume": 248000.0,
+      "sellVolume": 223200.0,
+      "numBuys": 275,
+      "numSells": 234,
+      "numTraders": 900,
+      "holderChange": 0.1,
+      "liquidityChange": 0.4
+    },
+    "updatedAt": "2026-09-21T12:00:00Z"
+  },
+  {
+    "id": "oPAiAikWTaFj9RYoRFD35ccfwhnMcB3ThgBZRHSkjTZ",
+    "name": "T-OpenAI",
+    "symbol": "tOpenAI",
+    "decimals": 9,
+    "holderCount": 8454,
+    "audit": {
+      "mintAuthorityDisabled": false,
+      "freezeAuthorityDisabled": false,
+      "topHoldersPercentage": 58.0
+    },
+    "organicScore": 71.0,
+    "organicScoreLabel": "high",
+    "isVerified": true,
+    "tags": [
+      "verified"
+    ],
+    "fdv": 661718,
+    "mcap": 661718,
+    "usdPrice": 968.51,
+    "liquidity": 612000,
+    "stats1h": {
+      "priceChange": 0.5499999999999999,
+      "buyVolume": 6120.0,
+      "sellVolume": 5508.0,
+      "numBuys": 6,
+      "numSells": 5,
+      "numTraders": 40,
+      "holderChange": 0.1,
+      "liquidityChange": 0.4
+    },
+    "stats24h": {
+      "priceChange": 3.3,
+      "buyVolume": 122400.0,
+      "sellVolume": 110160.0,
+      "numBuys": 136,
+      "numSells": 115,
+      "numTraders": 900,
+      "holderChange": 0.1,
+      "liquidityChange": 0.4
+    },
+    "updatedAt": "2026-09-21T12:00:00Z"
+  },
+  {
+    "id": "So11111111111111111111111111111111111111112",
+    "name": "Wrapped SOL",
+    "symbol": "SOL",
+    "decimals": 9,
+    "holderCount": 3820662,
+    "audit": {
+      "mintAuthorityDisabled": true,
+      "freezeAuthorityDisabled": true,
+      "topHoldersPercentage": 2.1
+    },
+    "organicScore": 99.0,
+    "organicScoreLabel": "high",
+    "isVerified": true,
+    "tags": [
+      "verified",
+      "community",
+      "strict"
+    ],
+    "fdv": 66296570171,
+    "mcap": 66296570171,
+    "usdPrice": 112.857,
+    "liquidity": 980000000,
+    "stats1h": {
+      "priceChange": 0.4666666666666666,
+      "buyVolume": 9800000.0,
+      "sellVolume": 8820000.0,
+      "numBuys": 10888,
+      "numSells": 9284,
+      "numTraders": 40,
+      "holderChange": 0.1,
+      "liquidityChange": 0.4
+    },
+    "stats24h": {
+      "priceChange": 2.8,
+      "buyVolume": 196000000.0,
+      "sellVolume": 176400000.0,
+      "numBuys": 217777,
+      "numSells": 185684,
+      "numTraders": 900,
+      "holderChange": 0.1,
+      "liquidityChange": 0.4
+    },
+    "updatedAt": "2026-09-21T12:00:00Z"
+  },
+  {
+    "id": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+    "name": "USD Coin",
+    "symbol": "USDC",
+    "decimals": 6,
+    "holderCount": 4100000,
+    "audit": {
+      "mintAuthorityDisabled": false,
+      "freezeAuthorityDisabled": false,
+      "topHoldersPercentage": 30.4
+    },
+    "organicScore": 98.0,
+    "organicScoreLabel": "high",
+    "isVerified": true,
+    "tags": [
+      "verified",
+      "stable"
+    ],
+    "fdv": 9000000000,
+    "mcap": 9000000000,
+    "usdPrice": 0.99977,
+    "liquidity": 1300000000,
+    "stats1h": {
+      "priceChange": 0.0,
+      "buyVolume": 13000000.0,
+      "sellVolume": 11700000.0,
+      "numBuys": 14444,
+      "numSells": 12315,
+      "numTraders": 40,
+      "holderChange": 0.1,
+      "liquidityChange": 0.4
+    },
+    "stats24h": {
+      "priceChange": 0.0,
+      "buyVolume": 260000000.0,
+      "sellVolume": 234000000.0,
+      "numBuys": 288888,
+      "numSells": 246315,
+      "numTraders": 900,
+      "holderChange": 0.1,
+      "liquidityChange": 0.4
+    },
+    "updatedAt": "2026-09-21T12:00:00Z"
+  },
+  {
+    "id": "MWDemoLaunch1111111111111111111111111111111",
+    "name": "Demo Launch",
+    "symbol": "DEMO",
+    "decimals": 6,
+    "holderCount": 1210,
+    "audit": {
+      "mintAuthorityDisabled": true,
+      "freezeAuthorityDisabled": true,
+      "topHoldersPercentage": 22.0,
+      "devBalancePercentage": 1.2,
+      "devMigrations": 1
+    },
+    "organicScore": 44.0,
+    "organicScoreLabel": "medium",
+    "isVerified": false,
+    "tags": [
+      "toporganicscore"
+    ],
+    "fdv": 410000,
+    "mcap": 410000,
+    "usdPrice": 0.00041,
+    "liquidity": 81000,
+    "stats1h": {
+      "priceChange": -2.0,
+      "buyVolume": 810.0,
+      "sellVolume": 729.0,
+      "numBuys": 0,
+      "numSells": 0,
+      "numTraders": 40,
+      "holderChange": 0.1,
+      "liquidityChange": 0.4
+    },
+    "stats24h": {
+      "priceChange": -12.0,
+      "buyVolume": 16200.0,
+      "sellVolume": 14580.0,
+      "numBuys": 18,
+      "numSells": 15,
+      "numTraders": 900,
+      "holderChange": 0.1,
+      "liquidityChange": 0.4
+    },
+    "updatedAt": "2026-09-21T12:00:00Z",
+    "launchpad": "met-dbc",
+    "graduatedPool": "MWDemoPoo1Graduated1111111111111111111111111",
+    "graduatedAt": "2026-09-01T09:30:00Z",
+    "firstPool": {
+      "id": "MWDemoCurve11111111111111111111111111111111",
+      "createdAt": "2026-08-31T18:00:00Z"
+    }
+  },
+  {
+    "id": "MWDemoUnverified111111111111111111111111111",
+    "name": "Totally USDC",
+    "symbol": "\u202eCDSU",
+    "decimals": 6,
+    "holderCount": 40,
+    "audit": {
+      "isSus": true
+    },
+    "organicScore": 3.0,
+    "organicScoreLabel": "low",
+    "isVerified": false,
+    "tags": [],
+    "fdv": 12000,
+    "mcap": 12000,
+    "usdPrice": 1.0,
+    "liquidity": 4000,
+    "stats1h": {
+      "priceChange": 0.0,
+      "buyVolume": 40.0,
+      "sellVolume": 36.0,
+      "numBuys": 0,
+      "numSells": 0,
+      "numTraders": 40,
+      "holderChange": 0.1,
+      "liquidityChange": 0.4
+    },
+    "stats24h": {
+      "priceChange": 0.0,
+      "buyVolume": 800.0,
+      "sellVolume": 720.0,
+      "numBuys": 0,
+      "numSells": 0,
+      "numTraders": 900,
+      "holderChange": 0.1,
+      "liquidityChange": 0.4
+    },
+    "updatedAt": "2026-09-21T12:00:00Z"
+  }
+]

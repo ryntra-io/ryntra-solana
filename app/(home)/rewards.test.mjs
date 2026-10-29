@@ -4,12 +4,11 @@ import test from "node:test";
 
 import { HOMEPAGE_COPY } from "../../lib/site/homepage-copy.ts";
 import { homepageModel } from "../../lib/site/homepage-model.ts";
-import { POINTS_POLICY_V1, levelFor } from "../../lib/points/policy.ts";
-import { REWARD_RANKS, REWARD_RULES_CURRENT } from "../../lib/rewards/rules.ts";
+import { RANK_POINTS_PER_USD, RANK_WINDOW_DAYS, REWARD_RANKS, REWARD_RULES_CURRENT } from "../../lib/rewards/rules.ts";
 import { MENU_SECTIONS } from "../shell/domains.ts";
 import { customerHref } from "../../lib/product/customer-routing.ts";
 import { PRODUCT_ROUTES } from "../shell/product-routes.ts";
-import { POINTS, POINTS_EXAMPLE, REWARDS } from "./rewards-facts.ts";
+import { REWARDS } from "./rewards-facts.ts";
 
 const read = (path) => readFileSync(new URL("../../" + path, import.meta.url), "utf8");
 const withoutComments = (source) => source.replace(/\/\*[\s\S]*?\*\//g, " ").replace(/^[ \t]*\/\/.*$/gm, "");
@@ -37,9 +36,14 @@ test("the block carries its words in both languages and claims nothing the progr
     assert.deepEqual(Object.keys(r.segments), ["fees", "points", "referral"]);
     assert.match(r.segments.fees.body, /\{rate\}/, `${locale}: the fee sentence takes its rate from the facts`);
     assert.doesNotMatch(r.segments.fees.body, /\d/, `${locale}: no rate typed into the words`);
-    for (const key of ["eyebrow", "lead", "panelTitle", "example", "loopLabel", "open", "explore"]) assert.ok(r[key].length > 2, `${locale}.${key}`);
+    for (const key of ["eyebrow", "lead", "panelTitle", "loopLabel", "open", "explore"]) assert.ok(r[key].length > 2, `${locale}.${key}`);
+    /* UX-751: one programme. The block may not carry an example balance, a
+       level, «PTS» or the name of the programme no screen draws. */
+    assert.equal(r.example, undefined, `${locale}: nothing on the panel is an example any more`);
+    assert.equal(r.segments.points.level, undefined, `${locale}: no level ladder`);
+    assert.match(r.segments.points.window, /\{days\}/, `${locale}: the rank window comes from the facts`);
     const f = HOMEPAGE_COPY[locale].footer;
-    assert.deepEqual(f.links.map((link) => link.href), ["/app/markets", "/app/autoinvest", "/app/rewards", "/docs", "/stats"]);
+    assert.deepEqual(f.links.map((link) => link.href), ["/app/markets", "/app/bots", "/app/rewards", "/docs", "/stats"]);
     /* The support page joined the legal pair on 2026-09-29 — the Android app's store listing names both. */
     assert.deepEqual(f.legal.map((link) => link.href), ["/legal/terms", "/legal/privacy", "/support"]);
     assert.match(f.copyright, /^© 2026 Ryntra$/);
@@ -60,6 +64,13 @@ test("the block carries its words in both languages and claims nothing the progr
   }
   /* Points are said to be what the policy says they are: no cash value, not a token. */
   assert.match(en.segments.points.note, /No cash value · not a token/);
+  /* The one programme a person can open is the rank (UX-751, following Ріст 19). */
+  assert.equal(en.segments.points.name, "Rank points");
+  assert.equal(uk.segments.points.name, "Очки рангу");
+  const pointWords = JSON.stringify([en.segments.points, uk.segments.points, HOMEPAGE_COPY.en.hero, HOMEPAGE_COPY.uk.hero]);
+  for (const gone of [/\bPTS\b/, /БАЛІВ/, /Ryntra Points/, /Points program/, /Програма балів/, /Levels · Rank/, /Рівні · Ранг/]) {
+    assert.doesNotMatch(pointWords, gone, `the landing must not sell a second points programme: ${gone}`);
+  }
   /* Every footer destination is a page of the site. */
   assert.ok(PRODUCT_ROUTES.some((route) => route.href === "/app/rewards"), "/app/rewards is a registered page");
   for (const id of ["home", "markets"]) assert.equal(MENU_SECTIONS[id].href, `/app/${id}`, `/app/${id} is a section of the menu`);
@@ -68,26 +79,26 @@ test("the block carries its words in both languages and claims nothing the progr
   for (const file of ["app/docs/page.tsx", "app/legal/terms/page.tsx", "app/legal/privacy/page.tsx"]) assert.ok(existsSync(new URL("../../" + file, import.meta.url)), file);
 });
 
-test("the three rates are the programme's own and the points example sits on a level the policy has", () => {
+test("the three rates and the rank are the programme's own, and no figure on the page is invented", () => {
   const level1 = REWARD_RANKS.map((rank) => REWARD_RULES_CURRENT.referralL1BpsByRank[rank] / 100);
   assert.equal(REWARDS.feeSharePercent, REWARD_RULES_CURRENT.cashbackBps / 100);
   assert.equal(REWARDS.referralLevel1Percent, `${Math.min(...level1)}–${Math.max(...level1)}`);
   assert.equal(REWARDS.referralLevel2Percent, REWARD_RULES_CURRENT.referralL2Bps / 100);
   assert.equal(REWARDS.feeSharePercent, 50);
-  const placed = levelFor(POINTS_POLICY_V1, POINTS_EXAMPLE);
-  assert.equal(POINTS.level, placed.level);
-  assert.equal(POINTS.nextAt, placed.nextAt === null ? null : Number(placed.nextAt));
-  assert.equal(POINTS.total, Number(POINTS_EXAMPLE));
-  assert.ok(POINTS.progress > 0 && POINTS.progress < 1, "the example sits inside its level, not on its edge");
-  assert.ok(POINTS.level >= 1 && POINTS.level <= POINTS_POLICY_V1.levels.length);
+  /* The rank is the rule, not an example: both numbers are the rewards rules' own. */
+  assert.equal(REWARDS.rankPointsPerUsd, Number(RANK_POINTS_PER_USD));
+  assert.equal(REWARDS.rankWindowDays, RANK_WINDOW_DAYS);
+  const facts = withoutComments(read("app/(home)/rewards-facts.ts"));
+  assert.doesNotMatch(facts, /POINTS_EXAMPLE|lib\/points\/policy/, "the landing carries no Points V1 code");
   /* The page prints the facts, never its own figures. */
   const source = withoutComments(read("app/(home)/rewards.tsx"));
   assert.match(source, /r\.segments\.fees\.body\.replace\("\{rate\}", `\$\{REWARDS\.feeSharePercent\}%`\)/);
   assert.match(source, /\{REWARDS\.referralLevel1Percent\}%/);
   assert.match(source, /\{REWARDS\.referralLevel2Percent\}%/);
-  assert.match(source, /String\(POINTS\.level\)\.padStart\(2, "0"\)/);
+  assert.match(source, /\{format\(REWARDS\.rankPointsPerUsd\)\}/);
+  assert.match(source, /REWARDS\.rankWindowDays/);
   assert.doesNotMatch(source, /\b(?:50|10|5)%/, "no rate typed into the component");
-  assert.match(source, /\{r\.example\}/, "the points figure is marked as an example");
+  assert.doesNotMatch(source, /POINTS\.|r\.example/, "no example and no level on the panel (UX-751)");
 });
 
 test("the panel's chip is the registry's word, the close has one primary action, and the footer is the landing's own on the same ground", () => {
@@ -153,7 +164,9 @@ test("the light stays inside the block and the motion is restrained: one count, 
   /* The counters run once, from the panel's arrival, and settle on the facts. */
   assert.match(source, /arrive\.disconnect\(\);/);
   assert.match(source, /setShare\(Math\.round\(REWARDS\.feeSharePercent \* eased\)\);/);
-  assert.match(source, /setPoints\(Math\.round\(POINTS\.total \* eased\)\);/);
+  /* One counter, not two: the points counted up to an example balance, and
+     the example is gone (UX-751). The rank figure is a rule and stands still. */
+  assert.doesNotMatch(source, /setPoints/);
   assert.match(source, /useState<number>\(REWARDS\.feeSharePercent\)/, "the figures render complete without the script");
   assert.match(source, /if \(reduced\.matches\) \{\s*root\.dataset\.seen = "";\s*root\.dataset\.counted = "";\s*root\.dataset\.end = "";\s*return;/);
   /* The ring is drawn to the share, the levels light after the count. */

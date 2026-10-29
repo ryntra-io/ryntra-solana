@@ -1,0 +1,81 @@
+/* «Плани» (AI-06, AI-20): two ways to start a plan and one row to «Боти», where the plans live. Both themes through the tokens. */
+.tab {
+  display: grid;
+  gap: var(--ry-s3);
+  min-width: 0;
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.lead {
+  margin: 0;
+  font-size: var(--ry-fs-dense);
+  line-height: 1.5;
+  color: var(--ry-text-muted);
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--ry-s2);
+}
+
+.actions :global(.rw-btn) {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+/* The one row to «Боти»: the place, then what waits there. */
+.home {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  grid-template-areas:
+    "icon title arrow"
+    "icon meta arrow";
+  align-items: center;
+  gap: 2px var(--ry-s3);
+  min-height: 56px;
+  padding: var(--ry-s2) var(--ry-s3);
+  border: 1px solid var(--ry-border);
+  border-radius: var(--ry-r-btn-sm);
+  background: var(--ry-card);
+  color: var(--ry-text);
+  text-decoration: none;
+  transition:
+    border-color 160ms ease-out,
+    background-color 160ms ease-out;
+}
+
+.home:hover,
+.home:focus-visible {
+  border-color: var(--ry-border-strong);
+  background: var(--ry-hover);
+}
+
+.home:focus-visible {
+  outline: var(--ryntra-focus-outline, 2px solid #ff681c);
+  outline-offset: 2px;
+}
+
+.homeIcon {
+  grid-area: icon;
+  color: var(--ry-text-muted);
+}
+
+.homeTitle {
+  grid-area: title;
+  font-weight: 600;
+}
+
+.homeMeta {
+  grid-area: meta;
+  min-width: 0;
+  font-size: var(--ry-fs-label-sm);
+  color: var(--ry-text-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.homeArrow {
+  grid-area: arrow;
+  color: var(--ry-text-muted);
+}

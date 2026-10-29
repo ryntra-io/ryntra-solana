@@ -1,37 +1,24 @@
 /*
- * «Ринки» — one screener. The head, then one card: the
- * tabs and the filter, the quick orders, the table, the count. The table
- * speaks the stock table's language — uppercase quiet headers that sort,
- * 56px rows, mono figures, a dash for a figure nobody stated — so the two
- * lists it replaced read as one.
+ * «Ринки» — one screener on the core's page (B4), dense (B17): one row of
+ * choices — the kind of asset, the order, the filter — then one block with the
+ * core's table, rows of 40 px under a head that stays in sight, and its count.
+ * The figures are Geist with even digits, a dash for a figure nobody stated.
  */
 
+/* The core's page; the frame gives the edges. */
 .page {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr);
-  gap: var(--ry-s4);
   width: 100%;
-  min-width: 0;
+  padding: 0;
 }
 
-.head {
-  display: grid;
-  gap: var(--ry-s1);
-}
-
-.title {
-  margin: 0;
-  font-family: var(--ry-font-sans);
-  font-size: var(--ry-fs-page);
-  line-height: var(--ry-lh-tight);
-  letter-spacing: var(--ry-ls-head);
-  color: var(--ry-text);
-}
-
-.lead {
-  margin: 0;
-  font-size: var(--ry-fs-copy);
-  color: var(--ry-muted);
+/* The page's heading is for a screen reader: the menu already names the page, and the first thing seen is the row of choices. */
+.page > :global(.ryntra-page__head) {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
 }
 
 .screener {
@@ -39,20 +26,19 @@
   grid-template-columns: minmax(0, 1fr);
   gap: var(--ry-s3);
   min-width: 0;
-  padding: var(--ry-s3) 0 0;
-  border: 1px solid var(--ry-border);
-  border-radius: var(--ry-r-card);
-  background: var(--ry-card);
-  overflow: hidden;
 }
 
 .toolbar {
   display: flex;
   align-items: center;
-  justify-content: space-between;
   flex-wrap: wrap;
   gap: var(--ry-s3);
-  padding: 0 var(--ry-s4);
+  min-height: 40px;
+}
+
+/* The kinds keep their full width; the filter gives way first, and goes under them only when even its least does not fit. */
+.toolbar > .tabs {
+  flex: 0 0 auto;
 }
 
 .tabs {
@@ -113,9 +99,63 @@
   text-align: center;
 }
 
+/* The order: one select, the words of the choice beside its quiet label. */
+.sort {
+  position: relative;
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: var(--ry-s2);
+  height: 40px;
+  padding: 0 var(--ry-s3);
+  border: 1px solid var(--ry-border);
+  border-radius: var(--ry-r-btn);
+  background: var(--ry-bg, var(--ry-card));
+  color: var(--ry-muted);
+  font-family: var(--ry-font-sans);
+  font-size: var(--ry-fs-dense);
+  white-space: nowrap;
+}
+
+.sort:focus-within {
+  border-color: var(--ry-border-strong);
+  box-shadow: var(--ry-focus);
+}
+
+.sortWord {
+  font-size: var(--ry-fs-label);
+}
+
+.sort select {
+  appearance: none;
+  min-width: 0;
+  margin: 0;
+  padding: 0 18px 0 0;
+  border: 0;
+  background: transparent;
+  color: var(--ry-text);
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+  outline: none;
+}
+
+.sort select option {
+  background: var(--ry-elevated);
+  color: var(--ry-text);
+}
+
+.sort svg {
+  position: absolute;
+  right: var(--ry-s3);
+  pointer-events: none;
+}
+
 .search {
   display: flex;
-  flex: 0 1 340px;
+  flex: 1 1 260px;
+  max-width: 400px;
+  margin-inline-start: auto;
   align-items: center;
   gap: var(--ry-s2);
   min-width: 0;
@@ -147,151 +187,62 @@
   color: var(--ry-text-muted, var(--ry-muted));
 }
 
-.orders {
-  display: flex;
-  align-items: center;
-  gap: var(--ry-s3);
-  padding: 0 var(--ry-s4);
-  overflow-x: auto;
-  scrollbar-width: none;
-}
-
-.orders::-webkit-scrollbar {
-  display: none;
-}
-
-/* The order is a quieter control than the kind of asset: words, the chosen one underlined — not a second row of pills. */
-.order {
-  flex: 0 0 auto;
-  min-height: 32px;
-  padding: 0 var(--ry-s1);
-  border: 0;
-  border-bottom: 2px solid transparent;
-  border-radius: 0;
-  background: transparent;
-  color: var(--ry-muted);
-  font-family: var(--ry-font-sans);
-  font-size: var(--ry-fs-label);
-  font-weight: 500;
-  white-space: nowrap;
-  cursor: pointer;
-}
-
-.order:hover {
-  color: var(--ry-text);
-}
-
-.order[aria-pressed="true"] {
-  border-bottom-color: var(--ry-iris);
-  color: var(--ry-text);
-  font-weight: 600;
-}
-
-.order:focus-visible {
-  outline: none;
-  box-shadow: var(--ry-focus);
-}
-
+/* The memes' and the private companies' one honest line: small, so the rows still start near the top. */
 .note {
-  margin: 0 var(--ry-s4);
-  padding: var(--ry-s2) var(--ry-s3);
+  margin: 0;
+  padding: 6px var(--ry-s3);
   border-radius: var(--ry-r-btn-sm);
   background: color-mix(in srgb, var(--ry-caution) 10%, transparent);
   color: var(--ry-text);
-  font-size: var(--ry-fs-label);
-  line-height: 1.45;
-}
-
-.tableWrap {
-  overflow-x: auto;
-  min-width: 0;
-  border-top: 1px solid var(--ry-border);
-}
-
-.table {
-  width: 100%;
-  border-collapse: collapse;
-}
-
-.table thead th {
-  height: 40px;
-  padding: 0 var(--ry-s3);
-  border-bottom: 1px solid var(--ry-border);
-  text-align: right;
-  white-space: nowrap;
-}
-
-.table thead th.cAsset {
-  text-align: left;
-}
-
-.sortButton,
-.headText {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--ry-s1);
-  padding: 0;
-  border: 0;
-  background: transparent;
-  color: var(--ry-muted);
-  font-family: var(--ry-font-sans);
   font-size: var(--ry-fs-label-sm);
-  font-weight: 600;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
+  line-height: 1.4;
 }
 
-.sortButton {
-  cursor: pointer;
+/* The block holds the table and its count; its title is for a screen reader — the chosen tab already says it. */
+.tableBlock {
+  min-width: 0;
 }
 
-.sortButton:hover,
-.sortButton[data-active="true"] {
-  color: var(--ry-text);
-}
-
-.sortButton:focus-visible {
-  outline: none;
-  box-shadow: var(--ry-focus);
-  border-radius: 4px;
-}
-
-.table td,
-.table tbody th {
-  height: 56px;
-  padding: 0 var(--ry-s3);
-  border-bottom: 1px solid var(--ry-border);
-  font-size: var(--ry-fs-value);
-  color: var(--ry-text);
-  vertical-align: middle;
-  text-align: right;
+.tableBlock > :global(.ryntra-block__head) {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
   white-space: nowrap;
 }
 
-.table tbody tr:last-child td,
-.table tbody tr:last-child th {
-  border-bottom: 0;
+/* The core's row of 40 px: the asset in one line. */
+.table td {
+  height: 40px;
 }
 
-.row {
-  transition: background-color var(--rt-duration-fast) var(--rt-ease);
+/*
+ * The head stays in sight: the core's table scrolls sideways inside itself, and a box that scrolls holds a sticky head
+ * to itself. Every column fits the screen here (they drop by width, a phone's are fixed), so the table clips instead of
+ * scrolling, and its head sticks under the frame's header while the page scrolls.
+ */
+.table {
+  overflow-x: clip;
 }
 
-.row:hover {
-  background: var(--ry-hover);
+.table th {
+  top: var(--ryntra-size-header, 56px);
 }
 
-.cStar {
-  width: 40px;
-  padding-inline: var(--ry-s3) 0 !important;
-  text-align: left !important;
+/* The watchlist's star stands last, narrow. */
+.table td:last-child {
+  width: 44px;
+  padding-inline: 0 var(--ry-s2);
 }
 
+/* 32 px inside the 40 px row on a desk (a mouse's target); a phone's taller row gives the finger its 44. */
 .star {
   display: inline-grid;
   place-items: center;
   width: 32px;
   height: 32px;
+  min-height: 0;
   border: 0;
   border-radius: var(--ry-r-pill);
   background: transparent;
@@ -313,11 +264,6 @@
   box-shadow: var(--ry-focus);
 }
 
-.table tbody th.cAsset {
-  text-align: left;
-  font-weight: 600;
-}
-
 .asset {
   display: flex;
   align-items: center;
@@ -337,8 +283,8 @@
   display: inline-grid;
   place-items: center;
   flex: 0 0 auto;
-  width: 28px;
-  height: 28px;
+  width: 24px;
+  height: 24px;
   border-radius: var(--ry-r-pill);
   background: var(--ry-elevated);
   object-fit: cover;
@@ -349,16 +295,14 @@
 }
 
 .names {
-  display: grid;
-  gap: 2px;
+  display: flex;
+  align-items: baseline;
+  gap: var(--ry-s2);
   min-width: 0;
 }
 
 .symbol {
-  display: flex;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: 6px;
+  flex: 0 0 auto;
   font-family: var(--ry-font-sans);
   font-size: var(--ry-fs-dense);
   font-weight: 600;
@@ -368,10 +312,11 @@
 
 .name {
   display: block;
+  min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  max-width: 30ch;
+  max-width: 24ch;
   font-size: var(--ry-fs-label);
   font-weight: 400;
   color: var(--ry-muted);
@@ -383,6 +328,10 @@
 }
 
 .flag {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 4px;
   padding: 1px var(--ry-s2);
   border-radius: var(--ry-r-pill);
   border: 1px solid var(--ry-border-strong);
@@ -399,29 +348,51 @@
   color: var(--ry-caution);
 }
 
-.cNum {
-  font-family: var(--ry-font-mono);
-  font-variant-numeric: tabular-nums;
-}
-
-.cNum [data-tone="up"] {
-  color: var(--ry-pnl-pos);
-}
-
-.cNum [data-tone="down"] {
-  color: var(--ry-pnl-neg);
-}
-
-.cNum [data-tone="flat"] {
+.flagMore {
   color: var(--ry-muted);
 }
 
-.cNum [data-organic="low"] {
+/* A phone's label: in words, on the name's line — a long one takes a second line rather than losing its end. */
+.flagLine {
+  display: none;
+  overflow: hidden;
+  color: var(--ry-muted);
+  font-size: var(--ry-fs-label-sm);
+  font-weight: 600;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.flagLine[data-flag="private"],
+.flagLine[data-flag="caution"] {
   color: var(--ry-caution);
 }
 
-.cNum [data-organic] {
-  font-family: var(--ry-font-sans);
+.table [data-col] {
+  font-variant-numeric: tabular-nums;
+}
+
+.table [data-tone="up"] {
+  color: var(--ry-pnl-pos);
+}
+
+.table [data-tone="down"] {
+  color: var(--ry-pnl-neg);
+}
+
+.table [data-tone="far"] {
+  color: var(--ry-caution);
+}
+
+.table [data-tone="flat"] {
+  color: var(--ry-muted);
+}
+
+.table [data-organic="low"] {
+  color: var(--ry-caution);
+}
+
+.table [data-organic] {
   font-size: var(--ry-fs-label);
 }
 
@@ -459,7 +430,7 @@
   align-items: center;
   flex-wrap: wrap;
   gap: var(--ry-s3);
-  padding: var(--ry-s3) var(--ry-s4);
+  padding-top: var(--ry-s3);
   border-top: 1px solid var(--ry-border);
 }
 
@@ -472,26 +443,6 @@
   margin-inline-start: auto;
   font-size: var(--ry-fs-label-sm);
   color: var(--ry-text-muted, var(--ry-muted));
-}
-
-.empty,
-.status {
-  margin: 0;
-  padding: var(--ry-s6) var(--ry-s4);
-  border-top: 1px solid var(--ry-border);
-  color: var(--ry-muted);
-  font-size: var(--ry-fs-copy);
-  text-align: center;
-}
-
-.status {
-  display: grid;
-  justify-items: center;
-  gap: var(--ry-s3);
-}
-
-.status p {
-  margin: 0;
 }
 
 .srOnly {
@@ -531,41 +482,45 @@
 
 .boneRows {
   display: grid;
-  gap: 6px;
-  padding: 0 var(--ry-s4) var(--ry-s4);
+  gap: 2px;
+}
+
+.boneTabs {
+  width: min(480px, 100%);
 }
 
 .phoneOnly {
   display: none;
 }
 
-/* The columns follow the width: the asset, its price and its day always; the rest as the screen allows. */
-@media (max-width: 1280px) {
-  .table [data-col="organic"],
-  .table [data-col="top10"] {
-    display: none;
-  }
-}
-
-@media (max-width: 1080px) {
-  .table [data-col="marketCap"],
-  .table [data-col="age"],
-  .table [data-col="change1h"] {
-    display: none;
-  }
-}
-
 @media (max-width: 760px) {
-  .table [data-col="liquidity"],
-  .table [data-col="volume24h"],
-  .table [data-col="session"],
-  .table [data-col="deviation"],
-  .table [data-col="premium"] {
-    display: none;
+  .boneTabs {
+    flex: 1 0 100%;
+  }
+
+  /* A phone: the kinds in their own scrolling row, the order and the filter under them. */
+  .toolbar {
+    flex-wrap: wrap;
+    gap: var(--ry-s2);
+  }
+
+  .toolbar > .tabs {
+    flex: 1 0 100%;
+  }
+
+  /* The select's name stays for a screen reader; a phone's row has no room to print it. */
+  .sortWord {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
   }
 
   .search {
-    flex-basis: 100%;
+    flex: 1 1 0;
+    max-width: none;
   }
 
   .phoneOnly {
@@ -574,53 +529,101 @@
   }
 
   /* A row that scrolls sideways fades at its edge, so the words past it read as more, not as cut. */
-  .tabs,
-  .orders {
+  .tabs {
     -webkit-mask-image: linear-gradient(90deg, var(--ry-text) 85%, transparent);
     mask-image: linear-gradient(90deg, var(--ry-text) 85%, transparent);
     padding-inline-end: 32px;
   }
 
-  /* On a phone the table takes the screen's width, edge to edge. */
-  .screener {
-    margin-inline: -16px;
-    border-inline: 0;
-    border-radius: 0;
+  /* A phone's row: the asset, its price, its day and the star — every one of them on the screen, nothing cut. */
+  .table table {
+    table-layout: fixed;
   }
 
-  /* A phone's row: the star, the asset, its price and its day — every one of them on the screen. */
   .table td,
-  .table tbody th,
-  .table thead th {
+  .table th {
     padding: 0 6px;
     font-size: var(--ry-fs-dense);
   }
 
-  .cStar {
-    width: 30px;
-    padding-inline: 6px 0 !important;
+  .table td {
+    height: 52px;
+  }
+
+  .table th:first-child,
+  .table td:first-child {
+    width: auto;
+  }
+
+  .table th:nth-child(2),
+  .table td:nth-child(2) {
+    width: 27%;
+  }
+
+  .table th:nth-child(3),
+  .table td:nth-child(3) {
+    width: 23%;
+  }
+
+  .table th:last-child,
+  .table td:last-child {
+    width: 44px;
+  }
+
+  .names {
+    display: grid;
+    gap: 1px;
+  }
+
+  .flag,
+  .name[data-flagged] {
+    display: none;
+  }
+
+  .flagLine {
+    display: block;
+    letter-spacing: -0.01em;
+  }
+
+  /* One line: the first label; the rest are in its title and read out. */
+  .flagLine .flagMore {
+    display: none;
+  }
+
+  /* The order is said by the select above the table; a phone's narrow head keeps its words. */
+  .table th :global(.ryntra-table__sort-icon) {
+    display: none;
+  }
+
+  /* A head that does not fit its narrow column takes two lines rather than running past its edge. */
+  .table th,
+  .table th :global(.ryntra-table__sort) {
+    white-space: normal;
+    overflow-wrap: anywhere;
+    line-height: 1.2;
   }
 
   .star {
-    width: 28px;
-    height: 28px;
+    width: 32px;
+    height: 44px;
   }
 
   .asset {
-    gap: var(--ry-s2);
+    gap: 6px;
   }
 
   .icon {
-    width: 24px;
-    height: 24px;
+    width: 20px;
+    height: 20px;
   }
 
   .name {
-    max-width: 11ch;
+    max-width: 100%;
   }
 
   .symbol {
-    max-width: 14ch;
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
 
   .sources {

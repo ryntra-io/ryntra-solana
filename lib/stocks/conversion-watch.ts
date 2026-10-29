@@ -177,6 +177,23 @@ export function shortEventLine(event: WatchedEvent, lang: Lang, nowMs: number): 
   return lang === "uk" ? `Обміняй до ${day}` : `Swap by ${day}`;
 }
 
+/**
+ * The deadline beside a purchase in Spot (UX-504): one red line under the
+ * action — «Обміняти до 12.03.2027, інакше токен згорить · не акція» — for
+ * a token whose issuer opened a swap window, or the closed window's few
+ * words once the cut-off has passed. Where the rights line already says «not
+ * a share» beside it, `notShare` leaves the tail off.
+ */
+export function spotDeadlineLine(event: WatchedEvent, lang: Lang, nowMs: number, notShare = true): string {
+  if (windowState(event, nowMs) === "closed") return lang === "uk" ? "Строк обміну минув — емітент більше не підтримує токен" : "The swap deadline passed — the issuer no longer supports the token";
+  const at = new Date(event.deadline);
+  const day = lang === "uk"
+    ? `${String(at.getUTCDate()).padStart(2, "0")}.${String(at.getUTCMonth() + 1).padStart(2, "0")}.${at.getUTCFullYear()}`
+    : deadlineDay(event.deadline, "en");
+  const tail = notShare ? (lang === "uk" ? " · не акція" : " · not a share") : "";
+  return lang === "uk" ? `Обміняти до ${day}, інакше токен згорить${tail}` : `Swap by ${day} or the token expires worthless${tail}`;
+}
+
 /** «Обміняти на SpaceX (SPCXx)» — the one action; null when the issuer names no target Ryntra offers. */
 export function swapActionWord(watch: ConversionWatch, lang: Lang): string | null {
   if (!watch.into) return null;

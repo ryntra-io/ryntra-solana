@@ -1,10 +1,10 @@
 /**
  * How a rule is said — «Щотижня · чт о 19:00», «Щотижня $25 в NVIDIA», «чт,
  * 24 вер. о 19:00», «Якщо NVIDIA впаде на 5 % — докупити $20», «Округлення
- * кожної оплати до $1», «Накопичено $0,60 · нагадаю від $1», «Цього місяця
+ * кожної оплати до $1», «Накопичено $0,60 · нагадування від $1», «Цього місяця
  * $45 з $100» — in both languages («Автоінвест» ·
- * «Щотижня» · «Якщо впаде на 5 %» · «Бюджет місяця» · «З кожної
- * оплати»; never DCA, trigger or «купує автоматично»). The web app's own
+ * «Щотижня» · «Якщо впаде на 5 %» · «Бюджет місяця»; v5.5 : «З кожної
+ * оплати»; never DCA, trigger or «купує автоматично»). The web line's own
  * phrases (`lib/autoinvest/words.ts`, `app/app/invest/invest-words.ts`), so
  * the reminder a person gets and the rule they set on the phone say the same
  * thing. Pure.
@@ -99,10 +99,10 @@ export function ruleWhenLine(
   return rule.schedule ? ruleLine(rule.schedule, locale) : ''
 }
 
-/** «Накопичено $0,60 · нагадаю від $1» · «$0.60 gathered · reminder from $1» — what a «З кожної оплати» rule waits with. */
+/** «Накопичено $0,60 · нагадування від $1» · «$0.60 gathered · reminder from $1» — what a «З кожної оплати» rule waits with. */
 export function gatheredLine(gatheredUsd: number, minimumUsd: number, locale: Locale): string {
   return locale === 'uk'
-    ? `Накопичено ${dollarsText(gatheredUsd, 'uk')} · нагадаю від ${dollarsText(minimumUsd, 'uk')}`
+    ? `Накопичено ${dollarsText(gatheredUsd, 'uk')} · нагадування від ${dollarsText(minimumUsd, 'uk')}`
     : `${dollarsText(gatheredUsd, 'en')} gathered · reminder from ${dollarsText(minimumUsd, 'en')}`
 }
 

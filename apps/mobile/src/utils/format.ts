@@ -8,6 +8,57 @@ import type { Locale } from '@/lib/i18n'
 
 export const DASH = '—'
 
+/** What a screen reader says for a dash that stands for an unknown figure — never «тире». */
+export const UNKNOWN_SPOKEN: Readonly<Record<Locale, string>> = { en: 'unknown', uk: 'невідомо' }
+/** What it says for a sum the eye on Home hid — never a row of bullets. */
+export const HIDDEN_SPOKEN: Readonly<Record<Locale, string>> = { en: 'hidden', uk: 'приховано' }
+const HIDDEN_MARK = /^•{3,}$/
+
+/** A figure as a screen reader says it: an unknown value's dash is «невідомо», a hidden sum «приховано»; else as it is. */
+export function saidFigure(value: string, locale: Locale): string {
+  const trimmed = value.trim()
+  if (trimmed === DASH) return UNKNOWN_SPOKEN[locale]
+  if (HIDDEN_MARK.test(trimmed)) return HIDDEN_SPOKEN[locale]
+  return writtenOut(value)
+}
+
+const SUBSCRIPT = '₀₁₂₃₄₅₆₇₈₉'
+const SUBSCRIPT_PRICE = /0([.,])0([₀-₉]+)(\d+)/g
+
+/** A tiny price's zeros counted in a subscript («0.0₅501») written out for a screen reader («0.00000501»). */
+function writtenOut(text: string): string {
+  return text.replace(SUBSCRIPT_PRICE, (_match, sep: string, sub: string, digits: string) => {
+    const zeros = Number(
+      sub
+        .split('')
+        .map((mark) => SUBSCRIPT.indexOf(mark))
+        .join(''),
+    )
+    return `0${sep}${'0'.repeat(zeros)}${digits}`
+  })
+}
+
+/**
+ * A text's own label for a screen reader when it shows an unknown figure: the dash alone, or the dash before its unit
+ * («— SOL»), is said as «невідомо». Null when the text says no unknown figure — a dash inside a sentence stays a dash.
+ */
+export function spokenUnknown(text: string, locale: Locale): string | null {
+  const trimmed = text.trim()
+  if (trimmed === DASH) return UNKNOWN_SPOKEN[locale]
+  if (HIDDEN_MARK.test(trimmed)) return HIDDEN_SPOKEN[locale]
+  if (trimmed.startsWith(`${DASH} `)) return `${UNKNOWN_SPOKEN[locale]}${trimmed.slice(DASH.length)}`
+  return null
+}
+
+/**
+ * What a text is said as, always a string: its unknown figure as «невідомо» (see `spokenUnknown`), else the text
+ * itself. A text passes it on every render so a screen reader's label follows the figure — Android keeps the last
+ * label it was given when the prop is dropped, so a «—» that fills in would still be read as «невідомо».
+ */
+export function spokenText(text: string, locale: Locale): string {
+  return spokenUnknown(text, locale) ?? writtenOut(text)
+}
+
 const usd = new Intl.NumberFormat('en-US', {
   style: 'currency',
   currency: 'USD',
@@ -20,6 +71,11 @@ const usdSmall = new Intl.NumberFormat('en-US', {
   minimumFractionDigits: 2,
   maximumFractionDigits: 6,
 })
+/** Below a cent a price keeps three significant digits, so look-alike tokens never read as the same «$0.000003». */
+const tinySignificant: Readonly<Record<Locale, Intl.NumberFormat>> = {
+  en: new Intl.NumberFormat('en-US', { maximumSignificantDigits: 3, maximumFractionDigits: 20 }),
+  uk: new Intl.NumberFormat('uk-UA', { maximumSignificantDigits: 3, maximumFractionDigits: 20 }),
+}
 const compact = new Intl.NumberFormat('en-US', { notation: 'compact', maximumFractionDigits: 1 })
 const percent = new Intl.NumberFormat('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
 const clock = new Intl.DateTimeFormat('en-GB', { hour: '2-digit', minute: '2-digit' })
@@ -76,9 +132,11 @@ function isFinite_(value: unknown): value is number {
 }
 
 /**
- * A USD price: two decimals from $1 up, up to six below it, and below a
- * millionth four significant digits — a meme's per-token price is never
- * written as $0.00; a dash when unknown.
+ * A USD price: two decimals from $1 up, up to six from a cent, and below a
+ * cent three significant digits — «$0.00123»; from four zeros after the point
+ * the zeros are counted in a subscript, as launch pages write it: «$0.0₅501».
+ * A meme's per-token price is never written as $0.00, and look-alikes never
+ * read as one price; a dash when unknown.
  */
 export function formatPrice(value: number | null | undefined, locale: Locale): string {
   if (!isFinite_(value)) return DASH
@@ -86,20 +144,52 @@ export function formatPrice(value: number | null | undefined, locale: Locale): s
   if (value === 0) return usd.format(0)
   const magnitude = Math.abs(value)
   if (magnitude >= 1) return usd.format(value)
-  if (magnitude >= 0.000001) return usdSmall.format(value)
-  const places = Math.min(20, 3 - Math.floor(Math.log10(magnitude)))
-  return `${value < 0 ? '−' : ''}$${magnitude.toFixed(places).replace(/0+$/, '')}`
+  if (magnitude >= 0.01) return usdSmall.format(value)
+  return `${value < 0 ? '−' : ''}$${tinyPrice(magnitude, locale)}`
 }
 
-/** The same price in the Ukrainian shape: «$224,66», «$0,00042». */
+/**
+ * A price in a list's column: as `formatPrice`, but between a cent and a dollar at most four significant digits —
+ * «$0.1447», never «$0.144709» beside «$1.72» — so the column reads at one precision. Below a cent the three
+ * significant digits and the subscript stay; a dash when unknown.
+ */
+export function formatListPrice(value: number | null | undefined, locale: Locale): string {
+  if (!isFinite_(value)) return DASH
+  const magnitude = Math.abs(value)
+  if (magnitude >= 0.01 && magnitude < 1) return formatPrice(Number(value.toPrecision(4)), locale)
+  return formatPrice(value, locale)
+}
+
+/** The same price in the Ukrainian shape: «$224,66», «$0,00042», «$0,0₅501». */
 function ukPrice(value: number): string {
   const magnitude = Math.abs(value)
   const sign = value < 0 ? '−' : ''
   if (magnitude === 0) return `$${ukMoney.format(0)}`
   if (magnitude >= 1) return `${sign}$${ukMoney.format(magnitude)}`
-  if (magnitude >= 0.000001) return `${sign}$${ukSmall.format(magnitude)}`
-  const places = Math.min(20, 3 - Math.floor(Math.log10(magnitude)))
-  return `${sign}$${magnitude.toFixed(places).replace(/0+$/, '').replace('.', ',')}`
+  if (magnitude >= 0.01) return `${sign}$${ukSmall.format(magnitude)}`
+  return `${sign}$${tinyPrice(magnitude, 'uk')}`
+}
+
+/**
+ * A positive price below a cent with three significant digits: «0.00123» written out while it has fewer than four
+ * zeros after the point, «0.0₅501» (five zeros, then 501) from four — the launch pages' shape.
+ */
+function tinyPrice(magnitude: number, locale: Locale): string {
+  const sep = locale === 'uk' ? ',' : '.'
+  let zeros = Math.ceil(-Math.log10(magnitude) - 1e-12) - 1
+  let digits = Math.round(magnitude * 10 ** (zeros + 3))
+  // A figure the rounding carries to a thousand (0.00000999 → 0.0000100) has one zero fewer.
+  if (digits >= 1000) {
+    zeros -= 1
+    digits = Math.round(digits / 10)
+  }
+  const shown = digits.toString().replace(/0+$/, '') || '0'
+  if (zeros < 4) return tinySignificant[locale].format(Number(`0.${'0'.repeat(zeros)}${shown}`))
+  const sub = String(zeros)
+    .split('')
+    .map((digit) => SUBSCRIPT[Number(digit)])
+    .join('')
+  return `0${sep}0${sub}${shown}`
 }
 
 /** A USD amount of money — always two decimals ($1,234.56 · $1 234,56); a positive amount under a cent says so; a dash when unknown. */
@@ -121,15 +211,37 @@ export function formatUsdSigned(value: number | null | undefined, locale: Locale
   return `${value > 0 ? '+' : '−'}${money(rounded)}`
 }
 
+/** Ukrainian's own words for the compact sizes, as «Про компанію» writes them (`company-facts.ts`: «$303 млрд»). */
+const UK_COMPACT: readonly Readonly<{ size: number; word: string }>[] = [
+  { size: 1e12, word: 'трлн' },
+  { size: 1e9, word: 'млрд' },
+  { size: 1e6, word: 'млн' },
+  { size: 1e3, word: 'тис.' },
+]
+const ukCompact = new Intl.NumberFormat('uk-UA', { maximumFractionDigits: 1 })
+
+/** «$2,7 млрд» · «$926,3 млн» · «$110,5 тис.» · «$512,3» — the English compact's rounding, Ukrainian's words. */
+function ukUsdCompact(value: number): string {
+  const magnitude = Math.abs(value)
+  let index = UK_COMPACT.findIndex((unit) => magnitude >= unit.size)
+  let scaled = index === -1 ? magnitude : magnitude / UK_COMPACT[index]!.size
+  // A figure the rounding carries to a thousand of its size is said in the next one, as English says «$1M», never «$1000K».
+  if (Math.round(scaled * 10) / 10 >= 1000 && index !== 0) {
+    index = index === -1 ? UK_COMPACT.length - 1 : index - 1
+    scaled = magnitude / UK_COMPACT[index]!.size
+  }
+  const word = index === -1 ? '' : ` ${UK_COMPACT[index]!.word}`
+  return `${value < 0 ? '−' : ''}$${ukCompact.format(scaled)}${word}`
+}
+
 /**
- * A USD amount for volumes and liquidity — compact ($27.9M · $27,9M: the web's
- * Spot keeps the K, M and B in both languages, the comma is Ukrainian's), a dash
- * when unknown.
+ * A USD amount for volumes and liquidity — compact: «$27.9M» in English,
+ * «$27,9 млн» in Ukrainian (the words «Про компанію» uses); a dash when unknown.
  */
 export function formatUsdCompact(value: number | null | undefined, locale: Locale): string {
   if (!isFinite_(value)) return DASH
-  const text = compact.format(value)
-  return `$${locale === 'uk' ? text.replace('.', ',') : text}`
+  if (locale === 'uk') return ukUsdCompact(value)
+  return `$${compact.format(value)}`
 }
 
 /** A signed percentage (+0.27%, −1.20% · +0,27%); a dash when unknown. */
@@ -144,6 +256,15 @@ export function formatPercent(value: number | null | undefined, locale: Locale):
 export function signOf(value: number | null | undefined): 'up' | 'down' | 'flat' {
   if (!isFinite_(value) || value === 0) return 'flat'
   return value > 0 ? 'up' : 'down'
+}
+
+/**
+ * Direction of a percentage as `formatPercent` writes it: a move that rounds to «0,00%» is neutral, never a red or
+ * green zero (ST-5 r4: BONK's −0.004% read as a red «0,00%»).
+ */
+export function percentSignOf(value: number | null | undefined): 'up' | 'down' | 'flat' {
+  if (!isFinite_(value)) return 'flat'
+  return Math.round(Math.abs(value) * 100) === 0 ? 'flat' : signOf(value)
 }
 
 /** Wall-clock time of an ISO timestamp (HH:MM, 24h); a dash when absent or unparsable. */
@@ -178,10 +299,21 @@ export function shortAddress(address: string | null | undefined, edge = 4): stri
 /** The number shape of each language: «1,234.5» · «1 234,5». */
 const NUMBER_TAG: Readonly<Record<Locale, string>> = { en: 'en-US', uk: 'uk-UA' }
 
-/** A token amount with up to `maxFractionDigits` decimals, trailing zeros trimmed; a dash when unknown. */
-export function formatAmount(value: number | null | undefined, maxFractionDigits: number, locale: Locale): string {
+/**
+ * A token amount with up to `maxFractionDigits` decimals, trailing zeros trimmed down to `minFractionDigits` (none by
+ * default; a column of sizes keeps them, so its decimals line up); a dash when unknown.
+ */
+export function formatAmount(
+  value: number | null | undefined,
+  maxFractionDigits: number,
+  locale: Locale,
+  minFractionDigits = 0,
+): string {
   if (!isFinite_(value)) return DASH
-  return new Intl.NumberFormat(NUMBER_TAG[locale], { maximumFractionDigits: maxFractionDigits }).format(value)
+  return new Intl.NumberFormat(NUMBER_TAG[locale], {
+    minimumFractionDigits: Math.min(minFractionDigits, maxFractionDigits),
+    maximumFractionDigits: maxFractionDigits,
+  }).format(value)
 }
 
 const monthShort: Readonly<Record<Locale, Intl.DateTimeFormat>> = {

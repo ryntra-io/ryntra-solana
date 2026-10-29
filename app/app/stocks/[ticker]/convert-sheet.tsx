@@ -1,13 +1,15 @@
 "use client";
 
-import { ArrowUpRight, CheckCircle, Warning, X, XCircle } from "@phosphor-icons/react";
+import { ArrowUpRight } from "@phosphor-icons/react";
+import { Button, TradeTicket, amountForShare, newDraft, ticketModel, type TicketDraft, type TicketReviewed } from "@ryntra/core/ui";
 import { ryntraFeeOfWhich } from "./ryntra-fee-line";
 import Link from "next/link";
+import { pagePath } from "@/lib/site/localized";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useId, useMemo, useRef, useState } from "react";
 
 import { approxUsd, buyCosts, dollars, formatUnits, unitsFromRaw } from "@/app/app/invest/company-model";
-import { solShort } from "@/app/app/invest/funding-model";
+import { FIRST_PURCHASE_LAMPORTS, PURCHASE_FEE_LAMPORTS, solShort } from "@/app/app/invest/funding-model";
 import { investWords, numberLocale, reserveLine } from "@/app/app/invest/invest-words";
 import { useWalletData } from "@/app/app/wallet-data";
 import type { WorkspaceLocale } from "@/app/shell/locale";
@@ -18,13 +20,15 @@ import { formatUsdPrice } from "@/app/solana/workspace/spot/spot-format";
 import { useSpotMarket } from "@/app/solana/workspace/spot/use-spot-data";
 import { plainAmount, SPOT_QUOTE_ASSETS, useSpotTicket, type SpotQuoteAsset } from "@/app/solana/workspace/spot/use-spot-ticket";
 import { explorerTxUrl } from "@/lib/solana/explorer";
-import { classifySpotFill } from "@/lib/solana/fill-outcome";
 import { WRAPPED_SOL_MINT } from "@/lib/solana/send-kinds";
 import { swapFailureCopy } from "@/lib/solana/swap-failure-copy";
 import { SPOT_SALE_SIDE } from "@/lib/spot/ticket-state";
 import { deadlineExact } from "@/lib/stocks/conversion-watch";
+import { NETWORK_LABEL, SOL_COIN, chainUnits, solGas, ticketBalances, ticketMarket, ticketPrices, unitsOf as ticketUnits, type TicketCoin } from "@/lib/ticket/solana-ticket";
 
 import company from "./company.module.css";
+import { STOCK_VENUE, stockTicketBase, stockTicketView } from "./stock-ticket";
+import { tradeFailureLine } from "./trade-failure-words";
 
 /**
  * The swap before the issuer's deadline, and the quiet sale — the IPO and
@@ -90,8 +94,6 @@ export type ConvertSheetProps = Readonly<{
   locale: WorkspaceLocale;
 }>;
 
-const SHARES = [100, 50, 25] as const;
-type Share = (typeof SHARES)[number];
 const USDC = SPOT_QUOTE_ASSETS[0];
 const RAW = /^\d+$/;
 
@@ -189,10 +191,46 @@ function ConvertFlow({
   const holdsTarget = holdings.status === "ready" && holdings.data.some((row) => row.mint === target.mint && RAW.test(row.amountRaw) && BigInt(row.amountRaw) > 0n);
   const cannotPayFee = connection !== null && solRow !== null && RAW.test(solRow.amountRaw) && solShort(BigInt(solRow.amountRaw), holdsTarget);
 
-  const [share, setShare] = useState<Share>(100);
-  const partRaw = heldRaw !== null && heldRaw > 0n ? (heldRaw * BigInt(share)) / 100n : null;
-  const amount = partRaw !== null && partRaw > 0n && baseDecimals !== null ? plainAmount(partRaw.toString(), baseDecimals) : "";
-  const giveUnits = partRaw !== null ? unitsFromRaw(partRaw.toString(), baseDecimals, multiplier) : null;
+  /* ------------------------------------------------------------ the ticket's market */
+  /* What is given counts in the units the wallet shows; what arrives — the listed token in its own, or dollars as USDC. */
+  const giveCoin: TicketCoin = useMemo(() => ({ mint, symbol, decimals: baseDecimals ?? 0, digits: 4, multiplier }), [mint, symbol, baseDecimals, multiplier]);
+  const getCoin: TicketCoin = useMemo(
+    () => (swap && into ? { mint: into.mint, symbol: into.symbol, decimals: target.decimals, digits: 4, multiplier: into.multiplier } : { mint: USDC.mint, symbol: "USDC", decimals: USDC.decimals, digits: 2 }),
+    [swap, into, target.decimals],
+  );
+  const [clock, setClock] = useState(() => Date.now());
+  useEffect(() => {
+    const timer = window.setInterval(() => setClock(Date.now()), 1_000);
+    return () => window.clearInterval(timer);
+  }, []);
+  const balances = !connection
+    ? null
+    : heldRaw === null
+      ? {}
+      : ticketBalances([
+          { coin: giveCoin, raw: heldRaw },
+          { coin: SOL_COIN, raw: solRow?.amountRaw ?? (holdings.status === "ready" && holdings.complete ? "0" : null) },
+        ]);
+  const gas = useMemo(() => solGas(holdsTarget ? PURCHASE_FEE_LAMPORTS : FIRST_PURCHASE_LAMPORTS), [holdsTarget]);
+  const ticketMarketOf = useMemo(() => ticketMarket({ id: `${mint}:${getCoin.mint}`, base: giveCoin, quote: getCoin, price: null }), [mint, giveCoin, getCoin]);
+
+  /* How much: all of it until the person says otherwise — the swap is the holder's one action before the deadline. */
+  const [amountText, setAmountText] = useState<string | null>(null);
+  const [amountUnit, setAmountUnit] = useState<"token" | "usd">("token");
+  const draft: TicketDraft = newDraft({ side: "sell", unit: amountUnit, amount: amountText ?? "" });
+  /* The token's dollar price, as the last quote said it: a sum typed in dollars keeps meaning the same amount while the
+     next quote is asked for — never «no price» because the sum itself changed. */
+  const [lastGiveUsd, setLastGiveUsd] = useState<number | null>(null);
+  const steadyPrices = useMemo(() => ticketPrices([{ coin: giveCoin, usd: lastGiveUsd }, { coin: getCoin, usd: swap ? (into?.exchangeUsd ?? null) : 1 }], clock, "Jupiter"), [giveCoin, getCoin, lastGiveUsd, swap, into, clock]);
+  const baseInput = { side: "sell" as const, market: ticketMarketOf, base: giveCoin, quote: getCoin, draft, balances, prices: steadyPrices, reference: null, gas, unavailable: null, now: clock };
+  const opening = ticketModel(stockTicketBase(baseInput), lang);
+  useEffect(() => {
+    if (amountText !== null || heldRaw === null || heldRaw <= 0n || baseDecimals === null || !opening.max) return;
+    setAmountText(amountForShare(opening, 100, "token", {}, lang));
+  }, [amountText, heldRaw, baseDecimals, opening, lang]);
+  const typedShown = ticketUnits(opening.paid);
+  const partRaw = typedShown === null || heldRaw === null || heldRaw <= 0n ? null : chainUnits(typedShown, giveCoin, heldRaw);
+  const amount = partRaw !== null && partRaw > 0n && partRaw <= (heldRaw ?? 0n) && baseDecimals !== null ? plainAmount(partRaw.toString(), baseDecimals) : "";
 
   /* ------------------------------------------------------- the one execution path */
   const ticket = useSpotTicket({
@@ -208,6 +246,8 @@ function ConvertFlow({
     onRefresh: refresh,
   });
   const { phase, quoted, prepared, settled, attempt } = ticket;
+  /* What Review agreed to, kept here: the hook lets the prepared order go before the answer settles. */
+  const [agreed, setAgreed] = useState<TicketReviewed | null>(null);
   const working = phase === "PREPARING" || phase === "SIGNING" || phase === "EXECUTING" || phase === "RECOVERING";
   useEffect(() => {
     onBusy(working);
@@ -235,8 +275,7 @@ function ConvertFlow({
           issuerFeeBasisPoints: issuerFeeBps,
         })
       : null;
-  const ryntraFeeLine = ryntraFeeOfWhich(prepared?.order ?? quoted?.order ?? null, word("ryntraFeeOfWhich"), numbers);
-  const issuerFee = estimate?.issuerFeeUsd != null && issuerFeeBps !== null && issuerFeeBps > 0 ? `${word("issuerFeeOfWhich")} ${new Intl.NumberFormat(numbers, { maximumFractionDigits: 2 }).format(issuerFeeBps / 100)}% ${approxUsd(estimate.issuerFeeUsd, numbers).replace(" ", " ")}` : null;
+  const ryntraFeeLine = ryntraFeeOfWhich(prepared?.order ?? quoted?.order ?? null, "", numbers);
 
   /* The rate against the company's price on the exchange: what one token brings, and how far below or above the listed share that is — the swap's price, shown honestly. */
   const perToken = outUnits !== null && inUnits !== null && inUnits > 0 ? outUnits / inUnits : null;
@@ -261,20 +300,65 @@ function ConvertFlow({
   })();
   const routeLine = order && order.route.length > 0 ? order.route.map((hop) => hop.label).join(" → ") : null;
 
-  const quoteFailure = ticket.quoteFailure && amount ? ticket.quoteFailureMessage : null;
+  const quoteFailure = ticket.quoteFailure && amount ? tradeFailureLine(ticket.quoteFailure, ticket.quoteFailureMessage, swap ? "swap" : "sell", lang) : null;
   const quoteStop = ticket.quoteFailure ? !swapFailureCopy(ticket.quoteFailure.code, text).retryable : false;
   const blocked = quoted?.verdict.verdict === "BLOCKED";
   const failure = (() => {
     const code = ticket.actionFailure?.code ?? null;
     if (code === "WALLET_REFUSED") return word("walletDeclined");
-    if (ticket.actionFailureMessage) return ticket.actionFailureMessage;
+    if (ticket.actionFailure) return tradeFailureLine(ticket.actionFailure, ticket.actionFailureMessage, swap ? "swap" : "sell", lang);
     return null;
   })();
 
   const topUpSol = useCallback(() => {
-    const back = encodeURIComponent(window.location.pathname);
+    const back = encodeURIComponent(pagePath(window.location.pathname));
     router.push(`/app/top-up?need=sol&from=${back}`);
   }, [router]);
+
+  /* The ticket's dollar sums: the token's price from the quote's own figure, the listed share's from the exchange. */
+  const giveUsd = inUsd !== null && inUnits !== null && inUnits > 0 ? inUsd / inUnits : null;
+  /* Learned from the live quote alone, while nothing is being reviewed — never from the order a Review stands on — and
+     held still while a sum is typed in dollars: a price that follows each new quote would resize the sum, ask again,
+     and close the Review it was asked for. */
+  const quotedOrder = quoted?.order ?? null;
+  const quotedInUsd = quotedOrder?.inUsdValue !== null && quotedOrder?.inUsdValue !== undefined ? Number(quotedOrder.inUsdValue) : null;
+  const quotedInUnits = quotedOrder ? unitsFromRaw(quotedOrder.inAmountRaw, baseDecimals, multiplier) : null;
+  const quotedGiveUsd = quotedInUsd !== null && quotedInUnits !== null && quotedInUnits > 0 ? quotedInUsd / quotedInUnits : null;
+  useEffect(() => {
+    if (phase !== "IDLE" || quotedGiveUsd === null || !Number.isFinite(quotedGiveUsd) || quotedGiveUsd <= 0) return;
+    if (amountUnit === "usd" && lastGiveUsd !== null) return;
+    setLastGiveUsd(quotedGiveUsd);
+  }, [phase, quotedGiveUsd, amountUnit, lastGiveUsd]);
+  const prices = ticketPrices([{ coin: giveCoin, usd: giveUsd ?? lastGiveUsd }, { coin: getCoin, usd: swap ? exchangeUsd : 1 }], clock, "Jupiter");
+  /* What arrives counts in the decimals the server read for the order, before the catalog's: a token the catalog has not
+     read yet is never drawn as a million of itself. */
+  const viewCoin: TicketCoin = swap && outDecimals !== null && outDecimals !== getCoin.decimals ? { ...getCoin, decimals: outDecimals } : getCoin;
+  const viewMarket = viewCoin === getCoin ? ticketMarketOf : ticketMarket({ id: `${mint}:${viewCoin.mint}`, base: giveCoin, quote: viewCoin, price: null });
+  const view = stockTicketView({
+    agreed,
+    ...baseInput,
+    market: viewMarket,
+    quote: viewCoin,
+    prices: amountUnit === "usd" ? steadyPrices : prices,
+    spot: { phase, quoted, quoting: ticket.quoting, prepared, preparedReadiness: ticket.preparedReadiness, bytesChanged: ticket.bytesChanged, reviewSecondsLeft: ticket.reviewSecondsLeft, settled, attempt },
+    quoteFailed: quoteFailure,
+    unavailable: blocked || quoteStop ? word(swap ? "swapUnavailable" : "saleUnavailable") : null,
+    holding: swap && outDecimals === null && targetMarket.value?.decimals === undefined,
+    time: new Intl.DateTimeFormat(numbers, { hour: "2-digit", minute: "2-digit" }).format(new Date(clock)),
+    lang,
+  });
+  useEffect(() => {
+    if (view.stage === "review" && view.reviewed) setAgreed(view.reviewed);
+    // Taken once per prepared order as Review shows it: `view.reviewed` is a new object every render.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [prepared, view.stage]);
+  /* Let go when a new order is asked for, a Review is put down or the sheet starts over: an answer that comes without a
+     Review of its own (another signature in flight) never reads an earlier Review's figures. */
+  useEffect(() => {
+    if (phase === "IDLE" || (phase === "PREPARING" && prepared === null)) setAgreed(null);
+  }, [phase, prepared]);
+  const outcome = view.outcome;
+  const inReview = view.stage === "review";
 
   const targetWord = swap && into ? `${into.company} (${into.symbol})` : "USDC";
   const title = swap ? (lang === "uk" ? `Обміняти ${symbol}` : `Swap ${symbol}`) : lang === "uk" ? `Продати ${symbol}` : `Sell ${symbol}`;
@@ -286,263 +370,247 @@ function ConvertFlow({
       <h2 id={titleId} className={company.sheetTitle}>
         {heading}
       </h2>
-      <button type="button" className={company.sheetClose} onClick={onClose} disabled={working} aria-label={word("close")}>
-        <X size={18} weight="bold" aria-hidden="true" />
-      </button>
+      <Button variant="ghost" icon="x" className={company.sheetClose} onClick={onClose} disabled={working} aria-label={word("close")} lang={lang} />
     </div>
   );
 
-  /* ------------------------------------------------------------ the receipt */
-  const outcome = phase === "SETTLED" && settled ? classifySpotFill(settled) : null;
-  if (outcome) {
-    const context = ticket.settledContext;
-    const gotRaw = settled?.observation?.actualOutputRaw ?? null;
-    const gaveRaw = settled?.observation?.actualInputRaw ?? null;
-    const got = gotRaw ? unitsFromRaw(gotRaw, swap ? (context?.quoteDecimals ?? outDecimals) : USDC.decimals, swap ? into?.multiplier ?? null : null) : null;
-    const gave = gaveRaw ? unitsFromRaw(gaveRaw, context?.baseDecimals ?? baseDecimals, multiplier) : null;
-    const tone = outcome.kind === "FILLED" ? (outcome.note === null ? "matched" : "caution") : outcome.kind === "NOT_FILLED" ? "risk" : outcome.kind === "NOTHING_HAPPENED" ? "quiet" : "caution";
-    const heading =
-      outcome.kind === "FILLED"
-        ? swap
-          ? `${word("swapped")} · ${got !== null ? `${formatUnits(got, numbers)} ` : ""}${targetWord}`
-          : `${word("sold")}${got !== null ? ` · ${dollars(got, numbers)}` : ""}`
-        : outcome.kind === "NOTHING_HAPPENED"
-          ? word("nothingSwapped")
-          : outcome.kind === "NOT_FILLED"
-            ? word("swapRejected")
-            : word("unknownTx");
-    return (
-      <div className={company.sheetBody} data-sheet="receipt" data-convert-receipt={mode}>
-        {head(name)}
-        <div className={company.receipt} data-tone={tone} role="status">
-          <span className={company.receiptMark} aria-hidden="true">
-            {tone === "matched" ? <CheckCircle size={44} weight="fill" /> : tone === "risk" ? <XCircle size={44} weight="fill" /> : <Warning size={44} weight="fill" />}
-          </span>
-          <p className={company.receiptTitle} translate="no">
-            {heading}
+  /* The receipt's title, as the sheet's head. */
+  const context = ticket.settledContext;
+  const gotRaw = settled?.observation?.actualOutputRaw ?? null;
+  const gaveRaw = settled?.observation?.actualInputRaw ?? null;
+  const got = gotRaw ? unitsFromRaw(gotRaw, swap ? (context?.quoteDecimals ?? outDecimals) : USDC.decimals, swap ? into?.multiplier ?? null : null) : null;
+  const gave = gaveRaw ? unitsFromRaw(gaveRaw, context?.baseDecimals ?? baseDecimals, multiplier) : null;
+  const heading = outcome
+    ? outcome.kind === "FILLED"
+      ? swap
+        ? `${word("swapped")} · ${got !== null ? `${formatUnits(got, numbers)} ` : ""}${targetWord}`
+        : `${word("sold")}${got !== null ? ` · ${dollars(got, numbers)}` : ""}`
+      : outcome.kind === "NOTHING_HAPPENED"
+        ? word(swap ? "nothingSwapped" : "nothingSold")
+        : outcome.kind === "NOT_FILLED"
+          ? word(swap ? "swapRejected" : "saleRejected")
+          : word(swap ? "swapUnknownTx" : "saleUnknownTx")
+    : null;
+
+  /* «Усі витрати» as before: counted here on the order's figures (the server counts a company bought or sold for USDC only), the issuer's and Ryntra's parts on their own lines. */
+  const count =
+    estimate && amount
+      ? {
+          costLines: [
+            ...(estimate.issuerFeeUsd != null && issuerFeeBps !== null && issuerFeeBps > 0 ? [{ label: word("issuerFeeOfWhich"), value: `${new Intl.NumberFormat(numbers, { maximumFractionDigits: 2 }).format(issuerFeeBps / 100)}% ${approxUsd(estimate.issuerFeeUsd, numbers)}` }] : []),
+            ...(ryntraFeeLine ? [{ label: word("ryntraFeeOfWhich"), value: ryntraFeeLine.trim() }] : []),
+          ],
+          costsTotal: approxUsd(estimate.totalUsd, numbers),
+        }
+      : {};
+  const none = connection !== null && heldRaw === 0n;
+  const sheetName = view.stage === "review" ? "review" : view.stage === "result" ? (outcome ? "receipt" : "recovery") : "compose";
+
+  return (
+    <div
+      className={company.sheetBody}
+      data-sheet={sheetName}
+      data-convert-compose={view.stage === "form" ? mode : undefined}
+      data-convert-review={inReview ? mode : undefined}
+      data-convert-receipt={outcome ? mode : undefined}
+    >
+      {head(heading ?? (inReview ? word("review") : view.stage === "result" ? name : title))}
+      {view.stage === "form" ? (
+        <p className={company.convertTo} translate="no">
+          <span>{symbol}</span>
+          <span aria-hidden="true">→</span>
+          {swap && into ? <MarketIcon mint={into.mint} icon={into.icon} symbol={into.company} size={20} /> : <MarketIcon mint={USDC.mint} icon={USDC.icon} symbol="USDC" size={20} />}
+          <span>{targetWord}</span>
+        </p>
+      ) : null}
+      {view.stage === "form" && none ? (
+        <>
+          <p className={company.sheetNote} data-empty="token">
+            {swap ? (lang === "uk" ? `У гаманці немає ${symbol} — обмінювати нічого.` : `There is no ${symbol} in this wallet — nothing to swap.`) : lang === "uk" ? `У гаманці немає ${symbol} — продавати нічого.` : `There is no ${symbol} in this wallet — nothing to sell.`}
           </p>
+          <div className={company.sheetActions}>
+            <Button variant="primary" block onClick={onClose} lang={lang}>
+              {word("done")}
+            </Button>
+          </div>
+        </>
+      ) : (
+        <TradeTicket
+          quietLegs
+          {...view.input}
+          className={company.ticket}
+          venue={STOCK_VENUE}
+          network={NETWORK_LABEL}
+          stage={view.stage}
+          reviewed={view.reviewed}
+          result={view.result}
+          signing={view.signing}
+          cancelWhileSigning={false}
+          {...(connection ? { signer: `${connection.address.slice(0, 4)}…${connection.address.slice(-4)}` } : {})}
+          {...count}
+          reviewRows={inReview && rateLine ? [{ label: word("rowRate"), value: gapLine ? `${rateLine} · ${gapLine}` : rateLine }] : undefined}
+          whatItIs={inReview ? word(swap ? "swapIsTrade" : "saleIsTrade") : undefined}
+          titleAs="h3"
+          lang={lang}
+          onDraftChange={(next) => {
+            if (next.unit !== amountUnit) setAmountUnit(next.unit);
+            setAmountText(next.amount);
+          }}
+          /* «Спробувати ще» only where another press can help: not on a refusal this deployment cannot pass, nor on a sum over the limit. */
+          onRetryQuote={quoteStop ? undefined : () => ticket.refreshQuote()}
+          onConnect={onConnect}
+          onReview={() => {
+            /* One press at a time: none while the order is prepared or signed; a Review let go for its age asks a fresh price. */
+            if (working) return;
+            if (ticket.lockedReview) void ticket.cancelReview(true);
+            else void ticket.review();
+          }}
+          {...(connection && view.stage === "form" && (phase === "PREPARING" || holdings.status !== "ready")
+            ? {
+                action:
+                  phase !== "PREPARING" && holdings.status === "error" ? (
+                    /* A wallet read that failed is read again on a press, never «Reading…» for good. */
+                    <>
+                      <p className={company.sheetError} role="status">
+                        {word("walletUnread")}
+                      </p>
+                      <Button variant="primary" block onClick={refresh} lang={lang} data-ticket-action="">
+                        {word("tryAgain")}
+                      </Button>
+                    </>
+                  ) : (
+                    <Button variant="primary" block disabled lang={lang} data-ticket-action="">
+                      {phase === "PREPARING" ? word("preparingReview") : word("reading")}
+                    </Button>
+                  ),
+              }
+            : {})}
+          onCancel={() => void ticket.cancelReview()}
+          onConfirm={() => void ticket.sign()}
+          onVerify={settled && outcome?.kind !== "NOTHING_HAPPENED" ? () => window.open(explorerTxUrl("mainnet", settled.signature), "_blank", "noopener,noreferrer") : undefined}
+          onAgain={() => ticket.reset()}
+        />
+      )}
+      {/* The step the held action names, said to a screen reader as it changes. */}
+      <p className={company.srOnly} role="status">
+        {view.stage === "form" && phase === "PREPARING" ? word("preparingReview") : ""}
+      </p>
+
+      {view.stage === "form" && !none ? (
+        <>
+          {ticket.lockedReview ? (
+            <Button variant="secondary" block onClick={() => void ticket.cancelReview(true)} lang={lang}>
+              {word("refreshPrice")}
+            </Button>
+          ) : null}
+          {cannotPayFee ? (
+            <>
+              <p className={company.sheetNote} data-empty="sol">
+                {word("needSol")}
+              </p>
+              <Button variant="secondary" block icon="wallet" onClick={topUpSol} lang={lang}>
+                {word("topUpSol")}
+              </Button>
+            </>
+          ) : null}
+          {failure ? <p className={company.sheetError}>{failure}</p> : null}
+        </>
+      ) : null}
+
+      {inReview ? (
+        <>
+          {/* The account the swap opens for the new token: its own line, never a cost — it stays in the wallet. */}
+          {estimate?.accountUsd ? <p className={company.sheetNote} data-reserve>{reserveLine(locale, approxUsd(estimate.accountUsd, numbers))}</p> : null}
+          <details className={company.risk} data-convert-details>
+            <summary>{word("details")}</summary>
+            <dl className={company.convertFacts}>
+              {routeLine ? (
+                <div>
+                  <dt>{word("swapRoute")}</dt>
+                  <dd translate="no">{routeLine}</dd>
+                </div>
+              ) : null}
+              <div>
+                <dt>{word("issuerDeadline")}</dt>
+                <dd translate="no">{deadlineExact(deadline, lang)}</dd>
+              </div>
+              {swap && into ? (
+                <div>
+                  <dt>{word("whatYouGet")}</dt>
+                  <dd>{into.truth}</dd>
+                </div>
+              ) : null}
+              <div>
+                <dt>{word("issuerNotice")}</dt>
+                <dd>
+                  <a href={noticeUrl} target="_blank" rel="noreferrer noopener">
+                    {noticeUrl.replace(/^https:\/\/(www\.)?/, "")} <ArrowUpRight size={12} aria-hidden="true" />
+                  </a>
+                  {mechanicsUrl ? (
+                    <a href={mechanicsUrl} target="_blank" rel="noreferrer noopener">
+                      {word("howSwapWorks")} <ArrowUpRight size={12} aria-hidden="true" />
+                    </a>
+                  ) : null}
+                </dd>
+              </div>
+            </dl>
+          </details>
+          {failure ? <p className={company.sheetError}>{failure}</p> : null}
+          {view.stale && !view.signing ? (
+            <Button variant="secondary" block onClick={() => void ticket.cancelReview(true)} lang={lang}>
+              {word("refreshPrice")}
+            </Button>
+          ) : null}
+        </>
+      ) : null}
+
+      {view.stage === "result" && outcome ? (
+        <>
           {outcome.kind === "FILLED" && gave !== null ? (
             <p className={company.receiptSub} translate="no">
               {`${word("receiptFor")} ${formatUnits(gave, numbers)} ${symbol}`}
             </p>
           ) : null}
           {outcome.kind === "FILLED" && outcome.note ? <p className={company.receiptNote}>{outcome.note === "BELOW_MINIMUM" ? word("belowMinimum") : word("notAsReviewed")}</p> : null}
-        </div>
-        <div className={company.sheetActions}>
-          {outcome.kind === "FILLED" ? (
-            <button type="button" className="rw-btn rw-btn--primary" onClick={onClose}>
-              {word("done")}
-            </button>
-          ) : (
-            <button type="button" className="rw-btn rw-btn--primary" onClick={() => ticket.reset()}>
-              {word("tryAgain")}
-            </button>
-          )}
-          <p className={company.sheetLinks}>
-            <Link href="/app/activity" prefetch={false}>
-              {word("history")}
-            </Link>
-            {settled && outcome.kind !== "NOTHING_HAPPENED" ? (
-              <a href={explorerTxUrl("mainnet", settled.signature)} target="_blank" rel="noreferrer noopener">
-                {word("transaction")} <ArrowUpRight size={12} aria-hidden="true" />
-              </a>
+          <div className={company.sheetActions}>
+            {outcome.kind === "FILLED" ? (
+              <Button variant="primary" block onClick={onClose} lang={lang}>
+                {word("done")}
+              </Button>
             ) : null}
-          </p>
-        </div>
-      </div>
-    );
-  }
-
-  if (phase === "RECOVERY" || phase === "RECOVERING" || attempt) {
-    return (
-      <div className={company.sheetBody} data-sheet="recovery">
-        {head(name)}
-        <p className={company.sheetNote} role="status">
-          {word("unknownTx")}
-        </p>
-        {failure ? <p className={company.sheetError}>{failure}</p> : null}
-        <div className={company.sheetActions}>
-          <button type="button" className="rw-btn rw-btn--primary" disabled={phase === "RECOVERING"} onClick={() => void ticket.recover()}>
-            {phase === "RECOVERING" ? word("checkingTx") : word("checkTx")}
-          </button>
-          <p className={company.sheetLinks}>
-            <Link href="/app/activity" prefetch={false}>
-              {word("history")}
-            </Link>
-          </p>
-        </div>
-      </div>
-    );
-  }
-
-  /* ------------------------------------------------------------ the Review */
-  const inReview = (phase === "REVIEW" || phase === "SIGNING" || phase === "EXECUTING") && prepared !== null;
-  if (inReview && prepared) {
-    const po = prepared.order;
-    const minOut = unitsFromRaw(po.minReceivedRaw, outDecimals, swap ? into?.multiplier ?? null : null);
-    const ready = ticket.preparedReadiness?.ready === true;
-    const seconds = ticket.reviewSecondsLeft;
-    return (
-      <div className={company.sheetBody} data-sheet="review" data-convert-review={mode}>
-        {head(word("review"))}
-        <dl className={company.review} aria-label={word("review")}>
-          <div>
-            <dt>{word("rowGive")}</dt>
-            <dd translate="no">
-              {inUnits === null ? "—" : `${formatUnits(inUnits, numbers)} ${symbol}`}
-              {inUsd !== null ? <span>{approxUsd(inUsd, numbers)}</span> : null}
-            </dd>
-          </div>
-          <div>
-            <dt>{word("rowGet")}</dt>
-            <dd translate="no">
-              {outUnits === null ? "—" : swap ? `≈ ${formatUnits(outUnits, numbers)} ${targetWord}` : `≈ ${dollars(outUnits, numbers)} USDC`}
-              {minOut !== null ? <span>{`${word("atLeast")} ${swap ? formatUnits(minOut, numbers) : dollars(minOut, numbers)}`}</span> : null}
-            </dd>
-          </div>
-          <div>
-            <dt>{word("rowCosts")}</dt>
-            <dd translate="no">
-              {estimate ? approxUsd(estimate.totalUsd, numbers) : "—"}
-              {issuerFee ? <span data-issuer-fee>{issuerFee}</span> : null}
-              {ryntraFeeLine ? <span data-ryntra-fee>{ryntraFeeLine}</span> : null}
-            </dd>
-            {/* The account the swap opens for the new token: its own line, never a cost — it stays in the wallet. */}
-            {estimate?.accountUsd ? <dd data-reserve>{reserveLine(locale, approxUsd(estimate.accountUsd, numbers))}</dd> : null}
-          </div>
-          <div>
-            <dt>{word("rowRate")}</dt>
-            <dd translate="no" data-convert-rate>
-              {rateLine ?? "—"}
-              {gapLine ? <span data-convert-gap={gapPct !== null && gapPct < 0 ? "below" : "above"}>{gapLine}</span> : null}
-            </dd>
-          </div>
-        </dl>
-        <details className={company.risk} data-convert-details>
-          <summary>{word("details")}</summary>
-          <dl className={company.convertFacts}>
-            {routeLine ? (
-              <div>
-                <dt>{word("swapRoute")}</dt>
-                <dd translate="no">{routeLine}</dd>
-              </div>
-            ) : null}
-            <div>
-              <dt>{word("issuerDeadline")}</dt>
-              <dd translate="no">{deadlineExact(deadline, lang)}</dd>
-            </div>
-            {swap && into ? (
-              <div>
-                <dt>{word("whatYouGet")}</dt>
-                <dd>{into.truth}</dd>
-              </div>
-            ) : null}
-            <div>
-              <dt>{word("issuerNotice")}</dt>
-              <dd>
-                <a href={noticeUrl} target="_blank" rel="noreferrer noopener">
-                  {noticeUrl.replace(/^https:\/\/(www\.)?/, "")} <ArrowUpRight size={12} aria-hidden="true" />
-                </a>
-                {mechanicsUrl ? (
-                  <a href={mechanicsUrl} target="_blank" rel="noreferrer noopener">
-                    {word("howSwapWorks")} <ArrowUpRight size={12} aria-hidden="true" />
-                  </a>
-                ) : null}
-              </dd>
-            </div>
-          </dl>
-          <p>{word("swapIsTrade")}</p>
-        </details>
-        {failure ? <p className={company.sheetError}>{failure}</p> : null}
-        <p className={company.sheetTimer} aria-live="off">
-          {ready && seconds !== null && seconds > 0 ? `${word("priceHolds")} ${seconds} ${word("seconds")}` : ready ? "" : word("priceExpired")}
-        </p>
-        <div className={company.sheetActions}>
-          {phase === "SIGNING" || phase === "EXECUTING" ? (
-            <button type="button" className="rw-btn rw-btn--primary" disabled>
-              {phase === "SIGNING" ? word("inWallet") : word("sending")}
-            </button>
-          ) : ready && !ticket.bytesChanged ? (
-            <button type="button" className="rw-btn rw-btn--primary" onClick={() => void ticket.sign()}>
-              {word("sign")}
-            </button>
-          ) : (
-            <button type="button" className="rw-btn rw-btn--primary" onClick={() => void ticket.cancelReview(true)}>
-              {word("refreshPrice")}
-            </button>
-          )}
-          <button type="button" className={company.quietButton} disabled={working} onClick={() => void ticket.cancelReview()}>
-            {word("cancel")}
-          </button>
-        </div>
-      </div>
-    );
-  }
-
-  /* ------------------------------------------------------------ compose */
-  const none = connection !== null && heldRaw === 0n;
-  const cta = (() => {
-    if (ticket.lockedReview) return { label: word("refreshPrice"), disabled: false, run: () => void ticket.cancelReview(true) };
-    if (!connection) return { label: word("connectWallet"), disabled: false, run: onConnect };
-    if (holdings.status !== "ready" || baseDecimals === null) return { label: word("reading"), disabled: true, run: undefined };
-    if (none) return { label: word("done"), disabled: false, run: onClose };
-    if (phase === "PREPARING") return { label: word("preparingReview"), disabled: true, run: undefined };
-    if (cannotPayFee) return { label: word("topUpSol"), disabled: false, run: topUpSol };
-    if (blocked || quoteStop) return { label: word("swapUnavailable"), disabled: true, run: undefined };
-    return { label: swap ? word("reviewSwap") : word("reviewSale"), disabled: !quoted, run: () => void ticket.review() };
-  })();
-  const estimateLine = (() => {
-    if (none || !amount) return " ";
-    if (outUnits !== null && estimate) return `≈ ${swap ? `${formatUnits(outUnits, numbers)} ${targetWord}` : `${dollars(outUnits, numbers)} USDC`} · ${word("allCosts")} ${approxUsd(estimate.totalUsd, numbers)}`;
-    return quoteFailure ?? word("pricing");
-  })();
-
-  return (
-    <div className={company.sheetBody} data-sheet="compose" data-convert-compose={mode}>
-      {head(title)}
-      <p className={company.convertTo} translate="no">
-        <span>{symbol}</span>
-        <span aria-hidden="true">→</span>
-        {swap && into ? <MarketIcon mint={into.mint} icon={into.icon} symbol={into.company} size={20} /> : <MarketIcon mint={USDC.mint} icon={USDC.icon} symbol="USDC" size={20} />}
-        <span>{targetWord}</span>
-      </p>
-      {none ? (
-        <p className={company.sheetNote} data-empty="token">
-          {lang === "uk" ? `У гаманці немає ${symbol} — обмінювати нічого.` : `There is no ${symbol} in this wallet — nothing to swap.`}
-        </p>
-      ) : (
-        <>
-          <div className={company.limit}>
-            <span className={company.limitLabel} id={`${titleId}-share`}>
-              {word("howMuch")}
-            </span>
-            <div className={company.limitChips} role="group" aria-labelledby={`${titleId}-share`}>
-              {SHARES.map((value) => (
-                <button key={value} type="button" className={company.chip} aria-pressed={share === value} disabled={working} onClick={() => setShare(value)}>
-                  {value === 100 ? word("shareAll") : value === 50 ? word("shareHalf") : word("shareQuarter")}
-                </button>
-              ))}
-            </div>
-          </div>
-          <p className={company.convertGive} translate="no">
-            {giveUnits !== null ? `${formatUnits(giveUnits, numbers)} ${symbol}` : <span className={company.lineBone} aria-hidden="true" />}
-          </p>
-          <p className={company.estimate} aria-live="polite">
-            {estimateLine}
-          </p>
-          {!cannotPayFee ? null : (
-            <p className={company.sheetNote} data-empty="sol">
-              {word("needSol")}
+            <p className={company.sheetLinks}>
+              <Link href="/app/activity" prefetch={false}>
+                {word("history")}
+              </Link>
+              {/* After a filled trade: the position as it now stands, among everything the wallet holds. */}
+              {outcome.kind === "FILLED" ? (
+                <Link href="/app/portfolio" prefetch={false}>
+                  {word("portfolio")}
+                </Link>
+              ) : null}
             </p>
-          )}
+          </div>
         </>
-      )}
-      {failure ? <p className={company.sheetError}>{failure}</p> : null}
-      <div className={company.sheetActions}>
-        <button type="button" className="rw-btn rw-btn--primary" disabled={cta.disabled} onClick={cta.run}>
-          {cta.label}
-        </button>
-      </div>
+      ) : null}
+
+      {view.stage === "result" && !outcome ? (
+        <>
+          <p className={company.sheetNote} role="status">
+            {word(swap ? "swapUnknownTx" : "saleUnknownTx")}
+          </p>
+          {failure ? <p className={company.sheetError}>{failure}</p> : null}
+          <div className={company.sheetActions}>
+            <Button variant="primary" block loading={phase === "RECOVERING"} disabled={phase === "RECOVERING"} onClick={() => void ticket.recover()} lang={lang}>
+              {phase === "RECOVERING" ? word("checkingTx") : word("checkTx")}
+            </Button>
+            <p className={company.sheetLinks}>
+              <Link href="/app/activity" prefetch={false}>
+                {word("history")}
+              </Link>
+            </p>
+          </div>
+        </>
+      ) : null}
     </div>
   );
 }

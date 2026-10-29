@@ -6,6 +6,7 @@ import Svg, { Circle, Path, Polygon } from 'react-native-svg'
 import { Card } from '@/components/card'
 import { Chip } from '@/components/chip'
 import { DoorRow } from '@/components/door-row'
+import { HelpDot } from '@/components/help-dot'
 import { Icon } from '@/components/icon'
 import { Screen } from '@/components/screen'
 import { Sheet } from '@/components/sheet'
@@ -28,7 +29,15 @@ import {
   shortKey,
 } from '@/features/launch/launch-format'
 import { ageOf, agoText, durationText, inAttention, markKey, presetName, riskKey } from '@/features/launch/launch-model'
-import { healthDoorLine, holdersFloor, marketKey, readsOnChange } from '@/features/launch/market-view'
+import {
+  creatorFreeLine,
+  healthDoorLine,
+  holdersFloor,
+  lockBoundBps,
+  lockedWhatLine,
+  marketKey,
+  readsOnChange,
+} from '@/features/launch/market-view'
 import {
   useLaunchCreator,
   useLaunchHealth,
@@ -54,6 +63,7 @@ import { openLink } from '@/lib/open-link'
 import { JournalCard } from './journal-parts'
 import { EnforceChip, HealthSheet, MarketStateCard, RulesCard, TechChip } from './market-parts'
 import { ExplorerLink, Row, ShareLink, TokenPicture } from './parts'
+import { KeyboardLiftScroll } from './keyboard-lift'
 import { TradePanel } from './trade-panel'
 
 /**
@@ -156,167 +166,172 @@ export function LaunchTokenScreen({ mint }: { mint: string }) {
           className="h-9 w-9 border border-line bg-surface"
         />
       }
-      refreshControl={
-        <RefreshControl
-          refreshing={pulling}
-          onRefresh={() => {
-            setPulling(true)
-            // The spinner waits for the token and its market; the slower reads arrive under it quietly.
-            void Promise.allSettled([token.refetch(), market.refetch()]).finally(() => setPulling(false))
-            // A query not enabled is never asked: its refetch would ignore `enabled` and send a token of «null».
-            if (markets && token.data) {
-              void health.refetch()
-              void card.refetch()
-            }
-            if (launchOpen.journal && token.data) void journal.refetch()
-          }}
-        />
-      }
+      scroll={false}
     >
-      <TokenHead
-        token={data}
-        word={word}
-        locale={locale}
-        hidePicture={hiding.hidden}
-        tech={health.data?.technicalValidation ?? card.data?.market.technicalValidation ?? false}
-      />
-      {market.data ? (
-        <MarketBody
+      {/* The page scrolls in its own body: the trade's fee and button kept above the keyboard while the amount is typed. */}
+      <KeyboardLiftScroll
+        refreshControl={
+          <RefreshControl
+            refreshing={pulling}
+            onRefresh={() => {
+              setPulling(true)
+              // The spinner waits for the token and its market; the slower reads arrive under it quietly.
+              void Promise.allSettled([token.refetch(), market.refetch()]).finally(() => setPulling(false))
+              // A query not enabled is never asked: its refetch would ignore `enabled` and send a token of «null».
+              if (markets && token.data) {
+                void health.refetch()
+                void card.refetch()
+              }
+              if (launchOpen.journal && token.data) void journal.refetch()
+            }}
+          />
+        }
+      >
+        <TokenHead
           token={data}
-          market={market.data}
           word={word}
           locale={locale}
-          stale={market.isError}
-          stateCard={
-            markets ? (
-              <MarketStateCard
-                market={market.data}
-                health={health.data ?? null}
-                card={card.data ?? null}
-                healthFailed={health.isError && !health.data}
-                healthStale={health.isError && Boolean(health.data)}
-                onRetry={() => void health.refetch()}
-                word={word}
-                locale={locale}
-              />
-            ) : undefined
-          }
-          healthDoor={
-            markets
-              ? {
-                  line: healthDoorLine(health.data ?? null, health.isError, word, locale, market.data.progress),
-                  onPress: () => (health.data ? setHealthOpen(true) : void health.refetch()),
-                }
-              : undefined
-          }
+          hidePicture={hiding.hidden}
+          tech={health.data?.technicalValidation ?? card.data?.market.technicalValidation ?? false}
         />
-      ) : (
-        <Card className="items-center gap-3 py-6">
-          {market.isError ? (
-            <>
-              <Txt variant="ui" tone="muted">
-                {word('marketUnread')}
-              </Txt>
-              <Pressable
-                accessibilityRole="button"
-                onPress={() => void market.refetch()}
-                hitSlop={8}
-                className="min-h-11 justify-center"
-              >
-                <Txt variant="ui" tone="brand">
-                  {word('readAgain')}
+        {market.data ? (
+          <MarketBody
+            token={data}
+            market={market.data}
+            word={word}
+            locale={locale}
+            stale={market.isError}
+            stateCard={
+              markets ? (
+                <MarketStateCard
+                  market={market.data}
+                  health={health.data ?? null}
+                  card={card.data ?? null}
+                  healthFailed={health.isError && !health.data}
+                  healthStale={health.isError && Boolean(health.data)}
+                  onRetry={() => void health.refetch()}
+                  word={word}
+                  locale={locale}
+                />
+              ) : undefined
+            }
+            healthDoor={
+              markets
+                ? {
+                    line: healthDoorLine(health.data ?? null, health.isError, word, locale, market.data.progress),
+                    onPress: () => (health.data ? setHealthOpen(true) : void health.refetch()),
+                  }
+                : undefined
+            }
+          />
+        ) : (
+          <Card className="items-center gap-3 py-6">
+            {market.isError ? (
+              <>
+                <Txt variant="ui" tone="muted">
+                  {word('marketUnread')}
                 </Txt>
-              </Pressable>
-            </>
-          ) : (
+                <Pressable
+                  accessibilityRole="button"
+                  onPress={() => void market.refetch()}
+                  hitSlop={8}
+                  className="min-h-11 justify-center"
+                >
+                  <Txt variant="ui" tone="brand">
+                    {word('readAgain')}
+                  </Txt>
+                </Pressable>
+              </>
+            ) : (
+              <Txt variant="ui" tone="muted">
+                {word('marketReading')}
+              </Txt>
+            )}
+          </Card>
+        )}
+        {health.data ? (
+          <RulesCard
+            health={health.data}
+            marks={(data.receipt?.marks ?? []).map((mark) => mark.code)}
+            word={word}
+            locale={locale}
+          />
+        ) : null}
+        <Marks token={data} market={market.data ?? null} word={word} />
+        {launchOpen.journal ? (
+          <JournalCard
+            log={journal.data ?? null}
+            failed={journal.isError && !journal.data}
+            stale={journal.isError && Boolean(journal.data)}
+            onRetry={() => void journal.refetch()}
+            health={health.data ?? null}
+            symbol={data.symbol}
+            word={word}
+            locale={locale}
+          />
+        ) : null}
+        {hiding.hidden ? (
+          <Card className="gap-1 pb-2">
             <Txt variant="ui" tone="muted">
-              {word('marketReading')}
+              {word('hiddenNote')}
             </Txt>
+            <Pressable
+              accessibilityRole="button"
+              onPress={hiding.toggle}
+              hitSlop={8}
+              className="min-h-11 justify-center self-start"
+            >
+              <Txt variant="ui" tone="brand">
+                {word('showAgain')}
+              </Txt>
+            </Pressable>
+          </Card>
+        ) : (
+          <About token={data} word={word} />
+        )}
+        <Card>
+          <ShareLink word={word} link={data.shareLink} symbol={data.symbol} />
+        </Card>
+        <ReceiptDoor token={data} word={word} locale={locale} />
+        <Card padded={false}>
+          <DoorRow
+            icon="flag-outline"
+            label={word('report')}
+            line={word('reportLine')}
+            external={word('reportBy')}
+            onPress={() =>
+              void Linking.openURL(
+                reportTokenMailto(
+                  {
+                    mint: data.token,
+                    symbol: data.symbol,
+                    name: data.name,
+                    page: `https://ryntra.io/app/launch/${data.token}`,
+                    reporter: account.address,
+                  },
+                  locale,
+                ),
+              ).catch(() => void Linking.openURL(SUPPORT_PAGE_URL).catch(() => undefined))
+            }
+            last={hiding.hidden}
+          />
+          {hiding.hidden ? null : (
+            <DoorRow icon="eye-off-outline" label={word('hide')} line={word('hideLine')} onPress={hiding.toggle} last />
           )}
         </Card>
-      )}
-      {health.data ? (
-        <RulesCard
-          health={health.data}
-          marks={(data.receipt?.marks ?? []).map((mark) => mark.code)}
-          word={word}
-          locale={locale}
-        />
-      ) : null}
-      <Marks token={data} word={word} />
-      {launchOpen.journal ? (
-        <JournalCard
-          log={journal.data ?? null}
-          failed={journal.isError && !journal.data}
-          stale={journal.isError && Boolean(journal.data)}
-          onRetry={() => void journal.refetch()}
-          health={health.data ?? null}
-          symbol={data.symbol}
-          word={word}
-          locale={locale}
-        />
-      ) : null}
-      {hiding.hidden ? (
-        <Card className="gap-1 pb-2">
-          <Txt variant="ui" tone="muted">
-            {word('hiddenNote')}
-          </Txt>
-          <Pressable
-            accessibilityRole="button"
-            onPress={hiding.toggle}
-            hitSlop={8}
-            className="min-h-11 justify-center self-start"
-          >
-            <Txt variant="ui" tone="brand">
-              {word('showAgain')}
-            </Txt>
-          </Pressable>
-        </Card>
-      ) : (
-        <About token={data} word={word} />
-      )}
-      <Card>
-        <ShareLink word={word} link={data.shareLink} symbol={data.symbol} />
-      </Card>
-      <ReceiptDoor token={data} word={word} locale={locale} />
-      <Card padded={false}>
-        <DoorRow
-          icon="flag-outline"
-          label={word('report')}
-          line={word('reportLine')}
-          external={word('reportBy')}
-          onPress={() =>
-            void Linking.openURL(
-              reportTokenMailto(
-                {
-                  mint: data.token,
-                  symbol: data.symbol,
-                  name: data.name,
-                  page: `https://ryntra.io/app/launch/${data.token}`,
-                  reporter: account.address,
-                },
-                locale,
-              ),
-            ).catch(() => void Linking.openURL(SUPPORT_PAGE_URL).catch(() => undefined))
-          }
-          last={hiding.hidden}
-        />
-        {hiding.hidden ? null : (
-          <DoorRow icon="eye-off-outline" label={word('hide')} line={word('hideLine')} onPress={hiding.toggle} last />
-        )}
-      </Card>
-      {health.data ? (
-        <HealthSheet
-          visible={healthOpen}
-          onClose={() => setHealthOpen(false)}
-          health={health.data}
-          card={card.data ?? null}
-          progress={market.data?.progress ?? null}
-          stale={health.isError}
-          word={word}
-          locale={locale}
-        />
-      ) : null}
+        {health.data ? (
+          <HealthSheet
+            visible={healthOpen}
+            onClose={() => setHealthOpen(false)}
+            health={health.data}
+            card={card.data ?? null}
+            progress={market.data?.progress ?? null}
+            stale={health.isError}
+            word={word}
+            locale={locale}
+          />
+        ) : null}
+      </KeyboardLiftScroll>
     </Screen>
   )
 }
@@ -414,8 +429,21 @@ export function MarketBody({
         <View className="flex-row flex-wrap">
           <Stat
             label={word('price')}
-            value={market.price.usd !== null ? `$${price.text}` : `${price.text} ${market.pair.symbol}`}
-            spoken={market.price.usd !== null ? `$${price.plain}` : `${price.plain} ${market.pair.symbol}`}
+            // No price read is a bare dash — never «$—».
+            value={
+              price.text === '—'
+                ? '—'
+                : market.price.usd !== null
+                  ? `$${price.text}`
+                  : `${price.text} ${market.pair.symbol}`
+            }
+            spoken={
+              price.plain === '—'
+                ? '—'
+                : market.price.usd !== null
+                  ? `$${price.plain}`
+                  : `${price.plain} ${market.pair.symbol}`
+            }
           />
           <Stat
             label={market.venue === 'curve' ? word('liquidityCurve') : word('liquidity')}
@@ -612,7 +640,7 @@ export function MarketBody({
 
 function Stat({ label, value, spoken }: { label: string; value: string; spoken?: string }) {
   return (
-    // A label may take two lines («Топ-10 від пропозиції»); the figures of a row stay on one line at its foot.
+    // A label may take two lines («Топ-10 · частка емісії»); the figures of a row stay on one line at its foot.
     <View
       className="w-1/3 justify-between gap-0.5 py-1.5 pr-2"
       accessible
@@ -710,7 +738,10 @@ function RiskList({
           n: fact.code === 'HISTORY_PARTIAL' ? (values.trades ?? 0) : (values.count ?? 0),
           age: durationText(word, Math.max(0, values.seconds ?? nowSeconds)),
         })
-        const why = `${word(`riskWhy_${fact.code}` as Parameters<LaunchWord>[0])}${fact.code === 'HISTORY_PARTIAL' && market.creator.tradesComplete ? ` ${word('creatorReadWhole')}` : ''}`
+        const why = word(`riskWhy_${fact.code}` as Parameters<LaunchWord>[0])
+        // A history read in part is one short line: what it may change, and that the creator's own trades were read
+        // whole, stand behind its «?» — not a wall under it.
+        const partial = fact.code === 'HISTORY_PARTIAL'
         return (
           <View key={fact.code} className="flex-row items-start gap-2.5">
             <Icon
@@ -720,10 +751,21 @@ function RiskList({
               style={{ marginTop: 1 }}
             />
             <View className="flex-1 gap-0.5">
-              <Txt variant="ui">{text}</Txt>
-              <Txt variant="labelSm" tone="faint" style={{ lineHeight: 16 }}>
-                {why}
-              </Txt>
+              {partial ? (
+                <View className="flex-row items-start gap-1">
+                  <Txt variant="ui" className="flex-1">
+                    {text}
+                  </Txt>
+                  <HelpDot title={text} body={market.creator.tradesComplete ? [why, word('creatorReadWhole')] : why} />
+                </View>
+              ) : (
+                <>
+                  <Txt variant="ui">{text}</Txt>
+                  <Txt variant="labelSm" tone="faint" style={{ lineHeight: 16 }}>
+                    {why}
+                  </Txt>
+                </>
+              )}
               {fact.source ? (
                 <ExplorerLink
                   label={fact.source.kind === 'tx' ? word('sourceTx') : word('sourceAccount')}
@@ -845,30 +887,31 @@ function Holders({ market, word, locale }: { market: LaunchMarketResponse; word:
   const bundleFloorOnly = groups.bundle !== null && groups.bundle.atLeast && groups.bundle.wallets === 0
   return (
     <View className="gap-2 px-4 pb-2">
-      <View className="flex-row flex-wrap">
-        <Stat label={word('label_creator')} value={formatBps(groups.creatorBps, locale)} />
-        <Stat
-          label={groups.snipers ? word('groupSnipers', { n: groups.snipers.wallets }) : word('groupSnipersName')}
-          value={groups.snipers ? formatBps(groups.snipers.shareBps, locale) : word('groupUnread')}
-        />
-        <Stat
-          label={
-            bundleUnread || bundleFloorOnly
-              ? word('label_bundle')
-              : word(groups.bundle!.atLeast ? 'groupBundleAtLeast' : 'groupBundle', { n: groups.bundle!.wallets })
-          }
-          value={
-            bundleUnread
-              ? word('groupUnread')
-              : bundleFloorOnly
-                ? word('groupPartial')
-                : `${groups.bundle!.atLeast ? '≥ ' : ''}${formatBps(groups.bundle!.shareBps, locale)}`
-          }
-        />
+      {/* Who a sniper or a bundle is, and whom the shares count — one tap deep beside the groups. */}
+      <View className="flex-row items-start">
+        <View className="flex-1 flex-row flex-wrap">
+          <Stat label={word('label_creator')} value={formatBps(groups.creatorBps, locale)} />
+          <Stat
+            label={groups.snipers ? word('groupSnipers', { n: groups.snipers.wallets }) : word('groupSnipersName')}
+            value={groups.snipers ? formatBps(groups.snipers.shareBps, locale) : word('groupUnread')}
+          />
+          <Stat
+            label={
+              bundleUnread || bundleFloorOnly
+                ? word('label_bundle')
+                : word(groups.bundle!.atLeast ? 'groupBundleAtLeast' : 'groupBundle', { n: groups.bundle!.wallets })
+            }
+            value={
+              bundleUnread
+                ? word('groupUnread')
+                : bundleFloorOnly
+                  ? word('groupPartial')
+                  : `${groups.bundle!.atLeast ? '≥ ' : ''}${formatBps(groups.bundle!.shareBps, locale)}`
+            }
+          />
+        </View>
+        <HelpDot title={word('tabHolders')} body={[word('labelLegend'), word('holdersPeople')]} />
       </View>
-      <Txt variant="labelSm" tone="faint" style={{ lineHeight: 16 }}>
-        {`${word('labelLegend')} ${word('holdersPeople')}`}
-      </Txt>
       {people.map((row, index) => (
         <HolderRow
           key={row.owner}
@@ -1022,13 +1065,35 @@ function CreatorLaunches({
   )
 }
 
-/** «Чесний лаунч»: each mark with the account where anyone can see it; the creator's lock first. */
-export function Marks({ token, word }: { token: LaunchTokenResponse; word: LaunchWord }) {
+/**
+ * «Чесний лаунч»: each mark with the account where anyone can see it; the creator's lock first — what it holds, and,
+ * from the market's read, when the creator holds more than it, that this part is not locked.
+ */
+export function Marks({
+  token,
+  market = null,
+  word,
+}: {
+  token: LaunchTokenResponse
+  market?: LaunchMarketResponse | null
+  word: LaunchWord
+}) {
   const now = useNow(60_000)
   const locale = useLocale()
   const receipt = token.receipt
   const marks = receipt?.marks ?? []
   const lockMark = marks.find((mark) => mark.code === 'CREATOR_BUY_LOCKED') ?? null
+  const bound = lockBoundBps(receipt)
+  const free = lockMark
+    ? creatorFreeLine(
+        {
+          creatorBps: market ? market.holders.groups.creatorBps : null,
+          bound,
+          creatorBuys: market ? market.chart.markers.filter((marker) => marker.kind === 'creator-buy').length : 0,
+        },
+        word,
+      )
+    : null
   const minutes = receipt ? Math.floor((now - Date.parse(receipt.observedAt)) / 60_000) : 0
   return (
     <Card className="gap-2.5">
@@ -1053,16 +1118,27 @@ export function Marks({ token, word }: { token: LaunchTokenResponse; word: Launc
             <MarkRow
               icon="lock-closed"
               text={word('mark_CREATOR_BUY_LOCKED')}
-              sub={
+              sub={[
+                lockedWhatLine(bound, word, locale),
                 receipt.creatorLock
                   ? Date.parse(receipt.creatorLock.cliffAt) > Date.parse(receipt.observedAt)
                     ? word('lockedUntil', { date: formatDate(receipt.creatorLock.cliffAt, locale) })
                     : word('lockedVesting', { date: formatDate(receipt.creatorLock.endsAt, locale) })
-                  : null
-              }
+                  : null,
+              ]
+                .filter(Boolean)
+                .join('\n')}
               url={explorerUrl(token.network, 'account', lockMark.account)}
               word={word}
             />
+          ) : null}
+          {free ? (
+            <View className="flex-row items-start gap-2.5">
+              <Icon name="warning" size={18} color="warningInk" />
+              <Txt variant="ui" tone="warning" className="flex-1">
+                {free}
+              </Txt>
+            </View>
           ) : null}
           {marks
             .filter((mark) => mark.code !== 'CREATOR_BUY_LOCKED')

@@ -206,7 +206,7 @@ test('an uncounted figure is a dash; the issuer’s fee, the reserve and the cau
   assert.equal(rows[0].sub, null)
   assert.equal(rows[1].value, '—')
   assert.equal(rows[2].fee, 'з них комісія емітента 1% ≈\u00a0$0,10')
-  assert.match(rows[2].sub, /у SOL разово/)
+  assert.match(rows[2].sub, /у SOL лишаються в гаманці/)
   assert.equal(rows[3].sub, 'Продати може не вийти.')
   assert.equal(rows[3].caution, true)
 })

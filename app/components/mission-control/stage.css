@@ -1,0 +1,101 @@
+/* The page's own words follow the scene's source: live words while it draws the chain, DEMO while the simulator runs. */
+[data-scene]:not([data-source="demo"]) [data-when="demo"],
+[data-scene]:not([data-source="live"]) [data-when="live"] {
+  display: none;
+}
+
+/* The live read's state, in the scene's own words: only while it is stale or unavailable, and never over the demo. */
+.mc-read-state {
+  display: none;
+  position: absolute;
+  z-index: 30;
+  left: 50%;
+  bottom: max(12px, env(safe-area-inset-bottom, 0px));
+  transform: translateX(-50%);
+  margin: 0;
+  padding: 8px 14px;
+  border-radius: 999px;
+  border: 1px solid rgba(245, 181, 68, 0.45);
+  background: rgba(8, 13, 20, 0.86);
+  color: #ffd58a;
+  font: 500 11px/1.3 var(--font-geist-mono, "Geist Mono"), ui-monospace, monospace;
+  letter-spacing: 0.06em;
+  text-align: center;
+  max-width: calc(100% - 32px);
+  pointer-events: none;
+}
+
+.mc-read-short {
+  display: none;
+}
+
+/* A phone: one short line in the gap under the cards, never over them. */
+@media (max-width: 759px) {
+  .mc-read-state {
+    white-space: nowrap;
+    font-size: 10.5px;
+    padding: 7px 12px;
+  }
+
+  .mc-read-long {
+    display: none;
+  }
+
+  .mc-read-short {
+    display: inline;
+  }
+}
+
+[data-scene][data-source="live"][data-live="stale"] .mc-read-state[data-read="stale"],
+[data-scene][data-source="live"][data-live="unavailable"] .mc-read-state[data-read="unavailable"] {
+  display: block;
+}
+
+/* The scene pages' heading for readers and the index, out of the picture: the scene itself says it in 3D. */
+.mc-sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* The home page's scene ends in the night it continues into below (`mission-sections`): over the 3D, under the HUD. */
+.mc-scene-fade {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 160px;
+  z-index: 1;
+  pointer-events: none;
+  background: linear-gradient(180deg, rgba(4, 7, 11, 0), #04070b 92%);
+}
+
+/* The keyboard's way past the scene: out of sight until it has focus. */
+.mc-skip {
+  position: absolute;
+  left: -9999px;
+  top: auto;
+}
+
+.mc-skip:focus-visible {
+  /* Shown just above the eyebrow, out of the flow: the hero does not move and no word is covered. */
+  left: 0;
+  z-index: 2;
+  transform: translateY(calc(-100% - 6px));
+  display: inline-block;
+  padding: 10px 14px;
+  border-radius: 10px;
+  /* Solid: nothing of the eyebrow under it shows through. */
+  background: #080d14;
+  color: #f5f7fa;
+  font: 600 13px/1 var(--font-geist, Geist), system-ui, sans-serif;
+  outline: 2px solid #f5f7fa;
+  outline-offset: 3px;
+}
+

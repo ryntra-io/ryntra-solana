@@ -5,7 +5,7 @@
  * before a wallet is opened (the same rule the web keeps), the words for
  * every refusal the routes can give, and the one attempt record that survives
  * the app closing. Every word and figure comes out in the language asked for
- * — English unless Ukrainian is asked. Nothing here talks to the network
+ * (M22) — English unless Ukrainian is asked. Nothing here talks to the network
  * or holds a key.
  */
 
@@ -14,6 +14,7 @@ import { getBase58Decoder, getTransactionDecoder } from '@solana/kit'
 import {
   SOL_MINT,
   USDC_MINT,
+  USDT_MINT,
   type ExecutionPlanBinding,
   type RuleBinding,
   type SwapOrderCore,
@@ -36,6 +37,14 @@ export type TradeAsset = Readonly<{
   icon: string | null
   /** The chain's decimals; null until the market row or a quote says. */
   decimals: number | null
+  /** Jupiter's check, as the list the token was picked from said it; absent when nothing said it — never assumed. */
+  verified?: boolean
+  /** Jupiter flagged the token, as the list said it. */
+  suspicious?: boolean
+  /** The company whose stock this token borrows its ticker or name from while it is not that stock (ST-5 r4). */
+  lookalikeOf?: string | null
+  /** The market's dollar price as the list said it — the dollar line's last resort when the estimate gives none. */
+  price?: number | null
 }>
 
 export const USDC_ASSET: TradeAsset = {
@@ -130,6 +139,44 @@ export function formatUnits(raw: string, decimals: number, maxFraction: number, 
   return fraction.length > 0 ? `${grouped}${marks.fraction}${fraction}` : grouped
 }
 
+/** Significant digits an estimate's token figure keeps: «≈ 2,07906 USDC» never «≈ 2,079061». */
+const SHORT_SIGNIFICANT = 6
+
+/**
+ * Raw units as an estimate says them, short (ST-5): a dollar token to the cent, any other token to six significant
+ * digits — cut, never rounded up, as `formatUnits` cuts. Display only: the amount itself stays whole.
+ */
+export function shortUnits(raw: string, decimals: number, mint: string, locale: Locale): string {
+  if (!/^\d+$/.test(raw)) return '—'
+  if (mint === USDC_MINT || mint === USDT_MINT) {
+    const cents = formatUnits(raw, decimals, 2, locale)
+    // A crumb under a cent is «< 0,01», never a «0» that says nothing comes (ST-5): a known tiny figure is not zero.
+    return cents === '0' && /[1-9]/.test(raw) ? `< 0${UNIT_MARKS[locale].fraction}01` : cents
+  }
+  const padded = raw.padStart(decimals + 1, '0')
+  const whole = padded.slice(0, padded.length - decimals).replace(/^0+(?=\d)/, '')
+  if (whole !== '0') return formatUnits(raw, decimals, Math.max(0, SHORT_SIGNIFICANT - whole.length), locale)
+  const leadingZeros = padded.slice(padded.length - decimals).match(/^0*/)?.[0].length ?? 0
+  return formatUnits(raw, decimals, Math.min(decimals, leadingZeros + SHORT_SIGNIFICANT), locale)
+}
+
+/** An estimate's figure with its «≈» — a figure already bounded («< 0,01») keeps its own qualifier, never «≈ < 0,01». */
+/**
+ * A typed field as a figure is read (ST-5 r8): its whole part grouped in the language's shape — «500000» reads
+ * «500,000» · «500 000», as the estimate beside it — the fraction and the mark as typed. Display only: the field
+ * itself stays ungrouped.
+ */
+export function groupedField(text: string, locale: Locale): string {
+  const match = /^(\d+)([.,]\d*)?$/.exec(text)
+  if (!match) return text
+  const whole = match[1]!.replace(/\B(?=(\d{3})+(?!\d))/g, UNIT_MARKS[locale].group)
+  return `${whole}${match[2] ?? ''}`
+}
+
+export function approxFigure(figure: string): string {
+  return figure.startsWith('<') ? figure : `≈ ${figure}`
+}
+
 /** Raw units as an amount field holds them — no grouping, the language's own fraction mark («1234.5» · «1234,5»). */
 /** The quick shares of what the wallet can spend, as on a company's purchase: 25 · 50 · 75 · 100 %. */
 export const PAY_SHARES_PCT = [25, 50, 75, 100] as const
@@ -140,8 +187,127 @@ export function shareOfRaw(raw: string, pct: number): string | null {
   return ((BigInt(raw) * BigInt(Math.round(pct))) / 100n).toString()
 }
 
+/**
+ * What a swap paid in SOL keeps back beyond the server's own fee reserve (already out of `spendableRaw`): the rent of
+ * two token accounts — the wrapped SOL the swap opens and closes, and the bought token's own when it is new — the
+ * chain's 2 039 280 lamports each. So «100 %» of SOL is a sum the wallet can sign, never one that fails on rent.
+ */
+export const SOL_SWAP_RESERVE_LAMPORTS = 4_078_560n
+
+/** What a ticket can spend of the asset it pays with, raw: a token's whole spendable amount; SOL less the swap's reserve. */
+export function ticketSpendableRaw(raw: string, mint: string): string {
+  if (!/^\d+$/.test(raw)) return '0'
+  if (mint !== SOL_MINT) return raw
+  const left = BigInt(raw) - SOL_SWAP_RESERVE_LAMPORTS
+  return left > 0n ? left.toString() : '0'
+}
+
+/** A dollar of USDC or USDT, raw (6 decimals) — the least a purchase is (`MIN_BUY_USD`). */
+const ONE_DOLLAR_RAW = 1_000_000n
+
+/** How far under a dollar a sum paid in SOL may read before it is held: a price is a reading, not a promise. */
+export const DOLLAR_FLOOR_TOLERANCE = 0.005
+
+/**
+ * Whether a purchase spends under a dollar. Paid in dollars
+ * it is the sum itself, raw — never a venue's price of the dollar, so exactly $1 always passes. Paid in SOL it is the
+ * sum at SOL's own price, with a hair of tolerance; without a price nothing is claimed (false). Raw amounts only.
+ */
+export function underOneDollar(
+  input: Readonly<{ payMint: string; payDecimals: number; amountRaw: string | null; solUsd: number | null }>,
+): boolean {
+  const { payMint, payDecimals, amountRaw, solUsd } = input
+  if (amountRaw === null || !/^\d+$/.test(amountRaw) || BigInt(amountRaw) === 0n) return false
+  if (payMint === USDC_MINT || payMint === USDT_MINT) {
+    const dollar = payDecimals === 6 ? ONE_DOLLAR_RAW : 10n ** BigInt(Math.max(0, payDecimals))
+    return BigInt(amountRaw) < dollar
+  }
+  if (payMint === SOL_MINT) {
+    if (solUsd === null || !Number.isFinite(solUsd) || solUsd <= 0) return false
+    const usd = (Number(amountRaw) / 1e9) * solUsd
+    return usd < 1 - DOLLAR_FLOOR_TOLERANCE
+  }
+  return false
+}
+
+/**
+ * SOL's price for the $1 floor (`underOneDollar`): the market's own figure; while the market has not said it, the one an
+ * order paying SOL implies — its dollar value over its SOL — so a purchase in SOL is not let under the floor for want of
+ * the market's price. Null when neither says.
+ */
+export function floorSolUsd(
+  marketSolUsd: number | null,
+  order: Readonly<{ inputMint: string; inAmountRaw: string; inUsdValue: string | null }> | null,
+): number | null {
+  if (marketSolUsd !== null && Number.isFinite(marketSolUsd) && marketSolUsd > 0) return marketSolUsd
+  if (!order || order.inputMint !== SOL_MINT || order.inUsdValue === null || !/^\d+$/.test(order.inAmountRaw)) {
+    return null
+  }
+  const sol = Number(order.inAmountRaw) / 1e9
+  const usd = Number(order.inUsdValue)
+  return sol > 0 && Number.isFinite(usd) && usd > 0 ? usd / sol : null
+}
+
+/**
+ * What a purchase is paid with before the person picks: USDC when the wallet can spend a dollar of it; else SOL when it can spend some; else USDC — so a wallet that holds
+ * only SOL is offered its own shares, never «Недостатньо USDC». Never the asset being bought. `spendable` is the
+ * wallet's read, raw, by mint; null before the read answers, and then the first quote asset stands.
+ */
+export function payingAssetFor(
+  quoteAssets: readonly TradeAsset[],
+  asset: TradeAsset | null,
+  spendable: ((mint: string) => string | null) | null,
+): TradeAsset {
+  const offered = quoteAssets.filter((candidate) => candidate.mint !== asset?.mint)
+  const first = offered[0] ?? quoteAssets[0]!
+  if (!spendable) return first
+  const usdc = offered.find((candidate) => candidate.mint === USDC_MINT)
+  const sol = offered.find((candidate) => candidate.mint === SOL_MINT)
+  const usdcRaw = usdc ? spendable(usdc.mint) : null
+  if (usdc && usdcRaw !== null && /^\d+$/.test(usdcRaw) && BigInt(usdcRaw) >= ONE_DOLLAR_RAW) return usdc
+  const solRaw = sol ? spendable(sol.mint) : null
+  if (sol && solRaw !== null && BigInt(ticketSpendableRaw(solRaw, sol.mint)) > 0n) return sol
+  return first
+}
+
 export function unitsForField(raw: string, decimals: number, locale: Locale): string {
   return formatUnits(raw, decimals, decimals, locale).split(UNIT_MARKS[locale].group).join('')
+}
+
+/**
+ * The network's fee of a quote in SOL, as the server reads it (signature and priority), for «Обмін»'s line beside the
+ * rate (NEW-LOOK §3) and the Review's row; null when the quote carries none. A Solana fee is never zero: a total of 0
+ * is a fee the quote does not know, so it is null — a dash where it is said, never «0 SOL» (ST-5). A total under six
+ * places is said to the lamport, never cut to «0». The figure is the server's — nothing is estimated here.
+ */
+export function quoteNetworkFee(
+  order: Readonly<{ signatureFeeLamports: string; priorityFeeLamports: string }>,
+  locale: Locale = 'en',
+): string | null {
+  if (!/^\d+$/.test(order.signatureFeeLamports) || !/^\d+$/.test(order.priorityFeeLamports)) return null
+  const total = lamportsTotal([order.signatureFeeLamports, order.priorityFeeLamports])
+  if (BigInt(total) === 0n) return null
+  return `${formatUnits(total, 9, BigInt(total) < 1000n ? 9 : 6, locale)} SOL`
+}
+
+type FeeLamports = Readonly<{ signatureFeeLamports: string; priorityFeeLamports: string }>
+
+/**
+ * «Комісія мережі» on the Swap ticket (ST-5 r8): the quote's own fee; where a quote of the same pair states none, the
+ * last fee a quote of that pair stated — the network's fee does not grow with the sum — only when the order says the
+ * person pays it (`gasless: false`, the contract's field). A gasless order, or one that does not say, keeps the dash.
+ * `last` is the pair's last stated fee. The figure is still the server's — nothing is estimated here.
+ */
+export function swapNetworkFee(
+  order: FeeLamports & Readonly<{ inputMint: string; outputMint: string }>,
+  last: (FeeLamports & Readonly<{ inputMint: string; outputMint: string }>) | null,
+  locale: Locale = 'en',
+): string | null {
+  const own = quoteNetworkFee(order, locale)
+  if (own !== null) return own
+  const personPays = 'gasless' in order && order.gasless === false
+  const samePair = last !== null && last.inputMint === order.inputMint && last.outputMint === order.outputMint
+  return personPays && samePair ? quoteNetworkFee(last, locale) : null
 }
 
 function lamportsTotal(lamports: readonly string[]): string {
@@ -228,8 +394,14 @@ export const TRADE_FAILURE_KEYS = [
   'notAccepted',
   'failed',
   'walletTimeout',
+  'ledgerBlind',
+  'txVersion',
   'signatureUnrecorded',
   'closedUnderWallet',
+  'bytesRebuilt',
+  'priceRenewed',
+  'deviceConfirm',
+  'walletCannotSign',
   'reviewInvalidated',
   'proofNotSigned',
   'simulationNotClear',
@@ -293,11 +465,16 @@ export function assessReview(
 
 /* ---- the Review as rows ---- */
 
+/** Which of the Review's lines a row is — what the new look's short «Перевірка» picks its four lines by. */
+export type ReviewKey =
+  'receive' | 'minimum' | 'price' | 'impact' | 'slippage' | 'networkFee' | 'reserve' | 'serviceFee' | 'jupiterFee'
+
 export type ReviewLine = Readonly<{
   label: string
   value: string
   tone?: 'fg' | 'muted' | 'success' | 'danger' | 'warning'
   emphasis?: boolean
+  key?: ReviewKey
 }>
 
 export type ReviewView = Readonly<{
@@ -383,7 +560,8 @@ export function serviceFeeText(fee: SwapOrderCore['ryntraFee'], locale: Locale):
 /** Jupiter's total already includes Ryntra's share — a referral or, on a `/build` order (1.24.0), the platform fee; what remains is the venue's own. */
 export function additionalJupiterFeeBps(total: number, fee: SwapOrderCore['ryntraFee']): number {
   if (!Number.isFinite(total) || total < 0) return 0
-  const included = fee?.mechanism === 'JUPITER_REFERRAL' || fee?.mechanism === 'JUPITER_PLATFORM_FEE' ? fee.basisPoints : 0
+  const included =
+    fee?.mechanism === 'JUPITER_REFERRAL' || fee?.mechanism === 'JUPITER_PLATFORM_FEE' ? fee.basisPoints : 0
   return Math.max(0, total - included)
 }
 
@@ -413,12 +591,14 @@ export function reviewView(
   const { order } = input
   const rows: ReviewLine[] = []
   rows.push({
+    key: 'receive',
     label: input.exact ? words.rows.receive : words.rows.receiveEstimate,
     value: `${units(order.outAmountRaw, receiveDecimals)} ${input.receive.symbol}`,
   })
   // The minimum is the chain's guarantee and exists only on the exact order; an estimate has none to promise.
   if (input.exact) {
     rows.push({
+      key: 'minimum',
       label: words.rows.minimum,
       value: `${units(order.minReceivedRaw, receiveDecimals)} ${input.receive.symbol}`,
       emphasis: true,
@@ -426,35 +606,45 @@ export function reviewView(
   }
   const inAmount = rawToNumber(order.inAmountRaw, payDecimals)
   const outAmount = rawToNumber(order.outAmountRaw, receiveDecimals)
-  if (inAmount > 0 && outAmount > 0) {
+  // A rate from a crumb is the crumb's rounding, not the market's (ST-5 r7: 1 raw unit of cbBTC read «1 SOL ≈ 0,001», 21 % off): none is said.
+  if (inAmount > 0 && outAmount > 0 && rateIsPrecise(order.inAmountRaw, order.outAmountRaw)) {
     // The market's price in the quote asset whichever way the order runs: a Buy, and a Swap paid in USDC, price what is received.
     const priceReceived = input.mode === 'buy' || (input.mode === 'swap' && input.pay.mint === USDC_MINT)
     const price = priceReceived
-      ? `1 ${input.receive.symbol} ≈ ${formatPriceNumber(inAmount / outAmount, locale)} ${input.pay.symbol}`
-      : `1 ${input.pay.symbol} ≈ ${formatPriceNumber(outAmount / inAmount, locale)} ${input.receive.symbol}`
-    rows.push({ label: words.rows.price, value: price })
+      ? `1 ${input.receive.symbol} ≈ ${formatRate(inAmount / outAmount, locale)} ${input.pay.symbol}`
+      : `1 ${input.pay.symbol} ≈ ${formatRate(outAmount / inAmount, locale)} ${input.receive.symbol}`
+    rows.push({ key: 'price', label: words.rows.price, value: price })
   }
   const impact = priceImpactPercent(order.priceImpactPct)
   if (impact !== null) {
     rows.push({
+      key: 'impact',
       label: words.rows.impact,
       value: `${fixed(impact, 2, locale)}%`,
       tone: impact >= 3 ? 'danger' : impact >= 1 ? 'warning' : undefined,
     })
   }
-  if (input.exact) rows.push({ label: words.rows.slippage, value: `${fixed(order.slippageBps / 100, 2, locale)}%` })
+  if (input.exact)
+    rows.push({ key: 'slippage', label: words.rows.slippage, value: `${fixed(order.slippageBps / 100, 2, locale)}%` })
   if (input.exact) {
     rows.push({
+      key: 'networkFee',
       label: words.rows.networkFee,
-      value: `${formatUnits(lamportsTotal([order.signatureFeeLamports, order.priorityFeeLamports]), 9, 6, locale)} SOL`,
+      // Unknown is a dash, never «0 SOL» (`quoteNetworkFee`).
+      value: quoteNetworkFee(order, locale) ?? '—',
     })
     if (/^\d+$/.test(order.rentFeeLamports) && BigInt(order.rentFeeLamports) > 0n) {
-      rows.push({ label: words.rows.reserve, value: `${formatUnits(order.rentFeeLamports, 9, 6, locale)} SOL` })
+      rows.push({
+        key: 'reserve',
+        label: words.rows.reserve,
+        value: `${formatUnits(order.rentFeeLamports, 9, 6, locale)} SOL`,
+      })
     }
   }
-  rows.push({ label: words.rows.serviceFee, value: serviceFeeText(order.ryntraFee ?? null, locale) })
+  rows.push({ key: 'serviceFee', label: words.rows.serviceFee, value: serviceFeeText(order.ryntraFee ?? null, locale) })
   const additional = additionalJupiterFeeBps(order.totalFeeBasisPoints, order.ryntraFee ?? null)
-  if (additional > 0) rows.push({ label: words.rows.jupiterFee, value: `${fixed(additional / 100, 2, locale)}%` })
+  if (additional > 0)
+    rows.push({ key: 'jupiterFee', label: words.rows.jupiterFee, value: `${fixed(additional / 100, 2, locale)}%` })
   const warnings = reviewWarnings(input.findings ?? [], order).map((key) => words.warnings[key])
   return {
     pay: `${units(order.inAmountRaw, payDecimals)} ${input.pay.symbol}`,
@@ -464,12 +654,128 @@ export function reviewView(
   }
 }
 
-const PRICE_TAG: Readonly<Record<Locale, string>> = { en: 'en-US', uk: 'uk-UA' }
+/**
+ * The new look's short «Перевірка» (NEW-LOOK §3): Спишеться · Отримаєш (with the chain's minimum) · Усі витрати (each
+ * cost the server stated, Ryntra's own among them — never a total worked out here) · Що це; the price, the impact,
+ * the slippage and any other line stay a tap deeper, as they are. Every figure is the Review's own.
+ */
+export type CheckSummary = Readonly<{
+  spend: string
+  receive: string
+  minimum: string | null
+  /** Each cost on its own line, as the server stated it: Ryntra's fee, the network's, the account's reserve. */
+  costs: readonly Readonly<{
+    key: 'serviceFee' | 'networkFee' | 'reserve' | 'jupiterFee'
+    label: string
+    value: string
+  }>[]
+  /** What stays a tap deeper. */
+  details: readonly ReviewLine[]
+}>
 
-function formatPriceNumber(value: number, locale: Locale): string {
-  if (!Number.isFinite(value)) return '—'
-  const places = value >= 1000 ? 2 : value >= 1 ? 4 : 6
-  return value.toLocaleString(PRICE_TAG[locale], { minimumFractionDigits: 0, maximumFractionDigits: places })
+const COST_KEYS = ['serviceFee', 'networkFee', 'reserve', 'jupiterFee'] as const
+
+export function checkSummary(view: ReviewView): CheckSummary {
+  const byKey = (key: ReviewKey) => view.rows.find((row) => row.key === key) ?? null
+  const costs = COST_KEYS.flatMap((key) => {
+    const row = byKey(key)
+    return row ? [{ key, label: row.label, value: row.value }] : []
+  })
+  const shown = new Set<ReviewKey | undefined>(['receive', 'minimum', ...COST_KEYS])
+  return {
+    spend: view.pay,
+    receive: byKey('receive')?.value ?? view.receive,
+    minimum: byKey('minimum')?.value ?? null,
+    costs,
+    details: view.rows.filter((row) => !shown.has(row.key)),
+  }
+}
+
+/**
+ * The least raw units either side of an order has for its rate to be said: from 1 000 the rounding of a unit moves the
+ * rate by at most 0,1 % — under it a satoshi's rounding is the rate (ST-5 r7).
+ */
+export const RATE_MIN_RAW = 1000n
+
+/** Whether an order's two raw amounts are large enough for their ratio to be the market's rate, not a rounding. */
+export function rateIsPrecise(inAmountRaw: string, outAmountRaw: string): boolean {
+  if (!/^\d+$/.test(inAmountRaw) || !/^\d+$/.test(outAmountRaw)) return false
+  return BigInt(inAmountRaw) >= RATE_MIN_RAW && BigInt(outAmountRaw) >= RATE_MIN_RAW
+}
+
+/** Significant digits a rate keeps, in both languages alike (ST-5 r7): «105,25», «0,00127», never 4 places in one and 1 in the other. */
+const RATE_SIGNIFICANT = 6
+
+/**
+ * A rate as the person reads it: six significant digits (a whole number from 100 000 keeps its whole part), trailing
+ * zeros gone, grouped and marked as the language writes — worked out here, not by the engine's `Intl`, so both languages
+ * say the same digits. A dash when not a positive number.
+ */
+export function formatRate(value: number, locale: Locale): string {
+  if (!Number.isFinite(value) || value <= 0) return '—'
+  const magnitude = Math.floor(Math.log10(value))
+  const places = Math.min(20, Math.max(0, RATE_SIGNIFICANT - 1 - magnitude))
+  const [whole = '0', fraction = ''] = value.toFixed(places).split('.')
+  const marks = UNIT_MARKS[locale]
+  const kept = fraction.replace(/0+$/, '')
+  const grouped = whole.replace(/\B(?=(\d{3})+(?!\d))/g, marks.group)
+  return kept.length > 0 ? `${grouped}${marks.fraction}${kept}` : grouped
+}
+
+/** What a known amount of a token is worth at its market price, in dollars; null when the amount, the decimals or a positive price is not known. */
+export function usdAtPrice(
+  raw: string | null,
+  decimals: number | null,
+  price: number | null | undefined,
+): number | null {
+  if (raw === null || !/^\d+$/.test(raw) || decimals === null) return null
+  if (typeof price !== 'number' || !Number.isFinite(price) || price <= 0) return null
+  const amount = rawToNumber(raw, decimals)
+  return Number.isFinite(amount) && amount > 0 ? amount * price : null
+}
+
+/** Above this, a swap's two dollar figures name the price lost between them (ST-5 r9) — display only, nothing decided on it. */
+export const PRICE_LOSS_SHOWN_PCT = 1
+
+/**
+ * What a swap loses on the price, per cent of what is given — the dollars given against the dollars received, both
+ * known; null when either is unknown or the loss is within `PRICE_LOSS_SHOWN_PCT` (a gain is no loss).
+ */
+export function priceLossPct(inUsd: number | null | undefined, outUsd: number | null | undefined): number | null {
+  if (typeof inUsd !== 'number' || !Number.isFinite(inUsd) || inUsd <= 0) return null
+  if (typeof outUsd !== 'number' || !Number.isFinite(outUsd) || outUsd < 0) return null
+  const loss = (1 - outUsd / inUsd) * 100
+  return loss > PRICE_LOSS_SHOWN_PCT ? loss : null
+}
+
+/** What a leg of a swap says of its token beside it: Jupiter's check, its flag, a stock's look-alike (ST-5 r7). */
+export type LegMarks = Readonly<{ unverified: boolean; flagged: boolean; lookalikeOf: string | null }>
+
+/**
+ * A leg's marks, from what the list it was picked from said and from its market row read since: a token either calls
+ * unverified or flagged is marked; nothing either said is never a mark. Null for no token.
+ */
+export function legMarks(
+  asset: TradeAsset | null,
+  row: Readonly<{ verified: boolean; suspicious: boolean }> | null,
+): LegMarks | null {
+  if (!asset) return null
+  return {
+    unverified: asset.verified === false || row?.verified === false,
+    flagged: asset.suspicious === true || row?.suspicious === true,
+    lookalikeOf: asset.lookalikeOf ?? null,
+  }
+}
+
+/** The one warning a swap says over its legs, the strongest first: a stock's look-alike, then a flag, then no check. */
+export function legWarning(
+  marks: readonly (LegMarks | null)[],
+): Readonly<{ kind: 'lookalike'; company: string } | { kind: 'flagged' } | { kind: 'unverified' }> | null {
+  const company = marks.find((mark) => mark?.lookalikeOf)?.lookalikeOf
+  if (company) return { kind: 'lookalike', company }
+  if (marks.some((mark) => mark?.flagged)) return { kind: 'flagged' }
+  if (marks.some((mark) => mark?.unverified)) return { kind: 'unverified' }
+  return null
 }
 
 /* ---- what went wrong, in the product's words (the web's map, kept in step) ---- */
@@ -497,15 +803,29 @@ const RETRYABLE: ReadonlySet<TradeFailureKey> = new Set<TradeFailureKey>([
   'checkingPrevious',
   'failed',
   'walletTimeout',
+  'ledgerBlind',
   'signatureUnrecorded',
   'closedUnderWallet',
+  'bytesRebuilt',
+  'priceRenewed',
+  'deviceConfirm',
 ])
 
 /** A route's, the wallet's or Trade's own refusal code — which words say it (the web's map, kept in step). */
 export function tradeFailureKey(code: string): TradeFailureKey {
+  // A Ledger behind the wallet (M45): «Blind signing» off, or bytes a Ledger cannot sign yet.
+  if (/^LEDGER_BLIND_SIGNING$/.test(code)) return 'ledgerBlind'
+  if (/^WALLET_CANNOT_SIGN$/.test(code)) return 'walletCannotSign'
+  // AG-2: the Review built again after the bytes aged out under a wallet; twice in a row, the plain «within 20 s».
+  if (/^BYTES_REBUILT$/.test(code)) return 'bytesRebuilt'
+  // AG-2b: the Review renewed its bytes at the press and a figure came out worse — the person looks again.
+  if (/^REVIEW_RENEWED$/.test(code)) return 'priceRenewed'
+  if (/^BYTES_AGED$/.test(code)) return 'deviceConfirm'
+  if (/^TX_VERSION$/.test(code)) return 'txVersion'
+  if (/^WALLET_TIMEOUT$/.test(code)) return 'walletTimeout'
   if (/SWAP_PAUSED/.test(code)) return 'paused'
   if (/^ASSET_NOT_OFFERED$/.test(code)) return 'notOffered'
-  /* The server answers a native client by its bearer only on the routes opened to it. */
+  /* The server answers a native client by its bearer only once line A opens these routes to it (request 13). */
   if (/^FORBIDDEN_ORIGIN$/.test(code)) return 'forbiddenOrigin'
   if (
     /PROOF_NOT_SIGNED|ISSUER_KEY_MISSING|STORE_NOT_DURABLE|PROVIDER_KEY_MISSING|NO_INDEPENDENT_RPC|PRODUCTION_KEY_REQUIRED|DURABLE_MULTI_WRITER/.test(
@@ -553,6 +873,11 @@ export function tradeFailureCopy(code: string, locale: Locale = 'en'): TradeFail
   return failureCopyOf(tradeFailureKey(code), locale)
 }
 
+/** AG-2: «built again» is a note over a fresh Review, not a refusal — said in the warning tone. */
+export function failureTone(key: string): 'danger' | 'warning' {
+  return key === 'bytesRebuilt' || key === 'priceRenewed' ? 'warning' : 'danger'
+}
+
 /** The words of one refusal by its key. */
 export function failureCopyOf(key: TradeFailureKey, locale: Locale = 'en'): TradeFailureCopy {
   return { key, message: TRADE_COPY[locale].failures[key], retryable: RETRYABLE.has(key) }
@@ -573,6 +898,18 @@ export type TradeContext = Readonly<{
   outAmountRaw: string
   minReceivedRaw: string
 }>
+
+/**
+ * Whether a Review the app kept belongs to the ticket on screen now (M44.3): the same kind of order and both of its
+ * legs — what is paid and what is received — exactly the ticket's. Anything else would show one order under another
+ * order's names, so it is never taken back here.
+ */
+export function reviewBelongsHere(
+  context: Pick<TradeContext, 'mode' | 'pay' | 'receive'>,
+  here: Readonly<{ mode: TradeMode; pay: string | null; receive: string | null }>,
+): boolean {
+  return context.mode === here.mode && context.pay.mint === here.pay && context.receive.mint === here.receive
+}
 
 export type TradeAttempt = Readonly<{
   schema: 'ryntra.mobile.trade-attempt'

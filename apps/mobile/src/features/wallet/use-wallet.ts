@@ -1,9 +1,20 @@
 import { getBase64Decoder, getBase64Encoder, getTransactionDecoder, getTransactionEncoder } from '@solana/kit'
-import { useMobileWallet } from '@wallet-ui/react-native-kit'
-import { useCallback, useEffect, useRef, useState } from 'react'
+import {
+  MobileWalletProviderContext,
+  transact,
+  useAuthorization,
+  useMobileWallet,
+  type KitMobileWallet,
+} from '@wallet-ui/react-native-kit'
+import { useCallback, useContext, useEffect, useRef, useState } from 'react'
 import { Linking } from 'react-native'
 
+import { startKeepClock } from '@/features/session/keep-store'
 import { walletDeclined, walletErrorKind } from '@/features/session/session-client'
+
+import { createLiveToken } from './live-token'
+import { inWallet } from './wallet-away'
+import { forgetSignsV1, rememberSignsV1, signsV1Of } from './wallet-versions'
 
 /** The association intent every Mobile Wallet Adapter wallet answers; the app's manifest may query it. */
 const WALLET_INTENT = 'solana-wallet://v1/associate/local'
@@ -49,6 +60,41 @@ export type WalletAction = 'connect' | 'disconnect' | 'switch'
 /** Between the revoke's wallet session and the fresh authorization's — the wallet needs the gap. */
 const SWITCH_PAUSE_MS = 900
 
+/** One for the app: every screen's wallet requests share the token they hold. */
+const liveToken = createLiveToken()
+
+/** The token the phone holds this moment — never the one a callback closed over renders ago. */
+type HeldToken = () => string | undefined
+
+/**
+ * A session's wallet whose `authorize` carries the token the phone holds now — whatever token the kit's callback
+ * closed over — and keeps to a live one (`live-token.ts`); every other method as it is. Holding none (never
+ * connected, forgotten, switched), the request goes without. The kit's own «ask without the token» would get the held
+ * token back from here; it never runs only because every refusal leaves `live-token.ts` untyped.
+ */
+function withLiveToken(wallet: KitMobileWallet, heldToken: HeldToken): KitMobileWallet {
+  return new Proxy(wallet, {
+    get(target, property, receiver) {
+      if (property !== 'authorize') return Reflect.get(target, property, receiver)
+      const authorize = target.authorize.bind(target) as (params: { auth_token?: string }) => Promise<unknown>
+      return (params: { auth_token?: string }) => {
+        const { auth_token: _closed, ...rest } = params
+        const held = heldToken()
+        return liveToken.authorize(authorize, held ? { ...rest, auth_token: held } : rest)
+      }
+    },
+  })
+}
+
+/** One wallet session — opened, authorized with the held token or afresh, used and closed — counted while it is out. */
+function inSession<T>(heldToken: HeldToken, work: (wallet: KitMobileWallet) => Promise<T>): Promise<T> {
+  // The kit types the callback's own promise as the session's result; the session resolves with what it resolves to.
+  return inWallet(() => transact((wallet) => work(withLiveToken(wallet, heldToken))) as unknown as Promise<T>)
+}
+
+/** A fresh authorization may come back with another account; nothing is signed for it in place of the one asked. */
+const OTHER_ACCOUNT = 'The wallet answered with another account — nothing was signed.'
+
 /**
  * The wallet is the account. This hook is the app's one view of it: the
  * connected address, connect, disconnect and switch through Mobile Wallet
@@ -62,6 +108,21 @@ const SWITCH_PAUSE_MS = 900
  */
 export function useWallet() {
   const wallet = useMobileWallet()
+  // The kit's own requests skip the live token, so the app opens its sessions itself and authorizes through the kit.
+  const provider = useContext(MobileWalletProviderContext)
+  const { authorizeSession, authorizeSessionWithSignIn } = useAuthorization(provider)
+  const { store } = provider
+  const heldToken = useCallback(() => store.$authToken.get(), [store])
+  const address = wallet.account ? String(wallet.account.address) : null
+  /** Authorized in this session as the account the request was made for, or nothing is signed. */
+  const authorizeAs = useCallback(
+    async (session: KitMobileWallet, expected: string | null) => {
+      const account = await authorizeSession(session)
+      if (expected !== null && String(account.address) !== expected) throw new Error(OTHER_ACCOUNT)
+      return account
+    },
+    [authorizeSession],
+  )
   const [busy, setBusy] = useState<WalletAction | null>(null)
   const [failure, setFailure] = useState<WalletFailure | null>(null)
 
@@ -79,14 +140,39 @@ export function useWallet() {
     }
   }, [])
 
+  /**
+   * The chosen time starts with the connection — set before the account
+   * arrives, so the old end never meets it; a connect cancelled or failed in
+   * the wallet puts the time before it back.
+   */
+  const connectWithClock = useCallback(async () => {
+    const undo = startKeepClock()
+    try {
+      return await inSession(heldToken, (session) => authorizeSession(session))
+    } catch (error) {
+      undo()
+      throw error
+    }
+  }, [authorizeSession, heldToken])
+
   const connect = useCallback(
     () =>
       run('connect', async () => {
         if (!(await walletInstalled())) throw new NoWalletError()
-        await wallet.connect()
+        await connectWithClock()
       }),
-    [run, wallet],
+    [run, connectWithClock],
   )
+
+  /**
+   * Connect as `connect` does, for a caller that answers someone else — the city's page (CITY-6c): the account the
+   * wallet chose comes back, and a cancel or a failure is thrown as the wallet said it, not kept as the hook's line.
+   */
+  const connectAccount = useCallback(async (): Promise<Readonly<{ address: string; label: string | null }>> => {
+    if (!(await walletInstalled())) throw new NoWalletError()
+    const account = await connectWithClock()
+    return { address: String(account.address), label: account.label ?? null }
+  }, [connectWithClock])
 
   /**
    * Revoke the authorization in the wallet itself, so its list of connected
@@ -96,13 +182,17 @@ export function useWallet() {
    */
   const revokeAndForget = useCallback(async () => {
     try {
-      await wallet.connectAnd(async (api) => {
-        // `transact` hands the whole wallet; the adapter types the callback's parameter narrowly.
-        await wallet.deauthorizeSession(api as unknown as Parameters<typeof wallet.deauthorizeSession>[0])
-      })
+      await inWallet(() =>
+        wallet.connectAnd(async (api) => {
+          // `transact` hands the whole wallet; the adapter types the callback's parameter narrowly.
+          await wallet.deauthorizeSession(api as unknown as Parameters<typeof wallet.deauthorizeSession>[0])
+        }),
+      )
     } catch {
       // See above.
     } finally {
+      liveToken.reset()
+      forgetSignsV1()
       await wallet.disconnect()
     }
   }, [wallet])
@@ -110,11 +200,23 @@ export function useWallet() {
   const disconnect = useCallback(() => run('disconnect', revokeAndForget), [run, revokeAndForget])
 
   /**
+   * Forget the authorization on this phone without opening the wallet — the
+   * end of the time the person chose (ST-2) happens on its own, so no wallet
+   * sheet is raised for it; the wallet's own list of apps keeps Ryntra until
+   * the person removes it there or connects again.
+   */
+  const forget = useCallback(() => {
+    liveToken.reset()
+    forgetSignsV1()
+    return wallet.disconnect()
+  }, [wallet])
+
+  /**
    * Let the person pick another wallet or account in the wallet's own sheet:
    * the current token is revoked and forgotten first, and the fresh
-   * authorization is asked for on the next render — when the adapter's
-   * `connect` no longer holds the old token in its closure — so the wallet
-   * has to ask, never re-authorizing the same account silently.
+   * authorization is asked for once the phone holds no token — every
+   * session reads the token held at that moment — so the wallet has to ask,
+   * never re-authorizing the same account silently.
    */
   const switching = useRef(false)
   const switchWallet = useCallback(
@@ -134,10 +236,14 @@ export function useWallet() {
   const signTransaction = useCallback(
     async (unsignedWireBase64: string): Promise<string> => {
       const unsigned = getTransactionDecoder().decode(getBase64Encoder().encode(unsignedWireBase64))
-      const signed = await wallet.signTransactions(unsigned)
+      const [signed] = await inSession(heldToken, async (session) => {
+        await authorizeAs(session, address)
+        return session.signTransactions({ transactions: [unsigned] })
+      })
+      if (!signed) throw new Error('The wallet did not complete the request.')
       return getBase64Decoder().decode(getTransactionEncoder().encode(signed))
     },
-    [wallet],
+    [authorizeAs, address, heldToken],
   )
   /**
    * Several exact transactions signed in one wallet prompt — a launch with its
@@ -146,10 +252,45 @@ export function useWallet() {
   const signTransactions = useCallback(
     async (unsignedWireBase64: readonly string[]): Promise<string[]> => {
       const unsigned = unsignedWireBase64.map((wire) => getTransactionDecoder().decode(getBase64Encoder().encode(wire)))
-      const signed = await wallet.signTransactions(unsigned)
+      const signed = await inSession(heldToken, async (session) => {
+        await authorizeAs(session, address)
+        return session.signTransactions({ transactions: unsigned })
+      })
       return signed.map((transaction) => getBase64Decoder().decode(getTransactionEncoder().encode(transaction)))
     },
-    [wallet],
+    [authorizeAs, address, heldToken],
+  )
+
+  /**
+   * Whether this wallet signs v1 transactions, asked of the wallet itself in a
+   * short session of its own, authorized as the connected account first — so
+   * the answer is that wallet's, not another one the phone routed to — and
+   * kept. Nothing is signed.
+   */
+  const readSignsV1 = useCallback(async (): Promise<boolean> => {
+    const capabilities = await inSession(heldToken, async (session) => {
+      await authorizeAs(session, address)
+      return session.getCapabilities()
+    })
+    const signsV1 = signsV1Of(capabilities)
+    rememberSignsV1(signsV1)
+    return signsV1
+  }, [authorizeAs, address, heldToken])
+
+  const signIn = useCallback(
+    (payload: Parameters<typeof authorizeSessionWithSignIn>[1]) =>
+      inSession(heldToken, (session) => authorizeSessionWithSignIn(session, payload)),
+    [authorizeSessionWithSignIn, heldToken],
+  )
+  const signMessage = useCallback(
+    (message: Uint8Array): Promise<Uint8Array> =>
+      inSession(heldToken, async (session) => {
+        const account = await authorizeAs(session, address)
+        const [signed] = await session.signMessages({ addresses: [account.addressBase64], payloads: [message] })
+        if (!signed) throw new Error('The wallet did not complete the request.')
+        return signed
+      }),
+    [authorizeAs, address, heldToken],
   )
 
   useEffect(() => {
@@ -159,14 +300,14 @@ export function useWallet() {
     const timer = setTimeout(() => {
       void run('switch', async () => {
         if (!(await walletInstalled())) throw new NoWalletError()
-        await wallet.connect()
+        await connectWithClock()
       })
     }, SWITCH_PAUSE_MS)
     return () => clearTimeout(timer)
-  }, [wallet, run])
+  }, [wallet, run, connectWithClock])
 
   return {
-    address: wallet.account ? String(wallet.account.address) : null,
+    address,
     label: wallet.account?.label ?? null,
     accounts: wallet.accounts?.map((account) => String(account.address)) ?? [],
     /** Which action is running, or null. */
@@ -174,14 +315,19 @@ export function useWallet() {
     failure,
     clearFailure: () => setFailure(null),
     connect,
+    /** Connect and hand back the account, or throw — for the city's bridge. */
+    connectAccount,
     disconnect,
+    forget,
     switchWallet,
     /** `solana:signIn` and plain message signing, for the session flow only. */
-    signIn: wallet.signIn,
-    signMessage: wallet.signMessages,
+    signIn,
+    signMessage,
     /** Exact reviewed bytes signed in the wallet, for the trade flow only; the server submits. */
     signTransaction,
     /** Several exact transactions in one prompt, for Launch; the server sends them. */
     signTransactions,
+    /** Whether the wallet signs v1 — asked of it once, for Launch's first purchase on Micro. */
+    readSignsV1,
   }
 }

@@ -113,7 +113,7 @@ export async function setExecutorStop(
 }
 
 /**
- * Where a word to the operator goes in Telegram: the operator's id the error monitor already writes to
+ * Where a word to the operator goes in Telegram: the founder's id the error monitor already writes to
  * (`ALERT_TELEGRAM_ID`), else the admin who last flipped the executor's switch on this network (recorded as
  * `admin:<telegram id>`); null when neither is known.
  */

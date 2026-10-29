@@ -9,17 +9,23 @@ import { existsSync, readFileSync } from "node:fs";
 import test from "node:test";
 
 import { DEVELOPER_ENTRIES, DOC_NAV, DOC_PAGES, docNeighbours, docPageBySlug, docSearchText, docsHref } from "./content/index.ts";
-import { FEES, JUPITER_ORDER_KEEPS_PERCENT, JUPITER_ORDER_MIN_FEE_BPS, POINTS, PRODUCT_PAGES, REWARDS, hrefOf, readinessOf } from "./content/facts.ts";
+import { CLAIM_FLOOR, CREDITS, FEES, GRID, JUPITER_ORDER_KEEPS_PERCENT, JUPITER_ORDER_MIN_FEE_BPS, LAUNCH_FEES, LIMITS, PERPS, PREDICTION_BUY_FEE, PRODUCT_PAGES, REFERRAL_BIND_WINDOW_DAYS, REWARD_EXTRAS, REWARDS, hrefOf, readinessOf } from "./content/facts.ts";
 import { DOC_GROUP_IDS, DOC_PATH_PREFIXES } from "./content/model.ts";
 import { PRODUCT_ROUTES } from "../shell/product-routes.ts";
-import { MENU_SECTIONS, MENU_SECTION_IDS, PRODUCT_PAGE_IDS, drawn } from "../shell/domains.ts";
+import { MENU_SECTIONS, MENU_SECTION_IDS, PRODUCT_PAGE_IDS, drawn, menuNavigation } from "../shell/domains.ts";
 import { CUSTOMER_REDIRECTS } from "../../lib/product/customer-routing.ts";
 import { RYNTRA_SERVICE_FEE_POLICY } from "../../lib/swap/service-fee.ts";
 import { FEE_POLICY_V2 } from "../../lib/core/fee-policy.ts";
 import { REWARD_MINIMUM_CLAIM_USD_MICROS, USD_MICROS_PER_USD } from "../../lib/rewards/model.ts";
 import { REWARD_RANKS, REWARD_RULES_CURRENT } from "../../lib/rewards/rules.ts";
 import { JUPITER_REFERRAL_FEE_MIN_BPS, JUPITER_REFERRAL_PROVIDER_SHARE_PERCENT } from "../../lib/solana/quotes.ts";
-import { POINTS_POLICY_V1 } from "../../lib/points/policy.ts";
+import { REFERRAL_BIND_WINDOW_DAYS as BIND_WINDOW_DAYS } from "../../lib/rewards/referral.ts";
+import { RYNTRA_BUY_FEE_BIPS } from "../../lib/predictions/costs.ts";
+import { DEFAULT_PERP_SLIPPAGE_BPS, MAX_PERP_SLIPPAGE_BPS, MIN_ORDER_NOTIONAL_USD } from "../../lib/phoenix/orders-model.ts";
+import { GRID_LEVELS } from "../../lib/bots/grid.ts";
+import { DEFAULT_CREDIT_PRICES } from "../../lib/assistant/credits/prices.ts";
+import { TRIGGER_V1_MIN_ORDER_USD, TRIGGER_V1_MIN_REFERRAL_FEE_BPS } from "../../lib/solana/limits/model.ts";
+import { launchPoolFee } from "../../lib/core/fee-comparison.ts";
 
 const root = new URL("../../", import.meta.url);
 const read = (path) => readFileSync(new URL(path, root), "utf8");
@@ -116,13 +122,17 @@ test("every page the menu draws has its documentation, and a page that is not bu
     }
     assert.ok(page, `product page ${id} has no documentation page`);
   }
-  /* The table lists the pages the menu draws, section by section in the menu's order. */
+  /* The table lists the pages the menu draws, row by row in the menu's order (Menu 3, NAV-1). */
   const drawnInMenuOrder = MENU_SECTION_IDS.flatMap((section) => MENU_SECTIONS[section].pages).filter((id) => drawn(PRODUCT_ROUTES.find((route) => route.id === id)));
   assert.deepEqual(PRODUCT_PAGES.map((page) => page.id), drawnInMenuOrder);
-  assert.deepEqual([...new Set(PRODUCT_PAGES.map((page) => page.section))], ["markets", "trade", "bots", "portfolio", "money", "rewards"]);
-  assert.equal(CUSTOMER_REDIRECTS.find((row) => row.source === "/docs/trade/predictions")?.destination, "/docs/start/cabinet", "the demo's documentation address leads to the cabinet page");
+  assert.deepEqual([...new Set(PRODUCT_PAGES.map((page) => page.section))], ["spot", "swap", "markets", "bots", "rewards", "portfolio", "send", "receive", "bridge", "history"]);
   const redirected = new Map(CUSTOMER_REDIRECTS.map((row) => [row.source, row]));
-  for (const [gone, to] of [["/docs/trade/perps", "/docs/trade/spot"], ["/docs/strategies/ideas", "/docs/strategies/overview"]]) {
+  /* F3 (24.10): Perps and Predictions are documented again, as rows of Trading that work — at their old addresses. */
+  for (const written of ["/docs/trade/perps", "/docs/trade/predictions"]) {
+    assert.ok(!redirected.has(written), `${written} must answer as a page, not lead away`);
+    assert.ok(docPageBySlug(written.replace("/docs/", "")), `${written} is not a documentation page`);
+  }
+  for (const [gone, to] of [["/docs/strategies/ideas", "/docs/strategies/overview"]]) {
     assert.equal(redirected.get(gone)?.destination, to, `${gone} must lead to ${to}`);
     assert.equal(redirected.get(gone)?.permanent, false, `${gone} is temporary: the page may come back when it is built`);
     assert.ok(docPageBySlug(to.replace("/docs/", "")), `${to} is not a documentation page`);
@@ -148,11 +158,17 @@ test("the documentation speaks only of what is built, and the page count follows
     en: /[Ii]n development|\bPlanned\b|being built|[Cc]oming soon|\bSoon\b|on the way|not built yet|in the future|will be (built|added|available)/,
     uk: /Розробляється|[Уу] розробці|Заплановано|заплановані|будуються|будується|Скоро|Незабаром|незабаром|на підході|згодом|у майбутньому|в майбутньому|поки не збудован/,
   };
+  /* One page is allowed the word: «Teams, agents and developers. Every other page speaks only of what is built. */
   for (const page of DOC_PAGES) {
+    if (page.slug === "soon") continue;
     for (const locale of LOCALES) {
       assert.doesNotMatch(textOf(page, locale), NOT_BUILT[locale], `${page.slug} (${locale}) speaks of something not built`);
     }
   }
+  const soon = docPageBySlug("soon");
+  assert.equal(soon.group, "developers");
+  assert.equal(soon.sections.length, 1, "the soon page stays one short section");
+  for (const locale of LOCALES) assert.doesNotMatch(textOf(soon, locale), /\b20\d\d\b|\bQ[1-4]\b|квартал|quarter|will (launch|ship|offer)|буде доступн/iu, `the soon page (${locale}) promises a date or a feature`);
 
   const STATUS_WORD = {
     available: { en: "Live", uk: "Працює" },
@@ -171,18 +187,21 @@ test("the documentation speaks only of what is built, and the page count follows
 
   const EN = ["zero", "one", "two", "three", "four", "five", "six", "seven", "eight", "nine", "ten", "eleven", "twelve", "thirteen", "fourteen", "fifteen", "sixteen", "seventeen", "eighteen", "nineteen", "twenty"];
   const UK = ["нуль", "одна", "дві", "три", "чотири", "п'ять", "шість", "сім", "вісім", "дев'ять", "десять", "одинадцять", "дванадцять", "тринадцять", "чотирнадцять", "п'ятнадцять", "шістнадцять", "сімнадцять", "вісімнадцять", "дев'ятнадцять", "двадцять"];
-  /* The cabinet has the sections of the menu and the pages it draws — a
+  /* The cabinet has Home, the groups of the menu and the pages it draws — a
      planned page and one kept off the surface are not among them (the menu
-     you can see). */
-  const count = PRODUCT_ROUTES.filter(drawn).length;
-  const sections = MENU_SECTION_IDS.length;
-  const UK_SECTIONS = ["нуль", "один", "два", "три", "чотири", "п'ять", "шість", "сім", "вісім"];
+     you can see; Menu 3, NAV-1). */
+  /* Since F3 (24.10) the count is of the rows the menu draws, which is what a person sees — not the registered pages. */
+  const navigation = menuNavigation(PRODUCT_ROUTES, "en");
+  const groups = navigation.groups.filter((group) => group.id !== "home").length;
+  const count = navigation.groups.filter((group) => group.id !== "home").reduce((sum, group) => sum + group.rows.length, 0);
+  const UK_ROWS = [...UK.slice(0, 3).map((word, i) => ["нуль", "один", "два"][i] ?? word), ...UK.slice(3)].map((word, i) => `${word} ${i === 1 ? "рядок" : i >= 2 && i <= 4 ? "рядки" : "рядків"}`);
+  const UK_GROUPS = ["нуль груп", "одна група", "дві групи", "три групи", "чотири групи", "п'ять груп", "шість груп"];
   const cabinet = docPageBySlug("start/cabinet");
-  assert.ok(cabinet.summary.en.toLowerCase().startsWith(`the ${EN[sections]} sections of the menu and the ${EN[count]} pages in them`), "the cabinet counts the registry's pages (en)");
-  assert.ok(cabinet.summary.uk.toLowerCase().startsWith(`${UK_SECTIONS[sections]} розділів меню і ${UK[count]} сторінок у них`), "the cabinet counts the registry's pages (uk)");
+  assert.ok(cabinet.summary.en.toLowerCase().startsWith(`home, the ${EN[groups]} groups of the menu and the ${EN[count]} rows in them`), "the cabinet counts the menu's rows (en)");
+  assert.ok(cabinet.summary.uk.toLowerCase().startsWith(`головна, ${UK_GROUPS[groups]} меню і ${UK_ROWS[count]} у них`), "the cabinet counts the menu's rows (uk)");
   const glossary = docPageBySlug("reference/glossary");
-  assert.ok(textOf(glossary, "en").includes(`the ${EN[sections]} sections of the menu and the ${EN[count]} pages in them`), "the glossary counts the registry's pages (en)");
-  assert.ok(textOf(glossary, "uk").includes(`${UK_SECTIONS[sections]} розділів меню і ${UK[count]} сторінок у них`), "the glossary counts the registry's pages (uk)");
+  assert.ok(textOf(glossary, "en").toLowerCase().includes(`home, the ${EN[groups]} groups of the menu and the ${EN[count]} rows in them`), "the glossary counts the menu's rows (en)");
+  assert.ok(textOf(glossary, "uk").toLowerCase().includes(`головна, ${UK_GROUPS[groups]} меню і ${UK_ROWS[count]} у них`), "the glossary counts the menu's rows (uk)");
   /* No depth to choose is documented to a person. */
   for (const page of DOC_PAGES) {
     for (const locale of LOCALES) {
@@ -207,9 +226,8 @@ test("every figure the documentation states is the one the product computes with
   assert.equal(JUPITER_ORDER_MIN_FEE_BPS, JUPITER_REFERRAL_FEE_MIN_BPS);
   for (const share of level1) assert.ok(REWARDS.referralL1Ladder.en.includes(`${share}%`) && REWARDS.referralL1Ladder.uk.includes(`${share}%`), `the ladder states ${share}%`);
   assert.equal(REWARDS.claimFloorUsd, Number(REWARD_MINIMUM_CLAIM_USD_MICROS / USD_MICROS_PER_USD));
-  assert.equal(POINTS.dailyCap, Number(POINTS_POLICY_V1.dailyVolumePointsCap));
-  assert.equal(POINTS.levels.length, POINTS_POLICY_V1.levels.length);
-  assert.equal(POINTS.tiers.length, POINTS_POLICY_V1.volumeTiers.length);
+  /* The Points V1 tables left with the page that drew them (UX-751): the
+     documentation now reads the rank's own rules and no other programme's. */
 
   const fees = textOf(docPageBySlug("reference/fees"), "en");
   for (const flow of ["MEME", "TRENDING", "MAJOR", "XSTOCK", "ONDO", "PRESTOCK"]) assert.ok(fees.includes(FEES.flow(flow)), `the fees page states the ${flow} rate`);
@@ -218,13 +236,44 @@ test("every figure the documentation states is the one the product computes with
   for (const share of [REWARDS.cashbackPercent, REWARDS.referralL1Percent, REWARDS.referralL2Percent]) {
     assert.ok(rewards.includes(`${share}%`), `the rewards page states the ${share}% share`);
   }
-  assert.ok(rewards.includes(`$${REWARDS.claimFloorUsd.toFixed(2)}`), "the rewards page states the claim floor");
-  const points = textOf(docPageBySlug("money/points"), "en");
-  assert.ok(points.includes(POINTS.dailyCap.toLocaleString("en-US")), "the points page states the daily cap");
-  assert.ok(points.includes(`+${POINTS.qualifiedReferralPoints} points`), "the points page states the referral points");
-  assert.ok(points.includes(POINTS.levels[POINTS.levels.length - 1].toLocaleString("en-US")), "the points page states the top level");
+  assert.ok(rewards.includes(CLAIM_FLOOR.en.withAccount) && rewards.includes(CLAIM_FLOOR.en.withoutAccount), "the rewards page states the claim floors of the rules in force");
+  if (REWARD_EXTRAS.inviterWindow) assert.ok(rewards.includes(`${REWARD_EXTRAS.inviterWindow.percent}%`), "the rewards page states the inviter's window");
+  assert.equal(REFERRAL_BIND_WINDOW_DAYS, BIND_WINDOW_DAYS, "the referral change window is the one the ledger applies");
+
+  /* F3: the product pages' figures, each the one the code charges, bounds or grants with. */
+  assert.equal(PREDICTION_BUY_FEE.en, `${RYNTRA_BUY_FEE_BIPS / 100}%`);
+  assert.equal(PERPS.minNotional, `$${MIN_ORDER_NOTIONAL_USD}`);
+  assert.equal(PERPS.tolerance.default, `${DEFAULT_PERP_SLIPPAGE_BPS / 100}%`);
+  assert.equal(PERPS.tolerance.max, `${MAX_PERP_SLIPPAGE_BPS / 100}%`);
+  assert.equal(GRID.levels, GRID_LEVELS.join(" · "));
+  assert.equal(LIMITS.triggerMinimum, `$${TRIGGER_V1_MIN_ORDER_USD}`);
+  assert.equal(LIMITS.triggerFloor.en, `${TRIGGER_V1_MIN_REFERRAL_FEE_BPS / 100}%`);
+  assert.equal(CREDITS.question, DEFAULT_CREDIT_PRICES.question);
+  /* One figure stands for both on the assistant's page while the plan prices them alike. */
+  assert.equal(DEFAULT_CREDIT_PRICES.tokenReport, DEFAULT_CREDIT_PRICES.priceMove, "a token report and a price move are priced apart now — say both");
+  assert.equal(LAUNCH_FEES.curve.en, `${launchPoolFee().curve.baseBps / 100}%`);
+  const feesEn = textOf(docPageBySlug("reference/fees"), "en");
+  for (const figure of [PREDICTION_BUY_FEE.en, LIMITS.triggerFloor.en, LAUNCH_FEES.curve.en, LAUNCH_FEES.poolStart.en, FEES.bridge]) assert.ok(feesEn.includes(figure.toLowerCase()), `the fees page states ${figure}`);
+  /* The order route charges no Ryntra fee under its minimum: the fees page names the flows that fall under it. */
+  for (const [flow, word] of [["MAJOR", "major coins"], ["XSTOCK", "xstocks"]]) {
+    const under = FEE_POLICY_V2[flow].bps > 0 && FEE_POLICY_V2[flow].bps < JUPITER_ORDER_MIN_FEE_BPS;
+    const sentence = feesEn.slice(feesEn.indexOf("a rate under that route's minimum"), feesEn.indexOf("carry no ryntra fee there"));
+    assert.equal(sentence.includes(word), under, `the fees page's order-route sentence for ${flow}`);
+  }
+  const perpsEn = textOf(docPageBySlug("trade/perps"), "en");
+  for (const figure of [PERPS.minNotional, PERPS.tolerance.default, PERPS.tolerance.max]) assert.ok(perpsEn.includes(figure), `the perps page states ${figure}`);
+  /* UX-751: one programme. «Points and levels» is merged into Rewards —
+     there is no second page selling a balance no screen draws, and the one
+     page that remains states the rank's window and what points are not. */
+  assert.equal(docPageBySlug("money/points"), undefined, "the second points page is gone, not relabelled");
+  const rewardsEn = textOf(docPageBySlug("money/rewards"), "en");
+  assert.ok(rewardsEn.includes(`over the last ${REWARDS.rankWindowDays} days`), "the rewards page states the rank window");
+  assert.ok(rewardsEn.includes("points have no cash value and cannot be transferred or exchanged"), "the rewards page carries what points are not");
+  const rewardsUk = textOf(docPageBySlug("money/rewards"), "uk");
+  assert.ok(rewardsUk.includes("очки не мають грошової вартості"), "Growth rules §12 write the Ukrainian sentence in these words");
+  assert.ok(!rewardsUk.includes("бал"), "one word for one thing: the documentation says «очки», never «бали»");
   /* No figure is typed as a literal that could drift from the policy. */
-  for (const file of ["start.ts", "invest.ts", "trade.ts", "money.ts", "ryntra.ts", "reference.ts"]) {
+  for (const file of ["start.ts", "invest.ts", "trade.ts", "money.ts", "ryntra.ts", "reference.ts", "perps.ts", "predictions.ts", "bots.ts", "launch.ts", "manage.ts", "phone.ts", "soon.ts"]) {
     const source = read(`app/docs/content/${file}`);
     assert.doesNotMatch(source, /"[^"]*\b0\.(5|25)%[^"]*"/, `${file} types a fee as a literal instead of reading FEES`);
     assert.doesNotMatch(source, /"[^"]*\b(50|10|5)% (of|від)[^"]*"/, `${file} types a rewards share as a literal`);
@@ -234,7 +283,7 @@ test("every figure the documentation states is the one the product computes with
 test("the documentation speaks the product's language, never the company's", () => {
   const forbidden = [
     /RYN-[A-Z0-9]+-[A-Z0-9-]+/, /Evidence (OS|Kernel)/i, /paper-first/i, /Arcus/i, /Guard API/, /Agent Control/,
-    /Master Plan/i, /canon/i, /registry rollup/i, /WIP/, /hackathon/i, /grant (application|programme|program|packet)/i, /founder report/i, /readiness matrix/i, /venue-neutral/i,
+    /hackathon/i, /grant (application|programme|program|packet)/i, /founder report/i, /readiness matrix/i, /venue-neutral/i,
     /Risk, Strategy/i, /Robinhood(?! Chain)/, /Stellar/, /Starknet/, /Uniswap/,
   ];
   for (const page of DOC_PAGES) {
@@ -249,18 +298,23 @@ test("the documentation speaks the product's language, never the company's", () 
   const redirected = new Set(CUSTOMER_REDIRECTS.map((row) => row.source));
   for (const page of DOC_PAGES) assert.ok(!redirected.has(docsHref(page.slug)), `${docsHref(page.slug)} is a redirected address`);
   /* Nothing in the renderer either. */
-  assert.doesNotMatch(EXPERIENCE, /RYN-[A-Z0-9-]+|docs\/tasks|MASTER-PLAN|readiness matrix|founder report/i);
+  assert.doesNotMatch(EXPERIENCE, /RYN-[A-Z0-9-]+|docs\/tasks|readiness matrix|founder report/i);
 });
 
 test("the navigation is the menu's sections with every page once, and the developers' routes are real", () => {
-  /* The documentation's sections are the menu's, then Reference and Developers. */
-  assert.deepEqual([...DOC_GROUP_IDS], ["start", "invest", "trade", "launch", "money", "portfolio", "ryntra", "rewards", "reference", "developers"]);
+  /* The documentation's sections are the products a person uses, then Reference and
+     the one short section for teams, agents and developers. */
+  assert.deepEqual([...DOC_GROUP_IDS], ["start", "trade", "perps", "predictions", "bots", "launch", "portfolio", "money", "rewards", "ryntra", "phone", "reference", "developers"]);
+  for (const id of DOC_GROUP_IDS) assert.ok(DOC_PAGES.some((page) => page.group === id), `the ${id} section has no page`);
   assert.deepEqual(DOC_NAV.map((group) => group.id), [...DOC_GROUP_IDS]);
   const hrefs = DOC_NAV.flatMap((group) => group.items.map((item) => item.href));
   assert.equal(new Set(hrefs).size, hrefs.length, "a page appears twice in the navigation");
   for (const page of DOC_PAGES) assert.ok(hrefs.includes(docsHref(page.slug)), `${page.slug} is not in the navigation`);
+  /* Since F3 (24.10) the developer references stay reachable by their own links, and the navigation names none of
+     them: teams, agents and developers get one short «soon» page. */
+  assert.deepEqual(DOC_NAV.find((group) => group.id === "developers").items.map((item) => item.href), ["/docs/soon"]);
   for (const entry of DEVELOPER_ENTRIES) {
-    assert.ok(hrefs.includes(entry.href));
+    assert.ok(!hrefs.includes(entry.href), `${entry.href} is in the navigation`);
     const file = `app${entry.href}/page.tsx`;
     assert.ok(existsSync(new URL(file, root)), `${entry.href} has no page at ${file}`);
     assert.match(read(file), /<DocsPage view=\{\{ kind: "/);

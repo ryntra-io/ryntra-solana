@@ -36,8 +36,10 @@ test("a purchase, a rule and the month's budget start at one dollar; the purchas
   assert.equal(shareOfRaw(24_500_000n, 6, 100), 24.5);
   assert.equal(shareOfRaw(0n, 6, 100), 0);
   assert.equal(shareOfRaw(3_000_000n, 6, 25), 0.75, "a share under a dollar is computed, and the sheet does not offer it");
-  assert.match(BUY_SHEET, /BUY_SHARE_PRESETS_PCT\.map\(\(pct\) => \{/);
-  assert.match(BUY_SHEET, /disabled=\{busy \|\| share < MIN_BUY_USD\}/);
+  /* On the core's ticket the shares of the wallet's USDC are its slider and «Макс»; a sum under a dollar waits with the reason (`minQuoteRaw`). */
+  assert.match(BUY_SHEET, /const MIN_BUY_RAW = BigInt\(MIN_BUY_USD \* 10 \*\* 6\);/);
+  assert.match(BUY_SHEET, /minQuoteRaw: MIN_BUY_RAW/);
+  assert.doesNotMatch(BUY_SHEET, /quick=\{/, "the purchase's ticket offers no fixed sums");
   assert.doesNotMatch(BUY_SHEET, /STOCK_QUOTE_PRESETS_USD/, "the purchase offers no fixed sums");
   assert.doesNotMatch(RULE_SHEET, /STOCK_QUOTE_PRESETS_USD|company\.presets/, "a rule's sum is typed, any sum the person likes: no quick sums");
   /* A dollar a day never runs into the ceiling: the longest month is 31 days. */
@@ -93,8 +95,9 @@ test("the words, in both languages: the reserve apart, the company's own minimum
   assert.equal(reserveLine("en", "≈ $0.24"), "≈ $0.24 in SOL, once — it stays in your wallet, on the token's account");
   assert.equal(reserveFirstLine("uk", "≈ $1,20", "$1"), "Разовий резерв ≈ $1,20 у SOL більший за саму покупку ($1). Він лишиться в гаманці на рахунку токена — це не витрата.");
   assert.match(reserveFirstLine("en", "≈ $1.20", "$1"), /^The one-time reserve, ≈ \$1\.20 in SOL, is more than the purchase itself \(\$1\)\. It stays in your wallet/);
-  assert.equal(routeMinimumLine("uk", "$1", "IREN", "$5"), "На $1 маршруту зараз немає. IREN — від $5.");
-  assert.equal(routeMinimumLine("en", "$1", "IREN", "$5"), "No route for $1 right now. IREN from $5.");
+  /* A purchase's words, not the router's (SOL-K1): the sum is too little for the company, and from what it buys. */
+  assert.equal(routeMinimumLine("uk", "$1", "IREN", "$5"), "$1 — замало для IREN зараз. Купується від $5.");
+  assert.equal(routeMinimumLine("en", "$1", "IREN", "$5"), "$1 is too little for IREN right now. It can be bought from $5.");
   assert.equal(setMinimumWord("uk", "$5"), "Поставити $5");
   assert.equal(setMinimumWord("en", "$5"), "Use $5");
   /* Home says what is live (the menu v6.2): the minimum stays where a purchase is made, not a promise on Home. */
@@ -124,17 +127,18 @@ test("the rule's sheet opens weekly on $10 — a default, not advice — and eve
 test("«Перевірка» keeps four rows: the reserve is a line of its own under «Усі витрати», never joined to the costs", () => {
   for (const [name, sheet] of [["buy", BUY_SHEET], ["convert", CONVERT_SHEET]]) {
     assert.doesNotMatch(sheet, /word\("and"\)|accountOnce/, `${name}: no «і … разово» after the costs`);
-    assert.match(sheet, /<dd data-reserve>\{reserveLine\(locale, /, `${name}: the reserve is its own line`);
+    assert.match(sheet, /<p className=\{company\.sheetNote\} data-reserve>\{reserveLine\(locale, /, `${name}: the reserve is its own line, under the costs, never among them`);
   }
-  const review = BUY_SHEET.slice(BUY_SHEET.indexOf('data-sheet="review"'));
-  assert.ok(review.indexOf("data-reserve-first") < review.indexOf("<dl"), "said before the rows when it is more than the purchase");
-  assert.equal((review.slice(0, review.indexOf("</dl>")).match(/<dt>/g) ?? []).length, 4, "four rows");
+  /* The ticket's Review: what is paid, what arrives and at least, all costs, what it is; the reserve said first when it is more than the purchase. */
+  assert.ok(BUY_SHEET.indexOf("data-reserve-first") < BUY_SHEET.indexOf("<TradeTicket"), "said before the ticket when it is more than the purchase");
+  assert.doesNotMatch(BUY_SHEET.slice(BUY_SHEET.indexOf("countOf = ")), /^\s*reserve/m, "the reserve is never a cost line");
 });
 
 test("a company with no route for the sum says its own minimum from the quote, and the one action puts it in", () => {
   assert.match(BUY_SHEET, /const noRoute = !ruleMode && valid && isNoRoute\(ticket\.quoteFailure\?\.code\);/);
   assert.match(BUY_SHEET, /useRouteMinimum\(mint, valid \? amount : null, noRoute\)/);
-  assert.match(BUY_SHEET, /label: setMinimumWord\(locale, dollars\(minimumUsd, numbers\)\), disabled: false, run: \(\) => pickAmount\(minimumUsd\)/);
+  assert.match(BUY_SHEET, /onClick=\{\(\) => onAmountText\(String\(minimumUsd\)\)\} lang=\{lang\}>\s*\{setMinimumWord\(locale, dollars\(minimumUsd, numbers\)\)\}/);
+  assert.match(BUY_SHEET, /quoteFailed: over \? word\("maxBuy"\) : valid \? \(minimumLine \?\? quoteFailure\) : null/, "the ticket says the company's own minimum where the venue found no route");
   /* 1.19.0: a «З кожної оплати» rule's minimum is what must route; every other kind's typed sum. */
   assert.match(RULE_SHEET, /const routedSum = kind === "payments" \? thresholdUsd : typedValid \? typed : null;/);
   assert.match(RULE_SHEET, /useQuoteRoute\(mint, routedSum, composing\)/);

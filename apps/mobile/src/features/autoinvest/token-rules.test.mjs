@@ -52,9 +52,9 @@ test('the floor in the web’s words: what a token stands on, or why it does not
   assert.equal(floorLine(floor('below', 18_400, 400), 'NEWT', 'en'), 'NEWT: liquidity $18,400 — below the floor of $25,000')
   assert.equal(floorLine(floor('below', 90_000, 5), '', 'uk'), 'На ринку 5 год — поріг 24 годин')
   assert.equal(floorLine(floor('unavailable', null, null), '', 'en'), 'Liquidity cannot be read right now')
-  assert.equal(floorMetLine(floor('met', 7_200_000, 24_528), 'en'), 'Met · $7.2M · 1,022 d on the market')
-  assert.equal(floorMetLine(floor('met', 7_200_000, 24_528), 'uk'), 'Виконано · $7,2 млн · 1 022 дн. на ринку')
-  assert.equal(floorStanding(floor('met', 30_000, 30), 'en'), 'Met · $30K · 30 h on the market')
+  assert.equal(floorMetLine(floor('met', 7_200_000, 24_528), 'en'), 'Met · liquidity $7.2M · 1,022 d on the market')
+  assert.equal(floorMetLine(floor('met', 7_200_000, 24_528), 'uk'), 'Виконано · ліквідність $7,2 млн · 1 022 дн. на ринку')
+  assert.equal(floorStanding(floor('met', 30_000, 30), 'en'), 'Met · liquidity $30K · 30 h on the market')
   assert.equal(ageWord(47, 'uk'), '47 год')
   assert.equal(ageWord(72, 'en'), '3 d')
   // The floor that holds a deferred purchase is said first; a floor that is met holds nothing.
@@ -225,17 +225,23 @@ test('the ticket under a rule: only its open reminder on its own market buys; an
 
 test('the surfaces: «Регулярно» beside «Ринок» in Trade, beside «Купити» on a coin’s page, the reads header on every request', () => {
   const trade = code('screens/trade/index.tsx')
-  assert.match(trade, /const showOrderTypes = mode === 'buy' && !ruleAsk && !planBinding && asset !== null/)
+  assert.match(trade, /const showOrderTypes = \(mode === 'buy' \|\| mode === 'sell'\) && !ruleAsk && !planBinding && asset !== null/)
   assert.match(trade, /<RecurringPanel/)
-  // In «Регулярно» the rule's own button is the one action; under a rule the sum is the rule's, in USDC, and held.
-  assert.match(trade, /\{recurring \? null : \(\s*<BottomAction/)
+  // In «Регулярно» the rule's own button is the one action — the sheet sets no footer of its own there; under a rule
+  // the sum is the rule's, in USDC, and held.
+  const recurringStep = trade.slice(trade.indexOf('} else if (recurring && asset) {'), trade.indexOf('/* ---- the market ticket'))
+  assert.match(recurringStep, /<RecurringPanel/)
+  assert.doesNotMatch(recurringStep, /footer =/)
   assert.match(trade, /const quoteAsset = ruleAsk\s*\? USDC_ASSET/)
   assert.match(trade, /const ticketAmount = ruleSum !== null \? ruleSumText\(ruleSum, locale\) : ruleAsk \? '' : amountText/)
-  assert.match(trade, /rule: ruleBinding \}\)/)
-  assert.match(trade, /ruleLine=\{reviewRuleLine\}/)
-  // The field shows the sum the ticket quotes and signs; «МАКС» changes nothing under a rule.
-  assert.match(trade, /value=\{ruleAsk \? ticketAmount : amountText\}/)
-  assert.match(trade, /disabled=\{ruleAsk !== null\}\s*hitSlop=\{6\}/)
+  assert.match(trade, /rule: ruleBinding,/)
+  // «Перевірка» names the rule the purchase is made under.
+  assert.match(trade, /reviewRuleLine \? <RuleReviewRow label=\{ruleWords\.yourRule\} line=\{reviewRuleLine\} \/>/)
+  // The figure shows the sum the ticket quotes and signs; under a rule no chip, no key and no «МАКС» changes it.
+  assert.match(trade, /const amountShown = \(ruleAsk \? ticketAmount : amountText\) \|\| '0'/)
+  assert.match(trade, /const editable = trade\.phase === 'idle' && !trade\.lockedReview && !ruleAsk/)
+  assert.match(trade, /amountChips\.length > 0 && !ruleAsk/)
+  assert.match(trade, /<Keypad mark=\{keyMark\} onKey=\{press\} deleteLabel=\{sheetWords\.keypadDelete\} disabled=\{!editable\} \/>/)
   // A token's card in «Мої боти» opens its trade with «Регулярно»; a company's opens its rule's sheet.
   const block = code('screens/autoinvest/rules-block.tsx')
   assert.match(block, /else if \(isListedToken\(rule\.asset\)\)\s*router\.push\(\{\s*pathname: '\/trade',[\s\S]*?order: 'recurring'/)
@@ -254,4 +260,16 @@ test('the surfaces: «Регулярно» beside «Ринок» in Trade, besid
   assert.match(api, /'X-Ryntra-Reads': 'rule-reference-enabled'/)
   assert.match(api, /for \(const \[name, value\] of Object\.entries\(READS_HEADER\)\) headers\.set\(name, value\)/)
   assert.match(api, /asset: \(mint, signal\) => v1\(\(\) => v1Client\(null, signal\)\.rules\.asset\(mint\)\)/)
+})
+
+test('the floor in the rule’s sheet is one short line — every figure with its word, the terms behind «?»', () => {
+  assert.equal(AUTOINVEST_COPY.uk.floorMet, 'Підходить для регулярної купівлі')
+  assert.equal(AUTOINVEST_COPY.en.floorMet, 'Fits a recurring buy')
+  assert.match(AUTOINVEST_COPY.uk.floorWhat('ліквідність від $25 000'), /^Поріг: ліквідність від \$25 000\. /)
+  assert.match(AUTOINVEST_COPY.en.floorWhat('$25,000 of liquidity'), /^The floor: \$25,000 of liquidity\. /)
+  const sheet = code('screens/autoinvest/autoinvest-sheet.tsx')
+  assert.match(sheet, /const floorText = floor \? \(met \? copy\.floorMet : floorStanding\(floor, locale\)\) : ''/)
+  assert.match(sheet, /<HelpDot title=\{copy\.floorTitle\} body=\{floorDetail\} \/>/)
+  // No caps heading over the line: the check reads as a sentence, not a gate.
+  assert.doesNotMatch(sheet, /\{copy\.floorTitle\}\s*<\/Txt>/)
 })

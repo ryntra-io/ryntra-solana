@@ -18,10 +18,13 @@ import { isRetiredMint, RETIRED_REASON } from "@/lib/stocks/retired";
 import { resolveServiceFeeConfig } from "@/lib/swap/service-fee.server";
 import { createSolanaRpcHandle } from "@/lib/solana/rpc";
 import { serverSendPolicy } from "@/lib/solana/send-safety";
+import { readTokenRiskFacts } from "@/lib/solana/risk-facts";
 import { buildSwapQuoteReview } from "@/lib/solana/swap-review";
+import { swapTradeRisk } from "@/lib/solana/trade-risk.server";
 import type { SolanaAssetPassport } from "@/lib/solana/types";
 import { awaitCheckContext, readCheckContext, swapCheckOf } from "@/lib/stocks/check.server";
 import { chooseQuote } from "@/lib/core/solana-swap/fee-route.server";
+import { serverTimingOf } from "@/lib/core/pipeline";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -39,6 +42,13 @@ export const maxDuration = 30;
  * and the review policy's verdict over the output mint. It builds no
  * transaction, asks for no wallet and cannot sign — the executable path stays
  * `../order` and `../execute`.
+ *
+ * Since 1.85.0 it also carries the risk verdict over the trade itself — the
+ * four words over thirteen named facts, each with its source and its time.
+ * The token's chain facts for it are asked for the moment the mint is known,
+ * beside the quote rather than after it, so a Review costs no extra wait; a
+ * gateway that cannot serve them makes the verdict `INCOMPLETE` saying which
+ * facts are missing, which is the one thing it must never do quietly.
  */
 
 const BASE58 = /^[1-9A-HJ-NP-Za-km-z]{32,44}$/;
@@ -103,13 +113,26 @@ export async function POST(request: Request) {
 
   /* «Перевірка» (1.20.0): the company's row and SOL's price, read beside the venue's quote so they cost no time of their own. Never throws. */
   const checkContext = readCheckContext(input.inputMint, input.outputMint);
-
+  /* The token's chain facts, asked for beside the quote for the same reason. Never throws. */
+  const riskFacts = readTokenRiskFacts({ mint: input.outputMint });
   const handle = createSolanaRpcHandle({ network: "mainnet" });
   const sides: Record<string, SolanaAssetPassport> = {};
   const reads: Record<string, MintReadSuccess> = {};
   const decimals: Record<string, number> = {};
-  for (const mint of [input.inputMint, input.outputMint]) {
-    const read = await readMintAccount(handle, mint);
+  const config = resolveServiceFeeConfig();
+  /* SOL-S1 (котирування ≤ 1 с): both mints and the venue's price are asked at once. Fee policy v2 prices the lane the
+     Review will be built on, for the web and the phone alike (the phone reads 1.24.0 since M30): one product, one fee for
+     the same purchase. The price is used only once both passports pass; a refused mint answers with its own words. */
+  const startedAt = performance.now();
+  const priced = chooseQuote({ inputMint: input.inputMint, outputMint: input.outputMint, amountRaw: input.amountRaw, selection, handle, config }).then(
+    (choice) => (choice.ok ? ({ ok: true, order: choice.order } as const) : choice.failure),
+    (cause: unknown) => ({ ok: "THREW", cause }) as const,
+  );
+  const mints = [input.inputMint, input.outputMint];
+  const mintReads = await Promise.all(mints.map((mint) => readMintAccount(handle, mint)));
+  const passportsMs = performance.now() - startedAt;
+  for (const [index, mint] of mints.entries()) {
+    const read = mintReads[index];
     if (!read.ok) {
       return failure(422, "MINT_UNREADABLE", `The mint ${mint} could not be read live: ${read.reason}`, rate);
     }
@@ -122,11 +145,10 @@ export async function POST(request: Request) {
     decimals[mint] = passport.passport.identity.decimals.value;
   }
 
-  const config = resolveServiceFeeConfig();
-  /* Fee policy v2 prices the lane the Review will be built on, for the web and the phone alike (the phone reads it from contract 1.24.0): one product, one fee for the same purchase. */
-  const result = await chooseQuote({ inputMint: input.inputMint, outputMint: input.outputMint, amountRaw: input.amountRaw, selection, handle, config }).then((choice) =>
-    choice.ok ? ({ ok: true, order: choice.order } as const) : choice.failure,
-  );
+  const settled = await priced;
+  if (settled.ok === "THREW") throw settled.cause;
+  const result = settled;
+  const pricedMs = performance.now() - startedAt;
   if (!result.ok) {
     const status = result.code === "NO_ROUTE" ? 409 : result.code === "RATE_LIMITED" ? 429 : 502;
     return failure(status, `QUOTE_${result.code}`, result.reason, rate, {
@@ -163,6 +185,9 @@ export async function POST(request: Request) {
     preflight: preflight.preflight,
   });
   const review = buildSwapQuoteReview(order);
+  /* The risk verdict over the trade: the terms of this quote, the chain facts
+     asked for above, and the review over the output mint folded in. */
+  const risk = await swapTradeRisk({ order, assetReview: verdict, chain: await riskFacts });
   /* The four lines on this quote, as the server counts them for every client — no reserve before the order proves one. */
   const context = await awaitCheckContext(checkContext);
   const check = swapCheckOf({ context, basis: "quote", order, decimals, mintRead: context ? (reads[context.stockMint] ?? null) : null, nowMs: Date.now() });
@@ -181,7 +206,18 @@ export async function POST(request: Request) {
       passports: sides,
       expiresAt: order.reviewExpiresAt,
       check,
+      risk,
     },
-    { headers: responseHeaders(rate) },
+    /* SOL-S1: the estimate's wait, measured on production. */
+    {
+      headers: {
+        ...responseHeaders(rate),
+        "server-timing": serverTimingOf([
+          { name: "passports", ms: passportsMs },
+          { name: "price", ms: pricedMs },
+          { name: "total", ms: performance.now() - startedAt },
+        ]),
+      },
+    },
   );
 }

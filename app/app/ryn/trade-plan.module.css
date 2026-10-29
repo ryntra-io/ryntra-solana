@@ -1,0 +1,555 @@
+/* «План угоди й критик» (AI-11): the plans with Ryntra, the composer and one plan. Both themes through the tokens. */
+.group,
+.composer,
+.critic,
+.reality {
+  display: grid;
+  gap: var(--ry-s3);
+  min-width: 0;
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.actions :global(.rw-btn) {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.groupTitle,
+.sectionTitle {
+  margin: 0;
+  font-size: var(--ry-fs-label-sm);
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  color: var(--ry-text-muted);
+}
+
+.sectionTitle {
+  font-size: var(--ry-fs-dense);
+  color: var(--ry-text);
+}
+
+.lead,
+.muted,
+.summary,
+.fees,
+.thesis,
+.endLine {
+  margin: 0;
+  font-size: var(--ry-fs-dense);
+  line-height: 1.5;
+}
+
+.lead,
+.muted {
+  color: var(--ry-text-muted);
+}
+
+.thesis {
+  display: -webkit-box;
+  overflow: hidden;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  font-size: var(--ry-fs-body, 15px);
+  color: var(--ry-text);
+}
+
+.plainText {
+  margin: 0;
+  font-size: var(--ry-fs-dense);
+  line-height: 1.5;
+  color: var(--ry-text);
+}
+
+.summary {
+  color: var(--ry-text);
+}
+
+.fees {
+  font-family: var(--ry-font-mono);
+  font-size: var(--ry-fs-label-sm);
+  color: var(--ry-text-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.endLine {
+  padding: var(--ry-s2) var(--ry-s3);
+  border: 1px solid color-mix(in srgb, var(--ry-caution) 45%, transparent);
+  border-radius: var(--ry-r-btn-sm);
+  background: var(--ry-caution-soft);
+  color: var(--ry-text);
+}
+
+.failure {
+  margin: 0;
+  font-size: var(--ry-fs-dense);
+  color: var(--ry-pnl-neg, var(--ry-text));
+}
+
+.list,
+.findings,
+.plain {
+  display: grid;
+  gap: var(--ry-s1);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.plain {
+  font-size: var(--ry-fs-dense);
+  color: var(--ry-text);
+}
+
+.row {
+  display: grid;
+  grid-template-columns: auto auto minmax(0, 1fr);
+  grid-template-areas:
+    "icon symbol state"
+    "icon meta meta";
+  align-items: center;
+  gap: 2px var(--ry-s2);
+  min-height: 52px;
+  padding: var(--ry-s2) var(--ry-s3);
+  border: 1px solid var(--ry-border);
+  border-radius: var(--ry-r-btn-sm);
+  background: var(--ry-card);
+  color: var(--ry-text);
+  text-decoration: none;
+  transition:
+    border-color 160ms ease-out,
+    background-color 160ms ease-out;
+}
+
+.row:hover,
+.row:focus-visible {
+  border-color: var(--ry-border-strong);
+  background: var(--ry-hover);
+}
+
+.row:focus-visible {
+  outline: var(--ryntra-focus-outline, 2px solid #ff681c);
+  outline-offset: 2px;
+}
+
+.rowIcon {
+  grid-area: icon;
+  color: var(--ry-text-muted);
+}
+
+.rowSymbol {
+  grid-area: symbol;
+  font-weight: 600;
+}
+
+.row .state {
+  grid-area: state;
+  justify-self: start;
+}
+
+.rowMeta {
+  grid-area: meta;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-family: var(--ry-font-mono);
+  font-size: var(--ry-fs-label-sm);
+  color: var(--ry-text-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.state {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 1px var(--ry-s2);
+  border: 1px solid var(--ry-border-strong);
+  border-radius: var(--ry-r-pill);
+  font-size: var(--ry-fs-label-sm);
+  font-weight: 600;
+  color: var(--ry-text-muted);
+  white-space: nowrap;
+}
+
+.state::before {
+  content: "";
+  width: 6px;
+  height: 6px;
+  border-radius: var(--ry-r-pill);
+  background: currentColor;
+}
+
+.state[data-state="checked"],
+.state[data-state="approved"] {
+  color: var(--ry-text);
+  background: var(--ry-elevated);
+}
+
+.state[data-state="watching"] {
+  color: var(--ry-pnl-pos);
+  border-color: color-mix(in srgb, var(--ry-pnl-pos) 45%, transparent);
+  background: var(--ry-verified-soft);
+}
+
+/* AI-20: a state is said in words and a quiet tone, never in the brand's orange — that is the page's one action. */
+.state[data-state="done"] {
+  color: var(--ry-text);
+  border-color: var(--ry-border-strong);
+  background: var(--ry-elevated);
+}
+
+.state[data-state="broken"] {
+  color: var(--ry-caution);
+  border-color: color-mix(in srgb, var(--ry-caution) 45%, transparent);
+  background: var(--ry-caution-soft);
+}
+
+/* the composer */
+.composer {
+  padding: var(--ry-s3);
+  border: 1px solid var(--ry-border);
+  border-radius: var(--ry-r-card, 12px);
+  background: var(--ry-card);
+}
+
+.tokens {
+  display: grid;
+  gap: var(--ry-s2);
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.label {
+  margin: 0;
+  padding: 0;
+  font-size: var(--ry-fs-label-sm);
+  font-weight: 600;
+  color: var(--ry-text-muted);
+}
+
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--ry-s2);
+}
+
+.chip {
+  min-height: 32px;
+  padding: 2px var(--ry-s3);
+  border: 1px solid var(--ry-border);
+  border-radius: var(--ry-r-pill);
+  background: transparent;
+  color: var(--ry-text);
+  font: inherit;
+  font-size: var(--ry-fs-dense);
+  cursor: pointer;
+}
+
+.chip[aria-checked="true"] {
+  border-color: var(--ry-brand-line, var(--ry-border-strong));
+  background: var(--ry-brand-soft, var(--ry-card));
+}
+
+.fields {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: var(--ry-s2) var(--ry-s3);
+}
+
+.field {
+  display: grid;
+  gap: 4px;
+  min-width: 7rem;
+  font-size: var(--ry-fs-label-sm);
+  color: var(--ry-text-muted);
+}
+
+.field[data-wide] {
+  flex: 1 1 16rem;
+}
+
+.field input,
+.field textarea {
+  width: 9rem;
+  min-width: 0;
+  min-height: 36px;
+  padding: 4px 10px;
+  border: 1px solid var(--ry-border);
+  border-radius: var(--ry-r-control, 8px);
+  background: var(--ry-surface, var(--ry-card));
+  color: var(--ry-text);
+  font: inherit;
+  font-size: var(--ry-fs-dense);
+}
+
+.field[data-wide] input,
+.field textarea {
+  width: 100%;
+}
+
+.field textarea {
+  resize: vertical;
+  line-height: 1.5;
+}
+
+.fold summary {
+  width: fit-content;
+  font-size: var(--ry-fs-dense);
+  color: var(--ry-text-muted);
+  cursor: pointer;
+}
+
+.fold[open] {
+  display: grid;
+  gap: var(--ry-s2);
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--ry-s2);
+}
+
+.quiet {
+  color: var(--ry-text-muted);
+}
+
+.link {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--ry-text);
+  font: inherit;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  cursor: pointer;
+}
+
+/* one plan (AI-20): the core's action page — the plan, its fees and critic, then the person's word and the rest. One
+   column reads in that order; from 1420 px the fees and the critic stand beside the plan as its live review, the pair
+   in the middle of the canvas (form-pair.module.css gives the page its width). */
+.planPair {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-areas:
+    "plan"
+    "review"
+    "rest";
+  align-items: start;
+  gap: var(--ry-s4);
+  min-width: 0;
+}
+
+.planMain,
+.planReview,
+.planRest {
+  display: grid;
+  gap: var(--ry-s3);
+  min-width: 0;
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.planMain {
+  grid-area: plan;
+}
+
+.planReview {
+  grid-area: review;
+}
+
+.planRest {
+  grid-area: rest;
+}
+
+@media (min-width: 1420px) {
+  .planPair {
+    grid-template-columns: minmax(0, 1fr) var(--form-pair-review, 340px);
+    grid-template-areas:
+      "plan review"
+      "rest review";
+    column-gap: var(--ryntra-space-6);
+  }
+
+  /* The critic stays in sight while the plan is read and the person decides. */
+  .planReview {
+    position: sticky;
+    top: calc(var(--ryntra-header-height, 56px) + var(--ry-s4));
+    padding: var(--ry-s3) var(--ry-s4);
+    border: 1px solid var(--ry-border);
+    border-radius: var(--ry-r-card);
+    background: var(--ry-card);
+  }
+}
+
+.back,
+.openPlan {
+  display: inline-flex;
+  align-items: center;
+  justify-self: start;
+  gap: 6px;
+  font-size: var(--ry-fs-dense);
+  color: var(--ry-text);
+  text-decoration: underline;
+  text-decoration-color: var(--ry-border-strong);
+  text-underline-offset: 3px;
+}
+
+.openPlan {
+  font-weight: 600;
+}
+
+.planHead {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--ry-s2);
+}
+
+.planTitle {
+  margin: 0;
+  font-size: var(--ry-fs-h2, 22px);
+  font-weight: 600;
+}
+
+.levels {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(9.5rem, 1fr));
+  gap: var(--ry-s2);
+  margin: 0;
+}
+
+.levels > div {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+  padding: var(--ry-s2) var(--ry-s3);
+  border: 1px solid var(--ry-border);
+  border-radius: var(--ry-r-btn-sm);
+  background: var(--ry-card);
+}
+
+.levels dt {
+  font-size: var(--ry-fs-label-sm);
+  color: var(--ry-text-muted);
+}
+
+.levels dd {
+  margin: 0;
+  font-family: var(--ry-font-mono);
+  font-size: var(--ry-fs-dense);
+  font-variant-numeric: tabular-nums;
+  overflow-wrap: anywhere;
+}
+
+.tag {
+  display: inline-block;
+  padding: 0 6px;
+  border-radius: var(--ry-r-pill);
+  background: var(--ry-elevated);
+  font-family: var(--ry-font-sans, inherit);
+  font-size: var(--ry-fs-label-sm);
+  color: var(--ry-text-muted);
+}
+
+.critic,
+.reality,
+.approved {
+  padding-top: var(--ry-s3);
+  border-top: 1px solid var(--ry-border);
+}
+
+.approved {
+  display: grid;
+  gap: var(--ry-s2);
+}
+
+.finding {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: baseline;
+  gap: var(--ry-s2);
+  font-size: var(--ry-fs-dense);
+  line-height: 1.5;
+}
+
+.severity {
+  min-width: 5.5rem;
+  font-size: var(--ry-fs-label-sm);
+  font-weight: 600;
+  color: var(--ry-text-muted);
+}
+
+.finding[data-severity="major"] .severity {
+  color: var(--ry-caution);
+}
+
+.trade {
+  display: grid;
+  gap: 2px;
+  padding: var(--ry-s2) var(--ry-s3);
+  border: 1px solid var(--ry-border);
+  border-radius: var(--ry-r-btn-sm);
+  background: var(--ry-card);
+  font-size: var(--ry-fs-dense);
+}
+
+.trade p {
+  margin: 0;
+}
+
+.trade[data-verdict="deviated"] {
+  border-color: color-mix(in srgb, var(--ry-caution) 45%, transparent);
+}
+
+.mono {
+  font-family: var(--ry-font-mono);
+  font-size: var(--ry-fs-label-sm);
+  color: var(--ry-text-muted);
+}
+
+@media (max-width: 480px) {
+  /* On a phone the mark runs in the line with its finding, so the finding keeps two lines. */
+  .finding {
+    display: block;
+  }
+
+  .severity {
+    display: inline;
+    min-width: 0;
+    margin-right: 6px;
+  }
+
+  .field input {
+    width: 8rem;
+  }
+}
+
+/* AI-20: in «Боти», the approved plans' way back to their critic — one quiet line, not a second list. */
+.withRyntra {
+  margin: 0;
+  font-size: var(--ry-fs-dense);
+  line-height: 1.6;
+  color: var(--ry-text-muted);
+}
+
+.withRyntra a {
+  color: var(--ry-text);
+  text-decoration: underline;
+  text-decoration-color: var(--ry-border-strong);
+  text-underline-offset: 3px;
+}
+
+.withRyntraMore {
+  display: inline;
+}
+
+.withRyntraMore > summary {
+  display: inline;
+  cursor: pointer;
+  color: var(--ry-text);
+}

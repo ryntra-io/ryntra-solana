@@ -48,7 +48,7 @@ export async function GET(req: NextRequest) {
   const rate = consumeSolanaReadRequest(req.headers);
   if (!rate.allowed) return json({ error: "rate limited" }, 429);
   const address = new URL(req.url).searchParams.get("address") ?? "";
-  const read = await readWalletProof();
+  const read = await readWalletProof({ allowLink: true });
   if (read.status === "unavailable") return json({ error: "unavailable" }, 503);
   const proof = read.status === "ok" ? read.proof : null;
   if (!proof || proof.chain !== "solana" || proof.address !== address) return json({ error: "proof required", proof: false }, 401);

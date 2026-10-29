@@ -14,6 +14,9 @@
  */
 
 import type { MarketRow, SessionPeriod, StockUniverseRow } from '../../lib/api.ts'
+import { isBlockedToken } from '../../lib/blocked-names.ts'
+import { stockPoolFar } from '../../lib/search.ts'
+import { companyDisplayName } from '../invest/shelf.ts'
 
 export const SCREENER_TABS = ['all', 'memes', 'crypto', 'stocks', 'private', 'watchlist'] as const
 export type ScreenerTab = (typeof SCREENER_TABS)[number]
@@ -25,15 +28,16 @@ export function isScreenerTab(value: unknown): value is ScreenerTab {
 const one = (value: string | readonly string[] | null | undefined): string | null =>
   (Array.isArray(value) ? value[0] : value) ?? null
 
+type AddressParams = Readonly<Record<string, string | readonly string[] | null | undefined>>
+
 /**
  * The tab an address asks for: `?tab=`, and the words the lists this screener
  * replaced used — the web's stock screener's `?kind=preipo` and Trends'
  * `?mode=meme`, the phone's own lists' `stock`, `meme`, `crypto` and
- * `watchlist` — so an old link opens where it pointed.
+ * `watchlist` — so an old link opens where it pointed. Null when the address
+ * names none of them (`?tab=nothing`, or a segment's `?seg=` alone).
  */
-export function screenerTabOf(
-  params: Readonly<Record<string, string | readonly string[] | null | undefined>>,
-): ScreenerTab {
+export function askedScreenerTab(params: AddressParams): ScreenerTab | null {
   const tab = one(params.tab)
   const kind = one(params.kind)
   if (kind === 'preipo') return 'private'
@@ -45,12 +49,62 @@ export function screenerTabOf(
   const mode = one(params.mode)
   if (mode === 'meme' || mode === 'memes') return 'memes'
   if (mode === 'stocks') return 'stocks'
-  return 'all'
+  return null
 }
 
-/** The screener's address on a tab — the bar's Markets, opened where it should be. */
-export function marketsPath(tab: ScreenerTab = 'all'): string {
-  return tab === 'all' ? '/(tabs)/markets' : `/(tabs)/markets?tab=${tab}`
+/** The tab an address asks for, «Усі» when it names none. */
+export function screenerTabOf(params: AddressParams): ScreenerTab {
+  return askedScreenerTab(params) ?? 'all'
+}
+
+/**
+ * The chips of «Торгівля · Ринки»: Усі · Акції · Крипто · Меми · Лаунчі · Обране.
+ * «Усі» every asset; «Акції» the companies and the private ones; «Крипто» the coins without the memes; «Меми» the
+ * memes; «Лаунчі» the markets launched through Ryntra; «Обране» what the person starred — last, not first.
+ */
+export const PLACE_CHIPS = ['all', 'stocks', 'crypto', 'memes', 'launches', 'watchlist'] as const
+export type PlaceChip = (typeof PLACE_CHIPS)[number]
+
+/** «Ринки» opens on «Усі» unless an address asks for a chip or the person chose one before. */
+export const PLACE_DEFAULT: PlaceChip = 'all'
+
+/** The chip a tab an older link names lands on — nothing it held is out of reach. */
+export function placeChipOf(tab: ScreenerTab): PlaceChip {
+  if (tab === 'stocks' || tab === 'private') return 'stocks'
+  return tab
+}
+
+/** The chip an address asks for (`?tab=`, `?kind=`, `?mode=` of every older link); null when it asks for none. */
+export function askedPlaceChip(params: AddressParams): PlaceChip | null {
+  const tab = askedScreenerTab(params)
+  return tab === null ? null : placeChipOf(tab)
+}
+
+/** The chip «Ринки» opens on: the one an address asks for, else the one the person chose last, else «Усі». */
+export function openingChip(asked: PlaceChip | null, remembered: PlaceChip | null): PlaceChip {
+  return asked ?? remembered ?? PLACE_DEFAULT
+}
+
+const CHIP_KINDS: Readonly<Record<PlaceChip, readonly ScreenerKind[]>> = {
+  all: ['crypto', 'meme', 'stock', 'private'],
+  stocks: ['stock', 'private'],
+  crypto: ['crypto'],
+  memes: ['meme'],
+  launches: [],
+  watchlist: [],
+}
+
+/** The kinds of asset a chip lists — one list per chip, the same each time; «Лаунчі» and «Обране» are read on their own. */
+export function kindsOfChip(chip: PlaceChip): readonly ScreenerKind[] {
+  return CHIP_KINDS[chip]
+}
+
+/**
+ * The screener's address: on a tab when one is named (`'all'` too — a door that says «all markets» opens «Усі»),
+ * else «Торгівля · Ринки» as the person left it.
+ */
+export function marketsPath(tab?: ScreenerTab): string {
+  return tab ? `/(tabs)/markets?tab=${tab}` : '/(tabs)/markets'
 }
 
 export type ScreenerKind = 'meme' | 'crypto' | 'stock' | 'private'
@@ -79,6 +133,11 @@ export type ScreenerRow = Readonly<{
   halted: boolean
   /** Whether the issuer offers a new purchase. */
   tradable: boolean
+  /**
+   * The pool's price stands far from the issuer's reference for the share (ST-5 r8: SGOVx at $2 090 a token against a
+   * $100,59 share) — from the stock universe's own deviation and reference; false where the row carries no reference.
+   */
+  poolFar: boolean
 }>
 
 const finite = (value: number | null | undefined): number | null =>
@@ -91,13 +150,14 @@ export function isDepositToken(row: Pick<MarketRow, 'name'>): boolean {
 
 /**
  * A row of the venue's list as a screener row, or null where it is not one the
- * screener draws: a deposit receipt, or a token the venue did not classify. A
+ * screener draws: a deposit receipt, a token the venue did not classify, or a
+ * token whose symbol or name carries a slur (`lib/blocked-names.ts`). A
  * stock the venue lists is a row only where `stocks` is asked (the watchlist,
  * which may hold any kind) — the stock universe draws the stocks otherwise,
  * with the issuer's facts.
  */
 export function marketScreenerRow(row: MarketRow, options: Readonly<{ stocks?: boolean }> = {}): ScreenerRow | null {
-  if (isDepositToken(row)) return null
+  if (isDepositToken(row) || isBlockedToken(row)) return null
   const kind: ScreenerKind | null =
     row.category === 'meme'
       ? 'meme'
@@ -125,6 +185,8 @@ export function marketScreenerRow(row: MarketRow, options: Readonly<{ stocks?: b
     markPremium: null,
     halted: false,
     tradable: true,
+    // The venue's list carries no reference for the share: no claim.
+    poolFar: false,
   }
 }
 
@@ -135,7 +197,9 @@ export function stockScreenerRow(row: StockUniverseRow): ScreenerRow {
     kind: privateCompany ? 'private' : 'stock',
     mint: row.mint,
     symbol: row.symbol,
-    name: row.name,
+    // The company as a person knows it — «Trump Media & Technology Group», never the issuer's «… Corp. Common Stock» —
+    // so the row's line holds the company, its issuer and the session without a cut word.
+    name: companyDisplayName(row.name),
     icon: row.icon,
     price: finite(row.price),
     change24h: finite(row.change24h),
@@ -149,6 +213,7 @@ export function stockScreenerRow(row: StockUniverseRow): ScreenerRow {
     markPremium: privateCompany ? finite(row.markPremium) : null,
     halted: row.halted,
     tradable: row.tradable !== false,
+    poolFar: stockPoolFar(row),
   }
 }
 

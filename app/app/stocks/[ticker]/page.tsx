@@ -8,11 +8,14 @@ import { companyCardInputOf, companyName, companyPagePath, companySeoInputOf, co
 import { companySearchDescription, companySearchTitle } from "@/lib/site/company-seo";
 import { breadcrumbList, companyEntity, jsonLdScript, webPage } from "@/lib/site/structured-data";
 import { readStockAsset } from "@/lib/stocks/asset.server";
-import { lifecycleEventFor } from "@/lib/stocks/lifecycle-events";
+import { companyPageAnswer } from "@/lib/stocks/company-page-route";
+import { isWatched } from "@/lib/stocks/conversion-watch";
+import { lifecycleEventFor, lifecycleEventForTicker } from "@/lib/stocks/lifecycle-events";
 import { retiredTokenFor } from "@/lib/stocks/retired";
 import { findStockRow, type StockRow } from "@/lib/stocks/universe.server";
 
 import { CompanyUnavailable, CompanyView, RetiredCompany } from "./company-view";
+import { CompanyEventPage } from "./event-page";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -33,9 +36,10 @@ export async function generateMetadata({ params }: { params: Promise<{ ticker: s
   if (!TICKER.test(ticker)) return { title: ticker };
   const retired = retiredTokenFor(ticker);
   if (retired) return { title: retired.symbol };
+  const event = lifecycleEventForTicker(ticker);
   const [found, locale] = await Promise.all([findStockRow(ticker), solanaServerLocale()]);
   const row = found.ok ? found.row : null;
-  if (!found.ok || !row) return { title: ticker };
+  if (!found.ok || !row) return { title: isWatched(event) ? `${event.watch.company} · ${event.watch.symbol}` : ticker };
   const input = companySeoInputOf(row);
   return indexedPageMetadata({
     path: companyPagePath(row),
@@ -73,9 +77,10 @@ function CompanyGraph({ row, locale }: { row: StockRow; locale: "en" | "uk" }) {
  * the pools, the onchain activity and the risk card with the way into a plan,
  * Ryntra's Brief and Critic on request, and the chain facts
  * (`company-view.tsx`). The candles and the full ticket are Spot's, one press
- * from the chart. An unknown ticker lands on the product's own not-found page
- * (`not-found.tsx`); a token Ryntra no longer supports says so, and where it
- * can be sold.
+ * from the chart. A token whose issuer opened a swap window and that no
+ * catalogue lists any more has the event's own page (`event-page.tsx`). An
+ * unknown ticker lands on the product's own not-found page (`not-found.tsx`);
+ * a token Ryntra no longer supports says so, and where it can be sold.
  */
 export default async function StockAssetPage({ params }: { params: Promise<{ ticker: string }> }) {
   const { ticker: raw } = await params;
@@ -85,7 +90,10 @@ export default async function StockAssetPage({ params }: { params: Promise<{ tic
   const retired = retiredTokenFor(ticker);
   if (retired) return <RetiredCompany locale={locale} token={retired} />;
   const read = await readStockAsset(ticker);
-  if (!read.ok && read.code === "UNKNOWN_ASSET") notFound();
+  /* A token whose issuer opened a swap window keeps its page with the deadline and the swap whatever the catalogues say (UX-503): its holders' every way in names it. */
+  const answer = companyPageAnswer(ticker, read);
+  if (answer.kind === "event") return <CompanyEventPage locale={locale} event={answer.event} nowMs={Date.now()} />;
+  if (answer.kind === "not-found") notFound();
   if (!read.ok) return <CompanyUnavailable locale={locale} ticker={ticker} />;
   /* A token whose issuer opened a swap window: the listed token the swap goes into, read from the same universe — its price on the exchange and what it is, for the swap's Review. */
   const into = lifecycleEventFor(read.asset.row.representation.mint)?.watch?.into ?? null;

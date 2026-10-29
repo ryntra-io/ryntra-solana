@@ -20,14 +20,15 @@ const Body = z
     sellShares: z.number().finite().positive().max(1_000_000).optional(),
     planId: z.string().regex(/^pplan_[0-9a-f]{24}$/).nullable().optional(),
     locale: z.enum(["en", "uk"]).optional(),
+    mode: z.enum(["paper", "live"]).optional(),
   })
   .strict();
 
 /**
- * The Review of a paper order: the route priced in paper mode for the
- * wallet's own session, the paper balance, the plan's conditions, every check
- * named — stored under the quote id so the order placed is exactly the one
- * reviewed.
+ * The Review of an order: the route priced for the wallet's own session —
+ * in paper mode unless `mode: "live"` is asked for and live trading is open
+ * to this wallet — the balance, the plan's conditions, every check named;
+ * stored under the quote id so the order placed is exactly the one reviewed.
  */
 export async function POST(request: Request) {
   const resolved = await requirePredictionActor(request, "mutation");

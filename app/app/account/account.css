@@ -136,3 +136,8 @@
 
 /* The signed-in fact at the top of the wallet panel: a check and a sentence. */
 .ry-product .ry-identity-fact { display: inline-flex; align-items: center; gap: 6px; color: var(--ry-verified); }
+
+/* Above the frame's bottom bar on a phone and a tablet (Menu 3, NAV-1). */
+@media (max-width: 1023px) {
+  .ry-account-notice { bottom: calc(var(--sol-phonebar-h, 64px) + var(--ry-s3) + env(safe-area-inset-bottom, 0px)); }
+}

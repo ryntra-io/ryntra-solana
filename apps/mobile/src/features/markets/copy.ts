@@ -16,7 +16,7 @@ export type MarketsCopy = Readonly<{
   askRyntra: string
   sortBy: string
   sortA11y: (sort: string) => string
-  sorts: Readonly<Record<ScreenerSort, Readonly<{ label: string; detail: string }>>>
+  sorts: Readonly<Record<ScreenerSort, Readonly<{ label: string }>>>
   /* the rows */
   notAShare: string
   /** A private token against PreStocks’ own valuation — the web’s column «До оцінки»: «+2,2% до оцінки». */
@@ -25,22 +25,19 @@ export type MarketsCopy = Readonly<{
   notOffered: string
   privateLine: string
   memesRisk: string
+  /** A meme's mark on its row where kinds are mixed («Усі», «Обране»). */
+  memeMark: string
   coinsDown: string
+  cryptoDown: string
+  memesDown: string
   stocksDown: string
   showMore: string
   /* the clock line */
-  onDevice: string
-  waitingSync: string
-  synced: (time: string) => string
-  walletList: string
-  keptOnDevice: string
-  walletListTitle: string
   notLoaded: string
   loading: string
   loadingA11y: string
   /* the lists' states */
   watchEmpty: string
-  watchEmptyLine: string
   searchMarkets: string
   noConnection: string
   listDown: string
@@ -49,19 +46,14 @@ export type MarketsCopy = Readonly<{
   tryAgain: string
   listEmpty: string
   watchNoneListed: string
-  categoryEmpty: string
   refresh: string
-  stale: string
-  /** «Усі» mixes reads: only the coins are stale. */
-  coinsStale: string
-  partial: string
+  /** A list's prices at their read's time: «Ціни о 11:49», «Ціни вчора о 23:10». */
+  pricesAt: (at: string) => string
   notListed: (count: number) => string
-  refreshFailed: string
   /* the search */
   back: string
   searching: string
   searchIdle: string
-  searchIdleLine: string
   searchDown: string
   searchNeedsNetwork: string
   searchDownLine: string
@@ -69,10 +61,8 @@ export type MarketsCopy = Readonly<{
   noAnswer: (query: string) => string
   results: (count: number) => string
   catalogueDown: string
-  staleMark: string
   /* a contract address */
   openAddress: string
-  addressLine: (address: string) => string
   finding: string
   /* the asset picker of Trade */
   noMarkets: string
@@ -100,37 +90,33 @@ export const MARKETS_COPY: Copy<MarketsCopy> = {
       watchlist: 'Watchlist',
     },
     tabsA11y: 'Asset kinds',
-    search: 'Name, ticker or contract address',
+    search: 'Name, ticker or address',
     askRyntra: 'Ask Ryntra',
     sortBy: 'Sort',
     sortA11y: (sort) => `Sort: ${sort}`,
     sorts: {
-      volume: { label: 'Trending', detail: '24h volume, highest first' },
-      rise: { label: 'Gainers', detail: '24h change, biggest rise first' },
-      fall: { label: 'Losers', detail: '24h change, biggest fall first' },
-      liquidity: { label: 'Liquidity', detail: 'The deepest pools first' },
-      deviation: { label: 'To exchange', detail: 'Token price against the share’s price on the exchange' },
+      volume: { label: 'Trending' },
+      rise: { label: 'Gainers' },
+      fall: { label: 'Losers' },
+      liquidity: { label: 'Liquidity' },
+      deviation: { label: 'To exchange' },
     },
     notAShare: 'Not a share',
     toValuation: (signed) => `${signed} to valuation`,
     atValuation: 'at valuation',
     notOffered: 'Not offered',
     privateLine: 'PreStocks tokens, not shares. Selling may not be possible.',
-    memesRisk: 'The riskiest: a price can fall to zero within hours. Buy only what you are ready to lose.',
+    memesRisk: 'Memes can fall to zero within hours. Buy only what you can afford to lose.',
+    memeMark: 'Meme',
     coinsDown: 'Crypto and memes are not answering right now.',
+    cryptoDown: 'Crypto is not answering right now.',
+    memesDown: 'Memes are not answering right now.',
     stocksDown: 'Stocks are not answering right now.',
     showMore: 'Show more',
-    onDevice: 'on this device',
-    waitingSync: 'waiting to sync',
-    synced: (time) => `synced ${time}`,
-    walletList: 'your wallet’s list',
-    keptOnDevice: 'Kept on this device',
-    walletListTitle: 'Your wallet’s list',
     notLoaded: 'Not loaded',
     loading: 'Loading',
     loadingA11y: 'Loading markets',
-    watchEmpty: 'Your watchlist is empty',
-    watchEmptyLine: 'Tap ☆ on a token’s page to keep it here.',
+    watchEmpty: 'Nothing in Favourites yet',
     searchMarkets: 'Search markets',
     noConnection: 'No connection',
     listDown: 'Markets did not load',
@@ -138,18 +124,13 @@ export const MARKETS_COPY: Copy<MarketsCopy> = {
     listDownLine: 'The list is not answering right now. Try again in a moment.',
     tryAgain: 'Try again',
     listEmpty: 'Nothing in this list yet',
-    watchNoneListed: 'The venue lists none of your starred assets right now.',
-    categoryEmpty: 'The catalogue has no markets in this category right now.',
+    watchNoneListed: 'None of your favourites is trading right now.',
     refresh: 'Refresh',
-    stale: 'Stale · last known figures',
-    coinsStale: 'Coins stale · last known figures',
-    partial: 'Partial list',
-    notListed: (count) => `${count} not listed by the venue`,
-    refreshFailed: 'Refresh failed · last read shown',
+    pricesAt: (at) => `Prices ${at}`,
+    notListed: (count) => `${count} not trading right now`,
     back: 'Back',
     searching: 'Searching',
     searchIdle: 'Search every market',
-    searchIdleLine: 'A name, a ticker or a contract address',
     searchDown: 'Search did not answer',
     searchNeedsNetwork: 'Search needs the network.',
     searchDownLine: 'Search is not answering right now. Try again in a moment.',
@@ -157,9 +138,7 @@ export const MARKETS_COPY: Copy<MarketsCopy> = {
     noAnswer: (query) => `No market answers to “${query}”.`,
     results: (count) => `${count} ${count === 1 ? 'result' : 'results'}`,
     catalogueDown: 'Catalogue search unavailable',
-    staleMark: 'Stale',
     openAddress: 'Open the token',
-    addressLine: (address) => `By its contract address ${address}`,
     finding: 'Finding the token',
     noMarkets: 'No markets loaded',
     catalogueSilent: 'The catalogue did not answer.',
@@ -168,69 +147,67 @@ export const MARKETS_COPY: Copy<MarketsCopy> = {
     title: 'Ринки',
     tabs: { all: 'Усі', memes: 'Меми', crypto: 'Крипта', stocks: 'Акції', private: 'Приватні', watchlist: 'Обране' },
     tabsA11y: 'Види активів',
-    search: 'Назва, тікер або адреса контракту',
+    search: 'Назва, тікер або адреса',
     askRyntra: 'Спитати Ryntra',
     sortBy: 'Порядок',
     sortA11y: (sort) => `Порядок: ${sort}`,
     sorts: {
-      volume: { label: 'У тренді', detail: 'Обсяг за 24 год, спершу найбільший' },
-      rise: { label: 'Зростають', detail: 'Зміна за 24 год, спершу найбільше зростання' },
-      fall: { label: 'Падають', detail: 'Зміна за 24 год, спершу найбільше падіння' },
-      liquidity: { label: 'Ліквідність', detail: 'Спершу найглибші пули' },
-      deviation: { label: 'До біржі', detail: 'Ціна токена проти ціни акції на біржі' },
+      volume: { label: 'У тренді' },
+      rise: { label: 'Зростають' },
+      fall: { label: 'Падають' },
+      liquidity: { label: 'Ліквідність' },
+      deviation: { label: 'До біржі' },
     },
     notAShare: 'Це не акція',
     toValuation: (signed) => `${signed} до оцінки`,
     atValuation: 'за оцінкою',
     notOffered: 'Не пропонується',
     privateLine: 'Токени PreStocks, а не акції. Продати може не вийти.',
-    memesRisk: 'Найризикованіше: ціна може впасти до нуля за години. Купуй лише те, що готовий втратити.',
-    coinsDown: 'Крипта й меми зараз не відповідають.',
+    memesRisk: 'Меми можуть упасти до нуля за години. Купуй лише на суму, яку не шкода втратити.',
+    memeMark: 'Мем',
+    coinsDown: 'Крипто й меми зараз не відповідають.',
+    cryptoDown: 'Крипто зараз не відповідає.',
+    memesDown: 'Меми зараз не відповідають.',
     stocksDown: 'Акції зараз не відповідають.',
     showMore: 'Показати ще',
-    onDevice: 'на цьому пристрої',
-    waitingSync: 'чекає синхронізації',
-    synced: (time) => `синхронізовано о ${time}`,
-    walletList: 'список твого гаманця',
-    keptOnDevice: 'Зберігається на цьому пристрої',
-    walletListTitle: 'Список твого гаманця',
     notLoaded: 'Не завантажено',
     loading: 'Завантаження',
     loadingA11y: 'Завантажуємо ринки',
     watchEmpty: 'Обране порожнє',
-    watchEmptyLine: 'Натисни ☆ на сторінці токена — і він буде тут.',
     searchMarkets: 'Пошук на ринках',
     noConnection: 'Немає з’єднання',
     listDown: 'Ринки не завантажилися',
-    listNeedsNetwork: 'Списку потрібна мережа. Спробуй ще раз, коли з’явиться зв’язок.',
+    listNeedsNetwork: 'Списку потрібен інтернет. Спробуй ще раз, коли з’явиться зв’язок.',
     listDownLine: 'Список ринків зараз не відповідає. Спробуй ще раз за мить.',
     tryAgain: 'Спробувати ще',
     listEmpty: 'У цьому списку поки нічого',
-    watchNoneListed: 'Жоден із позначених тобою активів зараз не торгується на майданчику.',
-    categoryEmpty: 'У цій категорії зараз немає ринків.',
+    watchNoneListed: 'Жоден з обраних активів зараз не торгується.',
     refresh: 'Оновити',
-    stale: 'Застаріло · останні відомі цифри',
-    coinsStale: 'Монети застаріли · останні відомі цифри',
-    partial: 'Неповний список',
+    pricesAt: (at) => `Ціни ${at}`,
     notListed: (count) =>
-      `${count} ${ukCount(count, 'актив не торгується', 'активи не торгуються', 'активів не торгуються')} на майданчику`,
-    refreshFailed: 'Не оновилося · показано останнє прочитане',
+      `${count} ${ukCount(count, 'актив зараз не торгується', 'активи зараз не торгуються', 'активів зараз не торгуються')}`,
     back: 'Назад',
     searching: 'Шукаємо',
     searchIdle: 'Пошук на всіх ринках',
-    searchIdleLine: 'Назва, тікер або адреса контракту',
     searchDown: 'Пошук не відповів',
-    searchNeedsNetwork: 'Пошуку потрібна мережа.',
+    searchNeedsNetwork: 'Пошуку потрібен інтернет.',
     searchDownLine: 'Пошук зараз не відповідає. Спробуй ще раз за мить.',
     nothingFound: 'Нічого не знайдено',
     noAnswer: (query) => `Жоден ринок не відповідає на «${query}».`,
     results: (count) => `${count} ${ukCount(count, 'результат', 'результати', 'результатів')}`,
     catalogueDown: 'Пошук у каталозі недоступний',
-    staleMark: 'Застаріло',
     openAddress: 'Відкрити токен',
-    addressLine: (address) => `За адресою контракту ${address}`,
     finding: 'Шукаємо токен',
     noMarkets: 'Ринки не завантажилися',
     catalogueSilent: 'Каталог не відповів.',
   },
+}
+
+/**
+ * The one quiet line over a list of prices, as Markets says it: their time, «Ціни о 11:49» (`at` writes the time). Null
+ * when nothing was read. A list's prices stand and are read again quietly (every 60 s and when the screen opens); the
+ * server's `stale` flag draws no «Ціни не оновлюються» bar over them.
+ */
+export function pricesLine(words: MarketsCopy, observedAt: string | null, at: (iso: string) => string): string | null {
+  return observedAt ? words.pricesAt(at(observedAt)) : null
 }

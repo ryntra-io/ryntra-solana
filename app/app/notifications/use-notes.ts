@@ -7,6 +7,7 @@ import { useSolanaConnection } from "@/app/solana/workspace/connection";
 import { useWalletProof } from "@/app/solana/workspace/wallet-proof";
 
 import { onSurface, type BellSurface } from "./bell-surface";
+import { walletFact } from "@/lib/account/wallet-proof-store.client";
 
 /**
  * The wallet's notes, read once for the page. The bell in the top bar and
@@ -122,7 +123,8 @@ export function useNotes(locale: WorkspaceLocale): Notes {
         ...store,
         surface: { recent: surface.recent.map((note) => (note.id === id ? { ...note, unread: false } : note)), unread: Math.max(0, surface.unread - 1) },
       });
-      if (fixture) return;
+      /* A read mark is a write; on a link alone it stays on this screen rather than asking the wallet to sign for it. */
+      if (fixture || walletFact().provenVia === "link") return;
       void fetch("/api/monitoring", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ read: id }) }).catch(() => undefined);
     },
     [key, fixture],

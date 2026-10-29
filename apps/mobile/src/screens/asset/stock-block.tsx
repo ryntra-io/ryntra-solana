@@ -8,7 +8,7 @@ import { Txt } from '@/components/txt'
 import { DETAILS_COPY } from '@/features/invest/details-copy'
 import type { ReferenceState, StockAsset } from '@/lib/api'
 import { useCopy, useLocale } from '@/lib/i18n'
-import { isScaled, issuerLabel, judgeReference, referenceWord, unitsLine } from '@/lib/stocks'
+import { issuerLabel, judgeReference, referenceWord, unitsLine } from '@/lib/stocks'
 import { formatClock, formatPercent, formatPrice } from '@/utils/format'
 
 const REFERENCE_TONES: Record<ReferenceState, ChipTone> = {
@@ -86,9 +86,9 @@ export function StockBlock({ asset, now }: { asset: StockAsset; now: number }) {
           className="flex-1"
         />
         <StatTile
-          label={words.deviation}
+          label={words.tokenVsShare}
           value={formatPercent(row.deviationPct, locale)}
-          note={row.deviationPct === null ? null : words.versus(referenceLabel)}
+          note={row.deviationPct === null ? null : words.referenceBy(referenceLabel)}
           tone={
             row.deviationPct === null || Math.abs(row.deviationPct) < 0.5
               ? 'fg'
@@ -105,11 +105,11 @@ export function StockBlock({ asset, now }: { asset: StockAsset; now: number }) {
         {asset.multiplierAgreement === 'differ' ? <Chip label={words.unitsDiffer} tone="warning" caps={false} /> : null}
         {activation ? <Chip label={words.unitsChange(activation)} tone="warning" caps={false} /> : null}
       </View>
+      {/* The units alone (ST-5 r8): the token's own price for a share is the tile above, as a distance — a fourth
+          per-share price on the page said nothing new. */}
       {units ? (
         <Txt variant="labelSm" tone="faint">
-          {isScaled(multiplier?.current)
-            ? `${units} · ${words.perShare(formatPrice(row.tokenPerShareUsd, locale))}`
-            : units}
+          {units}
         </Txt>
       ) : null}
     </View>

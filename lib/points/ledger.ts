@@ -168,6 +168,12 @@ export function rankPoints(
     const summary = pointsSummary(rows, policy);
     scored.push({ wallet, points: summary.points, first: summary.firstEarnedAt ?? "" });
   }
+  return rankOrder(scored);
+}
+
+/** The order itself — points descending, the earlier first row first, then the address — over figures already summed. */
+export function rankOrder(figures: readonly Readonly<{ wallet: string; points: bigint; first: string }>[]): PointsRanking {
+  const scored = [...figures];
   scored.sort((left, right) => {
     if (left.points !== right.points) return left.points > right.points ? -1 : 1;
     if (left.first !== right.first) return left.first < right.first ? -1 : 1;

@@ -9,7 +9,7 @@
  * Units are deliberate. An account is an authenticated account; a login is one
  * confirmed server exchange; an event is one permitted action; a thread is one
  * support thread. Rows of notes are rows of notes, never people. Operator
- * accounts (the team's own) are excluded from product metrics and reported
+ * accounts (the founder's own) are excluded from product metrics and reported
  * on their own line.
  */
 
@@ -69,6 +69,7 @@ export const METRIC_IDS = [
   "watched_addresses",
   "site_cta_14d",
   "site_workspace_cta_14d",
+  "seeker_connect_14d",
   "product_events_30d",
   "logins_30d",
   "daily_signed_in",
@@ -439,6 +440,19 @@ export const ADMIN_METRICS: Readonly<Record<MetricId, MetricDefinition>> = {
     dedup: "без дедуплікації (кожен клік)",
     denominator: "—",
     coverage: "з релізу, що дозволив подію на сервері",
+    freshness: LIVE,
+  },
+  seeker_connect_14d: {
+    id: "seeker_connect_14d",
+    label: "Підключення Seeker Connect",
+    unit: "events",
+    source: "events.seeker_connect_ok · _cancelled · _failed (first-party, /api/track)",
+    rule: "спроби «Connect with Seeker» за підсумком: підключено · скасовано (закрито чи відхилено в гаманці) · не з'єдналось; без адрес і особистих даних; тихе відновлення не рахується; спроба, яку браузер обірвав до відповіді гаманця, не рахується; анонімний лічильник — накрутити може будь-хто в межах ліміту 60/хв на IP; спроба — не людина",
+    window: "останні 14 днів",
+    timezone: UTC,
+    dedup: "без дедуплікації (кожна спроба)",
+    denominator: "—",
+    coverage: "з релізу, що дозволив події на сервері (SKR-1)",
     freshness: LIVE,
   },
   product_events_30d: {

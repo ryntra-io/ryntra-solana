@@ -1,0 +1,326 @@
+/* «Ліміти витрат» (SOL-7): the core's blocks carry the page; these are its forms, rows and states, on the treasury's
+   (SOL-4) measures. 390 px first. */
+
+.page {
+  width: 100%;
+  padding: 0;
+}
+
+.titleRow {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--ry-s2);
+}
+
+.netChip {
+  display: inline-flex;
+  align-items: center;
+  min-height: 24px;
+  padding: 2px 10px;
+  border: 1px solid var(--ry-caution);
+  border-radius: var(--ry-r-pill);
+  background: var(--ry-caution-soft);
+  color: var(--ry-text);
+  font-size: var(--ry-fs-label-sm);
+  font-weight: 500;
+}
+
+.view {
+  display: grid;
+  gap: var(--ry-s4);
+  min-width: 0;
+}
+
+.startRow,
+.formActions,
+.actionsRow,
+.rowActions,
+.amountRow {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--ry-s2);
+}
+
+.startRow {
+  margin-bottom: var(--ry-s4);
+}
+
+.formActions {
+  justify-content: flex-end;
+}
+
+.amountRow {
+  flex-wrap: nowrap;
+}
+
+.rowActions {
+  margin-top: var(--ry-s1, 4px);
+}
+
+.form {
+  display: grid;
+  gap: var(--ry-s3);
+  min-width: 0;
+  margin-top: var(--ry-s3);
+}
+
+.field {
+  display: grid;
+  align-content: start;
+  gap: 6px;
+  min-width: 0;
+}
+
+.label {
+  font-size: var(--ry-fs-label);
+  font-weight: 500;
+  color: var(--ry-text);
+}
+
+.hint,
+.fieldError,
+.warnLine {
+  margin: 0;
+  font-size: var(--ry-fs-label);
+  line-height: var(--ry-lh-body);
+  color: var(--ry-muted);
+}
+
+.fieldError {
+  color: var(--ry-pnl-neg);
+}
+
+.warnLine,
+.warn {
+  color: var(--ry-caution);
+}
+
+.input {
+  width: 100%;
+  min-width: 0;
+  min-height: 44px;
+  padding: 10px 12px;
+  border: 1px solid var(--ry-border);
+  border-radius: var(--ry-r-btn);
+  background: var(--ry-bg);
+  color: var(--ry-text);
+  font: inherit;
+  font-size: var(--ry-fs-copy);
+}
+
+.input::placeholder {
+  color: var(--ry-muted);
+  opacity: 0.7;
+}
+
+.input:hover {
+  border-color: var(--ry-border-strong);
+}
+
+.input:focus-visible {
+  outline: none;
+  border-color: var(--ry-text);
+  box-shadow: 0 0 0 1px var(--ry-text);
+}
+
+.mono {
+  font-family: var(--ry-font-mono);
+  font-variant-numeric: tabular-nums;
+  overflow-wrap: anywhere;
+}
+
+.grid2,
+.grid3 {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--ry-s3);
+}
+
+.issues {
+  display: grid;
+  gap: 4px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-size: var(--ry-fs-label);
+  color: var(--ry-pnl-neg);
+}
+
+.failure {
+  display: grid;
+  gap: 4px;
+  margin: 0 0 var(--ry-s3);
+  font-size: var(--ry-fs-label);
+  color: var(--ry-pnl-neg);
+}
+
+.failure p {
+  margin: 0;
+}
+
+.linkButton {
+  min-height: 32px;
+  padding: 0 4px;
+  border: 0;
+  background: none;
+  color: var(--ry-text);
+  font: inherit;
+  font-size: var(--ry-fs-label);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  cursor: pointer;
+}
+
+.linkButton:focus-visible {
+  outline: 2px solid var(--ry-text);
+  outline-offset: 2px;
+}
+
+.list {
+  display: grid;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.item {
+  display: grid;
+  gap: var(--ry-s2);
+  padding: var(--ry-s3) 0;
+  border-top: 1px solid var(--ry-border);
+  min-width: 0;
+}
+
+.item:first-child {
+  border-top: 0;
+  padding-top: 0;
+}
+
+.itemHead {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  column-gap: var(--ry-s3);
+  row-gap: 4px;
+  min-width: 0;
+}
+
+.itemWhat {
+  font-size: var(--ry-fs-copy);
+  font-variant-numeric: tabular-nums;
+  color: var(--ry-text);
+  overflow-wrap: anywhere;
+}
+
+.itemFacts {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--ry-s2);
+  margin: 0;
+}
+
+.itemFacts div {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+.itemFacts dt {
+  font-size: var(--ry-fs-label-sm);
+  color: var(--ry-muted);
+}
+
+.itemFacts dd {
+  margin: 0;
+  font-size: var(--ry-fs-label);
+  font-variant-numeric: tabular-nums;
+  color: var(--ry-text);
+  overflow-wrap: anywhere;
+}
+
+.itemFacts a {
+  color: inherit;
+}
+
+.state {
+  font-size: var(--ry-fs-label);
+  color: var(--ry-text);
+}
+
+.state[data-status="active"] {
+  color: var(--ry-verified);
+}
+
+.state[data-status="cancelled"],
+.state[data-status="blocked"],
+.state[data-status="unknown"] {
+  color: var(--ry-caution);
+}
+
+.state[data-status="spent"],
+.state[data-status="expired"],
+.state[data-status="ended"],
+.state[data-status="stopped"],
+.state[data-status="scheduled"] {
+  color: var(--ry-muted);
+}
+
+.review,
+.receiptWrap {
+  margin-bottom: var(--ry-s4);
+}
+
+.receiptWrap {
+  display: grid;
+  gap: var(--ry-s2);
+}
+
+.details {
+  display: grid;
+  gap: var(--ry-s2);
+  margin: 0;
+}
+
+.details div {
+  display: grid;
+  gap: 2px;
+}
+
+.details dt {
+  font-size: var(--ry-fs-label-sm);
+  color: var(--ry-muted);
+}
+
+.details dd {
+  margin: 0;
+  font-size: var(--ry-fs-label);
+  color: var(--ry-text);
+  overflow-wrap: anywhere;
+}
+
+.details a {
+  color: inherit;
+}
+
+@media (min-width: 720px) {
+  .grid2 {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .grid3 {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .itemFacts {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .input {
+    transition: none;
+  }
+}

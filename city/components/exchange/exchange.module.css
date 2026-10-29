@@ -1,0 +1,1517 @@
+/* The Exchange's contents (CITY-5d): Phoenix's perpetuals in one Pro window. The glass, the head, the moving and the
+   whole screen are the city's one window frame (CITY-65): a window over the city on a desk, its bottom sheet on a phone.
+   One amber action, every figure from the engine. Sizes only from the type scale of city/styles/city.module.css. */
+
+.display {
+  font-family: var(--font-display, system-ui), system-ui, sans-serif;
+  font-stretch: 125%;
+  font-variation-settings: 'wdth' 125;
+  font-weight: 900;
+  letter-spacing: 0.01em;
+  text-transform: uppercase;
+}
+
+/* ---------- In the frame ---------- */
+
+.framed {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+/* ---------- Head ---------- */
+
+.head {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 16px 10px;
+}
+
+.titleBlock {
+  min-width: 0;
+  flex: 1;
+}
+
+.headRow {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 4px 16px;
+}
+
+.quote {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 10px;
+  white-space: nowrap;
+  cursor: default;
+}
+
+.quotePrice {
+  font-size: var(--type-title);
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+
+.quoteMove {
+  font-size: var(--type-small);
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  color: var(--text-dim);
+}
+
+.marketButton {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  max-width: 100%;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--ice);
+  cursor: pointer;
+}
+
+.marketName {
+  font-size: var(--type-title-l);
+  line-height: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.chevron {
+  width: 14px;
+  height: 14px;
+  flex: none;
+  color: var(--text-dim);
+}
+
+/* ---------- The market strip ---------- */
+
+.strip {
+  flex: none;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 18px;
+  padding: 0 16px 12px;
+  border-bottom: 1px solid rgba(153, 69, 255, 0.18);
+  font-size: var(--type-small);
+  color: var(--text-dim);
+  font-variant-numeric: tabular-nums;
+}
+
+.strip b {
+  color: var(--ice);
+  font-weight: 700;
+}
+
+.fact {
+  white-space: nowrap;
+}
+
+.info {
+  width: 22px;
+  height: 22px;
+  display: inline-grid;
+  place-items: center;
+  margin-left: auto;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  font-family: var(--font-display, system-ui), system-ui, sans-serif;
+  font-size: var(--type-caption);
+  font-weight: 900;
+  color: var(--ice);
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.infoOn {
+  background: rgba(153, 69, 255, 0.4);
+}
+
+/* What «i» or a tap opens: one line across its row, read and closed again. */
+.details {
+  flex-basis: 100%;
+  width: 100%;
+  margin-top: 6px;
+  font-size: var(--type-caption);
+  line-height: 1.45;
+  color: var(--ice);
+  font-variant-numeric: tabular-nums;
+}
+
+.up {
+  color: var(--mint);
+}
+
+.down {
+  color: var(--flare);
+}
+
+.warnText {
+  color: var(--amber);
+}
+
+/* ---------- Body ---------- */
+
+.body {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+}
+
+.columns {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(300px, 340px);
+  grid-template-rows: minmax(0, 1fr);
+  width: 100%;
+  min-height: 0;
+}
+
+.pane {
+  min-width: 0;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: 12px 16px 16px;
+}
+
+.side {
+  border-left: 1px solid rgba(153, 69, 255, 0.18);
+  display: flex;
+  flex-direction: column;
+}
+
+/* In a scrolling column nothing is squeezed: the column scrolls instead. */
+.side > *,
+.flow > * {
+  flex-shrink: 0;
+}
+
+/* The one action stays in reach at the foot of its column while the column scrolls, over the column's own padding. */
+.foot {
+  position: sticky;
+  bottom: -16px;
+  z-index: 1;
+  margin: 0 -16px -16px;
+  padding: 6px 16px 16px;
+  background: linear-gradient(to bottom, rgba(10, 9, 18, 0), #0a0912 14px);
+}
+
+.stack {
+  width: 100%;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.stack > .pane {
+  flex: 1;
+}
+
+.flow {
+  display: flex;
+  flex-direction: column;
+}
+
+/* ---------- Tabs ---------- */
+
+.tabs {
+  flex: none;
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: 1fr;
+  gap: 4px;
+}
+
+.stack > .tabs {
+  padding: 10px 16px 8px;
+  border-bottom: 1px solid rgba(153, 69, 255, 0.18);
+}
+
+.tab {
+  height: 36px;
+  padding: 0 6px;
+  border: 0;
+  font-size: var(--type-micro);
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--text-dim);
+}
+
+.tabOn {
+  background: rgba(153, 69, 255, 0.28);
+  color: var(--ice);
+  box-shadow: inset 0 -2px 0 var(--violet);
+}
+
+.tabCount {
+  margin-left: 5px;
+  color: var(--amber);
+  font-variant-numeric: tabular-nums;
+}
+
+/* Five tabs in a phone's width: each as wide as its word, the spacing a little tighter. */
+.stack > .tabs {
+  grid-auto-columns: auto;
+}
+
+.stack > .tabs .tab {
+  padding: 0 4px;
+  letter-spacing: 0.06em;
+}
+
+.tab:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+/* ---------- Blocks and figures ---------- */
+
+.block {
+  margin-top: 14px;
+}
+
+.block:first-child {
+  margin-top: 0;
+}
+
+.label {
+  font-size: var(--type-micro);
+  font-weight: 800;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+}
+
+.labelRow {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.labelSide {
+  font-size: var(--type-caption);
+  font-weight: 700;
+  color: var(--text-dim);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.title {
+  margin-top: 4px;
+  font-size: var(--type-title);
+  line-height: 1.1;
+}
+
+.line {
+  margin-top: 6px;
+  font-size: var(--type-small);
+  line-height: 1.45;
+  color: var(--text-dim);
+}
+
+.line b {
+  color: var(--ice);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.gridWide {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+@media (max-width: 520px) {
+  .gridWide {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+.cell {
+  min-width: 0;
+  padding: 8px 10px;
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.cellLabel {
+  font-size: var(--type-micro);
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.cellValue {
+  margin-top: 3px;
+  font-size: var(--type-base);
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.rows {
+  margin-top: 10px;
+  display: grid;
+  gap: 2px;
+}
+
+.rowFigure {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 6px 0;
+  font-size: var(--type-body);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.rowFigure span:first-child {
+  color: var(--text-dim);
+}
+
+.rowFigure span:last-child {
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+
+.more {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 36px;
+  margin-top: 4px;
+  padding: 0;
+  border: 0;
+  background: none;
+  font-size: var(--type-caption);
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: #c9a2ff;
+}
+
+.moreGlyph {
+  width: 14px;
+  height: 14px;
+  transition: transform 160ms ease;
+}
+
+.moreGlyphOn {
+  transform: rotate(180deg);
+}
+
+/* ---------- Health ---------- */
+
+.health {
+  display: inline-flex;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  align-items: center;
+  gap: 7px;
+  min-width: 0;
+  font-size: var(--type-caption);
+  white-space: nowrap;
+  cursor: default;
+}
+
+.health:disabled {
+  cursor: default;
+}
+
+.healthDot {
+  width: 8px;
+  height: 8px;
+  flex: none;
+  border-radius: 50%;
+  background: var(--tone, #c9a2ff);
+  box-shadow: 0 0 8px var(--tone, #c9a2ff);
+}
+
+.healthRoom {
+  color: var(--text-dim);
+  font-variant-numeric: tabular-nums;
+}
+
+.healthWord {
+  font-weight: 800;
+  color: var(--tone, #c9a2ff);
+}
+
+/* ---------- Controls ---------- */
+
+.segment {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+  margin-top: 8px;
+}
+
+.choice {
+  height: 44px;
+  border: 0;
+  font-size: var(--type-body);
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--text-dim);
+  clip-path: polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px);
+}
+
+.choiceOn {
+  background: rgba(153, 69, 255, 0.36);
+  color: var(--ice);
+  box-shadow: inset 0 -2px 0 var(--violet);
+}
+
+.choice:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 8px;
+}
+
+.chipsFill {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: 1fr;
+}
+
+.chip {
+  min-width: 44px;
+  height: 34px;
+  padding: 0 10px;
+  border: 0;
+  font-size: var(--type-small);
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--ice);
+}
+
+.chipOn {
+  background: rgba(153, 69, 255, 0.36);
+  box-shadow: inset 0 -2px 0 var(--violet);
+}
+
+.chip:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+.field {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  height: 48px;
+  margin-top: 8px;
+  padding: 0 12px;
+  background: rgba(255, 255, 255, 0.06);
+  box-shadow: inset 0 0 0 1px rgba(153, 69, 255, 0.22);
+}
+
+.field:focus-within {
+  box-shadow: inset 0 0 0 2px var(--violet);
+}
+
+.fieldUnit {
+  font-size: var(--type-body);
+  font-weight: 800;
+  color: var(--amber);
+}
+
+.input {
+  flex: 1;
+  min-width: 0;
+  height: 100%;
+  border: 0;
+  padding: 0;
+  background: none;
+  color: var(--ice);
+  font: inherit;
+  font-size: var(--type-lead);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  outline: none;
+}
+
+.input::placeholder {
+  color: rgba(238, 241, 255, 0.34);
+}
+
+.pairFields {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.pairFields .field {
+  min-width: 0;
+}
+
+.toggle {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  height: 40px;
+  margin-top: 10px;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--ice);
+  font-size: var(--type-body);
+  font-weight: 700;
+}
+
+.switch {
+  position: relative;
+  width: 40px;
+  height: 22px;
+  background: rgba(255, 255, 255, 0.12);
+}
+
+.switch::after {
+  content: '';
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 16px;
+  height: 16px;
+  background: var(--text-dim);
+  transition: transform 160ms ease;
+}
+
+.switchOn {
+  background: rgba(153, 69, 255, 0.5);
+}
+
+.switchOn::after {
+  background: var(--ice);
+  transform: translateX(18px);
+}
+
+/* ---------- The sliders: leverage, and the share of free collateral ---------- */
+
+.dialValue {
+  font-size: var(--type-lead);
+  line-height: 1;
+  color: var(--amber);
+  font-variant-numeric: tabular-nums;
+}
+
+.slider {
+  -webkit-appearance: none;
+  appearance: none;
+  display: block;
+  width: 100%;
+  height: 32px;
+  margin: 6px 0 0;
+  padding: 0;
+  background: none;
+  cursor: pointer;
+  touch-action: pan-y;
+}
+
+.slider:focus-visible {
+  outline: none;
+}
+
+.slider::-webkit-slider-runnable-track {
+  height: 4px;
+  background: linear-gradient(90deg, var(--violet), var(--amber)) 0 0 / var(--fill, 0%) 100% no-repeat, rgba(255, 255, 255, 0.1);
+}
+
+.slider::-moz-range-track {
+  height: 4px;
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.slider::-moz-range-progress {
+  height: 4px;
+  background: linear-gradient(90deg, var(--violet), var(--amber));
+}
+
+.slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 22px;
+  height: 22px;
+  margin-top: -9px;
+  border: 0;
+  background: var(--ice);
+  clip-path: polygon(50% 0, 100% 50%, 50% 100%, 0 50%);
+  box-shadow: 0 0 14px rgba(255, 178, 63, 0.6);
+  transition: transform 140ms ease;
+}
+
+.slider::-moz-range-thumb {
+  width: 22px;
+  height: 22px;
+  border: 0;
+  border-radius: 0;
+  background: var(--ice);
+  clip-path: polygon(50% 0, 100% 50%, 50% 100%, 0 50%);
+}
+
+.slider:active::-webkit-slider-thumb,
+.slider:focus-visible::-webkit-slider-thumb {
+  transform: scale(1.18);
+  background: var(--amber);
+}
+
+.slider:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+/* The leverage steps under the slider, each standing where it is on it: the first and last kept inside the column. */
+.marks {
+  position: relative;
+  height: 28px;
+  margin: 0 11px;
+}
+
+.mark {
+  position: absolute;
+  top: 0;
+  transform: translateX(-50%);
+  min-width: 34px;
+  height: 28px;
+  padding: 0 4px;
+  border: 0;
+  background: none;
+  font-size: var(--type-caption);
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  color: var(--text-dim);
+}
+
+.markOn {
+  color: var(--amber);
+}
+
+.mark:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+/* ---------- The order book ---------- */
+
+.depth {
+  display: flex;
+  flex-direction: column;
+  margin-top: 10px;
+  font-variant-numeric: tabular-nums;
+}
+
+.depthHead {
+  display: flex;
+  justify-content: space-between;
+  padding: 0 10px 6px;
+  font-size: var(--type-micro);
+  font-weight: 800;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+}
+
+.depthSide {
+  display: grid;
+  gap: 2px;
+}
+
+.depthRow {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 28px;
+  padding: 0 10px;
+  border: 0;
+  background: none;
+  font-size: var(--type-small);
+  font-weight: 700;
+  color: var(--ice);
+  isolation: isolate;
+}
+
+/* Each level's depth up to it, a bar from the right: the bids in Solana's mint, the asks in flare. */
+.depthRow::before {
+  content: '';
+  position: absolute;
+  inset: 0 0 0 auto;
+  width: var(--depth, 0%);
+  z-index: -1;
+  transition: width 240ms ease;
+}
+
+.depthAsk::before {
+  background: linear-gradient(90deg, rgba(255, 75, 58, 0.06), rgba(255, 75, 58, 0.2));
+}
+
+.depthBid::before {
+  background: linear-gradient(90deg, rgba(20, 241, 149, 0.05), rgba(20, 241, 149, 0.18));
+}
+
+.depthAsk .depthPrice {
+  color: var(--flare);
+}
+
+.depthBid .depthPrice {
+  color: var(--mint);
+}
+
+.depthRow:hover,
+.depthRow:focus-visible {
+  outline: none;
+  box-shadow: inset 0 0 0 1px rgba(153, 69, 255, 0.5);
+}
+
+.depthSize {
+  color: var(--text-dim);
+}
+
+.depthMid {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 4px 12px;
+  margin: 6px 0;
+  padding: 10px;
+  background: rgba(153, 69, 255, 0.1);
+  box-shadow: inset 3px 0 0 var(--violet);
+}
+
+.depthMark {
+  font-size: var(--type-title);
+  line-height: 1;
+}
+
+.depthSpread {
+  font-size: var(--type-caption);
+  font-weight: 700;
+  color: var(--text-dim);
+}
+
+/* ---------- The one action ---------- */
+
+.grow {
+  flex: 1;
+}
+
+.action {
+  width: 100%;
+  height: 54px;
+  margin-top: 14px;
+  padding: 0 18px;
+  border: 0;
+  font-size: var(--type-action);
+  color: var(--ink);
+  background: linear-gradient(100deg, var(--warm), var(--amber));
+  clip-path: polygon(14px 0, 100% 0, 100% calc(100% - 14px), calc(100% - 14px) 100%, 0 100%, 0 14px);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: grid;
+  place-items: center;
+}
+
+.action:disabled {
+  cursor: default;
+  font-size: var(--type-body);
+  background: #1c1a2a;
+  color: var(--text-dim);
+}
+
+.waiting {
+  animation: breathe 1.6s ease-in-out infinite;
+}
+
+@keyframes breathe {
+  50% {
+    opacity: 0.6;
+  }
+}
+
+.small {
+  height: 34px;
+  padding: 0 12px;
+  border: 0;
+  font-size: var(--type-micro);
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--ice);
+  background: rgba(255, 255, 255, 0.08);
+  white-space: nowrap;
+}
+
+.small:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+.smallDanger {
+  box-shadow: inset 0 -2px 0 rgba(255, 75, 58, 0.7);
+}
+
+.quiet {
+  height: 40px;
+  margin-top: 6px;
+  padding: 0;
+  border: 0;
+  background: none;
+  font-size: var(--type-caption);
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+  text-align: left;
+}
+
+.quiet:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+.link {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 10px;
+  font-size: var(--type-small);
+  font-weight: 700;
+  color: var(--ice);
+  text-underline-offset: 3px;
+}
+
+.link svg {
+  width: 14px;
+  height: 14px;
+}
+
+.notice {
+  margin-top: 10px;
+  font-size: var(--type-small);
+  line-height: 1.45;
+  color: var(--ice);
+}
+
+.noticeWarn {
+  color: var(--amber);
+}
+
+.noticeError {
+  color: #ffb3aa;
+}
+
+.shimmer {
+  display: block;
+  width: 60%;
+  height: 18px;
+  margin-top: 8px;
+  background: linear-gradient(90deg, rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0.12), rgba(255, 255, 255, 0.05));
+  background-size: 200% 100%;
+  animation: shimmer 1.2s linear infinite;
+}
+
+@keyframes shimmer {
+  to {
+    background-position: -200% 0;
+  }
+}
+
+.shimmerShort {
+  width: 40%;
+}
+
+.formAction {
+  width: 100%;
+  margin-top: 10px;
+}
+
+.empty {
+  margin-top: 14px;
+  font-size: var(--type-small);
+  line-height: 1.45;
+  color: var(--text-dim);
+}
+
+/* ---------- Lists: positions, orders, history, markets ---------- */
+
+.list {
+  display: grid;
+  gap: 6px;
+  margin-top: 10px;
+}
+
+.item {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 3px 12px;
+  padding: 10px 12px;
+  background: rgba(255, 255, 255, 0.045);
+  clip-path: polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px);
+}
+
+.itemName {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  font-size: var(--type-base);
+  line-height: 1.15;
+}
+
+.itemName > span:first-child {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.tag {
+  padding: 2px 6px;
+  font-family: var(--font-ui, system-ui), system-ui, sans-serif;
+  font-size: var(--type-micro);
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  color: var(--text-dim);
+  background: rgba(255, 255, 255, 0.07);
+}
+
+.tagLong {
+  color: var(--ice);
+  background: rgba(153, 69, 255, 0.32);
+}
+
+.tagShort {
+  color: var(--ice);
+  background: rgba(255, 178, 63, 0.22);
+}
+
+.tagDanger {
+  color: var(--flare);
+  background: rgba(255, 75, 58, 0.14);
+}
+
+.itemFigure {
+  font-size: var(--type-base);
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  text-align: right;
+}
+
+.itemLine {
+  grid-column: 1 / -1;
+  font-size: var(--type-caption);
+  line-height: 1.45;
+  color: var(--text-dim);
+  font-variant-numeric: tabular-nums;
+}
+
+.itemLine b {
+  color: var(--ice);
+  font-weight: 700;
+}
+
+.itemActions {
+  grid-column: 1 / -1;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 6px;
+}
+
+.itemForm {
+  grid-column: 1 / -1;
+}
+
+button.item {
+  width: 100%;
+  border: 0;
+  text-align: left;
+  color: var(--ice);
+}
+
+button.item:hover {
+  background: rgba(153, 69, 255, 0.16);
+}
+
+.itemOn {
+  box-shadow: inset 3px 0 0 var(--violet);
+}
+
+.search {
+  margin-top: 4px;
+}
+
+/* ---------- The level strip: the chart layers until the chart takes them ---------- */
+
+.levels {
+  position: relative;
+  grid-column: 1 / -1;
+  height: 30px;
+  margin: 8px 6px 2px;
+}
+
+.levels::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 14px;
+  height: 2px;
+  background: rgba(238, 241, 255, 0.12);
+}
+
+.level {
+  position: absolute;
+  top: 6px;
+  width: 2px;
+  height: 18px;
+  transform: translateX(-1px);
+  background: var(--tone);
+}
+
+.levelDashed {
+  background: repeating-linear-gradient(to bottom, var(--tone) 0 3px, transparent 3px 6px);
+}
+
+.levelMark {
+  position: absolute;
+  top: 9px;
+  width: 10px;
+  height: 10px;
+  transform: translate(-5px, 0) rotate(45deg);
+  background: var(--ice);
+  box-shadow: 0 0 8px rgba(238, 241, 255, 0.6);
+}
+
+/* ---------- After an action ---------- */
+
+.outcome {
+  margin-top: 6px;
+  font-size: var(--type-micro);
+  font-weight: 800;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--mint);
+}
+
+.outcomeWarn {
+  color: var(--amber);
+}
+
+.outcomeDanger {
+  color: var(--flare);
+}
+
+.result {
+  margin-top: 6px;
+  font-size: var(--type-headline);
+  line-height: 1.05;
+  font-variant-numeric: tabular-nums;
+  overflow-wrap: anywhere;
+}
+
+/* ---------- The wallet ---------- */
+
+.walletLine {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 36px;
+  padding: 6px 16px;
+  border-top: 1px solid rgba(153, 69, 255, 0.18);
+  font-size: var(--type-caption);
+  color: var(--text-dim);
+}
+
+.dot {
+  width: 10px;
+  height: 10px;
+  flex: none;
+  border-radius: 50%;
+  background: var(--player, var(--violet));
+  box-shadow: 0 0 10px var(--player, var(--violet));
+}
+
+.address {
+  font-variant-numeric: tabular-nums;
+  color: var(--ice);
+}
+
+.linkButton {
+  margin-left: auto;
+  border: 0;
+  padding: 4px 0;
+  background: none;
+  font-size: var(--type-caption);
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.wallets {
+  display: grid;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.walletButton {
+  height: 50px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 0 14px;
+  border: 0;
+  background: rgba(255, 255, 255, 0.07);
+  color: var(--ice);
+  font-size: var(--type-base);
+  font-weight: 700;
+  text-align: left;
+  clip-path: polygon(10px 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%, 0 10px);
+}
+
+.walletButton img {
+  width: 26px;
+  height: 26px;
+  border-radius: 6px;
+}
+
+/* ---------- The tower card's line to the Exchange ---------- */
+
+.towerLine {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  min-height: 44px;
+  margin-top: 10px;
+  padding: 0 12px;
+  border: 0;
+  font-size: var(--type-small);
+  font-weight: 700;
+  color: var(--ice);
+  text-align: left;
+  background: rgba(153, 69, 255, 0.14);
+  box-shadow: inset 0 0 0 1px rgba(153, 69, 255, 0.35);
+  clip-path: polygon(10px 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%, 0 10px);
+}
+
+.towerLine:hover {
+  background: rgba(153, 69, 255, 0.26);
+}
+
+.towerLine svg {
+  width: 18px;
+  height: 18px;
+  flex: none;
+  color: #c9a2ff;
+}
+
+.towerLineWord {
+  flex: none;
+  font-size: var(--type-caption);
+  letter-spacing: 0.12em;
+  white-space: nowrap;
+}
+
+.towerLineMore {
+  min-width: 0;
+  margin-left: auto;
+  color: var(--text-dim);
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+@media (max-width: 400px) {
+  .head {
+    padding: 10px 14px 8px;
+  }
+  .strip {
+    padding: 0 14px 10px;
+    gap: 2px 12px;
+  }
+  .pane {
+    padding: 10px 14px 16px;
+  }
+  .foot {
+    margin: 0 -14px -16px;
+    padding: 6px 14px 16px;
+  }
+  .stack > .tabs {
+    padding: 8px 14px 8px;
+  }
+}
+
+/* ---------- The stills (cinematic CGI of 28.10): the head, the empty and no-account states ---------- */
+
+.headArt {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 0;
+  width: 100%;
+  height: 136px;
+  object-fit: cover;
+  object-position: 78% 42%;
+  opacity: 0.62;
+  pointer-events: none;
+  user-select: none;
+  -webkit-mask-image: linear-gradient(90deg, transparent 0, #000 46%), linear-gradient(180deg, #000 30%, transparent 100%);
+  -webkit-mask-composite: source-in;
+  mask-image: linear-gradient(90deg, transparent 0, #000 46%), linear-gradient(180deg, #000 30%, transparent 100%);
+  mask-composite: intersect;
+}
+
+.head,
+.strip {
+  position: relative;
+  z-index: 1;
+}
+
+.artState {
+  display: grid;
+  justify-items: start;
+}
+
+.artFrame {
+  width: 100%;
+  aspect-ratio: 12 / 5;
+  overflow: hidden;
+  /* The still's own night while it arrives: the eclipse's violet high on the right, the city's amber low. */
+  background:
+    radial-gradient(60% 70% at 72% 28%, rgba(153, 69, 255, 0.22), transparent 70%),
+    radial-gradient(70% 50% at 40% 100%, rgba(255, 104, 28, 0.14), transparent 70%),
+    linear-gradient(180deg, #120d24, #08070f);
+  clip-path: polygon(12px 0, 100% 0, 100% calc(100% - 12px), calc(100% - 12px) 100%, 0 100%, 0 12px);
+  box-shadow: inset 0 0 0 1px rgba(153, 69, 255, 0.28);
+}
+
+.artImage {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: 50% 55%;
+  animation: artIn 420ms ease-out both;
+}
+
+@keyframes artIn {
+  from {
+    opacity: 0;
+  }
+}
+
+.artState > .title {
+  margin-top: 14px;
+}
+
+.artAction {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 48px;
+  margin-top: 14px;
+  padding: 0 20px;
+  font-size: var(--type-body);
+  color: var(--ink);
+  text-decoration: none;
+  background: linear-gradient(100deg, var(--warm), var(--amber));
+  clip-path: polygon(12px 0, 100% 0, 100% calc(100% - 12px), calc(100% - 12px) 100%, 0 100%, 0 12px);
+}
+
+.artAction svg {
+  width: 14px;
+  height: 14px;
+}
+
+/* The one line a person reads before signing: size, leverage, liquidation, fee. */
+.terms {
+  margin-top: 8px;
+  font-size: var(--type-body);
+  font-weight: 700;
+  line-height: 1.4;
+  color: var(--ice);
+  font-variant-numeric: tabular-nums;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .artImage {
+    animation: none;
+  }
+}
+
+/* ---------- Price chart: the market's bars in the wide view ---------- */
+
+.chart {
+  margin-bottom: 14px;
+}
+
+/* Under the account's card the chart keeps the card's own air above it. */
+.chart:not(:first-child) {
+  margin-top: 18px;
+  margin-bottom: 0;
+}
+
+.chartFrame {
+  position: relative;
+  height: clamp(160px, 30vh, 360px);
+  border: 1px solid rgba(153, 69, 255, 0.18);
+  background:
+    linear-gradient(to bottom, rgba(255, 255, 255, 0.035) 1px, transparent 1px) 0 0 / 100% 25%,
+    radial-gradient(80% 90% at 70% 20%, rgba(153, 69, 255, 0.1), transparent 70%),
+    rgba(8, 7, 15, 0.6);
+  overflow: hidden;
+}
+
+.chartSvg {
+  position: absolute;
+  inset: 0 64px 0 0;
+  width: calc(100% - 64px);
+  height: 100%;
+}
+
+.chartUp {
+  fill: var(--mint);
+  stroke: var(--mint);
+}
+
+.chartDown {
+  fill: var(--flare);
+  stroke: var(--flare);
+}
+
+.chartUp line,
+.chartDown line {
+  stroke-width: 1px;
+}
+
+.chartUp rect,
+.chartDown rect {
+  stroke: none;
+}
+
+.chartLast {
+  stroke: rgba(255, 104, 28, 0.55);
+  stroke-width: 1px;
+  stroke-dasharray: 3 4;
+}
+
+.chartScale {
+  position: absolute;
+  right: 8px;
+  font-size: var(--type-caption);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: var(--text-dim);
+}
+
+.chartHigh {
+  top: 6px;
+}
+
+.chartLow {
+  bottom: 6px;
+}
+
+.chartTag {
+  position: absolute;
+  right: 0;
+  transform: translateY(-50%);
+  padding: 2px 6px;
+  font-size: var(--type-caption);
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  color: var(--ink);
+  background: var(--amber);
+}
+
+.chartWait {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, rgba(255, 255, 255, 0.02), rgba(255, 255, 255, 0.06), rgba(255, 255, 255, 0.02));
+  background-size: 200% 100%;
+  animation: shimmer 1.6s linear infinite;
+}
+
+.chartTimes {
+  display: flex;
+  justify-content: flex-end;
+  gap: 4px;
+  margin-top: 6px;
+}
+
+.chartTime {
+  min-width: 44px;
+  height: 32px;
+  padding: 0 8px;
+  border: 0;
+  font-size: var(--type-caption);
+  font-weight: 800;
+  color: var(--text-dim);
+  background: transparent;
+  cursor: pointer;
+}
+
+.chartTimeOn {
+  color: var(--ice);
+  background: rgba(153, 69, 255, 0.24);
+}
+
+/* Beside the chart the account's still is a strip, so the chart leads the wide view. */
+.chartLed .artFrame {
+  aspect-ratio: auto;
+  height: 140px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .chartWait {
+    animation: none;
+  }
+}

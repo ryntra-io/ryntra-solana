@@ -31,7 +31,7 @@ import { useNow } from '@/hooks/use-now'
 import { isNetworkError } from '@/lib/api'
 import { useCopy, useLocale, useSharedCopy } from '@/lib/i18n'
 import { useTheme } from '@/theme'
-import { DASH, formatClock, formatDayHeading } from '@/utils/format'
+import { DASH, formatClock, formatDayHeading, saidFigure } from '@/utils/format'
 
 import { ReceiptDocSheet } from './doc-sheet'
 import { DOC_STATUS_TONE } from './receipt-picture'
@@ -63,10 +63,11 @@ function amountsLine(doc: ReceiptDoc): string {
 /** One receipt in the list: what kind, what happened, what moved, its state when it is not settled, its time. */
 export function ReceiptRow({ doc, last, onPress }: { doc: ReceiptDoc; last: boolean; onPress: () => void }) {
   const copy = useCopy(RECEIPTS_COPY)
+  const locale = useLocale()
   return (
     <Pressable
       accessibilityRole="button"
-      accessibilityLabel={`${doc.title}, ${amountsLine(doc)}, ${copy.statuses[doc.status]}, ${formatClock(doc.at)}`}
+      accessibilityLabel={`${doc.title}, ${saidFigure(amountsLine(doc), locale)}, ${copy.statuses[doc.status]}, ${formatClock(doc.at)}`}
       onPress={onPress}
       className={`min-h-14 flex-row items-center gap-3 py-3 active:bg-hover ${last ? '' : 'border-b border-line'}`}
     >
@@ -244,7 +245,7 @@ export function ReceiptsScreen() {
           docs.length === 0 ? (
             // «None yet» only when everything was read; a list that was read in part says so above, not «none».
             history.complete && !cabinet.isError && !cabinet.isPending ? (
-              <StateView icon="receipt-outline" title={copy.emptyTitle} detail={copy.emptyDetail} />
+              <StateView icon="receipt-outline" title={copy.emptyTitle} />
             ) : null
           ) : (
             <Txt variant="ui" tone="muted" className="py-6 text-center">
@@ -260,7 +261,7 @@ export function ReceiptsScreen() {
     docs.length > 0
       ? copy.subtitle(docs.length)
       : activity.data
-        ? copy.coverage
+        ? undefined
         : activity.isError
           ? shared.didNotLoad
           : shared.loading

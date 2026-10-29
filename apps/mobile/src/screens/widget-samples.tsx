@@ -10,7 +10,7 @@ import { useTheme } from '@/theme'
 const SAMPLE_WALLET = 'Samp1eWa11et11111111111111111111111111111111'
 
 /**
- * The home-screen widget in the development gallery: the launcher's own
+ * The home-screen widget in the development gallery (M9): the launcher's own
  * drawing of it, by the same library, in the app's theme and language — a
  * fresh read, one from yesterday not updated, hidden amounts, a wallet not
  * connected, and the lowest size. Sample figures, never a wallet's.

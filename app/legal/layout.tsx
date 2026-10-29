@@ -47,6 +47,10 @@ export default async function LegalLayout({ children }: { children: React.ReactN
         <p className="legal-contact">
           {locale === "uk" ? "Питання щодо цих документів:" : "Questions about these documents:"} <a href={contactMailto()}>{CONTACTS.email}</a>
         </p>
+        {/* The notices the charts' open-source libraries ask to be shown (CH-17). */}
+        <p className="legal-contact">
+          <a href="/legal/licenses">{locale === "uk" ? "Ліцензії відкритого коду" : "Open-source licences"}</a>
+        </p>
       </main>
 
       <FrozenFooter locale={locale} />

@@ -10,6 +10,7 @@ import {
   countShort,
   chartDay,
   dayShort,
+  exchangeClock,
   exchangeShort,
   issuerFeeText,
   moneyShort,
@@ -24,6 +25,7 @@ import {
   yearPoints,
   yearRange,
   yearStartsLate,
+  venueName,
 } from './company-facts.ts'
 import { TRUTH_TOPICS, truthTopicText } from './truth-topics.ts'
 
@@ -70,8 +72,11 @@ test('money in the web’s short form: трлн, млрд, млн, тис. in Uk
   assert.equal(plain(moneyShort(912_000, 'uk')), '$912 тис.')
   assert.equal(plain(moneyShort(2_970, 'uk')), '$2,97 тис.')
   assert.equal(moneyShort(41, 'uk'), '$41')
-  assert.equal(moneyShort(0.5, 'uk'), '$0,5')
-  assert.equal(plain(moneyShort(-1.2e9, 'uk')), '−$1,2 млрд')
+  assert.equal(moneyShort(0.5, 'uk'), '$0,50')
+  assert.equal(moneyShort(0.2, 'uk'), '$0,20', 'cents under a dollar (ST-5 r8: «$0,2»)')
+  assert.equal(moneyShort(3_195_000, 'en'), '$3.20M', 'one precision: never «$3.2M» beside «$3.19M» (ST-5 r8)')
+  assert.equal(moneyShort(3_190_000, 'en'), '$3.19M')
+  assert.equal(plain(moneyShort(-1.2e9, 'uk')), '−$1,20 млрд')
   assert.equal(moneyShort(1.93e12, 'en'), '$1.93T')
   assert.equal(moneyShort(110_400, 'en'), '$110K')
   assert.equal(moneyShort(null, 'uk'), null, 'unknown is not drawn, never $0')
@@ -100,7 +105,7 @@ test('a share with two decimals under one per cent and one above', () => {
 
 test('days as the web writes them: the source’s day, the chart’s day, the path’s day', () => {
   assert.equal(plain(dayShort('2026-09-26T12:51:13.890Z', 'uk')), '26 вер. 2026 р.')
-  assert.equal(dayShort('2026-09-26T12:51:13.890Z', 'en'), 'Sep 26, 2026')
+  assert.equal(dayShort('2026-09-26T12:51:13.890Z', 'en'), '26 Sep 2026')
   assert.equal(plain(dayShort('2025-06-27T10:14:51.000Z', 'uk')), '27 черв. 2025 р.')
   assert.equal(dayShort('not a day', 'uk'), null)
   assert.equal(dayShort(null, 'uk'), null)
@@ -108,7 +113,7 @@ test('days as the web writes them: the source’s day, the chart’s day, the pa
   assert.equal(plain(chartDay(noon, 'uk')), '30 бер. 2026 р.')
   assert.equal(chartDay(noon, 'en'), '30 Mar 2026')
   assert.equal(pathDay('2026-06-12', 'uk'), '12.06.2026')
-  assert.equal(pathDay('2026-06-12', 'en'), 'Jun 12, 2026')
+  assert.equal(pathDay('2026-06-12', 'en'), '12 Jun 2026')
   assert.equal(pathDay('not a day', 'uk'), null)
 })
 
@@ -118,6 +123,21 @@ test('the exchange’s short name from its MIC, else its stated name without the
   assert.equal(exchangeShort({ mic: 'XNYS', name: 'New York Stock Exchange' }), 'NYSE')
   assert.equal(exchangeShort({ mic: 'XTKS', name: 'Tokyo Stock Exchange' }), 'Tokyo')
   assert.equal(exchangeShort(null), null)
+})
+
+test('the exchange’s clock and the pool’s venue in words, never a time-zone ID or a slug (ST-5 r6)', () => {
+  assert.equal(exchangeClock('America/New_York', 'en'), 'New York time')
+  assert.equal(exchangeClock('America/New_York', 'uk'), 'час Нью-Йорка')
+  assert.equal(exchangeClock('Europe/Paris', 'en'), 'Paris time')
+  assert.equal(exchangeClock('Europe/Paris', 'uk'), 'час міста Paris')
+  assert.equal(exchangeClock('Etc/GMT+5', 'en'), null)
+  assert.equal(exchangeClock(null, 'en'), null)
+  assert.equal(venueName('raydium-clmm'), 'Raydium')
+  assert.equal(venueName('meteora_dlmm'), 'Meteora')
+  assert.equal(venueName('pumpswap'), 'PumpSwap')
+  assert.equal(venueName('newdex-v2'), 'Newdex')
+  assert.equal(venueName(null), null)
+  assert.equal(venueName(''), null)
 })
 
 test('under the name: the ticker on its exchange; a private company’s standing; a public one’s token', () => {
@@ -146,7 +166,7 @@ test('under the name: the ticker on its exchange; a private company’s standing
     'en',
   )
   assert.equal(english.subline, 'SPACEX · PreStocks token')
-  assert.equal(english.status, 'Public since Jun 12, 2026')
+  assert.equal(english.status, 'Public since 12 Jun 2026')
   // A path without a swap says nothing of a listing.
   assert.equal(publicSinceOf({ ...SPACEX_PATH, swap: null }), null)
 })
@@ -212,7 +232,7 @@ test('«Що ти купуєш» for NVIDIA: the issuer, the backing with its da
     english.map(({ value, note }) => [value, note]),
     [
       ['xStocks · Backed Finance', null],
-      ['100.1%', '186,664 shares held by Alpaca · reserves at Sep 26, 2026'],
+      ['100.1%', '186,664 shares held by Alpaca · reserves at 26 Sep 2026'],
       ['Already in the token amount', null],
       ['None', null],
     ],
@@ -318,7 +338,7 @@ test('«Торги на Solana» for NVIDIA: the day’s figures, buying against
     day.stats.map(({ label, value }) => [label, plain(value)]),
     [
       ['Обсяг', '$24,5 млн'],
-      ['Ліквідність', '$3,4 млн'],
+      ['Ліквідність', '$3,40 млн'],
       ['Власників', '113 тис.'],
       ['Трейдерів', '15,1 тис.'],
       ['Угод', '170 тис.'],
@@ -343,7 +363,7 @@ test('«Торги на Solana» for NVIDIA: the day’s figures, buying against
   assert.equal(buyShare(null, 3), null)
 })
 
-test('the price over the year: anchored to the page’s price, its low and high with their days, where the price stands', () => {
+test('the price over half a year: the closes as the pool closed them, its low and high with their days, where the price stands', () => {
   const now = Date.UTC(2026, 8, 26, 13)
   const day = 86_400_000
   // Six months of daily closes, the pool's last one a per cent above the page's price.
@@ -355,23 +375,38 @@ test('the price over the year: anchored to the page’s price, its low and high 
     close: index === 3 ? 160 : index === 50 ? 240 : 200 + (index % 7),
   }))
   candles[candles.length - 1] = { ...candles[candles.length - 1], close: 202 }
-  const points = yearPoints(candles, 200, now)
+  const points = yearPoints(candles, now)
   assert.equal(points.length, 183)
-  assert.ok(Math.abs(points[points.length - 1].price - 200) < 1e-9, 'the line ends at the page’s price')
+  assert.equal(points[points.length - 1].price, 202, 'the closes are the pool’s own, never scaled to the page’s price')
   const range = yearRange(points, 200, now)
   assert.ok(range)
-  assert.ok(Math.abs(range.low - 160 * (200 / 202)) < 1e-9)
-  assert.ok(Math.abs(range.high - 240 * (200 / 202)) < 1e-9)
+  assert.equal(range.low, 160)
+  assert.equal(range.high, 240)
   assert.equal(range.lowAt, candles[3].time * 1000)
+  assert.equal(range.highAt, candles[50].time * 1000)
   assert.ok(range.position > 0 && range.position < 1)
-  assert.equal(yearStartsLate(range, now), true, 'half a year says since when, never «a year»')
+  // ST-5: a close on a fixed day does not move with the live price.
+  for (const live of [190.83, 200, 205.5, 239]) {
+    const moved = yearRange(yearPoints(candles, now), live, now)
+    assert.equal(moved.low, 160, `low at a live ${live}`)
+    assert.equal(moved.high, 240, `high at a live ${live}`)
+    assert.equal(moved.lowAt, candles[3].time * 1000)
+  }
+  assert.equal(
+    yearStartsLate(range, now),
+    false,
+    'the route’s full 183 daily bars are half a year, never «since» their first day',
+  )
+  // A token listed two months ago says since when.
+  const young = yearRange(points.slice(-60), 200, now)
+  assert.equal(yearStartsLate(young, now), true)
   // A live price beyond the line is the year's new end, dated now.
   const higher = yearRange(points, 300, now)
   assert.equal(higher.high, 300)
   assert.equal(higher.highAt, now)
   assert.equal(higher.position, 1)
   assert.equal(yearRange(points.slice(0, 1), 200, now), null, 'one point is a figure, not a range')
-  assert.deepEqual(yearPoints([], 200, now), [])
+  assert.deepEqual(yearPoints([], now), [])
 })
 
 test('a private company’s key figures: PreStocks’ valuation and the one its token’s price implies, with their time', () => {

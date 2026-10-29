@@ -6,8 +6,6 @@ import { ConnectionControl, type ConnectionCopy } from "@/app/shell/connection-c
 import { connectionCopyFor } from "@/app/shell/connection-copy";
 import type { ConnectionAdapter, ConnectionCapability } from "@/app/shell/connection";
 
-import { useWalletConnect } from "./wallet-connect";
-
 /**
  * Ryntra's connection, expressed in the shell's contract.
  *
@@ -33,6 +31,11 @@ import { useWalletConnect } from "./wallet-connect";
  * false assertion as `NO WALLET` printed above a route that signs — the same
  * mistake, in the other direction.
  *
+ * **No Ethereum sign-in (SOL-W1, decision 58).** It once drove SIWE through an
+ * injected `window.ethereum`. On Ryntra on Solana a person signs in with a
+ * Solana wallet only, so without a proved address «Connect» leads to the
+ * account settings, where the Solana wallet is linked (`WalletEntry`).
+ *
  * **No network is claimed either.** The cabinet is venue-neutral; the address
  * is the same address on every chain a person uses it on, and there is no
  * single network this workspace requires. `network: null` says that, where a
@@ -49,8 +52,6 @@ export function RyntraConnectionControl({
   identity?: ReactNode;
   copy?: ConnectionCopy;
 }) {
-  const { available, busy, error, run } = useWalletConnect("signin");
-
   const adapter = useMemo<ConnectionAdapter>(() => {
     const capabilities: ConnectionCapability[] = [];
     if (identityWallet) capabilities.push("READ", "OWNERSHIP_PROVEN");
@@ -60,20 +61,20 @@ export function RyntraConnectionControl({
       snapshot: {
         /* A proved address is itself a connector: the account can be read
            without a wallet extension present on this page at all. Without one,
-           availability is whether a wallet could be asked. */
-        available: Boolean(identityWallet) || available,
-        connecting: busy,
+           the way is the account settings' Solana wallet. */
+        available: true,
+        connecting: false,
         address: identityWallet,
         /* Nothing to be off. See the note above `network: null`. */
         onExpectedNetwork: true,
         capabilities,
-        error,
+        error: null,
       },
       network: null,
-      connect: identityWallet ? undefined : () => void run(),
+      connect: identityWallet ? undefined : () => window.location.assign("/app/settings#account"),
       truncate: (value) => `${value.slice(0, 6)}…${value.slice(-4)}`,
     };
-  }, [available, busy, error, identityWallet, run]);
+  }, [identityWallet]);
 
   return (
     <ConnectionControl

@@ -1,0 +1,668 @@
+/* The home's live event feed (CITY-66, mock M1): dark chamfered glass with an edge in the event's colour, the brand's
+   amber for the header and the gear, mint for what rose, flare for what fell, violet for what is new. On a desk a
+   column on the left under the top bar; on a phone a strip that opens into the list. Tokens from
+   city/styles/city.module.css. */
+
+.feed {
+  position: absolute;
+  top: calc(max(12px, env(safe-area-inset-top)) + 58px);
+  left: var(--gutter);
+  right: var(--gutter);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-height: 0;
+  /* The page's old global styles pad every <section>; the feed sets its own. */
+  margin: 0;
+  padding: 0;
+  transition:
+    opacity 180ms ease,
+    visibility 0s linear 0s;
+}
+
+/* A window open (`data-hidden`, city/lib/city/windows.ts), or a menu of the top bar — the search, the wallet's list:
+   the feed and its controls step aside until it closes, so nothing of the feed stands over a window. */
+.feed[data-hidden],
+:global(body:has([data-city-top] [aria-expanded='true'])) .feed {
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transition:
+    opacity 160ms ease,
+    visibility 0s linear 160ms;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .feed,
+  .feed[data-hidden] {
+    transition: none;
+  }
+}
+
+/* ---------- Header: the gear, the bolt, the «i» for sources ---------- */
+
+.head {
+  display: flex;
+  flex: none;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+  min-height: 44px;
+}
+
+.gear,
+.more,
+.info,
+.close {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  border: 0;
+  color: var(--amber);
+  cursor: pointer;
+}
+
+.gear {
+  --cut: 10px;
+  background: linear-gradient(160deg, rgba(20, 16, 36, 0.86), rgba(8, 7, 15, 0.9));
+  clip-path: polygon(var(--cut) 0, 100% 0, 100% calc(100% - var(--cut)), calc(100% - var(--cut)) 100%, 0 100%, 0 var(--cut));
+  box-shadow: inset 0 0 0 2px rgba(255, 178, 63, 0.45), inset 0 1px 18px rgba(153, 69, 255, 0.18);
+}
+
+.gear[aria-expanded='true'] {
+  color: var(--ink);
+  background: linear-gradient(160deg, var(--warm), var(--amber));
+}
+
+.gear svg,
+.more svg,
+.close svg {
+  width: 22px;
+  height: 22px;
+}
+
+.close {
+  width: 40px;
+  height: 40px;
+  color: var(--text-dim);
+  background: none;
+}
+
+.close svg {
+  width: 16px;
+  height: 16px;
+}
+
+.more {
+  display: none;
+  background: none;
+  color: var(--ice);
+}
+
+/* The one quiet control for each event's source and clock time. */
+.info {
+  margin-left: auto;
+  background: none;
+  color: var(--text-dim);
+}
+
+.info svg {
+  width: 18px;
+  height: 18px;
+}
+
+.info[aria-pressed='true'] {
+  color: var(--amber);
+}
+
+.more[aria-expanded='true'] svg {
+  transform: rotate(180deg);
+}
+
+/* The gear's chamfer clips an outline: its focus is drawn inside. */
+.gear:focus-visible {
+  outline: none;
+  box-shadow: inset 0 0 0 2px var(--amber), inset 0 0 0 4px rgba(6, 5, 12, 0.9);
+}
+
+.more:focus-visible,
+.info:focus-visible,
+.close:focus-visible,
+.switch:focus-visible {
+  outline: 2px solid var(--amber);
+  outline-offset: 2px;
+}
+
+.kicker {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  font-weight: 800;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--amber);
+  text-shadow: 0 1px 8px rgba(6, 5, 12, 0.9);
+  white-space: nowrap;
+  min-width: 0;
+}
+
+.bolt {
+  width: 14px;
+  height: 14px;
+  flex: none;
+}
+
+
+/* ---------- «Show on home» ---------- */
+
+.settings {
+  --cut: 14px;
+  flex: none;
+  padding: 10px 14px 12px 18px;
+  background: linear-gradient(160deg, rgba(20, 16, 36, 0.92), rgba(8, 7, 15, 0.94));
+  clip-path: polygon(var(--cut) 0, 100% 0, 100% calc(100% - var(--cut)), calc(100% - var(--cut)) 100%, 0 100%, 0 var(--cut));
+  box-shadow: inset 0 0 0 2px rgba(153, 69, 255, 0.28), inset 0 1px 18px rgba(153, 69, 255, 0.18);
+}
+
+.settingsHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 2px;
+}
+
+.settingsTitle {
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--amber);
+}
+
+.row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-height: 44px;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--ice);
+}
+
+.switch {
+  position: relative;
+  flex: none;
+  width: 46px;
+  height: 26px;
+  padding: 0;
+  border: 0;
+  border-radius: 13px;
+  background: rgba(238, 241, 255, 0.18);
+  box-shadow: inset 0 0 0 1px rgba(238, 241, 255, 0.22);
+  cursor: pointer;
+  transition: background-color 160ms ease;
+}
+
+.switch[aria-checked='true'] {
+  background: var(--mint);
+  box-shadow: 0 0 12px rgba(20, 241, 149, 0.45);
+}
+
+.knob {
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: var(--ice);
+  box-shadow: 0 1px 4px rgba(6, 5, 12, 0.6);
+  transition: transform 160ms ease;
+}
+
+.switch[aria-checked='true'] .knob {
+  transform: translateX(20px);
+}
+
+
+/* ---------- The events ---------- */
+
+.list {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  overflow: hidden;
+}
+
+/* A new event grows in at the top and the older ones move down with it. */
+.item {
+  display: grid;
+  grid-template-rows: 1fr;
+  padding-bottom: 8px;
+  animation: feedIn 520ms cubic-bezier(0.2, 0.9, 0.3, 1) both;
+}
+
+.item:last-child {
+  padding-bottom: 0;
+}
+
+/* An event the column has no room for waits out of sight, never cut in half; the list fades at its edge meanwhile. */
+.item[data-over] {
+  visibility: hidden;
+}
+
+.list[data-overflow] {
+  mask-image: linear-gradient(180deg, #000 calc(100% - 28px), transparent);
+}
+
+.item > * {
+  min-height: 0;
+}
+
+@keyframes feedIn {
+  from {
+    grid-template-rows: 0fr;
+    padding-bottom: 0;
+    opacity: 0;
+    transform: translateX(-28px);
+  }
+}
+
+.card {
+  --tone: var(--violet);
+  --cut: 12px;
+  position: relative;
+  display: grid;
+  grid-template-columns: 40px minmax(0, 1fr) auto;
+  grid-template-areas:
+    'icon title time'
+    'icon line spark'
+    'icon meta meta';
+  align-items: center;
+  column-gap: 12px;
+  width: 100%;
+  padding: 9px 14px 9px 16px;
+  border: 0;
+  overflow: hidden;
+  text-align: left;
+  font: inherit;
+  color: var(--ice);
+  background: linear-gradient(160deg, rgba(20, 16, 36, 0.86), rgba(8, 7, 15, 0.9));
+  clip-path: polygon(var(--cut) 0, 100% 0, 100% calc(100% - var(--cut)), calc(100% - var(--cut)) 100%, 0 100%, 0 var(--cut));
+  box-shadow: inset 3px 0 0 var(--tone), inset 0 0 0 1px rgba(153, 69, 255, 0.28), inset 0 1px 18px rgba(153, 69, 255, 0.14);
+}
+
+.card[data-tone='up'],
+.card[data-tone='flow'] {
+  --tone: var(--mint);
+}
+
+.card[data-tone='down'] {
+  --tone: var(--flare);
+}
+
+button.card {
+  cursor: pointer;
+}
+
+button.card:hover {
+  box-shadow: inset 3px 0 0 var(--tone), inset 0 0 0 1px rgba(255, 178, 63, 0.5), inset 0 1px 18px rgba(153, 69, 255, 0.2);
+}
+
+button.card:focus-visible {
+  outline: none;
+  box-shadow: inset 3px 0 0 var(--tone), inset 0 0 0 2px var(--amber);
+}
+
+button.card:active {
+  transform: translateY(1px);
+}
+
+.icon {
+  grid-area: icon;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  object-fit: cover;
+  background: var(--graphite);
+  box-shadow: 0 0 0 1px rgba(238, 241, 255, 0.16);
+}
+
+.iconGlyph {
+  display: grid;
+  place-items: center;
+  color: var(--ice);
+  font-size: 15px;
+  font-weight: 800;
+  background: radial-gradient(circle at 35% 30%, rgba(153, 69, 255, 0.85), rgba(42, 22, 64, 0.95));
+}
+
+.iconGlyph svg {
+  width: 20px;
+  height: 20px;
+}
+
+.title {
+  grid-area: title;
+  min-width: 0;
+  overflow: hidden;
+  font-size: 15px;
+  font-weight: 800;
+  line-height: 1.25;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.line {
+  grid-area: line;
+  min-width: 0;
+  overflow: hidden;
+  font-size: 14px;
+  font-weight: 700;
+  line-height: 1.3;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  font-variant-numeric: tabular-nums;
+  color: rgba(238, 241, 255, 0.82);
+}
+
+.card[data-tone='up'] .line,
+.card[data-tone='down'] .line,
+.card[data-tone='flow'] .title {
+  color: var(--tone);
+}
+
+.time {
+  grid-area: time;
+  justify-self: end;
+  font-size: 12px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  color: rgba(238, 241, 255, 0.72);
+}
+
+/* Shown with the header's «i»: who said it, and the clock time. */
+.meta {
+  display: none;
+  grid-area: meta;
+  min-width: 0;
+  overflow: hidden;
+  font-size: 12px;
+  line-height: 1.35;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  color: var(--text-dim);
+}
+
+.feed[data-details] .meta {
+  display: block;
+}
+
+.spark {
+  grid-area: spark;
+  justify-self: end;
+  display: block;
+  overflow: visible;
+}
+
+.spark polyline {
+  fill: none;
+  stroke: var(--tone);
+  stroke-width: 2;
+  stroke-linejoin: round;
+  stroke-linecap: round;
+  filter: drop-shadow(0 0 4px var(--tone));
+}
+
+/* The flashing (a switch of «Show on home»): an event that arrives after the first ones glows once in its colour. */
+.card::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0;
+  background: linear-gradient(90deg, var(--tone), transparent 75%);
+}
+
+.feed[data-flash='on'] .item[data-fresh] .card::after {
+  animation: feedGlow 1400ms ease-out 420ms both;
+}
+
+@keyframes feedGlow {
+  30% {
+    opacity: 0.32;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+
+/* The one state in words: everything switched off. */
+.empty {
+  margin: 0;
+  padding: 10px 14px;
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1.45;
+  color: rgba(238, 241, 255, 0.82);
+  background: rgba(8, 7, 15, 0.72);
+  box-shadow: inset 0 0 0 1px rgba(153, 69, 255, 0.22);
+}
+
+/* ---------- Desk: the column on the left, as tall as the screen allows above the dock ---------- */
+
+@media (min-aspect-ratio: 1/1) {
+  /* A short screen (a phone on its side) scrolls the column, so «Show on home» is always reachable. */
+  section.feed {
+    right: auto;
+    width: 340px;
+    max-height: calc(100dvh - max(12px, env(safe-area-inset-top)) - 58px - 128px);
+    overflow-x: hidden;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    scrollbar-width: none;
+    /* The column's empty spaces let drags through to the city; its controls and cards take them. */
+    pointer-events: none;
+  }
+
+  section.feed::-webkit-scrollbar {
+    display: none;
+  }
+
+  section.feed > *,
+  .head > * {
+    pointer-events: auto;
+  }
+
+  .feed > .head {
+    pointer-events: none;
+  }
+}
+
+/* A narrower desk: the first-visit hint stands under the top bar's middle, so the column starts under it while it shows. */
+@media (min-aspect-ratio: 1/1) and (max-width: 1100px) {
+  :global(body:has([data-city-hint])) section.feed {
+    top: calc(max(12px, env(safe-area-inset-top)) + 112px);
+    max-height: calc(100dvh - max(12px, env(safe-area-inset-top)) - 112px - 128px);
+  }
+}
+
+/* ---------- Phone held upright: a strip with the newest event; the chevron opens the list ---------- */
+
+@media not all and (min-aspect-ratio: 1/1) {
+  .more {
+    display: grid;
+  }
+
+  .feed:not([data-open]) {
+    --cut: 10px;
+    flex-direction: row;
+    align-items: center;
+    gap: 0;
+    min-height: 52px;
+    padding: 2px 0 2px 12px;
+    background: linear-gradient(160deg, rgba(20, 16, 36, 0.88), rgba(8, 7, 15, 0.92));
+    clip-path: polygon(var(--cut) 0, 100% 0, 100% calc(100% - var(--cut)), calc(100% - var(--cut)) 100%, 0 100%, 0 var(--cut));
+    box-shadow: inset 0 0 0 2px rgba(153, 69, 255, 0.28), inset 0 1px 18px rgba(153, 69, 255, 0.18);
+  }
+
+  .feed:not([data-open]) .head {
+    display: contents;
+  }
+
+  /* The strip keeps the bolt, the newest event and the chevron. */
+  .feed:not([data-open]) .gear,
+  .feed:not([data-open]) .info,
+  .feed:not([data-open]) .settings,
+  .feed:not([data-open]) .meta {
+    display: none;
+  }
+
+  .feed:not([data-open]) .kicker {
+    order: 0;
+    margin-right: 10px;
+  }
+
+  .feed:not([data-open]) .list,
+  .feed:not([data-open]) .empty {
+    order: 1;
+    flex: 1;
+    min-width: 0;
+  }
+
+  .feed:not([data-open]) .more {
+    order: 2;
+    margin-left: 0;
+  }
+
+  .feed:not([data-open]) .item:not(:first-child) {
+    display: none;
+  }
+
+  .feed:not([data-open]) .item {
+    padding-bottom: 0;
+  }
+
+  /* The name and the figure share the strip: each grows to its width, and when both cannot fit they shorten alike. */
+  .feed:not([data-open]) .card {
+    grid-template-columns: 28px minmax(0, max-content) minmax(0, max-content) 1fr auto;
+    grid-template-areas: 'icon title line . time';
+    column-gap: 8px;
+    padding: 4px 0;
+    background: none;
+    clip-path: none;
+    box-shadow: none;
+  }
+
+  .feed:not([data-open]) .icon {
+    width: 28px;
+    height: 28px;
+  }
+
+  .feed:not([data-open]) .iconGlyph svg {
+    width: 16px;
+    height: 16px;
+  }
+
+  .feed:not([data-open]) .title,
+  .feed:not([data-open]) .line {
+    font-size: 14px;
+  }
+
+  .feed:not([data-open]) .spark {
+    display: none;
+  }
+
+  .feed:not([data-open]) button.card:focus-visible {
+    box-shadow: inset 0 0 0 2px var(--amber);
+  }
+
+  .feed:not([data-open]) .empty {
+    padding: 0;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    background: none;
+    box-shadow: none;
+  }
+
+  /* Open: the list under the strip down to the dock, scrolling when the screen is short; the card above the dock
+     steps aside meanwhile (hud.module.css), as it does for the search. */
+  .feed[data-open] {
+    overflow-x: hidden;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+  }
+
+  .feed[data-open] .head {
+    position: sticky;
+    top: 0;
+    z-index: 1;
+    padding-right: 2px;
+    background: linear-gradient(180deg, rgba(6, 5, 12, 0.85), rgba(6, 5, 12, 0));
+  }
+
+  /* What stands under the top bar on a phone — the first-visit hint, the wallet's «Mine» pill (trade/mine.module.css),
+     or both — the strip steps below, and the open list ends above the dock all the same. */
+  :global(body:has([data-city-hint])) .feed {
+    --below: 112px;
+  }
+
+  :global(body:has([aria-controls='city-mine'])) .feed {
+    --below: 96px;
+  }
+
+  :global(body:has([data-city-hint]):has([aria-controls='city-mine'])) .feed {
+    --below: 158px;
+  }
+
+  .feed {
+    top: calc(max(12px, env(safe-area-inset-top)) + var(--below, 58px));
+  }
+
+  .feed[data-open] {
+    max-height: calc(100dvh - max(12px, env(safe-area-inset-top)) - var(--below, 58px) - max(14px, env(safe-area-inset-bottom)) - 104px);
+  }
+}
+
+/* A narrow phone puts the moments' button under the top bar on the right (moments.module.css): the strip leaves it room. */
+@media (max-width: 460px) and (max-aspect-ratio: 1/1) {
+  :global(body:has([data-city-top] [aria-label^='Moments'])) .feed {
+    right: calc(var(--gutter) + 52px);
+  }
+}
+
+/* ---------- Motion: a device asking for reduced motion, or «Flashing effects» off ---------- */
+
+/* Events appear in place: nothing slides in, glows, or turns. */
+@media (prefers-reduced-motion: reduce) {
+  .item,
+  .feed[data-flash] .item[data-fresh] .card::after {
+    animation: none;
+  }
+
+  .switch,
+  .knob,
+  .more svg {
+    transition: none;
+  }
+}
+
+.feed[data-flash='off'] .item {
+  animation: none;
+}
+
+.feed[data-flash='off'] .switch,
+.feed[data-flash='off'] .knob,
+.feed[data-flash='off'] .more svg {
+  transition: none;
+}

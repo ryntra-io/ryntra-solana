@@ -1,4 +1,3 @@
-import { useRouter } from 'expo-router'
 import { useState, type ReactNode } from 'react'
 import { Pressable, View } from 'react-native'
 
@@ -30,6 +29,8 @@ import {
 } from '@/features/invest/conversion-watch'
 import { CONVERT_COPY, type ConvertCopy } from '@/features/invest/convert-copy'
 import { useConvert, type ConvertController, type ConvertInto, type ConvertToken } from '@/features/invest/use-convert'
+import { useOpenPlace, usePlaceHold } from '@/features/shell/open-place'
+import { PORTFOLIO_HISTORY_PATH } from '@/features/shell/shell'
 import type { TradeContext } from '@/features/trade/trade-model'
 import { RECEIPTS_COPY } from '@/features/receipts/copy'
 import { docFromSwap, outcomeStatus } from '@/features/receipts/receipt-doc'
@@ -38,7 +39,7 @@ import { TopUpSheet } from '@/screens/home/top-up-sheet'
 import { ShareReceiptSheet } from '@/screens/receipts/share-receipt'
 import { openLink } from '@/lib/open-link'
 
-import { BuyReceiptFace, QuietLinks, ReviewTable, type ReceiptFace } from './buy-sheet'
+import { BuyReceiptFace, QuietLinks, ReviewTable, SignInHelp, type ReceiptFace } from './buy-sheet'
 
 const QUOTE_UNREAD = new Set(['offline', 'tooLong', 'providerDown', 'rateLimited', 'failed'])
 
@@ -98,11 +99,13 @@ function ConvertFlow({
   event: IssuerEvent
   onClose: () => void
 }) {
-  const router = useRouter()
+  const openPlace = useOpenPlace()
   const words = useCopy(CONVERT_COPY)
   const buyWords = useCopy(BUY_COPY)
   const convert = useConvert(token, mode, into)
   const { trade } = convert
+  // While it is prepared, signed, sent or checked, a note's tap or a quick action waits for it (`place-hold.ts`).
+  usePlaceHold(trade.busy)
   const [topUp, setTopUp] = useState(false)
   const address = trade.account.address
 
@@ -113,9 +116,12 @@ function ConvertFlow({
     else if (trade.phase === 'settled') trade.reset()
     onClose()
   }
+  // «Історія» is a segment of «Портфель» (NEW-LOOK §5): the sheet closes and the place opens on it.
   const toHistory = () => {
+    // A swap being prepared, signed, sent or checked keeps its sheet: History opens once it is not.
+    if (trade.busy) return
     close()
-    router.push('/history')
+    openPlace(PORTFOLIO_HISTORY_PATH)
   }
 
   const logo = <AssetIcon symbol={token.name} icon={token.icon} size={32} />
@@ -139,7 +145,12 @@ function ConvertFlow({
           </Txt>
         </View>
         {trade.failure ? (
-          <Txt variant="ui" tone="danger">
+          <Txt
+            variant="ui"
+            tone={
+              trade.failure.code === 'BYTES_REBUILT' || trade.failure.code === 'REVIEW_RENEWED' ? 'warning' : 'danger'
+            }
+          >
             {words.failures[buyFailureKey(trade.failure.code)]}
           </Txt>
         ) : null}
@@ -149,7 +160,7 @@ function ConvertFlow({
           disabled={trade.phase === 'recovering'}
           onPress={() => void trade.recover()}
         />
-        <QuietLinks links={[{ label: buyWords.history, onPress: toHistory }]} />
+        {trade.phase === 'recovering' ? null : <QuietLinks links={[{ label: buyWords.history, onPress: toHistory }]} />}
       </View>
     )
   } else if ((trade.phase === 'review' || trade.phase === 'signing') && trade.prepared && convert.rows) {
@@ -359,11 +370,8 @@ function Compose({
         loading={button.loading}
       />
 
-      {action.kind === 'sign-in' ? (
-        <Txt variant="ui" tone="faint" className="text-center">
-          {buyWords.signInLine}
-        </Txt>
-      ) : null}
+      {/* That signing in moves nothing sits behind «?» (ST-4). */}
+      {action.kind === 'sign-in' ? <SignInHelp /> : null}
       {action.kind === 'need-sol' ? (
         <Pressable accessibilityRole="button" accessibilityLabel={buyWords.topUp} onPress={onTopUp} hitSlop={8}>
           <Txt variant="ui" tone="fg" className="text-center">
@@ -409,10 +417,8 @@ function Review({
     trade.closeReview()
     void trade.review()
   }
-  const order = trade.prepared?.order.order ?? null
-  const route = order && order.route.length > 0 ? order.route.map((hop) => hop.label).join(' → ') : null
+  // The exchange's hops are its own business, not a fact a person needs (ST-4): the details hold what bears on them.
   const facts: readonly { label: string; value: string; onPress?: () => void }[] = [
-    ...(route ? [{ label: words.route, value: route }] : []),
     { label: words.issuerDeadline, value: deadlineExact(event.deadline, locale) },
     ...(convert.mode === 'swap' && into?.truth ? [{ label: words.whatYouGet, value: into.truth }] : []),
     ...(event.noticeUrl
@@ -474,7 +480,13 @@ function Review({
         </View>
       ) : null}
       {trade.failure ? (
-        <Txt variant="ui" tone="danger" className="text-center">
+        <Txt
+          variant="ui"
+          tone={
+            trade.failure.code === 'BYTES_REBUILT' || trade.failure.code === 'REVIEW_RENEWED' ? 'warning' : 'danger'
+          }
+          className="text-center"
+        >
           {words.failures[buyFailureKey(trade.failure.code)]}
         </Txt>
       ) : null}
@@ -536,7 +548,8 @@ export function convertReceiptFace(
         gave === null
           ? null
           : `${outcome.fromReview ? '≈ ' : ''}${words.receiptFor(`${formatShareUnits(gave, locale)} ${input.symbol}`)}`,
-      note: outcome.belowMinimum ? buyWords.belowMinimum : outcome.fromReview ? buyWords.fromReview : null,
+      // «≈» says the figure is the Review's; the receipt keeps the network's (ST-4: no line says so).
+      note: outcome.belowMinimum ? buyWords.belowMinimum : null,
       noteTone: outcome.belowMinimum ? 'warning' : 'faint',
     }
   }

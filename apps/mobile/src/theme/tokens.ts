@@ -1,151 +1,136 @@
 /**
  * Ryntra Brand — the token layer of the native client.
  *
- * Every value here is copied from the web repository's `DESIGN.md` frontmatter
- * (the machine projection of the shipped token layer, fixed 2026-09-11).
- * Nothing is invented here: a new value is first declared there, then copied.
+ * Every colour is the core's own (`core-tokens.ts`, the JSON tokens of task A2
+ * copied by `scripts/sync-tokens.mjs`): Graphite is the dark theme and the
+ * default, Porcelain the light one — the web draws the same two from the same
+ * file, so a surface of the phone and of ryntra.io is the same pixel. The keys
+ * are the semantic names the UI reads; a key the core has no word for is made
+ * of one of its colours — a tint is its colour at an alpha, never a new hue.
  * `scripts/theme-css.mjs` projects this file into `src/theme/tokens.css` for
- * Uniwind; `tokens.test.mjs` fails when the two drift apart.
+ * Uniwind; `tokens.test.mjs` fails when the two drift apart or a value leaves
+ * the core's.
  */
+import { core } from './core-tokens.ts'
 
-/** Brand and interaction colours — identical in both themes. */
-export const brand = {
-  brand: '#FF681C',
-  brandHover: '#FF7A2F',
-  brandDeep: '#F24C0C',
-  brandPressed: '#E0430A',
-  brandLift: '#FF8A4A',
-  brandSink: '#C24509',
-  onBrand: '#FFFFFF',
-  honey: '#F5A524',
-  brandSoft: 'rgba(255, 104, 28, 0.12)',
-  brandLine: 'rgba(255, 104, 28, 0.32)',
-  brandEdge: 'rgba(255, 190, 120, 0.35)',
-  brandGlow: 'rgba(255, 104, 28, 0.22)',
-  brandChip: 'rgba(255, 104, 28, 0.14)',
-  brandChipLine: 'rgba(255, 104, 28, 0.45)',
-  focus: 'rgba(255, 104, 28, 0.35)',
-  /** Solana's own light — only on and around the Solana object, never a surface, text or action. */
-  solanaGreen: '#00FFA3',
-  solanaPurple: '#DC1FFF',
-  solanaViolet: '#9945FF',
-} as const
+type CoreTheme = (typeof core.themes)[keyof typeof core.themes]
 
-/** Theme-dependent colours. Keys are the semantic names the UI reads. */
+/** `#RRGGBB` at an alpha — a tint of a core colour, `rgba(…)` as Uniwind and React Native both read it. */
+export function tint(hex: string, alpha: number): string {
+  const value = Number.parseInt(hex.slice(1), 16)
+  return `rgba(${(value >> 16) & 255}, ${(value >> 8) & 255}, ${value & 255}, ${alpha})`
+}
+
+/** WCAG contrast of two `#RRGGBB` colours. */
+export function contrast(a: string, b: string): number {
+  const luminance = (hex: string) => {
+    const value = Number.parseInt(hex.slice(1), 16)
+    const [r, g, bl] = [(value >> 16) & 255, (value >> 8) & 255, value & 255].map((channel) => {
+      const c = channel / 255
+      return c <= 0.03928 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4
+    })
+    return 0.2126 * r + 0.7152 * g + 0.0722 * bl
+  }
+  const [hi, lo] = [luminance(a), luminance(b)].sort((x, y) => y - x)
+  return (hi + 0.05) / (lo + 0.05)
+}
+
+/** One theme's semantic colours, from the core's palette of that theme. */
+function themeOf({ color: c, effect }: CoreTheme) {
+  return {
+    /** The page. */
+    ground: c.bg,
+    /** Blocks, panels. */
+    surface: c.surface,
+    /** Sheets, menus, the raised block. */
+    elevated: c.elevated,
+    /** A row under the finger. */
+    hover: c['surface-hover'],
+    /** Borders and rules. */
+    line: c.border,
+    /** A border that asks for attention: a field, a handle. */
+    lineStrong: c['border-hover'],
+    /** The empty part of a bar or a switch. */
+    track: c.border,
+    fg: c.text,
+    muted: c.muted,
+    /** The quietest words — the core's one muted, which already holds 4.5:1. */
+    fgMuted: c.muted,
+    /** The one orange action, the current place, focus. */
+    brand: c.brand,
+    /** The orange word in small text — the core's `brand-text`. */
+    brandInk: c['brand-text'],
+    brandPressed: c['brand-pressed'],
+    /** Text on orange is dark. */
+    onBrand: c['on-brand'],
+    brandLine: tint(c.brand, 0.32),
+    brandGlow: tint(c.brand, 0.22),
+    brandChip: tint(c.brand, 0.14),
+    brandChipLine: tint(c.brand, 0.45),
+    success: c.up,
+    successInk: c['up-text'],
+    successSoft: tint(c.up, 0.13),
+    danger: c.down,
+    /** Words on a red button: the core's dark ink, or its white surface where the ink falls under 4.5:1. */
+    onDanger: contrast(c['on-brand'], c.down) >= 4.5 ? c['on-brand'] : c.surface,
+    /** Graphite's text in both themes — words over the camera, a switch's thumb: what stays light on any picture. */
+    inkLight: core.themes.graphite.color.text,
+    dangerInk: c['down-text'],
+    dangerSoft: tint(c.down, 0.13),
+    warning: c.warn,
+    warningInk: c['warn-text'],
+    warningSoft: tint(c.warn, 0.14),
+    info: c.info,
+    infoInk: c['info-text'],
+    /** What a figure stands on — its source and its time: the core's quiet word, never a hue of its own. */
+    evidence: c.muted,
+    evidenceSoft: tint(c.muted, 0.12),
+    evidenceLine: tint(c.muted, 0.3),
+    /** What dims the screen under a sheet or over the camera — the core's scrim. */
+    scrim: effect.scrim,
+    /** A price line: quieter than the figure beside it. */
+    chart2: c.muted,
+  } as const
+}
+
+/** Theme-dependent colours: `dark` is the core's Graphite, `light` its Porcelain. */
 export const themes = {
-  dark: {
-    ground: '#080D13',
-    groundTop: '#0C141D',
-    groundEdge: '#070B10',
-    sidebar: '#0B121A',
-    surface: '#0E1620',
-    elevated: '#131E2A',
-    hover: '#172230',
-    line: '#22303E',
-    lineStrong: '#2F4052',
-    track: '#1B2632',
-    fg: '#F5F7FA',
-    muted: '#91A0B2',
-    fgMuted: '#7A8899',
-    env: 'rgba(145, 160, 178, 0.14)',
-    shadowSm: 'rgba(0, 0, 0, 0.35)',
-    shadowMd: 'rgba(0, 0, 0, 0.45)',
-    shadowElevated: 'rgba(0, 0, 0, 0.60)',
-    success: '#19C77A',
-    onSuccess: '#05331F',
-    successSoft: 'rgba(25, 199, 122, 0.13)',
-    successInk: '#19C77A',
-    danger: '#FF4D55',
-    onDanger: '#3D0A0D',
-    dangerSoft: 'rgba(255, 77, 85, 0.13)',
-    dangerInk: '#FF4D55',
-    warning: '#F5A524',
-    onWarning: '#3D2A05',
-    warningSoft: 'rgba(245, 165, 36, 0.14)',
-    warningInk: '#F5A524',
-    info: '#5B9CF5',
-    onInfo: '#0A2C5C',
-    evidence: '#9DB3D1',
-    evidenceSoft: 'rgba(157, 179, 209, 0.12)',
-    evidenceLine: 'rgba(157, 179, 209, 0.30)',
-    chart2: '#8FA6C8',
-    chart5: '#6E8CA0',
-    chart6: '#64748B',
-  },
-  light: {
-    ground: '#F5F7FA',
-    groundTop: '#F5F7FA',
-    groundEdge: '#F1F4F8',
-    sidebar: '#FFFFFF',
-    surface: '#FFFFFF',
-    elevated: '#FAFBFC',
-    hover: '#EEF2F6',
-    line: '#DDE3EA',
-    lineStrong: '#C5CED9',
-    track: '#E6EBF1',
-    fg: '#111820',
-    muted: '#667085',
-    fgMuted: '#7C8798',
-    env: 'rgba(102, 112, 133, 0.12)',
-    shadowSm: 'rgba(17, 24, 32, 0.05)',
-    shadowMd: 'rgba(17, 24, 32, 0.12)',
-    shadowElevated: 'rgba(17, 24, 32, 0.18)',
-    success: '#169B62',
-    onSuccess: '#05331F',
-    successSoft: 'rgba(22, 155, 98, 0.12)',
-    successInk: '#0F7A4D',
-    danger: '#E53E45',
-    onDanger: '#3D0A0D',
-    dangerSoft: 'rgba(229, 62, 69, 0.12)',
-    dangerInk: '#D0343B',
-    warning: '#E99618',
-    onWarning: '#3D2A05',
-    warningSoft: 'rgba(233, 150, 24, 0.14)',
-    warningInk: '#A8650A',
-    info: '#2F6FD6',
-    onInfo: '#0A2C5C',
-    evidence: '#4E6480',
-    evidenceSoft: 'rgba(78, 100, 128, 0.10)',
-    evidenceLine: 'rgba(78, 100, 128, 0.28)',
-    chart2: '#8FA6C8',
-    chart5: '#6E8CA0',
-    chart6: '#64748B',
-  },
+  dark: themeOf(core.themes.graphite),
+  light: themeOf(core.themes.porcelain),
 } as const
 
 export type ThemeName = keyof typeof themes
-export type ThemeColors = (typeof themes)[ThemeName]
-export type Colors = ThemeColors & typeof brand
+export type Colors = { readonly [K in keyof (typeof themes)['dark']]: string }
 
-/** Radii, px — the scale of DESIGN.md `rounded`. */
+/** Radii, px — the core's `radius` (field 8, button 10, block 12, card 16, pill) and the phone's focus rings. */
 export const radius = {
   focusTight: 2,
   focusSm: 4,
   focusMd: 6,
-  xs: 8,
-  btn: 10,
-  sm: 12,
-  md: 16,
+  xs: core.radius.field,
+  btn: core.radius.button,
+  sm: core.radius.block,
+  md: core.radius.card,
   lg: 20,
-  pill: 999,
+  pill: core.radius.pill,
 } as const
 
-/** Spacing, px — the 4-point scale of DESIGN.md `spacing`. */
+/** Spacing, px — the core's 4-point `space`, and the phone's two wide steps above it. */
 export const spacing = {
-  '2xs': 4,
-  xs: 8,
-  sm: 12,
-  md: 16,
-  lg: 24,
-  xl: 32,
+  '2xs': core.space['1'],
+  xs: core.space['2'],
+  sm: core.space['3'],
+  md: core.space['4'],
+  lg: core.space['6'],
+  xl: core.space['8'],
   '2xl': 48,
   '3xl': 72,
 } as const
 
 /**
  * Font families as embedded by the expo-font config plugin (static weights, one
- * file per weight; the family name is the file name). Weight is chosen by
- * family, never by `fontWeight`.
+ * file per weight; the family name is the file name) — the core's Geist and
+ * Geist Mono. Weight is chosen by family, never by `fontWeight`.
  */
 export const fonts = {
   sans: 'Geist_400Regular',
@@ -156,7 +141,7 @@ export const fonts = {
   monoSemibold: 'GeistMono_600SemiBold',
 } as const
 
-/** The cabinet type ramp of DESIGN.md `typography`, rem × 16, mobile end of every clamp. */
+/** The phone's type ramp — Geist and Geist Mono at the mobile end of the web's sizes. */
 export const type = {
   display: { fontFamily: fonts.sansSemibold, fontSize: 32, lineHeight: 34, letterSpacing: -0.8 },
   headline: { fontFamily: fonts.sansSemibold, fontSize: 24, lineHeight: 28, letterSpacing: -0.48 },
@@ -171,11 +156,23 @@ export const type = {
 
 export type TypeVariant = keyof typeof type
 
-/** Motion, ms — short and expensive. */
+/** Motion, ms — the core's `motion`: short and expensive. */
 export const motion = {
-  fast: 150,
-  base: 200,
-  slow: 220,
+  fast: core.motion.fast,
+  base: core.motion.base,
 } as const
 
-export const tokens = { brand, themes, radius, spacing, fonts, type, motion } as const
+/**
+ * The page's widths — the core's `page`: on a window wider than a phone, a screen stands as one column in the
+ * middle, never pressed to an edge. An overview (Home, Portfolio, a list) is the web's main column beside its aside
+ * at the wide break — `wide − aside.max − gap`; the phone draws no aside, so the column stands alone. An action (a
+ * form, a Review, the settings) is the core's `action` column.
+ */
+export const page = {
+  overview: core.page.wide - core.page.aside.max - core.page.gap,
+  action: core.page.action,
+} as const
+
+export type PageKind = keyof typeof page
+
+export const tokens = { themes, radius, spacing, fonts, type, motion, page } as const

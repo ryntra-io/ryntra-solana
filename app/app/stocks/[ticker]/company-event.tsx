@@ -1,5 +1,6 @@
 "use client";
 
+import { Button } from "@ryntra/core/ui";
 import { HourglassMedium } from "@phosphor-icons/react";
 import { useCallback, useEffect, useState } from "react";
 
@@ -100,8 +101,30 @@ export function PathEvent({ event, token, locale }: Readonly<{ event: CompanyEve
   );
 }
 
+/**
+ * The page of a token whose issuer event outlived every catalogue (UX-503):
+ * the deadline in red before anything else, then the swap as the one action
+ * and the sale beside it — offered to everyone who arrives, holder or not,
+ * because the address itself is the way to the swap — and what the token is.
+ */
+export function EventCard({ event, token, truth, locale }: Readonly<{ event: CompanyEventFacts; token: CompanyToken; truth: string; locale: WorkspaceLocale }>) {
+  const holder = useHolds(token.mint);
+  return (
+    <div className={company.eventCard} data-event-card={event.open ? "open" : "closed"}>
+      <p className={company.eventDeadline} data-company-event={holder ? "holder" : "everyone"}>
+        <HourglassMedium size={18} weight="bold" aria-hidden="true" />
+        <span>{holder ? event.lines.holder : event.lines.everyone}</span>
+      </p>
+      <EventSwap event={event} token={token} holder={holder} locale={locale} always />
+      <p className={company.eventTruth} data-company-truth>
+        {truth}
+      </p>
+    </div>
+  );
+}
+
 /** A holder's one action and the quiet second, and the swap's sheet they open — a note's `?convert=1` opens it on arrival. */
-function EventSwap({ event, token, holder, locale }: Readonly<{ event: CompanyEventFacts; token: CompanyToken; holder: boolean; locale: WorkspaceLocale }>) {
+function EventSwap({ event, token, holder, locale, always = false }: Readonly<{ event: CompanyEventFacts; token: CompanyToken; holder: boolean; locale: WorkspaceLocale; always?: boolean }>) {
   const { connection } = useSolanaConnection();
   const sheet = useConvertSheet();
   const { openSheet, close } = sheet;
@@ -126,16 +149,16 @@ function EventSwap({ event, token, holder, locale }: Readonly<{ event: CompanyEv
 
   return (
     <>
-      {holder ? (
+      {holder || always ? (
         <div className={company.eventActions} data-company-event-actions>
           {event.open && event.swapWord && event.into ? (
-            <button type="button" className="rw-btn rw-btn--primary" aria-haspopup="dialog" data-swap-open={sheet.mode === "swap" ? "true" : undefined} onClick={() => openSheet("swap")}>
+            <Button variant="primary" block aria-haspopup="dialog" data-swap-open={sheet.mode === "swap" ? "true" : undefined} onClick={() => openSheet("swap")} lang={locale === "uk" ? "uk" : "en"}>
               {event.swapWord}
-            </button>
+            </Button>
           ) : null}
-          <button type="button" className={company.quietButton} aria-haspopup="dialog" onClick={() => openSheet("sell")}>
+          <Button variant="ghost" block aria-haspopup="dialog" onClick={() => openSheet("sell")} lang={locale === "uk" ? "uk" : "en"}>
             {event.sellWord}
-          </button>
+          </Button>
         </div>
       ) : null}
       <ConvertSheet

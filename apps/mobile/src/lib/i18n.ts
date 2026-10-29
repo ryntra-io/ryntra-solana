@@ -49,7 +49,7 @@ function subscribe(listener: () => void): () => void {
   return () => listeners.delete(listener)
 }
 
-/** The language in effect, live: a change in More re-renders every screen that reads it. */
+/** The language in effect, live: a change in «Налаштування» re-renders every screen that reads it. */
 export function useLocale(): Locale {
   return useSyncExternalStore(subscribe, getLocale, getLocale)
 }
@@ -89,11 +89,15 @@ const SHARED_EN = {
   yesterday: 'yesterday',
   connectWallet: 'Connect wallet',
   connectTitle: 'Connect your wallet',
-  connectDetail: (what: string) => `${what} follows the wallet you connect. Keys never leave it.`,
+  connectFor: (what: string) => `${what} — from your wallet`,
+  connectHelp:
+    'Ryntra reads what the wallet you connect holds. Its keys never leave it, and nothing moves without your signature in it.',
   signInTitle: 'Sign in with your wallet',
-  signInDetail: (what: string) =>
-    `${what} is private to this wallet. Signing a message proves it is yours and moves nothing.`,
+  signInFor: (what: string) => `${what} — private to this wallet`,
+  signInHelp: 'Signing a message proves the wallet is yours. It moves nothing and costs nothing.',
   signIn: 'Sign in with your wallet',
+  whatItMeans: 'What it means',
+  signInWhy: 'Why sign in',
 } as const
 
 type SharedCopy = {
@@ -106,7 +110,7 @@ const SHARED_UK: SharedCopy = {
   tryAgain: 'Спробувати ще раз',
   refresh: 'Оновити',
   noConnection: 'Немає з’єднання',
-  needsNetwork: 'Цьому екрану потрібна мережа. Спробуй ще раз, коли з’явиться зв’язок.',
+  needsNetwork: 'Цьому екрану потрібен інтернет. Спробуй ще раз, коли з’явиться зв’язок.',
   didNotLoad: 'Не завантажилось',
   refreshFailed: 'Оновлення не вдалося · показано останнє прочитане',
   offline: 'Немає з’єднання',
@@ -117,13 +121,17 @@ const SHARED_UK: SharedCopy = {
   unknown: '—',
   today: 'сьогодні',
   yesterday: 'вчора',
-  connectWallet: 'Підключити гаманець',
-  connectTitle: 'Підключи гаманець',
-  connectDetail: (what: string) => `${what} іде за гаманцем, який ти підключиш. Ключі його не покидають.`,
+  connectWallet: 'Під’єднати гаманець',
+  connectTitle: 'Під’єднай гаманець',
+  connectFor: (what: string) => `${what} — з твого гаманця`,
+  connectHelp:
+    'Ryntra читає, що лежить у гаманці, який ти під’єднаєш. Ключі його не покидають, і нічого не рухається без твого підпису в ньому.',
   signInTitle: 'Увійди гаманцем',
-  signInDetail: (what: string) =>
-    `${what} приватні для цього гаманця. Підпис повідомлення доводить, що він твій, і нічого не переміщує.`,
+  signInFor: (what: string) => `${what} — лише для цього гаманця`,
+  signInHelp: 'Підпис повідомлення доводить, що гаманець твій. Він нічого не переміщує й нічого не коштує.',
   signIn: 'Увійти гаманцем',
+  whatItMeans: 'Що це означає',
+  signInWhy: 'Навіщо входити',
 }
 
 export const SHARED_COPY: Copy<SharedCopy> = { en: SHARED_EN, uk: SHARED_UK }

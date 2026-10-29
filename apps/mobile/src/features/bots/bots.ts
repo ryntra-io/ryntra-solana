@@ -70,18 +70,16 @@ export function planResultLine(
 export type BotsCopy = Readonly<{
   title: string
   tabs: Readonly<Record<BotsTab, string>>
-  mineLead: string
   plans: string
-  plansLead: string
   createPlan: string
   results: string
-  resultsLead: string
-  catalogLead: string
   recurring: string
   recurringWhat: string
   recurringHow: string
   recurringFor: string
   pickToken: string
+  /** The search sheet «Обрати токен» opens over Bots: what the token is chosen for. */
+  pickTokenFor: string
   myRules: string
   planName: string
   planWhat: string
@@ -97,20 +95,17 @@ export const BOTS_COPY: Copy<BotsCopy> = {
   en: {
     title: 'Bots',
     tabs: { mine: 'My bots', catalog: 'Catalog' },
-    mineLead:
-      'Everything that runs on your rule — recurring buys and trade plans. Ryntra reminds you; you sign every buy.',
     plans: 'Trade plans',
-    plansLead: 'A plan’s result is on its card.',
     createPlan: 'Create a plan',
     results: 'Results',
-    resultsLead: 'Every trade against its plan, and what Ryntra remembers',
-    catalogLead: 'What you can set up today.',
     recurring: 'Recurring buy',
     recurringWhat:
       'Buys any token every day, week or month, when its price falls or from every payment — within a monthly budget you set.',
     recurringHow: 'Ryntra reminds you; you sign each buy. Your money stays in your wallet.',
-    recurringFor: 'Stocks, coins and memes. A meme or a new token needs $25,000 of liquidity and 24 hours on the market.',
+    recurringFor:
+      'Stocks, coins and memes. A meme or a new token needs $25,000 of liquidity and 24 hours on the market.',
     pickToken: 'Choose a token',
+    pickTokenFor: 'Token for a recurring buy',
     myRules: 'My rules',
     planName: 'Trade plan',
     planWhat: 'Your own rules for one trade: entry, size, stop and target.',
@@ -122,20 +117,16 @@ export const BOTS_COPY: Copy<BotsCopy> = {
   uk: {
     title: 'Боти',
     tabs: { mine: 'Мої боти', catalog: 'Каталог' },
-    mineLead:
-      'Усе, що працює за твоїм правилом, — регулярна купівля й плани угод. Ryntra нагадує, кожну купівлю підписуєш ти.',
     plans: 'Плани угод',
-    plansLead: 'Результат плану — у його картці.',
     createPlan: 'Створити план',
     results: 'Результати',
-    resultsLead: 'Кожна угода проти свого плану й що пам’ятає Ryntra',
-    catalogLead: 'Що можна налаштувати вже сьогодні.',
     recurring: 'Регулярна купівля',
     recurringWhat:
       'Купує будь-який токен щодня, щотижня, щомісяця, коли ціна впаде або з кожної оплати — у межах бюджету місяця, який ставиш ти.',
     recurringHow: 'Ryntra нагадує, кожну купівлю підписуєш ти. Гроші лишаються у твоєму гаманці.',
     recurringFor: 'Акції, монети й меми. Мем чи новий токен — від $25 000 ліквідності й 24 годин на ринку.',
     pickToken: 'Обрати токен',
+    pickTokenFor: 'Токен для регулярної купівлі',
     myRules: 'Мої правила',
     planName: 'План угоди',
     planWhat: 'Твої правила однієї угоди: вхід, розмір, стоп і ціль.',

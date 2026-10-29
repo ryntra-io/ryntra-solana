@@ -3,6 +3,8 @@ import type { JournalProjection } from "@/lib/home/advice/journal";
 import type { DecisionsProjection } from "@/lib/home/advice/read-model";
 import { loadDecisionReads } from "@/app/app/action-cases/read";
 import { projectDecisions } from "@/lib/home/advice/read-model";
+import type { HonestPnl } from "@/lib/core/pnl/honest";
+import { fillsHonest, paperHonest } from "@/lib/journal/honest";
 
 /**
  * What the Journal reads, and why it reads it through the decisions projection.
@@ -28,6 +30,11 @@ export type JournalRead = Readonly<{
   journaled: number | null;
   /** `true` when the paper book answered. `false` means no figure is a fact. */
   statsAvailable: boolean;
+  /**
+   * The honest standard (DSC-2) over each book apart — paper and real are never summed. Null when that book was not
+   * read (or there is none to read): the page says «not read», never a zero.
+   */
+  honest: Readonly<{ paper: HonestPnl | null; live: HonestPnl | null }>;
   recovery: readonly string[];
 }>;
 
@@ -38,6 +45,7 @@ export async function loadJournal(input: Readonly<{
   asOf: string;
 }>): Promise<JournalRead> {
   const reads = await loadDecisionReads(input);
+  const nowS = Math.floor(Date.parse(input.asOf) / 1000);
 
   const projection = projectDecisions({
     asOf: input.asOf,
@@ -66,6 +74,10 @@ export async function loadJournal(input: Readonly<{
     trades: reads.paperStats?.trades ?? null,
     journaled: reads.paperStats?.journaled ?? null,
     statsAvailable: reads.paperStats !== null,
+    honest: {
+      paper: reads.books.paper ? paperHonest(reads.books.paper, nowS) : null,
+      live: reads.books.fills ? fillsHonest(reads.books.fills, nowS) : null,
+    },
     recovery: reads.recovery,
   };
 }

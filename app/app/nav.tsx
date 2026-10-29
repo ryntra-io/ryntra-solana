@@ -29,7 +29,6 @@ export function CabinetNavFooter({ c, name, statusName }: { c: CbCopy; name: str
       </div>
       {/* Logout clears the cookie server-side and redirects, so it needs a full
           document navigation; next/link would be wrong here. */}
-      {/* eslint-disable-next-line @next/next/no-html-link-for-pages */}
       <a className="cbs-logout" href="/api/session?logout=1">
         <SignOut size={15} weight="bold" /> {c.nav.logout}
       </a>

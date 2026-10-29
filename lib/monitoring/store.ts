@@ -33,17 +33,20 @@ export type MonitorRecord = Readonly<{
   updatedAt: string;
 }>;
 
-/** The record a card stands for: the kind and the exact id, never a symbol to match on. */
+/** The record a card stands for (the mobile line's request 22): the kind and the exact id, never a symbol to match on. */
 export type MonitorSubject = Readonly<{ kind: MonitorSubjectKind; id: string }>;
 
-/** A note's subject: a monitor's record, or (1.12.0) the autoinvest rule whose reminder the note is — a rule is not a monitor — or (1.13.0) the month's autoinvest budget, spent — or (1.15.0) an issuer's event about a token the wallet holds, `id` its mint: a window to swap it before the issuer's cut-off. */
-export type InboxSubjectKind = MonitorSubjectKind | "autoinvest-rule" | "autoinvest-budget" | "issuer-event";
+/** A note's subject: a monitor's record, or (1.12.0) the autoinvest rule whose reminder the note is — a rule is not a monitor — or (1.13.0) the month's autoinvest budget, spent — or (1.15.0) an issuer's event about a token the wallet holds, `id` its mint: a window to swap it before the issuer's cut-off — or (1.42.0) a spot limit order Ryntra recorded, `id` its order account: «Ордер виконано» and «Квитанція готова» (`lib/solana/limits/notes.server.ts`). */
+/* 1.46.0 (AI-10): or «Ранковий огляд» of a day, `id` the person's day (`2026-10-18`) — the assistant line's note, no monitor. */
+/* 1.57.0 (AI-05): or a token watch that rang, `id` the watch (`wch_…`) — the assistant line's note, no monitor. */
+/* 1.63.0 (SOL-R4): or a trade of a wallet the person follows, `id` the wallet's address — «Стеження за гаманцями», no monitor. */
+export type InboxSubjectKind = MonitorSubjectKind | "autoinvest-rule" | "autoinvest-budget" | "issuer-event" | "limit-order" | "assistant-brief" | "launch-creator" | "token-watch" | "assistant-task" | "wallet-watch";
 export type InboxSubject = Readonly<{ kind: InboxSubjectKind; id: string }>;
 
 /** 1.13.0: what became of a rule's reminder, read when the surface is read — never stored on the note; 1.18.0: `deferred`, the price condition holds it back. */
 export type InboxRuleState = "due" | "pending" | "bought" | "missed" | "held" | "deferred";
 
-/** The finding as figures: the kind, its outcome and the facts behind the sentence, for a reader in any language. */
+/** The finding as figures (request 23): the kind, its outcome and the facts behind the sentence, for a reader in any language. */
 export type InboxFinding = Readonly<{ kind: ConditionKind; outcome: FindingOutcome; facts: FindingFacts }>;
 
 export type InboxRecord = Readonly<{
@@ -193,7 +196,7 @@ export async function readPreferences(store: GuardStore, owner: string): Promise
   };
 }
 
-/** A note about a plan's monitor — every note but an autoinvest reminder (1.12.0), the budget's (1.13.0), an issuer's event (1.15.0) and a position's warning (1.21.0). */
+/** A note about a plan's monitor — every note but an autoinvest reminder (1.12.0), the budget's (1.13.0), an issuer's event (1.15.0), a position's warning (1.21.0) and a limit order's (1.42.0). */
 export type MonitorNote = InboxRecord & Readonly<{ subject?: Readonly<{ kind: "trading-plan" | "prediction-plan"; id: string }> }>;
 
 /** Whether a note is autoinvest's own — a rule's reminder or the month's budget — rather than a monitor's. */
@@ -211,9 +214,39 @@ export function isPositionNote(row: InboxRecord): boolean {
   return row.subject?.kind === "position";
 }
 
-/** The notes about plans' monitors: what plan memory and the agent's note reads are about; autoinvest's notes, the issuer's events and a position's warnings are none of them. */
+/** Whether a note is the limits lane's (1.42.0): a spot limit order filled, or its receipt ready. */
+export function isLimitOrderNote(row: InboxRecord): boolean {
+  return row.subject?.kind === "limit-order";
+}
+
+/** Whether a note is «Ранковий огляд» (1.46.0, AI-10): the assistant's morning brief of a day. */
+export function isAssistantBriefNote(row: InboxRecord): boolean {
+  return row.subject?.kind === "assistant-brief";
+}
+
+/** The notes about plans' monitors: what plan memory and the agent's note reads are about; autoinvest's notes, the issuer's events, a position's warnings, a limit order's notes and the morning brief are none of them. */
+/** A creator's note (1.49.0, SOL-L2): a launch's news, not a plan's. */
+export function isLaunchCreatorNote(row: InboxRecord): boolean {
+  return row.subject?.kind === "launch-creator";
+}
+
+/** Whether a note is a token watch's (1.57.0, AI-05): a threshold the person set on a token, crossed. */
+export function isTokenWatchNote(row: InboxRecord): boolean {
+  return row.subject?.kind === "token-watch";
+}
+
+/** Whether a note is a «Доручення»'s (1.59.0, AI-19): the assistant's answer to a question asked on a schedule. */
+export function isAssistantTaskNote(row: InboxRecord): boolean {
+  return row.subject?.kind === "assistant-task";
+}
+
+/** Whether a note is a followed wallet's trade (1.63.0, SOL-R4): what the wallet did, read from the chain. */
+export function isWalletWatchNote(row: InboxRecord): boolean {
+  return row.subject?.kind === "wallet-watch";
+}
+
 export function monitorNotes(notes: readonly InboxRecord[]): readonly MonitorNote[] {
-  return notes.filter((row): row is MonitorNote => !isAutoinvestNote(row) && !isIssuerEventNote(row) && !isPositionNote(row));
+  return notes.filter((row): row is MonitorNote => !isAutoinvestNote(row) && !isIssuerEventNote(row) && !isPositionNote(row) && !isLimitOrderNote(row) && !isAssistantBriefNote(row) && !isLaunchCreatorNote(row) && !isTokenWatchNote(row) && !isAssistantTaskNote(row) && !isWalletWatchNote(row));
 }
 
 /**

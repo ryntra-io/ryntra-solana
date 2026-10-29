@@ -4,72 +4,58 @@ import { readFileSync } from "node:fs";
 
 import { LANDING_COPY } from "./landing-copy.ts";
 
-/* TradingView's Ticker Tape on the landing — a condition of the free Advanced
-   Charts licence (2026-10-09): the widget stands on the home page with
-   TradingView's logo and its link under it. These hold the parts that keep
-   the condition met and the page light. */
+/* The market tape on the landing — Ryntra's own since SOL-T4: the core's sparkline on Solana's
+   prices, where TradingView's Ticker Tape stood. These hold the parts that
+   keep it ours, honest about its sources, and the page light. */
 
 const read = (path) => readFileSync(new URL(path, import.meta.url), "utf8");
 const withoutComments = (source) => source.replace(/\/\*[\s\S]*?\*\//g, " ").replace(/^[ \t]*\/\/.*$/gm, "");
 const source = withoutComments(read("./market-tape.tsx"));
 const css = withoutComments(read("./market-tape.module.css"));
-const config = read("../../next.config.ts");
 
-test("the tape is TradingView's own web component, from the one host the landing's policy names", () => {
-  assert.match(source, /export const TAPE_SCRIPT = "https:\/\/widgets\.tradingview-widget\.com\/w\/en\/tv-ticker-tape\.js";/);
-  assert.match(config, /const TRADINGVIEW_WIDGETS = "https:\/\/widgets\.tradingview-widget\.com";/, "the script's host is the one the landing's policy adds");
-  assert.match(source, /script\.type = "module";/);
-  assert.match(source, /document\.createElement\("tv-ticker-tape"\)/);
+test("no chart of anyone else's: the lines are the core's sparkline, and nothing of TradingView is left", () => {
+  assert.match(source, /import \{ ChartCaption, Sparkline \} from "@ryntra\/core\/chart\/compact";/);
+  assert.match(source, /import "@ryntra\/core\/chart\/compact\.css";/);
+  assert.match(source, /<Sparkline[\s\S]*caption="none"/, "each line says nothing of its own: one caption speaks for the tape");
+  assert.match(source, /<ChartCaption[\s\S]*status=\{status\}/, "the sources and the age of the numbers, once, under the tape");
+  assert.doesNotMatch(source + css, /tradingview|tv-ticker-tape|--tv-widget|lightweight-charts|<script|createElement\("script"\)/i);
 });
 
-test("the symbols: the four Solana-side assets in dollars on one exchange, three companies and the S&P 500 fund", () => {
-  const symbols = source.match(/export const TAPE_SYMBOLS = \[([\s\S]*?)\] as const;/)?.[1].match(/"[^"]+"/g)?.map((value) => value.slice(1, -1));
-  assert.deepEqual(symbols, [
-    "BITSTAMP:SOLUSD",
-    "BITSTAMP:BTCUSD",
-    "BITSTAMP:ETHUSD",
-    "BITSTAMP:JUPUSD",
-    "NASDAQ:AAPL",
-    "NASDAQ:NVDA",
-    "NASDAQ:TSLA",
-    "AMEX:SPY",
-  ]);
-  assert.match(source, /setAttribute\("symbols", TAPE_SYMBOLS\.join\(","\)\)/);
-});
-
-test("TradingView's logo and link stay as TradingView draws them — nothing hides, clips or recolours the attribution", () => {
-  /* The widget's own switches for its branding are never set… */
-  assert.doesNotMatch(source, /hide-attribution|no-link|white-label|hide-logo|no-links|disable-scroll/);
-  /* …nor are the tokens of its attribution and its link… */
-  assert.doesNotMatch(css, /--tv-widget-attribution|--tv-widget-link-color/);
-  /* …and the slot has no overflow, no mask and nothing laid over the tape. */
-  assert.doesNotMatch(css, /overflow|mask|clip-path|::before|::after|opacity|visibility|display: none/);
-});
-
-test("lazy: nothing of TradingView is in the page's markup; it loads after the page, near the screen, once", () => {
-  const rendered = source.slice(source.indexOf("return ("));
-  assert.doesNotMatch(rendered, /<script|tv-ticker-tape|tradingview/i, "the server sends an empty slot");
+test("the tape reads Ryntra's own route, after the page and near the screen, and keeps its height", () => {
+  assert.match(source, /export const TAPE_ROUTE = "\/api\/spot\/tape";/);
   assert.match(source, /new IntersectionObserver\(/);
   assert.match(source, /document\.readyState === "complete"/);
   assert.match(source, /addEventListener\("load", whenIdle, \{ once: true \}\)/);
   assert.match(source, /requestIdleCallback/);
-  assert.match(source, /document\.querySelector\(`script\[src="\$\{TAPE_SCRIPT\}"\]`\)/, "one script, however often the block mounts");
-  /* The slot keeps the tape's height (measured: 78 px, compact, at 1440 and 375), so the orbit never moves. */
+  assert.match(source, /window\.setTimeout\(\(\) => void load\(\), next\)/, "it reads again while the page is open");
+  assert.match(source, /const next = !whole && soon <= 6 \? TAPE_PARTIAL_TTL_MS : TAPE_TTL_MS;/, "a failed or partial read is read again soon — a few times");
+  assert.match(source, /if \(document\.hidden\) \{/, "no reads while nobody is looking");
+  const rendered = source.slice(source.indexOf("<section"));
+  assert.doesNotMatch(rendered, /fetch\(/, "the server sends an empty slot");
+  /* The slot keeps the tape's height (TradingView's compact tape measured 78 px at 1440 and 375), so the orbit never moves. */
   assert.match(css, /\.slot \{[^}]*min-height: 78px;/);
 });
 
-test("the tape follows the reader's theme on a transparent ground, in the landing's ink and font", () => {
-  assert.match(source, /watchResolvedTheme\(\(theme\) => tape\.setAttribute\("theme", theme\)\)/);
-  assert.match(source, /setAttribute\("transparent", ""\)/);
-  assert.match(source, /setAttribute\("item-size", "compact"\)/);
-  assert.match(css, /--tv-widget-border-color: color-mix\(in srgb, var\(--landing-ink\) 10%, transparent\);/);
-  assert.match(css, /--tv-widget-font-family: var\(--ry-font-sans\);/);
-  assert.match(css, /--tv-widget-positive-color: var\(--ry-pnl-pos\);/);
-  assert.match(css, /--tv-widget-negative-color: var\(--ry-pnl-neg\);/);
+test("the tape runs, stops under a hand, and stands still for anyone who asked for less motion", () => {
+  assert.match(css, /\.track \{[^}]*animation: tape-run 60s linear infinite;/);
+  assert.match(css, /\.frame:hover \.track,\s*\.frame:focus-within \.track \{[^}]*animation-play-state: paused;/);
+  assert.match(css, /@media \(prefers-reduced-motion: reduce\) \{[\s\S]*\.track \{[^}]*animation: none;/);
+  assert.match(source, /<ul className=\{styles\.run\} aria-hidden>/, "the run's second copy is hidden from a screen reader");
 });
 
-test("a screen reader hears whose prices these are, in both languages", () => {
-  assert.equal(LANDING_COPY.en.tape.label, "Market prices from TradingView");
-  assert.equal(LANDING_COPY.uk.tape.label, "Ціни ринків від TradingView");
+test("the core's tokens are the landing's own ink, font and colours of up and down", () => {
+  assert.match(css, /--ryntra-text: var\(--landing-ink\);/);
+  assert.match(css, /--ryntra-up: var\(--ry-pnl-pos\);/);
+  assert.match(css, /--ryntra-down: var\(--ry-pnl-neg\);/);
+  assert.match(css, /--ryntra-font-sans: var\(--ry-font-sans\);/);
+  assert.match(css, /--ryntra-border: color-mix\(in srgb, var\(--landing-ink\) 10%, transparent\);/);
+  assert.doesNotMatch(css, /#[0-9a-f]{3,8}\b|rgba?\(/i, "no colour of its own");
+});
+
+test("a screen reader hears what the tape is, in both languages", () => {
+  assert.equal(LANDING_COPY.en.tape.label, "Market prices on Solana");
+  assert.equal(LANDING_COPY.uk.tape.label, "Ціни ринків на Solana");
+  assert.equal(LANDING_COPY.en.tape.day, "over 24 hours");
+  assert.equal(LANDING_COPY.uk.tape.day, "за 24 години");
   assert.match(source, /aria-label=\{landingCopy\(locale\)\.tape\.label\}/);
 });

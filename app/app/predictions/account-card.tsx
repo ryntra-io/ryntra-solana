@@ -1,16 +1,38 @@
 "use client";
 
+import { EmptyState } from "@ryntra/core/ui";
 import Link from "next/link";
 
 import type { WorkspaceLocale } from "@/app/shell/locale";
+import { ConnectWalletButton } from "@/app/solana/workspace/wallet-gate";
 import type { PredictionOrderRecord } from "@/lib/predictions/paper";
 
+import { BotCheck } from "./bot-check";
 import { pct, shares, timeShort, usd } from "./format";
 import styles from "./predictions.module.css";
 import type { usePaperAccount } from "./use-paper-account";
 import { outcomeLabel, venueName, wordsFor } from "./words";
+import { usePredictionsPaths } from "./surface";
 
 type Account = ReturnType<typeof usePaperAccount>;
+
+/**
+ * A guest's one way in: the app's own «Connect wallet» (the same button and
+ * the header's panel as every page), or — with a wallet already held but not
+ * signed in on this site — the one signature that proves it.
+ */
+export function ConnectAction({ account, locale, block = false }: { account: Account; locale: WorkspaceLocale; block?: boolean }) {
+  const word = wordsFor(locale);
+  // A wallet held but not signed in here (or signed in for another): one signature, not a second wallet.
+  if (account.address) {
+    return (
+      <button type="button" className={`rw-btn rw-btn--primary${block ? ` ${styles.blockButton}` : ""}`} onClick={() => void account.prove()}>
+        {word("linkAction")}
+      </button>
+    );
+  }
+  return <ConnectWalletButton block={block} />;
+}
 
 /**
  * The paper account, in one card: the link state as the server states it —
@@ -20,13 +42,13 @@ type Account = ReturnType<typeof usePaperAccount>;
  * the real portfolio and the word says so on every figure.
  */
 export function AccountCard({ account, locale, compact = false, eventId = null }: { account: Account; locale: WorkspaceLocale; compact?: boolean; /** Filter positions and orders to one event on the detail page. */ eventId?: string | null }) {
+  const paths = usePredictionsPaths();
   const word = wordsFor(locale);
   const { state, link } = account;
 
   const head = (
     <div className={styles.cardHead}>
       <h2 className={styles.cardTitle}>{word("accountTitle")}</h2>
-      <span className={styles.paperBadge}>{word("paperBadge")}</span>
     </div>
   );
 
@@ -43,17 +65,16 @@ export function AccountCard({ account, locale, compact = false, eventId = null }
   }
 
   if (state.status === "guest") {
+    // Beside a ticket or on the hub the one way in is the ticket's or the header's: no second card saying the same.
+    if (compact) return null;
     return (
-      <section className={styles.card}>
-        {head}
-        <div className={styles.linkCard}>
-          <p className={styles.note}>{word("walletFirst")}</p>
-          {account.address && !account.proven ? (
-            <button type="button" className="rw-btn rw-btn--primary" onClick={() => void account.prove()}>
-              {word("linkAction")}
-            </button>
-          ) : null}
+      <section className={styles.card} aria-labelledby="pred-account">
+        <div className={styles.cardHead}>
+          <h2 id="pred-account" className={styles.cardTitle}>
+            {word("accountTitle")}
+          </h2>
         </div>
+        <EmptyState icon="wallet" text={word("accountGuest")} action={<ConnectAction account={account} locale={locale} />} />
       </section>
     );
   }
@@ -80,17 +101,32 @@ export function AccountCard({ account, locale, compact = false, eventId = null }
     return (
       <section className={styles.card}>
         {head}
-        <div className={styles.linkCard}>
+        <div className={styles.linkCard} aria-live="polite">
           <h3>{expired ? word("expiredTitle") : word("notLinkedTitle")}</h3>
-          <p className={styles.note}>{expired ? word("expiredText") : word("notLinkedText")}</p>
+          {/* While the check is shown, its one sentence is the card's text. */}
+          {link.status === "challenge" ? null : <p className={styles.note}>{expired ? word("expiredText") : word("notLinkedText")}</p>}
           {linkState.state === "revoked" ? <p className={styles.muted}>{word("revoked")}</p> : null}
           {!linkState.available ? <p className={styles.notice}>{word("linkUnavailable")}</p> : null}
-          {link.status === "failed" ? <p className={styles.error}>{link.code === "WALLET_MISMATCH" ? word("walletMismatch") : link.code === "NO_WALLET" ? word("walletFirst") : link.code === "REFUSED" ? link.reason : link.reason || word("unavailable")}</p> : null}
-          <div className={styles.actions}>
-            <button type="button" className="rw-btn rw-btn--primary" disabled={!linkState.available || link.status === "signing" || link.status === "verifying"} onClick={() => void account.enable()}>
-              {link.status === "signing" || link.status === "verifying" ? word("linking") : word("linkAction")}
-            </button>
-          </div>
+          {link.status === "failed" ? <p className={styles.error}>{link.code === "WALLET_MISMATCH" ? word("walletMismatch") : link.code === "LINK_UNAVAILABLE" ? word("siteNotAllowed") : link.code === "NO_WALLET" ? word("walletFirst") : link.code === "CHALLENGE_FAILED" ? word("botCheckFailed") : link.code === "CHALLENGE_BLOCKED" ? word("botCheckBlocked") : link.code === "PROVIDER_UNAVAILABLE" || link.code === "RATE_LIMITED" ? word("unavailable") : link.code === "REFUSED" ? link.reason : link.reason || word("unavailable")}</p> : null}
+          {link.status === "challenge" ? (
+            <>
+              <p className={styles.notice}>
+                <b>{word("botCheckTitle")}.</b> {word("botCheckText")}
+              </p>
+              <BotCheck key={link.round} siteKey={link.siteKey} locale={locale} onToken={(token) => void account.enable(token)} onFail={account.challengeFailed} />
+              <div className={styles.actions}>
+                <button type="button" className="rw-btn" onClick={account.cancelChallenge}>
+                  {word("cancel")}
+                </button>
+              </div>
+            </>
+          ) : (
+            <div className={styles.actions}>
+              <button type="button" className="rw-btn rw-btn--primary" disabled={!linkState.available || link.status === "signing" || link.status === "verifying"} onClick={() => void account.enable()}>
+                {link.status === "signing" || link.status === "verifying" ? word("linking") : word("linkAction")}
+              </button>
+            </div>
+          )}
         </div>
       </section>
     );
@@ -104,15 +140,27 @@ export function AccountCard({ account, locale, compact = false, eventId = null }
 
   return (
     <section className={styles.card} aria-labelledby="pred-account">
-      <div className={styles.cardHead}>
+      <div className={`${styles.cardHead} ${styles.cardHeadWrap}`}>
         <h2 id="pred-account" className={styles.cardTitle}>
           {word("accountTitle")}
         </h2>
-        <span className={styles.stateChip} data-tone="good">
-          {word("linked")}
+        <span className={styles.cardHeadEnd}>
+          {compact && paths.portfolio ? (
+            <Link className={styles.cardLink} href={paths.portfolio} prefetch={false}>
+              {word("openPortfolio")} →
+            </Link>
+          ) : null}
+          <span className={styles.stateChip} data-tone="good">
+            {word("linked")}
+          </span>
         </span>
       </div>
       {data.providerFailure ? <p className={styles.notice} style={{ margin: "var(--ry-s3) var(--ry-s4) 0" }}>{data.providerFailure.code === "SESSION_EXPIRED" ? word("sessionExpired") : word("unavailable")}</p> : null}
+      {data.access?.locationBlocked ? (
+        <p className={styles.notice} role="status" style={{ margin: "var(--ry-s3) var(--ry-s4) 0" }}>
+          {word("locationBlocked")}
+        </p>
+      ) : null}
       <div className={styles.accountStrip}>
         <Metric label={word("cash")} value={balance ? usd(balance.cashBalance) : "—"} sub={balance ? `${word("balance")} · ${usd(balance.startingBalance, 0)}` : null} />
         <Metric label={word("positionsValue")} value={balance ? usd(balance.positionsValue) : "—"} />
@@ -131,7 +179,7 @@ export function AccountCard({ account, locale, compact = false, eventId = null }
           {positions.slice(0, compact ? 4 : 30).map((position) => (
             <div key={`${position.venueEventId}:${position.question}`} className={styles.positionRow}>
               <p className={styles.positionTitle}>
-                <Link href={`/app/predictions/${encodeURIComponent(position.eventId ?? position.venueEventId)}`} prefetch={false}>
+                <Link href={paths.event(position.eventId ?? position.venueEventId)} prefetch={false}>
                   {position.question}
                 </Link>
               </p>
@@ -245,12 +293,13 @@ export function orderStateWord(state: PredictionOrderRecord["state"], word: Retu
 }
 
 function OrderRow({ order, locale, compact = false }: { order: PredictionOrderRecord; locale: WorkspaceLocale; compact?: boolean }) {
+  const paths = usePredictionsPaths();
   const word = wordsFor(locale);
   const filled = order.execution?.orders.find((o) => o.executionPrice != null) ?? null;
   return (
     <tr>
       <th scope="row">
-        <Link href={`/app/predictions/${encodeURIComponent(order.eventId)}`} prefetch={false} style={{ color: "inherit", textDecoration: "none" }}>
+        <Link href={paths.event(order.eventId)} prefetch={false} style={{ color: "inherit", textDecoration: "none" }}>
           {order.question}
         </Link>
         <br />

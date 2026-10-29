@@ -2,7 +2,6 @@
   color: var(--ry-text);
   --rw-panel-min-height: auto;
 }
-.ry-product-account { display: flex; align-items: center; gap: 8px; }
 .ry-account-link { display: inline-flex; align-items: center; justify-content: center; gap: 6px; min-height: 44px; min-width: 44px; padding: 8px 12px; border-radius: 12px; color: var(--ry-text); text-decoration: none; }
 .ry-account-link:hover { background: var(--ry-hover); }
 /* The wordmark at a size the bar can carry: the lockup is 1em tall, and at
@@ -10,8 +9,9 @@
    could see (2026-09-12). The flat lockup of 2026-09-13 sets YNTRA at 55% of
    the R's height, so the R stands 32px in the 64px bar and the letters read
    at 17px beside the 44px controls. */
-.ry-product .rs-brand .ryntra-brand { font-size: var(--ry-fs-h2); }
 .ry-product .rs-page, .ry-product .so-head { margin-bottom: 24px; }
+/* A page's own action stands at the end of its heading's row, as on every core page — never under the title. */
+.ry-product .so-head { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; }
 .ry-product .rs-page h1, .ry-product .so-title { font-family: var(--ry-font-sans); font-size: clamp(1.5rem, 2.5vw, 2rem); line-height: 1.2; letter-spacing: -0.02em; }
 /* 44 px for a finger everywhere — except a desk tool's dense controls (`data-dense`: the terminal's timeframes,
    25/50/75/MAX, its tabs), which keep their own size and take 44 px from their own sheet under a finger. The exclusion
@@ -57,28 +57,9 @@
 .ry-product .ry-muted { color: var(--ry-muted); }
 /* The password page is one short form: a column in the middle of the canvas, like every money flow. */
 .ry-product .ry-account-settings { display: grid; gap: 32px; width: 100%; max-width: 580px; margin-inline: auto; }
-/* Settings take the canvas (DESIGN.md → «Page width»): each group a card of a readable width, the cards of a row equally
-   tall — on a desk appearance and the wallet stacked beside the account, on a wide desk the three side by side. */
-.ry-product .ry-settings-board { gap: 20px; max-width: none; margin-inline: 0; }
-@media (min-width: 1280px) {
-  .ry-product .ry-settings-board { grid-template-columns: repeat(2, minmax(0, 1fr)); grid-template-areas: "title title" "appearance account" "wallet account" "links links"; align-items: stretch; }
-  .ry-product .ry-settings-board > h1 { grid-area: title; }
-  .ry-product .ry-settings-board > [data-area="appearance"] { grid-area: appearance; }
-  .ry-product .ry-settings-board > [data-area="wallet"] { grid-area: wallet; }
-  .ry-product .ry-settings-board > [data-area="account"] { grid-area: account; }
-  .ry-product .ry-settings-board > .ry-inline-actions { grid-area: links; }
-}
-@media (min-width: 1600px) {
-  .ry-product .ry-settings-board { grid-template-columns: repeat(3, minmax(0, 1fr)); grid-template-areas: "title title title" "appearance wallet account" "links links links"; }
-}
-/* Signed in, the account — wallets, Telegram, sessions — is the long card: it takes the wide side and the short cards
-   keep their own height beside it, never stretched empty to its length. */
-@media (min-width: 1280px) {
-  .ry-product .ry-settings-board:has(.ry-account-settings-block) { align-items: start; }
-}
-@media (min-width: 1600px) {
-  .ry-product .ry-settings-board:has(.ry-account-settings-block) { grid-template-areas: "title title title" "appearance account account" "wallet account account" "links links links"; grid-template-rows: auto auto 1fr auto; }
-}
+/* «Акаунт» is the core's action page: one column in the
+   middle of the canvas, its cards one under another. The frame's canvas gives the edges. */
+.ry-product .ry-settings-page.ryntra-page--action { width: 100%; padding: 0; }
 .ry-product .ry-settings-section { padding: 20px 24px; border: 1px solid var(--ry-border); border-radius: var(--ry-r-card); background: var(--ry-card); }
 .ry-product .ry-settings-section > .ry-section-title { margin-bottom: 4px; }
 .ry-product .ry-settings-row { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px; margin: 16px 0; }
@@ -88,7 +69,6 @@
 .ry-product .ry-settings-option[aria-pressed="true"] { background: var(--ry-brand-soft); border-color: var(--ry-iris); color: var(--ry-accent-fg); font-weight: 600; }
 .ry-product .ry-action-link { display: inline-flex; align-items: center; min-height: 44px; min-width: 44px; color: var(--ry-text); text-underline-offset: 4px; }
 .ry-product main button:not(:where([data-dense], [data-dense] button)), .ry-product main a:not(:where([data-dense] a)) { min-width: 44px; }
-.ry-product .rs-nav a { min-height: 44px; }
 .ry-product .ry-plan-list { list-style: none; margin: 0 0 20px; padding: 0; }
 .ry-product .ry-plan-list li { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 12px; padding: 16px 0; border-bottom: 1px solid var(--ry-border); }
 .ry-money-flow { width: 100%; max-width: 580px; margin: 8px auto 0; }
@@ -105,22 +85,9 @@
 .ry-money-recent a { min-height: 44px; display: flex; align-items: center; justify-content: space-between; gap: 16px; color: var(--ry-muted); text-decoration: none; }
 .ry-money-recent li { border-bottom: 1px solid var(--ry-border); }
 .ry-money-recent time { font-size: 0.875rem; }
-.ry-swap-details { width: 100%; }
-.ry-swap-details nav { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
-/* The row says what it is before it says the two tickers. Without the label the
-   card ended on two loose words; without the underline they were muted text
-   that happened to be clickable. */
-.ry-swap-details nav > span { font-size: 0.75rem; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ry-muted); }
-.ry-swap-details a { min-height: 44px; display: inline-flex; align-items: center; color: var(--ry-text); text-decoration: underline; text-underline-offset: 4px; text-decoration-color: var(--ry-border-strong); }
-.ry-swap-details a:hover, .ry-swap-details a:focus-visible { text-decoration-color: currentColor; }
-.ry-swap-details dl { margin: 12px 0 0; }
-.ry-swap-details dl>div { display: flex; align-items: baseline; justify-content: space-between; gap: 16px; padding: 12px 0; border-bottom: 1px solid var(--ry-border); }
-.ry-swap-details dt { color: var(--ry-muted); }
-.ry-swap-details dd { margin: 0; max-width: 60%; text-align: right; overflow-wrap: anywhere; }
 @media (max-width: 640px) {
   .ry-account-link { padding: 8px; }
   .ry-account-link span { display: none; }
-  .ry-product-account { gap: 4px; }
   .ry-product .rs-page, .ry-product .so-head { margin-bottom: 20px; }
 }
 
@@ -130,48 +97,3 @@
 .ry-product .rw[data-scroll="true"] .rw-b { overflow: visible; }
 
 .ry-product .ry-settings-option:disabled { opacity: 0.5; cursor: wait; }
-
-/* The header of the menu v6.2: «Спитати Ryntra» with the
-   screen as its context, then the bell; beside the wallet its balance and
-   «Поповнити». Quiet controls — the one orange action stays the screen's. */
-.ry-ask,
-.ry-balance-topup,
-.ry-balance-sum {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  min-height: 40px;
-  padding: 0 12px;
-  border: 1px solid var(--ry-border);
-  border-radius: var(--ry-r-btn, 10px);
-  background: var(--ry-card);
-  color: var(--ry-text);
-  font-family: var(--ry-font-sans);
-  font-size: var(--ry-fs-dense);
-  font-weight: 600;
-  text-decoration: none;
-  white-space: nowrap;
-  transition: border-color var(--rt-duration-fast) var(--rt-ease), background-color var(--rt-duration-fast) var(--rt-ease);
-}
-.ry-ask:hover,
-.ry-balance-topup:hover,
-.ry-balance-sum:hover { border-color: var(--ry-border-strong); background: var(--ry-hover); }
-.ry-ask:focus-visible,
-.ry-balance-topup:focus-visible,
-.ry-balance-sum:focus-visible { outline: none; box-shadow: var(--ry-focus); }
-.ry-ask svg { color: var(--ry-accent); }
-.ry-balance { display: inline-flex; align-items: center; gap: 8px; }
-.ry-balance-sum { font-family: var(--ry-font-mono); font-variant-numeric: tabular-nums; border-color: transparent; background: transparent; }
-@media (max-width: 1240px) {
-  .ry-balance-topup span { display: none; }
-  .ry-balance-topup { padding: 0 10px; }
-}
-@media (max-width: 1080px) {
-  .ry-ask-label { display: none; }
-  .ry-ask { padding: 0 10px; }
-}
-/* On a phone the header keeps the search, «Спитати Ryntra» as its glyph (the screen is its context), the bell and the wallet; «Поповнити» is in «Ще» → Гроші. */
-@media (max-width: 900px) {
-  .ry-balance { display: none; }
-  .ry-ask { width: 40px; min-height: 40px; padding: 0; justify-content: center; }
-}

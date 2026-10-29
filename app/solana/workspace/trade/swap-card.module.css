@@ -1,43 +1,114 @@
+/* SOL-C13: the converter where Spot keeps its ticket, the pair where Spot keeps its chart — as wide as the canvas. On a
+   phone and a narrow canvas the converter comes first and the pair under it, both in one column of the core's action
+   width; from 1200 px they stand side by side, the converter on the right as Spot's ticket does. */
+.layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  align-items: start;
+  gap: var(--ryntra-grid-gap);
+  width: 100%;
+  max-width: var(--ryntra-page-action);
+  margin-inline: auto;
+  min-width: 0;
+}
+
+@media (min-width: 1200px) {
+  .layout {
+    grid-template-columns: minmax(0, 1fr) minmax(380px, 440px);
+    max-width: none;
+  }
+
+  .layout > [data-swap-converter] {
+    grid-column: 2;
+    grid-row: 1;
+  }
+
+  .layout > [data-swap-pair] {
+    grid-column: 1;
+    grid-row: 1;
+  }
+}
+
+.embedded {
+  display: contents;
+}
+
+/* The converter: one block of the core's look, nothing that clips — the ticket's action is `sticky` and stays in
+   sight at the foot of the screen while the form scrolls (UX-251, UX-252, UX-901). */
 .card {
   display: grid;
   grid-template-columns: minmax(0, 1fr);
-  width: 100%;
-  max-width: 720px; /* width-law: a single action's card, centred on the canvas */
-  /* Centred on both axes, and by auto margins rather than `align-items`.
-     The Swap panel is the only thing on its page and the grid stretches it to
-     the viewport, so a 400px card pinned to the top of an 1140px panel left
-     three quarters of the screen empty — the "nothing is here" a person
-     read as a broken page. Auto margins collapse to zero when the card
-     outgrows the panel, so a Review-height card is never pushed off the top;
-     `align-items: center` would clip it there, and the body does not scroll
-     because an action panel must not. */
-  margin-inline: auto;
-  margin-block: auto;
   gap: 10px;
+  min-width: 0;
+  padding: var(--ryntra-space-4);
+  border: 1px solid var(--ryntra-border);
+  border-radius: var(--ryntra-radius-block);
+  background: var(--ryntra-surface);
+}
+
+.ticketHost {
+  min-width: 0;
+}
+
+/* The pair is named once, by the legs; the ticket's own head (its name and a second price) is for a reader only. */
+.ticketHost :global(.ryntra-ticket__head) {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+/* Direction is the legs' ⇅ (UX-259) and every swap is at the market (UX-260): the ticket's two switches are not drawn.
+   The tolerance is the route's — nothing to choose before Review, as in Spot (UX-255). */
+.ticketHost :global(.ryntra-ticket > .ryntra-ticket__seg),
+.ticketHost :global(.ryntra-ticket[data-stage="form"] > .ryntra-ticket__settings) {
+  display: none;
+}
+
+/* A quote that leaves the tolerance to the exact order: before Review neither a minimum nor a tolerance is named. */
+.ticketHost[data-tolerance="by-review"] :global(.ryntra-ticket__summary) > :nth-child(2),
+.ticketHost[data-tolerance="by-review"][data-amount-ready="true"] :global(.ryntra-ticket__note--risk) {
+  display: none;
+}
+
+/* The pinned action sits on the converter's own surface, not on a strip of the page's background. */
+.ticketHost :global(.ryntra-ticket__action) {
+  background: var(--ryntra-surface);
+}
+
+/* A column too narrow for four quick sums takes them on two lines, each whole. */
+.ticketHost :global(.ryntra-ticket__chips) {
+  flex-wrap: wrap;
+}
+
+.ticketHost :global(.ryntra-ticket__field-head) {
+  flex-wrap: wrap;
+  row-gap: var(--ryntra-space-1);
 }
 
 /* ── The two legs ─────────────────────────────────────────────────────── */
 
 .legs {
+  /* The two pickers on one row and the flip between them: what is paid, what arrives — the ticket below sizes it. */
   position: relative;
   display: grid;
-  gap: 6px;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+  align-items: end;
+  gap: 8px;
 }
 
 .leg {
   display: grid;
   min-width: 0;
-  gap: 10px;
-  padding: 14px 16px;
-  border: 1px solid var(--border);
-  border-radius: var(--radius-lg);
-  background: var(--panel-2);
-  transition: border-color 160ms ease-out, background 160ms ease-out;
+  gap: 6px;
+  font-size: var(--fs-12);
+  color: var(--text-dim);
 }
 
 .leg:focus-within {
-  border-color: color-mix(in srgb, var(--accent) 55%, transparent);
-  background: color-mix(in srgb, var(--accent) 4%, var(--panel-2));
+  color: var(--text);
 }
 
 .legHead {
@@ -49,10 +120,9 @@
   color: var(--text-dim);
 }
 
+/* «Ти сплачуєш · Ти отримуєш» in the case a sentence has, as the ticket's own labels are (UX-271). */
 .legLabel {
-  font-weight: 600;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
+  font-weight: 500;
   white-space: nowrap;
 }
 
@@ -144,25 +214,14 @@
 /* ── Token pill ───────────────────────────────────────────────────────── */
 
 .tokenPill {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  flex: 0 0 auto;
-  padding: 7px 12px;
-  border: 1px solid var(--border);
-  border-radius: 999px;
-  background: var(--panel-3);
-  color: var(--text);
-  font-family: var(--font);
-  font-size: var(--fs-14);
+  /* The core's button, as wide as its column: the token's mark, its code and the caret, from the start. */
+  width: 100%;
+  justify-content: flex-start;
   font-weight: 600;
-  cursor: pointer;
-  transition: border-color 140ms ease-out, background 140ms ease-out;
 }
 
 .tokenPill:hover {
-  border-color: color-mix(in srgb, var(--accent) 45%, transparent);
-  background: color-mix(in srgb, var(--accent) 8%, var(--panel-3));
+  color: var(--text);
 }
 
 .tokenGlyph {
@@ -194,23 +253,14 @@
 }
 
 .flipButton {
-  display: grid;
-  place-items: center;
-  width: 34px;
-  height: 34px;
-  border: 1px solid var(--border);
-  border-radius: 50%;
-  background: var(--panel-3);
-  color: var(--text-dim);
-  font-size: var(--fs-14);
-  cursor: pointer;
-  transition: transform 180ms cubic-bezier(0.22, 1, 0.36, 1), border-color 140ms ease-out, color 140ms ease-out;
+  width: 40px;
+  height: 40px;
+  padding: 0;
+  transition: transform 180ms cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 .flipButton:hover {
   transform: rotate(180deg);
-  border-color: color-mix(in srgb, var(--accent) 50%, transparent);
-  color: var(--accent);
 }
 
 /* ── Rate, risk, action ───────────────────────────────────────────────── */
@@ -551,7 +601,7 @@
   background: rgba(7, 11, 22, 0.62);
 }
 
-[data-theme="light"] .pickerBackdrop {
+:is([data-theme="light"], [data-theme="porcelain"]) .pickerBackdrop {
   background: rgba(15, 23, 42, 0.35);
 }
 
@@ -616,14 +666,7 @@
 }
 
 .pickerClose {
-  border: 1px solid var(--border);
-  border-radius: var(--radius-xs);
-  background: transparent;
-  color: var(--text-dim);
-  font-family: var(--font);
-  font-size: var(--fs-13);
-  padding: 3px 9px;
-  cursor: pointer;
+  flex: 0 0 auto;
 }
 
 .pickerList {
@@ -639,21 +682,12 @@
 }
 
 .pickerItem {
-  display: flex;
-  align-items: center;
-  gap: 10px;
+  /* The core's ghost button as a row: the mark, the code and the name, the balance at the end. */
   width: 100%;
+  height: auto;
   min-height: 52px;
-  padding: 8px 10px;
-  border: 1px solid transparent;
-  border-radius: var(--radius-sm);
-  background: transparent;
-  color: var(--text);
-  font-family: var(--font);
-  font-size: var(--fs-14);
+  justify-content: flex-start;
   text-align: left;
-  cursor: pointer;
-  transition: background 120ms ease-out, border-color 120ms ease-out;
 }
 
 .pickerItem:hover:not(:disabled),
@@ -775,8 +809,15 @@
     justify-content: flex-start;
   }
 
+  /* The amount and its token stay on one row: the input gives up its own width, so the token's chip keeps its place at
+     the row's end instead of dropping under the amount at the left edge. */
   .legBody {
-    flex-wrap: wrap;
+    flex-wrap: nowrap;
+  }
+
+  .amountInput {
+    flex: 1 1 0;
+    width: 0;
   }
 
   .amountInput,
@@ -1141,21 +1182,6 @@
   margin-right: 8px;
 }
 
-/* The reason a connect control cannot act, said next to that control.
-   Not in a panel in the opposite corner of the screen. */
-.walletHint {
-  margin: 0;
-  font-size: var(--fs-13);
-  line-height: 1.5;
-  color: var(--text-dim);
-}
-
-.walletHint b {
-  display: block;
-  color: var(--text);
-  font-weight: 600;
-}
-
 /* ── The settled answer ──────────────────────────────────────────────────
    One card for what the signature came to, in place of the form. The
    amount received is the largest figure, then what it cost, the rate and
@@ -1361,4 +1387,32 @@
 
 .settledAgain:hover {
   background: var(--panel-3);
+}
+
+/* The core's ticket inside the card: the card's own width. */
+.ticket {
+  max-width: none;
+}
+
+/* A label inside the core's button lays its parts out in a row, start to end. */
+.tokenPill > span,
+.pickerItem > span {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  min-width: 0;
+}
+
+/* History, Explorer and Open receipt beside the receipt: links, quiet. */
+.settledLink {
+  align-self: center;
+  font-size: var(--fs-13);
+  color: var(--text-dim);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.settledLink:hover {
+  color: var(--text);
 }

@@ -1,17 +1,23 @@
 "use client";
 
-import { ArrowsClockwise, CheckCircle, CircleNotch, ImageSquare, Lock, RocketLaunch, TrendDown } from "@phosphor-icons/react";
+import { CheckCircle, ImageSquare, Lock, TrendDown } from "@phosphor-icons/react";
+import { NAV_WORDS } from "@ryntra/core/nav";
+import { Block, EmptyState, Page, Skeleton, Table, type TableColumn } from "@ryntra/core/ui";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useCallback, useEffect, useRef, useState, type MouseEvent } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 import type { WorkspaceLocale } from "@/app/shell/locale";
 import type { LaunchMarketRow, LaunchMarketsResponse } from "@/lib/api/v1/contract";
 
+import { coreLang, LinkButton, Unread } from "../launch-blocks";
 import { formatBps, formatCountShort, formatMoneyShort } from "../launch-format";
 import { launchWords } from "../launch-words";
 import styles from "../launch.module.css";
 import { daysText, pairMoney, shortDate, sinceShort, sinceText, stateTone } from "../market-view";
+import { useHydrated } from "../use-hydrated";
+import { publicLaunchMarkets } from "./public-markets";
+import { SurvivalBlock } from "./survival-block";
 
 type Word = ReturnType<typeof launchWords>;
 
@@ -29,26 +35,33 @@ const FULL_CURVE: ReadonlySet<NonNullable<LaunchMarketRow["state"]>["code"]> = n
  * «Лаунчі на Ryntra»: a row per market launched on Ryntra, in the data's own
  * order — the markets traded in the last day first. Read from the server's
  * list of the chain; every figure the chain did not give is said as not read,
- * never as zero. On a phone each row is a card of the same facts. Drawn in the
- * browser only — its times are the reader's own clock's.
+ * never as zero. One block of the core with the core's table in it: on a phone
+ * the table scrolls sideways inside its block, the token's name standing still.
+ * Drawn by the server with its list (SOL-P1) and again in the browser: its
+ * «ago» counts from the server's moment until the page is up, its dates are
+ * in the reader's own zone once it has hydrated.
  */
-export function MarketsBoard({ locale, network }: { locale: WorkspaceLocale; network: "solana:devnet" | "solana:mainnet" }) {
+export function MarketsBoard({
+  locale,
+  network,
+  initial = null,
+  renderedAt,
+}: {
+  locale: WorkspaceLocale;
+  network: "solana:devnet" | "solana:mainnet";
+  /** The server's list, drawn with the page (SOL-P1); null — the browser reads it. */
+  initial?: LaunchMarketsResponse | null;
+  /** The server's clock when it drew the page: the first draw in the browser counts from the same moment. */
+  renderedAt?: number;
+}) {
   const word = launchWords(locale);
-  const [list, setList] = useState<LaunchMarketsResponse | null>(null);
-  const [state, setState] = useState<"reading" | "ready" | "failed">("reading");
+  const lang = coreLang(locale);
+  const [list, setList] = useState<LaunchMarketsResponse | null>(initial);
+  const [state, setState] = useState<"reading" | "ready" | "failed">(initial ? "ready" : "reading");
   const busy = useRef(false);
-  const [now, setNow] = useState(() => Date.now());
-  const [opened] = useState(() => Date.now());
+  const [now, setNow] = useState(() => renderedAt ?? Date.now());
+  const [opened] = useState(() => renderedAt ?? Date.now());
   const router = useRouter();
-  /* A press anywhere on a row opens its token — a link inside it, or a selection of its text, keeps its own way. */
-  const open = useCallback(
-    (event: MouseEvent<HTMLTableRowElement>, href: string) => {
-      if ((event.target as HTMLElement).closest("a, button") || window.getSelection()?.toString()) return;
-      if (event.metaKey || event.ctrlKey) window.open(href, "_blank", "noopener");
-      else router.push(href);
-    },
-    [router],
-  );
 
   const read = useCallback(async () => {
     if (busy.current) return;
@@ -67,8 +80,11 @@ export function MarketsBoard({ locale, network }: { locale: WorkspaceLocale; net
     }
   }, []);
 
+  /* The server's list is the first read; without it the browser reads at once. */
+  const drawnWith = useRef(initial !== null);
   useEffect(() => {
-    void read();
+    if (drawnWith.current) setNow(Date.now());
+    else void read();
   }, [read]);
 
   const complete = list?.complete ?? false;
@@ -79,106 +95,242 @@ export function MarketsBoard({ locale, network }: { locale: WorkspaceLocale; net
     return () => window.clearInterval(timer);
   }, [read, complete]);
 
-  const markets = list?.markets ?? [];
+  /* People's launches only: the team's technical validations are not on a public board (B15). */
+  const markets = publicLaunchMarkets(list?.markets ?? []);
   /* The oldest read among the rows read: every figure is at least this fresh. */
   const reads = markets.filter((row) => row.read).map((row) => Date.parse(row.observedAt));
   const oldestRead = reads.length ? new Date(Math.min(...reads)).toISOString() : null;
+  const columns = marketColumns({ locale, word, now, reading: now - opened < READING_MS });
   return (
-    <div className={styles.page}>
-      <header className={styles.head}>
-        <div className={styles.headRow}>
-          <h1 className={styles.title}>{word("marketsTitle")}</h1>
+    <Page
+      kind="overview"
+      className={styles.corePage}
+      title={
+        <>
+          {NAV_WORDS[locale].items.launch}
           {network === "solana:devnet" ? <span className={styles.netChip}>{word("devnet")}</span> : null}
+        </>
+      }
+      /* «Мої лаунчі» and the launch form stand under the row «Лаунч» (Menu 3, NAV-1): no tab above the page leads there. */
+      action={
+        <div className={styles.boardActions}>
+          <LinkButton href="/app/launch/mine">{word("mineTitle")}</LinkButton>
+          <LinkButton href="/app/launch/new" variant="primary">
+            {word("title")}
+          </LinkButton>
         </div>
-        <p className={styles.lede}>{word("marketsLede")}</p>
-      </header>
-
+      }
+      help={`${word("marketsLede")} ${word("marketsOrder")}`}
+    >
       {list === null ? (
-        <section className={`${styles.card} ${styles.marketsState}`} aria-live="polite" aria-busy={state === "reading"}>
-          {state === "reading" ? (
-            <p className={styles.unread}>
-              <CircleNotch size={14} className={styles.spin} aria-hidden /> {word("marketsReading")}
-            </p>
-          ) : (
-            <div className={styles.unreadRow} role="status">
-              <p className={styles.unread}>{word("marketsUnread")}</p>
-              <button type="button" className={styles.textButton} onClick={() => void read()}>
-                <ArrowsClockwise size={14} aria-hidden /> {word("readAgain")}
-              </button>
-            </div>
-          )}
-        </section>
+        state === "reading" ? (
+          /* The same block and bars as the route's skeleton (`launch-loading.tsx`), so the board does not change shape twice. */
+          <Block title={word("marketsTable")} titleAs="h2" icon="chart-column" lang={lang} aria-live="polite" aria-busy="true">
+            <Skeleton lines={6} label={word("marketsReading")} />
+          </Block>
+        ) : (
+          <Unread text={word("marketsUnread")} again={word("readAgain")} onAgain={() => void read()} lang={lang} />
+        )
       ) : markets.length === 0 ? (
-        <section className={`${styles.card} ${styles.marketsState}`}>
-          <p className={styles.unread}>{word("marketsEmpty")}</p>
-          <Link className="rw-btn rw-btn--primary" href="/app/launch/new">
-            <RocketLaunch size={16} aria-hidden /> {word("title")}
-          </Link>
-        </section>
+        /* The page's one orange action is «Запустити токен» beside the heading; the empty board offers the same way quietly. */
+        <EmptyState
+          icon="inbox"
+          text={word("marketsEmpty")}
+          data-launch-board="empty"
+          action={<LinkButton href="/app/launch/new">{word("title")}</LinkButton>}
+        />
       ) : (
-        <section className={styles.marketsBoard} aria-labelledby="markets-count">
-          <div className={styles.marketsBar}>
-            <p id="markets-count" className={styles.marketsCount}>
-              {word("marketsCount", { n: markets.length })}
-            </p>
+        <Block title={word("marketsCount", { n: markets.length })} titleAs="h2" icon="chart-column" lang={lang}>
+          <div className={styles.blockStack}>
             <p className={styles.marketsLegend}>
               <span className={styles.liveDot} aria-hidden /> {word("live")} — {word("liveHint").toLocaleLowerCase(locale === "uk" ? "uk-UA" : "en-US")}
             </p>
-          </div>
-          {!list.complete ? <p className={styles.hint}>{word("marketsPartial")}</p> : null}
-          <div className={styles.marketsWrap}>
-            {/* The roles are written out: on a phone the rows are drawn as cards, and a table drawn so keeps them only this way. */}
-            <table className={styles.marketsTable} aria-label={word("marketsTable")} role="table">
-              <thead role="rowgroup">
-                <tr role="row">
-                  <th scope="col" role="columnheader">
-                    {word("colToken")}
-                  </th>
-                  <th scope="col" role="columnheader">
-                    {word("colState")}
-                  </th>
-                  <th scope="col" role="columnheader">
-                    {word("colWay")}
-                  </th>
-                  <th scope="col" role="columnheader" data-num>
-                    {word("colPool")}
-                  </th>
-                  <th scope="col" role="columnheader" data-num>
-                    {word("colDepth")}
-                  </th>
-                  <th scope="col" role="columnheader">
-                    {word("colBudget")}
-                  </th>
-                  <th scope="col" role="columnheader" data-num>
-                    {word("colHolders")}
-                  </th>
-                  <th scope="col" role="columnheader">
-                    {word("colCreator")}
-                  </th>
-                </tr>
-              </thead>
-              <tbody role="rowgroup">
-                {markets.map((row) => (
-                  <MarketRow key={row.token} row={row} locale={locale} word={word} now={now} reading={now - opened < READING_MS} open={open} />
-                ))}
-              </tbody>
-            </table>
-          </div>
-          <footer className={styles.marketsFoot}>
-            <p className={styles.hint}>
-              {word("marketsOrder")}
-              {oldestRead ? ` ${word("marketsRead", { ago: sinceText(oldestRead, word, locale, now) })}.` : null}
-            </p>
+            {!list.complete ? <p className={styles.hint}>{word("marketsPartial")}</p> : null}
+            <Table
+              className={styles.marketsTable}
+              caption={word("marketsTable")}
+              columns={columns}
+              rows={markets}
+              rowKey={(row) => row.token}
+              /* A press on a row opens its token — a selection of its text keeps its own way; the name is the link a new tab opens. */
+              onRowClick={(row) => {
+                if (window.getSelection()?.toString()) return;
+                router.push(`/app/launch/${row.token}`);
+              }}
+              lang={lang}
+            />
+            {/* How the rows are ordered lives behind the page's «?»; under the table — only when it was read. */}
+            {oldestRead ? <p className={styles.hint}>{word("marketsRead", { ago: sinceText(oldestRead, word, locale, now) })}.</p> : null}
             <p className={styles.noGuarantee}>{word("noGuarantee")}</p>
-          </footer>
-        </section>
+          </div>
+        </Block>
       )}
-    </div>
+      {/* SOL-L3: how many of people's markets lived to 7, 30 and 90 days, each with its proof — whatever the board shows. */}
+      <SurvivalBlock locale={locale} network={network} />
+    </Page>
   );
 }
 
 function NotRead({ word }: { word: Word }) {
   return <span className={styles.cellUnread}>{word("notRead")}</span>;
+}
+
+/**
+ * The board's columns — each figure the chain did not give said as not read, never as zero. The rows keep the server's
+ * order (live markets first, then by stage and the newest): no column sorts them by hand. A market not read yet while
+ * the page has just opened says «reading» once, in its state's cell, and its other figures wait quietly.
+ */
+function marketColumns({ locale, word, now, reading }: { locale: WorkspaceLocale; word: Word; now: number; reading: boolean }): TableColumn<LaunchMarketRow>[] {
+  const waits = (row: LaunchMarketRow) => !row.read && reading;
+  return [
+    { key: "token", label: word("colToken"), render: (row) => <TokenCell row={row} word={word} /> },
+    {
+      key: "state",
+      label: word("colState"),
+      render: (row) =>
+        waits(row) ? (
+          <span className={styles.cellUnread}>{word("rowReading")}</span>
+        ) : row.state ? (
+          <span className={styles.stateCell}>
+            <span className={styles.stateChip} data-tone={stateTone(row.state.code)} title={word(`stateHint_${row.state.code}`)}>
+              <span className={styles.stateDot} aria-hidden />
+              {word(`state_${row.state.code}`)}
+            </span>
+            {row.state.since ? <span className={styles.cellSub}><SinceShort at={row.state.since} word={word} locale={locale} now={now} /></span> : null}
+          </span>
+        ) : (
+          <NotRead word={word} />
+        ),
+    },
+    {
+      key: "way",
+      label: word("colWay"),
+      render: (row) =>
+        waits(row) ? null : row.progress ? (
+          row.progress.migrated ? (
+            <span className={styles.stateCell}>
+              <span className={styles.wayDone}>
+                <CheckCircle size={16} weight="fill" aria-hidden /> {word("onDex")}
+              </span>
+              {/* Days on the DEX stand where the way to it ended. */}
+              {row.daysSinceDex !== null ? <span className={styles.cellSub}>{daysText(row.daysSinceDex, word)}</span> : null}
+            </span>
+          ) : (
+            <span className={styles.wayCell}>
+              <span className={styles.wayValue}>{formatBps(row.progress.bps, locale)}</span>
+              <span className={styles.wayBar} role="progressbar" aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.round(row.progress.bps / 100)} aria-label={word("colWay")}>
+                <span style={{ width: `${Math.max(row.progress.bps / 100, 1)}%` }} />
+              </span>
+            </span>
+          )
+        ) : (
+          <NotRead word={word} />
+        ),
+    },
+    {
+      key: "pool",
+      label: word("colPool"),
+      numeric: true,
+      render: (row) =>
+        waits(row) ? null : row.poolLiquidity ? (
+          <span className={styles.cellFigure}>{formatMoneyShort(row.poolLiquidity.usd ?? row.poolLiquidity.pair, locale, row.poolLiquidity.usd !== null, row.pair.symbol)}</span>
+        ) : row.progress && !row.progress.migrated ? (
+          <span className={styles.cellMuted}>{word("stillOnCurve")}</span>
+        ) : (
+          <NotRead word={word} />
+        ),
+    },
+    {
+      key: "depth",
+      label: word("colDepth"),
+      numeric: true,
+      render: (row) =>
+        waits(row) ? null : row.venue === "curve" && row.state && FULL_CURVE.has(row.state.code) ? (
+          /* A full curve takes no sale until it moves to the DEX. */
+          <span className={styles.cellMuted}>{word("curveFull")}</span>
+        ) : row.depth5Raw !== null ? (
+          <span className={styles.cellFigure}>{pairMoney(row.depth5Raw, row.pair, locale)}</span>
+        ) : (
+          <NotRead word={word} />
+        ),
+    },
+    {
+      key: "budget",
+      label: word("colBudget"),
+      render: (row) => (waits(row) ? null : <BudgetCell budget={row.budget} ours={row.technicalValidation} read={row.read} money={(raw) => pairMoney(raw, row.pair, locale)} word={word} />),
+    },
+    {
+      key: "holders",
+      label: word("colHolders"),
+      numeric: true,
+      render: (row) =>
+        waits(row) ? null : row.holders !== null ? (
+          /* The ones found when the node would not scan every account: a floor, «4+». */
+          <span className={styles.cellFigure} title={row.holdersAtLeast ? word("hAtLeastHint") : undefined}>
+            {formatCountShort(row.holders, locale)}
+            {row.holdersAtLeast ? "+" : ""}
+          </span>
+        ) : row.holdersAtLeast ? (
+          <span className={styles.cellUnread}>{word("holdersUncounted")}</span>
+        ) : (
+          <NotRead word={word} />
+        ),
+    },
+    {
+      key: "creator",
+      label: word("colCreator"),
+      render: (row) =>
+        waits(row) ? (
+          row.creatorLock ? (
+            <span className={styles.creatorLock}>
+              <Lock size={14} weight="fill" aria-hidden /> {word("creatorLockUnread")}
+            </span>
+          ) : null
+        ) : (
+          <span className={styles.stateCell}>
+            {/* A row not read knows only the lock its record holds: no lock there is «not read», never «no lock». */}
+            {!row.read && !row.creatorLock ? <NotRead word={word} /> : <CreatorLock row={row} locale={locale} word={word} now={now} />}
+            {row.creatorSold === true ? (
+              <span className={styles.creatorSold}>
+                <TrendDown size={14} aria-hidden /> {word("creatorSoldYes")}
+              </span>
+            ) : row.creatorSold === false ? (
+              <span className={styles.cellSub}>{word("creatorSoldNo")}</span>
+            ) : (
+              <span className={styles.cellSub}>{word("creatorSoldUnread")}</span>
+            )}
+          </span>
+        ),
+    },
+  ];
+}
+
+/** The token's picture, name and ticker — the link a keyboard and a screen reader open it by — and its two marks. */
+function TokenCell({ row, word }: { row: LaunchMarketRow; word: Word }) {
+  return (
+    <span className={styles.marketToken}>
+      <Link className={styles.marketLink} href={`/app/launch/${row.token}`} prefetch={false}>
+        <span className={styles.marketPicture}>
+          {/* eslint-disable-next-line @next/next/no-img-element -- the token's own picture, served by its immutable address */}
+          {row.image ? <img src={row.image} alt="" /> : <ImageSquare size={18} aria-hidden />}
+        </span>
+        <span className={styles.marketNames}>
+          <span className={styles.marketName}>{row.name}</span>
+          <span className={styles.marketSymbol} translate="no">
+            ${row.symbol}
+          </span>
+        </span>
+      </Link>
+      <span className={styles.marketChips}>
+        {row.traded24h === true ? (
+          <span className={styles.liveChip} title={word("liveHint")}>
+            <span className={styles.liveDot} aria-hidden />
+            {word("live")}
+          </span>
+        ) : null}
+      </span>
+    </span>
+  );
 }
 
 /**
@@ -211,7 +363,7 @@ function BudgetCell({ budget, ours, read, money, word }: { budget: LaunchMarketR
         <span className={styles.cellLine}>
           {budget.earnedRaw !== null ? <span className={styles.cellFigure}>{money(budget.earnedRaw)}</span> : <NotRead word={word} />} {word("budgetInPool")}
         </span>
-        <span className={styles.cellSub}>{word(ours ? "budgetPoolClaims" : "budgetPoolWaits")}</span>
+        <span className={styles.cellSub}>{word(ours || budget.claims ? "budgetPoolClaims" : "budgetPoolWaits")}</span>
       </span>
     );
   }
@@ -234,171 +386,22 @@ function BudgetCell({ budget, ours, read, money, word }: { budget: LaunchMarketR
   );
 }
 
-function MarketRow({
-  row,
-  locale,
-  word,
-  now,
-  reading,
-  open,
-}: {
-  row: LaunchMarketRow;
-  locale: WorkspaceLocale;
-  word: Word;
-  now: number;
-  /** The page opened a moment ago: a market not read yet is being read, said once across its row. */
-  reading: boolean;
-  open: (event: MouseEvent<HTMLTableRowElement>, href: string) => void;
-}) {
-  const money = (raw: string) => pairMoney(raw, row.pair, locale);
-  const href = `/app/launch/${row.token}`;
-  const token = (
-    <th scope="row" role="rowheader" className={styles.marketToken}>
-      <Link className={styles.marketLink} href={href} prefetch={false}>
-        <span className={styles.marketPicture}>
-          {/* eslint-disable-next-line @next/next/no-img-element -- the token's own picture, served by its immutable address */}
-          {row.image ? <img src={row.image} alt="" /> : <ImageSquare size={18} aria-hidden />}
-        </span>
-        <span className={styles.marketNames}>
-          <span className={styles.marketName}>{row.name}</span>
-          <span className={styles.marketSymbol} translate="no">
-            ${row.symbol}
-          </span>
-        </span>
-      </Link>
-      <span className={styles.marketChips}>
-        {row.traded24h === true ? (
-          <span className={styles.liveChip} title={word("liveHint")}>
-            <span className={styles.liveDot} aria-hidden />
-            {word("live")}
-          </span>
-        ) : null}
-        {row.technicalValidation ? (
-          <span className={styles.techChip} title={word("techHint")}>
-            {word("techChip")}
-          </span>
-        ) : null}
-      </span>
-    </th>
-  );
-  if (!row.read && reading) {
-    return (
-      <tr className={styles.marketRow} role="row" onClick={(event) => open(event, href)}>
-        {token}
-        <td colSpan={7} role="cell" className={styles.rowReading} data-label="">
-          <span className={styles.unread}>
-            <CircleNotch size={14} className={styles.spin} aria-hidden /> {word("rowReading")}
-          </span>
-          {row.creatorLock ? (
-            <span className={styles.creatorLock}>
-              <Lock size={14} weight="fill" aria-hidden /> {word("creatorLockUnread")}
-            </span>
-          ) : null}
-        </td>
-      </tr>
-    );
-  }
-  return (
-    <tr className={styles.marketRow} data-live={row.traded24h === true ? "" : undefined} role="row" onClick={(event) => open(event, href)}>
-      {token}
-      <td data-label={word("colState")} role="cell">
-        {row.state ? (
-          <span className={styles.stateCell}>
-            <span className={styles.stateChip} data-tone={stateTone(row.state.code)} title={word(`stateHint_${row.state.code}`)}>
-              <span className={styles.stateDot} aria-hidden />
-              {word(`state_${row.state.code}`)}
-            </span>
-            {row.state.since ? <span className={styles.cellSub}>{sinceShort(row.state.since, word, locale, now)}</span> : null}
-          </span>
-        ) : (
-          <NotRead word={word} />
-        )}
-      </td>
-      <td data-label={word("colWay")} role="cell">
-        {row.progress ? (
-          row.progress.migrated ? (
-            <span className={styles.stateCell}>
-              <span className={styles.wayDone}>
-                <CheckCircle size={16} weight="fill" aria-hidden /> {word("onDex")}
-              </span>
-              {/* Days on the DEX stand where the way to it ended. */}
-              {row.daysSinceDex !== null ? <span className={styles.cellSub}>{daysText(row.daysSinceDex, word)}</span> : null}
-            </span>
-          ) : (
-            <span className={styles.wayCell}>
-              <span className={styles.wayValue}>{formatBps(row.progress.bps, locale)}</span>
-              <span className={styles.wayBar} role="progressbar" aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.round(row.progress.bps / 100)} aria-label={word("colWay")}>
-                <span style={{ width: `${Math.max(row.progress.bps / 100, 1)}%` }} />
-              </span>
-            </span>
-          )
-        ) : (
-          <NotRead word={word} />
-        )}
-      </td>
-      <td data-label={word("colPool")} data-num role="cell">
-        {row.poolLiquidity ? (
-          <span className={styles.cellFigure}>{formatMoneyShort(row.poolLiquidity.usd ?? row.poolLiquidity.pair, locale, row.poolLiquidity.usd !== null, row.pair.symbol)}</span>
-        ) : row.progress && !row.progress.migrated ? (
-          <span className={styles.cellMuted}>{word("stillOnCurve")}</span>
-        ) : (
-          <NotRead word={word} />
-        )}
-      </td>
-      <td data-label={word("colDepth")} data-num role="cell">
-        {row.venue === "curve" && row.state && FULL_CURVE.has(row.state.code) ? (
-          /* A full curve takes no sale until it moves to the DEX. */
-          <span className={styles.cellMuted}>{word("curveFull")}</span>
-        ) : row.depth5Raw !== null ? (
-          <span className={styles.cellFigure}>{money(row.depth5Raw)}</span>
-        ) : (
-          <NotRead word={word} />
-        )}
-      </td>
-      <td data-label={word("colBudget")} role="cell">
-        <BudgetCell budget={row.budget} ours={row.technicalValidation} read={row.read} money={money} word={word} />
-      </td>
-      <td data-label={word("colHolders")} data-num role="cell">
-        {row.holders !== null ? (
-          /* The ones found when the node would not scan every account: a floor, «4+». */
-          <span className={styles.cellFigure} title={row.holdersAtLeast ? word("hAtLeastHint") : undefined}>
-            {formatCountShort(row.holders, locale)}
-            {row.holdersAtLeast ? "+" : ""}
-          </span>
-        ) : row.holdersAtLeast ? (
-          <span className={styles.cellUnread}>{word("holdersUncounted")}</span>
-        ) : (
-          <NotRead word={word} />
-        )}
-      </td>
-      <td data-label={word("colCreator")} role="cell">
-        <span className={styles.stateCell}>
-          {/* A row not read knows only the lock its record holds: no lock there is «not read», never «no lock». */}
-          {!row.read && !row.creatorLock ? <NotRead word={word} /> : <CreatorLock row={row} locale={locale} word={word} now={now} />}
-          {row.creatorSold === true ? (
-            <span className={styles.creatorSold}>
-              <TrendDown size={14} aria-hidden /> {word("creatorSoldYes")}
-            </span>
-          ) : row.creatorSold === false ? (
-            <span className={styles.cellSub}>{word("creatorSoldNo")}</span>
-          ) : (
-            <span className={styles.cellSub}>{word("creatorSoldUnread")}</span>
-          )}
-        </span>
-      </td>
-    </tr>
-  );
+/** When a state began, as `sinceShort` says it — its date in the reader's zone once the page has hydrated (SOL-P1). */
+function SinceShort({ at, word, locale, now }: { at: string; word: Word; locale: WorkspaceLocale; now: number }) {
+  return <>{sinceShort(at, word, locale, now, useHydrated() ? undefined : "UTC")}</>;
 }
 
 /** The creator's lock: whole until its cliff, then freed step by step to its end; a lock whose dates were not read is said locked. */
 function CreatorLock({ row, locale, word, now }: { row: LaunchMarketRow; locale: WorkspaceLocale; word: Word; now: number }) {
+  /* The server draws the board too (SOL-P1): a date in the reader's own zone once the page has hydrated, in UTC before. */
+  const zone = useHydrated() ? undefined : "UTC";
   const lock = row.creatorLock;
   if (!lock) return <span className={styles.cellMuted}>{word("creatorNoLock")}</span>;
   const text =
     lock.cliffAt && Date.parse(lock.cliffAt) > now
-      ? word("creatorLockedUntil", { date: shortDate(lock.cliffAt, locale, now) })
+      ? word("creatorLockedUntil", { date: shortDate(lock.cliffAt, locale, now, zone) })
       : lock.endsAt && Date.parse(lock.endsAt) > now
-        ? word("creatorVestingUntil", { date: shortDate(lock.endsAt, locale, now) })
+        ? word("creatorVestingUntil", { date: shortDate(lock.endsAt, locale, now, zone) })
         : lock.cliffAt || lock.endsAt
           ? null
           : word("creatorLockUnread");

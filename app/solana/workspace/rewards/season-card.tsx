@@ -7,6 +7,7 @@ import { useSolanaI18n } from "../i18n/provider.tsx";
 import { SeasonBadge } from "./badge.tsx";
 import { leagueCopy } from "./league-copy.ts";
 import { useSeason } from "./season-view.tsx";
+import { PaidAsChip } from "./programme-card.tsx";
 import styles from "./leagues.module.css";
 
 /**
@@ -40,6 +41,7 @@ export function SeasonCard() {
           </span>
         </span>
         {you ? <span className={styles.chip} translate="no">{words.tasksDone(done, you.tasks.length)}</span> : null}
+        <PaidAsChip paidAs="STATUS" />
       </div>
       {you ? (
         <ul className={styles.tasks}>

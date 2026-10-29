@@ -51,7 +51,7 @@ import { CONTACTS } from "@/lib/site/contacts";
    address. This chrome serves `/[lang]`, which is parked rather than deleted —
    `PUBLIC_LOCALE_CODES` is `["en"]`, so every sub-locale currently redirects to
    `/` and nothing here renders. Cleaned anyway: unparking a locale should not
-   be the act that republishes a retired channel. The identities
+   be the act that republishes a channel the founder retired. The identities
    come from the one module now. */
 const X_URL = CONTACTS.companyX;
 const EMAIL = CONTACTS.email;

@@ -142,6 +142,14 @@ export const CrossSwapOrderRecordSchema = z
      * written with. Storing it is what makes a bridge made on a laptop open on
      * a phone.
      */
+    /**
+     * The EVM source wallet's pending transaction count, read just before
+     * `ARM` crossed the boundary. The only thing that can later prove a wallet
+     * sent nothing: `ABANDON` releases a crossed order only when the chain
+     * still reports this count (FIX-XSWAP-1). Null on Solana and on every
+     * order armed before the field existed — those are resolved by reading.
+     */
+    sourceAccountNonce: z.string().regex(/^(0|[1-9][0-9]*)$/).max(20).nullable().default(null),
     receiptHash: z.string().regex(HEX_DIGEST).nullable().default(null),
     receipt: z.unknown().nullable().default(null),
     reservedAt: z.string().datetime({ offset: true }),
@@ -317,6 +325,7 @@ export async function claimCrossSwapOrder(args: ClaimCrossSwapOrderInput): Promi
     refundTxHash: null,
     receivedAmount: null,
     refund: null,
+    sourceAccountNonce: null,
     receiptHash: null,
     receipt: null,
     reservedAt: args.at,
@@ -360,6 +369,7 @@ export async function claimCrossSwapOrder(args: ClaimCrossSwapOrderInput): Promi
       reviewDigest: args.reviewDigest,
       sourceTxHash: null,
       providerStatus: null,
+      sourceAccountNonce: null,
       reviewedWireHash: args.reviewedWireHash ?? null,
       reviewedCallHash: args.reviewedCallHash ?? null,
     },
@@ -383,6 +393,7 @@ type Patch = Partial<
     | "reviewedCallHash"
     | "receiptHash"
     | "receipt"
+    | "sourceAccountNonce"
   >
 >;
 
@@ -455,9 +466,13 @@ async function moveTo(args: {
   return refusal ?? settled;
 }
 
-/** The boundary is about to be crossed; from here value may have moved. */
-export function markCrossSwapArmed(args: { store: GuardStore; intentDigest: string; at: string }): Promise<CrossSwapOrderResult> {
-  return moveTo({ ...args, network: "mainnet", decide: (r) => {
+/**
+ * The boundary is about to be crossed; from here value may have moved. An EVM
+ * origin records the wallet's pending transaction count read just before, so
+ * a declined wallet can later be told apart from one that sent.
+ */
+export function markCrossSwapArmed(args: { store: GuardStore; intentDigest: string; at: string; sourceAccountNonce?: string }): Promise<CrossSwapOrderResult> {
+  return moveTo({ store: args.store, intentDigest: args.intentDigest, at: args.at, network: "mainnet", patch: { sourceAccountNonce: args.sourceAccountNonce }, decide: (r) => {
     if (r.state !== "RESERVED") return null;
     if (r.provider === "RELAY" && (!Number.isFinite(Date.parse(args.at)) || Date.parse(args.at) >= r.deadlineUnix * 1000)) return null;
     return "SUBMITTED_UNKNOWN";
@@ -481,9 +496,38 @@ export function markCrossSwapSubmitted(args: { store: GuardStore; intentDigest: 
   });
 }
 
-/** Provably never broadcast — a wallet declined before signing, or the blockhash died unsent. */
+/**
+ * Provably never broadcast — the Solana path only, where this process holds
+ * the proof itself: the RPC refused the signed bytes for a dead blockhash. A
+ * client's `ABANDON` goes through `releaseAbandonedCrossSwap` instead.
+ */
 export function markCrossSwapNeverBroadcast(args: { store: GuardStore; intentDigest: string; at: string }): Promise<CrossSwapOrderResult> {
   return moveTo({ ...args, network: "mainnet", decide: (r) => (r.state === "RESERVED" || r.state === "SUBMITTED_UNKNOWN" ? "EXPIRED_BEFORE_SUBMIT" : null) });
+}
+
+/**
+ * `ABANDON` — the wallet declined, says the client. The client's word releases
+ * only an order that never crossed the boundary (`RESERVED`). A crossed EVM
+ * order is released only with the chain's proof that nothing was sent: the
+ * source wallet's pending count still equal to the one recorded at `ARM`, read
+ * by the caller just now, and no transaction hash on record. Anything else —
+ * a Solana order, an order armed before the count was kept, a count that
+ * moved — stays recorded as possibly under way and is resolved by reading,
+ * because a client that could release its own boundary could send twice.
+ */
+export function releaseAbandonedCrossSwap(args: { store: GuardStore; intentDigest: string; at: string; observedNonce: string | null }): Promise<CrossSwapOrderResult> {
+  return moveTo({
+    store: args.store,
+    network: "mainnet",
+    intentDigest: args.intentDigest,
+    at: args.at,
+    decide: (r) => {
+      if (r.state === "RESERVED") return "EXPIRED_BEFORE_SUBMIT";
+      if (r.state !== "SUBMITTED_UNKNOWN" || r.sourceChain === "solana" || r.sourceTxHash !== null) return null;
+      if (r.sourceAccountNonce === null || args.observedNonce === null) return null;
+      return r.sourceAccountNonce === args.observedNonce ? "EXPIRED_BEFORE_SUBMIT" : null;
+    },
+  });
 }
 
 /** The source transaction landed and failed on chain: nothing moved. */

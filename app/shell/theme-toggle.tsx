@@ -15,7 +15,7 @@ import { fill, useShellCopy } from "./shell-copy";
  * settings page — and a person could not tell which one was telling the truth.
  * The fix was to give appearance exactly one home.
  *
- * **A control came back on 2026-08-24**, next to the language
+ * **The founder put a control back on 2026-08-24**, next to the language
  * button at the foot of the rail, because "one home" turned out to mean "two
  * clicks away on a page you have to leave the workspace to reach". That is a
  * different complaint from the one that emptied this slot, and both can be
@@ -28,7 +28,7 @@ import { fill, useShellCopy } from "./shell-copy";
  * `Settings → Appearance` is reflected here without a reload, and there is no
  * second copy of the value that can drift from the first.
  *
- * Two values. Dark and Light. `system` was closed on 2026-08-25:
+ * Two values. Dark and Light. The founder closed `system` on 2026-08-25:
  * following the machine was a third answer that nobody asked for, and it
  * made the control read as something other than a theme switch. A stored
  * `system` leftover is resolved once in `getThemePref` and never offered

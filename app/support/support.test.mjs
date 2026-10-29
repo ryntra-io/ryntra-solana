@@ -11,7 +11,7 @@ import { hasUkAddress, localizedPath } from "../../lib/site/localized.ts";
 import { SUPPORT_COPY, SUPPORT_PRIVACY_ANDROID } from "./support-copy.ts";
 
 /*
- * The store's two addresses: `/support` in both
+ * The store's two addresses (the mobile line's request 27): `/support` in both
  * languages and the privacy policy's section on the Android app in both — each
  * saying only what production has and what the phone's code does.
  */
@@ -76,7 +76,7 @@ test("the privacy policy's Android section says what stays on the phone, the wal
   assert.match(page, /<strong>Google Firebase Cloud Messaging<\/strong>/);
 });
 
-test("the privacy policy's Android section names the two permissions, the photo picker and a launch's public content", () => {
+test("the privacy policy's Android section names the two permissions, the photo picker and a launch's public content (request 51)", () => {
   const [en, uk] = LOCALES.map((locale) => JSON.stringify(ANDROID_PRIVACY[locale]));
   for (const words of [en, uk]) {
     assert.match(words, /\(CAMERA\)/);
@@ -98,7 +98,7 @@ test("the privacy policy's Android section names the two permissions, the photo 
   assert.doesNotMatch(en + uk, /one permission|один дозвіл|location, camera|геолокації, камери/);
 });
 
-test("the Terms carry the content rules a launch agrees to, in both languages", async () => {
+test("the Terms carry the content rules a launch agrees to, in both languages (request 52)", async () => {
   const { LAUNCH_TERMS, LAUNCH_SECTION_ID } = await import("../legal/terms/launch.ts");
   const [en, uk] = LOCALES.map((locale) => LAUNCH_TERMS[locale]);
   assert.match(en.heading, /^10\. Tokens you launch$/);

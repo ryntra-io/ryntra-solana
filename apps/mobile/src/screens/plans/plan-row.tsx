@@ -9,7 +9,7 @@ import { entryExpired, planIssuerLabel, statusTone, unitBasisOf } from '@/featur
 import type { MonitoringCard, TradingPlan } from '@/lib/api'
 import type { Locale } from '@/lib/i18n'
 import { HIDDEN_AMOUNT } from '@/features/home/home-model'
-import { formatAmount, formatMoment, formatUsd, localizeFigures } from '@/utils/format'
+import { formatAmount, formatMoment, formatUsd, localizeFigures, saidFigure } from '@/utils/format'
 
 export type PlanRowProps = {
   plan: TradingPlan
@@ -46,7 +46,7 @@ export function PlanRow({
       accessibilityLabel={[
         plan.asset.symbol,
         copy.status[plan.status],
-        hideMoney ? HIDDEN_AMOUNT : formatUsd(sizing.notionalUsd, locale),
+        saidFigure(hideMoney ? HIDDEN_AMOUNT : formatUsd(sizing.notionalUsd, locale), locale),
         result?.text,
       ]
         .filter(Boolean)
@@ -103,7 +103,9 @@ export function AttentionCard({ card, lastChecked, locale, now, onPress, paperLa
       <View className="flex-row items-center gap-2">
         <Icon name="alert-circle-outline" size={18} color="warningInk" />
         <Txt variant="ui" tone="warning" className="flex-1">
-          {card.title.startsWith(card.label) ? localizeFigures(card.title, locale) : `${card.label} · ${localizeFigures(card.title, locale)}`}
+          {card.title.startsWith(card.label)
+            ? localizeFigures(card.title, locale)
+            : `${card.label} · ${localizeFigures(card.title, locale)}`}
         </Txt>
         {card.paper && paperLabel ? <Chip label={paperLabel} /> : null}
         <Icon name="chevron-forward" size={16} color="warningInk" />

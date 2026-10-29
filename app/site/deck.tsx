@@ -10,8 +10,8 @@ import { CaretLeft, CaretRight } from "@phosphor-icons/react";
  * adds only the handling. Three inputs, one contract:
  *
  *   - arrows page the rail by its visible width and disable at the ends;
- *   - a mouse can grab the rail and pull it, the way a first-time reader
- *     reaches for it; snap is suspended while
+ *   - a mouse can grab the rail and pull it, the way the founder reached for
+ *     it on first contact ("воно не витягується"); snap is suspended while
  *     dragging so the rail follows the hand, and restored on release;
  *   - touch and keyboard keep the native scroll they already had.
  */

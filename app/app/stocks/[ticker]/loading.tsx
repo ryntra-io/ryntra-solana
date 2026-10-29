@@ -10,12 +10,13 @@ export default function CompanyLoading() {
   return (
     <div className={company.page} aria-busy="true" aria-live="polite" data-surface-state="LOADING">
       <span className={company.lineBone} style={{ width: 88, height: 14 }} />
-      <div className={company.top}>
+      {/* The page's own layout: the company and its line, the purchase in its card beside them from 860 px — the skeleton never jumps into two columns. */}
+      <div className={company.layout}>
         <div className={company.main}>
-          <div className={company.identity}>
-            <span className={`${company.logo} ${company.lineBone}`} style={{ width: 48, height: 48 }} />
+          <header className={company.head}>
+            <span className={`${company.logo} ${company.lineBone}`} style={{ width: 56, height: 56 }} />
             <span className={company.lineBone} style={{ width: 160, height: 24 }} />
-          </div>
+          </header>
           <span className={company.lineBone} style={{ width: 180, height: 44 }} />
           <span className={company.lineBone} style={{ width: 120, height: 14 }} />
           <div className={company.chart}>
@@ -23,9 +24,13 @@ export default function CompanyLoading() {
           </div>
         </div>
         <div className={company.aside}>
-          <span className={company.lineBone} style={{ width: "90%", height: 14 }} />
-          <span className={company.lineBone} style={{ width: "50%", height: 14 }} />
-          <span className={company.lineBone} style={{ width: "100%", height: 52 }} />
+          <div className={company.asideStick}>
+            <div className={company.buyCard}>
+              <span className={company.lineBone} style={{ width: "90%", height: 14 }} />
+              <span className={company.lineBone} style={{ width: "50%", height: 14 }} />
+              <span className={company.lineBone} style={{ width: "100%", height: 52 }} />
+            </div>
+          </div>
         </div>
       </div>
     </div>

@@ -49,7 +49,8 @@ export function ChoiceChips<T extends string>({
   className,
 }: ChoiceChipsProps<T>) {
   // A scrolled row keeps its selected chip in view — a tab a link opens is never hidden past the edge —
-  // and moves only when that chip is out of view, never on a tap at a chip already seen.
+  // and moves only when that chip is out of view, never on a tap at a chip already seen. A chip wider
+  // than the row is «seen» by its start: its words read from the first.
   const scroller = useRef<ScrollView>(null)
   const chipBoxes = useRef(new Map<string, Readonly<{ x: number; width: number }>>())
   const viewport = useRef(0)
@@ -59,8 +60,11 @@ export function ChoiceChips<T extends string>({
     const box = chipBoxes.current.get(selected)
     if (!box || viewport.current === 0) return false
     const edge = 16
-    if (box.x < offset.current) scroller.current?.scrollTo({ x: Math.max(0, box.x - edge), animated })
-    else if (box.x + box.width > offset.current + viewport.current)
+    const wide = box.width + 2 * edge > viewport.current
+    const startHidden = box.x < offset.current || box.x + edge > offset.current + viewport.current
+    if (box.x < offset.current || (wide && startHidden))
+      scroller.current?.scrollTo({ x: Math.max(0, box.x - edge), animated })
+    else if (!wide && box.x + box.width > offset.current + viewport.current)
       scroller.current?.scrollTo({ x: box.x + box.width - viewport.current + edge, animated })
     return true
   })

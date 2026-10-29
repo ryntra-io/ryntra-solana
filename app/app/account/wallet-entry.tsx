@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useSolanaConnection } from "@/app/solana/workspace/connection";
+import { ConnectWalletButton } from "@/app/solana/workspace/wallet-gate";
 import { useWalletProof } from "@/app/solana/workspace/wallet-proof";
 import { useAccount } from "./account-context";
 
@@ -13,12 +14,12 @@ const COPY = {
     refused: "Sign-in was cancelled. You can still view public quotes.", failed: "Sign-in could not be completed. Try again with the connected wallet.",
     unsupported: "This wallet cannot sign a sign-in message. Choose another supported wallet.", taken: "This wallet belongs to another account. No data was moved.",
     connecting: "Connecting…", connected: "Connected wallet", change: "Choose another wallet", expires: "Sign-in is reused while this session is valid." },
-  uk: { connect: "Підключити гаманець", choose: "Виберіть гаманець Solana", absent: "Відкрийте сторінку в браузері підтримуваного гаманця або увімкніть його розширення.",
-    consent: "Увійдіть гаманцем. Перший підпис створює ваш акаунт Ryntra; той самий підпис відкриває його надалі. Він не переміщує кошти й не дозволяє торгувати від вашого імені.",
-    linkConsent: "Прив’яжіть цей гаманець до поточного акаунта Ryntra як другий ключ. Збережені плани залишаться тут. Це не дає Ryntra дозволу торгувати.",
-    sign: "Підтвердити вхід", link: "Підтвердити прив’язку", signing: "Підтвердьте повідомлення в гаманці…", linked: "Гаманець прив’язано. Він теж відкриває цей акаунт.",
-    refused: "Вхід скасовано. Публічні котирування залишаються доступними.", failed: "Не вдалося виконати вхід. Спробуйте ще раз із підключеним гаманцем.",
-    unsupported: "Цей гаманець не підтримує підпис повідомлення для входу. Виберіть інший підтримуваний гаманець.", taken: "Цей гаманець належить іншому акаунту. Дані не перенесено.",
+  uk: { connect: "Підключити гаманець", choose: "Вибери гаманець Solana", absent: "Відкрий сторінку в браузері підтримуваного гаманця або увімкни його розширення.",
+    consent: "Увійди гаманцем. Перший підпис створює твій акаунт Ryntra; той самий підпис відкриває його надалі. Він не переміщує кошти й не дозволяє торгувати від твого імені.",
+    linkConsent: "Прив’яжи цей гаманець до поточного акаунта Ryntra як другий ключ. Збережені плани залишаться тут. Це не дає Ryntra дозволу торгувати.",
+    sign: "Підтвердити вхід", link: "Підтвердити прив’язку", signing: "Підтверди повідомлення в гаманці…", linked: "Гаманець прив’язано. Він теж відкриває цей акаунт.",
+    refused: "Вхід скасовано. Публічні котирування залишаються доступними.", failed: "Не вдалося виконати вхід. Спробуй ще раз із підключеним гаманцем.",
+    unsupported: "Цей гаманець не підтримує підпис повідомлення для входу. Вибери інший підтримуваний гаманець.", taken: "Цей гаманець належить іншому акаунту. Дані не перенесено.",
     connecting: "Підключення…", connected: "Підключений гаманець", change: "Вибрати інший гаманець", expires: "Вхід діє на всіх сторінках, доки сесія чинна." },
 } as const;
 
@@ -39,7 +40,8 @@ export function WalletEntry({ mode = "signin", onSuccess }: { mode?: "signin" | 
   return <div className="ry-wallet-entry">
     <p className="ry-login-lead">{mode === "link" ? c.linkConsent : c.consent}</p>
     {(!connection || choose) ? <div className="ry-account-actions" aria-label={c.choose}>
-      {wallets.length === 0 ? <p className="ry-muted">{c.absent}</p> : wallets.map((wallet) =>
+      {/* No wallet in this browser: the one button (B14) — the header's panel to install one, Phantom's browser on a phone. */}
+      {wallets.length === 0 ? <><p className="ry-muted">{c.absent}</p><ConnectWalletButton /></> : wallets.map((wallet) =>
         <button key={wallet.name} type="button" className="rw-btn" disabled={working} onClick={async () => { await connect(wallet.name); setChoose(false); }}>
           {connecting ? c.connecting : `${c.connect} · ${wallet.name}`}
         </button>)}

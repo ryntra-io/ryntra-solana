@@ -26,7 +26,8 @@ import { AgentCriticSchema, type AgentCritic, type AgentCriticFinding, type Agen
 import type { Locale } from "../provenance.ts";
 import type { ToolFact } from "../tools/types.ts";
 import { conditionKindWords, findingOutcomeWords } from "../../monitoring/engine.ts";
-import { checkWord } from "../tools/research.ts";
+import { TOOL_SOURCE_WORDS } from "../tools/market-data.ts";
+import { checkWord, windowWords } from "../tools/research.ts";
 import { asFigure, nothingRead, subjectSymbol, type LensReads } from "./reads.ts";
 
 const w = (locale: Locale, en: string, uk: string): string => (locale === "uk" ? uk : en);
@@ -437,11 +438,21 @@ function previousResults(reads: LensReads, locale: Locale): Draft[] {
   return out;
 }
 
+/** An evidence window as a person says it (AI-21) — one function for the answer and the formats. */
+export { windowWords };
+
+/** A read that did not answer, named as a person names its source — never the tool's own name (AI-21). */
+export function readWords(tool: string, locale: Locale): string {
+  const words = TOOL_SOURCE_WORDS[tool];
+  return words ? (locale === "uk" ? words[1] : words[0]) : w(locale, "one of the reads", "одне з читань");
+}
+
 function evidenceGaps(reads: LensReads, locale: Locale): Draft[] {
   const out: Draft[] = [];
   const conditions = reads.facts.get("plan.conditions");
   for (const card of reads.evidence) {
     if (card.state === "FRESH") continue;
+    const span = windowWords(card.window);
     out.push({
       kind: "evidence-missing",
       id: `evidence.${card.provider}.${card.window}`,
@@ -451,14 +462,20 @@ function evidenceGaps(reads: LensReads, locale: Locale): Draft[] {
         card.state === "UNKNOWN"
           ? w(
               locale,
-              `was never measured over ${card.window}: the source covers no observation of this mint. That is not a clean bill; nothing was checked.`,
-              `ніколи не вимірювалися за ${card.window}: джерело не має спостереження про цей мінт. Це не чиста довідка; нічого не перевіряли.`,
+              `was never measured ${span[0]}: the source covers no observation of this mint. That is not a clean bill; nothing was checked.`,
+              `ніколи не вимірювалися ${span[1]}: джерело не має спостереження про цей мінт. Це не чиста довідка; нічого не перевіряли.`,
             )
-          : w(
-              locale,
-              `is ${card.state.toLowerCase()} over ${card.window}${card.reason ? ` (${card.reason})` : ""}, so any reading of structure or flow here describes a moment that has passed.`,
-              `${card.state === "STALE" ? "застарілі" : "недоступні"} за ${card.window}${card.reason ? ` (${card.reason})` : ""}, тож будь-яке читання структури чи потоку тут описує момент, який минув.`,
-            ),
+          : card.state === "STALE"
+            ? w(
+                locale,
+                `is stale ${span[0]}${card.reason ? ` (${card.reason})` : ""}, so any reading of structure or flow here describes a moment that has passed.`,
+                `застарілі ${span[1]}${card.reason ? ` (${card.reason})` : ""}, тож будь-яке читання структури чи потоку тут описує момент, який минув.`,
+              )
+            : w(
+                locale,
+                `is unavailable ${span[0]}${card.reason ? ` (${card.reason})` : ""}: concentration, authorities and flows were not read here — a gap, not a clean bill.`,
+                `недоступні ${span[1]}${card.reason ? ` (${card.reason})` : ""}: концентрацію, права й потоки тут не прочитано — це прогалина, а не чиста довідка.`,
+              ),
     });
   }
   if (reads.evidence.length === 0 && (reads.market || reads.stock)) {
@@ -760,7 +777,7 @@ export function composeCritic(reads: LensReads, locale: Locale): AgentCritic {
       findings: [],
       gaps: [
         { text: w(locale, "Insufficient data: nothing could be read about this subject, so nothing can be argued against it.", "Даних недостатньо: про цей предмет нічого не вдалося прочитати, тож і сперечатися нема з чим."), cites: [] },
-        ...reads.unavailable.map((tool) => ({ text: w(locale, `The read “${tool}” did not answer; silence here is not agreement.`, `Читання «${tool}» не відповіло; мовчання тут не є згодою.`), cites: [] })),
+        ...reads.unavailable.map((tool) => ({ text: w(locale, `The read of ${readWords(tool, locale)} did not answer; silence here is not agreement.`, `Читання «${readWords(tool, locale)}» не відповіло; мовчання тут не є згодою.`), cites: [] })),
       ].slice(0, 6),
       insufficient: true,
     });

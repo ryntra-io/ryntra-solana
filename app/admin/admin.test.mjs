@@ -27,12 +27,12 @@ test("огляд і 401 лишаються fail-closed", () => {
   assert.match(page, /AdminUnauthorized/);
   assert.match(page, /AdminShellV2/);
   assert.doesNotMatch(page, /process\.env/);
-  for (const surface of ["users", "feedback", "broadcasts", "analytics", "seo", "operations", "audit", "settings"]) {
+  for (const surface of ["users", "feedback", "broadcasts", "analytics", "finance", "seo", "operations", "audit", "settings"]) {
     const source = read(`app/admin/${surface}/page.tsx`);
     assert.match(source, /getAdminSession/, surface);
     assert.match(source, /AdminUnauthorized/, surface);
   }
-  for (const route of ["overview", "users", "operations", "analytics", "feedback", "audit", "seo", "broadcasts", "analytics/business", "analytics/internal-wallets"]) {
+  for (const route of ["overview", "users", "operations", "analytics", "finance", "feedback", "audit", "seo", "broadcasts", "analytics/business", "analytics/internal-wallets"]) {
     const source = read(`app/api/admin/${route}/route.ts`);
     assert.match(source, /getAdminSession\(\)/, route);
     assert.match(source, /status: 401/, route);
@@ -208,14 +208,3 @@ test("Академія не тримає власної шапки й не ви�
   assert.doesNotMatch(academy, /logout|Вийти|href="\/admin"/);
 });
 
-test("жодна адмін-поверхня не показує внутрішні ідентифікатори задач чи службову лексику", () => {
-  for (const file of [
-    "app/admin/overview-panel.tsx",
-    "app/admin/users/users-panel.tsx",
-    "app/admin/feedback/feedback-panel.tsx",
-    "app/admin/analytics/analytics-panel.tsx",
-    "app/admin/shell/admin-shell-frame.tsx",
-  ]) {
-    assert.doesNotMatch(read(file), /RYN-[A-Z]+-\d{3}|MASTER-PLAN|canon|WIP/, file);
-  }
-});

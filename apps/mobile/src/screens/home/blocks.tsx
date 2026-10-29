@@ -7,14 +7,23 @@ import { Chip, type ChipTone } from '@/components/chip'
 import { Icon, type IconName } from '@/components/icon'
 import { Skeleton } from '@/components/skeleton'
 import { Txt } from '@/components/txt'
-import type { HomeCopy } from '@/features/home/copy'
+import { HOME_COPY, type HomeCopy } from '@/features/home/copy'
 import type { AttentionItem, MovePeriod, WatchMove } from '@/features/home/home-model'
 import type { BlockState } from '@/features/home/use-home'
 import { formatUnits } from '@/features/trade/trade-model'
 import type { MarketRow } from '@/lib/api'
-import { useLocale, type Locale } from '@/lib/i18n'
+import { useCopy, useLocale, type Locale } from '@/lib/i18n'
 import { cn } from '@/utils/cn'
-import { formatAge, formatClock, formatMoment, formatPercent, formatPrice, localizeFigures, signOf } from '@/utils/format'
+import {
+  formatAge,
+  formatClock,
+  formatMoment,
+  formatPercent,
+  formatPrice,
+  localizeFigures,
+  saidFigure,
+  signOf,
+} from '@/utils/format'
 
 /* ---- the block: a label, one fact beside it, then its rows ---- */
 
@@ -107,7 +116,10 @@ export function QuietLine({
 }) {
   return (
     <Pressable
+      accessible
       accessibilityRole={onPress ? 'button' : undefined}
+      // Read as its words alone — never the icons' glyphs around them.
+      accessibilityLabel={text}
       disabled={!onPress}
       onPress={onPress}
       className={cn(
@@ -115,11 +127,17 @@ export function QuietLine({
         onPress && 'active:bg-hover',
       )}
     >
-      <Icon name={icon} size={18} color="muted" />
+      <View accessibilityElementsHidden importantForAccessibility="no-hide-descendants">
+        <Icon name={icon} size={18} color="muted" />
+      </View>
       <Txt variant="ui" tone="muted" className="flex-1">
         {text}
       </Txt>
-      {onPress ? <Icon name="chevron-forward" size={16} color="fgMuted" /> : null}
+      {onPress ? (
+        <View accessibilityElementsHidden importantForAccessibility="no-hide-descendants">
+          <Icon name="chevron-forward" size={16} color="fgMuted" />
+        </View>
+      ) : null}
     </Pressable>
   )
 }
@@ -249,7 +267,11 @@ export function AttentionRow({ item, copy, locale, now, onPress }: AttentionRowP
     <WarningRow
       icon="alert-circle-outline"
       // A title that already names the asset is not prefixed with it again («NVDAx · NVDAx is above…»).
-      title={card.title.startsWith(card.label) ? localizeFigures(card.title, locale) : `${card.label} · ${localizeFigures(card.title, locale)}`}
+      title={
+        card.title.startsWith(card.label)
+          ? localizeFigures(card.title, locale)
+          : `${card.label} · ${localizeFigures(card.title, locale)}`
+      }
       detail={card.reason ? localizeFigures(card.reason, locale) : null}
       footer={footer}
       chip={chip}
@@ -278,7 +300,7 @@ export function MoveRow({ move, period, copy, onPress, last }: MoveRowProps) {
   return (
     <Pressable
       accessibilityRole="button"
-      accessibilityLabel={`${row.symbol}, ${formatPrice(row.price, locale)}, ${move.pct === null ? copy.notPricedThen : `${formatPercent(move.pct, locale)} ${periodWord}`}`}
+      accessibilityLabel={`${row.symbol}, ${saidFigure(formatPrice(row.price, locale), locale)}, ${move.pct === null ? copy.notPricedThen : `${formatPercent(move.pct, locale)} ${periodWord}`}`}
       onPress={onPress}
       className={cn('flex-row items-center gap-3 py-2.5 active:bg-hover', last ? '' : 'border-b border-line')}
     >
@@ -313,11 +335,12 @@ export function MoveRow({ move, period, copy, onPress, last }: MoveRowProps) {
 /** One mover as a compact pill: the symbol and its 24h move; the door is the asset. */
 export function MoverPill({ row, onPress }: { row: MarketRow; onPress: () => void }) {
   const locale = useLocale()
+  const copy = useCopy(HOME_COPY)
   const direction = signOf(row.change24hPct)
   return (
     <Pressable
       accessibilityRole="button"
-      accessibilityLabel={`${row.symbol}, ${formatPercent(row.change24hPct, locale)} in 24 hours`}
+      accessibilityLabel={`${row.symbol}, ${saidFigure(formatPercent(row.change24hPct, locale), locale)}, ${copy.over24h}`}
       onPress={onPress}
       className="flex-row items-center gap-2 rounded-pill border border-line bg-surface py-1.5 pl-1.5 pr-3 active:bg-hover"
     >

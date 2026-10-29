@@ -48,9 +48,10 @@ export const dynamic = "force-dynamic";
  *
  * ## Enumeration, and why a preview is safe without a session
  *
- * A code is 128 random bits over a 30-character alphabet. Guessing one is not a
- * thing that happens, and a code that *is* known was given to the holder on
- * purpose. What comes back is four characters from each end of an address that
+ * A code is twelve characters over a 30-character alphabet — about 58.85 bits
+ * (`lib/rewards/referral.ts`), 5 × 10¹⁷ codes. At a million issued codes one
+ * guess hits with a chance of about 2 × 10⁻¹², under the read limiter; and a
+ * code that *is* known was given to the holder on purpose. What comes back is four characters from each end of an address that
  * is public on any explorer anyway. The read limiter applies regardless.
  */
 function json(body: Record<string, unknown>, status = 200) {

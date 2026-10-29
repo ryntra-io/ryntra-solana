@@ -2,7 +2,7 @@ import type { SwapSettlement } from '../../lib/api.ts'
 import { settledView, tradeFailureKey } from './trade-model.ts'
 
 /**
- * What the hand feels at the two moments of an operation that matter:
+ * What the hand feels at the two moments of an operation that matter (M9):
  * «Перевірка» standing ready, and the signature's answer. Pure, so a test can
  * hold it; `lib/haptics` turns a cue into the phone's own pattern.
  *

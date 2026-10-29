@@ -32,10 +32,10 @@
 /* Dark is the default ground; an explicit light theme swaps the pair. */
 .ryntra-brand-lockup-light { display: none; }
 
-[data-theme="light"] .ryntra-brand-lockup-dark,
+:is([data-theme="light"], [data-theme="porcelain"]) .ryntra-brand-lockup-dark,
 [data-ry-theme="light"] .ryntra-brand-lockup-dark { display: none; }
 
-[data-theme="light"] .ryntra-brand-lockup-light,
+:is([data-theme="light"], [data-theme="porcelain"]) .ryntra-brand-lockup-light,
 [data-ry-theme="light"] .ryntra-brand-lockup-light { display: block; }
 
 /* The mark answers a hover on the whole lockup, not the other way round. */

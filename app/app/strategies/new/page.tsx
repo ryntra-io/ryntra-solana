@@ -3,9 +3,14 @@ import { AGENT_DRAFT_ID, PLAN_ID } from "@/lib/api/v1/contract";
 import { carriedBudget, carriedCondition } from "@/lib/plans/builder-defaults";
 
 import { PlanBuilder } from "../plans/plan-builder";
+import { PLAN_WORDS } from "../plans/plan-words";
 
 export const dynamic = "force-dynamic";
-export const metadata = { title: "Trading plan" };
+/* The tab names the plan as the menu's «Боти» does — «План угоди» (SOL-C15, UX-708). */
+export async function generateMetadata() {
+  const locale = await solanaServerLocale();
+  return { title: PLAN_WORDS.builderTitle[locale] };
+}
 
 const MINT = /^[1-9A-HJ-NP-Za-km-z]{32,44}$/;
 

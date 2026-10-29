@@ -25,7 +25,7 @@ import { createSolanaRpcHandle, withRpcDiscipline, type SolanaRpcHandle } from "
 import { sendTransactionOnce } from "../solana/submit-rpc.ts";
 import { associatedTokenAccount } from "../solana/token-account.ts";
 import { unconfiguredReserve, type RewardReserve } from "./balance.ts";
-import { REWARD_PAYOUT_DECIMALS } from "./model.ts";
+import { REWARD_PAYOUT_DECIMALS, type RewardPayoutAccount } from "./model.ts";
 
 /**
  * The account rewards are paid from, and the only place in this product that
@@ -270,6 +270,34 @@ export async function readRewardsReserve(
       return { state: "EMPTY", usdMicros: 0n, treasury: config.treasury, observedAt };
     }
     return { state: "UNREADABLE", usdMicros: 0n, treasury: config.treasury, reason: message };
+  }
+}
+
+/**
+ * Does the wallet already hold the payout mint's associated account — the one a payout lands in?
+ *
+ * Read only, and only for the claim floor (rules 2.1.0: $0.25 with the account, $1 when the payout has to open
+ * it). `UNKNOWN` on any failure, and the floor then stays the dollar: a wallet is never told the lower floor on a
+ * guess. The payout itself does not trust this answer — it creates the account idempotently either way.
+ */
+export async function readPayoutAccount(
+  wallet: string,
+  deps: Readonly<{ env?: NodeJS.ProcessEnv; handle?: SolanaRpcHandle }> = {},
+): Promise<RewardPayoutAccount> {
+  if (!BASE58.test(wallet)) return "UNKNOWN";
+  const config = rewardsTreasuryConfig(deps.env ?? process.env);
+  const mint = config.configured ? config.mint : DEFAULT_MINT;
+  const handle = deps.handle ?? createSolanaRpcHandle({ network: "mainnet" });
+  try {
+    const payoutMint = await readPayoutMint(handle, mint);
+    if (!("programAddress" in payoutMint)) return "UNKNOWN";
+    const account = await associatedTokenAccount({ owner: wallet, mint, tokenProgram: String(payoutMint.programAddress) });
+    const response = await withRpcDiscipline(handle, (abortSignal) =>
+      handle.rpc.getAccountInfo(account as never, { commitment: "confirmed", encoding: "base64" }).send({ abortSignal }),
+    );
+    return (response as { value?: unknown }).value ? "EXISTS" : "MISSING";
+  } catch {
+    return "UNKNOWN";
   }
 }
 

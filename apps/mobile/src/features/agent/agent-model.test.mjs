@@ -1,7 +1,8 @@
 import assert from 'node:assert/strict'
+import { readFileSync } from 'node:fs'
 import { test } from 'node:test'
 
-import { ApiError } from '../../lib/api.ts'
+import { ApiError, spokenText, spokenWords } from '../../lib/api.ts'
 import {
   agentFailureOf,
   budgetView,
@@ -76,7 +77,7 @@ const planDraftCard = {
   handoff: { kind: 'builder', href: `/app/strategies/new?mint=${SOL}&draft=${DRAFT}`, label: 'Open the draft in the builder', primary: true },
 }
 
-test('the context parameter is the web app’s own: written and read back, anything else is no context', () => {
+test('the context parameter is the web line’s own: written and read back, anything else is no context', () => {
   const cases = [
     { kind: 'asset', mint: SOL, symbol: 'SOL' },
     { kind: 'asset', mint: NVDA },
@@ -226,7 +227,7 @@ test('handoffs: none twice, one primary first, and each onto the phone’s own p
     primary: false,
     words: { kind: 'asset', symbol: 'SOL' },
   })
-  // Results open the phone's own Results screen.
+  // Results open the phone's own Results screen (M13).
   assert.equal(handoffView(kept[2], []).path, '/results')
   assert.deepEqual(handoffView(kept[2], []).words, { kind: 'results' })
   assert.deepEqual(handoffView(kept[0], []).words, { kind: 'server' })
@@ -341,4 +342,50 @@ test('an answered exchange joins the kept turns once; a send lost on the network
   // The same words asked long before this send are a different question.
   assert.equal(exchangeLanded(once, 'Why is SOL moving?', sentAt + 3_600_000), false)
   assert.equal(exchangeLanded({ ...once, turns: [person] }, 'Why is SOL moving?', sentAt), false)
+})
+
+test('a model’s source markers never reach the screen: the private-use area is dropped from the assistant’s words', () => {
+  // Production, 2026-10-22 (ST-14): «… over 24h. \uE200c1\uE202c2\uE201» drawn as «□c1□c2□».
+  assert.equal(
+    spokenText('SOL is down −3.63 % over 24h. \uE200c1\uE202c2\uE201'),
+    'SOL is down −3.63 % over 24h.',
+  )
+  assert.equal(spokenText('Volume rose \uE200c3\uE201 on the pair.'), 'Volume rose on the pair.')
+  assert.equal(spokenText('Stray\uE202 mark.'), 'Stray mark.')
+  // A marker a server cut short at the end of a text leaks no ids.
+  assert.equal(spokenText('Down 4 % over 24h. \uE200c1\uE202c2'), 'Down 4 % over 24h.')
+  // An opener that never closes takes no word with it, and a later marker stays its own.
+  assert.equal(spokenText('Down 4 %. \uE200c1\uE202c2 Volume rose on the pair.'), 'Down 4 %. Volume rose on the pair.')
+  assert.equal(spokenText('A \uE200c1 B \uE200c2\uE201 end.'), 'A B end.')
+  // Nothing but the markers is touched: spaces, punctuation and the text around them stay.
+  assert.equal(spokenText('  SOL ! at .5\uE200c1\uE201  '), '  SOL ! at .5  ')
+  // Text without them comes back as it was, spaces and all.
+  assert.equal(spokenText('  As it was.  '), '  As it was.  ')
+  // The whole answer: strings deep inside, numbers and nulls kept; bytes and anything not a plain object untouched.
+  const bytes = new Uint8Array([1, 2, 3])
+  const answer = spokenWords({
+    text: 'About SOL',
+    answer: { observation: [{ text: 'Up 2 %. \uE200c1\uE201', cites: ['c1'] }] },
+    n: 2,
+    none: null,
+    bytes,
+  })
+  assert.equal(answer.answer.observation[0].text, 'Up 2 %.')
+  assert.deepEqual(answer.answer.observation[0].cites, ['c1'])
+  assert.equal(answer.n, 2)
+  assert.equal(answer.none, null)
+  assert.equal(answer.bytes, bytes)
+  // Fields other routes match byte for byte stay as sent.
+  const card = spokenWords({ label: 'SOL\uF8FF', context: 'c\uE201', title: 'Up \uE200c1\uE201' })
+  assert.deepEqual(card, { label: 'SOL\uF8FF', context: 'c\uE201', title: 'Up' })
+  // Every route of the agent and the assistant goes through it, and so do the notes (a «Доручення» writes the model's words).
+  const api = readFileSync(new URL('../../lib/api.ts', import.meta.url), 'utf8')
+  for (const name of ['export const agentApi: AgentApi = {', 'export const assistantApi = {']) {
+    const start = api.indexOf(name)
+    const body = api.slice(start, api.indexOf('\n}', start))
+    assert.doesNotMatch(body, /[^.\w]v1\(\(\) =>/, name)
+    assert.match(body, /v1Words\(\(\) =>/, name)
+  }
+  const monitoring = api.slice(api.indexOf('export function fetchMonitoring('), api.indexOf('\n}', api.indexOf('export function fetchMonitoring(')))
+  assert.match(monitoring, /spokenWords\(surface\)/)
 })

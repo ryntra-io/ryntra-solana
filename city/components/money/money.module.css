@@ -1,0 +1,1005 @@
+/* The Money window's contents (CITY-63): one amber action per screen, mint only for money that arrived, flare only when
+   something is wrong. The glass, the head and the moving are the city's one window frame (CITY-65), a window on a
+   computer and the bottom sheet on a phone. Tokens and the type scale from city/styles/city.module.css (CITY-11). */
+
+.display {
+  font-family: var(--font-display, system-ui), system-ui, sans-serif;
+  font-stretch: 125%;
+  font-variation-settings: 'wdth' 125;
+  font-weight: 900;
+  letter-spacing: 0.01em;
+  text-transform: uppercase;
+}
+
+/* ---------- In the city's window frame (CITY-65) ----------
+   The frame brings the glass, the head with «Money», the moving and the whole screen; the contents fill its body. */
+
+.framed {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  padding: 12px 16px 14px;
+}
+
+.framed .head {
+  min-height: 24px;
+}
+
+.framed .tabs {
+  margin-top: 10px;
+}
+
+.framed > .tabs:first-child {
+  margin-top: 0;
+}
+
+/* While the window's code arrives: a quiet light across the glass, where the contents will stand. */
+.pending {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(100deg, transparent 30%, rgba(238, 241, 255, 0.05) 50%, transparent 70%) 0 0 / 220% 100%;
+  animation: pendingSweep 1.4s ease-in-out infinite;
+}
+
+@keyframes pendingSweep {
+  to {
+    background-position: -120% 0;
+  }
+}
+
+/* ---------- Head and tabs ---------- */
+
+.head {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex: none;
+}
+
+.who {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  min-width: 0;
+  font-size: var(--type-small);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: var(--text-dim);
+  white-space: nowrap;
+}
+
+.who b {
+  color: var(--ice);
+  font-weight: 800;
+}
+
+.dot {
+  width: 8px;
+  height: 8px;
+  flex: none;
+  border-radius: 50%;
+  background: var(--player, var(--violet));
+  box-shadow: 0 0 10px var(--player, var(--violet));
+}
+
+.tabs {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 4px;
+  flex: none;
+  margin-top: 12px;
+}
+
+.tab {
+  position: relative;
+  height: 54px;
+  min-width: 0;
+  display: grid;
+  justify-items: center;
+  align-content: center;
+  gap: 4px;
+  border: 0;
+  padding: 0 2px;
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--text-dim);
+  font-size: var(--type-caption);
+  font-weight: 700;
+}
+
+.tab svg {
+  width: 18px;
+  height: 18px;
+}
+
+.tab span {
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.tabOn {
+  background: rgba(153, 69, 255, 0.28);
+  color: var(--ice);
+  box-shadow: inset 0 -2px 0 var(--violet);
+}
+
+.tab:disabled {
+  cursor: default;
+  opacity: 0.4;
+}
+
+/* A tab that moves money, before it opens: one quiet dot, never a lock. */
+.soonDot {
+  position: absolute;
+  top: 7px;
+  right: 9px;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: rgba(238, 241, 255, 0.4);
+}
+
+.body {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  margin: 0 -6px;
+  padding: 14px 6px 4px;
+}
+
+.tabBody {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  /* The site's stylesheet pads every section; the window's tabs are not page sections. */
+  margin: 0;
+  padding: 0;
+}
+
+/* ---------- Words ---------- */
+
+.lead {
+  margin: 0;
+  font-size: var(--type-base);
+  line-height: 1.45;
+}
+
+.label {
+  margin-top: 8px;
+  font-size: var(--type-micro);
+  font-weight: 800;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+}
+
+.kicker {
+  font-size: var(--type-micro);
+  letter-spacing: 0.16em;
+  color: var(--amber);
+}
+
+.fine {
+  margin: 0;
+  font-size: var(--type-small);
+  line-height: 1.45;
+  color: var(--text-dim);
+}
+
+.empty {
+  margin: 12px 0;
+  font-size: var(--type-base);
+  line-height: 1.45;
+  color: var(--text-dim);
+}
+
+.note {
+  margin: 0;
+  font-size: var(--type-body);
+  line-height: 1.4;
+  color: var(--ice);
+}
+
+.noteWarn {
+  color: var(--amber);
+}
+
+.noteError {
+  color: #ffb3aa;
+}
+
+.noteGood {
+  color: var(--mint);
+}
+
+.link {
+  display: inline;
+  border: 0;
+  padding: 0;
+  background: none;
+  font-size: var(--type-small);
+  font-weight: 700;
+  color: #c9a2ff;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  text-align: left;
+}
+
+.link:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+/* ---------- Actions ---------- */
+
+.action {
+  width: 100%;
+  min-height: 54px;
+  display: grid;
+  place-items: center;
+  padding: 0 20px;
+  border: 0;
+  font-size: var(--type-action);
+  color: var(--ink);
+  text-decoration: none;
+  background: linear-gradient(100deg, var(--warm), var(--amber));
+  clip-path: polygon(14px 0, 100% 0, 100% calc(100% - 14px), calc(100% - 14px) 100%, 0 100%, 0 14px);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  transition: transform 120ms ease-out;
+}
+
+.action:active:not(:disabled) {
+  transform: scale(0.98);
+}
+
+.action:disabled {
+  cursor: default;
+  background: rgba(255, 255, 255, 0.09);
+  color: var(--text-dim);
+}
+
+/* The one action stays in reach while the form scrolls under it. */
+.cta {
+  position: sticky;
+  bottom: 0;
+  z-index: 1;
+  margin-top: 8px;
+}
+
+.cta:disabled {
+  background: #1d1a2b;
+}
+
+.waiting {
+  animation: breathe 1.6s ease-in-out infinite;
+}
+
+@keyframes breathe {
+  50% {
+    opacity: 0.6;
+  }
+}
+
+.secondary {
+  min-height: 44px;
+  padding: 0 16px;
+  border: 0;
+  font-size: var(--type-small);
+  letter-spacing: 0.08em;
+  color: var(--ice);
+  background: rgba(255, 255, 255, 0.06);
+  box-shadow: inset 0 0 0 1px rgba(238, 241, 255, 0.16);
+  clip-path: polygon(10px 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%, 0 10px);
+}
+
+.quick {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+/* ---------- Portfolio ---------- */
+
+.total {
+  display: grid;
+  gap: 4px;
+}
+
+.figure {
+  font-size: clamp(30px, 8vw, 40px);
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+
+.rows {
+  margin: 4px 0 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 2px;
+}
+
+.row {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: 12px;
+  min-height: 56px;
+  padding: 8px 10px;
+  background: rgba(238, 241, 255, 0.035);
+}
+
+.coinIcon {
+  flex: none;
+  border-radius: 50%;
+  object-fit: cover;
+  background: var(--graphite);
+}
+
+.names {
+  display: grid;
+  min-width: 0;
+  gap: 2px;
+}
+
+.names b {
+  font-size: var(--type-base);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.names span {
+  font-size: var(--type-caption);
+  color: var(--text-dim);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.figures {
+  display: grid;
+  justify-items: end;
+  gap: 2px;
+  font-variant-numeric: tabular-nums;
+}
+
+.figures b {
+  font-size: var(--type-base);
+}
+
+.figures span {
+  font-size: var(--type-caption);
+  color: var(--text-dim);
+  white-space: nowrap;
+}
+
+.bones {
+  display: grid;
+  gap: 8px;
+  margin-top: 6px;
+}
+
+.bones span {
+  height: 52px;
+  background: linear-gradient(90deg, rgba(255, 255, 255, 0.04), rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0.04));
+  background-size: 200% 100%;
+  animation: shimmer 1.2s linear infinite;
+}
+
+@keyframes shimmer {
+  to {
+    background-position: -200% 0;
+  }
+}
+
+/* ---------- Top up ---------- */
+
+.segment {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 2px;
+  padding: 2px;
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.segment button {
+  height: 40px;
+  border: 0;
+  background: none;
+  font-size: var(--type-small);
+  font-weight: 800;
+  color: var(--text-dim);
+}
+
+.segment .segmentOn {
+  background: rgba(153, 69, 255, 0.32);
+  color: var(--ice);
+  box-shadow: inset 0 -2px 0 var(--violet);
+}
+
+.address {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.qr {
+  align-self: center;
+  width: 196px;
+  height: 196px;
+  display: grid;
+  place-items: center;
+  margin-top: 6px;
+  background: #fff6e6;
+  clip-path: polygon(12px 0, 100% 0, 100% calc(100% - 12px), calc(100% - 12px) 100%, 0 100%, 0 12px);
+}
+
+.qr img {
+  width: 180px;
+  height: 180px;
+  image-rendering: pixelated;
+}
+
+.qrBone {
+  width: 180px;
+  height: 180px;
+  background: rgba(11, 10, 20, 0.08);
+}
+
+.addressFacts {
+  display: grid;
+  gap: 6px;
+}
+
+.addressValue {
+  margin: 0;
+  font-size: var(--type-lead);
+  font-weight: 700;
+  line-height: 1.35;
+  letter-spacing: 0.02em;
+  font-variant-numeric: tabular-nums;
+  overflow-wrap: anywhere;
+}
+
+.chip {
+  justify-self: start;
+  padding: 4px 10px;
+  font-size: var(--type-caption);
+  font-weight: 700;
+  color: var(--warm);
+  background: rgba(255, 178, 63, 0.1);
+}
+
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.chipButton,
+.coinChip {
+  height: 38px;
+  padding: 0 12px;
+  border: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  font-size: var(--type-small);
+  font-weight: 800;
+  color: var(--text-dim);
+  background: rgba(255, 255, 255, 0.06);
+  clip-path: polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px);
+}
+
+.chipOn {
+  background: rgba(153, 69, 255, 0.32);
+  color: var(--ice);
+  box-shadow: inset 0 -2px 0 var(--violet);
+}
+
+.chipButton:disabled,
+.coinChip:disabled {
+  cursor: default;
+}
+
+/* ---------- Fields ---------- */
+
+.field {
+  position: relative;
+  display: flex;
+  align-items: center;
+  background: rgba(255, 255, 255, 0.06);
+  clip-path: polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px);
+}
+
+.field:focus-within {
+  box-shadow: inset 0 0 0 2px rgba(153, 69, 255, 0.6);
+}
+
+.input {
+  width: 100%;
+  min-width: 0;
+  height: 50px;
+  border: 0;
+  padding: 0 14px;
+  background: rgba(255, 255, 255, 0.06);
+  outline: none;
+  font-size: var(--type-base);
+  color: var(--ice);
+  clip-path: polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px);
+}
+
+.field .input {
+  background: none;
+  clip-path: none;
+}
+
+.input::placeholder {
+  color: var(--text-dim);
+  opacity: 0.8;
+}
+
+.input:focus {
+  box-shadow: inset 0 0 0 2px rgba(153, 69, 255, 0.6);
+}
+
+.field .input:focus {
+  box-shadow: none;
+}
+
+.amount {
+  height: 58px;
+  font-size: var(--type-figure);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.unit {
+  flex: none;
+  padding-right: 14px;
+  font-size: var(--type-body);
+  font-weight: 800;
+  color: var(--warm);
+}
+
+.inline {
+  flex: none;
+  height: 34px;
+  margin-right: 8px;
+  padding: 0 12px;
+  border: 0;
+  font-size: var(--type-caption);
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ice);
+  background: rgba(153, 69, 255, 0.3);
+}
+
+.recents {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.recent {
+  height: 30px;
+  padding: 0 10px;
+  border: 0;
+  font-size: var(--type-caption);
+  font-weight: 700;
+  color: var(--text-dim);
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.amountHead {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+  margin-top: 8px;
+}
+
+.amountHead .label {
+  margin-top: 0;
+}
+
+.balance {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: var(--type-small);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: var(--text-dim);
+}
+
+.shares {
+  display: flex;
+  gap: 6px;
+}
+
+.share {
+  height: 32px;
+  padding: 0 14px;
+  border: 0;
+  font-size: var(--type-caption);
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  color: var(--ice);
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.share:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+/* An address held until the person says it is the one they meant (SEC-2). */
+.hold {
+  display: grid;
+  gap: 8px;
+  padding: 10px 12px;
+  font-size: var(--type-body);
+  line-height: 1.4;
+  color: var(--amber);
+  background: rgba(255, 178, 63, 0.08);
+  box-shadow: inset 2px 0 0 var(--amber);
+}
+
+.hold code {
+  font-family: inherit;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.03em;
+  color: var(--ice);
+  overflow-wrap: anywhere;
+}
+
+.hold .inline {
+  justify-self: start;
+  margin: 0;
+}
+
+.holdGood {
+  color: var(--mint);
+  background: rgba(20, 241, 149, 0.07);
+  box-shadow: inset 2px 0 0 var(--mint);
+}
+
+/* ---------- Review ---------- */
+
+.review {
+  display: grid;
+  gap: 8px;
+  margin-top: 10px;
+  padding: 12px 14px;
+  background: rgba(238, 241, 255, 0.05);
+  box-shadow: inset 0 0 0 1px rgba(153, 69, 255, 0.22);
+}
+
+.dim {
+  opacity: 0.6;
+}
+
+.warnings {
+  margin: 0;
+  padding: 0 0 0 16px;
+  display: grid;
+  gap: 4px;
+  font-size: var(--type-small);
+  line-height: 1.4;
+  color: var(--amber);
+}
+
+.stop {
+  color: #ffb3aa;
+}
+
+/* ---------- Results ---------- */
+
+.result {
+  display: grid;
+  gap: 8px;
+  padding: 14px;
+  background: rgba(238, 241, 255, 0.05);
+  box-shadow: inset 2px 0 0 var(--amber);
+}
+
+.resultGood {
+  box-shadow: inset 2px 0 0 var(--mint);
+}
+
+.resultGood .resultWord {
+  color: var(--mint);
+}
+
+.resultBad {
+  box-shadow: inset 2px 0 0 var(--flare);
+}
+
+.resultBad .resultWord {
+  color: var(--flare);
+}
+
+.resultWord {
+  font-size: clamp(26px, 7vw, 34px);
+  line-height: 1;
+  color: var(--amber);
+}
+
+.links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 16px;
+}
+
+/* ---------- Activity ---------- */
+
+.activityRow {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: center;
+  gap: 4px 12px;
+  padding: 10px;
+  background: rgba(238, 241, 255, 0.035);
+}
+
+.state {
+  font-size: var(--type-caption);
+  font-weight: 800;
+  white-space: nowrap;
+  color: var(--text-dim);
+}
+
+.tone_done {
+  color: var(--mint);
+}
+
+.tone_moving {
+  color: var(--amber);
+}
+
+.tone_failed {
+  color: #ffb3aa;
+}
+
+.tone_you {
+  color: var(--amber);
+}
+
+.rowLinks {
+  grid-column: 1 / -1;
+  display: flex;
+  gap: 14px;
+}
+
+.rowLinks:empty {
+  display: none;
+}
+
+/* ---------- Connect and soon ---------- */
+
+.connect {
+  display: grid;
+  gap: 12px;
+  margin-top: 6px;
+}
+
+.wallets {
+  display: grid;
+  gap: 6px;
+}
+
+.walletButton {
+  height: 50px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 0 14px;
+  border: 0;
+  font-size: var(--type-base);
+  font-weight: 800;
+  color: var(--ice);
+  background: rgba(255, 255, 255, 0.07);
+  clip-path: polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px);
+}
+
+.walletButton img {
+  width: 26px;
+  height: 26px;
+}
+
+.soon {
+  display: grid;
+  gap: 10px;
+  justify-items: start;
+  margin-top: 8px;
+}
+
+.soonTitle {
+  margin: 0;
+  font-size: clamp(22px, 6vw, 28px);
+  line-height: 1;
+}
+
+/* ---------- Terms, «i» and Details: what must be seen on one line, the rest one tap away ---------- */
+
+.terms {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  font-size: var(--type-body);
+  line-height: 1.45;
+  color: var(--text-dim);
+}
+
+.termsText {
+  flex: 1;
+  min-width: 0;
+  font-variant-numeric: tabular-nums;
+}
+
+.termsText b {
+  font-weight: 800;
+  color: var(--ice);
+}
+
+.info {
+  width: 28px;
+  height: 28px;
+  flex: none;
+  margin-top: -3px;
+  display: grid;
+  place-items: center;
+  border: 0;
+  padding: 0;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--ice);
+  font-size: var(--type-body);
+  font-weight: 800;
+}
+
+.infoOn {
+  background: rgba(153, 69, 255, 0.4);
+}
+
+.details {
+  margin: 0;
+  padding: 10px 12px;
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 6px 14px;
+  font-size: var(--type-small);
+  line-height: 1.35;
+  background: rgba(238, 241, 255, 0.05);
+  animation: open 180ms ease-out both;
+}
+
+.details dt {
+  color: var(--text-dim);
+}
+
+.details dd {
+  margin: 0;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  overflow-wrap: anywhere;
+}
+
+.more {
+  margin-top: 4px;
+}
+
+.moreToggle {
+  width: 100%;
+  height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 0;
+  border: 0;
+  background: none;
+  font-size: var(--type-small);
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  color: var(--text-dim);
+}
+
+.chevron {
+  width: 7px;
+  height: 7px;
+  border-right: 2px solid currentColor;
+  border-bottom: 2px solid currentColor;
+  transform: translateY(-2px) rotate(45deg);
+  transition: transform 160ms ease-out;
+}
+
+.chevron[data-open] {
+  transform: translateY(2px) rotate(-135deg);
+}
+
+.moreBody {
+  display: grid;
+  gap: 8px;
+  padding: 10px 12px;
+  background: rgba(238, 241, 255, 0.05);
+  animation: open 180ms ease-out both;
+}
+
+@keyframes open {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+}
+
+.refresh {
+  width: 36px;
+  height: 36px;
+  flex: none;
+  display: grid;
+  place-items: center;
+  padding: 0;
+  border: 0;
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--text-dim);
+  clip-path: polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px);
+}
+
+.refresh svg {
+  width: 17px;
+  height: 17px;
+}
+
+.refresh:hover {
+  color: var(--ice);
+}
+
+/* A row whose one control sits on the right: the total and its refresh, Activity's refresh. */
+.bar {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+/* The one number of a Review or a price: what arrives. */
+.hero {
+  font-size: var(--type-figure);
+  line-height: 1.05;
+  font-variant-numeric: tabular-nums;
+  overflow-wrap: anywhere;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .details,
+  .moreBody,
+  .pending {
+    animation: none;
+  }
+
+  .chevron {
+    transition: none;
+  }
+}
+
+@media (max-width: 400px) {
+  .framed {
+    padding-left: 12px;
+    padding-right: 12px;
+  }
+
+  .tab {
+    font-size: var(--type-micro);
+  }
+}

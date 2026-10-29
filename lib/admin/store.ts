@@ -92,7 +92,11 @@ export type DurableAuditAction =
   | "admin_mfa_reverify"
   | "admin_mfa_bypass_transitional"
   | "admin_identity_attach"
-  | "launch_executor_switch";
+  | "launch_executor_switch"
+  | "launch_people_switch"
+  | "moments_decide"
+  | "moments_approve_all"
+  | "moments_switch";
 
 export async function appendAdminAudit(input: {
   actorTelegramId: number;

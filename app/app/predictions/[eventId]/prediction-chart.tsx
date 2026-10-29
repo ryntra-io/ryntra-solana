@@ -1,30 +1,29 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { ProbabilityLine } from "@ryntra/core/chart/compact";
+import { useEffect, useState } from "react";
 
 import type { WorkspaceLocale } from "@/app/shell/locale";
-import { chartOptions } from "@/lib/chart/theme";
+import { aggStatus, barsFromAgg } from "@/lib/predictions/chart-feed";
 import type { PredictionBar, PredictionChart as ChartData } from "@/lib/predictions/model";
 
-import { pct, pctPoints } from "../format";
+import { pctPoints } from "../format";
 import styles from "../predictions.module.css";
 import { wordsFor } from "../words";
 
 /**
- * The price history of one outcome, in Ryntra's chart: the provider's bars
- * drawn as an area of probability on a 0–100% scale under the same tokens
- * Spot's candles use, the resolution the person picks, the staleness the
- * provider reports said in the frame. The summary line — *what changed* — is
- * computed here from the bars: the last close against the close a day and a
- * week earlier.
+ * An outcome's price history as the page reads it from the provider, the summary line — *what changed* — computed
+ * from its bars (the last close against the close a day and a week earlier), and the compact chart of the week from
+ * the core: the outcome's probability on a fixed 0–100 % axis, its «no» beside it, its source and age under it. The
+ * big chart of the market is the core's `RyntraChart` (`core-chart.tsx`).
  */
 
 export type Resolution = "1m" | "5m" | "1h" | "1d";
-const RESOLUTIONS: readonly { id: Resolution; label: string; countBack: number }[] = [
-  { id: "5m", label: "1D", countBack: 288 },
-  { id: "1h", label: "1W", countBack: 168 },
-  { id: "1h", label: "1M", countBack: 720 },
-  { id: "1d", label: "ALL", countBack: 365 },
+const RESOLUTIONS: readonly { id: Resolution; countBack: number }[] = [
+  { id: "5m", countBack: 288 },
+  { id: "1h", countBack: 168 },
+  { id: "1h", countBack: 720 },
+  { id: "1d", countBack: 365 },
 ];
 
 export type ChartState = Readonly<{ status: "loading" | "ready" | "failed" | "empty"; chart: ChartData | null }>;
@@ -67,66 +66,20 @@ export function changeOver(bars: readonly PredictionBar[], hours: number, nowMs:
   return last.c - earlier.c;
 }
 
-export function PredictionChartCard({ outcomeId, outcomeLabel, locale, theme, compact = false }: { outcomeId: string | null; outcomeLabel: string; locale: WorkspaceLocale; theme: "dark" | "light"; compact?: boolean }) {
+/** *What changed*: the week of an outcome in the core's compact chart, with the day's and the week's move over it. */
+export function OutcomeWeekCard({ outcomeId, outcomeLabel, noLabel, locale }: { outcomeId: string; outcomeLabel: string; noLabel: string | null; locale: WorkspaceLocale }) {
   const word = wordsFor(locale);
-  const [choice, setChoice] = useState(1);
-  const state = useOutcomeChart(outcomeId, choice);
-  const host = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    const el = host.current;
-    const chart = state.chart;
-    if (!el || !chart || chart.bars.length === 0) return undefined;
-    let disposed = false;
-    let dispose: (() => void) | null = null;
-    void import("lightweight-charts").then(({ createChart, AreaSeries }) => {
-      if (disposed || !host.current) return;
-      const accent = getComputedStyle(document.documentElement).getPropertyValue("--ry-accent-fg").trim() || "#FF681C";
-      const instance = createChart(host.current, {
-        ...chartOptions(theme, host.current),
-        rightPriceScale: { borderColor: getComputedStyle(document.documentElement).getPropertyValue("--ry-border").trim() || undefined, scaleMargins: { top: 0.1, bottom: 0.1 } },
-        handleScroll: !compact,
-        handleScale: !compact,
-      });
-      const series = instance.addSeries(AreaSeries, {
-        lineColor: accent,
-        topColor: `${accent}55`,
-        bottomColor: `${accent}05`,
-        lineWidth: 2,
-        priceFormat: { type: "custom", formatter: (v: number) => `${(v * 100).toFixed(1)}%`, minMove: 0.001 },
-        priceLineVisible: true,
-        lastValueVisible: true,
-      });
-      const seen = new Set<number>();
-      const data = chart.bars
-        .filter((b) => {
-          const t = Math.floor(b.t / 1000);
-          if (seen.has(t)) return false;
-          seen.add(t);
-          return true;
-        })
-        .map((b) => ({ time: Math.floor(b.t / 1000) as never, value: b.c }));
-      series.setData(data);
-      instance.timeScale().fitContent();
-      dispose = () => instance.remove();
-    });
-    return () => {
-      disposed = true;
-      dispose?.();
-    };
-  }, [state.chart, theme, compact]);
-
+  const state = useOutcomeChart(outcomeId, 1);
   const bars = state.chart?.bars ?? [];
-  const last = bars.length ? bars[bars.length - 1].c : null;
   const d1 = changeOver(bars, 24);
   const d7 = changeOver(bars, 24 * 7);
+  const points = state.status === "loading" ? null : barsFromAgg(bars).map((b) => ({ t: b.t, v: b.c }));
+  const status = state.chart ? aggStatus(state.chart, bars.at(-1)?.t ?? null, Date.now()) : null;
   return (
     <section className={styles.card} aria-label={word("chart")}>
-      <div className={styles.chartTools}>
+      <div className={styles.cardHead}>
+        <h2 className={styles.cardTitle}>{word("chart")}</h2>
         <span className={styles.eventMeta}>
-          <span>
-            {outcomeLabel} <b>{pct(last)}</b>
-          </span>
           {d1 != null ? (
             <span>
               {word("change24h")}{" "}
@@ -143,27 +96,18 @@ export function PredictionChartCard({ outcomeId, outcomeLabel, locale, theme, co
               </b>
             </span>
           ) : null}
-          {state.chart?.staleSeconds != null && state.chart.staleSeconds > 900 ? <span>· {word("stale")} {Math.round(state.chart.staleSeconds / 60)}{word("minutes")}</span> : null}
         </span>
-        <div className={styles.tabs} role="group" aria-label={word("chart")}>
-          {RESOLUTIONS.map((r, index) => (
-            <button key={r.label} type="button" className={styles.tab} aria-pressed={choice === index} onClick={() => setChoice(index)}>
-              {r.label}
-            </button>
-          ))}
-        </div>
       </div>
-      {state.status === "failed" ? (
-        <p className={styles.muted} style={{ padding: "var(--ry-s4)" }}>
-          {word("unavailable")}
-        </p>
-      ) : state.status === "empty" ? (
-        <p className={styles.muted} style={{ padding: "var(--ry-s4)" }}>
-          {word("chartEmpty")}
-        </p>
-      ) : (
-        <div ref={host} className={styles.chartHost} style={compact ? { height: 200 } : undefined} aria-busy={state.status === "loading"} />
-      )}
+      <div className={styles.weekLine}>
+        <ProbabilityLine
+          points={state.status === "failed" ? [] : points}
+          status={status}
+          label={`${outcomeLabel} · ${word("week")}`}
+          lang={locale === "uk" ? "uk" : "en"}
+          showNo={noLabel != null}
+          outcomes={noLabel != null ? { yes: outcomeLabel, no: noLabel } : undefined}
+        />
+      </div>
     </section>
   );
 }

@@ -1,11 +1,24 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
 
+import { readFileSync } from 'node:fs'
+
+import { PLACE_HOME_COPY } from '../home/place-copy.ts'
+import { PREDICTIONS_LIVE } from '../shell/places.ts'
+import { segmentOf, tradeSegmentAsked, tradeSegments } from '../shell/trade-place.ts'
+import { BLOCKED_STEMS, BLOCKED_WORDS } from '../../lib/blocked-names.ts'
+import { MARKETS_COPY } from './copy.ts'
 import {
+  askedPlaceChip,
+  askedScreenerTab,
   isContractAddress,
   isDepositToken,
   marketScreenerRow,
+  kindsOfChip,
   marketsPath,
+  openingChip,
+  PLACE_CHIPS,
+  PLACE_DEFAULT,
   rowsForTab,
   SCREENER_TABS,
   screenerTabOf,
@@ -75,8 +88,156 @@ test('an old link opens the tab it pointed at: the web’s stock screener and Tr
   assert.equal(screenerTabOf({ tab: 'dollars' }), 'crypto')
   assert.equal(screenerTabOf({ tab: ['watchlist'] }), 'watchlist')
   assert.equal(screenerTabOf({ tab: 'nothing' }), 'all')
+  // Asked for nothing it knows — the place opens as the person left it.
+  assert.equal(askedScreenerTab({ tab: 'nothing' }), null)
+  assert.equal(askedScreenerTab({ seg: 'swap' }), null)
+  assert.equal(askedScreenerTab({}), null)
+  assert.equal(askedScreenerTab({ tab: 'all' }), 'all')
   assert.equal(marketsPath(), '/(tabs)/markets')
+  // A door that says «all markets» opens «Усі»; any other names its tab.
+  assert.equal(marketsPath('all'), '/(tabs)/markets?tab=all')
   assert.equal(marketsPath('private'), '/(tabs)/markets?tab=private')
+})
+
+const code = (path) =>
+  readFileSync(new URL(`../../${path}`, import.meta.url), 'utf8')
+    .replace(/\/\*[\s\S]*?\*\//g, ' ')
+    .replace(/^\s*\/\/.*$/gm, ' ')
+
+test('«Ринки» opens on «Усі»; a chip an address asks for wins, then the one the person chose last', () => {
+  assert.equal(PLACE_DEFAULT, 'all')
+  assert.equal(PLACE_CHIPS[0], 'all')
+  assert.equal(PLACE_CHIPS.at(-1), 'watchlist')
+  assert.equal(openingChip(null, null), 'all')
+  assert.equal(openingChip(null, 'memes'), 'memes')
+  assert.equal(openingChip(null, 'watchlist'), 'watchlist')
+  assert.equal(openingChip('watchlist', 'stocks'), 'watchlist')
+  assert.equal(openingChip('all', 'watchlist'), 'all')
+  const screen = code('screens/markets/index.tsx')
+  // No first visit falls back on the favourites: the opening chip is «Усі», a choice is remembered under the new key.
+  assert.match(
+    screen,
+    /openingChip\(\s*asked,\s*readPreferenceText\(CHIP_KEY\) === null \? null : readPreference\(CHIP_KEY, PLACE_CHIPS, PLACE_DEFAULT\)/,
+  )
+  assert.match(screen, /const CHIP_KEY = 'markets\.place\.chip\.v2'/)
+  assert.match(screen, /writePreference\(CHIP_KEY, next\)/)
+  assert.doesNotMatch(screen, /watchlist\.mints\.length > 0 \? 'watchlist'/)
+  // An ask is spent once read, so Home's «Обране» switches the chip again the next time; it is never remembered.
+  assert.match(screen, /if \(asked\) router\.setParams\(\{ tab: undefined, kind: undefined, mode: undefined \}\)/)
+})
+
+test('every older link lands on the chip that holds what it named', () => {
+  const chip = (params) => askedPlaceChip(params)
+  assert.equal(chip({ tab: 'watchlist' }), 'watchlist')
+  assert.equal(chip({ tab: ['watchlist'] }), 'watchlist')
+  assert.equal(chip({ tab: 'all' }), 'all')
+  assert.equal(chip({ tab: 'crypto' }), 'crypto')
+  assert.equal(chip({ tab: 'dollars' }), 'crypto')
+  assert.equal(chip({ tab: 'memes' }), 'memes')
+  assert.equal(chip({ tab: 'meme' }), 'memes')
+  assert.equal(chip({ mode: 'meme' }), 'memes')
+  assert.equal(chip({ tab: 'stocks' }), 'stocks')
+  assert.equal(chip({ tab: 'stock' }), 'stocks')
+  assert.equal(chip({ tab: 'companies' }), 'stocks')
+  assert.equal(chip({ tab: 'private' }), 'stocks')
+  assert.equal(chip({ kind: 'preipo' }), 'stocks')
+  assert.equal(chip({ kind: 'listed' }), 'stocks')
+  assert.equal(chip({ mode: 'stocks' }), 'stocks')
+  assert.equal(chip({ tab: 'nothing' }), null)
+  assert.equal(chip({ seg: 'swap' }), null)
+  assert.equal(chip({}), null)
+  // What every chip it lands on lists holds what the link named.
+  for (const tab of SCREENER_TABS.filter((tab) => tab !== 'watchlist')) {
+    const rows = rowsForTab(
+      [
+        marketScreenerRow(coin()),
+        marketScreenerRow(coin({ mint: 'M1', category: 'meme' })),
+        stockScreenerRow(stock()),
+        stockScreenerRow(stock({ mint: 'P1', kind: 'pre-ipo', issuer: 'prestocks' })),
+      ],
+      tab,
+    )
+    const kinds = kindsOfChip(askedPlaceChip({ tab }))
+    for (const row of rows) assert.ok(kinds.includes(row.kind), `${tab} → ${row.kind}`)
+  }
+})
+
+test('«Торгівля» on a segment: `?seg=` names it; a chip of Ринки asked opens Ринки even when the place was on Обмін', () => {
+  assert.equal(tradeSegmentAsked({ seg: 'swap' }), 'swap')
+  assert.equal(tradeSegmentAsked({ seg: 'markets' }), 'markets')
+  assert.equal(tradeSegmentAsked({ tab: 'watchlist' }), 'markets')
+  assert.equal(tradeSegmentAsked({ tab: 'stock' }), 'markets')
+  assert.equal(tradeSegmentAsked({ kind: 'preipo' }), 'markets')
+  assert.equal(tradeSegmentAsked({ mode: 'meme' }), 'markets')
+  // `?seg=futures` opens Ф'ючерси (C4), the segment named winning over a chip; nothing asked keeps the one left.
+  assert.equal(segmentOf('futures'), 'futures')
+  assert.equal(tradeSegmentAsked({ seg: 'futures', tab: 'memes' }), 'futures')
+  assert.equal(tradeSegmentAsked({ seg: 'futures' }), 'futures')
+  assert.equal(tradeSegmentAsked({ seg: 'perps' }), null)
+  // `?seg=predictions` opens Прогнози (M12), a section of Ryntra on Solana — in a build that shows them; 1.17.0 does
+  // not (the second release), so the ask names no segment: the place keeps the one left, a chip asked with it opens Ринки.
+  assert.equal(segmentOf('predictions', tradeSegments(true)), 'predictions')
+  assert.equal(segmentOf('predictions', tradeSegments(false)), null)
+  assert.equal(tradeSegmentAsked({ seg: 'predictions' }), PREDICTIONS_LIVE ? 'predictions' : null)
+  assert.equal(tradeSegmentAsked({ seg: 'predictions', tab: 'memes' }), PREDICTIONS_LIVE ? 'predictions' : 'markets')
+  assert.equal(tradeSegmentAsked({ tab: 'nothing' }), null)
+  assert.equal(tradeSegmentAsked({}), null)
+  const place = code('screens/trade-place/index.tsx')
+  assert.match(place, /const asked = tradeSegmentAsked\(params\)/)
+  // The place spends `seg`; on any segment but Ринки a chip asked with it is spent too, never pulling the place to Ринки.
+  assert.match(
+    place,
+    /if \(segAsked && segAsked !== 'markets'\)\s*router\.setParams\(\{ seg: undefined, tab: undefined, kind: undefined, mode: undefined \}\)\s*else if \(segAsked\) router\.setParams\(\{ seg: undefined \}\)/,
+  )
+})
+
+test('«Крипто» lists the coins without the memes; «Меми» the memes; «Усі» every kind, a meme marked «Мем»', () => {
+  const screen = code('screens/markets/index.tsx')
+  assert.match(screen, /const crypto = useMarkets\('crypto', wantsCrypto\)/)
+  assert.match(screen, /const memes = useMarkets\('meme', wantsMemes\)/)
+  assert.match(screen, /const stocks = useStockUniverse\(wantsStocks\)/)
+  assert.match(screen, /rows: rows\.filter\(\(row\) => kinds\.includes\(row\.kind\)\)/)
+  // The meme's risk under «Меми» only; where kinds are mixed («Усі», «Обране») a meme's row says «Мем».
+  assert.match(screen, /const line = tab === 'memes' \? words\.memesRisk : null/)
+  // What a tokenized stock is sits behind «?» in the head under «Акції» — never a line on the list (ST-4).
+  assert.match(
+    screen,
+    /\{tab === 'stocks' \? <HelpDot title=\{sheet\.stocksTitle\} body=\{sheet\.stocksNote\} \/> : null\}/,
+  )
+  assert.match(screen, /rowOf\(row, locale, words, tab === 'all' \|\| tab === 'watchlist', sharedPeriod\)/)
+  // One session for every stock is said once in the head, not on each row (ST-4).
+  assert.match(screen, /row\.period && row\.period !== sharedPeriod/)
+  assert.match(screen, /if \(mixed && row\.kind === 'meme'\) notes\.push\(words\.memeMark\)/)
+  assert.equal(MARKETS_COPY.uk.memeMark, 'Мем')
+  assert.equal(MARKETS_COPY.en.memeMark, 'Meme')
+  // A read of «Усі» that did not answer is named — the crypto, the memes (both lost: one notice) or the stocks.
+  assert.match(
+    screen,
+    /cryptoFailed && memesFailed\s*\? words\.coinsDown\s*: cryptoFailed\s*\? words\.cryptoDown\s*: memesFailed\s*\? words\.memesDown\s*: null,\s*stocksFailed \? words\.stocksDown : null/,
+  )
+  assert.equal(MARKETS_COPY.uk.cryptoDown, 'Крипто зараз не відповідає.')
+  assert.equal(MARKETS_COPY.uk.coinsDown, 'Крипто й меми зараз не відповідають.')
+  // No list draws «Ціни (монет) не оновлюються» — its prices stand and are read again quietly (ST-7).
+  assert.doesNotMatch(screen, /list\.stale|words\.stale|words\.coinsStale|words\.refreshFailed|words\.partial/)
+  // An empty «Обране» has nothing to order.
+  assert.match(screen, /\{tab === 'launches' \|\| emptyWatchlist \? null : \(/)
+  // A row opens the token's own page — a company's with its sheets, a coin's with Купити · Продати · Ліміт.
+  assert.match(screen, /pathname: '\/asset\/\[mint\]'/)
+  assert.match(code('screens/launch/markets.tsx'), /router\.push\(`\/launch\/\$\{row\.token\}`/)
+})
+
+test('Home’s «Обране» door says where it goes — «Усе обране» → «Ринки · Обране» — and is not drawn over an empty list', () => {
+  const blocks = code('screens/home/place-blocks.tsx')
+  assert.match(blocks, /const openAll = \(\) => router\.navigate\(marketsPath\('watchlist'\) as never\)/)
+  assert.match(
+    blocks,
+    /action=\{watchlist\.mints\.length > 0 \? \{ label: words\.allFavourites, onPress: openAll \} : undefined\}/,
+  )
+  // An empty «Обране» leads to every market, as does «Що купити»'s «Усі ринки».
+  assert.match(blocks, /onPress=\{\(\) => router\.navigate\(marketsPath\('all'\) as never\)\}/)
+  assert.match(code('screens/home/buy-pick-sheet.tsx'), /openPlace\(marketsPath\('all'\)\)/)
+  assert.equal(PLACE_HOME_COPY.uk.allFavourites, 'Усе обране')
+  assert.equal(PLACE_HOME_COPY.en.allFavourites, 'All favourites')
 })
 
 test('a coin is a row by the venue’s own category; a deposit receipt and an unclassified token are not', () => {
@@ -125,6 +286,11 @@ test('a stock carries the issuer, the session and the deviation; a private compa
   assert.equal(privateRow.deviation, null)
   assert.equal(privateRow.period, null)
   assert.equal(privateRow.markPremium, 2.23)
+  // The company as a person knows it, without the issuer's legal form — the row's line is never cut.
+  assert.equal(
+    stockScreenerRow(stock({ name: 'Trump Media & Technology Group Corp. Common Stock' })).name,
+    'Trump Media & Technology Group',
+  )
   // An unknown session is no session; a token the issuer no longer offers says so.
   assert.equal(stockScreenerRow(stock({ period: 'unknown' })).period, null)
   assert.equal(stockScreenerRow(stock({ tradable: false })).tradable, false)
@@ -215,4 +381,17 @@ test('an address finds its page in the web’s order: a stock’s page, then a l
   })
   // A stock wins over a launch record, as on the web.
   assert.equal(tokenDestination(NVDA, { stockSymbol: 'NVDAx', launched: true }).pathname, '/asset/[mint]')
+})
+
+test('a coin whose symbol or name carries a blocked word is not a row of Markets', () => {
+  assert.equal(marketScreenerRow(coin({ category: 'meme', symbol: BLOCKED_STEMS[0].toUpperCase() })), null)
+  assert.equal(marketScreenerRow(coin({ category: 'meme', name: `Baby ${BLOCKED_WORDS[0]}` })), null)
+  assert.notEqual(marketScreenerRow(coin({ category: 'meme', symbol: 'SPICY', name: 'Spicy Raccoon' })), null)
+})
+
+test('a stock row carries whether its pool price stands far from the share; a venue row never claims it (ST-5 r8)', () => {
+  assert.equal(stockScreenerRow(stock({ reference: 100.59, deviation: 1978.2 })).poolFar, true)
+  assert.equal(stockScreenerRow(stock({ reference: null, deviation: 1978.2 })).poolFar, false)
+  assert.equal(stockScreenerRow(stock({ deviation: -0.04 })).poolFar, false)
+  assert.equal(marketScreenerRow(coin()).poolFar, false)
 })

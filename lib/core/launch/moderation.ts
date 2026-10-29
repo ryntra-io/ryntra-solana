@@ -175,9 +175,14 @@ function matches(reading: Reading, target: string, mode: Mode): boolean {
   return letters.endsWith(target) && AFFIXES.has(letters.slice(0, letters.length - target.length));
 }
 
-/** Whether a protected name shows in a field: a Cyrillic name by sound, a Latin one by the shapes of its letters. */
-function hits(field: string, name: string): boolean {
-  const mode: Mode = name.startsWith("==") ? "field" : name.startsWith("=") ? "word" : "auto";
+/**
+ * Whether a protected name shows in a field: a Cyrillic name by sound, a Latin one by the shapes of its letters.
+ * `wholeWords`: a long name counts only as a whole word or with a meme affix, never inside another word — for marking
+ * tokens already on the market, where a false mark misleads (Pulse, SOL-C5), unlike a refusal the creator can answer.
+ */
+function hits(field: string, name: string, wholeWords = false): boolean {
+  const declared: Mode = name.startsWith("==") ? "field" : name.startsWith("=") ? "word" : "auto";
+  const mode: Mode = wholeWords && declared === "auto" ? "word" : declared;
   const term = name.replace(/^=+/, "");
   const read = readings(field);
   if (CYRILLIC.test(term)) return read.sound !== null && matches(read.sound, transliterated(term).replace(/[^a-z]/g, ""), mode);
@@ -198,14 +203,17 @@ export type ModerationHit = Readonly<{ field: "name" | "symbol"; kind: "brand" |
  * means nothing is borrowed. Each hit names the field and the brand or person,
  * so the page can say exactly what to change.
  */
-export function launchNameHits(input: Readonly<{ name: string; symbol: string }>): readonly ModerationHit[] {
+export function launchNameHits(input: Readonly<{ name: string; symbol: string }>, options: Readonly<{ wholeWords?: boolean }> = {}): readonly ModerationHit[] {
+  const whole = options.wholeWords === true;
   const found: ModerationHit[] = [];
   const add = (field: ModerationHit["field"], entry: Protected) => {
     if (!found.some((hit) => hit.field === field && hit.label === entry.label)) found.push({ field, kind: entry.kind, label: entry.label });
   };
   for (const entry of PROTECTED) {
-    if (input.name.trim() && entry.names.some((name) => hits(input.name, name))) add("name", entry);
-    if (input.symbol.trim() && (entry.names.some((name) => hits(input.symbol, name)) || (entry.tickers ?? []).some((ticker) => isTicker(input.symbol, ticker)))) add("symbol", entry);
+    if (input.name.trim() && entry.names.some((name) => hits(input.name, name, whole))) add("name", entry);
+    /* A ticker already trading is matched as written — «WLF» is not «WIF» read through look-alike letters. */
+    const ticker = (value: string) => (whole ? input.symbol.trim().replace(/^\$/, "").toUpperCase() === value : isTicker(input.symbol, value));
+    if (input.symbol.trim() && (entry.names.some((name) => hits(input.symbol, name, whole)) || (entry.tickers ?? []).some(ticker))) add("symbol", entry);
   }
   return found;
 }

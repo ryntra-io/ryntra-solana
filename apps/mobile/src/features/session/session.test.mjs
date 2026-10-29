@@ -297,7 +297,73 @@ test('the person closing the wallet is a cancellation, not a failure, and nothin
   })
   assert.equal(declined.ok, false)
   assert.equal(declined.failure.kind, 'cancelled')
-  assert.match(declined.failure.message, /declined to sign/)
+  // A plain decline says it was declined — no Ledger advice where no Ledger was involved (ST-5).
+  assert.equal(declined.failure.message, 'You declined the sign-in in your wallet.')
+  assert.equal(declined.failure.hint, undefined)
+})
+
+test('the Ledger sentence comes only when the wallet names a Ledger or fails to sign without a decline', async () => {
+  const { api } = apiDouble()
+  const named = await signInWithWallet({
+    wallet: walletDouble({
+      signIn: async () => {
+        throw Object.assign(new Error('Ledger device: declined (0x6985)'), { code: -3 })
+      },
+    }),
+    api,
+    save: async () => undefined,
+  })
+  assert.equal(named.ok, false)
+  assert.equal(named.failure.hint, 'ledger')
+  assert.match(named.failure.message, /on a Ledger/)
+  const broke = await signInWithWallet({
+    wallet: walletDouble({
+      signIn: async () => {
+        throw new Error('transport failure')
+      },
+    }),
+    api,
+    save: async () => undefined,
+  })
+  assert.equal(broke.ok, false)
+  assert.equal(broke.failure.hint, 'ledger')
+})
+
+test('a wallet that comes back with nothing says so, and nothing is sent to verify', async () => {
+  const { api, calls } = apiDouble()
+  const empty = await signInWithWallet({
+    wallet: walletDouble({ signIn: async () => undefined }),
+    api,
+    save: async () => undefined,
+  })
+  assert.equal(empty.ok, false)
+  assert.equal(empty.failure.message, 'The wallet did not answer — try again.')
+  assert.equal(empty.failure.hint, undefined)
+  // A wallet without sign-in whose message signature comes back empty: the same line, never a silent throw.
+  const blank = await signInWithWallet({
+    wallet: walletDouble({
+      signIn: async () => {
+        throw new Error('Sign in result not retrieved.')
+      },
+      signMessage: async () => undefined,
+    }),
+    api,
+    save: async () => undefined,
+  })
+  assert.equal(blank.ok, false)
+  assert.equal(blank.failure.message, 'The wallet did not answer — try again.')
+  assert.ok(calls.every(([name]) => name === 'challenge'))
+  // A throw nobody foresaw (here the store) still ends in a line.
+  const unsaved = await signInWithWallet({
+    wallet: walletDouble(),
+    api: apiDouble().api,
+    save: async () => {
+      throw new Error('store full')
+    },
+    now: () => NOW,
+  })
+  assert.equal(unsaved.ok, false)
+  assert.equal(unsaved.failure.message, 'The sign-in did not finish. Try again.')
 })
 
 test('a wallet without sign-in signs the exact text instead', async () => {

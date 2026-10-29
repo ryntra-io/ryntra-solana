@@ -9,6 +9,7 @@
  *   paymentRequestSettlements  <id>
  *   paymentRequestReferences   <reference>  → { id }
  *   paymentIntents             <intentId>
+ *   paymentAttempts            <id>   (versioned: the one payment on its way, `attempt.ts`)
  *
  * The owner index is the only place a wallet is a key, and it is read only by
  * the proof-gated listing. A public read never touches it.
@@ -63,10 +64,13 @@ export function ownerPrefix(args: Readonly<{ network: string; wallet: string }>)
  * `insertIfAbsent`, so two requests can never share a reference even across
  * instances; the public id is claimed the same way. A lost claim is reported,
  * not retried here — the caller draws fresh randomness and tries again.
+ *
+ * `owner: null` (AI-12): a request no wallet's listing shows — the assistant's
+ * order of credits, paid to Ryntra's treasury; the order is its private side.
  */
 export async function createPaymentRequest(
   store: GuardStore,
-  args: Readonly<{ request: PaymentRequestRecord; owner: PaymentRequestOwner }>,
+  args: Readonly<{ request: PaymentRequestRecord; owner: PaymentRequestOwner | null }>,
 ): Promise<Readonly<{ ok: true }> | Readonly<{ ok: false; reason: "ID_TAKEN" | "REFERENCE_TAKEN" | "STORE_FAILED" }>> {
   try {
     const references = store.collection<ReferenceIndex>(REFERENCES);
@@ -78,7 +82,7 @@ export async function createPaymentRequest(
       await references.delete(args.request.reference);
       return { ok: false, reason: "ID_TAKEN" };
     }
-    await store.collection<PaymentRequestOwner>(OWNERS).set(ownerKey(args.owner), args.owner);
+    if (args.owner) await store.collection<PaymentRequestOwner>(OWNERS).set(ownerKey(args.owner), args.owner);
     return { ok: true };
   } catch {
     return { ok: false, reason: "STORE_FAILED" };
@@ -132,6 +136,7 @@ export async function readPaymentIntent(store: GuardStore, intentId: string): Pr
   return raw && raw.schema === "ryntra.pay.intent" ? raw : null;
 }
 
-export async function markPaymentIntentSubmitted(store: GuardStore, intent: PaymentIntentRecord, signature: string): Promise<void> {
+/** `null` (MC-1): bytes the node refused before it took them — the intent may be signed and sent again. */
+export async function markPaymentIntentSubmitted(store: GuardStore, intent: PaymentIntentRecord, signature: string | null): Promise<void> {
   await store.collection<PaymentIntentRecord>(INTENTS).set(intent.intentId, { ...intent, signature });
 }

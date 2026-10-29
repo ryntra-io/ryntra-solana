@@ -59,7 +59,6 @@ export function AdminShellFrame({
         </span>
         <span className={styles.topbarSpacer} />
         {/* Full document navigation so Set-Cookie from logout applies. */}
-        {/* eslint-disable-next-line @next/next/no-html-link-for-pages */}
         <a className={styles.logout} href="/api/session?logout=1">
           Вийти
         </a>

@@ -14,6 +14,7 @@ import { ScreenHeader } from '@/components/screen'
 import { Skeleton } from '@/components/skeleton'
 import { StateView } from '@/components/state-view'
 import { Txt } from '@/components/txt'
+import { useTelegramConnect } from '@/features/assistant/use-telegram'
 import { MONITORING_COPY, type MonitoringCopy } from '@/features/monitoring/copy'
 import {
   deviceTimezone,
@@ -37,12 +38,9 @@ import { useMonitoring } from '@/features/plans/use-plans'
 import { useAccount } from '@/features/session/use-account'
 import { SessionGate } from '@/features/wallet/wallet-gate'
 import { useNow } from '@/hooks/use-now'
-import { isNetworkError, type QuietHours } from '@/lib/api'
+import { isNetworkError, type QuietHours, type Session } from '@/lib/api'
 import { useCopy, useLocale, useSharedCopy } from '@/lib/i18n'
 import { formatMoment } from '@/utils/format'
-import { openLink } from '@/lib/open-link'
-
-const TELEGRAM_SETTINGS_URL = 'https://ryntra.io/app/settings#account'
 
 function phoneLine(
   state: PhoneState,
@@ -67,6 +65,83 @@ function phoneLine(
     default:
       return copy.phoneOff
   }
+}
+
+/**
+ * The wallet's Telegram channel, connected from the phone: one status and one action — «Підключити Telegram» opens the
+ * bot with a link made for this wallet; until Start is pressed there, «Натисни Start у Telegram» and the channel read
+ * again on each return to the app; connected — its handle with «Відключити», asked once more before it goes.
+ */
+function TelegramChannelRow({
+  session,
+  copy,
+  locale,
+}: {
+  session: Session
+  copy: MonitoringCopy
+  locale: 'en' | 'uk'
+}) {
+  const telegram = useTelegramConnect(session, locale)
+  const [asking, setAsking] = useState(false)
+  const failed = telegram.connectError ?? telegram.disconnectError ?? null
+
+  let status: string
+  let action
+  if (telegram.channel.isPending) {
+    status = copy.telegram
+    action = <Skeleton className="h-9 w-24 rounded-btn" />
+  } else if (telegram.connected) {
+    status = copy.telegramOn(telegram.username?.replace(/^@/, '') ?? null)
+    action = asking ? null : (
+      <Button title={copy.telegramDisconnect} variant="ghost" size="sm" onPress={() => setAsking(true)} />
+    )
+  } else if (telegram.waiting) {
+    status = copy.telegramWaiting
+    action = <Button title={copy.telegramOpen} variant="secondary" size="sm" onPress={telegram.reopen} />
+  } else {
+    status = telegram.channel.isError ? '—' : telegram.expired ? copy.telegramExpired : copy.telegramOff
+    action = (
+      <Button
+        title={copy.telegramConnect}
+        variant="secondary"
+        size="sm"
+        loading={telegram.connecting}
+        onPress={telegram.connect}
+      />
+    )
+  }
+
+  return (
+    <View className="gap-2 border-b border-line py-3">
+      <View className="flex-row items-center gap-3">
+        <Icon name="paper-plane-outline" size={18} />
+        <Txt variant="ui" tone={telegram.connected ? 'fg' : 'muted'} className="flex-1" numberOfLines={2}>
+          {status}
+        </Txt>
+        {action}
+      </View>
+      {asking && telegram.connected ? (
+        <View className="gap-2">
+          <Txt variant="ui">{copy.telegramDisconnectAsk}</Txt>
+          <View className="flex-row gap-2">
+            <Button
+              title={copy.telegramDisconnect}
+              variant="danger"
+              size="sm"
+              loading={telegram.disconnecting}
+              onPress={() => telegram.disconnect(() => setAsking(false))}
+            />
+            <Button title={copy.telegramKeep} variant="ghost" size="sm" onPress={() => setAsking(false)} />
+          </View>
+        </View>
+      ) : null}
+      {failed ? (
+        <Txt variant="labelSm" tone="danger">
+          {copy.telegramFailed}
+        </Txt>
+      ) : null}
+    </View>
+  )
 }
 
 /** The quiet-hours editor: presets, two clock fields, the device's timezone, one Save. */
@@ -166,8 +241,9 @@ function QuietHoursCard({
  * Where the wallet's notes go. The inbox always; Telegram and this phone as
  * the person switches them; quiet hours for both. Every switch is the
  * server's preference written at once and read back; the phone's own
- * registration is the device registry's record. Connecting a Telegram
- * channel stays on ryntra.io — the bearer has no door to it.
+ * registration is the device registry's record. Telegram is connected from
+ * the phone itself (1.11.0): a t.me link made for this wallet, Start pressed
+ * in Telegram, the channel read again on the way back.
  */
 export function NotificationPreferencesScreen() {
   const insets = useSafeAreaInsets()
@@ -270,22 +346,10 @@ export function NotificationPreferencesScreen() {
             </View>
             <ToggleRow
               label={copy.telegram}
-              // The API does not say whether this wallet's Telegram is linked; the one line says what the switch does.
-              hint={copy.telegramHint}
               value={preferences.telegram}
               onChange={(value) => void setTelegram(value)}
             />
-            <Pressable
-              accessibilityRole="link"
-              onPress={() => openLink(TELEGRAM_SETTINGS_URL)}
-              className="flex-row items-center gap-3 border-b border-line py-3 active:bg-hover"
-            >
-              <Icon name="paper-plane-outline" size={18} />
-              <Txt variant="ui" className="flex-1">
-                {copy.telegramConnect}
-              </Txt>
-              <Icon name="open-outline" size={16} color="fgMuted" />
-            </Pressable>
+            <TelegramChannelRow session={session} copy={copy} locale={locale} />
             <ToggleRow
               label={copy.thisPhone}
               hint={phoneLine(phone.state, copy, phone.record?.registeredAt ?? null, now, locale)}
@@ -344,7 +408,7 @@ export function NotificationPreferencesScreen() {
           <ScreenHeader title={copy.settings} />
         </View>
       </View>
-      <SessionGate what={copy.title}>{body}</SessionGate>
+      <SessionGate what={copy.settings}>{body}</SessionGate>
     </View>
   )
 }

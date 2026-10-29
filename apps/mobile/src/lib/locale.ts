@@ -1,7 +1,7 @@
 /**
  * The app's two languages and the choice between them, with nothing native
  * behind them so a test can hold them: English until the person chooses
- * Ukrainian, or the system's language, in More — the phone opens in English,
+ * Ukrainian, or the system's language, in «Налаштування» — the phone opens in English,
  * as ryntra.io does (2026-09-28).
  */
 

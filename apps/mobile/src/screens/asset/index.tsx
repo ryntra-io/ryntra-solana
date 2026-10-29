@@ -1,18 +1,18 @@
-import { useRouter } from 'expo-router'
+import { useRoute, useRouter } from 'expo-router'
 import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react'
-import { Pressable, RefreshControl, ScrollView, ToastAndroid, View } from 'react-native'
+import { Pressable, RefreshControl, Share, ToastAndroid, View } from 'react-native'
 import Animated, { LinearTransition } from 'react-native-reanimated'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 
-import { AssetIcon } from '@/components/asset-icon'
 import { Button } from '@/components/button'
 import { Chip } from '@/components/chip'
+import { HelpDot } from '@/components/help-dot'
 import { Icon } from '@/components/icon'
 import { Skeleton } from '@/components/skeleton'
 import { StatTile } from '@/components/stat-tile'
 import { StateView } from '@/components/state-view'
 import { Txt } from '@/components/txt'
-import { useOpenRyn } from '@/features/agent/ask-ryn'
+import { ExplainMove, useOpenRyn } from '@/features/agent/ask-ryn'
 import { AGENT_COPY } from '@/features/agent/copy'
 import { AUTOINVEST_COPY } from '@/features/autoinvest/copy'
 import {
@@ -28,9 +28,9 @@ import { isListedToken } from '@/features/autoinvest/floor'
 import { useRule, useRules, useRuleWrites } from '@/features/autoinvest/use-rules'
 import { ruleWhenLine, unbrokenParts } from '@/features/autoinvest/words'
 import { BUY_COPY } from '@/features/invest/buy-copy'
-import { dollarsText, exchangeState, issuerFeeOf, truthLine, unitsFromRaw } from '@/features/invest/buy-model'
+import { DEFAULT_BUY_USD, dollarsText, exchangeState, issuerFeeOf, truthLine } from '@/features/invest/buy-model'
 import { COMPANY_COPY } from '@/features/invest/company-copy'
-import { companyHead, truthTopicOf, type CompanyHead } from '@/features/invest/company-facts'
+import { companyHead, countShort, moneyShort, truthTopicOf, type CompanyHead } from '@/features/invest/company-facts'
 import { companyPathView, otherPathToken } from '@/features/invest/company-path'
 import { COMPANY_PATH_COPY } from '@/features/invest/company-path-copy'
 import {
@@ -43,21 +43,32 @@ import {
   type ConvertMode,
 } from '@/features/invest/conversion-watch'
 import { INVEST_COPY } from '@/features/invest/copy'
+import {
+  fairFromOf,
+  heardLive,
+  liveAt,
+  poolWarningOf,
+  poolWarningText,
+  quoteFar,
+  type LiveShareQuote,
+} from '@/features/invest/pool-warning'
 import { SALE_COPY } from '@/features/invest/sale-copy'
 import { heldUnitsText, positionUsd } from '@/features/invest/sale-model'
-import { formatNumber } from '@/features/launch/launch-format'
 import { SOL_MINT } from '@/lib/api'
-import { DETAILS_COPY, isAssetCategory } from '@/features/invest/details-copy'
+import { DETAILS_COPY } from '@/features/invest/details-copy'
 import { coinName, companyDisplayName, premiumPhrase } from '@/features/invest/shelf'
 import type { BuyCompany } from '@/features/invest/use-buy'
 import type { ConvertInto, ConvertToken } from '@/features/invest/use-convert'
 import { truthTopicText } from '@/features/invest/truth-topics'
 import { useShelfEvents, useShelfNames } from '@/features/invest/use-shelf'
+import { amountTextOf, shownRaw } from '@/features/portfolio/portfolio-model'
 import { useHoldings } from '@/features/portfolio/use-portfolio'
+import { offerAssetActions } from '@/features/pro-chart/asset-actions'
 import { useAccount } from '@/features/session/use-account'
 import { PLACES_COPY } from '@/features/shell/places'
 import { useWatchlist } from '@/features/watchlist/watchlist'
 import { useMarket, useStockAsset } from '@/hooks/use-market'
+import { useStockUniverse } from '@/hooks/use-markets'
 import { useNow } from '@/hooks/use-now'
 import {
   isNetworkError,
@@ -69,31 +80,25 @@ import {
   type StockAsset,
 } from '@/lib/api'
 import { useCopy, useLocale, type Locale } from '@/lib/i18n'
-import { isSupportedIssuer, issuerLabel } from '@/lib/stocks'
+import { stockLookalike } from '@/lib/search'
+import { isSupportedIssuer } from '@/lib/stocks'
 import { AutoinvestSheet, type AutoinvestCompany, type AutoinvestMode } from '@/screens/autoinvest/autoinvest-sheet'
 import { BudgetSheet } from '@/screens/autoinvest/budget-sheet'
 import { RuleCard } from '@/screens/autoinvest/rule-card'
 import { BuySheet } from '@/screens/invest/buy-sheet'
 import { ConvertSheet } from '@/screens/invest/convert-sheet'
+import { KeyboardLiftScroll } from '@/screens/launch/keyboard-lift'
 import { PositionCard, SellSheet } from '@/screens/invest/sell-sheet'
 import { EventBanner } from '@/screens/invest/event-ui'
 import { useTheme } from '@/theme'
-import {
-  formatAge,
-  formatClock,
-  formatCount,
-  formatPercent,
-  formatPrice,
-  formatUsdCompact,
-  signOf,
-} from '@/utils/format'
+import { DASH, formatClock, formatUsd } from '@/utils/format'
 
 import { ChartCard } from './chart-card'
 import { CompanyFacts } from './company-facts'
 import { CompanyPathStrip } from './company-path'
 import { QuoteCard } from './quote-card'
 import { ResearchSheet } from './research-sheet'
-import { QuietDoor, SimpleHead, SimpleHeadLoading, TruthBlock, type SimpleWarning } from './simple-head'
+import { QuietDoor, AssetHead, AssetHeadLoading, AssetHeadName, TruthBlock, type AssetWarning } from './asset-head'
 import { StockBlock, StockBlockLoading, StockUnconfirmed } from './stock-block'
 
 /**
@@ -131,9 +136,9 @@ export type AssetScreenProps = {
 }
 
 /**
- * The asset — one page for everyone:
+ * The asset — one page for everyone (M14, M15):
  * the company's name, one price in dollars with the day's
- * change and the local time, the line over a day, a week, a month or a year,
+ * change and the local time, the line over a day, a week, a month or half a year,
  * the label of what the token is (its line in «Що ти купуєш») and whether the
  * exchange is open, «Купити» as the one orange action — the purchase in dollars, as a
  * sheet over the page — and «Спитати Ryntra» quiet under it. A coin's «Купити»
@@ -150,7 +155,7 @@ export type AssetScreenProps = {
  * for an amount — each the venue's, the issuer's or the chain's figure with
  * its time.
  *
- * «Автоінвест» stands under «Купити»: a quiet door to a
+ * «Автоінвест» (M16 stands under «Купити»: a quiet door to a
  * new rule — «Регулярно», or «Якщо впаде» from the price this page read — or,
  * once the company has one, the rule itself, with what comes next. **While
  * its reminder is open** the rule's purchase is the
@@ -161,7 +166,7 @@ export type AssetScreenProps = {
  * Home lands here and is read afresh first; one the month's budget does not
  * cover offers «Змінити бюджет», the budget's sheet over it.
  *
- * **Нагляд за IPO й обміном** (a private token whose
+ * **Нагляд за IPO й обміном** (M19: a private token whose
  * issuer opened a window to swap it says so between its name and its price —
  * «SpaceX вийшла на біржу. SPACEX треба обміняти до 12 березня 2027 — після
  * строку токен згорить.»; a wallet that holds it reads «Обміняй SPACEX до …»
@@ -171,17 +176,17 @@ export type AssetScreenProps = {
  * wallet's signature decide. A purchase of the token says first that it must
  * be swapped by the deadline.
  *
- * **Сторінка компанії, повна** (the web's: under
+ * **Сторінка компанії, повна** (M23, the web's: under
  * the name, who the company is — «NVDA · Nasdaq», «Приватна компанія»; over
  * «Купити», the label of what the token is, its line waiting in «Що ти купуєш»;
  * under the purchase, the facts at rest — «Ключові показники», «Про компанію»,
  * «Що ти купуєш», «Торги на Solana · 24 год» (`company-facts.tsx`) — and only
  * then «Деталі», as the web's page closes. The company's SEC figures, its
- * industry and what it does are the web's own files, not served by
- * the contract; nothing stands in for them.
+ * industry and what it does are the web's own files, asked of line A
+ * (request 37); nothing stands in for them.
  *
- * **Шлях компанії** (the web's: under the purchase
- * (the price and «Купити» hold the first screen; above them only on the
+ * **Шлях компанії** (M24, the web's: under the purchase
+ * (M27 — the price and «Купити» hold the first screen; above them only on the
  * private token's own page, whose path carries the swap deadline),
  * where the contract gives a path, the strip Приватна · PreStocks → IPO → Біржа
  * → Solana (`company-path.tsx`) — this token «цей токен», the company's other
@@ -217,6 +222,15 @@ export function AssetScreen({
   const watchlist = useWatchlist()
   const [research, setResearch] = useState(false)
   const [details, setDetails] = useState(false)
+  /* The live prices for one share this page saw, each with its sum, time and engine — the purchase sheet's estimates and
+     the quotes for an amount (ST-5 r8). The pool warning follows only the purchase's own engine at the sum about to be
+     bought (ST-5 r9, r10: the quote card's fair $1 000 never softens the warning, nor says «from $1 000» beside it). */
+  const [seen, setSeen] = useState<readonly LiveShareQuote[]>([])
+  const hearLive = useCallback((next: LiveShareQuote) => setSeen((held) => heardLive(held, next)), [])
+  /* The sum the person is about to buy: the purchase sheet's own, as it was last left — before the sheet opened, the
+     sum it opens on. */
+  const [buyUsd, setBuyUsd] = useState<number | null>(DEFAULT_BUY_USD)
+  const hearAmount = useCallback((usd: number | null) => setBuyUsd(usd), [])
   // The spinner answers the person's pull only — never the price's own refresh every 20 seconds.
   const [pulling, setPulling] = useState(false)
   const [buying, setBuying] = useState(openBuy || reminder !== null)
@@ -271,6 +285,9 @@ export function AssetScreen({
   }
   const market = useMarket(mint)
   const detail: MarketDetail | null = market.data?.market ?? null
+  // The confirmed stocks, to say when this token borrows a stock's ticker or name without being it (ST-5 r4) — read only
+  // for a token no issuer stands behind as a stock.
+  const universe = useStockUniverse(detail !== null && !(detail.category === 'stock' && detail.issuer !== null))
   // A company the list named, or the shelf this session read, is one from the first frame: its issuer's read runs beside
   // the market's rather than after it.
   const isStock = (detail?.category ?? category ?? (nameOf(mint) !== null ? 'stock' : undefined)) === 'stock'
@@ -403,6 +420,9 @@ export function AssetScreen({
     if (result.refused) ToastAndroid.show(places.watchFull(watchlist.limit), ToastAndroid.SHORT)
   }
   const goTrade = () => router.push({ pathname: '/trade', params: { mint, symbol: detail?.symbol ?? symbol ?? '' } })
+  // The purchase and the sale pinned at the foot of the page (NEW-LOOK §3) open the one sheet over it.
+  const goBuy = () =>
+    router.push({ pathname: '/trade', params: { mint, symbol: detail?.symbol ?? symbol ?? '', side: 'buy' } })
   /* An old link's reminder on a coin or a meme (1.31.0): its purchase is Trade's ticket as the rule's purchase — the page
      hands it on once it knows the token is no company. */
   const handOn = reminder !== null && detail !== null && !isStock
@@ -417,37 +437,90 @@ export function AssetScreen({
       params: { mint, side: 'buy', rule: handRule, ...(handDue ? { due: handDue } : {}) },
     })
   }, [handOn, handRule, handDue, mint, router])
+  /* «Що купити» (Home's «Купити», NEW-LOOK §3) opens a coin's page with its purchase already open: the page hands the
+     purchase's sheet on once it knows the token is no company — a company's own purchase opens through `buying`. */
+  const openCoinBuy = openBuy && reminder === null && detail !== null && !isStock
+  const coinSymbol = detail?.symbol ?? symbol ?? ''
+  const coinBuyOpened = useRef(false)
+  useEffect(() => {
+    if (!openCoinBuy || coinBuyOpened.current) return
+    coinBuyOpened.current = true
+    router.push({ pathname: '/trade', params: { mint, symbol: coinSymbol, side: 'buy' } })
+  }, [openCoinBuy, mint, coinSymbol, router])
+  // The professional chart — the core's, the web's own — over the same market (CH-21).
+  const goProChart = () =>
+    router.push({ pathname: '/chart/[mint]', params: { mint, symbol: detail?.symbol ?? symbol ?? '' } })
   // A door only where a plan can stand: a stock, or a verified crypto or meme token (see `plannable`).
   const goPlan = () => router.push({ pathname: '/plans/new', params: { mint, symbol: detail?.symbol ?? symbol ?? '' } })
-  const askRyn = () =>
-    openRyn({ kind: 'asset', mint, ...(detail?.symbol ? { symbol: detail.symbol.slice(0, 32) } : {}) })
+  // The ticker the page knows — the market's, else the list's — goes with the question; the conversation's header names
+  // the asset as this page does (ST-5 r4), never by its address.
+  const askSymbol = detail?.symbol || symbol || null
+  const askRyn = () => openRyn({ kind: 'asset', mint, ...(askSymbol ? { symbol: askSymbol.slice(0, 32) } : {}) })
 
   const observedAt = market.data?.observedAt ?? null
-  const move = signOf(detail?.change24hPct)
 
   let body
   let company: BuyCompany | null = null
+  /* «Продати» (only with a position) and «Купити», pinned at the foot (NEW-LOOK §3) — where the page's one purchase is
+     plain; a rule's reminder, an issuer's swap first, or a company not offered keep their own words in the page. */
+  let pinned: Readonly<{ buy: () => void; buying: boolean; sell: (() => void) | null }> | null = null
+  // The page's own sale, pinned or not: the pro chart over this page offers «Продати» only where the page does (CH-21).
+  let sale: (() => void) | null = null
+  /* A look-alike's line — or a pool that cannot stand for the share (ST-5 r7) — said right over «Купити» docked at the
+     foot (ST-5 r6), where one who scrolled past the head reads it before buying; then the head does not say it again
+     (ST-5 r10: one place at a time). */
+  let buyWarning: string | null = null
   let ruleCompany: AutoinvestCompany | null = null
+  // Before the market answers: the shelf's name, else the ticker the list carried.
+  const knownName = nameOf(mint) ?? (symbol && symbol.length > 0 ? symbol : null)
   if (market.isPending || (market.data && ((issuerFirstRead && !graceOver) || privateUnknown))) {
-    body = <SimpleHeadLoading name={nameOf(mint)} />
+    body = <AssetHeadLoading name={knownName} />
   } else if (market.isError && !market.data) {
+    // The name the list carried stays over the failure, as it stood over the loading (ST-5 r4).
     body = (
-      <StateView
-        icon={isNetworkError(market.error) ? 'cloud-offline-outline' : 'alert-circle-outline'}
-        tone="danger"
-        title={isNetworkError(market.error) ? words.noConnection : words.priceDown}
-        action={{ title: words.tryAgain, onPress: () => void market.refetch(), loading: market.isFetching }}
-      />
+      <View className="gap-4">
+        {knownName ? <AssetHeadName name={knownName} /> : null}
+        <StateView
+          icon={isNetworkError(market.error) ? 'cloud-offline-outline' : 'alert-circle-outline'}
+          tone="danger"
+          title={isNetworkError(market.error) ? words.noConnection : words.priceDown}
+          action={{ title: words.tryAgain, onPress: () => void market.refetch(), loading: market.isFetching }}
+        />
+      </View>
     )
   } else if (!detail) {
     body = (
       <StateView icon="help-circle-outline" title={words.notListed} action={{ title: words.back, onPress: back }} />
     )
   } else {
-    const issuer = retired
-      ? null
-      : (detail.issuer?.label ?? (stockRep ? issuerLabel(stockRep.issuer.id, 'full') : null))
     const stockNotConfirmed = isStock && stock.isError && isNotFound(stock.error)
+    // A token that takes a stock's ticker or its company's name without being that stock: one line says so.
+    // Judged by the token's own price: a copy far from the share's price is never taken for the share (ST-5 r6).
+    const lookalike = universe.data ? stockLookalike(detail, universe.data.rows) : null
+    if (lookalike) buyWarning = words.notTheStock(companyDisplayName(lookalike.name))
+    /* A stock token whose pool price stands far from the issuer's reference for the share, or whose pool is nearly empty
+       (ST-5 r7: SGOVx at $2 090 a token against a $100,59 share, $0,2 in its pool) — the head's price is the pool's, so
+       the page says plainly that it is not the share's. With no reference, no distance is claimed. */
+    const poolWarning =
+      isStock && stock.data && !retired
+        ? poolWarningOf({
+            deviationPct: stock.data.row.deviationPct,
+            referencePerShare: stock.data.row.reference.perShare,
+            liquidityUsd: detail.liquidityUsd ?? stock.data.row.market.liquidityUsd,
+            // Judged only by a live figure for the sum about to be bought (ST-5 r9); with none, the pool's own price.
+            live: liveAt(seen, buyUsd, now),
+            fairFrom: fairFromOf(seen, buyUsd, stock.data.row.reference.perShare, now),
+          })
+        : null
+    const poolLine = poolWarning ? poolWarningText(poolWarning, locale, words, clockOfMs) : null
+    if (poolLine && !buyWarning) buyWarning = poolLine
+    /* The pool's own price far from the share (ST-5 r8: SGOVx «Капіталізація токена $110 млн» on $0,2 of liquidity): a
+       figure built on that price — the token's cap, its FDV — says nothing true and is a dash. Judged on the pool's own
+       price, which those figures are built on, whatever a live quote finds. */
+    const poolPriceFar =
+      isStock && stock.data && !retired
+        ? quoteFar(stock.data.row.deviationPct, stock.data.row.reference.perShare)
+        : false
     const retiredLine = (
       <View className="flex-row items-start gap-2 rounded-sm border border-line bg-surface px-4 py-3">
         <Icon name="information-circle-outline" size={18} color="muted" />
@@ -458,47 +531,6 @@ export function AssetScreen({
     )
 
     /* ---- the pieces, each the page's figure with its time ---- */
-    const technicalHead = (
-      <View className="gap-3">
-        <View className="flex-row items-center gap-3">
-          <AssetIcon symbol={detail.symbol} icon={detail.icon} size={48} />
-          <View className="flex-1 gap-0.5">
-            <Txt variant="headline">{detail.symbol}</Txt>
-            <Txt variant="ui" tone="muted" numberOfLines={2}>
-              {issuer && !detail.name.includes(issuer) ? `${detail.name} · ${issuer}` : detail.name}
-            </Txt>
-          </View>
-        </View>
-        <View className="gap-1">
-          <View className="flex-row items-center gap-3">
-            <Txt variant="dataLg">{formatPrice(detail.price, locale)}</Txt>
-            <Chip
-              label={formatPercent(detail.change24hPct, locale)}
-              tone={move === 'up' ? 'success' : move === 'down' ? 'danger' : 'neutral'}
-              mono
-            />
-          </View>
-          <View className="flex-row flex-wrap items-center gap-2">
-            <Txt variant="ui" tone="faint">
-              {detailWords.tokenPrice(formatClock(observedAt), formatAge(observedAt, now, locale))}
-            </Txt>
-            {market.data?.stale ? <Chip label={detailWords.stale} tone="warning" /> : null}
-            {market.isError ? <Chip label={detailWords.refreshFailed} tone="warning" caps={false} /> : null}
-          </View>
-        </View>
-        <View className="flex-row flex-wrap gap-2">
-          {detail.category ? (
-            <Chip
-              label={isAssetCategory(detail.category) ? detailWords.categories[detail.category] : detail.category}
-              tone="evidence"
-            />
-          ) : null}
-          {detail.verified ? null : <Chip label={detailWords.unverified} tone="warning" />}
-          {detail.audit.suspicious ? <Chip label={detailWords.flaggedByVenue} tone="warning" caps={false} /> : null}
-        </View>
-      </View>
-    )
-
     // The retired line is said once, in the purchase's place — never again among the issuer's figures.
     const stockPart: ReactNode = isStock ? (
       retired ? null : stock.data ? (
@@ -523,32 +555,34 @@ export function AssetScreen({
       )
     ) : null
 
+    // The day's figures in the words «Торги на Solana» says them above (ST-5 r6: «$7,83 млн» there, «$7,8 млн» here).
     const statsPart = (
       <View className="gap-2">
         <View className="flex-row gap-2">
           <StatTile
             label={detailWords.volume24h}
-            value={formatUsdCompact(detail.volume24hUsd, locale)}
+            value={moneyShort(detail.volume24hUsd, locale) ?? DASH}
             at={observedAt}
             className="flex-1"
           />
           <StatTile
             label={detailWords.liquidity}
-            value={formatUsdCompact(detail.liquidityUsd, locale)}
+            value={moneyShort(detail.liquidityUsd, locale) ?? DASH}
             at={observedAt}
             className="flex-1"
           />
         </View>
         <View className="flex-row gap-2">
           <StatTile
-            label={detailWords.marketCap}
-            value={formatUsdCompact(detail.marketCapUsd, locale)}
+            // A stock token's cap is the token's value on the chain, never the company's (ST-5 r7).
+            label={isStock ? detailWords.tokenMarketCap : detailWords.marketCap}
+            value={poolPriceFar ? DASH : (moneyShort(detail.marketCapUsd, locale) ?? DASH)}
             at={observedAt}
             className="flex-1"
           />
           <StatTile
             label={detailWords.holders}
-            value={formatCount(detail.holders, locale)}
+            value={countShort(detail.holders, locale) ?? DASH}
             at={observedAt}
             className="flex-1"
           />
@@ -556,7 +590,7 @@ export function AssetScreen({
       </View>
     )
 
-    const quotePart = stock.data && !retired ? <QuoteCard asset={stock.data} now={now} /> : null
+    const quotePart = stock.data && !retired ? <QuoteCard asset={stock.data} now={now} onLive={hearLive} /> : null
 
     const researchSheet = (
       <ResearchSheet
@@ -565,6 +599,7 @@ export function AssetScreen({
         market={detail}
         observedAt={observedAt ?? detail.updatedAt ?? ''}
         stock={retired ? null : (stock.data ?? null)}
+        poolPriceFar={poolPriceFar}
       />
     )
 
@@ -572,7 +607,7 @@ export function AssetScreen({
     const rep = stockRep
     const privateCompany = rep?.instrument?.class === 'pre-ipo'
     const name = displayName(detail, stock.data ?? null, nameOf(mint))
-    // The issuer's fee as the chain states it names itself in a private company's line (the web's own).
+    // The issuer's fee as the chain states it names itself in a private company's line (the web's own, M23).
     const feeBps = stock.data?.row.transferFee?.basisPoints ?? null
     const truth = rep ? truthLine(rep.issuer.id, name, locale, feeBps) : null
     /* Who the company is, under its name, and the label of what its token is — the web's head and purchase card. */
@@ -608,6 +643,12 @@ export function AssetScreen({
         truth,
         eventLine: buyerLine,
         issuerFee: issuerFeeOf(stock.data.row.transferFee),
+        pool: {
+          referencePerShare: stock.data.row.reference.perShare,
+          deviationPct: stock.data.row.deviationPct,
+          liquidityUsd: detail.liquidityUsd ?? stock.data.row.market.liquidityUsd,
+          seen,
+        },
       }
     }
     // A fall's rule counts from the price now: only a price this page read fresh is offered as that point.
@@ -625,7 +666,7 @@ export function AssetScreen({
     }
 
     /* The issuer's event, before any figure: a holder's line with the swap and the sale under it, everyone's line alone
-       — in its own box, or, where «Шлях компанії» stands on the private token's page, as the path's line. */
+       — in its own box, or, where «Шлях компанії» stands on the private token's page, as the path's line (M24). */
     // A holder's swap and sale only once their sheet can open — the token read (convertToken); until then the line alone.
     const holderActions =
       event && holder && convertToken
@@ -638,7 +679,7 @@ export function AssetScreen({
         : null
     // «Шлях компанії» stands above the price only for a holder of the private token, whose swap is the path's own line
     // and the page's one orange action; for everyone else it stands under the purchase, so the price and «Купити»
-    // hold the first screen, and the issuer's event is said before any figure in its own two lines.
+    // hold the first screen, and the issuer's event is said before any figure in its own two lines (M19, M27).
     const pathAbove = pathCarriesEvent && holder
     const eventBanner =
       event && !pathAbove ? (
@@ -658,16 +699,22 @@ export function AssetScreen({
     /* A private company's one number beside its price: against PreStocks' own valuation. */
     const markLine = privateCompany && !retired ? premiumPhrase(stock.data?.row.markPremiumPct, locale, words) : null
     const warnings = [
-      stockNotConfirmed ? { key: 'unconfirmed', text: words.notConfirmed, tone: 'warning' } : null,
+      // A look-alike's own line says more than «no issuer confirms»: one line, not two.
+      stockNotConfirmed && !lookalike ? { key: 'unconfirmed', text: words.notConfirmed, tone: 'warning' } : null,
+      lookalike
+        ? { key: 'lookalike', text: words.notTheStock(companyDisplayName(lookalike.name)), tone: 'warning' }
+        : null,
+      poolLine ? { key: 'pool', text: poolLine, tone: 'warning' } : null,
       detail.verified ? null : { key: 'unverified', text: words.unverified, tone: 'warning' },
       detail.audit.suspicious ? { key: 'flagged', text: words.flagged, tone: 'warning' } : null,
-    ].filter((warning): warning is SimpleWarning => warning !== null)
+    ].filter((warning): warning is AssetWarning => warning !== null)
 
     /* «Купити»: a company opens the purchase in dollars; a coin, or a token no issuer confirms, opens Trade. */
-    let buyAction: ReactNode
+    let buyAction: ReactNode = null
+    let pinBuy: Readonly<{ press: () => void; buying: boolean }> | null = null
     if ((!isStock || stockNotConfirmed) && companyRule && offer && offerWords) {
       /* A coin's or a meme's rule with its reminder open (1.31.0): the rule's purchase first — Trade's ticket on its sum —
-         an ordinary purchase second and quiet, saying the reminder stays open. */
+         an ordinary purchase second and quiet; that the reminder stays open is its button's hint, never a line (ST-4). */
       buyAction = (
         <View className="gap-2">
           <View className="flex-row items-center justify-center gap-1.5 px-2">
@@ -675,6 +722,9 @@ export function AssetScreen({
             <Txt variant="ui" tone="muted" tabular className="shrink text-center">
               {offerWords.when}
             </Txt>
+            <View className="-my-2">
+              <HelpDot title={ruleWords.reminderStaysOpen} body={ruleWords.plainHereLeavesOpen} size={16} />
+            </View>
           </View>
           <Button title={offerWords.buy} size="lg" onPress={() => buyUnder(companyRule, offer)} />
           <Button
@@ -684,16 +734,13 @@ export function AssetScreen({
             accessibilityHint={ruleWords.reminderStaysOpen}
             onPress={goTrade}
           />
-          <Txt variant="ui" tone="faint" className="text-center">
-            {ruleWords.reminderStaysOpen}
-          </Txt>
         </View>
       )
     } else if (!isStock || stockNotConfirmed) {
-      buyAction = <Button title={words.buy} size="lg" onPress={goTrade} />
+      pinBuy = { press: goBuy, buying: false }
     } else if (company && companyRule && offer && offerWords) {
-      /* The rule's reminder is open: its purchase first, on its sum; an ordinary purchase second and quiet, saying the
-         reminder stays open — the rule counts only a purchase by the rule. */
+      /* The rule's reminder is open: its purchase first, on its sum; an ordinary purchase second and quiet — that the
+         reminder stays open (the rule counts only a purchase by the rule) is its button's hint, never a line (ST-4). */
       buyAction = (
         <View className="gap-2">
           <View className="flex-row items-center justify-center gap-1.5 px-2">
@@ -701,6 +748,9 @@ export function AssetScreen({
             <Txt variant="ui" tone="muted" tabular className="shrink text-center">
               {offerWords.when}
             </Txt>
+            <View className="-my-2">
+              <HelpDot title={ruleWords.reminderStaysOpen} body={ruleWords.plainHereLeavesOpen} size={16} />
+            </View>
           </View>
           <Button
             title={offerWords.buy}
@@ -715,21 +765,13 @@ export function AssetScreen({
             accessibilityHint={ruleWords.reminderStaysOpen}
             onPress={() => setBuying(true)}
           />
-          <Txt variant="ui" tone="faint" className="text-center">
-            {ruleWords.reminderStaysOpen}
-          </Txt>
         </View>
       )
-    } else if (company) {
+    } else if (company && swapFirst) {
       // A holder's one orange action is the swap above: «Купити» steps back to quiet.
-      buyAction = (
-        <Button
-          title={words.buy}
-          variant={swapFirst ? 'secondary' : 'primary'}
-          size="lg"
-          onPress={() => setBuying(true)}
-        />
-      )
+      buyAction = <Button title={words.buy} variant="secondary" size="lg" onPress={() => setBuying(true)} />
+    } else if (company) {
+      pinBuy = { press: () => setBuying(true), buying: false }
     } else if (retired) {
       buyAction = retiredLine
     } else if (stock.data) {
@@ -752,16 +794,17 @@ export function AssetScreen({
     } else {
       // The issuer's read is on its way: «Купити» stands at once; pressed, the purchase opens the moment the company
       // is read.
-      buyAction = <Button title={words.buy} size="lg" loading={buying} onPress={() => setBuying(true)} />
+      pinBuy = { press: () => setBuying(true), buying }
     }
 
     /* «Твоя позиція»: what the wallet holds of the company and its worth, with «Продати» — the web's sale from a
        position. Not where the issuer's window offers its own sale above: a holder never sees two. */
     const saleHint = { name, icon: detail.icon, ticker: detail.symbol }
-    // What the wallet can move — the figure the sale sells, so the card and the sheet say one amount.
+    /* What the wallet holds — the whole of it, as «Портфель» and the chain say it (ST-5). What a sale or a swap can
+       spend of it (SOL less its fee reserve) is said by that sheet as «Доступно». */
     const heldRaw =
-      holds && heldRow && /^\d+$/.test(heldRow.spendableRaw) && BigInt(heldRow.spendableRaw) > 0n
-        ? BigInt(heldRow.spendableRaw)
+      holds && heldRow && /^\d+$/.test(heldRow.amountRaw) && BigInt(heldRow.amountRaw) > 0n
+        ? BigInt(heldRow.amountRaw)
         : null
     // Counted as the sale counts it: the chain's multiplier first, the issuer's market price first.
     const heldMultiplier =
@@ -786,17 +829,20 @@ export function AssetScreen({
     /* A coin's or a meme's position the same way (the operator, 2026-10-10: «акції мають зрівнятися з криптою, з мемами»):
        what the wallet can move and its worth at the page's price, «Продати» opening Trade on a Sell of this token. */
     const coinMultiplier = heldRow?.uiMultiplier ?? null
-    const coinAmount =
-      (!isStock || stockNotConfirmed) && !retired && heldRaw !== null && heldRow
-        ? unitsFromRaw(heldRaw.toString(), heldRow.decimals, coinMultiplier)
-        : null
+    // Written by Portfolio's own rule (the shown raw amount cut, never rounded, to six places), so the page, the
+    // holding sheet and Portfolio always say one figure.
     const coinUnits =
-      coinAmount === null
-        ? null
-        : coinAmount > 0 && coinAmount < 0.000001
-          ? `< ${formatNumber(0.000001, locale, 6)} ${detail.symbol}`
-          : `${formatNumber(coinAmount, locale, 6)} ${detail.symbol}`
+      (!isStock || stockNotConfirmed) && !retired && heldRaw !== null && heldRow
+        ? `${amountTextOf(shownRaw(heldRaw.toString(), heldRow.kind === 'NATIVE_SOL' ? null : coinMultiplier), heldRow.decimals, locale)} ${detail.symbol}`
+        : null
     const coinUsd = coinUnits ? positionUsd(heldRaw, heldRow?.decimals ?? null, coinMultiplier, detail.price) : null
+    const companySale =
+      isStock && stock.data && rep && !retired && heldUnits && canSell ? () => setSelling(saleHint) : null
+    const coinSale = coinUnits
+      ? () => router.push({ pathname: '/trade', params: { mint, symbol: detail.symbol, side: 'sell' } })
+      : null
+    sale = companySale ?? coinSale
+    if (pinBuy) pinned = { buy: pinBuy.press, buying: pinBuy.buying, sell: sale }
     const positionCard =
       isStock && stock.data && rep && !retired && heldUnits ? (
         <Animated.View layout={SETTLE}>
@@ -804,7 +850,7 @@ export function AssetScreen({
             label={saleWords.yourPosition}
             value={heldUsd === null ? heldUnits : worthText(heldUsd, locale)}
             detail={heldUsd === null ? null : heldUnits}
-            sellLabel={canSell ? saleWords.sell : null}
+            sellLabel={canSell && !pinned ? saleWords.sell : null}
             onSell={() => setSelling(saleHint)}
           />
         </Animated.View>
@@ -814,19 +860,21 @@ export function AssetScreen({
             label={saleWords.yourPosition}
             value={coinUsd === null ? coinUnits : worthText(coinUsd, locale)}
             detail={coinUsd === null ? null : coinUnits}
-            sellLabel={saleWords.sell}
-            onSell={() =>
-              router.push({ pathname: '/trade', params: { mint, symbol: detail.symbol, side: 'sell' } })
-            }
+            sellLabel={pinned ? null : saleWords.sell}
+            onSell={() => router.push({ pathname: '/trade', params: { mint, symbol: detail.symbol, side: 'sell' } })}
           />
         </Animated.View>
       ) : null
 
     body = (
       <View className="gap-4">
-        <SimpleHead
+        <AssetHead
           name={name}
-          subline={head?.subline ?? null}
+          // A coin's ticker under its name (NEW-LOOK §3: «тікер і назва»); a company keeps its own line.
+          subline={
+            head?.subline ??
+            (!isStock && detail.symbol && detail.symbol.toLowerCase() !== name.toLowerCase() ? detail.symbol : null)
+          }
           icon={detail.icon}
           price={detail.price}
           change={detail.change24hPct}
@@ -848,11 +896,20 @@ export function AssetScreen({
           event={eventBanner}
           copy={words}
           locale={locale}
-          warnings={warnings}
+          // One place at a time (ST-5 r10): the line «Купити» docked at the foot says is not said again under the price.
+          warnings={pinned && buyWarning ? warnings.filter((warning) => warning.text !== buyWarning) : warnings}
         />
         {/* The line at rest says no pool: the pool's own chart by the interval, with its source, is under «Деталі». */}
         <Animated.View layout={SETTLE}>
-          <ChartCard mint={mint} simple source={false} />
+          <ChartCard
+            mint={mint}
+            glance
+            source={false}
+            dayChangePct={detail.change24hPct}
+            pro={{ symbol: detail.symbol || name, open: goProChart }}
+          />
+          {/* The chart's question, as the web asks it beside the price: Ryntra opened on this asset, asked once. */}
+          <ExplainMove mint={mint} symbol={askSymbol} />
         </Animated.View>
         {truthLabel || exchange ? (
           <Animated.View layout={SETTLE}>
@@ -867,6 +924,10 @@ export function AssetScreen({
         ) : null}
         {positionCard}
         <Animated.View layout={SETTLE} style={{ gap: 8 }}>
+          {/* Over an in-page «Купити» only a line the head does not already say (ST-5 r10: one place at a time). */}
+          {buyWarning && !pinned && !warnings.some((warning) => warning.text === buyWarning) ? (
+            <BuyWarning text={buyWarning} />
+          ) : null}
           {buyAction}
           {(company || !isStock) && offer ? null : companyRule ? (
             // While its reminder is open the rule speaks through its purchase above; otherwise its card opens it.
@@ -887,6 +948,7 @@ export function AssetScreen({
             <QuietDoor
               icon="repeat-outline"
               label={ruleWords.autoinvest}
+              // The pool's warning is said in one place — never again on this door (ST-5 r9, r10).
               onPress={() => setAutoinvest({ kind: 'compose', amountUsd: null })}
             />
           ) : null}
@@ -917,7 +979,7 @@ export function AssetScreen({
         />
         {details ? (
           <View className="gap-4">
-            {technicalHead}
+            {/* The head above says the name and the one price; «Деталі» never says them again (ST-5). */}
             {stockPart}
             {/* What «Профі» drew on this page, a tap deeper for everyone. */}
             <View className="gap-2">
@@ -936,18 +998,13 @@ export function AssetScreen({
                 />
               ) : null}
               <QuietDoor
-                icon={starred ? 'star' : 'star-outline'}
-                label={starred ? places.watchRemove : places.watchAdd}
-                onPress={star}
-              />
-              <QuietDoor
                 icon="document-text-outline"
                 label={words.research}
                 trailing="chevron-forward"
                 onPress={() => setResearch(true)}
               />
             </View>
-            <ChartCard mint={mint} />
+            {/* One chart on the page — the one under the price; the pool it reads is no figure a person acts on (ST-5). */}
             {statsPart}
             {quotePart}
           </View>
@@ -964,12 +1021,38 @@ export function AssetScreen({
     setPending(null)
   }
 
+  /* The pro chart opened over this page (CH-21) offers this page's own «Купити» and «Продати» — only where the page
+     offers them, and running the page's own flow with its Review: never a purchase the page withholds (a retired issuer,
+     a halted stock, one not offered), never a sale without a position. */
+  const proBuy = pinned?.buy ?? null
+  const proActions = useRef<Readonly<{ buy: (() => void) | null; sell: (() => void) | null }>>({
+    buy: null,
+    sell: null,
+  })
+  useEffect(() => {
+    proActions.current = { buy: proBuy, sell: sale }
+  })
+  const canProBuy = proBuy !== null
+  const canProSell = sale !== null
+  // The line this page says over its docked «Купити» goes over the pro chart's too (ST-5 r6).
+  const proWarning = canProBuy ? buyWarning : null
+  // Each open page of the asset offers by its own route: the pro chart takes the page right under it.
+  const routeKey = useRoute().key
+  useEffect(
+    () =>
+      offerAssetActions(routeKey, {
+        buy: canProBuy,
+        sell: canProSell,
+        warning: proWarning,
+        run: (action) => proActions.current[action]?.(),
+      }),
+    [routeKey, canProBuy, canProSell, proWarning],
+  )
+
   /* Home's «Додати правило»: the sheet opens once the company and the wallet's rules are read — on the rule the
      company has, or a new one on a company one can buy (state adjusted during render, as React prescribes). */
   const sheetReady =
-    ruleCompany !== null &&
-    (!session || !rules.isPending) &&
-    (company !== null || companyRule !== null || !isStock)
+    ruleCompany !== null && (!session || !rules.isPending) && (company !== null || companyRule !== null || !isStock)
   if (askedAutoinvest && sheetReady) {
     setAskedAutoinvest(false)
     setAutoinvest(companyRule ? { kind: 'manage', rule: companyRule } : { kind: 'compose', amountUsd: null })
@@ -987,11 +1070,30 @@ export function AssetScreen({
         >
           <Icon name="arrow-back" size={22} color="fg" />
         </Pressable>
+        {/* «Обране» and «Поділитися» in the head (NEW-LOOK §3): a starred asset's star is orange, the one chosen state. */}
+        <View className="flex-row">
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel={starred ? places.watchRemove : places.watchAdd}
+            accessibilityState={{ selected: starred }}
+            onPress={star}
+            className="h-12 w-12 items-center justify-center rounded-pill active:bg-hover"
+          >
+            <Icon name={starred ? 'star' : 'star-outline'} size={22} color={starred ? 'brand' : 'fg'} />
+          </Pressable>
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel={words.share}
+            onPress={() => void Share.share({ message: `https://ryntra.io/app/token/${mint}` }).catch(() => undefined)}
+            className="h-12 w-12 items-center justify-center rounded-pill active:bg-hover"
+          >
+            <Icon name="share-social-outline" size={22} color="fg" />
+          </Pressable>
+        </View>
       </View>
-      <ScrollView
-        className="flex-1"
-        contentContainerClassName="px-4 pb-8 pt-2"
-        keyboardShouldPersistTaps="handled"
+      {/* The page keeps «Своя сума» and its «Quote» above the keyboard while the amount is typed (Android draws edge to
+          edge, so the window is never resized for it) — the lift the launch page's trade uses. */}
+      <KeyboardLiftScroll
         refreshControl={
           <RefreshControl
             refreshing={pulling}
@@ -1007,8 +1109,22 @@ export function AssetScreen({
           />
         }
       >
-        {body}
-      </ScrollView>
+        <View className="pb-2 pt-2">{body}</View>
+      </KeyboardLiftScroll>
+      {pinned ? (
+        <View
+          className="gap-3 border-t border-line bg-ground px-4 pt-3"
+          style={{ paddingBottom: Math.max(insets.bottom, 12) }}
+        >
+          {buyWarning ? <BuyWarning text={buyWarning} /> : null}
+          <View className="flex-row gap-3">
+            {pinned.sell ? (
+              <Button title={saleWords.sell} variant="secondary" size="lg" className="flex-1" onPress={pinned.sell} />
+            ) : null}
+            <Button title={words.buy} size="lg" className="flex-1" loading={pinned.buying} onPress={pinned.buy} />
+          </View>
+        </View>
+      ) : null}
       {company ? (
         <BuySheet
           company={company}
@@ -1016,6 +1132,8 @@ export function AssetScreen({
           onClose={closeBuy}
           rule={ruleState ? { state: ruleState, reread, changeBudget: openBudget } : null}
           openReminder={offerUsd !== null ? { amountUsd: offerUsd } : null}
+          onLive={hearLive}
+          onAmount={hearAmount}
           onBuyWeekly={
             session && rules.data && !companyRule
               ? (amountUsd) => {
@@ -1069,7 +1187,31 @@ export function AssetScreen({
   )
 }
 
-/** A position's worth: under a cent is «< $0,01», never a «$0» for something held. */
+/** The look-alike's or the pool's warning over the purchase: the line the head says, in a box one cannot read past. */
+/** The line over a docked «Купити»: a look-alike, a pool far from the share (ST-5 r6); the pro chart's foot says it too. */
+export function BuyWarning({ text }: { text: string }) {
+  return (
+    <View
+      accessibilityRole="alert"
+      className="flex-row items-start gap-2 rounded-sm border border-warning-soft bg-warning-soft px-4 py-3"
+    >
+      <Icon name="warning-outline" size={18} color="warningInk" style={{ marginTop: 1 }} />
+      <Txt variant="ui" tone="warning" className="flex-1">
+        {text}
+      </Txt>
+    </View>
+  )
+}
+
+/** A seen quote's time on the phone's clock («11:56»), as every figure's time is said. */
+function clockOfMs(ms: number): string {
+  return formatClock(new Date(ms).toISOString())
+}
+
+/**
+ * A position's worth in Portfolio's own figure — cents always («$5,01», never «$5»; ST-5 r6), under a cent «<$0,01»,
+ * never a «$0» for something held.
+ */
 function worthText(usd: number, locale: Locale): string {
-  return usd > 0 && usd < 0.01 ? `< ${dollarsText(0.01, locale)}` : dollarsText(usd, locale)
+  return formatUsd(usd, locale)
 }

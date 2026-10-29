@@ -3,7 +3,8 @@ import { cookies } from "next/headers";
 import { canKeepPersonalData, readSession, readWalletProof } from "@/lib/session";
 import { attachableAccountId } from "@/lib/auth/identity-link";
 import { accountLoginEnabled, customerDoorsEnabled, customerMethods, telegramClientId } from "@/lib/account/config";
-import { CABINET_BOOT_SCRIPT, THEME_BOOT_SCRIPT } from "./theme";
+import { CABINET_BOOT_SCRIPT } from "./theme";
+import { LOOK_BOOT_SCRIPT, LOOK_COOKIE, MENU_COOKIE } from "./look";
 import { normalizeWorkspaceLocale, WORKSPACE_LOCALE_COOKIE } from "@/app/shell/locale";
 import { SolanaI18nProvider } from "@/app/solana/workspace/i18n/provider";
 import { SolanaConnectionProvider } from "@/app/solana/workspace/connection";
@@ -22,11 +23,18 @@ export default async function CabinetLayout({ children }: { children: React.Reac
   const walletSignin = session?.method === "solana_siws" ? session.identityWallet : null;
   /* What the server already knows about the wallet's proof, handed to every
      page before it renders: a wallet sign-in is the proof of its own address,
-     so the common case costs no second read. */
-  const proofRead = walletSignin ? null : await readWalletProof();
+     so the common case costs no second read; an account signed in by email or
+     Google is the proof of the Solana wallet it linked by signature (SOL-W3),
+     so that person sees their pages without a signature either. */
+  const proofRead = walletSignin ? null : await readWalletProof({ allowLink: true });
   const proven = walletSignin ?? (proofRead?.status === "ok" ? proofRead.proof.address : null);
+  const provenVia = walletSignin ? "signin" : proofRead?.status === "ok" ? proofRead.proof.via : null;
   const checking = read.status === "unavailable" || proofRead?.status === "unavailable";
   const locale = normalizeWorkspaceLocale(store.get(WORKSPACE_LOCALE_COOKIE)?.value);
+  /* The menu's place and the look, read here and decoded by the core in the frame: the server never loads the core's
+     components (B1). */
+  const menuCookie = store.get(MENU_COOKIE)?.value;
+  const lookCookie = store.get(LOOK_COOKIE)?.value;
   /* Signed in means an account that can keep personal data: a recorded
      account session, or a legacy bot session that knows its account or passed
      the old channel gate. A guest and a connected wallet are not signed in. */
@@ -55,12 +63,14 @@ export default async function CabinetLayout({ children }: { children: React.Reac
     <HomeI18nProvider initialLocale={locale}>
       {/* The cabinet names itself on <html> before first paint, so the
           surfaces that mount outside the shell — the sign-in sheet, the
-          feedback dialog, toasts — take the terminal's own type and tokens. */}
-      <script dangerouslySetInnerHTML={{ __html: THEME_BOOT_SCRIPT + CABINET_BOOT_SCRIPT }} />
+          feedback dialog, toasts — take the terminal's own type and tokens;
+          and the core's theme, Graphite or Porcelain, applies before first
+          paint too: a theme that arrives one frame late reads as a flash. */}
+      <script dangerouslySetInnerHTML={{ __html: LOOK_BOOT_SCRIPT + CABINET_BOOT_SCRIPT }} />
       <SolanaConnectionProvider>
-        <WalletProofSeed address={proven} signedIn={signedIn} walletAddress={walletSignin} checking={checking} renderedAt={Date.now()}>
+        <WalletProofSeed address={proven} via={provenVia} signedIn={signedIn} walletAddress={walletSignin} checking={checking} renderedAt={Date.now()}>
           <AccountProvider summary={account}>
-            <WalletDataProvider><ProductShell signedIn={signedIn}><AccountDataBoundary>{children}</AccountDataBoundary></ProductShell></WalletDataProvider>
+            <WalletDataProvider><ProductShell signedIn={signedIn} menuCookie={menuCookie} lookCookie={lookCookie}><AccountDataBoundary>{children}</AccountDataBoundary></ProductShell></WalletDataProvider>
           </AccountProvider>
         </WalletProofSeed>
       </SolanaConnectionProvider>

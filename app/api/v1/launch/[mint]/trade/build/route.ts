@@ -1,5 +1,6 @@
 import { BASE58, LaunchTradeBuildRequestSchema, type LaunchTradeBuildResponse } from "@/lib/api/v1/contract";
 import { apiFailure, apiJson, apiMajorRefusal, readApiBody } from "@/lib/api/v1/http";
+import { serverTimingOf, type StepTiming } from "@/lib/core/pipeline";
 import { rateLimitHeaders } from "@/lib/http-control";
 import { launchNetwork } from "@/lib/launch/config.server";
 import { consumeSharedLaunchWrite, launchTradingDeps } from "@/lib/launch/runtime.server";
@@ -28,7 +29,10 @@ export async function POST(request: Request, context: { params: Promise<{ mint: 
   if (!BASE58.test(mint)) return apiFailure("VALIDATION_ERROR", "mint: not an address");
   const read = await readApiBody(request, LaunchTradeBuildRequestSchema);
   if (!read.ok) return read.response;
-  const built = await buildLaunchTrade(deps, mint, read.body).catch(() => ({ ok: false as const, code: "UNAVAILABLE" as const, message: "The network could not be read now; nothing was sent. Try again." }));
+  const started = performance.now();
+  const timings: StepTiming[] = [];
+  const built = await buildLaunchTrade(deps, mint, read.body, timings).catch(() => ({ ok: false as const, code: "UNAVAILABLE" as const, message: "The network could not be read now; nothing was sent. Try again." }));
   if (!built.ok) return apiFailure(built.code, built.message);
-  return apiJson(built.build satisfies LaunchTradeBuildResponse);
+  /* SOL-P1: each read of the build, timed — names only. */
+  return apiJson(built.build satisfies LaunchTradeBuildResponse, 200, { "server-timing": serverTimingOf(timings, [{ name: "total", ms: performance.now() - started }]) });
 }

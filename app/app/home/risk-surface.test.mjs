@@ -3,10 +3,10 @@ import { readFileSync } from "node:fs";
 import test from "node:test";
 
 /*
- * «Ризик портфеля» on Home: the server's one word for the wallet under
- * «Розподіл» on a wide head and under the day's change on a narrow one; the
- * reason and its one action; no rule judged in the browser; never an orange
- * of its own beside the head's one orange action.
+ * «Ризик портфеля» on Home: the server's one word for the wallet as the hero's
+ * small line, the full check under «Деталі»; the reason and its one action; no
+ * rule judged in the browser; never an orange of its own beside the page's one
+ * orange action.
  */
 
 const read = (path) => readFileSync(new URL(path, import.meta.url), "utf8").replace(/\r\n/g, "\n");
@@ -51,14 +51,14 @@ test("each reason has its one action — the sale, the company's watch, the asse
   assert.match(HOOK, /!proven \|\| expired \? "unproven"/);
 });
 
-test("Home: the line once there is something in the wallet — under «Розподіл» on a wide head, under the change on a narrow one", () => {
-  assert.match(SURFACE, /\{owned\.length > 0 \? <PortfolioRisk locale=\{locale\} place="main" \/> : null\}/);
-  assert.match(SURFACE, /<PortfolioRisk locale=\{locale\} place="side" \/>\n\s*<\/div>/, "the side copy closes «Розподіл»");
-  assert.match(CSS, /@container \(min-width: 640px\) \{[\s\S]*?\.riskMain \{\n\s*display: none;/, "a wide head draws only the side copy");
+test("Home: the verdict as the hero's one small line, the full check one tap away under «Деталі»", () => {
+  assert.match(SURFACE, /className=\{home\.riskNote\} data-risk=\{riskState\}/);
+  assert.match(SURFACE, /riskStateWord\(riskState as Parameters<typeof riskStateWord>\[0\], lang\)/);
+  assert.match(SURFACE, /onClick=\{onRisk\} aria-controls="home-details"/, "the line opens «Деталі»");
+  assert.match(SURFACE, /<PortfolioRisk locale=\{locale\} place="main" \/>/, "the full check stands under «Деталі»");
   /* The block's own class on every capsule control — a rule of this module cannot reach watch.module.css's hashed one. */
   assert.equal((RISK.match(/className=\{`\$\{watch\.inlineAction\} \$\{home\.riskAction\}`\}/g) ?? []).length, 4, "retry, the first reason's action, «ще N», confirm");
   assert.doesNotMatch(CSS, /\.risk[^{]*\.inlineAction/, "no rule of this module names another module's class");
   assert.match(CSS, /\.risk\[data-tone\] \.quietCapsule,\n\.risk\[data-tone\] \.riskAction:hover > \.quietCapsule \{/, "«ще N» stays quiet on a hover or a tap");
   assert.match(CSS, /:global\(\.ry-product\) \.risk \.riskAction:focus-visible \{\n\s*box-shadow: none;/, "one focus ring, on the capsule");
-  assert.match(CSS, /\.head\[data-need\] \{\n\s*align-items: start;/, "opening the reasons does not move «Купити»");
 });

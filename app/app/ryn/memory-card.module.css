@@ -1,0 +1,295 @@
+/*
+ * What Ryntra knows about the person (AI-18): a quiet card in the conversation's place — the person's own words, each
+ * line with «Забути». The brand only on the one primary press; both themes through the tokens.
+ */
+.card {
+  display: grid;
+  gap: var(--ry-s3);
+  min-width: 0;
+  padding: var(--ry-s4);
+  border: 1px solid var(--ry-border);
+  border-radius: var(--ry-r-card);
+  background: var(--ry-card);
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.head,
+.row,
+.rowHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--ry-s3);
+  min-width: 0;
+  flex-wrap: wrap;
+}
+
+.title {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--ry-s2);
+  margin: 0;
+  font-size: var(--ry-fs-value);
+  font-weight: 600;
+  line-height: var(--ry-lh-tight);
+  letter-spacing: var(--ry-ls-head);
+  color: var(--ry-text);
+}
+
+.title svg {
+  color: var(--ry-text-muted);
+}
+
+.lead {
+  margin: 0;
+  font-size: var(--ry-fs-dense);
+  line-height: 1.5;
+  color: var(--ry-text-muted);
+}
+
+.part {
+  display: grid;
+  gap: var(--ry-s2);
+  min-width: 0;
+  padding-top: var(--ry-s3);
+  border-top: 1px solid var(--ry-border);
+}
+
+.label {
+  font-size: var(--ry-fs-copy);
+  font-weight: 600;
+  color: var(--ry-text);
+}
+
+.field,
+.input {
+  width: 100%;
+  min-width: 0;
+  padding: var(--ry-s2) var(--ry-s3);
+  border: 1px solid var(--ry-border-strong);
+  border-radius: var(--ry-r-btn-sm);
+  background: var(--ry-elevated);
+  color: var(--ry-text);
+  font: inherit;
+  font-size: var(--ry-fs-copy);
+  line-height: 1.45;
+}
+
+.field {
+  resize: vertical;
+  min-height: 72px;
+}
+
+.field:focus-visible,
+.input:focus-visible {
+  outline: var(--ryntra-focus-outline, 2px solid #ff681c);
+  outline-offset: 1px;
+}
+
+.count {
+  font-family: var(--ry-font-mono);
+  font-size: var(--ry-fs-label-sm);
+  color: var(--ry-text-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.switch {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--ry-s2);
+  font-size: var(--ry-fs-dense);
+  color: var(--ry-text);
+  cursor: pointer;
+}
+
+.switch input {
+  width: 16px;
+  height: 16px;
+  accent-color: var(--ry-accent);
+}
+
+.notes {
+  display: grid;
+  gap: var(--ry-s1);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.note {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 2px var(--ry-s3);
+  padding: var(--ry-s2) 0;
+  border-bottom: 1px solid var(--ry-border);
+}
+
+.noteText {
+  min-width: 0;
+  font-size: var(--ry-fs-copy);
+  color: var(--ry-text);
+  overflow-wrap: anywhere;
+}
+
+.noteMeta {
+  grid-column: 1;
+  font-size: var(--ry-fs-label-sm);
+  color: var(--ry-text-muted);
+}
+
+.forget {
+  grid-column: 2;
+  grid-row: 1 / span 2;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  height: 32px;
+  padding: 0 var(--ry-s2);
+  border: 1px solid transparent;
+  border-radius: var(--ry-r-btn-sm);
+  background: transparent;
+  color: var(--ry-muted);
+  font: inherit;
+  font-size: var(--ry-fs-dense);
+  cursor: pointer;
+}
+
+.forget:hover:not(:disabled) {
+  color: var(--ry-text);
+  background: var(--ry-hover);
+}
+
+.forget:focus-visible,
+.link:focus-visible,
+.close:focus-visible {
+  outline: var(--ryntra-focus-outline, 2px solid #ff681c);
+  outline-offset: 1px;
+}
+
+.add {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: var(--ry-s2);
+}
+
+.facts {
+  display: grid;
+  gap: var(--ry-s2);
+  margin: 0;
+  padding-top: var(--ry-s3);
+  border-top: 1px solid var(--ry-border);
+}
+
+.facts div {
+  display: grid;
+  gap: 2px;
+}
+
+.facts dt {
+  font-size: var(--ry-fs-label);
+  color: var(--ry-text-muted);
+}
+
+.facts dd {
+  margin: 0;
+  font-size: var(--ry-fs-copy);
+  color: var(--ry-text);
+}
+
+.link {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--ry-text);
+  font: inherit;
+  font-size: var(--ry-fs-dense);
+  text-decoration: underline;
+  text-decoration-color: var(--ry-border-strong);
+  text-underline-offset: 3px;
+  cursor: pointer;
+}
+
+.close {
+  display: inline-grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  border: 0;
+  border-radius: var(--ry-r-btn-sm);
+  background: transparent;
+  color: var(--ry-muted);
+  cursor: pointer;
+}
+
+.close:hover {
+  background: var(--ry-hover);
+  color: var(--ry-text);
+}
+
+.foot {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: var(--ry-s3);
+  flex-wrap: wrap;
+}
+
+.confirm {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--ry-s2);
+  flex-wrap: wrap;
+  font-size: var(--ry-fs-dense);
+  color: var(--ry-text);
+}
+
+.error {
+  margin: 0;
+  font-size: var(--ry-fs-dense);
+  color: var(--ry-caution);
+}
+
+.remembered {
+  display: flex;
+  align-items: center;
+  gap: var(--ry-s2);
+  margin: 0;
+  padding: var(--ry-s2) var(--ry-s3);
+  border: 1px solid var(--ry-border);
+  border-radius: var(--ry-r-btn-sm);
+  background: var(--ry-elevated);
+  font-size: var(--ry-fs-dense);
+  color: var(--ry-text);
+}
+
+.remembered > span {
+  flex: 1;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.remembered svg {
+  flex: none;
+  color: var(--ry-text-muted);
+}
+
+.srOnly {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+@media (max-width: 640px) {
+  .card {
+    padding: var(--ry-s3);
+  }
+
+  .add {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}

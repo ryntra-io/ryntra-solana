@@ -1,0 +1,233 @@
+/*
+ * «Комісії» (SOL-X1): three blocks — $100 through Ryntra, what every receipt shows, and the comparison. The tables
+ * scroll inside their own frame on a phone; the page itself never scrolls sideways.
+ */
+
+.page {
+  display: grid;
+  gap: var(--ry-s6);
+  width: 100%;
+  min-width: 0;
+}
+
+.head {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: var(--ry-s3) var(--ry-s4);
+}
+
+.block {
+  display: grid;
+  gap: var(--ry-s3);
+  min-width: 0;
+  padding: var(--ry-s5);
+  border: 1px solid var(--ry-border);
+  border-radius: var(--ry-r-card);
+  background: var(--ry-card);
+}
+
+.blockHead {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: var(--ry-s1) var(--ry-s3);
+}
+
+.blockTitle {
+  margin: 0;
+  font-family: var(--ry-font-sans);
+  font-size: calc((var(--ry-fs-copy) + var(--ry-fs-key)) / 2);
+  font-weight: 600;
+  line-height: var(--ry-lh-head);
+  color: var(--ry-text);
+}
+
+.link {
+  color: var(--ry-text-muted);
+  font-size: var(--ry-fs-label);
+}
+
+.tableWrap {
+  overflow-x: auto;
+  min-width: 0;
+  border-radius: var(--ry-r-btn);
+}
+
+.tableWrap:focus-visible {
+  outline: 2px solid var(--ry-focus);
+  outline-offset: 2px;
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--ry-fs-dense);
+  color: var(--ry-text);
+}
+
+.table th,
+.table td {
+  padding: var(--ry-s2) var(--ry-s3);
+  border-bottom: 1px solid var(--ry-border);
+  text-align: left;
+  vertical-align: top;
+}
+
+.table thead th {
+  color: var(--ry-text-muted);
+  font-size: var(--ry-fs-label-sm);
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.table tbody th {
+  font-weight: 500;
+  min-width: 180px;
+}
+
+.table [data-numeric] {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.table td[data-tone="good"] {
+  color: var(--ry-pnl-pos);
+}
+
+.table tbody tr:last-child th,
+.table tbody tr:last-child td {
+  border-bottom: 0;
+}
+
+.venue {
+  display: block;
+}
+
+.venueNote {
+  display: block;
+  margin-top: 2px;
+  max-width: 48ch;
+  color: var(--ry-text-muted);
+  font-size: var(--ry-fs-label-sm);
+  font-weight: 400;
+  line-height: var(--ry-lh-body);
+}
+
+.sources {
+  display: grid;
+  gap: var(--ry-s1);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  min-width: 200px;
+}
+
+.sources a {
+  color: var(--ry-text);
+}
+
+.sourceMeta {
+  display: block;
+  color: var(--ry-text-muted);
+  font-size: var(--ry-fs-label-sm);
+}
+
+.note {
+  margin: 0;
+  max-width: 90ch;
+  color: var(--ry-text-muted);
+  font-size: var(--ry-fs-label);
+  line-height: var(--ry-lh-body);
+}
+
+.parts {
+  display: grid;
+  gap: var(--ry-s2);
+  margin: 0;
+}
+
+.parts > div {
+  display: grid;
+  grid-template-columns: minmax(140px, 22%) minmax(0, 1fr);
+  gap: var(--ry-s3);
+  align-items: baseline;
+}
+
+.parts dt {
+  color: var(--ry-text-muted);
+  font-size: var(--ry-fs-label);
+}
+
+.parts dd {
+  margin: 0;
+  color: var(--ry-text);
+  font-size: var(--ry-fs-dense);
+}
+
+/* A phone reads each row as a card — its name, then each figure under its column's name — not a table to scroll. */
+@media (max-width: 560px) {
+  .block {
+    padding: var(--ry-s4);
+  }
+
+  .table thead {
+    display: none;
+  }
+
+  .table,
+  .table tbody,
+  .table tr,
+  .table th,
+  .table td {
+    display: block;
+  }
+
+  .table tbody tr {
+    padding: var(--ry-s3) 0;
+    border-bottom: 1px solid var(--ry-border);
+  }
+
+  .table tbody tr:last-child {
+    border-bottom: 0;
+  }
+
+  .table th,
+  .table td {
+    padding: 2px 0;
+    border-bottom: 0;
+  }
+
+  .table tbody th {
+    min-width: 0;
+    margin-bottom: var(--ry-s1);
+  }
+
+  .table td[data-label] {
+    display: flex;
+    justify-content: space-between;
+    gap: var(--ry-s3);
+    text-align: right;
+    white-space: normal;
+  }
+
+  .table td[data-label]::before {
+    content: attr(data-label);
+    color: var(--ry-text-muted);
+    font-size: var(--ry-fs-label-sm);
+    text-align: left;
+  }
+
+  .sources {
+    min-width: 0;
+    text-align: right;
+  }
+
+  .parts > div {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 2px;
+  }
+}

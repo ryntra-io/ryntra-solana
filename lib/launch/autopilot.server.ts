@@ -57,6 +57,7 @@
  */
 
 import type { Keypair, Transaction } from "@solana/web3.js";
+import { AsyncLocalStorage } from "node:async_hooks";
 import { randomUUID } from "node:crypto";
 
 import { HOLDER_CLAIM_EVERY_MS, collectorShouldClaim, holderGrantState } from "../core/launch/holder.ts";
@@ -69,6 +70,7 @@ import {
   budgetRisk,
   budgetSteps,
   budgetTotals,
+  creatorWatchProven,
   dayTopUpsRaw,
   revenueAlertDue,
   revenueLeftRaw,
@@ -82,6 +84,7 @@ import {
   CLASSIC_SHAPE,
   EXECUTOR_JOURNALED_STATES,
   FLOOR_RULE,
+  OWNER_LADDER_PRESETS,
   addSample,
   binOfPrice,
   floorBudgetRaw,
@@ -98,6 +101,7 @@ import {
   type JournalActor,
   type JournalMark,
 } from "../core/launch/autopilot.ts";
+import { ENGINE_RULE, engineOrder, nextSlot, queueLagSeconds, visitOutcome, type EngineNodes, type EnginePhase, type EngineSlot } from "../core/launch/engine.ts";
 import { marketCycleState, type MarketCycleState } from "../core/launch/market-health.ts";
 import type { PartnerFeesRead } from "../core/venues/meteora-dbc/partner.server.ts";
 import type { HolderPool, HolderVenue } from "../core/venues/meteora-damm-v2/holder.server.ts";
@@ -107,6 +111,7 @@ import { budgetFigures, executorClaimsPreset, readBudgetRecord, readBudgetRecord
 import type { LaunchNetwork } from "./config.server.ts";
 import type { LaunchRecord, Sent } from "./flow.server.ts";
 import { noteGraduation } from "./graduation.server.ts";
+import { readEngineQueue, writeEngineQueue } from "./engine.server.ts";
 import { emptyExecutorMarket, readExecutorMarket, readExecutorMarkets, readExecutorStops, stopOn, updateExecutorMarket, writeJournalMark, type ExecutorMarket, type ExecutorStops } from "./executor.server.ts";
 import { HOLDER_CHECKS, allHolderPositions, closedAccountsOf, dropHolderClaim, dropHolderPosition, putHolderPosition, holderClaims, setHolderClaim, writeHolderClaim, type HolderClaimReceipt, type HolderPositionRecord } from "./holder.server.ts";
 
@@ -224,6 +229,19 @@ export type CurveRead = Readonly<{
 export type AutopilotChain = Readonly<{
   executor: string;
   curve(record: LaunchRecord): Promise<CurveRead | null>;
+  /**
+   * Many curves at once — a request of the node per hundred (SOL-L6): by token, null where a curve is not there, absent
+   * where it was not read (the pass then reads that one alone). Optional: a chain without it is read one curve at a time.
+   */
+  curves?(records: readonly LaunchRecord[]): Promise<ReadonlyMap<string, CurveRead | null>>;
+  /**
+   * Many graduated pools' prices at once (SOL-L6): `prices` from the main node, `pricesSecond` from the second — by pool;
+   * a pool left out was not read. Optional: without them each ladder reads its own.
+   */
+  prices?(pools: ReadonlyArray<Readonly<{ dammPool: string; token: string }>>): Promise<ReadonlyMap<string, Readonly<{ price: number; pairMint: string; tokenDecimals: number; pairDecimals: number }>>>;
+  pricesSecond?(pools: ReadonlyArray<Readonly<{ dammPool: string; token: string }>>): Promise<ReadonlyMap<string, number>>;
+  /** How the nodes answered this chain's reads (SOL-L6, SOL-C9): reads, the main node down for some, neither answering. Optional. */
+  nodes?(): EngineNodes;
   /** The migration built — signed later, by the executor and its positions' new keys (`signers`), and sent once. */
   buildMigration(record: LaunchRecord): Promise<Readonly<{ transaction: Transaction; signers: readonly Keypair[] }>>;
   /** An account's first transaction that did not fail, or null when its history could not be read to the start. */
@@ -267,15 +285,40 @@ export type AutopilotDeps = Readonly<{
   deadline?: number;
   /** Tells the operator — Ryntra's revenue on the executor's wallet above 100 USDC; true when the word was delivered. */
   alert?: (text: string) => Promise<boolean>;
+  /**
+   * The operator's switch of people's Micro markets (SOL-L6, `./engine.server.ts`): while it is open the executor claims
+   * the budget and keeps the ladder on a Micro market a person launched, by the same policies as on Ryntra's own. Asked
+   * once a pass and again before each signature on such a market; absent or not answering — closed.
+   */
+  peopleOpen?: () => Promise<boolean>;
+  /** Markets acted on at once where their acts move only their own money (`ENGINE_RULE.concurrency`). */
+  concurrency?: number;
 }>;
 
 export type AutopilotStep = Readonly<{ token: string; step: string; signature?: string }>;
-export type AutopilotReport = Readonly<{ state: "RAN"; executor: string; steps: readonly AutopilotStep[] }>;
+
+/** What a pass did, counted — kept with the pass for the operator and the alerts. */
+export type AutopilotStats = Readonly<{
+  ms: number;
+  markets: number;
+  /** Curves read in bulk, and read one by one. */
+  curvesBulk: number;
+  curvesSingle: number;
+  /** Curves the bulk read could not reach this pass: their markets wait for the next. */
+  curvesUnread: number;
+  /** Per phase of the queue: markets due, visited, left for the next pass, and the longest a due market has waited (s). */
+  budget: PhaseStats;
+  floor: PhaseStats;
+  failing: number;
+  peopleOpen: boolean;
+}>;
+export type PhaseStats = Readonly<{ due: number; visited: number; left: number; lagSeconds: number }>;
+export type AutopilotReport = Readonly<{ state: "RAN"; executor: string; steps: readonly AutopilotStep[]; stats?: AutopilotStats }>;
 
 /** The states of a market on the DEX: a pass reaches these after every market still on its curve. */
 const ON_DEX: ReadonlySet<MarketCycleState> = new Set<MarketCycleState>(["CORE_MARKET_LIVE", "ENDOWMENT_FUNDED", "LADDER_ACTIVE", "MAINTAINING", "PAUSED_RISK", "MATURE", "ENDOWMENT_EXHAUSTED"]);
 /** The presets whose ladder stands on money the operator puts in, opened by the ladder's own stop (Micro's and the demo market's stands on their budget). */
-const LADDER_PRESETS: ReadonlySet<string> = new Set(["classic", "protected"]);
+const LADDER_PRESETS = OWNER_LADDER_PRESETS;
 /** Failed graduations that landed, written into the log in one run; the rest of the run is counted. */
 export const GRADUATION_FAILURES_LOGGED = 3;
 
@@ -287,6 +330,10 @@ export const EXECUTOR_FLOOR_LAMPORTS = 30_000_000n;
  * and the reserve below which nothing is sent, so a graduation is never starved by liquidity.
  */
 export const FLOOR_START_LAMPORTS = 230_000_000n;
+/** A graduation's rent and fee, ≈ 0.024 SOL: set aside in the pass before it is signed. */
+export const GRADUATION_LAMPORTS = 25_000_000n;
+/** A claim's fee with its priority, set aside in the pass before it is signed. */
+export const FEE_LAMPORTS = 100_000n;
 /** A move up may open a new bin array (≈ 0.072 SOL) and grow the position: it starts only above the reserve plus this. */
 export const FLOOR_MOVE_LAMPORTS = 90_000_000n;
 /** The pair currency's cent the pool's proof costs, raw (6 decimals). */
@@ -306,7 +353,7 @@ const floorKey = (cluster: string, token: string) => `solana:${cluster}:${token}
 type Lease = Readonly<{ version: number; holder: string; until: number }>;
 
 /** When the executor last finished a pass on a network — what a market's health reads to say whether it acts now. */
-export type AutopilotPass = Readonly<{ cluster: LaunchNetwork["cluster"]; executor: string; at: string }>;
+export type AutopilotPass = Readonly<{ cluster: LaunchNetwork["cluster"]; executor: string; at: string; stats?: AutopilotStats }>;
 
 /** The executor's last finished pass on a network; null when it never passed, or the store did not answer. */
 export async function lastAutopilotPass(store: GuardStore, cluster: string): Promise<AutopilotPass | null> {
@@ -315,17 +362,20 @@ export async function lastAutopilotPass(store: GuardStore, cluster: string): Pro
 
 /** One pass over the network's launches, or over one token; stops starting new acts at `budgetMs`. */
 export async function runAutopilot(given: AutopilotDeps, options: Readonly<{ only?: string; budgetMs?: number }> = {}): Promise<AutopilotReport> {
-  const end = given.now().getTime() + (options.budgetMs ?? 45_000);
+  const started = given.now().getTime();
+  const end = started + (options.budgetMs ?? 45_000);
   /* Nothing is signed later than a few seconds past the budget: each act checks it before it signs. */
   const deps: AutopilotDeps = { ...given, deadline: given.deadline ?? end + 5_000 };
+  const cluster = deps.network.cluster;
   const records = options.only
-    ? [await deps.store.collection<LaunchRecord>("launches").get(`solana:${deps.network.cluster}:${options.only}`)].filter((row): row is LaunchRecord => row != null)
-    : await deps.store.collection<LaunchRecord>("launches").valuesWithPrefix(`solana:${deps.network.cluster}:`);
+    ? [await deps.store.collection<LaunchRecord>("launches").get(`solana:${cluster}:${options.only}`)].filter((row): row is LaunchRecord => row != null)
+    : await deps.store.collection<LaunchRecord>("launches").valuesWithPrefix(`solana:${cluster}:`);
   /* A record written before launches had a state is a launch the chain confirmed. */
   const launched = records.filter((record) => record.state !== "PENDING").sort((a, b) => Date.parse(a.launchedAt) - Date.parse(b.launchedAt));
   /* The operator's switch first: while it cannot be read, nothing is signed and the pass is not counted. */
-  const stops = await readExecutorStops(deps.store, deps.network.cluster).catch(() => null);
+  const stops = await readExecutorStops(deps.store, cluster).catch(() => null);
   if (!stops) return { state: "RAN", executor: deps.chain.executor, steps: [{ token: "*", step: "STOPS_UNREAD" }] };
+  const concurrency = Math.max(1, deps.concurrency ?? ENGINE_RULE.concurrency);
   const steps: AutopilotStep[] = [];
   const curves = new Map<string, CurveRead>();
   /* Whether a launch is Ryntra's own, by its creator — asked once a pass. */
@@ -337,72 +387,185 @@ export async function runAutopilot(given: AutopilotDeps, options: Readonly<{ onl
     ours.set(record.creator, answer);
     return answer;
   };
+  /*
+   * People's Micro markets (SOL-L6): the operator's switch asked once for the pass. A market of a person's the executor
+   * serves is kept here, so the switch is asked again before each signature on it (`prepareChecked`).
+   */
+  const peopleOpen = deps.peopleOpen ? await deps.peopleOpen().catch(() => false) : false;
+  const people = new Set<string>();
+  PEOPLE_MARKETS.set(deps, people);
+  /** Whether the executor serves this budget market's budget and ladder: Ryntra's own, or a person's while the switch is open. */
+  let ladderRecords: Promise<Readonly<{ floors: ReadonlyMap<string, FloorRecord>; budgets: ReadonlyMap<string, MarketBudgetRecord> }>> | null = null;
+  const recordsOf = () =>
+    (ladderRecords ??= Promise.all([
+      deps.store.versioned<FloorRecord>(FLOORS).valuesWithPrefix(`solana:${cluster}:`).catch((): FloorRecord[] => []),
+      readBudgetRecords(deps.store, cluster).catch((): MarketBudgetRecord[] => []),
+    ]).then(([floors, budgets]) => ({ floors: new Map(floors.filter((row) => row.cluster === cluster).map((row) => [row.token, row])), budgets: new Map(budgets.map((row) => [row.token, row])) })));
+  /**
+   * Whether the executor serves this budget market's budget and ladder: Ryntra's own; or a person's, while the switch is
+   * open, whose creator was watched from its launch — a sale in an unwatched first week cannot be known (SOL-L6).
+   */
+  const served = async (record: LaunchRecord) => {
+    if (await ryntraLaunched(record)) return true;
+    if (!peopleOpen) return false;
+    const watchFrom = (await recordsOf()).budgets.get(record.token)?.creatorWatchFrom;
+    if (!creatorWatchProven({ watchFrom, launchedAt: seconds(record.launchedAt) ?? unixNow() })) return false;
+    people.add(record.token);
+    return true;
+  };
   const graduated: Array<Readonly<{ record: LaunchRecord; curve: CurveRead }>> = [];
+  const now = () => deps.now().getTime();
+  const unixNow = () => Math.floor(now() / 1000);
 
   /*
    * Curves first: a full curve is graduated before any liquidity is touched. Markets not yet on the DEX come first, the
    * newest first — a curve that just filled never waits behind markets that graduated long ago; those follow, oldest
-   * first.
+   * first. Every curve is read in a few requests (`curves`); a market still on its curve with nothing of the executor's
+   * pending, and one whose graduation is already written down, is said as such without a lease or a write — hundreds
+   * fit in a pass. A curve the bulk read could not reach (its node refusing) is not read: the market waits a pass, and
+   * never turns into hundreds of reads one by one against a node already refusing.
+   *
+   * The phases share the pass's time (SOL-L6, measured on devnet 20.10): the curves until 45 % of it, the budgets until
+   * 70 %, the ladders until the end — one phase slow on a node never leaves the others nothing.
    */
-  const known = await readExecutorMarkets(deps.store, deps.network.cluster).catch(() => new Map<string, ExecutorMarket>());
+  const budgetMs = end - started;
+  const launchedTokens: ReadonlySet<string> = new Set(launched.map((record) => record.token));
+  /* Markets of this pass's budget and ladder queues still failing — the ones the queue will try again. */
+  const budgetFailing = new Set<string>();
+  const floorFailing = new Set<string>();
+  const curvesEnd = started + Math.round(budgetMs * 0.45);
+  const budgetsEnd = started + Math.round(budgetMs * 0.7);
+  const known = await readExecutorMarkets(deps.store, cluster).catch(() => new Map<string, ExecutorMarket>());
   const onDex = (record: LaunchRecord) => ON_DEX.has(known.get(record.token)?.state ?? "CREATED");
   const order = [...launched.filter((record) => !onDex(record)).reverse(), ...launched.filter(onDex)];
-  for (const record of order) {
-    if (deps.now().getTime() > end) break;
-    const stopped = stopOn(stops, record.token) !== null;
+  /* A budget market's creator is watched from the first pass for the first week: those go the long way. */
+  const creatorWatched = (record: LaunchRecord) => executorClaimsPreset(record.preset) && unixNow() - (seconds(record.launchedAt) ?? unixNow()) <= BUDGET_RULE.creatorSaleWindowSeconds;
+  const bulkTried = Boolean(deps.chain.curves) && order.length > 0;
+  const bulk: ReadonlyMap<string, CurveRead | null> = bulkTried ? await deps.chain.curves!(order).catch(() => new Map<string, CurveRead | null>()) : new Map<string, CurveRead | null>();
+  /*
+   * What is urgent goes first in the phase's time: a curve full or a graduation of ours in flight or failed, then a budget
+   * market's first week (its creator watched); then the rest, newest market first.
+   */
+  const urgency = (record: LaunchRecord) => {
+    const read = bulk.get(record.token);
+    const market = known.get(record.token);
+    if ((read && !read.migrated && read.reserveRaw >= read.thresholdRaw) || market?.graduation || (market?.failures ?? 0) > 0) return 0;
+    return creatorWatched(record) ? 1 : 2;
+  };
+  const urgentFirst = [...order].sort((a, b) => urgency(a) - urgency(b));
+  /* Graduations already written down, in one reading: those markets need no lease to go on to their budget and ladder. */
+  const recorded = new Set(
+    (await deps.store.collection<AutopilotReceipt>(RECEIPTS).valuesWithPrefix(`solana:${cluster}:`).catch((): AutopilotReceipt[] => []))
+      .filter((row) => row.kind === "GRADUATED")
+      .map((row) => row.token),
+  );
+  /* A graduation someone else sent and the executor could not yet prove from the chain is looked for again after a wait. */
+  const recordSlots = await readEngineQueue(deps.store, cluster, "graduation");
+  const recordDue = (token: string) => {
+    const slot = recordSlots.get(token);
+    return !slot || slot.dueAt === null || slot.dueAt <= unixNow();
+  };
+  let curvesBulk = 0;
+  let curvesSingle = 0;
+  let curvesUnread = 0;
+  await eachLimited(urgentFirst, concurrency, async (record) => {
+    const token = record.token;
+    const read = bulk.get(token);
+    const market = known.get(token);
+    const settled = market?.watchedAt && !market.graduation && market.failures === 0 && !creatorWatched(record);
+    if (read && settled && !read.migrated && read.reserveRaw < read.thresholdRaw) {
+      curvesBulk += 1;
+      curves.set(token, read);
+      steps.push({ token, step: "ON_CURVE" });
+      return;
+    }
+    if (read && settled && read.migrated && recorded.has(token)) {
+      curvesBulk += 1;
+      curves.set(token, read);
+      graduated.push({ record, curve: read });
+      if (now() <= curvesEnd) await noteGraduation(deps.store, record, read.finishedAt, deps.now()).catch(() => undefined);
+      steps.push({ token, step: "GRADUATED_KNOWN" });
+      return;
+    }
+    if (now() > curvesEnd) return;
+    if (bulkTried && !bulk.has(token)) {
+      curvesUnread += 1;
+      steps.push({ token, step: "CURVE_UNREAD" });
+      return;
+    }
+    const stopped = stopOn(stops, token) !== null;
     steps.push(
-      ...(await leased(deps, record.token, async () => {
+      ...(await leased(deps, token, async () => {
         const out: AutopilotStep[] = [];
         /* The executor's first pass over a market goes into its log once, before anything it does there. */
-        if (!stopped) out.push(...(await watchOnce(deps, record.token)));
-        /* A budget market's creator, watched from the first pass for the first week — a sale on the curve counts too. */
-        if (executorClaimsPreset(record.preset) && (await ryntraLaunched(record))) await watchCreator(deps, record).catch(() => undefined);
-        const curve = await deps.chain.curve(record);
-        if (!curve) return [...out, { token: record.token, step: "NO_CURVE" }];
-        curves.set(record.token, curve);
+        if (!stopped && !market?.watchedAt) out.push(...(await watchOnce(deps, token)));
+        /*
+         * A budget market's creator, watched from the first pass for the first week — a sale on the curve counts too —, on
+         * people's markets whatever the switch says: opened later, the switch finds a sale already known.
+         */
+        if (executorClaimsPreset(record.preset)) await watchCreator(deps, record).catch(() => undefined);
+        /* Read in bulk; a curve the bulk read found no plain curve at (another kind of pool) is read alone. */
+        let curve: CurveRead | null = bulk.get(token) ?? null;
+        if (curve) curvesBulk += 1;
+        /* Read alone: no plain curve in the bulk read, or a full one — read afresh before anything is sent for it. */
+        if (!curve || (!curve.migrated && curve.reserveRaw >= curve.thresholdRaw)) {
+          curvesSingle += 1;
+          curve = await deps.chain.curve(record);
+        }
+        if (!curve) return [...out, { token, step: "NO_CURVE" }];
+        curves.set(token, curve);
         if (!curve.migrated) {
-          if (curve.reserveRaw < curve.thresholdRaw) return [...out, { token: record.token, step: "ON_CURVE" }];
-          if (stopped) return [...out, { token: record.token, step: "STOPPED" }];
+          if (curve.reserveRaw < curve.thresholdRaw) return [...out, { token, step: "ON_CURVE" }];
+          if (stopped) return [...out, { token, step: "STOPPED" }];
           const sent = await graduate(deps, record, curve);
           /* Graduated in this pass: what changed is noted from the moved curve. */
-          if (sent.some((step) => step.step === "GRADUATED" || step.step === "GRADUATION_LANDED")) curves.set(record.token, { ...curve, migrated: true });
+          if (sent.some((step) => step.step === "GRADUATED" || step.step === "GRADUATION_LANDED")) curves.set(token, { ...curve, migrated: true });
           return [...out, ...sent];
         }
         graduated.push({ record, curve });
         await noteGraduation(deps.store, record, curve.finishedAt, deps.now()).catch(() => undefined);
         /* The curve has moved: a graduation of ours in flight or failed is over, whoever sent the one that went through. */
         await settleMoved(deps, record, curve).catch(() => undefined);
-        return [...out, await recordGraduation(deps, record, curve).catch((error: unknown) => ({ token: record.token, step: `GRADUATION_ERROR: ${message(error)}` }))];
+        if (!recorded.has(token) && !recordDue(token)) return [...out, { token, step: "GRADUATION_RECORD_LATER" }];
+        const step = await recordGraduation(deps, record, curve).catch((error: unknown) => ({ token, step: `GRADUATION_ERROR: ${message(error)}` }));
+        /* Not proven from the chain this time: looked for again after a growing wait, not every minute. */
+        const failed = step.step === "GRADUATION_UNREAD" || step.step === "GRADUATION_UNPROVEN" || step.step.startsWith("GRADUATION_ERROR");
+        recordSlots.set(token, nextSlot(recordSlots.get(token) ?? null, { outcome: failed ? "FAILED" : "ACTED", now: unixNow(), restSeconds: 0, error: failed ? step.step : null }));
+        return [...out, step];
       })),
     );
-  }
+  });
+  await writeEngineQueue(deps.store, cluster, "graduation", recordSlots, new Set([...launchedTokens].filter((token) => !recorded.has(token))), deps.now()).catch(() => undefined);
+  /* The phases after the curves go oldest launch first, whatever order the curves were read in. */
+  const launchOrder = new Map(launched.map((record, index) => [record.token, index]));
+  graduated.sort((a, b) => (launchOrder.get(a.record.token) ?? 0) - (launchOrder.get(b.record.token) ?? 0));
 
   /*
-   * Then the markets' budgets, oldest launch first: on Micro and the demo market the executor claims the partner's fees
-   * itself — in phase 0 only on markets Ryntra launched itself; on people's markets the fees wait in Meteora's pools.
+   * Then the markets' budgets: on Micro and the demo market the executor claims the partner's fees itself — on markets
+   * Ryntra launched, and on people's while the operator's switch is open; elsewhere the fees wait in Meteora's pools.
+   * The queue's order, a few at once (a claim only brings a market's own money in), as many as the pass has time for.
    */
   const budgeted = graduated.filter(({ record }) => executorClaimsPreset(record.preset));
+  const budgetSlots = await readEngineQueue(deps.store, cluster, "budget");
+  const claimable: LaunchRecord[] = [];
   for (const { record } of budgeted) {
-    if (deps.now().getTime() > end) break;
-    if (stopOn(stops, record.token)) {
-      steps.push({ token: record.token, step: "STOPPED" });
-      continue;
-    }
-    if (!(await ryntraLaunched(record))) {
-      steps.push({ token: record.token, step: "BUDGET_IN_POOL" });
-      continue;
-    }
-    steps.push(...(await leased(deps, record.token, () => claimBudget(deps, record))));
+    if (stopOn(stops, record.token)) steps.push({ token: record.token, step: "STOPPED" });
+    else if (!(await served(record))) steps.push({ token: record.token, step: "BUDGET_IN_POOL" });
+    else claimable.push(record);
   }
+  const budgetStats = await queuePhase(deps, "budget", claimable, budgetSlots, { end: budgetsEnd, concurrency, rest: ENGINE_RULE.budgetRestSeconds, steps, keep: launchedTokens, failing: budgetFailing }, (record) => leased(deps, record.token, () => claimBudget(deps, record)));
 
   /*
-   * Then the Fee-Funded Liquidity Ladder, oldest launch first — in phase 0 only on markets Ryntra launched itself: on
-   * Micro and the demo market from the market's budget; on Classic and Protected from the operator's money, while its
-   * own stop is open.
+   * Then the Fee-Funded Liquidity Ladder — on markets Ryntra launched itself, and on people's Micro markets while the
+   * switch is open: on Micro and the demo market from the market's budget; on Classic and Protected from the operator's
+   * money, while its own stop is open, one at a time, oldest launch first, each reading the wallet afresh. The budgets'
+   * ladders then in the queue's order, a few at once — each takes only its own budget's reserve, from one reading of
+   * the wallet for the whole pass.
    */
   let ownerClosed = false;
+  const ownerLadders: Array<Readonly<{ record: LaunchRecord; dammPool: string }>> = [];
+  const budgetLadders: Array<Readonly<{ token: string; record: LaunchRecord; dammPool: string; finishOnly?: boolean }>> = [];
   for (const { record, curve } of graduated) {
-    if (deps.now().getTime() > end) break;
     if (!curve.dammPool) continue;
     const funding = executorClaimsPreset(record.preset) ? "budget" : LADDER_PRESETS.has(record.preset) ? "owner" : null;
     if (funding === null) {
@@ -417,34 +580,208 @@ export async function runAutopilot(given: AutopilotDeps, options: Readonly<{ onl
       steps.push({ token: record.token, step: "STOPPED" });
       continue;
     }
-    if (!(await ryntraLaunched(record))) {
-      steps.push({ token: record.token, step: "FLOOR_NOT_OURS" });
+    if (!(await (funding === "budget" ? served(record) : ryntraLaunched(record)))) {
+      /*
+       * A person's ladder the switch closed on in the middle of an act — a send not read yet, steps emptied for a move —
+       * is finished: the act read from the chain and the money put back into the steps; nothing new goes in.
+       */
+      const stored = funding === "budget" ? ((await recordsOf()).floors.get(record.token) ?? null) : null;
+      if (stored && (stored.pending || stored.redeposit)) budgetLadders.push({ token: record.token, record, dammPool: curve.dammPool, finishOnly: true });
+      else steps.push({ token: record.token, step: "FLOOR_NOT_OURS" });
       continue;
     }
-    const dammPool = curve.dammPool;
-    steps.push(...(await leased(deps, record.token, () => floor(deps, record, dammPool, end, funding))));
+    if (funding === "owner") ownerLadders.push({ record, dammPool: curve.dammPool });
+    else budgetLadders.push({ token: record.token, record, dammPool: curve.dammPool });
+  }
+  for (const { record, dammPool } of ownerLadders) {
+    if (now() > end) break;
+    steps.push(...(await leased(deps, record.token, () => floor(deps, record, dammPool, end, "owner"))));
   }
   if (ownerClosed) steps.push({ token: "*", step: "FLOOR_CLOSED" });
+  const wallet: PassWallet = { shares: new Map() };
+  /* Every budget ladder's price in a few requests, from each node apart; the risk limits' SOL read once. */
+  if (budgetLadders.length && deps.chain.prices) {
+    const pools = budgetLadders.map((run) => ({ dammPool: run.dammPool, token: run.token }));
+    const [main, second] = await Promise.all([deps.chain.prices(pools).catch(() => null), deps.chain.pricesSecond ? deps.chain.pricesSecond(pools).catch(() => null) : Promise.resolve(undefined)]);
+    wallet.prices = main ?? new Map();
+    if (second !== undefined) wallet.seconds = second ?? new Map();
+    /* Not read: each ladder reads its own — one failed read never fails every ladder of the pass. */
+    wallet.lamports = deps.chain.lamports().catch(() => null);
+  }
+  const floorSlots = await readEngineQueue(deps.store, cluster, "floor");
+  const floorStats = await queuePhase(deps, "floor", budgetLadders, floorSlots, { end, concurrency, rest: ENGINE_RULE.floorRestSeconds, steps, keep: launchedTokens, failing: floorFailing }, (run) =>
+    leased(deps, run.token, () => floor(deps, run.record, run.dammPool, end, "budget", wallet, run.finishOnly === true)),
+  );
+  /* The switch of people's markets holds over their budgets and ladders alone: the holders' collector is not asked it. */
+  people.clear();
 
   /* Then Ryntra's revenue on the executor's wallet: above 100 USDC the operator is told. */
   if (budgeted.length) steps.push(...(await noteRevenue(deps).catch((error: unknown) => [{ token: "*", step: `REVENUE_ERROR: ${message(error)}` }])));
 
   /* Then the holders' positions: the fees their owners let Ryntra's collector bring to their wallets. */
   if (!stops.all?.stopped) steps.push(...(await collectForHolders(deps, end, stops).catch((error: unknown) => [{ token: "*", step: `HOLDERS_ERROR: ${message(error)}` }])));
-  /* Then what changed on each market, written down — store writes only, a little past the acts' budget at most. */
+  /*
+   * Then what changed on each market, written down — store writes only, a little past the acts' budget at most. Each
+   * market's state is worked out from one reading of every record; only a market whose state moved is leased and written.
+   */
+  const changed = await statesMoved(deps, launched, curves).catch(() => null);
   for (const record of launched) {
-    if (deps.now().getTime() > end + 10_000) break;
+    if (now() > end + 10_000) break;
     const curve = curves.get(record.token);
     if (!curve || stopOn(stops, record.token)) continue;
+    if (changed && !changed.has(record.token)) continue;
     const noted = await leased(deps, record.token, () => noteState(deps, record, curve));
     steps.push(...noted.filter((step) => step.step !== "LEASED"));
   }
+  const stats: AutopilotStats = {
+    ms: now() - started,
+    markets: launched.length,
+    curvesBulk,
+    curvesSingle,
+    curvesUnread,
+    budget: budgetStats,
+    floor: floorStats,
+    failing: new Set([...failingMarkets(steps).filter((token) => !stopOn(stops, token)), ...budgetFailing, ...floorFailing]).size,
+    peopleOpen,
+  };
   /* The pass is written down: a market's health says the executor acts only while its passes keep coming. */
   await deps.store
     .collection<AutopilotPass>(PASSES)
-    .set(`solana:${deps.network.cluster}`, { cluster: deps.network.cluster, executor: deps.chain.executor, at: deps.now().toISOString() })
+    .set(`solana:${cluster}`, { cluster, executor: deps.chain.executor, at: deps.now().toISOString(), stats })
     .catch(() => undefined);
-  return { state: "RAN", executor: deps.chain.executor, steps };
+  return { state: "RAN", executor: deps.chain.executor, steps, stats };
+}
+
+/* ------------------------------------------------------------------ the queue and the pass's own reading of the wallet */
+
+/**
+ * The executor's SOL is one wallet for every market (SOL-L6): acts run a few at once, so each sets aside what it may
+ * spend — rent and fees — before it signs, and an act starting meanwhile reads the wallet less what the acts still
+ * running set aside. An act that ends gives its part back: the wallet then shows what it spent.
+ */
+const SOL_SET_ASIDE = new WeakMap<AutopilotDeps, { reserved: bigint }>();
+/** What the act running now set aside, given back when it ends — the wallet read after it already shows what it spent. */
+const ACT_SET_ASIDE = new AsyncLocalStorage<{ reserved: bigint }>();
+
+/** Whether the executor may start an act needing `need` lamports on its wallet; if so, `cost` is set aside for it at once. */
+async function solFor(deps: AutopilotDeps, need: bigint, cost: bigint): Promise<boolean> {
+  const held = await deps.chain.lamports();
+  const ledger = SOL_SET_ASIDE.get(deps) ?? { reserved: 0n };
+  SOL_SET_ASIDE.set(deps, ledger);
+  if (held - ledger.reserved < need) return false;
+  ledger.reserved += cost;
+  const act = ACT_SET_ASIDE.getStore();
+  if (act) act.reserved += cost;
+  return true;
+}
+
+/** People's markets the executor serves in a pass, by the pass's deps: the switch is asked again before each signature there. */
+const PEOPLE_MARKETS = new WeakMap<AutopilotDeps, ReadonlySet<string>>();
+
+/**
+ * What a pass reads once for its budget ladders: the executor's wallet by pair currency, every ladder's price from each
+ * of the two nodes (absent — not read in bulk, each ladder reads its own), and the executor's SOL for the risk limits.
+ */
+type PassWallet = {
+  shares: Map<string, Promise<WalletShares>>;
+  prices?: ReadonlyMap<string, Readonly<{ price: number; pairMint: string; tokenDecimals: number; pairDecimals: number }>> | null;
+  seconds?: ReadonlyMap<string, number> | null;
+  lamports?: Promise<bigint | null>;
+};
+
+/** `act` on each item, at most `limit` at once, in the items' order. */
+async function eachLimited<T>(items: readonly T[], limit: number, act: (item: T) => Promise<void>): Promise<void> {
+  let next = 0;
+  const worker = async () => {
+    while (next < items.length) {
+      const item = items[next]!;
+      next += 1;
+      await act(item);
+    }
+  };
+  await Promise.all(Array.from({ length: Math.max(1, Math.min(limit, items.length)) }, worker));
+}
+
+/**
+ * One phase of the queue: the markets due in its order, a few at once, while the pass has time; each visit moves the
+ * market's place — due again next pass after an act or a wait, after the phase's rest when there was nothing to do, after
+ * a growing wait when it failed. The queue is written back for the next pass.
+ */
+async function queuePhase<T extends Readonly<{ token: string }>>(
+  deps: AutopilotDeps,
+  phase: EnginePhase,
+  items: readonly T[],
+  slots: Map<string, EngineSlot>,
+  args: Readonly<{ end: number; concurrency: number; rest: number; steps: AutopilotStep[]; /** The markets whose places are kept — every launch of the network, so a market left out of this pass keeps its wait. */ keep: ReadonlySet<string>; /** Collects the markets of this phase still failing — their visit failed and they wait to be tried again. */ failing?: Set<string> }>,
+  visit: (item: T) => Promise<AutopilotStep[]>,
+): Promise<PhaseStats> {
+  const due = engineOrder(items, slots, Math.floor(deps.now().getTime() / 1000));
+  for (const item of items) if ((slots.get(item.token)?.errors ?? 0) > 0) args.failing?.add(item.token);
+  let visited = 0;
+  await eachLimited(due, args.concurrency, async (item) => {
+    if (deps.now().getTime() > args.end) return;
+    const out = await visit(item).catch((error: unknown) => [{ token: item.token, step: `ERROR: ${message(error)}` }]);
+    args.steps.push(...out);
+    visited += 1;
+    const outcome = visitOutcome(out);
+    const error = outcome === "FAILED" ? (out.find((row) => /ERROR|FAILED|REJECTED|REFUSED|LAPSED/.test(row.step))?.step ?? null) : null;
+    slots.set(item.token, nextSlot(slots.get(item.token) ?? null, { outcome, now: Math.floor(deps.now().getTime() / 1000), restSeconds: args.rest, error }));
+    if (outcome === "FAILED") args.failing?.add(item.token);
+    else args.failing?.delete(item.token);
+  });
+  const tokens = new Set(items.map((item) => item.token));
+  await writeEngineQueue(deps.store, deps.network.cluster, phase, slots, args.keep, deps.now()).catch(() => undefined);
+  const mine = [...slots].filter(([token]) => tokens.has(token)).map(([, slot]) => slot);
+  return { due: due.length, visited, left: due.length - visited, lagSeconds: queueLagSeconds(mine, Math.floor(deps.now().getTime() / 1000)) };
+}
+
+/** Markets whose visit failed in a pass. */
+function failingMarkets(steps: readonly AutopilotStep[]): string[] {
+  const byToken = new Map<string, AutopilotStep[]>();
+  for (const step of steps) if (step.token !== "*") byToken.set(step.token, [...(byToken.get(step.token) ?? []), step]);
+  return [...byToken].filter(([, rows]) => visitOutcome(rows) === "FAILED").map(([token]) => token);
+}
+
+/**
+ * The markets whose state as the executor reads it differs from the one it last wrote down — worked out from one
+ * reading of every market's record, ladder, budget and receipts.
+ */
+async function statesMoved(deps: AutopilotDeps, launched: readonly LaunchRecord[], curves: ReadonlyMap<string, CurveRead>): Promise<Set<string>> {
+  const cluster = deps.network.cluster;
+  const [markets, floors, budgets, receipts] = await Promise.all([
+    readExecutorMarkets(deps.store, cluster),
+    deps.store.versioned<FloorRecord>(FLOORS).valuesWithPrefix(`solana:${cluster}:`),
+    readBudgetRecords(deps.store, cluster),
+    deps.store.collection<AutopilotReceipt>(RECEIPTS).valuesWithPrefix(`solana:${cluster}:`),
+  ]);
+  const floorOf = new Map(floors.filter((row) => row.cluster === cluster).map((row) => [row.token, row]));
+  const budgetOf = new Map(budgets.map((row) => [row.token, row]));
+  const receiptsOf = groupReceipts(receipts);
+  const moved = new Set<string>();
+  for (const record of launched) {
+    const curve = curves.get(record.token);
+    if (!curve) continue;
+    const market = markets.get(record.token) ?? emptyExecutorMarket(cluster, record.token, deps.now());
+    const state = executorStateOf({
+      record,
+      curve,
+      market,
+      floor: floorOf.get(record.token) ?? null,
+      receipts: receiptsOf.get(record.token) ?? [],
+      now: Math.floor(deps.now().getTime() / 1000),
+      budget: executorClaimsPreset(record.preset) ? (budgetOf.get(record.token) ?? null) : null,
+    });
+    if (state !== null && state !== market.state) moved.add(record.token);
+  }
+  return moved;
+}
+
+/** Receipts by token, each token's the oldest first — as `autopilotReceipts` gives them. */
+function groupReceipts(rows: readonly AutopilotReceipt[]): Map<string, AutopilotReceipt[]> {
+  const byToken = new Map<string, AutopilotReceipt[]>();
+  for (const row of rows) byToken.set(row.token, [...(byToken.get(row.token) ?? []), row]);
+  for (const list of byToken.values()) list.sort((a, b) => (Date.parse(a.at ?? "") || 0) - (Date.parse(b.at ?? "") || 0));
+  return byToken;
 }
 
 /* ------------------------------------------------------------------ the executor's marks */
@@ -680,7 +1017,7 @@ async function collectOne(deps: AutopilotDeps, row: HolderPositionRecord, pools:
   if (!collectorShouldClaim({ claimablePairRaw: BigInt(read.unclaimedPairRaw), pairDecimals: pool.pairDecimals, pairIsDollar: row.pairDollar === true, lastClaimAt: last, now: deps.now().getTime() })) {
     return [{ token: row.token, step: "HOLDER_WAIT" }];
   }
-  if ((await deps.chain.lamports()) < EXECUTOR_FLOOR_LAMPORTS) {
+  if (!(await solFor(deps, EXECUTOR_FLOOR_LAMPORTS, FEE_LAMPORTS))) {
     return [{ token: row.token, step: "HOLDER_LOW_SOL" }];
   }
   const tx = await deps.chain.holder.buildCollectorClaim(pool, { collector: deps.chain.executor, owner: read.owner, position: row.position, nftMint: row.nftMint });
@@ -750,19 +1087,25 @@ async function prepareChecked(deps: AutopilotDeps, token: string, tx: Transactio
   if (deps.deadline !== undefined && deps.now().getTime() > deps.deadline) throw new OutOfTime("out of time");
   const stops = await readExecutorStops(deps.store, deps.network.cluster).catch(() => null);
   if (!stops || stopOn(stops, token)) throw new StoppedNow("stopped");
+  /* A person's market: the operator's switch of people's markets read again — closed while the pass runs, it holds at once. */
+  if (PEOPLE_MARKETS.get(deps)?.has(token) && !(await (deps.peopleOpen?.() ?? Promise.resolve(false)).catch(() => false))) throw new StoppedNow("people closed");
   return deps.chain.prepare(tx, extra, payees);
 }
 
 async function leased(deps: AutopilotDeps, token: string, act: () => Promise<AutopilotStep[]>): Promise<AutopilotStep[]> {
   const holder = randomUUID();
   if (!(await takeLease(deps, token, holder))) return [{ token, step: "LEASED" }];
+  const setAside = { reserved: 0n };
   try {
-    return await act();
+    return await ACT_SET_ASIDE.run(setAside, act);
   } catch (error) {
     if (error instanceof StoppedNow) return [{ token, step: "STOPPED" }];
     if (error instanceof OutOfTime) return [{ token, step: "OUT_OF_TIME" }];
     return [{ token, step: `ERROR: ${message(error)}` }];
   } finally {
+    /* The act is over: what it set aside is given back — what it spent, the wallet itself now shows. */
+    const ledger = SOL_SET_ASIDE.get(deps);
+    if (ledger) ledger.reserved -= setAside.reserved;
     await dropLease(deps, token, holder).catch(() => undefined);
   }
 }
@@ -819,7 +1162,7 @@ async function graduate(deps: AutopilotDeps, record: LaunchRecord, curve: CurveR
   if (market.failures > 0 && market.failedAt !== null && unix(deps) < market.failedAt + graduationRetryDelaySeconds(market.failures)) {
     return [...steps, { token, step: "GRADUATION_WAIT" }];
   }
-  if ((await deps.chain.lamports()) < EXECUTOR_FLOOR_LAMPORTS) return [...steps, { token, step: "LOW_SOL" }];
+  if (!(await solFor(deps, EXECUTOR_FLOOR_LAMPORTS, GRADUATION_LAMPORTS))) return [...steps, { token, step: "LOW_SOL" }];
   const built = await deps.chain.buildMigration(record);
   const prepared = await prepareChecked(deps, token, built.transaction, built.signers);
   /* Written before the send: an answer lost still leaves the graduation to read, and no second is sent over it. */
@@ -910,10 +1253,10 @@ export function isMigration(logs: readonly string[]): boolean {
 
 type Save = (next: Omit<FloorRecord, "version" | "updatedAt">) => Promise<FloorRecord>;
 
-/** A budget ladder's geometry before its depth is known: steps of 2.5 %, the first ≈ −4.8 %, the deepest −39 %. */
+/** A budget ladder's geometry before its depth is known: steps of 2.5 %, the first ≈ −4.8 %, the deepest ≈ −25.6 % (`BUDGET_LADDER`). */
 export const BUDGET_SHAPE: LadderShape = Object.freeze({ binStep: BUDGET_LADDER.binStep, topGapBins: BUDGET_LADDER.topGapBins, depthBins: BUDGET_LADDER.maxStepsByDepth, raiseStepBins: BUDGET_LADDER.raiseStepBins });
 
-async function floor(deps: AutopilotDeps, record: LaunchRecord, dammPool: string, end: number, funding: "owner" | "budget" = "owner"): Promise<AutopilotStep[]> {
+async function floor(deps: AutopilotDeps, record: LaunchRecord, dammPool: string, end: number, funding: "owner" | "budget" = "owner", wallet?: PassWallet, finishOnly = false): Promise<AutopilotStep[]> {
   const token = record.token;
   const floors = deps.store.versioned<FloorRecord>(FLOORS);
   const key = floorKey(deps.network.cluster, token);
@@ -938,8 +1281,14 @@ async function floor(deps: AutopilotDeps, record: LaunchRecord, dammPool: string
     if (settled === "WAIT") return [{ token, step: "FLOOR_PENDING", signature: current.pending.signature }];
     await save(settled);
   }
+  /* A person's ladder after the switch closed: a move begun puts its money back; nothing else is done. */
+  if (finishOnly) {
+    if (current.state === "PLACED" && current.redeposit && current.pool && current.position) return [{ token, step: "FLOOR_PEOPLE_CLOSED" }, ...(await finishMove(deps, current, current.samples, 0n, save))];
+    return [{ token, step: "FLOOR_PEOPLE_CLOSED" }];
+  }
 
-  const price = await deps.chain.price(dammPool, token);
+  /* Read in bulk for the pass where it was; a pool the bulk read missed waits a pass — never read alone after its node refused. */
+  const price = wallet?.prices ? (wallet.prices.get(dammPool) ?? null) : await deps.chain.price(dammPool, token);
   if (!price || !(price.price > 0)) return [{ token, step: "NO_PRICE" }];
   const marketBin = binOfPrice(price.price, shape.binStep, price.tokenDecimals, price.pairDecimals);
   const samples = addSample(current.samples, now, marketBin);
@@ -954,14 +1303,14 @@ async function floor(deps: AutopilotDeps, record: LaunchRecord, dammPool: string
    * take only what is its own — a budget market its own reserve, the operator's Classic ladder none of the budgets and
    * none of the revenue.
    */
-  const shares = await walletShares(deps, price.pairMint);
+  const shares = await sharesOf(deps, price.pairMint, funding === "budget" ? wallet : undefined);
   const ownReserve = funding === "budget" ? (shares.reserves.get(token) ?? 0n) : 0n;
   const free = owed === null || shares.owedUnread ? 0n : walletFreeRaw({ walletPairRaw: shares.held, reservesRaw: shares.reservesTotal, ownReserveRaw: ownReserve, owedRaw: shares.owedTotal, revenueLeftRaw: shares.revenueLeft });
   let budget: bigint;
   let gate: BudgetGate | null = null;
   if (funding === "budget") {
     /* The risk limits first: with the price unchecked or the reads interrupted, this pass only reads — but a move already begun puts its money back. */
-    gate = await budgetGate(deps, record, dammPool, price.price, now);
+    gate = await budgetGate(deps, record, dammPool, price.price, now, wallet);
     if (!gate.act) {
       if (gate.data === "STALE") await save({ ...current, samples });
       if (current.state === "PLACED" && current.redeposit && current.pool && current.position) return [{ token, step: `BUDGET_DATA_${gate.data}` }, ...(await finishMove(deps, current, current.samples, 0n, save))];
@@ -992,7 +1341,7 @@ async function floor(deps: AutopilotDeps, record: LaunchRecord, dammPool: string
       await save({ ...current, samples });
       return [{ token, step: gate?.risks.length ? `BUDGET_RISK_${gate.risks.join("_")}` : "FLOOR_NO_BUDGET" }];
     }
-    if ((await deps.chain.lamports()) < FLOOR_START_LAMPORTS) {
+    if (!(await solFor(deps, FLOOR_START_LAMPORTS, FLOOR_START_LAMPORTS - EXECUTOR_FLOOR_LAMPORTS))) {
       await save({ ...current, samples });
       return [{ token, step: "FLOOR_LOW_SOL" }];
     }
@@ -1081,7 +1430,7 @@ async function floor(deps: AutopilotDeps, record: LaunchRecord, dammPool: string
   if (gate) await noteSteps(deps, record, gate.figures, BigInt(read.pairRaw));
   const decision = floorRaise({ ladder: { lowerBinId: read.lowerBinId, upperBinId: read.upperBinId }, marketBinId: reference, holdsToken, seen: current.raiseSeen, at: now, shape });
   if (decision.raise) {
-    if ((await deps.chain.lamports()) < EXECUTOR_FLOOR_LAMPORTS + FLOOR_MOVE_LAMPORTS) {
+    if (!(await solFor(deps, EXECUTOR_FLOOR_LAMPORTS + FLOOR_MOVE_LAMPORTS, FLOOR_MOVE_LAMPORTS))) {
       await save({ ...current, samples });
       return [{ token, step: "FLOOR_LOW_SOL" }];
     }
@@ -1089,9 +1438,9 @@ async function floor(deps: AutopilotDeps, record: LaunchRecord, dammPool: string
   }
   /*
    * More is free for these steps: added to them where they stand, the position holding only the pair currency. A budget's
-   * ladder grows deeper as the money allows — never fewer than 5 USDC a step, never below −39 %.
+   * ladder grows deeper as the money allows — never fewer than 5 USDC a step, never below ≈ −25.6 %.
    */
-  if (budget > 0n && !holdsToken && (await deps.chain.lamports()) >= EXECUTOR_FLOOR_LAMPORTS + FLOOR_MOVE_LAMPORTS) {
+  if (budget > 0n && !holdsToken && (await solFor(deps, EXECUTOR_FLOOR_LAMPORTS + FLOOR_MOVE_LAMPORTS, FLOOR_MOVE_LAMPORTS))) {
     const deeper = gate ? read.upperBinId - Math.max(1, budgetSteps(BigInt(read.pairRaw) + budget)) + 1 : read.lowerBinId;
     const ladder = { lowerBinId: Math.min(read.lowerBinId, deeper), upperBinId: read.upperBinId };
     return place(deps, current, ladder, budget, "FLOOR_ADDED", samples, save);
@@ -1298,7 +1647,7 @@ async function claimBudget(deps: AutopilotDeps, record: LaunchRecord): Promise<A
   const source = CLAIM_ORDER.find(holds);
   /* The locked position not looked up this pass: said in the pass's steps, so a node that keeps refusing is seen. */
   if (!source) return [{ token, step: read.lpUnread ? "BUDGET_LP_UNREAD" : "BUDGET_NOTHING" }];
-  if ((await deps.chain.lamports()) < EXECUTOR_FLOOR_LAMPORTS) return [{ token, step: "BUDGET_LOW_SOL" }];
+  if (!(await solFor(deps, EXECUTOR_FLOOR_LAMPORTS, FEE_LAMPORTS))) return [{ token, step: "BUDGET_LOW_SOL" }];
   const tx = await deps.chain.buildPartnerClaim(read, source);
   const prepared = await prepareChecked(deps, token, tx, []);
   const pending = { source, signature: prepared.signature, validUntil: prepared.validUntil, sentAt: iso(deps) };
@@ -1381,13 +1730,14 @@ type BudgetGate = Readonly<{
  * a gap, the fall within the hour, a sale from the creator's wallet in the first week, the executor's SOL. What it read
  * is kept for the next pass; a limit that holds is kept with the moment it began.
  */
-async function budgetGate(deps: AutopilotDeps, record: LaunchRecord, dammPool: string, price: number, now: number): Promise<BudgetGate> {
+async function budgetGate(deps: AutopilotDeps, record: LaunchRecord, dammPool: string, price: number, now: number, wallet?: PassWallet): Promise<BudgetGate> {
   const token = record.token;
   const where = { cluster: deps.network.cluster, token, pairMint: record.pairMint, now: deps.now() };
   /* A second node's failure to answer is a price not checked — said apart from no second node at all. */
   const [second, lamports, known] = await Promise.all([
-    deps.chain.priceSecond(dammPool, token).catch(() => Number.NaN),
-    deps.chain.lamports(),
+    /* The second node's price as the pass read it in bulk (a pool it missed — not checked), else read now. */
+    wallet?.seconds ? Promise.resolve(wallet.seconds.get(dammPool) ?? Number.NaN) : deps.chain.priceSecond(dammPool, token).catch(() => Number.NaN),
+    wallet?.lamports ? wallet.lamports.then((held) => held ?? deps.chain.lamports()) : deps.chain.lamports(),
     budgetFiguresOf(deps.store, deps.network.cluster, token),
   ]);
   const launchedAt = seconds(record.launchedAt) ?? now;
@@ -1423,7 +1773,7 @@ async function watchCreator(deps: AutopilotDeps, record: LaunchRecord): Promise<
   if (knownHigh !== null && held <= knownHigh && (known!.creatorSoldAt !== null || held + TOKEN_DUST_RAW >= knownHigh)) return;
   await updateBudgetRecord(deps.store, { cluster: deps.network.cluster, token: record.token, pairMint: record.pairMint, now: deps.now() }, (row) => {
     const high = row.creatorHighRaw ? BigInt(row.creatorHighRaw) : null;
-    if (high === null || held > high) return { ...row, creatorHighRaw: held.toString() };
+    if (high === null || held > high) return { ...row, creatorHighRaw: held.toString(), creatorWatchFrom: row.creatorWatchFrom ?? (high === null ? now : null) };
     if (row.creatorSoldAt === null && held + TOKEN_DUST_RAW < high) return { ...row, creatorSoldAt: now };
     return row;
   });
@@ -1438,13 +1788,22 @@ type WalletShares = Readonly<{ held: bigint; reserves: ReadonlyMap<string, bigin
  */
 async function walletShares(deps: AutopilotDeps, pairMint: string): Promise<WalletShares> {
   const cluster = deps.network.cluster;
-  const rows = (await readBudgetRecords(deps.store, cluster)).filter((row) => row.pairMint === pairMint);
+  /* Every market's ledger, ladder and receipts in one reading each — not three readings per market (SOL-L6). */
+  const [budgets, floors, receipts] = await Promise.all([
+    readBudgetRecords(deps.store, cluster),
+    deps.store.versioned<FloorRecord>(FLOORS).valuesWithPrefix(`solana:${cluster}:`),
+    deps.store.collection<AutopilotReceipt>(RECEIPTS).valuesWithPrefix(`solana:${cluster}:`),
+  ]);
+  const rows = budgets.filter((row) => row.pairMint === pairMint);
+  const placedOf = new Map(floors.map((row) => [row.token, BigInt(row.placedRaw ?? "0")]));
+  const costsOf = new Map<string, bigint>();
+  for (const row of receipts) if (row.kind === "FLOOR_POOL") costsOf.set(row.token, (costsOf.get(row.token) ?? 0n) + BigInt(row.pairRaw ?? "0"));
   const reserves = new Map<string, bigint>();
-  for (const row of rows) reserves.set(row.token, (await budgetFiguresOf(deps.store, cluster, row.token)).figures.reserveRaw);
+  for (const row of rows) reserves.set(row.token, budgetFigures({ record: row, placedRaw: placedOf.get(row.token) ?? 0n, costsRaw: costsOf.get(row.token) ?? 0n }).reserveRaw);
   const reservesTotal = [...reserves.values()].reduce((total, value) => total + value, 0n);
   let owedTotal = 0n;
   let owedUnread = false;
-  for (const stored of await deps.store.versioned<FloorRecord>(FLOORS).valuesWithPrefix(`solana:${cluster}:`)) {
+  for (const stored of floors) {
     if (!stored.redeposit) continue;
     /* Steps emptied by a move whose answer is not read: how much is owed back is not known — nothing is free meanwhile. */
     if (stored.redeposit.raw === null) owedUnread = true;
@@ -1462,6 +1821,22 @@ async function walletShares(deps: AutopilotDeps, pairMint: string): Promise<Wall
     owedRaw: owedTotal,
   });
   return { held, reserves, reservesTotal, owedTotal, revenueLeft, owedUnread };
+}
+
+/**
+ * The wallet divided, for a ladder: read afresh, or — for a pass's budget ladders — once for the pass. One reading is
+ * enough for those: each takes only its own budget's reserve, and what one of them spends leaves its own reserve with the
+ * money, so the rest of the wallet stays the others'.
+ */
+function sharesOf(deps: AutopilotDeps, pairMint: string, wallet?: PassWallet): Promise<WalletShares> {
+  if (!wallet) return walletShares(deps, pairMint);
+  const known = wallet.shares.get(pairMint);
+  if (known) return known;
+  const read = walletShares(deps, pairMint);
+  wallet.shares.set(pairMint, read);
+  /* A reading that failed is not kept: the next ladder reads again. */
+  read.catch(() => wallet.shares.delete(pairMint));
+  return read;
 }
 
 /** What the budget's steps hold, kept for the market's state: exhausted when they hold none of the pair currency and the reserve is below a step. */

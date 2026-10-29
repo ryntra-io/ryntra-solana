@@ -5,7 +5,7 @@ import { appendAdminAudit } from "@/lib/admin/store";
 import { getGuardRuntime } from "@/lib/guard/runtime";
 import { privateNoStoreHeaders } from "@/lib/http-control";
 import { launchNetwork } from "@/lib/launch/config.server";
-import { executorStatus, flipExecutor, switchAdmitted } from "@/lib/launch/executor-admin.server";
+import { executorStatus, flipExecutor, flipPeople, switchAdmitted } from "@/lib/launch/executor-admin.server";
 import { mutationOriginAllowed } from "@/lib/security";
 import { getAdminSession, getAdminSessionDetail } from "@/lib/session";
 
@@ -48,6 +48,8 @@ export async function POST(req: NextRequest) {
   } catch {
     return NextResponse.json({ error: "bad json" }, { status: 400, headers: privateNoStoreHeaders() });
   }
+  /* The budget and the ladder on people's Micro markets (SOL-L6): a switch of the whole network. */
+  if (body.action === "people-open" || body.action === "people-close") return flipPeopleSwitch(network, admitted, body.action === "people-open");
   const action = body.action === "stop" || body.action === "resume" ? body.action : null;
   const token = body.token === null || body.token === undefined ? null : typeof body.token === "string" && MINT.test(body.token) ? body.token : undefined;
   if (!action || token === undefined) return NextResponse.json({ error: "bad params" }, { status: 400, headers: privateNoStoreHeaders() });
@@ -66,6 +68,22 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ ...outcome, status: await executorStatus(network, store) }, { headers: privateNoStoreHeaders() });
   } catch {
     await appendAdminAudit({ actorTelegramId: actor, action: "launch_executor_switch", outcome: "failed", payload }).catch(() => false);
+    return NextResponse.json({ error: "unavailable" }, { status: 503, headers: privateNoStoreHeaders() });
+  }
+}
+
+/** The operator opens or closes the budget and the ladder on people's Micro markets; each flip in the admin's audit. */
+async function flipPeopleSwitch(network: NonNullable<ReturnType<typeof launchNetwork>>, admitted: Readonly<{ telegramId: number; door: string }>, open: boolean) {
+  const actor = admitted.telegramId;
+  const payload = { action: open ? "people-open" : "people-close", network: network.chain, door: admitted.door };
+  await appendAdminAudit({ actorTelegramId: actor, action: "launch_people_switch", outcome: "attempt", payload }).catch(() => false);
+  try {
+    const store = getGuardRuntime().store;
+    const outcome = await flipPeople(network, store, { open, by: `admin:${actor}` });
+    await appendAdminAudit({ actorTelegramId: actor, action: "launch_people_switch", outcome: "ok", payload: { ...payload, changed: outcome.changed } }).catch(() => false);
+    return NextResponse.json({ ...outcome, marked: [], status: await executorStatus(network, store) }, { headers: privateNoStoreHeaders() });
+  } catch {
+    await appendAdminAudit({ actorTelegramId: actor, action: "launch_people_switch", outcome: "failed", payload }).catch(() => false);
     return NextResponse.json({ error: "unavailable" }, { status: 503, headers: privateNoStoreHeaders() });
   }
 }

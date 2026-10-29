@@ -10,7 +10,7 @@
  * shelf groups the representations of one underlying (the same instrument,
  * never merely one company name) and shows the one it would buy — the most
  * liquid representation the issuer confirms in its own catalogue, else the
- * most liquid one. The rule is the web app's own (`lib/stocks/shelf.ts`), so
+ * most liquid one. The rule is the web line's own (`lib/stocks/shelf.ts`), so
  * the phone and ryntra.io show the same cards in the same order.
  *
  * **Who is on the shelf:** xStocks and Backpack. Ondo is not a beginner's
@@ -63,7 +63,7 @@ export type CompanyShelf = Readonly<{
   privateCompanies: readonly ShelfCard[]
   /**
    * The issuers' windows to swap a token before a cut-off, as the universe
-   * states them (the IPO and conversion watch) — whether or not the
+   * states them (the IPO and conversion watch, M19) — whether or not the
    * token is still on a shelf: Portfolio says a held token's deadline, and
    * that it has passed, from here.
    */

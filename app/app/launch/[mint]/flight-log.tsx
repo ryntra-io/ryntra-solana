@@ -25,11 +25,13 @@ import {
   WarningCircle,
   Wrench,
 } from "@phosphor-icons/react";
-import { useCallback, useEffect, useState, type ReactNode } from "react";
+import { Block, Button } from "@ryntra/core/ui";
+import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
 
 import type { WorkspaceLocale } from "@/app/shell/locale";
 import type { LaunchJournalEventView, LaunchJournalMarkView, LaunchJournalResponse } from "@/lib/api/v1/contract";
 
+import { coreLang } from "../launch-blocks";
 import { explorerUrl, formatBps, formatDate, formatMoneyShort, formatPrice, formatRaw } from "../launch-format";
 import { launchWords, type LaunchWordKey } from "../launch-words";
 import styles from "../launch.module.css";
@@ -39,6 +41,8 @@ type Word = ReturnType<typeof launchWords>;
 const API_HEADERS = { "X-Ryntra-API": "1" } as const;
 /** The log opens with this many entries; the rest are one press away. */
 const FIRST = 6;
+/** The overview shows this many of the newest entries. */
+const RECENT = 3;
 
 const ICONS: Readonly<Record<LaunchJournalEventView["kind"], ReactNode>> = {
   LAUNCHED: <RocketLaunch size={18} aria-hidden />,
@@ -124,21 +128,18 @@ function Sentence({ line }: { line: Line }) {
   );
 }
 
+/** The flight log as the page holds it: the answer, or still reading, or not read. */
+export type LogRead = LaunchJournalResponse | "reading" | "failed";
+
 /**
- * «Бортовий журнал» on a token's page: what happened to the token, the newest
- * first, each entry with its time, its amount and the transaction anyone can
- * open — and, when Ryntra has placed it, the Fee-Funded Liquidity Ladder as it
- * stands, said as liquidity and nothing more. A move up of the ladder is one
- * entry, the emptying before it under it. The executor's own marks stand
- * among them: its first pass, a stop or a resume, a failed graduation, each
- * new state of the market — a state that rests on an entry's transaction is
- * said on that entry. Read after the market, and again when the trades or the
- * way to the DEX change.
+ * «Бортовий журнал» of a token, read once for the whole page: what happened to the token, the newest first, each entry
+ * with its time, its amount and the transaction anyone can open — and, when Ryntra has placed it, the Fee-Funded
+ * Liquidity Ladder as it stands. The overview shows its newest entries, the liquidity its ladder, the history all of it.
+ * Read after the market, and again when the trades or the way to the DEX change.
  */
-export function FlightLog({ token, locale, refresh, symbol }: { token: string; locale: WorkspaceLocale; refresh: string | null; symbol: string }) {
-  const word = launchWords(locale);
-  const [log, setLog] = useState<LaunchJournalResponse | "reading" | "failed">("reading");
-  const [all, setAll] = useState(false);
+export function useFlightLog(token: string, refresh: string | null) {
+  const [log, setLog] = useState<LogRead>("reading");
+  const last = useRef<string | null | undefined>(undefined);
   /* «5 min ago» goes on counting between reads. */
   const [, setTick] = useState(0);
   useEffect(() => {
@@ -153,35 +154,17 @@ export function FlightLog({ token, locale, refresh, symbol }: { token: string; l
     setLog((before) => answer ?? (typeof before === "object" ? before : "failed"));
   }, [token]);
 
+  /* The first read goes at once, beside the market's — never after it; again when the trades or the way to the DEX change. */
   useEffect(() => {
-    if (refresh !== null) void read();
+    if (last.current === undefined || (refresh !== null && last.current !== null && refresh !== last.current)) void read();
+    if (refresh !== null || last.current === undefined) last.current = refresh;
   }, [refresh, read]);
 
-  if (log === "reading" || log === "failed") {
-    return (
-      <section className={`${styles.card} ${styles.slotLog}`} aria-labelledby="launch-log" aria-busy={log === "reading"}>
-        <h2 id="launch-log" className={styles.cardTitle}>
-          {word("logTitle")}
-        </h2>
-        {log === "reading" ? (
-          <p className={styles.unread}>
-            <CircleNotch size={14} className={styles.spin} aria-hidden /> {word("logReading")}
-          </p>
-        ) : (
-          <div className={styles.unreadRow} role="status">
-            <p className={styles.unread}>{word("logUnread")}</p>
-            <button type="button" className={styles.textButton} onClick={() => void read()}>
-              <ArrowsClockwise size={14} aria-hidden /> {word("readAgain")}
-            </button>
-          </div>
-        )}
-      </section>
-    );
-  }
+  return { log, read: () => void read() };
+}
 
-  const entries = timeline(log.events, log.marks ?? []);
-  /* A sale of the creator's is always in the first view: Ryntra's own entries never push it behind «Show all». */
-  const shown = all ? entries : entries.filter((row, index) => index < FIRST || (row.type === "event" && row.entry.kind === "CREATOR_SOLD"));
+/** The money, the tokens and the prices of a log, as its sentences write them. */
+function figuresOf(log: LaunchJournalResponse, locale: WorkspaceLocale, symbol: string) {
   const money = (raw: string) => formatMoneyShort(Number(raw) / 10 ** log.pair.decimals, locale, log.pair.dollar, log.pair.symbol);
   const tokens = (raw: string) => `${formatRaw(raw, log.tokenDecimals, locale, 0)} $${symbol}`;
   /* A price with its unit, as the page's head writes it: the subscript for the eye, the number written out to be read. */
@@ -190,104 +173,182 @@ export function FlightLog({ token, locale, refresh, symbol }: { token: string; l
     const written = formatPrice(value, locale);
     return { visual: unit(written.text), plain: unit(written.plain) };
   };
+  return { money, tokens, price };
+}
+type Figures = ReturnType<typeof figuresOf>;
+
+/** The log not here yet: still reading, or not read with one press to read again. */
+function LogWaiting({ log, onRead, word }: { log: "reading" | "failed"; onRead: () => void; word: Word }) {
+  return log === "reading" ? (
+    <p className={styles.unread}>
+      <CircleNotch size={14} className={styles.spin} aria-hidden /> {word("logReading")}
+    </p>
+  ) : (
+    <div className={styles.unreadRow} role="status">
+      <p className={styles.unread}>{word("logUnread")}</p>
+      <Button variant="ghost" onClick={onRead}>
+        <ArrowsClockwise size={14} aria-hidden /> {word("readAgain")}
+      </Button>
+    </div>
+  );
+}
+
+/** The whole log, the newest first, in the history: every entry, its transaction, and the log saved as a file. */
+export function FlightLog({ read, locale, symbol }: { read: ReturnType<typeof useFlightLog>; locale: WorkspaceLocale; symbol: string }) {
+  const word = launchWords(locale);
+  const [all, setAll] = useState(false);
+  const { log } = read;
+
+  if (log === "reading" || log === "failed") {
+    return (
+      <Block title={word("logTitle")} titleAs="h2" lang={coreLang(locale)} id="launch-log" className={styles.slotLog} aria-busy={log === "reading"}>
+        <LogWaiting log={log} onRead={read.read} word={word} />
+      </Block>
+    );
+  }
+
+  const entries = timeline(log.events, log.marks ?? []);
+  /* A sale of the creator's is always in the first view: Ryntra's own entries never push it behind «Show all». */
+  const shown = all ? entries : entries.filter((row, index) => index < FIRST || (row.type === "event" && row.entry.kind === "CREATOR_SOLD"));
+  const figures = figuresOf(log, locale, symbol);
 
   return (
-    <section className={`${styles.card} ${styles.slotLog}`} aria-labelledby="launch-log">
-      <div className={styles.cardHeadRow}>
-        <h2 id="launch-log" className={styles.cardTitle}>
-          {word("logTitle")}
-        </h2>
-        {/* The log as the API answers it, saved as a file — readable without a wallet, every entry with its transaction. */}
-        <button type="button" className={styles.textButton} onClick={() => saveLog(log, symbol)} aria-label={word("logSaveLabel")}>
+    <Block title={word("logTitle")} titleAs="h2" lang={coreLang(locale)} id="launch-log" className={styles.slotLog}>
+      <div className={styles.blockBar}>{/* The log as the API answers it, saved as a file — readable without a wallet, every entry with its transaction. */}
+        <Button variant="ghost" onClick={() => saveLog(log, symbol)} aria-label={word("logSaveLabel")}>
           <DownloadSimple size={14} aria-hidden /> {word("logSave")}
-        </button>
-      </div>
-      {log.floor ? (
-        <div className={styles.floorBlock}>
-          <div className={styles.floorHead}>
-            <HandCoins size={18} aria-hidden />
-            <h3 className={styles.floorTitle}>{word("floorTitle")}</h3>
-            <a className={styles.markLink} href={explorerUrl(log.network, "account", log.floor.pool)} target="_blank" rel="noreferrer noopener" aria-label={word("floorPoolLabel")}>
-              {word("floorPool")} <ArrowSquareOut size={12} aria-hidden />
-            </a>
-          </div>
-          <p className={styles.floorLine}>
-            <Sentence line={say(word, "floorLine", { amount: money(log.floor.pairRaw) }, { low: price(log.floor.priceLow), high: price(log.floor.priceHigh) })} />
-          </p>
-          {BigInt(log.floor.tokensRaw) > 0n ? (
-            <p className={styles.floorLine}>
-              <Sentence line={say(word, "floorBought", { tokens: tokens(log.floor.tokensRaw) })} />
-            </p>
-          ) : null}
-          <p className={styles.floorNote}>{word("floorNote")}</p>
-        </div>
-      ) : log.floorUnread ? (
-        <p className={styles.unread}>{word("floorUnread")}</p>
-      ) : null}
+        </Button></div>
       <ol className={styles.logList}>
-        {shown.map((row, index) => {
-          if (row.type === "mark") return <MarkItem key={`mark:${index}:${row.mark.kind}:${row.mark.at}`} mark={row.mark} resumed={row.resumed} log={log} money={money} word={word} locale={locale} />;
-          const { entry, emptied, now } = row;
-          const name = word(`log_${entry.kind}` as LaunchWordKey);
-          const time = entry.at ? when(entry.at, locale, word) : null;
-          const line = detail(entry, word, money, tokens, price, locale);
-          const emptiedTime = emptied?.at ? when(emptied.at, locale, word) : null;
-          return (
-            <li key={`${entry.kind}:${entry.signature}`} className={styles.logItem} data-kind={entry.kind} data-actor={entry.actor}>
-              <span className={styles.logIcon}>{ICONS[entry.kind]}</span>
-              <span className={styles.logText}>
-                <span className={styles.logHead}>
-                  <span className={styles.logName}>{name}</span>
-                  {entry.enforcement ? (
-                    <span className={styles.logEnforce} data-enforcement={entry.enforcement} title={word(`enforceHint_${entry.enforcement}`)}>
-                      {word(`logEnforce_${entry.enforcement}`)}
-                    </span>
-                  ) : null}
-                  {entry.at && time ? (
-                    <time className={styles.logWhen} dateTime={entry.at} title={new Date(entry.at).toLocaleString(locale === "uk" ? "uk-UA" : "en-US")}>
-                      {time}
-                    </time>
-                  ) : null}
-                  {/* The state this entry moved the market into, as the executor wrote it down — then, not necessarily now. */}
-                  {now?.state ? (
-                    <span className={styles.logState} title={word("markStateAfter", { state: word(`state_${now.state}` as LaunchWordKey) })}>
-                      <span aria-hidden>{word(`state_${now.state}` as LaunchWordKey)}</span>
-                      <span className={styles.visuallyHidden}>{word("markStateAfter", { state: word(`state_${now.state}` as LaunchWordKey) })}</span>
-                    </span>
-                  ) : null}
-                </span>
-                {line ? (
-                  <span className={styles.logDetail}>
-                    <Sentence line={line} />
-                  </span>
-                ) : null}
-                {/* A move up is one entry: the emptying that came first, its amount and its own transaction, under it. */}
-                {emptied ? (
-                  <span className={styles.logDetail}>
-                    {emptied.pairRaw ? <Sentence line={say(word, "log_FLOOR_RAISED_emptied", { amount: money(emptied.pairRaw) })} /> : null}{" "}
-                    <a className={styles.markLink} href={explorerUrl(log.network, "tx", emptied.signature)} target="_blank" rel="noreferrer noopener" aria-label={`${word("logTx")}: ${word("logTxEmptied")}${emptiedTime ? `, ${emptiedTime}` : ""}`}>
-                      {word("logTxEmptied")} <ArrowSquareOut size={12} aria-hidden />
-                    </a>
-                  </span>
-                ) : null}
-              </span>
-              <a className={`${styles.markLink} ${styles.logTx}`} href={explorerUrl(log.network, "tx", entry.signature)} target="_blank" rel="noreferrer noopener" aria-label={`${word("logTx")}: ${name}${time ? `, ${time}` : ""}`}>
-                {word("logTx")} <ArrowSquareOut size={12} aria-hidden />
-              </a>
-            </li>
-          );
-        })}
+        {shown.map((row, index) => (
+          <Entry key={entryKey(row, index)} row={row} log={log} figures={figures} word={word} locale={locale} />
+        ))}
       </ol>
       {entries.length > shown.length || all ? (
-        <button type="button" className={styles.textButton} onClick={() => setAll((open) => !open)} aria-expanded={all}>
+        <Button variant="ghost" onClick={() => setAll((open) => !open)} aria-expanded={all}>
           {all ? word("logLess") : word("logMore", { n: entries.length })}
-        </button>
+        </Button>
       ) : null}
       {/* The answer gives the newest 200: a log that holds more says so, and the file it saves says the same. */}
       {log.total !== undefined && log.total > log.events.length ? <p className={styles.hint}>{word("logTotal", { shown: log.events.length, total: log.total })}</p> : null}
       {!log.complete ? <p className={styles.hint}>{word("logIncomplete")}</p> : null}
       <p className={styles.marksChecked}>{word("marksChecked", { ago: when(log.observedAt, locale, word) })}</p>
-    </section>
+    </Block>
+  );
+}
+
+/** The overview's look at the log: its newest entries, and the whole log one press away. */
+export function RecentLog({ read, locale, symbol, onAll }: { read: ReturnType<typeof useFlightLog>; locale: WorkspaceLocale; symbol: string; onAll: () => void }) {
+  const word = launchWords(locale);
+  const { log } = read;
+  const entries = typeof log === "object" ? timeline(log.events, log.marks ?? []) : [];
+  return (
+    <Block title={word("recentTitle")} titleAs="h2" lang={coreLang(locale)} id="launch-recent" className={styles.recentCard}>
+      <div className={styles.blockBar}>{entries.length ? (
+          <Button variant="ghost" onClick={onAll}>
+            {word("recentAll", { n: entries.length })}
+          </Button>
+        ) : null}</div>
+      {typeof log !== "object" ? (
+        <LogWaiting log={log} onRead={read.read} word={word} />
+      ) : entries.length ? (
+        <ol className={`${styles.logList} ${styles.logCompact}`}>
+          {entries.slice(0, RECENT).map((row, index) => (
+            <Entry key={entryKey(row, index)} row={row} log={log} figures={figuresOf(log, locale, symbol)} word={word} locale={locale} />
+          ))}
+        </ol>
+      ) : (
+        <p className={styles.unread}>{word("logEmpty")}</p>
+      )}
+    </Block>
+  );
+}
+
+/**
+ * The Fee-Funded Liquidity Ladder as it stands, said as liquidity and nothing more: the money in it from Ryntra's fees on
+ * this token, the range its steps buy over, what it has bought, and its pool on the explorer.
+ */
+export function LadderCard({ read, locale, symbol }: { read: ReturnType<typeof useFlightLog>; locale: WorkspaceLocale; symbol: string }) {
+  const word = launchWords(locale);
+  const { log } = read;
+  if (typeof log !== "object") return null;
+  if (!log.floor) return log.floorUnread ? <p className={styles.unread}>{word("floorUnread")}</p> : null;
+  const { money, tokens, price } = figuresOf(log, locale, symbol);
+  return (
+    <Block title={word("floorTitle")} titleAs="h2" lang={coreLang(locale)} id="launch-ladder" className={styles.ladderCard}>
+      <div className={styles.blockBar}>
+        <a className={styles.markLink} href={explorerUrl(log.network, "account", log.floor.pool)} target="_blank" rel="noreferrer noopener" aria-label={word("floorPoolLabel")}>
+          {word("floorPool")} <ArrowSquareOut size={12} aria-hidden />
+        </a>
+      </div>
+      <p className={styles.ladderFigure}>{money(log.floor.pairRaw)}</p>
+      <p className={styles.floorLine}>
+        <Sentence line={say(word, "floorRange", {}, { low: price(log.floor.priceLow), high: price(log.floor.priceHigh) })} />
+      </p>
+      {BigInt(log.floor.tokensRaw) > 0n ? (
+        <p className={styles.floorLine}>
+          <Sentence line={say(word, "floorBought", { tokens: tokens(log.floor.tokensRaw) })} />
+        </p>
+      ) : null}
+      <p className={styles.floorNote}>{word("floorNote")}</p>
+    </Block>
+  );
+}
+
+function entryKey(row: TimelineRow, index: number): string {
+  return row.type === "mark" ? `mark:${index}:${row.mark.kind}:${row.mark.at}` : `${row.entry.kind}:${row.entry.signature}`;
+}
+
+/** One entry of the log: a mark of the executor's, or an entry from the chain with its transaction. */
+function Entry({ row, log, figures, word, locale }: { row: TimelineRow; log: LaunchJournalResponse; figures: Figures; word: Word; locale: WorkspaceLocale }) {
+  if (row.type === "mark") return <MarkItem mark={row.mark} resumed={row.resumed} log={log} money={figures.money} word={word} locale={locale} />;
+  const { entry, emptied, now } = row;
+  const name = word(`log_${entry.kind}` as LaunchWordKey);
+  const time = entry.at ? when(entry.at, locale, word) : null;
+  const line = detail(entry, word, figures.money, figures.tokens, figures.price, locale);
+  const emptiedTime = emptied?.at ? when(emptied.at, locale, word) : null;
+  return (
+    <li className={styles.logItem} data-kind={entry.kind} data-actor={entry.actor}>
+      <span className={styles.logIcon}>{ICONS[entry.kind]}</span>
+      <span className={styles.logText}>
+        <span className={styles.logHead}>
+          <span className={styles.logName}>{name}</span>
+          {entry.enforcement ? (
+            <span className={styles.logEnforce} data-enforcement={entry.enforcement} title={word(`enforceHint_${entry.enforcement}`)}>
+              {word(`logEnforce_${entry.enforcement}`)}
+            </span>
+          ) : null}
+          {entry.at && time ? (
+            <time className={styles.logWhen} dateTime={entry.at} title={new Date(entry.at).toLocaleString(locale === "uk" ? "uk-UA" : "en-US")}>
+              {time}
+            </time>
+          ) : null}
+          {/* The state this entry moved the market into, as the executor wrote it down — then, not necessarily now. */}
+          {now?.state ? (
+            <span className={styles.logState} title={word("markStateAfter", { state: word(`state_${now.state}` as LaunchWordKey) })}>
+              <span aria-hidden>{word(`state_${now.state}` as LaunchWordKey)}</span>
+              <span className={styles.visuallyHidden}>{word("markStateAfter", { state: word(`state_${now.state}` as LaunchWordKey) })}</span>
+            </span>
+          ) : null}
+        </span>
+        {line ? (
+          <span className={styles.logDetail}>
+            <Sentence line={line} />
+          </span>
+        ) : null}
+        {/* A move up is one entry: the emptying that came first, its amount and its own transaction, under it. */}
+        {emptied ? (
+          <span className={styles.logDetail}>
+            {emptied.pairRaw ? <Sentence line={say(word, "log_FLOOR_RAISED_emptied", { amount: figures.money(emptied.pairRaw) })} /> : null}{" "}
+            <a className={styles.markLink} href={explorerUrl(log.network, "tx", emptied.signature)} target="_blank" rel="noreferrer noopener" aria-label={`${word("logTx")}: ${word("logTxEmptied")}${emptiedTime ? `, ${emptiedTime}` : ""}`}>
+              {word("logTxEmptied")} <ArrowSquareOut size={12} aria-hidden />
+            </a>
+          </span>
+        ) : null}
+      </span>
+      <a className={`${styles.markLink} ${styles.logTx}`} href={explorerUrl(log.network, "tx", entry.signature)} target="_blank" rel="noreferrer noopener" aria-label={`${word("logTx")}: ${name}${time ? `, ${time}` : ""}`}>
+        {word("logTx")} <ArrowSquareOut size={12} aria-hidden />
+      </a>
+    </li>
   );
 }
 

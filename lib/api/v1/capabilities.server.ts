@@ -9,6 +9,7 @@
  */
 
 import { PAGE_GROUP } from "../../../app/shell/domains.ts";
+import { AUTHORITY_MATRIX, ENFORCEMENT_LEVELS, EXECUTION_MODES, HONEST_STATES, isAutomatic, resolveAuthority } from "../../core/authority-matrix.ts";
 import { PRODUCT_ROUTES } from "../../../app/shell/product-routes.ts";
 import { EVIDENCE_CONDITIONS_LIMIT } from "../../evidence/conditions.ts";
 import { EVIDENCE_PROVIDERS, EVIDENCE_WINDOWS, metricsOfProvider, type EvidenceWindow } from "../../evidence/metrics.ts";
@@ -79,7 +80,7 @@ const MODULE_ROUTES: Readonly<Record<string, readonly string[]>> = {
   swap: ["/api/solana/swap/quote", "/api/solana/swap/order", "/api/solana/swap/execute", "/api/solana/swap/recover"],
   spot: ["/api/spot/markets", "/api/spot/market", "/api/spot/candles", "/api/spot/watchlist", "/api/v1/watchlist", "/api/v1/research/evidence"],
   stocks: ["/api/stocks/universe", "/api/stocks/asset", "/api/stocks/quote", "/api/v1/stocks/popular", "/api/v1/research/evidence", "/api/v1/rules"],
-  send: ["/api/solana/transfer", "/api/v1/research/address-evidence", "/api/v1/money"],
+  send: ["/api/solana/transfer", "/api/v1/research/address-evidence", "/api/v1/research/skr-name", "/api/v1/money"],
   receive: ["/api/pay", "/api/v1/pay"],
   bridge: ["/api/solana/bridge", "/api/solana/cross-swap"],
   rewards: ["/api/rewards"],
@@ -182,6 +183,9 @@ export function buildCapabilities(deps: Readonly<{ env?: NodeJS.ProcessEnv; now?
         return { provider, attribution: providerRights(provider).attribution, windows };
       }),
       addressEvidence: "/api/v1/research/address-evidence",
+      skrName: "/api/v1/research/skr-name",
+      /* 1.68.0: «Події ринку» (DSC-1). */
+      events: "/api/v1/events",
     },
     /* 1.20.0: «Популярне» the server lists; «Перевірка» travels as `check` on the swap's quote and order. */
     stocks: { popular: "/api/v1/stocks/popular", popularLimit: POPULAR_DEFAULT_LIMIT, popularMaxLimit: POPULAR_MAX_LIMIT },
@@ -213,7 +217,42 @@ export function buildCapabilities(deps: Readonly<{ env?: NodeJS.ProcessEnv; now?
     },
     /* 1.25.0: Ryntra Launch — only where it is served (the devnet stand now), with the network it launches on. */
     ...launchCapability(env),
+    /* 1.67.0: the capability and authority matrix, resolved on this deployment (EXE-1). */
+    authority: authorityCapability(env),
     observedAt: (deps.now ?? (() => new Date()))().toISOString(),
+  };
+}
+
+/** The matrix as a client reads it: every row with its state on this deployment; the switches' variables and the internal task a row waits on stay unnamed. */
+export function authorityCapability(env: NodeJS.ProcessEnv): NonNullable<Capabilities["authority"]> {
+  return {
+    states: [...HONEST_STATES],
+    enforcement: [...ENFORCEMENT_LEVELS],
+    modes: [...EXECUTION_MODES],
+    rows: AUTHORITY_MATRIX.map((row) => {
+      const resolved = resolveAuthority(row, env);
+      return {
+        id: row.id,
+        venue: row.venue,
+        action: row.action,
+        surface: row.surface,
+        provider: row.provider,
+        readiness: row.readiness,
+        state: resolved.state,
+        eligibility: resolved.eligibility,
+        gate: resolved.gate,
+        enforcement: row.enforcement,
+        mode: row.mode,
+        signer: row.signer,
+        runsAlone: row.runsAlone,
+        network: row.network,
+        automation: { ...row.automation },
+        automatic: isAutomatic(row),
+        evidence: row.evidence,
+        notCovered: row.notCovered,
+        note: row.note,
+      };
+    }),
   };
 }
 
@@ -238,6 +277,7 @@ function launchCapability(env: NodeJS.ProcessEnv): Pick<Capabilities, "launch"> 
       creators: "/api/v1/launch/creators/{address}",
       claimBuild: "/api/v1/launch/{mint}/claim/build",
       claimSubmit: "/api/v1/launch/{mint}/claim/submit",
+      claimReview: "/api/v1/launch/{mint}/claim/review",
       journal: "/api/v1/launch/{mint}/journal",
       holder: "/api/v1/launch/{mint}/holder/{address}",
       holderQuote: "/api/v1/launch/{mint}/holder/quote",
@@ -250,6 +290,30 @@ function launchCapability(env: NodeJS.ProcessEnv): Pick<Capabilities, "launch"> 
       markets: "/api/v1/launch/markets",
       marketCard: "/api/v1/launch/markets/{mint}",
       health: "/api/v1/launch/{mint}/health",
+      stats: "/api/v1/launch/{mint}/stats",
+      profile: "/api/v1/launch/creators/{address}/profile",
+      survival: "/api/v1/launch/survival",
+      advancedConfigBuild: "/api/v1/launch/advanced/config/build",
+      advancedConfigSubmit: "/api/v1/launch/advanced/config/submit",
+      boost: "/api/v1/launch/{mint}/boost",
+      boostBuild: "/api/v1/launch/{mint}/boost/build",
+      boostSubmit: "/api/v1/launch/{mint}/boost/submit",
+      boostPayoutBuild: "/api/v1/launch/{mint}/boost/payout/build",
+      boostPayoutSubmit: "/api/v1/launch/{mint}/boost/payout/submit",
+      split: "/api/v1/launch/{mint}/split",
+      splitRuleBuild: "/api/v1/launch/{mint}/split/rule/build",
+      splitRuleSubmit: "/api/v1/launch/{mint}/split/rule/submit",
+      splitDepthBuild: "/api/v1/launch/{mint}/split/depth/build",
+      splitDepthSubmit: "/api/v1/launch/{mint}/split/depth/submit",
+      splitPayoutBuild: "/api/v1/launch/{mint}/split/payout/build",
+      splitPayoutSubmit: "/api/v1/launch/{mint}/split/payout/submit",
+      earlyAccessBuild: "/api/v1/launch/early-access/build",
+      earlyAccessSubmit: "/api/v1/launch/early-access/submit",
+      earlyAccess: "/api/v1/launch/{mint}/early-access",
+      earlyAccessDepositBuild: "/api/v1/launch/{mint}/early-access/deposit/build",
+      earlyAccessDepositSubmit: "/api/v1/launch/{mint}/early-access/deposit/submit",
+      earlyAccessActionBuild: "/api/v1/launch/{mint}/early-access/action/build",
+      earlyAccessActionSubmit: "/api/v1/launch/{mint}/early-access/action/submit",
     },
   };
 }

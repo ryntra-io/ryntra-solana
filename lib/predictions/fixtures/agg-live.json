@@ -1,0 +1,168 @@
+{
+  "source": "The aggregator's answers on the live order path, shaped by the @agg-build/sdk 4.26 types (SmartRouteResponse, ExecuteManagedResponse, ExecutionStatusResponse, ExecutionOrderItem, PositionGroup, CancelManagedExecutionResponse, RedeemResponse, AppClientConfigResponse) and the app order list the fee ledger reads. No key, no real account. {{expires}} and {{refresh}} are filled with a time ahead of the test's clock.",
+  "appConfigLive": { "status": 200, "body": { "tradingMode": "live", "paperStartingBalance": 10000, "disabledVenues": [], "disabledCategoryPresets": [], "earlyAccessEnabled": false, "authOptions": [] } },
+  "appConfigPaper": { "status": 200, "body": { "tradingMode": "paper", "paperStartingBalance": 10000, "disabledVenues": [], "disabledCategoryPresets": [], "earlyAccessEnabled": false, "authOptions": [] } },
+  "routeLive": {
+    "status": 200,
+    "body": {
+      "quoteId": "q_live_1",
+      "venueMarketOutcomeId": "o-yes",
+      "venueMarketId": "m1",
+      "estimatedCostRaw": "1994000",
+      "expiresAt": "{{expires}}",
+      "refreshAt": "{{refresh}}",
+      "status": "ok",
+      "fills": [{ "venue": "polymarket", "chain": "polygon", "avgPrice": 0.4, "venueQty": 4.9, "venueFee": 0, "builderFee": 0, "settlementFee": 0 }],
+      "totalFilled": 4.9,
+      "rawExecCost": 1.96,
+      "solveTimeMs": 12,
+      "verifyTimeMs": 4,
+      "matchedMarkets": [{ "venue": "polymarket", "venueMarketId": "m1" }],
+      "totalCostIncFees": 1.9659,
+      "estimatedPayout": 4.9,
+      "estimatedProfit": 2.9341,
+      "returnPct": 149.25,
+      "feeBreakdown": { "rawExecCost": 1.96, "venueFees": 0, "builderFee": 0, "bridgeFees": 0, "executionGas": 0, "appFee": 0.0059, "appFeeBips": 30, "totalCost": 1.9659 },
+      "appFee": { "bips": 30, "categoryKey": "default", "quotedAppFeeRaw": "5900" }
+    }
+  },
+  "routeLiveOutside": {
+    "status": 200,
+    "body": {
+      "quoteId": "q_live_outside",
+      "venueMarketOutcomeId": "o-yes",
+      "venueMarketId": "m1",
+      "estimatedCostRaw": "1994000",
+      "expiresAt": "{{expires}}",
+      "refreshAt": "{{refresh}}",
+      "status": "ok",
+      "fills": [
+        { "venue": "polymarket", "chain": "polygon", "avgPrice": 0.4, "venueQty": 2.5, "venueFee": 0, "builderFee": 0, "settlementFee": 0 },
+        { "venue": "kalshi", "chain": "solana", "avgPrice": 0.41, "venueQty": 2.4, "venueFee": 0.01, "builderFee": 0, "settlementFee": 0 }
+      ],
+      "totalFilled": 4.9,
+      "rawExecCost": 1.984,
+      "solveTimeMs": 12,
+      "verifyTimeMs": 4,
+      "matchedMarkets": [],
+      "totalCostIncFees": 2.0,
+      "estimatedPayout": 4.9,
+      "estimatedProfit": 2.9
+    }
+  },
+  "fillAccepted": { "status": 200, "body": { "quoteId": "q_live_1", "orderIds": ["ord_live_1"], "status": "pending" } },
+  "statusWorking": {
+    "status": 200,
+    "body": {
+      "quoteId": "q_live_1",
+      "executionId": "exe_1",
+      "orderIds": ["ord_live_1"],
+      "overallState": "placing",
+      "terminal": false,
+      "errorReason": null,
+      "pollAfterMs": 1000,
+      "steps": [{ "label": "Place on Polymarket", "kind": "order", "status": "running", "errorReason": null }],
+      "orders": [{ "orderId": "ord_live_1", "venue": "polymarket", "status": "partially_filled_open", "event": "partial_fill", "filledAmountRaw": "980000", "actualSharesRaw": "2450000", "executionPriceRaw": 0.4, "errorReason": null }]
+    }
+  },
+  "statusPartialCancelled": {
+    "status": 200,
+    "body": {
+      "quoteId": "q_live_1",
+      "executionId": "exe_1",
+      "orderIds": ["ord_live_1"],
+      "overallState": "partially_filled",
+      "terminal": true,
+      "errorReason": null,
+      "pollAfterMs": null,
+      "steps": [{ "label": "Place on Polymarket", "kind": "order", "status": "completed", "errorReason": null }],
+      "orders": [{ "orderId": "ord_live_1", "venue": "polymarket", "status": "cancelled", "event": "cancelled", "filledAmountRaw": "980000", "actualSharesRaw": "2450000", "executionPriceRaw": 0.4, "errorReason": null }]
+    }
+  },
+  "ordersLive": {
+    "status": 200,
+    "body": {
+      "data": [
+        {
+          "id": "ord_live_1",
+          "quoteId": "q_live_1",
+          "status": "cancelled",
+          "venue": "polymarket",
+          "side": "buy",
+          "createdAt": "2026-10-24T10:00:00.000Z",
+          "updatedAt": "2026-10-24T10:00:20.000Z",
+          "amountRaw": "1960000",
+          "filledAmountRaw": "980000",
+          "quotedPriceRaw": 0.4,
+          "executionPrice": 0.4,
+          "quotedSharesRaw": "4900000",
+          "actualSharesRaw": "2450000",
+          "quotedToWinRaw": "4900000",
+          "actualToWinRaw": "2450000",
+          "partialFillReason": "user_cancelled",
+          "errorMessage": null,
+          "venueMarket": { "question": "Will the test pass?", "venueEventId": "ev1" },
+          "venueMarketOutcome": { "label": "Yes" }
+        }
+      ],
+      "nextCursor": null,
+      "hasMore": false
+    }
+  },
+  "cancelAccepted": { "status": 200, "body": { "quoteId": "q_live_1", "orderIds": ["ord_live_1"], "status": "cancelled" } },
+  "positionsActiveNone": { "status": 200, "body": { "data": [], "nextCursor": null, "hasMore": false } },
+  "positionsClosedWon": {
+    "status": 200,
+    "body": {
+      "data": [
+        {
+          "eventId": "ev1",
+          "status": "closed",
+          "redeemStatus": "eligible",
+          "resolutionDate": "2026-10-24T12:00:00.000Z",
+          "venueMarket": {
+            "venueEventId": "ev1",
+            "question": "Will the test pass?",
+            "image": null,
+            "status": "resolved",
+            "venueMarketOutcomes": [
+              {
+                "label": "Yes",
+                "totalSize": 2.45,
+                "avgEntryPrice": 0.4,
+                "currentPrice": 1,
+                "totalValue": 2.45,
+                "unrealizedPnl": 1.47,
+                "unrealizedPnlPercent": 150,
+                "winner": true,
+                "venueBreakdown": [{ "venue": "polymarket", "size": 2.45, "venueMarketId": "m1", "venueMarketOutcomeId": "o-yes" }]
+              }
+            ]
+          }
+        }
+      ],
+      "nextCursor": null,
+      "hasMore": false
+    }
+  },
+  "redeemSubmitted": { "status": 200, "body": { "redeemId": "rdm_1", "results": [{ "venueMarketOutcomeId": "o-yes", "status": "submitted", "callsId": "calls_1", "pendingUserOpId": null, "txHash": "0xabc123def4567890", "reason": null }] } },
+  "appOrderLive": {
+    "id": "ord_live_1",
+    "quoteId": "q_live_1",
+    "dagRunId": "exe_1",
+    "externalId": "ryntra:solana:HSxcfwks1J75kyu7EPjeiuLxPv9baNgMHrSponVBETmY",
+    "userId": "agguser",
+    "venue": "polymarket",
+    "status": "cancelled",
+    "side": "buy",
+    "amountRaw": "1960000",
+    "orderType": "market",
+    "filledAmountRaw": "980000",
+    "updatedAt": "2026-10-24T10:00:20.000Z",
+    "fees": {
+      "venueFeeBasis": "fill",
+      "quoted": { "venueFeeRaw": null, "appFeeRaw": "5900", "appFeeBips": 30, "referralFeeRaw": null },
+      "actual": { "dagRunId": "exe_1", "venueFeeRaw": null, "appFee": { "bips": 30, "dueRaw": "2940", "collectedRaw": "2940", "status": "confirmed" }, "bridge": null, "referral": null }
+    }
+  }
+}

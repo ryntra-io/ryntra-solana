@@ -4,18 +4,22 @@ import { FlatList, Keyboard, Pressable, View } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 
 import { AssetRow } from '@/components/asset-row'
+import { HelpDot } from '@/components/help-dot'
 import { Icon } from '@/components/icon'
 import { ScreenHeader } from '@/components/screen'
 import { SearchInput } from '@/components/search-field'
 import { Skeleton } from '@/components/skeleton'
 import { StateView } from '@/components/state-view'
 import { Txt } from '@/components/txt'
+import { MARKETS_COPY, pricesLine } from '@/features/markets/copy'
 import { PLANS_COPY } from '@/features/plans/copy'
 import { useStockUniverse } from '@/hooks/use-markets'
+import { useNow } from '@/hooks/use-now'
 import { isNetworkError, type StockUniverseRow } from '@/lib/api'
 import { useCopy, useLocale, useSharedCopy } from '@/lib/i18n'
-import { matchStocks } from '@/lib/search'
+import { matchStocks, stockPoolFar } from '@/lib/search'
 import { issuerLabel, sessionWord } from '@/lib/stocks'
+import { formatAt } from '@/utils/format'
 
 function LoadingRows() {
   return (
@@ -43,6 +47,8 @@ export function PickStockScreen() {
   const copy = useCopy(PLANS_COPY)
   const locale = useLocale()
   const shared = useSharedCopy()
+  const markets = useCopy(MARKETS_COPY)
+  const now = useNow(60_000)
   const universe = useStockUniverse()
   const [query, setQuery] = useState('')
   const needle = query.trim()
@@ -61,6 +67,13 @@ export function PickStockScreen() {
     Keyboard.dismiss()
     router.replace({ pathname: '/plans/new', params: { mint: row.mint, symbol: row.symbol } })
   }
+
+  /* The prices listed carry their time, as the Swap and Buy pickers say it (ST-5 r8); a refresh that did not answer
+     leaves them standing under it, with no «Ціни не оновлюються» line (ST-7). */
+  const freshness =
+    universe.data && rows.length > 0
+      ? pricesLine(markets, universe.data.fetchedAt, (iso) => formatAt(iso, now, locale))
+      : null
 
   let body
   if (universe.isPending) {
@@ -97,6 +110,8 @@ export function PickStockScreen() {
                     ? null
                     : sessionWord(item.period, locale),
               halted: item.halted,
+              // The chip Markets and Search carry (ST-5 r10): a pool price far from the share.
+              poolFar: stockPoolFar(item),
             }}
             onPress={() => pick(item)}
             last={index === rows.length - 1}
@@ -122,7 +137,11 @@ export function PickStockScreen() {
           <Icon name="arrow-back" size={22} color="fg" />
         </Pressable>
         <View className="flex-1">
-          <ScreenHeader title={copy.newPlan} subtitle={copy.whichStock} />
+          <ScreenHeader
+            title={copy.newPlan}
+            subtitle={copy.whichStock}
+            right={<HelpDot title={copy.whichStock} body={copy.plansForStocks} />}
+          />
         </View>
       </View>
       <View className="flex-row px-4 pb-3">
@@ -134,9 +153,11 @@ export function PickStockScreen() {
           autoFocus={false}
         />
       </View>
-      <Txt variant="labelSm" tone="faint" className="px-5 pb-2">
-        {copy.plansForStocks}
-      </Txt>
+      {freshness ? (
+        <Txt variant="labelSm" tone="faint" tabular className="px-5 pb-1">
+          {freshness}
+        </Txt>
+      ) : null}
       {body}
     </View>
   )

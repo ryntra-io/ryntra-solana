@@ -3,7 +3,7 @@ import { readFileSync } from 'node:fs'
 import { test } from 'node:test'
 
 /*
- * «Автоінвест» made clear on the phone — the
+ * «Автоінвест» made clear on the phone (M20, part 2) — the
  * web's own (`app/app/invest/autoinvest-surfaces.test.mjs`): the block on
  * Home and in Portfolio for every connected wallet, the rule's purchase first
  * while its reminder is open and the ordinary purchase second, saying the
@@ -30,15 +30,16 @@ const BUY = code('screens/invest/buy-sheet.tsx')
 const TRADE = code('screens/trade/index.tsx')
 const NOTICE = code('screens/autoinvest/rule-reminder-notice.tsx')
 
-test('«Автоінвест» is on Home for every connected wallet — not held back until it signs in', () => {
-  assert.match(HOME, /\{state === 'guest' \? null : <RulesBlock session=\{account\.session\} place="home" \/>\}/)
-  assert.doesNotMatch(HOME, /state === 'signed-in' && account\.session \? <RulesBlock/)
-  // A wallet not signed in reads one line and a quiet way in; its rules are read behind its session.
+test('«Автоінвест» lives in «Боти», not on Home — Home is the prototype’s Обране · Мої ринки · Останнє', () => {
+  // The operator’s word of 2026-10-17: Home as the prototype draws it; the rules are a tap away in «Ще → Боти».
+  assert.match(HOME, /const available = availableBlocks\(state !== 'guest'\)/)
+  assert.doesNotMatch(HOME, /<RulesBlock/)
+  // A wallet not signed in reads no line — only a quiet way in; its rules are read behind its session.
   assert.match(
     BLOCK,
     /session \? <SignedInRules session=\{session\} place=\{place\} copy=\{copy\} \/> : <SignInForRules copy=\{copy\} \/>/,
   )
-  assert.match(BLOCK, /copy\.signInForRules/)
+  assert.doesNotMatch(BLOCK, /signInForRules/)
   assert.doesNotMatch(BLOCK, /<Button[^>]*\n?[^>]*variant="primary"/, 'nothing in the block is orange')
 })
 
@@ -50,6 +51,17 @@ test('the rules live in «Боти → Мої боти»: the same block, before
   // Portfolio no longer draws the block: «Боти · N активні» is its door, counted only from what was read.
   assert.doesNotMatch(PORTFOLIO, /<RulesBlock/)
   assert.match(PORTFOLIO, /activeCount\(rules\.data\?\.rules \?\? null, plans\.data\?\.plans \?\? null\)/)
+})
+
+test('«Додати правило» → «Знайти інший токен» searches over Bots, titled for the recurring buy — never the Markets tab', () => {
+  // The search sheet over Bots, as the Catalog's «Обрати токен»; the token chosen opens its page with its rule's sheet,
+  // pushed onto Bots' stack, so Back returns to Bots.
+  assert.match(BLOCK, /import \{ AssetPickerSheet \} from '@\/screens\/trade\/asset-picker'/)
+  assert.match(BLOCK, /<AssetPickerSheet\s+visible=\{searching\}\s+title=\{copy\.pickTokenFor\}/)
+  assert.match(BLOCK, /pathname: '\/asset\/\[mint\]',\s*params: \{ mint: asset\.mint, symbol: asset\.symbol, autoinvest: '1' \}/)
+  assert.match(BLOCK, /onSearch=\{\(\) => \{\s*setPicking\(false\)\s*setSearching\(true\)/)
+  assert.doesNotMatch(BLOCK, /marketsPath/)
+  assert.doesNotMatch(BLOCK, /openPlace/)
 })
 
 test('the month’s budget is its own line: «Бюджет не задано · Задати» or «Бюджет місяця $10 з $50 · Змінити»', () => {
@@ -99,10 +111,11 @@ test('while a rule’s reminder is open, the company’s first action is the rul
   const context = branch.indexOf('{offerWords.when}')
   const first = branch.indexOf('title={offerWords.buy}')
   const second = branch.indexOf('title={ruleWords.plainPurchase}')
-  const note = branch.indexOf('{ruleWords.reminderStaysOpen}')
+  const help = branch.indexOf('<HelpDot title={ruleWords.reminderStaysOpen} body={ruleWords.plainHereLeavesOpen}')
+  const note = branch.indexOf('accessibilityHint={ruleWords.reminderStaysOpen}')
   assert.ok(
-    context > 0 && first > context && second > first && note > second,
-    'when, the rule’s purchase, the ordinary one, its line',
+    context > 0 && help > context && first > help && second > first && note > second,
+    'when with its «?», the rule’s purchase, the ordinary one with its hint',
   )
   assert.match(branch, /onPress=\{\(\) => buyUnder\(companyRule, offer\)\}/)
   assert.match(
@@ -141,7 +154,8 @@ test('Trade says it too: a Buy there leaves the reminder open, with the way to t
     TRADE,
     /mode === 'buy' && account\.session && !ruleAsk \? \(\s*<RuleReminderNotice\s+session=\{account\.session\}\s+mint=\{legs\.receive\?\.mint \?\? null\}\s+onBuy=\{\(binding\) => setRuleAsk\(binding\)\}/,
   )
-  assert.ok(TRADE.indexOf('<RuleReminderNotice') < TRADE.indexOf('<BottomAction'), 'said before the action')
+  // Said in the ticket, before its keypad and its one action (M44.3's sheet).
+  assert.ok(TRADE.indexOf('<RuleReminderNotice') < TRADE.indexOf('<Keypad mark'), 'said before the action')
   assert.match(NOTICE, /useRules\(session\)/)
   assert.match(NOTICE, /reminderOffer\(rule, rules\.data\?\.budget \?\? null, now\)/)
   assert.match(
@@ -151,7 +165,7 @@ test('Trade says it too: a Buy there leaves the reminder open, with the way to t
   )
   assert.match(
     NOTICE,
-    /copy\.reminderOpenHere[\s\S]*copy\.plainHereLeavesOpen[\s\S]*onPress=\{buyByRule\}[\s\S]*copy\.buyByRule\(usd\)/,
+    /copy\.reminderOpenHere[\s\S]*<HelpDot title=\{copy\.reminderOpenHere\} body=\{copy\.plainHereLeavesOpen\} \/>[\s\S]*onPress=\{buyByRule\}[\s\S]*copy\.buyByRule\(usd\)/,
   )
   assert.doesNotMatch(NOTICE, /<Button/, 'a line, never a second orange action')
 })

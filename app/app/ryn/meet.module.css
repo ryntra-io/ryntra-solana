@@ -1,0 +1,208 @@
+/*
+ * «Знайомство» (AI-06): one card, one question at a time, one press an answer. A quiet card in the conversation's place,
+ * the brand only on the chosen answer and the progress. Both themes through the tokens.
+ */
+.card {
+  display: grid;
+  gap: var(--ry-s3);
+  min-width: 0;
+  padding: var(--ry-s4);
+  border: 1px solid var(--ry-border);
+  border-radius: var(--ry-r-card);
+  background: var(--ry-card);
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.card[data-compact] {
+  padding: var(--ry-s3);
+}
+
+.head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--ry-s3);
+}
+
+.title {
+  margin: 0;
+  font-size: var(--ry-fs-value);
+  font-weight: 600;
+  line-height: var(--ry-lh-tight);
+  letter-spacing: var(--ry-ls-head);
+  color: var(--ry-text);
+}
+
+.step {
+  flex: none;
+  font-family: var(--ry-font-mono);
+  font-size: var(--ry-fs-label-sm);
+  color: var(--ry-text-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.lead {
+  margin: 0;
+  font-size: var(--ry-fs-dense);
+  line-height: 1.5;
+  color: var(--ry-text-muted);
+}
+
+.progress {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 4px;
+}
+
+.progress span {
+  height: 3px;
+  border-radius: var(--ry-r-pill);
+  background: var(--ry-border);
+}
+
+.progress span[data-on] {
+  background: var(--ry-accent);
+}
+
+.question {
+  display: grid;
+  gap: var(--ry-s2);
+  min-width: 0;
+}
+
+.ask {
+  margin: 0;
+  font-size: var(--ry-fs-copy);
+  font-weight: 600;
+  line-height: 1.4;
+  color: var(--ry-text);
+}
+
+.note {
+  margin: 0;
+  font-size: var(--ry-fs-label-sm);
+  line-height: 1.45;
+  color: var(--ry-text-muted);
+}
+
+.choices {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 120px), 1fr));
+  gap: var(--ry-s2);
+}
+
+.choice {
+  min-height: 44px;
+  padding: 10px 12px;
+  border: 1px solid var(--ry-border);
+  border-radius: var(--ry-r-btn-sm);
+  background: var(--ry-surface, var(--ry-card));
+  color: var(--ry-text);
+  font: inherit;
+  font-size: var(--ry-fs-dense);
+  text-align: left;
+  cursor: pointer;
+  transition:
+    border-color 160ms ease-out,
+    background-color 160ms ease-out;
+}
+
+.choice:hover {
+  border-color: var(--ry-border-strong);
+  background: var(--ry-hover);
+}
+
+.choice[aria-checked="true"] {
+  border-color: var(--ry-accent);
+  background: var(--ry-brand-soft);
+}
+
+.choice:focus-visible,
+.back:focus-visible,
+.skip:focus-visible {
+  outline: var(--ryntra-focus-outline, 2px solid #ff681c);
+  outline-offset: 2px;
+}
+
+.where {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--ry-s2) var(--ry-s4);
+  font-size: var(--ry-fs-dense);
+  color: var(--ry-text);
+}
+
+.fixed {
+  color: var(--ry-text-muted);
+}
+
+.check {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--ry-s2);
+  min-height: 36px;
+}
+
+.check[data-wide] {
+  flex-basis: 100%;
+}
+
+.check input {
+  width: 18px;
+  height: 18px;
+  flex: none;
+  accent-color: var(--ry-accent, #ff681c);
+}
+
+.error {
+  margin: 0;
+  font-size: var(--ry-fs-dense);
+  color: var(--ry-caution);
+}
+
+.foot {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--ry-s2);
+}
+
+.foot :global(.rw-btn) {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.spacer {
+  flex: 1 1 auto;
+}
+
+.back,
+.skip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 36px;
+  padding: 0 10px;
+  border: 0;
+  border-radius: var(--ry-r-btn-sm);
+  background: transparent;
+  color: var(--ry-text-muted);
+  font: inherit;
+  font-size: var(--ry-fs-dense);
+  cursor: pointer;
+}
+
+.back:hover,
+.skip:hover {
+  color: var(--ry-text);
+  background: var(--ry-hover);
+}
+
+.doneLine {
+  margin: 0;
+  font-size: var(--ry-fs-copy);
+  line-height: 1.5;
+  color: var(--ry-text);
+}

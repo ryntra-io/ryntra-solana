@@ -13,6 +13,24 @@ import { useEffect, type RefObject } from "react";
  * page is read as its top plus the scroll. The value depends on nothing the
  * chart's own height moves, so it settles on the first pass.
  */
+/** A chart shorter than this says nothing at all: the floor below which a short screen is not worth squeezing. */
+export const FIT_FLOOR_PX = 120;
+
+/**
+ * The height from the room a screen actually has: what is left under the chart's top, less what must stay seen below
+ * it, the phone's bar and a margin — within `min` and `max`.
+ *
+ * The floor gives way to the room. A phone turned on its side has 390 px of screen, and a `min` written for a window
+ * 900 tall would then make a panel taller than everything it stands in: the chart would push the page's own action off
+ * the screen, which is the one thing turning the phone was meant to show (the landscape reading of the UX audit of
+ * 21.10). So where the room is smaller than `min`, the height is the room — down to a floor no screen is below.
+ */
+export function fitHeight({ innerHeight, top, below = 0, bar = 0, margin = 16, min = 300, max = 760 }: { innerHeight: number; top: number; below?: number; bar?: number; margin?: number; min?: number; max?: number }): number {
+  const room = innerHeight - top - below - bar - margin;
+  const floor = Math.min(min, Math.max(FIT_FLOOR_PX, room));
+  return Math.round(Math.min(max, Math.max(floor, room)));
+}
+
 export function useFitHeight(
   host: RefObject<HTMLElement | null>,
   { target, tail, variable, min = 300, max = 760, margin = 16 }: { target: string; tail?: string; variable: string; min?: number; max?: number; margin?: number },
@@ -31,7 +49,10 @@ export function useFitHeight(
         const box = element.getBoundingClientRect();
         const after = tail ? root.querySelector<HTMLElement>(tail)?.getBoundingClientRect() : null;
         const below = after ? Math.max(0, after.bottom - box.bottom) : 0;
-        const next = Math.round(Math.min(max, Math.max(min, window.innerHeight - (box.top + window.scrollY) - below - margin)));
+        /* The phone's bottom bar the core pins below 1024 px (SOL-C11): the screen ends above it. Measured, not read off
+           `--shell-bottom`, which may still be a `calc()` before the core has measured it; a desk draws none. */
+        const bar = document.querySelector<HTMLElement>(".ryntra-shell__bar")?.getBoundingClientRect().height ?? 0;
+        const next = fitHeight({ innerHeight: window.innerHeight, top: box.top + window.scrollY, below, bar, margin, min, max });
         if (root.style.getPropertyValue(variable) !== `${next}px`) root.style.setProperty(variable, `${next}px`);
       });
     };

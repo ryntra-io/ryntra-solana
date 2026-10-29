@@ -251,7 +251,7 @@
   color: var(--ry-pnl-neg);
 }
 
-:global([data-theme="light"]) .tradeFigure[data-tone="down"],
+:global(:is([data-theme="light"], [data-theme="porcelain"])) .tradeFigure[data-tone="down"],
 :global([data-ry-theme="light"]) .tradeFigure[data-tone="down"] {
   color: var(--ry-pnl-neg-light);
 }

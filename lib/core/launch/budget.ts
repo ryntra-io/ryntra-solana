@@ -66,6 +66,18 @@ export const BUDGET_RULE = Object.freeze({
   curveClaimMinRaw: 10_000n,
 });
 
+/** A creator's wallet first read later than this after the launch: a sale in the first week could have gone unseen. */
+export const CREATOR_WATCH_GRACE_SECONDS = 15 * 60;
+
+/**
+ * Whether a person's market had its creator watched from its launch (SOL-L6): the executor's first read of the creator's
+ * wallet within `CREATOR_WATCH_GRACE_SECONDS` of it. A sale in the first week stops new money for good, so a market whose
+ * first week was not watched is one Ryntra does not keep a budget for — its fees wait in Meteora's pools.
+ */
+export function creatorWatchProven(args: Readonly<{ watchFrom: number | null | undefined; launchedAt: number }>): boolean {
+  return args.watchFrom !== null && args.watchFrom !== undefined && args.watchFrom - args.launchedAt <= CREATOR_WATCH_GRACE_SECONDS;
+}
+
 /** What one claim brings: its part for the market's budget and its part for Ryntra's revenue. */
 export function splitClaim(source: BudgetSource, raw: bigint): Readonly<{ budgetRaw: bigint; revenueRaw: bigint }> {
   if (raw <= 0n) return { budgetRaw: 0n, revenueRaw: 0n };

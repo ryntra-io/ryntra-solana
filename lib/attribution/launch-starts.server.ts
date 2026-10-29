@@ -26,6 +26,7 @@ import { unstable_cache } from "next/cache.js";
 
 import { resolveEndpoints } from "../solana/rpc.ts";
 import { ATTRIBUTION_REGISTRY, publicRegistry, type RegistryEntry, type RegistryMoment } from "./registry.ts";
+import { getTransactionAnyVersion } from "../solana/v1-tx.ts";
 
 /** A thousand signatures a page; past this many the start is left unknown rather than read for ever. */
 const PAGES = 20;
@@ -71,7 +72,7 @@ export async function oldestTransaction(connection: Pick<Connection, "getSignatu
 export async function createdAt(connection: Reader, address: string): Promise<RegistryMoment | null> {
   const oldest = await oldestTransaction(connection, address);
   if (!oldest) return null;
-  const tx = await connection.getTransaction(oldest.tx, { commitment: "confirmed", maxSupportedTransactionVersion: 0 });
+  const tx = await getTransactionAnyVersion(connection, oldest.tx);
   if (!tx?.meta) throw new Error(`The transaction ${oldest.tx} was not read.`);
   const keys = tx.transaction.message.getAccountKeys({ accountKeysFromLookups: tx.meta.loadedAddresses });
   const index = keys.staticAccountKeys.findIndex((key) => key.toBase58() === address);

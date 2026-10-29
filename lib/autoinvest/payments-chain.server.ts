@@ -218,7 +218,7 @@ async function readSignatures(transport: ChainTransport, account: string, cursor
 async function readTransaction(transport: ChainTransport, signature: string, hosts: Set<string>): Promise<ChainTransaction | null> {
   for (const endpoint of transport.endpoints) {
     try {
-      const tx = await transport.call<RpcTransaction | null>(endpoint, "getTransaction", [signature, { encoding: "jsonParsed", maxSupportedTransactionVersion: 0, commitment: "finalized" }]);
+      const tx = await transport.call<RpcTransaction | null>(endpoint, "getTransaction", [signature, { encoding: "jsonParsed", maxSupportedTransactionVersion: 1, commitment: "finalized" }]);
       await transport.pace?.();
       const trimmed = tx ? trimTransaction(signature, tx) : null;
       if (!trimmed) continue;

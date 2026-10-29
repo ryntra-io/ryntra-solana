@@ -18,6 +18,7 @@
 .legs {
   position: relative;
   display: grid;
+  grid-template-columns: minmax(0, 1fr);
   gap: var(--rt-space-xs, 8px);
 }
 
@@ -49,11 +50,10 @@
   flex-wrap: wrap;
 }
 
+/* A leg says its role once, in the page's own case (B18: no shouted «ТИ НАДСИЛАЄШ»). */
 .legLabel {
-  font-size: 0.75rem;
-  font-weight: 600;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
+  font-size: 0.875rem;
+  font-weight: 500;
   color: var(--rt-ink-low, var(--ry-muted, inherit));
 }
 
@@ -107,9 +107,7 @@
   background: transparent;
   color: var(--rt-ink-low, var(--ry-muted, inherit));
   font: inherit;
-  font-size: 0.6875rem;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
+  font-size: 0.75rem;
   cursor: pointer;
   flex: none;
 }
@@ -121,42 +119,13 @@
   outline: none;
 }
 
-/* The same weight as the share pills it sits beside, and deliberately not the
-   action colour: the card already has one call to connect — the full-width
-   button under it — and a second one in the same loud red made the leg head
-   compete with the thing a person is meant to press. This is the quiet way in
-   for somebody who has already read the form. */
-.walletConnect {
-  min-height: 24px;
-  padding: 0 10px;
-  border: 1px solid var(--rt-hairline, var(--ry-border, transparent));
-  border-radius: var(--rt-radius-pill, 999px);
-  background: transparent;
-  color: var(--rt-ink-mid, var(--ry-muted, inherit));
-  font: inherit;
-  font-size: 0.75rem;
-  font-weight: 600;
-  cursor: pointer;
-  flex: none;
-  transition:
-    border-color var(--rt-duration-fast, 120ms) var(--rt-ease, ease),
-    color var(--rt-duration-fast, 120ms) var(--rt-ease, ease),
-    background var(--rt-duration-fast, 120ms) var(--rt-ease, ease);
-}
-
-.walletConnect:hover,
-.walletConnect:focus-visible {
-  border-color: var(--rt-hairline-strong, var(--ry-border-strong, currentColor));
-  color: var(--rt-ink-high, inherit);
-  background: var(--rt-action-blue-soft, transparent);
-  outline: none;
-}
-
 .balanceRow {
   display: flex;
   align-items: center;
+  justify-content: space-between;
   gap: 10px;
   flex-wrap: wrap;
+  margin-top: var(--ryntra-space-3, 12px);
 }
 
 .balanceText {
@@ -165,8 +134,7 @@
 }
 
 .balanceText b {
-  font-family: var(--rt-mono, var(--ry-font-mono, monospace));
-  font-weight: 500;
+  font-weight: 600;
   font-variant-numeric: tabular-nums;
   color: var(--rt-ink-high, inherit);
 }
@@ -183,8 +151,9 @@
   border-radius: var(--rt-radius-pill, 999px);
   background: transparent;
   color: var(--rt-ink-mid, var(--ry-muted, inherit));
-  font-family: var(--rt-mono, var(--ry-font-mono, monospace));
   font-size: 0.75rem;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
   cursor: pointer;
   transition:
     border-color var(--rt-duration-fast, 120ms) var(--rt-ease, ease),
@@ -221,7 +190,6 @@
    is no price this element is not rendered at all: an empty line reserving
    space reads as a figure that failed to load, and `$0.00` would be a lie. */
 .usdLine {
-  font-family: var(--rt-mono, var(--ry-font-mono, monospace));
   font-size: 0.8125rem;
   font-variant-numeric: tabular-nums;
   color: var(--rt-ink-low, var(--ry-muted, inherit));
@@ -236,9 +204,10 @@
   border: 0;
   background: transparent;
   color: var(--rt-ink-high, inherit);
-  font-family: var(--rt-mono, var(--ry-font-mono, monospace));
+  /* A number, not an address: Geist 32/600 with table figures (B18). */
+  font-family: var(--ryntra-font-sans, var(--rt-font, inherit));
   font-size: 2rem;
-  font-weight: 500;
+  font-weight: 600;
   letter-spacing: -0.01em;
   font-variant-numeric: tabular-nums;
   line-height: 1.1;
@@ -904,7 +873,7 @@
 
   .amountInput,
   .amountOut {
-    font-size: 1.375rem;
+    font-size: 1.75rem;
     min-height: 44px;
   }
 
@@ -1049,4 +1018,10 @@
 .menuItem:disabled {
   cursor: not-allowed;
   opacity: 0.55;
+}
+
+/* Into Solana without a wallet yet: one sentence and the one way to a Solana wallet (SOL-W1). */
+.inbound {
+  display: grid;
+  gap: var(--ry-s3);
 }

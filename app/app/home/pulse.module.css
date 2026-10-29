@@ -1,7 +1,7 @@
 /*
  * Pulse — the top of Home. One card in the screener's language: the feeds
  * as tabs, the window and the filters beside them, then rows — the token,
- * its figures in mono, the facts against it, four quick sums. The row's
+ * its figures in the interface's face with tabular digits, the facts against it, four quick sums. The row's
  * columns follow the card's own width (a container), so the same rows read
  * on a laptop beside the menu, a wide desk and a phone.
  */
@@ -17,15 +17,17 @@
   align-items: baseline;
   flex-wrap: wrap;
   gap: var(--ry-s1) var(--ry-s3);
+  padding: var(--ry-s3) var(--ry-s4) 0;
 }
 
 .title {
   margin: 0;
   font-family: var(--ry-font-sans);
-  font-size: var(--ry-fs-page);
-  line-height: var(--ry-lh-tight);
-  letter-spacing: var(--ry-ls-head);
-  color: var(--ry-text);
+  /* A block of Home: its name as the core's blocks say theirs — quiet, inside the card. */
+  font-size: var(--ryntra-type-ui-size);
+  line-height: var(--ryntra-type-ui-line);
+  font-weight: var(--ryntra-weight-medium);
+  color: var(--ryntra-muted);
 }
 
 .lead {
@@ -255,7 +257,8 @@
   border-radius: var(--ry-r-btn-sm);
   background: var(--ry-bg, var(--ry-card));
   color: var(--ry-text);
-  font-family: var(--ry-font-mono);
+  font-family: var(--ry-font-sans);
+  font-variant-numeric: tabular-nums;
   font-size: var(--ry-fs-label);
   font-variant-numeric: tabular-nums;
 }
@@ -416,9 +419,7 @@
   grid-template-columns: repeat(3, minmax(0, 1fr));
   grid-template-areas:
     "asset asset change"
-    "price marketCap volume"
-    "risk risk risk"
-    "quick quick quick";
+    "marketCap volume risk";
   row-gap: 6px;
   border-bottom: 1px solid var(--ry-border);
   transition: background-color var(--rt-duration-fast) var(--rt-ease);
@@ -542,14 +543,47 @@
   color: var(--ry-muted);
 }
 
-.row[data-ryntra="true"] .tags {
+/* A known brand's or person's name on a token Jupiter has not verified (SOL-C5): the caution colour, never cut off. */
+/* «?» beside a count: a figure nobody stated, apart from the number so «4 ?» never reads as «maybe 4». */
+.riskUnread {
+  margin-left: 3px;
+  padding-left: 3px;
+  border-left: 1px solid currentColor;
+  opacity: 0.8;
+}
+
+.borrowed {
+  flex: 0 0 auto;
+  padding: 1px 6px;
+  border-radius: var(--ry-r-pill);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--ry-caution) 55%, transparent);
+  color: var(--ry-caution);
+  font-weight: 650;
+}
+
+/* Copies of one name in a feed: the row's own address, and how many others share the name. */
+.twin {
+  flex: 0 0 auto;
+  color: var(--ry-text);
+  font-family: var(--ry-font-mono);
+}
+
+.twinCount {
+  margin-left: 4px;
+  color: var(--ry-caution);
+  font-family: var(--ry-font-sans);
+  font-weight: 650;
+}
+
+.row[data-ryntra="true"] .tags,
+.row[data-marked="true"] .tags {
   flex-wrap: wrap;
   row-gap: 4px;
 }
 
 .age {
   flex: 0 0 auto;
-  font-family: var(--ry-font-mono);
+  font-family: var(--ry-font-sans);
   font-variant-numeric: tabular-nums;
 }
 
@@ -584,7 +618,7 @@
 
 .curveText {
   flex: 0 0 auto;
-  font-family: var(--ry-font-mono);
+  font-family: var(--ry-font-sans);
   font-variant-numeric: tabular-nums;
   white-space: nowrap;
 }
@@ -603,7 +637,7 @@
 
 .figureValue {
   overflow: hidden;
-  font-family: var(--ry-font-mono);
+  font-family: var(--ry-font-sans);
   font-variant-numeric: tabular-nums;
   font-size: var(--ry-fs-label);
   color: var(--ry-text);
@@ -615,7 +649,14 @@
 .row > .figure[data-col="marketCap"] { grid-area: marketCap; }
 .row > .figure[data-col="volume"] { grid-area: volume; }
 
-/* A card shows three figures; the liquidity, the holders and the top ten wait for a line. */
+/* A card shows two figures and the facts; the price, the liquidity, the holders, the top ten and the quick sums wait
+   for a wide line — on Home a token's row opens its page, where the price and the sums are. */
+.row > .figure[data-col="price"],
+.row > .quick,
+.hint {
+  display: none;
+}
+
 .row > .figure[data-col="liquidity"],
 .row > .figure[data-col="holders"],
 .row > .figure[data-col="top10"] {
@@ -625,7 +666,7 @@
 .change {
   grid-area: change;
   justify-self: end;
-  font-family: var(--ry-font-mono);
+  font-family: var(--ry-font-sans);
   font-variant-numeric: tabular-nums;
   font-size: var(--ry-fs-dense);
   font-weight: 600;
@@ -650,7 +691,7 @@
   grid-area: risk;
   position: relative;
   z-index: 2;
-  justify-self: start;
+  justify-self: end;
 }
 
 .risk {
@@ -666,7 +707,8 @@
   border-radius: var(--ry-r-pill);
   background: transparent;
   color: var(--ry-muted);
-  font-family: var(--ry-font-mono);
+  font-family: var(--ry-font-sans);
+  font-variant-numeric: tabular-nums;
   font-size: var(--ry-fs-label);
   font-variant-numeric: tabular-nums;
   cursor: pointer;
@@ -741,7 +783,8 @@
   border-radius: var(--ry-r-pill);
   background: var(--ry-card);
   color: var(--ry-text);
-  font-family: var(--ry-font-mono);
+  font-family: var(--ry-font-sans);
+  font-variant-numeric: tabular-nums;
   font-size: var(--ry-fs-label);
   font-variant-numeric: tabular-nums;
   text-decoration: none;
@@ -765,14 +808,97 @@
     grid-column: 1 / -1;
   }
 
-  /* Every feed in sight: the tabs wrap rather than hide behind a scroll. */
+  /* One row of feeds that scrolls sideways, the filters beside it: two rows of tabs and a third for the filters
+     pushed the feed off a phone's first screen (B2b). */
+  .toolbar {
+    flex-wrap: nowrap;
+  }
+
   .tabs {
-    flex-wrap: wrap;
-    overflow: visible;
+    flex: 1 1 auto;
   }
 
   .tab {
     min-height: 36px;
+  }
+}
+
+/* A phone's card: the feed's rows speak for it — its one-line note would wrap to three. */
+@container pulse (max-width: 479px) {
+  .note {
+    display: none;
+  }
+}
+
+/* A line from 600 px too — Pulse in Home's main column (B2b): the token and its age, the market cap, the volume, the
+   change and the facts. The price, the liquidity and the quick sums wait for a wider card or the token's page. */
+@container pulse (min-width: 600px) and (max-width: 959px) {
+  .columns,
+  .row {
+    grid-template-columns: minmax(160px, 1fr) 88px 112px 104px 80px;
+    grid-template-areas: "asset marketCap volume change risk";
+    column-gap: 10px;
+    padding-block: var(--ry-s2);
+  }
+
+  .row {
+    min-height: 56px;
+  }
+
+  .columns {
+    display: grid;
+    color: var(--ry-muted);
+    font-size: var(--ry-fs-label-sm);
+    font-weight: 600;
+    white-space: nowrap;
+  }
+
+  .columns > span {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    text-align: right;
+  }
+
+  .columns > [data-col="asset"] { grid-area: asset; text-align: left; }
+  .columns > [data-col="marketCap"] { grid-area: marketCap; }
+  .columns > [data-col="volume"] { grid-area: volume; }
+  .columns > [data-col="change"] { grid-area: change; }
+  .columns > [data-col="risk"] { grid-area: risk; text-align: center; }
+  .columns > [data-col="price"],
+  .columns > [data-col="liquidity"],
+  .columns > [data-col="holders"],
+  .columns > [data-col="top10"],
+  .columns > [data-col="quick"] { display: none; }
+
+  .row > .figure[data-col="price"],
+  .row > .quick {
+    display: none;
+  }
+
+  .figure {
+    justify-items: end;
+  }
+
+  .figureLabel {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
+  }
+
+  .facts {
+    justify-self: center;
+  }
+
+  .riskLabel {
+    display: none;
+  }
+
+  .factsList {
+    left: auto;
+    right: 0;
   }
 }
 
@@ -796,8 +922,6 @@
     color: var(--ry-muted);
     font-size: var(--ry-fs-label-sm);
     font-weight: 600;
-    letter-spacing: 0.06em;
-    text-transform: uppercase;
     white-space: nowrap;
   }
 
@@ -823,6 +947,9 @@
   }
 
   .row > .figure[data-col="liquidity"] { display: grid; grid-area: liquidity; }
+  .row > .figure[data-col="price"] { display: grid; }
+  .row > .quick { display: flex; }
+  .hint { display: inline; }
 
   .figure {
     justify-items: end;

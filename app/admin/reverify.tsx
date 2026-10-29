@@ -61,7 +61,17 @@ export function ReverifyHost() {
       setRequest(null);
       return;
     }
-    setProblem(r.status === 422 ? "Код не підійшов. Спробуйте наступний." : "Підтвердження недоступне.");
+    // Each refusal says what to do: a code that did not fit, a sign-in that cannot confirm money (the bot's link),
+    // a sign-in that belongs to someone else, or a server that could not check.
+    setProblem(
+      r.status === 422
+        ? "Код не підійшов. Спробуйте наступний."
+        : r.status === 401
+          ? "Вхід через посилання з бота не підтверджує дії з грошима. Увійдіть через ryntra.io/admin/login (email чи Google і код)."
+          : r.status === 409
+            ? "Ця адмінка відкрита іншим акаунтом. Вийдіть і увійдіть знову через ryntra.io/admin/login."
+            : "Сервер не зміг перевірити код. Спробуйте за хвилину.",
+    );
   };
 
   const cancel = () => {

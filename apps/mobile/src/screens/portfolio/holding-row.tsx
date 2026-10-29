@@ -7,7 +7,8 @@ import type { PortfolioCopy } from '@/features/portfolio/copy'
 import type { PortfolioRow } from '@/features/portfolio/portfolio-model'
 import { useLocale } from '@/lib/i18n'
 import { EventBanner, type EventActions } from '@/screens/invest/event-ui'
-import { DASH, formatPercent, formatUsd, signOf } from '@/utils/format'
+import { useSpace } from '@/theme'
+import { DASH, formatPercent, formatUsd, saidFigure, signOf } from '@/utils/format'
 
 /** An issuer's event under a held position: the holder's line, and the swap and the sale while the window is open. */
 export type RowEvent = Readonly<{ line: string; actions: EventActions | null }>
@@ -30,14 +31,15 @@ export type HoldingRowProps = {
  */
 export function HoldingRow({ row, copy, onPress, last, event = null }: HoldingRowProps) {
   const locale = useLocale()
+  const space = useSpace()
   const move = signOf(row.dayChangePct)
   const value = row.value === null ? DASH : formatUsd(row.value, locale)
   const line = (
     <Pressable
       accessibilityRole="button"
-      accessibilityLabel={`${row.symbol}, ${row.amountText} ${row.symbol}, ${value}${row.dayChangePct === null ? '' : `, ${formatPercent(row.dayChangePct, locale)}`}`}
+      accessibilityLabel={`${row.symbol}, ${row.amountText} ${row.symbol}, ${saidFigure(value, locale)}${row.dayChangePct === null ? '' : `, ${formatPercent(row.dayChangePct, locale)}`}`}
       onPress={onPress}
-      className={`flex-row items-center gap-3 py-3 active:bg-hover ${last || event ? '' : 'border-b border-line'}`}
+      className={`flex-row items-center gap-3 ${space.row} active:bg-hover ${last || event ? '' : 'border-b border-line'}`}
     >
       <AssetIcon symbol={row.symbol} icon={row.icon} />
       <View className="flex-1 gap-0.5">

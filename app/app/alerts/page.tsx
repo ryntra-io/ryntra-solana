@@ -1,13 +1,15 @@
 import type { Metadata } from "next";
 
+import { words } from "@/lib/monitoring/copy";
 import { solanaServerLocale } from "@/app/solana/workspace/i18n/server";
 
 import { MonitoringPanel } from "./monitoring-view";
 
-export const metadata: Metadata = {
-  title: "Monitoring",
-  robots: { index: false, follow: false },
-};
+/** The page's one name, in the reader's language, the bell's word (B18: «Сповіщення», not «Нагляд» nor «Monitoring»). */
+export async function generateMetadata(): Promise<Metadata> {
+  const locale = await solanaServerLocale();
+  return { title: words(locale).title, robots: { index: false, follow: false } };
+}
 
 export const dynamic = "force-dynamic";
 

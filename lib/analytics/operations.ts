@@ -361,6 +361,7 @@ const CHAIN_NAMES: Readonly<Record<SwapNetwork, string>> = {
   polygon: "Polygon",
   bnb: "BNB Chain",
   robinhood: "Robinhood Chain",
+  arc: "Arc",
 };
 
 function txLink(label: OperationLink["label"], chain: SwapNetwork | null, ref: string | null): OperationLink | null {

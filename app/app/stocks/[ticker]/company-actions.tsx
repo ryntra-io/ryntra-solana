@@ -1,5 +1,6 @@
 "use client";
 
+import { Button } from "@ryntra/core/ui";
 import { CaretRight } from "@phosphor-icons/react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 
@@ -160,6 +161,7 @@ export function CompanyActions({ priceUsd, quietWhenHeld = false, conditionRefer
     <>
       <BuySheet
         {...props}
+        priceUsd={priceUsd}
         quiet={quietWhenHeld && holds}
         ruleBuy={ruleBuy}
         ruleOffer={ruleOffer}
@@ -189,9 +191,9 @@ export function CompanyActions({ priceUsd, quietWhenHeld = false, conditionRefer
           </button>
         )
       ) : (
-        <button type="button" className={`rw-btn ${company.autoinvest}`} aria-haspopup="dialog" onClick={() => setSheet({ kind: "compose", amountUsd: null })}>
+        <Button variant="secondary" block className={company.autoinvest} aria-haspopup="dialog" onClick={() => setSheet({ kind: "compose", amountUsd: null })} lang={lang}>
           {word("autoinvest")}
-        </button>
+        </Button>
       )}
       <AutoinvestSheet
         open={sheet !== null}

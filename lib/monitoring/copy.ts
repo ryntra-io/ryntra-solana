@@ -4,7 +4,7 @@ type Bi = Readonly<{ en: string; uk: string }>;
 const bi = (en: string, uk: string): Bi => ({ en, uk });
 
 export const MONITORING_WORDS = {
-  title: bi("Monitoring", "Нагляд"),
+  title: bi("Notifications", "Сповіщення"),
   lead: bi("Ryntra watches your rules. Nothing trades on its own.", "Ryntra стежить за твоїми правилами. Нічого не торгує само."),
   needsAttention: bi("Needs attention", "Потребує уваги"),
   watching: bi("Watching", "Стежимо"),
@@ -16,7 +16,7 @@ export const MONITORING_WORDS = {
   emptyRecent: bi("No notes yet.", "Нотаток ще немає."),
   connect: bi("Connect a wallet to see what needs attention.", "Підключи гаманець, щоб побачити, що потребує уваги."),
   noWallet: bi("Phantom, Solflare and Backpack all work.", "Phantom, Solflare і Backpack підходять."),
-  confirm: bi("Confirm this wallet to see its monitoring.", "Підтверди гаманець, щоб побачити його моніторинг."),
+  confirm: bi("Confirm this wallet to see Alerts.", "Підтверди гаманець, щоб побачити Сповіщення."),
   confirmWallet: bi("Confirm wallet", "Підтвердити гаманець"),
   reviewPlan: bi("Review plan", "Переглянути план"),
   reviewPrediction: bi("Review paper plan", "Переглянути паперовий план"),
@@ -34,7 +34,8 @@ export const MONITORING_WORDS = {
   quietOff: bi("No quiet hours", "Без тихих годин"),
   quietOn: bi("Quiet hours", "Тихі години"),
   saveQuiet: bi("Save quiet hours", "Зберегти тихі години"),
-  connectTelegram: bi("Connect Telegram in Settings", "Підключити Telegram у Налаштуваннях"),
+  /* Telegram is connected on «Акаунт» (`/app/settings#account`), not in the menu's «Налаштування» (UX-713). */
+  connectTelegram: bi("Connect Telegram in Account", "Підключити Telegram в Акаунті"),
   attentionBanner: bi("Something in this plan changed. Review it on today's figures — a note is not permission to trade.", "У цьому плані щось змінилось. Переглянь його на сьогоднішніх цифрах — нотатка не є дозволом торгувати."),
   markRead: bi("Mark as read", "Позначити прочитаним"),
   lastChecked: bi("Last checked", "Остання перевірка"),
@@ -53,7 +54,7 @@ export const MONITORING_WORDS = {
   quietHours: bi("Quiet hours", "Тихі години"),
   revokeDevice: bi("Stop this device", "Зупинити цей пристрій"),
   noDevices: bi("No phone is registered for notes yet.", "Жоден телефон ще не зареєстровано для нотаток."),
-  couldNotLoad: bi("Monitoring could not be read right now.", "Нагляд зараз не вдалося прочитати."),
+  couldNotLoad: bi("Notifications could not be read right now.", "Сповіщення зараз не вдалося прочитати."),
   tryAgain: bi("Try again", "Спробувати ще раз"),
   loading: bi("Reading your plans…", "Читаємо твої плани…"),
   /* «Автоінвест» on the surface: a reminder's state, and the month's budget spent */
@@ -86,7 +87,16 @@ export function relativeTime(iso: string | null, nowMs: number, locale: Locale):
   return `${Math.round(delta / 86_400_000)} ${w.daysAgo}`;
 }
 
-export function telegramText(input: Readonly<{ label: string; reason: string; href: string; paper: boolean }>): string {
-  const paper = input.paper ? "Paper\n" : "";
-  return `Ryntra\n${paper}Your ${input.label} plan needs attention.\n${input.reason}\n\nReview plan\n${input.href}`;
+/**
+ * A plan's note as Telegram carries it, in the language it is said in (SOL-C15: the delivery says it in the chat's
+ * own language where the note holds its words in both); a note no longer found says only that a plan needs attention.
+ */
+export function telegramText(input: Readonly<{ label: string | null; reason: string | null; href: string; paper: boolean }>, locale: Locale = "en"): string {
+  const w = words(locale);
+  const paper = input.paper ? `${w.paper}\n` : "";
+  const head =
+    input.label === null
+      ? locale === "uk" ? "Твій план потребує уваги." : "Your plan needs attention."
+      : locale === "uk" ? `Твій план «${input.label}» потребує уваги.` : `Your ${input.label} plan needs attention.`;
+  return `Ryntra\n${paper}${head}\n${input.reason ? `${input.reason}\n` : ""}\n${w.reviewPlan}\n${input.href}`;
 }

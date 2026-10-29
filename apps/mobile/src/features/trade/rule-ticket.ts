@@ -21,11 +21,12 @@
 import type { Copy, Locale } from '../../lib/i18n.ts'
 import { ruleBuyState, type RuleBuyState } from '../autoinvest/rule-model.ts'
 
-export const ORDER_TYPES = ['market', 'recurring'] as const
+/** «Ринок · Ліміт · Регулярно» — the web's order, in its order: now, at a price (C3, the web's B3), or the rule that reminds of it. */
+export const ORDER_TYPES = ['market', 'limit', 'recurring'] as const
 export type OrderType = (typeof ORDER_TYPES)[number]
 
 export function orderTypeOf(value: unknown): OrderType {
-  return value === 'recurring' ? 'recurring' : 'market'
+  return value === 'recurring' || value === 'limit' ? value : 'market'
 }
 
 /** The rule's purchase as the ticket reads it: the rule's own state, or a rule whose token is not this market. */
@@ -154,7 +155,7 @@ export const RULE_TICKET_COPY: Copy<RuleTicketCopy> = {
     budgetWaits: 'What is left of this month’s budget does not cover the rule’s purchase.',
     reminderNoLonger: 'This reminder can no longer be bought — read the rule again.',
     tokenUnreadable: 'The token’s liquidity or price cannot be read right now — try again in a moment.',
-    tokenFlagged: 'Jupiter’s audit flags this token, or Ryntra no longer supports it — the rule does not buy it.',
+    tokenFlagged: 'Jupiter marks this token as risky, or Ryntra no longer supports it — the rule does not buy it.',
   },
   uk: {
     orderType: 'Тип ордера',
@@ -183,7 +184,7 @@ export const RULE_TICKET_COPY: Copy<RuleTicketCopy> = {
     budgetWaits: 'Залишок бюджету місяця не покриває купівлю за правилом.',
     reminderNoLonger: 'За цим нагадуванням уже не купити — прочитай правило знову.',
     tokenUnreadable: 'Ліквідність чи ціну токена зараз не прочитати — спробуй за мить.',
-    tokenFlagged: 'Аудит Jupiter позначає цей токен або Ryntra його більше не підтримує — правило його не купує.',
+    tokenFlagged: 'Jupiter позначає цей токен як ризиковий, або Ryntra його більше не підтримує — правило його не купує.',
   },
 }
 

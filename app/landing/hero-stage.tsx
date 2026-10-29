@@ -235,7 +235,7 @@ function SwapTicket({
  * static stack under prefers-reduced-motion or a coarse pointer.
  */
 export function HeroStage({ copy, routeConfirmed }: { copy: HomeCopy; routeConfirmed: boolean }) {
-  const { points, status } = useHeroSeries();
+  const { points, status, observedAt } = useHeroSeries();
   // Starts true so the first rendered frame is still: motion is opt-in once the
   // preference is known, never a flash the user has to sit through.
   const [reducedMotion, setReducedMotion] = useState(true);
@@ -362,7 +362,7 @@ export function HeroStage({ copy, routeConfirmed }: { copy: HomeCopy; routeConfi
             </div>
           </div>
 
-          <HeroChart points={points} />
+          <HeroChart points={points} status={status} observedAt={observedAt} />
         </div>
       </div>
 

@@ -165,7 +165,7 @@ export async function readTokenPoolsBody(mint: string, priority: "chart" | "page
    wake up within the hour, and the frame should follow. */
 const POOL_REFUSAL_TTL_MS = 10 * 60_000;
 
-export async function resolveSpotPool(mint: string): Promise<{ ok: true; pool: SpotPool } | SpotCandlesFailure> {
+export async function resolveSpotPool(mint: string, priority: "chart" | "page" = "chart"): Promise<{ ok: true; pool: SpotPool } | SpotCandlesFailure> {
   const hit = pools.get(mint);
   const now = Date.now();
   if (hit && now - hit.readAt < (hit.value ? POOL_TTL_MS : POOL_REFUSAL_TTL_MS)) {
@@ -173,7 +173,7 @@ export async function resolveSpotPool(mint: string): Promise<{ ok: true; pool: S
     const refusal = hit.refusal ?? "NO_POOL";
     return { ok: false, code: refusal, reason: NO_CHART_REASONS[refusal] };
   }
-  const read = await readTokenPoolsBody(mint);
+  const read = await readTokenPoolsBody(mint, priority);
   if (!read.ok) {
     if (hit?.value) return { ok: true, pool: hit.value };
     return read;
@@ -190,21 +190,25 @@ const reads = new Map<string, { value: SpotCandlesRead; readAt: number }>();
 const noChart = new Map<string, { code: "STALE" | "PRICE_MISMATCH"; at: number }>();
 const NO_CHART_TTL_MS = 10 * 60_000;
 
-export async function readSpotCandles(mint: string, timeframe: SpotTimeframe): Promise<SpotCandlesRead | SpotCandlesFailure> {
+/**
+ * `priority`: a person's chart reads with "chart"; a read nobody is waiting on — the landing's tape (SOL-T4) — with
+ * "page", which leaves the minute's reserve to the charts people have open.
+ */
+export async function readSpotCandles(mint: string, timeframe: SpotTimeframe, priority: "chart" | "page" = "chart"): Promise<SpotCandlesRead | SpotCandlesFailure> {
   const key = `${mint}:${timeframe}`;
   const hit = reads.get(key);
   const now = Date.now();
   if (hit && now - hit.readAt < TIMEFRAME_TTL_MS[timeframe]) return hit.value;
   const refused = noChart.get(key);
   if (refused && now - refused.at < NO_CHART_TTL_MS) return { ok: false, code: refused.code, reason: NO_CHART_REASONS[refused.code] };
-  const resolved = await resolveSpotPool(mint);
+  const resolved = await resolveSpotPool(mint, priority);
   if (!resolved.ok) {
     if (hit && now - hit.readAt < STALE_GRACE_MS) return { ...hit.value, stale: true };
     return resolved;
   }
   const source = TIMEFRAME_SOURCE[timeframe];
   const url = `${BASE}/pools/${encodeURIComponent(resolved.pool.address)}/ohlcv/${source.path}?aggregate=${source.aggregate}&limit=${timeframe === "1d" ? DAILY_CANDLE_LIMIT : CANDLE_LIMIT}&currency=usd&token=${resolved.pool.side}`;
-  const read = await getJson(url);
+  const read = await getJson(url, priority);
   if (!read.ok) {
     if (hit && now - hit.readAt < STALE_GRACE_MS) return { ...hit.value, stale: true };
     return read;

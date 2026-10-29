@@ -47,3 +47,23 @@ export function useSheetAboveKeyboard(dialog: RefObject<HTMLDialogElement | null
 
 /** Less than this is a browser's own bar folding away, never a keyboard (a phone's number keys are ≈ 250–350 px). */
 const KEYBOARD_MIN_PX = 120;
+
+/**
+ * On a desk the sum is ready as the sheet opens: the ticket's own field, focused and chosen whole, so the first key
+ * replaces the sum it opened on. On a phone the keyboard rises only on the person's own tap, never by itself.
+ */
+export function useSumReadyOnDesk(dialog: RefObject<HTMLDialogElement | null>, open: boolean) {
+  useEffect(() => {
+    if (!open || typeof window === "undefined") return undefined;
+    if (!window.matchMedia("(hover: hover) and (pointer: fine)").matches) return undefined;
+    const frame = window.requestAnimationFrame(() => {
+      const element = dialog.current;
+      if (!element?.open) return;
+      const input = element.querySelector<HTMLInputElement>('[data-ticket-field="amount"]');
+      if (!input || input.disabled || input.readOnly) return;
+      input.focus({ preventScroll: true });
+      input.select();
+    });
+    return () => window.cancelAnimationFrame(frame);
+  }, [dialog, open]);
+}

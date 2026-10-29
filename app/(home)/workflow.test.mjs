@@ -68,7 +68,7 @@ test("every step stands on a place of the product and shows its readiness, read 
     assert.ok(page, `${id} stands on a registered page`);
     assert.equal(model.find((entry) => entry.id === id).status, STATUS_OF[page.readiness], `${id} carries the registry's readiness of ${page.id}`);
   }
-  /* Markets and «Автоінвест» are sections of the menu — «Автоінвест» in «Боти» since the menu v6.2. */
+  /* Markets and «Автоінвест» are places of the menu — «Автоінвест» the row «Боти» of «Автоматика» since Menu 3 (NAV-1). */
   for (const [id, section] of [["company", "markets"], ["autoinvest", "bots"]]) {
     assert.ok(MENU_SECTION_IDS.includes(section), `${id} stands on the menu's ${section}`);
   }

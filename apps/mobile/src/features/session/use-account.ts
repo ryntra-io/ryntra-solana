@@ -6,10 +6,11 @@ import { revokeThisDevice } from '@/features/notifications/revoke'
 import { useWallet } from '@/features/wallet/use-wallet'
 import { clearWalletList } from '@/features/watchlist/watchlist'
 import { useNow } from '@/hooks/use-now'
+import { forgetBearers } from '@/lib/session-bearer'
 import { sessionApi } from './session-api'
 import { signInWithWallet, signOut as endSession, type SignInFailure } from './session-client'
 import { sessionFor } from './session-model'
-import { clearSession, saveSession, useSession } from './session-store'
+import { clearSession, getSession, saveSession, useSession } from './session-store'
 
 /** Every private query is keyed under this prefix so a sign-out can drop them all at once. */
 export const PRIVATE_QUERY_KEY = 'private'
@@ -37,6 +38,7 @@ export function useAccount() {
       if (address) {
         clearWalletList(address)
         clearDeviceRecord(address)
+        forgetBearers(address)
       }
       queryClient.removeQueries({ queryKey: [PRIVATE_QUERY_KEY] })
     },
@@ -82,6 +84,24 @@ export function useAccount() {
     return wallet.switchWallet()
   }, [signOut, wallet])
 
+  /**
+   * The time the person chose ran out: the phone forgets the wallet, the
+   * session and the wallet's private caches at once — nothing private stays
+   * usable past the end — and resolves; the server hears of it after, best
+   * effort, with the session the store holds now (never a copy read before
+   * it loaded).
+   */
+  const endChosenTime = useCallback(async () => {
+    const held = getSession()
+    const address = held?.address ?? wallet.address
+    // The device's record is read before the forget drops it.
+    const device = revokeThisDevice(held)
+    // The wallet first: a forget that fails leaves the session for the next try to end on the server.
+    await wallet.forget()
+    await forget(address)
+    void device.then(() => endSession({ session: held, api, clear: async () => undefined })).catch(() => undefined)
+  }, [api, forget, wallet])
+
   return {
     ready,
     address: wallet.address,
@@ -98,6 +118,7 @@ export function useAccount() {
     connect: wallet.connect,
     disconnect,
     switchWallet,
+    endChosenTime,
     signIn,
     signOut,
   }

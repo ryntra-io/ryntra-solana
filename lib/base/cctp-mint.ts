@@ -3,7 +3,7 @@
  *
  * Circle does not deliver a Standard CCTP transfer. Something has to call
  * `receiveMessage(message, attestation)` on the destination chain, and on this
- * lane that something is the person's own Base wallet. This module builds the
+ * lane that something is the founder's own Base wallet. This module builds the
  * exact call, prices it, and checks the conditions that would waste a signature
  * — but it holds no key and sends nothing. The transaction leaves from a wallet
  * in the browser, the same way the burn does.

@@ -1,0 +1,326 @@
+/*
+ * «Доручення» (AI-19; its own tab since AI-20): each task one row with its rhythm, its next run,
+ * its last answer and two quiet presses; the form one card; the brand only on «Увімкнути» and the chosen answer.
+ */
+/* AI-20: a tab of its own — no rule above it, as there was under the watches. */
+.panel {
+  position: relative;
+  display: grid;
+  gap: var(--ry-s3);
+  min-width: 0;
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.head,
+.taskHead,
+.actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--ry-s2) var(--ry-s3);
+  flex-wrap: wrap;
+  min-width: 0;
+}
+
+.actions {
+  justify-content: flex-end;
+}
+
+/* AI-20: «Нове доручення» under the lead, at the start of the row. */
+.head {
+  justify-content: flex-start;
+}
+
+/* AI-20: the tab above already says «Доручення» — the heading stays for a screen reader, not printed twice. */
+.title {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: 0;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+.lead,
+.empty,
+.last {
+  margin: 0;
+  font-size: var(--ry-fs-dense);
+  line-height: 1.5;
+  color: var(--ry-text-muted);
+}
+
+.last {
+  color: var(--ry-text);
+  overflow-wrap: anywhere;
+}
+
+.error {
+  margin: 0;
+  font-size: var(--ry-fs-dense);
+  color: var(--ry-caution);
+}
+
+.push {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: var(--ry-s2) var(--ry-s3);
+  padding: var(--ry-s3);
+  border: 1px solid var(--ry-border);
+  border-radius: var(--ry-r-card);
+  background: var(--ry-elevated);
+}
+
+.push > svg {
+  color: var(--ry-text-muted);
+}
+
+.push[data-phase="on"] > svg {
+  color: var(--ry-verified);
+}
+
+.pushText {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+.pushTitle {
+  margin: 0;
+  font-size: var(--ry-fs-copy);
+  font-weight: 600;
+  color: var(--ry-text);
+}
+
+.list {
+  display: grid;
+  gap: var(--ry-s2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.task {
+  display: grid;
+  gap: var(--ry-s1);
+  padding: var(--ry-s3);
+  border: 1px solid var(--ry-border);
+  border-radius: var(--ry-r-card);
+  background: var(--ry-card);
+}
+
+.task[data-status="paused"] {
+  opacity: 0.85;
+}
+
+.taskName {
+  min-width: 0;
+  font-size: var(--ry-fs-copy);
+  font-weight: 600;
+  color: var(--ry-text);
+  text-decoration: none;
+  overflow-wrap: anywhere;
+}
+
+.taskName:hover {
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.rhythm {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 8px;
+  border-radius: var(--ry-r-pill);
+  background: var(--ry-elevated);
+  font-family: var(--ry-font-mono);
+  font-size: var(--ry-fs-label-sm);
+  color: var(--ry-text-muted);
+  white-space: nowrap;
+}
+
+.quiet {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 32px;
+  padding: 0 10px;
+  border: 1px solid transparent;
+  border-radius: var(--ry-r-btn-sm);
+  background: transparent;
+  color: var(--ry-muted);
+  font: inherit;
+  font-size: var(--ry-fs-dense);
+  cursor: pointer;
+}
+
+.quiet:hover:not(:disabled) {
+  color: var(--ry-text);
+  background: var(--ry-hover);
+}
+
+.quiet:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.quiet:focus-visible,
+.link:focus-visible,
+.taskName:focus-visible {
+  outline: var(--ryntra-focus-outline, 2px solid #ff681c);
+  outline-offset: 1px;
+}
+
+.link {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--ry-text);
+  font: inherit;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  cursor: pointer;
+}
+
+.form {
+  display: grid;
+  gap: var(--ry-s3);
+  padding: var(--ry-s4);
+  border: 1px solid var(--ry-border);
+  border-radius: var(--ry-r-card);
+  background: var(--ry-card);
+  min-width: 0;
+}
+
+.choices {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--ry-s2);
+  margin: 0;
+  padding: 0;
+  border: 0;
+  min-width: 0;
+}
+
+.label {
+  width: 100%;
+  margin-bottom: 2px;
+  font-size: var(--ry-fs-copy);
+  font-weight: 600;
+  color: var(--ry-text);
+}
+
+.choice {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  min-height: 36px;
+  padding: 0 12px;
+  border: 1px solid var(--ry-border-strong);
+  border-radius: var(--ry-r-pill);
+  background: var(--ry-elevated);
+  font-size: var(--ry-fs-dense);
+  color: var(--ry-text);
+  cursor: pointer;
+}
+
+.choice input {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.choice[data-on] {
+  border-color: var(--ry-accent);
+  background: var(--ry-brand-soft);
+}
+
+.choice[data-off] {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.choices > .lead {
+  flex-basis: 100%;
+}
+
+.choice:focus-within {
+  outline: var(--ryntra-focus-outline, 2px solid #ff681c);
+  outline-offset: 1px;
+}
+
+.check,
+.time {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--ry-s2);
+  font-size: var(--ry-fs-dense);
+  color: var(--ry-text);
+}
+
+.check input {
+  width: 16px;
+  height: 16px;
+  accent-color: var(--ry-accent);
+}
+
+.time input {
+  min-height: 36px;
+  padding: 0 8px;
+  border: 1px solid var(--ry-border-strong);
+  border-radius: var(--ry-r-btn-sm);
+  background: var(--ry-elevated);
+  color: var(--ry-text);
+  font: inherit;
+}
+
+.fieldWrap {
+  display: grid;
+  gap: var(--ry-s1);
+}
+
+.field {
+  width: 100%;
+  min-width: 0;
+  padding: var(--ry-s2) var(--ry-s3);
+  border: 1px solid var(--ry-border-strong);
+  border-radius: var(--ry-r-btn-sm);
+  background: var(--ry-elevated);
+  color: var(--ry-text);
+  font: inherit;
+  font-size: var(--ry-fs-copy);
+  resize: vertical;
+}
+
+.field:focus-visible {
+  outline: var(--ryntra-focus-outline, 2px solid #ff681c);
+  outline-offset: 1px;
+}
+
+.price {
+  margin: 0;
+  padding: var(--ry-s2) var(--ry-s3);
+  border-radius: var(--ry-r-btn-sm);
+  background: var(--ry-elevated);
+  font-size: var(--ry-fs-dense);
+  color: var(--ry-text);
+}
+
+@media (max-width: 640px) {
+  .push {
+    grid-template-columns: auto minmax(0, 1fr);
+  }
+
+  .push > button {
+    grid-column: 1 / -1;
+    justify-self: start;
+  }
+
+  .form {
+    padding: var(--ry-s3);
+  }
+}

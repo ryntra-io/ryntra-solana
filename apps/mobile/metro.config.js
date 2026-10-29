@@ -27,7 +27,12 @@ uniwindConfig.cacheStores = ({ FileStore }) => {
       return super.set(key, value)
     }
   }
-  return [new ProjectStore({ root: path.join(__dirname, 'node_modules', '.cache', 'metro') })]
+  // A task tree whose node_modules is a junction to the line's own keeps a cache of its own (`RYNTRA_METRO_CACHE`):
+  // a shared one serves one tree's routes to another's bundle.
+  const root = process.env.RYNTRA_METRO_CACHE
+    ? path.resolve(process.env.RYNTRA_METRO_CACHE)
+    : path.join(__dirname, 'node_modules', '.cache', 'metro')
+  return [new ProjectStore({ root })]
 }
 
 module.exports = uniwindConfig

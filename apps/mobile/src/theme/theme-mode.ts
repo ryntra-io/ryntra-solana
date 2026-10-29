@@ -4,12 +4,12 @@ import { Uniwind } from 'uniwind'
 export type ThemeMode = 'dark' | 'light' | 'system'
 
 export const THEME_MODES: readonly { mode: ThemeMode; label: string }[] = [
-  { mode: 'dark', label: 'Dark' },
-  { mode: 'light', label: 'Light' },
-  { mode: 'system', label: 'System' },
+  { mode: 'dark', label: 'Graphite' },
+  { mode: 'light', label: 'Porcelain' },
+  { mode: 'system', label: 'As the system' },
 ]
 
-/** Dark is the presentation theme (Brand; the choice persists on the device. */
+/** Graphite (dark) is the default, as on the web (the core's `default`); the choice persists on the device. */
 const DEFAULT_MODE: ThemeMode = 'dark'
 const STORAGE_KEY = 'theme.mode'
 

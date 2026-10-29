@@ -5,6 +5,7 @@ import { consumeLoginNonce, getState } from "@/lib/beta/rpc";
 import { isAdminOperator } from "@/lib/admin/store";
 import { loginTargetOf, recordAccountLogin } from "@/lib/admin/activity";
 import { sessionOpen, sessionRevoke } from "@/lib/account/rpc";
+import { LINKED_WALLET_COOKIE } from "@/lib/account/wallet-session";
 import { ADMIN_IDLE_S, ADMIN_SESSION_TTL_S, CUSTOMER_SESSION_TTL_S } from "@/lib/auth/account-session";
 import { verifySession } from "@/lib/beta/token";
 
@@ -81,6 +82,7 @@ export async function GET(req: NextRequest) {
     res.cookies.delete("rt");
     res.cookies.delete("rta");
     res.cookies.delete("rw");
+    res.cookies.delete(LINKED_WALLET_COOKIE);
     return res;
   }
   // Native Telegram sends Site:none; Telegram Web is cross-site. Allow the latter only for a

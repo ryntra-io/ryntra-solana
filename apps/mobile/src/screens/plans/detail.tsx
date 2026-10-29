@@ -10,6 +10,7 @@ import { Chip } from '@/components/chip'
 import { DoorRow } from '@/components/door-row'
 import { FactRow } from '@/components/fact-row'
 import { Field } from '@/components/field'
+import { HelpDot } from '@/components/help-dot'
 import { Icon } from '@/components/icon'
 import { ScreenHeader } from '@/components/screen'
 import { Sheet } from '@/components/sheet'
@@ -76,12 +77,24 @@ import { AttentionCard } from './plan-row'
 
 const first = (value: string | string[] | undefined): string | undefined => (Array.isArray(value) ? value[0] : value)
 
-function Section({ title, children }: { title: string; children: React.ReactNode }) {
+function Section({
+  title,
+  help,
+  children,
+}: {
+  title: string
+  /** What the section's words mean, one tap deep behind «?» beside the title. */
+  help?: string | readonly string[]
+  children: React.ReactNode
+}) {
   return (
     <View className="gap-2">
-      <Txt variant="labelSm" tone="faint" caps className="px-1">
-        {title}
-      </Txt>
+      <View className="flex-row items-center gap-1 px-1">
+        <Txt variant="labelSm" tone="faint" caps>
+          {title}
+        </Txt>
+        {help ? <HelpDot title={title} body={help} /> : null}
+      </View>
       {children}
     </View>
   )
@@ -192,7 +205,7 @@ function MarketRules({
             key={`${condition.metric}:${condition.window}`}
             label={metricLabel(metric, condition.metric, locale)}
             value={`${copy.operator[condition.operator]} ${thresholdText(metric, condition.threshold, flags, locale)} · ${condition.window}`}
-            detail={`${copy.mode[condition.mode]} · ${copy.modeHint[condition.mode]}`}
+            detail={copy.mode[condition.mode]}
             mono={false}
             last={index === rules.evidenceConditions.length - 1}
           />
@@ -215,10 +228,13 @@ function SizingCard({
 }) {
   return (
     <Card className="gap-1">
-      <View className="flex-row items-end justify-between pb-1">
-        <Txt variant="labelSm" tone="faint" caps>
-          {copy.plannedSize}
-        </Txt>
+      <View className="flex-row items-center justify-between pb-1">
+        <View className="flex-row items-center gap-1">
+          <Txt variant="labelSm" tone="faint" caps>
+            {copy.plannedSize}
+          </Txt>
+          <HelpDot title={copy.plannedSize} body={copy.sizeNote} />
+        </View>
         <Chip label={copy.limitedBy[sizing.limitedBy]} caps={false} />
       </View>
       <Txt variant="dataLg">
@@ -226,9 +242,6 @@ function SizingCard({
       </Txt>
       <FactRow label={copy.plannedSpend} value={formatUsd(sizing.notionalUsd, locale)} />
       <FactRow label={copy.lossPerUnit} value={formatPrice(sizing.lossPerShareUsd, locale)} last />
-      <Txt variant="labelSm" tone="faint" className="pt-2">
-        {copy.sizeNote}
-      </Txt>
     </Card>
   )
 }
@@ -266,9 +279,12 @@ function NowCard({
   return (
     <Card className="gap-1">
       <View className="flex-row items-center justify-between">
-        <Txt variant="labelSm" tone="faint" caps>
-          {copy.marketNow}
-        </Txt>
+        <View className="flex-row items-center gap-1">
+          <Txt variant="labelSm" tone="faint" caps>
+            {copy.marketNow}
+          </Txt>
+          <HelpDot title={copy.marketNow} body={[copy.reviewDecides, copy.planContextNote]} />
+        </View>
         {now.stale ? <Chip label={copy.stale} tone="warning" /> : null}
       </View>
       {loading && now.pricePerUnit === null ? (
@@ -321,9 +337,6 @@ function NowCard({
           ) : null}
         </>
       )}
-      <Txt variant="labelSm" tone="faint" className="pt-2">
-        {copy.reviewDecides}
-      </Txt>
     </Card>
   )
 }
@@ -463,16 +476,15 @@ export function PlanDetailScreen() {
     const card = attentionCard(plan, surface)
     // Two active plans on one symbol share one card on the surface; the detail says so instead of claiming it.
     const shared = sharedSymbols(all.data?.plans ?? []).has(plan.asset.symbol)
+    // The status chip says draft or cancelled; a line says only what the chip cannot — the purchases made.
     const stateLine =
-      plan.status === 'draft'
-        ? copy.stateDraft
-        : plan.status === 'cancelled'
-          ? copy.stateCancelled
-          : plan.executions.length > 0
-            ? copy.stateExecuted(plan.executions.length)
-            : plan.status === 'active'
-              ? copy.stateWaiting
-              : null
+      plan.status === 'draft' || plan.status === 'cancelled'
+        ? null
+        : plan.executions.length > 0
+          ? copy.stateExecuted(plan.executions.length)
+          : plan.status === 'active'
+            ? copy.stateWaiting
+            : null
     body = (
       <ScrollView
         className="flex-1"
@@ -568,7 +580,14 @@ export function PlanDetailScreen() {
         />
 
         {rules.evidenceConditions.length > 0 ? (
-          <Section title={copy.marketRules}>
+          <Section
+            title={copy.marketRules}
+            help={[
+              copy.marketRulesHint,
+              `${copy.mode.advisory}: ${copy.modeHint.advisory}`,
+              `${copy.mode.required}: ${copy.modeHint.required}`,
+            ]}
+          >
             <MarketRules rules={rules} metrics={metrics} copy={copy} locale={locale} />
           </Section>
         ) : null}
@@ -664,7 +683,6 @@ export function PlanDetailScreen() {
             <DoorRow
               icon="analytics-outline"
               label={copy.results}
-              line={copy.resultsLine}
               onPress={() => router.push({ pathname: '/results', params: { plan: plan.id, from: 'plan' } })}
               last
             />
@@ -749,9 +767,7 @@ export function PlanDetailScreen() {
       </View>
       <SessionGate what={copy.title}>
         <View className="flex-1">{body}</View>
-        {plan && planActions(plan).review ? (
-          <BottomAction title={copy.reviewTrade} onPress={reviewTrade} hint={copy.planContextNote} />
-        ) : null}
+        {plan && planActions(plan).review ? <BottomAction title={copy.reviewTrade} onPress={reviewTrade} /> : null}
       </SessionGate>
 
       <Sheet visible={cancelOpen} title={copy.confirmCancel} onClose={closeCancel}>

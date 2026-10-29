@@ -22,10 +22,26 @@
  */
 
 import { contextParam, parseContextParam } from '../agent/context.ts'
+import { cityPathOf, cityRouteOf } from '../city/city-page.ts'
 import { isInstant, isRuleId } from '../autoinvest/rule-model.ts'
-import { marketsPath, screenerTabOf, type ScreenerTab } from '../markets/screener.ts'
-import { BOTS_CATALOG_PATH, BOTS_PATH, MONEY_PATH } from '../shell/places.ts'
-import { LEGACY_TAB_ROUTES } from '../shell/shell.ts'
+import { askedScreenerTab, marketsPath, type ScreenerTab } from '../markets/screener.ts'
+import {
+  BOTS_CATALOG_PATH,
+  BOTS_PATH,
+  MONEY_PATH,
+  PREDICTIONS_LIVE,
+  PREDICTIONS_MONEY_PATH,
+  PREDICTIONS_PATH,
+} from '../shell/places.ts'
+import {
+  HOME_PATH,
+  LEGACY_TAB_ROUTES,
+  ORDERS_PATH,
+  PORTFOLIO_HISTORY_PATH,
+  PORTFOLIO_PATH,
+  SWAP_PATH,
+  TRADE_PATH,
+} from '../shell/shell.ts'
 import { BUDGET_EDIT_PATH } from './monitoring-model.ts'
 
 const NOTE = /^(inb_|mon_)[0-9a-f]{24}$/
@@ -33,9 +49,27 @@ const NOTE = /^(inb_|mon_)[0-9a-f]{24}$/
 const SYMBOL = /^[A-Za-z0-9._-]{1,32}$/
 const DEV_CLIENT = /^[a-z][a-z0-9+.-]*:\/\/expo-development-client(?:[/?#]|$)/i
 const PLAN = /^plan_[0-9a-f]{32}$/
+/** A limit order's id as the server names it. */
+const ORDER = /^[A-Za-z0-9_-]{1,64}$/
 const RULE = /^rule_[0-9a-f]{32}$/
 const MINT = /^[1-9A-HJ-NP-Za-km-z]{32,44}$/
+/** A Phoenix market's symbol, as the futures route reads it (`features/futures/futures-model.ts`). */
+const FUTURES_MARKET = /^[A-Za-z0-9]{1,20}$/
+/** An event of «Прогнози», as the Predictions routes name one (`features/predictions/predictions-model.ts`). */
+const PREDICTION_EVENT = /^[A-Za-z0-9_-]{1,64}$/
 const DRAFT = /^agd_[0-9a-f]{24}$/
+/** A token watch of the assistant (1.57.0), or `all` — «Стежу» alone. */
+const WATCH = /^(wch_[0-9a-f]{24}|all)$/
+/** A «Доручення» of the assistant (1.59.0). */
+const TASK = /^t_[0-9a-f]{12}$/
+/** A trade plan Ryntra composed with the person (1.61.0). */
+const ASSISTANT_PLAN = /^[A-Za-z0-9_-]{3,80}$/
+/** A credits order of the assistant (1.54.0): «Кредити» with its state. */
+const ORDER_ID = /^[A-Za-z0-9_-]{1,64}$/
+/** A morning brief's day, or `latest` — the newest. */
+const BRIEF_DAY = /^(\d{4}-\d{2}-\d{2}|latest)$/
+/** The assistant's tabs (AI-06): Розмова · Стежу · Плани · Огляди · Кредити. */
+const ASSISTANT_TABS: ReadonlySet<string> = new Set(['chat', 'watch', 'plans', 'brief', 'credits'])
 const VERSION = /^[1-9][0-9]{0,3}$/
 /** A plain positive decimal, up to nine whole digits and six places — the web ticket's own shape for a sum. */
 const SUM = /^\d{1,9}(\.\d{1,6})?$/
@@ -45,11 +79,13 @@ const QUESTION_MAX = 2000
 
 /** The app's own routes a link may name directly — left as they are. */
 const NATIVE_PATHS =
-  /^\/(?:\(tabs\)(?:\/|$)|trade(?:\?|$)|plans\/|bots(?:\?|$)|monitoring(?:\/|$)|asset\/|token\/|history(?:\?|$)|results(?:\?|$)|rewards(?:\?|$)|search(?:\?|$)|ryn(?:\?|$)|changes(?:\?|$)|settings(?:\?|$)|money(?:\/(?:send|receive))?(?:\?|$)|launch(?:\/|\?|$)|gallery(?:\?|$)|_sitemap(?:\?|$)|$)/
+  /^\/(?:\(tabs\)(?:\/|$)|trade(?:\?|$)|plans\/|bots(?:\?|$)|monitoring(?:\/|$)|asset\/|token\/|futures\/[A-Za-z0-9]{1,20}(?:\?|$)|predictions\/[A-Za-z0-9_-]{1,64}(?:\?|$)|history(?:\?|$)|results(?:\?|$)|rewards(?:\?|$)|search(?:\?|$)|ryn(?:\?|$)|lens(?:\?|$)|ryn-plan\/[A-Za-z0-9_-]{3,80}(?:\?|$)|changes(?:\?|$)|settings(?:\?|$)|money\/(?:send|receive)(?:\?|$)|launch(?:\/|\?|$)|gallery(?:\?|$)|_sitemap(?:\?|$)|$)/
 
 export type MapOptions = Readonly<{
   /** Carry the sum a link names — only for Ryntra's own handoffs, where the person wrote it (see above). */
   carrySums?: boolean
+  /** Whether this build shows «Прогнози» (`PREDICTIONS_LIVE` unless a test names it). */
+  predictions?: boolean
 }>
 
 export type MappedLink = Readonly<{
@@ -61,7 +97,7 @@ export type MappedLink = Readonly<{
 
 /**
  * The path and query of a link the app may receive: the site's, the app's scheme (`ryntra://`, or the development
- * build's own `ryntra-dev://`), or a bare path. Null when it is none of these.
+ * build's own `ryntra-dev://`, M27), or a bare path. Null when it is none of these.
  */
 export function pathOfLink(url: string): string | null {
   const trimmed = url.trim()
@@ -99,18 +135,44 @@ export function mapDeepLink(url: string, options: MapOptions = {}): MappedLink {
   const name = pathname(path)
   const params = query(path)
 
+  // The city's own links (CITY-6c): a coin's tower, `/c/<mint>`, opens «Місто» on it. The site's `/` is the app's
+  // own `/`, «Місто», already.
+  const city = name.startsWith('/c/') ? cityPathOf(name) : null
+  if (city !== null) return { path: cityRouteOf(city), kind: 'native' }
+
+  // A build without «Прогнози» (the second release brings them) sends every link to them to the web, never to a
+  // screen it does not draw: the phone's own addresses as the web names the same place.
+  const hiddenPrediction = (options.predictions ?? PREDICTIONS_LIVE) ? null : predictionOnWeb(name, params)
+  if (hiddenPrediction !== null)
+    return { path: `/monitoring/open?href=${encodeURIComponent(hiddenPrediction)}`, kind: 'web' }
   // The older shells' tabs — Trade, Strategies, the Agent, the bar's «+»: where they lead now, the link's own query kept.
   const legacy = (LEGACY_TAB_ROUTES as Readonly<Record<string, string>>)[name]
   if (legacy) {
     const search = params.toString()
     return { path: search ? `${legacy}?${search}` : legacy, kind: 'native' }
   }
-  // Markets on a list of an older shell (`/lists`, the tab's `stock`, `meme`): the screener on the same assets.
-  if (name === '/lists') return { path: screenerPath(params, 'all'), kind: 'native' }
-  if (name === '/(tabs)/markets' && params.toString()) return { path: screenerPath(params, 'all'), kind: 'native' }
-  // The plans live in «Боти → Мої боти» since the current menu; a plan's own page stays where it was.
+  // A swap with no asset is «Торгівля · Обмін», its own place since M44.3; a ticket with an asset stays the sheet.
+  if (name === '/trade' && params.get('mode') === 'swap' && !params.get('mint'))
+    return { path: SWAP_PATH, kind: 'native' }
+  // The places the new look moved (NEW-LOOK §2): Термінал, Ринки, Гроші and Мої ордери, from links, receipts and push.
+  const moved = movedPlace(name, params)
+  if (moved !== null) return { path: moved, kind: 'native' }
+  // Markets on a list of an older shell (M2's `/lists`, the tab's `stock`, `meme`): the screener on the same assets.
+  if (name === '/lists') return { path: screenerPath(params), kind: 'native' }
+  // «Торгівля» on a segment (`seg`, M44.3) passes as it is; a list an older Markets named, onto the screener's chip.
+  if (name === '/(tabs)/markets' && params.toString() && !params.get('seg'))
+    return { path: screenerPath(params), kind: 'native' }
+  // The plans live in «Боти → Мої боти» since the menu v6.2; a plan's own page stays where it was.
   if (name === '/plans') return { path: BOTS_PATH, kind: 'native' }
   if (NATIVE_PATHS.test(path)) return { path, kind: 'native' }
+  // «Торгівля → Прогнози» (M12), in a build that shows them: the web's event page opens the phone's; the portfolio's
+  // money, the phone's «Гроші».
+  const prediction = /^\/app\/predictions\/([^/]+)$/.exec(name)
+  if (prediction) {
+    const id = prediction[1] ?? ''
+    if (id === 'portfolio') return { path: PREDICTIONS_MONEY_PATH, kind: 'native' }
+    return { path: PREDICTION_EVENT.test(id) ? `/predictions/${id}` : PREDICTIONS_PATH, kind: 'native' }
+  }
 
   if (name === '/app/alerts/open') {
     const n = params.get('n') ?? ''
@@ -129,6 +191,18 @@ export function mapDeepLink(url: string, options: MapOptions = {}): MappedLink {
   }
   if (name === '/app/strategies' || name === '/app/strategies/plans') return { path: BOTS_PATH, kind: 'native' }
 
+  // A trade plan Ryntra composed with the person: its own page on the phone (1.61.0).
+  const assistantPlan = /^\/app\/ryn\/plans\/([^/]+)$/.exec(name)
+  if (assistantPlan) {
+    const id = assistantPlan[1] ?? ''
+    return { path: ASSISTANT_PLAN.test(id) ? `/ryn-plan/${id}` : '/ryn?tab=plans', kind: 'native' }
+  }
+  // A followed wallet's trade (1.63.0, SOL-R4): the phone has no «Гаманці», so the note itself opens, with its words.
+  if (name === '/app/markets' && params.get('tab') === 'wallets') {
+    const wallet = params.get('wallet')
+    return { path: wallet && MINT.test(wallet) ? `/monitoring/open?wallet=${wallet}` : '/monitoring', kind: 'native' }
+  }
+
   const ryn = agentPathOf(name, params, options)
   if (ryn !== null) return { path: ryn, kind: 'native' }
 
@@ -139,15 +213,67 @@ export function mapDeepLink(url: string, options: MapOptions = {}): MappedLink {
   return { path: '/', kind: 'unknown' }
 }
 
+/** The addresses of «Торгівля» a link may carry `?seg=` on: the place's own, its older tab and the moved Markets. */
+const TRADE_PLACE_NAMES: ReadonlySet<string> = new Set([TRADE_PATH, '/(tabs)/trade', '/trade', '/markets'])
+
+/**
+ * The web's address of a link to «Прогнози» — the web's own `/app/predictions…`, the phone's `/predictions/<event>`
+ * and `/predictions/money`, and «Торгівля» on `?seg=predictions`, named as the web names them with the link's query
+ * kept; null for a link to anything else.
+ */
+function predictionOnWeb(name: string, params: URLSearchParams): string | null {
+  const search = params.toString()
+  const kept = (web: string) => (search ? `${web}?${search}` : web)
+  if (name === '/app/predictions' || name.startsWith('/app/predictions/')) return kept(name)
+  const own = /^\/predictions\/([^/]+)$/.exec(name)
+  if (own) {
+    const id = own[1] ?? ''
+    if (id === 'money') return kept('/app/predictions/portfolio')
+    return kept(PREDICTION_EVENT.test(id) ? `/app/predictions/${id}` : '/app/predictions')
+  }
+  if (TRADE_PLACE_NAMES.has(name) && params.get('seg') === 'predictions') return '/app/predictions'
+  return null
+}
+
+/**
+ * Where an address of a place the new look moved now leads (NEW-LOOK §2): «Термінал» is «Торгівля» on Ринки — with
+ * `side=sell` the ticket's sale, the link's own query kept; `/markets` is «Торгівля · Ринки» on the tab it names;
+ * «Гроші» is the bar's «Гроші» (`open=top-up` kept); «Мої ордери» open over «Портфель», the order a note named kept. Null
+ * for any other path.
+ */
+export function movedPlace(name: string, params: URLSearchParams): string | null {
+  switch (name) {
+    case '/terminal':
+    case '/(tabs)/terminal': {
+      if (params.get('side') !== 'sell') return TRADE_PATH
+      const search = params.toString()
+      return `/trade?${search}`
+    }
+    case '/markets':
+      return screenerPath(params)
+    case '/money':
+    case '/(tabs)/money':
+      return params.get('open') === 'top-up' ? `${MONEY_PATH}?open=top-up` : MONEY_PATH
+    case ORDERS_PATH: {
+      const order = params.get('order')
+      return withQuery(PORTFOLIO_PATH, [
+        ['open', 'orders'],
+        ['order', order && ORDER.test(order) ? order : null],
+      ])
+    }
+    default:
+      return null
+  }
+}
+
 /** A link's query as the screener reads it. */
 function paramsOf(params: URLSearchParams): Record<string, string> {
   return Object.fromEntries(params.entries())
 }
 
-/** The screener on the tab a link asks for, or on `fallback` when it asks for none. */
-function screenerPath(params: URLSearchParams, fallback: ScreenerTab): string {
-  const asked = paramsOf(params)
-  return marketsPath(asked.tab || asked.kind || asked.mode ? screenerTabOf(asked) : fallback)
+/** The screener on the tab a link asks for, or on `fallback` when it asks for none — with none, as the person left it. */
+function screenerPath(params: URLSearchParams, fallback?: ScreenerTab): string {
+  return marketsPath(askedScreenerTab(paramsOf(params)) ?? fallback)
 }
 
 function withQuery(path: string, entries: readonly (readonly [string, string | null])[]): string {
@@ -164,7 +290,7 @@ function withQuery(path: string, entries: readonly (readonly [string, string | n
  * Markets on a tab (the stock screener and Trends lead there), «Боти» (the
  * plans, the results, the recurring buy), a token by its address, Swap,
  * Portfolio, History, Rewards, Top up and Receive — the same places on both,
- * the current menu. Null when the path is none of them.
+ * the menu v6.2. Null when the path is none of them.
  */
 function agentPathOf(name: string, params: URLSearchParams, options: MapOptions): string | null {
   const rawMint = params.get('mint')
@@ -174,12 +300,23 @@ function agentPathOf(name: string, params: URLSearchParams, options: MapOptions)
       const context = parseContextParam(params.get('context'))
       // A question a link carries only fills the composer; the person sends it.
       const question = (params.get('q') ?? '').trim().slice(0, QUESTION_MAX)
-      return context
-        ? withQuery('/ryn', [
-            ['context', contextParam(context)],
-            ['q', question || null],
-          ])
-        : withQuery('/ryn', [['q', question || null]])
+      // A morning brief's day (1.46.0, `?brief=2026-10-18`, or `latest`): the brief opens first.
+      const rawBrief = params.get('brief')
+      const brief = rawBrief && BRIEF_DAY.test(rawBrief) ? rawBrief : null
+      // A watch's note (1.57.0) opens «Стежу» on it; a task's (1.59.0) its conversation; a door its tab.
+      const watch = params.get('watch')
+      const task = params.get('task')
+      const tab = params.get('tab')
+      const order = params.get('order')
+      return withQuery('/ryn', [
+        ['context', context ? contextParam(context) : null],
+        ['q', question || null],
+        ['brief', brief],
+        ['watch', watch && WATCH.test(watch) ? watch : null],
+        ['task', task && TASK.test(task) ? task : null],
+        ['tab', tab && ASSISTANT_TABS.has(tab) ? tab : null],
+        ['order', order && ORDER_ID.test(order) ? order : null],
+      ])
     }
     case '/app/spot': {
       // Spot without a market is the phone's Trade, where a market is picked (Markets · «Для досвідчених» · Спот).
@@ -216,11 +353,12 @@ function agentPathOf(name: string, params: URLSearchParams, options: MapOptions)
     }
     case '/app/home':
       // The month's autoinvest budget, spent: its note's Telegram button opens Home with the budget's sheet (1.13.0).
-      return params.get('budget') === 'edit' ? BUDGET_EDIT_PATH : '/(tabs)'
+      return params.get('budget') === 'edit' ? BUDGET_EDIT_PATH : HOME_PATH
     case '/app/portfolio':
       return '/(tabs)/portfolio'
     case '/app/activity':
-      return '/history'
+      // The web's activity is the phone's «Портфель · Історія» (NEW-LOOK §5).
+      return PORTFOLIO_HISTORY_PATH
     case '/app/results':
       // The phone's own Results screen, a tap inside «Боти»: the plans' and the rules' outcomes.
       return '/results'
@@ -233,18 +371,26 @@ function agentPathOf(name: string, params: URLSearchParams, options: MapOptions)
     case '/app/bots/catalog':
       return BOTS_CATALOG_PATH
     case '/app/markets':
-      return screenerPath(params, 'all')
+      return screenerPath(params)
     case '/app/stocks':
     case '/app/stocks/screener':
       // The stock screener is the screener's «Акції» (`?kind=preipo` — «Приватні»).
       return screenerPath(params, 'stocks')
     case '/app/trends':
       // «Тренди» is the screener's own order now (`?mode=meme` — «Меми»).
-      return screenerPath(params, 'all')
+      return screenerPath(params)
     case '/app/top-up':
       return `${MONEY_PATH}?open=top-up`
     case '/app/swap':
-      return '/trade?mode=swap'
+      return SWAP_PATH
+    case '/app/futures':
+    case '/app/perps': {
+      // «Торгівля → Ф'ючерси» (C4): the web's `?market=SOL` opens that Phoenix market's own page.
+      const market = params.get('market')
+      return market && FUTURES_MARKET.test(market) ? `/futures/${market}` : `${TRADE_PATH}?seg=futures`
+    }
+    case '/app/predictions':
+      return PREDICTIONS_PATH
     case '/app/rewards':
       return '/rewards'
     case '/app/receive':
@@ -334,10 +480,98 @@ export function linkOfNotificationData(data: unknown): string | null {
   return pathOfLink(link) === null ? null : link
 }
 
-/** A web path the resolver may open: only the site's own `/app/…` pages, never an arbitrary address. */
-export function webHrefOf(href: string | null | undefined): string | null {
+/*
+ * The site's addresses in Ukrainian — the web's own rule (`lib/site/localized.ts`, `hasUkAddress` and
+ * `localizedPath`): a page offered in both languages answers at `/uk` and the same path, and a visit there sets the
+ * language for what follows; every other page has one address, and its language is the browser's cookie, which the
+ * phone cannot set. So a door the phone opens in Ukrainian takes the `/uk` address where the page has one, and the
+ * plain address otherwise. The documentation's pages by slug, word for word with the web's `DOC_SLUGS`.
+ */
+const SITE_ORIGIN = 'https://ryntra.io'
+const UK_PREFIX = '/uk'
+const UK_DOC_SLUGS: ReadonlySet<string> = new Set([
+  'start/getting-started',
+  'start/wallet',
+  'start/cabinet',
+  'manage/settings',
+  'invest/buy',
+  'invest/autoinvest',
+  'invest/company-page',
+  'invest/private-companies',
+  'invest/what-you-buy',
+  'trade/swap',
+  'trade/spot',
+  'trade/screener',
+  'trade/trends',
+  'launch/launch-a-token',
+  'money/top-up',
+  'money/send',
+  'money/receive',
+  'money/bridge',
+  'manage/portfolio',
+  'strategies/my-strategies',
+  'strategies/results',
+  'strategies/overview',
+  'manage/activity',
+  'ryntra',
+  'money/rewards',
+  'money/referrals',
+  'money/points',
+  'reference/review',
+  'reference/fees',
+  'reference/statuses',
+  'reference/troubleshooting',
+  'reference/faq',
+  'reference/glossary',
+])
+const UK_PAGES: ReadonlySet<string> = new Set([
+  '/',
+  '/app/home',
+  '/app/markets',
+  '/company',
+  '/security',
+  '/methodology',
+  '/contact',
+  '/support',
+  '/stats',
+  '/docs',
+])
+/** A company's page: one token, never the screener that shares the folder. */
+const UK_COMPANY_PAGE = /^\/app\/stocks\/(?!screener$)[A-Za-z0-9._-]{1,44}$/
+
+/** Whether the site's page at this path (no query, no fragment) has a Ukrainian address too. */
+export function hasUkAddress(path: string): boolean {
+  if (UK_PAGES.has(path)) return true
+  if (UK_COMPANY_PAGE.test(path)) return true
+  return path.startsWith('/docs/') && UK_DOC_SLUGS.has(path.slice('/docs/'.length))
+}
+
+/** A site path in the phone's language: its `/uk` address where the page has one, the path as it is otherwise. */
+export function localizedSitePath(path: string, locale: 'en' | 'uk'): string {
+  if (locale !== 'uk' || !path.startsWith('/')) return path
+  const cut = path.search(/[?#]/)
+  const [page, suffix] = cut < 0 ? [path, ''] : [path.slice(0, cut), path.slice(cut)]
+  if (page === UK_PREFIX || page.startsWith(`${UK_PREFIX}/`) || !hasUkAddress(page)) return path
+  return (page === '/' ? UK_PREFIX : `${UK_PREFIX}${page}`) + suffix
+}
+
+/**
+ * A web path the resolver may open: only the site's own `/app/…` pages, never an arbitrary address — in the phone's
+ * language where the page has a Ukrainian address (`/uk/app/home`), as it is otherwise (`/app/bridge`).
+ */
+export function webHrefOf(href: string | null | undefined, locale: 'en' | 'uk' = 'en'): string | null {
   if (typeof href !== 'string') return null
   const path = pathOfLink(href)
   if (path === null || !path.startsWith('/app/')) return null
-  return `https://ryntra.io${path}`
+  return `${SITE_ORIGIN}${localizedSitePath(path, locale)}`
+}
+
+/** One of ryntra.io's own pages (Help's `https://ryntra.io/docs`) in the phone's language; any other address as it is. */
+export function siteHrefOf(url: string, locale: 'en' | 'uk'): string {
+  const site = /^https:\/\/ryntra\.io(\/[^#]*)?(#.*)?$/i.exec(url.trim())
+  if (!site) return url
+  const path = site[1] && site[1].length > 0 ? site[1] : '/'
+  const localized = localizedSitePath(path, locale)
+  if (localized === path) return url
+  return `${SITE_ORIGIN}${localized}${site[2] ?? ''}`
 }

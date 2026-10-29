@@ -1,6 +1,9 @@
+import { cityRouteOfLink } from '@/features/city/city-page'
+
 /**
- * Expo Router hands every URL the OS opens the app with through here — the
- * app's scheme, the site's links, a push's link — before it becomes a route.
- * The one mapper decides; see `features/monitoring/deep-link.ts`.
+ * Expo Router hands every URL the OS opens the app with through here — the app's scheme, the site's links — before it
+ * becomes a route. The app is the city (decision 75): a coin's tower opens the city on it, everything else the city.
  */
-export { redirectSystemPath } from '@/features/monitoring/deep-link'
+export function redirectSystemPath(input: Readonly<{ path: string; initial: boolean }>): string {
+  return cityRouteOfLink(input.path)
+}

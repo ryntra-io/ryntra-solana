@@ -35,7 +35,7 @@ export async function POST(request: Request) {
   const guard = getGuardRuntime();
   if (!guard.writes.allowed || !storeSurvivesColdStart(guard.store)) return apiFailure("UNAVAILABLE", "The agent needs a durable store; this deployment does not have one.");
   const deps = await agentDepsFor(request, proof.address);
-  const result = await handleAgentCritic(deps, { owner: proof.address, subject: read.body.subject, locale: read.body.locale, compose: read.body.compose });
+  const result = await handleAgentCritic(deps, { owner: proof.address, subject: read.body.subject, locale: read.body.locale, compose: read.body.compose, acceptCredits: read.body.acceptCredits ?? null });
   if (!result.ok) return apiFailure(result.code, result.reason);
   return apiJson(result.response satisfies AgentCriticResponse);
 }

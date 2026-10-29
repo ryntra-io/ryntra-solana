@@ -1,4 +1,5 @@
 import { resolveInternalWallets } from "../admin/internal-wallets.ts";
+import { notePointsStandings } from "./standings.ts";
 import { withBoundedCasRetry, type GuardStore, type GuardAtomicVersionedWrite } from "../guard/store.ts";
 import { ensureRewardAccount, readRewardAccount } from "../rewards/ledger.ts";
 import { nextEarningSince, referralLevelsAt, referrerAt, RewardAccountSchema, type RewardAccount } from "../rewards/referral.ts";
@@ -148,6 +149,8 @@ async function recordPointsCore(
     writes.push({ collection: "pointsAccruals", key: operationKey, expectedVersion: prior?.version ?? null,
       next: { version: (prior?.version ?? -1) + 1, day, entries: prior?.entries ?? accrual.entries, valued: volume.usdMicros !== null } as { version: number } });
     if (!await store.compareAndSetMany(writes)) return false;
+    /* The rank's record follows the rows just written (`standings.ts`); non-fatal. */
+    await notePointsStandings(store, created.map((entry) => entry.wallet), now);
     const points = created.reduce((sum, entry) => sum + BigInt(entry.points), 0n);
     return { state: "RECORDED", created: created.length, existing: accrual.entries.length - created.length, points: points.toString(), pending: volume.usdMicros === null };
     });

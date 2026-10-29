@@ -3,6 +3,7 @@ import type { ReactNode } from "react";
 import Link from "next/link";
 import {
   ArrowRight,
+  Calculator,
   CheckCircle,
   ClockCounterClockwise,
   Gauge,
@@ -18,6 +19,7 @@ import type { JournalCycle } from "@/lib/home/advice/journal";
 import { Section, StateChip } from "@/app/app/portfolio/tiles";
 import { CycleRow } from "@/app/app/action-cases/tiles";
 import type { WorkspaceLocale } from "@/app/shell/locale";
+import { HonestPnlPanel } from "@/app/shell/honest-pnl";
 import { cabinetUiCopy } from "../ui-lang";
 import { VisitorNotice } from "../visitor";
 import { loadJournal, type JournalRead } from "./read";
@@ -41,6 +43,7 @@ type JournalPageCopy = {
   loop: { title: string; info: ReactNode; chip: (cycles: number) => string };
   discipline: { title: string; info: (hint: string) => ReactNode };
   metric: { noData: string; unavailable: string };
+  honest: { title: string; info: ReactNode; paper: string; live: string; notRead: string; paperNote: string; liveNote: string };
   adherence: {
     title: string;
     info: (minCohort: number) => ReactNode;
@@ -113,6 +116,21 @@ const COPY = {
       ),
     },
     metric: { noData: "No data yet", unavailable: "Unavailable" },
+    honest: {
+      title: "Honest result",
+      info: (
+        <p>
+          One standard for every result Ryntra shows: fees counted, realized and unrealized apart, what is held at the
+          price it would leave at, how complete the data is, the drawdown, and 7 · 30 · 90 days. A result not known well
+          enough is <b>not known</b> — never a zero, never a plus. Paper and real are two results, never one sum.
+        </p>
+      ),
+      paper: "Paper",
+      live: "Real trades",
+      notRead: "This book was not read on this request — no figure is shown for it.",
+      paperNote: "Paper: a closed trade's result is the move less its entry and exit fees; an open paper trade is not marked here, so it is a part not known.",
+      liveNote: "Real: the venue's closed result before fees, less every fill's fee (opening fills too), from the last 100 fills read. Positions still open at the venue are in the Portfolio and not counted here.",
+    },
     adherence: {
       title: "Does following your plan pay off, in your own data",
       info: (minCohort: number) => (
@@ -163,15 +181,15 @@ const COPY = {
     visitor: {
       eyebrow: "Перегляд",
       heading: "Журнал",
-      body: "Кожен ваш план, ухвалене рішення, те, що сталося насправді, і те, що ви записали після, — весь цикл, paper і реальні угоди поруч.",
+      body: "Кожен твій план, ухвалене рішення, те, що сталося насправді, і твій запис після, — весь цикл, paper і реальні угоди поруч.",
       reason:
-        "Журнал — це ваш власний запис, тож без акаунта тут нема чого читати. Це не пейвол: журнал чужих рішень не був би журналом.",
+        "Журнал — це твій власний запис, тож без акаунта тут нема чого читати. Це не пейвол: журнал чужих рішень не був би журналом.",
     },
     readFailed: "Читання не вдалося",
     hardError: {
       title: "Це читання не завершилося",
       info: <p>Тут не показано жодного циклу з попереднього читання. Застарілий журнал, поданий як поточний, — саме той дефект, якому цей стан запобігає.</p>,
-      empty: "Ніщо на цій сторінці зараз не є поточним фактом. Перезавантажте, щоб повторити читання.",
+      empty: "Ніщо на цій сторінці зараз не є поточним фактом. Перезавантаж, щоб повторити читання.",
     },
     reload: "Перезавантажити",
     decisions: "Рішення",
@@ -184,9 +202,9 @@ const COPY = {
       title: "Цикл",
       info: (
         <p>
-          Журнал — це чотири речі по порядку: що ви <b>запланували</b>, що{" "}
-          <b>вирішили</b>, що було <b>спостережено</b> і який <b>висновок</b> ви
-          зробили. Кожен лічильник нижче — скільки ваших циклів дійшло до цієї ланки.
+          Журнал — це чотири речі по порядку: що <b>заплановано</b>, що{" "}
+          <b>вирішено</b>, що було <b>спостережено</b> і який <b>висновок</b>
+          зроблено. Кожен лічильник нижче — скільки твоїх циклів дійшло до цієї ланки.
           Прогалина — не провал: це названа відсутня ланка, і її можна закрити.
         </p>
       ),
@@ -196,20 +214,35 @@ const COPY = {
       title: "Дисципліна",
       info: (hint: string) => (
         <p>
-          {hint}. Дотримання плану — це те, як часто ви робили те, що казали; це
+          {hint}. Дотримання плану — це те, як часто ти робиш те, що кажеш; це
           поведінка, і це єдине в цьому продукті, що читач контролює повністю.
           Показник, якого книга не повідомила, показано як недоступний, а не як нуль —{" "}
-          <b>«ви не дотримались жодного плану» і «книга не відповіла» — різні факти</b>,
-          і лише один із них про вас.
+          <b>«жодного плану не дотримано» і «книга не відповіла» — різні факти</b>,
+          і лише один із них про тебе.
         </p>
       ),
     },
     metric: { noData: "Даних ще немає", unavailable: "Недоступно" },
+    honest: {
+      title: "Чесний результат",
+      info: (
+        <p>
+          Один стандарт для кожного результату в Ryntra: комісії враховано, реалізоване й нереалізоване окремо, те, що
+          тримається, — за ціною виходу, повнота даних, просадка і 7 · 30 · 90 днів. Результат, відомий недостатньо, —{" "}
+          <b>невідомий</b>: ніколи не нуль і не плюс. Папір і реальні угоди — два результати, ніколи не одна сума.
+        </p>
+      ),
+      paper: "Папір",
+      live: "Реальні угоди",
+      notRead: "Цю книгу на цьому читанні не прочитано — цифр для неї не показуємо.",
+      paperNote: "Папір: результат закритої угоди — рух ціни мінус комісії входу й виходу; відкриту paper-угоду тут не оцінено, тож це невідома частина.",
+      liveNote: "Реальні: закритий результат майданчика до комісій мінус комісія кожного філу (і відкривальних) — за останніми 100 прочитаними філами. Позиції, ще відкриті на майданчику, — у Портфелі й тут не враховані.",
+    },
     adherence: {
-      title: "Чи окупається дотримання плану — у ваших власних даних",
+      title: "Чи окупається дотримання плану — у твоїх власних даних",
       info: (minCohort: number) => (
         <p>
-          Дві когорти ваших власних закритих paper-угод: ті, де ви дотримались плану,
+          Дві когорти твоїх власних закритих paper-угод: ті, де плану дотримано,
           і ті, де ні. Поки в будь-якій когорті менше ніж {minCohort} угод, різниця —
           шум, і сторінка каже це прямо, а не малює її. Навіть вище цього порогу це
           особистий поведінковий сигнал, а не дослідження — і це <b>лише paper</b>, бо
@@ -217,13 +250,13 @@ const COPY = {
           кількома філами, і змішування читалося б як реальний результат.
         </p>
       ),
-      followed: "Дотримались плану",
-      broke: "Порушили план",
+      followed: "План дотримано",
+      broke: "План порушено",
       emptyCohort: "У цій когорті немає угод",
       closedInProfit: (wins: number, n: number) => `${wins} із ${n} закрито в плюс`,
       noFlags: "Жодна закрита paper-угода ще не має позначки плану, тож порівнювати нема чого.",
       delta: (points: string) =>
-        `Наразі дотримання плану дає ${points} пунктів win rate у ваших власних даних. З більшою кількістю угод оцінка стає стійкішою.`,
+        `Наразі дотримання плану дає ${points} пунктів win rate у твоїх власних даних. З більшою кількістю угод оцінка стає стійкішою.`,
       needMore: (minCohort: number, unflagged: number) =>
         `Кожній когорті потрібно ${minCohort} угод, перш ніж різницю варто читати.${unflagged === 0 ? "" : ` Закритих угод без позначки плану: ${unflagged} — їх виключено.`}`,
     },
@@ -236,7 +269,7 @@ const COPY = {
           вже сталася.
         </p>
       ),
-      empty: "Жодного відкритого циклу. Усе, що ви почали, вже спостережено.",
+      empty: "Жодного відкритого циклу. Усе розпочате вже спостережено.",
     },
     observed: {
       title: "Спостережені цикли",
@@ -248,10 +281,16 @@ const COPY = {
         </p>
       ),
       chip: (reviewed: number, unreviewed: number) => `Розібрано: ${reviewed} · Без розбору: ${unreviewed}`,
-      empty: "Ще нічого не закрилося, тож розбирати нема чого. Ця сторінка наповнюється з того, що ви реально робите.",
+      empty: "Ще нічого не закрилося, тож розбирати нема чого. Ця сторінка наповнюється з того, що ти реально робиш.",
     },
   },
 } as const satisfies Record<WorkspaceLocale, JournalPageCopy>;
+
+/** Dollars as the honest result prints them: «+$12.40», «−$3.05». */
+function usdText(value: number, locale: string, signed: boolean): string {
+  const text = new Intl.NumberFormat(locale, { style: "currency", currency: "USD", maximumFractionDigits: 2 }).format(Math.abs(value));
+  return `${signed ? (value > 0 ? "+" : value < 0 ? "−" : "") : value < 0 ? "−" : ""}${text}`;
+}
 
 /**
  * Ryntra Home — the Journal, as the cycle it records.
@@ -394,6 +433,26 @@ export default async function JournalPage() {
             </li>
           ))}
         </ul>
+      </Section>
+
+      <Section
+        id="honest-result"
+        title={local.honest.title}
+        icon={<Calculator size={17} weight="bold" aria-hidden />}
+        info={local.honest.info}
+      >
+        <div className={styles.honest}>
+          {([["paper", read.honest.paper, local.honest.paperNote], ["live", read.honest.live, local.honest.liveNote]] as const).map(([book, pnl, note]) => (
+            <div key={book} className={styles.honestBook}>
+              <h3 className={styles.honestTitle}>{book === "paper" ? local.honest.paper : local.honest.live}</h3>
+              {pnl === null ? (
+                <p className={styles.empty}>{local.honest.notRead}</p>
+              ) : (
+                <HonestPnlPanel pnl={pnl} lang={lang === "uk" ? "uk" : "en"} numberLocale={lang === "uk" ? "uk-UA" : "en-US"} format={(value, signed) => usdText(value, lang === "uk" ? "uk-UA" : "en-US", signed)} notes={[note]} />
+              )}
+            </div>
+          ))}
+        </div>
       </Section>
 
       <Section

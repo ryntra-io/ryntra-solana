@@ -9,7 +9,7 @@ import { facts, list, note, p, section, steps, table, type DocPage } from "./mod
  * PreStocks, and what a token actually is. The five pages are what the old
  * Stocks page said in one scroll, laid out one question a page; its address
  * leads to «What you actually buy» by a 308, and its screener section is the
- * screener's own page under Trade.
+ * screener's own page under Markets.
  *
  * Every figure is the product's: the least a purchase is, the sum the sheet
  * opens on, the loss limits, the reminder's hours, the rules a wallet holds,
@@ -26,7 +26,7 @@ const label = (id: "truthXStocks" | "truthBackpack" | "truthOndo" | "truthPreSto
 
 export const BUY: DocPage = {
   slug: "invest/buy",
-  group: "invest",
+  group: "trade",
   destination: "markets",
   title: { en: "Buy a piece of a company", uk: "Купити частинку компанії" },
   seoTitle: { en: "Buy a piece of a company from $1 — Ryntra Docs", uk: "Купити частинку компанії від $1 — Документація Ryntra" },
@@ -96,17 +96,17 @@ export const BUY: DocPage = {
     section("limit", "The loss limit", "Межа збитку", [
       p(
         "A loss limit is kept as a plan on your wallet — one message your wallet signs, not a transaction. Once Telegram is connected, Ryntra writes to you there when the price reaches it; it never sells or signs for you, and a price can jump past a limit.",
-        "Межа збитку зберігається як план на твоєму гаманці — одне повідомлення, яке підписує гаманець, а не транзакція. Щойно Telegram під'єднано, Ryntra напише туди, коли ціна до неї дійде; вона ніколи не продає й не підписує за тебе, а ціна може проскочити межу.",
+        "Межа збитку зберігається як план на твоєму гаманці — одне повідомлення, яке підписує гаманець, а не транзакція. Щойно Telegram підключено, Ryntra напише туди, коли ціна до неї дійде; вона ніколи не продає й не підписує за тебе, а ціна може проскочити межу.",
       ),
       p(
-        `A company you already hold gets one too. In Monitoring, on its page and in Portfolio a position without an exit reads «Attention: bought — no exit set»; «Turn on “Ryntra will warn you”» sets a loss limit and a target from the price now — Careful −${LOSS_LIMITS.careful} / +${LOSS_TARGETS.careful}, Balanced −${LOSS_LIMITS.balanced} / +${LOSS_TARGETS.balanced} — with Telegram connected. Every position then reads one state with one action: On track, Attention, Action needed (the limit or the target reached — Open the sale) or Paused by the issuer.`,
-        `Межу можна поставити й на компанію, яку вже маєш. У Нагляді, на її сторінці й у Портфелі позиція без виходу показує «Увага: куплено — вихід не налаштований»; «Увімкнути «Ryntra попередить»» ставить межу збитку й ціль від ціни зараз — «Обережно» −${LOSS_LIMITS.careful} / +${LOSS_TARGETS.careful}, «Збалансовано» −${LOSS_LIMITS.balanced} / +${LOSS_TARGETS.balanced} — з під'єднаним Telegram. Далі в кожної позиції один стан і одна дія: «Все за планом», «Увага», «Дія» (межу чи ціль досягнуто — «Відкрити продаж») або «Пауза емітента».`,
+        `A company you already hold gets one too. In Notifications, on its page and in Portfolio a position without an exit reads «Attention: bought — no exit set»; «Turn on “Ryntra will warn you”» sets a loss limit and a target from the price now — Careful −${LOSS_LIMITS.careful} / +${LOSS_TARGETS.careful}, Balanced −${LOSS_LIMITS.balanced} / +${LOSS_TARGETS.balanced} — with Telegram connected. Every position then reads one state with one action: On track, Attention, Action needed (the limit or the target reached — Open the sale) or Paused by the issuer.`,
+        `Межу можна поставити й на компанію, яку вже маєш. У «Сповіщеннях», на її сторінці й у Портфелі позиція без виходу показує «Увага: куплено — вихід не налаштований»; «Увімкнути «Ryntra попередить»» ставить межу збитку й ціль від ціни зараз — «Обережно» −${LOSS_LIMITS.careful} / +${LOSS_TARGETS.careful}, «Збалансовано» −${LOSS_LIMITS.balanced} / +${LOSS_TARGETS.balanced} — з підключеним Telegram. Далі в кожної позиції один стан і одна дія: «Все за планом», «Увага», «Дія» (межу чи ціль досягнуто — «Відкрити продаж») або «Пауза емітента».`,
       ),
     ]),
     section("who", "Who can buy", "Хто може купувати", [
       p(
-        "The issuer decides. By their own documents xStocks, Backpack and PreStocks are not for the US, and Backpack is not for the UK, the UAE or Japan either; a private company's page carries «Who may hold it». Ryntra never works around an issuer's restrictions.",
-        "Це вирішує емітент. За своїми документами xStocks, Backpack і PreStocks — не для США, Backpack — ще й не для Великої Британії, ОАЕ та Японії; у приватних компаній рядок «Хто може тримати» — на сторінці компанії. Ryntra не обходить обмежень емітента.",
+        "The issuer decides. By their own documents xStocks, Backpack and PreStocks are not for the US, Backpack is not for the UK, the UAE or Japan either, and each issuer names more places; a private company's page carries «Who may hold it». Ryntra never works around an issuer's restrictions.",
+        "Це вирішує емітент. За своїми документами xStocks, Backpack і PreStocks — не для США, Backpack — ще й не для Великої Британії, ОАЕ та Японії, і кожен емітент називає ще інші місця; у приватних компаній рядок «Хто може тримати» — на сторінці компанії. Ryntra не обходить обмежень емітента.",
       ),
     ]),
   ],
@@ -115,7 +115,7 @@ export const BUY: DocPage = {
 
 export const AUTOINVEST_PAGE: DocPage = {
   slug: "invest/autoinvest",
-  group: "invest",
+  group: "bots",
   destination: "bots",
   title: { en: "Recurring buy", uk: "Регулярна купівля" },
   seoTitle: { en: "Recurring buy: three rules and a budget — Ryntra Docs", uk: "Регулярна купівля: правила й бюджет — Документація Ryntra" },
@@ -126,8 +126,8 @@ export const AUTOINVEST_PAGE: DocPage = {
   sections: [
     section("what", "What a recurring buy is", "Що таке регулярна купівля", [
       p(
-        "A recurring buy (until 2026-10-06 called Autoinvest) buys any token with liquidity — a tokenized company, a coin like SOL, a meme or a new token — by a rule you set; your rules live in Bots → My bots, and a new one starts from Recurring next to Market in any token's order, or from Bots → Catalog. When the rule falls due, Ryntra reminds you, and you sign each purchase; the money stays in your wallet until you do. A rule never buys anything on its own.",
-        "Регулярна купівля (до 06.10.2026 — «Автоінвест») купує будь-який токен із ліквідністю — токенізовану компанію, монету на кшталт SOL, мем чи новий токен — за правилом, яке задаєш ти; твої правила — у «Боти → Мої боти», а новий починається з «Регулярно» поруч із «Ринок» в ордері будь-якого токена або з «Боти → Каталог». Коли настає час правила, Ryntra нагадує, а кожну купівлю підписуєш ти; гроші лежать у твоєму гаманці, доки ти не підпишеш. Правило саме нічого не купує.",
+        "A recurring buy buys any token with liquidity — a tokenized company, a coin like SOL, a meme or a new token — by a rule you set; your rules live in Automation → Bots, and a new one starts from Recurring next to Market in any token's order, or from Bots → Catalog. When the rule falls due, Ryntra reminds you, and you sign each purchase; the money stays in your wallet until you do. A rule never buys anything on its own.",
+        "Регулярна купівля купує будь-який токен із ліквідністю — токенізовану компанію, монету на кшталт SOL, мем чи новий токен — за правилом, яке задаєш ти; твої правила — у «Автоматика → Боти», а новий починається з «Регулярно» поруч із «Ринок» в ордері будь-якого токена або з «Боти → Каталог». Коли настає час правила, Ryntra нагадує, а кожну купівлю підписуєш ти; гроші лежать у твоєму гаманці, доки ти не підпишеш. Правило саме нічого не купує.",
       ),
       table(
         { en: ["Rule", "When it reminds you", "For example"], uk: ["Правило", "Коли нагадує", "Наприклад"] },
@@ -148,30 +148,30 @@ export const AUTOINVEST_PAGE: DocPage = {
     section("set-up", "Set up a rule", "Налаштувати правило", [
       steps(
         [
-          "In Spot press Recurring next to Market in any token's order — or Recurring buy on a company's page, Add a rule under Recurring buy on Home, in Portfolio or in Bots → My bots, or Buy weekly on a purchase's receipt.",
+          "In Spot press Recurring buy under any token's ticket — or Recurring buy on a company's page, Add a rule under Recurring buy in Portfolio or in Automation → Bots, or Buy weekly on a purchase's receipt.",
           `Choose the rule, the sum of each purchase — from ${AUTOINVEST.minimum} — and when. The sheet shows when the first reminder comes.`,
           "Press Turn on. Your wallet signs one message to save the rule — not a transaction.",
           "When the rule falls due, a reminder arrives in Ryntra, and in Telegram once it is connected. One tap opens a fresh Review for the rule's sum; sign it, and the receipt names the rule and the next purchase.",
         ],
         [
-          "У Споті натисни «Регулярно» поруч із «Ринок» в ордері будь-якого токена — або «Регулярна купівля» на сторінці компанії, «Додати правило» в блоці «Регулярна купівля» на Головній, у Портфелі чи в «Боти → Мої боти», або «Купувати щотижня» в квитанції купівлі.",
+          "У Споті натисни «Регулярна купівля» під квитком будь-якого токена — або «Регулярна купівля» на сторінці компанії, «Додати правило» в блоці «Регулярна купівля» у Портфелі чи в «Автоматика → Боти», або «Купувати щотижня» в квитанції купівлі.",
           `Обери правило, суму кожної купівлі — від ${AUTOINVEST.minimum} — і коли. Аркуш покаже, коли прийде перше нагадування.`,
           "Натисни «Увімкнути». Гаманець підписує одне повідомлення, щоб зберегти правило, — не транзакцію.",
-          "Коли настає час правила, нагадування приходить у Ryntra, а в Telegram — щойно його під'єднано. Один дотик відкриває свіжу «Перевірку» на суму правила; підпиши — і квитанція назве правило й наступну купівлю.",
+          "Коли настає час правила, нагадування приходить у Ryntra, а в Telegram — щойно його підключено. Один дотик відкриває свіжу «Перевірку» на суму правила; підпиши — і квитанція назве правило й наступну купівлю.",
         ],
       ),
     ]),
     section("reminders", "Reminders", "Нагадування", [
       list(
         [
-          "Your rules and the monthly budget are on Home, in Portfolio and in Bots → My bots, each rule with its switch.",
+          "Your rules and the monthly budget are in Portfolio and in Automation → Bots, each rule with its switch.",
           "While a reminder is open, the company's page — or the token's order in Spot — offers Buy $X by your rule first. A one-off purchase leaves the reminder open: a rule counts only a purchase made by it, and both say so.",
           `A reminder stays open for ${AUTOINVEST.reminderHours} hours. One you do not sign is marked Missed — Ryntra never buys it later and never doubles the next one.`,
           "Pause stops the reminders; turn the rule on again and it counts from then. Deleting a rule keeps its purchases in History, each marked Recurring buy.",
           `A wallet holds up to ${AUTOINVEST.rules} rules. A purchase by a rule goes through the same Review, costs and signature as any other.`,
         ],
         [
-          "Твої правила й бюджет місяця — на Головній, у Портфелі й у «Боти → Мої боти», кожне правило зі своїм перемикачем.",
+          "Твої правила й бюджет місяця — у Портфелі й в «Автоматика → Боти», кожне правило зі своїм перемикачем.",
           "Поки нагадування відкрите, сторінка компанії — чи ордер токена в Споті — першою пропонує «Купити $X за правилом». Звичайна купівля лишає нагадування відкритим: правило рахує лише купівлю за правилом, і обидві про це кажуть.",
           `Нагадування діє ${AUTOINVEST.reminderHours} години. Непідписане позначається «Пропущено»: Ryntra не купує його пізніше й не подвоює наступне.`,
           "Пауза зупиняє нагадування; увімкни правило знову — і відлік піде від тієї миті. Видалене правило лишає свої купівлі в Історії, кожну з позначкою «Регулярна купівля».",
@@ -215,7 +215,7 @@ export const AUTOINVEST_PAGE: DocPage = {
           "Every time the rule would remind you, Ryntra reads the floor again. Under it — or when the figures cannot be read — the purchase is deferred: one note says why, and the rule checks again while the reminder is open. The order of a rule's purchase is refused under the floor too. A token flagged suspicious by Jupiter's own audit takes no rule.",
         ],
         [
-          `Правило на монету, мем чи новий токен стоїть на порозі: ${AUTOINVEST.floorUsd.uk} ліквідності в його пулах і ${AUTOINVEST.floorHours} годин від першого пулу — як їх зараз показує список Jupiter. Токенізовану компанію натомість підтверджує емітент.`,
+          `Правило на монету, мем чи новий токен стоїть на порозі: ${AUTOINVEST.floorUsd.uk} ліквідності в його пулах і ${AUTOINVEST.floorHours} год від першого пулу — як їх зараз показує список Jupiter. Токенізовану компанію натомість підтверджує емітент.`,
           "Перед «Увімкнути» аркуш мему чи токена, якого Jupiter не перевірив, показує факти ризику: вік, ліквідність, скільки тримає десятка найбільших власників, чи може хтось іще випускати нові токени чи заморожувати токени власників, органічну оцінку й чи перевірив його Jupiter. Це факти, не вирок.",
           "Щоразу, коли правило мало б нагадати, Ryntra читає поріг знову. Нижче порогу — або коли цифр не прочитати — купівлю відкладено: одна нотатка каже чому, а правило перевіряє знову, поки нагадування відкрите. Ордер купівлі за правилом нижче порогу теж не пройде. На токен, який власний аудит Jupiter позначає підозрілим, правило не ставиться.",
         ],
@@ -224,12 +224,12 @@ export const AUTOINVEST_PAGE: DocPage = {
     section("budget", "The monthly budget", "Бюджет місяця", [
       list(
         [
-          `A ceiling for all your rules in a calendar month, from ${usd(AUTOINVEST.budgetMinimum)}, on your own clock — At most per month, never the sum of one purchase. It is its own line under Autoinvest: No budget set · Set, or $45 of $100 over the month's bar. Only you change it.`,
+          `A ceiling for all your rules in a calendar month, from ${usd(AUTOINVEST.budgetMinimum)}, on your own clock — At most per month, never the sum of one purchase. It is its own line under Recurring buy: No budget set · Set, or $45 of $100 over the month's bar. Only you change it.`,
           "Only finished purchases by rules count; one still on its way counts until its outcome is known. A reminder you did not buy counts nothing.",
           "A purchase that does not fit what is left is not reminded of: one note says the budget is spent, and your rules stand until the 1st — or until you change the budget.",
         ],
         [
-          `Стеля для всіх правил на календарний місяць, від ${usd(AUTOINVEST.budgetMinimum)}, за твоїм годинником, — «Не більше на місяць», ніколи не сума однієї купівлі. Це окремий рядок у блоці «Автоінвест»: «Бюджет не задано · Задати» або «$45 з $100» над смужкою місяця. Змінюєш лише ти.`,
+          `Стеля для всіх правил на календарний місяць, від ${usd(AUTOINVEST.budgetMinimum)}, за твоїм годинником, — «Не більше на місяць», ніколи не сума однієї купівлі. Це окремий рядок у блоці «Регулярна купівля»: «Бюджет не задано · Задати» або «$45 з $100» над смужкою місяця. Змінюєш лише ти.`,
           "Рахуються лише завершені купівлі за правилами; незавершена — доки не з'ясується її результат. Нагадування без купівлі не рахується.",
           "Купівлю, що не вміщається в залишок, Ryntra не нагадує: одна нотатка каже, що бюджет вичерпано, і правила стоять до 1-го числа — або доки ти не зміниш бюджет.",
         ],
@@ -239,13 +239,13 @@ export const AUTOINVEST_PAGE: DocPage = {
       list(
         [
           `On a company with a reference — PreStocks' valuation for a private company, the issuer's reference per share for a listed one — a rule can carry Price condition: don't buy if it costs more than N% above the reference — ${AUTOINVEST.conditionPresets}, ${AUTOINVEST.conditionDefault} unless you choose another, or No condition. The sheet shows how the price stands now.`,
-          `When the rule falls due, Ryntra checks the price against the reference. Within your limit, the reminder comes as usual. Above it — or when the price or the reference is more than ${AUTOINVEST.conditionMaxAgeMinutes} minutes old, or missing — the purchase is deferred: one note in the bell and in Notifications on Home says why, with the figure and the time of the data, and the rule checks again while the reminder is open. Never met, it is marked Missed.`,
+          `When the rule falls due, Ryntra checks the price against the reference. Within your limit, the reminder comes as usual. Above it — or when the price or the reference is more than ${AUTOINVEST.conditionMaxAgeMinutes} minutes old, or missing — the purchase is deferred: one note in Notifications, in your wallet's panel, says why, with the figure and the time of the data, and the rule checks again while the reminder is open. Never met, it is marked Missed.`,
           "PreStocks' valuation is PreStocks' own figure — not a fair price and not a market price. The Review of a rule's purchase carries the condition's line: how far the price stands from the reference, the reference, your limit and the time of the data.",
           "On a coin, a meme or a new token the reference is its market price when you turn the rule on — and again whenever you turn it on after a pause: don't buy if it costs more than N% above it. It starts at No condition: a fixed price is a ceiling, and a recurring buy keeps buying unless you set one.",
         ],
         [
           `Для компанії з орієнтиром — оцінкою PreStocks для приватної компанії, орієнтиром емітента за акцію для публічної — правило може мати «Умову ціни»: не купувати, якщо дорожче за орієнтир більш ніж на N % — ${AUTOINVEST.conditionPresets}, ${AUTOINVEST.conditionDefault}, якщо ти не обереш інше, або «Без умови». Аркуш показує, як ціна стоїть зараз.`,
-          `Коли настає час правила, Ryntra порівнює ціну з орієнтиром. У межах твого ліміту нагадування приходить, як завжди. Понад ліміт — або коли ціна чи орієнтир старші за ${AUTOINVEST.conditionMaxAgeMinutes} хвилин чи їх немає — купівлю відкладено: одна нотатка в дзвіночку й у «Сповіщеннях» на Головній каже чому, з числом і часом даних, а правило перевіряє знову, поки нагадування відкрите. Якщо умову так і не виконано — «Пропущено».`,
+          `Коли настає час правила, Ryntra порівнює ціну з орієнтиром. У межах твого ліміту нагадування приходить, як завжди. Понад ліміт — або коли ціна чи орієнтир старші за ${AUTOINVEST.conditionMaxAgeMinutes} хвилин чи їх немає — купівлю відкладено: одна нотатка в «Сповіщеннях» у панелі гаманця каже чому, з числом і часом даних, а правило перевіряє знову, поки нагадування відкрите. Якщо умову так і не виконано — «Пропущено».`,
           "Оцінка PreStocks — власна цифра PreStocks, не справедлива ціна й не ринкова. «Перевірка» купівлі за правилом має рядок умови: наскільки ціна відходить від орієнтира, сам орієнтир, твій ліміт і час даних.",
           "Для монети, мему чи нового токена орієнтир — його ринкова ціна, коли ти вмикаєш правило, і знову щоразу, коли вмикаєш його після паузи: не купувати, якщо дорожче за неї більш ніж на N %. Типово — «Без умови»: незмінна ціна — це стеля, і регулярна купівля купує далі, доки ти її не поставиш.",
         ],
@@ -257,7 +257,7 @@ export const AUTOINVEST_PAGE: DocPage = {
 
 export const COMPANY_PAGE: DocPage = {
   slug: "invest/company-page",
-  group: "invest",
+  group: "trade",
   destination: "markets",
   title: { en: "The company page", uk: "Сторінка компанії" },
   seoTitle: { en: "The company page: figures, path, what you buy — Ryntra", uk: "Сторінка компанії: цифри, шлях, що купуєш — Ryntra" },
@@ -275,7 +275,7 @@ export const COMPANY_PAGE: DocPage = {
         { en: ["Block", "What it holds", "Where it comes from"], uk: ["Блок", "Що в ньому", "Звідки"] },
         {
           en: [
-            ["Key figures", "The company's size and results — revenue, earnings, market value, P/E, the dividend — and the price over the year", "Its SEC filings, dated; the price line from the token's pool"],
+            ["Key statistics", "The company's size and results — revenue, earnings, market value, P/E, the dividend — and the price over the year", "Its SEC filings, dated; the price line from the token's pool"],
             ["About the company", "What it does, its industry, where it is, where it lists, its latest report", "Its SEC records and the issuer's catalogue"],
             ["What you buy", "The issuer's label and line, the backing, the dividends, the issuer's fee", "The issuer's documents and reserves; the fee and the multiplier from the chain"],
             ["Trading on Solana", "The token's day: volume, liquidity, holders, traders, buying against selling", "Jupiter's market data, with its time"],
@@ -311,7 +311,7 @@ export const COMPANY_PAGE: DocPage = {
 
 export const PRIVATE_COMPANIES: DocPage = {
   slug: "invest/private-companies",
-  group: "invest",
+  group: "trade",
   destination: "markets",
   title: { en: "Private companies", uk: "Приватні компанії" },
   seoTitle: { en: "Pre-IPO companies: PreStocks tokens — Ryntra Docs", uk: "Приватні компанії до IPO: токени PreStocks — Ryntra" },
@@ -348,8 +348,8 @@ export const PRIVATE_COMPANIES: DocPage = {
     ]),
     section("ipo", "When the company lists", "Коли компанія виходить на біржу", [
       p(
-        "When a private company lists or is bought, its PreStocks token has a deadline: it must be swapped, or it expires. Ryntra shows the event and the deadline on the company's page, in Portfolio and in the bell, with one action — Swap: a fresh Review and your signature. SpaceX has listed, and its page says until when SPACEX can be swapped for SPCXx.",
-        "Коли приватна компанія виходить на біржу чи її купують, токен PreStocks має строк: його треба обміняти, інакше він згорить. Ryntra показує подію й строк на сторінці компанії, у Портфелі й у дзвіночку однією дією — «Обміняти»: свіжа «Перевірка» й твій підпис. SpaceX уже на біржі, і її сторінка каже, до коли SPACEX можна обміняти на SPCXx.",
+        "When a private company lists or is bought, its PreStocks token has a deadline: it must be swapped, or it expires. Ryntra shows the event and the deadline on the company's page, in Portfolio and in Notifications, with one action — Swap: a fresh Review and your signature. SpaceX has listed, and its page says until when SPACEX can be swapped for SPCXx.",
+        "Коли приватна компанія виходить на біржу чи її купують, токен PreStocks має строк: його треба обміняти, інакше він згорить. Ryntra показує подію й строк на сторінці компанії, у Портфелі й у «Сповіщеннях» однією дією — «Обміняти»: свіжа «Перевірка» й твій підпис. SpaceX уже на біржі, і її сторінка каже, до коли SPACEX можна обміняти на SPCXx.",
       ),
     ]),
     section("before", "Before you buy", "Перш ніж купити", [
@@ -358,13 +358,13 @@ export const PRIVATE_COMPANIES: DocPage = {
           "Selling may not be possible: the issuer promises no liquidity.",
           "The issuer can freeze the token, pause transfers, and move or burn it from any wallet.",
           "A full loss is possible, and the price can stand far from the valuation.",
-          "Autoinvest works by reminder for these tokens too; each purchase is your signature.",
+          "Recurring buy works by reminder for these tokens too; each purchase is your signature.",
         ],
         [
           "Продати може не вийти: емітент ліквідності не обіцяє.",
           "Емітент може заморозити токен, зупинити перекази, перемістити чи спалити його з будь-якого гаманця.",
           "Можлива повна втрата, а ціна може стояти далеко від оцінки.",
-          "«Автоінвест» для цих токенів теж працює нагадуванням; кожна купівля — твій підпис.",
+          "Регулярна купівля для цих токенів теж працює нагадуванням; кожна купівля — твій підпис.",
         ],
       ),
     ]),
@@ -374,7 +374,7 @@ export const PRIVATE_COMPANIES: DocPage = {
 
 export const WHAT_YOU_BUY: DocPage = {
   slug: "invest/what-you-buy",
-  group: "invest",
+  group: "trade",
   destination: "markets",
   title: { en: "What you actually buy", uk: "Що ти насправді купуєш" },
   seoTitle: { en: "Tokenized stocks: what you actually buy — Ryntra Docs", uk: "Токенізовані акції: що ти насправді купуєш — Ryntra" },
@@ -408,14 +408,14 @@ export const WHAT_YOU_BUY: DocPage = {
         },
       ),
       p(
-        "Who may hold each is the issuer's decision: by their own documents xStocks, Ondo and PreStocks are not for the US, and Backpack is not for the US, the UK, the UAE or Japan. Ryntra never works around an issuer's restrictions.",
-        "Хто може тримати кожен із них, вирішує емітент: за своїми документами xStocks, Ondo й PreStocks — не для США, а Backpack — не для США, Великої Британії, ОАЕ та Японії. Ryntra не обходить обмежень емітента.",
+        "Who may hold each is the issuer's decision: by their own documents xStocks, Ondo and PreStocks are not for the US, and Backpack is not for the US, the UK, the UAE or Japan — among other places each issuer names on the company's page. Ryntra never works around an issuer's restrictions.",
+        "Хто може тримати кожен із них, вирішує емітент: за своїми документами xStocks, Ondo й PreStocks — не для США, а Backpack — не для США, Великої Британії, ОАЕ та Японії, — серед інших місць, які кожен емітент називає на сторінці компанії. Ryntra не обходить обмежень емітента.",
       ),
     ]),
     section("units", "Dividends and units", "Дивіденди й одиниці", [
       p(
-        "Where the issuer's document describes it, dividends are reinvested into the token: your amount grows by the issuer's multiplier instead of a payout to your wallet, and the company's page says «Dividends already in your amount». The multiplier is read from the chain and applied once.",
-        "Де це описує документ емітента, дивіденди реінвестуються в токен: твоя кількість зростає на множник емітента замість виплати на гаманець, і сторінка компанії каже «Дивіденди вже в твоїй кількості». Множник прочитано з ланцюга, і його застосовано один раз.",
+        "Where the issuer's document describes it, dividends are reinvested into the token: your amount grows by the issuer's multiplier instead of a payout to your wallet, and the company's page says «Already in your amount». The multiplier is read from the chain and applied once.",
+        "Де це описує документ емітента, дивіденди реінвестуються в токен: твоя кількість зростає на множник емітента замість виплати на гаманець, і сторінка компанії каже «Вже в твоїй кількості». Множник прочитано з ланцюга, і його застосовано один раз.",
       ),
     ]),
     section("check", "What to check before you buy", "Що перевірити перед купівлею", [

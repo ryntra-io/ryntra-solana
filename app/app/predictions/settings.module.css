@@ -1,0 +1,183 @@
+/* The section's own sheet, «Ціни й тікет», drawn inside the Solana shell. */
+
+.iconButton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 40px;
+  height: 40px;
+  min-height: 40px;
+  padding: 0 8px;
+  border: 1px solid var(--ry-border);
+  border-radius: var(--ry-r-btn);
+  background: transparent;
+  color: var(--ry-text);
+  font: inherit;
+  font-size: var(--ry-fs-label);
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  cursor: pointer;
+}
+
+.iconButton:hover {
+  background: var(--ry-hover);
+  border-color: var(--ry-border-strong);
+}
+
+.scrim {
+  position: fixed;
+  inset: 0;
+  /* Above the shell's floating action (65), so nothing behind the open sheet stays clickable. */
+  z-index: 70;
+  display: grid;
+  place-items: center;
+  padding: var(--ry-s4);
+  background: rgba(8, 13, 19, 0.56);
+}
+
+.sheet {
+  width: min(440px, 100%);
+  max-height: calc(100dvh - 32px);
+  overflow-y: auto;
+  padding: var(--ry-s5);
+  display: grid;
+  gap: var(--ry-s3);
+  background: var(--ry-card);
+  border: 1px solid var(--ry-border);
+  border-radius: var(--ry-r-card);
+  box-shadow: var(--ry-shadow-elevated);
+  outline: none;
+}
+
+.sheetHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--ry-s2);
+}
+
+.sheetHead h2 {
+  margin: 0;
+  font-size: var(--ry-fs-section);
+  font-weight: 700;
+}
+
+/* ── Each choice a row of buttons, applied at once ── */
+
+.settingsSheet {
+  width: min(520px, 100%);
+  gap: var(--ry-s4);
+}
+
+.setting {
+  display: grid;
+  gap: var(--ry-s2);
+}
+
+.settingLabel {
+  font-size: var(--ry-fs-label);
+  font-weight: 600;
+  color: var(--ry-text);
+}
+
+.settingHelp,
+.settingFoot {
+  font-size: var(--ry-fs-label-sm);
+  color: var(--ry-muted);
+}
+
+.settingFoot {
+  margin: 0;
+  padding-top: var(--ry-s3);
+  border-top: 1px solid var(--ry-border);
+}
+
+.segments {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(96px, 1fr));
+  gap: var(--ry-s1);
+}
+
+.segments[data-count="4"] {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+@media (max-width: 520px) {
+  .segments[data-count="4"] {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+/* Choices that change nothing on a phone (one column, blocks one under another) are not offered there. */
+@media (max-width: 767px) {
+  .setting[data-desk] {
+    display: none;
+  }
+}
+
+.segment {
+  display: grid;
+  gap: 2px;
+  justify-items: center;
+  min-height: 40px;
+  padding: var(--ry-s1) var(--ry-s2);
+  border: 1px solid var(--ry-border);
+  border-radius: var(--ry-r-btn-sm);
+  background: transparent;
+  color: var(--ry-text);
+  font: inherit;
+  font-size: var(--ry-fs-label);
+  font-weight: 600;
+  text-align: center;
+  cursor: pointer;
+}
+
+.segment small {
+  font-family: var(--ry-font-mono);
+  font-variant-numeric: tabular-nums;
+  font-size: var(--ry-fs-label-sm);
+  font-weight: 500;
+  color: var(--ry-muted);
+}
+
+.segment:hover {
+  background: var(--ry-hover);
+}
+
+.segment[aria-pressed="true"] {
+  color: var(--ry-accent-fg);
+  background: var(--ry-elevated);
+  border-color: var(--ry-brand-line);
+}
+
+.segment:focus-visible,
+.amountField input:focus-visible {
+  outline: none;
+  box-shadow: var(--ry-focus);
+}
+
+.amountField {
+  display: flex;
+  align-items: center;
+  gap: var(--ry-s1);
+  width: min(200px, 100%);
+  min-height: 40px;
+  padding: 0 var(--ry-s3);
+  border: 1px solid var(--ry-border);
+  border-radius: var(--ry-r-btn-sm);
+  font-family: var(--ry-font-mono);
+}
+
+.amountField input {
+  flex: 1;
+  min-width: 0;
+  border: 0;
+  background: transparent;
+  color: var(--ry-text);
+  font: inherit;
+  font-variant-numeric: tabular-nums;
+}
+
+.amountField input[aria-invalid="true"] {
+  color: var(--ry-pnl-neg);
+}

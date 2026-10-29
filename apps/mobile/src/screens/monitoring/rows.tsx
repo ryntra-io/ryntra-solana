@@ -65,7 +65,7 @@ export type NoteRowProps = {
   onPress: () => void
   /** Present on an unread note: the one-tap mark without opening. */
   onMarkRead?: () => void
-  /** Ryntra's conversation about this note: why it came, whether it still holds — an explanation, never an action. */
+  /** Ryntra's conversation about this note (M11): why it came, whether it still holds — an explanation, never an action. */
   onAsk?: () => void
   askLabel?: string
   last?: boolean
@@ -80,12 +80,15 @@ export function NoteRow({ note, copy, locale, now, onPress, onMarkRead, onAsk, a
   const { colors } = useTheme()
   const ruleCopy = useCopy(AUTOINVEST_COPY)
   const words = noteWords(note, locale)
-  // An autoinvest note is a reminder or the month's budget, an issuer's event says its own deadline:
+  // An autoinvest note (M16) is a reminder or the month's budget, an issuer's event (M19) says its own deadline, a
+  // limit's note (C3) says its order filled or its receipt is ready, a morning brief (1.46.0) is Ryntra's own words:
   // no plan to explain, so no question for Ryntra.
   const ownWords =
     note.subject?.kind === 'autoinvest-rule' ||
     note.subject?.kind === 'autoinvest-budget' ||
-    note.subject?.kind === 'issuer-event'
+    note.subject?.kind === 'issuer-event' ||
+    note.subject?.kind === 'limit-order' ||
+    note.subject?.kind === 'assistant-brief'
   // What became of a reminder as the rule reads it now (1.13.0): said beside it; an open one is the note's own words;
   // 1.18.0: a purchase the price condition still holds back — the note leads to the company, where why is said.
   const ruleState =

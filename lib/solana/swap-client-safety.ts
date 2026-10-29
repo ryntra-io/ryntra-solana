@@ -275,3 +275,50 @@ export function readSwapClientSignature(args: {
     return null;
   }
 }
+
+/** The figures of an order a person agreed to in Review: what they receive at least and every cost. */
+export type ReviewedOrderTerms = Readonly<{
+  inputMint: string;
+  outputMint: string;
+  inAmountRaw: string;
+  minReceivedRaw: string;
+  totalFeeBasisPoints: number;
+  platformFee: Readonly<{ basisPoints: number }>;
+  signatureFeeLamports: string;
+  priorityFeeLamports: string;
+  rentFeeLamports: string;
+}>;
+
+function rawOf(value: string): bigint | null {
+  return /^\d{1,40}$/.test(value) ? BigInt(value) : null;
+}
+
+/**
+ * AG-1: may fresh bytes go to the wallet without a second Review?
+ *
+ * Bytes live ~30 s (`blockhash-life.ts`) and the Review stays readable longer
+ * (`MINIMUM_HUMAN_REVIEW_WINDOW_MS`), so a person who reads carefully signs a
+ * fresh order, fetched at the moment they press. That order opens the wallet
+ * only when it is the same swap and no worse on any line the person read: the
+ * minimum received is at least the reviewed one, and no fee — Jupiter's,
+ * Ryntra's, the network's or the rent — is higher. Anything else goes back to
+ * Review, as «Надіслати» does when its world changed (`checkEnvironmentLock`).
+ */
+export function freshOrderNoWorse(reviewed: ReviewedOrderTerms, fresh: ReviewedOrderTerms): boolean {
+  if (fresh.inputMint !== reviewed.inputMint || fresh.outputMint !== reviewed.outputMint || fresh.inAmountRaw !== reviewed.inAmountRaw) return false;
+  const pairs: readonly (readonly [string, string, "atLeast" | "atMost"])[] = [
+    [fresh.minReceivedRaw, reviewed.minReceivedRaw, "atLeast"],
+    [fresh.signatureFeeLamports, reviewed.signatureFeeLamports, "atMost"],
+    [fresh.priorityFeeLamports, reviewed.priorityFeeLamports, "atMost"],
+    [fresh.rentFeeLamports, reviewed.rentFeeLamports, "atMost"],
+  ];
+  for (const [now, then, rule] of pairs) {
+    const a = rawOf(now);
+    const b = rawOf(then);
+    if (a === null || b === null) return false;
+    if (rule === "atLeast" ? a < b : a > b) return false;
+  }
+  if (!(fresh.totalFeeBasisPoints <= reviewed.totalFeeBasisPoints)) return false;
+  if (!(fresh.platformFee.basisPoints <= reviewed.platformFee.basisPoints)) return false;
+  return true;
+}

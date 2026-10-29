@@ -1,0 +1,160 @@
+/*
+ * Team Launch (MOS-2) — the eight steps in one column down the middle of the page, drawn for 390 px first. The step
+ * bar, the fields and the problems are Launch's own (`../launch.module.css`); here is only what a column of eight
+ * steps adds: the column's width, the rows of the allocation, and the tables step 08 reads from. Tokens only
+ * (DESIGN.md → app/design/tokens.css); figures and addresses in Geist Mono with tabular numerals.
+ */
+
+/* One column, centred: the core's «action» page is one column in the middle of the room the menu leaves, and the
+   wizard is read straight down it. Nothing here caps the width a second time. */
+.column {
+  display: grid;
+  gap: var(--ry-s4);
+  width: 100%;
+  min-width: 0;
+}
+
+/* Eight steps: a grid that wraps on a phone rather than a row that scrolls off. */
+.steps {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+@media (min-width: 768px) {
+  .steps {
+    grid-template-columns: repeat(8, minmax(0, 1fr));
+  }
+}
+
+/* A row of the allocation: the category, its per cent, its recipient and its two locks. */
+.allocationRow {
+  display: grid;
+  gap: var(--ry-s2);
+  grid-template-columns: minmax(0, 1fr);
+  align-items: end;
+  padding-block: var(--ry-s2);
+  border-top: 1px solid var(--ry-border);
+}
+
+.allocationRow:first-of-type {
+  border-top: 0;
+}
+
+@media (min-width: 560px) {
+  .allocationRow {
+    grid-template-columns: minmax(0, 1.4fr) 5rem minmax(0, 1.6fr) 5rem 5rem auto;
+  }
+}
+
+.rowTotal {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: var(--ry-s2);
+  margin: 0;
+  font-size: var(--ry-fs-label);
+  color: var(--ry-muted);
+}
+
+/* A short list of facts: the label on the left, the figure on the right, in mono. */
+.facts {
+  display: grid;
+  gap: 6px;
+  margin: 0;
+}
+
+.fact {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: var(--ry-s2);
+  font-size: var(--ry-fs-label);
+}
+
+.factLabel {
+  color: var(--ry-muted);
+}
+
+.factValue {
+  font-family: var(--ry-font-mono);
+  font-variant-numeric: tabular-nums;
+  color: var(--ry-text);
+  text-align: right;
+  overflow-wrap: anywhere;
+}
+
+/* The tables of step 08: every fee, every field of the Constitution, every row of the chronicle. */
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--ry-fs-label);
+}
+
+.table th,
+.table td {
+  padding: 8px 10px;
+  border-bottom: 1px solid var(--ry-border);
+  text-align: left;
+  vertical-align: top;
+}
+
+.table thead th {
+  color: var(--ry-muted);
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.table tbody tr:last-child td {
+  border-bottom: 0;
+}
+
+.numeric {
+  font-family: var(--ry-font-mono);
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+  white-space: nowrap;
+}
+
+.group {
+  color: var(--ry-muted);
+  font-weight: 600;
+}
+
+/* A grade said as a word, never as a colour alone. */
+.grade {
+  color: var(--ry-muted);
+  white-space: nowrap;
+}
+
+.gradeNone {
+  color: var(--ry-risk);
+}
+
+/* The rights a step needs, and what the wallet holds of them. */
+.rightsLine {
+  margin: 0;
+  font-size: var(--ry-fs-label);
+  line-height: var(--ry-lh-body);
+  color: var(--ry-muted);
+}
+
+.choice {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--ry-s3);
+}
+
+.check {
+  display: flex;
+  align-items: center;
+  gap: var(--ry-s2);
+  font-size: var(--ry-fs-label);
+  color: var(--ry-text);
+}
+
+.actionNote {
+  margin: 0;
+  font-family: var(--ry-font-mono);
+  font-size: var(--ry-fs-label-sm);
+  color: var(--ry-muted);
+  overflow-wrap: anywhere;
+}

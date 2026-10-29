@@ -88,7 +88,7 @@ test("the universe carries its words in both languages and one real destination"
   assert.match(source, /src=\{`\/site\/universe\/\$\{asset\.icon\}`\}/, "pictures are served from this site");
   assert.match(source, /src="\/site\/solana-mark\.svg"/, "the real Solana mark sits in the core");
   assert.doesNotMatch(source, /three|@react-three|framer-motion/, "no library carries the scene");
-  /* Since 2026-10-09 TradingView's market tape stands between them (a condition of the chart licence) — a line, not a block. */
+  /* Since 2026-10-09 the market tape stands between them — Ryntra's own since SOL-T4 — a line, not a block. */
   assert.match(withoutComments(read("app/(home)/homepage.tsx")), /<Hero locale=\{locale\} \/>\s*<MarketTape locale=\{locale\} \/>\s*<Universe locale=\{locale\} \/>/, "the universe is the second block, after the hero and its market tape");
 });
 

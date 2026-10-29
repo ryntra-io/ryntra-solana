@@ -24,13 +24,6 @@
   white-space: nowrap;
 }
 
-/* ── The head ────────────────────────────────────────────────────────── */
-
-.head {
-  display: grid;
-  gap: var(--ry-s2);
-}
-
 .headRow {
   display: flex;
   flex-wrap: wrap;
@@ -70,69 +63,138 @@
 
 /* ── The layout ──────────────────────────────────────────────────────── */
 
-.layout {
-  display: grid;
-  gap: var(--ry-s5);
-  min-width: 0;
-}
-
+/* «Запустити токен» in three steps (B4): one step's blocks under the row of steps, then its actions. */
 .form {
-  container: launch-form / inline-size;
-  min-width: 0;
-}
-
-/* The form's sections in their order — the token and its links, then the preset and the first buy. */
-.formColumns,
-.formColumn {
   display: grid;
   gap: var(--ry-s4);
-  align-content: start;
   min-width: 0;
 }
 
-/* Wide enough for two: the token and its links on the left, the preset and the first buy on the right. */
-@container launch-form (min-width: 900px) {
-  .formColumns {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    align-items: start;
-  }
-}
-
-.aside {
-  min-width: 0;
-}
-
-.asideSticky {
+.wizardSteps {
   display: grid;
-  grid-template-columns: minmax(0, 1fr);
-  gap: var(--ry-s4);
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--ry-s2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  scroll-margin-top: 96px;
+}
+
+.wizardStep {
   min-width: 0;
 }
 
-@media (min-width: 1024px) {
-  .layout {
-    grid-template-columns: minmax(0, 1fr) clamp(360px, 24vw, 440px);
-    align-items: start;
+.wizardButton {
+  display: flex;
+  align-items: center;
+  gap: var(--ry-s2);
+  width: 100%;
+  min-height: 44px;
+  padding: 8px 10px;
+  border: 1px solid var(--ry-border);
+  border-radius: var(--ry-r-btn);
+  background: var(--ry-card);
+  color: var(--ry-muted);
+  font: inherit;
+  font-size: var(--ry-fs-label);
+  font-weight: 600;
+  text-align: left;
+  cursor: pointer;
+}
+
+.wizardButton:disabled {
+  cursor: default;
+}
+
+.wizardStep[data-state="active"] .wizardButton {
+  border-color: var(--ry-accent);
+  color: var(--ry-text);
+}
+
+.wizardStep[data-state="done"] .wizardButton {
+  color: var(--ry-text);
+}
+
+.wizardStep[data-state="done"] .wizardButton:hover:not(:disabled) {
+  border-color: var(--ry-border-strong);
+}
+
+.wizardIndex {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  border: 1px solid currentColor;
+  border-radius: var(--ry-r-pill);
+  font-variant-numeric: tabular-nums;
+}
+
+.wizardStep[data-state="done"] .wizardIndex {
+  border: 0;
+  color: var(--ry-verified);
+}
+
+.wizardLabel {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* A phone: the step at hand by its name, the others by their number — their names stay for a screen reader. */
+@media (max-width: 479px) {
+  .wizardSteps {
+    display: flex;
   }
 
-  .aside {
-    position: sticky;
-    top: 88px;
-    align-self: start;
+  .wizardStep {
+    flex: none;
   }
+
+  .wizardStep[data-state="active"] {
+    flex: 1 1 auto;
+  }
+
+  .wizardStep:not([data-state="active"]) .wizardLabel {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
+  }
+}
+
+/* The step's body takes focus when the step changes; its heading says where the keyboard is, without a ring round all. */
+.form:focus {
+  outline: none;
+}
+
+/* A review whose amount is being counted again: its figures are the last amount's, said quieter until the new ones come. */
+.reviewStale {
+  opacity: 0.5;
+  transition: opacity 150ms ease;
+}
+
+/* A step's actions: back on the left, the way forward on the right. */
+.stepActions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: var(--ry-s2);
 }
 
 /* ── A section ───────────────────────────────────────────────────────── */
 
+/* A fieldset inside the core's block: the block draws the frame, the fieldset only groups and locks. */
 .section {
   display: grid;
   gap: var(--ry-s3);
   min-width: 0;
   margin: 0;
-  padding: var(--ry-s4);
-  border: 1px solid var(--ry-border);
-  border-radius: var(--ry-r-card);
-  background: var(--ry-card);
+  padding: 0;
+  border: 0;
 }
 
 .section:disabled {
@@ -147,17 +209,6 @@
 
 .section[data-paused] :is(.input, .picture, .lockBox) {
   opacity: 0.6;
-}
-
-.sectionTitle {
-  float: left;
-  width: 100%;
-  margin: 0 0 var(--ry-s1);
-  padding: 0;
-  font-size: var(--ry-fs-section);
-  font-weight: 600;
-  line-height: var(--ry-lh-head);
-  color: var(--ry-text);
 }
 
 .optional {
@@ -206,7 +257,7 @@
 }
 
 .count {
-  font-family: var(--ry-font-mono);
+  font-family: var(--ry-font-sans);
   font-size: var(--ry-fs-label-sm);
   font-variant-numeric: tabular-nums;
   color: var(--ry-muted);
@@ -462,6 +513,55 @@
   color: var(--ry-text);
 }
 
+/* «За замовчуванням» beside «Захищений»'s name: a quiet pill, never the orange of the action (UX-406). */
+.presetDefault {
+  display: inline-block;
+  margin-left: var(--ry-s2);
+  padding: 1px 8px;
+  border: 1px solid var(--ry-border-strong);
+  border-radius: var(--ry-r-pill);
+  color: var(--ry-muted);
+  font-size: var(--ry-fs-label);
+  font-weight: 500;
+  vertical-align: 1px;
+  white-space: nowrap;
+}
+
+/* «Усі числа»: the presets side by side; on a phone the table scrolls inside its own box, never the page. */
+.compareWrap {
+  /* No width of its own to the fieldset's min-content: it fills the column and scrolls inside it. */
+  inline-size: 0;
+  min-inline-size: 100%;
+  overflow-x: auto;
+  margin-top: var(--ry-s2);
+}
+
+.compare {
+  width: 100%;
+  min-width: 520px;
+  border-collapse: collapse;
+  font-size: var(--ry-fs-label);
+  font-variant-numeric: tabular-nums;
+}
+
+.compare th,
+.compare td {
+  padding: 8px var(--ry-s2);
+  border-bottom: 1px solid var(--ry-border);
+  text-align: left;
+  vertical-align: top;
+}
+
+.compare thead th {
+  color: var(--ry-text);
+  font-weight: 600;
+}
+
+.compare tbody th {
+  color: var(--ry-muted);
+  font-weight: 400;
+}
+
 .details {
   border-top: 1px solid var(--ry-border);
   padding-top: var(--ry-s2);
@@ -519,7 +619,16 @@
 }
 
 .row dt {
+  flex-shrink: 0;
   color: var(--ry-muted);
+}
+
+/* Why a partner code could not be used: a quiet line under the value, not a second voice in it. */
+.partnerNote {
+  display: block;
+  margin-top: 2px;
+  color: var(--ry-muted);
+  font-size: var(--ry-fs-label-sm);
 }
 
 .row dd {
@@ -674,47 +783,6 @@
   color: var(--ry-muted);
 }
 
-.review {
-  display: grid;
-  gap: var(--ry-s3);
-  padding: var(--ry-s4);
-  border: 1px solid var(--ry-border);
-  border-radius: var(--ry-r-card);
-  background: var(--ry-card);
-  box-shadow: var(--ry-shadow-sm);
-}
-
-.reviewTitle {
-  margin: 0;
-  font-size: var(--ry-fs-section);
-  font-weight: 600;
-  color: var(--ry-text);
-}
-
-.fixed {
-  display: flex;
-  align-items: flex-start;
-  gap: 8px;
-  margin: 0;
-  padding: 10px 12px;
-  border-radius: var(--ry-r-btn);
-  background: var(--ry-caution-soft);
-  color: var(--ry-text);
-  font-size: var(--ry-fs-label);
-  line-height: var(--ry-lh-body);
-}
-
-.fixed svg {
-  flex: none;
-  margin-top: 2px;
-  color: var(--ry-caution);
-}
-
-.cta {
-  width: 100%;
-  min-height: 48px !important;
-}
-
 .failure {
   display: grid;
   gap: 4px;
@@ -859,14 +927,6 @@
   color: var(--ry-verified);
 }
 
-.successTitle {
-  margin: 0;
-  font-size: var(--ry-fs-key);
-  font-weight: 600;
-  line-height: var(--ry-lh-head);
-  color: var(--ry-text);
-}
-
 .lockedLine {
   display: inline-flex;
   align-items: center;
@@ -923,15 +983,24 @@
   flex: 1 1 auto;
 }
 
-/* The two actions side by side, half the card each, the link above them; on a card too narrow for both labels on one
-   line each takes the whole width rather than break its words. */
+/* The link and «Copy» the card's whole width, the two places to post — X and Telegram — half each under them
+   (SOL-L1e); beside a trade, with no link shown, the three side by side while they fit. */
 .shareRow {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(min(100%, 9.5rem), 1fr));
+  grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
-.shareRow > .shareLink {
+.shareRow > .shareLink,
+.shareRow > .shareCopy {
   grid-column: 1 / -1;
+}
+
+.shareCompact .shareRow {
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 6.5rem), 1fr));
+}
+
+.shareCompact .shareRow > .shareCopy {
+  grid-column: auto;
 }
 
 .shareRow > :global(.rw-btn) {
@@ -962,17 +1031,22 @@
   gap: var(--ry-s3);
 }
 
-/* ── The token's page ────────────────────────────────────────────────── */
-
-.tokenHead {
-  display: grid;
-  grid-template-columns: 72px minmax(0, 1fr);
+/* The page's heading: the token's picture beside its name, in the heading's own size. */
+.tokenTitleLine {
+  display: inline-flex;
   align-items: center;
   gap: var(--ry-s3);
-  padding: var(--ry-s4);
-  border: 1px solid var(--ry-border);
-  border-radius: var(--ry-r-card);
-  background: var(--ry-card);
+  min-width: 0;
+}
+
+.tokenTitleLine .tokenPicture {
+  flex: none;
+  width: 40px;
+  height: 40px;
+}
+
+.tokenTitleLine .tokenName {
+  font: inherit;
 }
 
 .tokenPicture {
@@ -990,12 +1064,6 @@
   width: 100%;
   height: 100%;
   object-fit: cover;
-}
-
-.tokenTitle {
-  display: grid;
-  gap: 4px;
-  min-width: 0;
 }
 
 .tokenName {
@@ -1032,24 +1100,6 @@
   color: var(--ry-muted);
 }
 
-.tokenGrid {
-  display: grid;
-  gap: var(--ry-s4);
-  min-width: 0;
-}
-
-@media (min-width: 1024px) {
-  .tokenGrid {
-    grid-template-columns: minmax(0, 1fr) 360px;
-    align-items: start;
-  }
-
-  .tokenGrid > .asideSticky {
-    position: sticky;
-    top: 88px;
-  }
-}
-
 .card {
   display: grid;
   gap: var(--ry-s3);
@@ -1082,7 +1132,7 @@
 }
 
 .progressValue {
-  font-family: var(--ry-font-mono);
+  font-family: var(--ry-font-sans);
   font-size: var(--ry-fs-data-m);
   font-weight: 600;
   font-variant-numeric: tabular-nums;
@@ -1288,9 +1338,7 @@
     grid-area: chart;
   }
 
-  .slotAttention {
-    grid-area: attention;
-  }
+  
 
   .mainCol {
     grid-area: main;
@@ -1314,12 +1362,6 @@
   background: var(--ry-card);
 }
 
-.headSlot > .tokenHead {
-  padding: 0;
-  border: 0;
-  background: none;
-}
-
 .priceBlock {
   display: grid;
   gap: var(--ry-s3);
@@ -1332,47 +1374,6 @@
     align-items: end;
     gap: var(--ry-s5);
   }
-}
-
-.priceMain {
-  display: grid;
-  gap: 2px;
-  min-width: 0;
-}
-
-.priceLabel {
-  font-size: var(--ry-fs-label);
-  color: var(--ry-muted);
-}
-
-.priceCap {
-  font-family: var(--ry-font-mono);
-  font-size: var(--ry-fs-data-xl);
-  font-weight: 600;
-  line-height: 1.05;
-  font-variant-numeric: tabular-nums;
-  letter-spacing: -0.02em;
-  color: var(--ry-text);
-}
-
-.priceMove {
-  font-family: var(--ry-font-mono);
-  font-size: var(--ry-fs-label);
-  font-variant-numeric: tabular-nums;
-  color: var(--ry-muted);
-}
-
-.priceMove[data-dir="up"] {
-  color: var(--ry-pnl-pos);
-}
-
-.priceMove[data-dir="down"] {
-  color: var(--ry-pnl-neg);
-}
-
-.priceMoveLabel {
-  font-family: var(--ry-font-sans);
-  color: var(--ry-muted);
 }
 
 .stats {
@@ -1404,7 +1405,7 @@
 
 .stat dd {
   margin: 0;
-  font-family: var(--ry-font-mono);
+  font-family: var(--ry-font-sans);
   font-size: var(--ry-fs-copy);
   font-weight: 600;
   font-variant-numeric: tabular-nums;
@@ -1412,53 +1413,6 @@
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-}
-
-.soldBanner {
-  display: grid;
-  grid-template-columns: auto minmax(0, 1fr) auto;
-  align-items: center;
-  gap: 10px;
-  min-height: 44px;
-  padding: 10px 12px;
-  border: 1px solid var(--ry-caution);
-  border-radius: var(--ry-r-btn);
-  background: var(--ry-caution-soft);
-  color: var(--ry-text);
-  font-size: var(--ry-fs-label);
-  font-weight: 600;
-  text-decoration: none;
-}
-
-.soldBanner svg:first-child {
-  color: var(--ry-caution);
-}
-
-.soldWhen {
-  font-weight: 400;
-  color: var(--ry-muted);
-}
-
-/* Where the banner would stand when the creator's trades were not read whole: said plainly, in no warning colour. */
-.soldUnread {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  min-height: 44px;
-  margin: 0;
-  padding: 10px 12px;
-  border: 1px dashed var(--ry-border-strong);
-  border-radius: var(--ry-r-btn);
-  color: var(--ry-muted);
-  font-size: var(--ry-fs-label);
-}
-
-.cardHeadRow {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: space-between;
-  align-items: baseline;
-  gap: var(--ry-s2);
 }
 
 .legend {
@@ -1489,9 +1443,20 @@
   }
 }
 
+/* The core's compact chart (CH-17) fills the box: the plot grows, the line of the source and age keeps its own height. */
+.chartCanvas :global(.ryntra-mini) {
+  height: 100%;
+}
+
+.chartCanvas :global(.ryntra-mini__plot) {
+  flex: 1 1 auto;
+  height: auto;
+  min-height: 120px;
+}
+
 .progressLine {
   margin: 0;
-  font-family: var(--ry-font-mono);
+  font-family: var(--ry-font-sans);
   font-size: var(--ry-fs-label);
   font-variant-numeric: tabular-nums;
   color: var(--ry-muted);
@@ -1546,8 +1511,9 @@
   border-radius: var(--ry-r-pill);
   background: var(--ry-caution-soft);
   color: var(--ry-text);
-  font-family: var(--ry-font-mono);
+  font-family: var(--ry-font-sans);
   font-size: var(--ry-fs-label-sm);
+  font-variant-numeric: tabular-nums;
 }
 
 .tabPanel {
@@ -1669,7 +1635,7 @@
   grid-area: amount;
   display: grid;
   min-width: 0;
-  font-family: var(--ry-font-mono);
+  font-family: var(--ry-font-sans);
   font-variant-numeric: tabular-nums;
   color: var(--ry-text);
 }
@@ -1684,7 +1650,7 @@
 
 .tradeCap {
   grid-area: cap;
-  font-family: var(--ry-font-mono);
+  font-family: var(--ry-font-sans);
   font-variant-numeric: tabular-nums;
   color: var(--ry-muted);
   text-align: right;
@@ -1759,7 +1725,7 @@
 }
 
 .groupValue {
-  font-family: var(--ry-font-mono);
+  font-family: var(--ry-font-sans);
   font-size: var(--ry-fs-copy);
   font-weight: 600;
   font-variant-numeric: tabular-nums;
@@ -1793,9 +1759,10 @@
 
 .holderRank {
   grid-area: rank;
-  font-family: var(--ry-font-mono);
+  font-family: var(--ry-font-sans);
   font-size: var(--ry-fs-label-sm);
   color: var(--ry-muted);
+  font-variant-numeric: tabular-nums;
 }
 
 .holderShare {
@@ -1803,7 +1770,7 @@
   display: grid;
   white-space: nowrap;
   gap: 4px;
-  font-family: var(--ry-font-mono);
+  font-family: var(--ry-font-sans);
   font-variant-numeric: tabular-nums;
   color: var(--ry-text);
   text-align: right;
@@ -1902,34 +1869,6 @@
   gap: 4px var(--ry-s3);
 }
 
-/* A quiet action inside a card: a word, not a second orange button. */
-.textButton {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  min-height: 32px;
-  padding: 0;
-  border: 0;
-  background: none;
-  color: var(--ry-muted);
-  font: inherit;
-  font-size: var(--ry-fs-label-sm);
-  font-weight: 600;
-  text-decoration: underline;
-  text-underline-offset: 3px;
-  cursor: pointer;
-}
-
-.textButton:hover {
-  color: var(--ry-text);
-}
-
-.textButton:focus-visible {
-  outline: 2px solid var(--ry-text);
-  outline-offset: 2px;
-  border-radius: 2px;
-}
-
 .launchName {
   color: var(--ry-text);
   font-weight: 600;
@@ -1953,13 +1892,6 @@
 
 .tradeCard {
   gap: var(--ry-s3);
-}
-
-.tradeHead {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: var(--ry-s2);
 }
 
 .sideSwitch {
@@ -2005,11 +1937,6 @@
   outline-offset: 1px;
 }
 
-.tradeVenue {
-  font-size: var(--ry-fs-label-sm);
-  color: var(--ry-muted);
-}
-
 .tradeCard .suffix {
   right: 12px;
 }
@@ -2033,9 +1960,10 @@
   border-radius: var(--ry-r-pill);
   background: var(--ry-bg);
   color: var(--ry-text);
-  font-family: var(--ry-font-mono);
+  font-family: var(--ry-font-sans);
   font-size: var(--ry-fs-label);
   cursor: pointer;
+  font-variant-numeric: tabular-nums;
 }
 
 .quick:hover,
@@ -2076,7 +2004,7 @@
 }
 
 .quoteValue {
-  font-family: var(--ry-font-mono);
+  font-family: var(--ry-font-sans);
   font-size: var(--ry-fs-data-m);
   font-weight: 600;
   font-variant-numeric: tabular-nums;
@@ -2085,9 +2013,10 @@
 }
 
 .quoteSub {
-  font-family: var(--ry-font-mono);
+  font-family: var(--ry-font-sans);
   font-size: var(--ry-fs-label-sm);
   color: var(--ry-muted);
+  font-variant-numeric: tabular-nums;
 }
 
 .sniperLine {
@@ -2153,52 +2082,6 @@
   font-size: var(--ry-fs-section);
   font-weight: 600;
   color: var(--ry-text);
-}
-
-/* What the trade cost or brought, at the size of a figure: the money is not a footnote. */
-.tradeDoneAmount {
-  margin: 0;
-  font-family: var(--ry-font-mono);
-  font-size: var(--ry-fs-copy);
-  color: var(--ry-text);
-}
-
-/* The trade's transaction and its receipt, side by side at a readable size; on a narrow card one under the other. */
-.tradeLinks {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--ry-s2) var(--ry-s4);
-}
-
-.tradeLinks .markLink {
-  font-size: var(--ry-fs-dense);
-}
-
-/* «Another trade»: the way back, quiet — after a trade the panel has no loud action. */
-.tradeAgain {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--ry-s2);
-  justify-self: start;
-  min-height: 44px;
-  padding: 0;
-  border: 0;
-  background: none;
-  color: var(--ry-text);
-  font: inherit;
-  font-size: var(--ry-fs-dense);
-  font-weight: 600;
-  cursor: pointer;
-}
-
-.tradeAgain:hover {
-  color: var(--ry-accent);
-}
-
-.tradeAgain:focus-visible {
-  outline: 2px solid var(--ry-accent);
-  outline-offset: 2px;
-  border-radius: 4px;
 }
 
 /* While a trade's own share stands in the panel, the token's link below it waits: one way to share at a time. */
@@ -2276,8 +2159,8 @@
 
 /* A finger needs room: on a touch screen every link and quiet button of the page is at least 44 px tall. */
 @media (pointer: coarse) {
-  .tokenLayout .markLink,
-  .tokenLayout .textButton,
+  
+.tokenLayout .markLink,
   .tradeTime > a {
     min-height: 44px;
   }
@@ -2299,9 +2182,10 @@
   box-shadow: var(--ry-shadow-md);
 }
 
-@media (max-width: 900px) {
+/* Above the frame's bottom bar, all the way to 1023 px where the bar is drawn (Menu 3, NAV-1). */
+@media (max-width: 1023px) {
   .tradeJump {
-    bottom: calc(56px + var(--ry-s3) + env(safe-area-inset-bottom, 0px));
+    bottom: calc(var(--sol-phonebar-h, 64px) + var(--ry-s3) + env(safe-area-inset-bottom, 0px));
   }
 }
 
@@ -2324,9 +2208,43 @@
   color: var(--ry-muted);
 }
 
+/* «Мої лаунчі»: the one number — what the launches earned — and beside it what can be claimed and what was claimed. */
+.mineSummary {
+  display: grid;
+  gap: var(--ry-s4);
+  min-width: 0;
+  padding: var(--ry-s4);
+  border: 1px solid var(--ry-border);
+  border-radius: var(--ry-r-card);
+  background: var(--ry-card);
+}
+
+@media (min-width: 900px) {
+  .mineSummary {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    align-items: end;
+  }
+}
+
+/* Each currency apart, never one turned into another: the first in the number's size, the rest beside it. */
+.mineFigures {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 4px var(--ry-s4);
+}
+
+.mineFigures .mineFigure + .mineFigure {
+  font-size: var(--ry-fs-copy);
+}
+
+.mineTotal dd .mineFigure {
+  display: block;
+}
+
 .mineTotals {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: var(--ry-s3);
   margin: 0;
 }
@@ -2345,7 +2263,7 @@
 .mineTotal dd {
   margin: 0;
   overflow: hidden;
-  font-family: var(--ry-font-mono);
+  font-family: var(--ry-font-sans);
   font-size: var(--ry-fs-copy);
   font-weight: 600;
   font-variant-numeric: tabular-nums;
@@ -2356,61 +2274,6 @@
 
 .mineTotal[data-lead] dd {
   font-size: var(--ry-fs-data-m);
-}
-
-.mineMeta {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 4px var(--ry-s2);
-  margin: 0;
-  font-size: var(--ry-fs-label);
-  color: var(--ry-muted);
-}
-
-.mineMeta strong {
-  font-family: var(--ry-font-mono);
-  font-weight: 600;
-  color: var(--ry-text);
-}
-
-/* The cabinet: the totals, the launches, the receipts — on a wide desk the launches take the width and the totals
-   and the receipts stand beside them, as Home's notes do. */
-.mineBoard {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr);
-  grid-template-areas: "summary" "list" "receipts";
-  gap: var(--ry-s4);
-  min-width: 0;
-}
-
-.mineBoard > [data-area="summary"] {
-  grid-area: summary;
-}
-
-.mineBoard > [data-area="list"] {
-  grid-area: list;
-}
-
-.mineBoard > [data-area="receipts"] {
-  grid-area: receipts;
-}
-
-@media (min-width: 1600px) {
-  .mineBoard {
-    grid-template-columns: minmax(0, 1fr) clamp(340px, 22vw, 440px);
-    grid-template-rows: auto 1fr;
-    grid-template-areas: "list summary" "list receipts";
-    align-items: start;
-  }
-
-  /* Beside the launches the total earned leads on its own line, what is to claim and what was claimed under it. */
-  .mineBoard > [data-area="summary"] .mineTotals {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-
-  .mineBoard > [data-area="summary"] .mineTotal[data-lead] {
-    grid-column: 1 / -1;
-  }
 }
 
 /* As many cards in a row as the width holds, each as wide as the row allows: two launches fill the row, never a
@@ -2431,38 +2294,6 @@
   container: mine-card / inline-size;
   display: grid;
   min-width: 0;
-}
-
-.mineCard {
-  align-content: start;
-}
-
-/* A lone launch across a wide desk: who and how far on the left, the figures on the right, the rest under both. */
-@container mine-card (min-width: 900px) {
-  .mineCard {
-    grid-template-columns: minmax(0, 1fr) minmax(0, 1.2fr);
-    column-gap: var(--ry-s6);
-  }
-
-  .mineCard > * {
-    grid-column: 1 / -1;
-  }
-
-  .mineCard > .mineHead {
-    grid-column: 1;
-    grid-row: 1;
-  }
-
-  .mineCard > .mineProgress {
-    grid-column: 1;
-    grid-row: 2;
-  }
-
-  .mineCard > .mineStats {
-    grid-column: 2;
-    grid-row: 1 / span 2;
-    align-self: center;
-  }
 }
 
 .mineHead {
@@ -2493,26 +2324,6 @@
   display: grid;
   gap: 2px;
   min-width: 0;
-}
-
-.mineName {
-  margin: 0;
-  overflow: hidden;
-  font-size: var(--ry-fs-section);
-  font-weight: 600;
-  line-height: var(--ry-lh-head);
-  white-space: nowrap;
-  text-overflow: ellipsis;
-}
-
-.mineName a {
-  color: var(--ry-text);
-  text-decoration: none;
-}
-
-.mineName a:hover {
-  text-decoration: underline;
-  text-underline-offset: 3px;
 }
 
 .mineProgress {
@@ -2585,7 +2396,7 @@
 }
 
 .mineSharePct {
-  font-family: var(--ry-font-mono);
+  font-family: var(--ry-font-sans);
   font-variant-numeric: tabular-nums;
 }
 
@@ -2593,19 +2404,6 @@
   display: grid;
   gap: var(--ry-s2);
   justify-items: start;
-}
-
-.mineActions .cta {
-  justify-self: stretch;
-}
-
-/* A wide card: «Забрати» at a button's own width, not a bar across the card. */
-@container mine-card (min-width: 600px) {
-  .mineActions .cta {
-    justify-self: start;
-    width: auto;
-    min-width: 280px;
-  }
 }
 
 .mineResult {
@@ -2634,21 +2432,6 @@
 
 .mineReceipt:last-child {
   border-bottom: 0;
-}
-
-.mineReceiptHead {
-  display: flex;
-  justify-content: space-between;
-  align-items: baseline;
-  gap: var(--ry-s3);
-  font-size: var(--ry-fs-label);
-  color: var(--ry-text);
-}
-
-.mineReceiptAmount {
-  font-family: var(--ry-font-mono);
-  font-weight: 600;
-  font-variant-numeric: tabular-nums;
 }
 
 .mineReceipt .details {
@@ -2706,7 +2489,7 @@
 }
 
 .feeSharePctFixed {
-  font-family: var(--ry-font-mono);
+  font-family: var(--ry-font-sans);
   font-weight: 600;
   font-variant-numeric: tabular-nums;
   color: var(--ry-text);
@@ -2760,25 +2543,9 @@
   border-color: var(--ry-risk);
 }
 
-/* «Забрати» on each launch: a plain action with the brand's edge — the page keeps no single orange action, every launch has its own. */
-.claimBtn {
-  border-color: var(--ry-brand-line) !important;
-  background: var(--ry-brand-soft) !important;
-  font-weight: 600;
-}
-
 /* A second currency under the first: the same ink, a step smaller — a community token is not worth less attention. */
 .mineTotal dd + dd {
   font-size: var(--ry-fs-copy);
-}
-
-.mineResultTitle {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  margin: 0;
-  font-weight: 600;
-  color: var(--ry-text);
 }
 
 /* On a phone the address takes its own line, whole; the share and «remove» sit under it. */
@@ -2812,15 +2579,9 @@
   list-style: none;
 }
 
-.minePartial {
-  color: var(--ry-caution);
-}
-
 /* Links and disclosures a finger presses: 44 px tall where the pointer is coarse. */
 @media (pointer: coarse) {
-  .mineCard .markLink,
-  .mineCard .summary,
-  .mineReceipt .markLink,
+    .mineReceipt .markLink,
   .mineReceipt .summary {
     min-height: 44px;
   }
@@ -2852,8 +2613,7 @@
 }
 
 /* An address and an amount never break mid-way. */
-.addr,
-.mineReceiptAmount {
+.addr {
   white-space: nowrap;
 }
 
@@ -2864,7 +2624,6 @@
 
 /* On a phone the whole address shows in its own line, in a size that holds 44 characters; its problem sits right under it. */
 @media (max-width: 559px) {
-
 
   .feeShareRow[data-problem="address"] .problem {
     grid-row: 2;
@@ -2888,53 +2647,6 @@
   }
 }
 
-/* ── Launch's two pages, one tap apart: «Запустити токен» · «Мої лаунчі» ─
-   The menu has one row for Launch, so its pages are named here, on a desk too.
-   Portfolio's pill tabs: the current one a card on the page with a hairline. */
-.placeTabs {
-  display: flex;
-  gap: var(--ry-s1);
-  min-width: 0;
-  /* Room for the focus ring, which a scrolling row would otherwise clip. */
-  margin: -3px -3px var(--ry-s3);
-  padding: 3px;
-  overflow-x: auto;
-  scrollbar-width: none;
-}
-
-.placeTabs::-webkit-scrollbar {
-  display: none;
-}
-
-.placeTab {
-  display: inline-flex;
-  flex: 0 0 auto;
-  align-items: center;
-  min-height: 44px;
-  padding: 0 var(--ry-s3);
-  border-radius: var(--ry-r-pill);
-  font-size: var(--ry-fs-dense);
-  font-weight: 600;
-  white-space: nowrap;
-  color: var(--ry-muted);
-  text-decoration: none;
-  transition: background-color var(--rt-duration-fast) var(--rt-ease), color var(--rt-duration-fast) var(--rt-ease);
-}
-
-.placeTab:hover {
-  color: var(--ry-text);
-}
-
-.placeTab[aria-current="page"] {
-  background: var(--ry-card);
-  box-shadow: inset 0 0 0 1px var(--ry-border);
-  color: var(--ry-text);
-}
-
-.placeTab:focus-visible {
-  outline: none;
-  box-shadow: var(--ry-focus);
-}
 /* Launch's operator stop: a quiet line in the page's own tone — the muted ink and an icon, no card of its own, so it
    never weighs as much as the form — and never the red of a problem. */
 .pausedNote {
@@ -2991,17 +2703,6 @@
   color: var(--ry-muted);
   font-size: var(--ry-fs-label);
   font-weight: 600;
-}
-
-/* The action's place while launching waits: the button itself, unpressable and without the brand's orange, says why. */
-/* Above the product's own «disabled = half opacity», which would fade the words to about 2:1. */
-.review .cta.ctaPaused,
-.review .cta.ctaPaused:disabled {
-  border: 1px solid var(--ry-border);
-  background: var(--ry-hover);
-  color: var(--ry-muted);
-  opacity: 1;
-  cursor: not-allowed;
 }
 
 /* ── The flight log: each entry with its time, amount and transaction; the Fee-Funded Liquidity Ladder above it ── */
@@ -3100,39 +2801,10 @@
 
 /* Every figure in a sentence of the log in the mono face, tabular, in the ink of the text. */
 .figure {
-  font-family: var(--ry-font-mono);
+  font-family: var(--ry-font-sans);
   font-variant-numeric: tabular-nums;
   color: var(--ry-text);
   white-space: nowrap;
-}
-
-.floorBlock {
-  display: grid;
-  gap: 6px;
-  padding: var(--ry-s3);
-  border: 1px solid var(--ry-border);
-  border-radius: var(--ry-r-btn);
-}
-
-/* The pool's link stays on the title's line: the title wraps inside its own room instead. */
-.floorHead {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  color: var(--rt-evidence-cyan);
-}
-
-.floorTitle {
-  flex: 1 1 auto;
-  min-width: 0;
-  margin: 0;
-  font-size: var(--ry-fs-copy);
-  font-weight: 600;
-  color: var(--ry-text);
-}
-
-.floorHead .markLink {
-  flex: none;
 }
 
 /* The one sentence that keeps the liquidity from reading as a floor under the price: at reading size, never a footnote. */
@@ -3157,7 +2829,6 @@
  */
 .slotLog .hint,
 .slotLog .unread,
-.slotLog .textButton,
 .slotLog .marksChecked,
 .slotLog .markLink {
   font-size: var(--ry-fs-dense);
@@ -3189,13 +2860,6 @@
 .poolCard .affixed:has(.suffix) .input {
   padding-right: 96px;
   font-size: var(--ry-fs-data-m);
-}
-
-.poolHead {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--ry-s2);
 }
 
 .poolLede {
@@ -3245,6 +2909,15 @@
   color: var(--ry-text);
 }
 
+/* The collector's passes have stopped: said first, in text — a fact of now, not an alarm. */
+.collectorIdle {
+  margin: 0 0 4px;
+  font-size: var(--ry-fs-dense);
+  font-weight: 600;
+  line-height: 1.5;
+  color: var(--ry-text);
+}
+
 .collectorLine {
   margin: 0;
   font-size: var(--ry-fs-dense);
@@ -3280,7 +2953,7 @@
   padding: 6px 4px;
   border-bottom: 1px solid var(--ry-border);
   text-align: right;
-  font-family: var(--ry-font-mono);
+  font-family: var(--ry-font-sans);
   font-variant-numeric: tabular-nums;
   white-space: nowrap;
 }
@@ -3426,7 +3099,7 @@
 
 .positionFigures dd {
   margin: 0;
-  font-family: var(--ry-font-mono);
+  font-family: var(--ry-font-sans);
   font-variant-numeric: tabular-nums;
   font-size: var(--ry-fs-dense);
   color: var(--ry-text);
@@ -3451,6 +3124,27 @@
   flex-wrap: wrap;
   align-items: center;
   gap: var(--ry-s3);
+}
+
+/* The core's Review before a permission's signature (SOL-C14), in the position's own column. */
+.permissionReview {
+  min-width: 0;
+}
+
+.permissionDetails {
+  display: grid;
+  gap: var(--ry-s1);
+  margin: 0;
+}
+
+.permissionDetails dt {
+  color: var(--ry-muted);
+}
+
+.permissionDetails dd {
+  margin: 0;
+  font-family: var(--ry-font-mono);
+  overflow-wrap: anywhere;
 }
 
 .claimList {
@@ -3557,7 +3251,7 @@
 }
 
 .simWorst {
-  font-family: var(--ry-font-mono);
+  font-family: var(--ry-font-sans);
   font-variant-numeric: tabular-nums;
   font-size: var(--ry-fs-dense);
   color: var(--ry-pnl-neg);
@@ -3582,29 +3276,27 @@
 
 /* ── «Лаунчі на Ryntra» — every market launched on Ryntra ─────────────── */
 
-.marketsState {
-  justify-items: start;
+/* Launch's pages stand in the core's page (B4): the frame gives the edges, the core the heading and the columns. */
+.corePage {
+  width: 100%;
+  padding: 0;
 }
 
-.marketsBoard {
-  display: grid;
-  gap: var(--ry-s3);
+/* What stood beside a card's heading — a state, a link, a legend — on its own line at the top of the block. */
+.blockBar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--ry-s2) var(--ry-s3);
   min-width: 0;
 }
 
-.marketsBar {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: 4px var(--ry-s4);
-}
-
-.marketsCount {
-  margin: 0;
-  font-size: var(--ry-fs-label);
-  font-weight: 600;
-  color: var(--ry-text);
+/* What a block holds, one under another: a line, the table, its small print. */
+.blockStack {
+  display: grid;
+  gap: var(--ry-s3);
+  min-width: 0;
 }
 
 .marketsLegend {
@@ -3626,77 +3318,17 @@
   background: var(--ry-verified);
 }
 
-.marketsWrap {
-  min-width: 0;
-  overflow-x: auto;
-  border: 1px solid var(--ry-border);
-  border-radius: var(--ry-r-card);
-  background: var(--ry-card);
-}
-
-/* A dense data table: the 13 px step the type scale keeps for one, its small print 12 px. */
-.marketsTable {
-  width: 100%;
-  border-collapse: collapse;
-  font-size: var(--ry-fs-data);
-  color: var(--ry-text);
-}
-
-/* Dense enough for eight columns beside the menu on a 1280 px laptop: tight sides, the edges a little wider. */
-.marketsTable th,
+/* The core's table with two lines in a cell: the figure, and its small print under it. */
 .marketsTable td {
-  padding: 10px 6px;
-  border-bottom: 1px solid var(--ry-border);
-  text-align: left;
+  padding-block: 10px;
+  white-space: normal;
   vertical-align: middle;
 }
 
-.marketsTable tr > :first-child {
-  padding-left: 12px;
-}
-
-.marketsTable tr > :last-child {
-  padding-right: 12px;
-}
-
-.marketsTable thead th {
-  font-size: var(--ry-fs-label);
-  font-weight: 600;
-  line-height: 1.25;
-  color: var(--ry-muted);
-  vertical-align: bottom;
-}
-
-.marketsTable [data-num] {
-  text-align: right;
-}
-
-.marketsTable tbody tr:last-child > * {
-  border-bottom: 0;
-}
-
-/* The whole row opens the token on a press; its name is the link a keyboard and a screen reader use. */
-.marketRow {
-  cursor: pointer;
-}
-
-.marketRow:hover {
-  background: var(--ry-hover);
-}
-
-/* A market being read: one line across its figures, never a «not read» in each of them. */
-.rowReading {
-  color: var(--ry-muted);
-  font-size: var(--ry-fs-data);
-}
-
-.rowReading > * + * {
-  margin-left: var(--ry-s4);
-}
-
 .marketToken {
-  min-width: 150px;
-  font-weight: 400;
+  display: grid;
+  gap: 2px;
+  min-width: 160px;
 }
 
 .marketLink {
@@ -3871,7 +3503,7 @@
 }
 
 .cellFigure {
-  font-family: var(--ry-font-mono);
+  font-family: var(--ry-font-sans);
   font-variant-numeric: tabular-nums;
   color: var(--ry-text);
   white-space: nowrap;
@@ -3892,7 +3524,7 @@
 }
 
 .wayValue {
-  font-family: var(--ry-font-mono);
+  font-family: var(--ry-font-sans);
   font-variant-numeric: tabular-nums;
 }
 
@@ -3939,7 +3571,6 @@
   color: var(--ry-muted);
 }
 
-
 .creatorSold {
   display: inline-flex;
   align-items: center;
@@ -3953,24 +3584,14 @@
   color: var(--ry-caution);
 }
 
-.marketsFoot {
-  display: grid;
-  gap: var(--ry-s2);
-}
-
 /* No price is promised: one plain sentence under every figure of a market, in a quiet box as wide as the sentence. */
+/* The risk is said in one quiet line under the figures — never a framed box standing at one edge of a wide block. */
 .noGuarantee {
-  width: fit-content;
-  max-width: 100%;
   margin: 0;
-  padding: 10px 12px;
-  border: 1px solid var(--ry-border);
-  border-radius: var(--ry-r-btn);
-  background: var(--ry-bg);
-  color: var(--ry-text);
-  font-size: var(--ry-fs-data);
-  font-weight: 600;
-  line-height: var(--ry-lh-body);
+  color: var(--ry-muted);
+  font-size: var(--ry-fs-label-sm);
+  font-weight: 500;
+  line-height: 1.45;
 }
 
 @media (pointer: coarse) {
@@ -3979,135 +3600,10 @@
   }
 }
 
-/* A phone: each market a card of the same facts, its name on top, the figures two by two under their names. */
-@media (max-width: 759px) {
-  .marketsWrap {
-    overflow: visible;
-    border: 0;
-    background: none;
-  }
-
-  .marketsTable,
-  .marketsTable tbody,
-  .marketsTable tr,
-  .marketsTable th,
-  .marketsTable td {
-    display: block;
-  }
-
-  .marketsTable thead {
-    position: absolute;
-    width: 1px;
-    height: 1px;
-    overflow: hidden;
-    clip: rect(0 0 0 0);
-    white-space: nowrap;
-  }
-
-  .marketsTable tbody {
-    display: grid;
-    gap: var(--ry-s3);
-  }
-
-  /* Scoped like the rule above it, so the card's grid wins over the table's block. */
-  .marketsTable .marketRow {
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: var(--ry-s3);
-    padding: var(--ry-s4);
-    border: 1px solid var(--ry-border);
-    border-radius: var(--ry-r-card);
-    background: var(--ry-card);
-  }
-
-  .marketsTable .marketRow:hover {
-    background: var(--ry-card);
-  }
-
-  .marketsTable .marketRow > th,
-  .marketsTable .marketRow > td {
-    padding: 0;
-    border: 0;
-  }
-
-  .marketsTable .marketRow > th {
-    grid-column: 1 / -1;
-  }
-
-  .marketsTable .marketRow > td {
-    display: grid;
-    align-content: start;
-    gap: 4px;
-    min-width: 0;
-    text-align: left;
-  }
-
-  .marketsTable .marketRow > td::before {
-    content: attr(data-label);
-    color: var(--ry-muted);
-    font-size: var(--ry-fs-label);
-  }
-
-  .marketsTable .marketRow > td.rowReading {
-    grid-column: 1 / -1;
-  }
-
-  .rowReading > * + * {
-    margin-left: 0;
-  }
-
-  .marketName {
-    max-width: none;
-    white-space: normal;
-  }
-
-  .creatorLock,
-  .creatorSold,
-  .wayDone {
-    white-space: normal;
-  }
-}
-
 /* ── «Здоров'я ринку» on a token's page ───────────────────────────────── */
 
 .slotHealth {
   min-width: 0;
-}
-
-.healthStateLine {
-  margin: 0;
-  font-size: var(--ry-fs-dense);
-  line-height: var(--ry-lh-body);
-  color: var(--ry-muted);
-}
-
-.healthGrid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(min(100%, 220px), 1fr));
-  gap: var(--ry-s3);
-  min-width: 0;
-}
-
-.healthTile {
-  display: grid;
-  align-content: start;
-  gap: 6px;
-  min-width: 0;
-  padding: var(--ry-s3);
-  border: 1px solid var(--ry-border);
-  border-radius: var(--ry-r-btn);
-  background: var(--ry-bg);
-}
-
-.healthWide {
-  grid-column: 1 / -1;
-}
-
-.healthLabel {
-  margin: 0;
-  font-size: var(--ry-fs-label);
-  font-weight: 600;
-  color: var(--ry-muted);
 }
 
 .healthFigure {
@@ -4176,16 +3672,6 @@
   flex-wrap: wrap;
   align-items: center;
   gap: 0 6px;
-}
-
-.healthEngine {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 0 6px;
-  margin: 0;
-  font-size: var(--ry-fs-data);
-  color: var(--ry-text);
 }
 
 .depthRows {
@@ -4352,4 +3838,1029 @@
 
 .holderChange[data-tone="down"] {
   color: var(--ry-pnl-neg);
+}
+
+/* ── The token page in sections: the price, the facts worth a look, the chart and the trade first;
+      one section at a time under the chart — Overview · Liquidity · Risk · History ── */
+
+@media (min-width: 1024px) {
+  .tokenLayout,
+  .tokenLayout[data-attention] {
+    grid-template-areas:
+      "head head"
+      "chart aside"
+      "main aside";
+  }
+}
+
+@media (min-width: 1200px) {
+  .stats {
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+  }
+}
+
+/* The facts worth a look before a trade, a word each, under the price. */
+.riskStrip {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 12px;
+  padding-top: var(--ry-s3);
+  border-top: 1px solid var(--ry-border);
+}
+
+.stripLabel {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--ry-text);
+  font-size: var(--ry-fs-label);
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.stripLabel svg {
+  color: var(--ry-caution);
+}
+
+.stripChips {
+  display: flex;
+  flex: 1 1 auto;
+  flex-wrap: wrap;
+  gap: 6px;
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.stripChip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 28px;
+  padding: 3px 10px;
+  border: 1px solid var(--ry-border);
+  border-radius: var(--ry-r-pill);
+  background: var(--ry-bg);
+  color: var(--ry-text);
+  font-size: var(--ry-fs-label);
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.stripChip[data-tone="attention"] {
+  border-color: color-mix(in srgb, var(--ry-caution) 45%, transparent);
+  background: var(--ry-caution-soft);
+}
+
+.stripChip[data-tone="sold"] {
+  border-color: color-mix(in srgb, var(--ry-risk) 55%, transparent);
+  background: var(--ry-risk-soft);
+}
+
+a.stripChip[data-tone="sold"]:hover {
+  border-color: var(--ry-risk);
+}
+
+.stripChip[data-tone="info"] {
+  color: var(--ry-muted);
+}
+
+.stripAll {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  min-height: 28px;
+  margin-left: auto;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--ry-muted);
+  font: inherit;
+  font-size: var(--ry-fs-label);
+  font-weight: 500;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.stripAll:hover {
+  color: var(--ry-text);
+}
+
+/* The sections' bar: one row of tabs above the panels; the open one carries the brand's line, nothing else does. */
+.sectionTabs {
+  position: sticky;
+  top: 72px;
+  z-index: 5;
+  display: flex;
+  gap: 4px;
+  min-width: 0;
+  padding: 4px;
+  overflow-x: auto;
+  border: 1px solid var(--ry-border);
+  border-radius: var(--ry-r-card);
+  background: var(--ry-card);
+  scrollbar-width: none;
+}
+
+.sectionTabs::-webkit-scrollbar {
+  display: none;
+}
+
+.sectionTab {
+  display: inline-flex;
+  flex: 1 0 auto;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 44px;
+  padding: 8px 14px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--ry-muted);
+  font: inherit;
+  font-size: var(--ry-fs-copy);
+  font-weight: 600;
+  white-space: nowrap;
+  cursor: pointer;
+  transition:
+    background-color 160ms ease,
+    color 160ms ease,
+    box-shadow 160ms ease;
+}
+
+.sectionTab:hover {
+  background: var(--ry-hover);
+  color: var(--ry-text);
+}
+
+.sectionTab[aria-selected="true"] {
+  background: var(--ry-elevated);
+  color: var(--ry-text);
+  box-shadow: inset 0 -2px 0 var(--ry-accent);
+}
+
+.sectionPanel {
+  display: grid;
+  gap: var(--ry-s4);
+  min-width: 0;
+}
+
+.sectionPanel[hidden] {
+  display: none;
+}
+
+/* Ryntra's Market Engine on this market: the state, the budget in three figures, the market's way, the last action. */
+.engineCard {
+  gap: var(--ry-s4);
+}
+
+.engineLede {
+  max-width: 76ch;
+  margin: 0;
+  color: var(--ry-muted);
+  font-size: var(--ry-fs-label);
+  line-height: 1.55;
+}
+
+.engineFigures {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 96px), 1fr));
+  gap: var(--ry-s3);
+  margin: 0;
+}
+
+.engineFigure {
+  display: grid;
+  grid-template-rows: auto 1fr;
+  align-content: space-between;
+  gap: 4px;
+  min-width: 0;
+  padding: var(--ry-s3) var(--ry-s4);
+  border: 1px solid var(--ry-border);
+  border-radius: var(--ry-r-btn);
+  background: var(--ry-bg);
+}
+
+.engineFigure dt {
+  color: var(--ry-muted);
+  font-size: var(--ry-fs-label);
+}
+
+.engineFigure dd {
+  margin: 0;
+  overflow: hidden;
+  color: var(--ry-text);
+  font-family: var(--ry-font-sans);
+  font-size: var(--ry-fs-data-lg);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  line-height: 2rem;
+  letter-spacing: -0.01em;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.engineFigure dd[data-muted] {
+  color: var(--ry-muted);
+  font-family: var(--ry-font-sans);
+  font-size: var(--ry-fs-copy);
+  font-weight: 500;
+}
+
+/* The market's way: a dot per step on one line — done in the ink, the step the market is at ringed in the brand. */
+.cycle {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.cycleStep {
+  position: relative;
+  display: grid;
+  align-content: start;
+  gap: 8px;
+  min-width: 0;
+  padding-right: var(--ry-s3);
+}
+
+.cycleStep::before {
+  content: "";
+  position: absolute;
+  top: 9px;
+  right: 0;
+  left: 20px;
+  height: 2px;
+  background: var(--ry-border);
+}
+
+.cycleStep:last-child::before {
+  display: none;
+}
+
+.cycleStep[data-state="done"]:has(+ [data-state="done"])::before {
+  background: color-mix(in srgb, var(--ry-text) 55%, transparent);
+}
+
+.cycleDot {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  place-items: center;
+  width: 20px;
+  height: 20px;
+  border: 1.5px solid var(--ry-border-strong);
+  border-radius: var(--ry-r-pill);
+  background: var(--ry-card);
+  color: var(--ry-bg);
+}
+
+.cycleStep[data-state="done"] .cycleDot {
+  border-color: var(--ry-text);
+  background: var(--ry-text);
+}
+
+.cycleStep[data-state="now"] .cycleDot {
+  border-color: var(--ry-accent);
+  box-shadow: 0 0 0 4px var(--ry-brand-soft);
+}
+
+.cycleText {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+.cycleName {
+  color: var(--ry-text);
+  font-size: var(--ry-fs-label);
+  font-weight: 600;
+}
+
+.cycleStep[data-state="next"] .cycleName {
+  color: var(--ry-muted);
+}
+
+.cycleValue {
+  overflow: hidden;
+  color: var(--ry-muted);
+  font-family: var(--ry-font-sans);
+  font-size: var(--ry-fs-label);
+  font-variant-numeric: tabular-nums;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.engineLast {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px 16px;
+  padding-top: var(--ry-s3);
+  border-top: 1px solid var(--ry-border);
+}
+
+.engineAction {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 4px 10px;
+  min-width: 0;
+  margin: 0;
+  color: var(--ry-text);
+  font-size: var(--ry-fs-label);
+}
+
+.engineActionText {
+  font-weight: 500;
+}
+
+/* The newest entries of the log on the overview: the same rows, a little tighter, no line under the last. */
+.logCompact .logItem {
+  padding: 10px 0;
+}
+
+.logCompact .logItem:last-child {
+  border-bottom: 0;
+  padding-bottom: 0;
+}
+
+/* Blocks side by side where there is room: one number or one list each. */
+.tileRow {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 220px), 1fr));
+  align-items: stretch;
+  gap: var(--ry-s4);
+  min-width: 0;
+}
+
+.tileCard {
+  align-content: start;
+  gap: var(--ry-s2);
+}
+
+/* Liquidity: Ryntra's ladder, the depth and the budget; the pool and a holder's positions beside them on a wide desk. */
+.liquidityGrid {
+  display: grid;
+  align-items: start;
+  gap: var(--ry-s4);
+  min-width: 0;
+}
+
+.liquidityMain {
+  display: grid;
+  gap: var(--ry-s4);
+  min-width: 0;
+}
+
+/* Beside the trade the main column is narrow until a wide desk: the pool stands under the ladder before it. */
+@media (min-width: 1680px) {
+  .liquidityGrid:has(> :nth-child(2)) {
+    grid-template-columns: minmax(0, 1fr) minmax(320px, 400px);
+  }
+}
+
+.ladderCard {
+  gap: var(--ry-s2);
+}
+
+.ladderFigure {
+  margin: 0;
+  color: var(--ry-text);
+  font-family: var(--ry-font-sans);
+  font-size: var(--ry-fs-data-lg);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  line-height: 2rem;
+}
+
+@media (max-width: 719px) {
+  .engineLede {
+    display: none;
+  }
+
+  .engineFigures {
+    gap: var(--ry-s2);
+  }
+
+  .engineFigure {
+    padding: var(--ry-s2) var(--ry-s3);
+  }
+
+  .engineFigure dd,
+  .ladderFigure {
+    font-size: var(--ry-fs-data-m);
+    line-height: 1.6rem;
+  }
+
+  .sectionTab {
+    min-height: 40px;
+    padding: 6px 10px;
+    font-size: var(--ry-fs-label);
+  }
+
+  .cycle {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    row-gap: var(--ry-s4);
+  }
+
+  .cycleStep:nth-child(2)::before {
+    display: none;
+  }
+
+  .stripAll {
+    margin-left: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sectionTab {
+    transition: none;
+  }
+}
+
+/* The market's one line of risk under the trade: small and quiet, never a second card. */
+.asideCol > .noGuarantee {
+  width: auto;
+  padding: 0 var(--ry-s1);
+  border: 0;
+  background: none;
+  color: var(--ry-muted);
+  font-size: var(--ry-fs-label-sm);
+  font-weight: 500;
+}
+
+/* The Launch page's two actions beside its heading (Menu 3, NAV-1): «Мої лаунчі», then «Запустити токен». */
+.boardActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--ry-s2);
+}
+
+/* A token's page before the chain answers (B15): the heading's and the chart's places, still bars as the core's own
+   skeleton draws them — no shimmer on a loading screen. */
+.skeletonTitle {
+  display: inline-block;
+  width: 200px;
+  max-width: 60vw;
+  height: 28px;
+  vertical-align: middle;
+  border-radius: var(--ry-r-btn-sm);
+  background: var(--ryntra-border, var(--ry-elevated));
+}
+
+/* A token's heading: its picture is 40 px tall, the meta line under it one line of text (SOL-P1). */
+.skeletonTokenTitle {
+  height: 40px;
+}
+
+.skeletonLead {
+  display: inline-block;
+  width: 240px;
+  max-width: 70vw;
+  height: 20px;
+  border-radius: var(--ry-r-btn-sm);
+  background: var(--ryntra-border, var(--ry-elevated));
+  opacity: 0.6;
+}
+
+/*
+ * The market's skeleton in the market's own shape: each placeholder
+ * holds the height its block takes once the figures come, so the page does not move when they do.
+ */
+.priceSkeleton {
+  min-height: 183px;
+}
+
+@media (min-width: 900px) {
+  .priceSkeleton {
+    min-height: 99px;
+  }
+}
+
+@media (min-width: 1200px) {
+  .priceSkeleton {
+    min-height: 72px;
+  }
+}
+
+/* One line of chips — the line of what is worth a look before a trade, as most markets have it. */
+.stripSkeleton {
+  min-height: 57px;
+}
+
+/*
+ * Below a wide desk the line of what is worth a look keeps one height whatever it holds (SOL-P1): its label and «all the facts»
+ * on the first row, the chips in one row under them that scrolls sideways — a chip that comes with the health or the
+ * full read, or goes, never moves the chart below. Its place while it is read is that same height.
+ */
+@media (max-width: 1199px) {
+  .riskStrip {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-areas:
+      "label all"
+      "chips chips";
+  }
+
+  .stripLabel {
+    grid-area: label;
+  }
+
+  .stripAll {
+    grid-area: all;
+    margin-left: 0;
+  }
+
+  .stripChips {
+    grid-area: chips;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    overscroll-behavior-x: contain;
+    scrollbar-width: none;
+    /* Room for the focus ring inside the scroller, given back outside it: the line keeps its height. */
+    margin: -4px;
+    padding: 4px;
+    /* The chips past the edge fade into it, so a person sees there is more to scroll. */
+    mask-image: linear-gradient(to right, #000 calc(100% - 20px), transparent);
+  }
+
+  .stripChips::-webkit-scrollbar {
+    display: none;
+  }
+
+  .stripSkeleton {
+    min-height: 77px;
+  }
+}
+
+.legendSkeleton {
+  min-height: 24px;
+}
+
+.chartPlaceholder {
+  display: block;
+  height: 100%;
+  border-radius: var(--ry-r-card, 12px);
+  background: var(--ryntra-border, var(--ry-elevated));
+  opacity: 0.6;
+}
+
+.tradeSkeleton {
+  min-height: 300px;
+}
+
+.shareSkeleton {
+  min-height: 162px;
+}
+
+.tabsSkeleton {
+  min-height: 53px;
+  border-bottom: 1px solid var(--ry-border);
+}
+
+.engineSkeleton {
+  display: grid;
+  min-height: 280px;
+}
+
+.engineSkeleton > * {
+  min-height: 280px;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .chartPlaceholder {
+    animation: launchPlaceholderPulse 1.6s ease-in-out infinite;
+  }
+}
+
+@keyframes launchPlaceholderPulse {
+  50% {
+    opacity: 0.35;
+  }
+}
+
+/* ── The preset's numbers and the partner line in the review ─────────── */
+
+/* A second, quieter line under a row's value: what the number means, never a second number. */
+.rowNote {
+  display: block;
+  margin-top: 2px;
+  color: var(--ry-muted);
+  font-size: var(--ry-fs-label-sm);
+  text-align: right;
+}
+
+/* A quiet action inside a value — «Змінити», «Прибрати» — that reads as a link and keeps a 32 px target. */
+.textButton {
+  min-height: 32px;
+  padding: 0 4px;
+  border: 0;
+  background: none;
+  color: var(--ry-iris);
+  font: inherit;
+  font-size: var(--ry-fs-label);
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.textButton:hover {
+  text-decoration: underline;
+}
+
+.textButton:focus-visible {
+  outline: 2px solid var(--ry-iris);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+.textButton:disabled {
+  color: var(--ry-muted);
+  cursor: default;
+  text-decoration: none;
+}
+
+.partnerActions {
+  display: inline-flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 2px;
+  margin-left: 6px;
+}
+
+.partnerEdit {
+  display: flex;
+  gap: var(--ry-s2);
+  align-items: center;
+  justify-content: flex-end;
+}
+
+.partnerEdit .input {
+  min-width: 0;
+  max-width: 260px;
+}
+
+/* A sent trade not read yet: the transaction and another trade, side by side. */
+.tradeActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--ry-s2);
+}
+
+/* ── SOL-L3 «Доказ запуску»: each statement about the token with its links to the chain, topic by topic ── */
+
+.proofTopics {
+  display: grid;
+  gap: var(--ry-s3);
+  margin-top: var(--ry-s3);
+}
+
+.proofTopic {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+}
+
+.proofTopicTitle {
+  margin: 0;
+  font-size: var(--ry-fs-label-sm);
+  font-weight: 500;
+  color: var(--ry-muted);
+}
+
+.proofList {
+  display: grid;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.proofRow {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 4px 10px;
+  min-height: 44px;
+  padding: 4px 0;
+  border-bottom: 1px solid var(--ry-border);
+  font-size: var(--ry-fs-label);
+  color: var(--ry-text);
+}
+
+.proofRow:last-child {
+  border-bottom: 0;
+}
+
+.proofText {
+  min-width: 0;
+  line-height: var(--ry-lh-body);
+  overflow-wrap: anywhere;
+}
+
+.proofLinks {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 0 10px;
+}
+
+/* On a phone the links go under their statement: the words keep the width. */
+@media (max-width: 560px) {
+  .proofRow {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .proofLinks {
+    justify-content: flex-start;
+  }
+}
+
+/* A tile's figure and the account it is checked at. */
+.tileLink {
+  margin: 4px 0 0;
+}
+
+.storedFile {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 0 10px;
+}
+
+/* ── SOL-L3: the survival of Ryntra's markets at 7, 30 and 90 days, on «Лаунчі на Ryntra» ── */
+
+.survGrid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--ry-s3);
+}
+
+@media (max-width: 560px) {
+  .survGrid {
+    gap: var(--ry-s2);
+  }
+
+  .survCell {
+    padding: var(--ry-s2);
+  }
+}
+
+.survCell {
+  display: grid;
+  gap: 4px;
+  align-content: start;
+  padding: var(--ry-s3);
+  border: 1px solid var(--ry-border);
+  border-radius: var(--ry-r-btn);
+  min-width: 0;
+}
+
+.survDays {
+  font-size: var(--ry-fs-label-sm);
+  color: var(--ry-muted);
+}
+
+.survFigure {
+  font-size: 22px;
+  line-height: 28px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  color: var(--ry-text);
+}
+
+.survTable {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--ry-fs-label);
+}
+
+.survTable th,
+.survTable td {
+  padding: 6px 8px 6px 0;
+  border-bottom: 1px solid var(--ry-border);
+  text-align: left;
+  vertical-align: middle;
+}
+
+.survTable th {
+  font-weight: 500;
+  color: var(--ry-muted);
+}
+
+.survTableWrap {
+  overflow-x: auto;
+}
+
+/* ── SOL-L5: «Розширені параметри» in the form; Launch Boost and «Розширений» on a token's page ── */
+.slotOffer {
+  display: grid;
+  gap: var(--ry-s4);
+  min-width: 0;
+}
+
+.boostCard {
+  border-color: var(--ry-border-strong);
+}
+
+.boostLead {
+  margin: 0;
+  font-size: var(--ry-fs-copy);
+  line-height: var(--ry-lh-body);
+  color: var(--ry-text);
+}
+
+.boostLines {
+  display: grid;
+  gap: var(--ry-s2);
+  margin: 0;
+  padding-left: 1.1em;
+  font-size: var(--ry-fs-label);
+  line-height: var(--ry-lh-body);
+  color: var(--ry-muted);
+}
+
+.chip[data-state="LOCKED"] {
+  color: var(--ry-verified);
+}
+
+.chip[data-state="FAILED"] {
+  color: var(--ry-caution);
+}
+
+.unusual {
+  display: grid;
+  gap: var(--ry-s2);
+  padding: var(--ry-s3);
+  border: 1px solid var(--ry-caution);
+  border-radius: var(--ry-r-card);
+  background: var(--ry-caution-soft);
+  font-size: var(--ry-fs-label);
+  color: var(--ry-text);
+}
+
+.unusual ul {
+  margin: 0;
+  padding-left: 1.1em;
+  display: grid;
+  gap: var(--ry-s1);
+}
+
+.unusualTitle {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--ry-s2);
+  margin: 0;
+  font-weight: 600;
+}
+
+.formats {
+  display: grid;
+  gap: var(--ry-s3);
+  min-width: 0;
+}
+
+.format {
+  display: grid;
+  gap: var(--ry-s3);
+  min-width: 0;
+  padding: var(--ry-s3);
+  border: 1px solid var(--ry-border);
+  border-radius: var(--ry-r-card);
+}
+
+.format[data-on] {
+  border-color: var(--ry-border-strong);
+}
+
+.formatGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: var(--ry-s3);
+  min-width: 0;
+}
+
+.formatPreview {
+  display: grid;
+  gap: var(--ry-s2);
+  padding: var(--ry-s3);
+  border-radius: var(--ry-r-card);
+  background: var(--ry-elevated);
+  font-size: var(--ry-fs-label);
+  color: var(--ry-muted);
+}
+
+/* The token's other ways to trade under its ticket: Jupiter's swap and Spot, a quiet row of links (SOL-C10). */
+.tradeLinks {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--ry-s1) var(--ry-s4);
+}
+
+/* The shortfall's two actions under the review (SOL-C10): «Top up» a link in the action's colour, «Read again» quiet. */
+a.textButton {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  text-decoration: none;
+}
+
+button.markLink {
+  padding: 0;
+  border: 0;
+  background: none;
+  font: inherit;
+  font-size: var(--ry-fs-label-sm);
+  cursor: pointer;
+}
+
+/* ── «Конституція ринку» (MOS-1): who keeps each field, as the rules above mark it ───── */
+
+.enforceChip[data-enforcement="info"],
+.enforceChip[data-enforcement="none"] {
+  border-style: dashed;
+  color: var(--ry-muted);
+}
+
+.constitutionMeta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 6px 14px;
+  margin: 8px 0 4px;
+  font-size: var(--ry-fs-label);
+  color: var(--ry-muted);
+}
+
+.constitutionSha {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 8px;
+}
+
+.constitutionSha button {
+  border: 0;
+  padding: 0;
+  background: none;
+  font: inherit;
+  cursor: pointer;
+}
+
+.constitutionNoPrice {
+  margin: 6px 0 8px;
+  font-size: var(--ry-fs-label);
+  font-weight: 600;
+  color: var(--ry-text);
+}
+
+.constitutionValue {
+  display: block;
+  font-variant-numeric: tabular-nums;
+  overflow-wrap: anywhere;
+}
+
+.constitutionList {
+  display: grid;
+  gap: 2px;
+}
+
+.constitutionCode {
+  color: var(--ry-muted);
+  font-size: var(--ry-fs-label);
+  white-space: nowrap;
+  cursor: help;
+}
+
+/* On a phone: the mark and the check on one line, the field's words and value under them, full width. */
+@media (max-width: 559px) {
+  .constitutionRow {
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+
+  .constitutionRow > .ruleText {
+    grid-column: 1 / -1;
+    grid-row: 2;
+  }
+}
+
+.constitutionRow > .enforceChip {
+  justify-self: start;
+}
+
+.constitutionValue .cellUnread {
+  white-space: normal;
+}
+
+.constitutionCodeRef {
+  display: block;
+  margin-top: 2px;
+  color: var(--ry-muted);
+  font-family: var(--ry-font-mono);
+  font-size: var(--ry-fs-label-sm);
+  overflow-wrap: anywhere;
 }

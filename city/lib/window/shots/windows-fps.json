@@ -1,0 +1,53 @@
+{
+  "seconds": 8,
+  "size": "1440x860",
+  "quality": "low",
+  "city": {
+    "frames": 472,
+    "seconds": 8.01,
+    "fps": 59,
+    "p50Ms": 16.7,
+    "p95Ms": 16.8,
+    "longFrames": 1,
+    "renderer": "ANGLE (NVIDIA, NVIDIA GeForce GTX 1060 6GB (0x00001C03) Direct3D11 vs_5_0 ps_5_0, D3D11)",
+    "software": false,
+    "busyPercent": {
+      "task": 17.3,
+      "script": 11.3,
+      "layout": 0.2,
+      "style": 0.6
+    }
+  },
+  "city+windows": {
+    "frames": 480,
+    "seconds": 8.01,
+    "fps": 59.9,
+    "p50Ms": 16.7,
+    "p95Ms": 16.8,
+    "longFrames": 0,
+    "renderer": "ANGLE (NVIDIA, NVIDIA GeForce GTX 1060 6GB (0x00001C03) Direct3D11 vs_5_0 ps_5_0, D3D11)",
+    "software": false,
+    "busyPercent": {
+      "task": 14.2,
+      "script": 10.9,
+      "layout": 0.1,
+      "style": 0.4
+    }
+  },
+  "city+windows, seam dragged": {
+    "frames": 455,
+    "seconds": 8.01,
+    "fps": 56.8,
+    "p50Ms": 16.7,
+    "p95Ms": 16.8,
+    "longFrames": 4,
+    "renderer": "ANGLE (NVIDIA, NVIDIA GeForce GTX 1060 6GB (0x00001C03) Direct3D11 vs_5_0 ps_5_0, D3D11)",
+    "software": false,
+    "busyPercent": {
+      "task": 80.8,
+      "script": 52,
+      "layout": 3.3,
+      "style": 3.2
+    }
+  }
+}

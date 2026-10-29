@@ -1,0 +1,365 @@
+/*
+ * «Події ринку» (DSC-1) — Pulse's card (`pulse.module.css`) with rows of its own: the kind, when it happened and when it
+ * was seen, the token, what the event says, its sources and finality, the token's risk, the explorer. The row follows
+ * the card's own width (a container): a small card of its own on a phone, one line of columns on a desk.
+ */
+
+.events {
+  min-width: 0;
+}
+
+/* «Facts, not advice» stays on a phone too: Pulse folds its own note there, the feed does not. */
+.events .note {
+  display: block;
+}
+
+.readOnly {
+  font-size: var(--ry-fs-label);
+  color: var(--ry-muted);
+}
+
+.rows {
+  display: grid;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  border-top: 1px solid var(--ry-border);
+}
+
+.row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  grid-template-areas:
+    "kind when"
+    "token token"
+    "detail detail"
+    "facts explorer"
+    "why why";
+  align-items: center;
+  gap: 6px var(--ry-s3);
+  padding: var(--ry-s3) var(--ry-s4);
+  border-bottom: 1px solid var(--ry-border);
+  transition: background-color var(--rt-duration-fast) var(--rt-ease);
+}
+
+.row:last-child {
+  border-bottom: 0;
+}
+
+.row:hover {
+  background: var(--ry-hover);
+}
+
+.kind {
+  grid-area: kind;
+  display: inline-flex;
+  align-items: center;
+  justify-self: start;
+  gap: 6px;
+  min-width: 0;
+  min-height: 24px;
+  padding: 0 8px;
+  border-radius: var(--ry-r-pill);
+  background: var(--ry-elevated);
+  box-shadow: inset 0 0 0 1px var(--ry-border);
+  color: var(--ry-text);
+  font-size: var(--ry-fs-label-sm);
+  font-weight: 650;
+  white-space: nowrap;
+}
+
+.kind > span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.kind[data-kind="CREATOR_SOLD"],
+.kind[data-kind="AUTHORITY_OPEN"] {
+  background: color-mix(in srgb, var(--ry-caution) 14%, transparent);
+  color: var(--ry-caution);
+}
+
+.when {
+  grid-area: when;
+  display: grid;
+  justify-items: end;
+  gap: 2px;
+  font-variant-numeric: tabular-nums;
+  text-align: end;
+}
+
+.happened {
+  color: var(--ry-text);
+  font-size: var(--ry-fs-label);
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.happened[data-unknown="true"] {
+  color: var(--ry-muted);
+  font-weight: 500;
+  white-space: normal;
+}
+
+.seen {
+  color: var(--ry-muted);
+  font-size: var(--ry-fs-label-sm);
+  white-space: nowrap;
+}
+
+.seen[data-stale="true"] {
+  color: var(--ry-caution);
+}
+
+.token {
+  grid-area: token;
+  display: flex;
+  align-items: center;
+  gap: var(--ry-s2);
+  min-width: 0;
+}
+
+.tokenText {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+.tokenLink {
+  display: flex;
+  gap: var(--ry-s2);
+  min-width: 0;
+  color: var(--ry-text);
+  text-decoration: none;
+  /* The ticker and the name are one link of 32 px to a finger, the address under them. */
+  min-height: 32px;
+  align-items: center;
+  flex-wrap: nowrap;
+  overflow: hidden;
+}
+
+.tokenMeta {
+  display: flex;
+  align-items: center;
+  gap: var(--ry-s2);
+  min-width: 0;
+}
+
+.ryntra {
+  flex: 0 0 auto;
+  padding: 0 6px;
+  border-radius: var(--ry-r-pill);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--ry-accent) 55%, transparent);
+  color: var(--ry-text);
+  font-size: var(--ry-fs-label-sm);
+  font-weight: 650;
+}
+
+.tokenLink:hover {
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.tokenLink:focus-visible {
+  outline: 2px solid var(--ry-text);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+.mint {
+  flex: 0 0 auto;
+  color: var(--ry-muted);
+  font-size: var(--ry-fs-label-sm);
+  font-variant-numeric: tabular-nums;
+}
+
+.detail {
+  grid-area: detail;
+  min-width: 0;
+  color: var(--ry-text);
+  font-size: var(--ry-fs-label);
+  line-height: 1.45;
+}
+
+.facts {
+  grid-area: facts;
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 4px var(--ry-s2);
+  min-width: 0;
+  color: var(--ry-muted);
+  font-size: var(--ry-fs-label-sm);
+}
+
+.sources {
+  white-space: nowrap;
+}
+
+.finality {
+  padding: 1px 6px;
+  border-radius: var(--ry-r-pill);
+  box-shadow: inset 0 0 0 1px var(--ry-border);
+}
+
+.finality[data-finality="confirmed"] {
+  color: var(--ry-text);
+}
+
+.devnet {
+  padding: 1px 6px;
+  border-radius: var(--ry-r-pill);
+  background: var(--ry-elevated);
+  color: var(--ry-text);
+}
+
+.risk {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 1px 6px;
+  border-radius: var(--ry-r-pill);
+  box-shadow: inset 0 0 0 1px var(--ry-border);
+  white-space: nowrap;
+}
+
+.risk[data-level="1"] {
+  box-shadow: none;
+  background: color-mix(in srgb, var(--ry-caution) 14%, transparent);
+  color: var(--ry-caution);
+}
+
+.risk[data-level="2"] {
+  box-shadow: none;
+  background: color-mix(in srgb, var(--ry-risk) 14%, transparent);
+  color: var(--ry-risk);
+}
+
+.explorer {
+  grid-area: explorer;
+  display: inline-flex;
+  align-items: center;
+  align-self: end;
+  justify-self: end;
+  gap: 4px;
+  min-height: 36px;
+  padding: 0 var(--ry-s3);
+  border: 1px solid var(--ry-border);
+  border-radius: var(--ry-r-pill);
+  color: var(--ry-text);
+  font-size: var(--ry-fs-label);
+  font-weight: 600;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.explorer:hover {
+  background: var(--ry-hover);
+}
+
+.explorer:focus-visible {
+  outline: none;
+  box-shadow: var(--ry-focus);
+}
+
+.why {
+  grid-area: why;
+  display: flex;
+  align-items: flex-start;
+  gap: var(--ry-s2);
+  padding: var(--ry-s2) var(--ry-s3);
+  border-radius: var(--ry-r-btn-sm);
+  background: color-mix(in srgb, var(--ry-caution) 10%, transparent);
+  color: var(--ry-text);
+  font-size: var(--ry-fs-label);
+  line-height: 1.45;
+}
+
+.why svg {
+  flex: 0 0 auto;
+  margin-top: 2px;
+  color: var(--ry-caution);
+}
+
+.moreLink {
+  display: inline-flex;
+  align-items: center;
+  text-decoration: none;
+}
+
+.empty {
+  min-height: 160px;
+}
+
+.coverage {
+  flex-basis: 100%;
+  color: var(--ry-muted);
+  font-size: var(--ry-fs-label-sm);
+}
+
+/* A tablet's card, and Home's main column on a desk: the kind beside the token, what it says and its facts under them. */
+@container pulse (min-width: 640px) {
+  .row {
+    grid-template-columns: 156px minmax(0, 1fr) auto;
+    grid-template-areas:
+      "kind token when"
+      ". detail explorer"
+      ". facts explorer"
+      ". why why";
+    row-gap: 4px;
+  }
+
+  .kind {
+    align-self: start;
+    margin-top: 4px;
+  }
+
+  .tokenText {
+    grid-template-columns: auto minmax(0, 1fr);
+    align-items: center;
+    column-gap: var(--ry-s2);
+  }
+
+  .tokenLink {
+    min-height: 28px;
+  }
+}
+
+/* A desk's card: one line of columns — the time, the kind, the token, what it says with its facts, the explorer. */
+@container pulse (min-width: 1000px) {
+  .row {
+    grid-template-columns: 112px 168px minmax(180px, 0.9fr) minmax(0, 1.6fr) 136px;
+    grid-template-areas:
+      "when kind token detail explorer"
+      "when kind token facts explorer"
+      ". . why why why";
+    align-items: start;
+    row-gap: 4px;
+  }
+
+  .when {
+    justify-items: start;
+    text-align: start;
+    padding-top: 2px;
+  }
+
+  .kind {
+    margin-top: 2px;
+  }
+
+  .token {
+    align-self: start;
+  }
+
+  .tokenText {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .tokenLink {
+    min-height: 24px;
+  }
+
+  .explorer {
+    align-self: center;
+  }
+}

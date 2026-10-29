@@ -46,11 +46,11 @@ import { unstable_cache } from "next/cache.js";
 import { jupiterBackgroundAllowed } from "../solana/jupiter-budget.ts";
 import { listSpotMarkets, readSpotMarketsByMint } from "../spot/markets.server.ts";
 import type { SpotMarket } from "../spot/markets.ts";
-import { lifecycleOf, markPremiumPct, type IssuerMark, type Lifecycle, type LifecycleEvent, type TransferFee } from "./instrument.ts";
+import { eventStateAt, lifecycleOf, markPremiumPct, type IssuerMark, type Lifecycle, type LifecycleEvent, type TransferFee } from "./instrument.ts";
 import { indexPreStocksAssets, PRESTOCKS_SOURCE, readPreStocksCatalogueShared, type PreStocksAsset } from "./issuer-prestocks.server.ts";
 import { peekXStocksQuote, QUOTE_TIMEOUT_MS, readXStocksAssets, readXStocksQuote, XSTOCKS_SOURCE } from "./issuer-xstocks.server.ts";
 import { companyPathFor, type CompanyPath } from "./company-path.ts";
-import { lifecycleEventFor } from "./lifecycle-events.ts";
+import { LIFECYCLE_EVENTS, lifecycleEventFor } from "./lifecycle-events.ts";
 import { PYTH_SOURCE, pythFeedForUsListing, pythIndexFeedForCompany, pythPriceAccess, readPythEquityCatalogue, readPythLatestMany, type PythPrice, type PythPriceFailure } from "./pyth.server.ts";
 import { readCurrentEpoch, readMintMultiplier, readOnchainMintCached, transferFeeFromMint, warmOnchainMints } from "./asset.server.ts";
 import { buildRepresentation, indexIssuerAssets, matchesTicker, type IssuerCatalogues, type StockRepresentation } from "./representations.ts";
@@ -430,7 +430,10 @@ export async function buildStockUniverse(deps: Readonly<{ now?: () => Date; quot
      asset page answering not-found for NVDAx). A universe without an issuer's
      listing is not the universe; the last complete copy is served instead. */
   if (!catalogue.ok) return { ok: false, code: `ISSUER_CATALOGUE_${catalogue.code}`, reason: `The issuer's catalogue did not answer: ${catalogue.reason}` };
-  const mints = listed.rows.map((row) => row.mint);
+  /* A token whose issuer opened a swap window stays in the universe until the cut-off, whatever the ranked list or the issuer's catalogue still carry: its holders' every way in names its page (UX-503). */
+  const windows = openWindowTokens((deps.now ?? (() => new Date()))().getTime());
+  const listedMints = listed.rows.map((row) => row.mint);
+  const mints = [...listedMints, ...windows.map((asset) => asset.solanaMint).filter((mint) => !listedMints.includes(mint))];
   const full = await readMarketsInChunks(mints);
   if (!full.ok) return full;
   const issuerByMint = indexIssuerAssets(catalogue.assets);
@@ -438,11 +441,15 @@ export async function buildStockUniverse(deps: Readonly<{ now?: () => Date; quot
     xstocks: issuerByMint,
     prestocks: prestocks.ok ? indexPreStocksAssets(prestocks.assets) : null,
   };
+  /* The representation reads the window's tokens as the issuer's own; the issuer's mark and «listed by the issuer» stay the catalogue's alone. */
+  const books: IssuerCatalogues = { ...catalogues, prestocks: withWindowTokens(catalogues.prestocks, windows) };
   const pairs: Array<{ market: SpotMarket; representation: StockRepresentation }> = [];
   for (const mint of mints) {
     const market = full.byMint.get(mint);
     if (!market) continue;
-    const representation = buildRepresentation(market, catalogues);
+    const built = buildRepresentation(market, books);
+    /* A token the window alone put back is confirmed by the event registry, never by the issuer's catalogue. */
+    const representation = built && built.issuer.id === "prestocks" && !catalogues.prestocks?.has(mint) ? asWindowRepresentation(built) : built;
     if (representation) pairs.push({ market, representation });
   }
   await warmOnchainMints(pairs.map((pair) => pair.market.mint));
@@ -490,6 +497,7 @@ export async function buildStockUniverse(deps: Readonly<{ now?: () => Date; quot
     let facts: RowFacts = { epoch, quoteDeadlineMs };
     const pre = catalogues.prestocks?.get(market.mint);
     if (pre && prestocks.ok) facts = { ...facts, issuerMark: preStocksMark(pre, prestocks.fetchedAt, prestocks.stale), listedByIssuer: true, catalogueFetchedAt: prestocks.fetchedAt };
+    else if (representation.issuer.id === "prestocks") facts = { ...facts, listedByIssuer: false };
     else if (asset) facts = { ...facts, listedByIssuer: true, catalogueFetchedAt: catalogue.fetchedAt };
     return buildStockRow(market, representation, asset ? { trading: asset.trading } : null, now.getTime(), pyth, facts);
   });
@@ -506,6 +514,45 @@ export async function buildStockUniverse(deps: Readonly<{ now?: () => Date; quot
       fetchedAt: now.toISOString(),
     },
   };
+}
+
+/**
+ * The pre-IPO tokens whose issuer's swap window is open at a moment, as the
+ * issuer's catalogue would list them — the registry's symbol, the company and
+ * the notice's page, no mark (the registry states none). A window past its
+ * cut-off is not kept: the token is then «expired» and its page says so.
+ */
+export function openWindowTokens(nowMs: number, events: readonly LifecycleEvent[] = LIFECYCLE_EVENTS): PreStocksAsset[] {
+  return events
+    .filter((event) => event.watch && eventStateAt(event, nowMs) === "conversion-open")
+    .map((event) => ({
+      symbol: event.watch!.symbol,
+      name: `${event.watch!.company} PreStocks`,
+      company: event.watch!.company,
+      solanaMint: event.mint,
+      description: null,
+      productUrl: event.url,
+      logo: null,
+      mark: { tokenPriceUsd: null, markPriceUsd: null, impliedValuationUsd: null, markValuationUsd: null, supply: null },
+    }));
+}
+
+/**
+ * A window token's representation as the registry, not the catalogue, confirms
+ * it: «tag-only» (the venue's issuer tag and the hand-kept event), its sources
+ * saying so — never «confirmed by the issuer's catalogue» for a token the
+ * issuer's API no longer lists.
+ */
+export function asWindowRepresentation(representation: StockRepresentation): StockRepresentation {
+  return { ...representation, issuerConfirmation: "tag-only", sources: ["jupiter-verified", "issuer-event-registry"] };
+}
+
+/** The issuer's catalogue with the window's tokens it no longer lists; the catalogue's own entry wins where it still has one. */
+export function withWindowTokens(catalogue: ReadonlyMap<string, PreStocksAsset> | null, windows: readonly PreStocksAsset[]): ReadonlyMap<string, PreStocksAsset> | null {
+  if (windows.length === 0) return catalogue;
+  const merged = new Map(catalogue ?? []);
+  for (const asset of windows) if (!merged.has(asset.solanaMint)) merged.set(asset.solanaMint, asset);
+  return merged;
 }
 
 /** After a failed build, no new build starts on this instance for this long; the last good copy is served meanwhile. */

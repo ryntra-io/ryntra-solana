@@ -4,8 +4,11 @@
  * stable Ryntra id through the provider's Partner External ID Linking, and the
  * person never sees a second profile.
  *
- *   start   — the provider issues its own nonce; the server builds the SIWS
- *             message for the proven wallet and this site; the browser signs
+ *   start   — the provider issues its own nonce (or, under load, asks for
+ *             its bot check first: CHALLENGE_REQUIRED, and the same start
+ *             again with the check's token); the server builds the
+ *             sign-in message (SIWS) for the proven Solana wallet and this
+ *             site; the browser signs
  *             exactly that text (the Ryntra proof is never reused — the
  *             provider's contract issues its own challenge).
  *   verify  — the message must name the proven wallet; the provider verifies
@@ -24,7 +27,7 @@
 import { signExternalId } from "@agg-build/sdk/server";
 
 import type { GuardStore } from "../guard/store.ts";
-import { readPredictionsEnv, ryntraExternalId } from "./env.ts";
+import { readPredictionsEnv, ryntraExternalId, walletChain } from "./env.ts";
 import { failure, type PredictionFailure } from "./failure.ts";
 import type { PredictionProvider, ProviderUserProfile, Result } from "./provider.ts";
 import { accessExpiry, linkAvailability, linkStatus, readLink, withProviderSession, writeLink, type LinkStatus, type PredictionLinkRecord } from "./session.ts";
@@ -45,12 +48,13 @@ export async function startLink(
   store: GuardStore,
   provider: PredictionProvider,
   wallet: string,
-  site: Readonly<{ domain: string; uri: string; locale?: "en" | "uk" }>,
+  site: Readonly<{ domain: string; uri: string; locale?: "en" | "uk"; /** The bot check's answer, when the provider asked for one on the last start. */ turnstileToken?: string | null }>,
   env: NodeJS.ProcessEnv = process.env,
 ): Promise<Result<LinkChallenge>> {
+  if (walletChain(wallet) !== "solana") return failure("UNAUTHORIZED", "Sign in with a Solana wallet.");
   const availability = linkAvailability(store, env);
   if (!availability.available) return failure("LINK_UNAVAILABLE", availability.reason === "no_session_secret" ? "This deployment cannot hold a paper account session." : "The paper account needs a durable store; this deployment has none.");
-  const challenge = await provider.signInChallenge({ address: wallet, domain: site.domain, uri: site.uri, statement: linkStatement(site.locale ?? "en") });
+  const challenge = await provider.signInChallenge({ chain: "solana", address: wallet, domain: site.domain, uri: site.uri, statement: linkStatement(site.locale ?? "en"), turnstileToken: site.turnstileToken ?? null });
   if (!challenge.ok) return challenge;
   return { ok: true, value: { message: challenge.value.message, nonce: challenge.value.nonce, statement: challenge.value.statement, wallet } };
 }
@@ -85,6 +89,7 @@ export async function verifyLink(
 ): Promise<Result<LinkStatus>> {
   const availability = linkAvailability(store, env);
   if (!availability.available) return failure("LINK_UNAVAILABLE", "This deployment cannot hold a paper account session.");
+  if (walletChain(wallet) !== "solana") return failure("UNAUTHORIZED", "Sign in with a Solana wallet.");
   const signedFor = siwsAddress(input.message);
   if (!signedFor || signedFor !== wallet) return failure("WALLET_MISMATCH", "The signed message is not for the wallet this session proved.");
 

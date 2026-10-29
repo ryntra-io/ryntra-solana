@@ -1,5 +1,5 @@
 'use no memo'
-// The widget library draws plain functions; the React Compiler's memoization breaks its tree.
+// The widget library draws plain functions; the React Compiler's memoization breaks its tree (M9).
 
 import Constants from 'expo-constants'
 import { requestWidgetUpdate, type WidgetInfo, type WidgetRepresentation } from 'react-native-android-widget'
@@ -12,7 +12,7 @@ import { PORTFOLIO_WIDGET, PortfolioWidget } from './portfolio-widget'
 import { widgetFace, type WidgetState } from './widget-model'
 import { readWidgetState } from './widget-store'
 
-/** Portfolio by the app's own scheme — `ryntra://`, or the development build's `ryntra-dev://`. */
+/** Portfolio by the app's own scheme — `ryntra://`, or the development build's `ryntra-dev://` (M27). */
 function portfolioUri(): string {
   const configured = Constants.expoConfig?.scheme
   const scheme = (Array.isArray(configured) ? configured[0] : configured) ?? 'ryntra'

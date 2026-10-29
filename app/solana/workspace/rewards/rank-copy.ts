@@ -1,10 +1,29 @@
 import type { WorkspaceLocale } from "@/app/shell/locale";
 
+import { RANK_THRESHOLDS, REWARD_RANKS } from "../../../../lib/rewards/rules.ts";
+
+/**
+ * The ladder, said in each language from the thresholds in force — never retyped. A ladder that moves (it did on
+ * 2026-10-27) must move in the sentence a person reads, or the page promises a rank the code does not give.
+ */
+const ladderLine = (locale: WorkspaceLocale): string => {
+  const names = locale === "uk"
+    ? { BRONZE: "Бронза", SILVER: "Срібло", GOLD: "Золото", SAPPHIRE: "Сапфір", DIAMOND: "Діамант" }
+    : { BRONZE: "Bronze", SILVER: "Silver", GOLD: "Gold", SAPPHIRE: "Sapphire", DIAMOND: "Diamond" };
+  const number = (value: bigint) => value.toLocaleString(locale === "uk" ? "uk-UA" : "en-US").replace(/ /g, " ");
+  const from = locale === "uk" ? "від" : "from";
+  const points = locale === "uk" ? " очок" : " points";
+  const parts = REWARD_RANKS.map((rank, index) =>
+    `${names[rank]} — ${from} ${number(RANK_THRESHOLDS[rank])}${index === 0 ? points : ""}`.replace(" — ", locale === "uk" ? " — " : " "),
+  );
+  return `${parts.join(", ")}.`;
+};
+
 /**
  * The words of ranks, in both languages, beside the card that says them.
  *
  * Kept here rather than in the workspace catalogue because the catalogue is
- * the core's file and ranks are the growth module's: this page's new sentences
+ * the core's file and ranks are the Growth line's: this page's new sentences
  * live with the page. Every sentence has both languages by construction — a
  * missing one is a type error, not a mixed-language page.
  */
@@ -31,13 +50,40 @@ type Copy = Readonly<{
   /** A ladder step read aloud: the rank, its share, the points it begins at. */
   step: (rank: RankId, share: number, from: string) => string;
   fresh: string;
+  /** No points yet because every trade so far was inside «First $10 back». */
+  freshWindow: string;
   unavailable: string;
   inviteTitle: string;
   levelOneChip: (share: string) => string;
   levelTwoChip: (share: string) => string;
-  cashbackRate: string;
-  friendRate: string;
   rewardsRules: readonly string[];
+  /**
+   * Rules 2.1.0, once they are in force: the inviter's line with its 90 days, «First $10 back» and the claim floor.
+   * Every figure arrives from the server; the sentences only place them.
+   */
+  inviterRule: (share: number, days: number) => string;
+  firstTenRule: (cap: string, days: number, wallets: number) => string;
+  claimFloorRule: (withAccount: string, withoutAccount: string) => string;
+  /** The rule of the earlier claim floor, before rules 2.1.0. */
+  claimFloorBefore: string;
+  /** Under rules 2.1.0: a trade made earlier keeps the rules it was made under. */
+  rulesBefore: string;
+  levelOneWindowChip: (share: number) => string;
+  /** Under the ladder: a friend's first days pay the window's share at any rank. */
+  ladderWindow: (share: number, days: number) => string;
+  /** The same, short, under the rank's ladder; the whole rule is in «How ranks work». */
+  ladderWindowShort: (share: number, days: number) => string;
+  /** The two referral sources, as a person names them (not «L1», «L2»). */
+  fromFriends: string;
+  fromTheirFriends: string;
+  /** «First $10 back» on the earnings panel, for a wallet that holds the window. */
+  firstTenTitle: (cap: string) => string;
+  firstTenProgress: (returned: string, cap: string) => string;
+  firstTenUntil: (date: string) => string;
+  firstTenCheck: (held: string) => string;
+  firstTenFull: (cap: string) => string;
+  firstTenEnded: string;
+  firstTenFailed: string;
   ranksTitle: string;
   ranksRules: readonly string[];
   /** Recent rewards, folded to the newest few: open the rest of the list, fold it back. */
@@ -130,17 +176,33 @@ const EN: Copy = {
   ladder: "Your share of a friend's trade · points needed",
   step: (rank, share, from) => `${EN_RANK[rank]}: ${share}% from a friend's trade, from ${enNumber(from)} points`,
   fresh: "Your first trade earns your first points.",
+  freshWindow: "Trades in First $10 back earn no points; your trades after it do.",
   unavailable: "Your rank is unavailable right now.",
   inviteTitle: "Invite friends",
   levelOneChip: (share) => `Friends ${share}`,
   levelTwoChip: (share) => `Their friends ${share}`,
-  cashbackRate: "50% of the fee Ryntra receives",
-  friendRate: "10–30% by your rank",
   rewardsRules: [
     "50% of the fee Ryntra receives on your own trade comes back to you.",
     "From a trade by a friend you invited: 10% to 30% of the fee Ryntra receives, by your rank. From the friends they invited: 5%.",
     "Trades made before these rules began keep the earlier shares: 50%, 10% and 5% of the fee paid.",
   ],
+  inviterRule: (share, days) => `From a trade by a friend you invited: ${share}% of the fee Ryntra receives for the friend's first ${days} days, then 10% to 30% by your rank — except while the friend gets their First $10 back, and by your rank if a review cancels it. From the friends they invited: 5%, except their trades in First $10 back.`,
+  firstTenRule: (cap, days, wallets) => `First ${cap} back: a new wallet gets back all of the fee Ryntra receives until ${cap} has come back, for up to ${days} days from its first trade. For the first ${wallets} new wallets each month that pass our check. Half comes back at once, the rest after the check. Whoever invited the wallet earns nothing from these trades, and they earn no rank points.`,
+  claimFloorRule: (withAccount, withoutAccount) => `Claim from ${withAccount} USDC when your wallet already has a USDC account, or from ${withoutAccount} when the payout opens one for it. To the wallet you are signed in with.`,
+  claimFloorBefore: "Claim from $1.00 USDC, to the wallet you are signed in with.",
+  rulesBefore: "A trade made before these rules keeps the rules it was made under.",
+  levelOneWindowChip: (share) => `Friends up to ${share}%`,
+  ladderWindow: (share, days) => `Each friend's first ${days} days pay you ${share}% at any rank, once their First $10 back is done — unless a review cancelled it.`,
+  ladderWindowShort: (share, days) => `Each friend's first ${days} days: ${share}% at any rank.`,
+  fromFriends: "From friends",
+  fromTheirFriends: "From their friends",
+  firstTenTitle: (cap) => `First ${cap} back`,
+  firstTenProgress: (returned, cap) => `${returned} of ${cap} back`,
+  firstTenUntil: (date) => `until ${date}`,
+  firstTenCheck: (held) => `${held} comes once your wallet is checked.`,
+  firstTenFull: (cap) => `All ${cap} came back.`,
+  firstTenEnded: "The window has ended.",
+  firstTenFailed: "First $10 back was cancelled for this wallet after a review.",
   historyAll: (count) => `Show ${count} more`,
   historyFold: "Show fewer",
   header: "Rewards",
@@ -150,7 +212,7 @@ const EN: Copy = {
   headerPending: (sum) => `Rewards: ${sum} on its way`,
   ranksTitle: "How ranks work",
   ranksRules: [
-    "Bronze from 0 points, Silver from 100, Gold from 1,000, Sapphire from 10,000, Diamond from 50,000.",
+    ladderLine("en"),
     "1 point for every $1 of fee Ryntra receives from your trades and from trades by friends you invited, over the last 30 days. A rank can go down as well as up.",
     "Your rank sets your share of a friend's fee: 10% at Bronze, 15% at Silver, 20% at Gold, 25% at Sapphire, 30% at Diamond.",
     "Points have no cash value and cannot be transferred or exchanged.",
@@ -195,17 +257,33 @@ const UK: Copy = {
   ladder: "Ваша частка з угоди друга · поріг очок",
   step: (rank, share, from) => `${UK_RANK[rank]}: ${share}% з угоди друга, від ${from} ${ukUnit(from)}`,
   fresh: "Перша угода дасть перші очки.",
+  freshWindow: "Угоди в «Перших $10 назад» очок не дають; наступні — дають.",
   unavailable: "Ранг зараз недоступний.",
   inviteTitle: "Запросіть друзів",
   levelOneChip: (share) => `Друзі ${share}`,
   levelTwoChip: (share) => `Друзі друзів ${share}`,
-  cashbackRate: "50% комісії, яку отримує Ryntra",
-  friendRate: "10–30% за вашим рангом",
   rewardsRules: [
     "50% комісії, яку Ryntra отримує з вашої угоди, повертається вам.",
     "З угоди друга, якого ви запросили: від 10% до 30% комісії, яку отримує Ryntra, за вашим рангом. З угод тих, кого запросили вони: 5%.",
     "Угоди, зроблені до цих правил, лишаються за попередніми частками: 50%, 10% і 5% сплаченої комісії.",
   ],
+  inviterRule: (share, days) => `З угоди друга, якого ви запросили: ${share}% комісії, яку отримує Ryntra, перші ${days} днів від його першої угоди, далі — від 10% до 30% за вашим рангом; поки друг отримує «Перші $10 назад» — нічого, а якщо перевірка їх скасувала — за рангом. З угод тих, кого запросили вони: 5%, крім їхніх угод у «Перших $10 назад».`,
+  firstTenRule: (cap, days, wallets) => `Перші ${cap} назад: новий гаманець отримує назад усю комісію, яку отримала Ryntra, поки не повернеться ${cap}, щонайдовше ${days} днів від першої угоди. Для перших ${wallets} нових гаманців місяця, що пройшли нашу перевірку. Половина повертається одразу, решта — після перевірки. Той, хто запросив гаманець, з цих угод нічого не отримує, і очок рангу вони не дають.`,
+  claimFloorRule: (withAccount, withoutAccount) => `Отримати можна від ${withAccount} USDC, якщо у вашому гаманці вже є рахунок USDC, або від ${withoutAccount}, якщо виплата його відкриває. На гаманець, яким ви увійшли.`,
+  claimFloorBefore: "Отримати можна від $1.00 USDC, на гаманець, яким ви увійшли.",
+  rulesBefore: "Угода, зроблена до цих правил, лишається за правилами, за якими її зроблено.",
+  levelOneWindowChip: (share) => `Друзі до ${share}%`,
+  ladderWindow: (share, days) => `Перші ${days} днів кожного друга дають вам ${share}% на будь-якому ранзі — після його «Перших $10 назад», якщо перевірка їх не скасувала.`,
+  ladderWindowShort: (share, days) => `Перші ${days} днів кожного друга — ${share}% на будь-якому ранзі.`,
+  fromFriends: "Від друзів",
+  fromTheirFriends: "Від друзів друзів",
+  firstTenTitle: (cap) => `Перші ${cap} назад`,
+  firstTenProgress: (returned, cap) => `Повернено ${returned} з ${cap}`,
+  firstTenUntil: (date) => `до ${date}`,
+  firstTenCheck: (held) => `${held} — після перевірки гаманця.`,
+  firstTenFull: (cap) => `Усі ${cap} повернено.`,
+  firstTenEnded: "Вікно скінчилося.",
+  firstTenFailed: "Для цього гаманця «Перші $10 назад» скасовано після перевірки.",
   historyAll: (count) => `Показати ще ${count}`,
   historyFold: "Згорнути",
   header: "Винагороди",
@@ -215,7 +293,7 @@ const UK: Copy = {
   headerPending: (sum) => `Винагороди: ${sum} очікує`,
   ranksTitle: "Як працюють ранги",
   ranksRules: [
-    "Бронза — від 0 очок, Срібло — від 100, Золото — від 1 000, Сапфір — від 10 000, Діамант — від 50 000.",
+    ladderLine("uk"),
     "1 очко за кожен $1 комісії, яку Ryntra отримує з ваших угод і з угод друзів, яких ви запросили, за останні 30 днів. Ранг може й знизитися.",
     "Ранг визначає вашу частку з комісії друга: 10% на Бронзі, 15% на Сріблі, 20% на Золоті, 25% на Сапфірі, 30% на Діаманті.",
     "Очки не мають грошової вартості, їх не можна передати чи обміняти.",

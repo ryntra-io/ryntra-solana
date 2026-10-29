@@ -1,0 +1,193 @@
+/* «Ліміт» in the Spot ticket (B3): the price, the amount and the venue in the ticket's own boxes; the Review and the
+   Receipt are the core's (`@ryntra/core/ui.css`). Every colour, size and duration is a token. */
+
+.panel {
+  display: grid;
+  gap: var(--ry-s3);
+}
+
+/* «Ринок 105,5» and «Доступно …»: a quiet chip that fills the field, never a second orange press. */
+.marketChip {
+  min-height: 24px;
+  padding: 0 var(--ry-s2);
+  border: 1px solid var(--ry-border);
+  border-radius: var(--ry-r-pill, 999px);
+  background: transparent;
+  color: var(--ry-muted);
+  font-family: var(--ry-font-sans);
+  font-size: var(--ry-fs-label);
+  font-weight: 600;
+  letter-spacing: 0;
+  text-transform: none;
+  font-variant-numeric: tabular-nums;
+  cursor: pointer;
+  transition: color 150ms ease, border-color 150ms ease;
+}
+
+.marketChip:hover:not(:disabled) {
+  color: var(--ry-text);
+  border-color: var(--ry-muted);
+}
+
+.marketChip:focus-visible {
+  outline: 2px solid var(--ry-iris);
+  outline-offset: 2px;
+}
+
+.marketChip:disabled {
+  cursor: default;
+  opacity: 0.5;
+}
+
+.available {
+  font-size: var(--ry-fs-label);
+  font-weight: 600;
+  letter-spacing: 0;
+  text-transform: none;
+  color: var(--ry-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.distance {
+  font-size: var(--ry-fs-label);
+  color: var(--ry-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.distance[data-tone="warn"] {
+  color: var(--ry-caution);
+}
+
+/* The distance from the market on the left, the three steps away from it on the right. */
+.offsets {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--ry-s2);
+  flex-wrap: wrap;
+}
+
+.offsetChips {
+  display: inline-flex;
+  gap: var(--ry-s1);
+}
+
+.offsetChip {
+  min-height: 28px;
+  min-width: 3.25rem;
+  padding: 0 var(--ry-s2);
+  border: 1px solid var(--ry-border);
+  border-radius: var(--ry-r-chip, 8px);
+  background: transparent;
+  color: var(--ry-muted);
+  font-family: var(--ry-font-sans);
+  font-size: var(--ry-fs-label);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  cursor: pointer;
+  transition: color 150ms ease, border-color 150ms ease, background 150ms ease;
+}
+
+.offsetChip:hover:not(:disabled) {
+  color: var(--ry-text);
+  border-color: var(--ry-muted);
+}
+
+.offsetChip[aria-pressed="true"] {
+  color: var(--ry-text);
+  border-color: var(--ry-iris);
+  background: color-mix(in srgb, var(--ry-iris) 10%, transparent);
+}
+
+.offsetChip:focus-visible {
+  outline: 2px solid var(--ry-iris);
+  outline-offset: 2px;
+}
+
+.offsetChip:disabled {
+  cursor: default;
+  opacity: 0.5;
+}
+
+/* Where the order waits: two equal choices, the unavailable one grey with its reason, never hidden. */
+.venues {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--ry-s2);
+}
+
+.venue {
+  display: grid;
+  gap: 2px;
+  align-content: start;
+  min-height: 56px;
+  padding: var(--ry-s2) var(--ry-s3);
+  border: 1px solid var(--ry-border);
+  border-radius: var(--ry-r-btn);
+  background: var(--ry-bg);
+  color: var(--ry-text);
+  font-family: var(--ry-font-sans);
+  text-align: left;
+  cursor: pointer;
+  transition: border-color 150ms ease, box-shadow 150ms ease;
+}
+
+.venue b {
+  font-size: var(--ry-fs-dense);
+  font-weight: 700;
+}
+
+.venue span {
+  font-size: var(--ry-fs-label);
+  line-height: 1.35;
+  color: var(--ry-muted);
+}
+
+.venue:hover:not(:disabled) {
+  border-color: var(--ry-muted);
+}
+
+.venue[aria-checked="true"] {
+  border-color: var(--ry-iris);
+  box-shadow: var(--ry-brand-glow, none);
+}
+
+.venue:focus-visible {
+  outline: 2px solid var(--ry-iris);
+  outline-offset: 2px;
+}
+
+.venue:disabled {
+  cursor: default;
+  opacity: 0.55;
+}
+
+.details {
+  display: grid;
+  gap: var(--ry-s2);
+  margin: 0;
+  font-size: var(--ry-fs-label);
+}
+
+.details div {
+  display: grid;
+  gap: 2px;
+}
+
+.details dt {
+  color: var(--ry-muted);
+}
+
+.details dd {
+  margin: 0;
+  font-family: var(--ry-font-mono);
+  overflow-wrap: anywhere;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .marketChip,
+  .offsetChip,
+  .venue {
+    transition: none;
+  }
+}

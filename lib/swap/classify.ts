@@ -57,6 +57,7 @@
  */
 
 import {
+  ARRIVAL_ONLY_NETWORKS,
   assetRoutableOnNetwork,
   crossSwapPairFor,
   resolveSwapAsset,
@@ -89,6 +90,8 @@ export type SwapRouteUnavailableReason =
   | "TRANSFER_ASSET_NOT_USDC"
   /** The network will not carry this asset at all — see `NETWORK_ROUTABLE_ASSETS`. */
   | "ASSET_NOT_ROUTABLE_ON_NETWORK"
+  /** Money arrives on this network from here and never leaves it from here — see `ARRIVAL_ONLY_NETWORKS`. */
+  | "ARRIVAL_ONLY_NETWORK"
   | "PAIR_NOT_SUPPORTED";
 
 export type SwapRouteClassification =
@@ -129,6 +132,10 @@ export function classifySwapRoute(fromRef: SwapSideRef, toRef: SwapSideRef): Swa
       return { ok: false, reason: "ASSET_NOT_ROUTABLE_ON_NETWORK", from, to };
     }
   }
+
+  /* Arc arrives and does not leave: its gas is the USDC being sent, and Ryntra
+     on Arc is where leaving it is done. Refused before a quote, with its reason. */
+  if (ARRIVAL_ONLY_NETWORKS.includes(from.network) && from.network !== to.network) return { ok: false, reason: "ARRIVAL_ONLY_NETWORK", from, to };
 
   if (from.network === to.network) {
     if (from.economicAsset === to.economicAsset) return { ok: false, reason: "SAME_ASSET_SAME_NETWORK", from, to };

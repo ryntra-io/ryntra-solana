@@ -1,0 +1,1149 @@
+/*
+ * «Ринки → Пули» — the catalogue and a pool's page on the core's overview
+ * page: the views of Markets, the venue tabs and the filter, one block with
+ * the core's table; on a pool's page the facts, the distribution and the
+ * simulator, the wallet's positions in the side column. Figures are Geist
+ * with even digits, a dash for a figure nobody stated.
+ */
+
+.page,
+.catalogPage {
+  width: 100%;
+  padding: 0;
+}
+
+/* No wallet: the page takes the whole width — the side column of positions would stand empty (B17, and the audit's
+   «Реєстр зайвого» row for a pool's own page, SOL-C17). */
+.catalogPage :global(.ryntra-page__columns):has([data-pools-guest]),
+.page :global(.ryntra-page__columns):has([data-pools-guest]) {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.catalogPage :global(.ryntra-page__aside):has([data-pools-guest]),
+.page :global(.ryntra-page__aside):has([data-pools-guest]) {
+  display: none;
+}
+
+/* The catalogue's heading is for a screen reader: the menu names the page, and the first thing seen is the row of choices (B17). */
+.catalogPage > :global(.ryntra-page__head) {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+.catalog {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--ry-s3);
+  min-width: 0;
+}
+
+/* One row of choices: the kind of pool, the order, the filter. */
+.toolbar {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--ry-s3);
+  min-height: 40px;
+}
+
+/* The kinds keep their full width; the filter gives way first, and goes under them only when even its least does not fit. */
+.toolbar > .tabs {
+  flex: 0 0 auto;
+}
+
+.tabs {
+  display: flex;
+  gap: 2px;
+  min-width: 0;
+  max-width: 100%;
+  margin: -3px;
+  padding: 3px;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.tabs::-webkit-scrollbar {
+  display: none;
+}
+
+.tab {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 6px;
+  min-height: 36px;
+  padding: 0 var(--ry-s3);
+  border: 0;
+  border-radius: var(--ry-r-pill);
+  background: transparent;
+  color: var(--ry-muted);
+  font-family: var(--ry-font-sans);
+  font-size: var(--ry-fs-dense);
+  font-weight: 600;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: background-color var(--rt-duration-fast) var(--rt-ease), color var(--rt-duration-fast) var(--rt-ease);
+}
+
+.tab:hover {
+  color: var(--ry-text);
+}
+
+.tab[aria-pressed="true"] {
+  background: var(--ry-elevated);
+  box-shadow: inset 0 0 0 1px var(--ry-border-strong, var(--ry-border));
+  color: var(--ry-text);
+}
+
+.tab:focus-visible {
+  outline: none;
+  box-shadow: var(--ry-focus);
+}
+
+.tabCount {
+  min-width: 18px;
+  padding: 0 5px;
+  border-radius: var(--ry-r-pill);
+  background: var(--ry-hover);
+  font-size: var(--ry-fs-label-sm);
+  font-variant-numeric: tabular-nums;
+  text-align: center;
+}
+
+.sort {
+  position: relative;
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: var(--ry-s2);
+  height: 40px;
+  padding: 0 var(--ry-s3);
+  border: 1px solid var(--ry-border);
+  border-radius: var(--ry-r-btn);
+  background: var(--ry-bg, var(--ry-card));
+  color: var(--ry-muted);
+  font-family: var(--ry-font-sans);
+  font-size: var(--ry-fs-dense);
+  white-space: nowrap;
+}
+
+.sort:focus-within {
+  border-color: var(--ry-border-strong);
+  box-shadow: var(--ry-focus);
+}
+
+.sortWord {
+  font-size: var(--ry-fs-label);
+}
+
+/* Beside a wallet's side column of positions the catalogue is narrow: the select's name is read out, the choice is printed. */
+@media (max-width: 1679px) {
+  .catalogPage :global(.ryntra-page__columns):not(:has([data-pools-guest])) .sortWord {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
+  }
+}
+
+.sort select {
+  appearance: none;
+  min-width: 0;
+  margin: 0;
+  padding: 0 18px 0 0;
+  border: 0;
+  background: transparent;
+  color: var(--ry-text);
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+  outline: none;
+}
+
+.sort select option {
+  background: var(--ry-elevated);
+  color: var(--ry-text);
+}
+
+.sort svg {
+  position: absolute;
+  right: var(--ry-s3);
+  pointer-events: none;
+}
+
+.search {
+  display: flex;
+  flex: 1 1 200px;
+  max-width: 380px;
+  margin-inline-start: auto;
+  align-items: center;
+  gap: var(--ry-s2);
+  min-width: 0;
+  height: 40px;
+  margin: 0;
+  padding: 0 4px 0 var(--ry-s3);
+  border: 1px solid var(--ry-border);
+  border-radius: var(--ry-r-btn);
+  background: var(--ry-bg, var(--ry-card));
+  color: var(--ry-muted);
+}
+
+.search:focus-within {
+  border-color: var(--ry-border-strong);
+  box-shadow: var(--ry-focus);
+}
+
+.search input {
+  flex: 1;
+  min-width: 0;
+  border: 0;
+  background: transparent;
+  color: var(--ry-text);
+  font-family: var(--ry-font-sans);
+  font-size: var(--ry-fs-dense);
+  outline: none;
+}
+
+.search input::placeholder {
+  color: var(--ry-text-muted, var(--ry-muted));
+}
+
+.searchGo {
+  display: inline-grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border: 0;
+  border-radius: var(--ry-r-btn-sm);
+  background: transparent;
+  color: var(--ry-muted);
+  font-size: var(--ry-fs-dense);
+  cursor: pointer;
+}
+
+.searchGo:hover {
+  background: var(--ry-hover);
+  color: var(--ry-text);
+}
+
+.searchGo:focus-visible {
+  outline: none;
+  box-shadow: var(--ry-focus);
+}
+
+.searchLine {
+  margin: 0;
+  color: var(--ry-muted);
+  font-size: var(--ry-fs-label);
+}
+
+.searchLine a {
+  color: var(--ry-text);
+}
+
+.order {
+  flex: 0 0 auto;
+  min-height: 32px;
+  padding: 0 var(--ry-s1);
+  border: 0;
+  border-bottom: 2px solid transparent;
+  border-radius: 0;
+  background: transparent;
+  color: var(--ry-muted);
+  font-family: var(--ry-font-sans);
+  font-size: var(--ry-fs-label);
+  font-weight: 500;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.order:hover {
+  color: var(--ry-text);
+}
+
+.order[aria-pressed="true"] {
+  border-bottom-color: var(--ry-iris);
+  color: var(--ry-text);
+  font-weight: 600;
+}
+
+.order:focus-visible {
+  outline: none;
+  box-shadow: var(--ry-focus);
+}
+
+.tableBlock {
+  min-width: 0;
+}
+
+/* The block's title is for a screen reader — the chosen tab already says it. */
+.tableBlock > :global(.ryntra-block__head) {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+/* The core's row of 40 px: the pair in one line (B17). */
+.table td {
+  height: 40px;
+}
+
+/* Every column fits the catalogue (they drop by its width), so the table clips instead of scrolling sideways, and its head sticks under the frame's header. */
+.table {
+  overflow-x: clip;
+}
+
+.table th {
+  top: var(--ryntra-size-header, 56px);
+}
+
+/* A catalogue row: the pair, its kind quietly beside it, and «Не перевірено» in words where a token is not verified. */
+.pairLine {
+  display: flex;
+  align-items: baseline;
+  gap: var(--ry-s2);
+  min-width: 0;
+  color: inherit;
+  text-decoration: none;
+}
+
+.pairLine:focus-visible {
+  outline: none;
+  border-radius: var(--ry-r-btn-sm);
+  box-shadow: var(--ry-focus);
+}
+
+.unverified {
+  flex: 0 0 auto;
+  padding: 1px var(--ry-s2);
+  border: 1px solid color-mix(in srgb, var(--ry-caution) 55%, var(--ry-border));
+  border-radius: var(--ry-r-pill);
+  color: var(--ry-caution);
+  font-size: var(--ry-fs-label-sm);
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.table [data-col] {
+  font-variant-numeric: tabular-nums;
+}
+
+.pair {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+  color: inherit;
+  text-decoration: none;
+}
+
+.pair:focus-visible {
+  outline: none;
+  border-radius: var(--ry-r-btn-sm);
+  box-shadow: var(--ry-focus);
+}
+
+.pairName {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  min-width: 0;
+  overflow: hidden;
+  color: var(--ry-text);
+  font-weight: 600;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.pairSep {
+  color: var(--ry-muted);
+  font-weight: 400;
+}
+
+.pairVenue {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--ry-muted);
+  font-size: var(--ry-fs-label-sm);
+  white-space: nowrap;
+}
+
+.tag {
+  padding: 0 6px;
+  border-radius: var(--ry-r-pill);
+  background: var(--ry-hover);
+  color: var(--ry-text);
+  font-size: var(--ry-fs-label-sm);
+}
+
+.flag {
+  display: inline-grid;
+  place-items: center;
+  width: 16px;
+  height: 16px;
+  margin-inline-start: 4px;
+  border-radius: var(--ry-r-pill);
+  background: color-mix(in srgb, var(--ry-caution) 18%, transparent);
+  color: var(--ry-text);
+  font-size: var(--ry-fs-label-sm);
+  font-weight: 700;
+}
+
+.foot {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--ry-s3);
+  padding-top: var(--ry-s3);
+  border-top: 1px solid var(--ry-border);
+}
+
+.footCount {
+  color: var(--ry-muted);
+  font-size: var(--ry-fs-label);
+}
+
+.sources {
+  margin-inline-start: auto;
+  color: var(--ry-text-muted, var(--ry-muted));
+  font-size: var(--ry-fs-label-sm);
+}
+
+.footNote,
+.sourcesLine,
+.positionsFoot {
+  margin: var(--ry-s2) 0 0;
+  color: var(--ry-text-muted, var(--ry-muted));
+  font-size: var(--ry-fs-label-sm);
+  line-height: 1.45;
+}
+
+.note {
+  margin: 0;
+  padding: var(--ry-s2) var(--ry-s3);
+  border-radius: var(--ry-r-btn-sm);
+  background: color-mix(in srgb, var(--ry-caution) 10%, transparent);
+  color: var(--ry-text);
+  font-size: var(--ry-fs-label);
+  line-height: 1.45;
+}
+
+.srOnly {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+.bone {
+  display: block;
+  max-width: 100%;
+  border-radius: var(--ry-r-btn-sm);
+  /* The core skeleton's own bar colour: visible on a card in Graphite and in Porcelain alike (B15). */
+  background: var(--ryntra-border, var(--ry-elevated));
+  animation: pools-bone 1.4s ease-in-out infinite;
+}
+
+@keyframes pools-bone {
+  0%,
+  100% {
+    opacity: 0.55;
+  }
+
+  50% {
+    opacity: 1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .bone {
+    animation: none;
+    opacity: 0.7;
+  }
+}
+
+.boneRows {
+  display: grid;
+  gap: 6px;
+}
+
+
+/* The wallet's positions, in the side column. */
+.positions {
+  display: grid;
+  gap: var(--ry-s2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.position {
+  display: grid;
+  gap: var(--ry-s2);
+  padding: var(--ry-s3);
+  border: 1px solid var(--ry-border);
+  border-radius: var(--ry-r-btn);
+}
+
+.positionHead {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--ry-s2);
+}
+
+.range {
+  flex: 0 0 auto;
+  padding: 2px 8px;
+  border-radius: var(--ry-r-pill);
+  background: color-mix(in srgb, var(--ry-pnl-pos) 14%, transparent);
+  color: var(--ry-text);
+  font-size: var(--ry-fs-label-sm);
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.range[data-range="above"],
+.range[data-range="below"] {
+  background: color-mix(in srgb, var(--ry-caution) 18%, transparent);
+}
+
+.positionFacts {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--ry-s2);
+  margin: 0;
+}
+
+.positionFacts dt {
+  color: var(--ry-muted);
+  font-size: var(--ry-fs-label-sm);
+}
+
+.positionFacts dd {
+  margin: 0;
+  color: var(--ry-text);
+  font-size: var(--ry-fs-dense);
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+
+.positionLine {
+  margin: 0;
+  color: var(--ry-muted);
+  font-size: var(--ry-fs-label-sm);
+  font-variant-numeric: tabular-nums;
+  overflow-wrap: anywhere;
+}
+
+.positionWarn {
+  margin: 0;
+  color: var(--ry-text);
+  font-size: var(--ry-fs-label-sm);
+}
+
+/* A pool's page. */
+.back {
+  justify-self: start;
+  color: var(--ry-muted);
+  font-size: var(--ry-fs-label);
+  text-decoration: none;
+}
+
+.back:hover {
+  color: var(--ry-text);
+}
+
+.facts {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: var(--ry-s3) var(--ry-s4);
+  margin: 0;
+}
+
+.fact {
+  display: grid;
+  align-content: start;
+  gap: 2px;
+  min-width: 0;
+}
+
+.fact dt {
+  color: var(--ry-muted);
+  font-size: var(--ry-fs-label-sm);
+}
+
+.fact dd {
+  margin: 0;
+  color: var(--ry-text);
+  font-size: var(--ry-fs-body, 15px);
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+
+.fact[data-tone="down"] dd {
+  color: var(--ry-pnl-neg);
+}
+
+.fact[data-tone="up"] dd {
+  color: var(--ry-pnl-pos);
+}
+
+.factNote {
+  color: var(--ry-text-muted, var(--ry-muted));
+  font-size: var(--ry-fs-label-sm);
+  line-height: 1.35;
+}
+
+.chart {
+  display: grid;
+  gap: var(--ry-s2);
+  margin: 0;
+}
+
+/* The bins' bars are the core's compact bars (CH-17); their box keeps the older chart's height. */
+.chart .binsPlot {
+  --ryntra-mini-height: 140px;
+  min-width: 0;
+}
+
+.chartAxis {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--ry-s2);
+  color: var(--ry-muted);
+  font-size: var(--ry-fs-label-sm);
+  font-variant-numeric: tabular-nums;
+}
+
+.chartAxis[data-centered] {
+  justify-content: center;
+}
+
+.chartActive {
+  color: var(--ry-text);
+  font-weight: 600;
+  text-align: center;
+}
+
+.chartLegend {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--ry-s3);
+  margin: 0;
+  color: var(--ry-muted);
+  font-size: var(--ry-fs-label-sm);
+}
+
+.chartLegend [data-side]::before {
+  content: "";
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  margin-inline-end: 6px;
+  border-radius: 2px;
+  vertical-align: -1px;
+}
+
+/* The legend in the bars' own colours: the core's info, border and text tokens. */
+.chartLegend [data-side="y"]::before {
+  background: var(--ryntra-info);
+}
+
+.chartLegend [data-side="x"]::before {
+  background: var(--ryntra-border-hover);
+}
+
+.chartLegend [data-side="active"]::before {
+  background: var(--ryntra-text);
+}
+
+.chartUnit {
+  margin: 0;
+  color: var(--ry-text-muted, var(--ry-muted));
+  font-size: var(--ry-fs-label-sm);
+}
+
+.chartLegend .chartUnit {
+  margin-inline-start: auto;
+}
+
+.rangeWrap {
+  display: grid;
+  gap: var(--ry-s2);
+}
+
+.rangeTrack {
+  position: relative;
+  height: 10px;
+  border-radius: var(--ry-r-pill);
+  background: color-mix(in srgb, var(--ry-info) 35%, var(--ry-elevated));
+}
+
+.rangeMarker {
+  position: absolute;
+  top: -5px;
+  width: 3px;
+  height: 20px;
+  margin-inline-start: -1.5px;
+  border-radius: 2px;
+  background: var(--ry-text);
+}
+
+.split {
+  display: flex;
+  height: 10px;
+  overflow: hidden;
+  border-radius: var(--ry-r-pill);
+}
+
+.split [data-side="x"] {
+  background: color-mix(in srgb, var(--ry-muted) 60%, transparent);
+}
+
+.split [data-side="y"] {
+  background: color-mix(in srgb, var(--ry-info) 70%, transparent);
+}
+
+/* The simulator. */
+.sim {
+  display: grid;
+  gap: var(--ry-s4);
+}
+
+.simInputs {
+  display: grid;
+  grid-template-columns: minmax(0, 160px) minmax(0, 1fr);
+  gap: var(--ry-s4);
+  align-items: start;
+}
+
+.simInputs > .simField:nth-child(3) {
+  grid-column: 1 / -1;
+}
+
+.simField {
+  display: grid;
+  gap: var(--ry-s2);
+  min-width: 0;
+  color: var(--ry-muted);
+  font-size: var(--ry-fs-label);
+}
+
+.simField strong {
+  color: var(--ry-text);
+  font-variant-numeric: tabular-nums;
+}
+
+.simField input:not([type="range"]) {
+  width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+  height: 40px;
+  padding: 0 var(--ry-s3);
+  border: 1px solid var(--ry-border);
+  border-radius: var(--ry-r-btn);
+  background: var(--ry-bg, var(--ry-card));
+  color: var(--ry-text);
+  font-family: var(--ry-font-sans);
+  font-size: var(--ry-fs-dense);
+  font-variant-numeric: tabular-nums;
+}
+
+.simField input:not([type="range"]):focus-visible {
+  outline: none;
+  border-color: var(--ry-border-strong);
+  box-shadow: var(--ry-focus);
+}
+
+.simField input[type="range"] {
+  width: 100%;
+  accent-color: var(--ry-info);
+}
+
+.simMoves {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--ry-s2);
+}
+
+.simOut {
+  display: grid;
+  gap: var(--ry-s2);
+  padding-top: var(--ry-s3);
+  border-top: 1px solid var(--ry-border);
+}
+
+/* «Деталі»: addresses and the venue's page, folded. */
+.details {
+  border: 1px solid var(--ry-border);
+  border-radius: var(--ry-r-btn);
+  background: var(--ry-card);
+}
+
+.details summary {
+  padding: var(--ry-s3) var(--ry-s4);
+  color: var(--ry-text);
+  font-size: var(--ry-fs-dense);
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.details summary:focus-visible {
+  outline: none;
+  border-radius: var(--ry-r-btn);
+  box-shadow: var(--ry-focus);
+}
+
+.detailsList {
+  display: grid;
+  gap: var(--ry-s2);
+  margin: 0;
+  padding: 0 var(--ry-s4) var(--ry-s3);
+}
+
+.detailsList dt {
+  color: var(--ry-muted);
+  font-size: var(--ry-fs-label-sm);
+}
+
+.detailsList dd {
+  margin: 0;
+  color: var(--ry-text);
+  font-family: var(--ry-font-mono);
+  font-size: var(--ry-fs-label);
+  overflow-wrap: anywhere;
+}
+
+.external {
+  display: inline-block;
+  margin: 0 var(--ry-s4) var(--ry-s3);
+  color: var(--ry-text);
+  font-size: var(--ry-fs-label);
+}
+
+@media (max-width: 760px) {
+  .toolbar {
+    flex-wrap: wrap;
+    gap: var(--ry-s2);
+  }
+
+  .toolbar > .tabs {
+    flex: 1 0 100%;
+  }
+
+  /* The select's name stays for a screen reader; a phone's row has no room to print it. */
+  .sortWord {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
+  }
+
+  .search {
+    flex: 1 1 0;
+    max-width: none;
+  }
+
+  /* A phone's row: the pair over its kind, its depth and its fees against it — nothing cut. */
+  .pairLine {
+    display: grid;
+    gap: 1px;
+  }
+
+  .table td {
+    height: 52px;
+  }
+
+  .table table {
+    table-layout: fixed;
+  }
+
+  .table th:not(:first-child),
+  .table td:not(:first-child) {
+    width: 27%;
+  }
+
+  /* The order is said by the select above the table; a phone's narrow head keeps its words. */
+  .table th :global(.ryntra-table__sort-icon) {
+    display: none;
+  }
+
+  /* An empty filter keeps its words: «↵» (all of Meteora) appears once there is something to look for. */
+  .search input:placeholder-shown ~ .searchGo {
+    display: none;
+  }
+
+  /* «Комісії/TVL 24 год» takes two lines under a phone's narrow column rather than running past its edge. */
+  .table th,
+  .table th :global(.ryntra-table__sort) {
+    white-space: normal;
+    overflow-wrap: anywhere;
+    line-height: 1.2;
+  }
+
+  .pairName,
+  .pairVenue {
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .tabs {
+    -webkit-mask-image: linear-gradient(90deg, var(--ry-text) 85%, transparent);
+    mask-image: linear-gradient(90deg, var(--ry-text) 85%, transparent);
+    padding-inline-end: 32px;
+  }
+
+  .table td,
+  .table th {
+    padding: 0 6px;
+    font-size: var(--ry-fs-dense);
+  }
+
+  .pairName {
+    max-width: 18ch;
+  }
+
+  .sources {
+    margin-inline-start: 0;
+  }
+
+  .simInputs {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .facts {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+/* The action pages: one column of the core's action width, fields and choices stacked, one orange action. */
+.actionStack {
+  display: grid;
+  gap: var(--ry-s4);
+  min-width: 0;
+}
+
+.actionStack > .simField > label {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--ry-s2);
+  color: var(--ry-text);
+}
+
+.fieldAside {
+  display: inline-flex;
+  align-items: baseline;
+  gap: var(--ry-s2);
+  color: var(--ry-muted);
+  font-size: var(--ry-fs-label-sm);
+  font-variant-numeric: tabular-nums;
+}
+
+.inlineAction {
+  justify-self: start;
+  min-height: 32px;
+  padding: 0 var(--ry-s1);
+  border: 0;
+  background: none;
+  color: var(--ry-text);
+  font: inherit;
+  font-size: var(--ry-fs-label-sm);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  cursor: pointer;
+}
+
+.inlineAction:disabled {
+  color: var(--ry-muted);
+  cursor: default;
+  text-decoration: none;
+}
+
+.inlineAction:focus-visible {
+  outline: none;
+  box-shadow: var(--ry-focus);
+  border-radius: 4px;
+}
+
+.fieldWarn {
+  color: var(--ry-pnl-neg);
+  font-size: var(--ry-fs-label-sm);
+}
+
+.rangeLine {
+  margin: 0;
+  color: var(--ry-muted);
+  font-size: var(--ry-fs-label);
+}
+
+.rangeLine strong {
+  color: var(--ry-text);
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+}
+
+.pageAction {
+  display: grid;
+  justify-items: end;
+  gap: var(--ry-s1);
+}
+
+.pageActionNote {
+  color: var(--ry-muted);
+  font-size: var(--ry-fs-label-sm);
+}
+
+.manageLink {
+  justify-self: start;
+  color: var(--ry-text);
+  font-size: var(--ry-fs-label-sm);
+  text-decoration: none;
+}
+
+.manageLink:hover {
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+/* A form's one action: in place on a desk, held at the bottom of a phone's screen while the fields scroll. */
+.formAction {
+  display: grid;
+}
+
+@media (max-width: 767px) {
+  .pageAction {
+    justify-items: stretch;
+  }
+
+  .formAction {
+    position: sticky;
+    bottom: 0;
+    z-index: 2;
+    margin: 0 calc(-1 * var(--ry-s4));
+    padding: var(--ry-s3) var(--ry-s4) calc(var(--ry-s3) + env(safe-area-inset-bottom, 0px));
+    border-top: 1px solid var(--ry-border);
+    background: var(--ry-bg, var(--ry-card));
+  }
+}
+
+/* SOL-2b: a position's result, its entry and the rebalance as two signed steps. */
+.positionFacts [data-tone="down"] dd {
+  color: var(--ry-pnl-neg);
+}
+
+.positionFacts [data-tone="up"] dd {
+  color: var(--ry-pnl-pos);
+}
+
+.watchTitle {
+  margin: 0;
+  color: var(--ry-text);
+  font-size: var(--ry-fs-label);
+  font-weight: 600;
+}
+
+.entryFields {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--ry-s3);
+}
+
+.rebalance {
+  display: grid;
+  gap: var(--ry-s2);
+  padding: var(--ry-s3);
+  border: 1px solid color-mix(in srgb, var(--ry-caution) 45%, var(--ry-border));
+  border-radius: var(--ry-r-btn);
+}
+
+.step {
+  display: inline-flex;
+  align-items: center;
+  min-height: 36px;
+  padding: 0 var(--ry-s3);
+  border: 1px solid var(--ry-border-strong, var(--ry-border));
+  border-radius: var(--ry-r-btn);
+  background: transparent;
+  color: var(--ry-text);
+  font-family: var(--ry-font-sans);
+  font-size: var(--ry-fs-label);
+  font-weight: 500;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.step:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--ry-text) 6%, transparent);
+}
+
+.step:disabled {
+  color: var(--ry-muted);
+  cursor: default;
+}
+
+.step:focus-visible {
+  outline: none;
+  box-shadow: var(--ry-focus);
+}
+
+.netInputs {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: var(--ry-s4);
+  align-items: start;
+}
+
+.netScenarios {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--ry-s3);
+  margin: 0;
+}
+
+@media (max-width: 760px) {
+  .entryFields {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .netScenarios {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+/* EXE-1: pool actions' honest state, who signs and who holds the bound — one quiet line above the catalogue. */
+.authority {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--ry-s1) var(--ry-s2);
+  margin: 0;
+  font-size: var(--ry-fs-dense);
+  line-height: 1.5;
+  color: var(--ry-muted);
+}
+
+.authorityVenue {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--ry-s1);
+  color: var(--ry-text);
+  font-weight: 600;
+}

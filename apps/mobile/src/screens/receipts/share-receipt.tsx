@@ -84,9 +84,7 @@ export function ShareReceiptSheet({
             width={Math.min(PICTURE_WIDTH, width - 32)}
           />
         </View>
-        {face.hasAmounts ? (
-          <ToggleRow label={copy.showAmounts} hint={copy.showAmountsHint} value={show} onChange={setShow} last />
-        ) : null}
+        {face.hasAmounts ? <ToggleRow label={copy.showAmounts} value={show} onChange={setShow} last /> : null}
         {failure ? (
           <Txt variant="ui" tone="danger" accessibilityLiveRegion="polite">
             {failure}

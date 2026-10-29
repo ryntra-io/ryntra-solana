@@ -1,0 +1,85 @@
+/* Ріст 18: the one sign-in a Rewards page may ask for, centred in the page's column (SOL-C1). */
+
+.gate {
+  display: grid;
+  gap: var(--ry-s4);
+  justify-items: center;
+  min-width: 0;
+  padding: var(--ry-s6) var(--ry-s5);
+  border: 1px solid var(--ry-border);
+  border-radius: var(--ry-r-card);
+  background: var(--ry-card);
+  text-align: center;
+}
+
+.gate[data-inside="true"] {
+  padding: var(--ry-s4) 0;
+  border: 0;
+  background: none;
+}
+
+/* The invitation above the line keeps its own width, in the middle. */
+.gate > :not(.ask):not(.quiet) {
+  width: min(100%, 640px);
+  text-align: start;
+}
+
+.ask {
+  display: grid;
+  gap: var(--ry-s3);
+  justify-items: center;
+}
+
+.lead {
+  margin: 0;
+  max-width: 40ch;
+  color: var(--ry-text);
+  font-size: var(--ry-fs-app);
+  font-weight: 600;
+}
+
+.quiet {
+  margin: 0;
+  color: var(--ry-muted);
+  font-size: var(--ry-fs-dense);
+}
+
+.failure {
+  margin: 0;
+  color: var(--ry-risk);
+  font-size: var(--ry-fs-dense);
+}
+
+.button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 44px;
+  padding: 0 var(--ry-s5);
+  border: 1px solid var(--ry-brand-edge);
+  border-radius: var(--ry-r-btn);
+  background: var(--ry-gradient);
+  color: var(--ry-on-iris);
+  font: inherit;
+  font-size: var(--ry-fs-app);
+  font-weight: 600;
+  cursor: pointer;
+  box-shadow: var(--ry-brand-glow);
+  transition: background 160ms ease-out, transform 160ms ease-out, box-shadow 160ms ease-out;
+}
+
+.button:hover:not(:disabled) {
+  background: var(--ry-gradient-hover);
+  transform: translateY(-1px);
+  box-shadow: var(--ry-brand-glow-strong);
+}
+
+.button:disabled {
+  cursor: progress;
+  opacity: 0.7;
+}
+
+.button:focus-visible {
+  outline: none;
+  box-shadow: var(--ry-focus);
+}

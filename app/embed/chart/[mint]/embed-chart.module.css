@@ -1,0 +1,50 @@
+/* The chart alone in a window that is the app's screen (CH-21): the page's ground, no card around the chart, the
+   candles taking the whole window under the chart's bar, less the line of the sources under them. */
+:global(body):has(.frame) {
+  margin: 0;
+  background: var(--ry-bg);
+  color: var(--ry-text);
+  font-family: var(--ry-font-sans);
+  overflow: hidden;
+}
+
+.frame {
+  display: flex;
+  flex-direction: column;
+  height: 100dvh;
+}
+
+/* The landing's section rhythm (`globals.css`) stops here, as it does at the cabinet's canvas (`app/shell/shell.css`):
+   the core's chart is a section too. */
+.frame :global(section) {
+  padding-block: 0;
+}
+
+.frame :global([data-terminal-chart]) {
+  flex: 1 1 auto;
+  min-height: 0;
+  grid-template-rows: minmax(0, 1fr) auto;
+  border: 0;
+  border-radius: 0;
+  background: var(--ry-bg);
+  padding: var(--ry-s1) var(--ry-s2) var(--ry-s2);
+}
+
+.frame :global([data-terminal-chart]) [data-spot-core-chart] {
+  height: 100%;
+  min-height: 0;
+}
+
+.frame :global([data-terminal-chart]) [data-spot-core-chart] :global(.ryntra-chart) {
+  min-height: 0;
+}
+
+.frame :global([data-terminal-chart]) [data-spot-core-chart] :global(.ryntra-chart__stage) {
+  flex: 1 1 auto;
+  height: auto;
+  min-height: 160px;
+}
+
+.frame :global([data-chart-state]) {
+  min-height: 200px;
+}

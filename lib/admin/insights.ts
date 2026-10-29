@@ -50,8 +50,15 @@ export type InsightsModel = {
   searchConsole: GoogleTruth;
 };
 
-/** Site clicks `/api/track` accepts. Both are anonymous and neither is a person. */
-export const FIRST_PARTY_EVENT_CATALOG = ["telegram_cta_click", "workspace_cta_click", "arcus_link_click"] as const;
+/** Events `/api/track` accepts: site clicks and Seeker Connect's count (SKR-1). All anonymous; none is a person. */
+export const FIRST_PARTY_EVENT_CATALOG = [
+  "telegram_cta_click",
+  "workspace_cta_click",
+  "arcus_link_click",
+  "seeker_connect_ok",
+  "seeker_connect_cancelled",
+  "seeker_connect_failed",
+] as const;
 
 export function googleConfigured(env: {
   GA4_PROPERTY_ID?: string;

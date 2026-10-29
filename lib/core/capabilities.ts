@@ -25,6 +25,14 @@
  * The older registry of public claims (`lib/product/capabilities.ts`) answers
  * a different question — how mature a claim on a page is — and stays as it is.
  *
+ * **What a person may do, and who holds its bound, is the authority matrix**
+ * (`./authority-matrix.ts`, EXE-1): one row per venue × action with its honest
+ * state. Each row here names the matrix rows it routes (`authority`), and a
+ * row here is `LIVE` only where one of them has a live ceiling
+ * (`authority-matrix.test.mjs`). `PLANNED` here means «not on the core's
+ * routing yet» — a venue people already use on its own routes (the pools,
+ * Phoenix) reads its people's state from the matrix, never from this file.
+ *
  * Pure: no I/O and no clock. The environment is passed in.
  */
 
@@ -85,6 +93,8 @@ export type CapabilityRow = Readonly<{
   attribution: CapabilityAttribution | null;
   /** The intent pipeline the row runs through; null while it runs on its own routes. */
   pipeline: IntentPipelineId | null;
+  /** The authority-matrix rows (`./authority-matrix.ts`) this row routes; the person's state is theirs. */
+  authority: readonly string[];
   /** One plain line for an operator: what the row is, never a claim to a person. */
   note: string;
 }>;
@@ -110,6 +120,7 @@ export const CAPABILITY_REGISTRY: readonly CapabilityRow[] = Object.freeze([
       products: ["swap", "memes", "stocks"],
     },
     pipeline: "solana-swap",
+    authority: ["jupiter.swap", "jupiter.limit"],
     note: "Swap, Spot and the company page: one order, one review, one wallet signature, one receipt; the fee per flow.",
   },
   {
@@ -125,6 +136,7 @@ export const CAPABILITY_REGISTRY: readonly CapabilityRow[] = Object.freeze([
       products: ["bridge"],
     },
     pipeline: null,
+    authority: ["relay.cross-swap"],
     note: "Cross-chain swap and bridge from Solana; runs on its own routes until it moves onto the pipeline.",
   },
   {
@@ -136,18 +148,20 @@ export const CAPABILITY_REGISTRY: readonly CapabilityRow[] = Object.freeze([
     fee: PLANNED_FEE,
     attribution: { kind: "FEE_WALLET", configKey: null, products: ["memes"] },
     pipeline: null,
+    authority: [],
     note: "Trading on launch curves directly.",
   },
   {
     network: "solana",
     venue: "meteora-dbc",
     capability: "launch",
-    /* Open to people on mainnet since 2026-10-06: creating, trading on the curve and in the pool, claiming — behind the Launch lane's stop. */
+    /* Open to people on mainnet since 2026-10-06: creating, trading on the curve and in the pool, the creator's claim — behind the Launch lane's stop. The partner's claim on the treasury multisig is not built (SOL-L1d). */
     state: "LIVE",
     lane: "LAUNCH",
     fee: { kind: "NONE", reason: "The curve's own fee: Ryntra earns inside it as the config's partner, with no fee of its own on top." },
     attribution: { kind: "CURVE_CONFIG", configKey: null, products: ["launch"] },
     pipeline: null,
+    authority: ["meteora-dbc.launch", "meteora-dbc.trade", "meteora-dbc.creator-claim", "meteora-dbc.holder-collect", "meteora-dbc.graduation", "meteora-dbc.liquidity-ladder", "meteora-dbc.partner-claim"],
     note: "Ryntra Launch on a dynamic bonding curve: a config per preset; the partner's fee claimer and the pool payer in the attribution registry.",
   },
   {
@@ -159,6 +173,7 @@ export const CAPABILITY_REGISTRY: readonly CapabilityRow[] = Object.freeze([
     fee: PLANNED_FEE,
     attribution: { kind: "CURVE_CONFIG", configKey: null, products: ["launch"] },
     pipeline: null,
+    authority: [],
     note: "A second launch venue after the first is live.",
   },
   {
@@ -170,7 +185,8 @@ export const CAPABILITY_REGISTRY: readonly CapabilityRow[] = Object.freeze([
     fee: PLANNED_FEE,
     attribution: { kind: "FEE_WALLET", configKey: null, products: ["lp"] },
     pipeline: null,
-    note: "Pools and automatic liquidity; reading pool data is live elsewhere, opening a position is not.",
+    authority: ["meteora-dlmm.liquidity", "meteora-dlmm.grid", "meteora-dlmm.limit"],
+    note: "Pools and the grid: on their own routes behind the pools' gate, not the core's routing yet; the people's state is the matrix's.",
   },
   {
     network: "solana",
@@ -181,7 +197,8 @@ export const CAPABILITY_REGISTRY: readonly CapabilityRow[] = Object.freeze([
     fee: PLANNED_FEE,
     attribution: { kind: "FEE_WALLET", configKey: null, products: ["lp"] },
     pipeline: null,
-    note: "Pools after a launch migrates.",
+    authority: ["meteora-damm2.liquidity"],
+    note: "Pools, and launches' pools after migration: on their own routes behind the pools' gate; the people's state is the matrix's.",
   },
   {
     network: "solana",
@@ -192,7 +209,8 @@ export const CAPABILITY_REGISTRY: readonly CapabilityRow[] = Object.freeze([
     fee: PLANNED_FEE,
     attribution: { kind: "PARTNER_CODE", configKey: null, products: ["perps"] },
     pipeline: null,
-    note: "Perpetuals on Solana first.",
+    authority: ["phoenix.collateral", "phoenix.orders"],
+    note: "Perpetuals on Phoenix: collateral and orders on their own routes and gates; the people's state is the matrix's.",
   },
   {
     network: "hyperliquid",
@@ -203,6 +221,7 @@ export const CAPABILITY_REGISTRY: readonly CapabilityRow[] = Object.freeze([
     fee: PLANNED_FEE,
     attribution: { kind: "PARTNER_CODE", configKey: null, products: ["perps"] },
     pipeline: null,
+    authority: [],
     note: "Perpetuals second, through a partner code.",
   },
   ...(["base", "bsc", "ethereum", "robinhood"] as const).map(
@@ -215,6 +234,7 @@ export const CAPABILITY_REGISTRY: readonly CapabilityRow[] = Object.freeze([
       fee: PLANNED_FEE,
       attribution: { kind: "FEE_WALLET", configKey: null, products: ["swap"] },
       pipeline: null,
+      authority: [],
       note: "Swap on an EVM chain through the one EVM adapter.",
     }),
   ),
@@ -248,6 +268,7 @@ const CapabilityRowSchema = z
       .strict()
       .nullable(),
     pipeline: z.enum(INTENT_PIPELINES).nullable(),
+    authority: z.array(z.string().min(1)),
     note: z.string().min(1).max(200),
   })
   .strict()

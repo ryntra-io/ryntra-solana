@@ -21,7 +21,7 @@ import { useStellarActivity } from "./hub/use-activity.ts";
  * Stellar Hub — mission control.
  *
  * This page has been wrong twice, in opposite directions. First it was four
- * cards and two blocks of prose, which correctly read as a test page.
+ * cards and two blocks of prose, which the founder correctly called a test page.
  * Then it became a good single-purpose screen — the network, and what each
  * issuer can do to a holding — with a sentence at the bottom saying *"read one
  * asset completely and say what is unknown about it; that is the whole of it."*

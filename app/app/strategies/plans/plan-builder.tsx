@@ -1,8 +1,9 @@
 "use client";
 
+import { Page } from "@ryntra/core/ui";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import { ISSUER_SHORT, type SlimStockRow } from "@/app/app/stocks/stock-model";
 import { Help, HelpLabel } from "@/app/shell/help";
@@ -10,10 +11,11 @@ import type { HelpTopicId } from "@/app/shell/help-topics";
 import type { WorkspaceLocale } from "@/app/shell/locale";
 import { MarketIcon } from "@/app/solana/workspace/spot/market-list";
 import { useSolanaConnection } from "@/app/solana/workspace/connection";
+import { ConnectWalletButton } from "@/app/solana/workspace/wallet-gate";
 import { useWalletProof } from "@/app/solana/workspace/wallet-proof";
 import { PlanRulesSchema, isTokenPlanAsset, planAssetKind, planUnitBasis, type AgentDraftResponse, type MarketEvidenceReadDto, type PlanAssetRead, type PlanRules, type TradingPlan } from "@/lib/api/v1/contract";
 import { judgeEvidenceCondition, validateEvidenceConditions } from "@/lib/evidence/conditions";
-import { EVIDENCE_METRICS, evidenceMetric, type EvidenceMetricId, type EvidenceOperator, type EvidenceWindow } from "@/lib/evidence/metrics";
+import { EVIDENCE_METRICS, EVIDENCE_WINDOWS, evidenceMetric, isEvidenceMetricId, type EvidenceMetricId, type EvidenceOperator, type EvidenceWindow } from "@/lib/evidence/metrics";
 import { INVALIDATION_EXAMPLE_UNDER_ENTRY, MAX_PRICE_OVER_ENTRY, startingPrice, type CarriedCondition, type StartingPriceSource } from "@/lib/plans/builder-defaults";
 import { decimalReadingDiffers, parseDecimalInput } from "@/lib/plans/decimal-input";
 import { computePlanSizing, validatePlanRules, type PlanIssue, type PlanSizingContext } from "@/lib/plans/sizing";
@@ -22,8 +24,11 @@ import type { StockAsset } from "@/lib/stocks/asset.server";
 
 import { conditionSentence, fmtByUnit, fmtClock, operatorWord, windowWord } from "@/app/solana/workspace/evidence/evidence-words";
 
+import { clearKept, flushKept, keepDraft, readKept, restoreDraft } from "./draft-keep";
 import { fmtUnits, fmtUsd, fmtWhen, issueSentence, planWordsFor, type IssueFigures, type PlanWord } from "./plan-words";
+import pair from "../../form-pair.module.css";
 import styles from "./plans.module.css";
+import { ensureWalletActs } from "@/lib/account/wallet-proof-store.client";
 
 /**
  * The plan builder.
@@ -317,6 +322,31 @@ const FIELD_OF: Readonly<Record<string, keyof Draft>> = {
   "execution.minLiquidityUsd": "minLiquidity",
 };
 
+const HORIZON_UNITS: ReadonlySet<string> = new Set(["days", "weeks", "months", "none"]);
+const OPERATORS: ReadonlySet<string> = new Set(["gt", "gte", "lt", "lte"]);
+
+/** A condition the form can draw: a known metric and window, an operator, a threshold as typed, a mode. */
+function isConditionDraft(value: unknown): value is ConditionDraft {
+  if (!value || typeof value !== "object") return false;
+  const item = value as Record<string, unknown>;
+  return (
+    typeof item.metric === "string" &&
+    isEvidenceMetricId(item.metric) &&
+    typeof item.window === "string" &&
+    (EVIDENCE_WINDOWS as readonly string[]).includes(item.window) &&
+    typeof item.operator === "string" &&
+    OPERATORS.has(item.operator) &&
+    typeof item.threshold === "string" &&
+    item.threshold.length <= 40 &&
+    (item.mode === "advisory" || item.mode === "required")
+  );
+}
+
+/** A kept draft (UX-702) over the form's fresh one: what passes the form's own shape, the fresh value elsewhere. */
+function keptDraftOver(kept: unknown, fresh: Draft): Draft | null {
+  return restoreDraft(kept, fresh, { accept: { horizonUnit: (value) => typeof value === "string" && HORIZON_UNITS.has(value) }, acceptItem: isConditionDraft });
+}
+
 /** The fields a plan cannot be sized without, in the order the form asks for them — what a disabled button names. */
 const REQUIRED: readonly Readonly<{ field: keyof Draft; word: PlanWord }>[] = [
   { field: "thesis", word: "needWhy" },
@@ -345,6 +375,9 @@ export function PlanBuilder({ mint, planId, budget, locale, carried = null, agen
   /* A field says what it needs once the person has been in it; a fresh form does not open with warnings. */
   const [touched, setTouched] = useState<ReadonlySet<keyof Draft>>(() => new Set());
   const [save, setSave] = useState<{ status: "idle" | "saving" | "failed"; message: string | null; issues: readonly PlanIssue[] }>({ status: "idle", message: null, issues: [] });
+  /* UX-702: a new plan the person has written in waits in this browser (and, for a guest, in the address) until it is saved. */
+  const edited = useRef(false);
+  const [restored, setRestored] = useState<"tab" | "link" | null>(null);
   /* Ryn's draft: read back through the wallet's proof once it exists; the form opens on the mint meanwhile. */
   const [agentDraft, setAgentDraft] = useState<{ status: "idle" | "loading" | "applied" | "missing" | "unproven" }>({ status: agentDraftId ? "idle" : "applied" });
 
@@ -436,14 +469,22 @@ export function PlanBuilder({ mint, planId, budget, locale, carried = null, agen
           }
         }
       }
+      /* A new plan written here before — reloaded, or reopened inside Phantom — comes back; never over what the link itself carries. */
+      const fresh = draftFromAsset(held, budget, carried);
+      const keptRead = !edited.current && !planId && !agentDraftId && budget === null && carried === null ? readKept(read.asset.mint) : null;
+      const kept = keptRead ? keptDraftOver(keptRead.draft, fresh) : null;
+      if (kept && keptRead) {
+        edited.current = true;
+        setRestored(keptRead.from);
+      }
       setDraft((current) => {
         if (fromAgent) {
           setEntrySource("indication");
           return fromAgent;
         }
         if (current) return current;
-        setEntrySource(entrySourceOf(held));
-        return draftFromAsset(held, budget, carried);
+        setEntrySource(kept ? "yours" : entrySourceOf(held));
+        return kept ?? fresh;
       });
     })().catch(() => {
       if (live) setAsset({ status: "failed", asset: null });
@@ -486,9 +527,11 @@ export function PlanBuilder({ mint, planId, budget, locale, carried = null, agen
     setTouched((current) => (current.has("conditions") ? current : new Set(current).add("conditions")));
   };
   const addCondition = () => {
+    edited.current = true;
     setDraft((current) => (current ? { ...current, conditions: [...current.conditions, { metric: "dex_volume_usd", window: "24h", operator: "gte", threshold: "", mode: "advisory" }] } : current));
   };
   const removeCondition = (index: number) => {
+    edited.current = true;
     setDraft((current) => (current ? { ...current, conditions: current.conditions.filter((_, at) => at !== index) } : current));
   };
 
@@ -502,10 +545,20 @@ export function PlanBuilder({ mint, planId, budget, locale, carried = null, agen
         return next;
       });
       if (key === "entryPrice") setEntrySource("yours");
+      edited.current = true;
       setTouched((current) => (current.has(key) ? current : new Set(current).add(key)));
     },
     [existing, touched],
   );
+
+  /* The draft kept while a new plan is written (`draft-keep.ts`): only once the person has written in it — a form at rest keeps nothing. */
+  const assetMint = asset.asset?.read.asset.mint ?? null;
+  useEffect(() => {
+    if (planId || existing || !draft || !assetMint || !edited.current) return;
+    keepDraft(assetMint, draft, address === null);
+  }, [draft, assetMint, planId, existing, address]);
+  /* Leaving the builder inside the app writes the waiting address on this page, never on the next one. */
+  useEffect(() => () => flushKept(), []);
 
   const outcome = useMemo(() => {
     if (!draft) return null;
@@ -573,11 +626,13 @@ export function PlanBuilder({ mint, planId, budget, locale, carried = null, agen
     setSave({ status: "saving", message: null, issues: [] });
     try {
       const headers = { "content-type": "application/json", accept: "application/json", "X-Ryntra-API": "1" };
+      if (!(await ensureWalletActs())) { setSave({ status: "idle", message: null, issues: [] }); return; }
       const response = existing
         ? await fetch(`/api/v1/plans/${encodeURIComponent(existing.id)}`, { method: "PUT", headers, body: JSON.stringify({ rules: outcome.rules, ifVersion: existing.version, reason: draft.reason.trim() || null }) })
         : await fetch("/api/v1/plans", { method: "POST", headers, body: JSON.stringify({ asset: { mint: asset.asset?.read.asset.mint }, rules: outcome.rules, activate: mode === "activate" }) });
       const body = (await response.json()) as { plan?: TradingPlan; error?: { code: string; message: string; issues?: PlanIssue[] } };
       if (response.ok && body.plan) {
+        if (assetMint) clearKept(assetMint);
         router.push(`/app/strategies/plans/${body.plan.id}`);
         return;
       }
@@ -614,25 +669,87 @@ export function PlanBuilder({ mint, planId, budget, locale, carried = null, agen
   /* The estimate needs the money and the prices, not the thesis; its empty state names what is still blank. */
   const estimateMissing = draft ? REQUIRED.filter(({ field }) => field !== "thesis" && blank(String(draft[field]))).map(({ word: key }) => word(key)) : [];
 
+  /* One card: the plan estimate at the planning price, and what the model says you can lose. */
+  const estimateCard = (
+    <section className={`${styles.card} ${styles.buyCard}`} aria-label={word("youBuy")}>
+      <div className={styles.cardHead}>
+        <h2>
+          <HelpLabel topic="size" locale={locale}>
+            {word("youBuy")}
+          </HelpLabel>
+        </h2>
+        <span className={styles.cardHeadSpacer} />
+        {preview ? (
+          <span className={styles.muted} translate="no">
+            {word("atPlanningPrice")} {fmtUsd(preview.rules.entry.pricePerShare, locale)}
+          </span>
+        ) : null}
+      </div>
+      <div className={styles.cardBody}>
+        {preview ? (
+          <>
+            <div className={styles.buyBig}>
+              <b translate="no">
+                {fmtUnits(preview.sizing.units, locale)} {symbolUnderlying}
+              </b>
+              <span translate="no">≈ {fmtUsd(preview.sizing.notionalUsd, locale)}</span>
+            </div>
+            <span className={styles.buyChip}>{preview.sizing.limitedBy === "risk" ? word("limitedByRisk") : word("limitedByCapital")}</span>
+            <ul className={styles.buyFacts}>
+              <li>
+                {word("lossIfPrefix")} <b translate="no">{fmtUsd(preview.rules.risk.invalidationPerShare, locale)}</b>, {word("lossIfSuffix")}{" "}
+                <b translate="no">{fmtUsd(preview.sizing.units * preview.sizing.lossPerShareUsd, locale)}</b>
+                <Help topic="plannedRisk" locale={locale} />
+              </li>
+              <li>
+                {word("costsModelled")} <b translate="no">{(preview.rules.risk.costBufferBps / 100).toFixed(2)}%</b>
+                <Help topic="costBuffer" locale={locale} />
+              </li>
+              <li>
+                {word("validUntil")} <b translate="no">{preview.rules.entry.validUntil ? fmtWhen(preview.rules.entry.validUntil, locale) : word("noValidUntil")}</b>
+                <Help topic="validUntil" locale={locale} />
+              </li>
+              {preview.rules.evidenceConditions.map((condition, index) => (
+                <li key={`condition-${index}`}>
+                  {conditionSentence(condition, locale)}
+                  {condition.mode === "required" ? ` · ${word("evidenceRequireShort")}` : ""}
+                  {index === 0 ? <Help topic="evidenceCondition" locale={locale} /> : null}
+                </li>
+              ))}
+            </ul>
+            <p className={styles.footnote}>{word("modelNote")}</p>
+          </>
+        ) : (
+          <p className={styles.muted}>{!draft ? "—" : estimateMissing.length > 0 ? `${word("stillNeeded")} ${estimateMissing.join(" · ")}` : word("fillTheRules")}</p>
+        )}
+      </div>
+    </section>
+  );
+
+  /* The form and its live estimate: a centred pair from the moment an asset is named (the core's action column, wider
+     for the estimate beside it — DESIGN.md → «Page width»); picking the asset, or failing to read it, is one column. */
+  const paired = asset.status === "loading" || asset.status === "ready";
+
   return (
-    <section className={styles.page} aria-labelledby="plan-builder-title">
-      <p className={styles.crumbs}>
+    <Page
+      kind="action"
+      className={paired ? pair.page : pair.column}
+      title={existing ? `${word("builderTitleEdit")} · v${existing.version + 1}` : word("builderTitle")}
+      help={word("builderLead")}
+      lang={locale === "uk" ? "uk" : "en"}
+    >
+      <div className={styles.crumbs}>
         <Link href="/app/bots" prefetch={false}>
           {word("back")}
         </Link>
         <span aria-hidden="true">/</span>
         <span>{existing ? word("builderTitleEdit") : word("builderTitle")}</span>
-      </p>
-      <header className={styles.head}>
-        <h1 id="plan-builder-title">{existing ? `${word("builderTitleEdit")} · v${existing.version + 1}` : word("builderTitle")}</h1>
-        <span className={styles.headSpacer} />
         {assetHref ? (
-          <Link className="rw-btn" href={assetHref} prefetch={false}>
+          <Link className={`rw-btn ${styles.crumbsAction}`} href={assetHref} prefetch={false}>
             {tokenAsset ? word("seeMarket") : word("seeAsset")}
           </Link>
         ) : null}
-      </header>
-      <p className={styles.lead}>{word("builderLead")}</p>
+      </div>
       {agentDraft.status === "unproven" || agentDraft.status === "missing" || agentDraft.status === "loading" ? (
         <p className={styles.lead} data-agent-draft={agentDraft.status}>
           {agentDraft.status === "unproven"
@@ -640,6 +757,12 @@ export function PlanBuilder({ mint, planId, budget, locale, carried = null, agen
             : agentDraft.status === "missing"
               ? locale === "uk" ? "Чернетка від Ryntra не знайдена або її термін минув; форма відкрита на активі." : "The draft Ryntra prepared was not found or has expired; the form is open on the asset."
               : locale === "uk" ? "Читаємо чернетку від Ryntra…" : "Reading the draft Ryntra prepared…"}
+        </p>
+      ) : null}
+
+      {restored ? (
+        <p className={styles.lead} role="status" data-draft-kept>
+          {restored === "link" ? word("draftFromLink") : word("draftKept")}
         </p>
       ) : null}
 
@@ -659,15 +782,18 @@ export function PlanBuilder({ mint, planId, budget, locale, carried = null, agen
           </div>
         </section>
       ) : !draft || !planAsset || (!tokenAsset && (!row || !rep)) ? (
-        <section className={styles.card}>
-          <div className={styles.cardBody}>
-            <p className={styles.muted} aria-busy="true">
-              {word("assetLoadingAny")}
-            </p>
-          </div>
-        </section>
+        <div className={pair.pair}>
+          <section className={styles.card}>
+            <div className={styles.cardBody}>
+              <p className={styles.muted} aria-busy="true">
+                {word("assetLoadingAny")}
+              </p>
+            </div>
+          </section>
+          <aside className={pair.review}>{estimateCard}</aside>
+        </div>
       ) : (
-        <div className={styles.builder}>
+        <div className={pair.pair}>
           <form
             className={styles.card}
             onSubmit={(event) => {
@@ -1008,14 +1134,18 @@ export function PlanBuilder({ mint, planId, budget, locale, carried = null, agen
                 ) : null}
               </div>
               {save.status === "failed" && save.message ? <p className={styles.error}>{save.message}</p> : null}
-              {!proven ? (
+              {!address ? (
+                /* UX-702: a guest's last step is the one button every page has (B14); what was written stays. */
+                <div className={styles.actions} data-save-guest>
+                  <p className={styles.muted}>{word("connectToSave")}</p>
+                  <ConnectWalletButton />
+                </div>
+              ) : !proven ? (
                 <div className={styles.actions}>
                   <p className={styles.muted}>{word("signInToSave")}</p>
-                  {address ? (
-                    <button type="button" className="rw-btn rw-btn--primary" onClick={() => void proof.prove()} disabled={proof.state.status === "signing"}>
-                      {proof.state.status === "signing" ? word("confirming") : word("confirmWallet")}
-                    </button>
-                  ) : null}
+                  <button type="button" className="rw-btn rw-btn--primary" onClick={() => void proof.prove()} disabled={proof.state.status === "signing"}>
+                    {proof.state.status === "signing" ? word("confirming") : word("confirmWallet")}
+                  </button>
                 </div>
               ) : existing ? (
                 <div className={styles.actions}>
@@ -1044,65 +1174,10 @@ export function PlanBuilder({ mint, planId, budget, locale, carried = null, agen
             </div>
           </form>
 
-          {/* One card: the plan estimate at the planning price, and what the model says you can lose. */}
-          <aside className={styles.aside}>
-            <section className={`${styles.card} ${styles.buyCard}`} aria-label={word("youBuy")}>
-              <div className={styles.cardHead}>
-                <h2>
-                  <HelpLabel topic="size" locale={locale}>
-                    {word("youBuy")}
-                  </HelpLabel>
-                </h2>
-                <span className={styles.cardHeadSpacer} />
-                {preview ? (
-                  <span className={styles.muted} translate="no">
-                    {word("atPlanningPrice")} {fmtUsd(preview.rules.entry.pricePerShare, locale)}
-                  </span>
-                ) : null}
-              </div>
-              <div className={styles.cardBody}>
-                {preview ? (
-                  <>
-                    <div className={styles.buyBig}>
-                      <b translate="no">
-                        {fmtUnits(preview.sizing.units, locale)} {symbolUnderlying}
-                      </b>
-                      <span translate="no">≈ {fmtUsd(preview.sizing.notionalUsd, locale)}</span>
-                    </div>
-                    <span className={styles.buyChip}>{preview.sizing.limitedBy === "risk" ? word("limitedByRisk") : word("limitedByCapital")}</span>
-                    <ul className={styles.buyFacts}>
-                      <li>
-                        {word("lossIfPrefix")} <b translate="no">{fmtUsd(preview.rules.risk.invalidationPerShare, locale)}</b>, {word("lossIfSuffix")}{" "}
-                        <b translate="no">{fmtUsd(preview.sizing.units * preview.sizing.lossPerShareUsd, locale)}</b>
-                        <Help topic="plannedRisk" locale={locale} />
-                      </li>
-                      <li>
-                        {word("costsModelled")} <b translate="no">{(preview.rules.risk.costBufferBps / 100).toFixed(2)}%</b>
-                        <Help topic="costBuffer" locale={locale} />
-                      </li>
-                      <li>
-                        {word("validUntil")} <b translate="no">{preview.rules.entry.validUntil ? fmtWhen(preview.rules.entry.validUntil, locale) : word("noValidUntil")}</b>
-                        <Help topic="validUntil" locale={locale} />
-                      </li>
-                      {preview.rules.evidenceConditions.map((condition, index) => (
-                        <li key={`condition-${index}`}>
-                          {conditionSentence(condition, locale)}
-                          {condition.mode === "required" ? ` · ${word("evidenceRequireShort")}` : ""}
-                          {index === 0 ? <Help topic="evidenceCondition" locale={locale} /> : null}
-                        </li>
-                      ))}
-                    </ul>
-                    <p className={styles.footnote}>{word("modelNote")}</p>
-                  </>
-                ) : (
-                  <p className={styles.muted}>{estimateMissing.length > 0 ? `${word("stillNeeded")} ${estimateMissing.join(" · ")}` : word("fillTheRules")}</p>
-                )}
-              </div>
-            </section>
-          </aside>
+          <aside className={pair.review}>{estimateCard}</aside>
         </div>
       )}
-    </section>
+    </Page>
   );
 }
 

@@ -54,7 +54,8 @@ export type ProductNavGroup = Readonly<{
  * It replaced `Request beta access` as the primary CTA on 2026-08-17, because the loudest button on the site gated
  * the smallest part of it: four workspaces open with no account at all, and
  * the one thing beta actually gates is the cabinet. A first-time visitor read
- * "beta" and concluded the product was closed. Beta keeps its honest places: the cabinet row in the menu,
+ * "beta" and concluded the product was closed — including, on a bad night,
+ * the founder. Beta keeps its honest places: the cabinet row in the menu,
  * the homepage story, and the mobile sheet's second button.
  */
 export const WORKSPACES_HREF = "/workspaces";
@@ -136,7 +137,8 @@ function agentControlNavigationState() {
  * which meant the cabinet) with places (the ecosystem hubs), linked the places to
  * their landings rather than their doors, and did not link the Workspace Map
  * at all — so the answer to "how do I get into a workspace" was three hops
- * long and started with a guess.
+ * long and started with a guess. Founder-reported, at night, as "я сам не
+ * розумію, куди деяка вкладка".
  *
  * Three groups now, in the order of a real visit: the doors that open with no
  * account (straight to each workspace, not to prose about it), the cabinet

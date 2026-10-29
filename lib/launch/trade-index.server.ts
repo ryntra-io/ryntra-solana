@@ -30,7 +30,12 @@ export function launchDecodedIndex(store: GuardStore, cluster: string, feeWallet
       return new Map(rows.filter((row) => row.token === token && row.feeWallet === fee).map((row) => [row.signature, row.decoded]));
     },
     async save(token, signature, decoded) {
-      await collection.insertIfAbsent(`${prefix(token)}${signature}`, { cluster, token, feeWallet: fee, signature, decoded });
+      const key = `${prefix(token)}${signature}`;
+      const row = { cluster, token, feeWallet: fee, signature, decoded };
+      if (await collection.insertIfAbsent(key, row)) return;
+      /* Written once — except a decode made before `marks` (SOL-L2), which the same transaction read again replaces. */
+      const kept = await collection.get(key);
+      if (kept && !kept.decoded.marks && decoded.marks) await collection.set(key, row);
     },
   };
 }

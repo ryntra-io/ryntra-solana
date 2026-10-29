@@ -1,12 +1,12 @@
 {
   "package": "packages/ryntra-api-client",
-  "commit": "b37e036c",
-  "contractVersion": "1.36.0",
+  "commit": "2067bc348",
+  "contractVersion": "1.66.0",
   "contractMajor": 1,
-  "pinnedAt": "2026-10-09",
+  "pinnedAt": "2026-10-22",
   "files": {
-    "types.ts": "c6e32ad2c28c2d4af11b1238ecd0f31f879313c1",
-    "client.ts": "378b9985958b001bd12da8b88fede37cbecc8598"
+    "types.ts": "4beface5b4a148229e62dce6b96f7b9955aded42",
+    "client.ts": "20eb493f1a615c3872dbd1ecb803a984c329ad2a"
   },
-  "note": "Copies taken by content with `git show <commit>:packages/ryntra-api-client/src/<file>`; never edited here — take a new commit instead. The hashes are git blob ids of the LF content; pin.test.mjs checks them."
+  "note": "Copies taken by content with `git show <commit>:packages/ryntra-api-client/src/<file>`; never edited here — take a new commit instead. The hashes are git blob ids of the LF content; pin.test.mjs checks them. 2067bc348 is master's merge of the assistant line (#784): `api.assistant.*` (AI-13, request 68) for ST-13."
 }

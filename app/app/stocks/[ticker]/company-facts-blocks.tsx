@@ -40,7 +40,12 @@ type Stat = Readonly<{
   tone?: "down" | null;
 }>;
 
-function Stats({ items, columns = 4 }: { items: readonly Stat[]; columns?: 3 | 4 | 5 }) {
+/* As many columns as figures, up to five: one or two figures never leave half a desk's row blank. */
+function columnsFor(count: number): 2 | 3 | 4 | 5 {
+  return count >= 5 ? 5 : count <= 2 ? 2 : count === 3 ? 3 : 4;
+}
+
+function Stats({ items, columns = 4 }: { items: readonly Stat[]; columns?: 2 | 3 | 4 | 5 }) {
   return (
     <dl className={company.stats} data-columns={columns}>
       {items.map((item) => (
@@ -174,7 +179,7 @@ export function KeyStats({
         ) : null
       }
     >
-      {items.length ? <Stats items={items} columns={items.length >= 5 ? 5 : items.length === 3 ? 3 : 4} /> : null}
+      {items.length ? <Stats items={items} columns={columnsFor(items.length)} /> : null}
       <YearRange mint={mint} price={price} locale={locale} />
     </Block>
   );
@@ -268,7 +273,7 @@ export function WhatYouBuy({ locale, asset, feeBps, multiplier }: { locale: Work
       value: (
         <span className={company.factStack}>
           <span translate="no">{pctShort(backed, lang)}</span>
-          <span className={company.factNote}>{[held && custodian ? `${held} ${word("sharesHeldBy")} ${custodian}` : null, `${word("reservesAt")} ${dayShort(reserves.observedAt, lang) ?? ""}`].filter(Boolean).join(" · ")}</span>
+          <span className={company.factNote}>{[held && custodian ? `${held} ${word("sharesHeldBy")} ${custodian}` : null, dayShort(reserves.observedAt, lang) ? `${word("reservesAt")} ${dayShort(reserves.observedAt, lang)}` : null].filter(Boolean).join(" · ")}</span>
         </span>
       ),
     });
@@ -281,7 +286,7 @@ export function WhatYouBuy({ locale, asset, feeBps, multiplier }: { locale: Work
         <span className={company.factStack}>
           <span>{dividendWord(issuer, lang)}</span>
           <span className={company.factNote} translate="no">
-            {scaled}
+            {lang === "uk" ? `1 токен = ${scaled.slice(1)} акції` : `1 token = ${scaled.slice(1)} shares`}
           </span>
         </span>
       ) : (
@@ -346,12 +351,16 @@ export async function PopularAside({ locale, mint }: { locale: WorkspaceLocale; 
               <MarketIcon mint={card.mint} icon={card.icon} symbol={card.name} size={32} className={company.popularLogo} />
               <span className={company.popularName}>{card.name}</span>
               <span className={company.popularFigures}>
-                <span className={company.popularPrice} translate="no">
-                  {formatUsdPrice(card.price, numbers)}
-                </span>
-                <span className={company.popularChange} data-tone={toneOf(card.change24h)} translate="no">
-                  {formatPercent(card.change24h, numbers)}
-                </span>
+                {card.price === null ? null : (
+                  <span className={company.popularPrice} translate="no">
+                    {formatUsdPrice(card.price, numbers)}
+                  </span>
+                )}
+                {card.change24h === null ? null : (
+                  <span className={company.popularChange} data-tone={toneOf(card.change24h)} translate="no">
+                    {formatPercent(card.change24h, numbers)}
+                  </span>
+                )}
               </span>
             </Link>
           </li>
@@ -406,7 +415,7 @@ export async function TokenTrading({
   }
   return (
     <Block id="company-trading" title={word("tradingOnSolana")} source={market ? word("marketSource") : null}>
-      <Stats items={items} columns={items.length >= 5 ? 5 : items.length === 3 ? 3 : 4} />
+      <Stats items={items} columns={columnsFor(items.length)} />
       {buying !== null ? (
         <div className={company.pressure}>
           <div className={company.pressureHead}>

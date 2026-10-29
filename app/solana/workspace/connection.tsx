@@ -19,13 +19,19 @@ import { MenuRow } from "@/app/shell/menu";
 import { scaleRawAmount } from "@/lib/solana/amounts";
 import { explorerAddressUrl } from "@/lib/solana/explorer";
 import type { ProviderHealthState } from "@/lib/solana/health";
-import { isPhoneUserAgent, PHANTOM_DOWNLOAD_URL, phantomBrowseUrl } from "@/lib/solana/open-in-wallet";
+import { BACKPACK_DOWNLOAD_URL, isPhoneUserAgent, PHANTOM_DOWNLOAD_URL, phantomBrowseUrl, SOLFLARE_DOWNLOAD_URL, solflareBrowseUrl } from "@/lib/solana/open-in-wallet";
 import { useSolanaI18n } from "./i18n/provider.tsx";
 import { announceAccountChange, clearWalletAccount } from "@/lib/account/wallet-auth.client";
 import { revalidateWalletFact } from "@/lib/account/wallet-proof-store.client";
+import { restoreUntilAnswered } from "@/lib/solana/wallet-restore.client";
+import { SEEKER_CONNECT_WALLET } from "@/lib/solana/seeker-connect";
+import { SeekerConnectEntry } from "./seeker-button.tsx";
+import { useSkrName } from "./skr-name.tsx";
 import {
   connectWallet,
   detectWallets,
+  forgetWallet,
+  seekerRegistered,
   reconnectWallet,
   registeredWallet,
   selectSolanaAccount,
@@ -82,7 +88,21 @@ export type SolanaConnectionValue = Readonly<{
    * kept and nobody is signed out: a pause is not a different wallet.
    */
   paused: boolean;
+  /**
+   * Where the connection came from: the person pressing Connect, the silent
+   * restore, or the wallet itself showing another account. Only the first is
+   * certainly a different person; the others may be a moment's flicker.
+   */
+  connectedBy: ConnectedBy | null;
+  /**
+   * A quiet note, not a failure: «Connect with Seeker» launched and nothing
+   * answered — what any phone that is not a Seeker says (SKR-1). Cleared by
+   * the next attempt.
+   */
+  notice: "SEEKER_UNREACHABLE" | null;
 }>;
+
+export type ConnectedBy = "chosen" | "restored" | "wallet";
 
 /**
  * The wallet client's states, mapped to the shell's three.
@@ -139,9 +159,13 @@ export function SolanaConnectionProvider({ children }: { children: ReactNode }) 
   const [wallets, setWallets] = useState<readonly DetectedWallet[]>([]);
   const [connection, setConnection] = useState<WalletConnection | null>(null);
   const [paused, setPaused] = useState(false);
+  const [connectedBy, setConnectedBy] = useState<ConnectedBy | null>(null);
   const [connecting, setConnecting] = useState(false);
+  /* Set by `connect` itself, not on render: the restore must not ask the same wallet while its prompt is open. */
+  const connectingRef = useRef(false);
   const [error, setError] = useState<string | null>(null);
   const [errorKind, setErrorKind] = useState<ConnectionErrorKind | null>(null);
+  const [notice, setNotice] = useState<SolanaConnectionValue["notice"]>(null);
 
   /* Detection only, and only after mount. Registering wallets is not connecting
      to them, and there is no auto-connect anywhere in this workspace: a wallet
@@ -160,7 +184,7 @@ export function SolanaConnectionProvider({ children }: { children: ReactNode }) 
   }, []);
 
   /**
-   * Restore a connection the wallet already trusts — once, and without asking.
+   * Restore a connection the wallet already trusts — without asking, and again until the wallet answers.
    *
    * The no-auto-connect rule above is kept, not traded away: `reconnectWallet`
    * uses Wallet Standard's `connect({ silent: true })`, which must not prompt.
@@ -174,11 +198,13 @@ export function SolanaConnectionProvider({ children }: { children: ReactNode }) 
    * connected address. One wallet context is a property of the product, so it
    * has to survive navigation.
    *
-   * Guarded by a ref rather than a dependency list because `wallets` changes
-   * whenever a wallet registers late, and a restore attempt per registration is
-   * a restore attempt too many.
+   * It used to run once, guarded by a ref, with `wallets` in its dependencies:
+   * a second wallet registering while the first was answering cancelled that
+   * answer, the ref forbade another try, and the person who had connected on
+   * Home found «Підключити» on the next page. Now it keys on the connection
+   * alone and tries again — a few times on a widening delay, then whenever a
+   * wallet registers or the tab comes back — until the wallet answers.
    */
-  const restored = useRef(false);
   const connectedWalletName = connection?.wallet ?? null;
   /* A wallet with no account for a moment — locked, between two accounts, its
      extension restarting — is paused, not gone: the address, the name and the
@@ -194,11 +220,13 @@ export function SolanaConnectionProvider({ children }: { children: ReactNode }) 
     const account = shown ? selectSolanaAccount(shown.accounts) : null;
     if (account && account.address !== connectedAddress.current) {
       setConnection({ wallet: connectedWalletName, address: account.address, chains: account.chains });
+      setConnectedBy("wallet");
       setPaused(false);
     }
     return watchWalletAccounts(connectedWalletName, (next) => {
       if (next) {
         setConnection(next);
+        if (next.address !== connectedAddress.current) setConnectedBy("wallet");
         setPaused(false);
       } else setPaused(true);
     });
@@ -213,6 +241,7 @@ export function SolanaConnectionProvider({ children }: { children: ReactNode }) 
     void (async () => {
       const result = await reconnectWallet(connectedWalletName);
       if (live && result.ok) {
+        if (result.connection.address !== connectedAddress.current) setConnectedBy("wallet");
         setConnection(result.connection);
         setPaused(false);
       }
@@ -222,23 +251,31 @@ export function SolanaConnectionProvider({ children }: { children: ReactNode }) 
     };
   }, [paused, connectedWalletName, wallets]);
   useEffect(() => {
-    if (restored.current || connection) return;
-    const hint = readWalletHint();
-    if (!hint) return;
-    if (!wallets.some((wallet) => wallet.name === hint)) return;
-    restored.current = true;
-    let live = true;
-    void (async () => {
-      const result = await reconnectWallet(hint);
-      /* A silent refusal is not an error and is never shown: it only means the
-         grant is gone, and the person is simply not connected. */
-      if (live && result.ok) setConnection(result.connection);
-    })();
-    return () => {
-      live = false;
+    if (connection) return;
+    if (!readWalletHint()) return;
+    const restore = restoreUntilAnswered(
+      (restored) => {
+        /* A connection the person made meanwhile wins over the restore. */
+        setConnection((current) => current ?? restored);
+        setConnectedBy((current) => current ?? "restored");
+        setPaused(false);
+      },
+      /* Not while the person's own Connect is open: one question to the wallet at a time. */
+      { hint: () => (connectingRef.current ? null : readWalletHint()) },
+    );
+    const again = () => {
+      if (document.visibilityState === "visible") restore.again();
     };
-  }, [connection, wallets]);
+    window.addEventListener("focus", again);
+    document.addEventListener("visibilitychange", again);
+    return () => {
+      restore.stop();
+      window.removeEventListener("focus", again);
+      document.removeEventListener("visibilitychange", again);
+    };
+  }, [connection]);
 
+  const lastTarget = useRef<string | null>(null);
   const connect = useCallback(
     async (name?: string) => {
       /* The fallback is for the single-wallet browser, where there is nothing
@@ -247,17 +284,35 @@ export function SolanaConnectionProvider({ children }: { children: ReactNode }) 
          reached past a Phantom in the toolbar for a MetaMask holding an
          unanswered popup — the scores tie whenever no wallet has yet exposed a
          Solana account, and the tiebreak is alphabetical. */
-      const target = name ?? wallets[0]?.name;
+      /* «Try again» names no wallet: it repeats the last one asked — Seeker's
+         quiet row included, which is in no list (SKR-1). */
+      const target = name ?? wallets[0]?.name ?? lastTarget.current;
+      lastTarget.current = target ?? null;
       if (!target) return;
       setError(null);
       setErrorKind(null);
+      setNotice(null);
+      connectingRef.current = true;
       setConnecting(true);
       try {
         const result = await connectWallet(target);
         if (result.ok) {
           setConnection(result.connection);
+          setConnectedBy("chosen");
           setPaused(false);
           writeWalletHint(result.connection.wallet);
+        }
+        /* Seeker Connect's own answers (SKR-1): a closed overlay is nobody's
+           failure and says nothing; a launch nothing answered is a quiet note
+           beside the other ways in; every other code its overlay has already
+           told the person, so the panel stays as it was and the button is the
+           retry. Its plain errors carry no code and are said here. */
+        else if (result.state === "CANCELLED") {
+          /* Nothing to say. */
+        } else if (result.state === "UNREACHABLE") {
+          setNotice("SEEKER_UNREACHABLE");
+        } else if (result.code) {
+          /* Told by the wallet's own dialog. */
         }
         /* A refusal is an ordinary answer — the person pressed cancel — and the
            client returns it as a value rather than throwing. It belongs in the
@@ -268,17 +323,25 @@ export function SolanaConnectionProvider({ children }: { children: ReactNode }) 
           setErrorKind(kindOf(result.state));
         }
       } finally {
+        connectingRef.current = false;
         setConnecting(false);
       }
     },
     [wallets],
   );
 
+  const forgetOnDisconnect = useRef<string | null>(null);
+  forgetOnDisconnect.current = connection?.wallet ?? null;
   const disconnect = useCallback(() => {
+    /* Seeker Connect forgets its cached token (locally — the wallet is not
+       launched); other wallets are left as they always were. */
+    if (forgetOnDisconnect.current) void forgetWallet(forgetOnDisconnect.current);
     setConnection(null);
+    setConnectedBy(null);
     setPaused(false);
     setError(null);
     setErrorKind(null);
+    setNotice(null);
     /* Disconnect has to mean it. Leaving the hint would silently reconnect on
        the very next navigation, which is the opposite of what was asked. It
        is also the one wallet action that signs out: a pause never does, a
@@ -290,8 +353,8 @@ export function SolanaConnectionProvider({ children }: { children: ReactNode }) 
   }, []);
 
   const value = useMemo<SolanaConnectionValue>(
-    () => ({ wallets, connection, connecting, error, errorKind, connect, disconnect, paused }),
-    [connect, connecting, connection, disconnect, error, errorKind, wallets, paused],
+    () => ({ wallets, connection, connecting, error, errorKind, connect, disconnect, paused, connectedBy, notice }),
+    [connect, connecting, connection, disconnect, error, errorKind, wallets, paused, connectedBy, notice],
   );
 
   return (
@@ -368,17 +431,22 @@ export function SolanaConnectionControl({
   identity,
   preferences,
   compact = false,
+  triggerId,
 }: {
   identity?: ReactNode;
   /** The person's own settings in the panel — the product's menu. */
   preferences?: (close: () => void) => ReactNode;
   /** The product's menu: the address and the SOL balance, no technical rows. */
   compact?: boolean;
+  /** A fixed id for the panel's trigger, so a frame's own wallet button can open this panel (the core's header, B1). */
+  triggerId?: string;
 } = {}) {
   const { text } = useSolanaI18n();
-  const { wallets, connection, connecting, error, errorKind, connect, disconnect } = useSolanaConnection();
+  const { wallets, connection, connecting, error, errorKind, connect, disconnect, notice } = useSolanaConnection();
   const [read, setRead] = useState<WalletRead>({ status: "idle" });
   const address = connection?.address ?? null;
+  /* The wallet's `.skr` name, when it has one (SKR-4): on the trigger in place of the shortened address. */
+  const skrName = useSkrName(address, { self: true });
   /* A browser with no wallet at all: a phone's Safari or Chrome cannot carry
      one, so the panel offers this page inside Phantom's own browser; a
      computer is told where to get one. Read after mount — the server does not
@@ -441,6 +509,25 @@ export function SolanaConnectionControl({
     };
   }, [address]);
 
+  /* «Connect with Seeker» (SKR-1). Seeker Connect is registered on Android
+     only and listed only where a Seeker is likely (`detectWallets`). There,
+     with no other wallet in the browser, it is the panel's one button, the
+     wallet apps' own browsers under it; beside an injected wallet it is one
+     more row in the list. On any other Android phone Phantom stays first
+     and Seeker is a quiet row under the wallet apps: its first connect
+     leaves the page for Solana Mobile's link, which only a Seeker takes. */
+  const seekerFirst = wallets.length > 0 && wallets.every((wallet) => wallet.name === SEEKER_CONNECT_WALLET);
+  const [seekerHere, setSeekerHere] = useState(false);
+  useEffect(() => {
+    const read = () => setSeekerHere(seekerRegistered());
+    read();
+    return subscribeWallets(read);
+  }, []);
+  const seekerQuiet = seekerHere && !wallets.some((wallet) => wallet.name === SEEKER_CONNECT_WALLET);
+  const seekerHint = notice === "SEEKER_UNREACHABLE"
+    ? text("Seeker didn't answer. This button opens the wallet on a Seeker phone; on another phone, open Ryntra in Phantom or Solflare.")
+    : null;
+
   const adapter = useMemo<ConnectionAdapter>(() => {
     const capabilities: ConnectionCapability[] = [];
     if (connection) capabilities.push("READ", "OWNERSHIP_PROVEN", "SIGN_TX");
@@ -448,7 +535,7 @@ export function SolanaConnectionControl({
     return {
       id: "solana",
       snapshot: {
-        available: wallets.length > 0,
+        available: wallets.length > 0 || connection !== null,
         connecting,
         address,
         /* Wallet Standard does not expose a mutable "active cluster", but an
@@ -465,7 +552,7 @@ export function SolanaConnectionControl({
          them, so the ranking becomes a suggestion instead of a decision. The
          list is what the panel renders when there is more than one; with one
          wallet there is nothing to choose and the ordinary button stands. */
-      choices: wallets.map((wallet) => ({ id: wallet.name, label: wallet.name, icon: wallet.icon })),
+      choices: seekerFirst ? [] : wallets.map((wallet) => ({ id: wallet.name, label: wallet.name, icon: wallet.icon })),
       /* This said "Solana Devnet" and pinned the explorer to that cluster,
          which made the shell assert a network for the whole workspace on
          behalf of one surface. Every read here is mainnet; only Send is still
@@ -490,20 +577,23 @@ export function SolanaConnectionControl({
       /* base58, not hex: a `0x`-shaped shortener produced unreadable stubs the
          first time it met a Solana address. */
       truncate: (value) => `${value.slice(0, 4)}…${value.slice(-4)}`,
+      name: skrName,
     };
-  }, [address, connect, connecting, connection, disconnect, error, errorKind, read, text, wallets]);
+  }, [address, connect, connecting, connection, disconnect, error, errorKind, read, seekerFirst, skrName, text, wallets]);
 
   const copy = useMemo<ConnectionCopy>(() => ({
     ...DEFAULT_COPY,
     panelTitle: text(DEFAULT_COPY.panelTitle),
     connect: text(DEFAULT_COPY.connect),
+    name: text("Name"),
     connectShort: text(DEFAULT_COPY.connectShort ?? DEFAULT_COPY.connect),
+    continueWith: text("Continue with"),
     connecting: text(DEFAULT_COPY.connecting),
     waiting: text(DEFAULT_COPY.waiting),
     unavailableTitle: text("No wallet in this browser"),
     unavailableBody: phone
       ? text("On a phone, Ryntra opens inside your wallet app.")
-      : text("Install Phantom, Solflare or Backpack, then reload this page."),
+      : text("Phantom, Solflare and Backpack all work."),
     disconnectedTitle: text(DEFAULT_COPY.disconnectedTitle),
     chooseTitle: text(DEFAULT_COPY.chooseTitle),
     disconnectedBody: text("Connecting only reads your wallet's balances. Nothing is signed until you approve the exact transaction."),
@@ -565,7 +655,7 @@ export function SolanaConnectionControl({
 
   return (
     <ConnectionControl
-      triggerId={`solana-connection-${controlId}`}
+      triggerId={triggerId ?? `solana-connection-${controlId}`}
       adapter={adapter}
       preferences={preferences}
       compact={compact}
@@ -613,21 +703,74 @@ export function SolanaConnectionControl({
         </>
       }
       copy={copy}
+      featured={
+        seekerFirst ? (
+          <SeekerConnectEntry busy={connecting} onConnect={() => void connect(SEEKER_CONNECT_WALLET)} hint={seekerHint}>
+            <button
+              type="button"
+              className="rs-menu-action"
+              onClick={() => window.location.assign(phantomBrowseUrl(window.location.href, window.location.origin))}
+            >
+              {text("Open in Phantom")}
+            </button>
+            <button
+              type="button"
+              className="rs-menu-action"
+              onClick={() => window.location.assign(solflareBrowseUrl(window.location.href, window.location.origin))}
+            >
+              {text("Open in Solflare")}
+            </button>
+          </SeekerConnectEntry>
+        ) : seekerHint ? (
+          /* Seeker in the list beside another wallet: the same quiet line, above the list. */
+          <p className="rs-menu-hint" role="status">{seekerHint}</p>
+        ) : null
+      }
+      /* No wallet in this browser (B14, the B13 review's frame §5.4): on a phone, this page inside a wallet's own
+         browser; on a computer, the three wallets that work and the way back once one is installed. */
       unavailable={
         phone ? (
-          <button
-            type="button"
-            className="rs-menu-action"
-            data-variant="primary"
-            onClick={() => window.location.assign(phantomBrowseUrl(window.location.href, window.location.origin))}
-          >
-            {text("Open in Phantom")}
-          </button>
+          <>
+            <button
+              type="button"
+              className="rs-menu-action"
+              data-variant="primary"
+              onClick={() => window.location.assign(phantomBrowseUrl(window.location.href, window.location.origin))}
+            >
+              {text("Open in Phantom")}
+            </button>
+            <button
+              type="button"
+              className="rs-menu-action"
+              onClick={() => window.location.assign(solflareBrowseUrl(window.location.href, window.location.origin))}
+            >
+              {text("Open in Solflare")}
+            </button>
+            {seekerQuiet ? (
+              <button type="button" className="rs-menu-action" disabled={connecting} onClick={() => void connect(SEEKER_CONNECT_WALLET)}>
+                {connecting ? text(DEFAULT_COPY.connecting) : text("On a Seeker? Connect with Seeker")}
+              </button>
+            ) : null}
+            {seekerQuiet && seekerHint ? <p className="rs-menu-hint" role="status">{seekerHint}</p> : null}
+          </>
         ) : (
-          <a className="rs-menu-action" href={PHANTOM_DOWNLOAD_URL} target="_blank" rel="noreferrer noopener">
-            <ArrowSquareOut size={15} weight="bold" aria-hidden />
-            {text("Install Phantom")}
-          </a>
+          <>
+            <a className="rs-menu-action" data-variant="primary" href={PHANTOM_DOWNLOAD_URL} target="_blank" rel="noreferrer noopener">
+              <ArrowSquareOut size={15} weight="bold" aria-hidden />
+              {text("Install Phantom")}
+            </a>
+            <a className="rs-menu-action" href={SOLFLARE_DOWNLOAD_URL} target="_blank" rel="noreferrer noopener">
+              <ArrowSquareOut size={15} weight="bold" aria-hidden />
+              {text("Install Solflare")}
+            </a>
+            <a className="rs-menu-action" href={BACKPACK_DOWNLOAD_URL} target="_blank" rel="noreferrer noopener">
+              <ArrowSquareOut size={15} weight="bold" aria-hidden />
+              {text("Install Backpack")}
+            </a>
+            <button type="button" className="rs-menu-action" onClick={() => window.location.reload()}>
+              {text("Installed already? Reload the page")}
+            </button>
+          </>
         )
       }
     />

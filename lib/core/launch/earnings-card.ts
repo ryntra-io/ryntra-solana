@@ -1,5 +1,5 @@
 /**
- * A creator's earnings card — the data the growth module's earnings card draws,
+ * A creator's earnings card — the data the Growth line's earnings card draws,
  * given by the core.
  *
  * Only figures from the programs' own counters, with their period: what the

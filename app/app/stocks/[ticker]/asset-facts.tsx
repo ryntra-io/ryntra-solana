@@ -3,8 +3,15 @@ import { formatPercent, formatUsdCompact, formatUsdPrice, toneOf } from "@/app/s
 import type { StockAsset } from "@/lib/stocks/asset.server";
 import { LIFECYCLE_WORDS, RIGHTS_WORDS } from "@/lib/stocks/instrument";
 
-import { clockOf, ISSUER_FULL, periodTone, periodWord, referenceWord, wordsFor } from "../stock-model";
+import { eventLine, isWatched } from "@/lib/stocks/conversion-watch";
+import { lifecycleEventFor } from "@/lib/stocks/lifecycle-events";
+
+import { clockOf, dexName, ISSUER_FULL, referenceWord, wordsFor } from "../stock-model";
+import { pathDeadline } from "./company-path-words";
+import { sayablePoolName } from "./pool-names";
 import styles from "../stocks.module.css";
+import { HoursChange } from "./market-hours";
+import { hoursState, hoursTone, hoursWord } from "./market-hours-words";
 import { CompanyIndexFact } from "./pre-ipo-research";
 
 /**
@@ -18,6 +25,28 @@ import { CompanyIndexFact } from "./pre-ipo-research";
  */
 
 type Facts = ReturnType<typeof factsOf>;
+
+/** A country as the reader names it, from its code: «US» → «США» / «the United States». */
+function countryName(code: string, locale: WorkspaceLocale): string {
+  try {
+    return new Intl.DisplayNames(locale === "uk" ? "uk-UA" : "en-US", { type: "region" }).of(code.toUpperCase()) ?? code;
+  } catch {
+    return code;
+  }
+}
+
+/**
+ * A private token's state in a sentence, in the reader's language: the
+ * registry's note is the issuer's notice in English, so the Ukrainian page
+ * says the same event in its own words (the IPO and conversion watch), and a
+ * paused token says so — never an English sentence on a Ukrainian page.
+ */
+function lifecycleNote(mint: string, lifecycle: StockAsset["row"]["lifecycle"], lang: "en" | "uk"): string | null {
+  if (lang === "en") return lifecycle.note;
+  if (lifecycle.state === "paused") return "Емітент зупинив усі перекази цього токена.";
+  const event = lifecycleEventFor(mint);
+  return isWatched(event) ? eventLine(event, "everyone", "uk", Date.now()) : null;
+}
 
 function factsOf(asset: StockAsset, locale: WorkspaceLocale) {
   const { row } = asset;
@@ -38,16 +67,15 @@ function factsOf(asset: StockAsset, locale: WorkspaceLocale) {
     preIpo: rep.instrument.class === "pre-ipo",
     lifecycle,
     lifecycleClock: clockOf(lifecycle.observedAt, locale),
-    deadline: lifecycle.deadline ? `${lifecycle.deadline.slice(0, 10)} ${clockOf(lifecycle.deadline, locale) ?? ""} UTC`.trim() : null,
+    deadline: lifecycle.deadline && Number.isFinite(Date.parse(lifecycle.deadline)) ? pathDeadline(lifecycle.deadline, locale === "uk" ? "uk" : "en") : null,
     fee,
     feePct: fee ? `${(fee.basisPoints / 100).toFixed(2)}%` : null,
     mark: row.issuerMark,
     markClock: clockOf(row.issuerMark?.fetchedAt ?? null, locale),
     markTone: toneOf(row.markPremiumPct),
     deviationTone: toneOf(row.deviationPct),
-    sessionTone: periodTone(row.session.period),
+    sessionState: hoursState(row.session),
     referenceClock: clockOf(row.reference.observedAt ?? row.reference.fetchedAt, locale),
-    nextChange: clockOf(row.session.nextChangeAt, locale),
     activation: clockOf(multiplier?.effectiveAt ?? null, locale),
     scaled: multiplier ? Math.abs(multiplier.current - 1) > 1e-9 : false,
     rights: RIGHTS_WORDS[rep.instrument.rights],
@@ -57,7 +85,7 @@ function factsOf(asset: StockAsset, locale: WorkspaceLocale) {
 /** Market: the venue's figures, the issuer's reference or mark, the session, the fee the mint withholds. */
 export function MarketCard({ asset, locale, className }: { asset: StockAsset; locale: WorkspaceLocale; className?: string }) {
   const facts = factsOf(asset, locale);
-  const { word, numberLocale, uk, row, preIpo, mark, markClock, fee, feePct, markTone, deviationTone, sessionTone, referenceClock, nextChange } = facts;
+  const { word, numberLocale, uk, row, preIpo, mark, markClock, fee, feePct, markTone, deviationTone, sessionState, referenceClock } = facts;
   return (
     <section className={`${styles.card} ${className ?? styles.w6}`} aria-labelledby="market-title">
       <div className={styles.cardHead}>
@@ -72,7 +100,7 @@ export function MarketCard({ asset, locale, className }: { asset: StockAsset; lo
                 <dd translate="no">
                   {mark?.perUnit == null ? "—" : `${formatUsdPrice(mark.perUnit, numberLocale)} ${word("perToken")}`}
                   <span className={styles.factSub} data-tone={mark?.stale ? "caution" : undefined}>
-                    {mark ? `${mark.source.label} · ${word("markFetched")} ${markClock ?? "—"} UTC${mark.stale ? ` · ${referenceWord("stale", locale).toLowerCase()}` : ""}` : uk ? "емітент не відповів" : "the issuer did not answer"}
+                    {mark ? `${mark.source.label}${markClock ? ` · ${word("markFetched")} ${markClock} UTC` : ""}${mark.stale ? ` · ${referenceWord("stale", locale).toLowerCase()}` : ""}` : uk ? "емітент не відповів" : "the issuer did not answer"}
                   </span>
                 </dd>
               </div>
@@ -89,7 +117,7 @@ export function MarketCard({ asset, locale, className }: { asset: StockAsset; lo
                 <dt>{word("tokenPrice")}</dt>
                 <dd translate="no">
                   {formatUsdPrice(row.market.priceUsd, numberLocale)}
-                  <span className={styles.factSub}>{formatPercent(row.market.change24hPct, numberLocale)} · 24h · Jupiter · {word("perToken")}</span>
+                  <span className={styles.factSub}>{formatPercent(row.market.change24hPct, numberLocale)} {word("col24h")} · Jupiter · {word("perToken")}</span>
                 </dd>
               </div>
               <div>
@@ -139,17 +167,25 @@ export function MarketCard({ asset, locale, className }: { asset: StockAsset; lo
               <div>
                 <dt>{word("session")}</dt>
                 <dd data-prose="true">
-                  {sessionTone ? (
-                    <span className={styles.session} data-tone={sessionTone}>
+                  {/* The session in the same words as the line under the price, and its change only beside a stated state. */}
+                  {sessionState ? (
+                    <span className={styles.session} data-tone={hoursTone(sessionState)}>
                       <span className={styles.dot} aria-hidden="true" />
-                      {periodWord(row.session.period, locale)}
+                      {hoursWord(sessionState, locale)}
                     </span>
                   ) : (
                     "—"
                   )}
-                  <span className={styles.factSub}>
-                    {[row.session.exchange?.name ?? null, nextChange ? `${word("nextChange").toLowerCase()} ${nextChange} UTC` : null].filter(Boolean).join(" · ") || (uk ? "розклад невідомий" : "schedule unknown")}
-                  </span>
+                  {row.session.exchange ? (
+                    <span className={styles.factSub}>
+                      {row.session.exchange.name}
+                      {sessionState ? <HoursChange session={row.session} locale={locale} prefix=" · " /> : null}
+                    </span>
+                  ) : sessionState ? (
+                    <HoursChange session={row.session} locale={locale} className={styles.factSub} />
+                  ) : (
+                    <span className={styles.factSub}>{uk ? "розклад невідомий" : "schedule unknown"}</span>
+                  )}
                 </dd>
               </div>
               <div>
@@ -157,7 +193,7 @@ export function MarketCard({ asset, locale, className }: { asset: StockAsset; lo
                 <dd translate="no">
                   {formatUsdPrice(row.market.priceUsd, numberLocale)}
                   <span className={styles.factSub}>
-                    {formatPercent(row.market.change24hPct, numberLocale)} · 24h · Jupiter · {word("perShare")}
+                    {formatPercent(row.market.change24hPct, numberLocale)} {word("col24h")} · Jupiter · {word("perShare")}
                   </span>
                 </dd>
               </div>
@@ -189,8 +225,8 @@ export function MarketCard({ asset, locale, className }: { asset: StockAsset; lo
               {row.market.liquidityUsd === null || row.market.liquidityUsd < 1 ? word("noPool") : formatUsdCompact(row.market.liquidityUsd, numberLocale)}
               {asset.pool ? (
                 <span className={styles.factSub}>
-                  {asset.pool.name}
-                  {asset.pool.dex ? ` · ${asset.pool.dex}` : ""}
+                  {/* A pool's name is the venue's and anyone's to set: a hate word in it is never said here (UX-505). */}
+                  {[sayablePoolName(asset.pool.name), asset.pool.dex ? dexName(asset.pool.dex) : null].filter(Boolean).join(" · ")}
                   {/* The venue's own liquidity figure for the route, not the pool's TVL — the Liquidity card below states the pool's, and the two are different measures of one pool. */}
                   {` · ${uk ? "за списком Jupiter" : "as Jupiter lists it"}`}
                 </span>
@@ -218,7 +254,7 @@ export function WhatYouBuyCard({ asset, locale, className }: { asset: StockAsset
             <dt>{word("issuer")}</dt>
             <dd data-prose="true">
               {ISSUER_FULL[rep.issuer.id]}
-              <span className={styles.factSub}>{rep.issuerConfirmation === "issuer-catalogue" ? (uk ? "mint підтверджено каталогом емітента" : "mint confirmed by the issuer's catalogue") : uk ? "відомий за тегом каталогу Jupiter" : "known by the venue's catalogue tag"}</span>
+              <span className={styles.factSub}>{rep.issuerConfirmation === "issuer-catalogue" ? (uk ? "токен підтверджено каталогом емітента" : "the token is confirmed by the issuer's catalogue") : uk ? "токен є в каталозі Jupiter з позначкою емітента" : "the token is in Jupiter's catalogue with the issuer's tag"}</span>
             </dd>
           </div>
           <div>
@@ -227,8 +263,8 @@ export function WhatYouBuyCard({ asset, locale, className }: { asset: StockAsset
               {preIpo ? (rep.underlying.name ?? rep.name) : rep.underlying.symbol}
               <span className={styles.factSub}>
                 {preIpo
-                  ? rep.issuerNote ?? (uk ? "приватна компанія · без біржового лістингу" : "a private company · no exchange listing")
-                  : [rep.underlying.name ?? null, rep.underlying.isin ? `ISIN ${rep.underlying.isin}` : null, rep.underlying.listingCountry ? (uk ? `лістинг ${rep.underlying.listingCountry}` : `listed ${rep.underlying.listingCountry}`) : null].filter(Boolean).join(" · ") || (uk ? "деталі емітент не публікує" : "no further detail from the issuer")}
+                  ? (uk ? null : rep.issuerNote) ?? (uk ? "приватна компанія · без біржового лістингу" : "a private company · no exchange listing")
+                  : [rep.underlying.name ?? null, rep.underlying.isin ? `ISIN ${rep.underlying.isin}` : null, rep.underlying.listingCountry ? (uk ? `лістинг: ${countryName(rep.underlying.listingCountry, locale)}` : `listing: ${countryName(rep.underlying.listingCountry, locale)}`) : null].filter(Boolean).join(" · ") || (uk ? "деталі емітент не публікує" : "no further detail from the issuer")}
               </span>
             </dd>
           </div>
@@ -274,10 +310,9 @@ export function WhatYouBuyCard({ asset, locale, className }: { asset: StockAsset
                   {LIFECYCLE_WORDS[lifecycle.state][lang]}
                   {deadline ? ` · ${word("lifecycleUntil")} ${deadline}` : ""}
                   <span className={styles.factSub}>
-                    {lifecycle.note ? `${lifecycle.note} ` : ""}
+                    {lifecycleNote(rep.mint, lifecycle, lang) ? `${lifecycleNote(rep.mint, lifecycle, lang)} ` : ""}
                     {rep.issuer.id === "prestocks" ? word("exitTermsPreStocks") : ""}
                     {lifecycleClock ? ` · ${lifecycleClock} UTC` : ""}
-                    {lifecycle.recheckBy ? ` · ${word("lifecycleRecheck")} ${lifecycle.recheckBy.slice(0, 10)}` : ""}
                   </span>
                   {lifecycle.url ? (
                     <span className={styles.factSub}>
@@ -335,19 +370,19 @@ export function AssetDetailsFold({ asset, locale }: { asset: StockAsset; locale:
               <span className={styles.factSub} data-tone={multiplierState === "activation-window" || asset.multiplierAgreement === "differ" ? "caution" : undefined}>
                 {multiplierState === "activation-window"
                   ? uk
-                    ? "множник змінюється зараз — дочекайтеся"
+                    ? "множник змінюється зараз — дочекайся"
                     : "the multiplier is changing now — wait"
                   : multiplierState === "pending" && multiplier?.pending
                     ? uk
-                      ? `новий множник ${multiplier.pending.toFixed(6)} з ${activation ?? "—"} UTC`
-                      : `a new multiplier ${multiplier.pending.toFixed(6)} from ${activation ?? "—"} UTC`
+                      ? `новий множник ${multiplier.pending.toFixed(6)}${activation ? ` з ${activation} UTC` : ""}`
+                      : `a new multiplier ${multiplier.pending.toFixed(6)}${activation ? ` from ${activation} UTC` : ""}`
                     : asset.multiplierAgreement === "agree"
                       ? uk
                         ? "ланцюг і емітент згодні"
                         : "the chain and the issuer agree"
                       : asset.multiplierAgreement === "differ"
                         ? uk
-                          ? "ланцюг і емітент розходяться — перевірте перед підписом"
+                          ? "ланцюг і емітент розходяться — перевір перед підписом"
                           : "the chain and the issuer differ — check before you sign"
                         : uk
                           ? "з ланцюга · лише одне джерело"
@@ -393,8 +428,7 @@ export function AssetDetailsFold({ asset, locale }: { asset: StockAsset; locale:
                 <dd translate="no">
                   {(Number(BigInt(onchain.supplyRaw)) / 10 ** onchain.decimals).toLocaleString(numberLocale, { maximumFractionDigits: 2 })} {rep.symbol}
                   <span className={styles.factSub}>
-                    {uk ? "слот" : "slot"} {onchain.slot ?? "—"}
-                    {clockOf(onchain.observedAt, locale) ? ` · ${clockOf(onchain.observedAt, locale)} UTC` : ""}
+                    {clockOf(onchain.observedAt, locale) ? `${uk ? "прочитано о" : "read at"} ${clockOf(onchain.observedAt, locale)} UTC` : null}
                   </span>
                 </dd>
               </div>

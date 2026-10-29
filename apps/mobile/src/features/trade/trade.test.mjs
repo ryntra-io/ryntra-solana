@@ -3,15 +3,37 @@ import { test } from 'node:test'
 
 import { getBase64Decoder, getBase64Encoder, getTransactionDecoder, getTransactionEncoder } from '@solana/kit'
 
-import { ApiError } from '../../lib/api.ts'
+import { ApiError, SWAP_ORDER_TIMEOUT_MS, SWAP_SEND_TIMEOUT_MS } from '../../lib/api.ts'
+import { walletCancel } from '../wallet/wallet-wait.ts'
 import {
+  checkAfterSend,
   failureFrom,
+  freshOrderNoWorse,
+  QUOTE_ASK_AGAIN_MS,
+  quoteAskAgain,
+  QUOTE_ASK_LIMIT_MS,
+  QUOTE_LIMIT_AGAIN_MS,
+  QUOTE_LIMIT_MARGIN_MS,
+  QUOTE_LIMIT_WAIT_MAX_MS,
+  QUOTE_LIMIT_WAIT_MS,
+  quoteLimitHolds,
+  quoteLimitNext,
+  quoteLimitWait,
+  QUOTE_STUCK_ASKS,
+  QUOTE_STUCK_MS,
+  quoteWithin,
+  RELEASE_AFTER_DEATH_MS,
+  RELEASE_ASK_EVERY_MS,
+  RELEASE_ASKS,
   ORDER_RETRY_MAX_MS,
   orderRetryDelay,
   prepareReview,
   recoverAttempt,
+  releaseAgedReview,
   releaseReview,
+  REVIEW_RENEWALS,
   signAndSend,
+  ticketEstimate,
 } from './trade-flow.ts'
 import {
   additionalJupiterFeeBps,
@@ -243,7 +265,7 @@ test('the ticket has two legs from the mode: a Buy pays the quote asset, a Sell 
   assert.deepEqual(tradeOrigin('buy'), { surface: 'SPOT', side: 'BUY' })
   assert.deepEqual(tradeOrigin('sell'), { surface: 'SPOT', side: 'SELL' })
   assert.equal(tradeOrigin('swap'), null)
-  // A Buy under an autoinvest reminder names the rule and the occurrence; a Sell never does.
+  // M16: a Buy under an autoinvest reminder names the rule and the occurrence; a Sell never does.
   const rule = { ruleId: 'rule_5e1f0c2a9b8d4e7f6a3c1b0d9e8f7a6b', dueAt: '2026-09-24T16:00:00.000Z' }
   assert.deepEqual(tradeOrigin('buy', null, rule), { surface: 'SPOT', side: 'BUY', rule })
   assert.deepEqual(tradeOrigin('sell', null, rule), { surface: 'SPOT', side: 'SELL' })
@@ -299,7 +321,7 @@ test('the Review’s rows: expected and minimum received, the price of what is h
     'Minimum received',
     'Price',
     'Price impact',
-    'Slippage',
+    'Max price move',
     'Network fee',
     'Account reserve',
     'Ryntra service fee',
@@ -312,7 +334,7 @@ test('the Review’s rows: expected and minimum received, the price of what is h
   assert.equal(view.rows[6].value, '0.002039 SOL')
   assert.equal(view.rows[7].value, '0.10% · 0.1 USDC')
   // The finding's own sentence is never shown: the web's words by the rule — here a minimum that disagrees with the bound.
-  assert.deepEqual(view.warnings, ['The quote and minimum received use different slippage.'])
+  assert.deepEqual(view.warnings, ['The quote and the minimum received allow different price moves.'])
   // An estimate before the order: no slippage, no network fees, the label says estimate.
   const estimate = reviewView(
     {
@@ -414,7 +436,7 @@ test('the readiness rule before a wallet opens: signed proof, clean simulation, 
 test('the words for a refusal say what happened and whether pressing again can help', () => {
   assert.deepEqual(tradeFailureCopy('FORBIDDEN_ORIGIN'), {
     key: 'forbiddenOrigin',
-    message: 'Signing from the app is not open on the server yet.',
+    message: 'Signing from the app is not open yet.',
     retryable: false,
   })
   assert.equal(tradeFailureCopy('ORDER_BUILD_FAILED').retryable, true)
@@ -422,7 +444,7 @@ test('the words for a refusal say what happened and whether pressing again can h
   assert.equal(tradeFailureCopy('QUOTE_NO_ROUTE').message, 'No route for this pair right now.')
   assert.equal(tradeFailureCopy('SWAP_PRE_SIGN_REFUSED').retryable, false)
   assert.equal(tradeFailureCopy('OWNER_SWAP_LOCKED').message, 'Checking the previous swap. Try again in a moment.')
-  assert.equal(tradeFailureCopy('WALLET_REFUSED').message, 'Wallet approval was cancelled.')
+  assert.equal(tradeFailureCopy('WALLET_REFUSED').message, 'Wallet approval was cancelled. Nothing was sent.')
   assert.equal(tradeFailureCopy('HTTP_504').retryable, true)
   assert.equal(tradeFailureCopy('UNAUTHORIZED').message, 'Sign in with your wallet to trade.')
   assert.equal(tradeFailureCopy('SOMETHING_ELSE').message, 'The trade could not continue. Try again.')
@@ -552,7 +574,7 @@ test('prepare: the exact Review for the session’s wallet, judged before it is 
     now: () => NOW,
   })
   assert.equal(c.ok, false)
-  assert.equal(c.failure.message, 'Signing from the app is not open on the server yet.')
+  assert.equal(c.failure.message, 'Signing from the app is not open yet.')
   assert.equal(c.failure.retryable, false)
 })
 
@@ -808,7 +830,7 @@ test('sign and send: the wallet’s refusal, an unreadable signature and a windo
   })
   assert.equal(declined.ok, false)
   assert.equal(declined.phase, 'review')
-  assert.equal(declined.failure.message, 'Wallet approval was cancelled.')
+  assert.equal(declined.failure.message, 'Wallet approval was cancelled. Nothing was sent.')
   const unsigned = await signAndSend({
     api,
     wallet: walletDouble({ signTransaction: async (wire) => wire }),
@@ -831,8 +853,11 @@ test('sign and send: the wallet’s refusal, an unreadable signature and a windo
     sleep: () => new Promise(() => {}),
   })
   assert.equal(late.ok, false)
-  assert.equal(late.failure.code, 'REVIEW_CLOSED_UNDER_WALLET')
+  // AG-2: the bytes' ~30 s are checked before the Review's window — a signature 200 s late is past both, and never sent.
+  assert.equal(late.failure.code, 'BYTES_REBUILT')
+  assert.equal(late.aged, 'late')
   assert.equal(late.invalidated, true)
+  assert.equal(calls.filter((call) => call[0] === 'execute').length, 0)
   const timedOut = await signAndSend({
     api,
     wallet: walletDouble({ signTransaction: () => new Promise(() => {}) }),
@@ -1185,4 +1210,509 @@ test('Ryntra’s fee is inside Jupiter’s total on an `/order` referral and on 
   assert.equal(additionalJupiterFeeBps(45, fee('JUPITER_PLATFORM_FEE')), 20)
   assert.equal(additionalJupiterFeeBps(45, fee('NONE')), 45)
   assert.equal(additionalJupiterFeeBps(10, fee('JUPITER_PLATFORM_FEE')), 0, 'never below nothing')
+})
+
+test('sign and send with a Ledger (M45): «Скасувати» sends nothing, 6808 is its own refusal, a later version never reaches the wallet', async () => {
+  const { api, calls } = apiDouble()
+  const attempts = attemptsDouble()
+  const prepared = (
+    await prepareReview({
+      api,
+      session,
+      attempts,
+      mode: 'buy',
+      pay: USDC_ASSET,
+      receive: NVDA,
+      amountRaw: '100000000',
+      origin: null,
+      now: () => NOW,
+    })
+  ).prepared
+  const cancel = walletCancel()
+  let answer = () => undefined
+  const waiting = signAndSend({
+    api,
+    wallet: walletDouble({
+      signTransaction: (wire) =>
+        new Promise((resolve) => {
+          answer = () => resolve(walletSigns(wire))
+        }),
+    }),
+    session,
+    attempts,
+    prepared,
+    now: () => NOW,
+    sleep: () => new Promise(() => {}),
+    cancel,
+  })
+  cancel.cancel()
+  const cancelled = await waiting
+  // The wallet answers after «Скасувати»: that signature is never sent.
+  answer()
+  await new Promise((resolve) => setTimeout(resolve, 0))
+  assert.equal(cancelled.ok, false)
+  assert.equal(cancelled.phase, 'review')
+  assert.equal(cancelled.failure.key, 'walletCancelled')
+  assert.equal(attempts.get(TAKER), null)
+
+  const blind = await signAndSend({
+    api,
+    wallet: walletDouble({
+      signTransaction: async () => {
+        throw new Error('Ledger device: UNKNOWN_ERROR (0x6808)')
+      },
+    }),
+    session,
+    attempts,
+    prepared,
+    now: () => NOW,
+    sleep: () => new Promise(() => {}),
+  })
+  assert.equal(blind.failure.code, 'LEDGER_BLIND_SIGNING')
+  assert.equal(blind.failure.key, 'ledgerBlind')
+  assert.equal(blind.failure.retryable, true)
+
+  // A message of version 1: the wallet is not opened.
+  const v1 = getBase64Encoder().encode(prepared.order.order.transactionBase64).slice()
+  v1[65] = 0x81
+  let opened = false
+  const later = await signAndSend({
+    api,
+    wallet: walletDouble({
+      signTransaction: async (wire) => {
+        opened = true
+        return walletSigns(wire)
+      },
+    }),
+    session,
+    attempts,
+    prepared: {
+      ...prepared,
+      order: {
+        ...prepared.order,
+        order: { ...prepared.order.order, transactionBase64: getBase64Decoder().decode(v1) },
+      },
+    },
+    now: () => NOW,
+    sleep: () => new Promise(() => {}),
+  })
+  assert.equal(later.failure.code, 'TX_VERSION')
+  assert.equal(opened, false)
+
+  // The wait is ninety seconds at least, however short the Review's window.
+  const asked = []
+  await signAndSend({
+    api,
+    wallet: walletDouble({ signTransaction: () => new Promise(() => {}) }),
+    session,
+    attempts,
+    prepared,
+    now: () => NOW,
+    sleep: async (ms) => void asked.push(ms),
+  })
+  assert.ok(asked[0] >= 90_000)
+  assert.equal(
+    calls.some((c) => c[0] === 'execute'),
+    false,
+    'nothing was ever sent',
+  )
+})
+
+test('«Обмін» says the network’s fee beside the rate — the quote’s own lamports, in SOL (NEW-LOOK §3)', async () => {
+  const { quoteNetworkFee } = await import('./trade-model.ts')
+  assert.equal(quoteNetworkFee({ signatureFeeLamports: '5000', priorityFeeLamports: '15000' }), '0.00002 SOL')
+  assert.equal(quoteNetworkFee({ signatureFeeLamports: '5000', priorityFeeLamports: '15000' }, 'uk'), '0,00002 SOL')
+  assert.equal(quoteNetworkFee({ signatureFeeLamports: '', priorityFeeLamports: '1' }), null)
+  // A Solana fee is never zero: a total of 0 is a fee the quote does not know — a dash where it is said (ST-5).
+  assert.equal(quoteNetworkFee({ signatureFeeLamports: '0', priorityFeeLamports: '0' }, 'uk'), null)
+  assert.equal(quoteNetworkFee({ signatureFeeLamports: '5000', priorityFeeLamports: '0' }, 'uk'), '0,000005 SOL')
+  // Under six places it is said to the lamport, never cut to «0».
+  assert.equal(quoteNetworkFee({ signatureFeeLamports: '0', priorityFeeLamports: '500' }), '0.0000005 SOL')
+})
+
+/* ---- AG-2: the bytes live ~30 s — a stand clock against the server's `signableMs` ---- */
+
+test('AG-2: the wallet never opens on bytes with less than its window left; a fresh Review instead', async () => {
+  const { api } = apiDouble()
+  const attempts = attemptsDouble()
+  const prepared = (
+    await prepareReview({
+      api,
+      session,
+      attempts,
+      mode: 'buy',
+      pay: USDC_ASSET,
+      receive: NVDA,
+      amountRaw: '100000000',
+      origin: null,
+      now: () => NOW,
+    })
+  ).prepared
+  assert.equal(prepared.receivedAtMs, NOW)
+  let opened = 0
+  const short = await signAndSend({
+    api,
+    wallet: walletDouble({ signTransaction: async (wire) => ((opened += 1), wire) }),
+    session,
+    attempts,
+    // 20 s after arrival: of a 25 s window less than the wallet's 10 s is left.
+    prepared: { ...prepared, order: { ...prepared.order, signableMs: 25_000 } },
+    now: () => NOW + 20_000,
+    sleep: () => new Promise(() => {}),
+  })
+  assert.equal(short.ok, false)
+  assert.equal(short.aged, 'short')
+  assert.equal(opened, 0)
+})
+
+for (const seconds of [25, 30, 45, 60, 90]) {
+  test(`AG-2: a Ledger that confirms after ${seconds} s — the signature is never sent, the Review is built again`, async () => {
+    const { api, calls } = apiDouble()
+    const attempts = attemptsDouble()
+    const prepared = (
+      await prepareReview({
+        api,
+        session,
+        attempts,
+        mode: 'buy',
+        pay: USDC_ASSET,
+        receive: NVDA,
+        amountRaw: '100000000',
+        origin: null,
+        now: () => NOW,
+      })
+    ).prepared
+    let tick = 0
+    const late = await signAndSend({
+      api,
+      wallet: walletDouble(),
+      session,
+      attempts,
+      prepared: {
+        ...prepared,
+        order: { ...prepared.order, signableMs: 25_000, expiresAt: new Date(NOW + 120_000).toISOString() },
+      },
+      now: () => (tick++ === 0 ? NOW : NOW + seconds * 1_000),
+      sleep: () => new Promise(() => {}),
+    })
+    assert.equal(late.ok, false)
+    assert.equal(late.aged, 'late')
+    assert.equal(calls.filter((call) => call[0] === 'execute').length, 0)
+  })
+}
+
+test('AG-2: an aged Review is released only after its bytes should be dead, and the chain is asked at most four times', async () => {
+  const waits = []
+  let asked = 0
+  const api = {
+    cancel: async () => {
+      asked += 1
+      throw new ApiError('BLOCKHASH_STILL_VALID', 'still valid', 409, null, {})
+    },
+  }
+  const prepared = { order: { signableMs: 20_000, order: { requestId: 'r1' } }, receivedAtMs: 1_000, context: null }
+  const out = await releaseAgedReview({
+    api,
+    session,
+    prepared,
+    now: () => 11_000,
+    sleep: async (ms) => void waits.push(ms),
+  })
+  assert.equal(out.ok, false)
+  assert.equal(out.failure.code, 'BLOCKHASH_STILL_VALID')
+  assert.equal(asked, 4)
+  // First the bytes' death (arrival + window + 5 s margin − now) and half a second for the chain (ST-3: from 1.5 s),
+  // then three pauses of three seconds — the last ask still about ten seconds past the death, for a lagging RPC.
+  assert.equal(RELEASE_ASKS, 4)
+  assert.deepEqual(waits, [1_000 + 20_000 + 5_000 - 11_000 + 500, 3_000, 3_000, 3_000])
+  assert.ok(RELEASE_AFTER_DEATH_MS + (RELEASE_ASKS - 1) * RELEASE_ASK_EVERY_MS >= 9_000)
+  let once = 0
+  const freed = await releaseAgedReview({
+    api: { cancel: async () => ((once += 1), { state: 'EXPIRED_BEFORE_SUBMIT' }) },
+    session,
+    prepared,
+    now: () => 60_000,
+    sleep: async () => undefined,
+  })
+  assert.equal(freed.ok, true)
+  assert.equal(once, 1)
+})
+
+test('AG-2b: fresh bytes open the wallet on the old press only when nothing is worse', () => {
+  const old = orderCore()
+  assert.equal(freshOrderNoWorse(old, orderCore({ requestId: 'req-2' })), true)
+  assert.equal(freshOrderNoWorse(old, orderCore({ minReceivedRaw: '46600000' })), true)
+  assert.equal(freshOrderNoWorse(old, orderCore({ minReceivedRaw: '46400000' })), false)
+  assert.equal(freshOrderNoWorse(old, orderCore({ priorityFeeLamports: '15001' })), false)
+  assert.equal(freshOrderNoWorse(old, orderCore({ rentFeeLamports: '2039281' })), false)
+  assert.equal(freshOrderNoWorse(old, orderCore({ totalFeeBasisPoints: 11 })), false)
+  assert.equal(freshOrderNoWorse(old, orderCore({ platformFee: { basisPoints: 11, mint: USDC_ASSET.mint } })), false)
+  assert.equal(freshOrderNoWorse(old, orderCore({ inAmountRaw: '100000001' })), false)
+  assert.equal(freshOrderNoWorse(old, orderCore({ outputMint: USDC_ASSET.mint })), false)
+  assert.equal(freshOrderNoWorse(old, orderCore({ minReceivedRaw: 'n/a' })), false)
+})
+
+test('AG-2b: an open Review renews itself a bounded number of times — about two minutes, within the action budget', () => {
+  assert.ok(REVIEW_RENEWALS >= 1 && REVIEW_RENEWALS <= 4)
+})
+
+/* ---- ST-3 «Швидкі обміни» ---- */
+
+test('ST-3: a send whose end the phone did not hear is checked by itself; a heard end or a refusal before the network is not', () => {
+  const pending = { schema: 'ryntra.mobile.trade-attempt', requestId: 'r', signature: 's', taker: TAKER, state: 'SUBMITTED_UNKNOWN' }
+  const settled = { ...pending, state: 'SETTLED' }
+  assert.equal(checkAfterSend({ ok: true, settlement: { state: 'PENDING' }, attempt: pending }), pending)
+  assert.equal(checkAfterSend({ ok: true, settlement: { state: 'MATCHED' }, attempt: settled }), null)
+  assert.equal(checkAfterSend({ ok: false, failure: { code: 'NETWORK' }, phase: 'recovery', attempt: pending }), pending)
+  assert.equal(checkAfterSend({ ok: false, failure: { code: 'WALLET_REFUSED' }, phase: 'review' }), null)
+  assert.equal(checkAfterSend({ ok: false, failure: { code: 'X' }, phase: 'recovery' }), null)
+})
+
+test('ST-3: a slow execute that lands reads «Готово», a «still pending» one is checked until it lands — nothing sent twice', async () => {
+  const calls = []
+  const attempts = new Map()
+  const store = { get: (t) => attempts.get(t) ?? null, set: (a) => attempts.set(a.taker, a), clear: (t) => attempts.delete(t) }
+  let polls = 0
+  const api = {
+    execute: async () => (calls.push('execute'), { state: 'PENDING', signature: 'sig', observation: null, facts: null, receipt: null }),
+    recover: async () => (calls.push('recover'), (polls += 1) < 3 ? { state: 'PENDING', signature: 'sig' } : { state: 'MATCHED', signature: 'sig' }),
+  }
+  const prepared = { order: orderResponse(), context: { mode: 'buy' }, receivedAtMs: NOW }
+  const sent = await signAndSend({
+    api,
+    wallet: { signTransaction: async (wire) => walletSigns(wire) },
+    session,
+    attempts: store,
+    prepared,
+    now: () => NOW + 1_000,
+  })
+  const open = checkAfterSend(sent)
+  assert.ok(open, 'a pending answer is checked by itself')
+  const checked = await recoverAttempt({ api, session, attempts: store, attempt: open, sleep: async () => undefined })
+  assert.equal(checked.ok, true)
+  assert.equal(checked.final, true)
+  assert.equal(checked.settlement.state, 'MATCHED')
+  assert.deepEqual(calls, ['execute', 'recover', 'recover', 'recover'])
+  assert.equal(store.get(TAKER), null)
+})
+
+test('ST-3: the first asks of a check come every 1.5 s, then every 3 s', async () => {
+  const waits = []
+  let asked = 0
+  const store = { get: () => null, set: () => undefined, clear: () => undefined }
+  const attempt = { schema: 'ryntra.mobile.trade-attempt', requestId: 'r', signature: 's', taker: TAKER, state: 'SUBMITTED_UNKNOWN', context: null }
+  await recoverAttempt({
+    api: { recover: async () => ((asked += 1) < 7 ? { state: 'PENDING', signature: 's' } : { state: 'MATCHED', signature: 's' }) },
+    session,
+    attempts: store,
+    attempt,
+    sleep: async (ms) => void waits.push(ms),
+  })
+  assert.deepEqual(waits, [1_500, 1_500, 1_500, 3_000, 3_000, 3_000])
+})
+
+test('ST-3: a check nobody waits on writes nothing back — a signature another check settled stays settled', async () => {
+  let held = null
+  const store = { get: () => held, set: (a) => (held = a), clear: () => (held = null) }
+  const attempt = { schema: 'ryntra.mobile.trade-attempt', requestId: 'r', signature: 's', taker: TAKER, state: 'SUBMITTED_UNKNOWN', context: null }
+  const out = await recoverAttempt({
+    api: { recover: async () => ({ state: 'PENDING', signature: 's' }) },
+    session,
+    attempts: store,
+    attempt,
+    sleep: async () => undefined,
+    cancelled: () => true,
+  })
+  assert.equal(out.final, false)
+  assert.equal(held, null)
+})
+
+test('ST-3: a check the person walked away from stops asking and keeps the attempt for the next look', async () => {
+  let asked = 0
+  let gone = false
+  const attempts = new Map()
+  const store = { get: (t) => attempts.get(t) ?? null, set: (a) => attempts.set(a.taker, a), clear: (t) => attempts.delete(t) }
+  const attempt = { schema: 'ryntra.mobile.trade-attempt', requestId: 'r', signature: 's', taker: TAKER, state: 'SUBMITTED_UNKNOWN', context: null }
+  store.set(attempt) // the send wrote it before the check began
+  const out = await recoverAttempt({
+    api: { recover: async () => ((asked += 1), (gone = true), { state: 'PENDING', signature: 's' }) },
+    session,
+    attempts: store,
+    attempt,
+    sleep: async () => undefined,
+    cancelled: () => gone,
+  })
+  assert.equal(asked, 1)
+  assert.equal(out.final, false)
+  assert.equal(store.get(TAKER).state, 'SUBMITTED_UNKNOWN')
+})
+
+test('ST-5: a refresh that failed never leaves its old figure beside the refusal — «—» and one status line', () => {
+  // The quote for the amount on screen, its latest ask answered: shown, also while it refreshes under it.
+  assert.equal(ticketEstimate({ matches: true, failed: false, fetching: false }), 'shown')
+  assert.equal(ticketEstimate({ matches: true, failed: false, fetching: true }), 'shown')
+  // Offline after a quote: the cache keeps the last answer, the ticket does not show it.
+  assert.equal(ticketEstimate({ matches: true, failed: true, fetching: false }), 'none')
+  // «Спробувати ще» pressed: pricing, never the old figure.
+  assert.equal(ticketEstimate({ matches: true, failed: true, fetching: true }), 'pricing')
+  // Another amount typed: no figure until its own answer.
+  assert.equal(ticketEstimate({ matches: false, failed: false, fetching: true }), 'pricing')
+  assert.equal(ticketEstimate({ matches: false, failed: false, fetching: false }), 'none')
+})
+
+test('ST-3: a quote refused for a moment is asked once more by itself; a refusal that stands is said at once', () => {
+  assert.equal(QUOTE_ASK_AGAIN_MS, 1_000)
+  // Ryntra's own fixed window is not asked again at one second; the venue's «too many requests» is.
+  assert.equal(quoteAskAgain(new ApiError('RATE_LIMITED', 'x', 429), 0), false)
+  assert.equal(quoteAskAgain(new ApiError('QUOTE_RATE_LIMITED', 'x', 429), 0), true)
+  assert.equal(quoteAskAgain(new ApiError('HTTP_504', 'x', 504), 0), true)
+  assert.equal(quoteAskAgain(new ApiError('ORDER_UNREACHABLE', 'x', 502), 0), true)
+  assert.equal(quoteAskAgain(new TypeError('Network request failed'), 0), true)
+  assert.equal(quoteAskAgain(new ApiError('QUOTE_RATE_LIMITED', 'x', 429), 1), false)
+  assert.equal(quoteAskAgain(new ApiError('NO_ROUTE', 'x', 404), 0), false)
+  assert.equal(quoteAskAgain(new ApiError('AMOUNT_TOO_SMALL', 'x', 400), 0), false)
+  assert.equal(quoteAskAgain(new ApiError('SWAP_POLICY_BLOCKED', 'x', 403), 0), false)
+  // A limiter that names a longer pause is not asked again at one second.
+  assert.equal(quoteAskAgain(new ApiError('QUOTE_RATE_LIMITED', 'x', 429, null, { retryAfterSeconds: 2 }), 0), true)
+  assert.equal(quoteAskAgain(new ApiError('QUOTE_RATE_LIMITED', 'x', 429, null, { retryAfterSeconds: 10 }), 0), false)
+})
+
+test('ST-5 r9–r10: «too many requests» is waited out for the pause it names, then asked again while the ticket is open', () => {
+  const limited = new ApiError('RATE_LIMITED', 'x', 429)
+  // No pause named: about two seconds; a named one is kept, with a small margin past it.
+  assert.equal(quoteLimitWait(limited), QUOTE_LIMIT_WAIT_MS)
+  assert.equal(QUOTE_LIMIT_WAIT_MS, 2_000)
+  assert.equal(
+    quoteLimitWait(new ApiError('RATE_LIMITED', 'x', 429, null, { retryAfterSeconds: 3 })),
+    3_000 + QUOTE_LIMIT_MARGIN_MS,
+  )
+  // Ryntra's 60-second window names up to 60 s (ST-5 r10): waited out, never said at once.
+  assert.equal(
+    quoteLimitWait(new ApiError('RATE_LIMITED', 'x', 429, null, { retryAfterSeconds: 47 })),
+    47_000 + QUOTE_LIMIT_MARGIN_MS,
+  )
+  assert.equal(
+    quoteLimitWait(new ApiError('RATE_LIMITED', 'x', 429, null, { retryAfterSeconds: 60 })),
+    60_000 + QUOTE_LIMIT_MARGIN_MS,
+  )
+  assert.equal(QUOTE_LIMIT_WAIT_MAX_MS, 60_000 + QUOTE_LIMIT_MARGIN_MS)
+  assert.equal(
+    quoteLimitWait(new ApiError('RATE_LIMITED', 'x', 429, null, { retryAfterSeconds: 900 })),
+    QUOTE_LIMIT_WAIT_MAX_MS,
+  )
+  // A pause of nothing still leaves a second between asks.
+  assert.equal(quoteLimitWait(new ApiError('RATE_LIMITED', 'x', 429, null, { retryAfterSeconds: 0 })), QUOTE_ASK_AGAIN_MS)
+  // The venue's limiter: its short one reaches the ticket only after the query's own retry — then it is paced too.
+  assert.equal(
+    quoteLimitWait(new ApiError('QUOTE_RATE_LIMITED', 'x', 429, null, { retryAfterSeconds: 5 })),
+    5_000 + QUOTE_LIMIT_MARGIN_MS,
+  )
+  assert.equal(quoteLimitWait(new ApiError('QUOTE_RATE_LIMITED', 'x', 429)), QUOTE_LIMIT_WAIT_MS)
+  // After the ask past the window is refused too: every ten seconds while the ticket is open, or the pause named.
+  assert.equal(QUOTE_LIMIT_AGAIN_MS, 10_000)
+  assert.equal(quoteLimitWait(limited, true), QUOTE_LIMIT_AGAIN_MS)
+  assert.equal(
+    quoteLimitWait(new ApiError('RATE_LIMITED', 'x', 429, null, { retryAfterSeconds: 20 }), true),
+    20_000 + QUOTE_LIMIT_MARGIN_MS,
+  )
+  // Any refusal that is not «too many requests» is no pacing.
+  assert.equal(quoteLimitWait(new ApiError('NO_ROUTE', 'x', 404)), null)
+  assert.equal(quoteLimitWait(new TypeError('Network request failed')), null)
+
+  // The refusal starts the wait from when it arrived; the refusal is held back as pricing meanwhile.
+  let held = quoteLimitNext(null, { kind: 'refused', error: limited, key: 'A', nowMs: 1_000 })
+  assert.deepEqual(held, { phase: 'waiting', until: 3_000 })
+  assert.equal(quoteLimitHolds(held, limited, 'A'), true)
+  // Before the state is set, the refusal is held back already — never a red line for a frame.
+  assert.equal(quoteLimitHolds(null, limited, 'A'), true)
+  // Typing on during the wait starts no ask and no second wait: the window is the one window.
+  assert.equal(quoteLimitNext(held, { kind: 'refused', error: limited, key: 'B', nowMs: 2_000 }), held)
+  assert.equal(quoteLimitHolds(held, null, 'C'), true)
+  // The window passes: the newest amount on screen is the one asked.
+  held = quoteLimitNext(held, { kind: 'waited', key: 'C' })
+  assert.deepEqual(held, { phase: 'spent', key: 'C' })
+  // That one ask refused too: said now — and asked again by itself ten seconds on, never left until a press.
+  held = quoteLimitNext(held, { kind: 'refused', error: limited, key: 'C', nowMs: 4_000 })
+  assert.deepEqual(held, { phase: 'resting', key: 'C', until: 14_000 })
+  assert.equal(quoteLimitHolds(held, limited, 'C'), false)
+  // Its pause over, the same amount is asked again; refused again, it rests another ten seconds.
+  const again = quoteLimitNext(held, { kind: 'again', key: 'C' })
+  assert.deepEqual(again, { phase: 'spent', key: 'C' })
+  assert.deepEqual(quoteLimitNext(again, { kind: 'refused', error: limited, key: 'C', nowMs: 14_100 }), {
+    phase: 'resting',
+    key: 'C',
+    until: 24_100,
+  })
+  // Another amount on screen when the pause ends is asked as any amount is: the pacing is over.
+  assert.equal(quoteLimitNext(held, { kind: 'again', key: 'E' }), null)
+  assert.equal(quoteLimitNext(held, { kind: 'again', key: null }), null)
+  // A new amount typed after it is a new ask — refused, it waits its own window first.
+  assert.deepEqual(quoteLimitNext(held, { kind: 'refused', error: limited, key: 'D', nowMs: 5_000 }), {
+    phase: 'waiting',
+    until: 7_000,
+  })
+  // Any answer ends the pacing; a wait with nothing typed at its end owes no ask.
+  assert.equal(quoteLimitNext(held, { kind: 'answered' }), null)
+  assert.equal(quoteLimitNext({ phase: 'waiting', until: 3_000 }, { kind: 'waited', key: null }), null)
+  // A refusal that is not waited out is said as before.
+  assert.equal(quoteLimitNext(null, { kind: 'refused', error: new ApiError('NO_ROUTE', 'x', 404), key: 'A', nowMs: 0 }), null)
+  assert.equal(quoteLimitHolds(null, new ApiError('NO_ROUTE', 'x', 404), 'A'), false)
+})
+
+test('ST-5 r10: an estimate is never asked for minutes — an ask that does not settle is a «took too long», asked once more', async () => {
+  assert.equal(QUOTE_ASK_LIMIT_MS, 13_000)
+  // An answer in time passes through.
+  assert.equal(await quoteWithin(Promise.resolve('quote'), 50), 'quote')
+  // An ask that never settles is refused at the limit, and its own abort is called.
+  let aborted = false
+  const never = new Promise(() => undefined)
+  await assert.rejects(
+    quoteWithin(never, 10, () => {
+      aborted = true
+    }),
+    (error) => error instanceof ApiError && error.code === 'QUOTE_TIMEOUT',
+  )
+  assert.equal(aborted, true)
+  // «Took too long» — the query asks it once more by itself, then the ticket says it with «Спробувати ще».
+  const late = new ApiError('QUOTE_TIMEOUT', 'x', 0)
+  assert.equal(failureFrom(late).key, 'tooLong')
+  assert.equal(quoteAskAgain(late, 0), true)
+  assert.equal(quoteAskAgain(late, 1), false)
+  // A typed amount the query left idle under a cancelled ask is asked again soon, a bounded number of times.
+  assert.ok(QUOTE_STUCK_MS <= 2_000)
+  assert.equal(QUOTE_STUCK_ASKS, 2)
+})
+
+test('ST-3: the phone waits for the swap routes past the venue’s own wait — a slow send is never cut into «no network»', () => {
+  // The routes' `maxDuration` is 60 s; the execute hands the bytes to the venue for up to 30 s, the order asks it again
+  // for up to 10 s and then simulates.
+  // The send waits past the venue's 30 s, never as long as the route's 60: the sheet cannot be left while it waits, and
+  // an answer that does not come is asked of the chain by itself after.
+  assert.ok(SWAP_SEND_TIMEOUT_MS > 30_000 && SWAP_SEND_TIMEOUT_MS <= 40_000)
+  assert.ok(SWAP_ORDER_TIMEOUT_MS > 12_000 && SWAP_ORDER_TIMEOUT_MS <= 25_000)
+})
+
+test('«Комісія мережі» keeps the pair’s last stated fee for a crumb’s quote that states none — only when the person pays it (ST-5 r8)', async () => {
+  const { swapNetworkFee } = await import('./trade-model.ts')
+  const pair = { inputMint: 'So11111111111111111111111111111111111111112', outputMint: 'USDC' }
+  const stated = { ...pair, signatureFeeLamports: '5000', priorityFeeLamports: '0' }
+  const none = { ...pair, signatureFeeLamports: '0', priorityFeeLamports: '0', gasless: false }
+  assert.equal(swapNetworkFee(stated, null, 'uk'), '0,000005 SOL')
+  assert.equal(swapNetworkFee(none, stated, 'uk'), '0,000005 SOL')
+  assert.equal(swapNetworkFee(none, null, 'uk'), null)
+  // Another pair's fee is not this pair's; a gasless order, or one that does not say, keeps the dash.
+  assert.equal(swapNetworkFee(none, { ...stated, outputMint: 'BONK' }, 'uk'), null)
+  assert.equal(swapNetworkFee({ ...none, gasless: true }, stated, 'uk'), null)
+  const { gasless: _unsaid, ...unsaid } = none
+  assert.equal(swapNetworkFee(unsaid, stated, 'uk'), null)
+})
+
+test('the Swap’s pay figure is grouped as the estimate beside it; the field stays as typed (ST-5 r8)', async () => {
+  const { groupedField } = await import('./trade-model.ts')
+  assert.equal(groupedField('500000', 'en'), '500,000')
+  assert.equal(groupedField('500000', 'uk'), '500 000')
+  assert.equal(groupedField('1234567,5', 'uk'), '1 234 567,5')
+  assert.equal(groupedField('0.00001', 'en'), '0.00001')
+  assert.equal(groupedField('1000.', 'en'), '1,000.')
+  assert.equal(groupedField('', 'en'), '')
 })

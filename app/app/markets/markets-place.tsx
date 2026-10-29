@@ -5,6 +5,7 @@ import type { ScreenerRow, ScreenerTab } from "@/lib/markets/screener";
 import { listScreenerCoins } from "@/lib/spot/markets.server";
 import { readStockUniverse } from "@/lib/stocks/universe.server";
 
+import { Page } from "../launch/launch-core";
 import { MarketsScreener, ScreenerSkeleton } from "./markets-screener";
 import { marketsWords } from "./markets-words";
 import { stockScreenerRow } from "./screener-rows";
@@ -18,19 +19,17 @@ const COINS_CARRIED = { crypto: 150, meme: 150 } as const;
  * stock universe's listed stocks and private companies and the venue's crypto
  * and memes — in one table with tabs, sorted the way the person chooses. The
  * head is sent at once; the table streams in behind a skeleton of its shape.
+ * The heading is for a screen reader (the menu names the page); the first
+ * thing seen is the one row of choices and then the rows (B17).
  */
 export function MarketsPlace({ locale, tab }: { locale: WorkspaceLocale; tab: ScreenerTab }) {
   const word = marketsWords(locale);
   return (
-    <div className={styles.page}>
-      <header className={styles.head}>
-        <h1 className={styles.title}>{word("title")}</h1>
-        <p className={styles.lead}>{word("lead")}</p>
-      </header>
-      <Suspense fallback={<ScreenerSkeleton />}>
+    <Page kind="overview" className={styles.page} title={word("title")} lang={locale === "uk" ? "uk" : "en"}>
+      <Suspense fallback={<ScreenerSkeleton title={word("tabAll")} />}>
         <ScreenerData locale={locale} tab={tab} />
       </Suspense>
-    </div>
+    </Page>
   );
 }
 
@@ -43,7 +42,7 @@ async function ScreenerData({ locale, tab }: { locale: WorkspaceLocale; tab: Scr
       locale={locale}
       initialTab={tab}
       down={{ coins: !coins.ok, stocks: !stocks.ok }}
-      coinsAt={coins.ok ? { at: coins.observedAt, stale: coins.stale } : null}
+      coinsAt={coins.ok ? { at: coins.stale ? (coins.lastGoodAt ?? coins.observedAt) : coins.observedAt, stale: coins.stale } : null}
     />
   );
 }

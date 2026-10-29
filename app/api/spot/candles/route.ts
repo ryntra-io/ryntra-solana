@@ -16,7 +16,7 @@ export const maxDuration = 30;
  *
  * `?limit=120` answers the newest N bars instead of the source's full window
  * (300 bars; 366 on the daily timeframe, a year for «1Р» on a company page) —
- * a phone draws about 120, so asking for that halves the read. The
+ * the mobile line's request 8: a phone draws about 120 and halves the read. The
  * source is still asked for its full window, so the edge cache is one entry
  * per market and timeframe whatever the limit; only the answer is trimmed.
  */

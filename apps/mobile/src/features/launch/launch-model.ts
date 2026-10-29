@@ -18,6 +18,32 @@ import type {
 import type { LaunchWord, LaunchWordKey } from './copy.ts'
 import { lostAfterSend, type LaunchFailure } from './launch-flow.ts'
 
+/**
+ * The first buy's «Max»: the preset's cap, never more than the wallet holds
+ * of the pair currency. Null — no «Max» offered — while the balance is not
+ * read, when it is zero, and for a SOL pair, whose launch pays its own
+ * network costs in SOL that the phone does not know in advance.
+ */
+export function firstBuyMaxRaw(capRaw: string | null, spendableRaw: bigint | null, solPair: boolean): bigint | null {
+  if (capRaw === null || !/^\d+$/.test(capRaw) || spendableRaw === null || spendableRaw <= 0n || solPair) return null
+  const cap = BigInt(capRaw)
+  if (cap <= 0n) return null
+  return spendableRaw < cap ? spendableRaw : cap
+}
+
+/** The contract version a deployment names is at least `least` — false when it names none or one not read. */
+export function contractAtLeast(named: string | null | undefined, least: string): boolean {
+  const parts = (version: string) => (/^\d+\.\d+\.\d+$/.test(version) ? version.split('.').map(Number) : null)
+  const have = parts(named ?? '')
+  const want = parts(least)
+  if (!have || !want) return false
+  for (let i = 0; i < 3; i += 1) if (have[i] !== want[i]) return have[i]! > want[i]!
+  return true
+}
+
+/** 1.71.0 (MC-1): the build takes `format: "v1"`; before it a build refuses the field (its schema is strict). */
+export const LAUNCH_V1_CONTRACT = '1.71.0'
+
 /** Launch's operator stop: a build or a send waits — said as a pause, never as a person's failure. */
 export const PAUSED_CODE = 'LAUNCH_PAUSED'
 
@@ -34,12 +60,30 @@ export function createFailureKey(failure: LaunchFailure): LaunchWordKey {
       return 'errWalletRefused'
     case 'WALLET_NOT_FOUND':
       return 'walletMissing'
+    case 'WALLET_CANNOT_SIGN':
+      return 'walletCannotSign'
+    case 'LAUNCH_SIGN_LATE':
+      return 'signLate'
+    case 'LAUNCH_BYTES_SHORT':
+      return 'bytesShort'
+    case 'LAUNCH_QUOTE_MOVED':
+      return 'quoteMoved'
     case 'WALLET_FAILED':
       return 'walletUnfinished'
     case 'LAUNCH_NAME_BORROWED':
       return 'errBorrowedServer'
     case 'LAUNCH_IMAGE_INVALID':
       return 'pictureBad'
+    case 'LAUNCH_IMAGE_REFUSED':
+      return 'pictureRefused'
+    case 'LAUNCH_IMAGE_CHECK_UNAVAILABLE':
+      return 'pictureCheckLater'
+    case 'LAUNCH_WALLET_V1_REQUIRED':
+      return 'errWalletV1'
+    case 'LAUNCH_V1_AGAIN':
+      return 'errV1Again'
+    case 'LAUNCH_WALLET_UNREAD':
+      return 'walletVersionUnread'
     case 'LAUNCH_LIMIT':
       return 'errLimit'
     case 'LAUNCH_PAUSED':
@@ -89,6 +133,14 @@ export function tradeFailureKey(code: string, atSend = false): LaunchWordKey {
       return 'errWalletRefused'
     case 'WALLET_NOT_FOUND':
       return 'walletMissing'
+    case 'WALLET_CANNOT_SIGN':
+      return 'walletCannotSign'
+    case 'LAUNCH_SIGN_LATE':
+      return 'signLate'
+    case 'LAUNCH_BYTES_SHORT':
+      return 'bytesShort'
+    case 'LAUNCH_QUOTE_MOVED':
+      return 'quoteMoved'
     case 'WALLET_FAILED':
       return 'walletUnfinished'
     case 'LAUNCH_PAUSED':
@@ -140,6 +192,14 @@ export function claimFailureKey(code: string, atSend: boolean): LaunchWordKey {
       return 'errRateLimited'
     case 'WALLET_NOT_FOUND':
       return 'walletMissing'
+    case 'WALLET_CANNOT_SIGN':
+      return 'walletCannotSign'
+    case 'LAUNCH_SIGN_LATE':
+      return 'signLate'
+    case 'LAUNCH_BYTES_SHORT':
+      return 'bytesShort'
+    case 'LAUNCH_QUOTE_MOVED':
+      return 'quoteMoved'
     case 'WALLET_FAILED':
       return 'walletUnfinished'
     default:

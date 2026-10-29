@@ -273,7 +273,7 @@ export function bridgeNetworkReasonCopy(reason: string | null, text: Text, netwo
              bridges there as itself. What changed on 2026-09-09 is that the
              swap into its own money exists, so the sentence names where it
              lives instead of ending on a refusal. */
-          text("Robinhood Chain has no USDC route. Its money is USDG, which Swap reaches as a cross-chain swap.")
+          text("Robinhood Chain has no USDC route. Its money is USDG, which Swap reaches as a swap between networks.")
         : text("This network has no USDC route.");
     default:
       return null;

@@ -3,6 +3,7 @@ import { Share, ToastAndroid, View } from 'react-native'
 
 import { Button } from '@/components/button'
 import { Card } from '@/components/card'
+import { HelpDot } from '@/components/help-dot'
 import { Icon } from '@/components/icon'
 import { Sheet } from '@/components/sheet'
 import { Txt } from '@/components/txt'
@@ -15,7 +16,7 @@ export type TopUpSheetProps = {
   /** The wallet's own address; null for a guest, who is offered the one step that gives it. */
   address: string | null
   onClose: () => void
-  /** «Поповнити» from Home, or «Отримати» from «Ще» — the same address, said for what it is used for. */
+  /** «Поповнити» from Home, «Гроші» or «Меню», or «Отримати» — the same address, said for what it is used for. */
   purpose?: 'top-up' | 'receive'
   /** A guest's one action: connect the wallet, and the address appears in the same sheet. */
   onConnect?: () => void
@@ -25,12 +26,13 @@ export type TopUpSheetProps = {
 /**
  * «Поповнити» — the one way in that works on the phone today: USDC sent to
  * the person's own address on the Solana network, from an exchange or another
- * wallet («only what works»). «Отримати» in «Ще» is the
+ * wallet («only what works»). «Отримати» in «Гроші» is the
  * same address for anything sent on Solana. The address is the
  * wallet's own and whole; it is copied or handed to the system's share sheet,
  * never sent anywhere by the app. The network is named before anything else
- * can be done with it, because a transfer from another network is lost. A
- * guest reads one line and one action — connecting the wallet.
+ * can be done with it, because a transfer from another network is lost.
+ * Where to send from and the SOL a purchase needs sit behind «?» beside the
+ * address (ST-4). A guest sees one action — connecting the wallet.
  */
 export function TopUpSheet({
   visible,
@@ -62,11 +64,13 @@ export function TopUpSheet({
     >
       {address ? (
         <View className="gap-4 pb-2">
-          <Txt variant="body">{receive ? copy.receiveLine : copy.topUpLine}</Txt>
           <Card className="gap-1.5">
-            <Txt variant="labelSm" tone="faint">
-              {copy.yourAddress}
-            </Txt>
+            <View className="flex-row items-center justify-between gap-2">
+              <Txt variant="labelSm" tone="faint">
+                {copy.yourAddress}
+              </Txt>
+              {receive ? null : <HelpDot title={copy.topUpHelpTitle} body={copy.topUpHelp} />}
+            </View>
             {/* One line, shrunk to fit a narrow phone: an address broken with two characters on a line of their own is misread. */}
             <Txt
               variant="data"
@@ -85,11 +89,6 @@ export function TopUpSheet({
               {copy.topUpWarning}
             </Txt>
           </View>
-          {receive ? null : (
-            <Txt variant="ui" tone="faint">
-              {copy.gasLine}
-            </Txt>
-          )}
           <View className="gap-2">
             {canCopy ? (
               <Button title={copied ? copy.copied : copy.copyAddress} size="lg" onPress={copyAddress} />
@@ -104,7 +103,6 @@ export function TopUpSheet({
         </View>
       ) : (
         <View className="gap-4 pb-2">
-          <Txt variant="body">{copy.receiveGuest}</Txt>
           {onConnect ? <Button title={copy.connectWallet} size="lg" loading={connecting} onPress={onConnect} /> : null}
         </View>
       )}

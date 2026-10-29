@@ -1,6 +1,6 @@
 /**
  * Launch's words in both languages — the web's own (`app/app/launch/launch-words.ts`
- * in the web app), so the phone and the web say one thing one way — and the
+ * on the web line), so the phone and the web say one thing one way — and the
  * few the phone needs where it does the same by other means (a camera, a
  * gallery). Short: one line per idea, a number where there is one, the hard
  * facts said before the signature.
@@ -12,10 +12,6 @@ const bi = (en: string, uk: string) => ({ en, uk }) as const
 
 export const LAUNCH_WORDS = {
   title: bi('Launch a token', 'Запустити токен'),
-  lede: bi(
-    'A token on a Meteora bonding curve. Name, ticker and picture are fixed forever once launched.',
-    'Токен на кривій Meteora. Назву, тікер і картинку після запуску не змінить ніхто.',
-  ),
 
   sectionToken: bi('Token', 'Токен'),
   picture: bi('Picture', 'Картинка'),
@@ -24,6 +20,11 @@ export const LAUNCH_WORDS = {
   pictureHint: bi('Square, PNG, JPG, WebP or GIF', 'Квадратна, PNG, JPG, WebP або GIF'),
   pictureMissing: bi('Add a picture', 'Додай картинку'),
   pictureBad: bi('This file is not a picture we can use', 'Цей файл не підходить як картинка'),
+  pictureRefused: bi('Ryntra does not show this picture. Choose another one.', 'Ryntra не показує таку картинку. Обери іншу.'),
+  pictureCheckLater: bi(
+    'The picture could not be checked right now. Nothing was sent; try again in a moment.',
+    'Картинку зараз не вдалося перевірити. Нічого не надіслано; спробуй ще раз за хвилину.',
+  ),
   name: bi('Name', 'Назва'),
   namePlaceholder: bi('Moon Cat', 'Місячний кіт'),
   ticker: bi('Ticker', 'Тікер'),
@@ -37,16 +38,26 @@ export const LAUNCH_WORDS = {
   x: bi('X', 'X'),
   telegram: bi('Telegram', 'Telegram'),
 
-  sectionPreset: bi('Preset', 'Пресет'),
-  presetSniper: bi('Snipers pay {start} → {end} in {time}', 'Снайпери платять {start} → {end} за {time}'),
-  presetCreator: bi('{pct} of trading fees goes to you', 'Тобі {pct} торгових комісій'),
-  presetCap: bi('Your buy: up to {pct} of supply', 'Твоя покупка: до {pct} пропозиції'),
+  sectionPreset: bi('Preset', 'Умови запуску'),
+  presetHelp: bi(
+    'A fixed set of terms for the token: its fees, your share of them, how much you can buy first and when it moves to the DEX. Chosen once, fixed on the blockchain. The first buyers pay a higher fee that falls within minutes: bots that buy in the first seconds pay for it.',
+    'Готовий набір умов для токена: комісії, твоя частка в них, скільки можна купити першим і коли токен вийде на DEX. Обирається один раз і закріплюється в блокчейні. Перші покупці платять вищу комісію, що спадає за хвилини: так за це платять боти, які купують у перші секунди.',
+  ),
+  presetSniper: bi(
+    'Fee for the first buyers: {start}, falling to {end} in {time}',
+    'Комісія для перших покупців: {start}, за {time} спадає до {end}',
+  ),
+  presetCreator: bi('You earn {pct} of every fee on the curve', 'Тобі {pct} кожної комісії на кривій'),
+  presetCap: bi('Your buy: up to {pct} of supply', 'Твоя покупка: до {pct} емісії'),
   presetPair: bi('Paired with {symbol}', 'У парі з {symbol}'),
-  presetDetails: bi('All numbers of the preset', 'Усі числа пресету'),
-  presetGraduation: bi('Graduation fee', 'Комісія виходу на DEX'),
+  presetDetails: bi('All numbers of the preset', 'Усі умови запуску'),
+  presetGraduation: bi('Launch completion fee', 'Комісія завершення запуску'),
   presetGraduationValue: bi('{pct} of the raise, you get {creator}', '{pct} зібраного, тобі {creator}'),
   presetToken: bi('Token', 'Токен'),
-  presetTokenValue: bi('1,000,000,000 · no minting, no freezing', '1 000 000 000 · без допечатки й заморозки'),
+  presetTokenValue: bi(
+    '1,000,000,000 · no minting, no freezing',
+    '1 000 000 000 · нових не випустять, заморозити не можна',
+  ),
 
   sectionBuy: bi('Your first buy', 'Твоя перша покупка'),
   buyHint: bi(
@@ -56,23 +67,47 @@ export const LAUNCH_WORDS = {
   buyAmount: bi('Amount', 'Сума'),
   buyMax: bi('Max', 'Макс'),
   buyNone: bi('No first buy', 'Без першої покупки'),
-  buyGets: bi('≈ {tokens} tokens · {pct} of supply', '≈ {tokens} токенів · {pct} пропозиції'),
-  buyCap: bi('Cap: {amount} {symbol} ({pct} of supply)', 'Стеля: {amount} {symbol} ({pct} пропозиції)'),
+  buyGets: bi('≈ {tokens} tokens · {pct} of supply', '≈ {tokens} токенів · {pct} емісії'),
+  buyCap: bi('Cap: {amount} {symbol} ({pct} of supply)', 'Стеля: {amount} {symbol} ({pct} емісії)'),
   buyAboveCap: bi('Above the cap of {amount} {symbol}', 'Більше за стелю {amount} {symbol}'),
   buyQuoting: bi('Counting…', 'Рахуємо…'),
   lockTitle: bi('Lock my buy', 'Заблокувати мою покупку'),
   lockHint: bi(
     'Holders see “Creator locked their buy”. No one can cancel the lock.',
-    'Холдери бачать «Творець заблокував свою покупку». Скасувати замок не може ніхто.',
+    'Власники бачать «Творець заблокував свою покупку». Скасувати замок не може ніхто.',
+  ),
+  lockRequiredTitle: bi('Your buy is locked', 'Твоя покупка під замком'),
+  lockRequiredHint: bi(
+    'On {preset} your first buy goes under a lock: nothing unlocks for {period}. You sign it with the launch; no one can cancel it.',
+    'На «{preset}» твоя перша покупка йде під замок: {period} не розблоковується нічого. Підписуєш його разом із запуском; скасувати замок не може ніхто.',
+  ),
+  errWalletV1: bi(
+    'On these terms your first buy and its lock go in one transaction, and the wallet on this phone cannot sign it. Launch without a first buy.',
+    'На цих умовах твоя перша покупка й її замок ідуть однією транзакцією, а гаманець на цьому телефоні не вміє її підписати. Запусти без першої покупки.',
+  ),
+  lockNone: bi(
+    'No lock long enough is offered right now, so a first buy cannot go on these terms. Launch without a first buy.',
+    'Зараз немає достатньо довгого замка, тож перша покупка на цих умовах неможлива. Запусти без першої покупки.',
+  ),
+  errV1Again: bi(
+    'Nothing was sent: Ryntra could not settle how to build this launch. Try again in a moment.',
+    'Нічого не надіслано: Ryntra не змогла уточнити, як будувати цей запуск. Спробуй ще раз за хвилину.',
+  ),
+  walletVersionUnread: bi(
+    'The wallet did not say whether it can sign this launch. Nothing was sent; try again, or launch without a first buy.',
+    'Гаманець не сказав, чи може підписати цей запуск. Нічого не надіслано; спробуй ще раз або запусти без першої покупки.',
   ),
   lockSchedule: bi('{cliff} locked, then daily over {vest}', '{cliff} замок, далі щодня впродовж {vest}'),
-  lockUntil: bi('Nothing unlocks before {date}; all by {end}.', 'До {date} не розблокується нічого; усе — до {end}'),
+  lockUntil: bi(
+    'Nothing unlocks before {date}; all by {end}. Cannot be undone.',
+    'До {date} не розблокується нічого; усе — до {end}. Скасувати не можна.',
+  ),
   months: bi('{n} mo', '{n} міс'),
   year: bi('1 yr', '1 рік'),
 
   review: bi('Before you sign', 'Перед підписом'),
   reviewNetwork: bi('Network', 'Мережа'),
-  reviewPreset: bi('Preset', 'Пресет'),
+  reviewPreset: bi('Preset', 'Умови запуску'),
   reviewBuy: bi('First buy', 'Перша покупка'),
   reviewLock: bi('Lock', 'Замок'),
   reviewNoLock: bi('No lock', 'Без замка'),
@@ -86,7 +121,7 @@ export const LAUNCH_WORDS = {
   termsLead: bi('By launching, you agree to the', 'Запускаючи, ти погоджуєшся з'),
   terms: bi('Terms of Use', 'Умовами використання'),
   launch: bi('Launch token', 'Запустити токен'),
-  connect: bi('Connect wallet to launch', 'Підключи гаманець, щоб запустити'),
+  connect: bi('Connect wallet to launch', 'Під’єднай гаманець, щоб запустити'),
 
   stepPrepare: bi('Preparing the transaction', 'Готуємо транзакцію'),
   stepSign: bi('Confirm in your wallet', 'Підтверди в гаманці'),
@@ -147,7 +182,7 @@ export const LAUNCH_WORDS = {
   ),
   errAboveCap: bi(
     "The first buy is above the preset's cap. Nothing was sent.",
-    'Перша покупка більша за стелю пресету. Нічого не надіслано.',
+    'Перша покупка більша, ніж дозволяють умови запуску. Нічого не надіслано.',
   ),
   errExpired: bi(
     'The signature took too long. Nothing was sent; launch again.',
@@ -166,8 +201,8 @@ export const LAUNCH_WORDS = {
 
   successTitle: bi('${symbol} is live', '${symbol} запущено'),
   successLine: bi(
-    'Share the link: everyone who joins through it is your referral.',
-    'Поділися посиланням: хто прийде за ним — твій реферал.',
+    "Share the link: anyone who opens it sees your token's page and can buy it.",
+    'Поділися посиланням: за ним відкриється сторінка токена, де його можна купити.',
   ),
   successLocked: bi(
     'Your buy: nothing unlocks before {date}, all by {end}',
@@ -206,7 +241,7 @@ export const LAUNCH_WORDS = {
     'Ланцюг зараз не прочитано; позначки без перевірки не показуємо.',
   ),
   view: bi('View', 'Переглянути'),
-  mark_MINT_REVOKED: bi('No one can mint more', 'Допечатати не може ніхто'),
+  mark_MINT_REVOKED: bi('No one can mint more', 'Нових токенів не випустить ніхто'),
   mark_NO_FREEZE: bi('No one can freeze tokens', 'Заморозити токени не може ніхто'),
   mark_METADATA_FIXED: bi('Name and picture fixed', 'Назва й картинка незмінні'),
   mark_NO_TRANSFER_HOOK: bi('No rule on transfers', 'Без правил на переказах'),
@@ -223,6 +258,19 @@ export const LAUNCH_WORDS = {
   mark_CREATOR_BUY_LOCKED: bi('Creator locked their buy', 'Творець заблокував свою покупку'),
   lockedUntil: bi('Nothing unlocks before {date}', 'До {date} не розблокується нічого'),
   lockedVesting: bi('Unlocking daily until {date}', 'Розблоковується щодня до {date}'),
+  lockedWhat: bi("Locked: the creator's first buy", 'Заблоковано: перша покупка творця'),
+  lockedWhatPct: bi(
+    "Locked: the creator's first buy, {pct} of the supply",
+    'Заблоковано: перша покупка творця, {pct} емісії',
+  ),
+  creatorBoughtMore: bi(
+    'The creator bought more after launch — that part is not locked',
+    'Творець докупив після запуску — ця частина не заблокована',
+  ),
+  creatorHoldsMore: bi(
+    'The creator holds more than is locked — that part is not locked',
+    'Творець тримає більше, ніж заблоковано, — ця частина не заблокована',
+  ),
   about: bi('About', 'Про токен'),
   linksByCreator: bi('Set by the creator, not checked by Ryntra', 'Задає творець, Ryntra не перевіряє'),
   report: bi('Report this token', 'Поскаржитися на токен'),
@@ -236,13 +284,14 @@ export const LAUNCH_WORDS = {
   ),
   showAgain: bi('Show again', 'Показати знову'),
   receipt: bi('Launch receipt', 'Квитанція лаунчу'),
-  receiptCreated: bi('Created', 'Створено'),
-  receiptConfig: bi('Preset config', 'Конфіг пресету'),
+  // The row's value is the creation's signature, not a date (ST-5): the word names the transaction.
+  receiptCreated: bi('Creation transaction', 'Транзакція створення'),
+  receiptConfig: bi('Preset config', 'Умови запуску'),
   receiptCurve: bi('Curve', 'Крива'),
   receiptFirstBuy: bi("Creator's first buy", 'Перша покупка творця'),
   receiptFirstBuyValue: bi(
     '{tokens} tokens for {amount} {symbol} · cap {cap} tokens ({pct} of supply)',
-    '{tokens} токенів за {amount} {symbol} · стеля {cap} токенів ({pct} пропозиції)',
+    '{tokens} токенів за {amount} {symbol} · стеля {cap} токенів ({pct} емісії)',
   ),
   receiptLock: bi("Creator's lock", 'Замок творця'),
   receiptNone: bi('None', 'Немає'),
@@ -254,8 +303,8 @@ export const LAUNCH_WORDS = {
   liquidity: bi('Liquidity', 'Ліквідність'),
   liquidityCurve: bi('On the curve', 'На кривій'),
   volume24h: bi('Volume 24h', 'Обсяг 24 год'),
-  holders: bi('Holders', 'Холдери'),
-  top10: bi('Top 10 of supply', 'Топ-10 від пропозиції'),
+  holders: bi('Holders', 'Власники'),
+  top10: bi('Top 10 · share of supply', 'Топ-10 · частка емісії'),
   age: bi('Age', 'Вік'),
   inPair: bi('in {symbol}', 'у {symbol}'),
   marketUnread: bi('The market could not be read right now.', 'Не вдалося прочитати ринок.'),
@@ -270,8 +319,8 @@ export const LAUNCH_WORDS = {
   day: bi('{n} d', '{n} дн.'),
 
   chartTitle: bi('Market cap', 'Капіталізація'),
-  chartLegendBuy: bi('creator bought', 'творець купив'),
-  chartLegendSell: bi('creator sold', 'творець продав'),
+  chartLegendBuy: bi('Creator bought', 'Творець купив'),
+  chartLegendSell: bi('Creator sold', 'Творець продав'),
   chartLegendDex: bi('Moved to the DEX', 'Вихід на DEX'),
   chartMarkCreator: bi('C', 'Т'),
   chartNoTrades: bi(
@@ -281,7 +330,7 @@ export const LAUNCH_WORDS = {
 
   progressOf: bi('{amount} of {threshold} {symbol}', '{amount} з {threshold} {symbol}'),
   progressLeft: bi('{amount} {symbol} more to the DEX', 'До виходу ще {amount} {symbol}'),
-  graduatedPool: bi('Trades in its Meteora pool', 'Торгується в пулі Meteora'),
+  graduatedPool: bi('Trades in its own pool', 'Торгується у своєму пулі'),
   pool: bi('Pool', 'Пул'),
 
   buy: bi('Buy', 'Купити'),
@@ -303,18 +352,20 @@ export const LAUNCH_WORDS = {
     'Ліквідності {liquidity} · Ryntra {ryntra} · Meteora {meteora}',
   ),
   feeSniper: bi(
-    'Fee for snipers: {fee} now, falling to {end} by {time}',
-    'Комісія для снайперів: зараз {fee}, спадає до {end} о {time}',
+    'Fee for the first buyers: {fee} now, falling to {end} by {time}',
+    'Комісія для перших покупців: зараз {fee}, спадає до {end} о {time}',
   ),
   priceUp: bi('Moves the price up {pct}', 'Ціна зросте на {pct}'),
   priceDown: bi('Moves the price down {pct}', 'Ціна впаде на {pct}'),
+  priceFlat: bi('The price barely moves', 'Ціна майже не зміниться'),
   capAfter: bi('Market cap after', 'Капіталізація після'),
-  partialFill: bi(
-    'The curve fills first: {spent} of {amount} {symbol} is spent, the rest stays with you.',
-    'Крива заповниться раніше: буде витрачено {spent} з {amount} {symbol}, решта лишиться в тебе.',
+  curveTakesUpTo: bi(
+    'The curve takes up to {amount} {symbol} now; the rest stays with you.',
+    'На кривій зараз можна купити до {amount} {symbol}, решта лишиться в тебе.',
   ),
-  slippage: bi('Slippage', 'Прослизання'),
-  connectToTrade: bi('Connect wallet', "Під'єднати гаманець"),
+  curveSetMax: bi('Set {amount} {symbol}', 'Вписати {amount} {symbol}'),
+  slippage: bi('Max price move', 'Допустимий рух ціни'),
+  connectToTrade: bi('Connect wallet', 'Під’єднати гаманець'),
   buyAction: bi('Buy ${symbol}', 'Купити ${symbol}'),
   sellAction: bi('Sell ${symbol}', 'Продати ${symbol}'),
   tradeCounting: bi('Counting…', 'Рахуємо…'),
@@ -350,13 +401,13 @@ export const LAUNCH_WORDS = {
     'Мережа не прийняла угоду: токени й {symbol} не рухались; мережеву комісію могло бути списано.',
   ),
   errSlippage: bi(
-    'The price moved past your slippage while the trade was on its way. Nothing moved; try again or allow more slippage.',
-    'Ціна зрушила далі за допустиме прослизання, поки угода йшла. Нічого не відбулося; спробуй ще раз або збільш прослизання.',
+    'The price moved more than you allowed while the trade was on its way. Nothing moved; try again or allow a bigger move.',
+    'Ціна зрушила більше, ніж ти дозволив, поки угода йшла. Нічого не відбулося; спробуй ще раз або дозволь більший рух.',
   ),
   errQuote: bi('The trade could not be counted right now.', 'Угоду зараз не вдалося порахувати.'),
 
   tabTrades: bi('Trades', 'Угоди'),
-  tabHolders: bi('Holders', 'Холдери'),
+  tabHolders: bi('Holders', 'Власники'),
   tabRisk: bi('Risk', 'Ризик'),
   tradesEmpty: bi('No trades yet.', 'Угод ще немає.'),
   tradesMore: bi('Show {n} more', 'Показати ще {n}'),
@@ -391,7 +442,7 @@ export const LAUNCH_WORDS = {
     "Bought in the creation's block, or the creator's wallet paid for the buy",
     'Купив у блоці створення, або покупку оплатив гаманець творця',
   ),
-  holdersCount: bi('Holders: {n}', 'Холдерів: {n}'),
+  holdersCount: bi('Holders: {n}', 'Власників: {n}'),
   groupSnipers: bi('Snipers · {n}', 'Снайпери · {n}'),
   groupSnipersName: bi('Snipers', 'Снайпери'),
   groupBundle: bi('Bundle · {n}', 'Бандл · {n}'),
@@ -405,7 +456,7 @@ export const LAUNCH_WORDS = {
   riskLede: bi('Facts from the chain, not advice.', 'Факти з ланцюга, не порада.'),
   risk_CREATOR_SOLD: bi('The creator sold {pct} of the tokens they bought', 'Творець продав {pct} куплених токенів'),
   riskWhy_CREATOR_SOLD: bi("A creator's sale weighs on the price.", 'Продаж творця тисне на ціну.'),
-  risk_CREATOR_HOLDS: bi('The creator holds {pct} of the supply', 'Творець тримає {pct} пропозиції'),
+  risk_CREATOR_HOLDS: bi('The creator holds {pct} of the supply', 'Творець тримає {pct} емісії'),
   riskWhy_CREATOR_HOLDS: bi('From 5%, enough to move the price alone.', 'Від 5 % — досить, щоб сам рухати ціну.'),
   risk_BUNDLE_HOLDS: bi('The bundle holds {pct} · wallets: {wallets}', 'Бандл тримає {pct} · гаманців: {wallets}'),
   riskWhy_BUNDLE_HOLDS: bi(
@@ -417,12 +468,9 @@ export const LAUNCH_WORDS = {
     'Bought in the first 2 minutes; early buyers often sell into the first rise.',
     'Купили в перші 2 хв; ранні покупці часто продають на першому зростанні.',
   ),
-  risk_TOP10_HOLD: bi(
-    'The 10 largest holders have {pct} of the supply',
-    '10 найбільших холдерів мають {pct} пропозиції',
-  ),
+  risk_TOP10_HOLD: bi('The 10 largest holders have {pct} of the supply', '10 найбільших власників мають {pct} емісії'),
   riskWhy_TOP10_HOLD: bi('From 30%, a few wallets can move the price.', 'Від 30 % кілька гаманців можуть рухати ціну.'),
-  risk_FEW_HOLDERS: bi('{n} holder{s:n}', 'Холдерів: {n}'),
+  risk_FEW_HOLDERS: bi('{n} holder{s:n}', 'Власників: {n}'),
   riskWhy_FEW_HOLDERS: bi(
     'Fewer than 20: a thin market, one trade moves the price.',
     'Менше 20 — тонкий ринок: одна угода рухає ціну.',
@@ -458,8 +506,8 @@ export const LAUNCH_WORDS = {
   outcomeDex: bi('On the DEX', 'Вийшов на DEX'),
   outcomeCurve: bi('Curve {pct}', 'Крива {pct}'),
   outcomeSold: bi('creator sold {pct} of their buy', 'творець продав {pct} купленого'),
-  creatorSoldSupply: bi('The creator sold {pct} of the supply', 'Творець продав {pct} пропозиції'),
-  risk_CREATOR_SOLD_SUPPLY: bi('The creator sold {pct} of the supply', 'Творець продав {pct} пропозиції'),
+  creatorSoldSupply: bi('The creator sold {pct} of the supply', 'Творець продав {pct} емісії'),
+  risk_CREATOR_SOLD_SUPPLY: bi('The creator sold {pct} of the supply', 'Творець продав {pct} емісії'),
   risk_OPENING_UNREAD: bi('The first minutes of trading were not read', 'Перші хвилини торгів не прочитано'),
   riskWhy_OPENING_UNREAD: bi(
     'Snipers and the bundle are not known for this token.',
@@ -478,20 +526,20 @@ export const LAUNCH_WORDS = {
     'Частки — лише людей; крива, пул і замок творця — окремо.',
   ),
   colSide: bi('Trade', 'Угода'),
-  presetChip: bi('Preset “{name}”', 'Пресет «{name}»'),
+  presetChip: bi('Preset “{name}”', 'Умови «{name}»'),
   marksChecked: bi('Checked on chain {ago}', 'Перевірено в ланцюгу {ago}'),
-  tabsLabel: bi("The token's trades, holders and risk", 'Угоди, холдери й ризик токена'),
+  tabsLabel: bi("The token's trades, holders and risk", 'Угоди, власники й ризик токена'),
   tabRiskCount: bi('facts to look at: {n}', 'фактів до уваги: {n}'),
   outcomeKept: bi('creator did not sell', 'творець не продавав'),
-  outcomeSoldSupply: bi('creator sold {pct} of the supply', 'творець продав {pct} пропозиції'),
+  outcomeSoldSupply: bi('creator sold {pct} of the supply', 'творець продав {pct} емісії'),
   creatorUnread: bi(
     'Their other launches could not be read right now.',
     'Інші їхні лаунчі зараз не вдалося прочитати.',
   ),
-  risk_HOLDERS_UNCOUNTED: bi('At least {n} holder{s:n}', 'Холдерів щонайменше {n}'),
+  risk_HOLDERS_UNCOUNTED: bi('At least {n} holder{s:n}', 'Власників щонайменше {n}'),
   riskWhy_HOLDERS_UNCOUNTED: bi(
     'Not every holder could be counted; there may be more.',
-    'Порахувати всіх холдерів не вдалося; їх може бути більше.',
+    'Порахувати всіх власників не вдалося; їх може бути більше.',
   ),
   attentionTitle: bi('Worth a look before a trade', 'Варто глянути перед угодою'),
   attentionAll: bi('All the facts', 'Усі факти'),
@@ -536,28 +584,16 @@ export const LAUNCH_WORDS = {
 
   // The token page — the sharing
   feeShareTitle: bi("Creator's fees shared", 'Комісії творця діляться'),
-  feeShareLine: bi(
-    "By Meteora's fee vault, at shares fixed forever.",
-    'Сховищем Meteora за частками, записаними назавжди.',
-  ),
+  feeShareLine: bi('Paid out by these shares, fixed forever.', 'Виплачується за цими частками, записаними назавжди.'),
   feeShareVault: bi('Vault', 'Сховище'),
 
   // «Мої лаунчі» — the creator's cabinet
   mineTitle: bi('My launches', 'Мої лаунчі'),
-  mineLede: bi(
-    'Your tokens, their way to the DEX and your share of their fees.',
-    'Твої токени, їхній шлях до DEX і твоя частка їхніх комісій.',
-  ),
-  mineConnectTitle: bi('Connect the wallet you launch from', "Під'єднай гаманець, з якого запускаєш"),
-  mineConnectLine: bi(
-    'Your launches and fees belong to your wallet, not to this phone.',
-    'Лаунчі й комісії належать твоєму гаманцю, а не цьому телефону.',
-  ),
-  mineConnect: bi('Connect wallet', "Під'єднати гаманець"),
+  mineConnectTitle: bi('Connect the wallet you launch from', 'Під’єднай гаманець, з якого запускаєш'),
+  mineConnect: bi('Connect wallet', 'Під’єднати гаманець'),
   mineReading: bi('Reading your launches…', 'Читаємо твої лаунчі…'),
   mineUnread: bi('Your launches could not be read right now.', 'Лаунчі зараз не вдалося прочитати.'),
   mineEmptyTitle: bi('No launches yet', 'Лаунчів ще немає'),
-  mineEmptyLine: bi('Launch a token, and its fees show up here.', "Запусти токен — і його комісії з'являться тут."),
   mineLaunch: bi('Launch a token', 'Запустити токен'),
   mineEarned: bi('Fees to you', 'Комісії тобі'),
   mineToClaim: bi('To claim', 'Можна забрати'),
@@ -571,8 +607,8 @@ export const LAUNCH_WORDS = {
   ),
   mineRoleShare: bi('Your share {pct}', 'Твоя частка {pct}'),
   mineNotRead: bi('not read', 'не прочитано'),
-  source_curve: bi('Trading on the curve', 'Торгівля на кривій'),
-  source_graduation: bi('DEX launch fee', 'Комісія виходу на DEX'),
+  source_curve: bi('Trading during launch', 'Торгівля під час запуску'),
+  source_graduation: bi('Launch completion fee', 'Комісія завершення запуску'),
   source_lp: bi('Locked liquidity', 'Замкнена ліквідність'),
   sourceAfterDex: bi('once it reaches the DEX', 'коли вийде на DEX'),
   mineBreakdownShare: bi('Your share — {pct} of each', 'Твоя частка — {pct} з кожного'),
@@ -600,11 +636,11 @@ export const LAUNCH_WORDS = {
   ),
   claimPartial: bi('Claimed part: {amount}', 'Забрано частину: {amount}'),
   claimPartialLine: bi(
-    'The rest did not go through and still waits — press «Claim» again.',
+    'The rest did not go through and still waits — press “Claim” again.',
     'Решта не пройшла й чекає — натисни «Забрати» ще раз.',
   ),
   claimCost: bi('Network cost: {sol} SOL', 'Вартість у мережі: {sol} SOL'),
-  claimCostUnknown: bi('Network cost: your wallet shows it', 'Вартість у мережі покаже гаманець'),
+  claimCostUnknown: bi('Network cost: shown in your wallet', 'Вартість у мережі: побачиш у гаманці'),
   mineShareWaiting: bi('once confirmed', 'після підтвердження'),
   errClaimTitle: bi('Nothing was claimed', 'Нічого не забрано'),
   errClaimNothing: bi('Nothing to claim now. Nothing was sent.', 'Зараз нічого забрати. Нічого не надіслано.'),
@@ -616,7 +652,7 @@ export const LAUNCH_WORDS = {
   ),
   errClaimWalletChanged: bi(
     'The wallet changed. Connect the wallet that holds this share and try again.',
-    "Гаманець змінився. Під'єднай гаманець, якому належить частка, і спробуй ще раз.",
+    'Гаманець змінився. Під’єднай гаманець, якому належить частка, і спробуй ще раз.',
   ),
   errClaimUnknown: bi(
     'No answer came back — the claim may have gone through. Check the receipts below before claiming again.',
@@ -631,7 +667,7 @@ export const LAUNCH_WORDS = {
   receiptsTitle: bi('Receipts', 'Квитанції'),
   receiptsEmpty: bi('Nothing claimed yet.', 'Ще нічого не забрано.'),
   receiptReceived: bi('Received', 'Отримано'),
-  receiptPaid: bi('Paid by the programs', 'Виплатили програми'),
+  receiptPaid: bi('Paid out', 'Виплачено'),
   receiptIntoVault: bi('into the shared vault', 'у спільне сховище'),
   receiptVaultPaid: bi('Your share from the vault', 'Твоя частка зі сховища'),
   receiptWhen: bi('{date}', '{date}'),
@@ -649,7 +685,7 @@ export const LAUNCH_WORDS = {
     'Камеру для Ryntra не дозволено. Дозволь її в налаштуваннях телефона або обери з галереї.',
   ),
   unavailable: bi('Launch is not open right now.', 'Лаунч зараз не відкритий.'),
-  presetsUnread: bi('The presets could not be read right now.', 'Пресети зараз не вдалося прочитати.'),
+  presetsUnread: bi('The presets could not be read right now.', 'Умови запуску зараз не вдалося прочитати.'),
   tokenNotFound: bi('There is no launch at this address.', 'За цією адресою лаунчу немає.'),
   tokenUnread: bi('The token could not be read right now.', 'Токен зараз не вдалося прочитати.'),
   more: bi('More', 'Більше'),
@@ -657,6 +693,22 @@ export const LAUNCH_WORDS = {
   walletMissing: bi(
     'No Solana wallet is installed on this phone. Nothing was sent.',
     'На цьому телефоні немає гаманця Solana. Нічого не надіслано.',
+  ),
+  signLate: bi(
+    'A transaction lives about 30 seconds: confirm in the wallet, or on a Ledger, within 20 seconds. Nothing was sent — try again.',
+    'Транзакція живе ~30 секунд: підтверди в гаманці чи на Ledger за 20 секунд. Нічого не надіслано — спробуй ще раз.',
+  ),
+  bytesShort: bi(
+    'The network was slow to prepare it. Nothing was sent — try again.',
+    'Мережа надто довго готувала транзакцію. Нічого не надіслано — спробуй ще раз.',
+  ),
+  quoteMoved: bi(
+    'The price moved while the wallet was open. Nothing was sent — check the new figures and try again.',
+    'Ціна змінилась, поки гаманець був відкритий. Нічого не надіслано — переглянь нові цифри й спробуй ще раз.',
+  ),
+  walletCannotSign: bi(
+    "This wallet does not sign transactions for apps — it only sends them itself. Nothing was sent; use Phantom, Solflare or the Seeker's wallet.",
+    'Цей гаманець не підписує транзакції для застосунків — лише надсилає їх сам. Нічого не надіслано; скористайся Phantom, Solflare чи гаманцем Seeker.',
   ),
   walletUnfinished: bi(
     'The wallet did not finish. Nothing was sent; try again.',
@@ -688,16 +740,12 @@ export const LAUNCH_WORDS = {
   presetName_community: bi('Community', 'Спільнота'),
 
   // «Лаунчі на Ryntra» and a market's health (contract 1.36.0, the web's words as on production 1.37.0) — taken whole
-  marksRules: bi('Program rules', 'Правила програм'),
+  marksRules: bi('Fixed rules', 'Незмінні правила'),
   marksRulesHint: bi(
-    'Each of these is enforced by a program on chain; neither the creator nor Ryntra can change it.',
-    'Кожне з цього забезпечує програма в ланцюгу; ні творець, ні Ryntra цього не змінять.',
+    'Each of these is fixed on the blockchain; neither the creator nor Ryntra can change it.',
+    'Кожне з цього закріплено в блокчейні; ні творець, ні Ryntra цього не змінять.',
   ),
   marketsTitle: bi('Markets launched on Ryntra', 'Лаунчі на Ryntra'),
-  marketsLede: bi(
-    'Every market launched through Ryntra, read from the chain. No wallet needed.',
-    'Кожен ринок, запущений через Ryntra, — просто з ланцюга. Гаманець не потрібен.',
-  ),
   marketsReading: bi('Reading the markets from the chain…', 'Читаємо ринки з ланцюга…'),
   marketsUnread: bi("The markets couldn't be read now.", 'Зараз не вдалося прочитати ринки.'),
   marketsPartial: bi(
@@ -708,16 +756,22 @@ export const LAUNCH_WORDS = {
     'No market has been launched on Ryntra on this network yet.',
     'На цій мережі ще не запущено жодного ринку.',
   ),
-  marketsOrder: bi(
-    'Live markets first, then by stage and the newest. No ranking by hand.',
-    'Спершу живі ринки, далі — за етапом і новизною. Без ручного топу.',
-  ),
   colWay: bi('To the DEX', 'Шлях до DEX'),
-  colDepth: bi('Depth at −5%', 'Глибина на −5 %'),
-  colHolders: bi('Holders over $1', 'Холдери понад $1'),
+  colDepth: bi('Can sell before a 5% drop', 'Продаж до падіння на 5 %'),
+  colHolders: bi('Holders over $1', 'Тримають понад $1'),
+  cardsHelpTitle: bi('What the cards show', 'Що на картках'),
+  cardsHelp: bi(
+    'Can sell before a 5% drop: how much of the token can be sold before its price falls 5%. Holders over $1: wallets holding more than a dollar of it. Every figure is read from the chain at the time shown above the cards.',
+    'Продаж до падіння на 5 %: скільки токена можна продати, перш ніж ціна впаде на 5 %. Тримають понад $1: гаманці, що мають його більш ніж на долар. Усі цифри прочитано з ланцюга в час, зазначений над картками.',
+  ),
+  tradeStatus_trading: bi('Trading', 'Торгується'),
+  tradeStatus_moving: bi('Moving to the DEX', 'Переходить на DEX'),
+  tradeStatus_stalled: bi('Move to the DEX delayed', 'Перехід на DEX затримується'),
+  filled: bi('filled {pct}', 'заповнено {pct}'),
+  priceMoveOver: bi('More than the max price move of {max}', 'Більше за допустимий рух ціни {max}'),
   live: bi('Live', 'Живий'),
   liveHint: bi('A trade in the last 24 hours', 'Угода за останні 24 години'),
-  techChip: bi('Technical validation', 'Технічна валідація'),
+  techChip: bi('Test launch by Ryntra', 'Тестовий запуск Ryntra'),
   techHint: bi(
     'Launched by Ryntra itself to check the full cycle — not demand.',
     'Запустила сама Ryntra, щоб перевірити повний цикл, — це не попит.',
@@ -762,8 +816,8 @@ export const LAUNCH_WORDS = {
     'Ryntra надіслала вихід на DEX; мережа ще не підтвердила.',
   ),
   stateHint_CORE_MARKET_LIVE: bi(
-    "Trades in its DAMM v2 pool; the pool's liquidity is locked forever.",
-    'Торгується в пулі DAMM v2; ліквідність пулу замкнено назавжди.',
+    'Trades in its own pool; the pool’s liquidity is locked forever and cannot be withdrawn.',
+    'Торгується у своєму пулі; ліквідність пулу замкнено назавжди — її не можна вивести.',
   ),
   stateHint_ENDOWMENT_FUNDED: bi(
     "Ryntra has collected the market's budget from its fees.",
@@ -777,22 +831,19 @@ export const LAUNCH_WORDS = {
     'Ryntra has moved its steps up or topped them up since placing them.',
     'Ryntra піднімала чи поповнювала сходинки після розміщення.',
   ),
-  stateLine_MAINTAINING: bi(
-    'Ryntra last moved or topped up its steps {ago}.',
-    'Ryntra востаннє піднімала чи поповнювала сходинки {ago}.',
-  ),
+  stateLine_MAINTAINING: bi('Last moved up or topped up {ago}.', 'Востаннє піднято чи поповнено {ago}.'),
   stateHint_PAUSED_RISK: bi(
     "Ryntra's actions on this market are paused; trading goes on.",
     'Дії Ryntra на цьому ринку на паузі; торгівля йде далі.',
   ),
   stateHint_MATURE: bi('On the DEX for 30 days or more.', 'На DEX 30 днів і довше.'),
   stateHint_MIGRATION_FAILED: bi(
-    "The curve is full and its DEX pool isn't there yet. Anyone can send the move; while Ryntra's executor runs, it sends it again.",
-    'Крива набрала поріг, а пулу DEX ще немає. Вихід може надіслати будь-хто; поки виконавець Ryntra діє, він надсилає його знову.',
+    'The curve is full and its DEX pool isn’t there yet. Anyone can send the move; while Ryntra acts here, it sends it again.',
+    'Крива набрала поріг, а пулу DEX ще немає. Вихід може надіслати будь-хто; поки Ryntra діє тут, вона надсилає його знову.',
   ),
   stateHint_ENDOWMENT_EXHAUSTED: bi(
-    "The ladder isn't topped up any more; the market lives on its DAMM v2 pool.",
-    'Драбина більше не поповнюється; ринок живе на пулі DAMM v2.',
+    'The ladder isn’t topped up any more; the market lives on its own pool.',
+    'Драбина більше не поповнюється; ринок живе на своєму пулі.',
   ),
   stateSince: bi('Since {when}', 'З {when}'),
   healthTitle: bi('Market health', "Здоров'я ринку"),
@@ -813,8 +864,8 @@ export const LAUNCH_WORDS = {
     'Драбина Ryntra: її сходинки купують від {from} до {to}, ціна зараз {price}',
   ),
   hLadderUsed: bi(
-    "Ryntra's ladder holds no {symbol} now: sales went through its steps, and they hold the token",
-    'Драбина Ryntra зараз без {symbol}: продажі пройшли крізь її сходинки, і вони тримають токен',
+    "Ryntra's buys below the price are filled: sales went through them, and Ryntra holds the token they bought",
+    'Купівлі Ryntra нижче ціни вже виконано: продажі пройшли крізь них, і куплений токен тримає Ryntra',
   ),
   hDepthClosed: bi(
     'The curve is full: it takes no sales until it moves to the DEX.',
@@ -836,20 +887,20 @@ export const LAUNCH_WORDS = {
   hTraded: bi('A trade in the last 24 h', 'Угода за останні 24 год'),
   hNotTraded: bi('No trade in 24 h', 'Без угод за 24 год'),
   hTradedUnread: bi("The last 24 h weren't read whole", 'Останню добу прочитано не всю'),
-  hHolders: bi('Holders over $1', 'Холдери понад $1'),
+  hHolders: bi('Holders over $1', 'Власники понад $1'),
   hHoldersSub: bi("without pools, locks and Ryntra's wallets", 'без пулів, замків і гаманців Ryntra'),
   hAtLeast: bi('At least {n}', 'Щонайменше {n}'),
   hAtLeastHint: bi(
     "Counted from the holders found: the network didn't list every account.",
-    'Пораховано зі знайдених холдерів: мережа не дала всіх рахунків.',
+    'Пораховано зі знайдених власників: мережа не дала всіх рахунків.',
   ),
   hHoldersNoneFound: bi(
     "None of the holders found holds more than $1, and the network didn't list every account.",
-    'Серед знайдених холдерів жоден не має понад $1, а всіх рахунків мережа не дала.',
+    'Серед знайдених власників жоден не має понад $1, а всіх рахунків мережа не дала.',
   ),
   hCreator: bi('Creator', 'Творець'),
   hCreatorSold: bi('Sold {pct} of what they bought', 'Продав {pct} купленого'),
-  hCreatorSoldSupply: bi('Sold {pct} of the supply', 'Продав {pct} пропозиції'),
+  hCreatorSoldSupply: bi('Sold {pct} of the supply', 'Продав {pct} емісії'),
   hConcentration: bi('Concentration', 'Концентрація'),
   hTop10: bi('Top 10 hold {pct} of circulating tokens', 'Топ-10 тримають {pct} токенів в обігу'),
   hTop10AtLeast: bi(
@@ -862,10 +913,10 @@ export const LAUNCH_WORDS = {
   ),
   hMarked: bi('Above {pct}: marked', 'Понад {pct}: позначка'),
   hNotMarked: bi('Below the {pct} mark', 'Нижче позначки {pct}'),
-  hEngine: bi("Ryntra's executor", 'Виконавець Ryntra'),
+  hEngine: bi('Ryntra on this market', 'Ryntra на цьому ринку'),
   hNoExecutor: bi(
-    "None on this network yet — anyone can send the move to the DEX, Meteora's keepers too.",
-    'На цій мережі його ще немає — вихід на DEX може надіслати будь-хто, зокрема кіпери Meteora.',
+    'Not on this network yet — anyone can send the move to the DEX, including Meteora.',
+    'На цій мережі Ryntra ще не діє — вихід на DEX може надіслати будь-хто, зокрема Meteora.',
   ),
   hExecutorIdle: bi(
     'Not acting on this network now — anyone can send the move to the DEX.',
@@ -878,14 +929,17 @@ export const LAUNCH_WORDS = {
     'Watching this market: it sends the move to the DEX as soon as the curve fills.',
     'Стежить за ринком: надішле вихід на DEX, щойно крива набере поріг.',
   ),
-  hExecutorActs_pool: bi("Watching this market, under Ryntra's policies.", 'Стежить за ринком — за політиками Ryntra.'),
+  hExecutorActs_pool: bi(
+    "Watching this market, under Ryntra's policies.",
+    'Стежить за ринком — так, як визначила Ryntra.',
+  ),
   hPause_OPERATOR: bi(
     "Paused here by hand: it signs nothing until it's back on.",
     'На паузі тут вручну: нічого не підписує, доки його знову не ввімкнуть.',
   ),
   hPause_STOPPED: bi(
-    "Ryntra's executor isn't acting on this market now: its ladder stands but doesn't move.",
-    'Виконавець Ryntra зараз не діє на цьому ринку: драбина стоїть, але не рухається.',
+    'Ryntra isn’t acting on this market now: its ladder stands but doesn’t move.',
+    'Ryntra зараз не діє на цьому ринку: драбина стоїть, але не рухається.',
   ),
   hPause_RISK_LIMIT: bi(
     'Paused at a risk limit: Ryntra does nothing here until the risk clears.',
@@ -893,32 +947,28 @@ export const LAUNCH_WORDS = {
   ),
   hRules: bi('What governs this market', 'Що тримає цей ринок'),
   hRulesLegend: bi(
-    "A rule is enforced by a program on chain; neither the creator nor Ryntra can change it. A policy is run by Ryntra's server and holds while the server does.",
-    'Правило забезпечує програма в ланцюгу — ні творець, ні Ryntra його не змінять. Політику виконує сервер Ryntra — вона діє, поки він працює.',
-  ),
-  hRulesInMarks: bi(
-    "The token's own rules and the DEX pool's locks are in “Honest launch”.",
-    'Правила самого токена й замки пулу DEX — у «Чесному лаунчі».',
+    'A rule is fixed on the blockchain; neither the creator nor Ryntra can change it. A policy is Ryntra’s own and holds while Ryntra keeps running it.',
+    'Правило закріплено в блокчейні — ні творець, ні Ryntra його не змінять. «Від Ryntra» — те, що робить сама Ryntra; діє, поки Ryntra це виконує.',
   ),
   hRulesIncomplete: bi("Some of the token's rules couldn't be read now.", 'Частину правил токена зараз не прочитано.'),
   hHow: bi('How we count', 'Як ми рахуємо'),
   enforce_rule: bi('Rule', 'Правило'),
-  enforce_policy: bi('Policy', 'Політика'),
-  enforceHint_rule: bi('Enforced by a program on chain', 'Забезпечує програма в ланцюгу'),
-  enforceHint_policy: bi("Run by Ryntra's server", 'Виконує сервер Ryntra'),
-  keeper_token2022: bi('Token-2022', 'Token-2022'),
-  keeper_meteoraDbc: bi('Meteora DBC', 'Meteora DBC'),
-  keeper_meteoraDammV2: bi('Meteora DAMM v2', 'Meteora DAMM v2'),
-  keeper_metLock: bi('Met Lock', 'Met Lock'),
+  enforce_policy: bi('Policy', 'Від Ryntra'),
+  enforceHint_rule: bi('Fixed on the blockchain', 'Закріплено в блокчейні'),
+  enforceHint_policy: bi('Run by Ryntra', 'Виконує Ryntra'),
+  keeper_token2022: bi('The token itself', 'Сам токен'),
+  keeper_meteoraDbc: bi('Meteora’s curve', 'Крива Meteora'),
+  keeper_meteoraDammV2: bi('Meteora’s pool', 'Пул Meteora'),
+  keeper_metLock: bi('Meteora’s lock', 'Замок Meteora'),
   keeper_feeSharing: bi('Meteora fee sharing', 'Ділення комісій Meteora'),
   keeper_ryntra: bi('Ryntra', 'Ryntra'),
   rule_CONFIG_FIXED: bi(
-    "The curve's numbers and the DEX pool's starting fees are set in Meteora's config; neither the creator nor Ryntra can change them",
-    'Числа кривої й стартові комісії пулу DEX записано в конфігу Meteora — ні творець, ні Ryntra їх не змінять',
+    'The curve’s numbers and the DEX pool’s starting fees are fixed at launch; neither the creator nor Ryntra can change them',
+    'Числа кривої й стартові комісії пулу DEX закріплено під час запуску — ні творець, ні Ryntra їх не змінять',
   ),
   rule_CURVE_HOLDS_FUNDS: bi(
-    "Buyers' money on the curve is held by Meteora's program",
-    'Гроші покупців на кривій тримає програма Meteora',
+    'Buyers’ money is held by a program on the blockchain until the DEX',
+    'Гроші покупців до виходу на DEX зберігає програма в блокчейні',
   ),
   rule_GRADUATION_AT_THRESHOLD: bi(
     'Moves to the DEX at {amount}; anyone can send it',
@@ -937,15 +987,15 @@ export const LAUNCH_WORDS = {
   ),
   rule_CREATOR_FIRST_BUY_CAP: bi(
     "The creator's first buy was capped at {pct} of the supply",
-    'Перша покупка творця — не більше {pct} пропозиції',
+    'Перша покупка творця — не більше {pct} емісії',
   ),
   rule_GRADUATION_BY_RYNTRA: bi(
     'If no one sends the move to the DEX, Ryntra sends it',
     'Якщо вихід на DEX не надішле ніхто, його надішле Ryntra',
   ),
   rule_FEE_FUNDED_LADDER: bi(
-    'Fee-Funded Liquidity Ladder: buy steps below the price, never sold into a fall',
-    'Драбина ліквідності з комісій: сходинки на купівлю нижче ціни, у падіння не продає',
+    "Ryntra buys below the price with this market's fees and never sells into a fall",
+    'Ryntra купує нижче ціни за комісії ринку й у падіння не продає',
   ),
   rule_CREATOR_SALE_MARK: bi(
     'Every sale by the creator is marked here and in the flight log',
@@ -958,8 +1008,8 @@ export const LAUNCH_WORDS = {
     'Стан — де ринок у своєму циклі; щоразу з ланцюга.',
   ),
   def_depth: bi(
-    "Executable depth — what the market pays out in the pair currency while sales move the price 2, 5 or 10% down: on the curve, what Meteora's curve releases; after the DEX, the DAMM v2 pool plus Ryntra's ladder steps at or above that price. The pools' fee isn't taken off; other venues aren't counted.",
-    'Виконувана глибина — скільки ринок виплатить у валюті пари, поки продажі зсувають ціну на 2, 5 чи 10 % униз: на кривій — що віддасть крива Meteora; після виходу — пул DAMM v2 і сходинки драбини Ryntra не нижче цієї ціни. Комісію пулів не віднято; інші майданчики не враховано.',
+    'Executable depth — what the market pays out in the pair currency while sales move the price 2, 5 or 10% down: on the curve, what Meteora’s curve releases; after the DEX, the pool plus Ryntra’s ladder steps at or above that price. The pools’ fee isn’t taken off; other venues aren’t counted.',
+    'Виконувана глибина — скільки ринок виплатить у валюті пари, поки продажі зсувають ціну на 2, 5 чи 10 % униз: на кривій — що віддасть крива Meteora; після виходу — пул і сходинки драбини Ryntra не нижче цієї ціни. Комісію пулів не віднято; інші майданчики не враховано.',
   ),
   def_budget: bi(
     "Market budget — what Ryntra earned on this market for its ladder, what stands in the ladder, and what's left. “Not counted yet” means exactly that, never zero.",
@@ -971,7 +1021,7 @@ export const LAUNCH_WORDS = {
   ),
   def_holders: bi(
     "Holders — wallets worth more than $1 at the price now, without pools, locks and Ryntra's own wallets; from every account of the token, or — when the network won't list them all — from the ones found, said “at least”.",
-    'Холдери — гаманці з балансом понад $1 за поточною ціною, без пулів, замків і гаманців Ryntra; з усіх рахунків токена, а коли мережа не дає всіх — зі знайдених, «щонайменше».',
+    'Власники — гаманці з балансом понад $1 за поточною ціною, без пулів, замків і гаманців Ryntra; з усіх рахунків токена, а коли мережа не дає всіх — зі знайдених, «щонайменше».',
   ),
   def_creator: bi(
     'Creator — their lock and its dates, and whether they sold any of the token.',
@@ -982,8 +1032,8 @@ export const LAUNCH_WORDS = {
     'Концентрація — десять найбільших балансів без пулів і замків, як частка токенів поза ними (в обігу); з усіх рахунків або з найбільших — тоді «щонайменше». Понад 60 % — позначка, не пауза.',
   ),
   def_engine: bi(
-    "Executor — Ryntra's wallet that acts on markets by Ryntra's policies: whether it acts on this network now, and its last action here.",
-    'Виконавець — гаманець Ryntra, що діє на ринках за політиками Ryntra: чи діє він на цій мережі зараз і його остання дія тут.',
+    'Ryntra on this market — Ryntra’s wallet that acts on markets by Ryntra’s policies: whether it acts on this network now, and its last action here.',
+    'Ryntra на цьому ринку — гаманець Ryntra, що діє на ринках так, як визначила Ryntra: чи діє він на цій мережі зараз і його остання дія тут.',
   ),
   noGuarantee: bi(
     'No price guarantee. Liquidity can be used up. Ryntra never holds your money.',
@@ -1019,7 +1069,7 @@ export const LAUNCH_WORDS = {
   ),
   log_CREATOR_SOLD_supply: bi(
     '{tokens} for {amount} · {pct} of the supply by then',
-    '{tokens} за {amount} · {pct} пропозиції на той момент',
+    '{tokens} за {amount} · {pct} емісії на той момент',
   ),
   log_GRADUATED_ryntra: bi(
     'The curve held {amount} · migrated by Ryntra',
@@ -1087,7 +1137,7 @@ export const LAUNCH_WORDS = {
   enforce_observed: bi('Observed', 'Спостереження'),
   enforceHint_observed: bi(
     'Seen on chain by the log; neither a rule nor a policy',
-    'Журнал бачить це в ланцюгу; не правило і не політика',
+    'Журнал бачить це в ланцюгу; не правило і не дія Ryntra',
   ),
   // The phone's own: the third tab's short name (the web's menu says it so), the market's card on the token's page, its addresses
   tabMarkets: bi('Launches on Ryntra', 'Лаунчі на Ryntra'),
@@ -1102,14 +1152,19 @@ export const LAUNCH_WORDS = {
   ),
   poolLockedForever: bi('DEX pool locked forever', 'Пул DEX замкнений назавжди'),
   poolSince: bi('On the DEX since {date}', 'На DEX з {date}'),
-  ladderUnread: bi("Ryntra's ladder wasn't read now", 'Драбину Ryntra зараз не прочитано'),
-  rulesLegendOpen: bi('Rule or policy — what it means', 'Правило чи політика — що це'),
+  ladderUnread: bi("Ryntra's buys below the price weren't read now", 'Купівлі Ryntra нижче ціни зараз не прочитано'),
+  rulesLegendOpen: bi('Rule or policy — what it means', 'Правило чи «Від Ryntra» — що це'),
   rulesMore: bi('{n} more', 'Ще {n}'),
-  ladderWorks: bi(
-    "Ryntra's ladder works: {amount} in its buy steps",
-    'Драбина Ryntra працює: {amount} у сходинках на купівлю',
+  ladderWorks: bi('Ryntra holds {amount} to buy below the price', 'Ryntra тримає {amount} на купівлю нижче ціни'),
+  ladderHolds: bi(
+    "{amount} from Ryntra stands to buy below the price; Ryntra isn't moving it now",
+    '{amount} від Ryntra стоїть на купівлю нижче ціни; зараз Ryntra її не рухає',
   ),
-  ladderHolds: bi("In Ryntra's ladder: {amount} in its buy steps", 'У драбині Ryntra: {amount} у сходинках на купівлю'),
+  ladderHelpTitle: bi("Ryntra's buys below the price", 'Купівлі Ryntra нижче ціни'),
+  ladderHelp: bi(
+    "Ryntra funds them from this market's fees and moves them up after the price. They buy when the price falls and never sell into a fall. They promise no price.",
+    'Ryntra наповнює їх із комісій цього ринку й піднімає слідом за ціною. Вони купують, коли ціна падає, і в падіння не продають. Ціни вони не обіцяють.',
+  ),
   poolPartLocked: bi(
     "Part of the DEX pool's liquidity locked forever",
     'Частку ліквідності пулу DEX замкнено назавжди',
@@ -1131,23 +1186,19 @@ export const LAUNCH_WORDS = {
   addresses: bi('Market addresses', 'Адреси ринку'),
   addr_curve: bi('Curve', 'Крива'),
   addr_config: bi('Config', 'Конфіг'),
-  addr_pool: bi('DEX pool · DAMM v2', 'Пул DEX · DAMM v2'),
+  addr_pool: bi('DEX pool', 'Пул DEX'),
   addr_locked: bi('Locked position', 'Замкнена позиція'),
   addr_creatorLock: bi("Creator's lock", 'Замок творця'),
   addr_feeVault: bi('Fee sharing', 'Ділення комісій'),
   addr_ladder: bi("Ryntra's ladder", 'Драбина Ryntra'),
-  addr_executor: bi("Ryntra's executor", 'Виконавець Ryntra'),
+  addr_executor: bi('Ryntra’s working wallet', 'Робочий гаманець Ryntra'),
 
-  // The preset said before the signature
+  // The preset said before the signature (M38.4)
   presetWay: bi('Market cap: starts at {start}, DEX at {end}', 'Капіталізація: старт {start}, вихід на DEX — {end}'),
   hRulesBefore: bi('What will govern this market', 'Що триматиме цей ринок'),
-  rulesBeforeLine: bi(
-    "All of it holds from the launch. The accounts that show it are on the market's page.",
-    'Усе це діє із запуску. Адреси, де це видно, — на сторінці ринку.',
-  ),
   presetLpForever: bi(
-    "Once on the DEX, the pool's liquidity is locked forever",
-    'Після виходу на DEX ліквідність пулу буде замкнено назавжди',
+    'Once the token moves to its own pool, the pool’s liquidity is locked forever',
+    'Коли токен перейде у свій пул, ліквідність пулу буде замкнено назавжди',
   ),
   rule_GRADUATION_AT_CAP: bi(
     'Moves to the DEX at a {amount} market cap; anyone can send it',
@@ -1155,9 +1206,9 @@ export const LAUNCH_WORDS = {
   ),
   rule_CREATOR_FIRST_BUY_CAP_before: bi(
     "The creator's first buy: at most {pct} of the supply",
-    'Перша покупка творця — не більше {pct} пропозиції',
+    'Перша покупка творця — не більше {pct} емісії',
   ),
-  // «Мої лаунчі»: each market's state and health, what it earned by source
+  // «Мої лаунчі»: each market's state and health, what it earned by source (M38.4)
   mineBySource: bi('Earned, by source', 'Зароблено за джерелами'),
 } as const
 

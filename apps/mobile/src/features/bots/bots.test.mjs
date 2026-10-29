@@ -30,7 +30,10 @@ test('«Боти» is the web’s: Мої боти · Каталог, the web’
   assert.equal(BOTS_COPY.uk.recurring, 'Регулярна купівля')
   assert.equal(BOTS_COPY.uk.plans, 'Плани угод')
   // Any token with liquidity (1.31.0), the floor of a meme or a new token said with it — the web's words.
-  assert.equal(BOTS_COPY.uk.recurringFor, 'Акції, монети й меми. Мем чи новий токен — від $25 000 ліквідності й 24 годин на ринку.')
+  assert.equal(
+    BOTS_COPY.uk.recurringFor,
+    'Акції, монети й меми. Мем чи новий токен — від $25 000 ліквідності й 24 годин на ринку.',
+  )
   assert.equal(BOTS_COPY.uk.pickToken, 'Обрати токен')
   assert.equal(botsTabOf('catalog'), 'catalog')
   assert.equal(botsTabOf(undefined), 'mine')
@@ -76,8 +79,13 @@ test('the screen: «Мої боти» behind the wallet’s session, the rules b
   assert.ok(code.indexOf('<RulesBlock') < code.indexOf('<MyPlans />'))
   assert.match(code, /router\.push\('\/results'\)/)
   assert.match(code, /result=\{resultOf\(plan\)\}/)
-  // The catalog opens every token on Markets — a recurring buy names any token with liquidity — and a plan from a stock.
-  assert.match(code, /marketsPath\('all'\)/)
+  // The catalog's recurring buy names any token with liquidity: the search sheet over Bots, titled for the rule, and the
+  // token chosen opens on its page with its rule's sheet — never the Markets tab with no word of what it is for (ST-5).
+  assert.match(code, /<AssetPickerSheet[\s\S]*?title=\{bots\.pickTokenFor\}/)
+  assert.match(code, /autoinvest: '1'/)
+  assert.doesNotMatch(code, /marketsPath\('all'\)/)
+  assert.equal(BOTS_COPY.uk.pickTokenFor, 'Токен для регулярної купівлі')
+  assert.equal(BOTS_COPY.en.pickTokenFor, 'Token for a recurring buy')
   assert.match(code, /router\.push\('\/plans\/pick'\)/)
   // No orange on the catalog: its actions are quiet (one orange action per screen).
   assert.doesNotMatch(code.slice(code.indexOf('function Catalog')), /variant="primary"/)

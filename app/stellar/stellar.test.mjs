@@ -55,7 +55,7 @@ test("every destination the page offers is a route that is actually mounted", ()
     assert.ok(mountedRouteFile(href), `${name}: ${href} resolves to no mounted page`);
   }
 
-  /* The gate, proven rather than asserted. These are the two URLs the page's
+  /* The gate, proven rather than asserted. These are the two URLs the founder's
      brief named, and the reason the page does not use them: `/developers`
      carries no Stellar section, and a receipt is verified by pasting the
      document rather than by id. If the resolver ever returns a file for either,

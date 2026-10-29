@@ -2,7 +2,9 @@ import assert from 'node:assert/strict'
 import { test } from 'node:test'
 
 import { ApiError } from '../../lib/api.ts'
+import { walletCancel } from '../wallet/wallet-wait.ts'
 import {
+  base58ByteLength,
   blocksNewSend,
   checkNotes,
   checkRows,
@@ -14,13 +16,16 @@ import {
   linkIsLive,
   overBalance,
   parsePendingSend,
+  recipientLocal,
   recipientView,
   resumeReadOf,
   sendAssets,
   sendFailureKey,
   settleOutcome,
   settleRefusedBeforeSubmit,
+  spendableOf,
   transferInput,
+  wrongLengthView,
 } from './money-model.ts'
 import { qrPath } from './qr.ts'
 import { payLink, resumePending, sameTerms, sendReviewed } from './send-flow.ts'
@@ -270,6 +275,22 @@ test('the recipient check’s one decision, in words', () => {
   assert.equal(
     recipientView({ ...base, input: 'pay-link', next: 'none', problem: 'SELF', address: ME }, 'uk').line,
     'Це твоє власне посилання на оплату.',
+  )
+  // An Ethereum address is named as one, never as a Solana address mistyped.
+  const evm = '0x52908400098527886E0F7030069857D2E4169EE7'
+  for (const problem of ['MISREAD_CHARACTER', 'NOT_AN_ADDRESS', 'WRONG_LENGTH']) {
+    assert.equal(
+      recipientView({ ...base, next: 'none', problem, address: null }, 'en', evm).line,
+      'This is an Ethereum address. Ryntra sends on Solana here — enter a Solana address.',
+    )
+    assert.equal(
+      recipientView({ ...base, next: 'none', problem, address: null }, 'uk', ` ${evm} `).line,
+      'Це адреса Ethereum. Тут Ryntra надсилає в мережі Solana — введи адресу Solana.',
+    )
+  }
+  assert.equal(
+    recipientView({ ...base, next: 'none', problem: 'MISREAD_CHARACTER', address: null }, 'en', 'So1O').line,
+    'A Solana address never has 0, O, I or l. Copy it rather than retyping it.',
   )
 })
 
@@ -692,4 +713,136 @@ test('a fresh Review that adds a cost the person did not read goes back to them'
   })
   assert.equal(result.ok, false)
   assert.equal(result.failure.key, 'changed')
+})
+
+test('a transfer with a Ledger (M45): «Скасувати» or ninety seconds without an answer send nothing; 6808 is said as itself', async () => {
+  const doubles = api()
+  const settled = []
+  const settle = doubles.settle
+  doubles.settle = async (request) => {
+    settled.push(request)
+    return settle(request)
+  }
+  const pending = memoryStore()
+  const cancel = walletCancel()
+  const waiting = sendReviewed({
+    api: doubles,
+    wallet: { signTransaction: () => new Promise(() => {}) },
+    pending,
+    read: review(),
+    transfer: TRANSFER,
+    summary: null,
+    now: () => 0,
+    sleep: () => new Promise(() => {}),
+    cancel,
+    onSigning: () => cancel.cancel(),
+  })
+  const cancelled = await waiting
+  assert.equal(cancelled.ok, false)
+  assert.equal(cancelled.phase, 'review')
+  assert.equal(cancelled.failure.key, 'walletCancelled')
+
+  const asked = []
+  const timedOut = await sendReviewed({
+    api: doubles,
+    wallet: { signTransaction: () => new Promise(() => {}) },
+    pending,
+    read: review(),
+    transfer: TRANSFER,
+    summary: null,
+    now: () => 0,
+    sleep: async (ms) => void asked.push(ms),
+  })
+  assert.equal(timedOut.failure.key, 'walletTimeout')
+  assert.deepEqual(asked, [90_000])
+
+  const blind = await sendReviewed({
+    api: doubles,
+    wallet: {
+      signTransaction: async () => {
+        throw new Error('Ledger: blind signing is disabled (0x6808)')
+      },
+    },
+    pending,
+    read: review(),
+    transfer: TRANSFER,
+    summary: null,
+    now: () => 0,
+  })
+  assert.equal(blind.failure.key, 'ledgerBlind')
+  // The wallet answered: the screen is told before the network round trip, so «Скасувати» goes at once.
+  const order = []
+  await sendReviewed({
+    api: { ...doubles, returned: async (request) => (order.push('returned'), doubles.returned(request)) },
+    wallet,
+    pending: memoryStore(),
+    read: review(),
+    transfer: TRANSFER,
+    summary: null,
+    now: () => 0,
+    onSigned: () => order.push('signed'),
+  })
+  assert.deepEqual(order.slice(0, 2), ['signed', 'returned'])
+  assert.equal(settled.length, 1, 'only the transfer signed in time was settled')
+  assert.equal(pending.get(ME), null, 'nothing was written down')
+})
+
+test('ST-5: a base58 text that is not 32 bytes is the wrong length, said by the phone without asking the server', () => {
+  // 32 characters, 23 bytes: the server named it «cannot receive SOL».
+  const short = '5k3FabcdXYZ123abcdXYZ123abcdXYZ1'
+  assert.equal(short.length, 32)
+  assert.equal(base58ByteLength(short), 23)
+  assert.equal(recipientLocal(short, false), 'wrong-length')
+  assert.equal(recipientLocal(short, true), 'wrong-length')
+  assert.deepEqual(wrongLengthView('uk'), { kind: 'problem', line: 'Адреса неправильної довжини. Скопіюй її ще раз.' })
+  assert.equal(wrongLengthView('en').line, 'That address is the wrong length. Copy it again.')
+  // Real addresses are 32 bytes, whether 43 or 44 characters, and the system program's 32 ones.
+  assert.equal(base58ByteLength(ME), 32)
+  assert.equal(base58ByteLength(USDC), 32)
+  assert.equal(base58ByteLength('11111111111111111111111111111111'), 32)
+  assert.equal(recipientLocal(ME, false), null)
+  assert.equal(
+    recipientLocal(
+      `  ${USDC}
+`,
+      false,
+    ),
+    null,
+  )
+  // Too long is the wrong length too.
+  assert.equal(recipientLocal(`${ME}abc`, false), 'wrong-length')
+})
+
+test('ST-5: while the first characters are typed nothing is said; the length is judged once the field is left', () => {
+  assert.equal(recipientLocal('5', false), 'typing')
+  assert.equal(recipientLocal('5k3Fabcd', false), 'typing')
+  assert.equal(recipientLocal(ME.slice(0, 31), false), 'typing')
+  // Left the field, «Далі», pasted or scanned: a short text is the wrong length now.
+  assert.equal(recipientLocal('5k3Fabcd', true), 'wrong-length')
+  assert.equal(recipientLocal('', false), null)
+  assert.equal(recipientLocal('', true), null)
+})
+
+test('ST-5: what is not plain base58 is the server’s to read — links, requests, an Ethereum address, a misread character', () => {
+  assert.equal(base58ByteLength('0xabc'), null)
+  for (const text of [
+    `solana:${ME}?amount=1`,
+    'https://ryntra.io/pay/abc',
+    '0x52908400098527886E0F7030069857D2E4169EE7',
+    `${ME.slice(0, 10)}0${ME.slice(11)}`,
+    `${ME.slice(0, 10)}l${ME.slice(11)}`,
+  ]) {
+    assert.equal(recipientLocal(text, false), null, text)
+    assert.equal(recipientLocal(text, true), null, text)
+  }
+})
+
+test('«Можна надіслати»: unknown is a dash, zero only for a row absent from a complete read', () => {
+  assert.deepEqual(spendableOf({ spendableRaw: '1500000', decimals: 6 }, false), { raw: '1500000', decimals: 6 })
+  assert.equal(spendableOf({ spendableRaw: null, decimals: 6 }, true), null)
+  assert.equal(spendableOf({ spendableRaw: undefined }, true), null)
+  assert.equal(spendableOf({ spendableRaw: 'n/a', decimals: 6 }, true), null)
+  assert.deepEqual(spendableOf(null, true), { raw: '0', decimals: null })
+  assert.equal(spendableOf(null, false), null)
+  assert.deepEqual(spendableOf({ spendableRaw: '0', decimals: null }, false), { raw: '0', decimals: null })
 })

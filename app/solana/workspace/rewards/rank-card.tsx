@@ -54,7 +54,7 @@ export function rankProgress(rank: Pick<RankSummary, "points" | "rankFrom" | "ne
 const RING_RADIUS = 40;
 const RING_LENGTH = 2 * Math.PI * RING_RADIUS;
 
-export function RankCard({ rank }: { rank: RankSummary | null }) {
+export function RankCard({ rank, inviterWindow = null, firstTen = false }: { rank: RankSummary | null; inviterWindow?: Readonly<{ share: number; days: number }> | null; firstTen?: boolean }) {
   const { locale } = useSolanaI18n();
   const copy = rankCopy(locale);
   const gradient = `rw-ring-${useId().replace(/:/g, "")}`;
@@ -122,7 +122,7 @@ export function RankCard({ rank }: { rank: RankSummary | null }) {
           <p className={styles.pointsNext}>{rank.next ? copy.toNext(rank.next.toGo, rank.next.rank) : copy.top}</p>
           <p className={styles.pointsLead}>
             {fresh
-              ? copy.fresh
+              ? firstTen ? copy.freshWindow : copy.fresh
               : copy.breakdown(rank.fromTrades, rank.fromFriends, whole(rank.fromLaunches) > 0 ? rank.fromLaunches : null).map((segment, index) => (
                   <span key={segment}>
                     {index > 0 ? " · " : null}
@@ -149,6 +149,8 @@ export function RankCard({ rank }: { rank: RankSummary | null }) {
             );
           })}
         </ol>
+        {/* Rules 2.1.0: a friend's first days pay the window's share whatever the rank — said once, under the shares. */}
+        {inviterWindow ? <p className={styles.ladderNote}>{copy.ladderWindowShort(inviterWindow.share, inviterWindow.days)}</p> : null}
       </div>
     </section>
   );

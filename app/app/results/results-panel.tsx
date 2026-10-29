@@ -43,7 +43,7 @@ type Feed = Readonly<{
 const EMPTY: Feed = { status: "idle", results: [], outcomes: [], positions: [], summary: EMPTY_SUMMARY, pending: 0 };
 
 /**
- * `embedded` — the panel inside «Боти → Мої боти», under the plans: the page
+ * `embedded` — the panel inside «Термінал → Автоінвест», under the plans: the page
  * above already asks a guest in and a wallet to confirm, so the panel says
  * nothing until it has results to show, and then draws `head` above them.
  */

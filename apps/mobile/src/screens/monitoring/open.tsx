@@ -4,6 +4,7 @@ import { Pressable, View } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 
 import { Card } from '@/components/card'
+import { HelpDot } from '@/components/help-dot'
 import { Icon } from '@/components/icon'
 import { ScreenHeader } from '@/components/screen'
 import { Skeleton } from '@/components/skeleton'
@@ -18,29 +19,39 @@ import { recordJourney } from '@/features/journeys/journey-store'
 import { MONITORING_COPY } from '@/features/monitoring/copy'
 import { webHrefOf } from '@/features/monitoring/deep-link'
 import { marketsPath } from '@/features/markets/screener'
-import { parseNoteRef, type NoteTarget } from '@/features/monitoring/monitoring-model'
+import {
+  BUDGET_EDIT_PATH,
+  latestWalletNote,
+  parseNoteRef,
+  type NoteTarget,
+} from '@/features/monitoring/monitoring-model'
 import { useMarkRead, useResolvedNote } from '@/features/monitoring/use-monitoring'
 import { PLANS_COPY } from '@/features/plans/copy'
 import { useAccount } from '@/features/session/use-account'
+import { useOpenPlace } from '@/features/shell/open-place'
+import { portfolioOrdersPath } from '@/features/shell/shell'
 import { SessionGate } from '@/features/wallet/wallet-gate'
 import { useNow } from '@/hooks/use-now'
 import { useCopy, useLocale, useSharedCopy } from '@/lib/i18n'
 import { PlanRow } from '@/screens/plans/plan-row'
 import { openLink } from '@/lib/open-link'
 
+import { WalletWatchNote } from './wallet-watch-note'
+
 const first = (value: string | string[] | undefined): string | undefined => (Array.isArray(value) ? value[0] : value)
 const SYMBOL = /^[A-Za-z0-9._-]{1,32}$/
+const WALLET = /^[1-9A-HJ-NP-Za-km-z]{32,44}$/
 
 /**
  * The resolver behind every deep link into the monitoring: `?n=<note|monitor>`
  * from a push, a Telegram button or the web's own link, `?href=<web path>`
  * for a page the phone has no surface for, `?rule=<id>&due=<instant>` for an
- * autoinvest reminder's own link. It reads the wallet's surface and
+ * autoinvest reminder's own link (M16). It reads the wallet's surface and
  * plans afresh, marks the note read as the web's link does, and replaces
  * itself with the exact plan — or, for a reminder, with its company's
  * purchase under the rule, the rule read afresh first; for the note that the
  * month's budget is spent, with Home and the budget's sheet; for an issuer's
- * event, with the token's page and its swap's sheet — and the event's own
+ * event (M19), with the token's page and its swap's sheet — and the event's own
  * link, `?stock=<symbol>&open=convert|sell`, finds the token on the shelf and
  * opens the same, no session needed to read it. When the surface names
  * a symbol two plans share, it asks — it never guesses. Nothing here carries a
@@ -50,6 +61,7 @@ const SYMBOL = /^[A-Za-z0-9._-]{1,32}$/
 export function OpenNoteScreen() {
   const insets = useSafeAreaInsets()
   const router = useRouter()
+  const openPlace = useOpenPlace()
   const locale = useLocale()
   const copy = useCopy(MONITORING_COPY)
   const plansCopy = useCopy(PLANS_COPY)
@@ -64,6 +76,7 @@ export function OpenNoteScreen() {
     symbol?: string | string[]
     stock?: string | string[]
     open?: string | string[]
+    wallet?: string | string[]
   }>()
   const ref = parseNoteRef(first(params.n))
   const web = webHrefOf(first(params.href))
@@ -100,7 +113,7 @@ export function OpenNoteScreen() {
           ?.mint ?? null)
       : null
 
-  /* An issuer's event by its own link: the token by its symbol, the swap or the sale. */
+  /* An issuer's event by its own link (M19): the token by its symbol, the swap or the sale. */
   const linkStock = first(params.stock)
   const linkOpen = first(params.open)
   const stockSymbol = !ref && linkStock && SYMBOL.test(linkStock) ? linkStock : null
@@ -113,6 +126,10 @@ export function OpenNoteScreen() {
         null)
       : null
   const stockUnknown = stockLink && shelf.shelf !== null && stockMint === null
+
+  /* A followed wallet's push names the wallet, not the note (SOL-R4): its newest note in the inbox is shown. */
+  const linkWallet = first(params.wallet)
+  const walletLink = !ref && linkWallet && WALLET.test(linkWallet) ? linkWallet : null
 
   const toInbox = () => router.replace('/monitoring')
 
@@ -151,7 +168,32 @@ export function OpenNoteScreen() {
       // The month's autoinvest budget, spent: Home with the budget's sheet, as the web's own link opens it.
       done.current = true
       if (resolved.note?.unread) mark(resolved.note.id)
-      router.replace({ pathname: '/(tabs)', params: { budget: 'edit' } })
+      openPlace(BUDGET_EDIT_PATH)
+    } else if (resolved.target.kind === 'orders') {
+      // A limit filled or its receipt ready: «Мої ордери» on that order over «Портфель» (NEW-LOOK §2), as the web's own
+      // link opens its list — the way back lands on the place that holds the orders.
+      done.current = true
+      if (resolved.note?.unread) mark(resolved.note.id)
+      openPlace(portfolioOrdersPath(resolved.target.order))
+    } else if (resolved.target.kind === 'brief') {
+      // A morning brief: Ryntra with the brief of that day open, as the web's own link opens it.
+      done.current = true
+      if (resolved.note?.unread) mark(resolved.note.id)
+      router.replace({ pathname: '/ryn', params: { brief: resolved.target.day } })
+    } else if (resolved.target.kind === 'watch') {
+      // A token watch rang: «Стежу» with that watch in view, as the web's own link opens it.
+      done.current = true
+      if (resolved.note?.unread) mark(resolved.note.id)
+      router.replace({ pathname: '/ryn', params: { watch: resolved.target.watchId } })
+    } else if (resolved.target.kind === 'task') {
+      // A «Доручення» answered: its conversation, every run's answer.
+      done.current = true
+      if (resolved.note?.unread) mark(resolved.note.id)
+      router.replace({ pathname: '/ryn', params: { task: resolved.target.taskId } })
+    } else if (resolved.target.kind === 'walletWatch') {
+      // A followed wallet's trade is shown here, in its own words: read once it is opened.
+      done.current = true
+      if (resolved.note?.unread) mark(resolved.note.id)
     } else if (resolved.target.kind === 'issuer') {
       // An issuer's deadline on a held token: its page with the swap's sheet, as the web's own link opens it.
       done.current = true
@@ -161,7 +203,7 @@ export function OpenNoteScreen() {
         params: { mint: resolved.target.mint, category: 'stock', convert: '1' },
       })
     }
-  }, [resolved, mark, router])
+  }, [resolved, mark, router, openPlace])
 
   // A reminder: its company's purchase under the rule, once the rule is read — or, gone, its company alone.
   const ruleId = ruleTarget?.ruleId ?? null
@@ -195,9 +237,9 @@ export function OpenNoteScreen() {
       })
     } else if (stockUnknown) {
       done.current = true
-      router.replace(marketsPath('stocks') as never)
+      openPlace(marketsPath('stocks'))
     }
-  }, [stockSymbol, stockAction, stockMint, stockUnknown, router])
+  }, [stockSymbol, stockAction, stockMint, stockUnknown, router, openPlace])
 
   // A web-only page: opened once, and said.
   useEffect(() => {
@@ -218,12 +260,20 @@ export function OpenNoteScreen() {
   let body
   if (stockLink) {
     body = resolving
+  } else if (walletLink) {
+    body = session ? (
+      <WalletWatchNote
+        session={session}
+        wallet={walletLink}
+        note={monitoring.data ? latestWalletNote(monitoring.data, walletLink) : null}
+      />
+    ) : null
   } else if (!ref && !ruleTarget && web) {
     body = (
       <StateView
         icon="globe-outline"
         title={copy.webTitle}
-        detail={copy.webDetail}
+        help={{ title: copy.webTitle, body: copy.webDetail }}
         action={{ title: copy.openOnWeb, onPress: () => openLink(web) }}
       />
     )
@@ -232,7 +282,7 @@ export function OpenNoteScreen() {
       <StateView
         icon="notifications-off-outline"
         title={copy.unknownTitle}
-        detail={copy.unknownDetail}
+        help={{ title: copy.unknownTitle, body: copy.unknownDetail }}
         action={{ title: copy.backToInbox, onPress: toInbox }}
       />
     )
@@ -288,11 +338,11 @@ export function OpenNoteScreen() {
             ) : null}
           </Card>
         ) : null}
-        <View className="gap-1 px-1">
-          <Txt variant="title">{copy.choosePlanTitle(symbol)}</Txt>
-          <Txt variant="ui" tone="muted">
-            {copy.choosePlanDetail}
+        <View className="flex-row items-center gap-1 px-1">
+          <Txt variant="title" className="shrink">
+            {copy.choosePlanTitle(symbol)}
           </Txt>
+          <HelpDot title={copy.choosePlanTitle(symbol)} body={copy.choosePlanDetail} />
         </View>
         <Card padded={false} className="px-4">
           {candidates.map((plan, index) => (
@@ -320,7 +370,7 @@ export function OpenNoteScreen() {
       <StateView
         icon="git-branch-outline"
         title={copy.goneTitle}
-        detail={copy.goneDetail}
+        help={{ title: copy.goneTitle, body: copy.goneDetail }}
         action={{ title: copy.backToInbox, onPress: toInbox }}
       />
     )
@@ -331,17 +381,19 @@ export function OpenNoteScreen() {
       <StateView
         icon="notifications-off-outline"
         title={copy.unknownTitle}
-        detail={copy.unknownDetail}
+        help={{ title: copy.unknownTitle, body: copy.unknownDetail }}
         action={{ title: copy.backToInbox, onPress: toInbox }}
       />
     )
+  } else if (resolved.target.kind === 'walletWatch') {
+    body = <WalletWatchNote session={session} wallet={resolved.target.wallet} note={resolved.note} />
   } else if (resolved.target.kind === 'web') {
     const href = webHrefOf(resolved.target.href)
     body = (
       <StateView
         icon="globe-outline"
         title={copy.webTitle}
-        detail={copy.webDetail}
+        help={{ title: copy.webTitle, body: copy.webDetail }}
         action={
           href
             ? { title: copy.openOnWeb, onPress: () => openLink(href) }
@@ -366,11 +418,11 @@ export function OpenNoteScreen() {
           <Icon name="arrow-back" size={22} color="fg" />
         </Pressable>
         <View className="flex-1">
-          <ScreenHeader title={copy.title} />
+          <ScreenHeader title={copy.inboxTitle} />
         </View>
       </View>
       {/* A page that opens on the web needs no session on the phone; everything else is the wallet's own. */}
-      {(!ref && !ruleTarget && web) || stockLink ? body : <SessionGate what={copy.title}>{body}</SessionGate>}
+      {(!ref && !ruleTarget && web) || stockLink ? body : <SessionGate what={copy.inboxTitle}>{body}</SessionGate>}
     </View>
   )
 }

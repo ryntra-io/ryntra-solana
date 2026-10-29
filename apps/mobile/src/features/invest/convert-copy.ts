@@ -28,7 +28,6 @@ export type ConvertCopy = Readonly<{
   rowRate: string
   details: string
   hideDetails: string
-  route: string
   issuerDeadline: string
   whatYouGet: string
   issuerNotice: string
@@ -62,7 +61,6 @@ export const CONVERT_COPY: Copy<ConvertCopy> = {
     rowRate: 'Rate',
     details: 'Details',
     hideDetails: 'Hide details',
-    route: 'Route',
     issuerDeadline: 'The issuer’s deadline',
     whatYouGet: 'What you get',
     issuerNotice: 'The issuer’s notice',
@@ -82,6 +80,12 @@ export const CONVERT_COPY: Copy<ConvertCopy> = {
       walletFailed: 'The wallet did not finish the request. Nothing was sent.',
       closedUnderWallet:
         'The price expired while the wallet was open. That signature was not sent — refresh the price.',
+      bytesRebuilt:
+        'The price was built again — a transaction lives only about 30 seconds. Nothing was sent; check it and confirm.',
+      deviceConfirm:
+        'A transaction lives about 30 seconds: confirm in the wallet, or on a Ledger, within 20 seconds. Nothing was sent — refresh the price.',
+      walletCannotSign:
+        "This wallet does not sign transactions for apps — it only sends them itself. Nothing was sent; use Phantom, Solflare or the Seeker's wallet.",
       signatureUnreadable: 'The wallet’s signature could not be read. Nothing was sent.',
       paused: 'Trading is switched off right now.',
       notOffered: 'This is not offered right now.',
@@ -129,7 +133,6 @@ export const CONVERT_COPY: Copy<ConvertCopy> = {
     rowRate: 'Курс',
     details: 'Деталі',
     hideDetails: 'Сховати деталі',
-    route: 'Маршрут',
     issuerDeadline: 'Строк емітента',
     whatYouGet: 'Що отримаєш',
     issuerNotice: 'Оголошення емітента',
@@ -148,6 +151,12 @@ export const CONVERT_COPY: Copy<ConvertCopy> = {
       walletTimeout: 'Гаманець не відповів, поки діяла ціна. Нічого не підписано — онови ціну.',
       walletFailed: 'Гаманець не завершив запит. Нічого не надіслано.',
       closedUnderWallet: 'Ціна застаріла, поки гаманець був відкритий. Цей підпис не надіслано — онови ціну.',
+      bytesRebuilt:
+        'Ціну зібрано наново — транзакція живе лише ~30 секунд. Нічого не надіслано; переглянь і підтверди.',
+      deviceConfirm:
+        'Транзакція живе ~30 секунд: підтверди в гаманці чи на Ledger за 20 секунд. Нічого не надіслано — онови ціну.',
+      walletCannotSign:
+        'Цей гаманець не підписує транзакції для застосунків — лише надсилає їх сам. Нічого не надіслано; скористайся Phantom, Solflare чи гаманцем Seeker.',
       signatureUnreadable: 'Підпис гаманця не вдалося прочитати. Нічого не надіслано.',
       paused: 'Операції зараз вимкнені.',
       notOffered: 'Це зараз не пропонується.',

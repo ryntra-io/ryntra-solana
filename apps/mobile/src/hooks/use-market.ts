@@ -1,5 +1,7 @@
 import { keepPreviousData, useQuery } from '@tanstack/react-query'
 
+import { chartLimited, noChart } from '@/features/invest/chart-asks'
+
 import {
   fetchCandles,
   fetchMarket,
@@ -24,6 +26,15 @@ export function useMarket(mint: string, enabled = true) {
 }
 
 /**
+ * Whether a candles ask is asked again at once: a 404 (`CANDLES_THIN`) is this market's own answer — no chart, for a
+ * stated reason — and a limiter's 429 is asked again only after its window, by the chart itself (ST-5 r10); any other
+ * refusal once.
+ */
+export function candlesRetry(count: number, error: unknown): boolean {
+  return !noChart(error) && !chartLimited(error) && count < 1
+}
+
+/**
  * Candles for one market and timeframe, asked no more often than the server
  * keeps them fresh. A failed refresh keeps the last read on screen; a 404 is
  * this market's own answer (no chart, for a stated reason) and is not retried.
@@ -35,7 +46,7 @@ export function useCandles(mint: string, timeframe: Timeframe) {
     queryFn: ({ signal }) => fetchCandles(mint, timeframe, signal),
     staleTime: ttl,
     refetchInterval: ttl,
-    retry: (count, error) => !isNotFound(error) && count < 1,
+    retry: candlesRetry,
   })
 }
 

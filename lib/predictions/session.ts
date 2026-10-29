@@ -16,6 +16,7 @@
  */
 
 import { withBoundedCasRetry, type GuardStore } from "../guard/store.ts";
+import { walletChain } from "./env.ts";
 import { failure, type PredictionFailure } from "./failure.ts";
 import type { PredictionProvider, ProviderUserSession, Result } from "./provider.ts";
 import { open, seal, vaultAvailable } from "./vault.ts";
@@ -27,7 +28,7 @@ export type PredictionLinkRecord = Readonly<{
   wallet: string;
   externalId: string;
   providerUserId: string;
-  /** The Solana address the provider holds for this user; must be the Ryntra wallet. */
+  /** The address the provider holds for this user; must be the Ryntra wallet. */
   providerWallet: string | null;
   externalIdLinked: boolean;
   linkAttemptedAt: string | null;
@@ -45,8 +46,10 @@ export type PredictionLinkRecord = Readonly<{
 }>;
 
 export const LINK_KEY_PREFIX = "solana:mainnet:";
+/** An EVM wallet's link lives under its own prefix; the Solana key is the one rows were written under since the first link. */
+export const EVM_LINK_KEY_PREFIX = "evm:";
 export function linkKey(wallet: string): string {
-  return `${LINK_KEY_PREFIX}${wallet}`;
+  return walletChain(wallet) === "evm" ? `${EVM_LINK_KEY_PREFIX}${wallet}` : `${LINK_KEY_PREFIX}${wallet}`;
 }
 
 /** The provider's access token is a JWT with `exp`; a token that is not one is assumed to live ten minutes. */

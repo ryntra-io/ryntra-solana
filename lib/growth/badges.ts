@@ -461,3 +461,135 @@ export function seasonBadgeSvg(badge: SeasonBadgeId, options: BadgeOptions & { e
     `</svg>`
   );
 }
+
+/* ---------------------------------------------------------------- tracks */
+
+/**
+ * The badges of the Ryntra Network's tracks — partners, the Founding seat,
+ * creators, ambassadors and liquidity. Not a second system: each is an achievement, the
+ * round medallion in the achievements' teal with its own pictogram. The
+ * partner track's four levels also carry one to four orange marks, the way a
+ * rank does, so a level never rests on its picture alone.
+ */
+export const TRACK_BADGE_IDS = [
+  "SCOUT",
+  "PARTNER",
+  "BUILDER",
+  "COUNCIL",
+  "FOUNDING_PARTNER",
+  "LAUNCHED",
+  "GRADUATED",
+  "RETURNING_BUILDER",
+  "EDUCATOR",
+  "GUIDE",
+  "COMMUNITY_PARTNER",
+  "POOL_CONTRIBUTOR",
+  "STEWARD",
+  "STRATEGIST",
+] as const;
+export type TrackBadgeId = (typeof TRACK_BADGE_IDS)[number];
+
+/** The partner track's levels in order: the number of orange marks each wears. */
+export const PARTNER_LEVEL_IDS = ["SCOUT", "PARTNER", "BUILDER", "COUNCIL"] as const satisfies readonly TrackBadgeId[];
+
+/** Where a marked track badge's marks sit: low on the round face, under the pictogram. */
+const TRACK_MARKS_Y = 46;
+
+/** One to four orange marks on a thin teal line, inside the round rim. */
+function trackMarks(count: number, color: string, line: string): string {
+  const gap = 6;
+  const start = 32 - ((count - 1) * gap) / 2;
+  let out = `<path data-mark-line="" d="M20 ${TRACK_MARKS_Y}H44" stroke="${line}" stroke-opacity="0.55" stroke-width="0.7" stroke-linecap="round"/>`;
+  for (let i = 0; i < count; i += 1) {
+    const x = start + i * gap;
+    out += `<path data-mark="" d="M${r2(x)} ${r2(TRACK_MARKS_Y - MARK_SIZE)}L${r2(x + MARK_SIZE)} ${TRACK_MARKS_Y}L${r2(x)} ${r2(TRACK_MARKS_Y + MARK_SIZE)}L${r2(x - MARK_SIZE)} ${TRACK_MARKS_Y}Z" fill="${color}"/>`;
+  }
+  return out;
+}
+
+/** The tracks' pictograms on a 64 box; the partner levels keep above their marks. */
+function trackPictogram(id: TrackBadgeId, color: string): string {
+  const stroke = `fill="none" stroke="${color}" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"`;
+  switch (id) {
+    case "SCOUT":
+      /* A lens: the first look for a creator worth bringing. */
+      return `<circle cx="29.5" cy="28.5" r="7.5" ${stroke}/><path d="M35 34l5.5 5.5" ${stroke}/>`;
+    case "PARTNER":
+      /* Two rings joined: a creator and the person who brought them. */
+      return `<circle cx="27" cy="30" r="7" ${stroke}/><circle cx="37" cy="30" r="7" ${stroke}/>`;
+    case "BUILDER":
+      /* Three blocks laid: markets built one on another. */
+      return `<path d="M21 33h10v7H21zM33 33h10v7H33zM27 23.5h10v7H27z" ${stroke}/>`;
+    case "COUNCIL":
+      /* A hall of columns: the partners whose markets hold the programme up. */
+      return `<path d="M19.5 25L32 17l12.5 8z" ${stroke}/><path d="M24 28.5v9M32 28.5v9M40 28.5v9M20 40.5h24" ${stroke}/>`;
+    case "FOUNDING_PARTNER":
+      /* An arch and its keystone: among the first partners the programme was built on. */
+      return `<path d="M20.5 45V32a11.5 11.5 0 0 1 23 0v13" ${stroke}/><path d="M29 17.5h6l-1 6h-4z" ${stroke}/><path d="M17.5 45h29" ${stroke}/>`;
+    case "LAUNCHED":
+      /* A line that leaves the ground: a launch confirmed. */
+      return `<path d="M32 43V20M24.5 27.5L32 20l7.5 7.5" ${stroke}/><path d="M20 46h24" ${stroke} stroke-opacity="0.45"/>`;
+    case "GRADUATED":
+      /* The bonding curve, then the market — the same drawing as a launch that reached a DEX. */
+      return `<path d="M19 42c6 0 9-3 12-9s5-9 9-10" ${stroke}/><path d="M40 23l6-6M41 17h5v5" ${stroke}/><path d="M19 45.5h26" ${stroke} stroke-opacity="0.45"/>`;
+    case "RETURNING_BUILDER":
+      /* The way round and back to a second market. */
+      return `<path d="M42 32a10 10 0 1 1-3-7.1" ${stroke}/><path d="M40 18.5v6.5h-6.5" ${stroke}/><path d="M28.5 29h7v7h-7z" ${stroke}/>`;
+    case "EDUCATOR":
+      /* An open book: materials that teach. */
+      return `<path d="M32 24c-4.5-3.2-9.5-3.6-13-2v20c3.5-1.6 8.5-1.2 13 2 4.5-3.2 9.5-3.6 13-2V22c-3.5-1.6-8.5-1.2-13 2z" ${stroke}/><path d="M32 24v20" ${stroke}/>`;
+    case "GUIDE":
+      /* A signpost: showing creators the way in. */
+      return `<path d="M32 17v29" ${stroke}/><path d="M32 21h10l3.5 3.5L42 28H32M32 32H22l-3.5 3.5L22 39h10" ${stroke}/>`;
+    case "COMMUNITY_PARTNER":
+      /* Three people joined: a community that brings creators. */
+      return `<circle cx="32" cy="21" r="4.2" ${stroke}/><circle cx="21.5" cy="39" r="4.2" ${stroke}/><circle cx="42.5" cy="39" r="4.2" ${stroke}/><path d="M29.6 24.6l-5.7 10.8M34.4 24.6l5.7 10.8M25.7 39h12.6" ${stroke}/>`;
+    case "POOL_CONTRIBUTOR":
+      /* A drop over the pool's line: liquidity put in. */
+      return `<path d="M32 17.5c-5.2 6.8-8.5 11.4-8.5 15.7a8.5 8.5 0 0 0 17 0c0-4.3-3.3-8.9-8.5-15.7z" ${stroke}/><path d="M19.5 46h25" ${stroke} stroke-opacity="0.45"/>`;
+    case "STEWARD":
+      /* Two bounds and the price kept between them. */
+      return `<path d="M21 19.5v25M43 19.5v25" ${stroke}/><path d="M25.5 34c2.2-3.6 4.3-3.6 6.5 0s4.3 3.6 6.5 0" ${stroke}/>`;
+    case "STRATEGIST":
+      /* Bins gathered under a narrow range: liquidity placed where the price trades. */
+      return `<path d="M22 44v-6M27 44V31M32 44V24.5M37 44V31M42 44v-6" ${stroke}/><path d="M25 19.5h14" ${stroke} stroke-opacity="0.45"/>`;
+  }
+}
+
+/** How many orange marks a track badge wears: the partner levels one to four, every other none. */
+export function trackMarksOf(id: TrackBadgeId): number {
+  const index = (PARTNER_LEVEL_IDS as readonly TrackBadgeId[]).indexOf(id);
+  return index < 0 ? 0 : index + 1;
+}
+
+/**
+ * A track's badge: the round medallion in the achievements' teal with its
+ * pictogram (and its marks, for a partner level) — or, not yet earned, the
+ * rim alone in slate with the marks in slate, like every other badge.
+ */
+export function trackBadgeSvg(badge: TrackBadgeId, options: BadgeOptions & { earned: boolean }): string {
+  const id = idPrefix(options.id);
+  const outer = circle(32, 32, 30);
+  const inner = circle(32, 32, 24.5);
+  const count = trackMarksOf(badge);
+  if (!options.earned) {
+    return (
+      svgOpen(options.size, options.title) +
+      lockedRim(outer, inner) +
+      trackPictogram(badge, LOCKED_METAL.mid) +
+      (count ? trackMarks(count, LOCKED_METAL.mid, LOCKED_METAL.mid) : "") +
+      `</svg>`
+    );
+  }
+  return (
+    svgOpen(options.size, options.title) +
+    `<defs>${metalGradient(`${id}-m`, ACHIEVEMENT_METAL)}${enamelGradient(`${id}-e`)}</defs>` +
+    `<path d="${outer}" fill="url(#${id}-m)" stroke="${ACHIEVEMENT_METAL.edge}" stroke-width="1"/>` +
+    gloss(`${id}-g`, outer) +
+    `<path d="${inner}" fill="url(#${id}-e)" stroke="${ACHIEVEMENT_METAL.light}" stroke-opacity="0.45" stroke-width="0.8"/>` +
+    trackPictogram(badge, ACHIEVEMENT_METAL.light) +
+    (count ? trackMarks(count, ORANGE, ACHIEVEMENT_METAL.light) : "") +
+    lights(id, outer) +
+    `</svg>`
+  );
+}

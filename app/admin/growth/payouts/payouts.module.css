@@ -1,0 +1,11 @@
+.form {
+  display: grid;
+  gap: 12px;
+  max-width: 560px;
+  margin-top: 14px;
+  min-width: 0;
+}
+
+.form input {
+  min-width: 0;
+}

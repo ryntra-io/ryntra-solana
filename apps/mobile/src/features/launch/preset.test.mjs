@@ -90,14 +90,20 @@ test('each rule said in words with the preset’s own figures — never a code, 
       NOW,
     )
   assert.equal(text('GRADUATION_AT_THRESHOLD'), 'Вихід на DEX — на капіталізації $75 000; надіслати його може будь-хто')
-  assert.equal(text('CREATOR_FIRST_BUY_CAP'), 'Перша покупка творця — не більше 2 % пропозиції')
+  assert.equal(text('CREATOR_FIRST_BUY_CAP'), 'Перша покупка творця — не більше 2 % емісії')
   // No pool exists yet: said as what happens once on the DEX.
-  assert.equal(text('LP_LOCKED_FOREVER'), 'Після виходу на DEX ліквідність пулу буде замкнено назавжди')
-  assert.equal(text('MINT_REVOKED'), 'Допечатати не може ніхто')
+  assert.equal(text('LP_LOCKED_FOREVER'), 'Коли токен перейде у свій пул, ліквідність пулу буде замкнено назавжди')
+  assert.equal(text('MINT_REVOKED'), 'Нових токенів не випустить ніхто')
 })
 
 test('a preset the phone has not seen (Micro, once the server lists it) is said by its own figures', () => {
-  const micro = { ...PROTECTED, id: 'micro', name: { uk: 'Мікро', en: 'Micro' }, graduationMarketCapUsd: 3600, firstBuyCapBps: 150 }
+  const micro = {
+    ...PROTECTED,
+    id: 'micro',
+    name: { uk: 'Мікро', en: 'Micro' },
+    graduationMarketCapUsd: 3600,
+    firstBuyCapBps: 150,
+  }
   const rules = presetRules(micro, null, NOW)
   assert.equal(rules.length, 9)
   const way = rules.find((rule) => rule.code === 'GRADUATION_AT_THRESHOLD')
@@ -105,7 +111,9 @@ test('a preset the phone has not seen (Micro, once the server lists it) is said 
   const cap = rules.find((rule) => rule.code === 'CREATOR_FIRST_BUY_CAP')
   assert.equal(presetRuleText(cap, micro, en, 'en', NOW), "The creator's first buy: at most 1.5% of the supply")
   // Its pool not locked for ever: not said.
-  assert.ok(!presetRules({ ...micro, lpLockedForeverPct: 50 }, null, NOW).some((rule) => rule.code === 'LP_LOCKED_FOREVER'))
+  assert.ok(
+    !presetRules({ ...micro, lpLockedForeverPct: 50 }, null, NOW).some((rule) => rule.code === 'LP_LOCKED_FOREVER'),
+  )
 })
 
 test('the preset’s way in whole dollars; the new words in both languages', () => {
@@ -118,7 +126,6 @@ test('the preset’s way in whole dollars; the new words in both languages', () 
   for (const key of [
     'presetWay',
     'hRulesBefore',
-    'rulesBeforeLine',
     'rule_GRADUATION_AT_CAP',
     'rule_CREATOR_FIRST_BUY_CAP_before',
     'presetLpForever',
@@ -129,7 +136,12 @@ test('the preset’s way in whole dollars; the new words in both languages', () 
 })
 
 test('what every preset says alike is said once; a preset that differs brings its line back onto each card', () => {
-  const classic = { ...PROTECTED, id: 'classic', sniperFee: { startBps: 2000, endBps: 100, seconds: 120 }, firstBuyCapBps: 500 }
+  const classic = {
+    ...PROTECTED,
+    id: 'classic',
+    sniperFee: { startBps: 2000, endBps: 100, seconds: 120 },
+    firstBuyCapBps: 500,
+  }
   assert.deepEqual(presetsAlike([classic, PROTECTED]), { way: true, lpForever: true })
   const micro = { ...PROTECTED, id: 'micro', graduationMarketCapUsd: 3600 }
   assert.deepEqual(presetsAlike([classic, PROTECTED, micro]), { way: false, lpForever: true })

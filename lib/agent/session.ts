@@ -11,6 +11,13 @@
  * order's state or the inbox: those are read again through the tools on
  * every question. Compare-and-set on the store's revision keeps two answers
  * to one session from overwriting each other; the loser re-reads.
+ *
+ * AI-02: a conversation lives `AGENT_SESSION_RETENTION_DAYS` (90) days from
+ * its last turn. Past that it is not read back, not listed and not resumed,
+ * and the wallet's own read removes it — the retention the line's plan
+ * states, not a clean-up job over other wallets. «Нова розмова» opens a
+ * fresh session even where one for the same context exists, and the list
+ * says each conversation's first question, its dates and when it expires.
  */
 
 import { randomBytes } from "node:crypto";
@@ -19,6 +26,7 @@ import { z } from "zod";
 
 import {
   AGENT_SESSION_ID,
+  AGENT_SESSION_RETENTION_DAYS,
   AGENT_TURNS_KEPT,
   AgentContextSchema,
   AgentTurnSchema,
@@ -26,6 +34,7 @@ import {
   NETWORK,
   type AgentContext,
   type AgentSession,
+  type AgentSessionSummary,
   type AgentTurn,
 } from "../api/v1/contract.ts";
 import type { GuardStore } from "../guard/store.ts";
@@ -34,6 +43,17 @@ const COLLECTION = "agentSessions" as const;
 
 /** How many sessions a wallet keeps; the oldest beyond it are not read back. */
 export const SESSIONS_KEPT = 20;
+
+const DAY_MS = 86_400_000;
+
+/** When a session stops being read back: its last turn plus the retention. */
+export function sessionExpiresAt(record: Pick<AgentSessionRecord, "updatedAt">): string {
+  return new Date(Date.parse(record.updatedAt) + AGENT_SESSION_RETENTION_DAYS * DAY_MS).toISOString();
+}
+
+export function sessionExpired(record: Pick<AgentSessionRecord, "updatedAt">, nowMs: number): boolean {
+  return Date.parse(sessionExpiresAt(record)) <= nowMs;
+}
 
 export const AgentSessionRecordSchema = z
   .object({
@@ -82,25 +102,55 @@ export function projectSession(record: AgentSessionRecord): AgentSession {
   return { id: record.id, owner: record.owner, network: record.network, locale: record.locale, context: record.context, turns: record.turns, createdAt: record.createdAt, updatedAt: record.updatedAt };
 }
 
-export async function readSession(store: GuardStore, owner: string, sessionId: string): Promise<AgentSessionRecord | null> {
+/** Remove one of the wallet's own sessions that outlived its retention; a failed removal leaves it unread, never shown. */
+async function forget(store: GuardStore, record: AgentSessionRecord): Promise<void> {
+  await versioned(store)
+    .delete(sessionKey(record.owner, record.id))
+    .catch(() => undefined);
+}
+
+export async function readSession(store: GuardStore, owner: string, sessionId: string, nowMs: number = Date.now()): Promise<AgentSessionRecord | null> {
   if (!BASE58.test(owner) || !AGENT_SESSION_ID.test(sessionId)) return null;
   const raw = await versioned(store).get(sessionKey(owner, sessionId));
   if (raw === undefined || raw === null) return null;
   const parsed = AgentSessionRecordSchema.safeParse(raw);
   /* A record of another wallet under this key cannot exist by construction; the check is the boundary said twice. */
-  return parsed.success && parsed.data.owner === owner ? parsed.data : null;
+  if (!parsed.success || parsed.data.owner !== owner) return null;
+  if (sessionExpired(parsed.data, nowMs)) {
+    await forget(store, parsed.data);
+    return null;
+  }
+  return parsed.data;
 }
 
-/** The wallet's sessions, most recently updated first. */
-export async function listSessions(store: GuardStore, owner: string): Promise<readonly AgentSessionRecord[]> {
+/** The wallet's sessions within their retention, most recently updated first; the expired ones are removed on the way. */
+export async function listSessions(store: GuardStore, owner: string, nowMs: number = Date.now()): Promise<readonly AgentSessionRecord[]> {
   if (!BASE58.test(owner)) return [];
   const values = await versioned(store).valuesWithPrefix(sessionPrefix(owner));
-  return values
+  const records = values
     .map((value) => AgentSessionRecordSchema.safeParse(value))
     .filter((parsed): parsed is { success: true; data: AgentSessionRecord } => parsed.success && parsed.data.owner === owner)
-    .map((parsed) => parsed.data)
+    .map((parsed) => parsed.data);
+  for (const record of records) if (sessionExpired(record, nowMs)) await forget(store, record);
+  return records
+    .filter((record) => !sessionExpired(record, nowMs))
     .sort((a, b) => Date.parse(b.updatedAt) - Date.parse(a.updatedAt))
     .slice(0, SESSIONS_KEPT);
+}
+
+/** A conversation as the list shows it: its first question, how many turns, its dates and when it expires — never its answers. */
+export function summariseSession(record: AgentSessionRecord): AgentSessionSummary {
+  const first = record.turns.find((turn) => turn.role === "person")?.text ?? null;
+  return {
+    id: record.id,
+    locale: record.locale,
+    context: record.context,
+    title: first ? first.replace(/\s+/g, " ").trim().slice(0, 120) : null,
+    turnCount: record.turnCount,
+    createdAt: record.createdAt,
+    updatedAt: record.updatedAt,
+    expiresAt: sessionExpiresAt(record),
+  };
 }
 
 function sameContext(a: AgentContext | null, b: AgentContext | null): boolean {
@@ -114,14 +164,16 @@ function sameContext(a: AgentContext | null, b: AgentContext | null): boolean {
  */
 export async function openSession(
   store: GuardStore,
-  input: Readonly<{ owner: string; locale: "en" | "uk"; context: AgentContext | null; sessionId?: string; nowMs: number; newId?: () => string }>,
+  input: Readonly<{ owner: string; locale: "en" | "uk"; context: AgentContext | null; sessionId?: string; fresh?: boolean; nowMs: number; newId?: () => string }>,
 ): Promise<Readonly<{ ok: true; record: AgentSessionRecord; opened: boolean }> | Readonly<{ ok: false; code: "AGENT_SESSION_NOT_FOUND" | "UNAVAILABLE" }>> {
   if (input.sessionId) {
-    const found = await readSession(store, input.owner, input.sessionId);
+    const found = await readSession(store, input.owner, input.sessionId, input.nowMs);
     if (!found) return { ok: false, code: "AGENT_SESSION_NOT_FOUND" };
     return { ok: true, record: found, opened: false };
   }
-  const existing = (await listSessions(store, input.owner)).find((record) => sameContext(record.context, input.context) && record.locale === input.locale);
+  /* «Нова розмова»: a fresh session whatever exists for the same context — but an empty one already open is that fresh session, so pressing it twice leaves no empty conversations behind. */
+  const sameKind = (await listSessions(store, input.owner, input.nowMs)).filter((record) => sameContext(record.context, input.context) && record.locale === input.locale);
+  const existing = input.fresh ? sameKind.find((record) => record.turns.length === 0) : sameKind[0];
   if (existing) return { ok: true, record: existing, opened: false };
   const at = new Date(input.nowMs).toISOString();
   const record: AgentSessionRecord = {

@@ -4,6 +4,7 @@ import { Button } from '@/components/button'
 import { Card } from '@/components/card'
 import { Chip } from '@/components/chip'
 import { FactRow } from '@/components/fact-row'
+import { HelpDot } from '@/components/help-dot'
 import { QrCode } from '@/components/qr-code'
 import { Txt } from '@/components/txt'
 import { MONEY_COPY } from '@/features/money/copy'
@@ -42,18 +43,26 @@ export function LinkCard({ link: initial, onNew }: { link: PayLink; onNew?: () =
     <View className="gap-3">
       <Card className="items-center gap-4">
         <View className="w-full flex-row items-center justify-between gap-3">
-          <Txt variant="labelSm" tone="faint" caps>
-            {words.paymentLink}
-          </Txt>
+          <View className="flex-row items-center gap-1">
+            <Txt variant="labelSm" tone="faint" caps>
+              {words.paymentLink}
+            </Txt>
+            {paid ? null : (
+              <HelpDot
+                title={words.paymentLink}
+                body={amount ? words.sendThisLink : [words.payerChooses, words.sendThisLink]}
+              />
+            )}
+          </View>
           <Chip label={words.status[link.status]} tone={linkTone(link)} caps={false} />
         </View>
         <View className="items-center gap-1">
-          <Txt variant="dataLg" accessibilityLabel={amount ?? words.payerChooses}>
+          <Txt variant="dataLg" accessibilityLabel={amount ?? `${link.token.symbol}, ${words.anyAmount}`}>
             {amount ?? link.token.symbol}
           </Txt>
           {amount ? null : (
             <Txt variant="ui" tone="faint">
-              {words.payerChooses}
+              {words.anyAmount}
             </Txt>
           )}
           {link.description ? (
@@ -89,10 +98,6 @@ export function LinkCard({ link: initial, onNew }: { link: PayLink; onNew?: () =
       {link.note ? (
         <Txt variant="ui" tone="warning">
           {words.notes[link.note]}
-        </Txt>
-      ) : !paid ? (
-        <Txt variant="ui" tone="faint">
-          {words.sendThisLink}
         </Txt>
       ) : null}
 

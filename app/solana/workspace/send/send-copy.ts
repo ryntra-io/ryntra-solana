@@ -25,6 +25,11 @@ type Text = (english: string) => string;
  */
 export function sendFailureCopy(code: string | null, text: Text): string {
   const value = code ?? "";
+  /* A `.skr` name is read again right before the wallet opens (SKR-4): it moved, or it could not be read. */
+  if (value === "SKR_CHANGED") return text("The name now points to another address. Check it and review again.");
+  if (value === "SKR_GONE") return text("No such .skr name");
+  if (value === "SKR_UNCHECKED") return text("The name could not be checked right now.");
+  if (value === "SKR_UNREAD") return text("The name could not be checked again before signing. Nothing was sent.");
   if (/RATE_LIMITED/.test(value)) return text("Too many requests. Try again in a moment.");
   if (/INSUFFICIENT|BALANCE|AMOUNT/.test(value)) return text("That amount is unavailable.");
   if (/RECIPIENT|ADDRESS|DESTINATION/.test(value)) return text("Check the recipient address.");

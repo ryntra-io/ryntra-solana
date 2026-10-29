@@ -1,5 +1,5 @@
 /**
- * A launch that reached a DEX earns its creator the growth module's points —
+ * A launch that reached a DEX earns its creator the Growth line's points —
  * the call into `lib/rewards` (`recordLaunchGraduation`), its names and
  * arguments unchanged. Called wherever the chain is read and shows the curve
  * graduated: the token's market and the creator's cabinet. Once per mint: the

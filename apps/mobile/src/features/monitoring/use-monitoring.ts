@@ -7,6 +7,8 @@ import { RULES_KEY } from '@/features/autoinvest/use-rules'
 import { recordJourney } from '@/features/journeys/journey-store'
 import { useMonitoring, usePlans } from '@/features/plans/use-plans'
 import { PRIVATE_QUERY_KEY } from '@/features/session/use-account'
+import { useOpenPlace } from '@/features/shell/open-place'
+import { portfolioOrdersPath } from '@/features/shell/shell'
 import {
   markMonitoringRead,
   updateMonitoringPreferences,
@@ -19,7 +21,14 @@ import type { Locale } from '@/lib/i18n'
 import { openLink } from '@/lib/open-link'
 
 import { webHrefOf } from './deep-link'
-import { parseNoteRef, resolveNote, type NoteRef, type NoteTarget, type Resolved } from './monitoring-model'
+import {
+  BUDGET_EDIT_PATH,
+  parseNoteRef,
+  resolveNote,
+  type NoteRef,
+  type NoteTarget,
+  type Resolved,
+} from './monitoring-model'
 
 const MONITORING_KEY = [PRIVATE_QUERY_KEY, 'monitoring'] as const
 
@@ -101,6 +110,7 @@ export function useResolvedNote(session: Session | null, locale: Locale, ref: No
  */
 export function useOpenNote(session: Session | null, from: 'home' | 'plans' | 'inbox' | 'plan' | 'resolver' = 'inbox') {
   const router = useRouter()
+  const openPlace = useOpenPlace()
   const queryClient = useQueryClient()
   const markRead = useMarkRead(session)
   const mark = markRead.mutate
@@ -137,7 +147,7 @@ export function useOpenNote(session: Session | null, from: 'home' | 'plans' | 'i
       }
       if (target.kind === 'budget') {
         // The month's autoinvest budget, spent: its one action, «Змінити бюджет», is the budget's sheet on Home.
-        router.navigate({ pathname: '/(tabs)', params: { budget: 'edit' } })
+        openPlace(BUDGET_EDIT_PATH)
         return
       }
       if (target.kind === 'issuer') {
@@ -145,9 +155,25 @@ export function useOpenNote(session: Session | null, from: 'home' | 'plans' | 'i
         router.push({ pathname: '/asset/[mint]', params: { mint: target.mint, category: 'stock', convert: '1' } })
         return
       }
+      if (target.kind === 'orders') {
+        // A limit filled or its receipt ready: «Портфель · Ордери» on that order — the same list as the web's.
+        openPlace(portfolioOrdersPath(target.order))
+        return
+      }
+      if (target.kind === 'watch') {
+        // A token watch rang: «Стежу» with that watch in view, its «Пауза», «Змінити», «Вимкнути» and «Чому?».
+        router.push({ pathname: '/ryn', params: { watch: target.watchId } })
+        return
+      }
+      if (target.kind === 'task') {
+        // A «Доручення» answered: its conversation, with every run's answer.
+        router.push({ pathname: '/ryn', params: { task: target.taskId } })
+        return
+      }
+      // A followed wallet's trade (and anything else): the note on the resolver, with its own words.
       if (ref) router.push({ pathname: '/monitoring/open', params: { n: ref.id } })
     },
-    [from, mark, queryClient, router, session?.address],
+    [from, mark, queryClient, router, openPlace, session?.address],
   )
 }
 

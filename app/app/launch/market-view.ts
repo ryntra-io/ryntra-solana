@@ -54,19 +54,19 @@ export function sinceText(at: string, word: Word, locale: WorkspaceLocale, now: 
 }
 
 /** A date in a dense row: «30 груд.» this year, «6 квіт. 2027» another — the year only where it differs. */
-export function shortDate(at: string | number, locale: WorkspaceLocale, now: number = Date.now()): string {
+export function shortDate(at: string | number, locale: WorkspaceLocale, now: number = Date.now(), timeZone?: string): string {
   const date = new Date(at);
-  const sameYear = date.getFullYear() === new Date(now).getFullYear();
-  /* A date never breaks across lines in a narrow cell: its own spaces do not wrap. */
-  return new Intl.DateTimeFormat(locale === "uk" ? "uk-UA" : "en-US", sameYear ? { day: "numeric", month: "short" } : { day: "numeric", month: "short", year: "numeric" })
+  const sameYear = timeZone === "UTC" ? date.getUTCFullYear() === new Date(now).getUTCFullYear() : date.getFullYear() === new Date(now).getFullYear();
+  /* A date never breaks across lines in a narrow cell: its own spaces do not wrap. `timeZone`: the server's draw, in UTC (SOL-P1). */
+  return new Intl.DateTimeFormat(locale === "uk" ? "uk-UA" : "en-US", { ...(sameYear ? { day: "numeric", month: "short" } : { day: "numeric", month: "short", year: "numeric" }), ...(timeZone ? { timeZone } : {}) } as Intl.DateTimeFormatOptions)
     .format(date)
     .replace(/ /g, "\u00a0");
 }
 
 /** When a state began: «з 7 жовт.» from a day back, «3 год тому» within the day. */
-export function sinceShort(at: string, word: Word, locale: WorkspaceLocale, now: number = Date.now()): string {
+export function sinceShort(at: string, word: Word, locale: WorkspaceLocale, now: number = Date.now(), timeZone?: string): string {
   if (now - Date.parse(at) < 86_400_000) return sinceText(at, word, locale, now);
-  const date = new Intl.DateTimeFormat(locale === "uk" ? "uk-UA" : "en-US", { day: "numeric", month: "short" }).format(new Date(at));
+  const date = new Intl.DateTimeFormat(locale === "uk" ? "uk-UA" : "en-US", { day: "numeric", month: "short", ...(timeZone ? { timeZone } : {}) }).format(new Date(at));
   return word("stateSince", { when: date });
 }
 
@@ -76,6 +76,7 @@ const KEEPER_WORD: Readonly<Record<LaunchMarketRuleView["by"], LaunchWordKey>> =
   "meteora-damm-v2": "keeper_meteoraDammV2",
   "met-lock": "keeper_metLock",
   "dynamic-fee-sharing": "keeper_feeSharing",
+  "solana-loader": "keeper_solanaLoader",
   ryntra: "keeper_ryntra",
 };
 
@@ -119,9 +120,26 @@ export function ruleText(rule: LaunchMarketRuleView, pair: Pair, word: Word, loc
     case "METADATA_FIXED":
     case "NO_TRANSFER_HOOK":
       return word(`mark_${rule.code}`);
+    case "TRANSFER_FEE_UNTIL_DEX":
+      return word("mark_TRANSFER_FEE_UNTIL_DEX", { pct: pct(Number(value("bps") ?? 0), locale) });
+    /* «Правила на кривій» (SOL-L8): the rules the program keeps, each named, never «Без правил на переказах». */
+    case "CURVE_RULES_UNTIL_DEX":
+      return word("mark_CURVE_RULES_UNTIL_DEX", { rules: curveRuleNames(String(value("rules") ?? ""), word) });
+    case "CURVE_RULES_PROGRAM_GOVERNED":
+      return word("mark_CURVE_RULES_PROGRAM_GOVERNED");
     default:
       return word(`rule_${rule.code}` as LaunchWordKey);
   }
+}
+
+/** The rules a token's hook keeps, as a person reads them: the comma list the rule carries, each by its own word. */
+export function curveRuleNames(rules: string, word: Word): string {
+  return rules
+    .split(",")
+    .map((id) => id.trim())
+    .filter((id) => id !== "")
+    .map((id) => word(`curveRule_${id}` as LaunchWordKey))
+    .join(" · ");
 }
 
 /** A share in whole per cent where it is whole: «60 %», «2 %», «12,5 %». */

@@ -3,10 +3,10 @@ import { View } from 'react-native'
 import Svg, { Path, Rect } from 'react-native-svg'
 
 import { qrPath } from '@/features/money/qr'
-import { brand, themes } from '@/theme/tokens'
+import { themes } from '@/theme/tokens'
 
-/** A code is dark on white in either theme: the brand's white and the dark ground. */
-const PAPER = brand.onBrand
+/** A code is dark on white in either theme: Porcelain's white surface and Graphite's ground. */
+const PAPER = themes.light.surface
 const INK = themes.dark.ground
 
 export type QrCodeProps = {

@@ -50,8 +50,8 @@ function preStocksTerms(feePct: string | null): readonly Readonly<{ title: Bi; b
       title: bi("Fees", "Комісії"),
       body: feePct
         ? bi(
-            `The mint withholds ${feePct} of every transfer — a purchase, a sale, a move between your own wallets. Apps and pools charge their own trading fees on top; there is no yearly management fee.`,
-            `Mint утримує ${feePct} з кожного переказу — купівлі, продажу, переказу між власними гаманцями. Застосунки й пули беруть ще й свої комісії за торгівлю; щорічної комісії за управління немає.`,
+            `The token withholds ${feePct} of every transfer — a purchase, a sale, a move between your own wallets. Apps and pools charge their own trading fees on top; there is no yearly management fee.`,
+            `Токен утримує ${feePct} з кожного переказу — купівлі, продажу, переказу між власними гаманцями. Застосунки й пули беруть ще й свої комісії за торгівлю; щорічної комісії за управління немає.`,
           )
         : bi(
             "The issuer may charge a fee on transfers; apps and pools charge their own trading fees; there is no yearly management fee.",
@@ -89,7 +89,7 @@ const WORDS = {
   sources: bi("Sources", "Джерела"),
   source: bi("Source", "Джерело"),
   risksTitle: bi("Structure risks", "Ризики структури"),
-  risksSub: bi("what the instrument carries by design — stated from the row's facts, the chain and dated reports, not a rating", "що інструмент несе за своєю будовою — з фактів рядка, ланцюга й датованих повідомлень, не рейтинг"),
+  risksSub: bi("what the instrument carries by design — from the token's settings on chain, the issuer's terms and dated reports, not a rating", "що інструмент несе за своєю будовою — з налаштувань токена в мережі, умов емітента й датованих повідомлень, не рейтинг"),
   companyIndex: bi("Company index", "Індекс компанії"),
   companyIndexNone: bi("no 24/7 index on Pyth for this company", "24/7-індексу Pyth для цієї компанії немає"),
   companyIndexUnavailable: bi("unavailable right now", "зараз недоступний"),
@@ -116,6 +116,16 @@ const w = (locale: WorkspaceLocale, key: keyof typeof WORDS): string => WORDS[ke
 function dayOf(iso: string, locale: WorkspaceLocale): string {
   const at = new Date(`${iso.slice(0, 10)}T12:00:00Z`);
   return locale === "uk" ? at.toLocaleDateString("uk-UA", { day: "2-digit", month: "2-digit", year: "numeric", timeZone: "UTC" }) : at.toLocaleDateString("en-GB", { day: "numeric", month: "long", year: "numeric", timeZone: "UTC" });
+}
+
+/** The pool's size and its day, as far as they were read — never a dash inside a sentence. */
+function liquidityFacts(pool: string | null, volume: string | null, lang: "en" | "uk"): string {
+  if (lang === "uk") {
+    const parts = [pool ? `пул ${pool}` : null, volume ? `обіг за 24 год ${volume}` : null].filter(Boolean);
+    return parts.length > 0 ? `: ${parts.join(", ")}` : "; розмір пулу зараз не прочитано";
+  }
+  const parts = [pool ? `the pool holds ${pool}` : null, volume ? `${volume} traded in 24 h` : null].filter(Boolean);
+  return parts.length > 0 ? `: ${parts.join(", ")}` : "; the pool's size could not be read right now";
 }
 
 /** The company index as one fact of the Market card: the value with its state and time, or why there is none. */
@@ -237,27 +247,27 @@ export function StructureRisks({ asset, locale }: { asset: StockAsset; locale: W
       body:
         powers.length > 0
           ? uk
-            ? `Емітент (${issuer}) може ${powers.join(", ")} — це налаштування самого mint у ланцюзі, не обіцянка.`
-            : `The issuer (${issuer}) can ${powers.join(", ")} — settings of the mint itself on chain, not a promise.`
+            ? `Емітент (${issuer}) може ${powers.join(", ")} — це налаштування самого токена в мережі, не обіцянка.`
+            : `The issuer (${issuer}) can ${powers.join(", ")} — settings of the token itself on chain, not a promise.`
           : uk
-            ? "Налаштувань mint зараз не вдалося прочитати з ланцюга; перевір їх перед підписом."
-            : "The mint's settings could not be read from the chain right now; check them before signing.",
+            ? "Налаштувань токена зараз не вдалося прочитати з мережі; перевір їх перед підписом."
+            : "The token's settings could not be read from the chain right now; check them before signing.",
     },
     {
       key: "riskLiquidity",
       body: uk
-        ? `Ліквідність — лише вторинний ринок на DEX: пул ${pool ?? "—"}, обіг за 24 год ${volume ?? "—"}. Велике замовлення зсуває ціну; емітент ліквідності не обіцяє.`
-        : `Liquidity is the secondary market on DEXs only: the pool holds ${pool ?? "—"}, ${volume ?? "—"} traded in 24 h. A large order moves the price; the issuer promises no liquidity.`,
+        ? `Ліквідність — лише вторинний ринок на DEX${liquidityFacts(pool, volume, "uk")}. Велике замовлення зсуває ціну; емітент ліквідності не обіцяє.`
+        : `Liquidity is the secondary market on DEXs only${liquidityFacts(pool, volume, "en")}. A large order moves the price; the issuer promises no liquidity.`,
     },
     {
       key: "riskFee",
       body: feePct
         ? uk
-          ? `Mint утримує ${feePct} з кожного переказу — купівлі, продажу, переказу між власними гаманцями; це вже всередині котирування, але не повертається.`
-          : `The mint withholds ${feePct} of every transfer — a buy, a sale, a move between your own wallets; it is inside the quote's figures and is not returned.`
+          ? `Токен утримує ${feePct} з кожного переказу — купівлі, продажу, переказу між власними гаманцями; це вже всередині котирування, але не повертається.`
+          : `The token withholds ${feePct} of every transfer — a buy, a sale, a move between your own wallets; it is inside the quote's figures and is not returned.`
         : uk
-          ? "Комісії переказу на mint не зчитано; перевір котирування перед підписом."
-          : "No transfer fee was read from the mint; check the quote before signing.",
+          ? "Комісії переказу токена не зчитано; перевір котирування перед підписом."
+          : "No transfer fee was read from the token; check the quote before signing.",
     },
     {
       key: "riskEvent",
@@ -272,12 +282,12 @@ export function StructureRisks({ asset, locale }: { asset: StockAsset; locale: W
     {
       key: "riskReference",
       body: uk
-        ? `Оцінка емітента ${mark === null ? "не опублікована" : `${formatUsdPrice(mark, numberLocale)} за токен (${issuer}, ${markClock ?? "—"} UTC)`} — це його власна цифра, не ринкова ціна; ${
+        ? `Оцінка емітента ${mark === null ? "не опублікована" : `${formatUsdPrice(mark, numberLocale)} за токен (${issuer}${markClock ? `, ${markClock} UTC` : ""})`} — це його власна цифра, не ринкова ціна; ${
             index ? (index.valueUsd === null ? "індекс Pyth зараз недоступний" : `індекс Pyth ${formatUsdPrice(index.valueUsd, numberLocale)} — орієнтовний`) : "24/7-індексу Pyth для компанії немає"
-          }; жодна з них не є ціною, за якою можна торгувати. Ринок${premium === null ? "" : ` зараз ${formatPercent(premium, numberLocale)} до оцінки емітента`}.`
-        : `The issuer's mark ${mark === null ? "is not published" : `is ${formatUsdPrice(mark, numberLocale)} per token (${issuer}, ${markClock ?? "—"} UTC)`} — its own figure, not a market price; ${
+          }; жодна з них не є ціною, за якою можна торгувати.${premium === null ? "" : ` Ринок зараз ${formatPercent(premium, numberLocale)} до оцінки емітента.`}`
+        : `The issuer's mark ${mark === null ? "is not published" : `is ${formatUsdPrice(mark, numberLocale)} per token (${issuer}${markClock ? `, ${markClock} UTC` : ""})`} — its own figure, not a market price; ${
             index ? (index.valueUsd === null ? "Pyth's index is unavailable right now" : `Pyth's index is ${formatUsdPrice(index.valueUsd, numberLocale)} and indicative`) : "Pyth publishes no 24/7 index for the company"
-          }; neither is a price anyone can trade at. The market${premium === null ? "" : ` is ${formatPercent(premium, numberLocale)} against the issuer's mark right now`}.`,
+          }; neither is a price anyone can trade at.${premium === null ? "" : ` The market is ${formatPercent(premium, numberLocale)} against the issuer's mark right now.`}`,
     },
     { key: "riskReserves", body: RESERVE_REPORTS_NOTE.line[uk ? "uk" : "en"], sources: [RESERVE_REPORTS_NOTE.source], readOn: "2026-09-25" },
   ];

@@ -3,7 +3,7 @@ import Link from "next/link";
 import { Suspense } from "react";
 
 import { exchangeShort, truthTopic } from "@/app/app/invest/company-facts-model";
-import { exchangeState, premiumLine, truthLine } from "@/app/app/invest/company-model";
+import { premiumLine, truthLine } from "@/app/app/invest/company-model";
 import { investWords } from "@/app/app/invest/invest-words";
 import { saleAssetOf } from "@/app/app/invest/sale-model";
 import { LensPanel } from "@/app/app/lens/lens-panel";
@@ -18,9 +18,11 @@ import { companyFactsFor, companyFigures, fiscalYearEndWords, headquartersLabel 
 import { companyNoticeFor } from "@/lib/stocks/company-notices";
 import { companyLine, isKnownFund } from "@/lib/stocks/company-profiles";
 import { FUND_SECTOR, PRIVATE_SECTOR, sectorLabel } from "@/lib/stocks/company-sectors";
-import { eventLine, isWatched, SELL_FOR_USDC, swapActionWord, windowState, type WatchedEvent } from "@/lib/stocks/conversion-watch";
+import { eventLine, isWatched, SELL_FOR_USDC, spotDeadlineLine, swapActionWord, windowState, type WatchedEvent } from "@/lib/stocks/conversion-watch";
 import { lifecycleEventFor } from "@/lib/stocks/lifecycle-events";
+import { SALE_MAY_FAIL } from "@/lib/stocks/check";
 import { RETIRED_WORDS, type RetiredToken } from "@/lib/stocks/retired";
+import { preIpoRightsChip, tokenLine } from "@/lib/stocks/truth";
 import { companyDisplayName } from "@/lib/stocks/shelf";
 import type { StockRow } from "@/lib/stocks/universe.server";
 
@@ -36,6 +38,7 @@ import { CompanyShare, YourPosition } from "./company-live";
 import { CompanyQuote } from "./company-quote";
 import { DealBlock } from "./deal-block";
 import { LiquidityBlock, LiquiditySkeleton } from "./liquidity-block";
+import { MarketHours } from "./market-hours";
 import { AboutPreStocksToken, StructureRisks } from "./pre-ipo-research";
 
 /**
@@ -46,7 +49,7 @@ import { AboutPreStocksToken, StructureRisks } from "./pre-ipo-research";
  * The head says who the company is — its logo and name («Apple», never the
  * token's ticker), and under the name its ticker on its exchange and its
  * industry — then the price in dollars with the move in dollars and per cent,
- * whether the exchange is open, and the line over a day, a week, a month or a
+ * the exchange's hours on the reader's clock (`market-hours.tsx`), and the line over a day, a week, a month or a
  * year. *Купити* is the one orange action and opens the purchase in dollars;
  * *Автоінвест* stands quiet beside it — or, once a rule exists, the rule
  * itself (`company-actions.tsx`) — and the reader's own position under them,
@@ -91,7 +94,6 @@ export function CompanyView({ locale, asset, target = null, counterpart = null, 
   const truth = truthLine(rep.issuer.id, name, locale, feeBps);
   const notice = preIpo ? companyNoticeFor(rep.companyKey) : null;
   const premium = preIpo ? premiumLine(row.markPremiumPct, rep.issuer.label, lang) : null;
-  const exchange = preIpo ? null : exchangeState(row.session);
   const onchain = "error" in asset.onchain ? null : asset.onchain;
   const multiplier = asset.chainMultiplier?.current ?? row.multiplier?.current ?? null;
   /* The IPO and conversion watch: the issuer's event before any figure, the holder's one action and the swap's facts. */
@@ -104,6 +106,8 @@ export function CompanyView({ locale, asset, target = null, counterpart = null, 
   const privateFeeBps = path?.at === "solana" ? (counterpart?.transferFee?.basisPoints ?? null) : feeBps;
   const publicSince = preIpo && path?.swap ? (path.steps.find((step) => step.step === "ipo")?.date ?? null) : null;
   const buyerLine = isWatched(watched) && read?.open ? eventLine(watched, "buyer", lang, nowMs) : null;
+  /* The deadline in red right over «Купити», as Spot says it (UX-504). */
+  const buyDeadline = isWatched(watched) ? spotDeadlineLine(watched, lang, nowMs, false) : null;
   const buyable = row.lifecycle.tradable && rep.tradingHalted !== true && typeof row.market.priceUsd === "number";
   /* «Продати з позиції»: the holder's sale beside the position, read as the page reads the company — unless the issuer's event already offers the holder a sale on this page, so no one sees two. */
   const sale = read ? null : saleAssetOf(asset, lang);
@@ -124,7 +128,11 @@ export function CompanyView({ locale, asset, target = null, counterpart = null, 
   const sector = preIpo ? (publicSince ? (lang === "uk" ? `Публічна з ${pathDay(publicSince, lang)}` : `Public since ${pathDay(publicSince, lang)}`) : PRIVATE_SECTOR[lang]) : fund ? FUND_SECTOR[lang] : sectorLabel(ticker, facts?.sic, lang);
   const exchangeName = preIpo ? null : exchangeShort(rep.exchange, facts?.exchange ?? null);
   const line = companyLine(rep.underlying.symbol, lang);
-  const subline = publicSince ? `${rep.symbol} · ${lang === "uk" ? "токен PreStocks" : "PreStocks token"}` : [ticker && exchangeName ? `${ticker} · ${exchangeName}` : ticker, sector].filter(Boolean).join(" · ");
+  const subline = [ticker && exchangeName ? `${ticker} · ${exchangeName}` : ticker, sector].filter(Boolean).join(" · ");
+  /* Which token this page sells, and whose: the symbol the wallet will show, its issuer, and that it is not a share (UX-502). */
+  const tokenSubline = tokenLine(rep.symbol, rep.issuer.id, lang);
+  /* A private company's purchase carries its two strongest risks into the sheet, before any sum (UX-500): a sale may not go through, and the company's own word about tokens like this one. */
+  const buyRisks = preIpo ? [SALE_MAY_FAIL[lang], ...(notice ? [notice.line[lang]] : [])] : [];
   const label = helpTopic(truthTopic(rep.issuer.id), locale).title;
   const unit = rep.instrument.unitBasis === "token" ? "token" : "share";
 
@@ -143,6 +151,10 @@ export function CompanyView({ locale, asset, target = null, counterpart = null, 
               <h1 id="company-title" className={company.name}>
                 {name}
               </h1>
+              <p className={company.tokenLine} data-token-line>
+                <span translate="no">{rep.symbol}</span>
+                {tokenSubline.slice(rep.symbol.length)}
+              </p>
               {subline ? (
                 <p className={company.subline} translate="no">
                   {subline}
@@ -176,14 +188,7 @@ export function CompanyView({ locale, asset, target = null, counterpart = null, 
             locale={locale}
             premium={premium ? { line: premium, at: row.issuerMark?.fetchedAt ?? null } : null}
             defaultRange={rep.issuer.id === "prestocks" ? "1m" : "1d"}
-            status={
-              exchange ? (
-                <p className={company.exchange} data-state={exchange}>
-                  <span className={company.dot} aria-hidden="true" />
-                  {exchange === "open" ? word("exchangeOpen") : `${word("exchangeClosed")} · ${word("closedDrift")}`}
-                </p>
-              ) : null
-            }
+            status={preIpo ? null : <MarketHours session={row.session} locale={locale} className={company.exchange} dotClassName={company.dot} />}
             aside={
               /* The line is the company's; the candles, the drawing and the full ticket are Spot's, one press away. */
               <Link className={company.toSpot} href={spotHref} prefetch={false}>
@@ -198,12 +203,16 @@ export function CompanyView({ locale, asset, target = null, counterpart = null, 
           <div className={company.asideStick} data-terminal-aside>
             <div className={company.buyCard}>
               <p className={company.buyTitle}>{`${word("buyCompany")} ${name}`}</p>
-              {preIpo ? null : (
-                <p className={company.truth} data-company-truth>
-                  <span className={company.truthLabel}>{label}</span>
-                  <span className={company.truthText}>{truth}</span>
+              {/* The rights at the purchase, on every width (UX-501): a listed company's token says what it tracks; a private company's, that it is not a share and a sale may fail (UX-500). */}
+              <p className={company.truth} data-company-truth>
+                <span className={company.truthLabel}>{label}</span>
+                <span className={company.truthText}>{preIpo ? preIpoRightsChip(lang) : truth}</span>
+              </p>
+              {buyDeadline ? (
+                <p className={company.buyDeadline} data-swap-deadline>
+                  {buyDeadline}
                 </p>
-              )}
+              ) : null}
               {buyable ? (
                 <CompanyActions
                   mint={rep.mint}
@@ -217,6 +226,8 @@ export function CompanyView({ locale, asset, target = null, counterpart = null, 
                   truth={truth}
                   priceUsd={row.market.priceUsd}
                   eventLine={buyerLine}
+                  riskLines={buyRisks}
+                  pinned
                   quietWhenHeld={read?.open === true && read.into !== null}
                   conditionFacts={conditionFacts}
                   conditionReference={conditionReference}
@@ -225,7 +236,8 @@ export function CompanyView({ locale, asset, target = null, counterpart = null, 
                 />
               ) : (
                 <p className={company.status} role="status">
-                  {rep.tradingHalted ? word("halted") : word("notOffered")}
+                  {/* Why there is no purchase: the issuer's pause, the issuer's word — or only the price that did not arrive, which is not the issuer's doing. */}
+                  {rep.tradingHalted ? word("halted") : row.lifecycle.tradable ? word("priceDown") : word("notOffered")}
                 </p>
               )}
               {buyable ? <p className={company.buyNote}>{word("fromDollarWallet")}</p> : null}
@@ -296,6 +308,7 @@ export function CompanyView({ locale, asset, target = null, counterpart = null, 
           <AssetDetailsFold asset={asset} locale={locale} />
         </div>
       </details>
+      {buyable ? <div className={company.pinnedSpace} aria-hidden="true" /> : null}
     </section>
   );
 }
@@ -308,7 +321,7 @@ export function CompanyView({ locale, asset, target = null, counterpart = null, 
  * price on the exchange by its issuer's reference, what it is). Without that
  * row the swap is not offered; the sale is.
  */
-function eventFacts(event: WatchedEvent, target: StockRow | null, lang: "en" | "uk", nowMs: number): CompanyEventFacts {
+export function eventFacts(event: WatchedEvent, target: StockRow | null, lang: "en" | "uk", nowMs: number): CompanyEventFacts {
   const into = event.watch.into;
   const listed = into && target && target.representation.mint === into.mint ? target : null;
   return {
@@ -358,8 +371,8 @@ export function RetiredCompany({ locale, token }: { locale: WorkspaceLocale; tok
       <div className={company.retired} role="status" data-retired-state>
         <p className={company.retiredState}>{RETIRED_WORDS.state[lang]}</p>
         <p>{RETIRED_WORDS.exit[lang]}</p>
-        <Link className="rw-btn" href="/app/portfolio" prefetch={false}>
-          {word("allInPortfolio")}
+        <Link className="ryntra-button ryntra-button--secondary" href="/app/portfolio" prefetch={false}>
+          <span className="ryntra-button__label">{word("allInPortfolio")}</span>
         </Link>
       </div>
     </section>
@@ -377,8 +390,8 @@ export function CompanyUnavailable({ locale, ticker }: { locale: WorkspaceLocale
       </Link>
       <div className={company.status} role="status">
         <p>{word("companyDown")}</p>
-        <a className="rw-btn" href={`/app/stocks/${encodeURIComponent(ticker)}`}>
-          {word("reload")}
+        <a className="ryntra-button ryntra-button--secondary" href={`/app/stocks/${encodeURIComponent(ticker)}`}>
+          <span className="ryntra-button__label">{word("reload")}</span>
         </a>
       </div>
     </section>

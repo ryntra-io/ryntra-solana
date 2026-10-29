@@ -10,7 +10,10 @@ export const revalidate = 0;
 
 export async function generateMetadata() {
   const { text } = await solanaServerText();
-  return { title: text("Holdings") };
+  /* The tab's name is the page's name: H1 and the menu both say «Portfolio / Портфель», and the tab said
+     «Holdings · Ryntra» / «Активи портфеля · Ryntra» — the audit's pair 21 (UX-976), found by the live-word
+     guard on the page itself. */
+  return { title: text("Portfolio") };
 }
 
 /**

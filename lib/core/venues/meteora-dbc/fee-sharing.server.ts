@@ -27,9 +27,10 @@ import {
   deriveFeeVaultPdaAddress,
   deriveTokenVaultAddress,
 } from "@meteora-ag/dynamic-fee-sharing-sdk";
-import { DYNAMIC_BONDING_CURVE_PROGRAM_ID, DynamicBondingCurveClient, DynamicBondingCurveIdl, deriveDbcEventAuthority, deriveDbcPoolAuthority } from "@meteora-ag/dynamic-bonding-curve-sdk";
+import { DYNAMIC_BONDING_CURVE_PROGRAM_ID, DynamicBondingCurveIdl, deriveDbcEventAuthority, deriveDbcPoolAuthority } from "@meteora-ag/dynamic-bonding-curve-sdk";
 import { PublicKey, type Connection, type TransactionInstruction } from "@solana/web3.js";
 
+import { dbcClientOf } from "../meteora-clients.server.ts";
 import type { Address } from "../../contracts.ts";
 import type { FeeShare } from "../../launch/fee-shares.ts";
 
@@ -72,7 +73,7 @@ export async function feeSharingSplitInstructions(args: Readonly<{
   shares: readonly FeeShare[];
 }>): Promise<readonly TransactionInstruction[]> {
   const dfs = new DynamicFeeSharingClient(args.connection, "confirmed");
-  const dbc = new DynamicBondingCurveClient(args.connection, "confirmed");
+  const dbc = dbcClientOf(args.connection);
   const creator = new PublicKey(args.creator);
   const base = new PublicKey(args.token);
   const vault = deriveFeeVaultPdaAddress(base, new PublicKey(args.pairMint));
@@ -85,7 +86,7 @@ export async function feeSharingSplitInstructions(args: Readonly<{
     userShare: args.shares.map((share) => ({ address: new PublicKey(share.address), share: share.bps })),
   });
   /* The curve does not exist yet when this is built: its handover is made from the accounts it will have. */
-  const handover = await dbc.state.getProgram().methods
+  const handover = await dbc.state.program.methods
     .transferPoolCreator()
     .accountsPartial({ virtualPool: new PublicKey(args.pool), config: new PublicKey(args.config), creator, newCreator: vault })
     .instruction();
@@ -121,6 +122,8 @@ export type FeeSharingSources = Readonly<{
   curve: Readonly<{ pool: Address; config: Address }> | null;
   graduation: Readonly<{ pool: Address; config: Address }> | null;
   lp: Readonly<{ pool: Address; position: Address; positionNftAccount: Address }> | null;
+  /** The curve's surplus, the creator's part — once the curve is full; absent where a caller names none. */
+  surplus?: Readonly<{ pool: Address; config: Address }> | null;
 }>;
 
 /**
@@ -134,11 +137,11 @@ export type FeeSharingSources = Readonly<{
  * vault's own (a preset collects its fees in the pair currency, so nothing
  * lands there): opened once for the launch, not for every wallet that claims.
  */
-export async function feeSharingClaimInstructions(args: Readonly<{ connection: Connection; vault: Address; wallet: Address; sources: FeeSharingSources }>): Promise<Readonly<{ funding: readonly Readonly<{ source: "curve" | "graduation" | "lp"; instructions: readonly TransactionInstruction[] }>[]; claim: readonly TransactionInstruction[] }>> {
+export async function feeSharingClaimInstructions(args: Readonly<{ connection: Connection; vault: Address; wallet: Address; sources: FeeSharingSources }>): Promise<Readonly<{ funding: readonly Readonly<{ source: "curve" | "graduation" | "lp" | "surplus"; instructions: readonly TransactionInstruction[] }>[]; claim: readonly TransactionInstruction[] }>> {
   const dfs = new DynamicFeeSharingClient(args.connection, "confirmed");
   const vault = new PublicKey(args.vault);
   const wallet = new PublicKey(args.wallet);
-  const funding: { source: "curve" | "graduation" | "lp"; instructions: readonly TransactionInstruction[] }[] = [];
+  const funding: { source: "curve" | "graduation" | "lp" | "surplus"; instructions: readonly TransactionInstruction[] }[] = [];
   if (args.sources.curve) {
     /* The program's whitelist names `claim_creator_trading_fee`; the SDK's `…2` wrapper calls `claim_creator_trading_fee2`,
        which the program refuses as InvalidAction (0x1779) — proven on devnet 06.10. */
@@ -157,6 +160,11 @@ export async function feeSharingClaimInstructions(args: Readonly<{ connection: C
     });
     funding.push({ source: "lp", instructions: tx.instructions });
   }
+  if (args.sources.surplus) {
+    /* The creator's part of the surplus into the vault: `creator_withdraw_surplus` through the vault, as the SDK builds it. */
+    const tx = await dfs.fundByWithdrawDbcCreatorSurplus({ signer: wallet, feeVault: vault, poolConfig: new PublicKey(args.sources.surplus.config), virtualPool: new PublicKey(args.sources.surplus.pool) });
+    funding.push({ source: "surplus", instructions: tx.instructions });
+  }
   const claim = await dfs.claimUserFee2({ feeVault: vault, user: wallet, payer: wallet, receiver: wallet });
   return { funding, claim: claim.instructions };
 }
@@ -167,7 +175,7 @@ export async function feeSharingClaimInstructions(args: Readonly<{ connection: C
  * the creator for the partner's. The flag is the program's — 1 for the creator.
  */
 async function fundByCreatorMigrationFee(connection: Connection, dfs: DynamicFeeSharingClient, vault: PublicKey, wallet: PublicKey, source: Readonly<{ pool: Address; config: Address }>): Promise<TransactionInstruction> {
-  const dbc = new DynamicBondingCurveClient(connection, "confirmed");
+  const dbc = dbcClientOf(connection);
   const config = await dbc.state.getPoolConfig(new PublicKey(source.config));
   const pool = await dbc.state.getPool(new PublicKey(source.pool));
   if (!config || !pool) throw new Error("The curve or its config could not be read.");

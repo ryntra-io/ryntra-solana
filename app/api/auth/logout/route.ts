@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 
 import { accountLegacyClose, sessionResolve, sessionRevoke, sessionRevokeAccount, type LegacyCloseResult } from "@/lib/account/rpc";
+import { LINKED_WALLET_COOKIE } from "@/lib/account/wallet-session";
 import { supabaseAuthCookieNames } from "@/lib/auth/cookie-policy";
 import { supabaseServer } from "@/lib/auth/supabase";
 import { verifySession } from "@/lib/beta/token";
@@ -101,6 +102,7 @@ export async function POST(req: NextRequest) {
   res.cookies.delete("rt");
   res.cookies.delete("rta");
   res.cookies.delete("rw");
+  res.cookies.delete(LINKED_WALLET_COOKIE);
   for (const name of supabaseAuthCookieNames(req.cookies.getAll().map((c) => c.name))) res.cookies.delete(name);
   return res;
 }

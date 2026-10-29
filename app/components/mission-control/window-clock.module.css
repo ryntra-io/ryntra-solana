@@ -1,0 +1,98 @@
+/* The launch windows' clock (MC-2): Geist Mono, capitals, tabular figures — a label of the scene, never a button. */
+.clock {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 12px;
+  margin: 0;
+  min-height: 34px;
+  padding: 8px 14px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(8, 13, 20, 0.64);
+  backdrop-filter: blur(18px);
+  color: #f5f7fa;
+  font: 500 11px/1.2 var(--font-geist-mono, "Geist Mono"), ui-monospace, monospace;
+  letter-spacing: 0.16em;
+  font-variant-numeric: tabular-nums;
+  pointer-events: none;
+}
+
+.clock[data-window="pending"] {
+  visibility: hidden;
+}
+
+.label {
+  color: #8a97a8;
+}
+
+.value {
+  font-weight: 600;
+  color: #f5f7fa;
+}
+
+.count {
+  color: #4fb8ff;
+}
+
+/* Open: the scene's info blue — the orange stays the action's. */
+.open {
+  border-color: rgba(79, 184, 255, 0.4);
+}
+
+.dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #4fb8ff;
+  box-shadow: 0 0 10px rgba(79, 184, 255, 0.8);
+}
+
+/* The home page's hero: in the flow under the buttons. */
+.hero {
+  margin-top: 18px;
+  border-radius: 14px;
+}
+
+/* The Control Room: in the corner column above «Post to X». */
+.room {
+  align-self: flex-end;
+}
+
+/* Launch Night: the desk's lower right, clear of the scoreboard, the log and the director's line. */
+.night {
+  position: absolute;
+  z-index: 20;
+  right: max(16px, env(safe-area-inset-right, 0px));
+  bottom: calc(max(12px, env(safe-area-inset-bottom, 0px)) + 128px);
+  white-space: nowrap;
+}
+
+@media (max-width: 759px) {
+  .clock {
+    flex-wrap: nowrap;
+    white-space: nowrap;
+    font-size: 10px;
+    letter-spacing: 0.12em;
+    padding: 7px 12px;
+  }
+
+  .kind {
+    display: none;
+  }
+
+  .count {
+    display: none;
+  }
+
+  /* A phone's broadcast has no room beside its board and its director: the schedule is on the home page. */
+  .night {
+    display: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .dot {
+    box-shadow: none;
+  }
+}

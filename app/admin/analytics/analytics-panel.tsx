@@ -37,6 +37,9 @@ const SITE_EVENT_LABEL: Record<string, string> = {
   telegram_cta_click: "CTA бота",
   workspace_cta_click: "CTA кабінету",
   arcus_link_click: "посилання Arcus",
+  seeker_connect_ok: "Seeker: підключено",
+  seeker_connect_cancelled: "Seeker: скасовано",
+  seeker_connect_failed: "Seeker: не з'єдналось",
 };
 
 function TrafficSources() {
@@ -70,7 +73,7 @@ function TrafficSources() {
       <div className={biz.sourcesBody}>
         <p className={biz.kpiNote}>
           Три різні правди, їх не зводять в одну цифру. Порожнє Google — це «не підключено», не нуль відвідувачів.
-          Кліки на сайті — анонімні події, не люди; дії в продукті — дозволені дії акаунтів, без сум і адрес.
+          Кліки на сайті й підключення Seeker — анонімні події, не люди; дії в продукті — дозволені дії акаунтів, без сум і адрес.
         </p>
 
         {error ? (
@@ -99,7 +102,7 @@ function TrafficSources() {
                   <PlainStat key={event.name} value={event.count} label={SITE_EVENT_LABEL[event.name] ?? event.name} />
                 ))}
               </div>
-              <MetricDefinitions ids={["site_cta_14d", "site_workspace_cta_14d"]} />
+              <MetricDefinitions ids={["site_cta_14d", "site_workspace_cta_14d", "seeker_connect_14d"]} />
             </section>
 
             <section className={`${styles.card} ${styles.cardHalf}`}>

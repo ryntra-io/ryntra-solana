@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { Pressable, View } from 'react-native'
 
 import { Card } from '@/components/card'
+import { HelpDot } from '@/components/help-dot'
 import { Icon } from '@/components/icon'
 import { Sheet } from '@/components/sheet'
 import { Txt } from '@/components/txt'
@@ -22,6 +23,8 @@ import {
   holdersFloor,
   holdersLine,
   keeperWord,
+  LADDER_STATES,
+  ladderHelp,
   ladderLine,
   nextLine,
   onDexNow,
@@ -30,23 +33,21 @@ import {
   poolAddressOf,
   poolLine,
   reserveText,
-  knownState,
   ruleText,
-  rulesShownInMarks,
   rulesToShow,
   sinceText,
   stateLine,
-  headerSince,
+  healthTradeStatus,
   stateTone,
   type HoldersView,
   type StateTone,
+  type TradeStatus,
 } from '@/features/launch/market-view'
 import { presetRules, presetRuleText, type PresetLock } from '@/features/launch/preset-view'
 import { useNow } from '@/hooks/use-now'
 import type {
   LaunchMarketRule as LaunchMarketRuleView,
   LaunchMarketCardResponse,
-  LaunchMarketCycleState,
   LaunchMarketEnforcement,
   LaunchMarketHealthResponse,
   LaunchMarketResponse,
@@ -82,24 +83,39 @@ const STATE_DOT: Readonly<Record<StateTone, string>> = {
  */
 type Standalone = Readonly<{ standalone?: boolean }>
 
-/** A market's state in its cycle: a dot and the state's word — the colour never says it alone. */
-export function StateChip({
-  code,
+const TRADE_TONE: Readonly<Record<Exclude<TradeStatus, 'notRead'>, StateTone>> = {
+  trading: 'live',
+  moving: 'curve',
+  stalled: 'caution',
+}
+
+/**
+ * A market's one status — can it be traded now — the only pill a launch wears,
+ * on every list, on Home's «Мої ринки» in the same words and on the market's
+ * page; the cycle's stage is never a second pill or a line beside it.
+ */
+export function TradeStatusChip({
+  status,
   word,
-  standalone = false,
-}: { code: LaunchMarketCycleState; word: LaunchWord } & Standalone) {
-  const tone = stateTone(code)
-  if (!knownState(code))
+  hint,
+}: {
+  status: TradeStatus
+  word: LaunchWord
+  /** A stop of its own for a screen reader, with this hint — only where it stands alone. */
+  hint?: string
+}) {
+  if (status === 'notRead')
     return (
       <Txt variant="labelSm" tone="muted">
         {word('notRead')}
       </Txt>
     )
+  const tone = TRADE_TONE[status]
   return (
     <View
-      accessible={standalone}
+      accessible={hint !== undefined}
       accessibilityRole="text"
-      accessibilityHint={standalone ? word(`stateHint_${code}`) : undefined}
+      accessibilityHint={hint}
       className={cn(
         'flex-row items-center gap-1.5 self-start rounded-pill border px-2.5 py-[3px]',
         STATE_SURFACE[tone],
@@ -107,7 +123,7 @@ export function StateChip({
     >
       <View className={cn('h-2 w-2 rounded-pill border-[1.5px]', STATE_DOT[tone])} />
       <Txt variant="labelSm" tone="fg">
-        {word(`state_${code}`)}
+        {word(`tradeStatus_${status}`)}
       </Txt>
     </View>
   )
@@ -189,10 +205,10 @@ export function EnforceChip({
   )
 }
 
-/** Holders over $1 in a cell: the count, a floor with «+», «Не пораховано», or «Не прочитано» — never a zero for none read. */
+/** Holders over $1 in a cell: the count, a floor with «+», «—» where not counted, or «Не прочитано» — never a zero for none counted. */
 export function holdersCell(view: HoldersView, word: LaunchWord, locale: Locale): string {
   if (view.kind === 'count') return holdersFloor(view.count, view.atLeast, locale)
-  return view.kind === 'uncounted' ? word('holdersUncounted') : word('notRead')
+  return view.kind === 'uncounted' ? '—' : word('notRead')
 }
 
 /** The way to the DEX: the curve's share, or «На DEX» with its days. */
@@ -244,24 +260,16 @@ export function MarketStateCard({
   const pool = health ? poolLine(health, card, word, locale, now) : null
   const poolAddress = poolAddressOf(card, market)
   const full = health ? curveFull(health.venue, health.state.code, market.progress) : false
-  const line = health ? stateLine(health.state, word, locale, now, full) : null
-  const since = health ? headerSince(health, word, locale, now) : null
+  // The pill is the one status: no stage line beside it. Ryntra's own steps on its ladder are not a state to read on the
+  // card's face — the ladder's line says what it holds, and how it works stands behind its «?».
+  const line = health && !LADDER_STATES.has(health.state.code) ? stateLine(health.state, word, locale, now, full) : null
   return (
     <Card className="gap-3">
       <View className="flex-row items-center justify-between gap-3">
         <Txt variant="labelSm" tone="faint" caps>
           {word('marketTitle')}
         </Txt>
-        {health ? (
-          <View className="flex-row items-center gap-2">
-            {since ? (
-              <Txt variant="labelSm" tone="muted">
-                {since}
-              </Txt>
-            ) : null}
-            <StateChip code={health.state.code} word={word} />
-          </View>
-        ) : null}
+        {health ? <TradeStatusChip status={healthTradeStatus(health, market.progress)} word={word} /> : null}
       </View>
       {health ? (
         <View className="gap-1">
@@ -314,12 +322,13 @@ export function MarketStateCard({
           {poolAddress ? (
             <ExplorerLink label={word('pool')} url={explorerUrl(market.network, 'account', poolAddress)} />
           ) : null}
-          {ladder ? (
+          {ladder && health ? (
             <View className="flex-row items-start gap-2">
               <Icon name="git-commit-outline" size={16} color="muted" style={{ marginTop: 1 }} />
               <Txt variant="ui" tone="muted" className="flex-1">
                 {ladder}
               </Txt>
+              <HelpDot title={word('ladderHelpTitle')} body={ladderHelp(health, word, locale, now)} />
             </View>
           ) : null}
         </View>
@@ -381,7 +390,6 @@ export function RulesCard({
   // Three rules in words on the first screen (PLAN §7); the rest one press away.
   // One more is shown, never hidden behind «Ще 1».
   const rules = all || every.length <= RULES_AT_ONCE + 1 ? every : every.slice(0, RULES_AT_ONCE)
-  const inMarks = rulesShownInMarks(marks)
   return (
     <Card className="gap-3">
       <Txt variant="labelSm" tone="faint" caps>
@@ -415,11 +423,6 @@ export function RulesCard({
       {!health.rulesComplete ? (
         <Txt variant="ui" tone="warning">
           {word('hRulesIncomplete')}
-        </Txt>
-      ) : null}
-      {inMarks.size ? (
-        <Txt variant="labelSm" tone="muted" style={{ lineHeight: 16 }}>
-          {word('hRulesInMarks')}
         </Txt>
       ) : null}
       {/* What a rule and a policy are, one press deep: the chips say which, the words say why it matters. */}
@@ -534,9 +537,6 @@ export function PresetRulesCard({
         </Pressable>
       ) : null}
       {policies.map(row)}
-      <Txt variant="labelSm" tone="muted" style={{ lineHeight: 16 }}>
-        {word('rulesBeforeLine')}
-      </Txt>
       <More label={word('rulesLegendOpen')} quiet>
         <Txt variant="labelSm" tone="muted" style={{ lineHeight: 17 }}>
           {word('hRulesLegend')}
@@ -547,12 +547,22 @@ export function PresetRulesCard({
 }
 
 /** One block of the health: its label, then its lines. */
-function Block({ label, children }: { label: string; children: React.ReactNode }) {
+function Block({ label, help, children }: { label: string; help?: string; children: React.ReactNode }) {
   return (
     <View className="gap-1.5 border-b border-line py-3">
-      <Txt variant="labelSm" tone="faint" caps>
-        {label}
-      </Txt>
+      {help ? (
+        // What the figure counts, one tap deep beside its label — never a line under it.
+        <View className="flex-row items-center gap-1">
+          <Txt variant="labelSm" tone="faint" caps>
+            {label}
+          </Txt>
+          <HelpDot title={label} body={help} />
+        </View>
+      ) : (
+        <Txt variant="labelSm" tone="faint" caps>
+          {label}
+        </Txt>
+      )}
       {children}
     </View>
   )
@@ -644,16 +654,13 @@ export function HealthSheet({
       scroll
     >
       <View className="px-4 pb-2">
-        <Block label={word('hDepth')}>
+        <Block label={word('hDepth')} help={full ? undefined : word('hDepthSub')}>
           {full ? (
             <Txt variant="ui" tone="muted">
               {word('hDepthClosed')}
             </Txt>
           ) : (
             <>
-              <Txt variant="labelSm" tone="muted">
-                {word('hDepthSub')}
-              </Txt>
               {health.depth.map((level) => {
                 const label = word('dropLabel', { pct: pct(level.dropBps, locale) })
                 return (
@@ -706,12 +713,9 @@ export function HealthSheet({
           )}
         </Block>
 
-        <Block label={word('hHolders')}>
+        <Block label={word('hHolders')} help={word('hHoldersSub')}>
           <Txt variant={holders.counted ? 'data' : 'ui'} tone={holders.counted ? 'fg' : 'muted'}>
             {holders.text}
-          </Txt>
-          <Txt variant="labelSm" tone="muted">
-            {word('hHoldersSub')}
           </Txt>
           {health.holders.atLeast ? (
             <Txt variant="labelSm" tone="muted" style={{ lineHeight: 16 }}>

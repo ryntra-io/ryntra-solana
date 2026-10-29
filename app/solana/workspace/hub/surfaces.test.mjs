@@ -405,7 +405,9 @@ test("the connection control imports no signing capability", () => {
  */
 test("the workspace offers every detected wallet, and no failure is guessed to be a refusal", () => {
   const conn = stripJs(read(join(WORKSPACE, "connection.tsx")));
-  assert.match(conn, /choices: wallets\.map\(/, "The control is handed a ranking instead of the wallets themselves.");
+  /* «Connect with Seeker» stands in for the list only when Seeker Connect is the one wallet there is (SKR-1). */
+  assert.match(conn, /choices: (seekerFirst \? \[\] : )?wallets\.map\(/, "The control is handed a ranking instead of the wallets themselves.");
+  assert.match(conn, /const seekerFirst = wallets\.length > 0 && wallets\.every\(\(wallet\) => wallet\.name === SEEKER_CONNECT_WALLET\)/);
   assert.match(conn, /connect: \(id\) => connect\(id\)/, "The chosen wallet's name never reaches connect().");
   assert.match(conn, /kindOf\(result\.state\)/, "The failure reaches the panel without saying what kind it was.");
 
@@ -754,6 +756,8 @@ test("every class used in Solana markup resolves to a rule", () => {
     join("app", "shell", "shell.css"),
     join("app", "globals.css"),
     join("app", "app", "product.css"),
+    /* The core's components (the product shell loads them): a link drawn as the core's quiet button names its classes. */
+    join("node_modules", "@ryntra", "core", "ui", "ui.css"),
   ];
   const defined = new Set();
   for (const sheet of sheets) {
@@ -850,7 +854,8 @@ test("the Swap surface quotes server-side, keeps its deep link, and renders ever
   /* The browser never talks to the venue. Every quote is built by the server
      route, which holds the credential and reads both mints itself. */
   assert.ok(!/api\.jup\.ag/.test(card), "The card reaches the venue directly; the credential is server-only.");
-  assert.match(route, /await chooseQuote\(\{/, "The quote route no longer asks fee policy v2's lane choice.");
+  /* SOL-S1: asked beside the passports and awaited before the price is used. */
+  assert.match(route, /const priced = chooseQuote\(\{[\s\S]*const settled = await priced;/, "The quote route no longer asks fee policy v2's lane choice.");
   assert.match(route, /readMintAccount/, "The quote route no longer re-reads both mints live.");
 
   /* Every venue refusal the adapter can produce has a rendering path. The card
@@ -884,7 +889,11 @@ test("the Swap surface quotes server-side, keeps its deep link, and renders ever
      and an expired Review offers a new one. */
   assert.doesNotMatch(card, /\} else if \(!fresh\) \{/, "The Review waits for a fresh estimate again.");
   assert.match(card, /if \(!connection \|\| attempt\) return;/, "The Review waits for an estimate again.");
-  assert.match(card, /reviewSecondsLeft === null \|\| reviewSecondsLeft <= 0[\s\S]*?ctaLabel = text\("Get a new quote"\)/, "An expired Review can reach a signature.");
+  /* SOL-S1: a Review whose window closed by time confirms in one press — the press builds fresh bytes, never the
+     expired ones (`pressRoute`); a structural refusal still asks for a new quote. */
+  assert.match(card, /const preparedConfirmable = preparedReadiness !== null &&\s*\(preparedReadiness\.ready \|\| preparedReadiness\.code === "ORDER_EXPIRED" \|\| preparedReadiness\.code === "ORDER_TOO_SHORT"\);/, "An expired Review can reach a signature.");
+  assert.match(card, /if \(!preparedConfirmable\) \{\s*ctaLabel = text\("Get a new quote"\)/, "A refused Review offers no new quote.");
+  assert.match(card, /if \(route === "FRESH_BYTES"\) \{\s*const fresh = await refreshReviewedBytes\(prepared, "sign"\);/, "An expired Review's own bytes can reach a wallet.");
   assert.ok(!/signTransaction|signAndSend/.test(page), "The page must not sign; signing lives in the reviewed card.");
 
   /* The verdict's vocabulary stays closed: the surface never introduces the
@@ -912,9 +921,15 @@ test("the swap card is keyed V2, fee-honest, freshness-bound and canary-gated", 
   /* Fee honesty survives in the exact Review and Receipt, not as a customer
      cheat sheet. The last pre-wallet surface carries only the three values a
      person decides on. */
-  for (const label of ["You pay", "You receive at least", "Network fee estimate", "Account reserve"]) {
-    assert.match(card, new RegExp(label), `The exact Review omits ${label}.`);
-  }
+  /* SOL-T3: the exact Review is the core ticket's — «Ти платиш · Отримуєш · Мінімум» are its own rows. SOL-C13 (UX-263):
+     its cost lines and its total are one count of the exact order — Jupiter, Ryntra, the network — and the account's
+     reserve is its own row beside them, never a cost line that the total leaves out. */
+  assert.match(card, /<TradeTicket\b[\s\S]*?reviewed=\{ticketReviewed\}/, "The exact Review is no longer the core ticket's.");
+  assert.match(card, /costLines=\{reviewCosts \? reviewCosts\.lines : \[\]\}/, "Review's cost lines are no longer the count its total is.");
+  assert.match(card, /costsTotal=\{reviewCosts \? reviewCosts\.total :/, "Review's total is no longer the count its lines are.");
+  assert.match(card, /label: text\("Account reserve, returned when the account closes"\)/, "The account's reserve is no longer said beside Review's costs, as the reserve it is.");
+  assert.match(card, /reviewRows=\{ticketStage === "review" \? reviewRows : undefined\}/, "The account's reserve no longer reaches Review.");
+  assert.ok(!/Network fee estimate/.test(card), "Review prints its own network line beside the core's again (UX-263).");
   assert.match(card, /finding\.outcome === "REVIEW"[\s\S]*reviewWarningCopies/,
     "Signable REVIEW findings are no longer shown to the human in plain language.");
   assert.match(card, /const effectiveSlippageBps = Math\.max[\s\S]*warnings\.push\(text\("The quote and minimum received use different slippage\."\)\)[\s\S]*effectiveSlippageBps > 300[\s\S]*warnings\.push\(text\("The price may move by more than 3%\."\)\)/,
@@ -1061,21 +1076,21 @@ test("M2 keeps exact Review, wallet approval and submit ambiguity as three separ
   assert.match(card, /EXPIRED_AFTER_SUBMIT/, "The card cannot end a stranded broadcast.");
 });
 
-test("Swap constrains its implicit grid track inside the workspace panel", () => {
-  const css = read(join(WORKSPACE, "trade", "swap-card.module.css"));
+test("Swap constrains its implicit grid track and never clips its pinned action (SOL-C13)", () => {
+  const css = stripCss(read(join(WORKSPACE, "trade", "swap-card.module.css")));
   assert.match(
     css,
     /\.card\s*\{[^}]*grid-template-columns:\s*minmax\(0,\s*1fr\)/s,
-    "The quote-expiry control can widen the card past its clipped workspace panel.",
+    "The quote-expiry control can widen the card past its column.",
   );
-
-  const cardRule = /\.card\s*\{([^}]*)\}/s.exec(stripCss(css))?.[1] ?? "";
-  const maxWidth = Number(/max-width:\s*(\d+)px/.exec(cardRule)?.[1]);
-  assert.ok(
-    Number.isFinite(maxWidth) && maxWidth >= 560 && maxWidth <= 720,
-    `The desktop Swap interaction measure is ${maxWidth || "unbounded"}px; keep it between 560px and 720px.`,
-  );
-  assert.match(cardRule, /margin-inline:\s*auto/, "The focused Swap ticket is not centred inside its full-width workspace panel.");
+  const cardRule = /\.card\s*\{([^}]*)\}/s.exec(css)?.[1] ?? "";
+  /* The core's ticket pins its action with `sticky`: an ancestor that clips or scrolls takes that away (UX-251, UX-901). */
+  assert.ok(!/overflow\s*:/.test(cardRule), "The converter clips its content again; the ticket's action cannot stay in sight.");
+  /* Side by side from 1200 px — the converter where Spot keeps its ticket — and one column of the action width under it. */
+  const layoutRule = /\.layout\s*\{([^}]*)\}/s.exec(css)?.[1] ?? "";
+  assert.match(layoutRule, /max-width:\s*var\(--ryntra-page-action\)/, "On a phone and a narrow canvas the converter is not one action column.");
+  assert.match(css, /@media \(min-width: 1200px\)\s*\{\s*\.layout\s*\{[^}]*grid-template-columns:\s*minmax\(0,\s*1fr\)\s+minmax\(380px,\s*440px\)/s,
+    "On a desk the pair and the converter no longer stand side by side as Spot's chart and ticket do.");
 });
 
 test("Swap keeps one accessible page heading and the workspace mobile interaction floor", () => {
@@ -1083,16 +1098,12 @@ test("Swap keeps one accessible page heading and the workspace mobile interactio
   const card = read(join(WORKSPACE, "trade", "swap-card.tsx"));
   const css = stripCss(read(join(WORKSPACE, "trade", "swap-card.module.css")));
 
-  /* The H1 is `PageHead`'s now, and it is visible: it names the page a person
-     is standing in. It was `sr-only` while the page was one panel whose own
-     header already said `Swap` — two identical headings stacked is a defect
-     this product has already had to repair once, and the fix is to name
-     different things rather than to hide one of them. */
-  assert.match(page, /<PageHead title="Swap" \/>/,
-    "Swap is the only routed Solana page without an H1 for document navigation, and its H1 must name the page.");
-  assert.ok(!/<h1/.test(page), "The Swap page writes its own H1 beside the one PageHead renders.");
-  assert.match(card, /h=\{tall \? 8 : 6\}/,
-    "The Swap ticket reserves rows it has nothing to put in.");
+  /* SOL-C13: the H1 is the core page's, and the page is named once (UX-273) — no panel title «Swap» under it; what
+     the page is for stands behind the «?», never as a line under the heading. */
+  assert.match(page, /<Page\s+kind="overview"[\s\S]*?title=\{text\("Swap"\)\}[\s\S]*?help=\{text\(/,
+    "Swap is no longer the core's page with its one heading and its «?».");
+  assert.ok(!/<h1|<PageHead/.test(page), "The Swap page writes a heading of its own beside the core page's.");
+  assert.ok(!/title=\{text\("Swap"\)\}/.test(card), "The converter names the page a second time.");
 
   const mobileStart = css.indexOf("@media (max-width: 620px)");
   assert.ok(mobileStart >= 0, "Swap has no mobile rules at its supported phone breakpoint.");
@@ -1120,12 +1131,11 @@ test("Swap is full-width, clean, and leaves technical evidence to the Receipt", 
   assert.match(modules, /id:\s*"trade"[\s\S]*?label:\s*"Swap"[\s\S]*?route:\s*`\$\{BASE\}\/swap`/);
   assert.ok(!/lead=/.test(page), "The customer Swap still opens with an explanatory header or info essay.");
   assert.match(legacy, /permanentRedirect/);
-  /* Four columns, not twelve. The ticket keeps the whole canvas to itself no
-     longer: the panels beside it read the same order it would sign, and the
-     card's own engine is untouched by any of them. */
-  assert.match(card, /id="trade-swap"[\s\S]*?w=\{4\}/);
-  assert.match(card, /<SwapContext[\s\S]{0,200}facts=\{contextFacts\}/,
-    "The Swap ticket no longer hands its own order to the panels beside it.");
+  /* SOL-C13: as wide as the canvas, like the terminals — the converter where Spot keeps its ticket, the pair beside it
+     where Spot keeps its chart; the card's own engine is untouched by it. */
+  assert.match(card, /id="trade-swap"[\s\S]*?data-swap-converter/);
+  assert.match(card, /<SwapPair[\s\S]{0,400}age=\{priceAge\}[\s\S]{0,200}offline=\{offline\}/,
+    "The pair beside the converter no longer says the age of its price or the connection.");
   assert.ok(!/id="trade-asset-review"/.test(card), "Asset evidence still owns a second workspace panel.");
   assert.ok(!/<details|Every rule and its evidence|Default pair · not a recommendation/.test(card), "The Swap still prints a technical cheat sheet.");
   assert.ok(!/className=\{styles\.errorCode\}|Recover by signature/.test(card), "Raw codes or recovery vocabulary still leak into the customer flow.");
@@ -1153,14 +1163,14 @@ test("Send and Receipts keep the working-product journey customer-first", () => 
   const catalog = read(join(WORKSPACE, "i18n", "catalog.ts"));
   const receipts = read(join(WORKSPACE, "receipts", "page.tsx"));
 
-  /* One panel, the width of the canvas, the way Swap is. The two-panel desk
-     this replaced put a compose form beside a Review rail that had nothing in
-     it until both were filled, so a disconnected wallet rendered a narrow inert
-     form beside a dead column. */
-  assert.match(send, /<Panel[\s\S]{0,120}id="send-transfer"[\s\S]{0,200}w=\{4\}/,
-    "The Send ticket is not the domain's four-column card.");
-  assert.match(send, /<MoneyContext span=\{transferRows\} holdings=\{holdings\} \/>/,
-    "Send does not mount the Money domain beside its ticket, or makes it read balances a second time.");
+  /* One form, the frame of every page of «Гроші» (B18): the heading once, the 560 px form without a title of its
+     own, and beside it the recent transfers read from the server's history — never a second balance read. The
+     two-panel desk before it put a compose form beside a Review rail that had nothing in it until both were filled. */
+  assert.match(send, /<MoneyPage[\s\S]{0,80}id="send"[\s\S]{0,200}title=\{NAV_WORDS\[lang\]\.items\.send\}/,
+    "The Send page is not the frame of «Гроші», named once by the menu's word.");
+  assert.match(send, /aside=\{<RecentTransfers kind="transfers"/,
+    "Send does not show the recent transfers beside its form.");
+  assert.doesNotMatch(send, /<Panel\b/, "the card draws a title of its own again — the page's name twice");
   /* One balance read per page. `/api/solana/holdings` was measured at 46.5s on
      production against 1.7s for the same wallet's activity, so a panel asking
      again is not a rounding error. The card that already asked hands it over. */
@@ -1168,9 +1178,7 @@ test("Send and Receipts keep the working-product journey customer-first", () => 
     "Send reads holdings more than once for one page.");
   assert.ok(!/<Panel id="send-review"/.test(send),
     "Send renders a prerequisite-error Review panel before a wallet or asset exists.");
-  assert.match(send, /const transferRows = plan \? \(warnings\.length >= 3 \? 7 : 6\) : settled \? 6 : 5;/,
-    "The Send panel reserves rows it has nothing to put in.");
-  assert.match(send, /className=\{styles\.cta\}/,
+  assert.match(send, /<MoneyAction>[\s\S]{0,200}<Button variant="primary" block onClick=\{onCta\}/,
     "The single full-width action is gone; Send is back to scattered buttons.");
   assert.match(catalog, /"Wallet":\s*"Гаманець"/,
     "The primary Ukrainian mobile wallet action falls back to English.");
@@ -1275,7 +1283,8 @@ test("History shows four words a person knows and none a lane speaks", () => {
      `lib/solana/action-ledger.ts` — so this surface must contain no lane
      vocabulary at all. The check is on the source with comments stripped,
      because the file explains the rule it obeys. */
-  const card = stripJs(read(join(WORKSPACE, "history", "history-card.tsx")));
+  /* A row's words live in `history-lines.ts` since B2b, shared with Home's «Останні операції»: both are History's surface. */
+  const card = stripJs(read(join(WORKSPACE, "history", "history-card.tsx")) + read(join(WORKSPACE, "history", "history-lines.ts")));
 
   for (const laneWord of [
     "SUBMITTED_UNKNOWN",
@@ -1360,4 +1369,12 @@ test("no Solana surface uses a forbidden claim shape", () => {
     const source = stripJs(read(path));
     assert.ok(!forbidden.test(source), `${path} carries a forbidden claim shape.`);
   }
+});
+
+test("a dollar sum changed while Review is being prepared converts, and so cancels the request for the old sum", () => {
+  const card = stripJs(read(join(WORKSPACE, "trade", "swap-card.tsx")));
+  /* The form stays open while an order is prepared: the guard blocks a conversion only once the wallet has the order. */
+  assert.match(card, /if \(amountUnit !== "usd" \|\| pinnedPay \|\| \(busy && phase !== "PREPARING"\) \|\| prepared\) return;/);
+  /* …and a changed amount cancels the request in flight (PREPARING → IDLE). */
+  assert.match(card, /setPhase\(\(current\) => \(current === "REVIEW" \|\| current === "PREPARING" \? "IDLE" : current\)\);\s*\}, \[amount, buyMint, connection\?\.address, sellMint\]\);/);
 });

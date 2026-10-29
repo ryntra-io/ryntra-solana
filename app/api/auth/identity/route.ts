@@ -2,7 +2,9 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 
 import { accountMethods } from "@/lib/account/config";
-import { accountWalletUnlink, sessionList } from "@/lib/account/rpc";
+import { accountWalletUnlink, sessionList, sessionResolve, sessionRevoke } from "@/lib/account/rpc";
+import { LINKED_WALLET_COOKIE } from "@/lib/account/wallet-session";
+import { verifySession } from "@/lib/beta/token";
 import { matchIdentity } from "@/lib/auth/identity-link";
 import { supabaseServer, supabaseVerifiedUser } from "@/lib/auth/supabase";
 import { privateNoStoreHeaders } from "@/lib/http-control";
@@ -21,7 +23,9 @@ export const dynamic = "force-dynamic";
  *
  * POST `unlink` removes one provider identity through Supabase, which refuses
  * to unlink the last one, so an account cannot lock itself out; `unlink_wallet`
- * removes a proven wallet link. Adding an identity is a round trip that starts
+ * removes a proven wallet link — and with it the proof that link gave this
+ * account's session (SOL-W3), plus a separate `rw` proof of the same address
+ * this browser still holds. Adding an identity is a round trip that starts
  * at `/api/auth/oauth?purpose=link`; adding a password is `/api/auth/password`.
  */
 
@@ -105,8 +109,27 @@ export async function POST(req: NextRequest) {
   }
 
   if (parsed.action === "unlink_wallet") {
+    /* The link was the account's proof of this wallet, and the session reads
+       its links live, so that proof ends with this request. A `rw` proof of the
+       same address in this browser is a second, account-less one: it is closed
+       too, so «unlinked» means no private read of the wallet from here. Which
+       `rw` this browser holds is asked before anything changes: a store that
+       does not answer is a 503 with the link still in place, never a link gone
+       and a proof left open behind a deleted cookie. */
+    const rw = verifySession(req.cookies.get("rw")?.value ?? "");
+    const rwOutcome = rw && !rw.admin && rw.subject.kind === "session" ? await sessionResolve(rw.subject.sessionId, false) : null;
+    if (rwOutcome?.status === "unavailable") return json({ error: "unavailable" }, 503);
     const result = await accountWalletUnlink(session.accountId, parsed.chain, parsed.address);
-    return result.ok ? json({ ok: true }) : json({ error: result.error }, result.error === "unavailable" ? 503 : result.error === "not_found" ? 404 : 409);
+    if (!result.ok) return json({ error: result.error }, result.error === "unavailable" ? 503 : result.error === "not_found" ? 404 : 409);
+    let res = json({ ok: true });
+    if (rwOutcome && (rwOutcome.status !== "ok" || (rwOutcome.session.kind === "wallet" && rwOutcome.session.walletAddress === parsed.address))) {
+      /* The link is gone; a proof the store would not close keeps its cookie and says 503, so the page asks again
+         rather than hearing «done» over a proof still open. */
+      if (rwOutcome.status === "ok" && !(await sessionRevoke(rwOutcome.session.id, "logout"))) res = json({ error: "unavailable", unlinked: true }, 503);
+      else res.cookies.delete("rw");
+    }
+    if (req.cookies.get(LINKED_WALLET_COOKIE)?.value === parsed.address) res.cookies.delete(LINKED_WALLET_COOKIE);
+    return res;
   }
 
   if (!accountMethods().email) return json({ error: "unavailable", status: "off" }, 503);

@@ -2,8 +2,10 @@
    The page that made each row, the day it happened, what went out and what
    came in; one row opened is the receipt in words. Tokens only. */
 
+/* One column that may shrink: the filter row scrolls inside it instead of widening the card past a phone's edge. */
 .card {
   display: grid;
+  grid-template-columns: minmax(0, 1fr);
   gap: var(--ry-s4);
   min-width: 0;
 }
@@ -528,8 +530,11 @@
     padding-left: var(--ry-s3);
   }
 
+  /* One column without wrapping: a wrapping column takes its width from the widest child (the filter row), and the
+     export button stretched past the card's edge with it. */
   .toolbar {
     flex-direction: column;
+    flex-wrap: nowrap;
     align-items: stretch;
   }
 

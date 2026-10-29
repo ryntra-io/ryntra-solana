@@ -1,0 +1,138 @@
+{
+  "source": {
+    "from": "the market-data gateway (branch data 0294d860) over the recorded AGG trades of 24.10.2026 09:44 UTC (apps/market-data/test/fixtures/agg-polymarket-2026-10-24.json), market 0 «yes», 1m, init",
+    "outcome": "kja91tr9crrwf6sfulcmim6p",
+    "no": "zd0qz3iv146a13swk1dw6cvq",
+    "question": "Match Winner"
+  },
+  "instruments": {
+    "instruments": [
+      {
+        "id": "agg:kja91tr9crrwf6sfulcmim6p",
+        "chart": {
+          "kind": "prediction",
+          "scale": "probability",
+          "outcomes": [
+            "yes",
+            "no"
+          ],
+          "default_resolution": "1m",
+          "resolutions": [
+            "1s",
+            "5s",
+            "1m",
+            "3m",
+            "5m",
+            "15m",
+            "30m",
+            "1h",
+            "2h",
+            "4h",
+            "6h",
+            "8h",
+            "12h",
+            "1d",
+            "1w",
+            "1M"
+          ],
+          "complement": "agg:zd0qz3iv146a13swk1dw6cvq",
+          "venues": [
+            "limitless",
+            "polymarket",
+            "predict"
+          ],
+          "volume": {
+            "en": "Shares as printed: a match counts as its taker and each of its makers, on both yes and no when a pair is minted or merged",
+            "uk": "Частки, як їх друкують майданчики: збіг — це тейкер і кожен мейкер, на «так» і на «ні», коли пару випускають чи погашають"
+          }
+        }
+      },
+      {
+        "id": "agg:zd0qz3iv146a13swk1dw6cvq",
+        "chart": {
+          "kind": "prediction",
+          "scale": "probability",
+          "outcomes": [
+            "yes",
+            "no"
+          ],
+          "default_resolution": "1m",
+          "resolutions": [
+            "1s",
+            "5s",
+            "1m",
+            "3m",
+            "5m",
+            "15m",
+            "30m",
+            "1h",
+            "2h",
+            "4h",
+            "6h",
+            "8h",
+            "12h",
+            "1d",
+            "1w",
+            "1M"
+          ],
+          "complement": "agg:kja91tr9crrwf6sfulcmim6p",
+          "venues": [
+            "limitless",
+            "polymarket",
+            "predict"
+          ],
+          "volume": {
+            "en": "Shares as printed: a match counts as its taker and each of its makers, on both yes and no when a pair is minted or merged",
+            "uk": "Частки, як їх друкують майданчики: збіг — це тейкер і кожен мейкер, на «так» і на «ні», коли пару випускають чи погашають"
+          }
+        }
+      }
+    ]
+  },
+  "history": {
+    "bars": [
+      {
+        "t": 1792835040000,
+        "o": "29",
+        "h": "29",
+        "l": "21",
+        "c": "23",
+        "v": "10088.714376",
+        "turnover": "231098.406752",
+        "trades": 71
+      },
+      {
+        "t": 1792835100000,
+        "o": "23",
+        "h": "25",
+        "l": "22",
+        "c": "22",
+        "v": "9514.626068",
+        "turnover": "219093.52660215",
+        "trades": 64
+      }
+    ],
+    "more": {
+      "forward": false,
+      "backward": false
+    },
+    "gaps": [],
+    "display_step": "0.01",
+    "multiplier_version": null,
+    "status": {
+      "state": "live",
+      "market": "open",
+      "source": {
+        "id": "agg",
+        "label": "AGG",
+        "rights": "display",
+        "attribution": null
+      },
+      "at": 1792835195000,
+      "gateway_at": 1792835200000,
+      "age_ms": 5000,
+      "delay_ms": null,
+      "derived": true
+    }
+  }
+}

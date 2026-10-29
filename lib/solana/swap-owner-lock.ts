@@ -11,6 +11,12 @@
  * lock forever turned "one swap at a time" into one swap per wallet, ever.
  * Those three states are replaced by the next Review; an outstanding
  * signature is not.
+ *
+ * Nor is an unsigned Review a lock: a Review nobody has signed through this server is
+ * replaced by the next one at once, in the same compare-and-set — the
+ * signature claim and the replacement race on one version, so exactly one of
+ * them wins. A claim that loses is refused before any send
+ * (`OWNER_SWAP_LOCK_MISMATCH`, «A newer Review … replaced …») and sends nothing.
  */
 
 import { z } from "zod";
@@ -39,6 +45,15 @@ export function isSwapOwnerLockSettled(state: SwapOwnerLockState): boolean {
     state === "EXPIRED_AFTER_SUBMIT" ||
     state === "FAILED" ||
     state === "RECEIPTED";
+}
+
+/**
+ * An issued Review no signature has reached: the next order replaces it.
+ * Only the server's own record decides — the claim that would move it to
+ * SIGNED is the step before any send, so bytes it holds were never sent.
+ */
+export function isSwapOwnerReviewReplaceable(record: Pick<SwapOwnerLockRecord, "state" | "signature">): boolean {
+  return record.state === "REVIEW_ISSUED" && record.signature === null;
 }
 
 const SwapOwnerLockRecordSchema = z
@@ -166,7 +181,7 @@ export async function reserveSwapOwnerReview(args: {
     return await withBoundedCasRetry(async () => {
       const existing = await readRecord(args.store, args.owner);
       if (existing === "MALFORMED") return unavailable("The durable owner-swap lock is malformed.");
-      const replaceable = existing ? isSwapOwnerLockSettled(existing.state) : false;
+      const replaceable = existing ? isSwapOwnerLockSettled(existing.state) || isSwapOwnerReviewReplaceable(existing) : false;
       if (existing && !replaceable) {
         return {
           ok: false,
@@ -176,8 +191,9 @@ export async function reserveSwapOwnerReview(args: {
         } as const;
       }
       /* The outgoing record is a completed swap's only durable evidence.
-         Move it under its signature before the slot is reused. */
-      if (existing) await archiveSettled(args.store, existing);
+         Move it under its signature before the slot is reused. An unsigned
+         Review has no signature and nothing to keep: no bytes of it left. */
+      if (existing && isSwapOwnerLockSettled(existing.state)) await archiveSettled(args.store, existing);
       const next = existing
         ? SwapOwnerLockRecordSchema.parse({
             ...candidate,
@@ -231,11 +247,11 @@ export async function claimSwapOwnerSignature(args: {
     store: args.store,
     owner: args.owner,
     decide: (record) => {
-      if (
-        record.requestId !== args.requestId ||
-        record.messageDigest !== args.messageDigest ||
-        record.reviewDigest !== args.reviewDigest
-      ) {
+      /* Another order for this wallet replaced the Review these bytes came from (SOL-S1): nothing is sent, and a fresh Review is the way on. */
+      if (record.requestId !== args.requestId) {
+        return { ok: false, code: "OWNER_SWAP_LOCK_MISMATCH", reason: "A newer Review for this wallet replaced the one these bytes came from. Nothing was sent; sign the fresh Review.", record };
+      }
+      if (record.messageDigest !== args.messageDigest || record.reviewDigest !== args.reviewDigest) {
         return { ok: false, code: "OWNER_SWAP_LOCK_MISMATCH", reason: "The signature does not match the durable exact Review.", record };
       }
       if (record.state !== "REVIEW_ISSUED" || Date.parse(args.at) >= Date.parse(record.reviewExpiresAt)) {

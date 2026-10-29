@@ -3,7 +3,9 @@ import type { ReactNode } from 'react'
 import { StateView } from '@/components/state-view'
 import { Txt } from '@/components/txt'
 import { useAccount } from '@/features/session/use-account'
-import { useSharedCopy } from '@/lib/i18n'
+import { useLocale, useSharedCopy } from '@/lib/i18n'
+
+import { failureLine, signInFailureLine } from './signing-copy'
 
 export type WalletGateProps = {
   /** What the wallet unlocks here: "Your portfolio", "Trading". */
@@ -19,17 +21,18 @@ export type WalletGateProps = {
 export function WalletGate({ what, children }: WalletGateProps) {
   const account = useAccount()
   const copy = useSharedCopy()
+  const locale = useLocale()
   if (account.address) return <>{children}</>
   return (
     <StateView
       icon="wallet-outline"
-      title={copy.connectTitle}
-      detail={copy.connectDetail(what)}
+      title={copy.connectFor(what)}
+      help={{ title: copy.connectTitle, body: copy.connectHelp }}
       action={{ title: copy.connectWallet, onPress: () => void account.connect(), loading: account.busy === 'connect' }}
     >
       {account.failure ? (
         <Txt variant="ui" tone="danger" className="text-center">
-          {account.failure.message}
+          {failureLine(account.failure.message, locale)}
         </Txt>
       ) : null}
     </StateView>
@@ -44,18 +47,19 @@ export function WalletGate({ what, children }: WalletGateProps) {
 export function SessionGate({ what, children }: WalletGateProps) {
   const account = useAccount()
   const copy = useSharedCopy()
+  const locale = useLocale()
   if (account.session) return <>{children}</>
   if (!account.address) return <WalletGate what={what}>{children}</WalletGate>
   return (
     <StateView
       icon="key-outline"
-      title={copy.signInTitle}
-      detail={copy.signInDetail(what)}
+      title={copy.signInFor(what)}
+      help={{ title: copy.signInWhy, body: copy.signInHelp }}
       action={{ title: copy.signIn, onPress: () => void account.signIn(), loading: account.signingIn }}
     >
       {account.signInFailure ? (
         <Txt variant="ui" tone="danger" className="text-center">
-          {account.signInFailure.message}
+          {signInFailureLine(account.signInFailure, locale)}
         </Txt>
       ) : null}
     </StateView>

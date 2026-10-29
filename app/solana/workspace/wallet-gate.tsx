@@ -1,155 +1,79 @@
 "use client";
 
 /**
- * The wallet choice, and the whole screen built around it.
+ * A guest's one way to a wallet, on every page (B14, the B13 review's items 1 and 11).
  *
- * `WalletConnectRow` already made the *behaviour* correct: one connection
- * implementation, no auto-picking, a failure printed beside the control that
- * caused it. What it could not fix is that each card pasted that row into the
- * top-left corner of a panel and left the rest of the screen empty. Measured on
- * the rendered page, Holdings was 419x259 of content inside a 2234x708 body.
- * Three of the product's first screens were mostly void, and the first thing a
- * person met was a list of grey buttons under a sentence.
+ * The review found eight wordings of the same act, five shapes of button, gates that drew only a sentence about the
+ * missing extension, and form buttons that called `connect(undefined)` and did nothing. There is now one control:
  *
- * Two exports, one vocabulary:
+ * - `ConnectWalletButton` — the core's primary `Button`, «Підключити гаманець». It opens the header's own wallet panel,
+ *   so the choice among wallets, «Встановити Phantom» when there is none, «Продовжити з …» when there is one, and every
+ *   failure are the same panel wherever the press came from. On a phone whose browser carries no wallet the same place
+ *   reads «Відкрити в Phantom» and opens this page inside Phantom's browser — the one way on there.
+ * - `WalletGate` — the core's `EmptyState` inside the block that will hold the data: one sentence, that button.
  *
- * - `WalletChoices` is the choice itself, and it is the same tiles wherever it
- *   appears — inside the Send, Swap and Bridge forms as well as here.
- * - `WalletGate` is the whole screen for a surface that has nothing to show
- *   without a wallet: Holdings, Receive, Receipts. Centred on both axes, which
- *   is what makes the emptiness read as composition rather than as an
- *   unfinished page.
- *
- * **One line, not a paragraph.** The gate's line says what the screen will show
- * once a wallet is connected. Nothing here explains Solana, wallets, or what
- * connecting does.
- *
- * **No dead control.** The cards used to render a disabled `Choose a wallet
- * above` whose only job was to point at another control. Where the tiles are on
- * screen, they are the action, and the button that pointed at them is gone.
- *
- * The pending wallet is tracked here rather than read from the provider's
- * `connecting` flag alone, because the flag cannot say *which* tile was
- * pressed — and a row of four tiles that all dim together tells somebody their
- * click went nowhere in particular.
+ * Nothing here connects a wallet by itself or picks one for the person.
  */
 
-import { useEffect, useState } from "react";
-
-import { isPhoneUserAgent, phantomBrowseUrl } from "@/lib/solana/open-in-wallet";
+import { Button, EmptyState } from "@ryntra/core/ui";
 
 import { useSolanaConnection } from "./connection.tsx";
 import { useSolanaI18n } from "./i18n/provider.tsx";
 import styles from "./wallet-gate.module.css";
+import { reachAfter, useWalletReach } from "./wallet-reach.ts";
 
-export type WalletChoicesProps = Readonly<{
-  /**
-   * What to do when exactly one wallet is detected and there is nothing to
-   * choose. `button` renders the connecting control; `defer` renders nothing,
-   * because the surrounding card's own primary button already connects it.
-   */
-  single: "button" | "defer";
-  /** Class for a failure line, so a card keeps its own error treatment. */
-  errorClassName?: string;
+export type ConnectWalletButtonProps = Readonly<{
+  /** The pinned action of a form: as wide as its column. */
+  block?: boolean;
+  className?: string;
+  /** Secondary where the screen's one orange action is another (Spot: the ticket's). */
+  variant?: "primary" | "secondary";
+  /** Runs before the header's panel opens: a sheet above the header closes itself first (`reachAfter`). */
+  before?: () => void;
 }>;
 
-export function WalletChoices({ single, errorClassName }: WalletChoicesProps) {
-  const { text } = useSolanaI18n();
-  const { wallets, connecting, error, connect } = useSolanaConnection();
-  const [pending, setPending] = useState<string | null>(null);
-
-  const start = (name: string) => {
-    setPending(name);
-    void connect(name);
-  };
-
-  const only = wallets.length === 1 ? wallets[0] : null;
-
+export function ConnectWalletButton({ block = false, className, before, variant = "primary" }: ConnectWalletButtonProps) {
+  const { text, locale } = useSolanaI18n();
+  const { connecting } = useSolanaConnection();
+  const { openInWallet, reach } = useWalletReach();
   return (
-    <>
-      {only && single === "button" ? (
-        <button
-          className={styles.cta}
-          type="button"
-          onClick={() => start(only.name)}
-          disabled={connecting}
-        >
-          {only.icon ? (
-            /* The wallet hands its icon over as a data URI, so there is no
-               remote file for `next/image` to optimize. */
-            // eslint-disable-next-line @next/next/no-img-element
-            <img className={styles.ctaIcon} src={only.icon} alt="" width={20} height={20} />
-          ) : null}
-          {connecting ? text("Opening…") : `${text("Continue with")} ${only.name}`}
-        </button>
-      ) : null}
-
-      {wallets.length > 1 ? (
-        <div className={styles.choices}>
-          {wallets.map((wallet) => (
-            <button
-              key={wallet.name}
-              className={styles.tile}
-              type="button"
-              onClick={() => start(wallet.name)}
-              disabled={connecting}
-            >
-              {wallet.icon ? (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img className={styles.tileIcon} src={wallet.icon} alt="" width={28} height={28} />
-              ) : null}
-              {connecting && pending === wallet.name ? text("Opening…") : wallet.name}
-            </button>
-          ))}
-        </div>
-      ) : null}
-
-      {error ? <p className={errorClassName ?? styles.error}>{error}</p> : null}
-    </>
+    <Button
+      variant={variant}
+      icon="wallet"
+      block={block}
+      className={className}
+      loading={connecting}
+      onClick={() => reachAfter(before, reach)}
+      lang={locale === "uk" ? "uk" : "en"}
+      data-connect-wallet=""
+    >
+      {openInWallet ? text("Open in Phantom") : text("Connect wallet")}
+    </Button>
   );
 }
 
-export type WalletGateProps = Readonly<{
+export type WalletChoicesProps = Readonly<{
   /**
-   * What this screen shows once a wallet is connected. One sentence, concrete,
-   * in the product's own voice — never an explanation of the connection.
+   * `defer` draws nothing: the surrounding form's own primary button is the connect action. `button` draws the one
+   * connect button. Kept for the pages that still name it (other lines' paths); the tiles it once drew live in the
+   * header's panel now.
    */
+  single: "button" | "defer";
+  /** No longer used: a failure is printed in the header's panel, beside the choice that caused it. */
+  errorClassName?: string;
+}>;
+
+export function WalletChoices({ single }: WalletChoicesProps) {
+  const { connection } = useSolanaConnection();
+  if (connection || single === "defer") return null;
+  return <ConnectWalletButton />;
+}
+
+export type WalletGateProps = Readonly<{
+  /** What this block shows once a wallet is connected. One sentence, in «ти» — never an explanation of the connection. */
   title: string;
 }>;
 
 export function WalletGate({ title }: WalletGateProps) {
-  const { text } = useSolanaI18n();
-  const { wallets } = useSolanaConnection();
-  /* A phone's browser carries no wallet: the way on is this page inside
-     Phantom's own browser. Read after mount — the server does not know the
-     device. */
-  const [phone, setPhone] = useState(false);
-  useEffect(() => {
-    setPhone(isPhoneUserAgent(window.navigator.userAgent));
-  }, []);
-
-  return (
-    <div className={styles.gate}>
-      <p className={styles.title}>{title}</p>
-
-      {wallets.length === 0 && phone ? (
-        <>
-          <p className={styles.none}>
-            <span className={styles.noneLead}>{text("No wallet in this browser")}</span>
-            <span>{text("On a phone, Ryntra opens inside your wallet app.")}</span>
-          </p>
-          <button className={styles.cta} type="button" onClick={() => window.location.assign(phantomBrowseUrl(window.location.href, window.location.origin))}>
-            {text("Open in Phantom")}
-          </button>
-        </>
-      ) : wallets.length === 0 ? (
-        <p className={styles.none}>
-          <span className={styles.noneLead}>{text("No Solana wallet in this browser.")}</span>
-          <span>{text("Phantom, Solflare and Backpack all work.")}</span>
-        </p>
-      ) : null}
-
-      <WalletChoices single="button" />
-    </div>
-  );
+  return <EmptyState icon="wallet" text={title} action={<ConnectWalletButton />} className={styles.gate} data-wallet-gate="" />;
 }

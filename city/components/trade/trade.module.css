@@ -1,0 +1,1187 @@
+/* The trade card over the city: a plain financial card in the city's glass, no game motion inside it. One amber
+   action, every figure from the engine. Tokens from city/styles/city.module.css. */
+
+.layer {
+  position: fixed;
+  inset: 0;
+  z-index: 12;
+  pointer-events: none;
+  font-family: var(--font-ui, system-ui), system-ui, sans-serif;
+  color: var(--ice);
+}
+
+.display {
+  font-family: var(--font-display, system-ui), system-ui, sans-serif;
+  font-stretch: 125%;
+  font-variation-settings: 'wdth' 125;
+  font-weight: 900;
+  letter-spacing: 0.01em;
+  text-transform: uppercase;
+}
+
+.sheet {
+  position: absolute;
+  left: 50%;
+  bottom: max(14px, env(safe-area-inset-bottom));
+  width: min(560px, calc(100% - 2 * var(--gutter)));
+  max-height: calc(100% - 92px - env(safe-area-inset-top));
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  /* Never shorter than the tower card it stands over, so the two never show at once. */
+  min-height: min(440px, calc(100% - 92px - env(safe-area-inset-top)));
+  display: flex;
+  flex-direction: column;
+  transform: translateX(-50%);
+  padding: 18px 18px 14px;
+  pointer-events: auto;
+  /* Solid: the tower card it stands over never shows through. */
+  background: linear-gradient(160deg, #141024, #08070f);
+  clip-path: polygon(16px 0, 100% 0, 100% calc(100% - 16px), calc(100% - 16px) 100%, 0 100%, 0 16px);
+  box-shadow: inset 0 0 0 2px rgba(153, 69, 255, 0.32), inset 0 1px 18px rgba(153, 69, 255, 0.18);
+  animation: sheetIn 260ms ease-out both;
+}
+
+/* Whatever the card holds keeps its own height: a taller ticket scrolls inside the card, nothing is squeezed away. */
+.sheet > * {
+  flex-shrink: 0;
+}
+
+@keyframes sheetIn {
+  from {
+    opacity: 0;
+    transform: translate(-50%, 24px);
+  }
+}
+
+/* ---------- Head ---------- */
+
+.head {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.icon {
+  width: 46px;
+  height: 46px;
+  flex: none;
+  border-radius: 50%;
+  object-fit: cover;
+  background: var(--graphite);
+  box-shadow: 0 0 0 2px rgba(255, 178, 63, 0.55);
+}
+
+.title {
+  min-width: 0;
+  flex: 1;
+}
+
+.symbol {
+  font-size: 28px;
+  line-height: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.priceLine {
+  margin-top: 5px;
+  font-size: 14px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.priceLine small {
+  font-size: 11px;
+  opacity: 0.7;
+}
+
+.up {
+  color: var(--mint);
+}
+
+.down {
+  color: var(--flare);
+}
+
+.close {
+  width: 44px;
+  height: 44px;
+  flex: none;
+  display: grid;
+  place-items: center;
+  border: 0;
+  padding: 0;
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--ice);
+}
+
+.close svg {
+  width: 20px;
+  height: 20px;
+}
+
+.close:disabled {
+  opacity: 0.35;
+  cursor: default;
+}
+
+/* ---------- Market · Limit · Stop ---------- */
+
+/* The way to trade: a quiet row above Buy and Sell, underlined in violet, never a second amber. */
+.modes {
+  display: flex;
+  gap: 18px;
+  margin-top: 8px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.mode {
+  height: 30px;
+  padding: 0;
+  border: 0;
+  background: none;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+  box-shadow: inset 0 -2px 0 transparent;
+}
+
+.modeOn {
+  color: var(--ice);
+  box-shadow: inset 0 -2px 0 var(--violet);
+}
+
+.mode:disabled {
+  cursor: default;
+}
+
+/* ---------- Buy / Sell ---------- */
+
+.sides {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+  margin-top: 14px;
+}
+
+.side {
+  height: 40px;
+  border: 0;
+  font-size: 13px;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--text-dim);
+}
+
+.sideOn {
+  background: rgba(153, 69, 255, 0.28);
+  color: var(--ice);
+  box-shadow: inset 0 -2px 0 var(--violet);
+}
+
+/* ---------- What is paid with or sold ---------- */
+
+.row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+  margin-top: 16px;
+}
+
+.label {
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+}
+
+.labelGroup {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 10px;
+  min-width: 0;
+  white-space: nowrap;
+}
+
+/* SOL or USDC: two small chips beside the label, never a second amber. */
+.pays {
+  display: inline-flex;
+  gap: 2px;
+  padding: 2px;
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.payChip {
+  height: 26px;
+  padding: 0 10px;
+  border: 0;
+  background: none;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  color: var(--text-dim);
+}
+
+.payOn {
+  background: rgba(153, 69, 255, 0.32);
+  color: var(--ice);
+  box-shadow: inset 0 -2px 0 var(--violet);
+}
+
+.payChip:disabled {
+  cursor: default;
+}
+
+/* Any other coin: the chip that opens the picker. */
+.moreChip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.chevron {
+  width: 12px;
+  height: 12px;
+  flex: none;
+  vertical-align: -1px;
+}
+
+/* A label row whose chips need the room: the balance goes under it rather than being cut. */
+.rowWrap {
+  flex-wrap: wrap;
+  row-gap: 4px;
+}
+
+.rowWrap .balance,
+.rowWrap .marketRef,
+.rowWrap .getInline {
+  margin-left: auto;
+}
+
+.balance {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-size: 13px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: var(--text-dim);
+  white-space: nowrap;
+}
+
+.ownOn {
+  box-shadow: inset 0 0 0 2px var(--amber);
+}
+
+.ownWrong,
+.ownWrong:focus-within {
+  box-shadow: inset 0 0 0 2px var(--flare);
+}
+
+/* ---------- How much: the field, the four shares, the slider ---------- */
+
+.size {
+  /* The brand's orange (CITY-11): the slider's fill, its thumb and a lit share. */
+  --accent: #ff681c;
+  display: grid;
+  /* Never wider than the card: a long coin name shortens, the field never pushes the card sideways. */
+  grid-template-columns: minmax(0, 1fr);
+  gap: 10px;
+  margin-top: 8px;
+}
+
+.amount {
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  height: 64px;
+  padding: 0 16px;
+  background: rgba(255, 255, 255, 0.05);
+  box-shadow: inset 0 0 0 1px rgba(238, 241, 255, 0.08);
+  clip-path: polygon(10px 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%, 0 10px);
+  cursor: text;
+  transition: box-shadow 160ms ease;
+}
+
+.amount:focus-within {
+  box-shadow: inset 0 0 0 1.5px rgba(255, 104, 28, 0.7);
+}
+
+.amountWrong,
+.amountWrong:focus-within {
+  box-shadow: inset 0 0 0 1.5px var(--flare);
+}
+
+.amountInput {
+  flex: 1;
+  min-width: 0;
+  border: 0;
+  padding: 0;
+  background: none;
+  outline: none;
+  font-size: 30px;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+  color: var(--ice);
+}
+
+.amountInput::placeholder {
+  color: var(--text-dim);
+  opacity: 0.6;
+}
+
+.amountUnit {
+  flex: none;
+  max-width: 45%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 16px;
+  color: var(--text-dim);
+}
+
+.shares {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 6px;
+}
+
+.share {
+  height: 44px;
+  border: 0;
+  padding: 0;
+  background: rgba(255, 255, 255, 0.05);
+  box-shadow: inset 0 0 0 1px rgba(238, 241, 255, 0.08);
+  clip-path: polygon(6px 0, 100% 0, 100% calc(100% - 6px), calc(100% - 6px) 100%, 0 100%, 0 6px);
+  font-size: 13px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  font-variant-numeric: tabular-nums;
+  color: var(--ice);
+  transition: background 140ms ease, color 140ms ease, box-shadow 140ms ease;
+}
+
+.share:hover:not(:disabled) {
+  background: rgba(255, 104, 28, 0.1);
+}
+
+.shareOn,
+.shareOn:hover:not(:disabled) {
+  background: rgba(255, 104, 28, 0.16);
+  box-shadow: inset 0 0 0 1.5px var(--accent);
+  color: #ffd2b8;
+}
+
+.share:disabled {
+  opacity: 0.35;
+  cursor: default;
+}
+
+/* A thin track in a tall target: the whole row takes the finger, the thumb follows. */
+.slider {
+  position: relative;
+  height: 44px;
+  margin: 0 11px;
+  touch-action: none;
+  cursor: pointer;
+  outline: none;
+}
+
+.track {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 50%;
+  height: 3px;
+  transform: translateY(-50%);
+  background: rgba(238, 241, 255, 0.12);
+}
+
+.fill {
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  background: linear-gradient(90deg, rgba(255, 104, 28, 0.55), var(--accent));
+}
+
+.mark {
+  position: absolute;
+  top: 50%;
+  width: 7px;
+  height: 7px;
+  transform: translate(-50%, -50%) rotate(45deg);
+  background: #191527;
+  box-shadow: inset 0 0 0 1.5px rgba(238, 241, 255, 0.28);
+}
+
+.markPassed {
+  background: var(--accent);
+  box-shadow: none;
+}
+
+.thumb {
+  position: absolute;
+  top: 50%;
+  width: 22px;
+  height: 22px;
+  transform: translate(-50%, -50%);
+  border-radius: 50%;
+  background: radial-gradient(circle at 50% 50%, #fff3ea 0 4px, var(--accent) 5px);
+  box-shadow: 0 0 0 4px rgba(255, 104, 28, 0.18), 0 2px 10px rgba(255, 104, 28, 0.45);
+  transition: box-shadow 140ms ease;
+}
+
+.slider:focus-visible .thumb,
+.slider:active .thumb {
+  box-shadow: 0 0 0 7px rgba(255, 104, 28, 0.26), 0 2px 12px rgba(255, 104, 28, 0.55);
+}
+
+.sliderResting {
+  cursor: default;
+}
+
+.sliderResting .fill,
+.sliderResting .markPassed {
+  background: rgba(238, 241, 255, 0.2);
+}
+
+.sliderResting .thumb {
+  background: #2a2638;
+  box-shadow: inset 0 0 0 1.5px rgba(238, 241, 255, 0.22);
+}
+
+/* ---------- What you get ---------- */
+
+.get {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  margin-top: 6px;
+  min-height: 44px;
+  min-width: 0;
+}
+
+.getFigure {
+  font-size: clamp(32px, 9vw, 42px);
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+
+.getSymbol {
+  font-size: 20px;
+  line-height: 1;
+  color: var(--warm);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.getWaiting {
+  color: var(--text-dim);
+}
+
+.shimmer {
+  width: 46%;
+  height: 34px;
+  background: linear-gradient(90deg, rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0.12), rgba(255, 255, 255, 0.05));
+  background-size: 200% 100%;
+  animation: shimmer 1.2s linear infinite;
+}
+
+@keyframes shimmer {
+  to {
+    background-position: -200% 0;
+  }
+}
+
+/* The terms before the signature: one line, two at most on a phone; the rest behind «i». */
+.terms {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  margin-top: 8px;
+  font-size: 14px;
+  line-height: 1.45;
+  color: var(--text-dim);
+}
+
+.termsText {
+  flex: 1;
+  min-width: 0;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.termsText b {
+  color: var(--ice);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.notable {
+  color: var(--amber) !important;
+}
+
+.high {
+  color: var(--flare) !important;
+}
+
+.info {
+  width: 28px;
+  height: 28px;
+  flex: none;
+  margin-top: -3px;
+  display: grid;
+  place-items: center;
+  border: 0;
+  padding: 0;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--ice);
+  font-size: 14px;
+  font-weight: 800;
+}
+
+.infoOn {
+  background: rgba(153, 69, 255, 0.4);
+}
+
+.details {
+  margin: 10px 0 0;
+  padding: 10px 12px;
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 6px 14px;
+  font-size: 13px;
+  line-height: 1.35;
+  background: rgba(238, 241, 255, 0.05);
+}
+
+.details dt {
+  color: var(--text-dim);
+}
+
+.details dd {
+  margin: 0;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  overflow-wrap: anywhere;
+}
+
+/* ---------- One line under the terms ---------- */
+
+.notice {
+  margin-top: 10px;
+  font-size: 14px;
+  line-height: 1.4;
+  color: var(--ice);
+}
+
+.noticeWarn {
+  color: var(--amber);
+}
+
+.noticeError {
+  color: #ffb3aa;
+}
+
+/* ---------- The one action ---------- */
+
+.action {
+  width: 100%;
+  height: 58px;
+  margin-top: 14px;
+  padding: 0 20px;
+  border: 0;
+  font-size: 18px;
+  color: var(--ink);
+  background: linear-gradient(100deg, var(--warm), var(--amber));
+  clip-path: polygon(14px 0, 100% 0, 100% calc(100% - 14px), calc(100% - 14px) 100%, 0 100%, 0 14px);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  transition: transform 120ms ease-out;
+}
+
+/* The ticket's one action stays in view: a card taller than its room scrolls under it, the action pinned at the
+   bottom over a short fade of the card's own ground. In a card that fits, it sits where it always did. */
+.dock {
+  position: sticky;
+  bottom: 0;
+  z-index: 1;
+  background: linear-gradient(to bottom, rgba(10, 8, 19, 0), #0a0813 14px);
+  /* The same ground over the card's bottom padding (short of its 2 px rim), so nothing shows under the pinned action. A shadow takes no
+     room: a card that fits keeps its layout and never scrolls for it. */
+  box-shadow: 0 12px 0 #0a0813;
+}
+
+/* The wallet's line under the action starts below the action's ground. */
+.dock + .walletLine {
+  margin-top: 14px;
+}
+
+.action:active:not(:disabled) {
+  transform: scale(0.98);
+}
+
+.action:disabled {
+  cursor: default;
+  background: rgba(255, 255, 255, 0.09);
+  color: var(--text-dim);
+}
+
+.waiting {
+  animation: breathe 1.6s ease-in-out infinite;
+}
+
+@keyframes breathe {
+  50% {
+    opacity: 0.6;
+  }
+}
+
+.pair {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 14px;
+}
+
+.pair .action {
+  flex: 1;
+  width: auto;
+  margin-top: 0;
+}
+
+.quiet {
+  height: 58px;
+  padding: 0 16px;
+  border: 0;
+  background: none;
+  font-size: 14px;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+  white-space: nowrap;
+}
+
+/* ---------- The wallet ---------- */
+
+.walletLine {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 10px;
+  min-height: 24px;
+  font-size: 12px;
+  color: var(--text-dim);
+}
+
+.dot {
+  width: 12px;
+  height: 12px;
+  flex: none;
+  border-radius: 50%;
+  background: var(--player, var(--violet));
+  box-shadow: 0 0 10px var(--player, var(--violet));
+}
+
+.address {
+  font-variant-numeric: tabular-nums;
+  color: var(--ice);
+}
+
+.link {
+  margin-left: auto;
+  border: 0;
+  padding: 4px 0;
+  background: none;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.wallets {
+  display: grid;
+  gap: 8px;
+  margin-top: 14px;
+}
+
+.walletButton {
+  height: 54px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 0 16px;
+  border: 0;
+  background: rgba(255, 255, 255, 0.07);
+  color: var(--ice);
+  font-size: 16px;
+  font-weight: 700;
+  text-align: left;
+  clip-path: polygon(10px 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%, 0 10px);
+}
+
+.walletButton img {
+  width: 28px;
+  height: 28px;
+  border-radius: 6px;
+}
+
+.walletButton:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+.walletHint {
+  margin-top: 10px;
+  font-size: 13px;
+  line-height: 1.45;
+  color: var(--text-dim);
+}
+
+.walletHint a {
+  color: var(--ice);
+}
+
+/* ---------- After the trade ---------- */
+
+/* Pushes the after-trade actions to the bottom of the card. */
+.grow {
+  flex: 1;
+}
+
+.kicker {
+  margin-top: 16px;
+  font-size: 13px;
+  font-weight: 800;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--mint);
+}
+
+.kickerWarn {
+  color: var(--amber);
+}
+
+.kickerDanger {
+  color: var(--flare);
+}
+
+.result {
+  margin-top: 8px;
+  font-size: clamp(26px, 7vw, 34px);
+  line-height: 1.05;
+  font-variant-numeric: tabular-nums;
+  overflow-wrap: anywhere;
+}
+
+.resultLine {
+  margin-top: 8px;
+  font-size: 15px;
+  line-height: 1.45;
+  color: var(--text-dim);
+}
+
+.explorer {
+  display: inline-block;
+  margin-top: 10px;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text-dim);
+  text-underline-offset: 3px;
+}
+
+.card {
+  display: block;
+  width: 100%;
+  margin-top: 14px;
+  aspect-ratio: 1200 / 630;
+  object-fit: cover;
+  background: var(--graphite);
+}
+
+/* ---------- Phones ---------- */
+
+@media (max-width: 400px) {
+  .sheet {
+    padding: 16px 14px 12px;
+  }
+  .symbol {
+    font-size: 24px;
+  }
+  .amount {
+    height: 58px;
+  }
+  .amountInput {
+    font-size: 26px;
+  }
+  .row {
+    gap: 6px;
+  }
+  .labelGroup {
+    gap: 6px;
+  }
+  .payChip {
+    padding: 0 8px;
+  }
+}
+
+/* ---------- Desktop: the card stands on the right, the city keeps the centre ---------- */
+
+@media (min-aspect-ratio: 1/1) {
+  .sheet {
+    left: auto;
+    right: var(--gutter);
+    bottom: 24px;
+    /* As wide as the tower card it stands over, so the two never show at once. */
+    width: 520px;
+    min-height: 380px;
+    max-height: calc(100% - 100px);
+    transform: none;
+    animation-name: sheetInSide;
+  }
+}
+
+@keyframes sheetInSide {
+  from {
+    opacity: 0;
+    transform: translateX(32px);
+  }
+}
+
+/* ---------- Computer: a window the person moves and stretches ---------- */
+
+.window {
+  position: absolute;
+  display: flex;
+  flex-direction: column;
+  pointer-events: auto;
+  animation: sheetInSide 260ms ease-out both;
+}
+
+/* The window takes focus when it opens; the controls inside keep their own rings. */
+.sheet:focus {
+  outline: none;
+}
+
+.sheet.floating {
+  position: relative;
+  inset: auto;
+  flex: 1 1 auto;
+  width: auto;
+  min-height: 0;
+  max-height: none;
+  transform: none;
+  animation: none;
+}
+
+.grab {
+  cursor: grab;
+  touch-action: none;
+  user-select: none;
+}
+
+.grab:active {
+  cursor: grabbing;
+}
+
+/* Every corner stretches the window; two short stripes show where. The top-left one leads: the window opens in the
+   screen's bottom-right corner, so that is the side with room to grow. */
+.corner {
+  position: absolute;
+  z-index: 2;
+  bottom: 0;
+  width: 24px;
+  height: 24px;
+  touch-action: none;
+  --grip: rgba(238, 241, 255, 0.32);
+}
+
+.corner:hover {
+  --grip: var(--ice);
+}
+
+.cornerNw {
+  top: 0;
+  bottom: auto;
+  left: 0;
+  cursor: nwse-resize;
+  --grip: rgba(238, 241, 255, 0.55);
+  background: linear-gradient(315deg, transparent 62%, var(--grip) 62% 67%, transparent 67% 76%, var(--grip) 76% 81%, transparent 81%);
+}
+
+.cornerNe {
+  top: 0;
+  bottom: auto;
+  right: 0;
+  cursor: nesw-resize;
+  background: linear-gradient(45deg, transparent 62%, var(--grip) 62% 67%, transparent 67% 76%, var(--grip) 76% 81%, transparent 81%);
+}
+
+.cornerSw {
+  left: 0;
+  cursor: nesw-resize;
+  background: linear-gradient(225deg, transparent 62%, var(--grip) 62% 67%, transparent 67% 76%, var(--grip) 76% 81%, transparent 81%);
+}
+
+/* The card's own cut runs across this corner: the stripes sit just inside it. */
+.cornerSe {
+  right: 0;
+  cursor: nwse-resize;
+  background: linear-gradient(135deg, transparent 38%, var(--grip) 38% 43%, transparent 43% 52%, var(--grip) 52% 57%, transparent 57%);
+}
+
+/* ---------- Coin picker ---------- */
+
+/* Inside the card: the card's own glass, a field and a list; Back returns to the trade as it was. */
+.picker {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  flex: 1;
+  margin-top: 12px;
+}
+
+.pickerHead {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.pickerBack {
+  width: 36px;
+  height: 36px;
+  display: grid;
+  place-items: center;
+  border: 0;
+  padding: 0;
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--ice);
+}
+
+.pickerBack svg {
+  width: 18px;
+  height: 18px;
+}
+
+.pickerField {
+  height: 44px;
+  margin-top: 10px;
+  padding: 0 12px;
+  border: 0;
+  outline: none;
+  font: inherit;
+  font-size: 15px;
+  color: var(--ice);
+  background: rgba(255, 255, 255, 0.06);
+  clip-path: polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px);
+}
+
+.pickerField:focus {
+  box-shadow: inset 0 0 0 2px rgba(153, 69, 255, 0.6);
+}
+
+.pickerField::placeholder {
+  color: var(--text-dim);
+}
+
+.pickerList {
+  list-style: none;
+  margin: 8px 0 0;
+  padding: 0;
+  overflow-y: auto;
+  min-height: 0;
+  max-height: 320px;
+}
+
+.pickerRow {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 52px;
+  padding: 6px 4px;
+  border: 0;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+  background: none;
+  color: var(--ice);
+  text-align: left;
+}
+
+.pickerRow:hover:not(:disabled),
+.pickerRow:focus-visible {
+  background: rgba(153, 69, 255, 0.14);
+}
+
+.pickerIcon {
+  width: 32px;
+  height: 32px;
+  flex: none;
+  border-radius: 50%;
+  object-fit: cover;
+  background: var(--graphite);
+}
+
+.pickerNames {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-width: 0;
+}
+
+.pickerNames b {
+  font-size: 15px;
+  font-weight: 800;
+}
+
+.pickerName {
+  font-size: 12px;
+  color: var(--text-dim);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* A coin Jupiter has not verified: said in amber, where its name would be. */
+.pickerRisk {
+  color: var(--amber);
+}
+
+.pickerAmount {
+  font-size: 14px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: var(--text-dim);
+}
+
+/* ---------- Limit and stop price ---------- */
+
+/* The market's price beside the label: a tap puts it in the field. */
+.marketRef {
+  padding: 0;
+  border: 0;
+  background: none;
+  font-size: 13px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: var(--text-dim);
+  text-decoration: underline;
+  text-decoration-color: rgba(255, 255, 255, 0.2);
+  text-underline-offset: 3px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  min-width: 0;
+}
+
+.marketRef:disabled {
+  cursor: default;
+}
+
+.priceField {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  height: 52px;
+  margin-top: 8px;
+  padding: 0 14px;
+  background: rgba(255, 255, 255, 0.06);
+  clip-path: polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px);
+  cursor: text;
+}
+
+.priceField:focus-within {
+  box-shadow: inset 0 0 0 2px rgba(153, 69, 255, 0.6);
+}
+
+.priceInput {
+  flex: 1;
+  min-width: 0;
+  border: 0;
+  padding: 0;
+  background: none;
+  outline: none;
+  font-size: 24px;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+  color: var(--ice);
+}
+
+.priceInput::placeholder {
+  color: var(--text-dim);
+  opacity: 0.7;
+}
+
+.priceUnit {
+  flex: none;
+  max-width: 50%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+}
+
+.distance {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--text-dim);
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* What the amount brings at the price: on the label's own row, the price above is the ticket's big figure. */
+.getInline {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 13px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--amber);
+}
+
+.getInline b {
+  font-size: 22px;
+  letter-spacing: 0.01em;
+  color: var(--ice);
+}
+
+.expiries {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-left: auto;
+}
+
+.expiries .payChip {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.expiries .payOn {
+  background: rgba(153, 69, 255, 0.32);
+}

@@ -1290,7 +1290,7 @@
   gap: var(--ry-s1);
 }
 
-.rowActions :global(.rw-btn) {
+.rowActions :global(.ryntra-button) {
   min-height: 30px;
   padding: 4px 8px;
   font-size: var(--ry-fs-label);
@@ -1389,7 +1389,7 @@
   padding-top: var(--ry-s2);
 }
 
-.quoteActions :global(.rw-btn) {
+.quoteActions :global(.ryntra-button) {
   flex: 1 1 auto;
 }
 

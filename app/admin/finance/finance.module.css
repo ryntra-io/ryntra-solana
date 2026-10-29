@@ -1,0 +1,423 @@
+/* Ryntra's financial panel (SOL-F1): one number first, then blocks — each a number, its check and one disclosure.
+   Tokens are the admin's (app/globals.css), so Graphite and Porcelain both hold. */
+
+.root {
+  display: grid;
+  gap: 16px;
+  min-width: 0;
+}
+
+.head {
+  display: grid;
+  gap: 6px;
+}
+
+.titleRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.titleRow h1 {
+  margin: 0;
+}
+
+.lead {
+  margin: 0;
+  color: var(--text-faint);
+  max-width: 44rem;
+}
+
+.controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin-top: 6px;
+}
+
+.segment {
+  display: inline-flex;
+  padding: 2px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: var(--panel-2);
+}
+
+.segmentButton {
+  min-height: 32px;
+  padding: 4px 12px;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--text-faint);
+  font: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.segmentButton[aria-pressed="true"] {
+  background: var(--panel);
+  color: var(--text);
+  box-shadow: 0 0 0 1px var(--border-strong);
+}
+
+.readAt {
+  font-size: 12px;
+  color: var(--text-faint);
+}
+
+.state {
+  justify-items: start;
+}
+
+.stateTitle {
+  margin: 0;
+  font-weight: 700;
+}
+
+.muted {
+  margin: 0;
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--text-faint);
+}
+
+/* One column the page's width: the admin's card spans twelve, which would give this grid twelve implicit tracks. */
+.stack {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 16px;
+  min-width: 0;
+}
+
+.stack > * {
+  grid-column: 1 / -1;
+}
+
+/* A table of many columns scrolls sideways on a phone rather than folding each cell into a column of words. */
+.scrollTable table {
+  min-width: 760px;
+}
+
+.scrollTable th,
+.scrollTable td {
+  white-space: nowrap;
+}
+
+.stack[aria-busy="true"] {
+  opacity: 0.72;
+  transition: opacity 180ms ease;
+}
+
+/* ── the net result ── */
+
+.hero {
+  gap: 8px;
+}
+
+.heroTop {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.heroLabel {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-dim);
+}
+
+.heroValue {
+  font-family: var(--mono);
+  font-size: 36px;
+  line-height: 1.1;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: var(--text);
+}
+
+.up {
+  color: var(--success);
+}
+
+.down {
+  color: var(--admin-danger-text, var(--danger));
+}
+
+.heroParts {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 8px;
+  margin: 6px 0 0;
+}
+
+.heroParts div {
+  display: grid;
+  gap: 2px;
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--panel-2);
+  min-width: 0;
+}
+
+.heroParts dt {
+  font-size: 12px;
+  color: var(--text-faint);
+}
+
+.heroParts dd {
+  margin: 0;
+  font-family: var(--mono);
+  font-size: 16px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: var(--text);
+}
+
+/* ── the eight sums ── */
+
+/* The site's `section` carries a landing's padding: a block of the panel is not a landing section. Four sums of money
+   that moved, then the three that went out: 4 + 3 across twelve columns, no hole. */
+.lines {
+  display: grid;
+  grid-template-columns: repeat(12, minmax(0, 1fr));
+  gap: 12px;
+  padding: 0;
+}
+
+.lines > .line {
+  grid-column: span 3;
+}
+
+.lines > .line:nth-child(n + 5) {
+  grid-column: span 4;
+}
+
+.line {
+  display: grid;
+  gap: 6px;
+  align-content: start;
+  justify-items: start;
+  padding: 14px 16px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--panel);
+  min-width: 0;
+}
+
+.line:hover {
+  border-color: var(--border-strong);
+}
+
+.lineLabel {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-dim);
+}
+
+.lineValue {
+  font-family: var(--mono);
+  font-size: 24px;
+  line-height: 1.15;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: var(--text);
+}
+
+.atLeast {
+  font-size: 0.7em;
+  color: var(--text-faint);
+}
+
+.unread {
+  font-family: inherit;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text-faint);
+}
+
+.lineDetails {
+  width: 100%;
+  font-size: 13px;
+}
+
+.lineDetails summary {
+  cursor: pointer;
+  color: var(--text-faint);
+  font-size: 12px;
+  padding: 4px 0;
+}
+
+.lineDetails[open] summary {
+  margin-bottom: 6px;
+}
+
+.parts {
+  display: grid;
+  gap: 4px;
+  margin: 8px 0 0;
+}
+
+.parts div {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 4px 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.parts dt {
+  color: var(--text-dim);
+  min-width: 0;
+}
+
+.parts dd {
+  margin: 0;
+  font-family: var(--mono);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  color: var(--text);
+}
+
+.parts div[data-check="DIFF"] dt::after {
+  content: " •";
+  color: var(--admin-danger-text, var(--danger));
+}
+
+.ledger {
+  margin: 8px 0 0;
+  font-size: 12px;
+  font-family: var(--mono);
+  color: var(--text-dim);
+}
+
+/* ── differences, metrics, launches ── */
+
+.mono {
+  font-family: var(--mono);
+  font-size: 12px;
+}
+
+.unreadList summary {
+  cursor: pointer;
+  font-size: 13px;
+  color: var(--text-faint);
+}
+
+.unreadList ul {
+  margin: 8px 0 0;
+  padding-left: 18px;
+  font-size: 13px;
+  color: var(--text-dim);
+  display: grid;
+  gap: 2px;
+}
+
+.metrics {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.metric {
+  display: grid;
+  gap: 3px;
+  padding: 11px 13px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--panel-2);
+  min-width: 0;
+}
+
+.metricLabel {
+  font-size: 12px;
+  color: var(--text-faint);
+}
+
+.metricValue {
+  font-family: var(--mono);
+  font-size: 22px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: var(--text);
+}
+
+.token {
+  font-family: var(--mono);
+  font-weight: 700;
+  color: var(--text);
+}
+
+.own {
+  display: inline-block;
+  margin-left: 8px;
+  padding: 1px 7px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  font-size: 11px;
+  color: var(--text-faint);
+  white-space: nowrap;
+}
+
+.method summary {
+  cursor: pointer;
+  list-style-position: inside;
+}
+
+.method[open] summary {
+  margin-bottom: 10px;
+}
+
+.method > p {
+  margin: 8px 0;
+}
+
+@media (max-width: 1100px) {
+  .lines > .line,
+  .lines > .line:nth-child(n + 5) {
+    grid-column: span 6;
+  }
+
+  .lines > .line:last-child {
+    grid-column: span 12;
+  }
+
+  .metrics {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 640px) {
+  .heroValue {
+    font-size: 30px;
+  }
+
+  .heroParts {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .lines > .line,
+  .lines > .line:nth-child(n + 5),
+  .lines > .line:last-child {
+    grid-column: span 12;
+  }
+
+  .metrics {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .lineValue {
+    font-size: 22px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .stack[aria-busy="true"] {
+    transition: none;
+  }
+}

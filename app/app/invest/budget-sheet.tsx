@@ -1,5 +1,6 @@
 "use client";
 
+import { Button } from "@ryntra/core/ui";
 import { X } from "@phosphor-icons/react";
 import { useCallback, useEffect, useId, useRef, useState } from "react";
 
@@ -191,9 +192,9 @@ function BudgetFlow({ budget, locale, titleId, onBusy, onClose, onSave, onClear 
       {failure ? <p className={company.sheetError}>{failure}</p> : null}
 
       <div className={company.sheetActions}>
-        <button type="button" className="rw-btn rw-btn--primary" disabled={cap === null || step !== "idle"} onClick={() => void save()}>
+        <Button variant="primary" block disabled={cap === null || step !== "idle"} onClick={() => void save()} lang={lang}>
           {step === "proving" ? word("confirming") : step === "saving" ? word("saving") : word("save")}
-        </button>
+        </Button>
         {budget?.capUsd !== null && budget?.capUsd !== undefined ? (
           <button type="button" className={company.quietButton} disabled={step !== "idle"} onClick={() => void clear()}>
             {word("removeBudget")}

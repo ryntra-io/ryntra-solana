@@ -196,6 +196,25 @@ export const WORKSPACE_SURFACES: readonly WorkspaceSurface[] = [
     insteadLabel: "See the adapter projections",
   },
   {
+    id: "procurement",
+    href: "/agents/workspace/procurement",
+    heading: "Agents and payments",
+    title: "Agents and payments",
+    lede:
+      "A registry of who an agent may pay, a mandate the program itself enforces, and one paid service beside the facts that stay free.",
+    state: "READ ONLY",
+    scope: { mode: "READ ONLY" },
+    works: [
+      "Every URL is resolved by the real registry at render time: an origin that merely contains a registered name, a path that merely starts with one, and a URL carrying a credential each refuse with their own reason.",
+      "The mandate table is the gate's verdict on six program states, computed here — the two that hold both a recipient and an end date let an agent act alone, and the four that do not say which fact is missing.",
+      "The seven material risk facts are listed with where the product already reads each, and a test fails if any of them appears in what the paid report adds.",
+    ],
+    blocker:
+      "No provider is registered and nothing can be bought: Ryntra holds no facilitator credential, the deep report is AGH-1 and is not built, the price is set only after a real cost measurement, and nothing reads a mandate from a node — so every action is one a person signs. Devnet and a first payment with real money are a separate, later step.",
+    insteadHref: "/agents/workspace/commerce",
+    insteadLabel: "See the one 402 engine",
+  },
+  {
     id: "tools",
     href: "/agents/workspace/tools",
     heading: "Agent tools",
@@ -411,6 +430,20 @@ const SURFACE_UK: Readonly<Record<string, SurfaceOverlay>> = {
     blocker:
       "Девʼять із двохсот восьми маршрутів-кандидатів можна задекларувати, і жоден не досяжний. Ryntra не тримає облікових даних фасилітатора, підписанта чи ключа, жодного фасилітатора не викликано і жоден ланцюг не читано, тож кожна зразкова квитанція спирається на звіт, якого ще не існує.",
     insteadLabel: "Переглянути проєкції адаптерів",
+  },
+  procurement: {
+    heading: "Агенти й платежі",
+    title: "Агенти й платежі",
+    lede:
+      "Реєстр тих, кому агент може платити, мандат, який примушує сама програма, і одна платна послуга поруч із фактами, що лишаються безкоштовними.",
+    works: [
+      "Кожен URL розвʼязує справжній реєстр під час рендеру: origin, який лише містить зареєстровану назву, шлях, який лише з неї починається, і URL з обліковими даними відмовляють кожен зі своєю причиною.",
+      "Таблиця мандатів — вердикт гейта на шести станах програм, обчислений тут: два, що тримають і отримувача, і строк, дають агенту діяти самому, а чотири інші називають, якого факту бракує.",
+      "Сім основних фактів ризику перелічено з тим, де продукт уже читає кожен, і тест падає, якщо котрийсь із них опиниться в тому, що додає платний звіт.",
+    ],
+    blocker:
+      "Жодного постачальника не зареєстровано й купити нічого не можна: Ryntra не тримає облікових даних фасилітатора, глибокий звіт — це AGH-1 і він не зроблений, ціну задають лише після заміру собівартості, а мандат із вузла ніщо не читає — тож кожну дію підписує людина. Devnet і перший платіж справжніми грошима — окремий, пізніший крок.",
+    insteadLabel: "Переглянути єдиний рушій 402",
   },
   tools: {
     heading: "Інструменти агента",

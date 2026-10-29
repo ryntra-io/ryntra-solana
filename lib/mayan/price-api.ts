@@ -316,6 +316,57 @@ function readProviderError(payload: unknown): Readonly<{ code: string | number |
   return { code: null, message: null };
 }
 
+/** The parts of Mayan's quote that decide what is spent and what arrives where. */
+export type MayanQuoteFacts = Readonly<{
+  type: string;
+  fromChain: string;
+  toChain: string;
+  fromToken: Readonly<{ contract: string }>;
+  toToken: Readonly<{ contract: string }>;
+  effectiveAmountIn64: string;
+  swiftVersion?: string;
+  gasless?: boolean;
+}>;
+
+export type MayanQuoteExpectation = Readonly<{
+  fromChain: string;
+  /** Mint, contract or Mayan's zero address for the native coin, as the request named it. */
+  fromToken: string;
+  toChain: string;
+  toToken: string;
+  /** The person's amount in base units; the quote may spend this or less, never more. */
+  amountInRaw: string;
+}>;
+
+/** A Solana mint is case-sensitive base58; an EVM contract is the same contract in any case. */
+function sameToken(chain: string, a: string, b: string): boolean {
+  return chain === "solana" ? a === b : a.toLowerCase() === b.toLowerCase();
+}
+
+/**
+ * Whether Mayan answered the question it was asked (FIX-XSWAP-1). Any field
+ * that differs is named, so the refusal says what moved rather than that
+ * something did. Read at the quote and again by the Solana builder, because
+ * the builder is the last point before bytes exist.
+ */
+export function mayanQuoteMatchesRequest(quote: MayanQuoteFacts, expected: MayanQuoteExpectation): Readonly<{ ok: true }> | Readonly<{ ok: false; code: "QUOTE_MISMATCH"; reason: string }> {
+  const refuse = (reason: string) => ({ ok: false as const, code: "QUOTE_MISMATCH" as const, reason });
+  const mismatch = (field: string) => refuse(`Mayan's quote names a different ${field} from the one you asked for; nothing was built.`);
+  if (quote.fromChain !== expected.fromChain) return mismatch("source network");
+  if (quote.toChain !== expected.toChain) return mismatch("destination network");
+  if (!sameToken(expected.fromChain, quote.fromToken.contract, expected.fromToken)) return mismatch("token to spend");
+  if (!sameToken(expected.toChain, quote.toToken.contract, expected.toToken)) return mismatch("token to receive");
+  if (!/^[1-9][0-9]*$/.test(quote.effectiveAmountIn64) || !/^[1-9][0-9]*$/.test(expected.amountInRaw)) return mismatch("amount");
+  if (BigInt(quote.effectiveAmountIn64) > BigInt(expected.amountInRaw)) {
+    return refuse("Mayan's quote spends more than the amount you entered; nothing was built.");
+  }
+  if (quote.gasless === true) return refuse("Mayan offered a gasless order, which needs a signer other than your wallet.");
+  if (quote.type === "SWIFT" && quote.fromChain === "solana" && quote.swiftVersion !== "V2") {
+    return refuse("Only Swift V2 orders are built from Solana here.");
+  }
+  return { ok: true };
+}
+
 /**
  * Which of Mayan's answers this lane may act on for a given tuple.
  *

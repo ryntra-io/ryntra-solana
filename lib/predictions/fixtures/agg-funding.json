@@ -1,0 +1,66 @@
+{
+  "source": "Answers of the AGG execution API on the managed-account money paths, as the funding tests replay them. Shapes and figures: docs.agg.market/concepts/funding and /concepts/accounts-and-wallets (read 2026-10-21), the SDK @agg-build/sdk 4.26.0 types, and the deposit-addresses answer recorded on 2026-10-20 for the line's test user (supported chains as answered; addresses replaced by stand-ins). The live answers of the other calls are recorded by scripts/predictions-qa/record-funding.mjs when the owner runs it; no key or token is in this file.",
+  "depositAddressesPending": { "status": 202, "body": { "ready": false } },
+  "depositAddresses": {
+    "status": 200,
+    "body": {
+      "ready": true,
+      "evmAddress": "0x00000000000000000000000000000000000a6600",
+      "svmAddress": "AGGsVm1111111111111111111111111111111111111",
+      "supportedChains": [
+        { "chainId": 137, "name": "Polygon", "tokens": [
+          { "symbol": "USDC.e", "address": "0x2791Bca1f2de4661ED88A30C99A7a9449Aa84174", "decimals": 6 },
+          { "symbol": "USDC", "address": "0x3c499c542cEF5E3811e1192ce70d8cC03d5c3359", "decimals": 6 },
+          { "symbol": "USDT", "address": "0xc2132D05D31c914a87C6611C10748AEb04B58e8F", "decimals": 6 }
+        ] },
+        { "chainId": 8453, "name": "Base", "tokens": [
+          { "symbol": "USDC", "address": "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913", "decimals": 6 }
+        ] },
+        { "chainId": 792703809, "name": "Solana", "tokens": [
+          { "symbol": "USDC", "address": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v", "decimals": 6 }
+        ] }
+      ]
+    }
+  },
+  "balancesLive": {
+    "status": 200,
+    "body": {
+      "cash": [
+        { "tokenSymbol": "USDC", "totalRaw": "12500000", "availableRaw": "10000000", "reservedRaw": "2500000", "decimals": 6, "chains": [
+          { "chainId": 792703809, "tokenAddress": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v", "tokenSymbol": "USDC", "balanceRaw": "10000000", "decimals": 6, "lastSyncedAt": "2026-10-21T09:00:00.000Z" },
+          { "chainId": 137, "tokenAddress": "0x3c499c542cEF5E3811e1192ce70d8cC03d5c3359", "tokenSymbol": "USDC", "balanceRaw": "2500000", "decimals": 6, "lastSyncedAt": "2026-10-21T09:00:00.000Z" }
+        ] },
+        { "tokenSymbol": "USDC.e", "totalRaw": "3000000", "decimals": 6, "chains": [
+          { "chainId": 137, "tokenAddress": "0x2791Bca1f2de4661ED88A30C99A7a9449Aa84174", "tokenSymbol": "USDC.e", "balanceRaw": "3000000", "decimals": 6, "lastSyncedAt": "2026-10-21T09:00:00.000Z" }
+        ] }
+      ],
+      "positions": [
+        { "venue": "polymarket", "balance": 4.2, "costBasis": 4, "unrealizedPnl": 0.2, "realizedPnl": 0, "priceSource": "orderbook", "bookQuality": "healthy" }
+      ]
+    }
+  },
+  "activityDeposits": {
+    "status": 200,
+    "body": {
+      "data": [
+        { "id": "dep_confirmed", "type": "deposit", "createdAt": "2026-10-21T08:00:00.000Z", "updatedAt": "2026-10-21T08:01:00.000Z", "status": "confirmed", "tokenSymbol": "USDC", "amountRaw": "10000000", "chainId": "792703809", "fromAddress": "9wFFyRfZBsuAha4YcuxcXLKwMxJR43S7fPfQLusDBzvT", "txHash": "5UfDuX9mZp8tjqTQrPfhX3tE7aU9wW6p1qJm2Hk8sVxN3a1bYcRdEfGhJkLmNoPqRsTuVwXyZ", "source": "external_wallet" },
+        { "id": "dep_pending", "type": "deposit", "createdAt": "2026-10-21T09:10:00.000Z", "updatedAt": "2026-10-21T09:10:00.000Z", "status": "pending", "tokenSymbol": "USDC", "amountRaw": "2500000", "chainId": "792703809", "fromAddress": "9wFFyRfZBsuAha4YcuxcXLKwMxJR43S7fPfQLusDBzvT", "txHash": "3kS8rT6vW1yZ4aB7cD0eF2gH5jK8mN1pQ4rS7tU0vW3xY6zA9bC2dE5fG8hJ1kL4mN7pQ", "source": "external_wallet" },
+        { "id": "dep_odd", "type": "deposit", "createdAt": "2026-10-20T08:00:00.000Z", "updatedAt": "2026-10-20T08:00:00.000Z", "status": "under_review", "tokenSymbol": "USDC", "amountRaw": "1000000", "chainId": "792703809", "fromAddress": "9wFFyRfZBsuAha4YcuxcXLKwMxJR43S7fPfQLusDBzvT", "txHash": "2aB4cD6eF8gH0jK2mN4pQ6rS8tU0vW2xY4zA6bC8dE0fG2hJ4kL6mN8pQ0rS2tU4vW6xY", "source": "external_wallet" }
+      ],
+      "nextCursor": null,
+      "hasMore": false
+    }
+  },
+  "withdrawableQuote": { "status": 200, "body": { "tokenSymbol": "USDC", "destinationChainId": 792703809, "maxDeliverableRaw": "15270000", "rawBalanceRaw": "15500000", "decimals": 6 } },
+  "withdrawPreviewQuoted": { "status": 200, "body": { "receiveAmountRaw": "4770000", "feeRaw": "230000", "relayFeeRaw": "230000", "networkFeeRaw": "0", "pricingStatus": "quoted", "quoteExpiresAt": "2026-10-21T09:31:00.000Z", "unviableReason": null, "maxDeliverableRaw": null } },
+  "withdrawPreviewInsufficient": { "status": 200, "body": { "receiveAmountRaw": null, "feeRaw": null, "relayFeeRaw": null, "networkFeeRaw": null, "pricingStatus": "unviable", "quoteExpiresAt": null, "unviableReason": "Insufficient balance for withdrawal", "maxDeliverableRaw": null } },
+  "withdrawPreviewAboveMax": { "status": 200, "body": { "receiveAmountRaw": null, "feeRaw": null, "relayFeeRaw": null, "networkFeeRaw": null, "pricingStatus": "unviable", "quoteExpiresAt": null, "unviableReason": "Requested amount exceeds the maximum deliverable", "maxDeliverableRaw": "15270000" } },
+  "withdrawAccepted": { "status": 200, "body": { "withdrawalId": "wd_7f3a", "status": "pending", "requested": { "tokenSymbol": "USDC", "amountRaw": "5000000" }, "completedAmountRaw": null, "destination": { "chainId": 792703809, "address": "{{destination}}", "tokenSymbol": "USDC" }, "legs": [], "expected": { "outputRaw": "4770000", "feeRaw": "230000", "etaSeconds": 90 }, "pricingStatus": "quoted", "errorMessage": null, "sources": [] } },
+  "withdrawalBridging": { "status": 200, "body": { "withdrawalId": "wd_7f3a", "status": "bridging", "requested": { "tokenSymbol": "USDC", "amountRaw": "5000000" }, "completedAmountRaw": null, "destination": { "chainId": 792703809, "address": "{{destination}}", "tokenSymbol": "USDC" }, "legs": [{ "type": "bridge", "status": "submitted", "sourceChainId": 137, "destChainId": 792703809, "amountRaw": "2500000", "txHash": "0x9c1e5b2a7d3f4e6a8b0c2d4e6f8a0b2c4d6e8f0a2b4c6d8e0f2a4b6c8d0e2f4a", "bridgeOperationId": "op_1" }], "expected": { "outputRaw": "4770000", "feeRaw": "230000", "etaSeconds": 60 }, "pricingStatus": "quoted", "errorMessage": null, "sources": [] } },
+  "withdrawalCompleted": { "status": 200, "body": { "withdrawalId": "wd_7f3a", "status": "completed", "requested": { "tokenSymbol": "USDC", "amountRaw": "5000000" }, "completedAmountRaw": "4771200", "destination": { "chainId": 792703809, "address": "{{destination}}", "tokenSymbol": "USDC" }, "legs": [{ "type": "bridge", "status": "confirmed", "sourceChainId": 137, "destChainId": 792703809, "amountRaw": "2500000", "txHash": "0x9c1e5b2a7d3f4e6a8b0c2d4e6f8a0b2c4d6e8f0a2b4c6d8e0f2a4b6c8d0e2f4a", "bridgeOperationId": "op_1" }, { "type": "transfer", "status": "confirmed", "sourceChainId": 792703809, "destChainId": 792703809, "amountRaw": "2500000", "txHash": "4nV7kQ2rT9wX3yZ6aB8cD1eF4gH7jK0mN3pQ6rS9tU2vW5xY8zA1bC4dE7fG0hJ3kL6mN", "bridgeOperationId": null }], "expected": { "outputRaw": "4770000", "feeRaw": "230000", "etaSeconds": 0 }, "pricingStatus": "quoted", "errorMessage": null, "sources": [] } },
+  "withdrawalPartial": { "status": 200, "body": { "withdrawalId": "wd_7f3a", "status": "partial", "requested": { "tokenSymbol": "USDC", "amountRaw": "5000000" }, "completedAmountRaw": "2490000", "destination": { "chainId": 792703809, "address": "{{destination}}", "tokenSymbol": "USDC" }, "legs": [], "expected": { "outputRaw": "4770000", "feeRaw": "230000", "etaSeconds": null }, "pricingStatus": "quoted", "errorMessage": "One source could not be bridged", "sources": [] } },
+  "withdrawalFailed": { "status": 200, "body": { "withdrawalId": "wd_7f3a", "status": "failed", "requested": { "tokenSymbol": "USDC", "amountRaw": "5000000" }, "completedAmountRaw": null, "destination": { "chainId": 792703809, "address": "{{destination}}", "tokenSymbol": "USDC" }, "legs": [], "expected": { "outputRaw": null, "feeRaw": null, "etaSeconds": null }, "pricingStatus": "unviable", "errorMessage": "Bridge liquidity unavailable, try again shortly", "sources": [] } },
+  "withdrawalUnreadStatus": { "status": 200, "body": { "withdrawalId": "wd_7f3a", "status": "under_review", "requested": { "tokenSymbol": "USDC", "amountRaw": "5000000" }, "completedAmountRaw": null, "destination": { "chainId": 792703809, "address": "{{destination}}", "tokenSymbol": "USDC" }, "legs": [], "expected": { "outputRaw": null, "feeRaw": null, "etaSeconds": null }, "pricingStatus": "quoted", "errorMessage": null, "sources": [] } },
+  "withdrawRefused": { "status": 400, "body": { "message": "destinationChainId is not supported for USDC", "code": "invalid_request" } },
+  "withdrawServerError": { "status": 502, "body": { "message": "Bad gateway" } }
+}

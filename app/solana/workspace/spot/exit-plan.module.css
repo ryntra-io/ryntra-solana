@@ -1,0 +1,299 @@
+/* «Швидка торгівля» and «План виходу» beside the token's ticket (SOL-R2): chips, the level that is ready, the plan's Review and its receipt. */
+
+.panel {
+  display: grid;
+  gap: var(--ry-s2);
+  min-width: 0;
+  padding: var(--ry-s2) var(--ry-s3);
+  border: 1px solid var(--ry-border);
+  border-radius: var(--ry-r-chip);
+  background: var(--ry-env-bg);
+}
+
+.head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 2px var(--ry-s2);
+  min-width: 0;
+}
+
+.title,
+.planTitle,
+.reviewTitle {
+  margin: 0;
+  color: var(--ry-text);
+  font-size: var(--ry-fs-copy);
+  font-weight: 600;
+}
+
+.planTitle {
+  font-size: var(--ry-fs-label);
+}
+
+.hint,
+.note {
+  margin: 0;
+  color: var(--ry-muted);
+  font-size: var(--ry-fs-label);
+  line-height: var(--ry-lh-body);
+}
+
+.ready,
+.sent {
+  display: grid;
+  gap: var(--ry-s1);
+  padding: var(--ry-s2) var(--ry-s3);
+  border-radius: var(--ry-r-chip);
+  background: var(--ry-elevated);
+  font-size: var(--ry-fs-dense);
+  line-height: var(--ry-lh-body);
+}
+
+.ready {
+  border: 1px solid var(--ry-accent);
+}
+
+.sent {
+  border: 1px solid var(--ry-caution);
+  color: var(--ry-caution);
+}
+
+.plan {
+  display: grid;
+  gap: var(--ry-s2);
+  min-width: 0;
+  padding-top: var(--ry-s2);
+  border-top: 1px solid var(--ry-border);
+}
+
+.compose,
+.review,
+.receipt {
+  display: grid;
+  gap: var(--ry-s2);
+  min-width: 0;
+}
+
+.presets,
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--ry-s1);
+}
+
+.actions {
+  justify-content: flex-end;
+}
+
+.group {
+  display: grid;
+  gap: var(--ry-s1);
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.group legend {
+  padding: 0;
+  margin-bottom: var(--ry-s1);
+  color: var(--ry-text);
+  font-size: var(--ry-fs-label);
+  font-weight: 600;
+}
+
+.toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--ry-s1);
+  min-height: 32px;
+  cursor: pointer;
+}
+
+.toggle input {
+  width: 16px;
+  height: 16px;
+  accent-color: var(--ry-accent);
+}
+
+.legRow {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) auto;
+  align-items: end;
+  gap: var(--ry-s1);
+}
+
+.field {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+  color: var(--ry-muted);
+  font-size: var(--ry-fs-label);
+}
+
+.field input {
+  min-width: 0;
+  min-height: 32px;
+  padding: 0 var(--ry-s2);
+  border: 1px solid var(--ry-border);
+  border-radius: var(--ry-r-chip);
+  background: var(--ry-bg);
+  color: var(--ry-text);
+  font-family: var(--ry-font-mono);
+  font-size: var(--ry-fs-label);
+  font-variant-numeric: tabular-nums;
+}
+
+.field input:focus-visible {
+  outline: 2px solid var(--ry-accent);
+  outline-offset: 1px;
+}
+
+.field input[aria-invalid="true"] {
+  border-color: var(--ry-risk);
+}
+
+.errors,
+.error {
+  margin: 0;
+  padding: 0;
+  color: var(--ry-risk);
+  font-size: var(--ry-fs-label);
+  line-height: var(--ry-lh-body);
+  list-style: none;
+}
+
+.receipt {
+  padding: var(--ry-s3);
+  border: 1px solid var(--ry-border);
+  border-radius: var(--ry-r-card);
+  background: var(--ry-card);
+}
+
+.receiptHead {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 2px var(--ry-s2);
+}
+
+.receiptState {
+  color: var(--ry-muted);
+  font-size: var(--ry-fs-label);
+}
+
+.receiptState[data-open] {
+  color: var(--ry-caution);
+}
+
+.mono {
+  font-family: var(--ry-font-mono);
+  overflow-wrap: anywhere;
+}
+
+.review {
+  padding: var(--ry-s3);
+  border: 1px solid var(--ry-border);
+  border-radius: var(--ry-r-card);
+  background: var(--ry-elevated);
+}
+
+.rows {
+  display: grid;
+  gap: var(--ry-s1);
+  margin: 0;
+}
+
+.rows > div {
+  display: grid;
+  grid-template-columns: minmax(0, auto) minmax(0, 1fr);
+  align-items: baseline;
+  gap: 2px var(--ry-s2);
+  min-width: 0;
+}
+
+.legs li {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 2px var(--ry-s2);
+  min-width: 0;
+}
+
+.legName {
+  min-width: 0;
+}
+
+.legState {
+  text-align: right;
+}
+
+.legDetail {
+  grid-column: 1 / -1;
+  color: var(--ry-muted);
+}
+
+.rows dt {
+  color: var(--ry-muted);
+  font-size: var(--ry-fs-label);
+}
+
+.rows dd {
+  margin: 0;
+  min-width: 0;
+  color: var(--ry-text);
+  font-size: var(--ry-fs-label);
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+
+.what {
+  margin: 0;
+  color: var(--ry-text);
+  font-size: var(--ry-fs-label);
+  font-weight: 600;
+  line-height: var(--ry-lh-body);
+}
+
+.risk {
+  margin: 0;
+  color: var(--ry-muted);
+  font-size: var(--ry-fs-label);
+  line-height: var(--ry-lh-body);
+}
+
+.legs {
+  display: grid;
+  gap: var(--ry-s1);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-size: var(--ry-fs-label);
+  font-variant-numeric: tabular-nums;
+}
+
+.legs li b {
+  font-weight: 600;
+}
+
+.legs li[data-leg-state="ready"] b {
+  color: var(--ry-accent);
+}
+
+.legs li[data-leg-state="sent"] b {
+  color: var(--ry-caution);
+}
+
+.legs li[data-leg-state="cancelled"],
+.legs li[data-leg-state="closed"] {
+  color: var(--ry-muted);
+}
+
+.warning {
+  margin: 0;
+  color: var(--ry-caution);
+  font-size: var(--ry-fs-label);
+  line-height: var(--ry-lh-body);
+}

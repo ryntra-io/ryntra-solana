@@ -19,14 +19,20 @@
 
 import { CpAmm, getUnClaimLpFee } from "@meteora-ag/cp-amm-sdk";
 import { DynamicFeeSharingClient } from "@meteora-ag/dynamic-fee-sharing-sdk";
-import { DAMM_V2_MIGRATION_FEE_ADDRESS, DynamicBondingCurveClient, deriveDammV2PoolAddress } from "@meteora-ag/dynamic-bonding-curve-sdk";
+import { DAMM_V2_MIGRATION_FEE_ADDRESS, deriveDammV2PoolAddress } from "@meteora-ag/dynamic-bonding-curve-sdk";
+import { getSurplusBreakdown } from "@meteora-ag/dynamic-bonding-curve-sdk-v2";
+import BN from "bn.js";
 import { getBase58Encoder } from "@solana/kit";
+import { unpackAccount } from "@solana/spl-token";
 import { PublicKey, Transaction, VersionedTransaction, type Connection, type TransactionInstruction } from "@solana/web3.js";
 
+import { cpAmmOf, dbcClientOf } from "../meteora-clients.server.ts";
 import type { Address, UnsignedTx } from "../../contracts.ts";
-import { creatorEarnings, type CreatorEarnings, type CreatorFeesRead, type FeeSource } from "../../launch/creator-earnings.ts";
+import { FEE_SOURCES, creatorEarnings, type CreatorEarnings, type CreatorFeesRead, type FeeSource } from "../../launch/creator-earnings.ts";
+import { readExitPositions } from "./exit-positions.server.ts";
 import { FEE_SHARING_PROGRAM, feeSharingClaimInstructions, feeSharingVaultOf, observeFeeSharing, type FeeSharingObservation } from "./fee-sharing.server.ts";
 import { createMeteoraDbcLaunchVenue, type PresetConfigs } from "./launch.server.ts";
+import { getTransactionAnyVersion } from "../../../solana/v1-tx.ts";
 
 const DBC_PROGRAM = "dbcij3LWUppWqq96dh6gJWwBifmcGfLSB5D4DuSMaqN";
 const DAMM_V2_PROGRAM = "cpamdpZCGKUy5JxQXB4dcpGPiikHawvSWAd6mEn1sGG";
@@ -50,16 +56,40 @@ export type CreatorFeesObservation = Readonly<{
   reserveRaw: string;
   /** When the curve was filled (`finish_curve_timestamp`, unix seconds); null while it is not. */
   graduatedAt: number | null;
-  /** The graduated pool and the creator role's position in it, when there is one. */
-  graduated: Readonly<{ pool: Address; position: Address | null; positionNftAccount: Address | null }> | null;
+  /**
+   * The graduated pool and the creator role's position in it, when there is one — with the position's liquidity (free,
+   * vesting and locked for ever) and the pool's, the share of its fees the role takes (SOL-L2).
+   */
+  graduated: Readonly<{
+    pool: Address;
+    position: Address | null;
+    positionNftAccount: Address | null;
+    positionLiquidity?: string | null;
+    poolLiquidity?: string;
+    /** SOL-L12: the position's NFT mint, and its liquidity by lock — free, vesting, locked for ever; null without a position. */
+    nftMint?: Address | null;
+    liquidity?: Readonly<{ unlocked: string; vested: string; permanent: string }> | null;
+  }> | null;
   sharing: FeeSharingObservation | null;
+  /** SOL-L12: who the config sends the curve's leftover base tokens to, and whether they were withdrawn. */
+  leftover?: Readonly<{ receiver: Address; withdrawn: boolean }>;
   read: CreatorFeesRead;
 }>;
 
 const str = (value: { toString(): string } | number | bigint) => value.toString();
 
-export async function readCreatorFees(connection: Connection, args: Readonly<{ token: Address; pool: Address }>): Promise<CreatorFeesObservation> {
-  const client = new DynamicBondingCurveClient(connection, "confirmed");
+/**
+ * `readers`: nodes asked for older transactions and whole signature lists — the graduated pool's exit is found from the
+ * move to the DEX (`./exit-positions.server.ts`), never from a node's index of a wallet's positions, which the public
+ * node refuses. `exitSignature`: the move's signature when the caller knows it. Without readers — the executor's pass,
+ * whose logic this does not change — the role's position is looked up as before, through the main node's index.
+ */
+export async function readCreatorFees(
+  connection: Connection,
+  args: Readonly<{ token: Address; pool: Address }>,
+  options: Readonly<{ readers?: readonly (Connection | null | undefined)[]; exitSignature?: string | null | (() => Promise<string | null>) }> = {},
+): Promise<CreatorFeesObservation> {
+  const client = dbcClientOf(connection);
   const virtual = await client.state.getPool(new PublicKey(args.pool));
   if (!virtual) throw new Error(`No curve at ${args.pool}.`);
   const state = virtual.poolState;
@@ -78,16 +108,44 @@ export async function readCreatorFees(connection: Connection, args: Readonly<{ t
   if (migrated) {
     const dammConfig = DAMM_V2_MIGRATION_FEE_ADDRESS[config.migrationFeeOption];
     if (dammConfig) {
-      const cpAmm = new CpAmm(connection);
+      const cpAmm = cpAmmOf(connection);
       const dammPool = deriveDammV2PoolAddress(dammConfig, new PublicKey(args.token), config.quoteMint);
       const poolState = await cpAmm.fetchPoolState(dammPool);
-      const found = (await cpAmm.getUserPositionByPool(dammPool, state.creator))[0] ?? null;
-      graduated = { pool: dammPool.toBase58(), position: found?.position.toBase58() ?? null, positionNftAccount: found?.positionNftAccount.toBase58() ?? null };
+      /* The creator role's exit position — what the move to the DEX locked for it —, not an entry it made as a holder. A
+         read that fails throws: the launch is then listed unread, never with nothing earned. */
+      const finished = Number(str(state.finishCurveTimestamp));
+      let found: Readonly<{ position: string; nftAccount: string; state: Awaited<ReturnType<CpAmm["fetchPositionState"]>> }> | null;
+      if (options.readers) {
+        const exit = await readExitPositions({
+          connection,
+          readers: options.readers,
+          indexed: options.readers[0] ?? null,
+          curve: args.pool,
+          pool: dammPool.toBase58(),
+          finishedAt: finished > 0 ? finished : null,
+          known: typeof options.exitSignature === "function" ? await options.exitSignature().catch(() => null) : (options.exitSignature ?? null),
+        });
+        found = exit.positions.find((position) => position.owner === roleOwner) ?? null;
+      } else {
+        /* A caller that names no readers — the executor's pass — reads as it always has: its own node's index of the role's positions. */
+        const held = (await cpAmm.getUserPositionByPool(dammPool, state.creator))[0] ?? null;
+        found = held ? { position: held.position.toBase58(), nftAccount: held.positionNftAccount.toBase58(), state: held.positionState } : null;
+      }
+      const held = found ? BigInt(str(found.state.unlockedLiquidity)) + BigInt(str(found.state.vestedLiquidity)) + BigInt(str(found.state.permanentLockedLiquidity)) : null;
+      graduated = {
+        pool: dammPool.toBase58(),
+        position: found?.position ?? null,
+        positionNftAccount: found?.nftAccount ?? null,
+        positionLiquidity: held === null ? null : held.toString(),
+        poolLiquidity: str(poolState.liquidity),
+        nftMint: found ? found.state.nftMint.toBase58() : null,
+        liquidity: found ? { unlocked: str(found.state.unlockedLiquidity), vested: str(found.state.vestedLiquidity), permanent: str(found.state.permanentLockedLiquidity) } : null,
+      };
       if (found) {
         /* The pair currency is the pool's B side when the token is A: a preset's pool collects its fee in the pair alone. */
         const pairIsB = poolState.tokenBMint.equals(config.quoteMint);
-        const unclaimed = getUnClaimLpFee(poolState, found.positionState);
-        const metrics = found.positionState.metrics;
+        const unclaimed = getUnClaimLpFee(poolState, found.state);
+        const metrics = found.state.metrics;
         lp = {
           claimedRaw: str(pairIsB ? metrics.totalClaimedBFee : metrics.totalClaimedAFee),
           unclaimedRaw: str(pairIsB ? unclaimed.feeTokenB : unclaimed.feeTokenA),
@@ -106,6 +164,7 @@ export async function readCreatorFees(connection: Connection, args: Readonly<{ t
     graduatedAt: Number(str(state.finishCurveTimestamp)) > 0 ? Number(str(state.finishCurveTimestamp)) : null,
     graduated,
     sharing,
+    leftover: { receiver: config.leftoverReceiver.toBase58(), withdrawn: (state as unknown as { isWithdrawLeftover: number }).isWithdrawLeftover === 1 },
     read: {
       roleOwner,
       curve: { totalTradingRaw: str(state.metrics.totalTradingQuoteFee), creatorPct: config.creatorTradingFeePercentage, unclaimedRaw: str(state.creatorQuoteFee) },
@@ -117,9 +176,27 @@ export async function readCreatorFees(connection: Connection, args: Readonly<{ t
         withdrawn: (state.migrationFeeWithdrawStatus & CREATOR_MIGRATION_FEE_MASK) !== 0,
       },
       lp,
+      surplus: {
+        full: migrated || Number(str(state.finishCurveTimestamp)) > 0,
+        reserveRaw: str(state.quoteReserve),
+        thresholdRaw: str(config.migrationQuoteThreshold),
+        creatorPct: config.creatorTradingFeePercentage,
+        withdrawn: (state as unknown as { isCreatorWithdrawSurplus: number }).isCreatorWithdrawSurplus === 1,
+      },
       sharing: sharing ? { vault: sharing.vault, totalShare: sharing.totalShare, fundedRaw: sharing.fundedRaw, feePerShare: sharing.feePerShare, users: sharing.users } : null,
     },
   };
+}
+
+/**
+ * The curve's surplus as Meteora's SDK 2.0 splits it (`getSurplusBreakdown`, the split `creator_withdraw_surplus` and
+ * `partner_withdraw_surplus` pay): all of it, the creator's part, the partner's and the protocol's. Null before the curve
+ * is full — there is none.
+ */
+export function surplusBreakdownOf(surplus: CreatorFeesRead["surplus"]): Readonly<{ totalRaw: string; creatorRaw: string; partnerRaw: string; protocolRaw: string }> | null {
+  if (!surplus.full) return null;
+  const split = getSurplusBreakdown(new BN(surplus.reserveRaw), new BN(surplus.thresholdRaw), surplus.creatorPct);
+  return { totalRaw: split.total.toString(), creatorRaw: split.creator.toString(), partnerRaw: split.partner.toString(), protocolRaw: split.protocol.toString() };
 }
 
 /** Whether a wallet may take from this launch: the creator holding the role, or one of the vault's wallets. */
@@ -134,6 +211,8 @@ export function earningsOf(observation: CreatorFeesObservation, wallet: Address)
 export type CreatorClaimBuild = Readonly<{
   txs: readonly (UnsignedTx & Readonly<{ sources: readonly FeeSource[] }>)[];
   sources: readonly FeeSource[];
+  /** What the wallet is paid by this claim: its part of every source the claim takes. */
+  expectedRaw: string;
   /** The wallet's SOL the network simulated the claim taking (fees, and the rent of any account it opens); null when it could not be simulated. */
   costLamports: string | null;
 }>;
@@ -152,9 +231,68 @@ export class ClaimRefusal extends Error {
  * in as few transactions as fit (one, unless a pool's accounts make it too
  * long), or — shared — one transaction that funds the vault from each source
  * and pays the wallet its share.
+ *
+ * The locked LP's fee is taken from the creator role's exit position the read
+ * found (`observation.graduated`), never from whichever position of the
+ * wallet's a node's index lists first.
  */
 export async function buildCreatorClaim(connection: Connection, args: Readonly<{ observation: CreatorFeesObservation; wallet: Address; configs: PresetConfigs }>): Promise<CreatorClaimBuild> {
-  const { observation, wallet } = args;
+  const { wallet } = args;
+  let observation = args.observation;
+  if (!mayClaim(observation, wallet)) throw new ClaimRefusal("NOT_YOURS", "This wallet takes no part of this launch's creator fees.");
+  const holding = (source: FeeSource) => BigInt(earningsOf(observation, wallet).role[source].unclaimedRaw) > 0n;
+  let sources = FEE_SOURCES.filter(holding);
+  const payer = new PublicKey(wallet);
+  const exit = observation.graduated?.position && observation.graduated.positionNftAccount ? { pool: observation.graduated.pool, position: observation.graduated.position, positionNftAccount: observation.graduated.positionNftAccount } : null;
+  /* An LP fee read without the position it sits in cannot be claimed from the right one: it waits, said as not claimable now. */
+  if (sources.includes("lp") && !exit) sources = sources.filter((source) => source !== "lp");
+  if (observation.sharing) {
+    const curveSource = { pool: observation.pool, config: observation.config };
+    const fund = (taken: readonly FeeSource[]) =>
+      feeSharingClaimInstructions({
+        connection,
+        vault: observation.sharing!.vault,
+        wallet,
+        sources: {
+          curve: taken.includes("curve") ? curveSource : null,
+          graduation: taken.includes("graduation") ? curveSource : null,
+          lp: taken.includes("lp") ? exit : null,
+          surplus: taken.includes("surplus") ? curveSource : null,
+        },
+      });
+    let shared = await fund(sources);
+    /* The vault program funds only from the actions it lists: a surplus it refuses is left on the curve, said as not
+       claimable now, and the rest is claimed — never a claim that fails whole for it. */
+    const surplusPart = shared.funding.find((part) => part.source === "surplus");
+    if (surplusPart && (await simulated(connection, surplusPart.instructions, payer)) === "refused") {
+      sources = sources.filter((source) => source !== "surplus");
+      observation = withoutSurplus(observation);
+      shared = await fund(sources);
+    }
+    const expected = BigInt(earningsOf(observation, wallet).mine.unclaimedRaw);
+    if (expected <= 0n) throw new ClaimRefusal("NOTHING_TO_CLAIM", "Nothing to take now.");
+    /* The vault is funded first, then the wallet's share paid out — the last part, in the last transaction. */
+    const parts = [...shared.funding.map((part) => ({ sources: [part.source] as FeeSource[], instructions: part.instructions })), { sources: [] as FeeSource[], instructions: shared.claim }];
+    return finish(connection, pack(parts, payer), payer, sources, expected);
+  }
+  if (sources.length === 0) throw new ClaimRefusal("NOTHING_TO_CLAIM", "Nothing to take now.");
+  const venue = createMeteoraDbcLaunchVenue({ connection, configs: args.configs });
+  const parts: { sources: FeeSource[]; instructions: readonly TransactionInstruction[] }[] = [];
+  for (const source of sources) parts.push({ sources: [source], instructions: await venue.claimFeeInstructions("creator", observation.token, source, source === "lp" && exit ? { position: { position: exit.position, positionNftAccount: exit.positionNftAccount } } : {}) });
+  const earnings = earningsOf(observation, wallet).role;
+  const expected = sources.reduce((total, source) => total + BigInt(earnings[source].unclaimedRaw), 0n);
+  return finish(connection, pack(parts, payer), payer, sources, expected);
+}
+
+/**
+ * «Забрати» as it was built before SOL-L1d — the path kept while SOL-L1d's claims are closed on the network
+ * (`launchClaimsV2Open`, mainnet without the operator's switch): the curve's, the graduation's and the LP's fees, never the
+ * curve's surplus (not counted: `withoutSurplusRead`), the LP's position from the node's index (`claimFeeInstructions`
+ * without a position), and what the wallet is paid is its whole unclaimed part — the same bytes and figures as before.
+ */
+export async function buildCreatorClaimBefore(connection: Connection, args: Readonly<{ observation: CreatorFeesObservation; wallet: Address; configs: PresetConfigs }>): Promise<CreatorClaimBuild> {
+  const { wallet } = args;
+  const observation = withoutSurplusRead(args.observation);
   if (!mayClaim(observation, wallet)) throw new ClaimRefusal("NOT_YOURS", "This wallet takes no part of this launch's creator fees.");
   const earnings = earningsOf(observation, wallet);
   const holding = (source: FeeSource) => BigInt(earnings.role[source].unclaimedRaw) > 0n;
@@ -178,13 +316,38 @@ export async function buildCreatorClaim(connection: Connection, args: Readonly<{
     });
     /* The vault is funded first, then the wallet's share paid out — the last part, in the last transaction. */
     const parts = [...shared.funding.map((part) => ({ sources: [part.source] as FeeSource[], instructions: part.instructions })), { sources: [] as FeeSource[], instructions: shared.claim }];
-    return finish(connection, pack(parts, payer), payer, sources);
+    return finish(connection, pack(parts, payer), payer, sources, BigInt(earnings.mine.unclaimedRaw));
   }
   if (sources.length === 0) throw new ClaimRefusal("NOTHING_TO_CLAIM", "Nothing to take now.");
   const venue = createMeteoraDbcLaunchVenue({ connection, configs: args.configs });
   const parts: { sources: FeeSource[]; instructions: readonly TransactionInstruction[] }[] = [];
   for (const source of sources) parts.push({ sources: [source], instructions: await venue.claimFeeInstructions("creator", observation.token, source) });
-  return finish(connection, pack(parts, payer), payer, sources);
+  return finish(connection, pack(parts, payer), payer, sources, BigInt(earnings.mine.unclaimedRaw));
+}
+
+/** The observation without the curve's surplus — counted as none, as before SOL-L1d read it. */
+export function withoutSurplusRead(observation: CreatorFeesObservation): CreatorFeesObservation {
+  return { ...observation, read: { ...observation.read, surplus: { full: false, reserveRaw: "0", thresholdRaw: "0", creatorPct: 0, withdrawn: false } } };
+}
+
+/** The observation with the curve's surplus counted as not claimable now. */
+function withoutSurplus(observation: CreatorFeesObservation): CreatorFeesObservation {
+  return { ...observation, read: { ...observation.read, surplus: { ...observation.read.surplus, withdrawn: true } } };
+}
+
+/**
+ * These instructions alone, signed by `payer`, simulated now: «clean», «refused» by a program, or «unknown» when the
+ * node did not answer — an unanswered simulation drops nothing.
+ */
+async function simulated(connection: Connection, instructions: readonly TransactionInstruction[], payer: PublicKey): Promise<"clean" | "refused" | "unknown"> {
+  try {
+    const { blockhash } = await connection.getLatestBlockhash("confirmed");
+    const tx = new Transaction({ feePayer: payer, blockhash, lastValidBlockHeight: 0 }).add(...instructions);
+    const answer = await connection.simulateTransaction(new VersionedTransaction(tx.compileMessage()), { sigVerify: false, replaceRecentBlockhash: true, commitment: "confirmed" });
+    return answer.value.err === null ? "clean" : "refused";
+  } catch {
+    return "unknown";
+  }
 }
 
 /** As few transactions as fit, in order: a part joins the last one while the bytes stay under a packet, with room for a wallet's own instructions. */
@@ -202,7 +365,7 @@ function pack(parts: readonly Readonly<{ sources: FeeSource[]; instructions: rea
 }
 
 /** The groups sealed for the wallet, and what the network simulates them taking from it. */
-async function finish(connection: Connection, groups: readonly Readonly<{ sources: FeeSource[]; instructions: readonly TransactionInstruction[] }>[], payer: PublicKey, sources: readonly FeeSource[]): Promise<CreatorClaimBuild> {
+async function finish(connection: Connection, groups: readonly Readonly<{ sources: FeeSource[]; instructions: readonly TransactionInstruction[] }>[], payer: PublicKey, sources: readonly FeeSource[], expected: bigint): Promise<CreatorClaimBuild> {
   const txs = [];
   for (const group of groups) txs.push({ ...(await seal(connection, group.instructions, payer)), sources: group.sources });
   let cost: bigint | null = 0n;
@@ -223,7 +386,7 @@ async function finish(connection: Connection, groups: readonly Readonly<{ source
     /* Not simulated is not free: the cost is said as unknown. */
     cost = null;
   }
-  return { txs, sources, costLamports: cost === null ? null : cost.toString() };
+  return { txs, sources, expectedRaw: expected.toString(), costLamports: cost === null ? null : cost.toString() };
 }
 
 /* Two claims in one transaction may each open the same account of the pair currency: the idempotent opening stays, a second plain one would fail. */
@@ -252,6 +415,22 @@ async function seal(connection: Connection, instructions: readonly TransactionIn
   return { network: "solana", wireBase64: Buffer.from(tx.serialize({ requireAllSignatures: false, verifySignatures: false })).toString("base64"), validUntil: String(latest.lastValidBlockHeight) };
 }
 
+/**
+ * Who holds a DAMM v2 position's NFT now — the owner of the one token account that holds it. Whoever holds the NFT takes
+ * the position's fees; Meteora's «Send Position» moves the NFT, and liquidity locked for ever stays locked. Null when the
+ * account could not be read or holds no NFT.
+ */
+export async function readPositionHolder(connection: Connection, nftAccount: Address): Promise<Address | null> {
+  const info = await connection.getAccountInfo(new PublicKey(nftAccount), "confirmed");
+  if (!info) return null;
+  try {
+    const account = unpackAccount(new PublicKey(nftAccount), info, info.owner);
+    return account.amount === 1n ? account.owner.toBase58() : null;
+  } catch {
+    return null;
+  }
+}
+
 /** A claim as the chain recorded it: what each source paid by its program's own event, and what the wallet received. */
 export type CreatorClaimObservation = Readonly<{
   signature: string;
@@ -269,15 +448,15 @@ export type CreatorClaimObservation = Readonly<{
 type EventCoder = { events: { decode(data: string): { name: string; data: Record<string, unknown> } | null } };
 
 export async function observeCreatorClaim(connection: Connection, args: Readonly<{ signature: string; wallet: Address; pairMint: Address; pool: Address; graduatedPool: Address | null }>): Promise<CreatorClaimObservation | null> {
-  const tx = await connection.getTransaction(args.signature, { commitment: "confirmed", maxSupportedTransactionVersion: 0 });
+  const tx = await getTransactionAnyVersion(connection, args.signature);
   if (!tx?.meta) return null;
-  const dbc = (new DynamicBondingCurveClient(connection, "confirmed").state.getProgram() as unknown as { coder: EventCoder }).coder;
-  const damm = (new CpAmm(connection)._program as unknown as { coder: EventCoder }).coder;
+  const dbc = (dbcClientOf(connection).state.program as unknown as { coder: EventCoder }).coder;
+  const damm = (cpAmmOf(connection)._program as unknown as { coder: EventCoder }).coder;
   const dfs = (new DynamicFeeSharingClient(connection, "confirmed").program as unknown as { coder: EventCoder }).coder;
   const message = tx.transaction.message;
   const keys = message.getAccountKeys({ accountKeysFromLookups: tx.meta.loadedAddresses });
   const keyAt = (index: number) => keys.get(index)?.toBase58() ?? "";
-  const paid: Record<FeeSource, bigint> = { curve: 0n, graduation: 0n, lp: 0n };
+  const paid: Record<FeeSource, bigint> = { curve: 0n, graduation: 0n, lp: 0n, surplus: 0n };
   let vaultPaid: bigint | null = null;
   const amount = (value: unknown) => BigInt((value as { toString(): string } | undefined)?.toString() ?? "0");
   const pubkey = (value: unknown) => (value as PublicKey | undefined)?.toBase58?.() ?? "";
@@ -294,6 +473,7 @@ export async function observeCreatorClaim(connection: Connection, args: Readonly
       if (event.name === "evtClaimCreatorTradingFee" && pubkey(fields.pool) === args.pool) paid.curve += amount(fields.tokenQuoteAmount);
       /* The flag is the program's: 1 is the creator's withdrawal. */
       else if (event.name === "evtWithdrawMigrationFee" && pubkey(fields.pool) === args.pool && Number(fields.flag) === 1) paid.graduation += amount(fields.fee);
+      else if (event.name === "evtCreatorWithdrawSurplus" && pubkey(fields.pool) === args.pool) paid.surplus += amount(fields.surplusAmount);
       else if (event.name === "evtClaimPositionFee" && args.graduatedPool !== null && pubkey(fields.pool) === args.graduatedPool) paid.lp += amount(fields.feeBClaimed);
       else if (event.name === "evtClaimFee" && pubkey(fields.user) === args.wallet) vaultPaid = (vaultPaid ?? 0n) + amount(fields.claimedFee);
     }
@@ -304,7 +484,7 @@ export async function observeCreatorClaim(connection: Connection, args: Readonly
     slot: tx.slot,
     at: tx.blockTime ?? null,
     failed: tx.meta.err !== null,
-    paid: { curve: paid.curve.toString(), graduation: paid.graduation.toString(), lp: paid.lp.toString() },
+    paid: { curve: paid.curve.toString(), graduation: paid.graduation.toString(), lp: paid.lp.toString(), surplus: paid.surplus.toString() },
     vaultPaidRaw: vaultPaid === null ? null : vaultPaid.toString(),
     receivedRaw: (held(tx.meta.postTokenBalances) - held(tx.meta.preTokenBalances)).toString(),
   };

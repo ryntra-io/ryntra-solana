@@ -22,3 +22,8 @@ export function feel(cue: TradeCue) {
           )
   played.catch(() => undefined)
 }
+
+/** A held block lifting for arranging: one medium tap, the phone's own. */
+export function feelHold() {
+  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => undefined)
+}

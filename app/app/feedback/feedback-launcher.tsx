@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useId, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import { ChatCircleDots, X } from "@phosphor-icons/react";
+import { X } from "@phosphor-icons/react";
 import { usePathname } from "next/navigation";
 
 import { useSolanaConnection } from "@/app/solana/workspace/connection";
@@ -12,9 +12,9 @@ import styles from "./feedback.module.css";
 /**
  * Feedback, where the people are.
  *
- * A row in the rail's foot, beside Settings, on
- * every page of the cabinet and in the phone's More drawer, opening one small
- * dialog: what kind of message, the message, a way to reach the person if
+ * A row of the wallet's panel, beside Settings and the notifications, on
+ * every page of the cabinet, on a desk and on a phone (Menu 3), opening one
+ * small dialog: what kind of message, the message, a way to reach the person if
  * they want one. The page it was written from and the connected wallet travel
  * with it, so the operator sees who wrote and where — and says so on the
  * form, in one line, before the person presses Send.
@@ -46,11 +46,14 @@ type SendState =
   | { status: "sent"; ref: string }
   | { status: "failed"; reason: string };
 
-export function FeedbackLauncher() {
+/**
+ * «Відгук»: one small dialog the frame holds open — the wallet's panel opens it (Menu 3, NAV-1: nothing stands above
+ * the page, so it has no button of its own).
+ */
+export function FeedbackLauncher({ open, onClose }: { open: boolean; onClose: () => void }) {
   const { text, locale } = useSolanaI18n();
   const { connection } = useSolanaConnection();
   const pathname = usePathname();
-  const [open, setOpen] = useState(false);
   const [topic, setTopic] = useState<Topic>("question");
   const [body, setBody] = useState("");
   const [contact, setContact] = useState("");
@@ -60,9 +63,9 @@ export function FeedbackLauncher() {
   const wallet = connection?.address ?? null;
 
   const close = useCallback(() => {
-    setOpen(false);
+    onClose();
     setState({ status: "idle" });
-  }, []);
+  }, [onClose]);
 
   useEffect(() => {
     if (!open) return;
@@ -203,15 +206,5 @@ export function FeedbackLauncher() {
     </div>
   ) : null;
 
-  return (
-    <>
-      <button type="button" className={`rs-link ${styles.launch}`} onClick={() => setOpen(true)} aria-haspopup="dialog" aria-expanded={open}>
-        <span className="rs-link-ic" aria-hidden="true">
-          <ChatCircleDots size={17} weight="bold" />
-        </span>
-        <span className="rs-link-label">{text("Feedback")}</span>
-      </button>
-      {typeof document !== "undefined" && dialog ? createPortal(dialog, document.body) : null}
-    </>
-  );
+  return typeof document !== "undefined" && dialog ? createPortal(dialog, document.body) : null;
 }

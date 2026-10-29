@@ -35,6 +35,7 @@ import { launchExecutorAddress, launchPair } from "./config.server.ts";
 import { journalMarks } from "./executor.server.ts";
 import { readLaunchRecord } from "./flow.server.ts";
 import { readLaunchMarketFacts, type MarketDeps } from "./market.server.ts";
+import { getTransactionAnyVersion } from "../solana/v1-tx.ts";
 
 const CACHE_MS = 10_000;
 const CACHE = new Map<string, Readonly<{ at: number; value: Promise<LaunchJournalResponse | null> }>>();
@@ -56,7 +57,7 @@ export function readLaunchJournal(deps: MarketDeps, token: string): Promise<Laun
 async function transactionOf(connection: Connection, second: Connection | null, signature: string): Promise<Readonly<{ at: string | null; feePayer: string; logs: readonly string[]; failed: boolean }> | null> {
   const known = TRANSACTIONS.get(signature);
   if (known) return known;
-  const read = (from: Connection) => from.getTransaction(signature, { commitment: "confirmed", maxSupportedTransactionVersion: 0 });
+  const read = (from: Connection) => getTransactionAnyVersion(from, signature);
   const tx = (await read(connection).catch(() => null)) ?? (second ? await read(second).catch(() => null) : null);
   if (!tx?.meta) return null;
   const facts = {
@@ -73,7 +74,7 @@ async function transactionOf(connection: Connection, second: Connection | null, 
 async function assemble(deps: MarketDeps, token: string): Promise<LaunchJournalResponse | null> {
   const record = await readLaunchRecord(deps, deps.network.cluster, token);
   if (!record || record.state === "PENDING") return null;
-  const pair = launchPair(deps.network, record.preset);
+  const pair = launchPair(deps.network, record.preset, record.pairMint);
   const second = deps.second ?? null;
   const events: JournalEvent[] = [];
   events.push(

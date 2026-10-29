@@ -3,13 +3,19 @@ import { insertEvent } from "@/lib/db";
 import { FixedWindowLimiter, TRACK_MAX_BODY_BYTES, clientIp, privateNoStoreHeaders, rateLimitHeaders } from "@/lib/http-control";
 import { reportError } from "@/lib/monitor";
 import { mutationOriginAllowed } from "@/lib/security";
+import { PERPS_EVENT_NAMES, perpsTrackRow } from "@/lib/phoenix/telemetry";
+import { SEEKER_CONNECT_EVENT_NAMES, seekerTrackRow } from "@/lib/solana/seeker-connect";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 /* Anonymous site clicks only. `workspace_cta_click` is fired by the site chrome
-   and was once refused here, so the admin never saw it. */
-const ALLOWED_EVENTS = new Set(["telegram_cta_click", "workspace_cta_click", "arcus_link_click"]);
+   and was once refused here, so the admin never saw it. Seeker Connect's count
+   (SKR-1) is three more names: worked, cancelled, did not connect. Perps' moments
+   (PERP-4, spec §18) are nine more, each with a market's symbol and one word. */
+const SEEKER_EVENTS: ReadonlySet<string> = new Set(SEEKER_CONNECT_EVENT_NAMES);
+const PERPS_EVENTS: ReadonlySet<string> = new Set(PERPS_EVENT_NAMES);
+const ALLOWED_EVENTS = new Set(["telegram_cta_click", "workspace_cta_click", "arcus_link_click", ...SEEKER_EVENTS, ...PERPS_EVENTS]);
 const limiter = new FixedWindowLimiter({ limit: 60, windowMs: 60_000, maxKeys: 5_000 });
 const TRACK_ERROR_REPORT_WINDOW_MS = 60_000;
 let lastInsertErrorAt = 0;
@@ -57,13 +63,20 @@ export async function POST(req: NextRequest) {
   const { name, placement, locale, path, ref } = (body ?? {}) as Record<string, unknown>;
   if (typeof name !== "string" || !ALLOWED_EVENTS.has(name)) return empty(400);
 
-  const stored = await insertEvent({
-    name,
-    placement: str(placement, 32),
-    locale: str(locale, 12),
-    path: str(path, 128),
-    ref: str(ref, 256),
-  });
+  /* A Seeker count says why, where and in which language — never whose or
+     whence: every field held to `seekerTrackRow`, whatever the request carried. */
+  const seeker = SEEKER_EVENTS.has(name) ? seekerTrackRow(body as Record<string, unknown>) : null;
+  /* A Perps moment says which market and which kind — never a wallet, an amount or a price (`perpsTrackRow`). */
+  const perps = PERPS_EVENTS.has(name) ? perpsTrackRow(body as Record<string, unknown>) : null;
+  const stored = await insertEvent(
+    seeker ?? perps ?? {
+      name,
+      placement: str(placement, 32),
+      locale: str(locale, 12),
+      path: str(path, 128),
+      ref: str(ref, 256),
+    },
+  );
   const now = Date.now();
   if (!stored && now - lastInsertErrorAt >= TRACK_ERROR_REPORT_WINDOW_MS) {
     lastInsertErrorAt = now;

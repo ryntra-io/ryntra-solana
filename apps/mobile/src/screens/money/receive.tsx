@@ -7,6 +7,7 @@ import { Card } from '@/components/card'
 import { Chip } from '@/components/chip'
 import { ChoiceChips, type Choice } from '@/components/choice-chips'
 import { Field } from '@/components/field'
+import { HelpDot } from '@/components/help-dot'
 import { Icon } from '@/components/icon'
 import { QrCode } from '@/components/qr-code'
 import { Screen } from '@/components/screen'
@@ -16,18 +17,14 @@ import { MONEY_COPY } from '@/features/money/copy'
 import { addressPayUrl, linkAmount, linkAmountInput, linkTone, sendAssets } from '@/features/money/money-model'
 import { useCreatePayLink, useMyPayLinks } from '@/features/money/use-pay-links'
 import { useAccount } from '@/features/session/use-account'
-import {
-  ApiError,
-  needsSignIn,
-  PAY_LINK_EXPIRATIONS,
-  USDC_MINT,
-  type PayLink,
-  type PayLinkExpiration,
-} from '@/lib/api'
+import { signInFailureLine } from '@/features/wallet/signing-copy'
+import { ApiError, needsSignIn, PAY_LINK_EXPIRATIONS, USDC_MINT, type PayLink, type PayLinkExpiration } from '@/lib/api'
 import { canCopy, copyText } from '@/lib/clipboard'
 import { feel } from '@/lib/haptics'
 import { useCopy, useLocale, useSharedCopy } from '@/lib/i18n'
 import { useHoldings } from '@/features/portfolio/use-portfolio'
+import { PAYMENTS_PATH } from '@/features/shell/shell'
+import { cn } from '@/utils/cn'
 
 import { LinkCard } from './link-card'
 
@@ -37,12 +34,13 @@ type Mode = 'address' | 'request'
 type LinkToken = Readonly<{ key: string; mint: string | null; symbol: string }>
 
 const DESCRIPTION_MAX = 120
+const REQUEST_SUMS = [10, 25, 50, 100] as const
 
 /**
  * «Отримати» — two jobs, as on the web: «Моя адреса» (the address, its code,
  * copy, share — one glance and one tap) and «Запит на оплату» (a payment link
  * for an exact amount: the token, the sum, what it is for, how long it holds,
- * one action). «Посилання на оплату» in «Ще» opens the second at once.
+ * one action). «Посилання на оплату» from «Гроші» opens the second at once.
  */
 export function ReceiveScreen() {
   const router = useRouter()
@@ -51,7 +49,7 @@ export function ReceiveScreen() {
   const account = useAccount()
   const params = useLocalSearchParams<{ tab?: string }>()
   const [mode, setMode] = useState<Mode>(params.tab === 'link' ? 'request' : 'address')
-  const back = () => (router.canGoBack() ? router.back() : router.replace('/(tabs)/more'))
+  const back = () => (router.canGoBack() ? router.back() : router.replace(PAYMENTS_PATH as never))
   const modes: readonly Choice<Mode>[] = [
     { value: 'address', label: words.myAddress },
     { value: 'request', label: words.requestPayment },
@@ -61,12 +59,18 @@ export function ReceiveScreen() {
       {account.address ? (
         <>
           <ChoiceChips choices={modes} value={mode} onChange={setMode} role="tablist" fill quiet />
-          {mode === 'address' ? <AddressPanel address={account.address} /> : <RequestPanel />}
+          {mode === 'address' ? (
+            <AddressPanel address={account.address} />
+          ) : (
+            <RequestPanel />
+          )}
         </>
       ) : (
         <StateView
           icon="qr-code-outline"
-          title={words.connectToReceive}
+          // What Receive gives once a wallet is connected — never «Під'єднай гаманець» over «Під'єднати гаманець» (ST-5 r7).
+          title={words.receiveGuest}
+          help={{ title: shared.connectTitle, body: shared.connectHelp }}
           action={{
             title: words.connectWallet,
             onPress: () => void account.connect(),
@@ -189,9 +193,15 @@ function RequestPanel() {
   return (
     <View className="gap-4">
       <View className="gap-1.5">
-        <Txt variant="labelSm" tone="faint" caps>
-          {words.token}
-        </Txt>
+        <View className="flex-row items-center justify-between gap-2">
+          <Txt variant="labelSm" tone="faint" caps>
+            {words.token}
+          </Txt>
+          <HelpDot
+            title={words.paymentLink}
+            body={amount === null ? [words.payerChooses, words.sendThisLink] : words.sendThisLink}
+          />
+        </View>
         <ChoiceChips
           choices={tokens.map((entry) => ({ value: entry.key, label: entry.symbol }))}
           value={token.key}
@@ -199,6 +209,30 @@ function RequestPanel() {
           scroll
           quiet
         />
+      </View>
+      {/* The sums asked for most, a tap each (NEW-LOOK §3 «Попросити»); any other is typed below. */}
+      <View className="flex-row gap-2">
+        {REQUEST_SUMS.map((sum) => {
+          const field = String(sum)
+          const on = amountText === field
+          return (
+            <Pressable
+              key={sum}
+              accessibilityRole="button"
+              accessibilityState={{ selected: on }}
+              accessibilityLabel={`${sum} ${token.symbol}`}
+              onPress={() => setAmountText(field)}
+              className={cn(
+                'h-12 flex-1 items-center justify-center rounded-pill border',
+                on ? 'border-brand-chip-line bg-brand-chip' : 'border-line-strong active:bg-hover',
+              )}
+            >
+              <Txt variant="ui" tone={on ? 'brand' : 'fg'}>
+                {field}
+              </Txt>
+            </Pressable>
+          )
+        })}
       </View>
       <Field
         label={`${words.amount} · ${words.optional}`}
@@ -230,9 +264,6 @@ function RequestPanel() {
           quiet
         />
       </View>
-      <Txt variant="ui" tone="faint">
-        {amount === null ? `${words.payerChooses} ${words.sendThisLink}` : words.sendThisLink}
-      </Txt>
       {session && !(create.isError && needsSignIn(create.error)) ? (
         <View className="gap-2">
           {create.isError ? (
@@ -252,12 +283,9 @@ function RequestPanel() {
         </View>
       ) : (
         <View className="gap-2">
-          <Txt variant="ui" tone="muted">
-            {words.signInToCreate}
-          </Txt>
           {account.signInFailure ? (
             <Txt variant="ui" tone="danger">
-              {account.signInFailure.message}
+              {signInFailureLine(account.signInFailure, locale)}
             </Txt>
           ) : null}
           <Button

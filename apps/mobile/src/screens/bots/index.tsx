@@ -9,13 +9,13 @@ import { Card } from '@/components/card'
 import { Chip } from '@/components/chip'
 import { ChoiceChips, type Choice } from '@/components/choice-chips'
 import { DoorRow } from '@/components/door-row'
+import { HelpDot } from '@/components/help-dot'
 import { ScreenHeader } from '@/components/screen'
 import { Skeleton } from '@/components/skeleton'
 import { Txt } from '@/components/txt'
 import { AskRyn } from '@/features/agent/ask-ryn'
 import { RULES_KEY } from '@/features/autoinvest/use-rules'
 import { BOTS_COPY, BOTS_TABS, botsTabOf, planResultLine, type BotsTab } from '@/features/bots/bots'
-import { marketsPath } from '@/features/markets/screener'
 import { noteRefOfHref, planForCard } from '@/features/monitoring/monitoring-model'
 import { useOpenNote } from '@/features/monitoring/use-monitoring'
 import { PLANS_COPY } from '@/features/plans/copy'
@@ -30,6 +30,7 @@ import { isNetworkError, type MonitoringCard, type TradingPlan } from '@/lib/api
 import { useCopy, useLocale, useSharedCopy } from '@/lib/i18n'
 import { RulesBlock } from '@/screens/autoinvest/rules-block'
 import { AttentionCard, PlanRow } from '@/screens/plans/plan-row'
+import { AssetPickerSheet } from '@/screens/trade/asset-picker'
 import { useTheme } from '@/theme'
 import { formatUsd, formatUsdSigned } from '@/utils/format'
 
@@ -45,17 +46,22 @@ function Group({ title, count, children }: { title: string; count: number; child
   )
 }
 
-function SectionTitle({ title, line }: { title: string; line?: string }) {
+function SectionTitle({ title }: { title: string }) {
   return (
-    <View className="gap-0.5">
-      <Txt variant="title" accessibilityRole="header">
+    <Txt variant="title" accessibilityRole="header">
+      {title}
+    </Txt>
+  )
+}
+
+/** A catalog card's title with its «?»: what the bot does sits one tap deep, never as lines on the card. */
+function CardTitle({ title, help }: { title: string; help: readonly string[] }) {
+  return (
+    <View className="flex-row items-center gap-1">
+      <Txt variant="title" className="shrink">
         {title}
       </Txt>
-      {line ? (
-        <Txt variant="ui" tone="faint">
-          {line}
-        </Txt>
-      ) : null}
+      <HelpDot title={title} body={help} />
     </View>
   )
 }
@@ -130,7 +136,7 @@ function MyPlans() {
     body = (
       <View className="items-start gap-2 py-2">
         <Txt variant="ui" tone="muted">
-          {copy.noPlansDetail}
+          {copy.noPlansTitle}
         </Txt>
         <Button title={bots.createPlan} variant="secondary" size="sm" onPress={newPlan} />
       </View>
@@ -193,7 +199,7 @@ function MyPlans() {
 
   return (
     <View className="gap-1">
-      <SectionTitle title={bots.plans} line={bots.plansLead} />
+      <SectionTitle title={bots.plans} />
       {body}
     </View>
   )
@@ -219,6 +225,7 @@ function Mine() {
       <ScrollView
         className="flex-1"
         contentContainerClassName="gap-6 px-4 pb-10 pt-1"
+        keyboardShouldPersistTaps="handled"
         refreshControl={
           <RefreshControl
             refreshing={refreshing}
@@ -229,69 +236,64 @@ function Mine() {
           />
         }
       >
-        <Txt variant="ui" tone="muted">
-          {bots.mineLead}
-        </Txt>
         <RulesBlock session={account.session} place="bots" />
         <MyPlans />
         <Card padded={false}>
-          <DoorRow
-            icon="analytics-outline"
-            label={bots.results}
-            line={bots.resultsLead}
-            onPress={() => router.push('/results')}
-            last
-          />
+          <DoorRow icon="analytics-outline" label={bots.results} onPress={() => router.push('/results')} last />
         </Card>
       </ScrollView>
     </SessionGate>
   )
 }
 
-/** «Каталог»: what can be set up today — the recurring buy for any token with liquidity, and a trade plan. */
+/**
+ * «Каталог»: what can be set up today — the recurring buy for any token with liquidity, and a trade plan. «Обрати
+ * токен» keeps the person in Bots: the search sheet over this screen, titled for the recurring buy, and the token
+ * chosen opens on its page with its rule's sheet (`autoinvest=1`, as «Мої правила»'s «Додати правило»), Back from
+ * which returns here — never the Markets tab with no word of what the token is for.
+ */
 function Catalog({ onMine }: { onMine: () => void }) {
   const router = useRouter()
   const bots = useCopy(BOTS_COPY)
+  const [picking, setPicking] = useState(false)
   return (
-    <ScrollView className="flex-1" contentContainerClassName="gap-3 px-4 pb-10 pt-1">
-      <Txt variant="ui" tone="muted">
-        {bots.catalogLead}
-      </Txt>
+    <ScrollView
+      className="flex-1"
+      contentContainerClassName="gap-3 px-4 pb-10 pt-1"
+      keyboardShouldPersistTaps="handled"
+    >
       <Card className="gap-3">
-        <Txt variant="title">{bots.recurring}</Txt>
-        <Txt variant="ui" tone="muted">
-          {bots.recurringWhat}
-        </Txt>
-        {/* Any token with liquidity (1.31.0): what a rule may name, and the floor a meme or a new token stands on. */}
-        <Txt variant="ui" tone="faint">
-          {bots.recurringFor}
-        </Txt>
-        <Txt variant="ui" tone="faint">
-          {bots.recurringHow}
-        </Txt>
+        {/* Any token with liquidity (1.31.0): what a rule may name, and the floor a meme or a new token stands on — behind «?». */}
+        <CardTitle title={bots.recurring} help={[bots.recurringWhat, bots.recurringFor, bots.recurringHow]} />
         <View className="flex-row gap-2">
-          <Button
-            title={bots.pickToken}
-            variant="secondary"
-            className="flex-1"
-            onPress={() => router.navigate(marketsPath('all') as never)}
-          />
-          <Button title={bots.myRules} variant="ghost" className="flex-1" onPress={onMine} />
+          <Button title={bots.pickToken} variant="secondary" className="flex-1" onPress={() => setPicking(true)} />
+          <Button title={bots.myRules} variant="secondary" className="flex-1" onPress={onMine} />
         </View>
       </Card>
       <Card className="gap-3">
-        <Txt variant="title">{bots.planName}</Txt>
-        <Txt variant="ui" tone="muted">
-          {bots.planWhat}
-        </Txt>
+        <CardTitle title={bots.planName} help={[bots.planWhat]} />
         <Button title={bots.createPlan} variant="secondary" onPress={() => router.push('/plans/pick')} />
       </Card>
+      <AssetPickerSheet
+        visible={picking}
+        title={bots.pickTokenFor}
+        kind="market"
+        exclude={null}
+        onClose={() => setPicking(false)}
+        onPick={(asset) => {
+          setPicking(false)
+          router.push({
+            pathname: '/asset/[mint]',
+            params: { mint: asset.mint, symbol: asset.symbol, autoinvest: '1' },
+          })
+        }}
+      />
     </ScrollView>
   )
 }
 
 /**
- * «Боти» — a row of «Ще», the web's `/app/bots`: everything
+ * «Боти» — a row of «Меню · Автоматика», the web's `/app/bots`: everything
  * that runs on the person's rule in one place. «Мої боти» gathers the
  * recurring-buy rules (Ryntra reminds, the person signs every buy) and the
  * trade plans, each with its result; «Каталог» holds what can be set up.

@@ -22,8 +22,8 @@ const BASE58 = /^[1-9A-HJ-NP-Za-km-z]{32,44}$/;
  * browser's search over every listed stock. `?shape=slim&q=nvidia` answers
  * only the rows that match by company, ticker or token, ranked the way the
  * browser ranks them (`matchRows`), so a phone on a metered connection asks
- * for the handful it needs instead of the whole list; the browser's
- * behaviour is unchanged.
+ * for the handful it needs instead of the whole list (the mobile line's
+ * request 7); the browser's behaviour is unchanged.
  */
 
 function failure(status: number, code: string, message: string, rate: RateLimitDecision) {

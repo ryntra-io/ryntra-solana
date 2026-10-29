@@ -9,9 +9,10 @@ import {
   usdMicrosOf,
   type RewardEntry,
   type RewardValuation,
+  type RewardWindow,
 } from "./model.ts";
 import { isServiceFeeIncome, type RyntraServiceFee } from "../swap/service-fee.ts";
-import { REWARD_RULES_V1, type RewardRank, type RewardRules } from "./rules.ts";
+import { FIRST_TEN_CEILING_BPS, hasWindows, payoutCeilingBps, REWARD_RULES_V1, type RewardRank, type RewardRules, storedVersion } from "./rules.ts";
 
 /**
  * One collected service fee becomes up to three rewards, or nothing at all.
@@ -80,12 +81,28 @@ export type AccrualInput = Readonly<{
   rules?: RewardRules;
   /** The inviter's rank when the trade settled. Absent means Bronze. */
   referrerL1Rank?: RewardRank | null;
+  /**
+   * The windows of rules `2.1.0` this trade falls in, as `record.server.ts` read them from the trader's record
+   * (`first-ten.ts`). Ignored under any other rules.
+   *
+   * `firstTen` — inside «First $10 back»: `remainingUsdMicros` is what may still come back before the cap;
+   * `"FROZEN"` is the layout of a row first written without a price — the ordinary half and the inviter's zero,
+   * never the rest — so that pricing it later cannot change what was written. `inviter` — inside the inviter's
+   * 90 days from this trader's first trade.
+   */
+  window?: Readonly<{ firstTen?: Readonly<{ remainingUsdMicros: bigint }> | "FROZEN" | null; inviter?: boolean }>;
 }>;
 
 export type AccrualRefusal = Readonly<{ ok: false; reason: string }>;
 
 export type AccrualResult =
-  | Readonly<{ ok: true; entries: readonly RewardEntry[]; ref: string }>
+  | Readonly<{
+      ok: true;
+      entries: readonly RewardEntry[];
+      ref: string;
+      /** Inside «First $10 back»: what came back to the trader on this trade, and of it the rest held for the check, USD micro-units — known amounts only. */
+      firstTen?: Readonly<{ returnedUsdMicros: bigint; restUsdMicros: bigint }>;
+    }>
   | AccrualRefusal;
 
 /** The gross this fee is a share of, or the reason there is none. */
@@ -123,6 +140,9 @@ function receivedOf(fee: RyntraServiceFee, gross: bigint): bigint | string {
   if (received < 0n || received > gross) return "The received fee is outside the gross the person paid.";
   return received;
 }
+
+/** A row written without a dollar figure on purpose — not "value it as usual". */
+const NO_DOLLARS = Symbol("no dollars");
 
 export function accrueRewards(input: AccrualInput): AccrualResult {
   const { fee } = input;
@@ -209,51 +229,141 @@ export function accrueRewards(input: AccrualInput): AccrualResult {
     }
   };
 
+  /**
+   * Any part of the base in dollars, from its raw amount — for the rows whose share is not a whole rate of the
+   * base (the rest of «First $10 back»). Null when the fee has no dollar figure.
+   */
+  const valueOfRaw = (raw: bigint): bigint | null => {
+    if (par) return raw;
+    if (statedMicros !== null && valuation.basis === "PROVIDER_STATED_USD") return (statedMicros * raw) / gross.raw;
+    if (!priced?.price) return null;
+    try {
+      return usdMicrosOf({ raw, decimals: gross.decimals, price: priced.price });
+    } catch {
+      return null;
+    }
+  };
+
   const entries: RewardEntry[] = [];
   const l1Rank: RewardRank = input.referrerL1Rank ?? "BRONZE";
-  const add = (type: "CASHBACK" | "REFERRAL_L1" | "REFERRAL_L2", recipient: string, rateBps: number): void => {
-    const shareRaw = shareOfGross(base, rateBps);
-    if (shareRaw === 0n) return;
-    entries.push({
+  const windows = hasWindows(rules) ? input.window ?? null : null;
+  const firstTen = windows?.firstTen ?? null;
+  const inviterWindow = windows?.inviter === true ? rules.inviterWindow ?? null : null;
+  /**
+   * One row. `part` — the part of the base the row is a share of, when a trade is split at the cap of «First $10
+   * back»; its dollars are then read from its own raw amount. Without it the row is a share of the whole base, valued
+   * exactly as before 2.1.0.
+   */
+  const add = (
+    type: "CASHBACK" | "REFERRAL_L1" | "REFERRAL_L2",
+    recipient: string,
+    rateBps: number,
+    marks: Readonly<{ window?: RewardWindow; shareRaw?: bigint; usdMicros?: string | typeof NO_DOLLARS; keepZero?: boolean; part?: bigint }> = {},
+  ): RewardEntry | null => {
+    const partBase = marks.part ?? base;
+    const shareRaw = marks.shareRaw ?? shareOfGross(partBase, rateBps);
+    if (shareRaw === 0n && !marks.keepZero) return null;
+    const partValue = marks.part !== undefined ? valueOfRaw(shareRaw) : undefined;
+    const entry: RewardEntry = {
       type,
       recipient,
       rateBps,
       shareRaw: shareRaw.toString(),
-      usdMicros: valueOf(shareRaw, rateBps),
+      usdMicros: marks.usdMicros === NO_DOLLARS ? null : marks.usdMicros ?? (partValue !== undefined ? (partValue === null ? null : partValue.toString()) : valueOf(shareRaw, rateBps)),
       valuation,
       source,
       createdAt: input.now,
       claimId: null,
       signature: null,
       ...(rules.base === "RECEIVED"
-        ? { rules: { version: "2.0.0" as const, base: "RECEIVED" as const, baseRaw: base.toString(), rank: type === "REFERRAL_L1" ? l1Rank : null } }
+        ? { rules: { version: storedVersion(rules), base: "RECEIVED" as const, baseRaw: partBase.toString(), rank: type === "REFERRAL_L1" ? l1Rank : null } }
         : {}),
-    });
+      /* Every row of 2.1.0 says where its money comes from; rows of earlier rules keep the shape they had. */
+      ...(hasWindows(rules) ? { fundedBy: "fee" as const } : {}),
+      ...(marks.window ? { window: marks.window } : {}),
+    };
+    entries.push(entry);
+    return entry;
   };
 
-  add("CASHBACK", input.trader, rules.cashbackBps);
+  /* The ordinary shares of a base, or of its part past «First $10 back»: cashback, the inviter (the 90 days' share,
+     or the rank's), the second level. */
+  const ordinary = (part?: bigint, cashbackWindow?: RewardWindow): void => {
+    add("CASHBACK", input.trader, rules.cashbackBps, { part, window: cashbackWindow });
+    /* Self-referral is refused where a referrer is bound, and refused again here.
+       The first refusal is the rule; this one is the guard that keeps a future
+       caller from routing around it. */
+    if (input.referrerL1 && input.referrerL1 !== input.trader) {
+      if (inviterWindow) add("REFERRAL_L1", input.referrerL1, inviterWindow.bps, { part, window: "INVITER_90" });
+      else add("REFERRAL_L1", input.referrerL1, rules.referralL1BpsByRank[l1Rank], { part });
+    }
+    if (
+      input.referrerL2 &&
+      input.referrerL2 !== input.trader &&
+      input.referrerL2 !== input.referrerL1
+    ) {
+      add("REFERRAL_L2", input.referrerL2, rules.referralL2Bps, { part });
+    }
+  };
 
-  /* Self-referral is refused where a referrer is bound, and refused again here.
-     The first refusal is the rule; this one is the guard that keeps a future
-     caller from routing around it. */
-  if (input.referrerL1 && input.referrerL1 !== input.trader) {
-    add("REFERRAL_L1", input.referrerL1, rules.referralL1BpsByRank[l1Rank]);
+  /* How much of the base is inside «First $10 back» — all of it, or the part that brings what came back to the cap. */
+  let windowRaw = 0n;
+  let firstTenResult: Readonly<{ returnedUsdMicros: bigint; restUsdMicros: bigint }> | undefined;
+  if (firstTen) {
+    const baseUsd = firstTen === "FROZEN" ? null : valueOfRaw(base);
+    if (firstTen === "FROZEN" || baseUsd === null || baseUsd <= firstTen.remainingUsdMicros) {
+      windowRaw = base;
+    } else {
+      /* The cap falls inside this trade: the window is the part whose whole refund reaches it, floored so its dollars
+         never pass it; the rest of the trade is ordinary — the inviter's share, the second level, the points. */
+      windowRaw = (base * firstTen.remainingUsdMicros) / baseUsd;
+      while (windowRaw > 0n && (valueOfRaw(windowRaw) ?? 0n) > firstTen.remainingUsdMicros) windowRaw -= 1n;
+    }
   }
-  if (
-    input.referrerL2 &&
-    input.referrerL2 !== input.trader &&
-    input.referrerL2 !== input.referrerL1
-  ) {
-    add("REFERRAL_L2", input.referrerL2, rules.referralL2Bps);
+  if (windowRaw > 0n && firstTen) {
+    /*
+     * «First $10 back»: all of the window's part back to the trader, in two rows. The ordinary half is the trader's
+     * as on any trade; the rest waits for the cluster check. A fee with no dollar figure yet is written whole, both
+     * rows without dollars: when it is priced, `record.server.ts` measures its rest against what is left of the cap.
+     */
+    const whole = windowRaw === base;
+    const half = add("CASHBACK", input.trader, rules.cashbackBps, { window: "FIRST_TEN", ...(whole ? {} : { part: windowRaw }) });
+    const halfRaw = shareOfGross(windowRaw, rules.cashbackBps);
+    const halfUsd = halfRaw === 0n ? 0n : half?.usdMicros != null ? BigInt(half.usdMicros) : null;
+    let restUsd = 0n;
+    const restRaw = windowRaw - halfRaw;
+    if (restRaw > 0n) {
+      const usd = halfUsd === null ? null : valueOfRaw(restRaw);
+      /* Priced now: inside the cap by construction — or, for a row first written without a price (`FROZEN`), measured
+         against the cap by the caller. Not priced: no dollars here. */
+      if (usd === null || usd > 0n) {
+        add("CASHBACK", input.trader, Number((restRaw * 10_000n) / base), { window: "FIRST_TEN_REST", shareRaw: restRaw, usdMicros: usd === null ? NO_DOLLARS : usd.toString() });
+        restUsd = usd ?? 0n;
+      }
+    }
+    if (whole) {
+      /* The trade happened, and the inviter is told so by a row of nothing: boards and badges count a friend's trade
+         by its level-1 row, and the inviter's share in the window is zero by the rules. No second level. */
+      if (input.referrerL1 && input.referrerL1 !== input.trader) {
+        add("REFERRAL_L1", input.referrerL1, 0, { window: "FIRST_TEN", shareRaw: 0n, usdMicros: "0", keepZero: true });
+      }
+    } else {
+      ordinary(base - windowRaw, "FIRST_TEN_AFTER");
+    }
+    firstTenResult = { returnedUsdMicros: (halfUsd ?? 0n) + restUsd, restUsdMicros: restUsd };
+  } else {
+    ordinary();
   }
 
   /* The rule of a received base, checked on the figures themselves rather
-     than trusted to the rates: everything one fee pays out stays inside what
-     reached Ryntra. */
+     than trusted to the rates: everything one fee pays out stays inside its
+     ceiling of what reached Ryntra — all of its part inside «First $10 back»,
+     and of the rest all of it under 2.0.0, 85 % under 2.1.0. */
   if (rules.base === "RECEIVED") {
     const paid = entries.reduce((sum, entry) => sum + BigInt(entry.shareRaw ?? "0"), 0n);
-    if (paid > base) return { ok: false, reason: "These shares would pay out more than Ryntra received." };
+    const allowed = windowRaw * BigInt(FIRST_TEN_CEILING_BPS) + (base - windowRaw) * BigInt(payoutCeilingBps(rules));
+    if (paid * 10_000n > allowed) return { ok: false, reason: "These shares would pay out more than their ceiling of what Ryntra received." };
   }
 
-  return { ok: true, entries, ref };
+  return { ok: true, entries, ref, ...(firstTenResult ? { firstTen: firstTenResult } : {}) };
 }

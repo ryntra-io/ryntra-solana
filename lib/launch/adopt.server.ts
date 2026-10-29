@@ -82,7 +82,7 @@ export async function adoptLaunch(deps: AdoptDeps, token: string): Promise<Launc
   const key = `${deps.network.cluster}:${token}`;
   const now = deps.now().getTime();
   if ((NOT_ADOPTED.get(key) ?? 0) > now) return null;
-  const venue = deps.venue ?? createMeteoraDbcLaunchVenue({ connection: deps.connection, configs: deps.network.configs, poolPayer: deps.poolPayer, archive: deps.archive ?? null });
+  const venue = deps.venue ?? createMeteoraDbcLaunchVenue({ connection: deps.connection, configs: deps.network.configs, poolPayer: deps.poolPayer, archive: deps.archive ?? null, history: deps.history, curveRules: deps.network.curveRules ?? null });
   const notALaunch = () => remember(key, now + NOT_A_LAUNCH_MS);
   const unread = () => remember(key, now + UNREAD_MS);
   /* One read for a token that is not a launch: no curve on a preset's config, nothing further is asked. */
@@ -119,7 +119,8 @@ export async function adoptLaunch(deps: AdoptDeps, token: string): Promise<Launc
     token,
     pool: curve,
     config: init.config,
-    pairMint: launchPair(deps.network, preset).mint,
+    /* «Спільнота»: the community whose config the curve sits on. */
+    pairMint: (preset === "community" ? deps.network.communities.find((pair) => pair.config === init.config) : undefined)?.mint ?? launchPair(deps.network, preset).mint,
     preset,
     creator: init.creator,
     name: observation.mint.name ?? "",

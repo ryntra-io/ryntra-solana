@@ -1,5 +1,6 @@
 import { BASE58, LaunchTradeQuoteRequestSchema, type LaunchTradeQuoteResponse } from "@/lib/api/v1/contract";
 import { apiFailure, apiJson, apiMajorRefusal, readApiBody } from "@/lib/api/v1/http";
+import { serverTimingOf, type StepTiming } from "@/lib/core/pipeline";
 import { rateLimitHeaders } from "@/lib/http-control";
 import { launchNetwork } from "@/lib/launch/config.server";
 import { consumeLaunchWrite, launchMarketDeps } from "@/lib/launch/runtime.server";
@@ -26,7 +27,11 @@ export async function POST(request: Request, context: { params: Promise<{ mint: 
   if (!BASE58.test(mint)) return apiFailure("VALIDATION_ERROR", "mint: not an address");
   const read = await readApiBody(request, LaunchTradeQuoteRequestSchema);
   if (!read.ok) return read.response;
-  const quoted = await quoteLaunchTrade(deps, mint, read.body).catch(() => ({ ok: false as const, code: "UNAVAILABLE" as const, message: "The network could not be read now; nothing was sent. Try again." }));
-  if (!quoted.ok) return apiFailure(quoted.code, quoted.message);
-  return apiJson(quoted.quote satisfies LaunchTradeQuoteResponse);
+  const started = performance.now();
+  const timings: StepTiming[] = [];
+  const quoted = await quoteLaunchTrade(deps, mint, read.body, timings).catch(() => ({ ok: false as const, code: "UNAVAILABLE" as const, message: "The network could not be read now; nothing was sent. Try again." }));
+  /* SOL-P1: how long each read of the quote took, on a refusal too. */
+  const timing = serverTimingOf(timings, [{ name: "total", ms: performance.now() - started }]);
+  if (!quoted.ok) return apiFailure(quoted.code, quoted.message, { headers: { "server-timing": timing } });
+  return apiJson(quoted.quote satisfies LaunchTradeQuoteResponse, 200, { "server-timing": timing });
 }

@@ -3,6 +3,7 @@ import { z } from "zod";
 import { consumeSolanaReadRequest, readAgentControlJson } from "@/lib/agent-control/http";
 import { getGuardRuntime } from "@/lib/guard/runtime";
 import { privateNoStoreHeaders, rateLimitHeaders, type RateLimitDecision } from "@/lib/http-control";
+import { attemptInFlight, payPaused, readPaymentAttempt } from "@/lib/pay/attempt";
 import { derivePaymentStatus } from "@/lib/pay/model";
 import { paymentReadHandle } from "@/lib/pay/public";
 import { readPaymentRequest, readPaymentSettlement } from "@/lib/pay/store";
@@ -40,7 +41,7 @@ export async function POST(request: Request, context: { params: Promise<{ id: st
   const rate = consumeSolanaReadRequest(request.headers);
   if (!rate.allowed) return failure(429, "RATE_LIMITED", "Too many requests.", rate);
   /* The payment page's origin for a browser, the native bearer for the phone
-     (1.22.0, the same rule the swap routes follow): a
+     (1.22.0, the swap routes' rule since the mobile line's request 13): a
      bearer that fails is refused by its own code and never falls through, and
      a bearer pays only as its own wallet. The browser's refusal keeps its
      code and words. */
@@ -52,6 +53,7 @@ export async function POST(request: Request, context: { params: Promise<{ id: st
   if (!parsed.success) return failure(400, "VALIDATION_ERROR", "That is not a wallet address.", rate);
   if (walletMismatch(carrier, parsed.data.payer)) return failure(403, "WALLET_MISMATCH", "The session's wallet is not the payer.", rate);
 
+  if (payPaused(process.env)) return failure(503, "UNAVAILABLE", "Payments through Ryntra are paused; nothing was built.", rate);
   const { id } = await context.params;
   const store = getGuardRuntime().store;
   const record = await readPaymentRequest(store, id);
@@ -63,6 +65,8 @@ export async function POST(request: Request, context: { params: Promise<{ id: st
   if (status.status === "PAID") return failure(409, "ALREADY_PAID", "This request has already been paid.", rate);
   if (status.status === "EXPIRED") return failure(410, "EXPIRED", "This request has expired.", rate);
   if (settlement?.state === "PENDING") return failure(409, "PAYMENT_PENDING", "A payment for this request is already on its way.", rate);
+  /* MC-1: the request's one attempt, while its bytes can still land, whatever the settlement says. */
+  if (attemptInFlight(await readPaymentAttempt(store, record.id), now)) return failure(409, "PAYMENT_PENDING", "A payment for this request is already on its way.", rate);
 
   let amountRaw: string | null = record.amountRaw;
   if (amountRaw === null) {

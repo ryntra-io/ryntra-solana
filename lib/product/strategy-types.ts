@@ -21,6 +21,15 @@ import type { DomainLabel, PageReadiness } from "../../app/shell/domains.ts";
  * vocabulary the pages use, so the rail and this catalog can never disagree
  * about what a word means.
  *
+ * **The library of «Боти»**: a bot is a strategy
+ * from this list and an executor that depends on the market. «Боти → Каталог»
+ * draws the available types from here and nothing else, each with how it runs
+ * and where it is set up. Three are live on Solana: the trade plan, the
+ * recurring buy (the DCA type: Ryntra reminds, the person signs every buy) and
+ * the grid on Meteora DLMM — liquidity spread evenly over the pool's own price
+ * steps, so the pool itself fills each level both ways; placed and collected by
+ * the person's signature, with no delegate, no durable nonce and no server key.
+ *
  * *Spend & Invest* is a rule that connects a spending event to an investment
  * — a purchase or a round-up sends a defined amount into SOL, a basket or a
  * tokenized stock. It is a strategy type, not a page.
@@ -44,6 +53,10 @@ export type StrategyType = Readonly<{
   name: DomainLabel;
   /** One line: what the type is. Never a promise about its result. */
   blurb: DomainLabel;
+  /** Available types only: one line on how it runs — who signs, what holds the money. */
+  runs?: DomainLabel;
+  /** Available types only: where it is set up. */
+  setup?: string;
 }>;
 
 export const STRATEGY_TYPES: readonly StrategyType[] = [
@@ -51,29 +64,38 @@ export const STRATEGY_TYPES: readonly StrategyType[] = [
     id: "trading-plan",
     /* Live since 2026-09-15: the plan on the server with versions, a deterministic size and check. */
     readiness: "available",
-    name: { en: "Trading Plan", uk: "Торговий план" },
+    name: { en: "Trade plan", uk: "План угоди" },
     blurb: {
-      en: "Rules you write before you sign — checked on the Review, kept beside the result.",
-      uk: "Правила, які ти пишеш до підпису — перевірені в Review, збережені поруч із результатом.",
+      en: "Your rules before you sign, kept beside the result.",
+      uk: "Твої правила до підпису, збережені поруч із результатом.",
     },
+    runs: { en: "Entry, size, stop and target; you sign the trade.", uk: "Вхід, розмір, стоп і ціль; угоду підписуєш ти." },
+    setup: "/app/strategies/new",
   },
   {
     id: "dca",
-    readiness: "planned",
-    name: { en: "DCA", uk: "DCA" },
+    /* Live as «Регулярна купівля» (1.31.0): Ryntra reminds, the person signs every buy. */
+    readiness: "available",
+    name: { en: "Recurring buy", uk: "Регулярна купівля" },
     blurb: {
-      en: "A fixed amount at a fixed rhythm, every buy under Review.",
-      uk: "Фіксована сума з фіксованим ритмом, кожна купівля через Review.",
+      en: "A set amount on a rhythm, on a dip or from each payment.",
+      uk: "Сума в ритмі, на падінні чи з кожної оплати.",
     },
+    runs: { en: "Ryntra reminds you; you sign every buy and the money stays in your wallet.", uk: "Ryntra нагадує; кожну купівлю підписуєш ти, гроші — у твоєму гаманці." },
+    /* SOL-C15 (UX-701): set up from «Боти» — «Обрати токен» opens the picker, then the rule's sheet; no detour through Markets. */
+    setup: "/app/bots",
   },
   {
     id: "grid",
-    readiness: "planned",
-    name: { en: "Grid", uk: "Сітка" },
+    /* Live since B10 (20.10.2026): Meteora DLMM, the pool's bins are the levels. */
+    readiness: "available",
+    name: { en: "Grid", uk: "Грід" },
     blurb: {
-      en: "Trade a range by set levels, a budget and a risk.",
-      uk: "Торгуй діапазон за заданими рівнями, бюджетом і ризиком.",
+      en: "Buy levels below the price and sell levels above it, in a pool's own price steps.",
+      uk: "Рівні купівлі нижче ціни й продажу вище неї — у власних кроках ціни пулу.",
     },
+    runs: { en: "The pool fills each level both ways; you earn a share of its fee.", uk: "Пул виконує рівні в обидва боки; ти отримуєш частку комісії." },
+    setup: "/app/bots/grid",
   },
   {
     id: "free-capital",

@@ -27,9 +27,9 @@ export function homepageModel(
     const route = routes.find((entry) => entry.id === id);
     return route ? FROM_ROUTE[route.readiness] ?? "UNAVAILABLE" : "UNAVAILABLE";
   };
-  /* Markets and «Автоінвест» are sections of the menu, not pages of the route
-     registry: drawn in the menu means open. «Автоінвест» lives in «Боти» since
-     the menu v6.2. */
+  /* Markets and «Автоінвест» are places of the menu, not pages of the route
+     registry: drawn in the menu means open. «Автоінвест» is the row «Боти» of
+     «Автоматика» since Menu 3 (NAV-1). */
   const SECTION_OF = { markets: "markets", autoinvest: "bots" } as const;
   const destination = (id: keyof typeof SECTION_OF): HomepageStatus =>
     (MENU_SECTION_IDS as readonly string[]).includes(SECTION_OF[id]) ? "AVAILABLE" : "UNAVAILABLE";

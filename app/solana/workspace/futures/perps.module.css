@@ -1,0 +1,1851 @@
+/* The Perps terminal (PERP-2): the market's head in one line, then the core's terminal — the chart, the book, the
+   ticket, the positions, the orders, the account — in the core's tokens, so it reads as every terminal of Ryntra does.
+   Numbers are tabular; colour never says a thing alone — a side has its word, a loss its sign. */
+
+.page {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--ryntra-space-2);
+  min-width: 0;
+}
+
+.notice {
+  margin: var(--ryntra-space-4) 0;
+  color: var(--ryntra-muted);
+}
+
+.muted {
+  margin: 0;
+  color: var(--ryntra-muted);
+  font-size: var(--ryntra-type-caption-size);
+  line-height: var(--ryntra-type-caption-line);
+}
+
+.page [data-tone="up"] {
+  color: var(--ryntra-up-text);
+}
+
+.page [data-tone="down"] {
+  color: var(--ryntra-down-text);
+}
+
+.page [data-side="long"] {
+  color: var(--ryntra-up-text);
+}
+
+.page [data-side="short"] {
+  color: var(--ryntra-down-text);
+}
+
+.symbol {
+  font-family: var(--ryntra-font-mono);
+  font-weight: var(--ryntra-weight-semibold);
+}
+
+/* ---------------------------------------------------------------- the head */
+
+.head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--ryntra-space-2) var(--ryntra-space-5, 24px);
+  min-height: 56px;
+  padding: var(--ryntra-space-1) var(--ryntra-space-3);
+  border: 1px solid var(--ryntra-border);
+  border-radius: var(--ryntra-radius-card);
+  background: var(--ryntra-surface);
+  min-width: 0;
+}
+
+.pickerWrap {
+  position: relative;
+  flex: 0 0 auto;
+}
+
+.picker {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--ryntra-space-2);
+  height: 40px;
+  margin-inline-start: calc(-1 * var(--ryntra-space-2));
+  padding: 0 var(--ryntra-space-2);
+  border: 0;
+  border-radius: var(--ryntra-radius-button);
+  background: transparent;
+  color: var(--ryntra-text);
+  font: inherit;
+  cursor: pointer;
+}
+
+.picker:hover,
+.picker[aria-expanded="true"] {
+  background: var(--ryntra-surface-hover);
+}
+
+.picker:focus-visible {
+  outline: var(--ryntra-focus-outline);
+  outline-offset: var(--ryntra-focus-offset);
+}
+
+.pickerName {
+  font-family: var(--ryntra-font-mono);
+  font-size: var(--ryntra-type-body-size);
+  line-height: var(--ryntra-type-body-line);
+  font-weight: var(--ryntra-weight-semibold);
+}
+
+.pickerLev {
+  padding: 0 6px;
+  border: 1px solid var(--ryntra-border);
+  border-radius: var(--ryntra-radius-pill);
+  color: var(--ryntra-muted);
+  font-size: var(--ryntra-type-caption-size);
+  line-height: var(--ryntra-type-caption-line);
+  font-variant-numeric: var(--ryntra-numeric);
+}
+
+.marketMenu {
+  position: absolute;
+  inset-block-start: calc(100% + 6px);
+  inset-inline-start: 0;
+  z-index: var(--ryntra-z-menu);
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+  gap: var(--ryntra-space-2);
+  width: min(520px, calc(100vw - 32px));
+  max-height: min(560px, 70vh);
+  padding: var(--ryntra-space-2);
+  border: 1px solid var(--ryntra-border);
+  border-radius: var(--ryntra-radius-card);
+  background: var(--ryntra-elevated);
+  box-shadow: var(--ryntra-shadow-elevated);
+}
+
+.marketSearch {
+  box-sizing: border-box;
+  width: 100%;
+  height: var(--ryntra-size-button);
+  padding: 0 var(--ryntra-space-3);
+  border: 1px solid var(--ryntra-border);
+  border-radius: var(--ryntra-radius-field);
+  background: var(--ryntra-bg);
+  color: var(--ryntra-text);
+  font: inherit;
+  font-size: var(--ryntra-type-ui-size);
+}
+
+.marketSearch:focus-visible {
+  outline: var(--ryntra-focus-outline);
+  outline-offset: var(--ryntra-focus-offset);
+}
+
+.marketTable {
+  display: grid;
+  align-content: start;
+  min-height: 0;
+  overflow-y: auto;
+}
+
+.marketRowHead,
+.marketRow {
+  display: grid;
+  grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr) minmax(0, 0.8fr) minmax(0, 0.9fr);
+  gap: var(--ryntra-space-2);
+  align-items: center;
+  padding: 0 var(--ryntra-space-2);
+  font-variant-numeric: var(--ryntra-numeric);
+}
+
+.marketRowHead {
+  min-height: 28px;
+  color: var(--ryntra-muted);
+  font-size: var(--ryntra-type-caption-size);
+}
+
+.marketRowHead > :not(:first-child),
+.marketRow > :not(:first-child) {
+  text-align: end;
+}
+
+.marketRow {
+  min-height: 36px;
+  border: 0;
+  border-radius: var(--ryntra-radius-field);
+  background: transparent;
+  color: var(--ryntra-text);
+  font: inherit;
+  font-size: var(--ryntra-type-ui-size);
+  text-align: start;
+  cursor: pointer;
+}
+
+.marketRow:hover,
+.marketRow[aria-current="true"] {
+  background: var(--ryntra-surface-hover);
+}
+
+.marketRow:focus-visible {
+  outline: var(--ryntra-focus-outline);
+  outline-offset: -2px;
+}
+
+.marketName {
+  display: inline-flex;
+  align-items: baseline;
+  gap: var(--ryntra-space-1);
+  font-family: var(--ryntra-font-mono);
+  font-weight: var(--ryntra-weight-semibold);
+}
+
+.marketName small {
+  color: var(--ryntra-muted);
+  font-family: var(--ryntra-font-sans);
+  font-size: var(--ryntra-type-caption-size);
+  font-weight: var(--ryntra-weight-regular);
+}
+
+.headPrice {
+  display: grid;
+  gap: 0;
+}
+
+.headMark {
+  font-family: var(--ryntra-font-mono);
+  font-size: 20px;
+  line-height: 26px;
+  font-weight: var(--ryntra-weight-semibold);
+  font-variant-numeric: var(--ryntra-numeric);
+}
+
+.headMarkLabel {
+  color: var(--ryntra-muted);
+  font-size: var(--ryntra-type-caption-size);
+  line-height: var(--ryntra-type-caption-line);
+}
+
+.headStats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--ryntra-space-1) var(--ryntra-space-5, 24px);
+  margin: 0;
+  min-width: 0;
+}
+
+.headStats div {
+  display: grid;
+  gap: 2px;
+}
+
+.headStats dt {
+  color: var(--ryntra-muted);
+  font-size: var(--ryntra-type-caption-size);
+  line-height: var(--ryntra-type-caption-line);
+  white-space: nowrap;
+}
+
+.headStats dd {
+  margin: 0;
+  font-family: var(--ryntra-font-mono);
+  font-size: var(--ryntra-type-ui-size);
+  line-height: var(--ryntra-type-ui-line);
+  font-variant-numeric: var(--ryntra-numeric);
+  white-space: nowrap;
+}
+
+.tradeChip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-inline-start: auto;
+  height: 26px;
+  padding: 0 var(--ryntra-space-2);
+  border: 1px solid var(--ryntra-border);
+  border-radius: var(--ryntra-radius-pill);
+  color: var(--ryntra-muted);
+  font-size: var(--ryntra-type-caption-size);
+  white-space: nowrap;
+}
+
+.tradeChip::before {
+  content: "";
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--ryntra-muted);
+}
+
+.tradeChip[data-trade="open"] {
+  color: var(--ryntra-text);
+}
+
+.tradeChip[data-trade="open"]::before {
+  background: var(--ryntra-up);
+}
+
+.tradeChip[data-trade="gated"]::before {
+  background: var(--ryntra-warn);
+}
+
+.headTools {
+  flex: 0 0 auto;
+}
+
+/* The market's top leverage is already on the picker («25×»): below 1600 px the head drops the repeat, so the head's
+   tools keep to its row longer. */
+@media (max-width: 1599px) {
+  .headStats [data-perps-stat="leverage"] {
+    display: none;
+  }
+}
+
+.headLayout {
+  display: flex;
+  align-items: center;
+  gap: var(--ryntra-space-2);
+}
+
+.doneChip {
+  height: 36px;
+  padding: 0 var(--ryntra-space-3);
+  border: 0;
+  border-radius: var(--ryntra-radius-button);
+  background: var(--ryntra-brand);
+  color: var(--ryntra-on-brand);
+  font: inherit;
+  font-size: var(--ryntra-type-ui-size);
+  font-weight: var(--ryntra-weight-semibold);
+  cursor: pointer;
+}
+
+.moreRule {
+  width: 100%;
+  margin: var(--ryntra-space-1) 0;
+  border: 0;
+  border-top: 1px solid var(--ryntra-border);
+}
+
+/* The core's row under the terminal — «Додати панель · Налаштувати · Повернути стандарт» — lives in the head's «⋯». */
+.terminal :global(.ryntra-arrange) {
+  display: none;
+}
+
+/* The layout's «⋯»: one quiet button, the presets under it. */
+.more {
+  position: relative;
+}
+
+.more > summary {
+  list-style: none;
+}
+
+.more > summary::-webkit-details-marker {
+  display: none;
+}
+
+.moreButton {
+  display: inline-grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  border: 1px solid var(--ryntra-border);
+  border-radius: var(--ryntra-radius-button);
+  color: var(--ryntra-muted);
+  cursor: pointer;
+}
+
+.moreButton:hover,
+.more[open] > .moreButton {
+  color: var(--ryntra-text);
+  background: var(--ryntra-surface-hover);
+}
+
+.moreButton:focus-visible {
+  outline: var(--ryntra-focus-outline);
+  outline-offset: var(--ryntra-focus-offset);
+}
+
+.moreMenu {
+  position: absolute;
+  inset-block-start: calc(100% + 4px);
+  inset-inline-end: 0;
+  z-index: var(--ryntra-z-menu);
+  display: grid;
+  gap: 2px;
+  min-width: 220px;
+  padding: var(--ryntra-space-2);
+  border: 1px solid var(--ryntra-border);
+  border-radius: var(--ryntra-radius-card);
+  background: var(--ryntra-elevated);
+  box-shadow: var(--ryntra-shadow-elevated);
+}
+
+.moreMenu > p {
+  display: flex;
+  align-items: center;
+  gap: var(--ryntra-space-1);
+  margin: 0 0 2px;
+  padding: 0 var(--ryntra-space-2);
+  color: var(--ryntra-muted);
+  font-size: var(--ryntra-type-caption-size);
+}
+
+.moreItem {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  min-height: 36px;
+  padding: 0 var(--ryntra-space-2);
+  border: 1px solid transparent;
+  border-radius: var(--ryntra-radius-field);
+  background: transparent;
+  color: var(--ryntra-text);
+  font: inherit;
+  font-size: var(--ryntra-type-ui-size);
+  text-align: start;
+  cursor: pointer;
+}
+
+.moreItem:hover {
+  background: var(--ryntra-surface-hover);
+}
+
+.moreItem[aria-pressed="true"] {
+  border-color: var(--ryntra-border);
+  background: var(--ryntra-surface);
+}
+
+.moreItem:disabled {
+  color: var(--ryntra-muted);
+  cursor: default;
+}
+
+/* ------------------------------------------------------------ the terminal */
+
+.terminalHost {
+  min-width: 0;
+}
+
+.terminal {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ryntra-space-2);
+  height: var(--perps-terminal-h, max(600px, calc(100dvh - 170px)));
+  min-width: 0;
+}
+
+.terminal > :global(.ryntra-terminal) {
+  flex: 1 1 auto;
+  height: auto;
+  min-height: 0;
+}
+
+.terminal :global(.ryntra-dock__panel) {
+  padding: var(--ryntra-space-2) var(--ryntra-space-3);
+}
+
+/* The chart and the book fill their panels to the edge: their own frames are the panel's. */
+.terminal :global(.ryntra-dock__panel):has([data-perps-panel="chart"]),
+.terminal :global(.ryntra-dock__panel):has([data-perps-panel="book"]) {
+  padding: var(--ryntra-space-1);
+}
+
+.terminal :global(.dv-tab:not(.dv-active-tab) .dv-default-tab-action) {
+  display: none;
+}
+
+.dockBody {
+  container: perpspanel / inline-size;
+  position: relative;
+  min-width: 0;
+  min-height: 100%;
+}
+
+.dockBody[data-perps-panel="chart"],
+.dockBody[data-perps-panel="book"] {
+  height: 100%;
+}
+
+.dockBody[data-perps-panel="chart"] {
+  display: flex;
+  flex-direction: column;
+}
+
+.coreChart {
+  flex: 1 1 auto;
+  height: 100%;
+  min-height: 240px;
+}
+
+.ticketSlot,
+.ticketHome {
+  min-width: 0;
+}
+
+/* --------------------------------------------------------------- the book */
+
+.book {
+  position: relative;
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr) auto minmax(0, 1fr);
+  height: 100%;
+  min-height: 320px;
+  font-family: var(--ryntra-font-mono);
+  font-size: 12px;
+  line-height: 20px;
+  font-variant-numeric: var(--ryntra-numeric);
+}
+
+.book[data-stale] .bookRow {
+  opacity: 0.55;
+}
+
+.bookHead,
+.bookRow {
+  display: grid;
+  grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr) minmax(0, 1fr);
+  gap: var(--ryntra-space-2);
+  padding: 0 var(--ryntra-space-2);
+}
+
+.bookHead {
+  min-height: 24px;
+  align-items: center;
+  color: var(--ryntra-muted);
+  font-family: var(--ryntra-font-sans);
+  font-size: var(--ryntra-type-caption-size);
+}
+
+.bookHead > :not(:first-child),
+.bookRow > :not(:first-child) {
+  text-align: end;
+}
+
+/* The asks stand bottom-up, the best next to the middle; what does not fit is cut at the far end. */
+.bookAsks,
+.bookBids {
+  display: flex;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.bookAsks {
+  flex-direction: column-reverse;
+}
+
+.bookBids {
+  flex-direction: column;
+}
+
+.bookRow {
+  position: relative;
+  flex: 0 0 20px;
+  box-sizing: border-box;
+  height: 20px;
+  min-height: 0;
+  align-items: center;
+  border: 0;
+  background: transparent;
+  color: var(--ryntra-text);
+  font: inherit;
+  cursor: pointer;
+}
+
+/* The running total as a bar from the right, in the side's colour, under the numbers. */
+.bookRow::before {
+  content: "";
+  position: absolute;
+  inset-block: 1px;
+  inset-inline-end: 0;
+  width: var(--depth, 0%);
+  opacity: 0.14;
+  pointer-events: none;
+}
+
+.bookRow[data-side="ask"]::before {
+  background: var(--ryntra-down);
+}
+
+.bookRow[data-side="bid"]::before {
+  background: var(--ryntra-up);
+}
+
+.bookRow[data-side="ask"] .bookPrice {
+  color: var(--ryntra-down-text);
+}
+
+.bookRow[data-side="bid"] .bookPrice {
+  color: var(--ryntra-up-text);
+}
+
+.bookRow:hover:not(:disabled) {
+  background: var(--ryntra-surface-hover);
+}
+
+.bookRow:focus-visible {
+  outline: var(--ryntra-focus-outline);
+  outline-offset: -2px;
+}
+
+.bookRow:disabled {
+  cursor: default;
+}
+
+.bookRow > span {
+  position: relative;
+}
+
+.bookMid {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--ryntra-space-2);
+  padding: 6px var(--ryntra-space-2);
+  border-block: 1px solid var(--ryntra-border);
+}
+
+.bookMark {
+  font-size: 15px;
+  font-weight: var(--ryntra-weight-semibold);
+}
+
+.bookSpread {
+  color: var(--ryntra-muted);
+  font-family: var(--ryntra-font-sans);
+  font-size: var(--ryntra-type-caption-size);
+}
+
+/* ------------------------------------------------------------- the ticket */
+
+/* A terminal's ticket: the whole panel's width. In Pro — the core's compact density, a step tighter so the order's
+   figures and its action stand in one panel's height on a laptop; in Simple — the core's regular density as it is. */
+.ticket {
+  max-width: none;
+}
+
+/* The ticket's action sticks to the panel's foot when the order scrolls under it: a solid band of the panel's surface
+   around it and a soft edge above, so no line of the form shows half-cut around the button. */
+.ticket :global(.ryntra-ticket__action) {
+  background: var(--ryntra-surface);
+  box-shadow:
+    0 0 0 var(--ryntra-space-2) var(--ryntra-surface),
+    0 calc(-1 * var(--ryntra-space-6)) var(--ryntra-space-4) calc(-1 * var(--ryntra-space-1)) var(--ryntra-surface);
+}
+
+.ticket[data-density="compact"] {
+  --ticket-gap: 6px;
+  --ticket-pad: 10px;
+}
+
+.ticket[data-density="compact"] :global(.ryntra-ticket__summary) {
+  gap: 2px;
+}
+
+.ticket[data-density="compact"] :global(.ryntra-ticket__row) {
+  font-size: var(--ryntra-type-caption-size);
+  line-height: 18px;
+}
+
+.ticket[data-density="compact"] :global(.ryntra-ticket__action) {
+  padding-block: 6px;
+}
+
+.ticket[data-density="compact"] :global(.ryntra-ticket__field) {
+  gap: var(--ryntra-space-1);
+}
+
+.modeRow {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  gap: var(--ryntra-space-2);
+  align-items: stretch;
+}
+
+.types {
+  --ticket-seg: 30px;
+}
+
+.types :global(.ryntra-ticket__seg-option) {
+  padding: 0 var(--ryntra-space-1);
+}
+
+.modeChip,
+.leverageChip {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  padding: 0 var(--ryntra-space-2);
+  border: 1px solid var(--ryntra-border);
+  border-radius: var(--ryntra-radius-button);
+  background: var(--ryntra-surface);
+  color: var(--ryntra-text);
+  font: inherit;
+  font-size: var(--ryntra-type-ui-size);
+  font-weight: var(--ryntra-weight-medium);
+  font-variant-numeric: var(--ryntra-numeric);
+}
+
+.modeChip {
+  cursor: help;
+}
+
+.leverageChip {
+  cursor: pointer;
+}
+
+.leverageChip:hover,
+.leverageChip[aria-expanded="true"] {
+  border-color: var(--ryntra-border-hover);
+  background: var(--ryntra-surface-hover);
+}
+
+.leverageChip:focus-visible {
+  outline: var(--ryntra-focus-outline);
+  outline-offset: var(--ryntra-focus-offset);
+}
+
+.leveragePanel {
+  display: grid;
+  gap: var(--ryntra-space-3);
+  padding: var(--ryntra-space-3);
+  border: 1px solid var(--ryntra-border-hover);
+  border-radius: var(--ryntra-radius-block);
+  background: var(--ryntra-elevated);
+}
+
+.leverageHead {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--ryntra-space-2);
+  font-size: var(--ryntra-type-ui-size);
+}
+
+.leverageValue {
+  font-family: var(--ryntra-font-mono);
+  font-size: 20px;
+  font-weight: var(--ryntra-weight-semibold);
+}
+
+/* The slider's marks: four quiet words under it, one row however narrow the panel. */
+.shares {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: var(--ryntra-space-1);
+}
+
+.shares button {
+  min-height: 24px;
+  padding: 0;
+  border: 0;
+  border-radius: var(--ryntra-radius-field);
+  background: transparent;
+  color: var(--ryntra-muted);
+  font: inherit;
+  font-size: var(--ryntra-type-caption-size);
+  font-variant-numeric: var(--ryntra-numeric);
+  cursor: pointer;
+}
+
+.shares button:hover:not(:disabled),
+.shares button[aria-pressed="true"] {
+  color: var(--ryntra-text);
+  background: var(--ryntra-surface-hover);
+}
+
+.shares button:focus-visible {
+  outline: var(--ryntra-focus-outline);
+  outline-offset: var(--ryntra-focus-offset);
+}
+
+.shares button:disabled {
+  cursor: default;
+}
+
+.steps {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(44px, 1fr));
+  gap: var(--ryntra-space-1);
+}
+
+.steps > * {
+  justify-content: center;
+  min-width: 0;
+  padding: 0 var(--ryntra-space-1);
+}
+
+.sides :global(.ryntra-ticket__seg-option) {
+  font-weight: var(--ryntra-weight-semibold);
+}
+
+.available {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--ryntra-space-2);
+  margin: 0;
+  padding: 0 var(--ryntra-space-1);
+  font-size: var(--ryntra-type-ui-size);
+  font-variant-numeric: var(--ryntra-numeric);
+}
+
+.available dt {
+  color: var(--ryntra-muted);
+}
+
+.available dd {
+  margin: 0;
+}
+
+.toggles {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--ryntra-space-2) var(--ryntra-space-4);
+  padding: 0 var(--ryntra-space-1);
+}
+
+.check {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--ryntra-space-2);
+  min-height: 24px;
+  font-size: var(--ryntra-type-ui-size);
+  cursor: pointer;
+}
+
+.check input {
+  width: 16px;
+  height: 16px;
+  margin: 0;
+  accent-color: var(--ryntra-brand);
+}
+
+.check:has(input:disabled) {
+  color: var(--ryntra-muted);
+  cursor: default;
+}
+
+.legs {
+  display: grid;
+  gap: var(--ryntra-space-2);
+  padding: var(--ryntra-space-3);
+  border: 1px solid var(--ryntra-border);
+  border-radius: var(--ryntra-radius-block);
+  background: var(--ryntra-surface);
+}
+
+.leg {
+  display: grid;
+  gap: 4px;
+}
+
+.legLabel {
+  color: var(--ryntra-muted);
+  font-size: var(--ryntra-type-caption-size);
+}
+
+.legHint {
+  min-height: var(--ryntra-type-caption-line);
+  font-size: var(--ryntra-type-caption-size);
+  line-height: var(--ryntra-type-caption-line);
+  font-variant-numeric: var(--ryntra-numeric);
+}
+
+/* --------------------------------------------- positions, orders, account */
+
+.scroll {
+  min-width: 0;
+  overflow-x: auto;
+}
+
+.cellLink {
+  padding: 0;
+  border: 0;
+  text-align: start;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+}
+
+.cellLink:hover .symbol {
+  text-decoration: underline;
+}
+
+.cellLink:focus-visible {
+  outline: var(--ryntra-focus-outline);
+  outline-offset: 2px;
+}
+
+.liquidation {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 2px;
+}
+
+.liquidation[data-tone="down"] {
+  font-weight: var(--ryntra-weight-semibold);
+}
+
+.liquidationPrice {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.away,
+.unknown {
+  color: var(--ryntra-muted);
+  font-size: var(--ryntra-type-caption-size);
+  font-weight: var(--ryntra-weight-regular);
+}
+
+.pnl {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: flex-end;
+  font-variant-numeric: var(--ryntra-numeric);
+}
+
+.pnl small {
+  font-size: var(--ryntra-type-caption-size);
+}
+
+.rowActions {
+  display: inline-flex;
+  flex-wrap: nowrap;
+  gap: var(--ryntra-space-1);
+  justify-content: flex-end;
+}
+
+.rowActions button {
+  min-height: 28px;
+  padding: 0 var(--ryntra-space-2);
+  border: 1px solid var(--ryntra-border);
+  border-radius: var(--ryntra-radius-field);
+  background: transparent;
+  color: var(--ryntra-text);
+  font: inherit;
+  font-size: var(--ryntra-type-caption-size);
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.rowActions button:hover {
+  border-color: var(--ryntra-border-hover);
+  background: var(--ryntra-surface-hover);
+}
+
+.rowActions button:focus-visible {
+  outline: var(--ryntra-focus-outline);
+  outline-offset: var(--ryntra-focus-offset);
+}
+
+.accountPanel {
+  display: grid;
+  gap: var(--ryntra-space-3);
+  min-width: 0;
+}
+
+/* ------------------------------------------- the head's tools (PERP-6) */
+
+.headLayout {
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+/* Simple · Pro and the sheet's choices: a row of pressed buttons, the chosen one raised. */
+.segment {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 2px;
+  padding: 2px;
+  border: 1px solid var(--ryntra-border);
+  border-radius: var(--ryntra-radius-button);
+  background: var(--ryntra-bg);
+}
+
+.segment > button {
+  min-height: 30px;
+  padding: 0 var(--ryntra-space-3);
+  border: 0;
+  border-radius: var(--ryntra-radius-field);
+  background: transparent;
+  color: var(--ryntra-muted);
+  font: inherit;
+  font-size: var(--ryntra-type-ui-size);
+  font-variant-numeric: var(--ryntra-numeric);
+  cursor: pointer;
+}
+
+.segment > button:hover:not(:disabled) {
+  color: var(--ryntra-text);
+}
+
+.segment > button[aria-pressed="true"] {
+  background: var(--ryntra-surface-hover);
+  color: var(--ryntra-text);
+  font-weight: var(--ryntra-weight-semibold);
+}
+
+.segment > button:focus-visible {
+  outline: var(--ryntra-focus-outline);
+  outline-offset: var(--ryntra-focus-offset);
+}
+
+.segment > button:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+button.moreButton {
+  padding: 0;
+  background: transparent;
+  font: inherit;
+}
+
+.helpCard {
+  width: min(360px, calc(100vw - 32px));
+}
+
+.helpCard > p {
+  display: block;
+  margin: 0;
+  padding: var(--ryntra-space-1);
+  color: var(--ryntra-text);
+  font-size: var(--ryntra-type-ui-size);
+  line-height: var(--ryntra-type-ui-line);
+}
+
+.primaryChip,
+.quietChip {
+  min-height: 36px;
+  padding: 0 var(--ryntra-space-3);
+  border-radius: var(--ryntra-radius-button);
+  font: inherit;
+  font-size: var(--ryntra-type-ui-size);
+  cursor: pointer;
+}
+
+.primaryChip {
+  border: 0;
+  background: var(--ryntra-brand);
+  color: var(--ryntra-on-brand);
+  font-weight: var(--ryntra-weight-semibold);
+}
+
+.quietChip {
+  border: 1px solid var(--ryntra-border);
+  background: transparent;
+  color: var(--ryntra-text);
+}
+
+.quietChip:hover {
+  background: var(--ryntra-surface-hover);
+}
+
+.primaryChip:focus-visible,
+.quietChip:focus-visible,
+.iconButton:focus-visible {
+  outline: var(--ryntra-focus-outline);
+  outline-offset: var(--ryntra-focus-offset);
+}
+
+.resetAsk {
+  display: grid;
+  gap: var(--ryntra-space-2);
+  max-width: 300px;
+  padding: var(--ryntra-space-2);
+  border: 1px solid var(--ryntra-border);
+  border-radius: var(--ryntra-radius-field);
+}
+
+.resetAsk > p {
+  margin: 0;
+  font-size: var(--ryntra-type-ui-size);
+  line-height: var(--ryntra-type-ui-line);
+}
+
+.resetActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--ryntra-space-2);
+}
+
+/* The first switch between Simple and Pro, said once under the head. */
+.modeNote {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--ryntra-space-2) var(--ryntra-space-3);
+  padding: var(--ryntra-space-2) var(--ryntra-space-3);
+  border: 1px solid var(--ryntra-border);
+  border-radius: var(--ryntra-radius-card);
+  background: var(--ryntra-surface);
+}
+
+.modeNote > p {
+  flex: 1 1 260px;
+  margin: 0;
+  font-size: var(--ryntra-type-ui-size);
+  line-height: var(--ryntra-type-ui-line);
+}
+
+/* ------------------------------------------- «Налаштування термінала» ⚙ */
+
+.sheet,
+.phoneScreen {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: var(--ryntra-elevated);
+  color: var(--ryntra-text);
+}
+
+.sheet[open],
+.phoneScreen[open] {
+  display: flex;
+  flex-direction: column;
+}
+
+.sheet::backdrop,
+.phoneScreen::backdrop {
+  background: color-mix(in srgb, var(--ryntra-bg) 60%, transparent);
+}
+
+/* A side sheet on the right, the whole height; a phone's whole width. */
+.sheet {
+  inset-block: 0;
+  inset-inline: auto 0;
+  width: min(420px, 100vw);
+  max-width: 100vw;
+  height: 100dvh;
+  max-height: 100dvh;
+  border-inline-start: 1px solid var(--ryntra-border);
+  box-shadow: var(--ryntra-shadow-elevated);
+}
+
+.sheetHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--ryntra-space-2);
+  padding: var(--ryntra-space-2) var(--ryntra-space-3) var(--ryntra-space-2) var(--ryntra-space-4);
+  border-block-end: 1px solid var(--ryntra-border);
+}
+
+.sheetHead > h2 {
+  margin: 0;
+  font-size: var(--ryntra-type-body-size);
+  line-height: var(--ryntra-type-body-line);
+  font-weight: var(--ryntra-weight-semibold);
+}
+
+.iconButton {
+  display: inline-grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  border: 0;
+  border-radius: var(--ryntra-radius-button);
+  background: transparent;
+  color: var(--ryntra-muted);
+  cursor: pointer;
+}
+
+.iconButton:hover {
+  color: var(--ryntra-text);
+  background: var(--ryntra-surface-hover);
+}
+
+.sheetBody {
+  flex: 1 1 auto;
+  display: grid;
+  align-content: start;
+  gap: var(--ryntra-space-4);
+  min-height: 0;
+  padding: var(--ryntra-space-3) var(--ryntra-space-4);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+.sheetFoot {
+  display: grid;
+  gap: var(--ryntra-space-2);
+  padding: var(--ryntra-space-3) var(--ryntra-space-4);
+  border-block-start: 1px solid var(--ryntra-border);
+}
+
+.setGroup {
+  display: grid;
+  gap: var(--ryntra-space-3);
+  min-width: 0;
+  margin: 0;
+  padding: 0 0 var(--ryntra-space-4);
+  border: 0;
+  border-block-end: 1px solid var(--ryntra-border);
+}
+
+.setGroup > legend {
+  margin-block-end: var(--ryntra-space-2);
+  padding: 0;
+  font-size: var(--ryntra-type-ui-size);
+  font-weight: var(--ryntra-weight-semibold);
+}
+
+.setRow {
+  display: grid;
+  gap: var(--ryntra-space-1);
+  min-width: 0;
+}
+
+.setLabel {
+  color: var(--ryntra-muted);
+  font-size: var(--ryntra-type-caption-size);
+  line-height: var(--ryntra-type-caption-line);
+}
+
+.setNote {
+  margin: 0;
+  color: var(--ryntra-muted);
+  font-size: var(--ryntra-type-caption-size);
+  line-height: var(--ryntra-type-caption-line);
+}
+
+.setRow > .segment {
+  justify-self: start;
+}
+
+.setSwitch {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--ryntra-space-3);
+  min-height: 44px;
+  font-size: var(--ryntra-type-ui-size);
+  line-height: var(--ryntra-type-ui-line);
+  cursor: pointer;
+}
+
+.setSwitch > span {
+  display: grid;
+}
+
+.setSwitch small {
+  color: var(--ryntra-muted);
+  font-size: var(--ryntra-type-caption-size);
+}
+
+.setSwitch > input {
+  flex: 0 0 auto;
+  width: 20px;
+  height: 20px;
+  margin: 0;
+  accent-color: var(--ryntra-brand);
+}
+
+.setSwitch:has(input:disabled) {
+  cursor: default;
+}
+
+/* --------------------------------------------- positions and orders as cards */
+
+.tableOrCards {
+  min-width: 0;
+}
+
+.stacked {
+  display: inline-flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.tableOrCards :global(td.is-numeric) .stacked {
+  align-items: flex-end;
+}
+
+.stacked > small {
+  color: var(--ryntra-muted);
+  font-size: var(--ryntra-type-caption-size);
+  line-height: var(--ryntra-type-caption-line);
+}
+
+.stacked > small[data-side="long"] {
+  color: var(--ryntra-up-text);
+}
+
+.stacked > small[data-side="short"] {
+  color: var(--ryntra-down-text);
+}
+
+.cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 300px), 1fr));
+  gap: var(--ryntra-space-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.card {
+  display: grid;
+  gap: var(--ryntra-space-2);
+  min-width: 0;
+  padding: var(--ryntra-space-3);
+  border: 1px solid var(--ryntra-border);
+  border-radius: var(--ryntra-radius-block);
+  background: var(--ryntra-surface);
+}
+
+.cardHead {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--ryntra-space-3);
+}
+
+.cardHead > :last-child {
+  align-items: flex-end;
+  text-align: end;
+}
+
+.cardFacts {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--ryntra-space-2) var(--ryntra-space-3);
+  margin: 0;
+}
+
+.cardFacts > div {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+.cardFacts dt {
+  color: var(--ryntra-muted);
+  font-size: var(--ryntra-type-caption-size);
+  line-height: var(--ryntra-type-caption-line);
+}
+
+.cardFacts dd {
+  margin: 0;
+  overflow-wrap: anywhere;
+  font-variant-numeric: var(--ryntra-numeric);
+  font-size: var(--ryntra-type-ui-size);
+}
+
+.cardFacts .liquidation {
+  align-items: flex-start;
+}
+
+.cardActions .rowActions {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(0, 1fr));
+  width: 100%;
+}
+
+/* ------------------------------------------------- the order on a phone */
+
+.launcher {
+  display: grid;
+  gap: var(--ryntra-space-2);
+}
+
+.launcherSides {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--ryntra-space-2);
+}
+
+.launchSide,
+.resume {
+  min-height: 48px;
+  border-radius: var(--ryntra-radius-button);
+  font: inherit;
+  font-size: var(--ryntra-type-body-size);
+  font-weight: var(--ryntra-weight-semibold);
+  cursor: pointer;
+}
+
+.launchSide {
+  border: 1px solid currentColor;
+  background: var(--ryntra-surface);
+}
+
+.launchSide[data-side-button="long"] {
+  color: var(--ryntra-up-text);
+}
+
+.launchSide[data-side-button="short"] {
+  color: var(--ryntra-down-text);
+}
+
+.resume {
+  border: 0;
+  background: var(--ryntra-brand);
+  color: var(--ryntra-on-brand);
+}
+
+.launchSide:focus-visible,
+.resume:focus-visible {
+  outline: var(--ryntra-focus-outline);
+  outline-offset: var(--ryntra-focus-offset);
+}
+
+/* The whole screen: over the page and the menu, its own scroll so the keyboard never covers the Review. */
+.phoneScreen {
+  inset: 0;
+  width: 100vw;
+  max-width: 100vw;
+  height: 100dvh;
+  max-height: 100dvh;
+  background: var(--ryntra-bg);
+}
+
+.phoneBody {
+  flex: 1 1 auto;
+  min-height: 0;
+  padding: var(--ryntra-space-3) var(--ryntra-space-4) var(--ryntra-space-6, 32px);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+/* ------------------------------------- the reader's settings (PERP-6, spec §14) */
+
+/* Larger text: every panel and the head, not the chart, whose own drawing keeps its scale. */
+.page[data-scale="112"] .head,
+.page[data-scale="112"] .dockBody:not([data-perps-panel="chart"]),
+.page[data-scale="112"] .sheetBody,
+.page[data-scale="112"] .phoneBody {
+  zoom: 1.12;
+}
+
+.page[data-scale="125"] .head,
+.page[data-scale="125"] .dockBody:not([data-perps-panel="chart"]),
+.page[data-scale="125"] .sheetBody,
+.page[data-scale="125"] .phoneBody {
+  zoom: 1.25;
+}
+
+/* Higher contrast: the quiet words as the text, the borders as a pressed one — the core's own tokens. */
+.page[data-contrast="more"] {
+  --ryntra-muted: var(--ryntra-text);
+  --ryntra-border: var(--ryntra-border-hover);
+}
+
+/* Less motion, asked here or by the system: nothing slides or fades. */
+.page[data-motion="reduce"] *,
+.page[data-motion="reduce"] *::before,
+.page[data-motion="reduce"] *::after {
+  transition-duration: 0s !important;
+  animation-duration: 0s !important;
+  animation-iteration-count: 1 !important;
+  scroll-behavior: auto !important;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .page *,
+  .page *::before,
+  .page *::after {
+    transition-duration: 0s !important;
+    animation-duration: 0s !important;
+    animation-iteration-count: 1 !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* Simple: the regular density — a step more room in the panels. */
+.page[data-density="regular"] .terminal :global(.ryntra-dock__panel) {
+  padding: var(--ryntra-space-3);
+}
+
+/* 44 px targets (spec §15): in Simple, on a phone, or asked for — every control a finger presses. */
+.page[data-targets="large"] .rowActions button,
+.page[data-targets="large"] .segment > button,
+.page[data-targets="large"] .primaryChip,
+.page[data-targets="large"] .quietChip,
+.page[data-targets="large"] .doneChip,
+.page[data-targets="large"] .moreItem,
+.page[data-targets="large"] .marketRow,
+.page[data-targets="large"] .picker,
+.page[data-targets="large"] .leverageChip,
+.page[data-targets="large"] .modeChip,
+.page[data-targets="large"] .shares button,
+.page[data-targets="large"] .check,
+.page[data-targets="large"] .cellLink {
+  min-height: 44px;
+}
+
+.page[data-targets="large"] .moreButton {
+  width: 44px;
+  height: 44px;
+}
+
+.page[data-targets="large"] .rowActions button,
+.page[data-targets="large"] .segment > button {
+  min-width: 44px;
+}
+
+.page[data-targets="large"] .ticket {
+  --ticket-seg: 44px;
+}
+
+.page[data-targets="large"] .types {
+  --ticket-seg: 44px;
+}
+
+/* The core ticket's own small parts — the unit's toggle, the amount, the share's slider, the settings' summary — and
+   the terminal's tabs: 44 px where targets are large. */
+.page[data-targets="large"] .ticket :global(.ryntra-ticket__seg-option),
+.page[data-targets="large"] .ticket :global(.ryntra-ticket__input),
+.page[data-targets="large"] .ticket :global(.ryntra-ticket__price-input),
+.page[data-targets="large"] .ticket :global(.ryntra-ticket__range),
+.page[data-targets="large"] .ticket :global(.ryntra-ticket__settings > summary),
+.page[data-targets="large"] :global(.ryntra-review__details > summary) {
+  min-height: 44px;
+}
+
+.page[data-targets="large"] .terminal :global(.ryntra-dock) {
+  --dv-tabs-and-actions-container-height: 45px;
+}
+
+.page[data-targets="large"] .check input {
+  width: 20px;
+  height: 20px;
+}
+
+.page[data-targets="large"] .bookRow {
+  flex-basis: 44px;
+  height: 44px;
+}
+
+/* ------------------------------------------------------------- widths */
+
+/* Under 900 px: the head's figures in a grid of their own, never a row that scrolls aside. */
+@media (max-width: 899px) {
+  .headStats {
+    order: 3;
+    flex: 1 0 100%;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(110px, 1fr));
+  }
+
+  .tradeChip {
+    margin-inline-start: 0;
+  }
+}
+
+/* A phone: the head wraps into lines and the terminal's panels stand one under another (the core's own). */
+@media (max-width: 767px) {
+  .head {
+    gap: var(--ryntra-space-1) var(--ryntra-space-3);
+  }
+
+  .headStats {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .headTools {
+    flex: 1 0 100%;
+  }
+
+  .headLayout {
+    justify-content: flex-start;
+  }
+
+  .terminal {
+    height: auto;
+  }
+
+  .book {
+    height: 560px;
+  }
+}
+
+/* PERP-4 — the market's state, the data's life, the catalog's groups and the favorites (data and states only; the
+   terminal's layout is PERP-6's). */
+.marketMenu {
+  grid-template-rows: auto auto minmax(0, 1fr);
+}
+
+.marketGroups {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--ryntra-space-1);
+}
+
+.marketGroups button {
+  height: 28px;
+  padding: 0 var(--ryntra-space-2);
+  border: 1px solid var(--ryntra-border);
+  border-radius: var(--ryntra-radius-pill);
+  background: transparent;
+  color: var(--ryntra-muted);
+  font: inherit;
+  font-size: var(--ryntra-type-caption-size);
+  cursor: pointer;
+}
+
+.marketGroups button[aria-pressed="true"] {
+  border-color: var(--ryntra-text);
+  color: var(--ryntra-text);
+}
+
+.marketGroups button:focus-visible,
+.marketStar:focus-visible {
+  outline: var(--ryntra-focus-outline);
+  outline-offset: var(--ryntra-focus-offset);
+}
+
+.marketItem {
+  display: grid;
+  grid-template-columns: 28px minmax(0, 1fr);
+  align-items: center;
+}
+
+.marketStar {
+  width: 28px;
+  height: 28px;
+  border: 0;
+  border-radius: var(--ryntra-radius-field);
+  background: transparent;
+  color: var(--ryntra-muted);
+  font: inherit;
+  cursor: pointer;
+}
+
+.marketStar[aria-pressed="true"] {
+  color: var(--ryntra-brand-text);
+}
+
+.headMark[data-stale] {
+  color: var(--ryntra-muted);
+}
+
+.headNote {
+  display: block;
+  color: var(--ryntra-muted);
+  font-family: var(--ryntra-font-sans);
+  font-size: var(--ryntra-type-caption-size);
+  line-height: var(--ryntra-type-caption-line);
+}
+
+.staleChip,
+.stateChip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 26px;
+  padding: 0 var(--ryntra-space-2);
+  border: 1px solid var(--ryntra-warn);
+  border-radius: var(--ryntra-radius-pill);
+  color: var(--ryntra-text);
+  font-size: var(--ryntra-type-caption-size);
+  white-space: nowrap;
+}
+
+.stateChip[data-perps-state="internalPricing"],
+.stateChip[data-perps-state="underlyingClosed"] {
+  border-color: var(--ryntra-border);
+}
+
+/* ------------------------------------------------- PERP-5: the deal's core */
+
+/* How long the order stands (Pro): the choice, then one sentence of what it does. */
+.tifRow {
+  display: grid;
+  gap: 4px;
+}
+
+/* Best bid · Mid · Best ask over the limit price field. */
+.priceChips {
+  display: flex;
+  gap: 4px;
+  flex-wrap: wrap;
+}
+
+/* The three units a TP/SL may be set in, with the line that says what the unit means. */
+.legUnits {
+  display: grid;
+  gap: 4px;
+}
+
+/* The account's five numbers over the positions (spec §11.2): each one its own, never one total. */
+.sums {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--ryntra-space-2) var(--ryntra-space-4);
+  margin: 0 0 var(--ryntra-space-2);
+  padding: 0 0 var(--ryntra-space-2);
+  border-bottom: 1px solid var(--ryntra-border);
+}
+
+.sums > div {
+  display: grid;
+  gap: 2px;
+}
+
+.sums dt {
+  color: var(--ryntra-muted);
+  font-size: var(--ryntra-type-caption-size);
+}
+
+.sums dd {
+  margin: 0;
+  font-variant-numeric: tabular-nums;
+  font-weight: var(--ryntra-weight-semibold);
+}
+
+.sums dd[data-tone="up"] {
+  color: var(--ryntra-up, var(--ryntra-text));
+}
+
+.sums dd[data-tone="down"] {
+  color: var(--ryntra-down, var(--ryntra-text));
+}
+
+/* One action over a panel's table: «Cancel all» with its count. */
+.panelActions {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--ryntra-space-2);
+  margin: 0 0 var(--ryntra-space-2);
+}
+
+/* ------------------------------------------------------------ Scalp Check */
+
+/* Beside the spread in Pro (PERP-7, spec §8): collapsed, one small word on the book's middle band. */
+.scalp {
+  font-family: var(--ryntra-font-sans);
+  font-size: var(--ryntra-type-caption-size);
+}
+
+.scalpOpen {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--ryntra-muted);
+  font: inherit;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  cursor: pointer;
+}
+
+.scalpOpen:hover,
+.scalpOpen:focus-visible {
+  color: var(--ryntra-text);
+}
+
+/* Opened, the check stands over the book on the panel's own height, with «Згорнути» of its own: the panel a terminal
+   gives the book is short, and a check squeezed into half of it would scroll its own numbers out of sight. */
+.scalpBody {
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  display: grid;
+  align-content: start;
+  gap: var(--ryntra-space-2);
+  overflow-y: auto;
+  padding: var(--ryntra-space-2);
+  background: var(--ryntra-elevated);
+}
+
+.scalpHead {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--ryntra-space-2);
+  margin: 0;
+  color: var(--ryntra-text);
+}
+
+.scalpForm {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: end;
+  gap: var(--ryntra-space-2);
+}
+
+.scalpAmount {
+  display: grid;
+  gap: 2px;
+  min-width: 120px;
+  color: var(--ryntra-muted);
+}
+
+.scalpAmount input {
+  width: 100%;
+  padding: 4px var(--ryntra-space-2);
+  border: 1px solid var(--ryntra-border);
+  border-radius: var(--ryntra-radius-button);
+  background: transparent;
+  color: var(--ryntra-text);
+  font-family: var(--ryntra-font-mono);
+  font-variant-numeric: var(--ryntra-numeric);
+}
+
+.scalpFacts {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: var(--ryntra-space-2);
+  margin: 0;
+}
+
+.scalpFacts div {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+.scalpFacts dt {
+  color: var(--ryntra-muted);
+}
+
+.scalpFacts dd {
+  margin: 0;
+  color: var(--ryntra-text);
+  font-family: var(--ryntra-font-mono);
+  font-variant-numeric: var(--ryntra-numeric);
+  overflow-wrap: anywhere;
+}
+
+/* The one number the whole panel is for: the move that brings the round trip back to nothing. It keeps the place the
+   specification gives it — last in the chain — but sticks to the foot of the sheet, so it is on screen while the
+   figures it is made of scroll above it. */
+.scalpBreakEven {
+  position: sticky;
+  bottom: calc(-1 * var(--ryntra-space-2));
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--ryntra-space-2);
+  margin: 0;
+  padding-top: var(--ryntra-space-2);
+  border-top: 1px solid var(--ryntra-border);
+  background: var(--ryntra-elevated);
+  color: var(--ryntra-muted);
+}
+
+.scalpBreakEven strong {
+  color: var(--ryntra-text);
+  font-family: var(--ryntra-font-mono);
+  font-size: var(--ryntra-type-body-size);
+  font-variant-numeric: var(--ryntra-numeric);
+}
+
+/* A book that cannot carry the size says so where the numbers would have been, in the caution colour. */
+.scalpThin {
+  margin: 0;
+  color: var(--ryntra-warn);
+}
+
+/* Figures counted on a book that stopped updating say so under them, in the same caution colour. */
+.scalpStale {
+  margin: 0;
+  color: var(--ryntra-warn);
+}

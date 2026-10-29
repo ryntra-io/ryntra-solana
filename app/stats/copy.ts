@@ -42,6 +42,7 @@ const NETWORKS_EN = {
   polygon: "Polygon",
   bnb: "BNB Chain",
   robinhood: "Robinhood Chain",
+  arc: "Arc",
 } satisfies NetworkWords;
 
 const REGISTRY_NETWORKS_EN = {
@@ -126,6 +127,7 @@ export const STATS_COPY = {
         LAUNCH_EXECUTOR: "Launch executor",
         LAUNCH_REFERRAL: "Launch referral",
         LAUNCH_REVENUE: "Ryntra revenue from Micro",
+        PERPS_BUILDER: "Perps builder fee",
       } satisfies RoleWords,
       kinds: {
         FEE_WALLET: "Fee wallet",
@@ -139,6 +141,8 @@ export const STATS_COPY = {
         LAUNCH_POOL_PAYER: "Pool creation wallet",
         LAUNCH_EXECUTOR: "Graduation and the Fee-Funded Liquidity Ladder",
         METEORA_REFERRAL_TOKEN_ACCOUNT: "Meteora referral account, USDC",
+        PHOENIX_FLIGHT_BUILDER: "Builder on Phoenix Flight",
+        PHOENIX_BUILDER_TRADER_ACCOUNT: "The builder's Phoenix trader account",
       } satisfies KindWords,
       block: (network: string, block: string) => (network === "Solana" ? `Slot ${block}` : `${network} block ${block}`),
       noTransaction: "No transaction yet",
@@ -278,6 +282,7 @@ export const STATS_COPY = {
         LAUNCH_EXECUTOR: "Виконавець лаунчу",
         LAUNCH_REFERRAL: "Реферал лаунчу",
         LAUNCH_REVENUE: "Дохід Ryntra з Micro",
+        PERPS_BUILDER: "Комісія білдера Perps",
       } satisfies RoleWords,
       kinds: {
         FEE_WALLET: "Гаманець комісій",
@@ -291,6 +296,8 @@ export const STATS_COPY = {
         LAUNCH_POOL_PAYER: "Гаманець створення пулів",
         LAUNCH_EXECUTOR: "Вихід на DEX і драбина ліквідності з комісій",
         METEORA_REFERRAL_TOKEN_ACCOUNT: "Реферальний рахунок Meteora, USDC",
+        PHOENIX_FLIGHT_BUILDER: "Білдер у Phoenix Flight",
+        PHOENIX_BUILDER_TRADER_ACCOUNT: "Торговий рахунок білдера в Phoenix",
       } satisfies KindWords,
       block: (network: string, block: string) => (network === "Solana" ? `Слот ${block}` : `Блок ${network} ${block}`),
       noTransaction: "Транзакцій ще немає",

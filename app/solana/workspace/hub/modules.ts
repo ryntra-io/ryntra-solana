@@ -45,7 +45,7 @@ import { translateSolana } from "../i18n/catalog.ts";
  * regression fixture and never a release gate, and the product names five
  * status axes. So the environment axis is `MAINNET · OFFCHAIN`, the mode axis
  * is `READ_ONLY · USER_SIGNED · NONE`, and the word above `AVAILABLE` is
- * `OWNER_CANARY_VERIFIED` — the promotion word, earned per action family by
+ * `OWNER_CANARY_VERIFIED` — the M5 promotion word, earned per action family by
  * one owner-signed mainnet action, never by a devnet rehearsal.
  *
  * `NONE` survives on the mode axis because the named modes have no value for a
@@ -651,7 +651,7 @@ export const SOLANA_MODULES: readonly SolanaModule[] = [
     detail:
       "Discovery across venues with the same question priced side by side, a position opened and closed through Review with the person's own signature, its result in Activity, and prediction signals beside the markets they refer to. Prediction detail lives inside the page and is never a row of its own.",
     exists: "A visible locked page at /app/predictions that states what it will own. No market, odd, balance or trading action is shown.",
-    missing: "The aggregator integration: market discovery, pricing, order construction, settlement and the signals. Partner/API access has been requested and is pending.",
+    missing: "The aggregator integration: market discovery, pricing, order construction, settlement and the model's own notes. Partner/API access has been requested and is pending.",
     gate: "A separate surface only after its own data, custody, risk and canary gate — and, before that, the aggregator's partner/API access, requested and pending.",
     environment: "MAINNET",
     mode: "USER_SIGNED",

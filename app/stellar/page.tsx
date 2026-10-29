@@ -36,7 +36,7 @@ export const metadata: Metadata = sitePageMetadata({
 /**
  * The public Stellar page.
  *
- * Its job is to move a reviewer, a
+ * Its job, decided by the founder on 2026-08-14, is to move a reviewer, a
  * referrer or a design partner from "what is this?" to "this is a specific,
  * working Stellar-native product" — in the time someone actually spends on a
  * page, and in language an asset holder still understands. It is therefore

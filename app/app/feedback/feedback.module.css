@@ -1,16 +1,4 @@
-/* Feedback — one rail row and one small dialog. */
-
-.launch {
-  width: calc(100% - 2 * var(--ry-s2));
-  background: none;
-  border: 0;
-  border-inline-start: 2px solid transparent;
-  cursor: pointer;
-  text-align: start;
-  font: inherit;
-  font-size: var(--ry-fs-app);
-  font-weight: 600;
-}
+/* Feedback — one small dialog, opened from the tools above every page. */
 
 .backdrop {
   position: fixed;
@@ -207,4 +195,22 @@
 @media (max-width: 480px) {
   .topics { grid-template-columns: repeat(2, minmax(0, 1fr)); border-radius: var(--radius); }
   .topic { border-radius: var(--radius-sm); }
+}
+
+/* The same fields in a page's own block, not a dialog: «Поскаржитися на токен» (MC-1). */
+.form {
+  display: grid;
+  gap: var(--rt-space-md);
+}
+/* A report's reasons: chips that wrap in a narrow column, each its own pill — never squeezed into one segmented row. */
+.reasons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.reasons .topic {
+  min-height: 36px;
+  padding: 0 14px;
+  border: 1px solid var(--border);
+  background: var(--panel-2);
 }

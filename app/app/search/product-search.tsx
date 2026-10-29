@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { createPortal } from "react-dom";
-import { useCallback, useEffect, useId, useMemo, useRef, useState, type ReactNode } from "react";
+import { useCallback, useEffect, useId, useImperativeHandle, useMemo, useRef, useState, type ReactNode, type Ref } from "react";
 import {
   ArrowLineDown,
   ArrowLineRight,
@@ -13,6 +13,7 @@ import {
   ChartPieSlice,
   ClockCounterClockwise,
   Compass,
+  Drop,
   Funnel,
   GearSix,
   GitBranch,
@@ -25,9 +26,11 @@ import {
   Robot,
   RocketLaunch,
   Wallet,
+  SlidersHorizontal,
   Sparkle,
   Target,
   TrendUp,
+  UserCircle,
   X,
 } from "@phosphor-icons/react";
 
@@ -36,8 +39,9 @@ import type { WorkspaceLocale } from "@/app/shell/locale";
 import { PRODUCT_ROUTES } from "@/app/shell/product-routes";
 import { MarketIcon } from "@/app/solana/workspace/spot/market-list";
 import { formatPercent, formatUsdPrice, toneOf } from "@/app/solana/workspace/spot/spot-format";
-import { searchActions, searchProduct, type SearchIndex } from "@/lib/search/product-search";
+import { CUSTOMIZE_HREF, searchActions, searchProduct, type SearchIndex } from "@/lib/search/product-search";
 
+import { openCustomize } from "../customize-open";
 import styles from "./product-search.module.css";
 import { readSearchIndex } from "./search-index";
 
@@ -76,6 +80,7 @@ type Word = keyof typeof WORDS;
 const ACTION_ICONS: Readonly<Record<string, ReactNode>> = {
   home: <House size={18} weight="bold" />,
   explore: <Compass size={18} weight="bold" />,
+  pools: <Drop size={18} weight="bold" />,
   trade: <ArrowsLeftRight size={18} weight="bold" />,
   launch: <RocketLaunch size={18} weight="bold" />,
   "launch-plus": <PlusCircle size={18} weight="bold" />,
@@ -97,12 +102,21 @@ const ACTION_ICONS: Readonly<Record<string, ReactNode>> = {
   ryntra: <Sparkle size={18} weight="bold" />,
   rewards: <Gift size={18} weight="bold" />,
   settings: <GearSix size={18} weight="bold" />,
+  customize: <SlidersHorizontal size={18} weight="bold" />,
+  account: <UserCircle size={18} weight="bold" />,
   alerts: <BellRinging size={18} weight="bold" />,
 };
 
 type Result = Readonly<{ key: string; href: string; node: ReactNode }>;
 
-export function ProductSearch({ locale }: { locale: WorkspaceLocale }) {
+/** Opens the search from outside: the core's header has its own search button and Ctrl K. */
+export type ProductSearchHandle = Readonly<{ show: () => void }>;
+
+/**
+ * Given a `handle`, the search is the dialog alone: the frame that holds the handle draws the button and owns the
+ * shortcut (the core's header since B1), so this component neither draws its own field nor listens for ⌘K.
+ */
+export function ProductSearch({ locale, handle }: { locale: WorkspaceLocale; handle?: Ref<ProductSearchHandle> }) {
   const router = useRouter();
   const lang = locale === "uk" ? "uk" : "en";
   const word = useCallback((key: Word) => WORDS[key][lang], [lang]);
@@ -138,8 +152,12 @@ export function ProductSearch({ locale }: { locale: WorkspaceLocale }) {
     if (restore && document.contains(restore)) restore.focus();
   }, []);
 
-  /* ⌘K / Ctrl+K, the standard way to a search on both platforms. */
+  useImperativeHandle(handle, () => ({ show }), [show]);
+  const headless = handle !== undefined;
+
+  /* ⌘K / Ctrl+K, the standard way to a search on both platforms — unless the frame holding the handle owns it. */
   useEffect(() => {
+    if (headless) return;
     const onKey = (event: KeyboardEvent) => {
       if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === "k") {
         event.preventDefault();
@@ -149,7 +167,7 @@ export function ProductSearch({ locale }: { locale: WorkspaceLocale }) {
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [hide, open, show]);
+  }, [headless, hide, open, show]);
 
   useEffect(() => {
     if (!open) return;
@@ -170,9 +188,11 @@ export function ProductSearch({ locale }: { locale: WorkspaceLocale }) {
   }, [index, open]);
 
   const numbers = numberLocale(locale);
+  const rank = (group: string) => (group === "address" ? -1 : results.order.indexOf(group === "private" ? "privateCompanies" : (group as (typeof results.order)[number])));
   const searching = query.trim().length > 0;
 
-  /* The rows in the order they are drawn, so the arrows walk what the eye sees. */
+  /* The rows in the order they are drawn, so the arrows walk what the eye sees: a pasted address first, then the groups in
+     the order of their best match (`results.order`), so Enter opens the best answer — «SOL» opens Solana (UX-002). */
   const groups: readonly Readonly<{ id: string; title: string; rows: readonly Result[] }>[] = [
     {
       /* A pasted contract address is a token: its page finds whether it is a company's, a launch's or a coin's. */
@@ -269,14 +289,17 @@ export function ProductSearch({ locale }: { locale: WorkspaceLocale }) {
         ),
       })),
     },
-  ].filter((group) => group.rows.length > 0);
+  ]
+    .filter((group) => group.rows.length > 0)
+    .sort((a, b) => rank(a.id) - rank(b.id));
 
   const flat = groups.flatMap((group) => group.rows);
   const nothing = searching && flat.length === 0 && !reading;
 
+  /* The first row again when the query changes — and when the index arrives, since the groups may reorder under it. */
   useEffect(() => {
     setActive(0);
-  }, [query]);
+  }, [query, index]);
 
   const go = (row: Result | undefined) => {
     if (!row) return;
@@ -284,7 +307,15 @@ export function ProductSearch({ locale }: { locale: WorkspaceLocale }) {
     setQuery("");
     setActive(0);
     restoreRef.current = null;
-    router.push(row.href);
+    /* «Налаштування» is the menu's own panel, not a page: opened where it lives (UX-013). */
+    if (row.href === CUSTOMIZE_HREF) {
+      openCustomize();
+      return;
+    }
+    /* An address outside this app opens there, not through this app's router; so does Прогнози,
+       whose pages need their own content policy (the venues' images and live feed), which only a full load brings. */
+    if (/^https?:\/\//.test(row.href) || /^\/app\/predictions(\/|$)/.test(row.href)) window.location.assign(row.href);
+    else router.push(row.href);
   };
 
   const onKeyDown = (event: React.KeyboardEvent<HTMLInputElement>) => {
@@ -367,11 +398,13 @@ export function ProductSearch({ locale }: { locale: WorkspaceLocale }) {
 
   return (
     <>
-      <button type="button" className="rs-searchbtn" onClick={show} aria-haspopup="dialog" aria-expanded={open} aria-label={word("open")}>
-        <MagnifyingGlass size={18} weight="bold" aria-hidden="true" />
-        <span className="rs-searchbtn-text">{word("open")}</span>
-        <kbd className="rs-searchbtn-key" aria-hidden="true">{shortcut}</kbd>
-      </button>
+      {headless ? null : (
+        <button type="button" className="rs-searchbtn" onClick={show} aria-haspopup="dialog" aria-expanded={open} aria-label={word("open")}>
+          <MagnifyingGlass size={18} weight="bold" aria-hidden="true" />
+          <span className="rs-searchbtn-text">{word("open")}</span>
+          <kbd className="rs-searchbtn-key" aria-hidden="true">{shortcut}</kbd>
+        </button>
+      )}
       {typeof document !== "undefined" && dialog ? createPortal(dialog, document.body) : null}
     </>
   );

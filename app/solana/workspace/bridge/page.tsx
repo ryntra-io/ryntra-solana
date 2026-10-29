@@ -1,9 +1,6 @@
-import { PanelGrid } from "@/app/shell/panel";
 import { isSwapNetwork, resolveSwapAsset } from "@/lib/swap/catalog";
-import { PageHead } from "../hub/parts.tsx";
 import { solanaServerText } from "../i18n/server.ts";
 import { BridgeSurface } from "./bridge-surface.tsx";
-import { ResumeUnfinished } from "./resume-unfinished.tsx";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -12,7 +9,7 @@ const AMOUNT_SHAPE = /^\d{1,20}(\.\d{1,18})?$/;
 
 export async function generateMetadata() {
   const { text } = await solanaServerText();
-  return { title: text("Cross-chain") };
+  return { title: text("Between networks") };
 }
 
 /**
@@ -47,8 +44,8 @@ export async function generateMetadata() {
  * failure and one status model, so Relay being down leaves Swap working and a
  * Jupiter problem leaves this page working.
  *
- * `ResumeUnfinished` sits above the form because a cross-network transfer is the
- * operation that can outlive the tab it started in. The engines remember an
+ * `ResumeUnfinished` sits above the form (inside the surface since B18) because a
+ * cross-network transfer is the operation that can outlive the tab it started in. The engines remember an
  * unfinished one but only read that memory while mounted, and each mounts only
  * for its own pair — so the way back cannot depend on which pair happens to be
  * selected.
@@ -58,7 +55,6 @@ export default async function BridgePage({
 }: {
   searchParams: Promise<{ amount?: string; from?: string; fa?: string; to?: string; ta?: string; in?: string; out?: string }>;
 }) {
-  const { text } = await solanaServerText();
   const params = await searchParams;
 
   /* The same gate the card classifies with, rather than a written-out list of
@@ -73,23 +69,17 @@ export default async function BridgePage({
   const toNetwork = networkOk(params.to);
   const seed = {
     /* Bring funds to Solana is the opening direction, so an unspecified link
-       opens on Base USDC against Solana SOL. Both sides are seeds. */
+       opens on Base USDC against Solana USDC — dollars stay dollars (decided
+       17.10 for B18: «Між мережами» opens USDC → USDC, the pair that keeps the
+       asset and moves through Circle). Both sides are seeds. */
     fromNetwork: fromNetwork ?? "base",
     fromAsset: assetOk(params.from, params.fa) ?? (fromNetwork === undefined ? "USDC" : undefined),
     toNetwork: toNetwork ?? "solana",
-    toAsset: assetOk(params.to, params.ta) ?? (toNetwork === undefined ? "SOL" : undefined),
+    toAsset: assetOk(params.to, params.ta) ?? (toNetwork === undefined ? "USDC" : undefined),
     amount: params.amount && AMOUNT_SHAPE.test(params.amount) ? params.amount : undefined,
   };
 
-  return (
-    <>
-      <PageHead title="Cross-chain" />
-      <div className="ry-money-flow">
-        <ResumeUnfinished />
-        <PanelGrid label={text("Bridge")}>
-          <BridgeSurface seed={seed} />
-        </PanelGrid>
-      </div>
-    </>
-  );
+  /* The surface draws the whole page since B18: the heading once, the form and, beside it, the latest moves between
+     networks (`../money/money-page.tsx`). */
+  return <BridgeSurface seed={seed} />;
 }

@@ -1,24 +1,34 @@
 import { NextRequest, NextResponse } from "next/server";
 
 import { consumeSolanaReadRequest } from "@/lib/agent-control/http";
-import { resolveInternalWallets } from "@/lib/admin/internal-wallets";
 import { getGuardRuntime } from "@/lib/guard/runtime";
-import { listAllPointsEntries, listPointsEntries, rankPoints } from "@/lib/points/ledger";
+import { listPointsEntries } from "@/lib/points/ledger";
+import { readPointsRanking } from "@/lib/points/standings";
 import { pointsView } from "@/lib/points/view";
 import { privateNoStoreHeaders } from "@/lib/http-control";
-import { rewardsActivation } from "@/lib/rewards/activation";
+import { rewardsStartedAt } from "@/lib/rewards/activation";
 import { readClaim } from "@/lib/rewards/claim";
 import { ensureRewardAccount, listRewardEntries, readRewardAccount, reconcileReferralEdges, readReferralCounts } from "@/lib/rewards/ledger";
 import { maskWallet, referralLink } from "@/lib/rewards/referral";
 import { rankStanding, rankSummary, type RankEvent } from "@/lib/rewards/rank";
 import { achievementsOf } from "@/lib/growth/achievements";
-import { listRankEvents, rewardRulesEffectiveFrom, rewardRulesFor } from "@/lib/rewards/rank-store";
+import { listCountedRankEvents, rewardRulesEffectiveFrom, rewardRulesFor } from "@/lib/rewards/rank-store";
 import type { RewardRules } from "@/lib/rewards/rules";
-import { readRewardsReserve, rewardsTreasuryConfig } from "@/lib/rewards/treasury.server";
+import { readPayoutAccount, readRewardsReserve, rewardsTreasuryConfig } from "@/lib/rewards/treasury.server";
+import { claimMinimumUsdMicros } from "@/lib/rewards/balance";
+import { firstTenView, readFirstTen } from "@/lib/rewards/first-ten";
+import { usdText } from "@/lib/rewards/format";
+import type { RewardPayoutAccount } from "@/lib/rewards/model";
 import { heldUsdMicros, readReserveLedger } from "@/lib/rewards/reserve";
 import { rewardsView } from "@/lib/rewards/view";
 import { getWalletProofFrom } from "@/lib/session";
+import { noteDevice } from "@/lib/growth/protect-deps.server";
+import { walletHold } from "@/lib/growth/review-store";
 import { replayBenefitJobs } from "@/lib/rewards/benefit-replay.server";
+import { enqueueBenefitJob, hurryBenefitJob } from "@/lib/rewards/benefit-jobs";
+import { readSubjectEvents } from "@/lib/growth/review-store";
+import { caseOf, walletSubject } from "@/lib/growth/review";
+import { internalPayoutText, internalWalletsForMoney } from "@/lib/rewards/internal";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -66,7 +76,8 @@ export async function GET(req: NextRequest) {
   const store = getGuardRuntime().store;
   const now = new Date().toISOString();
   // Only this proven wallet's already queued settlements; no history backfill.
-  await replayBenefitJobs(store, { wallet: address, limit: 2, budgetMs: 6_000, now }).catch(() => undefined);
+  /* The cluster check reads the chain and may wait for a person: it is the schedule's, never the page's. */
+  await replayBenefitJobs(store, { wallet: address, limit: 2, budgetMs: 6_000, now, exclude: ["FIRST_TEN_CHECK"] }).catch(() => undefined);
   /* Creating the record here is what gives a person a referral link the first
      time they open the page, without asking them to sign anything extra. */
 
@@ -102,13 +113,30 @@ export async function GET(req: NextRequest) {
   /* The rules in force decide the shares the page shows; if they cannot be
      read, the rank is unavailable rather than shown under the wrong rules. */
   const rulesNow = await rewardRulesFor(store, now, now).catch(() => null);
-  const [entries, reserve, claim, ledger, points] = await Promise.all([
+  /* Rules 2.1.0: the claim floor follows the wallet's USDC account — read only while those rules are in force. */
+  /* The owner's and the test wallets (`lib/rewards/internal.ts`): paid nothing, ranked nowhere. Null when unreadable. */
+  const internal = await internalWalletsForMoney(store, process.env);
+  const [entries, reserve, claim, ledger, points, usdcAccount, firstTen] = await Promise.all([
     listRewardEntries(store, address),
     readRewardsReserve(),
     readClaim(store, address),
     readReserveLedger(store),
-    readPoints(store, address),
+    readPoints(store, address, now, internal),
+    rulesNow?.claimFloor ? readPayoutAccount(address) : Promise.resolve<RewardPayoutAccount>("UNKNOWN"),
+    rulesNow?.firstTen ? readFirstTen(store, address).catch(() => null) : Promise.resolve(null),
   ]);
+  const minimumUsdMicros = claimMinimumUsdMicros(rulesNow, usdcAccount);
+  /* A window still waiting for its check keeps its check queued — and a cancelled one whose wallet a person cleared
+     since (an appeal that won) is looked at again, to be given back. */
+  if (firstTen?.window && (firstTen.window.check === "PENDING" || (firstTen.window.check === "FAILED" && (await walletHold(store, address, now).catch(() => "REVIEW")) === "NONE"))) {
+    const job = { kind: "FIRST_TEN_CHECK" as const, wallet: address, operationId: "first-ten", settledAt: firstTen.firstTradeAt };
+    /* A person decided the wallet's case since its first trade: the check is due now, not after its back-off. */
+    const subject = walletSubject(address);
+    const log = await readSubjectEvents(store, subject).catch(() => null);
+    const decision = log ? caseOf(subject, log.events, now).decision : null;
+    const answered = decision !== null && Date.parse(decision.at) >= Date.parse(firstTen.firstTradeAt);
+    await (answered ? hurryBenefitJob : enqueueBenefitJob)(store, job, now).catch(() => undefined);
+  }
 
   const view = rewardsView({
     entries,
@@ -123,11 +151,19 @@ export async function GET(req: NextRequest) {
     claim,
     locale,
     referral: { code: account.code, link: referralLink(publicOrigin(req), account.code) },
+    minimumUsdMicros,
   });
 
   const latestAccount = await readRewardAccount(store, address);
   const payoutConfig = rewardsTreasuryConfig();
   const payoutsEnabled = payoutConfig.configured && payoutConfig.canSign;
+  /* A wallet the review froze is not paid until the freeze is lifted; why is the reviewer's, never shown here. */
+  const hold = await walletHold(store, address, now).catch(() => "REVIEW" as const);
+  /* The owner's and the test wallets are paid nothing (Ріст 3); a list that cannot be read pays nobody either. */
+  const team = internal?.has(address) === true;
+  const held = hold !== "NONE" || team || internal === null;
+  /* S4: the proven wallet seen with this request, kept as hashes only. */
+  await noteDevice(store, address, req.headers);
   const response = json({
     ok: true,
     address,
@@ -141,8 +177,8 @@ export async function GET(req: NextRequest) {
     referralL1: view.referralL1,
     referralL2: view.referralL2,
     sourceAmounts: Object.fromEntries(Object.entries(view.balance.bySource).map(([key, value]) => [key, value.toString()])),
-    claimable: view.balance.claimable && payoutsEnabled,
-    claimBlockedReason: payoutsEnabled ? view.balance.claimBlockedReason : locale === "uk" ? "Виплати винагород тимчасово недоступні." : "Rewards payouts are temporarily unavailable.",
+    claimable: view.balance.claimable && payoutsEnabled && !held,
+    claimBlockedReason: claimBlockedText(locale, { team, hold, listRead: internal !== null, payoutsEnabled, balanceReason: view.balance.claimBlockedReason }),
     pendingReasons: view.balance.pendingReasons,
     referrals: view.referrals,
     rows: view.rows,
@@ -165,10 +201,48 @@ export async function GET(req: NextRequest) {
        "your rewards will appear after your first trade" while nothing is
        accruing is making a promise that is not yet true, and the honest
        fix is one sentence rather than a hidden menu entry. */
-    started: rewardsActivation().state === "OPEN",
+    started: rewardsStartedAt(now),
+    /* Rules 2.1.0 as this wallet meets them: its claim floor, «First $10 back» if it holds it, and the offers. Absent
+       before those rules are in force — the page then says only what lives. */
+    ...(rulesNow?.version === "2.1.0" ? { programme: programmeOf(rulesNow, usdcAccount, minimumUsdMicros, firstTenView(firstTen, now, rulesNow), view.balance.checkUsdMicros) } : {}),
   });
   return response;
   } catch { return json({ ok: false, error: "REWARDS_UNAVAILABLE" }, 503); }
+}
+
+/** Why the payout button rests, in the person's words: a team wallet, a review, payouts off, or the balance's own reason. */
+function claimBlockedText(
+  locale: "en" | "uk",
+  state: Readonly<{ team: boolean; hold: "NONE" | "REVIEW" | "STOPPED"; listRead: boolean; payoutsEnabled: boolean; balanceReason: string | null }>,
+): string | null {
+  if (state.team) return internalPayoutText(locale);
+  if (state.hold === "STOPPED") return locale === "uk" ? "Виплати з цього гаманця зупинено після перевірки." : "Payouts from this wallet were stopped after a review.";
+  if (state.hold === "REVIEW") return locale === "uk" ? "Виплата на перевірці. Відповімо протягом 72 годин." : "Your payout is being reviewed. We answer within 72 hours.";
+  if (!state.listRead || !state.payoutsEnabled) return locale === "uk" ? "Виплати винагород тимчасово недоступні." : "Rewards payouts are temporarily unavailable.";
+  return state.balanceReason;
+}
+
+/** Rules 2.1.0 on the page: decimal dollar text and whole numbers, nothing internal. */
+function programmeOf(
+  rules: RewardRules,
+  usdcAccount: RewardPayoutAccount,
+  minimum: bigint,
+  firstTen: ReturnType<typeof firstTenView>,
+  checkUsdMicros: bigint,
+) {
+  const offer = rules.firstTen!;
+  return {
+    rulesVersion: rules.version,
+    claimMinimum: usdText(minimum),
+    claimMinimumWithAccount: usdText(rules.claimFloor!.withAccountUsdMicros),
+    claimMinimumWithoutAccount: usdText(rules.claimFloor!.withoutAccountUsdMicros),
+    usdcAccount,
+    firstTenOffer: { cap: usdText(offer.capUsdMicros), days: offer.days, walletsPerMonth: offer.walletsPerMonth },
+    firstTen: firstTen
+      ? { state: firstTen.state, check: firstTen.check, returned: usdText(firstTen.returnedUsdMicros), cap: usdText(firstTen.capUsdMicros), held: usdText(checkUsdMicros), endsAt: firstTen.endsAt }
+      : null,
+    inviterWindow: { share: rules.inviterWindow!.bps / 100, days: rules.inviterWindow!.days },
+  };
 }
 
 /**
@@ -185,7 +259,7 @@ async function readRankAndBadges(
 ) {
   let events: readonly RankEvent[];
   try {
-    events = await listRankEvents(store, wallet);
+    events = await listCountedRankEvents(store, wallet, now);
   } catch {
     return { rank: null, achievements: null };
   }
@@ -218,21 +292,17 @@ async function readRankAndBadges(
 /**
  * This wallet's points, and where it stands.
  *
- * The rank needs every external wallet's rows, so the whole collection is
- * read — right at this product's volume, and written down in the ledger
- * module as the thing that moves to a rollup when it stops being right. A
- * failure here is a null on the page, never a failed Rewards read: points are
- * a fact beside the balance, not a condition of it.
+ * The rank comes from the standings record (`lib/points/standings.ts`) — one small record of every wallet's two
+ * figures, moved by each write of points and mended here from this wallet's own rows — never from a scan of the
+ * ledger. A failure here is a null on the page, never a failed Rewards read: points are a fact beside the balance,
+ * not a condition of it.
  */
-async function readPoints(store: ReturnType<typeof getGuardRuntime>["store"], wallet: string) {
+async function readPoints(store: ReturnType<typeof getGuardRuntime>["store"], wallet: string, now: string, internal: ReadonlySet<string> | null) {
   try {
-    const [mine, all, internal] = await Promise.all([
-      listPointsEntries(store, wallet),
-      listAllPointsEntries(store),
-      resolveInternalWallets(store, process.env),
-    ]);
-    if (internal.store !== "measured") return null;
-    return { ...pointsView({ entries: mine, wallet, ranking: rankPoints(all, internal.wallets) }), excluded: internal.wallets.has(wallet) };
+    if (!internal) return null;
+    const mine = await listPointsEntries(store, wallet);
+    const ranking = await readPointsRanking(store, { wallet, mine, internalWallets: internal, now });
+    return { ...pointsView({ entries: mine, wallet, ranking }), excluded: internal.has(wallet) };
   } catch {
     return null;
   }

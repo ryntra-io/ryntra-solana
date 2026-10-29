@@ -55,9 +55,12 @@ export type PipelineDefinition<Context, Stop> = Readonly<{
   steps: readonly PipelineStep<Context, Stop>[];
 }>;
 
+/** How long one step took, in milliseconds — what a route's `Server-Timing` names (SOL-S1). */
+export type StepTiming = Readonly<{ name: string; ms: number }>;
+
 export type PipelineRun<Stop> =
-  | Readonly<{ completed: true; trace: readonly string[] }>
-  | Readonly<{ completed: false; stop: Stop; stoppedAt: string; trace: readonly string[] }>;
+  | Readonly<{ completed: true; trace: readonly string[]; timings: readonly StepTiming[] }>
+  | Readonly<{ completed: false; stop: Stop; stoppedAt: string; trace: readonly string[]; timings: readonly StepTiming[] }>;
 
 const stageIndex = (stage: IntentStage): number => INTENT_STAGES.indexOf(stage);
 
@@ -121,18 +124,32 @@ export function definePipeline<Context, Stop>(definition: PipelineDefinition<Con
   return Object.freeze({ line, part, steps: Object.freeze([...steps]) });
 }
 
-/** Runs the steps in order until one stops. The trace names every step that ran. */
+/** Runs the steps in order until one stops. The trace names every step that ran, and the timings how long each took. */
 export async function runPipeline<Context, Stop>(
   pipeline: PipelineDefinition<Context, Stop>,
   context: Context,
 ): Promise<PipelineRun<Stop>> {
   const trace: string[] = [];
+  const timings: StepTiming[] = [];
   for (const step of pipeline.steps) {
     trace.push(step.name);
+    const started = performance.now();
     const result = await step.run(context);
-    if ("stop" in result) return { completed: false, stop: result.stop, stoppedAt: step.name, trace };
+    timings.push({ name: step.name, ms: performance.now() - started });
+    if ("stop" in result) return { completed: false, stop: result.stop, stoppedAt: step.name, trace, timings };
   }
-  return { completed: true, trace };
+  return { completed: true, trace, timings };
+}
+
+/**
+ * A `Server-Timing` header value: each step, then any extra spans. Step names
+ * become tokens (`owner-lock-free` → `owner-lock-free`), durations one decimal.
+ * Names only — never an address, an amount or a key.
+ */
+export function serverTimingOf(timings: readonly StepTiming[], extra: readonly StepTiming[] = []): string {
+  return [...timings, ...extra]
+    .map(({ name, ms }) => `${name.replace(/[^A-Za-z0-9_-]/g, "-")};dur=${Math.max(0, ms).toFixed(1)}`)
+    .join(", ");
 }
 
 /** The stage of each step, in order — what a reader of a line checks first. */

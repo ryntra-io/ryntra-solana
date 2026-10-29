@@ -24,6 +24,9 @@ export const RELAY_API_ORIGIN = "https://api.relay.link";
 /** Robinhood Chain's EVM id, as its own documentation and Relay both state it. */
 export const ROBINHOOD_CHAIN_ID = 4663;
 
+/** Arc mainnet's EVM id, as Relay's chain index and Arc's own RPC both state it. */
+export const ARC_CHAIN_ID = 5042;
+
 /**
  * Relay's id for Solana. Not an EIP-155 chain id and not a Wormhole id — a
  * number Relay assigns; read from its chain list, never computed.
@@ -39,6 +42,8 @@ export const RELAY_CHAIN_IDS: Readonly<Record<SwapNetwork, number>> = {
   polygon: 137,
   bnb: 56,
   robinhood: ROBINHOOD_CHAIN_ID,
+  /* Circle's Arc mainnet, `depositEnabled: true` in Relay's `/chains` (2026-10-15). */
+  arc: ARC_CHAIN_ID,
 };
 
 /**

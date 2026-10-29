@@ -8,6 +8,7 @@ import { Sheet } from '@/components/sheet'
 import { Txt } from '@/components/txt'
 import {
   handoffView,
+  isAnswerCard,
   isDraftCard,
   rynTurnView,
   turnLead,
@@ -39,7 +40,7 @@ function Sentences({
 }: {
   sentences: readonly SentenceView[]
   tone?: 'fg' | 'muted'
-  /** The numbers of the sources each sentence stands on — shown where the sources are. */
+  /** The numbers of the sources each sentence stands on — shown where the sources are (M27). */
   marks?: boolean
 }) {
   return (
@@ -127,7 +128,7 @@ function handoffTitle(view: HandoffView, copy: AgentCopy): string {
   }
 }
 
-/** How many of the answer's points stand at rest; the others, with the next steps, are under «Деталі». */
+/** How many of the answer's points stand at rest; the others, with the next steps, are under «Деталі» (M27). */
 const LEAD_AT_REST = 1
 
 /**
@@ -135,7 +136,7 @@ const LEAD_AT_REST = 1
  * or an honest *not enough data*, the answer's first point with the numbers
  * of the sources it stands on, a draft to act on and the doors. One tap deeper,
  * under «Деталі»: the rest of what is known, the figures Ryntra read and the
- * next steps; what could
+ * next steps (M27); what could
  * make it wrong, the risks and what to check; the sources with their times and
  * states. `emphasis` gives the
  * turn the screen's one orange action; without it every button is quiet.
@@ -146,12 +147,13 @@ export function RynTurn({ turn, context, emphasis = false }: { turn: AgentTurn; 
   const lead = emphasis ? turnLead(turn) : null
   const [deeperOpen, setDeeperOpen] = useState(false)
   const [sourcesOpen, setSourcesOpen] = useState(false)
-  // At rest the answer says its first point; the rest of what it knows and the next steps are one tap deeper.
+  // At rest the answer says its first point; the rest of what it knows and the next steps are one tap deeper (M27).
   const [allOpen, setAllOpen] = useState(false)
   const leadShown = allOpen ? view.lead : view.lead.slice(0, LEAD_AT_REST)
   // The figures Ryntra read (a market, a stock, the evidence) are the answer's grounds, one tap deeper; a draft — the
-  // place where the person acts — stays at rest.
-  const readCards = view.cards.filter((card) => !isDraftCard(card)).length
+  // place where the person acts — stays at rest (M27).
+  // News and «Що зрушило ціну?» are the answer itself: they stand at rest with the draft (ST-8, as the web shows them).
+  const readCards = view.cards.filter((card) => !isDraftCard(card) && !isAnswerCard(card)).length
   const folded = view.lead.length > LEAD_AT_REST || view.actions.length > 0 || readCards > 0
   // Two web pages can be one screen on the phone (Spot and the asset passport are both the asset): offered once.
   const handoffs = view.handoffs
@@ -184,10 +186,24 @@ export function RynTurn({ turn, context, emphasis = false }: { turn: AgentTurn; 
         </View>
       ) : null}
 
-      {leadShown.length > 0 ? <Sentences sentences={leadShown} marks={allOpen || !folded} /> : null}
+      {/* Open, the answer reads in its blocks, titled as on the web: what is known now, then what it means. */}
+      {allOpen && view.observation.length > 0 && view.meaning.length > 0 ? (
+        <View className="gap-4">
+          <View className="gap-1.5">
+            <SectionTitle>{copy.observation}</SectionTitle>
+            <Sentences sentences={view.observation} />
+          </View>
+          <View className="gap-1.5">
+            <SectionTitle>{copy.meaning}</SectionTitle>
+            <Sentences sentences={view.meaning} />
+          </View>
+        </View>
+      ) : leadShown.length > 0 ? (
+        <Sentences sentences={leadShown} marks={allOpen || !folded} />
+      ) : null}
 
       {view.cards.map((card, index) =>
-        allOpen || isDraftCard(card) ? (
+        allOpen || isDraftCard(card) || isAnswerCard(card) ? (
           <AgentCardView
             key={`${card.kind}-${index}`}
             card={card}

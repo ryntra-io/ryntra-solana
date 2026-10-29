@@ -222,8 +222,124 @@
 }
 
 .card[data-kind="comparison"],
-.card[data-kind="holdings"] {
+.card[data-kind="holdings"],
+.card[data-kind="news"],
+.card[data-kind="move"] {
   grid-column: 1 / -1;
+}
+
+/* ── AI-09: news and «What moved the price?» ───────────────────────── */
+
+.news {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: var(--ry-s3);
+}
+
+.newsItem {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+.newsTitle {
+  font-size: var(--ry-fs-dense);
+  line-height: 1.45;
+  color: var(--ry-text);
+  text-decoration: none;
+  overflow-wrap: anywhere;
+}
+
+.newsTitle:hover,
+.newsTitle:focus-visible {
+  text-decoration: underline;
+}
+
+.newsMeta {
+  font-family: var(--ry-font-mono);
+  font-size: var(--ry-fs-label-sm);
+  color: var(--ry-text-muted);
+}
+
+.newsNote {
+  margin: 0;
+  font-size: var(--ry-fs-label-sm);
+  line-height: 1.45;
+  color: var(--ry-text-muted);
+}
+
+.moveChange {
+  font-family: var(--ry-font-mono);
+  font-size: var(--ry-fs-value);
+  color: var(--ry-text);
+}
+
+.moveRows {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: var(--ry-s2);
+}
+
+.moveRow {
+  display: grid;
+  grid-template-columns: 7.5rem 1fr;
+  align-items: baseline;
+  gap: var(--ry-s3);
+  min-width: 0;
+}
+
+.mark {
+  justify-self: start;
+  padding: 1px 8px;
+  border: 1px solid color-mix(in srgb, currentColor 45%, transparent);
+  border-radius: var(--ry-r-pill);
+  font-size: var(--ry-fs-label-sm);
+  font-weight: 600;
+  line-height: 1.5;
+  white-space: nowrap;
+}
+
+.mark[data-mark="fact"] {
+  color: var(--ry-verified);
+}
+
+.mark[data-mark="unverified"] {
+  color: var(--ry-caution);
+}
+
+.mark[data-mark="inference"] {
+  color: var(--ry-info);
+}
+
+.mark[data-mark="unknown"] {
+  color: var(--ry-unknown);
+}
+
+.moveText {
+  min-width: 0;
+  font-size: var(--ry-fs-dense);
+  line-height: 1.5;
+  color: var(--ry-text);
+  overflow-wrap: anywhere;
+}
+
+.marksLegend {
+  font-size: var(--ry-fs-label-sm);
+  color: var(--ry-text-muted);
+}
+
+.marksLegend summary {
+  cursor: pointer;
+  width: fit-content;
+}
+
+.marksLegend p {
+  margin: var(--ry-s1) 0 0;
+  line-height: 1.5;
 }
 
 .cardHead {
@@ -296,6 +412,13 @@
   font-size: var(--ry-fs-value);
   color: var(--ry-text);
   overflow-wrap: anywhere;
+}
+
+/* A figure that is words, not a number («у верифікованому списку Jupiter»): the copy's size, broken between words only. */
+.value[data-words="true"] {
+  font-family: inherit;
+  font-size: var(--ry-fs-copy);
+  overflow-wrap: normal;
 }
 
 .figure[data-state="unavailable"] .value,
@@ -556,6 +679,133 @@
   gap: var(--ry-s2);
 }
 
+/* AI-06c: the microphone beside «Спитати» — a quiet square button; listening, it carries the brand's ring. */
+.composerActions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: var(--ry-s2);
+}
+
+.mic {
+  display: inline-grid;
+  place-items: center;
+  flex: 0 0 auto;
+  width: 40px;
+  height: 40px;
+  padding: 0;
+  border: 1px solid var(--ry-border-strong);
+  border-radius: 11px;
+  background: var(--ry-elevated);
+  color: var(--ry-text);
+  cursor: pointer;
+  transition:
+    border-color var(--rt-duration-fast) var(--rt-ease),
+    background var(--rt-duration-fast) var(--rt-ease);
+}
+
+.mic:hover {
+  border-color: var(--ry-accent);
+}
+
+.mic:focus-visible {
+  outline: 2px solid var(--ry-accent);
+  outline-offset: 1px;
+}
+
+.mic:disabled {
+  cursor: default;
+  opacity: 0.5;
+}
+
+.mic[aria-pressed="true"] {
+  border-color: var(--ry-accent);
+  background: var(--ry-brand-soft);
+  color: var(--ry-accent-fg);
+  animation: ryn-mic-ring 1.4s ease-out infinite;
+}
+
+@keyframes ryn-mic-ring {
+  0% {
+    box-shadow: 0 0 0 0 var(--ry-brand-line);
+  }
+  100% {
+    box-shadow: 0 0 0 8px transparent;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .mic[aria-pressed="true"] {
+    animation: none;
+    box-shadow: 0 0 0 3px var(--ry-brand-soft);
+  }
+}
+
+.voiceNote {
+  margin: 0;
+  padding-left: 4px;
+  font-size: var(--ry-fs-label);
+  line-height: 1.4;
+  color: var(--ry-text-muted);
+}
+
+/* A problem reads in the text's own colour, with weight: the caution orange is too pale for small text on Porcelain. */
+/* Not yet reached: the line keeps its place, unseen, so its appearing moves nothing. */
+.voiceQuiet {
+  visibility: hidden;
+}
+
+.voiceNote[data-problem] {
+  color: var(--ry-text);
+  font-weight: 500;
+}
+
+/* AI-08: a recording waiting to be heard — «Розпізнати · N» takes the field's primary button; letting it go is a quiet word in the line. */
+.voiceDiscard {
+  display: inline;
+  min-height: 0;
+  height: auto;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--ry-text);
+  font: inherit;
+  line-height: inherit;
+  text-decoration: underline;
+  text-decoration-color: var(--ry-border-strong);
+  text-underline-offset: 3px;
+  cursor: pointer;
+}
+
+.voiceDiscard:hover {
+  text-decoration-color: var(--ry-accent);
+}
+
+.voiceDiscard:focus-visible {
+  outline: 2px solid var(--ry-accent);
+  outline-offset: 2px;
+}
+
+/* AI-06c: a talk reads as a reply — paragraphs, no section titles — and its questions as buttons under it. */
+.talk {
+  display: grid;
+  gap: 8px;
+}
+
+.talk p {
+  margin: 0;
+  font-size: var(--ry-fs-copy);
+  line-height: 1.55;
+  color: var(--ry-text);
+  overflow-wrap: anywhere;
+}
+
+.talkAsks {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--ry-s2);
+}
+
 .input {
   width: 100%;
   min-height: 56px;
@@ -582,6 +832,149 @@
   color: var(--ry-text-muted);
 }
 
+/* ── AI-02: the day, the time, «Нова розмова», the conversations, the guest ── */
+
+.dayDivider {
+  display: flex;
+  align-items: center;
+  gap: var(--ry-s3);
+  margin: 0;
+  font-family: var(--ry-font-mono);
+  font-size: var(--ry-fs-label-sm);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ry-text-muted);
+}
+
+.dayDivider::before,
+.dayDivider::after {
+  content: "";
+  flex: 1;
+  height: 1px;
+  background: var(--ry-border);
+}
+
+.turnTime {
+  margin-left: auto;
+  font-family: var(--ry-font-mono);
+  font-size: var(--ry-fs-label-sm);
+  color: var(--ry-text-muted);
+}
+
+.toolbar {
+  position: relative;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: var(--ry-s2);
+}
+
+.toolbar :global(.rw-btn),
+.guestStrip :global(.rw-btn) {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.history {
+  display: inline-block;
+}
+
+.history > summary {
+  list-style: none;
+  cursor: pointer;
+}
+
+.history > summary::-webkit-details-marker {
+  display: none;
+}
+
+/* The list opens over the conversation, anchored to the toolbar's edge, so the buttons keep one row on a phone. */
+.historyBody {
+  position: absolute;
+  top: calc(100% + var(--ry-s2));
+  left: 0;
+  z-index: 5;
+  display: grid;
+  gap: var(--ry-s2);
+  padding: var(--ry-s3);
+  width: min(420px, 100%);
+  box-shadow: var(--ry-shadow-pop, 0 12px 32px rgb(0 0 0 / 0.28));
+  border: 1px solid var(--ry-border);
+  border-radius: var(--ry-r-card);
+  background: var(--ry-card);
+}
+
+.historyList {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 4px;
+}
+
+.historyRow {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: var(--ry-s2);
+  width: 100%;
+  min-height: 40px;
+  padding: 8px 10px;
+  border: 1px solid transparent;
+  border-radius: var(--ry-r-control, 10px);
+  background: transparent;
+  color: var(--ry-text);
+  font: inherit;
+  font-size: var(--ry-fs-dense);
+  text-align: left;
+  cursor: pointer;
+}
+
+.historyRow:hover:not(:disabled),
+.historyRow:focus-visible {
+  border-color: var(--ry-border-strong);
+  background: var(--ry-elevated);
+}
+
+.historyRow[data-current="true"] {
+  border-color: var(--ry-accent);
+  cursor: default;
+}
+
+.historyTitle {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.historyMeta {
+  font-family: var(--ry-font-mono);
+  font-size: var(--ry-fs-label-sm);
+  color: var(--ry-text-muted);
+  white-space: nowrap;
+}
+
+.guestStrip {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--ry-s2) var(--ry-s3);
+  padding: var(--ry-s3) var(--ry-s4);
+  border: 1px solid var(--ry-border);
+  border-radius: var(--ry-r-card);
+  background: var(--ry-card);
+}
+
+.guestLead {
+  margin: 0;
+  max-width: 60ch;
+  font-size: var(--ry-fs-dense);
+  line-height: 1.5;
+  color: var(--ry-muted);
+}
+
 .srOnly {
   position: absolute;
   width: 1px;
@@ -605,7 +998,1253 @@
     text-align: left;
   }
 
+  .moveRow {
+    grid-template-columns: 1fr;
+    gap: 4px;
+  }
+
   .turn {
     padding: var(--ry-s3);
   }
+}
+
+/* AI-10: «Ранковий огляд» — one fold under the toolbar; the summary says whether it is on and when. */
+.briefFold {
+  border: 1px solid var(--ry-border);
+  border-radius: var(--ry-r-card);
+  background: var(--ry-card);
+}
+
+.briefSummary {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--ry-s1) var(--ry-s2);
+  min-height: 44px;
+  padding: var(--ry-s2) var(--ry-s3);
+  list-style: none;
+  cursor: pointer;
+  color: var(--ry-text);
+}
+
+.briefSummary::-webkit-details-marker {
+  display: none;
+}
+
+.briefName {
+  font-weight: 600;
+}
+
+.briefStatus {
+  font-size: var(--ry-fs-label-sm);
+  color: var(--ry-text-muted);
+}
+
+.briefFold[data-enabled="on"] .briefStatus {
+  color: var(--ry-verified);
+}
+
+.briefBody {
+  display: grid;
+  gap: var(--ry-s3);
+  padding: 0 var(--ry-s3) var(--ry-s3);
+  min-width: 0;
+}
+
+.briefControls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--ry-s2) var(--ry-s4);
+}
+
+.briefSwitch,
+.briefTimeField {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--ry-s2);
+  min-height: 40px;
+  font-size: var(--ry-fs-dense);
+  color: var(--ry-text);
+}
+
+.briefSwitch input {
+  width: 18px;
+  height: 18px;
+  accent-color: var(--ry-accent, #ff681c);
+}
+
+.briefTimeField select {
+  min-height: 36px;
+  padding: 4px 8px;
+  border: 1px solid var(--ry-border);
+  border-radius: var(--ry-r-control, 8px);
+  background: var(--ry-surface, var(--ry-card));
+  color: var(--ry-text);
+  font: inherit;
+}
+
+.briefMeta {
+  margin: 0;
+  font-size: var(--ry-fs-label-sm);
+  line-height: 1.5;
+  color: var(--ry-text-muted);
+  overflow-wrap: anywhere;
+}
+
+.briefCard {
+  display: grid;
+  gap: var(--ry-s2);
+  min-width: 0;
+  padding-top: var(--ry-s2);
+  border-top: 1px solid var(--ry-border);
+}
+
+.briefHead {
+  margin: 0;
+  font-size: var(--ry-fs-dense);
+  font-weight: 600;
+  color: var(--ry-text);
+}
+
+.briefPart {
+  margin: 0 0 var(--ry-s1);
+  font-size: var(--ry-fs-label-sm);
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  color: var(--ry-text-muted);
+}
+
+.briefLines {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: var(--ry-s2);
+}
+
+.briefLine {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  align-items: start;
+  gap: var(--ry-s2);
+  min-width: 0;
+}
+
+.briefLine a {
+  color: inherit;
+  text-decoration: underline;
+  text-decoration-color: color-mix(in srgb, currentColor 35%, transparent);
+  text-underline-offset: 3px;
+}
+
+/* A line's claim in at most two lines on a phone; its source and time beneath, quiet. */
+.briefClaim {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+  font-size: var(--ry-fs-dense);
+  line-height: 1.5;
+  color: var(--ry-text);
+  overflow-wrap: anywhere;
+}
+
+.briefClaim > a,
+.briefClaim > :global(a) {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.briefSource {
+  font-size: var(--ry-fs-label-sm);
+  line-height: 1.4;
+  color: var(--ry-text-muted);
+}
+
+/* AI-04: credits — the welcome ask, the prices, the latest entries; inside the same fold as «Ранковий огляд». */
+.creditsWelcome {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--ry-s2) var(--ry-s3);
+  font-size: var(--ry-fs-label-sm);
+}
+
+.creditsPrices {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 200px), 1fr));
+  gap: var(--ry-s1) var(--ry-s4);
+  margin: 0;
+}
+
+.creditsPrice {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--ry-s2);
+  min-width: 0;
+  padding: 4px 0;
+  border-bottom: 1px solid var(--ry-border);
+  font-size: var(--ry-fs-dense);
+}
+
+.creditsPrice dt {
+  color: var(--ry-text-muted);
+}
+
+.creditsPrice dd {
+  margin: 0;
+  font-family: var(--ry-font-mono);
+  color: var(--ry-text);
+}
+
+.creditsEntries {
+  display: grid;
+  gap: var(--ry-s1);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.creditsEntry {
+  display: grid;
+  grid-template-columns: 1fr auto auto;
+  align-items: baseline;
+  gap: var(--ry-s3);
+  font-size: var(--ry-fs-dense);
+}
+
+.creditsAmount {
+  font-family: var(--ry-font-mono);
+  color: var(--ry-text);
+}
+
+.creditsAmount[data-sign="plus"] {
+  color: var(--ry-verified);
+}
+
+/*
+ * AI-06a: the one-column grids take the column's width, never their text's narrowest — with words that may break
+ * anywhere, an `auto` column sized the rows for a sliver of width, and in the side panel the sections of an answer
+ * stood apart with empty bands between them.
+ */
+.surface,
+.conversation,
+.turn,
+.answer,
+.section,
+.sentences {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+/* AI-12: buying credits — four packages, the order with its QR and the receipt. */
+.buyPackages {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 132px), 1fr));
+  gap: var(--ry-s2);
+}
+
+.buyPackage {
+  display: grid;
+  gap: 2px;
+  justify-items: start;
+  padding: var(--ry-s2) var(--ry-s3);
+  border: 1px solid var(--ry-border);
+  border-radius: var(--ry-r-btn-sm);
+  background: var(--ry-card);
+  color: var(--ry-text);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.buyPackage:hover:not(:disabled),
+.buyPackage[data-active="true"] {
+  border-color: var(--ry-accent);
+}
+
+.buyPackage:focus-visible {
+  outline: 2px solid var(--ry-accent);
+  outline-offset: 2px;
+}
+
+.buyPackage:disabled {
+  cursor: progress;
+  opacity: 0.7;
+}
+
+.buyPrice {
+  font-family: var(--ry-font-mono);
+  font-size: var(--ry-fs-value);
+  font-weight: 600;
+}
+
+.buyCredits {
+  font-size: var(--ry-fs-dense);
+  color: var(--ry-text-muted);
+}
+
+.buyBonus {
+  font-family: var(--ry-font-mono);
+  font-size: var(--ry-fs-label-sm);
+  color: var(--ry-verified);
+}
+
+.buyOrder {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: var(--ry-s3);
+  padding: var(--ry-s3);
+  border: 1px solid var(--ry-border);
+  border-radius: var(--ry-r-card);
+  background: var(--ry-elevated);
+}
+
+.buyQr {
+  flex: none;
+  width: 168px;
+  height: 168px;
+  padding: 6px;
+  border-radius: var(--ry-r-btn-sm);
+  background: #fff;
+}
+
+.buyOrderBody {
+  display: grid;
+  flex: 1 1 220px;
+  gap: var(--ry-s2);
+  justify-items: start;
+  min-width: 0;
+}
+
+.buyOrderBody > :global(.rw-btn) {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--ry-s1);
+}
+
+.buyOrderBody > details {
+  justify-self: stretch;
+}
+
+.buyOrderTitle {
+  margin: 0;
+  font-size: var(--ry-fs-copy);
+  font-weight: 600;
+  color: var(--ry-text);
+}
+
+.buyStatus {
+  margin: 0;
+  font-size: var(--ry-fs-dense);
+  color: var(--ry-text-muted);
+}
+
+.buyStatus[data-status="paid"] {
+  color: var(--ry-verified);
+}
+
+.buyStatus[data-status="underpaid"],
+.buyStatus[data-status="checking"] {
+  color: var(--ry-caution);
+}
+
+.buyPast {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--ry-text);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  text-decoration: underline;
+  text-decoration-color: var(--ry-border-strong);
+  text-underline-offset: 3px;
+}
+
+.buyReceipt {
+  display: grid;
+  gap: 0;
+  max-width: 560px;
+  margin: var(--ry-s1) 0 var(--ry-s2);
+}
+
+.buyReceipt > div {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 2px var(--ry-s3);
+  padding: 4px 0;
+  border-bottom: 1px solid var(--ry-border);
+  font-size: var(--ry-fs-dense);
+}
+
+.buyReceipt dt {
+  color: var(--ry-text-muted);
+}
+
+.buyReceipt dd {
+  margin: 0;
+  min-width: 0;
+  font-family: var(--ry-font-mono);
+  color: var(--ry-text);
+  overflow-wrap: anywhere;
+}
+
+.buyReceipt a {
+  color: inherit;
+  text-decoration: underline;
+  text-decoration-color: var(--ry-border-strong);
+  text-underline-offset: 3px;
+}
+
+/* On a phone the page itself is the wallet's way in; a code to scan with the same phone is no help. */
+@media (max-width: 640px) {
+  .buyQr,
+  .buyScanHint {
+    display: none;
+  }
+}
+
+/* ── AI-06b: the page — the balance, the tabs, one conversation in the middle ───────────────── */
+
+.page {
+  gap: var(--ry-s5);
+}
+
+.head {
+  align-items: center;
+}
+
+/* The balance: one large figure, what it comes to, the day's free questions, «Поповнити». */
+.meter {
+  display: grid;
+  grid-template-columns: auto auto auto;
+  align-items: center;
+  gap: var(--ry-s3) var(--ry-s5);
+  min-height: 80px;
+  padding: var(--ry-s3) var(--ry-s3) var(--ry-s3) var(--ry-s5);
+  border: 1px solid var(--ry-border);
+  border-radius: var(--ry-r-card);
+  background: var(--ry-card);
+  box-shadow: 0 1px 2px var(--ry-shadow-sm, rgb(0 0 0 / 0.2));
+}
+
+.meter[data-state="loading"] {
+  width: min(100%, 440px);
+}
+
+.meter[data-state="guest"] {
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  gap: var(--ry-s3) var(--ry-s4);
+  max-width: 560px;
+  padding-left: var(--ry-s4);
+}
+
+.meterFigure {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+}
+
+.meterBalance {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  margin: 0;
+}
+
+/* The hero figure in Geist with tabular digits: in a monospace face the group space takes a whole cell and «2 000» reads as two numbers. */
+.meterNumber {
+  font-family: var(--ry-font-sans);
+  font-size: 32px;
+  font-weight: 600;
+  line-height: 1;
+  letter-spacing: -0.02em;
+  font-variant-numeric: tabular-nums;
+  color: var(--ry-text);
+}
+
+.meterUnit {
+  font-size: var(--ry-fs-copy);
+  font-weight: 500;
+  color: var(--ry-muted);
+}
+
+.meterLine {
+  margin: 0;
+  font-size: var(--ry-fs-dense);
+  line-height: 1.4;
+  color: var(--ry-muted);
+}
+
+.meterFree {
+  display: grid;
+  gap: 8px;
+  align-self: stretch;
+  align-content: center;
+  padding-left: var(--ry-s5);
+  border-left: 1px solid var(--ry-border);
+}
+
+/* The day's free questions as small steps: lit while left, quiet once asked. Neutral — orange is for actions. */
+.meterSteps {
+  display: flex;
+  gap: 3px;
+}
+
+.meterSteps span {
+  width: 12px;
+  height: 4px;
+  border-radius: 2px;
+  background: var(--ry-border-strong);
+}
+
+.meterSteps span[data-on="true"] {
+  background: var(--ry-text);
+  opacity: 0.78;
+}
+
+.meterAction {
+  justify-self: end;
+}
+
+.meterAction:global(.rw-btn) {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.meterIcon {
+  display: inline-grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  border: 1px solid var(--ry-border);
+  border-radius: 12px;
+  background: var(--ry-elevated);
+  color: var(--ry-text);
+}
+
+.meterBody {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+.meterGuestTitle {
+  margin: 0;
+  font-size: var(--ry-fs-copy);
+  font-weight: 600;
+  color: var(--ry-text);
+}
+
+/* The tabs: the conversation, the morning brief, the credits — one row, the chosen one underlined in the brand. */
+.tabBar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--ry-s2) var(--ry-s3);
+  border-bottom: 1px solid var(--ry-border);
+}
+
+.tabs {
+  display: flex;
+  gap: var(--ry-s1);
+  min-width: 0;
+  margin-bottom: -1px;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.tabs::-webkit-scrollbar {
+  display: none;
+}
+
+.tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  height: 46px;
+  padding: 0 var(--ry-s3);
+  border: 0;
+  border-bottom: 2px solid transparent;
+  background: none;
+  color: var(--ry-muted);
+  font: inherit;
+  font-size: var(--ry-fs-copy);
+  font-weight: 500;
+  white-space: nowrap;
+  cursor: pointer;
+  transition:
+    color 160ms ease-out,
+    border-color 160ms ease-out;
+}
+
+.tab:hover {
+  color: var(--ry-text);
+}
+
+.tab[aria-selected="true"] {
+  color: var(--ry-text);
+  border-bottom-color: var(--ry-accent);
+}
+
+.tab[aria-selected="true"] svg {
+  color: var(--ry-accent);
+}
+
+.tab:focus-visible {
+  outline: var(--ryntra-focus-outline, 2px solid #ff681c);
+  outline-offset: -4px;
+  border-radius: 8px;
+}
+
+.tabNote {
+  padding: 2px 7px;
+  border-radius: var(--ry-r-pill);
+  background: var(--ry-elevated);
+  font-family: var(--ry-font-mono);
+  font-size: var(--ry-fs-label-sm);
+  color: var(--ry-text-muted);
+}
+
+.chatTools,
+.chatBar {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: var(--ry-s1);
+}
+
+.chatTools .historyBody {
+  left: auto;
+  right: 0;
+  width: min(380px, calc(100vw - 2 * var(--ry-s4)));
+}
+
+.chatBar {
+  justify-content: flex-end;
+}
+
+.barButton {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 34px;
+  padding: 0 10px;
+  border: 1px solid transparent;
+  border-radius: var(--ry-r-btn-sm);
+  background: transparent;
+  color: var(--ry-muted);
+  font: inherit;
+  font-size: var(--ry-fs-dense);
+  font-weight: 500;
+  cursor: pointer;
+  transition:
+    color 160ms ease-out,
+    background-color 160ms ease-out;
+}
+
+.barButton:hover:not(:disabled),
+.history[open] > .barButton {
+  color: var(--ry-text);
+  background: var(--ry-hover);
+}
+
+.barButton:focus-visible {
+  outline: var(--ryntra-focus-outline, 2px solid #ff681c);
+  outline-offset: 1px;
+}
+
+.barButton:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+
+/* One conversation in the middle of the page, at a reading width; the tabs' panels the same width. */
+.chat,
+.tabPanel {
+  display: grid;
+  gap: var(--ry-s4);
+  width: 100%;
+  max-width: 820px; /* width-law: a conversation at a reading measure, centred; the balance and the tabs keep the canvas width */
+  min-width: 0;
+  margin-inline: auto;
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.chat[hidden],
+.tabPanel[hidden] {
+  display: none;
+}
+
+/* A new conversation: one question in large type, one line, the questions to start with. */
+.empty {
+  display: grid;
+  justify-items: center;
+  gap: var(--ry-s2);
+  padding: 48px 0 var(--ry-s5);
+  text-align: center;
+}
+
+.emptyMark {
+  display: inline-grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  margin-bottom: var(--ry-s2);
+  border: 1px solid var(--ry-border);
+  border-radius: 14px;
+  background: var(--ry-elevated);
+  color: var(--ry-text);
+}
+
+.emptyTitle {
+  margin: 0;
+  font-size: clamp(1.5rem, 3vw, 2rem);
+  font-weight: 600;
+  line-height: 1.15;
+  letter-spacing: -0.02em;
+  color: var(--ry-text);
+  text-wrap: balance;
+}
+
+.emptyLine {
+  margin: 0;
+  max-width: 52ch;
+  font-size: var(--ry-fs-copy);
+  line-height: 1.5;
+  color: var(--ry-muted);
+}
+
+.starters {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--ry-s2);
+  width: 100%;
+  max-width: 680px;
+  margin: var(--ry-s5) 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.starter {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--ry-s3);
+  width: 100%;
+  min-height: 52px;
+  padding: 12px 14px 12px 16px;
+  border: 1px solid var(--ry-border);
+  border-radius: 12px;
+  background: var(--ry-card);
+  color: var(--ry-text);
+  font: inherit;
+  font-size: var(--ry-fs-copy);
+  text-align: left;
+  cursor: pointer;
+  transition:
+    border-color 160ms ease-out,
+    background-color 160ms ease-out;
+}
+
+.starter svg {
+  flex: none;
+  color: var(--ry-text-muted);
+  transition:
+    color 160ms ease-out,
+    transform 160ms ease-out;
+}
+
+.starter:hover:not(:disabled) {
+  border-color: var(--ry-border-strong);
+  background: var(--ry-hover);
+}
+
+.starter:hover:not(:disabled) svg {
+  color: var(--ry-accent);
+  transform: translate(1px, -1px);
+}
+
+.starter:focus-visible {
+  outline: var(--ryntra-focus-outline, 2px solid #ff681c);
+  outline-offset: 2px;
+}
+
+.starter:disabled {
+  opacity: 0.6;
+  cursor: progress;
+}
+
+/* The composer stays at the foot of the conversation while it scrolls. */
+.dock {
+  position: sticky;
+  bottom: 0;
+  z-index: 2;
+  display: grid;
+  gap: var(--ry-s2);
+  padding: var(--ry-s3) 0;
+  background: linear-gradient(to top, var(--ry-bg) calc(100% - var(--ry-s3)), transparent);
+}
+
+.dock .context {
+  justify-self: start;
+  margin: 0;
+}
+
+.composer[data-page] {
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: end;
+  padding: 8px 8px 8px 6px;
+  border: 1px solid var(--ry-border-strong);
+  border-radius: 16px;
+  background: var(--ry-card);
+  box-shadow: 0 6px 20px var(--ry-shadow-sm, rgb(0 0 0 / 0.18));
+  transition:
+    border-color 160ms ease-out,
+    box-shadow 160ms ease-out;
+}
+
+.composer[data-page]:focus-within {
+  border-color: var(--ry-brand-line);
+  box-shadow:
+    0 0 0 3px var(--ry-brand-soft),
+    0 6px 20px var(--ry-shadow-sm, rgb(0 0 0 / 0.18));
+}
+
+.composer[data-page] .input {
+  min-height: 48px;
+  max-height: 220px;
+  padding: 8px 10px;
+  border: 0;
+  background: transparent;
+  resize: none;
+}
+
+.composer[data-page] .input:focus-visible {
+  outline: none;
+}
+
+.composer[data-page] :global(.rw-btn) {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border-radius: 11px;
+}
+
+/* Nothing to ask yet: a quiet button, not a second pale orange one beside «Поповнити». */
+.composer[data-page] :global(.rw-btn--primary):disabled {
+  border-color: var(--ry-border);
+  background: var(--ry-elevated);
+  color: var(--ry-text-muted);
+  box-shadow: none;
+}
+
+/* The packages fill the tab's width: four in a row on a desk, two on a phone. */
+.panelBody .buyPackages {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.panelBody .buyBonus {
+  color: var(--ry-text-muted);
+}
+
+.dock .budget {
+  padding-left: 4px;
+  font-family: var(--ry-font-sans);
+  font-size: var(--ry-fs-label);
+}
+
+/* The brief's and the credits' tabs: a title with its state, then the parts parted by a line, not boxed. */
+.panelBody {
+  display: grid;
+  gap: var(--ry-s4);
+  padding-top: var(--ry-s2);
+  min-width: 0;
+}
+
+.panelLead {
+  margin: 0;
+  max-width: 68ch;
+  font-size: var(--ry-fs-copy);
+  line-height: 1.5;
+  color: var(--ry-muted);
+}
+
+.panelRate {
+  margin-left: 6px;
+  padding: 2px 8px;
+  border-radius: var(--ry-r-pill);
+  background: var(--ry-elevated);
+  font-family: var(--ry-font-mono);
+  font-size: var(--ry-fs-label-sm);
+  color: var(--ry-text);
+  white-space: nowrap;
+}
+
+/* The parts' names read as headings of the tab, not as small print. */
+.panelBody .briefPart {
+  margin-bottom: var(--ry-s2);
+  font-size: var(--ry-fs-copy);
+  font-weight: 600;
+  letter-spacing: 0;
+  text-transform: none;
+  color: var(--ry-text);
+}
+
+/* «Надсилати щоранку» as a switch: the product's control, not the browser's square. */
+.panelBody .briefSwitch input {
+  position: relative;
+  flex: none;
+  width: 36px;
+  height: 20px;
+  margin: 0;
+  border-radius: var(--ry-r-pill);
+  background: var(--ry-border-strong);
+  appearance: none;
+  cursor: pointer;
+  transition: background-color 160ms ease-out;
+}
+
+.panelBody .briefSwitch input::before {
+  content: "";
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: var(--ry-text);
+  box-shadow: 0 1px 2px rgb(0 0 0 / 0.3);
+  transition: transform 180ms ease-out;
+}
+
+.panelBody .briefSwitch input:checked {
+  background: var(--ry-accent);
+}
+
+.panelBody .briefSwitch input:checked::before {
+  background: var(--ryntra-on-brand, #080d13);
+  transform: translateX(16px);
+}
+
+.panelBody .briefSwitch input:focus-visible {
+  outline: var(--ryntra-focus-outline, 2px solid #ff681c);
+  outline-offset: 2px;
+}
+
+.panelBody .briefSwitch input:disabled {
+  opacity: 0.6;
+  cursor: progress;
+}
+
+.panelBody .briefBody {
+  gap: var(--ry-s4);
+  padding: 0;
+}
+
+.panelBody .briefBody > .section + .section,
+.panelBody .briefBody > .briefCard {
+  padding-top: var(--ry-s4);
+  border-top: 1px solid var(--ry-border);
+}
+
+/* AI-06c: the conversation's end is brought into view with room for the sticky field below it — the newest reply is never under the field. */
+.conversationEnd {
+  scroll-margin-bottom: 200px;
+}
+
+/* Below a desk the bottom bar is fixed over the page's foot (frame.css): the composer sticks above it, not under it. */
+@media (max-width: 1023px) {
+  .dock {
+    bottom: calc(var(--sol-phonebar-h, 65px) + env(safe-area-inset-bottom, 0px));
+  }
+
+  .conversationEnd {
+    scroll-margin-bottom: calc(200px + var(--sol-phonebar-h, 65px) + env(safe-area-inset-bottom, 0px));
+  }
+}
+
+@media (max-width: 760px) {
+  .head {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .meter,
+  .meter[data-state="guest"] {
+    grid-template-columns: minmax(0, 1fr) auto;
+    max-width: none;
+    padding: var(--ry-s3) var(--ry-s3) var(--ry-s3) var(--ry-s4);
+  }
+
+  .meter[data-state="guest"] {
+    grid-template-columns: auto minmax(0, 1fr);
+  }
+
+  .meter[data-state="guest"] .meterAction {
+    grid-column: 1 / -1;
+    justify-self: stretch;
+  }
+
+  .meter[data-state="guest"] .meterAction > summary {
+    display: flex;
+    justify-content: center;
+  }
+
+  .meter[data-state="loading"] {
+    width: 100%;
+  }
+
+  .meterNumber {
+    font-size: 28px;
+  }
+
+  .meterFree {
+    grid-column: 1 / -1;
+    grid-row: 2;
+    padding: var(--ry-s3) 0 0;
+    border-left: 0;
+    border-top: 1px solid var(--ry-border);
+  }
+
+  .meter[data-state="ready"] .meterAction {
+    grid-column: 2;
+    grid-row: 1;
+  }
+
+  .tab {
+    padding: 0 var(--ry-s2);
+  }
+
+  .tab .tabNote {
+    display: none;
+  }
+
+  /* AI-06: the tabs on a phone's page share the row by their words (AI-20: six — «Доручення» is the longest), none cut;
+     a row that cannot hold them scrolls rather than clipping a word. */
+  .surface[data-page] .tabs {
+    flex: 1 1 auto;
+    gap: 0;
+  }
+
+  .surface[data-page] .tab {
+    flex: 1 0 auto;
+    flex-direction: column;
+    justify-content: center;
+    gap: 2px;
+    min-width: 0;
+    height: 52px;
+    padding: 0 2px;
+    font-size: var(--ry-fs-label-sm);
+  }
+
+  .surface[data-page] .tab > span:not(.tabNote) {
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .chatTools {
+    width: 100%;
+    justify-content: flex-end;
+    padding-bottom: var(--ry-s1);
+  }
+
+  .empty {
+    padding-top: var(--ry-s5);
+  }
+
+
+  .starters {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .panelBody .buyPackages {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 640px) {
+  .composer[data-page] {
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+}
+
+/* ── AI-06: one surface for the panel and the page — five tabs, «Що бачить Ryntra», «Знайомство» ───────────────── */
+
+/*
+ * The side panel's tabs: six in a column of 420 px, and of 390 on a phone — the glyph above its word, each tab as wide
+ * as its word with the rest shared out (AI-20), the bar held at the top of the panel while its body scrolls.
+ */
+.surface[data-compact] {
+  gap: var(--ry-s3);
+}
+
+.surface[data-compact] .tabBar {
+  position: sticky;
+  top: calc(-1 * var(--ry-s3));
+  z-index: 3;
+  margin: calc(-1 * var(--ry-s3)) calc(-1 * var(--ry-s4)) 0;
+  padding: 0 var(--ry-s2);
+  background: var(--ry-card);
+}
+
+.surface[data-compact] .tabs {
+  flex: 1 1 auto;
+  gap: 0;
+}
+
+.surface[data-compact] .tab {
+  position: relative;
+  flex: 1 0 auto;
+  flex-direction: column;
+  justify-content: center;
+  gap: 2px;
+  min-width: 0;
+  height: 52px;
+  padding: 0 2px;
+  font-size: var(--ry-fs-label-sm);
+}
+
+.surface[data-compact] .tab > span:not(.tabNote) {
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* The count of watches on: a small figure on the glyph's corner, not a pill beside a word. */
+.surface[data-compact] .tabNote {
+  position: absolute;
+  top: 5px;
+  left: calc(50% + 6px);
+  padding: 0 5px;
+  font-size: 10px;
+  line-height: 16px;
+}
+
+.surface[data-compact] .chat,
+.surface[data-compact] .tabPanel {
+  gap: var(--ry-s3);
+}
+
+/* The panel's card is the dock's ground: the field's fade comes from the panel, not the page under it. */
+.surface[data-compact] .dock {
+  padding: var(--ry-s2) 0 0;
+  background: linear-gradient(to top, var(--ry-card) calc(100% - var(--ry-s3)), transparent);
+}
+
+/* «Що бачить Ryntra»: a quiet fold beside the field — what this page shows it, the wallet it reads, what it never does. */
+.sees {
+  justify-self: start;
+  max-width: 100%;
+  font-size: var(--ry-fs-label-sm);
+  color: var(--ry-text-muted);
+}
+
+.seesSummary {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px var(--ry-s2);
+  min-height: 32px;
+  list-style: none;
+  cursor: pointer;
+  border-radius: var(--ry-r-btn-sm);
+}
+
+.seesSummary::-webkit-details-marker {
+  display: none;
+}
+
+.seesSummary:hover {
+  color: var(--ry-text);
+}
+
+.seesSummary:focus-visible,
+.seesChange:focus-visible {
+  outline: var(--ryntra-focus-outline, 2px solid #ff681c);
+  outline-offset: 2px;
+}
+
+.seesSummary .context {
+  font-size: var(--ry-fs-label-sm);
+}
+
+.sees[open] .seesSummary {
+  color: var(--ry-text);
+}
+
+.seesList {
+  display: grid;
+  gap: 6px;
+  margin: var(--ry-s1) 0 var(--ry-s1);
+  padding: var(--ry-s2) var(--ry-s3);
+  border: 1px solid var(--ry-border);
+  border-radius: var(--ry-r-btn-sm);
+  background: var(--ry-elevated);
+  list-style: none;
+  line-height: 1.45;
+  color: var(--ry-text);
+}
+
+.seesChange {
+  display: inline;
+  min-height: 0;
+  height: auto;
+  padding: 0;
+  line-height: inherit;
+  border: 0;
+  background: none;
+  color: var(--ry-text);
+  font: inherit;
+  text-decoration: underline;
+  text-decoration-color: var(--ry-border-strong);
+  text-underline-offset: 3px;
+  cursor: pointer;
+}
+
+/* A guest who pressed «Стежити» or «План»: the wallet is the step, said first. */
+.guestStrip[data-wants] {
+  border-color: var(--ry-brand-line, var(--ry-border-strong));
+}
+
+/* A wallet connected but not confirmed: the person's own tab says what it holds and asks for the one signature. */
+.lockedCard {
+  display: grid;
+  gap: var(--ry-s3);
+  justify-items: start;
+  padding: var(--ry-s5);
+  border: 1px solid var(--ry-border);
+  border-radius: var(--ry-r-card);
+  background: var(--ry-card);
+}
+
+.lockedTitle {
+  margin: 0;
+  font-size: var(--ry-fs-body, 15px);
+  font-weight: 600;
+  color: var(--ry-text);
+}
+
+.lockedLine {
+  margin: 0;
+  font-size: var(--ry-fs-dense);
+  line-height: 1.5;
+  color: var(--ry-text-muted);
+}
+
+/* AI-08: a recording waiting to be heard — the field keeps its width, and the microphone and «Розпізнати · N» stand under it. */
+.composer[data-waiting],
+.composer[data-page][data-waiting] {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.composer[data-waiting] .composerActions {
+  justify-content: flex-end;
 }

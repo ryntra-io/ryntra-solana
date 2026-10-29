@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import {decodeWalletCollection,holdingValue,holdingSymbol,shownRaw,usdValue,usdValueIn,walletValue} from "./wallet-view-model.ts";
+import {decodeWalletCollection,holdingValue,holdingSymbol,shownRaw,usdValue,usdValueIn,walletValue,usdcFigure,USDC_MINT} from "./wallet-view-model.ts";
 
 test("failed and malformed reads cannot become empty wallets",()=>{
   for(const payload of [null,{error:{code:"UNAVAILABLE"}},{data:{}},{data:{holdings:[{amountRaw:"oops",decimals:6}]}}]) assert.throws(()=>decodeWalletCollection(true,payload,"holdings"),/READ_FAILED/);
@@ -45,7 +45,7 @@ test("every ledger lane passes the activity read, and an unknown one costs a row
   /* This has now happened twice on production. The first RECEIVE row — a paid
      payment request — failed the whole wallet read on 2026-09-07, and the fix
      added one string to the copy of the lane list this decoder carried. On
-     2026-09-08 the first CROSS_SWAP row did it again, minutes after
+     2026-09-08 the founder's first CROSS_SWAP row did it again, minutes after
      the swap had settled correctly on both chains. So the list is imported,
      every lane in it is asserted here, and a lane from some future build is
      dropped with the read marked incomplete instead of throwing. */
@@ -70,4 +70,12 @@ test("a sum reads the same on Home and in Portfolio, in the reader's language",(
   assert.equal(usdValueIn(1_234_560_000n,"uk"),"$1 234,56");
   assert.equal(usdValueIn(5_000n,"uk"),"<$0,01");
   assert.equal(usdValueIn(0n,"uk"),"$0,00");
+});
+
+test("the header's USDC: two decimals in the reader's grouping, never rounded up, from any decimals", () => {
+  assert.equal(usdcFigure(1_240_509_999n, 6, "en"), "1,240.50");
+  assert.equal(usdcFigure(1_240_509_999n, 6, "uk"), "1 240,50");
+  assert.equal(usdcFigure(0n, 6, "en"), "0.00");
+  assert.equal(usdcFigure(5n, 1, "en"), "0.50");
+  assert.equal(USDC_MINT, "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v");
 });

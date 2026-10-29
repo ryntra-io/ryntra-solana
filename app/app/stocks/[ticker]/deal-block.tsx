@@ -1,6 +1,7 @@
 "use client";
 
 import { ArrowDown, ArrowRight } from "@phosphor-icons/react";
+import { Button } from "@ryntra/core/ui";
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 
@@ -158,7 +159,8 @@ export function DealBlock({
         const body = (await response.json()) as StockComparison | { error?: { message?: string } };
         if (!live) return;
         if (response.ok && "rows" in body) setState({ status: "ready", comparison: body, reason: null });
-        else setState({ status: "failed", comparison: null, reason: "error" in body && body.error?.message ? body.error.message : word("quoteUnavailable") });
+        /* The server's message is for the log; the person reads the card's own words. */
+        else setState({ status: "failed", comparison: null, reason: word("quoteUnavailable") });
       })
       .catch(() => {
         if (live) setState({ status: "failed", comparison: null, reason: word("quoteUnavailable") });
@@ -181,9 +183,10 @@ export function DealBlock({
   const submitCustom = () => {
     const value = parseDecimalInput(custom);
     if (value !== null && value >= 1) {
-      const whole = Math.round(value);
-      setUsd(whole);
-      setCustom(String(whole));
+      /* The sum as typed, to the cent, within what one estimate covers ($1 000 000). */
+      const cents = Math.min(1_000_000, Math.round(value * 100) / 100);
+      setUsd(cents);
+      setCustom(new Intl.NumberFormat(numberLocale, { maximumFractionDigits: 2, useGrouping: false }).format(cents));
       setChosen(true);
     }
   };
@@ -201,18 +204,19 @@ export function DealBlock({
         </div>
         <div className={styles.cardBody}>
           <div className={styles.sides} role="group" aria-label={word("market")}>
-            <button type="button" className={styles.side} data-side="buy" aria-pressed={side === "buy"} onClick={() => setSide("buy")}>
+            {/* Which side the comparison counts: the page's own ticket buys and sells, this block only compares. */}
+            <Button variant={side === "buy" ? "secondary" : "ghost"} data-side="buy" aria-pressed={side === "buy"} onClick={() => setSide("buy")} lang={locale === "uk" ? "uk" : "en"}>
               {word("buy")}
-            </button>
-            <button type="button" className={styles.side} data-side="sell" aria-pressed={side === "sell"} onClick={() => setSide("sell")}>
+            </Button>
+            <Button variant={side === "sell" ? "secondary" : "ghost"} data-side="sell" aria-pressed={side === "sell"} onClick={() => setSide("sell")} lang={locale === "uk" ? "uk" : "en"}>
               {word("sell")}
-            </button>
+            </Button>
           </div>
           <div className={styles.presets} role="group" aria-label={word("quoteForAmount")}>
             {STOCK_QUOTE_PRESETS_USD.map((preset) => (
-              <button key={preset} type="button" className={styles.preset} aria-pressed={usd === preset} onClick={() => pick(preset)}>
+              <Button key={preset} variant={usd === preset ? "secondary" : "ghost"} aria-pressed={usd === preset} onClick={() => pick(preset)} lang={locale === "uk" ? "uk" : "en"}>
                 ${preset.toLocaleString("en-US")}
-              </button>
+              </Button>
             ))}
           </div>
           <form
@@ -225,9 +229,9 @@ export function DealBlock({
             <label className={styles.search}>
               <input value={custom} onChange={(event) => setCustom(event.target.value)} inputMode="decimal" placeholder={word("yourAmount")} aria-label={word("yourAmount")} />
             </label>
-            <button type="submit" className="rw-btn">
+            <Button type="submit" variant="secondary" lang={locale === "uk" ? "uk" : "en"}>
               {word("quote")}
-            </button>
+            </Button>
           </form>
           {side === "buy" && tradable && !quiet ? <LossLimitPresets value={limit} onChange={setLimit} locale={locale} /> : null}
           {state.status === "failed" ? (
@@ -237,7 +241,7 @@ export function DealBlock({
           ) : null}
           {state.status === "ready" && anchor && !quote ? (
             <p className={styles.quoteStatus} data-kind="failed" role="status">
-              {anchor.failure?.code === "NO_ROUTE" ? word("noRouteAtSize") : anchor.failure?.code === "LIFECYCLE" ? `${word("notPurchasable")} — ${anchor.failure.reason}` : anchor.failure?.code === "PROVIDER" ? word("venueRefused") : word("quoteUnavailable")}
+              {anchor.failure?.code === "NO_ROUTE" ? word("noRouteAtSize") : anchor.failure?.code === "LIFECYCLE" ? word("notPurchasable") : anchor.failure?.code === "PROVIDER" ? word("venueRefused") : word("quoteUnavailable")}
             </p>
           ) : null}
           {state.status === "loading" && !quote ? <div className={`${styles.bone} ${styles.quoteBone}`} aria-busy="true" /> : null}
@@ -248,14 +252,16 @@ export function DealBlock({
           ) : (
             <div className={styles.quoteActions}>
               {side === "buy" && !tradable ? null : (
-                <Link id={quiet ? undefined : BUY_REVIEW_ID} className={quiet ? "rw-btn" : "rw-btn rw-btn--primary"} href={reviewHref} prefetch={false}>
-                  <span>{side === "buy" ? word("reviewPurchase") : word("reviewSale")}</span>
-                  <ArrowRight size={16} weight="bold" aria-hidden="true" />
+                <Link id={quiet ? undefined : BUY_REVIEW_ID} className={quiet ? "ryntra-button ryntra-button--secondary" : "ryntra-button ryntra-button--primary"} href={reviewHref} prefetch={false}>
+                  <span className="ryntra-button__label">
+                    {side === "buy" ? word("reviewPurchase") : word("reviewSale")}
+                    <ArrowRight size={16} weight="bold" aria-hidden="true" />
+                  </span>
                 </Link>
               )}
               {side === "buy" && tradable ? (
-                <Link className="rw-btn" href={planHref} prefetch={false}>
-                  {word("planThisPurchase")}
+                <Link className="ryntra-button ryntra-button--secondary" href={planHref} prefetch={false}>
+                  <span className="ryntra-button__label">{word("planThisPurchase")}</span>
                 </Link>
               ) : null}
             </div>
@@ -545,12 +551,12 @@ function RepresentationRow({ row, compared, amountLabel, batchAt, locale }: { ro
       </td>
       <td>
         <span className={styles.rowActions}>
-          <Link className="rw-btn rw-btn--sm" href={planHref} prefetch={false}>
-            {word("plan")}
+          <Link className="ryntra-button ryntra-button--secondary" href={planHref} prefetch={false}>
+            <span className="ryntra-button__label">{word("plan")}</span>
           </Link>
           {/* Quiet: the screen's one orange action is the buy card's own. */}
-          <Link className="rw-btn rw-btn--sm" href={spotHref} prefetch={false}>
-            {word("trade")}
+          <Link className="ryntra-button ryntra-button--secondary" href={spotHref} prefetch={false}>
+            <span className="ryntra-button__label">{word("trade")}</span>
           </Link>
         </span>
       </td>

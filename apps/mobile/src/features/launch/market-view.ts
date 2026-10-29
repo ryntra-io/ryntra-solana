@@ -3,7 +3,7 @@
  * 1.36.0): a state's tone and its words, a rule's sentence, depth, holders,
  * concentration, the creator's lock, Ryntra's ladder and executor — the
  * web's own (`app/app/launch/market-view.ts`, `markets-board.tsx`,
- * `market-health.tsx` in the web app). A figure the server did not read is
+ * `market-health.tsx` on the web line). A figure the server did not read is
  * `null` and said «Не прочитано»; a budget not accounted is «Ще не рахуємо»;
  * neither is ever drawn as zero. Pure: the screens and the tests read it.
  */
@@ -100,6 +100,14 @@ export function pairMoney(raw: string, pair: Pair, locale: Locale): string {
     const cent = locale === 'uk' ? '0,01' : '0.01'
     return pair.dollar ? `< $${cent}` : `< ${cent} ${pair.symbol}`
   }
+  // Under a hundred, money with cents keeps both of them: «$3,90», never «$3,9»; a whole sum stays «$90».
+  if (value > 0 && value < 100 && Math.round(value * 100) % 100 !== 0) {
+    const text = new Intl.NumberFormat(locale === 'uk' ? 'uk-UA' : 'en-US', {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    }).format(value)
+    return pair.dollar ? `$${text}` : `${text} ${pair.symbol}`
+  }
   return formatMoneyShort(value, locale, pair.dollar, pair.symbol)
 }
 
@@ -161,6 +169,24 @@ export function stateLine(
   // On the DEX the card's own line says the pool and its lock: its sentence names neither a program nor a lock.
   if (CARD_SENTENCE.has(state.code)) return word(`stateCard_${state.code}` as LaunchWordKey)
   return word(`stateHint_${state.code}` as LaunchWordKey)
+}
+
+/**
+ * The states that are Ryntra's own steps on its ladder — funded, placed, moved — not a state a person trades in: on the
+ * market's card they are said as the ladder's outcome (`ladderLine`), and how it works stands behind its «?».
+ */
+export const LADDER_STATES: ReadonlySet<LaunchMarketCycleState> = new Set([
+  'ENDOWMENT_FUNDED',
+  'LADDER_ACTIVE',
+  'MAINTAINING',
+])
+
+/** What stands behind the ladder's «?» on the card: how it is funded and acts, and when Ryntra last moved it. */
+export function ladderHelp(health: Health, word: LaunchWord, locale: Locale, now: number): string[] {
+  const lines = [word('ladderHelp')]
+  if (health.state.code === 'MAINTAINING' && health.state.since)
+    lines.push(word('stateLine_MAINTAINING', { ago: sinceText(health.state.since, word, locale, now) }))
+  return lines
 }
 
 /** The states whose web sentence names the pool's program or its lock — the card says them in its own words. */
@@ -306,6 +332,24 @@ export function holdersView(count: number | null, atLeast: boolean): HoldersView
   return atLeast ? { kind: 'uncounted' } : { kind: 'notRead' }
 }
 
+/**
+ * Holders over $1 as a list row says them. A bare zero the market itself
+ * contradicts — its curve moved, it trades on the DEX, it traded in the last
+ * day or its creator sold, so some wallet holds it — was not counted: said
+ * «—», never «0». A zero beside none of these stays a figure.
+ */
+export function rowHoldersView(
+  row: Pick<LaunchMarketRow, 'holders' | 'holdersAtLeast' | 'progress' | 'traded24h' | 'creatorSold'>,
+): HoldersView {
+  const view = holdersView(row.holders, row.holdersAtLeast)
+  if (view.kind !== 'count' || view.count !== 0 || view.atLeast) return view
+  const held =
+    (row.progress !== null && (row.progress.migrated || row.progress.bps > 0)) ||
+    row.traded24h === true ||
+    row.creatorSold === true
+  return held ? { kind: 'uncounted' } : view
+}
+
 /** The list's depth at −5 %: a full curve takes no sale; null is not read, never zero. */
 export type DepthView =
   Readonly<{ kind: 'curveFull' }> | Readonly<{ kind: 'notRead' }> | Readonly<{ kind: 'raw'; raw: string }>
@@ -323,6 +367,49 @@ export function curveFull(
   if (venue !== 'curve') return false
   if (state !== null && FULL_CURVE.has(state as LaunchMarketCycleState)) return true
   return progress !== null && !progress.migrated && progress.bps >= 10_000
+}
+
+/**
+ * A card's one status — what a person needs from the list: can it be traded
+ * now. A full curve takes no trade until it reaches the DEX («moving»), a
+ * move that stalled says so; otherwise it trades, on its curve or its pool
+ * — whatever Ryntra's ladder is doing there, which the market's page says.
+ * Not read is not read, never a guess.
+ */
+export type TradeStatus = 'trading' | 'moving' | 'stalled' | 'notRead'
+
+export function rowTradeStatus(row: Pick<LaunchMarketRow, 'state' | 'venue' | 'progress'>): TradeStatus {
+  const code = row.state?.code ?? null
+  if (code === 'MIGRATION_FAILED') return 'stalled'
+  if (code !== null && FULL_CURVE.has(code)) return 'moving'
+  if (curveFull(row.venue, code, row.progress)) return 'moving'
+  if (row.progress !== null || row.venue !== null) return 'trading'
+  // Without the chain's read, a stage the server names still says it trades — a pause alone does not say where.
+  if (code !== null && code !== 'PAUSED_RISK' && knownState(code)) return 'trading'
+  return 'notRead'
+}
+
+/** The same one status from a market's page: its health's stage and venue, the market's own way to the DEX. */
+export function healthTradeStatus(
+  health: Pick<Health, 'state' | 'venue'>,
+  progress: Readonly<{ bps: number; migrated: boolean }> | null,
+): TradeStatus {
+  return rowTradeStatus({ state: health.state, venue: health.venue, progress })
+}
+
+/**
+ * The same one status from the creator's cabinet (Home's «Мої ринки»), which
+ * carries only the way to the DEX: on the curve, full, or on the DEX.
+ */
+export function cabinetTradeStatus(
+  row: Readonly<{ progressBps: number | null; migrated: boolean | null }>,
+): TradeStatus {
+  if (row.progressBps === null || row.migrated === null) return row.migrated === true ? 'trading' : 'notRead'
+  return rowTradeStatus({
+    state: null,
+    venue: row.migrated ? 'pool' : 'curve',
+    progress: { bps: row.progressBps, migrated: row.migrated },
+  })
 }
 
 export function rowDepth(row: LaunchMarketRow): DepthView {
@@ -703,4 +790,48 @@ export function poolAddressOf(
 export function headerSince(health: Health, word: LaunchWord, locale: Locale, now: number): string | null {
   if (!health.state.since || !knownState(health.state.code) || health.state.code === 'MAINTAINING') return null
   return sinceShort(health.state.since, word, locale, now)
+}
+
+/**
+ * What the creator's lock is measured against, as a share of the supply (rounded down): the amount locked when the
+ * receipt carries it; else the first buy's cap — a lock holds the first buy, never more than its cap. Null when the
+ * receipt carries neither.
+ */
+export function lockBoundBps(
+  receipt: Readonly<{
+    creatorLock?: Readonly<{ lockedRaw: string }> | null
+    creatorFirstBuy: Readonly<{ capRaw: string }> | null
+    token2022: Readonly<{ supplyRaw: string }>
+  }> | null,
+): Readonly<{ bps: number; exact: boolean }> | null {
+  if (!receipt) return null
+  const supply = BigInt(receipt.token2022.supplyRaw)
+  if (supply <= 0n) return null
+  const locked = receipt.creatorLock?.lockedRaw ?? null
+  const raw = locked ?? receipt.creatorFirstBuy?.capRaw ?? null
+  if (raw === null) return null
+  return { bps: Number((BigInt(raw) * 10_000n) / supply), exact: locked !== null }
+}
+
+/** The lock's row says what it holds: the creator's first buy, with its share of the supply only when the receipt carries the amount. */
+export function lockedWhatLine(
+  bound: Readonly<{ bps: number; exact: boolean }> | null,
+  word: LaunchWord,
+  locale: Locale,
+) {
+  return bound?.exact ? word('lockedWhatPct', { pct: pct(bound.bps, locale) }) : word('lockedWhat')
+}
+
+/**
+ * The creator holds more than their lock can hold — that part is free to sell, said beside the lock so the promise is
+ * not read as covering it. «Bought more after launch» only when the chart shows more than one buy of the creator's; else
+ * the plain fact. A basis point of rounding apart says nothing; without the market's read or the lock's bound, nothing.
+ */
+export function creatorFreeLine(
+  args: Readonly<{ creatorBps: number | null; bound: Readonly<{ bps: number }> | null; creatorBuys: number }>,
+  word: LaunchWord,
+): string | null {
+  if (args.creatorBps === null || args.bound === null) return null
+  if (args.creatorBps <= args.bound.bps + 1) return null
+  return word(args.creatorBuys > 1 ? 'creatorBoughtMore' : 'creatorHoldsMore')
 }

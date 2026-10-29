@@ -15,18 +15,18 @@
       }
     ]
   },
-  "contentHash": "0x76f0362977f78c88338745bbd23a6bb61d1629598d2c6608a004172142496f99",
+  "contentHash": "0xf17e969ba076b794509963363f117f76c19c04eb7dd17bc8b7d946b7b95ac9a6",
   "issuer": {
     "status": "SIGNED",
     "algorithm": "Ed25519",
-    "keyId": "ryntra-issuer-21082e64945d2ba6",
-    "publicKey": "MCowBQYDK2VwAyEAvJVbaFq/zHWKz9lC3hGbm6lXd5UMyss4IpVGTL5Rpzc=",
-    "signature": "lKf672ZrkfN4vRMPamPt644lIbaAO8GMrsUsLX7uSip2EPbZwlcLYTHFfhdedsdwG4IjPqjykEY6ycH8yJzaCw==",
+    "keyId": "ryntra-issuer-48bb4a5323cfee42",
+    "publicKey": "MCowBQYDK2VwAyEAitX8KkT/IH1xcvrwdZ2KaZg7njd3P6EB9a3sgDU3LsQ=",
+    "signature": "P5JW/1/SourAMWYqLMjU9pI3Pkh/YywQfPFTbzie/uRCY1qx1tVH+ED28ec4TvZoKQPfEZN4Wziz7HCwAAzfBg==",
     "signedAt": "2026-08-17T09:00:00.000Z"
   },
   "integrity": {
     "algorithm": "SHA-256",
-    "hash": "0x24c628549861b1047ad990db7e499bef28361a943ef6ddd0cce4dba0dad70dac"
+    "hash": "0x6fdf1b227559d31d5059f9c65337f8c0f70e0235545f04cd02f09e51e347e1b5"
   },
   "kind": "OUTCOME_RECEIPT",
   "maturity": "OBSERVED",
@@ -37,7 +37,7 @@
     "transactionHash": "0xbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
     "observedEffects": [
       {
-        "description": "Job 526 exists on chain with the expected job type.",
+        "description": "Job 7 exists on chain with the expected job type.",
         "sourceRef": "eip155:97:contract:getJob",
         "observedAt": "2026-08-17T09:00:00.000Z"
       }
@@ -46,6 +46,6 @@
   },
   "limitations": [
     "OUTCOME RECEIPT — AN OBSERVATION, NOT AN INSTRUCTION",
-    "Ryntra observed and reconciled this outcome; it did not sign, submit, fund or execute it."
+    "Ryntra observed and reconciled this outcome. The wallet supplied any required signature; submission responsibility is stated by the receipt's bound action path."
   ]
 }

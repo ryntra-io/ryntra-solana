@@ -1,0 +1,187 @@
+/*
+ * The assistant's side panel (AI-06a): a column at the right under the
+ * header. On a desk of 1280 px or more the page steps aside for it, so the
+ * chart and the ticket stay whole; on a narrower desk it lies over the
+ * page's right edge; on a phone it is a sheet over the page under the
+ * header. Both themes through the tokens.
+ */
+
+.panel {
+  position: fixed;
+  top: var(--ryntra-size-header, 56px);
+  right: 0;
+  bottom: 0;
+  z-index: 50;
+  display: grid;
+  grid-template-rows: auto auto minmax(0, 1fr);
+  width: min(420px, 100vw);
+  border-left: 1px solid var(--ry-border);
+  background: var(--ry-card);
+  box-shadow: var(--ry-shadow-md);
+  color: var(--ry-text);
+}
+
+.head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--ry-s3);
+  padding: var(--ry-s3) var(--ry-s3) 0 var(--ry-s4);
+}
+
+.title {
+  margin: 0;
+  font-family: var(--ry-font-sans);
+  font-size: var(--ry-fs-value);
+  line-height: var(--ry-lh-tight);
+  letter-spacing: var(--ry-ls-head);
+}
+
+.headEnd {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--ry-s1);
+}
+
+.full {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 8px;
+  border-radius: var(--ry-r-btn-sm);
+  font-size: var(--ry-fs-label);
+  color: var(--ry-text-muted);
+}
+
+.full:hover,
+.full:focus-visible {
+  color: var(--ry-text);
+  background: var(--ry-elevated);
+}
+
+.close {
+  display: inline-grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  border: 0;
+  border-radius: var(--ry-r-btn-sm);
+  background: transparent;
+  color: var(--ry-text-muted);
+  cursor: pointer;
+}
+
+.close:hover,
+.close:focus-visible {
+  color: var(--ry-text);
+  background: var(--ry-elevated);
+}
+
+.lead {
+  margin: var(--ry-s1) var(--ry-s4) var(--ry-s3);
+  font-size: var(--ry-fs-label);
+  line-height: 1.45;
+  color: var(--ry-text-muted);
+}
+
+/* The conversation scrolls inside the panel; the page under it keeps its own place. */
+.body {
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: 0 var(--ry-s4) var(--ry-s4);
+  border-top: 1px solid var(--ry-border);
+  padding-top: var(--ry-s3);
+}
+
+/* A phone: the whole width under the header, over the bottom bar. */
+@media (max-width: 767px) {
+  .panel {
+    width: 100vw;
+    border-left: 0;
+    box-shadow: none;
+  }
+
+  /* The words leave the line; the link keeps its name (`aria-label`). */
+  .full span {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .panel {
+    animation: enter 160ms ease-out;
+  }
+
+  @keyframes enter {
+    from {
+      opacity: 0;
+      transform: translateX(12px);
+    }
+  }
+}
+
+/*
+ * AI-06b: the credits on the header's button — a quiet figure after «Ryntra» on a desk, a small orange count on the
+ * corner of the round button on a phone. Geist Mono, tabular: it is a number, read at a glance.
+ */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  height: 20px;
+  padding: 0 7px;
+  border: 1px solid var(--ry-border);
+  border-radius: var(--ry-r-pill);
+  background: var(--ry-elevated);
+  color: var(--ry-text);
+  font-family: var(--ry-font-sans);
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.srOnly {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+@media (max-width: 767px) {
+  :global(.ryntra-header__assistant):has(.badge) {
+    position: relative;
+    overflow: visible;
+  }
+
+  .badge {
+    position: absolute;
+    top: -5px;
+    right: -6px;
+    height: 16px;
+    padding: 0 4px;
+    border-color: var(--ry-bg);
+    background: var(--ry-accent);
+    color: var(--ryntra-on-brand, #080d13);
+    font-size: 10px;
+  }
+
+  .badgeFull {
+    display: none;
+  }
+}
+
+@media (min-width: 768px) {
+  .badgeShort {
+    display: none;
+  }
+}

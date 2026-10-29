@@ -58,6 +58,13 @@
  *   the account, where the partner's claims of the configs' fees may land too.
  *   After graduation the pool no longer names the config, and this account is
  *   how a trade of a graduated launch is Ryntra's.
+ * - **Perps builder** — Ryntra's builder on Phoenix's Flight, the builder-code
+ *   proxy every Perps order of Ryntra's goes through: the builder's address,
+ *   which each routed order names, and its Phoenix trader account, where Flight
+ *   moves the builder's fee as collateral inside the order. A counter adds the
+ *   fee Flight logs for an order that names both — never a credit to the
+ *   trader account, which is not a token account: Phoenix keeps its collateral
+ *   inside its own program.
  * - **Micro and the demo market** — their configs name the executor as the
  *   partner's fee claimer, not the vault: the executor takes the migration fee,
  *   the partner's share of the surplus and of the trading fees and the fees of
@@ -100,7 +107,7 @@ export const ATTRIBUTION_REGISTRY_VERSION = "1.0.0";
 export const REGISTRY_NETWORKS = [...NETWORK_IDS, "relay"] as const;
 export type RegistryNetwork = NetworkId | "relay";
 
-export const REGISTRY_ROLES = ["FEE", "PAYOUT_CASHBACK", "PAYOUT_FRIENDS", "PAYOUT_INTEGRATORS", "PAYOUT_REWARDS", "TREASURY", "LAUNCH_CONFIG", "LAUNCH_FEE_CLAIMER", "LAUNCH_POOL_PAYER", "LAUNCH_EXECUTOR", "LAUNCH_REFERRAL", "LAUNCH_REVENUE"] as const;
+export const REGISTRY_ROLES = ["FEE", "PAYOUT_CASHBACK", "PAYOUT_FRIENDS", "PAYOUT_INTEGRATORS", "PAYOUT_REWARDS", "TREASURY", "LAUNCH_CONFIG", "LAUNCH_FEE_CLAIMER", "LAUNCH_POOL_PAYER", "LAUNCH_EXECUTOR", "LAUNCH_REFERRAL", "LAUNCH_REVENUE", "PERPS_BUILDER"] as const;
 export type RegistryRole = (typeof REGISTRY_ROLES)[number];
 
 /** How the identity exists on its network. */
@@ -127,6 +134,10 @@ export const REGISTRY_KINDS = [
   "LAUNCH_EXECUTOR",
   /** Meteora's referral account in a launch's trades: the partner's vault's token account in the pair currency. */
   "METEORA_REFERRAL_TOKEN_ACCOUNT",
+  /** A builder registered with Phoenix's Flight; the orders routed through it name it. */
+  "PHOENIX_FLIGHT_BUILDER",
+  /** The builder's Phoenix trader account, where Flight moves the builder's fee as collateral. */
+  "PHOENIX_BUILDER_TRADER_ACCOUNT",
 ] as const;
 export type RegistryKind = (typeof REGISTRY_KINDS)[number];
 
@@ -243,13 +254,18 @@ export const ATTRIBUTION_REGISTRY: readonly RegistryEntry[] = Object.freeze([
   place("solana-payout-cashback", "PAYOUT_CASHBACK", "PAYOUT_WALLET", EVERY_FEE_PRODUCT, "SUPPLY_SIDE"),
   place("solana-payout-friends", "PAYOUT_FRIENDS", "PAYOUT_WALLET", EVERY_FEE_PRODUCT, "SUPPLY_SIDE"),
   place("solana-payout-integrators", "PAYOUT_INTEGRATORS", "PAYOUT_WALLET", ["api"], "SUPPLY_SIDE"),
-  place("solana-payout-rewards", "PAYOUT_REWARDS", "PAYOUT_WALLET", EVERY_FEE_PRODUCT, "SUPPLY_SIDE"),
+  /* The rewards treasury (`RYNTRA_REWARDS_TREASURY_SOLANA`): cashback, friends and, since Ріст GR-09, the creator
+     partners' share of launch pools are paid from it. Never published. */
+  { ...place("solana-payout-rewards", "PAYOUT_REWARDS", "PAYOUT_WALLET", [...EVERY_FEE_PRODUCT, "launch"], "SUPPLY_SIDE"), address: "CnYqvXcX7BaEKRB5AMbq5GkvQvNBdKPpvZRsdjJXiHr4" },
   place("solana-treasury", "TREASURY", "TREASURY_WALLET", [], "NONE"),
   /* Created on mainnet 2026-10-05, the creator's share 40 %; the fee claimer is vault 0 of the partner's Squads multisig
      4qFxfhdHoJvRtSyfmx8ZnCH8k8Cvb6WicPDaYYnsECLM. Two earlier configs with a 25 % share (8C7rCu7t…, J1HDwCmm…) were never
      used by Ryntra and are not Ryntra Launch's. */
   { ...place("solana-launch-config-classic", "LAUNCH_CONFIG", "DBC_CONFIG", ["launch"], "FEES"), address: "B6gheJ5PL6tpE9V3vQGYA8wLqe3pcFh1fgKf4aPxZh1G" },
   { ...place("solana-launch-config-protected", "LAUNCH_CONFIG", "DBC_CONFIG", ["launch"], "FEES"), address: "33KU1WNMVAXLBuGF1EQAHqWFnrsDevofJnw4VAamiK2G" },
+  /* «Спільнота» on JUP (SOL-L5), signed on mainnet 2026-10-20 at JUP $0.316: its curve in JUP,
+     the same multisig's vault 0 its fee claimer; read back from the chain whole — 167 fields as the rehearsal's. */
+  { ...place("solana-launch-config-community-jup", "LAUNCH_CONFIG", "DBC_CONFIG", ["launch"], "FEES"), mint: "JUPyiwrYJFskUPiHa7hkeR8VUtAeFoSYbKedZNsDvCN", address: "6PmbsMGNeFifnshbBYn2MC5mNhxexzfqVQceGJ2bv9qC" },
   { ...place("solana-launch-fee-claimer", "LAUNCH_FEE_CLAIMER", "DBC_FEE_CLAIMER", ["launch"], "NONE"), address: "22BZNVD9FuZPQvGwALBwhopSyxUCTuNNeTW1Lr1KsSvA" },
   /* Created 2026-10-06 for this job alone; its key is held outside this repository, and a launch pays it back in its own transaction. */
   { ...place("solana-launch-pool-payer", "LAUNCH_POOL_PAYER", "LAUNCH_POOL_PAYER", ["launch"], "NONE"), address: "H2Bzv5pcrEGug1STGbZhvX98DGb3SCFa4pnAtUwktyyV" },
@@ -263,15 +279,20 @@ export const ATTRIBUTION_REGISTRY: readonly RegistryEntry[] = Object.freeze([
   /* Ryntra's revenue from Micro: three quarters of the partner's trading and position fees, on the executor's wallet outside
      the markets' budgets until the operator moves it to the multisig. */
   { ...place("solana-launch-revenue-micro", "LAUNCH_REVENUE", "LAUNCH_EXECUTOR", ["launch"], "NONE"), parent: "solana-launch-executor", address: "J7zLmXSewhb1kcqwpL4SKpKfivivwn6wmSHwSg6H4JeU" },
-  /* Meteora's referral in a launch's trades: the partner's vault's USDC account, which every trade through Ryntra — and the
-     creator's first purchase — names as its referral since 2026-10-08. Counted by the swap event's referral fee, never by
-     its credits. */
+  /* Meteora's referral in a launch's trades: the partner's vault's USDC account, which every trade through Ryntra names as
+     its referral since 2026-10-08 — never the creator's first purchase, which goes without one so the program grants it
+     the minimum fee. Counted by the swap event's referral fee, never by its credits. */
   {
     ...place("solana-launch-referral-usdc", "LAUNCH_REFERRAL", "METEORA_REFERRAL_TOKEN_ACCOUNT", ["launch"], "FEES"),
     parent: "solana-launch-fee-claimer",
     mint: USDC,
     address: "4kVogGhWqheXKjteM2urywUS5L8q7AnSNJCYDna4VrDy",
   },
+  /* Ryntra's builder on Phoenix's Flight, registered by the operator on mainnet 2026-10-22 at 2 bps (B6b): a new account for
+     this job alone, its key held outside this repository. Flight takes the fee from the taker part of an order routed
+     through it — post-only orders stay Phoenix's own and pay none — and moves it into the builder's trader account. */
+  { ...place("solana-perps-builder", "PERPS_BUILDER", "PHOENIX_FLIGHT_BUILDER", ["perps"], "FEES"), address: "AAsopcXAB2WzeaTtCfuPS7nanGod8EefReaeVQCSopyN" },
+  { ...place("solana-perps-builder-trader", "PERPS_BUILDER", "PHOENIX_BUILDER_TRADER_ACCOUNT", ["perps"], "FEES"), parent: "solana-perps-builder", address: "4e2gmdF9VF4dLJB6DiLKmEfnYSJJMiDY8vUriroj6nqB" },
 ]);
 
 /* ------------------------------------------------------------ validation */
@@ -336,6 +357,8 @@ export function validateRegistry(rows: readonly RegistryEntry[] = ATTRIBUTION_RE
                     ? row.kind === "METEORA_REFERRAL_TOKEN_ACCOUNT" && row.countedAs === "FEES"
                     : row.role === "LAUNCH_REVENUE"
                       ? row.kind === "LAUNCH_EXECUTOR" && row.countedAs === "NONE"
+                      : row.role === "PERPS_BUILDER"
+                        ? (row.kind === "PHOENIX_FLIGHT_BUILDER" || row.kind === "PHOENIX_BUILDER_TRADER_ACCOUNT") && row.countedAs === "FEES"
                     : row.kind === "PAYOUT_WALLET" && row.countedAs === "SUPPLY_SIDE";
     if (!roleFits) problems.push(`${row.id}: the role, the kind and how it is counted disagree`);
     if (row.role !== "TREASURY" && row.products.length === 0) problems.push(`${row.id}: names no product`);
@@ -352,6 +375,9 @@ export function validateRegistry(rows: readonly RegistryEntry[] = ATTRIBUTION_RE
       if (executor?.role !== "LAUNCH_EXECUTOR") problems.push(`${row.id}: Ryntra's revenue from Micro sits on the executor's wallet`);
       else if (row.address !== null && row.address !== executor.address) problems.push(`${row.id}: Ryntra's revenue from Micro is the executor's own address`);
     }
+    /* A builder's trader account names its builder; a builder stands on its own. */
+    if (row.kind === "PHOENIX_BUILDER_TRADER_ACCOUNT" && rows.find((other) => other.id === row.parent)?.kind !== "PHOENIX_FLIGHT_BUILDER") problems.push(`${row.id}: a builder's trader account names its builder`);
+    if (row.kind === "PHOENIX_FLIGHT_BUILDER" && row.parent !== null) problems.push(`${row.id}: a builder names no parent`);
   }
   /* One open fee wallet for each product (one wallet may serve several), one payout wallet per kind, one treasury. */
   for (const product of FEE_WALLET_PRODUCTS) {
@@ -367,6 +393,7 @@ export function validateRegistry(rows: readonly RegistryEntry[] = ATTRIBUTION_RE
     if (rows.filter((row) => row.role === role && row.network === "solana" && row.end === null).length > 1) problems.push(`${role}: more than one open row`);
   }
   for (const row of rows) if (row.role.startsWith("LAUNCH_") && (row.products.length !== 1 || row.products[0] !== "launch")) problems.push(`${row.id}: a launch identity serves Ryntra Launch alone`);
+  for (const row of rows) if (row.role === "PERPS_BUILDER" && (row.products.length !== 1 || row.products[0] !== "perps")) problems.push(`${row.id}: the builder serves Perps alone`);
   return problems;
 }
 

@@ -11,8 +11,9 @@ import { SOLANA_MODULES, localizedSolanaModules } from "../hub/modules.ts";
 
 test("Solana uses the one workspace locale cookie and has exact core EN/UA copy", () => {
   assert.equal(WORKSPACE_LOCALE_COOKIE, "ryntra_hub_locale");
-  assert.equal(translateSolana("uk", "Bridge"), "Міст");
-  assert.equal(translateSolana("uk", "Review bridge"), "Перевірити міст");
+  /* One name for the work — «Між мережами», the menu's word — never «Міст» (B18). */
+  assert.equal(translateSolana("uk", "Bridge"), "Між мережами");
+  assert.equal(translateSolana("uk", "Review bridge"), "Перевірити переказ між мережами");
   assert.equal(translateSolana("uk", "Mainnet · read only"), "Мейннет · лише читання");
   assert.equal(translateSolana("en", "Bridge"), "Bridge");
   assert.throws(() => translateSolana("uk", "__missing_translation__"), /missing/i);

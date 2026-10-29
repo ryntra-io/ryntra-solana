@@ -1,0 +1,58 @@
+{
+  "name": "@ryntra/market-weather",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Honest live Solana market data for apps and games: a data contract where every signal carries its source and time, needs minimum liquidity and two agreeing reads, and says «data delayed» when late; read-only Jupiter and Meteora (DLMM, DAMM v2, DBC graduation) adapters; issuer-power badges; and a one-file city embed for the web and a phone's WebView.",
+  "keywords": [
+    "solana",
+    "market-data",
+    "jupiter",
+    "meteora",
+    "dlmm",
+    "damm-v2",
+    "dbc",
+    "token-2022",
+    "webview",
+    "seeker",
+    "read-only"
+  ],
+  "license": "Apache-2.0",
+  "author": "Dmytro Plavutskyi",
+  "homepage": "https://ryntra.io",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ryntra-io/ryntra.git",
+    "directory": "packages/market-weather"
+  },
+  "engines": {
+    "node": ">=22.18"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "exports": {
+    ".": "./src/index.ts",
+    "./embed": "./src/embed/index.ts",
+    "./market-weather-city.js": "./dist/market-weather-city.js"
+  },
+  "types": "./src/index.ts",
+  "sideEffects": [
+    "./src/embed/index.ts",
+    "./dist/market-weather-city.js"
+  ],
+  "files": [
+    "src",
+    "dist",
+    "fixtures",
+    "examples",
+    "scripts",
+    "README.md",
+    "LICENSE",
+    "NOTICE"
+  ],
+  "scripts": {
+    "build": "node --disable-warning=ExperimentalWarning scripts/build.mjs",
+    "test": "node --test test/*.test.mjs"
+  }
+}

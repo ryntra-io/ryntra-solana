@@ -1,6 +1,9 @@
 import { PLAN_ID, RULE_ID, type ExecutionPlanBinding, type RuleBinding } from "@/lib/api/v1/contract";
 import { isSpotView, type SpotView } from "@/lib/spot/markets";
 import { quickSum } from "@/lib/spot/quick-trade";
+import { getGuardRuntime } from "@/lib/guard/runtime";
+import { launchNetwork } from "@/lib/launch/config.server";
+import { launchRecordedHere } from "@/lib/launch/recorded.server";
 
 import { solanaServerText } from "../i18n/server.ts";
 import { SpotWorkspace } from "./spot-workspace.tsx";
@@ -47,13 +50,28 @@ export default async function SpotPage({ searchParams }: { searchParams: Promise
   const dueMs = params.due ? Date.parse(params.due) : Number.NaN;
   const rule: RuleBinding | null = mint && params.rule && RULE_ID.test(params.rule) && Number.isFinite(dueMs) ? { ruleId: params.rule, dueAt: new Date(dueMs).toISOString() } : null;
   const quickUsd = mint && params.buy ? quickSum(params.buy) : null;
-  const { text } = await solanaServerText();
+  /* A token launched on Ryntra: its launch page is its own, and the header leads there — one read of Ryntra's record,
+     never the chain, beside the page's words and cut off after a moment: Spot never waits on the store for a line. */
+  const [launched, { text }] = await Promise.all([mint ? launchedHere(mint) : false, solanaServerText()]);
   /* The section's tab «Спот» above already names the page; the title stays for a screen reader and gives its
      line on a laptop to the chart. */
   return (
     <>
       <h1 className="sr-only">{text("Spot")}</h1>
-      <SpotWorkspace initialMint={mint} initialView={view} initialPlan={plan} initialSide={side} initialAmount={amount} initialRule={rule} initialQuickUsd={side === "SELL" ? null : quickUsd} />
+      <SpotWorkspace initialMint={mint} initialView={view} initialPlan={plan} initialSide={side} initialAmount={amount} initialRule={rule} initialQuickUsd={side === "SELL" ? null : quickUsd} launchMint={launched ? mint : null} />
     </>
   );
+}
+
+const LAUNCH_READ_MS = 300;
+
+async function launchedHere(mint: string): Promise<boolean> {
+  try {
+    const network = launchNetwork();
+    if (!network) return false;
+    const read = launchRecordedHere(getGuardRuntime().store, network.cluster, mint).catch(() => false);
+    return await Promise.race([read, new Promise<boolean>((resolve) => setTimeout(() => resolve(false), LAUNCH_READ_MS))]);
+  } catch {
+    return false;
+  }
 }

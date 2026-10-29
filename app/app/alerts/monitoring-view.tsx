@@ -1,5 +1,6 @@
 "use client";
 
+import { Page } from "@ryntra/core/ui";
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 
@@ -22,6 +23,7 @@ import type { QuietHours } from "@/lib/monitoring/quiet-hours";
 
 import styles from "./monitoring.module.css";
 import watchStyles from "@/app/app/invest/watch.module.css";
+import { ensureWalletActs, walletFact } from "@/lib/account/wallet-proof-store.client";
 
 type MonitorStatus = "watching" | "needs_attention" | "paused" | "unavailable";
 
@@ -117,7 +119,8 @@ export function MonitoringPanel({ locale }: { locale: Locale }) {
   }, [proven, load, fixture]);
 
   async function markRead(id: string) {
-    await fetch("/api/monitoring", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ read: id }) });
+    /* A read mark is a write; on a link alone it stays on this screen rather than asking the wallet to sign for it. */
+    if (walletFact().provenVia !== "link") await fetch("/api/monitoring", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ read: id }) });
     setSurface((current) =>
       current
         ? { ...current, recent: current.recent.map((row) => (row.id === id ? { ...row, unread: false } : row)), unread: Math.max(0, current.unread - 1) }
@@ -127,6 +130,7 @@ export function MonitoringPanel({ locale }: { locale: Locale }) {
 
   async function savePrefs(patch: Partial<Preferences>) {
     const quietHours = patch.quietHours === undefined ? surface?.preferences.quietHours ?? null : patch.quietHours;
+    if (!(await ensureWalletActs())) return;
     await fetch("/api/monitoring", {
       method: "POST",
       headers: { "content-type": "application/json" },
@@ -140,53 +144,43 @@ export function MonitoringPanel({ locale }: { locale: Locale }) {
   }
 
   async function revoke(deviceId: string) {
-    await fetch(`/api/v1/notifications/devices/${encodeURIComponent(deviceId)}`, { method: "DELETE", headers: { "X-Ryntra-API": "1" } });
+    if (!(await ensureWalletActs())) return;
+    const response = await fetch(`/api/v1/notifications/devices/${encodeURIComponent(deviceId)}`, { method: "DELETE", headers: { "X-Ryntra-API": "1" } }).catch(() => null);
+    if (!response?.ok) return;
     setDevices((rows) => rows.filter((row) => row.deviceId !== deviceId));
   }
 
   if (!address && !fixture) {
     return (
-      <div className={styles.page}>
-        <header className={styles.head}>
-          <h1>{w.title}</h1>
-          <p className={styles.lead}>{w.lead}</p>
-        </header>
+      <Page kind="action" className={styles.page} title={w.title} help={w.lead} lang={locale}>
         <div className={styles.gate}>
           <p className={styles.title}>{w.connect}</p>
           <p className={styles.meta}>{w.noWallet}</p>
           <WalletChoices single="button" />
         </div>
-      </div>
+      </Page>
     );
   }
 
   if (!proven) {
     return (
-      <div className={styles.page}>
-        <header className={styles.head}>
-          <h1>{w.title}</h1>
-          <p className={styles.lead}>{w.lead}</p>
-        </header>
+      <Page kind="action" className={styles.page} title={w.title} help={w.lead} lang={locale}>
         <div className={styles.gate}>
           <p className={styles.empty}>{w.confirm}</p>
           <button type="button" className="rw-btn rw-btn--primary" onClick={() => void proof.prove()} disabled={proof.state.status === "signing"}>
             {w.confirmWallet}
           </button>
         </div>
-      </div>
+      </Page>
     );
   }
 
   if (state === "failed") {
     return (
-      <div className={styles.page}>
-        <header className={styles.head}>
-          <h1>{w.title}</h1>
-          <p className={styles.lead}>{w.lead}</p>
-        </header>
+      <Page kind="action" className={styles.page} title={w.title} help={w.lead} lang={locale}>
         <p className={styles.empty}>{w.couldNotLoad}</p>
         <button type="button" className={styles.ghost} onClick={() => void load()}>{w.tryAgain}</button>
-      </div>
+      </Page>
     );
   }
 
@@ -207,11 +201,7 @@ export function MonitoringPanel({ locale }: { locale: Locale }) {
   const primaryNote = attention.length === 0 && !actNow ? ((recent.find((row) => row.unread && noteActs(row) && row.ruleState !== "deferred") ?? recent.find((row) => row.unread && noteActs(row)))?.id ?? null) : null;
 
   return (
-    <div className={styles.page}>
-      <header className={styles.head}>
-        <h1>{w.title}</h1>
-        <p className={styles.lead}>{w.lead}</p>
-      </header>
+    <Page kind="action" className={styles.page} title={w.title} help={w.lead} lang={locale}>
 
       {state === "loading" && !surface ? <p className={styles.empty} aria-busy="true">{w.loading}</p> : null}
 
@@ -256,8 +246,8 @@ export function MonitoringPanel({ locale }: { locale: Locale }) {
                   {/* The note's actions in one row, wrapping on a phone: its own, then «Спитати Ryntra», then «Позначити прочитаним». */}
                   <div className={styles.noteActions}>
                     {noteActs(row) ? <Link className={row.id === primaryNote ? "rw-btn rw-btn--primary" : "rw-btn"} href={row.href}>{row.cta}</Link> : null}
-                    {/* Why this note, in Ryntra's words — the exact record, the finding, the market now. Autoinvest's notes and an issuer's event say why themselves: the rule's day or fall came, the budget is spent, the issuer's deadline nears. */}
-                    {row.subject?.kind === "autoinvest-rule" || row.subject?.kind === "autoinvest-budget" || row.subject?.kind === "issuer-event" ? null : (
+                    {/* Why this note, in Ryntra's words — the exact record, the finding, the market now. Autoinvest's notes, an issuer's event and a limit order's note say why themselves: the rule's day or fall came, the budget is spent, the issuer's deadline nears, the order filled or its receipt is ready. */}
+                    {row.subject?.kind === "autoinvest-rule" || row.subject?.kind === "autoinvest-budget" || row.subject?.kind === "issuer-event" || row.subject?.kind === "limit-order" || row.subject?.kind === "assistant-brief" || row.subject?.kind === "launch-creator" || row.subject?.kind === "token-watch" || row.subject?.kind === "assistant-task" || row.subject?.kind === "wallet-watch" ? null : (
                       <Link className="rw-btn" href={rynHref({ kind: "note", inboxId: row.id }, locale === "uk" ? "Чому мені прийшло це сповіщення?" : "Why did I get this alert?")} prefetch={false}>{locale === "uk" ? "Спитати Ryntra" : "Ask Ryntra"}</Link>
                     )}
                     {row.unread ? <button type="button" className={styles.ghost} onClick={() => void markRead(row.id)}>{w.markRead}</button> : null}
@@ -322,7 +312,7 @@ export function MonitoringPanel({ locale }: { locale: Locale }) {
           </div>
         </section>
       ) : null}
-    </div>
+    </Page>
   );
 }
 

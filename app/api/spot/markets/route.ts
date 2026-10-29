@@ -1,14 +1,15 @@
 import { z } from "zod";
 
 import { consumeSolanaReadRequest } from "@/lib/agent-control/http";
-import { publicCacheHeaders, rateLimitHeaders, type RateLimitDecision } from "@/lib/http-control";
+import { privateNoStoreHeaders, publicCacheHeaders, rateLimitHeaders, type RateLimitDecision } from "@/lib/http-control";
 import { isSpotView } from "@/lib/spot/markets";
-import { listSpotMarkets, readSpotMarketsByMint, searchSpotMarkets } from "@/lib/spot/markets.server";
+import { listSpotMarkets, readSpotMarketsByMint, searchSpotMarkets, spotListEdgeSeconds } from "@/lib/spot/markets.server";
 import { toListRow } from "@/lib/spot/markets";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
-export const maxDuration = 30;
+/* A list refresh that outlives its answer runs inside this invocation (`after`): the universe's slowest honest read is about 44 s. */
+export const maxDuration = 60;
 
 /**
  * The Spot market list — one view at a time, or a search, or a list of mints.
@@ -33,6 +34,11 @@ const QuerySchema = z
 
 function headers(rate: RateLimitDecision, ttl: number) {
   return { ...publicCacheHeaders(ttl, ttl * 4), ...rateLimitHeaders(rate) };
+}
+
+function listHeaders(rate: RateLimitDecision, oldestReadAt: string) {
+  const edge = spotListEdgeSeconds(oldestReadAt, Date.now());
+  return edge ? { ...publicCacheHeaders(edge.ttl, edge.revalidate), ...rateLimitHeaders(rate) } : { ...rateLimitHeaders(rate), ...privateNoStoreHeaders() };
 }
 
 function failure(status: number, code: string, message: string, rate: RateLimitDecision) {
@@ -68,10 +74,11 @@ export async function GET(request: Request) {
   }
   const read = await listSpotMarkets(resolvedView, limit);
   if (!read.ok) return failure(read.code === "RATE_LIMITED" ? 429 : 503, `MARKETS_${read.code}`, read.reason, rate);
-  /* A partial read is not cached at the edge: the next visitor must not
-     inherit a category list the universe never filled. */
+  /* A partial or stale read is not cached at the edge: the next visitor must
+     not inherit a category list the universe never filled, nor a «stale» the
+     server has since mended. */
   return Response.json(
-    { rows: read.rows, observedAt: read.observedAt, stale: read.stale, partial: read.partial, source: read.source },
-    { headers: read.partial ? { ...rateLimitHeaders(rate), "cache-control": "private, no-store" } : headers(rate, 30) },
+    { rows: read.rows, observedAt: read.observedAt, stale: read.stale, ...(read.lastGoodAt ? { lastGoodAt: read.lastGoodAt } : {}), partial: read.partial, source: read.source },
+    { headers: read.partial || read.stale ? { ...rateLimitHeaders(rate), ...privateNoStoreHeaders() } : listHeaders(rate, read.oldestReadAt) },
   );
 }

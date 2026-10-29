@@ -1,0 +1,211 @@
+/* The Day 90 sky (MC-3) in the scene's language: glass, mono labels, the gold of the day-90 star in light only — never
+   the orange of the one action. */
+.section,
+.room {
+  --sky-text: #f5f7fa;
+  --sky-soft: #c3ccd8;
+  --sky-muted: #8a97a8;
+  --sky-rule: rgba(255, 255, 255, 0.08);
+  --sky-line: #2b3c51;
+  --sky-gold: #f5b544;
+  color: var(--sky-text);
+}
+
+.section {
+  margin-top: 40px;
+  padding: 22px 24px 24px;
+  background: linear-gradient(180deg, rgba(20, 32, 48, 0.62), rgba(8, 13, 20, 0.74));
+  border: 1px solid var(--sky-rule);
+  border-radius: 20px;
+  -webkit-backdrop-filter: blur(18px);
+  backdrop-filter: blur(18px);
+}
+
+.eyebrow {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  margin: 0;
+  font: 500 11px/1 var(--font-geist-mono, "Geist Mono"), ui-monospace, monospace;
+  letter-spacing: 0.2em;
+  color: var(--sky-muted);
+}
+
+.dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--sky-gold);
+  box-shadow: 0 0 10px rgba(245, 181, 68, 0.8);
+}
+
+.title {
+  margin: 14px 0 0;
+  font-size: 20px;
+  line-height: 1.3;
+  font-weight: 600;
+}
+
+.lede {
+  margin: 8px 0 0;
+  max-width: 720px;
+  font-size: 15px;
+  line-height: 1.55;
+  color: var(--sky-soft);
+}
+
+.state {
+  margin: 18px 0 0;
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--sky-muted);
+}
+
+.stars {
+  list-style: none;
+  margin: 18px 0 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 260px), 1fr));
+  gap: 10px;
+}
+
+.star {
+  display: flex;
+  gap: 12px;
+  padding: 12px 14px;
+  border: 1px solid var(--sky-rule);
+  border-radius: 14px;
+  background: rgba(8, 13, 20, 0.6);
+  min-width: 0;
+}
+
+.glint {
+  flex: none;
+  width: 10px;
+  height: 10px;
+  margin-top: 5px;
+  border-radius: 50%;
+  background: #ffe6b8;
+  box-shadow: 0 0 12px rgba(245, 181, 68, 0.9);
+}
+
+.body {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.top {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.ticker {
+  font-weight: 700;
+  font-size: 15px;
+  color: var(--sky-text);
+  text-decoration: none;
+}
+
+a.ticker:hover {
+  text-decoration: underline;
+}
+
+a.ticker:focus-visible,
+.toggle:focus-visible {
+  outline: 2px solid var(--sky-text);
+  outline-offset: 3px;
+}
+
+.chip {
+  padding: 3px 7px;
+  border: 1px solid var(--sky-line);
+  border-radius: 999px;
+  font: 500 10px/1 var(--font-geist-mono, "Geist Mono"), ui-monospace, monospace;
+  letter-spacing: 0.14em;
+  color: var(--sky-soft);
+}
+
+.name {
+  font-size: 13px;
+  color: var(--sky-soft);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.crew {
+  font: 400 12px/1.5 var(--font-geist-mono, "Geist Mono"), ui-monospace, monospace;
+  color: var(--sky-muted);
+  overflow-wrap: anywhere;
+}
+
+.more {
+  margin: 12px 0 0;
+  font: 500 11px/1.5 var(--font-geist-mono, "Geist Mono"), ui-monospace, monospace;
+  letter-spacing: 0.12em;
+  color: var(--sky-muted);
+}
+
+/* A Control Room: a button beside «Post to X», and its sheet. */
+.room {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 10px;
+}
+
+.toggle {
+  font: 600 13px/1 var(--font-geist-sans, Geist), system-ui, sans-serif;
+  color: var(--sky-text);
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  background: rgba(8, 13, 20, 0.72);
+  border-radius: 10px;
+  height: 36px;
+  padding: 0 14px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  -webkit-backdrop-filter: blur(14px);
+  backdrop-filter: blur(14px);
+}
+
+.toggle:hover {
+  border-color: rgba(255, 255, 255, 0.3);
+}
+
+.sheet {
+  width: min(420px, calc(100vw - 32px));
+  max-height: min(60vh, 520px);
+  overflow: auto;
+  padding: 14px;
+  border-radius: 16px;
+  background: rgba(8, 13, 20, 0.86);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  -webkit-backdrop-filter: blur(18px);
+  backdrop-filter: blur(18px);
+}
+
+.sheetHead {
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.4;
+  color: var(--sky-soft);
+}
+
+.sheet .stars {
+  grid-template-columns: 1fr;
+  margin-top: 12px;
+}
+
+/* On a phone the room's bottom edge already holds its action, «Post to X» and the feed: the Day 90 sky is read on the
+   home page's section there, never stacked over them. */
+@media (max-width: 759px) {
+  .room {
+    display: none;
+  }
+}

@@ -9,6 +9,9 @@
  *   only signer is the person's wallet. The SDK returns `signers: []` for
  *   Swift; a route that would need a generated keypair is refused here rather
  *   than signed by this process — nothing here holds or creates a Solana key.
+ *   The quote is read back against the request and every instruction against
+ *   the programs a Swift order needs before any bytes exist; the plan route
+ *   then proves the simulated effects on the wallet (`solana-swift-guard.ts`).
  * - `buildEvmFastMctpCalls` encodes the Forwarder call (and, for an ERC-20
  *   input, the exact-amount approval before it) for an EIP-1193 wallet. Pure
  *   ABI encoding plus read-only RPC for allowance and gas; no signer.
@@ -29,13 +32,15 @@
  * shown and collected by nobody. `mayanReferrerRoute` answers per quote.
  */
 
-import { Connection, PublicKey, TransactionMessage, VersionedTransaction } from "@solana/web3.js";
+import { AddressLookupTableAccount, Connection, PublicKey, TransactionInstruction, TransactionMessage, VersionedTransaction } from "@solana/web3.js";
 import { addresses as MAYAN_ADDRESSES, createSwapFromSolanaInstructions, getSwapFromEvmTxPayload, type Quote } from "@mayanfinance/swap-sdk";
 
 import { encodeErc20Approve, readBaseErc20Allowance } from "../base/cctp-burn.ts";
 import { baseRpcCall, hexQuantityToDecimal, type EvmRpcHandle } from "../base/rpc.ts";
-import type { MayanRawQuote } from "./price-api.ts";
+import { WRAPPED_SOL_MINT } from "../solana/send-kinds.ts";
+import { MAYAN_NATIVE_TOKEN, mayanQuoteMatchesRequest, type MayanQuoteExpectation, type MayanRawQuote } from "./price-api.ts";
 import { mayanReferrerRoute, type MayanQuoteShape } from "./referrer.ts";
+import { checkMayanSwiftInstructions } from "./solana-swift-guard.ts";
 
 export const MAYAN_FORWARDER_CONTRACT: string = MAYAN_ADDRESSES.MAYAN_FORWARDER_CONTRACT;
 export const MAYAN_SWIFT_V2_PROGRAM: string = MAYAN_ADDRESSES.SWIFT_V2_PROGRAM_ID;
@@ -69,8 +74,25 @@ export type SolanaSwiftBuild =
       lookupTableCount: number;
       /** Program ids the message invokes, from its static keys, for the Pro disclosure and the trail. */
       programIds: readonly string[];
+      /** The message's static keys, in order: the first part of the vector the simulation's balances index. */
+      staticAccounts: readonly string[];
+      /** Every writable account, lookup tables resolved: the accounts whose post-states the simulation is asked for. */
+      writableAccounts: readonly string[];
+      /** What the wallet spends, for the owner-effect check: the mint (wSOL for the native coin) and the amount. */
+      inputMint: string;
+      nativeInput: boolean;
+      amountInRaw: string;
     }>
-  | Readonly<{ ok: false; code: "ROUTE_NEEDS_PROVIDER_KEY" | "BUILD_FAILED" | "SIGNER_SHAPE"; reason: string }>;
+  | Readonly<{ ok: false; code: "ROUTE_NEEDS_PROVIDER_KEY" | "BUILD_FAILED" | "SIGNER_SHAPE" | "QUOTE_MISMATCH" | "UNEXPECTED_PROGRAM"; reason: string }>;
+
+type SwiftInstructionsBuilder = (
+  quote: Quote,
+  owner: string,
+  destination: string,
+  referrer: Readonly<{ solana: string }> | null,
+  connection: Connection,
+  options: { swiftRefundAddress: string },
+) => Promise<Readonly<{ instructions: TransactionInstruction[]; lookupTables: AddressLookupTableAccount[]; signers: readonly unknown[] }>>;
 
 export async function buildSolanaSwiftTransaction(args: {
   quote: MayanRawQuote;
@@ -79,14 +101,27 @@ export async function buildSolanaSwiftTransaction(args: {
   rpcUrl: string;
   /** Ryntra's Solana referrer address; omitted or null builds an order with no fee. */
   referrer?: string | null;
+  /** What the person asked for; a quote that answers anything else is refused before the SDK runs (FIX-XSWAP-1). */
+  expected: MayanQuoteExpectation;
+  /** Test seams: the SDK's builder and the blockhash read. */
+  deps?: Readonly<{
+    createInstructions?: SwiftInstructionsBuilder;
+    latestBlockhash?: () => Promise<Readonly<{ blockhash: string; lastValidBlockHeight: number }>>;
+  }>;
 }): Promise<SolanaSwiftBuild> {
   if (args.quote.type !== "SWIFT") {
     return { ok: false, code: "ROUTE_NEEDS_PROVIDER_KEY", reason: `Only Swift is built from Solana; ${args.quote.type} needs a signer this process may not create.` };
   }
+  /* The quote is the API's answer, and everything below is built from it: the
+     token the order locks, the chain and token it pays out. It is read back
+     against the request before the SDK sees it. */
+  const matches = mayanQuoteMatchesRequest(args.quote, args.expected);
+  if (!matches.ok) return matches;
   const connection = new Connection(args.rpcUrl, "confirmed");
-  let built: Awaited<ReturnType<typeof createSwapFromSolanaInstructions>>;
+  const createInstructions = args.deps?.createInstructions ?? (createSwapFromSolanaInstructions as unknown as SwiftInstructionsBuilder);
+  let built: Awaited<ReturnType<SwiftInstructionsBuilder>>;
   try {
-    built = await createSwapFromSolanaInstructions(args.quote as unknown as Quote, args.owner, args.destination, referrerAddresses(args.referrer), connection, {
+    built = await createInstructions(args.quote as unknown as Quote, args.owner, args.destination, referrerAddresses(args.referrer), connection, {
       swiftRefundAddress: args.owner,
     });
   } catch (error) {
@@ -99,10 +134,16 @@ export async function buildSolanaSwiftTransaction(args: {
       reason: `This route needs ${built.signers.length} generated signer(s); only the wallet may sign here.`,
     };
   }
+  /* The swap leg's instructions come from Mayan's HTTP API. Only the programs
+     a Swift order needs may appear, top level or behind Mayan's proxy. */
+  const programs = checkMayanSwiftInstructions(
+    built.instructions.map((instruction) => ({ programId: instruction.programId.toBase58(), keys: instruction.keys.map((key) => ({ pubkey: key.pubkey.toBase58() })) })),
+  );
+  if (!programs.ok) return { ok: false, code: "UNEXPECTED_PROGRAM", reason: programs.reason };
   let blockhash: string;
   let lastValidBlockHeight: number;
   try {
-    ({ blockhash, lastValidBlockHeight } = await connection.getLatestBlockhash("confirmed"));
+    ({ blockhash, lastValidBlockHeight } = await (args.deps?.latestBlockhash ?? (() => connection.getLatestBlockhash("confirmed")))());
   } catch (error) {
     return { ok: false, code: "BUILD_FAILED", reason: `The cluster did not give a blockhash: ${error instanceof Error ? error.message : String(error)}` };
   }
@@ -120,6 +161,10 @@ export async function buildSolanaSwiftTransaction(args: {
   }
   const transaction = new VersionedTransaction(message);
   const programIds = [...new Set(message.compiledInstructions.map((ix) => message.staticAccountKeys[ix.programIdIndex]?.toBase58()).filter((id): id is string => Boolean(id)))];
+  const keys = message.getAccountKeys({ addressLookupTableAccounts: built.lookupTables });
+  const loaded = keys.accountKeysFromLookups ?? { writable: [], readonly: [] };
+  const vector = [...keys.staticAccountKeys, ...loaded.writable, ...loaded.readonly].map((key) => key.toBase58());
+  const nativeInput = args.quote.fromToken.contract === MAYAN_NATIVE_TOKEN;
   return {
     ok: true,
     unsignedWireBase64: Buffer.from(transaction.serialize()).toString("base64"),
@@ -130,6 +175,11 @@ export async function buildSolanaSwiftTransaction(args: {
     instructionCount: built.instructions.length,
     lookupTableCount: built.lookupTables.length,
     programIds,
+    staticAccounts: message.staticAccountKeys.map((key) => key.toBase58()),
+    writableAccounts: vector.filter((_address, index) => message.isAccountWritable(index)),
+    inputMint: nativeInput ? WRAPPED_SOL_MINT : args.quote.fromToken.contract,
+    nativeInput,
+    amountInRaw: args.quote.effectiveAmountIn64,
   };
 }
 

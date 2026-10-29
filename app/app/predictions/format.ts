@@ -50,7 +50,8 @@ export function dateShort(iso: string | null, locale: WorkspaceLocale): string {
   if (!iso) return "—";
   const date = new Date(iso);
   if (Number.isNaN(date.getTime())) return "—";
-  return date.toLocaleDateString(locale === "uk" ? "uk-UA" : "en-GB", { day: "numeric", month: "short", year: "numeric" });
+  /* In UTC, the provider's own clock: the server and the browser then print the same day. */
+  return date.toLocaleDateString(locale === "uk" ? "uk-UA" : "en-GB", { day: "numeric", month: "short", year: "numeric", timeZone: "UTC" });
 }
 
 export function timeShort(iso: string | null, locale: WorkspaceLocale): string {

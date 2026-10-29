@@ -9,6 +9,7 @@
 import { words } from "./copy.ts";
 import type { MonitorStatus } from "./engine.ts";
 import type { InboxFinding, InboxRecord, InboxRuleState, MonitorRecord, MonitorSubject } from "./store.ts";
+import { buttonIn } from "./telegram-locale.ts";
 
 export type MonitoringSurface = Readonly<{
   attention: readonly SurfaceCard[];
@@ -34,11 +35,12 @@ export type SurfaceCard = Readonly<{
   finding: InboxFinding | null;
 }>;
 
-/** A note's words in the reader's language where the note holds both, else as the tick wrote them. */
+/** A note's words in the reader's language where the note holds both, else as the tick wrote them; its button too where it can be said there (SOL-C15). */
 export function noteInLocale(row: InboxRecord, locale: "en" | "uk"): InboxRecord {
   if (!row.text) return row;
   const words = row.text[locale];
-  return words.title === row.title && words.reason === row.reason ? row : { ...row, title: words.title, reason: words.reason };
+  const cta = buttonIn(row, locale) ?? row.cta;
+  return words.title === row.title && words.reason === row.reason && cta === row.cta ? row : { ...row, title: words.title, reason: words.reason, cta };
 }
 
 /**
@@ -47,7 +49,7 @@ export function noteInLocale(row: InboxRecord, locale: "en" | "uk"): InboxRecord
  * says nothing of carries no `ruleState`.
  */
 export function composeMonitoringSurface(monitors: readonly MonitorRecord[], notes: readonly InboxRecord[], locale: "en" | "uk", ruleStateOf: (note: InboxRecord) => InboxRuleState | null = () => null): MonitoringSurface {
-  /* Every note in the reader's language where it holds both, a rule's reminder with what became of it. */
+  /* Every note in the reader's language where it holds both (request 20/23), a rule's reminder with what became of it. */
   const recent = notes.map((row) => {
     const read = noteInLocale(row, locale);
     const ruleState = read.subject?.kind === "autoinvest-rule" ? ruleStateOf(read) : null;

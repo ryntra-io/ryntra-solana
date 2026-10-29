@@ -5,13 +5,13 @@ import type { ReviewWarningKey, TradeFailureKey, TradeMode } from './trade-model
 /**
  * Every word Trade says — the ticket, the asset picker, «Перевірка» and its
  * rows, the wallet's signature, the receipt, the recovery of a signature and
- * every refusal — in both languages. The words are the web's own for the
+ * every refusal — in both languages (M22). The words are the web's own for the
  * same surface (its Spot order ticket and swap card, `app/solana/workspace`),
  * and the phone's own where the phone already says the same thing on a
  * purchase (`buy-copy.ts`: «Перевірка», «Під’єднати гаманець», «Увійти
  * гаманцем»), so the app says one thing; the Ukrainian speaks «ти» and keeps no
  * English word — the web's «Review» is «Перевірка» here, its «slippage» is
- * «сліпедж».
+ * «допустимий рух ціни».
  */
 export type TradeCopy = Readonly<{
   title: string
@@ -19,29 +19,20 @@ export type TradeCopy = Readonly<{
   /** What a signature was for, on the recovery card: «Купівля · 10 USDC → NVDAx». */
   modeNouns: Readonly<Record<TradeMode, string>>
   /* the header's line */
-  settledLine: string
-  quoteLine: (time: string, left: string) => string
   seconds: (count: number) => string
   expired: string
   pricing: string
-  reviewedFirst: string
-  pickAssets: string
   /* the one action */
   connect: string
-  connectHint: string
   signIn: string
-  signInHint: string
   tradeAgain: string
-  tradeAgainHint: string
   checkTx: string
-  checkTxHint: string
   release: string
-  releaseHint: string
   review: string
-  moreThanHeld: (amount: string, symbol: string) => string
   needSol: string
   assetBlocked: string
-  reviewHint: string
+  /** A swap leg's mark for a token that takes a stock's ticker or name — the list's own word (ST-5 r7). */
+  notTheStock: string
   /* the recovery card */
   signedTx: string
   checking: string
@@ -51,7 +42,6 @@ export type TradeCopy = Readonly<{
   /* the ticket */
   youPay: string
   available: (amount: string) => string
-  useAll: string
   /** The quick shares' group, said to a screen reader. */
   shares: string
   amountIn: (symbol: string) => string
@@ -60,15 +50,10 @@ export type TradeCopy = Readonly<{
   changeAsset: (symbol: string) => string
   flip: string
   youReceive: string
-  youReceiveEstimate: string
   tryAgain: string
   /* «Перевірка» as a sheet */
   reviewTitle: string
-  closesIn: (seconds: number) => string
-  closedNewQuote: string
-  newQuote: string
   waitingWallet: string
-  signInWallet: string
   cancel: string
   /* the Review's rows */
   rows: Readonly<{
@@ -84,6 +69,8 @@ export type TradeCopy = Readonly<{
     jupiterFee: string
   }>
   none: string
+  /** A swap's two dollar figures apart by more than 1 %, said quietly under the rate (ST-5 r9): «Втрата на ціні ≈ 6%». */
+  priceLoss: (pct: string) => string
   warnings: Readonly<Record<ReviewWarningKey, string>>
   /* the receipt */
   bought: (symbol: string) => string
@@ -105,6 +92,11 @@ export type TradeCopy = Readonly<{
   notFilledByNetwork: (earlier: boolean) => string
   seenWithoutReceipt: string
   failures: Readonly<Record<TradeFailureKey, string>>
+  /**
+   * A price that could not be had (ST-5): nothing was being sent, so the line never says «Nothing was sent» — only
+   * that the price is missing and what to do. Keys not named here say their `failures` line.
+   */
+  quoteFailures: Readonly<Partial<Record<TradeFailureKey, string>>>
 }>
 
 export const TRADE_COPY: Copy<TradeCopy> = {
@@ -112,38 +104,25 @@ export const TRADE_COPY: Copy<TradeCopy> = {
     title: 'Trade',
     modes: { buy: 'Buy', sell: 'Sell', swap: 'Swap' },
     modeNouns: { buy: 'Buy', sell: 'Sell', swap: 'Swap' },
-    settledLine: 'Settled',
-    quoteLine: (time, left) => `Quote ${time} · ${left}`,
     seconds: (count) => `${count} s`,
     expired: 'expired',
     pricing: 'Pricing…',
-    reviewedFirst: 'Reviewed before you sign',
-    pickAssets: 'Pick the two assets',
     connect: 'Connect wallet',
-    connectHint: 'Keys never leave the wallet.',
     signIn: 'Sign in with your wallet',
-    signInHint: 'Signing a message proves the wallet is yours and moves nothing.',
     tradeAgain: 'Trade again',
-    tradeAgainHint: 'The outcome above is what the chain did.',
     checkTx: 'Check transaction',
-    checkTxHint: 'A signed transaction is out. It is checked, never sent again.',
     release: 'Release the open Review',
-    releaseHint: 'A Review was opened elsewhere and never signed.',
     review: 'Review',
-    moreThanHeld: (amount, symbol) => `More than you hold: ${amount} ${symbol} available`,
     needSol: 'Add a little SOL for the network fee.',
     assetBlocked: 'This asset did not pass Ryntra’s checks, so no order is offered for it.',
-    reviewHint: 'The exact order is reviewed before you sign. Nothing moves without your wallet.',
-    signedTx: 'Signed transaction',
+    notTheStock: 'Not the stock',
+    signedTx: 'Your operation',
     checking: 'Checking',
     unresolved: 'Unresolved',
-    attemptUnknown:
-      'The outcome of a signature you gave is not known yet. Check it before anything else; nothing is sent again.',
-    earlierUnresolved:
-      'A transaction signed earlier for this wallet is unresolved on the server. Check it before anything else; nothing is sent again.',
+    attemptUnknown: 'Its outcome is not known yet. Check it first — nothing is sent twice.',
+    earlierUnresolved: 'An earlier operation is waiting for its answer. Check it first — nothing is sent twice.',
     youPay: 'You pay',
     available: (amount) => `Available ${amount} · MAX`,
-    useAll: 'Use the whole balance',
     shares: 'A share of what you can spend',
     amountIn: (symbol) => `Amount in ${symbol}`,
     amount: 'Amount',
@@ -151,14 +130,9 @@ export const TRADE_COPY: Copy<TradeCopy> = {
     changeAsset: (symbol) => `${symbol}, change asset`,
     flip: 'Reverse: pay with what you receive',
     youReceive: 'You receive',
-    youReceiveEstimate: 'You receive · estimate',
     tryAgain: 'Try again',
     reviewTitle: 'Review',
-    closesIn: (seconds) => `Closes in ${seconds} s · what you sign is exactly this`,
-    closedNewQuote: 'Closed · get a new quote',
-    newQuote: 'Get a new quote',
     waitingWallet: 'Waiting for your wallet…',
-    signInWallet: 'Sign in your wallet',
     cancel: 'Cancel',
     rows: {
       receive: 'You receive',
@@ -166,16 +140,17 @@ export const TRADE_COPY: Copy<TradeCopy> = {
       minimum: 'Minimum received',
       price: 'Price',
       impact: 'Price impact',
-      slippage: 'Slippage',
+      slippage: 'Max price move',
       networkFee: 'Network fee',
       reserve: 'Account reserve',
       serviceFee: 'Ryntra service fee',
-      jupiterFee: 'Additional Jupiter fee',
+      jupiterFee: 'Jupiter fee',
     },
     none: 'None',
+    priceLoss: (pct) => `Price loss ≈ ${pct}`,
     warnings: {
       assetReview: 'This asset needs extra review.',
-      slippageDiffers: 'The quote and minimum received use different slippage.',
+      slippageDiffers: 'The quote and the minimum received allow different price moves.',
       slippageWide: 'The price may move by more than 3%.',
       reviewCarefully: 'Review this swap carefully.',
       priceImpact: 'This swap may move the market price.',
@@ -202,10 +177,16 @@ export const TRADE_COPY: Copy<TradeCopy> = {
     notFilledByNetwork: (earlier) =>
       `${earlier ? 'A transaction signed earlier for this wallet' : 'This trade'} was not filled by the network.`,
     seenWithoutReceipt: 'The network has seen this transaction, but its receipt is unavailable. Check the explorer.',
+    quoteFailures: {
+      offline: 'Couldn’t get a price — check the connection.',
+      tooLong: 'The price took too long. Try again.',
+      providerDown: 'Couldn’t get a price from the swap provider just now.',
+      providerRefused: 'The swap provider did not price this.',
+    },
     failures: {
       paused: 'Swapping is turned off right now.',
       notOffered: 'The issuer no longer offers this token for purchase.',
-      forbiddenOrigin: 'Signing from the app is not open on the server yet.',
+      forbiddenOrigin: 'Signing from the app is not open yet.',
       notSetUp: 'Ryntra is not set up to sign swaps right now.',
       preSignRefused: 'This swap was checked and not offered for signing.',
       finalCheckFailed: 'The signed transaction failed its final check. Nothing was sent. Get a new quote.',
@@ -235,16 +216,26 @@ export const TRADE_COPY: Copy<TradeCopy> = {
       notEnough: 'This wallet does not hold enough for this swap.',
       amount: 'This amount cannot be swapped.',
       quoteExpired: 'The quote expired. Get a new quote.',
-      walletCancelled: 'Wallet approval was cancelled.',
+      walletCancelled: 'Wallet approval was cancelled. Nothing was sent.',
       rateLimited: 'Too many requests just now. Try again in a moment.',
       checkingPrevious: 'Checking the previous swap. Try again in a moment.',
       notAccepted: 'This request was not accepted.',
       failed: 'The trade could not continue. Try again.',
-      walletTimeout:
-        'Your wallet did not answer before this Review’s window closed. Nothing was signed or sent; ask for a fresh order.',
+      walletTimeout: 'Your wallet did not answer within 90 seconds. Nothing was sent — refresh the Review.',
+      ledgerBlind:
+        'The Ledger did not sign: “Blind signing” is off in its Solana app. Turn it on in the app’s settings and try again.',
+      txVersion:
+        'This transaction is in a format a Ledger cannot sign yet, so the wallet was not opened. Nothing was sent.',
       signatureUnrecorded: 'The wallet signature could not be recorded. Nothing was submitted.',
       closedUnderWallet:
         'The Review window closed while your wallet was open. That signature was never sent and cannot be — ask for a fresh order and sign that one.',
+      walletCannotSign:
+        "This wallet does not sign transactions for apps — it only sends them itself. Nothing was sent; use Phantom, Solflare or the Seeker's wallet.",
+      priceRenewed: 'The price was refreshed and a figure changed. Nothing was sent — check the numbers and confirm.',
+      bytesRebuilt:
+        'The Review was built again — a transaction lives only about 30 seconds. Nothing was sent; check it and sign.',
+      deviceConfirm:
+        'A transaction lives about 30 seconds: confirm in the wallet, or on a Ledger, within 20 seconds. Nothing was sent — refresh the Review.',
       reviewInvalidated: 'This Review was refused by a later check. Ask for a fresh one.',
       proofNotSigned: 'The exact Review has no trusted issuer signature.',
       simulationNotClear: 'The exact provider bytes did not pass simulation.',
@@ -258,37 +249,25 @@ export const TRADE_COPY: Copy<TradeCopy> = {
     title: 'Торгувати',
     modes: { buy: 'Купити', sell: 'Продати', swap: 'Обмін' },
     modeNouns: { buy: 'Купівля', sell: 'Продаж', swap: 'Обмін' },
-    settledLine: 'Виконано',
-    quoteLine: (time, left) => `Котирування ${time} · ${left}`,
     seconds: (count) => `${count} с`,
     expired: 'минуло',
     pricing: 'Рахуємо ціну…',
-    reviewedFirst: 'Перевірка перед підписом',
-    pickAssets: 'Обери два активи',
     connect: 'Під’єднати гаманець',
-    connectHint: 'Ключі не покидають гаманця.',
     signIn: 'Увійти гаманцем',
-    signInHint: 'Підпис повідомлення доводить, що гаманець твій, і нічого не переміщує.',
     tradeAgain: 'Торгувати далі',
-    tradeAgainHint: 'Вище — те, що зробила мережа.',
     checkTx: 'Перевірити транзакцію',
-    checkTxHint: 'Підписана транзакція вже існує. Її перевіряють, а не надсилають знову.',
     release: 'Закрити відкриту Перевірку',
-    releaseHint: 'Перевірку відкрили деінде й не підписали.',
     review: 'Перевірка',
-    moreThanHeld: (amount, symbol) => `Більше, ніж є: доступно ${amount} ${symbol}`,
     needSol: 'Додай трохи SOL на комісію мережі.',
     assetBlocked: 'Цей актив не пройшов перевірки Ryntra, тож ордер для нього не пропонується.',
-    reviewHint: 'Точний ордер перевіряється перед підписом. Без твого гаманця нічого не рухається.',
-    signedTx: 'Підписана транзакція',
+    notTheStock: 'Не акція',
+    signedTx: 'Твоя операція',
     checking: 'Перевіряємо',
     unresolved: 'Не з’ясовано',
-    attemptUnknown: 'Результат твого підпису ще невідомий. Спершу перевір його — нічого не надсилається вдруге.',
-    earlierUnresolved:
-      'Транзакція, підписана раніше для цього гаманця, на сервері ще не з’ясована. Спершу перевір її — нічого не надсилається вдруге.',
+    attemptUnknown: 'Її результат ще невідомий. Спершу перевір — нічого не надсилається вдруге.',
+    earlierUnresolved: 'Попередня операція ще чекає на відповідь. Спершу перевір її — нічого не надсилається вдруге.',
     youPay: 'Ти платиш',
     available: (amount) => `Доступно ${amount} · МАКС`,
-    useAll: 'Взяти весь доступний баланс',
     shares: 'Частка того, що можна витратити',
     amountIn: (symbol) => `Сума в ${symbol}`,
     amount: 'Сума',
@@ -296,14 +275,9 @@ export const TRADE_COPY: Copy<TradeCopy> = {
     changeAsset: (symbol) => `${symbol}, змінити актив`,
     flip: 'Поміняти місцями: платити тим, що отримуєш',
     youReceive: 'Ти отримуєш',
-    youReceiveEstimate: 'Ти отримуєш · оцінка',
     tryAgain: 'Спробувати ще',
     reviewTitle: 'Перевірка',
-    closesIn: (seconds) => `Закриється за ${seconds} с · підписуєш саме це`,
-    closedNewQuote: 'Закрито · онови котирування',
-    newQuote: 'Оновити котирування',
     waitingWallet: 'Чекаємо на твій гаманець…',
-    signInWallet: 'Підписати в гаманці',
     cancel: 'Скасувати',
     rows: {
       receive: 'Ти отримуєш',
@@ -311,16 +285,17 @@ export const TRADE_COPY: Copy<TradeCopy> = {
       minimum: 'Мінімум отримання',
       price: 'Ціна',
       impact: 'Вплив на ціну',
-      slippage: 'Сліпедж',
+      slippage: 'Допустимий рух ціни',
       networkFee: 'Комісія мережі',
       reserve: 'Резерв для рахунку',
       serviceFee: 'Комісія Ryntra',
-      jupiterFee: 'Додаткова комісія Jupiter',
+      jupiterFee: 'Комісія Jupiter',
     },
     none: 'Немає',
+    priceLoss: (pct) => `Втрата на ціні ≈ ${pct}`,
     warnings: {
       assetReview: 'Цей актив потребує додаткової перевірки.',
-      slippageDiffers: 'Котирування й мінімум отримання рахують різний сліпедж.',
+      slippageDiffers: 'Котирування й мінімум отримання допускають різний рух ціни.',
       slippageWide: 'Ціна може змінитися більш ніж на 3%.',
       reviewCarefully: 'Уважно перевір цей обмін.',
       priceImpact: 'Цей обмін може вплинути на ринкову ціну.',
@@ -353,10 +328,16 @@ export const TRADE_COPY: Copy<TradeCopy> = {
         ? 'Мережа не виконала транзакцію, підписану раніше для цього гаманця.'
         : 'Мережа не виконала цю операцію.',
     seenWithoutReceipt: 'Мережа побачила транзакцію, але квитанція недоступна. Перевір її в експлорері.',
+    quoteFailures: {
+      offline: 'Не вдалося отримати ціну — перевір з’єднання.',
+      tooLong: 'Ціну рахували задовго. Спробуй ще раз.',
+      providerDown: 'Провайдер обміну зараз не дав ціни.',
+      providerRefused: 'Провайдер обміну не порахував ціну для цього запиту.',
+    },
     failures: {
       paused: 'Обмін зараз вимкнено.',
       notOffered: 'Емітент більше не пропонує цей токен для купівлі.',
-      forbiddenOrigin: 'Підпис із застосунку на сервері ще не відкрито.',
+      forbiddenOrigin: 'Підпис із застосунку ще не відкрито.',
       notSetUp: 'Ryntra зараз не налаштована підписувати обміни.',
       preSignRefused: 'Цей обмін перевірено й не запропоновано до підпису.',
       finalCheckFailed: 'Підписана транзакція не пройшла фінальну перевірку. Нічого не надіслано. Онови котирування.',
@@ -386,16 +367,25 @@ export const TRADE_COPY: Copy<TradeCopy> = {
       notEnough: 'У гаманці недостатньо для цього обміну.',
       amount: 'Цю суму обміняти не вийде.',
       quoteExpired: 'Котирування застаріло. Онови його.',
-      walletCancelled: 'Підтвердження в гаманці скасовано.',
+      walletCancelled: 'Підтвердження в гаманці скасовано. Нічого не надіслано.',
       rateLimited: 'Забагато запитів. Спробуй за мить.',
       checkingPrevious: 'Перевіряємо попередній обмін. Спробуй за мить.',
       notAccepted: 'Запит не прийнято.',
       failed: 'Операція не вдалася. Спробуй ще раз.',
-      walletTimeout:
-        'Гаманець не відповів, поки діяло вікно Перевірки. Нічого не підписано й не надіслано — запроси новий ордер.',
+      walletTimeout: 'Гаманець не відповів за 90 секунд. Нічого не надіслано — онови «Перевірку».',
+      ledgerBlind:
+        'Ledger не підписав: у застосунку Solana на Ledger вимкнено «Blind signing». Увімкни його в налаштуваннях застосунку й спробуй знову.',
+      txVersion: 'Цю транзакцію Ledger ще не вміє підписати, тож гаманець не відкрито. Нічого не надіслано.',
       signatureUnrecorded: 'Підпис гаманця не вдалося зафіксувати. Нічого не надіслано.',
       closedUnderWallet:
         'Вікно Перевірки закрилося, поки гаманець був відкритий. Той підпис не надіслано, і надіслати його вже не можна — запроси новий ордер і підпиши його.',
+      walletCannotSign:
+        'Цей гаманець не підписує транзакції для застосунків — лише надсилає їх сам. Нічого не надіслано; скористайся Phantom, Solflare чи гаманцем Seeker.',
+      priceRenewed: 'Ціну оновлено, і одна з цифр змінилась. Нічого не надіслано — переглянь і підтверди.',
+      bytesRebuilt:
+        'Перевірку зібрано наново — транзакція живе лише ~30 секунд. Нічого не надіслано; переглянь і підпиши.',
+      deviceConfirm:
+        'Транзакція живе ~30 секунд: підтверди в гаманці чи на Ledger за 20 секунд. Нічого не надіслано — онови «Перевірку».',
       reviewInvalidated: 'Ця Перевірка вже не дійсна — її відхилила пізніша звірка. Запроси нову.',
       proofNotSigned: 'У точної Перевірки немає довіреного підпису Ryntra.',
       simulationNotClear: 'Точна транзакція провайдера не пройшла симуляцію.',
@@ -405,4 +395,9 @@ export const TRADE_COPY: Copy<TradeCopy> = {
       policyIncomplete: 'Політика обміну дала неповний висновок — таку транзакцію не можна віддавати гаманцю.',
     },
   },
+}
+
+/** A price's refusal as said on a ticket: its own line where one is written (no «Nothing was sent»), else the failure's. */
+export function quoteFailureLine(words: TradeCopy, key: TradeFailureKey): string {
+  return words.quoteFailures[key] ?? words.failures[key]
 }

@@ -145,9 +145,12 @@ export function forgetPendingSend(storage: StorageLike, wallet: string): boolean
 /**
  * How long signed bytes can still reach the network.
  *
- * A Solana blockhash is valid for 150 slots, about ninety seconds. Two minutes
- * is that with room for a slow operator, and it is the only fact that turns
- * "the chain has not seen it" into "the chain never will".
+ * A Solana blockhash is valid for 150 blocks — about thirty seconds since
+ * mainnet slots became 200 ms (AG-1, 2026-10-17; `blockhash-life.ts`). Two
+ * minutes stays anyway: this is a fallback, never the verdict. "The chain
+ * never will" is the chain's word — the block height past
+ * `lastValidBlockHeight` — and shortening this clock would let live bytes be
+ * forgotten and sent a second time.
  */
 export const BLOCKHASH_WINDOW_MS = 120_000;
 

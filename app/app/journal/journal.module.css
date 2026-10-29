@@ -278,6 +278,27 @@
 
 .empty[data-tone="CALM"] svg { color: var(--rt-reconciled-green-fg); }
 
+/* ── honest result (DSC-2): paper and real side by side, never one sum ── */
+
+.honest {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 320px), 1fr));
+  gap: var(--rt-space-md);
+}
+
+.honestBook {
+  display: grid;
+  align-content: start;
+  gap: var(--rt-space-xs);
+  min-width: 0;
+}
+
+.honestTitle {
+  margin: 0;
+  color: var(--rt-ink-high);
+  font-size: var(--ry-fs-dense);
+}
+
 /* ── loading ────────────────────────────────────────────────────────────── */
 
 .skeleton {

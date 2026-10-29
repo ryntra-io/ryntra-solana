@@ -50,6 +50,13 @@ export function rewardsActivation(env: NodeJS.ProcessEnv = process.env): Rewards
   return { state: "OPEN", at: new Date(epochMs).toISOString(), epochMs };
 }
 
+/** Have rewards started at `now`: an activation instant that is set and already passed. One rule for every page. */
+export function rewardsStartedAt(now: string | number, env: NodeJS.ProcessEnv = process.env): boolean {
+  const activation = rewardsActivation(env);
+  const at = typeof now === "number" ? now : Date.parse(now);
+  return activation.state === "OPEN" && activation.epochMs <= at;
+}
+
 /**
  * Is an operation that settled at this moment eligible?
  *

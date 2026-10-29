@@ -1,5 +1,5 @@
 import { useQueryClient } from '@tanstack/react-query'
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
 import { useHoldings } from '@/features/portfolio/use-portfolio'
 import type { Prepared } from '@/features/trade/trade-flow'
@@ -11,6 +11,7 @@ import { useLocale } from '@/lib/i18n'
 
 import { BUY_COPY } from './buy-copy'
 import {
+  amountFieldInput,
   amountFieldText,
   buyCheckRows,
   buyEstimate,
@@ -21,11 +22,16 @@ import {
   isBuyableSum,
   isCompanyBuy,
   isNoRoute,
+  isRateLimited,
+  limitPause,
+  namedWaitSeconds,
   offersPayChoice,
   PAY_ASSETS,
   payDollar,
   parseDollars,
   pickedShare,
+  quotedSpendUsd,
+  quoteForSum,
   reserveFirstOf,
   ryntraFeeFigures,
   sumText,
@@ -34,6 +40,7 @@ import {
   type IssuerFee,
   type PayDollar,
 } from './buy-model'
+import { BUY_ENGINE, perSharePaid, type LiveShareQuote } from './pool-warning'
 import { useRouteMinimum } from './use-route-minimum'
 
 /** A company as the purchase needs it — named, drawn and counted as the page read it. */
@@ -53,13 +60,35 @@ export type BuyCompany = Readonly<{
   /** The one line of truth; null when no issuer document was read. */
   truth: string | null
   /**
-   * The issuer's event before a purchase (the IPO and conversion watch): the token bought must
+   * The issuer's event before a purchase (the IPO and conversion watch; M19): the token bought must
    * be swapped by the issuer's deadline — said under the truth, before any sum, and again in «Перевірка»; null for none.
    */
   eventLine?: string | null
   /** The fee the mint withholds on the transfer that delivers the token — PreStocks' 1 %; null when none. */
   issuerFee: IssuerFee | null
+  /**
+   * The share's reference and the pool as the page read them (ST-5 r8): the sheet says the page's pool warning over its
+   * own action, judged again on its own live estimate, and what the shares are worth at the reference where the price
+   * stands far from it. Absent or null where no issuer states a reference.
+   */
+  pool?: BuyPool | null
 }>
+
+/** The share's reference and the pool, as the company's page read them — display only, never part of the order. */
+export type BuyPool = Readonly<{
+  referencePerShare: number | null
+  /** The pool's own price against the reference, per cent, as the issuer's row states it. */
+  deviationPct: number | null
+  liquidityUsd: number | null
+  /**
+   * The live quotes the page saw for the share, each with its sum and time (the sheet's own estimates, its quote for an
+   * amount): the warning is judged only by the one for the sum on screen (ST-5 r9), never by another sum's.
+   */
+  seen: readonly LiveShareQuote[]
+}>
+
+/** How far past a limiter's pause the sheet asks, so an ask Trade's own flow makes at the window's end goes first. */
+const LIMIT_YIELD_MS = 500
 
 const rawOf = (value: string | undefined): bigint | null => (value && /^\d+$/.test(value) ? BigInt(value) : null)
 
@@ -73,7 +102,7 @@ export type RuleBuy = Readonly<{ amountUsd: number | null; binding: RuleBinding 
 
 /**
  * One purchase in dollars on the phone — the sheet's state over Trade's own
- * flow (the server's exact Review, the wallet's signature over those
+ * flow (M3: the server's exact Review, the wallet's signature over those
  * bytes, the one submission, the receipt, the recovery of a signature the app
  * closed on). This hook adds only what the company's sheet says around it:
  * the sum in dollars — from $1, opening on $10 — and its quick shares of the
@@ -146,8 +175,89 @@ export function useBuy(company: BuyCompany, rule: RuleBuy | null = null) {
     rule: binding,
   })
 
+  /* ---- a quote the server's limiter held back: asked again by itself after the window, «Рахуємо ціну…» meanwhile ---- */
+  // Typing at a person's pace asks once per settled sum; two asks inside the limiter's window are refused (ST-5).
+  const limitedKey =
+    trade.phase === 'idle' && trade.amountRaw !== null && isRateLimited(trade.quoteFailure?.code)
+      ? `${payAsset.mint}:${trade.amountRaw}`
+      : null
+  const quoting = trade.quoting
+  const refreshQuote = useRef(trade.refreshQuote)
+  useEffect(() => {
+    refreshQuote.current = trade.refreshQuote
+  })
+  // The refusal's own query, read for the wait the server named (`retryAfterSeconds`; absent — the sheet's own pauses).
+  const quoteQueryKey = useMemo(
+    () => ['trade', 'quote', payAsset.mint, company.mint, trade.amountRaw ?? ''] as const,
+    [payAsset.mint, company.mint, trade.amountRaw],
+  )
+  const limitAsks = useRef<{ key: string | null; asked: number; since: number }>({ key: null, asked: 0, since: 0 })
+  const [limitWaiting, setLimitWaiting] = useState<string | null>(null)
+  // The sum whose asks ran out (about a minute): only then is its refusal said.
+  const [limitSpent, setLimitSpent] = useState<string | null>(null)
+  // A quote that came (or a new sum) lets a later refusal be waited out again (state adjusted during render).
+  if (limitedKey === null && !quoting && limitSpent !== null) setLimitSpent(null)
+  // A pause whose ask yielded is looked at again, so the count and the minute go on even if nothing else changed.
+  const [limitLook, setLimitLook] = useState(0)
+  useEffect(() => {
+    if (limitedKey === null) {
+      // A quote that came (or a new sum) starts the count again; one in flight keeps it.
+      if (!quoting) limitAsks.current = { key: null, asked: 0, since: 0 }
+      return
+    }
+    if (quoting) return
+    if (limitAsks.current.key !== limitedKey) limitAsks.current = { key: limitedKey, asked: 0, since: Date.now() }
+    const error: unknown = queryClient.getQueryState(quoteQueryKey)?.error
+    const named = namedWaitSeconds(error && typeof error === 'object' ? (error as { details?: unknown }).details : null)
+    const pause = limitPause(limitAsks.current.asked, Date.now() - limitAsks.current.since, named)
+    if (pause === null) {
+      setLimitSpent(limitedKey)
+      return
+    }
+    limitAsks.current.asked += 1
+    setLimitWaiting(limitedKey)
+    const refusedAt = queryClient.getQueryState(quoteQueryKey)?.errorUpdatedAt ?? 0
+    // A moment past the pause: when Trade's own flow asks again at the same window's end, this ask yields to it.
+    const timer = setTimeout(() => {
+      setLimitWaiting(null)
+      const state = queryClient.getQueryState(quoteQueryKey)
+      // Asked already (Trade's own pacing) or answered since: one ask per window, never two.
+      if (!state || state.fetchStatus === 'fetching' || state.status !== 'error' || state.errorUpdatedAt !== refusedAt) {
+        setLimitLook((look) => look + 1)
+        return
+      }
+      refreshQuote.current()
+    }, pause + LIMIT_YIELD_MS)
+    return () => {
+      clearTimeout(timer)
+      setLimitWaiting(null)
+    }
+  }, [limitedKey, quoting, queryClient, quoteQueryKey, limitLook])
+  /**
+   * The quote was held back by the limiter and is being asked again: the sheet says it is pricing, not that it failed —
+   * until its asks ran out.
+   */
+  const quoteHeld = limitedKey !== null && (limitSpent !== limitedKey || limitWaiting === limitedKey || quoting)
+
   /* ---- what the sum buys and costs, from the live quote — the server's count (contract 1.20.0) ---- */
-  const estimate = buyEstimate(trade.quote, company)
+  // Only a quote for the sum on screen says what it buys (ST-5 r10); until it comes the sheet is pricing.
+  const payDecimals = payAsset.decimals ?? 6
+  const forSum = quoteForSum(trade.quote, trade.typedRaw, payDecimals)
+  const estimate = forSum ? buyEstimate(trade.quote, company) : null
+  /* What the estimate paid for one share (ST-5 r8): the dollars the quote was made for — the server's count, else the
+     order's own input; never the sum on screen standing in (ST-5 r10) — over the shares that arrive. A figure for
+     display alone: the page's pool warning and the sheet's worth at the reference read it; nothing here prices or
+     changes the order. */
+  const paidUsd = forSum ? quotedSpendUsd(trade.quote, estimate, payDecimals) : null
+  const paidPerShare =
+    (estimate?.unit ?? company.unit) === 'share' ? perSharePaid(paidUsd, estimate?.units ?? null) : null
+  // The estimate's own time — when the phone received it (ST-5 r9): a figure with no time is not told on.
+  const quotedMs = trade.quotedAt ? Date.parse(trade.quotedAt) : Number.NaN
+  // Priced by the engine the purchase buys through: the page's warning over «Купити» is judged by these alone (r10).
+  const paid: LiveShareQuote | null =
+    paidPerShare !== null && paidUsd !== null && Number.isFinite(quotedMs)
+      ? { perShare: paidPerShare, usd: paidUsd, at: quotedMs, source: BUY_ENGINE }
+      : null
 
   /* ---- no route for the sum: the company's own minimum, from the same quote at the ladder's larger sums ---- */
   // A reminder's sum is the rule's own, so only a sum the person types looks for one.
@@ -186,13 +296,14 @@ export function useBuy(company: BuyCompany, rule: RuleBuy | null = null) {
   /* ---- the one action ---- */
   const insufficient =
     payRaw !== null && trade.typedRaw !== null && /^\d+$/.test(trade.typedRaw) && BigInt(trade.typedRaw) > payRaw
+  const priced = trade.amountRaw !== null && trade.amountRaw === trade.typedRaw
   const action = composeAction({
     connected: trade.account.address !== null,
     signedIn: trade.account.session !== null,
     amountUsd,
     lockedReview: trade.lockedReview !== null,
     preparing: trade.phase === 'preparing',
-    priced: trade.amountRaw !== null && trade.amountRaw === trade.typedRaw,
+    priced,
     needsSol,
     insufficient,
     unavailable: trade.quoteBlocked || (trade.quoteFailure !== null && !trade.quoteFailure.retryable),
@@ -211,7 +322,8 @@ export function useBuy(company: BuyCompany, rule: RuleBuy | null = null) {
     trade,
     locale,
     amountText,
-    setAmountText: (text: string) => setAmountText(text.replace(/[^\d.,]/g, '').slice(0, 12)),
+    // One decimal mark and cents at most; a key past them is refused, so the field shows the sum that is read (ST-5).
+    setAmountText: (text: string) => setAmountText((held) => amountFieldInput(held, text, 2, locale)),
     pickSum: (usd: number) => setAmountText(amountFieldText(usd, locale)),
     amountUsd,
     /** The quick shares of the paying dollars — each drawn, offered only from $1; none without a wallet's read. */
@@ -232,6 +344,9 @@ export function useBuy(company: BuyCompany, rule: RuleBuy | null = null) {
     needsSol,
     insufficient,
     estimate,
+    /** What the live estimate paid for one share and the dollars it spends; null where it cannot be said. */
+    paid,
+    quoteHeld,
     rows,
     /** «Перевірка»'s first line when the account's reserve is more than the purchase; null otherwise. */
     reserveFirst,

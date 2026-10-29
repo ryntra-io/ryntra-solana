@@ -42,7 +42,7 @@ export function useDocsLocale(): PublicLocale {
 const CHROME = {
   en: {
     search: "Search the documentation",
-    placeholder: "Buy, Autoinvest, fees, receipt…",
+    placeholder: "Perps, grid, launch, fees…",
     results: (n: number) => (n === 1 ? "1 page" : `${n} pages`),
     noResults: "Nothing matches. Try another word.",
     contents: "Contents",
@@ -58,7 +58,7 @@ const CHROME = {
   },
   uk: {
     search: "Пошук у документації",
-    placeholder: "Купівля, «Автоінвест», комісії, квитанція…",
+    placeholder: "Perps, грід, лаунч, комісії…",
     results: (n: number) => `${n} стор.`,
     noResults: "Нічого не знайдено. Спробуй інше слово.",
     contents: "Зміст",

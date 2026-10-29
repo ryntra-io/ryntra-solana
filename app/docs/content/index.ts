@@ -1,41 +1,69 @@
-import { INVEST_PAGES } from "./invest.ts";
-import { LAUNCH_PAGES } from "./launch.ts";
-import { ACTIVITY, PORTFOLIO, SETTINGS } from "./manage.ts";
+import { BOTS_PAGE } from "./bots.ts";
+import { AUTOINVEST_PAGE, BUY, COMPANY_PAGE, PRIVATE_COMPANIES, WHAT_YOU_BUY } from "./invest.ts";
+import { CREATOR, LAUNCH } from "./launch.ts";
+import { ACTIVITY, POOLS, PORTFOLIO, SETTINGS } from "./manage.ts";
 import { DOC_GROUP_IDS, GROUP_TITLES, type DocGroupId, type DocPage, type Localized } from "./model.ts";
-import { MONEY_PAGES, REWARDS_PAGES } from "./money.ts";
+import { RECEIVE, REFERRALS, REWARDS_PAGE, SEND, TOP_UP_PAGE } from "./money.ts";
+import { PERPS_PAGE } from "./perps.ts";
+import { PHONE } from "./phone.ts";
+import { PREDICTIONS_PAGE } from "./predictions.ts";
 import { REFERENCE_PAGES } from "./reference.ts";
-import { RYNTRA_PAGES } from "./ryntra.ts";
-import { START_PAGES } from "./start.ts";
-import { STRATEGY_PAGES } from "./strategies.ts";
-import { SCREENER, SPOT, SWAP, TRENDS } from "./trade.ts";
+import { ASSISTANT } from "./ryntra.ts";
+import { SOON } from "./soon.ts";
+import { CABINET, GETTING_STARTED, OVERVIEW, WALLET } from "./start.ts";
+import { MY_STRATEGIES, RESULTS, STRATEGIES_OVERVIEW } from "./strategies.ts";
+import { BRIDGE, SCREENER, SPOT, SWAP, TRADE_OVERVIEW, TRENDS } from "./trade.ts";
 
 /**
- * Every documentation page, in reading order — the menu's order: Start,
- * Invest, Trade, Launch, Money, Portfolio, Ryntra, Rewards, then Reference. The
- * overview (slug "") is `/docs`; every other slug answers at `/docs/<slug>`.
+ * Every documentation page, in reading order — the products a person uses: Start,
+ * Trading, Perps, Predictions, Bots and grid, Launch, Portfolio and pools, Money and wallet, Rewards, the assistant,
+ * the phone, then Reference, and the one short page for teams, agents and developers. The overview (slug "") is
+ * `/docs`; every other slug answers at `/docs/<slug>`.
  */
 export const DOC_PAGES: readonly DocPage[] = [
-  ...START_PAGES,
+  OVERVIEW,
+  GETTING_STARTED,
+  CABINET,
   SETTINGS,
-  ...INVEST_PAGES,
-  SWAP,
+  TRADE_OVERVIEW,
   SPOT,
+  SWAP,
   SCREENER,
   TRENDS,
-  ...LAUNCH_PAGES,
-  ...MONEY_PAGES,
+  BUY,
+  COMPANY_PAGE,
+  WHAT_YOU_BUY,
+  PRIVATE_COMPANIES,
+  PERPS_PAGE,
+  PREDICTIONS_PAGE,
+  BOTS_PAGE,
+  AUTOINVEST_PAGE,
+  MY_STRATEGIES,
+  RESULTS,
+  STRATEGIES_OVERVIEW,
+  LAUNCH,
+  CREATOR,
   PORTFOLIO,
-  ...STRATEGY_PAGES,
+  POOLS,
+  WALLET,
+  TOP_UP_PAGE,
+  SEND,
+  RECEIVE,
+  BRIDGE,
   ACTIVITY,
-  ...RYNTRA_PAGES,
-  ...REWARDS_PAGES,
+  REWARDS_PAGE,
+  REFERRALS,
+  ASSISTANT,
+  PHONE,
   ...REFERENCE_PAGES,
+  SOON,
 ];
 
 /**
  * The developer references keep their own routes and their own renderer
- * (`docs-experience.tsx`); the navigation lists them beside the product
- * pages so a reader finds them from the same place.
+ * (`docs-experience.tsx`) and answer by their own links; since F3
+ * the navigation lists none of them — «Teams, agents and developers» is the
+ * one page it holds for them.
  */
 export type DeveloperEntry = Readonly<{ href: string; title: Localized; summary: Localized }>;
 export const DEVELOPER_ENTRIES: readonly DeveloperEntry[] = [
@@ -61,6 +89,11 @@ export const DEVELOPER_ENTRIES: readonly DeveloperEntry[] = [
 export const SITE_ENTRIES: Readonly<Partial<Record<DocGroupId, readonly DeveloperEntry[]>>> = {
   reference: [
     {
+      href: "/support",
+      title: { en: "Support", uk: "Підтримка" },
+      summary: { en: "Where to ask, what to send with your question, and the answers people look for first.", uk: "Куди писати, що додати до запитання, і відповіді, які шукають першими." },
+    },
+    {
       href: "/security",
       title: { en: "Security", uk: "Безпека" },
       summary: { en: "What Ryntra can touch and what it cannot, what has not been audited, and how to report an issue.", uk: "Чого Ryntra може торкнутися й чого ні, що не проходило аудиту і як повідомити про проблему." },
@@ -69,13 +102,6 @@ export const SITE_ENTRIES: Readonly<Partial<Record<DocGroupId, readonly Develope
       href: "/methodology",
       title: { en: "Where the figures come from", uk: "Звідки цифри" },
       summary: { en: "Every figure Ryntra shows, its source and its time.", uk: "Кожна цифра в Ryntra, її джерело й час." },
-    },
-  ],
-  developers: [
-    {
-      href: "/developers",
-      title: { en: "Open source", uk: "Відкритий код" },
-      summary: { en: "The public repository: what is open, how to run it and what it does not claim.", uk: "Публічний репозиторій: що відкрито, як запустити і чого він не стверджує." },
     },
   ],
 };
@@ -89,14 +115,11 @@ export function docPageBySlug(slug: string): DocPage | undefined {
 export type DocNavItem = Readonly<{ href: string; title: Localized; summary: Localized; slug?: string }>;
 export type DocNavGroup = Readonly<{ id: DocGroupId; title: Localized; items: readonly DocNavItem[] }>;
 
-/** The sidebar: the menu's sections, then Reference and Developers, each with its pages in reading order and the site's own pages it points to. */
+/** The sidebar: the products, then Reference and «Teams, agents, developers», each with its pages in reading order and the site's own pages it points to. */
 export const DOC_NAV: readonly DocNavGroup[] = DOC_GROUP_IDS.map((id) => {
   const site = (SITE_ENTRIES[id] ?? []).map((entry) => ({ href: entry.href, title: entry.title, summary: entry.summary }));
-  const pages =
-    id === "developers"
-      ? DEVELOPER_ENTRIES.map((entry) => ({ href: entry.href, title: entry.title, summary: entry.summary }))
-      : DOC_PAGES.filter((page) => page.group === id).map((page) => ({ href: docsHref(page.slug), title: page.title, summary: page.summary, slug: page.slug }));
-  return { id, title: GROUP_TITLES[id], items: id === "developers" ? [...site, ...pages] : [...pages, ...site] };
+  const docs = DOC_PAGES.filter((page) => page.group === id).map((page) => ({ href: docsHref(page.slug), title: page.title, summary: page.summary, slug: page.slug }));
+  return { id, title: GROUP_TITLES[id], items: [...docs, ...site] };
 });
 
 /** The page before and after, in reading order, for the footer of an article. */

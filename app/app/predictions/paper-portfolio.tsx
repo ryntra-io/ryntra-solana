@@ -8,6 +8,7 @@ import { AccountCard } from "./account-card";
 import styles from "./predictions.module.css";
 import { usePaperAccount } from "./use-paper-account";
 import { wordsFor } from "./words";
+import { usePredictionsPaths } from "./surface";
 
 /**
  * *Paper Predictions* on the Portfolio page: the paper account in its own
@@ -17,6 +18,7 @@ import { wordsFor } from "./words";
  * account sees how to enable one.
  */
 export function PaperPortfolioSection({ locale }: { locale: WorkspaceLocale }) {
+  const paths = usePredictionsPaths();
   const word = wordsFor(locale);
   const account = usePaperAccount();
   if (account.state.status === "guest") return null;
@@ -30,7 +32,7 @@ export function PaperPortfolioSection({ locale }: { locale: WorkspaceLocale }) {
           <p className={styles.tagline}>{locale === "uk" ? "Симульовані кошти — не входять у суму вашого портфеля." : "Simulated funds — never part of your portfolio total."}</p>
         </div>
         <div className={styles.actions}>
-          <Link className="rw-btn" href="/app/predictions" prefetch={false}>
+          <Link className="rw-btn" href={paths.hub} prefetch={false}>
             {word("title")}
           </Link>
         </div>

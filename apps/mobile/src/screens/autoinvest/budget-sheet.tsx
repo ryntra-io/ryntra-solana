@@ -3,6 +3,7 @@ import { Keyboard, TextInput, View } from 'react-native'
 
 import { Button } from '@/components/button'
 import { ChoiceChips, type Choice } from '@/components/choice-chips'
+import { HelpDot } from '@/components/help-dot'
 import { Sheet } from '@/components/sheet'
 import { Txt } from '@/components/txt'
 import { AUTOINVEST_COPY } from '@/features/autoinvest/copy'
@@ -26,8 +27,8 @@ import { type, useTheme } from '@/theme'
 /**
  * «Бюджет місяця» — the person's own ceiling for every rule in a calendar
  * month, a sheet like the purchase's: a sum
- * in dollars under «Не більше на місяць», from $1,
- * typed or $31 · $50 · $100 · $200 — the first a dollar a day
+ * in dollars under «Не більше на місяць», from $1
+ * (M21), typed or $31 · $50 · $100 · $200 — the first a dollar a day
  * for the longest month — what the month has taken so far («Цього місяця $45 з
  * $100»), one line on what the ceiling does and one on what counts,
  * «Зберегти» — and «Прибрати бюджет» while there is one. Only the person sets
@@ -102,9 +103,13 @@ function BudgetFlow({ onClose }: { onClose: () => void }) {
       <View className="gap-4 pb-2">
         {/* The budget's sum is the month's ceiling for all rules — never one purchase. */}
         <View className="gap-0.5">
-          <Txt variant="labelSm" tone="faint" caps className="text-center" importantForAccessibility="no">
-            {copy.atMostPerMonth}
-          </Txt>
+          {/* What the ceiling bounds and what it counts — one tap deep beside its label. */}
+          <View className="flex-row items-center justify-center gap-1">
+            <Txt variant="labelSm" tone="faint" caps className="text-center" importantForAccessibility="no">
+              {copy.atMostPerMonth}
+            </Txt>
+            <HelpDot title={copy.monthBudget} body={[copy.budgetLine, copy.budgetCounts]} />
+          </View>
           <TextInput
             value={text.length > 0 ? `$${text}` : ''}
             onChangeText={(value) => setTypedText(value.replace(/[^\d.,]/g, '').slice(0, 12))}
@@ -133,12 +138,6 @@ function BudgetFlow({ onClose }: { onClose: () => void }) {
             {monthWords(budget, copy, locale)}
           </Txt>
         ) : null}
-        <Txt variant="body" className="text-center">
-          {copy.budgetLine}
-        </Txt>
-        <Txt variant="ui" tone="faint" className="text-center">
-          {copy.budgetCounts}
-        </Txt>
         {failure ? (
           <Txt variant="ui" tone="danger" className="text-center">
             {failure}

@@ -7,9 +7,11 @@ import { Panel } from "@/app/shell/panel";
 import { StatusChip } from "@/app/shell/status-chip";
 import { connectEvmWallet, EVM_WALLET_CHAINS, sendEvmTransaction } from "@/lib/base/wallet.client";
 import { displayAmount, parseHumanAmount } from "@/lib/solana/amounts";
+import { MAX_SIGNABLE_WINDOW_MS, MIN_WALLET_WINDOW_MS, mayOpenWallet, signableWindowClosed } from "@/lib/solana/blockhash-life";
 import { clearBridgeRun, readBridgeRun, saveBridgeRun } from "@/lib/solana/bridge-run.client";
 import { addEphemeralSignature, createEphemeralMessageAccount } from "@/lib/solana/cctp-ephemeral.client";
 import { explorerTxUrl } from "@/lib/solana/explorer";
+import { signFreshBytes } from "@/lib/solana/sign-fresh";
 import { downloadReceipt, storeSolanaReceipt } from "@/lib/solana/send-receipt-vault.client";
 import { signTransaction } from "@/lib/solana/wallet.client";
 import { useSolanaConnection } from "../connection.tsx";
@@ -85,7 +87,11 @@ const USDC_DECIMALS = 6;
  * actually died, which is the backstop that matters and the only one that can
  * see the chain.
  */
-const REVIEW_REFRESH_MS = 30_000;
+const REVIEW_REFRESH_MS = MAX_SIGNABLE_WINDOW_MS - MIN_WALLET_WINDOW_MS;
+/* AG-1 (17.10): slots are 200 ms now and a blockhash lives ~150 blocks ≈ 30 s, so half a minute was the whole life of
+   the bytes, not a safe interval. The Review is rebuilt while the wallet still has its own window
+   (`lib/solana/blockhash-life.ts`), and a press or a signature that comes later builds it again instead of burning
+   bytes the network would refuse. */
 
 /**
  * How often the card asks Circle whether it has signed yet.
@@ -578,6 +584,14 @@ export function BridgeCard({ embedded, onFacts }: { embedded?: BridgeCardEmbedde
       return;
     }
 
+    /* AG-1: too little of the bytes' life left for a wallet — the Review is built again first. */
+    const receivedAt = planReceivedAt ?? 0;
+    if (!mayOpenWallet({ receivedAtMs: receivedAt, signableMs: MAX_SIGNABLE_WINDOW_MS })) {
+      setStage("REVIEW");
+      const fresh = await prepare();
+      if (fresh) setRefreshed(true);
+      return;
+    }
     const signed = await signTransaction({
       wallet: connection.wallet,
       address: connection.address,
@@ -587,6 +601,13 @@ export function BridgeCard({ embedded, onFacts }: { embedded?: BridgeCardEmbedde
     if (!signed.ok) {
       setFailure(bridgeWalletFailureCopy(signed.reason, text));
       setStage("REVIEW");
+      return;
+    }
+    /* The wallet outlived the bytes: never burned — a fresh Review instead of the network's refusal. */
+    if (signableWindowClosed({ receivedAtMs: receivedAt, signableMs: MAX_SIGNABLE_WINDOW_MS })) {
+      setStage("REVIEW");
+      const fresh = await prepare();
+      if (fresh) setRefreshed(true);
       return;
     }
 
@@ -653,7 +674,7 @@ export function BridgeCard({ embedded, onFacts }: { embedded?: BridgeCardEmbedde
       usdcBeforeRaw: null,
     });
     setStage("ATTESTING");
-  }, [connection, direction, plan, text]);
+  }, [connection, direction, plan, planReceivedAt, prepare, text]);
 
   /**
    * The Base-source burn: arm the boundary, then open the wallet.
@@ -830,44 +851,51 @@ export function BridgeCard({ embedded, onFacts }: { embedded?: BridgeCardEmbedde
       return;
     }
     const recipientOwner = plan.plan.destinationOwner ?? recipient.trim() ?? connection.address;
-    const built = await postJson<{
-      plan: {
-        state: string;
-        reason: string | null;
-        unsignedWireBase64: string | null;
-        recipientUsdcBeforeRaw: string | null;
-        createsRecipientAccount: boolean;
-      };
-    }>("/api/solana/bridge/mint", {
-      intentDigest: plan.plan.intentDigest,
-      from: connection.address,
-      messageHex: attested.messageHex,
-      attestationHex: attested.attestationHex,
-      recipientOwner,
+    /* AG-1: the receive is built and signed in one press; a wallet slower than the bytes' ~30 s gets fresh bytes and
+       one more prompt instead of a refusal (`lib/solana/sign-fresh.ts`). */
+    const fresh = await signFreshBytes<string, string, Readonly<{ ok: false; received: boolean; message: string | null }>>({
+      build: async () => {
+        const built = await postJson<{
+          plan: {
+            state: string;
+            reason: string | null;
+            unsignedWireBase64: string | null;
+            recipientUsdcBeforeRaw: string | null;
+            createsRecipientAccount: boolean;
+          };
+        }>("/api/solana/bridge/mint", {
+          intentDigest: plan.plan.intentDigest,
+          from: connection.address,
+          messageHex: attested.messageHex,
+          attestationHex: attested.attestationHex,
+          recipientOwner,
+        });
+        if (!built.ok) return { ok: false, received: false, message: text("The last step could not be prepared just now. Your money is safe and this can be retried.") };
+        setUsdcBefore(built.data.plan.recipientUsdcBeforeRaw);
+        if (built.data.plan.state === "ALREADY_RECEIVED") return { ok: false, received: true, message: null };
+        if (built.data.plan.state !== "READY" || !built.data.plan.unsignedWireBase64) {
+          return { ok: false, received: false, message: built.data.plan.reason ?? text("The last step is not ready yet. Your money is safe and this can be retried.") };
+        }
+        return { ok: true, data: built.data.plan.unsignedWireBase64 };
+      },
+      signableMsOf: () => null,
+      sign: async (wire) => {
+        const answer = await signTransaction({ wallet: connection.wallet, address: connection.address, unsignedWireBase64: wire, chain: "solana:mainnet" });
+        return answer.ok ? { ok: true, value: answer.signedWireBase64 } : answer;
+      },
     });
-    if (!built.ok) {
-      setFailure(text("The last step could not be prepared just now. Your money is safe and this can be retried."));
+    if (!fresh.ok) {
+      if (fresh.stage === "build") {
+        if (fresh.failure.received) setStage("OBSERVING");
+        else setFailure(fresh.failure.message);
+      } else if (fresh.stage === "sign") {
+        setFailure(bridgeWalletFailureCopy(fresh.reason, text));
+      } else {
+        setFailure(text("The last step could not be prepared just now. Your money is safe and this can be retried."));
+      }
       return;
     }
-    setUsdcBefore(built.data.plan.recipientUsdcBeforeRaw);
-    if (built.data.plan.state === "ALREADY_RECEIVED") {
-      setStage("OBSERVING");
-      return;
-    }
-    if (built.data.plan.state !== "READY" || !built.data.plan.unsignedWireBase64) {
-      setFailure(built.data.plan.reason ?? text("The last step is not ready yet. Your money is safe and this can be retried."));
-      return;
-    }
-    const signed = await signTransaction({
-      wallet: connection.wallet,
-      address: connection.address,
-      unsignedWireBase64: built.data.plan.unsignedWireBase64,
-      chain: "solana:mainnet",
-    });
-    if (!signed.ok) {
-      setFailure(bridgeWalletFailureCopy(signed.reason, text));
-      return;
-    }
+    const signed = { signedWireBase64: fresh.signed };
     const submitted = await postJson<{ signature: string }>("/api/solana/bridge/receive", {
       intentDigest: plan.plan.intentDigest,
       payer: connection.address,
@@ -1484,7 +1512,7 @@ export function BridgeCard({ embedded, onFacts }: { embedded?: BridgeCardEmbedde
           ) : null}
           {refreshed ? (
             <div className={styles.errorRow}>
-              {text("A minute passed, so this review was rebuilt against the current network. The transfer is the same — check it once more and confirm.")}
+              {text("The transaction lives about 30 seconds, so this review was rebuilt against the current network. The transfer is the same — check it once more and confirm.")}
             </div>
           ) : null}
           {failure ? <div className={styles.errorRow}>{failure}</div> : null}

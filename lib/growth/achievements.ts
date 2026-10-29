@@ -1,6 +1,6 @@
 import { effectiveRewardEntries } from "../rewards/ledger.ts";
 import { USD_MICROS_PER_USD, type RewardEntry } from "../rewards/model.ts";
-import { receivedUsdMicrosOf, type RankEvent } from "../rewards/rank.ts";
+import { partnerBaseSweep, rankEventPointsOf, receivedUsdMicrosOf, type RankEvent } from "../rewards/rank.ts";
 import { formatPoints } from "../points/model.ts";
 import { RANK_POINTS_PER_USD, RANK_THRESHOLDS, RANK_WINDOW_MS, rankForPoints, REWARD_RANKS, type RewardRank } from "../rewards/rules.ts";
 import { ACHIEVEMENT_IDS, rankTier, type AchievementId } from "./badges.ts";
@@ -61,7 +61,8 @@ function contributions(wallet: string, entries: readonly RewardEntry[], events: 
   for (const event of events) {
     const ms = Date.parse(event.at);
     if (event.wallet !== wallet || !Number.isFinite(ms) || ms > atMs) continue;
-    out.push({ ms, trades: 0n, friends: 0n, launches: BigInt(event.points) });
+    /* A partner's base is read whole at each moment (it leaves the window by its own rule); its arrival is a moment to read. */
+    out.push({ ms, trades: 0n, friends: 0n, launches: rankEventPointsOf(event) });
   }
   return out.sort((a, b) => a.ms - b.ms);
 }
@@ -90,6 +91,8 @@ export function ranksReached(
   let friends = 0n;
   let launches = 0n;
   let tail = 0;
+  /* The partners' base is read in one pass over its spans: the moments asked about rise. */
+  const partners = partnerBaseSweep(args.events, args.wallet, RANK_WINDOW_MS);
   const read = (ms: number) => {
     while (tail < list.length && list[tail].ms <= ms - RANK_WINDOW_MS) {
       trades -= list[tail].trades;
@@ -97,7 +100,8 @@ export function ranksReached(
       launches -= list[tail].launches;
       tail += 1;
     }
-    const points = (trades * RANK_POINTS_PER_USD) / USD_MICROS_PER_USD + (friends * RANK_POINTS_PER_USD) / USD_MICROS_PER_USD + launches;
+    const fromPartners = (partners(ms) * RANK_POINTS_PER_USD) / USD_MICROS_PER_USD;
+    const points = (trades * RANK_POINTS_PER_USD) / USD_MICROS_PER_USD + (friends * RANK_POINTS_PER_USD) / USD_MICROS_PER_USD + launches + fromPartners;
     const held = rankForPoints(points);
     for (const rank of REWARD_RANKS) {
       if (rank === "BRONZE" || rankTier(rank) > rankTier(held) || first.has(rank)) continue;

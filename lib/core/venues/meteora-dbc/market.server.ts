@@ -25,10 +25,8 @@
  * it is given.
  */
 
-import { CpAmm } from "@meteora-ag/cp-amm-sdk";
 import {
   DAMM_V2_MIGRATION_FEE_ADDRESS,
-  DynamicBondingCurveClient,
   SwapMode,
   deriveDammV2PoolAddress,
   type PoolConfig,
@@ -38,7 +36,9 @@ import { Connection, PublicKey } from "@solana/web3.js";
 import { getBase58Encoder } from "@solana/kit";
 import BN from "bn.js";
 
+import { cpAmmOf, dbcClientOf } from "../meteora-clients.server.ts";
 import { SNIPER_SECONDS, accountPageReached, listsWhole, partnerPartRaw, priceFromSqrtX64, tradeOf, type LaunchTrade, type SwapSeen } from "./market.ts";
+import { getTransactionAnyVersion } from "../../../solana/v1-tx.ts";
 
 const DBC_PROGRAM = "dbcij3LWUppWqq96dh6gJWwBifmcGfLSB5D4DuSMaqN";
 const DAMM_V2_PROGRAM = "cpamdpZCGKUy5JxQXB4dcpGPiikHawvSWAd6mEn1sGG";
@@ -62,6 +62,10 @@ const RETRY_PAUSE_MS = 400;
 /** How many of an account's newest signatures are read for a wallet's own trades. */
 const ACCOUNT_SIGNATURES = 200;
 const ACCOUNT_BUDGET_MS = 10_000;
+/** A window of a market's history read for its survival (SOL-L3): pages of a thousand signatures back to it, decoded in batches. */
+const WINDOW_PAGES = 20;
+const WINDOW_DECODE_BATCH = 40;
+const WINDOW_BUDGET_MS = 15_000;
 
 export type CurveState = Readonly<{
   pool: string;
@@ -100,6 +104,8 @@ export type GraduatedState = Readonly<{
   pairReserveRaw: string;
   /** `collect_fee_mode` 2: the pool compounds and prices by its two reserves; otherwise by its liquidity inside its range. */
   compounding: boolean;
+  /** `collect_fee_mode`: 0 both tokens, 1 only B, 2 compounding (only B). */
+  collectFeeMode: number;
   liquidity: string;
   sqrtMinPrice: string;
   sqrtMaxPrice: string;
@@ -118,7 +124,7 @@ export type MarketState = Readonly<{
   /** The curve's opening price, from its config. */
   openingPrice: number;
   /** The accounts as read, for a quote on this same read: the curve's account and its config. Never sent anywhere. */
-  accounts: Readonly<{ curve: unknown; config: PoolConfig }>;
+  accounts: Readonly<{ curve: unknown; config: PoolConfig; /** The graduated pool's account as the read saw it, when it has one. */ pool?: unknown }>;
 }>;
 
 export type TradeHistory = Readonly<{
@@ -133,6 +139,11 @@ export type TradeHistory = Readonly<{
   coveredFrom: number | null;
   /** When the transactions listed but not read landed (unix seconds; one with no time counts as now). */
   gaps: readonly number[];
+  /**
+   * The slots of the graduated pool's transactions that added or took out liquidity, among those read; null when one of
+   * its transactions was decoded without looking for it. Empty before graduation.
+   */
+  liquidityChangeSlots: readonly number[] | null;
 }>;
 
 export type HolderBalance = Readonly<{ owner: string; account: string; amountRaw: string }>;
@@ -147,7 +158,11 @@ export type HolderRead = Readonly<{
   largestRead: boolean;
 }>;
 
-export type Decoded = Readonly<{ slot: number; blockTime: number | null; failed: boolean; trades: readonly LaunchTrade[] }>;
+/**
+ * One transaction as decoded. `marks` (SOL-L2): it was read for the creator's and the LP's part of each swap and for a
+ * change of the graduated pool's liquidity; a decode without them is read again from the node when a history needs them.
+ */
+export type Decoded = Readonly<{ slot: number; blockTime: number | null; failed: boolean; trades: readonly LaunchTrade[]; marks?: Readonly<{ v: 1; liquidityChanged: boolean }> }>;
 
 /**
  * Where decoded transactions outlive a process: a confirmed transaction's trades never change, so once any instance has
@@ -158,6 +173,12 @@ export type DecodedIndex = Readonly<{
   load(token: string): Promise<ReadonlyMap<string, Decoded>>;
   save(token: string, signature: string, decoded: Decoded): Promise<void>;
 }>;
+
+/** How far back a decode's `marks` matter: the longest window (a week) and a day of margin. */
+const MARKS_WINDOW_SECONDS = 8 * 24 * 60 * 60;
+/* A decode a node would not give again now: asked again after this pause, not on every read. */
+const REFETCH_REFUSED = new Map<string, number>();
+const REFETCH_PAUSE_MS = 5 * 60 * 1000;
 
 /* A confirmed transaction never changes: decoded once a process. Bounded, oldest out first. */
 const DECODED = new Map<string, Decoded>();
@@ -175,6 +196,18 @@ const CONFIGS = new Map<string, Promise<PoolConfig>>();
 /* A launch's supply and decimals, and its pair's decimals. */
 const MINTS = new Map<string, Readonly<{ at: number; value: Readonly<{ supplyRaw: bigint; tokenDecimals: number; pairDecimals: number; pairProgram: string }> }>>();
 const MINT_CACHE_MS = 10 * 60 * 1000;
+/* A curve's state in flight or read less than a second ago, for reads that may share it (SOL-P1, `state({ shared })`). */
+const STATES = new Map<string, { at: number; token: string; settled: number | null; value: Promise<MarketState> }>();
+const STATE_SHARE_MS = 1_000;
+/** A read of a curve still under way after this long is not joined again: a node that hangs leaves no quote stuck. */
+const STATE_STUCK_MS = 15_000;
+/* A graduated curve's pool, by the curve's address: it never changes once the curve has moved there. */
+const GRADUATED_POOLS = new Map<string, string>();
+const STATES_MAX = 500;
+/* A scan of a mint's accounts in flight or just answered: `scanHolders` starts it, `holders` takes the same one. */
+const SCANS = new Map<string, Readonly<{ at: number; value: Promise<HolderBalance[] | null> }>>();
+const SCAN_KEEP_MS = 5_000;
+const SCANS_MAX = 500;
 
 function remember(key: string, value: Decoded) {
   if (DECODED.size >= DECODED_MAX) DECODED.delete(DECODED.keys().next().value as string);
@@ -191,8 +224,18 @@ function tokenAccountOf(data: Buffer): Readonly<{ mint: string; owner: string; a
   return { mint: new PublicKey(data.subarray(0, 32)).toBase58(), owner: new PublicKey(data.subarray(32, 64)).toBase58(), amount: data.readBigUInt64LE(64) };
 }
 
+/** A trade sent changes the market: its curve and its holders are read again, not taken from the shared reads (SOL-P1). */
+export function forgetSharedReads(token: string): void {
+  for (const [key, entry] of STATES) if (entry.token === token) STATES.delete(key);
+  for (const key of [...SCANS.keys()]) if (key.endsWith(`:${token}`)) SCANS.delete(key);
+}
+
 export type LaunchMarketReader = Readonly<{
-  state(args: Readonly<{ token: string; pool: string }>): Promise<MarketState>;
+  /**
+   * `shared` (SOL-P1): a read of the same curve in flight, or ended less than `STATE_SHARE_MS` ago, is taken rather than
+   * read again — a crowd's quotes and market reads ask the node once a second, not once a person. A build asks fresh.
+   */
+  state(args: Readonly<{ token: string; pool: string; shared?: boolean }>): Promise<MarketState>;
   /** `budgetMs`: how long the read may take, the node's waits included; what is unread then leaves the history partial. */
   trades(args: Readonly<{ token: string; state: MarketState; creationSignature: string; limit?: number; budgetMs?: number }>): Promise<TradeHistory>;
   /** `accounts`: the token accounts the trades moved tokens through, with their owners — a holder in an account of any kind is found. */
@@ -209,9 +252,20 @@ export type LaunchMarketReader = Readonly<{
    * transaction was read inside the budget.
    */
   accountTrades(args: Readonly<{ token: string; state: MarketState; accounts: readonly string[]; since: number | null; creationSignature?: string | null; budgetMs?: number }>): Promise<Readonly<{ trades: readonly LaunchTrade[]; complete: boolean }>>;
+  /**
+   * The trades of one window of time, `[from, to)` in unix seconds, on the curve and the graduated pool (SOL-L3: a
+   * market's survival at day N), each account's signatures paged back past `from`. `found`: a trade the caller looks for
+   * — once one is decoded the read stops. `complete`: every transaction of the window was listed and decoded.
+   */
+  windowTrades(args: Readonly<{ token: string; state: MarketState; from: number; to: number; found?: (trade: LaunchTrade) => boolean; budgetMs?: number }>): Promise<Readonly<{ trades: readonly LaunchTrade[]; complete: boolean }>>;
   /** The trades one transaction made on this token, from its swap events; null when the node has no record of it yet. */
   /** `fresh`: a decode this process kept from before Ryntra's part of a trade was counted is read from the node again. */
   transaction(args: Readonly<{ token: string; state: MarketState; signature: string; fresh?: boolean }>): Promise<readonly LaunchTrade[] | null>;
+  /**
+   * Starts the scan of every account of the mint ahead of `holders`, which then waits for the same scan rather than a
+   * second one: it hangs on nothing of the history, so a read asks it beside the history (SOL-P1).
+   */
+  scanHolders(token: string): void;
   /** The DBC curves a wallet created, anywhere — null when the node does not answer the scan. */
   curvesBy(creator: string): Promise<number | null>;
   /** The curve's fee for a trade now, basis points — the falling fee for snipers included. */
@@ -224,7 +278,13 @@ export type LaunchMarketReader = Readonly<{
  * node that refused is not asked again for a while.
  */
 const REFUSED = new Map<string, number>();
-const REFUSAL_PAUSE_MS = 5 * 60 * 1000;
+/*
+ * A minute, not five: a public node's refusal is mostly a moment's burst limit, and a five-minute silence made a
+ * market's holders and concentration read «not read» on every read in it (18.10: now figures, now null).
+ */
+const REFUSAL_PAUSE_MS = 60 * 1000;
+/** The most refusals kept — a key per node and mint; the paused ones past their minute go first. */
+const REFUSED_MAX = 2_000;
 /** How long one of them may take; a node that has not answered by then is a node that refused. */
 const OPTIONAL_READ_MS = 8_000;
 
@@ -241,7 +301,10 @@ async function optional<T>(endpoint: string, kind: string, read: () => Promise<T
       }),
     ]);
   } catch {
-    REFUSED.set(key, Date.now());
+    const now = Date.now();
+    REFUSED.delete(key);
+    REFUSED.set(key, now);
+    if (REFUSED.size > REFUSED_MAX) for (const [old, at] of REFUSED) if (now - at >= REFUSAL_PAUSE_MS || REFUSED.size > REFUSED_MAX) REFUSED.delete(old);
     return null;
   } finally {
     clearTimeout(timer);
@@ -275,19 +338,33 @@ export function createLaunchMarketReader(
   options: Readonly<{ feeWallet?: string | null; referralOwner?: string | null; indexed?: string | null; index?: DecodedIndex | null; history?: string | null; archive?: string | null }> = {},
 ): LaunchMarketReader {
   const lenient = sideConnection(options.indexed ?? connection.rpcEndpoint);
+  /*
+   * The holders' reads — every account of the mint, its largest accounts — are asked of the indexed node and then of the
+   * node whose lists reach back, each in turn until one answers: one node's refusal is no longer the figure's.
+   */
+  const lenients = [lenient, ...(options.history ? [sideConnection(options.history)] : [])].filter((node, index, all) => all.findIndex((other) => other.rpcEndpoint === node.rpcEndpoint) === index);
+  async function fromAny<T>(kind: string, read: (node: Connection) => Promise<T>): Promise<T | null> {
+    for (const node of lenients) {
+      /* A scan of one mint that timed out says nothing of another's: its pause is the mint's (`kind` names it). */
+      const answer = await optional(node.rpcEndpoint, kind, () => read(node));
+      if (answer !== null) return answer;
+    }
+    return null;
+  }
   const listing = options.history && options.history !== connection.rpcEndpoint ? sideConnection(options.history) : connection;
   const archive = options.archive && options.archive !== connection.rpcEndpoint ? sideConnection(options.archive) : null;
   const feeWallet = options.feeWallet ?? null;
   const referralOwner = options.referralOwner ?? null;
   const index = options.index ?? null;
-  const client = new DynamicBondingCurveClient(connection, "confirmed");
-  const lenientClient = new DynamicBondingCurveClient(lenient, "confirmed");
-  const cpAmm = new CpAmm(connection);
-  const dbcCoder = (client.state.getProgram() as unknown as { coder: { events: { decode(data: string): { name: string; data: Record<string, unknown> } | null } } }).coder;
+  const client = dbcClientOf(connection);
+  const lenientClient = dbcClientOf(lenient);
+  const cpAmm = cpAmmOf(connection);
+  const dbcCoder = (client.state.program as unknown as { coder: { events: { decode(data: string): { name: string; data: Record<string, unknown> } | null } } }).coder;
   const dammCoder = (cpAmm._program as unknown as { coder: { events: { decode(data: string): { name: string; data: Record<string, unknown> } | null } } }).coder;
 
   function configOf(address: PublicKey): Promise<PoolConfig> {
-    const key = `${connection.rpcEndpoint}:${address.toBase58()}`;
+    /* Keyed by the SDK too: an account one version decoded is never quoted by the other (SOL-L9). */
+    const key = `${client.sdk}:${connection.rpcEndpoint}:${address.toBase58()}`;
     const cached = CONFIGS.get(key);
     if (cached) return cached;
     const read = client.state.getPoolConfig(address).then((config) => {
@@ -299,8 +376,31 @@ export function createLaunchMarketReader(
     return read;
   }
 
-  async function state({ token, pool }: Readonly<{ token: string; pool: string }>): Promise<MarketState> {
+  function state({ token, pool, shared = false }: Readonly<{ token: string; pool: string; shared?: boolean }>): Promise<MarketState> {
+    if (!shared) return readState(token, pool);
+    const key = `${client.sdk}:${connection.rpcEndpoint}:${pool}`;
+    const hit = STATES.get(key);
+    if (hit && (hit.settled === null ? Date.now() - hit.at < STATE_STUCK_MS : Date.now() - hit.settled < STATE_SHARE_MS)) return hit.value;
+    STATES.delete(key);
+    if (STATES.size >= STATES_MAX) STATES.delete(STATES.keys().next().value as string);
+    const entry: { at: number; token: string; settled: number | null; value: Promise<MarketState> } = { at: Date.now(), token, settled: null, value: readState(token, pool) };
+    STATES.set(key, entry);
+    entry.value.then(
+      () => {
+        entry.settled = Date.now();
+      },
+      () => {
+        if (STATES.get(key) === entry) STATES.delete(key);
+      },
+    );
+    return entry.value;
+  }
+
+  async function readState(token: string, pool: string): Promise<MarketState> {
     const tokenKey = new PublicKey(token);
+    /* A curve that graduated has one pool for ever: once known, the pool is read beside the curve, not after it (SOL-P1). */
+    const knownPool = GRADUATED_POOLS.get(pool) ?? null;
+    const early = knownPool ? cpAmm.fetchPoolState(new PublicKey(knownPool)).catch(() => null) : null;
     const virtual = await client.state.getPool(new PublicKey(pool));
     if (!virtual) throw new Error(`No curve at ${pool}.`);
     const curveState = (virtual as unknown as { poolState?: typeof virtual } & typeof virtual).poolState ?? virtual;
@@ -330,10 +430,17 @@ export function createLaunchMarketReader(
       points: config.curve.filter((point) => big(point.sqrtPrice) > 0n).map((point) => ({ sqrtPrice: point.sqrtPrice.toString(), liquidity: point.liquidity.toString() })),
     };
     let graduated: GraduatedState | null = null;
+    /* The graduated pool's account as this read saw it: a quote on it reads it again only where this read did not. */
+    let graduatedPool: unknown = null;
     if (migrated) {
       const dammConfig = DAMM_V2_MIGRATION_FEE_ADDRESS[config.migrationFeeOption];
       const dammPool = dammConfig ? deriveDammV2PoolAddress(dammConfig, tokenKey, config.quoteMint) : null;
-      const poolState = dammPool ? await cpAmm.fetchPoolState(dammPool).catch(() => null) : null;
+      const poolState = dammPool ? await (early && knownPool === dammPool.toBase58() ? early : cpAmm.fetchPoolState(dammPool).catch(() => null)) : null;
+      graduatedPool = poolState;
+      if (dammPool && poolState) {
+        if (GRADUATED_POOLS.size >= STATES_MAX) GRADUATED_POOLS.delete(GRADUATED_POOLS.keys().next().value as string);
+        GRADUATED_POOLS.set(pool, dammPool.toBase58());
+      }
       if (dammPool && poolState) {
         const tokenIsA = poolState.tokenAMint.equals(tokenKey);
         graduated = {
@@ -345,6 +452,7 @@ export function createLaunchMarketReader(
           tokenReserveRaw: (tokenIsA ? poolState.tokenAAmount : poolState.tokenBAmount).toString(),
           pairReserveRaw: (tokenIsA ? poolState.tokenBAmount : poolState.tokenAAmount).toString(),
           compounding: toNumber(poolState.collectFeeMode) === 2,
+          collectFeeMode: toNumber(poolState.collectFeeMode),
           liquidity: poolState.liquidity.toString(),
           sqrtMinPrice: poolState.sqrtMinPrice.toString(),
           sqrtMaxPrice: poolState.sqrtMaxPrice.toString(),
@@ -362,7 +470,7 @@ export function createLaunchMarketReader(
       pairProgram,
       price: poolPrice ?? curvePrice,
       openingPrice: priceFromSqrtX64(config.sqrtStartPrice.toString(), tokenDecimals, pairDecimals),
-      accounts: { curve: virtual, config },
+      accounts: { curve: virtual, config, pool: graduatedPool },
     };
   }
 
@@ -387,16 +495,39 @@ export function createLaunchMarketReader(
     /* What a trade cost depends on the fee wallet read with it. */
     const key = `${token}:${signature}:${feeWallet ?? ""}`;
     const cached = DECODED.get(key);
-    if (cached && (!fresh || cached.trades.every((trade) => trade.ryntraRaw !== undefined))) return cached;
-    let tx = await connection.getTransaction(signature, { commitment: "confirmed", maxSupportedTransactionVersion: 0 });
+    /*
+     * A decode made before `marks` is read again only while it can still count in a window (the last week and a day):
+     * an older one stays as it is, and the windows never reach it. A read again that fails keeps the older decode.
+     */
+    const refusedAt = REFETCH_REFUSED.get(key);
+    const marksMatter =
+      cached !== undefined &&
+      !cached.marks &&
+      cached.blockTime !== null &&
+      cached.blockTime >= Math.floor(Date.now() / 1000) - MARKS_WINDOW_SECONDS &&
+      (refusedAt === undefined || Date.now() - refusedAt > REFETCH_PAUSE_MS);
+    if (cached && !marksMatter && (!fresh || cached.trades.every((trade) => trade.ryntraRaw !== undefined))) return cached;
+    let tx = await getTransactionAnyVersion(connection, signature).catch((error) => {
+      if (marksMatter) return null;
+      throw error;
+    });
     /* A public node keeps a day or two of transactions: an older one is asked of the archive. */
-    if (!tx && archive) tx = await archive.getTransaction(signature, { commitment: "confirmed", maxSupportedTransactionVersion: 0 }).catch(() => null);
-    if (!tx?.meta) return null;
+    if (!tx && archive) tx = await getTransactionAnyVersion(archive, signature).catch(() => null);
+    if (!tx?.meta) {
+      /* Not read again now: the older decode stands, and this process asks again only after a pause. */
+      if (marksMatter) {
+        /* Bounded, oldest out first, as the decodes are. */
+        if (REFETCH_REFUSED.size >= DECODED_MAX) REFETCH_REFUSED.delete(REFETCH_REFUSED.keys().next().value!);
+        REFETCH_REFUSED.set(key, Date.now());
+      }
+      return marksMatter ? cached : null;
+    }
     const message = tx.transaction.message;
     const keys = message.getAccountKeys({ accountKeysFromLookups: tx.meta.loadedAddresses });
     const keyAt = (index: number) => keys.get(index)?.toBase58() ?? "";
     const seen: SwapSeen[] = [];
     let unsure = false;
+    let liquidityChanged = false;
     /* Who owns each token account the transaction touched, from the chain's own record of its balances. */
     const pre = tx.meta.preTokenBalances ?? [];
     const post = tx.meta.postTokenBalances ?? [];
@@ -416,6 +547,13 @@ export function createLaunchMarketReader(
         const data = bytesOf(ix.data);
         if (data.length < 16 || !data.subarray(0, 8).equals(EVENT_IX_TAG)) continue;
         const event = (program === DBC_PROGRAM ? dbcCoder : dammCoder).events.decode(data.subarray(8).toString("base64"));
+        /* Liquidity added to or taken out of the graduated pool, or a position split: the creator's share of its fees may have changed here. */
+        if ((event?.name === "evtLiquidityChange" || event?.name === "evtSplitPosition2" || event?.name === "evtSplitPosition3") && program === DAMM_V2_PROGRAM) {
+          const pool = (event.data as { pool?: PublicKey }).pool?.toBase58();
+          if (!market.graduated) unsure = true;
+          else if (pool === market.graduated.pool) liquidityChanged = true;
+          continue;
+        }
         if (!event || event.name !== "evtSwap2") continue;
         const fields = event.data as Record<string, unknown> & { pool: PublicKey; tradeDirection: number; swapResult: Record<string, BN>; currentTimestamp: BN };
         /* The swap that wrote this event: the program's own instruction just before it when another program called it, else the outer one. */
@@ -443,6 +581,7 @@ export function createLaunchMarketReader(
             feesRaw: big(result.tradingFee) + big(result.protocolFee) + big(result.referralFee),
             /* Ryntra is the partner of every Ryntra launch config: its part of the trading fee is the creator's remainder. */
             partnerFeeRaw: partnerPartRaw(big(result.tradingFee), market.curve.creatorTradingFeePct),
+            creatorFeeRaw: big(result.tradingFee) - partnerPartRaw(big(result.tradingFee), market.curve.creatorTradingFeePct),
             priceAfter: priceFromSqrtX64(result.nextSqrtPrice.toString(), market.tokenDecimals, market.pairDecimals),
           });
         } else {
@@ -458,6 +597,8 @@ export function createLaunchMarketReader(
             side: sell ? "sell" : "buy",
             feesRaw: big(result.claimingFee) + big(result.compoundingFee) + big(result.protocolFee) + big(result.referralFee),
             partnerFeeRaw: 0n,
+            /* The LP's part is in the pair currency when the pool collects its fee in B alone and the pair is B. */
+            lpFeeRaw: graduated.tokenIsA && (graduated.collectFeeMode === 1 || graduated.collectFeeMode === 2) ? big(result.claimingFee) : null,
             priceAfter: dammPrice(result.nextSqrtPrice.toString(), graduated.tokenIsA, market.tokenDecimals, market.pairDecimals),
           });
         }
@@ -476,7 +617,13 @@ export function createLaunchMarketReader(
     const trades = seen.map((entry) =>
       tradeOf(seen.length === 1 ? { ...entry, ryntraFeeRaw: ryntraFee > 0n ? ryntraFee : 0n, referralToRyntraRaw: referralToRyntra > 0n ? referralToRyntra : 0n } : entry),
     );
-    const decoded: Decoded = { slot: tx.slot, blockTime: tx.blockTime ?? null, failed: tx.meta.err !== null, trades: tx.meta.err === null ? trades : [] };
+    const decoded: Decoded = {
+      slot: tx.slot,
+      blockTime: tx.blockTime ?? null,
+      failed: tx.meta.err !== null,
+      trades: tx.meta.err === null ? trades : [],
+      marks: { v: 1, liquidityChanged: tx.meta.err === null && liquidityChanged },
+    };
     /* Kept only when it is whole: a decode that may have missed the token's own pool swap is answered once and read again. */
     if (unsure) return decoded;
     remember(key, decoded);
@@ -529,7 +676,9 @@ export function createLaunchMarketReader(
    */
   async function decodeAll(token: string, market: MarketState, signatures: readonly string[], until: number): Promise<(Decoded | null)[]> {
     if (signatures.some((signature) => !DECODED.has(`${token}:${signature}:${feeWallet ?? ""}`))) await warm(token);
-    const decoded = await inTurns(signatures, (signature) => (Date.now() < until ? decode(token, signature, market).catch(() => null) : Promise.resolve(null)));
+    /* Past the budget a decode this process already holds is still given — never a gap where one is known. */
+    const known = (signature: string) => DECODED.get(`${token}:${signature}:${feeWallet ?? ""}`) ?? null;
+    const decoded = await inTurns(signatures, (signature) => (Date.now() < until ? decode(token, signature, market).catch(() => known(signature)) : Promise.resolve(known(signature))));
     for (let index = 0; index < decoded.length && Date.now() < until; index += 1) {
       if (decoded[index] !== null) continue;
       await new Promise((resolve) => setTimeout(resolve, RETRY_PAUSE_MS));
@@ -554,8 +703,11 @@ export function createLaunchMarketReader(
 
   async function trades({ token, state: market, creationSignature, limit = TRADE_HISTORY_LIMIT, budgetMs = HISTORY_BUDGET_MS }: Parameters<LaunchMarketReader["trades"]>[0]): Promise<TradeHistory> {
     const until = Date.now() + budgetMs;
-    const curveSignatures = await signaturesOf(new PublicKey(market.curve.pool), { limit });
-    const poolSignatures = market.graduated ? await signaturesOf(new PublicKey(market.graduated.pool), { limit }) : [];
+    /* The curve's list and the pool's are two independent reads: asked at once (SOL-P1). */
+    const [curveSignatures, poolSignatures] = await Promise.all([
+      signaturesOf(new PublicKey(market.curve.pool), { limit }),
+      market.graduated ? signaturesOf(new PublicKey(market.graduated.pool), { limit }) : Promise.resolve([]),
+    ]);
     const all = [...new Map([...curveSignatures, ...poolSignatures].filter((entry) => entry.err === null).map((entry) => [entry.signature, entry])).values()];
     if (!all.some((entry) => entry.signature === creationSignature)) all.push({ signature: creationSignature, slot: 0, err: null, memo: null, blockTime: null });
     /* The creation first: the creator's first buy and the opening block rest on it, and it is read once a process. */
@@ -575,7 +727,19 @@ export function createLaunchMarketReader(
     const cutAt = (list: typeof curveSignatures, whole: boolean) => (whole ? null : (list.at(-1)?.blockTime ?? Number.POSITIVE_INFINITY));
     const cuts = [cutAt(curveSignatures, curveWhole), ...(market.graduated ? [cutAt(poolSignatures, poolWhole)] : [])].filter((value): value is number => value !== null);
     const times = new Map(all.map((entry) => [entry.signature, entry.blockTime ?? null]));
+    /* The pool's liquidity moves: from every transaction of the pool that was read, each decoded looking for it. */
+    const ofPool = new Set(poolSignatures.map((entry) => entry.signature));
+    let liquidityChangeSlots: number[] | null = [];
+    const marksFrom = Math.floor(Date.now() / 1000) - MARKS_WINDOW_SECONDS;
+    decoded.forEach((entry, index) => {
+      if (!entry || !ofPool.has(signatures[index]!) || liquidityChangeSlots === null) return;
+      /* An unmarked decode older than any window cannot fall after a window's first swap: it does not hide the others. */
+      if (!entry.marks && entry.blockTime !== null && entry.blockTime < marksFrom) return;
+      if (!entry.marks) liquidityChangeSlots = null;
+      else if (entry.marks.liquidityChanged) liquidityChangeSlots.push(entry.slot);
+    });
     return {
+      liquidityChangeSlots,
       coveredFrom: cuts.length ? Math.max(...cuts) : null,
       gaps: signatures.filter((_, index) => decoded[index] === null).map((signature) => times.get(signature) ?? Math.floor(Date.now() / 1000)),
       trades: list,
@@ -589,8 +753,9 @@ export function createLaunchMarketReader(
     const until = Date.now() + budgetMs;
     const signatures: string[] = [];
     let complete = true;
-    for (const account of accounts) {
-      const listed = await listedFrom(new PublicKey(account), { limit: ACCOUNT_SIGNATURES }).catch(() => null);
+    /* Each account's list is its own read: asked at once (SOL-P1), then taken in the accounts' order. */
+    const lists = await Promise.all(accounts.map((account) => listedFrom(new PublicKey(account), { limit: ACCOUNT_SIGNATURES }).catch(() => null)));
+    for (const listed of lists) {
       if (!listed) {
         complete = false;
         continue;
@@ -611,6 +776,54 @@ export function createLaunchMarketReader(
     const unique = [...new Set(signatures)];
     const decoded = await decodeAll(token, market, unique, until);
     return { trades: decoded.flatMap((entry) => entry?.trades ?? []), complete: complete && decoded.every((entry) => entry !== null) };
+  }
+
+  async function windowTrades({ token, state: market, from, to, found = () => false, budgetMs = WINDOW_BUDGET_MS }: Parameters<LaunchMarketReader["windowTrades"]>[0]): ReturnType<LaunchMarketReader["windowTrades"]> {
+    const until = Date.now() + budgetMs;
+    let complete = true;
+    const inWindow: string[] = [];
+    for (const pool of [market.curve.pool, ...(market.graduated ? [market.graduated.pool] : [])]) {
+      let before: string | undefined;
+      for (let page = 0; ; page += 1) {
+        if (page >= WINDOW_PAGES || Date.now() >= until) {
+          complete = false;
+          break;
+        }
+        const listed = await listedFrom(new PublicKey(pool), { before, limit: 1_000 }).catch(() => null);
+        if (!listed) {
+          complete = false;
+          break;
+        }
+        const batch = listed.entries;
+        for (const entry of batch) {
+          if (entry.err !== null) continue;
+          /* A signature with no time is decoded: its swap event carries the program's own clock. */
+          if (entry.blockTime === null || entry.blockTime === undefined || (entry.blockTime >= from && entry.blockTime < to)) inWindow.push(entry.signature);
+        }
+        /* Newest first: a page reaching past the window's start holds all of it; a short page is the account's first — whole only from the endpoint with the whole history. */
+        const oldest = batch.findLast((entry) => entry.blockTime !== null && entry.blockTime !== undefined)?.blockTime;
+        if (oldest !== null && oldest !== undefined && oldest < from) break;
+        if (batch.length < 1_000) {
+          if (!listed.deep) complete = false;
+          break;
+        }
+        before = batch.at(-1)?.signature;
+      }
+    }
+    const unique = [...new Set(inWindow)];
+    const trades: LaunchTrade[] = [];
+    for (let index = 0; index < unique.length; index += WINDOW_DECODE_BATCH) {
+      if (Date.now() >= until) {
+        complete = false;
+        break;
+      }
+      const decoded = await decodeAll(token, market, unique.slice(index, index + WINDOW_DECODE_BATCH), until);
+      if (decoded.some((entry) => entry === null)) complete = false;
+      const batch = decoded.flatMap((entry) => entry?.trades ?? []).filter((trade) => trade.at >= from && trade.at < to);
+      trades.push(...batch);
+      if (batch.some(found)) return { trades, complete: complete && index + WINDOW_DECODE_BATCH >= unique.length };
+    }
+    return { trades, complete };
   }
 
   async function opening({ token, state: market, creationSignature, createdAt, budgetMs = OPENING_BUDGET_MS }: Parameters<LaunchMarketReader["opening"]>[0]): ReturnType<LaunchMarketReader["opening"]> {
@@ -651,7 +864,11 @@ export function createLaunchMarketReader(
     if (market.graduated) accounts.push({ owner: market.graduated.tokenVault, account: market.graduated.tokenVault });
     if (escrow) accounts.push({ owner: escrow, account: getAssociatedTokenAddressSync(mint, new PublicKey(escrow), true, TOKEN_2022_PROGRAM_ID).toBase58() });
     /* The largest accounts catch a holder who never traded; a node that will not answer them leaves the traders' own. */
-    const answered = await optional(lenient.rpcEndpoint, "largest", () => lenient.getTokenLargestAccounts(mint, "confirmed").then((answer) => answer.value.map((entry) => entry.address.toBase58())));
+    /* Every account of the mint first: when a node scans it, the largest accounts are among them and need no second read. */
+    const all = await mintAccounts(mint);
+    const answered = all
+      ? [...all].sort((a, b) => (BigInt(b.amountRaw) > BigInt(a.amountRaw) ? 1 : BigInt(b.amountRaw) < BigInt(a.amountRaw) ? -1 : 0)).slice(0, 20).map((row) => row.account)
+      : await fromAny(`largest:${mint.toBase58()}`, (node) => node.getTokenLargestAccounts(mint, "confirmed").then((answer) => answer.value.map((entry) => entry.address.toBase58())));
     const largest = answered ?? [];
     const known = new Set(accounts.map((entry) => entry.account));
     const extra = largest.filter((address) => !known.has(address));
@@ -676,7 +893,6 @@ export function createLaunchMarketReader(
       const held = byOwner.get(balance.owner);
       byOwner.set(balance.owner, held ? { ...held, amountRaw: (BigInt(held.amountRaw) + BigInt(balance.amountRaw)).toString() } : balance);
     }
-    const all = await mintAccounts(mint);
     return { balances: [...byOwner.values()], totalHolders: all === null ? null : all.length, accounts: all, largestRead: answered !== null };
   }
 
@@ -684,9 +900,23 @@ export function createLaunchMarketReader(
    * Every account of the mint with a balance — its address, owner and amount — scanned on the node: the count of holders
    * and the market's health read the same scan. Null where the node does not index the token program.
    */
-  async function mintAccounts(mint: PublicKey): Promise<HolderBalance[] | null> {
-    return optional(lenient.rpcEndpoint, "holders", async () => {
-      const accounts = await lenient.getProgramAccounts(TOKEN_2022_PROGRAM_ID, {
+  function mintAccounts(mint: PublicKey): Promise<HolderBalance[] | null> {
+    const key = `${lenients.map((node) => node.rpcEndpoint).join(",")}:${mint.toBase58()}`;
+    const hit = SCANS.get(key);
+    if (hit && Date.now() - hit.at < SCAN_KEEP_MS) return hit.value;
+    if (SCANS.size >= SCANS_MAX) SCANS.delete(SCANS.keys().next().value as string);
+    const value = scanMint(mint);
+    SCANS.set(key, { at: Date.now(), value });
+    return value;
+  }
+
+  function scanHolders(token: string): void {
+    void mintAccounts(new PublicKey(token)).catch(() => null);
+  }
+
+  async function scanMint(mint: PublicKey): Promise<HolderBalance[] | null> {
+    return fromAny(`holders:${mint.toBase58()}`, async (node) => {
+      const accounts = await node.getProgramAccounts(TOKEN_2022_PROGRAM_ID, {
         commitment: "confirmed",
         filters: [{ memcmp: { offset: 0, bytes: mint.toBase58() } }],
         /* The owner (bytes 32–63) and the amount (64–71) of each account. */
@@ -736,7 +966,7 @@ export function createLaunchMarketReader(
     return (await decode(token, signature, market, fresh === true))?.trades ?? null;
   }
 
-  return { state, trades, opening, accountTrades, transaction, holders, curvesBy, feeNowBps };
+  return { state, trades, opening, accountTrades, windowTrades, transaction, holders, scanHolders, curvesBy, feeNowBps };
 }
 
 /** The graduated pool's price of the token in the pair currency: its square root prices B in A. */

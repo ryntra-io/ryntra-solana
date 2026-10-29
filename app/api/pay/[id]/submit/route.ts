@@ -3,10 +3,10 @@ import { z } from "zod";
 import { consumeSolanaReadRequest, readAgentControlJson } from "@/lib/agent-control/http";
 import { getGuardRuntime } from "@/lib/guard/runtime";
 import { privateNoStoreHeaders, rateLimitHeaders, type RateLimitDecision } from "@/lib/http-control";
-import { emptySettlement } from "@/lib/pay/model";
 import { refreshPaymentSettlement } from "@/lib/pay/observe";
 import { loadPublicPaymentRequest, paymentReadHandle } from "@/lib/pay/public";
-import { readPaymentIntent, readPaymentRequest, readPaymentSettlement, writePaymentSettlement } from "@/lib/pay/store";
+import { payPaused } from "@/lib/pay/attempt";
+import { readPaymentIntent, readPaymentRequest } from "@/lib/pay/store";
 import { submitPaymentTransaction } from "@/lib/pay/transaction";
 import { readSwapCarrier } from "@/lib/solana/swap-carrier.server";
 
@@ -25,8 +25,8 @@ function headers(rate: RateLimitDecision) {
   return { ...privateNoStoreHeaders(), ...rateLimitHeaders(rate) };
 }
 
-function failure(status: number, code: string, message: string, rate: RateLimitDecision) {
-  return Response.json({ error: { code, message } }, { status, headers: headers(rate) });
+function failure(status: number, code: string, message: string, rate: RateLimitDecision, signature?: string) {
+  return Response.json({ error: { code, message, ...(signature ? { signature } : {}) } }, { status, headers: headers(rate) });
 }
 
 /**
@@ -36,13 +36,15 @@ function failure(status: number, code: string, message: string, rate: RateLimitD
  * when it was built for this request, records the signature as a pending
  * settlement so the page says "sent, waiting for the network", and returns
  * the refreshed public view. Confirmation comes from observing the reference,
- * never from the fact that a submit went out.
+ * never from the fact that a submit went out. MC-1: the pending settlement is
+ * written before the bytes leave, and a lost answer is answered with the
+ * signature to follow — never a second transaction.
  */
 export async function POST(request: Request, context: { params: Promise<{ id: string }> }) {
   const rate = consumeSolanaReadRequest(request.headers);
   if (!rate.allowed) return failure(429, "RATE_LIMITED", "Too many requests.", rate);
   /* The payment page's origin for a browser, the native bearer for the phone
-     (1.22.0, the same rule the swap routes follow): a
+     (1.22.0, the swap routes' rule since the mobile line's request 13): a
      bearer that fails is refused by its own code and never falls through, and
      a bearer pays only as its own wallet. The browser's refusal keeps its
      code and words. */
@@ -53,6 +55,7 @@ export async function POST(request: Request, context: { params: Promise<{ id: st
   const parsed = BodySchema.safeParse(body.value);
   if (!parsed.success) return failure(400, "VALIDATION_ERROR", "The signed transaction was not accepted.", rate);
 
+  if (payPaused(process.env)) return failure(503, "UNAVAILABLE", "Payments through Ryntra are paused; nothing was sent.", rate);
   const { id } = await context.params;
   const store = getGuardRuntime().store;
   const record = await readPaymentRequest(store, id);
@@ -74,14 +77,11 @@ export async function POST(request: Request, context: { params: Promise<{ id: st
   });
   if (!submitted.ok) {
     const status = submitted.code === "SUBMIT_FAILED" ? 502 : submitted.code === "INTENT_EXPIRED" ? 410 : 409;
-    return failure(status, submitted.code, submitted.reason, rate);
+    return failure(status, submitted.code, submitted.reason, rate, submitted.signature);
   }
 
+  /* The settlement is PENDING with the signature since before the bytes left (`submitPaymentTransaction`, MC-1). */
   const now = new Date();
-  const previous = (await readPaymentSettlement(store, record.id)) ?? emptySettlement(record.id, now.toISOString());
-  if (previous.state !== "PAID" && previous.state !== "OVERPAID") {
-    await writePaymentSettlement(store, { ...previous, state: "PENDING", signature: submitted.signature, checkedAt: now.toISOString() });
-  }
   /* One immediate look. A just-sent transaction is usually not confirmed yet;
      the page keeps polling `/api/pay/:id`, which observes again. */
   await refreshPaymentSettlement({ store, handle, request: record, now, force: true });

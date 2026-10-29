@@ -149,7 +149,9 @@ test("nothing in the drawn hero is invented: no user, volume or partner counts, 
     const total = rows.reduce((sum, [, share]) => sum + share, 0);
     assert.equal(Math.round(total * 10) / 10, 100, `the allocation sums to 100 (${locale})`);
     const rewards = HOMEPAGE_COPY[locale].hero.rewards.rows.map(([figure]) => figure);
-    assert.deepEqual(rewards, ["50%", "10–30%", "Points"], "the real 50% cashback, the inviter's 10–30% by rank and Points, no tier or token");
+    /* UX-751: the third row was «Points · Points program · Levels · Rank» —
+       the programme no screen draws. It is the rank's own rule now. */
+    assert.deepEqual(rewards, ["50%", "10–30%", "$1 = 1"], "the real 50% cashback, the inviter's 10–30% by rank and the rank point, no tier or token");
   }
 });
 
@@ -213,31 +215,31 @@ test("the drawn hero is written on the projection and moves once", () => {
   assert.match(css, /--u: calc\(100cqw \/ 900\)/, "one canvas pixel");
   assert.doesNotMatch(css, /animation-iteration-count|infinite/, "nothing perpetual");
   assert.doesNotMatch(css, /Onest|Plex|Space Grotesk/);
-  /* The home segment inherits the root's brand faces; it loads none of its own. */
+  /* The home segment's layout loads no face of its own; the city's faces are its page's (decision 70). */
   assert.doesNotMatch(read("app/(home)/layout.tsx"), /next\/font/);
   assert.ok(existsSync(new URL("../../public/site/solana-mark.svg", import.meta.url)), "the network's mark is an asset, not a palette value");
 });
 
-test("the landing is back at its addresses: `/` in English, `/uk` in Ukrainian, the address deciding the language", () => {
+test("`/` is Ryntra City in English (decision 70); the Ukrainian landing stays at `/uk` in the code", () => {
   /* On 2026-09-26 the old landing's story was retired and `/` led into the
-     app by a temporary 307 until the new site took `/` back. This is that
-     site: the landing's design with its new words, English at `/` and
-     Ukrainian at `/uk`, the temporary redirect gone. */
+     app by a temporary 307 until the new site took `/` back. MC-0 (decision
+     68) made `/` Mission Control's Orbit; since decision 70 (2026-10-26) `/`
+     is Ryntra City — the Solana market as a living 3D city — English only. The landing's and Mission
+     Control's pages stay in the code. */
   const routing = withoutComments(read("lib/product/customer-routing.ts"));
   assert.doesNotMatch(routing, /\["\/", "\/app\/swap"\]/, "`/` never goes to Swap");
   const config = withoutComments(read("next.config.ts"));
   assert.doesNotMatch(config, /\{ source: "\/", destination: FRONT_DOOR/, "the temporary 307 from `/` into the app is gone");
   assert.doesNotMatch(config, /FRONT_DOOR/);
-  assert.equal(existsSync(new URL("../preview/site", import.meta.url)), false, "no preview door: the landing is the site");
-  for (const [file, locale] of [["app/(home)/page.tsx", "en"], ["app/(home)/uk/page.tsx", "uk"]]) {
-    const route = withoutComments(read(file));
-    assert.doesNotMatch(route, /cookies\(\)/, `${file}: the address decides the language, never a cookie`);
-    assert.match(route, new RegExp(`export const metadata: Metadata = buildLandingMetadata\\("${locale}"\\);`), `${file}: its own title, description, canonical and hreflang`);
-    assert.match(route, new RegExp(`landingJsonLdScript\\("${locale}"\\)`), `${file}: its own structured data, in its own language`);
-    assert.match(route, new RegExp(`<Homepage locale="${locale}" />`), `${file}: the landing`);
-  }
-  /* The header, handed the page's language, writes it to the language cookie on arrival,
-     so «Відкрити застосунок» on `/uk` opens the app in Ukrainian and on `/` in English. */
+  assert.equal(existsSync(new URL("../preview/site", import.meta.url)), false, "no preview door");
+  const home = withoutComments(read("app/(home)/page.tsx"));
+  assert.doesNotMatch(home, /cookies\(\)/, "the address decides the language, never a cookie");
+  assert.match(home, /export const metadata: Metadata = buildCityMetadata\(\);/, "the city's own title, description and card");
+  assert.match(home, /<CityApp initial=\{BUNDLED_CITY\} \/>/, "the city");
+  assert.match(home, /<h1 className=\{s\.hidden\}>\{CITY_WORDS\.title\}<\/h1>/, "the H1 is in the first HTML");
+  const uk = withoutComments(read("app/(home)/uk/page.tsx"));
+  assert.match(uk, /<Homepage locale="uk" \/>/, "the Ukrainian landing stays, for the day it returns");
+  /* The header, handed the page's language, writes it to the language cookie on arrival. */
   assert.match(withoutComments(read("app/site/frozen/public-header.tsx")), /if \(localeProp\) \{\s*writePublicLocaleCookie\(localeProp\);/);
   assert.match(read("app/(home)/homepage.tsx"), /<PublicHeader locale=\{locale\}/);
 });

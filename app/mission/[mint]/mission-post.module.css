@@ -1,0 +1,120 @@
+.post {
+  position: absolute;
+  right: max(16px, env(safe-area-inset-right, 0px));
+  /* On a desk: under the room's top bar, clear of the crew panel and the feed bar along the bottom edge. */
+  top: calc(max(12px, env(safe-area-inset-top, 0px)) + 60px);
+  z-index: 20;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 10px;
+  font-family: var(--font-geist-sans, Geist), system-ui, sans-serif;
+}
+
+/* On a phone the top holds the room's stats: the toggle sits right, above the feed bar; the crew panel is on the left. */
+@media (max-width: 759px) {
+  .post {
+    top: auto;
+    bottom: calc(max(16px, env(safe-area-inset-bottom, 0px)) + 72px);
+  }
+}
+
+.toggle,
+.tab,
+.intent {
+  font: 600 13px/1 var(--font-geist-sans, Geist), system-ui, sans-serif;
+  color: #f5f7fa;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  background: rgba(8, 13, 20, 0.72);
+  border-radius: 10px;
+  height: 36px;
+  padding: 0 14px;
+  cursor: pointer;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  backdrop-filter: blur(14px);
+}
+
+.toggle:hover,
+.tab:hover,
+.intent:hover {
+  border-color: rgba(255, 255, 255, 0.3);
+}
+
+.toggle:focus-visible,
+.tab:focus-visible,
+.intent:focus-visible {
+  outline: 2px solid #f5f7fa;
+  outline-offset: 3px;
+}
+
+.sheet {
+  width: min(420px, calc(100vw - 32px));
+  padding: 14px;
+  border-radius: 16px;
+  background: rgba(8, 13, 20, 0.86);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(18px);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.tabs {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.tab[aria-pressed="true"] {
+  border-color: rgba(79, 184, 255, 0.6);
+  color: #cfeaff;
+}
+
+.cardWrap {
+  position: relative;
+  aspect-ratio: 1200 / 675;
+  border-radius: 10px;
+  background: #080d13;
+  overflow: hidden;
+}
+
+.cardWait {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  padding: 0 16px;
+  text-align: center;
+  color: #8a97a8;
+  font: 400 13px/1.4 var(--font-geist-sans, Geist), system-ui, sans-serif;
+}
+
+.card {
+  position: relative;
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.intent {
+  justify-content: center;
+}
+
+.unread {
+  margin: 0;
+  padding: 18px 14px;
+  border-radius: 10px;
+  background: #080d13;
+  color: #8a97a8;
+  font: 400 13px/1.45 var(--font-geist-sans, Geist), system-ui, sans-serif;
+}
+
+/* MC-2: the post's own part, live only — the window clock above it shows in DEMO too. */
+.liveOnly {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 10px;
+}

@@ -1,0 +1,32 @@
+{
+  "Xsc9qvGR1efVDFGLrVsmkzv3qi45LTBjeUKSPmx9qEh": {
+    "usdPrice": 223.85094827845964,
+    "blockId": 367112408,
+    "decimals": 8,
+    "priceChange24h": 2.6
+  },
+  "oPAiAikWTaFj9RYoRFD35ccfwhnMcB3ThgBZRHSkjTZ": {
+    "usdPrice": 968.5075581811788,
+    "blockId": 367112408,
+    "decimals": 9,
+    "priceChange24h": 3.4
+  },
+  "So11111111111111111111111111111111111111112": {
+    "usdPrice": 112.85721942177028,
+    "blockId": 367112408,
+    "decimals": 9,
+    "priceChange24h": 2.9
+  },
+  "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v": {
+    "usdPrice": 0.9997737022359922,
+    "blockId": 367112408,
+    "decimals": 6,
+    "priceChange24h": 0.01
+  },
+  "MWDemoLaunch1111111111111111111111111111111": {
+    "usdPrice": 0.00041,
+    "blockId": 367112408,
+    "decimals": 6,
+    "priceChange24h": -12.4
+  }
+}

@@ -17,9 +17,11 @@
  * are never cached — they are the live figures the Review is judged on.
  */
 
-import { createAggClient, type AggClient, type VenueEventWithMarkets, type VenueMarket } from "@agg-build/sdk";
+import { createAggClient, loadImmutableHistory, type AggAuthStartResult, type AggClient, type Venue, type VenueEventWithMarkets, type VenueMarket } from "@agg-build/sdk";
 
-import { readPredictionsEnv } from "../env.ts";
+import { readBotSiteKey, startThroughBotCheck } from "../bot-check.ts";
+import { limitRaw } from "../limit-model.ts";
+import { readPredictionsEnv, type PredictionsEnv } from "../env.ts";
 import { classifyProviderError, failure } from "../failure.ts";
 import {
   mapBook,
@@ -27,6 +29,8 @@ import {
   mapEvent,
   mapEventSummary,
   mapExecution,
+  mapLimitOrder,
+  mapLimitPlaced,
   mapMarketPrices,
   mapNews,
   mapPaperBalance,
@@ -37,18 +41,24 @@ import {
   mapRoute,
   mapSignals,
   eventStale,
+  eventTradable,
+  leadMarket,
+  rawInPlay,
   midpointMap,
   type PredictionCategory,
+  type PredictionChart,
   type PredictionEngineState,
   type PredictionEventSummary,
   type PredictionMarketPrices,
 } from "../model.ts";
+import { PROVIDER_REFRESH_TIMEOUT_MS, WITHDRAW_SEND_TIMEOUT_MS, mapDeposits, mapLiveBalance, mapPreview, mapWithdrawal, solanaDepositTarget } from "../funding.ts";
 import type { DiscoverQuery, PredictionProvider, ProviderUserProfile, ProviderUserSession, Result } from "../provider.ts";
 
 const CATEGORIES_TTL_MS = 5 * 60_000;
 const LIST_TTL_MS = 20_000;
 const EVENT_TTL_MS = 10_000;
 const CHART_TTL_MS = 20_000;
+const EMPTY_CHART_TTL_MS = 4_000;
 const RESEARCH_TTL_MS = 60_000;
 
 type CacheEntry<T> = { at: number; value: Promise<T> };
@@ -73,6 +83,8 @@ function cached<T>(key: string, ttlMs: number, read: () => Promise<T>): Promise<
 /** For tests and the stand: forget every cached read. */
 export function resetAggAdapterCache(): void {
   cache.clear();
+  /* The shared client keeps the base URL it was made with; a reset makes the next read take the environment again. */
+  publicClient = null;
 }
 
 /**
@@ -93,16 +105,26 @@ export function serverAggClient(options: Parameters<typeof createAggClient>[0]):
   return c;
 }
 
+/** Thrown when the deployment was given no aggregator app; `attempt` turns it into the product's own *not configured*. */
+class NotConfigured extends Error {}
+
+/** The environment with an app id, or the refusal to call the provider at all. */
+function configuredEnv(): PredictionsEnv & { appId: string } {
+  const env = readPredictionsEnv();
+  if (!env.appId) throw new NotConfigured("no aggregator app is configured");
+  return env as PredictionsEnv & { appId: string };
+}
+
 let publicClient: AggClient | null = null;
 function client(): AggClient {
   if (publicClient) return publicClient;
-  const env = readPredictionsEnv();
+  const env = configuredEnv();
   publicClient = serverAggClient({ baseUrl: env.baseUrl, appId: env.appId, apiKey: env.apiKey ?? undefined, wsUrl: env.wsUrl, persistSession: false });
   return publicClient;
 }
 
 function userClient(session: ProviderUserSession): AggClient {
-  const env = readPredictionsEnv();
+  const env = configuredEnv();
   const c = serverAggClient({ baseUrl: env.baseUrl, appId: env.appId, apiKey: env.apiKey ?? undefined, persistSession: false });
   c.setAccessToken(session.accessToken);
   return c;
@@ -112,6 +134,8 @@ async function attempt<T>(read: () => Promise<T>): Promise<Result<T>> {
   try {
     return { ok: true, value: await read() };
   } catch (error) {
+    if (error instanceof NotConfigured) return failure("PROVIDER_UNAVAILABLE", "This deployment has no prediction provider configured.");
+    if ((error as { kind?: unknown })?.kind === "domain") return failure("LINK_UNAVAILABLE", "The market provider does not accept sign-ins from this site yet.");
     return classifyProviderError(error);
   }
 }
@@ -132,8 +156,8 @@ async function readCategories(): Promise<readonly PredictionCategory[]> {
 }
 
 /** The Yes midpoint of each event's first market, one batch call, a missing one left null. */
-async function leadingPrices(events: readonly VenueEventWithMarkets[]): Promise<ReadonlyMap<string, number>> {
-  const ids = events.map((e) => e.venueMarkets?.[0]?.id).filter((id): id is string => typeof id === "string");
+async function leadingPrices(events: readonly VenueEventWithMarkets[], now: number): Promise<ReadonlyMap<string, number>> {
+  const ids = events.map((e) => leadMarket(e.venueMarkets, now, rawInPlay(e, now))?.id).filter((id): id is string => typeof id === "string");
   if (ids.length === 0) return new Map();
   try {
     const prices = await client().getMidpoints({ venueMarketIds: ids });
@@ -144,20 +168,59 @@ async function leadingPrices(events: readonly VenueEventWithMarkets[]): Promise<
   }
 }
 
-async function summaries(events: readonly VenueEventWithMarkets[]): Promise<readonly PredictionEventSummary[]> {
-  /* The provider keeps events "open" long after their end; a list is of markets a person can still decide on. */
-  const current = events.filter((e) => !eventStale(e));
-  const prices = await leadingPrices(current);
-  return current.map((e) => mapEventSummary(e, prices));
+/**
+ * The provider keeps events "open" long after their end. A search answers
+ * every event still within two days of its end, each to be shown in its own
+ * state; a browsed list holds only what a person can still trade — not an
+ * event past its close, not one whose every market has stopped.
+ */
+async function summaries(events: readonly VenueEventWithMarkets[], tradableOnly = false): Promise<readonly PredictionEventSummary[]> {
+  const now = Date.now();
+  const current = events.filter((e) => !eventStale(e, now));
+  const prices = await leadingPrices(current, now);
+  const mapped = current.map((e) => mapEventSummary(e, prices, now));
+  return tradableOnly ? mapped.filter((e) => eventTradable(e, now)) : mapped;
 }
 
-function mapProfile(user: { id: string; username: string | null; externalId: string | null; wallets?: readonly { chain: string; address: string }[]; accounts?: readonly { provider: string; providerAccountId: string }[]; isLocationBlocked?: boolean }): ProviderUserProfile {
+function mapProfile(user: { id: string; username: string | null; externalId: string | null; wallets?: readonly { chain: string; address: string }[]; accounts?: readonly { provider: string; providerAccountId: string }[]; isLocationBlocked?: boolean; venueAccounts?: readonly { venue: string; status: string; kycStatus: string }[] | null }): ProviderUserProfile {
   /* The provider lists a SIWS user's wallet under `accounts` (provider `solana_wallet`), not always under `wallets`. */
   const fromAccounts = (user.accounts ?? [])
     .filter((a) => a.provider === "solana_wallet" || a.provider === "wallet")
     .map((a) => ({ chain: a.provider === "solana_wallet" ? "solana" : "evm", address: a.providerAccountId }));
   const wallets = [...(user.wallets ?? []).map((w) => ({ chain: String(w.chain), address: w.address })), ...fromAccounts];
-  return { id: user.id, username: user.username, externalId: user.externalId, wallets, locationBlocked: Boolean(user.isLocationBlocked) };
+  const venueAccounts = Array.isArray(user.venueAccounts) ? user.venueAccounts.map((a) => ({ venue: String(a.venue), status: String(a.status), kycStatus: String(a.kycStatus) })) : null;
+  return { id: user.id, username: user.username, externalId: user.externalId, wallets, locationBlocked: Boolean(user.isLocationBlocked), venueAccounts };
+}
+
+/**
+ * An outcome's bars. AGG answers `/charts/bars` with no bars and a state of its own (`warming`, `unsupported`) for a
+ * series it serves another way: its finalized history is published as files it signs with their SHA-256, which the
+ * SDK fetches and checks (`loadImmutableHistory`), and the bars after them come from `/charts/bars` again. Found
+ * 29.10 (CITY-77): the busiest markets answered empty bars at every resolution, and the chart drew nothing. The files
+ * are a second way and never a promise — any doubt about them leaves the first answer as it was.
+ */
+async function readChart(outcomeId: string, resolution: "1m" | "5m" | "1h" | "1d", countBack: number, to: number): Promise<PredictionChart> {
+  const first = await client().getChartBars({ venueMarketOutcomeId: outcomeId, resolution, to, countBack });
+  if (first.data.length > 0 || first.meta?.state === "empty") return mapChart(first);
+  try {
+    const manifest = await client().getChartHistoryManifest({ venueMarketOutcomeId: outcomeId, resolution, to, countBack });
+    if (manifest.venueMarketOutcomeId !== outcomeId || !manifest.meta?.complete || manifest.resolution !== resolution) return mapChart(first);
+    const history = (await loadImmutableHistory({ manifest })).filter((b) => b.t < to);
+    let tail: typeof history = [];
+    if (manifest.finalizedThrough < to) {
+      const after = await client()
+        .getChartBars({ venueMarketOutcomeId: outcomeId, resolution, from: manifest.finalizedThrough, to })
+        .catch(() => null);
+      if (after && after.venue === manifest.venue && after.resolution === manifest.resolution) tail = after.data.filter((b) => b.t >= manifest.finalizedThrough && b.t < to);
+    }
+    const data = [...history, ...tail].slice(-countBack);
+    if (data.length === 0) return mapChart(first);
+    const serverTime = Number.isFinite(manifest.meta.serverTime) ? manifest.meta.serverTime : Date.now();
+    const last = data.at(-1)!.t;
+    return mapChart({ venueMarketOutcomeId: outcomeId, venue: manifest.venue, resolution: manifest.resolution, data, meta: { ...manifest.meta, serverTime, lastBarOpenTime: last, staleSeconds: Math.max(0, (serverTime - last) / 1000) } });
+  } catch {
+    return mapChart(first);
+  }
 }
 
 export const aggProvider: PredictionProvider = {
@@ -194,10 +257,11 @@ export const aggProvider: PredictionProvider = {
           const now = Date.now();
           events = events
             .filter((e) => e.endDate && Date.parse(e.endDate) > now)
-            .sort((a, b) => Date.parse(a.endDate ?? "") - Date.parse(b.endDate ?? ""))
-            .slice(0, limit);
+            .sort((a, b) => Date.parse(a.endDate ?? "") - Date.parse(b.endDate ?? ""));
         }
-        return { events: await summaries(events), nextCursor: ending ? null : (page.nextCursor ?? null), readAt: new Date().toISOString() };
+        /* The page is cut after the untradable ones are out, so Ending soon stays full. */
+        const listed = await summaries(events, true);
+        return { events: ending ? listed.slice(0, limit) : listed, nextCursor: ending ? null : (page.nextCursor ?? null), readAt: new Date().toISOString() };
       });
     }),
 
@@ -275,12 +339,15 @@ export const aggProvider: PredictionProvider = {
       return mapBook(item, new Date().toISOString());
     }),
 
-  chart: (outcomeId, resolution, countBack = 96) =>
-    attempt(() =>
-      cached(`chart:${outcomeId}:${resolution}:${countBack}`, CHART_TTL_MS, async () =>
-        mapChart(await client().getChartBars({ venueMarketOutcomeId: outcomeId, resolution, to: Date.now(), countBack: Math.min(Math.max(countBack, 2), 500) })),
-      ),
-    ),
+  chart: (outcomeId, resolution, countBack = 96, to) =>
+    attempt(async () => {
+      const key = `chart:${outcomeId}:${resolution}:${countBack}:${to ?? "now"}`;
+      const chart = await cached(key, CHART_TTL_MS, () => readChart(outcomeId, resolution, Math.min(Math.max(countBack, 2), 500), to ?? Date.now()));
+      /* An empty answer is often a series AGG is still building: kept a few seconds only, so the next ask reads again. */
+      const hit = cache.get(key);
+      if (chart.bars.length === 0 && hit) hit.at = Math.min(hit.at, Date.now() - CHART_TTL_MS + EMPTY_CHART_TTL_MS);
+      return chart;
+    }),
 
   signals: (venueMarketId) =>
     attempt(() =>
@@ -304,11 +371,12 @@ export const aggProvider: PredictionProvider = {
       }),
     ),
 
-  ripple: (venueMarketId, mode, limit = 10) =>
+  ripple: (venueMarketId, mode, limit = 10, side = "yes") =>
     attempt(() =>
-      cached(`ripple:${venueMarketId}:${mode}:${limit}`, RESEARCH_TTL_MS, async () => {
+      /* Yes is the provider's own default: asked for it, the key stays the one the research reads share. */
+      cached(`ripple:${venueMarketId}:${mode}:${limit}${side === "no" ? ":no" : ""}`, RESEARCH_TTL_MS, async () => {
         try {
-          const result = await client().getCorrelatedMarketCascade({ venueMarketId, mode, limit });
+          const result = await client().getCorrelatedMarketCascade({ venueMarketId, mode, limit, ...(side === "no" ? { side } : {}) });
           return mapRipple(mode, result.data ?? []);
         } catch (error) {
           if ((error as { status?: number })?.status === 404) return mapRipple(mode, []);
@@ -321,6 +389,12 @@ export const aggProvider: PredictionProvider = {
     attempt(() =>
       cached(`news:${venueMarketId}:${limit}`, RESEARCH_TTL_MS, async () => mapNews(await client().getMarketNews({ venueMarketIds: [venueMarketId], limit: Math.min(limit, 5) }))),
     ),
+
+  appMode: () =>
+    attempt(async () => {
+      const cfg = (await client().getAppConfig({ cache: "no-store" })) as unknown as Record<string, unknown>;
+      return cfg.tradingMode === "live" ? "live" : cfg.tradingMode === "paper" ? "paper" : "unknown";
+    }),
 
   engine: () =>
     attempt(() =>
@@ -336,25 +410,40 @@ export const aggProvider: PredictionProvider = {
       }),
     ),
 
-  signInChallenge: ({ address, domain, uri, statement }) =>
-    attempt(async () => {
-      const start = await client().authStart({ provider: "siws" });
+  signInChallenge: async ({ chain, address, domain, uri, statement, turnstileToken }) => {
+    /* Under load the provider answers the start with its bot check instead of a nonce: that is a step for the person, not an outage. */
+    let started: Result<Exclude<AggAuthStartResult, { type: "challenge_required" }>>;
+    try {
+      if (chain !== "solana") throw Object.assign(new Error("only a Solana wallet signs in here"), { status: 400 });
+      started = await startThroughBotCheck((body) => client().authStart(body), { provider: "siws" as const }, turnstileToken, () => readBotSiteKey(configuredEnv()));
+    } catch (error) {
+      return attempt(() => Promise.reject(error));
+    }
+    if (!started.ok) return started;
+    const start = started.value;
+    return attempt(async () => {
       if (start.type !== "nonce") throw Object.assign(new Error(`sign-in start answered ${start.type}`), { status: 503 });
-      const text = statement ?? start.statement;
+      /* The provider checks the statement it was set up with: once the app has one, a message with any other text is refused. */
+      const text = start.statement ?? statement ?? undefined;
       const message = client().buildSiwsMessage({ address, chainId: "mainnet", nonce: start.nonce, domain, uri, statement: text });
       return { nonce: start.nonce, message, statement: text ?? null };
-    }),
+    });
+  },
 
   verifySignIn: ({ message, signature }) =>
     attempt(async () => {
       /* A throwaway client: `verify` stores the session on the instance, and this one is discarded at once. */
-      const env = readPredictionsEnv();
+      const env = configuredEnv();
       const c = serverAggClient({ baseUrl: env.baseUrl, appId: env.appId, apiKey: env.apiKey ?? undefined, persistSession: false });
       try {
         const result = await c.verify({ message, signature });
         return { accessToken: result.accessToken, refreshToken: result.refreshToken ?? null, user: mapProfile(result.user) };
       } catch (error) {
         const status = (error as { status?: number })?.status;
+        /* A site the provider does not allow for this app is not a bad signature: the person can do nothing about it, the operator can. */
+        if (/unregistered_domain|is not allowed for this app/i.test(String((error as { message?: unknown })?.message ?? ""))) {
+          throw Object.assign(new Error("site not allowed"), { status: 403, kind: "domain" });
+        }
         if (status === 400 || status === 401) throw Object.assign(new Error("signature refused"), { status: 401, kind: "signature" });
         throw error;
       }
@@ -362,12 +451,14 @@ export const aggProvider: PredictionProvider = {
 
   refresh: (refreshToken) =>
     attempt(async () => {
-      const env = readPredictionsEnv();
+      const env = configuredEnv();
       const response = await fetch(`${env.baseUrl}/auth/token/refresh`, {
         method: "POST",
         headers: { "content-type": "application/json", accept: "application/json", "x-app-id": env.appId, ...(env.apiKey ? { "x-app-api-key": env.apiKey } : {}) },
         body: JSON.stringify({ refreshToken }),
         cache: "no-store",
+        /* Bounded, so a withdrawal send's lease (WITHDRAW_SEND_LEASE_MS) outlasts the refreshes it may wait on. */
+        signal: AbortSignal.timeout(PROVIDER_REFRESH_TIMEOUT_MS),
       });
       if (!response.ok) throw Object.assign(new Error(`refresh answered ${response.status}`), { status: response.status === 401 || response.status === 400 ? 401 : response.status });
       const body = (await response.json()) as { accessToken?: string; refreshToken?: string };
@@ -387,15 +478,15 @@ export const aggProvider: PredictionProvider = {
 
   paperBalance: (session) => attempt(async () => mapPaperBalance(await userClient(session).getManagedBalances({ mode: "paper" }))),
 
-  paperPositions: (session, status) =>
+  paperPositions: (session, status, mode = "paper") =>
     attempt(async () => {
-      const page = await userClient(session).getExecutionPositions({ mode: "paper", status, limit: 50 });
+      const page = await userClient(session).getExecutionPositions({ mode, status, limit: 50 });
       return (page.data ?? []).map(mapPaperPosition);
     }),
 
-  paperOrders: (session, limit = 50) =>
+  paperOrders: (session, limit = 50, mode = "paper") =>
     attempt(async () => {
-      const page = await userClient(session).getExecutionOrders({ mode: "paper", limit: Math.min(limit, 100) });
+      const page = await userClient(session).getExecutionOrders({ mode, limit: Math.min(limit, 100) });
       return (page.data ?? []).map(mapPaperOrder);
     }),
 
@@ -403,29 +494,158 @@ export const aggProvider: PredictionProvider = {
     attempt(async () => {
       const c = session ? userClient(session) : client();
       const quotedAt = new Date().toISOString();
+      const mode = request.mode ?? "paper";
+      /* A live buy asks for every cost, one-time setup included, so the Review and the cap see the whole of it. */
+      const deepEstimate = mode === "live" && request.side === "buy" ? true : undefined;
+      /* A live route is priced only where live orders are open; an empty list would mean every venue, so it is never sent empty. */
+      const allowedVenues = mode === "live" ? (request.allowedVenues ?? []).map((v) => v as Venue) : undefined;
+      if (mode === "live" && (!allowedVenues || allowedVenues.length === 0)) throw Object.assign(new Error("a live route needs its venues"), { status: 400 });
       const route =
         request.side === "buy"
-          ? await c.getSmartRoute({ venueMarketOutcomeId: request.outcomeId, tradeSide: "buy", maxSpend: request.spendUsd ?? 0, mode: "paper", compareVenues: true, slipCapBps: request.slipCapBps })
-          : await c.getSmartRoute({ venueMarketOutcomeId: request.outcomeId, tradeSide: "sell", sellShares: request.sellShares ?? 0, mode: "paper", compareVenues: true, slipCapBps: request.slipCapBps });
+          ? await c.getSmartRoute({ venueMarketOutcomeId: request.outcomeId, tradeSide: "buy", maxSpend: request.spendUsd ?? 0, mode, compareVenues: true, slipCapBps: request.slipCapBps, allowedVenues, deepEstimate })
+          : await c.getSmartRoute({ venueMarketOutcomeId: request.outcomeId, tradeSide: "sell", sellShares: request.sellShares ?? 0, mode, compareVenues: true, slipCapBps: request.slipCapBps, allowedVenues });
       return mapRoute(route, request.side, request.side === "buy" ? (request.spendUsd ?? 0) : (request.sellShares ?? 0), quotedAt);
     }),
 
   execute: (session, request) =>
     attempt(async () => {
-      const accepted = await userClient(session).executeManaged({
-        quoteId: request.quoteId,
-        mode: "paper",
-        fallbackToLatest: {
-          outcomeId: request.fallback.outcomeId,
-          side: request.fallback.side,
-          maxSpend: request.fallback.spendUsd,
-          sellShares: request.fallback.sellShares,
-        },
-      });
+      const mode = request.mode ?? "paper";
+      const fallback = mode === "paper" ? request.fallback : null;
+      const accepted = await userClient(session)
+        .executeManaged({
+          quoteId: request.quoteId,
+          mode,
+          ...(fallback
+            ? {
+                fallbackToLatest: {
+                  outcomeId: fallback.outcomeId,
+                  side: fallback.side,
+                  maxSpend: fallback.spendUsd,
+                  sellShares: fallback.sellShares,
+                },
+              }
+            : {}),
+        })
+        .catch((error: unknown) => {
+          /* A timeout or a conflict on the fill says nothing about whether it ran: never read as a refusal. */
+          const status = (error as { status?: unknown })?.status;
+          if (status === 408 || status === 409) throw Object.assign(new Error("the fill got no clear answer"), { status: 503 });
+          throw error;
+        });
       return { quoteId: accepted.quoteId, orderIds: accepted.orderIds ?? [], status: accepted.status, alreadyAccepted: Boolean(accepted.alreadyAccepted) };
     }),
 
-  executionStatus: (session, quoteId) => attempt(async () => mapExecution(await userClient(session).getExecutionStatus({ quoteId, mode: "paper" }))),
+  executionStatus: (session, quoteId, mode = "paper") => attempt(async () => mapExecution(await userClient(session).getExecutionStatus({ quoteId, mode }))),
+
+  cancelOrder: (session, orderId) =>
+    attempt(async () => {
+      const answer = await userClient(session).cancelManagedOrder(orderId);
+      return { orderIds: answer.orderIds ?? [orderId], status: answer.status === "cancelled" ? "cancelled" : "cancel_pending" };
+    }),
+
+  placeLimitOrder: (session, request) =>
+    attempt(async () => {
+      const answer = await userClient(session)
+        .placeLimitOrder({
+          venue: request.venue as Venue,
+          venueMarketOutcomeId: request.outcomeId,
+          side: request.side,
+          limitPriceRaw: limitRaw(request.price),
+          sizeRaw: limitRaw(request.shares),
+          timeInForce: request.timeInForce,
+          clientOrderId: request.clientOrderId,
+          ...(request.timeInForce === "GTD" && request.expiresAt ? { expiresAt: request.expiresAt } : {}),
+        })
+        .catch((error: unknown) => {
+          /* A timeout or a conflict says nothing about whether the venue took it: never read as a refusal. The same client id is asked about, never sent again as a new order. */
+          const status = (error as { status?: unknown })?.status;
+          if (status === 408 || status === 409) throw Object.assign(new Error("the limit order got no clear answer"), { status: 503 });
+          throw error;
+        });
+      return mapLimitPlaced(answer);
+    }),
+
+  limitOrders: (session, limit = 50) =>
+    attempt(async () => {
+      const page = await userClient(session).getExecutionOrders({ mode: "live", orderType: "limit", limit: Math.min(limit, 100) });
+      return (page.data ?? []).map(mapLimitOrder);
+    }),
+
+  redeem: (session, outcomeIds) =>
+    attempt(async () => {
+      const answer = await userClient(session).redeem({ venueMarketOutcomeIds: [...outcomeIds], mode: "live" });
+      const known = new Set(["submitted", "confirmed", "ineligible", "rejected"]);
+      /* A leg status this reader does not know is not a refusal: it is kept as unknown. */
+      return {
+        redeemId: String(answer.redeemId ?? ""),
+        legs: (answer.results ?? []).map((leg) => ({
+          outcomeId: String(leg.venueMarketOutcomeId ?? ""),
+          status: (known.has(leg.status) ? leg.status : "unknown") as "submitted" | "confirmed" | "ineligible" | "rejected" | "unknown",
+          txHash: leg.txHash ?? null,
+          reason: leg.reason ?? null,
+        })),
+      };
+    }),
+
+  depositTarget: (session) => attempt(async () => solanaDepositTarget(await userClient(session).getDepositAddresses())),
+
+  liveBalance: (session) => attempt(async () => mapLiveBalance(await userClient(session).getManagedBalances({ mode: "live" }))),
+
+  deposits: (session, limit = 10) => attempt(async () => mapDeposits(await userClient(session).getUserActivity({ type: "deposit", limit: Math.min(Math.max(limit, 1), 50) }))),
+
+  withdrawable: (session, destinationChainId) =>
+    attempt(async () => {
+      const quote = await userClient(session).getWithdrawalQuote({ tokenSymbol: "USDC", destinationChainId });
+      return { maxDeliverableRaw: typeof quote.maxDeliverableRaw === "string" && /^\d+$/.test(quote.maxDeliverableRaw) ? quote.maxDeliverableRaw : null };
+    }),
+
+  withdrawPreview: (session, request) =>
+    attempt(async () =>
+      mapPreview(
+        await userClient(session).withdrawPreview({ amountRaw: request.amountRaw, tokenSymbol: "USDC", destinationAddress: request.destinationAddress, destinationChainId: request.destinationChainId }),
+        request.amountRaw,
+      ),
+    ),
+
+  withdraw: async (session, request) => {
+    let c: AggClient;
+    try {
+      c = userClient(session);
+    } catch (error) {
+      /* No client, no request: nothing could have been sent. */
+      return attempt(() => Promise.reject(error));
+    }
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    try {
+      const send = c.withdrawManaged({ requestId: request.requestId, amountRaw: request.amountRaw, tokenSymbol: "USDC", destinationAddress: request.destinationAddress, destinationChainId: request.destinationChainId });
+      /* After a timeout the send may still settle; its late answer is read by the next status check, not here. */
+      send.catch(() => null);
+      const answer = await Promise.race([
+        send,
+        new Promise<never>((_, reject) => {
+          timer = setTimeout(() => reject(Object.assign(new Error("withdrawal send timed out"), { timedOut: true })), WITHDRAW_SEND_TIMEOUT_MS);
+        }),
+      ]);
+      const withdrawal = mapWithdrawal(answer);
+      return { ok: true, value: withdrawal ? { outcome: "accepted", withdrawal } : { outcome: "unknown", reason: "answer_without_id" } };
+    } catch (error) {
+      const status = typeof (error as { status?: unknown })?.status === "number" ? ((error as { status: number }).status as number) : null;
+      /* The provider refused the session before it looked at the request: refresh and ask again under the same id. */
+      if (status === 401) return failure("SESSION_EXPIRED", "The account's session expired; sign with the wallet again.");
+      /* Refusals that create nothing. Anything else — no answer, a timeout, a server error, a conflict on the id — may have created one. */
+      if (status === 400 || status === 403 || status === 422 || status === 429) return { ok: true, value: { outcome: "refused", failure: classifyProviderError(error) } };
+      return { ok: true, value: { outcome: "unknown", reason: (error as { timedOut?: boolean })?.timedOut ? "timeout" : status === null ? "no_answer" : `status_${status}` } };
+    } finally {
+      if (timer) clearTimeout(timer);
+    }
+  },
+
+  withdrawal: (session, withdrawalId) =>
+    attempt(async () => {
+      const mapped = mapWithdrawal(await userClient(session).getWithdrawalStatus(withdrawalId));
+      if (!mapped) throw Object.assign(new Error("withdrawal answer without an id"), { status: 503 });
+      return mapped;
+    }),
 };
 
 export function getPredictionProvider(): PredictionProvider {

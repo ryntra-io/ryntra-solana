@@ -138,6 +138,13 @@ export const GUARD_COLLECTIONS = [
   "paymentRequestSettlements",
   "paymentRequestReferences",
   "paymentIntents",
+  /* MC-1: a payment request's one payment on its way — the payer's signature armed before the bytes leave, compare-and-set,
+     so a retry after a lost answer is never a second payment (`lib/pay/attempt.ts`). No DDL. */
+  "paymentAttempts",
+  /* FIX-PAY-1: how far the reference of a payment request has been read — the last signature judged and the credits
+     found up to it — so empty transactions carrying a public reference cost each read nothing twice and cannot hold a
+     request in «checking» (`lib/pay/observe.ts`). No DDL. */
+  "paymentReferenceReads",
   /* Rewards. Four records, and the split is the same one the payment request
      made: what a person is owed, who they are in the referral graph, which
      code answers to them, and the one claim that may be in flight.
@@ -185,14 +192,23 @@ export const GUARD_COLLECTIONS = [
      counter missed repairs itself the first time either party opens Rewards,
      and one it already has stays exactly as it is. */
   "rewardReferralEdges",
-  /* Ranks (the growth module, rules 2.0.0). `rewardRules` holds the moment each
+  /* Ranks (the Growth line, rules 2.0.0). `rewardRules` holds the moment each
      rules version came into force, written once with `insertIfAbsent`;
      `rankEvents` are points earned without a fee — a launch that reached a
      DEX — keyed `wallet:kind:ref`, append-only. Values in the same column; no
      DDL. */
   "rewardRules",
   "rankEvents",
-  /* Leaderboards and seasons (the growth module). `growthBoards` caches each
+  /* Rules 2.1.0 (the Growth line). `rewardWelcome` is one row per
+     wallet — its first trade, and whether it holds «First $10 back» and its
+     check; `rewardWelcomeMonths` holds each month's places. `rewardBudget` is
+     the growth budget's month (limit, spent) and `rewardBudgetEntries` its
+     lines, written together. Values in the same column; no DDL. */
+  "rewardWelcome",
+  "rewardWelcomeMonths",
+  "rewardBudget",
+  "rewardBudgetEntries",
+  /* Leaderboards and seasons (the Growth line). `growthBoards` caches each
      week's computed figures and each season's counts so a board is not
      recomputed from every ledger on every read; `growthSeasons` holds when the
      first season began, written once; `growthPrefs` is one row per wallet
@@ -200,11 +216,81 @@ export const GUARD_COLLECTIONS = [
   "growthBoards",
   "growthSeasons",
   "growthPrefs",
-  /* Trade cards (the growth module): one row per card a wallet made of its own
+  /* Trade cards (the Growth line): one row per card a wallet made of its own
      trade — the figures, rank and code frozen at that moment — written once
      with `insertIfAbsent`, read by the card's public page and picture. No
      money, no DDL. */
   "growthCards",
+  /* The pool-share journal (the Growth line): Ryntra's received part of each
+     launch pool's claims on each launch network, and beside it the stream-1
+     rewards on the same pool's trades — keyed `<network>:<pool>:claim:<tx>:<index>`
+     (a claim split over pools: `<network>:pooled:claim:…`) and
+     `solana:<pool>:stream1:<signature>`, written once with `insertIfAbsent`,
+     never changed. No money moves, no DDL. */
+  "growthPoolShares",
+  /* Creator partners (the Growth line). `growthPoolPartners` binds a launch
+     pool to the partner who brought its creator — `pool:<network>:<pool>`,
+     with the creator's own index `creator:<network>:<creator>:<pool>` — both
+     written at once when the launch is signed and never changed;
+     `growthWalletLinks` is one partner's Solana and EVM wallet linked by
+     signatures from both, `solana:<address>` and `evm:<address>` written
+     together under compare-and-set — a newer link both wallets signed
+     replaces the older halves — with every link kept under both wallets as
+     `history:<solana>:<linkedAt>:<evm>` and
+     `historyEvm:<evm>:<linkedAt>:<solana>`. No money moves, no DDL. */
+  "growthPoolPartners",
+  "growthWalletLinks",
+  /* The Ryntra Network's shadow ledger (the Growth line): what each creator
+     partner earned from the pools of the creators they brought — never paid
+     from here. `growthPartnerEntries` holds one entry per change of one
+     claim's line, `<partner>:<network>:<pool>:<tx>:<index>:<seq>`, written
+     only with `insertIfAbsent` (a decrease is a negative entry, nothing is
+     rewritten); `growthPartnerChecks` holds the self-referral reasons a run
+     found after the launch, `pool:<network>:<pool>:<reason>`, never removed;
+     `growthFoundingPartners` is the one record of the Founding seats, `seats`,
+     under compare-and-set. No money moves, no DDL. */
+  "growthPartnerEntries",
+  "growthPartnerChecks",
+  "growthFoundingPartners",
+  /* Protection of the Ryntra Network and of fixed rewards (the Growth line).
+     `growthReviewEvents` is the review queue's append-only log,
+     `<subject>:<seq>` — openings, signals, appeals, freezes and decisions with
+     their reasons; `growthSignals` keeps each signal's evidence as keyed
+     hashes with an expiry; `growthFunding` caches the chain's funding facts by
+     hash, with an expiry; `growthDevices` keeps hashed device and IP /24
+     sightings of proven wallets, with an expiry; `growthFundingHubs` are the
+     sources the reviewer marked as exchanges or bridges; `growthActivations`
+     holds when each launch's creator became activated, written once. No money
+     moves, no DDL. */
+  "growthReviewEvents",
+  "growthSignals",
+  "growthFunding",
+  "growthDevices",
+  "growthFundingHubs",
+  "growthActivations",
+  /* Partner payouts (the Growth line). `growthPartnerPayouts` holds one claim
+     slot per partner and network, compare-and-set like `rewardClaims`, the
+     canary's slot and the gate its paid receipt opens; `growthPartnerReceipts`
+     is append-only — one receipt per paid payout, each line with its pool,
+     rules version, claim transaction and amount. No DDL. */
+  "growthPartnerPayouts",
+  "growthPartnerReceipts",
+  /* How many times a personal link was opened (the Growth line): one number
+     per code per day, nothing about whoever opened it — the first step of a
+     creator partner's funnel. No DDL. */
+  "growthLinkOpens",
+  /* The growth panel (the Growth line, Ріст 7): visits by source and day (a
+     number, nothing about whoever visited), the post codes the panel issued,
+     and the one source each wallet came from — written once, never a
+     boundary. No DDL. */
+  "growthVisits",
+  "growthPostCodes",
+  "growthTouchWallets",
+  /* Liquidity badges (the Growth line): one row per proven wallet — the days
+     Ryntra read one of its pool positions in range, the badges they earned
+     and whether the wallet chose to show them on the boards. No money, no
+     DDL. */
+  "growthLiquidity",
   /* Admin business analytics. Two records, neither a boundary: nothing
      compare-and-sets on them to decide whether money may move.
 
@@ -231,6 +317,9 @@ export const GUARD_COLLECTIONS = [
   /* Transaction fences and operation/qualification identities for Points.
      Values in the existing Guard table; no new database schema. */
   "pointsAccruals",
+  /* Where every wallet stands on Points — one small record (`lib/points/standings.ts`) so the Rewards read never
+     scans `pointsEntries`. A value in the same column; no DDL. */
+  "pointsStandings",
   /* Feedback context: who wrote a thread, in the terms the inbox table does
      not hold — topic, wallet, contact, page — keyed by the thread id. A value
      in the same column; no DDL. */
@@ -275,6 +364,13 @@ export const GUARD_COLLECTIONS = [
   "predictionWatchlists",
   "predictionOrders",
   "predictionPlans",
+  /* Predictions, live money: each signed webhook delivery the aggregator sent, keyed by its message id and claimed
+     with insertIfAbsent so a retried delivery takes no second effect; and Ryntra's fee ledger — the venue orders
+     (`order:<id>`), the trades they make up (`trade:<key>`) with the fee, the aggregator's share and the inviter, the
+     quotes placed (`quote:<id>`) and the order list's read position (`cursor:orders`), version-checked. Values in the
+     same column; no DDL. */
+  "predictionWebhookEvents",
+  "predictionFeeLedger",
   /* Monitoring: one condition engine for plans, evidence and paper
      predictions — monitors keyed by wallet, the inbox, durable trigger
      identities (insertIfAbsent so a retry is not a second alert), the outbox,
@@ -309,6 +405,36 @@ export const GUARD_COLLECTIONS = [
   "agentDrafts",
   "agentBudget",
   "agentReceipts",
+  /* Ryntra's news (AI-09): the items collected from the allow-listed feeds, keyed `item:<UTC day>:<id>` and written
+     once; a digest per token and one of the market, keyed `digest:<mint|market>`; the followed tokens as terms; the last
+     run's report. Nobody's own data — public headlines with their source and time. A value in the same column; no DDL. */
+  "assistantNews",
+  /* «Ранковий огляд» (AI-10): a wallet's settings (`settings:<wallet>` — on, the time, the zone, the language), the
+     market's summary once per hour slot for everyone (`market:<UTC hour>`), each wallet's brief of a day
+     (`brief:<wallet>:<day>`, created by compare-and-set so two passes make one) and the last pass's report. No DDL. */
+  "assistantBriefs",
+  /* The assistant's credits (AI-04): one balance per holder (`bal:wallet:<address>` or `bal:account:<uuid>`), advanced by
+     compare-and-set; entries that only append (`entry:<holder>:<seq>`), idempotency records (`idem:<holder>:<key>`) and
+     one-time claims (`claim:welcome:…`), each written in the same atomic write as the balance. No DDL. */
+  "assistantCredits",
+  /* «Стежити за токеном» (AI-05): a wallet's watches (`watch:solana:mainnet:<wallet>:<id>`, versioned), each watched
+     token's latest read and short history shared by everyone who watches it (`market:<mint>`), the hour's count of
+     deliveries per wallet (`rate:…`) and the last pass's report. No DDL. */
+  "assistantWatches",
+  /* «Знайомство» (AI-06): the person's five answers or that they skipped them, keyed
+     `profile:solana:mainnet:<wallet>`, versioned (lib/assistant/profile/store.ts). No DDL. */
+  "assistantProfiles",
+  /* «План угоди й критик» (AI-11): a wallet's trade plans with every version and its critic
+     (`plan:solana:mainnet:<wallet>:<id>`, versioned by compare-and-set; lib/assistant/plans/store.ts). No DDL. */
+  "assistantPlans",
+  /* The assistant in Telegram (AI-07): one row per chat (`chat:<telegramId>`, versioned) — the account the chat is bound
+     to, the wallet it reads for, the conversation, what waits for a button and the chat's minute; the deployment's day
+     of voice (`voice:day:<YYYY-MM-DD>`). No DDL (lib/assistant/telegram/link.ts). */
+  "assistantTelegram",
+  /* «Голос у вебі» (AI-08): the last recordings a credits holder had heard on the server (`voice:<holder>`, versioned) —
+     the words, the seconds and what they cost — so a recording sent again is answered with its words, never charged
+     twice. No DDL (lib/assistant/voice/web.ts). */
+  "assistantVoice",
   /* «Автоінвест»: one row per rule, keyed `solana:mainnet:<wallet>:<ruleId>`
      so a wallet's rules are one prefix scan and never another wallet's;
      compare-and-set on the row's own revision, so the tick writing a reminder
@@ -343,6 +469,16 @@ export const GUARD_COLLECTIONS = [
      same column; no DDL. */
   "launchImages",
   "launchMetadata",
+  /* MC-1: what Ryntra took down — a picture, a metadata record or a token — keyed `image:<sha256>`,
+     `metadata:<sha256>`, `mint:<mint>`: who, when and why. The addresses keep naming the same bytes; Ryntra stops
+     serving them. A value in the same column; no DDL. */
+  "launchTakedowns",
+  /* Ryntra Launch (SOL-L3): the IPFS copy of a picture or metadata pinned by the operator's provider, keyed by the same
+     sha256 — its address (the raw CID of the same bytes), the provider's host and when; and a market's survival at 7,
+     30 and 90 days once decided, keyed `<cluster>:<token>:<days>` — a week of the chain that is over never changes.
+     Written once each. A value in the same column; no DDL. */
+  "launchIpfs",
+  "launchSurvival",
   /* Ryntra Launch: a launch built and waiting for the creator's signature,
      keyed by its id — the hash of the exact message the server will co-sign,
      nothing else; it lives minutes. And a launch the chain confirmed, keyed
@@ -351,6 +487,48 @@ export const GUARD_COLLECTIONS = [
   "launchBuilds",
   "launches",
   "launchesByCreator",
+  /* Ryntra Launch, «Розширений» (SOL-L5): a launch's own config built and waiting for the creator's signature, keyed
+     `<cluster>:<build id>` — the hash of the exact message the config's key signs after the creator; it lives minutes.
+     And each config made, keyed `<cluster>:<config>` — the creator's, its numbers, PENDING until the network has it,
+     USED once a launch on it was sent. A value in the same column; no DDL. */
+  "launchAdvancedBuilds",
+  "launchAdvancedConfigs",
+  /* Ryntra Launch, Launch Boost (SOL-L5): a creator's campaign for buyers, keyed `<cluster>:<token>` — its rules, the
+     Met Lock escrow holding its budget, its payout's plan and signatures; the builds waiting for the creator's signature,
+     keyed `<cluster>:<build id>`; and each build that was sent, under the same key, so a build is sent once. A value in
+     the same column; no DDL. */
+  "launchBoosts",
+  "launchBoostBuilds",
+  "launchBoostSends",
+  /* Ryntra Launch, a distribution campaign (DROP-2): a vesting or airdrop campaign, keyed `<cluster>:<campaign id>` —
+     its draft, the published list and root, the Met Lock root escrow holding exactly what the list adds up to, every
+     claim a recipient made and every row its owner cancelled; the builds waiting for a signature, keyed
+     `<cluster>:<build id>`; and each build that was sent, under the same key, so a build is sent once. A value in the
+     same column; no DDL. */
+  "launchDistributions",
+  "launchDistributionBuilds",
+  "launchDistributionSends",
+  /* Ryntra Launch, the creator's split (SOL-L2b): a token's division of the creator's own share, keyed `<cluster>:<token>`
+     — each rule the creator signed, the depth steps placed, each payout round with its rows and root, every signature
+     and its state; the builds waiting for the creator's signature, keyed `<cluster>:<build id>`; and each build that was
+     sent, under the same key, so a build is sent once. A value in the same column; no DDL. */
+  "launchCreatorSplits",
+  "launchCreatorSplitBuilds",
+  "launchCreatorSplitSends",
+  /* … and who bought what of the token, from its whole history read step by step: each wallet's bought less sold, the
+     wallets the creator paid a buy for, and where the read of the curve and the pool stands. A value in the same
+     column; no DDL. */
+  "launchCreatorSplitBought",
+  /* Ryntra Launch, a mission's crew (MC-2): the creator's invitations by X handle and each invitee's own answer with
+     their wallet, keyed `<cluster>:<crew id>` — fixed once made, bound to its token at liftoff. A value in the same
+     column; no DDL. */
+  "launchCrews",
+  /* Ryntra Launch, early access (SOL-L5): a token launched with an Alpha Vault, keyed `<cluster>:<mint>` — its rules, its
+     mint, pool and vault, each creation step's signature and state; the builds waiting for a signature, keyed
+     `<cluster>:<build id>`; and each build that was sent, under the same key. A value in the same column; no DDL. */
+  "launchEarlyAccess",
+  "launchEarlyAccessBuilds",
+  "launchEarlyAccessSends",
   /* Ryntra Launch: every send of a launch, keyed `solana:<cluster>:<creator>:<build>` — the creator's day and the
      network's hour are counted from it, the sends the chain refused included. */
   "launchAttempts",
@@ -368,10 +546,30 @@ export const GUARD_COLLECTIONS = [
   "launchClaims",
   "launchClaimBuilds",
   "launchClaimSends",
+  /* Ryntra Launch (SOL-L10): «Комісія за переказ» — a creator's harvest or withdraw built for their wallet (`<cluster>:<id>`),
+     its one send, and each step that landed with its signature (`<cluster>:<token>:<signature>`), the cycle's «withdrawn».
+     A value in the same column; no DDL. */
+  "launchTransferFeeBuilds",
+  "launchTransferFeeSends",
+  "launchTransferFeeSteps",
+  /* Ryntra Launch (SOL-L1d): the revenue journal of the partner vault's Squads proposals — each proposal made through
+     Ryntra with the claims it carries, and each line run through Ryntra with its transaction — keyed
+     `<cluster>:<multisig>:<index, 20 digits>`. The financial panel holds it against the vault's claims on chain. A value
+     in the same column; no DDL. */
+  "launchPartnerClaims",
   /* Ryntra Launch: a launch's transactions as decoded from the chain, keyed `<cluster>:<token>:<fee wallet>:<signature>` —
      a confirmed transaction's trades never change, so every instance reads them here and asks the node only for what is
      new. Written once each, never changed. A value in the same column; no DDL. */
   "launchTradeIndex",
+  /* Ryntra Launch (SOL-L2): where each launch's creator notes stand — the holder mark passed, whether a fees note may be
+     written for each wallet — keyed `<cluster>:<token>`; and the creators' pass's cursor, keyed `<cluster>`. A value in
+     the same column; no DDL. */
+  "launchCreatorNotes",
+  "launchCreatorNotesCursor",
+  /* Ryntra Launch (SOL-L12): each pair currency's watch — the mint's profile as first read (or as the operator accepted
+     it), the profile now, and whether it changed — keyed `<cluster>:<mint>`. A changed pair pauses new launches on it
+     until it reads as before or the operator accepts it. A value in the same column; no DDL. */
+  "launchQuoteWatch",
   /* Ryntra Launch: the routes' write windows shared by every instance, keyed `<route>:<address>:<window start>`, a
      version-checked count; an address's older windows are removed as it writes. A value in the same column; no DDL. */
   "launchLimits",
@@ -415,6 +613,58 @@ export const GUARD_COLLECTIONS = [
   /* Ryntra Launch, the holders' collector's own pace (1.41.0): when it reads each position again — an hour under a
      dollar, six after a refused claim — keyed `<cluster>:<position>`. A value in the same column; no DDL. */
   "launchHolderChecks",
+  /* Ryntra Launch's executor at scale (SOL-L6): each phase's queue — when each market is due next, its failures in a
+     row — keyed `solana:<cluster>:<phase>`, rewritten each pass (advisory: a lost write only reorders the next pass);
+     the operator's words the passes said and when, keyed `solana:<cluster>`; and the operator's switch of the budget and
+     the ladder on people's Micro markets with its flips, keyed `solana:<cluster>`, version-checked. A value in the same
+     column; no DDL. */
+  "launchEngineQueue",
+  "launchEngineAlerts",
+  "launchEnginePeople",
+  /* Spot limits on Solana (B3): every Jupiter Trigger and Meteora DLMM limit order Ryntra relayed — the terms, the fee the
+     chain wrote, and the signatures of its placing, fills and cancelling — keyed `mainnet:<wallet>:<venue>:<order>`, a
+     version-checked record. Its own collection, not a lane of `solanaWalletActions`, whose lane list the public API and the
+     phone decode. A value in the same column; no DDL. */
+  "solanaLimitOrders",
+  /* The treasury on Squads (SOL-4): each build the person's wallet is asked to sign — the unsigned bytes in order, to
+     compare the signed ones with — keyed `<network>:<id>`, swept an hour after it expires; and its one send, keyed the
+     same. A value in the same column; no DDL. */
+  "solanaTreasuryBuilds",
+  "solanaTreasurySends",
+  /* The spending limits on Subscriptions (SOL-7): each build the person's wallet is asked to sign — its unsigned bytes,
+     to compare the signed ones with — keyed `<network>:<id>`, swept an hour after it expires; and its one send, keyed
+     the same. A value in the same column; no DDL. */
+  "solanaAllowanceBuilds",
+  "solanaAllowanceSends",
+  /* «Стеження за гаманцями» (SOL-R4): the wallets a person follows (`follow:solana:mainnet:<owner>`, versioned), each
+     wallet's trades read from the chain and shared by all who follow it (`activity:<wallet>`), a token's creator and
+     creation (`birth:<mint>`), the trades each person was told of (`told:…`) and the hour's count of notes sent per
+     person (`sent:…`). No DDL. */
+  "walletWatch",
+  /* The action and budget ledger (EXE-2, `lib/core/actions/`): one head per action (`<actionId>`, versioned), its events
+     (`<actionId>:<seq>`, inserted once), the idempotency claims (`<scope>:<key>`, once), the budgets (`<budgetId>`,
+     versioned), one reservation per action (`<actionId>`, versioned) and the signature claims (`<cluster>:<signature>`,
+     once). A value in the same column; the migration `supabase/prepared/20261025_exe_2_action_ledger_v1.sql` adds the
+     database's own refusal to rewrite the once-written rows and to pass a budget's limit. */
+  "actionIntents",
+  "actionEvents",
+  "actionIdempotency",
+  "actionBudgets",
+  "actionReservations",
+  "actionTransactions",
+  /* The agents' procurement hub on Solana (SOL-5, `lib/agent-control/procurement/`): one row per payment identifier,
+     keyed `<side>:<paymentId>` where the side is the sale Ryntra made or the purchase one of its agents was authorized
+     to make. `insertIfAbsent` on that key is what makes «one payment, at most one execution» true across instances and
+     cold starts: a retry of the same authorization finds the row it wrote, and a settlement nobody can confirm stays
+     `AWAITING_RECONCILIATION` rather than becoming a second charge. A value in the same column; no DDL. */
+  "agentProcurementPayments",
+  /* The tasks of the A2A paths (`lib/agent-control/a2a/`): one row per task, keyed `<side>:task:<taskId>`, and one
+     marker per request that asked for it, keyed `<side>:request:<requestKey>` — the side being the task Ryntra
+     answered or the order Ryntra placed with somebody else's agent. The two keys are claimed in one
+     `insertAllIfAbsent`, which is what makes a resent order the order it already is rather than a second one; a
+     terminal state arriving from the other party moves a field named for a claim and never the delivery axis. A value
+     in the same column; no DDL. */
+  "agentExternalTasks",
 ] as const;
 
 export type GuardCollectionName = (typeof GUARD_COLLECTIONS)[number];

@@ -8,6 +8,8 @@ import { mapDeepLink } from '@/features/monitoring/deep-link'
 import { useSurface } from '@/features/plans/use-plans'
 import { useSession } from '@/features/session/session-store'
 import { PRIVATE_QUERY_KEY } from '@/features/session/use-account'
+import { useOpenPlace } from '@/features/shell/open-place'
+import { onPlacesFree, placesHeld } from '@/features/shell/place-hold'
 import { registerDevice, type Session } from '@/lib/api'
 import { useLocale } from '@/lib/i18n'
 
@@ -36,6 +38,7 @@ export function NotificationsBinder() {
   const { session } = useSession()
   const locale = useLocale()
   const router = useRouter()
+  const openPlace = useOpenPlace()
   const navigation = useRootNavigationState()
   const queryClient = useQueryClient()
   const surface = useSurface(session, locale)
@@ -52,7 +55,8 @@ export function NotificationsBinder() {
     void pushDevice.ensureChannel()
   }, [])
 
-  // A tap: the launch's own, then every later one; each handled once.
+  // A tap: the launch's own, then every later one; each handled once. A tap while money is moving — a purchase or a
+  // send being signed, sent or checked — waits for it, so the sheet it stands on is not closed under it (`place-hold.ts`).
   useEffect(() => {
     const open = (tap: PushTap) => {
       if (!handled.take(tap.id)) return
@@ -60,24 +64,33 @@ export function NotificationsBinder() {
       const mapped = mapDeepLink(tap.link)
       recordJourney('note_tap', { target: mapped.kind })
       if (mapped.kind === 'unknown') return
-      router.navigate(mapped.path as Href)
+      // A place of the bar (Портфель · Ордери, Історія, Home's budget) opens without a second bar over the screen in front.
+      if (mapped.path.startsWith('/(tabs)')) openPlace(mapped.path)
+      else router.navigate(mapped.path as Href)
     }
     const deliver = (tap: PushTap) => {
-      if (ready) open(tap)
+      if (ready && !placesHeld()) open(tap)
       else pending.current = tap
+    }
+    const flush = () => {
+      if (!ready || placesHeld() || !pending.current) return
+      const tap = pending.current
+      pending.current = null
+      open(tap)
     }
     const launch = pushDevice.lastTap()
     if (launch) {
       deliver(launch)
       pushDevice.clearLastTap()
     }
-    if (ready && pending.current) {
-      const tap = pending.current
-      pending.current = null
-      open(tap)
+    flush()
+    const stopFree = onPlacesFree(flush)
+    const stopTap = pushDevice.onTap(deliver)
+    return () => {
+      stopFree()
+      stopTap()
     }
-    return pushDevice.onTap(deliver)
-  }, [ready, router])
+  }, [ready, router, openPlace])
 
   // An arrival, or a return to the foreground, re-reads the inbox from the server.
   useEffect(() => {

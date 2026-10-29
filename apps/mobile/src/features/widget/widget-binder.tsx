@@ -14,7 +14,7 @@ import { redrawPortfolioWidgets } from './widget-render'
 import { setWidgetFigures, setWidgetWallet } from './widget-store'
 
 /**
- * Keeps the home-screen widget in step with the app: the wallet
+ * Keeps the home-screen widget in step with the app (M9): the wallet
  * connected — or none — and the app's language, theme and hidden amounts,
  * drawn again each time the app leaves the screen. The figures themselves
  * come from Portfolio's own read (`usePortfolio`).

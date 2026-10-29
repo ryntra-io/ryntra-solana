@@ -42,9 +42,10 @@ import {
   type Survival,
 } from "../core/launch/market-health.ts";
 import { observeCreatorLock } from "../core/venues/meteora-dbc/creator-lock.server.ts";
+import { RECEIPT_EXIT_UNREAD, RECEIPT_LOCK_UNREAD, receiptRefusedByRules } from "../core/venues/meteora-dbc/receipt.ts";
 import { creatorActivity, creatorSoldShare, priceFromSqrtX64, uiAmount } from "../core/venues/meteora-dbc/market.ts";
 import { launchPreset } from "../core/venues/meteora-dbc/presets.ts";
-import { inPoolBudget, type BudgetRisk } from "../core/launch/budget.ts";
+import { creatorWatchProven, inPoolBudget, type BudgetRisk } from "../core/launch/budget.ts";
 import { autopilotReceipts, budgetFiguresOf, floorRecord, type AutopilotReceipt } from "./autopilot.server.ts";
 import { executorClaimsPreset, exhaustedNow, marketBudget, type BudgetRead, type LadderRead, type MarketBudgetRecord } from "./budget.server.ts";
 import { launchExecutorAddress, launchPair } from "./config.server.ts";
@@ -57,7 +58,7 @@ import { metadataOfUri } from "./metadata.server.ts";
 export type OwnWallets = Readonly<{ wallets: ReadonlySet<string>; complete: boolean }>;
 
 /** Whether Ryntra's executor acts on this network now — its key here, Launch open, its passes coming —, and whether it may move its steps. */
-export type ExecutorRuns = Readonly<{ acts: boolean; ladder: boolean }>;
+export type ExecutorRuns = Readonly<{ acts: boolean; ladder: boolean; /** Its switch or its passes could not be read now and no recent read stands in: `acts` is false by not knowing. */ unread?: boolean }>;
 
 export type HealthDeps = MarketDeps &
   Readonly<{
@@ -68,6 +69,8 @@ export type HealthDeps = MarketDeps &
     executorRuns: () => Promise<ExecutorRuns>;
     /** What the executor keeps on a market and the operator's stop on it; absent where no executor's records are read. */
     executorOf?: (token: string) => Promise<ExecutorFacts>;
+    /** The operator's switch of people's Micro markets (SOL-L6): open — the executor claims their budgets too. Absent — closed. */
+    peopleServed?: () => Promise<boolean>;
   }>;
 
 /** The operator's stop that holds on a market, and what the executor keeps there — its graduation in flight, its failures, its budget. */
@@ -166,7 +169,33 @@ function remember<V>(map: Map<string, V>, key: string, value: V, max: number) {
   while (map.size > max) map.delete(map.keys().next().value as string);
 }
 
-const freshFor = (read: MarketRead | null) => (read && read.figures && read.walletsComplete ? FRESH_MS : BRIEF_MS);
+/**
+ * A read that stands in for later ones: its figures read, Ryntra's own wallets read whole, and its holders read — the
+ * concentration a figure, not «not read» because one node refused a moment (18.10: now figures, now null).
+ */
+const goodRead = (read: MarketRead | null): read is MarketRead => Boolean(read && read.figures && read.walletsComplete);
+
+/** The holders were read: every account of the mint, or its largest accounts — a market with nothing in circulation is read too. */
+const holdersRead = (holders: HoldersRead) => !holders.atLeast || holders.top10Bps !== null;
+
+const freshFor = (read: MarketRead | null) => (goodRead(read) && holdersRead(read.figures!.holders) ? FRESH_MS : BRIEF_MS);
+
+/*
+ * The holders as last read, by market: a read whose holders a node refused keeps its own figures and takes these — the
+ * holders and the ten largest change slowly, and a moment's refusal is not a reason to say «not read» (18.10: now
+ * figures, now null) nor to put an older price, state or budget in place of the fresh ones.
+ */
+const LAST_HOLDERS = new Map<string, Readonly<{ at: number; holders: HoldersRead }>>();
+
+/** A read whose holders were not read, with the holders of the last read that had them, within the time a good read stands in. */
+export function withLastHolders(read: MarketRead, last: Readonly<{ at: number; holders: HoldersRead }> | null, now: number): MarketRead {
+  if (!read.figures || holdersRead(read.figures.holders) || !last || now - last.at >= FALLBACK_MS) return read;
+  return { ...read, figures: { ...read.figures, holders: last.holders } };
+}
+
+/* Whether the executor acts, as last read: a read of its switch or its passes that failed takes this, never «it stopped». */
+const LAST_RUNS = new Map<string, Readonly<{ at: number; runs: ExecutorRuns }>>();
+const LAST_FACTS = new Map<string, Readonly<{ at: number; facts: ExecutorFacts }>>();
 
 /**
  * The market read: one read at a time per market — a second caller waits on the one running —, served again for a
@@ -182,11 +211,14 @@ export function readMarket(deps: HealthDeps, token: string): Promise<MarketRead 
   const value = assemble(deps, token).then((read) => {
     const done = deps.now().getTime();
     let answer = read;
-    if (read?.figures && read.walletsComplete) remember(LAST_GOOD, key, read, LAST_GOOD_MAX);
+    if (read?.figures && holdersRead(read.figures.holders)) remember(LAST_HOLDERS, key, { at: done, holders: read.figures.holders }, LAST_GOOD_MAX);
+    /* The good read is kept as it was read: holders taken from an earlier read stand only their own ten minutes, never a good read's on top. */
+    if (goodRead(read)) remember(LAST_GOOD, key, read, LAST_GOOD_MAX);
     else if (read) {
       const good = LAST_GOOD.get(key);
       if (good && done - Date.parse(good.observedAt) < FALLBACK_MS) answer = good;
     }
+    if (answer) answer = withLastHolders(answer, LAST_HOLDERS.get(key) ?? null, done);
     remember(SETTLED, key, { at: done, value: answer }, SETTLED_MAX);
     return answer;
   });
@@ -214,8 +246,9 @@ export async function marketForAnswer(deps: HealthDeps, token: string): Promise<
 
 /** The last read of a market that had its figures, within the time a good read may stand in; null when there is none. */
 export function lastGoodMarket(cluster: string, token: string, now: number = Date.now()): MarketRead | null {
-  const good = LAST_GOOD.get(`${cluster}:${token}`) ?? null;
-  return good && now - Date.parse(good.observedAt) < FALLBACK_MS ? good : null;
+  const key = `${cluster}:${token}`;
+  const good = LAST_GOOD.get(key) ?? null;
+  return good && now - Date.parse(good.observedAt) < FALLBACK_MS ? withLastHolders(good, LAST_HOLDERS.get(key) ?? null, now) : null;
 }
 
 /** Ryntra's steps on a token: none, placed with each step's holding, or placed and not read now. */
@@ -253,9 +286,10 @@ async function readLadder(deps: HealthDeps, token: string, tokenDecimals: number
 async function readLock(deps: HealthDeps, record: LaunchRecord): Promise<LockRead | null> {
   if (!record.lock || record.lock.state === "FAILED") return null;
   const observed = await observeCreatorLock(deps.connection, record.lock.escrow).catch(() => undefined);
-  /* An escrow the chain does not hold (yet, or never) is no lock; one not read is a lock of unknown dates. */
+  /* An escrow the chain does not hold (yet, or never) is no lock; one not read is a lock of unknown dates — only when the
+     record already knows it landed: a lock never settled and not read now is not said to hold. */
   if (observed === null) return record.lock.state === "LOCKED" ? { escrow: record.lock.escrow, cliffAt: null, endsAt: null } : null;
-  if (observed === undefined) return { escrow: record.lock.escrow, cliffAt: null, endsAt: null };
+  if (observed === undefined) return record.lock.state === "LOCKED" ? { escrow: record.lock.escrow, cliffAt: null, endsAt: null } : null;
   return { escrow: record.lock.escrow, cliffAt: observed.cliffAt, endsAt: observed.endsAt };
 }
 
@@ -271,22 +305,43 @@ export function ladderRunsFor(record: Pick<LaunchRecord, "preset">, runs: Execut
 async function assemble(deps: HealthDeps, token: string): Promise<MarketRead | null> {
   const record = await readLaunchRecord(deps, deps.network.cluster, token);
   if (!record || record.state === "PENDING") return null;
-  const pair = launchPair(deps.network, record.preset);
+  const pair = launchPair(deps.network, record.preset, record.pairMint);
   const [stored, wallets, receipts, lock, facts, runs] = await Promise.all([
     metadataOfUri(deps.store, record.metadataUri, deps.origin).catch(() => null),
     deps.ryntraWallets().catch((): OwnWallets => ({ wallets: new Set<string>(), complete: false })),
     autopilotReceipts(deps.store, deps.network.cluster, token).catch(() => [] as AutopilotReceipt[]),
     readLock(deps, record),
     readLaunchMarketFacts(deps, token).catch(() => null),
-    deps.executorRuns().catch((): ExecutorRuns => ({ acts: false, ladder: false })),
+    deps
+      .executorRuns()
+      .then((runs) => {
+        LAST_RUNS.set(deps.network.cluster, { at: deps.now().getTime(), runs });
+        return runs;
+      })
+      .catch((): ExecutorRuns => {
+        const last = LAST_RUNS.get(deps.network.cluster);
+        return last && deps.now().getTime() - last.at < FALLBACK_MS ? last.runs : { acts: false, ladder: false, unread: true };
+      }),
   ]);
   /* A switch that could not be read is said as not read — no stop invented, and nothing of the executor's claimed. */
-  const executorFacts = deps.executorOf ? await deps.executorOf(token).catch((): ExecutorFacts => ({ stop: null, market: null, unread: true })) : NO_EXECUTOR_FACTS;
+  const factsKey = `${deps.network.cluster}:${token}`;
+  const executorFacts = deps.executorOf
+    ? await deps
+        .executorOf(token)
+        .then((facts) => {
+          remember(LAST_FACTS, factsKey, { at: deps.now().getTime(), facts }, LAST_GOOD_MAX);
+          return facts;
+        })
+        .catch((): ExecutorFacts => {
+          const last = LAST_FACTS.get(factsKey);
+          return last && deps.now().getTime() - last.at < FALLBACK_MS ? last.facts : { stop: null, market: null, unread: true };
+        })
+    : NO_EXECUTOR_FACTS;
   const ladder = await readLadder(deps, token, facts?.state.tokenDecimals ?? 6, pair.decimals);
   const { budget, risks } = await readBudget(deps, record, wallets.wallets.has(record.creator));
   return marketReadOf({
     record,
-    metadata: stored ? { name: stored.metadata.name, symbol: stored.metadata.symbol, image: stored.metadata.image ?? null } : null,
+    metadata: stored ? { name: stored.metadata.name, symbol: stored.metadata.symbol, image: stored.takenDown ? null : (stored.metadata.image ?? null) } : null,
     wallets,
     receipts,
     lock,
@@ -311,21 +366,33 @@ const NO_RISKS = Object.freeze({ codes: [] as readonly BudgetRisk[], at: null })
  */
 async function readBudget(deps: HealthDeps, record: LaunchRecord, ours: boolean): Promise<Readonly<{ budget: BudgetRead; risks: MarketRead["risks"] }>> {
   if (!executorClaimsPreset(record.preset)) return { budget: { kind: "NOT_COUNTED" }, risks: NO_RISKS };
+  const claims = await budgetClaimed(deps, ours);
   const { readPartnerFees } = await import("../core/venues/meteora-dbc/partner.server.ts");
   const [kept, partner] = await Promise.all([
-    ours ? budgetFiguresOf(deps.store, deps.network.cluster, record.token).catch(() => null) : Promise.resolve(null),
+    /* The executor's ledger wherever it has one — a person's market claimed while the switch was open keeps what it got. */
+    budgetFiguresOf(deps.store, deps.network.cluster, record.token).catch(() => null),
     readPartnerFees(deps.connection, { token: record.token, pool: record.pool }, { indexed: deps.second ?? null }).catch(() => null),
   ]);
   /* A locked position not looked up is a sum not read — never a smaller one. */
   const inPool = partner && !partner.lpUnread ? inPoolBudget({ curveRaw: partner.curveRaw, migrationRaw: partner.migration.withdrawn ? 0n : partner.migration.raw, surplusRaw: partner.surplus.withdrawn ? 0n : partner.surplus.raw, lpRaw: partner.lp?.pairRaw ?? null }) : null;
   const ledger: MarketBudgetRecord | null = kept?.record ?? null;
+  /* A person's market whose creator was not watched from its launch is not kept, whatever the switch says (SOL-L6). */
+  /* The ledger not read: whether its creator was watched is not known — not said. */
+  const keeps = claims === true && !ours && !kept ? undefined : claims === true && !ours && !creatorWatchProven({ watchFrom: ledger?.creatorWatchFrom, launchedAt: Math.floor(Date.parse(record.launchedAt) / 1000) }) ? false : claims;
   if (kept && ledger && ledger.claims.length) {
     return {
-      budget: { kind: "COUNTED", figures: kept.figures, inPoolRaw: inPool ? inPool.budgetRaw : null, exhausted: exhaustedNow(ledger, kept.figures) },
+      budget: { kind: "COUNTED", figures: kept.figures, inPoolRaw: inPool ? inPool.budgetRaw : null, exhausted: exhaustedNow(ledger, kept.figures), claims: keeps },
       risks: { codes: ledger.risks, at: ledger.riskAt },
     };
   }
-  return { budget: { kind: "IN_POOL", inPool }, risks: ledger ? { codes: ledger.risks, at: ledger.riskAt } : NO_RISKS };
+  return { budget: { kind: "IN_POOL", inPool, claims: keeps }, risks: ledger ? { codes: ledger.risks, at: ledger.riskAt } : NO_RISKS };
+}
+
+/** Whether the executor claims a budget market's budget: Ryntra's own, or a person's while the switch is open (SOL-L6). */
+export async function budgetClaimed(deps: Pick<HealthDeps, "peopleServed">, ours: boolean): Promise<boolean | undefined> {
+  if (ours) return true;
+  /* The switch not read: whether the executor claims here is not said — never «no longer kept» by not knowing. */
+  return deps.peopleServed ? await deps.peopleServed().catch(() => undefined) : false;
 }
 
 /** A market's read from its parts — what the answers need of them, and the figures. Pure: the parts are its input. */
@@ -390,6 +457,8 @@ export function marketReadOf(args: Readonly<{
  */
 export function marketPause(args: Readonly<{ stop: ExecutorFacts["stop"]; migrated: boolean; ladder: LadderRead["state"]; runs: ExecutorRuns; ours: boolean; risks?: MarketRead["risks"] }>): MarketPause | null {
   if (args.stop) return { code: "OPERATOR", at: seconds(args.stop.at) };
+  /* Whether the executor acts was not read now: no stop is said on a guess — the engine says it was not read (1.47.0). */
+  if (args.runs.unread) return null;
   /* A risk limit of the budget's, read by the executor while it acts here: no new money goes into the steps. */
   if (args.migrated && args.ours && args.runs.acts && args.risks && args.risks.codes.length) return { code: "RISK_LIMIT", at: args.risks.at, risks: args.risks.codes };
   return args.migrated && args.ladder !== "NONE" && !(args.runs.acts && args.runs.ladder && args.ours) ? { code: "STOPPED", at: null } : null;
@@ -530,7 +599,7 @@ const rounded = (value: number, decimals: number) => Number(value.toFixed(Math.m
 
 /** The list's row of a market read; with no figures, the record's facts only. */
 export function marketRow(read: MarketRead, network: HealthDeps["network"]): LaunchMarketRow {
-  const pair = launchPair(network, read.record.preset);
+  const pair = launchPair(network, read.record.preset, read.record.pairMint);
   const basics = read.basics;
   const figures = read.figures;
   const graduated = basics?.graduated ?? null;
@@ -569,9 +638,13 @@ export function marketRow(read: MarketRead, network: HealthDeps["network"]): Lau
 }
 
 /** The pool's locked positions from the token's receipt, each named by whose share it is: the creator's — their wallet, or the vault sharing their fees — or Ryntra's as the config's partner. */
-function lockedPositions(read: MarketRead, view: LaunchTokenResponse | null) {
+export function lockedPositions(read: Pick<MarketRead, "record">, network: HealthDeps["network"], view: LaunchTokenResponse | null) {
   const creatorRoles = new Set([read.record.creator, ...(read.record.feeSharing?.vault ? [read.record.feeSharing.vault] : [])]);
-  return (view?.receipt?.graduated?.positions ?? []).map((position) => ({ position: position.position, owner: creatorRoles.has(position.owner) ? ("creator" as const) : ("partner" as const), address: position.owner }));
+  /* Ryntra's side of the exit: the config's partner (its fee claimer) and, on Micro and the demo market, the executor. An exit
+     NFT anyone else holds now is neither's share by name — its liquidity is still locked for ever, said plainly. */
+  const partners = new Set([network.referralOwner, launchExecutorAddress(network)].filter((address): address is string => Boolean(address)));
+  const ownerOf = (address: string) => (creatorRoles.has(address) ? ("creator" as const) : partners.has(address) ? ("partner" as const) : ("other" as const));
+  return (view?.receipt?.graduated?.positions ?? []).map((position) => ({ position: position.position, owner: ownerOf(position.owner), address: position.owner }));
 }
 
 /** The vault sharing the creator's fees, once it holds the curve's creator role: the token's read settles it, the record keeps it. */
@@ -590,7 +663,7 @@ export function marketCard(read: MarketRead, network: HealthDeps["network"], vie
       curve: read.record.pool,
       pairMint: read.record.pairMint,
       pool: read.basics?.graduated?.pool ?? null,
-      lockedPositions: lockedPositions(read, view)
+      lockedPositions: lockedPositions(read, network, view)
         .slice(0, 8)
         .map((position) => ({ position: position.position, owner: position.address })),
       creatorLock: read.lock?.escrow ?? null,
@@ -607,7 +680,7 @@ export function marketHealth(read: MarketRead, network: HealthDeps["network"], v
   const basics = read.basics;
   const figures = read.figures;
   if (!basics || !figures) return null;
-  const pair = launchPair(network, read.record.preset);
+  const pair = launchPair(network, read.record.preset, read.record.pairMint);
   const now = Math.floor(Date.parse(read.observedAt) / 1000);
   const preset = launchPreset(read.record.preset);
   const ladder = read.ladder;
@@ -617,6 +690,8 @@ export function marketHealth(read: MarketRead, network: HealthDeps["network"], v
   const stopped = read.executorFacts.stop !== null;
   /* The executor acts here only while its switch was read and holds no stop for this market. */
   const acts = read.runs.acts && !read.executorFacts.unread;
+  /* 1.47.0: whether it acts was not read now — never said as an executor that does not act. */
+  const actsUnread = Boolean(read.runs.unread || read.executorFacts.unread);
   /* The ladder's policy runs only where the executor moves it: a market Ryntra launched itself, not stopped. */
   const ladderMoves = ladder.state !== "NONE" && acts && read.runs.ladder && !stopped && read.technicalValidation;
   const receipt = view?.receipt ?? null;
@@ -667,27 +742,38 @@ export function marketHealth(read: MarketRead, network: HealthDeps["network"], v
     engine: {
       executor: read.executor,
       acts,
+      /* 1.47.0: whether it acts was not read now — never said as an executor that does not act. */
+      ...(actsUnread ? { actsUnread: true } : {}),
       lastAction: read.lastAction,
       pause: figures.pause ? { code: figures.pause.code, at: iso(figures.pause.at), ...(figures.pause.risks ? { risks: [...figures.pause.risks] } : {}) } : null,
     },
     rules: marketRules({
       migrated: basics.migrated,
       tokenMarks: receipt?.marks ?? [],
+      transferFeeBps: receipt?.transferFee?.bps ?? null,
+      /* «Правила на кривій» (SOL-L8): the receipt's own block — the program read from the mint and the launch's set. */
+      curveRules: receipt?.curveRules ?? null,
       config: read.record.config,
       curve: read.record.pool,
       launchSignature: read.record.signature,
       thresholdRaw: basics.thresholdRaw,
-      lockedPositions: lockedPositions(read, view).map((position) => ({ position: position.position, owner: position.owner })),
+      lockedPositions: lockedPositions(read, network, view).map((position) => ({ position: position.position, owner: position.owner })),
       creatorLock: read.lock,
       feeVault: feeVault(read, view),
-      firstBuyCapBps: preset?.creatorFirstBuyCapBps ?? null,
+      /* «Розширений»: the cap its own terms named (SOL-L5). */
+      firstBuyCapBps: read.record.advanced?.firstBuyCapBps ?? preset?.creatorFirstBuyCapBps ?? null,
       executor: acts && !stopped ? read.executor : null,
       ladderPool: ladderMoves ? ladder.pool : null,
       concentrationRead: figures.holders.top10Bps !== null,
       creatorSalesRead: figures.creatorSold !== null,
       now,
     }).map((rule) => ({ ...rule, values: { ...rule.values } })),
-    rulesComplete: receipt !== null,
+    /* A receipt read but for its exit or its lock leaves those rules unsaid: the rules are then said incomplete. */
+    /* A launch the rules refused has nothing left unread: the marks say the refusal, never «not read». */
+    /* Whether the executor acts, not read, leaves its ladder's policy unsaid on a market with steps: incomplete too (1.47.0). */
+    rulesComplete:
+      receiptRefusedByRules(view?.receiptProblems ?? []) ||
+      (receipt !== null && !(view?.receiptProblems ?? []).some((problem) => problem === RECEIPT_EXIT_UNREAD || problem === RECEIPT_LOCK_UNREAD) && !(actsUnread && ladder.state !== "NONE")),
     observedAt: read.observedAt,
   };
 }

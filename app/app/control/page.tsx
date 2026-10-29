@@ -101,7 +101,7 @@ const COPY = {
       </p>
     ),
     emptyNote:
-      "Підтвердьте акаунт і підключіть джерело. Модель повноважень нижче задекларована, а не привʼязана до акаунта, і вона однакова для всіх.",
+      "Підтверди акаунт і підключи джерело. Модель повноважень нижче задекларована, а не привʼязана до акаунта, і вона однакова для всіх.",
     confirmAccess: "Підтвердити доступ",
     agentControl: "Agent Control",
     vocabularyTitle: "Модель повноважень",
@@ -112,7 +112,7 @@ const COPY = {
     hardErrorTitle: "Це читання не завершилося",
     hardErrorInfo: <p>Тут не показано жодної плитки з попереднього читання. Застарілий стан контролю, поданий як поточний, — саме той дефект, якому цей стан запобігає.</p>,
     hardErrorNote:
-      "Ніщо на цій сторінці зараз не є поточним фактом. Перезавантажте, щоб повторити читання, або відкрийте кожну власницьку поверхню напряму.",
+      "Ніщо на цій сторінці зараз не є поточним фактом. Перезавантаж, щоб повторити читання, або відкрий кожну власницьку поверхню напряму.",
     reload: "Перезавантажити",
     portfolio: "Портфель",
     recoveryTitle: "Це читання неповне",
@@ -132,8 +132,8 @@ const COPY = {
 /**
  * Ryntra Home — compact Agent Control projections.
  *
- * The rule: *Strategy and Agent Control appear as projections, not
- * copies.* This route is that rule as a page. Every tile carries the
+ * Frozen decision 27: *Strategy and Agent Control appear as projections, not
+ * copies.* This route is that sentence as a page. Every tile carries the
  * surface that owns its fact and a link to it; `authority` is the constant
  * `PROJECTION`; and there is no control here that pauses, resumes, revokes,
  * authorizes or trips a kill switch — those live in Agent Control, with the

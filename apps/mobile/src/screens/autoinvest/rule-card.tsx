@@ -23,13 +23,13 @@ import type { AutoinvestRule, RuleBudget } from '@/lib/api'
 import { useCopy, useLocale } from '@/lib/i18n'
 
 /**
- * A company's rule in «Автоінвест»'s place under «Купити»: how much and how often, and what comes next — the next purchase, the
+ * A company's rule in «Автоінвест»'s place under «Купити» ( * M16): how much and how often, and what comes next — the next purchase, the
  * pause, the month's budget holding it, or, while its reminder is open, «Час
  * твоєї покупки». A purchase the price condition holds back says «Купівлю
  * відкладено · правило перевірить знову» with why under it — the reason, the
  * figure and the data's time. A «З оплат» rule reads «Автоінвест · З
  * оплат» with its terms and what it has gathered — «Накопичено $0,60 ·
- * нагадаю від $1» — and its open reminder the sum it gathered. A
+ * нагадування від $1» — and its open reminder the sum it gathered. A
  * reminder that passed without a signature says «Пропущено» once and is never
  * caught up. One tap opens the rule, or buys the open reminder.
  */

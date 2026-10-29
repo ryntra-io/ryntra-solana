@@ -57,6 +57,7 @@ export const AGENT_MODULES: readonly AgentModuleSpec[] = [
     entries: [
       { id: "integrations", labelKey: "nav.integrations", href: "/agents/workspace/integrations", icon: "providers" },
       { id: "commerce", labelKey: "nav.commerce", href: "/agents/workspace/commerce", icon: "treasury" },
+      { id: "procurement", labelKey: "nav.procurement", href: "/agents/workspace/procurement", icon: "treasury" },
       { id: "tools", labelKey: "nav.tools", href: "/agents/workspace/tools", icon: "terminal" },
       { id: "adoption", labelKey: "nav.adoption", href: "/agents/workspace/adoption", icon: "developers" },
     ],

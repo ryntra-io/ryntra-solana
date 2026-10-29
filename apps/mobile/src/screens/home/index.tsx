@@ -5,6 +5,7 @@ import { AppState, Pressable, RefreshControl, View } from 'react-native'
 import { Button } from '@/components/button'
 import { Card } from '@/components/card'
 import { Chip } from '@/components/chip'
+import { HelpDot } from '@/components/help-dot'
 import { Icon } from '@/components/icon'
 import { Screen } from '@/components/screen'
 import { Txt } from '@/components/txt'
@@ -12,6 +13,7 @@ import { HOME_COPY } from '@/features/home/copy'
 import { money, TRENDING_CLASSES, type AttentionItem, type BriefLine } from '@/features/home/home-model'
 import { writeLastLook } from '@/features/home/last-look'
 import { useHome } from '@/features/home/use-home'
+import { INVEST_COPY } from '@/features/invest/copy'
 import { recordJourney } from '@/features/journeys/journey-store'
 import { marketsPath } from '@/features/markets/screener'
 import { noteRefOfHref } from '@/features/monitoring/monitoring-model'
@@ -19,6 +21,9 @@ import { useOpenNote } from '@/features/monitoring/use-monitoring'
 import { PLANS_COPY } from '@/features/plans/copy'
 import { attentionSymbols, sharedSymbols } from '@/features/plans/plan-model'
 import { PORTFOLIO_COPY } from '@/features/portfolio/copy'
+import { useOpenPlace } from '@/features/shell/open-place'
+import { PORTFOLIO_HISTORY_PATH, PORTFOLIO_PATH, TRADE_PATH } from '@/features/shell/shell'
+import { failureLine, signInFailureLine } from '@/features/wallet/signing-copy'
 import type { MarketRow } from '@/lib/api'
 import { useCopy, useSharedCopy } from '@/lib/i18n'
 import { PlanRow } from '@/screens/plans/plan-row'
@@ -31,11 +36,11 @@ type Door =
   'asset' | 'plan' | 'plans' | 'new-plan' | 'portfolio' | 'inbox' | 'trade' | 'markets' | 'watchlist' | 'choose'
 
 /**
- * «Що змінилося» — Home one tap deeper (the command centre,
+ * «Що змінилося» — Home one tap deeper (M10's command centre,
  * a screen of its own since one version). It answers one question: what
- * changed, and what needs a look. The unfinished operation first (its recovery), then the
- * plans that need attention (the monitoring's cards, honest about a card two plans
- * share), the portfolio in one line, the active plans,
+ * changed, and what needs a look. The unfinished operation first (M3's recovery), then the
+ * plans that need attention (M7's cards, honest about a card two plans
+ * share), the portfolio in one line (M4's read), the active plans,
  * the watchlist's moves since the person last looked, and a short list of
  * what changed with its doors. A guest sees the markets and one next
  * action; a wallet without a session sees its public figures and the one
@@ -44,11 +49,13 @@ type Door =
  */
 export function HomeScreen({ onBack, backLabel }: { onBack?: () => void; backLabel?: string } = {}) {
   const router = useRouter()
+  const openPlace = useOpenPlace()
   const { colors } = useTheme()
   const copy = useCopy(HOME_COPY)
   const shared = useSharedCopy()
   const plansCopy = useCopy(PLANS_COPY)
   const portfolioCopy = useCopy(PORTFOLIO_COPY)
+  const investCopy = useCopy(INVEST_COPY)
   const home = useHome()
   const { account, state, locale, now, hidden } = home
   const openNote = useOpenNote(account.session, 'home')
@@ -89,11 +96,11 @@ export function HomeScreen({ onBack, backLabel }: { onBack?: () => void; backLab
   const openPlan = (id: string) => go('plan', () => router.push({ pathname: '/plans/[id]', params: { id } }))
   const openPlans = () => go('plans', () => router.push('/bots'))
   const openNewPlan = () => go('new-plan', () => router.push('/plans/pick'))
-  const openPortfolio = () => go('portfolio', () => router.navigate('/(tabs)/portfolio'))
+  const openPortfolio = () => go('portfolio', () => openPlace(PORTFOLIO_PATH))
   const openInbox = () => go('inbox', () => router.push('/monitoring'))
   const openTrade = () => go('trade', () => router.push('/trade'))
-  const openMarkets = () => go('markets', () => router.navigate('/(tabs)/markets'))
-  const openWatchlist = () => go('watchlist', () => router.navigate(marketsPath('watchlist') as never))
+  const openMarkets = () => go('markets', () => openPlace(TRADE_PATH))
+  const openWatchlist = () => go('watchlist', () => openPlace(marketsPath('watchlist')))
   const openAttention = (item: AttentionItem) => {
     if (item.kind === 'recovery') return openTrade()
     if (item.kind === 'entry-expired') return openPlan(item.plan.id)
@@ -222,7 +229,12 @@ export function HomeScreen({ onBack, backLabel }: { onBack?: () => void; backLab
         title={copy.portfolio}
         fact={view ? formatMoment(view.observedAt, now, locale) : null}
         action={
-          view ? { label: portfolioCopy.history, onPress: () => go('portfolio', () => router.push('/history')) } : null
+          view
+            ? {
+                label: portfolioCopy.history,
+                onPress: () => go('portfolio', () => openPlace(PORTFOLIO_HISTORY_PATH)),
+              }
+            : null
         }
       >
         {gate ??
@@ -236,24 +248,33 @@ export function HomeScreen({ onBack, backLabel }: { onBack?: () => void; backLab
               className="gap-2 rounded-sm border border-line bg-surface px-4 py-3 active:bg-hover"
             >
               <View className="flex-row items-center justify-between gap-3">
-                <Txt variant="dataLg" tone={view.total === null && !hidden ? 'muted' : 'fg'}>
-                  {money(view.total, hidden, locale)}
-                </Txt>
+                <View className="shrink flex-row flex-wrap items-center gap-1">
+                  <Txt variant="dataLg" tone={view.total === null && !hidden ? 'muted' : 'fg'}>
+                    {money(view.total, hidden, locale)}
+                  </Txt>
+                  {view.unpriced > 0 ? (
+                    <Txt variant="labelSm" tone="faint" className="pl-1">
+                      {investCopy.unpriced(view.unpriced)}
+                    </Txt>
+                  ) : null}
+                  {view.unpriced > 0 ? (
+                    <HelpDot
+                      title={investCopy.unpricedTitle}
+                      body={investCopy.unpricedHelp(view.unpriced, view.rows.length)}
+                    />
+                  ) : null}
+                </View>
                 <Icon name="chevron-forward" size={18} color="fgMuted" />
               </View>
-              <View className="flex-row flex-wrap items-center gap-x-2 gap-y-1">
-                {change ? (
+              {change ? (
+                <View className="flex-row flex-wrap items-center gap-x-2 gap-y-1">
                   <Chip
-                    label={`${hidden ? '' : `${formatUsdSigned(change.usd, locale)} · `}${formatPercent(change.pct, locale)} ${portfolioCopy.today}`}
+                    label={`${hidden ? '' : `${formatUsdSigned(change.usd, locale)} · `}${formatPercent(change.pct, locale)} ${portfolioCopy.overDay}`}
                     tone={change.usd > 0 ? 'success' : change.usd < 0 ? 'danger' : 'neutral'}
                     mono
                   />
-                ) : null}
-                <Txt variant="labelSm" tone="faint">
-                  {portfolioCopy.priced(view.priced, view.rows.length)}
-                  {view.unpriced > 0 ? ` · ${portfolioCopy.withoutPrice(view.unpriced)}` : ''}
-                </Txt>
-              </View>
+                </View>
+              ) : null}
               {notices.length > 0 ? (
                 <View className="flex-row flex-wrap gap-2">
                   {notices.map((notice) => (
@@ -456,14 +477,12 @@ export function HomeScreen({ onBack, backLabel }: { onBack?: () => void; backLab
   }
   const briefKey = (line: BriefLine) =>
     line.kind === 'plan' ? `plan:${line.plan.id}` : line.kind === 'watch' ? `watch:${line.move.row.mint}` : line.kind
-  const showBrief = state !== 'guest' || watch.total > 0
+  // A first look has nothing to compare with yet: the block waits for the next one rather than saying so.
+  const showBrief = (state !== 'guest' || watch.total > 0) && (home.look !== null || home.brief.length > 0)
   const brief = showBrief ? (
     <Block title={copy.changed} fact={home.look ? copy.since(formatClock(home.look.at)) : null}>
-      {home.brief.length === 0 ? (
-        <QuietLine
-          text={home.look ? copy.nothingChanged(formatClock(home.look.at)) : copy.firstLook}
-          icon={home.look ? 'checkmark-circle-outline' : 'eye-outline'}
-        />
+      {home.brief.length === 0 && home.look ? (
+        <QuietLine text={copy.nothingChanged(formatClock(home.look.at))} icon="checkmark-circle-outline" />
       ) : (
         <Card padded={false}>
           {home.brief.map((line, index) => (
@@ -481,15 +500,19 @@ export function HomeScreen({ onBack, backLabel }: { onBack?: () => void; backLab
   ) : null
 
   /* ---- the account's one next action ---- */
-  const failure = account.signInFailure?.message ?? account.failure?.message ?? null
+  const failure = account.signInFailure
+    ? signInFailureLine(account.signInFailure, locale)
+    : account.failure
+      ? failureLine(account.failure.message, locale)
+      : null
   const accountCard =
     state === 'guest' ? (
       <Card className="gap-3">
-        <View className="gap-1">
-          <Txt variant="title">{shared.connectTitle}</Txt>
-          <Txt variant="body" tone="muted">
-            {copy.guestDetail}
+        <View className="flex-row items-center gap-1">
+          <Txt variant="title" className="shrink">
+            {shared.connectTitle}
           </Txt>
+          <HelpDot title={shared.connectTitle} body={shared.connectHelp} />
         </View>
         {failure ? (
           <Txt variant="ui" tone="danger">
@@ -522,7 +545,7 @@ export function HomeScreen({ onBack, backLabel }: { onBack?: () => void; backLab
       subtitle={subtitle}
       onBack={onBack}
       backLabel={backLabel}
-      contentClassName="gap-5"
+      rhythm="section"
       refreshControl={
         <RefreshControl
           refreshing={home.refreshing}

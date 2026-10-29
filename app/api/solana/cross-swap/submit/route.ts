@@ -1,6 +1,7 @@
 import { z } from "zod";
 
 import { consumeAgentControlRequest, readAgentControlJson } from "@/lib/agent-control/http";
+import { baseRpcCall, createEvmRpcHandle, EVM_CHAIN_IDS, hexQuantityToDecimal, type EvmChainId } from "@/lib/base/rpc";
 import { getGuardRuntime } from "@/lib/guard/runtime";
 import { storeSurvivesColdStart } from "@/lib/guard/store";
 import { privateNoStoreHeaders, rateLimitHeaders, type RateLimitDecision } from "@/lib/http-control";
@@ -10,6 +11,7 @@ import {
   markCrossSwapRecoveryRequired,
   markCrossSwapSubmitted,
   readCrossSwapOrder,
+  releaseAbandonedCrossSwap,
   sha256HexOf,
   type CrossSwapOrderRecord,
 } from "@/lib/mayan/cross-swap-order";
@@ -40,7 +42,8 @@ export const maxDuration = 60;
  *
  * EVM-origin: an EVM wallet signs and broadcasts atomically, so the boundary
  * is crossed *before* the wallet opens (`ARM`), the hash is reported after
- * (`RECORD`), and a wallet that declined is the only way back (`ABANDON`).
+ * (`RECORD`), and a wallet that declined is the only way back (`ABANDON`) —
+ * proved by the source wallet's pending count, never by the client's word.
  * Every pre-boundary refusal carries `submitBoundary: NOT_CROSSED`.
  */
 
@@ -70,6 +73,16 @@ function failure(status: number, code: string, message: string, rate: RateLimitD
 }
 function refuseBeforeSubmit(status: number, code: string, message: string, rate: RateLimitDecision, extra: object = {}) {
   return failure(status, code, message, rate, { submitBoundary: "NOT_CROSSED", ...extra });
+}
+
+function isEvmChain(chain: string): chain is EvmChainId {
+  return (EVM_CHAIN_IDS as readonly string[]).includes(chain);
+}
+
+/** The EVM wallet's pending transaction count, as the chain reports it now; null when it cannot be read. */
+async function readSourceAccountNonce(chain: EvmChainId, wallet: string): Promise<string | null> {
+  const read = await baseRpcCall<string>(createEvmRpcHandle(chain), "eth_getTransactionCount", [wallet, "pending"]);
+  return read.ok ? hexQuantityToDecimal(read.value) : null;
 }
 
 async function writeHistory(store: ReturnType<typeof getGuardRuntime>["store"], record: CrossSwapOrderRecord, now: string) {
@@ -109,8 +122,26 @@ export async function POST(request: Request) {
   const now = () => new Date().toISOString();
 
   if (input.phase === "ABANDON") {
-    const released = await markCrossSwapNeverBroadcast({ store, intentDigest: record.intentDigest, at: now() });
-    if (!released.ok) return failure(409, released.code, released.reason, rate, { state: released.record?.state ?? record.state });
+    /* The client says its wallet declined. That releases a plan that never
+       crossed the boundary; a crossed EVM order is released only when the
+       chain still shows the pending count recorded at `ARM` (FIX-XSWAP-1). */
+    let observedNonce: string | null = null;
+    if (record.state === "SUBMITTED_UNKNOWN" && isEvmChain(record.sourceChain)) {
+      observedNonce = await readSourceAccountNonce(record.sourceChain, record.sourceWallet);
+      if (observedNonce === null) {
+        return failure(503, "SOURCE_ACCOUNT_UNREADABLE", "The source chain could not be asked whether this wallet has sent anything, so the order stays recorded as possibly under way.", rate, {
+          released: false,
+          state: record.state,
+        });
+      }
+    }
+    const released = await releaseAbandonedCrossSwap({ store, intentDigest: record.intentDigest, at: now(), observedNonce });
+    if (!released.ok) {
+      return failure(409, released.code === "CROSS_SWAP_ORDER_STATE" ? "RELEASE_NOT_ESTABLISHED" : released.code, "Nothing proves this order was never sent, so it stays recorded as possibly under way and is resolved by reading, never by sending again.", rate, {
+        released: false,
+        state: released.record?.state ?? record.state,
+      });
+    }
     return Response.json({ released: true, state: released.record.state }, { headers: headers(rate) });
   }
 
@@ -156,10 +187,17 @@ export async function POST(request: Request) {
 
   if (input.phase === "ARM") {
     if (record.sourceChain === "solana") return refuseBeforeSubmit(409, "PHASE_MISMATCH", "A Solana order is submitted with its signed bytes, not armed.", rate);
+    /* The count `ABANDON` will compare against, read before anything is armed:
+       the only thing that can later prove the wallet sent nothing. */
+    if (!isEvmChain(record.sourceChain)) return refuseBeforeSubmit(409, "PHASE_MISMATCH", "Only an EVM order is armed.", rate);
+    const sourceAccountNonce = await readSourceAccountNonce(record.sourceChain, record.sourceWallet);
+    if (sourceAccountNonce === null) {
+      return refuseBeforeSubmit(503, "SOURCE_ACCOUNT_UNREADABLE", "This wallet's position on the source chain could not be read, and without it a declined swap could not be told apart from a sent one.", rate);
+    }
     /* On an EVM origin, arming *is* the last step before the wallet sends. */
     const refused = await claimCanarySubmit();
     if (refused) return refused;
-    const armed = await markCrossSwapArmed({ store, intentDigest: record.intentDigest, at: now() });
+    const armed = await markCrossSwapArmed({ store, intentDigest: record.intentDigest, at: now(), sourceAccountNonce });
     if (!armed.ok) return refuseBeforeSubmit(409, armed.code, armed.reason, rate, { state: armed.record?.state ?? record.state });
     return Response.json({ state: armed.record.state, intentDigest: record.intentDigest }, { headers: headers(rate) });
   }

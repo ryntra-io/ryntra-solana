@@ -85,23 +85,32 @@ export function windowChangePct(geometry: ChartGeometry | null): number | null {
   return ((geometry.last.value - geometry.first.value) / geometry.first.value) * 100
 }
 
-/* ---- «Простий»'s ranges: a day, a week, a month, a year (the web's own) ---- */
+/* ---- the page's ranges at rest: a day, a week, a month, half a year ---- */
 
-export const CHART_RANGES = ['1d', '1w', '1m', '1y'] as const
+/**
+ * The longest range is half a year, not the web's year: the candles route serves at most 183 daily bars (checked
+ * 2026-10-19: `tf=1d` → 183 bars, `limit=300` still 183, no weekly timeframe), so a «1Y» chip drew six months and
+ * called a token older than that «since 20 Apr». It becomes a year again when line A serves one (request in the
+ * handoff: 366 daily bars or weekly bars).
+ */
+export const CHART_RANGES = ['1d', '1w', '1m', '6m'] as const
 export type ChartRange = (typeof CHART_RANGES)[number]
 
 const DAY_MS = 86_400_000
 
+/** The daily bars the candles route serves at most — half a year (see `CHART_RANGES`). */
+export const DAILY_BARS_SERVED = 183
+
 /**
  * Each range is drawn from the bars that fit it: a day of five-minute bars, a
- * week of hourly ones, a month of four-hour ones, a year of daily ones — a few
- * hundred points each, enough for a smooth line on a phone.
+ * week of hourly ones, a month of four-hour ones, half a year of daily ones — a
+ * few hundred points each, enough for a smooth line on a phone.
  */
 export const RANGE_SOURCE: Readonly<Record<ChartRange, Readonly<{ timeframe: Timeframe; spanMs: number }>>> = {
   '1d': { timeframe: '5m', spanMs: DAY_MS },
   '1w': { timeframe: '1h', spanMs: 7 * DAY_MS },
   '1m': { timeframe: '4h', spanMs: 30 * DAY_MS },
-  '1y': { timeframe: '1d', spanMs: 365 * DAY_MS },
+  '6m': { timeframe: '1d', spanMs: DAILY_BARS_SERVED * DAY_MS },
 }
 
 /** The bars inside a range that ends now, oldest first; a bar's time is in seconds. */
@@ -121,9 +130,10 @@ export function rangeCandles(candles: readonly Candle[], range: ChartRange, nowM
 }
 
 /**
- * Whether the history starts inside the range — a token younger than a year
- * has no year to draw, and the chart says since when rather than calling a few
- * months a year. A tenth of the span is the slack a quiet pool's first bar gets.
+ * Whether the history starts inside the range — a token younger than half a
+ * year has no half year to draw, and the chart says since when rather than
+ * calling a few weeks six months. A tenth of the span is the slack a quiet
+ * pool's first bar gets.
  */
 export function historyStartsLate(bars: readonly Candle[], range: ChartRange, nowMs: number): boolean {
   const first = bars[0]
@@ -176,12 +186,12 @@ export function coarserBars(bars: readonly Candle[], stepSeconds: number): Candl
   return folded
 }
 
-/** How wide a bar of each range's line may be: a day's line is drawn from quarter hours; the others as read. */
+/** How wide a bar of each range's line may be: a day's line is drawn from quarter hours (M27); the others as read. */
 export const RANGE_STEP_SECONDS: Readonly<Record<ChartRange, number>> = {
   '1d': 900,
   '1w': 0,
   '1m': 0,
-  '1y': 0,
+  '6m': 0,
 }
 
 /**
@@ -190,14 +200,14 @@ export const RANGE_STEP_SECONDS: Readonly<Record<ChartRange, number>> = {
  * falls on either side of a wide spread by chance, so even folded closes still
  * zigzag (SPCXx, 2026-09-29); a quarter hour nearly always trades both sides,
  * and its middle is where the price stood between them. The chart says every
- * figure of such a line as «≈» (`PriceChart`'s `approx`); a week, a month and a
- * year keep their closes, and the change a range states is always close to close.
+ * figure of such a line as «≈» (`PriceChart`'s `approx`); a week, a month and
+ * half a year keep their closes, and the change a range states is always close to close.
  */
 export const RANGE_DRAWS_MIDDLES: Readonly<Record<ChartRange, boolean>> = {
   '1d': true,
   '1w': false,
   '1m': false,
-  '1y': false,
+  '6m': false,
 }
 
 /** Each bar at its middle, halfway between its high and its low; a bar without a usable range keeps its close. */
@@ -207,4 +217,17 @@ export function barMiddles(bars: readonly Candle[]): Candle[] {
     const usable = Number.isFinite(high) && Number.isFinite(low) && low > 0 && high >= low
     return usable ? { ...bar, close: (high + low) / 2 } : bar
   })
+}
+
+/**
+ * The left mark's scale: a day of five-minute bars starts yesterday, so its first time says its day too — never
+ * «03:45 … 03:45» (M44.6).
+ */
+export function firstScale(
+  firstSeconds: number,
+  lastSeconds: number,
+  scale: 'intraday' | 'days' | 'months',
+): 'intraday' | 'days' | 'months' {
+  if (scale !== 'intraday') return scale
+  return new Date(firstSeconds * 1000).toDateString() === new Date(lastSeconds * 1000).toDateString() ? scale : 'days'
 }

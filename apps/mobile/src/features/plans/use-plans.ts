@@ -53,8 +53,8 @@ export function usePlanVersion(session: Session | null, planId: string | null, v
 
 /**
  * The monitoring surface for the wallet: what needs attention and what is
- * watched, in the app's language. Read here for the plans; the monitoring
- * feature adds the inbox, the preferences and the device.
+ * watched, in the app's language. Read here for the plans; M7 adds the
+ * inbox, the preferences and the device.
  */
 export function useMonitoring(session: Session | null, locale: Locale) {
   return useQuery({

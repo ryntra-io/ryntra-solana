@@ -16,14 +16,23 @@ import {
 } from "@/lib/admin/notifications";
 import { connectTelegramChannel, isTelegramConnectCode, verifyTelegramConnectCode } from "@/lib/account/notifications";
 import { getGuardRuntime } from "@/lib/guard/runtime";
+import { assistantCallback, assistantCommand, assistantMessage, assistantStart, type TgVoice } from "@/lib/assistant/telegram/bot";
+import { rememberChat } from "@/lib/assistant/telegram/link";
+import { assistantBotDeps } from "@/lib/assistant/telegram/runtime.server";
+import { ensureBotProfile } from "@/lib/assistant/telegram/profile";
 import { answerCallback, editMessage, editReplyMarkup, sendForceReply, sendMessage, tg, type InlineKeyboard } from "./api";
 
 /**
- * Ryntra beta bot.
+ * Ryntra's bot — since AI-07 the assistant «Ryntra» in Telegram
+ * (`lib/assistant/telegram/**`): `/start` says who Ryntra is and either what
+ * to do here (a chat bound to an account) or how to connect it; questions,
+ * voice messages, /watch /plans /brief /credits /settings /help and the
+ * notifications' buttons go to the assistant.
  *
- * Access is one action: start the bot, read what confirmation means, press confirm.
- * Nothing else opens the product. Channel membership, an X follow, an Arcus account and
- * a wallet address are optional and change neither access nor standing.
+ * The beta's checklist is no longer offered. Its buttons on messages already
+ * sent still answer as they did: confirming beta access is one action, and
+ * nothing else opens the product. Channel membership, an X follow, an Arcus
+ * account and a wallet address are optional and change neither access nor standing.
  *
  * `telegram_join` survives as the storage identifier for the verified-access flag because
  * `lib/session.ts` and every already-verified row depend on it. It is a column name, not a
@@ -37,7 +46,7 @@ const BOT_USERNAME = "RyntraBeta_bot";
 const ACCESS_TASK = "telegram_join" as const;
 
 type TgUser = { id: number; username?: string; first_name?: string; language_code?: string };
-type TgMessage = { message_id: number; chat: { id: number; type: string }; from?: TgUser; text?: string };
+type TgMessage = { message_id: number; chat: { id: number; type: string }; from?: TgUser; text?: string; voice?: TgVoice; audio?: TgVoice };
 type TgCallback = { id: string; from: TgUser; data?: string; message?: TgMessage };
 export type TgUpdate = { update_id: number; message?: TgMessage; callback_query?: TgCallback };
 
@@ -73,11 +82,6 @@ function accessKeyboard(state: BetaState, lang: BetaLang): InlineKeyboard {
     { text: state.user.wallet_address ? c.btnWalletDone : c.btnWallet, callback_data: "wallet" },
   ]);
   return rows;
-}
-
-function welcomeText(lang: BetaLang): string {
-  const c = BETA_COPY[lang];
-  return `${c.welcomeTitle}\n\n${c.welcomeBody}\n\n${c.welcomeFooter}`;
 }
 
 function statusText(state: BetaState, lang: BetaLang): string {
@@ -120,12 +124,12 @@ async function ensureState(user: TgUser): Promise<BetaState | null> {
  */
 const NOTIFY_CONNECT_COPY: Record<BetaLang, { connected: string; stale: string; failed: string }> = {
   en: {
-    connected: "Ryntra notifications are connected to this chat. You can disconnect them any time in Settings → Wallets & notifications.",
+    connected: "Ryntra notifications are connected to this chat. You can disconnect them any time in Account → Account and notifications.",
     stale: "This connection link has expired. Open Ryntra → Settings and press «Connect Telegram» again.",
     failed: "The connection could not be saved right now. Try again from Settings in a moment.",
   },
   uk: {
-    connected: "Сповіщення Ryntra підключено до цього чату. Відключити можна будь-коли в Налаштуваннях → Гаманці й сповіщення.",
+    connected: "Сповіщення Ryntra підключено до цього чату. Відключити можна будь-коли в Акаунті → Акаунт і сповіщення.",
     stale: "Це посилання для підключення вже не діє. Відкрийте Ryntra → Налаштування і натисніть «Підключити Telegram» ще раз.",
     failed: "Зараз не вдалося зберегти підключення. Спробуйте ще раз із Налаштувань за хвилину.",
   },
@@ -156,25 +160,32 @@ async function handleStart(
       await sendMessage(msg.chat.id, NOTIFY_CONNECT_COPY[lang].stale);
       return;
     }
-    const bound = await connectTelegramChannel(getGuardRuntime().store, {
+    const store = getGuardRuntime().store;
+    const bound = await connectTelegramChannel(store, {
       accountId: named.accountId,
       telegramId: user.id,
       username: user.username ?? null,
       now: new Date().toISOString(),
     });
-    await sendMessage(msg.chat.id, bound ? NOTIFY_CONNECT_COPY[lang].connected : NOTIFY_CONNECT_COPY[lang].failed);
+    if (!bound) {
+      await sendMessage(msg.chat.id, NOTIFY_CONNECT_COPY[lang].failed);
+      return;
+    }
+    /* AI-07: the chat is the assistant's from now on — remembered, then greeted as Ryntra. */
+    await rememberChat(store, { telegramId: user.id, accountId: named.accountId, locale: lang === "uk" ? "uk" : "en", nowMs: Date.now() });
+    await assistantStart(assistantBotDeps(), msg, { connected: true });
     return;
   }
+  /* The beta's row is still kept for attribution; the assistant answers whether or not it could be written. */
   const state = await ensureState(user);
-  const lang = langOf(state, user.language_code);
-  if (!state) {
-    await sendMessage(msg.chat.id, BETA_COPY[lang].stateError);
-    return;
-  }
   /* Attribution runs after the user exists and never gates what follows: a malformed or
      absent payload leaves the user with ordinary direct access. */
-  if (fromStartCommand) void recordBotStart(user.id, payload ?? null, updateId ?? null);
-  await sendMessage(msg.chat.id, welcomeText(lang), accessKeyboard(state, lang));
+  if (state) {
+    if (fromStartCommand) void recordBotStart(user.id, payload ?? null, updateId ?? null);
+  }
+  /* `/start` greets; a first message that is no command is answered as a question. */
+  if (fromStartCommand) await assistantStart(assistantBotDeps(), msg);
+  else await assistantMessage(assistantBotDeps(), msg);
 }
 
 async function handleStatus(chatId: number, user: TgUser) {
@@ -216,6 +227,13 @@ async function handleCallback(cb: TgCallback) {
   const user = cb.from;
   const chatId = cb.message?.chat.id ?? user.id;
   const messageId = cb.message?.message_id;
+  /* AI-07: the assistant's buttons (`a:…`); `a:np` opens the broadcast settings below. */
+  if (cb.data === "a:np") {
+    await answerCallback(cb.id);
+    await renderSettings(chatId, user.id, pickBetaLang(user.language_code));
+    return;
+  }
+  if (await assistantCallback(assistantBotDeps(), cb)) return;
   const state = (await getState(user.id)) ?? (await ensureState(user));
   const lang = langOf(state, user.language_code);
   const c = BETA_COPY[lang];
@@ -327,39 +345,12 @@ async function handleAdmin(msg: TgMessage, cmd: string): Promise<boolean> {
       secret_token: secret,
       allowed_updates: ["message", "callback_query"],
     });
-    await tg("setMyCommands", {
-      commands: [
-        { command: "start", description: "Open the beta and confirm access" },
-        { command: "status", description: "Your access state" },
-        { command: "feedback", description: "Send product feedback" },
-        { command: "settings", description: "Notification settings" },
-        { command: "help", description: "Commands" },
-      ],
-    });
-    await tg("setMyCommands", {
-      commands: [
-        { command: "start", description: "Відкрити бету й підтвердити доступ" },
-        { command: "status", description: "Стан твого доступу" },
-        { command: "feedback", description: "Надіслати відгук" },
-        { command: "settings", description: "Сповіщення" },
-        { command: "help", description: "Команди" },
-      ],
-      language_code: "uk",
-    });
-    await tg("setMyCommands", {
-      commands: [
-        { command: "start", description: "Открыть бету и подтвердить доступ" },
-        { command: "status", description: "Состояние твоего доступа" },
-        { command: "feedback", description: "Отправить отзыв" },
-        { command: "settings", description: "Уведомления" },
-        { command: "help", description: "Команды" },
-      ],
-      language_code: "ru",
-    });
+    /* AI-07: the assistant's commands (`command: "settings"` among them) and its profile, English by default and Ukrainian for uk, written where Telegram holds something else; the beta's Russian list is cleared. */
+    const profile = await ensureBotProfile(tg);
     const self = await tg<{ id: number; username: string }>("getMe", {});
     await sendMessage(
       msg.chat.id,
-      `Setup: webhook ${wh ? "✅" : "❌"} (message + callback_query)\nBot: @${self?.username ?? BOT_USERNAME}`
+      `Setup: webhook ${wh ? "✅" : "❌"} (message + callback_query)\nProfile and commands: ${profile.state === "failed" ? "❌" : profile.state === "applied" ? `✅ ${profile.written.join(", ")}` : "✅ unchanged"}\nBot: @${self?.username ?? BOT_USERNAME}`
     );
     return true;
   }
@@ -382,6 +373,9 @@ export async function handleUpdate(update: TgUpdate): Promise<void> {
   const msg = update.message;
   if (!msg?.from || msg.chat.type !== "private") return;
 
+  /* AI-07: a voice message is a question in the person's voice. */
+  if (msg.voice || msg.audio) return assistantMessage(assistantBotDeps(), msg);
+
   const text = (msg.text ?? "").trim();
   const [cmdRaw, ...rest] = text.split(/\s+/);
   const cmd = cmdRaw?.toLowerCase().replace(`@${BOT_USERNAME.toLowerCase()}`, "");
@@ -393,13 +387,13 @@ export async function handleUpdate(update: TgUpdate): Promise<void> {
     await sendMessage(msg.chat.id, `Your Telegram ID: <code>${msg.from.id}</code>`);
     return;
   }
-  if (cmd === "/help") {
-    const state = await getState(msg.from.id);
-    await sendMessage(msg.chat.id, BETA_COPY[langOf(state, msg.from.language_code)].help);
+  if (cmd === "/help" || cmd === "/watch" || cmd === "/plans" || cmd === "/brief" || cmd === "/credits") {
+    await assistantCommand(assistantBotDeps(), msg, cmd, arg);
     return;
   }
   if (cmd === "/settings") {
-    await renderSettings(msg.chat.id, msg.from.id, langOf(await getState(msg.from.id), msg.from.language_code));
+    /* The assistant's settings; the broadcast toggles (`np:`) open from there. */
+    await assistantCommand(assistantBotDeps(), msg, cmd, arg);
     return;
   }
   if (cmd === "/feedback") {
@@ -448,7 +442,12 @@ export async function handleUpdate(update: TgUpdate): Promise<void> {
 
   const state = await getState(msg.from.id);
   if (!state) return handleStart(msg, undefined, update.update_id, false);
-  await sendMessage(msg.chat.id, BETA_COPY[langOf(state, msg.from.language_code)].unknown);
+  /* AI-07: an unknown command is no question to pay for — the list of what the bot does; anything else is a question to the assistant. */
+  if (cmd?.startsWith("/")) {
+    await assistantCommand(assistantBotDeps(), msg, "/help", "");
+    return;
+  }
+  await assistantMessage(assistantBotDeps(), msg);
 }
 
 async function renderSettings(chatId: number, userId: number, lang: BetaLang, messageId?: number) {

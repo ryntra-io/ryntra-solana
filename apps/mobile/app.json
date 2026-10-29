@@ -3,20 +3,23 @@
     "name": "Ryntra",
     "slug": "ryntra",
     "scheme": "ryntra",
-    "version": "1.12.0",
+    "version": "1.18.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
     "userInterfaceStyle": "automatic",
     "backgroundColor": "#080D13",
     "android": {
       "package": "io.ryntra.app",
-      "versionCode": 8,
+      "versionCode": 23,
       "blockedPermissions": [
         "android.permission.SYSTEM_ALERT_WINDOW",
         "android.permission.READ_EXTERNAL_STORAGE",
         "android.permission.WRITE_EXTERNAL_STORAGE",
         "android.permission.USE_BIOMETRIC",
-        "android.permission.USE_FINGERPRINT"
+        "android.permission.USE_FINGERPRINT",
+        "android.permission.CAMERA",
+        "android.permission.RECORD_AUDIO",
+        "android.permission.POST_NOTIFICATIONS"
       ],
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/adaptive-foreground.png",
@@ -32,23 +35,15 @@
             {
               "scheme": "https",
               "host": "ryntra.io",
-              "pathPrefix": "/app/alerts"
+              "path": "/"
             },
             {
               "scheme": "https",
               "host": "ryntra.io",
-              "pathPrefix": "/app/strategies"
-            },
-            {
-              "scheme": "https",
-              "host": "ryntra.io",
-              "pathPrefix": "/app/launch"
+              "pathPrefix": "/c/"
             }
           ],
-          "category": [
-            "BROWSABLE",
-            "DEFAULT"
-          ]
+          "category": ["BROWSABLE", "DEFAULT"]
         }
       ]
     },
@@ -89,81 +84,11 @@
       ],
       "expo-image",
       "expo-secure-store",
-      [
-        "expo-camera",
-        {
-          "cameraPermission": "Ryntra uses the camera to scan a wallet address or a payment code.",
-          "recordAudioAndroid": false,
-          "barcodeScannerEnabled": true
-        }
-      ],
-      [
-        "expo-image-picker",
-        {
-          "cameraPermission": "Ryntra uses the camera to take a picture for a token you launch.",
-          "microphonePermission": false
-        }
-      ],
-      [
-        "expo-notifications",
-        {
-          "icon": "./assets/images/notification-icon.png",
-          "color": "#FF681C",
-          "defaultChannel": "plans"
-        }
-      ],
-      [
-        "expo-quick-actions",
-        {
-          "androidIcons": {
-            "shortcut_search": {
-              "foregroundImage": "./assets/images/shortcut-search.png",
-              "backgroundColor": "#080D13"
-            },
-            "shortcut_portfolio": {
-              "foregroundImage": "./assets/images/shortcut-portfolio.png",
-              "backgroundColor": "#080D13"
-            },
-            "shortcut_agent": {
-              "foregroundImage": "./assets/images/shortcut-agent.png",
-              "backgroundColor": "#080D13"
-            },
-            "shortcut_markets": {
-              "foregroundImage": "./assets/images/shortcut-markets.png",
-              "backgroundColor": "#080D13"
-            }
-          }
-        }
-      ],
-      [
-        "react-native-android-widget",
-        {
-          "fonts": [
-            "./node_modules/@expo-google-fonts/geist/400Regular/Geist_400Regular.ttf",
-            "./node_modules/@expo-google-fonts/geist/500Medium/Geist_500Medium.ttf",
-            "./node_modules/@expo-google-fonts/geist/600SemiBold/Geist_600SemiBold.ttf"
-          ],
-          "widgets": [
-            {
-              "name": "Portfolio",
-              "label": "@string/widget_portfolio_label",
-              "previewImage": "./assets/images/widget-portfolio-preview.png",
-              "minWidth": "180dp",
-              "minHeight": "110dp",
-              "targetCellWidth": 3,
-              "targetCellHeight": 2,
-              "resizeMode": "horizontal|vertical",
-              "updatePeriodMillis": 1800000
-            }
-          ]
-        }
-      ],
-      "./plugins/with-widget-strings.js",
       "./plugins/with-release-signing.js"
     ],
     "experiments": {
       "reactCompiler": true,
-      "typedRoutes": true
+      "typedRoutes": false
     }
   }
 }

@@ -6,6 +6,20 @@
     { "path": "/api/cron/benefits", "schedule": "*/5 * * * *" },
     { "path": "/api/cron/reconcile", "schedule": "*/10 * * * *" },
     { "path": "/api/cron/monitoring", "schedule": "*/5 * * * *" },
-    { "path": "/api/cron/launch-autopilot", "schedule": "* * * * *" }
+    { "path": "/api/v1/assistant/news/collect", "schedule": "*/10 * * * *" },
+    { "path": "/api/v1/assistant/news/refresh", "schedule": "7 * * * *" },
+    { "path": "/api/v1/assistant/brief/tick", "schedule": "*/5 * * * *" },
+    { "path": "/api/v1/assistant/watches/tick", "schedule": "* * * * *" },
+    { "path": "/api/cron/wallet-watch", "schedule": "*/2 * * * *" },
+    { "path": "/api/v1/assistant/tasks/tick", "schedule": "* * * * *" },
+    { "path": "/api/cron/launch-autopilot", "schedule": "* * * * *" },
+    { "path": "/api/cron/launch-creator-notes", "schedule": "*/10 * * * *" },
+    { "path": "/api/cron/launch-ipfs", "schedule": "17 * * * *" },
+    { "path": "/api/predictions/webhooks/ledger", "schedule": "23 * * * *" },
+    { "path": "/api/predictions/settlement/sweep", "schedule": "*/10 * * * *" },
+    { "path": "/api/predictions/watch/sweep", "schedule": "*/5 * * * *" },
+    { "path": "/api/predictions/limit/sweep", "schedule": "*/5 * * * *" },
+    { "path": "/api/x/cron", "schedule": "*/10 * * * *" },
+    { "path": "/api/cron/city-beacons", "schedule": "*/2 * * * *" }
   ]
 }

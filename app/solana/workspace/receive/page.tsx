@@ -1,5 +1,3 @@
-import { PanelGrid } from "@/app/shell/panel";
-import { PageHead } from "../hub/parts.tsx";
 import { solanaServerText } from "../i18n/server.ts";
 import { ReceiveCard } from "./receive-card.tsx";
 
@@ -16,16 +14,10 @@ export async function generateMetadata() {
  *
  * Everything on it needs a wallet, and a wallet exists only in a browser. The
  * server contributes one read: what this address holds, so a request can name a
- * token in words rather than in a mint address.
+ * token in words rather than in a mint address. Since B18 the card draws the
+ * whole page — the heading once, the address or the request, and beside them
+ * the payment requests and the latest incoming money (`../money/money-page.tsx`).
  */
-export default async function SolanaReceivePage() {
-  const { text } = await solanaServerText();
-  return (
-    <>
-      <PageHead title="Receive" />
-      <div className="ry-money-flow"><PanelGrid label={text("Receive")}>
-        <ReceiveCard />
-      </PanelGrid></div>
-    </>
-  );
+export default function SolanaReceivePage() {
+  return <ReceiveCard />;
 }

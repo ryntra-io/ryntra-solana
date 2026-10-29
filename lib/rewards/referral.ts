@@ -2,6 +2,8 @@ import { randomBytes } from "node:crypto";
 
 import { z } from "zod";
 
+import { normalizeReferralCode, REFERRAL_CODE_ALPHABET as ALPHABET, REFERRAL_CODE_LENGTH as CODE_LENGTH, REFERRAL_CODE_PATTERN } from "./referral-code.ts";
+
 /**
  * Who invited whom, and the four ways that can go wrong.
  *
@@ -16,9 +18,15 @@ import { z } from "zod";
  * or anything derived from one. Two reasons, and the second is the load-bearing
  * one: a sequential id tells a stranger how many people are here and lets them
  * walk the set, and an address in a link publishes the inviter's whole on-chain
- * history to everybody they invite. The code is 128 random bits in base32
- * without vowels — no accidental words, no `0`/`O` or `1`/`l` confusion when
- * somebody reads one aloud.
+ * history to everybody they invite. The code is twelve characters over a
+ * thirty-character alphabet without vowels — no accidental words, no `0`/`O`
+ * or `1`/`l` confusion when somebody reads one aloud. Each character is one
+ * random byte reduced modulo 30 (the first 16 symbols come up 9 times in 256,
+ * the other 14 eight times), so a code carries about 58.85 bits of entropy —
+ * not 128: sixteen random bytes are drawn and only twelve are read. About
+ * 5 × 10¹⁷ codes; at a million issued, one guess finds somebody's code with a
+ * chance of about 2 × 10⁻¹², and every read that could test one is rate
+ * limited (a test in `growth-3.test.mjs` pins the figure).
  *
  * ## What binds, and when
  *
@@ -31,11 +39,7 @@ import { z } from "zod";
  * before it.
  */
 
-/* Crockford-style alphabet minus vowels: no words, no ambiguous glyphs. */
-const ALPHABET = "0123456789BCDFGHJKLMNPQRSTVWXZ";
-const CODE_LENGTH = 12;
-
-export const REFERRAL_CODE_PATTERN = new RegExp(`^[${ALPHABET}]{${CODE_LENGTH}}$`);
+export { normalizeReferralCode, REFERRAL_CODE_PATTERN };
 
 /** A fresh opaque code. Random, not derived — nothing about the owner leaks. */
 export function mintReferralCode(bytes: Uint8Array = randomBytes(16)): string {
@@ -44,22 +48,6 @@ export function mintReferralCode(bytes: Uint8Array = randomBytes(16)): string {
     code += ALPHABET[bytes[index % bytes.length] % ALPHABET.length];
   }
   return code;
-}
-
-/**
- * Normalize what a person typed or a link carried. Case and dashes are noise.
- *
- * A whole link is accepted too — `ryntra.io/r/<code>`, with or without the
- * scheme, a trailing slash, a `?to=` or a card path after it. Friends paste
- * what they were sent, and what they were sent is usually the link; answering
- * "code not found" to the very thing the inviter copied is the kind of wall
- * that makes people stop. Only the segment after `/r/` is read, and it still
- * has to be a code.
- */
-export function normalizeReferralCode(value: string): string | null {
-  const linked = /(?:^|\/)r\/([^/?#\s]+)/i.exec(value.trim());
-  const cleaned = (linked ? linked[1] : value).trim().toUpperCase().replace(/[\s-]/g, "");
-  return REFERRAL_CODE_PATTERN.test(cleaned) ? cleaned : null;
 }
 
 export const RewardAccountSchema = z

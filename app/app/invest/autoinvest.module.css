@@ -305,13 +305,36 @@
   background: var(--ry-elevated);
 }
 
-/* «Для якої компанії?» — what the wallet owns, then the popular companies. */
+/* The picker's search (SOL-C15): one field over the rest of the companies and tokens. */
+.pickSearch {
+  width: 100%;
+  min-height: 44px;
+  padding: 0 var(--ry-s3);
+  border: 1px solid var(--ry-border);
+  border-radius: var(--ry-r-btn);
+  background: var(--ry-card);
+  color: var(--ry-text);
+  font: inherit;
+  font-size: var(--ry-fs-copy);
+}
+
+.pickSearch:focus-visible {
+  outline: none;
+  border-color: var(--ry-border-strong);
+  box-shadow: var(--ry-focus);
+}
+
+/* «Для якого токена?» — what the wallet owns, the popular companies, or what the search found. */
 .picks {
   display: grid;
   gap: var(--ry-s1);
   margin: 0;
   padding: 0;
   list-style: none;
+}
+
+.picks[data-stale="true"] {
+  opacity: 0.6;
 }
 
 .pickGroup {

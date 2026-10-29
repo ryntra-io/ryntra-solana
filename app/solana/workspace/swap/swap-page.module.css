@@ -1,0 +1,7 @@
+/*
+ * Swap on the core's page (SOL-C13): as wide as the canvas, like the terminals — the pair where Spot keeps its chart,
+ * the converter where Spot keeps its ticket, with no cap of an overview page.
+ */
+.page {
+  max-width: none;
+}

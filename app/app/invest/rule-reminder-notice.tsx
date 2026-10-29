@@ -1,5 +1,6 @@
 "use client";
 
+import { Button } from "@ryntra/core/ui";
 import { ArrowRight } from "@phosphor-icons/react";
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
@@ -38,10 +39,9 @@ export function RuleReminderNotice({ mint, proven, locale, className, onBuy }: R
       <b translate="no">{`${word("reminderOpenHere")} · ${usdWord(purchaseSumUsd(rule, due), locale)}`}</b>
       <span>{word("plainHereLeavesOpen")}</span>
       {onBuy ? (
-        <button type="button" onClick={() => onBuy({ ruleId: rule.id, dueAt: due.dueAt })}>
+        <Button variant="secondary" icon="chevron-right" onClick={() => onBuy({ ruleId: rule.id, dueAt: due.dueAt })} lang={locale === "uk" ? "uk" : "en"}>
           {buyByRuleWord(locale, purchaseSumUsd(rule, due))}
-          <ArrowRight size={14} weight="bold" aria-hidden="true" />
-        </button>
+        </Button>
       ) : (
         <Link href={rulePurchaseHref(rule, due.dueAt)} prefetch={false}>
           {buyByRuleWord(locale, purchaseSumUsd(rule, due))}

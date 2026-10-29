@@ -1,0 +1,748 @@
+/* The Launch Docks over the city: the sheet that raises a tower and the card of a launch's tower. The HUD's language —
+   dark glass with chamfered corners and an inner violet edge, monumental type, one amber action on screen, mint for
+   value, red only for danger. Tokens from city/styles/city.module.css. */
+
+.panel {
+  background: linear-gradient(160deg, rgba(20, 16, 36, 0.92), rgba(8, 7, 15, 0.95));
+  box-shadow: inset 0 0 0 2px rgba(153, 69, 255, 0.3), inset 0 1px 22px rgba(153, 69, 255, 0.2);
+}
+
+.display {
+  font-family: var(--font-display, system-ui), system-ui, sans-serif;
+  font-stretch: 125%;
+  font-variation-settings: 'wdth' 125;
+  font-weight: 900;
+  letter-spacing: 0.01em;
+  text-transform: uppercase;
+}
+
+/* ---------- The sheet ---------- */
+
+.sheet {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: var(--kb, 0px);
+  max-height: calc(100% - 64px - var(--kb, 0px) - env(safe-area-inset-top));
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: 20px var(--gutter) max(18px, env(safe-area-inset-bottom));
+  clip-path: polygon(22px 0, calc(100% - 22px) 0, 100% 22px, 100% 100%, 0 100%, 0 22px);
+  animation: rise 420ms cubic-bezier(0.2, 1.3, 0.4, 1) both;
+}
+
+.sheetLoading {
+  height: 360px;
+  background: linear-gradient(160deg, rgba(20, 16, 36, 0.92), rgba(8, 7, 15, 0.95));
+}
+
+.head {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.title {
+  margin: 0;
+  min-width: 0;
+  flex: 1;
+  font-size: 24px;
+  line-height: 1.05;
+  color: var(--warm);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.headPic {
+  width: 44px;
+  height: 44px;
+  flex: none;
+  object-fit: cover;
+  background: var(--graphite);
+  box-shadow: 0 0 0 2px rgba(255, 178, 63, 0.6), 0 0 18px rgba(255, 178, 63, 0.3);
+  clip-path: polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px);
+}
+
+.headTitle {
+  min-width: 0;
+  flex: 1;
+}
+
+.headTitle .title {
+  display: block;
+}
+
+.headName {
+  margin-top: 3px;
+  font-size: 13px;
+  color: var(--text-dim);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.close,
+.back {
+  width: 44px;
+  height: 44px;
+  flex: none;
+  display: grid;
+  place-items: center;
+  padding: 0;
+  border: 0;
+  color: var(--text-dim);
+  background: rgba(238, 241, 255, 0.06);
+}
+
+.close svg,
+.back svg {
+  width: 20px;
+  height: 20px;
+}
+
+.back:disabled {
+  opacity: 0.35;
+  cursor: default;
+}
+
+/* ---------- The three fields ---------- */
+
+.launchRow {
+  display: grid;
+  grid-template-columns: 96px minmax(0, 1fr);
+  gap: 12px;
+  margin-top: 16px;
+}
+
+.pic {
+  position: relative;
+  height: 96px;
+  display: grid;
+  place-items: center;
+  align-content: center;
+  gap: 2px;
+  cursor: pointer;
+  color: var(--amber);
+  background: rgba(255, 178, 63, 0.06) center / cover no-repeat;
+  box-shadow: inset 0 0 0 2px rgba(255, 178, 63, 0.5);
+  clip-path: polygon(12px 0, 100% 0, 100% calc(100% - 12px), calc(100% - 12px) 100%, 0 100%, 0 12px);
+}
+
+.pic b {
+  font-size: 30px;
+  line-height: 1;
+}
+
+.pic > span {
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
+.picSet {
+  box-shadow: inset 0 0 0 2px rgba(20, 241, 149, 0.55);
+}
+
+.pic:focus-within {
+  outline: 2px solid var(--amber);
+  outline-offset: 2px;
+}
+
+/* The file input stays in the label's box, invisible: a tap on the tile is a tap on it. */
+.file {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+
+.fields {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 8px;
+  min-width: 0;
+}
+
+.field {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  height: 44px;
+  padding: 0 14px;
+  background: rgba(238, 241, 255, 0.07);
+  clip-path: polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px);
+}
+
+.field:focus-within {
+  background: rgba(238, 241, 255, 0.11);
+  box-shadow: inset 0 0 0 2px rgba(255, 178, 63, 0.55);
+}
+
+.fieldBad {
+  box-shadow: inset 0 0 0 2px rgba(255, 231, 194, 0.55);
+}
+
+.field > span {
+  flex: none;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+}
+
+.field > i {
+  margin-left: auto;
+  margin-right: -4px;
+  font-style: normal;
+  font-size: 17px;
+  font-weight: 800;
+  color: var(--text-dim);
+}
+
+.field input {
+  width: 0;
+  min-width: 0;
+  flex: 1;
+  height: 100%;
+  padding: 0;
+  border: 0;
+  outline: 0;
+  background: none;
+  text-align: right;
+  font: inherit;
+  font-size: 17px;
+  font-weight: 800;
+  color: var(--ice);
+}
+
+.field > i + input {
+  flex: 0 1 auto;
+  width: var(--chars, 5ch);
+  max-width: 11ch;
+}
+
+.field input::placeholder {
+  color: rgba(238, 241, 255, 0.28);
+}
+
+.rules {
+  display: grid;
+  gap: 6px;
+  margin-top: 14px;
+}
+
+.rules span {
+  position: relative;
+  padding-left: 18px;
+  font-size: 14px;
+  line-height: 1.35;
+  color: var(--text-dim);
+}
+
+.rules span::before {
+  content: '';
+  position: absolute;
+  left: 2px;
+  top: 6px;
+  width: 7px;
+  height: 7px;
+  background: var(--mint);
+  transform: rotate(45deg);
+  box-shadow: 0 0 8px var(--mint);
+}
+
+.problem {
+  margin-top: 14px;
+  padding: 10px 12px;
+  font-size: 14px;
+  line-height: 1.4;
+  color: var(--warm);
+  background: rgba(255, 178, 63, 0.1);
+}
+
+/* ---------- The amber action ---------- */
+
+.action {
+  display: grid;
+  place-items: center;
+  width: 100%;
+  height: 56px;
+  margin-top: 16px;
+  padding: 0 22px;
+  border: 0;
+  font-size: 18px;
+  color: var(--ink);
+  text-decoration: none;
+  background: linear-gradient(100deg, var(--warm), var(--amber) 55%, #ff9a3c);
+  clip-path: polygon(14px 0, 100% 0, 100% calc(100% - 14px), calc(100% - 14px) 100%, 0 100%, 0 14px);
+  box-shadow: 0 0 40px rgba(255, 178, 63, 0.45);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  transition: transform 120ms ease-out;
+}
+
+.action:active {
+  transform: scale(0.97);
+}
+
+.actionBig {
+  height: 64px;
+  font-size: 20px;
+  margin-top: 18px;
+}
+
+.fine {
+  margin-top: 10px;
+  text-align: center;
+  font-size: 13px;
+  color: var(--text-dim);
+}
+
+.netLine {
+  margin-top: 8px;
+  text-align: center;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--warm);
+}
+
+.pair {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 14px;
+}
+
+.pair .action {
+  flex: 1;
+  width: auto;
+  margin-top: 0;
+}
+
+.quiet {
+  height: 56px;
+  padding: 0 18px;
+  border: 0;
+  background: none;
+  font-size: 15px;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+}
+
+/* ---------- The review ---------- */
+
+.review {
+  display: grid;
+  gap: 10px;
+  margin: 16px 0 0;
+}
+
+.row {
+  padding: 10px 12px 9px;
+  background: rgba(238, 241, 255, 0.04);
+}
+
+.row dt {
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--amber);
+}
+
+.row dd {
+  margin: 3px 0 0;
+  font-size: 14px;
+  line-height: 1.35;
+  color: var(--ice);
+}
+
+.row dd + dd {
+  color: var(--text-dim);
+}
+
+.wallet {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 14px;
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.walletDot {
+  width: 9px;
+  height: 9px;
+  flex: none;
+  border-radius: 50%;
+  background: var(--mint);
+  box-shadow: 0 0 10px var(--mint);
+}
+
+.link {
+  margin-left: auto;
+  padding: 6px 0;
+  border: 0;
+  background: none;
+  font-size: 13px;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+}
+
+.walletList {
+  display: grid;
+  gap: 8px;
+  margin-top: 16px;
+}
+
+.walletPick {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  height: 52px;
+  padding: 0 16px;
+  border: 0;
+  font-size: 16px;
+  font-weight: 800;
+  color: var(--ice);
+  background: rgba(238, 241, 255, 0.08);
+  clip-path: polygon(10px 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%, 0 10px);
+}
+
+.walletPick img,
+.walletBlank {
+  width: 28px;
+  height: 28px;
+  border-radius: 7px;
+  background: var(--graphite);
+}
+
+.walletPick:disabled {
+  opacity: 0.6;
+}
+
+.noWallet {
+  margin-top: 16px;
+  padding: 12px 14px;
+  font-size: 14px;
+  line-height: 1.45;
+  color: var(--text-dim);
+  background: rgba(238, 241, 255, 0.05);
+}
+
+/* ---------- While the launch runs ---------- */
+
+.progress {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  min-height: 64px;
+  margin-top: 18px;
+  padding: 10px 16px;
+  background: rgba(20, 241, 149, 0.07);
+  box-shadow: inset 0 0 0 2px rgba(20, 241, 149, 0.35);
+  clip-path: polygon(12px 0, 100% 0, 100% calc(100% - 12px), calc(100% - 12px) 100%, 0 100%, 0 12px);
+}
+
+.progressTitle {
+  font-size: 17px;
+  line-height: 1.1;
+}
+
+.progressLine {
+  margin-top: 4px;
+  font-size: 13px;
+  color: var(--text-dim);
+}
+
+.spinner {
+  width: 26px;
+  height: 26px;
+  flex: none;
+  border-radius: 50%;
+  border: 3px solid rgba(20, 241, 149, 0.25);
+  border-top-color: var(--mint);
+  animation: spin 900ms linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.failed {
+  margin-top: 16px;
+}
+
+.failedWords {
+  padding: 12px 14px;
+  font-size: 14px;
+  line-height: 1.45;
+  color: var(--warm);
+  background: rgba(255, 178, 63, 0.1);
+}
+
+/* ---------- A launch's tower ---------- */
+
+.card {
+  position: absolute;
+  left: 50%;
+  bottom: max(14px, env(safe-area-inset-bottom));
+  width: min(560px, calc(100% - 2 * var(--gutter)));
+  transform: translateX(-50%);
+  padding: 16px 18px 18px;
+  clip-path: polygon(16px 0, 100% 0, 100% calc(100% - 16px), calc(100% - 16px) 100%, 0 100%, 0 16px);
+  animation: cardIn 320ms cubic-bezier(0.2, 1.3, 0.4, 1);
+}
+
+.cardTop {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.kicker {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  flex: 1;
+  font-size: 13px;
+  font-weight: 800;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--accent, var(--amber));
+  white-space: nowrap;
+}
+
+.kickerTime {
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.14em;
+  color: var(--amber);
+}
+
+.pulse {
+  width: 9px;
+  height: 9px;
+  flex: none;
+  border-radius: 50%;
+  background: var(--flare);
+  box-shadow: 0 0 12px var(--flare);
+  animation: blink 1.2s infinite;
+}
+
+@keyframes blink {
+  50% {
+    opacity: 0.3;
+  }
+}
+
+.cardHead {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 10px;
+}
+
+.cardPic {
+  width: 48px;
+  height: 48px;
+  flex: none;
+  border-radius: 50%;
+  object-fit: cover;
+  background: var(--graphite);
+  box-shadow: 0 0 0 2px var(--accent, var(--amber)), 0 0 20px var(--accent, var(--amber));
+}
+
+.cardTitle {
+  min-width: 0;
+  flex: 1;
+}
+
+.cardSymbol {
+  font-size: 32px;
+  line-height: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.cardName {
+  margin-top: 3px;
+  font-size: 14px;
+  color: var(--text-dim);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.holders {
+  flex: none;
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--text-dim);
+}
+
+.holders b {
+  color: var(--ice);
+  font-variant-numeric: tabular-nums;
+}
+
+.tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 10px;
+}
+
+.tag {
+  padding: 3px 8px;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  background: rgba(153, 69, 255, 0.22);
+  color: var(--ice);
+}
+
+.tagMine {
+  background: rgba(20, 241, 149, 0.16);
+  color: var(--mint);
+}
+
+.tagNet {
+  background: rgba(255, 178, 63, 0.16);
+  color: var(--warm);
+}
+
+.tagWarn {
+  background: rgba(238, 241, 255, 0.07);
+  color: var(--text-dim);
+}
+
+.bar {
+  position: relative;
+  height: 10px;
+  margin-top: 14px;
+  background: rgba(238, 241, 255, 0.12);
+  clip-path: polygon(5px 0, 100% 0, 100% 100%, 0 100%, 0 5px);
+}
+
+.barFill {
+  position: absolute;
+  inset: 0 auto 0 0;
+  background: linear-gradient(90deg, var(--violet), var(--amber));
+  box-shadow: 0 0 16px rgba(255, 178, 63, 0.6);
+  transition: width 600ms ease-out;
+}
+
+.cardLine {
+  margin-top: 10px;
+  font-size: 15px;
+  line-height: 1.4;
+  color: var(--text-dim);
+}
+
+.checks {
+  display: flex;
+  gap: 6px;
+  margin-top: 12px;
+}
+
+.check {
+  flex: 1;
+  padding: 7px 4px;
+  text-align: center;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.checkOk {
+  color: var(--mint);
+  background: rgba(20, 241, 149, 0.12);
+}
+
+.checkAhead {
+  color: var(--text-dim);
+  background: rgba(238, 241, 255, 0.05);
+}
+
+.checkQuiet {
+  color: var(--text-dim);
+  background: rgba(238, 241, 255, 0.05);
+  text-decoration: line-through rgba(238, 241, 255, 0.35);
+}
+
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translateY(24px);
+  }
+}
+
+@keyframes cardIn {
+  from {
+    opacity: 0;
+    transform: translate(-50%, 40px);
+  }
+}
+
+@media (max-width: 400px) {
+  .title {
+    font-size: 21px;
+  }
+  .cardSymbol {
+    font-size: 28px;
+  }
+  .launchRow {
+    grid-template-columns: 88px minmax(0, 1fr);
+  }
+  .pic {
+    height: 96px;
+  }
+}
+
+/* ---------- Desktop: the sheet and the card stand on the right, the city keeps the centre ---------- */
+
+@media (min-aspect-ratio: 1/1) {
+  .sheet {
+    left: auto;
+    right: var(--gutter);
+    bottom: 24px;
+    width: 440px;
+    max-height: calc(100% - 100px);
+    padding: 22px;
+    clip-path: polygon(22px 0, 100% 0, 100% calc(100% - 22px), calc(100% - 22px) 100%, 0 100%, 0 22px);
+    animation-name: sideIn;
+  }
+  .card {
+    left: auto;
+    right: var(--gutter);
+    bottom: 24px;
+    width: 460px;
+    transform: none;
+    animation-name: sideIn;
+  }
+}
+
+@keyframes sideIn {
+  from {
+    opacity: 0;
+    transform: translateX(40px);
+  }
+}

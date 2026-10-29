@@ -23,9 +23,9 @@ import styles from "./landing.module.css";
  * застосунок», the workflow as the purchase's own road — and adds, in the same
  * design, «Автоінвест», what you buy with the company's path, the phone,
  * security, where Ryntra is today and the questions people ask first.
- * Between the hero and the universe runs TradingView's market tape
- * (`market-tape.tsx`), a condition of the free Advanced Charts licence of
- * 2026-10-09: TradingView's widget with its logo and link, loaded lazily.
+ * Between the hero and the universe runs the market tape (`market-tape.tsx`):
+ * Ryntra's own since SOL-T4 — Solana's prices on the core's sparkline, where
+ * TradingView's Ticker Tape stood from 2026-10-09 — loaded lazily.
  *
  * English at `/`, Ukrainian at `/uk`: the address decides the language
  * (`page.tsx`, `uk/page.tsx`), and the header's language menu moves between

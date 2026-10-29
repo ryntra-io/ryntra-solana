@@ -7,6 +7,7 @@ import { decideBearerAuth } from "@/lib/security";
 import { reconcileLaunchTrades } from "@/lib/launch/record.server";
 import { launchMarketDeps } from "@/lib/launch/runtime.server";
 import { reconcileSolanaWalletActions } from "@/lib/solana/action-reconcile.server";
+import { reconcileLimitOrders } from "@/lib/solana/limits/sync.server";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -30,6 +31,8 @@ export async function GET(req: NextRequest) {
     const report = await reconcileSolanaWalletActions(getGuardRuntime().store, { apply: true, limit: 25 });
     const launchDeps = launchMarketDeps();
     const launches = launchDeps ? await reconcileLaunchTrades(launchDeps, { limit: 10 }).catch(() => []) : [];
+    /* Spot limits (B3): a placement or cancellation whose relay did not answer is read by its signature; open orders are refreshed from their venue. */
+    const limits = await reconcileLimitOrders(getGuardRuntime().store, { limit: 25 }).catch(() => []);
     const chain = await readAttribution();
     return NextResponse.json(
       {
@@ -39,6 +42,7 @@ export async function GET(req: NextRequest) {
         left: report.decisions.filter((decision) => !decision.applied).map((decision) => ({ key: decision.key, evidence: decision.evidence })),
         enriched: report.enriched.filter((row) => row.applied).length,
         launchTrades: launches.filter((entry) => entry.after !== entry.before),
+        limits: limits.filter((decision) => decision.applied),
         chain: chain.ok ? { readAt: chain.readAt, operations: chain.totals.operations, complete: chain.coverage.complete } : { code: chain.code },
       },
       { headers: privateNoStoreHeaders() },

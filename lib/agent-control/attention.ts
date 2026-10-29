@@ -85,14 +85,14 @@ export type AttentionQueue = Readonly<{
  */
 export const AGENT_CONTROL_OWNER_ACTIONS = Object.freeze([
   Object.freeze({
-    task: "RYN-AGENT-CONTROL-007",
+    key: "bnb-job-funding",
     title: "The BNB job is still unfunded",
     detail:
       "United Stables on BNB Testnet is owner-minted with autoMintMaxLimit 0 and has no faucet, so obtaining it is a human request to BNB rather than a code path. Re-checked on chain 2026-08-24 and still unmet.",
     step: "Request the test asset from BNB and fund the job, then re-run the on-chain check.",
   }),
   Object.freeze({
-    task: "RYN-AGENT-CONTROL-008",
+    key: "developer-kit-publication",
     title: "The developer packages are unpublished",
     detail:
       "npm whoami returns 401 against registry.npmjs.org and the @ryntra scope has zero published packages. Authenticating is a password and OTP action that is not an implementing agent's to perform.",
@@ -134,14 +134,14 @@ export function attentionQueue(input: AttentionInput): AttentionQueue {
 
   for (const candidate of input.ownerActions ?? []) {
     if (!isRecord(candidate)) continue;
-    const task = text(candidate.task);
+    const key = text(candidate.key);
     const title = text(candidate.title);
     const detail = text(candidate.detail);
     const step = text(candidate.step);
-    if (!task || !title || !detail || !step) continue;
+    if (!key || !title || !detail || !step) continue;
     items.push(
       Object.freeze({
-        id: `owner-action:${task}`,
+        id: `owner-action:${key}`,
         category: "OWNER_DECISION" as const,
         priority: rank("OWNER_DECISION"),
         title,

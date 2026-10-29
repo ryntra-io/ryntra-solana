@@ -1,0 +1,721 @@
+{
+ "source": "The aggregator's answers for market watching, shaped by the @agg-build/sdk 4.26 types (VenueEventWithMarkets, VenueMarket, BatchMidpointsResponse, BatchOrderbooksResponse, the market-news feed, CorrelatedMarketCascadeItem, PositionGroup). The bar series is built by the test around its own clock, since every staleness rule is read off the bars' own times; `chartShell` is the envelope it fills. No key, no real account.",
+ "event": {
+  "status": 200,
+  "body": {
+   "id": "ev1",
+   "title": "December rate decision",
+   "subtitle": null,
+   "image": null,
+   "status": "OPEN",
+   "venue": "polymarket",
+   "venues": [
+    "polymarket",
+    "kalshi"
+   ],
+   "volume": 400000.0,
+   "endDate": "2026-12-20T23:59:00.000Z",
+   "startDate": null,
+   "description": null,
+   "categories": [],
+   "marketCount": 1,
+   "aggKey": "agg:rate-dec",
+   "structureType": null,
+   "arbReturn": null,
+   "venueMarkets": [
+    {
+     "id": "m1",
+     "venue": "polymarket",
+     "question": "Will the rate hold in December?",
+     "status": "OPEN",
+     "venueMarketOutcomes": [
+      {
+       "id": "o-yes",
+       "label": "Yes",
+       "price": 0.52,
+       "venueMarketId": "m1",
+       "winner": null,
+       "matchedVenueMarketOutcomes": []
+      },
+      {
+       "id": "o-no",
+       "label": "No",
+       "price": 0.48,
+       "venueMarketId": "m1",
+       "winner": null,
+       "matchedVenueMarketOutcomes": []
+      }
+     ],
+     "volume": 120000.0,
+     "endDate": "2026-12-20T23:59:00.000Z",
+     "resolutionDate": "2026-12-22T23:59:00.000Z",
+     "description": null,
+     "rulesPrimary": "The market resolves to Yes if the policy rate is unchanged at the December meeting. Resolution source is the central bank's own statement. If the meeting does not take place, the market is cancelled.",
+     "rulesSecondary": null,
+     "tickSize": 0.01,
+     "minOrderSize": 1,
+     "image": null,
+     "matchedVenueMarkets": []
+    }
+   ]
+  }
+ },
+ "eventRulesChanged": {
+  "status": 200,
+  "body": {
+   "id": "ev1",
+   "title": "December rate decision",
+   "subtitle": null,
+   "image": null,
+   "status": "OPEN",
+   "venue": "polymarket",
+   "venues": [
+    "polymarket",
+    "kalshi"
+   ],
+   "volume": 400000.0,
+   "endDate": "2026-12-20T23:59:00.000Z",
+   "startDate": null,
+   "description": null,
+   "categories": [],
+   "marketCount": 1,
+   "aggKey": "agg:rate-dec",
+   "structureType": null,
+   "arbReturn": null,
+   "venueMarkets": [
+    {
+     "id": "m1",
+     "venue": "polymarket",
+     "question": "Will the rate hold in December?",
+     "status": "OPEN",
+     "venueMarketOutcomes": [
+      {
+       "id": "o-yes",
+       "label": "Yes",
+       "price": 0.52,
+       "venueMarketId": "m1",
+       "winner": null,
+       "matchedVenueMarketOutcomes": []
+      },
+      {
+       "id": "o-no",
+       "label": "No",
+       "price": 0.48,
+       "venueMarketId": "m1",
+       "winner": null,
+       "matchedVenueMarketOutcomes": []
+      }
+     ],
+     "volume": 120000.0,
+     "endDate": "2026-12-20T23:59:00.000Z",
+     "resolutionDate": "2026-12-22T23:59:00.000Z",
+     "description": null,
+     "rulesPrimary": "The market resolves to Yes if the policy rate is unchanged at the December meeting. Resolution source is the central bank's published decision page. If the meeting does not take place, the market is cancelled.",
+     "rulesSecondary": null,
+     "tickSize": 0.01,
+     "minOrderSize": 1,
+     "image": null,
+     "matchedVenueMarkets": []
+    }
+   ]
+  }
+ },
+ "markets": {
+  "status": 200,
+  "body": {
+   "data": [
+    {
+     "id": "m1",
+     "venue": "polymarket",
+     "question": "Will the rate hold in December?",
+     "status": "OPEN",
+     "venueMarketOutcomes": [
+      {
+       "id": "o-yes",
+       "label": "Yes",
+       "price": 0.52,
+       "venueMarketId": "m1",
+       "winner": null,
+       "matchedVenueMarketOutcomes": []
+      },
+      {
+       "id": "o-no",
+       "label": "No",
+       "price": 0.48,
+       "venueMarketId": "m1",
+       "winner": null,
+       "matchedVenueMarketOutcomes": []
+      }
+     ],
+     "volume": 120000.0,
+     "endDate": "2026-12-20T23:59:00.000Z",
+     "resolutionDate": "2026-12-22T23:59:00.000Z",
+     "description": null,
+     "rulesPrimary": "The market resolves to Yes if the policy rate is unchanged at the December meeting. Resolution source is the central bank's own statement. If the meeting does not take place, the market is cancelled.",
+     "rulesSecondary": null,
+     "tickSize": 0.01,
+     "minOrderSize": 1,
+     "image": null,
+     "matchedVenueMarkets": []
+    }
+   ],
+   "nextCursor": null,
+   "hasMore": false
+  }
+ },
+ "marketsRulesChanged": {
+  "status": 200,
+  "body": {
+   "data": [
+    {
+     "id": "m1",
+     "venue": "polymarket",
+     "question": "Will the rate hold in December?",
+     "status": "OPEN",
+     "venueMarketOutcomes": [
+      {
+       "id": "o-yes",
+       "label": "Yes",
+       "price": 0.52,
+       "venueMarketId": "m1",
+       "winner": null,
+       "matchedVenueMarketOutcomes": []
+      },
+      {
+       "id": "o-no",
+       "label": "No",
+       "price": 0.48,
+       "venueMarketId": "m1",
+       "winner": null,
+       "matchedVenueMarketOutcomes": []
+      }
+     ],
+     "volume": 120000.0,
+     "endDate": "2026-12-20T23:59:00.000Z",
+     "resolutionDate": "2026-12-22T23:59:00.000Z",
+     "description": null,
+     "rulesPrimary": "The market resolves to Yes if the policy rate is unchanged at the December meeting. Resolution source is the central bank's published decision page. If the meeting does not take place, the market is cancelled.",
+     "rulesSecondary": null,
+     "tickSize": 0.01,
+     "minOrderSize": 1,
+     "image": null,
+     "matchedVenueMarkets": []
+    }
+   ],
+   "nextCursor": null,
+   "hasMore": false
+  }
+ },
+ "linkedEvent": {
+  "status": 200,
+  "body": {
+   "id": "ev2",
+   "title": "December inflation print",
+   "subtitle": null,
+   "image": null,
+   "status": "OPEN",
+   "venue": "polymarket",
+   "venues": [
+    "polymarket",
+    "kalshi"
+   ],
+   "volume": 400000.0,
+   "endDate": "2026-12-20T23:59:00.000Z",
+   "startDate": null,
+   "description": null,
+   "categories": [],
+   "marketCount": 1,
+   "aggKey": "agg:rate-dec",
+   "structureType": null,
+   "arbReturn": null,
+   "venueMarkets": [
+    {
+     "id": "m2",
+     "venue": "polymarket",
+     "question": "Will inflation print above 3%?",
+     "status": "OPEN",
+     "venueMarketOutcomes": [
+      {
+       "id": "o2-yes",
+       "label": "Yes",
+       "price": 0.44,
+       "venueMarketId": "m2",
+       "winner": null,
+       "matchedVenueMarketOutcomes": []
+      },
+      {
+       "id": "o2-no",
+       "label": "No",
+       "price": 0.56,
+       "venueMarketId": "m2",
+       "winner": null,
+       "matchedVenueMarketOutcomes": []
+      }
+     ],
+     "volume": 90000.0,
+     "endDate": "2026-12-20T23:59:00.000Z",
+     "resolutionDate": "2026-12-22T23:59:00.000Z",
+     "description": null,
+     "rulesPrimary": "The market resolves to Yes above 3.0%.",
+     "rulesSecondary": null,
+     "tickSize": 0.01,
+     "minOrderSize": 1,
+     "image": null,
+     "matchedVenueMarkets": []
+    }
+   ]
+  }
+ },
+ "linkedMarkets": {
+  "status": 200,
+  "body": {
+   "data": [
+    {
+     "id": "m2",
+     "venue": "polymarket",
+     "question": "Will inflation print above 3%?",
+     "status": "OPEN",
+     "venueMarketOutcomes": [
+      {
+       "id": "o2-yes",
+       "label": "Yes",
+       "price": 0.44,
+       "venueMarketId": "m2",
+       "winner": null,
+       "matchedVenueMarketOutcomes": []
+      },
+      {
+       "id": "o2-no",
+       "label": "No",
+       "price": 0.56,
+       "venueMarketId": "m2",
+       "winner": null,
+       "matchedVenueMarketOutcomes": []
+      }
+     ],
+     "volume": 90000.0,
+     "endDate": "2026-12-20T23:59:00.000Z",
+     "resolutionDate": "2026-12-22T23:59:00.000Z",
+     "description": null,
+     "rulesPrimary": "The market resolves to Yes above 3.0%.",
+     "rulesSecondary": null,
+     "tickSize": 0.01,
+     "minOrderSize": 1,
+     "image": null,
+     "matchedVenueMarkets": []
+    }
+   ],
+   "nextCursor": null,
+   "hasMore": false
+  }
+ },
+ "midpointsCalm": {
+  "status": 200,
+  "body": {
+   "data": [
+    {
+     "venue": "polymarket",
+     "venueMarketId": "m1",
+     "midpoint": 0.52,
+     "spread": 0.02,
+     "bestBid": 0.51,
+     "bestAsk": 0.53,
+     "timestamp": 1761480000000,
+     "arbReturn": null,
+     "marketStatus": "OPEN",
+     "error": null,
+     "outcomes": [
+      {
+       "venueMarketOutcomeId": "o-yes",
+       "label": "Yes",
+       "midpoint": 0.52,
+       "bestBid": 0.51,
+       "bestAsk": 0.53
+      },
+      {
+       "venueMarketOutcomeId": "o-no",
+       "label": "No",
+       "midpoint": 0.48,
+       "bestBid": 0.47,
+       "bestAsk": 0.49
+      }
+     ],
+     "matched": [
+      {
+       "venue": "kalshi",
+       "venueMarketId": "k1",
+       "midpoint": 0.53,
+       "spread": 0.02,
+       "bestBid": 0.52,
+       "bestAsk": 0.54,
+       "timestamp": 1761480000000
+      }
+     ]
+    }
+   ]
+  }
+ },
+ "midpointsCrossed": {
+  "status": 200,
+  "body": {
+   "data": [
+    {
+     "venue": "polymarket",
+     "venueMarketId": "m1",
+     "midpoint": 0.65,
+     "spread": 0.02,
+     "bestBid": 0.64,
+     "bestAsk": 0.66,
+     "timestamp": 1761480000000,
+     "arbReturn": null,
+     "marketStatus": "OPEN",
+     "error": null,
+     "outcomes": [
+      {
+       "venueMarketOutcomeId": "o-yes",
+       "label": "Yes",
+       "midpoint": 0.65,
+       "bestBid": 0.64,
+       "bestAsk": 0.66
+      },
+      {
+       "venueMarketOutcomeId": "o-no",
+       "label": "No",
+       "midpoint": 0.35,
+       "bestBid": 0.34,
+       "bestAsk": 0.36
+      }
+     ],
+     "matched": [
+      {
+       "venue": "kalshi",
+       "venueMarketId": "k1",
+       "midpoint": 0.7,
+       "spread": 0.02,
+       "bestBid": 0.69,
+       "bestAsk": 0.71,
+       "timestamp": 1761480000000
+      }
+     ]
+    }
+   ]
+  }
+ },
+ "midpointsStale": {
+  "status": 200,
+  "body": {
+   "data": [
+    {
+     "venue": "polymarket",
+     "venueMarketId": "m1",
+     "midpoint": 0.65,
+     "spread": 0.02,
+     "bestBid": 0.64,
+     "bestAsk": 0.66,
+     "timestamp": 1760000000000,
+     "arbReturn": null,
+     "marketStatus": "OPEN",
+     "error": null,
+     "outcomes": [
+      {
+       "venueMarketOutcomeId": "o-yes",
+       "label": "Yes",
+       "midpoint": 0.65,
+       "bestBid": 0.64,
+       "bestAsk": 0.66
+      },
+      {
+       "venueMarketOutcomeId": "o-no",
+       "label": "No",
+       "midpoint": 0.35,
+       "bestBid": 0.34,
+       "bestAsk": 0.36
+      }
+     ],
+     "matched": [
+      {
+       "venue": "kalshi",
+       "venueMarketId": "k1",
+       "midpoint": 0.7,
+       "spread": 0.02,
+       "bestBid": 0.69,
+       "bestAsk": 0.71,
+       "timestamp": 1760000000000
+      }
+     ]
+    }
+   ]
+  }
+ },
+ "bookFull": {
+  "status": 200,
+  "body": {
+   "data": [
+    {
+     "venueMarketId": "m1",
+     "status": "OK",
+     "error": null,
+     "requestedMarket": {
+      "venue": "polymarket",
+      "tickSize": 0.01,
+      "marketStatus": "OPEN"
+     },
+     "venueOrderbooks": {
+      "polymarket": {
+       "venueMarketId": "m1",
+       "tickSize": 0.01,
+       "orderbook": {
+        "bids": [
+         {
+          "price": 0.51,
+          "size": 2000
+         },
+         {
+          "price": 0.5,
+          "size": 3000
+         }
+        ],
+        "asks": [
+         {
+          "price": 0.53,
+          "size": 2000
+         },
+         {
+          "price": 0.54,
+          "size": 3000
+         }
+        ]
+       }
+      }
+     },
+     "matchedMarkets": []
+    }
+   ]
+  }
+ },
+ "bookThin": {
+  "status": 200,
+  "body": {
+   "data": [
+    {
+     "venueMarketId": "m1",
+     "status": "OK",
+     "error": null,
+     "requestedMarket": {
+      "venue": "polymarket",
+      "tickSize": 0.01,
+      "marketStatus": "OPEN"
+     },
+     "venueOrderbooks": {
+      "polymarket": {
+       "venueMarketId": "m1",
+       "tickSize": 0.01,
+       "orderbook": {
+        "bids": [
+         {
+          "price": 0.4,
+          "size": 100
+         }
+        ],
+        "asks": [
+         {
+          "price": 0.6,
+          "size": 100
+         }
+        ]
+       }
+      }
+     },
+     "matchedMarkets": []
+    }
+   ]
+  }
+ },
+ "newsNone": {
+  "status": 200,
+  "body": {
+   "results": [
+    {
+     "question": "Will the rate hold in December?",
+     "timeRangeLabel": "Last 7 days",
+     "searchQuery": "december rate decision",
+     "articles": []
+    }
+   ]
+  }
+ },
+ "newsOne": {
+  "status": 200,
+  "body": {
+   "results": [
+    {
+     "question": "Will the rate hold in December?",
+     "timeRangeLabel": "Last 7 days",
+     "searchQuery": "december rate decision",
+     "articles": [
+      {
+       "title": "Central bank signals a pause in December",
+       "source": "Reuters",
+       "publishedAt": "{{fresh}}",
+       "url": "https://example.test/a",
+       "impactSummary": "A pause would favour Yes."
+      }
+     ]
+    }
+   ]
+  }
+ },
+ "newsTwo": {
+  "status": 200,
+  "body": {
+   "results": [
+    {
+     "question": "Will the rate hold in December?",
+     "timeRangeLabel": "Last 7 days",
+     "searchQuery": "december rate decision",
+     "articles": [
+      {
+       "title": "Second statement lands",
+       "source": "AP",
+       "publishedAt": "{{fresh}}",
+       "url": "https://example.test/b",
+       "impactSummary": "More of the same."
+      },
+      {
+       "title": "Central bank signals a pause in December",
+       "source": "Reuters",
+       "publishedAt": "{{older}}",
+       "url": "https://example.test/a",
+       "impactSummary": "A pause would favour Yes."
+      }
+     ]
+    }
+   ]
+  }
+ },
+ "cascade": {
+  "status": 200,
+  "body": {
+   "data": [
+    {
+     "venueEventId": "ev2",
+     "eventTitle": "December inflation print",
+     "eventStatus": "OPEN",
+     "score": 0.81,
+     "action": "buy_yes",
+     "reason": "Both turn on the same policy path.",
+     "reasonDomain": "macro",
+     "eventEndDate": "2026-12-20T23:59:00.000Z"
+    }
+   ]
+  }
+ },
+ "chartShell": {
+  "venueMarketOutcomeId": "o-yes",
+  "venue": "polymarket",
+  "resolution": "1h",
+  "data": [],
+  "meta": {
+   "staleSeconds": 10,
+   "lastBarOpenTime": 0
+  }
+ },
+ "positionsNone": {
+  "status": 200,
+  "body": {
+   "data": [],
+   "nextCursor": null,
+   "hasMore": false
+  }
+ },
+ "positionsSmall": {
+  "status": 200,
+  "body": {
+   "data": [
+    {
+     "eventId": "ev1",
+     "status": "active",
+     "redeemStatus": "not_eligible",
+     "resolutionDate": "2026-12-22T23:59:00.000Z",
+     "venueMarket": {
+      "venueEventId": "ev1",
+      "question": "Will the rate hold in December?",
+      "image": null,
+      "status": "OPEN",
+      "venueMarketOutcomes": [
+       {
+        "label": "Yes",
+        "totalSize": 75.0,
+        "avgEntryPrice": 0.4,
+        "currentPrice": 0.65,
+        "totalValue": 30.0,
+        "unrealizedPnl": 1.0,
+        "unrealizedPnlPercent": 10,
+        "winner": null,
+        "venueBreakdown": [
+         {
+          "venue": "polymarket",
+          "size": 75.0,
+          "venueMarketId": "m1",
+          "venueMarketOutcomeId": "o-yes"
+         }
+        ]
+       }
+      ]
+     }
+    }
+   ],
+   "nextCursor": null,
+   "hasMore": false
+  }
+ },
+ "positionsBig": {
+  "status": 200,
+  "body": {
+   "data": [
+    {
+     "eventId": "ev1",
+     "status": "active",
+     "redeemStatus": "not_eligible",
+     "resolutionDate": "2026-12-22T23:59:00.000Z",
+     "venueMarket": {
+      "venueEventId": "ev1",
+      "question": "Will the rate hold in December?",
+      "image": null,
+      "status": "OPEN",
+      "venueMarketOutcomes": [
+       {
+        "label": "Yes",
+        "totalSize": 96.0,
+        "avgEntryPrice": 0.4,
+        "currentPrice": 0.65,
+        "totalValue": 62.4,
+        "unrealizedPnl": 1.0,
+        "unrealizedPnlPercent": 10,
+        "winner": null,
+        "venueBreakdown": [
+         {
+          "venue": "polymarket",
+          "size": 96.0,
+          "venueMarketId": "m1",
+          "venueMarketOutcomeId": "o-yes"
+         }
+        ]
+       }
+      ]
+     }
+    }
+   ],
+   "nextCursor": null,
+   "hasMore": false
+  }
+ },
+ "appConfigPaper": {
+  "status": 200,
+  "body": {
+   "tradingMode": "paper",
+   "paperStartingBalance": 1000,
+   "disabledVenues": []
+  }
+ }
+}

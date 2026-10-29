@@ -51,12 +51,23 @@ export function applyThemePref(pref: ThemePref): "dark" | "light" {
     window.localStorage.setItem(PREF_KEY, pref);
     window.localStorage.setItem(LEGACY_KEY, resolved);
   } catch { /* Theme changes immediately even if this browser cannot retain it. */ }
+  /* The app reads the core's look cookie first (`app/app/look.ts`, B1): a choice made on the site follows it there,
+     the density the person chose in the app kept. */
+  try {
+    const density = /(?:^|;\s*)ryntra-look=[a-z]+\.(regular|compact)/.exec(document.cookie)?.[1] ?? "regular";
+    document.cookie = `ryntra-look=${resolved === "light" ? "porcelain" : "graphite"}.${density}; path=/; max-age=31536000; samesite=lax`;
+  } catch { /* Without cookies the app opens in its own default. */ }
   return resolved;
 }
 
-/** Read the resolved theme straight off <html data-theme> (the cabinet/boot script keeps it current). */
+/**
+ * Read the resolved theme straight off <html data-theme> (the cabinet/boot script keeps it current). Inside the
+ * Solana app the core names it — Porcelain is the light one (`app/app/look.ts`).
+ */
 export function readResolvedTheme(): "dark" | "light" {
-  return typeof document !== "undefined" && document.documentElement.getAttribute("data-theme") === "light" ? "light" : "dark";
+  if (typeof document === "undefined") return "dark";
+  const theme = document.documentElement.getAttribute("data-theme");
+  return theme === "light" || theme === "porcelain" ? "light" : "dark";
 }
 
 /** Watch <html data-theme> for changes. Returns an unsubscribe. Calls cb immediately with the current value. */

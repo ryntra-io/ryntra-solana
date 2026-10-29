@@ -67,7 +67,7 @@ export async function POST(request: Request) {
   const rate = consumeSolanaReadRequest(request.headers);
   if (!rate.allowed) return failure(429, "RATE_LIMITED", "Too many requests.", rate);
   /* The site's origin for a browser, the native bearer for the phone (1.22.0,
-     the rule the swap routes follow); a
+     the rule the swap routes follow since the mobile line's request 13); a
      bearer that fails is refused by its own code and never falls through
      (`lib/solana/swap-carrier.ts`). The attempt ledger is keyed by the
      signature and names no wallet, so the bearer binds nothing more here

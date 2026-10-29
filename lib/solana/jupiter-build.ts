@@ -114,6 +114,12 @@ export type JupiterBuildRequest = Readonly<{
   slippageBps?: number;
   /** Null asks for no fee: a dollar-to-dollar swap, or a flow whose fee cannot be carried here. */
   fee: JupiterBuildFee | null;
+  /**
+   * Routing held to these venues, by Jupiter's own case-sensitive labels — the
+   * Exchange's second quote asks `["Manifest"]` for the order book alone (B9).
+   * Absent asks every venue, as the swap lane always has.
+   */
+  dexes?: readonly string[];
 }>;
 
 type ApiInstruction = Readonly<{ programId: string; accounts: readonly Readonly<{ pubkey: string; isSigner: boolean; isWritable: boolean }>[]; data: string }>;
@@ -227,6 +233,10 @@ export async function fetchJupiterBuild(
   /* Jupiter's real-time estimate unless a person's rule names a bound. */
   url.searchParams.set("slippageBps", slippageBps !== undefined ? String(slippageBps) : "rtse");
   const routeAffectingOptions = [slippageBps !== undefined ? `slippageBps=${slippageBps}` : "slippageBps=rtse"];
+  if (request.dexes && request.dexes.length > 0) {
+    url.searchParams.set("dexes", request.dexes.join(","));
+    routeAffectingOptions.push(`dexes=${request.dexes.join(",")}`);
+  }
   if (fee) {
     url.searchParams.set("platformFeeBps", String(fee.bps));
     url.searchParams.set("feeAccount", fee.account);

@@ -30,7 +30,9 @@ const HOME = read("app/site/home.tsx");
    route-entry check forbids both a custom prop on the default export and
    extra named exports, and `/[lang]` mounts the same component. The chrome
    assertions below read the composition; the entry is asserted to render it. */
-const ROUTE = read("app/(home)/homepage.tsx") + read("app/(home)/page.tsx");
+/* Since decision 70 `/` is Ryntra City (`app/(home)/page.tsx`) and the landing's composition lives on in homepage.tsx,
+   mounted by `/uk`'s entry: the chrome assertions read the landing where it is still composed. */
+const ROUTE = read("app/(home)/homepage.tsx") + read("app/(home)/uk/page.tsx");
 
 /**
  * Every page the redesign owns, with the route file that serves it.
@@ -94,7 +96,7 @@ test("the homepage is the frozen landing, and two earlier landings are parked ra
   /* Structured data comes from the page's own words (`landing-jsonld.ts`), so
      a search result cannot claim more than the page does: its feature list is
      «Працює зараз», tied item by item to the code in `landing.test.mjs`. */
-  assert.match(ROUTE, /landingJsonLdScript\("en"\)/);
+  assert.match(ROUTE, /landingJsonLdScript\("uk"\)/);
   assert.doesNotMatch(ROUTE, /featureList\s*:/);
 });
 
@@ -214,7 +216,7 @@ test("the global chrome presents one product family, not a second product", () =
 
   /* The doors group links doors: every open-now row lands inside a workspace,
      not on prose about one. "How do I get into the workspace" being a
-     three-hop guess is the defect this menu replaced. */
+     three-hop guess is the founder-reported defect this menu replaced. */
   const openGroup = PRODUCT_NAV_GROUPS.find((group) => group.id === "open");
   for (const item of openGroup.items) {
     assert.match(item.href ?? "", /\/workspace$/, `${item.id} must link straight to its workspace`);
@@ -861,13 +863,17 @@ test("no homepage anchor is dead, on any surface that links to one", () => {
    * own component reported a dead link that was not dead. A liveness check
    * pointed at a parked file proves nothing about the live one.
    */
-  const homeDir = new URL("../../app/(home)/", import.meta.url);
+  /* Since MC-0 the live homepage's sections are Mission Control's components (`app/components/mission-control/`,
+     mounted by `app/(home)/page.tsx`): their ids are the page's anchors too. Read from `app/(home)` alone, the hero's
+     `#launch` looked dead and `#how` passed only because the parked landing happens to carry an `id="how"`. */
+  const homeDirs = [new URL("../../app/(home)/", import.meta.url), new URL("../../app/components/mission-control/", import.meta.url)];
   const anchors = new Set(
-    readdirSync(homeDir)
-      .filter((name) => name.endsWith(".tsx"))
-      .flatMap((name) => [
-        ...readFileSync(new URL(name, homeDir), "utf8").matchAll(/\bid="([a-z0-9-]+)"/g),
-      ])
+    homeDirs
+      .flatMap((dir) =>
+        readdirSync(dir)
+          .filter((name) => name.endsWith(".tsx"))
+          .flatMap((name) => [...readFileSync(new URL(name, dir), "utf8").matchAll(/\bid="([a-z0-9-]+)"/g)]),
+      )
       .map((match) => match[1]),
   );
   const files = [];

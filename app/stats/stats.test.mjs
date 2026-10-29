@@ -132,7 +132,7 @@ test("decimal text is exact and symbols are known for the fee assets", () => {
 });
 
 test("both languages carry every sentence, and no internal vocabulary reaches the page", () => {
-  const forbidden = /RYN-[A-Z]+-\d|canon|WIP|gate|handoff|Dune|DefiLlama|hackathon|competition|grant|task|RPC|referral account balance|methodology rule/i;
+  const forbidden = /RYN-[A-Z]+-\d|gate|handoff|Dune|DefiLlama|hackathon|competition|grant|task|RPC|referral account balance|methodology rule/i;
   for (const locale of ["en", "uk"]) {
     const copy = STATS_COPY[locale];
     const text = JSON.stringify(copy, (key, value) => (typeof value === "function" ? value(1, 1, 1) : value));

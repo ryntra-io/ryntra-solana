@@ -1,34 +1,50 @@
 "use client";
 
-import { ArrowSquareOut, CaretDown, CheckCircle, CircleNotch, Clock, ImageSquare, Plus, Receipt, Wallet, Warning } from "@phosphor-icons/react";
-import Link from "next/link";
+import { ArrowSquareOut, CaretDown, CheckCircle, CircleNotch, ImageSquare, Warning } from "@phosphor-icons/react";
+import { Block, Button, Receipt as CoreReceipt, EmptyState, HeroNumber, Page } from "@ryntra/core/ui";
 import { useCallback, useEffect, useMemo, useState } from "react";
 
-import { useWalletReach } from "@/app/app/invest/use-wallet-reach";
+import { ConnectWalletButton } from "@/app/solana/workspace/wallet-gate";
 import type { WorkspaceLocale } from "@/app/shell/locale";
 import { useSolanaConnection } from "@/app/solana/workspace/connection";
 import type {
   LaunchCabinetRow,
   LaunchClaimBuildResponse,
+  LaunchClaimReviewResponse,
   LaunchClaimReceipt,
   LaunchClaimSubmitResponse,
   LaunchCreatorCabinetResponse,
-  LaunchMarketResponse,
+  LaunchStatsResponse,
 } from "@/lib/api/v1/contract";
+import { buildMatchesReview } from "@/lib/core/launch/claim-review";
 import { launchPreset } from "@/lib/core/venues/meteora-dbc/presets";
+import { signFreshBytes } from "@/lib/solana/sign-fresh";
 import { signTransactions } from "@/lib/solana/wallet.client";
 
-import { explorerUrl, formatBps, formatCountShort, formatDate, formatMoneyShort, formatRaw, fromRaw, shortAddress } from "../launch-format";
+import { coreLang, LinkButton, Reading, Unread } from "../launch-blocks";
+import { explorerUrl, formatBps, formatDate, formatRaw, shortAddress } from "../launch-format";
 import { launchWords } from "../launch-words";
 import styles from "../launch.module.css";
 import { PausedChip, PausedNote } from "../paused-note";
+import { CompareLaunches, EarnedBySource, LaunchDexMarket, LaunchMarketFigures, LaunchOwnTrades, LaunchSources, NotesBlock, ProfileBlock, type StatsRead } from "./cabinet-blocks";
+import { exact, money } from "./cabinet-figures";
+import { cabinetWords } from "./cabinet-words";
+import { ClaimAllReading, ClaimAllReview } from "./claim-all-review";
+import { claimAllWords } from "./claim-all-words";
+import { SplitBlock } from "./split-block";
+import { TransferFeeCabinet } from "./transfer-fee-actions";
+import own from "./cabinet.module.css";
 
 /**
  * «Мої лаунчі» — the creator's cabinet. Drawn for 390 px first: what the
- * wallet's launches earned it (each currency apart), then each launch — its
- * way to the DEX, its day's volume and holders, what it earned and what can be
- * claimed now, one orange «Забрати» — and the claim receipts. Every figure is
- * the chain's; a figure that could not be read is said as not read.
+ * wallet's launches earned it (each currency apart) by source over the day,
+ * the week and all time; the launches side by side; then each launch — its
+ * way to the DEX, its holders, traders and those who came back, its volume
+ * and liquidity, after the DEX its market, the creator's own trades and lock,
+ * what can be claimed now with one «Забрати все» — every pocket in one Review
+ * before the signature (SOL-L12) — the claim receipts, the notifications and
+ * the public profile (SOL-L2). Every figure is the chain's; a figure that
+ * could not be read is said as not read.
  *
  * The cabinet belongs to the wallet, not to the browser: it reads by the
  * connected wallet's address and keeps nothing here.
@@ -49,30 +65,14 @@ async function api<T>(path: string, init?: RequestInit): Promise<Answer<T>> {
 }
 
 type Word = ReturnType<typeof launchWords>;
-type Pair = LaunchCabinetRow["pair"];
-
-/** An amount in its currency, short: «$12,4 тис.» in dollars, «1 234 COMM» in a community's token. */
-function money(raw: string | bigint, pair: Pair, locale: WorkspaceLocale): string {
-  const value = Number(fromRaw(raw, pair.decimals, 6));
-  if (pair.dollar && value > 0 && value < 0.01) return locale === "uk" ? "< $0,01" : "< $0.01";
-  return formatMoneyShort(value, locale, pair.dollar, pair.symbol);
-}
-
-/** An amount the person takes, to the cent: «$174,09» · «361,33 COMM». */
-function exact(raw: string | bigint, pair: Pair, locale: WorkspaceLocale): string {
-  const value = Number(fromRaw(raw, pair.decimals, 6));
-  if (value > 0 && value < 0.01) return pair.dollar ? (locale === "uk" ? "< $0,01" : "< $0.01") : `< 0${locale === "uk" ? "," : "."}01 ${pair.symbol}`;
-  const text = formatRaw(raw, pair.decimals, locale, 2);
-  return pair.dollar ? `$${text}` : `${text} ${pair.symbol}`;
-}
 
 export function CreatorCabinet({ locale, network, paused = false }: { locale: WorkspaceLocale; network: "solana:devnet" | "solana:mainnet"; paused?: boolean }) {
   const word = launchWords(locale);
+  const lang = coreLang(locale);
   const { connection } = useSolanaConnection();
-  const { reach } = useWalletReach();
   const wallet = connection?.address ?? null;
   const [read, setRead] = useState<{ wallet: string; data: LaunchCreatorCabinetResponse | null; failed: boolean } | null>(null);
-  const [markets, setMarkets] = useState<Record<string, LaunchMarketResponse | "unread" | undefined>>({});
+  const [stats, setStats] = useState<Record<string, StatsRead>>({});
 
   const load = useCallback(async () => {
     if (!wallet) return;
@@ -85,16 +85,17 @@ export function CreatorCabinet({ locale, network, paused = false }: { locale: Wo
     void load();
   }, [load]);
 
-  /* The day's volume and the holders come from each token's own market read — one at a time, after the cabinet, so a public node is not asked in a burst. */
+  /* Each launch's figures — the day's and the week's, the market, the creator's own trades — come from its own read, one
+     at a time after the cabinet, so a public node is not asked in a burst. */
   const tokens = useMemo(() => (read?.data?.launches ?? []).map((row) => row.token), [read?.data]);
   useEffect(() => {
     let live = true;
     void (async () => {
       for (const token of tokens) {
         if (!live) return;
-        const answer = await api<LaunchMarketResponse>(`/api/v1/launch/${token}/market`);
+        const answer = await api<LaunchStatsResponse>(`/api/v1/launch/${token}/stats`);
         if (!live) return;
-        setMarkets((current) => ({ ...current, [token]: answer.ok ? answer.data : "unread" }));
+        setStats((current) => ({ ...current, [token]: answer.ok ? answer.data : "unread" }));
       }
     })();
     return () => {
@@ -104,107 +105,125 @@ export function CreatorCabinet({ locale, network, paused = false }: { locale: Wo
 
   const data = read?.wallet === wallet ? read?.data : null;
   const reading = Boolean(wallet) && (!read || read.wallet !== wallet || (!read.data && !read.failed));
+  const full = Boolean(wallet && !reading && data && data.launches.length > 0);
 
   return (
-    <div className={styles.page}>
-      {/* «Запустити токен» is the tab beside this one: no second way to the same page in the head. */}
-      <header className={styles.mineHeadGrid}>
-        <div className={styles.headRow}>
-          <h1 className={styles.title}>{word("mineTitle")}</h1>
+    /* «Запустити токен» is the tab beside this one and the frame's own action: no second way to the same page in the head. */
+    <Page
+      kind="overview"
+      className={styles.corePage}
+      title={word("mineTitle")}
+      lead={
+        <>
+          {word("mineLede")}
           {network === "solana:devnet" ? (
             <span className={styles.netChip} title={word("devnetHint")}>
               {word("devnet")}
             </span>
           ) : null}
           {paused ? <PausedChip locale={locale} /> : null}
-        </div>
-        <p className={styles.lede}>{word("mineLede")}</p>
-        {/* Launch's stop closed: «Забрати» waits; the cabinet is read as ever. */}
-        {paused ? <PausedNote locale={locale} /> : null}
-      </header>
-
+        </>
+      }
+      aside={
+        full && data && wallet ? (
+          <>
+            <Receipts receipts={data.receipts} network={data.network} locale={locale} />
+            <NotesBlock locale={locale} />
+            <ProfileBlock wallet={wallet} locale={locale} />
+          </>
+        ) : undefined
+      }
+    >
+      {/* Launch's stop closed: «Забрати» waits; the cabinet is read as ever. */}
+      {paused ? <PausedNote locale={locale} /> : null}
       {!wallet ? (
-        <section className={`${styles.card} ${styles.mineEmpty}`}>
-          <Wallet size={28} aria-hidden className={styles.mineEmptyIcon} />
-          <h2 className={styles.cardTitle}>{word("mineConnectTitle")}</h2>
-          <p className={styles.hint}>{word("mineConnectLine")}</p>
-          <button type="button" className="rw-btn rw-btn--primary" onClick={() => reach()}>
-            <Wallet size={18} aria-hidden /> {word("mineConnect")}
-          </button>
-        </section>
+        <EmptyState
+          icon="wallet"
+          text={word("mineConnectLine")}
+          action={
+            <ConnectWalletButton />
+          }
+        />
       ) : reading ? (
-        <section className={`${styles.card} ${styles.mineEmpty}`} aria-busy="true">
-          <CircleNotch size={22} aria-hidden className={styles.spin} />
-          <p className={styles.hint}>{word("mineReading")}</p>
-        </section>
+        <Reading label={word("mineReading")} hero lines={4} />
       ) : !data ? (
-        <section className={`${styles.card} ${styles.mineEmpty}`} role="alert">
-          <p className={styles.hint}>{word("mineUnread")}</p>
-          <button type="button" className="rw-btn" onClick={() => void load()}>
-            {word("mineReadAgain")}
-          </button>
-        </section>
+        <Unread text={word("mineUnread")} again={word("mineReadAgain")} onAgain={() => void load()} lang={lang} />
       ) : data.launches.length === 0 ? (
-        <section className={`${styles.card} ${styles.mineEmpty}`}>
-          <h2 className={styles.cardTitle}>{word("mineEmptyTitle")}</h2>
-          <p className={styles.hint}>{word("mineEmptyLine")}</p>
-          <Link href="/app/launch/new" className="rw-btn rw-btn--primary">
-            <Plus size={18} aria-hidden /> {word("mineLaunch")}
-          </Link>
-        </section>
+        <EmptyState
+          icon="inbox"
+          text={word("mineEmptyLine")}
+          action={
+            <LinkButton href="/app/launch/new" variant="primary">
+              {word("mineLaunch")}
+            </LinkButton>
+          }
+        />
       ) : (
-        /* The launches, and beside them on a wide desk the totals and the receipts; on a phone the totals come first. */
-        <div className={styles.mineBoard}>
-          <Summary data={data} locale={locale} />
-          <ul className={styles.mineList} data-area="list">
+        <>
+          <Summary data={data} stats={stats} locale={locale} />
+          {data.launches.length > 1 ? <CompareLaunches rows={data.launches} stats={stats} locale={locale} /> : null}
+          <ul className={styles.mineList}>
             {data.launches.map((row) => (
               <li key={row.token}>
-                <LaunchRow row={row} market={markets[row.token]} wallet={wallet} network={data.network} locale={locale} paused={paused} onClaimed={() => void load()} />
+                <LaunchRow row={row} stats={stats[row.token]} wallet={wallet} network={data.network} locale={locale} paused={paused} onClaimed={() => void load()} />
               </li>
             ))}
           </ul>
-          <Receipts receipts={data.receipts} network={data.network} locale={locale} />
-        </div>
+        </>
       )}
-    </div>
+    </Page>
   );
 }
 
-/** What all the wallet's launches earned it, each currency apart — never a community token turned into dollars. */
-function Summary({ data, locale }: { data: LaunchCreatorCabinetResponse; locale: WorkspaceLocale }) {
+/** How many launches reached a DEX: with some not read, a floor («2+») or «not read» — never a «0» for launches not read. */
+function onDex(card: LaunchCreatorCabinetResponse["card"], word: ReturnType<typeof launchWords>): string {
+  if (card.unread === 0) return String(card.graduated);
+  return card.graduated > 0 ? `${card.graduated}+` : word("mineOnDexUnread");
+}
+
+/**
+ * What all the wallet's launches earned it — the page's one number, each currency apart, never a community token
+ * turned into dollars — with what can be claimed now and what was claimed beside it.
+ */
+function Summary({ data, stats, locale }: { data: LaunchCreatorCabinetResponse; stats: Readonly<Record<string, StatsRead>>; locale: WorkspaceLocale }) {
   const word = launchWords(locale);
+  const lang = coreLang(locale);
   const card = data.card;
   const toClaim = new Map<string, bigint>();
   for (const row of data.launches) if (row.earnings) toClaim.set(row.pair.mint, (toClaim.get(row.pair.mint) ?? 0n) + BigInt(row.earnings.mine.unclaimedRaw));
+  const amounts = [...card.amounts].sort((a, b) => Number(b.dollar) - Number(a.dollar));
+  const figures = (metric: "earned" | "toClaim" | "claimed") =>
+    amounts.map((amount) => {
+      const pair = { mint: amount.pairMint, symbol: amount.symbol, decimals: amount.decimals, dollar: amount.dollar };
+      const raw = metric === "earned" ? amount.earnedRaw : metric === "claimed" ? amount.claimedRaw : (toClaim.get(amount.pairMint) ?? 0n);
+      return (
+        <span key={amount.pairMint} className={styles.mineFigure}>
+          {metric === "toClaim" ? exact(raw, pair, locale) : money(raw, pair, locale)}
+        </span>
+      );
+    });
   return (
-    <section className={styles.card} aria-labelledby="mine-summary" data-area="summary">
-      <h2 id="mine-summary" className={styles.visuallyHidden}>
-        {word("mineEarned")}
-      </h2>
+    <section className={styles.mineSummary} aria-label={word("mineEarned")}>
+      <HeroNumber
+        label={word("mineEarned")}
+        value={<span className={styles.mineFigures}>{figures("earned")}</span>}
+        note={`${word("mineLaunches")} ${card.launches} · ${word("mineOnDex")} ${onDex(card, word)} · ${word("mineSince", { date: formatDate(card.period.from, locale) })}`}
+        lang={lang}
+      />
       <dl className={styles.mineTotals}>
-        {(["earned", "toClaim", "claimed"] as const).map((metric) => (
-          <div key={metric} className={styles.mineTotal} data-lead={metric === "earned" ? "" : undefined}>
-            <dt>{word(metric === "earned" ? "mineEarned" : metric === "toClaim" ? "mineToClaim" : "mineClaimed")}</dt>
-            {[...card.amounts].sort((a, b) => Number(b.dollar) - Number(a.dollar)).map((amount) => {
-              const pair = { mint: amount.pairMint, symbol: amount.symbol, decimals: amount.decimals, dollar: amount.dollar };
-              const raw = metric === "earned" ? amount.earnedRaw : metric === "claimed" ? amount.claimedRaw : (toClaim.get(amount.pairMint) ?? 0n);
-              return <dd key={amount.pairMint}>{metric === "toClaim" ? exact(raw, pair, locale) : money(raw, pair, locale)}</dd>;
-            })}
-          </div>
-        ))}
+        <div className={styles.mineTotal}>
+          <dt>{word("mineToClaim")}</dt>
+          <dd>{figures("toClaim")}</dd>
+        </div>
+        <div className={styles.mineTotal}>
+          <dt>{word("mineClaimed")}</dt>
+          <dd>{figures("claimed")}</dd>
+        </div>
       </dl>
-      <p className={styles.mineMeta}>
-        <span>
-          {word("mineLaunches")} <strong>{card.launches}</strong>
-        </span>
-        <span aria-hidden>·</span>
-        <span>
-          {word("mineOnDex")} <strong>{card.graduated}</strong>
-        </span>
-        <span aria-hidden>·</span>
-        <span>{word("mineSince", { date: formatDate(card.period.from, locale) })}</span>
-      </p>
       {card.unread > 0 ? <p className={styles.unread}>{word("mineSummaryUnread", { n: card.unread })}</p> : null}
+      <div className={own.summaryWide}>
+        <EarnedBySource rows={data.launches} stats={stats} locale={locale} />
+      </div>
     </section>
   );
 }
@@ -213,7 +232,7 @@ type ClaimPhase = "idle" | "prepare" | "sign" | "send" | "done" | "error";
 
 function LaunchRow({
   row,
-  market,
+  stats,
   wallet,
   network,
   locale,
@@ -221,7 +240,7 @@ function LaunchRow({
   onClaimed,
 }: {
   row: LaunchCabinetRow;
-  market: LaunchMarketResponse | "unread" | undefined;
+  stats: StatsRead;
   wallet: string;
   network: "solana:devnet" | "solana:mainnet";
   locale: WorkspaceLocale;
@@ -229,12 +248,20 @@ function LaunchRow({
   onClaimed: () => void;
 }) {
   const word = launchWords(locale);
+  const cabinet = cabinetWords(locale);
+  const say = claimAllWords(locale);
+  const lang = coreLang(locale);
   const { connection } = useSolanaConnection();
   const [phase, setPhase] = useState<ClaimPhase>("idle");
+  /* «Забрати все» (SOL-L12): every pocket read and shown before a wallet is asked; the claim built after is checked against it. */
+  const [review, setReview] = useState<{ state: "reading" } | { state: "shown"; data: LaunchClaimReviewResponse } | { state: "unread" } | null>(null);
+  const read = stats && stats !== "unread" ? stats : null;
   /* Where a refusal came from: before anything was sent, or at the send — when the answer may be lost after the claim went out. */
   const [failure, setFailure] = useState<{ code: string; message: string; step?: "send" } | null>(null);
   const [result, setResult] = useState<LaunchClaimSubmitResponse | null>(null);
   const [cost, setCost] = useState<string | null>(null);
+  /* When the claim went out — the receipt's time, not the moment it is drawn again. */
+  const [claimedAt, setClaimedAt] = useState(0);
   const earnings = row.earnings;
   /* A wallet named in a sharing still being confirmed: nothing of it is the wallet's yet. */
   const waiting = row.role === "recipient" && row.feeSharing?.state !== "SHARED";
@@ -242,31 +269,63 @@ function LaunchRow({
   const unclaimed = earnings ? BigInt(earnings.mine.unclaimedRaw) : 0n;
   const busy = phase === "prepare" || phase === "sign" || phase === "send";
   const shared = row.feeSharing && row.feeSharing.state !== "FAILED";
+  /* The claim was built a second time: the first signature came back after the bytes had aged (AG-1). */
+  const [again, setAgain] = useState(false);
 
-  const claim = async () => {
+  const openReview = async () => {
+    setFailure(null);
+    setReview({ state: "reading" });
+    const answer = await api<LaunchClaimReviewResponse>(`/api/v1/launch/${row.token}/claim/review?wallet=${encodeURIComponent(wallet)}`);
+    if (answer.ok) setReview({ state: "shown", data: answer.data });
+    else if (answer.code === "WALLET_MISMATCH" || answer.code === "LAUNCH_NOT_FOUND") {
+      setReview(null);
+      setFailure({ code: answer.code, message: answer.message });
+      setPhase("error");
+    } else setReview({ state: "unread" });
+  };
+
+  const claim = async (shown: LaunchClaimReviewResponse) => {
+    setReview(null);
     setFailure(null);
     setPhase("prepare");
     const base = `/api/v1/launch/${row.token}/claim`;
-    const built = await api<LaunchClaimBuildResponse>(`${base}/build`, { method: "POST", body: JSON.stringify({ wallet }) });
-    if (!built.ok) {
-      setFailure(built);
-      setPhase("error");
-      return;
-    }
-    setCost(built.data.networkCostLamports);
-    setPhase("sign");
     if (!connection || connection.address !== wallet) {
       setFailure({ code: "WALLET_CHANGED", message: "" });
       setPhase("error");
       return;
     }
-    const signed = await signTransactions({ wallet: connection.wallet, address: wallet, unsignedWireBase64: [...built.data.unsignedWireBase64], chain: built.data.network });
-    if (!signed.ok) {
-      /* Cancelled in the wallet: nothing was sent, and the button is back. */
-      setFailure({ code: "WALLET_REFUSED", message: signed.reason });
-      setPhase("idle");
+    setAgain(false);
+    /* Bytes live ~30 s (`lib/solana/blockhash-life.ts`): a signature that comes back later is not sent — the claim is built again. */
+    const fresh = await signFreshBytes({
+      build: async () => {
+        setPhase("prepare");
+        const built = await api<LaunchClaimBuildResponse>(`${base}/build`, { method: "POST", body: JSON.stringify({ wallet }) });
+        /* The bytes must be the claim the Review showed — as many transactions, the same pockets — or no wallet is asked. */
+        if (built.ok && !buildMatchesReview(shown, built.data)) return { ok: false as const, code: CLAIM_CHANGED, message: "" };
+        return built;
+      },
+      signableMsOf: (data) => data.signableMs,
+      sign: async (data) => {
+        setCost(data.networkCostLamports);
+        setPhase("sign");
+        const answer = await signTransactions({ wallet: connection.wallet, address: wallet, unsignedWireBase64: [...data.unsignedWireBase64], chain: data.network });
+        return answer.ok ? { ok: true, value: answer.signedWireBase64 } : answer;
+      },
+      onRebuild: (why) => setAgain(why === "late"),
+    });
+    if (!fresh.ok) {
+      if (fresh.stage === "sign") {
+        /* Cancelled in the wallet: nothing was sent, and the button is back. */
+        setFailure({ code: "WALLET_REFUSED", message: fresh.reason });
+        setPhase("idle");
+        return;
+      }
+      setFailure(fresh.stage === "build" ? fresh.failure : { code: "LAUNCH_BUILD_EXPIRED", message: "" });
+      setPhase("error");
       return;
     }
+    const built = { data: fresh.built };
+    const signed = { signedWireBase64: fresh.signed };
     setPhase("send");
     const sent = await api<LaunchClaimSubmitResponse>(`${base}/submit`, { method: "POST", body: JSON.stringify({ buildId: built.data.buildId, wallet, signedWireBase64: signed.signedWireBase64 }) });
     if (!sent.ok) {
@@ -277,170 +336,167 @@ function LaunchRow({
       return;
     }
     setResult(sent.data);
+    setClaimedAt(Date.now());
     setPhase("done");
     onClaimed();
   };
 
   return (
-    <article className={`${styles.card} ${styles.mineCard}`} aria-labelledby={`mine-${row.token}`}>
-      <header className={styles.mineHead}>
-        <span className={styles.minePicture}>
-          {/* eslint-disable-next-line @next/next/no-img-element -- the token's own picture, served by its immutable address */}
-          {row.image ? <img src={row.image} alt="" /> : <ImageSquare size={22} aria-hidden />}
-        </span>
-        <div className={styles.mineTitleBlock}>
-          <h2 id={`mine-${row.token}`} className={styles.mineName}>
-            <Link href={`/app/launch/${row.token}`}>{row.name}</Link>
-          </h2>
-          <div className={styles.tokenMeta}>
-            <span className={styles.tokenSymbol}>${row.symbol}</span>
-            <span className={styles.chip}>{word("presetChip", { name: presetName })}</span>
-            {row.role === "recipient" && earnings ? <span className={styles.chip}>{word("mineRoleShare", { pct: formatBps(earnings.mine.shareBps, locale) })}</span> : null}
-          </div>
-          <p className={styles.mineSub}>
-            {word("mineLaunchedAt", { date: formatDate(row.launchedAt, locale) })} · <span className={styles.addr}>{shortAddress(row.token)}</span>
-          </p>
-        </div>
-      </header>
-
-      <div className={styles.mineProgress}>
-        <div className={styles.progressHead}>
-          <span className={styles.hint}>{row.migrated ? word("graduated") : word("progress")}</span>
-          {row.progressBps === null ? (
-            <span className={styles.progressValue} data-unknown="">
-              {word("progressUnknown")}
-            </span>
-          ) : (
-            <span className={styles.progressValue}>{row.migrated ? <CheckCircle size={16} weight="fill" aria-hidden className={styles.mineDone} /> : formatBps(row.progressBps, locale)}</span>
-          )}
-        </div>
-        {row.progressBps !== null && !row.migrated ? (
-          <div className={styles.bar} role="progressbar" aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.round(row.progressBps / 100)} aria-label={word("progress")}>
-            <span className={styles.barFill} style={{ width: `${row.progressBps / 100}%` }} />
-          </div>
-        ) : null}
-      </div>
-
-      <dl className={styles.mineStats}>
-        <div className={styles.stat}>
-          <dt>{word("mineVolume")}</dt>
-          <dd>{marketFigure(market, (data) => `${data.volume24h.complete ? "" : "≥ "}${formatMoneyShort(data.volume24h.pair, locale, data.pair.dollar, data.pair.symbol)}`, word)}</dd>
-        </div>
-        <div className={styles.stat}>
-          <dt>{word("mineHolders")}</dt>
-          <dd>{marketFigure(market, (data) => `${data.holders.atLeast ? "≥ " : ""}${formatCountShort(data.holders.count, locale)}`, word)}</dd>
-        </div>
-        <div className={styles.stat}>
-          <dt>{word("mineEarned")}</dt>
-          <dd>{earnings ? money(earnings.mine.earnedRaw, row.pair, locale) : <span className={styles.statUnread}>{word(waiting ? "mineShareWaiting" : "mineNotRead")}</span>}</dd>
-        </div>
-        <div className={styles.stat}>
-          <dt>{word("mineToClaim")}</dt>
-          <dd>{earnings ? exact(earnings.mine.unclaimedRaw, row.pair, locale) : <span className={styles.statUnread}>{word(waiting ? "mineShareWaiting" : "mineNotRead")}</span>}</dd>
-        </div>
-      </dl>
-
-      {earnings ? (
-        <details className={styles.details}>
-          <summary className={styles.summary}>
-            {word("mineBreakdown")} <CaretDown size={14} aria-hidden className={styles.caret} />
-          </summary>
-          {shared ? <p className={styles.hint}>{word("mineBreakdownShare", { pct: formatBps(earnings.mine.shareBps, locale) })}</p> : null}
-          <dl className={styles.rows}>
-            {(["curve", "graduation", "lp"] as const).map((source) => {
-              const part = earnings.role[source];
-              /* Shared: the wallet's part of each source, so the rows add up to what it earned. */
-              const earned = shared ? (BigInt(part.earnedRaw) * BigInt(earnings.mine.shareBps)) / 10_000n : BigInt(part.earnedRaw);
-              const left = BigInt(part.unclaimedRaw);
-              const later = source !== "curve" && !row.migrated;
-              return (
-                <div key={source} className={styles.row}>
-                  <dt>{word(`source_${source}`)}</dt>
-                  <dd>
-                    {later ? (
-                      <span className={styles.statUnread}>{word("sourceAfterDex")}</span>
-                    ) : (
-                      <>
-                        {money(earned, row.pair, locale)}
-                        {!shared && left > 0n && left !== earned ? <span className={styles.mineLeft}>{word("sourceLeft", { amount: exact(left, row.pair, locale) })}</span> : null}
-                      </>
-                    )}
-                  </dd>
-                </div>
-              );
-            })}
-          </dl>
-        </details>
-      ) : null}
-
-      {row.feeSharing ? <Sharing row={row} wallet={wallet} network={network} locale={locale} /> : null}
-
-      {phase === "done" && result ? (
-        <ClaimResult result={result} row={row} network={network} locale={locale} onClose={() => setPhase("idle")} />
-      ) : busy ? (
-        <ol className={styles.steps} aria-live="polite">
-          {(["prepare", "sign", "send"] as const).map((step) => {
-            const order = ["prepare", "sign", "send"];
-            const state = order.indexOf(step) < order.indexOf(phase) ? "done" : step === phase ? "active" : "next";
-            return (
-              <li key={step} className={styles.step} data-state={state}>
-                <span className={styles.stepIcon}>
-                  {state === "done" ? <CheckCircle size={18} weight="fill" aria-hidden /> : state === "active" ? <CircleNotch size={18} aria-hidden className={styles.spin} /> : <span className={styles.stepDot} />}
-                </span>
-                {step === "prepare" ? word("stepPrepareClaim") : step === "sign" ? word("stepSign") : word("stepSendClaim")}
-              </li>
-            );
-          })}
-          {phase !== "prepare" ? <li className={styles.mineCost}>{cost === null ? word("claimCostUnknown") : word("claimCost", { sol: formatRaw(cost, 9, locale, 6) })}</li> : null}
-        </ol>
-      ) : (
-        <div className={styles.mineActions}>
-          {row.claimable && unclaimed > 0n && !paused ? (
-            <button type="button" className={`rw-btn ${styles.cta} ${styles.claimBtn}`} onClick={() => void claim()}>
-              {word("claim", { amount: exact(unclaimed, row.pair, locale) })}
-            </button>
-          ) : (
-            <p className={styles.hint}>{waiting ? word("mineSharePending") : earnings && earnings.mine.shareBps === 0 ? word("claimNotYours") : word("claimNothing")}</p>
-          )}
-          <Link className={styles.markLink} href={`/app/launch/${row.token}`}>
-            {word("mineOpenToken")} <ArrowSquareOut size={14} aria-hidden />
-          </Link>
-        </div>
-      )}
-
-      {failure && phase !== "done" ? (
-        failure.code === "WALLET_REFUSED" ? (
-          <p className={styles.cancelled} role="status">
-            {word("walletCancelled")}
-          </p>
-        ) : (
-          <div className={styles.failure} role="alert">
-            <p className={styles.failureTitle}>
-              <Warning size={18} weight="fill" aria-hidden /> {word(claimFailureTitle(failure.code, failure.step === "send"))}
-            </p>
-            <p className={styles.failureText}>{claimFailureText(failure.code, failure.step === "send", word)}</p>
+    <Block
+      title={
+        <>
+          {row.name} <span className={styles.tokenSymbol}>${row.symbol}</span>
+        </>
+      }
+      titleAs="h2"
+      lang={lang}
+      aria-label={`${row.name} $${row.symbol}`}
+      action={
+        phase === "done" || busy ? undefined : (
+          <div className={styles.mineActions}>
+            {row.claimable && unclaimed > 0n && !paused ? (
+              <Button variant="secondary" onClick={() => void openReview()} disabled={review !== null} lang={lang}>
+                {say("claimAll", { amount: exact(unclaimed, row.pair, locale) })}
+              </Button>
+            ) : (
+              <p className={styles.hint}>
+                {waiting ? word("mineSharePending") : earnings && earnings.mine.shareBps === 0 ? word("claimNotYours") : paused && unclaimed > 0n ? cabinet("claimPaused") : word("claimNothing")}
+              </p>
+            )}
+            <LinkButton href={`/app/launch/${row.token}`} variant="ghost">
+              {word("mineOpenToken")}
+            </LinkButton>
           </div>
         )
-      ) : null}
-    </article>
+      }
+    >
+      <div className={`${styles.blockStack} ${own.fitAll}`}>
+        <div className={styles.mineHead}>
+          <span className={styles.minePicture}>
+            {/* eslint-disable-next-line @next/next/no-img-element -- the token's own picture, served by its immutable address */}
+            {row.image ? <img src={row.image} alt="" /> : <ImageSquare size={22} aria-hidden />}
+          </span>
+          <div className={styles.mineTitleBlock}>
+            <div className={styles.tokenMeta}>
+              <span className={styles.chip}>{word("presetChip", { name: presetName })}</span>
+              {row.role === "recipient" && earnings ? <span className={styles.chip}>{word("mineRoleShare", { pct: formatBps(earnings.mine.shareBps, locale) })}</span> : null}
+            </div>
+            <p className={styles.mineSub}>
+              {word("mineLaunchedAt", { date: formatDate(row.launchedAt, locale) })} · <span className={styles.addr}>{shortAddress(row.token)}</span>
+            </p>
+          </div>
+        </div>
+
+        <div className={styles.mineProgress}>
+          <div className={styles.progressHead}>
+            <span className={styles.hint}>{row.migrated ? word("graduated") : word("progress")}</span>
+            {row.progressBps === null ? (
+              <span className={styles.progressValue} data-unknown="">
+                {word("progressUnknown")}
+              </span>
+            ) : (
+              <span className={styles.progressValue}>{row.migrated ? <CheckCircle size={16} weight="fill" aria-hidden className={styles.mineDone} /> : formatBps(row.progressBps, locale)}</span>
+            )}
+          </div>
+          {row.progressBps !== null && !row.migrated ? (
+            <div className={styles.bar} role="progressbar" aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.round(row.progressBps / 100)} aria-label={word("progress")}>
+              <span className={styles.barFill} style={{ width: `${row.progressBps / 100}%` }} />
+            </div>
+          ) : null}
+        </div>
+
+        <LaunchMarketFigures row={row} read={stats} locale={locale} />
+
+        <dl className={styles.mineStats}>
+          <div className={styles.stat}>
+            <dt>{word("mineEarned")}</dt>
+            <dd>{earnings ? money(earnings.mine.earnedRaw, row.pair, locale) : <span className={styles.statUnread}>{word(waiting ? "mineShareWaiting" : "mineNotRead")}</span>}</dd>
+          </div>
+          <div className={styles.stat}>
+            <dt>{word("mineToClaim")}</dt>
+            <dd>{earnings ? exact(earnings.mine.unclaimedRaw, row.pair, locale) : <span className={styles.statUnread}>{word(waiting ? "mineShareWaiting" : "mineNotRead")}</span>}</dd>
+          </div>
+        </dl>
+
+        {earnings ? (
+          <details className={`${styles.details} ${own.fit}`}>
+            <summary className={styles.summary}>
+              {word("mineBreakdown")} <CaretDown size={14} aria-hidden className={styles.caret} />
+            </summary>
+            {shared ? <p className={styles.hint}>{word("mineBreakdownShare", { pct: formatBps(earnings.mine.shareBps, locale) })}</p> : null}
+            <LaunchSources row={row} read={stats} locale={locale} />
+            {row.migrated === false ? <p className={styles.hint}>{cabinet("afterDexHint")}</p> : null}
+          </details>
+        ) : null}
+
+        {read?.market ? <LaunchDexMarket stats={read} pair={row.pair} locale={locale} /> : null}
+        {read ? <LaunchOwnTrades stats={read} pair={row.pair} locale={locale} /> : null}
+
+        {row.feeSharing ? <Sharing row={row} wallet={wallet} network={network} locale={locale} /> : null}
+        {/* SOL-L2b: the creator divides their own share — the rule, what it owes, the steps and the rounds. */}
+        {row.role === "creator" ? <SplitBlock row={row} wallet={wallet} network={network} locale={locale} paused={paused} /> : null}
+        {/* SOL-L10: a «Розширений» launch may take a fee on transfers — its cycle and the creator's two steps; nothing when it takes none. */}
+        {row.role === "creator" && row.preset === "advanced" ? <TransferFeeCabinet token={row.token} symbol={row.symbol} wallet={wallet} locale={locale} network={network} paused={paused} /> : null}
+
+        {review?.state === "reading" ? <ClaimAllReading locale={locale} /> : null}
+        {review?.state === "unread" ? <Unread text={say("reviewUnread")} again={say("reviewAgain")} onAgain={() => void openReview()} lang={lang} /> : null}
+        {review?.state === "shown" ? (
+          <ClaimAllReview review={review.data} symbol={row.symbol} wallet={wallet} locale={locale} signing={busy} onSign={() => void claim(review.data)} onCancel={() => setReview(null)} />
+        ) : null}
+
+        {phase === "done" && result ? (
+          <ClaimResult result={result} at={claimedAt} row={row} network={network} locale={locale} onClose={() => setPhase("idle")} />
+        ) : busy ? (
+          <ol className={styles.steps} aria-live="polite">
+            {(["prepare", "sign", "send"] as const).map((step) => {
+              const order = ["prepare", "sign", "send"];
+              const state = order.indexOf(step) < order.indexOf(phase) ? "done" : step === phase ? "active" : "next";
+              return (
+                <li key={step} className={styles.step} data-state={state}>
+                  <span className={styles.stepIcon}>
+                    {state === "done" ? <CheckCircle size={18} weight="fill" aria-hidden /> : state === "active" ? <CircleNotch size={18} aria-hidden className={styles.spin} /> : <span className={styles.stepDot} />}
+                  </span>
+                  {step === "prepare" ? word("stepPrepareClaim") : step === "sign" ? word(again ? "stepSignAgain" : "stepSign") : word("stepSendClaim")}
+                </li>
+              );
+            })}
+            {phase !== "prepare" ? <li className={styles.mineCost}>{cost === null ? word("claimCostUnknown") : word("claimCost", { sol: formatRaw(cost, 9, locale, 6) })}</li> : null}
+          </ol>
+        ) : null}
+
+        {failure && phase !== "done" ? (
+          failure.code === "WALLET_REFUSED" ? (
+            <p className={styles.cancelled} role="status">
+              {word("walletCancelled")}
+            </p>
+          ) : (
+            <div className={styles.failure} role="alert">
+              <p className={styles.failureTitle}>
+                <Warning size={18} weight="fill" aria-hidden /> {word(claimFailureTitle(failure.code, failure.step === "send"))}
+              </p>
+              <p className={styles.failureText}>{claimFailureText(failure.code, failure.step === "send", word, locale)}</p>
+            </div>
+          )
+        ) : null}
+      </div>
+    </Block>
   );
 }
 
-function marketFigure(market: LaunchMarketResponse | "unread" | undefined, figure: (data: LaunchMarketResponse) => string, word: Word) {
-  if (market === undefined) return <span className={styles.statUnread}>{word("mineMarketReading")}</span>;
-  if (market === "unread") return <span className={styles.statUnread}>{word("mineNotRead")}</span>;
-  return figure(market);
-}
+/** A client-side refusal: the claim built is not the one the Review showed; nothing was signed. */
+const CLAIM_CHANGED = "LAUNCH_CLAIM_CHANGED";
 
 /** The title says only what is known: «nothing was claimed» where the claim was refused before or by the network, else what happened. */
 function claimFailureTitle(code: string, atSend: boolean): "errClaimTitle" | "errClaimTitleUnknown" | "errClaimTitleSent" {
   if (code === "LAUNCH_BUILD_USED") return "errClaimTitleSent";
-  const known = ["LAUNCH_SUBMIT_FAILED", "LAUNCH_NOTHING_TO_CLAIM", "LAUNCH_SIGNED_OTHER_BYTES", "LAUNCH_BUILD_EXPIRED", "WALLET_CHANGED", "WALLET_MISMATCH", "LAUNCH_NOT_FOUND", "LAUNCH_PAUSED"];
+  const known = [CLAIM_CHANGED, "LAUNCH_SUBMIT_FAILED", "LAUNCH_NOTHING_TO_CLAIM", "LAUNCH_SIGNED_OTHER_BYTES", "LAUNCH_BUILD_EXPIRED", "WALLET_CHANGED", "WALLET_MISMATCH", "LAUNCH_NOT_FOUND", "LAUNCH_PAUSED"];
   return atSend && !known.includes(code) ? "errClaimTitleUnknown" : "errClaimTitle";
 }
 
-function claimFailureText(code: string, atSend: boolean, word: Word): string {
+function claimFailureText(code: string, atSend: boolean, word: Word, locale: WorkspaceLocale): string {
   switch (code) {
+    case CLAIM_CHANGED:
+      return claimAllWords(locale)("changed");
     case "LAUNCH_NOTHING_TO_CLAIM":
       return word("errClaimNothing");
     case "WALLET_MISMATCH":
@@ -491,96 +547,128 @@ function Sharing({ row, wallet, network, locale }: { row: LaunchCabinetRow; wall
   );
 }
 
-function ClaimResult({ result, row, network, locale, onClose }: { result: LaunchClaimSubmitResponse; row: LaunchCabinetRow; network: "solana:devnet" | "solana:mainnet"; locale: WorkspaceLocale; onClose: () => void }) {
+function ClaimResult({ result, at, row, network, locale, onClose }: { result: LaunchClaimSubmitResponse; at: number; row: LaunchCabinetRow; network: "solana:devnet" | "solana:mainnet"; locale: WorkspaceLocale; onClose: () => void }) {
   const word = launchWords(locale);
+  const lang = coreLang(locale);
   const received = result.receipts.reduce((total, receipt) => total + BigInt(receipt.receivedRaw), 0n);
   const confirmed = result.state === "CONFIRMED";
   /* A part said as a part only when something was received; a first transaction still unconfirmed is said as pending. */
   const partial = result.state === "PARTIAL" && received > 0n;
+  const signatures = [...result.receipts.map((receipt) => receipt.signature), ...result.pending];
   return (
     <div className={styles.mineResult} role="status" aria-live="polite">
-      <p className={styles.mineResultTitle}>
-        {confirmed ? <CheckCircle size={18} weight="fill" aria-hidden className={styles.mineDone} /> : partial ? <Warning size={18} weight="fill" aria-hidden className={styles.minePartial} /> : <Clock size={18} aria-hidden />}
-        {confirmed ? word("claimDone", { amount: exact(received, row.pair, locale) }) : partial ? word("claimPartial", { amount: exact(received, row.pair, locale) }) : word("claimPendingTitle")}
-      </p>
+      <CoreReceipt
+        variant="full"
+        titleAs="h3"
+        lang={lang}
+        status={confirmed ? "completed" : "pending"}
+        title={confirmed ? word("claimDone", { amount: exact(received, row.pair, locale) }) : partial ? word("claimPartial", { amount: exact(received, row.pair, locale) }) : word("claimPendingTitle")}
+        amount={received > 0n ? `+${exact(received, row.pair, locale)}` : "—"}
+        time={new Intl.DateTimeFormat(locale === "uk" ? "uk-UA" : "en-US", { hour: "2-digit", minute: "2-digit" }).format(new Date(at))}
+        network={network === "solana:devnet" ? "Solana Devnet" : "Solana"}
+        transaction={signatures[0] ? shortAddress(signatures[0]) : undefined}
+        onVerify={signatures[0] ? () => window.open(explorerUrl(network, "tx", signatures[0]!), "_blank", "noopener,noreferrer") : undefined}
+      />
       <p className={styles.hint}>{confirmed ? word("claimDoneLine") : result.state === "PARTIAL" ? word("claimPartialLine") : word("claimPendingLine")}</p>
-      {[...result.receipts.map((receipt) => receipt.signature), ...result.pending].map((signature) => (
-        <a key={signature} className={styles.markLink} href={explorerUrl(network, "tx", signature)} target="_blank" rel="noreferrer noopener">
-          {word("viewTx")} {shortAddress(signature)} <ArrowSquareOut size={14} aria-hidden />
-        </a>
-      ))}
-      <button type="button" className="rw-btn" onClick={onClose}>
+      {/* A claim in more than one transaction: each one, where anyone can see it. */}
+      {signatures.length > 1
+        ? signatures.slice(1).map((signature) => (
+            <a key={signature} className={styles.markLink} href={explorerUrl(network, "tx", signature)} target="_blank" rel="noreferrer noopener">
+              {word("viewTx")} {shortAddress(signature)} <ArrowSquareOut size={14} aria-hidden />
+            </a>
+          ))
+        : null}
+      <Button variant="secondary" onClick={onClose} lang={lang}>
         {word("claimAgain")}
-      </button>
+      </Button>
     </div>
   );
 }
 
-/** The claim receipts: what each program paid by its own event, and what the wallet received — each with its transaction. */
+/**
+ * The claim receipts, as the core's receipt: what the wallet received, «Перевірити» to its transaction — and, a press
+ * deeper, what each program paid by its own event.
+ */
 function Receipts({ receipts, network, locale }: { receipts: readonly LaunchClaimReceipt[]; network: "solana:devnet" | "solana:mainnet"; locale: WorkspaceLocale }) {
   const word = launchWords(locale);
+  const lang = coreLang(locale);
   return (
-    <section className={styles.card} aria-labelledby="mine-receipts" data-area="receipts">
-      <h2 id="mine-receipts" className={styles.cardTitle}>
-        <Receipt size={18} aria-hidden /> {word("receiptsTitle")}
-      </h2>
+    <Block title={word("receiptsTitle")} icon="receipt" titleAs="h2" lang={lang}>
       {receipts.length === 0 ? (
         <p className={styles.hint}>{word("receiptsEmpty")}</p>
       ) : (
         <ul className={styles.mineReceipts}>
           {receipts.map((receipt) => {
             /* A transaction that only funded the shared vault received nothing itself: its figure is what it put in. */
-            const paidIn = BigInt(receipt.paid.curve) + BigInt(receipt.paid.graduation) + BigInt(receipt.paid.lp);
+            const paidIn = BigInt(receipt.paid.curve) + BigInt(receipt.paid.graduation) + BigInt(receipt.paid.lp) + BigInt(receipt.paid.surplus ?? "0");
             const intoVault = BigInt(receipt.receivedRaw) === 0n && paidIn > 0n;
             const shared = receipt.vaultPaidRaw !== null || intoVault;
             return (
               <li key={receipt.signature} className={styles.mineReceipt}>
-                <div className={styles.mineReceiptHead}>
-                  <span>
-                    <strong>{receipt.name}</strong> <span className={styles.tokenSymbol}>${receipt.symbol}</span>{" "}
-                    <span className={styles.hint}>
-                      {receipt.at ? formatDate(receipt.at, locale) : ""} · <span className={styles.addr}>{shortAddress(receipt.token)}</span>
-                    </span>
-                  </span>
-                  <span className={styles.mineReceiptAmount}>
-                    {intoVault ? <span className={styles.optional}>{word("receiptIntoVault")} </span> : null}
-                    {exact(intoVault ? paidIn : receipt.receivedRaw, receipt.pair, locale)}
-                  </span>
-                </div>
+                <CoreReceipt
+                  variant="compact"
+                  lang={lang}
+                  status="completed"
+                  title={
+                    <>
+                      {receipt.name} <span className={styles.tokenSymbol}>${receipt.symbol}</span>
+                    </>
+                  }
+                  amount={
+                    <>
+                      {intoVault ? <span className={styles.optional}>{word("receiptIntoVault")} </span> : null}
+                      {exact(intoVault ? paidIn : receipt.receivedRaw, receipt.pair, locale)}
+                    </>
+                  }
+                  time={receipt.at ? formatDate(receipt.at, locale) : shortAddress(receipt.signature)}
+                  onVerify={() => window.open(explorerUrl(network, "tx", receipt.signature), "_blank", "noopener,noreferrer")}
+                />
                 <details className={styles.details}>
                   <summary className={styles.summary}>
                     {word("receiptPaid")}
                     {shared ? <span className={styles.optional}> · {word("receiptIntoVault")}</span> : null} <CaretDown size={14} aria-hidden className={styles.caret} />
                   </summary>
                   <dl className={styles.rows}>
-                    {(["curve", "graduation", "lp"] as const)
-                      .filter((source) => BigInt(receipt.paid[source]) > 0n)
+                    {(["curve", "graduation", "lp", "surplus"] as const)
+                      /* A receipt kept before 1.70.0 names no surplus. */
+                      .filter((source) => BigInt(receipt.paid[source] ?? "0") > 0n)
                       .map((source) => (
                         <div key={source} className={styles.row}>
                           <dt>{word(`source_${source}`)}</dt>
-                          <dd>{formatRaw(receipt.paid[source], receipt.pair.decimals, locale, 4)} {receipt.pair.symbol}</dd>
+                          <dd>
+                            {formatRaw(receipt.paid[source], receipt.pair.decimals, locale, 4)} {receipt.pair.symbol}
+                          </dd>
                         </div>
                       ))}
                     {shared ? (
                       <div className={styles.row}>
                         <dt>{word("receiptVaultPaid")}</dt>
-                        <dd>{formatRaw(receipt.vaultPaidRaw!, receipt.pair.decimals, locale, 4)} {receipt.pair.symbol}</dd>
+                        <dd>
+                          {formatRaw(receipt.vaultPaidRaw!, receipt.pair.decimals, locale, 4)} {receipt.pair.symbol}
+                        </dd>
                       </div>
                     ) : null}
                     <div className={styles.row}>
                       <dt>{word("receiptReceived")}</dt>
-                      <dd>{formatRaw(receipt.receivedRaw, receipt.pair.decimals, locale, 4)} {receipt.pair.symbol}</dd>
+                      <dd>
+                        {formatRaw(receipt.receivedRaw, receipt.pair.decimals, locale, 4)} {receipt.pair.symbol}
+                      </dd>
+                    </div>
+                    <div className={styles.row}>
+                      <dt>{word("viewTx")}</dt>
+                      <dd>
+                        <a className={`${styles.markLink} ${styles.addr}`} href={explorerUrl(network, "tx", receipt.signature)} target="_blank" rel="noreferrer noopener">
+                          {shortAddress(receipt.signature)} <ArrowSquareOut size={12} aria-hidden />
+                        </a>
+                      </dd>
                     </div>
                   </dl>
                 </details>
-                <a className={styles.markLink} href={explorerUrl(network, "tx", receipt.signature)} target="_blank" rel="noreferrer noopener">
-                  {word("viewTx")} {shortAddress(receipt.signature)} <ArrowSquareOut size={14} aria-hidden />
-                </a>
               </li>
             );
           })}
         </ul>
       )}
-    </section>
+    </Block>
   );
 }

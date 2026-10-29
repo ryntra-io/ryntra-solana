@@ -28,7 +28,7 @@ import { allowedFromRuns } from "../answer.ts";
 import { readBudgetState, reserveCall, writeReceipt } from "../budget.ts";
 import { AGENT_PROMPT_VERSION, safetyIdentifier } from "../model.ts";
 import { CitationBook, type Locale } from "../provenance.ts";
-import type { AgentDeps } from "../service.ts";
+import { creditsContextFor, type AgentDeps } from "../service.ts";
 import { resolveAsset } from "../tools/readers.ts";
 import { runTool } from "../tools/registry.ts";
 import type { ToolContext, ToolRun } from "../tools/types.ts";
@@ -171,7 +171,8 @@ function figuresAllowed(text: string, allowed: ReadonlySet<number>): boolean {
   return true;
 }
 
-export type LensVerification<T> = Readonly<{ value: T; dropped: number }>;
+/** `kept` — the model's own sentences that stood; AI-04 keeps the credits only when one did. */
+export type LensVerification<T> = Readonly<{ value: T; dropped: number; kept: number }>;
 
 /**
  * A model's Brief held to the reads: a sentence that cites an id no tool
@@ -182,6 +183,7 @@ export type LensVerification<T> = Readonly<{ value: T; dropped: number }>;
 export function verifyBrief(draft: AgentBrief, packet: LensPacket, deterministic: AgentBrief): LensVerification<AgentBrief> {
   const allowed = allowedFromRuns(packet.reads.runs);
   let dropped = 0;
+  let keptTotal = 0;
   const out: AgentBrief = { changed: [], matters: [], supports: [], unknown: [], checks: [], insufficient: draft.insufficient || deterministic.insufficient };
   for (const section of ["changed", "matters", "supports", "unknown", "checks"] as const) {
     const kept = draft[section]
@@ -195,9 +197,10 @@ export function verifyBrief(draft: AgentBrief, packet: LensPacket, deterministic
         return { text, cites: [...new Set(sentence.cites)].filter((id) => packet.citations.has(id)).slice(0, 6) };
       })
       .filter((row): row is { text: string; cites: string[] } => row !== null);
+    keptTotal += kept.length;
     out[section] = kept.length > 0 ? kept : deterministic[section];
   }
-  return { value: out, dropped };
+  return { value: out, dropped, kept: keptTotal };
 }
 
 /**
@@ -238,7 +241,8 @@ export function verifyCritic(draft: AgentCritic, packet: LensPacket, determinist
       return { text, cites: [...new Set(sentence.cites)].slice(0, 6) };
     })
     .filter((row): row is { text: string; cites: string[] } => row !== null);
-  return { value: { findings: findings.slice(0, 12), gaps: gaps.length > 0 ? gaps.slice(0, 6) : deterministic.gaps, insufficient: deterministic.insufficient }, dropped };
+  const reworded = findings.filter((row) => byId.get(row.id)?.text !== row.text).length;
+  return { value: { findings: findings.slice(0, 12), gaps: gaps.length > 0 ? gaps.slice(0, 6) : deterministic.gaps, insufficient: deterministic.insufficient }, dropped, kept: reworded + gaps.length };
 }
 
 /* ------------------------------------------------------------ the exchange */
@@ -252,7 +256,7 @@ const lensTurnId = (): string => `lns_${randomBytes(12).toString("hex")}`;
 
 export async function handleAgentLens(
   deps: AgentDeps,
-  input: Readonly<{ owner: string; subject: AgentContext; locale: Locale; format: LensFormat; compose: LensCompose }>,
+  input: Readonly<{ owner: string; subject: AgentContext; locale: Locale; format: LensFormat; compose: LensCompose; acceptCredits?: number | null }>,
 ): Promise<LensResult> {
   const nowMs = (deps.now ?? Date.now)();
   const locale = input.locale;
@@ -277,21 +281,28 @@ export async function handleAgentLens(
 
   const worthy = input.compose === "model" && deps.model !== null && deps.budget.modelEnabled && !(brief?.insufficient ?? false) && !(critic?.insufficient ?? false);
   if (worthy && deps.model) {
-    const reservation = await reserveCall(deps.store, input.owner, deps.budget, nowMs);
+    const turnId = lensTurnId();
+    const credits = await creditsContextFor(deps, input.owner, nowMs);
+    /* AI-04: the Brief (L1) is a token report's price, the Critic (L2) a deep analysis' — held before the call, kept only when its words are used. */
+    const reservation = await reserveCall(deps.store, input.owner, deps.budget, nowMs, credits ? { context: credits, action: input.format === "critic" ? "deep" : "tokenReport", acceptCredits: input.acceptCredits ?? null, idem: `lens:${turnId}` } : null);
     if (!reservation.ok) {
       if (reservation.code === "AGENT_BUSY") return { ok: false, code: "AGENT_BUSY", reason: reservation.reason };
       /* Over the allowance the format is still answered, deterministically; the budget state on the response says why. */
     } else {
-      const turnId = lensTurnId();
       const composed = input.format === "brief" ? await deps.model.composeBrief?.(packet, safetyIdentifier(input.owner)) : await deps.model.composeCritic?.(packet, safetyIdentifier(input.owner));
       if (composed && composed.ok) {
-        if (composed.format === "brief" && brief) finalBrief = verifyBrief(composed.brief, packet, brief).value;
-        if (composed.format === "critic" && critic) finalCritic = verifyCritic(composed.critic, packet, critic).value;
+        const verified = composed.format === "brief" && brief ? verifyBrief(composed.brief, packet, brief) : composed.format === "critic" && critic ? verifyCritic(composed.critic, packet, critic) : null;
+        if (verified && composed.format === "brief") finalBrief = verified.value as AgentBrief;
+        if (verified && composed.format === "critic") finalCritic = verified.value as AgentCritic;
         composedBy = "model";
-        await writeReceipt(deps.store, { owner: input.owner, sessionId: `lens:${input.format}`, turnId, model: deps.model.name, promptVersion: AGENT_PROMPT_VERSION, phase: "answer", tokens: composed.usage, latencyMs: Math.round(composed.latencyMs), outcome: "ok", at: new Date(nowMs).toISOString() }).catch(() => null);
+        /* Kept only when a sentence of the model's stood. */
+        if (verified && verified.kept > 0) await reservation.charge();
+        else await reservation.forgive();
+        await writeReceipt(deps.store, { owner: input.owner, sessionId: `lens:${input.format}`, turnId, model: composed.model, promptVersion: AGENT_PROMPT_VERSION, task: input.format, tokens: composed.usage, latencyMs: Math.round(composed.latencyMs), outcome: "ok", at: new Date(nowMs).toISOString() }).catch(() => null);
       } else if (composed) {
         if (!composed.reached) await reservation.refund();
-        await writeReceipt(deps.store, { owner: input.owner, sessionId: `lens:${input.format}`, turnId, model: deps.model.name, promptVersion: AGENT_PROMPT_VERSION, phase: "answer", tokens: composed.usage, latencyMs: Math.round(composed.latencyMs), outcome: composed.outcome, at: new Date(nowMs).toISOString() }).catch(() => null);
+        else await reservation.forgive();
+        await writeReceipt(deps.store, { owner: input.owner, sessionId: `lens:${input.format}`, turnId, model: composed.model, promptVersion: AGENT_PROMPT_VERSION, task: input.format, tokens: composed.usage, latencyMs: Math.round(composed.latencyMs), outcome: composed.outcome, at: new Date(nowMs).toISOString() }).catch(() => null);
       } else {
         await reservation.refund();
       }
@@ -299,7 +310,7 @@ export async function handleAgentLens(
     }
   }
 
-  const budget = await readBudgetState(deps.store, input.owner, deps.budget, nowMs);
+  const budget = await readBudgetState(deps.store, input.owner, deps.budget, nowMs, await creditsContextFor(deps, input.owner, nowMs));
   const cards: AgentCard[] = runs.flatMap((run) => run.cards).slice(0, AGENT_CARDS_MAX);
   const tools: AgentToolOutcome[] = runs.map((run) => ({ tool: run.tool, kind: run.kind, outcome: run.outcome, state: run.state, latencyMs: 0 })).slice(0, 16);
   const shared = {
@@ -332,7 +343,7 @@ export async function composeLensForTurn(
 /** The Brief, typed: the route's `satisfies` needs the one shape, not the union. */
 export async function handleAgentBrief(
   deps: AgentDeps,
-  input: Readonly<{ owner: string; subject: AgentContext; locale: Locale; compose: LensCompose }>,
+  input: Readonly<{ owner: string; subject: AgentContext; locale: Locale; compose: LensCompose; acceptCredits?: number | null }>,
 ): Promise<Readonly<{ ok: true; response: AgentBriefResponse }> | Readonly<{ ok: false; code: "AGENT_BUSY" | "UNAVAILABLE"; reason: string }>> {
   const result = await handleAgentLens(deps, { ...input, format: "brief" });
   if (!result.ok) return result;
@@ -343,7 +354,7 @@ export async function handleAgentBrief(
 /** The Critic, typed, for the same reason. */
 export async function handleAgentCritic(
   deps: AgentDeps,
-  input: Readonly<{ owner: string; subject: AgentContext; locale: Locale; compose: LensCompose }>,
+  input: Readonly<{ owner: string; subject: AgentContext; locale: Locale; compose: LensCompose; acceptCredits?: number | null }>,
 ): Promise<Readonly<{ ok: true; response: AgentCriticResponse }> | Readonly<{ ok: false; code: "AGENT_BUSY" | "UNAVAILABLE"; reason: string }>> {
   const result = await handleAgentLens(deps, { ...input, format: "critic" });
   if (!result.ok) return result;

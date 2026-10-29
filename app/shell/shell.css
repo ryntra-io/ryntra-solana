@@ -22,7 +22,7 @@
   /* One token authority: app/globals.css `:root`. Every shell name below is an
      alias into it — the parallel literal palette this block used to carry is
      the two-simultaneous-cyans defect that one authority closes. Light theme
-     resolves through the same aliases via the root `[data-theme="light"]`
+     resolves through the same aliases via the root `:is([data-theme="light"], [data-theme="porcelain"])`
      overrides, so the chrome and the canvas can no longer disagree. */
   --ink: var(--bg);
   --deep: var(--panel-2);
@@ -335,6 +335,19 @@
 }
 .rs-menu-action[data-variant="primary"]:hover { background: var(--ry-iris-pressed); }
 .rs-menu-action:disabled { opacity: 0.55; cursor: default; }
+
+/* A wallet put first as its own button (Seeker Connect on Android, SKR-1),
+   with the other ways in under it. The button is the wallet maker's own
+   element and draws itself; it only has to fill the column. */
+.rs-menu-featured {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ry-s2);
+}
+.rs-menu-featured-button {
+  display: block;
+  width: 100%;
+}
 
 /* The wallet list. Stacked rather than gridded: the names are the wallets'
    own and range from "OKX Wallet" to one word, so a two-column grid would
@@ -1644,21 +1657,21 @@ button.rs-group-title[data-shut="true"] .rs-group-caret {
    violet and amber all need more weight to stay legible on a light surface. */
 
 /* The light palette resolves through the same aliases via the root
-   `[data-theme="light"]` overrides in globals.css. Small accent/status TEXT
+   `:is([data-theme="light"], [data-theme="porcelain"])` overrides in globals.css. Small accent/status TEXT
    switches to the darker `-strong` variants there, which exist precisely to
    clear WCAG AA on light surfaces. */
-[data-theme="light"] .rs {
+:is([data-theme="light"], [data-theme="porcelain"]) .rs {
   --cyan: var(--accent-strong);
   --mint: var(--success-strong);
   --amber: var(--warning-strong);
 }
 
-[data-theme="light"] .rs-mode:hover,
-[data-theme="light"] .rs-panel-row:hover { background: rgba(15, 23, 42, 0.05); }
-[data-theme="light"] .rs-mode[aria-checked="true"] { background: var(--accent-soft); }
-[data-theme="light"] .rs-chip { background: rgba(15, 23, 42, 0.03); }
-[data-theme="light"] .rs-scrim { background: rgba(15, 23, 42, 0.35); }
-[data-theme="light"] .rs-nav { box-shadow: none; }
+:is([data-theme="light"], [data-theme="porcelain"]) .rs-mode:hover,
+:is([data-theme="light"], [data-theme="porcelain"]) .rs-panel-row:hover { background: rgba(15, 23, 42, 0.05); }
+:is([data-theme="light"], [data-theme="porcelain"]) .rs-mode[aria-checked="true"] { background: var(--accent-soft); }
+:is([data-theme="light"], [data-theme="porcelain"]) .rs-chip { background: rgba(15, 23, 42, 0.03); }
+:is([data-theme="light"], [data-theme="porcelain"]) .rs-scrim { background: rgba(15, 23, 42, 0.35); }
+:is([data-theme="light"], [data-theme="porcelain"]) .rs-nav { box-shadow: none; }
 
 /* ================================================ cabinet content density ==
    `.cb-grid` was written for a centred two-column page. In a canvas that can be
@@ -1684,32 +1697,32 @@ button.rs-group-title[data-shut="true"] .rs-group-caret {
  *
  * Shell v2 removed most of this block rather than translating it: the top
  * bar, the rail, the switcher and the connection control draw from `--ry-*`,
- * which the frozen tokens flip under `[data-theme="light"]` themselves. What
+ * which the frozen tokens flip under `:is([data-theme="light"], [data-theme="porcelain"])` themselves. What
  * remains covers the surfaces still on legacy aliases — the canvas, the
  * inspector, the customize panel and the cabinet chips.
  */
-[data-theme="light"] .rs,
-[data-theme="light"] .rs-nav,
-[data-theme="light"] .rs-inspector,
-[data-theme="light"] .rs-canvas { color: var(--text); }
+:is([data-theme="light"], [data-theme="porcelain"]) .rs,
+:is([data-theme="light"], [data-theme="porcelain"]) .rs-nav,
+:is([data-theme="light"], [data-theme="porcelain"]) .rs-inspector,
+:is([data-theme="light"], [data-theme="porcelain"]) .rs-canvas { color: var(--text); }
 
 
-[data-theme="light"] .rs-chip-k,
-[data-theme="light"] .rs-mode small,
-[data-theme="light"] .rs-customize-empty,
-[data-theme="light"] .rs-customize-foot,
-[data-theme="light"] .rs-tag { color: var(--text-faint); }
+:is([data-theme="light"], [data-theme="porcelain"]) .rs-chip-k,
+:is([data-theme="light"], [data-theme="porcelain"]) .rs-mode small,
+:is([data-theme="light"], [data-theme="porcelain"]) .rs-customize-empty,
+:is([data-theme="light"], [data-theme="porcelain"]) .rs-customize-foot,
+:is([data-theme="light"], [data-theme="porcelain"]) .rs-tag { color: var(--text-faint); }
 
-[data-theme="light"] .rs-chip-v,
-[data-theme="light"] .rs-mode { color: var(--text-dim); }
-[data-theme="light"] .rs-panel-toggle,
-[data-theme="light"] .rs-mode b { color: var(--text); }
-[data-theme="light"] .rs-mode[aria-checked="true"] { color: var(--text); }
-[data-theme="light"] .rs-mod-n { color: var(--cyan); }
-[data-theme="light"] .rs-switch-more:hover { color: var(--cyan); background: rgba(15, 23, 42, 0.05); }
-[data-theme="light"] .rs-reset { color: var(--text-dim); }
-[data-theme="light"] .rs-panel-move button { color: var(--text-faint); }
-[data-theme="light"] .rs-skip { background: var(--text); color: var(--panel); }
+:is([data-theme="light"], [data-theme="porcelain"]) .rs-chip-v,
+:is([data-theme="light"], [data-theme="porcelain"]) .rs-mode { color: var(--text-dim); }
+:is([data-theme="light"], [data-theme="porcelain"]) .rs-panel-toggle,
+:is([data-theme="light"], [data-theme="porcelain"]) .rs-mode b { color: var(--text); }
+:is([data-theme="light"], [data-theme="porcelain"]) .rs-mode[aria-checked="true"] { color: var(--text); }
+:is([data-theme="light"], [data-theme="porcelain"]) .rs-mod-n { color: var(--cyan); }
+:is([data-theme="light"], [data-theme="porcelain"]) .rs-switch-more:hover { color: var(--cyan); background: rgba(15, 23, 42, 0.05); }
+:is([data-theme="light"], [data-theme="porcelain"]) .rs-reset { color: var(--text-dim); }
+:is([data-theme="light"], [data-theme="porcelain"]) .rs-panel-move button { color: var(--text-faint); }
+:is([data-theme="light"], [data-theme="porcelain"]) .rs-skip { background: var(--text); color: var(--panel); }
 
 /* ------------------------------------------------ shared navigation footer */
 

@@ -1,13 +1,15 @@
 "use client";
 
-import { ArrowUpRight, CheckCircle, HourglassMedium, Warning, X, XCircle } from "@phosphor-icons/react";
+import { HourglassMedium } from "@phosphor-icons/react";
+import { Button, TradeTicket, newDraft, ticketModel, type TicketDraft, type TicketReviewed } from "@ryntra/core/ui";
 import { ryntraFeeOfWhich } from "./ryntra-fee-line";
 import Link from "next/link";
+import { pagePath } from "@/lib/site/localized";
 import { useRouter } from "next/navigation";
 import { Fragment, useCallback, useEffect, useId, useMemo, useRef, useState } from "react";
 
-import { approxUsd, BUY_SHARE_PRESETS_PCT, DEFAULT_BUY_USD, dollars, formatUnits, isNoRoute, MAX_BUY_USD, MIN_BUY_USD, parseDollars, shareOfRaw, unitsFromRaw, unitsPhrase } from "@/app/app/invest/company-model";
-import { solShort } from "@/app/app/invest/funding-model";
+import { approxUsd, DEFAULT_BUY_USD, dollars, formatUnits, isNoRoute, MAX_BUY_USD, MIN_BUY_USD, unitsFromRaw, unitsPhrase } from "@/app/app/invest/company-model";
+import { FIRST_PURCHASE_LAMPORTS, PURCHASE_FEE_LAMPORTS, solShort } from "@/app/app/invest/funding-model";
 import { buyByRuleWord, investWords, numberLocale, plainLeavesOpenLine, reserveFirstLine, reserveLine, routeMinimumLine, setMinimumWord } from "@/app/app/invest/invest-words";
 import { useRouteMinimum } from "@/app/app/invest/use-route-minimum";
 import { useWalletData } from "@/app/app/wallet-data";
@@ -17,8 +19,7 @@ import { useSolanaConnection } from "@/app/solana/workspace/connection";
 import { openSolanaConnection } from "@/app/solana/workspace/connection-trigger.client";
 import { useSolanaI18n } from "@/app/solana/workspace/i18n/provider";
 import { MarketIcon } from "@/app/solana/workspace/spot/market-list";
-import { QuickBuy } from "@/app/solana/workspace/spot/quick-buy";
-import { formatUsdMoney, formatUsdPrice } from "@/app/solana/workspace/spot/spot-format";
+import { formatUsdPrice } from "@/app/solana/workspace/spot/spot-format";
 import { useSpotMarket } from "@/app/solana/workspace/spot/use-spot-data";
 import { SPOT_QUOTE_ASSETS, useSpotTicket } from "@/app/solana/workspace/spot/use-spot-ticket";
 import { useWalletProof } from "@/app/solana/workspace/wallet-proof";
@@ -30,15 +31,18 @@ import { checkPriceCondition, type PriceFacts } from "@/lib/autoinvest/price-con
 import { dueWords, ruleWhenLine, usdWord } from "@/lib/autoinvest/words";
 import { LOSS_LIMIT_PRESETS, lossLimitPurchase, type LossLimitPreset } from "@/lib/plans/purchase";
 import { explorerTxUrl } from "@/lib/solana/explorer";
-import { classifySpotFill } from "@/lib/solana/fill-outcome";
 import { SOLANA_MAINNET_USDC_MINT } from "@/lib/solana/send-kinds";
 import { swapFailureCopy } from "@/lib/solana/swap-failure-copy";
 import { SPOT_PURCHASE_SIDE } from "@/lib/spot/ticket-state";
-import type { SwapCheck } from "@/lib/stocks/check";
+import { SALE_MAY_FAIL, type SwapCheck } from "@/lib/stocks/check";
+import { NETWORK_LABEL, SOL_COIN, plainRaw, referenceOf, solGas, ticketBalances, ticketMarket, ticketPrices, unitsOf, type TicketCoin } from "@/lib/ticket/solana-ticket";
 
 import company from "./company.module.css";
-import { useSheetAboveKeyboard } from "./sheet-keyboard";
-import { SumField } from "./sum-field";
+import { useSheetAboveKeyboard, useSumReadyOnDesk } from "./sheet-keyboard";
+import { QuickSums } from "./quick-sums";
+import { STOCK_VENUE, stockTicketBase, stockTicketView } from "./stock-ticket";
+import { tradeFailureLine } from "./trade-failure-words";
+import { ensureWalletActs } from "@/lib/account/wallet-proof-store.client";
 
 /**
  * The purchase in dollars — «Простий»'s one action on a company, drawn as a
@@ -105,6 +109,9 @@ import { SumField } from "./sum-field";
 /* The sheet opens on $10 — a default, not advice; any sum from a dollar is the person's own. */
 const DEFAULT_USD = DEFAULT_BUY_USD;
 const USDC = SPOT_QUOTE_ASSETS[0];
+/* The dollars the company is bought with; the network's fee is paid in SOL (`SOL_COIN`). */
+const USDC_COIN: TicketCoin = { mint: SOLANA_MAINNET_USDC_MINT, symbol: "USDC", decimals: 6, digits: 2 };
+const MIN_BUY_RAW = BigInt(MIN_BUY_USD * 10 ** 6);
 const API_HEADERS = { accept: "application/json", "X-Ryntra-API": "1" } as const;
 
 export type BuySheetProps = Readonly<{
@@ -144,12 +151,18 @@ export type BuySheetProps = Readonly<{
    * again in the Review's «Що це»; null where the token has none.
    */
   eventLine?: string | null;
+  /** A private company's strongest risks, said in the sheet before any sum (UX-500): a sale may not go through, the company's own word about tokens like this one. */
+  riskLines?: readonly string[];
+  /** On a phone, «Купити» also stands pinned over the bottom bar while the card's own button is out of sight (UX-501). */
+  pinned?: boolean;
   /** «Купити» quiet: a holder's one orange action on the page is the swap. */
   quiet?: boolean;
   /** «Умова ціни»: the facts a rule's price condition is judged on, as the page read them — the sheet reads them again while a rule's purchase is open. */
   conditionFacts?: PriceFacts | null;
   /** «Швидка купівля» over «Купити»: the person's dollar sums, each one tap from the sheet on that sum with its Review. */
   quickBuy?: boolean;
+  /** The company's price per share or token in dollars, as the page read it: the ticket's dollar sums and its reference. */
+  priceUsd?: number | null;
 }>;
 
 /** The rule's purchase offered first while its reminder is open: its sum, what the reminder is, and the press that opens it. */
@@ -236,6 +249,7 @@ export function BuySheet(props: BuySheetProps) {
 
   /* On a phone the sheet stands above the keyboard the sum raises: «Купити за $1» stays in sight. */
   useSheetAboveKeyboard(dialog, open);
+  useSumReadyOnDesk(dialog, open);
 
   useEffect(() => {
     /* A wallet connected for this purchase: the sheet comes back with the sum the person chose. */
@@ -267,9 +281,24 @@ export function BuySheet(props: BuySheetProps) {
     });
   }, []);
 
-  const { ruleOffer = null, quiet = false } = props;
+  const { ruleOffer = null, quiet = false, pinned = false } = props;
   const plainNoteId = useId();
-  const primary = quiet ? "rw-btn" : "rw-btn rw-btn--primary";
+  const lang = props.locale === "uk" ? "uk" : "en";
+
+  /* On a phone the card's «Купити» sits below the chart and the company's way: while it is out of sight, the same purchase stands pinned over the bottom bar (UX-501). */
+  /* The anchor is watched whenever it is drawn — it comes and goes with a reminder's purchase and a holder's quiet «Купити». */
+  const [anchor, setAnchor] = useState<HTMLSpanElement | null>(null);
+  const [cardInView, setCardInView] = useState(true);
+  useEffect(() => {
+    if (!anchor || typeof IntersectionObserver === "undefined") {
+      setCardInView(true);
+      return undefined;
+    }
+    const observer = new IntersectionObserver(([entry]) => setCardInView(entry?.isIntersecting ?? true));
+    observer.observe(anchor);
+    return () => observer.disconnect();
+  }, [anchor]);
+  const pinnedPrice = props.priceUsd === null || props.priceUsd === undefined ? null : formatUsdPrice(props.priceUsd, numberLocale(props.locale));
 
   return (
     <>
@@ -286,22 +315,38 @@ export function BuySheet(props: BuySheetProps) {
               ))}
             </span>
           </p>
-          <button type="button" className={`rw-btn rw-btn--primary ${company.buy}`} data-sheet-open={open ? "true" : undefined} data-rule-first="true" aria-haspopup="dialog" onClick={ruleOffer.onBuy}>
+          <Button variant="primary" block className={company.buy} data-sheet-open={open ? "true" : undefined} data-rule-first="true" aria-haspopup="dialog" onClick={ruleOffer.onBuy} lang={lang}>
             {buyByRuleWord(props.locale, ruleOffer.amountUsd)}
-          </button>
-          <button type="button" className={`rw-btn ${company.plainBuy}`} aria-haspopup="dialog" aria-describedby={plainNoteId} onClick={openPlain}>
+          </Button>
+          <Button variant="secondary" block className={company.plainBuy} aria-haspopup="dialog" aria-describedby={plainNoteId} onClick={openPlain} lang={lang}>
             {word("plainPurchase")}
-          </button>
+          </Button>
           <p id={plainNoteId} className={company.plainNote}>
             {word("reminderStaysOpen")}
           </p>
         </>
       ) : (
         <>
-          {props.quickBuy ? <QuickBuy locale={props.locale === "uk" ? "uk" : "en"} onPick={pickQuick} size="comfort" label /> : null}
-          <button type="button" className={`${primary} ${company.buy}`} data-sheet-open={open ? "true" : undefined} data-quiet={quiet ? "true" : undefined} aria-haspopup="dialog" onClick={openPlain}>
-            {word("buy")}
-          </button>
+          {props.quickBuy ? (
+            /* «Швидка купівля»: each of the person's sums one tap from the sheet on it with its Review; the pencil changes them, the same sums as on Spot. */
+            <QuickSums locale={props.locale} onPick={pickQuick} />
+          ) : null}
+          {/* The card's «Купити» and, after it, the anchor the pinned purchase watches — one grid item, so no gap of its own. */}
+          <div className={company.buyWrap}>
+            <Button variant={quiet ? "secondary" : "primary"} block className={company.buy} data-sheet-open={open ? "true" : undefined} data-quiet={quiet ? "true" : undefined} aria-haspopup="dialog" onClick={openPlain} lang={lang}>
+              {word("buy")}
+            </Button>
+            {pinned && !quiet ? <span ref={setAnchor} className={company.buyAnchor} aria-hidden="true" /> : null}
+          </div>
+          {pinned && !quiet ? (
+            <>
+              <div className={company.pinnedBuy} data-pinned-buy data-hidden={cardInView || open ? "true" : undefined}>
+                <Button variant="primary" block aria-haspopup="dialog" onClick={openPlain} lang={lang}>
+                  <span translate="no">{`${word("buy")} ${props.name}${pinnedPrice ? ` · ${pinnedPrice}` : ""}`}</span>
+                </Button>
+              </div>
+            </>
+          ) : null}
         </>
       )}
       <dialog
@@ -388,8 +433,10 @@ function BuyFlow({
   onChangeBudget,
   ruleOffer = null,
   eventLine = null,
+  riskLines = [],
   conditionFacts = null,
   quickTap = 0,
+  priceUsd = null,
 }: BuySheetProps & {
   titleId: string;
   /** The count of quick sums pressed: a new one asks for the Review of the sheet's sum once. */
@@ -436,9 +483,44 @@ function BuyFlow({
   const ruleSum = rule ? purchaseSumUsd(rule, occurrence) : null;
   const ruleBinding = useMemo(() => (ruleOpen && rule && occurrence ? { ruleId: rule.id, dueAt: occurrence.dueAt } : null), [ruleOpen, rule, occurrence]);
 
+  /* ---------------------------------------------------------- the ticket's market */
+  /* A dollar is a USDC here, as every sum on the company's page is: the sheet's $10 is ten USDC. */
+  const companyCoin: TicketCoin = useMemo(() => ({ mint, symbol, decimals: baseDecimals ?? 0, digits: 4, multiplier }), [mint, symbol, baseDecimals, multiplier]);
+  const ticketMarketOf = useMemo(() => ticketMarket({ id: mint, base: companyCoin, quote: USDC_COIN, price: priceUsd, minQuoteRaw: MIN_BUY_RAW }), [mint, companyCoin, priceUsd]);
+  const [clock, setClock] = useState(() => Date.now());
+  useEffect(() => {
+    const timer = window.setInterval(() => setClock(Date.now()), 1_000);
+    return () => window.clearInterval(timer);
+  }, []);
+  const priceAt = useMemo(() => (priceUsd === null ? 0 : Date.now()), [priceUsd]);
+  const prices = useMemo(() => ticketPrices([{ coin: USDC_COIN, usd: 1 }, { coin: companyCoin, usd: priceUsd }], priceAt, "Jupiter"), [companyCoin, priceUsd, priceAt]);
+  const reference = useMemo(() => referenceOf(priceUsd, 1, "Jupiter", priceAt), [priceUsd, priceAt]);
+  const usdcRow = holdings.status === "ready" ? holdings.data.find((row) => row.mint === SOLANA_MAINNET_USDC_MINT) ?? null : null;
+  const solRow = holdings.status === "ready" ? holdings.data.find((row) => row.kind === "NATIVE_SOL") ?? null : null;
+  const companyRow = holdings.status === "ready" ? holdings.data.find((row) => row.mint === mint) ?? null : null;
+  const holdsCompany = companyRow !== null && /^\d+$/.test(companyRow.amountRaw) && BigInt(companyRow.amountRaw) > 0n;
+  /* The wallet as read: a balance not read yet is unknown, never zero; a complete read without USDC holds none. */
+  const balances = !connection
+    ? null
+    : holdings.status !== "ready"
+      ? {}
+      : ticketBalances([
+          { coin: USDC_COIN, raw: usdcRow?.amountRaw ?? (holdings.complete ? "0" : null) },
+          { coin: SOL_COIN, raw: solRow?.amountRaw ?? (holdings.complete ? "0" : null) },
+          { coin: companyCoin, raw: companyRow?.amountRaw ?? null },
+        ]);
+  /* The network's SOL: the fee, and for a company the wallet does not hold yet the account it opens. */
+  const gas = useMemo(() => solGas(holdsCompany ? PURCHASE_FEE_LAMPORTS : FIRST_PURCHASE_LAMPORTS), [holdsCompany]);
+  const [amountUnit, setAmountUnit] = useState<"token" | "usd">("token");
+
   /* A reminder's purchase is the rule's sum, no loss limit: the rule is the person's whole instruction. */
   const limit = ruleMode ? null : chosenLimit;
-  const amount = ruleMode ? ruleSum : parseDollars(amountText, lang);
+  const draft: TicketDraft = newDraft({ side: "buy", unit: ruleMode ? "token" : amountUnit, amount: ruleMode ? (ruleSum === null ? "" : String(ruleSum)) : amountText });
+  const ticketBase = { side: "buy" as const, market: ticketMarketOf, base: companyCoin, quote: USDC_COIN, draft, balances, prices, reference, gas, unavailable: null, now: clock };
+  /* What the sum typed is in USDC, as the ticket counts it: the sheet's order is sized from it. */
+  const typed = ticketModel(stockTicketBase(ticketBase), lang);
+  const typedRaw = unitsOf(typed.paid);
+  const amount = ruleMode ? ruleSum : typedRaw === null ? null : Number(typedRaw) / 10 ** USDC_COIN.decimals;
   const valid = amount !== null && amount >= MIN_BUY_USD && amount <= MAX_BUY_USD;
 
   /* ---------------------------------------------------------- the loss limit */
@@ -511,7 +593,7 @@ function BuyFlow({
     baseDecimals,
     baseSymbol: symbol,
     quote: USDC,
-    amount: valid && amount !== null ? String(amount) : "",
+    amount: valid && amount !== null ? (ruleMode ? String(amount) : typedRaw !== null ? plainRaw(typedRaw, USDC_COIN.decimals) : "") : "",
     planBinding: binding,
     ruleBinding,
     text,
@@ -519,6 +601,8 @@ function BuyFlow({
     onRefresh: refresh,
   });
   const { phase, quoted, prepared, settled, attempt } = ticket;
+  /* What Review agreed to, kept here: the hook lets the prepared order go before the answer settles. */
+  const [agreed, setAgreed] = useState<TicketReviewed | null>(null);
   const working = phase === "PREPARING" || phase === "SIGNING" || phase === "EXECUTING" || phase === "RECOVERING";
   const busy = working || step !== "idle";
 
@@ -544,6 +628,7 @@ function BuyFlow({
   const writePlan = async (): Promise<ExecutionPlanBinding | null> => {
     if (!made) return null;
     try {
+      if (!(await ensureWalletActs())) return null;
       const response = await fetch("/api/v1/plans", {
         method: "POST",
         headers: { ...API_HEADERS, "content-type": "application/json" },
@@ -556,7 +641,22 @@ function BuyFlow({
     }
   };
 
+  /* One press at a time: a second tap or Enter while the limit is proven, written or the Review prepared asks for nothing again. */
+  const pressing = useRef(false);
   const press = async () => {
+    if (pressing.current || busy || wantReview) return;
+    if (ticket.lockedReview) {
+      void ticket.cancelReview(true);
+      return;
+    }
+    pressing.current = true;
+    try {
+      await pressOnce();
+    } finally {
+      pressing.current = false;
+    }
+  };
+  const pressOnce = async () => {
     setStepFailure(null);
     if (!connection) {
       onConnect();
@@ -598,21 +698,14 @@ function BuyFlow({
   };
 
   /* ------------------------------------------------------------ the wallet */
-  const usdcRow = holdings.status === "ready" ? holdings.data.find((row) => row.mint === SOLANA_MAINNET_USDC_MINT) ?? null : null;
-  const solRow = holdings.status === "ready" ? holdings.data.find((row) => row.kind === "NATIVE_SOL") ?? null : null;
   const usdc = usdcRow ? Number(usdcRow.amountRaw) / 10 ** usdcRow.decimals : holdings.status === "ready" && holdings.complete ? 0 : null;
-  /* The raw USDC the quick shares are taken of — what the wallet holds, so 100 % is exactly it. */
-  const usdcRawText = usdcRow ? usdcRow.amountRaw : null;
-  const usdcRaw = usdcRawText && /^\d+$/.test(usdcRawText) ? BigInt(usdcRawText) : null;
   const insufficient = connection !== null && valid && amount !== null && usdc !== null && amount > usdc + 1e-9;
-  /* The network's SOL: the fee, and for a company the wallet does not hold yet the account it opens — short of that, the network would refuse the purchase, so the sheet says so before any Review. */
-  const holdsCompany = holdings.status === "ready" && holdings.data.some((row) => row.mint === mint && /^\d+$/.test(row.amountRaw) && BigInt(row.amountRaw) > 0n);
   const cannotPayFee = connection !== null && solRow !== null && /^\d+$/.test(solRow.amountRaw) && solShort(BigInt(solRow.amountRaw), holdsCompany);
   const router = useRouter();
   /* «Поповнити» from the purchase: the top-up worded for what is missing, and the way back to this company. */
   const topUp = useCallback(
     (need: "sol" | null) => {
-      const back = encodeURIComponent(window.location.pathname);
+      const back = encodeURIComponent(pagePath(window.location.pathname));
       router.push(`/app/top-up?${need ? `need=${need}&` : ""}from=${back}`);
     },
     [router],
@@ -647,14 +740,11 @@ function BuyFlow({
   const check: SwapCheck | null = prepared ? (prepared.check ?? null) : (quoted?.check ?? null);
   const outUnits = check?.get.amount ?? null;
   const costs = valid ? (check?.costs ?? null) : null;
-  /* «з них комісія емітента 1% ≈ $0,10» — the share of the sum the token's own mint withholds, said on its own line; «1% ≈ $0,10» is kept on one line on a phone. */
-  const ryntraFeeLine = ryntraFeeOfWhich(prepared?.order ?? quoted?.order ?? null, word("ryntraFeeOfWhich"), numbers);
-  const issuerFee = costs?.issuerFee ? `${word("issuerFeeOfWhich")} ${new Intl.NumberFormat(numbers, { maximumFractionDigits: 2 }).format(costs.issuerFee.basisPoints / 100)}% ${approxUsd(costs.issuerFee.usd, numbers).replace(" ", " ")}` : null;
   /* The server answered the quote without its lines (the company could not be read): nothing is counted here in their place. */
   const uncounted = valid && quoted !== null && outUnits === null;
   /* Under the sum: «≈ 0,0787 частки Apple · усі витрати ≈ $0,06» — the server's figures; a cost it could not count is a dash. */
   const estimateLine = valid && outUnits !== null ? `≈ ${unitsPhrase(outUnits, unit, name, lang, numbers)} · ${word("allCosts")} ${costs ? approxUsd(costs.usd, numbers) : "—"}` : null;
-  const quoteFailure = ticket.quoteFailure && valid ? ticket.quoteFailureMessage : null;
+  const quoteFailure = ticket.quoteFailure && valid ? tradeFailureLine(ticket.quoteFailure, ticket.quoteFailureMessage, "buy", lang) : null;
   const quoteStop = ticket.quoteFailure ? !swapFailureCopy(ticket.quoteFailure.code, text).retryable : false;
   const blocked = quoted?.verdict.verdict === "BLOCKED";
   /* No route for the sum typed: the company's own minimum, read from the same quote at the ladder's larger sums. A reminder's sum is the rule's own, so only a purchase the person types looks for one. */
@@ -675,18 +765,48 @@ function BuyFlow({
     if (code === "RULE_BUDGET_EXHAUSTED") return `${word("budgetBlocks")} ${word("rulesStand")}.`;
     /* 1.18.0: the server judged the rule's price condition on its own figures and it is not met now. */
     if (code === "RULE_PRICE_CONDITION") return word("conditionRefused");
-    if (ruleMode && code === "UNAUTHORIZED") return word("confirmWallet");
-    if (ticket.actionFailureMessage) return ticket.actionFailureMessage;
+    if (ruleMode && code === "UNAUTHORIZED") return word("confirmWalletToBuy");
+    if (ticket.actionFailure) return tradeFailureLine(ticket.actionFailure, ticket.actionFailureMessage, "buy", lang);
     /* The wallet's proof is asked for only under a limit; a refusal is the person's, anything else leaves the limit unsaved. */
     if (limit && proof.state.status === "refused") return word("walletDeclined");
     if (limit && (proof.state.status === "failed" || proof.state.status === "unsupported" || proof.state.status === "taken")) return word("limitFailed");
     return null;
   })();
 
-  /* ------------------------------------------------------------ the screens */
-  const inReview = (phase === "REVIEW" || phase === "SIGNING" || phase === "EXECUTING") && prepared !== null;
-  const outcome = phase === "SETTLED" && settled ? classifySpotFill(settled) : null;
-  const recovering = phase === "RECOVERY" || phase === "RECOVERING";
+  /* ------------------------------------------------------------ the ticket */
+  /* «Усі витрати» as the server counted them (1.20.0), with the issuer's and Ryntra's parts on their own lines. */
+  const countOf = (lines: SwapCheck | null, order: Parameters<typeof ryntraFeeOfWhich>[0]) => {
+    if (!lines?.costs || !valid) return {};
+    const parts: { label: string; value: string }[] = [];
+    if (lines.costs.issuerFee) parts.push({ label: word("issuerFeeOfWhich"), value: `${new Intl.NumberFormat(numbers, { maximumFractionDigits: 2 }).format(lines.costs.issuerFee.basisPoints / 100)}% ${approxUsd(lines.costs.issuerFee.usd, numbers)}` });
+    const ryntra = ryntraFeeOfWhich(order, "", numbers);
+    if (ryntra) parts.push({ label: word("ryntraFeeOfWhich"), value: ryntra.trim() });
+    return { costLines: parts, costsTotal: approxUsd(lines.costs.usd, numbers) };
+  };
+  const over = amount !== null && amount > MAX_BUY_USD;
+  const view = stockTicketView({
+    agreed,
+    ...ticketBase,
+    spot: { phase, quoted, quoting: ticket.quoting, prepared, preparedReadiness: ticket.preparedReadiness, bytesChanged: ticket.bytesChanged, reviewSecondsLeft: ticket.reviewSecondsLeft, settled, attempt },
+    /* No route for the sum: the company's own minimum, else the venue's own words. */
+    quoteFailed: over ? word("maxBuy") : valid ? (minimumLine ?? quoteFailure) : null,
+    unavailable: blocked || quoteStop ? word("unavailableNow") : null,
+    holding: step !== "idle" || wantReview,
+    time: new Intl.DateTimeFormat(numbers, { hour: "2-digit", minute: "2-digit" }).format(new Date(clock)),
+    lang,
+  });
+  useEffect(() => {
+    if (view.stage === "review" && view.reviewed) setAgreed(view.reviewed);
+    // Taken once per prepared order as Review shows it: `view.reviewed` is a new object every render.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [prepared, view.stage]);
+  /* Let go when a new order is asked for, a Review is put down or the sheet starts over: an answer that comes without a
+     Review of its own (another signature in flight) never reads an earlier Review's figures. */
+  useEffect(() => {
+    if (phase === "IDLE" || (phase === "PREPARING" && prepared === null)) setAgreed(null);
+  }, [phase, prepared]);
+  const outcome = view.outcome;
+  const inReview = view.stage === "review";
 
   const head = (title: string) => (
     <div className={company.sheetHead}>
@@ -695,210 +815,44 @@ function BuyFlow({
       <h2 id={titleId} className={company.sheetTitle}>
         {title}
       </h2>
-      <button type="button" className={company.sheetClose} onClick={onClose} disabled={busy} aria-label={word("close")}>
-        <X size={18} weight="bold" aria-hidden="true" />
-      </button>
+      <Button variant="ghost" icon="x" className={company.sheetClose} onClick={onClose} disabled={busy} aria-label={word("close")} lang={lang} />
     </div>
   );
 
-  if (outcome) {
-    const context = ticket.settledContext;
-    const spentRaw = settled?.observation?.actualInputRaw ?? null;
-    const spent = spentRaw ? Number(spentRaw) / 10 ** (context?.quoteDecimals ?? USDC.decimals) : amount;
-    const gotUnits = settled?.observation ? unitsFromRaw(settled.observation.actualOutputRaw, context?.baseDecimals ?? baseDecimals, multiplier) : null;
-    const tone = outcome.kind === "FILLED" ? (outcome.note === null ? "matched" : "caution") : outcome.kind === "NOT_FILLED" ? "risk" : outcome.kind === "NOTHING_HAPPENED" ? "quiet" : "caution";
-    const title =
-      outcome.kind === "FILLED"
-        ? `${unit === "token" ? (lang === "uk" ? `${word("ownToken")} ${name}` : `${name} ${word("ownToken")}`) : `${word("ownPiece")} ${name}`}${spent !== null ? ` · ${dollars(spent, numbers)}` : ""}`
-        : outcome.kind === "NOTHING_HAPPENED"
-          ? word("nothingHappened")
-          : outcome.kind === "NOT_FILLED"
-            ? word("notFilled")
-            : word("unknownTx");
-    const watched = outcome.kind === "FILLED" && plan && binding && settled ? plan : null;
-    /* The receipt's mark of the rule, and when it reminds next. */
-    const byRule = outcome.kind === "FILLED" && ruleMode && boughtUnder ? boughtUnder : null;
-    /* The next purchase as the rule reads now — the tick advanced it when it reminded; a «Якщо впаде» rule has none, its price decides. */
-    const nextDue = byRule ? (rule?.id === byRule.id ? rule.nextDueAt : byRule.nextDueAt) : null;
-    const nextOfRule = byRule && nextDue && byRule.schedule ? dueWords(Date.parse(nextDue), byRule.schedule.timeZone, lang) : null;
-    /* «Купувати щотижня» after a plain purchase, on the sum just bought. */
-    const weekly = outcome.kind === "FILLED" && !ruleMode && onBuyWeekly && spent !== null && spent >= MIN_BUY_USD - 0.005 ? Math.round(spent * 100) / 100 : null;
-    return (
-      <div className={company.sheetBody} data-sheet="receipt" data-rule={byRule ? "true" : undefined}>
-        {head(name)}
-        <div className={company.receipt} data-tone={tone} role="status">
-          <span className={company.receiptMark} aria-hidden="true">
-            {tone === "matched" ? <CheckCircle size={44} weight="fill" /> : tone === "risk" ? <XCircle size={44} weight="fill" /> : <Warning size={44} weight="fill" />}
-          </span>
-          <p className={company.receiptTitle}>{title}</p>
-          {outcome.kind === "FILLED" && gotUnits !== null ? <p className={company.receiptSub}>{unitsPhrase(gotUnits, unit, name, lang, numbers)}</p> : null}
-          {outcome.kind === "FILLED" && outcome.note ? <p className={company.receiptNote}>{outcome.note === "BELOW_MINIMUM" ? word("belowMinimum") : word("notAsReviewed")}</p> : null}
-          {byRule ? (
-            <p className={company.ruleMark}>
-              <span>{`${word("byRule")} · ${ruleWhenLine(byRule, lang)}`}</span>
-              {nextOfRule ? <span translate="no">{`${word("nextPurchase")}: ${nextOfRule}`}</span> : null}
-            </p>
-          ) : null}
-          {watched ? (
-            channel === "connected" ? (
-              <p className={company.receiptWatch}>
-                {word("watchingLimit")} <b translate="no">{formatUsdPrice(watched.limitPerUnit, numbers)}</b>
-              </p>
-            ) : (
-              <p className={company.receiptWatch}>
-                <Link href="/app/settings#account" prefetch={false}>
-                  {word("limitSavedNoChannel")}
-                </Link>
-              </p>
-            )
-          ) : null}
-        </div>
-        <div className={company.sheetActions}>
-          {outcome.kind === "FILLED" ? (
-            <button type="button" className="rw-btn rw-btn--primary" onClick={onClose}>
-              {word("done")}
-            </button>
-          ) : (
-            <button type="button" className="rw-btn rw-btn--primary" onClick={() => ticket.reset()}>
-              {word("tryAgain")}
-            </button>
-          )}
-          {weekly !== null ? (
-            <button type="button" className="rw-btn" onClick={() => onBuyWeekly?.(weekly)}>
-              {word("buyWeekly")}
-            </button>
-          ) : null}
-          <p className={company.sheetLinks}>
-            <Link href="/app/activity" prefetch={false}>
-              {word("history")}
-            </Link>
-            {settled && outcome.kind !== "NOTHING_HAPPENED" ? (
-              <a href={explorerTxUrl("mainnet", settled.signature)} target="_blank" rel="noreferrer noopener">
-                {word("transaction")} <ArrowUpRight size={12} aria-hidden="true" />
-              </a>
-            ) : null}
-          </p>
-        </div>
-      </div>
-    );
-  }
+  /* The order's own lines in Review: «Що це» as the server says it — the truth and the issuer's event said to a buyer. */
+  const lines = prepared?.check ?? null;
+  const paidUsd = lines?.spend.amount ?? null;
+  const reserve = inReview && lines?.reserve?.usd ? approxUsd(lines.reserve.usd, numbers) : null;
+  const reserveFirst = reserve !== null && lines?.reserve?.first === true && paidUsd !== null;
+  const whatLine = lines ? lines.what.truth[lang] : truth;
+  const buyerEvent = lines ? (lines.what.note?.kind === "issuer-event" ? lines.what.note[lang] : null) : eventLine;
+  /* A private company's purchase: «Що це» says that a sale may not go through, as the sale's Review does (UX-500). */
+  const saleMayFail = preIpo && lines?.what.note?.kind !== "sale-may-fail" ? SALE_MAY_FAIL[lang] : null;
 
-  if (recovering || attempt) {
-    return (
-      <div className={company.sheetBody} data-sheet="recovery">
-        {head(name)}
-        <p className={company.sheetNote} role="status">
-          {word("unknownTx")}
-        </p>
-        {failure ? <p className={company.sheetError}>{failure}</p> : null}
-        <div className={company.sheetActions}>
-          <button type="button" className="rw-btn rw-btn--primary" disabled={phase === "RECOVERING"} onClick={() => void ticket.recover()}>
-            {phase === "RECOVERING" ? word("checkingTx") : word("checkTx")}
-          </button>
-          <p className={company.sheetLinks}>
-            <Link href="/app/activity" prefetch={false}>
-              {word("history")}
-            </Link>
-          </p>
-        </div>
-      </div>
-    );
-  }
+  /* The receipt's title, as the sheet's head: what the person now holds, or what became of the order. */
+  const context = ticket.settledContext;
+  const spentRaw = settled?.observation?.actualInputRaw ?? null;
+  const spent = spentRaw ? Number(spentRaw) / 10 ** (context?.quoteDecimals ?? USDC.decimals) : amount;
+  const gotUnits = settled?.observation ? unitsFromRaw(settled.observation.actualOutputRaw, context?.baseDecimals ?? baseDecimals, multiplier) : null;
+  const receiptTitle = outcome
+    ? outcome.kind === "FILLED"
+      ? `${unit === "token" ? (lang === "uk" ? `${word("ownToken")} ${name}` : `${name} ${word("ownToken")}`) : `${word("ownPiece")} ${name}`}${spent !== null ? ` · ${dollars(spent, numbers)}` : ""}`
+      : outcome.kind === "NOTHING_HAPPENED"
+        ? word("nothingHappened")
+        : outcome.kind === "NOT_FILLED"
+          ? word("notFilled")
+          : word("unknownTx")
+    : null;
+  const watched = outcome?.kind === "FILLED" && plan && binding && settled ? plan : null;
+  /* The receipt's mark of the rule, and when it reminds next — a «Якщо впаде» rule has none, its price decides. */
+  const byRule = outcome?.kind === "FILLED" && ruleMode && boughtUnder ? boughtUnder : null;
+  const nextDue = byRule ? (rule?.id === byRule.id ? rule.nextDueAt : byRule.nextDueAt) : null;
+  const nextOfRule = byRule && nextDue && byRule.schedule ? dueWords(Date.parse(nextDue), byRule.schedule.timeZone, lang) : null;
+  /* «Купувати щотижня» after a plain purchase, on the sum just bought. */
+  const weekly = outcome?.kind === "FILLED" && !ruleMode && onBuyWeekly && spent !== null && spent >= MIN_BUY_USD - 0.005 ? Math.round(spent * 100) / 100 : null;
 
-  if (inReview && prepared) {
-    /* The order's own lines, as the server counted them on these exact bytes (1.20.0); a figure it could not count is a dash, never one counted here. */
-    const lines = prepared.check ?? null;
-    const paid = lines?.spend.amount ?? null;
-    const minUnits = lines?.get.atLeast ?? null;
-    const ready = ticket.preparedReadiness?.ready === true;
-    const seconds = ticket.reviewSecondsLeft;
-    /* The reserve a new token's account keeps: its own line, and said first when it is more than the purchase itself. */
-    const reserve = lines?.reserve?.usd ? approxUsd(lines.reserve.usd, numbers) : null;
-    const reserveFirst = reserve !== null && lines?.reserve?.first === true && paid !== null;
-    /* «Що це» as the server says it — the truth and, under it, the issuer's event said to a buyer; the page's own words only when the server could not read the company. */
-    const whatLine = lines ? lines.what.truth[lang] : truth;
-    const buyerEvent = lines ? (lines.what.note?.kind === "issuer-event" ? lines.what.note[lang] : null) : eventLine;
-    const caution = lines ? lines.what.caution : preIpo;
-    return (
-      <div className={company.sheetBody} data-sheet="review" data-check={lines ? lines.basis : "none"}>
-        {head(word("review"))}
-        {reserveFirst && reserve && paid !== null ? (
-          <p className={company.sheetWarning} data-reserve-first>
-            {reserveFirstLine(locale, reserve, dollars(paid, numbers))}
-          </p>
-        ) : null}
-        <dl className={company.review} aria-label={word("review")}>
-          <div>
-            <dt>{word("rowSpend")}</dt>
-            <dd translate="no">
-              {paid === null ? "—" : formatUsdMoney(paid, numbers)}
-              <span>USDC</span>
-            </dd>
-          </div>
-          <div>
-            <dt>{word("rowGet")}</dt>
-            <dd translate="no">
-              {outUnits === null ? "—" : `≈ ${unitsPhrase(outUnits, unit, name, lang, numbers)}`}
-              {minUnits !== null ? <span>{`${word("atLeast")} ${formatUnits(minUnits, numbers)}`}</span> : null}
-            </dd>
-          </div>
-          <div>
-            <dt>{word("rowCosts")}</dt>
-            <dd translate="no">
-              {costs ? approxUsd(costs.usd, numbers) : "—"}
-              {issuerFee ? <span data-issuer-fee>{issuerFee}</span> : null}
-              {ryntraFeeLine ? <span data-ryntra-fee>{ryntraFeeLine}</span> : null}
-            </dd>
-            {reserve ? <dd data-reserve>{reserveLine(locale, reserve)}</dd> : null}
-          </div>
-          <div>
-            <dt>{word("rowWhat")}</dt>
-            <dd data-prose="true" data-caution={caution ? "true" : undefined}>
-              {whatLine}
-              {buyerEvent ? <span data-company-event="buyer">{buyerEvent}</span> : null}
-            </dd>
-          </div>
-        </dl>
-        {plan && binding ? <LimitLine limitPerUnit={plan.limitPerUnit} limit={limit} channel={channel} locale={locale} /> : null}
-        {ruleMode && boughtUnder ? (
-          <p className={company.limitLine}>
-            <span>{`${word("byRule")} · ${ruleWhenLine(boughtUnder, lang)}`}</span>
-          </p>
-        ) : null}
-        {/* The rule's price condition, judged on the figures read now: the deviation, the reference, the limit, the data's time. */}
-        {ruleMode && boughtUnder && reviewedCondition ? (
-          <p className={company.limitLine} data-condition={reviewedCondition.verdict} translate="no">
-            <span>{`${word("priceCondition")} · ${conditionReviewLine(reviewedCondition, Date.now(), ruleZone, lang)}`}</span>
-          </p>
-        ) : null}
-        {failure ? <p className={company.sheetError}>{failure}</p> : null}
-        <p className={company.sheetTimer} aria-live="off">
-          {ready && seconds !== null && seconds > 0 ? `${word("priceHolds")} ${seconds} ${word("seconds")}` : ready ? "" : word("priceExpired")}
-        </p>
-        <div className={company.sheetActions}>
-          {phase === "SIGNING" || phase === "EXECUTING" ? (
-            <button type="button" className="rw-btn rw-btn--primary" disabled>
-              {phase === "SIGNING" ? word("inWallet") : word("sending")}
-            </button>
-          ) : ready && !ticket.bytesChanged ? (
-            <button type="button" className="rw-btn rw-btn--primary" onClick={() => void ticket.sign()}>
-              {word("sign")}
-            </button>
-          ) : (
-            <button type="button" className="rw-btn rw-btn--primary" onClick={() => void ticket.cancelReview(true)}>
-              {word("refreshPrice")}
-            </button>
-          )}
-          <button type="button" className={company.quietButton} disabled={busy} onClick={() => void ticket.cancelReview()}>
-            {word("cancel")}
-          </button>
-        </div>
-      </div>
-    );
-  }
-
-  /* ------------------------------------------------------------ a reminder */
-  if (ruleMode) {
+  /* ------------------------------------------------------------ a reminder, before its Review */
+  if (ruleMode && view.stage === "form") {
     const next = rule?.nextDueAt && rule.schedule ? dueWords(Date.parse(rule.nextDueAt), rule.schedule.timeZone, lang) : null;
     /* What became of the reminder when it is not open: said plainly, with no purchase offered (never caught up). */
     const readFailed = ruleBuy?.read === "failed" && !rule;
@@ -939,7 +893,7 @@ function BuyFlow({
     return (
       <div className={company.sheetBody} data-sheet="rule-buy" data-deferred={waitingOn ? "true" : undefined}>
         {head(waitingOn ? word("purchaseDeferred") : ruleOpen || !rule ? word("timeToBuy") : `${word("autoinvest")} · ${name}`)}
-        {preIpo ? <SheetTruth truth={truth} eventLine={eventLine} /> : null}
+        {preIpo ? <SheetTruth truth={truth} eventLine={eventLine} risks={riskLines} /> : null}
         {rule ? (
           <div className={company.ruleSummary}>
             <p className={company.ruleAmount}>{lang === "uk" ? `${usdWord(ruleSum ?? rule.amountUsd, lang)} в ${name}` : `${usdWord(ruleSum ?? rule.amountUsd, lang)} of ${name}`}</p>
@@ -950,7 +904,7 @@ function BuyFlow({
         )}
         {ruleOpen && !budgetHolds && !conditionHolds ? (
           <p className={company.estimate} aria-live="polite">
-            {estimateLine ?? (quoteFailure ? quoteFailure : uncounted ? " " : word("pricing"))}
+            {estimateLine ?? (quoteFailure ? quoteFailure : uncounted ? " " : word("pricing"))}
           </p>
         ) : null}
         {/* The rule's price condition met now: why the purchase is offered — the deviation, the reference, the limit, the data's time. */}
@@ -969,9 +923,9 @@ function BuyFlow({
         {!closedWord && ruleOpen && !insufficient && cannotPayFee ? <p className={company.sheetNote} data-empty="sol">{word("needSol")}</p> : null}
         {failure ? <p className={company.sheetError}>{failure}</p> : null}
         <div className={company.sheetActions}>
-          <button type="button" className="rw-btn rw-btn--primary" disabled={ruleCta.disabled} onClick={ruleCta.run}>
+          <Button variant="primary" block disabled={ruleCta.disabled} onClick={ruleCta.run} lang={lang}>
             {ruleCta.label}
-          </button>
+          </Button>
           {connection && usdc !== null && ruleOpen ? (
             <p className={company.sheetLinks}>
               <span translate="no">{`${insufficient ? `${word("notEnough")} · ` : ""}${word("walletHas")} ${formatUnits(usdc, numbers)} USDC`}</span>
@@ -982,116 +936,251 @@ function BuyFlow({
     );
   }
 
-  /* ------------------------------------------------------------ compose */
-  const pickAmount = (value: number) => onAmountText(String(value));
+  /* ------------------------------------------------------------ the purchase on the core's ticket */
   const warning = helpTopic("lossLimitWarning", locale);
-  const cta = (() => {
-    if (ticket.lockedReview) return { label: word("refreshPrice"), disabled: false, run: () => void ticket.cancelReview(true) };
-    if (!connection) return { label: word("connectWallet"), disabled: false, run: onConnect };
-    if (amount !== null && amount < MIN_BUY_USD) return { label: word("minimum"), disabled: true, run: undefined };
-    if (!valid || amount === null) return { label: word("buy"), disabled: true, run: undefined };
-    /* No route for this sum: the one action puts in the company's own minimum, never a dead button; while it is looked for, nothing is offered; none found — buying is not available now. */
-    if (noRoute && minimumUsd !== null) return { label: setMinimumWord(locale, dollars(minimumUsd, numbers)), disabled: false, run: () => pickAmount(minimumUsd) };
-    if (noRoute && routeMinimum.state === "finding") return { label: `${word("buyFor")} ${dollars(amount, numbers)}`, disabled: true, run: undefined };
-    if (noRoute && routeMinimum.state === "none") return { label: word("unavailableNow"), disabled: true, run: undefined };
-    if (step === "proving") return { label: word("confirming"), disabled: true, run: undefined };
-    if (step === "writing") return { label: word("savingLimit"), disabled: true, run: undefined };
-    if (phase === "PREPARING" || wantReview) return { label: word("preparingReview"), disabled: true, run: undefined };
-    /* What is missing is never a dead button: the one action brings it — dollars first, then the network's SOL. */
-    if (insufficient) return { label: word("topUp"), disabled: false, run: () => topUp(null) };
-    if (cannotPayFee) return { label: word("topUpSol"), disabled: false, run: () => topUp("sol") };
-    if (blocked || quoteStop) return { label: word("unavailableNow"), disabled: true, run: undefined };
-    if (limit && !made) return { label: `${word("buyFor")} ${dollars(amount, numbers)}`, disabled: true, run: undefined };
-    return { label: `${word("buyFor")} ${dollars(amount, numbers)}`, disabled: false, run: () => void press() };
-  })();
-
+  const sheetName = view.stage === "review" ? "review" : view.stage === "result" ? (outcome ? "receipt" : "recovery") : "compose";
+  const stepWord = step === "proving" ? word("confirming") : step === "writing" ? word("savingLimit") : phase === "PREPARING" || wantReview ? word("preparingReview") : null;
+  /* While the sheet works, or the sum cannot be bought as it stands, the action waits in its own words — as the sheet's button did. */
+  const holdWord =
+    view.stage !== "form" || !connection
+      ? null
+      : stepWord ??
+        /* A sum over one purchase's limit is not sent: the action stands held — the limit is said once, above it — rather than pressable and doing nothing. */
+        (over
+          ? `${word("buyFor")} ${dollars(amount ?? 0, numbers)}`
+          : noRoute && routeMinimum.state === "none"
+          ? word("unavailableNow")
+          : valid && amount !== null && ((noRoute && routeMinimum.state === "finding") || (limit && !made && !insufficient))
+            ? `${word("buyFor")} ${dollars(amount, numbers)}`
+            : null);
   return (
-    <div className={company.sheetBody} data-sheet="compose">
-      {head(`${word("buy")} ${name}`)}
-      {preIpo ? <SheetTruth truth={truth} eventLine={eventLine} /> : null}
+    <div className={company.sheetBody} data-sheet={sheetName} data-check={inReview ? (lines ? lines.basis : "none") : undefined} data-rule={byRule ? "true" : undefined}>
+      {head(receiptTitle ?? (inReview ? word("review") : view.stage === "result" ? name : `${word("buy")} ${name}`))}
+      {view.stage === "form" && preIpo ? <SheetTruth truth={truth} eventLine={eventLine} risks={riskLines} /> : null}
       {/* An ordinary purchase while a rule's reminder is open says so before any sum: the reminder stays open. */}
-      {ruleOffer ? (
+      {view.stage === "form" && ruleOffer ? (
         <p className={company.plainSheetNote} data-rule-open>
           {plainLeavesOpenLine(locale, ruleOffer.amountUsd)}
         </p>
       ) : null}
-
-      {/* A press chooses the whole sum and the keyboard's own key is the one action (`sum-field.tsx`): $1 is a tap and a key from the sheet's $10. */}
-      <SumField
-        value={amountText}
-        onChange={onAmountText}
-        onGo={() => {
-          if (!cta.disabled) cta.run?.();
-        }}
-        label={word("amount")}
-        describedBy={`${titleId}-estimate`}
-        disabled={busy}
-      />
-      {/* The quick choices are shares of the wallet's USDC — 25 · 50 · 75 · 100 %; the sum itself is typed freely. Drawn once the wallet's USDC is read; a share under a dollar is not offered. */}
-      {usdcRaw !== null && usdcRaw > 0n ? (
-        <div className={company.presets} role="group" aria-label={word("quickShares")}>
-          {BUY_SHARE_PRESETS_PCT.map((pct) => {
-            const share = shareOfRaw(usdcRaw, usdcRow?.decimals ?? USDC.decimals, pct);
-            return (
-              <button key={pct} type="button" className={company.preset} aria-pressed={amount !== null && Math.abs(amount - share) < 0.005} disabled={busy || share < MIN_BUY_USD} onClick={() => pickAmount(share)}>
-                {`${pct}%`}
-              </button>
-            );
-          })}
-        </div>
+      {/* The reserve a new token's account keeps, said first when it is more than the purchase itself. */}
+      {reserveFirst && reserve && paidUsd !== null ? (
+        <p className={company.sheetWarning} data-reserve-first>
+          {reserveFirstLine(locale, reserve, dollars(paidUsd, numbers))}
+        </p>
       ) : null}
-      <p id={`${titleId}-estimate`} className={company.estimate} aria-live="polite">
-        {!valid ? " " : (estimateLine ?? (minimumLine ? minimumLine : quoteFailure ? quoteFailure : uncounted ? " " : word("pricing")))}
+
+      <TradeTicket
+        quietLegs
+        {...view.input}
+        className={company.ticket}
+        venue={STOCK_VENUE}
+        network={NETWORK_LABEL}
+        stage={view.stage}
+        reviewed={view.reviewed}
+        result={view.result}
+        signing={view.signing}
+        cancelWhileSigning={false}
+        {...(connection ? { signer: `${connection.address.slice(0, 4)}…${connection.address.slice(-4)}` } : {})}
+        {...countOf(check, prepared?.order ?? quoted?.order ?? null)}
+        whatItIs={
+          inReview ? (
+            <>
+              {whatLine}
+              {buyerEvent ? <span data-company-event="buyer"> {buyerEvent}</span> : null}
+              {saleMayFail ? <span data-sale-may-fail> {saleMayFail}</span> : null}
+            </>
+          ) : undefined
+        }
+        titleAs="h3"
+        lang={lang}
+        onDraftChange={(next) => {
+          if (next.unit !== amountUnit) setAmountUnit(next.unit);
+          onAmountText(next.amount);
+        }}
+        /* «Спробувати ще» only where another press can help: not on a refusal this deployment cannot pass, nor on a sum over the limit. */
+        onRetryQuote={quoteStop || over ? undefined : () => ticket.refreshQuote()}
+        onConnect={onConnect}
+        onReview={() => void press()}
+        {...(holdWord
+          ? {
+              action: (
+                <Button variant="primary" block disabled lang={lang} data-ticket-action="">
+                  {holdWord}
+                </Button>
+              ),
+            }
+          : {})}
+        onCancel={() => void ticket.cancelReview()}
+        onConfirm={() => void ticket.sign()}
+        onVerify={settled && outcome?.kind !== "NOTHING_HAPPENED" ? () => window.open(explorerTxUrl("mainnet", settled.signature), "_blank", "noopener,noreferrer") : undefined}
+        onAgain={() => ticket.reset()}
+      />
+      {/* The step the held action names, said to a screen reader as it changes. */}
+      <p className={company.srOnly} role="status">
+        {view.stage === "form" ? (stepWord ?? "") : ""}
       </p>
 
-      <div className={company.limit}>
-        <span className={company.limitLabel} id={`${titleId}-limit`}>
-          {word("lossLimit")}
-        </span>
-        <div className={company.limitChips} role="group" aria-labelledby={`${titleId}-limit`}>
-          {([null, "careful", "balanced"] as const).map((preset) => (
-            <button key={preset ?? "none"} type="button" className={company.chip} aria-pressed={limit === preset} disabled={busy} onClick={() => onLimit(preset)}>
-              {preset === null ? word("limitNone") : `−${LOSS_LIMIT_PRESETS[preset].stopPct}%`}
-            </button>
-          ))}
-        </div>
-      </div>
-      {limit ? (
+      {view.stage === "form" ? (
         <>
-          {asset.status === "failed" ? <p className={company.sheetError}>{word("limitPriceUnknown")}</p> : made ? <LimitLine limitPerUnit={made.limitPerUnit} limit={limit} channel={proven ? channel : "unknown"} locale={locale} /> : <span className={company.lineBone} aria-hidden="true" />}
-          {/* The warning in full one press deep, inside the sheet itself: the product's `?` opens in a portal the modal sheet would cover. */}
-          <details className={company.risk}>
-            <summary>{word("canLoseAll")}</summary>
-            <p>{`${warning.short} ${warning.important}`}</p>
-          </details>
+          {/* No route for this sum: the company's own minimum is one press away, never a dead button. */}
+          {noRoute && minimumUsd !== null ? (
+            <Button variant="secondary" block onClick={() => onAmountText(String(minimumUsd))} lang={lang}>
+              {setMinimumWord(locale, dollars(minimumUsd, numbers))}
+            </Button>
+          ) : null}
+          {ticket.lockedReview ? (
+            <Button variant="secondary" block onClick={() => void ticket.cancelReview(true)} lang={lang}>
+              {word("refreshPrice")}
+            </Button>
+          ) : null}
+          <div className={company.limit}>
+            <span className={company.limitLabel} id={`${titleId}-limit`}>
+              {word("lossLimit")}
+            </span>
+            <div className={company.limitChips} role="group" aria-labelledby={`${titleId}-limit`}>
+              {([null, "careful", "balanced"] as const).map((preset) => (
+                <Button key={preset ?? "none"} variant={limit === preset ? "secondary" : "ghost"} aria-pressed={limit === preset} disabled={busy} onClick={() => onLimit(preset)} lang={lang}>
+                  {preset === null ? word("limitNone") : `−${LOSS_LIMIT_PRESETS[preset].stopPct}%`}
+                </Button>
+              ))}
+            </div>
+          </div>
+          {limit ? (
+            <>
+              {asset.status === "failed" ? <p className={company.sheetError}>{word("limitPriceUnknown")}</p> : made ? <LimitLine limitPerUnit={made.limitPerUnit} limit={limit} channel={proven ? channel : "unknown"} locale={locale} /> : <span className={company.lineBone} aria-hidden="true" />}
+              {/* The warning in full one press deep, inside the sheet itself: the product's `?` opens in a portal the modal sheet would cover. */}
+              <details className={company.risk}>
+                <summary>{word("canLoseAll")}</summary>
+                <p>{`${warning.short} ${warning.important}`}</p>
+              </details>
+            </>
+          ) : null}
+          {failure ? <p className={company.sheetError}>{failure}</p> : null}
+          {/* What is missing is never a dead end: the top-up worded for it, dollars first, then the network's SOL. */}
+          {insufficient ? (
+            <Button variant="secondary" block icon="wallet" onClick={() => topUp(null)} lang={lang}>
+              {word("topUp")}
+            </Button>
+          ) : valid && cannotPayFee ? (
+            <>
+              <p className={company.sheetNote} data-empty="sol">
+                {word("needSol")}
+              </p>
+              <Button variant="secondary" block icon="wallet" onClick={() => topUp("sol")} lang={lang}>
+                {word("topUpSol")}
+              </Button>
+            </>
+          ) : null}
         </>
       ) : null}
 
-      {failure ? <p className={company.sheetError}>{failure}</p> : null}
-      {valid && !insufficient && cannotPayFee ? <p className={company.sheetNote} data-empty="sol">{word("needSol")}</p> : null}
+      {inReview ? (
+        <>
+          {reserve ? <p className={company.sheetNote} data-reserve>{reserveLine(locale, reserve)}</p> : null}
+          {plan && binding ? <LimitLine limitPerUnit={plan.limitPerUnit} limit={limit} channel={channel} locale={locale} /> : null}
+          {ruleMode && boughtUnder ? (
+            <p className={company.limitLine}>
+              <span>{`${word("byRule")} · ${ruleWhenLine(boughtUnder, lang)}`}</span>
+            </p>
+          ) : null}
+          {/* The rule's price condition, judged on the figures read now: the deviation, the reference, the limit, the data's time. */}
+          {ruleMode && boughtUnder && reviewedCondition ? (
+            <p className={company.limitLine} data-condition={reviewedCondition.verdict} translate="no">
+              <span>{`${word("priceCondition")} · ${conditionReviewLine(reviewedCondition, Date.now(), ruleZone, lang)}`}</span>
+            </p>
+          ) : null}
+          {failure ? <p className={company.sheetError}>{failure}</p> : null}
+          {/* A price that no longer holds: the Review keeps its figures, and a fresh one is one press. */}
+          {view.stale && !view.signing ? (
+            <Button variant="secondary" block onClick={() => void ticket.cancelReview(true)} lang={lang}>
+              {word("refreshPrice")}
+            </Button>
+          ) : null}
+        </>
+      ) : null}
 
-      <div className={company.sheetActions}>
-        <button type="button" className="rw-btn rw-btn--primary" disabled={cta.disabled} onClick={cta.run}>
-          {cta.label}
-        </button>
-        {connection && usdc !== null ? (
-          <p className={company.sheetLinks} data-empty={insufficient ? "usdc" : undefined}>
-            <span translate="no">{`${insufficient ? `${word("notEnough")} · ` : ""}${word("walletHas")} ${formatUnits(usdc, numbers)} USDC`}</span>
+      {view.stage === "result" && outcome ? (
+        <>
+          {outcome.kind === "FILLED" && gotUnits !== null ? <p className={company.receiptSub}>{unitsPhrase(gotUnits, unit, name, lang, numbers)}</p> : null}
+          {outcome.kind === "FILLED" && outcome.note ? <p className={company.receiptNote}>{outcome.note === "BELOW_MINIMUM" ? word("belowMinimum") : word("notAsReviewed")}</p> : null}
+          {byRule ? (
+            <p className={company.ruleMark}>
+              <span>{`${word("byRule")} · ${ruleWhenLine(byRule, lang)}`}</span>
+              {nextOfRule ? <span translate="no">{`${word("nextPurchase")}: ${nextOfRule}`}</span> : null}
+            </p>
+          ) : null}
+          {watched ? (
+            channel === "connected" ? (
+              <p className={company.receiptWatch}>
+                {word("watchingLimit")} <b translate="no">{formatUsdPrice(watched.limitPerUnit, numbers)}</b>
+              </p>
+            ) : (
+              <p className={company.receiptWatch}>
+                <Link href="/app/settings#account" prefetch={false}>
+                  {word("limitSavedNoChannel")}
+                </Link>
+              </p>
+            )
+          ) : null}
+          <div className={company.sheetActions}>
+            {outcome.kind === "FILLED" ? (
+              <Button variant="primary" block onClick={onClose} lang={lang}>
+                {word("done")}
+              </Button>
+            ) : null}
+            {weekly !== null ? (
+              <Button variant="secondary" block onClick={() => onBuyWeekly?.(weekly)} lang={lang}>
+                {word("buyWeekly")}
+              </Button>
+            ) : null}
+            <p className={company.sheetLinks}>
+              <Link href="/app/activity" prefetch={false}>
+                {word("history")}
+              </Link>
+              {/* After a filled trade: the position as it now stands, among everything the wallet holds. */}
+              {outcome.kind === "FILLED" ? (
+                <Link href="/app/portfolio" prefetch={false}>
+                  {word("portfolio")}
+                </Link>
+              ) : null}
+            </p>
+          </div>
+        </>
+      ) : null}
+
+      {view.stage === "result" && !outcome ? (
+        /* An order whose answer is still being looked for: never sent again, only checked. */
+        <>
+          <p className={company.sheetNote} role="status">
+            {word("unknownTx")}
           </p>
-        ) : null}
-      </div>
+          {failure ? <p className={company.sheetError}>{failure}</p> : null}
+          <div className={company.sheetActions}>
+            <Button variant="primary" block loading={phase === "RECOVERING"} disabled={phase === "RECOVERING"} onClick={() => void ticket.recover()} lang={lang}>
+              {phase === "RECOVERING" ? word("checkingTx") : word("checkTx")}
+            </Button>
+            <p className={company.sheetLinks}>
+              <Link href="/app/activity" prefetch={false}>
+                {word("history")}
+              </Link>
+            </p>
+          </div>
+        </>
+      ) : null}
     </div>
   );
 }
 
 /**
- * A private company's truth at the top of the sheet, before any sum — and,
- * where the issuer opened a swap window, the event in the same box: the
- * token bought now must be swapped by the issuer's deadline (the IPO and
- * conversion watch).
+ * A private company's truth at the top of the sheet, before any sum, with
+ * its strongest risks under it — a sale may not go through, the company's
+ * own word about tokens like this one (UX-500) — and, where the issuer opened
+ * a swap window, the event in the same box: the token bought now must be
+ * swapped by the issuer's deadline (the IPO and conversion watch).
  */
-export function SheetTruth({ truth, eventLine }: { truth: string; eventLine: string | null }) {
-  if (!eventLine) {
+export function SheetTruth({ truth, eventLine, risks = [] }: { truth: string; eventLine: string | null; risks?: readonly string[] }) {
+  if (!eventLine && risks.length === 0) {
     return (
       <p className={company.sheetWarning} data-company-truth>
         {truth}
@@ -1101,10 +1190,17 @@ export function SheetTruth({ truth, eventLine }: { truth: string; eventLine: str
   return (
     <div className={company.sheetWarning}>
       <p data-company-truth>{truth}</p>
-      <p className={company.warningEvent} data-company-event="buyer">
-        <HourglassMedium size={16} weight="bold" aria-hidden="true" />
-        <span>{eventLine}</span>
-      </p>
+      {risks.map((risk) => (
+        <p key={risk} className={company.sheetRisk} data-buy-risk>
+          {risk}
+        </p>
+      ))}
+      {eventLine ? (
+        <p className={company.warningEvent} data-company-event="buyer">
+          <HourglassMedium size={16} weight="bold" aria-hidden="true" />
+          <span>{eventLine}</span>
+        </p>
+      ) : null}
     </div>
   );
 }

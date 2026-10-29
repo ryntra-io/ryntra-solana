@@ -12,10 +12,12 @@
  *
  * Nothing reaches the network: `fetch` is replaced for the whole scenario, and
  * a call no scenario answers is recorded as `unexpected` and answered with a
- * deterministic HTTP 599. The clock is frozen at `T0` (`Date` only); the one
- * real wait the execute route makes — its 1.5 s status poll — advances the
- * frozen clock by exactly 1.5 s and then yields at once, so the poll runs its
- * real number of rounds in no real time.
+ * deterministic HTTP 599. The clock is frozen at `T0` (`Date` only); the
+ * real waits the routes make — the venue's 1.5 s pause and, since SOL-S1, the
+ * execute route's 0.5 s landing read — advance the frozen clock by exactly
+ * that much and then yield at once, so a poll runs its real number of rounds
+ * in no real time. `Server-Timing` (SOL-S1) is recorded by its step names
+ * only: its durations are the machine's, not the route's behaviour.
  *
  * One value is not deterministic and is replaced in the record: the referral
  * code a new rewards account receives is 128 random bits, and appears as
@@ -61,6 +63,7 @@ const { createMemoryGuardStore, GUARD_COLLECTIONS } = await import("../../../../
 const { resetJupiterBudget } = await import("../../../../lib/solana/jupiter-budget.ts");
 const { resetJupiterReferralCache } = await import("../../../../lib/solana/referral-account.server.ts");
 const { resetRentParametersCache } = await import("../../../../lib/solana/rent.ts");
+const { resetMsPerSlotCache } = await import("../../../../lib/solana/blockhash-life.ts");
 const { getGuardRuntime } = await import("../../../../lib/guard/runtime.ts");
 
 const ROUTES = {
@@ -214,6 +217,11 @@ function defaultRpc(world, method, params) {
       };
     case "isBlockhashValid":
       return { context: CONTEXT, value: world.blockhashValid ?? true };
+    /* AG-1: how long the order's bytes may still be signed — the tip and the slot speed (`lib/solana/blockhash-life.ts`). */
+    case "getEpochInfo":
+      return world.epochInfo ?? { absoluteSlot: CONTEXT.slot, blockHeight: fx.LAST_VALID_BLOCK_HEIGHT - 120, epoch: 925, slotIndex: 0, slotsInEpoch: 432_000, transactionCount: null };
+    case "getRecentPerformanceSamples":
+      return [{ slot: CONTEXT.slot, numSlots: 300, numTransactions: 0, numNonVoteTransactions: 0, samplePeriodSecs: 60 }];
     case "getSignatureStatuses":
       return { context: CONTEXT, value: [world.signatureStatus?.() ?? null] };
     case "getTransaction":
@@ -293,7 +301,11 @@ function setEnvironment(overrides) {
 }
 
 function sortedHeaders(headers) {
-  return Object.fromEntries([...headers.entries()].sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0)));
+  return Object.fromEntries(
+    [...headers.entries()]
+      .map(([key, value]) => [key, key === "server-timing" ? value.replace(/;dur=[0-9.]+/g, "") : value])
+      .sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0)),
+  );
 }
 
 /** Random referral codes become stable placeholders, numbered by first appearance. */
@@ -322,6 +334,7 @@ function scenario(name, script, options = {}) {
     resetJupiterBudget();
     resetJupiterReferralCache();
     resetRentParametersCache();
+    resetMsPerSlotCache();
 
     const { store, dump } = recordingStore({ durable: options.durable ?? true });
     /* The routes read the process runtime's store; each scenario gets a fresh one. */
@@ -339,7 +352,7 @@ function scenario(name, script, options = {}) {
     installNetwork(t, world, () => calls);
     const realSetTimeout = globalThis.setTimeout;
     t.mock.method(globalThis, "setTimeout", (callback, ms, ...rest) => {
-      if (ms === 1_500) {
+      if (ms === 1_500 || ms === 500) {
         waits.push(ms);
         t.mock.timers.tick(ms);
         return realSetTimeout(callback, 0, ...rest);
@@ -500,15 +513,24 @@ scenario("order refused: the issuer key is missing", async (ctx) => {
   await ctx.post("order", ORDER_INPUT, { env: { RYNTRA_AGENT_ISSUER_PRIVATE_KEY: null } });
 });
 
-scenario("order refused: the owner already holds a live Review", async (ctx) => {
+/* SOL-S1 (line B's request 60): an unsigned Review no longer holds the wallet — the next order replaces it at once. */
+scenario("order: a new order replaces the owner's unsigned Review at once", async (ctx) => {
   await ctx.post("order", ORDER_INPUT, { setup: true });
+  ctx.world.jupiterOrder = () => jsonResponse(fx.jupiterOrderBody({ overrides: { requestId: "req-replacing-review" } }));
   await ctx.post("order", ORDER_INPUT);
 });
 
-scenario("order: an unclaimed Review past its window with a dead blockhash is recycled", async (ctx) => {
+scenario("order: an unsigned Review past its window is replaced without asking the chain", async (ctx) => {
   await ctx.post("order", ORDER_INPUT, { setup: true });
   ctx.tick(46_000);
-  ctx.world.blockhashValid = false;
+  await ctx.post("order", ORDER_INPUT);
+});
+
+scenario("order refused: the owner holds a signature the server claimed", async (ctx) => {
+  const { order } = await orderAndLand(ctx);
+  ctx.world.jupiterExecute = () => new Error("socket reset");
+  ctx.world.signatureStatus = () => null;
+  await ctx.post("execute", executeBody(order), { summary: "exact signed bytes", setup: true });
   await ctx.post("order", ORDER_INPUT);
 });
 
@@ -604,6 +626,13 @@ scenario("execute refused before submit: the Review window has closed", async (c
   await ctx.post("execute", executeBody(order), { summary: "exact signed bytes, presented 46 s after the order" });
 });
 
+scenario("execute refused before submit: a newer order replaced the Review", async (ctx) => {
+  const { order } = await orderAndLand(ctx);
+  ctx.world.jupiterOrder = () => jsonResponse(fx.jupiterOrderBody({ overrides: { requestId: "req-replacing-review" } }));
+  await ctx.post("order", ORDER_INPUT, { setup: true });
+  await ctx.post("execute", executeBody(order), { summary: "exact signed bytes of the replaced Review" });
+});
+
 scenario("execute refused before submit: modified bytes without the reviewed bytes", async (ctx) => {
   const { order } = await orderAndLand(ctx);
   const modified = fx.signWire(fx.buildSwapWire({ microLamports: 10_000 })).wire;
@@ -677,6 +706,36 @@ scenario("execute: the wallet re-priced the compute budget and the adopted bytes
     summary: "wallet re-priced the compute budget to 10 000 micro-lamports; reviewedTransactionBase64 is the order's bytes",
   });
 }, { fullStore: true });
+
+/* SOL-S1: our own broadcast is sent again — the same bytes, the same signature — every 2 s until an operator sees it. */
+scenario("execute: the adopted bytes are sent again until the chain shows them", async (ctx) => {
+  const order = await ctx.post("order", ORDER_INPUT, { setup: true });
+  const adopted = fx.signWire(fx.buildSwapWire({ microLamports: 10_000 }));
+  const adoptedFee = fx.SIGNATURE_FEE + fx.ADOPTED_PRIORITY_FEE;
+  ctx.world.simulation = () => ({ fee: adoptedFee });
+  ctx.world.sendTransaction = () => adopted.signature;
+  let reads = 0;
+  /* Unseen for the first 4.5 s of reads: two re-sends go out, then it lands. */
+  ctx.world.signatureStatus = () => (++reads <= 10 ? null : landedStatus("confirmed"));
+  ctx.world.transaction = () => fx.transactionValue(adopted.wire, adopted.signature, { fee: adoptedFee });
+  await ctx.post("execute", executeBody(order, { wire: adopted.wire, reviewed: order.order.transactionBase64 }), {
+    summary: "adopted bytes; the chain shows them only after two re-sends",
+  });
+});
+
+scenario("execute: the first send of the adopted bytes does not answer and a re-send lands them", async (ctx) => {
+  const order = await ctx.post("order", ORDER_INPUT, { setup: true });
+  const adopted = fx.signWire(fx.buildSwapWire({ microLamports: 10_000 }));
+  const adoptedFee = fx.SIGNATURE_FEE + fx.ADOPTED_PRIORITY_FEE;
+  ctx.world.simulation = () => ({ fee: adoptedFee });
+  let sends = 0;
+  ctx.world.sendTransaction = () => (++sends === 1 ? { http: 502 } : adopted.signature);
+  ctx.world.signatureStatus = () => (sends < 2 ? null : landedStatus("confirmed"));
+  ctx.world.transaction = () => fx.transactionValue(adopted.wire, adopted.signature, { fee: adoptedFee });
+  await ctx.post("execute", executeBody(order, { wire: adopted.wire, reviewed: order.order.transactionBase64 }), {
+    summary: "adopted bytes; the first send answers HTTP 502, the re-send lands",
+  });
+});
 
 scenario("execute refused before submit: the adopted bytes fail their own simulation", async (ctx) => {
   const order = await ctx.post("order", ORDER_INPUT, { setup: true });

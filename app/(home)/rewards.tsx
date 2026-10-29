@@ -7,7 +7,7 @@ import type { PublicLocale } from "@/lib/site/locale";
 import { HOMEPAGE_COPY } from "@/lib/site/homepage-copy";
 import { homepageModel } from "@/lib/site/homepage-model";
 import { localizedPath } from "@/lib/site/localized";
-import { POINTS, REWARDS } from "./rewards-facts";
+import { REWARDS } from "./rewards-facts";
 import styles from "./rewards.module.css";
 
 /**
@@ -17,22 +17,24 @@ import styles from "./rewards.module.css";
  * what Ryntra is, where it works, how it leads a trade, and why to stay and
  * open it. This block is the last of those: one rewards panel in the
  * centre, not ten cards — three segments for the three things the
- * programme pays for (a share of eligible service fees, points for
- * qualified activity, a share of what invited traders generate) — then the
+ * programme pays for (a share of eligible service fees, the rank points a
+ * dollar of that fee earns, a share of what invited traders generate) — then the
  * closing line, one orange button, and the footer folded into the same
  * ground. Serious fintech, not a casino: no coins, no confetti, no promise
  * of income or of a token.
  *
  * What is real. The three rates are the programme's own
- * (rewards-facts.ts, held equal to `lib/rewards/model.ts` by test); the
- * points figure is an example, marked as one, whose level comes from the
- * live policy; the panel's chip is the Rewards page's readiness from the
+ * (rewards-facts.ts, held equal to `lib/rewards/model.ts` by test); the rank
+ * figure is the rule itself — a dollar of the fee Ryntra received is a rank
+ * point — and nothing on the panel is an example any more (UX-751: the
+ * example balance of «Ryntra Points» previewed a programme no screen draws,
+ * so it is gone, not relabelled); the panel's chip is the Rewards page's readiness from the
  * route registry; the trust line says only what the product is — Solana
  * mainnet, non-custodial, markets that do not close. Every word is in
  * `HOMEPAGE_COPY`.
  *
  * How it moves. Once, as it scrolls into view: the words rise, the panel
- * lifts 24px, the ring draws to 50%, the points count up, the referral
+ * lifts 24px, the ring draws to 50%, the referral
  * levels light one after the other; the light behind the panel drifts
  * slowly and the button breathes — faintly, on a long clock. A hovered
  * segment brightens and lifts 3px. Off screen the light stands still, and
@@ -71,7 +73,6 @@ export function Rewards({ locale }: { locale: PublicLocale }) {
      for the search engine — and the script takes them back to nothing only
      once it knows it will count them up. */
   const [share, setShare] = useState<number>(REWARDS.feeSharePercent);
-  const [points, setPoints] = useState<number>(POINTS.total);
   const [counted, setCounted] = useState(true);
 
   useEffect(() => {
@@ -88,7 +89,6 @@ export function Rewards({ locale }: { locale: PublicLocale }) {
     let frame = 0;
     const settle = () => {
       setShare(REWARDS.feeSharePercent);
-      setPoints(POINTS.total);
       setCounted(true);
     };
     const count = () => {
@@ -98,7 +98,6 @@ export function Rewards({ locale }: { locale: PublicLocale }) {
         const t = Math.min(1, (now - start) / length);
         const eased = 1 - Math.pow(1 - t, 3);
         setShare(Math.round(REWARDS.feeSharePercent * eased));
-        setPoints(Math.round(POINTS.total * eased));
         if (t < 1) frame = requestAnimationFrame(tick);
         else { frame = 0; settle(); }
       };
@@ -113,7 +112,6 @@ export function Rewards({ locale }: { locale: PublicLocale }) {
     }
     /* The block is below the fold when this runs; nothing is seen to reset. */
     setShare(0);
-    setPoints(0);
     setCounted(false);
 
     /* Reveal once, when half the head is on screen. */
@@ -233,24 +231,19 @@ export function Rewards({ locale }: { locale: PublicLocale }) {
             <p className={styles.segmentBody}>{r.segments.fees.body.replace("{rate}", `${REWARDS.feeSharePercent}%`)}</p>
           </article>
 
-          {/* 02 — points for qualified activity; the figure is an example. */}
+          {/* 02 — the rank points a person can actually find in the app
+              (UX-751). No example balance and no level: this segment used to
+              preview the Points V1 programme, which no screen draws. */}
           <article className={styles.segment} data-kind="points">
             <span className={styles.index}>02</span>
             <div className={styles.points}>
               <span className={styles.pointsValue}>
-                <b>{format(points)}</b>
+                <b>{format(REWARDS.rankPointsPerUsd)}</b>
                 <small>{r.segments.points.unit}</small>
               </span>
               <span className={styles.pointsLevel}>
-                <span>{r.segments.points.level} {String(POINTS.level).padStart(2, "0")}</span>
-                <span className={styles.example}>{r.example}</span>
+                <span>{r.segments.points.window.replace("{days}", String(REWARDS.rankWindowDays))}</span>
               </span>
-              <span className={styles.pointsBar} aria-hidden="true">
-                <span className={styles.pointsFill} style={{ transform: `scaleX(${counted ? POINTS.progress.toFixed(3) : 0})` }} />
-              </span>
-              {POINTS.nextAt !== null ? (
-                <span className={styles.pointsNext}>{r.segments.points.next} {format(POINTS.nextAt)}</span>
-              ) : null}
             </div>
             <h3 className={styles.segmentName}>{r.segments.points.name}</h3>
             <p className={styles.segmentBody}>{r.segments.points.body}</p>

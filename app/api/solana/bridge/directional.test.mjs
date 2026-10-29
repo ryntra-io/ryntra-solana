@@ -299,8 +299,11 @@ test("the terminal receipt write records the direction it has just proved", () =
  * compiler caught the hard-coded label sitting one level below it.
  */
 test("the History screen can represent a transfer arriving on Solana", () => {
-  const source = read("app/solana/workspace/history/history-card.tsx");
-  assert.match(source, /import type \{ SolanaWalletAction \} from "@\/lib\/solana\/action-ledger"/, "History must use the shared direction-aware action contract.");
+  const card = read("app/solana/workspace/history/history-card.tsx");
+  assert.match(card, /import type \{ SolanaWalletAction \} from "@\/lib\/solana\/action-ledger"/, "History must use the shared direction-aware action contract.");
+  /* A row's words live in `history-lines.ts` since B2b, shared with Home's «Останні операції». */
+  assert.match(card, /describeAction\(action, text\)/);
+  const source = read("app/solana/workspace/history/history-lines.ts");
   assert.match(read("lib/solana/action-ledger.ts"), /destination[^;]*"BASE"[^;]*"SOLANA"/);
   const at = source.indexOf('action.lane === "BRIDGE"');
   assert.ok(at !== -1, "History no longer describes the bridge lane.");

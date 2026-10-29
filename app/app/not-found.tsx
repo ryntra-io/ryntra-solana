@@ -12,7 +12,7 @@ const WORDS = {
   },
   home: { en: "Home", uk: "Головна" },
   markets: { en: "Markets", uk: "Ринки" },
-  trade: { en: "Trade", uk: "Торгувати" },
+  trade: { en: "Terminal", uk: "Термінал" },
   portfolio: { en: "Portfolio", uk: "Портфель" },
 } as const;
 

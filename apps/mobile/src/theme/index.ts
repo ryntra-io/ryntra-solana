@@ -1,9 +1,11 @@
 import { useUniwind } from 'uniwind'
 
-import { brand, themes, type Colors, type ThemeName } from './tokens'
+import { themes, type Colors, type ThemeName } from './tokens'
 
+export * from './density'
 export * from './tokens'
 export * from './theme-mode'
+export * from './use-density'
 
 /**
  * The resolved theme for code that needs a colour value in JavaScript (tab bars,
@@ -13,5 +15,5 @@ export * from './theme-mode'
 export function useTheme(): { name: ThemeName; isDark: boolean; colors: Colors } {
   const { theme } = useUniwind()
   const name: ThemeName = theme === 'light' ? 'light' : 'dark'
-  return { name, isDark: name === 'dark', colors: { ...brand, ...themes[name] } }
+  return { name, isDark: name === 'dark', colors: themes[name] }
 }

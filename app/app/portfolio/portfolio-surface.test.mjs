@@ -9,6 +9,8 @@ const PORTFOLIO = code("app/app/portfolio/page.tsx");
 const HOLDINGS_PAGE = code("app/solana/workspace/holdings/page.tsx");
 const HOLDINGS = code("app/solana/workspace/holdings/holdings-card.tsx");
 const LOADING = code("app/app/portfolio/loading.tsx");
+/* The loading page is the cabinet's shared bones (SOL-C16); what it promises a screen reader is promised there. */
+const BONES = code("app/app/bones.tsx");
 const WALLET_DATA = code("app/app/wallet-data.tsx");
 const CSS = read("app/solana/workspace/holdings/holdings.module.css");
 
@@ -69,13 +71,18 @@ test("Portfolio consumes one wallet read and one valuation implementation", () =
 });
 
 test("loading, failed reads and incomplete reads cannot render as an empty wallet", () => {
-  assert.match(LOADING, /aria-busy="true"/);
+  /* The page is the shape of the portfolio, held at the heights its blocks will take, and it says it is busy: both
+     come from the shared bones, so the promise is asserted where it is kept. */
+  assert.match(LOADING, /<PageBones\b/);
+  assert.match(BONES, /aria-busy="true"/);
   assert.doesNotMatch(LOADING, /formatMoney|usdValue|\$[0-9]/);
+  assert.doesNotMatch(BONES, /formatMoney|usdValue|\$[0-9]/);
   assert.match(HOLDINGS, /if \(!connection\)\s*\{\s*return\s*\([\s\S]*?<WalletGate\b/);
   assert.match(HOLDINGS, /holdings\.status === "error"/);
   assert.match(HOLDINGS, /holdings\.status === "ready" && !holdings\.complete/);
   assert.match(HOLDINGS, /holdings\.status === "ready" && holdings\.complete && rows\.length === 0/);
-  assert.match(HOLDINGS, /holdings\.status === "ready" && holdings\.complete\s*\?/);
+  /* The value: a number only for a wallet read whole — `portfolioValue` decides, the one rule Home draws too (B2b). */
+  assert.match(HOLDINGS, /portfolio\.phase === "ready" && portfolio\.total !== null \?/);
   assert.match(HOLDINGS, /activity\.status === "error" \|\| \(activity\.status === "ready" && !activity\.complete && moving\.length === 0\)/);
 });
 

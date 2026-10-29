@@ -5,7 +5,7 @@ import type { BuyFailureKey } from './buy-model.ts'
 /**
  * Every word a company's page and its purchase in dollars say on the
  * beginner's path, in both languages. The words are the web
- * app's own for the same page and the same sheet, so the phone and ryntra.io
+ * line's own for the same page and the same sheet, so the phone and ryntra.io
  * say the same thing; the Ukrainian speaks «ти» and has no English word on the
  * way to a purchase. The wallet signs with its own biometrics — the
  * app says «Підтверди в гаманці», never the vault's name. Nothing here offers
@@ -16,6 +16,9 @@ export type BuyCopy = Readonly<{
   /* the company page */
   exchangeOpen: string
   exchangeClosed: string
+  /** The exchange's extended and overnight hours — the session word a search row says, then the drift (ST-5 r4). */
+  exchangeExtended: string
+  exchangeOvernight: string
   notOffered: string
   halted: string
   /** A token of an issuer Ryntra no longer supports: no purchase, the way out said. */
@@ -34,11 +37,18 @@ export type BuyCopy = Readonly<{
   minimum: string
   /** No route for the sum typed: the company's own minimum is being read from the same quote. */
   findingMinimum: string
-  /** «На $1 маршруту зараз немає. IREN — від $5.» — the least sum the company's live quote routes. */
+  /** «На $1 зараз не купити. IREN — від $5.» — the least sum the company's live quote can fill. */
   routeMinimum: (asked: string, company: string, minimum: string) => string
   /** «Поставити $5» — the one action that puts that minimum in. */
   setMinimum: (minimum: string) => string
   allCosts: string
+  /**
+   * «≈ $0,02 у ціні акції за $10» — what the shares a sum brings are worth at the share's reference, said in place of
+   * «усі витрати» where the price stands far from the share (ST-5 r8: the fees alone hid a loss of almost all of it).
+   */
+  shareWorth: (worth: string, paid: string) => string
+  /** The estimate's own time, said quietly after it (ST-5 r9): «о 11:56». */
+  quotedAt: (time: string) => string
   pricing: string
   quoteDown: string
   payWith: string
@@ -46,12 +56,13 @@ export type BuyCopy = Readonly<{
   connect: string
   connectFailed: string
   signIn: string
-  signInLine: string
   signInFailed: string
   signInOffline: string
   signInOutdated: string
   needSol: string
   notEnough: (symbol: string) => string
+  /** The paying dollars and the network's SOL both short — the dollars named first (ST-5). */
+  notEnoughAndSol: (symbol: string) => string
   unavailable: string
   refreshPrice: string
   preparing: string
@@ -68,6 +79,9 @@ export type BuyCopy = Readonly<{
   reserve: (usd: string) => string
   /** Said before the four rows when that reserve is more than the purchase itself. */
   reserveFirst: (reserve: string, spend: string) => string
+  /** What the reserve is — one tap deep, behind «?» (ST-4). */
+  reserveTitle: string
+  reserveHelp: string
   /** The issuer's own fee inside «Усі витрати» — «з них комісія емітента 1% ≈ $0,10». */
   issuerFee: (pct: string, usd: string | null) => string
   /** Ryntra's own fee inside «Усі витрати», beside the issuer's — «з них комісія Ryntra 0,50% · ≈ 0,05 USDC», the web's words. */
@@ -86,7 +100,6 @@ export type BuyCopy = Readonly<{
   earlierTx: string
   ownPiece: (company: string) => string
   ownToken: (company: string) => string
-  fromReview: string
   belowMinimum: string
   nothingHappened: string
   notFilled: string
@@ -105,6 +118,8 @@ export const BUY_COPY: Copy<BuyCopy> = {
   en: {
     exchangeOpen: 'Exchange open',
     exchangeClosed: 'Exchange closed · the price may drift',
+    exchangeExtended: 'Extended hours · the price may drift',
+    exchangeOvernight: 'Overnight · the price may drift',
     notOffered: 'The issuer is not offering new purchases right now.',
     halted: 'The issuer has paused trading.',
     retired: 'No longer supported in Ryntra — you can sell it in your own wallet.',
@@ -119,9 +134,11 @@ export const BUY_COPY: Copy<BuyCopy> = {
     quickShares: (symbol) => `A share of your ${symbol}`,
     minimum: 'The minimum is $1',
     findingMinimum: 'Finding the least this company can be bought for…',
-    routeMinimum: (asked, company, minimum) => `No route for ${asked} right now. ${company} from ${minimum}.`,
+    routeMinimum: (asked, company, minimum) => `${asked} cannot be bought right now. ${company} from ${minimum}.`,
     setMinimum: (minimum) => `Use ${minimum}`,
     allCosts: 'all costs',
+    shareWorth: (worth, paid) => `${worth} of the share’s value for ${paid}`,
+    quotedAt: (time) => `at ${time}`,
     pricing: 'Pricing…',
     quoteDown: 'The price could not be read right now.',
     payWith: 'Pay with',
@@ -129,26 +146,29 @@ export const BUY_COPY: Copy<BuyCopy> = {
     connect: 'Connect wallet',
     connectFailed: 'The wallet was not connected.',
     signIn: 'Sign in with your wallet',
-    signInLine: 'Signing in proves the wallet is yours and moves nothing.',
     signInFailed: 'Signing in did not finish. Try again.',
     signInOffline: 'Signing in needs the network. Try again.',
     signInOutdated: 'Update the app to sign in.',
     needSol: 'A little SOL is needed for the network fee',
     notEnough: (symbol) => `Not enough ${symbol}`,
+    notEnoughAndSol: (symbol) => `Not enough ${symbol} · and SOL for the fee`,
     unavailable: 'Buying is not available right now',
     refreshPrice: 'Refresh the price',
     preparing: 'Preparing the Review…',
     walletHas: (amount) => `In your wallet: ${amount}`,
-    topUp: 'Top up',
+    topUp: 'Add funds',
     review: 'Review',
     rowSpend: 'You pay',
     rowGet: 'You get',
     rowCosts: 'All costs',
     rowWhat: 'What it is',
     atLeast: 'at least',
-    reserve: (usd) => `${usd} in SOL, once — it stays in your wallet, on the token’s account`,
+    reserve: (usd) => `${usd} in SOL stays in your wallet`,
     reserveFirst: (reserve, spend) =>
-      `The one-time reserve, ${reserve} in SOL, is more than the purchase itself (${spend}). It stays in your wallet, on the token’s account — it is not a cost.`,
+      `${reserve} in SOL stays in your wallet — more than the purchase itself (${spend})`,
+    reserveTitle: 'SOL that stays in your wallet',
+    reserveHelp:
+      'A token new to your wallet needs its own account there. Opening it sets this SOL aside once, on the token’s account: it stays yours and is not a cost.',
     issuerFee: (pct, usd) => (usd ? `including the issuer’s ${pct} fee ${usd}` : `including the issuer’s ${pct} fee`),
     ryntraFee: (figures) => `including the Ryntra fee\u00a0${figures}`,
     truthUnknown: 'Not verified: no issuer document was read',
@@ -161,10 +181,9 @@ export const BUY_COPY: Copy<BuyCopy> = {
     checkTx: 'Check the transaction',
     checkingTx: 'Checking the transaction…',
     unknownTx: 'The outcome is not known yet. Do not buy again until it is.',
-    earlierTx: 'An earlier signature of this wallet is not checked yet. It is checked first — nothing is sent twice.',
+    earlierTx: 'An earlier operation is waiting for its answer. It is checked first — nothing is sent twice.',
     ownPiece: (company) => `You own a piece of ${company}`,
     ownToken: (company) => `${company} token bought`,
-    fromReview: 'Figures from the Review — the receipt keeps the network’s.',
     belowMinimum: 'Less arrived than the Review’s minimum — the receipt keeps both figures.',
     nothingHappened: 'Nothing happened — your money did not move. You can buy again.',
     notFilled: 'The network rejected the purchase. Only the network fee was spent.',
@@ -183,6 +202,12 @@ export const BUY_COPY: Copy<BuyCopy> = {
       walletFailed: 'The wallet did not finish the request. Nothing was sent.',
       closedUnderWallet:
         'The price expired while the wallet was open. That signature was not sent — refresh the price.',
+      bytesRebuilt:
+        'The price was built again — a transaction lives only about 30 seconds. Nothing was sent; check it and confirm.',
+      deviceConfirm:
+        'A transaction lives about 30 seconds: confirm in the wallet, or on a Ledger, within 20 seconds. Nothing was sent — refresh the price.',
+      walletCannotSign:
+        "This wallet does not sign transactions for apps — it only sends them itself. Nothing was sent; use Phantom, Solflare or the Seeker's wallet.",
       signatureUnreadable: 'The wallet’s signature could not be read. Nothing was sent.',
       paused: 'Buying is switched off right now.',
       notOffered: 'The issuer is not offering new purchases right now.',
@@ -216,6 +241,8 @@ export const BUY_COPY: Copy<BuyCopy> = {
   uk: {
     exchangeOpen: 'Біржа відкрита',
     exchangeClosed: 'Біржа зачинена · ціна може відхилятися',
+    exchangeExtended: 'Подовжені години · ціна може відхилятися',
+    exchangeOvernight: 'Нічна сесія · ціна може відхилятися',
     notOffered: 'Емітент зараз не пропонує нових купівель.',
     halted: 'Емітент призупинив торги.',
     retired: 'Більше не підтримується в Ryntra — продати можна у своєму гаманці.',
@@ -230,9 +257,11 @@ export const BUY_COPY: Copy<BuyCopy> = {
     quickShares: (symbol) => `Частка твоїх ${symbol}`,
     minimum: 'Мінімум — $1',
     findingMinimum: 'Шукаємо, від якої суми купується ця компанія…',
-    routeMinimum: (asked, company, minimum) => `На ${asked} маршруту зараз немає. ${company} — від ${minimum}.`,
+    routeMinimum: (asked, company, minimum) => `На ${asked} зараз не купити. ${company} — від ${minimum}.`,
     setMinimum: (minimum) => `Поставити ${minimum}`,
     allCosts: 'усі витрати',
+    shareWorth: (worth, paid) => `${worth} у ціні акції за ${paid}`,
+    quotedAt: (time) => `о ${time}`,
     pricing: 'Рахуємо ціну…',
     quoteDown: 'Ціну зараз не вдалося прочитати.',
     payWith: 'Оплата',
@@ -240,12 +269,12 @@ export const BUY_COPY: Copy<BuyCopy> = {
     connect: 'Під’єднати гаманець',
     connectFailed: 'Гаманець не під’єднано.',
     signIn: 'Увійти гаманцем',
-    signInLine: 'Вхід доводить, що гаманець твій, і нічого не переміщує.',
     signInFailed: 'Вхід не завершився. Спробуй ще.',
-    signInOffline: 'Для входу потрібна мережа. Спробуй ще.',
+    signInOffline: 'Для входу потрібен інтернет. Спробуй ще.',
     signInOutdated: 'Онови застосунок, щоб увійти.',
     needSol: 'Потрібно трохи SOL на плату мережі',
     notEnough: (symbol) => `Недостатньо ${symbol}`,
+    notEnoughAndSol: (symbol) => `Недостатньо ${symbol} · і SOL на мережу`,
     unavailable: 'Купівля зараз недоступна',
     refreshPrice: 'Оновити ціну',
     preparing: 'Готуємо перевірку…',
@@ -257,9 +286,11 @@ export const BUY_COPY: Copy<BuyCopy> = {
     rowCosts: 'Усі витрати',
     rowWhat: 'Що це',
     atLeast: 'щонайменше',
-    reserve: (usd) => `${usd} у SOL разово лишаються в гаманці на рахунку токена`,
-    reserveFirst: (reserve, spend) =>
-      `Разовий резерв ${reserve} у SOL більший за саму покупку (${spend}). Він лишиться в гаманці на рахунку токена — це не витрата.`,
+    reserve: (usd) => `${usd} у SOL лишаються в гаманці`,
+    reserveFirst: (reserve, spend) => `${reserve} у SOL лишаються в гаманці — більше за саму покупку (${spend})`,
+    reserveTitle: 'SOL, що лишається в гаманці',
+    reserveHelp:
+      'Токену, якого ще не було в гаманці, потрібен окремий рахунок. Його відкриття один раз відкладає цей SOL на рахунок токена: він лишається твоїм і не є витратою.',
     issuerFee: (pct, usd) => (usd ? `з них комісія емітента ${pct} ${usd}` : `з них комісія емітента ${pct}`),
     ryntraFee: (figures) => `з них комісія Ryntra\u00a0${figures}`,
     truthUnknown: 'Не перевірено: документів емітента не прочитано',
@@ -272,11 +303,9 @@ export const BUY_COPY: Copy<BuyCopy> = {
     checkTx: 'Перевірити транзакцію',
     checkingTx: 'Перевіряємо транзакцію…',
     unknownTx: 'Результат ще невідомий. Не купуй ще раз, доки він не з’ясується.',
-    earlierTx:
-      'Попередній підпис цього гаманця ще не перевірено. Спершу перевіримо його — нічого не надсилається вдруге.',
+    earlierTx: 'Попередня операція ще чекає на відповідь. Спершу перевіримо її — нічого не надсилається вдруге.',
     ownPiece: (company) => `У тебе є частинка ${company}`,
     ownToken: (company) => `У тебе є токен ${company}`,
-    fromReview: 'Цифри з Перевірки — квитанція зберігає цифри мережі.',
     belowMinimum: 'Прийшло менше, ніж мінімум у Перевірці, — квитанція зберігає обидві цифри.',
     nothingHappened: 'Нічого не сталося — гроші не рухались. Можна купити ще раз.',
     notFilled: 'Мережа відхилила купівлю. Списано лише плату мережі.',
@@ -294,6 +323,12 @@ export const BUY_COPY: Copy<BuyCopy> = {
       walletTimeout: 'Гаманець не відповів, поки діяла ціна. Нічого не підписано — онови ціну.',
       walletFailed: 'Гаманець не завершив запит. Нічого не надіслано.',
       closedUnderWallet: 'Ціна застаріла, поки гаманець був відкритий. Цей підпис не надіслано — онови ціну.',
+      bytesRebuilt:
+        'Ціну зібрано наново — транзакція живе лише ~30 секунд. Нічого не надіслано; переглянь і підтверди.',
+      deviceConfirm:
+        'Транзакція живе ~30 секунд: підтверди в гаманці чи на Ledger за 20 секунд. Нічого не надіслано — онови ціну.',
+      walletCannotSign:
+        'Цей гаманець не підписує транзакції для застосунків — лише надсилає їх сам. Нічого не надіслано; скористайся Phantom, Solflare чи гаманцем Seeker.',
       signatureUnreadable: 'Підпис гаманця не вдалося прочитати. Нічого не надіслано.',
       paused: 'Купівля зараз вимкнена.',
       notOffered: 'Емітент зараз не пропонує нових купівель.',

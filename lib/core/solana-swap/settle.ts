@@ -33,19 +33,22 @@ import { resolveServiceFeeConfig } from "../../swap/service-fee.server.ts";
 import { createSolanaNetwork, type SolanaNetwork } from "../networks/solana.ts";
 import { definePipeline, NEXT, need, runPipeline, type PipelineRun, type PipelineStep, type StepResult } from "../pipeline.ts";
 import { createJupiterSwapVenue } from "../venues/jupiter.ts";
+import { awaitLanding } from "../../solana/landing.ts";
+import { resendSameTransaction } from "../../solana/submit-rpc.ts";
 import { SOLANA_SWAP_SIGNED_GUARD, type SwapSignedGuardContext } from "./guard.ts";
 import type { SwapRefusal, SwapSettleStop } from "./refusal.ts";
 
 /**
- * How long the adopted lane waits for its own broadcast to be seen.
+ * How long this deployment's own broadcast is read — and its same bytes sent
+ * again (SOL-S1, `landing.ts`) — until an operator sees it.
  *
- * A blockhash outlives this comfortably and the route itself may run for 60
+ * The bytes' blockhash dies inside this (~30 s from the build, part of it
+ * spent before the wallet answered), and the route itself may run for 60
  * seconds, so this leaves room for the reads and the Receipt that follow. A
  * transaction still unseen after it is genuinely unresolved, and recovery by
- * signature is then the honest answer rather than a premature one.
+ * signature — which the card now runs by itself — is then the honest answer.
  */
 const ADOPTED_CONFIRM_DEADLINE_MS = 30_000;
-const ADOPTED_CONFIRM_INTERVAL_MS = 1_500;
 
 /**
  * How long a venue "Failed" waits for the independent operator.
@@ -63,6 +66,8 @@ type SettleOutcome = Readonly<{
   /** Null on the adopted lane: this deployment broadcast, not the venue. */
   report: JupiterExecuteResult | null;
   broadcastFailure: string | null;
+  /** Our own send was answered with an RPC refusal (preflight): sending the same bytes again cannot help (SOL-S1). */
+  broadcastRejected?: boolean;
 }>;
 
 type Observed = Extract<Awaited<ReturnType<typeof observeSwap>>, { ok: true }>;
@@ -193,7 +198,7 @@ const submitOnce: PipelineStep<SwapSettleContext, SwapSettleStop> = {
           const submission = await network.submit({ network: "solana", wireBase64: signedTransactionBase64, signature }, "fast");
           return submission.state === "SENT"
             ? ({ kind: "EXECUTED", report: null, broadcastFailure: null } as const)
-            : ({ kind: "AMBIGUOUS", report: null, broadcastFailure: submission.reason } as const);
+            : ({ kind: "AMBIGUOUS", report: null, broadcastFailure: submission.reason, broadcastRejected: submission.rejected === true } as const);
         }
         const report = await venue.execute(signedTransactionBase64, quote.requestId);
         return { kind: report.ok ? "EXECUTED" : "AMBIGUOUS", report, broadcastFailure: null } as const;
@@ -226,7 +231,7 @@ const chainStatus: PipelineStep<SwapSettleContext, SwapSettleStop> = {
   stage: "settle",
   name: "chain-status",
   async run(context) {
-    const { report, broadcastFailure } = need(context.outcome, "outcome");
+    const { report, broadcastFailure, broadcastRejected } = need(context.outcome, "outcome");
     /* Bytes this deployment broadcast itself — `/build`'s, or a wallet's guarded change — wait for their own landing. */
     const ownBroadcast = submissionLaneOf(context) !== "JUPITER_EXECUTE";
     const network = need(context.network, "network");
@@ -248,15 +253,33 @@ const chainStatus: PipelineStep<SwapSettleContext, SwapSettleStop> = {
      * person whose swap was simply still confirming was handed a recovery
      * button for an ordinary success. This is the same wait, against the
      * independent operator rather than the one that took the bytes.
+     *
+     * SOL-S1: read every 0.5 s rather than 1.5 s, and on our own broadcast send
+     * the same signed bytes again every 2 s until they are seen — also when the
+     * first send did not answer, because the bytes may simply not have arrived;
+     * not when the RPC refused them (preflight), which a same send repeats.
+     * The same signature lands at most once; a send the cluster would refuse is
+     * refused by preflight and never forwarded (`landing.ts`).
      */
     const venueFailed = report?.ok === true && report.report.status === "Failed";
-    if (!seen && ((ownBroadcast && delivered) || venueFailed)) {
-      const deadline = Date.now() + (ownBroadcast ? ADOPTED_CONFIRM_DEADLINE_MS : VENUE_FAILED_SEEN_DEADLINE_MS);
-      while (!seen && Date.now() < deadline) {
-        await new Promise((resolve) => setTimeout(resolve, ADOPTED_CONFIRM_INTERVAL_MS));
-        settlement = await network.observe(signature);
-        seen = settlement.state !== "NOT_SEEN";
-      }
+    if (!seen && ((ownBroadcast && broadcastRejected !== true) || venueFailed)) {
+      const submitHandle = need(context.submitHandle, "submitHandle");
+      const landed = await awaitLanding(
+        {
+          observe: async () => {
+            const read = await network.observe(signature);
+            return { seen: read.state !== "NOT_SEEN", settlement: read };
+          },
+          resend: () => (ownBroadcast ? resendSameTransaction({ handle: submitHandle, signedWireBase64: context.signedTransactionBase64 }) : Promise.resolve()),
+        },
+        {
+          deadlineMs: ownBroadcast ? ADOPTED_CONFIRM_DEADLINE_MS : VENUE_FAILED_SEEN_DEADLINE_MS,
+          initial: { seen: false, settlement },
+          ...(ownBroadcast ? {} : { resendEveryMs: Number.POSITIVE_INFINITY }),
+        },
+      );
+      settlement = landed.last.settlement;
+      seen = landed.last.seen;
     }
 
     if (!delivered && !seen) {

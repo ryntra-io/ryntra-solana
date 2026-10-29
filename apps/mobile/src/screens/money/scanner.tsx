@@ -9,12 +9,12 @@ import { Txt } from '@/components/txt'
 import { MONEY_COPY } from '@/features/money/copy'
 import { feel } from '@/lib/haptics'
 import { useCopy, useSharedCopy } from '@/lib/i18n'
-import { brand, themes } from '@/theme/tokens'
+import { themes } from '@/theme/tokens'
 
-/** The camera's own ground, the close button's scrim and the frame — the dark theme's ground and shadow, the brand's white. */
+/** The camera's own ground, the close button's scrim and the frame — Graphite's ground and scrim, Porcelain's white. */
 const CAMERA_GROUND = themes.dark.ground
-const SCRIM = themes.dark.shadowMd
-const FRAME = brand.onBrand
+const SCRIM = themes.dark.scrim
+const FRAME = themes.light.surface
 
 export type ScannerProps = {
   visible: boolean
@@ -69,7 +69,7 @@ export function Scanner({ visible, onClose, onScan }: ScannerProps) {
           />
         ) : null}
         <View className="flex-row items-center justify-between px-4" style={{ paddingTop: insets.top + 8 }}>
-          <Txt variant="title" tone="onBrand">
+          <Txt variant="title" tone="inkLight">
             {words.scanTitle}
           </Txt>
           <Pressable
@@ -80,7 +80,7 @@ export function Scanner({ visible, onClose, onScan }: ScannerProps) {
             className="h-11 w-11 items-center justify-center rounded-pill"
             style={{ backgroundColor: SCRIM }}
           >
-            <Icon name="close" size={24} color="onBrand" />
+            <Icon name="close" size={24} color="inkLight" />
           </Pressable>
         </View>
         {granted ? (
@@ -95,14 +95,11 @@ export function Scanner({ visible, onClose, onScan }: ScannerProps) {
                 borderColor: FRAME,
               }}
             />
-            <Txt variant="ui" className="mt-6 px-8 text-center" tone="onBrand">
-              {words.scanHint}
-            </Txt>
           </View>
         ) : permission ? (
           <View className="flex-1 items-center justify-center gap-4 px-8">
-            <Icon name="camera-outline" size={32} color="onBrand" />
-            <Txt variant="body" className="text-center" tone="onBrand">
+            <Icon name="camera-outline" size={32} color="inkLight" />
+            <Txt variant="body" className="text-center" tone="inkLight">
               {words.cameraNeeded}
             </Txt>
             {permission.canAskAgain ? (

@@ -3,6 +3,7 @@ import { z } from "zod";
 import { maskWallet } from "../rewards/referral.ts";
 import { REWARD_RANKS, type RewardRank } from "../rewards/rules.ts";
 import { walletFace } from "./badges.ts";
+import { LIQUIDITY_BADGE_IDS, type LiquidityBadgeId } from "./liquidity.ts";
 import { BOARD_IDS, BOARD_ROWS, boardRows, PODIUM, TRADERS_MIN_CLOSED_USD, type BoardId, type WeekMetrics } from "./leaderboard.ts";
 import { SEASON_TASK_IDS, SEASON_THEMES, type SeasonProgress } from "./seasons.ts";
 import { SEASON_WEEKS, weekOfSeason, type SeasonRange, type WeekRange } from "./weeks.ts";
@@ -35,6 +36,8 @@ export const LeagueRowSchema = z
     /** Traders: basis points of result. Friends: friends who traded. Creators: launches on a DEX. */
     value: z.number().int(),
     you: z.boolean(),
+    /** The wallet's highest liquidity badge — only when it chose to show it on the boards. */
+    liquidity: z.enum(LIQUIDITY_BADGE_IDS).optional(),
   })
   .strict();
 export type LeagueRow = z.infer<typeof LeagueRowSchema>;
@@ -112,8 +115,16 @@ export function seasonHead(season: SeasonRange | null, weekStart: string, theme:
   return { number: season.number, theme, start: season.start, end: season.end, week: weekOfSeason(season, weekStart), weeks: SEASON_WEEKS };
 }
 
-function row(place: number, wallet: string, value: number, ranks: Readonly<Record<string, RewardRank>>, viewer: string | null): LeagueRow {
-  return { place, name: maskWallet(wallet), face: walletFace(wallet), rank: ranks[wallet] ?? null, value, you: wallet === viewer };
+function row(
+  place: number,
+  wallet: string,
+  value: number,
+  ranks: Readonly<Record<string, RewardRank>>,
+  viewer: string | null,
+  liquidity: Readonly<Record<string, LiquidityBadgeId>> = {},
+): LeagueRow {
+  const shown = Object.hasOwn(liquidity, wallet) ? liquidity[wallet] : undefined;
+  return { place, name: maskWallet(wallet), face: walletFace(wallet), rank: ranks[wallet] ?? null, value, you: wallet === viewer, ...(shown ? { liquidity: shown } : {}) };
 }
 
 /** The boards of one week as the page reads them. */
@@ -130,6 +141,8 @@ export function leaderboardsView(
     creators: boolean;
     /** The proven viewer: their wallet, rank now, whether hidden and whether internal. */
     viewer: Readonly<{ wallet: string; rank: RewardRank | null; hidden: boolean; internal: boolean }> | null;
+    /** The highest liquidity badge of each wallet that chose to show it (`readPublicLiquidity`). */
+    liquidity?: Readonly<Record<string, LiquidityBadgeId>>;
   }>,
 ): LeaderboardsResponse {
   const viewerWallet = args.viewer?.wallet ?? null;
@@ -137,7 +150,7 @@ export function leaderboardsView(
   for (const board of BOARD_IDS) {
     const ordered = boardRows(args.metrics, board, args.exclude);
     boards[board] = {
-      rows: ordered.slice(0, BOARD_ROWS).map((entry) => row(entry.place, entry.wallet, entry.value, args.ranks, viewerWallet)),
+      rows: ordered.slice(0, BOARD_ROWS).map((entry) => row(entry.place, entry.wallet, entry.value, args.ranks, viewerWallet, args.liquidity)),
       total: ordered.length,
     };
   }

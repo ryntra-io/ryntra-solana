@@ -76,6 +76,12 @@ export type ProChartProps = {
   features?: ProChartFeatures;
   /** How the price axis and the crosshair print a value — e.g. a market cap as «$4.6M»; read when the chart is built, so a caller that changes it remounts the chart. */
   priceFormatter?: (value: number) => string;
+  /**
+   * The main series' own price format: the decimals its axis steps by, and how a value prints on the axis, the
+   * crosshair and every price line — a token at $0.000003 needs steps of 1e-9, which the default two decimals cannot
+   * draw (its axis stood empty and its price read «0.00»).
+   */
+  priceFormat?: Readonly<{ decimals: number; formatter: (value: number) => string }>;
 };
 
 /* ---- series construction per chart type ---- */
@@ -109,6 +115,12 @@ function addMainSeries(chart: IChartApi, s: ChartSettings, accent: string): AnyS
     default:
       return chart.addSeries(CandlestickSeries, candleColorOptions(pal, s.chartType)) as AnySeries;
   }
+}
+
+/* LWC takes the step as `base` (1 / minMove), which keeps a step of 1e-12 exact where a float minMove would not. */
+function seriesPriceFormat(format: NonNullable<ProChartProps["priceFormat"]>) {
+  const base = 10 ** Math.max(0, Math.min(18, Math.round(format.decimals)));
+  return { priceFormat: { type: "custom" as const, base, minMove: 1 / base, formatter: format.formatter } };
 }
 
 function mapBar(c: NormalizedCandle, type: ChartType) {
@@ -180,10 +192,12 @@ export const ProChart = forwardRef<ProChartHandle, ProChartProps>(function ProCh
   const {
     candles, symbolLabel, tfSeconds, theme, accent, timeframes, tf, onTfChange,
     priceLines, markers, riskLines, onRiskLineDrag, onRiskLineCommit,
-    storageNamespace, drawingScope, note, chartClassName, features, priceFormatter,
+    storageNamespace, drawingScope, note, chartClassName, features, priceFormatter, priceFormat,
   } = props;
   const priceFormatterRef = useRef(priceFormatter);
   priceFormatterRef.current = priceFormatter;
+  const priceFormatRef = useRef(priceFormat);
+  priceFormatRef.current = priceFormat;
   const feat = { drawings: true, indicators: true, settings: true, fullscreen: true, ...features };
 
   const [settings, setSettings] = useState<ChartSettings>(() => loadChartSettings());
@@ -309,6 +323,7 @@ export const ProChart = forwardRef<ProChartHandle, ProChartProps>(function ProCh
     const s = settingsRef.current;
     const chart = createChart(el, buildChartOptions(theme, s, priceFormatterRef.current));
     const series = addMainSeries(chart, s, accentHex);
+    if (priceFormatRef.current) series.applyOptions(seriesPriceFormat(priceFormatRef.current));
     series.setData(candlesRef.current.map((c) => mapBar(c, s.chartType)));
     chart.priceScale("right").applyOptions({
       mode: s.scale.log ? PriceScaleMode.Logarithmic : PriceScaleMode.Normal,
@@ -419,6 +434,11 @@ export const ProChart = forwardRef<ProChartHandle, ProChartProps>(function ProCh
   useEffect(() => { layerRef.current?.setVisible(drawVisible); }, [drawVisible]);
   useEffect(() => { layerRef.current?.setPositionSide(positionSide); }, [positionSide]);
 
+  /* ---------- the series' price format follows the price's size ---------- */
+  useEffect(() => {
+    if (priceFormat) seriesRef.current?.applyOptions(seriesPriceFormat(priceFormat));
+  }, [priceFormat]);
+
   /* ---------- price lines ---------- */
   useEffect(() => { applyPriceLines(); }, [priceLines, applyPriceLines]);
   useEffect(() => { applyMarkers(); }, [markers, applyMarkers, settings.palette]);
@@ -527,7 +547,7 @@ export const ProChart = forwardRef<ProChartHandle, ProChartProps>(function ProCh
     <div ref={rootRef} className={`pc-root${fullscreen ? " pc-fullscreen" : ""}`}>
       <div className="dm-tfs pc-head">
         {timeframes.map((x) => (
-          <button key={x} className={tf === x ? "on" : ""} onClick={() => onTfChange(x)}>{x}</button>
+          <button key={x} type="button" className={tf === x ? "on" : ""} aria-pressed={tf === x} onClick={() => onTfChange(x)}>{x}</button>
         ))}
         {note}
         <div className="pc-actions">

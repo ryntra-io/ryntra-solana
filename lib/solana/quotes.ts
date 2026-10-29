@@ -43,17 +43,22 @@ const MAX_PROVIDER_TEXT = 256;
  * takes as long as they take, against a clock that had already started when
  * the order was built and while they were still reading.
  *
- * The real bound is the blockhash the provider built with: valid for 151
- * blocks, roughly 60 to 90 seconds, part of which Jupiter has already spent
- * before the order reaches this process. It is deliberately NOT computed from
- * `getBlockHeight` — the default public endpoint answers that call with its
- * slot, which is about 22 million higher than the true block height, and
- * `transfer/settle` already carries a note about the same host doing it.
+ * This is the Review's reading window, not the bytes' life. The bytes live as
+ * long as the blockhash the provider built with: 150 blocks, which since
+ * mainnet slots became 200 ms (measured 2026-10-17) is about thirty seconds,
+ * part of it already spent by Jupiter. AG-1 keeps the two apart: the person
+ * reads at their own pace for this window, and the order route says how long
+ * the bytes may still be signed (`signableMs`, from `lastValidBlockHeight` and
+ * the block height read through `getEpochInfo` — never `getBlockHeight`, which
+ * the default public endpoint answers with its slot, about 22 million too
+ * high; `blockhash-life.ts`). A Review signed later gets fresh bytes at the
+ * moment of signing, and the wallet opens on them only when the minimum and
+ * every fee are no worse (`freshOrderNoWorse`).
  *
- * 45 seconds is what is left after leaving `/execute` room to land inside the
- * same blockhash, and it is under the 60-second ceiling the normalizer
- * enforces below. `swap-freshness.test.mjs` fails the build if this ever drops
- * back to a value a person cannot act inside.
+ * 45 seconds, under the 60-second ceiling the normalizer enforces below.
+ * `swap-freshness.test.mjs` fails the build if this ever drops below what a
+ * person can read inside — the fix for short bytes is fresh bytes, never a
+ * shorter Review.
  */
 export const JUPITER_ORDER_REVIEW_WINDOW_MS = 45_000;
 

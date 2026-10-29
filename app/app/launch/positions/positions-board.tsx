@@ -1,10 +1,10 @@
 "use client";
 
-import { CircleNotch, ImageSquare, Wallet } from "@phosphor-icons/react";
+import { CircleNotch, ImageSquare } from "@phosphor-icons/react";
 import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
 
-import { useWalletReach } from "@/app/app/invest/use-wallet-reach";
+import { WalletGate } from "@/app/solana/workspace/wallet-gate";
 import type { WorkspaceLocale } from "@/app/shell/locale";
 import { useSolanaConnection } from "@/app/solana/workspace/connection";
 import type { LaunchHolderPositionsResponse } from "@/lib/api/v1/contract";
@@ -26,7 +26,6 @@ type Read = { wallet: string; data: LaunchHolderPositionsResponse | null; failed
 export function PositionsBoard({ locale, network }: { locale: WorkspaceLocale; network: "solana:devnet" | "solana:mainnet" }) {
   const word = launchWords(locale);
   const { connection } = useSolanaConnection();
-  const { reach } = useWalletReach();
   const wallet = connection?.address ?? null;
   const [read, setRead] = useState<Read | null>(null);
 
@@ -63,13 +62,8 @@ export function PositionsBoard({ locale, network }: { locale: WorkspaceLocale; n
       </header>
 
       {!wallet ? (
-        <section className={`${styles.card} ${styles.mineEmpty}`}>
-          <Wallet size={28} aria-hidden className={styles.mineEmptyIcon} />
-          <h2 className={styles.cardTitle}>{word("positionsConnectTitle")}</h2>
-          <button type="button" className="rw-btn rw-btn--primary" onClick={() => reach()}>
-            <Wallet size={18} aria-hidden /> {word("mineConnect")}
-          </button>
-        </section>
+        /* The one guest state (B14): the core's EmptyState, one sentence and the one button. */
+        <WalletGate title={word("positionsConnectTitle")} />
       ) : reading ? (
         <section className={`${styles.card} ${styles.mineEmpty}`} aria-busy="true">
           <CircleNotch size={22} aria-hidden className={styles.spin} />

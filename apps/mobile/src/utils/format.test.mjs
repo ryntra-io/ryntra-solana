@@ -13,13 +13,17 @@ import {
   formatDay,
   formatMoment,
   formatPercent,
+  formatListPrice,
   formatPrice,
   formatShare,
   formatUsd,
   formatUsdCompact,
   formatUsdSigned,
+  percentSignOf,
   shortAddress,
   signOf,
+  saidFigure,
+  spokenText,
 } from './format.ts'
 
 test('unknown figures are dashes, never zeros', () => {
@@ -39,9 +43,24 @@ test('prices keep two decimals from a dollar up and more precision below it', ()
   assert.equal(formatPrice(763.0344392980868, 'en'), '$763.03')
   assert.equal(formatPrice(0.00042, 'en'), '$0.00042')
   assert.equal(formatPrice(0, 'en'), '$0.00')
-  // Below a millionth (a meme's per-token price): significant digits, never $0.00.
-  assert.equal(formatPrice(0.0000001234567, 'en'), '$0.0000001235')
-  assert.equal(formatPrice(0.0000002, 'en'), '$0.0000002')
+  assert.equal(formatPrice(0.5, 'en'), '$0.50')
+  assert.equal(formatPrice(0.012345, 'en'), '$0.012345')
+  // Below a cent: three significant digits, never $0.00; from four zeros after the point they are counted in a subscript.
+  assert.equal(formatPrice(0.00123456, 'en'), '$0.00123')
+  assert.equal(formatPrice(0.0000001234567, 'en'), '$0.0₆123')
+  assert.equal(formatPrice(0.0000002, 'en'), '$0.0₆2')
+  assert.equal(formatPrice(-0.00000501, 'en'), '−$0.0₅501')
+  // A rounding carried to a thousand has one zero fewer.
+  assert.equal(formatPrice(0.0000099996, 'en'), '$0.0₄1')
+  assert.equal(formatPrice(0.0099996, 'en'), '$0.01')
+})
+
+test('look-alike tokens under a hundred-thousandth of a dollar read as different prices', () => {
+  const bonk = formatPrice(0.000003412, 'uk')
+  const lookAlike = formatPrice(0.000003087, 'uk')
+  assert.equal(bonk, '$0,0₅341')
+  assert.equal(lookAlike, '$0,0₅309')
+  assert.notEqual(bonk, lookAlike)
 })
 
 test('volumes are compact dollars and percentages are signed', () => {
@@ -54,6 +73,14 @@ test('volumes are compact dollars and percentages are signed', () => {
   assert.deepEqual([signOf(2), signOf(-2), signOf(0), signOf(null)], ['up', 'down', 'flat', 'flat'])
 })
 
+test('a move that rounds to 0.00% is neutral, as it is written', () => {
+  assert.deepEqual(
+    [percentSignOf(-0.004), percentSignOf(0.0049), percentSignOf(-0.005), percentSignOf(0.27), percentSignOf(null)],
+    ['flat', 'flat', 'down', 'up', 'flat'],
+  )
+  assert.equal(formatPercent(-0.004, 'uk'), '0,00%')
+})
+
 test('Ukrainian money groups with a space and a comma; the English shapes stay as they were', () => {
   // Hermes and Node may space the thousands with a no-break space or a narrow one: both are a space.
   assert.match(formatUsd(1409.69, 'uk'), /^\$1\s409,69$/)
@@ -61,7 +88,8 @@ test('Ukrainian money groups with a space and a comma; the English shapes stay a
   assert.match(formatPrice(1307.8242573374764, 'uk'), /^\$1\s307,82$/)
   assert.equal(formatPrice(224.66385, 'uk'), '$224,66')
   assert.equal(formatPrice(0.00042, 'uk'), '$0,00042')
-  assert.equal(formatPrice(0.0000001234567, 'uk'), '$0,0000001235')
+  assert.equal(formatPrice(0.0000001234567, 'uk'), '$0,0₆123')
+  assert.equal(formatPrice(0.00123456, 'uk'), '$0,00123')
   assert.equal(formatPrice(null, 'uk'), DASH)
   assert.equal(formatPercent(0.2686776, 'uk'), '+0,27%')
   assert.equal(formatPercent(-1.2, 'uk'), '−1,20%')
@@ -116,11 +144,20 @@ test('a moment reads against now: the clock today, tomorrow or yesterday a day a
   assert.equal(formatMoment('never', now), '—')
 })
 
-test('the venue’s figures in Ukrainian shape: the web’s K and M with a comma, a space between thousands', () => {
+test('the venue’s figures in Ukrainian shape: тис., млн and млрд with a comma, a space between thousands', () => {
   const NBSP = ' '
   assert.equal(formatUsdCompact(110_500, 'en'), '$110.5K')
-  assert.equal(formatUsdCompact(110_500, 'uk'), '$110,5K')
-  assert.equal(formatUsdCompact(5_000_000, 'uk'), '$5M')
+  assert.equal(formatUsdCompact(110_500, 'uk'), '$110,5 тис.')
+  assert.equal(formatUsdCompact(5_000_000, 'uk'), '$5 млн')
+  assert.equal(formatUsdCompact(926_300_000, 'uk'), '$926,3 млн')
+  assert.equal(formatUsdCompact(2_712_000_000, 'uk'), '$2,7 млрд')
+  assert.equal(formatUsdCompact(61_480_000_000, 'en'), '$61.5B')
+  assert.equal(formatUsdCompact(61_480_000_000, 'uk'), '$61,5 млрд')
+  assert.equal(formatUsdCompact(1_930_000_000_000, 'uk'), '$1,9 трлн')
+  assert.equal(formatUsdCompact(999_960, 'uk'), '$1 млн')
+  assert.equal(formatUsdCompact(999_960, 'en'), '$1M')
+  assert.equal(formatUsdCompact(512.34, 'uk'), '$512,3')
+  assert.equal(formatUsdCompact(-2_700_000, 'uk'), '−$2,7 млн')
   assert.equal(formatUsdCompact(null, 'uk'), DASH)
   assert.equal(formatCount(9997, 'en'), '9,997')
   assert.equal(formatCount(9997, 'uk'), `9${NBSP}997`)
@@ -142,4 +179,28 @@ test('a time with its preposition names its day when it is not today', () => {
   assert.equal(isToday(at(5, 9), noon), true)
   assert.equal(isToday(at(4, 22), noon), false)
   assert.equal(isToday(null, noon), false)
+})
+
+test('a text is always said as something: a dash as «невідомо», a figure as itself', () => {
+  assert.equal(spokenText('—', 'uk'), 'невідомо')
+  assert.equal(spokenText('— SOL', 'en'), 'unknown SOL')
+  assert.equal(spokenText('≈ $12,30', 'uk'), '≈ $12,30')
+  assert.equal(spokenText('−1 % від ринку', 'uk'), '−1 % від ринку')
+  // A tiny price's subscript is written out for a screen reader.
+  assert.equal(spokenText('$0,0₅501', 'uk'), '$0,00000501')
+  assert.equal(saidFigure('$0.0₁₂3', 'en'), '$0.0000000000003')
+})
+
+test('a list price holds at most four significant digits between a cent and a dollar', () => {
+  assert.equal(formatListPrice(0.144709, 'en'), '$0.1447')
+  assert.equal(formatListPrice(0.144709, 'uk'), '$0,1447')
+  assert.equal(formatListPrice(0.5, 'en'), '$0.50')
+  assert.equal(formatListPrice(0.012345, 'en'), '$0.01235')
+  assert.equal(formatListPrice(0.99996, 'en'), '$1.00')
+  assert.equal(formatListPrice(1.7234, 'uk'), '$1,72')
+  // Below a cent the subscript form stays; unknown is a dash.
+  assert.equal(formatListPrice(0.00000308, 'uk'), '$0,0₅308')
+  assert.equal(formatListPrice(0.00123456, 'en'), '$0.00123')
+  assert.equal(formatListPrice(null, 'en'), DASH)
+  assert.equal(formatListPrice(-0.144709, 'en'), formatPrice(-0.1447, 'en'))
 })

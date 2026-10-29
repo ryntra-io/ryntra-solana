@@ -5,6 +5,7 @@ import { Pressable, Switch, View } from 'react-native'
 
 import { AssetIcon } from '@/components/asset-icon'
 import { Button } from '@/components/button'
+import { HelpDot } from '@/components/help-dot'
 import { Icon } from '@/components/icon'
 import { Sheet } from '@/components/sheet'
 import { Skeleton } from '@/components/skeleton'
@@ -37,15 +38,17 @@ import { shelfCardFor, type ShelfCard } from '@/features/invest/shelf'
 import { usePopularCompanies } from '@/features/invest/use-popular'
 import { useCompanyShelf } from '@/features/invest/use-shelf'
 import { recordJourney } from '@/features/journeys/journey-store'
-import { marketsPath } from '@/features/markets/screener'
 import { usePortfolio } from '@/features/portfolio/use-portfolio'
+import { MARKETS_COPY, pricesLine } from '@/features/markets/copy'
 import { useAccount } from '@/features/session/use-account'
 import { useNow } from '@/hooks/use-now'
 import { fetchMarketsByMints, type AutoinvestRule, type RuleBudget, type RuleOccurrence, type Session } from '@/lib/api'
 import { useCopy, useLocale, type Locale } from '@/lib/i18n'
 import { companyItem, ShelfRow } from '@/screens/invest/shelf-ui'
+import { AssetPickerSheet } from '@/screens/trade/asset-picker'
 import { useTheme } from '@/theme'
 import { cn } from '@/utils/cn'
+import { formatAt } from '@/utils/format'
 
 import { AutoinvestSheet } from './autoinvest-sheet'
 import { BudgetRow } from './budget-row'
@@ -53,7 +56,7 @@ import { BudgetSheet } from './budget-sheet'
 
 /**
  * «Автоінвест» — one block on Home and in Portfolio, for every connected
- * wallet. The month's budget
+ * wallet (M16, M20). The month's budget
  * as its own line — «Бюджет не задано · Задати», or «Бюджет місяця $45 з
  * $100 · Змінити» over its bar (spent, «Бюджет вичерпано · Правила стоять до
  * 1-го числа») — once there is a rule or a ceiling for it to bound; the
@@ -96,9 +99,6 @@ function SignInForRules({ copy }: { copy: AutoinvestCopy }) {
     : null
   return (
     <View className="gap-2 rounded-sm border border-line bg-surface px-4 py-3">
-      <Txt variant="ui" tone="muted">
-        {copy.signInForRules}
-      </Txt>
       <Pressable
         accessibilityRole="button"
         accessibilityLabel={buyWords.signIn}
@@ -130,6 +130,8 @@ function SignedInRules({ session, place, copy }: { session: Session; place: Rule
   const shelf = useCompanyShelf()
   const [managing, setManaging] = useState<AutoinvestRule | null>(null)
   const [picking, setPicking] = useState(false)
+  // «Знайти інший токен»: the search over every token, a sheet over this screen (ST-5) — never the Markets tab.
+  const [searching, setSearching] = useState(false)
   const [budgetOpen, setBudgetOpen] = useState(false)
   const [switching, setSwitching] = useState<string | null>(null)
   const [failure, setFailure] = useState<string | null>(null)
@@ -175,7 +177,9 @@ function SignedInRules({ session, place, copy }: { session: Session; place: Rule
       // A token turned on again stands on the floor again (1.31.0): its refusal in its own words.
       const tokenFailure = isListedToken(rule.asset) ? tokenWriteFailure(result.code, 'change') : null
       setFailure(
-        tokenFailure ? copy[tokenFailure] : writeFailureWords(result.code, copy, { write: 'change', dip: rule.dip !== null }),
+        tokenFailure
+          ? copy[tokenFailure]
+          : writeFailureWords(result.code, copy, { write: 'change', dip: rule.dip !== null }),
       )
     }
   }
@@ -206,9 +210,12 @@ function SignedInRules({ session, place, copy }: { session: Session; place: Rule
           <BudgetRow budget={budget} copy={copy} locale={locale} onEdit={() => setBudgetOpen(true)} />
         ) : null}
         {list.length === 0 ? (
-          <Txt variant="ui" tone="muted" className="px-1 py-1">
-            {copy.noRulesYet}
-          </Txt>
+          <View className="flex-row items-center gap-1 px-1">
+            <Txt variant="ui" tone="muted" className="shrink">
+              {copy.noRulesYet}
+            </Txt>
+            <HelpDot title={copy.autoinvest} body={copy.noRulesHelp} />
+          </View>
         ) : (
           list.map((rule) => (
             <HomeRuleCard
@@ -274,6 +281,10 @@ function SignedInRules({ session, place, copy }: { session: Session; place: Rule
         address={session.address}
         copy={copy}
         onClose={() => setPicking(false)}
+        onSearch={() => {
+          setPicking(false)
+          setSearching(true)
+        }}
         onPick={(company) => {
           recordJourney('home_go', { from: place, to: 'rule-new' })
           setPicking(false)
@@ -286,6 +297,23 @@ function SignedInRules({ session, place, copy }: { session: Session; place: Rule
               ...(company.category ? { category: company.category } : {}),
               autoinvest: '1',
             },
+          })
+        }}
+      />
+      {/* Any other token, titled for the recurring buy as the Catalog's «Обрати токен»: the token chosen opens on its
+          page with its rule's sheet, and Back from it returns here — never the Markets tab with no word of what for. */}
+      <AssetPickerSheet
+        visible={searching}
+        title={copy.pickTokenFor}
+        kind="market"
+        exclude={null}
+        onClose={() => setSearching(false)}
+        onPick={(asset) => {
+          recordJourney('home_go', { from: place, to: 'rule-new' })
+          setSearching(false)
+          router.push({
+            pathname: '/asset/[mint]',
+            params: { mint: asset.mint, symbol: asset.symbol, autoinvest: '1' },
           })
         }}
       />
@@ -404,7 +432,7 @@ export function HomeRuleCard({
         onValueChange={onToggle}
         accessibilityLabel={`${copy.ruleOf(rule.name)} · ${on ? copy.ruleOn : copy.onPause}`}
         trackColor={{ false: colors.lineStrong, true: colors.success }}
-        thumbColor={colors.onBrand}
+        thumbColor={colors.inkLight}
         ios_backgroundColor={colors.lineStrong}
       />
     </View>
@@ -415,10 +443,16 @@ export function HomeRuleCard({
  * «Додати правило» → «Для якого токена?» (1.31.0): what the wallet holds — a
  * company, a coin, a meme; never the dollars a rule pays with — then the
  * popular companies, the server's list, the web's own (1.20.0), without what
- * the wallet holds; «Усі токени — на Ринках» opens Markets, where «Регулярно»
- * stands on every token. A tap opens the token with its rule's sheet; the
- * server judges the floor.
+ * the wallet holds; «Знайти інший токен» opens the search over every token,
+ * titled for the recurring buy, over this screen (ST-5). A tap opens the token
+ * with its rule's sheet; the server judges the floor.
  */
+/** The oldest of some times — the time a list drawn from several reads is true at; null when none is a time. */
+function oldestOf(times: readonly (string | null)[]): string | null {
+  const valid = times.filter((time): time is string => time !== null && Number.isFinite(Date.parse(time)))
+  return valid.length > 0 ? valid.reduce((a, b) => (Date.parse(b) < Date.parse(a) ? b : a)) : null
+}
+
 type PickedCompany = Pick<ShelfCard, 'mint' | 'ticker' | 'name' | 'icon' | 'price' | 'change24h'> &
   Readonly<{ category?: 'stock' | 'crypto' | 'meme' }>
 
@@ -427,21 +461,25 @@ function CompanyPicker({
   address,
   copy,
   onClose,
+  onSearch,
   onPick,
 }: {
   visible: boolean
   address: string
   copy: AutoinvestCopy
   onClose: () => void
+  onSearch: () => void
   onPick: (company: PickedCompany) => void
 }) {
-  const router = useRouter()
   const locale = useLocale()
   const invest = useCopy(INVEST_COPY)
+  const markets = useCopy(MARKETS_COPY)
+  const now = useNow(60_000)
   const shelf = useCompanyShelf()
   const listed = usePopularCompanies()
   const holdings = usePortfolio(address)
   if (!visible) return null
+  const at = (iso: string) => formatAt(iso, now, locale)
   const cards = shelf.shelf
   const held = new Set(
     (holdings.view?.rows ?? []).filter((row) => row.amount > 0 && !row.native).map((row) => row.mint),
@@ -453,7 +491,9 @@ function CompanyPicker({
     : []
   // The coins and memes the wallet holds that the venue prices — SOL among them; a rule on one is named by its symbol.
   const ownedTokens: PickedCompany[] = (holdings.view?.rows ?? [])
-    .filter((row) => row.amount > 0 && (row.group === 'crypto' || row.group === 'meme') && row.price !== null && row.listed)
+    .filter(
+      (row) => row.amount > 0 && (row.group === 'crypto' || row.group === 'meme') && row.price !== null && row.listed,
+    )
     .map((row) => ({
       mint: row.mint,
       ticker: row.symbol,
@@ -466,12 +506,32 @@ function CompanyPicker({
   const owned = [...ownedCompanies, ...ownedTokens]
   const popular = (listed.data?.companies ?? []).filter((company) => !held.has(company.mint))
   const today = invest.today
-  const section = (title: string, list: readonly PickedCompany[]) =>
+  /* Each list's prices carry their time, as the Swap and Buy pickers say it (ST-5 r8): what the wallet holds is true at
+     the older of the reads it is drawn from — the shelf's for a company, the holdings' for a coin; the popular companies
+     at the server's read. A refresh that did not answer leaves the last prices standing under their time, with no
+     «Ціни не оновлюються» line (ST-7). */
+  const ownedLine = pricesLine(
+    markets,
+    oldestOf([
+      ownedCompanies.length > 0 ? (cards?.fetchedAt ?? null) : null,
+      ownedTokens.length > 0 ? (holdings.view?.observedAt ?? null) : null,
+    ]),
+    at,
+  )
+  const popularLine = listed.data ? pricesLine(markets, listed.data.fetchedAt, at) : null
+  const section = (title: string, list: readonly PickedCompany[], line: string | null) =>
     list.length > 0 ? (
       <View className="gap-1">
-        <Txt variant="labelSm" tone="faint" caps>
-          {title}
-        </Txt>
+        <View className="gap-0.5">
+          <Txt variant="labelSm" tone="faint" caps accessibilityRole="header">
+            {title}
+          </Txt>
+          {line ? (
+            <Txt variant="labelSm" tone="faint" tabular>
+              {line}
+            </Txt>
+          ) : null}
+        </View>
         <View>
           {list.map((card, index) => (
             <ShelfRow
@@ -491,9 +551,9 @@ function CompanyPicker({
       <View className="gap-4 pb-2">
         {cards || listed.data ? (
           <>
-            {section(copy.youOwn, owned)}
+            {section(copy.youOwn, owned, ownedLine)}
             {listed.data ? (
-              section(copy.popular, popular)
+              section(copy.popular, popular, popularLine)
             ) : listed.isError ? (
               // The server's list did not answer: said, with the one way to ask again — never a section that silently vanished.
               <View className="items-start gap-3 rounded-sm border border-line bg-surface p-4">
@@ -531,10 +591,7 @@ function CompanyPicker({
         <Button
           title={copy.allTokens}
           variant="secondary"
-          onPress={() => {
-            onClose()
-            router.navigate(marketsPath('all') as never)
-          }}
+          onPress={onSearch}
         />
       </View>
     </Sheet>

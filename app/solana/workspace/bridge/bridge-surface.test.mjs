@@ -140,28 +140,16 @@ test("the largest amount offered is the largest amount signable, and an amount a
   assert.doesNotMatch(engine, /disabled=\{!q \|\| !amountRaw/, "the unexplained five-way grey button is gone");
 });
 
-test("the destination address can be read from the person's own wallet, and a refusal says so", () => {
-  assert.match(engine, /text\("Use my Base wallet"\)/);
-  assert.match(engine, /askEvmWallet/);
-  assert.match(engine, /case "NO_WALLET":/, "a browser with no wallet is told to paste instead of watching a dead button");
-  assert.match(surface, /return wallet\.code === "NO_WALLET"/);
+test("the destination on another network is text the person types, never a wallet to connect (SOL-W1)", () => {
+  assert.doesNotMatch(engine, /Use my Base wallet|askEvmWallet|onConnectEvm|evmAddress/);
+  assert.match(engine, /className=\{styles\.address\}/, "the receiving address is an input");
+  assert.match(engine, /That is not an Ethereum-style address\./, "a mistyped address is named before Review");
 });
-
-test("an approval is waited out on chain, not handed back to the person to guess", () => {
-  /* The Base -> Solana canary of 2026-09-07: approve at 21:32:51, swap at
-     21:36:39, and everything between was a person wondering whether the
-     allowance existed yet. A second early press would have asked them to
-     approve twice. */
-  const wallet = read("../../../../lib/base/wallet.client.ts");
-  assert.match(wallet, /export async function waitForEvmReceipt/);
-  assert.match(wallet, /eth_getTransactionReceipt/);
-  assert.doesNotMatch(wallet, /eth_sendRawTransaction/, "the waiter reads; it never sends");
-  assert.match(engine, /const landed = await waitForEvmReceipt\(sent\.transactionHash\)/);
-  assert.match(engine, /await review\(\);/, "a landed approval reprices the swap without a second press");
-  assert.ok(engine.includes('case "APPROVAL_SLOW":'), "a slow approval is named as slow, never as a failure");
-  assert.ok(engine.includes('"TIMEOUT" ? "APPROVAL_SLOW"'), "a timeout is a timeout, not APPROVAL_FAILED");
+test("nothing on a Solana page signs on another network: the EVM-origin branch is gone, a non-Solana plan is refused (SOL-W1)", () => {
+  assert.doesNotMatch(engine, /lib\/base\/wallet\.client|sendEvmTransaction|waitForEvmReceipt|EVM_WALLET_CHAINS/);
+  assert.match(engine, /if \(plan\.plan\.origin === "solana"\) \{[\s\S]*?signTransaction\(\{ wallet: solana\.wallet/, "Solana sends are signed by the Solana wallet");
+  assert.match(engine, /Not a Solana plan: nothing on a Solana page signs it/);
 });
-
 test("a finished step is readable, not dark ink on a dark panel", () => {
   /* --rt-reconciled-green-ink is the ink that sits ON the verified green fill
      (#0B3D2A) and the receipts surface uses it on paper. On this dark panel the
@@ -183,8 +171,9 @@ test("every surface that words a lane words the cross-chain one", () => {
   for (const [file, path] of [
     ["home-surface", "../home-surface.tsx"],
     ["holdings-card", "../holdings/holdings-card.tsx"],
-    ["local-receipts", "../receipts/local-receipts.tsx"],
-    ["history-card", "../history/history-card.tsx"],
+    ["receipt-lines", "../receipts/receipt-lines.ts"],
+    /* A row's words live in `history-lines.ts` since B2b, shared with Home's «Останні операції». */
+    ["history-lines", "../history/history-lines.ts"],
   ]) {
     assert.ok(read(path).includes('CROSS_SWAP'), file);
   }
@@ -194,48 +183,21 @@ test("every surface that words a lane words the cross-chain one", () => {
   assert.doesNotMatch(surface, /lane: "SEND" \| "SWAP"/, "a hand-copied lane union is how this happened");
 });
 
-test("a balance is read for the network and the asset actually chosen, not for a CCTP direction", () => {
-  /* Found on production 2026-09-10 with USDG on Robinhood Chain: no
-     `Available` line and no 25/50/75/MAX. The EVM balance came from the
-     bridge's CCTP route, which takes a *direction* rather than a network, so
-     `robinhood` fell through a ternary and asked **Ethereum** — a chain the
-     person does not hold this money on — and the route reads only USDC and the
-     native coin, so USDG could not have been read on any chain. */
+test("only the Solana balance is read: another network has no wallet on this page (SOL-W1)", () => {
   assert.doesNotMatch(surface, /BASE_TO_SOLANA|ETHEREUM_TO_SOLANA/, "no CCTP direction is inferred from a swap network");
-  assert.match(surface, /"\/api\/swap\/balance"/, "the balance route asks by network, wallet and asset");
-  assert.match(surface, /network,\s*owner: evmAddress,\s*asset,/);
-  /* The reading has to be about this asset, or a figure read for one asset
-     survives a change to another. */
-  assert.match(surface, /evmBalance\.asset !== from\.asset/);
-  assert.match(surface, /evmBalance\.owner !== evmAddress/);
-  /* Decimals are never guessed: an unreadable scale shows no balance rather
-     than one that is a million times wrong under a MAX button. */
-  assert.match(surface, /fromAsset\.decimals \?\? evmBalance\.decimals/);
-  const route = read("../../../../app/api/swap/balance/route.ts");
-  assert.match(route, /readBaseErc20Balance/);
-  assert.match(route, /readBaseErc20Decimals/, "a token outside the catalogue is asked for its own scale");
-  assert.match(route, /NOT_AN_EVM_NETWORK/, "Solana holdings keep their one reader");
+  assert.doesNotMatch(surface, /"\/api\/swap\/balance"|evmBalance|evmAddress/);
+  assert.match(surface, /Another network's balance is not read: no wallet of that network is connected here\./);
 });
-
-test("every leg says which wallet it is attached to, and the EVM one can be connected there", () => {
-  /* A Solana wallet has shown as a chip in the shell header since it shipped.
-     An Ethereum-style one showed nowhere at all — on pairs whose sending side
-     *is* the EVM one, which is every Robinhood Chain pair. */
+test("only the Solana leg carries a wallet; money in from another network is a deposit address (SOL-W1)", () => {
   assert.match(surface, /const walletChip = /);
+  assert.match(surface, /if \(network !== "solana"\) return null;/);
   assert.match(surface, /\{walletChip\("from"\)\}/);
-  assert.match(surface, /from\.network !== to\.network \? walletChip\("to"\) : null/, "a same-wallet pair does not print the address twice");
-  assert.match(surface, /styles\.walletConnect/);
-  assert.match(surface, /styles\.walletAddress/);
-  /* A reload must not lose a connection the wallet still holds, and an account
-     switched in the wallet must not leave the old balance on screen. */
-  const wallet = read("../../../../lib/base/wallet.client.ts");
-  assert.match(wallet, /export async function readEvmWalletAddress/);
-  assert.match(wallet, /eth_accounts/, "the silent read never opens a prompt");
-  assert.match(wallet, /export function watchEvmWalletAddress/);
-  assert.match(surface, /readEvmWalletAddress\(\)/);
-  assert.match(surface, /watchEvmWalletAddress\(/);
+  assert.doesNotMatch(surface, /lib\/base\/wallet\.client|connectEvmWallet|readEvmWalletAddress|watchEvmWalletAddress/);
+  assert.match(surface, /<NetworkDeposit\s+key=\{connection\.address\}\s+recipient=\{connection\.address\}/, "into Solana is an address to send to");
+  assert.match(surface, /const depositView = !outbound && !runOpen;/, "a transfer already under way keeps its engine, to its receipt");
+  assert.match(surface, /ryntra\.solana\.cross-swap-run\.v1/);
+  assert.match(engine, /const RUN_KEY = "ryntra\.solana\.cross-swap-run\.v1";/, "the surface reads the engine's own record");
 });
-
 test("an unmapped failure never claims a send, and a missing address is named", () => {
   /* The default read *Something did not go through. Nothing was sent twice.*
      under a quote that had never been priced — a sentence about a submission
@@ -303,7 +265,7 @@ test("both legs say what the amount is worth, and say nothing when they do not k
   assert.match(surface, /\{sendUsd \? \(/);
   assert.match(surface, /\{receiveUsd \? \(/);
   assert.match(surface, /if \(raw === null \|\| decimals === null \|\| unit === undefined\) return null/);
-  assert.match(surface, /"≈ < \$0\.01"/, "a sum below a cent is a sum, not nothing");
+  assert.match(surface, /`≈ < \$\{formatUsdMoney\(0\.01, numbers\)\}`/, "a sum below a cent is a sum, not nothing — in the page's own number language (B18)");
 
   /* And it decides nothing. No button, no amount and no plan may read a price:
      what is signed is the quote's own minimum, from the rail that fills it. */
@@ -316,26 +278,18 @@ test("both legs say what the amount is worth, and say nothing when they do not k
   assert.doesNotMatch(price, /coingecko:/, "no token is priced by a name on another chain");
 });
 
-test("a network and an asset are told apart without spending the action colour", () => {
-  /* Measured on ryntra.io 2026-09-10: Solana, Robinhood Chain, USDG and SOL all
-     rendered rgba(255,90,31,.14) behind #FF8552 — four identical discs in the
-     colour of the button a person is meant to press, and nothing telling a
-     chain from a token. This palette has no four network colours to give: the
-     Brandbook froze the ramp and the only non-semantic accents are iris
-     (action) and aurora. So the two are told apart by shape. */
-  const css = read("./bridge-surface.module.css");
-  assert.match(surface, /styles\.glyphNetwork/);
-  assert.match(surface, /styles\.glyphAsset/);
-  const network = css.slice(css.indexOf(".glyphNetwork {"));
-  const networkRule = network.slice(0, network.indexOf("}"));
-  const asset = css.slice(css.indexOf(".glyphAsset {"));
-  const assetRule = asset.slice(0, asset.indexOf("}"));
-  assert.doesNotMatch(networkRule, /action-blue|authorization-violet/, "the chain mark is not the action colour");
-  assert.doesNotMatch(assetRule, /action-blue|authorization-violet/, "nor is the asset mark");
-  assert.match(networkRule, /border-radius: var\(--rt-radius-xs/, "a chain is a square");
-  assert.match(assetRule, /border-radius: 50%/, "an asset is a circle");
-  /* The shape has to survive both grounds: a 12% wash alone vanishes on light. */
-  assert.match(assetRule, /border: 1px solid/);
+test("a network and an asset are told apart by their own marks, never by a letter or the action colour", () => {
+  /* Measured on ryntra.io 2026-09-10: four identical discs in the colour of the button a person is meant to press.
+     Then letters: «B» for Base and BNB Chain, «A» for Arbitrum and the arrival-only network (the B13 review, item 12).
+     Since B18 every network and coin wears its own mark, a file of this site (`../money/marks.tsx`, `public/marks/`),
+     so a chain and a token are told apart by sight and the action colour is spent only on the action. */
+  assert.match(surface, /<NetworkMark network=\{ref\.network\}/, "the network beside each amount");
+  assert.match(surface, /<NetworkMark network=\{candidate\}/, "every row of the network menu");
+  assert.match(surface, /<AssetMark symbol=\{codeFor\(ref\)\} mint=\{markMint\(ref\)\}/, "the coin beside each amount");
+  assert.doesNotMatch(surface, /styles\.glyph|\.slice\(0, 1\)\}<\/span>/, "no first letter stands where a mark should");
+  const marks = read("../money/marks.tsx");
+  assert.match(marks, /\/marks\/networks\/\$\{network\}\.svg/, "a network's mark is a file of this site");
+  assert.doesNotMatch(marks, /https?:\/\//, "never a picture waiting on a third host");
 
   /* One primary orange on the surface. The embedded Solana card filled its CTA
      with `--accent`, which is `--rt-action-blue-fg` — the colour of action
@@ -367,38 +321,18 @@ test("the asset links at the foot of a Solana swap say what they are", () => {
      links: `SOL   USDC`, reading as something left behind rather than somewhere
      to go. The label existed only on the `aria-label`, so the one audience that
      could tell what the row was for was the one that could not see it. */
-  const context = read("../trade/swap-context.tsx");
-  assert.match(context, /<nav aria-label=\{uk\?"Відомості про активи":"Asset details"\}><span>/);
-  const product = read("../../../../app/app/product.css");
-  assert.match(product, /\.ry-swap-details nav > span/);
-  assert.match(product, /\.ry-swap-details a \{[^}]*text-decoration: underline/);
+  /* SOL-C13: each asset's row in the pair beside the converter carries its own visible «About» link (REDUNDANT, M4). */
+  const pair = read("../trade/swap-pair.tsx");
+  assert.match(pair, /href=\{`\/app\/assets\?mint=\$\{side\.mint\}`\}[^>]*>\s*\{text\("About"\)\}/);
+  const css = read("../trade/swap-pair.module.css");
+  assert.match(css, /\.details \{[^}]*text-decoration: underline/);
 });
 
-test("a Solana-only pair never speaks to an Ethereum wallet", () => {
-  /* Found on production 2026-09-10, mid-swap. `eth_accounts` is the silent
-     half of `eth_requestAccounts` in a wallet that speaks only Ethereum — and
-     Phantom is not that wallet. It injects `window.ethereum` beside its Solana
-     provider, and with a Solana account active it answers that call with a
-     modal of its own: "Unsupported account — This website is trying to use
-     Ethereum, which this Solana account doesn't support." It fired on a
-     Solana-to-Solana swap, on a card with no Ethereum anything on it, because
-     the restore effect ran on mount with no deps. */
-  assert.match(surface, /const pairTouchesEvm = from\.network !== "solana" \|\| to\.network !== "solana"/);
-  assert.match(surface, /if \(!pairTouchesEvm\) return;/);
-  assert.match(surface, /if \(!readEvmWalletHint\(\)\) return;[\s\S]*?await readEvmWalletAddress/, "silent reads still require a prior connection");
-  assert.match(surface, /\}, \[pairTouchesEvm, hasEvmAddress\]\);/, "the account listener also attaches after the first connection");
-  assert.doesNotMatch(surface, /readEvmWalletAddress\(\);\s*\n\s*if \(live && address\) setEvmAddress\(address\);\s*\n\s*\}\)\(\);\s*\n[\s\S]{0,200}\}, \[\]\);/, "no unconditional mount read remains");
-
-  /* And the hint is written where a wallet actually answered, cleared where the
-     person let it go — so a browser that has never connected one is never asked. */
-  const wallet = read("../../../../lib/base/wallet.client.ts");
-  assert.match(wallet, /export function readEvmWalletHint/);
-  assert.match(wallet, /export function writeEvmWalletHint/);
-  assert.match(wallet, /writeEvmWalletHint\(true\);/);
-  assert.match(surface, /writeEvmWalletHint\(false\);/);
-  assert.match(wallet, /Phantom is not that wallet/, "the reason is written down where the next caller will read it");
+test("a Solana page never speaks to an Ethereum wallet at all (SOL-W1)", () => {
+  /* Phantom answers \`window.ethereum\` on a Solana account with its own «Unsupported account» modal
+     (found on production 2026-09-10). Since SOL-W1 nothing here asks it anything. */
+  for (const source of [surface, engine]) assert.doesNotMatch(source, /window\.ethereum|eth_accounts|eth_requestAccounts|EvmWallet/);
 });
-
 test("a provider refusal carries the provider's own words", () => {
   /* Jupiter states its reason in the 400 body, in plain words, and this threw it
      away and printed the status number. The sibling branch — a 200 with no

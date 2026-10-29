@@ -5,6 +5,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { Icon } from '@/components/icon'
 import { Txt } from '@/components/txt'
 import { useSharedCopy } from '@/lib/i18n'
+import { page } from '@/theme'
 
 export type SheetProps = {
   visible: boolean
@@ -44,9 +45,10 @@ export function Sheet({ visible, title, subtitle, leading, onClose, scroll = fal
           onPress={onClose}
           className="absolute inset-0 bg-black/50"
         />
+        {/* On a wide window the sheet stands in the middle at the action column's width, never edge to edge. */}
         <View
-          className="rounded-t-lg border-t border-line bg-elevated pt-3"
-          style={{ maxHeight: '88%', paddingBottom: Math.max(insets.bottom, 16) }}
+          className="w-full self-center rounded-t-lg border-t border-line bg-elevated pt-3"
+          style={{ maxHeight: '88%', maxWidth: page.action, paddingBottom: Math.max(insets.bottom, 16) }}
         >
           <View className="mb-2 h-1 w-10 self-center rounded-pill bg-line-strong" />
           <View className="flex-row items-center gap-3 px-4 py-2">

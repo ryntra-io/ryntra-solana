@@ -1,0 +1,388 @@
+/* Ryntra on Solana inside the core's frame (B1, Menu 3 since NAV-1): the header,
+   the menu and the page area are the core's (`@ryntra/core/ui.css`); nothing
+   stands above the page. This file only hangs the wallet's panel under the
+   header and gives the page the names the old frame's root (`.rs`) gave it. */
+
+/* The header's height, under the name the product's own stylesheets ask for it by. The core sizes its header with
+   `--ryntra-size-header` and never declares `--ryntra-header-height`, so every reader of that name was living on its
+   fallback — right at 56 px and wrong the moment the header is any other height, which on a short landscape screen it
+   is. Tied here, once, so the two cannot drift apart again. */
+.ry-product[data-solana-app="true"] {
+  --ryntra-header-height: var(--ryntra-size-header);
+}
+
+/* The names the pages read from the old frame's root (`app/shell/shell.css` and `rt-bridge.css` declare them on
+   `.rs`); the canvas is not `.rs` — that root is a grid with a rail — so it carries them itself. */
+.ry-product[data-solana-app="true"] .sol-canvas {
+  --ink: var(--bg);
+  --deep: var(--panel-2);
+  --raised: var(--panel-3);
+  --hairline: var(--border);
+  --hairline-strong: var(--border-strong);
+  --fg: var(--text);
+  --fg-dim: var(--text-dim);
+  --fg-muted: var(--text-faint);
+  --cyan: var(--accent);
+  --mint: var(--success);
+  --amber: var(--warning);
+  --red: var(--danger);
+  --display: var(--ry-font-sans);
+  --tech: var(--rt-mono);
+  --body: var(--rt-font);
+  --mono: var(--rt-mono);
+
+  --bg: var(--rt-page);
+  --bg-2: var(--rt-panel);
+  --panel: var(--rt-panel);
+  --panel-2: var(--rt-raised);
+  --panel-3: var(--rt-raised);
+  --panel-hover: var(--rt-overlay);
+  --border: var(--rt-hairline);
+  --border-strong: var(--rt-hairline-strong);
+  --text: var(--rt-ink-high);
+  --text-dim: var(--rt-ink-mid);
+  --text-faint: var(--rt-ink-low);
+  --accent: var(--rt-action-blue-fg);
+  --accent-2: var(--rt-action-blue-fg);
+  --accent-ink: var(--rt-action-blue-ink);
+  --accent-soft: var(--rt-action-blue-soft);
+  --accent-line: var(--rt-action-blue-line);
+  --accent-strong: var(--rt-action-blue);
+  --blue: var(--rt-action-blue);
+  --blue-soft: var(--rt-action-blue-soft);
+  --blue-ink: var(--rt-action-blue-ink);
+  --violet: var(--rt-authorization-violet);
+  --violet-soft: var(--rt-authorization-violet-soft);
+  --success: var(--rt-reconciled-green-fg);
+  --success-soft: var(--rt-reconciled-green-soft);
+  --success-ink: var(--rt-reconciled-green-ink);
+  --success-strong: var(--rt-reconciled-green-fg);
+  --warning: var(--rt-review-amber-fg);
+  --warning-soft: var(--rt-review-amber-soft);
+  --warning-strong: var(--rt-review-amber-fg);
+  --danger: var(--rt-blocked-red);
+  --danger-soft: var(--rt-blocked-red-soft);
+  --danger-ink: var(--rt-blocked-red-ink);
+  --ch-grid: var(--rt-chart-grid);
+  --ch-series: var(--rt-chart-series);
+  --ch-up: var(--rt-reconciled-green);
+  --ch-down: var(--rt-blocked-red);
+  --radius: var(--rt-radius-md);
+  --radius-sm: var(--rt-radius-sm);
+  --radius-xs: var(--rt-radius-xs);
+  --radius-lg: var(--rt-radius-lg);
+  --r-badge: var(--rt-radius-xs);
+  --ry-font-display: var(--ry-font-sans);
+
+  min-height: calc(100dvh - var(--ryntra-header-height, 56px));
+  color: var(--fg);
+  font-family: var(--body);
+  font-variant-numeric: tabular-nums;
+}
+/* The light text tones the old root gave its pages under the light theme — Porcelain is the core's light. */
+:is([data-theme="light"], [data-theme="porcelain"]) .ry-product[data-solana-app="true"] .sol-canvas {
+  --danger: var(--rt-blocked-red-fg);
+  --violet: var(--rt-authorization-violet-fg);
+  --cyan: var(--accent-strong);
+  --mint: var(--success-strong);
+  --amber: var(--warning-strong);
+  color: var(--text);
+}
+.ry-product[data-solana-app="true"] .sol-canvas *,
+.ry-product[data-solana-app="true"] .sol-canvas *::before,
+.ry-product[data-solana-app="true"] .sol-canvas *::after { box-sizing: border-box; }
+/* The core chart's readout row counts its height without its padding (`content-box`, chart.css); the canvas-wide rule
+   above would cut its words in half (CH-17). */
+.ry-product[data-solana-app="true"] .sol-canvas .ryntra-chart__ohlc { box-sizing: content-box; }
+:where(.ry-product[data-solana-app="true"] .sol-canvas) :where(a) { color: inherit; text-decoration: none; }
+
+/* The wallet's panel hangs from the header's right edge, under the core's wallet button that opens it; its own
+   trigger stays out of sight. */
+.sol-wallet-anchor {
+  position: fixed;
+  top: var(--ryntra-header-height, 56px);
+  right: var(--ry-s4);
+  z-index: 60;
+  width: 0;
+  height: 0;
+}
+.sol-wallet-anchor .rs-menu-trigger {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
+}
+.sol-wallet-anchor .rs-menu-panel {
+  top: 4px;
+  right: 0;
+}
+
+/* A ticket's or an exchange's one action is pinned by the core above the bar while its column scrolls (`sticky`); a
+   card that hides its overflow would hold it in place as its own scroller, under the fold (UX-251, SOL-C11). Clipped
+   instead: the corners stay, the action stays in reach. */
+.ry-product[data-solana-app="true"] .rw:has(.ryntra-ticket__action, .ryntra-exchange__action) { overflow: clip; }
+
+/* The phone's bottom bar of Menu 3 (NAV-1): Головна · Торгівля · Гроші · Портфель · Меню, below 1024 px where the
+   core has no rail. «Гроші» opens its four large actions above the bar. The core's `bottomBar` (SOL-C11): the core pins
+   it, keeps its height in `--shell-bottom` and the page's last lines and pinned action above it — none of that here. */
+.sol-phonebar { display: none; }
+/* The bar's height, for what the product itself pins at the bottom of a phone's screen (Spot's trade bar, a notice). */
+:root { --sol-phonebar-h: 65px; }
+@media (max-width: 1023px) {
+  /* Until the core has measured the bar (its script runs after the first paint) the frame takes it as this bar, not as
+     one touch row: a pinned action never starts over it on a slow phone. */
+  .ry-product[data-solana-app="true"] .ryntra-shell:has(> .ryntra-shell__bar) { --shell-bottom: calc(var(--sol-phonebar-h) + env(safe-area-inset-bottom, 0px)); }
+  .sol-phonebar {
+    display: block;
+    position: relative;
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+    border-top: 1px solid var(--ryntra-border);
+    background: var(--ryntra-bg);
+  }
+  /* «Гроші» open: its sheet rises over whatever is pinned above the bar (a page's action, Spot's trade bar). */
+  .ryntra-shell__bar:has(.sol-phonebar-sheet) { z-index: var(--ryntra-z-menu); }
+  .sol-phonebar-places {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+  .sol-phonebar-place {
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    width: 100%;
+    height: 64px;
+    margin: 0;
+    padding: 6px 2px;
+    border: 0;
+    background: transparent;
+    color: var(--ryntra-muted);
+    font-family: inherit;
+    font-size: 12px;
+    font-weight: 500;
+    line-height: 16px;
+    appearance: none;
+    text-decoration: none;
+    cursor: pointer;
+  }
+  .sol-phonebar-place[aria-current="page"],
+  .sol-phonebar-place[data-current],
+  .sol-phonebar-place[aria-expanded="true"] { color: var(--ryntra-brand-text); }
+  .sol-phonebar-place:focus-visible,
+  .sol-phonebar-action:focus-visible,
+  .sol-phonebar-history:focus-visible { outline: none; box-shadow: var(--ryntra-focus-shadow); }
+  .sol-phonebar-sheet {
+    position: absolute;
+    inset: auto 0 100% 0;
+    display: grid;
+    gap: var(--ryntra-space-3);
+    padding: var(--ryntra-space-4);
+    border-top: 1px solid var(--ryntra-border);
+    border-radius: var(--ryntra-radius-card) var(--ryntra-radius-card) 0 0;
+    background: var(--ryntra-surface);
+    box-shadow: var(--ryntra-shadow-elevated);
+  }
+  .sol-phonebar-actions {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: var(--ryntra-space-2);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+  .sol-phonebar-actions > li { display: flex; }
+  .sol-phonebar-action {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--ryntra-space-2);
+    min-height: 84px;
+    padding: var(--ryntra-space-3) var(--ryntra-space-1);
+    border: 1px solid var(--ryntra-border);
+    border-radius: var(--ryntra-radius-block);
+    background: var(--ryntra-bg);
+    color: var(--ryntra-text);
+    font-size: 13px;
+    font-weight: 600;
+    text-align: center;
+    text-decoration: none;
+  }
+  .sol-phonebar-action svg { color: var(--ryntra-brand-text); }
+  .sol-phonebar-action[aria-current="page"] { border-color: var(--ryntra-brand-text); }
+  .sol-phonebar-history {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--ryntra-space-2);
+    min-height: 44px;
+    border-radius: var(--ryntra-radius-button);
+    color: var(--ryntra-muted);
+    font-size: 14px;
+    text-decoration: none;
+  }
+}
+
+/* ── A phone while a person types ───────────────────────────────────────────────────────────────────────────────
+   The keyboard takes a third of the screen, and the bar takes a row of what is left — right where a sum field sits on
+   Обмін, so the sum is typed behind the bar. While the focus is in a field the bar steps aside (`data-typing`, set by
+   `app/app/typing.ts`) and the page gets its last row back; the menu is a press away in the header all the while, and
+   the bar returns as soon as the focus leaves. The field itself is kept inside what is seen by the same module, which
+   reads the visual viewport — the only thing that knows where the keys begin. */
+@media (max-width: 1023px) {
+  html[data-typing="true"] .ry-product[data-solana-app="true"] .ryntra-shell__bar {
+    display: none;
+  }
+
+  /* Nothing is pinned above a bar that is not drawn: a page's action, a ticket's and a Review's all come down to the
+     bottom of the screen, and the page stops reserving the row under itself. The core measures the bar it pins and
+     writes the height on the frame itself, so a bar hidden here measures nothing and the core's own number says zero;
+     this is the value until it does, as it is for the bar's own height above. */
+  html[data-typing="true"] .ry-product[data-solana-app="true"] .ryntra-shell:has(> .ryntra-shell__bar) {
+    --shell-bottom: env(safe-area-inset-bottom, 0px);
+  }
+
+  html[data-typing="true"] .ry-product[data-solana-app="true"] .ryntra-shell:has(> .ryntra-shell__bar) > .ryntra-shell__main {
+    padding-bottom: var(--shell-bottom);
+  }
+
+  /* And what the product pins itself stands above the bar's own height, by this name — Spot's «Купити | Продати», the
+     four actions of «Гроші», a notice, the assistant's field. A bar that stepped aside has no height, so they come down
+     with it rather than hovering a row above nothing; the browser's own scroll to a field (`scroll-padding-bottom` in
+     `app/globals.css`) stops reserving that row too. */
+  html[data-typing="true"] {
+    --sol-phonebar-h: 0px;
+  }
+}
+
+/* ── A phone turned on its side ─────────────────────────────────────────────────────────────────────────────────
+   844×390: the header and the bar took 121 px of 390 — 31 % of the screen — and a person who turned the phone to see
+   the chart bigger saw less of it than upright (the landscape reading of the UX audit of 21.10). A short landscape
+   screen has no row to spare, so the bar gives its own up — the menu is the header's ☰ below a desk, which is where the
+   bar's «Меню» sent people anyway — and the header draws itself one touch row tall instead of 56 px. That is the whole
+   change: a phone on its side is 844 px wide, where the network's plate already stands in the header rather than on a
+   line of its own, and on a smaller phone in landscape — 568 px and narrower — the line stays, because a plate pushed
+   into a header that narrow is the next thing to lie over something. Only a short screen: a tablet on its side keeps
+   its bar and its header as they are. */
+@media (orientation: landscape) and (max-height: 500px) {
+  .ry-product[data-solana-app="true"] {
+    --ryntra-size-header: 44px;
+  }
+
+  .ry-product[data-solana-app="true"] .ryntra-shell__bar {
+    display: none;
+  }
+
+  /* As above: the core measures a hidden bar as nothing; this is the value until it has. */
+  .ry-product[data-solana-app="true"] .ryntra-shell:has(> .ryntra-shell__bar) {
+    --shell-bottom: env(safe-area-inset-bottom, 0px);
+  }
+
+  .ry-product[data-solana-app="true"] .ryntra-shell:has(> .ryntra-shell__bar) > .ryntra-shell__main {
+    padding-bottom: var(--shell-bottom);
+  }
+
+  /* The same for what the product pins itself: on a phone narrower than 768 px turned on its side — 667×375, 568×320 —
+     the pages draw their phone faces, and those pin above the bar's height by this name. With the bar gone and the name
+     left at 65 px, Spot's «Купити | Продати» and the action of «Гроші» floated 65 px over nothing: a fifth of a 320 px
+     screen, on the very screen this rule was written to give back. Named on the document, so the browser's own scroll
+     padding follows; only where the Solana app is what the document draws. */
+  html:has(.ry-product[data-solana-app="true"]) {
+    --sol-phonebar-h: 0px;
+  }
+}
+
+/* «Торгівля → Perps» opens Phoenix's perpetuals inside Solana (B7, decision 56), and «Торгівля → Прогнози» the
+   Predictions section on AGG (NAV-6c, decision 58): rows of this network, not ways out. The core draws its `futures`
+   and `predictions` rows as another product's — the arrow ↗ and «a separate product» for a screen reader — whatever
+   address it is given, so here, and only for the rows that open Solana's own pages, both are left out. Asked of the
+   core as a row «inside the network» (handoff B7); this rule goes when the core draws it so. */
+.ry-product[data-solana-app="true"] .ryntra-menu__row[href="/app/perps"] > .ryntra-menu__mark:not(.ryntra-spin),
+.ry-product[data-solana-app="true"] .ryntra-menu__row[href="/app/perps"] > .ryntra-visually-hidden,
+.ry-product[data-solana-app="true"] .ryntra-menu__row[href="/app/predictions"] > .ryntra-menu__mark:not(.ryntra-spin),
+.ry-product[data-solana-app="true"] .ryntra-menu__row[href="/app/predictions"] > .ryntra-visually-hidden {
+  display: none;
+}
+
+/* What a place lets a person do now, beside its word (SOL-C2, decision 63; UX-365, UX-350, UX-003): Perps — Phoenix,
+   view only until orders open; Казна on mainnet — «Beta», on the group's head, so it is in sight with the group shut and
+   the row «Огляд казни» keeps its whole word. The words are `MENU_TAGS` of `app/shell/domains.ts`, handed to the frame
+   as custom properties; Perps' is the same `FUTURES_NOW` the search's hint ends with. A place without its property
+   has no tag. Generated
+   content is part of the control's name, so a screen reader hears it too. Asked of the core as a row's own tag (handoff
+   SOL-C2); these rules go when the core draws one. */
+.ry-product[data-solana-app="true"] .ryntra-menu__row[href="/app/perps"]::after,
+.ry-product[data-solana-app="true"] .ryntra-menu__group[data-group="treasury"] > .ryntra-menu__head::after {
+  flex: none;
+  margin-left: auto;
+  padding: 0 var(--ryntra-space-2);
+  border: 1px solid var(--ryntra-border);
+  border-radius: var(--ryntra-radius-pill);
+  color: var(--ryntra-muted);
+  font-size: var(--ryntra-type-caption-size);
+  line-height: calc(var(--ryntra-type-caption-line) + 2px);
+  font-weight: var(--ryntra-weight-medium);
+}
+.ry-product[data-solana-app="true"] .ryntra-menu__row[href="/app/perps"]::after {
+  content: var(--sol-menu-tag-futures, none);
+}
+
+/* «Perps» in both languages, as Jupiter, Drift and Phoenix name the place. The core
+   names its `futures` row «Ф'ючерси» / «Futures» for every network, and the other networks and the phone keep it; here the
+   core's word leaves the page — hidden, so neither the eye nor a screen reader meets it — and the frame's word
+   (`PERPS_LABEL` of `app/shell/domains.ts`, the search's too, as `--sol-menu-word-futures`) stands where it stood: in
+   the rail, the narrow rail's flyout and the phone's sheet alike. The word is the row's own generated content, so it
+   is the link's name: a hidden element's generated content would not be. The row's `::before` is the core's bar of
+   the page on screen; for this row the bar moves to the hidden label's `::before`, drawn as the core draws it. Asked
+   of the core as a network's own word for a row (handoff PERP-1); these rules go when the core takes one. */
+.ry-product[data-solana-app="true"] .ryntra-menu__row[href="/app/perps"] > .ryntra-menu__label {
+  visibility: hidden;
+  font-size: 0;
+}
+.ry-product[data-solana-app="true"] .ryntra-menu__row[href="/app/perps"]::before,
+.ry-product[data-solana-app="true"] .ryntra-menu__row[href="/app/perps"][aria-current="page"]::before {
+  position: static;
+  width: auto;
+  min-width: 0;
+  overflow: hidden;
+  border-radius: 0;
+  background: none;
+  text-overflow: ellipsis;
+  content: var(--sol-menu-word-futures, "Perps");
+}
+.ry-product[data-solana-app="true"] .ryntra-menu__row[href="/app/perps"][aria-current="page"] > .ryntra-menu__label::before {
+  position: absolute;
+  top: var(--ryntra-space-2);
+  bottom: var(--ryntra-space-2);
+  left: -1px;
+  width: var(--ryntra-focus-width);
+  border-radius: var(--ryntra-radius-pill);
+  background: var(--ryntra-brand);
+  visibility: visible;
+  content: "";
+}
+.ry-product[data-solana-app="true"] .ryntra-menu__flyout .ryntra-menu__row[href="/app/perps"][aria-current="page"] > .ryntra-menu__label::before {
+  left: 0;
+}
+.ry-product[data-solana-app="true"] .ryntra-menu__group[data-group="treasury"] > .ryntra-menu__head::after {
+  order: 1;
+  content: var(--sol-menu-tag-treasury, none);
+}
+/* The group's arrow stays at the end, after the tag. */
+.ry-product[data-solana-app="true"] .ryntra-menu__group[data-group="treasury"] > .ryntra-menu__head > .ryntra-menu__arrow {
+  order: 2;
+  margin-left: var(--ryntra-space-2);
+}
+/* The narrow rail draws the head as its icon alone: no tag there (the flyout's title carries the word). */
+.ry-product[data-solana-app="true"] .ryntra-menu--collapsed .ryntra-menu__group > .ryntra-menu__head::after {
+  content: none;
+}

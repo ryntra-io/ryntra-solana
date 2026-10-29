@@ -89,6 +89,8 @@ export function AgentPanel() {
             <PlainStat value={usage.month.calls} label={`викликів моделі за місяць · ${usage.month.month}`} />
             <PlainStat value={usage.byDay.reduce((sum, row) => sum + row.calls, 0)} label="квитанцій за 14 днів" />
             <PlainStat value={usage.byDay.reduce((sum, row) => sum + row.tokens, 0)} label="токенів за 14 днів" />
+            {/* AI-02: dollars from the priced receipts; the calls with no price are counted apart, never as free. */}
+            <PlainStat value={Number(usage.byDay.reduce((sum, row) => sum + (row.costUsd ?? 0), 0).toFixed(4))} label="доларів витрачено за 14 днів" />
           </div>
           <p className={styles.cardNote}>
             Інструменти · дослідження: {payload.tools.research.map((tool) => <code key={tool}>{tool}</code>).reduce<ReactNode[]>((acc, node, index) => (index === 0 ? [node] : [...acc, ", ", node]), [])} · підготовка: {payload.tools.prepare.map((tool) => <code key={tool}>{tool}</code>).reduce<ReactNode[]>((acc, node, index) => (index === 0 ? [node] : [...acc, ", ", node]), [])} · виконання: <code>false</code> · оновлено {formatDateTime(payload.generatedAt)}
@@ -103,6 +105,8 @@ export function AgentPanel() {
                     <th scope="col">Викликів</th>
                     <th scope="col">Токенів</th>
                     <th scope="col">Гаманців</th>
+                    <th scope="col">Гостей</th>
+                    <th scope="col">$</th>
                     <th scope="col">Результати</th>
                   </tr>
                 </thead>
@@ -115,6 +119,8 @@ export function AgentPanel() {
                       <td className={styles.cellNum}>{row.calls}</td>
                       <td className={styles.cellNum}>{row.tokens}</td>
                       <td className={styles.cellNum}>{row.wallets}</td>
+                      <td className={styles.cellNum}>{row.guests ?? 0}</td>
+                      <td className={styles.cellNum}>{`$${(row.costUsd ?? 0).toFixed(4)}${row.unpriced ? ` +${row.unpriced} без ціни` : ""}`}</td>
                       <td>{Object.entries(row.outcomes).map(([outcome, count]) => `${OUTCOME_WORD[outcome] ?? outcome} ×${count}`).join(", ")}</td>
                     </tr>
                   ))}
@@ -125,7 +131,7 @@ export function AgentPanel() {
             <p className={styles.cardNote}>Квитанцій ще немає: жоден виклик моделі не зроблено.</p>
           )}
           {usage.byModel.length > 0 ? (
-            <p className={styles.cardNote}>{usage.byModel.map((row) => `${row.model}: ${row.calls} викл., ${row.inputTokens} вхідних · ${row.outputTokens} вихідних токенів`).join(" · ")}</p>
+            <p className={styles.cardNote}>{usage.byModel.map((row) => `${row.model}: ${row.calls} викл., ${row.inputTokens} вхідних (${row.cachedTokens ?? 0} з кешу) · ${row.outputTokens} вихідних токенів · $${(row.costUsd ?? 0).toFixed(4)}`).join(" · ")}</p>
           ) : null}
         </div>
       ) : !error ? (

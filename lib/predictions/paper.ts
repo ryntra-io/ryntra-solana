@@ -14,25 +14,36 @@
  *
  * One record per quote in Guard `predictionOrders`, keyed `<wallet>:<quoteId>`;
  * the provider's own ledger is the truth of what happened to the order and
- * the record is reconciled to it, never the other way round. Nothing here
- * moves real funds: every provider call carries `mode: "paper"` and the app
- * itself is a paper app at the provider (`tradingMode: paper`).
+ * the record is reconciled to it, never the other way round.
+ *
+ * Paper by default. A live order — real USDC from the managed account — is
+ * reviewed only when the person asks for one and `live.ts` opens it to this
+ * wallet, on venues the deployment names, with the provider's app in live
+ * mode; the Review says so on its first line, the route is priced only
+ * across those venues, the amount is capped, and the fill spends exactly the
+ * reviewed quote (never a re-priced one). Every check is made again at the
+ * fill.
  *
  * Server only.
  */
 
 import { withBoundedCasRetry, type GuardStore } from "../guard/store.ts";
+import { reviewCosts, type ReviewCosts } from "./costs.ts";
 import { failure, type PredictionFailure } from "./failure.ts";
+import type { LiveBalance } from "./funding.ts";
+import { LIVE_SLIP_CAP_BPS, liveVenuesFor, readLiveSettings, venuesOutside, type TradeMode } from "./live.ts";
 import type { PaperBalance, PaperExecution, PaperOrder, PaperPosition, PredictionEvent, PredictionRoute, PredictionSettlement } from "./model.ts";
+import { WORKING_ORDER_STATES, cancellable } from "./order-state.ts";
 import { readPredictionPlan, recordPredictionPlanExecution, type PredictionPlan } from "./plan.ts";
-import type { PredictionProvider, Result } from "./provider.ts";
+import type { PredictionProvider, ProviderUserProfile, Result } from "./provider.ts";
 import { linkStatus, withProviderSession, type LinkStatus } from "./session.ts";
 
 export type ReviewCheckState = "pass" | "warn" | "fail";
 export type ReviewCheck = Readonly<{ id: string; state: ReviewCheckState; detail: string; figure?: string | null }>;
 
 export type PaperReview = Readonly<{
-  mode: "paper";
+  /** `live` — real USDC from the managed account; everything else is simulated. */
+  mode: TradeMode;
   quoteId: string;
   event: Readonly<{ id: string; title: string; endDate: string | null }>;
   market: Readonly<{ id: string; question: string; venue: string; resolutionDate: string | null; rules: Readonly<{ primary: string | null; secondary: string | null }> }>;
@@ -51,6 +62,8 @@ export type PaperReview = Readonly<{
     maxLossUsd: number;
     returnIfRightPct: number | null;
   }>;
+  /** A buy's cost line by line — contracts, venue fees, Ryntra's fee, gas, bridge — and a saving only where it is true; null on a sell. Absent on a Review stored before it was kept. */
+  costs?: ReviewCosts | null;
   quote: Readonly<{ quotedAt: string; expiresAt: string; ageSeconds: number; expired: boolean }>;
   venues: readonly string[];
   settlement: PredictionSettlement | null;
@@ -91,6 +104,10 @@ export type PredictionOrderRecord = Readonly<{
 }>;
 
 const QUOTE_MAX_AGE_S = 90;
+/** How long after a quote's expiry an untraced send is still waited on before it is called not received. */
+const UNSEEN_GRACE_MS = 2 * 60_000;
+/** Refusals that come before the provider creates anything: the same Review may be placed again. */
+const NOTHING_CREATED: ReadonlySet<string> = new Set(["RATE_LIMITED", "SESSION_EXPIRED", "FORBIDDEN", "NOT_FOUND", "NOT_LINKED", "LINK_UNAVAILABLE", "UNAUTHORIZED"]);
 const MIN_SPEND_USD = 1;
 const MAX_SPEND_USD = 10_000;
 
@@ -131,6 +148,15 @@ const REVIEW_WORDS = {
     balanceOk: (cash: string) => `Paper balance ${cash} covers it.`,
     balanceUnknown: "The paper balance could not be read before this Review.",
     sellShares: (n: string) => `${n} shares to sell.`,
+    liveMode: "Real money: USDC from your predictions balance, held by AGG. The venues receive a real order.",
+    liveAmountHigh: (max: string) => `A live order is at most ${max} for now.`,
+    liveAmountOk: (amount: string) => `${amount} of real money at most.`,
+    liveBalanceShort: (cash: string, total: string) => `The available balance (${cash}) does not cover ${total}.`,
+    liveBalanceOk: (cash: string) => `Available balance ${cash} covers it.`,
+    liveBalanceUnknown: "The balance could not be read; a live order needs it read first.",
+    liveVenues: (venues: string) => `The route fills on ${venues}, where live orders are not open yet.`,
+    liveVenuesOk: (venues: string) => `Live orders are open on ${venues}.`,
+    liveSlip: (cap: string) => `The price may move at most ${cap} against you before the order stops.`,
     marketGone: "The market is no longer in this event.",
     marketResolved: "The market has resolved; nothing more can be placed on it.",
     marketClosed: "The market is closed to new orders.",
@@ -167,6 +193,15 @@ const REVIEW_WORDS = {
     balanceOk: (cash: string) => `Paper-баланс ${cash} покриває це.`,
     balanceUnknown: "Paper-баланс не вдалося прочитати перед цим Review.",
     sellShares: (n: string) => `${n} акцій на продаж.`,
+    liveMode: "Справжні гроші: USDC з балансу прогнозів, який тримає AGG. Майданчики отримують справжній ордер.",
+    liveAmountHigh: (max: string) => `Справжній ордер поки що — щонайбільше ${max}.`,
+    liveAmountOk: (amount: string) => `Щонайбільше ${amount} справжніх грошей.`,
+    liveBalanceShort: (cash: string, total: string) => `Доступний баланс (${cash}) не покриває ${total}.`,
+    liveBalanceOk: (cash: string) => `Доступний баланс ${cash} покриває це.`,
+    liveBalanceUnknown: "Баланс не вдалося прочитати; для справжнього ордера його треба прочитати спершу.",
+    liveVenues: (venues: string) => `Маршрут виконується на ${venues}, де справжні ордери ще не відкрито.`,
+    liveVenuesOk: (venues: string) => `Справжні ордери відкрито на ${venues}.`,
+    liveSlip: (cap: string) => `Ціна може зрушити проти вас щонайбільше на ${cap}, далі ордер зупиняється.`,
     marketGone: "Ринку більше немає в цій події.",
     marketResolved: "Ринок вирішено; на нього більше нічого не розмістити.",
     marketClosed: "Ринок закрито для нових ордерів.",
@@ -204,8 +239,12 @@ export function buildReview(input: Readonly<{
   plan: PredictionPlan | null;
   nowMs: number;
   locale?: ReviewLocale;
+  /** Paper unless named. A live Review also names the venues open to live orders and the most one may spend. */
+  mode?: TradeMode;
+  live?: Readonly<{ venues: readonly string[]; maxOrderUsd: number }>;
 }>): PaperReview {
   const { event, route, balance, plan, nowMs } = input;
+  const mode: TradeMode = input.mode === "live" ? "live" : "paper";
   const w = REVIEW_WORDS[input.locale ?? "en"];
   const market = event.markets.find((m) => m.id === input.venueMarketId) ?? event.markets[0];
   const outcome = market?.outcomes.find((o) => o.id === input.outcomeId);
@@ -222,8 +261,9 @@ export function buildReview(input: Readonly<{
   };
   const pass = (id: string, detail: string, figure?: string | null) => checks.push({ id, state: "pass", detail, figure: figure ?? null });
 
-  /* Mode — the app is a paper app; the route was priced in paper mode. */
-  pass("mode", w.mode, "paper");
+  /* Mode — said first, so nobody mistakes real money for a simulation or the other way round. */
+  if (mode === "live") pass("mode", w.liveMode, "live");
+  else pass("mode", w.mode, "paper");
 
   /* The route itself. */
   const feesUsd = route.fees.venue + route.fees.builder + route.fees.settlement + (route.fees.app ?? 0);
@@ -240,15 +280,27 @@ export function buildReview(input: Readonly<{
   if (expired) block("quote_age", w.quoteOld(ageSeconds), `${ageSeconds}s`);
   else pass("quote_age", w.quoteFresh(ageSeconds, new Date(route.expiresAt).toISOString().slice(11, 19)), `${ageSeconds}s`);
 
-  /* Amount and balance. */
+  /* Live: only on venues open to live orders — a route that fills anywhere else is refused, not trimmed. */
+  if (mode === "live") {
+    const open = input.live?.venues ?? [];
+    const outside = venuesOutside(route.fills.map((f) => f.venue), open);
+    if (open.length === 0 || outside.length > 0) block("live_venues", w.liveVenues(outside.join(", ") || "—"), outside.join(", ") || null);
+    else pass("live_venues", w.liveVenuesOk(open.join(", ")), open.join(", "));
+    pass("slippage", w.liveSlip(`${LIVE_SLIP_CAP_BPS / 100}%`), `${LIVE_SLIP_CAP_BPS / 100}%`);
+  }
+
+  /* Amount and balance. A live order is capped lower — on everything it costs, fees and one-time costs included — and is never placed on a balance nobody read. */
   if (input.side === "buy") {
+    const ceiling = mode === "live" ? Math.min(MAX_SPEND_USD, input.live?.maxOrderUsd ?? 0) : MAX_SPEND_USD;
+    const capped = mode === "live" ? Math.max(input.requested, totalUsd) : input.requested;
     if (input.requested < MIN_SPEND_USD) block("amount", w.amountLow(money(MIN_SPEND_USD)), money(input.requested));
-    else if (input.requested > MAX_SPEND_USD) block("amount", w.amountHigh(money(MAX_SPEND_USD)), money(input.requested));
-    else pass("amount", w.amountOk(money(input.requested)), money(input.requested));
+    else if (capped > ceiling) block("amount", mode === "live" ? w.liveAmountHigh(money(ceiling)) : w.amountHigh(money(ceiling)), money(input.requested));
+    else pass("amount", mode === "live" ? w.liveAmountOk(money(input.requested)) : w.amountOk(money(input.requested)), money(input.requested));
     if (balance) {
-      if (balance.cashBalance < totalUsd) block("balance", w.balanceShort(money(balance.cashBalance), money(totalUsd)), money(balance.cashBalance));
-      else pass("balance", w.balanceOk(money(balance.cashBalance)), money(balance.cashBalance));
-    } else warn("balance", w.balanceUnknown);
+      if (balance.cashBalance < totalUsd) block("balance", (mode === "live" ? w.liveBalanceShort : w.balanceShort)(money(balance.cashBalance), money(totalUsd)), money(balance.cashBalance));
+      else pass("balance", (mode === "live" ? w.liveBalanceOk : w.balanceOk)(money(balance.cashBalance)), money(balance.cashBalance));
+    } else if (mode === "live") block("balance", w.liveBalanceUnknown);
+    else warn("balance", w.balanceUnknown);
   } else {
     pass("amount", w.sellShares(input.requested.toFixed(2)), `${input.requested.toFixed(2)}`);
   }
@@ -297,7 +349,7 @@ export function buildReview(input: Readonly<{
   }
 
   return {
-    mode: "paper",
+    mode,
     quoteId: route.quoteId,
     event: { id: event.id, title: event.title, endDate: event.endDate },
     market: market ? { id: market.id, question: market.question, venue: market.venue, resolutionDate: market.resolutionDate, rules: market.rules } : { id: input.venueMarketId, question: event.title, venue: event.venue, resolutionDate: null, rules: { primary: null, secondary: null } },
@@ -316,6 +368,7 @@ export function buildReview(input: Readonly<{
       maxLossUsd: input.side === "buy" ? totalUsd : 0,
       returnIfRightPct: route.returnPct ?? (totalUsd > 0 ? (profit / totalUsd) * 100 : null),
     },
+    costs: reviewCosts(route),
     quote: { quotedAt: route.quotedAt, expiresAt: route.expiresAt, ageSeconds, expired },
     venues: route.fills.map((f) => f.venue),
     settlement: event.settlement,
@@ -326,6 +379,36 @@ export function buildReview(input: Readonly<{
     canPlace: blockedBy.length === 0,
     blockedBy,
   };
+}
+
+/* ------------------------------------------------------------- live */
+
+/**
+ * Whether a live order may be reviewed (or filled) for this wallet now: the
+ * deployment opens live money to it on at least one venue, and the
+ * provider's app is in live mode, read fresh.
+ */
+async function liveOpen(provider: PredictionProvider, wallet: string, env: NodeJS.ProcessEnv): Promise<Result<Readonly<{ venues: readonly string[]; maxOrderUsd: number }>>> {
+  const venues = liveVenuesFor(wallet, env);
+  if (venues.length === 0) return failure("FORBIDDEN", "Live trading is not open to this wallet here.");
+  const appMode = await provider.appMode();
+  if (!appMode.ok) return appMode;
+  if (appMode.value !== "live") return failure("FORBIDDEN", "The provider's app trades on paper only; a live order cannot be placed yet.");
+  return { ok: true, value: { venues, maxOrderUsd: readLiveSettings(env).maxOrderUsd } };
+}
+
+/**
+ * The managed account's money in the Review's balance shape: cash is what
+ * can be spent now (held amounts excluded), positions as the provider marks
+ * them. The paper-only figures (starting balance, P&L, earnings) are not
+ * read for live and stay 0; the Review shows only the cash.
+ */
+function liveCash(balance: LiveBalance): PaperBalance {
+  return { startingBalance: 0, cashBalance: balance.availableUsd, positionsValue: balance.positionsUsd, realizedPnl: 0, unrealizedPnl: 0, earnings: 0 };
+}
+
+export function orderMode(record: Pick<PredictionOrderRecord, "review">): TradeMode {
+  return record.review.mode === "live" ? "live" : "paper";
 }
 
 /* ------------------------------------------------------------- quote */
@@ -339,6 +422,8 @@ export type QuoteInput = Readonly<{
   sellShares?: number;
   planId?: string | null;
   locale?: ReviewLocale;
+  /** Paper unless `live` is asked for — and live is reviewed only where `live.ts` opens it. */
+  mode?: TradeMode;
 }>;
 
 export type QuoteResult = Readonly<{ review: PaperReview; link: LinkStatus; record: PredictionOrderRecord }>;
@@ -349,9 +434,13 @@ export type QuoteResult = Readonly<{ review: PaperReview; link: LinkStatus; reco
  * check is real), the paper balance read, the plan's conditions judged, the
  * record stored as `reviewed` under the quote id.
  */
-export async function quotePaper(store: GuardStore, provider: PredictionProvider, wallet: string, input: QuoteInput, nowMs: number = Date.now()): Promise<Result<QuoteResult>> {
+export async function quotePaper(store: GuardStore, provider: PredictionProvider, wallet: string, input: QuoteInput, nowMs: number = Date.now(), env: NodeJS.ProcessEnv = process.env): Promise<Result<QuoteResult>> {
   const requested = input.side === "buy" ? (input.spendUsd ?? 0) : (input.sellShares ?? 0);
   if (!Number.isFinite(requested) || requested <= 0) return failure("VALIDATION_ERROR", "Name an amount above zero.", { issues: [{ path: input.side === "buy" ? "spendUsd" : "sellShares", message: "above zero" }] });
+  const mode: TradeMode = input.mode === "live" ? "live" : "paper";
+  const live = mode === "live" ? await liveOpen(provider, wallet, env) : null;
+  if (live && !live.ok) return live;
+  const liveTerms = live?.ok ? live.value : undefined;
   const event = await provider.event(input.eventId);
   if (!event.ok) return event;
   const link = await linkStatus(store, wallet);
@@ -360,8 +449,8 @@ export async function quotePaper(store: GuardStore, provider: PredictionProvider
 
   const priced = await withProviderSession(store, provider, wallet, async (session) => {
     const [route, balance] = await Promise.all([
-      provider.route(session, { outcomeId: input.outcomeId, side: input.side, spendUsd: input.spendUsd, sellShares: input.sellShares }),
-      provider.paperBalance(session),
+      provider.route(session, { outcomeId: input.outcomeId, side: input.side, spendUsd: input.spendUsd, sellShares: input.sellShares, mode, allowedVenues: liveTerms?.venues, slipCapBps: mode === "live" ? LIVE_SLIP_CAP_BPS : undefined }),
+      mode === "live" ? provider.liveBalance(session).then((b): Result<PaperBalance | null> => (b.ok ? { ok: true, value: liveCash(b.value) } : b)) : provider.paperBalance(session),
     ]);
     if (!route.ok) return route;
     return { ok: true as const, value: { route: route.value, balance: balance.ok ? balance.value : null } };
@@ -379,6 +468,8 @@ export async function quotePaper(store: GuardStore, provider: PredictionProvider
     plan: plan ? plan.value : null,
     nowMs,
     locale: input.locale ?? "en",
+    mode,
+    live: liveTerms,
   });
   const at = new Date(nowMs).toISOString();
   const record: PredictionOrderRecord = {
@@ -449,37 +540,87 @@ const SETTLE_POLL_MS = 1_200;
 const SETTLE_POLL_MAX_MS = 12_000;
 
 /**
- * Place the reviewed paper order: the quote must still be fresh and the
- * Review must not have refused; the provider accepts the fill and the
- * execution is polled to a terminal state (at most twelve seconds here,
- * the rest by `syncPaperOrder`). Every state the provider reports is written
- * on the record; nothing is claimed filled until the provider says so.
+ * Place the reviewed order: the quote must still be fresh and the Review
+ * must not have refused; the provider accepts the fill and the execution is
+ * polled to a terminal state (at most twelve seconds here, the rest by
+ * `syncPaperOrder`). Every state the provider reports is written on the
+ * record; nothing is claimed filled until the provider says so.
+ *
+ * A live order is checked again here — still open to this wallet, every
+ * venue of the route still open, the amount within today's cap, the
+ * provider's app still live — and spends exactly the reviewed quote: no
+ * re-pricing fallback.
+ *
+ * Only one request sends a Review: it first turns the record from
+ * `reviewed` into `submitted` (compare-and-set); a second click, a second
+ * tab or a late retry finds it taken and gets the record as it stands. What
+ * happens next is written only over this request's own claim. A send the
+ * provider refused before creating anything frees the Review again (or
+ * marks it failed, when the quote itself was refused); a send with no clear
+ * answer stays `submitted` and is read back by its quote — never offered as
+ * a fresh order, never marked expired or failed without the provider's word.
  */
-export async function placePaper(store: GuardStore, provider: PredictionProvider, wallet: string, quoteId: string, nowMs: number = Date.now()): Promise<Result<PredictionOrderRecord>> {
+export async function placePaper(store: GuardStore, provider: PredictionProvider, wallet: string, quoteId: string, nowMs: number = Date.now(), env: NodeJS.ProcessEnv = process.env): Promise<Result<PredictionOrderRecord>> {
   const current = await orders(store).get(orderKey(wallet, quoteId));
   if (!current) return failure("NOT_FOUND", "No Review for that quote; ask for a fresh one.");
   if (current.state !== "reviewed") return { ok: true, value: current };
   if (!current.review.canPlace) return failure("ORDER_REFUSED", `The Review refused this order: ${current.review.blockedBy.join(", ")}.`);
   if (Date.parse(current.review.route.expiresAt) <= nowMs || nowMs - Date.parse(current.review.route.quotedAt) > QUOTE_MAX_AGE_S * 1000) {
-    await patchOrder(store, wallet, quoteId, (c) => ({ ...c, state: "expired", updatedAt: new Date(nowMs).toISOString() }));
+    await patchOrder(store, wallet, quoteId, (c) => (c.state === "reviewed" ? { ...c, state: "expired", updatedAt: new Date(nowMs).toISOString() } : c));
     return failure("QUOTE_EXPIRED", "The quote expired before the order was placed; ask for a fresh Review.");
   }
+  const mode = orderMode(current);
+  if (mode === "live") {
+    const live = await liveOpen(provider, wallet, env);
+    if (!live.ok) return live;
+    const outside = venuesOutside(current.review.venues, live.value.venues);
+    if (outside.length > 0) return failure("ORDER_REFUSED", `Live orders are no longer open on ${outside.join(", ")}; ask for a fresh Review.`);
+    const total = Math.max(current.requested, current.review.figures.totalUsd);
+    if (current.side === "buy" && total > live.value.maxOrderUsd) return failure("ORDER_REFUSED", "The amount is above today's limit for a live order; ask for a fresh Review.");
+  }
 
-  const accepted = await withProviderSession(store, provider, wallet, (session) =>
-    provider.execute(session, {
+  /*
+   * The claim: only the request whose compare-and-set turned this Review into
+   * `submitted` sends it. Decided by the write that landed, not by comparing
+   * times — two requests in one millisecond still make one winner.
+   */
+  const claim = new Date().toISOString();
+  let won = false;
+  const claimed = await patchOrder(store, wallet, quoteId, (c) => {
+    won = c.state === "reviewed";
+    return won ? { ...c, state: "submitted", submittedAt: claim, updatedAt: claim } : c;
+  });
+  if (!claimed) return failure("UNAVAILABLE", "The order could not be recorded before sending; nothing was sent — try again.");
+  if (!won) return { ok: true, value: claimed };
+  const mine = (c: PredictionOrderRecord) => c.state === "submitted" && c.submittedAt === claim && c.providerOrderIds.length === 0 && c.execution === null;
+
+  let sent = false;
+  const accepted = await withProviderSession(store, provider, wallet, (session) => {
+    sent = true;
+    return provider.execute(session, {
       quoteId,
-      fallback: { outcomeId: current.outcomeId, side: current.side, spendUsd: current.side === "buy" ? current.requested : undefined, sellShares: current.side === "sell" ? current.requested : undefined },
-    }),
-  );
+      mode,
+      fallback: mode === "live" ? null : { outcomeId: current.outcomeId, side: current.side, spendUsd: current.side === "buy" ? current.requested : undefined, sellShares: current.side === "sell" ? current.requested : undefined },
+    });
+  });
   if (!accepted.ok) {
-    if (accepted.code === "VALIDATION_ERROR" || accepted.code === "QUOTE_UNAVAILABLE") {
-      await patchOrder(store, wallet, quoteId, (c) => ({ ...c, state: "failed", updatedAt: new Date(nowMs).toISOString() }));
+    const at = new Date().toISOString();
+    /* The quote itself refused: nothing was created, and this Review cannot be placed again. */
+    if (sent && (accepted.code === "VALIDATION_ERROR" || accepted.code === "QUOTE_UNAVAILABLE")) {
+      await patchOrder(store, wallet, quoteId, (c) => (mine(c) ? { ...c, state: "failed", updatedAt: at } : c));
       return failure("ORDER_REFUSED", accepted.message);
     }
-    return accepted;
+    /* Never sent, or refused before the provider looked at the order: the Review is free again. */
+    if (!sent || NOTHING_CREATED.has(accepted.code)) {
+      await patchOrder(store, wallet, quoteId, (c) => (mine(c) ? { ...c, state: "reviewed", submittedAt: null, updatedAt: at } : c));
+      return accepted;
+    }
+    /* No answer is not a no: the record waits on the provider's word by its quote. */
+    const read = await syncPaperOrder(store, provider, wallet, quoteId);
+    return { ok: true, value: read.ok ? read.value : ((await readPaperOrder(store, wallet, quoteId)) ?? claimed) };
   }
-  const submittedAt = new Date().toISOString();
-  let record = await patchOrder(store, wallet, quoteId, (c) => ({ ...c, state: "submitted", providerOrderIds: accepted.value.orderIds, submittedAt, updatedAt: submittedAt }));
+  const acceptedAt = new Date().toISOString();
+  let record = await patchOrder(store, wallet, quoteId, (c) => (c.state === "submitted" && c.submittedAt === claim && c.providerOrderIds.length === 0 ? { ...c, providerOrderIds: accepted.value.orderIds, updatedAt: acceptedAt } : c));
   if (!record) return failure("UNAVAILABLE", "The order was accepted by the provider but could not be recorded; reload to see it.");
 
   const deadline = Date.now() + SETTLE_POLL_MAX_MS;
@@ -500,12 +641,29 @@ export async function syncPaperOrder(store: GuardStore, provider: PredictionProv
   const current = await orders(store).get(orderKey(wallet, quoteId));
   if (!current) return failure("NOT_FOUND", "No such paper order.");
   if (current.state === "reviewed" || current.state === "expired") return { ok: true, value: current };
+  const mode = orderMode(current);
   const read = await withProviderSession(store, provider, wallet, async (session) => {
-    const [execution, list] = await Promise.all([provider.executionStatus(session, quoteId), provider.paperOrders(session, 50)]);
+    const [execution, list] = await Promise.all([provider.executionStatus(session, quoteId, mode), provider.paperOrders(session, 50, mode)]);
     if (!execution.ok) return execution;
     return { ok: true as const, value: { execution: execution.value, providerOrders: list.ok ? list.value.filter((o) => o.quoteId === quoteId || current.providerOrderIds.includes(o.id)) : current.providerOrders } };
   });
-  if (!read.ok) return read;
+  if (!read.ok) {
+    /*
+     * A send that left no trace: the provider names no execution for the
+     * quote, its own order list (read fine) holds nothing of it, no order id
+     * was ever given, and the quote can no longer be executed. It never
+     * reached the venues.
+     */
+    const untraced = read.code === "NOT_FOUND" && current.state === "submitted" && current.providerOrderIds.length === 0 && current.execution === null && Date.parse(current.review.route.expiresAt) + UNSEEN_GRACE_MS <= Date.now();
+    const listed = untraced ? await withProviderSession(store, provider, wallet, (session) => provider.paperOrders(session, 100, mode)) : null;
+    const gone = untraced && listed !== null && listed.ok && !listed.value.some((o) => o.quoteId === quoteId);
+    if (gone) {
+      const at = new Date().toISOString();
+      const closed = await patchOrder(store, wallet, quoteId, (c) => (c.state === "submitted" && c.providerOrderIds.length === 0 && c.execution === null ? { ...c, state: "failed", settledAt: at, updatedAt: at } : c));
+      if (closed) return { ok: true, value: closed };
+    }
+    return read;
+  }
   const state = stateOf(read.value.execution);
   const at = new Date().toISOString();
   const next = await patchOrder(store, wallet, quoteId, (c) => ({
@@ -518,6 +676,40 @@ export async function syncPaperOrder(store: GuardStore, provider: PredictionProv
     updatedAt: at,
   }));
   return next ? { ok: true, value: next } : failure("UNAVAILABLE", "The paper order could not be updated; reload.");
+}
+
+export { cancellable } from "./order-state.ts";
+
+/**
+ * Cancel the part of an order that has not filled: every provider order of
+ * the quote still working is asked to cancel, then the execution is read
+ * back. The record says what the provider says — `cancelled`, or still
+ * `submitted` with the cancel pending — and a fill that beat the cancel stays
+ * a fill.
+ */
+export async function cancelOrder(store: GuardStore, provider: PredictionProvider, wallet: string, quoteId: string): Promise<Result<PredictionOrderRecord>> {
+  const current = await orders(store).get(orderKey(wallet, quoteId));
+  if (!current) return failure("NOT_FOUND", "No such order for this wallet.");
+  if (!cancellable(current)) return failure("ORDER_REFUSED", "Nothing of this order is still working; there is nothing to cancel.");
+  const rows = current.execution?.orders ?? [];
+  const ids = rows.length > 0 ? rows.filter((o) => WORKING_ORDER_STATES.has(o.status)).map((o) => o.orderId) : current.providerOrderIds;
+  const asked = await withProviderSession(store, provider, wallet, async (session) => {
+    let done = 0;
+    let refused: PredictionFailure | null = null;
+    for (const id of ids) {
+      const answer = await provider.cancelOrder(session, id);
+      /* An expired session: refreshed and asked again from the start; a cancel asked twice is still one cancel. */
+      if (!answer.ok && answer.code === "SESSION_EXPIRED") return answer;
+      if (answer.ok) done += 1;
+      else refused ??= answer;
+    }
+    return { ok: true as const, value: { done, refused } };
+  });
+  /* Whatever came of the cancels, the order is read back: some may have gone through before one failed. */
+  const synced = await syncPaperOrder(store, provider, wallet, quoteId);
+  if (!asked.ok) return asked;
+  if (asked.value.done === 0 && asked.value.refused) return asked.value.refused;
+  return synced;
 }
 
 export async function readPaperOrder(store: GuardStore, wallet: string, quoteId: string): Promise<PredictionOrderRecord | null> {
@@ -545,19 +737,31 @@ export type PaperAccountView = Readonly<{
   readAt: string;
   /** Set when the provider could not be read; the rest is what the store holds. */
   providerFailure: PredictionFailure | null;
+  /**
+   * Whether the provider lets this person trade from where they are, as the
+   * provider states it on their profile; null when it was not read (no link,
+   * or the provider failed). Ryntra adds no rule of its own.
+   */
+  access: Readonly<{ locationBlocked: boolean; venueAccounts?: ProviderUserProfile["venueAccounts"] }> | null;
 }>;
 
-export async function readPaperAccount(store: GuardStore, provider: PredictionProvider, wallet: string): Promise<PaperAccountView> {
+/**
+ * The account in one mode: the paper account (the default), or the live one —
+ * the managed balance in the paper shape, live positions and orders, and
+ * only Ryntra's live records.
+ */
+export async function readPaperAccount(store: GuardStore, provider: PredictionProvider, wallet: string, mode: TradeMode = "paper"): Promise<PaperAccountView> {
   const link = await linkStatus(store, wallet);
-  const records = await listPaperOrders(store, wallet);
+  const records = (await listPaperOrders(store, wallet)).filter((r) => orderMode(r) === mode);
   const readAt = new Date().toISOString();
-  if (link.state !== "active") return { link, balance: null, positions: [], closedPositions: [], providerOrders: [], orders: records, readAt, providerFailure: null };
+  if (link.state !== "active") return { link, balance: null, positions: [], closedPositions: [], providerOrders: [], orders: records, readAt, providerFailure: null, access: null };
   const read = await withProviderSession(store, provider, wallet, async (session) => {
-    const [balance, positions, closed, list] = await Promise.all([provider.paperBalance(session), provider.paperPositions(session, "active"), provider.paperPositions(session, "closed"), provider.paperOrders(session, 100)]);
+    const balanceRead: Promise<Result<PaperBalance | null>> = mode === "live" ? provider.liveBalance(session).then((b): Result<PaperBalance | null> => (b.ok ? { ok: true, value: liveCash(b.value) } : b)) : provider.paperBalance(session);
+    const [balance, positions, closed, list, profile] = await Promise.all([balanceRead, provider.paperPositions(session, "active", mode), provider.paperPositions(session, "closed", mode), provider.paperOrders(session, 100, mode), provider.profile(session)]);
     if (!balance.ok) return balance;
-    return { ok: true as const, value: { balance: balance.value, positions: positions.ok ? positions.value : [], closed: closed.ok ? closed.value : [], list: list.ok ? list.value : [] } };
+    return { ok: true as const, value: { balance: balance.value, positions: positions.ok ? positions.value : [], closed: closed.ok ? closed.value : [], list: list.ok ? list.value : [], access: profile.ok ? { locationBlocked: profile.value.locationBlocked, venueAccounts: profile.value.venueAccounts ?? null } : null } };
   });
-  if (!read.ok) return { link: await linkStatus(store, wallet), balance: null, positions: [], closedPositions: [], providerOrders: [], orders: records, readAt, providerFailure: read };
+  if (!read.ok) return { link: await linkStatus(store, wallet), balance: null, positions: [], closedPositions: [], providerOrders: [], orders: records, readAt, providerFailure: read, access: null };
   /* Records the provider has not settled yet are re-read here, so a reload never shows a stale `submitted`. */
   const open = records.filter((r) => r.state === "submitted");
   const synced: PredictionOrderRecord[] = [];
@@ -575,5 +779,6 @@ export async function readPaperAccount(store: GuardStore, provider: PredictionPr
     orders: records.map((r) => byQuote.get(r.quoteId) ?? r),
     readAt,
     providerFailure: null,
+    access: read.value.access,
   };
 }

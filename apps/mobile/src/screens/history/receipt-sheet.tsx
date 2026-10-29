@@ -6,12 +6,19 @@ import { Icon } from '@/components/icon'
 import { Sheet } from '@/components/sheet'
 import { Txt } from '@/components/txt'
 import type { HistoryCopy } from '@/features/history/copy'
-import { explorerUrl, historyTitle, type HistoryRow, type HistoryStatus } from '@/features/history/history-model'
-import { docFromHistory } from '@/features/receipts/receipt-doc'
+import {
+  destinationNetwork,
+  explorerUrl,
+  historyTitle,
+  sourceTxShown,
+  type HistoryRow,
+  type HistoryStatus,
+} from '@/features/history/history-model'
+import { docFromHistory, gaveWord } from '@/features/receipts/receipt-doc'
 import type { Locale } from '@/lib/i18n'
 import { DASH, formatAmount, formatMoment, formatUsd, shortAddress } from '@/utils/format'
 import { openLink } from '@/lib/open-link'
-import { ShareReceiptButton } from '@/screens/receipts/share-receipt'
+import { ReceiptModes } from '@/screens/receipts/receipt-modes'
 
 export const STATUS_TONE: Readonly<Record<HistoryStatus, ChipTone>> = {
   done: 'success',
@@ -38,13 +45,19 @@ export function ReceiptSheet({ row, now, locale, copy, onClose }: ReceiptSheetPr
     tone?: 'fg' | 'muted' | 'success' | 'danger'
     mono?: boolean
   }[] = []
-  if (row.out) facts.push({ label: copy.paid, value: `${row.out.amountText} ${row.out.symbol}` })
-  if (row.in) {
+  // What left is named by the operation: sent on a transfer, sold on a sale, paid on everything else.
+  const left = gaveWord(row.kind)
+  // Nothing moved on an operation that did not happen: no «Сплачено» or «Отримано» under «Не відбулося», as «Просто»
+  // (`docFromHistory`) says it. A pending one keeps its legs — it may well have paid.
+  const moved = row.status !== 'failed'
+  if (row.out && moved) {
     facts.push({
-      label: copy.received,
-      value: `${row.in.amountText} ${row.in.symbol}`,
-      tone: row.status === 'failed' ? 'muted' : 'fg',
+      label: left === 'sent' ? copy.sent : left === 'sold' ? copy.sold : copy.paid,
+      value: `${row.out.amountText} ${row.out.symbol}`,
     })
+  }
+  if (row.in && moved) {
+    facts.push({ label: copy.received, value: `${row.in.amountText} ${row.in.symbol}` })
   }
   if (row.fee) {
     facts.push({
@@ -66,24 +79,27 @@ export function ReceiptSheet({ row, now, locale, copy, onClose }: ReceiptSheetPr
   facts.push({ label: copy.time, value: formatMoment(row.at, now, locale) })
   const updated = formatMoment(row.updatedAt, now, locale)
   if (updated !== formatMoment(row.at, now, locale)) facts.push({ label: copy.updated, value: updated })
-  if (row.destination && row.kind !== 'receive') {
-    facts.push({ label: copy.destination, value: copy.destinations[row.destination] ?? row.destination, mono: false })
+  // The network only as the record names it without contradicting its own transaction (destinationNetwork).
+  const destination = destinationNetwork(row)
+  if (destination && row.kind !== 'receive') {
+    facts.push({ label: copy.destination, value: copy.destinations[destination] ?? destination, mono: false })
   }
   if (row.plan) facts.push({ label: copy.plan, value: copy.planVersion(row.plan.version), mono: false })
   if (row.rule) facts.push({ label: copy.autoinvest, value: copy.byRule, mono: false })
   if (row.signature) facts.push({ label: copy.signature, value: shortAddress(row.signature, 8) })
-  if (row.sourceTx) facts.push({ label: copy.sourceTx, value: shortAddress(row.sourceTx, 8) })
-  if (row.destinationTx) facts.push({ label: copy.destinationTx, value: shortAddress(row.destinationTx, 8) })
+  // The source transaction is not printed twice when it is the row's own signature.
+  const sourceTx = sourceTxShown(row)
+  if (sourceTx) facts.push({ label: copy.sourceTx, value: shortAddress(sourceTx, 8) })
+  if (row.destinationTx && row.destinationTx !== row.signature)
+    facts.push({ label: copy.destinationTx, value: shortAddress(row.destinationTx, 8) })
 
   const proof = row.signature ?? (row.destinationTx && !row.destinationTx.startsWith('0x') ? row.destinationTx : null)
 
-  return (
-    <Sheet visible title={historyTitle(row, copy.words)} subtitle={copy.receipt} onClose={onClose} scroll>
-      <View className="flex-row items-center justify-between pb-2">
-        <Chip label={copy.status[row.status]} tone={STATUS_TONE[row.status]} />
-        <Txt variant="labelSm" tone="faint">
-          {formatMoment(row.at, now, locale)}
-        </Txt>
+  const detailed = (
+    <View>
+      {/* The state alone: the time is said once, on «Час» below. */}
+      <View className="flex-row items-center pb-2">
+        <Chip label={copy.status[row.status]} tone={STATUS_TONE[row.status]} caps={false} />
       </View>
       {facts.map((fact, index) => (
         <FactRow
@@ -112,12 +128,18 @@ export function ReceiptSheet({ row, now, locale, copy, onClose }: ReceiptSheetPr
           </Txt>
         </Pressable>
       ) : null}
-      <ShareReceiptButton doc={docFromHistory(row, historyTitle(row, copy.words))} className="border-t border-line" />
       {facts.length === 0 && !proof ? (
         <Txt variant="ui" tone="faint" className="py-3">
           {DASH}
         </Txt>
       ) : null}
+    </View>
+  )
+
+  // «Просто · Детально» (NEW-LOOK §5): the lines above are «Детально»; the technical data folded a tap deeper.
+  return (
+    <Sheet visible title={historyTitle(row, copy.words)} subtitle={copy.receipt} onClose={onClose} scroll>
+      <ReceiptModes doc={docFromHistory(row, historyTitle(row, copy.words))} detailed={detailed} />
     </Sheet>
   )
 }

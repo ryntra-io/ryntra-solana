@@ -101,7 +101,7 @@ test("the overview separates guest, failed wallet reads and unpriced assets", ()
   assert.match(plans, /state\.plans\.length === 0/);
   assert.match(plans, /word\("startFromStock"\)/);
   assert.match(read("app/app/strategies/read.ts"), /if \(!subjectPresent\(input\.subject\)\) \{[\s\S]*?return/);
-  assert.match(read("app/app/bots/page.tsx"), /<PlansPanel locale=\{locale\} \/>/);
+  assert.match(read("app/app/bots/bots-view.tsx"), /<PlansPanel locale=\{locale\} \/>/);
 });
 
 test("the overview hands off to working pages and does not invent market advice", () => {

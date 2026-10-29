@@ -8,7 +8,7 @@
  * falls on its last day; the hour the clocks skip in spring is read as the
  * hour after it.
  *
- * The same functions the server reminds with (the web app's
+ * The same functions the server reminds with (the web line's
  * `lib/autoinvest/schedule.ts`, applied on the phone), so «Перша купівля: чт,
  * 25 вер. о 19:00» on the sheet is the instant the reminder comes. Pure: the
  * clock is always an argument; nothing here reads the network.

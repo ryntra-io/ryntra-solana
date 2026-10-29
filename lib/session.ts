@@ -5,9 +5,9 @@ import { legacyAccessClosed } from "@/lib/beta/legacy-access";
 import type { BetaState } from "@/lib/beta/types";
 import { isAdminOperator } from "@/lib/admin/store";
 import { projectSessionIdentity } from "@/lib/home/session-identity";
-import { sessionResolve, type ResolvedSession, type SessionMethod, type WalletChain, type WalletLink } from "@/lib/account/rpc";
+import { sessionResolve, type ResolvedSession, type SessionMethod, type WalletLink } from "@/lib/account/rpc";
 import type { AccountSubject } from "@/lib/account/subject";
-import { walletSessionBound } from "@/lib/account/wallet-session";
+import { LINKED_WALLET_COOKIE, readCookieWalletProof, walletSessionBound, type WalletProof, type WalletProofRead } from "@/lib/account/wallet-session";
 import { bearerToken, resolveNativeSession } from "@/lib/auth/native-session";
 
 /**
@@ -214,54 +214,40 @@ export async function getSession(): Promise<Session | null> {
 }
 
 /**
- * A proven wallet: the `rw` cookie, or the wallet sign-in itself.
+ * A proven wallet: the `rw` cookie, the wallet sign-in itself, or a wallet
+ * linked to the account signed in.
  *
- * Proof is a recorded session minted only after a sign-in message the server
- * built was signed by that address and verified. Two such sessions exist: the
- * `rw` proof (`prove`, for a person signed in by another door, and the API),
- * and the customer session a wallet sign-in opens (`rt`, method
- * `solana_siws`), which names the address it signed with. Both are a
- * signature by that address over this server's message, so one sign-in is
- * the proof for every page — nobody signs twice to see their own data. A
- * connected wallet in the browser proves nothing and never reaches here.
+ * Proof always rests on a signature by that address over a message this
+ * server built and verified. Three carriers exist: the `rw` proof (`prove`,
+ * for the API; short), the customer session a wallet sign-in opens (`rt`,
+ * method `solana_siws`), which names the address it signed with, and — of 20.10 (decision 62, SOL-W3) — an account session opened
+ * by another door (email, Google, Telegram), which proves the Solana wallets
+ * its account linked by that wallet's signature (`action=link`), read live from
+ * the session's row (`sessionWalletProof`). So one signature is the proof for
+ * every private read — nobody signs again to see their own data. That third
+ * carrier counts only for a caller that reads and opts in (`allowLink`): a
+ * write, a payout or a binding never sees it and asks the wallet's own
+ * signature, as before. No proof signs for the wallet — a trade or a transfer
+ * of the wallet's money is signed by the wallet at the moment of action. A
+ * connected wallet in the browser proves nothing and never reaches here. The
+ * rule itself lives in `readCookieWalletProof`, where node tests it.
  */
-export type WalletProof = Readonly<{
-  sessionId: string;
-  chain: WalletChain;
-  address: string;
-  method: SessionMethod;
-  expiresAt: string;
-}>;
+export type { WalletProof, WalletProofRead } from "@/lib/account/wallet-session";
 
-export type WalletProofRead =
-  | Readonly<{ status: "ok"; proof: WalletProof }>
-  | Readonly<{ status: "absent" }>
-  | Readonly<{ status: "unavailable" }>;
+/**
+ * `allowLink`: whether an account session's linked wallet counts (`via:
+ * "link"`). Off by default — a link proves a wallet for reading only, so a caller that writes, pays or binds anything
+ * never sees it and answers «sign with the wallet» as before; a read opts in.
+ */
+export type WalletProofOptions = Readonly<{ allowLink?: boolean }>;
 
-export async function readWalletProof(): Promise<WalletProofRead> {
+export async function readWalletProof(options: WalletProofOptions = {}): Promise<WalletProofRead> {
   const jar = await cookies();
-  let unavailable = false;
-  const proof = verifySession(jar.get("rw")?.value ?? "");
-  if (proof && !proof.admin && proof.subject.kind === "session") {
-    const outcome = await sessionResolve(proof.subject.sessionId);
-    if (outcome.status === "ok") {
-      const s = outcome.session;
-      if (s.kind === "wallet" && s.walletChain && s.walletAddress) {
-        return { status: "ok", proof: { sessionId: s.id, chain: s.walletChain, address: s.walletAddress, method: s.method, expiresAt: s.expiresAt } };
-      }
-    } else if (outcome.status === "unavailable") unavailable = true;
-  }
-  const signin = verifySession(jar.get("rt")?.value ?? "");
-  if (signin && !signin.admin && signin.subject.kind === "session") {
-    const outcome = await sessionResolve(signin.subject.sessionId);
-    if (outcome.status === "ok") {
-      const s = outcome.session;
-      if (s.kind === "customer" && s.method === "solana_siws" && s.walletChain && s.walletAddress && walletSessionBound(s)) {
-        return { status: "ok", proof: { sessionId: s.id, chain: s.walletChain, address: s.walletAddress, method: s.method, expiresAt: s.expiresAt } };
-      }
-    } else if (outcome.status === "unavailable") unavailable = true;
-  }
-  return unavailable ? { status: "unavailable" } : { status: "absent" };
+  return readCookieWalletProof(
+    { rw: jar.get("rw")?.value ?? null, rt: jar.get("rt")?.value ?? null, linked: jar.get(LINKED_WALLET_COOKIE)?.value ?? null },
+    { verify: verifySession, resolve: (id) => sessionResolve(id) },
+    options,
+  );
 }
 
 /**
@@ -277,8 +263,8 @@ export class SessionStoreUnavailable extends Error {
   }
 }
 
-export async function getWalletProof(): Promise<WalletProof | null> {
-  const read = await readWalletProof();
+export async function getWalletProof(options: WalletProofOptions = {}): Promise<WalletProof | null> {
+  const read = await readWalletProof(options);
   if (read.status === "unavailable") throw new SessionStoreUnavailable();
   return read.status === "ok" ? read.proof : null;
 }
@@ -291,17 +277,17 @@ export async function getWalletProof(): Promise<WalletProof | null> {
  * the cookie, so a native client cannot be quietly served a browser's session
  * and a browser cannot be served a native one.
  */
-export async function readWalletProofFrom(headers: Headers): Promise<WalletProofRead> {
+export async function readWalletProofFrom(headers: Headers, options: WalletProofOptions = {}): Promise<WalletProofRead> {
   if (bearerToken(headers)) {
     const read = await resolveNativeSession(headers);
     if (!read.ok) return read.code === "UNAVAILABLE" ? { status: "unavailable" } : { status: "absent" };
-    return { status: "ok", proof: { sessionId: read.session.sessionId, chain: "solana", address: read.session.address, method: read.resolved.method, expiresAt: read.session.expiresAt } };
+    return { status: "ok", proof: { sessionId: read.session.sessionId, chain: "solana", address: read.session.address, method: read.resolved.method, expiresAt: read.session.expiresAt, via: "signin" } };
   }
-  return readWalletProof();
+  return readWalletProof(options);
 }
 
-export async function getWalletProofFrom(headers: Headers): Promise<WalletProof | null> {
-  const read = await readWalletProofFrom(headers);
+export async function getWalletProofFrom(headers: Headers, options: WalletProofOptions = {}): Promise<WalletProof | null> {
+  const read = await readWalletProofFrom(headers, options);
   if (read.status === "unavailable") throw new SessionStoreUnavailable();
   return read.status === "ok" ? read.proof : null;
 }

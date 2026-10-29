@@ -1,5 +1,7 @@
 import type { AgentState } from '../../lib/api/v1/types.ts'
 import type { Copy } from '../../lib/i18n.ts'
+import { formatCount } from '../../utils/format.ts'
+import { creditsText } from '../assistant/credits-model.ts'
 
 /**
  * The words around the assistant, in both languages. The assistant is
@@ -12,6 +14,15 @@ import type { Copy } from '../../lib/i18n.ts'
  * internal vocabulary: a person reads what Ryntra read, what it means, what
  * could be wrong, and where to act.
  */
+/** One, few, many: «1 питання», «3 джерела», «5 історій». */
+function ukPlural(count: number, one: string, few: string, many: string): string {
+  const ten = count % 10
+  const hundred = count % 100
+  if (ten === 1 && hundred !== 11) return one
+  if (ten >= 2 && ten <= 4 && (hundred < 12 || hundred > 14)) return few
+  return many
+}
+
 const EN = {
   title: 'Ryntra · AI assistant',
   who: 'Ryntra',
@@ -27,7 +38,7 @@ const EN = {
   signInTitle: 'Sign in to ask Ryntra',
   signInDetail: 'One signature proves the wallet is yours; it moves nothing.',
   // the conversation
-  lead: 'Ryntra is an AI; the decision and the signature are yours.',
+  lead: 'Ryntra is an AI; you decide and sign.',
   opening: 'Opening the conversation',
   openFailed: 'The conversation did not open',
   placeholder: 'Ask in your own words',
@@ -52,6 +63,8 @@ const EN = {
   risks: 'Risks and unknowns',
   checks: 'Worth checking',
   actions: 'Possible next steps',
+  observation: 'What is known now',
+  meaning: 'What it means',
   sources: (count: number) => (count === 1 ? '1 source' : `${count} sources`),
   sourcesTitle: 'Sources',
   noTime: 'no time stated',
@@ -64,7 +77,6 @@ const EN = {
     unknown: 'unknown',
   } satisfies Record<AgentState, string>,
   // the budget
-  budgetReads: 'Short answers from Ryntra’s own data',
   budgetSpent: (time: string) => `Short answers now · full answers again at ${time}`,
   budgetOpen: (left: number, allowance: number) => `${left} of ${allowance} answers left today`,
   // failures
@@ -76,6 +88,7 @@ const EN = {
     invalid: 'A question is up to 2,000 characters.',
     network: 'No connection. Your question is kept.',
     unavailable: 'Ryntra could not answer right now.',
+    rate: 'Too many questions in a minute — ask again shortly.',
   },
   askAgain: 'Ask again',
   // the cards
@@ -141,6 +154,122 @@ const EN = {
   // the doors into the conversation from elsewhere
   askRyn: 'Ask Ryntra',
   askAboutNote: 'Ask Ryntra about this note',
+  // the guest (1.43.0): market questions without a wallet
+  emptyTitle: 'What would you like to know?',
+  emptyLine: 'About a token, the market or your wallet — in your own words.',
+  emptyLineGuest: 'About a token or the market — in your own words.',
+  guestPlaceholder: 'Ask about a token or the market',
+  guestNote: 'As a guest, Ryntra reads market data only',
+  guestOpen: (left: number, allowance: number) => `${left} of ${allowance} model answers left for guests today`,
+  guestSpent: 'Model answers for guests are used up today · answers from the data',
+  guestOwn: 'Your portfolio, plans and notes — with your wallet',
+  guestAsk1: 'What moved SOL’s price today?',
+  guestAsk2: 'What is BONK’s price now?',
+  guestAsk3: 'Compare JUP and WIF',
+  guestAsk4: 'What is NVDAx?',
+  // the price of the next question with the model, before it is asked: the day's free ones, then the balance
+  freeLeft: (count: number) =>
+    count === 1 ? 'Free today: 1 question with the model' : `Free today: ${count} questions with the model`,
+  freeSpent: (time: string) => `Free questions are used up and the balance is short · answers from the data · free again at ${time}`,
+  creditsFromBalance: (price: number, balance: number) =>
+    `A question with the model: ${creditsText(price, 'en')} from the balance (${formatCount(balance, 'en')})`,
+  creditsPartly: (price: number, free: number, rest: number, balance: number) =>
+    `A question with the model: ${creditsText(price, 'en')} — ${formatCount(free, 'en')} free, ${formatCount(rest, 'en')} from the balance (${formatCount(balance, 'en')})`,
+  creditsDayCap: (time: string) => `The day’s limit of credits is reached · answers from the data until ${time}`,
+  // the conversations (1.43.0)
+  tabChat: 'Conversation',
+  tabBrief: 'Morning brief',
+  tabWatch: 'Watching',
+  tabPlans: 'Plans',
+  tabBriefs: 'Briefs',
+  tabCredits: 'Credits',
+  knowsTitle: 'What Ryntra knows about you',
+  conversations: 'Conversations',
+  newConversation: 'New conversation',
+  noConversations: 'No earlier conversations yet.',
+  conversationsFailed: 'The conversations did not load',
+  retention: 'A conversation stays here for 90 days after its last message.',
+  untitled: 'No question yet',
+  openNow: 'Open now',
+  // the morning brief (1.46.0)
+  briefLead: 'One summary of the market for everyone, then only what changed in your tokens, positions and plans.',
+  briefHowTitle: 'How the brief works',
+  briefHow:
+    'Every figure has its source and time; a headline is what a publication reports, not a verified fact. The brief is free every day — your own part too.',
+  briefSend: 'Send every morning',
+  briefTime: 'Time',
+  briefKyiv: 'Kyiv time',
+  briefOff: 'Off',
+  briefNext: (when: string) => `Next one ${when}`,
+  briefToday: 'today',
+  briefTomorrow: 'tomorrow',
+  briefWhen: (day: string, time: string) => `${day} at ${time}`,
+  briefWhere: (channels: string) => `Goes to ${channels}`,
+  briefInbox: 'Alerts',
+  briefQuiet: 'This time is in your quiet hours: the brief comes when they end.',
+  briefNone: 'No brief yet — the first one comes at your time.',
+  briefSaving: 'Saving',
+  briefFailed: 'The brief’s settings could not be saved right now.',
+  briefLoadFailed: 'The brief could not be read right now',
+  briefPickTime: 'When the brief comes',
+  // the marks of a line: how sure it is (1.44.0, 1.46.0)
+  mark: { fact: 'Fact', unverified: 'Unverified', inference: 'Inference', unknown: 'Unknown' },
+  marksTitle: 'What the marks mean',
+  marksLegend:
+    'Fact — a figure a source states. Unverified — what a publication reports. Inference — Ryntra’s reading of the two. Unknown — what no source says; the cause itself is always among it.',
+  // news and «What moved the price?» (1.44.0)
+  cardMove: 'What moved the price?',
+  move1h: 'last hour',
+  move24h: '24 h',
+  cardNews: (symbol: string) => `News · ${symbol}`,
+  cardNewsMarket: 'Market news',
+  newsDay: (stories: number, sources: number) =>
+    `${stories === 1 ? '1 story' : `${stories} stories`} · ${sources === 1 ? '1 source' : `${sources} sources`} in 24 h`,
+  newsAlso: (count: number) => (count === 1 ? '+1 more source' : `+${count} more sources`),
+  newsNone: 'Nothing in the last 48 hours.',
+  newsReport: 'A headline is what a publication reports, not a verified fact.',
+  newsCollected: (when: string) => `Feeds read ${when}`,
+  explainMove: 'Explain the move',
+  watchDoor: 'Watch',
+  planDoor: 'Plan',
+  explainAsk: (symbol: string) => `What moved ${symbol}’s price?`,
+  explainAskThis: 'What moved this token’s price?',
+  // the microphone: Android's own speech to text; voice is input only
+  speak: 'Speak your question',
+  speakPrompt: 'Ask Ryntra',
+  // the language spoken, and the recording Ryntra's server hears where the phone cannot (AI-08)
+  voiceLang: (language: 'en' | 'uk') => (language === 'uk' ? 'UA' : 'EN'),
+  voiceLangSwitch: (language: 'en' | 'uk') =>
+    language === 'uk' ? 'Voice: Ukrainian — switch to English' : 'Voice: English — switch to Ukrainian',
+  voiceRecord: 'Record your question',
+  voiceRecordStop: 'Stop recording',
+  voiceCheck: 'Check the text before «Ask».',
+  voicePhoneFailed: (credits: string) =>
+    `The phone’s recognition didn’t work — record instead: Ryntra’s server hears it through OpenAI, ${credits} per 30 s.`,
+  voiceOffer: (credits: string) =>
+    `Nothing recognised? Record instead — Ryntra’s server hears it through OpenAI, ${credits} per 30 s.`,
+  voiceRecordInstead: 'Record',
+  voiceOpening: 'Waiting for the microphone — allow it.',
+  voiceRecording: (clock: string) => `Recording ${clock} of 2:00 — press stop when you’ve asked.`,
+  voiceRecorded: (clock: string) => `Recording ${clock} — Ryntra’s server hears it through OpenAI.`,
+  voiceHear: (credits: string) => `Recognise · ${credits}`,
+  voiceDiscard: 'Discard',
+  voiceHearing: 'Recognising the recording…',
+  voiceHeard: (credits: string) => `Check the text — fix the ticker or the sum — then «Ask». ${credits} spent.`,
+  voiceHeardFree: (credits: string) =>
+    `Check the text — fix the ticker or the sum — then «Ask». ${credits} from today’s free ones.`,
+  voiceProblem: {
+    denied: 'The app has no access to the microphone — allow it in the phone’s settings, or type the question.',
+    recorder: 'The microphone didn’t start — try again, or type the question.',
+    failed: 'The server didn’t answer — press «Recognise» again: one recording is never charged twice.',
+    silence: 'No words in the recording — nothing was charged. Try again closer to the microphone.',
+    tooLong: 'The recording is too long — up to 2 min; ask in a shorter one.',
+    unreadable: 'The recording couldn’t be read — record the question again.',
+    noCredits: 'Not enough credits to recognise it — top up in «Credits», or type the question.',
+    dayCap: 'Today’s limit of credits is reached — it starts again tomorrow; type the question.',
+    daySpent: 'Voice on the server is spent for today — type the question; tomorrow it works again.',
+    priceChanged: 'The price has changed — check it on the button and press again.',
+  },
 } as const
 
 export type AgentCopy = {
@@ -163,7 +292,7 @@ const UK: AgentCopy = {
   guestDetail: 'Ryntra читає твої активи, плани й нотатки — лише твої.',
   signInTitle: 'Увійди, щоб питати Ryntra',
   signInDetail: 'Один підпис доводить, що гаманець твій; він нічого не переміщує.',
-  lead: 'Ryntra — ШІ; рішення й підпис — твої.',
+  lead: 'Ryntra — ШІ; вирішуєш і підписуєш ти.',
   opening: 'Відкриваємо розмову',
   openFailed: 'Розмова не відкрилася',
   placeholder: 'Питай своїми словами',
@@ -188,6 +317,8 @@ const UK: AgentCopy = {
   risks: 'Ризики й невідоме',
   checks: 'Варто перевірити',
   actions: 'Можливі наступні кроки',
+  observation: 'Що відомо зараз',
+  meaning: 'Що це означає',
   sources: (count) => (count === 1 ? '1 джерело' : count < 5 ? `${count} джерела` : `${count} джерел`),
   sourcesTitle: 'Джерела',
   noTime: 'час не вказано',
@@ -199,7 +330,6 @@ const UK: AgentCopy = {
     unavailable: 'недоступно',
     unknown: 'невідомо',
   },
-  budgetReads: 'Короткі відповіді з даних Ryntra',
   budgetSpent: (time) => `Зараз короткі відповіді · повні знову о ${time}`,
   budgetOpen: (left, allowance) => `Лишилось ${left} з ${allowance} відповідей сьогодні`,
   failure: {
@@ -210,6 +340,7 @@ const UK: AgentCopy = {
     invalid: 'Запитання — до 2000 символів.',
     network: 'Немає з’єднання. Запитання збережено.',
     unavailable: 'Ryntra зараз не змогла відповісти.',
+    rate: 'Забагато питань за хвилину — спитай трохи згодом.',
   },
   askAgain: 'Спитати ще раз',
   card: {
@@ -271,6 +402,112 @@ const UK: AgentCopy = {
   openAsset: (symbol) => (symbol ? `Відкрити ${symbol}` : 'Відкрити актив'),
   askRyn: 'Спитати Ryntra',
   askAboutNote: 'Спитати Ryntra про цю нотатку',
+  emptyTitle: 'Що хочеш дізнатись?',
+  emptyLine: 'Про токен, ринок чи свій гаманець — своїми словами.',
+  emptyLineGuest: 'Про токен чи ринок — своїми словами.',
+  guestPlaceholder: 'Спитай про токен чи ринок',
+  guestNote: 'Для гостя Ryntra читає лише ринкові дані',
+  guestOpen: (left, allowance) => `Лишилось ${left} з ${allowance} відповідей моделі для гостей сьогодні`,
+  guestSpent: 'Відповіді моделі для гостей на сьогодні вичерпано · відповіді з даних',
+  guestOwn: 'Свій портфель, плани й нотатки — з гаманцем',
+  guestAsk1: 'Що сьогодні зрушило ціну SOL?',
+  guestAsk2: 'Скільки зараз коштує BONK?',
+  guestAsk3: 'Порівняй JUP і WIF',
+  guestAsk4: 'Що таке NVDAx?',
+  freeLeft: (count) => `Сьогодні безкоштовно: ${count} ${ukPlural(count, 'питання', 'питання', 'питань')} з моделлю`,
+  freeSpent: (time) => `Безкоштовні скінчились, балансу бракує · відповіді з даних · безкоштовні знову о ${time}`,
+  creditsFromBalance: (price, balance) =>
+    `Питання з моделлю: ${creditsText(price, 'uk')} з балансу (${formatCount(balance, 'uk')})`,
+  creditsPartly: (price, free, rest, balance) =>
+    `Питання з моделлю: ${creditsText(price, 'uk')} — ${formatCount(free, 'uk')} безкоштовно, ${formatCount(rest, 'uk')} з балансу (${formatCount(balance, 'uk')})`,
+  creditsDayCap: (time) => `Денний ліміт кредитів досягнуто · відповіді з даних до ${time}`,
+  tabChat: 'Розмова',
+  tabBrief: 'Ранковий огляд',
+  tabWatch: 'Стежу',
+  tabPlans: 'Плани',
+  tabBriefs: 'Огляди',
+  tabCredits: 'Кредити',
+  knowsTitle: 'Що Ryntra знає про тебе',
+  conversations: 'Розмови',
+  newConversation: 'Нова розмова',
+  noConversations: 'Попередніх розмов ще немає.',
+  conversationsFailed: 'Розмови не завантажились',
+  retention: 'Розмову видно тут 90 днів після останнього повідомлення.',
+  untitled: 'Ще без питання',
+  openNow: 'Відкрита зараз',
+  briefLead: 'Одне зведення ринку на всіх, далі — лише те, що змінилось у твоїх токенах, позиціях і планах.',
+  briefHowTitle: 'Як працює огляд',
+  briefHow:
+    'Кожна цифра — з джерелом і часом; заголовок — те, що пише видання, а не перевірений факт. Огляд безкоштовний щодня — і твоя частина теж.',
+  briefSend: 'Надсилати щоранку',
+  briefTime: 'Час',
+  briefKyiv: 'за Києвом',
+  briefOff: 'Вимкнено',
+  briefNext: (when) => `Наступний ${when}`,
+  briefToday: 'сьогодні',
+  briefTomorrow: 'завтра',
+  briefWhen: (day, time) => `${day} о ${time}`,
+  briefWhere: (channels) => `Куди: ${channels}`,
+  briefInbox: 'Сповіщення',
+  briefQuiet: 'Цей час — у тихих годинах: огляд прийде, коли вони скінчаться.',
+  briefNone: 'Огляду ще не було — перший прийде у твій час.',
+  briefSaving: 'Зберігаємо',
+  briefFailed: 'Налаштування огляду зараз не зберегти.',
+  briefLoadFailed: 'Огляд зараз не прочитати',
+  briefPickTime: 'Коли приходить огляд',
+  mark: { fact: 'Факт', unverified: 'Неперевірено', inference: 'Висновок', unknown: 'Невідомо' },
+  marksTitle: 'Що означають позначки',
+  marksLegend:
+    'Факт — цифра від джерела. Неперевірено — те, що пише видання. Висновок — прочитання Ryntra цих двох. Невідомо — те, чого не каже жодне джерело; сама причина завжди серед цього.',
+  cardMove: 'Що зрушило ціну?',
+  move1h: 'за годину',
+  move24h: 'за 24 год',
+  cardNews: (symbol) => `Новини · ${symbol}`,
+  cardNewsMarket: 'Новини ринку',
+  newsDay: (stories, sources) =>
+    `${stories} ${ukPlural(stories, 'історія', 'історії', 'історій')} · ${sources} ${ukPlural(sources, 'джерело', 'джерела', 'джерел')} за 24 год`,
+  newsAlso: (count) => `ще ${count} ${ukPlural(count, 'джерело', 'джерела', 'джерел')}`,
+  newsNone: 'За 48 годин нічого.',
+  newsReport: 'Заголовок — це те, що пише видання, а не перевірений факт.',
+  newsCollected: (when) => `Стрічки прочитано ${when}`,
+  explainMove: 'Пояснити рух',
+  watchDoor: 'Стежити',
+  planDoor: 'План',
+  explainAsk: (symbol) => `Що зрушило ціну ${symbol}?`,
+  explainAskThis: 'Що зрушило ціну цього токена?',
+  speak: 'Сказати питання голосом',
+  speakPrompt: 'Спитай Ryntra',
+  voiceLang: (language) => (language === 'uk' ? 'UA' : 'EN'),
+  voiceLangSwitch: (language) =>
+    language === 'uk' ? 'Мова голосу: українська — перемкнути на англійську' : 'Мова голосу: англійська — перемкнути на українську',
+  voiceRecord: 'Записати питання',
+  voiceRecordStop: 'Зупинити запис',
+  voiceCheck: 'Перевір текст перед «Спитати».',
+  voicePhoneFailed: (credits) =>
+    `Розпізнавання телефона не спрацювало — запиши: розпізнає сервер Ryntra через OpenAI, ${credits} за 30 с.`,
+  voiceOffer: (credits) => `Нічого не розпізнано? Запиши — розпізнає сервер Ryntra через OpenAI, ${credits} за 30 с.`,
+  voiceRecordInstead: 'Записати',
+  voiceOpening: 'Чекаю на мікрофон — дозволь його.',
+  voiceRecording: (clock) => `Запис ${clock} з 2:00 — натисни «стоп», коли скажеш питання.`,
+  voiceRecorded: (clock) => `Запис ${clock} — розпізнає сервер Ryntra через OpenAI.`,
+  voiceHear: (credits) => `Розпізнати · ${credits}`,
+  voiceDiscard: 'Скасувати',
+  voiceHearing: 'Розпізнаю запис…',
+  voiceHeard: (credits) => `Перевір текст — тікер і суму можна виправити — і натисни «Спитати». Списано ${credits}.`,
+  voiceHeardFree: (credits) =>
+    `Перевір текст — тікер і суму можна виправити — і натисни «Спитати». Списано ${credits} з безкоштовних на сьогодні.`,
+  voiceProblem: {
+    denied: 'Застосунок не має доступу до мікрофона — дозволь у налаштуваннях телефона або напиши питання.',
+    recorder: 'Мікрофон не ввімкнувся — спробуй ще або напиши питання.',
+    failed: 'Сервер не відповів — натисни «Розпізнати» ще раз: за один запис двічі не списуємо.',
+    silence: 'Слів у записі не почула — нічого не списано. Спробуй ще, ближче до мікрофона.',
+    tooLong: 'Запис задовгий — до 2 хв; скажи питання коротше.',
+    unreadable: 'Запис не вдалося прочитати — запиши питання ще раз.',
+    noCredits: 'Бракує кредитів на розпізнавання — поповни у «Кредитах» або напиши питання.',
+    dayCap: 'Денний ліміт витрат кредитів вичерпано — завтра знову; поки напиши питання.',
+    daySpent: 'Голос на сервері на сьогодні вичерпано — напиши питання; завтра знову працює.',
+    priceChanged: 'Ціна змінилась — перевір її на кнопці й натисни ще раз.',
+  },
 }
 
 export const AGENT_COPY: Copy<AgentCopy> = { en: EN, uk: UK }

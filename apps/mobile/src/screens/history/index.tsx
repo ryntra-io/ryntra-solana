@@ -4,20 +4,13 @@ import { Pressable, RefreshControl, SectionList, View } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 
 import { Chip } from '@/components/chip'
-import { Icon, type IconName } from '@/components/icon'
+import { Icon } from '@/components/icon'
 import { ScreenHeader } from '@/components/screen'
 import { Skeleton } from '@/components/skeleton'
 import { StateView } from '@/components/state-view'
 import { Txt } from '@/components/txt'
 import { HISTORY_COPY } from '@/features/history/copy'
-import {
-  groupByDay,
-  historyAmounts,
-  historyTitle,
-  rowsForMint,
-  type HistoryKind,
-  type HistoryRow,
-} from '@/features/history/history-model'
+import { groupByDay, rowsForMint, type HistoryRow } from '@/features/history/history-model'
 import { useHistory } from '@/features/history/use-history'
 import { useAccount } from '@/features/session/use-account'
 import { useAttempt } from '@/features/trade/trade-store'
@@ -28,18 +21,8 @@ import { useCopy, useLocale, useSharedCopy } from '@/lib/i18n'
 import { useTheme } from '@/theme'
 import { formatClock, formatDayHeading } from '@/utils/format'
 
-import { ReceiptSheet, STATUS_TONE } from './receipt-sheet'
-
-const KIND_ICON: Readonly<Record<HistoryKind, IconName>> = {
-  buy: 'arrow-down-circle-outline',
-  sell: 'arrow-up-circle-outline',
-  swap: 'swap-horizontal-outline',
-  send: 'arrow-up-outline',
-  receive: 'arrow-down-outline',
-  bridge: 'git-merge-outline',
-  crossSwap: 'shuffle-outline',
-  other: 'ellipse-outline',
-}
+import { HistoryRowView } from './history-row'
+import { ReceiptSheet } from './receipt-sheet'
 
 function LoadingRows({ label }: { label: string }) {
   return (
@@ -70,7 +53,16 @@ const first = (value: string | string[] | undefined): string | undefined => (Arr
  * that asset's rows with the filter named and clearable. Public by address;
  * the wallet's reward rows join over its bearer.
  */
-export function HistoryScreen() {
+export function HistoryScreen({
+  embedded = false,
+  asset = null,
+  onAllAssets,
+}: {
+  embedded?: boolean
+  /** Inside «Портфель · Історія»: one asset's statement, asked from its position — the place keys the screen by it. */
+  asset?: Readonly<{ mint: string; symbol: string }> | null
+  onAllAssets?: () => void
+} = {}) {
   const insets = useSafeAreaInsets()
   const router = useRouter()
   const { colors } = useTheme()
@@ -79,9 +71,14 @@ export function HistoryScreen() {
   const shared = useSharedCopy()
   const now = useNow(30_000)
   const params = useLocalSearchParams<{ mint?: string | string[]; symbol?: string | string[] }>()
-  const mintParam = first(params.mint)
-  const symbolParam = first(params.symbol)
-  const [mint, setMint] = useState<string | null>(isMint(mintParam) ? mintParam : null)
+  const mintParam = asset?.mint ?? first(params.mint)
+  const symbolParam = asset?.symbol ?? first(params.symbol)
+  const [mint, setMintState] = useState<string | null>(isMint(mintParam) ? mintParam : null)
+  // «Усі» leaves the asset: here, and in the place that asked for it.
+  const setMint = (next: string | null) => {
+    setMintState(next)
+    if (next === null) onAllAssets?.()
+  }
   const [picked, setPicked] = useState<HistoryRow | null>(null)
 
   const account = useAccount()
@@ -107,31 +104,12 @@ export function HistoryScreen() {
     index: number
     section: { data: readonly HistoryRow[] }
   }) => (
-    <Pressable
-      accessibilityRole="button"
-      accessibilityLabel={`${historyTitle(item, copy.words)}, ${historyAmounts(item)}, ${copy.status[item.status]}, ${formatClock(item.at)}`}
+    <HistoryRowView
+      item={item}
+      time={formatClock(item.at)}
       onPress={() => setPicked(item)}
-      className={`flex-row items-center gap-3 py-3 active:bg-hover ${index === section.data.length - 1 ? '' : 'border-b border-line'}`}
-    >
-      <View className="h-9 w-9 items-center justify-center rounded-pill bg-elevated">
-        <Icon name={KIND_ICON[item.kind]} size={18} color="fg" />
-      </View>
-      <View className="flex-1 gap-0.5">
-        <Txt variant="ui" numberOfLines={1}>
-          {historyTitle(item, copy.words)}
-        </Txt>
-        <Txt variant="data" tone="faint" numberOfLines={1}>
-          {historyAmounts(item)}
-        </Txt>
-      </View>
-      <View className="items-end gap-1">
-        {/* A settled row needs no badge — that is what a statement is; anything else says its state. */}
-        {item.status !== 'done' ? <Chip label={copy.status[item.status]} tone={STATUS_TONE[item.status]} /> : null}
-        <Txt variant="labelSm" tone="faint">
-          {formatClock(item.at)}
-        </Txt>
-      </View>
-    </Pressable>
+      last={index === section.data.length - 1}
+    />
   )
 
   let body
@@ -149,12 +127,18 @@ export function HistoryScreen() {
         action={{ title: shared.tryAgain, onPress: () => void query.refetch(), loading: query.isFetching }}
       />
     )
+  } else if (rows.length === 0 && embedded && !mint) {
+    // Inside «Портфель · Історія» an empty statement is one quiet line, as «Активи» (NEW-LOOK §3).
+    body = (
+      <Txt variant="ui" tone="muted" className="px-4 py-2 text-center">
+        {copy.emptyTitle}
+      </Txt>
+    )
   } else if (rows.length === 0) {
     body = (
       <StateView
         icon="receipt-outline"
         title={mint ? copy.emptyForAsset(symbolParam ?? '') : copy.emptyTitle}
-        detail={copy.emptyDetail}
         action={mint ? { title: copy.all, onPress: () => setMint(null) } : undefined}
       />
     )
@@ -214,14 +198,43 @@ export function HistoryScreen() {
     )
   }
 
-  const subtitle = mint
-    ? `${symbolParam ?? ''} · ${rows.length}`
-    : query.data
-      ? `${copy.coverage} · ${rows.length}`
-      : query.isError
-        ? shared.didNotLoad
-        : shared.loading
+  // Without a wallet nothing is read — no «Loading» over «Під'єднати гаманець» (ST-5).
+  const subtitle = !account.address
+    ? undefined
+    : mint
+      ? `${symbolParam ?? ''} · ${rows.length}`
+      : query.data
+        ? undefined
+        : query.isError
+          ? shared.didNotLoad
+          : shared.loading
 
+  // Inside «Портфель · Історія» the place draws the head; the statement and its receipts are the same — one asset's
+  // with its chip to leave it.
+  if (embedded) {
+    return (
+      <View className="flex-1">
+        {mint ? (
+          <View className="flex-row px-4 pb-2">
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel={`${symbolParam ?? mint.slice(0, 4)}, ${copy.all}`}
+              onPress={() => setMint(null)}
+              hitSlop={8}
+              className="h-9 flex-row items-center gap-1 rounded-pill border border-brand-chip-line bg-brand-chip px-3 active:opacity-80"
+            >
+              <Txt variant="labelSm" tone="brand">
+                {symbolParam ?? mint.slice(0, 4)}
+              </Txt>
+              <Icon name="close" size={14} color="brand" />
+            </Pressable>
+          </View>
+        ) : null}
+        <WalletGate what={copy.title}>{body}</WalletGate>
+        <ReceiptSheet row={picked} now={now} locale={locale} copy={copy} onClose={() => setPicked(null)} />
+      </View>
+    )
+  }
   return (
     <View className="flex-1 bg-ground" style={{ paddingTop: insets.top }}>
       <View className="flex-row items-center gap-1 px-2 pt-1">

@@ -35,7 +35,26 @@ export type ToolFact = Readonly<{
 }>;
 
 /** A sentence a tool wrote for the composer, with the citations it stands on — the deterministic composer prints these; a model may reword them and must keep the citations. */
-export type ToolNote = Readonly<{ text: string; cites: readonly string[]; section: "observation" | "meaning" | "counter" | "risks" | "checks" | "actions" }>;
+export type ToolNote = Readonly<{
+  text: string;
+  cites: readonly string[];
+  section: "observation" | "meaning" | "counter" | "risks" | "checks" | "actions";
+  /**
+   * AI-09: the sentence carries a third party's words — a headline. It reaches
+   * the model in a block of its own marked as untrusted, and the figures in it
+   * hold a model only in a sentence that cites it (`answer.ts`).
+   */
+  quote?: true;
+  /** AI-09: on a line of «What moved the price?», its mark — the model is handed it and keeps it. */
+  mark?: "fact" | "unverified" | "inference" | "unknown";
+  /**
+   * AI-21 (the phone's request 69): the same sentence without its own figure
+   * of the price's move — said where the answer's head is the move, from one
+   * source with its time, so a second source's figure of the same move does
+   * not sit beside it.
+   */
+  withoutMove?: string;
+}>;
 
 export type ToolOutcome = "ok" | "empty" | "unavailable" | "refused";
 

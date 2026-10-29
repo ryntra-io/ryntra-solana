@@ -6,6 +6,7 @@ import { BOTTOM_ACTION_INSET, BottomAction } from '@/components/bottom-action'
 import { Card } from '@/components/card'
 import { ChoiceChips } from '@/components/choice-chips'
 import { Field } from '@/components/field'
+import { HelpDot } from '@/components/help-dot'
 import { Icon } from '@/components/icon'
 import { Screen } from '@/components/screen'
 import { Sheet } from '@/components/sheet'
@@ -34,6 +35,7 @@ import {
 import {
   COST_ESTIMATE_SOL,
   createFailureKey,
+  firstBuyMaxRaw,
   periodWord,
   sendTitleKey,
   supplyPct,
@@ -43,8 +45,11 @@ import { choosePicture, takePicture } from '@/features/launch/picture'
 import { presetsAlike, usd } from '@/features/launch/preset-view'
 import { useLaunchCreate, type LaunchCreate } from '@/features/launch/use-create'
 import { useLaunchOpen, useLaunchPresets } from '@/features/launch/use-launch'
+import { useHoldings } from '@/features/portfolio/use-portfolio'
+import { usePlaceHold } from '@/features/shell/open-place'
 import { useNow } from '@/hooks/use-now'
 import { TERMS_URL } from '@/lib/legal'
+import { SOL_MINT } from '@/lib/api'
 import type { LaunchPreset, LaunchPresetsResponse } from '@/lib/api/v1/types'
 import { useLocale, useSharedCopy, type Locale } from '@/lib/i18n'
 
@@ -68,6 +73,8 @@ export function LaunchNewScreen() {
   const open = launchOpen.open
   const presets = useLaunchPresets(open === true)
   const create = useLaunchCreate(presets.data ?? null)
+  // While it is prepared, signed or sent, a note's tap or a quick action waits for it (`place-hold.ts`).
+  usePlaceHold(create.phase === 'prepare' || create.phase === 'sign' || create.phase === 'send')
   const back = () => (router.canGoBack() ? router.back() : router.replace('/(tabs)'))
 
   if (open === false || launchOpen.failed) {
@@ -134,13 +141,8 @@ export function LaunchNewScreen() {
     <View className="flex-1 bg-ground">
       <Screen title={word('title')} onBack={back} backLabel={shared.back} bottomInset={BOTTOM_ACTION_INSET}>
         <LaunchTabs word={word} current="new" />
-        {create.paused ? (
-          <PausedNote word={word} scope="form" />
-        ) : (
-          <Txt variant="ui" tone="muted">
-            {word('lede')}
-          </Txt>
-        )}
+        {/* «Name, ticker and picture cannot be changed» is said once, before the signature (ReviewSection). */}
+        {create.paused ? <PausedNote word={word} scope="form" /> : null}
         <TokenSection create={create} word={word} />
         <LinksSection create={create} word={word} />
         <PresetSection create={create} word={word} locale={locale} presets={presets.data.presets} />
@@ -175,15 +177,15 @@ function actionOf(
       hint: create.landed ? undefined : word('launchSettling'),
     }
   }
-  // While it runs, the one line above the action says where it stands: prepared · in the wallet · on the network.
-  if (create.phase === 'prepare')
-    return { title: word('stepPrepare'), onPress: () => undefined, loading: true, hint: word('stepPrepare') }
-  if (create.phase === 'sign') {
-    const step = word(create.transactions > 1 ? 'stepSignMany' : 'stepSign')
-    return { title: step, onPress: () => undefined, loading: true, hint: step }
-  }
-  if (create.phase === 'send')
-    return { title: word('stepSend'), onPress: () => undefined, loading: true, hint: word('stepSend') }
+  // While it runs, the action's own title says where it stands: prepared · in the wallet · on the network — no line repeats it.
+  if (create.phase === 'prepare') return { title: word('stepPrepare'), onPress: () => undefined, loading: true }
+  if (create.phase === 'sign')
+    return {
+      title: word(create.transactions > 1 ? 'stepSignMany' : 'stepSign'),
+      onPress: () => undefined,
+      loading: true,
+    }
+  if (create.phase === 'send') return { title: word('stepSend'), onPress: () => undefined, loading: true }
   if (!create.account.address)
     return {
       title: word('connect'),
@@ -214,9 +216,9 @@ function useProblem(create: LaunchCreate, word: LaunchWord) {
   }
 }
 
-function SectionTitle({ title, optional }: { title: string; optional?: string }) {
-  return (
-    <Txt variant="labelSm" tone="faint" caps>
+function SectionTitle({ title, optional, help }: { title: string; optional?: string; help?: string }) {
+  const text = (
+    <Txt variant="labelSm" tone="faint" caps className={help ? 'shrink' : undefined}>
       {title}
       {optional ? (
         <Txt variant="labelSm" tone="faint">
@@ -225,6 +227,14 @@ function SectionTitle({ title, optional }: { title: string; optional?: string })
         </Txt>
       ) : null}
     </Txt>
+  )
+  if (!help) return text
+  // What the section means sits one tap deep, beside its title — never a line under it.
+  return (
+    <View className="flex-row items-center gap-1">
+      {text}
+      <HelpDot title={title} body={help} />
+    </View>
   )
 }
 
@@ -418,7 +428,7 @@ function PresetSection({
     word('presetWay', { start: usd(entry.startMarketCapUsd, locale), end: usd(entry.graduationMarketCapUsd, locale) })
   return (
     <Card className="gap-3">
-      <SectionTitle title={word('sectionPreset')} />
+      <SectionTitle title={word('sectionPreset')} help={word('presetHelp')} />
       {alike.way || alike.lpForever ? (
         <View className="gap-0.5">
           {alike.way ? (
@@ -465,9 +475,11 @@ function PresetSection({
                   time: formatDuration(entry.sniperFee.seconds, locale),
                 })}
               </Txt>
-              <Txt variant="ui" tone="muted">
-                {word('presetCreator', { pct: formatPercent(entry.creatorTradingFeePct, locale, 0) })}
-              </Txt>
+              {entry.terms ? (
+                <Txt variant="ui" tone="muted">
+                  {word('presetCreator', { pct: formatBps(entry.terms.curveSplit.creatorBps, locale) })}
+                </Txt>
+              ) : null}
               <Txt variant="ui" tone="muted">
                 {word('presetCap', { pct: formatBps(entry.firstBuyCapBps, locale) })}
               </Txt>
@@ -532,6 +544,22 @@ function BuySection({
   const decimals = preset.pair.decimals
   const quote = create.quoteData
   const maxIn = quote ? fromRaw(quote.maxAmountInRaw, decimals, 2) : null
+  // «Max» is what this wallet can put in: the cap, never more than it holds — none while its balance is unread or zero.
+  const holdings = useHoldings(create.account.address)
+  const read = holdings.data?.data ?? null
+  const row = read?.holdings.find((holding) => holding.mint === preset.pair.mint) ?? null
+  const spendable =
+    read === null
+      ? null
+      : row
+        ? /^\d+$/.test(row.spendableRaw)
+          ? BigInt(row.spendableRaw)
+          : null
+        : read.tokenRead === 'COMPLETE'
+          ? 0n
+          : null
+  const walletMaxRaw = firstBuyMaxRaw(quote?.maxAmountInRaw ?? null, spendable, preset.pair.mint === SOL_MINT)
+  const walletMax = walletMaxRaw === null ? null : fromRaw(walletMaxRaw, decimals, 2)
   const tokens = quote && BigInt(quote.tokensOutRaw) > 0n ? quote.tokensOutRaw : null
   const invalid = create.buyRaw === null
   const locked = create.busy || create.paused
@@ -559,12 +587,11 @@ function BuySection({
       ? word('buyAboveCap', { amount: formatNumber(Number(maxIn), locale, 2), symbol: preset.pair.symbol })
       : null
   const lock = create.lock
+  // Micro and the demo market: the lock is the preset's, not the creator's choice.
+  const required = create.lockMinDays !== null
   return (
     <Card className="gap-3">
-      <SectionTitle title={word('sectionBuy')} optional={word('optional')} />
-      <Txt variant="ui" tone="muted">
-        {word('buyHint')}
-      </Txt>
+      <SectionTitle title={word('sectionBuy')} optional={word('optional')} help={word('buyHint')} />
       <View className="flex-row items-end gap-2">
         <Field
           className="flex-1"
@@ -579,24 +606,24 @@ function BuySection({
           hint={hint}
         />
       </View>
-      {maxIn ? (
+      {walletMax && Number(walletMax) > 0 ? (
         <View className="flex-row">
           <Pressable
             accessibilityRole="button"
             disabled={locked}
-            onPress={() => create.setBuyText(maxIn)}
+            onPress={() => create.setBuyText(walletMax)}
             className="h-11 justify-center rounded-pill border border-line px-4 active:bg-hover"
           >
-            <Txt variant="ui">{`${word('buyMax')} · ${formatNumber(Number(maxIn), locale, 2)} ${preset.pair.symbol}`}</Txt>
+            <Txt variant="ui">{`${word('buyMax')} · ${formatNumber(Number(walletMax), locale, 2)} ${preset.pair.symbol}`}</Txt>
           </Pressable>
         </View>
       ) : null}
-      {create.buying ? (
+      {create.buying && !create.lockMissing ? (
         <View className="gap-2 rounded-sm border border-line px-3 py-3">
           <Pressable
             accessibilityRole="switch"
-            accessibilityState={{ checked: create.lockId !== null, disabled: locked }}
-            disabled={locked}
+            accessibilityState={{ checked: create.lockId !== null, disabled: locked || required }}
+            disabled={locked || required}
             onPress={() => create.setLockId(create.lockId ? null : (locks[0]?.id ?? null))}
             className="flex-row items-start gap-3"
           >
@@ -606,17 +633,29 @@ function BuySection({
               color={create.lockId ? 'brand' : 'muted'}
               style={{ marginTop: 2 }}
             />
-            <View className="flex-1 gap-1">
-              <Txt variant="ui">{word('lockTitle')}</Txt>
-              <Txt variant="labelSm" tone="faint" style={{ lineHeight: 16 }}>
-                {word('lockHint')}
+            <View className="flex-1 flex-row items-center gap-1">
+              <Txt variant="ui" className="shrink">
+                {word(required ? 'lockRequiredTitle' : 'lockTitle')}
               </Txt>
+              <HelpDot
+                title={word(required ? 'lockRequiredTitle' : 'lockTitle')}
+                body={
+                  create.lockMinDays === null
+                    ? word('lockHint')
+                    : word('lockRequiredHint', {
+                        preset: preset.name[locale],
+                        period: periodWord(create.lockMinDays, word),
+                      })
+                }
+              />
             </View>
-            <Icon
-              name={create.lockId ? 'checkbox' : 'square-outline'}
-              size={22}
-              color={create.lockId ? 'brand' : 'fgMuted'}
-            />
+            {required ? null : (
+              <Icon
+                name={create.lockId ? 'checkbox' : 'square-outline'}
+                size={22}
+                color={create.lockId ? 'brand' : 'fgMuted'}
+              />
+            )}
           </Pressable>
           {create.lockId ? (
             <>
@@ -624,7 +663,7 @@ function BuySection({
                 role="radiogroup"
                 scroll
                 disabled={locked}
-                choices={locks.map((entry) => ({
+                choices={create.lockChoices.map((entry) => ({
                   value: entry.id,
                   label: word('lockSchedule', {
                     cliff: periodWord(entry.cliffDays, word),
@@ -644,6 +683,23 @@ function BuySection({
               ) : null}
             </>
           ) : null}
+        </View>
+      ) : null}
+      {create.v1Blocked || create.lockMissing ? (
+        <View className="gap-2">
+          <Txt variant="ui" tone="danger" accessibilityRole="alert">
+            {word(create.lockMissing ? 'lockNone' : 'errWalletV1')}
+          </Txt>
+          <View className="flex-row">
+            <Pressable
+              accessibilityRole="button"
+              disabled={locked}
+              onPress={() => create.setBuyText('')}
+              className="h-11 justify-center rounded-pill border border-line px-4 active:bg-hover"
+            >
+              <Txt variant="ui">{word('buyNone')}</Txt>
+            </Pressable>
+          </View>
         </View>
       ) : null}
     </Card>

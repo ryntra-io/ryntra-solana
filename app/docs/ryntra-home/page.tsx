@@ -141,7 +141,7 @@ export default function Page() {
         <div className="rx-prose">
           <p>
             The current state of all three is readable inside the product at{" "}
-            <Link href="/app/operations">Operations</Link>, where they are drawn as kill switches
+            <Link href="/app/operations">History</Link>, where they are drawn as kill switches
             that are shown and never thrown. The registered maturity of every Ryntra capability
             is at <Link href="/docs/current-capabilities">Current capabilities</Link>.
           </p>

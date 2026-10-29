@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 
 import { consumeSolanaReadRequest } from "@/lib/agent-control/http";
 import { getGuardRuntime } from "@/lib/guard/runtime";
+import { readPublicLiquidity } from "@/lib/growth/liquidity-store";
+import { BOARD_IDS, BOARD_ROWS, boardRows } from "@/lib/growth/leaderboard";
 import { boardExclusions, launchesReachedDex, readWeek, seasonsBegan } from "@/lib/growth/league-store";
 import { leaderboardsView, seasonHead } from "@/lib/growth/league-view";
 import { seasonTheme } from "@/lib/growth/seasons";
@@ -20,7 +22,8 @@ export const maxDuration = 30;
  *
  * Public: a board is a status people chose to be seen with, and every name
  * on it is four characters from each end of an address that is public on
- * any explorer anyway. With `address` and that wallet's proof, the answer
+ * any explorer anyway; a liquidity badge beside a name only where that
+ * wallet turned it on. With `address` and that wallet's proof, the answer
  * also says where the viewer stands — including how far a trader is from the
  * board's minimum, which is nobody else's business and so never without the
  * proof. Not cached by the browser: the viewer's part rides on a cookie.
@@ -46,6 +49,9 @@ export async function GET(req: NextRequest) {
       seasonsBegan(store, now).catch(() => null),
       launchesReachedDex(store).catch(() => false),
     ]);
+    /* Liquidity badges only of the wallets the boards show, and only where they chose to show them; unreadable — none, the board stands. */
+    const shown = BOARD_IDS.flatMap((board) => boardRows(snapshot.metrics, board, exclusions.wallets).slice(0, BOARD_ROWS).map((row) => row.wallet));
+    const liquidity = await readPublicLiquidity(store, shown).catch(() => ({}));
     const season = firstStart ? seasonAt(firstStart, week.start) : null;
 
     let viewer: Parameters<typeof leaderboardsView>[0]["viewer"] = null;
@@ -69,6 +75,7 @@ export async function GET(req: NextRequest) {
         season: seasonHead(season, week.start, season ? seasonTheme(season.number) : null),
         creators,
         viewer,
+        liquidity,
       }),
     );
   } catch {

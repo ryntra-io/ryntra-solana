@@ -61,7 +61,7 @@ const COPY = {
     langLabel: "Мова бота та сповіщень",
     walletLabel: "Адреса гаманця Arcus (публічна, лише читання — ніколи не ключі)",
     walletHint:
-      "Адреса вмикає перегляд рахунку наживо, журнал реальних угод і Telegram-сповіщення про виконання. Зміна адреси повторно привʼязує ваш крок «Arcus Submitted».",
+      "Адреса вмикає перегляд рахунку наживо, журнал реальних угод і Telegram-сповіщення про виконання. Зміна адреси повторно привʼязує твій крок «Arcus Submitted».",
     nothingToSave: "Немає чого зберігати.",
     saved: "Збережено",
     failed: "Не вдалося",
@@ -192,7 +192,6 @@ export function SettingsForm({
         </ul>
         {/* Logout is an API endpoint that clears the cookie and redirects: it needs a
             full document navigation, so next/link would be wrong here. */}
-        {/* eslint-disable-next-line @next/next/no-html-link-for-pages */}
         <a className="cb-logout" href="/api/session?logout=1">{copy.logout}</a>
       </section>
     </>

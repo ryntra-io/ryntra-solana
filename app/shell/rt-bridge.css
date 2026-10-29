@@ -9,7 +9,7 @@
  * app/design/tokens.css, which is itself a projection of DESIGN.md. The public
  * site keeps the legacy values untouched; it migrates on its own rung, later.
  *
- * The light theme needs no second block here: the root `[data-theme="light"]`
+ * The light theme needs no second block here: the root `:is([data-theme="light"], [data-theme="porcelain"])`
  * overrides flip the `--rt-*` tokens themselves, and these aliases follow.
  *
  * Deliberately NOT bridged on this rung:
@@ -99,7 +99,7 @@
 /* On mineral paper, red and violet re-resolve to the darkened light-FG set:
    #EF4444 reads at 3.9:1 and #8B5CF6 at 3.3:1 on paper, below the text bar.
    Dark is untouched — this block simply does not apply there. */
-[data-theme="light"] .rs {
+:is([data-theme="light"], [data-theme="porcelain"]) .rs {
   --danger: var(--rt-blocked-red-fg);
   --violet: var(--rt-authorization-violet-fg);
 }

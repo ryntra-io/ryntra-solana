@@ -16,10 +16,20 @@ import { openLink } from '@/lib/open-link'
 import { DASH, shortAddress } from '@/utils/format'
 
 import { DOC_STATUS_TONE } from './receipt-picture'
+import { ReceiptModes } from './receipt-modes'
 import { ShareReceiptButton } from './share-receipt'
 
 /** A receipt's whole card: every leg and fee, who started it, the time twice, the transaction one tap further, and the share. */
-export function DocCard({ doc, loading = false }: { doc: ReceiptDoc; loading?: boolean }) {
+export function DocCard({
+  doc,
+  loading = false,
+  share = true,
+}: {
+  doc: ReceiptDoc
+  loading?: boolean
+  /** Off where the card is «Детально» of a receipt that shares itself. */
+  share?: boolean
+}) {
   const copy = useCopy(RECEIPTS_COPY)
   const locale = useLocale()
   const times = docTimes(doc.at, locale)
@@ -89,7 +99,7 @@ export function DocCard({ doc, loading = false }: { doc: ReceiptDoc; loading?: b
           </Txt>
         </Pressable>
       ) : null}
-      {loading ? null : <ShareReceiptButton doc={doc} />}
+      {loading || !share ? null : <ShareReceiptButton doc={doc} />}
     </View>
   )
 }
@@ -113,7 +123,7 @@ export function ReceiptDocSheet({ doc, onClose }: { doc: ReceiptDoc | null; onCl
   const unread = doc.kind === 'launch' && doc.signature === null
   return (
     <Sheet visible title={doc.title} subtitle={copy.receipt} onClose={onClose} scroll>
-      {unread ? <LaunchDoc doc={doc} /> : <DocCard doc={doc} />}
+      {unread ? <LaunchDoc doc={doc} /> : <ReceiptModes doc={doc} detailed={<DocCard doc={doc} share={false} />} />}
     </Sheet>
   )
 }

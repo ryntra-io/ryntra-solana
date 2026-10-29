@@ -1,0 +1,19 @@
+/* AI-06a: a desk wide enough for the page and the assistant's side panel — the page steps aside, nothing of it is
+   covered (the panel's own look is `assistant-panel.module.css`). */
+@media (min-width: 1280px) {
+  html[data-assistant-panel="open"] .ryntra-shell__main {
+    margin-right: 420px;
+  }
+
+  /* What a page pins to the window's bottom edge — Spot's «Купити | Продати» once its terminal is narrow — ends where
+     the panel begins. */
+  html[data-assistant-panel="open"] [data-trade-bar] {
+    right: 420px;
+  }
+}
+
+/* `globals.css` gives every bare `<section>` 78px of vertical padding; the panel stands outside the page's canvas,
+   which takes it back (`app/shell/shell.css`), so it takes it back itself — at the same weight, under any class. */
+:where(#ryntra-assistant-panel) section {
+  padding-block: 0;
+}

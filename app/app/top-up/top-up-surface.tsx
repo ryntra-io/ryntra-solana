@@ -1,24 +1,30 @@
 "use client";
 
-import { Bank, CaretDown, CheckCircle, Copy, CreditCard, QrCode } from "@phosphor-icons/react";
-import Image from "next/image";
+import { Bank, CaretDown, CheckCircle, Copy, CreditCard, GlobeHemisphereWest, QrCode, Wallet } from "@phosphor-icons/react";
 import Link from "next/link";
 import QRCode from "qrcode";
 import { useCallback, useEffect, useId, useMemo, useRef, useState, type ReactNode } from "react";
+import { NAV_WORDS } from "@ryntra/core/nav";
+import { Block, Button } from "@ryntra/core/ui";
 
 import { fundingNeed, fundsOf, fundsReady, solAmount, SUGGESTED_SOL_LAMPORTS, suggestedSolUsd, UNKNOWN_FUNDS, type Funds } from "@/app/app/invest/funding-model";
 import { investWords, numberLocale, solEnoughLine } from "@/app/app/invest/invest-words";
-import invest from "@/app/app/invest/invest.module.css";
-import { useWalletReach } from "@/app/app/invest/use-wallet-reach";
 import { useWalletData } from "@/app/app/wallet-data";
 import { decodeWalletCollection, type WalletHolding } from "@/app/app/wallet-view-model";
 import type { WorkspaceLocale } from "@/app/shell/locale";
 import { useSolanaConnection } from "@/app/solana/workspace/connection";
+import { ConnectWalletButton } from "@/app/solana/workspace/wallet-gate";
+import { AssetMark, NetworkMark } from "@/app/solana/workspace/money/marks";
+import { MoneyAction, MoneyCard, MoneyPage } from "@/app/solana/workspace/money/money-page";
+import money from "@/app/solana/workspace/money/money-page.module.css";
+import { RecentTransfers } from "@/app/solana/workspace/money/recent-transfers";
 import { formatUsdMoney } from "@/app/solana/workspace/spot/spot-format";
 import { useSpotMarket } from "@/app/solana/workspace/spot/use-spot-data";
 import { readWalletHoldings } from "@/lib/solana/holdings.client";
 import { WRAPPED_SOL_MINT } from "@/lib/solana/send-kinds";
 
+import { depositWords } from "./deposit-words";
+import { NetworkDeposit } from "./network-deposit";
 import styles from "./top-up.module.css";
 
 /**
@@ -32,7 +38,9 @@ import styles from "./top-up.module.css";
  * своєму гаманці» (Phantom takes the card; the page never does) and
  * «Переказати з біржі» (the steps, the address, the network). When dollars
  * are there and only the network's SOL is missing, the same three rows are
- * worded for SOL.
+ * worded for SOL. A fourth, «З іншої мережі» (SOL-W1), takes USDC from
+ * another network or an exchange that has no Solana: an address to send to,
+ * never a second wallet to connect.
  *
  * **Waiting is part of the page.** While something is missing the wallet is
  * read again every fifteen seconds, so money sent from an exchange shows up
@@ -43,44 +51,154 @@ import styles from "./top-up.module.css";
  */
 
 type Need = "usdc" | "sol";
-type Way = "receive" | "card" | "exchange";
+type Way = "receive" | "card" | "exchange" | "network";
 
 /** How often the page reads the wallet again while something is missing, and for how long at most. */
 const POLL_MS = 15_000;
 const POLL_LIMIT = 40;
 
 export function TopUpSurface({ locale, need, from }: { locale: WorkspaceLocale; need: Need | null; from: string | null }) {
-  const word = investWords(locale);
   const { connection } = useSolanaConnection();
+  return connection ? <WalletTopUp key={connection.address} address={connection.address} locale={locale} need={need} from={from} /> : <GuestTopUp locale={locale} need={need} />;
+}
+
+/**
+ * A guest (B18, the B13 review's item 11): the same page — the two things a purchase needs, «—» where the wallet's
+ * figures will be, and every way to top up, open to read — so a person with USDC on an exchange learns the way before
+ * connecting anything. A wallet is needed only for an address, and the page's one action asks for it (B14).
+ */
+function GuestTopUp({ locale, need }: { locale: WorkspaceLocale; need: Need | null }) {
+  const word = investWords(locale);
+  const deposit = depositWords(locale);
+  const [open, setOpen] = useState<Way | null>(null);
+  const toggle = useCallback((way: Way) => setOpen((current) => (current === way ? null : way)), []);
+  const mode: Need = need ?? "usdc";
+  const later = <p className={styles.fine}>{deposit("addressLater")}</p>;
   return (
-    <div className={`${invest.page} ${styles.page}`}>
-      <header className={styles.head}>
-        <h1 className={invest.heroTitle}>{word("topUp")}</h1>
-        <p className={invest.heroLine}>{word("topUpLede")}</p>
-      </header>
-      {connection ? <WalletTopUp key={connection.address} address={connection.address} locale={locale} need={need} from={from} /> : <GuestTopUp locale={locale} />}
-    </div>
+    <MoneyPage
+      id="top-up"
+      title={NAV_WORDS[locale].items.deposit}
+      help={word("topUpLede")}
+      lang={locale}
+      form={
+        <>
+          <MoneyCard>
+            <section className={styles.status} aria-labelledby="top-up-needs" data-need="guest">
+              <h2 id="top-up-needs" className={styles.statusTitle}>{deposit("needsTitle")}</h2>
+              <FundLine symbol="USDC" name="USDC" role={word("forPurchases")} value="—" ok={null} missing="" />
+              <FundLine symbol="SOL" name="SOL" role={word("forNetwork")} value="—" ok={null} missing="" />
+            </section>
+            <MoneyAction>
+              <ConnectWalletButton block />
+            </MoneyAction>
+          </MoneyCard>
+          <Ways mode={mode} locale={locale} open={open} onToggle={toggle} address={later} exchange={later} network={later} />
+        </>
+      }
+      aside={
+        <>
+          <AddressAside locale={locale} address={null} />
+          <RecentTransfers kind="incoming" title={deposit("recentIncoming")} />
+        </>
+      }
+    />
   );
 }
 
-/** A guest: the one empty state of «Простий» without a wallet, and the way to one. */
-function GuestTopUp({ locale }: { locale: WorkspaceLocale }) {
+/**
+ * The ways to top up, one row each — its picture, what it is, where and how long — in the order a person reaches for
+ * them (`critics/money.md` §5 «Поповнити»): a card, an exchange, another network, another wallet. Pressed, a row says
+ * what to do; the address it needs is the caller's (`address`, `exchange`, `network`).
+ */
+function Ways({
+  mode,
+  locale,
+  open,
+  onToggle,
+  address,
+  exchange,
+  network,
+}: {
+  mode: Need;
+  locale: WorkspaceLocale;
+  open: Way | null;
+  onToggle: (way: Way) => void;
+  address: ReactNode;
+  exchange: ReactNode;
+  network: ReactNode;
+}) {
   const word = investWords(locale);
-  const { openInWallet, reach } = useWalletReach();
+  const deposit = depositWords(locale);
   return (
-    <section className={`${invest.hero} ${styles.guest}`} data-empty="guest">
-      <p className={styles.emptyTitle}>{word("connectToBuy")}</p>
-      <div className={invest.actions}>
-        <button type="button" className="rw-btn rw-btn--primary" onClick={reach}>
-          {openInWallet ? word("openInPhantom") : word("connectWallet")}
-        </button>
+    <section className={styles.ways} aria-labelledby="top-up-ways">
+      <h2 id="top-up-ways" className={styles.waysTitle}>{word("waysTitle")}</h2>
+      <WayRow way="card" open={open === "card"} onToggle={onToggle} icon={<CreditCard size={22} weight="bold" aria-hidden="true" />} title={word(mode === "sol" ? "cardSol" : "cardUsdc")} sub={word(mode === "sol" ? "cardSolSub" : "cardUsdcSub")}>
+        <ol className={styles.steps}>
+          <li>{word("openPhantom")}</li>
+          {mode === "sol" ? (
+            <>
+              <li>{word("solSwap")}</li>
+              <li>{word("solCard")}</li>
+            </>
+          ) : (
+            <>
+              <li>{word("cardPay")}</li>
+              <li>{word("cardBuy")}</li>
+            </>
+          )}
+        </ol>
+        <p className={styles.fine}>{word("cardFine")}</p>
+      </WayRow>
+      <WayRow way="exchange" open={open === "exchange"} onToggle={onToggle} icon={<Bank size={22} weight="bold" aria-hidden="true" />} title={word(mode === "sol" ? "exchangeSol" : "exchangeUsdc")} sub={`${word(mode === "sol" ? "exchangeSolSub" : "exchangeUsdcSub")} · ${deposit("exchangeTime")}`}>
+        <p className={styles.stepLine}>{word(mode === "sol" ? "exchangeStepsSol" : "exchangeStepsUsdc")}</p>
+        {exchange}
+        {mode === "usdc" ? <p className={styles.fine}>{deposit("exchangeOther")}</p> : null}
+      </WayRow>
+      {/* USDC only: when what is missing is the network's SOL, this way would not help. */}
+      {mode === "usdc" ? (
+        <WayRow way="network" open={open === "network"} onToggle={onToggle} icon={<GlobeHemisphereWest size={22} weight="bold" aria-hidden="true" />} title={deposit("wayTitle")} sub={`${deposit("waySub")} · ${deposit("networkTime")}`}>
+          {network}
+        </WayRow>
+      ) : null}
+      {/* On a desk the address and its code stand beside the form (`AddressAside`), so this row is the phone's. */}
+      <div className={money.inlineOnly}>
+        <WayRow way="receive" open={open === "receive"} onToggle={onToggle} icon={<QrCode size={22} weight="bold" aria-hidden="true" />} title={word(mode === "sol" ? "receiveSol" : "receiveUsdc")} sub={`${word("receiveSub")} · ${deposit("walletTime")}`}>
+          {address}
+        </WayRow>
       </div>
     </section>
   );
 }
 
+/**
+ * «Твоя адреса Solana» beside the form on a desk: the code a phone's camera reads, the address whole and one copy —
+ * the way in from another wallet or an exchange, always in sight. A guest sees where it will be, and the form's own
+ * button connects the wallet (B14: one button). Below a desk the same block is the «З іншого гаманця» row.
+ */
+function AddressAside({ locale, address }: { locale: WorkspaceLocale; address: string | null }) {
+  const word = investWords(locale);
+  const deposit = depositWords(locale);
+  return (
+    <div className={money.besideOnly}>
+      <Block title={deposit("addressTitle")} icon="wallet" lang={locale}>
+        {address ? (
+          <AddressBlock address={address} locale={locale} withQr compact primary={false} note={word("solanaOnlyUsdc")} />
+        ) : (
+          <div className={styles.addressGuest}>
+            <span className={styles.qrGuest} aria-hidden="true">
+              <Wallet size={32} />
+            </span>
+            <p className={styles.fine}>{deposit("addressLater")}</p>
+          </div>
+        )}
+      </Block>
+    </div>
+  );
+}
+
 function WalletTopUp({ address, locale, need, from }: { address: string; locale: WorkspaceLocale; need: Need | null; from: string | null }) {
   const word = investWords(locale);
+  const deposit = depositWords(locale);
   const numbers = numberLocale(locale);
   const { holdings, refresh } = useWalletData();
   const [polled, setPolled] = useState<Funds | null>(null);
@@ -146,12 +264,12 @@ function WalletTopUp({ address, locale, need, from }: { address: string; locale:
     status.current?.scrollIntoView({ block: "start", behavior: still ? "auto" : "smooth" });
   }, [state]);
 
-  return (
-    <>
-      <section ref={status} className={`${invest.hero} ${styles.status}`} aria-labelledby="top-up-wallet" data-need={state}>
+  const statusCard = (
+    <MoneyCard>
+      <section ref={status} className={styles.status} aria-labelledby="top-up-wallet" data-need={state}>
         <h2 id="top-up-wallet" className={styles.statusTitle}>{word("inYourWallet")}</h2>
         <FundLine
-          icon="/site/universe/USDC.png"
+          symbol="USDC"
           name="USDC"
           role={word("forPurchases")}
           value={funds.usdc === null ? null : formatUsdMoney(funds.usdc, numbers)}
@@ -159,7 +277,7 @@ function WalletTopUp({ address, locale, need, from }: { address: string; locale:
           missing={word("neededFrom")}
         />
         <FundLine
-          icon="/site/universe/SOL.png"
+          symbol="SOL"
           name="SOL"
           role={word("forNetwork")}
           value={funds.solLamports === null ? null : `${solAmount(funds.solLamports, numbers)} SOL`}
@@ -167,15 +285,10 @@ function WalletTopUp({ address, locale, need, from }: { address: string; locale:
           missing={`${word("neededAbout")}${suggested}`}
         />
         {state === "ready" ? (
-          <div className={styles.ready}>
-            <p className={styles.readyLine}>
-              <CheckCircle size={18} weight="fill" aria-hidden="true" />
-              {word("readyToBuy")}
-            </p>
-            <Link className="rw-btn rw-btn--primary" href={from ?? "/app/markets"}>
-              {from ? word("continueBuying") : word("buy")}
-            </Link>
-          </div>
+          <p className={styles.readyLine}>
+            <CheckCircle size={18} weight="fill" aria-hidden="true" />
+            {word("readyToBuy")}
+          </p>
         ) : state === "sol" ? (
           <p className={styles.needLine}>
             <b>{word("needSol")}</b> {solEnoughLine(locale, suggested, suggestedSolUsd(solUsd))}
@@ -186,44 +299,53 @@ function WalletTopUp({ address, locale, need, from }: { address: string; locale:
           <span className={styles.lineBone} aria-hidden="true" />
         )}
       </section>
+      {/* Once both lines are checked the page's one action is the purchase — pinned on a phone (B18). */}
+      {state === "ready" ? (
+        <MoneyAction>
+          <Link className="ryntra-button ryntra-button--primary ryntra-button--block" href={from ?? "/app/markets"}>
+            <span className="ryntra-button__label">{from ? word("continueBuying") : word("buy")}</span>
+          </Link>
+        </MoneyAction>
+      ) : null}
+    </MoneyCard>
+  );
 
-      <section className={styles.ways} aria-labelledby="top-up-ways">
-        <h2 id="top-up-ways" className={invest.sectionTitle}>{word("waysTitle")}</h2>
-        <WayRow way="receive" open={open === "receive"} onToggle={toggle} icon={<QrCode size={22} weight="bold" aria-hidden="true" />} title={word(mode === "sol" ? "receiveSol" : "receiveUsdc")} sub={word("receiveSub")}>
-          <AddressBlock address={address} locale={locale} withQr primary={state !== "ready"} note={word(mode === "sol" ? "solanaOnly" : "solanaOnlyUsdc")} />
-        </WayRow>
-        <WayRow way="card" open={open === "card"} onToggle={toggle} icon={<CreditCard size={22} weight="bold" aria-hidden="true" />} title={word(mode === "sol" ? "cardSol" : "cardUsdc")} sub={word(mode === "sol" ? "cardSolSub" : "cardUsdcSub")}>
-          <ol className={styles.steps}>
-            <li>{word("openPhantom")}</li>
-            {mode === "sol" ? (
-              <>
-                <li>{word("solSwap")}</li>
-                <li>{word("solCard")}</li>
-              </>
-            ) : (
-              <>
-                <li>{word("cardPay")}</li>
-                <li>{word("cardBuy")}</li>
-              </>
-            )}
-          </ol>
-          <p className={styles.fine}>{word("cardFine")}</p>
-        </WayRow>
-        <WayRow way="exchange" open={open === "exchange"} onToggle={toggle} icon={<Bank size={22} weight="bold" aria-hidden="true" />} title={word(mode === "sol" ? "exchangeSol" : "exchangeUsdc")} sub={word(mode === "sol" ? "exchangeSolSub" : "exchangeUsdcSub")}>
-          <p className={styles.stepLine}>{word(mode === "sol" ? "exchangeStepsSol" : "exchangeStepsUsdc")}</p>
-          <AddressBlock address={address} locale={locale} primary={state !== "ready"} note={mode === "usdc" && ready.sol === false ? word("exchangeAddSol") : null} />
-        </WayRow>
-      </section>
-    </>
+  return (
+    <MoneyPage
+      id="top-up"
+      title={NAV_WORDS[locale].items.deposit}
+      help={word("topUpLede")}
+      lang={locale}
+      form={
+        <>
+          {statusCard}
+          <Ways
+            mode={mode}
+            locale={locale}
+            open={open}
+            onToggle={toggle}
+            address={<AddressBlock address={address} locale={locale} withQr primary={state !== "ready"} note={word(mode === "sol" ? "solanaOnly" : "solanaOnlyUsdc")} />}
+            exchange={<AddressBlock address={address} locale={locale} primary={false} note={mode === "usdc" && ready.sol === false ? word("exchangeAddSol") : null} />}
+            network={<NetworkDeposit recipient={address} locale={locale} primary={state !== "ready"} />}
+          />
+        </>
+      }
+      aside={
+        <>
+          <AddressAside locale={locale} address={address} />
+          <RecentTransfers kind="incoming" title={deposit("recentIncoming")} />
+        </>
+      }
+    />
   );
 }
 
 /** One of the two things a purchase needs: what it is for, what the wallet holds, and whether that is enough. */
-function FundLine({ icon, name, role, value, ok, missing }: { icon: string; name: string; role: string; value: string | null; ok: boolean | null; missing: string }) {
+function FundLine({ symbol, name, role, value, ok, missing }: { symbol: "USDC" | "SOL"; name: string; role: string; value: string | null; ok: boolean | null; missing: string }) {
   return (
     <div className={styles.line} data-ok={ok === null ? undefined : ok ? "true" : "false"}>
       {/* The two coins' own marks, served from this site — never a picture waiting on a third host. */}
-      <Image className={styles.lineIcon} src={icon} alt="" width={32} height={32} />
+      <AssetMark className={styles.lineIcon} symbol={symbol} size={32} />
       <span className={styles.lineText}>
         <span className={styles.lineName}>{name}</span>
         <span className={styles.lineRole}>{role}</span>
@@ -269,9 +391,10 @@ function WayRow({ way, open, onToggle, icon, title, sub, children }: { way: Way;
  * The wallet's address as a sender needs it: the network named, the address
  * whole, one button to copy it, and — for another wallet — a QR code of the
  * bare address, which every wallet and exchange scanner reads (a `solana:`
- * link is refused by some, among them Phantom's).
+ * link is refused by some, among them Phantom's). `compact` draws the code at
+ * 160 px for the side column (B18).
  */
-function AddressBlock({ address, locale, withQr = false, primary, note }: { address: string; locale: WorkspaceLocale; withQr?: boolean; primary: boolean; note: string | null }) {
+function AddressBlock({ address, locale, withQr = false, compact = false, primary, note }: { address: string; locale: WorkspaceLocale; withQr?: boolean; compact?: boolean; primary: boolean; note: string | null }) {
   const word = investWords(locale);
   const [qr, setQr] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
@@ -302,31 +425,32 @@ function AddressBlock({ address, locale, withQr = false, primary, note }: { addr
   };
 
   return (
-    <div className={styles.address} data-qr={withQr ? "true" : undefined}>
+    <div className={styles.address} data-qr={withQr ? "true" : undefined} data-compact={compact ? "true" : undefined}>
       {withQr ? (
         <div className={styles.qrWrap}>
           {qr ? (
             /* A data URI this component just drew; there is no remote file for next/image. */
             // eslint-disable-next-line @next/next/no-img-element
-            <img className={styles.qr} src={qr} alt={word("scanToSend")} width={220} height={220} />
+            <img className={styles.qr} src={qr} alt={word("scanToSend")} width={compact ? 160 : 220} height={compact ? 160 : 220} />
           ) : (
             <span className={styles.qrBone} aria-hidden="true" />
           )}
         </div>
       ) : null}
       <div className={styles.addressFacts}>
-        <span className={styles.addressLabel}>{word("yourAddress")}</span>
+        {compact ? null : <span className={styles.addressLabel}>{word("yourAddress")}</span>}
         <p className={styles.addressValue} translate="no">
           {address}
         </p>
         <span className={styles.chip}>
+          <NetworkMark network="solana" size={14} />
           {word("networkWord")} · <b translate="no">Solana</b>
         </span>
       </div>
-      <button type="button" className={primary ? "rw-btn rw-btn--primary" : "rw-btn"} onClick={() => void copy()}>
+      <Button variant={primary ? "primary" : "secondary"} block={compact} onClick={() => void copy()} lang={locale}>
         <Copy size={16} weight="bold" aria-hidden="true" />
         {copied ? word("copied") : word("copyAddress")}
-      </button>
+      </Button>
       {note ? <p className={styles.fine}>{note}</p> : null}
     </div>
   );

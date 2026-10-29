@@ -2,23 +2,24 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 
-import { useSolanaConnection } from "@/app/solana/workspace/connection";
-import { useWalletProof } from "@/app/solana/workspace/wallet-proof";
 import type { PredictionPlan } from "@/lib/predictions/plan-model";
 import type { PaperAccountView } from "@/lib/predictions/paper";
 import type { WatchEntry } from "@/lib/predictions/watchlist";
-import { bytesToBase64, signMessageWithWallet } from "@/lib/solana/wallet-signin.client";
+
+import { usePredictionsWallet } from "./surface";
 
 /**
  * The paper account as the browser sees it: one read of
  * `/api/predictions/account`, the link flow (the server's message → one
- * wallet signature → the server's verify), the revoke, and a re-read on
- * demand. The browser never sees a provider token: the answer is a link
+ * wallet signature → the server's verify; under load the provider's bot
+ * check first, and the same start again with its token), the revoke, and
+ * a re-read on demand. The browser never sees a provider token: the answer is a link
  * state and the account's figures.
  *
  * `guest` — no proven wallet on this site (the person signs in with the
  * wallet first, through the shell's own control); `ready` — the account as
- * the server states it, linked or not.
+ * the server states it, linked or not. The wallet is the shell's
+ * (`surface.tsx`): the Solana wallet the cabinet connected.
  */
 
 export type AccountData = PaperAccountView & Readonly<{ wallet: string; watchlist: readonly WatchEntry[]; plans: readonly PredictionPlan[] }>;
@@ -29,27 +30,37 @@ export type AccountState =
   | Readonly<{ status: "ready"; account: AccountData }>
   | Readonly<{ status: "failed"; account: AccountData | null; code: string }>;
 
-export type LinkFlow = Readonly<{ status: "idle" }> | Readonly<{ status: "signing" }> | Readonly<{ status: "verifying" }> | Readonly<{ status: "failed"; code: string; reason: string }>;
+/** `challenge` — the provider wants its bot check before the sign-in starts; `round` counts the checks shown, so a refused token draws a fresh box. */
+export type LinkFlow =
+  | Readonly<{ status: "idle" }>
+  | Readonly<{ status: "challenge"; siteKey: string; round: number }>
+  | Readonly<{ status: "signing" }>
+  | Readonly<{ status: "verifying" }>
+  | Readonly<{ status: "failed"; code: string; reason: string }>;
 
-type ApiFailure = { error?: { code?: string; message?: string } };
+type ApiFailure = { error?: { code?: string; message?: string; siteKey?: string } };
 
-export function usePaperAccount(): Readonly<{
+/** `skip`: a component handed the account by its page reads nothing itself (one read per page, not one per panel). */
+export function usePaperAccount(options: Readonly<{ skip?: boolean }> = {}): Readonly<{
   state: AccountState;
   link: LinkFlow;
   proven: boolean;
   address: string | null;
   refresh: () => Promise<void>;
-  enable: () => Promise<boolean>;
+  enable: (turnstileToken?: string) => Promise<boolean>;
+  challengeFailed: (why: "failed" | "blocked") => void;
+  cancelChallenge: () => void;
   disable: () => Promise<void>;
   prove: () => Promise<boolean | void>;
+  connect: (() => void) | null;
 }> {
-  const { connection } = useSolanaConnection();
-  const proof = useWalletProof();
-  const address = connection?.address ?? null;
-  const proven = proof.state.status === "proven" && proof.state.address === address;
+  const wallet = usePredictionsWallet();
+  const address = wallet.address;
+  const proven = wallet.proven;
   const [state, setState] = useState<AccountState>({ status: "loading", account: null });
   const [link, setLink] = useState<LinkFlow>({ status: "idle" });
   const current = useRef<string | null>(null);
+  const rounds = useRef(0);
 
   /* The server decides who is asking (the proof cookie, or the phone's bearer):
      the read is made regardless of what the browser knows about the wallet, a
@@ -82,33 +93,51 @@ export function usePaperAccount(): Readonly<{
     }
   }, [address]);
 
+  const skip = options.skip === true;
   useEffect(() => {
+    if (skip) return;
     void refresh();
-  }, [refresh, proven]);
+  }, [refresh, proven, skip]);
 
-  const enable = useCallback(async (): Promise<boolean> => {
-    if (!connection) {
+  /* `turnstileToken` — the bot check's answer, when the last start asked for one: the same start is sent again with it. */
+  const enable = useCallback(async (turnstileToken?: string): Promise<boolean> => {
+    if (!wallet.address) {
       setLink({ status: "failed", code: "NO_WALLET", reason: "" });
       return false;
     }
     setLink({ status: "signing" });
     try {
-      const started = await fetch("/api/predictions/link/start", { method: "POST", headers: { accept: "application/json" }, cache: "no-store" });
+      const started = await fetch("/api/predictions/link/start", {
+        method: "POST",
+        headers: turnstileToken ? { "content-type": "application/json", accept: "application/json" } : { accept: "application/json" },
+        body: turnstileToken ? JSON.stringify({ turnstileToken }) : undefined,
+        cache: "no-store",
+      });
       const challenge = (await started.json()) as { message?: string } & ApiFailure;
+      /* Asked again after a token: the server says CHALLENGE_FAILED; should it ever ask again instead, it is the same refusal, never a new round. */
+      if (challenge.error?.code === "CHALLENGE_REQUIRED" && turnstileToken) {
+        setLink({ status: "failed", code: "CHALLENGE_FAILED", reason: "" });
+        return false;
+      }
+      if (challenge.error?.code === "CHALLENGE_REQUIRED" && challenge.error.siteKey) {
+        rounds.current += 1;
+        setLink({ status: "challenge", siteKey: challenge.error.siteKey, round: rounds.current });
+        return false;
+      }
       if (!started.ok || !challenge.message) {
         setLink({ status: "failed", code: challenge.error?.code ?? "UNAVAILABLE", reason: challenge.error?.message ?? "" });
         return false;
       }
-      const signed = await signMessageWithWallet(connection.wallet, connection.address, challenge.message);
+      const signed = await wallet.sign(challenge.message);
       if (!signed.ok) {
-        setLink({ status: "failed", code: signed.state, reason: signed.reason });
+        setLink({ status: "failed", code: signed.code, reason: signed.reason });
         return false;
       }
       setLink({ status: "verifying" });
       const verified = await fetch("/api/predictions/link/verify", {
         method: "POST",
         headers: { "content-type": "application/json", accept: "application/json" },
-        body: JSON.stringify({ message: challenge.message, signature: bytesToBase64(signed.signature), encoding: "base64" }),
+        body: JSON.stringify({ message: challenge.message, signature: signed.signature, encoding: signed.encoding }),
       });
       const outcome = (await verified.json()) as ApiFailure;
       if (!verified.ok) {
@@ -122,12 +151,18 @@ export function usePaperAccount(): Readonly<{
       setLink({ status: "failed", code: "NETWORK", reason: "" });
       return false;
     }
-  }, [connection, refresh]);
+  }, [wallet, refresh]);
+
+  /* The check could not be shown or did not pass: nothing was started, the person may try again. */
+  const challengeFailed = useCallback((why: "failed" | "blocked") => setLink({ status: "failed", code: why === "blocked" ? "CHALLENGE_BLOCKED" : "CHALLENGE_FAILED", reason: "" }), []);
+
+  /* The person leaves the check: nothing was started, the card offers the sign-in again. */
+  const cancelChallenge = useCallback(() => setLink({ status: "idle" }), []);
 
   const disable = useCallback(async () => {
     await fetch("/api/predictions/link/revoke", { method: "POST", headers: { accept: "application/json" } }).catch(() => null);
     await refresh();
   }, [refresh]);
 
-  return { state, link, proven, address, refresh, enable, disable, prove: proof.prove };
+  return { state, link, proven, address, refresh, enable, challengeFailed, cancelChallenge, disable, prove: wallet.prove, connect: wallet.connect };
 }

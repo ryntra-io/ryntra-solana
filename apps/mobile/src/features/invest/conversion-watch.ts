@@ -1,6 +1,7 @@
 /**
  * The IPO and conversion watch on the phone — Ryntra does not let a token burn
- * (as the web app does it).
+ * (M19, as the web's session 2
+ * does it).
  *
  * When a private company goes public, its PreStocks token must be swapped
  * before the issuer's cut-off, or it expires worthless. The server states the

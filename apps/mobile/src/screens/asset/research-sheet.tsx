@@ -1,15 +1,20 @@
-import { Pressable, View } from 'react-native'
+import { Pressable, ToastAndroid, View } from 'react-native'
 
 import { FactRow } from '@/components/fact-row'
+import { HelpDot } from '@/components/help-dot'
 import { Icon, type IconName } from '@/components/icon'
 import { Sheet } from '@/components/sheet'
 import { Txt } from '@/components/txt'
+import { exchangeClock, exchangeShort, moneyShort, venueName } from '@/features/invest/company-facts'
 import { DETAILS_COPY, isAssetCategory, type DetailsCopy } from '@/features/invest/details-copy'
 import type { MarketDetail, StockAsset } from '@/lib/api'
+import { canCopy, copyText } from '@/lib/clipboard'
+import { feel } from '@/lib/haptics'
 import { useCopy, useLocale, type Locale } from '@/lib/i18n'
 import { issuerLabel, referenceWord, sessionWord, unitsLine } from '@/lib/stocks'
 import { openLink } from '@/lib/open-link'
 import {
+  DASH,
   formatAmount,
   formatClock,
   formatCount,
@@ -17,7 +22,6 @@ import {
   formatPercent,
   formatPrice,
   formatShare,
-  formatUsdCompact,
   shortAddress,
 } from '@/utils/format'
 
@@ -32,8 +36,23 @@ function Section({ title, children }: { title: string; children: React.ReactNode
   )
 }
 
-function authorityWord(disabled: boolean | null, words: DetailsCopy): string {
-  return disabled === null ? '—' : disabled ? words.authorityOff : words.authorityOn
+function authorityWord(disabled: boolean | null, on: string, words: DetailsCopy): string {
+  return disabled === null ? '—' : disabled ? words.authorityOff : on
+}
+
+/**
+ * Whether new tokens can be minted, or the token frozen, in plain words: «Вимкнено» where the chain records no one,
+ * «Можливий» where it records an address — the address itself behind «?», never a bare address on the row (ST-5 r6).
+ */
+function AuthorityValue({ on, help, title }: { on: string; help: string; title: string }) {
+  return (
+    <View className="-my-1 flex-row items-center gap-1">
+      <Txt variant="ui" selectable>
+        {on}
+      </Txt>
+      <HelpDot title={title} body={help} size={16} />
+    </View>
+  )
 }
 
 /** A raw supply through the mint's decimals, whole units. */
@@ -68,6 +87,8 @@ export type ResearchSheetProps = {
   market: MarketDetail
   observedAt: string
   stock: StockAsset | null
+  /** The pool's own price stands far from the share (ST-5 r8): the cap and the FDV built on it are dashes. */
+  poolPriceFar?: boolean
 }
 
 /**
@@ -78,7 +99,14 @@ export type ResearchSheetProps = {
  * The words and figures are in the person's language; the venue, the issuer
  * and the chain keep their names.
  */
-export function ResearchSheet({ visible, onClose, market, observedAt, stock }: ResearchSheetProps) {
+export function ResearchSheet({
+  visible,
+  onClose,
+  market,
+  observedAt,
+  stock,
+  poolPriceFar = false,
+}: ResearchSheetProps) {
   const locale = useLocale()
   const words = useCopy(DETAILS_COPY)
   const row = stock?.row ?? null
@@ -98,8 +126,8 @@ export function ResearchSheet({ visible, onClose, market, observedAt, stock }: R
   return (
     <Sheet
       visible={visible}
-      title={words.researchTitle(market.symbol)}
-      subtitle={words.asOf(formatClock(observedAt))}
+      title={words.researchTitle}
+      subtitle={`${market.symbol} · ${words.asOf(formatClock(observedAt))}`}
       onClose={onClose}
       scroll
     >
@@ -125,14 +153,14 @@ export function ResearchSheet({ visible, onClose, market, observedAt, stock }: R
         {onchain ? null : (
           <FactRow
             label={words.mintAuthority}
-            value={authorityWord(market.audit.mintAuthorityDisabled, words)}
+            value={authorityWord(market.audit.mintAuthorityDisabled, words.mintOn, words)}
             mono={false}
           />
         )}
         {onchain ? null : (
           <FactRow
             label={words.freezeAuthority}
-            value={authorityWord(market.audit.freezeAuthorityDisabled, words)}
+            value={authorityWord(market.audit.freezeAuthorityDisabled, words.freezeOn, words)}
             mono={false}
           />
         )}
@@ -149,9 +177,10 @@ export function ResearchSheet({ visible, onClose, market, observedAt, stock }: R
           }
         />
         <FactRow
-          label={words.marketCap}
-          value={formatUsdCompact(market.marketCapUsd, locale)}
-          detail={words.fullyDiluted(formatUsdCompact(market.fdvUsd, locale))}
+          // A stock token's cap is the token's value on the chain, never the company's (ST-5 r7).
+          label={stock !== null || market.category === 'stock' ? words.tokenMarketCap : words.marketCap}
+          value={poolPriceFar ? DASH : (moneyShort(market.marketCapUsd, locale) ?? DASH)}
+          detail={words.fullyDiluted(poolPriceFar ? DASH : (moneyShort(market.fdvUsd, locale) ?? DASH))}
           last
         />
       </Section>
@@ -165,10 +194,11 @@ export function ResearchSheet({ visible, onClose, market, observedAt, stock }: R
             mono={false}
           />
           <FactRow label="ISIN" value={rep.underlying.isin ?? '—'} />
+          {/* The exchange by its short name and its clock in words — never its MIC or its time-zone ID (ST-5 r6). */}
           <FactRow
             label={words.exchange}
-            value={rep.exchange ? rep.exchange.name : '—'}
-            detail={rep.exchange ? `${rep.exchange.mic} · ${rep.exchange.timezone}` : null}
+            value={exchangeShort(rep.exchange) ?? '—'}
+            detail={exchangeClock(rep.exchange?.timezone, locale)}
             mono={false}
           />
           <FactRow
@@ -203,9 +233,25 @@ export function ResearchSheet({ visible, onClose, market, observedAt, stock }: R
                   : words.fromChain
             }
           />
+          {/* The issuer's tokens in circulation stand under the reserves; what they, the chain's supply and the backing
+              each count is the same «?» as the supply's — beside this figure too, since the two need not agree (ST-5 r9). */}
           <FactRow
             label={words.reserves}
             value={stock?.reserves ? words.sharesHeld(formatAmount(Number(stock.reserves.sharesHeld), 2, locale)) : '—'}
+            right={
+              stock?.reserves ? (
+                <View className="-my-1 flex-row items-center gap-1">
+                  <Txt variant="data" selectable>
+                    {words.sharesHeld(formatAmount(Number(stock.reserves.sharesHeld), 2, locale))}
+                  </Txt>
+                  <HelpDot
+                    title={words.supplyHelpTitle}
+                    body={[words.supplyHelp, words.reservesHelp]}
+                    size={16}
+                  />
+                </View>
+              ) : undefined
+            }
             detail={
               stock?.reserves
                 ? words.reservesDetail(
@@ -221,44 +267,96 @@ export function ResearchSheet({ visible, onClose, market, observedAt, stock }: R
       ) : null}
 
       <Section title={words.sectionOnchain}>
-        <FactRow label={words.tokenAddress} value={shortAddress(market.mint, 6)} detail={market.mint} />
+        {/* The address once, short, with its copy beside it; the program and the decimals are the chain's plumbing,
+            not a fact a person reads (ST-5 r4). */}
         <FactRow
-          label={words.program}
-          value={
-            onchain
-              ? onchain.programKind.replace('_', ' ')
-              : market.tokenProgram
-                ? shortAddress(market.tokenProgram, 6)
-                : '—'
+          label={words.tokenAddress}
+          value={shortAddress(market.mint, 6)}
+          right={
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel={`${words.copyAddress}: ${market.mint}`}
+              disabled={!canCopy}
+              onPress={() => {
+                if (!copyText(market.mint)) return
+                feel('review')
+                ToastAndroid.show(words.copied, ToastAndroid.SHORT)
+              }}
+              hitSlop={6}
+              className="-my-1 min-h-8 flex-row items-center gap-1.5 rounded-btn px-1 active:bg-hover"
+            >
+              <Txt variant="data" tabular>
+                {shortAddress(market.mint, 6)}
+              </Txt>
+              {canCopy ? <Icon name="copy-outline" size={16} color="muted" /> : null}
+            </Pressable>
           }
-          mono={onchain === null}
         />
-        <FactRow label={words.decimals} value={market.decimals === null ? '—' : `${market.decimals}`} />
+        {/* The supply with its time (the chain's slot is plumbing); what it, the reserves and the backing each count
+            behind «?», since the chain's supply and the issuer's circulation need not agree (ST-5 r6). */}
         {onchain ? (
           <FactRow
             label={words.supply}
             value={supplyOf(onchain.supplyRaw, onchain.decimals, locale)}
-            detail={words.slot(onchain.slot === null ? '—' : `${onchain.slot}`, formatClock(onchain.observedAt))}
+            detail={formatClock(onchain.observedAt)}
+            right={
+              <View className="-my-1 flex-row items-center gap-1">
+                <Txt variant="data" selectable>
+                  {supplyOf(onchain.supplyRaw, onchain.decimals, locale)}
+                </Txt>
+                <HelpDot
+                  title={words.supplyHelpTitle}
+                  body={stock?.reserves ? [words.supplyHelp, words.reservesHelp] : words.supplyHelp}
+                  size={16}
+                />
+              </View>
+            }
           />
         ) : null}
         {onchain ? (
           <FactRow
             label={words.mintAuthority}
-            value={onchain.mintAuthority ? shortAddress(onchain.mintAuthority, 6) : words.none}
+            value={onchain.mintAuthority ? words.mintOn : words.authorityOff}
+            mono={false}
+            right={
+              onchain.mintAuthority ? (
+                <AuthorityValue
+                  on={words.mintOn}
+                  title={words.mintAuthority}
+                  help={words.mintBy(onchain.mintAuthority)}
+                />
+              ) : undefined
+            }
           />
         ) : null}
         {onchain ? (
           <FactRow
             label={words.freezeAuthority}
-            value={onchain.freezeAuthority ? shortAddress(onchain.freezeAuthority, 6) : words.none}
+            value={onchain.freezeAuthority ? words.freezeOn : words.authorityOff}
+            mono={false}
+            right={
+              onchain.freezeAuthority ? (
+                <AuthorityValue
+                  on={words.freezeOn}
+                  title={words.freezeAuthority}
+                  help={words.freezeBy(onchain.freezeAuthority)}
+                />
+              ) : undefined
+            }
           />
         ) : null}
+        {/* The pool by its venue's name and what it holds — never the venue's slug or the pool's address (ST-5 r6). */}
         <FactRow
           label={words.pool}
           value={stock?.pool ? stock.pool.name : '—'}
           detail={
             stock?.pool
-              ? `${stock.pool.dex ?? '—'} · ${formatUsdCompact(stock.pool.reserveUsd, locale)} · ${shortAddress(stock.pool.address, 6)}`
+              ? [
+                  venueName(stock.pool.dex),
+                  stock.pool.reserveUsd !== null ? words.inPool(moneyShort(stock.pool.reserveUsd, locale) ?? DASH) : null,
+                ]
+                  .filter(Boolean)
+                  .join(' · ') || null
               : null
           }
           mono={false}

@@ -42,9 +42,8 @@ export function Appearance() {
   const [locale, setLocale] = useState<WorkspaceLocale | null>(null);
 
   useEffect(() => {
-    const pref = getThemePref();
-    setTheme(pref);
-    applyThemePref(pref);
+    /* Read, not applied: opening the page must not rewrite the app's look (the core's cookie follows a press only). */
+    setTheme(getThemePref());
     setLocale(readLocale());
   }, []);
 

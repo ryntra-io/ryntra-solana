@@ -1,14 +1,11 @@
-import { FEES, FEES_UK, REWARDS } from "./facts.ts";
+import { FEES, FEES_UK, LIMITS, PURCHASE, REWARDS } from "./facts.ts";
 import { facts, list, note, p, section, steps, table, type DocPage } from "./model.ts";
 
 /**
- * Trade — Spot and Swap, the tabs of the menu's «Торгувати», and the Markets
- * screener with its Trending order, each documented as what it does today. Bridge is documented
- * under Money, where the product keeps it; what you buy and how a company is
- * bought live under Invest since the site's redesign, and the old Stocks
- * page's address leads there. A page that is not built has no documentation
- * page: Perps is registered and drawn nowhere, and its old address leads to
- * Spot.
+ * Торгівля — the overview of the group (spot, swap, stocks and memes), Spot with its limit orders, Swap, and the
+ * Markets screener with its Trending order, each documented as what it does today. «Між мережами» (Bridge) is
+ * documented under Money, where the menu keeps it; how a company is bought and what you buy keep their `invest/*`
+ * addresses under this section. Perps and Predictions have their own sections (`perps.ts`, `predictions.ts`).
  */
 
 export const SWAP: DocPage = {
@@ -57,7 +54,7 @@ export const SWAP: DocPage = {
           "Обери актив, яким платиш, і актив, який отримуєш. Шукай за назвою, тікером або адресою mint.",
           "Введи суму або візьми 25% · 50% · 75% · MAX від того, що маєш.",
           "Дочекайся котирування. Воно показує курс, вплив на ціну, плату мережі й мінімум, який ти отримаєш.",
-          "Натисни «Перевірити». Ryntra симулює точну транзакцію й показує, що спишеться з гаманця і що надійде, — разом із резервом, який лишає новий рахунок токена.",
+          "Натисни «Перевірка». Ryntra симулює точну транзакцію й показує, що спишеться з гаманця і що надійде, — разом із резервом, який лишає новий рахунок токена.",
           "Підтверди в гаманці. Якщо ринок вийшов за перевірені цифри, Ryntra попросить перевірити знову, а не підписувати застарілі умови.",
           "Стеж за результатом в Історії. Квитанція тримає перевірені й фактичні цифри поруч.",
         ],
@@ -94,57 +91,55 @@ export const BRIDGE: DocPage = {
   slug: "money/bridge",
   group: "money",
   pageId: "bridge",
-  title: { en: "Bridge", uk: "Міст" },
+  title: { en: "Between networks", uk: "Між мережами" },
   summary: {
-    en: "Move value between Solana and other networks in one reviewed step — you choose the result, Ryntra finds the route.",
-    uk: "Перенеси вартість між Solana й іншими мережами одним перевіреним кроком — ти обираєш результат, Ryntra знаходить маршрут.",
+    en: "Move money between Solana and other networks with your Solana wallet alone: in through a deposit address, out by one reviewed transaction.",
+    uk: "Переноси гроші між Solana й іншими мережами лише гаманцем Solana: усередину — через адресу поповнення, назовні — однією перевіреною транзакцією.",
   },
   sections: [
-    section("what", "What Bridge is for", "Для чого Міст", [
+    section("what", "What it is for", "Для чого це", [
       p(
-        "Swap changes an asset on Solana. Bridge moves value between networks: USDC on Base to SOL on Solana, SOL on Solana to USDC on Ethereum. You say where the money is and what you want to end up with; the routing, the providers and the steps in between are Ryntra's job, and every one of them is shown before you sign.",
-        "Обмін змінює актив на Solana. Міст переносить вартість між мережами: USDC на Base → SOL на Solana, SOL на Solana → USDC на Ethereum. Ти кажеш, де гроші і що хочеш отримати; маршрут, провайдери й проміжні кроки — робота Ryntra, і кожен із них видно до підпису.",
+        "Swap changes an asset on Solana. Money → Between networks moves money across chains through Relay, and needs only your Solana wallet: no wallet of another network is ever connected. Money comes into Solana through a deposit address the page gives you; money leaves Solana by a transaction your Solana wallet signs.",
+        "Обмін змінює актив на Solana. Гроші → Між мережами переносить гроші між мережами через Relay, і для цього потрібен лише твій гаманець Solana: гаманця іншої мережі ніколи не підключають. У Solana гроші приходять через адресу поповнення, яку дає сторінка; із Solana вони йдуть транзакцією, яку підписує твій гаманець Solana.",
       ),
       facts(
         [
-          ["Networks", "Solana ↔ Base, Ethereum, Arbitrum, Optimism, Polygon, BNB Chain, Robinhood Chain"],
-          ["Assets", "USDC, SOL, ETH, USDG — the form lists what each route offers"],
-          ["Ryntra service fee", `${FEES.bridge} of the amount, stated apart from the provider's and the networks' costs`],
+          ["Into Solana", "USDC from Base, Ethereum, Arbitrum, Optimism, Polygon or BNB Chain, to USDC on Solana, from $1"],
+          ["Out of Solana", "To Base, Ethereum, Arbitrum, Optimism, Polygon, BNB Chain and others, and USDG to Robinhood Chain — the form lists what each route offers"],
+          ["Ryntra's fee", `None into Solana; ${FEES.bridge} of the amount out of Solana, stated apart from the provider's and the networks' costs`],
           ["Time", "An estimate is shown per route before you sign; History follows the transfer until it arrives"],
         ],
         [
-          ["Мережі", "Solana ↔ Base, Ethereum, Arbitrum, Optimism, Polygon, BNB Chain, Robinhood Chain"],
-          ["Активи", "USDC, SOL, ETH, USDG — форма показує, що пропонує кожен маршрут"],
-          ["Комісія Ryntra", `${FEES_UK.bridge} від суми, окремо від витрат провайдера й мереж`],
+          ["У Solana", "USDC з Base, Ethereum, Arbitrum, Optimism, Polygon чи BNB Chain — у USDC на Solana, від $1"],
+          ["Із Solana", "У Base, Ethereum, Arbitrum, Optimism, Polygon, BNB Chain та інші, а USDG — у Robinhood Chain; форма показує, що пропонує кожен маршрут"],
+          ["Комісія Ryntra", `У Solana — немає; із Solana — ${FEES_UK.bridge} від суми, окремо від витрат провайдера й мереж`],
           ["Час", "Оцінку маршруту видно до підпису; Історія веде переказ до прибуття"],
         ],
       ),
     ]),
-    section("how", "How to bridge", "Як перенести кошти", [
+    section("how", "How to move money", "Як перенести гроші", [
       steps(
         [
-          "Choose the source network and asset, then the destination network and asset. Both sides on Solana is a swap, and the page says so.",
-          "Connect the wallet of the source network. A transfer from Base or Ethereum is signed by your wallet on that network; a transfer from Solana by your Solana wallet.",
-          "Enter the amount and read the quote: expected receive, provider costs, Ryntra fee, network costs and the estimated time.",
-          "Press Review, check the destination address — it is where the money will land — and confirm in your wallet.",
-          "Watch History. The transfer reads Sent, then Arrived; if a route cannot complete, the page says what happened and where the money is.",
+          "Choose where the money is and where it goes. Both sides on Solana is a swap, and the page says so.",
+          "Into Solana: the page shows a deposit address on the source network. Send USDC there from your exchange or wallet; it arrives in your Solana wallet as USDC.",
+          "Out of Solana: enter the amount and the destination address, and read the quote — what arrives, the provider's costs, Ryntra's fee, the network costs and the estimated time. Press Review and sign with your Solana wallet.",
+          "Watch History: the transfer reads On its way, then Arrived; if a step needs you, it reads Needs you and says what to do.",
         ],
         [
-          "Обери вихідну мережу й актив, потім мережу й актив призначення. Обидві сторони на Solana — це обмін, і сторінка про це скаже.",
-          "Під'єднай гаманець вихідної мережі. Переказ із Base чи Ethereum підписує твій гаманець у тій мережі; переказ із Solana — твій гаманець Solana.",
-          "Введи суму й прочитай котирування: скільки очікувано надійде, витрати провайдера, комісія Ryntra, плата мереж і орієнтовний час.",
-          "Натисни «Перевірити», звір адресу призначення — саме туди прийдуть гроші — і підтверди в гаманці.",
-          "Стеж в Історії. Переказ читається як «Надіслано», потім «Прибуло»; якщо маршрут не може завершитися, сторінка скаже, що сталося і де гроші.",
+          "Обери, де гроші й куди вони йдуть. Обидві сторони на Solana — це обмін, і сторінка про це скаже.",
+          "У Solana: сторінка показує адресу поповнення у вихідній мережі. Надішли туди USDC зі своєї біржі чи гаманця — вони надійдуть у твій гаманець Solana як USDC.",
+          "Із Solana: введи суму й адресу призначення та прочитай котирування — що надійде, витрати провайдера, комісія Ryntra, плата мереж і орієнтовний час. Натисни «Перевірка» й підпиши гаманцем Solana.",
+          "Стеж в Історії: переказ читається як «У дорозі», потім «Надійшло»; якщо крок потребує тебе, він читається як «Потрібна твоя дія» і каже, що робити.",
         ],
       ),
       note(
-        "A bridge is two networks and a provider between them. The destination address is part of the amount: check it before you sign, every time.",
-        "Міст — це дві мережі й провайдер між ними. Адреса призначення — частина суми: перевіряй її до підпису щоразу.",
+        "Send only USDC, on the network the page names, to a deposit address; a deposit Relay cannot fill is not refunded by itself — it is recovered through Relay's support. Out of Solana, the destination address is part of the amount: check it before you sign, every time.",
+        "На адресу поповнення надсилай лише USDC і лише в тій мережі, яку називає сторінка; поповнення, яке Relay не може виконати, саме не повертається — його повертають через підтримку Relay. Із Solana адреса призначення — частина суми: перевіряй її до підпису щоразу.",
         "caution",
       ),
     ]),
   ],
-  related: ["trade/swap", "reference/fees", "manage/activity"],
+  related: ["reference/networks", "money/top-up", "reference/fees"],
 };
 
 export const SPOT: DocPage = {
@@ -159,8 +154,8 @@ export const SPOT: DocPage = {
   sections: [
     section("what", "What Spot is for", "Для чого Спот", [
       p(
-        "Spot is where you look at an asset before you trade it. Every market shows its price, the 24-hour move, a chart with timeframes from a minute to a week, liquidity, volume, market cap, holders and age, plus what you hold of it and what you have traded here. Buy and Sell sit beside that context and go through the same Review and the same wallet signature as Swap.",
-        "Спот — місце, де ти дивишся на актив перед тим, як ним торгувати. Кожен ринок показує ціну, рух за 24 години, графік із таймфреймами від хвилини до тижня, ліквідність, обсяг, капіталізацію, кількість власників і вік, а ще що з нього є в тебе і твої угоди на ньому. «Купити» й «Продати» стоять поруч із цим і проходять ту саму «Перевірку» й той самий підпис гаманця, що й Обмін.",
+        "Spot is where you look at an asset before you trade it. Every market shows its price, the 24-hour move, a chart with timeframes from a minute to a day, liquidity, volume, market cap, holders and age, plus what you hold of it and what you have traded here. Buy and Sell sit beside that context and go through the same Review and the same wallet signature as Swap.",
+        "Спот — місце, де ти дивишся на актив перед тим, як ним торгувати. Кожен ринок показує ціну, рух за 24 години, графік із таймфреймами від хвилини до доби, ліквідність, обсяг, капіталізацію, кількість власників і вік, а ще що з нього є в тебе і твої угоди на ньому. «Купити» й «Продати» стоять поруч із цим і проходять ту саму «Перевірку» й той самий підпис гаманця, що й Обмін.",
       ),
       facts(
         [
@@ -192,9 +187,32 @@ export const SPOT: DocPage = {
           "Обери категорію або шукай за назвою, тікером чи адресою. Список показує ціну, зміну за 24 год, ліквідність і обсяг кожного ринку.",
           "Відкрий ринок. Прочитай графік і цифри; заголовок каже, що це за актив, — для токенізованої акції це емітент і орієнтир, за яким вона рухається.",
           "На квитку обери «Купити» чи «Продати», у чому платити чи отримувати — USDC або SOL, — потім суму.",
-          "Натисни «Перевірити». Вона показує, що спишеться, що надійде щонайменше, комісії й резерв рахунку, якщо він є. Підтверди в гаманці.",
+          "Натисни «Перевірка». Вона показує, що спишеться, що надійде щонайменше, комісії й резерв рахунку, якщо він є. Підтверди в гаманці.",
           "Угода з'являється в Історії з квитанцією; твоя позиція в активі оновлюється на сторінці ринку й у Портфелі.",
         ],
+      ),
+    ]),
+    section("limits", "Limit orders", "Лімітні ордери", [
+      p(
+        "Beside Buy and Sell at the market, the Spot ticket places a limit — a price you want to buy at or sell at — on one of two venues on Solana. Either way your tokens leave the wallet into an account the venue's program holds for this order alone, and only your signature takes them back; open orders stand under My orders, where you cancel them.",
+        "Поруч із ринковими «Купити» й «Продати» квиток Споту ставить ліміт — ціну, за якою хочеш купити чи продати, — на одному з двох майданчиків Solana. В обох випадках токени йдуть із гаманця на рахунок, який програма майданчика тримає лише для цього ордера, і повертає їх лише твій підпис; відкриті ордери стоять у «Мої ордери», де їх і скасовують.",
+      ),
+      table(
+        { en: ["Venue", "How it fills", "Ryntra's fee"], uk: ["Майданчик", "Як виконується", "Комісія Ryntra"] },
+        {
+          en: [
+            ["Jupiter", `Jupiter's keeper swaps when the market reaches your price; from ${LIMITS.triggerMinimum} an order`, `The pair's rate, at least ${LIMITS.triggerFloor.en} — none on a dollar pair — in the token you receive and on top of the price; the Review says at which price the order really fills`],
+            ["A Meteora pool", `The pool fills your bins as the price crosses them, up to ${LIMITS.dlmmMaxBins} bins; offered where a pool of the pair takes limits`, `None — you earn ${LIMITS.dlmmMakerShare} of the pool's fee on what your order fills`],
+          ],
+          uk: [
+            ["Jupiter", `Кіпер Jupiter робить обмін, коли ринок доходить до твоєї ціни; ордер від ${LIMITS.triggerMinimum}`, `Ставка пари, щонайменше ${LIMITS.triggerFloor.uk} — на доларовій парі немає, — у токені, який отримуєш, і понад ціну; «Перевірка» каже, за якою ціною ордер справді виконається`],
+            ["Пул Meteora", `Пул виконує твої біни, коли ціна їх перетинає, до ${LIMITS.dlmmMaxBins} бінів; доступно там, де пул пари приймає ліміти`, `Немає — тобі йде ${LIMITS.dlmmMakerShare} комісії пулу з того, що виконав твій ордер`],
+          ],
+        },
+      ),
+      note(
+        "A Spot order carries no TP/SL. «Exit plan» on a meme is a reminder kept on this device while the page is open: when a level is reached you open the Review and sign — nothing sells by itself.",
+        "Ордер Споту не має TP/SL. «План виходу» на мемі — нагадування, яке зберігається на цьому пристрої, поки сторінка відкрита: коли рівень досягнуто, ти відкриваєш «Перевірку» і підписуєш — само нічого не продається.",
       ),
     ]),
     section("memes", "Memes", "Меми", [
@@ -223,21 +241,21 @@ export const SCREENER: DocPage = {
   sections: [
     section("what", "What the screener shows", "Що показує скринер", [
       p(
-        "Markets is one screener. Its tabs — All, Memes, Crypto, Stocks, Private and Watchlist — are views of one table, and the filter above it finds a row by name, ticker, issuer or contract address. A row opens the token's page: a company's page for a stock or a private company, the market in Spot for a coin.",
-        "Ринки — це один скринер. Його вкладки — Усі, Меми, Крипта, Акції, Приватні й Обране — це види однієї таблиці, а фільтр над нею знаходить рядок за назвою, тікером, емітентом чи адресою контракту. Рядок відкриває сторінку токена: сторінку компанії для акції чи приватної компанії, ринок у Споті для монети.",
+        "Markets is one screener. Its tabs All, Crypto, Stocks, Private and Watchlist are views of one table, and the filter above it finds a row by name, ticker, issuer or address; a row opens the token's page — a company's page for a stock or a private company, the market in Spot for a coin. Memes opens the meme radar — six read-only feeds: New, Growing, Near Graduation, Graduated, Trending and Watchlist. Wallets follows the wallets you choose, their trades and results read from the chain.",
+        "Ринки — це один скринер. Його вкладки Усі, Крипта, Акції, Приватні й Обране — види однієї таблиці, а фільтр над нею знаходить рядок за назвою, тікером, емітентом чи адресою; рядок відкриває сторінку токена — сторінку компанії для акції чи приватної компанії, ринок у Споті для монети. «Меми» відкривають мем-радар — шість стрічок лише для читання: Нові, Ростуть, Майже на DEX, Вийшли на DEX, Тренди й Обране. «Гаманці» стежать за гаманцями, які обереш ти, — їхні угоди й результати прочитано з ланцюга.",
       ),
       list(
         [
           "For every asset: the price, the change over 24 hours, the volume, the liquidity and, where the venue states it, the market cap.",
-          "For memes and crypto, also the hour's change, the age of the first pool, the share the ten largest holders keep and the venue's organic score; a token whose mint or freeze authority is still open says so on its row.",
+          "For crypto, also the hour's change, the age of the first pool, the share the ten largest holders keep and the venue's organic score; a token whose mint or freeze authority is still open says so on its row.",
           "For stocks: the issuer, the exchange's session and the token's deviation from the share's price on the exchange. For private companies: «Not a share» and the token against PreStocks' own valuation — context, not a deviation.",
-          "The order is yours: Trending (the day's volume), Gainers, Losers, Moving now, Newest, Liquidity, or any column's header. Your tab and order are kept on this device; the Watchlist is the same list as Spot's star.",
+          "The order is yours: Most traded (the day's volume), Gainers, Losers, Moving now, Newest, Liquidity, or any column's header. Your tab and order are kept on this device; the Watchlist is the same list as Spot's star.",
         ],
         [
           "Для кожного активу: ціна, зміна за 24 години, обсяг, ліквідність і, де майданчик її називає, капіталізація.",
-          "Для мемів і крипти ще зміна за годину, вік першого пулу, частка десяти найбільших власників і органічна оцінка майданчика; токен, у якого право випуску чи заморозки не відкликано, каже про це у своєму рядку.",
+          "Для крипти ще зміна за годину, вік першого пулу, частка десяти найбільших власників і органічна оцінка майданчика; токен, у якого право випуску чи заморозки не відкликано, каже про це у своєму рядку.",
           "Для акцій: емітент, сесія біржі й відхилення ціни токена від ціни акції на біржі. Для приватних компаній: «Це не акція» і ціна токена проти оцінки самого PreStocks — для орієнтиру, не відхилення.",
-          "Порядок обираєш ти: «У тренді» (денний обсяг), «Зростають», «Падають», «Рух за годину», «Нові», «Ліквідність» або заголовок будь-якої колонки. Вкладка й порядок зберігаються на цьому пристрої; «Обране» — той самий список, що й зірка у Споті.",
+          "Порядок обираєш ти: «Найбільший обсяг» (денний обсяг), «Зростають», «Падають», «Рух за годину», «Нові», «Ліквідність» або заголовок будь-якої колонки. Вкладка й порядок зберігаються на цьому пристрої; «Обране» — той самий список, що й зірка у Споті.",
         ],
       ),
       note(
@@ -255,14 +273,14 @@ export const TRENDS: DocPage = {
   pageId: "trends",
   title: { en: "Trending", uk: "У тренді" },
   summary: {
-    en: "What is moving on Solana today — the Trending order of the Markets screener, by the venue's own figures, one press away from the token's page.",
-    uk: "Що рухається на Solana сьогодні — порядок «У тренді» скринера Ринків, за цифрами самого майданчика, за одне натискання від сторінки токена.",
+    en: "What is moving on Solana today — the Most traded order of the Markets screener and the meme radar's Trending feed, by the venue's own figures.",
+    uk: "Що рухається на Solana сьогодні — порядок «Найбільший обсяг» скринера Ринків і стрічка «Тренди» мем-радару, за цифрами самого майданчика.",
   },
   sections: [
     section("today", "What Trending shows", "Що показує «У тренді»", [
       p(
-        "Trending is not a page of its own any more: it is the first order of the Markets screener — the assets with the most trading on Solana today, by the venue's own figures. Gainers, Losers and Moving now sit beside it, and the Memes tab shows the memes by the same order.",
-        "«У тренді» — більше не окрема сторінка, а перший порядок скринера Ринків: активи з найбільшим обсягом торгів на Solana сьогодні, за цифрами самого майданчика. Поруч — «Зростають», «Падають» і «Рух за годину», а вкладка «Меми» показує меми в тому самому порядку.",
+        "Trending is not a page of its own any more. In the Markets screener it is the first order, Most traded — the assets with the most trading on Solana today, by the venue's own figures — with Gainers, Losers and Moving now beside it; for memes it is the Trending feed of the meme radar under Memes.",
+        "«У тренді» — більше не окрема сторінка. У скринері Ринків це перший порядок, «Найбільший обсяг», — активи з найбільшим обсягом торгів на Solana сьогодні, за цифрами самого майданчика, — а поруч «Зростають», «Падають» і «Рух за годину»; для мемів це стрічка «Тренди» мем-радару у вкладці «Меми».",
       ),
       list(
         [
@@ -281,55 +299,60 @@ export const TRENDS: DocPage = {
   related: ["trade/spot", "trade/screener", "strategies/overview"],
 };
 
-/* The prediction demo left the surface on 2026-09-24, so its page is not
-   documented to a person; its text stays below, beside the demo's code, and
-   its address leads to the menu's page. */
-export const PREDICTIONS: DocPage = {
-  slug: "trade/predictions",
+export const TRADE_OVERVIEW: DocPage = {
+  slug: "trade/overview",
   group: "trade",
-  pageId: "predictions",
-  title: { en: "Predictions", uk: "Прогнози" },
+  destination: "spot",
+  title: { en: "Trading: overview", uk: "Торгівля: огляд" },
+  seoTitle: { en: "Trading on Solana: spot, swap, stocks, memes — Ryntra Docs", uk: "Торгівля на Solana — Документація Ryntra" },
   summary: {
-    en: "Markets on outcomes — crypto, finance, politics, sports, world — across the venues that price them, with a plan, a Review and paper trading. Paper trading only: simulated funds, no real money.",
-    uk: "Ринки на події — крипта, фінанси, політика, спорт, світ — по майданчиках, що їх оцінюють, із планом, перевіркою і paper-торгівлею. Лише paper-торгівля: симульовані кошти, без реальних грошей.",
+    en: "Spot, Swap and Markets: crypto, memes and tokenized stocks on Solana, at the market or with a limit, each through the same Review and your signature.",
+    uk: "Спот, Обмін і Ринки в одній групі: крипта, меми й токенізовані акції на Solana, за ринком чи лімітом, кожне через ту саму «Перевірку» і твій підпис.",
   },
   sections: [
-    section("today", "What Predictions does today", "Що Прогнози роблять сьогодні", [
-      p(
-        "A prediction market is a market on an outcome: a share of «Yes» pays $1 if the outcome happens and $0 if it does not, so its price is the market's probability. Predictions lists these markets across the venues that trade them — the same question priced side by side — with search, trending, ending soon, the venues' real categories and your watchlist. A market opens into its outcomes and live probabilities, the change over a day and a week, the volume, the time to resolution, and your paper position.",
-        "Ринок прогнозів — це ринок на подію: частка «Так» виплачує $1, якщо подія стається, і $0, якщо ні, тож її ціна — це ймовірність, яку дає ринок. Прогнози показують такі ринки по майданчиках, де вони торгуються — одне питання, оцінене поруч, — із пошуком, трендом, тими, що скоро завершуються, справжніми категоріями майданчиків і вашим списком відстеження. Ринок відкривається у свої наслідки й живі ймовірності, зміну за день і тиждень, обсяг, час до резолюції та вашу paper-позицію.",
+    section("rows", "The rows of Trading", "Рядки Торгівлі", [
+      table(
+        { en: ["Row", "What it is for"], uk: ["Рядок", "Для чого"] },
+        {
+          en: [
+            ["Spot", "A market's page with its chart, figures and ticket: buy or sell at the market or with a limit, paying or receiving in USDC or SOL"],
+            ["Swap", "One asset for another on Solana in the fewest steps"],
+            ["Markets", "One screener for stocks, private companies, crypto and memes; a company opens its own page with Buy and Sell in dollars"],
+            ["Launch", "Every market launched on Ryntra, and «Launch a token» — see Launch"],
+            ["Perps", "Phoenix's perpetual futures — see Perps"],
+            ["Predictions", "Markets on outcomes through AGG — see Predictions"],
+          ],
+          uk: [
+            ["Спот", "Сторінка ринку з графіком, цифрами й квитком: купити чи продати за ринком або лімітом, платячи чи отримуючи в USDC або SOL"],
+            ["Обмін", "Один актив на інший на Solana за найменше кроків"],
+            ["Ринки", "Один скринер для акцій, приватних компаній, крипти й мемів; компанія відкриває свою сторінку з «Купити» й «Продати» в доларах"],
+            ["Лаунч", "Кожен ринок, запущений на Ryntra, і «Запустити токен» — дивись «Лаунч»"],
+            ["Perps", "Безстрокові ф'ючерси Phoenix — дивись Perps"],
+            ["Прогнози", "Ринки на події через AGG — дивись «Прогнози»"],
+          ],
+        },
       ),
+    ]),
+    section("what", "What you can trade", "Чим можна торгувати", [
       list(
         [
-          "Research: each venue's live price, the price history, related markets, generated signals with the model named, the ripple effect, news, and each venue's own resolution rules and where they differ.",
-          "Market depth: the aggregated order book with each level's venue breakdown, the books by venue, live trades, venue prices and the cross-venue return where the provider computes one.",
-          "A Prediction Plan in three steps — Why, Risk / Money, Conditions — sized on the amount and the entry probability; for a prediction the whole amount is the most you can lose.",
-          "A Review before every paper order: the outcome, what you put on it, what it pays if right, what you lose if wrong, the fees, the quote's age, the venues that fill it, the settlement summary, your plan's conditions and every check. The one action is «Place paper order».",
+          `Crypto — SOL, BTC, ETH, JUP and every Solana token with a market; a major coin carries Ryntra's lowest rate, ${FEES.flow("MAJOR")}.`,
+          `Memes and new tokens — with their liquidity, age, holders and whether Jupiter verifies them shown beside the button; ${FEES.flow("MEME")} until a token is verified and a week old.`,
+          `Tokenized stocks — tokens of xStocks, Backpack and Ondo that track a listed share, and PreStocks tokens of private companies; not shares. A company is bought in dollars from $${PURCHASE.minimum}, at ${FEES.company}.`,
+          "Dollars — USDC, USDT and the other dollars on Solana; a dollar for a dollar carries no Ryntra fee.",
         ],
         [
-          "Дослідження: жива ціна кожного майданчика, історія ціни, пов'язані ринки, згенеровані сигнали з названою моделлю, ефект хвилі, новини, а також власні правила резолюції кожного майданчика і де вони різняться.",
-          "Глибина ринку: агрегована книга ордерів із розкладом кожного рівня по майданчиках, книги по майданчиках, живі угоди, ціни майданчиків і міжмайданчикова дохідність там, де постачальник її обчислює.",
-          "План прогнозу у три кроки — Чому, Ризик / Гроші, Умови — розрахований за сумою і ймовірністю входу; для прогнозу вся сума — найбільше, що можна втратити.",
-          "Перевірка перед кожним paper-ордером: наслідок, скільки ви ставите, скільки він виплатить, якщо праві, скільки втратите, якщо ні, комісії, вік котирування, майданчики, що виконують, підсумок резолюції, умови вашого плану і кожна перевірка. Одна дія — «Розмістити paper-ордер».",
+          `Крипта — SOL, BTC, ETH, JUP і кожен токен Solana, що має ринок; велика монета має найнижчу ставку Ryntra — ${FEES_UK.flow("MAJOR")}.`,
+          `Меми й нові токени — їхня ліквідність, вік, власники й чи верифікує їх Jupiter видно поруч із кнопкою; ${FEES_UK.flow("MEME")}, доки токен не верифіковано й йому не виповнився тиждень.`,
+          `Токенізовані акції — токени xStocks, Backpack і Ondo, що відстежують біржову акцію, і токени PreStocks приватних компаній; це не акції. Компанію купують у доларах від $${PURCHASE.minimum}, за ${FEES_UK.company}.`,
+          "Долари — USDC, USDT та інші долари на Solana; долар на долар комісії Ryntra не має.",
         ],
       ),
-    ]),
-    section("paper", "Paper trading, and what it is not", "Paper-торгівля і чим вона не є", [
-      p(
-        "Predictions runs in paper mode: a paper balance of simulated funds, paper orders, paper positions. A paper order is priced against the venues' live books and filled by the provider's simulator — no venue receives it, no real funds move, and nothing here is a blockchain testnet. Paper figures never enter your real portfolio: Portfolio shows «Paper Predictions» apart, and History tags every paper operation. Live trading in prediction markets is a separate decision that has not been taken.",
-        "Прогнози працюють у paper-режимі: paper-баланс із симульованих коштів, paper-ордери, paper-позиції. Paper-ордер оцінюється за живими книгами майданчиків і виконується симулятором постачальника — жоден майданчик його не отримує, реальні кошти не рухаються, і це не блокчейн-тестнет. Paper-цифри ніколи не потрапляють у ваш реальний портфель: Портфель показує «Paper-прогнози» окремо, а Історія позначає кожну paper-операцію. Live-торгівля на ринках прогнозів — окреме рішення, якого не ухвалено.",
-      ),
       note(
-        "Enabling paper trading takes one signature with your wallet: the provider issues its own sign-in message, your wallet signs it, and Ryntra keeps the provider session on the server behind your account. You never see a second profile, and no token of the provider's reaches your browser.",
-        "Увімкнення paper-торгівлі — один підпис гаманцем: постачальник видає власне повідомлення для входу, гаманець його підписує, а Ryntra тримає сесію постачальника на сервері за вашим акаунтом. Ви ніколи не бачите другого профілю, і жоден токен постачальника не потрапляє у ваш браузер.",
-      ),
-    ]),
-    section("honesty", "What a probability is, and is not", "Чим є ймовірність, а чим ні", [
-      p(
-        "A probability is a price, not a fact about the future. Generated signals are the provider's model's observations — Ryntra names the model and never turns a signal into a «buy». Venues can settle the same question differently; the resolution rules are each venue's own words, shown as such. A thin book moves on small orders; the Review names the venues and the quote's age so you decide on what is actually there.",
-        "Імовірність — це ціна, а не факт про майбутнє. Згенеровані сигнали — спостереження моделі постачальника; Ryntra називає модель і ніколи не перетворює сигнал на «купуй». Майданчики можуть вирішити одне й те саме питання по-різному; правила резолюції — власні слова кожного майданчика, показані як такі. Тонка книга рухається від малих ордерів; перевірка називає майданчики і вік котирування, щоб ви вирішували на підставі того, що є насправді.",
+        "Every trade is routed on Solana — through Jupiter at the market, through Jupiter or a Meteora pool with a limit — and goes through the Review: what leaves, what arrives at least, every cost by name. Your wallet signs; Ryntra never holds the money.",
+        "Кожна угода маршрутизується в Solana — через Jupiter за ринком, через Jupiter чи пул Meteora з лімітом — і проходить «Перевірку»: що спишеться, що надійде щонайменше, кожна витрата на ім'я. Підписує твій гаманець; Ryntra ніколи не тримає грошей.",
       ),
     ]),
   ],
-  related: ["strategies/overview", "manage/portfolio", "reference/statuses"],
+  related: ["trade/spot", "trade/swap", "invest/buy", "reference/fees"],
 };

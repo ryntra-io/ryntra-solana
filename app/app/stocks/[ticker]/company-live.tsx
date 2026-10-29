@@ -1,9 +1,11 @@
 "use client";
 
+import { Button } from "@ryntra/core/ui";
+import Link from "next/link";
 import { useCallback, useEffect, useMemo, useState } from "react";
 
 import { yearRange } from "@/app/app/invest/company-facts-model";
-import { anchorPoints, formatUnits, rangePoints, unitsPhrase } from "@/app/app/invest/company-model";
+import { anchorPoints, rangePoints, unitsPhrase } from "@/app/app/invest/company-model";
 import { investWords, numberLocale } from "@/app/app/invest/invest-words";
 import { WarnSheet, WatchLine } from "@/app/app/invest/position-watch";
 import { MIN_SALE_USD, SALE_SHARE_PRESETS_PCT, type SaleAsset } from "@/app/app/invest/sale-model";
@@ -14,7 +16,6 @@ import type { WorkspaceLocale } from "@/app/shell/locale";
 import type { PositionWatchView } from "@/lib/api/v1/contract";
 import { openSolanaConnection } from "@/app/solana/workspace/connection-trigger.client";
 import { ShareTrade } from "@/app/solana/workspace/rewards/share-trade";
-import { QuickSell } from "@/app/solana/workspace/spot/quick-buy";
 import { formatUsdMoney, formatUsdPrice } from "@/app/solana/workspace/spot/spot-format";
 import { useSpotCandles } from "@/app/solana/workspace/spot/use-spot-data";
 
@@ -99,7 +100,7 @@ export function YearRange({ mint, price, locale }: { mint: string; price: number
 export function YourPosition({ mint, name, price, unit, locale, sale = null }: { mint: string; name: string; price: number | null; unit: "share" | "token"; locale: WorkspaceLocale; sale?: SaleAsset | null }) {
   const word = investWords(locale);
   const numbers = numberLocale(locale);
-  const { holdings } = useWalletData();
+  const { holdings, refresh } = useWalletData();
   const [selling, setSelling] = useState(false);
   /* «Швидкий продаж»: the share pressed and the press's count — the sheet opens on it with its Review. */
   const [quickShare, setQuickShare] = useState<Readonly<{ pct: number; tap: number }> | null>(null);
@@ -163,36 +164,64 @@ export function YourPosition({ mint, name, price, unit, locale, sale = null }: {
     if (held && positionsPhase === "ready" && !watch) reloadPositions(30_000);
   }, [held, positionsPhase, watch, reloadPositions]);
   /* The sale's sheet outlives the block while it is open: a settled sale re-reads the wallet, and the receipt stays on screen while the position is read again — or is gone, all of it sold. */
-  if (!position && !(canSell && selling)) return null;
+  /* A wallet that could not be read is not a wallet without the company: say so, with the way to read it again. */
+  if (!position && !(canSell && selling)) {
+    if (holdings.status !== "error") return null;
+    return (
+      <div className={company.position} data-position="unread" role="status">
+        <span className={company.positionUnits}>{word("walletUnread")}</span>
+        <Button variant="ghost" onClick={refresh} lang={locale === "uk" ? "uk" : "en"}>
+          {word("tryAgain")}
+        </Button>
+      </div>
+    );
+  }
   return (
     <>
       {position ? (
         <div className={company.position} data-position>
           <div className={company.positionText}>
             <span className={company.statLabel}>{word("yourPosition")}</span>
-            <span className={company.positionValue} translate="no">
-              {position.value !== null ? formatUsdMoney(position.value, numbers) : formatUnits(position.amount, numbers)}
-            </span>
+            {/* Without a price the units are the position: said once, not as a bare number over the same number in words. */}
+            {position.value !== null ? (
+              <span className={company.positionValue} translate="no">
+                {formatUsdMoney(position.value, numbers)}
+              </span>
+            ) : null}
             <span className={company.positionUnits}>{unitsPhrase(position.amount, unit, name, locale === "uk" ? "uk" : "en", numbers)}</span>
+            {/* The same position among everything the wallet holds, one press away. */}
+            <Link className={company.positionAll} href="/app/portfolio" prefetch={false}>
+              {word("allInPortfolio")}
+            </Link>
           </div>
           {canSell && !saleInLine ? (
-            <button type="button" className={`rw-btn ${company.sell}`} aria-haspopup="dialog" data-sell-open={selling ? "true" : undefined} onClick={openSale}>
+            <Button variant="secondary" className={company.sell} aria-haspopup="dialog" data-sell-open={selling ? "true" : undefined} onClick={openSale} lang={locale === "uk" ? "uk" : "en"}>
               {word("sell")}
-            </button>
+            </Button>
           ) : null}
         </div>
       ) : null}
       {/* A share of the position in one tap: the same sheet, on that share, with its Review — a share worth under a dollar is not a sale, all of it always is. */}
       {position && canSell && !saleInLine ? (
-        <QuickSell
-          locale={locale === "uk" ? "uk" : "en"}
-          shares={SALE_SHARE_PRESETS_PCT}
-          onPick={sellShare}
-          size="comfort"
-          label
-          disabled={selling}
-          unavailable={(pct) => pct < 100 && position.value !== null && (position.value * pct) / 100 < MIN_SALE_USD}
-        />
+        <div className={company.quickBuy} role="group" aria-label={word("quickSell")}>
+          <span className={company.quickBuyLabel}>{word("quickSell")}</span>
+          <div className={company.quickBuyRow}>
+            {SALE_SHARE_PRESETS_PCT.map((pct) => (
+              <Button
+                key={pct}
+                variant="secondary"
+                aria-haspopup="dialog"
+                aria-label={`${word("sell")} ${pct === 100 ? word("quickSellAll") : `${pct}%`}`}
+                disabled={selling || (pct < 100 && position.value !== null && (position.value * pct) / 100 < MIN_SALE_USD)}
+                onClick={() => sellShare(pct)}
+                lang={locale === "uk" ? "uk" : "en"}
+                data-quick-sell={pct}
+              >
+                {pct === 100 ? word("quickSellAll") : `${pct}${locale === "uk" ? " %" : "%"}`}
+              </Button>
+            ))}
+          </div>
+        </div>
       ) : null}
       {position && watch ? (
         <WatchLine
@@ -211,7 +240,7 @@ export function YourPosition({ mint, name, price, unit, locale, sale = null }: {
 
 /**
  * «Поділитися угодою» on a company's page: a card of the reader's own trade of
- * this company, with their invitation link (the growth module's card). Read
+ * this company, with their invitation link (the Growth line's card). Read
  * again whenever the wallet's position in the company changes — a purchase or
  * a sale settled in the sheets above offers its card at once.
  */

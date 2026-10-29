@@ -5,6 +5,7 @@ import { useEffect, useMemo, useState } from "react";
 
 import type { WorkspaceLocale } from "@/app/shell/locale";
 import { parseDecimalInput } from "@/lib/plans/decimal-input";
+import type { PredictionPlanDraft } from "@/lib/predictions/assistant/draft";
 import type { PredictionEvent, PredictionMarket } from "@/lib/predictions/model";
 import { computePredictionSizing, type PredictionMonitorCondition, type PredictionPlan } from "@/lib/predictions/plan-model";
 
@@ -32,6 +33,7 @@ export function PlanBuilder({
   market,
   outcomeId,
   locale,
+  initial = null,
   onClose,
   onSaved,
 }: {
@@ -39,6 +41,8 @@ export function PlanBuilder({
   market: PredictionMarket;
   outcomeId: string;
   locale: WorkspaceLocale;
+  /** Ryntra's draft to start from: the numbers filled in, the reason left to the person. */
+  initial?: PredictionPlanDraft | null;
   onClose: () => void;
   onSaved: (plan: PredictionPlan) => void;
 }) {
@@ -48,12 +52,14 @@ export function PlanBuilder({
   const [thesis, setThesis] = useState("");
   const [whyNow, setWhyNow] = useState("");
   const [chosenOutcome, setChosenOutcome] = useState(outcome?.id ?? "");
-  const [amount, setAmount] = useState("10");
-  const [entry, setEntry] = useState(outcome?.probability != null ? (outcome.probability * 100).toFixed(1) : "");
-  const [maxProb, setMaxProb] = useState("");
+  const percent = (p: number) => String(Math.round(p * 1000) / 10);
+  const [amount, setAmount] = useState(initial ? String(initial.amountUsd) : "10");
+  const [entry, setEntry] = useState(initial ? percent(initial.entryProbability) : outcome?.probability != null ? (outcome.probability * 100).toFixed(1) : "");
+  const [maxProb, setMaxProb] = useState(initial ? percent(initial.maxProbability) : "");
+  /* The reason the plan is wrong stays the person's to write; Ryntra's draft fills the numbers only. */
   const [invalidation, setInvalidation] = useState("");
-  const [invalidationBelow, setInvalidationBelow] = useState("");
-  const [deadline, setDeadline] = useState(event.endDate ? event.endDate.slice(0, 10) : "");
+  const [invalidationBelow, setInvalidationBelow] = useState(initial?.invalidationBelow != null ? percent(initial.invalidationBelow) : "");
+  const [deadline, setDeadline] = useState(initial?.deadline ? initial.deadline.slice(0, 10) : event.endDate ? event.endDate.slice(0, 10) : "");
   const [monitoring, setMonitoring] = useState<PredictionMonitorCondition[]>([{ metric: "probability", direction: "above", threshold: null, note: null }]);
   const [references, setReferences] = useState("");
   const [assumptions, setAssumptions] = useState("");
@@ -135,6 +141,11 @@ export function PlanBuilder({
             <X size={18} />
           </button>
         </div>
+        {initial ? (
+          <p className={styles.notice} style={{ margin: "var(--ry-s3) var(--ry-s4) 0" }}>
+            {word("planFromRyntra")}
+          </p>
+        ) : null}
         <ol className={styles.steps} aria-label={word("planTitle")}>
           {([word("planWhy"), word("planMoney"), word("planConditions")] as const).map((label, index) => (
             <li key={label}>
@@ -333,7 +344,7 @@ function fromPercent(text: string): number | null {
 }
 
 export function metricWord(metric: PredictionMonitorCondition["metric"], locale: WorkspaceLocale): string {
-  const en: Record<PredictionMonitorCondition["metric"], string> = { probability: "Probability crosses", volume24h: "24h volume moves by", resolution: "Hours before resolution", signal: "Generated signals change", plan: "A plan condition no longer holds" };
-  const uk: Record<PredictionMonitorCondition["metric"], string> = { probability: "Імовірність перетинає", volume24h: "Обсяг за 24 год змінюється на", resolution: "Годин до резолюції", signal: "Змінюються згенеровані сигнали", plan: "Умова плану більше не виконується" };
+  const en: Record<PredictionMonitorCondition["metric"], string> = { probability: "Probability crosses", volume24h: "24h volume moves by", resolution: "Hours before resolution", signal: "Model theses change", plan: "A plan condition no longer holds" };
+  const uk: Record<PredictionMonitorCondition["metric"], string> = { probability: "Імовірність перетинає", volume24h: "Обсяг за 24 год змінюється на", resolution: "Годин до резолюції", signal: "Змінюються тези моделі", plan: "Умова плану більше не виконується" };
   return (locale === "uk" ? uk : en)[metric];
 }

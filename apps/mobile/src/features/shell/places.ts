@@ -1,92 +1,81 @@
 /**
- * What each place holds a tap deeper, pure — the current menu on a phone,
- * the web's own (`app/shell/domains.ts`).
+ * What the places hold a tap deeper, pure — beside Menu 3 (`menu.ts`, decision 55):
  *
- * - **Головна** — «Що змінилося»: the command-centre Home (what needs
- *   a look, the plans, the watchlist's moves, the markets' movers, the brief).
- * - **Ринки** — one screener for every asset (`features/markets/screener.ts`).
- * - **Портфель** — beside the positions: Боти (what runs on the person's
- *   rule) and Історія, as the web's Позиції · Історія.
- * - **Ще** — Торгувати · Боти · Гроші · Винагороди · Ryntra · Налаштування,
- *   each with the web's caption; «Гроші» holds Поповнити · Надіслати ·
- *   Отримати · Між мережами, the web's tabs, and the payment link beside
- *   Отримати.
+ * - **Головна** — its account, «Усього», four actions and the person's
+ *   blocks; «Вхідні» there holds «Що змінилося», the command-centre Home of
+ *   M10 (what needs a look, the plans, the watchlist's moves, the movers).
+ * - **Торгівля** — Ринки, one screener for every asset (`features/markets/screener.ts`), and Обмін.
+ * - **Гроші** — Поповнити · Надіслати · Отримати · Між мережами, the core's four large actions (`menu.ts`).
+ * - **Портфель** — beside the positions: Ордери, Боти (what runs on the
+ *   person's rule), Історія and Квитанції.
+ * - **Меню** — Menu 3: the core's groups with the rows that live in the phone, Налаштування and Допомога at its
+ *   foot (`menu.ts`).
  *
  * A door opens the phone's own screen where the phone has one. A page only the
- * web has built opens ryntra.io and says so — never a dead row. Pools and
- * Perps are not rows until their tasks are on production.
+ * web has built opens the site and says so — never a dead row: a door to a
+ * product whose address does not answer yet is not drawn (`MENU_LIVE`).
  */
 
 import type { Copy } from '../../lib/i18n.ts'
+import { PAYMENTS_PATH, TRADE_PATH } from './shell.ts'
 
-/** Where a door leads: a screen of the phone, a sheet over the place, or a page only ryntra.io has built. */
+/** Where a door leads: a screen of the phone, a sheet over the place, a page of ryntra.io, or another of Ryntra's sites. */
 export type PlaceDestination =
   | Readonly<{ kind: 'screen'; path: string }>
   | Readonly<{ kind: 'sheet'; sheet: 'top-up' }>
   | Readonly<{ kind: 'web'; path: string }>
+  | Readonly<{ kind: 'site'; url: string }>
 
-/** Home's one door a tap deeper: the command-centre Home — what changed and what needs a look. */
+/** «Вхідні»'s door a tap deeper: M10's Home — what changed and what needs a look. */
 export const CHANGES_PATH = '/changes'
 
 /** «Боти»: everything that runs on the person's rule. */
 export const BOTS_PATH = '/bots'
 /** «Боти → Каталог». */
 export const BOTS_CATALOG_PATH = '/bots?tab=catalog'
-/** «Гроші»: one screen of four doors and the payment link. */
-export const MONEY_PATH = '/money'
+/** «Гроші» — the place of the bar; `/money` is its older address. */
+export const MONEY_PATH = PAYMENTS_PATH
 /** «Налаштування»: the wallet, its monitoring, the look and the language. */
 export const SETTINGS_PATH = '/settings'
+/**
+ * Whether this build shows «Прогнози» (M12). The release 1.17.0 carries the assistant and Phoenix's trades and hides
+ * them: no segment, no menu row, no screen — their links
+ * open on the web. The code stays whole; the second release turns this on.
+ */
+export const PREDICTIONS_LIVE: boolean = false
+/** «Торгівля → Прогнози» (M12) and its account's money — the live USDC on Solana that AGG holds. */
+export const PREDICTIONS_PATH = `${TRADE_PATH}?seg=predictions`
+export const PREDICTIONS_MONEY_PATH = '/predictions/money'
+/** «Вхідні»: the wallet's notes, what needs attention and what is watched. */
+export const INBOX_PATH = '/monitoring'
+/** «Допомога»: Ryntra's documentation on the site. */
+export const HELP_URL = 'https://ryntra.io/docs'
 
-/** «Ще»'s rows, in the web's order: the sections the bar does not hold, then Ryntra and the settings. */
-export const MORE_ROWS = ['trade', 'bots', 'money', 'rewards', 'ryntra', 'settings'] as const
-export type MoreRow = (typeof MORE_ROWS)[number]
+/** Portfolio's segments (NEW-LOOK §3): Активи · Ордери · Історія. */
+export const PORTFOLIO_SEGMENTS = ['assets', 'orders', 'history'] as const
+export type PortfolioSegment = (typeof PORTFOLIO_SEGMENTS)[number]
 
-/** «Гроші»: the web's tabs Поповнити · Надіслати · Отримати · Між мережами, the payment link beside Отримати. */
-export const MONEY_PAGES = ['topUp', 'send', 'receive', 'link', 'bridge'] as const
-export type MoneyPage = (typeof MONEY_PAGES)[number]
-
-/** Portfolio's doors beside the positions: Боти · Історія (plans and their results live in «Боти»). */
-export const PORTFOLIO_DOORS = ['bots', 'history', 'receipts'] as const
+/** Portfolio's doors under the assets: Боти · Квитанції (plans and their results live in «Боти»). */
+export const PORTFOLIO_DOORS = ['bots', 'receipts'] as const
 export type PortfolioDoor = (typeof PORTFOLIO_DOORS)[number]
 
-/** Where each door of «Ще», «Гроші» and Portfolio leads. Between networks is the web's page; the rest are the phone's. */
-export const DOOR_DESTINATIONS: Readonly<Record<MoreRow | MoneyPage | PortfolioDoor, PlaceDestination>> = {
-  trade: { kind: 'screen', path: '/trade' },
+/** Where each of Portfolio's doors leads — the phone's own screens. */
+export const DOOR_DESTINATIONS: Readonly<Record<PortfolioDoor, PlaceDestination>> = {
   bots: { kind: 'screen', path: BOTS_PATH },
-  money: { kind: 'screen', path: MONEY_PATH },
-  rewards: { kind: 'screen', path: '/rewards' },
-  ryntra: { kind: 'screen', path: '/ryn' },
-  settings: { kind: 'screen', path: SETTINGS_PATH },
-  topUp: { kind: 'sheet', sheet: 'top-up' },
-  send: { kind: 'screen', path: '/money/send' },
-  receive: { kind: 'screen', path: '/money/receive' },
-  link: { kind: 'screen', path: '/money/receive?tab=link' },
-  bridge: { kind: 'web', path: '/app/bridge' },
-  history: { kind: 'screen', path: '/history' },
   receipts: { kind: 'screen', path: '/receipts' },
-}
-
-/** Every door the places draw a tap deeper, with where it leads — what a test reads to prove the reach. */
-export function placeDoors(): readonly Readonly<{ place: string; door: string; destination: PlaceDestination }>[] {
-  return [
-    { place: 'home', door: 'changes', destination: { kind: 'screen', path: CHANGES_PATH } },
-    ...PORTFOLIO_DOORS.map((door) => ({ place: 'portfolio', door, destination: DOOR_DESTINATIONS[door] })),
-    ...MORE_ROWS.map((door) => ({ place: 'more', door, destination: DOOR_DESTINATIONS[door] })),
-    ...MONEY_PAGES.map((door) => ({ place: 'money', door, destination: DOOR_DESTINATIONS[door] })),
-  ]
 }
 
 export type PlacesCopy = Readonly<{
   whatChanged: string
-  /** A row of «Ще»: its name and the line under it — the web's caption; the settings carry none. */
-  rows: Readonly<Record<MoreRow, Readonly<{ label: string; caption: string | null }>>>
   doors: Readonly<Record<PortfolioDoor, string>>
-  /** «Між мережами» — the web's tab; the other money words are `MONEY_COPY`'s. */
-  bridge: string
+  segments: Readonly<Record<PortfolioSegment, string>>
   /** A count beside «Боти»: «2 активні». */
   active: (count: number) => string
   /** What a screen reader hears on a door that leaves the app for ryntra.io. */
   onWeb: string
+  /** …and on a door to a site opened in the browser. */
+  inBrowser: string
+  /** The asset's door to its purchase-and-sale sheet (`/trade`) — named by what it does, not «Spot» (ST-4). */
   openInSpot: string
   createPlan: string
   watchAdd: string
@@ -98,43 +87,29 @@ export type PlacesCopy = Readonly<{
 export const PLACES_COPY: Copy<PlacesCopy> = {
   en: {
     whatChanged: 'What changed',
-    rows: {
-      trade: { label: 'Trade', caption: 'Spot and swap' },
-      bots: { label: 'Bots', caption: 'Recurring buys, plans' },
-      money: { label: 'Money', caption: 'Top up and transfers' },
-      rewards: { label: 'Rewards', caption: 'Points, leaderboards, season' },
-      ryntra: { label: 'Ryntra', caption: 'AI assistant' },
-      settings: { label: 'Settings', caption: null },
-    },
-    doors: { bots: 'Bots', history: 'History', receipts: 'Receipts' },
-    bridge: 'Cross-chain',
+    doors: { bots: 'Bots', receipts: 'Receipts' },
+    segments: { assets: 'Assets', orders: 'Orders', history: 'History' },
     active: (count) => `${count} active`,
     onWeb: 'opens ryntra.io',
-    openInSpot: 'Open in Spot',
+    inBrowser: 'opens in the browser',
+    openInSpot: 'Trade',
     createPlan: 'Create plan',
-    watchAdd: 'Add to watchlist',
-    watchRemove: 'Remove from watchlist',
-    watchFull: (limit) => `The watchlist keeps up to ${limit} assets.`,
+    watchAdd: 'Add to Favourites',
+    watchRemove: 'Remove from Favourites',
+    watchFull: (limit) => `Favourites keep up to ${limit} assets.`,
   },
   uk: {
     whatChanged: 'Що змінилося',
-    rows: {
-      trade: { label: 'Торгувати', caption: 'Спот і обмін' },
-      bots: { label: 'Боти', caption: 'Регулярна купівля, плани' },
-      money: { label: 'Гроші', caption: 'Поповнення й перекази' },
-      rewards: { label: 'Винагороди', caption: 'Бали, таблиці, сезон' },
-      ryntra: { label: 'Ryntra', caption: 'ШІ-помічник' },
-      settings: { label: 'Налаштування', caption: null },
-    },
-    doors: { bots: 'Боти', history: 'Історія', receipts: 'Квитанції' },
-    bridge: 'Між мережами',
+    doors: { bots: 'Боти', receipts: 'Квитанції' },
+    segments: { assets: 'Активи', orders: 'Ордери', history: 'Історія' },
     active: (count) => `${count} ${activeWord(count)}`,
     onWeb: 'відкриває ryntra.io',
-    openInSpot: 'Відкрити в Споті',
+    inBrowser: 'відкривається в браузері',
+    openInSpot: 'Торгувати',
     createPlan: 'Створити план',
-    watchAdd: 'Додати в обране',
-    watchRemove: 'Прибрати з обраного',
-    watchFull: (limit) => `В обраному — до ${limit} активів.`,
+    watchAdd: 'Додати в Обране',
+    watchRemove: 'Прибрати з Обраного',
+    watchFull: (limit) => `В Обраному — до ${limit} активів.`,
   },
 }
 

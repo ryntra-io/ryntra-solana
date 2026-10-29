@@ -19,7 +19,8 @@ import { maskWallet } from "./business.ts";
  * masked address on one row, never a thread.
  */
 
-export const FEEDBACK_TOPICS = ["question", "idea", "bug", "security"] as const;
+/** «report» (MC-1): a report on a launched token from its page — read first, as security is. */
+export const FEEDBACK_TOPICS = ["question", "idea", "bug", "security", "report"] as const;
 export type FeedbackTopic = (typeof FEEDBACK_TOPICS)[number];
 
 export function isFeedbackTopic(value: unknown): value is FeedbackTopic {
@@ -28,7 +29,10 @@ export function isFeedbackTopic(value: unknown): value is FeedbackTopic {
 
 /** The inbox's own category for a topic — its check constraint knows four words. */
 export function inboxCategoryFor(topic: FeedbackTopic): "bug" | "idea" | "security" | "other" {
-  return topic === "question" ? "other" : topic;
+  if (topic === "question") return "other";
+  /* A report on a token may be content that harms people: the inbox reads it first. */
+  if (topic === "report") return "security";
+  return topic;
 }
 
 const BASE58_ADDRESS = /^[1-9A-HJ-NP-Za-km-z]{32,44}$/;

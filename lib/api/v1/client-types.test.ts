@@ -40,12 +40,64 @@ import type {
   LaunchClaimReceiptSchema,
   CreatorEarningsCardSchema,
   LaunchCreatorCabinetResponseSchema,
+  LaunchCreatorProfileResponseSchema,
+  LaunchStatsResponseSchema,
   LaunchClaimBuildRequestSchema,
   LaunchClaimBuildResponseSchema,
+  LaunchClaimReviewResponseSchema,
+  LaunchPairWatchSchema,
   LaunchClaimSubmitRequestSchema,
   LaunchClaimSubmitResponseSchema,
+  LaunchTransferFeeBuildRequestSchema,
+  LaunchTransferFeeBuildResponseSchema,
+  LaunchTransferFeeResponseSchema,
+  TeamRolesResponseSchema,
+  TeamsResponseSchema,
+  TeamCreateRequestSchema,
+  TeamResponseSchema,
+  TeamInviteRequestSchema,
+  TeamMemberChangeRequestSchema,
+  TeamMemberChangeResponseSchema,
+  TeamTreasuryRequestSchema,
+  TeamCheckResponseSchema,
+  LaunchTransferFeeSubmitRequestSchema,
+  LaunchTransferFeeSubmitResponseSchema,
   LaunchJournalResponseSchema,
   LaunchMarketsResponseSchema,
+  /* 1.56.0 — Формати запуску 2 */
+  LaunchAdvancedChoiceSchema,
+  LaunchAdvancedTermsSchema,
+  LaunchAdvancedBoundsSchema,
+  LaunchBoostBoundsSchema,
+  LaunchEarlyAccessBoundsSchema,
+  LaunchAdvancedConfigBuildRequestSchema,
+  LaunchAdvancedConfigBuildResponseSchema,
+  LaunchAdvancedConfigSubmitRequestSchema,
+  LaunchAdvancedConfigSubmitResponseSchema,
+  LaunchBoostRulesSchema,
+  LaunchBoostBuildRequestSchema,
+  LaunchBoostBuildResponseSchema,
+  LaunchBoostSubmitRequestSchema,
+  LaunchBoostSubmitResponseSchema,
+  LaunchBoostPayoutBuildRequestSchema,
+  LaunchBoostPayoutBuildResponseSchema,
+  LaunchBoostPayoutSubmitRequestSchema,
+  LaunchBoostPayoutSubmitResponseSchema,
+  LaunchBoostViewSchema,
+  LaunchEarlyAccessRulesSchema,
+  LaunchEarlyAccessBuildRequestSchema,
+  LaunchEarlyAccessBuildResponseSchema,
+  LaunchEarlyAccessSubmitRequestSchema,
+  LaunchEarlyAccessSubmitResponseSchema,
+  LaunchEarlyAccessDepositBuildRequestSchema,
+  LaunchEarlyAccessDepositBuildResponseSchema,
+  LaunchEarlyAccessDepositSubmitRequestSchema,
+  LaunchEarlyAccessDepositSubmitResponseSchema,
+  LaunchEarlyAccessActionBuildRequestSchema,
+  LaunchEarlyAccessActionBuildResponseSchema,
+  LaunchEarlyAccessActionSubmitRequestSchema,
+  LaunchEarlyAccessActionSubmitResponseSchema,
+  LaunchEarlyAccessViewSchema,
   LaunchMarketCardResponseSchema,
   LaunchMarketHealthResponseSchema,
 } from "./contract.ts";
@@ -95,6 +147,15 @@ import type {
   AgentBriefResponseSchema,
   AgentBriefSchema,
   AgentBudgetStateSchema,
+  AssistantCreditEntrySchema,
+  AssistantCreditOrderRequestSchema,
+  AssistantCreditOrderResponseSchema,
+  AssistantCreditOrderSchema,
+  AssistantCreditOrdersResponseSchema,
+  AssistantCreditPackageSchema,
+  AssistantCreditPurchaseSchema,
+  AssistantCreditsResponseSchema,
+  AssistantCreditsSchema,
   AgentCardSchema,
   AgentCriticResponseSchema,
   AgentCriticSchema,
@@ -102,12 +163,47 @@ import type {
   AgentLensRequestSchema,
   AgentMessageRequestSchema,
   AgentMessageResponseSchema,
+  AgentGuestRequestSchema,
+  AgentGuestResponseSchema,
+  AssistantBriefResponseSchema,
+  AssistantBriefUpdateSchema,
+  AssistantWatchCreateSchema,
+  AssistantWatchesResponseSchema,
+  AssistantWatchSchema,
+  AssistantWatchUpdateSchema,
+  AssistantProfileResponseSchema,
+  AssistantProfileSchema,
+  AssistantProfileUpdateSchema,
+  AssistantMemoryNoteSchema,
+  AssistantMemoryResponseSchema,
+  AssistantMemoryUpdateSchema,
+  AssistantWalletPictureSchema,
+  AssistantTaskAskSchema,
+  AssistantTaskSchema,
+  AssistantTasksResponseSchema,
+  AssistantTaskCreateSchema,
+  AssistantTaskUpdateSchema,
+  AssistantPushStateSchema,
+  AssistantPushLatestSchema,
+  AssistantVoiceRequestSchema,
+  AssistantVoiceResponseSchema,
+  AssistantPlanSchema,
+  AssistantPlanResponseSchema,
+  AssistantPlansResponseSchema,
+  AssistantPlanCreateSchema,
+  AssistantPlanUpdateSchema,
+  AssistantPlanRecheckSchema,
+  AssistantPlanStateRequestSchema,
+  AgentSessionListResponseSchema,
   AgentSessionOpenRequestSchema,
   AgentSessionResponseSchema,
+  AgentSessionSummarySchema,
   AgentSuggestionsResponseSchema,
   AgentTurnSchema,
   AddressEvidenceReadSchema,
   ApiErrorSchema,
+  AuthorityMatrixV1Schema,
+  AuthorityRowV1Schema,
   CapabilitiesSchema,
   ChallengeRequestSchema,
   ChallengeResponseSchema,
@@ -138,6 +234,8 @@ import type {
   PlanVersionResponseSchema,
   RevokeResponseSchema,
   SessionResponseSchema,
+  SeekerCheckResponseSchema,
+  SeekerTokenSchema,
   TradingPlanSchema,
   VerifyRequestSchema,
   VerifyResponseSchema,
@@ -231,6 +329,7 @@ import type {
   PredictionsPlanResponseSchema,
   PredictionsWatchlistResponseSchema,
   PredictionLinkChallengeSchema,
+  PredictionsLinkStartRequestSchema,
   PredictionsLinkVerifyRequestSchema,
   PredictionsQuoteRequestSchema,
   PredictionsOrdersRequestSchema,
@@ -238,6 +337,8 @@ import type {
   PredictionsPlanRequestSchema,
   PredictionsPlanStatusRequestSchema,
   PredictionsWatchlistRequestSchema,
+  MarketEventSchema,
+  MarketEventsResponseSchema,
 } from "./contract.ts";
 
 type Mutual<A, B> = [A] extends [B] ? ([B] extends [A] ? true : never) : never;
@@ -252,6 +353,12 @@ export type Checks = [
   Same<z.input<typeof VerifyRequestSchema>, Client.VerifyRequest>,
   Same<z.output<typeof VerifyResponseSchema>, Client.VerifyResponse>,
   Same<z.output<typeof SessionResponseSchema>, Client.SessionResponse>,
+  /* 1.68.0 — «Події ринку» */
+  Same<z.output<typeof MarketEventSchema>, Client.MarketEvent>,
+  Same<z.output<typeof MarketEventsResponseSchema>, Client.MarketEventsResponse>,
+  /* 1.66.0 — «Перевірено Seeker» */
+  Same<z.output<typeof SeekerTokenSchema>, Client.SeekerToken>,
+  Same<z.output<typeof SeekerCheckResponseSchema>, Client.SeekerCheckResponse>,
   Same<z.output<typeof RevokeResponseSchema>, Client.RevokeResponse>,
   Same<z.output<typeof WatchlistResponseSchema>, Client.WatchlistResponse>,
   Same<z.input<typeof WatchlistPutRequestSchema>, Client.WatchlistPutRequest>,
@@ -292,10 +399,59 @@ export type Checks = [
   /* 1.8.0 — the agent: the bodies of its routes, the turn and the cards */
   Same<z.input<typeof AgentSessionOpenRequestSchema>, Client.AgentSessionOpenRequest>,
   Same<z.output<typeof AgentSessionResponseSchema>, Client.AgentSessionResponse>,
+  /* 1.43.0 */
+  Same<z.output<typeof AgentSessionSummarySchema>, Client.AgentSessionSummary>,
+  Same<z.output<typeof AgentSessionListResponseSchema>, Client.AgentSessionListResponse>,
+  Same<z.input<typeof AgentGuestRequestSchema>, Client.AgentGuestRequest>,
+  Same<z.output<typeof AgentGuestResponseSchema>, Client.AgentGuestResponse>,
+  Same<z.output<typeof AssistantBriefResponseSchema>, Client.AssistantBriefResponse>,
+  Same<z.input<typeof AssistantBriefUpdateSchema>, Client.AssistantBriefUpdate>,
+  /* 1.57.0 — token watches */
+  Same<z.output<typeof AssistantWatchSchema>, Client.AssistantWatch>,
+  Same<z.output<typeof AssistantWatchesResponseSchema>, Client.AssistantWatchesResponse>,
+  Same<z.input<typeof AssistantWatchCreateSchema>, Client.AssistantWatchCreate>,
+  Same<z.input<typeof AssistantWatchUpdateSchema>, Client.AssistantWatchUpdate>,
+  /* 1.58.0 — «Знайомство» */
+  Same<z.output<typeof AssistantProfileSchema>, Client.AssistantProfile>,
+  Same<z.output<typeof AssistantProfileResponseSchema>, Client.AssistantProfileResponse>,
+  Same<z.input<typeof AssistantProfileUpdateSchema>, Client.AssistantProfileUpdate>,
+  Same<z.output<typeof AssistantMemoryNoteSchema>, Client.AssistantMemoryNote>,
+  Same<z.output<typeof AssistantWalletPictureSchema>, Client.AssistantWalletPicture>,
+  Same<z.output<typeof AssistantMemoryResponseSchema>, Client.AssistantMemoryResponse>,
+  Same<z.input<typeof AssistantMemoryUpdateSchema>, Client.AssistantMemoryUpdate>,
+  Same<z.output<typeof AssistantTaskAskSchema>, Client.AssistantTaskAsk>,
+  Same<z.output<typeof AssistantTaskSchema>, Client.AssistantTask>,
+  Same<z.output<typeof AssistantTasksResponseSchema>, Client.AssistantTasksResponse>,
+  Same<z.input<typeof AssistantTaskCreateSchema>, Client.AssistantTaskCreate>,
+  Same<z.input<typeof AssistantTaskUpdateSchema>, Client.AssistantTaskUpdate>,
+  Same<z.output<typeof AssistantPushStateSchema>, Client.AssistantPushState>,
+  Same<z.output<typeof AssistantPushLatestSchema>, Client.AssistantPushLatest>,
+  /* 1.63.0 — voice heard on the server */
+  Same<z.input<typeof AssistantVoiceRequestSchema>, Client.AssistantVoiceRequest>,
+  Same<z.output<typeof AssistantVoiceResponseSchema>, Client.AssistantVoiceResponse>,
+  /* 1.61.0 — the trade plan and its critic */
+  Same<z.output<typeof AssistantPlanSchema>, Client.AssistantPlan>,
+  Same<z.output<typeof AssistantPlanResponseSchema>, Client.AssistantPlanResponse>,
+  Same<z.output<typeof AssistantPlansResponseSchema>, Client.AssistantPlansResponse>,
+  Same<z.input<typeof AssistantPlanCreateSchema>, Client.AssistantPlanCreate>,
+  Same<z.input<typeof AssistantPlanUpdateSchema>, Client.AssistantPlanUpdate>,
+  Same<z.input<typeof AssistantPlanRecheckSchema>, Client.AssistantPlanRecheck>,
+  Same<z.input<typeof AssistantPlanStateRequestSchema>, Client.AssistantPlanStateRequest>,
   Same<z.input<typeof AgentMessageRequestSchema>, Client.AgentMessageRequest>,
   Same<z.output<typeof AgentMessageResponseSchema>, Client.AgentMessageResponse>,
   Same<z.output<typeof AgentDraftResponseSchema>, Client.AgentDraftResponse>,
   Same<z.output<typeof AgentBudgetStateSchema>, Client.AgentBudgetState>,
+  /* 1.52.0 — the assistant's credits */
+  Same<z.output<typeof AssistantCreditsSchema>, Client.AssistantCredits>,
+  Same<z.output<typeof AssistantCreditEntrySchema>, Client.AssistantCreditEntry>,
+  Same<z.output<typeof AssistantCreditsResponseSchema>, Client.AssistantCreditsResponse>,
+  /* 1.54.0 — buying credits */
+  Same<z.output<typeof AssistantCreditPackageSchema>, Client.AssistantCreditPackage>,
+  Same<z.output<typeof AssistantCreditPurchaseSchema>, Client.AssistantCreditPurchase>,
+  Same<z.output<typeof AssistantCreditOrderSchema>, Client.AssistantCreditOrder>,
+  Same<z.output<typeof AssistantCreditOrderResponseSchema>, Client.AssistantCreditOrderResponse>,
+  Same<z.output<typeof AssistantCreditOrdersResponseSchema>, Client.AssistantCreditOrdersResponse>,
+  Same<z.input<typeof AssistantCreditOrderRequestSchema>, Client.AssistantCreditOrderRequest>,
   Same<z.output<typeof AgentSuggestionsResponseSchema>, Client.AgentSuggestionsResponse>,
   Same<z.output<typeof AgentTurnSchema>, Client.AgentTurn>,
   Same<z.output<typeof AgentCardSchema>, Client.AgentCard>,
@@ -394,6 +550,7 @@ export type Checks = [
   Same<z.output<typeof PredictionsPlanResponseSchema>, Client.PredictionsPlanResponse>,
   Same<z.output<typeof PredictionsWatchlistResponseSchema>, Client.PredictionsWatchlistResponse>,
   Same<z.output<typeof PredictionLinkChallengeSchema>, Client.PredictionLinkChallenge>,
+  Same<z.input<typeof PredictionsLinkStartRequestSchema>, Client.PredictionsLinkStartRequest>,
   Same<z.input<typeof PredictionsLinkVerifyRequestSchema>, Client.PredictionsLinkVerifyRequest>,
   Same<z.input<typeof PredictionsQuoteRequestSchema>, Client.PredictionsQuoteRequest>,
   Same<z.input<typeof PredictionsOrdersRequestSchema>, Client.PredictionsOrdersRequest>,
@@ -404,7 +561,7 @@ export type Checks = [
 ];
 
 /* Every entry must be `true`; a `never` anywhere fails this assignment. */
-export const checks: Checks = [true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true];
+export const checks: Checks = [true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true];
 
 /* 1.22.0 — «Гроші» for the phone: the client's mirror of every new shape, both directions. */
 export type MoneyChecks = [
@@ -486,6 +643,55 @@ export type LaunchClientChecks = [
 
 export const launchClientChecks: LaunchClientChecks = [true, true, true, true, true, true, true, true, true, true, true, true];
 
+/* 1.56.0 — Формати запуску 2: «Розширений», «Спільнота», Launch Boost and early access, both directions. */
+export type LaunchFormatsClientChecks = [
+  Same<z.output<typeof LaunchAdvancedChoiceSchema>, Client.LaunchAdvancedChoice>,
+  Same<z.output<typeof LaunchAdvancedTermsSchema>, Client.LaunchAdvancedTerms>,
+  Same<z.output<typeof LaunchAdvancedBoundsSchema>, Client.LaunchAdvancedBounds>,
+  Same<z.output<typeof LaunchBoostBoundsSchema>, Client.LaunchBoostBounds>,
+  Same<z.output<typeof LaunchEarlyAccessBoundsSchema>, Client.LaunchEarlyAccessBounds>,
+  /* the optional fields of 1.56.0, each checked whole */
+  Same<NonNullable<z.output<typeof LaunchPresetsResponseSchema>["formats"]>, NonNullable<Client.LaunchPresetsResponse["formats"]>>,
+  Same<NonNullable<z.output<typeof LaunchPresetsResponseSchema>["communities"]>, NonNullable<Client.LaunchPresetsResponse["communities"]>>,
+  Same<NonNullable<z.output<typeof LaunchTokenResponseSchema>["advanced"]>, NonNullable<Client.LaunchTokenResponse["advanced"]>>,
+  Same<NonNullable<z.output<typeof LaunchTokenResponseSchema>["pair"]>, NonNullable<Client.LaunchTokenResponse["pair"]>>,
+  Same<Pick<z.input<typeof LaunchQuoteRequestSchema>, "pairMint" | "advancedConfig">, Pick<Client.LaunchQuoteRequest, "pairMint" | "advancedConfig">>,
+  Same<Pick<z.input<typeof LaunchBuildRequestSchema>, "pairMint" | "advancedConfig">, Pick<Client.LaunchBuildRequest, "pairMint" | "advancedConfig">>,
+  Same<z.input<typeof LaunchAdvancedConfigBuildRequestSchema>, Client.LaunchAdvancedConfigBuildRequest>,
+  Same<z.output<typeof LaunchAdvancedConfigBuildResponseSchema>, Client.LaunchAdvancedConfigBuildResponse>,
+  Same<z.input<typeof LaunchAdvancedConfigSubmitRequestSchema>, Client.LaunchAdvancedConfigSubmitRequest>,
+  Same<z.output<typeof LaunchAdvancedConfigSubmitResponseSchema>, Client.LaunchAdvancedConfigSubmitResponse>,
+  Same<z.output<typeof LaunchBoostRulesSchema>, Client.LaunchBoostRules>,
+  Same<z.input<typeof LaunchBoostRulesSchema>, Client.LaunchBoostRulesInput>,
+  Same<z.input<typeof LaunchBoostBuildRequestSchema>, Client.LaunchBoostBuildRequest>,
+  Same<z.output<typeof LaunchBoostBuildResponseSchema>, Client.LaunchBoostBuildResponse>,
+  Same<z.input<typeof LaunchBoostSubmitRequestSchema>, Client.LaunchBoostSubmitRequest>,
+  Same<z.output<typeof LaunchBoostSubmitResponseSchema>, Client.LaunchBoostSubmitResponse>,
+  Same<z.input<typeof LaunchBoostPayoutBuildRequestSchema>, Client.LaunchBoostPayoutBuildRequest>,
+  Same<z.output<typeof LaunchBoostPayoutBuildResponseSchema>, Client.LaunchBoostPayoutBuildResponse>,
+  Same<z.input<typeof LaunchBoostPayoutSubmitRequestSchema>, Client.LaunchBoostPayoutSubmitRequest>,
+  Same<z.output<typeof LaunchBoostPayoutSubmitResponseSchema>, Client.LaunchBoostPayoutSubmitResponse>,
+  Same<z.output<typeof LaunchBoostViewSchema>, Client.LaunchBoostView>,
+  Same<z.output<typeof LaunchEarlyAccessRulesSchema>, Client.LaunchEarlyAccessRules>,
+  Same<z.input<typeof LaunchEarlyAccessRulesSchema>, Client.LaunchEarlyAccessRulesInput>,
+  Same<z.input<typeof LaunchEarlyAccessBuildRequestSchema>, Client.LaunchEarlyAccessBuildRequest>,
+  Same<z.output<typeof LaunchEarlyAccessBuildResponseSchema>, Client.LaunchEarlyAccessBuildResponse>,
+  Same<z.input<typeof LaunchEarlyAccessSubmitRequestSchema>, Client.LaunchEarlyAccessSubmitRequest>,
+  Same<z.output<typeof LaunchEarlyAccessSubmitResponseSchema>, Client.LaunchEarlyAccessSubmitResponse>,
+  Same<z.input<typeof LaunchEarlyAccessDepositBuildRequestSchema>, Client.LaunchEarlyAccessDepositBuildRequest>,
+  Same<z.output<typeof LaunchEarlyAccessDepositBuildResponseSchema>, Client.LaunchEarlyAccessDepositBuildResponse>,
+  Same<z.input<typeof LaunchEarlyAccessDepositSubmitRequestSchema>, Client.LaunchEarlyAccessDepositSubmitRequest>,
+  Same<z.output<typeof LaunchEarlyAccessDepositSubmitResponseSchema>, Client.LaunchEarlyAccessDepositSubmitResponse>,
+  Same<z.input<typeof LaunchEarlyAccessActionBuildRequestSchema>, Client.LaunchEarlyAccessActionBuildRequest>,
+  Same<z.output<typeof LaunchEarlyAccessActionBuildResponseSchema>, Client.LaunchEarlyAccessActionBuildResponse>,
+  Same<z.input<typeof LaunchEarlyAccessActionSubmitRequestSchema>, Client.LaunchEarlyAccessActionSubmitRequest>,
+  Same<z.output<typeof LaunchEarlyAccessActionSubmitResponseSchema>, Client.LaunchEarlyAccessActionSubmitResponse>,
+  Same<z.output<typeof LaunchEarlyAccessViewSchema>, Client.LaunchEarlyAccessViewResponse>,
+  Same<NonNullable<z.output<typeof CapabilitiesSchema>["launch"]>, NonNullable<Client.Capabilities["launch"]>>,
+];
+
+export const launchFormatsClientChecks: LaunchFormatsClientChecks = [true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true];
+
 /* 1.27.0 — a launch's market and trading on it: the client's mirror of every new shape, both directions. */
 export type LaunchMarketClientChecks = [
   Same<z.output<typeof LaunchTradeRowSchema>, Client.LaunchTradeRow>,
@@ -513,13 +719,17 @@ export type LaunchCabinetClientChecks = [
   Same<z.output<typeof LaunchClaimReceiptSchema>, Client.LaunchClaimReceipt>,
   Same<z.output<typeof CreatorEarningsCardSchema>, Client.CreatorEarningsCard>,
   Same<z.output<typeof LaunchCreatorCabinetResponseSchema>, Client.LaunchCreatorCabinetResponse>,
+  Same<z.output<typeof LaunchStatsResponseSchema>, Client.LaunchStatsResponse>,
+  Same<z.output<typeof LaunchCreatorProfileResponseSchema>, Client.LaunchCreatorProfileResponse>,
   Same<z.input<typeof LaunchClaimBuildRequestSchema>, Client.LaunchClaimBuildRequest>,
   Same<z.output<typeof LaunchClaimBuildResponseSchema>, Client.LaunchClaimBuildResponse>,
+  Same<z.output<typeof LaunchClaimReviewResponseSchema>, Client.LaunchClaimReviewResponse>,
+  Same<z.output<typeof LaunchPairWatchSchema>, Client.LaunchPairWatch>,
   Same<z.input<typeof LaunchClaimSubmitRequestSchema>, Client.LaunchClaimSubmitRequest>,
   Same<z.output<typeof LaunchClaimSubmitResponseSchema>, Client.LaunchClaimSubmitResponse>,
 ];
 
-export const launchCabinetClientChecks: LaunchCabinetClientChecks = [true, true, true, true, true, true, true, true, true];
+export const launchCabinetClientChecks: LaunchCabinetClientChecks = [true, true, true, true, true, true, true, true, true, true, true, true, true];
 
 /* 1.36.0 — the markets launched on Ryntra, a market's card, its health, and the flight log whose entries gain what governs them: both directions. */
 export type LaunchMarketsClientChecks = [
@@ -530,3 +740,38 @@ export type LaunchMarketsClientChecks = [
 ];
 
 export const launchMarketsClientChecks: LaunchMarketsClientChecks = [true, true, true, true];
+
+/* 1.67.0 — the capability and authority matrix (EXE-1): both directions. */
+export type AuthorityClientChecks = [
+  Same<z.output<typeof AuthorityRowV1Schema>, Client.AuthorityRowV1>,
+  Same<z.output<typeof AuthorityMatrixV1Schema>, Client.AuthorityMatrixV1>,
+  Same<NonNullable<z.output<typeof CapabilitiesSchema>["authority"]>, NonNullable<Client.Capabilities["authority"]>>,
+];
+
+export const authorityClientChecks: AuthorityClientChecks = [true, true, true];
+
+/* 1.72.0 — «Комісія за переказ» (SOL-L10): the cycle, the timeline and the creator's two steps, both directions. */
+export type LaunchTransferFeeClientChecks = [
+  Same<z.output<typeof LaunchTransferFeeResponseSchema>, Client.LaunchTransferFeeResponse>,
+  Same<z.input<typeof LaunchTransferFeeBuildRequestSchema>, Client.LaunchTransferFeeBuildRequest>,
+  Same<z.output<typeof LaunchTransferFeeBuildResponseSchema>, Client.LaunchTransferFeeBuildResponse>,
+  Same<z.input<typeof LaunchTransferFeeSubmitRequestSchema>, Client.LaunchTransferFeeSubmitRequest>,
+  Same<z.output<typeof LaunchTransferFeeSubmitResponseSchema>, Client.LaunchTransferFeeSubmitResponse>,
+];
+
+export const launchTransferFeeClientChecks: LaunchTransferFeeClientChecks = [true, true, true, true, true];
+
+/* 1.75.0 — a team's roles and rights (TEAM-1): both directions. */
+export type TeamClientChecks = [
+  Same<z.output<typeof TeamRolesResponseSchema>, Client.TeamRolesResponse>,
+  Same<z.output<typeof TeamsResponseSchema>, Client.TeamsResponse>,
+  Same<z.input<typeof TeamCreateRequestSchema>, Client.TeamCreateRequest>,
+  Same<z.output<typeof TeamResponseSchema>, Client.TeamResponse>,
+  Same<z.input<typeof TeamInviteRequestSchema>, Client.TeamInviteRequest>,
+  Same<z.input<typeof TeamMemberChangeRequestSchema>, Client.TeamMemberChangeRequest>,
+  Same<z.output<typeof TeamMemberChangeResponseSchema>, Client.TeamMemberChangeResponse>,
+  Same<z.input<typeof TeamTreasuryRequestSchema>, Client.TeamTreasuryRequest>,
+  Same<z.output<typeof TeamCheckResponseSchema>, Client.TeamCheckResponse>,
+];
+
+export const teamClientChecks: TeamClientChecks = [true, true, true, true, true, true, true, true, true];

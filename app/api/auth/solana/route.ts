@@ -3,7 +3,8 @@ import { isAddress } from "@solana/kit";
 import { z } from "zod";
 
 import { accountByWallet, accountWalletLink, accountResolveSolana, sessionOpen, sessionResolve, sessionRevoke } from "@/lib/account/rpc";
-import { WALLET_PROOF_TTL_S, WALLET_SIGNIN_TTL_S, cookieBase } from "@/lib/auth/account-session";
+import { CUSTOMER_SESSION_TTL_S, WALLET_PROOF_TTL_S, WALLET_SIGNIN_TTL_S, cookieBase } from "@/lib/auth/account-session";
+import { LINKED_WALLET_COOKIE, linkProvesFor } from "@/lib/account/wallet-session";
 import { buildSiwsInput, siwsMessageText, verifySiws, type SiwsAction } from "@/lib/auth/siws";
 import { issueWalletNonce, walletNonceIssuedHere } from "@/lib/auth/wallet-nonce";
 import { consumeLoginNonce } from "@/lib/beta/rpc";
@@ -27,19 +28,22 @@ export const dynamic = "force-dynamic";
  *        becomes a formality it can satisfy.
  * `POST` verifies the signed message and then does one of two things —
  *        `prove` opens a wallet-proof session (the `rw` cookie: private server
- *        history for that address, nothing more), `link` additionally binds the
- *        proven address to the account signed in right now.
+ *        history for that address, nothing more), `link` binds the proven
+ *        address to the account signed in right now. A linked wallet is the
+ *        proof for that account's session for as long as both last (decision
+ *        62, SOL-W3: `readWalletProof`), so `link` opens no `rw` of its own —
+ *        a separate 24-hour proof beside it would outlive an unlink.
  *
  * `signin` is a separate, purpose-bound SIWS action that resolves an account
  * and issues a recorded customer session. That session names the address it
  * signed with and is itself the proof of that address on every page
  * (`readWalletProof`), so a person signs once per visit, not once per page;
  * it lives as long as an email sign-in and is renewed while in use.
- * `prove` still creates no account: the web asks for it only from a person
- * already signed in by another door, and a person with no account signs in
- * instead. A connected wallet in the browser proves nothing until it signs; a
- * signature over anything but this server's message for this nonce is
- * refused. Nothing here touches a transaction.
+ * `prove` still creates no account: the web no longer asks for it — a person
+ * signed in by another door links the wallet once instead (SOL-W3), and a
+ * person with no account signs in. A connected wallet in the browser proves
+ * nothing until it signs; a signature over anything but this server's message
+ * for this nonce is refused. Nothing here touches a transaction.
  *
  * THE NONCE IS CHECKED TWICE, FOR TWO DIFFERENT PROPERTIES — see
  * `app/api/auth/wallet/route.ts`: issuance (HMAC tag) first, then single use
@@ -154,11 +158,29 @@ export async function POST(req: NextRequest) {
   if (!verified.ok) return fail("verification failed", 401);
   const address = verified.address;
 
+  /* A recorded session of a door that proves its links (email, Google,
+     Telegram OpenID — `linkProvesFor`) proves the wallet from here on. Any
+     other session that links — a bot link, a wallet sign-in linking a second
+     wallet, a legacy stateless token — reads no proof from the link, so it
+     keeps the short `rw` proof beside it, as before (SOL-W3). */
+  const linkProves = body.action === "link" && Boolean(session?.sessionId) && Boolean(session?.method && linkProvesFor(session.method));
   if (body.action === "link") {
     if (!session?.accountId) return fail("unauthorized", 401);
+    /* One owner per wallet: a wallet another account holds is refused here
+       and proves nothing for this one (`wallet_taken`). */
     const linked = await accountWalletLink(session.accountId, "solana", address);
     if (!linked.ok) {
       return fail(linked.error, linked.error === "wallet_taken" ? 409 : linked.error === "unavailable" ? 503 : 400);
+    }
+    /* The account's session is the proof from here on. A `rw` this browser
+       still holds (an older `prove`) is read before it and could name another
+       address, so it is closed — after the link, so a refused link costs
+       nobody their proof; the cookie goes either way below, and a row the
+       store could not close ends on its own within a day. */
+    const previous = linkProves ? verifySession(req.cookies.get("rw")?.value ?? "") : null;
+    if (previous && !previous.admin && previous.subject.kind === "session") {
+      const outcome = await sessionResolve(previous.subject.sessionId, false);
+      if (outcome.status === "ok" && outcome.session.kind === "wallet") await sessionRevoke(outcome.session.id, "replaced");
     }
   }
 
@@ -192,10 +214,11 @@ export async function POST(req: NextRequest) {
      signed with, and «sign out everywhere» closes it with the account. A
      separate `rw` beside it would be a second, account-less credential that
      outlives that sign-out, so a sign-in issues none (and the replaced one
-     above is gone). `prove` and `link` still open the short `rw` proof. */
+     above is gone); a link issues none either — the account's session proves
+     a linked wallet. Only `prove` opens the short `rw` proof. */
   let proof: { id: string; expiresAt: string } | null = null;
   let token: string | null = null;
-  if (!customer) {
+  if (body.action === "prove" || (body.action === "link" && !linkProves)) {
     proof = await sessionOpen({
       kind: "wallet",
       method: "solana_siws",
@@ -230,10 +253,15 @@ export async function POST(req: NextRequest) {
   }
   await verifiedPresence;
 
-  const res = NextResponse.json({ ok: true, address, expiresAt: customer?.expiresAt ?? proof?.expiresAt ?? null, linked: body.action === "link", signedIn: body.action === "signin" }, { headers: privateNoStoreHeaders() });
+  const res = NextResponse.json({ ok: true, address, expiresAt: customer?.expiresAt ?? proof?.expiresAt ?? (linkProves ? session?.expiresAt ?? null : null), linked: body.action === "link", signedIn: body.action === "signin" }, { headers: privateNoStoreHeaders() });
+  if (linkProves) {
+    res.cookies.delete("rw");
+    res.cookies.set(LINKED_WALLET_COOKIE, address, { ...cookieBase(req.url), maxAge: CUSTOMER_SESSION_TTL_S });
+  }
   if (customerToken) {
     res.cookies.set("rt", customerToken, { ...cookieBase(req.url), maxAge: WALLET_SIGNIN_TTL_S });
     res.cookies.delete("rw");
+    res.cookies.delete(LINKED_WALLET_COOKIE);
   }
   if (token) res.cookies.set("rw", token, { ...cookieBase(req.url), maxAge: WALLET_PROOF_TTL_S });
   return res;

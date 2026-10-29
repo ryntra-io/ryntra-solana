@@ -4,6 +4,7 @@ import {
   formatUsdMicros,
   rewardEntryKey,
   rewardEntryPrefix,
+  rewardEntryRefOf,
   RewardEntrySchema,
   type RewardEntry,
   type RewardType,
@@ -81,7 +82,7 @@ export async function recordRewards(
   let existing = 0;
   for (const entry of entries) {
     const parsed = RewardEntrySchema.parse(entry);
-    const key = rewardEntryKey({ recipient: parsed.recipient, type: parsed.type, ref });
+    const key = rewardEntryKey({ recipient: parsed.recipient, type: parsed.type, ref: rewardEntryRefOf(parsed, ref) });
     const inserted = await collection.insertIfAbsent(key, parsed);
     if (inserted) created.push(parsed);
     else existing += 1;
@@ -136,6 +137,9 @@ export function totalRewards(entries: readonly RewardEntry[]): RewardTotals {
     if (entry.type === "CASHBACK" || entry.type === "REFERRAL_L1" || entry.type === "REFERRAL_L2") {
       bySource[entry.type] += value;
     }
+    /* The cancellation of «First $10 back» takes back cashback, and an appeal that wins gives it back: the cashback
+       source moves with them. */
+    if (entry.type === "ADJUSTMENT" && (entry.window === "FIRST_TEN_VOID" || entry.window === "FIRST_TEN_REINSTATED")) bySource.CASHBACK += value;
   }
   return {
     entitledUsdMicros: entitled,
@@ -198,7 +202,8 @@ export async function ensureRewardAccount(
        `account.directReferrals + 1` was `NaN`, and the write that carried it
        was rejected — which is how a referral count silently stayed at zero. */
     if (found) return RewardAccountSchema.parse(found);
-    /* A collision is astronomically unlikely at 128 bits and is still handled:
+    /* A collision is unlikely at ~58.85 bits (`referral.ts`: a chance of about
+       one in a million at a million codes) and is still handled:
        the code index is the authority, and losing that insert means minting
        again rather than two people sharing one link. */
     const code = mintReferralCode();
@@ -621,7 +626,8 @@ export function effectiveRewardEntries(entries: readonly RewardEntry[]): readonl
   }
   return entries.filter(entry => !entry.valuationOf).map(entry => {
     if (entry.usdMicros !== null || !entry.source) return entry;
-    const key = rewardEntryKey({ recipient: entry.recipient, type: entry.type, ref: `${entry.source.mechanism}:${entry.source.operationRef}` });
+    /* A row keyed beside another on the same fee (the rest of «First $10 back») is matched under its own key. */
+    const key = rewardEntryKey({ recipient: entry.recipient, type: entry.type, ref: rewardEntryRefOf(entry, `${entry.source.mechanism}:${entry.source.operationRef}`) });
     const adjustment = valued.get(key);
     if (!adjustment || adjustment.recipient !== entry.recipient || adjustment.valuationOf?.type !== entry.type
       || adjustment.shareRaw !== entry.shareRaw || adjustment.source?.grossRaw !== entry.source.grossRaw
@@ -630,13 +636,31 @@ export function effectiveRewardEntries(entries: readonly RewardEntry[]): readonl
   });
 }
 
-/** Counts are a projection of bindings, including a binding whose edge index
- * write was interrupted. Only two aggregate numbers leave the server. */
+/**
+ * How many people this wallet brought, at each level — two prefix reads of its own edges, never every account.
+ *
+ * The edges are the graph indexed by inviter (`linkReferralEdge`): written with each binding, moved with each change,
+ * and re-asserted by `reconcileReferralEdges` on every Rewards read of either party — the wallet's own read runs it
+ * just before this one. A binding whose edge write was interrupted therefore shows here as soon as the friend opens
+ * «Винагороди» or trades again; until then the figure is one short — a display figure, never money (shares follow
+ * the account's `referrer`, not the edges). A wallet counted at both levels is counted once, at the first.
+ * Only two aggregate numbers leave the server.
+ */
 export async function readReferralCounts(store: GuardStore, wallet: string): Promise<Readonly<{ level1: number; level2: number }>> {
-  const records = (await store.collection<RewardAccount>(ACCOUNTS).valuesWithPrefix("")).map(row => RewardAccountSchema.parse(row));
-  const direct = new Set(records.filter(row => row.referrer === wallet && row.wallet !== wallet).map(row => row.wallet));
-  const indirect = new Set(records.filter(row => row.referrer && direct.has(row.referrer) && row.wallet !== wallet && !direct.has(row.wallet)).map(row => row.wallet));
+  const edges = store.collection<{ wallet: string; level: number }>(EDGES);
+  const [first, second] = await Promise.all([edges.valuesWithPrefix(`${wallet}:L1:`), edges.valuesWithPrefix(`${wallet}:L2:`)]);
+  const direct = new Set(first.filter(edge => edge.level === 1 && edge.wallet !== wallet).map(edge => edge.wallet));
+  const indirect = new Set(second.filter(edge => edge.level === 2 && edge.wallet !== wallet && !direct.has(edge.wallet)).map(edge => edge.wallet));
   return { level1: direct.size, level2: indirect.size };
+}
+
+/**
+ * The wallets that confirmed this one as their inviter — the first level only,
+ * read from the referral graph by its inviter (one prefix, not every account).
+ */
+export async function readDirectReferrals(store: GuardStore, wallet: string): Promise<ReadonlySet<string>> {
+  const edges = await store.collection<{ wallet: string; level: number }>(EDGES).valuesWithPrefix(`${wallet}:L1:`);
+  return new Set(edges.filter(edge => edge.level === 1 && edge.wallet !== wallet).map(edge => edge.wallet));
 }
 
 /** A one-line operator summary. Never shown to a customer. */

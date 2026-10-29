@@ -1,5 +1,5 @@
 /**
- * A company's facts at rest — the pure half (the web's,
+ * A company's facts at rest — the pure half (M23; the web's,
  * its `company-facts-model.ts` and
  * `company-facts-blocks.tsx`).
  *
@@ -17,7 +17,7 @@
  * The web reads the company's SEC figures, its industry and «Про компанію»'s
  * lines from files of its own (`lib/stocks/company-facts.data.ts`,
  * `company-profiles.ts`, `company-sectors.ts`) — no route serves them, so the
- * phone says nothing in their place.
+ * phone asks line A for them (request 37) and says nothing in their place.
  * No fetch, no clock, no React.
  */
 
@@ -40,16 +40,20 @@ const UNITS: readonly Readonly<{ size: number; en: string; uk: string }>[] = [
 
 /* ---- figures ---- */
 
-/** «$5,44 трлн» · «$303 млрд» · «$16,3 млн» · «$912 тис.» · «$41» — three significant figures at most, a minus for a loss. */
+/**
+ * «$5,44 трлн» · «$303 млрд» · «$16,3 млн» · «$912 тис.» · «$41» · «$0,20» — three significant figures in a short unit,
+ * always the same count (ST-5 r8: «$3.2M» beside «$3.19M» read as two precisions — now «$3.20M»), whole dollars under a
+ * thousand, cents under a dollar («$0,20», never «$0,2»); a minus for a loss.
+ */
 export function moneyShort(value: number | null | undefined, locale: Locale): string | null {
   if (!isFiniteNumber(value)) return null
   const abs = Math.abs(value)
   const unit = UNITS.find((entry) => abs >= entry.size) ?? null
   const scaled = unit ? abs / unit.size : abs
-  const digits = scaled >= 100 ? 0 : scaled >= 10 ? 1 : 2
+  const digits = unit ? (scaled >= 100 ? 0 : scaled >= 10 ? 1 : 2) : scaled >= 1 ? 0 : 2
   const text = new Intl.NumberFormat(numberTag(locale), {
-    minimumFractionDigits: 0,
-    maximumFractionDigits: unit ? digits : scaled >= 1 ? 0 : 2,
+    minimumFractionDigits: digits,
+    maximumFractionDigits: digits,
   }).format(scaled)
   return `${value < 0 ? '−' : ''}$${text}${unit ? unit[locale] : ''}`
 }
@@ -72,31 +76,41 @@ export function pctShort(value: number | null | undefined, locale: Locale): stri
 
 /* ---- days ---- */
 
-/** «26 вер. 2026 р.» · «Sep 26, 2026» — a day as a source dated it, read in UTC (no clock). */
+const EN_MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'] as const
+
+/**
+ * English's one day shape, day first as the rest of the app writes it (`formatDay`: «14 Sep»): «26 Sep 2026» —
+ * spelt from its own months, since an engine's en-GB may say «Sept».
+ */
+const enDay = (day: number, month: number, year: number): string => `${day} ${EN_MONTHS[month]} ${year}`
+
+/** «26 вер. 2026 р.» · «26 Sep 2026» — a day as a source dated it, read in UTC (no clock). */
 export function dayShort(iso: string | null | undefined, locale: Locale): string | null {
   if (!iso) return null
   const at = Date.parse(iso)
   if (!Number.isFinite(at)) return null
-  return new Intl.DateTimeFormat(numberTag(locale), {
+  const date = new Date(at)
+  if (locale === 'en') return enDay(date.getUTCDate(), date.getUTCMonth(), date.getUTCFullYear())
+  return new Intl.DateTimeFormat('uk-UA', {
     day: 'numeric',
     month: 'short',
     year: 'numeric',
     timeZone: 'UTC',
-  }).format(new Date(at))
+  }).format(date)
 }
 
 /** «30 бер. 2026 р.» · «30 Mar 2026» — a chart's day, day first as the rest of the app writes it, with its year. */
 export function chartDay(atMs: number, locale: Locale): string {
-  return new Intl.DateTimeFormat(locale === 'uk' ? 'uk-UA' : 'en-GB', {
+  const date = new Date(atMs)
+  if (locale === 'en') return enDay(date.getDate(), date.getMonth(), date.getFullYear())
+  return new Intl.DateTimeFormat('uk-UA', {
     day: 'numeric',
     month: 'short',
     year: 'numeric',
-  }).format(new Date(atMs))
+  }).format(date)
 }
 
-const EN_MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'] as const
-
-/** «12.06.2026» · «Jun 12, 2026» — a recorded day of a company's path, `YYYY-MM-DD` or a full time read in UTC. */
+/** «12.06.2026» · «12 Jun 2026» — a recorded day of a company's path, `YYYY-MM-DD` or a full time read in UTC; English day first, as `chartDay`. */
 export function pathDay(iso: string, locale: Locale): string | null {
   const at = new Date(/^\d{4}-\d{2}-\d{2}$/.test(iso) ? `${iso}T00:00:00.000Z` : iso)
   if (!Number.isFinite(at.getTime())) return null
@@ -104,7 +118,7 @@ export function pathDay(iso: string, locale: Locale): string | null {
   const month = at.getUTCMonth()
   const year = at.getUTCFullYear()
   if (locale === 'uk') return `${String(day).padStart(2, '0')}.${String(month + 1).padStart(2, '0')}.${year}`
-  return `${EN_MONTHS[month]} ${day}, ${year}`
+  return enDay(day, month, year)
 }
 
 /* ---- the head: the ticker on its exchange, the industry ---- */
@@ -128,6 +142,62 @@ export function exchangeShort(exchange: Readonly<{ mic: string; name: string }> 
   return null
 }
 
+/** The cities of the exchanges' clocks, as a person says «New York time» — the English, and the Ukrainian «час …». */
+const EXCHANGE_CITIES: Readonly<Record<string, Readonly<{ en: string; uk: string }>>> = {
+  'America/New_York': { en: 'New York', uk: 'Нью-Йорка' },
+  'America/Chicago': { en: 'Chicago', uk: 'Чикаго' },
+  'America/Toronto': { en: 'Toronto', uk: 'Торонто' },
+  'Europe/London': { en: 'London', uk: 'Лондона' },
+  'Europe/Berlin': { en: 'Frankfurt', uk: 'Франкфурта' },
+  'Asia/Hong_Kong': { en: 'Hong Kong', uk: 'Гонконгу' },
+  'Asia/Tokyo': { en: 'Tokyo', uk: 'Токіо' },
+}
+
+/**
+ * The exchange's clock in words — «New York time» · «час Нью-Йорка» — in
+ * place of its time-zone ID; a zone not named here keeps its city, never the
+ * ID's region. Null without a zone.
+ */
+export function exchangeClock(timezone: string | null | undefined, locale: Locale): string | null {
+  if (!timezone) return null
+  const known = EXCHANGE_CITIES[timezone]
+  if (known) return locale === 'uk' ? `час ${known.uk}` : `${known.en} time`
+  const city = timezone.split('/').pop()?.replace(/_/g, ' ').trim()
+  if (!city || !/^[A-Za-z][A-Za-z .'-]*$/.test(city)) return null
+  return locale === 'uk' ? `час міста ${city}` : `${city} time`
+}
+
+/** The venues by their families, as they name themselves — the pool's slug says the family first. */
+const VENUE_NAMES: Readonly<Record<string, string>> = {
+  raydium: 'Raydium',
+  orca: 'Orca',
+  meteora: 'Meteora',
+  pumpswap: 'PumpSwap',
+  pump: 'Pump.fun',
+  phoenix: 'Phoenix',
+  openbook: 'OpenBook',
+  lifinity: 'Lifinity',
+  fluxbeam: 'FluxBeam',
+  saber: 'Saber',
+  solfi: 'SolFi',
+  invariant: 'Invariant',
+  crema: 'Crema',
+  stabble: 'Stabble',
+  obric: 'Obric',
+  goosefx: 'GooseFX',
+  byreal: 'Byreal',
+}
+
+/**
+ * The venue a pool stands on, by its name — «raydium-clmm» is «Raydium»; an
+ * unknown slug's first word, capitalised. Null without one.
+ */
+export function venueName(dex: string | null | undefined): string | null {
+  const family = dex?.trim().toLowerCase().split(/[-_\s.]+/)[0] ?? ''
+  if (!family) return null
+  return VENUE_NAMES[family] ?? `${family.charAt(0).toUpperCase()}${family.slice(1)}`
+}
+
 /** When a private token's company went public, by its path: the IPO's day — only while the path names a swap. */
 export function publicSinceOf(path: CompanyPath | null | undefined): string | null {
   if (!path?.swap) return null
@@ -147,7 +217,7 @@ export type CompanyHead = Readonly<{
 
 /**
  * Who the company is, under its name (the web's head): the ticker on its
- * exchange — the industry once the contract serves it — for a
+ * exchange — the industry once the contract serves it (request 37) — for a
  * listed company; «Приватна компанія» for a private one, or, once it has gone
  * public and its token waits to be swapped, what the token is: «SPACEX · токен
  * PreStocks».
@@ -193,7 +263,7 @@ export type CompanyFact = Readonly<{ key: string; label: string; value: string; 
  * «Ключові показники» for a private company: PreStocks' own valuation of it and
  * the one the token's price implies, each under its issuer's name and the
  * time Ryntra read it. The listed company's figures from its SEC filings wait
- * for the contract.
+ * for the contract (request 37).
  */
 export function privateStats(
   mark: Readonly<{
@@ -220,8 +290,8 @@ export function privateStats(
 /**
  * «Про компанію» as far as the contract says it: a private company's status,
  * a listed one's exchange and ticker. What the company does, its industry, its
- * headquarters, its fiscal year and its latest report are the web's own files,
- * not served by the contract.
+ * headquarters, its fiscal year and its latest report are the web's own files
+ * — request 37.
  */
 export function aboutFacts(head: CompanyHead, words: CompanyCopy): CompanyFact[] {
   const facts: CompanyFact[] = []
@@ -390,22 +460,26 @@ export function tradingDay(
   }
 }
 
-/* ---- the price over the year ---- */
+/* ---- the price over half a year ---- */
 
 const DAY_MS = 86_400_000
-const YEAR_MS = 365 * DAY_MS
+/**
+ * The span the price range covers: half a year — all the daily bars the candles route serves (183; `lib/chart.ts`
+ * `DAILY_BARS_SERVED`). Called a year, it said «since 20 Apr» of a token on Solana since 2025. A year again once
+ * line A serves one (request in the handoff).
+ */
+const YEAR_MS = 183 * DAY_MS
 
 export type LinePoint = Readonly<{ at: number; price: number }>
 
 /**
- * The year's daily closes, oldest first, anchored to the page's price — the
- * chart is one pool's history, and its last trade can sit a per cent away from
- * the venue's price the page shows, so every point keeps its ratio to the last
- * and the line ends where the page's price stands (the web's `anchorPoints`).
+ * The half year's daily closes, oldest first, as the pool closed them. A close of a past day is history: it is never
+ * scaled to the live price (ST-5 — scaled, «the lowest close on 29 Jul» moved with every tick of the price). Only the
+ * last bar, the day still forming, moves.
  */
-export function yearPoints(candles: readonly Candle[], price: number | null, nowMs: number): LinePoint[] {
+export function yearPoints(candles: readonly Candle[], nowMs: number): LinePoint[] {
   const from = nowMs - YEAR_MS
-  const points = candles
+  return candles
     .map((candle) => ({ at: candle.time * 1000, price: candle.close }))
     .filter(
       (point) =>
@@ -416,10 +490,6 @@ export function yearPoints(candles: readonly Candle[], price: number | null, now
         point.at <= nowMs + 60_000,
     )
     .sort((a, b) => a.at - b.at)
-  const last = points[points.length - 1]?.price ?? null
-  if (!isFiniteNumber(price) || price <= 0 || last === null || last <= 0) return points
-  const scale = price / last
-  return points.map((point) => ({ at: point.at, price: point.price * scale }))
 }
 
 export type YearRange = Readonly<{
@@ -434,9 +504,10 @@ export type YearRange = Readonly<{
 }>
 
 /**
- * The lowest and highest point of the year's line with the live price, which
- * is part of the year, and where the price stands between them. Fewer than two
- * points say nothing.
+ * The lowest and highest daily close of the half year's line with the live
+ * price, which is part of it, and where the price stands between them — read
+ * from daily closes, and labelled so («Найвище закриття дня»), since a month's
+ * four-hour closes can reach past them. Fewer than two points say nothing.
  */
 export function yearRange(points: readonly LinePoint[], price: number | null, nowMs: number): YearRange | null {
   const from = nowMs - YEAR_MS
@@ -462,7 +533,10 @@ export function yearRange(points: readonly LinePoint[], price: number | null, no
   }
 }
 
-/** A history that starts well inside the year says since when (the web's 330 days). */
+/**
+ * A history that starts well inside the half year says since when — a tenth of the span is a quiet pool's slack, as
+ * the chart's own (`historyStartsLate`); the route's full 183 bars never do.
+ */
 export function yearStartsLate(range: YearRange, nowMs: number): boolean {
-  return range.since > nowMs - 330 * DAY_MS
+  return range.since > nowMs - YEAR_MS * 0.9
 }

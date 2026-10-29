@@ -49,7 +49,7 @@ test("the transaction and submit routes refuse cross-site calls, pay only as the
   const submit = code("lib/pay/transaction.ts");
   assert.match(submit, /actual !== expectedMessageHash/, "the submit boundary compares the signed message hash to the pinned one");
   /* Phantom recompiles the message with a ComputeBudget pair and Lighthouse
-     guards before signing; a second test wallet was refused as "a
+     guards before signing; the founder's second wallet was refused as "a
      different transaction". A mismatch must go through the Send lane's shared
      comparison, which admits only those recognised additions. */
   assert.match(submit, /compareWalletTransaction\(\{[\s\S]*expectsTokenGuard: tolerance\.expectsTokenGuard/);
@@ -75,7 +75,7 @@ test("proof of ownership resolves the wallet through the registry that actually 
      looked only at the never-shipped `navigator.wallets.get()` draft and at a
      global nothing wrote to. It must consult the event-based registry first. */
   const signIn = code("lib/solana/wallet-signin.client.ts");
-  assert.match(signIn, /import \{ registeredWallet, withWalletPromptTimeout \} from "\.\/wallet\.client"/);
+  assert.match(signIn, /import \{[^}]*\bregisteredWallet\b[^}]*\} from "\.\/wallet\.client(\.ts)?"/);
   assert.match(signIn, /const fromRegistry = registeredWallet\(name\)/);
   assert.match(code("lib/solana/wallet.client.ts"), /export function registeredWallet\(name: string\)/);
 });

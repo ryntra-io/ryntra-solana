@@ -121,6 +121,12 @@ export const SOLANA_BRIDGE_NETWORK_STATE_ENV = {
  */
 export const SOLANA_CROSS_SWAP_NETWORK_STATE_ENV = {
   robinhood: "RYNTRA_SOLANA_CROSS_SWAP_ROBINHOOD_STATE",
+  /* A new network on a proven rail, as a destination only (2026-10-15). The
+     controlled operation above is pinned to another pair and carries no fee, so
+     this one has no canary: it opens only when somebody sets it to `OPEN` on
+     purpose — for the first signed swap, read back from both chains — and is
+     paused again by setting it to anything else. */
+  arc: "RYNTRA_SOLANA_CROSS_SWAP_ARC_STATE",
 } as const;
 
 export type SolanaGatedCrossSwapNetwork = keyof typeof SOLANA_CROSS_SWAP_NETWORK_STATE_ENV;

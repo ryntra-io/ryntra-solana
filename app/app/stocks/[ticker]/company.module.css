@@ -13,6 +13,8 @@
   gap: var(--ry-s5);
   width: 100%;
   min-width: 0;
+  max-width: 1280px;
+  margin-inline: auto;
   container: company / inline-size;
 }
 
@@ -173,6 +175,16 @@
   overflow-wrap: anywhere;
 }
 
+/* The token under the company's name: its symbol, its issuer, not a share (UX-502). */
+.tokenLine {
+  margin: 0;
+  font-size: var(--ry-fs-dense);
+  font-weight: 600;
+  line-height: var(--ry-lh-body);
+  color: var(--ry-text);
+  overflow-wrap: anywhere;
+}
+
 /* A private company's line: what the token is not, before any figure. */
 .warning,
 .sheetWarning {
@@ -224,6 +236,56 @@
   margin: 0;
 }
 
+/* A private company's strongest risks under its truth in the sheet, before any sum (UX-500). */
+.sheetWarning > .sheetRisk {
+  margin-top: var(--ry-s2);
+  padding-top: var(--ry-s2);
+  border-top: 1px solid color-mix(in srgb, var(--ry-caution) 30%, transparent);
+  font-weight: 600;
+}
+
+/* The phone's pinned purchase (UX-501): over the bottom bar while the card's own «Купити» is out of sight. */
+.buyWrap {
+  display: grid;
+  min-width: 0;
+}
+
+.buyAnchor {
+  display: block;
+  height: 0;
+}
+
+.pinnedBuy,
+.pinnedSpace {
+  display: none;
+}
+
+@media (max-width: 1023px) {
+  .pinnedBuy {
+    position: fixed;
+    inset: auto 0 calc(var(--sol-phonebar-h, 64px) + env(safe-area-inset-bottom, 0px));
+    z-index: 30;
+    display: block;
+    padding: var(--ry-s2) var(--ry-s3);
+    border-top: 1px solid var(--ry-border);
+    background: var(--ry-bg);
+  }
+
+  .pinnedBuy[data-hidden] {
+    display: none;
+  }
+
+  .pinnedBuy :global(.ryntra-button) {
+    min-height: 48px;
+  }
+
+  /* The page's end clears the pinned purchase, so the last card is never under it. */
+  .pinnedSpace {
+    display: block;
+    height: 72px;
+  }
+}
+
 /* A holder's one action and the quiet second, right under the event — «Купити» steps back to quiet for a holder, so the screen keeps one orange action. */
 .eventActions {
   display: flex;
@@ -244,6 +306,75 @@
   .eventActions > .quietButton {
     width: 100%;
   }
+}
+
+/* ── A token's issuer event, on a page of its own (UX-503) ─────────────── */
+
+/* One card and its head: a column in the middle, never a strip across a wide screen. */
+.eventPage {
+  max-width: 640px; /* width-law: one event card with one action */
+  margin-inline: auto;
+}
+
+.eventCard {
+  display: grid;
+  gap: var(--ry-s4);
+  padding: var(--ry-s4);
+  border: 1px solid color-mix(in srgb, var(--ry-risk) 55%, transparent);
+  border-radius: var(--ry-r-card);
+  background: var(--ry-card);
+}
+
+@media (min-width: 720px) {
+  .eventCard {
+    padding: var(--ry-s5);
+  }
+}
+
+/* The deadline in red, first: what happens to the token if nothing is done. */
+.eventDeadline {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--ry-s2);
+  margin: 0;
+  padding: var(--ry-s3);
+  border-radius: var(--ry-r-chip);
+  background: var(--ry-risk-soft);
+  font-size: var(--ry-fs-copy);
+  font-weight: 600;
+  line-height: var(--ry-lh-body);
+  color: var(--ry-text);
+  text-wrap: pretty;
+}
+
+.eventDeadline > svg {
+  flex: 0 0 auto;
+  margin-top: 0.15em;
+  color: var(--ry-risk);
+}
+
+.eventTruth,
+.eventSource {
+  margin: 0;
+  font-size: var(--ry-fs-dense);
+  line-height: var(--ry-lh-body);
+  color: var(--ry-muted);
+}
+
+.eventSource {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--ry-s1) var(--ry-s3);
+}
+
+.eventSource > a {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--ry-s1);
+  min-height: 24px;
+  color: var(--ry-text);
+  text-decoration: underline;
+  text-underline-offset: 2px;
 }
 
 /* ── «Шлях компанії» ────────────────────────────────────────────────── */
@@ -583,7 +714,7 @@ a.pathChip:focus-visible {
 
 .chart {
   position: relative;
-  height: 180px;
+  height: 220px;
   margin-top: var(--ry-s4);
   color: var(--ry-muted);
   /* A finger reads the line sideways and still scrolls the page up and down. */
@@ -638,51 +769,19 @@ a.pathChip:focus-visible {
   color: var(--ry-risk);
 }
 
-.chart[data-state="ready"] {
-  cursor: crosshair;
-}
-
-.chartSvg {
-  display: block;
-  width: 100%;
+/* The line is the core's compact area chart (CH-17): it fills the box, its readout and its source line inside. */
+.chart .coreLine {
   height: 100%;
-  overflow: visible;
 }
 
-.line {
-  stroke: currentColor;
-  stroke-width: 2;
-  stroke-linejoin: round;
-  stroke-linecap: round;
+/* The plot takes the box's height, the source line under it keeps its own. */
+.chart .coreLine :global(.ryntra-mini__plot) {
+  flex: 1 1 auto;
+  height: auto;
+  min-height: 120px;
 }
 
-.baseline {
-  stroke: var(--ry-border-strong);
-  stroke-width: 1;
-  stroke-dasharray: 3 5;
-}
-
-.hair {
-  position: absolute;
-  top: 0;
-  bottom: 0;
-  width: 1px;
-  background: var(--ry-border-strong);
-  transform: translateX(-0.5px);
-  pointer-events: none;
-}
-
-.pin {
-  position: absolute;
-  width: 12px;
-  height: 12px;
-  border: 2px solid var(--ry-card);
-  border-radius: var(--ry-r-pill);
-  background: currentColor;
-  transform: translate(-50%, -50%);
-  pointer-events: none;
-}
-
+/* The page's skeleton while the company loads (`loading.tsx`). */
 .chartBone {
   position: absolute;
   inset: 0;
@@ -937,12 +1036,20 @@ a.pathChip:focus-visible {
   color: var(--ry-muted);
 }
 
-/* On a phone the card keeps the label and lets its line wait for «Що ти купуєш» below — so «Купити» stands on the first screen. */
-@media (max-width: 719px) {
-  .truthText {
-    display: none;
-  }
+/* A token with a swap deadline: the date in red over «Купити» (UX-504). */
+.buyDeadline {
+  margin: 0;
+  padding: var(--ry-s2) var(--ry-s3);
+  border: 1px solid color-mix(in srgb, var(--ry-risk) 55%, transparent);
+  border-radius: var(--ry-r-chip);
+  background: var(--ry-risk-soft);
+  font-size: var(--ry-fs-dense);
+  font-weight: 600;
+  line-height: var(--ry-lh-body);
+  color: var(--ry-risk);
 }
+
+/* The rights line stands on every width (UX-501): on a phone «Купити» is pinned over the bottom bar instead (`.pinnedBuy`). */
 
 /* The label from the issuer's documents, as a quiet chip over its line. */
 .truthLabel {
@@ -1011,9 +1118,23 @@ body:has(dialog[data-warn][open]) .buy {
   color: var(--ry-muted);
 }
 
+/* «Усе в Портфелі» under the position: a quiet way to the same position among the rest of the wallet. */
+.positionAll {
+  width: fit-content;
+  margin-top: 2px;
+  font-size: var(--ry-fs-dense);
+  color: var(--ry-muted);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.positionAll:hover {
+  color: var(--ry-text);
+}
+
 .exchange {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   gap: var(--ry-s2);
   margin: var(--ry-s1) 0 0;
   font-size: var(--ry-fs-dense);
@@ -1028,14 +1149,102 @@ body:has(dialog[data-warn][open]) .buy {
   background: var(--ry-muted);
 }
 
+/* The hours wrap to a second line on a phone: the dot stays with the first. */
+.exchange .dot {
+  margin-top: calc((1lh - 8px) / 2);
+}
+
 .exchange[data-state="open"] .dot {
   background: var(--ry-verified);
+}
+
+.exchange[data-state="extended"] .dot {
+  background: var(--ry-info);
 }
 
 .buy {
   width: 100%;
   min-height: 52px;
   margin-top: var(--ry-s1);
+}
+
+/* «Швидка купівля»: the person's four sums, each one press from the purchase's Review — the core's buttons in one row. */
+.quickBuy {
+  display: grid;
+  gap: var(--ry-s2);
+  margin-top: var(--ry-s1);
+}
+
+.quickBuyLabel {
+  font-size: var(--ry-fs-dense);
+  font-weight: 500;
+  color: var(--ry-muted);
+}
+
+/* Four sums and the pencil (or the save) after them, in its own narrow column. */
+.quickBuyRow {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr)) auto;
+  gap: var(--ry-s2);
+}
+
+.quickSumField {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  min-height: 44px;
+  padding: 0 var(--ry-s2);
+  border: 1px solid var(--ry-border);
+  border-radius: var(--ry-r-btn);
+  background: var(--ry-card);
+  color: var(--ry-muted);
+}
+
+.quickSumField:focus-within {
+  border-color: var(--ry-accent);
+}
+
+.quickSumField[data-invalid="true"] {
+  border-color: var(--ry-risk);
+}
+
+.quickSumField input {
+  width: 100%;
+  min-width: 0;
+  border: 0;
+  background: transparent;
+  color: var(--ry-text);
+  font: inherit;
+  font-variant-numeric: tabular-nums;
+  outline: none;
+}
+
+.quickSumError {
+  margin: 0;
+  font-size: var(--ry-fs-dense);
+  color: var(--ry-risk);
+}
+
+.quickBuyRow > * {
+  min-width: 0;
+  font-variant-numeric: tabular-nums;
+}
+
+/* A phone gives each of the four sums about 60 px: the core button's own padding leaves too little for «$1 000», so the row's buttons pad less and never spill a label past their edge. */
+.quickBuyRow > :global(.ryntra-button) {
+  padding-inline: var(--ry-s2);
+  overflow: hidden;
+}
+
+@media (max-width: 420px) {
+  .quickBuyRow > :global(.ryntra-button) {
+    padding-inline: var(--ry-s1);
+  }
+}
+
+/* The core's ticket inside the company's sheet: the sheet's own width, its own spacing. */
+.ticket {
+  max-width: none;
 }
 
 /* While the sheet is open the page's action steps aside: one orange action on a screen. */
@@ -1212,7 +1421,7 @@ body:has(dialog[data-warn][open]) .buy {
   color: var(--ry-text);
 }
 
-.retired :global(.rw-btn) {
+.retired :global(.ryntra-button) {
   margin-top: var(--ry-s2);
 }
 
@@ -1267,6 +1476,11 @@ body:has(dialog[data-warn][open]) .buy {
   margin: 0;
   font-size: var(--ry-fs-dense);
   color: var(--ry-muted);
+}
+
+/* «Ключові показники» with no figure filed and no year's line to draw (a fund, a foreign filer, a market with no chart): no card with a title alone. */
+.block[data-block="company-stats"]:not(:has(dl, [data-year-range], .yearBone)) {
+  display: none;
 }
 
 /* A row of figures: each its label over its value — two across on a phone, up to five on a wide screen. */
@@ -1636,8 +1850,10 @@ body:has(dialog[data-warn][open]) .buy {
 
 /* ── The sheet ────────────────────────────────────────────────────────── */
 
-/* The dialog is the dimmed page; the panel inside it is the sheet. */
+/* The dialog is the dimmed page; the panel inside it is the sheet. Over the frame's bottom bar, so a pinned action or
+   Review inside it stands at the sheet's foot, not a bar higher (the core's `--shell-bottom`, SOL-C11). */
 .sheet {
+  --shell-bottom: 0px;
   position: fixed;
   inset: 0;
   width: 100%;
@@ -1746,7 +1962,9 @@ body:has(dialog[data-warn][open]) .buy {
   color: var(--ry-muted);
 }
 
+/* A result's title is a sentence («Мережа відхилила купівлю. Списано лише плату мережі.»): it wraps — up to three lines — rather than lose its second half to «…». */
 .sheetTitle {
+  display: -webkit-box;
   margin: 0;
   min-width: 0;
   overflow: hidden;
@@ -1754,8 +1972,11 @@ body:has(dialog[data-warn][open]) .buy {
   font-weight: 600;
   line-height: var(--ry-lh-head);
   color: var(--ry-text);
-  white-space: nowrap;
-  text-overflow: ellipsis;
+  text-wrap: balance;
+  overflow-wrap: anywhere;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
+  line-clamp: 3;
 }
 
 .sheetClose {

@@ -35,14 +35,16 @@ export type WorksNowKey =
   | "autoinvest"
   | "budget"
   | "company"
+  | "fairPrice"
+  | "assetTruth"
   | "portfolio"
   | "rewards"
   | "assistant"
   | "experienced";
 
-/** What is being built next, web and phone; the key names the item. */
+/** What the next rows of the queue build, web and phone; the key names the row. */
 export type BuildingKey = "android" | "warn";
-export type NextKey = "fairPrice" | "assetTruth" | "startFromZero";
+export type NextKey = "startFromZero";
 export type RuleKindKey = "schedule" | "dip" | "payments";
 
 type Item<K extends string> = Readonly<{ key: K; text: string }>;
@@ -71,8 +73,11 @@ export type LandingCopy = Readonly<{
     next: Readonly<{ title: string; items: readonly Item<NextKey>[] }>;
   }>;
   faq: Readonly<{ eyebrow: string; title: string; items: readonly Question[] }>;
-  /** The market tape's name for a screen reader; the tape itself is TradingView's (`market-tape.tsx`). */
-  tape: Readonly<{ label: string }>;
+  /**
+   * The market tape (`market-tape.tsx`, SOL-T4): its name for a screen reader, and the words of a day's line — the
+   * tape is Ryntra's own, on the core's sparkline, with Solana's prices.
+   */
+  tape: Readonly<{ label: string; day: string }>;
 }>;
 
 /** The day the product's screens on the page were taken from ryntra.io (`scripts/site/capture-landing-shots.mjs`). */
@@ -164,10 +169,12 @@ export const LANDING_COPY: Readonly<Record<LandingLocale, LandingCopy>> = {
           { key: "autoinvest", text: "Autoinvest: regularly, if it falls, from payments" },
           { key: "budget", text: "A monthly budget and a price condition" },
           { key: "company", text: "The company page and the company's path" },
+          { key: "fairPrice", text: "Fair price — a stock token's price next to the exchange's" },
+          { key: "assetTruth", text: "On every stock token, the issuer's label and where it is not offered" },
           { key: "portfolio", text: "Portfolio, history with receipts, notifications in the bell and in Telegram" },
           { key: "rewards", text: "Rewards: fee back, referrals and points" },
-          { key: "assistant", text: "Ryntra, the AI assistant — it explains, you decide and sign" },
-          { key: "experienced", text: "For the experienced: Spot with a chart, swap, bridge, send and receive" },
+          { key: "assistant", text: "The Ryntra assistant — it explains, you decide and sign" },
+          { key: "experienced", text: "For the experienced: Spot with a chart, swap, transfers between networks, send and receive" },
         ],
       },
       building: {
@@ -180,13 +187,11 @@ export const LANDING_COPY: Readonly<Record<LandingLocale, LandingCopy>> = {
       next: {
         title: "Next",
         items: [
-          { key: "fairPrice", text: "Fair price — the token's price next to the exchange's" },
-          { key: "assetTruth", text: "On every asset, the issuer's label and the countries it is closed to" },
           { key: "startFromZero", text: "Starting from zero — a top-up by card and a first purchase without SOL" },
         ],
       },
     },
-    tape: { label: "Market prices from TradingView" },
+    tape: { label: "Market prices on Solana", day: "over 24 hours" },
     faq: {
       eyebrow: "Questions",
       title: "What people ask first",
@@ -214,7 +219,7 @@ export const LANDING_COPY: Readonly<Record<LandingLocale, LandingCopy>> = {
           a: "Yes — from your position, on the company's page or in Portfolio: a sum in dollars or a share, the same Review and your signature. A PreStocks token may not sell — the issuer promises no liquidity.",
         },
         {
-          q: "What is Ryntra, the AI assistant?",
+          q: "What is the Ryntra assistant?",
           a: "An assistant that explains companies, prices and your portfolio and prepares drafts. Only you buy, sell and sign.",
         },
       ],
@@ -287,10 +292,12 @@ export const LANDING_COPY: Readonly<Record<LandingLocale, LandingCopy>> = {
           { key: "autoinvest", text: "«Автоінвест»: регулярно, якщо впаде, з оплат" },
           { key: "budget", text: "Бюджет місяця й «Умова ціни»" },
           { key: "company", text: "Сторінка компанії й «Шлях компанії»" },
+          { key: "fairPrice", text: "«Ціна чесна» — ціна токена акції поруч із ціною на біржі" },
+          { key: "assetTruth", text: "На кожному токені акції — мітка емітента й де його не пропонують" },
           { key: "portfolio", text: "Портфель, історія з квитанціями, сповіщення в дзвіночку й у Telegram" },
-          { key: "rewards", text: "Винагороди: повернення комісії, реферали й бали" },
-          { key: "assistant", text: "Ryntra — ШІ-помічник: пояснює, а вирішуєш і підписуєш ти" },
-          { key: "experienced", text: "Для досвідчених: Спот із графіком, обмін, міст, надіслати й отримати" },
+          { key: "rewards", text: "Винагороди: повернення комісії, реферали й очки рангу" },
+          { key: "assistant", text: "Помічник Ryntra: пояснює, а вирішуєш і підписуєш ти" },
+          { key: "experienced", text: "Для досвідчених: Спот із графіком, обмін, перекази між мережами, надіслати й отримати" },
         ],
       },
       building: {
@@ -303,13 +310,11 @@ export const LANDING_COPY: Readonly<Record<LandingLocale, LandingCopy>> = {
       next: {
         title: "Далі",
         items: [
-          { key: "fairPrice", text: "«Ціна чесна» — ціна токена поруч із ціною на біржі" },
-          { key: "assetTruth", text: "На кожному активі — мітка емітента й країни, для яких він закритий" },
           { key: "startFromZero", text: "Старт з нуля — поповнення карткою й перша купівля без SOL" },
         ],
       },
     },
-    tape: { label: "Ціни ринків від TradingView" },
+    tape: { label: "Ціни ринків на Solana", day: "за 24 години" },
     faq: {
       eyebrow: "Запитання",
       title: "Що питають першим",
@@ -337,7 +342,7 @@ export const LANDING_COPY: Readonly<Record<LandingLocale, LandingCopy>> = {
           a: "Так — з позиції, на сторінці компанії чи в Портфелі: сума в доларах або частка, та сама «Перевірка» й твій підпис. Токен PreStocks продати може не вийти — емітент ліквідності не обіцяє.",
         },
         {
-          q: "Що таке Ryntra — ШІ-помічник?",
+          q: "Що таке помічник Ryntra?",
           a: "Помічник, що пояснює компанії, ціни й твій портфель і готує чернетки. Купуєш, продаєш і підписуєш лише ти.",
         },
       ],

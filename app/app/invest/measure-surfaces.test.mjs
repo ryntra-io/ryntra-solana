@@ -13,7 +13,6 @@ import test from "node:test";
  */
 
 const source = (path) => readFileSync(new URL(path, import.meta.url), "utf8");
-const SUM_FIELD = source("../stocks/[ticker]/sum-field.tsx");
 const KEYBOARD = source("../stocks/[ticker]/sheet-keyboard.ts");
 const BUY_SHEET = source("../stocks/[ticker]/buy-sheet.tsx");
 const SELL_SHEET = source("../stocks/[ticker]/sell-sheet.tsx");
@@ -44,33 +43,29 @@ const EXECUTE_ROUTE = [
 const DEAL_BLOCK = source("../stocks/[ticker]/deal-block.tsx");
 
 test("a press on the sum chooses all of it, so the next key replaces it — $1 is a tap and a key from $10", () => {
-  assert.match(SUM_FIELD, /onFocus=\{\(event\) => \{\s*choosing\.current = true;\s*chooseAll\(event\.currentTarget\);/);
-  /* The press that focused the field places its caret after the focus: the choice is made again on that press's click, once. */
-  assert.match(SUM_FIELD, /onClick=\{\(event\) => \{\s*if \(!choosing\.current\) return;\s*choosing\.current = false;\s*chooseAll\(event\.currentTarget\);/);
-  assert.match(SUM_FIELD, /input\.setSelectionRange\(0, input\.value\.length\)/);
-  assert.match(SUM_FIELD, /inputMode="decimal"/);
+  /* SOL-T3: the sum is the core ticket's own field, and the core chooses it whole on the press that focuses it
+     (`@ryntra/core/ui` 0.7.0, `TradeTicket`); the sheets draw no field of their own. */
+  for (const [name, sheet] of [["buy", BUY_SHEET], ["sell", SELL_SHEET]]) {
+    assert.match(sheet, /<TradeTicket\b/, `${name}: the ticket's field`);
+    assert.doesNotMatch(sheet, /<SumField\b|<input\b/, `${name}: no sum field of its own`);
+  }
 });
 
 test("the keyboard's own action key is the sheet's one action, and only when that action runs now", () => {
-  assert.match(SUM_FIELD, /enterKeyHint="go"/);
-  assert.match(SUM_FIELD, /<form\s+className=\{company\.sumForm\}\s+noValidate\s+onSubmit=\{\(event\) => \{\s*event\.preventDefault\(\);\s*onGo\(\);/);
   for (const [name, sheet] of [["buy", BUY_SHEET], ["sell", SELL_SHEET]]) {
-    assert.match(sheet, /<SumField[\s\S]*?onGo=\{\(\) => \{\s*if \(!cta\.disabled\) cta\.run\?\.\(\);\s*\}\}/, `${name}: the key runs the one action, never a disabled one`);
-    assert.doesNotMatch(sheet, /className=\{company\.amountInput\}/, `${name}: one sum field, the shared one`);
+    /* The sum is the core's ticket's own field: Enter in it opens Review only when the ticket is ready (`TradeTicket`, `m.ready`). */
+    assert.match(sheet, /<TradeTicket\b[\s\S]*?onReview=\{/, `${name}: the key runs the ticket's one action, never a disabled one`);
+    assert.doesNotMatch(sheet, /className=\{company\.amountInput\}|<SumField\b/, `${name}: one sum field, the ticket's`);
   }
-  /* The form adds no box: the sheet's grid is unchanged. */
-  assert.match(COMPANY_CSS, /\.sumForm \{\s*display: contents;\s*\}/);
 });
 
 test("on a desk the sum is ready as the sheet opens; on a phone the keyboard rises only on the person's tap", () => {
-  assert.match(SUM_FIELD, /window\.matchMedia\("\(hover: hover\) and \(pointer: fine\)"\)\.matches/);
-  assert.match(SUM_FIELD, /if \(readied\.current \|\| disabled \|\| !input \|\| !typesWithoutRising\(\)\) return undefined;/);
-  assert.match(SUM_FIELD, /if \(!input\.closest\("dialog"\)\?\.open \|\| input\.disabled\) return;/, "only inside the open sheet");
-  assert.match(SUM_FIELD, /input\.focus\(\{ preventScroll: true \}\);\s*chooseAll\(input\);/);
-  /* The sum's own focus line, never the shell's ring, on a field that opens chosen. */
-  assert.match(COMPANY_CSS, /\.sheetBody \.amount \.amountInput:focus-visible \{\s*outline: none;\s*box-shadow: inset 0 -2px 0 var\(--ry-text\);/);
-  /* It outweighs the shell's ring, seen drawn around the sum on the stand: `[tabindex]` inside `:is()` makes that rule three classes' weight, this one four. */
-  assert.match(source("../product.css"), /\.ry-product :is\(input, select, textarea, button, a, \[role="button"\], \[tabindex\]\):focus-visible \{ outline: none; box-shadow: var\(--ry-focus\);/);
+  assert.match(KEYBOARD, /window\.matchMedia\("\(hover: hover\) and \(pointer: fine\)"\)\.matches/);
+  assert.match(KEYBOARD, /if \(!element\?\.open\) return;/, "only inside the open sheet");
+  assert.match(KEYBOARD, /querySelector<HTMLInputElement>\('\[data-ticket-field="amount"\]'\)/, "the ticket's own sum");
+  assert.match(KEYBOARD, /input\.focus\(\{ preventScroll: true \}\);\s*input\.select\(\);/);
+  assert.match(BUY_SHEET, /useSumReadyOnDesk\(dialog, open\);/);
+  assert.match(SELL_SHEET, /useSumReadyOnDesk\(dialog, open\);/);
 });
 
 test("both sheets stand above a phone's keyboard, their one action in sight", () => {
@@ -91,8 +86,10 @@ test("both sheets stand above a phone's keyboard, their one action in sight", ()
 
 test("the swap's quote and its signable order are asked once more after the provider's own pause; /execute never", () => {
   /* A quote — a read — waits at most 2.5 s (the rule of 2026-09-15). */
-  /* Since fee policy v2 the quote is the lane choice's — the web's and the phone's alike — whose every ask is asked once more the same way. */
-  assert.match(QUOTE_ROUTE, /await chooseQuote\(\{/);
+  /* Since fee policy v2 the quote is the lane choice's — the web's and the phone's alike (line B's request 41) — whose every ask is asked once more the same way. */
+  /* SOL-S1: asked beside the passports and awaited before the price is used. */
+  assert.match(QUOTE_ROUTE, /const priced = chooseQuote\(\{/);
+  assert.match(QUOTE_ROUTE, /const settled = await priced;/);
   const LANES = source("../../../lib/core/solana-swap/fee-route.server.ts");
   /* The v2 branch's own ask, not only the as-now one: the phone's quotes take it too. */
   assert.match(LANES, /const askOrder = \(\) => askOnceMoreAfterRate\(\(\) => fetchQuote\(\{ inputMint, outputMint, amountRaw, referral \}, selection\)\);/);
@@ -105,7 +102,9 @@ test("the swap's quote and its signable order are asked once more after the prov
   const quoteMethod = VENUE.slice(VENUE.indexOf("async quote("), VENUE.indexOf("async build("));
   assert.match(quoteMethod, /askOnceMoreAfterRate\(/, "the venue's quote asks once more after the provider's pause");
   /* Since 2026-10-11 through \`askVenueOrder\` (\`venue-order.ts\`), which also asks once more after the venue's own 4xx or 5xx. */
-  assert.match(stepBody(PREPARE, "venue-order"), /await askVenueOrder\(venue, intent\)/);
+  /* SOL-S1: the ask is started beside the passports (`askVenue`) and awaited by the venue's own step. */
+  assert.match(PREPARE.slice(PREPARE.indexOf("async function askVenue("), PREPARE.indexOf('name: "venue-order"')), /await askVenueOrder\(venue, intent\)/);
+  assert.match(stepBody(PREPARE, "venue-order"), /await \(context\.venueAsk \?\?= askVenue\(context\)\)/);
   assert.match(source("../../../lib/core/solana-swap/venue-order.ts"), /await venue\.quote\(intent\)/);
   const steps = PREPARE.slice(PREPARE.indexOf("  steps: ["), PREPARE.indexOf("  ],", PREPARE.indexOf("  steps: [")));
   const venueAt = steps.indexOf("venueOrder,");

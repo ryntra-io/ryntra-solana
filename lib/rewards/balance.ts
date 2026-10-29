@@ -2,8 +2,11 @@ import {
   formatUsdMicros,
   REWARD_MINIMUM_CLAIM_USD_MICROS,
   type RewardEntry,
+  type RewardPayoutAccount,
 } from "./model.ts";
+import { firstTenHeldUsdMicros } from "./first-ten.ts";
 import { totalRewards, type RewardTotals } from "./ledger.ts";
+import type { RewardRules } from "./rules.ts";
 
 /**
  * What a person may actually claim, which is not the same as what they earned.
@@ -44,6 +47,19 @@ export type RewardReserve =
 
 export type RewardPendingReason = "AWAITING_VALUATION" | "AWAITING_RESERVE";
 
+/**
+ * The least a claim may be, for a wallet, under the rules in force: rules `2.1.0` — $0.25 when the wallet holds a
+ * USDC account, $1 when the payout has to open one or the account could not be read; earlier rules — $1.
+ */
+export function claimMinimumUsdMicros(rules: RewardRules | null, account: RewardPayoutAccount): bigint {
+  if (!rules?.claimFloor) return REWARD_MINIMUM_CLAIM_USD_MICROS;
+  return account === "EXISTS" ? rules.claimFloor.withAccountUsdMicros : rules.claimFloor.withoutAccountUsdMicros;
+}
+
+function floorText(locale: RewardBalanceLocale, minimum: bigint): string {
+  return locale === "uk" ? `Отримати можна від $${formatUsdMicros(minimum)}` : `Claim available from $${formatUsdMicros(minimum)}`;
+}
+
 export type RewardBalance = Readonly<{
   /** Claimable right now, in USD micro-units. Never more than the reserve holds. */
   availableUsdMicros: bigint;
@@ -55,6 +71,10 @@ export type RewardBalance = Readonly<{
   lifetimeUsdMicros: bigint;
   claimedUsdMicros: bigint;
   bySource: RewardTotals["bySource"];
+  /** «First $10 back»: the rest of the window's trades, earned and waiting for the wallet's check. Part of `pending`. */
+  checkUsdMicros: bigint;
+  /** The floor this balance was measured against. */
+  minimumUsdMicros: bigint;
   /** True when Claim may be pressed: at or above the floor, and payable. */
   claimable: boolean;
   /** Why Claim is not offered, in one customer-readable sentence, or null. */
@@ -62,11 +82,6 @@ export type RewardBalance = Readonly<{
 }>;
 
 export type RewardBalanceLocale = "en" | "uk";
-
-const FLOOR_TEXT: Readonly<Record<RewardBalanceLocale, string>> = {
-  en: `Claim available from $${formatUsdMicros(REWARD_MINIMUM_CLAIM_USD_MICROS)}`,
-  uk: `Отримати можна від $${formatUsdMicros(REWARD_MINIMUM_CLAIM_USD_MICROS)}`,
-};
 
 /* The state and the condition that changes it — never a promise of when. */
 const RESERVE_TEXT: Readonly<Record<RewardBalanceLocale, string>> = {
@@ -95,24 +110,35 @@ export function rewardBalance(
      */
     heldUsdMicros: bigint;
     locale?: RewardBalanceLocale;
+    /**
+     * The floor of a claim (`claimMinimumUsdMicros`). Absent — the dollar: a caller that does not know whether the
+     * wallet holds a USDC account is never told a lower one.
+     */
+    minimumUsdMicros?: bigint;
   }>,
 ): RewardBalance {
   const locale = args.locale ?? "en";
+  const minimum = args.minimumUsdMicros ?? REWARD_MINIMUM_CLAIM_USD_MICROS;
   const totals = totalRewards(args.entries);
-  const owed = totals.entitledUsdMicros > 0n ? totals.entitledUsdMicros : 0n;
+  const entitled = totals.entitledUsdMicros > 0n ? totals.entitledUsdMicros : 0n;
+  /* The rest of «First $10 back» is earned, not yet claimable: it waits for the wallet's check, read from the rows
+     themselves, so every reader of a balance holds it back alike. */
+  const check = firstTenHeldUsdMicros(args.entries);
+  const owed = entitled > check ? entitled - check : 0n;
   const unheld = args.reserve.usdMicros - args.heldUsdMicros;
   /* Floored: a treasury drained below its outstanding holds offers nobody
      anything, rather than reporting a negative amount that would be subtracted
      again somewhere downstream. */
   const reserve = unheld > 0n ? unheld : 0n;
   const available = owed < reserve ? owed : reserve;
-  const pending = owed - available;
+  const pending = owed - available + (entitled - owed);
 
   const reasons: RewardPendingReason[] = [];
   if (totals.unvaluedCount > 0) reasons.push("AWAITING_VALUATION");
-  if (pending > 0n) reasons.push("AWAITING_RESERVE");
+  /* Waiting on the reserve is only what the reserve holds back — never the rest that waits for its check. */
+  if (owed > available) reasons.push("AWAITING_RESERVE");
 
-  const meetsFloor = available >= REWARD_MINIMUM_CLAIM_USD_MICROS;
+  const meetsFloor = available >= minimum;
   /*
    * Which sentence a person gets when Claim is off.
    *
@@ -125,7 +151,7 @@ export function rewardBalance(
    */
   let blocked: string | null = null;
   if (!meetsFloor) {
-    blocked = owed < REWARD_MINIMUM_CLAIM_USD_MICROS ? FLOOR_TEXT[locale] : RESERVE_TEXT[locale];
+    blocked = owed < minimum ? floorText(locale, minimum) : RESERVE_TEXT[locale];
   }
 
   return {
@@ -136,6 +162,8 @@ export function rewardBalance(
     lifetimeUsdMicros: totals.lifetimeUsdMicros,
     claimedUsdMicros: totals.claimedUsdMicros,
     bySource: totals.bySource,
+    checkUsdMicros: entitled - owed,
+    minimumUsdMicros: minimum,
     claimable: meetsFloor,
     claimBlockedReason: blocked,
   };

@@ -163,13 +163,13 @@
 .rw-badge[data-tone="evidence"] { color: var(--accent); border-color: var(--accent-line); background: var(--accent-soft); }
 .rw-badge[data-tone="caution"] { color: var(--warning); border-color: color-mix(in srgb, var(--warning) 42%, transparent); background: var(--warning-soft); }
 .rw-badge[data-tone="danger"] { color: var(--danger); border-color: color-mix(in srgb, var(--danger) 45%, transparent); background: var(--danger-soft); }
-[data-theme="light"] .rw-badge[data-tone="verified"] { color: var(--success-strong); }
+:is([data-theme="light"], [data-theme="porcelain"]) .rw-badge[data-tone="verified"] { color: var(--success-strong); }
 /* `--accent-strong` is the *fill* value — the colour a filled button is
    painted, meant to sit under white text. Used as text on the badge's own
    pale tint it measured 3.98:1, under the floor, which is why the light
    theme's status chips read washed out. `--accent` is the reading value. */
-[data-theme="light"] .rw-badge[data-tone="evidence"] { color: var(--accent); }
-[data-theme="light"] .rw-badge[data-tone="caution"] { color: var(--warning-strong); }
+:is([data-theme="light"], [data-theme="porcelain"]) .rw-badge[data-tone="evidence"] { color: var(--accent); }
+:is([data-theme="light"], [data-theme="porcelain"]) .rw-badge[data-tone="caution"] { color: var(--warning-strong); }
 
 /* -------------------------------------------------------------------- body */
 
@@ -412,7 +412,7 @@
    keeps the button's own ink: the broader selector used to override white on
    a filled primary CTA, producing 1.89:1 on dark and 1:1 on light. */
 .rw-kv a:not(.rw-btn) { color: var(--accent); }
-[data-theme="light"] .rw-kv a:not(.rw-btn) { color: var(--accent-strong); }
+:is([data-theme="light"], [data-theme="porcelain"]) .rw-kv a:not(.rw-btn) { color: var(--accent-strong); }
 
 /*
  * On a wide panel the pair becomes two columns instead of two ends.
@@ -640,7 +640,7 @@
 .rw-step[data-state="active"] .rw-step-m { border-color: var(--accent); color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
 .rw-step[data-state="active"] b { color: var(--text); }
 .rw-step[data-state="blocked"] .rw-step-m { border-color: color-mix(in srgb, var(--danger) 60%, transparent); color: var(--danger); }
-[data-theme="light"] .rw-step[data-state="done"] .rw-step-m { color: var(--success-strong); }
+:is([data-theme="light"], [data-theme="porcelain"]) .rw-step[data-state="done"] .rw-step-m { color: var(--success-strong); }
 
 /* Action cards inside a panel. Internal primitives, never nested panels. */
 .rw-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(206px, 1fr)); gap: 12px; flex: 1; min-height: 0; }
@@ -661,7 +661,7 @@ a.rw-card:hover { background: var(--panel-3); border-color: var(--accent-line); 
 .rw-card[aria-disabled="true"] { opacity: 0.55; cursor: not-allowed; }
 .rw-card-h { display: flex; align-items: center; gap: 9px; }
 .rw-card-h svg { color: var(--accent); flex: 0 0 auto; }
-[data-theme="light"] .rw-card-h svg { color: var(--accent-strong); }
+:is([data-theme="light"], [data-theme="porcelain"]) .rw-card-h svg { color: var(--accent-strong); }
 .rw-card[aria-disabled="true"] .rw-card-h svg { color: var(--text-faint); }
 .rw-card-h b { font-size: var(--fs-14); font-weight: 600; color: var(--text); }
 .rw-card p { margin: 0; font-size: var(--fs-12); color: var(--text-faint); line-height: 1.5; flex: 1; }
@@ -670,7 +670,7 @@ a.rw-card:hover { background: var(--panel-3); border-color: var(--accent-line); 
    assumed from the column arithmetic. */
 .rw-card-f { display: flex; align-items: center; justify-content: space-between; gap: 8px; flex-wrap: wrap; min-width: 0; }
 .rw-card-cta { font-size: var(--fs-12); font-weight: 600; color: var(--accent); display: inline-flex; align-items: center; gap: 5px; white-space: nowrap; }
-[data-theme="light"] .rw-card-cta { color: var(--accent-strong); }
+:is([data-theme="light"], [data-theme="porcelain"]) .rw-card-cta { color: var(--accent-strong); }
 
 /* The lifecycle band — the product's own idea, drawn rather than described.
    Stages that the current surface can actually reach are lit; the rest stay
@@ -691,7 +691,7 @@ a.rw-card:hover { background: var(--panel-3); border-color: var(--accent-line); 
   white-space: nowrap;
 }
 .rw-flow-i[data-on="true"] { color: var(--accent); border-color: var(--accent-line); background: var(--accent-soft); }
-[data-theme="light"] .rw-flow-i[data-on="true"] { color: var(--accent-strong); }
+:is([data-theme="light"], [data-theme="porcelain"]) .rw-flow-i[data-on="true"] { color: var(--accent-strong); }
 .rw-flow-s { color: var(--text-faint); font-size: var(--fs-12); }
 
 /* A capability row: name + description, state, action. */

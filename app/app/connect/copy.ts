@@ -157,7 +157,7 @@ export const CONNECTION_CENTER_COPY: Record<BetaLang, ConnectionCenterCopy> = {
       telegramUnverified: "Telegram access not verified",
       identityWallet: "SIWE-proven identity wallet",
       noIdentityWallet: "No wallet is proved by this session.",
-      linkWallet: "Link a wallet with SIWE",
+      linkWallet: "Link a Solana wallet",
       provedNow: "Wallet proved in this session",
       legacyWatch: "Legacy watch address",
       legacyBody: "Compatibility data for existing account views. It is not identity and is not automatically imported.",
@@ -249,7 +249,7 @@ export const CONNECTION_CENTER_COPY: Record<BetaLang, ConnectionCenterCopy> = {
   },
   uk: {
     title: "Центр підключень",
-    subtitle: "Одне місце, де видно, як ви увійшли в Ryntra, які дані дозволили читати, які provider credentials існують і чому жодне з цього не авторизує дію.",
+    subtitle: "Одне місце, де видно, як виконано вхід у Ryntra, які дані дозволено читати, які provider credentials існують і чому жодне з цього не авторизує дію.",
     localOnly: "Read connections і версії Financial Twin зберігаються в цьому браузері для цього акаунта. На інший пристрій вони не синхронізуються.",
     planes: {
       identity: { title: "Ідентичність", body: "Підписаний account/session. SIWE доводить один wallet лише тоді, коли саме він створив цю сесію." },
@@ -266,7 +266,7 @@ export const CONNECTION_CENTER_COPY: Record<BetaLang, ConnectionCenterCopy> = {
       telegramUnverified: "Telegram access not verified",
       identityWallet: "Identity wallet, доведений SIWE",
       noIdentityWallet: "Ця сесія не доводить жодного wallet.",
-      linkWallet: "Прив'язати wallet через SIWE",
+      linkWallet: "Прив'язати гаманець Solana",
       provedNow: "Wallet доведено в цій сесії",
       legacyWatch: "Legacy watch address",
       legacyBody: "Compatibility data для чинних account views. Це не identity і адреса не імпортується автоматично.",
@@ -284,7 +284,7 @@ export const CONNECTION_CENTER_COPY: Record<BetaLang, ConnectionCenterCopy> = {
     },
     watch: {
       title: "Watch-only",
-      body: "Додайте публічні адреси до оголошеного read scope. Ryntra не виводить, хто ними володіє.",
+      body: "Додай публічні адреси до оголошеного read scope. Ryntra не виводить, хто ними володіє.",
       addTitle: "Додати read connection",
       label: "Назва",
       labelPlaceholder: "Treasury watch",
@@ -304,16 +304,16 @@ export const CONNECTION_CENTER_COPY: Record<BetaLang, ConnectionCenterCopy> = {
       networkLabels: { EVM: "EVM address", SOLANA: "Solana address", STELLAR: "Stellar account" },
       scopeLabels: { BALANCES: "Баланси", POSITIONS: "Позиції", ACTIVITY: "Активність", ASSET_EVIDENCE: "Asset evidence" },
       errors: {
-        INVALID_DRAFT: "Перевірте адресу, назву й хоча б один read scope.",
+        INVALID_DRAFT: "Перевір адресу, назву й хоча б один read scope.",
         DUPLICATE_ACTIVE_CONNECTION: "Для цього типу адреси й самої адреси вже є активне read connection.",
-        CONNECTION_LIMIT_REACHED: "Досягнуто ліміту історії у 25 записів. Експорт недоступний; збережіть історію або reset local Home data.",
-        CONNECTION_NOT_FOUND: "Connection більше не існує. Оновіть сторінку й повторіть.",
+        CONNECTION_LIMIT_REACHED: "Досягнуто ліміту історії у 25 записів. Експорт недоступний; збережи історію або reset local Home data.",
+        CONNECTION_NOT_FOUND: "Connection більше не існує. Онови сторінку й повтори.",
         ALREADY_REVOKED: "Connection уже відкликано.",
       },
     },
     twin: {
       title: "Financial Twin",
-      body: "Versioned record ваших декларацій про цілі, горизонт, ліквідність і межі. Це контекст для майбутнього планування, не personality чи eligibility score.",
+      body: "Versioned record твоїх декларацій про цілі, горизонт, ліквідність і межі. Це контекст для майбутнього планування, не personality чи eligibility score.",
       statusMissing: "InvestorContext ще немає",
       statusPartial: "Часткові декларації",
       statusComplete: "Declared context complete",
@@ -332,7 +332,7 @@ export const CONNECTION_CENTER_COPY: Record<BetaLang, ConnectionCenterCopy> = {
       saveUnavailable: "Browser storage відмовив новій версії. Нічого не збережено.",
       history: "Історія версій",
       noHistory: "Збережених версій ще немає.",
-      disclaimer: "Ryntra записує ваші декларації. Вона не вирішує legal status, eligibility, suitability або що вам купувати чи продавати.",
+      disclaimer: "Ryntra записує твої декларації. Вона не вирішує legal status, eligibility, suitability або що тобі купувати чи продавати.",
     },
     storage: {
       loading: "Читаю локальний Home state цього акаунта…",
@@ -352,7 +352,7 @@ export const CONNECTION_CENTER_COPY: Record<BetaLang, ConnectionCenterCopy> = {
       authority: "Authority",
       missing: "не оголошено",
       open: "Відкрити Центр підключень",
-      signedOut: "Увійдіть, щоб створити прив'язаний до акаунта Financial Twin.",
+      signedOut: "Увійди, щоб створити прив'язаний до акаунта Financial Twin.",
       unavailable: "Локальний Financial Twin недоступний або його data не пройшли перевірку.",
     },
   },
@@ -366,7 +366,7 @@ export const CONNECTION_CENTER_COPY: Record<BetaLang, ConnectionCenterCopy> = {
       authority: { title: "Точная авторизация действия", body: "Здесь не предоставляется. Она начинается с одного просмотренного ActionCase и остаётся в Agent Control." },
     },
     wallets: {
-      title: "Wallets и сессия", body: "Идентичность аккаунта и адреса для наблюдения — разные записи.", session: "Subject сессии", telegramSession: "Сессия Telegram-аккаунта", walletSession: "SIWE wallet session", telegramVerified: "Telegram access verified", telegramUnverified: "Telegram access not verified", identityWallet: "Identity wallet, доказанный SIWE", noIdentityWallet: "Эта сессия не доказывает ни одного wallet.", linkWallet: "Привязать wallet через SIWE", provedNow: "Wallet доказан в этой сессии", legacyWatch: "Legacy watch address", legacyBody: "Compatibility data для текущих account views. Это не identity и адрес не импортируется автоматически.", importLegacy: "Импортировать как watch-only", imported: "Legacy address импортирован как явное read connection."
+      title: "Wallets и сессия", body: "Идентичность аккаунта и адреса для наблюдения — разные записи.", session: "Subject сессии", telegramSession: "Сессия Telegram-аккаунта", walletSession: "SIWE wallet session", telegramVerified: "Telegram access verified", telegramUnverified: "Telegram access not verified", identityWallet: "Identity wallet, доказанный SIWE", noIdentityWallet: "Эта сессия не доказывает ни одного wallet.", linkWallet: "Привязать кошелёк Solana", provedNow: "Wallet доказан в этой сессии", legacyWatch: "Legacy watch address", legacyBody: "Compatibility data для текущих account views. Это не identity и адрес не импортируется автоматически.", importLegacy: "Импортировать как watch-only", imported: "Legacy address импортирован как явное read connection."
     },
     venues: {
       title: "Venues", body: "Provider credentials имеют собственный scope, storage и revoke path.", lockedTitle: "Arcus credential controls заблокированы", lockedBody: "Этот аккаунт может использовать локальные read connections и Financial Twin. Создание или revoke Arcus trade key всё ещё требует текущего verified-session server gate.", provider: "Arcus", credentialScope: "Trade-key credential в браузере · только поддержанные requests", authority: "Credential не авторизует ордер. Exact review и wallet authorization остаются отдельными."

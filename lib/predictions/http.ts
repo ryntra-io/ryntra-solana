@@ -3,7 +3,9 @@
  * (`{ error: { code, message, issues? } }`, the same shape the v1 routes
  * answer), the no-store headers, a bounded JSON body reader, and the wallet
  * behind a request — the same proof both clients carry
- * (`lib/api/v1/proof.ts`: the phone's bearer, the web's proof cookie).
+ * (`lib/api/v1/proof.ts`: the phone's bearer, the web's proof cookie). The
+ * account is opened, funded and withdrawn with a Solana wallet only: an EVM
+ * proof the shared reader still accepts is refused here.
  *
  * Server only.
  */
@@ -11,13 +13,14 @@
 import { NextResponse } from "next/server";
 import type { z } from "zod";
 
-import { requireWalletProof } from "../api/v1/proof.ts";
+import { requirePredictionWalletProof } from "../api/v1/proof.ts";
 import { getGuardRuntime } from "../guard/runtime.ts";
 import type { GuardStore } from "../guard/store.ts";
 import { privateNoStoreHeaders } from "../http-control.ts";
 import { getPredictionProvider } from "./agg/adapter.ts";
 import { PREDICTION_FAILURE_STATUS, failure, failureBody, type PredictionFailure } from "./failure.ts";
 import type { PredictionProvider } from "./provider.ts";
+import { predictionProofWallet } from "./route-contract.ts";
 
 export function predictionJson<T>(body: T, status = 200, extra: Record<string, string> = {}): NextResponse {
   return NextResponse.json(body, { status, headers: { ...privateNoStoreHeaders(), ...extra } });
@@ -48,18 +51,22 @@ export async function readPredictionBody<S extends z.ZodTypeAny>(request: Reques
   return { ok: true, body: result.data };
 }
 
-export type PredictionActor = Readonly<{ wallet: string; carrier: "bearer" | "cookie"; store: GuardStore; provider: PredictionProvider }>;
+export type PredictionActor = Readonly<{ wallet: string; chain: "solana"; carrier: "bearer" | "cookie"; store: GuardStore; provider: PredictionProvider }>;
 
-/** The proven wallet behind a request, with the store and the provider a route needs. */
+/** The proven Solana wallet behind a request, with the store and the provider a route needs. */
 export async function requirePredictionActor(request: Request, intent: "read" | "mutation"): Promise<Readonly<{ ok: true; actor: PredictionActor }> | Readonly<{ ok: false; response: NextResponse }>> {
-  const proof = await requireWalletProof(request, intent);
+  const proof = await requirePredictionWalletProof(request, intent);
   if (!proof.ok) return { ok: false, response: proof.response };
-  return { ok: true, actor: { wallet: proof.address, carrier: proof.carrier, store: getGuardRuntime().store, provider: getPredictionProvider() } };
+  const owner = predictionProofWallet(proof);
+  if (!owner.ok) return { ok: false, response: predictionFailure(owner) };
+  return { ok: true, actor: { wallet: owner.wallet, chain: "solana", carrier: proof.carrier, store: getGuardRuntime().store, provider: getPredictionProvider() } };
 }
 
-/** The wallet behind a request when there is one; a public read answers for nobody. */
+/** The Solana wallet behind a request when there is one; a public read answers for nobody. */
 export async function optionalPredictionActor(request: Request): Promise<PredictionActor | null> {
-  const proof = await requireWalletProof(request, "read");
+  const proof = await requirePredictionWalletProof(request, "read");
   if (!proof.ok) return null;
-  return { wallet: proof.address, carrier: proof.carrier, store: getGuardRuntime().store, provider: getPredictionProvider() };
+  const owner = predictionProofWallet(proof);
+  if (!owner.ok) return null;
+  return { wallet: owner.wallet, chain: "solana", carrier: proof.carrier, store: getGuardRuntime().store, provider: getPredictionProvider() };
 }

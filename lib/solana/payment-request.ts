@@ -177,14 +177,37 @@ export type ObservedPayment = Readonly<{
   creditedRaw: string;
   /** The mint that moved, or null when native SOL did. */
   mint: string | null;
+  /**
+   * Base units of that mint the token's own transfer fee withheld in this
+   * transaction (Token-2022 `TransferFeeConfig`): what the payer sent and the
+   * recipient did not receive. Absent or "0" for a token without the fee.
+   */
+  feeWithheldRaw?: string;
+  /** How many payments this entry stands for, when a long history folded several into one (summed). Absent: one. */
+  count?: number;
 }>;
 
 export type PaymentMatch = Readonly<{
   state: PaymentMatchState;
   detail: string;
-  /** The payment this verdict is about, when one was seen. */
+  /**
+   * The payment this verdict is about, when one was seen: the one that brought
+   * the requested mint's sum to the asked amount, or the latest one counted.
+   */
   payment: ObservedPayment | null;
+  /** Base units of the requested mint credited to the recipient across every counted payment. */
+  receivedRaw: string;
+  /** Of those payments, what the token's own transfer fee withheld on the way. */
+  feeWithheldRaw: string;
+  /** How many transactions credited the recipient in the requested mint. */
+  payments: number;
 }>;
+
+/** A credit is a positive whole number of base units; anything else credited nobody. */
+function positiveRaw(value: string | undefined): bigint {
+  if (value === undefined || !/^[0-9]+$/.test(value)) return 0n;
+  return BigInt(value);
+}
 
 /**
  * Did this exact request get paid, and paid correctly?
@@ -195,12 +218,22 @@ export type PaymentMatch = Readonly<{
  * arrived and cannot be counted, and an expired request is one nobody should
  * still be paying.
  *
+ * **A payment is a credit.** The reference is public — anyone can put it in a
+ * transaction that moves nothing — so carrying it proves nothing on its own
+ * (SEC-1, FIX-PAY-1). Only base units that reached the recipient in the
+ * requested mint count; a transaction that credited nothing is not a payment,
+ * not an open request's payment and not a second payment.
+ *
+ * **The requested mint's credits add up.** No single transaction decides the
+ * verdict: a payment short by a token's own transfer fee and the top-up after
+ * it are one paid request, and another token arriving first does not stop the
+ * requested one being counted after it. Money in another mint is said only
+ * when nothing in the requested one arrived.
+ *
  * **Duplicate protection is by signature.** Two transactions carrying the same
  * reference are two payments, and the second is not a confirmation of the
- * first. The first one that satisfies the request settles it; anything after
- * that is reported as an overpayment rather than silently folded in, because
- * folding it in is how a person is told they were paid once when they were
- * paid twice.
+ * first: more than the request asked for is an overpayment, said with how many
+ * times it was paid, never silently folded into "paid once".
  */
 export function matchPayment(args: {
   /** Base units the request asked for, or null for an open request. */
@@ -211,44 +244,56 @@ export function matchPayment(args: {
   observed: readonly ObservedPayment[];
   expired: boolean;
 }): PaymentMatch {
-  const first = args.observed[0] ?? null;
+  const credits = args.observed.filter((entry) => positiveRaw(entry.creditedRaw) > 0n);
+  const counted = credits.filter((entry) => entry.mint === args.expectedMint);
+  const foreign = credits.find((entry) => entry.mint !== args.expectedMint) ?? null;
+  const none = { receivedRaw: "0", feeWithheldRaw: "0", payments: 0 } as const;
 
-  if (first === null) {
+  if (counted.length === 0) {
+    /* A payment that landed settles the request even if the clock has since
+       run out; another token that landed is said even then. Expiry stops new
+       payments being invited; it does not un-receive money that arrived. */
+    if (foreign !== null) {
+      return { state: "WRONG_TOKEN", detail: "A different token arrived than the one this request asked for.", payment: foreign, ...none };
+    }
     return args.expired
-      ? { state: "EXPIRED", detail: "This request expired before it was paid.", payment: null }
-      : { state: "AWAITING", detail: "Waiting for the payment.", payment: null };
+      ? { state: "EXPIRED", detail: "This request expired before it was paid.", payment: null, ...none }
+      : { state: "AWAITING", detail: "Waiting for the payment.", payment: null, ...none };
   }
 
-  /* A payment that landed settles the request even if the clock has since run
-     out. Expiry stops new payments being invited; it does not un-receive money
-     that already arrived. */
-  if (first.mint !== args.expectedMint) {
+  const expected = args.expectedRaw === null ? null : BigInt(args.expectedRaw);
+  let received = 0n;
+  let fee = 0n;
+  let payments = 0;
+  let settling: ObservedPayment | null = null;
+  for (const entry of counted) {
+    received += positiveRaw(entry.creditedRaw);
+    fee += positiveRaw(entry.feeWithheldRaw);
+    payments += entry.count !== undefined && Number.isSafeInteger(entry.count) && entry.count > 0 ? entry.count : 1;
+    if (settling === null && (expected === null || received >= expected)) settling = entry;
+  }
+  const last = counted[counted.length - 1] ?? null;
+  const sums = { receivedRaw: received.toString(), feeWithheldRaw: fee.toString(), payments };
+  const times = payments > 1 ? ` This request was paid ${payments} times.` : "";
+
+  if (expected === null) {
+    /* An open request: any positive amount of its token pays it, once. */
+    if (payments > 1) return { state: "OVERPAID", detail: `This request was paid ${payments} times.`, payment: settling, ...sums };
+    return { state: "PAID", detail: "Paid.", payment: settling, ...sums };
+  }
+  if (received < expected) {
+    const byFee = fee > 0n && received + fee >= expected;
     return {
-      state: "WRONG_TOKEN",
-      detail: "A different token arrived than the one this request asked for.",
-      payment: first,
+      state: "UNDERPAID",
+      detail: byFee
+        ? "The full amount was sent, but the token's own transfer fee kept part of it, so less arrived than this request asked for."
+        : "Less arrived than this request asked for.",
+      payment: last,
+      ...sums,
     };
   }
-
-  if (args.observed.length > 1) {
-    return {
-      state: "OVERPAID",
-      detail: `This request was paid ${args.observed.length} times.`,
-      payment: first,
-    };
+  if (received > expected) {
+    return { state: "OVERPAID", detail: `More arrived than this request asked for.${times}`, payment: settling, ...sums };
   }
-
-  if (args.expectedRaw === null) {
-    return { state: "PAID", detail: "Paid.", payment: first };
-  }
-
-  const expected = BigInt(args.expectedRaw);
-  const credited = BigInt(first.creditedRaw);
-  if (credited < expected) {
-    return { state: "UNDERPAID", detail: "Less arrived than this request asked for.", payment: first };
-  }
-  if (credited > expected) {
-    return { state: "OVERPAID", detail: "More arrived than this request asked for.", payment: first };
-  }
-  return { state: "PAID", detail: "Paid.", payment: first };
+  return { state: "PAID", detail: "Paid.", payment: settling, ...sums };
 }

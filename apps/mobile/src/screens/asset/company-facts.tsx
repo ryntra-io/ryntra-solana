@@ -7,6 +7,7 @@ import { Sheet } from '@/components/sheet'
 import { Skeleton } from '@/components/skeleton'
 import { Txt } from '@/components/txt'
 import { COMPANY_COPY, type CompanyCopy } from '@/features/invest/company-copy'
+import { INVEST_COPY } from '@/features/invest/copy'
 import {
   aboutFacts,
   chartDay,
@@ -27,20 +28,20 @@ import { useCandles } from '@/hooks/use-market'
 import { useNow } from '@/hooks/use-now'
 import type { MarketDetail, StockAsset } from '@/lib/api'
 import { useCopy, useLocale, type Locale } from '@/lib/i18n'
-import { formatMoment, formatPrice } from '@/utils/format'
+import { formatAt, formatMoment, formatPrice, saidFigure } from '@/utils/format'
 
 /**
  * A company's facts at rest — the web's company page
  * under the purchase, each block a set of figures
  * with its label and, under the block, where they come from and when:
- * «Ключові показники» (a private company's valuation, the price over the
- * year), «Про компанію» (a private company's standing, where the share lists),
+ * «Ключові показники» (a private company's valuation, the price over half
+ * a year), «Про компанію» (a private company's standing, where the share lists),
  * «Що ти купуєш» (the issuer's label and line — its whole text one tap deeper —
  * the issuer, the backing, the dividends, the issuer's fee) and «Торги на
  * Solana · 24 год» (the token's day). A figure no source states is not drawn;
  * a block with nothing to say is not drawn at all. The company's SEC figures,
- * its industry and what it does are the web's own files, not served by
- * the contract — nothing stands in for them.
+ * its industry and what it does are the web's own files, asked of line A
+ * (request 37) — nothing stands in for them.
  */
 export function CompanyFacts({
   mint,
@@ -102,9 +103,7 @@ export function CompanyFacts({
         title={words.tradingOnSolana}
         source={
           day.stats.length > 0 || day.pressure
-            ? [words.marketSource(formatMoment(observedAt, now, locale)), stale ? words.notUpdated : null]
-                .filter(Boolean)
-                .join(' · ')
+            ? [formatMoment(observedAt, now, locale), stale ? words.notUpdated : null].filter(Boolean).join(' · ')
             : null
         }
       >
@@ -196,7 +195,10 @@ function Facts({ items, ruled = false }: { items: readonly CompanyFact[]; ruled?
   )
 }
 
-/** «Ключові показники»: a private company's valuation, then the price over the year. Drawn only with something to say. */
+/**
+ * «Ключові показники»: a private company's valuation, then the price over half a year — all the daily bars the candles
+ * route serves — its low and high named as the daily closes they are. Drawn only with something to say.
+ */
 function KeyStats({
   mint,
   price,
@@ -211,9 +213,11 @@ function KeyStats({
   locale: Locale
 }) {
   const now = useNow(60_000)
+  const rangeWords = useCopy(INVEST_COPY)
   const candles = useCandles(mint, '1d')
   const range = useMemo(
-    () => (candles.data ? yearRange(yearPoints(candles.data.candles, price, now), price, now) : null),
+    // The closes as the pool closed them — a past day's close never moves with the live price (ST-5).
+    () => (candles.data ? yearRange(yearPoints(candles.data.candles, now), price, now) : null),
     [candles.data, price, now],
   )
   if (stats.length === 0 && !range && !candles.isPending) return null
@@ -224,18 +228,26 @@ function KeyStats({
         <View className="gap-2">
           <View className="flex-row items-baseline justify-between gap-3">
             <Txt variant="ui" tone="faint">
-              {words.yearRange}
+              {rangeWords.halfYearRange}
             </Txt>
-            {yearStartsLate(range, now) ? (
-              <Txt variant="ui" tone="faint" tabular>
-                {words.since(chartDay(range.since, locale))}
-              </Txt>
-            ) : null}
+            {/* The read's time, quietly — and that it is not updated, when the route says so. */}
+            <Txt variant="labelSm" tone="faint" tabular className="flex-shrink text-right">
+              {[
+                yearStartsLate(range, now) ? words.since(chartDay(range.since, locale)) : null,
+                candles.data ? formatAt(candles.data.observedAt, now, locale) : null,
+                candles.data?.stale ? rangeWords.notUpdated : null,
+              ]
+                .filter(Boolean)
+                .join(' · ')}
+            </Txt>
           </View>
           <View
             accessible
             accessibilityRole="image"
-            accessibilityLabel={words.yearRangeA11y(formatPrice(range.low, locale), formatPrice(range.high, locale))}
+            accessibilityLabel={rangeWords.closeRangeA11y(
+              saidFigure(formatPrice(range.low, locale), locale),
+              saidFigure(formatPrice(range.high, locale), locale),
+            )}
             className="my-1 h-1.5 rounded-pill bg-track"
           >
             {range.position === null ? null : (
@@ -251,21 +263,28 @@ function KeyStats({
               </>
             )}
           </View>
-          <View className="flex-row justify-between gap-4">
-            <View className="gap-0.5">
-              <Txt variant="ui" tabular>
+          {/* Two equal columns that may shrink (ST-5 r4): a long Ukrainian label and date wrap under the figure, never off the card. */}
+          <View className="flex-row gap-4">
+            <View className="min-w-0 flex-1 gap-0.5">
+              <Txt variant="ui" tabular numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8}>
                 {formatPrice(range.low, locale)}
               </Txt>
               <Txt variant="labelSm" tone="faint">
-                {`${words.yearLow} · ${chartDay(range.lowAt, locale)}`}
+                {rangeWords.lowestClose}
+              </Txt>
+              <Txt variant="labelSm" tone="faint" tabular>
+                {chartDay(range.lowAt, locale)}
               </Txt>
             </View>
-            <View className="items-end gap-0.5">
-              <Txt variant="ui" tabular>
+            <View className="min-w-0 flex-1 items-end gap-0.5">
+              <Txt variant="ui" tabular numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8} className="text-right">
                 {formatPrice(range.high, locale)}
               </Txt>
-              <Txt variant="labelSm" tone="faint">
-                {`${words.yearHigh} · ${chartDay(range.highAt, locale)}`}
+              <Txt variant="labelSm" tone="faint" className="text-right">
+                {rangeWords.highestClose}
+              </Txt>
+              <Txt variant="labelSm" tone="faint" tabular className="text-right">
+                {chartDay(range.highAt, locale)}
               </Txt>
             </View>
           </View>
@@ -277,7 +296,7 @@ function KeyStats({
   )
 }
 
-/** The issuer's label as a chip — its whole text one tap deeper — and its one line under it. */
+/** The issuer's label as a chip — its whole text one tap deeper — and its one line under it: what the token is not guards money. */
 function TruthRow({ topic, company, words }: { topic: TruthTopic; company: string; words: CompanyCopy }) {
   const [open, setOpen] = useState(false)
   return (
@@ -291,6 +310,7 @@ function TruthRow({ topic, company, words }: { topic: TruthTopic; company: strin
         <Txt variant="ui">{topic.title}</Txt>
         <Icon name="help-circle-outline" size={16} color="muted" />
       </Pressable>
+      {/* What the token is not — no share, no vote, selling may not work — stays on the screen: it guards money (ST-4). */}
       <Txt variant="ui" tone="muted">
         {topic.short}
       </Txt>
@@ -357,9 +377,6 @@ function Pressure({
             {words.sells(pressure.sells)}
           </Txt>
         </View>
-        <Txt variant="labelSm" tone="faint">
-          {words.byTrades}
-        </Txt>
       </View>
       <View
         accessible

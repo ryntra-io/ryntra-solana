@@ -26,20 +26,28 @@
     "paths": {
       "@/*": [
         "./*"
+      ],
+      "@ryntra/client": [
+        "./packages/ryntra-client/src/index.ts"
       ]
     }
   },
   "include": [
     "**/*.ts",
     "**/*.tsx",
+    ".next-ai08/types/**/*.ts",
+    ".next-dev/types/**/*.ts",
+    ".next-ws/types/**/*.ts",
     ".next/types/**/*.ts",
     "next-env.d.ts",
-    ".next-ws/types/**/*.ts"
+    ".next-review/types/**/*.ts"
   ],
   "exclude": [
     "node_modules",
     "output",
     "apps",
-    "docs/analytics/defillama/fork"
+    "docs/analytics/defillama/fork",
+    "docs/analytics/defillama/live",
+    "docs/analytics/defillama/pending"
   ]
 }

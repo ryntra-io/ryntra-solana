@@ -13,7 +13,7 @@ import { FIGURES, TRADE } from "./workflow-trade";
  * a screenshot would blur and could not be translated).
  *
  * What is real and what is a snapshot. The rail is the product's own menu —
- * its sections over the page registry (`PRODUCT_ROUTES` through
+ * its groups and rows over the page registry (`PRODUCT_ROUTES` through
  * `menuNavigation`) — so it is the rail the cabinet draws and nothing
  * planned can render as open. The market header's words are the Spot page's
  * own strings through the workspace catalogue. The figures — the list, the
@@ -136,8 +136,8 @@ const LAST_Y = yOf(LAST);
 
 export function HeroTerminal({ locale }: { locale: PublicLocale }) {
   const text = (english: string) => translateSolana(locale, english);
-  /* The menu you can see: every section with its caption,
-     nothing behind «Ще». The picture is Spot, so Spot is the lit row. */
+  /* The menu you can see (Menu 3): Home, then the groups — Торгівля open because Spot is on screen, Гроші open as it
+     is on a first visit, the rest shut. The picture is Spot, so Spot is the lit row. */
   const menu = menuNavigation(PRODUCT_ROUTES, locale);
 
   return (
@@ -155,17 +155,22 @@ export function HeroTerminal({ locale }: { locale: PublicLocale }) {
 
       <div className={styles.tBody}>
         <nav className={styles.tRail}>
-          {menu.sections.map((section) => (
-            <div key={section.id} className={styles.tGroup}>
-              {section.title ? <span className={styles.tGroupTitle}>{section.title}</span> : null}
-              {section.rows.map((row) => (
-                /* The cabinet's menu draws only pages that are ready; a page being built reads as a page. */
-                <span key={row.id} className={styles.tNavRow} data-active={row.id === "spot" || undefined}>
-                  <span className={styles.tNavName}><span className={styles.tNavDot} />{row.label}</span>
-                </span>
-              ))}
-            </div>
-          ))}
+          {menu.groups.map((group) => {
+            const open = group.id === "home" || group.id === "trading" || group.id === "money";
+            return (
+              <div key={group.id} className={styles.tGroup}>
+                {group.id === "home" ? null : <span className={styles.tGroupTitle}>{group.label}</span>}
+                {open
+                  ? group.rows.map((row) => (
+                      /* The cabinet's menu draws only pages that are ready; a page being built reads as a page. */
+                      <span key={row.id} className={styles.tNavRow} data-active={row.id === "spot" || undefined}>
+                        <span className={styles.tNavName}><span className={styles.tNavDot} />{row.label}</span>
+                      </span>
+                    ))
+                  : null}
+              </div>
+            );
+          })}
         </nav>
 
         <div className={styles.tMarkets}>

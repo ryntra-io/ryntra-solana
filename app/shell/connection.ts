@@ -275,4 +275,9 @@ export type ConnectionAdapter = Readonly<{
   disconnect?: () => void;
   switchNetwork?: () => void | Promise<void>;
   truncate: (address: string) => string;
+  /**
+   * The name the connected wallet goes by — Solana's `.skr` (SKR-4) — or `null`/absent. It stands where the shortened
+   * address stood on the trigger; inside the panel the address stays beside it, because the address is what signs.
+   */
+  name?: string | null;
 }>;

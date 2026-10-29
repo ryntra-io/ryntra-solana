@@ -7,12 +7,18 @@ import { Card } from '@/components/card'
 import { DoorRow } from '@/components/door-row'
 import { Screen } from '@/components/screen'
 import { Txt } from '@/components/txt'
+import { BLOCKS_COPY } from '@/features/home/blocks-copy'
+import { arrangeable, availableBlocks } from '@/features/home/home-blocks'
+import { accountState } from '@/features/home/home-model'
+import { useHomeLayout } from '@/features/home/use-home-layout'
+import { siteHrefOf } from '@/features/monitoring/deep-link'
 import { unreadCount } from '@/features/monitoring/monitoring-model'
 import { useSurface } from '@/features/plans/use-plans'
-import { accountDeletionMailto, DELETION_POLICY_URL, SUPPORT_EMAIL } from '@/features/session/account-deletion'
+import { accountDeletionMailto, DELETION_POLICY_URL } from '@/features/session/account-deletion'
 import { useAccount } from '@/features/session/use-account'
-import { PLACES_COPY } from '@/features/shell/places'
+import { HELP_URL, PLACES_COPY } from '@/features/shell/places'
 import { WalletPanel } from '@/features/wallet/wallet-panel'
+import { SIGNING_COPY } from '@/features/wallet/signing-copy'
 import {
   LOCALE_PREFERENCES,
   setLocalePreference,
@@ -24,8 +30,18 @@ import {
   type LocalePreference,
 } from '@/lib/i18n'
 import { PRIVACY_URL, TERMS_URL } from '@/lib/legal'
-import { getThemeMode, setThemeMode, THEME_MODES, type ThemeMode } from '@/theme'
 import { openLink } from '@/lib/open-link'
+import { ArrangeSheet } from '@/screens/home/arrange-sheet'
+import {
+  DENSITIES,
+  getThemeMode,
+  setDensity,
+  setThemeMode,
+  THEME_MODES,
+  useDensity,
+  type Density,
+  type ThemeMode,
+} from '@/theme'
 
 type SettingsCopy = Readonly<{
   title: string
@@ -42,6 +58,9 @@ type SettingsCopy = Readonly<{
   version: string
   gallery: string
   theme: Readonly<Record<ThemeMode, string>>
+  density: string
+  home: string
+  densities: Readonly<Record<Density, string>>
   locales: Readonly<Record<LocalePreference, string>>
 }>
 
@@ -51,7 +70,7 @@ const COPY: Copy<SettingsCopy> = {
     appearance: 'Appearance',
     language: 'Language',
     account: 'Account',
-    monitoring: 'Monitoring',
+    monitoring: 'Inbox',
     deleteData: 'Delete account data',
     byMail: 'opens your mail app',
     ryntra: 'Ryntra',
@@ -60,7 +79,10 @@ const COPY: Copy<SettingsCopy> = {
     privacy: 'Privacy',
     version: 'Version',
     gallery: 'Design gallery',
-    theme: { dark: 'Dark', light: 'Light', system: 'System' },
+    theme: { dark: 'Graphite', light: 'Porcelain', system: 'As the system' },
+    density: 'Density',
+    home: 'Home',
+    densities: { regular: 'Regular', compact: 'Compact' },
     locales: { en: 'English', uk: 'Українська', system: 'System' },
   },
   uk: {
@@ -68,7 +90,7 @@ const COPY: Copy<SettingsCopy> = {
     appearance: 'Вигляд',
     language: 'Мова',
     account: 'Акаунт',
-    monitoring: 'Моніторинг',
+    monitoring: 'Вхідні',
     deleteData: 'Видалити дані акаунта',
     byMail: 'відкриває пошту',
     ryntra: 'Ryntra',
@@ -77,7 +99,10 @@ const COPY: Copy<SettingsCopy> = {
     privacy: 'Приватність',
     version: 'Версія',
     gallery: 'Галерея дизайну',
-    theme: { dark: 'Темна', light: 'Світла', system: 'Системна' },
+    theme: { dark: 'Graphite', light: 'Porcelain', system: 'Як у системі' },
+    density: 'Щільність',
+    home: 'Головна',
+    densities: { regular: 'Звичайна', compact: 'Компактна' },
     locales: { en: 'English', uk: 'Українська', system: 'Системна' },
   },
 }
@@ -136,6 +161,18 @@ function ThemePicker({ labels }: { labels: SettingsCopy['theme'] }) {
   )
 }
 
+/** The web's two densities: the same screens, tighter or roomier — never a different app. */
+function DensityPicker({ labels }: { labels: SettingsCopy['densities'] }) {
+  const density = useDensity()
+  return (
+    <Segmented
+      options={DENSITIES.map((value) => ({ value, label: labels[value] }))}
+      value={density}
+      onChange={setDensity}
+    />
+  )
+}
+
 function LanguagePicker({ labels }: { labels: SettingsCopy['locales'] }) {
   const preference = useLocalePreference()
   return (
@@ -148,18 +185,24 @@ function LanguagePicker({ labels }: { labels: SettingsCopy['locales'] }) {
 }
 
 /**
- * «Налаштування» — a row of «Ще»: the wallet and its monitoring,
- * the look and the language, and where the product lives. What «Ще» drew
- * below its doors before the current menu, gathered in one place.
+ * «Налаштування» — a row at the foot of «Меню»: the wallet and its monitoring,
+ * the look and the language, and where the product lives. What «Ще» once drew
+ * below its doors before the menu v6.2, gathered in one place.
  */
 export function SettingsScreen() {
   const router = useRouter()
   const copy = useCopy(COPY)
   const places = useCopy(PLACES_COPY)
+  const signing = useCopy(SIGNING_COPY)
   const shared = useSharedCopy()
   const locale = useLocale()
   const account = useAccount()
   const unread = unreadCount(useSurface(account.session, locale))
+  const blocks = useCopy(BLOCKS_COPY)
+  const layout = useHomeLayout()
+  const [arranging, setArranging] = useState(false)
+  const available = availableBlocks(accountState(account.address, account.session) !== 'guest')
+  const rows = arrangeable(layout, available)
   const version = Constants.expoConfig?.version ?? '—'
   const back = () => (router.canGoBack() ? router.back() : router.replace('/(tabs)/more'))
   return (
@@ -173,10 +216,10 @@ export function SettingsScreen() {
           value={unread > 0 ? String(unread) : undefined}
           onPress={() => router.push('/monitoring')}
         />
+        <DoorRow icon="finger-print-outline" label={signing.title} onPress={() => router.push('/signing')} />
         <DoorRow
           icon="trash-outline"
           label={copy.deleteData}
-          line={SUPPORT_EMAIL}
           external={copy.byMail}
           onPress={() => {
             Linking.openURL(accountDeletionMailto(account.address, locale)).catch(
@@ -188,6 +231,18 @@ export function SettingsScreen() {
       </Card>
       <SectionLabel>{copy.appearance}</SectionLabel>
       <ThemePicker labels={copy.theme} />
+      <SectionLabel>{copy.density}</SectionLabel>
+      <DensityPicker labels={copy.densities} />
+      <SectionLabel>{copy.home}</SectionLabel>
+      <Card padded={false}>
+        <DoorRow
+          icon="grid-outline"
+          label={blocks.title}
+          value={blocks.shown(rows.filter((block) => block.on).length, rows.length)}
+          onPress={() => setArranging(true)}
+          last
+        />
+      </Card>
       <SectionLabel>{copy.language}</SectionLabel>
       <LanguagePicker labels={copy.locales} />
       <SectionLabel>{copy.ryntra}</SectionLabel>
@@ -196,20 +251,15 @@ export function SettingsScreen() {
           icon="globe-outline"
           label="ryntra.io"
           external={places.onWeb}
-          onPress={() => openLink('https://ryntra.io')}
+          onPress={() => openLink(siteHrefOf('https://ryntra.io', locale))}
         />
         <DoorRow
           icon="document-text-outline"
           label={copy.docs}
           external={places.onWeb}
-          onPress={() => openLink('https://ryntra.io/docs')}
+          onPress={() => openLink(siteHrefOf(HELP_URL, locale))}
         />
-        <DoorRow
-          icon="reader-outline"
-          label={copy.terms}
-          external={places.onWeb}
-          onPress={() => openLink(TERMS_URL)}
-        />
+        <DoorRow icon="reader-outline" label={copy.terms} external={places.onWeb} onPress={() => openLink(TERMS_URL)} />
         <DoorRow
           icon="shield-checkmark-outline"
           label={copy.privacy}
@@ -221,6 +271,7 @@ export function SettingsScreen() {
           <DoorRow icon="color-palette-outline" label={copy.gallery} onPress={() => router.push('/gallery')} last />
         ) : null}
       </Card>
+      <ArrangeSheet visible={arranging} available={available} onClose={() => setArranging(false)} />
     </Screen>
   )
 }

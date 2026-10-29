@@ -9,17 +9,23 @@
 
 import type { Connection } from "@solana/web3.js";
 
-import type { LaunchPresetsResponse } from "../api/v1/contract.ts";
+import { API_VERSION_HEADER, versionAtLeast, type LaunchPresetsResponse } from "../api/v1/contract.ts";
 import { CREATOR_LOCK_IDS, CREATOR_LOCK_SCHEDULES } from "../core/launch/creator-lock.ts";
+import { curveRulesFormat } from "../core/launch/curve-rules.ts";
+import { termsOf, type PresetTerms } from "../core/launch/preset-terms.ts";
 import { configsOfPreset } from "../core/venues/meteora-dbc/launch.server.ts";
 import { LAUNCH_PRESET_IDS, LAUNCH_PRESETS } from "../core/venues/meteora-dbc/presets.ts";
+import { partnerDeps } from "../growth/partner-deps.server.ts";
 import { getGuardRuntime } from "../guard/runtime.ts";
 import { storeSupportsConcurrentInstances, withBoundedCasRetry, type GuardStore } from "../guard/store.ts";
 import { FixedWindowLimiter, clientIp, type RateLimitDecision } from "../http-control.ts";
 import { resolveInternalWallets } from "../admin/internal-wallets.ts";
 import { ATTRIBUTION_REGISTRY } from "../attribution/registry.ts";
 import { adoptLaunch } from "./adopt.server.ts";
+import { boostBounds } from "./boost.server.ts";
+import { earlyAccessBoundsFor, earlyAccessOpenFor } from "./early-access.server.ts";
 import { lastAutopilotPass } from "./autopilot.server.ts";
+import { peopleOpenOf, readPeopleSwitch } from "./engine.server.ts";
 import { readExecutorMarket, readExecutorStops, stopOn, type ExecutorStops } from "./executor.server.ts";
 import type { ExecutorFacts, HealthDeps, OwnWallets } from "./health.server.ts";
 import {
@@ -38,7 +44,7 @@ import {
   launchWritesHere,
   type LaunchNetwork,
 } from "./config.server.ts";
-import type { LaunchDeps, LaunchReadDeps } from "./flow.server.ts";
+import { bindLaunchPartner, type LaunchDeps, type LaunchReadDeps, type LaunchRecord } from "./flow.server.ts";
 import { DESCRIPTION_MAX, IMAGE_MAX_BYTES, IMAGE_TYPES, NAME_MAX, SYMBOL_MAX } from "./form.ts";
 
 /**
@@ -55,7 +61,10 @@ export function launchDeps(): LaunchDeps | null {
   if (!poolPayer) return null;
   /* On mainnet the demo market takes only Ryntra's own wallets; the devnet stand is Ryntra's own throughout. */
   const ownWallet = async (wallet: string) => network.cluster !== "mainnet" || (await ryntraOwnWallets(network, store)).wallets.has(wallet);
-  return { network, connection: launchConnection(network), store, poolPayer, ownWallet, origin: network.origin, now: () => new Date(), second: launchArchiveConnection(network) };
+  /* The creator's partner: the team is every wallet of Ryntra's own — the same list the review reads; a list read
+     incompletely is no list. */
+  const partners = partnerDeps(store, { ownWallets: () => ryntraOwnWallets(network, store) });
+  return { network, connection: launchConnection(network), store, poolPayer, ownWallet, origin: network.origin, now: () => new Date(), second: launchArchiveConnection(network), env: process.env, partners };
 }
 
 /**
@@ -63,13 +72,16 @@ export function launchDeps(): LaunchDeps | null {
  * signature is called absent, and adopting a launch the chain shows Ryntra's pool payer created when the store has no
  * record of it.
  */
-export function launchReadHooks(network: LaunchNetwork, connection: Connection, store: GuardStore): Pick<LaunchReadDeps, "second" | "adopt"> {
+export function launchReadHooks(network: LaunchNetwork, connection: Connection, store: GuardStore): Pick<LaunchReadDeps, "second" | "adopt" | "bindPartner"> {
   const second = launchArchiveConnection(network);
   const poolPayer = launchPoolPayerAddress(network);
   const adopt = poolPayer
     ? (token: string) => adoptLaunch({ network, connection, store, poolPayer, history: launchHistoryConnection(network), archive: second, now: () => new Date() }, token)
     : null;
-  return { second, adopt };
+  /* A launch confirmed after its route gave up: bound to the partner its creator saw, by the same rules as at the send. */
+  const partners = partnerDeps(store, { ownWallets: () => ryntraOwnWallets(network, store) });
+  const bindPartner = (record: LaunchRecord) => bindLaunchPartner(store, partners, record, new Date().toISOString());
+  return { second, adopt, bindPartner };
 }
 
 /** What reading a launch's market needs — no key of Ryntra's, and no switch: a token's page reads while the lane is paused. */
@@ -167,7 +179,29 @@ export function launchHealthDeps(): HealthDeps | null {
     ryntraWallets: () => ryntraOwnWallets(deps.network, deps.store),
     executorRuns: () => launchExecutorRuns(deps.network, deps.store),
     executorOf: (token) => executorFactsOf(deps.network, deps.store, token),
+    peopleServed: () => launchPeopleServed(deps.network, deps.store),
   };
+}
+
+/* The operator's switch of people's Micro markets: read again after a few seconds — a page of markets asks once per market. */
+let PEOPLE: Readonly<{ at: number; cluster: string; value: Promise<boolean> }> | null = null;
+
+/**
+ * Whether Ryntra's executor claims the budget and keeps the ladder on people's Micro markets here (SOL-L6): the
+ * operator's switch — never flipped, open on devnet and closed on mainnet; not read, closed.
+ */
+export function launchPeopleServed(network: LaunchNetwork, store: GuardStore, now: number = Date.now()): Promise<boolean> {
+  if (PEOPLE && PEOPLE.cluster === network.cluster && now - PEOPLE.at < 10_000) return PEOPLE.value;
+  /* Not read: the promise fails — the token page then says nothing of it, and the form says the budget waits. */
+  const value = readPeopleSwitch(store, network.cluster).then((row) => {
+    if (row === undefined) throw new Error("The switch of people's markets was not read.");
+    return peopleOpenOf(network.cluster, row);
+  });
+  value.catch(() => {
+    if (PEOPLE?.value === value) PEOPLE = null;
+  });
+  PEOPLE = { at: now, cluster: network.cluster, value };
+  return value;
 }
 
 /** What reading a launch's page needs: the pool payer's address its receipt asks for, never its key. */
@@ -203,7 +237,14 @@ export function launchTrading(): boolean {
 export function launchPresetsView(network: LaunchNetwork, options: Readonly<{ internal?: boolean }> = {}): LaunchPresetsResponse {
   return {
     network: network.chain,
-    presets: LAUNCH_PRESET_IDS.filter((id) => configsOfPreset(network.configs, id).length > 0 && network.pairs[id] && (LAUNCH_PRESETS[id].audience === "people" || options.internal === true)).map((id) => {
+    presets: LAUNCH_PRESET_IDS.filter(
+      (id) =>
+        configsOfPreset(network.configs, id).length > 0 &&
+        network.pairs[id] &&
+        (LAUNCH_PRESETS[id].audience === "people" || options.internal === true) &&
+        /* «Правила на кривій» (SOL-L8): never listed before the operator opens the format after the audit of the rule program. */
+        (LAUNCH_PRESETS[id].curveRules !== true || (network.curveRules ?? null) !== null),
+    ).map((id) => {
       const preset = LAUNCH_PRESETS[id];
       const pair = launchPair(network, id);
       return {
@@ -220,10 +261,34 @@ export function launchPresetsView(network: LaunchNetwork, options: Readonly<{ in
         graduationQuote: preset.curve.graduationQuote ?? null,
         technicalValidation: preset.audience === "internal",
         lpLockedForeverPct: 100,
+        /* «Правила на кривій» (SOL-L8): such a token runs Ryntra's rules until the DEX, so «Без правил на переказах» is not said on it. */
+        ...(preset.curveRules === true ? { curveRules: true as const } : {}),
+        terms: termsView(termsOf(preset)),
       };
     }),
+    /* «Спільнота»'s community tokens and the formats of «Розширені параметри» (SOL-L5): each only where it is offered. */
+    communities: network.communities.map((pair) => ({ config: pair.config, mint: pair.mint, symbol: pair.symbol, decimals: pair.decimals })),
+    formats: {
+      advanced: network.advanced ? { bounds: { ...network.advanced.bounds, supplies: [...network.advanced.bounds.supplies], snipers: [...network.advanced.bounds.snipers] } } : null,
+      boost: boostOffered(network),
+      earlyAccess: earlyAccessOpenFor(network) ? earlyAccessOffered(network) : null,
+      /* «Правила на кривій» (SOL-L8): the verified set with its bounds and what is forbidden; null until the operator opens it. */
+      curveRules: curveRulesView(curveRulesFormat(network.curveRules ?? null)),
+    },
     locks: CREATOR_LOCK_IDS.map((id) => ({ id, cliffDays: CREATOR_LOCK_SCHEDULES[id].cliffDays, vestDays: CREATOR_LOCK_SCHEDULES[id].vestDays })),
     limits: { nameMax: NAME_MAX, symbolMax: SYMBOL_MAX, descriptionMax: DESCRIPTION_MAX, imageMaxBytes: IMAGE_MAX_BYTES, imageTypes: [...IMAGE_TYPES], launchesPerDay: LAUNCHES_PER_CREATOR_PER_DAY },
+  };
+}
+
+/** The format as the response carries it — the frozen tables copied, so nothing of the module's own is handed out. */
+function curveRulesView(format: ReturnType<typeof curveRulesFormat>): NonNullable<LaunchPresetsResponse["formats"]>["curveRules"] {
+  if (!format) return null;
+  return {
+    rules: format.rules.map((rule) => ({ id: rule.id, bounds: Object.fromEntries(Object.entries(rule.bounds).map(([name, range]) => [name, { min: range.min, max: range.max }])) })),
+    forbidden: format.forbidden.map((rule) => ({ id: rule.id, reason: rule.reason })),
+    scope: format.scope,
+    side: format.side,
+    program: { ...format.program },
   };
 }
 
@@ -240,6 +305,8 @@ const LIMITERS = {
   tradeSubmit: new FixedWindowLimiter({ limit: 120, windowMs: 60 * 60 * 1000, maxKeys: 5_000 }),
   claimBuild: new FixedWindowLimiter({ limit: 60, windowMs: 60 * 60 * 1000, maxKeys: 5_000 }),
   claimSubmit: new FixedWindowLimiter({ limit: 30, windowMs: 60 * 60 * 1000, maxKeys: 5_000 }),
+  /* «Забрати все»'s Review (SOL-L12): it builds and simulates the claim, so as many as the builds and a few more. */
+  claimReview: new FixedWindowLimiter({ limit: 90, windowMs: 60 * 60 * 1000, maxKeys: 5_000 }),
   cabinet: new FixedWindowLimiter({ limit: 240, windowMs: 60 * 60 * 1000, maxKeys: 5_000 }),
   /* A holder's position in the pool: its quote as the amount is typed, an entry or a permission built, one sent. */
   holderQuote: new FixedWindowLimiter({ limit: 600, windowMs: 60 * 60 * 1000, maxKeys: 5_000 }),
@@ -305,17 +372,66 @@ export async function consumeSharedLaunchWrite(kind: keyof typeof LIMITERS, head
   }
 }
 
+/** Launch Boost's bounds where a campaign may be opened here (SOL-L5): mainnet only with the operator's, on its production deployment. */
+function boostOffered(network: LaunchNetwork): NonNullable<NonNullable<LaunchPresetsResponse["formats"]>["boost"]> | null {
+  const bounds = boostBounds(network);
+  return bounds ? { bounds: { ...bounds, currencies: [...bounds.currencies], routes: [...bounds.routes], maxBudgetRaw: { ...bounds.maxBudgetRaw } } } : null;
+}
+
+/** Early access's bounds where it may be built here: the stand; mainnet only with the operator's bounds and word. */
+function earlyAccessOffered(network: LaunchNetwork): NonNullable<NonNullable<LaunchPresetsResponse["formats"]>["earlyAccess"]> | null {
+  const bounds = earlyAccessBoundsFor(network);
+  return bounds ? { bounds: { ...bounds, modes: [...bounds.modes] } } : null;
+}
+
+/** A preset's terms as the API serves them: the shares of `presetTerms`, the one source the form and the cabinet read. */
+function termsView(terms: PresetTerms): NonNullable<LaunchPresetsResponse["presets"][number]["terms"]> {
+  return {
+    curveSplit: { ...terms.curve.split },
+    curveSplitThroughRyntra: { ...terms.curve.splitThroughRyntra },
+    graduation: { feeBps: terms.graduation.feeBps, creatorBps: terms.graduation.creatorBps, ryntraBps: terms.graduation.ryntraBps, toBudget: terms.graduation.toBudget },
+    pool: {
+      startFeeBps: terms.pool.startFeeBps,
+      endFeeBps: terms.pool.endFeeBps,
+      meteoraBps: terms.pool.meteoraBps,
+      compoundingBps: terms.pool.compoundingBps,
+      creatorPositionBps: terms.pool.creatorPositionBps,
+      ryntraPositionBps: terms.pool.ryntraPositionBps,
+    },
+  };
+}
+
+/**
+ * A refusal in the contract's codes for the client that asked: `LAUNCH_BUSY` (1.50.0) reaches only a client naming
+ * contract 1.50.0 or later in `X-Ryntra-API-Version`, `LAUNCH_QUOTE_PAUSED` (1.73.0, SOL-L12) only one naming 1.73.0 or
+ * later; an older one — a client before it — gets `LAUNCH_PAUSED`, the code it already reads as «nothing was sent»,
+ * never an unknown code it would take for a lost answer.
+ */
+export function launchFailureCode(code: import("./flow.server.ts").LaunchFailureCode, headers: Headers): import("../api/v1/contract.ts").ApiErrorCode {
+  const mapped = LAUNCH_FAILURE_CODES[code];
+  /* Each newer refusal reaches only a client naming the contract that brought it; an older one reads «nothing was sent». */
+  const since = mapped === "LAUNCH_BUSY" ? "1.50.0" : mapped === "LAUNCH_QUOTE_PAUSED" ? "1.73.0" : null;
+  if (!since) return mapped;
+  const named = headers.get(API_VERSION_HEADER)?.trim() ?? "";
+  return /^\d+\.\d+\.\d+$/.test(named) && versionAtLeast(named, since) ? mapped : "LAUNCH_PAUSED";
+}
+
 /** A refusal of the flow in the contract's codes. */
 export const LAUNCH_FAILURE_CODES = {
   METADATA_NOT_FOUND: "LAUNCH_NOT_FOUND",
   NAME_BORROWED: "LAUNCH_NAME_BORROWED",
+  NAME_REFUSED: "VALIDATION_ERROR",
   CREATOR_LIMIT: "LAUNCH_LIMIT",
+  NETWORK_BUSY: "LAUNCH_BUSY",
   PAYER_LOW: "LAUNCH_PAUSED",
   PRESET_UNAVAILABLE: "VALIDATION_ERROR",
   FIRST_BUY_ABOVE_CAP: "LAUNCH_FIRST_BUY_ABOVE_CAP",
   LOCK_NEEDS_PURCHASE: "VALIDATION_ERROR",
   LOCK_REQUIRED: "VALIDATION_ERROR",
+  LOCK_NEEDS_V1: "LAUNCH_WALLET_V1_REQUIRED",
   SHARES_INVALID: "LAUNCH_SHARES_INVALID",
+  ADVANCED_INVALID: "VALIDATION_ERROR",
+  ADVANCED_CONFIG_UNUSABLE: "VALIDATION_ERROR",
   NOT_BUILT: "LAUNCH_NOT_FOUND",
   BUILD_EXPIRED: "LAUNCH_BUILD_EXPIRED",
   BUILD_USED: "LAUNCH_BUILD_USED",
@@ -324,4 +440,5 @@ export const LAUNCH_FAILURE_CODES = {
   SIGNATURE_MISSING: "LAUNCH_SIGNED_OTHER_BYTES",
   SUBMIT_FAILED: "LAUNCH_SUBMIT_FAILED",
   BUILD_FAILED: "UNAVAILABLE",
+  QUOTE_PAUSED: "LAUNCH_QUOTE_PAUSED",
 } as const satisfies Record<import("./flow.server.ts").LaunchFailureCode, import("../api/v1/contract.ts").ApiErrorCode>;

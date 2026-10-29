@@ -3,13 +3,15 @@
 import { useCallback, useEffect, useRef, useState, type KeyboardEvent } from "react";
 
 import type { LeaderboardsResponse, LeagueRow } from "@/lib/growth/league-view";
-import { useSolanaConnection } from "../connection.tsx";
 import { useSolanaI18n } from "../i18n/provider.tsx";
 import { WalletChoices } from "../wallet-gate.tsx";
-import { useWalletProof } from "../wallet-proof.tsx";
-import { FaceAvatar, RankAvatar, SeasonBadge } from "./badge.tsx";
+import { FaceAvatar, RankAvatar, SeasonBadge, TrackBadge } from "./badge.tsx";
 import { leagueCopy, type BoardWordId } from "./league-copy.ts";
+import { partnerCopy } from "./partner-copy.ts";
 import { rankCopy } from "./rank-copy.ts";
+import { SignInGate } from "./sign-in-gate.tsx";
+import { useRewardsWallet } from "./use-rewards-wallet.tsx";
+import { PaidAsChip } from "./programme-card.tsx";
 import styles from "./leagues.module.css";
 
 /**
@@ -28,13 +30,14 @@ const BOARDS: readonly BoardWordId[] = ["TRADERS", "FRIENDS", "CREATORS"];
 type Kind = "current" | "previous";
 
 export function LeaderboardView() {
-  const { connection } = useSolanaConnection();
   const { locale } = useSolanaI18n();
   const words = leagueCopy(locale);
   const ranks = rankCopy(locale).rank;
-  const proof = useWalletProof();
-  const address = connection?.address ?? null;
-  const proven = proof.state.status === "proven" && proof.state.address === address;
+  /* The wallet the sign-in proved (Ріст 18): the boards are public, «You» opens without a second step. */
+  const wallet = useRewardsWallet();
+  const { refused, served } = wallet;
+  const address = wallet.address;
+  const proven = wallet.open;
   const intl = locale === "uk" ? "uk-UA" : "en-US";
 
   const [kind, setKind] = useState<Kind>("current");
@@ -51,19 +54,37 @@ export function LeaderboardView() {
 
   const load = useCallback(async () => {
     const asked = key;
-    try {
+    const read = async () => {
       const query = `week=${kind}${proven && address ? `&address=${encodeURIComponent(address)}` : ""}`;
       const response = await fetch(`/api/growth/leaderboards?${query}`);
-      if (currentKey.current !== asked) return;
       if (!response.ok) throw new Error("unavailable");
-      const body = (await response.json()) as LeaderboardsResponse;
+      return (await response.json()) as LeaderboardsResponse;
+    };
+    try {
+      let body = await read();
       if (currentKey.current !== asked) return;
+      /* A proven read answered without «You» is the server not seeing the sign-in: asked again, read once more if it
+         still stands; otherwise the boards stay (they are public) and «You» follows the sign-in. Never stored as this
+         wallet's answer, so a later sign-in reads afresh. */
+      if (proven && address && body.you === null) {
+        let verdict = await refused(address);
+        if (currentKey.current !== asked) return;
+        if (verdict === "retry") {
+          body = await read();
+          if (currentKey.current !== asked) return;
+          if (body.you === null) verdict = await refused(address);
+          if (currentKey.current !== asked) return;
+        }
+        /* Gone or refused: «You» follows the sign-in. Otherwise the boards stand and «You» says it did not read. */
+        if (body.you === null && (verdict === "gone" || verdict === "refused")) return;
+      }
+      if (proven && address && body.you !== null) served(address);
       setSnapshot({ key: asked, data: body });
       setFailed(null);
     } catch {
       if (currentKey.current === asked) setFailed(asked);
     }
-  }, [key, kind, proven, address]);
+  }, [key, kind, proven, address, refused, served]);
 
   useEffect(() => {
     void load();
@@ -84,8 +105,8 @@ export function LeaderboardView() {
         headers: { "content-type": "application/json" },
         body: JSON.stringify({ address, hidden: !data.you.hidden }),
       });
-      /* A proof that expired: check it again, so the page asks to confirm. */
-      if (response.status === 401) void proof.recheck();
+      /* A sign-in that ended: the page offers the sign-in again. */
+      if (response.status === 401) void refused(address);
       if (!response.ok) throw new Error("not saved");
       await load();
     } catch {
@@ -93,7 +114,7 @@ export function LeaderboardView() {
     } finally {
       setSaving(false);
     }
-  }, [address, proven, data, saving, load, proof]);
+  }, [address, proven, data, saving, load, refused]);
 
   const day = (iso: string) => new Intl.DateTimeFormat(intl, { day: "numeric", month: "short", timeZone: "UTC" }).format(new Date(iso));
   const lastDay = (iso: string) => day(new Date(Date.parse(iso) - 86_400_000).toISOString());
@@ -148,6 +169,7 @@ export function LeaderboardView() {
               {words.ends(lastDay(season.end))}
             </span>
           </span>
+          <PaidAsChip paidAs="STATUS" />
         </section>
       ) : null}
 
@@ -162,10 +184,8 @@ export function LeaderboardView() {
       </div>
 
       <YouPanel
-        address={address}
-        proven={proven}
-        proofSigning={proof.state.status === "signing"}
-        onProve={() => void proof.prove()}
+        wallet={wallet}
+        onRetry={() => void load()}
         you={you}
         boards={boards}
         min={data.rules.tradersMinUsd}
@@ -229,6 +249,9 @@ function BoardRowView({ row, board: id, podium, rankName }: { row: LeagueRow; bo
   const { locale } = useSolanaI18n();
   const words = leagueCopy(locale);
   const figure = words.value(id, row.value);
+  /* Shown only where the wallet turned it on: its highest liquidity badge. */
+  const partner = partnerCopy(locale);
+  const liquidityName = row.liquidity ? partner.badge[row.liquidity] : null;
   const sign = id === "TRADERS" ? (row.value > 0 ? "pos" : row.value < 0 ? "neg" : undefined) : undefined;
   return (
     <li className={styles.row} data-podium={podium ? "true" : "false"} data-you={row.you ? "true" : "false"}>
@@ -239,7 +262,19 @@ function BoardRowView({ row, board: id, podium, rankName }: { row: LeagueRow; bo
       <FaceAvatar face={row.face} rank={row.rank} size={32} />
       <span className={styles.who}>
         <span className={styles.name} translate="no">{row.you ? `${words.you} · ${row.name}` : row.name}</span>
-        {rankName ? <span className={styles.rankName}>{rankName}</span> : null}
+        {rankName || liquidityName ? (
+          <span className={styles.rankName}>
+            {rankName}
+            {rankName && liquidityName ? " · " : null}
+            {row.liquidity && liquidityName ? (
+              <span className={styles.liquidityTag} title={`${partner.liquidityTagAloud} ${liquidityName}`}>
+                <TrackBadge badge={row.liquidity} earned size={14} />
+                <span className={styles.srOnly}>{partner.liquidityTagAloud} </span>
+                {liquidityName}
+              </span>
+            ) : null}
+          </span>
+        ) : null}
       </span>
       <span className={styles.value} data-sign={sign} translate="no">{figure}</span>
     </li>
@@ -247,10 +282,8 @@ function BoardRowView({ row, board: id, podium, rankName }: { row: LeagueRow; bo
 }
 
 function YouPanel({
-  address,
-  proven,
-  proofSigning,
-  onProve,
+  wallet,
+  onRetry,
   you,
   boards,
   min,
@@ -258,10 +291,8 @@ function YouPanel({
   saveError,
   onToggle,
 }: {
-  address: string | null;
-  proven: boolean;
-  proofSigning: boolean;
-  onProve: () => void;
+  wallet: ReturnType<typeof useRewardsWallet>;
+  onRetry: () => void;
   you: LeaderboardsResponse["you"];
   boards: readonly BoardWordId[];
   min: number;
@@ -272,7 +303,8 @@ function YouPanel({
   const { locale } = useSolanaI18n();
   const words = leagueCopy(locale);
 
-  if (!address) {
+  const address = wallet.address;
+  if (wallet.gate === "connect") {
     return (
       <section className={`${styles.panel} ${styles.pad}`} aria-label={words.you} data-you-state="none">
         <p className={styles.lead}>{words.connect}</p>
@@ -280,15 +312,23 @@ function YouPanel({
       </section>
     );
   }
-  if (!proven || !you) {
+  if (wallet.open && !you) {
+    /* Signed in, and «You» did not read: say so, nothing to sign. */
     return (
-      <section className={`${styles.panel} ${styles.pad}`} aria-label={words.you} data-you-state="unproven">
-        <div className={styles.head}>
-          <p className={styles.lead}>{words.confirmLead}</p>
-          <button type="button" className={styles.button} onClick={onProve} disabled={proofSigning}>
-            {proofSigning ? words.confirming : words.confirm}
+      <section className={styles.panel} aria-label={words.you} data-you-state="unavailable">
+        <div className={styles.state}>
+          <p className={styles.lead}>{words.unavailable}</p>
+          <button type="button" className={styles.quietButton} onClick={onRetry}>
+            {words.retry}
           </button>
         </div>
+      </section>
+    );
+  }
+  if (!wallet.open || !you || !address) {
+    return (
+      <section className={styles.panel} aria-label={words.you} data-you-state="unproven">
+        <SignInGate wallet={wallet} lead="boards" inside />
       </section>
     );
   }

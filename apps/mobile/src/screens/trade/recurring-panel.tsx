@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { View } from 'react-native'
 
 import { Button } from '@/components/button'
+import { HelpDot } from '@/components/help-dot'
 import { Skeleton } from '@/components/skeleton'
 import { Txt } from '@/components/txt'
 import { AUTOINVEST_COPY } from '@/features/autoinvest/copy'
@@ -24,7 +25,7 @@ import { BudgetSheet } from '@/screens/autoinvest/budget-sheet'
  * «Регулярно» in Trade: the rule on the ticket's token,
  * beside «Ринок» — written here when there is none, managed here when there is
  * one, its floor and facts of risk before the button (`AutoinvestPanel`). A
- * guest reads what a rule does and the way in; the wallet's rules are read
+ * guest gets the way in, what a rule does behind «?» (ST-4); the wallet's rules are read
  * behind its session. A token's open reminder is bought on this ticket
  * (`onBuyUnderRule`); a company's on its own page, where its purchase is. A
  * token no rule can name offers the market order beside its reason.
@@ -72,9 +73,12 @@ export function RecurringPanel({
   if (!session) {
     return (
       <View className="gap-3 rounded-sm border border-line bg-surface p-4">
-        <Txt variant="ui" tone="muted">
-          {words.recurringGuest}
-        </Txt>
+        <View className="flex-row items-center gap-1">
+          <Txt variant="ui" tone="muted" className="shrink">
+            {words.recurring}
+          </Txt>
+          <HelpDot title={words.recurring} body={words.recurringGuest} />
+        </View>
         {account.address ? (
           <Button
             title={buyWords.signIn}

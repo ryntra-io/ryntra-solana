@@ -34,13 +34,6 @@
   color: var(--ry-text);
 }
 
-.lead {
-  margin: 0;
-  max-width: 64ch;
-  font-size: var(--ry-fs-copy);
-  line-height: 1.5;
-  color: var(--ry-muted);
-}
 
 .actions {
   display: flex;
@@ -70,16 +63,13 @@
   color: var(--ry-text);
 }
 
-.blockNote {
-  margin: 0;
-  font-size: var(--ry-fs-dense);
-  color: var(--ry-muted);
-}
 
+/* The empty state stands in the middle of its block, as «Плани угод» below it does. */
 .guest {
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  justify-content: center;
+  text-align: center;
   flex-wrap: wrap;
   gap: var(--ry-s3);
   padding: var(--ry-s4);
@@ -94,10 +84,30 @@
   color: var(--ry-text);
 }
 
-/* Each bot as wide as the row allows: two bots fill the row, never an empty slot beside them. */
+.guestError {
+  flex-basis: 100%;
+  margin: 0;
+  font-size: var(--ry-fs-dense);
+  color: var(--ry-caution);
+}
+
+/* UX-700: where a rule's reminder arrives — a quiet line under the rules, its link to Telegram on «Акаунт». */
+.where {
+  margin: 0;
+  font-size: var(--ry-fs-dense);
+  line-height: var(--ry-lh-body);
+  color: var(--ry-muted);
+}
+
+.where a {
+  color: var(--ry-text);
+  font-weight: 600;
+}
+
+/* One bot a row (B10: three live types): a wide card lays its words at a reading measure beside its actions. */
 .catalog {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(min(100%, 340px), 1fr));
+  grid-template-columns: minmax(0, 1fr);
   gap: var(--ry-s4);
   margin: 0;
   padding: 0;
@@ -173,13 +183,11 @@
   color: var(--ry-muted);
 }
 
+/* What it buys — a quiet line, not a pill that breaks over two lines. */
 .botScope {
-  justify-self: start;
   margin: 0;
-  padding: 2px var(--ry-s2);
-  border: 1px solid var(--ry-border);
-  border-radius: var(--ry-r-pill);
   font-size: var(--ry-fs-label);
+  line-height: 1.45;
   color: var(--ry-muted);
 }
 
@@ -187,4 +195,460 @@
   display: flex;
   flex-wrap: wrap;
   gap: var(--ry-s2);
+}
+
+/* A guest's two paths (B16): what each does, by an example, side by side where the page is wide. */
+.paths {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 320px), 1fr));
+  gap: var(--ry-s4);
+}
+
+.path {
+  display: grid;
+  align-content: start;
+  gap: var(--ry-s2);
+  min-width: 0;
+  padding: var(--ry-s5);
+  border: 1px solid var(--ry-border);
+  border-radius: var(--ry-r-card);
+  background: var(--ry-card);
+}
+
+.pathLabel {
+  margin: 0;
+  font-size: var(--ry-fs-label);
+  font-weight: 600;
+  color: var(--ry-muted);
+}
+
+/* UX-716: an example reads as one — the size of a line, not of a hero figure the person might take for their own rule. */
+.pathExample {
+  margin: 0;
+  font-size: var(--ry-fs-copy);
+  font-weight: 600;
+  line-height: var(--ry-lh-head);
+  font-variant-numeric: tabular-nums;
+  color: var(--ry-text);
+}
+
+.pathLine {
+  margin: 0;
+  font-size: var(--ry-fs-dense);
+  line-height: var(--ry-lh-body);
+  color: var(--ry-muted);
+}
+
+.pathLink {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--ry-s1);
+  justify-self: start;
+  min-height: 32px;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--ry-text);
+  font: inherit;
+  font-size: var(--ry-fs-dense);
+  font-weight: 600;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.pathLink:focus-visible {
+  outline: none;
+  border-radius: var(--ry-r-btn);
+  box-shadow: var(--ry-focus);
+}
+
+.pathLink:hover {
+  text-decoration: underline;
+}
+
+@media (pointer: coarse) {
+  .pathLink {
+    min-height: 44px;
+  }
+}
+
+/* ------------------------------------------------------------------ B10: the grid on DLMM */
+
+.back {
+  justify-self: start;
+  color: var(--ry-muted);
+  font-size: var(--ry-fs-dense);
+  text-decoration: none;
+}
+
+.back:hover {
+  color: var(--ry-text);
+}
+
+.srOnly {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+.blockLink {
+  margin-left: auto;
+  color: var(--ry-text);
+  font-size: var(--ry-fs-dense);
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.blockLink:hover {
+  text-decoration: underline;
+}
+
+.gridNote {
+  margin: 0;
+  font-size: var(--ry-fs-dense);
+  color: var(--ry-muted);
+}
+
+/* The pool's choice: one search row, then the pools as rows that are links. */
+.gridSearch {
+  display: flex;
+  gap: var(--ry-s2);
+}
+
+.gridSearch input {
+  flex: 1;
+  min-width: 0;
+  min-height: 40px;
+  padding: 0 var(--ry-s3);
+  border: 1px solid var(--ry-border);
+  border-radius: var(--ry-r-btn);
+  background: var(--ry-card);
+  color: var(--ry-text);
+  font: inherit;
+  font-size: var(--ry-fs-copy);
+}
+
+.gridSearch input:focus-visible {
+  outline: none;
+  box-shadow: var(--ry-focus);
+}
+
+.gridPools {
+  display: grid;
+  gap: var(--ry-s2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.gridPool {
+  display: grid;
+  grid-template-columns: minmax(0, 1.4fr) repeat(4, minmax(0, 1fr));
+  align-items: center;
+  gap: var(--ry-s3);
+  min-height: 56px;
+  padding: var(--ry-s3) var(--ry-s4);
+  border: 1px solid var(--ry-border);
+  border-radius: var(--ry-r-card);
+  background: var(--ry-card);
+  color: var(--ry-text);
+  text-decoration: none;
+}
+
+.gridPool:hover {
+  border-color: var(--ry-border-strong);
+  background: var(--ry-hover);
+}
+
+.gridPool:focus-visible {
+  outline: none;
+  box-shadow: var(--ry-focus);
+}
+
+.gridPair {
+  font-weight: 600;
+  font-size: var(--ry-fs-copy);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.gridFact {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+.gridFact > span {
+  font-size: var(--ry-fs-label-sm);
+  color: var(--ry-muted);
+}
+
+.gridFact > strong {
+  font-size: var(--ry-fs-dense);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+@media (max-width: 640px) {
+  .gridPool {
+    grid-template-columns: minmax(0, 1fr) auto auto;
+  }
+
+  .gridFact[data-wide] {
+    display: none;
+  }
+}
+
+/* The grid's levels: the review beside the form in the action page's centred pair (`app/app/form-pair.module.css`). */
+.gridPlan {
+  display: grid;
+  gap: var(--ry-s4);
+  min-width: 0;
+  padding: var(--ry-s5);
+  border: 1px solid var(--ry-border);
+  border-radius: var(--ry-r-card);
+  background: var(--ry-card);
+}
+
+.gridFacts {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 180px), 1fr));
+  gap: var(--ry-s3) var(--ry-s4);
+  margin: 0;
+}
+
+.gridFacts > div {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+.gridFacts dt {
+  font-size: var(--ry-fs-label-sm);
+  color: var(--ry-muted);
+}
+
+.gridFacts dd {
+  margin: 0;
+  font-size: var(--ry-fs-copy);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  color: var(--ry-text);
+  overflow-wrap: anywhere;
+}
+
+.gridFactNote {
+  font-size: var(--ry-fs-label-sm);
+  font-variant-numeric: tabular-nums;
+  color: var(--ry-muted);
+}
+
+/* The levels as marks: buying below the price, selling above it, the price between. */
+.ladder {
+  display: flex;
+  align-items: flex-end;
+  gap: 2px;
+  height: 40px;
+}
+
+.rung {
+  flex: 1;
+  min-width: 2px;
+  height: 60%;
+  border-radius: 2px 2px 0 0;
+  background: var(--ry-border-strong);
+}
+
+.rung[data-side="buy"] {
+  background: color-mix(in srgb, var(--ry-pnl-pos) 70%, transparent);
+}
+
+.rung[data-side="sell"] {
+  background: color-mix(in srgb, var(--ry-pnl-neg) 70%, transparent);
+}
+
+.rung[data-side="price"] {
+  height: 100%;
+  background: var(--ry-text);
+}
+
+/* «Мої боти → Гріди»: one card per grid — its one number and «Зупинити». */
+.grids {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 360px), 1fr));
+  gap: var(--ry-s4);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.gridBot {
+  display: grid;
+  min-width: 0;
+}
+
+.gridCard {
+  display: grid;
+  gap: var(--ry-s3);
+  padding: var(--ry-s5);
+  border: 1px solid var(--ry-border);
+  border-radius: var(--ry-r-card);
+  background: var(--ry-card);
+}
+
+.gridCardHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--ry-s2);
+  min-width: 0;
+}
+
+.gridState {
+  flex: none;
+  padding: 2px var(--ry-s2);
+  border-radius: var(--ry-r-pill);
+  border: 1px solid var(--ry-border);
+  font-size: var(--ry-fs-label-sm);
+  color: var(--ry-muted);
+}
+
+.gridState[data-state="working"] {
+  color: var(--ry-pnl-pos);
+  border-color: color-mix(in srgb, var(--ry-pnl-pos) 40%, transparent);
+}
+
+.gridState[data-state="all_bought"],
+.gridState[data-state="all_sold"] {
+  color: var(--ry-caution);
+  border-color: color-mix(in srgb, var(--ry-caution) 40%, transparent);
+}
+
+.gridResult {
+  display: grid;
+  gap: 2px;
+}
+
+.gridResultLabel {
+  font-size: var(--ry-fs-label-sm);
+  color: var(--ry-muted);
+}
+
+.gridResult > strong {
+  font-size: var(--ry-fs-key);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  color: var(--ry-text);
+}
+
+.gridResult[data-tone="up"] > strong {
+  color: var(--ry-pnl-pos);
+}
+
+.gridResult[data-tone="down"] > strong {
+  color: var(--ry-pnl-neg);
+}
+
+.gridLine {
+  margin: 0;
+  font-size: var(--ry-fs-dense);
+  font-variant-numeric: tabular-nums;
+  color: var(--ry-muted);
+}
+
+.gridActions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: var(--ry-s2);
+}
+
+/* EXE-1 «Що бот робить сам»: one row a bot — its name and state, what it does alone, what waits, its bound. A wide
+   block lays the four side by side; a phone reads them as a short card each. */
+.truthLead {
+  margin: 0;
+  max-width: 72ch;
+  font-size: var(--ry-fs-copy);
+  line-height: var(--ry-lh-body);
+  color: var(--ry-muted);
+}
+
+.truth {
+  container: truth / inline-size;
+  display: grid;
+  gap: 0;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  border: 1px solid var(--ry-border);
+  border-radius: var(--ry-r-card);
+  background: var(--ry-card);
+}
+
+.truthRow {
+  display: grid;
+  gap: var(--ry-s2);
+  padding: var(--ry-s4) var(--ry-s5);
+  min-width: 0;
+}
+
+.truthRow + .truthRow {
+  border-top: 1px solid var(--ry-border);
+}
+
+.truthName {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--ry-s2);
+  font-size: var(--ry-fs-copy);
+  font-weight: 600;
+  line-height: var(--ry-lh-head);
+  color: var(--ry-text);
+}
+
+.truthCell {
+  display: grid;
+  gap: 2px;
+  margin: 0;
+  min-width: 0;
+  font-size: var(--ry-fs-dense);
+  line-height: 1.5;
+  color: var(--ry-text);
+}
+
+.truthHead {
+  font-size: var(--ry-fs-label);
+  font-weight: 600;
+  color: var(--ry-muted);
+}
+
+@container truth (min-width: 900px) {
+  .truthRow {
+    grid-template-columns: minmax(150px, 0.7fr) minmax(0, 1.2fr) minmax(0, 1.2fr) minmax(0, 1fr);
+    column-gap: var(--ry-s5);
+    align-items: start;
+  }
+}
+
+.botNameRow {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--ry-s2);
+}
+
+.gridTruth {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--ry-s2);
+  margin: 0;
+  font-size: var(--ry-fs-dense);
+  line-height: 1.5;
+  color: var(--ry-muted);
 }

@@ -2,8 +2,9 @@
 
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { NAV_WORDS } from "@ryntra/core/nav";
+import { Button } from "@ryntra/core/ui";
 
-import { Panel } from "@/app/shell/panel";
 import { StatusChip } from "@/app/shell/status-chip";
 import { RecipientCheck } from "@/app/solana/workspace/evidence/recipient-check";
 import {
@@ -26,10 +27,15 @@ import { acceptLatestSolanaResult, createLatestSolanaRequestGate } from "@/lib/s
 import { canSubmitSendAction, type SendSafetyVerdict } from "@/lib/solana/send-safety";
 import type { SendSupportVerdict } from "@/lib/solana/send-support";
 import {
+  openingSendAsset,
   preferredSendAsset,
   rememberSendAsset,
+  SEND_OPENING_USDC,
 } from "@/lib/solana/send-asset-preference.client";
 import { matchesSendAssetQuery } from "@/lib/solana/send-assets";
+import { isNewRecipient, recentSendRecipients, rememberSendRecipient } from "@/lib/solana/send-recipients.client";
+import { addressGroups, lookalikeOf, skrNameOf } from "@/lib/solana/skr-name";
+import { resolveSkrName, type SkrResolve } from "@/lib/solana/skr.client";
 import {
   downloadReceipt,
   storeSendReceipt,
@@ -49,8 +55,14 @@ import { signTransaction } from "@/lib/solana/wallet.client";
 import { FEATURED_MINTS } from "../assets/featured.ts";
 import { useSolanaConnection } from "../connection.tsx";
 import { useSolanaI18n } from "../i18n/provider.tsx";
-import { WalletConnectRow } from "../wallet-connect.tsx";
-import { MoneyContext } from "../money/money-context.tsx";
+import { ConnectWalletButton } from "../wallet-gate.tsx";
+import { useWalletReach } from "../wallet-reach.ts";
+import { useSkrName } from "../skr-name.tsx";
+import { AssetMark } from "../money/marks.tsx";
+import { MoneyAction, MoneyCard, MoneyPage } from "../money/money-page.tsx";
+import { RecentTransfers } from "../money/recent-transfers.tsx";
+import { formatUsdMoney } from "../spot/spot-format.ts";
+import { localFigure } from "../money/figures.ts";
 import {
   nothingMoved,
   sendFailureCopy,
@@ -89,6 +101,8 @@ type CatalogBits = Readonly<{
   isVerified: boolean | null;
   isSuspicious: boolean;
   usdPrice: string | null;
+  /** The catalogue's icon address, for a token the site carries no picture of. */
+  icon?: string | null;
 }>;
 
 type HoldingSourceAccount = Readonly<{
@@ -138,6 +152,9 @@ type SettleResponse = Readonly<{
 }>;
 
 type Failure = Readonly<{ code: string | null }>;
+
+/** A `.skr` name typed in «Кому», and what the server said it points to now — or that it is still asking (SKR-4). */
+type Named = SkrResolve | Readonly<{ state: "RESOLVING"; name: string }>;
 
 type Phase = "IDLE" | "READING" | "REVIEWING" | "SIGNING" | "SENDING";
 
@@ -209,12 +226,13 @@ function isKnown(holding: Holding): boolean {
   return holding.catalog?.isVerified === true;
 }
 
-function usdLabel(raw: string, decimals: number, usdPrice: string | null): string {
+/** The amount in dollars under the field, in the page's own number language — «≈ $120,50» in Ukrainian (B18). */
+function usdLabel(raw: string, decimals: number, usdPrice: string | null, locale: string): string {
   if (!usdPrice) return "";
   const usd = (Number(raw) / 10 ** decimals) * Number(usdPrice);
   if (!Number.isFinite(usd) || usd === 0) return "";
-  if (usd < 0.01) return "<$0.01";
-  return `$${usd.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  if (usd < 0.01) return `≈ < ${formatUsdMoney(0.01, locale)}`;
+  return `≈ ${formatUsdMoney(usd, locale)}`;
 }
 
 /** The exact amount, ungrouped, so it can be read back into the field. */
@@ -251,9 +269,20 @@ async function post<T>(
   }
 }
 
+/** A recent recipient's chip: its primary `.skr` name when it chose one, else the shortened address; the whole address on hover. */
+function RecentChip({ address, onPick, disabled }: { address: string; onPick: (value: string) => void; disabled: boolean }) {
+  const name = useSkrName(address);
+  return (
+    <button className={styles.recent} type="button" onClick={() => onPick(address)} disabled={disabled} translate="no" title={address}>
+      {name ?? short(address)}
+    </button>
+  );
+}
+
 export function SendCard() {
   const { text, locale } = useSolanaI18n();
-  const { wallets, connection, connecting, connect } = useSolanaConnection();
+  const { connection, connecting } = useSolanaConnection();
+  const { reach } = useWalletReach();
 
   const [holdings, setHoldings] = useState<readonly Holding[] | null>(null);
   /* Whether both token programs answered. Seen on production on 2026-09-11:
@@ -266,6 +295,14 @@ export function SendCard() {
   const [asset, setAsset] = useState("");
   const [recipient, setRecipient] = useState("");
   const [amount, setAmount] = useState("");
+  /* The name's address, shown and never kept: «Надіслати» reads it again right before the wallet opens (SKR-4). */
+  const [named, setNamed] = useState<Named | null>(null);
+  /* A look-alike of a known address the person said is the one they meant — for that exact address only (SEC-2). */
+  const [lookalikeAccepted, setLookalikeAccepted] = useState<string | null>(null);
+  /* An address nothing was sent to yet, checked against whoever gave it — for that exact address only (SEC-2). */
+  const [newAddressAccepted, setNewAddressAccepted] = useState<string | null>(null);
+  /* A pasted address's primary name, checked forward when the Review was built — Review names it only then (SKR-4). */
+  const [reviewChecked, setReviewChecked] = useState<Readonly<{ address: string; name: string }> | null>(null);
 
   const [plan, setPlan] = useState<PlanResponse | null>(null);
   const [settled, setSettled] = useState<SettleResponse | null>(null);
@@ -281,6 +318,22 @@ export function SendCard() {
   const [picking, setPicking] = useState(false);
   const [query, setQuery] = useState("");
   const [activeIndex, setActiveIndex] = useState(0);
+  /* The addresses this wallet sent to from this browser — chips under «Кому» (B18). */
+  const [recents, setRecents] = useState<readonly string[]>([]);
+  /* Whether that list has been looked at yet. Before the read, an empty list is an unknown, not an answer, and SEC-2's
+     «nothing was sent to this address yet» would be said of an address this browser has paid before. */
+  const [recentsRead, setRecentsRead] = useState(false);
+  /* «Вставити» only where the browser lets a page read the clipboard; decided after the first paint. */
+  const [canPaste, setCanPaste] = useState(false);
+  useEffect(() => {
+    setCanPaste(typeof navigator !== "undefined" && typeof navigator.clipboard?.readText === "function");
+  }, []);
+  useEffect(() => {
+    const read = connection && typeof window !== "undefined";
+    setRecents(read ? recentSendRecipients(window.localStorage, connection.address) : []);
+    /* Storage a browser refuses reads as empty — that is a looked-at list, and every address in it is then first. */
+    setRecentsRead(Boolean(read));
+  }, [connection]);
 
   const reviewRevision = useRef(0);
   const authorized = useRef<SolanaEnvironmentContext | null>(null);
@@ -322,10 +375,11 @@ export function SendCard() {
       setHoldings(result.data.holdings);
       setTokenRead(result.data.tokenRead ?? "COMPLETE");
       const available = result.data.holdings.map(assetId);
+      /* The coin last sent while it is still held, else USDC, else SOL (B18: «USDC одразу, без «? Актив»»). */
       setAsset(
         typeof window === "undefined"
           ? ""
-          : preferredSendAsset(window.sessionStorage, owner, available),
+          : openingSendAsset(preferredSendAsset(window.sessionStorage, owner, available), available),
       );
       setPicking(false);
       setQuery("");
@@ -491,9 +545,53 @@ export function SendCard() {
     setAmount(plainAmount(share.toString(), chosen.decimals));
   };
 
-  const parsedRecipient = recipient.trim() === "" ? null : parseSolanaAddress(recipient, "recipient address");
-  const recipientOk = parsedRecipient?.ok === true;
-  const sendingToSelf = recipientOk && connection?.address === (parsedRecipient as { address: string }).address;
+  /* «Кому» takes an address or a `.skr` name (SKR-4). A name counts only once the server answered where it points now. */
+  const recipientName = skrNameOf(recipient);
+  /* An answer about another name is no answer: while the new one is read, the line says so. */
+  const nameRead: Named | null = recipientName ? (named && named.name === recipientName ? named : { state: "RESOLVING", name: recipientName }) : null;
+  const parsedRecipient = recipient.trim() === "" || recipientName ? null : parseSolanaAddress(recipient, "recipient address");
+  const recipientAddress: string | null = recipientName
+    ? nameRead?.state === "FOUND"
+      ? nameRead.address
+      : null
+    : parsedRecipient?.ok === true
+      ? (parsedRecipient as { address: string }).address
+      : null;
+  const recipientOk = recipientAddress !== null;
+  const sendingToSelf = recipientOk && connection?.address === recipientAddress;
+  /* A pasted address that has a primary name shows it — only the one that wallet chose, never a name it was sent. */
+  const typedName = useSkrName(recipientName ? null : recipientAddress);
+  /* An address that copies a known one's first and last four characters (SEC-2): the recent recipients and the wallet itself. */
+  const knownAddresses = useMemo(() => (connection ? [...recents, connection.address] : recents), [connection, recents]);
+  const lookalike = recipientAddress && !sendingToSelf ? lookalikeOf(knownAddresses, recipientAddress) : null;
+  const lookalikeHolds = lookalike !== null && lookalikeAccepted !== recipientAddress;
+  /* The first transfer to this address from this browser (SEC-2) — its own check, asked and answered beside the
+     look-alike one, never instead of it: a planted address is both a look-alike of a recent one and new, and the two
+     say different things. An address only the chips remember is not new. */
+  const newAddress = recipientAddress !== null && !sendingToSelf && recentsRead && isNewRecipient(recents, recipientAddress);
+  const newAddressHolds = newAddress && newAddressAccepted !== recipientAddress;
+
+  useEffect(() => {
+    if (!recipientName) {
+      setNamed(null);
+      return;
+    }
+    const controller = new AbortController();
+    setNamed({ state: "RESOLVING", name: recipientName });
+    /* The person has stopped typing: one read per settled name. */
+    const timer = globalThis.setTimeout(() => {
+      resolveSkrName(recipientName, { signal: controller.signal }).then(
+        (read) => {
+          if (!controller.signal.aborted) setNamed(read);
+        },
+        () => undefined,
+      );
+    }, 350);
+    return () => {
+      controller.abort();
+      globalThis.clearTimeout(timer);
+    };
+  }, [recipientName]);
   const parsedAmount = !chosen || amount.trim() === "" ? null : parseHumanAmount(amount, chosen.decimals);
   const amountOk = parsedAmount?.ok === true;
   const overBalance =
@@ -502,9 +600,7 @@ export function SendCard() {
   const currentInput = useCallback(():
     | Readonly<{ ok: true; input: SplTransferInput | NativeSolTransferInput }>
     | Readonly<{ ok: false }> => {
-    if (!connection || !chosen) return { ok: false };
-    const address = parseSolanaAddress(recipient, "recipient address");
-    if (!address.ok) return { ok: false };
+    if (!connection || !chosen || !recipientAddress) return { ok: false };
     const value = parseHumanAmount(amount, chosen.decimals);
     if (!value.ok) return { ok: false };
     return {
@@ -516,7 +612,7 @@ export function SendCard() {
               actionRef: NATIVE_SOL_TRANSFER_ACTION_REF,
               network: NETWORK,
               sender: connection.address,
-              recipient: address.address,
+              recipient: recipientAddress,
               amountRaw: value.raw,
             }
           : {
@@ -525,11 +621,11 @@ export function SendCard() {
               network: NETWORK,
               mint: chosen.mint as string,
               sender: connection.address,
-              recipient: address.address,
+              recipient: recipientAddress,
               amountRaw: value.raw,
             },
     };
-  }, [amount, chosen, connection, recipient]);
+  }, [amount, chosen, connection, recipientAddress]);
 
   const environmentOf = useCallback(
     (bundle: PlanResponse): SolanaEnvironmentContext => ({
@@ -546,14 +642,43 @@ export function SendCard() {
     [ticker],
   );
 
+  /**
+   * A `.skr` name read again, never taken from the copy on screen (SKR-4): before the Review is built, before the wallet
+   * opens and once more before the signed bytes leave. `null` when it still points where the transaction pays; else the
+   * failure code — and the screen learns the new answer.
+   */
+  const recheckName = useCallback(async (name: string, expected: string): Promise<"SKR_CHANGED" | "SKR_GONE" | "SKR_UNREAD" | null> => {
+    const again = await resolveSkrName(name);
+    if (again.state !== "UNAVAILABLE") setNamed(again);
+    if (again.state === "NOT_FOUND") return "SKR_GONE";
+    if (again.state === "UNAVAILABLE") return "SKR_UNREAD";
+    return again.address === expected ? null : "SKR_CHANGED";
+  }, []);
+
   const requestReview = useCallback(async () => {
     const prepared = currentInput();
     if (!prepared.ok) return;
     invalidateReview();
     setSettled(null);
+    setReviewChecked(null);
     const revision = reviewRevision.current;
 
     setPhase("REVIEWING");
+    if (recipientName) {
+      const moved = await recheckName(recipientName, prepared.input.recipient);
+      if (reviewRevision.current !== revision) return;
+      if (moved) {
+        setPhase("IDLE");
+        /* Nothing is being signed yet: an unread name here is only «could not be checked right now». */
+        setFailure({ code: moved === "SKR_UNREAD" ? "SKR_UNCHECKED" : moved });
+        return;
+      }
+    } else if (typedName) {
+      /* The pasted address's name is shown in Review only if, read forward now, it is still this address's. */
+      const forward = await resolveSkrName(typedName).catch(() => null);
+      if (reviewRevision.current !== revision) return;
+      if (forward?.state === "FOUND" && forward.address === prepared.input.recipient) setReviewChecked({ address: forward.address, name: forward.name });
+    }
     const result = await post<PlanResponse>("/api/solana/transfer/plan", { input: prepared.input });
     if (reviewRevision.current !== revision) return;
     setPhase("IDLE");
@@ -563,7 +688,7 @@ export function SendCard() {
     }
     setPlan(result.data);
     authorized.current = environmentOf(result.data);
-  }, [currentInput, environmentOf, invalidateReview]);
+  }, [currentInput, environmentOf, invalidateReview, recheckName, recipientName, typedName]);
 
   const signAndSend = useCallback(async () => {
     if (sendInFlight.current || !connection) return;
@@ -576,6 +701,21 @@ export function SendCard() {
     const revision = reviewRevision.current;
 
     try {
+      /* A `.skr` name is read again right before the wallet opens, never taken from the Review's copy (SKR-4): a name
+         can change hands between the two, and the money goes to whoever owns it now. */
+      if (recipientName) {
+        setPhase("REVIEWING");
+        const moved = await recheckName(recipientName, prepared.input.recipient);
+        if (reviewRevision.current !== revision) return;
+        if (moved) {
+          setPhase("IDLE");
+          authorized.current = null;
+          setPlan(null);
+          setFailure({ code: moved });
+          return;
+        }
+      }
+
       /* A recent blockhash is deliberately short-lived, so the complete Review
          is rebuilt at the moment the person starts the final action and the
          wallet confirmation authorizes one immediate submit after the lock,
@@ -683,6 +823,21 @@ export function SendCard() {
       }
       setPlan(bundle);
 
+      /* The wallet may have stayed open for minutes: the name is read once more before the signed bytes leave. A
+         signature over a name that moved is dropped here — it was never sent, and nothing records it. */
+      if (recipientName) {
+        setPhase("SENDING");
+        const moved = await recheckName(recipientName, bundle.plan.recipient);
+        if (!signingRequests.current?.accepts(ticket, planHash)) return;
+        if (moved) {
+          setPhase("IDLE");
+          authorized.current = null;
+          setPlan(null);
+          setFailure({ code: moved });
+          return;
+        }
+      }
+
       /* Written before the request, not after the answer. Everything after
          this line may be lost — the tab, the connection, the process — and the
          one fact that must not be lost is that these bytes are signed. */
@@ -726,6 +881,10 @@ export function SendCard() {
       setPlan(null);
       authorized.current = null;
       setFailure(null);
+      /* The chain was read back: this address really got the money, so it becomes a chip under «Кому» (B18). */
+      if (result.data.observation && typeof window !== "undefined") {
+        setRecents(rememberSendRecipient(window.localStorage, connection.address, bundle.plan.recipient));
+      }
       /* Kept the moment it exists, so a person who closes the tab still has
          their record. This browser only — the download is the copy that
          survives clearing site data. */
@@ -752,7 +911,7 @@ export function SendCard() {
       sendInFlight.current = false;
       if (reviewRevision.current === revision) setPhase("IDLE");
     }
-  }, [connection, currentInput, environmentOf, loadHoldings]);
+  }, [connection, currentInput, environmentOf, loadHoldings, recheckName, recipientName]);
 
   const signingOpen = plan ? canSubmitSendAction({ network: NETWORK, safety: plan.safety }) : false;
   const readiness = plan
@@ -769,7 +928,7 @@ export function SendCard() {
 
   /* Both halves, because the decision comes from both: the capability verdict
      names what a person has to weigh, and the safety verdict is what opens or
-     closes the wallet. Listing only one produced a screen seen in testing —
+     closes the wallet. Listing only one produced the screen the founder hit —
      a refusal above a note about something that was not the reason. */
   const warnings = useMemo(() => {
     if (!plan) return [] as readonly Readonly<{ line: string; stops: boolean }>[];
@@ -833,8 +992,7 @@ export function SendCard() {
   let ctaLabel = text("Send");
   let ctaDisabled = true;
   if (!connection) {
-    /* Same rule as Swap: one wallet connects from here, several are chosen
-       from the tiles above and this button is not rendered at all. */
+    /* A guest sees `ConnectWalletButton` in this button's place (B14). */
     ctaLabel = text("Connect wallet");
     ctaDisabled = connecting;
   } else if (phase === "READING") {
@@ -856,10 +1014,18 @@ export function SendCard() {
     ctaLabel = text("Choose an asset");
   } else if (recipient.trim() === "") {
     ctaLabel = text("Enter a recipient");
+  } else if (nameRead?.state === "RESOLVING") {
+    ctaLabel = text("Finding the name…");
+  } else if (recipientName && !recipientOk) {
+    ctaLabel = text("Check the name");
   } else if (!recipientOk) {
     ctaLabel = text("Check the recipient address");
   } else if (sendingToSelf) {
     ctaLabel = text("Enter a different recipient");
+  } else if (lookalikeHolds) {
+    ctaLabel = text("Check the whole address");
+  } else if (newAddressHolds) {
+    ctaLabel = text("Check the new address");
   } else if (amount.trim() === "" || !amountOk) {
     ctaLabel = text("Enter an amount");
   } else if (overBalance) {
@@ -876,13 +1042,13 @@ export function SendCard() {
 
   const onCta = () => {
     if (!connection) {
-      void connect(wallets[0]?.name);
+      reach();
       return;
     }
     /* Not only the label. A disabled button is a rendering decision, and this
        is the one action where a stale render must not be able to authorize a
        second transfer. */
-    if (resumeBlocks) return;
+    if (resumeBlocks || lookalikeHolds || newAddressHolds) return;
     if (readyToSign) {
       void signAndSend();
       return;
@@ -917,336 +1083,382 @@ export function SendCard() {
   const issuerFee =
     plan && plan.preflight.transferFee.feeRaw !== "0" ? plan.preflight.transferFee.feeRaw : null;
 
-  /* The ticket is one column of the domain now, not the whole page. The panels
-     beside it read the same wallet-scoped endpoints Home does. */
-  const transferRows = plan ? (warnings.length >= 3 ? 7 : 6) : settled ? 6 : 5;
+  const lang = locale === "uk" ? "uk" : "en";
+  const reviewName = plan
+    ? recipientName
+      ? nameRead?.state === "FOUND" && nameRead.address === plan.plan.recipient
+        ? nameRead.name
+        : null
+      : reviewChecked?.address === plan.plan.recipient && reviewChecked.name === typedName
+        ? reviewChecked.name
+        : null
+    : null;
+  const pillTicker = chosen ? ticker : connection ? "" : "USDC";
+  const pillMint = chosen ? chosen.mint ?? "So11111111111111111111111111111111111111112" : SEND_OPENING_USDC;
 
-  return (
-    <>
-      <Panel
-        id="send-transfer"
-        title={text("Send")}
-        w={4}
-        /* Panel height comes from a row span, never from content, so the span
-           has to follow the state the card is actually in. These three are
-           measured, not guessed: `scripts/solana-send-review-audit.mjs` fails
-           when the reserved body runs more than 120px past the card. */
-        h={transferRows}
-        essential
-        badge={text("Solana mainnet")}
-        tone={settled?.observation ? "verified" : "evidence"}
-      >
-        <div className={styles.card}>
-          <div className={styles.legs}>
-            <div className={styles.leg}>
-              <div className={styles.legHead}>
-                <span className={styles.legLabel}>{text("Send")}</span>
-                {chosen ? (
-                  <span className={styles.balance}>
+  const fillRecipient = (value: string) => {
+    invalidateReview();
+    setRecipient(value);
+  };
+
+  const paste = async () => {
+    try {
+      const value = (await navigator.clipboard.readText()).trim();
+      if (value) fillRecipient(value);
+    } catch {
+      /* The browser refused the clipboard; the field is still there to paste into by hand. */
+    }
+  };
+
+  const form = (
+    <MoneyCard>
+      <div className={styles.legs}>
+        <div className={styles.leg}>
+          <div className={styles.legHead}>
+            <label className={styles.legLabel} htmlFor="send-amount">{text("Amount")}</label>
+            {chosen ? (
+              <span className={styles.balance}>
                 {/* `Available`, not `Balance`. The figure beneath this word is
                     `spendableRaw` — the balance with the network-fee reserve
                     already withheld — so a wallet holding 0.06046201 SOL read
                     `Balance 0.05996201 SOL` here and matched nothing the person
                     could see in their own wallet. The person needs the
                     *available* balance, which is exactly what this is. */}
-                    <span className={styles.balanceLabel}>{text("Available")}</span>
-                    <button
-                      className={styles.balanceValue}
-                      type="button"
-                      onClick={() => fillShare(1n, 1n)}
-                      disabled={busy}
-                      translate="no"
-                    >
-                      {displayAmount(chosen.spendableRaw, chosen.decimals)} {ticker}
-                    </button>
-                    <span className={styles.shareGroup}>
-                      <button
-                        className={styles.shareButton}
-                        type="button"
-                        onClick={() => fillShare(1n, 4n)}
-                        disabled={busy}
-                      >
-                        25%
-                      </button>
-                      <button
-                        className={styles.shareButton}
-                        type="button"
-                        onClick={() => fillShare(1n, 2n)}
-                        disabled={busy}
-                      >
-                        50%
-                      </button>
-                      <button
-                        className={styles.shareButton}
-                        type="button"
-                        onClick={() => fillShare(3n, 4n)}
-                        disabled={busy}
-                      >
-                        75%
-                      </button>
-                      <button
-                        className={styles.shareButton}
-                        type="button"
-                        onClick={() => fillShare(1n, 1n)}
-                        disabled={busy}
-                      >
-                        {text("MAX")}
-                      </button>
-                    </span>
-                  </span>
-                ) : null}
-              </div>
-              <div className={styles.legBody}>
-                <input
-                  className={styles.amountInput}
-                  value={amount}
-                  inputMode="decimal"
-                  spellCheck={false}
-                  autoComplete="off"
-                  aria-label={text("Amount to send")}
-                  placeholder="0.0"
-                  disabled={busy || !chosen}
-                  onChange={(event) => {
-                    invalidateReview();
-                    setAmount(event.target.value);
-                  }}
-                />
+                <span className={styles.balanceLabel}>{text("Available")}</span>
                 <button
-                  ref={pillRef}
-                  className={styles.tokenPill}
+                  className={styles.balanceValue}
                   type="button"
-                  aria-label={
-                    chosen
-                      ? `${text("Asset")}: ${ticker}. ${text("Choose an asset")}`
-                      : text("Choose an asset")
-                  }
-                  onClick={() => {
-                    setQuery("");
-                    setActiveIndex(Math.max(0, visible.findIndex((row) => assetId(row) === asset)));
-                    setPicking(true);
-                  }}
-                  disabled={busy || holdings === null}
-                >
-                  <span className={styles.tokenGlyph} aria-hidden>
-                    {chosen ? ticker.slice(0, 1) : "?"}
-                  </span>
-                  <span translate="no">{chosen ? ticker : text("Asset")}</span>
-                  <span className={styles.tokenCaret} aria-hidden>
-                    ▾
-                  </span>
-                </button>
-              </div>
-              <span className={styles.usdLine} translate="no">
-                {chosen && amountOk
-                  ? usdLabel(
-                      (parsedAmount as { raw: string }).raw,
-                      chosen.decimals,
-                      chosen.catalog?.usdPrice ?? null,
-                    )
-                  : ""}
-              </span>
-            </div>
-
-            <div className={styles.leg}>
-              <div className={styles.legHead}>
-                <span className={styles.legLabel}>{text("To")}</span>
-              </div>
-              <div className={styles.legBody}>
-                <input
-                  className={styles.addressInput}
-                  value={recipient}
-                  spellCheck={false}
-                  autoComplete="off"
-                  aria-label={text("Recipient address")}
-                  placeholder={text("Solana address")}
+                  onClick={() => fillShare(1n, 1n)}
                   disabled={busy}
-                  onChange={(event) => {
-                    invalidateReview();
-                    setRecipient(event.target.value);
-                  }}
-                />
-              </div>
-              <span className={styles.usdLine} translate="no">
-                {recipientOk && !sendingToSelf ? short((parsedRecipient as { address: string }).address) : ""}
+                  translate="no"
+                >
+                  {localFigure(displayAmount(chosen.spendableRaw, chosen.decimals), locale)} {ticker}
+                </button>
               </span>
-            </div>
+            ) : null}
           </div>
-
-          {/* The recipient check: once the address is a real one and the person has stopped typing, what an external security source knows about it — one line, the details a press away, never a block. Not asked for the person's own wallet. */}
-          {recipientOk && !sendingToSelf ? <RecipientCheck address={(parsedRecipient as { address: string }).address} locale={locale} /> : null}
-
-          {/* Only the case that costs money. A recipient who is already able to
-              receive the token is the ordinary case, and the absence of a setup
-              cost in the Review below is how the card says so — a line stating
-              that nothing is wrong is the prose people stop reading. */}
-          {plan?.plan.createsRecipientAccount ? (
-            <div className={styles.factRow}>
-              <span>
-                {text("This address has no account for this token yet — you pay a one-time setup cost.")}
+          <div className={styles.legBody}>
+            <input
+              id="send-amount"
+              className={styles.amountInput}
+              value={amount}
+              inputMode="decimal"
+              spellCheck={false}
+              autoComplete="off"
+              placeholder="0"
+              /* A guest may type the amount already (B18); a wallet whose balances are still being read may not. */
+              disabled={busy || (Boolean(connection) && !chosen)}
+              onChange={(event) => {
+                invalidateReview();
+                /* A Ukrainian comma is a decimal point here, as in «Між мережами». */
+                setAmount(event.target.value.replace(",", "."));
+              }}
+            />
+            <button
+              ref={pillRef}
+              className={styles.tokenPill}
+              type="button"
+              aria-label={pillTicker ? `${text("Asset")}: ${pillTicker}. ${text("Choose an asset")}` : text("Choose an asset")}
+              onClick={() => {
+                setQuery("");
+                setActiveIndex(Math.max(0, visible.findIndex((row) => assetId(row) === asset)));
+                setPicking(true);
+              }}
+              disabled={busy || holdings === null}
+            >
+              {pillTicker ? <AssetMark symbol={pillTicker} mint={pillMint} icon={chosen?.catalog?.icon ?? null} size={24} /> : null}
+              <span translate="no">{pillTicker || text("Choose an asset")}</span>
+              <span className={styles.tokenCaret} aria-hidden>
+                ▾
               </span>
-            </div>
-          ) : null}
-
-          {failureLine ? <div className={styles.errorRow}>{failureLine}</div> : null}
-          {walletDetail ? (
-            /* The wallet's own words, not a Ryntra code. Untranslated on
-               purpose: it is the wallet speaking to its own user, and
-               rewriting it would be inventing a message nobody sent. */
-            <div className={styles.walletHint}>{walletDetail}</div>
-          ) : null}
-          {blockedReason ? <div className={styles.errorRow}>{blockedReason}</div> : null}
-
-          {plan ? (
-            <section className={styles.exactReview} aria-label={text("Ready to sign")}>
-              <div className={styles.exactReviewHead}>
-                <span className={styles.legLabel}>{text("Ready to sign")}</span>
-              </div>
-              <div className={styles.exactReviewGrid}>
-                <span>
-                  {text("You send")}
-                  <b translate="no">{sentAmount}</b>
-                </span>
-                {issuerFee ? (
-                  /* The net figure below answers "what arrives". This answers
-                     "where the rest went", which is a different question and
-                     the one a person asks when the two numbers differ. The
-                     warning list says the issuer takes a fee; only this says
-                     how much. */
-                  <span>
-                    {text("Transfer fee")}
-                    <b translate="no">
-                      {displayAmount(issuerFee, plan.plan.decimals)} {ticker}
-                    </b>
-                  </span>
-                ) : null}
-                {receivesLess ? (
-                  <span>
-                    {text("Recipient gets")}
-                    <b translate="no">
-                      {displayAmount(plan.preflight.estimatedReceivedRaw, plan.plan.decimals)} {ticker}
-                    </b>
-                  </span>
-                ) : null}
-                <span>
-                  {text("To")}
-                  <b translate="no">{short(plan.plan.recipient)}</b>
-                </span>
-                <span>
-                  {text("From")}
-                  <b translate="no">{short(plan.plan.sender)}</b>
-                </span>
-                <span>
-                  {text("Network fee estimate")}
-                  <b translate="no">
-                    {lamportsToSol(plan.plan.baseFeeLamports, plan.plan.priorityFeeLamports)} SOL
-                  </b>
-                </span>
-                {accountReserve && accountReserve !== "0" ? (
-                  <span>
-                    {text("Account setup")}
-                    <b translate="no">{lamportsToSol(accountReserve)} SOL</b>
-                  </span>
-                ) : null}
-              </div>
-              {warnings.length > 0 ? (
-                <ul className={styles.reviewWarnings} aria-label={text("Read before confirming")}>
-                  {warnings.map((warning) => (
-                    <li key={warning.line} data-tone={warning.stops ? "stop" : "weigh"}>
-                      {warning.line}
-                    </li>
-                  ))}
-                </ul>
-              ) : null}
-            </section>
-          ) : null}
-
-          {/* A transfer this device signed and this tab never saw the end of.
-              It appears above the outcome of the current one because it is
-              older money and the more urgent question: the instruction that
-              matters is never to send it again, and before this existed a
-              reload was enough to lose it. */}
-          {resumed ? (
-            <div className={styles.riskRow} data-tone={resumedTone}>
-              <StatusChip family="risk" tone={resumedTone}>
-                {resumed.state === "LANDED"
-                  ? text("Sent")
-                  : resumed.state === "FAILED"
-                    ? text("Not sent")
-                    : text("Not confirmed")}
-              </StatusChip>
-              <span>
-                {resumed.state === "CHECKING"
-                  ? text("Checking an earlier transfer…")
-                  : resumed.state === "FAILED"
-                    ? sendOutcomeCopy("LANDED_FAILED", text)
-                    : resumed.state === "UNKNOWN"
-                      ? text("An earlier transfer is still being confirmed. Do not send it again.")
-                      : null}
-              </span>
-              <span translate="no">{short(resumed.signature)}</span>
-              <a
-                className="rw-btn"
-                href={explorerTxUrl(NETWORK, resumed.signature)}
-                target="_blank"
-                rel="noreferrer"
-              >
-                {text("Explorer")}
-              </a>
-            </div>
-          ) : null}
-
-          {/* A transfer that landed says so. Whether the ledger reconciled every
-              expectation is the receipt's word; the person's question is
-              whether their money moved, and an independent read of the chain is
-              what answers it. */}
-          {settled ? (
-            <div className={styles.riskRow} data-tone={settledTone}>
-              <StatusChip family="risk" tone={settledTone}>
-                {settled.observation
-                  ? text("Sent")
-                  : nothingMoved(settled.state)
-                    ? text("Not sent")
-                    : text("Not confirmed")}
-              </StatusChip>
-              {settled.observation ? null : <span>{sendOutcomeCopy(settled.state, text)}</span>}
-              <span translate="no">{short(settled.signature)}</span>
-              <a
-                className="rw-btn"
-                href={explorerTxUrl(NETWORK, settled.signature)}
-                target="_blank"
-                rel="noreferrer"
-              >
-                {text("Explorer")}
-              </a>
-              {settled.receipt ? (
-                <>
-                  <button
-                    className="rw-btn"
-                    type="button"
-                    onClick={() => downloadReceipt(settled.receipt)}
-                  >
-                    {text("Receipt")}
-                  </button>
-                  <Link className="rw-btn" href="/app/receipts">
-                    {text("Open receipt")}
-                  </Link>
-                </>
-              ) : null}
-            </div>
-          ) : null}
-
-          {/* Same component, same behaviour, as Swap and Bridge. */}
-          <WalletConnectRow hintClassName={styles.walletHint} errorClassName={styles.errorRow} />
-
-          {!connection && wallets.length > 1 ? null : (
-            <button className={styles.cta} type="button" onClick={onCta} disabled={ctaDisabled}>
-              {ctaLabel}
             </button>
-          )}
+          </div>
+          {/* Under the amount: what it is worth, and the shares of what is available — one line, so the amount stays in
+              the top third of a phone's screen (B18). */}
+          <div className={styles.amountFoot}>
+            <span className={styles.usdLine} translate="no">
+              {chosen && amountOk
+                ? usdLabel((parsedAmount as { raw: string }).raw, chosen.decimals, chosen.catalog?.usdPrice ?? null, locale === "uk" ? "uk-UA" : "en-US")
+                : ""}
+            </span>
+            {chosen ? (
+              <span className={styles.shareGroup} role="group" aria-label={text("Use part of the balance")}>
+                <button className={styles.shareButton} type="button" onClick={() => fillShare(1n, 4n)} disabled={busy}>
+                  25%
+                </button>
+                <button className={styles.shareButton} type="button" onClick={() => fillShare(1n, 2n)} disabled={busy}>
+                  50%
+                </button>
+                <button className={styles.shareButton} type="button" onClick={() => fillShare(3n, 4n)} disabled={busy}>
+                  75%
+                </button>
+                <button className={styles.shareButton} type="button" onClick={() => fillShare(1n, 1n)} disabled={busy}>
+                  {text("MAX")}
+                </button>
+              </span>
+            ) : null}
+          </div>
         </div>
-      </Panel>
 
-      <MoneyContext span={transferRows} holdings={holdings} />
+        <div className={styles.leg}>
+          <div className={styles.legHead}>
+            <label className={styles.legLabel} htmlFor="send-recipient">{text("To")}</label>
+          </div>
+          <div className={styles.legBody}>
+            <input
+              id="send-recipient"
+              className={styles.addressInput}
+              value={recipient}
+              spellCheck={false}
+              autoComplete="off"
+              placeholder={text("Solana address or .skr name")}
+              disabled={busy}
+              onChange={(event) => fillRecipient(event.target.value)}
+            />
+            {canPaste && recipient.trim() === "" ? (
+              <button className={styles.pasteButton} type="button" onClick={() => void paste()} disabled={busy}>
+                {text("Paste")}
+              </button>
+            ) : null}
+          </div>
+          {recents.length > 0 && recipient.trim() === "" ? (
+            <div className={styles.recents} role="group" aria-label={text("Recent recipients")}>
+              {recents.slice(0, 3).map((address) => (
+                <RecentChip key={address} address={address} onPick={fillRecipient} disabled={busy} />
+              ))}
+            </div>
+          ) : null}
+          {/* What a name points to now, or why it points nowhere; a pasted address's own primary name (SKR-4). */}
+          {recipientName ? (
+            <p className={styles.nameLine} data-state={nameRead?.state ?? "RESOLVING"} aria-live="polite">
+              {nameRead?.state === "FOUND" ? (
+                <span translate="no" title={nameRead.address}>→ {short(nameRead.address)}</span>
+              ) : nameRead?.state === "NOT_FOUND" ? (
+                text("No such .skr name")
+              ) : nameRead?.state === "UNAVAILABLE" ? (
+                text("The name could not be checked right now.")
+              ) : (
+                text("Finding the name…")
+              )}
+            </p>
+          ) : typedName ? (
+            <p className={styles.nameLine} data-state="FOUND" translate="no">
+              {typedName}
+            </p>
+          ) : null}
+        </div>
+      </div>
+
+      {/* The recipient check: once the address is a real one and the person has stopped typing, what an external security source knows about it — one line, the details a press away, never a block. Not asked for the person's own wallet. */}
+      {recipientOk && !sendingToSelf ? <RecipientCheck address={recipientAddress} locale={locale} /> : null}
+
+      {/* SEC-2: an address that copies a known one's edges — the poisoning trick — holds the action until the person says it is the one they meant. */}
+      {lookalike && recipientAddress ? (
+        <div className={styles.lookalike} role="alert" data-held={lookalikeHolds ? "true" : undefined}>
+          <span>
+            {lookalike === connection?.address
+              ? text("Looks like your own address, but it is another. Check the whole address.")
+              : text("Looks like a recent address, but it is another. Check the whole address.")}
+          </span>
+          <code className={styles.fullAddress} translate="no">{addressGroups(recipientAddress).join(" ")}</code>
+          {lookalikeHolds ? (
+            <button className={styles.lookalikeAccept} type="button" onClick={() => setLookalikeAccepted(recipientAddress)} disabled={busy}>
+              {text("It is the right address")}
+            </button>
+          ) : null}
+        </div>
+      ) : null}
+
+      {/* SEC-2: the first transfer to this address from this browser — its own block, so a planted address that is both
+          a look-alike and new is answered twice, and each answer is about the thing it names. */}
+      {newAddress && recipientAddress ? (
+        <div className={styles.newAddress} role="alert" data-held={newAddressHolds ? "true" : undefined}>
+          <span>{text("Nothing was sent to this address yet. Match its first and last characters with whoever gave it.")}</span>
+          {/* The look-alike block above prints the same address; one copy of it is what the eye checks. */}
+          {lookalike ? null : (
+            <code className={styles.fullAddress} translate="no">{addressGroups(recipientAddress).join(" ")}</code>
+          )}
+          {newAddressHolds ? (
+            <button className={styles.lookalikeAccept} type="button" onClick={() => setNewAddressAccepted(recipientAddress)} disabled={busy}>
+              {text("Address checked")}
+            </button>
+          ) : null}
+        </div>
+      ) : null}
+
+      {/* Only the case that costs money. A recipient who is already able to
+          receive the token is the ordinary case, and the absence of a setup
+          cost in the Review below is how the card says so — a line stating
+          that nothing is wrong is the prose people stop reading. */}
+      {plan?.plan.createsRecipientAccount ? (
+        <div className={styles.factRow}>
+          <span>{text("This address has no account for this token yet — you pay a one-time setup cost.")}</span>
+        </div>
+      ) : null}
+
+      {failureLine ? <div className={styles.errorRow}>{failureLine}</div> : null}
+      {walletDetail ? (
+        /* The wallet's own words, not a Ryntra code. Untranslated on
+           purpose: it is the wallet speaking to its own user, and
+           rewriting it would be inventing a message nobody sent. */
+        <div className={styles.walletHint}>{walletDetail}</div>
+      ) : null}
+      {blockedReason ? <div className={styles.errorRow}>{blockedReason}</div> : null}
+
+      {plan ? (
+        <section className={styles.exactReview} aria-label={text("Ready to sign")}>
+          <div className={styles.exactReviewHead}>
+            <span className={styles.reviewTitle}>{text("Ready to sign")}</span>
+          </div>
+          <div className={styles.exactReviewGrid}>
+            <span>
+              {text("You send")}
+              <b translate="no">{sentAmount}</b>
+            </span>
+            {issuerFee ? (
+              /* The net figure below answers "what arrives". This answers
+                 "where the rest went", which is a different question and
+                 the one a person asks when the two numbers differ. The
+                 warning list says the issuer takes a fee; only this says
+                 how much. */
+              <span>
+                {text("Transfer fee")}
+                <b translate="no">
+                  {displayAmount(issuerFee, plan.plan.decimals)} {ticker}
+                </b>
+              </span>
+            ) : null}
+            {receivesLess ? (
+              <span>
+                {text("Recipient gets")}
+                <b translate="no">
+                  {displayAmount(plan.preflight.estimatedReceivedRaw, plan.plan.decimals)} {ticker}
+                </b>
+              </span>
+            ) : null}
+            {/* Review always shows the whole address the transaction pays, and the name beside it only when it is that address's (SKR-4). */}
+            <span className={styles.reviewTo}>
+              {text("To")}
+              {reviewName ? <b translate="no">{reviewName}</b> : null}
+              <code className={styles.fullAddress} translate="no">{addressGroups(plan.plan.recipient).join(" ")}</code>
+            </span>
+            <span>
+              {text("From")}
+              <b translate="no">{short(plan.plan.sender)}</b>
+            </span>
+            <span>
+              {text("Network fee estimate")}
+              <b translate="no">
+                {lamportsToSol(plan.plan.baseFeeLamports, plan.plan.priorityFeeLamports)} SOL
+              </b>
+            </span>
+            {accountReserve && accountReserve !== "0" ? (
+              <span>
+                {text("Account setup")}
+                <b translate="no">{lamportsToSol(accountReserve)} SOL</b>
+              </span>
+            ) : null}
+          </div>
+          {warnings.length > 0 ? (
+            <ul className={styles.reviewWarnings} aria-label={text("Read before confirming")}>
+              {warnings.map((warning) => (
+                <li key={warning.line} data-tone={warning.stops ? "stop" : "weigh"}>
+                  {warning.line}
+                </li>
+              ))}
+            </ul>
+          ) : null}
+          {/* SEC-2: the one standing fact of every Review — the wallet signs, and nothing here can sign for it. Not a
+              warning: it is true of every transfer, and it reads where the signature is about to be given. */}
+          <p className={styles.reviewKeys}>{text("Ryntra never sees your keys.")}</p>
+        </section>
+      ) : null}
+
+      {/* A transfer this device signed and this tab never saw the end of.
+          It appears above the outcome of the current one because it is
+          older money and the more urgent question: the instruction that
+          matters is never to send it again, and before this existed a
+          reload was enough to lose it. */}
+      {resumed ? (
+        <div className={styles.riskRow} data-tone={resumedTone}>
+          <StatusChip family="risk" tone={resumedTone}>
+            {resumed.state === "LANDED"
+              ? text("Sent")
+              : resumed.state === "FAILED"
+                ? text("Not sent")
+                : text("Not confirmed")}
+          </StatusChip>
+          <span>
+            {resumed.state === "CHECKING"
+              ? text("Checking an earlier transfer…")
+              : resumed.state === "FAILED"
+                ? sendOutcomeCopy("LANDED_FAILED", text)
+                : resumed.state === "UNKNOWN"
+                  ? text("An earlier transfer is still being confirmed. Do not send it again.")
+                  : null}
+          </span>
+          <span translate="no">{short(resumed.signature)}</span>
+          <a className="rw-btn" href={explorerTxUrl(NETWORK, resumed.signature)} target="_blank" rel="noreferrer">
+            {text("Explorer")}
+          </a>
+        </div>
+      ) : null}
+
+      {/* A transfer that landed says so. Whether the ledger reconciled every
+          expectation is the receipt's word; the person's question is
+          whether their money moved, and an independent read of the chain is
+          what answers it. */}
+      {settled ? (
+        <div className={styles.riskRow} data-tone={settledTone}>
+          <StatusChip family="risk" tone={settledTone}>
+            {settled.observation
+              ? text("Sent")
+              : nothingMoved(settled.state)
+                ? text("Not sent")
+                : text("Not confirmed")}
+          </StatusChip>
+          {settled.observation ? null : <span>{sendOutcomeCopy(settled.state, text)}</span>}
+          <span translate="no">{short(settled.signature)}</span>
+          <a className="rw-btn" href={explorerTxUrl(NETWORK, settled.signature)} target="_blank" rel="noreferrer">
+            {text("Explorer")}
+          </a>
+          {settled.receipt ? (
+            <>
+              <button className="rw-btn" type="button" onClick={() => downloadReceipt(settled.receipt)}>
+                {text("Receipt")}
+              </button>
+              <Link className="rw-btn" href="/app/receipts">
+                {text("Open receipt")}
+              </Link>
+            </>
+          ) : null}
+        </div>
+      ) : null}
+
+      {/* The form's one action: in the card on a desk, pinned above the bottom bar on a phone (B18). A guest's is the
+          same on every page (B14): it opens the header's wallet panel. */}
+      <MoneyAction>
+        {!connection ? (
+          <ConnectWalletButton block />
+        ) : (
+          <Button variant="primary" block onClick={onCta} disabled={ctaDisabled} lang={lang}>
+            {ctaLabel}
+          </Button>
+        )}
+      </MoneyAction>
+    </MoneyCard>
+  );
+
+  return (
+    <>
+      <MoneyPage
+        id="send"
+        title={NAV_WORDS[lang].items.send}
+        help={text("One transfer on Solana: what leaves, where it goes and the network fee — all of it before your wallet signs.")}
+        lang={lang}
+        form={form}
+        aside={<RecentTransfers kind="transfers" title={text("Recent transfers")} />}
+      />
 
       {picking && connection ? (
         <div
@@ -1288,9 +1500,7 @@ export function SendCard() {
                   setActiveIndex((current) => (visible.length === 0 ? 0 : (current + 1) % visible.length));
                 } else if (event.key === "ArrowUp") {
                   event.preventDefault();
-                  setActiveIndex((current) =>
-                    visible.length === 0 ? 0 : (current - 1 + visible.length) % visible.length,
-                  );
+                  setActiveIndex((current) => (visible.length === 0 ? 0 : (current - 1 + visible.length) % visible.length));
                 } else if (event.key === "Enter") {
                   event.preventDefault();
                   const holding = visible[activeIndex];
@@ -1313,9 +1523,7 @@ export function SendCard() {
                       onMouseEnter={() => setActiveIndex(index)}
                       onClick={() => pick(id)}
                     >
-                      <span className={styles.tokenGlyph} aria-hidden>
-                        {code.slice(0, 1)}
-                      </span>
+                      <AssetMark symbol={code} mint={holding.mint ?? "So11111111111111111111111111111111111111112"} icon={holding.catalog?.icon ?? null} size={28} />
                       <span className={styles.pickerMeta}>
                         <span className={styles.pickerCode} translate="no">
                           {code}
@@ -1327,7 +1535,7 @@ export function SendCard() {
                         ) : null}
                       </span>
                       <span className={styles.pickerBalance} translate="no">
-                        {displayAmount(holding.spendableRaw, holding.decimals)}
+                        {localFigure(displayAmount(holding.spendableRaw, holding.decimals), locale)}
                       </span>
                     </button>
                   </li>

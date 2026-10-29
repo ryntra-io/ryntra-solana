@@ -65,6 +65,15 @@ export const USD_MICROS_PER_USD = 1_000_000n;
  */
 export const REWARD_MINIMUM_CLAIM_USD_MICROS = 1_000_000n;
 
+/**
+ * Rules `2.1.0` (the decision of 2026-10-17): **$0.25** when the wallet already has a USDC account — the payout
+ * pays no rent — and the dollar above when the payout has to open one. Where the account cannot be read, the dollar.
+ */
+export const REWARD_MINIMUM_CLAIM_WITH_ACCOUNT_USD_MICROS = 250_000n;
+
+/** Does the wallet hold a USDC account the payout can land in? `UNKNOWN` — not read, so not assumed. */
+export type RewardPayoutAccount = "EXISTS" | "MISSING" | "UNKNOWN";
+
 /** Rewards are paid in USDC on Solana, whose raw unit is already a USD micro. */
 export const REWARD_PAYOUT_DECIMALS = 6;
 
@@ -137,6 +146,27 @@ export const RewardSourceSchema = z
 
 export type RewardSource = z.output<typeof RewardSourceSchema>;
 
+/** `fee` — out of the fee Ryntra received; `budget` — out of the growth budget the owner named. */
+export const REWARD_FUNDING_SOURCES = ["fee", "budget"] as const;
+export type RewardFundingSource = (typeof REWARD_FUNDING_SOURCES)[number];
+
+/**
+ * The windows of rules `2.1.0`, as a row is marked:
+ * - `FIRST_TEN` — a trade inside «First $10 back»: the ordinary half of its fee back to the trader, or the inviter's
+ *   zero row (the trade happened; the inviter earns nothing in the window);
+ * - `FIRST_TEN_REST` — the rest of that fee back to the trader, held until the wallet passes the cluster check;
+ * - `FIRST_TEN_VOID` — a person cancelled the wallet's window after the check: the rest rows are taken back by one
+ *   negative row;
+ * - `FIRST_TEN_PASSED` — the check passed: a zero row that lets the rest rows be claimed;
+ * - `FIRST_TEN_AFTER` — the trader's ordinary cashback on the part of a trade past the cap (the trade that reaches
+ *   it is split: its window part is `FIRST_TEN` and `FIRST_TEN_REST`, the rest ordinary);
+ * - `FIRST_TEN_REINSTATED` — a cancelled window given back after a won appeal: the negative row's opposite;
+ * - `INVITER_90` — the inviter's 30 % of a friend's trade in the friend's first 90 days.
+ * No row of the first four earns rank points.
+ */
+export const REWARD_WINDOWS = ["FIRST_TEN", "FIRST_TEN_REST", "FIRST_TEN_VOID", "FIRST_TEN_PASSED", "FIRST_TEN_AFTER", "FIRST_TEN_REINSTATED", "INVITER_90"] as const;
+export type RewardWindow = (typeof REWARD_WINDOWS)[number];
+
 export const RewardEntrySchema = z
   .object({
     version: z.number().int().nonnegative().optional(),
@@ -170,13 +200,22 @@ export const RewardEntrySchema = z
      */
     rules: z
       .object({
-        version: z.literal("2.0.0"),
+        version: z.enum(["2.0.0", "2.1.0", "2.2.0"]),
         base: z.literal("RECEIVED"),
         baseRaw: z.string().regex(RAW_INTEGER),
         rank: z.enum(REWARD_RANKS).nullable(),
       })
       .strict()
       .optional(),
+    /**
+     * Where the money of this row comes from: `fee` — the fee Ryntra received; `budget` — the growth budget
+     * (`budget.ts`). Every row computed by rules `2.1.0` carries it. A row without it — of earlier rules, a claim, a
+     * late valuation of an earlier row — is `fee`: before the growth budget's journal nothing else paid a reward.
+     * Never recomputed.
+     */
+    fundedBy: z.enum(REWARD_FUNDING_SOURCES).optional(),
+    /** The window of rules `2.1.0` this row belongs to (`REWARD_WINDOWS`); absent on an ordinary row. */
+    window: z.enum(REWARD_WINDOWS).optional(),
   })
   .strict();
 
@@ -304,6 +343,15 @@ export function rewardEntryKey(
   args: Readonly<{ recipient: string; type: RewardType; ref: string }>,
 ): string {
   return `${args.recipient}:${args.type}:${args.ref}`;
+}
+
+/**
+ * The reference a row of an operation is keyed under: its operation's, except the rows that sit beside another row
+ * of the same recipient and kind on the same fee — the rest of a «First $10 back» trade and the ordinary cashback
+ * past the cap.
+ */
+export function rewardEntryRefOf(entry: Readonly<{ window?: RewardWindow }>, ref: string): string {
+  return entry.window === "FIRST_TEN_REST" ? `${ref}:rest` : entry.window === "FIRST_TEN_AFTER" ? `${ref}:after` : ref;
 }
 
 /** Everything belonging to one wallet, for `valuesWithPrefix`. */

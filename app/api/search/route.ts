@@ -1,15 +1,17 @@
 import { consumeSolanaReadRequest } from "@/lib/agent-control/http";
-import { publicCacheHeaders, rateLimitHeaders, type RateLimitDecision } from "@/lib/http-control";
+import { privateNoStoreHeaders, publicCacheHeaders, rateLimitHeaders, type RateLimitDecision } from "@/lib/http-control";
 import type { SearchIndex } from "@/lib/search/product-search";
 import { coinShelf, memeShelf, USDC_MINT, USDT_MINT } from "@/lib/spot/coin-shelf";
+import { withoutOffensiveNames } from "@/lib/spot/offensive-names";
 import { toListRow } from "@/lib/spot/markets";
-import { listSpotMarkets, readSpotMarket } from "@/lib/spot/markets.server";
+import { listSpotMarkets, readSpotMarket, spotListEdgeSeconds } from "@/lib/spot/markets.server";
 import { shelfCompanies, shelfPrivateCompanies } from "@/lib/stocks/shelf";
 import { readStockUniverse } from "@/lib/stocks/universe.server";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
-export const maxDuration = 30;
+/* A list refresh that outlives its answer runs inside this invocation (`after`): the universe's slowest honest read is about 44 s. */
+export const maxDuration = 60;
 
 /**
  * The index the product's search reads: the same lists Markets draws — one
@@ -42,14 +44,19 @@ export async function GET(request: Request) {
   const index: SearchIndex = {
     companies: universe.ok ? shelfCompanies(universe.universe.rows) : [],
     privateCompanies: universe.ok ? shelfPrivateCompanies(universe.universe.rows) : [],
-    coins: shelf.crypto.slice(0, COINS),
-    memes: memes.ok ? memeShelf(memes.rows).slice(0, MEMES) : [],
+    /* A token named with a hate word is not offered (B2b): the index fills Home's «Ринки зараз» and the search. */
+    coins: withoutOffensiveNames(shelf.crypto).slice(0, COINS),
+    memes: memes.ok ? withoutOffensiveNames(memeShelf(memes.rows)).slice(0, MEMES) : [],
     dollars: shelf.dollars,
   };
   const partial = !universe.ok || !crypto.ok || !memes.ok;
   if (!universe.ok && !crypto.ok && !memes.ok && dollarRows.length === 0) return failure(503, "SEARCH_UNAVAILABLE", "No market list answered.", rate);
+  /* The coins' and memes' prices are kept at the edge no longer than they stay fresh (SOL-D1), and not at all when stale. */
+  const lists = [crypto, memes].filter((read) => read.ok);
+  const stale = lists.some((read) => read.stale);
+  const edge = lists.length > 0 ? spotListEdgeSeconds(lists.map((read) => read.oldestReadAt).sort()[0], Date.now()) : { ttl: 60, revalidate: 300 };
   return Response.json(
     { ...index, partial, readAt: new Date().toISOString() },
-    { headers: partial ? { ...rateLimitHeaders(rate), "cache-control": "private, no-store" } : { ...publicCacheHeaders(60, 300), ...rateLimitHeaders(rate) } },
+    { headers: partial || stale || !edge ? { ...rateLimitHeaders(rate), ...privateNoStoreHeaders() } : { ...publicCacheHeaders(edge.ttl, edge.revalidate), ...rateLimitHeaders(rate) } },
   );
 }

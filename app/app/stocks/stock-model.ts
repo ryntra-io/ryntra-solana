@@ -46,8 +46,8 @@ export type SlimStockRow = Readonly<{
   volume: number | null;
   liquidity: number | null;
   /**
-   * The issuer events a list can name without a read per asset: the
-   * multiplier the chain has published and not yet
+   * The issuer events a list can name without a read per asset (the mobile
+   * line's request 26): the multiplier the chain has published and not yet
    * activated, and when it activates — judged again at answer time, so a
    * copy served after the activation names nothing pending — and when the
    * trading period in `period` next changes, as the issuer or the feed
@@ -273,6 +273,23 @@ export function clockOf(iso: string | null, locale: WorkspaceLocale): string | n
   return new Date(at).toLocaleTimeString(locale === "uk" ? "uk-UA" : "en-US", { hour: "2-digit", minute: "2-digit", timeZone: "UTC", hour12: false });
 }
 
+/** A venue as people name it, from GeckoTerminal's id: «raydium-clmm» → «Raydium CLMM», «pancakeswap-v3-solana» → «Pancakeswap v3». */
+const DEX_NAMES: Readonly<Record<string, string>> = {
+  raydium: "Raydium",
+  "raydium-clmm": "Raydium CLMM",
+  "raydium-cp": "Raydium CPMM",
+  orca: "Orca",
+  meteora: "Meteora",
+  "meteora-dlmm": "Meteora DLMM",
+  "meteora-damm-v2": "Meteora DAMM v2",
+};
+export function dexName(id: string): string {
+  const known = DEX_NAMES[id.replace(/-solana$/, "")];
+  if (known) return known;
+  const words = id.replace(/-solana$/, "").split("-").filter(Boolean);
+  return words.map((word, index) => (index === 0 ? word.charAt(0).toUpperCase() + word.slice(1) : word)).join(" ");
+}
+
 /* ---------------------------------------------------------------- words */
 
 type Bi = Readonly<{ en: string; uk: string }>;
@@ -326,11 +343,11 @@ export const STOCK_WORDS = {
   /* columns */
   colStock: bi("Stock", "Акція"),
   colPrice: bi("Price", "Ціна"),
-  col24h: bi("24h", "24h"),
+  col24h: bi("24h", "24 год"),
   colReference: bi("Reference", "Референс"),
   colDeviation: bi("Deviation", "Відхилення"),
   colSession: bi("Session", "Сесія"),
-  colVolume: bi("Volume 24h", "Обсяг 24h"),
+  colVolume: bi("Volume 24h", "Обсяг за 24 год"),
   colLiquidity: bi("Liquidity", "Ліквідність"),
   perShare: bi("per share", "за акцію"),
   perToken: bi("per token", "за токен"),
@@ -344,15 +361,14 @@ export const STOCK_WORDS = {
   impliedValuation: bi("Valuation the token price implies", "Оцінка за ціною токена"),
   vsMark: bi("Token vs issuer's mark", "Токен проти оцінки емітента"),
   vsMarkNote: bi("the token's market price against the issuer's own mark · context, not a deviation from a market reference", "ринкова ціна токена проти власної оцінки емітента · контекст, не відхилення від ринкового референсу"),
-  markFetched: bi("the issuer's figure · no observation time stated · fetched", "цифра емітента · час спостереження не зазначено · отримано"),
+  markFetched: bi("the issuer's figure, as of", "цифра емітента станом на"),
   noExchangeReference: bi("private company — no exchange reference", "приватна компанія — без біржового референсу"),
   transferFee: bi("Token transfer fee", "Комісія переказу токена"),
-  transferFeeNote: bi("withheld by the token's own mint on every transfer, by the issuer's rule · already inside the route's figures · not Ryntra's fee", "утримує сам mint токена при кожному переказі за правилом емітента · вже всередині цифр маршруту · не комісія Ryntra"),
+  transferFeeNote: bi("withheld by the token itself on every transfer, by the issuer's rule · already counted in the amounts you are quoted · not Ryntra's fee", "утримує сам токен при кожному переказі за правилом емітента · уже враховано в сумах, які ти бачиш · не комісія Ryntra"),
   transferFeePending: bi("changes to", "зміниться на"),
   fromEpoch: bi("from epoch", "з епохи"),
-  noTransferFee: bi("none on this mint", "на цьому mint немає"),
+  noTransferFee: bi("None", "Немає"),
   status: bi("Status", "Стан"),
-  lifecycleRecheck: bi("due for a check", "перевірити до"),
   lifecycleUntil: bi("until", "до"),
   issuerNotice: bi("issuer's notice", "повідомлення емітента"),
   exitTermsPreStocks: bi("Exit: sell on chain any time (the issuer promises no liquidity); after an IPO the issuer opens a conversion into the tokenized public stock for up to nine months, after which the token expires — the issuer's terms.", "Вихід: продати в ланцюзі будь-коли (емітент ліквідності не обіцяє); після IPO емітент відкриває конвертацію в токенізовану публічну акцію на строк до дев'яти місяців, після чого токен втрачає силу — умови емітента."),
@@ -363,7 +379,7 @@ export const STOCK_WORDS = {
   sameCompany: bi("Same company, another issuer", "Та сама компанія, інший емітент"),
   sameCompanyNote: bi("A different instrument with different rights and its own unit — shown, not compared. Cheaper is not the same thing.", "Інший інструмент з іншими правами та власною одиницею — показано, не порівнюється. Дешевше не означає те саме."),
   notPurchasable: bi("Not offered for purchase now", "Зараз не пропонується для купівлі"),
-  chainFacts: bi("Token-2022 facts", "Факти Token-2022"),
+  chainFacts: bi("Token rules", "Правила токена"),
   permanentDelegate: bi("permanent delegate — the issuer can move or burn holder balances", "постійний делегат — емітент може переміщувати чи спалювати баланси"),
   pausable: bi("pausable — the issuer can stop every transfer", "з паузою — емітент може зупинити всі перекази"),
   pausedNow: bi("paused now", "зупинено зараз"),
@@ -446,7 +462,7 @@ export const STOCK_WORDS = {
   dividendsInAmount: bi("Already in your amount", "Вже в твоїй кількості"),
   dividendsHow: bi("The issuer reinvests them by raising the multiplier", "Емітент реінвестує їх, збільшуючи множник"),
   dividendsNotPayout: bi("not a payout to an account", "це не виплата на рахунок"),
-  mint: bi("Mint", "Mint"),
+  mint: bi("Token address", "Адреса токена"),
   units: bi("Units", "Одиниці"),
   authorities: bi("Authorities", "Повноваження"),
   supply: bi("Token supply", "Емісія токена"),
@@ -461,7 +477,7 @@ export const STOCK_WORDS = {
   youGive: bi("You give", "Ти віддаєш"),
   priceImpact: bi("Price impact", "Вплив на ціну"),
   feesInQuote: bi("Fees in the quote", "Комісії в котируванні"),
-  presetsNote: bi("Example amounts for orientation; Spot's Review quotes your real amount again.", "Приклади сум для орієнтації; Review у Споті котирує твою реальну суму заново."),
+  presetsNote: bi("Example amounts for orientation; Spot's Review quotes your real amount again.", "Приклади сум для орієнтації; Перевірка в Споті рахує твою реальну суму заново."),
   details: bi("Details", "Деталі"),
   backToStocks: bi("Stocks", "Акції"),
   /* the terms of the deal and the comparison */
@@ -476,22 +492,22 @@ export const STOCK_WORDS = {
   reviewSale: bi("Review sale", "Перевірити продаж"),
   planThisPurchase: bi("Plan this purchase", "Спланувати купівлю"),
   assetDetails: bi("Asset details", "Деталі активу"),
-  assetDetailsSub: bi("mint · units · authorities · supply", "mint · одиниці · повноваження · емісія"),
+  assetDetailsSub: bi("address · units · authorities · supply", "адреса · одиниці · повноваження · емісія"),
   orderPerShare: bi("Price of this order, per share", "Ціна цієї заявки за акцію"),
   orderPerToken: bi("Price of this order, per token", "Ціна цієї заявки за токен"),
   minimumReceived: bi("Minimum received", "Мінімум отримання"),
-  minimumNote: bi("the least a signature accepts, after slippage of", "найменше, що прийме підпис, після сліпеджу"),
-  minimumAtReview: bi("set at the Review — its slippage bound applies to the amount you sign", "встановлює Review — його межа сліпеджу діє на суму, яку ти підписуєш"),
+  minimumNote: bi("the least a signature accepts, after slippage of", "найменше, що прийме підпис, після прослизання"),
+  minimumAtReview: bi("set at the Review — its slippage bound applies to the amount you sign", "встановлює Перевірка — її межа прослизання діє на суму, яку ти підписуєш"),
   quoteTime: bi("Quote time", "Час котирування"),
   reviewUntil: bi("review until", "перевірка до"),
-  quoteNotPromise: bi("A quote for comparison, not a promise of execution: Spot's Review quotes your amount again before you sign.", "Котирування для порівняння, не обіцянка виконання: Review у Споті котирує твою суму заново перед підписом."),
+  quoteNotPromise: bi("A quote for comparison, not a promise of execution: the Review quotes your amount again before you sign.", "Котирування для порівняння, не обіцянка виконання: Перевірка рахує твою суму заново перед підписом."),
   lowestCost: bi("Lowest quoted cost", "Найнижча котирувана вартість"),
   lowestFor: bi("for", "для"),
   notBestToken: bi("Cheaper is not the same rights or less risk — the issuers' terms differ.", "Дешевше — не ті самі права й не менший ризик: умови емітентів різні."),
   sameBasis: bi("The same amount, the same settlement asset (USDC), the same side, quoted together; per share through each token's own multiplier.", "Та сама сума, той самий актив розрахунку (USDC), той самий бік, котирування разом; за акцію через власний множник кожного токена."),
   confirmedByCatalogue: bi("issuer's catalogue", "каталог емітента"),
   impliedBySymbol: bi("by the token's symbol", "за символом токена"),
-  noRouteAtSize: bi("No route at this size", "Немає маршруту для цієї суми"),
+  noRouteAtSize: bi("This amount can't be bought right now", "Цю суму зараз не купити"),
   venueRefused: bi("The venue could not quote this amount", "Майданчик не зміг котирувати цю суму"),
   notQuoted: bi("Not quoted", "Не котирувалося"),
   unitsUnknown: bi("units unknown — not compared", "одиниці невідомі — не порівнюється"),

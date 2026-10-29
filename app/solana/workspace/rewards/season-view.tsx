@@ -5,12 +5,13 @@ import Link from "next/link";
 import { useCallback, useEffect, useRef, useState } from "react";
 
 import type { SeasonResponse } from "@/lib/growth/league-view";
-import { useSolanaConnection } from "../connection.tsx";
 import { useSolanaI18n } from "../i18n/provider.tsx";
 import { WalletChoices } from "../wallet-gate.tsx";
-import { useWalletProof } from "../wallet-proof.tsx";
 import { FaceAvatar, SeasonBadge } from "./badge.tsx";
 import { leagueCopy, type BoardWordId } from "./league-copy.ts";
+import { SignInGate } from "./sign-in-gate.tsx";
+import { useRewardsWallet } from "./use-rewards-wallet.tsx";
+import { PaidAsChip } from "./programme-card.tsx";
 import styles from "./leagues.module.css";
 
 /**
@@ -27,10 +28,11 @@ const BOARDS: readonly BoardWordId[] = ["TRADERS", "FRIENDS", "CREATORS"];
 
 /** One wallet's season, or the public page — shared by the page and the card on Rewards. */
 export function useSeason(season: number | null) {
-  const { connection } = useSolanaConnection();
-  const proof = useWalletProof();
-  const address = connection?.address ?? null;
-  const proven = proof.state.status === "proven" && proof.state.address === address;
+  /* The wallet the sign-in proved (Ріст 18): tasks and badges open without a second step. */
+  const wallet = useRewardsWallet();
+  const { refused } = wallet;
+  const address = wallet.address;
+  const proven = wallet.open;
   const key = `${season ?? "now"}:${proven ? address : ""}`;
   const currentKey = useRef(key);
   currentKey.current = key;
@@ -48,24 +50,30 @@ export function useSeason(season: number | null) {
       if (!response.ok) throw new Error("unavailable");
       const body = (await response.json()) as SeasonResponse;
       if (currentKey.current !== asked) return;
+      /* No «You» for a proven wallet: either the sign-in ended (the fact, asked again, drops it and the page offers the
+         sign-in) or the wallet's own rows did not read (the page says so) — never a refusal on its own word. */
+      if (proven && address && body.season && body.you === null) {
+        await refused(address, { count: false });
+        if (currentKey.current !== asked) return;
+      }
       setSnapshot({ key: asked, data: body });
       setFailed(null);
     } catch {
       if (currentKey.current === asked) setFailed(asked);
     }
-  }, [key, season, proven, address]);
+  }, [key, season, proven, address, refused]);
 
   useEffect(() => {
     void load();
   }, [load]);
 
-  return { data: snapshot?.key === key ? snapshot.data : null, failed: failed === key, load, address, proven, proof };
+  return { data: snapshot?.key === key ? snapshot.data : null, failed: failed === key, load, address, proven, wallet };
 }
 
 export function SeasonView({ season: asked }: { season: number | null }) {
   const { locale } = useSolanaI18n();
   const words = leagueCopy(locale);
-  const { data, failed, load, address, proven, proof } = useSeason(asked);
+  const { data, failed, load, proven, wallet } = useSeason(asked);
   const intl = locale === "uk" ? "uk-UA" : "en-US";
   const day = (iso: string) => new Intl.DateTimeFormat(intl, { day: "numeric", month: "short", timeZone: "UTC" }).format(new Date(iso));
   const lastDay = (iso: string) => day(new Date(Date.parse(iso) - 86_400_000).toISOString());
@@ -122,27 +130,31 @@ export function SeasonView({ season: asked }: { season: number | null }) {
                 {ended ? `${words.ended} · ` : season.week ? `${words.weekOf(season.week, season.weeks)} · ` : ""}
                 {words.weekRange(day(season.start), lastDay(season.end))}
               </span>
+              <PaidAsChip paidAs="STATUS" />
               <div className={styles.weekTrack} aria-hidden="true">
                 {data.weeks.map((week) => <span key={week.start} className={styles.weekTick} data-state={week.state} />)}
               </div>
             </div>
           </section>
 
-          <section className={`${styles.panel} ${styles.pad}`} aria-labelledby="season-you" data-you-state={you ? "proven" : address ? "unproven" : "none"}>
+          <section className={`${styles.panel} ${styles.pad}`} aria-labelledby="season-you" data-you-state={you ? "proven" : wallet.address ? "unproven" : "none"}>
             <div className={styles.head}>
               <h2 className={styles.title} id="season-you">{words.yourSeason}</h2>
               {you ? <span className={styles.chip} translate="no">{words.tasksDone(done, you.tasks.length)}</span> : null}
             </div>
-            {!address ? (
+            {wallet.gate === "connect" ? (
               <>
                 <p className={styles.lead}>{words.seasonConnect}</p>
                 <WalletChoices single="button" errorClassName={styles.error} />
               </>
-            ) : !proven || !you ? (
-              <div className={styles.head}>
-                <p className={styles.lead}>{words.seasonConfirm}</p>
-                <button type="button" className={styles.button} onClick={() => void proof.prove()} disabled={proof.state.status === "signing"}>
-                  {proof.state.status === "signing" ? words.confirming : words.confirm}
+            ) : !proven ? (
+              <SignInGate wallet={wallet} lead="season" inside />
+            ) : !you ? (
+              /* Proven, and the wallet's own rows did not read: say so and offer to read again — never another signature. */
+              <div className={styles.state}>
+                <p className={styles.lead}>{words.seasonUnavailable}</p>
+                <button type="button" className={styles.quietButton} onClick={() => void load()}>
+                  {words.retry}
                 </button>
               </div>
             ) : (

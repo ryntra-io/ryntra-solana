@@ -1,5 +1,6 @@
 "use client";
 
+import { Button } from "@ryntra/core/ui";
 /**
  * Portfolio — what this wallet owns, and what it is worth where that is known.
  *
@@ -41,6 +42,7 @@ import { WarnSheet, WatchLine } from "@/app/app/invest/position-watch";
 import { usePositions } from "@/app/app/invest/use-positions";
 import { fundingNeed, fundsOf } from "@/app/app/invest/funding-model";
 import { numberLocale } from "@/app/app/invest/invest-words";
+import { usePortfolioValue } from "@/app/app/use-portfolio-value";
 import { useWalletData } from "@/app/app/wallet-data";
 import { holdingSymbol, holdingValue, shownRaw, usdValueIn, walletValue, type WalletHolding } from "@/app/app/wallet-view-model";
 import { Panel } from "@/app/shell/panel";
@@ -58,9 +60,15 @@ import { MarketIcon } from "../spot/market-list.tsx";
 import { StockRowChips, useStockRows } from "../spot/stock-context.tsx";
 import { formatPercent, formatPrice } from "../spot/spot-format.ts";
 import { PlanLink, usePlansByMint } from "./plan-link.tsx";
-import { RewardsSummary } from "./rewards-summary.tsx";
+import { MyPositions } from "@/app/app/markets/pools/my-positions";
+import { PhoenixBlock } from "./phoenix-block.tsx";
+import { ordersHref, phoenixShown, poolsShown, type PoolsRead } from "./portfolio-model.ts";
+import { portfolioWords } from "./portfolio-words.ts";
+import { ReceiptsBlock } from "./receipts-block.tsx";
+import { RewardsBlock } from "./rewards-block.tsx";
 import { ShareTrade } from "../rewards/share-trade.tsx";
 import { WalletGate } from "../wallet-gate.tsx";
+import { useSkrName } from "../skr-name.tsx";
 import styles from "./holdings.module.css";
 
 const WRAPPED_SOL = "So11111111111111111111111111111111111111112";
@@ -123,6 +131,22 @@ export function HoldingsCard() {
   const { text, locale } = useSolanaI18n();
   const { connection } = useSolanaConnection();
   const { holdings, activity, refresh } = useWalletData();
+  /* «Загальна вартість» is Home's «Вартість портфеля»: the wallet, its pools, its open orders and its Phoenix collateral, by one rule (B2b, SOL-C6). */
+  const { value: portfolio, pools, limits, phoenix } = usePortfolioValue(connection?.address ?? null);
+  /* Whose portfolio it is, by the wallet's `.skr` name when it has one (SKR-4). */
+  const skrName = useSkrName(connection?.address ?? null, { self: true });
+  const words = portfolioWords(locale);
+  /* «У пулах» (B5): the positions money can be taken back from, on the read the value already made. */
+  const poolsRead: PoolsRead =
+    /* A wallet just switched: the last wallet's positions never decide whether the new one has a pools block. */
+    (pools.status === "ready" || pools.status === "failed") && pools.owner !== connection?.address
+      ? { status: "loading" }
+      : pools.status === "ready"
+      ? { status: "ready", positions: pools.answer.positions.length, complete: Object.values(pools.answer.venues).every((venue) => venue.ok) }
+      : pools.status === "failed"
+        ? { status: "failed" }
+        : { status: pools.status };
+  const showPools = poolsShown(poolsRead);
   const [query, setQuery] = useState("");
   const [category, setCategory] = useState<CategoryFilter>("all");
   /* The stock context for the rows that are tokenized stocks: the session and the
@@ -213,11 +237,17 @@ export function HoldingsCard() {
       covered += value;
       delta += value - value / ratio;
     }
+    /* The wallet's own day: pools and orders carry no day of their own, so the change is the wallet's and says so. */
     const total = Number(totals.total) / 1_000_000;
     if (total <= 0 || covered / total < 0.9) return null;
     const previous = covered - delta;
     return { usd: delta, pct: previous > 0 ? (delta / previous) * 100 : 0 };
   }, [allRows, totals]);
+  const beyondWallet = (portfolio.parts.pools ?? 0n) > 0n || (portfolio.parts.orders ?? 0n) > 0n || (portfolio.parts.collateral ?? 0n) > 0n;
+  const showPhoenix = phoenixShown(phoenix.value);
+  const partWord = (part: "pools" | "orders" | "collateral"): string => text(part === "pools" ? "Pools" : part === "orders" ? "In orders" : "Phoenix collateral");
+  const partHref = (part: "pools" | "orders" | "collateral"): string =>
+    part === "pools" ? (showPools ? "#portfolio-pools" : "/app/markets/pools") : part === "orders" ? ordersHref(limits.orders) : showPhoenix ? "#portfolio-phoenix" : "/app/perps";
 
   const counts = useMemo(() => {
     const out: Record<CategoryFilter, number> = { all: 0, crypto: 0, stock: 0, meme: 0, other: 0 };
@@ -263,7 +293,7 @@ export function HoldingsCard() {
   if (!connection) {
     return (
       <Panel id="portfolio-value" title={text("Wallet")} w={12} h={8} essential stretch>
-        <WalletGate title={text("Connect a wallet — and see what you hold")} />
+        <WalletGate title={text("Connect a wallet — your assets and positions will be here.")} />
       </Panel>
     );
   }
@@ -274,15 +304,25 @@ export function HoldingsCard() {
       <section className={`${styles.panel} ${styles.valuePanel}`} id="portfolio-value" aria-label={text("Value")}>
         <div className={styles.valueBody}>
           <div className={styles.valueMain}>
-            <span className={styles.eyebrow}>{text("Total value")}</span>
+            <span className={styles.eyebrow}>
+              {text("Total value")}
+              {skrName ? (
+                <>
+                  {" · "}
+                  <span className={styles.owner} translate="no" data-skr-name="">{skrName}</span>
+                </>
+              ) : null}
+            </span>
             <strong className={styles.totalValue} translate="no">
-              {holdings.status === "ready" && holdings.complete ? (totals.priced === 0 && totals.unpriced > 0 ? "\u2014" : usdValueIn(totals.total, locale)) : "\u2014"}
+              {portfolio.phase === "ready" && portfolio.total !== null ? (portfolio.total < 0n ? `−${usdValueIn(-portfolio.total, locale)}` : usdValueIn(portfolio.total, locale)) : "\u2014"}
             </strong>
             {holdings.status === "ready" && holdings.complete && dayChange ? (
               <span className={styles.dayChange} data-tone={dayChange.usd > 0 ? "up" : dayChange.usd < 0 ? "down" : undefined} translate="no">
-                {dayChange.usd >= 0 ? "+" : "−"}{usdValueIn(BigInt(Math.round(Math.abs(dayChange.usd) * 1_000_000)), locale)} · {formatPercent(dayChange.pct, numbers)} <span>{text("today")}</span>
+                {dayChange.usd >= 0 ? "+" : "−"}{usdValueIn(BigInt(Math.round(Math.abs(dayChange.usd) * 1_000_000)), locale)} · {formatPercent(dayChange.pct, numbers)} <span>{beyondWallet ? text("wallet today") : text("today")}</span>
               </span>
             ) : null}
+            {/* A part not read leaves the number a floor, said as Home says it. */}
+            {portfolio.phase === "ready" && portfolio.partial ? <span className={styles.dayChange}>{text("Not everything answered: the value is at least this.")}</span> : null}
             {/* The page's one orange action: the wallet's next step. */}
             <FundingActions need={need} firstStep={need === "usdc" && funds !== null && !funds.ownsCompany} locale={locale} />
             <dl className={styles.coverage}>
@@ -296,6 +336,27 @@ export function HoldingsCard() {
                   <dd translate="no">{totals.unpriced}</dd>
                 </div>
               ) : null}
+              {/* Each part beyond the wallet opens the place its money is taken back from (B5): the pools below, the orders in
+                  Spot, the collateral on «Perps» (or its positions below, SOL-C6). Collateral still being read is named
+                  so: the number never leaves the collateral out unsaid. */}
+              {(["pools", "orders", "collateral"] as const).map((part) =>
+                portfolio.reads[part] === "failed" || (part === "collateral" ? portfolio.reads.collateral === "loading" || (portfolio.parts[part] ?? 0n) !== 0n : (portfolio.parts[part] ?? 0n) > 0n) ? (
+                  <div key={part} className={styles.fact} data-part={part} data-tone={portfolio.reads[part] === "failed" ? "unknown" : undefined}>
+                    <dt>
+                      {portfolio.reads[part] !== "ready" ? (
+                        partWord(part)
+                      ) : (
+                        <Link className={styles.factLink} href={partHref(part)} prefetch={false}>
+                          {partWord(part)}
+                        </Link>
+                      )}
+                    </dt>
+                    <dd translate="no">
+                      {portfolio.reads[part] === "failed" ? text("Not read") : portfolio.reads[part] === "loading" ? text("Reading") : (portfolio.parts[part] ?? 0n) < 0n ? `−${usdValueIn(-(portfolio.parts[part] ?? 0n), locale)}` : usdValueIn(portfolio.parts[part] ?? 0n, locale)}
+                    </dd>
+                  </div>
+                ) : null,
+              )}
               {moving.length > 0 ? (
                 <div className={styles.fact} data-tone="motion">
                   <dt>{text("In motion")}</dt>
@@ -326,9 +387,6 @@ export function HoldingsCard() {
               </div>
             ) : null}
 
-            {/* Waiting in Rewards: a claim against Ryntra, never part of the total. */}
-            <RewardsSummary />
-
             {/* Money that has left and not yet arrived. */}
             <div className={styles.motion} id="portfolio-motion" data-tone={moving.length > 0 ? "caution" : undefined}>
               {activity.status === "loading" ? (
@@ -353,166 +411,185 @@ export function HoldingsCard() {
         </div>
       </section>
 
-      {/* Every asset, and the way into trading it. */}
-      <section className={`${styles.panel} ${styles.holdings}`} id="portfolio-holdings" aria-label={text("Holdings")}>
-        <div className={styles.head}>
-          <div className={styles.categories} role="group" aria-label={text("Narrow this list")}>
-            {(["all", "crypto", "stock", "meme"] as const).filter((option) => option === "all" || counts[option] > 0).map((option) => (
-              <button key={option} type="button" className={styles.category} data-active={option === category} aria-pressed={option === category} onClick={() => setCategory(option)}>
-                {categoryLabel(option)}
-                <span className={styles.categoryCount} translate="no">{counts[option]}</span>
+      {/* The main column: the holdings, then the pools and the receipts under them (B5) — one column, so nothing waits
+          for the side column's height. */}
+      <div className={styles.main}>
+        {/* Every asset, and the way into trading it. */}
+        <section className={`${styles.panel} ${styles.holdings}`} id="portfolio-holdings" aria-label={text("Holdings")}>
+          <div className={styles.head}>
+            <div className={styles.categories} role="group" aria-label={text("Narrow this list")}>
+              {(["all", "crypto", "stock", "meme"] as const).filter((option) => option === "all" || counts[option] > 0).map((option) => (
+                <button key={option} type="button" className={styles.category} data-active={option === category} aria-pressed={option === category} onClick={() => setCategory(option)}>
+                  {categoryLabel(option)}
+                  <span className={styles.categoryCount} translate="no">{counts[option]}</span>
+                </button>
+              ))}
+            </div>
+            {/* «Поділитися»: a card of a trade through Ryntra with the wallet's invitation link — from Rewards; at the end of the categories' row, so search keeps its width on a phone; nothing without a measured trade. */}
+            <ShareTrade align="end" />
+            <div className={styles.tools}>
+              <input
+                className={styles.search}
+                value={query}
+                onChange={(event) => setQuery(event.target.value)}
+                placeholder={text("Search")}
+                aria-label={text("Search your holdings")}
+                autoComplete="off"
+              />
+              <button className={styles.action} type="button" onClick={refresh} disabled={holdings.status === "loading"}>
+                {holdings.status === "loading" ? text("Reading…") : text("Refresh")}
               </button>
-            ))}
+            </div>
           </div>
-          {/* «Поділитися»: a card of a trade through Ryntra with the wallet's invitation link — from Rewards; at the end of the categories' row, so search keeps its width on a phone; nothing without a measured trade. */}
-          <ShareTrade align="end" />
-          <div className={styles.tools}>
-            <input
-              className={styles.search}
-              value={query}
-              onChange={(event) => setQuery(event.target.value)}
-              placeholder={text("Search")}
-              aria-label={text("Search your holdings")}
-              autoComplete="off"
-            />
-            <button className={styles.action} type="button" onClick={refresh} disabled={holdings.status === "loading"}>
-              {holdings.status === "loading" ? text("Reading…") : text("Refresh")}
-            </button>
-          </div>
-        </div>
 
-        {holdings.status === "error" ? (
-          <p className={styles.error}>{text("Balances could not be loaded just now. Try again in a moment.")}</p>
-        ) : null}
+          {holdings.status === "error" ? (
+            <p className={styles.error}>{text("Balances could not be loaded just now. Try again in a moment.")}</p>
+          ) : null}
 
-        {holdings.status === "ready" && !holdings.complete ? (
-          <p className={styles.note}>{text("Some balances could not be read, so this list may be incomplete.")}</p>
-        ) : null}
+          {holdings.status === "ready" && !holdings.complete ? (
+            <p className={styles.note}>{text("Some balances could not be read, so this list may be incomplete.")}</p>
+          ) : null}
 
-        {/* A wallet with nothing of value yet — an empty SOL balance is not a position — reads its first step. */}
-        {holdings.status === "ready" && holdings.complete && !searching && positions.length === 0 ? (
-          <p className={styles.note} data-empty="wallet">
-            {text("Top up — and make your first buy.")}{" "}
-            <Link href="/app/top-up">{text("Top up")}</Link>
-          </p>
-        ) : holdings.status === "ready" && holdings.complete && rows.length === 0 ? (
-          <p className={styles.note}>
-            {query.trim() === "" ? text("This wallet holds no tokens yet.") : text("Nothing here matches that.")}
-          </p>
-        ) : null}
+          {/* A wallet with nothing of value yet — an empty SOL balance is not a position — reads its first step. */}
+          {holdings.status === "ready" && holdings.complete && !searching && positions.length === 0 ? (
+            <p className={styles.note} data-empty="wallet">
+              {text("Top up — and make your first buy.")}{" "}
+              <Link href="/app/top-up">{text("Top up")}</Link>
+            </p>
+          ) : holdings.status === "ready" && holdings.complete && rows.length === 0 ? (
+            <p className={styles.note}>
+              {query.trim() === "" ? text("This wallet holds no tokens yet.") : text("Nothing here matches that.")}
+            </p>
+          ) : null}
 
-        {positions.length > 0 || (dustOpen && dust.length > 0) || searching ? (
-          <div className={styles.tableHead} aria-hidden="true">
-            <span>{text("Asset")}</span>
-            <span>{text("Price")}</span>
-            <span>{text("24h")}</span>
-            <span>{text("Amount")}</span>
-            <span>{text("Value")}</span>
-            <span>{text("Of wallet")}</span>
-            <span />
-          </div>
-        ) : null}
+          {positions.length > 0 || (dustOpen && dust.length > 0) || searching ? (
+            <div className={styles.tableHead} aria-hidden="true">
+              <span>{text("Asset")}</span>
+              <span>{text("Price")}</span>
+              <span>{text("24h")}</span>
+              <span>{text("Amount")}</span>
+              <span>{text("Value")}</span>
+              <span>{text("Of wallet")}</span>
+              <span />
+            </div>
+          ) : null}
 
-        <ul className={styles.list}>
-          {(searching ? rows : [...positions, ...(dustOpen ? dust : [])]).map((row) => {
-            /* A company the wallet holds is sold from its position: a stock Ryntra lists, priced, not paused, and not dust. A position whose issuer event already offers the sale keeps that one. */
-            const listed = row.category === "stock" && !row.retired && !row.event && row.price !== null && row.value !== null && row.value >= DUST_MICRO_USD ? stockRows?.get(row.mint) : undefined;
-            /* And a coin the same way, into USDC from the same sheet: any priced coin Spot trades, not dust — never USDC itself. */
-            const coinSellable = row.category !== "stock" && row.tradeable && !row.retired && !row.event && row.mint !== SOLANA_MAINNET_USDC_MINT && row.price !== null && row.value !== null && row.value >= DUST_MICRO_USD;
-            const sellable = (listed !== undefined && !listed.halted) || coinSellable;
-            const watch = row.category === "stock" && !row.retired ? watches.of(row.mint) : null;
-            const openSale = () => setSale({ mint: row.mint, name: listed?.name ?? row.name ?? row.ticker, icon: row.icon, coin: coinSellable });
-            /* «Пауза емітента»: nothing can be sold now. «Дія»: the row's own «Продати» is the sale the watch asks for — marked in the state's colour, and the line under the name says why. */
-            const sellButton = sellable && watch?.state !== "issuer-paused";
-            const urgent = sellButton && watch?.action === "open-sale" ? (watch.reason === "target" ? "target" : "limit") : undefined;
-            return (
-            <li className={styles.row} key={row.holding.mint ?? "native-sol"} data-dust={row.value === null || row.value < DUST_MICRO_USD} data-event={row.event ? "true" : undefined} data-sell={sellButton ? "true" : undefined} data-watch={watch ? watch.state : undefined}>
-              <div className={styles.assetCell}>
-                <Link className={styles.asset} href={row.retired ? `/app/stocks/${encodeURIComponent(row.mint)}` : row.tradeable ? `/app/spot?mint=${encodeURIComponent(row.mint)}` : mintHref(row.holding.mint ?? WRAPPED_SOL)}>
-                  <MarketIcon mint={row.mint} icon={row.icon} symbol={row.ticker} size={32} className={styles.icon} />
-                  <span className={styles.assetText}>
-                    <span className={styles.ticker} translate="no">{row.ticker}</span>
-                    {row.name && row.name !== row.ticker ? <span className={styles.assetName}>{row.name}</span> : null}
-                    {/* The way out is on the token's own page, one press from this row. */}
-                    {row.retired ? <span className={styles.assetRetired}>{text("No longer supported in Ryntra")}</span> : null}
-                    {row.category === "stock" && stockRows?.get(row.mint) ? <StockRowChips row={stockRows.get(row.mint)!} /> : null}
-                  </span>
-                </Link>
-                {/* The decision this position came from — a door, never a second calculation. */}
-                <PlanLink plans={plansByMint.get(row.mint) ?? []} text={text} />
-              </div>
-              <span className={styles.price} translate="no">{row.price === null ? "—" : `$${formatPrice(row.price, locale)}`}</span>
-              <span className={styles.change} data-tone={row.change === null ? undefined : row.change > 0 ? "up" : row.change < 0 ? "down" : undefined} translate="no">
-                {row.change === null ? "—" : formatPercent(row.change, numbers)}
-              </span>
-              <span className={styles.amount} translate="no">
-                {/* The amount as the wallet shows it: a scaled mint's raw amount times its multiplier (1.15.0). */}
-                {localFigure(displayAmount(shownRaw(row.holding).toString(), row.holding.decimals), locale)}
-              </span>
-              <span className={styles.value} translate="no" data-unpriced={row.value === null}>
-                {row.value === null ? "\u2014" : usdValueIn(row.value, locale)}
-              </span>
-              <span className={styles.share} translate="no">{share(row.value) === null ? "" : `${percent.format(share(row.value) as number)}%`}</span>
-              {/* Quiet: the page's one orange action is the wallet's next step above. */}
-              <span className={styles.sellCell}>
-                {sellButton ? (
-                  <button type="button" className={`rw-btn ${styles.sell}`} aria-haspopup="dialog" onClick={openSale} data-urgent={urgent}>
-                    {text("Sell")}
-                  </button>
+          <ul className={styles.list}>
+            {(searching ? rows : [...positions, ...(dustOpen ? dust : [])]).map((row) => {
+              /* A company the wallet holds is sold from its position: a stock Ryntra lists, priced, not paused, and not dust. A position whose issuer event already offers the sale keeps that one. */
+              const listed = row.category === "stock" && !row.retired && !row.event && row.price !== null && row.value !== null && row.value >= DUST_MICRO_USD ? stockRows?.get(row.mint) : undefined;
+              /* And a coin the same way, into USDC from the same sheet: any priced coin Spot trades, not dust — never USDC itself. */
+              const coinSellable = row.category !== "stock" && row.tradeable && !row.retired && !row.event && row.mint !== SOLANA_MAINNET_USDC_MINT && row.price !== null && row.value !== null && row.value >= DUST_MICRO_USD;
+              const sellable = (listed !== undefined && !listed.halted) || coinSellable;
+              const watch = row.category === "stock" && !row.retired ? watches.of(row.mint) : null;
+              const openSale = () => setSale({ mint: row.mint, name: listed?.name ?? row.name ?? row.ticker, icon: row.icon, coin: coinSellable });
+              /* «Пауза емітента»: nothing can be sold now. «Дія»: the row's own «Продати» is the sale the watch asks for — marked in the state's colour, and the line under the name says why. */
+              const sellButton = sellable && watch?.state !== "issuer-paused";
+              const urgent = sellButton && watch?.action === "open-sale" ? (watch.reason === "target" ? "target" : "limit") : undefined;
+              return (
+              <li className={styles.row} key={row.holding.mint ?? "native-sol"} data-dust={row.value === null || row.value < DUST_MICRO_USD} data-event={row.event ? "true" : undefined} data-sell={sellButton ? "true" : undefined} data-watch={watch ? watch.state : undefined}>
+                <div className={styles.assetCell}>
+                  <Link className={styles.asset} href={row.retired ? `/app/stocks/${encodeURIComponent(row.mint)}` : row.tradeable ? `/app/spot?mint=${encodeURIComponent(row.mint)}` : mintHref(row.holding.mint ?? WRAPPED_SOL)}>
+                    <MarketIcon mint={row.mint} icon={row.icon} symbol={row.ticker} size={32} className={styles.icon} />
+                    <span className={styles.assetText}>
+                      <span className={styles.ticker} translate="no">{row.ticker}</span>
+                      {row.name && row.name !== row.ticker ? <span className={styles.assetName}>{row.name}</span> : null}
+                      {/* The way out is on the token's own page, one press from this row. */}
+                      {row.retired ? <span className={styles.assetRetired}>{text("No longer supported in Ryntra")}</span> : null}
+                      {row.category === "stock" && stockRows?.get(row.mint) ? <StockRowChips row={stockRows.get(row.mint)!} /> : null}
+                    </span>
+                  </Link>
+                  {/* The decision this position came from — a door, never a second calculation. */}
+                  <PlanLink plans={plansByMint.get(row.mint) ?? []} text={text} />
+                </div>
+                <span className={styles.price} translate="no">{row.price === null ? "—" : `$${formatPrice(row.price, locale)}`}</span>
+                <span className={styles.change} data-tone={row.change === null ? undefined : row.change > 0 ? "up" : row.change < 0 ? "down" : undefined} translate="no">
+                  {row.change === null ? "—" : formatPercent(row.change, numbers)}
+                </span>
+                <span className={styles.amount} translate="no">
+                  {/* The amount as the wallet shows it: a scaled mint's raw amount times its multiplier (1.15.0). */}
+                  {localFigure(displayAmount(shownRaw(row.holding).toString(), row.holding.decimals), locale)}
+                </span>
+                <span className={styles.value} translate="no" data-unpriced={row.value === null}>
+                  {row.value === null ? "\u2014" : usdValueIn(row.value, locale)}
+                </span>
+                <span className={styles.share} translate="no">{share(row.value) === null ? "" : `${percent.format(share(row.value) as number)}%`}</span>
+                {/* Quiet: the page's one orange action is the wallet's next step above. */}
+                <span className={styles.sellCell}>
+                  {sellButton ? (
+                    <Button variant="secondary" className={styles.sell} aria-haspopup="dialog" onClick={openSale} data-urgent={urgent} lang={locale === "uk" ? "uk" : "en"}>
+                      {text("Sell")}
+                    </Button>
+                  ) : null}
+                </span>
+                {row.holding.mint ? (
+                  <Link className={styles.open} href={mintHref(row.holding.mint)} aria-label={`${text("Asset details")}: ${row.ticker}`} title={text("Asset details")}>
+                    <ArrowUpRight size={14} aria-hidden="true" />
+                  </Link>
+                ) : (
+                  <span className={styles.open} aria-hidden />
+                )}
+                {/* The issuer's event under the position, as wide as the row: the deadline, the swap, the quiet sale — each on the token's own page. */}
+                {row.event ? (
+                  <div className={styles.rowEvent} data-holding-event>
+                    <p>
+                      <HourglassMedium size={14} weight="bold" aria-hidden="true" />
+                      <span>{row.event.line}</span>
+                    </p>
+                    {row.event.swap ? (
+                      <Link className={styles.eventSwap} href={row.event.swap.href} prefetch={false}>
+                        {row.event.swap.word}
+                      </Link>
+                    ) : null}
+                    {row.event.sell ? (
+                      <Link className={styles.eventSell} href={row.event.sell.href} prefetch={false}>
+                        {row.event.sell.word}
+                      </Link>
+                    ) : null}
+                  </div>
                 ) : null}
-              </span>
-              {row.holding.mint ? (
-                <Link className={styles.open} href={mintHref(row.holding.mint)} aria-label={`${text("Asset details")}: ${row.ticker}`} title={text("Asset details")}>
-                  <ArrowUpRight size={14} aria-hidden="true" />
-                </Link>
-              ) : (
-                <span className={styles.open} aria-hidden />
-              )}
-              {/* The issuer's event under the position, as wide as the row: the deadline, the swap, the quiet sale — each on the token's own page. */}
-              {row.event ? (
-                <div className={styles.rowEvent} data-holding-event>
-                  <p>
-                    <HourglassMedium size={14} weight="bold" aria-hidden="true" />
-                    <span>{row.event.line}</span>
-                  </p>
-                  {row.event.swap ? (
-                    <Link className={styles.eventSwap} href={row.event.swap.href} prefetch={false}>
-                      {row.event.swap.word}
-                    </Link>
-                  ) : null}
-                  {row.event.sell ? (
-                    <Link className={styles.eventSell} href={row.event.sell.href} prefetch={false}>
-                      {row.event.sell.word}
-                    </Link>
-                  ) : null}
-                </div>
-              ) : null}
-              {/* Нагляд over the position: a line of the row itself, under the name — the state, its figures, its one action — never orange here (the page's one orange action is the wallet's next step). */}
-              {watch ? (
-                <div className={styles.rowWatch} data-row-watch>
-                  <WatchLine view={watch} locale={locale} place="row" onSale={sellable ? openSale : undefined} onWarn={() => setWarning(watch)} saleBeside={sellButton} />
-                </div>
-              ) : null}
-            </li>
-            );
-          })}
-        </ul>
+                {/* Нагляд over the position: a line of the row itself, under the name — the state, its figures, its one action — never orange here (the page's one orange action is the wallet's next step). */}
+                {watch ? (
+                  <div className={styles.rowWatch} data-row-watch>
+                    <WatchLine view={watch} locale={locale} place="row" onSale={sellable ? openSale : undefined} onWarn={() => setWarning(watch)} saleBeside={sellButton} />
+                  </div>
+                ) : null}
+              </li>
+              );
+            })}
+          </ul>
 
-        {!searching && dust.length > 0 ? (
-          <button type="button" className={styles.dustToggle} onClick={() => setDustOpen((open) => !open)} aria-expanded={dustOpen}>
-            {dustOpen ? <CaretUp size={14} aria-hidden="true" /> : <CaretDown size={14} aria-hidden="true" />}
-            {dustOpen ? text("Hide small and unpriced balances") : `${text("Small and unpriced balances")} · ${dust.length}`}
-          </button>
-        ) : null}
-      </section>
+          {!searching && dust.length > 0 ? (
+            <button type="button" className={styles.dustToggle} onClick={() => setDustOpen((open) => !open)} aria-expanded={dustOpen}>
+              {dustOpen ? <CaretUp size={14} aria-hidden="true" /> : <CaretDown size={14} aria-hidden="true" />}
+              {dustOpen ? text("Hide small and unpriced balances") : `${text("Small and unpriced balances")} · ${dust.length}`}
+            </button>
+          ) : null}
+        </section>
+
+        {/* Under the holdings (B5): «У пулах» — each position's value, its fees, whether it still earns, and the way to take
+            the money back, on the read the value already made — then «Квитанції», the newest finished operations. */}
+        <div className={styles.below}>
+          {showPools ? (
+            <div id="portfolio-pools" tabIndex={-1}>
+              <MyPositions locale={locale} read={pools} title={words.poolsTitle} />
+            </div>
+          ) : null}
+          {showPhoenix ? <PhoenixBlock read={phoenix} locale={locale} /> : null}
+          <ReceiptsBlock activity={activity} onRetry={refresh} />
+        </div>
+      </div>
 
       <PositionSale mint={sale && !sale.coin ? sale.mint : null} placeholder={sale} locale={locale} onClose={() => setSale(null)} />
       <CoinPositionSale mint={sale && sale.coin ? sale.mint : null} placeholder={sale} locale={locale} onClose={() => setSale(null)} />
       <WarnSheet view={warning} locale={locale} onClose={() => setWarning(null)} />
 
-      {/* «Автоінвест» — the wallet's rules and the month's budget, the block Home draws: the right column from 1280 px, under the value on a narrower desk, after the positions on a phone. */}
-      <div className={styles.autoinvest}>
-        <AutoinvestBlock locale={locale} />
+      {/* The right column from 1280 px, under the value on a narrower desk, after the positions on a phone: «Винагороди» (B5) — one number of points, Rewards' own — then «Автоінвест», the wallet's rules and the month's budget, the block Home draws. */}
+      <div className={styles.side}>
+        <RewardsBlock />
+        <div className={styles.autoinvest}>
+          <AutoinvestBlock locale={locale} />
+        </div>
       </div>
     </div>
   );

@@ -1,0 +1,87 @@
+.truth {
+  display: grid;
+  gap: var(--rt-space-sm);
+  padding: var(--rt-space-md);
+  border: 1px solid var(--border);
+  border-radius: var(--rt-radius-md);
+  background: var(--surface);
+  min-width: 0;
+}
+
+.head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--rt-space-md);
+}
+
+.title {
+  margin: 0;
+  color: var(--text);
+  font-size: var(--fs-14);
+  font-weight: 600;
+}
+
+.how {
+  color: var(--text-dim);
+  font-size: var(--fs-13);
+  white-space: nowrap;
+}
+
+.hero {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 4px 10px;
+  margin: 0;
+  color: var(--text-dim);
+  font-size: var(--fs-13);
+}
+
+.hero b {
+  color: var(--text);
+  font-size: var(--fs-15);
+  font-variant-numeric: tabular-nums;
+  overflow-wrap: anywhere;
+}
+
+.lines {
+  display: grid;
+  gap: 6px;
+  margin: 0;
+}
+
+.lines > div {
+  display: grid;
+  grid-template-columns: minmax(120px, 34%) minmax(0, 1fr);
+  gap: var(--rt-space-md);
+  align-items: baseline;
+}
+
+.lines dt {
+  color: var(--text-dim);
+  font-size: var(--fs-13);
+}
+
+.lines dd {
+  margin: 0;
+  color: var(--text);
+  font-size: var(--fs-13);
+  font-variant-numeric: tabular-nums;
+  overflow-wrap: anywhere;
+}
+
+.lines > div[data-tone="good"] dd {
+  color: var(--success);
+}
+
+.lines > div[data-tone="bad"] dd {
+  color: var(--danger);
+}
+
+@media (max-width: 520px) {
+  .lines > div {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 2px;
+  }
+}

@@ -1,7 +1,8 @@
-/* Portfolio — the value, the allocation, the holdings as a table. Tokens only.
-   From 1280 px a main column (the value on its full width, the table under
-   it) and «Автоінвест» on the right, as on Home; a narrower desk keeps the
-   summary column beside the table; one column on a phone. */
+/* Portfolio — the value, the allocation, the holdings as a table, then the
+   pools and the receipts under it (B5). Tokens only. From 1280 px a main
+   column (the value on its full width, the table and the blocks under it)
+   and «Винагороди» over «Автоінвест» on the right, as on Home; a narrower
+   desk keeps the summary column beside the table; one column on a phone. */
 
 .workspace {
   --pf-side: clamp(300px, 26vw, 380px);
@@ -21,15 +22,43 @@
   grid-area: value;
 }
 
-.workspace > .holdings {
+/* The main column: the holdings, then the pools and the receipts (B5), one under the other. */
+.main {
   grid-area: holdings;
+  display: flex;
+  flex-direction: column;
+  gap: var(--ry-s3);
+  min-width: 0;
 }
 
-/* The wallet's rules and the month's budget — the block Home draws; its title stands apart from the panel above. */
-.autoinvest {
-  grid-area: rules;
+.main > * {
   min-width: 0;
-  padding-top: var(--ry-s3);
+}
+
+/* The pools and the receipts (B5): the core's blocks, one under the other. */
+.below {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ry-s3);
+  min-width: 0;
+}
+
+.below > * {
+  min-width: 0;
+}
+
+/* The side column: «Винагороди», then «Автоінвест». */
+.side {
+  grid-area: rules;
+  display: flex;
+  flex-direction: column;
+  gap: var(--ry-s3);
+  min-width: 0;
+}
+
+/* The wallet's rules and the month's budget — the block Home draws; the side column's gap keeps its title apart. */
+.autoinvest {
+  min-width: 0;
 }
 
 /* ── Width: the main column and the right one ───────────────────────────── */
@@ -43,8 +72,10 @@
     gap: var(--ry-s5) var(--ry-s6);
   }
 
-  .autoinvest {
-    padding-top: 0;
+  .main,
+  .below,
+  .side {
+    gap: var(--ry-s5);
   }
 }
 
@@ -103,6 +134,14 @@
   font-weight: 600;
   letter-spacing: 0.08em;
   text-transform: uppercase;
+}
+
+/* The wallet's `.skr` name beside «Загальна вартість» (SKR-4): a name keeps its own case. */
+.owner {
+  font-family: var(--ry-font-mono, var(--mono));
+  letter-spacing: 0;
+  text-transform: none;
+  color: var(--ry-text);
 }
 
 .totalValue {
@@ -178,6 +217,15 @@
   color: var(--ry-caution);
 }
 
+/* How near liquidation a Phoenix account is, when it is not «safe» (SOL-C6). */
+.fact[data-tone="risk"] {
+  border-color: color-mix(in srgb, var(--ryntra-down-text) 40%, var(--ry-border));
+}
+
+.fact[data-tone="risk"] dd {
+  color: var(--ryntra-down-text);
+}
+
 /* ── Allocation ─────────────────────────────────────────────────────────── */
 
 .allocation {
@@ -251,40 +299,99 @@
   color: var(--ry-text);
 }
 
-/* ── Rewards row and money in motion, in the summary column ────────────── */
+/* ── «Винагороди», «Квитанції» and the parts beyond the wallet (B5) ────── */
 
-.rewardsRow {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto auto;
-  align-items: center;
-  gap: var(--ry-s2);
-  min-height: 44px;
-  padding: 0 var(--ry-s3);
-  border: 1px solid var(--ry-border);
-  border-radius: var(--ry-r-btn);
+/* A part of the value beyond the wallet opens where its money is taken back. */
+.factLink {
   color: inherit;
-  text-decoration: none;
-  transition: background 120ms ease-out;
+  text-decoration: underline;
+  text-decoration-color: var(--ry-border);
+  text-underline-offset: 3px;
 }
 
-.rewardsRow:hover {
-  background: var(--ry-hover);
-}
-
-.rewardsLabel {
-  font-size: var(--ry-fs-dense);
+.factLink:hover {
   color: var(--ry-text);
+  text-decoration-color: currentColor;
 }
 
-.rewardsValue {
-  font-family: var(--ry-font-mono);
-  font-size: var(--ry-fs-data);
-  color: var(--ry-pnl-pos);
+.blockSentence {
+  margin: 0;
+  color: var(--ryntra-muted);
+  font-size: var(--ryntra-type-ui-size);
+  line-height: var(--ryntra-type-ui-line);
+}
+
+.blockNote {
+  margin: var(--ryntra-space-2) 0 0;
+  color: var(--ryntra-muted);
+  font-size: var(--ryntra-type-caption-size);
+  line-height: var(--ryntra-type-caption-line);
+}
+
+.rewardsBody {
+  display: grid;
+  gap: var(--ryntra-space-1);
+}
+
+/* The one number of points: Rewards' own figure and unit. */
+.pointsFigure {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: var(--ryntra-space-2);
+  margin: 0;
+}
+
+.pointsFigure strong {
+  color: var(--ryntra-text);
+  font-size: var(--ryntra-type-number-size);
+  line-height: var(--ryntra-type-number-line);
+  font-weight: var(--ryntra-type-number-weight);
   font-variant-numeric: tabular-nums;
 }
 
-.rewardsGo {
-  color: var(--ry-muted);
+.pointsFigure span {
+  color: var(--ryntra-muted);
+  font-size: var(--ryntra-type-ui-size);
+}
+
+/* What is gathered in Rewards: a claim against Ryntra, said here and never added to the total. */
+.rewardsGathered {
+  margin: var(--ryntra-space-2) 0 0;
+  color: var(--ryntra-up-text);
+  font-size: var(--ryntra-type-ui-size);
+  font-variant-numeric: tabular-nums;
+}
+
+/* A receipt's cell, as Home draws an operation: what, then what it was against. */
+.receiptCell {
+  display: grid;
+  min-width: 0;
+}
+
+.receiptMain {
+  overflow: hidden;
+  color: var(--ryntra-text);
+  font-weight: var(--ryntra-weight-medium);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.receiptMain[data-side="buy"] {
+  color: var(--ryntra-up-text);
+}
+
+.receiptMain[data-side="sell"] {
+  color: var(--ryntra-down-text);
+}
+
+.receiptSub {
+  overflow: hidden;
+  color: var(--ryntra-muted);
+  font-size: var(--ryntra-type-caption-size);
+  line-height: var(--ryntra-type-caption-line);
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .motion:empty {

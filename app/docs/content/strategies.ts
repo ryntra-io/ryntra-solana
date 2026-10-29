@@ -11,7 +11,7 @@ import { list, note, p, section, steps, table, type DocPage } from "./model.ts";
 
 export const STRATEGIES_OVERVIEW: DocPage = {
   slug: "strategies/overview",
-  group: "portfolio",
+  group: "bots",
   title: { en: "The strategy cycle", uk: "Цикл стратегії" },
   summary: {
     en: "Idea → research → critic → risk → plan → your decision → Review → execution → monitoring → result: what each step is for.",
@@ -27,25 +27,25 @@ export const STRATEGIES_OVERVIEW: DocPage = {
     section("cycle", "The cycle, step by step", "Цикл, крок за кроком", [
       steps(
         [
-          "Idea — a note, a link, a piece of news or an asset from Spot or Trends: the thing that made you look.",
+          "Idea — a note, a link, a piece of news or an asset from Spot or Markets: the thing that made you look.",
           "Research — what is known about the asset, the market and the moment, structured rather than guessed.",
           "Critic — the case against: what does not hold, what is unknown, why the thesis could be wrong.",
           "Risk — the thesis turned into limits: budget, maximum loss, entry, invalidation, position size, liquidity and price impact. Where a figure can be computed exactly, it is computed, not estimated.",
           "Plan — a Trading Plan with those limits, saved with its version.",
           "Your decision — Trade, Wait, Watch or Reject. Ryntra proposes; it never decides.",
           "Review and execution — the same Review and the same wallet signature as every purchase.",
-          "Monitoring — the plan's conditions are watched; when something meaningful changes you get Review required, never a silently rewritten rule.",
+          "Alerts — the plan's conditions are watched; when a price you set is reached, a note arrives in Notifications — never a silently rewritten rule.",
           "Result — plan against actual, costs kept apart, no-trade outcomes recorded, and the history of your own decisions kept for the next one.",
         ],
         [
-          "Ідея — нотатка, посилання, новина чи актив зі Споту або Трендів: те, що змусило подивитися.",
+          "Ідея — нотатка, посилання, новина чи актив зі Споту чи Ринків: те, що змусило подивитися.",
           "Дослідження — що відомо про актив, ринок і момент, структуровано, а не навмання.",
           "Критика — аргументи проти: що не тримається, що невідомо, чому теза може бути хибною.",
           "Ризик — теза, перетворена на межі: бюджет, найбільша втрата, вхід, інвалідація, розмір позиції, ліквідність і вплив на ціну. Де цифру можна порахувати точно, її рахують, а не оцінюють.",
           "План — торговий план із цими межами, збережений зі своєю версією.",
           "Твоє рішення — торгувати, чекати, стежити чи відхилити. Ryntra пропонує; вирішує вона ніколи.",
           "«Перевірка» й виконання — та сама «Перевірка» й той самий підпис гаманця, що й у кожній купівлі.",
-          "Нагляд — умови плану відстежуються; коли щось суттєво змінюється, ти отримуєш «Потрібна перевірка», а не тихо переписане правило.",
+          "Сповіщення — умови плану відстежуються; коли ціну, яку ти задав, досягнуто, у «Сповіщення» приходить нотатка — а не тихо переписане правило.",
           "Результат — план проти факту, витрати окремо, результати без угоди записано, а історія твоїх власних рішень збережена для наступного.",
         ],
       ),
@@ -65,8 +65,8 @@ export const STRATEGIES_OVERVIEW: DocPage = {
         },
       ),
       note(
-        "Ryntra, the AI assistant, helps at Research, Critic and Risk — structuring, explaining, looking for counter-arguments. It does not trade, and the financial action is always your decision, the Review and your signature.",
-        "Ryntra — ШІ-помічник — допомагає на дослідженні, критиці й ризику: структурує, пояснює, шукає контраргументи. Він не торгує, а фінансова дія — завжди твоє рішення, «Перевірка» й твій підпис.",
+        "The Ryntra assistant helps at Research, Critic and Risk — structuring, explaining, looking for counter-arguments. It does not trade, and the financial action is always your decision, the Review and your signature.",
+        "Помічник Ryntra допомагає на дослідженні, критиці й ризику: структурує, пояснює, шукає контраргументи. Він не торгує, а фінансова дія — завжди твоє рішення, «Перевірка» й твій підпис.",
       ),
     ]),
   ],
@@ -75,7 +75,7 @@ export const STRATEGIES_OVERVIEW: DocPage = {
 
 export const MY_STRATEGIES: DocPage = {
   slug: "strategies/my-strategies",
-  group: "portfolio",
+  group: "bots",
   pageId: "my-strategies",
   title: { en: "My strategies", uk: "Мої стратегії" },
   summary: {
@@ -131,7 +131,7 @@ export const MY_STRATEGIES: DocPage = {
 
 export const RESULTS: DocPage = {
   slug: "strategies/results",
-  group: "portfolio",
+  group: "bots",
   pageId: "results",
   title: { en: "Results", uk: "Результати" },
   summary: {
@@ -153,8 +153,8 @@ export const RESULTS: DocPage = {
         "Витрати лишаються трьома частинами, які ніколи не складаються в одну цифру: рух ринку між входом твого плану й ціною «Перевірки», виконання між цією ціною й фактичним виконанням і комісія, записана підтвердженим рядком. План, що не дав угоди, — теж результат: сторінка каже чому — ціна так і не настала, строк плану минув, його скасовано, — з правилом і тим, що знайдено. Позиція складає власні виконання плану; реалізована цифра з'являється лише тоді, коли позицію закрито й кожну частину оцінено.",
       ),
       p(
-        "Strategy memory is facts derived from your own records at the moment you read them — each citing the plan, the version, the Review, the signature or the note it stands on. Nothing lives apart from the records, so memory cannot drift from them. Ryntra, the AI assistant, reads the same memory and cites it the same way.",
-        "Пам'ять стратегії — це факти, виведені з твоїх власних записів у мить читання, — кожен посилається на план, версію, «Перевірку», підпис чи нотатку, на яких стоїть. Нічого не живе окремо від записів, тож пам'ять не може з ними розійтися. Ryntra — ШІ-помічник — читає ту саму пам'ять і посилається на неї так само.",
+        "Strategy memory is facts derived from your own records at the moment you read them — each citing the plan, the version, the Review, the signature or the note it stands on. Nothing lives apart from the records, so memory cannot drift from them. The Ryntra assistant reads the same memory and cites it the same way.",
+        "Пам'ять стратегії — це факти, виведені з твоїх власних записів у мить читання, — кожен посилається на план, версію, «Перевірку», підпис чи нотатку, на яких стоїть. Нічого не живе окремо від записів, тож пам'ять не може з ними розійтися. Помічник Ryntra читає ту саму пам'ять і посилається на неї так само.",
       ),
     ]),
     section("limits", "What it cannot establish", "Чого вона не встановлює", [

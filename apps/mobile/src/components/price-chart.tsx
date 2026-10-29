@@ -5,10 +5,10 @@ import Svg, { Circle, Line, Path } from 'react-native-svg'
 import { COMPONENT_COPY } from '@/components/copy'
 import { Txt } from '@/components/txt'
 import type { Candle, Timeframe } from '@/lib/api'
-import { chartGeometry, nearestPoint, type ChartPoint } from '@/lib/chart'
+import { chartGeometry, firstScale, nearestPoint, type ChartPoint } from '@/lib/chart'
 import type { Locale } from '@/lib/i18n'
 import { useTheme } from '@/theme'
-import { formatBarTime, formatPrice } from '@/utils/format'
+import { formatBarTime, formatPrice, saidFigure } from '@/utils/format'
 
 export type PriceChartProps = {
   candles: readonly Candle[]
@@ -17,10 +17,16 @@ export type PriceChartProps = {
   /** The language of the figures and the days on the chart. */
   locale?: Locale
   /**
-   * The line is drawn through each bar's middle, not its close (a day's line): every figure it names is said as
-   * «≈», an estimate between the two sides of the pool's trades rather than one trade.
+   * The line is drawn through each bar's middle, not its close (a day's line, M27). Its marks on the screen read as
+   * every range's do — one style (ST-5 r4) — and the screen reader says its figures as «≈», an estimate between the
+   * two sides of the pool's trades rather than one trade.
    */
   approx?: boolean
+  /**
+   * How a value is written on the line and said to a screen reader — a price by default; a chance of an outcome writes
+   * its share of one as a percentage (M12).
+   */
+  figure?: (value: number) => string
 }
 
 /** How a bar's time is written for the window a timeframe spans (300 bars). */
@@ -37,11 +43,21 @@ const LABEL_WIDTH = 96
  * One line of closes in the chart series colour — never green or red, the
  * direction is a figure beside it. The low and the high are named on the
  * line; a finger on the chart reads any bar's close and time. A line drawn
- * through bars' middles (`approx`) says each of those figures as «≈».
+ * through bars' middles (`approx`) draws its marks as any other range does and
+ * says each figure as «≈» to a screen reader; every spoken figure is written
+ * out in full, never in a subscript (ST-5 r4).
  */
-export function PriceChart({ candles, timeframe, height = 168, locale = 'en', approx = false }: PriceChartProps) {
+export function PriceChart({
+  candles,
+  timeframe,
+  height = 168,
+  locale = 'en',
+  approx = false,
+  figure,
+}: PriceChartProps) {
   const { colors } = useTheme()
-  const price = (value: number) => `${approx ? '≈ ' : ''}${formatPrice(value, locale)}`
+  const price = (value: number) => (figure ? figure(value) : formatPrice(value, locale))
+  const said = (value: number) => `${approx ? '≈ ' : ''}${saidFigure(price(value), locale)}`
   const words = COMPONENT_COPY[locale]
   const [width, setWidth] = useState(0)
   const [touch, setTouch] = useState<ChartPoint | null>(null)
@@ -74,10 +90,10 @@ export function PriceChart({ candles, timeframe, height = 168, locale = 'en', ap
         accessibilityLabel={
           geometry
             ? words.priceLineA11y(
-                price(geometry.first.value),
-                price(geometry.last.value),
-                price(geometry.low.value),
-                price(geometry.high.value),
+                said(geometry.first.value),
+                said(geometry.last.value),
+                said(geometry.low.value),
+                said(geometry.high.value),
               )
             : words.priceLine
         }
@@ -134,7 +150,7 @@ export function PriceChart({ candles, timeframe, height = 168, locale = 'en', ap
       {geometry ? (
         <View className="flex-row justify-between">
           <Txt variant="labelSm" tone="faint">
-            {formatBarTime(geometry.first.time, scale, locale)}
+            {formatBarTime(geometry.first.time, firstScale(geometry.first.time, geometry.last.time, scale), locale)}
           </Txt>
           <Txt variant="labelSm" tone="faint">
             {formatBarTime(geometry.last.time, scale, locale)}

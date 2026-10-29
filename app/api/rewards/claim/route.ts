@@ -9,11 +9,14 @@ import { openClaim, readClaim, transitionClaim, claimUnresolved, armClaim } from
 import { reconcileClaimOnChain } from "@/lib/rewards/claim-settlement.server";
 import { listRewardEntries, totalRewards } from "@/lib/rewards/ledger";
 import { formatUsdMicros } from "@/lib/rewards/model";
-import { payRewardClaim, readRewardsReserve } from "@/lib/rewards/treasury.server";
+import { payRewardClaim, readPayoutAccount, readRewardsReserve } from "@/lib/rewards/treasury.server";
+import { rewardRulesFor } from "@/lib/rewards/rank-store";
 import { heldUsdMicros, holdReserve, readReserveLedger, releaseReserve } from "@/lib/rewards/reserve";
-import { rewardBalance } from "@/lib/rewards/balance";
+import { claimMinimumUsdMicros, rewardBalance } from "@/lib/rewards/balance";
 import { mutationOriginAllowed } from "@/lib/security";
 import { getWalletProof } from "@/lib/session";
+import { walletHold } from "@/lib/growth/review-store";
+import { internalPayoutText, internalWalletsForMoney } from "@/lib/rewards/internal";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -46,8 +49,22 @@ export async function POST(req: NextRequest) {
       return json({ ok: !settled.stillOpen, state: settled.state }, settled.stillOpen ? 202 : 200);
     }
     if (existing) await reconcileClaimOnChain(store, existing, now);
-    const [entries, reserve, ledger] = await Promise.all([listRewardEntries(store, wallet), readRewardsReserve(), readReserveLedger(store)]);
-    const balance = rewardBalance({ entries, reserve, heldUsdMicros: heldUsdMicros(ledger, now) });
+    /* A wallet the review froze opens no new payout until the freeze is lifted. An unresolved payout above still settles. */
+    const hold = await walletHold(store, wallet, now);
+    if (hold === "STOPPED") return json({ state: "STOPPED", reason: "Payouts from this wallet were stopped after a review." }, 409);
+    if (hold !== "NONE") return json({ state: "ON_REVIEW", reason: "The payout is being reviewed." }, 409);
+    /* The owner's and the test wallets open no payout — of rows written before Ріст 3 too. A list that cannot be read pays nobody. */
+    const internal = await internalWalletsForMoney(store, process.env);
+    if (!internal) return json({ state: "UNAVAILABLE", reason: "Payouts are temporarily unavailable." }, 503);
+    if (internal.has(wallet)) return json({ state: "INTERNAL", reason: internalPayoutText("en") }, 409);
+    /* The floor under the rules in force: rules 2.1.0 — $0.25 with a USDC account, $1 when the payout opens one
+       or the account cannot be read. A rules read that fails keeps the dollar. */
+    const rules = await rewardRulesFor(store, now, now).catch(() => null);
+    const [entries, reserve, ledger, usdcAccount] = await Promise.all([
+      listRewardEntries(store, wallet), readRewardsReserve(), readReserveLedger(store),
+      rules?.claimFloor ? readPayoutAccount(wallet) : Promise.resolve("UNKNOWN" as const),
+    ]);
+    const balance = rewardBalance({ entries, reserve, heldUsdMicros: heldUsdMicros(ledger, now), minimumUsdMicros: claimMinimumUsdMicros(rules, usdcAccount) });
     if (!balance.claimable) return json({ state: "NOT_CLAIMABLE", reason: balance.claimBlockedReason, available: formatUsdMicros(balance.availableUsdMicros) }, 409);
     const amount = balance.availableUsdMicros;
     const opened = await openClaim(store, { wallet, usdMicros: amount, now, expectedVersion: existing?.version ?? null });

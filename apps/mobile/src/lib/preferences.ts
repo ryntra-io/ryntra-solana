@@ -11,3 +11,8 @@ export function readPreference<T extends string>(key: string, allowed: readonly 
 export function writePreference(key: string, value: string) {
   storage.set(key, value)
 }
+
+/** A remembered choice stored as text of its own shape (a layout), read and checked by its owner. */
+export function readPreferenceText(key: string): string | null {
+  return storage.getString(key) ?? null
+}

@@ -14,6 +14,9 @@ const PROTECTED_PATHS = [
   /* The cabinet — all of it but the addresses below — at both languages' addresses. */
   "/app/",
   "/uk/app/",
+  /* The same cabinet at its addresses on app.ryntra.io. */
+  "/solana/",
+  "/uk/solana/",
 ];
 
 /*
@@ -28,7 +31,11 @@ const PROTECTED_PATHS = [
  * Only what is live is named: the QA route this file used to list
  * (`/strategy-lab-qa`) no longer exists.
  */
-const OPEN_PATHS = ["/", "/app/home$", "/app/markets$", "/app/stocks/", "/uk/app/home$", "/uk/app/markets$", "/uk/app/stocks/"];
+const OPEN_PATHS = [
+  "/", "/app/home$", "/app/markets$", "/app/stocks/", "/uk/app/home$", "/uk/app/markets$", "/uk/app/stocks/",
+  /* The same pages at their addresses on app.ryntra.io, which serves this file too. */
+  "/solana/home$", "/solana/markets$", "/solana/stocks/", "/uk/solana/home$", "/uk/solana/markets$", "/uk/solana/stocks/",
+];
 
 const USER_TRIGGERED_AGENTS = ["ChatGPT-User", "Claude-User", "Perplexity-User"];
 const ANSWER_AND_SEARCH_AGENTS = ["OAI-SearchBot", "Claude-SearchBot", "PerplexityBot"];

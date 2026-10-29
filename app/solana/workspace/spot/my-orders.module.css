@@ -1,0 +1,211 @@
+/* «Мої ордери»: the order, where it stands and what it got, read at a glance. Colours from the tokens: a fill is the
+   rising colour, a failure the falling one, waiting the brand's live dot. */
+
+.what {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+.what b {
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.what b[data-side="buy"] {
+  color: var(--ry-pnl-pos);
+}
+
+.what b[data-side="sell"] {
+  color: var(--ry-pnl-neg);
+}
+
+/* The light theme's own falling colour: the dark theme's red is too faint on white at this size. */
+:global(:is([data-ry-theme="light"], [data-theme="light"], [data-theme="porcelain"])) .what b[data-side="sell"],
+:global(:is([data-ry-theme="light"], [data-theme="light"], [data-theme="porcelain"])) .state[data-tone="bad"] {
+  color: var(--ry-pnl-neg-light);
+}
+
+.meta {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--ry-s2);
+  flex-wrap: wrap;
+}
+
+.venue {
+  font-size: var(--ry-fs-label);
+  color: var(--ry-muted);
+}
+
+.state {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: var(--ry-fs-label);
+  font-weight: 600;
+  color: var(--ry-muted);
+  white-space: nowrap;
+}
+
+.state[data-tone="done"] {
+  color: var(--ry-pnl-pos);
+}
+
+.state[data-tone="bad"] {
+  color: var(--ry-pnl-neg);
+}
+
+.state[data-tone="live"] {
+  color: var(--ry-text);
+}
+
+/* Waiting is a live status: the one place a small pulse is allowed. */
+.pulse {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--ry-iris);
+  box-shadow: 0 0 0 0 color-mix(in srgb, var(--ry-iris) 55%, transparent);
+  animation: live 1.8s ease-out infinite;
+}
+
+@keyframes live {
+  0% {
+    box-shadow: 0 0 0 0 color-mix(in srgb, var(--ry-iris) 55%, transparent);
+  }
+  70% {
+    box-shadow: 0 0 0 6px transparent;
+  }
+  100% {
+    box-shadow: 0 0 0 0 transparent;
+  }
+}
+
+.amounts {
+  font-size: var(--ry-fs-label);
+  color: var(--ry-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.root {
+  min-width: 0;
+}
+
+.amounts[data-filled="true"] {
+  color: var(--ry-text);
+}
+
+.link {
+  font-size: var(--ry-fs-label);
+  font-weight: 600;
+  color: var(--ry-text);
+  text-decoration: underline;
+  text-decoration-color: var(--ry-border);
+  text-underline-offset: 3px;
+}
+
+.link:hover {
+  text-decoration-color: var(--ry-iris);
+}
+
+.link:focus-visible {
+  outline: 2px solid var(--ry-iris);
+  outline-offset: 2px;
+}
+
+/* A phone: the three columns fit the screen without the table's sideways scroll — tighter cells, what filled under
+   what was given, a compact action. */
+@media (max-width: 560px) {
+  .root :global(.ryntra-table) :is(th, td) {
+    padding-inline: 8px;
+  }
+
+  /* Inside the Spot's bottom panel (B16) the table has the panel's width less its edge: a long price and its unit
+     wrap under each other rather than push the action past the edge. */
+  .root :global(.ryntra-table) td {
+    white-space: normal;
+    overflow-wrap: anywhere;
+  }
+
+  .got {
+    display: block;
+  }
+
+  .act {
+    min-height: 32px;
+    padding-inline: 10px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pulse {
+    animation: none;
+  }
+}
+
+/* The core's Review before a cancellation's signature (SOL-C14): a form, so a column in the middle of the screen, in a
+   sheet over the terminal — at the foot of a phone, in the middle of a desk. */
+.sheet {
+  position: fixed;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  max-width: none;
+  max-height: none;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: var(--ry-shadow-ink);
+  color: var(--ry-text);
+}
+
+.sheet[open] {
+  display: grid;
+  align-items: end;
+  justify-items: center;
+}
+
+.sheet::backdrop {
+  background: transparent;
+}
+
+.sheetBody {
+  width: 100%;
+  max-width: 560px;
+  max-height: 92dvh;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+@media (min-width: 720px) {
+  .sheet[open] {
+    align-items: center;
+  }
+}
+
+.review {
+  width: 100%;
+}
+
+.reviewDetails {
+  display: grid;
+  gap: 6px;
+  margin: 0;
+}
+
+.reviewDetails div {
+  display: grid;
+  gap: 2px;
+}
+
+.reviewDetails dt {
+  color: var(--ry-muted);
+}
+
+.reviewDetails dd {
+  margin: 0;
+  font-family: var(--ry-font-mono);
+  overflow-wrap: anywhere;
+}

@@ -10,6 +10,7 @@ import { dateShort, pct, usd } from "./format";
 import styles from "./predictions.module.css";
 import { usePaperAccount } from "./use-paper-account";
 import { wordsFor } from "./words";
+import { usePredictionsPaths } from "./surface";
 
 /**
  * The wallet's Prediction Plans on My strategies: each on the version it
@@ -19,9 +20,11 @@ import { wordsFor } from "./words";
  * risk. Activate a draft or cancel from here; the plan itself is edited from
  * the market it is about.
  */
-export function PredictionPlansPanel({ locale }: { locale: WorkspaceLocale }) {
+export function PredictionPlansPanel({ locale, account: shared = null }: { locale: WorkspaceLocale; /** The page's own account read, when the page has one. */ account?: ReturnType<typeof usePaperAccount> | null }) {
+  const paths = usePredictionsPaths();
   const word = wordsFor(locale);
-  const account = usePaperAccount();
+  const own = usePaperAccount({ skip: shared !== null });
+  const account = shared ?? own;
   const [busy, setBusy] = useState<string | null>(null);
   if (account.state.status !== "ready" || !account.state.account) return null;
   const plans = account.state.account.plans;
@@ -47,7 +50,6 @@ export function PredictionPlansPanel({ locale }: { locale: WorkspaceLocale }) {
         <h2 id="prediction-plans-title" className={styles.cardTitle}>
           {locale === "uk" ? "Плани прогнозів" : "Prediction plans"}
         </h2>
-        <span className={styles.paperBadge}>{word("paperBadge")}</span>
       </div>
       <div className={styles.list}>
         {plans.map((plan) => {
@@ -55,7 +57,7 @@ export function PredictionPlansPanel({ locale }: { locale: WorkspaceLocale }) {
           const sizing = plan.current.sizing;
           return (
             <div key={plan.id} className={styles.item}>
-              <Link href={`/app/predictions/${encodeURIComponent(rules.eventId)}`} prefetch={false}>
+              <Link href={paths.event(rules.eventId)} prefetch={false}>
                 {rules.question}
               </Link>
               <span className={styles.itemMeta}>

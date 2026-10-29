@@ -118,7 +118,8 @@ export const PRODUCT_ROUTES: readonly PageRoute[] = [
     id: "perps",
     href: `${BASE}/perps`,
     icon: "perps",
-    /* Registered and served; not a row until it is ready. */
+    /* Planned as the registered page of trading from Ryntra (B6b); its address is the row Perps' own already — Phoenix
+       inside Solana, view only and collateral (B7, PERP-1) — so the not-yet surface is drawn nowhere. */
     readiness: "planned",
     match: [`${BASE}/perps`],
   },
@@ -275,6 +276,6 @@ export const PRODUCT_ROUTES: readonly PageRoute[] = [
        Not `/app/operations`: that path redirects to Settings, and a registry
        that claims a route the router sends elsewhere gives one URL two
        answers. */
-    match: [`${BASE}/activity`, `${BASE}/receipts`],
+    match: [`${BASE}/activity`, `${BASE}/receipts`, `${BASE}/fees`],
   },
 ];

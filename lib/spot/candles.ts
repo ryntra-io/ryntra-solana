@@ -98,12 +98,17 @@ export type SpotPoolChoice =
  * two sides, the **other** side is a major quote — USDC, USDT or SOL, the only
  * ones whose USD conversion is trustworthy — it holds at least
  * {@link SPOT_POOL_MIN_RESERVE_USD} of reserves, and it traded in the last
- * day. Among those, the mint on the base side against a stable comes first,
- * then the base side against SOL, then the mint as a quote; ties by depth.
+ * day. Among those, for SOL itself the mint on the base side against a stable
+ * comes first, then the base side against SOL, then the mint as a quote, ties
+ * by depth; for every other mint the pool that traded most over the day — the
+ * market's main pair — ties by depth.
  *
  * Depth alone chose a week-old meme/SOL pool for SOL itself, because SOL is
  * the quote in most pools and a hot launch can out-reserve Orca for a day.
- * That is what the rule is for: a wrong chart is worse than none.
+ * That is what the rule is for: a wrong chart is worse than none. And «a stable
+ * first» for everyone charted Bonk from a side pool against USDC whose last
+ * trade was 18 minutes old while BONK/SOL traded every second (B15): a meme's
+ * market is where it trades.
  */
 export function chooseSpotPool(body: unknown, mint: string): SpotPoolChoice {
   const data = body && typeof body === "object" && Array.isArray((body as { data?: unknown }).data) ? ((body as { data: unknown[] }).data as GeckoPoolRow[]) : null;
@@ -128,7 +133,8 @@ export function chooseSpotPool(body: unknown, mint: string): SpotPoolChoice {
     anyDeep = true;
     const volume24h = asNumber(row.attributes?.volume_usd?.h24);
     if (volume24h === null || volume24h <= 0) continue;
-    const rank = side === "base" ? (STABLE_QUOTES.has(other) ? 3 : 2) : 1;
+    /* SOL by the quote it is stated against; everything else by where it trades. */
+    const rank = mint === WRAPPED_SOL ? (side === "base" ? (STABLE_QUOTES.has(other) ? 3 : 2) : 1) : volume24h;
     const pool: SpotPool = {
       address,
       name: typeof row.attributes?.name === "string" ? row.attributes.name : address,
@@ -168,6 +174,28 @@ export function candlesDescribe(
     if (ratio < 0.8 || ratio > 1.25) return { ok: false, reason: "PRICE_MISMATCH" };
   }
   return { ok: true };
+}
+
+/**
+ * The chart's last bar at the page's one last price (B15): the header, the ticket and the chart print one figure, as a
+ * terminal's header is its last bar. The live price closes the bar of the moment — a new bar from the last close when
+ * the moment's bar has not come from the source yet — and stretches its high or low to it. A price that misses the
+ * last close by the band `candlesDescribe` refuses, a clock behind the bars, or no price leaves the candles as read.
+ */
+export function withLivePrice(
+  candles: readonly NormalizedCandle[],
+  price: number | null,
+  nowSeconds: number,
+  timeframeSeconds: number,
+): NormalizedCandle[] {
+  if (candles.length === 0 || price === null || !Number.isFinite(price) || price <= 0 || !(timeframeSeconds > 0)) return [...candles];
+  const last = candles[candles.length - 1];
+  const bucket = (Math.floor(nowSeconds / timeframeSeconds) * timeframeSeconds) as UTCTimestamp;
+  if (last.time > bucket) return [...candles];
+  const ratio = price / last.close;
+  if (ratio < 0.8 || ratio > 1.25) return [...candles];
+  if (last.time === bucket) return [...candles.slice(0, -1), { ...last, close: price, high: Math.max(last.high, price), low: Math.min(last.low, price) }];
+  return [...candles, { time: bucket, open: last.close, high: Math.max(last.close, price), low: Math.min(last.close, price), close: price, volume: 0 }];
 }
 
 /**

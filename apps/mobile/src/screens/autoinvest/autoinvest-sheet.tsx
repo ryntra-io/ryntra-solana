@@ -6,6 +6,8 @@ import { AssetIcon } from '@/components/asset-icon'
 import { Button } from '@/components/button'
 import { type Choice } from '@/components/choice-chips'
 import { Field } from '@/components/field'
+import { HelpDot } from '@/components/help-dot'
+import { SignInHelp } from '@/screens/invest/buy-sheet'
 import { Icon } from '@/components/icon'
 import { Sheet } from '@/components/sheet'
 import { Skeleton } from '@/components/skeleton'
@@ -25,7 +27,7 @@ import {
   floorHeld,
   floorLine,
   floorStanding,
-  floorTermsMet,
+  floorTerms,
   isListedToken,
   riskRows,
   tokenBlockOf,
@@ -169,8 +171,8 @@ type Variant = 'sheet' | 'panel'
  * action puts it in. «Якщо впаде»: the sum and how far the price must fall
  * below the price now — «Ryntra нагадає при $241,59 або нижче · ціна зараз
  * $254,30»; one reminder each time it falls below that line. The sum reads
- * «Кожна купівля» — it is each purchase, never the month's budget.
- * **Межі.** The month's budget for
+ * «Кожна купівля» — it is each purchase, never the month's budget
+ * (M20). **Межі.** The month's budget for
  * every rule, the person's own, as its own line — «Бюджет не задано · Задати»
  * or «Бюджет місяця $10 з $50 · Змінити» — that opens the budget's own sheet
  * over this one («Не більше на місяць»); a sum the month's rest does not
@@ -181,7 +183,7 @@ type Variant = 'sheet' | 'panel'
  * never a transaction — and every purchase later is its own signature on a
  * fresh «Перевірка».
  *
- * **Умова ціни** (the web's: a
+ * **Умова ціни** (M25, the web's: a
  * company with a reference — PreStocks' valuation for a private one, the
  * reference per share for a listed one — offers «Не купувати, якщо дорожче за
  * орієнтир більш ніж на N %», 5 % (the server's default) unless the person
@@ -191,11 +193,11 @@ type Variant = 'sheet' | 'panel'
  * deferred says why — the reason, the figure and the data's time — and until
  * when the rule checks again.
  *
- * **З оплат** (the web's: the
+ * **З оплат** (M26, the web's: the
  * third kind sets money aside from the wallet's own USDC — «Що відкладати»:
  * «Округлення» of every payment to $1 or $5, «$ з оплати» typed from $0,10 to
  * $100, or «% з надходжень» 5 · 10 · 20 % — with the web's example on its own
- * arithmetic («Оплата $3,40 → $0,60 в Apple»), «Нагадаю від $1» (or the
+ * arithmetic («Оплата $3,40 → $0,60 в Apple»), «Нагадування від $1» (or the
  * company's own minimum where a dollar has no route) and what counts, the rest
  * behind «?». Its sheet says what it has gathered, «Що відкладати», «Рахую
  * з» and the newest payments or incoming transfers — the sum, the share, the
@@ -211,7 +213,9 @@ type Variant = 'sheet' | 'panel'
  */
 export function AutoinvestSheet(props: AutoinvestSheetProps) {
   if (!props.visible) return null
-  return <AutoinvestFlow key={props.mode.kind === 'manage' ? props.mode.rule.id : 'compose'} {...props} variant="sheet" />
+  return (
+    <AutoinvestFlow key={props.mode.kind === 'manage' ? props.mode.rule.id : 'compose'} {...props} variant="sheet" />
+  )
 }
 
 /**
@@ -264,12 +268,9 @@ function AutoinvestFlow({
     router.push('/monitoring/preferences')
   }
   const connected = telegram.data?.telegram.connected
+  // Connected, the channel needs no line; unconnected, one quiet way to connect it.
   const channel =
-    connected === true ? (
-      <Txt variant="ui" tone="faint" className="text-center">
-        {copy.remindersTelegram}
-      </Txt>
-    ) : connected === false ? (
+    connected === false ? (
       <Pressable
         accessibilityRole="button"
         accessibilityLabel={copy.connectTelegram}
@@ -828,7 +829,8 @@ function Compose({
                 keyboardType="numbers-and-punctuation"
                 maxLength={5}
                 editable={!saving}
-                error={typedTime ? null : copy.timeHint}
+                placeholder={copy.timeHint}
+                error={typedTime || timeText.length === 0 ? null : copy.timeFormat}
                 className="flex-1"
               />
             </View>
@@ -914,9 +916,6 @@ function Compose({
         </View>
       ) : null}
 
-      <Txt variant="ui" tone="muted" className="text-center">
-        {copy.promise}
-      </Txt>
       {channel}
 
       {failure ? (
@@ -929,6 +928,7 @@ function Compose({
         </Txt>
       ) : null}
 
+      {/* How a rule buys — Ryntra reminds, the wallet signs, the money stays in it — once, one tap deep beside the action. */}
       <Button
         title={button.title}
         size="lg"
@@ -937,10 +937,10 @@ function Compose({
         loading={button.loading}
       />
       {account.address && !account.session ? (
-        <Txt variant="ui" tone="faint" className="text-center">
-          {buyWords.signInLine}
-        </Txt>
-      ) : null}
+        <SignInHelp />
+      ) : (
+        <HelpDot title={copy.autoinvest} body={copy.promise} label={copy.howItWorks} />
+      )}
     </View>
   )
 }
@@ -949,8 +949,8 @@ function Compose({
  * A token's standing, before the rule (1.31.0, the web's `RiskFacts` and
  * floor line): for a meme or a new token the facts of its risk as the venue
  * states them — a caution where its own figure is one to weigh, never a
- * verdict — then «Поріг регулярної купівлі» with what the token stands on, or
- * why it does not. Inside Trade (`compact`) what the token's page already says
+ * verdict — then one short line on the floor of a recurring buy: «Підходить
+ * для регулярної купівлі», or why it does not, the figures and the terms behind «?». Inside Trade (`compact`) what the token's page already says
  * — its age, liquidity and holders — is left out. Nothing while it is read.
  */
 export function TokenStanding({
@@ -968,16 +968,23 @@ export function TokenStanding({
   const rows = riskRows(read, copy, locale, compact)
   const floor = read.floor
   if (!rows && !floor) return null
-  // Under the full facts the token's liquidity and age are said once: a met floor then names its terms, not the figures.
-  const floorText =
-    floor && floor.verdict === 'met' && rows && !compact ? floorTermsMet(locale) : floor ? floorStanding(floor, locale) : ''
+  // One short line: a met floor in plain words, a floor not met as its reason. The figures and the floor's terms sit
+  // behind «?» — under the full facts the token's liquidity and age are said once, so «?» then holds the terms alone.
+  const met = floor?.verdict === 'met'
+  const floorText = floor ? (met ? copy.floorMet : floorStanding(floor, locale)) : ''
+  const floorDetail = floor
+    ? [...(met && !(rows && !compact) ? [floorStanding(floor, locale)] : []), copy.floorWhat(floorTerms(locale))]
+    : []
   return (
     <View className="gap-3">
       {rows ? (
         <View className="gap-2" accessibilityLabel={copy.riskFacts}>
-          <Txt variant="labelSm" tone="faint" caps>
-            {copy.riskFacts}
-          </Txt>
+          <View className="flex-row items-center gap-1">
+            <Txt variant="labelSm" tone="faint" caps>
+              {copy.riskFacts}
+            </Txt>
+            <HelpDot title={copy.riskFacts} body={copy.riskSource} />
+          </View>
           {/* Two facts a row, each its label over its figure — the web's grid, never a long column of lines. */}
           <View className="flex-row flex-wrap rounded-sm border border-line bg-surface px-4 py-1.5">
             {rows.map((row) => (
@@ -997,19 +1004,14 @@ export function TokenStanding({
               </View>
             ))}
           </View>
-          <Txt variant="ui" tone="faint">
-            {copy.riskSource}
-          </Txt>
         </View>
       ) : null}
       {floor ? (
-        <View className="gap-0.5" accessibilityLabel={`${copy.floorTitle}: ${floorText}`}>
-          <Txt variant="labelSm" tone="faint" caps>
-            {copy.floorTitle}
-          </Txt>
-          <Txt variant="ui" tone={floor.verdict === 'met' ? 'muted' : 'warning'} tabular>
+        <View className="flex-row items-center gap-1">
+          <Txt variant="ui" tone={met ? 'muted' : 'warning'} tabular className="shrink">
             {floorText}
           </Txt>
+          <HelpDot title={copy.floorTitle} body={floorDetail} />
         </View>
       ) : null}
     </View>
@@ -1018,7 +1020,8 @@ export function TokenStanding({
 
 /** Why no rule can be turned on for a token now, in one line and one tone with the floor's line above it. */
 export function BlockNote({ block, copy }: { block: TokenBlock; copy: AutoinvestCopy }) {
-  const text = block === 'noRule' ? copy.noRuleOnToken : block === 'flagged' ? copy.flaggedSuspicious : copy.tokenUnreadable
+  const text =
+    block === 'noRule' ? copy.noRuleOnToken : block === 'flagged' ? copy.flaggedSuspicious : copy.tokenUnreadable
   return (
     <View className="flex-row items-start gap-2" accessibilityRole="text" accessibilityLiveRegion="polite">
       <Icon name="information-circle-outline" size={18} color="warningInk" style={{ marginTop: 1 }} />
@@ -1244,9 +1247,6 @@ function Done({
           </Txt>
         ) : null}
       </View>
-      <Txt variant="ui" tone="muted" className="text-center">
-        {copy.promise}
-      </Txt>
       {channel}
       <Button title={copy.done} size="lg" onPress={onDone} />
     </View>
@@ -1258,7 +1258,11 @@ function Done({
  * limit alone until then; on a token (1.31.0) the price it was turned on at and the ceiling it makes — «$150,00 · купує
  * до $157,50».
  */
-function conditionFact(condition: RulePriceConditionState, reference: RulePriceReference | null, locale: Locale): string {
+function conditionFact(
+  condition: RulePriceConditionState,
+  reference: RulePriceReference | null,
+  locale: Locale,
+): string {
   if (typeof condition.referenceUsd === 'number')
     return anchorStandingLine(condition.referenceUsd, condition.limitPct, locale)
   return reference ? conditionShort(condition.limitPct, reference, locale) : limitWords(condition.limitPct, locale)
@@ -1317,9 +1321,7 @@ function Manage({
   const condition = useConditionFacts(rule.asset.mint, rule.priceCondition !== null && !token)
   const reference = token
     ? 'enabled'
-    : (condition.reference ??
-      rule.occurrences.find((occurrence) => occurrence.condition)?.condition?.reference ??
-      null)
+    : (condition.reference ?? rule.occurrences.find((occurrence) => occurrence.condition)?.condition?.reference ?? null)
   // A token's purchase held back by its floor says so first: a thin pool is the reason whatever the price says.
   const floor = floorHeld(deferred)
   const when = (iso: string) =>
@@ -1478,9 +1480,6 @@ function Manage({
           }
         />
       ) : null}
-      <Txt variant="body" className="text-center">
-        {copy.promise}
-      </Txt>
       {channel}
       {failure ? (
         <Txt variant="ui" tone="danger" className="text-center">

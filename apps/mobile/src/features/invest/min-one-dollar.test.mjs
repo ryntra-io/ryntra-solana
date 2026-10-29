@@ -31,7 +31,8 @@ import {
 import { INVEST_COPY } from './copy.ts'
 
 /**
- * «Від $1» on the phone (the web's: a purchase, an
+ * «Від $1» on the phone (M21, «Чому 10? …
+ * Кожний день по долару»; the web's: a purchase, an
  * «Автоінвест» rule and the month's budget from one dollar; the sheets open on
  * $10 — a default, never advice; the purchase's quick choices are shares of
  * the wallet's dollars; a company without a route at the sum says its own
@@ -47,6 +48,7 @@ const BUY_SHEET = source('../../screens/invest/buy-sheet.tsx')
 const RULE_SHEET = source('../../screens/autoinvest/autoinvest-sheet.tsx')
 const BUDGET_SHEET = source('../../screens/autoinvest/budget-sheet.tsx')
 const USE_BUY = source('./use-buy.ts')
+const TRADE_SHEET = source('../../screens/trade/index.tsx')
 const LADDER = source('./use-route-minimum.ts')
 
 test('a purchase, a rule and the month’s budget start at one dollar; the sheets open on $10, a default and never advice', () => {
@@ -218,7 +220,13 @@ const ONE_DOLLAR_CHECK = {
     multiplier: 1,
   },
   spend: { mint: USDC_ASSET.mint, unit: 'usdc', amount: 1, usd: 1 },
-  get: { mint: 'XsH7vuEDhQZcGzQnxfuGq3nEYp9dHqPzR2DxBG3kS1V', unit: 'share', amount: 0.000028, atLeast: 0.00002786, usd: 0.9905 },
+  get: {
+    mint: 'XsH7vuEDhQZcGzQnxfuGq3nEYp9dHqPzR2DxBG3kS1V',
+    unit: 'share',
+    amount: 0.000028,
+    atLeast: 0.00002786,
+    usd: 0.9905,
+  },
   costs: { usd: 0.0103, issuerFee: null },
   reserve: { lamports: '1559560', usd: 0.311912, first: false },
   what: {
@@ -244,7 +252,7 @@ test('the one-time reserve is never a cost; «Перевірка» says it first
   assert.equal(rows.length, 4)
   assert.equal(rows[2].key, 'costs')
   assert.equal(rows[2].value, '≈ $0,01')
-  assert.equal(rows[2].sub, '≈ $0,31 у SOL разово лишаються в гаманці на рахунку токена')
+  assert.equal(rows[2].sub, '≈ $0,31 у SOL лишаються в гаманці')
   // Said before the rows, in the sheet.
   assert.ok(BUY_SHEET.indexOf('<ReserveFirstLine') < BUY_SHEET.indexOf('<BuyReviewTable rows={rows}'))
 })
@@ -258,18 +266,21 @@ function texts(value) {
 }
 
 test('the words, in both languages: the reserve apart, the company’s own minimum, a dollar everywhere, no advice', () => {
-  assert.equal(BUY_COPY.uk.reserve('≈ $0,24'), '≈ $0,24 у SOL разово лишаються в гаманці на рахунку токена')
-  assert.equal(BUY_COPY.en.reserve('≈ $0.24'), '≈ $0.24 in SOL, once — it stays in your wallet, on the token’s account')
+  assert.equal(BUY_COPY.uk.reserve('≈ $0,24'), '≈ $0,24 у SOL лишаються в гаманці')
+  assert.equal(BUY_COPY.en.reserve('≈ $0.24'), '≈ $0.24 in SOL stays in your wallet')
   assert.equal(
     BUY_COPY.uk.reserveFirst('≈ $1,20', '$1'),
-    'Разовий резерв ≈ $1,20 у SOL більший за саму покупку ($1). Він лишиться в гаманці на рахунку токена — це не витрата.',
+    '≈ $1,20 у SOL лишаються в гаманці — більше за саму покупку ($1)',
   )
   assert.match(
     BUY_COPY.en.reserveFirst('≈ $1.20', '$1'),
-    /^The one-time reserve, ≈ \$1\.20 in SOL, is more than the purchase itself \(\$1\)\./,
+    /^≈ \$1\.20 in SOL stays in your wallet — more than the purchase itself \(\$1\)/,
   )
-  assert.equal(BUY_COPY.uk.routeMinimum('$1', 'IREN', '$5'), 'На $1 маршруту зараз немає. IREN — від $5.')
-  assert.equal(BUY_COPY.en.routeMinimum('$1', 'IREN', '$5'), 'No route for $1 right now. IREN from $5.')
+  // What the reserve is sits behind «?» (ST-4): it stays the person's and is not a cost.
+  assert.match(BUY_COPY.en.reserveHelp, /not a cost/)
+  assert.match(BUY_COPY.uk.reserveHelp, /не є витратою/)
+  assert.equal(BUY_COPY.uk.routeMinimum('$1', 'IREN', '$5'), 'На $1 зараз не купити. IREN — від $5.')
+  assert.equal(BUY_COPY.en.routeMinimum('$1', 'IREN', '$5'), '$1 cannot be bought right now. IREN from $5.')
   assert.equal(BUY_COPY.uk.setMinimum('$5'), 'Поставити $5')
   assert.equal(BUY_COPY.en.setMinimum('$5'), 'Use $5')
   assert.equal(BUY_COPY.uk.minimum, 'Мінімум — $1')
@@ -277,9 +288,10 @@ test('the words, in both languages: the reserve apart, the company’s own minim
   assert.equal(INVEST_COPY.uk.guestHeadline, 'Запускай. Торгуй. Автоматизуй.')
   assert.equal(INVEST_COPY.en.guestHeadline, 'Launch. Trade. Automate.')
   // The web's words since a rule names any token (1.31.0): what a rule buys and that each buy is the person's signature.
+  assert.equal(AUTOINVEST_COPY.uk.noRulesYet, 'Правил ще немає')
   assert.equal(
-    AUTOINVEST_COPY.uk.noRulesYet,
-    'Правил ще немає. Правило купує токен щодня, щотижня, коли ціна впаде або з кожної оплати — кожну купівлю підписуєш ти.',
+    AUTOINVEST_COPY.uk.noRulesHelp,
+    'Правило купує токен щодня, щотижня, коли ціна впаде або з кожної оплати — кожну купівлю підписуєш ти.',
   )
   for (const copy of [BUY_COPY, INVEST_COPY, AUTOINVEST_COPY]) {
     for (const text of [...texts(copy.en), ...texts(copy.uk)]) {
@@ -287,4 +299,18 @@ test('the words, in both languages: the reserve apart, the company’s own minim
       assert.doesNotMatch(text, /recommend|рекоменд/i, `no sum is advised — each buys on their own budget: ${text}`)
     }
   }
+})
+
+test('a coin’s purchase as a company’s: 25% · 50% · 75% · 100% of what can be spent, any sum from $1', () => {
+  // «Я можу купити там нажати на 25%, на 50%, на 75%, на 100% … А можу просто … купити … на долар».
+  assert.doesNotMatch(TRADE_SHEET, /DOLLAR_SUMS|\$\$\{sum\}/, 'no fixed sums of dollars')
+  assert.match(TRADE_SHEET, /shares\.map\(\(share\) => \(\{\s*key: String\(share\.pct\),\s*label: `\$\{share\.pct\}%`/)
+  // A share of dollars under $1 is drawn, not offered; a typed sum under $1 holds «Переглянути» and says why.
+  assert.match(TRADE_SHEET, /Number\(share\.field\.replace\(',', '\.'\)\) < MIN_BUY_USD \? null : share\.field/)
+  // The floor is the sum itself, at the ticket and again at «Перевірка» — never a venue's estimate of it.
+  assert.equal(TRADE_SHEET.match(/underOneDollar\(\{/g)?.length, 2)
+  assert.doesNotMatch(TRADE_SHEET, /inUsdValue\) < MIN_BUY_USD|reviewUsd < MIN_BUY_USD/)
+  assert.match(TRADE_SHEET, /!belowMinimum &&/)
+  assert.match(TRADE_SHEET, /sheetWords\.fromOneDollar/)
+  assert.equal(MIN_BUY_USD, 1)
 })

@@ -1,0 +1,244 @@
+/*
+ * The procurement surface's own layout.
+ *
+ * Three tones carry meaning and never decoration. `alone` is an agent acting
+ * under a bound the program itself enforces; `person` is an action a human
+ * confirms or signs; `missing` is a fact nobody holds. Two different answers
+ * that looked the same would erase the distinction the mandate gate exists to
+ * make — which is the same reason the commerce surface keeps provider refusals
+ * apart from policy refusals.
+ */
+
+.stack {
+  min-width: 0;
+  display: grid;
+  gap: 12px;
+}
+
+.rows {
+  display: grid;
+  gap: 8px;
+}
+
+.row {
+  min-width: 0;
+  display: grid;
+  gap: 4px;
+  padding: 9px 11px;
+  background: var(--panel-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+}
+
+.rowHead {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 6px 10px;
+}
+
+.rowHead b {
+  color: var(--text);
+  font-size: var(--fs-14);
+}
+
+.row span {
+  color: var(--text-muted);
+  font-size: var(--fs-14);
+}
+
+.row code {
+  color: var(--text-muted);
+  font-size: var(--fs-13);
+  overflow-wrap: anywhere;
+}
+
+.verdict {
+  padding: 2px 8px;
+  border: 1px solid var(--border);
+  border-radius: var(--rt-radius-pill);
+  font-size: var(--fs-13);
+  white-space: nowrap;
+}
+
+.verdict[data-who="AGENT_ALONE"] {
+  color: var(--success);
+  border-color: var(--success-soft);
+}
+
+.verdict[data-who="HUMAN_CONFIRMATION"] {
+  color: var(--warning);
+  border-color: var(--warning-soft);
+}
+
+.verdict[data-who="HUMAN_SIGNATURE"] {
+  color: var(--text-muted);
+}
+
+.holds {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.hold {
+  padding: 2px 8px;
+  border: 1px solid var(--border);
+  border-radius: var(--rt-radius-pill);
+  color: var(--text-muted);
+  font-size: var(--fs-13);
+}
+
+.hold[data-held="true"] {
+  color: var(--text);
+  border-color: var(--accent-line);
+}
+
+.empty {
+  display: grid;
+  gap: 6px;
+  padding: 12px;
+  background: var(--panel-2);
+  border: 1px dashed var(--border);
+  border-radius: var(--radius-sm);
+}
+
+.empty b {
+  color: var(--text);
+  font-size: var(--fs-14);
+}
+
+.empty span,
+.empty li {
+  color: var(--text-muted);
+  font-size: var(--fs-14);
+}
+
+.envList {
+  margin: 0;
+  padding-left: 18px;
+  display: grid;
+  gap: 3px;
+}
+
+.envList code {
+  font-size: var(--fs-13);
+}
+
+.facts {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 7px;
+}
+
+.fact {
+  display: grid;
+  gap: 2px;
+}
+
+.fact b {
+  color: var(--text);
+  font-size: var(--fs-14);
+}
+
+.fact span {
+  color: var(--text-faint);
+  font-size: var(--fs-13);
+}
+
+.pairs {
+  display: grid;
+  gap: 6px;
+}
+
+.pair {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 4px 10px;
+}
+
+.pair > span {
+  color: var(--text-faint);
+  font-size: var(--fs-13);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.pair > b,
+.pair > code {
+  color: var(--text);
+  font-size: var(--fs-14);
+  overflow-wrap: anywhere;
+}
+
+.blockers {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 8px;
+  grid-template-columns: repeat(auto-fit, minmax(22ch, 1fr));
+}
+
+.blocker {
+  display: grid;
+  gap: 3px;
+  padding: 9px 11px;
+  background: var(--panel-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+}
+
+.blocker b {
+  color: var(--text);
+  font-size: var(--fs-14);
+}
+
+.blocker span {
+  color: var(--text-muted);
+  font-size: var(--fs-14);
+}
+
+.explain {
+  margin-top: 10px;
+  border-top: 1px solid var(--border);
+  padding-top: 8px;
+}
+
+.explain summary {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 44px;
+  color: var(--text-muted);
+  font-size: var(--fs-14);
+  cursor: pointer;
+}
+
+.explain summary:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.explain > div {
+  display: grid;
+  gap: 7px;
+  color: var(--text-muted);
+  font-size: var(--fs-14);
+}
+
+.explain p,
+.explain ul {
+  margin: 0;
+}
+
+.explain ul {
+  padding-left: 18px;
+  display: grid;
+  gap: 4px;
+}

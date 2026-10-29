@@ -29,7 +29,7 @@
 import { randomBytes } from "node:crypto";
 
 import { getBase58Decoder } from "@solana/kit";
-import { PublicKey, Transaction } from "@solana/web3.js";
+import { PublicKey, Transaction, VersionedTransaction } from "@solana/web3.js";
 
 import type {
   ApiErrorCode,
@@ -50,6 +50,9 @@ import type {
 import { resolveInternalWallets } from "../admin/internal-wallets.ts";
 import { HOLDER_GRANT_BITMASK, collectorNextClaim, holderEarningsCard, holderGrantState, permissionsOf, type HolderCardRow } from "../core/launch/holder.ts";
 import { createHolderVenue, HolderRefusal, type HolderPool, type HolderPositionRead, type HolderVenue } from "../core/venues/meteora-damm-v2/holder.server.ts";
+import { openCosigners, sealCosigners, ticketKeyConfigured, withoutSignaturesOf } from "../liquidity/studio/ticket.ts";
+import { readBuildWindows, web3ChainReader } from "../solana/blockhash-life.ts";
+import { ed25519Valid } from "../solana/limits/trigger-tx.ts";
 import { compareWalletTransaction } from "../solana/wallet-modification.ts";
 import { launchExecutorAddress, launchPair, launchPoolFee } from "./config.server.ts";
 import type { LaunchDeps, LaunchReadDeps, LaunchRecord } from "./flow.server.ts";
@@ -74,6 +77,10 @@ export type HolderDeps = Pick<LaunchDeps, "network" | "connection" | "store" | "
 export const HOLDER_OPEN_TO_PEOPLE = true;
 
 /** How long a built entry or permission waits for the signature. */
+/**
+ * The longest a build waits for the signature. The real wait is the bytes' life — ~150 blocks ≈ 30 s on 200 ms slots,
+ * less a margin per transaction (`lib/solana/blockhash-life.ts`); signed later, the panel builds again.
+ */
 export const HOLDER_BUILD_TTL_MS = 90 * 1000;
 const SEND_BUDGET = { confirmMs: 25_000, settleMs: 10_000 } as const;
 const ROUTE_MS = 50_000;
@@ -106,6 +113,12 @@ type HolderBuild = Readonly<{
   enteredPairRaw: string | null;
   feeRaw: string | null;
   granted: boolean;
+  /**
+   * The new position NFT's fresh key, sealed (`sealCosigners`): it signs the entry after the wallet, over the exact
+   * message the wallet signed. Absent on a permission, and on an entry built before the wallet signed first — its bytes
+   * carry the NFT's signature already.
+   */
+  cosign?: string | null;
 }>;
 
 /** A position entered through Ryntra: written before the entry is sent, settled by the chain's answer. */
@@ -291,7 +304,7 @@ export async function readLaunchHolder(deps: HolderDeps, token: string, wallet: 
     const found = await poolOf(deps, venue, token);
     if ("ok" in found) return found;
     const { record, pool } = found;
-    const pair = launchPair(deps.network, record.preset);
+    const pair = launchPair(deps.network, record.preset, record.pairMint);
     const collector = launchExecutorAddress(deps.network, deps.env ?? process.env);
     const fee = launchPoolFee(deps.network);
     const open = pool !== null && pair.dollar && (await holderOpenFor(deps, wallet));
@@ -334,7 +347,7 @@ async function entryGate(deps: HolderDeps, venue: HolderVenue, token: string, wa
   const found = await poolOf(deps, venue, token);
   if ("ok" in found) return found;
   if (!found.pool) return fail("LAUNCH_NOT_GRADUATED", "The token is still on its curve; its pool opens when it reaches the DEX.");
-  if (!launchPair(deps.network, found.record.preset).dollar) return fail("LAUNCH_HOLDER_CLOSED", "Entering is open for pools paired with a dollar.");
+  if (!launchPair(deps.network, found.record.preset, found.record.pairMint).dollar) return fail("LAUNCH_HOLDER_CLOSED", "Entering is open for pools paired with a dollar.");
   return { record: found.record, pool: found.pool };
 }
 
@@ -365,13 +378,22 @@ async function sweep(deps: HolderDeps): Promise<void> {
 
 export async function buildLaunchHolder(deps: HolderDeps, token: string, input: LaunchHolderBuildRequest): Promise<Readonly<{ ok: true; build: LaunchHolderBuildResponse }> | HolderFailure> {
   const venue = venueOf(deps);
+  const env = deps.env ?? process.env;
   try {
     const gate = await entryGate(deps, venue, token, input.wallet);
     if ("ok" in gate) return gate;
+    /* The NFT's fresh key waits sealed for the wallet's signature: without the server's key to seal it, nothing is built. */
+    if (!ticketKeyConfigured(env)) return fail("LAUNCH_PAUSED", "Entering is paused; nothing was built.");
     const built = await venue.buildEntry({ pool: gate.pool, wallet: input.wallet, input: input.input, amountRaw: BigInt(input.amountRaw), slippageBps: input.slippageBps });
     await sweep(deps).catch(() => undefined);
     const now = deps.now();
+    const windows = await readBuildWindows(web3ChainReader(deps.connection), built.validUntil, { capMs: HOLDER_BUILD_TTL_MS });
+    const signableMs = windows.signableMs;
     const { swapMinOutRaw: _min, ...figures } = built.quote;
+    /* The wallet signs first: the NFT's signature comes off the bytes it sees — the message stays the same. */
+    const cosign = sealCosigners([{ index: 0, key: built.nftKey }], env);
+    if (!cosign) return fail("LAUNCH_PAUSED", "Entering is paused; nothing was built.");
+    const unsigned = withoutSignaturesOf(built.wireBase64, [built.nftMint]);
     const record: HolderBuild = {
       id: randomBytes(16).toString("hex"),
       cluster: deps.network.cluster,
@@ -381,27 +403,32 @@ export async function buildLaunchHolder(deps: HolderDeps, token: string, input: 
       pool: gate.pool.address,
       position: built.position,
       nftMint: built.nftMint,
-      wireBase64: built.wireBase64,
+      wireBase64: unsigned,
       validUntil: built.validUntil,
       createdAt: now.toISOString(),
-      expiresAt: new Date(now.getTime() + HOLDER_BUILD_TTL_MS).toISOString(),
+      expiresAt: new Date(now.getTime() + windows.lifeMs).toISOString(),
       input: input.input,
       amountRaw: input.amountRaw,
       enteredPairRaw: figures.valuePairRaw,
       feeRaw: figures.feeRaw,
       granted: built.granted,
+      cosign,
     };
     await deps.store.collection<HolderBuild>(BUILDS).insertIfAbsent(key(record.cluster, record.id), record);
     return {
       ok: true,
-      build: { buildId: record.id, network: deps.network.chain, unsignedWireBase64: built.wireBase64, position: built.position, quote: { ...figures, grant: built.granted }, expiresAt: record.expiresAt },
+      build: { buildId: record.id, network: deps.network.chain, unsignedWireBase64: unsigned, position: built.position, quote: { ...figures, grant: built.granted }, expiresAt: record.expiresAt, signableMs },
     };
   } catch (error) {
     return refused(error);
   }
 }
 
-/** The signed bytes against the built ones: the wallet's own fee and guard instructions are its right, nothing else. */
+/**
+ * The signed bytes against the built ones: the wallet's own fee and guard instructions are its right, nothing else. The
+ * signers are the wallet and, on an entry, the new position's NFT; the wallet's signature must be real, the NFT's fresh
+ * key then signs over the exact message the wallet signed, and every signature must be real.
+ */
 async function signedAsBuilt(deps: HolderDeps, kinds: readonly HolderBuild["kind"][], token: string, input: Readonly<{ buildId: string; wallet: string; signedWireBase64: string }>): Promise<Readonly<{ build: HolderBuild; tx: Transaction }> | HolderFailure> {
   const build = await deps.store.collection<HolderBuild>(BUILDS).get(key(deps.network.cluster, input.buildId));
   if (!build || build.token !== token || !kinds.includes(build.kind)) return fail("LAUNCH_NOT_FOUND", "This was not built here.");
@@ -410,12 +437,36 @@ async function signedAsBuilt(deps: HolderDeps, kinds: readonly HolderBuild["kind
   const verdict = compareWalletTransaction({ expectedWireBase64: build.wireBase64, actualWireBase64: input.signedWireBase64, guardPolicy: "BOUNDED" });
   if (verdict.verdict !== "EXACT" && verdict.verdict !== "WALLET_GUARDS_ONLY") return fail("LAUNCH_SIGNED_OTHER_BYTES", "The wallet signed a different transaction than the one built.");
   let tx: Transaction;
+  let exact: VersionedTransaction;
   try {
-    tx = Transaction.from(Buffer.from(input.signedWireBase64, "base64"));
+    exact = VersionedTransaction.deserialize(Buffer.from(input.signedWireBase64, "base64"));
   } catch {
     return fail("LAUNCH_SIGNED_OTHER_BYTES", "The wallet returned bytes that are not a transaction.");
   }
-  if (!tx.verifySignatures(true)) return fail("LAUNCH_SIGNED_OTHER_BYTES", "A signature is missing or does not match the transaction.");
+  const signers = exact.message.staticAccountKeys.slice(0, exact.message.header.numRequiredSignatures).map((signer) => signer.toBase58());
+  const named = build.kind === "entry" ? [build.wallet, build.nftMint] : [build.wallet];
+  if (!signers.includes(build.wallet) || !signers.every((signer) => named.includes(signer))) return fail("LAUNCH_SIGNED_OTHER_BYTES", "The transaction names a signer it was not built with.");
+  const message = exact.message.serialize();
+  const real = (at: number) => {
+    const signature = exact.signatures[at];
+    return Boolean(signature) && signature!.some((byte) => byte !== 0) && ed25519Valid(message, signature!, new PublicKey(signers[at]!));
+  };
+  /* The wallet first: its signature over these bytes before the server's key signs them. */
+  if (!real(signers.indexOf(build.wallet))) return fail("LAUNCH_SIGNED_OTHER_BYTES", "A signature is missing or does not match the transaction.");
+  /* The NFT's fresh key after, over the exact message the wallet signed; an entry from before has its signature in the bytes. */
+  const sealed = build.cosign ? openCosigners(build.cosign, deps.env ?? process.env) : [];
+  if (!sealed) return fail("LAUNCH_BUILD_EXPIRED", "It can no longer be signed; prepare it again.");
+  try {
+    if (sealed.length) exact.sign(sealed.map((cosigner) => cosigner.key));
+  } catch {
+    return fail("LAUNCH_SIGNED_OTHER_BYTES", "The wallet signed a different transaction than the one built.");
+  }
+  if (!signers.every((_, at) => real(at))) return fail("LAUNCH_SIGNED_OTHER_BYTES", "A signature is missing or does not match the transaction.");
+  try {
+    tx = Transaction.from(exact.serialize());
+  } catch {
+    return fail("LAUNCH_SIGNED_OTHER_BYTES", "The wallet returned bytes that are not a transaction.");
+  }
   if (!(await deps.store.collection<Readonly<{ cluster: string; id: string; at: string }>>(SENDS).insertIfAbsent(key(build.cluster, build.id), { cluster: build.cluster, id: build.id, at: deps.now().toISOString() }))) {
     return fail("LAUNCH_BUILD_USED", "This was already sent.");
   }
@@ -473,6 +524,8 @@ export async function buildHolderPermission(deps: HolderDeps, token: string, inp
     if (input.action === "grant" && !(await holderOpenFor(deps, input.wallet))) return fail("LAUNCH_HOLDER_CLOSED", "Turning the collector on is not open yet.");
     const built = input.action === "grant" ? await venue.buildGrant({ wallet: input.wallet, position: record.position, nftMint: record.nftMint }) : await venue.buildRevoke({ wallet: input.wallet, position: record.position, nftMint: record.nftMint });
     const now = deps.now();
+    const windows = await readBuildWindows(web3ChainReader(deps.connection), built.validUntil, { capMs: HOLDER_BUILD_TTL_MS });
+    const signableMs = windows.signableMs;
     const build: HolderBuild = {
       id: randomBytes(16).toString("hex"),
       cluster: deps.network.cluster,
@@ -485,7 +538,7 @@ export async function buildHolderPermission(deps: HolderDeps, token: string, inp
       wireBase64: built.wireBase64,
       validUntil: built.validUntil,
       createdAt: now.toISOString(),
-      expiresAt: new Date(now.getTime() + HOLDER_BUILD_TTL_MS).toISOString(),
+      expiresAt: new Date(now.getTime() + windows.lifeMs).toISOString(),
       input: null,
       amountRaw: null,
       enteredPairRaw: null,
@@ -493,7 +546,7 @@ export async function buildHolderPermission(deps: HolderDeps, token: string, inp
       granted: input.action === "grant",
     };
     await deps.store.collection<HolderBuild>(BUILDS).insertIfAbsent(key(build.cluster, build.id), build);
-    return { ok: true, build: { buildId: build.id, network: deps.network.chain, unsignedWireBase64: built.wireBase64, action: input.action, expiresAt: build.expiresAt } };
+    return { ok: true, build: { buildId: build.id, network: deps.network.chain, unsignedWireBase64: built.wireBase64, action: input.action, expiresAt: build.expiresAt, signableMs } };
   } catch (error) {
     return refused(error);
   }
@@ -512,8 +565,8 @@ export async function submitHolderPermission(deps: HolderDeps, token: string, in
 /* ------------------------------------------------------------ «Мої позиції» and the earnings card */
 
 /**
- * Every position this wallet entered through Ryntra, across launches, read from the chain now, and the data the growth
- * module's earnings card draws — what went in, what it is worth, the fees, with the period.
+ * Every position this wallet entered through Ryntra, across launches, read from the chain now, and the data the Growth
+ * line's earnings card draws — what went in, what it is worth, the fees, with the period.
  */
 export async function readHolderPositions(deps: HolderDeps, wallet: string): Promise<Readonly<{ ok: true; positions: LaunchHolderPositionsResponse }> | HolderFailure> {
   const venue = venueOf(deps);
@@ -534,7 +587,7 @@ export async function readHolderPositions(deps: HolderDeps, wallet: string): Pro
       const claims = await holderClaims(deps, current.position);
       receipts.push(...claims.filter((claim) => claim.state === "CONFIRMED").map((claim) => claim.signature));
       const view = positionView(deps, current, read, claims, pool?.price ?? 0, { token: pool?.tokenDecimals ?? 6, pair: pool?.pairDecimals ?? 6 }, collector);
-      const pair = launch ? launchPair(deps.network, launch.preset) : null;
+      const pair = launch ? launchPair(deps.network, launch.preset, launch.pairMint) : null;
       views.push({ ...view, name: launch?.name ?? null, symbol: launch?.symbol ?? null, pair: pair ? { mint: pair.mint, symbol: pair.symbol, decimals: pair.decimals, dollar: pair.dollar } : null, tokenDecimals: pool?.tokenDecimals ?? null });
       if (pair) {
         cardRows.push({
@@ -570,7 +623,7 @@ function mutableCard(card: ReturnType<typeof holderEarningsCard>): LaunchHolderP
   return { ...card, period: { ...card.period }, amounts: card.amounts.map((amount) => ({ ...amount })), receipts: [...card.receipts] };
 }
 
-/** The data of a holder's earnings card through the core — what the growth module's card draws. */
+/** The data of a holder's earnings card through the core — what the Growth line's card draws. */
 export async function readHolderEarningsCard(deps: HolderDeps, wallet: string): Promise<LaunchHolderPositionsResponse["card"] | null> {
   const read = await readHolderPositions(deps, wallet);
   return read.ok ? read.positions.card : null;

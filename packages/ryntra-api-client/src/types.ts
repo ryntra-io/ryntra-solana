@@ -26,7 +26,7 @@
  */
 
 export const API_MAJOR = 1 as const;
-export const API_CONTRACT_VERSION = "1.41.0" as const;
+export const API_CONTRACT_VERSION = "1.86.0" as const;
 export const API_HEADER = "X-Ryntra-API" as const;
 export const API_VERSION_HEADER = "X-Ryntra-API-Version" as const;
 export const NETWORK = "solana:mainnet" as const;
@@ -66,6 +66,32 @@ export type ApiErrorCode =
   | "AGENT_DRAFT_NOT_FOUND"
   | "AGENT_BUDGET_EXHAUSTED"
   | "AGENT_BUSY"
+  /* 1.52.0 — the assistant's credits */
+  | "WELCOME_TAKEN"
+  | "WELCOME_NOT_ELIGIBLE"
+  /* 1.54.0 — buying credits */
+  | "CREDIT_ORDER_NOT_FOUND"
+  /* 1.57.0 — token watches */
+  | "WATCH_NOT_FOUND"
+  | "WATCH_LIMIT_REACHED"
+  | "WATCH_VERSION_CONFLICT"
+  | "MEMORY_NOTE_NOT_FOUND"
+  | "MEMORY_SECRET_REFUSED"
+  | "TASK_NOT_FOUND"
+  | "TASK_LIMIT_REACHED"
+  | "TASK_RUNS_CAP"
+  | "TASK_VERSION_CONFLICT"
+  | "TASK_PRICE_NOT_SHOWN"
+  /* 1.61.0 — the trade plan and its critic */
+  | "ASSISTANT_PLAN_NOT_FOUND"
+  | "ASSISTANT_PLAN_VERSION_CONFLICT"
+  | "ASSISTANT_PLAN_STATE_REFUSED"
+  /* 1.64.0 — voice heard on the server */
+  | "VOICE_TOO_LONG"
+  | "VOICE_NOT_HEARD"
+  | "VOICE_PRICE_NOT_SHOWN"
+  | "VOICE_DAY_SPENT"
+  | "CREDITS_DAY_CAP"
   /* 1.12.0 — autoinvest rules */
   | "RULE_NOT_FOUND"
   | "RULE_LIMIT_REACHED"
@@ -82,8 +108,13 @@ export type ApiErrorCode =
   | "LAUNCH_UNAVAILABLE"
   | "LAUNCH_NAME_BORROWED"
   | "LAUNCH_IMAGE_INVALID"
+  | "LAUNCH_IMAGE_REFUSED"
+  | "LAUNCH_IMAGE_CHECK_UNAVAILABLE"
+  | "LAUNCH_WALLET_V1_REQUIRED"
   | "LAUNCH_LIMIT"
   | "LAUNCH_PAUSED"
+  | "LAUNCH_BUSY"
+  | "LAUNCH_QUOTE_PAUSED"
   | "LAUNCH_FIRST_BUY_ABOVE_CAP"
   | "LAUNCH_BUILD_EXPIRED"
   | "LAUNCH_BUILD_USED"
@@ -97,9 +128,29 @@ export type ApiErrorCode =
   /* 1.29.0 — the creator's cabinet */
   | "LAUNCH_SHARES_INVALID"
   | "LAUNCH_NOTHING_TO_CLAIM"
+  | "LAUNCH_NO_TRANSFER_FEE"
   /* 1.33.0 — a holder's position in the pool */
   | "LAUNCH_HOLDER_CLOSED"
-  | "LAUNCH_NOT_GRADUATED";
+  | "LAUNCH_NOT_GRADUATED"
+  /** 1.81.0 (MOS-2): Team Launch is not open on this deployment, or not to this wallet. */
+  | "LAUNCH_TEAM_CLOSED"
+  /* 1.75.0 — a team's roles and rights (TEAM-1) */
+  | "TEAM_NOT_FOUND"
+  | "TEAM_FORBIDDEN"
+  | "TEAM_LIMIT"
+  | "TEAM_MEMBER_EXISTS"
+  | "TEAM_LAST_OWNER"
+  | "TEAM_CHANGED"
+  | "TEAM_TREASURY_REFUSED"
+  /* 1.86.0 — the developer console (DEV-2) */
+  | "DEV_NOT_FOUND"
+  | "DEV_FORBIDDEN"
+  | "DEV_LIMIT"
+  | "DEV_CHANGED"
+  | "DEV_KEY_INVALID"
+  | "DEV_ORIGIN_REFUSED"
+  | "DEV_SCOPE_REFUSED"
+  | "DEV_QUOTA_EXCEEDED";
 
 /** 1.7.0: the stable ids a plan issue may carry beside its message. */
 export type PlanIssueCode =
@@ -175,6 +226,10 @@ export type Capabilities = Readonly<{
     providers?: readonly Readonly<{ provider: EvidenceProvider; attribution: EvidenceAttribution; windows: readonly EvidenceWindow[] }>[];
     /** 1.6.0: the recipient check before a transfer. */
     addressEvidence?: "/api/v1/research/address-evidence";
+    /** 1.65.0: a `.skr` name to its address and an address to its name. */
+    skrName?: "/api/v1/research/skr-name";
+    /** 1.68.0: «Події ринку» — one feed of market events, each with its source and its transaction. */
+    events?: "/api/v1/events";
   }>;
   /** 1.8.0: Ryn, the agent — its routes, whether a model composes the words here, the tools by kind and the boundary said as a fact. */
   agent?: Readonly<{
@@ -242,6 +297,8 @@ export type Capabilities = Readonly<{
     creators?: "/api/v1/launch/creators/{address}";
     claimBuild?: "/api/v1/launch/{mint}/claim/build";
     claimSubmit?: "/api/v1/launch/{mint}/claim/submit";
+    /** 1.73.0 — «Забрати все»: the Review before the claim. */
+    claimReview?: "/api/v1/launch/{mint}/claim/review";
     /* 1.32.0 */
     journal?: "/api/v1/launch/{mint}/journal";
     /* 1.33.0 */
@@ -258,8 +315,78 @@ export type Capabilities = Readonly<{
     markets?: "/api/v1/launch/markets";
     marketCard?: "/api/v1/launch/markets/{mint}";
     health?: "/api/v1/launch/{mint}/health";
+    /* 1.49.0 — a launch's figures for its creator's cabinet, the creator's public profile */
+    stats?: "/api/v1/launch/{mint}/stats";
+    profile?: "/api/v1/launch/creators/{address}/profile";
+    /* 1.55.0 — the survival of the markets launched on Ryntra at 7, 30 and 90 days */
+    survival?: "/api/v1/launch/survival";
+    /* 1.56.0 — «Розширений»: the launch's own config, built and sent */
+    advancedConfigBuild?: "/api/v1/launch/advanced/config/build";
+    advancedConfigSubmit?: "/api/v1/launch/advanced/config/submit";
+    /* 1.56.0 — Launch Boost: a token's creator campaign, its commitment and its payout */
+    boost?: "/api/v1/launch/{mint}/boost";
+    boostBuild?: "/api/v1/launch/{mint}/boost/build";
+    boostSubmit?: "/api/v1/launch/{mint}/boost/submit";
+    boostPayoutBuild?: "/api/v1/launch/{mint}/boost/payout/build";
+    boostPayoutSubmit?: "/api/v1/launch/{mint}/boost/payout/submit";
+    /** 1.69.0 — the creator's split (SOL-L2b). */
+    split?: "/api/v1/launch/{mint}/split";
+    splitRuleBuild?: "/api/v1/launch/{mint}/split/rule/build";
+    splitRuleSubmit?: "/api/v1/launch/{mint}/split/rule/submit";
+    splitDepthBuild?: "/api/v1/launch/{mint}/split/depth/build";
+    splitDepthSubmit?: "/api/v1/launch/{mint}/split/depth/submit";
+    splitPayoutBuild?: "/api/v1/launch/{mint}/split/payout/build";
+    splitPayoutSubmit?: "/api/v1/launch/{mint}/split/payout/submit";
+    /* 1.56.0 — early access: the launch built and sent, its read and a deposit */
+    earlyAccessBuild?: "/api/v1/launch/early-access/build";
+    earlyAccessSubmit?: "/api/v1/launch/early-access/submit";
+    earlyAccess?: "/api/v1/launch/{mint}/early-access";
+    earlyAccessDepositBuild?: "/api/v1/launch/{mint}/early-access/deposit/build";
+    earlyAccessDepositSubmit?: "/api/v1/launch/{mint}/early-access/deposit/submit";
+    earlyAccessActionBuild?: "/api/v1/launch/{mint}/early-access/action/build";
+    earlyAccessActionSubmit?: "/api/v1/launch/{mint}/early-access/action/submit";
   }>;
+  /** 1.67.0 — the capability and authority matrix (EXE-1); absent on a deployment before it. */
+  authority?: AuthorityMatrixV1;
   observedAt: string;
+}>;
+
+/* ------------------------------------------------- authority matrix (1.67.0) */
+
+export type HonestState = "LIVE" | "PAPER" | "PREVIEW" | "DISABLED" | "UNAVAILABLE" | "UNKNOWN" | "RECOVERY";
+export type AuthorityEnforcement = "PROGRAM_ENFORCED" | "PROVIDER_NATIVE" | "RYNTRA_GATEWAY_ENFORCED" | "OBSERVE_ONLY";
+export type AuthorityMode = "MANUAL" | "ASSISTED" | "AUTONOMOUS";
+export type AuthorityAutomationElement = "strategyDefinition" | "trigger" | "riskPolicy" | "authorizedExecutor" | "reconciler" | "runtime" | "resultLedger";
+
+/** One venue × action on this deployment: its honest state, who may act, who holds the bound, how it runs. */
+export type AuthorityRowV1 = Readonly<{
+  id: string;
+  venue: "jupiter" | "meteora-dlmm" | "meteora-damm2" | "meteora-dbc" | "relay" | "circle-cctp" | "phoenix" | "squads" | "subscriptions" | "solana" | "solana-pay" | "agg" | "ryntra";
+  action: string;
+  surface: "trade" | "perps" | "pools" | "bots" | "launch" | "money" | "treasury" | "predictions" | "agents";
+  provider: "MAINNET" | "BETA" | "DEVNET" | "NOT_OFFERED";
+  readiness: "PROVEN" | "BUILT" | "PARTIAL" | "MISSING";
+  state: HonestState;
+  eligibility: "EVERYONE" | "CANARY" | "PILOT" | "OPERATOR" | "NOBODY";
+  gate: "OPEN" | "CANARY" | "DEVNET" | "CLOSED" | "NONE";
+  enforcement: AuthorityEnforcement;
+  mode: AuthorityMode;
+  signer: "PERSON_EACH" | "PERSON_ONCE" | "MULTISIG" | "PROVIDER" | "RYNTRA_KEY" | "NONE";
+  runsAlone: "NOTHING" | "REMINDER" | "VENUE" | "EXECUTOR";
+  network: "mainnet" | "devnet";
+  automation: Readonly<Record<AuthorityAutomationElement, boolean>>;
+  /** True only with all seven elements of spec §6.1. */
+  automatic: boolean;
+  evidence: string | null;
+  notCovered: string | null;
+  note: string;
+}>;
+
+export type AuthorityMatrixV1 = Readonly<{
+  states: readonly HonestState[];
+  enforcement: readonly AuthorityEnforcement[];
+  modes: readonly AuthorityMode[];
+  rows: readonly AuthorityRowV1[];
 }>;
 
 /* ------------------------------------------------------------ evidence (1.5.0) */
@@ -373,6 +500,70 @@ export type AddressEvidenceRead = Readonly<{
   served: "provider" | "cache" | "stale-cache" | "none";
 }>;
 
+/**
+ * 1.65.0: `GET /api/v1/research/skr-name` — with `name`, the address that owns it now (read every time, never
+ * cached: ask again before a signature and show the whole address); with `address`, the wallet's primary name.
+ * `UNAVAILABLE` is «the chain did not answer», never «no name».
+ */
+export type SkrNameRead =
+  | Readonly<{ direction: "name"; state: "FOUND" | "NOT_FOUND" | "UNAVAILABLE"; name: string; address: string | null }>
+  | Readonly<{ direction: "address"; state: "FOUND" | "NOT_FOUND" | "UNAVAILABLE"; address: string; name: string | null; source: "primary" | "owned" | null }>;
+
+/** 1.68.0: the kinds of «Події ринку», in the feed's own order. */
+export type MarketEventKind = "TOKEN_CREATED" | "DEX_LISTED" | "ALPHA_VAULT" | "LIQUIDITY_CHANGED" | "CONCENTRATION_CHANGED" | "AUTHORITY_OPEN" | "UNLOCK" | "CREATOR_SOLD" | "QUOTE_CHANGED" | "LAUNCH_LOG";
+/** 1.68.0: `chain` — Ryntra read it on Solana; `jupiter` — Jupiter Tokens V2 states it; `launch` — Ryntra Launch's records and MarketOS's receipts. */
+export type MarketEventSource = "chain" | "jupiter" | "launch";
+
+/**
+ * 1.68.0: one market event — one fact with its kind, when it happened (null when no source states it) and when Ryntra
+ * saw it, its sources, its transaction or account with the explorer's link, its finality, and the token's Pulse risk
+ * flags. `id` is `signature:index` for a fact with a transaction. Never advice; a trade opens on `token.href`.
+ */
+export type MarketEvent = Readonly<{
+  id: string;
+  kind: MarketEventKind;
+  network: "mainnet" | "devnet";
+  token: Readonly<{ mint: string; symbol: string; name: string; icon: string | null; href: string; launchedOnRyntra: boolean }>;
+  happenedAt: string | null;
+  happenedWithin: "h1" | "h24" | null;
+  observedAt: string;
+  sources: readonly MarketEventSource[];
+  finality: "confirmed" | "reported" | "scheduled";
+  stale: boolean;
+  signature: string | null;
+  account: string | null;
+  explorerUrl: string;
+  route: Readonly<{ from: "pump" | "meteora-dbc" | "launchlab" | null; to: "damm-v2" | null }> | null;
+  actor: "creator" | "ryntra" | "meteora" | "other" | null;
+  journalKind: "LAUNCHED" | "CREATOR_LOCKED" | "FEES_SHARED" | "CREATOR_SOLD" | "GRADUATED" | "FLOOR_POOL" | "FLOOR_PLACED" | "FLOOR_WITHDRAWN" | "FLOOR_RAISED" | "FLOOR_ADDED" | "FEE_CLAIMED" | "CREATOR_BOUGHT" | null;
+  soldBps: number | null;
+  soldOf: "bought" | "supply" | null;
+  changePct: number | null;
+  authority: "MINT" | "FREEZE" | null;
+  unlock: "cliff" | "end" | null;
+  pairRaw: string | null;
+  tokensRaw: string | null;
+  pair: Readonly<{ symbol: string; decimals: number }> | null;
+  tokenDecimals: number | null;
+  flags: readonly ("MINT_AUTHORITY" | "FREEZE_AUTHORITY" | "FLAGGED" | "BORROWED_NAME" | "CREATOR_MANY" | "LIQUIDITY_THIN" | "HOLDERS_FEW" | "BRAND_NEW")[];
+  unstated: readonly ("RIGHTS" | "HOLDERS" | "CREATOR" | "AGE")[];
+  borrowedLabel: string | null;
+  suspicious: readonly ("FLAGGED" | "BORROWED_NAME" | "NAME_COPY")[];
+}>;
+
+/** 1.68.0: `GET /api/v1/events` — the feed, the newest first, a suspicious token's event never above the first five clean ones; public. */
+export type MarketEventsResponse = Readonly<{
+  events: readonly MarketEvent[];
+  total: number;
+  observedAt: string;
+  stale: boolean;
+  partial: boolean;
+  sources: readonly MarketEventSource[];
+  /** The flight logs read for this answer against the people's markets launched on Ryntra; null where Launch is not served. */
+  logs: Readonly<{ read: number; markets: number }> | null;
+  coverage: readonly Readonly<{ kind: MarketEventKind; state: "read" | "partial" | "not-read"; sources: readonly MarketEventSource[] }>[];
+}>;
+
 export type ApiClient = Readonly<{ platform: "android"; appVersion: string; package?: string }>;
 
 export type ChallengeRequest = Readonly<{ address: string; locale?: "en" | "uk"; client: ApiClient }>;
@@ -398,6 +589,10 @@ export type ApiSession = Readonly<{ id: string; address: string; network: typeof
 export type VerifyResponse = Readonly<{ tokenType: "Bearer"; accessToken: string; session: ApiSession }>;
 
 export type SessionResponse = Readonly<{ session: ApiSession }>;
+/** 1.66.0: one Seeker Genesis Token the proven wallet holds — its mint and its place in the SGT group (a decimal string). */
+export type SeekerToken = Readonly<{ mint: string; memberNumber: string }>;
+/** 1.66.0: `GET /api/v1/auth/seeker` — «Перевірено Seeker»: whether the wallet the session proved holds an SGT, read by the server on mainnet. A chain that could not be read is UNAVAILABLE (503), never `verified: false`. */
+export type SeekerCheckResponse = Readonly<{ address: string; verified: boolean; tokens: readonly SeekerToken[]; network: "solana:mainnet"; checkedAt: string }>;
 
 export type RevokeResponse = Readonly<{ revoked: true }>;
 
@@ -819,7 +1014,7 @@ export const AGENT_QUESTION_MAX = 2000 as const;
 export const AGENT_TURNS_KEPT = 40 as const;
 
 /** Where a conversation was opened from; the agent reads it as context, never as authority. */
-export type AgentPage = "spot" | "stocks" | "swap" | "trends" | "strategies" | "results" | "activity" | "predictions";
+export type AgentPage = "spot" | "stocks" | "swap" | "trends" | "strategies" | "results" | "activity" | "predictions" | "tasks";
 export type AgentContext =
   | Readonly<{ kind: "asset"; mint: string; symbol?: string }>
   | Readonly<{ kind: "plan"; planId: string }>
@@ -847,6 +1042,10 @@ export type AgentQuestionClass =
 
 /** The state of a figure or a read, decided by age against the source's own rule. */
 export type AgentState = "current" | "stale" | "unavailable" | "unknown";
+/** 1.44.0: what kind of news an item is. */
+export type AgentNewsTopic = "security" | "etf" | "regulation" | "listing" | "funding" | "partnership" | "upgrade" | "launch" | "macro" | "market" | "other";
+/** 1.44.0: the mark on a line of «What moved the price?». */
+export type AgentMoveMark = "fact" | "unverified" | "inference" | "unknown";
 
 /** What a sentence stands on: the source, when it was observed, its state, the reference where one exists, the product page that shows the same read. */
 export type AgentCitation = Readonly<{ id: string; tool: string; source: string; observedAt: string | null; state: AgentState; ref: string | null; href: string | null }>;
@@ -949,6 +1148,17 @@ export type AgentCard =
       href: string;
     }>
   | Readonly<{ kind: "comparison"; title: string; columns: readonly Readonly<{ id: string; label: string }>[]; rows: readonly Readonly<{ label: string; cells: readonly AgentComparisonCell[] }>[]; note: string; href: string | null }>
+  /* 1.44.0 — a token's or the market's news, and «What moved the price?» with every line marked. */
+  | Readonly<{
+      kind: "news";
+      mint: string | null;
+      symbol: string | null;
+      items: readonly Readonly<{ id: string; title: string; source: string; publishedAt: string; url: string; topic: AgentNewsTopic; also: number; cite: string }>[];
+      day: Readonly<{ stories: number; sources: number }>;
+      collectedAt: string;
+      state: AgentState;
+    }>
+  | Readonly<{ kind: "move"; mint: string; symbol: string; window: "1h" | "24h"; change: AgentFigure | null; rows: readonly Readonly<{ mark: AgentMoveMark; text: string; cites: readonly string[] }>[] }>
   | AgentPlanDraftCard
   | AgentMonitoringDraftCard
   | AgentTradeDraftCard;
@@ -1015,6 +1225,71 @@ export type AgentTurn = Readonly<{
 
 export type AgentSession = Readonly<{ id: string; owner: string; network: typeof NETWORK; locale: "en" | "uk"; context: AgentContext | null; turns: readonly AgentTurn[]; createdAt: string; updatedAt: string }>;
 
+/** 1.52.0: the assistant's credits — the service's own units (1 000 = 1 USDC), never a token, never paid out. */
+export type AssistantCredits = Readonly<{
+  unit: "credits";
+  balance: number;
+  welcome: number;
+  bought: number;
+  free: Readonly<{ used: number; left: number; daily: number; resetsAt: string }>;
+  reserved: number;
+  dailySpend: Readonly<{ used: number; cap: number; resetsAt: string }>;
+  prices: Readonly<{ question: number; alertExplain: number; tokenReport: number; priceMove: number; voice: number; deep: number; plan: number }>;
+  welcomeOffer: "open" | "taken";
+  holder: "wallet" | "account";
+}>;
+
+/** 1.52.0: one entry of the credits' history; never a word of the question. */
+export type AssistantCreditEntry = Readonly<{
+  at: string;
+  kind: "grant" | "hold" | "capture" | "release" | "expire" | "merge-out" | "merge-in";
+  action: "question" | "alertExplain" | "tokenReport" | "priceMove" | "voice" | "deep" | "plan" | null;
+  reason: "welcome" | "purchase" | "adjust" | null;
+  credits: number;
+  charged: number | null;
+}>;
+
+/** 1.52.0: `GET /api/v1/assistant/credits` and `POST /api/v1/assistant/credits/welcome` (`granted`). */
+export type AssistantCreditsResponse = Readonly<{ credits: AssistantCredits; entries: readonly AssistantCreditEntry[]; granted?: number; purchase?: AssistantCreditPurchase }>;
+
+/** 1.54.0: one package of credits for USDC. */
+export type AssistantCreditPackage = Readonly<{ id: "usdc-2" | "usdc-5" | "usdc-10" | "usdc-25"; usdc: string; credits: number; bonusPercent: number }>;
+
+/** 1.54.0: whether credits are sold here, the packages and the treasury they are paid to. */
+export type AssistantCreditPurchase = Readonly<{
+  available: boolean;
+  packages: readonly AssistantCreditPackage[];
+  treasury: Readonly<{ address: string; abbreviated: string }> | null;
+  orderMinutes: number;
+}>;
+
+/** 1.54.0: one order of credits — what to pay, where, what arrived and what was credited; `payments` with `credited` is the receipt. */
+export type AssistantCreditOrder = Readonly<{
+  id: string;
+  package: AssistantCreditPackage;
+  status: "awaiting" | "checking" | "underpaid" | "paid" | "expired";
+  amount: Readonly<{ raw: string; display: string; symbol: "USDC"; mint: string }>;
+  received: Readonly<{ raw: string; display: string }>;
+  credited: number;
+  payPage: string;
+  payUrl: string;
+  reference: string;
+  treasury: Readonly<{ address: string; abbreviated: string }>;
+  createdAt: string;
+  expiresAt: string;
+  payments: readonly Readonly<{ signature: string; amount: string; at: string | null }>[];
+  wrongToken: boolean;
+}>;
+
+/** 1.54.0: `POST /api/v1/assistant/credits/orders` and `GET …/orders/<id>`. */
+export type AssistantCreditOrderResponse = Readonly<{ order: AssistantCreditOrder; credits: AssistantCredits }>;
+
+/** 1.54.0: `GET /api/v1/assistant/credits/orders`. */
+export type AssistantCreditOrdersResponse = Readonly<{ orders: readonly AssistantCreditOrder[]; credits: AssistantCredits }>;
+
+/** 1.54.0: the body of `POST /api/v1/assistant/credits/orders`. */
+export type AssistantCreditOrderRequest = Readonly<{ package: AssistantCreditPackage["id"]; locale?: "uk" | "en" }>;
+
 export type AgentBudgetState = Readonly<{
   unit: "calls";
   day: Readonly<{ used: number; allowance: number; resetsAt: string }>;
@@ -1023,13 +1298,329 @@ export type AgentBudgetState = Readonly<{
   exhausted: boolean;
   reason: string | null;
   model: "configured" | "absent";
+  /** 1.52.0: the credits a question that reaches the model is paid in. */
+  credits?: AssistantCredits;
 }>;
 
 export type AgentSuggestion = Readonly<{ text: string; class: AgentQuestionClass }>;
 
-export type AgentSessionOpenRequest = Readonly<{ context?: AgentContext | null; locale?: "en" | "uk"; sessionId?: string }>;
+export type AgentSessionOpenRequest = Readonly<{ context?: AgentContext | null; locale?: "en" | "uk"; sessionId?: string; fresh?: boolean }>;
+/** 1.43.0: how long a conversation is kept after its last turn. */
+export const AGENT_SESSION_RETENTION_DAYS = 90 as const;
+/** 1.43.0: one conversation as the list shows it — its first question, dates and expiry; never its answers. */
+export type AgentSessionSummary = Readonly<{ id: string; locale: "en" | "uk"; context: AgentContext | null; title: string | null; turnCount: number; createdAt: string; updatedAt: string; expiresAt: string }>;
+export type AgentSessionListResponse = Readonly<{ sessions: readonly AgentSessionSummary[]; retentionDays: typeof AGENT_SESSION_RETENTION_DAYS }>;
+/** 1.43.0: a market question without a wallet; the context is an asset or a page, never someone's own. */
+export type AgentGuestRequest = Readonly<{ text: string; locale?: "en" | "uk"; context?: Readonly<{ kind: "asset"; mint: string; symbol?: string }> | Readonly<{ kind: "page"; page: AgentPage }> | null }>;
+export type AgentGuestResponse = Readonly<{ person: AgentTurn; ryn: AgentTurn; guest: Readonly<{ day: Readonly<{ used: number; allowance: number; resetsAt: string }>; model: "configured" | "absent"; needsWallet: boolean }> }>;
+
+/* 1.46.0 — «Ранковий огляд» (AI-10): GET and PUT /api/v1/assistant/brief. */
+export type AssistantBriefLineKind = "sol" | "btc" | "mover" | "market-news" | "token" | "token-news" | "plan";
+export type AssistantBriefLine = Readonly<{ kind: AssistantBriefLineKind; mark: "fact" | "unverified"; text: string; source: string; observedAt: string | null; href: string | null }>;
+export type AssistantBriefPart = Readonly<{ title: string; words: string[]; lines: AssistantBriefLine[]; note: string | null }>;
+export type AssistantBrief = Readonly<{
+  day: string;
+  title: string;
+  market: AssistantBriefPart;
+  personal: AssistantBriefPart & Readonly<{ state: "changed" | "unchanged" | "unread" }>;
+  deliveredAt: string;
+}>;
+export type AssistantBriefSettings = Readonly<{ enabled: boolean; time: string; zone: string; locale: "en" | "uk" }>;
+export type AssistantBriefResponse = Readonly<{
+  settings: AssistantBriefSettings;
+  next: Readonly<{ at: string | null; quiet: boolean }>;
+  channels: Readonly<{ inbox: true; telegram: boolean; push: boolean }>;
+  priceCredits: number;
+  charged: false;
+  latest: AssistantBrief | null;
+}>;
+export type AssistantBriefUpdate = Readonly<{ enabled: boolean; time?: string; zone?: string; locale?: "en" | "uk" }>;
+
+/** 1.57.0: a token watch's rule — the person's own threshold, judged without a model. */
+export type AssistantWatchRule =
+  | Readonly<{ kind: "price"; direction: "above" | "below"; level: number }>
+  | Readonly<{ kind: "move"; window: "m5" | "h1" | "h24"; direction: "up" | "down" | "any"; pct: number }>
+  | Readonly<{ kind: "volume"; factor: number }>
+  | Readonly<{ kind: "liquidity"; window: "h1" | "h24"; direction: "drop" | "rise" | "any"; pct: number; pool: string | null }>;
+export type AssistantWatchPreset = "drop24h" | "rise24h" | "below" | "above" | "volume3x" | "liquidityDrop";
+export type AssistantWatchState = "armed" | "rang" | "cooling" | "unread" | "learning" | "paused";
+
+/** 1.57.0: one token watch as the reader sees it — what it reads now, its latest alert and «Чому?» at its price. */
+export type AssistantWatch = Readonly<{
+  id: string;
+  version: number;
+  mint: string;
+  symbol: string;
+  rule: AssistantWatchRule;
+  ruleText: string;
+  status: "active" | "paused";
+  cooldownMinutes: number;
+  channels: Readonly<{ telegram: boolean; push: boolean }>;
+  now: Readonly<{ state: AssistantWatchState; text: string | null; source: string | null; observedAt: string | null }>;
+  last: Readonly<{ at: string; title: string; reason: string; inboxId: string }> | null;
+  explain: Readonly<{ question: string; priceCredits: number }> | null;
+  createdAt: string;
+  updatedAt: string;
+}>;
+
+/** 1.57.0: `GET /api/v1/assistant/watches` and every write's answer. */
+export type AssistantWatchesResponse = Readonly<{
+  watches: readonly AssistantWatch[];
+  limit: Readonly<{ free: number; used: number; left: number }>;
+  presets: readonly Readonly<{ id: AssistantWatchPreset; text: string }>[];
+  explainPriceCredits: number;
+  channels: Readonly<{ inbox: true; telegram: boolean; push: boolean }>;
+  deliveriesPerHour: number;
+}>;
+
+/** 1.57.0: `POST /api/v1/assistant/watches` — a token by mint and a preset or a rule (one of the two). */
+export type AssistantWatchCreate = Readonly<{
+  mint: string;
+  preset?: AssistantWatchPreset;
+  rule?: AssistantWatchRule;
+  cooldownMinutes?: number;
+  channels?: Readonly<{ telegram: boolean; push: boolean }>;
+  locale?: "en" | "uk";
+}>;
+
+/** 1.57.0: `PATCH /api/v1/assistant/watches/{id}` — pause, resume or change; a changed rule starts afresh. */
+export type AssistantWatchUpdate = Readonly<{
+  ifVersion?: number;
+  status?: "active" | "paused";
+  rule?: AssistantWatchRule;
+  cooldownMinutes?: number;
+  channels?: Readonly<{ telegram: boolean; push: boolean }>;
+}>;
+
+/** 1.58.0 «Знайомство»: the proven wallet's answers, or that the person skipped them; they shape only Ryntra's wording. */
+export type AssistantProfile = Readonly<{
+  skipped: boolean;
+  goal: "learn" | "trade" | "hold" | null;
+  experience: "new" | "some" | "pro" | null;
+  riskPct: 0.5 | 1 | 2 | null;
+  horizon: "hours" | "days" | "weeks" | null;
+  updatedAt: string;
+}>;
+/** 1.58.0: `GET /api/v1/assistant/profile` and the answer to `PUT` — the profile (null until answered or skipped) and where notes go. */
+export type AssistantProfileResponse = Readonly<{
+  profile: AssistantProfile | null;
+  delivery: Readonly<{ inbox: true; telegram: boolean; push: boolean; quietHours: QuietHours | null }>;
+}>;
+/** 1.58.0: `PUT /api/v1/assistant/profile` — the four answers (with `delivery`, Нагляд's preferences too), or `{ skipped: true }`. */
+export type AssistantProfileUpdate =
+  | Readonly<{
+      goal: "learn" | "trade" | "hold";
+      experience: "new" | "some" | "pro";
+      riskPct: 0.5 | 1 | 2;
+      horizon: "hours" | "days" | "weeks";
+      delivery?: Readonly<{ telegram: boolean; push: boolean; quietHours: QuietHours | null }>;
+    }>
+  | Readonly<{ skipped: true }>;
+
+/** 1.59.0 (AI-18): one thing Ryntra keeps about the person, in their own words. */
+export type AssistantMemoryNote = Readonly<{ id: string; text: string; source: "said" | "asked" | "typed"; at: string }>;
+/** 1.59.0: what the wallet shows, read now — never kept. */
+export type AssistantWalletPicture = Readonly<{ state: "current" | "unavailable"; tokens: number | null; largest: readonly Readonly<{ symbol: string; mint: string }>[] }>;
+/** 1.59.0: `GET /api/v1/assistant/memory` and every write's answer. */
+export type AssistantMemoryResponse = Readonly<{
+  about: string | null;
+  noticing: boolean;
+  notes: readonly AssistantMemoryNote[];
+  profile: AssistantProfile | null;
+  wallet: AssistantWalletPicture;
+  updatedAt: string | null;
+}>;
+/** 1.59.0: `PUT /api/v1/assistant/memory` — «Про мене», whether to notice, or a note typed by hand. */
+export type AssistantMemoryUpdate = Readonly<{ about?: string | null; noticing?: boolean; note?: string }>;
+
+/** 1.59.0 (AI-19): what a «Доручення» asks. */
+export type AssistantTaskAsk =
+  | Readonly<{ kind: "question"; text: string }>
+  | Readonly<{ kind: "news"; mint: string; symbol: string }>
+  | Readonly<{ kind: "move"; mint: string; symbol: string }>
+  | Readonly<{ kind: "portfolio" }>;
+export type AssistantTaskEvery = "10m" | "30m" | "1h" | "1d";
+export type AssistantTask = Readonly<{
+  id: string;
+  ask: AssistantTaskAsk;
+  name: string;
+  every: AssistantTaskEvery;
+  time: string | null;
+  zone: string;
+  rhythm: string;
+  onlyWhenNew: boolean;
+  channels: Readonly<{ telegram: boolean; push: boolean }>;
+  status: "active" | "paused";
+  pausedBy: "person" | "credits" | "price" | null;
+  priceCredits: number;
+  perDayCredits: number;
+  nextRunAt: string | null;
+  skippedAt: string | null;
+  last: Readonly<{ at: string; headline: string; delivered: boolean }> | null;
+  runs: number;
+  href: string;
+  sessionId: string | null;
+  version: number;
+}>;
+/** 1.59.0: `GET /api/v1/assistant/tasks` and every write's answer. */
+export type AssistantTasksResponse = Readonly<{
+  tasks: readonly AssistantTask[];
+  limit: number;
+  pricePerRun: number;
+  rhythms: readonly Readonly<{ every: AssistantTaskEvery; runsPerDay: number; perDayCredits: number; fits: boolean }>[];
+  runs: Readonly<{ used: number; cap: number }>;
+}>;
+/** 1.59.0: `POST /api/v1/assistant/tasks` — `acceptCredits` is the price of a run the client showed. */
+export type AssistantTaskCreate = Readonly<{
+  ask: AssistantTaskAsk;
+  every: AssistantTaskEvery;
+  time?: string;
+  zone?: string;
+  locale?: "en" | "uk";
+  onlyWhenNew?: boolean;
+  channels: Readonly<{ telegram: boolean; push: boolean }>;
+  acceptCredits: number;
+}>;
+/** 1.59.0: `PATCH /api/v1/assistant/tasks/<id>`. */
+export type AssistantTaskUpdate = Readonly<{
+  ifVersion: number;
+  status?: "active" | "paused";
+  every?: AssistantTaskEvery;
+  time?: string;
+  channels?: Readonly<{ telegram: boolean; push: boolean }>;
+  onlyWhenNew?: boolean;
+  acceptCredits?: number;
+}>;
+/** 1.59.0: push to a computer's browser — whether the deployment can, its key, and how many browsers receive it. */
+export type AssistantPushState = Readonly<{ configured: boolean; publicKey: string | null; browsers: number; thisBrowser: boolean | null }>;
+/** 1.59.0: `GET /api/v1/assistant/push/latest` — what the service worker shows. */
+export type AssistantPushLatest = Readonly<{ note: Readonly<{ id: string; title: string; body: string; href: string }> | null }>;
+/** 1.64.0: `POST /api/v1/assistant/voice` — a recording (base64, at most two minutes) for the question field; `acceptCredits` is the price the client showed. */
+export type AssistantVoiceRequest = Readonly<{ id: string; audio: string; mime: string; seconds: number; locale?: "en" | "uk"; acceptCredits: number }>;
+/** 1.64.0: the words heard — for the field, never asked by themselves — what they cost, and the credits after. */
+export type AssistantVoiceResponse = Readonly<{ text: string; seconds: number; spent: number; free: number; repeat: boolean; credits: AssistantCredits | null }>;
+/** 1.61.0: who set a level or an assumption of a trade plan. */
+export type AssistantPlanAuthor = "person" | "ryntra" | "market" | "rules";
+export type AssistantPlanState = "draft" | "checked" | "approved" | "watching" | "done" | "cancelled" | "broken";
+export type AssistantPlanLevel = Readonly<{ priceUsd: number; by: AssistantPlanAuthor; why: string | null }>;
+/** 1.61.0: the fees and both outcomes of a sized plan, as the plan engine estimates them — never a quote. */
+export type AssistantPlanFees = Readonly<{
+  model: "estimate-v1";
+  feePolicy: string;
+  ryntraFeeBps: number;
+  costBufferBps: number;
+  notionalUsd: number;
+  ryntraFeeUsd: number;
+  costBufferUsd: number;
+  networkUsd: number;
+  totalUsd: number;
+  lossAtInvalidationUsd: number;
+  rewardAtTargetUsd: number;
+  rewardToRisk: number | null;
+}>;
+/** 1.61.0: one version's plan — the loss limit and the budget are always the person's. */
+export type AssistantPlanBody = Readonly<{
+  thesis: Readonly<{ text: string; whyNow: string | null; horizonDays: number | null; by: AssistantPlanAuthor }>;
+  entry: Readonly<{ priceUsd: number; maxPriceUsd: number; validUntil: string; condition: string | null; by: AssistantPlanAuthor }>;
+  invalidation: AssistantPlanLevel;
+  lossLimit: Readonly<{ riskUsd: number; budgetUsd: number }>;
+  targets: readonly AssistantPlanLevel[];
+  fees: AssistantPlanFees;
+  sizing: PlanSizing;
+  assumptions: readonly Readonly<{ text: string; by: AssistantPlanAuthor }>[];
+  sources: readonly Readonly<{ id: string; source: string; observedAt: string; state: AgentState; href: string | null }>[];
+}>;
+export type AssistantPlanFinding = Readonly<{
+  id: string;
+  severity: "major" | "minor" | "note";
+  kind: "fees" | "loss-scenario" | "contradiction" | "level" | "thesis" | "data" | "size" | "liquidity";
+  field: "thesis" | "entry" | "invalidation" | "lossLimit" | "targets" | "fees" | "sizing" | "sources";
+  text: string;
+  cites: readonly string[];
+  by: "rules" | "model";
+}>;
+/** 1.61.0: the critic on one version — the rules' checks always, the strong model's findings when it ran. */
+export type AssistantPlanCritic = Readonly<{ by: "rules" | "model"; model: string | null; findings: readonly AssistantPlanFinding[]; summary: string | null; gaps: readonly string[]; checkedAt: string }>;
+export type AssistantPlanVersion = Readonly<{ n: number; body: AssistantPlanBody; critic: AssistantPlanCritic; createdAt: string; by: "ryntra" | "person" | "plan-page"; reason: string | null; tradingPlanVersion: number | null }>;
+/** 1.61.0: one trade under the plan against it — the receipt and the risk in words. */
+export type AssistantPlanTrade = Readonly<{
+  signature: string;
+  at: string;
+  side: "BUY" | "SELL" | null;
+  outcome: "DONE" | "FAILED" | "UNKNOWN";
+  planned: Readonly<{ priceUsd: number; maxPriceUsd: number | null; units: number }>;
+  actual: Readonly<{ priceUsd: number | null; units: number | null; usd: number | null; feeUsd: number | null }>;
+  priceDeviationPct: number | null;
+  sizeDeviationPct: number | null;
+  verdict: "followed" | "deviated" | "unknown";
+  receipt: readonly string[];
+  risk: readonly string[];
+  receiptHash: string | null;
+}>;
+export type AssistantPlanReality = Readonly<{
+  trades: readonly AssistantPlanTrade[];
+  position: Readonly<{ state: "open" | "closed" | "none"; unitsHeld: number | null; costBasisUsd: number | null; realisedUsd: number | null }>;
+  summary: readonly string[];
+  complete: boolean;
+}>;
+/** 1.61.0: a trade plan Ryntra composed with the person — its state, every version, its journal, what Нагляд says and «План проти реальності». */
+export type AssistantPlan = Readonly<{
+  id: string;
+  mint: string;
+  symbol: string;
+  state: AssistantPlanState;
+  stateReason: "invalidation" | "expired" | "position-closed" | "person" | null;
+  version: number;
+  current: AssistantPlanVersion;
+  versions: readonly Readonly<{ n: number; createdAt: string; by: "ryntra" | "person" | "plan-page"; reason: string | null; critic: "rules" | "model" }>[];
+  journal: readonly Readonly<{ at: string; event: "created" | "edited" | "checked" | "approved" | "watching" | "synced" | "broken" | "done" | "cancelled"; version: number; note: string | null }>[];
+  tradingPlan: Readonly<{ id: string; status: PlanStatus; version: number; href: string }> | null;
+  watch: Readonly<{ status: "none" | "watching" | "needs_attention" | "paused" | "unavailable"; lastCheckedAt: string | null; line: string | null }>;
+  reality: AssistantPlanReality | null;
+  actions: Readonly<{ approve: boolean; watch: boolean; edit: boolean; recheck: boolean; cancel: boolean }>;
+  createdAt: string;
+  updatedAt: string;
+}>;
+export type AssistantPlanResponse = Readonly<{
+  plan: AssistantPlan;
+  prices: Readonly<{ plan: number; recheck: number }>;
+  spent: Readonly<{ credits: number; architect: "model" | "rules"; critic: "model" | "rules" }> | null;
+  budget: AgentBudgetState | null;
+}>;
+export type AssistantPlansResponse = Readonly<{ plans: readonly AssistantPlan[]; prices: Readonly<{ plan: number; recheck: number }>; budget: AgentBudgetState | null }>;
+/** 1.61.0: `POST /api/v1/assistant/plans` — the token, the person's idea, their loss limit or budget, any level they know, or a draft; `acceptCredits` the price shown. */
+export type AssistantPlanCreate = Readonly<{
+  mint: string;
+  idea: string;
+  riskUsd?: number | null;
+  budgetUsd?: number | null;
+  entryUsd?: number | null;
+  maxPriceUsd?: number | null;
+  invalidationUsd?: number | null;
+  targetsUsd?: readonly number[];
+  horizonDays?: number | null;
+  draftId?: string | null;
+  acceptCredits?: number | null;
+  locale?: "en" | "uk";
+}>;
+/** 1.61.0: `PUT /api/v1/assistant/plans/{id}` — the person's change, a new version. */
+export type AssistantPlanUpdate = Readonly<{
+  ifVersion: number;
+  thesis?: string;
+  entryUsd?: number;
+  maxPriceUsd?: number;
+  invalidationUsd?: number;
+  targetsUsd?: readonly number[];
+  riskUsd?: number;
+  budgetUsd?: number;
+  reason?: string | null;
+  locale?: "en" | "uk";
+}>;
+export type AssistantPlanRecheck = Readonly<{ ifVersion: number; acceptCredits?: number | null; locale?: "en" | "uk" }>;
+export type AssistantPlanStateRequest = Readonly<{ to: "approved" | "watching" | "cancelled"; ifVersion: number; locale?: "en" | "uk" }>;
 export type AgentSessionResponse = Readonly<{ session: AgentSession; budget: AgentBudgetState; suggestions: readonly AgentSuggestion[] }>;
-export type AgentMessageRequest = Readonly<{ sessionId: string; text: string; locale?: "en" | "uk" }>;
+/** 1.52.0 `acceptCredits`: the price the client showed; absent, only the day's free credits are spent. */
+export type AgentMessageRequest = Readonly<{ sessionId: string; text: string; locale?: "en" | "uk"; acceptCredits?: number; typed?: boolean }>;
 export type AgentMessageResponse = Readonly<{ sessionId: string; person: AgentTurn; ryn: AgentTurn; budget: AgentBudgetState }>;
 export type AgentDraftResponse = Readonly<{ draft: AgentDraftCard; sessionId: string; turnId: string; createdAt: string; expiresAt: string }>;
 export type AgentSuggestionsResponse = Readonly<{ context: AgentContext | null; suggestions: readonly AgentSuggestion[] }>;
@@ -1040,7 +1631,7 @@ export type AgentSuggestionsResponse = Readonly<{ context: AgentContext | null; 
  * `deterministic` (the default) never reaches a model and never spends;
  * `model` words the same reads under the wallet's existing agent allowance.
  */
-export type AgentLensRequest = Readonly<{ subject: AgentContext; locale?: "en" | "uk"; compose?: "deterministic" | "model" }>;
+export type AgentLensRequest = Readonly<{ subject: AgentContext; locale?: "en" | "uk"; compose?: "deterministic" | "model"; acceptCredits?: number }>;
 
 type AgentLensShape = Readonly<{
   subject: AgentContext;
@@ -1151,7 +1742,10 @@ export type SpotMarket = Readonly<{
 export type SpotMarketsResponse = Readonly<{
   rows: readonly SpotMarketListRow[];
   observedAt: string;
+  /** 1.53.0: true only when the oldest read behind the rows shown is older than five minutes, or one is held after a failed refresh. */
   stale: boolean;
+  /** 1.53.0: that oldest read's time, present when `stale`. */
+  lastGoodAt?: string;
   partial?: boolean;
   source?: Readonly<{ label: string; tier: "lite" | "pro" }>;
   missing?: readonly string[];
@@ -1608,8 +2202,9 @@ export type MonitorStatus = (typeof MONITOR_STATUSES)[number];
 /** 1.21.0: `position` — «Ryntra попередить» on a company the wallet holds, `id` the token's mint. */
 export const MONITOR_SUBJECT_KINDS = ["trading-plan", "prediction-plan", "position"] as const;
 export type MonitorSubjectKind = (typeof MONITOR_SUBJECT_KINDS)[number];
-/** 1.12.0: a note may also be an autoinvest rule's reminder — a note's subject, never a card's; 1.13.0: or the month's autoinvest budget, spent; 1.15.0: or an issuer's event about a token the wallet holds (`id` its mint) — a window to swap it before the issuer's cut-off. */
-export type MonitorNoteSubjectKind = MonitorSubjectKind | "autoinvest-rule" | "autoinvest-budget" | "issuer-event";
+/** 1.12.0: a note may also be an autoinvest rule's reminder — a note's subject, never a card's; 1.13.0: or the month's autoinvest budget, spent; 1.15.0: or an issuer's event about a token the wallet holds (`id` its mint) — a window to swap it before the issuer's cut-off; 1.42.0: or a spot limit order Ryntra recorded (`id` its order account) — «Ордер виконано» and «Квитанція готова». */
+/** 1.46.0: `assistant-brief` — «Ранковий огляд» of a day, `id` the person's day. */
+export type MonitorNoteSubjectKind = MonitorSubjectKind | "autoinvest-rule" | "autoinvest-budget" | "issuer-event" | "limit-order" | "assistant-brief" | "launch-creator" | "token-watch" | "assistant-task" | "wallet-watch";
 
 /** 1.21.0: `plan.target` — a position's target, reached. */
 export const MONITOR_CONDITION_KINDS = ["plan.price_bound", "plan.invalidation", "plan.expiry", "plan.deviation", "plan.evidence", "prediction.probability", "prediction.resolution", "prediction.signal", "plan.target"] as const;
@@ -1819,11 +2414,15 @@ export type ActivityAction = Readonly<{
   updatedAt: string;
 }>;
 
-/** `POST /api/solana/activity` — `rewards` null when the request is not the owner's, `[]` when there are none; `complete: false` when a stored row could not be read. */
+/** 1.60.0 (SOL-X1): the cashback one trade earned, by its signature — `usdMicros` null while unvalued, `held` while part waits on «First $10 back»'s check. */
+export type ActivityTradeCashback = Readonly<{ signature: string; usdMicros: string | null; held: boolean }>;
+
+/** `POST /api/solana/activity` — `rewards` and `cashback` null when the request is not the owner's, `[]` when there are none; `complete: false` when a stored row could not be read. */
 export type ActivityResponse = Readonly<{
   data: Readonly<{
     actions: readonly ActivityAction[];
     rewards: readonly RewardsRow[] | null;
+    cashback: readonly ActivityTradeCashback[] | null;
     complete: boolean;
     coverage: "RYNTRA_ACTIONS";
   }>;
@@ -1894,6 +2493,18 @@ export type RewardsAchievements = Readonly<{
   badges: readonly Readonly<{ id: RewardAchievement; earned: boolean; at: string | null }>[];
 }>;
 
+/** The rules in force as the wallet meets them (`2.1.0`, or `2.2.0` once its ladder is in force); absent before they are in force. */
+export type RewardsProgramme = Readonly<{
+  rulesVersion: "2.1.0" | "2.2.0";
+  claimMinimum: string;
+  claimMinimumWithAccount: string;
+  claimMinimumWithoutAccount: string;
+  usdcAccount: "EXISTS" | "MISSING" | "UNKNOWN";
+  firstTenOffer: Readonly<{ cap: string; days: number; walletsPerMonth: number }>;
+  firstTen: Readonly<{ state: "OPEN" | "CLOSED"; check: "PENDING" | "PASSED" | "FAILED"; returned: string; cap: string; held: string; endsAt: string }> | null;
+  inviterWindow: Readonly<{ share: number; days: number }>;
+}>;
+
 /** `GET /api/rewards?address=&locale=` — read-only; a claim is not described here. */
 export type RewardsResponse = Readonly<{
   ok: true;
@@ -1919,6 +2530,8 @@ export type RewardsResponse = Readonly<{
   /** Null when the badges could not be read; absent from a deployment before badges. */
   achievements?: RewardsAchievements | null;
   started: boolean;
+  /** Absent before rules 2.1.0 are in force. */
+  programme?: RewardsProgramme;
 }>;
 
 /** The rewards route's own error bodies (not the v1 envelope): 429 `rate limited`, 401 `proof required`, 503 `REWARDS_UNAVAILABLE`. */
@@ -2322,6 +2935,58 @@ export type SwapAssetVerdict = Readonly<{
   evaluatedAt: string;
 }>;
 
+/**
+ * 1.85.0 — the risk verdict over one trade. Thirteen named facts, each with
+ * the source that produced it and the time it was read; `missing` names what
+ * is absent on an `INCOMPLETE` one, and `limits` states the thresholds the
+ * measured facts were read against, so a client can show a person exactly
+ * what put a trade where it is.
+ *
+ * `NO_KNOWN_BLOCKER` reports the absence of known blockers. It is not "safe",
+ * and must never be drawn as such.
+ */
+export type TradeRiskFact =
+  | "MINT_AND_PROGRAM"
+  | "TOKEN_EXTENSIONS"
+  | "MINT_AUTHORITY"
+  | "FREEZE_AUTHORITY"
+  | "TOKEN_RESTRICTIONS"
+  | "SLIPPAGE"
+  | "LIQUIDITY_PATH"
+  | "QUOTE_FRESHNESS"
+  | "VENUE_STATUS"
+  | "HOLDER_CONCENTRATION"
+  | "CREATOR_BEHAVIOUR"
+  | "RWA_ELIGIBILITY"
+  | "TRADE_BUDGET";
+
+export type TradeRiskKind = "SWAP" | "SPOT_LIMIT" | "PERP" | "LAUNCH" | "BRIDGE_SWAP";
+
+export type TradeRisk = Readonly<{
+  schema: "ryntra.solana.trade-risk-verdict";
+  schemaVersion: "1.0.0";
+  trade: Readonly<{ kind: TradeRiskKind; network: "mainnet" | "devnet"; mint: string }>;
+  verdict: "NO_KNOWN_BLOCKER" | "REVIEW_REQUIRED" | "BLOCKED" | "INCOMPLETE";
+  findings: readonly Readonly<{
+    fact: TradeRiskFact;
+    outcome: "ALLOWED" | "REVIEW_REQUIRED" | "BLOCKED" | "INCOMPLETE";
+    detail: string;
+    source: Readonly<{ ref: string; label: string; readAt: string; slot: number | null }> | null;
+    missing: string | null;
+  }>[];
+  limits: Readonly<{
+    slippageReviewBps: number;
+    slippageBlockBps: number;
+    quoteFreshSeconds: number;
+    factsFreshSeconds: number;
+    topPlainHolderReviewShare: number;
+    topFivePlainHoldersReviewShare: number;
+    creatorHoldsReviewShare: number;
+    transferFeeReviewBps: number;
+  }>;
+  evaluatedAt: string;
+}>;
+
 /** 1.20.0: which way a company goes — bought with USDC, or sold into it. */
 export type CheckSide = "buy" | "sell";
 /** 1.20.0: `quote` the live quote's figures, before a Review; `order` the exact order the wallet will sign. */
@@ -2360,6 +3025,8 @@ export type SwapQuoteResponse = Readonly<{
   expiresAt: string;
   /** 1.20.0: «Перевірка» on the quote (no reserve); null unless a company is bought with USDC or sold into it. */
   check: SwapCheck | null;
+  /** 1.85.0: the risk verdict over this trade. */
+  risk: TradeRisk;
 }>;
 
 export type SwapInspection = Readonly<{
@@ -2493,6 +3160,8 @@ export type SwapOrderResponse = Readonly<{
   passports: Readonly<Record<string, SwapPassport>>;
   decimals: Readonly<Record<string, number>>;
   assetReview: SwapAssetVerdict | null;
+  /** 1.85.0: the risk verdict over this trade, built on the exact order the wallet will be asked to sign. */
+  risk: TradeRisk;
   policy: Readonly<{ intent: SwapIntent; verdict: SwapVerdict }>;
   bundle: SwapBundle;
   proof: SwapSignedProof;
@@ -2750,7 +3419,7 @@ export type SwapRecoverError = Readonly<{ error: Readonly<{ code: SwapRecoverErr
  * `RyntraRouteError`. Nothing here moves funds: every order is a paper order.
  */
 
-export const PREDICTION_FAILURE_CODES = ["VALIDATION_ERROR", "UNAUTHORIZED", "FORBIDDEN", "NOT_FOUND", "RATE_LIMITED", "PROVIDER_UNAVAILABLE", "NOT_LINKED", "LINK_UNAVAILABLE", "SESSION_EXPIRED", "WALLET_MISMATCH", "SIGNATURE_INVALID", "QUOTE_UNAVAILABLE", "QUOTE_EXPIRED", "ORDER_REFUSED", "PLAN_INVALID", "PLAN_NOT_FOUND", "PLAN_VERSION_CONFLICT", "PLAN_STATE_REFUSED", "UNAVAILABLE"] as const;
+export const PREDICTION_FAILURE_CODES = ["VALIDATION_ERROR", "UNAUTHORIZED", "FORBIDDEN", "NOT_FOUND", "RATE_LIMITED", "PROVIDER_UNAVAILABLE", "NOT_LINKED", "LINK_UNAVAILABLE", "SESSION_EXPIRED", "WALLET_MISMATCH", "SIGNATURE_INVALID", "CHALLENGE_REQUIRED", "CHALLENGE_FAILED", "QUOTE_UNAVAILABLE", "QUOTE_EXPIRED", "ORDER_REFUSED", "PLAN_INVALID", "PLAN_NOT_FOUND", "PLAN_VERSION_CONFLICT", "PLAN_STATE_REFUSED", "FUNDING_OFF", "WITHDRAWAL_OPEN", "UNAVAILABLE"] as const;
 export type PredictionFailureCode = (typeof PREDICTION_FAILURE_CODES)[number];
 
 export const PREDICTION_MARKET_STATUSES = ["open", "closed", "resolved", "unknown"] as const;
@@ -2774,12 +3443,13 @@ export type PredictionPlanStatus = (typeof PREDICTION_PLAN_STATUSES)[number];
 export const PREDICTION_MONITOR_METRICS = ["probability", "volume24h", "signal", "resolution", "plan"] as const;
 export type PredictionMonitorMetric = (typeof PREDICTION_MONITOR_METRICS)[number];
 
-/** A prediction route's own refusal; `issues` (at most 32) on VALIDATION_ERROR and PLAN_INVALID. */
+/** A prediction route's own refusal; `issues` (at most 32) on VALIDATION_ERROR and PLAN_INVALID; `siteKey` on CHALLENGE_REQUIRED — show the bot check (Turnstile) with it, then start again with its token. */
 export type PredictionsFailure = Readonly<{
   error: Readonly<{
     code: PredictionFailureCode;
     message: string;
     issues?: readonly Readonly<{ path: string; message: string }>[];
+    siteKey?: string;
   }>;
 }>;
 
@@ -2792,6 +3462,7 @@ export type PredictionFailureValue = Readonly<{
   message: string;
   issues?: readonly Readonly<{ path: string; message: string }>[];
   retryAfterSeconds?: number;
+  siteKey?: string;
 }>;
 
 export type PredictionCategory = Readonly<{ id: string; slug: string; name: string; eventCount: number; volume24h: number }>;
@@ -2857,6 +3528,14 @@ export type PredictionEventSummary = Readonly<{
   structureType: string | null;
   arbReturn: number | null;
   leading: readonly Readonly<{ id: string; label: string; probability: number | null; venueMarketId: string }>[];
+  /** the first market's question when the event holds more than one market; null otherwise. */
+  leadingQuestion?: string | null;
+  /** the provider's series cadence as an ISO-8601 duration (PT5M, PT1H, P1D…); null for a one-off event. */
+  recurrence?: string | null;
+  /** the provider's sport slug; null for an event that is not a game. */
+  sport?: string | null;
+  /** the game's scheduled start, for a sports event. */
+  gameStartTime?: string | null;
 }>;
 
 export type PredictionEvent = Readonly<{
@@ -2875,6 +3554,14 @@ export type PredictionEvent = Readonly<{
   structureType: string | null;
   arbReturn: number | null;
   leading: readonly Readonly<{ id: string; label: string; probability: number | null; venueMarketId: string }>[];
+  /** the first market's question when the event holds more than one market; null otherwise. */
+  leadingQuestion?: string | null;
+  /** the provider's series cadence as an ISO-8601 duration (PT5M, PT1H, P1D…); null for a one-off event. */
+  recurrence?: string | null;
+  /** the provider's sport slug; null for an event that is not a game. */
+  sport?: string | null;
+  /** the game's scheduled start, for a sports event. */
+  gameStartTime?: string | null;
   description: string | null;
   startDate: string | null;
   markets: readonly PredictionMarket[];
@@ -3155,6 +3842,21 @@ export type PredictionRoute = Readonly<{
   fees: Readonly<{ venue: number; builder: number; settlement: number; app: number | null }>;
   fills: readonly PredictionRouteFill[];
   venueSolo: readonly Readonly<{ venue: string; fields: Readonly<Record<string, string | number | boolean | null>> }>[];
+  /** the route's own cost breakdown, USD; null when the provider stated none. */
+  costs?: Readonly<{
+    contractsUsd: number;
+    venueFeesUsd: number;
+    builderFeeUsd: number;
+    bridgeUsd: number;
+    gasUsd: number;
+    appFeeUsd: number | null;
+    appFeeBips: number | null;
+    referralUsd: number | null;
+    setupUsd: number | null;
+    totalUsd: number;
+  }> | null;
+  /** each venue's own quote for the same order. */
+  solos?: readonly Readonly<{ venue: string; status: string; shares: number; avgPrice: number | null; directCostUsd: number | null; unavailableReason: string | null; levels?: readonly Readonly<{ price: number; qty: number }>[] }>[];
   warnings: readonly Readonly<{ venue: string; reason: string }>[];
   matchedMarkets: readonly Readonly<{ venue: string; venueMarketId: string }>[];
   expiresAt: string;
@@ -3167,9 +3869,9 @@ export type PredictionRoute = Readonly<{
 
 export type PredictionReviewCheck = Readonly<{ id: string; state: "pass" | "warn" | "fail"; detail: string; figure?: string | null }>;
 
-/** The Review of a paper order: `canPlace` is false exactly when `blockedBy` names a refusing check. */
+/** The Review of an order — `live` is real money, `paper` simulated: `canPlace` is false exactly when `blockedBy` names a refusing check. */
 export type PredictionPaperReview = Readonly<{
-  mode: "paper";
+  mode: "paper" | "live";
   quoteId: string;
   event: Readonly<{ id: string; title: string; endDate: string | null }>;
   market: Readonly<{
@@ -3194,6 +3896,13 @@ export type PredictionPaperReview = Readonly<{
     maxLossUsd: number;
     returnIfRightPct: number | null;
   }>;
+  /** a buy's cost line by line, Ryntra's fee, the total, and a saving against the cheapest single venue only where it is true; null on a sell. */
+  costs?: Readonly<{
+    lines: readonly Readonly<{ id: "contracts" | "venue" | "ryntra" | "gas" | "bridge" | "setup" | "referral"; usd: number | null }>[];
+    ryntra: Readonly<{ bips: number; usd: number; charged: boolean }>;
+    totalUsd: number;
+    saving: Readonly<{ usd: number; venue: string; venueCostUsd: number }> | null;
+  }> | null;
   quote: Readonly<{ quotedAt: string; expiresAt: string; ageSeconds: number; expired: boolean }>;
   venues: readonly string[];
   settlement: PredictionSettlement | null;
@@ -3253,7 +3962,10 @@ export type PredictionWatchEntry = Readonly<{
 
 export type PredictionsDiscoverQuery = Readonly<{ q?: string; category?: string; sort?: PredictionDiscoverSort; limit?: number; cursor?: string }>;
 
-export type PredictionsLinkVerifyRequest = Readonly<{ message: string; signature: string; encoding?: "base64" | "base58" }>;
+/** `POST /api/predictions/link/start` — no body, or the bot check's token after a CHALLENGE_REQUIRED. */
+export type PredictionsLinkStartRequest = Readonly<{ turnstileToken?: string }>;
+
+export type PredictionsLinkVerifyRequest = Readonly<{ message: string; signature: string; encoding?: "base64" | "base58" | "hex" }>;
 
 export type PredictionsQuoteRequest = Readonly<{
   eventId: string;
@@ -3264,6 +3976,7 @@ export type PredictionsQuoteRequest = Readonly<{
   sellShares?: number;
   planId?: string | null;
   locale?: "en" | "uk";
+  mode?: "paper" | "live";
 }>;
 
 export type PredictionsOrdersRequest = Readonly<{ quoteId: string }>;
@@ -3332,6 +4045,8 @@ export type PredictionsAccountResponse = Readonly<{
   orders: readonly PredictionOrderRecord[];
   readAt: string;
   providerFailure: PredictionFailureValue | null;
+  /** The provider's own word on whether this person may trade from where they are; null when not read. */
+  access: Readonly<{ locationBlocked: boolean; venueAccounts?: readonly Readonly<{ venue: string; status: string; kycStatus: string }>[] | null }> | null;
   watchlist: readonly PredictionWatchEntry[];
   plans: readonly PredictionPlan[];
 }>;
@@ -3632,6 +4347,8 @@ export type PayLink = Readonly<{
   createdAt: string;
   expiresAt: string;
   paid: Readonly<{ signature: string; creditedRaw: string; credited: string; paidAt: string | null }> | null;
+  /** 1.78.0 — what arrived in the requested token so far, summed over every payment, and what its own transfer fee withheld; null while nothing arrived. */
+  received: Readonly<{ raw: string; amount: string; feeWithheldRaw: string | null; feeWithheld: string | null }> | null;
 }>;
 
 /** `POST /api/v1/pay/requests` — `mint` null or absent for SOL, `amount` in the token's units or absent to let the payer choose, 7 days by default. */
@@ -4172,6 +4889,8 @@ export type PayPublicRequest = Readonly<{
   createdAt: string;
   expiresAt: string;
   paid: Readonly<{ signature: string; creditedRaw: string; paidAt: string | null }> | null;
+  /** 1.78.0 — what arrived in the requested token so far, and what its own transfer fee withheld of it. */
+  received: Readonly<{ raw: string; feeWithheldRaw: string | null }> | null;
 }>;
 
 export type PayPublicView = Readonly<{ request: PayPublicRequest; payUrl: string }>;
@@ -4196,6 +4915,8 @@ export type PayTransactionResponse = Readonly<{
     simulated: Readonly<{ succeeded: boolean; error: string | null }> | null;
     createsRecipientAccount: boolean;
     networkFeeLamports: string;
+    /** How long from arriving the payer may still sign: the bytes' life (~30 s) less a margin. Past it, prepare again. */
+    signableMs: number;
   }>;
 }>;
 
@@ -4219,7 +4940,8 @@ export type PaySubmitError = Readonly<{ error: Readonly<{ code: PaySubmitErrorCo
  * and hands both to `submit` unchanged.
  */
 /** 1.38.0: `micro` for people, `demo` — Ryntra's technical validation, never in the presets for people. */
-export type LaunchPresetId = "classic" | "protected" | "community" | "micro" | "demo";
+/** 1.80.0: `rules` — «Правила на кривій» (SOL-L8), offered only where its format is. */
+export type LaunchPresetId = "classic" | "protected" | "community" | "micro" | "demo" | "advanced" | "rules";
 export type LaunchLockId = "1m-3m" | "3m-6m" | "6m-12m";
 export type LaunchNetworkId = "solana:devnet" | "solana:mainnet";
 
@@ -4240,12 +4962,31 @@ export type LaunchPreset = Readonly<{
   /** 1.38.0: the demo market — Ryntra's technical validation. */
   technicalValidation: boolean;
   lpLockedForeverPct: 100;
+  /** 1.80.0 — SOL-L8: this preset's token runs Ryntra's rules on purchases until the DEX, so no mark says «no rule on transfers» on it. */
+  curveRules?: true;
+  /** 1.50.0 — who receives every fee, basis points of it: the curve, the same through Ryntra, the move to the DEX, the DEX pool. */
+  terms?: Readonly<{
+    curveSplit: LaunchFeeShares;
+    curveSplitThroughRyntra: LaunchFeeShares;
+    graduation: Readonly<{ feeBps: number; creatorBps: number; ryntraBps: number; toBudget: boolean }>;
+    pool: Readonly<{ startFeeBps: number; endFeeBps: number; meteoraBps: number; compoundingBps: number; creatorPositionBps: number; ryntraPositionBps: number }>;
+  }>;
 }>;
 
 /** `GET /api/v1/launch/presets` */
 export type LaunchPresetsResponse = Readonly<{
   network: LaunchNetworkId;
   presets: readonly LaunchPreset[];
+  /** 1.56.0 — «Спільнота»'s community tokens, each with its own config; absent or empty — one pair, the preset's own. */
+  communities?: readonly Readonly<{ config: string; mint: string; symbol: string; decimals: number }>[];
+  /** 1.56.0 — the formats of «Розширені параметри» offered here; each null where it is not (on mainnet until the operator's bounds). */
+  formats?: Readonly<{
+    advanced: Readonly<{ bounds: LaunchAdvancedBounds }> | null;
+    boost?: Readonly<{ bounds: LaunchBoostBounds }> | null;
+    earlyAccess?: Readonly<{ bounds: LaunchEarlyAccessBounds }> | null;
+    /** 1.80.0 — SOL-L8: null until the operator opens the format after the independent audit of its rule program. */
+    curveRules?: LaunchCurveRulesFormat | null;
+  }>;
   locks: readonly Readonly<{ id: LaunchLockId; cliffDays: number; vestDays: number }>[];
   limits: Readonly<{ nameMax: number; symbolMax: number; descriptionMax: number; imageMaxBytes: number; imageTypes: readonly string[]; launchesPerDay: number }>;
 }>;
@@ -4255,7 +4996,14 @@ export type LaunchMetadataRequest = Readonly<{ name: string; symbol: string; des
 export type LaunchMetadataResponse = Readonly<{ metadataUri: string; imageUrl: string; name: string; symbol: string }>;
 
 /** `POST /api/v1/launch/quote` */
-export type LaunchQuoteRequest = Readonly<{ preset: LaunchPresetId; amountRaw: string }>;
+export type LaunchQuoteRequest = Readonly<{
+  preset: LaunchPresetId;
+  amountRaw: string;
+  /** 1.56.0: «Спільнота» — the community token the curve pairs against. */
+  pairMint?: string;
+  /** 1.56.0: «Розширений» — the config the creator made for the launch. */
+  advancedConfig?: string;
+}>;
 export type LaunchQuoteResponse = Readonly<{ preset: LaunchPresetId; pairMint: string; amountInRaw: string; tokensOutRaw: string; capRaw: string; maxAmountInRaw: string; withinCap: boolean }>;
 
 /** `POST /api/v1/launch/build` */
@@ -4267,7 +5015,19 @@ export type LaunchBuildRequest = Readonly<{
   lock: LaunchLockId | null;
   /** 1.29.0, «Спільнота» only: the creator's fees shared — the creator among two to five wallets, basis points adding up to 10 000. */
   feeShares?: readonly LaunchFeeShare[];
+  /** The creator's partner: "offered" — the one the review showed; "none" — removed; a code or `/r/<code>` link — another in its place. Absent — no partner is bound. */
+  partner?: "offered" | "none" | Readonly<{ code: string }>;
+  /** 1.56.0, «Спільнота» only: the community token to pair against. */
+  pairMint?: string;
+  /** 1.56.0, «Розширений» only, and always: the config the creator made for this launch. */
+  advancedConfig?: string;
+  /** 1.71.0: "v1" — the wallet signs v1; on Micro and the demo market the only way a first purchase (and its lock, in the same transaction) is built. */
+  format?: "v1";
+  /** 1.74.0, Classic and Protected: the crew whose members said yes — the vault's rows are read from it on the server; with it, no `feeShares`. */
+  crew?: string;
 }>;
+/** One fee split, basis points of it (1.50.0). */
+export type LaunchFeeShares = Readonly<{ creatorBps: number; ryntraBps: number; meteoraBps: number }>;
 /** One wallet's share of a launch's creator fees, whole basis points (at least 100). */
 export type LaunchFeeShare = Readonly<{ address: string; bps: number }>;
 export type LaunchBuildResponse = Readonly<{
@@ -4283,6 +5043,8 @@ export type LaunchBuildResponse = Readonly<{
   /** 1.29.0: the sharing of the creator's fees, signed already by the new mint; the creator signs it too. */
   splitUnsignedWireBase64?: string | null;
   feeVault?: string | null;
+  /** The partner this build binds the pool to, masked as the review shows it; null — none. */
+  partner?: Readonly<{ partnerMasked: string; codeMasked: string; source: "previous" | "inviter" | "carried" | "chosen" | "none" }> | null;
 }>;
 
 /** `POST /api/v1/launch/submit` */
@@ -4292,7 +5054,41 @@ export type LaunchLock = Readonly<{ schedule: LaunchLockId; escrow: string; sign
 export type LaunchFeeSharing = Readonly<{ vault: string; shares: readonly LaunchFeeShare[]; signature: string | null; state: "SHARED" | "PENDING" | "FAILED"; reason: string | null }>;
 export type LaunchSubmitResponse = Readonly<{ token: string; signature: string; state: "LAUNCHED" | "PENDING"; lock: LaunchLock | null; feeSharing?: LaunchFeeSharing | null; tokenPath: string }>;
 
-export type LaunchMarkCode = "MINT_REVOKED" | "NO_FREEZE" | "METADATA_FIXED" | "NO_TRANSFER_HOOK" | "CURVE_HOLDS_FUNDS" | "LP_LOCKED_FOREVER" | "CREATOR_BUY_LOCKED";
+export type LaunchMarkCode =
+  | "MINT_REVOKED"
+  | "NO_FREEZE"
+  | "METADATA_FIXED"
+  | "NO_TRANSFER_HOOK"
+  | "TRANSFER_FEE_UNTIL_DEX"
+  /** 1.80.0 — SOL-L8: Ryntra's rules on purchases until the DEX, in place of «no rule on transfers». */
+  | "CURVE_RULES_UNTIL_DEX"
+  | "CURVE_HOLDS_FUNDS"
+  | "LP_LOCKED_FOREVER"
+  | "CREATOR_BUY_LOCKED";
+
+/** 1.80.0 — SOL-L8: the rules of Ryntra's verified set, the rules that lock a buyer in, and how a rule program may be changed. */
+export type LaunchCurveRuleId = "WALLET_CAP" | "ANTI_BUNDLE" | "CREATOR_VESTING" | "SNIPER_CEILING";
+export type LaunchLockedInRuleId =
+  | "SELL_FORBIDDEN"
+  | "SELL_ALLOWLIST"
+  | "SELL_CAP_PER_PERIOD"
+  | "TRANSFER_ALLOWLIST"
+  | "TRANSFER_BLOCKLIST"
+  | "TRANSFERS_PAUSABLE"
+  | "FORCED_TRANSFER"
+  | "BALANCE_FREEZE";
+export type LaunchCurveRulesUpgrade = "FROZEN" | "MULTISIG";
+export type LaunchCurveHookPhase = "CURVE" | "REMOVED" | "OUTSIDE_RULE";
+export type LaunchCurveRulesFormat = Readonly<{
+  rules: readonly Readonly<{ id: LaunchCurveRuleId; bounds: Readonly<Record<string, Readonly<{ min: number; max: number }>>> }>[];
+  forbidden: readonly Readonly<{ id: LaunchLockedInRuleId; reason: string }>[];
+  scope: "UNTIL_DEX";
+  side: "PURCHASE";
+  program: Readonly<{ program: string; upgrade: LaunchCurveRulesUpgrade; upgradeAuthority: string | null; audit: string }>;
+}>;
+
+/** «Комісія за переказ» (SOL-L10): where a launch's RevokeZeroFee timeline stands. */
+export type LaunchTransferFeePhase = "CURVE" | "ZERO_SCHEDULED" | "ZERO" | "OUTSIDE_RULE";
 
 /** The launch receipt's facts, as the chain shows them; every mark names the account where anyone can see it. */
 export type LaunchReceiptFacts = Readonly<{
@@ -4314,11 +5110,36 @@ export type LaunchReceiptFacts = Readonly<{
     decimals: number;
     mintAuthority: null;
     freezeAuthority: null;
-    transferHookProgram: null;
+    /** 1.80.0 — SOL-L8: the audited rule program while the token is on its curve; null on every other launch and after the DEX. */
+    transferHookProgram: string | null;
     metadataUpdateAuthority: null;
     metadataPointerAuthority: null;
-    extensions: readonly ("MetadataPointer" | "TokenMetadata")[];
+    extensions: readonly ("MetadataPointer" | "TokenMetadata" | "TransferFeeConfig" | "TransferHook")[];
   }>;
+  /** SOL-L10: the token's fee on transfers until the DEX, from the chain; absent or null — none. */
+  transferFee?: Readonly<{
+    bps: number;
+    mode: "REVOKE_ZERO_FEE";
+    withdrawAuthority: string;
+    phase: Exclude<LaunchTransferFeePhase, "OUTSIDE_RULE">;
+    bpsNow: number;
+    zeroFromEpoch: string | null;
+    epoch: string;
+  }> | null;
+  /**
+   * 1.80.0 — SOL-L8: «Правила на кривій». `program` and `phase` are read from the chain; `rules`, `upgrade`,
+   * `upgradeAuthority` and `audit` are the launch's own record, and `program` is the account where anyone checks the
+   * governance. Absent or null — the token runs no rule on a transfer.
+   */
+  curveRules?: Readonly<{
+    program: string;
+    scope: "UNTIL_DEX";
+    phase: Exclude<LaunchCurveHookPhase, "OUTSIDE_RULE">;
+    rules: readonly LaunchCurveRuleId[];
+    upgrade: LaunchCurveRulesUpgrade;
+    upgradeAuthority: string | null;
+    audit: string;
+  }> | null;
   curve: Readonly<{ quoteReserveRaw: string; migrationQuoteThresholdRaw: string; progressBps: number; migrated: boolean }>;
   graduated: Readonly<{
     pool: string;
@@ -4352,7 +5173,429 @@ export type LaunchTokenResponse = Readonly<{
   receipt: LaunchReceiptFacts | null;
   receiptProblems: readonly string[];
   shareLink: string;
+  /** 1.55.0 — the metadata and picture: by sha256, their IPFS address, and their pinned IPFS copy (null until pinned). */
+  storage?: Readonly<{ metadata: LaunchStoredFile; image: LaunchStoredFile | null }> | null;
+  /** 1.56.0 — «Розширений»: the launch's own numbers and what makes its tokenomics unusual; absent or null on a preset's launch. */
+  advanced?: Readonly<{ terms: LaunchAdvancedTerms; unusual: readonly LaunchUnusualReason[] }> | null;
+  /** 1.56.0 — «Спільнота»: the community token the curve pairs against. */
+  pair?: Readonly<{ mint: string; symbol: string; decimals: number }>;
+  /** 1.73.0 (SOL-L12) — the pair currency's watch; absent or null while not read. */
+  pairWatch?: LaunchPairWatch | null;
   observedAt: string;
+}>;
+
+/** 1.55.0 — a file Ryntra keeps for a launch: its sha256, its IPFS address (CID v1 raw), its pinned IPFS copy. */
+export type LaunchStoredFile = Readonly<{ sha256: string; cid: string; ipfs: Readonly<{ url: string; pinnedAt: string }> | null }>;
+
+/* ------------------------------------------------------------ 1.56.0 — Формати запуску 2 */
+
+/** 1.56.0 — «Розширений»: what the creator chooses in «Розширені параметри». */
+export type LaunchAdvancedChoice = Readonly<{
+  /** Whole tokens, one of the bounds' supplies. */
+  supply: number;
+  startMarketCapUsd: number;
+  graduationMarketCapUsd: number;
+  /** The creator's share of the curve's fee after Meteora's 20 %, percent. */
+  creatorTradingFeePct: number;
+  sniper: LaunchSniperStrength;
+  poolStartFeeBps: number;
+  poolEndFeeBps: number;
+  /** 1.72.0 (SOL-L10): «Комісія за переказ» until the DEX, basis points; absent — none. */
+  transferFeeBps?: number;
+}>;
+export type LaunchSniperStrength = "standard" | "strong";
+export type LaunchUnusualReason = "SUPPLY" | "STEEP" | "FLAT" | "LOW_START" | "HIGH_CREATOR_SHARE" | "SOFT_SNIPERS";
+type LaunchRange = Readonly<{ min: number; max: number }>;
+/** 1.56.0 — a launch's own numbers as kept: the choice and the bounds' part in force when its config was made. */
+export type LaunchAdvancedTerms = LaunchAdvancedChoice & Readonly<{ graduationFee: Readonly<{ pct: number; creatorPct: number }>; firstBuyCapBps: number }>;
+/** 1.56.0 — the bounds the operator approved for «Розширений» on this network. */
+export type LaunchAdvancedBounds = Readonly<{
+  supplies: readonly number[];
+  startMarketCapUsd: LaunchRange;
+  graduationMarketCapUsd: LaunchRange;
+  multiple: LaunchRange;
+  creatorTradingFeePct: LaunchRange;
+  snipers: readonly LaunchSniperStrength[];
+  poolStartFeeBps: LaunchRange;
+  poolEndFeeBps: LaunchRange;
+  graduationFee: Readonly<{ pct: number; creatorPct: number }>;
+  firstBuyCapBps: number;
+  /** 1.72.0 (SOL-L10): the ceiling of «Комісія за переказ» where it is offered; absent — not offered. */
+  transferFeeMaxBps?: number;
+}>;
+
+/** `POST /api/v1/launch/advanced/config/build` (1.56.0) — the launch's own config, the creator's transaction before the launch's. */
+export type LaunchAdvancedConfigBuildRequest = Readonly<{ creator: string; choice: LaunchAdvancedChoice }>;
+export type LaunchAdvancedConfigBuildResponse = Readonly<{
+  buildId: string;
+  network: LaunchNetworkId;
+  config: string;
+  unsignedWireBase64: string;
+  terms: LaunchAdvancedTerms;
+  /** The creator's SOL the config takes as simulated; null when the network would not say. */
+  creatorCostLamports: string | null;
+  expiresAt: string;
+  signableMs: number;
+}>;
+/** `POST /api/v1/launch/advanced/config/submit` (1.56.0) */
+export type LaunchAdvancedConfigSubmitRequest = Readonly<{ buildId: string; creator: string; signedWireBase64: string }>;
+export type LaunchAdvancedConfigSubmitResponse = Readonly<{ config: string; signature: string; state: "CREATED" | "PENDING"; terms: LaunchAdvancedTerms }>;
+
+/** 1.56.0 — Launch Boost: what the bonus is paid in (the pair currency or the token) and which purchases count. */
+export type LaunchBoostCurrencyId = "PAIR" | "TOKEN";
+export type LaunchBoostRoute = "ryntra" | "any";
+/** 1.56.0 — the bounds a campaign stays inside on this network. */
+export type LaunchBoostBounds = Readonly<{
+  currencies: readonly LaunchBoostCurrencyId[];
+  routes: readonly LaunchBoostRoute[];
+  minBonusBps: number;
+  maxBonusBps: number;
+  minMinutes: number;
+  maxDays: number;
+  maxStartDays: number;
+  minHoldHours: number;
+  maxHoldHours: number;
+  minBuyFloorRaw: string;
+  maxCapShareBps: number;
+  maxBudgetRaw: Readonly<{ PAIR: string | null; TOKEN: string | null }>;
+}>;
+/** 1.56.0 — a campaign's rules, as kept and read. */
+export type LaunchBoostRules = Readonly<{
+  currency: LaunchBoostCurrencyId;
+  bonusBps: number;
+  minBuyRaw: string;
+  capPerWalletRaw: string;
+  budgetRaw: string;
+  /** Unix seconds. */
+  startsAt: number;
+  endsAt: number;
+  holdHours: number;
+  routes: LaunchBoostRoute;
+}>;
+/** The rules as sent: `routes` defaults to "ryntra". */
+export type LaunchBoostRulesInput = Omit<LaunchBoostRules, "routes"> & Readonly<{ routes?: LaunchBoostRoute }>;
+export type LaunchBoostLines = Readonly<{ uk: readonly string[]; en: readonly string[] }>;
+export type LaunchBoostCurrency = Readonly<{ mint: string; symbol: string; decimals: number; program: string }>;
+
+/** `POST /api/v1/launch/{mint}/boost/build` (1.56.0) */
+export type LaunchBoostBuildRequest = Readonly<{ creator: string; rules: LaunchBoostRulesInput }>;
+export type LaunchBoostBuildResponse = Readonly<{
+  buildId: string;
+  network: LaunchNetworkId;
+  /** The commitment for the creator to sign first — the fee payer; the escrow's fresh base key signs after. */
+  unsignedWireBase64: string;
+  escrow: string;
+  currency: LaunchBoostCurrency;
+  budgetRaw: string;
+  /** From when purchases count, and when the budget unlocks for the payout (unix seconds). */
+  countsFrom: number;
+  unlocksAt: number;
+  lines: LaunchBoostLines;
+  expiresAt: string;
+  signableMs: number;
+}>;
+/** `POST /api/v1/launch/{mint}/boost/submit` (1.56.0) */
+export type LaunchBoostSubmitRequest = Readonly<{ buildId: string; creator: string; signedWireBase64: string }>;
+export type LaunchBoostSubmitResponse = Readonly<{ state: "LOCKED" | "PENDING" | "FAILED"; signature: string; escrow: string; reason: string | null }>;
+/** `POST /api/v1/launch/{mint}/boost/payout/build` (1.56.0) */
+export type LaunchBoostPayoutBuildRequest = Readonly<{ creator: string }>;
+export type LaunchBoostPayoutBuildResponse = Readonly<{
+  buildId: string;
+  network: LaunchNetworkId;
+  /** The creator signs every one in one window: the escrow claimed back first, then the transfers. */
+  unsignedWireBase64: readonly string[];
+  rows: readonly Readonly<{ wallet: string; bonusRaw: string; firstBuyAt: number; signature: string }>[];
+  remaining: number;
+  totalRaw: string;
+  leftoverRaw: string;
+  claimsEscrow: boolean;
+  currency: LaunchBoostCurrency;
+  expiresAt: string;
+  signableMs: number;
+}>;
+/** `POST /api/v1/launch/{mint}/boost/payout/submit` (1.56.0) */
+export type LaunchBoostPayoutSubmitRequest = Readonly<{ buildId: string; creator: string; signedWireBase64: readonly string[] }>;
+export type LaunchBoostPayoutSubmitResponse = Readonly<{
+  state: "PAID" | "PARTIAL" | "PENDING";
+  txs: readonly Readonly<{ signature: string; state: "CONFIRMED" | "PENDING" | "FAILED"; wallets: number; amountRaw: string; reason: string | null }>[];
+  paidRaw: string;
+}>;
+/** `GET /api/v1/launch/{mint}/boost` (1.56.0) — the campaign as shown before a purchase; NOT_READ — the figures that need the chain are null, never zero. */
+export type LaunchBoostView = Readonly<{
+  network: LaunchNetworkId;
+  token: string;
+  state: "PENDING" | "LOCKED" | "FAILED";
+  read: "OK" | "NOT_READ";
+  rules: LaunchBoostRules;
+  lines: LaunchBoostLines;
+  escrow: string;
+  currency: LaunchBoostCurrency;
+  countsFrom: number;
+  unlocksAt: number;
+  funded: Readonly<{ totalRaw: string; heldRaw: string; claimedRaw: string }> | null;
+  payout: Readonly<{
+    state: "NOT_READ" | "WAITING" | "READY" | "PENDING" | "PARTIAL" | "PAID";
+    recipients: number | null;
+    plannedRaw: string | null;
+    paidRaw: string;
+    leftoverRaw: string | null;
+    signatures: readonly string[];
+  }>;
+  observedAt: string;
+}>;
+
+/** 1.69.0 — the creator's rule: each bucket's part of the creator's own share, whole basis points adding up to 10 000. */
+export type LaunchSplitRule = Readonly<{ shares: Readonly<{ self: number; depth: number; community: number; holders: number }>; community: string | null }>;
+type LaunchSplitTxState = "PENDING" | "CONFIRMED" | "FAILED";
+type LaunchSplitGiven = Readonly<{ depth: string; community: string; holders: string }>;
+type LaunchSplitExcluded = Readonly<{ wallets: number; amountRaw: string }>;
+/** 1.69.0 — who a round left out and why; `unbought` — tokens held beyond what the wallet bought on the market. */
+export type LaunchSplitSnapshot = Readonly<{
+  eligible: number;
+  excluded: Readonly<{ creator: LaunchSplitExcluded; linked: LaunchSplitExcluded; bundle: LaunchSplitExcluded; program: LaunchSplitExcluded; ryntra: LaunchSplitExcluded; unbought: LaunchSplitExcluded }>;
+}>;
+/** 1.69.0 — POOL: the token's DLMM pool made; SYNC: its price taken up to the market's; STEPS: the creator's steps placed. */
+export type LaunchSplitDepthPhase = "POOL" | "SYNC" | "STEPS";
+/** 1.69.0 — `POST /api/v1/launch/{mint}/split/rule/build`. */
+export type LaunchSplitRuleBuildRequest = Readonly<{ creator: string; rule: LaunchSplitRule }>;
+export type LaunchSplitRuleBuildResponse = Readonly<{
+  buildId: string;
+  network: LaunchNetworkId;
+  unsignedWireBase64: string;
+  memo: string;
+  rule: LaunchSplitRule;
+  lines: LaunchBoostLines;
+  expiresAt: string;
+  signableMs: number;
+}>;
+/** 1.69.0 — the signed rule or depth act: one transaction. */
+export type LaunchSplitSubmitRequest = Readonly<{ buildId: string; creator: string; signedWireBase64: string }>;
+export type LaunchSplitRuleSubmitResponse = Readonly<{ state: LaunchSplitTxState; signature: string; reason: string | null }>;
+/** 1.69.0 — a depth act or a payout asked for. */
+export type LaunchSplitActBuildRequest = Readonly<{ creator: string }>;
+export type LaunchSplitDepthBuildResponse = Readonly<{
+  buildId: string;
+  network: LaunchNetworkId;
+  phase: LaunchSplitDepthPhase;
+  unsignedWireBase64: string;
+  pool: string;
+  position: string | null;
+  amountRaw: string;
+  owedRaw: string;
+  ladder: Readonly<{ lowerBinId: number; upperBinId: number; fromPct: number; toPct: number }> | null;
+  expiresAt: string;
+  signableMs: number;
+}>;
+export type LaunchSplitDepthSubmitResponse = LaunchSplitRuleSubmitResponse & Readonly<{ phase: LaunchSplitDepthPhase; position: string | null; amountRaw: string }>;
+export type LaunchSplitPayoutBuildResponse = Readonly<{
+  buildId: string;
+  network: LaunchNetworkId;
+  unsignedWireBase64: readonly string[];
+  round: number;
+  root: string;
+  memo: string;
+  rows: readonly Readonly<{ wallet: string; holdingRaw: string; amountRaw: string }>[];
+  community: Readonly<{ wallet: string; amountRaw: string }> | null;
+  holdersRaw: string;
+  communityRaw: string;
+  owed: Readonly<{ holdersRaw: string; communityRaw: string }>;
+  snapshot: LaunchSplitSnapshot | null;
+  pair: Readonly<{ mint: string; program: string; decimals: number; symbol: string; usdPrice: number; dollar: boolean }>;
+  expiresAt: string;
+  signableMs: number;
+}>;
+export type LaunchSplitPayoutSubmitRequest = Readonly<{ buildId: string; creator: string; signedWireBase64: readonly string[] }>;
+export type LaunchSplitPayoutSubmitResponse = Readonly<{
+  state: "PAID" | "PARTIAL" | "PENDING";
+  round: number;
+  txs: readonly Readonly<{ signature: string; state: LaunchSplitTxState; memo: boolean; wallets: number; amountRaw: string; reason: string | null }>[];
+  paidRaw: string;
+}>;
+/** `GET /api/v1/launch/{mint}/split` (1.69.0) — the creator's division of their own share; NOT_READ — the figures that need the chain are null, never zero. */
+export type LaunchSplitView = Readonly<{
+  network: LaunchNetworkId;
+  token: string;
+  creator: string;
+  open: boolean;
+  read: "OK" | "NOT_READ";
+  rule: LaunchSplitRule | null;
+  since: number | null;
+  pendingRule: LaunchSplitRule | null;
+  segments: readonly Readonly<{ rule: LaunchSplitRule; since: number; signature: string; fromEarnedRaw: string }>[];
+  lines: LaunchBoostLines;
+  pair: Readonly<{ mint: string; symbol: string; decimals: number; dollar: boolean }>;
+  ledger: Readonly<{
+    earnedRaw: string;
+    claimedRaw: string;
+    subjectRaw: string;
+    due: LaunchSplitGiven & Readonly<{ self: string }>;
+    done: LaunchSplitGiven;
+    owed: LaunchSplitGiven;
+    warnings: readonly ("ROLE_MOVED" | "LP_MOVED")[];
+  }> | null;
+  minimums: Readonly<{ depthRaw: string; communityRaw: string; holdersRoundRaw: string; perHolderRaw: string }>;
+  depth: Readonly<{
+    pool: string | null;
+    rule: Readonly<{ topGapPct: number; deepestPct: number; maxBins: number; minBinStep: number }>;
+    placements: readonly Readonly<{
+      kind: LaunchSplitDepthPhase;
+      signature: string;
+      validUntil: string;
+      state: LaunchSplitTxState;
+      reason: string | null;
+      pool: string;
+      position: string | null;
+      amountRaw: string;
+      lowerBinId: number | null;
+      upperBinId: number | null;
+      at: string;
+    }>[];
+    steps: readonly Readonly<{ position: string; pool: string; lowerBinId: number; upperBinId: number; pairRaw: string | null; tokenRaw: string | null; feePairRaw: string | null }>[];
+  }>;
+  rounds: readonly Readonly<{
+    round: number;
+    root: string;
+    rows: readonly Readonly<{ wallet: string; holdingRaw: string; amountRaw: string }>[];
+    community: Readonly<{ wallet: string; amountRaw: string }> | null;
+    snapshot: LaunchSplitSnapshot | null;
+    txs: readonly Readonly<{ signature: string; validUntil: string; state: LaunchSplitTxState; reason: string | null; memo: boolean; wallets: readonly string[]; holdersRaw: string; communityRaw: string }>[];
+    at: string;
+  }>[];
+  observedAt: string;
+}>;
+
+/** 1.56.0 — early access: FCFS or Pro Rata, and the phase the launch is in. */
+export type LaunchEarlyAccessMode = "FCFS" | "PRO_RATA";
+export type LaunchEarlyAccessPhase = "UPCOMING" | "DEPOSITS" | "FILLING" | "VESTING" | "DONE";
+/** 1.56.0 — the bounds early access stays inside on this network. */
+export type LaunchEarlyAccessBounds = Readonly<{
+  modes: readonly LaunchEarlyAccessMode[];
+  minCapRaw: string;
+  maxCapRaw: string;
+  minIndividualCapRaw: string;
+  minDepositMinutes: number;
+  maxDepositHours: number;
+  maxStartDelayHours: number;
+  minVestingHours: number;
+  maxVestingHours: number;
+  minStartMarketCapUsd: number;
+  maxStartMarketCapUsd: number;
+  maxPresaleBps: number;
+}>;
+/** 1.56.0 — an early-access launch's rules, as kept and read (unix seconds). */
+export type LaunchEarlyAccessRules = Readonly<{
+  mode: LaunchEarlyAccessMode;
+  depositStartsAt: number;
+  depositEndsAt: number;
+  maxCapRaw: string;
+  individualCapRaw: string | null;
+  vestingHours: number;
+  startMarketCapUsd: number;
+  supply: number;
+}>;
+/** The rules as sent: `supply` defaults to 1 000 000 000. */
+export type LaunchEarlyAccessRulesInput = Omit<LaunchEarlyAccessRules, "supply"> & Readonly<{ supply?: number }>;
+export type LaunchEarlyAccessSchedule = Readonly<{ depositStartsAt: number; depositEndsAt: number; fillStartsAt: number; activatesAt: number; vestingStartsAt: number; vestingEndsAt: number }>;
+export type LaunchEarlyAccessStep = Readonly<{ signature: string | null; state: "CONFIRMED" | "PENDING" | "FAILED" | "NOT_SENT"; reason: string | null }>;
+export type LaunchEarlyAccessSteps = Readonly<{ MINT: LaunchEarlyAccessStep; POOL: LaunchEarlyAccessStep; VAULT: LaunchEarlyAccessStep }>;
+export type LaunchEarlyAccessFill = Readonly<{
+  spentRaw: string;
+  feeRaw: string;
+  tokensOutRaw: string;
+  shareBps: number;
+  averagePriceUsd: number;
+  priceAfterUsd: number;
+  marketCapAfterUsd: number;
+  refundRaw: string;
+}>;
+export type LaunchEarlyAccessLines = Readonly<{ uk: readonly string[]; en: readonly string[] }>;
+
+/** `POST /api/v1/launch/early-access/build` (1.56.0) */
+export type LaunchEarlyAccessBuildRequest = Readonly<{ creator: string; metadataUri: string; rules: LaunchEarlyAccessRulesInput }>;
+export type LaunchEarlyAccessBuildResponse = Readonly<{
+  buildId: string;
+  network: LaunchNetworkId;
+  /** MINT, POOL, VAULT — the creator's wallet signs all three; sent in this order. */
+  unsignedWireBase64: readonly string[];
+  mint: string;
+  pool: string;
+  vault: string;
+  schedule: LaunchEarlyAccessSchedule;
+  lines: LaunchEarlyAccessLines;
+  presaleBps: number;
+  expiresAt: string;
+  signableMs: number;
+}>;
+/** `POST /api/v1/launch/early-access/submit` (1.56.0) */
+export type LaunchEarlyAccessSubmitRequest = Readonly<{ buildId: string; creator: string; signedWireBase64: readonly string[] }>;
+export type LaunchEarlyAccessSubmitResponse = Readonly<{ mint: string; pool: string; vault: string; state: "PENDING" | "OPEN" | "PARTIAL"; steps: LaunchEarlyAccessSteps; tokenPath: string }>;
+/** `POST /api/v1/launch/{mint}/early-access/deposit/build` (1.56.0) */
+export type LaunchEarlyAccessDepositBuildRequest = Readonly<{ wallet: string; amountRaw: string }>;
+export type LaunchEarlyAccessDepositBuildResponse = Readonly<{
+  buildId: string;
+  network: LaunchNetworkId;
+  unsignedWireBase64: string;
+  escrow: string;
+  opensEscrow: boolean;
+  amountRaw: string;
+  expiresAt: string;
+  signableMs: number;
+}>;
+/** `POST /api/v1/launch/{mint}/early-access/deposit/submit` (1.56.0) */
+export type LaunchEarlyAccessDepositSubmitRequest = Readonly<{ buildId: string; wallet: string; signedWireBase64: string }>;
+export type LaunchEarlyAccessDepositSubmitResponse = Readonly<{ state: "CONFIRMED" | "PENDING"; signature: string }>;
+/**
+ * `POST /api/v1/launch/{mint}/early-access/action/build` (1.56.0) — after the deposits: CLAIM the vested tokens,
+ * WITHDRAW_REMAINING the unspent USDC, WITHDRAW a Pro Rata deposit (all unless `amountRaw` names a part), FILL the
+ * vault's permissionless purchase.
+ */
+export type LaunchEarlyAccessAction = "CLAIM" | "WITHDRAW_REMAINING" | "WITHDRAW" | "FILL";
+export type LaunchEarlyAccessActionBuildRequest = Readonly<{ wallet: string; action: LaunchEarlyAccessAction; amountRaw?: string | null }>;
+export type LaunchEarlyAccessActionBuildResponse = Readonly<{
+  buildId: string;
+  network: LaunchNetworkId;
+  unsignedWireBase64: string;
+  action: LaunchEarlyAccessAction;
+  /** What it moves as read at the build; null for FILL. */
+  amountRaw: string | null;
+  expiresAt: string;
+  signableMs: number;
+}>;
+/** `POST /api/v1/launch/{mint}/early-access/action/submit` (1.56.0) */
+export type LaunchEarlyAccessActionSubmitRequest = Readonly<{ buildId: string; wallet: string; signedWireBase64: string }>;
+export type LaunchEarlyAccessActionSubmitResponse = Readonly<{ state: "CONFIRMED" | "PENDING"; signature: string }>;
+/** `GET /api/v1/launch/{mint}/early-access[?wallet=]` (1.56.0) — a figure not read now is null, never zero. */
+export type LaunchEarlyAccessViewResponse = Readonly<{
+  network: LaunchNetworkId;
+  mint: string;
+  pool: string;
+  vault: string;
+  creator: string;
+  name: string;
+  symbol: string;
+  rules: LaunchEarlyAccessRules;
+  schedule: LaunchEarlyAccessSchedule;
+  lines: LaunchEarlyAccessLines;
+  state: LaunchEarlyAccessPhase;
+  creation: Readonly<{ state: "PENDING" | "OPEN" | "PARTIAL"; steps: LaunchEarlyAccessSteps }>;
+  terms: Readonly<{ startPriceUsd: number; presaleBps: number; ryntraShareBps: 0; atCap: LaunchEarlyAccessFill }>;
+  read: "OK" | "MISSING" | "FAILED";
+  depositedRaw: string | null;
+  capRaw: string;
+  depositors: string | null;
+  boughtRaw: string | null;
+  filled: boolean | null;
+  atDeposited: LaunchEarlyAccessFill | null;
+  chainProblems: readonly string[];
+  mine: Readonly<{
+    depositedRaw: string;
+    claimableRaw: string;
+    claimedRaw: string;
+    allocatedRaw: string;
+    remainingQuoteRaw: string;
+    roomRaw: string | null;
+    refunded: boolean;
+  }> | null;
 }>;
 
 /* ------------------------------------------------------------ 1.27.0 — a launch's market and trading on it */
@@ -4475,11 +5718,21 @@ export type LaunchTradeQuoteResponse = Readonly<{
   amountLeftRaw: string;
   slippageBps: number;
   feeBps: number;
-  fee: Readonly<{ totalRaw: string; creatorRaw: string | null; ryntraRaw: string; meteoraRaw: string; liquidityRaw: string | null }>;
+  fee: Readonly<{
+    totalRaw: string;
+    creatorRaw: string | null;
+    ryntraRaw: string;
+    meteoraRaw: string;
+    liquidityRaw: string | null;
+    /** 1.50.0 — in the pool, `liquidityRaw` split: the creator's and Ryntra's locked positions, the other positions, the compounding share; null on the curve or unread. */
+    liquidity?: Readonly<{ creatorRaw: string; ryntraRaw: string; othersRaw: string; compoundingRaw: string }> | null;
+  }>;
   priceMoveBps: number;
   marketCapAfter: LaunchMoney;
   referral: boolean;
   observedAt: string;
+  /** 1.85.0: the risk verdict over this trade — apart from the token's own `risk` facts on the market read, which are a different list. */
+  tradeRisk: TradeRisk;
 }>;
 
 /** `POST /api/v1/launch/{mint}/trade/build` */
@@ -4511,11 +5764,12 @@ export type LaunchTradeReceiptResponse = Readonly<{ signature: string; state: "S
  * — with a receipt read back from the programs' events. `earnings` null —
  * not read now, never zero.
  */
-export type LaunchFeeSource = "curve" | "graduation" | "lp";
+/** 1.70.0: `surplus` — the creator's part of the curve's surplus, once the curve is full. */
+export type LaunchFeeSource = "curve" | "graduation" | "lp" | "surplus";
 export type LaunchSourceEarnings = Readonly<{ earnedRaw: string; unclaimedRaw: string }>;
 export type LaunchPairView = Readonly<{ mint: string; symbol: string; decimals: number; dollar: boolean }>;
 export type LaunchEarnings = Readonly<{
-  role: Readonly<{ curve: LaunchSourceEarnings; graduation: LaunchSourceEarnings; lp: LaunchSourceEarnings; earnedRaw: string; unclaimedRaw: string }>;
+  role: Readonly<{ curve: LaunchSourceEarnings; graduation: LaunchSourceEarnings; lp: LaunchSourceEarnings; surplus: LaunchSourceEarnings; earnedRaw: string; unclaimedRaw: string }>;
   mine: Readonly<{ shareBps: number; earnedRaw: string; unclaimedRaw: string; claimedRaw: string }>;
 }>;
 export type LaunchCabinetRow = Readonly<{
@@ -4541,7 +5795,7 @@ export type LaunchClaimReceipt = Readonly<{
   signature: string;
   at: string | null;
   pair: LaunchPairView;
-  paid: Readonly<{ curve: string; graduation: string; lp: string }>;
+  paid: Readonly<{ curve: string; graduation: string; lp: string; surplus: string }>;
   vaultPaidRaw: string | null;
   receivedRaw: string;
 }>;
@@ -4567,6 +5821,48 @@ export type LaunchCreatorCabinetResponse = Readonly<{
   observedAt: string;
 }>;
 
+/**
+ * 1.49.0 — the creator's cabinet in figures and the public profile (SOL-L2). `GET /api/v1/launch/{mint}/stats`: what
+ * the creator's side earned over the last day and week by source, the volume, the holders, the traders and those who
+ * came back, the liquidity, after the DEX the depth ±2 % and the pool's fees, the creator's own trades and lock. A
+ * window's figure is exact, a floor (`atLeast`) or not read (`raw: null`) — never a zero on a guess.
+ * `GET /api/v1/launch/creators/{address}/profile`: the launches the wallet made through Ryntra.
+ */
+export type LaunchWindowFigure = Readonly<{ raw: string | null; atLeast: boolean }>;
+export type LaunchCountFigure = Readonly<{ count: number | null; atLeast: boolean }>;
+export type LaunchSourceWindows = Readonly<{ curve: LaunchWindowFigure; graduation: LaunchWindowFigure; lp: LaunchWindowFigure }>;
+export type LaunchStatsResponse = Readonly<{
+  network: LaunchNetworkId;
+  token: string;
+  creator: string;
+  pair: LaunchPairView;
+  tokenDecimals: number;
+  venue: LaunchTradeVenue;
+  progressBps: number;
+  migrated: boolean;
+  links: Readonly<{ curve: string; pool: string | null; position: string | null; lock: string | null }>;
+  revenue: Readonly<{ day: LaunchSourceWindows; week: LaunchSourceWindows }>;
+  volume: Readonly<{ day: LaunchWindowFigure; week: LaunchWindowFigure; all: LaunchWindowFigure }>;
+  holders: LaunchCountFigure;
+  traders: LaunchCountFigure;
+  repeatTraders: LaunchCountFigure;
+  liquidity: LaunchMoney;
+  marketCap: LaunchMoney;
+  market: Readonly<{ depth: Readonly<{ upRaw: string; downRaw: string }> | null; fees: Readonly<{ day: LaunchWindowFigure; week: LaunchWindowFigure }>; lpShareBps: number | null }> | null;
+  creatorTrades: Readonly<{
+    boughtRaw: string;
+    soldRaw: string;
+    soldBps: number | null;
+    soldOf: "bought" | "supply" | null;
+    sales: readonly Readonly<{ signature: string; at: string; tokensRaw: string; pairRaw: string }>[];
+    complete: boolean;
+  }>;
+  lock: Readonly<{ state: "LOCKED" | "PENDING" | "FAILED"; schedule: LaunchLockId; escrow: string; lockedRaw: string | null; cliffAt: string; endAt: string }> | null;
+  observedAt: string;
+}>;
+export type LaunchProfileLaunch = Readonly<{ token: string; name: string; symbol: string; image: string | null; preset: LaunchPresetId; launchedAt: string; pair: LaunchPairView }>;
+export type LaunchCreatorProfileResponse = Readonly<{ network: LaunchNetworkId; creator: string; launches: readonly LaunchProfileLaunch[]; observedAt: string }>;
+
 /** `POST /api/v1/launch/{mint}/claim/build` */
 export type LaunchClaimBuildRequest = Readonly<{ wallet: string }>;
 export type LaunchClaimBuildResponse = Readonly<{
@@ -4581,6 +5877,44 @@ export type LaunchClaimBuildResponse = Readonly<{
   expiresAt: string;
 }>;
 
+/** 1.73.0 (SOL-L12) — the fields a mint's profile is compared by. */
+export type MintProfileField =
+  | "program"
+  | "decimals"
+  | "mintAuthority"
+  | "freezeAuthority"
+  | "extensions"
+  | "transferFee"
+  | "transferFeeAuthority"
+  | "permanentDelegate"
+  | "defaultAccountState"
+  | "transferHook"
+  | "closeAuthority"
+  | "pausable";
+/** 1.73.0 (SOL-L12) — a pair currency's watch: `CHANGED` when its issuer changed what it can do to holders, and since when. */
+export type LaunchPairWatch = Readonly<{ mint: string; symbol: string; state: "OK" | "CHANGED"; changes: readonly MintProfileField[]; since: string | null; checkedAt: string }>;
+
+/** `GET /api/v1/launch/{mint}/claim/review?wallet=` (1.73.0, SOL-L12) — «Забрати все»: the Review before the signature. */
+export type LaunchClaimPocketId = "curve" | "graduation" | "surplus" | "lp" | "leftover" | "transferFee";
+export type LaunchClaimPocketState = "IN_CLAIM" | "EMPTY" | "BEFORE_DEX" | "WAITING" | "CLOSED" | "NOT_YOURS" | "NONE" | "LATER" | "UNREAD";
+export type LaunchClaimReviewResponse = Readonly<{
+  network: LaunchNetworkId;
+  token: string;
+  wallet: string;
+  pair: LaunchPairView;
+  shared: boolean;
+  claimsV2: boolean;
+  pockets: readonly Readonly<{ pocket: LaunchClaimPocketId; state: LaunchClaimPocketState; amountRaw: string | null; transaction: number | null; holder: string | null }>[];
+  blockedBy: "POSITION_MOVED" | null;
+  transactions: readonly Readonly<{ index: number; sources: readonly LaunchFeeSource[]; payout: boolean }>[];
+  expectedRaw: string;
+  networkCostLamports: string | null;
+  surplus: Readonly<{ totalRaw: string; creatorRaw: string; partnerRaw: string; protocolRaw: string }> | null;
+  position: Readonly<{ address: string; pool: string; nftMint: string; holder: string | null; holderIs: "YOU" | "VAULT" | "OTHER" | "UNREAD"; permanentBps: number; forever: boolean }> | null;
+  lock: Readonly<{ escrow: string; cliffAt: string; endAt: string; lockedRaw: string }> | null;
+  observedAt: string;
+}>;
+
 /** `POST /api/v1/launch/{mint}/claim/submit` */
 export type LaunchClaimSubmitRequest = Readonly<{ buildId: string; wallet: string; signedWireBase64: readonly string[] }>;
 /** PARTIAL — the first transaction landed and a later one did not (`failed`): part was taken, the rest still waits. */
@@ -4590,6 +5924,41 @@ export type LaunchClaimSubmitResponse = Readonly<{
   pending: readonly string[];
   failed: readonly Readonly<{ signature: string; reason: string }>[];
 }>;
+
+/* ------------------------------------------------------------ 1.72.0 — «Комісія за переказ» (SOL-L10) */
+
+export type LaunchTransferFeeStep = "HARVEST" | "WITHDRAW";
+export type LaunchTransferFeeReceipt = Readonly<{ step: LaunchTransferFeeStep; signature: string; amountRaw: string; accounts: number | null; at: string }>;
+/** `GET /api/v1/launch/{mint}/transfer-fee` — the rate, the RevokeZeroFee timeline by epoch and the withheld cycle. */
+export type LaunchTransferFeeResponse = Readonly<{
+  network: LaunchNetworkId;
+  token: string;
+  decimals: number;
+  bps: number;
+  mode: "REVOKE_ZERO_FEE";
+  withdrawAuthority: string | null;
+  timeline: Readonly<{ phase: LaunchTransferFeePhase; bpsNow: number; curveBps: number; zeroFromEpoch: string | null; authorityLive: boolean; epoch: string }>;
+  cycle: Readonly<{ inAccountsRaw: string | null; accountsWithWithheld: number | null; onMintRaw: string; withdrawnRaw: string }>;
+  actions: Readonly<{ harvest: boolean; withdraw: boolean }>;
+  receipts: readonly LaunchTransferFeeReceipt[];
+  observedAt: string;
+}>;
+/** `POST /api/v1/launch/{mint}/transfer-fee/build` */
+export type LaunchTransferFeeBuildRequest = Readonly<{ wallet: string; step: LaunchTransferFeeStep }>;
+export type LaunchTransferFeeBuildResponse = Readonly<{
+  buildId: string;
+  network: LaunchNetworkId;
+  step: LaunchTransferFeeStep;
+  unsignedWireBase64: string;
+  expectedRaw: string;
+  accounts: number;
+  networkCostLamports: string | null;
+  expiresAt: string;
+  signableMs: number;
+}>;
+/** `POST /api/v1/launch/{mint}/transfer-fee/submit` */
+export type LaunchTransferFeeSubmitRequest = Readonly<{ buildId: string; wallet: string; signedWireBase64: string }>;
+export type LaunchTransferFeeSubmitResponse = Readonly<{ step: LaunchTransferFeeStep; state: "CONFIRMED" | "PENDING"; signature: string; receipt: LaunchTransferFeeReceipt | null }>;
 
 /* ------------------------------------------------------------ 1.32.0 — the flight log */
 
@@ -4818,12 +6187,16 @@ export type LaunchMarketCycleState =
 
 /** Who keeps a rule of the market: a program enforces a `rule`; Ryntra's server runs a `policy`. */
 export type LaunchMarketEnforcement = "rule" | "policy";
-export type LaunchMarketKeeper = "token-2022" | "meteora-dbc" | "meteora-damm-v2" | "met-lock" | "dynamic-fee-sharing" | "ryntra";
+export type LaunchMarketKeeper = "token-2022" | "meteora-dbc" | "meteora-damm-v2" | "met-lock" | "dynamic-fee-sharing" | "solana-loader" | "ryntra";
 export type LaunchMarketRuleCode =
   | "MINT_REVOKED"
   | "NO_FREEZE"
   | "METADATA_FIXED"
   | "NO_TRANSFER_HOOK"
+  | "TRANSFER_FEE_UNTIL_DEX"
+  /** 1.80.0 — SOL-L8: the rules on the curve, and who may change the program that keeps them. */
+  | "CURVE_RULES_UNTIL_DEX"
+  | "CURVE_RULES_PROGRAM_GOVERNED"
   | "CONFIG_FIXED"
   | "CURVE_HOLDS_FUNDS"
   | "GRADUATION_AT_THRESHOLD"
@@ -4842,6 +6215,8 @@ export type LaunchMarketStateView = Readonly<{ code: LaunchMarketCycleState; sin
  * The market's budget. `NOT_COUNTED`: no budget kept here — earned and reserve null, never zero; `IN_POOL`: no ladder, what
  * it earned waits in Meteora's pools; `COUNTED`: the executor claims its fees into its budget. `ladder` says whether Ryntra's
  * steps stand and were read. 1.39.0: `sources`, `placedRaw`, `revenueRaw` (Ryntra's, never the market's), `inPoolRaw`, `exhausted`.
+ * 1.51.0: `claims` — Ryntra's executor claims this budget and keeps its ladder (Ryntra's market, or a person's Micro market
+ * while Ryntra keeps people's markets open).
  */
 export type LaunchMarketBudget = Readonly<{
   state: "NOT_COUNTED" | "IN_POOL" | "COUNTED";
@@ -4854,6 +6229,7 @@ export type LaunchMarketBudget = Readonly<{
   revenueRaw?: string | null;
   inPoolRaw?: string | null;
   exhausted?: boolean;
+  claims?: boolean;
 }>;
 
 /** Executable depth at one drop (200, 500 or 1 000 basis points): the pair currency paid out until then, raw — `"0"` while the curve is full; null when not read. */
@@ -4899,6 +6275,104 @@ export type LaunchMarketRow = Readonly<{
 /** `GET /api/v1/launch/markets` — with a trade in the last day first, then by state and the newest. */
 export type LaunchMarketsResponse = Readonly<{ network: LaunchNetworkId; markets: readonly LaunchMarketRow[]; complete: boolean; observedAt: string }>;
 
+/** 1.52.0 — markets at least N days old: alive (someone other than the creator and Ryntra traded in the week to day N), quiet, or not read. */
+export type LaunchSurvivalTally = Readonly<{ eligible: number; alive: number; quiet: number; unread: number }>;
+
+/**
+ * `GET /api/v1/launch/survival` (1.55.0) — the survival of every market launched on Ryntra at 7, 30 and 90 days; each
+ * market that lived carries the transaction of the trade that proves it; people's markets and Ryntra's own apart.
+ */
+export type LaunchSurvivalResponse = Readonly<{
+  network: LaunchNetworkId;
+  windowDays: 7;
+  horizons: readonly Readonly<{ days: 7 | 30 | 90; people: LaunchSurvivalTally; ryntra: LaunchSurvivalTally }>[];
+  markets: readonly Readonly<{
+    token: string;
+    symbol: string;
+    launchedAt: string;
+    own: boolean;
+    outcomes: readonly Readonly<{ days: 7 | 30 | 90; state: "young" | "alive" | "quiet" | "unread"; proof: Readonly<{ signature: string; at: string }> | null }>[];
+  }>[];
+  /** `markets` names every market counted; false — the newest 500, the tallies count them all. */
+  listedAll: boolean;
+  ownWalletsComplete: boolean;
+  complete: boolean;
+  observedAt: string;
+}>;
+
+/** 1.74.0 — a launch window: the opening to the minute names it; a launch whose creation landed while it was open is in it. */
+export type LaunchWindow = Readonly<{ id: string; kind: "hourly" | "evening"; opensAt: string; closesAt: string }>;
+
+/** `GET /api/v1/launch/windows` (1.74.0) — the published schedule: hourly at :00 UTC for 10 min, every evening at 20:00 UTC for 30 min. */
+export type LaunchWindowsResponse = Readonly<{
+  open: LaunchWindow | null;
+  next: LaunchWindow;
+  nextEvening: LaunchWindow;
+  schedule: Readonly<{ hourlyMinutes: 10; eveningHourUtc: 20; eveningMinutes: 30 }>;
+  observedAt: string;
+}>;
+
+/** 1.74.0 — a crew member: the X handle (the person's word, confirmed by their wallet), the part of the creator's fees, the answer. */
+export type LaunchCrewMember = Readonly<{
+  handle: string;
+  bps: number;
+  state: "INVITED" | "ACCEPTED" | "DECLINED";
+  /** The wallet that said yes; null otherwise. */
+  wallet: string | null;
+  answeredAt: string | null;
+  /** The words the invitee says yes to. */
+  consent: readonly string[];
+}>;
+
+export type LaunchCrew = Readonly<{
+  id: string;
+  creator: string;
+  creatorHandle: string | null;
+  symbol: string;
+  name: string;
+  preset: "classic" | "protected";
+  window: string | null;
+  members: readonly LaunchCrewMember[];
+  creatorBps: number;
+  createdAt: string;
+  expiresAt: string;
+  expired: boolean;
+  token: string | null;
+  launchedAt: string | null;
+}>;
+
+/** `GET /api/v1/launch/crews/{id}`, and the answer of a write (1.74.0); `open` — crews may be made and answered on this network now. */
+export type LaunchCrewResponse = Readonly<{ network: LaunchNetworkId; crew: LaunchCrew; open: boolean }>;
+
+/** `POST /api/v1/launch/crews` (1.74.0) — the creator's proven wallet invites one to four people by X handle. */
+export type LaunchCrewCreateRequest = Readonly<{
+  creator: string;
+  creatorHandle: string | null;
+  symbol: string;
+  name: string;
+  preset: "classic" | "protected";
+  window: string | null;
+  invites: readonly Readonly<{ handle: string; bps: number }>[];
+}>;
+
+/** `POST /api/v1/launch/crews/{id}/answer` (1.74.0) — an invitee's own yes, or that wallet taking it back ("decline"). */
+export type LaunchCrewAnswerRequest = Readonly<{ handle: string; answer: "accept" | "decline" }>;
+
+/** `GET /api/v1/launch/crews` (1.74.0) — the crews in flight: the Dynamic Fee Sharing vault's own rows, by wallet (no handle). */
+export type LaunchCrewsResponse = Readonly<{
+  network: LaunchNetworkId;
+  crews: readonly Readonly<{
+    token: string;
+    symbol: string;
+    creator: string;
+    creatorBps: number;
+    members: readonly Readonly<{ wallet: string; bps: number }>[];
+    window: string | null;
+    launchedAt: string | null;
+  }>[];
+  observedAt: string;
+}>;
+
 /** `GET /api/v1/launch/markets/{mint}` — the row and the addresses the market lives at. */
 export type LaunchMarketCardResponse = Readonly<{
   network: LaunchNetworkId;
@@ -4942,6 +6416,8 @@ export type LaunchMarketHealthResponse = Readonly<{
     executor: string | null;
     /** Whether the executor acts on this network now: its key on the server, Launch open, a pass of its own in the last 15 minutes, every market not stopped by Ryntra's operator (1.37.0), the switch read. */
     acts: boolean;
+    /** 1.47.0: true when whether it acts could not be read now — `acts` is false by not knowing, never a stop; absent when read. */
+    actsUnread?: boolean;
     lastAction: Readonly<{ kind: LaunchJournalKind; at: string | null; signature: string }> | null;
     /** 1.37.0: `OPERATOR` — Ryntra's operator stopped the executor on this market or on every market. */
     pause: Readonly<{ code: "OPERATOR" | "STOPPED" | "RISK_LIMIT"; at: string | null; /** 1.39.0, `RISK_LIMIT`: the budget's limits that hold. */ risks?: LaunchBudgetRisk[] }> | null;
@@ -4950,4 +6426,93 @@ export type LaunchMarketHealthResponse = Readonly<{
   /** False when the token's receipt was not read: its own rules and the pool's locked positions are missing from `rules`. */
   rulesComplete: boolean;
   observedAt: string;
+}>;
+
+/* ------------------------------------------------- teams (1.75.0, TEAM-1) */
+
+export type TeamKind = "SOLO_CREATOR" | "PROJECT_TEAM" | "DAO_COMMUNITY" | "AGENCY" | "ENTERPRISE";
+export type TeamRole = "OWNER" | "ADMIN" | "FINANCE" | "LAUNCH_OPERATOR" | "MARKET_OPERATOR" | "DEVELOPER" | "ANALYST" | "VIEWER" | "AGENT";
+/** The nine rights of spec §9.2 and `members` — keeping the team's list. */
+export type TeamPermission = "view" | "draft" | "submit" | "sign" | "deploy" | "payout" | "withdraw" | "policy" | "receipts" | "members";
+/** `MULTISIG` — only as a proposal on the team's Squads treasury, approved on chain; a high-risk right is never `ALLOW`. */
+export type TeamGrant = "ALLOW" | "MULTISIG" | "DENY";
+export type TeamRisk = "LOW" | "MEDIUM" | "HIGH";
+export type TeamMemberStatus = "INVITED" | "ACTIVE";
+export type TeamNetworkId = "solana:devnet" | "solana:mainnet";
+export type TeamGrants = Readonly<Record<TeamPermission, TeamGrant>>;
+export type TeamJournalAction = "TEAM_CREATED" | "TEAM_RENAMED" | "MEMBER_INVITED" | "MEMBER_JOINED" | "ROLE_CHANGED" | "MEMBER_REMOVED" | "MEMBER_LEFT" | "TREASURY_LINKED" | "TREASURY_UNLINKED";
+export type TeamRefusal = "NOT_A_MEMBER" | "NOT_JOINED" | "ROLE_DENIES" | "NO_TREASURY" | "NO_MULTISIG_PATH" | "AUTHORITY_CLOSED" | "NOT_A_SIGNER" | "SIGNERS_UNREAD";
+
+/** `GET /api/v1/teams/roles` (1.75.0) — the matrix every team check runs on, and whether teams are served here. */
+export type TeamRolesResponse = Readonly<{
+  kinds: readonly TeamKind[];
+  roles: readonly TeamRole[];
+  permissions: readonly Readonly<{ id: TeamPermission; risk: TeamRisk; authority: readonly string[]; squadsPermission: "initiate" | "vote" | null }>[];
+  matrix: Readonly<Record<TeamRole, TeamGrants>>;
+  limits: Readonly<{ membersPerTeam: number; teamsCreatedPerWallet: number; membershipsPerWallet: number; invitationsPerWallet: number; inviteDays: number }>;
+  open: boolean;
+  network: TeamNetworkId | null;
+}>;
+
+export type TeamSummary = Readonly<{ id: string; name: string; kind: TeamKind; treasury: string | null; role: TeamRole; status: TeamMemberStatus; members: number }>;
+
+/** `GET /api/v1/teams` (1.75.0) — the proven wallet's teams, invitations included. */
+export type TeamsResponse = Readonly<{ network: TeamNetworkId; teams: readonly TeamSummary[] }>;
+
+/** `POST /api/v1/teams` (1.75.0) — a team made by the proven wallet, its first Owner. */
+export type TeamCreateRequest = Readonly<{ name: string; kind: TeamKind }>;
+
+export type TeamMember = Readonly<{ wallet: string; role: TeamRole; status: TeamMemberStatus; label: string | null; invitedBy: string; invitedAt: string; joinedAt: string | null }>;
+
+export type TeamJournalRow = Readonly<{ at: string; actor: string; action: TeamJournalAction; subject: string | null; role: TeamRole | null; previousRole: TeamRole | null }>;
+
+export type TeamSigner = Readonly<{ address: string; initiate: boolean; vote: boolean; execute: boolean; inTeam: boolean; role: TeamRole | null }>;
+
+export type Team = Readonly<{
+  id: string;
+  network: TeamNetworkId;
+  name: string;
+  kind: TeamKind;
+  treasury: string | null;
+  createdBy: string;
+  createdAt: string;
+  version: number;
+  you: Readonly<{ wallet: string; role: TeamRole; status: TeamMemberStatus; grants: TeamGrants }>;
+  /** To an active member only. */
+  members: readonly TeamMember[] | null;
+  /** To a member who reads receipts. */
+  journal: readonly TeamJournalRow[] | null;
+  /** The treasury's members on chain beside the list; null without a treasury. */
+  signers: Readonly<{ read: "OK"; rows: readonly TeamSigner[] }> | Readonly<{ read: "UNREAD" }> | null;
+}>;
+
+/** `GET /api/v1/teams/{id}` and the team writes (1.75.0). */
+export type TeamResponse = Readonly<{ team: Team }>;
+
+/** `POST /api/v1/teams/{id}/members` (1.75.0) — an invitation. */
+export type TeamInviteRequest = Readonly<{ wallet: string; role: TeamRole; label?: string | null }>;
+
+/** `POST /api/v1/teams/{id}/members/{wallet}` (1.75.0). */
+export type TeamMemberChangeRequest = Readonly<{ action: "accept" }> | Readonly<{ action: "role"; role: TeamRole }> | Readonly<{ action: "remove" }>;
+
+/** The team after a member change, or null once the wallet left it. */
+export type TeamMemberChangeResponse = Readonly<{ team: Team | null }>;
+
+/** `POST /api/v1/teams/{id}/treasury` (1.75.0) — a Squads v4 multisig the operator's wallet is on, linked once. */
+export type TeamTreasuryRequest = Readonly<{ multisig: string }>;
+
+/** `GET /api/v1/teams/{id}/check` (1.75.0) — the server's decision for the proven wallet and one right. */
+export type TeamCheckResponse = Readonly<{
+  teamId: string;
+  wallet: string;
+  allowed: boolean;
+  permission: TeamPermission;
+  role: TeamRole | null;
+  grant: TeamGrant;
+  risk: TeamRisk;
+  requires: "NOTHING" | "MULTISIG";
+  refusal: TeamRefusal | null;
+  authority: Readonly<{ id: string; state: HonestState; enforcement: AuthorityEnforcement; signer: "PERSON_EACH" | "PERSON_ONCE" | "MULTISIG" | "PROVIDER" | "RYNTRA_KEY" | "NONE" }> | null;
+  multisig: string | null;
+  squadsPermission: "initiate" | "vote" | null;
 }>;

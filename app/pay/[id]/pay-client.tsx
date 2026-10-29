@@ -1,8 +1,14 @@
 "use client";
 
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+
+import { Review } from "@ryntra/core/ui";
+/* The page sits outside the cabinet's shell: the core's Review brings its tokens, its components and the product's
+   dark/light names for Graphite and Porcelain (`legacy.css`), in the shell's order. */
+import "@ryntra/core/tokens.css";
+import "@ryntra/core/ui.css";
+import "@ryntra/core/legacy.css";
 
 import type { PublicPaymentView } from "@/lib/pay/public";
 import type { PublicPaymentStatus } from "@/lib/pay/model";
@@ -10,6 +16,8 @@ import type { PayCopy } from "@/lib/site/pay-copy";
 import { writePublicLocaleCookie, type PublicLocale } from "@/lib/site/locale";
 import { displayAmount, parseHumanAmount } from "@/lib/solana/amounts";
 import { explorerTxUrl } from "@/lib/solana/explorer";
+import { signFreshBytes } from "@/lib/solana/sign-fresh";
+import { CLASSIC_MINTS, TOKEN_ACCOUNT_RENT_LAMPORTS, reviewNetworkFrom, reviewSol, reviewWord } from "@/lib/ticket/review-words";
 import {
   connectWallet,
   detectWallets,
@@ -19,12 +27,15 @@ import {
   type WalletConnection,
 } from "@/lib/solana/wallet.client";
 
+import { PayBrand } from "../pay-brand";
 import styles from "../pay.module.css";
 
 type Phase =
   | { kind: "idle" }
   | { kind: "connecting"; wallet: string }
   | { kind: "connected"; connection: WalletConnection }
+  /* The core's Review before the wallet (SOL-C14): nothing is built until «Підписати в гаманці». */
+  | { kind: "review"; connection: WalletConnection }
   | { kind: "preparing"; connection: WalletConnection }
   | { kind: "signing"; connection: WalletConnection }
   | { kind: "sending"; connection: WalletConnection }
@@ -39,8 +50,8 @@ const POLL_MS = 10_000;
  * Phantom documents one mobile path: a QR or link that opens the page inside
  * its in-app browser (`https://phantom.app/ul/browse/<url>?ref=<ref>`), where
  * the page's own Pay with wallet then finds the wallet. Solflare mirrors it.
- * Phantom's scanner refused our standard `solana:` transfer request twice
- * in testing as "not a valid address", so the phone path is the page
+ * The founder's Phantom scanner refused our standard `solana:` transfer
+ * request twice as "not a valid address", so the phone path is the page
  * itself: the QR carries the page's HTTPS link for any camera, and on a
  * phone the page offers the wallet apps that can open it.
  */
@@ -65,6 +76,32 @@ function statusWord(status: PublicPaymentStatus, copy: PayCopy): string {
     case "UNKNOWN":
       return copy.statusUnknown;
   }
+}
+
+const fill = (template: string, values: Readonly<Record<string, string>>) => template.replace(/\{(\w+)\}/g, (_, key: string) => values[key] ?? "");
+
+/**
+ * What the page says beside the status, with the figures the server counted (FIX-PAY-1): how much arrived in the
+ * requested token, summed over every payment, and — when only the token's own transfer fee stands between that and the
+ * amount — that it was the fee. «Paid» for more than was asked always says so.
+ */
+function paymentNote(request: PublicPaymentView["request"], copy: PayCopy): string | null {
+  const units = (raw: string) => `${displayAmount(raw, request.token.decimals)} ${request.token.symbol}`;
+  const received = request.received;
+  if (request.note === "WRONG_TOKEN") return copy.noteWrongToken;
+  if (request.note === "UNDERPAID") {
+    if (!received || !request.amount) return copy.noteUnderpaid;
+    const values = { received: units(received.raw), amount: units(request.amount.raw), fee: units(received.feeWithheldRaw ?? "0") };
+    const byFee = received.feeWithheldRaw !== null && BigInt(received.raw) + BigInt(received.feeWithheldRaw) >= BigInt(request.amount.raw);
+    return fill(byFee ? copy.noteUnderpaidFee : copy.noteUnderpaidBy, values);
+  }
+  if (request.note === "OVERPAID") {
+    if (!received) return copy.noteOverpaid;
+    /* An open request asked for no amount: «more» there is paid more than once. */
+    if (!request.amount) return fill(copy.noteOverpaidOpen, { received: units(received.raw) });
+    return fill(copy.noteOverpaidBy, { received: units(received.raw), amount: units(request.amount.raw) });
+  }
+  return null;
 }
 
 function formatWhen(iso: string, locale: PublicLocale): string {
@@ -155,6 +192,11 @@ export function PayClient({
   const connect = useCallback(async (name: string) => {
     setPhase({ kind: "connecting", wallet: name });
     const result = await connectWallet(name);
+    /* A wallet's own overlay closed by the payer (Seeker Connect): nothing went wrong, the choice is back. */
+    if (!result.ok && result.state === "CANCELLED") {
+      setPhase({ kind: "idle" });
+      return;
+    }
     if (!result.ok) {
       setPhase({ kind: "error", connection: null, message: result.reason });
       return;
@@ -181,36 +223,50 @@ export function PayClient({
     }
     inFlight.current = true;
     try {
-      setPhase({ kind: "preparing", connection });
-      const prepared = await fetch(`/api/pay/${encodeURIComponent(request.id)}/transaction`, {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({ payer: connection.address, amount: request.amount ? null : amount.trim() }),
+      /*
+       * The payment's bytes live ~30 s (`lib/solana/blockhash-life.ts`). A signature that comes back later is not sent:
+       * the same payment is prepared again and the wallet asked once more, so the network never refuses it for age.
+       */
+      const fresh = await signFreshBytes({
+        build: async () => {
+          setPhase({ kind: "preparing", connection });
+          const prepared = await fetch(`/api/pay/${encodeURIComponent(request.id)}/transaction`, {
+            method: "POST",
+            headers: { "content-type": "application/json" },
+            body: JSON.stringify({ payer: connection.address, amount: request.amount ? null : amount.trim() }),
+          });
+          const preparedBody = (await prepared.json().catch(() => ({}))) as {
+            data?: { intentId: string; unsignedWireBase64: string; signableMs?: number };
+            error?: { code: string; message: string };
+          };
+          return prepared.ok && preparedBody.data
+            ? { ok: true as const, data: preparedBody.data }
+            : { ok: false as const, code: preparedBody.error?.code ?? null, message: preparedBody.error?.message ?? null };
+        },
+        signableMsOf: (data) => data.signableMs,
+        sign: async (data) => {
+          setPhase({ kind: "signing", connection });
+          const answer = await signTransaction({
+            wallet: connection.wallet,
+            address: connection.address,
+            unsignedWireBase64: data.unsignedWireBase64,
+            chain: "solana:mainnet",
+          });
+          return answer.ok ? { ok: true, value: answer.signedWireBase64 } : answer;
+        },
       });
-      const preparedBody = (await prepared.json().catch(() => ({}))) as {
-        data?: { intentId: string; unsignedWireBase64: string };
-        error?: { code: string; message: string };
-      };
-      if (!prepared.ok || !preparedBody.data) {
-        const code = preparedBody.error?.code;
-        setPhase({
-          kind: "error",
-          connection,
-          message: code === "SELF_PAYMENT" ? copy.errorSelf : preparedBody.error?.message ?? copy.errorGeneric,
-        });
+      if (!fresh.ok) {
+        const message =
+          fresh.stage === "build"
+            ? fresh.failure.code === "SELF_PAYMENT" ? copy.errorSelf : fresh.failure.message ?? copy.errorGeneric
+            : fresh.stage === "sign"
+              ? /refus|reject|declin/i.test(fresh.reason) ? copy.errorRefused : fresh.reason
+              : copy.errorGeneric;
+        setPhase({ kind: "error", connection, message });
         return;
       }
-      setPhase({ kind: "signing", connection });
-      const signed = await signTransaction({
-        wallet: connection.wallet,
-        address: connection.address,
-        unsignedWireBase64: preparedBody.data.unsignedWireBase64,
-        chain: "solana:mainnet",
-      });
-      if (!signed.ok) {
-        setPhase({ kind: "error", connection, message: /refus|reject|declin/i.test(signed.reason) ? copy.errorRefused : signed.reason });
-        return;
-      }
+      const preparedBody = { data: fresh.built };
+      const signed = { signedWireBase64: fresh.signed };
       setPhase({ kind: "sending", connection });
       const submitted = await fetch(`/api/pay/${encodeURIComponent(request.id)}/submit`, {
         method: "POST",
@@ -235,13 +291,22 @@ export function PayClient({
     }
   }, [amount, connection, copy.errorGeneric, copy.errorRefused, copy.errorSelf, request.amount, request.id, typedAmount]);
 
+  /* «Оплатити» opens the core's Review; only its «Підписати в гаманці» builds the payment and asks the wallet. */
+  const review = useCallback(() => {
+    if (!connection || inFlight.current) return;
+    if (!typedAmount.ok) {
+      setPhase({ kind: "error", connection, message: typedAmount.reason });
+      return;
+    }
+    setPhase({ kind: "review", connection });
+  }, [connection, typedAmount]);
+
   const status = request.status;
   const expired = status === "EXPIRED";
   const paid = status === "PAID";
   const canPay = !paid && !expired && pending === null;
   const amountLine = request.amount ? `${request.amount.display} ${request.token.symbol}` : `${copy.amountAny} · ${request.token.symbol}`;
-  const note =
-    request.note === "UNDERPAID" ? copy.noteUnderpaid : request.note === "WRONG_TOKEN" ? copy.noteWrongToken : request.note === "OVERPAID" ? copy.noteOverpaid : null;
+  const note = paymentNote(request, copy);
 
   const amountField = !request.amount ? (
     <label className={styles.field}>
@@ -257,6 +322,63 @@ export function PayClient({
       />
     </label>
   ) : null;
+
+  /* What the Review says, figure by figure: the amount the bytes will carry (typed amounts are fixed while it shows), every
+     cost on its own line — the network's floor, and for a token the recipient's account a first payment may open — and
+     what happens after. Nothing is built yet, so a figure the bytes decide is said as a floor, never as a ceiling: the
+     wallet's priority fee, a Token-2022 account's larger rent and a token's own transfer fee all come on top. Only USDC
+     and USDT are known here to be classic tokens without a fee. */
+  const reviewing = phase.kind === "review" || phase.kind === "preparing" || phase.kind === "signing" || phase.kind === "sending";
+  const reviewAmount = request.amount
+    ? `${request.amount.display} ${request.token.symbol}`
+    : typedAmount.ok
+      ? `${displayAmount(typedAmount.raw, request.token.decimals)} ${request.token.symbol}`
+      : "—";
+  const opensAccount = request.token.mint !== null;
+  const classic = request.token.mint !== null && CLASSIC_MINTS.has(request.token.mint);
+  const accountRent = reviewSol(TOKEN_ACCOUNT_RENT_LAMPORTS, locale);
+  const accountValue = reviewWord(locale, classic ? "upTo" : "from", { x: accountRent });
+  const reviewBlock =
+    reviewing && connection ? (
+      <Review
+        className={styles.review}
+        lang={locale}
+        titleAs="h2"
+        title={fill(copy.reviewTitle, { amount: reviewAmount, to: request.recipient.abbreviated })}
+        pay={reviewAmount}
+        get={fill(opensAccount && !classic ? copy.reviewGetLessFee : copy.reviewGet, { amount: reviewAmount, to: request.recipient.abbreviated })}
+        costs={[
+          { label: reviewWord(locale, "ryntra"), value: reviewWord(locale, "none") },
+          { label: reviewWord(locale, "network"), value: reviewNetworkFrom(locale) },
+          ...(opensAccount ? [{ label: reviewWord(locale, "recipientAccount"), value: accountValue }] : []),
+          ...(opensAccount && !classic ? [{ label: reviewWord(locale, "tokenFee"), value: reviewWord(locale, "tokenFeeIfAny") }] : []),
+        ]}
+        costsTotal={opensAccount ? reviewWord(locale, "plus", { a: reviewNetworkFrom(locale), b: accountValue }) : reviewNetworkFrom(locale)}
+        rows={[
+          ...(request.description ? [{ label: copy.forLabel, value: request.description }] : []),
+          { label: copy.networkLabel, value: copy.network },
+        ]}
+        whatItIs={copy.reviewWhat}
+        signer={<span translate="no">{connection.address.slice(0, 4)}…{connection.address.slice(-4)}</span>}
+        /* The wallet is asked only in «signing»; while the payment is prepared or sent the action stays grey and says why. */
+        ready={phase.kind === "review" || phase.kind === "signing"}
+        blockedReason={phase.kind === "preparing" ? copy.preparing : phase.kind === "sending" ? copy.sending : undefined}
+        signing={phase.kind === "signing"}
+        {...(phase.kind === "review" ? { onCancel: () => setPhase({ kind: "connected", connection }) } : {})}
+        onConfirm={() => void pay()}
+        risk={reviewWord(locale, "walletShowsFee")}
+        details={
+          <dl className={styles.reviewDetails}>
+            <dt>{copy.reviewRecipient}</dt>
+            <dd translate="no">{request.recipient.address}</dd>
+            <dt>{copy.reviewToken}</dt>
+            <dd translate="no">{request.token.mint ?? copy.reviewNativeSol}</dd>
+            <dt>{copy.referenceLabel}</dt>
+            <dd translate="no">{request.reference}</dd>
+          </dl>
+        }
+      />
+    ) : null;
 
   const walletFlow = (
     <>
@@ -286,14 +408,11 @@ export function PayClient({
       ) : null}
 
       {connection && phase.kind === "connected" ? (
-        <button type="button" className={styles.primary} onClick={() => void pay()} disabled={!request.amount && amount.trim() === ""}>
+        <button type="button" className={styles.primary} onClick={review} disabled={!request.amount && amount.trim() === ""}>
           {copy.payButton}
           {request.amount ? ` ${request.amount.display} ${request.token.symbol}` : typedAmount.ok ? ` ${displayAmount(typedAmount.raw, request.token.decimals)} ${request.token.symbol}` : ""}
         </button>
       ) : null}
-      {phase.kind === "preparing" ? <p className={styles.progress}>{copy.preparing}</p> : null}
-      {phase.kind === "signing" ? <p className={styles.progress}>{copy.confirmInWallet}</p> : null}
-      {phase.kind === "sending" ? <p className={styles.progress}>{copy.sending}</p> : null}
       {phase.kind === "error" ? (
         <p className={styles.error} role="alert">
           {phase.message}{" "}
@@ -320,10 +439,7 @@ export function PayClient({
   return (
     <div className={styles.frame}>
       <header className={styles.top}>
-        <Link className={styles.brand} href="/" aria-label="Ryntra">
-          <span className={styles.brandMark} aria-hidden>R</span>
-          <span>Ryntra</span>
-        </Link>
+        <PayBrand />
         <div className={styles.lang} role="group" aria-label={copy.language}>
           <button type="button" className={styles.langButton} data-active={locale === "en"} onClick={() => switchLocale("en")}>EN</button>
           <button type="button" className={styles.langButton} data-active={locale === "uk"} onClick={() => switchLocale("uk")}>UA</button>
@@ -375,7 +491,11 @@ export function PayClient({
           </a>
         ) : null}
 
-        {canPay ? (
+        {canPay && reviewBlock ? (
+          <div className={styles.reviewWrap}>
+            {reviewBlock}
+          </div>
+        ) : canPay ? (
           <div className={styles.ways} data-mobile={mobile}>
             {mobile ? (
               <div className={styles.wallet}>
@@ -434,7 +554,9 @@ export function PayClient({
 
       <footer className={styles.foot}>
         <span>{copy.poweredBy}</span>
-        <Link href="/">{copy.aboutRyntra}</Link>
+        {/* A whole page load, not a client navigation: /pay carries the core's stylesheets (SOL-C14), «/» its own. */}
+        {/* eslint-disable-next-line @next/next/no-html-link-for-pages */}
+        <a href="/">{copy.aboutRyntra}</a>
       </footer>
     </div>
   );

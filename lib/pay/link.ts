@@ -32,6 +32,8 @@ export type PayLink = Readonly<{
   expiresAt: string;
   /** Set only when the link is paid: the settling signature, what arrived (raw and in the token's units) and when. */
   paid: Readonly<{ signature: string; creditedRaw: string; credited: string; paidAt: string | null }> | null;
+  /** What arrived in the requested token so far (every payment summed) and what its own transfer fee withheld (1.78.0). */
+  received: Readonly<{ raw: string; amount: string; feeWithheldRaw: string | null; feeWithheld: string | null }> | null;
 }>;
 
 /** The Solana Pay request for one projected link — the same URL `/pay/<id>` builds from the stored record. */
@@ -67,6 +69,14 @@ export function projectPayLink(request: PublicPaymentRequest, origin: string): P
           creditedRaw: request.paid.creditedRaw,
           credited: exactDecimal(request.paid.creditedRaw, request.token.decimals),
           paidAt: request.paid.paidAt,
+        }
+      : null,
+    received: request.received
+      ? {
+          raw: request.received.raw,
+          amount: exactDecimal(request.received.raw, request.token.decimals),
+          feeWithheldRaw: request.received.feeWithheldRaw,
+          feeWithheld: request.received.feeWithheldRaw === null ? null : exactDecimal(request.received.feeWithheldRaw, request.token.decimals),
         }
       : null,
   };

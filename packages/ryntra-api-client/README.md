@@ -58,6 +58,23 @@ sentence.
 Since 1.10.0 `api.agent.brief()` and `api.agent.critic()` answer the two
 formats over the one agent engine.
 
+Since the AI-13 commit on 1.64.0 (the mobile line's request 68; the contract did
+not change, so the package keeps its number — pin it by commit) `api.assistant.*` calls
+the assistant's own surfaces on the web's routes, behind the bearer:
+`brief(locale, day)` and `setBrief(request, locale)` — «Ранковий огляд»; `credits.get()`,
+`credits.welcome()`, `credits.openOrder({ package })`, `credits.order(id)`
+and `credits.orders()` — the balance, the prices and a package for USDC (an
+order is a `lib/pay` request under the same id, paid with
+`api.pay.transaction(order.id, { payer })`, the wallet's signature over MWA
+and `api.pay.submit`); `watches.*` — «Стежу»; `profile()` and `setProfile()`
+— «Знайомство»; `memory.*` — what Ryntra knows about the person; `tasks.*` —
+«Доручення»; `plans.*` — a plan with its critic, approved or watched (a trade
+only in the person's own plan and Review); `voice()` — the server's
+speech-to-text for a recording, words for the field. A price is spent only
+by a call that carries the `acceptCredits` the person was shown; the client
+adds none. Web Push (`/api/v1/assistant/push`) is a browser's and has no
+method here: the phone's push is its device registration.
+
 Since 1.11.0 the routes the phone already consumes outside `/api/v1` are typed
 as they are served and called by name — `api.markets.*`, `api.stocks.*` (the
 slim row names a pending multiplier and when the session next changes),

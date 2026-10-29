@@ -103,7 +103,7 @@ export function usePortfolio(address: string | null) {
     // Past the wait, a read without prices is said as it is — a dash and «N without a price» — never a skeleton for good.
     return !folded.pricesRead && !beingRead ? { ...folded, pricesRead: true } : folded
   }, [shown, locale, beingRead])
-  // The home-screen widget shows the same read, with its time — never a read without its prices.
+  // The home-screen widget shows the same read, with its time (M9) — never a read without its prices.
   useEffect(() => {
     if (!view || !shown || !readHasPrices(shown)) return
     const changed = setWidgetFigures(figuresOf(view))

@@ -25,6 +25,15 @@ export function fromRaw(raw: bigint | string, decimals: number, places = decimal
   return fraction ? `${whole}.${fraction}` : whole.toString()
 }
 
+/**
+ * Raw units as the amount field takes them back: cut down (never rounded up) to `places`, with the locale's decimal
+ * separator and no grouping — `toRaw` reads it again as the same amount.
+ */
+export function typedAmount(raw: bigint | string, decimals: number, locale: Locale, places = decimals): string {
+  const text = fromRaw(raw, decimals, places)
+  return locale === 'uk' ? text.replace('.', ',') : text
+}
+
 const tag = (locale: Locale) => (locale === 'uk' ? 'uk-UA' : 'en-US')
 
 export function formatNumber(value: number, locale: Locale, digits = 0): string {
@@ -34,6 +43,35 @@ export function formatNumber(value: number, locale: Locale, digits = 0): string 
 /** A raw amount as the person reads it: grouped, at most `digits` after the point. */
 export function formatRaw(raw: bigint | string, decimals: number, locale: Locale, digits = 2): string {
   return formatNumber(Number(fromRaw(raw, decimals, Math.max(digits, 0))), locale, digits)
+}
+
+/**
+ * A fee, never shown smaller than it is: two decimals from a whole unit up,
+ * below it as many as three significant digits need (0.0162 · 0.00041),
+ * never more than the currency has — the last digit rounded up, never down.
+ * A share that is nothing (a part no one takes) is a plain zero.
+ */
+export function formatFeeRaw(raw: bigint | string, decimals: number, locale: Locale): string {
+  const value = typeof raw === 'string' ? BigInt(raw) : raw
+  if (value <= 0n) return formatNumber(0, locale, 0)
+  const unit = 10n ** BigInt(decimals)
+  const leadingZeros = value >= unit ? 0 : decimals - value.toString().length
+  const places = Math.min(decimals, value >= unit ? 2 : Math.max(2, leadingZeros + 3))
+  const step = 10n ** BigInt(decimals - places)
+  const up = ((value + step - 1n) / step) * step
+  return formatRaw(up, decimals, locale, places)
+}
+
+/**
+ * What a fee is of the money it is taken from (a buy's amount in, a sale's proceeds before the fee), in basis points
+ * rounded up — from the same figures the fee's amount is shown from, so «1.01% · 0.121» reads true on 12 and is never
+ * smaller than it is. Null with nothing to take it from.
+ */
+export function feeShareBps(feeRaw: bigint | string, baseRaw: bigint | string): number | null {
+  const fee = typeof feeRaw === 'string' ? BigInt(feeRaw) : feeRaw
+  const base = typeof baseRaw === 'string' ? BigInt(baseRaw) : baseRaw
+  if (base <= 0n || fee < 0n) return null
+  return Number((fee * 10_000n + base - 1n) / base)
 }
 
 const percentSign = (locale: Locale) => (locale === 'uk' ? ' %' : '%')
@@ -64,7 +102,8 @@ const SUBSCRIPT = '₀₁₂₃₄₅₆₇₈₉'
  * them. `plain` is the same number written out, for a screen reader.
  */
 export function formatTinyPrice(value: number, locale: Locale): Readonly<{ text: string; plain: string }> {
-  if (!Number.isFinite(value) || value <= 0) return { text: '0', plain: '0' }
+  // No price read (or none that is a price) is unknown — a dash, never a false zero.
+  if (!Number.isFinite(value) || value <= 0) return { text: '—', plain: '—' }
   const sep = locale === 'uk' ? ',' : '.'
   const plain = new Intl.NumberFormat(tag(locale), { maximumSignificantDigits: 4, maximumFractionDigits: 20 }).format(
     value,
@@ -113,6 +152,18 @@ export function formatMove(bps: number, locale: Locale): string {
   const pct = Math.abs(bps) / 100
   const digits = pct >= 100 ? 0 : 1
   return `${bps > 0 ? '+' : bps < 0 ? '−' : ''}${formatNumber(pct, locale, digits)}${percentSign(locale)}`
+}
+
+/**
+ * How far a trade moves the price, unsigned, as `formatMove` writes it («4,2 %»); null when it rounds to nothing —
+ * said as «barely moves», never as «moves 0 %».
+ */
+export function formatMoveSize(bps: number, locale: Locale): string | null {
+  if (!Number.isFinite(bps)) return null
+  const pct = Math.abs(bps) / 100
+  const digits = pct >= 100 ? 0 : 1
+  if (Math.round(pct * 10 ** digits) === 0) return null
+  return formatMove(Math.abs(bps), locale).replace(/^\+/, '')
 }
 
 /** An address as `Abcd…wxyz`. */

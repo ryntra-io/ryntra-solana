@@ -1,0 +1,81 @@
+/* Ryntra City (decision 70): the AFTERGLOW palette and the night ground, scoped to the city so the pages that
+   still run on the old design keep their own tokens. 3D materials read the same values from city/lib/palette.ts; the
+   roles, faces and type scale are city/styles/brand.ts (the brandbook, docs/city/brand/BRANDBOOK.md). */
+
+.root {
+  --ink: #0b0a14;
+  --ink-deep: #06050c;
+  --graphite: #23222d;
+  --pearl: #e9e4da;
+  --violet: #9945ff;
+  --violet-haze: #2a1640;
+  --zenith: #120b2a;
+  --amber: #ffb23f;
+  --warm: #ffe7c2;
+  --mint: #14f195;
+  --flare: #ff4b3a;
+  --ice: #eef1ff;
+  --text-dim: rgba(238, 241, 255, 0.62);
+  --glass: rgba(11, 10, 20, 0.78);
+  --glass-edge: rgba(153, 69, 255, 0.55);
+  --cut: 14px;
+  /* The side margin, wider where a phone held sideways has its notch (CITY-6a). */
+  --gutter: max(16px, env(safe-area-inset-left), env(safe-area-inset-right));
+  --type-micro: 11px;
+  --type-caption: 12px;
+  --type-small: 13px;
+  --type-body: 14px;
+  --type-base: 15px;
+  --type-lead: 17px;
+  --type-action: 18px;
+  --type-title: 20px;
+  --type-title-l: 22px;
+  --type-headline: 24px;
+  --type-figure: 30px;
+
+  position: fixed;
+  inset: 0;
+  overflow: hidden;
+  overscroll-behavior: none;
+  /* A finger scrolls a sheet but never zooms the page: the city's own pinch belongs to the canvas, whose touch-action
+     is none (CITY-6a). No double-tap zoom either, so a tap answers at once. */
+  touch-action: pan-x pan-y;
+  color-scheme: dark;
+  background: var(--ink-deep);
+  color: var(--ice);
+  font-family: var(--font-ui, system-ui), system-ui, sans-serif;
+  font-size: 16px;
+  line-height: 1.4;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* No weight of its own: every class in the city's sheets still wins over it. */
+:where(.root) button {
+  font: inherit;
+  color: inherit;
+  cursor: pointer;
+}
+
+:where(.root) a {
+  color: inherit;
+}
+
+/* The page's words for search engines and screen readers; the city says them with towers. */
+.hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .root *,
+  .root *::before,
+  .root *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}

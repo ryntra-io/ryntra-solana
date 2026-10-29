@@ -1,0 +1,19 @@
+{
+  "name": "@ryntra/client",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "The typed, read-only client for the Ryntra API v1: every public read the contract serves, with the answers checked against it, five error classes to branch on, cursor pagination and idempotency keys. Generated from openapi/ryntra-api-v1.yaml, which is generated from the contract the routes validate with. No dependency beyond fetch; no key, no signature, no write.",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "types": "./src/index.ts",
+  "sideEffects": false,
+  "license": "Apache-2.0",
+  "ryntra": {
+    "surface": "read-only",
+    "source": "openapi/ryntra-api-v1.yaml",
+    "generator": "scripts/api/build-client-v1.mjs",
+    "contractVersion": "exported as CONTRACT_VERSION from src/generated/contract.ts — kept in one place so no copy of it can go stale"
+  }
+}

@@ -1,93 +1,628 @@
-/*
- * Home's own two states beside the shared shelf (../invest/invest.module.css).
- *
- * A browser that remembers a wallet (`data-wallet-hint`, set before paint by
- * the cabinet's boot script) is reconnecting it silently: the guest's promise
- * waits under the shape of a balance until the wallet answers or the wait
- * ends (`data-settled`), so a returning person is never invited to connect a
- * wallet that is already on its way.
- */
+/* Home 2: an overview of the core — a main column and, from 1280 px, a side one. A guest: «Ринки зараз» and Pulse, beside
+ * them the three steps and the launches. A wallet: the value with its parts and quick actions, the assets and the last
+ * operations, beside them what needs attention, the open orders and the day's moves; Pulse below. Every colour, radius,
+ * space and size here is a token of the core; the blocks are the core's `Block`, the tables its `Table`, the number its
+ * `HeroNumber`. «Ризик портфеля» at the end keeps its own rules from before, on the cabinet's names that `legacy.css`
+ * maps to the same tokens. */
 
-/* `div.` because the shared `.hero` it also wears draws a grid; the pending
-   head is absent unless the browser remembers a wallet. */
-div.pending {
+/* The cabinet's canvas already pads the page; the core's page keeps its own rhythm inside it, not a second margin. */
+.page {
+  width: 100%;
+  padding: 0;
+}
+
+/* A block drawn in the side column on a desk, and one drawn in the main column below 1280 px, where the side column
+   falls under the main one. Scoped by the page, so the core's own `.ryntra-block { display: flex }` never wins by the
+   order the stylesheets load in. */
+@media (max-width: 1279px) {
+  .page .deskOnly {
+    display: none;
+  }
+}
+
+@media (min-width: 1280px) {
+  .page .narrowOnly {
+    display: none;
+  }
+}
+
+/* A browser that remembers a wallet (`data-wallet-hint`, set before paint by the boot script) draws the wallet's shape
+   instead of the guest's steps and door until the wallet is back or the wait ends (`data-settled`), so a returning
+   person is never invited to connect a wallet already on its way. */
+.pending {
   display: none;
 }
 
-:global(html[data-wallet-hint="1"]) .guest:not([data-settled]) {
+:global(html[data-wallet-hint="1"]) .page .guest:not([data-settled]) {
   display: none;
 }
 
 :global(html[data-wallet-hint="1"]) .pending:not([data-settled]) {
-  display: grid;
+  display: block;
 }
 
-.pending[data-settled] {
+/* A block with nothing in it: one sentence. */
+.sentence {
+  margin: 0;
+  color: var(--ryntra-muted);
+  font-size: var(--ryntra-type-ui-size);
+  line-height: var(--ryntra-type-ui-line);
+}
+
+/* Under a table: what one of its reads could not say. */
+.blockNote {
+  margin: 0;
+  color: var(--ryntra-muted);
+  font-size: var(--ryntra-type-caption-size);
+  line-height: var(--ryntra-type-caption-line);
+}
+
+/* A block's foot: its one action, then where its figures came from and when. */
+.foot {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--ryntra-space-2);
+  width: 100%;
+}
+
+.source {
+  color: var(--ryntra-muted);
+  font-size: var(--ryntra-type-caption-size);
+  line-height: var(--ryntra-type-caption-line);
+  font-variant-numeric: tabular-nums;
+}
+
+/* A table cell of two lines: what, then where it stands. */
+.cell {
+  display: grid;
+  min-width: 0;
+}
+
+.cellMain {
+  overflow: hidden;
+  color: var(--ryntra-text);
+  font-weight: var(--ryntra-weight-medium);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.cellMain[data-side="buy"] {
+  color: var(--ryntra-up-text);
+}
+
+.cellMain[data-side="sell"] {
+  color: var(--ryntra-down-text);
+}
+
+.cellSub {
+  overflow: hidden;
+  color: var(--ryntra-muted);
+  font-size: var(--ryntra-type-caption-size);
+  line-height: var(--ryntra-type-caption-line);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* An asset's name: two lines rather than an ellipsis — «Coinbase Wrapped BTC» is read whole on a phone. */
+.assetName {
+  display: -webkit-box;
+  overflow: hidden;
+  white-space: normal;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+}
+
+/* An asset: its mark, its name and its ticker. */
+.asset {
+  display: flex;
+  align-items: center;
+  gap: var(--ryntra-space-2);
+  min-width: 0;
+}
+
+.asset > :first-child {
+  flex: none;
+}
+
+.change {
+  font-variant-numeric: tabular-nums;
+}
+
+.change[data-tone="up"] {
+  color: var(--ryntra-up-text);
+}
+
+.change[data-tone="down"] {
+  color: var(--ryntra-down-text);
+}
+
+/* An operation's state: done is quiet, what needs the person or is on its way stands out, a failure is said in red. */
+.state {
+  color: var(--ryntra-muted);
+  white-space: nowrap;
+}
+
+.state[data-outcome="NEEDS_YOU"],
+.state[data-outcome="IN_FLIGHT"] {
+  color: var(--ryntra-warn-text);
+  font-weight: var(--ryntra-weight-medium);
+}
+
+.state[data-outcome="FAILED"] {
+  color: var(--ryntra-down-text);
+}
+
+/* «Ринки зараз»: one row of tabs above the table. */
+.tabs {
+  display: flex;
+  gap: var(--ryntra-space-1);
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.tab {
+  flex: none;
+  min-height: 36px;
+  padding: 0 var(--ryntra-space-3);
+  border: 1px solid transparent;
+  border-radius: var(--ryntra-radius-field);
+  background: none;
+  color: var(--ryntra-muted);
+  font: inherit;
+  font-size: var(--ryntra-type-ui-size);
+  font-weight: var(--ryntra-weight-medium);
+  cursor: pointer;
+}
+
+.tab:hover {
+  color: var(--ryntra-text);
+}
+
+.tab[aria-selected="true"] {
+  border-color: var(--ryntra-border);
+  background: var(--ryntra-elevated);
+  color: var(--ryntra-text);
+}
+
+.tab:focus-visible,
+.attentionRow:focus-visible,
+.launch:focus-visible {
+  outline: 2px solid var(--ryntra-brand);
+  outline-offset: 2px;
+}
+
+/* «Почни за три кроки»: a numbered list; the first step is the one to take, the next two wait in grey. */
+.steps {
+  display: grid;
+  gap: var(--ryntra-space-3);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.step {
+  display: grid;
+  grid-template-columns: 28px minmax(0, 1fr);
+  align-items: center;
+  gap: var(--ryntra-space-1) var(--ryntra-space-3);
+  color: var(--ryntra-muted);
+  font-size: var(--ryntra-type-ui-size);
+  line-height: var(--ryntra-type-ui-line);
+}
+
+.step[data-current] {
+  color: var(--ryntra-text);
+  font-weight: var(--ryntra-weight-medium);
+}
+
+.stepDot {
+  display: inline-grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  border: 1px solid var(--ryntra-border);
+  border-radius: 50%;
+  font-size: var(--ryntra-type-caption-size);
+  font-variant-numeric: tabular-nums;
+}
+
+.step[data-current] .stepDot {
+  border-color: var(--ryntra-brand);
+  color: var(--ryntra-brand);
+}
+
+.stepText {
+  min-width: 0;
+}
+
+/* The steps below 1280 px: three dots and the next step in one line. */
+.strip {
+  display: flex;
+  align-items: center;
+  gap: var(--ryntra-space-3);
+  min-height: 44px;
+  padding: var(--ryntra-space-2) var(--ryntra-space-3);
+  border: 1px solid var(--ryntra-border);
+  border-radius: var(--ryntra-radius-block);
+  background: var(--ryntra-surface);
+  font-size: var(--ryntra-type-ui-size);
+  line-height: var(--ryntra-type-ui-line);
+  color: var(--ryntra-muted);
+}
+
+.strip b {
+  color: var(--ryntra-text);
+  font-weight: var(--ryntra-weight-medium);
+}
+
+.stripDots {
+  display: inline-flex;
+  flex: none;
+  gap: 6px;
+}
+
+.stripDots > span {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--ryntra-border);
+}
+
+.stripDots > span[data-current] {
+  background: var(--ryntra-brand);
+}
+
+.stripText {
+  min-width: 0;
+}
+
+/* «Лаунчі на Ryntra»: a row per launch — the token and its holders, under them its way to the DEX as a bar. */
+.launches {
+  display: grid;
+  gap: var(--ryntra-space-1);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.launch {
+  display: flex;
+  align-items: center;
+  gap: var(--ryntra-space-3);
+  min-height: 48px;
+  padding: var(--ryntra-space-1) 0;
+  border-radius: var(--ryntra-radius-field);
+  color: inherit;
+  text-decoration: none;
+}
+
+.launch > :first-child {
+  flex: none;
+}
+
+.launch:hover .cellMain {
+  color: var(--ryntra-brand);
+}
+
+.launchBody {
+  display: grid;
+  flex: 1;
+  gap: 2px;
+  min-width: 0;
+}
+
+.launchHead {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--ryntra-space-2);
+  min-width: 0;
+}
+
+.launchHead > .cellSub {
+  flex: none;
+  font-variant-numeric: tabular-nums;
+}
+
+.curve {
+  display: flex;
+  align-items: center;
+  gap: var(--ryntra-space-2);
+  min-width: 0;
+}
+
+.curveBar {
+  position: relative;
+  flex: 1;
+  height: 4px;
+  overflow: hidden;
+  border-radius: 2px;
+  background: var(--ryntra-border);
+}
+
+.curveBar > span {
+  position: absolute;
+  inset: 0 auto 0 0;
+  border-radius: 2px;
+  background: var(--ryntra-brand);
+}
+
+.curve > .cellSub {
+  flex: none;
+  font-variant-numeric: tabular-nums;
+}
+
+/* «Вартість портфеля»: the number and its risk line, its three parts as one bar with their sums, the four quick actions. */
+.value {
+  display: grid;
+  gap: var(--ryntra-space-4);
+  padding: var(--ryntra-space-4);
+  border: 1px solid var(--ryntra-border);
+  border-radius: var(--ryntra-radius-block);
+  background: var(--ryntra-surface);
+}
+
+.valueHead {
+  display: grid;
+  justify-items: start;
+  gap: var(--ryntra-space-1);
+}
+
+.parts {
+  display: grid;
+  gap: var(--ryntra-space-2);
+}
+
+.partsBar {
+  display: flex;
+  gap: 2px;
+  height: 8px;
+  overflow: hidden;
+  border-radius: 4px;
+  background: var(--ryntra-border);
+}
+
+.partsBar > span {
+  min-width: 4px;
+}
+
+.partsBar > [data-part="wallet"],
+.partDot[data-part="wallet"] {
+  background: var(--ryntra-brand);
+}
+
+.partsBar > [data-part="pools"],
+.partDot[data-part="pools"] {
+  background: var(--ryntra-info);
+}
+
+.partsBar > [data-part="orders"],
+.partDot[data-part="orders"] {
+  background: var(--ryntra-warn);
+}
+
+.partsBar > [data-part="collateral"],
+.partDot[data-part="collateral"] {
+  background: var(--ryntra-muted);
+}
+
+.partRisk {
+  color: var(--ryntra-down-text);
+}
+
+.partLink {
+  color: inherit;
+  text-decoration: underline;
+  text-decoration-color: var(--ryntra-border);
+  text-underline-offset: 3px;
+}
+
+.partLink:hover {
+  color: var(--ryntra-text);
+  text-decoration-color: currentColor;
+}
+
+.partsList {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--ryntra-space-1) var(--ryntra-space-6);
+  margin: 0;
+}
+
+.part {
+  display: flex;
+  align-items: baseline;
+  gap: var(--ryntra-space-2);
+  font-size: var(--ryntra-type-ui-size);
+  line-height: var(--ryntra-type-ui-line);
+}
+
+.part dt {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--ryntra-muted);
+}
+
+.part dd {
+  margin: 0;
+  color: var(--ryntra-text);
+  font-weight: var(--ryntra-weight-medium);
+  font-variant-numeric: tabular-nums;
+}
+
+.partDot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+}
+
+.quick {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: var(--ryntra-space-2);
+}
+
+.quick > a {
+  justify-content: center;
+  min-width: 0;
+}
+
+@media (max-width: 599px) {
+  .quick {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+/* «Потребує уваги»: a row per thing that waits, each opening the place that acts on it; nothing waits — one quiet line. */
+.attention {
+  display: grid;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.attention > li + li {
+  border-top: 1px solid var(--ryntra-border);
+}
+
+.attentionRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--ryntra-space-2);
+  width: 100%;
+  min-height: 44px;
+  padding: 0;
+  border: 0;
+  border-radius: var(--ryntra-radius-field);
+  background: none;
+  color: var(--ryntra-text);
+  font: inherit;
+  font-size: var(--ryntra-type-ui-size);
+  line-height: var(--ryntra-type-ui-line);
+  text-align: start;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.attentionRow:hover {
+  color: var(--ryntra-brand);
+}
+
+.attentionCaret {
+  flex: none;
+  color: var(--ryntra-muted);
+}
+
+.calm {
+  display: flex;
+  align-items: center;
+  gap: var(--ryntra-space-2);
+  margin: 0;
+  color: var(--ryntra-muted);
+  font-size: var(--ryntra-type-ui-size);
+  line-height: var(--ryntra-type-ui-line);
+}
+
+.calmIcon {
+  flex: none;
+  color: var(--ryntra-up-text);
+}
+
+/* The portfolio's risk as the hero's small line: a quiet way into «Деталі», not an action. */
+.riskNote {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--ryntra-muted);
+  font: inherit;
+  text-align: start;
+  text-decoration: underline;
+  text-decoration-color: var(--ryntra-border);
+  text-underline-offset: 3px;
+  cursor: pointer;
+}
+
+.riskNote[data-risk="attention"] {
+  color: var(--ryntra-warn-text);
+}
+
+.riskNote:hover {
+  color: var(--ryntra-text);
+}
+
+.riskNote:focus-visible,
+.summary:focus-visible {
+  outline: 2px solid var(--ryntra-brand);
+  outline-offset: 2px;
+  border-radius: var(--ryntra-radius-field);
+  box-shadow: var(--ryntra-brand-glow);
+}
+
+/* Market pulse and the portfolio's risk: below the first screen, one tap away, drawn only when open. */
+.details {
+  border-top: 1px solid var(--ryntra-border);
+  padding-top: var(--ryntra-space-3);
+}
+
+.summary {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--ryntra-space-2);
+  min-height: 44px;
+  align-content: center;
+  color: var(--ryntra-text);
+  font-size: var(--ryntra-type-ui-size);
+  line-height: var(--ryntra-type-ui-line);
+  font-weight: var(--ryntra-weight-medium);
+  cursor: pointer;
+}
+
+/* The native triangle goes with `display: flex`; the core's chevron says the same, turned when open. */
+.summary {
+  list-style: none;
+}
+
+.summary::-webkit-details-marker {
   display: none;
 }
 
-.pendingLabel,
-.pendingValue,
-.pendingActions {
-  display: block;
-  border-radius: var(--ry-r-chip);
-  background: var(--ry-elevated);
-  animation: pulse 1.4s ease-in-out infinite;
+.chevron {
+  flex: none;
+  align-self: center;
+  color: var(--ryntra-muted);
+  transition: transform 150ms ease;
 }
 
-.pendingLabel {
-  width: 40%;
-  height: 14px;
-}
-
-.pendingValue {
-  width: 56%;
-  height: 40px;
-}
-
-.pendingActions {
-  width: 100%;
-  height: 44px;
-  margin-top: var(--ry-s2);
-}
-
-@keyframes pulse {
-  0%,
-  100% {
-    opacity: 0.55;
-  }
-
-  50% {
-    opacity: 1;
-  }
+.details[open] .chevron {
+  transform: rotate(90deg);
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .pendingLabel,
-  .pendingValue,
-  .pendingActions {
-    animation: none;
+  .chevron {
+    transition: none;
   }
 }
 
-/* ── The network's SOL: what is missing, said once, above the one action that brings it ── */
-
-.notice {
-  display: grid;
-  gap: 2px;
-  margin: 0;
-  padding: var(--ry-s3) var(--ry-s4);
-  border: 1px solid color-mix(in srgb, var(--ry-caution) 45%, transparent);
-  border-radius: var(--ry-r-card);
-  background: var(--ry-caution-soft);
-  font-size: var(--ry-fs-dense);
-  line-height: var(--ry-lh-body);
-  color: var(--ry-text);
+.summaryNote {
+  color: var(--ryntra-muted);
+  font-size: var(--ryntra-type-caption-size);
+  line-height: var(--ryntra-type-caption-line);
+  font-weight: var(--ryntra-weight-regular);
 }
 
-.notice b {
-  font-size: var(--ry-fs-copy);
-  font-weight: 600;
+.detailsBody {
+  display: grid;
+  gap: var(--ryntra-grid-gap);
+  padding-top: var(--ryntra-space-3);
 }
 
 /* ── «Ризик портфеля»: drawn as «Розподіл» is — its name a quiet label with «?», then the state: an icon,
@@ -232,6 +767,11 @@ div.pending {
   color: var(--ry-muted);
 }
 
+/* Under «Деталі»: the full check, the width of the column. */
+.riskMain {
+  max-width: 640px;
+}
+
 /* Beside «Розподіл»: the shares' verdict under the shares, a hairline apart. */
 .riskSide {
   margin-top: var(--ry-s2);
@@ -239,446 +779,3 @@ div.pending {
   border-top: 1px solid var(--ry-border);
 }
 
-/* ── Pulse over the full width, Home's own blocks under it ── */
-
-.page {
-  display: grid;
-  gap: var(--ry-s7);
-  width: 100%;
-  min-width: 0;
-}
-
-/* ── Width: a main column and a right one from 1280 px ── */
-
-.layout {
-  display: grid;
-  gap: var(--ry-s6);
-  width: 100%;
-  min-width: 0;
-  align-items: start;
-}
-
-.main,
-.aside {
-  display: grid;
-  gap: var(--ry-s6);
-  align-content: start;
-  min-width: 0;
-}
-
-/* The main column is the head's container: its two sides open by the
-   column's own width, not the screen's. */
-.main {
-  container-type: inline-size;
-}
-
-@media (min-width: 1280px) {
-  .layout {
-    grid-template-columns: minmax(0, 1fr) clamp(340px, 26vw, 420px);
-  }
-
-  /* The assistant has its own block beside the column; the head's quiet way is a phone's. */
-  .headMain .headAsk {
-    display: none;
-  }
-}
-
-/* ── The head's two sides ─────────────────────────────────────────────── */
-
-.headMain {
-  display: grid;
-  gap: var(--ry-s3);
-  align-content: start;
-  min-width: 0;
-}
-
-/* What the money is in and a guest's steps belong to a wide head; a narrow
-   one keeps the balance or the promise alone. */
-.steps,
-.allocation {
-  display: none;
-}
-
-@container (min-width: 640px) {
-  .head {
-    grid-template-columns: minmax(0, 1fr) minmax(220px, 0.8fr);
-    column-gap: var(--ry-s7);
-    align-items: center;
-  }
-
-  /* A wallet's head stands from the top: «Розподіл» and its risk grow downward, and «Купити» stays where it was. */
-  .head[data-need] {
-    align-items: start;
-  }
-
-  .steps,
-  .allocation {
-    display: grid;
-  }
-
-  /* A wide head draws the risk under «Розподіл»; the main column's copy is a narrow head's. */
-  .riskMain {
-    display: none;
-  }
-}
-
-.steps {
-  gap: var(--ry-s3);
-  margin: 0;
-  padding: 0;
-  list-style: none;
-}
-
-.step {
-  display: flex;
-  align-items: center;
-  gap: var(--ry-s3);
-  font-size: var(--ry-fs-copy);
-  font-weight: 500;
-  color: var(--ry-text);
-}
-
-.stepNumber {
-  display: grid;
-  place-items: center;
-  flex: 0 0 auto;
-  width: 32px;
-  height: 32px;
-  border: 1px solid var(--ry-border);
-  border-radius: var(--ry-r-pill);
-  background: var(--ry-elevated);
-  font-size: var(--ry-fs-dense);
-  font-weight: 600;
-  font-variant-numeric: tabular-nums;
-  color: var(--ry-muted);
-}
-
-.allocation {
-  gap: var(--ry-s3);
-  min-width: 0;
-}
-
-.sideLabel {
-  margin: 0;
-  font-size: var(--ry-fs-copy);
-  color: var(--ry-muted);
-}
-
-.bar {
-  display: flex;
-  gap: 2px;
-  height: 10px;
-  overflow: hidden;
-  border-radius: var(--ry-r-pill);
-  background: var(--ry-elevated);
-}
-
-.slice {
-  flex-basis: 0;
-  min-width: 3px;
-  background: var(--ry-c1);
-}
-
-.legend {
-  display: grid;
-  gap: var(--ry-s2);
-  margin: 0;
-  padding: 0;
-  list-style: none;
-}
-
-.legendRow {
-  display: grid;
-  grid-template-columns: 10px minmax(0, 1fr) auto;
-  align-items: center;
-  gap: var(--ry-s2);
-  font-size: var(--ry-fs-dense);
-}
-
-.dot {
-  width: 10px;
-  height: 10px;
-  border-radius: var(--ry-r-pill);
-  background: var(--ry-c1);
-}
-
-.slice[data-slice="1"], .dot[data-slice="1"] { background: var(--ry-c2); }
-.slice[data-slice="2"], .dot[data-slice="2"] { background: var(--ry-c3); }
-.slice[data-slice="3"], .dot[data-slice="3"] { background: var(--ry-c5); }
-.slice[data-slice="4"], .dot[data-slice="4"] { background: var(--ry-muted); }
-
-.legendName {
-  overflow: hidden;
-  font-weight: 500;
-  white-space: nowrap;
-  text-overflow: ellipsis;
-  color: var(--ry-text);
-}
-
-.legendShare {
-  font-variant-numeric: tabular-nums;
-  color: var(--ry-muted);
-}
-
-/* ── The right column's blocks ────────────────────────────────────────── */
-
-.card {
-  display: grid;
-  gap: var(--ry-s3);
-  margin: 0;
-  padding: var(--ry-s4);
-  border: 1px solid var(--ry-border);
-  border-radius: var(--ry-r-card);
-  background: var(--ry-card);
-  list-style: none;
-}
-
-.cardLine {
-  margin: 0;
-  font-size: var(--ry-fs-dense);
-  line-height: var(--ry-lh-body);
-  color: var(--ry-muted);
-}
-
-.textButton {
-  display: inline-flex;
-  align-items: center;
-  justify-self: start;
-  gap: var(--ry-s1);
-  min-height: 44px;
-  padding: 0;
-  border: 0;
-  background: transparent;
-  font: inherit;
-  font-size: var(--ry-fs-dense);
-  font-weight: 500;
-  color: var(--ry-text);
-  text-decoration: underline;
-  text-decoration-color: var(--ry-border-strong);
-  text-underline-offset: 3px;
-  cursor: pointer;
-}
-
-.textButton:hover:not(:disabled) {
-  text-decoration-color: var(--ry-text);
-}
-
-.textButton:disabled {
-  color: var(--ry-muted);
-  cursor: default;
-}
-
-.count {
-  display: inline-grid;
-  place-items: center;
-  min-width: 22px;
-  height: 22px;
-  margin-left: var(--ry-s2);
-  padding: 0 6px;
-  border-radius: var(--ry-r-pill);
-  background: var(--ry-elevated);
-  font-size: var(--ry-fs-label);
-  font-weight: 600;
-  font-variant-numeric: tabular-nums;
-  vertical-align: middle;
-  color: var(--ry-text);
-}
-
-.withIcon {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--ry-s2);
-}
-
-.ask {
-  display: flex;
-  gap: var(--ry-s2);
-}
-
-.askInput {
-  flex: 1 1 auto;
-  min-width: 0;
-  min-height: 44px;
-  padding: 0 var(--ry-s3);
-  border: 1px solid var(--ry-border);
-  border-radius: var(--ry-r-btn-sm);
-  background: var(--ry-bg);
-  font: inherit;
-  font-size: var(--ry-fs-copy);
-  color: var(--ry-text);
-}
-
-.askInput::placeholder {
-  color: var(--ry-muted);
-}
-
-.askInput:focus-visible {
-  outline: none;
-  border-color: var(--ry-border-strong);
-  box-shadow: var(--ry-focus);
-}
-
-.askSend {
-  flex: 0 0 auto;
-}
-
-.chips {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--ry-s2);
-}
-
-.chip {
-  display: inline-flex;
-  align-items: center;
-  min-height: 40px;
-  padding: 0 var(--ry-s3);
-  border: 1px solid var(--ry-border);
-  border-radius: var(--ry-r-pill);
-  font-size: var(--ry-fs-dense);
-  color: var(--ry-text);
-  text-decoration: none;
-  transition: border-color var(--rt-duration-fast) var(--rt-ease), background-color var(--rt-duration-fast) var(--rt-ease);
-}
-
-.chip:hover {
-  border-color: var(--ry-border-strong);
-  background: var(--ry-elevated);
-}
-
-.movers {
-  gap: 0;
-  padding: var(--ry-s1) var(--ry-s2);
-}
-
-.mover {
-  display: grid;
-  grid-template-columns: auto minmax(0, 1fr) auto;
-  align-items: center;
-  gap: var(--ry-s3);
-  min-height: 56px;
-  padding: var(--ry-s2);
-  border-radius: var(--ry-r-btn-sm);
-  color: var(--ry-text);
-  text-decoration: none;
-  transition: background-color var(--rt-duration-fast) var(--rt-ease);
-}
-
-.mover:hover {
-  background: var(--ry-elevated);
-}
-
-.movers li + li .mover {
-  border-top: 1px solid var(--ry-border);
-  border-radius: 0;
-}
-
-.moverLogo {
-  display: grid;
-  place-items: center;
-  width: 32px;
-  height: 32px;
-  overflow: hidden;
-  border-radius: var(--ry-r-pill);
-  background: var(--ry-elevated);
-  object-fit: cover;
-  font-size: var(--ry-fs-label);
-  font-weight: 600;
-  color: var(--ry-muted);
-}
-
-.moverName {
-  overflow: hidden;
-  font-size: var(--ry-fs-copy);
-  font-weight: 500;
-  white-space: nowrap;
-  text-overflow: ellipsis;
-}
-
-.moverFigures {
-  display: grid;
-  justify-items: end;
-  gap: 2px;
-}
-
-.moverPrice {
-  font-size: var(--ry-fs-value);
-  font-weight: 600;
-  font-variant-numeric: tabular-nums;
-  white-space: nowrap;
-}
-
-.moverChange {
-  font-size: var(--ry-fs-data);
-  font-weight: 600;
-  font-variant-numeric: tabular-nums;
-  white-space: nowrap;
-}
-
-.moverChange[data-tone="up"] {
-  color: var(--ry-verified);
-}
-
-.moverChange[data-tone="down"] {
-  color: var(--ry-risk);
-}
-
-.moverChange[data-tone="flat"] {
-  color: var(--ry-muted);
-}
-
-/* Popular companies: eight — two rows of four, four rows of two on a phone;
-   beside the right column on a wide desk, twelve — three rows of four. */
-@media (max-width: 1279px) {
-  .popularTiles > :nth-child(n + 9) {
-    display: none;
-  }
-}
-
-/* The movers' shape while the market lists are read. */
-.ghost {
-  border-radius: var(--ry-r-chip);
-  background: var(--ry-elevated);
-  animation: pulse 1.4s ease-in-out infinite;
-}
-
-.ghostLine {
-  width: 60%;
-  height: 14px;
-}
-
-.ghostShort {
-  width: 56px;
-  height: 14px;
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .ghost {
-    animation: none;
-  }
-}
-
-/* On a phone the two columns become one list: the main blocks first, a
-   wallet's «Автоінвест» right after what it owns, then the right column's
-   other blocks in their order. */
-@media (max-width: 900px) {
-  .layout {
-    display: flex;
-    flex-direction: column;
-    align-items: stretch;
-  }
-
-  .main,
-  .aside {
-    display: contents;
-  }
-
-  .layout [data-block="head"] { order: 1; }
-  .layout [data-block="owned"] { order: 2; }
-  .layout [data-block="autoinvest"] { order: 3; }
-  .layout [data-block="popular"] { order: 4; }
-  .layout [data-block="notes"] { order: 5; }
-  .layout [data-block="autoinvest"][data-guest] { order: 6; }
-  .layout [data-block="ask"] { order: 7; }
-  .layout [data-block="movers"] { order: 8; }
-}

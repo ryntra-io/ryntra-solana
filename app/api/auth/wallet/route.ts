@@ -25,8 +25,8 @@ export const dynamic = "force-dynamic";
  *        the proven address to the account already in the session, `signin`
  *        opens a WALLET-PROOF session for the address.
  *
- *   A wallet is not a Ryntra account. Under the access model in force
- *   since 2026-09-06 exactly three methods open an account —
+ *   A wallet is not a Ryntra account. Under the access model the
+ *   founder approved on 2026-09-06 exactly three methods open an account —
  *   email + password, Google, Telegram — and a signature proves ownership of
  *   an address, which unlocks that address's own private server history and
  *   the right to link it. So `signin` now mints the `rw` proof cookie, never

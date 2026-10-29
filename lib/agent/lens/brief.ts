@@ -19,6 +19,7 @@
 import { AGENT_BRIEF_SECTIONS, AgentBriefSchema, type AgentBrief, type AgentSentence } from "../../api/v1/contract.ts";
 import type { Locale } from "../provenance.ts";
 import type { ToolNote } from "../tools/types.ts";
+import { readWords, windowWords } from "./critic.ts";
 import { nothingRead, subjectSymbol, type LensReads } from "./reads.ts";
 
 export type BriefSection = (typeof AGENT_BRIEF_SECTIONS)[number];
@@ -187,15 +188,15 @@ function unknown(reads: LensReads, locale: Locale): AgentSentence[] {
     );
   }
   for (const tool of reads.unavailable) {
-    out.push(line(w(locale, `The read “${tool}” did not answer; what it would have said is missing here.`, `Читання «${tool}» не відповіло; те, що воно сказало б, тут відсутнє.`), []));
+    out.push(line(w(locale, `The read of ${readWords(tool, locale)} did not answer; what it would have said is missing here.`, `Читання «${readWords(tool, locale)}» не відповіло; те, що воно сказало б, тут відсутнє.`), []));
   }
   for (const card of reads.evidence) {
     if (card.state === "FRESH") continue;
     out.push(
       line(
         card.state === "UNKNOWN"
-          ? w(locale, `The evidence layer covers no observation for this mint over ${card.window}: not enough data, not a clean bill.`, `Шар доказів не має спостереження для цього мінта за ${card.window}: даних недостатньо, і це не чиста довідка.`)
-          : w(locale, `The ${card.window} observation is ${card.state.toLowerCase()}${card.reason ? ` (${card.reason})` : ""}.`, `Спостереження за ${card.window} — ${card.state === "STALE" ? "застаріле" : "недоступне"}${card.reason ? ` (${card.reason})` : ""}.`),
+          ? w(locale, `The evidence layer covers no observation for this mint ${windowWords(card.window)[0]}: not enough data, not a clean bill.`, `Шар доказів не має спостереження для цього мінта ${windowWords(card.window)[1]}: даних недостатньо, і це не чиста довідка.`)
+          : w(locale, `The observation ${windowWords(card.window)[0]} is ${card.state.toLowerCase()}${card.reason ? ` (${card.reason})` : ""}.`, `Спостереження ${windowWords(card.window)[1]} — ${card.state === "STALE" ? "застаріле" : "недоступне"}${card.reason ? ` (${card.reason})` : ""}.`),
         [card.cite],
       ),
     );

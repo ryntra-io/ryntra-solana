@@ -5,7 +5,7 @@ import type { ObservedOutcome } from "./advice-case.ts";
 /**
  * Receipts, and the one condition that creates them.
  *
- * The rule: **no Receipt before an authoritative observed outcome.**
+ * Frozen decision 26: **no Receipt before an authoritative observed outcome.**
  * That is the whole module. `issueReceipt` returns `null` for a case with no
  * outcome and for an outcome nobody authoritative observed, and there is no
  * second path into a `Receipt` — so a screen cannot render one by being

@@ -1,5 +1,5 @@
 import { useLocalSearchParams, useRouter } from 'expo-router'
-import { useState } from 'react'
+import { useState, type ReactNode } from 'react'
 import { Pressable, ScrollView, View } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 
@@ -10,6 +10,7 @@ import { Chip } from '@/components/chip'
 import { ChoiceChips } from '@/components/choice-chips'
 import { FactRow } from '@/components/fact-row'
 import { Field, ToggleRow } from '@/components/field'
+import { HelpDot } from '@/components/help-dot'
 import { Icon } from '@/components/icon'
 import { ScreenHeader } from '@/components/screen'
 import { Skeleton } from '@/components/skeleton'
@@ -76,6 +77,18 @@ function draftFits(card: AgentDraftCard, mint: string | null, planId: string | n
   return false
 }
 
+/** A field's «?»: what its figure means sits one tap deep, at the end of the field's label line — never under it. */
+function Helped({ title, body, children }: { title: string; body: string | readonly string[]; children: ReactNode }) {
+  return (
+    <View>
+      {children}
+      <View className="absolute -top-2 right-0">
+        <HelpDot title={title} body={body} />
+      </View>
+    </View>
+  )
+}
+
 /** A mint the server will not carry a plan on (422) or does not know (404) — said, never retried. */
 function notPlannable(error: unknown): boolean {
   return (
@@ -129,9 +142,6 @@ function RuleRow({
             <Chip label={copy.mode[condition.mode]} tone={condition.mode === 'required' ? 'brand' : 'neutral'} />
           </Pressable>
           {carried ? <Chip label={copy.fromRynRule} tone="evidence" caps={false} /> : null}
-          <Txt variant="labelSm" tone="faint">
-            {copy.modeHint[condition.mode]}
-          </Txt>
         </View>
       </View>
       <Pressable
@@ -368,7 +378,7 @@ export function PlanBuilderScreen() {
       <StateView
         icon="help-circle-outline"
         title={copy.notAStock}
-        detail={copy.plansForStocks}
+        help={{ title: copy.notAStock, body: copy.plansForStocks }}
         action={{ title: copy.pickStock, onPress: () => router.replace('/plans/pick') }}
       />
     )
@@ -406,11 +416,12 @@ export function PlanBuilderScreen() {
         keyboardShouldPersistTaps="handled"
       >
         {step === 0 && fromRyn ? (
-          <View className="flex-row items-start gap-2 rounded-sm border border-line bg-surface px-4 py-3">
+          <View className="flex-row items-center gap-2 rounded-sm border border-line bg-surface px-4 py-3">
             <Icon name="sparkles" size={16} color={fromRyn === 'applied' ? 'brand' : 'muted'} />
             <Txt variant="ui" tone="muted" className="flex-1">
               {fromRyn === 'applied' ? copy.fromRyn : copy.draftGone}
             </Txt>
+            {fromRyn === 'applied' ? <HelpDot title={copy.fromRyn} body={copy.fromRynHelp} /> : null}
           </View>
         ) : null}
         {step === 0 ? (
@@ -441,9 +452,9 @@ export function PlanBuilderScreen() {
               <ChoiceChips
                 choices={[
                   { value: 'none', label: copy.horizonNone },
-                  { value: 'days', label: copy.horizonUnits.days },
-                  { value: 'weeks', label: copy.horizonUnits.weeks },
-                  { value: 'months', label: copy.horizonUnits.months },
+                  { value: 'days', label: copy.horizonChips.days },
+                  { value: 'weeks', label: copy.horizonChips.weeks },
+                  { value: 'months', label: copy.horizonChips.months },
                 ]}
                 value={draft.horizonUnit}
                 onChange={(value: HorizonUnit) => set('horizonUnit', value)}
@@ -465,26 +476,28 @@ export function PlanBuilderScreen() {
 
         {step === 1 ? (
           <>
-            <Field
-              label={copy.budget}
-              value={draft.budget}
-              onChangeText={(text) => set('budget', text)}
-              keyboardType="decimal-pad"
-              placeholder="0"
-              suffix="$"
-              hint={copy.budgetHint}
-              error={error('budget')}
-            />
-            <Field
-              label={copy.risk}
-              value={draft.plannedRisk}
-              onChangeText={(text) => set('plannedRisk', text)}
-              keyboardType="decimal-pad"
-              placeholder="0"
-              suffix="$"
-              hint={copy.riskHint}
-              error={error('plannedRisk')}
-            />
+            <Helped title={copy.budget} body={copy.budgetHint}>
+              <Field
+                label={copy.budget}
+                value={draft.budget}
+                onChangeText={(text) => set('budget', text)}
+                keyboardType="decimal-pad"
+                placeholder="0"
+                suffix="$"
+                error={error('budget')}
+              />
+            </Helped>
+            <Helped title={copy.risk} body={copy.riskHint}>
+              <Field
+                label={copy.risk}
+                value={draft.plannedRisk}
+                onChangeText={(text) => set('plannedRisk', text)}
+                keyboardType="decimal-pad"
+                placeholder="0"
+                suffix="$"
+                error={error('plannedRisk')}
+              />
+            </Helped>
             <Field
               label={copy.reserve}
               value={draft.reserve}
@@ -499,45 +512,62 @@ export function PlanBuilderScreen() {
 
         {step === 2 ? (
           <>
-            <Field
-              label={`${copy.entry} · $ ${perUnit}`}
-              value={draft.entryPrice}
-              onChangeText={(text) => set('entryPrice', text)}
-              keyboardType="decimal-pad"
-              placeholder="0"
-              suffix="$"
-              hint={start ? copy.entryFrom[start.source] : copy.entryNone}
-              error={error('entryPrice')}
-            />
-            <Field
-              label={`${copy.invalidation} · $ ${perUnit}`}
-              value={draft.invalidation}
-              onChangeText={(text) => set('invalidation', text)}
-              keyboardType="decimal-pad"
-              placeholder="0"
-              suffix="$"
-              hint={copy.invalidationHint}
-              error={error('invalidation')}
-            />
+            {/* Where the prefilled figure came from sits behind «?»; a price nobody knows is said on the field. */}
+            {start ? (
+              <Helped title={copy.entry} body={copy.entryFrom[start.source]}>
+                <Field
+                  label={`${copy.entry} · $ ${perUnit}`}
+                  value={draft.entryPrice}
+                  onChangeText={(text) => set('entryPrice', text)}
+                  keyboardType="decimal-pad"
+                  placeholder="0"
+                  suffix="$"
+                  error={error('entryPrice')}
+                />
+              </Helped>
+            ) : (
+              <Field
+                label={`${copy.entry} · $ ${perUnit}`}
+                value={draft.entryPrice}
+                onChangeText={(text) => set('entryPrice', text)}
+                keyboardType="decimal-pad"
+                placeholder="0"
+                suffix="$"
+                hint={copy.entryNone}
+                error={error('entryPrice')}
+              />
+            )}
+            <Helped title={copy.invalidation} body={copy.invalidationHint}>
+              <Field
+                label={`${copy.invalidation} · $ ${perUnit}`}
+                value={draft.invalidation}
+                onChangeText={(text) => set('invalidation', text)}
+                keyboardType="decimal-pad"
+                placeholder="0"
+                suffix="$"
+                error={error('invalidation')}
+              />
+            </Helped>
             <Card padded={false} className="px-4">
               <ToggleRow
                 label={copy.limitPrice}
-                hint={copy.maxPriceHint}
                 value={draft.maxPriceOn}
                 onChange={(value) => set('maxPriceOn', value)}
                 last={!draft.maxPriceOn}
               />
               {draft.maxPriceOn ? (
-                <Field
-                  label={`${copy.maxPrice} · $ ${perUnit}`}
-                  value={draft.maxPrice}
-                  onChangeText={(text) => set('maxPrice', text)}
-                  keyboardType="decimal-pad"
-                  placeholder="0"
-                  suffix="$"
-                  error={error('maxPrice')}
-                  className="py-3"
-                />
+                <Helped title={copy.maxPrice} body={copy.maxPriceHint}>
+                  <Field
+                    label={`${copy.maxPrice} · $ ${perUnit}`}
+                    value={draft.maxPrice}
+                    onChangeText={(text) => set('maxPrice', text)}
+                    keyboardType="decimal-pad"
+                    placeholder="0"
+                    suffix="$"
+                    error={error('maxPrice')}
+                    className="py-3"
+                  />
+                </Helped>
               ) : null}
             </Card>
             <View className="gap-2">
@@ -571,12 +601,7 @@ export function PlanBuilderScreen() {
               onPress={() => setMoreOpen((open) => !open)}
               className="flex-row items-center justify-between rounded-sm border border-line bg-surface px-4 py-3 active:bg-hover"
             >
-              <View className="gap-0.5">
-                <Txt variant="ui">{copy.moreRules}</Txt>
-                <Txt variant="labelSm" tone="faint">
-                  {copy.moreRulesSub}
-                </Txt>
-              </View>
+              <Txt variant="ui">{copy.moreRules}</Txt>
               <Icon name={moreOpen ? 'chevron-up' : 'chevron-down'} size={18} />
             </Pressable>
             {moreOpen ? (
@@ -651,9 +676,19 @@ export function PlanBuilderScreen() {
             ) : null}
             {draft.conditions.length > 0 ? (
               <View className="gap-2">
-                <Txt variant="labelSm" tone="faint" caps>
-                  {copy.marketRules}
-                </Txt>
+                <View className="flex-row items-center gap-1">
+                  <Txt variant="labelSm" tone="faint" caps>
+                    {copy.marketRules}
+                  </Txt>
+                  <HelpDot
+                    title={copy.marketRules}
+                    body={[
+                      copy.marketRulesHint,
+                      `${copy.mode.advisory}: ${copy.modeHint.advisory}`,
+                      `${copy.mode.required}: ${copy.modeHint.required}`,
+                    ]}
+                  />
+                </View>
                 <Card padded={false} className="px-4">
                   {draft.conditions.map((condition, index) => (
                     <RuleRow
@@ -683,9 +718,6 @@ export function PlanBuilderScreen() {
                     />
                   ))}
                 </Card>
-                <Txt variant="labelSm" tone="faint">
-                  {copy.marketRulesHint}
-                </Txt>
               </View>
             ) : null}
           </>
@@ -695,9 +727,12 @@ export function PlanBuilderScreen() {
           <>
             {made.ok ? (
               <Card className="gap-1">
-                <Txt variant="ui" tone="success">
-                  {copy.checkPasses}
-                </Txt>
+                <View className="flex-row items-center gap-1">
+                  <Txt variant="ui" tone="success" className="shrink">
+                    {copy.checkPasses}
+                  </Txt>
+                  {planId ? null : <HelpDot title={copy.stepCheck} body={copy.planContextNote} />}
+                </View>
                 <FactRow
                   label={copy.entryRule}
                   value={`${formatPrice(made.rules.entry.pricePerShare, locale)} ${perUnit}`}
@@ -752,10 +787,13 @@ export function PlanBuilderScreen() {
             )}
             {preview ? (
               <Card className="gap-1">
-                <View className="flex-row items-end justify-between pb-1">
-                  <Txt variant="labelSm" tone="faint" caps>
-                    {copy.plannedSize}
-                  </Txt>
+                <View className="flex-row items-center justify-between pb-1">
+                  <View className="flex-row items-center gap-1">
+                    <Txt variant="labelSm" tone="faint" caps>
+                      {copy.plannedSize}
+                    </Txt>
+                    <HelpDot title={copy.plannedSize} body={[copy.previewNote, copy.sizeNote]} />
+                  </View>
                   <Chip label={copy.limitedBy[preview.limitedBy]} caps={false} />
                 </View>
                 <Txt variant="dataLg">
@@ -773,9 +811,6 @@ export function PlanBuilderScreen() {
                   value={`${formatAmount(preview.capitalLimitedUnits, 4, locale)} ${copy.units[unit]}`}
                   last
                 />
-                <Txt variant="labelSm" tone="faint" className="pt-2">
-                  {copy.previewNote} {copy.sizeNote}
-                </Txt>
               </Card>
             ) : null}
             {planId ? (
@@ -843,7 +878,6 @@ export function PlanBuilderScreen() {
             }
             disabled={lastStep ? !canSave || saving : false}
             loading={saving}
-            hint={lastStep ? (planId ? undefined : copy.planContextNote) : undefined}
           />
         ) : null}
       </SessionGate>

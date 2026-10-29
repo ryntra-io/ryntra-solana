@@ -2,7 +2,20 @@
 
 import { useId, type CSSProperties, type PointerEvent } from "react";
 
-import { ACHIEVEMENT_METAL, achievementBadgeSvg, faceAvatarSvg, RANK_METALS, rankBadgeSvg, SEASON_METAL, seasonBadgeSvg, walletAvatarSvg, type AchievementId, type SeasonBadgeId } from "@/lib/growth/badges";
+import {
+  ACHIEVEMENT_METAL,
+  achievementBadgeSvg,
+  faceAvatarSvg,
+  RANK_METALS,
+  rankBadgeSvg,
+  SEASON_METAL,
+  seasonBadgeSvg,
+  trackBadgeSvg,
+  walletAvatarSvg,
+  type AchievementId,
+  type SeasonBadgeId,
+  type TrackBadgeId,
+} from "@/lib/growth/badges";
 import type { RewardRank } from "@/lib/rewards/rules";
 
 /**
@@ -44,6 +57,12 @@ export function AchievementBadge({ achievement, earned, size = 40, label, classN
 export function SeasonBadge({ badge, earned, size = 40, label, className }: { badge: SeasonBadgeId; earned: boolean; size?: number; label?: string; className?: string }) {
   const id = cleanId(useId());
   return <Drawing markup={seasonBadgeSvg(badge, { id, size, earned })} size={size} label={label} className={className} glow={earned ? SEASON_METAL.mid : undefined} />;
+}
+
+/** A Network track's badge: a partner level, the Founding seat, a creator's or an ambassador's. */
+export function TrackBadge({ badge, earned, size = 40, label, className }: { badge: TrackBadgeId; earned: boolean; size?: number; label?: string; className?: string }) {
+  const id = cleanId(useId());
+  return <Drawing markup={trackBadgeSvg(badge, { id, size, earned })} size={size} label={label} className={className} glow={earned ? ACHIEVEMENT_METAL.mid : undefined} />;
 }
 
 /** Another wallet's face on a board, from the number the server sends beside its masked name. */

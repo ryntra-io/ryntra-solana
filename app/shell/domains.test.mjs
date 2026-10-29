@@ -2,39 +2,46 @@ import assert from "node:assert/strict";
 import { readFileSync, existsSync } from "node:fs";
 import test from "node:test";
 
+import { NAV_GROUPS, NAV_ITEM_IDS, NAV_WORDS } from "@ryntra/core/nav";
+
 import {
   ASSISTANT,
   FORBIDDEN_NAV_WORDS,
+  FUTURES_NOW,
   GROUP_LABELS,
   MENU_ACTION,
   MENU_FOOT,
-  MENU_GROUPS,
+  MENU_PATHS,
   MENU_SECTIONS,
   MENU_SECTION_IDS,
+  MENU_TAGS,
+  NETWORK_PLATE,
   OFF_SURFACE,
   PAGE_GROUP,
   PAGE_LABELS,
   PAGE_SECTION,
-  PHONE_BAR_SECTIONS,
+  PERPS_LABEL,
   PRODUCT_GROUP_IDS,
   PRODUCT_PAGE_IDS,
   SECONDARY_LABELS,
   drawn,
+  MENU_LIVE,
+  menuGroupOf,
   menuNavigation,
   mobileNavigation,
   pageActiveHref,
   registeredPages,
-  sectionTabs,
+  rowForPath,
 } from "./domains.ts";
 import { PRODUCT_ROUTES } from "./product-routes.ts";
 
 /**
- * The navigation contract, pinned — the menu v6.2 (2026-10-06): on a desk
- * «+ Запустити токен» on top, then Головна · Ринки — Торгувати · Лаунч ·
- * Боти — Портфель · Гроші · Винагороди in three groups without headings, each
- * row with its caption, the assistant in the header; a section's pages as
- * tabs at the top of it; on a phone Головна · Ринки · + · Портфель · Ще.
- * These tests exercise the routes the shell actually consumes, so an obsolete
+ * The navigation contract, pinned — Menu 3:
+ * Головна, then the core's groups Торгівля · Автоматика · Заробіток · Гроші,
+ * each opened by its arrow, with only the rows that live on Solana; every
+ * place a row, no tabs above a page; Надіслати and Отримати rows of Гроші; on
+ * a phone the core's bar Головна · Торгівля · Гроші · Портфель · Меню. These
+ * tests exercise the routes the shell actually consumes, so an obsolete
  * fixture cannot keep a second navigation passing after production changes.
  */
 
@@ -62,142 +69,133 @@ test("the registry carries fifteen pages in the product's order, each of one kin
   for (const id of PRODUCT_PAGE_IDS) assert.ok(PRODUCT_GROUP_IDS.includes(PAGE_GROUP[id]), `${id} has no kind`);
 });
 
-test("the menu v6.2 — «+ Запустити токен», then three groups of sections with their captions, nothing behind «Ще»", () => {
-  assert.deepEqual([...MENU_SECTION_IDS], ["home", "markets", "trade", "launch", "bots", "portfolio", "money", "rewards"]);
-  assert.deepEqual(MENU_GROUPS.map((group) => [...group.sections]), [["home", "markets"], ["trade", "launch", "bots"], ["portfolio", "money", "rewards"]]);
+test("Menu 3 — Головна, then the core's groups with the rows that live on Solana, Send and Receive rows of Money", () => {
+  assert.deepEqual([...MENU_SECTION_IDS], ["home", "spot", "swap", "markets", "launch", "futures", "predictions", "bots", "assistant", "pools", "rewards", "portfolio", "deposit", "send", "receive", "bridge", "history"]);
+  /* Every row is a row of the core's composition; nothing of the product's own. */
+  for (const id of MENU_SECTION_IDS) assert.ok(NAV_ITEM_IDS.includes(id), `${id} is not a row of the core's menu`);
   const uk = menuNavigation(ROUTES, "uk");
-  const shape = (menu) => menu.groups.map((group) => group.rows.map((row) => [row.label, row.caption ?? null]));
+  const shape = (menu) => menu.groups.map((group) => [group.label, group.rows.map((row) => row.label)]);
   assert.deepEqual(shape(uk), [
-    [["Головна", null], ["Ринки", "Акції, крипта, меми"]],
-    [["Торгувати", "Спот і обмін"], ["Лаунч", "Свій токен"], ["Боти", "Регулярна купівля, плани"]],
-    [["Портфель", "Позиції й історія"], ["Гроші", "Поповнення й перекази"], ["Винагороди", "Бали, таблиці, сезон"]],
+    ["Головна", ["Головна"]],
+    ["Торгівля", ["Спот", "Обмін", "Ринки", "Лаунч", "Perps", "Прогнози"]],
+    ["Автоматика", ["Боти", "Помічник Ryntra"]],
+    ["Заробіток", ["Пули", "Винагороди"]],
+    ["Гроші", ["Портфель", "Поповнити", "Надіслати", "Отримати", "Між мережами", "Історія"]],
   ]);
   assert.deepEqual(uk.groups.flatMap((group) => group.rows.map((row) => row.href)), [
-    "/app/home", "/app/markets",
-    "/app/spot", "/app/launch/new", "/app/bots",
-    "/app/portfolio", "/app/top-up", "/app/rewards",
+    "/app/home",
+    "/app/spot", "/app/swap", "/app/markets", "/app/launch/markets", "/app/perps", "/app/predictions",
+    "/app/bots", "/app/ryn",
+    "/app/markets/pools", "/app/rewards",
+    "/app/portfolio", "/app/top-up", "/app/send", "/app/receive", "/app/bridge", "/app/activity",
   ]);
   const en = menuNavigation(ROUTES, "en");
-  assert.deepEqual(en.groups.flatMap((group) => group.rows.map((row) => row.label)), ["Home", "Markets", "Trade", "Launch", "Bots", "Portfolio", "Money", "Rewards"]);
-  /* Home is not called Pulse until Pulse is live; no section is Pools or Perps until their tasks are. */
+  assert.deepEqual(en.groups.map((group) => group.label), ["Home", "Trading", "Automation", "Earning", "Money"]);
+  /* Надіслати and Отримати are rows of the first level of Гроші, not a tab of another page. */
+  assert.equal(menuGroupOf("send"), "money");
+  assert.equal(menuGroupOf("receive"), "money");
+  assert.equal(menuGroupOf("home"), null);
+  /* What does not live on Solana is not drawn — never a grey row with a caption: no Agents, Earn, Treasury, no «Ще». */
   for (const locale of ["en", "uk"]) {
-    const rows = menuNavigation(ROUTES, locale).groups.flatMap((group) => group.rows);
-    assert.ok(!rows.some((row) => /Pulse|Пули|Pools|Перпи|Perps/.test(`${row.label} ${row.caption ?? ""}`)), `${locale}: a section that is not live is drawn`);
+    const menu = menuNavigation(ROUTES, locale);
+    const rows = menu.groups.flatMap((group) => group.rows);
+    assert.ok(!rows.some((row) => /^(Agents|Агенти|Earn|Treasury|Казна|Ще|More|Термінал|Terminal)/.test(row.label)), `${locale}: a row that does not live here is drawn`);
+    assert.ok(!menu.groups.some((group) => group.id === "treasury"), `${locale}: the treasury is drawn`);
   }
-  /* The action on top: «+ Запустити токен», the launch form. */
+  /* The core's paths after /app: every row opens its own page. */
+  assert.equal(MENU_PATHS.home, "home");
+  assert.equal(MENU_PATHS.deposit, "top-up");
+  assert.equal(MENU_PATHS.history, "activity");
+  assert.equal(MENU_PATHS.pools, "markets/pools");
+  /* Рішення 56: Perps (Phoenix, B7) and Прогнози (AGG, NAV-6) are rows of Торгівля inside Solana; Ryntra Futures is
+     never a row of Solana's Торгівля (and, paused, no link of its menu either — decision 63). */
+  assert.deepEqual([...MENU_LIVE], [...MENU_SECTION_IDS]);
+  assert.ok(MENU_LIVE.includes("futures"), "Perps live on Solana since B7");
+  assert.ok(MENU_LIVE.includes("predictions"), "Прогнози live on Solana since NAV-6");
+  /* «Запустити токен» is the Launch page's own action, and the search's. */
   assert.equal(uk.action.label, "Запустити токен");
   assert.equal(en.action.label, "Launch a token");
   assert.equal(uk.action.href, "/app/launch/new");
-  /* The assistant is not a row of the desk's groups; it is «Спитати Ryntra» in the header. */
-  assert.ok(!uk.groups.some((group) => group.rows.some((row) => row.id === "agent" || row.href === "/app/ryn")), "Ryntra is a row of the menu");
+  /* The assistant is a row of Автоматика and the header's button. */
   assert.equal(uk.assistant.href, "/app/ryn");
-  assert.equal(uk.assistant.caption, "ШІ-помічник");
   assert.equal(ASSISTANT.ask.uk, "Спитати Ryntra");
-  /* The foot: Відгук, then Settings. */
   assert.equal(uk.feedbackLabel, "Відгук");
-  assert.equal(uk.settings.label, "Налаштування");
+  /* The wallet panel's row is «Акаунт»: «Налаштування» is the menu's own row only. */
+  assert.equal(uk.settings.label, "Акаунт");
   assert.equal(uk.settings.href, "/app/settings");
   assert.equal(en.feedbackLabel, "Feedback");
   /* No «Ryn» where a person reads: the assistant is Ryntra. */
-  for (const label of [...Object.values(MENU_SECTIONS).flatMap((section) => [section.label, section.caption].filter(Boolean)), ASSISTANT.label, ASSISTANT.caption].flatMap((label) => [label.en, label.uk])) {
+  for (const label of [...Object.values(MENU_SECTIONS).map((section) => section.label), ASSISTANT.label, ASSISTANT.caption].flatMap((label) => [label.en, label.uk])) {
     assert.doesNotMatch(label, /\bRyn\b/);
   }
 });
 
-test("every drawn page lives in exactly one drawn section; a page that is planned or off the surface is drawn nowhere", () => {
-  const placed = [...MENU_SECTION_IDS.flatMap((id) => MENU_SECTIONS[id].pages), ...ASSISTANT.pages];
-  assert.deepEqual([...placed].sort(), [...PRODUCT_PAGE_IDS].sort(), "a page is in no section, or in two");
-  assert.equal(new Set(placed).size, placed.length, "a page is listed in two sections");
-  for (const id of PRODUCT_PAGE_IDS) {
-    if (id === "ideas") continue;
-    assert.ok(MENU_SECTIONS[PAGE_SECTION[id]].pages.includes(id), `${id} is placed where it is not listed`);
-  }
-  /* A tab bound to a page that is not drawn is not a tab: Perps is planned, the prediction demo is off the surface. */
-  for (const id of MENU_SECTION_IDS) {
-    for (const tab of MENU_SECTIONS[id].tabs ?? []) {
-      if (!tab.page) continue;
-      const route = ROUTES.find((candidate) => candidate.id === tab.page);
-      assert.ok(drawn(route), `${tab.id} is a tab over ${tab.page}, which is not drawn`);
-    }
-  }
+test("every drawn page lives in exactly one row; a page that is planned or off the surface is drawn nowhere", () => {
+  const placed = MENU_SECTION_IDS.flatMap((id) => MENU_SECTIONS[id].pages);
+  assert.deepEqual([...placed].sort(), [...PRODUCT_PAGE_IDS].sort(), "a page is in no row, or in two");
+  assert.equal(new Set(placed).size, placed.length, "a page is listed in two rows");
+  for (const id of PRODUCT_PAGE_IDS) assert.ok(MENU_SECTIONS[PAGE_SECTION[id]].pages.includes(id), `${id} is placed where it is not listed`);
+  /* The registered Perps page stays planned under Spot; the row Perps holds Phoenix's route only (B7, PERP-1). */
   assert.equal(ROUTES.find((route) => route.id === "perps").readiness, "planned");
+  assert.equal(PAGE_SECTION.perps, "spot");
+  assert.deepEqual([...MENU_SECTIONS.futures.pages], []);
   assert.deepEqual([...OFF_SURFACE], ["predictions"]);
 });
 
-test("a section's pages are tabs at the top of its page — one component, drawn by the shell", () => {
-  const tabs = (path, locale = "uk") => {
-    const found = sectionTabs(path, ROUTES, locale);
-    return found ? [found.section, found.tabs.map((tab) => tab.label), found.current] : null;
-  };
-  assert.deepEqual(tabs("/app/spot"), ["trade", ["Спот", "Обмін"], "/app/spot"]);
-  assert.deepEqual(tabs("/app/swap"), ["trade", ["Спот", "Обмін"], "/app/swap"]);
-  assert.deepEqual(tabs("/app/launch/new"), ["launch", ["Запустити токен", "Лаунчі на Ryntra", "Мої лаунчі"], "/app/launch/new"]);
-  assert.deepEqual(tabs("/app/launch/markets"), ["launch", ["Запустити токен", "Лаунчі на Ryntra", "Мої лаунчі"], "/app/launch/markets"]);
-  assert.deepEqual(tabs("/app/launch/mine"), ["launch", ["Запустити токен", "Лаунчі на Ryntra", "Мої лаунчі"], "/app/launch/mine"]);
-  assert.deepEqual(tabs("/app/bots"), ["bots", ["Мої боти", "Каталог"], "/app/bots"]);
-  assert.deepEqual(tabs("/app/bots/catalog"), ["bots", ["Мої боти", "Каталог"], "/app/bots/catalog"]);
-  assert.deepEqual(tabs("/app/strategies/new"), ["bots", ["Мої боти", "Каталог"], "/app/bots"], "the plan builder stands under «Мої боти»");
-  assert.deepEqual(tabs("/app/portfolio"), ["portfolio", ["Позиції", "Історія"], "/app/portfolio"]);
-  assert.deepEqual(tabs("/app/activity"), ["portfolio", ["Позиції", "Історія"], "/app/activity"]);
-  assert.deepEqual(tabs("/app/receipts/abc"), ["portfolio", ["Позиції", "Історія"], "/app/activity"]);
-  assert.deepEqual(tabs("/app/top-up"), ["money", ["Поповнити", "Надіслати", "Отримати", "Між мережами"], "/app/top-up"]);
-  assert.deepEqual(tabs("/app/bridge", "en"), ["money", ["Top up", "Send", "Receive", "Cross-chain"], "/app/bridge"]);
-  /* A page that is none of a section's tabs draws none: a launch's page, a company's page, Markets, Home, Rewards. */
-  for (const path of ["/app/launch/So11111111111111111111111111111111111111112", "/app/stocks/NVDAx", "/app/markets", "/app/home", "/app/rewards", "/app/settings"]) {
-    assert.equal(sectionTabs(path, ROUTES, "uk"), null, `${path} draws tabs it does not have`);
-  }
-  /* The shell draws them, and the pages no longer draw tabs of their own. */
-  const shell = code("./app-shell.tsx");
-  assert.match(shell, /const tabs = product \? sectionTabs\(pathname, product\.routes, product\.locale\) : null;/);
-  assert.match(shell, /\{tabs \? <SectionTabsBar tabs=\{tabs\} \/> : null\}/);
+test("no tabs above a page: every place is a row of the menu, and the frame draws no row of tabs or tools", () => {
+  const frame = code("../app/product-shell.tsx");
+  assert.doesNotMatch(frame, /sectionTabs|SectionTabsBar|sol-pagebar|<AskRyntraButton|<HeaderRewards|<NotificationsBell/, "something stands above the page again");
+  assert.equal(existsSync(new URL("./section-tabs.tsx", import.meta.url)), false, "the tab bar above a page is back");
+  assert.doesNotMatch(code("./app-shell.tsx"), /sectionTabs|SectionTabsBar/, "the old frame draws tabs above a page");
   for (const path of ["../app/portfolio/portfolio-tabs.tsx", "../app/launch/launch-tabs.tsx", "../app/markets/tabs.ts"]) {
     assert.equal(existsSync(new URL(path, import.meta.url)), false, `${path} — a second tab component — is back`);
   }
   for (const path of ["../solana/workspace/holdings/page.tsx", "../solana/workspace/history/page.tsx", "../solana/workspace/send/page.tsx", "../solana/workspace/receive/page.tsx", "../app/launch/new/launch-flow.tsx", "../app/launch/mine/creator-cabinet.tsx"]) {
     assert.doesNotMatch(code(path), /PortfolioTabs|LaunchTabs|<MoneyTabs/, `${path} still draws tabs of its own`);
   }
-  const bar = readFileSync(new URL("./section-tabs.tsx", import.meta.url), "utf8");
-  assert.match(bar, /aria-current=\{tabs\.current === tab\.href \? "page" : undefined\}/);
+  /* The frame hands the core the row on screen, its paths and what lives here. */
+  assert.match(frame, /section=\{row\}/);
+  assert.match(frame, /sectionPaths=\{MENU_PATHS\}/);
+  assert.match(frame, /live=\{LIVE\}/);
+  assert.match(frame, /onAssistant=/);
 });
 
-test("the phone: Головна · Ринки · + · Портфель · Ще, and «Ще» opens Торгувати, Боти, Гроші, Винагороди, Ryntra and Налаштування", () => {
+test("the old frame's phone bar is the core's: Головна · Торгівля · Гроші · Портфель · Меню", () => {
   const phone = mobileNavigation(ROUTES, "uk");
-  assert.deepEqual(phone.map((entry) => entry.label), ["Головна", "Ринки", "Лаунч", "Портфель", "Ще"]);
-  assert.deepEqual(phone.map((entry) => entry.href), ["/app/home", "/app/markets", "/app/launch/new", "/app/portfolio", null]);
-  assert.deepEqual(mobileNavigation(ROUTES, "en").map((entry) => entry.label), ["Home", "Markets", "Launch", "Portfolio", "More"]);
-  assert.equal(phone[2].action, true, "«+» is the launch, drawn as an action");
-  assert.equal(phone[2].icon, MENU_ACTION.icon);
-  assert.deepEqual(phone[4].matches, ["/app/spot", "/app/bots", "/app/top-up", "/app/rewards", "/app/ryn", "/app/settings"]);
-  assert.deepEqual([...PHONE_BAR_SECTIONS], ["home", "markets", "portfolio"]);
-  /* Every row «Ще» opens lights it. */
-  const { routes } = menuNavigation(ROUTES, "uk");
-  for (const path of ["/app/swap", "/app/send", "/app/bridge", "/app/rewards", "/app/bots/catalog", "/app/ryn", "/app/settings"]) {
-    assert.ok(phone[4].matches.includes(pageActiveHref(path, routes)), `«Ще» is not current on ${path}`);
-  }
-  /* «Ще» opens the drawer; on a phone it hides the rows the bar holds and shows Ryntra. */
-  const shell = readFileSync(new URL("./app-shell.tsx", import.meta.url), "utf8");
-  assert.match(shell, /onMore=\{\(\) => setDrawer\(\(value\) => !value\)\}/);
-  assert.match(shell, /onNavigate=\{\(\) => setDrawer\(false\)\}/);
-  assert.match(shell, /id: "domains-assistant"/);
-  const css = readFileSync(new URL("./shell.css", import.meta.url), "utf8");
-  const phoneRules = css.slice(css.indexOf("the menu v6.2 =="));
-  for (const selector of ['.rs-group[data-group="domains-discover"]', '.rs-link[data-row="launch"]', '.rs-link[data-row="portfolio"]', ".rs-nav-launch"]) {
-    assert.ok(phoneRules.includes(selector), `the phone's «Ще» does not hide ${selector}`);
-  }
-  assert.match(phoneRules, /\.rs-group\[data-group="domains-assistant"\] \{\s*display: none;/, "the assistant is a row of the desk's menu");
+  assert.deepEqual(phone.map((entry) => entry.label), ["Головна", "Торгівля", "Гроші", "Портфель", "Меню"]);
+  assert.deepEqual(phone.map((entry) => entry.href), ["/app/home", "/app/spot", "/app/top-up", "/app/portfolio", null]);
+  assert.deepEqual(mobileNavigation(ROUTES, "en").map((entry) => entry.label), ["Home", "Trading", "Money", "Portfolio", "Menu"]);
+  /* Гроші stands for every row of its group, Send and Receive among them. */
+  assert.ok(phone[2].matches.includes("/app/send") && phone[2].matches.includes("/app/receive"));
+  /* The product's own frame is the core's: below 1024 px it draws the same bar of the core's places (`PhoneBar`), with
+     «Гроші» opening its four large actions and «Меню» the core's sheet (NAV-1, in place of B19) — handed to the core as
+     its `bottomBar` (A14, SOL-C11), which pins it and keeps a page's pinned action above it (UX-900). */
+  assert.doesNotMatch(code("../app/product-shell.tsx"), /mobileNavigation|ProductMobileNav|RyntraAppShell/);
+  assert.match(code("../app/product-shell.tsx"), /bottomBar=\{\(menu\) => <PhoneBar locale=\{locale\} row=\{row\} onNavigate=\{navigate\} menu=\{menu\} \/>\}/);
+  const bar = code("../app/phone-bar.tsx");
+  assert.match(bar, /PHONE_BAR\.map/);
+  assert.match(bar, /MONEY_ACTIONS\.map/);
+  assert.match(bar, /menu\.onOpen\(\)/);
+  assert.doesNotMatch(bar, /\.ryntra-header__menu--phone/, "the bar presses the header's button again instead of opening the core's sheet");
+  /* The core pins the bar: the product's stylesheet pins nothing of it and pads no page for it. */
+  const css = code("../app/frame.css");
+  assert.doesNotMatch(css, /\.sol-phonebar \{[^}]*position: fixed/);
+  assert.doesNotMatch(css, /\.sol-canvas \{ padding-bottom/);
 });
 
 test("one projection, taking nothing but the routes and a language — no depth, no switch, no cookie", () => {
   for (const projector of [mobileNavigation, menuNavigation]) {
     assert.equal(projector.length, 2, `${projector.name} takes (routes, locale) and nothing else`);
   }
-  assert.equal(sectionTabs.length, 3, "sectionTabs takes (path, routes, locale) and nothing else");
+  assert.equal(rowForPath.length, 1, "rowForPath takes a path and nothing else");
   const shell = code("./app-shell.tsx");
   assert.doesNotMatch(shell, /simpleNavigation|simpleMobileNavigation|resolveDepth\(|modeForDepth|lib\/product\/depth/, "the shell still chooses a menu by depth");
   assert.match(shell, /const menu = product \? menuNavigation\(product\.routes, product\.locale\) : null;/);
   assert.match(shell, /domainRoutes=\{menu\?\.routes\}/);
   assert.match(shell, /entries=\{mobileNavigation\(product\.routes, product\.locale\)\}/);
   assert.match(shell, /activeHref=\{pageActiveHref\(pathname, menu\.routes\)\}/);
+  /* The core's frame takes the row from the same routes: no depth, no cookie decides it. */
+  assert.match(code("../app/product-shell.tsx"), /return rowForPath\(pathname\);/);
   assert.doesNotMatch(code("../app/product-shell.tsx"), /DepthSwitch/, "the product rail still carries the switch");
   assert.equal(existsSync(new URL("../../lib/product/depth.ts", import.meta.url)), false, "the depth cookie module is back");
   for (const path of ["../app/layout.tsx", "../app/stocks/[ticker]/page.tsx", "../solana/workspace/holdings/page.tsx", "./shell-state.tsx", "../../lib/product/customer-routing.ts"]) {
@@ -206,61 +204,72 @@ test("one projection, taking nothing but the routes and a language — no depth,
 });
 
 test("a row of the menu is current on every route it stands for, and nowhere else", () => {
-  const { routes } = menuNavigation(ROUTES, "en");
   const cases = [
-    ["/app/home", "/app/home"],
-    ["/app/markets", "/app/markets"],
-    ["/app/stocks", "/app/markets"],
-    ["/app/stocks/AAPLx", "/app/markets"],
-    ["/app/stocks/screener", "/app/markets"],
-    ["/app/trends", "/app/markets"],
-    ["/app/assets", "/app/markets"],
-    ["/app/spot", "/app/spot"],
-    ["/app/swap", "/app/spot"],
-    ["/app/trade", "/app/spot"],
-    ["/app/launch/new", "/app/launch/new"],
-    ["/app/launch/mine", "/app/launch/new"],
-    ["/app/bots", "/app/bots"],
-    ["/app/bots/catalog", "/app/bots"],
-    ["/app/autoinvest", "/app/bots"],
-    ["/app/strategies/new", "/app/bots"],
-    ["/app/strategies/plans/plan_1", "/app/bots"],
-    ["/app/plans", "/app/bots"],
-    ["/app/results", "/app/bots"],
-    ["/app/journal", "/app/bots"],
-    ["/app/portfolio", "/app/portfolio"],
-    ["/app/activity", "/app/portfolio"],
-    ["/app/receipts", "/app/portfolio"],
-    ["/app/top-up", "/app/top-up"],
-    ["/app/send", "/app/top-up"],
-    ["/app/receive", "/app/top-up"],
-    ["/app/bridge", "/app/top-up"],
-    ["/app/rewards", "/app/rewards"],
-    ["/app/ryn", "/app/ryn"],
-    ["/app/research", "/app/ryn"],
-    ["/app/settings", "/app/settings"],
+    ["/app/home", "home"],
+    ["/app/markets", "markets"],
+    ["/app/stocks", "markets"],
+    ["/app/stocks/AAPLx", "markets"],
+    ["/app/stocks/screener", "markets"],
+    ["/app/trends", "markets"],
+    ["/app/assets", "markets"],
+    ["/app/markets/pools", "pools"],
+    ["/app/markets/pools/5rCf1DM8LjKTw4YqhnoLcngyZYeNnQqztScTogYHAS6", "pools"],
+    ["/app/launch/new", "launch"],
+    ["/app/launch/markets", "launch"],
+    ["/app/launch/mine", "launch"],
+    ["/app/launch/So11111111111111111111111111111111111111112", "launch"],
+    ["/app/spot", "spot"],
+    ["/app/swap", "swap"],
+    ["/app/trade", "swap"],
+    ["/app/bots", "bots"],
+    ["/app/bots/catalog", "bots"],
+    ["/app/autoinvest", "bots"],
+    ["/app/strategies/new", "bots"],
+    ["/app/strategies/plans/plan_1", "bots"],
+    ["/app/plans", "bots"],
+    ["/app/results", "bots"],
+    ["/app/journal", "bots"],
+    ["/app/portfolio", "portfolio"],
+    ["/app/activity", "history"],
+    ["/app/receipts", "history"],
+    ["/app/receipts/abc", "history"],
+    ["/app/fees", "history"],
+    ["/app/rewards", "rewards"],
+    ["/app/rewards/season", "rewards"],
+    ["/app/top-up", "deposit"],
+    ["/app/send", "send"],
+    ["/app/receive", "receive"],
+    ["/app/bridge", "bridge"],
+    ["/app/ryn", "assistant"],
+    ["/app/research", "assistant"],
+    ["/app/predictions", "predictions"],
+    ["/app/predictions/evt_1", "predictions"],
+    ["/app/predictions/portfolio", "predictions"],
   ];
-  for (const [path, expected] of cases) assert.equal(pageActiveHref(path, routes), expected, `${path} lights the wrong row`);
-  /* Monitoring is the bell's page, not a row's; the demo is off the surface. */
-  assert.equal(pageActiveHref("/app/alerts", routes), null, "the bell's page lights a row of the menu");
-  assert.equal(pageActiveHref("/app/predictions/abc", routes), null, "the demo lights a row of the menu");
-  assert.equal(pageActiveHref("/app/markets-extra", routes), null, "an unknown sibling must not light a row");
+  for (const [path, expected] of cases) assert.equal(rowForPath(path), expected, `${path} lights the wrong row`);
+  /* Settings and Нагляд light no row; nor does an unknown sibling. */
+  for (const path of ["/app/settings", "/app/alerts", "/app/predictions-extra", "/app/markets-extra", "/app"]) {
+    assert.equal(rowForPath(path), null, `${path} lights a row of the menu`);
+  }
 });
 
-test("the prediction demo is off every surface; its code and its addresses stay", async () => {
+test("Прогнози is a row of Торгівля after Ф'ючерси; its pages answer at their own address", async () => {
   const predictions = ROUTES.find((route) => route.id === "predictions");
   assert.equal(predictions.readiness, "available");
+  /* The registered page has no documentation yet, so it stays off the documented surface; the row holds the route. */
   assert.equal(drawn(predictions), false);
+  assert.deepEqual([...MENU_SECTIONS.predictions.pages], []);
   for (const locale of ["en", "uk"]) {
-    const tabs = MENU_SECTION_IDS.flatMap((id) => sectionTabs(MENU_SECTIONS[id].href, ROUTES, locale)?.tabs ?? []);
-    assert.ok(!tabs.some((tab) => /predictions/.test(tab.href)), `a tab (${locale}) draws the demo`);
+    const trading = menuNavigation(ROUTES, locale).groups.find((group) => group.id === "trading");
+    const ids = trading.rows.map((row) => row.id);
+    assert.equal(ids[ids.indexOf("launch") + 1], "futures", `Ф'ючерси (${locale}) stand right after Лаунч`);
+    assert.equal(ids[ids.indexOf("futures") + 1], "predictions", `Прогнози (${locale}) stands right after Ф'ючерси`);
+    assert.equal(trading.rows.find((row) => row.id === "predictions").href, "/app/predictions");
+    assert.equal(trading.rows.find((row) => row.id === "predictions").label, locale === "uk" ? "Прогнози" : "Predictions");
   }
   const { CUSTOMER_REDIRECTS } = await import("../../lib/product/customer-routing.ts");
   for (const source of ["/app/predictions", "/app/predictions/:path*"]) {
-    const row = CUSTOMER_REDIRECTS.find((candidate) => candidate.source === source);
-    assert.ok(row, `${source} is still a place a person can land`);
-    assert.equal(row.destination, "/app/markets");
-    assert.equal(row.permanent, false);
+    assert.ok(!CUSTOMER_REDIRECTS.some((candidate) => candidate.source === source), `${source} leads away from its own pages`);
   }
   for (const path of ["../app/predictions/page.tsx", "../app/predictions/paper-portfolio.tsx", "../app/predictions/paper-history.tsx", "../app/predictions/prediction-plans-panel.tsx"]) {
     assert.ok(existsSync(new URL(path, import.meta.url)), `${path} was deleted; the demo leaves the surface, not the repository`);
@@ -284,11 +293,17 @@ test("the never-a-row list stays out of the rail, and a planned page is a destin
   const { CUSTOMER_REDIRECTS } = await import("../../lib/product/customer-routing.ts");
   const byPath = new Map(CUSTOMER_REDIRECTS.map((row) => [row.source, row]));
   const working = new Set(ROUTES.filter((route) => route.readiness !== "planned").map((route) => route.href));
-  for (const route of ROUTES.filter((candidate) => candidate.readiness === "planned")) {
+  for (const route of ROUTES.filter((candidate) => candidate.readiness === "planned" && candidate.id !== "perps")) {
     const row = byPath.get(route.href);
     assert.ok(row, `${route.href} is planned and still a place a person can land`);
     assert.equal(row.permanent, false, `${route.href} must be free to come back when it is built`);
     assert.ok(working.has(row.destination) || row.destination === "/app/ryn", `${route.href} leads to ${row.destination}, which is not a page that works`);
+  }
+  /* The one planned page with no redirect: Perps, whose address is the row Perps' own — Phoenix inside Solana (B7,
+     PERP-1), a row of the menu that holds its route only. The page its address serves is Phoenix's, not the not-yet. */
+  for (const route of ROUTES.filter((candidate) => candidate.readiness === "planned" && !byPath.has(candidate.href))) {
+    assert.equal(route.id, "perps", `${route.href} is planned and still a place a person can land`);
+    assert.equal(route.href, MENU_SECTIONS.futures.href);
   }
 });
 
@@ -297,7 +312,7 @@ test("a page with no destination cannot be rendered at all", () => {
   assert.throws(() => menuNavigation(ROUTES.map((r) => (r.id === "stocks" ? { ...r, href: "  " } : r)), "en"), /stocks.*empty route/i);
 });
 
-test("every page, section and tab is a page the router actually serves", () => {
+test("every page and row is a page the router actually serves", () => {
   const served = (href) => {
     const dir = new URL(`../../app${href}/`, import.meta.url);
     return ["page.tsx", "page.ts", "page.jsx", "page.js"].some((name) => existsSync(new URL(name, dir)));
@@ -307,10 +322,11 @@ test("every page, section and tab is a page the router actually serves", () => {
     assert.ok(served(route.href), `${route.id} points at ${route.href}, which no page file serves`);
   }
   for (const id of MENU_SECTION_IDS) {
-    assert.ok(served(MENU_SECTIONS[id].href), `the section ${id} opens on ${MENU_SECTIONS[id].href}, which no page file serves`);
-    for (const tab of MENU_SECTIONS[id].tabs ?? []) assert.ok(served(tab.href), `the tab ${tab.id} opens on ${tab.href}, which no page file serves`);
+    assert.ok(served(MENU_SECTIONS[id].href), `the row ${id} opens on ${MENU_SECTIONS[id].href}, which no page file serves`);
   }
-  assert.ok(served(ASSISTANT.href) && served(MENU_ACTION.href) && served(MENU_FOOT.settings.href));
+  /* The pages under a row that its page links to. */
+  for (const href of ["/app/launch/mine", "/app/bots/catalog"]) assert.ok(served(href), `${href} is no page`);
+  assert.ok(served(ASSISTANT.href) && served(MENU_ACTION.href) && served(MENU_FOOT.settings.href) && served(MENU_FOOT.notifications.href));
   /* The cabinet's «not found» is inside the shell: a catch-all under /app and a not-found of its own. */
   assert.ok(existsSync(new URL("../app/not-found.tsx", import.meta.url)));
   assert.match(readFileSync(new URL("../app/[...missing]/page.tsx", import.meta.url), "utf8"), /notFound\(\)/);
@@ -325,7 +341,10 @@ test("readiness is declared once, and only in the three-status vocabulary", () =
   const available = ROUTES.filter((route) => route.readiness === "available").map((route) => route.id).sort();
   assert.deepEqual(available, ["activity", "bridge", "my-strategies", "portfolio", "predictions", "receive", "results", "rewards", "send", "spot", "stocks", "swap", "trends"]);
   const byRoute = new Map(ROUTES.map((route) => [route.id, route]));
-  for (const id of ["perps", "ideas"]) {
+  /* Perps draws Phoenix's markets, not the not-yet surface: its address re-exports Phoenix's page (PERP-1). */
+  assert.doesNotMatch(readFileSync(new URL("../solana/workspace/futures/page.tsx", import.meta.url), "utf8"), /NotYet/);
+  assert.doesNotMatch(readFileSync(new URL("../app/perps/page.tsx", import.meta.url), "utf8"), /NotYet/);
+  for (const id of ["ideas"]) {
     const source = readFileSync(new URL(`../app/${id}/page.tsx`, import.meta.url), "utf8");
     assert.ok(source.includes(`page="${id}"`) && source.includes("<NotYet"), `${id} must take its status from the registry, not from a prop`);
     assert.doesNotMatch(source, /readiness=/, `${id} states a readiness of its own`);
@@ -334,10 +353,12 @@ test("readiness is declared once, and only in the three-status vocabulary", () =
 });
 
 test("both locales are complete, and neither is the other's fallback", () => {
+  /* «Perps» is the same word in both languages on purpose, as Ryntra is. */
   for (const id of PRODUCT_PAGE_IDS) {
     const label = PAGE_LABELS[id];
     assert.ok(label.en && label.uk, `${id} is missing a locale`);
-    assert.notEqual(label.uk, label.en, `${id} is the same word in both locales, so one of them is untranslated`);
+    if (id === "perps") assert.deepEqual(label, PERPS_LABEL);
+    else assert.notEqual(label.uk, label.en, `${id} is the same word in both locales, so one of them is untranslated`);
   }
   for (const id of PRODUCT_GROUP_IDS) assert.notEqual(GROUP_LABELS[id].uk, GROUP_LABELS[id].en, `the kind ${id} is untranslated`);
   for (const [key, label] of Object.entries(SECONDARY_LABELS)) {
@@ -346,9 +367,8 @@ test("both locales are complete, and neither is the other's fallback", () => {
   }
   for (const id of MENU_SECTION_IDS) {
     const section = MENU_SECTIONS[id];
-    assert.notEqual(section.label.uk, section.label.en, `the section ${id} is untranslated`);
-    if (section.caption) assert.notEqual(section.caption.uk, section.caption.en, `the caption of ${id} is untranslated`);
-    for (const tab of section.tabs ?? []) assert.notEqual(tab.label.uk, tab.label.en, `the tab ${tab.id} is untranslated`);
+    if (id === "futures") assert.deepEqual(section.label, PERPS_LABEL);
+    else assert.notEqual(section.label.uk, section.label.en, `the row ${id} is untranslated`);
   }
   /* The assistant carries the product's own name in both languages, on purpose. */
   assert.equal(ASSISTANT.label.uk, "Ryntra");
@@ -358,8 +378,10 @@ test("both locales are complete, and neither is the other's fallback", () => {
 test("the rail cannot throw for want of a translation", () => {
   const source = readFileSync(new URL("./domains.ts", import.meta.url), "utf8");
   assert.ok(!/translateSolana\s*\(/.test(source), "the rail now calls the fail-closed translator");
-  assert.ok(!/^import\s/m.test(source), "the page vocabulary took a dependency it does not need");
-  assert.ok(!/from\s+"/.test(source), "the page vocabulary took a dependency it does not need");
+  /* One dependency: the core's composition of the menu — pure data and words, no React, no styles. */
+  const imports = [...source.matchAll(/from\s+"([^"]+)"/g)].map((match) => match[1]);
+  assert.deepEqual(imports, ["@ryntra/core/nav"], "the page vocabulary took a dependency it does not need");
+  assert.ok(NAV_GROUPS.length >= 4);
 });
 
 test("the retired names never reach a label", () => {
@@ -367,7 +389,7 @@ test("the retired names never reach a label", () => {
     ...Object.values(PAGE_LABELS).flatMap((label) => [label.en, label.uk]),
     ...Object.values(GROUP_LABELS).flatMap((label) => [label.en, label.uk]),
     ...Object.values(SECONDARY_LABELS).flatMap((label) => [label.en, label.uk]),
-    ...Object.values(MENU_SECTIONS).flatMap((section) => [section.label, section.caption, ...(section.tabs ?? []).map((tab) => tab.label)].filter(Boolean)).flatMap((label) => [label.en, label.uk]),
+    ...Object.values(MENU_SECTIONS).flatMap((section) => [section.label.en, section.label.uk]),
     ASSISTANT.label.en, ASSISTANT.caption.en, ASSISTANT.caption.uk, MENU_ACTION.label.en, MENU_ACTION.label.uk,
     MENU_FOOT.feedback.en, MENU_FOOT.feedback.uk,
   ];
@@ -386,7 +408,7 @@ test("the retired names never reach a label", () => {
   assert.equal(PAGE_LABELS.activity.en, "History", "English must read History, not Activity");
   assert.equal(PAGE_LABELS.activity.uk, "Історія", "Ukrainian must not read Активність");
   assert.equal(GROUP_LABELS.money.uk, "Кошти", "the API's kind of work keeps «Кошти»");
-  assert.ok(!PRODUCT_PAGE_IDS.includes("home"), "Home is a section, not a registered page");
+  assert.ok(!PRODUCT_PAGE_IDS.includes("home"), "Home is a row, not a registered page");
   const history = readFileSync(new URL("../solana/workspace/history/page.tsx", import.meta.url), "utf8");
   assert.match(history, /<PageHead title="History" \/>/);
   assert.doesNotMatch(history, /text\("Activity"\)/);
@@ -479,4 +501,85 @@ test("the old addresses of the menu lead to their new places, and /app/history k
   }
   /* A link's own query follows the target's: the old screener's pre-IPO filter. */
   assert.equal(customerHref("/app/stocks/screener?kind=preipo"), "/app/markets?tab=stocks&kind=preipo");
+});
+
+test("Perps of Торгівля are Phoenix inside Solana, one row with what it lets a person do now; no «Мережа», no «Інші продукти» (B7, SOL-C2, PERP-1)", async () => {
+  for (const locale of ["en", "uk"]) {
+    const trading = menuNavigation(ROUTES, locale).groups.find((group) => group.id === "trading");
+    const futures = trading.rows.find((row) => row.id === "futures");
+    assert.equal(futures.href, "/app/perps");
+    /* «Perps» in both languages, not the core's «Ф'ючерси» / «Futures». */
+    assert.equal(futures.label, "Perps");
+    assert.equal(MENU_SECTIONS.futures.label[locale], "Perps");
+    assert.equal(registeredPages(ROUTES, locale).find((entry) => entry.id === "perps").label, "Perps");
+  }
+  assert.deepEqual(PERPS_LABEL, { en: "Perps", uk: "Perps" });
+  /* The core's word stays the core's: the other networks and the phone read it unchanged. */
+  assert.equal(NAV_WORDS.uk.items.futures, "Ф'ючерси");
+  assert.equal(rowForPath("/app/perps"), "futures");
+  assert.equal(rowForPath("/app/futures"), "futures");
+  assert.equal(MENU_PATHS.futures, "perps");
+  const frame = code("../app/product-shell.tsx");
+  /* The core reads one address per id: its `futures` row is Phoenix's page; no separate product and no second network
+     of the core's catalogue is handed to the menu for now (decision 63). */
+  assert.match(frame, /futures: "\/app\/perps"/);
+  assert.doesNotMatch(frame, /"\/app\/futures"/);
+  assert.doesNotMatch(frame, /trade\.ryntra\.io|app\.ryntra\.io|FUTURES_TERMINAL|SECOND_APP|PHONE_APP_URL/);
+  /* No «Мережа» (an empty list), no «Інші продукти» (no separate product reaches the menu). */
+  assert.match(frame, /networks=\{NO_NETWORKS\}/);
+  assert.match(frame, /const NO_NETWORKS: readonly NetworkOption\[\] = \[\];/);
+  assert.match(frame, /const MENU_PRODUCTS = PRODUCTS\.filter\(\(product\) => !product\.separate\);/);
+  assert.match(frame, /products=\{MENU_PRODUCTS\}/);
+  /* The core draws its `futures` row as another product's; the frame leaves the arrow out for Solana's own page. */
+  const css = code("../app/frame.css");
+  assert.match(css, /\.ryntra-menu__row\[href="\/app\/perps"\] > \.ryntra-menu__mark/);
+  assert.match(css, /\.ryntra-menu__row\[href="\/app\/perps"\] > \.ryntra-visually-hidden/);
+  assert.doesNotMatch(css, /\/app\/futures/);
+  /* The row's word: the core's label leaves the page (hidden from the eye and a screen reader alike) and the frame's
+     «Perps» — the search's word too — stands in its place, handed over as a custom property. */
+  assert.match(css, /\.ryntra-menu__row\[href="\/app\/perps"\] > \.ryntra-menu__label \{\s*visibility: hidden;\s*font-size: 0;\s*\}/);
+  /* The word is the row's own generated content — a hidden label's would not be the link's name — and the core's bar of
+     the page on screen moves to the hidden label for this row. */
+  assert.match(css, /\.ryntra-menu__row\[href="\/app\/perps"\]::before,\s*[^{]*\.ryntra-menu__row\[href="\/app\/perps"\]\[aria-current="page"\]::before \{[^}]*position: static;[^}]*background: none;[^}]*content: var\(--sol-menu-word-futures, "Perps"\);/);
+  assert.match(css, /\.ryntra-menu__row\[href="\/app\/perps"\]\[aria-current="page"\] > \.ryntra-menu__label::before \{[^}]*position: absolute;[^}]*background: var\(--ryntra-brand\);[^}]*visibility: visible;[^}]*content: "";/);
+  assert.match(frame, /"--sol-menu-word-futures": JSON\.stringify\(PERPS_LABEL\[locale\]\)/);
+  /* Orders are open (B6b, 22.10): the row carries no tag — a tag stands only where a place does less than its word. */
+  assert.equal(MENU_TAGS.futures, undefined);
+  assert.deepEqual(FUTURES_NOW, { en: "orders open", uk: "ордери відкриті" });
+  assert.match(css, /\.ryntra-menu__row\[href="\/app\/perps"\]::after \{\s*content: var\(--sol-menu-tag-futures, none\);/);
+  assert.match(frame, /style=\{menuTagStyle\(locale\)\}/);
+  /* `/app/perps` is the page itself — Phoenix's, no longer the Hyperliquid terminal, no Hyperliquid code in it — and the
+     old `/app/futures` leads there for good (PERP-1): a permanent redirect, one hop, the query kept. */
+  const { customerHref, CUSTOMER_REDIRECTS, CUSTOMER_PATHS } = await import("../../lib/product/customer-routing.ts");
+  assert.equal(code("../app/perps/page.tsx").trim(), 'export { default, generateMetadata } from "@/app/solana/workspace/futures/page";');
+  assert.equal(existsSync(new URL("../app/futures/page.tsx", import.meta.url)), false, "/app/futures is a redirect, not a page");
+  assert.equal(CUSTOMER_REDIRECTS.some((row) => row.source === "/app/perps"), false, "/app/perps is the page, never a redirect");
+  assert.deepEqual(CUSTOMER_REDIRECTS.find((row) => row.source === "/app/futures"), { source: "/app/futures", destination: "/app/perps", permanent: true });
+  assert.equal(customerHref("/app/futures"), "/app/perps");
+  assert.equal(customerHref("/app/futures?market=BTC"), "/app/perps?market=BTC");
+  assert.equal(customerHref("/app/perps"), "/app/perps");
+  assert.equal(CUSTOMER_PATHS.perps, "/app/perps");
+  /* The old workspace address too (UX-952), straight to the new one: a row of the redirects, not a `redirect()` in the
+     page `/app/perps` re-exports — that would loop. */
+  assert.equal(customerHref("/solana/workspace/futures"), "/app/perps");
+  assert.deepEqual(CUSTOMER_REDIRECTS.find((row) => row.source === "/solana/workspace/futures"), { source: "/solana/workspace/futures", destination: "/app/perps", permanent: true });
+  assert.ok(CUSTOMER_REDIRECTS.every((row) => row.destination !== "/app/futures"), "a redirect still leads to /app/futures, a second hop");
+  assert.doesNotMatch(code("../solana/workspace/futures/page.tsx"), /\bredirect\(/);
+  /* Every link of line A to the page names the new address; the API keeps its name. */
+  for (const file of ["../app/home/home-surface.tsx", "../solana/workspace/holdings/phoenix-block.tsx", "../solana/workspace/holdings/holdings-card.tsx", "../app/account/account-context.tsx"]) {
+    assert.match(code(file), /"\/app\/perps"/, `${file} does not open /app/perps`);
+    assert.doesNotMatch(code(file), /"\/app\/futures"/, `${file} still opens /app/futures`);
+  }
+  assert.match(code("../solana/workspace/futures/use-futures-data.ts"), /\/api\/solana\/futures\/markets/);
+  for (const file of ["futures-workspace.tsx", "use-futures-data.ts", "futures-chart-source.ts", "page.tsx"]) {
+    assert.doesNotMatch(code(`../solana/workspace/futures/${file}`), /hyperliquid|lib\/arc\/perps/i, `${file} pulls Hyperliquid into the Solana build`);
+  }
+});
+
+test("the header names the network on a plate: «Solana Mainnet Beta», the core's `network`, no switch (SOL-C11, decision 63)", () => {
+  assert.equal(NETWORK_PLATE, "Solana Mainnet Beta");
+  const frame = code("../app/product-shell.tsx");
+  assert.match(frame, /network=\{NETWORK_PLATE\}/);
+  /* A plate, not a choice: no «Мережа» and no «Інші продукти» at the foot of the menu (SOL-C2). */
+  assert.match(frame, /networks=\{NO_NETWORKS\}/);
 });

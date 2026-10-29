@@ -17,12 +17,13 @@
  */
 
 import type { LaunchMarketRow, LaunchMarketsResponse } from "../api/v1/contract.ts";
+import { creatorWatchProven } from "../core/launch/budget.ts";
 import { CYCLE_RANK } from "../core/launch/market-health.ts";
 import { budgetFiguresOf } from "./autopilot.server.ts";
 import { executorClaimsPreset, exhaustedNow, marketBudget, type BudgetRead } from "./budget.server.ts";
 import { launchPair } from "./config.server.ts";
 import type { LaunchRecord } from "./flow.server.ts";
-import { lastGoodMarket, marketRow, readMarket, type HealthDeps, type MarketRead } from "./health.server.ts";
+import { budgetClaimed, lastGoodMarket, marketRow, readMarket, type HealthDeps, type MarketRead } from "./health.server.ts";
 
 /**
  * How long a list is served again — briefly while some of its markets are not read —, how old a market's read may be
@@ -84,9 +85,18 @@ function behind(deps: HealthDeps, token: string) {
   BEHIND.set(`${deps.network.cluster}:${token}`, deps);
 }
 
+/** A row, or null when its launch's pair is not one this network names (SOL-L5): one launch never fails the list. */
+function rowOf(make: () => LaunchMarketRow): LaunchMarketRow | null {
+  try {
+    return make();
+  } catch {
+    return null;
+  }
+}
+
 /** The row of a market whose chain was not read in time: the record's facts only — its lock as the record holds it —, every figure null. */
 export function unreadRow(record: LaunchRecord, deps: HealthDeps, technicalValidation: boolean, budget: BudgetRead = { kind: "NOT_COUNTED" }): LaunchMarketRow {
-  const pair = launchPair(deps.network, record.preset);
+  const pair = launchPair(deps.network, record.preset, record.pairMint);
   return {
     token: record.token,
     name: record.name.slice(0, 64),
@@ -120,9 +130,12 @@ export function unreadRow(record: LaunchRecord, deps: HealthDeps, technicalValid
  */
 async function unreadBudget(deps: HealthDeps, record: LaunchRecord, ours: boolean): Promise<BudgetRead> {
   if (!executorClaimsPreset(record.preset)) return { kind: "NOT_COUNTED" };
-  const kept = ours ? await budgetFiguresOf(deps.store, deps.network.cluster, record.token).catch(() => null) : null;
-  if (kept?.record?.claims.length) return { kind: "COUNTED", figures: kept.figures, inPoolRaw: null, exhausted: exhaustedNow(kept.record, kept.figures) };
-  return { kind: "IN_POOL", inPool: null };
+  const claims = await budgetClaimed(deps, ours);
+  const kept = await budgetFiguresOf(deps.store, deps.network.cluster, record.token).catch(() => null);
+  /* A person's market whose creator was not watched from its launch is not kept, whatever the switch says (SOL-L6). */
+  const keeps = claims === true && !ours && !kept ? undefined : claims === true && !ours && !creatorWatchProven({ watchFrom: kept?.record?.creatorWatchFrom, launchedAt: Math.floor(Date.parse(record.launchedAt) / 1000) }) ? false : claims;
+  if (kept?.record?.claims.length) return { kind: "COUNTED", figures: kept.figures, inPoolRaw: null, exhausted: exhaustedNow(kept.record, kept.figures), claims: keeps };
+  return { kind: "IN_POOL", inPool: null, claims: keeps };
 }
 
 /** The data's own order: a trade in the last day first, then the furthest along the cycle, then the newest launch. */
@@ -148,7 +161,9 @@ async function assemble(deps: HealthDeps): Promise<LaunchMarketsResponse> {
   for (const record of records) {
     const known = lastGoodMarket(cluster, record.token, now);
     if (known) {
-      rows.set(record.token, marketRow(known, deps.network));
+      /* «Спільнота»'s pair no longer offered here is a row not read, never the whole list failing (SOL-L5). */
+      const row = rowOf(() => marketRow(known, deps.network));
+      if (row) rows.set(record.token, row);
       if (now - Date.parse(known.observedAt) >= ROW_FRESH_MS) behind(deps, record.token);
     } else toRead.push(record);
   }
@@ -173,12 +188,24 @@ async function assemble(deps: HealthDeps): Promise<LaunchMarketsResponse> {
       ]);
       clearTimeout(timer);
       if (read === "late") behind(deps, record.token);
-      else if (read) rows.set(record.token, marketRow(read as MarketRead, deps.network));
+      else if (read) {
+        const row = rowOf(() => marketRow(read as MarketRead, deps.network));
+        if (row) rows.set(record.token, row);
+      }
     }
   };
   await Promise.all(Array.from({ length: Math.min(AT_ONCE, toRead.length) }, worker));
-  const markets = (
-    await Promise.all(records.map(async (record) => rows.get(record.token) ?? unreadRow(record, deps, wallets.has(record.creator), await unreadBudget(deps, record, wallets.has(record.creator)))))
-  ).sort(marketOrder);
-  return { network: deps.network.chain, markets, complete: markets.every((row) => row.read), observedAt: deps.now().toISOString() };
+  const listed = await Promise.all(
+    records.map(async (record) => {
+      const read = rows.get(record.token);
+      if (read) return read;
+      const own = wallets.has(record.creator);
+      if (!rowOf(() => unreadRow(record, deps, own))) return null;
+      return unreadRow(record, deps, own, await unreadBudget(deps, record, own));
+    }),
+  );
+  /* A launch whose pair this network no longer names (a community taken out of its configuration) cannot be said in its
+     currency: it is left out, and the list says it is not whole. */
+  const markets = listed.filter((row): row is LaunchMarketRow => Boolean(row)).sort(marketOrder);
+  return { network: deps.network.chain, markets, complete: markets.length === records.length && markets.every((row) => row.read), observedAt: deps.now().toISOString() };
 }

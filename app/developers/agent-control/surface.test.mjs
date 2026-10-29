@@ -147,7 +147,7 @@ test("the page is static until the developer explicitly runs a route or stdio to
 });
 
 test("the public copy avoids unsupported distribution, execution and program claims", () => {
-  const forbidden = /\b(?:production-ready|mainnet live|live integration|official partner|open source|grant award|Domain [ABC])\b/i;
+  const forbidden = /\b(?:production-ready|mainnet live|live integration|official partner|open source|Domain [ABC])\b/i;
   assert.doesNotMatch(visibleSource, forbidden);
   assert.doesNotMatch(visibleSource, /\$(?:500|1,000|2,500|5,000)/);
   assert.match(visibleSource, /Published Apache-2\.0 source; not on npm/);

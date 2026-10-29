@@ -12,7 +12,15 @@ import { isSupportedIssuer } from '@/lib/stocks'
 
 import { BUY_COPY } from './buy-copy'
 import { SALE_COPY } from './sale-copy'
-import { amountFieldText, issuerFeeOf, parseDollars, ryntraFeeFigures, truthLine, unitsFromRaw } from './buy-model'
+import {
+  amountFieldInput,
+  amountFieldText,
+  issuerFeeOf,
+  parseDollars,
+  ryntraFeeFigures,
+  truthLine,
+  unitsFromRaw,
+} from './buy-model'
 import {
   isCompanySale,
   isWholePosition,
@@ -249,9 +257,12 @@ export function useSale(company: SaleCompany) {
     locale,
     amountText,
     setAmountText: (text: string) => {
+      // One decimal mark and cents at most; a refused key leaves the field — and a picked share — as they were (ST-5).
+      const next = amountFieldInput(amountText, text, 2, locale)
+      if (next === amountText) return
       setPickedPct(null)
       setSumPrice(price)
-      setTyped(text.replace(/[^\d.,]/g, '').slice(0, 12))
+      setTyped(next)
     },
     amountUsd,
     shares,

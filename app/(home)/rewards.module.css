@@ -154,10 +154,6 @@
 .pointsValue b { font-weight: 500; font-size: var(--ry-fs-data-xl); letter-spacing: -.03em; line-height: 1; }
 .pointsValue small { font-size: var(--ry-fs-label); letter-spacing: .16em; color: var(--ry-unknown); }
 .pointsLevel { display: flex; align-items: center; gap: var(--ry-s3); font-family: var(--ry-font-mono); font-size: var(--ry-fs-label); letter-spacing: .14em; text-transform: uppercase; color: var(--landing-ink); }
-.example { padding: 2px 7px; border: 1px solid color-mix(in srgb, var(--landing-ink) 16%, transparent); border-radius: 4px; font-size: var(--ry-fs-label-sm); letter-spacing: .12em; color: var(--ry-unknown); }
-.pointsBar { display: block; height: 4px; border-radius: 2px; background: color-mix(in srgb, var(--landing-ink) 10%, transparent); overflow: hidden; }
-.pointsFill { display: block; height: 100%; border-radius: 2px; transform-origin: 0 50%; background: linear-gradient(90deg, color-mix(in srgb, var(--ry-iris) 60%, transparent), var(--ry-iris)); transition: transform 1500ms cubic-bezier(.2, .7, .3, 1) 200ms; }
-.pointsNext { font-family: var(--ry-font-mono); font-size: var(--ry-fs-label-sm); letter-spacing: .08em; color: var(--ry-unknown); }
 
 /* 03 — the two levels, and the line that joins them. */
 .levels { position: relative; display: flex; align-items: center; gap: var(--ry-s4); margin: var(--ry-s2) 0 var(--ry-s1); min-height: 148px; }

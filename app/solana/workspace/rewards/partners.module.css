@@ -1,0 +1,943 @@
+/* «Creator partners» and its media kit — the same panels, type and tokens as
+   Rewards. A phone first: one column, the card, the funnel, the markets, the
+   badges. On a desk the card and the funnel side by side, the markets across,
+   the badges and the rules under them. One orange action on a screen — the
+   copy of the link; statuses, figures and badges are never buttons in
+   orange. Both themes come from the tokens; motion only with the person. */
+
+.page {
+  display: grid;
+  gap: var(--ry-s3);
+  min-width: 0;
+}
+
+.promise {
+  margin: 0;
+  color: var(--ry-muted);
+  font-size: var(--ry-fs-dense);
+  line-height: 1.4;
+}
+
+.grid {
+  display: grid;
+  gap: var(--ry-s3);
+  min-width: 0;
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-areas: "card" "funnel" "markets" "badges" "how";
+}
+
+.areaCard { grid-area: card; min-width: 0; }
+.areaFunnel { grid-area: funnel; min-width: 0; }
+.areaMarkets { grid-area: markets; min-width: 0; }
+.areaBadges { grid-area: badges; min-width: 0; }
+.areaHow { grid-area: how; min-width: 0; }
+
+@media (min-width: 1024px) {
+  .grid {
+    grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr);
+    grid-template-areas: "card funnel" "markets markets" "badges badges" "how how";
+    align-items: start;
+  }
+
+  /* Nothing launched yet: the card beside the empty markets. */
+  .grid[data-empty="true"] {
+    grid-template-areas: "card markets" "badges badges" "how how";
+  }
+}
+
+.panel {
+  display: grid;
+  gap: var(--ry-s3);
+  min-width: 0;
+  padding: var(--ry-s4) var(--ry-s5);
+  background: var(--ry-card);
+  border: 1px solid var(--ry-border);
+  border-radius: var(--ry-r-card);
+}
+
+.areaFunnel > .panel,
+.areaCard > .panel {
+  height: 100%;
+}
+
+@media (max-width: 480px) {
+  .panel {
+    padding: var(--ry-s4);
+  }
+}
+
+.title {
+  margin: 0;
+  color: var(--ry-text);
+  font-size: var(--ry-fs-title);
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+
+.eyebrow,
+.label {
+  color: var(--ry-muted);
+  font-size: var(--ry-fs-label-sm);
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.muted {
+  display: block;
+  margin: 0;
+  color: var(--ry-muted);
+  font-size: var(--ry-fs-dense);
+  line-height: 1.4;
+}
+
+.note {
+  margin: 0;
+  color: var(--ry-muted);
+  font-size: var(--ry-fs-dense);
+  line-height: 1.4;
+}
+
+.warn {
+  display: block;
+  margin: 0;
+  color: var(--ry-caution);
+  font-size: var(--ry-fs-dense);
+}
+
+.srOnly {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+/* ── The card ─────────────────────────────────────────────────────────── */
+
+.levelRow {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: var(--ry-s3);
+}
+
+.levelText {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+.levelName {
+  margin: 0;
+  color: var(--ry-text);
+  font-size: var(--ry-fs-h3);
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+
+.glow {
+  filter: drop-shadow(0 3px 9px color-mix(in srgb, var(--badge-glow, transparent) 45%, transparent));
+}
+
+:global(:is([data-theme="light"], [data-theme="porcelain"])) .glow {
+  filter: drop-shadow(0 3px 9px color-mix(in srgb, var(--badge-glow, transparent) 25%, transparent));
+}
+
+.activated {
+  display: grid;
+  justify-items: end;
+  gap: 2px;
+  text-align: end;
+}
+
+/* A phone gives the level its whole line; the count of activated creators goes under it. */
+@media (max-width: 560px) {
+  .levelRow {
+    grid-template-columns: auto minmax(0, 1fr);
+  }
+
+  .activated {
+    grid-column: 1 / -1;
+    display: flex;
+    align-items: baseline;
+    justify-items: start;
+    gap: var(--ry-s2);
+    text-align: start;
+  }
+}
+
+.figure {
+  color: var(--ry-text);
+  font-family: var(--ry-font-mono);
+  font-size: var(--ry-fs-data-m);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.linkBlock {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--ry-s3);
+  padding: var(--ry-s3);
+  border-radius: var(--ry-r-btn);
+  background: var(--ry-bg);
+}
+
+.linkText {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+  flex: 1 1 200px;
+}
+
+.linkValue {
+  overflow: hidden;
+  color: var(--ry-text);
+  font-family: var(--ry-font-mono);
+  font-size: var(--ry-fs-dense);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.codeLine {
+  color: var(--ry-muted);
+  font-size: var(--ry-fs-label-sm);
+}
+
+.codeLine strong {
+  color: var(--ry-text);
+  font-family: var(--ry-font-mono);
+  font-weight: 600;
+}
+
+.primary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-height: 44px;
+  padding: 0 var(--ry-s5);
+  border: 1px solid var(--ry-brand-edge);
+  border-radius: var(--ry-r-btn);
+  background: var(--ry-gradient);
+  color: var(--ry-on-iris);
+  font: inherit;
+  font-size: var(--ry-fs-app);
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.primary:disabled {
+  border-color: var(--ry-border);
+  background: var(--ry-elevated);
+  color: var(--ry-muted);
+  cursor: not-allowed;
+}
+
+.quiet {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 40px;
+  padding: 0 var(--ry-s4);
+  border: 1px solid var(--ry-border);
+  border-radius: var(--ry-r-btn);
+  background: var(--ry-elevated);
+  color: var(--ry-text);
+  font: inherit;
+  font-size: var(--ry-fs-dense);
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.quiet:disabled {
+  color: var(--ry-muted);
+  cursor: not-allowed;
+}
+
+.textButton {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  justify-self: start;
+  min-height: 40px;
+  padding: 0 var(--ry-s2);
+  border: 0;
+  background: transparent;
+  color: var(--ry-muted);
+  font: inherit;
+  font-size: var(--ry-fs-dense);
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.primary:focus-visible,
+.quiet:focus-visible,
+.textButton:focus-visible,
+.link:focus-visible,
+.details summary:focus-visible,
+.table a:focus-visible {
+  outline: 2px solid var(--ry-focus);
+  outline-offset: 2px;
+}
+
+.money {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--ry-s2);
+  margin: 0;
+}
+
+.money div {
+  display: grid;
+  align-content: start;
+  gap: 2px;
+  min-width: 0;
+  padding: var(--ry-s3);
+  border: 1px solid var(--ry-border);
+  border-radius: var(--ry-r-btn);
+}
+
+.money .tileNote {
+  color: var(--ry-muted);
+  font-family: var(--ry-font-sans);
+  font-size: var(--ry-fs-label-sm);
+  font-weight: 400;
+}
+
+.money dt {
+  color: var(--ry-muted);
+  font-size: var(--ry-fs-label-sm);
+  font-weight: 600;
+}
+
+.money dd {
+  margin: 0;
+  color: var(--ry-text);
+  font-family: var(--ry-font-mono);
+  font-size: var(--ry-fs-data);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  overflow-wrap: anywhere;
+}
+
+.shareRow {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--ry-s1) var(--ry-s3);
+  padding-top: var(--ry-s3);
+  border-top: 1px solid var(--ry-border);
+}
+
+.shareValue {
+  color: var(--ry-text);
+  font-size: var(--ry-fs-dense);
+  font-weight: 600;
+}
+
+/* ── The funnel ───────────────────────────────────────────────────────── */
+
+.funnel {
+  display: grid;
+  gap: var(--ry-s3);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.step {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  grid-template-areas: "name value" "bar bar" "hint hint";
+  gap: 4px var(--ry-s3);
+}
+
+.stepName {
+  grid-area: name;
+  color: var(--ry-text);
+  font-size: var(--ry-fs-dense);
+  font-weight: 600;
+}
+
+.stepValue {
+  grid-area: value;
+  color: var(--ry-text);
+  font-family: var(--ry-font-mono);
+  font-size: var(--ry-fs-data);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+
+.bar {
+  grid-area: bar;
+  display: block;
+  height: 6px;
+  overflow: hidden;
+  border-radius: var(--ry-r-pill);
+  background: var(--ry-bg);
+}
+
+.bar[data-quiet="true"] {
+  display: none;
+}
+
+/* Opens counted from a day, fewer than the next step: said in place of the bar. */
+.stepSince {
+  grid-area: bar;
+  color: var(--ry-muted);
+  font-size: var(--ry-fs-label-sm);
+}
+
+.bar span {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: var(--ry-verified);
+}
+
+/* ── The markets ──────────────────────────────────────────────────────── */
+
+.empty {
+  display: grid;
+  justify-items: center;
+  gap: var(--ry-s3);
+  padding: var(--ry-s4) 0;
+  text-align: center;
+}
+
+.empty .muted {
+  max-width: 46ch;
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--ry-fs-dense);
+}
+
+.table th {
+  padding: 0 var(--ry-s2) var(--ry-s2);
+  border-bottom: 1px solid var(--ry-border);
+  color: var(--ry-muted);
+  font-size: var(--ry-fs-label-sm);
+  font-weight: 600;
+  text-align: start;
+  white-space: nowrap;
+}
+
+.table td {
+  padding: var(--ry-s3) var(--ry-s2);
+  border-bottom: 1px solid var(--ry-border);
+  color: var(--ry-text);
+  vertical-align: top;
+}
+
+.table tr:last-child td {
+  border-bottom: 0;
+}
+
+.table td > * + * {
+  margin-top: 4px;
+}
+
+.num {
+  font-family: var(--ry-font-mono);
+  font-variant-numeric: tabular-nums;
+  text-align: end !important;
+  white-space: nowrap;
+}
+
+.marketName {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 6px;
+  font-weight: 600;
+}
+
+.marketName a {
+  color: var(--ry-text);
+  text-decoration: none;
+}
+
+.marketName a:hover {
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.symbol {
+  color: var(--ry-muted);
+  font-family: var(--ry-font-mono);
+  font-size: var(--ry-fs-label-sm);
+}
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  min-height: 26px;
+  padding: 0 var(--ry-s2);
+  border: 1px solid var(--ry-border);
+  border-radius: var(--ry-r-pill);
+  color: var(--ry-muted);
+  font-size: var(--ry-fs-label-sm);
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.chip[data-tone="live"] {
+  color: var(--ry-text);
+}
+
+.chip[data-tone="live"]::before {
+  content: "";
+  width: 6px;
+  height: 6px;
+  margin-right: 6px;
+  border-radius: 50%;
+  background: var(--ry-verified);
+}
+
+.chip[data-tone="review"] {
+  border-color: color-mix(in srgb, var(--ry-caution) 55%, var(--ry-border));
+  color: var(--ry-text);
+}
+
+/* A phone reads a market as a card: each figure with its own name. */
+@media (max-width: 720px) {
+  .table thead {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+  }
+
+  .table,
+  .table tbody,
+  .table tr,
+  .table td {
+    display: block;
+  }
+
+  .table tr {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: var(--ry-s2);
+    padding: var(--ry-s3) 0;
+    border-bottom: 1px solid var(--ry-border);
+  }
+
+  .table tr:last-child {
+    border-bottom: 0;
+  }
+
+  .table td {
+    padding: 0;
+    border: 0;
+  }
+
+  .table td:nth-child(1),
+  .table td:nth-child(2),
+  .table td:nth-child(3) {
+    grid-column: 1 / -1;
+  }
+
+  .table td:nth-child(3)::before,
+  .table td.num::before {
+    content: attr(data-label);
+    display: block;
+    color: var(--ry-muted);
+    font-family: var(--ry-font-sans);
+    font-size: var(--ry-fs-label-sm);
+    font-weight: 600;
+  }
+
+  .num {
+    text-align: start !important;
+  }
+}
+
+.askWrap {
+  margin-top: var(--ry-s2);
+}
+
+.ask {
+  display: grid;
+  gap: var(--ry-s2);
+  max-width: 360px;
+}
+
+.textarea {
+  width: 100%;
+  min-height: 72px;
+  padding: var(--ry-s2);
+  border: 1px solid var(--ry-border-strong);
+  border-radius: var(--ry-r-btn);
+  background: var(--ry-bg);
+  color: var(--ry-text);
+  font: inherit;
+  font-size: var(--ry-fs-dense);
+  resize: vertical;
+}
+
+.textarea:focus-visible {
+  outline: 2px solid var(--ry-focus);
+  outline-offset: 1px;
+}
+
+.askActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--ry-s2);
+}
+
+/* ── Badges ───────────────────────────────────────────────────────────── */
+
+/* The tracks follow the panel's own width, not the screen's: inside the page's 1040 px column (Ріст 19) a desk
+   screen no longer means room for four tracks in a row, and badge names must never be cut. */
+.badgesPanel {
+  min-width: 0;
+  container-type: inline-size;
+}
+
+.tracks {
+  display: grid;
+  gap: var(--ry-s3);
+}
+
+/* Two tracks a row where there is room for two (the page's 1040 px column never has room for four with whole names). */
+@container (min-width: 600px) {
+  .tracks {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: var(--ry-s4);
+  }
+}
+
+.track {
+  display: grid;
+  gap: 4px;
+}
+
+/* Under the liquidity track: how the days are counted, and the wallet's one switch about the boards. */
+.liquidityFoot {
+  display: grid;
+  gap: 4px;
+  align-content: center;
+  justify-items: start;
+}
+
+/* A badge's name wraps between its words, never inside one («Founding Partner», «Community Partner»). */
+.trackBadges button > span:last-child {
+  overflow-wrap: normal;
+  word-break: normal;
+  hyphens: none;
+}
+
+.trackName {
+  color: var(--ry-muted);
+  font-size: var(--ry-fs-label-sm);
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.trackBadges {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 4px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+/* ── How it works, the terms, the kit ─────────────────────────────────── */
+
+.details summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--ry-s2);
+  min-height: 40px;
+  color: var(--ry-text);
+  font-size: var(--ry-fs-dense);
+  font-weight: 600;
+  cursor: pointer;
+  list-style: none;
+}
+
+.details summary::-webkit-details-marker {
+  display: none;
+}
+
+.flip,
+.details[open] summary svg {
+  transform: rotate(180deg);
+}
+
+.rules {
+  display: grid;
+  gap: var(--ry-s2);
+  margin: 0;
+  padding: 0 0 0 1.1em;
+  color: var(--ry-muted);
+  font-size: var(--ry-fs-dense);
+  line-height: 1.45;
+}
+
+.links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--ry-s2) var(--ry-s5);
+}
+
+.link {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  min-height: 36px;
+  color: var(--ry-text);
+  font-size: var(--ry-fs-dense);
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.link:hover {
+  text-decoration: underline;
+  text-underline-offset: 4px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .flip,
+.details[open] summary svg {
+    transition: none;
+  }
+}
+
+/* ── The media kit ────────────────────────────────────────────────────── */
+
+.gapLeft {
+  margin-left: 6px;
+}
+
+.inline {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--ry-s3);
+}
+
+.headRow {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--ry-s1) var(--ry-s3);
+}
+
+.screens {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--ry-s4);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+@media (min-width: 900px) {
+  .screens {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+.screen {
+  display: grid;
+  gap: var(--ry-s2);
+  min-width: 0;
+}
+
+.shot {
+  display: block;
+  width: 100%;
+  height: auto;
+  border: 1px solid var(--ry-border);
+  border-radius: var(--ry-r-btn);
+  background: var(--ry-bg);
+}
+
+.screenFoot {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--ry-s2);
+}
+
+.screenName {
+  color: var(--ry-text);
+  font-size: var(--ry-fs-dense);
+  font-weight: 600;
+}
+
+.marks {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--ry-s2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+@media (min-width: 640px) {
+  .marks {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+
+.markTile {
+  display: grid;
+  justify-items: center;
+  gap: var(--ry-s2);
+  padding: var(--ry-s3);
+  border: 1px solid var(--ry-border);
+  border-radius: var(--ry-r-btn);
+}
+
+/* Each mark on the ground it was made for, whatever the page's theme. */
+.markTile[data-ground="dark"] img {
+  padding: 8px;
+  border-radius: 12px;
+  background: #080d13;
+}
+
+.markTile[data-ground="light"] img {
+  padding: 8px;
+  border-radius: 12px;
+  background: #f4f1ea;
+}
+
+.markTile img {
+  box-sizing: content-box;
+  width: 56px;
+  height: 56px;
+}
+
+.swatches {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--ry-s3) var(--ry-s5);
+  margin: 0;
+}
+
+.swatches div {
+  display: grid;
+  gap: 4px;
+}
+
+.swatches dt {
+  color: var(--ry-muted);
+  font-size: var(--ry-fs-label-sm);
+  font-weight: 600;
+}
+
+.swatches dd {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--ry-s2);
+  margin: 0;
+  color: var(--ry-text);
+  font-family: var(--ry-font-mono);
+  font-size: var(--ry-fs-dense);
+}
+
+.swatch {
+  width: 20px;
+  height: 20px;
+  border: 1px solid var(--ry-border-strong);
+  border-radius: 6px;
+}
+
+.swatch[data-swatch="orange"] {
+  background: #ff681c;
+}
+
+.swatch[data-swatch="graphite"] {
+  background: #080d13;
+}
+
+.posts {
+  display: grid;
+  gap: var(--ry-s3);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.post {
+  display: grid;
+  gap: var(--ry-s2);
+  justify-items: start;
+  padding: var(--ry-s3);
+  border-radius: var(--ry-r-btn);
+  background: var(--ry-bg);
+}
+
+.post p {
+  margin: 0;
+  color: var(--ry-text);
+  font-size: var(--ry-fs-dense);
+  line-height: 1.45;
+  overflow-wrap: anywhere;
+}
+
+/* Payouts (GR-09): «Get $X», the latest word about a payout, and the receipts. */
+.payout {
+  display: grid;
+  gap: var(--ry-s2);
+  justify-items: start;
+}
+
+.receipts {
+  display: grid;
+  gap: var(--ry-s3);
+  margin: var(--ry-s3) 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.receipt {
+  display: grid;
+  gap: 4px;
+  font-size: var(--ry-fs-dense);
+  min-width: 0;
+}
+
+.receiptHead {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 4px 10px;
+}
+
+.receiptLines {
+  display: grid;
+  gap: 2px;
+  margin: 0;
+  padding: 0 0 0 var(--ry-s3);
+  list-style: none;
+  color: var(--ry-muted);
+  overflow-wrap: anywhere;
+}
+
+.txLink {
+  color: inherit;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}

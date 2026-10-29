@@ -1,0 +1,420 @@
+/* The desk for X: the moments' dark glass as a panel on the right (a sheet over the whole screen on a phone), one
+   amber action, the display face for the big words. Tokens come from city/styles/city.module.css (the page's root). */
+
+.desk {
+  position: fixed;
+  top: max(12px, env(safe-area-inset-top));
+  right: var(--gutter, 16px);
+  bottom: max(12px, env(safe-area-inset-bottom));
+  z-index: 44;
+  width: min(480px, calc(100% - 2 * var(--gutter, 16px)));
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: 16px 18px 18px;
+  color: var(--ice);
+  background: linear-gradient(160deg, rgba(20, 16, 36, 0.95), rgba(8, 7, 15, 0.97));
+  clip-path: polygon(16px 0, 100% 0, 100% calc(100% - 16px), calc(100% - 16px) 100%, 0 100%, 0 16px);
+  box-shadow: inset 0 0 0 2px rgba(153, 69, 255, 0.3), inset 0 1px 22px rgba(153, 69, 255, 0.18);
+  pointer-events: auto;
+}
+
+@media (max-width: 560px) {
+  .desk {
+    left: var(--gutter, 16px);
+    width: auto;
+  }
+}
+
+.head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.kicker {
+  font-size: 13px;
+  font-weight: 800;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--amber);
+}
+
+.sub {
+  margin-top: 4px;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+}
+
+.close {
+  width: 44px;
+  height: 44px;
+  flex: none;
+  display: grid;
+  place-items: center;
+  border: 0;
+  color: var(--ice);
+  background: rgba(255, 255, 255, 0.06);
+}
+
+/* ---------- The door ---------- */
+
+.lock {
+  display: grid;
+  gap: 10px;
+  margin-top: 18px;
+}
+
+.label {
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+}
+
+.input {
+  height: 48px;
+  padding: 0 14px;
+  border: 0;
+  font: inherit;
+  font-size: 16px;
+  color: var(--ice);
+  background: rgba(238, 241, 255, 0.07);
+  box-shadow: inset 0 0 0 1px rgba(238, 241, 255, 0.14);
+}
+
+/* ---------- The switch and approve all ---------- */
+
+.switchRow {
+  display: flex;
+  gap: 8px;
+  margin-top: 16px;
+}
+
+.switch {
+  flex: 1;
+  height: 52px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 0 14px;
+  border: 0;
+  font-size: 13px;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--ice);
+  background: rgba(238, 241, 255, 0.07);
+  clip-path: polygon(10px 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%, 0 10px);
+}
+
+.knob {
+  position: relative;
+  width: 40px;
+  height: 22px;
+  flex: none;
+  border-radius: 11px;
+  background: rgba(238, 241, 255, 0.18);
+  transition: background 160ms;
+}
+
+.knob::after {
+  content: '';
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: var(--ice);
+  transition: transform 160ms;
+}
+
+.switch[data-on='true'] .knob {
+  background: var(--mint);
+}
+
+.switch[data-on='true'] .knob::after {
+  transform: translateX(18px);
+  background: var(--ink);
+}
+
+.primary {
+  flex: 1.2;
+  height: 52px;
+  padding: 0 14px;
+  border: 0;
+  font-family: var(--font-display, system-ui), system-ui, sans-serif;
+  font-stretch: 125%;
+  font-variation-settings: 'wdth' 125;
+  font-weight: 900;
+  font-size: 14px;
+  text-transform: uppercase;
+  color: var(--ink);
+  background: linear-gradient(100deg, var(--warm), var(--amber) 55%, #ff9a3c);
+  clip-path: polygon(12px 0, 100% 0, 100% calc(100% - 12px), calc(100% - 12px) 100%, 0 100%, 0 12px);
+}
+
+.primary:disabled,
+.switch:disabled,
+.approve:disabled,
+.reject:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+
+.small {
+  margin: 10px 0 0;
+  font-size: 13px;
+  line-height: 1.45;
+  color: var(--text-dim);
+}
+
+.small[data-tone='warn'] {
+  padding: 8px 10px;
+  color: var(--warm);
+  background: rgba(255, 178, 63, 0.08);
+  box-shadow: inset 2px 0 0 var(--amber);
+}
+
+/* ---------- The queue ---------- */
+
+.list {
+  display: grid;
+  gap: 10px;
+  margin: 14px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.empty {
+  padding: 16px;
+  font-size: 14px;
+  line-height: 1.45;
+  color: var(--text-dim);
+  background: rgba(238, 241, 255, 0.04);
+}
+
+.card {
+  display: flex;
+  gap: 14px;
+  padding: 12px;
+  background: rgba(238, 241, 255, 0.04);
+  box-shadow: inset 0 0 0 1px rgba(238, 241, 255, 0.08);
+}
+
+.card[data-status='rejected'] {
+  opacity: 0.55;
+}
+
+.media {
+  width: 104px;
+  height: 185px;
+  flex: none;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  background: var(--ink-deep);
+  box-shadow: 0 0 0 2px rgba(255, 178, 63, 0.35);
+}
+
+.media[data-kind='card'] {
+  height: 130px;
+}
+
+.media video,
+.media img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.filming {
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+}
+
+.body {
+  min-width: 0;
+  flex: 1;
+}
+
+.meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+}
+
+.chip {
+  padding: 3px 7px;
+  letter-spacing: 0.1em;
+  color: var(--ink);
+  background: var(--text-dim);
+}
+
+.chip[data-status='ready'] {
+  background: var(--amber);
+}
+
+.chip[data-status='approved'],
+.chip[data-status='sent'] {
+  background: var(--mint);
+}
+
+.chip[data-status='failed'] {
+  color: var(--ice);
+  background: var(--flare);
+}
+
+.title {
+  margin-top: 6px;
+  font-family: var(--font-display, system-ui), system-ui, sans-serif;
+  font-stretch: 125%;
+  font-variation-settings: 'wdth' 125;
+  font-weight: 900;
+  font-size: 22px;
+  line-height: 1.05;
+  overflow-wrap: anywhere;
+}
+
+.figure {
+  margin-top: 4px;
+  font-size: 12px;
+  font-weight: 800;
+  line-height: 1.35;
+  color: var(--ice);
+}
+
+.text {
+  margin: 8px 0 0;
+  padding: 8px 10px;
+  font-size: 13px;
+  line-height: 1.42;
+  color: var(--ice);
+  background: rgba(238, 241, 255, 0.05);
+  overflow-wrap: anywhere;
+  user-select: text;
+}
+
+.foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-top: 6px;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.count {
+  color: var(--text-dim);
+  font-variant-numeric: tabular-nums;
+}
+
+.count[data-over='true'] {
+  color: var(--flare);
+}
+
+.link {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--amber);
+}
+
+.mediaMeta {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 6px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+}
+
+.save {
+  height: 28px;
+  padding: 0 10px;
+  border: 0;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--ice);
+  background: rgba(238, 241, 255, 0.08);
+}
+
+.actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.approve,
+.reject {
+  flex: 1;
+  height: 44px;
+  border: 0;
+  font-size: 12px;
+  font-weight: 900;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  clip-path: polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px);
+}
+
+.approve {
+  color: var(--ink);
+  background: var(--mint);
+}
+
+.reject {
+  color: var(--ice);
+  background: rgba(238, 241, 255, 0.08);
+}
+
+.primary:focus-visible,
+.switch:focus-visible,
+.approve:focus-visible,
+.reject:focus-visible,
+.close:focus-visible,
+.save:focus-visible,
+.input:focus-visible,
+.link:focus-visible {
+  outline: 2px solid var(--warm);
+  outline-offset: 2px;
+}
+
+@media (max-width: 420px) {
+  .card {
+    gap: 10px;
+    padding: 10px;
+  }
+  .media {
+    width: 84px;
+    height: 149px;
+  }
+  .switchRow {
+    flex-wrap: wrap;
+  }
+  .switchRow > * {
+    flex-basis: 100%;
+  }
+}

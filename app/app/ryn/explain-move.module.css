@@ -1,0 +1,53 @@
+/* «Пояснити рух» · «Стежити» · «План» in a token's strip and over its chart: quiet controls of the strip's height, the brand's mark on each. */
+.group {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  gap: 6px;
+}
+
+.explain {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  gap: 6px;
+  height: 32px;
+  padding: 0 10px;
+  border: 1px solid var(--ry-border);
+  border-radius: var(--ry-r-btn-sm);
+  background: transparent;
+  color: var(--ry-text);
+  font: inherit;
+  font-size: var(--ry-fs-label);
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.explain svg {
+  color: var(--ry-accent);
+}
+
+.explain:hover,
+.explain:focus-visible,
+.explain[aria-expanded="true"] {
+  border-color: var(--ry-border-strong);
+  background: var(--ry-elevated);
+}
+
+/* A phone's strip has room for the mark alone: the words stay for a screen reader and in the tooltip. */
+@media (max-width: 767px) {
+  .explain {
+    justify-content: center;
+    width: 32px;
+    padding: 0;
+  }
+
+  .word {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+}

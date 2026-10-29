@@ -1,0 +1,143 @@
+/*
+ * «Чесний результат» (DSC-2): the result after fees on top, five facts under it, the periods as a small table, the
+ * method one disclosure down. The same on «Гаманці» and in the Journal. An unknown result has no colour.
+ */
+
+.panel {
+  display: grid;
+  gap: var(--ry-s3);
+  min-width: 0;
+}
+
+.head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: var(--ry-s2) var(--ry-s3);
+}
+
+.headline {
+  display: grid;
+  gap: var(--ry-s1);
+  min-width: 0;
+}
+
+.label {
+  color: var(--ry-muted);
+  font-size: var(--ry-fs-label);
+}
+
+.value {
+  color: var(--ry-text);
+  font-family: var(--ry-font-mono);
+  font-size: var(--ry-fs-data-lg);
+  font-variant-numeric: tabular-nums;
+  overflow-wrap: anywhere;
+}
+
+.value[data-tone="up"],
+.periods td[data-tone="up"] {
+  color: var(--ry-pnl-pos);
+}
+
+.value[data-tone="down"],
+.periods td[data-tone="down"] {
+  color: var(--ry-pnl-neg);
+}
+
+.pct {
+  font-size: var(--ry-fs-dense);
+}
+
+.verdict {
+  justify-self: start;
+  padding: 2px var(--ry-s2);
+  border: 1px solid var(--ry-border);
+  border-radius: var(--ry-r-btn-sm, 10px);
+  color: var(--ry-muted);
+  font-size: var(--ry-fs-label);
+}
+
+.known {
+  margin: 0;
+  color: var(--ry-muted);
+  font-size: var(--ry-fs-label);
+  line-height: 1.4;
+}
+
+.facts {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: var(--ry-s2) var(--ry-s3);
+  margin: 0;
+}
+
+.facts div {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+.facts dt {
+  color: var(--ry-muted);
+  font-size: var(--ry-fs-label);
+}
+
+.facts dd {
+  margin: 0;
+  color: var(--ry-text);
+  font-family: var(--ry-font-mono);
+  font-size: var(--ry-fs-dense);
+  font-variant-numeric: tabular-nums;
+  overflow-wrap: anywhere;
+}
+
+/* Below the bar: a caution, not a loss — red is the result's colour. */
+.facts dd[data-low] {
+  color: var(--ry-caution);
+}
+
+.periods {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--ry-fs-dense);
+}
+
+.periods th,
+.periods td {
+  padding: var(--ry-s1) var(--ry-s2);
+  border-bottom: 1px solid var(--ry-border);
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.periods th:first-child {
+  text-align: left;
+}
+
+.periods thead th {
+  color: var(--ry-muted);
+  font-size: var(--ry-fs-label);
+  font-weight: 400;
+}
+
+.periods td {
+  font-family: var(--ry-font-mono);
+}
+
+.method {
+  color: var(--ry-muted);
+  font-size: var(--ry-fs-label);
+  line-height: 1.45;
+}
+
+.method summary {
+  cursor: pointer;
+  color: var(--ry-text);
+}
+
+.method ul {
+  margin: var(--ry-s2) 0 0;
+  padding-left: var(--ry-s4);
+}

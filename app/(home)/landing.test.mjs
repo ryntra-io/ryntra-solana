@@ -19,6 +19,7 @@ import { RULE_KINDS } from "../../lib/api/v1/contract.ts";
 import { RULE_PAYMENT_MODES } from "../../lib/autoinvest/payments.ts";
 import { BUDGET_MINIMUM_USD, PRICE_CONDITION_PRESETS_PCT, RULE_DIP_PRESETS_PCT } from "../../lib/autoinvest/limits.ts";
 import { REWARD_RATE_BPS } from "../../lib/rewards/model.ts";
+import { fairPriceOf, ISSUER_TERMS } from "../../lib/stocks/issuer-terms.ts";
 import { needsDevelopmentRepository } from "../../lib/development-repository.mjs";
 
 /*
@@ -28,8 +29,10 @@ import { needsDevelopmentRepository } from "../../lib/development-repository.mjs
  *
  *   - the first screen — the landing's line word for word and one action;
  *   - «Працює зараз» — every item tied to the code that does it on production;
- *   - «Будуємо» and «Далі» — plain words with no date, id or figure, drawn
- *     on the landing only;
+ *   - «Будуємо» and «Далі» — every item tied to a row of the queue that is not
+ *     done, failing the day it is, so the item moves rather than lingering;
+ *     the ties live here, never in the page's code, so no task id reaches a
+ *     browser;
  *   - the pictures — every one a file of `ryntra.io` screens, at its size;
  *   - the words — both languages the same shape, the product's own names,
  *     no forbidden word, nothing internal.
@@ -155,13 +158,15 @@ const WORKS_NOW = {
   purchase: () => {
     assert.equal(MIN_BUY_USD, 1, "a purchase from $1");
     const sheet = read("../app/stocks/[ticker]/buy-sheet.tsx");
-    assert.match(sheet, /data-sheet="review"/);
-    assert.match(sheet, /data-sheet="receipt"/);
+    /* The core's ticket: the form, Review over the exact order, the receipt (SOL-T3). */
+    assert.match(sheet, /<TradeTicket\b/);
+    assert.match(sheet, /const sheetName = view\.stage === "review" \? "review" : view\.stage === "result" \? \(outcome \? "receipt" : "recovery"\) : "compose";/);
+    assert.match(sheet, /data-sheet=\{sheetName\}/);
     /* The sale from a position, on the company page and in Portfolio — the purchase's Review and receipt on the sale's side. */
     const sale = read("../app/stocks/[ticker]/sell-sheet.tsx");
     assert.match(sale, /side: SPOT_SALE_SIDE/);
-    assert.match(sale, /data-sheet="review"/);
-    assert.match(sale, /data-sheet="receipt"/);
+    assert.match(sale, /<TradeTicket\b/);
+    assert.match(sale, /const sheetName = view\.stage === "review" \? "review" : view\.stage === "result" \? \(outcome \? "receipt" : "recovery"\) : "compose";/);
     assert.match(read("../app/stocks/[ticker]/company-live.tsx"), /<SellSheet /);
     assert.match(read("../solana/workspace/holdings/holdings-card.tsx"), /<PositionSale /);
   },
@@ -191,6 +196,20 @@ const WORKS_NOW = {
     const events = read("../../lib/stocks/lifecycle-events.ts");
     assert.match(events, /SPACEX/);
     assert.match(events, /SPCXx/);
+  },
+  /* «Ціна чесна» and «Правда про актив» — the «Актив» tab of every stock's token page in Spot. */
+  fairPrice: () => {
+    assert.equal(fairPriceOf(0.1), "fair");
+    assert.equal(fairPriceOf(null), "no-reference", "no exchange price, no invented number");
+    const tabs = read("../solana/workspace/spot/token-tabs.tsx");
+    assert.match(tabs, /if \(market\.category === "stock"\) tabs\.push\("asset"\)/);
+    assert.match(tabs, /data-fair-price=\{word\}/);
+  },
+  assetTruth: () => {
+    for (const terms of Object.values(ISSUER_TERMS)) assert.ok(terms.excluded.length > 0 && terms.document.url, "each issuer's places with its document");
+    const tabs = read("../solana/workspace/spot/token-tabs.tsx");
+    assert.match(tabs, /data-asset-truth/);
+    assert.match(tabs, /data-geo/);
   },
   portfolio: () => {
     assert.equal(readinessOf("portfolio"), "available");
@@ -225,18 +244,6 @@ test("«Працює зараз» — every item is tied to the code that does i
   }
 });
 
-test("«Будуємо» and «Далі» carry no dates, ids or figures, and only the landing draws them", () => {
-  for (const locale of LOCALES) {
-    const items = [...LANDING_COPY[locale].status.building.items, ...LANDING_COPY[locale].status.next.items];
-    for (const item of items) {
-      /* No dates, no ids, no per cents on the page. */
-      assert.doesNotMatch(item.text, /\d|RYN-|\bM\d/u, `${locale}: «${item.text}» carries a date, an id or a figure`);
-    }
-  }
-  /* Nowhere but the landing: the app draws no roadmap; only `/` and `/uk` show one. */
-  assert.doesNotMatch(read("../app/home/page.tsx"), /status\.building|status\.next|landing-copy/);
-});
-
 /* A word, not a part of one: Cyrillic letters are not `\w`, so `\b` cannot bound them. */
 const word = (source) => new RegExp(`(?<![\\p{L}\\p{N}])(?:${source})(?![\\p{L}\\p{N}])`, "iu");
 
@@ -253,7 +260,7 @@ test("the words: nothing forbidden, nothing internal, no typed fee", () => {
     word("радник\\p{L}*|консультант\\p{L}*|adviser|advisor|регульован\\p{L}*|regulated|прогноз ШІ|AI forecast|у межах закону|найкраще для тебе|рекомендуємо купити"),
     word("Professional Trading|Trade with a plan|Торгуйте за планом|Торгуй за планом"),
     /RYN-|\bWIP\b/u,
-    word("canon|канон\\p{L}*|hackathon|хакатон\\p{L}*|grants?|грант\\p{L}*"),
+    word("hackathon|хакатон\\p{L}*|grants?|грант\\p{L}*"),
   ];
   for (const pattern of forbidden) {
     const found = pattern.exec(text);

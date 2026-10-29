@@ -104,12 +104,10 @@ import {
   menuNavigation,
   mobileNavigation,
   pageActiveHref,
-  sectionTabs,
   type PageRoute,
   type ProductLocale,
 } from "./domains";
 import { ProductMobileNav } from "./product-mobile-nav";
-import { SectionTabsBar } from "./section-tabs";
 import { WidgetRegistryProvider } from "./widget";
 import {
   navigationFor,
@@ -1065,9 +1063,8 @@ function ShellFrame({
      and no cookie decides it: the menu v6.2, «+ Запустити токен» on top and
      three groups of sections with their captions, nothing behind «Ще» on a
      desk; on a phone the bar's five and «Ще» opening the rows the bar does not
-     hold. A section's pages are tabs at the top of its page. */
+     hold. Since Menu 3 (NAV-1) every place is a row: no tabs above a page. */
   const menu = product ? menuNavigation(product.routes, product.locale) : null;
-  const tabs = product ? sectionTabs(pathname, product.routes, product.locale) : null;
   const workspaceGroups = navGroupsFor?.(prefs.mode) ?? navGroups ?? navigationFor(workspace.id);
 
   /*
@@ -1086,10 +1083,10 @@ function ShellFrame({
     ? [
         ...menu.groups.map((group) => ({
           id: `domains-${group.id}`,
-          entries: group.rows.map((row) => ({ id: row.id, label: row.label, caption: row.caption, href: row.href, icon: row.icon })),
+          entries: group.rows.map((row) => ({ id: row.id, label: row.label, href: row.href, icon: row.icon })),
         })),
         /* The assistant is «Спитати Ryntra» in the header on a desk; on a phone, a row of «Ще» (shell.css). */
-        { id: "domains-assistant", entries: [{ id: menu.assistant.id, label: menu.assistant.label, caption: menu.assistant.caption, href: menu.assistant.href, icon: menu.assistant.icon }] },
+        { id: "domains-assistant", entries: [{ id: menu.assistant.id, label: menu.assistant.label, href: menu.assistant.href, icon: menu.assistant.icon }] },
         ...workspaceGroups,
       ]
     : workspaceGroups;
@@ -1290,7 +1287,6 @@ function ShellFrame({
 
         <main className="rs-canvas" id="workspace" tabIndex={-1}>
           {notice}
-          {tabs ? <SectionTabsBar tabs={tabs} /> : null}
           {children}
         </main>
 

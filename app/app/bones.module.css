@@ -1,0 +1,24 @@
+/* The bones of a cabinet page (`bones.tsx`): the core's page and blocks, with the heading's place reserved to its own
+   line. Every length is the core's token — the one the loaded page reads — so nothing shifts when the content comes. */
+
+.page {
+  /* The bars are the core's `Skeleton`; the page itself adds nothing but the heading's place. */
+  min-width: 0;
+}
+
+.title {
+  display: block;
+  width: min(40%, 220px);
+  height: var(--ryntra-type-h1-line);
+  border-radius: var(--ryntra-radius-field);
+  background: var(--ryntra-border);
+}
+
+/* The block's head: its word's own line, so the head is the height it will be once the word is there. */
+.blockTitle {
+  display: block;
+  width: min(50%, 160px);
+  height: var(--ryntra-type-ui-line);
+  border-radius: var(--ryntra-radius-field);
+  background: var(--ryntra-border);
+}

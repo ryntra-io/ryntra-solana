@@ -1,0 +1,51 @@
+/*
+ * A form with its live review — a plan with its estimate, a grid with its levels: the core's `Page kind="action"`, one column in the middle of the canvas with the
+ * review under the form; where the page has room for both with the canvas still showing on either side, a centred pair
+ * — the form at the action column's width and the review beside it. Never the canvas's width, never at its left edge.
+ */
+
+/* The frame's canvas gives the page its edges, the core the column and the heading. `column` is the same page with no
+   review beside the form (a step before the form, a read that failed). */
+.page:global(.ryntra-page--action),
+.column:global(.ryntra-page--action) {
+  --form-pair-review: 340px;
+  width: 100%;
+  padding: 0;
+}
+
+/* The form, then its review: under it in one column, beside it in a pair. */
+.pair {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  align-items: start;
+  gap: var(--ryntra-space-6);
+  min-width: 0;
+}
+
+.pair > * {
+  min-width: 0;
+}
+
+.review {
+  display: grid;
+  gap: var(--ryntra-space-4);
+  min-width: 0;
+}
+
+/* A desk with the rail open has the room from 1420 px: 640 + 24 + 340 leaves the canvas showing on both sides. Below it,
+   one column. */
+@media (min-width: 1420px) {
+  .page:global(.ryntra-page--action) {
+    max-width: calc(var(--ryntra-page-action) + var(--ryntra-space-6) + var(--form-pair-review)); /* width-law: a form beside its live review — the 640 px form and the 340 px review, one pair in the middle of the canvas */
+  }
+
+  .pair {
+    grid-template-columns: minmax(0, 1fr) var(--form-pair-review);
+  }
+
+  /* The figure the form makes stays in sight while the form is filled. */
+  .review {
+    position: sticky;
+    top: calc(var(--ryntra-header-height, 56px) + var(--ryntra-space-4));
+  }
+}

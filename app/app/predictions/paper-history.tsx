@@ -9,6 +9,7 @@ import { pct, shares, timeShort, usd } from "./format";
 import styles from "./predictions.module.css";
 import { usePaperAccount } from "./use-paper-account";
 import { venueName, wordsFor } from "./words";
+import { usePredictionsPaths } from "./surface";
 
 /**
  * Paper operations in History: every paper order as Ryntra recorded it — the
@@ -19,6 +20,7 @@ import { venueName, wordsFor } from "./words";
  * orders sees one sentence.
  */
 export function PaperHistorySection({ locale }: { locale: WorkspaceLocale }) {
+  const paths = usePredictionsPaths();
   const word = wordsFor(locale);
   const account = usePaperAccount();
   if (account.state.status !== "ready" || !account.state.account) return null;
@@ -33,7 +35,7 @@ export function PaperHistorySection({ locale }: { locale: WorkspaceLocale }) {
           <p className={styles.tagline}>{locale === "uk" ? "Симульовані ордери на ринках прогнозів. Не входять у реальну історію гаманця." : "Simulated orders on prediction markets. Not part of the wallet's real history."}</p>
         </div>
         <div className={styles.actions}>
-          <Link className="rw-btn" href="/app/predictions" prefetch={false}>
+          <Link className="rw-btn" href={paths.hub} prefetch={false}>
             {word("title")}
           </Link>
         </div>
@@ -63,7 +65,7 @@ export function PaperHistorySection({ locale }: { locale: WorkspaceLocale }) {
                     <tr key={order.quoteId}>
                       <td style={{ textAlign: "left" }}>{timeShort(order.submittedAt ?? order.createdAt, locale)}</td>
                       <th scope="row">
-                        <Link href={`/app/predictions/${encodeURIComponent(order.eventId)}`} prefetch={false} style={{ color: "inherit", textDecoration: "none" }}>
+                        <Link href={paths.event(order.eventId)} prefetch={false} style={{ color: "inherit", textDecoration: "none" }}>
                           {order.question}
                         </Link>
                         <br />

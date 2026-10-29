@@ -76,6 +76,21 @@ export function consumeEvidenceReadRequest(headers: Headers) {
 }
 
 /*
+ * `.skr` name reads (SKR-4), one window per direction so a page full of names never spends the read «Надіслати» makes
+ * right before a signature: a name to its address (a typing person, Review and the signature — far inside 30), an
+ * address to its name (the header, the Portfolio, the chips, a page of receipts), and a wallet's own list of names —
+ * a `getProgramAccounts` scan — kept to a few a minute.
+ */
+const SKR_FORWARD_LIMITER = new FixedWindowLimiter({ limit: 30, windowMs: 60_000, maxKeys: 5_000 });
+const SKR_REVERSE_LIMITER = new FixedWindowLimiter({ limit: 120, windowMs: 60_000, maxKeys: 5_000 });
+const SKR_OWNED_LIMITER = new FixedWindowLimiter({ limit: 5, windowMs: 60_000, maxKeys: 5_000 });
+
+export function consumeSkrNameRequest(headers: Headers, direction: "name" | "address" | "owned") {
+  const limiter = direction === "name" ? SKR_FORWARD_LIMITER : direction === "address" ? SKR_REVERSE_LIMITER : SKR_OWNED_LIMITER;
+  return limiter.consume(`skr-${direction}:${clientIp(headers)}`);
+}
+
+/*
  * Pictures are not reads, and they must not share the reads' budget either.
  *
  * A market list of 150 rows asks for up to 150 icons, and the image optimiser

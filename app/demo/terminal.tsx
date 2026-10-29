@@ -10,9 +10,14 @@ import { usMarketOpen } from "@/lib/market-hours";
 import { classifyRwaRisk, type RwaRiskLevel } from "@/lib/rwa/risk";
 import { PlanCard, type PlanCardStatus, type PlanCardRiskItem, type PlanCardChecklistItem } from "@/app/components/plan-card";
 import { Sun, Moon } from "@phosphor-icons/react";
-import { ProChart, type ProChartHandle } from "@/app/components/chart/ProChart";
-import { fromArcusCandle, tfToSeconds, type NormalizedCandle, type PriceLineSpec } from "@/lib/chart/types";
-import type { RiskLineSpec } from "@/lib/chart/risklines/layer";
+/* The core's tokens, its components (the chart's icon buttons and its screen-reader text) and the chart; not its base,
+   which would restyle the workspace's own html and body. */
+import "@ryntra/core/tokens.css";
+import "@ryntra/core/ui.css";
+import "@ryntra/core/chart.css";
+import type { ChartLevel, OrderLine, TradingLayerState } from "@ryntra/core/adapters";
+import { RyntraChart } from "@ryntra/core/chart";
+import { ArcusChartFeed, PRICE_BASIS, onTick, resolutionOf, timeframeOf, type ArcusCandle, type ArcusTimeframe } from "./arcus-chart-source";
 import { FLAGS } from "@/app/config/features";
 import { createLatestAccountRequestGate } from "@/lib/demo/latest-account-request";
 
@@ -27,13 +32,13 @@ type Market = {
   /** Venue fact (RWA markets only): accounts for US holidays/half-days — stronger than our local NYSE estimate. */
   isOutsideRth?: boolean;
 };
-type Candle = { openTime: number; open: string; high: string; low: string; close: string; volume?: string; isFinal: boolean };
+type Candle = ArcusCandle;
 
 const WS_URL = "wss://api.arcus.xyz/v1/ws";
-const TFS = ["1m", "5m", "15m", "1h", "4h", "1d"] as const;
 const CHECKLIST_BASE = ["Trend & structure", "Key levels marked", "Risk & R:R accepted", "News / events checked", "Plan written below"];
 const MISTAKES = ["", "FOMO entry", "No plan", "Early exit", "Late entry", "Oversized", "Moved stop", "Revenge trade", "Other"];
-const TERMINAL_ENTRY_LINE = "#ff5a1f";
+/** The core's indicator worker from this site's own file: the page's policy allows no worker from a blob. */
+const indicatorWorker = () => new Worker(new URL("../solana/workspace/spot/indicator-worker.ts", import.meta.url), { type: "module" });
 
 const fmtUsd = (n: number) => (n >= 0 ? "+" : "") + n.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 const fmtPx = (n: number) => n.toLocaleString("en-US", { maximumFractionDigits: 8 });
@@ -353,8 +358,10 @@ export function DemoTerminal({
   visitor?: boolean;
 }) {
   const [markets, setMarkets] = useState<Market[]>([]);
+  /* The market list answered — or did not: the chart opens on the venue's steps, or on the fallback ones. */
+  const [marketsRead, setMarketsRead] = useState(false);
   const [market, setMarket] = useState("BTC-USD");
-  const [tf, setTf] = useState<(typeof TFS)[number]>("1m");
+  const [tf, setTf] = useState<ArcusTimeframe>("1m");
   const [price, setPrice] = useState<number | null>(null);
   const [bbo, setBbo] = useState<{ bid: number | null; ask: number | null }>({ bid: null, ask: null });
   const [wsState, setWsState] = useState<"connecting" | "live" | "down">("connecting");
@@ -382,8 +389,9 @@ export function DemoTerminal({
   const [tab, setTab] = useState<"positions" | "journal">("positions");
   const [journalDraft, setJournalDraft] = useState<Record<string, { followed?: boolean; mistake: string; lesson: string }>>({});
 
-  const proRef = useRef<ProChartHandle | null>(null);
-  const [candles, setCandles] = useState<NormalizedCandle[]>([]);
+  /* One chart feed a market (`arcus-chart-source.ts`, SOL-T4): the REST read and the stream's candles go in, the
+     core's chart listens. The venue's steps come with the market list, which may arrive after the chart opened. */
+  const [held, setHeld] = useState<Readonly<{ market: string; feed: ArcusChartFeed }> | null>(null);
   const closingRef = useRef<Set<string>>(new Set());
   const priceRef = useRef<number | null>(null);
   const listRef = useRef<PaperList | null>(null);
@@ -427,6 +435,7 @@ export function DemoTerminal({
         const j = (await r.json()) as { markets: Market[] };
         if (alive && j.markets?.length) setMarkets(j.markets);
       } catch { /* selector stays with default */ }
+      if (alive) setMarketsRead(true);
     };
     void loadMarkets();
     // periodic refresh keeps funding / oracle fields in the risk monitor current
@@ -461,18 +470,35 @@ export function DemoTerminal({
     setTheme(next);
     applyThemePref(next);
   };
-  /* seed candles on market/tf change (bars survive theme switches — ProChart re-hydrates itself) */
+  const listed = markets.find((m) => m.marketDisplayName === market) ?? null;
+  const tickSize = listed?.tickSize ?? null;
+  const stepSize = listed?.stepSize ?? null;
+  const minNotional = listed?.minOrderNotional ?? null;
+  /* One feed a market, made once the market list has answered: the chart opens on the venue's own steps and is not
+     opened a second time when they arrive. */
   useEffect(() => {
+    if (!marketsRead) return;
+    const next = new ArcusChartFeed({ market, tick: tickSize ?? "0.01", lot: stepSize ?? "0.0001", minNotional });
+    setHeld({ market, feed: next });
+    return () => next.dispose();
+  }, [market, marketsRead, tickSize, stepSize, minNotional]);
+  const feed = held && held.market === market ? held.feed : null;
+  /* The stream reaches the feed through a ref: a new feed (the market list brought the venue's steps) keeps the connection. */
+  const feedRef = useRef<ArcusChartFeed | null>(null);
+  feedRef.current = feed;
+  /* seed candles on market/tf change (the feed keeps every interval it was given; the chart asks it) */
+  useEffect(() => {
+    if (!feed) return;
     let cancelled = false;
     void (async () => {
       try {
         const r = await fetch(`/api/arcus?kind=candles&market=${market}&tf=${tf}`);
         const j = (await r.json()) as { candles: Candle[] };
-        if (!cancelled && j.candles) setCandles(j.candles.map(fromArcusCandle));
+        if (!cancelled && j.candles) feed.put(tf, j.candles);
       } catch { /* chart stays empty until WS fills */ }
     })();
     return () => { cancelled = true; };
-  }, [market, tf]);
+  }, [feed, market, tf]);
 
   /* reset price on market switch so the SL/TP simulator never evaluates the new market's
      trades against the previous market's last price (would fire false auto-closes); reset bbo
@@ -490,6 +516,8 @@ export function DemoTerminal({
     let closed = false;
     let retry: ReturnType<typeof setTimeout> | null = null;
     let poll: ReturnType<typeof setInterval> | null = null;
+    /* The candles channel answered on this connection: from then on any frame says the chart's stream works. */
+    let candlesFlowing = false;
 
     // if the exchange rejects the CANDLES subscription (e.g. an unsupported tf), keep the chart moving via REST
     const startPollFallback = () => {
@@ -498,7 +526,7 @@ export function DemoTerminal({
         void fetch(`/api/arcus?kind=candles&market=${market}&tf=${tf}`)
           .then((r) => r.json())
           .then((j: { candles?: Candle[] }) => {
-            if (!closed && j.candles) proRef.current?.applySnapshot(j.candles.map(fromArcusCandle));
+            if (!closed && j.candles) feedRef.current?.put(tf, j.candles);
           })
           .catch(() => { /* next tick retries */ });
       }, 30_000);
@@ -511,6 +539,7 @@ export function DemoTerminal({
       setWsState("connecting");
       ws = new WebSocket(WS_URL);
       ws.onopen = () => {
+        candlesFlowing = false;
         setWsState("live");
         ws?.send(JSON.stringify({ type: "subscribe", channel: "bbo", id: market }));
         ws?.send(JSON.stringify({ type: "subscribe", channel: "candles", id: `${market}/${tf}` }));
@@ -521,9 +550,13 @@ export function DemoTerminal({
           if (m.type === "error") {
             // only a candles-subscription rejection warrants the REST fallback — a bbo/transient
             // error must not shadow a healthy live stream with lagging snapshots
-            if (String(e.data).includes("candles")) startPollFallback();
+            if (String(e.data).includes("candles")) {
+              candlesFlowing = false;
+              startPollFallback();
+            }
             return;
           }
+          if (candlesFlowing && !poll) feedRef.current?.alive();
           if (m.channel === "bbo" && m.contents) {
             const c = m.contents as { bestBid?: { price: string } | null; bestAsk?: { price: string } | null };
             const bid = c.bestBid ? Number(c.bestBid.price) : null;
@@ -533,11 +566,13 @@ export function DemoTerminal({
             setBbo({ bid, ask });
           } else if (m.channel === "candles" && m.contents) {
             stopPollFallback(); // the channel is healthy — a live frame beats the REST fallback
+            candlesFlowing = true;
             const c = m.contents as { candles?: Candle[]; isSnapshot?: boolean } & Candle;
             if (c.candles) {
-              proRef.current?.applySnapshot(c.candles.map(fromArcusCandle));
+              feedRef.current?.put(tf, c.candles);
+              feedRef.current?.alive();
             } else if (c.openTime) {
-              proRef.current?.applyTick(fromArcusCandle(c));
+              feedRef.current?.tick(tf, c);
               const px = Number(c.close);
               if (px > 0) setPrice((p) => p ?? px);
             }
@@ -546,6 +581,8 @@ export function DemoTerminal({
       };
       ws.onclose = () => {
         if (closed) return;
+        candlesFlowing = false;
+        feedRef.current?.down();
         setWsState("down");
         retry = setTimeout(connect, 3000);
       };
@@ -557,6 +594,8 @@ export function DemoTerminal({
       if (retry) clearTimeout(retry);
       if (poll) clearInterval(poll);
       ws?.close();
+      /* The next interval's stream has not answered yet: the chart is not live until it does. */
+      feedRef.current?.down();
     };
   }, [market, tf]);
 
@@ -601,36 +640,61 @@ export function DemoTerminal({
   const sl = Number(slIn) || 0;
   const tp = Number(tpIn) || 0;
 
-  /* static lines for OPEN trades on this market (not draggable) */
-  const openTradeLines = useMemo<PriceLineSpec[]>(() => {
-    const lines: PriceLineSpec[] = [];
-    const add = (id: string, price: number, color: string, title: string) => {
-      if (price > 0) lines.push({ id, price, color, title, style: "solid" });
+  /* The open trades on this market as levels on the core's chart: their lines are shown, never dragged. */
+  const levels = useMemo<ChartLevel[]>(() => {
+    if (!feed) return [];
+    const step = feed.instrument.tick;
+    const out: ChartLevel[] = [];
+    const add = (id: string, at: number, label: string) => {
+      if (at > 0) out.push({ id, kind: "level", price: onTick(at, step), basis: PRICE_BASIS, label });
     };
     for (const tr of list?.open ?? []) {
       if (tr.market !== market) continue;
-      add(`${tr.id}-entry`, Number(tr.entry_price), TERMINAL_ENTRY_LINE, `${tr.side} entry`);
-      if (tr.sl) add(`${tr.id}-sl`, Number(tr.sl), "down", "SL");
-      if (tr.tp) add(`${tr.id}-tp`, Number(tr.tp), "up", "TP");
+      add(`${tr.id}-entry`, Number(tr.entry_price), `${tr.side} entry`);
+      if (tr.sl) add(`${tr.id}-sl`, Number(tr.sl), "SL");
+      if (tr.tp) add(`${tr.id}-tp`, Number(tr.tp), "TP");
     }
-    return lines;
-  }, [list, market]);
+    return out;
+  }, [feed, list, market]);
 
-  /* draggable, ticket-synced plan lines — drag a line to set the ticket input, or type to move
-     the line. Entry is draggable only in limit mode (market entry follows the live price). */
-  const riskLines = useMemo<RiskLineSpec[]>(() => {
-    const lines: RiskLineSpec[] = [];
-    if (entryMode !== "market" && entry > 0 && (sl > 0 || tp > 0)) lines.push({ id: "plan-entry", price: entry, color: "entry", label: "Entry", draggable: true });
-    if (sl > 0) lines.push({ id: "plan-sl", price: sl, color: "down", label: "SL", draggable: true });
-    if (tp > 0) lines.push({ id: "plan-tp", price: tp, color: "up", label: "TP", draggable: true });
-    return lines;
-  }, [entry, sl, tp, entryMode]);
+  /* The ticket's plan as the draft lines of the core's trading layer — drag a line to set the ticket input, or type
+     to move the line. Entry is a line only in limit mode (a market entry follows the live price). The layer moves a
+     draft only on live data, sends nothing, and never drafts an order of its own here: this terminal is paper. */
+  const trading = useMemo<TradingLayerState | null>(() => {
+    if (!feed) return null;
+    const instrument = feed.instrument;
+    const step = instrument.tick;
+    const opens = side === "long" ? "buy" : "sell";
+    const closes = side === "long" ? "sell" : "buy";
+    const amount = size > 0 ? String(size) : "0";
+    const line = (id: string, role: OrderLine["role"], lineSide: "buy" | "sell", at: number, trigger: boolean, leg: number): OrderLine => ({
+      id, role, state: "draft", side: lineSide, price: onTick(at, step), trigger: trigger ? onTick(at, step) : null,
+      trigger_kind: trigger ? "last" : null, size: amount, remaining: amount, reduce_only: trigger, tif: null, intent_id: null, leg, refusal: null,
+    });
+    const lines: OrderLine[] = [];
+    if (entryMode !== "market" && entry > 0 && (sl > 0 || tp > 0)) lines.push(line("plan-entry", "limit", opens, entry, false, 0));
+    if (tp > 0) lines.push(line("plan-tp", "take_profit", closes, tp, true, 1));
+    if (sl > 0) lines.push(line("plan-sl", "stop_loss", closes, sl, true, 2));
+    const mid = bbo.bid && bbo.ask ? (bbo.bid + bbo.ask) / 2 : null;
+    return {
+      instrument,
+      view: PRICE_BASIS,
+      lines,
+      position: null,
+      tradable: true,
+      not_tradable_reason: null,
+      armed: false,
+      prices: mid ? { mid: onTick(mid, step) } : price ? { last: onTick(price, step) } : {},
+      fee_rate: feeFrac > 0 && feeFrac < 1 ? feeFrac.toFixed(8).replace(/0+$/, "").replace(/\.$/, "") : undefined,
+    };
+  }, [feed, side, size, entryMode, entry, sl, tp, bbo, price, feeFrac]);
 
-  const onRiskLineChange = (id: string, price: number): void => {
-    const v = String(price < 1 ? Number(price.toFixed(6)) : price < 100 ? Number(price.toFixed(3)) : Number(price.toFixed(2)));
-    if (id === "plan-sl") setSlIn(v);
-    else if (id === "plan-tp") setTpIn(v);
-    else if (id === "plan-entry") setEntryIn(v);
+  const chartMarks = useMemo(() => ({ view: PRICE_BASIS, marks: [], levels }), [levels]);
+
+  const onDraftMove = (id: string, at: string): void => {
+    if (id === "plan-sl") setSlIn(at);
+    else if (id === "plan-tp") setTpIn(at);
+    else if (id === "plan-entry") setEntryIn(at);
   };
 
   /* ---------- ticket math ---------- */
@@ -879,25 +943,35 @@ export function DemoTerminal({
       <main className="dm-grid">
         {/* chart */}
         <section className="dm-chart-wrap">
-          <ProChart
-            ref={proRef}
-            candles={candles}
-            symbolLabel={market}
-            tfSeconds={tfToSeconds(tf)}
-            theme={theme}
-            timeframes={TFS}
-            tf={tf}
-            onTfChange={(x) => setTf(x as (typeof TFS)[number])}
-            priceLines={openTradeLines}
-            riskLines={riskLines}
-            onRiskLineDrag={onRiskLineChange}
-            onRiskLineCommit={onRiskLineChange}
-            storageNamespace="demo"
-            drawingScope={`demo:${market}`}
-            note={<span className="dm-chart-note">Live Arcus market data · fills simulated</span>}
-            chartClassName="dm-chart"
-            features={{ drawings: FLAGS.terminal.chartDrawings, indicators: FLAGS.terminal.chartIndicators }}
-          />
+          {/* The core's chart (SOL-T4): its tokens resolve on this box, Graphite or Porcelain as the terminal's theme. */}
+          <div className="dm-chart" data-theme={theme === "light" ? "porcelain" : "graphite"} data-demo-chart>
+            {feed ? (
+              <RyntraChart
+                key={`${market}|${theme}`}
+                source={feed.source}
+                instrument={market}
+                resolution={resolutionOf(tf)}
+                onResolutionChange={(next) => {
+                  const x = timeframeOf(next);
+                  if (x) setTf(x);
+                }}
+                lang="en"
+                symbol={
+                  <span className="dm-chart-head">
+                    <b translate="no">{market}</b>
+                    <span className="dm-chart-note">Live Arcus market data · fills simulated</span>
+                  </span>
+                }
+                label={`${market} · price`}
+                trading={trading}
+                onDraftMove={onDraftMove}
+                marks={chartMarks}
+                drawings={FLAGS.terminal.chartDrawings ? { profile: null, legacy: () => [`ryntra-drawings:demo:${market}`] } : null}
+                indicatorWorker={indicatorWorker}
+                className="dm-core-chart"
+              />
+            ) : null}
+          </div>
         </section>
 
         {/* SmartTrade ticket */}

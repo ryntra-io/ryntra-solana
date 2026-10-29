@@ -27,6 +27,8 @@ import type {
   LaunchTradeSide,
   LaunchTradeSubmitResponse,
 } from '../../lib/api/v1/types.ts'
+import { signFresh } from '../wallet/sign-fresh.ts'
+import { walletCannotSign } from '../wallet/wallet-wait.ts'
 
 /** The wallet signs exact transactions, all in one prompt, and hands each back signed — it never sends. */
 export type LaunchWallet = Readonly<{ signTransactions: (unsignedWireBase64: readonly string[]) => Promise<string[]> }>
@@ -50,6 +52,7 @@ export function codeOf(error: unknown): Readonly<{ code: string; detail: string 
  */
 export function walletFailure(error: unknown): Readonly<{ code: string; detail: string | null }> {
   // The app's one reading of a wallet's answer — the same the sign-in and the trade use.
+  if (walletCannotSign(error)) return { code: 'WALLET_CANNOT_SIGN', detail: null }
   const kind = walletErrorKind(error)
   if (kind === 'no-wallet') return { code: 'WALLET_NOT_FOUND', detail: null }
   if (kind === 'cancelled') return { code: 'WALLET_REFUSED', detail: null }
@@ -59,11 +62,34 @@ export function walletFailure(error: unknown): Readonly<{ code: string; detail: 
 /** A wallet that handed back fewer signed transactions than it was given did not finish. */
 const SHORT = { code: 'WALLET_FAILED', detail: null } as const
 
+/**
+ * AG-2: the build's bytes live ~30 s, less a margin for each transaction sent after the first. The server says how long
+ * from arrival they may still be signed (`signableMs`, contract-additive — the pinned types predate it).
+ */
+function buildSignableMs(built: unknown): number | null {
+  const given = (built as Readonly<{ signableMs?: unknown }>).signableMs
+  return typeof given === 'number' ? given : null
+}
+
+/** A signature after the bytes' window, twice in a row: nothing was sent; the device has to confirm within ~20 s. */
+const AGED_LATE = { code: 'LAUNCH_SIGN_LATE', detail: null } as const
+/** Both builds came with too little of their life for a wallet: nothing was asked, nothing sent. */
+const AGED_SHORT = { code: 'LAUNCH_BYTES_SHORT', detail: null } as const
+/** A rebuild whose figures came out worse than the first: nothing was sent; the person looks at the figures again. */
+const MOVED = { code: 'LAUNCH_QUOTE_MOVED', detail: null } as const
+
 /* ---------------------------------------------------------------- the launch */
+
+/**
+ * 1.71.0 (MC-1): `format: "v1"` — the wallet signs v1; on Micro and the demo market the one way a first buy (and its
+ * lock, in the same transaction) is built. Contract-additive — the pinned types (1.66.0) predate it; the pin follows
+ * production.
+ */
+export type LaunchBuildRequestV1 = LaunchBuildRequest & Readonly<{ format?: 'v1' }>
 
 export type CreateApi = Readonly<{
   metadata: (request: LaunchMetadataRequest) => Promise<LaunchMetadataResponse>
-  build: (request: LaunchBuildRequest) => Promise<LaunchBuildResponse>
+  build: (request: LaunchBuildRequestV1) => Promise<LaunchBuildResponse>
   submit: (request: LaunchSubmitRequest) => Promise<LaunchSubmitResponse>
   token: (mint: string) => Promise<LaunchTokenResponse>
 }>
@@ -77,6 +103,11 @@ export type CreateInput = Readonly<{
   imageBase64: string
   firstBuyRaw: bigint
   lock: LaunchLockId | null
+  /**
+   * The wallet signs v1 (1.71.0): on Micro a first purchase and its lock are then one transaction — the build answers
+   * `lockUnsignedWireBase64: null` and the wallet signs one. Sent only with a first purchase.
+   */
+  format?: 'v1'
   onStep?: (step: FlowStep) => void
   /** Told what the build costs the creator and how many transactions the wallet signs, before it opens. */
   onBuilt?: (built: Readonly<{ creatorCostLamports: string; transactions: number }>) => void
@@ -102,31 +133,69 @@ export async function launchToken(input: CreateInput): Promise<CreateOutcome> {
   const step = input.onStep ?? (() => undefined)
   step('prepare')
   let metadata: LaunchMetadataResponse
-  let built: LaunchBuildResponse
   try {
     metadata = await input.api.metadata({ ...input.fields, imageBase64: input.imageBase64 })
-    built = await input.api.build({
-      creator: input.creator,
-      preset: input.preset,
-      metadataUri: metadata.metadataUri,
-      firstBuyRaw: input.firstBuyRaw.toString(),
-      lock: input.firstBuyRaw > 0n ? input.lock : null,
-    })
   } catch (error) {
     return { ok: false, failure: { step: 'before', ...codeOf(error) }, token: null }
   }
+  const wiresOf = (b: LaunchBuildResponse) => [
+    b.unsignedWireBase64,
+    ...(b.lockUnsignedWireBase64 ? [b.lockUnsignedWireBase64] : []),
+    ...(b.splitUnsignedWireBase64 ? [b.splitUnsignedWireBase64] : []),
+  ]
+  /* AG-2: signed after the bytes' window, the launch is built again (never sent dead) — only if the first buy still gets at least as much. */
+  let first: LaunchBuildResponse | null = null
+  type Stop = Readonly<{ code: string; detail: string | null }>
+  let rebuilding = false
+  const fresh = await signFresh<LaunchBuildResponse, string[], Stop, Stop>({
+    build: async () => {
+      // The first build is the «prepare» the flow already said; a second one says it again.
+      if (rebuilding) step('prepare')
+      rebuilding = true
+      try {
+        const b = await input.api.build({
+          creator: input.creator,
+          preset: input.preset,
+          metadataUri: metadata.metadataUri,
+          firstBuyRaw: input.firstBuyRaw.toString(),
+          lock: input.firstBuyRaw > 0n ? input.lock : null,
+          ...(input.format && input.firstBuyRaw > 0n ? { format: input.format } : {}),
+        })
+        if (first && BigInt(b.firstBuyOutRaw) < BigInt(first.firstBuyOutRaw)) return { ok: false, failure: MOVED }
+        first ??= b
+        return { ok: true, data: b }
+      } catch (error) {
+        return { ok: false, failure: codeOf(error) }
+      }
+    },
+    signableMsOf: buildSignableMs,
+    sign: async (b) => {
+      const wires = wiresOf(b)
+      input.onBuilt?.({ creatorCostLamports: b.creatorCostLamports, transactions: wires.length })
+      step('sign')
+      try {
+        const signed = await input.wallet.signTransactions(wires)
+        return signed.length === wires.length ? { ok: true, value: signed } : { ok: false, error: SHORT }
+      } catch (error) {
+        return { ok: false, error: walletFailure(error) }
+      }
+    },
+  })
+  if (!fresh.ok) {
+    const failure =
+      fresh.stage === 'build'
+        ? fresh.failure
+        : fresh.stage === 'sign'
+          ? fresh.error
+          : fresh.late
+            ? AGED_LATE
+            : AGED_SHORT
+    return { ok: false, failure: { step: 'before', ...failure }, token: null }
+  }
+  const built = fresh.built
+  const signed = fresh.signed
   const lockWire = built.lockUnsignedWireBase64 ?? null
   const splitWire = built.splitUnsignedWireBase64 ?? null
-  const wires = [built.unsignedWireBase64, ...(lockWire ? [lockWire] : []), ...(splitWire ? [splitWire] : [])]
-  input.onBuilt?.({ creatorCostLamports: built.creatorCostLamports, transactions: wires.length })
-  step('sign')
-  let signed: string[]
-  try {
-    signed = await input.wallet.signTransactions(wires)
-  } catch (error) {
-    return { ok: false, failure: { step: 'before', ...walletFailure(error) }, token: null }
-  }
-  if (signed.length !== wires.length) return { ok: false, failure: { step: 'before', ...SHORT }, token: null }
   step('send')
   let submitted: LaunchSubmitResponse
   try {
@@ -214,25 +283,59 @@ export async function tradeLaunch(
 ): Promise<TradeOutcome> {
   const step = input.onStep ?? (() => undefined)
   step('prepare')
-  let built: LaunchTradeBuildResponse
-  try {
-    built = await input.api.build({
-      wallet: input.address,
-      side: input.side,
-      amountRaw: input.amountRaw.toString(),
-      slippageBps: input.slippageBps,
-    })
-  } catch (error) {
-    return { ok: false, failure: { step: 'before', ...codeOf(error) } }
+  /* AG-2: signed after the bytes' window, the trade is built again — only if its minimum and fee are no worse. */
+  let first: LaunchTradeBuildResponse | null = null
+  type Stop = Readonly<{ code: string; detail: string | null }>
+  let rebuilding = false
+  const fresh = await signFresh<LaunchTradeBuildResponse, string[], Stop, Stop>({
+    build: async () => {
+      // The first build is the «prepare» the flow already said; a second one says it again.
+      if (rebuilding) step('prepare')
+      rebuilding = true
+      try {
+        const b = await input.api.build({
+          wallet: input.address,
+          side: input.side,
+          amountRaw: input.amountRaw.toString(),
+          slippageBps: input.slippageBps,
+        })
+        if (
+          first &&
+          (BigInt(b.quote.minimumOutRaw) < BigInt(first.quote.minimumOutRaw) ||
+            BigInt(b.quote.fee.totalRaw) > BigInt(first.quote.fee.totalRaw))
+        ) {
+          return { ok: false, failure: MOVED }
+        }
+        first ??= b
+        return { ok: true, data: b }
+      } catch (error) {
+        return { ok: false, failure: codeOf(error) }
+      }
+    },
+    signableMsOf: buildSignableMs,
+    sign: async (b) => {
+      step('sign')
+      try {
+        const signed = await input.wallet.signTransactions([b.unsignedWireBase64])
+        return signed[0] ? { ok: true, value: signed } : { ok: false, error: SHORT }
+      } catch (error) {
+        return { ok: false, error: walletFailure(error) }
+      }
+    },
+  })
+  if (!fresh.ok) {
+    const failure =
+      fresh.stage === 'build'
+        ? fresh.failure
+        : fresh.stage === 'sign'
+          ? fresh.error
+          : fresh.late
+            ? AGED_LATE
+            : AGED_SHORT
+    return { ok: false, failure: { step: 'before', ...failure } }
   }
-  step('sign')
-  let signed: string[]
-  try {
-    signed = await input.wallet.signTransactions([built.unsignedWireBase64])
-  } catch (error) {
-    return { ok: false, failure: { step: 'before', ...walletFailure(error) } }
-  }
-  if (!signed[0]) return { ok: false, failure: { step: 'before', ...SHORT } }
+  const built = fresh.built
+  const signed = fresh.signed as [string, ...string[]]
   step('send')
   try {
     const submit = await input.api.submit({
@@ -274,21 +377,46 @@ export async function claimFees(
 ): Promise<ClaimOutcome> {
   const step = input.onStep ?? (() => undefined)
   step('prepare')
-  let built: LaunchClaimBuildResponse
-  try {
-    built = await input.api.build({ wallet: input.address })
-  } catch (error) {
-    return { ok: false, failure: { step: 'before', ...codeOf(error) } }
+  /* AG-2: signed after the bytes' window, the claim is built again and the wallet asked once more — never sent dead. */
+  type Stop = Readonly<{ code: string; detail: string | null }>
+  let rebuilding = false
+  const fresh = await signFresh<LaunchClaimBuildResponse, string[], Stop, Stop>({
+    build: async () => {
+      // The first build is the «prepare» the flow already said; a second one says it again.
+      if (rebuilding) step('prepare')
+      rebuilding = true
+      try {
+        const b = await input.api.build({ wallet: input.address })
+        input.onBuilt?.(b)
+        return { ok: true, data: b }
+      } catch (error) {
+        return { ok: false, failure: codeOf(error) }
+      }
+    },
+    signableMsOf: buildSignableMs,
+    sign: async (b) => {
+      step('sign')
+      try {
+        const signed = await input.wallet.signTransactions(b.unsignedWireBase64)
+        return signed.length === b.unsignedWireBase64.length ? { ok: true, value: signed } : { ok: false, error: SHORT }
+      } catch (error) {
+        return { ok: false, error: walletFailure(error) }
+      }
+    },
+  })
+  if (!fresh.ok) {
+    const failure =
+      fresh.stage === 'build'
+        ? fresh.failure
+        : fresh.stage === 'sign'
+          ? fresh.error
+          : fresh.late
+            ? AGED_LATE
+            : AGED_SHORT
+    return { ok: false, failure: { step: 'before', ...failure } }
   }
-  input.onBuilt?.(built)
-  step('sign')
-  let signed: string[]
-  try {
-    signed = await input.wallet.signTransactions(built.unsignedWireBase64)
-  } catch (error) {
-    return { ok: false, failure: { step: 'before', ...walletFailure(error) } }
-  }
-  if (signed.length !== built.unsignedWireBase64.length) return { ok: false, failure: { step: 'before', ...SHORT } }
+  const built = fresh.built
+  const signed = fresh.signed
   step('send')
   try {
     const result = await input.api.submit({ buildId: built.buildId, wallet: input.address, signedWireBase64: signed })

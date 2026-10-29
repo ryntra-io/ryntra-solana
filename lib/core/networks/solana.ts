@@ -37,6 +37,17 @@ export function settlementOf(signature: string, read: Awaited<ReturnType<typeof 
   return { state: "SETTLED", signature, finality };
 }
 
+/**
+ * A definite refusal of these bytes: the RPC's preflight simulated them and they failed (-32002), not for a blockhash
+ * the node had not seen yet. Sending the same bytes again is refused the same way (SOL-S1). An unhealthy node, a rate
+ * limit or a blockhash the RPC is behind on is not this: those are the sends a re-send lands.
+ */
+function preflightRefused(cause: unknown): boolean {
+  if (!(cause instanceof SolanaSubmitRpcError) || cause.rpcCode !== "-32002") return false;
+  const text = `${cause.message} ${JSON.stringify(cause.rpcData ?? null, (_key, value) => (typeof value === "bigint" ? value.toString() : value))}`;
+  return !/BlockhashNotFound|Blockhash not found/i.test(text);
+}
+
 export function createSolanaNetwork(args: Readonly<{
   /** The deployment's own primary — the only one a send goes through. */
   submitHandle: SolanaRpcHandle;
@@ -53,7 +64,7 @@ export function createSolanaNetwork(args: Readonly<{
         return { state: "SENT", signature: tx.signature, lane: SOLANA_OWN_RPC_LANE };
       } catch (cause) {
         const reason = cause instanceof SolanaSubmitRpcError || cause instanceof Error ? cause.message : String(cause);
-        return { state: "UNKNOWN", signature: tx.signature, lane: SOLANA_OWN_RPC_LANE, reason };
+        return { state: "UNKNOWN", signature: tx.signature, lane: SOLANA_OWN_RPC_LANE, reason, ...(preflightRefused(cause) ? { rejected: true } : {}) };
       }
     },
     async observe(signature: string): Promise<Settlement> {

@@ -20,11 +20,17 @@ import {
   RULE_LIST_LIMIT,
 } from "../../../lib/autoinvest/limits.ts";
 import { RULE_REMINDER_HOURS } from "../../../lib/autoinvest/schedule.ts";
-import { POINTS_POLICY_V1 } from "../../../lib/points/policy.ts";
 import { REWARD_MINIMUM_CLAIM_USD_MICROS, USD_MICROS_PER_USD } from "../../../lib/rewards/model.ts";
 import { RANK_THRESHOLDS, RANK_WINDOW_DAYS, REWARD_RANKS, REWARD_RULES_CURRENT } from "../../../lib/rewards/rules.ts";
 import { RYNTRA_SERVICE_FEE_POLICY } from "../../../lib/swap/service-fee.ts";
 import { FEE_POLICY_V2, type FeeFlow } from "../../../lib/core/fee-policy.ts";
+import { launchPoolFee } from "../../../lib/core/fee-comparison.ts";
+import { DEFAULT_PERP_SLIPPAGE_BPS, MAX_PERP_SLIPPAGE_BPS, MIN_ORDER_NOTIONAL_USD, MIN_PERP_SLIPPAGE_BPS, STOP_SLIPPAGE_BPS } from "../../../lib/phoenix/orders-model.ts";
+import { MAX_COLLATERAL_MICRO, MIN_COLLATERAL_MICRO } from "../../../lib/phoenix/collateral-model.ts";
+import { RYNTRA_BUY_FEE_BIPS } from "../../../lib/predictions/costs.ts";
+import { DLMM_LIMIT_MAKER_FEE_SHARE_PERCENT, DLMM_LIMIT_MAX_BINS, TRIGGER_V1_MIN_ORDER_USD, TRIGGER_V1_MIN_REFERRAL_FEE_BPS } from "../../../lib/solana/limits/model.ts";
+import { DEFAULT_GRID_LEVELS, GRID_LEVELS } from "../../../lib/bots/grid.ts";
+import { DEFAULT_CREDIT_PRICES, resolveCreditsConfig } from "../../../lib/assistant/credits/prices.ts";
 
 /**
  * The figures the documentation states, read from the code that charges,
@@ -170,55 +176,11 @@ export function rankRows(locale: "en" | "uk"): readonly (readonly string[])[] {
   return REWARD_RANKS.map((rank, i) => [RANK_NAMES[locale][i], number.format(Number(RANK_THRESHOLDS[rank])), `${referralL1ByRank[i]}%`]);
 }
 
-const usd = (micros: bigint): number => Number(micros / USD_MICROS_PER_USD);
-const perDollar = (perThousand: bigint): string => {
-  const value = Number(perThousand) / 1000;
-  return Number.isInteger(value) ? value.toFixed(0) : String(value);
-};
-
-/** The Points policy, V1, as the ledger applies it. */
-export const POINTS = {
-  version: POINTS_POLICY_V1.version,
-  tiers: POINTS_POLICY_V1.volumeTiers.map((tier) => ({
-    upToUsd: tier.upToUsdMicros === null ? null : usd(tier.upToUsdMicros),
-    perDollar: perDollar(tier.pointsPerThousandUsd),
-  })),
-  dailyCap: Number(POINTS_POLICY_V1.dailyVolumePointsCap),
-  activeDayPoints: Number(POINTS_POLICY_V1.activeDay.points),
-  activeDayMinimumUsd: usd(POINTS_POLICY_V1.activeDay.minimumDayVolumeUsdMicros),
-  qualifiedReferralPoints: Number(POINTS_POLICY_V1.qualifiedReferral.points),
-  strategyCompletedPoints: Number(POINTS_POLICY_V1.strategyCompleted.points),
-  /** Lifetime points at which each level begins; index 0 is level 1. */
-  levels: POINTS_POLICY_V1.levels.map((points) => Number(points)),
-} as const;
-
-const fmt = (value: number): string => value.toLocaleString("en-US");
-
-/** The tier table as the documentation shows it, in both languages. */
-export function pointsTierRows(locale: "en" | "uk"): readonly (readonly string[])[] {
-  let from = 0;
-  return POINTS.tiers.map((tier) => {
-    const range = tier.upToUsd === null
-      ? locale === "uk" ? `понад $${fmt(from)}` : `above $${fmt(from)}`
-      : `$${fmt(from)} – $${fmt(tier.upToUsd)}`;
-    const rate = locale === "uk" ? `${tier.perDollar} бала за $1` : `${tier.perDollar} point${tier.perDollar === "1" ? "" : "s"} per $1`;
-    from = tier.upToUsd ?? from;
-    return [range, rate];
-  });
-}
-
-export function levelRows(locale: "en" | "uk"): readonly (readonly string[])[] {
-  return POINTS.levels.map((at, index) => [
-    locale === "uk" ? `Рівень ${index + 1}` : `Level ${index + 1}`,
-    index === 0 ? (locale === "uk" ? "від 0 балів" : "from 0 points") : (locale === "uk" ? `від ${fmt(at)} балів` : `from ${fmt(at)} points`),
-  ]);
-}
-
-/** The pages of the menu with the section that holds them and their readiness, from the registry. */
+/** The pages of the menu with the row that holds them and their readiness, from the registry. */
 export type ProductPageFact = Readonly<{ id: ProductPageId; href: string; section: MenuSectionId; label: Readonly<{ en: string; uk: string }>; sectionLabel: Readonly<{ en: string; uk: string }>; readiness: PageReadiness }>;
 
 /**
- * Only the pages the menu draws, section by section in the menu's order. A
+ * Only the pages the menu draws, row by row in the menu's order. A
  * planned page and a page kept off the surface are registered and drawn
  * nowhere — not in the menu, not in the documentation's table.
  */
@@ -242,7 +204,92 @@ export function hrefOf(id: ProductPageId): string {
   return route.href;
 }
 
-/** Where a section of the menu or the assistant opens, from the menu's own list. */
+/** Where a row of the menu or the assistant opens, from the menu's own list. */
 export function destinationHref(id: DocsDestination): string {
   return id === "agent" ? ASSISTANT.href : MENU_SECTIONS[id].href;
 }
+
+/* ------------------------------------------------ F3: the product pages' figures */
+
+const percentOf = (bps: number): string => bpsToPercent(bps);
+
+/** Perps on Phoenix: the order's bounds and the collateral's, read from the code the ticket and the server use. */
+export const PERPS = {
+  minNotional: `$${MIN_ORDER_NOTIONAL_USD}`,
+  tolerance: { default: percentOf(DEFAULT_PERP_SLIPPAGE_BPS), min: percentOf(MIN_PERP_SLIPPAGE_BPS), max: percentOf(MAX_PERP_SLIPPAGE_BPS) },
+  toleranceUk: { default: ukDecimal(percentOf(DEFAULT_PERP_SLIPPAGE_BPS)), min: ukDecimal(percentOf(MIN_PERP_SLIPPAGE_BPS)), max: ukDecimal(percentOf(MAX_PERP_SLIPPAGE_BPS)) },
+  /** How far a limit may stand through the mark before it is refused — the same bound as the tolerance's ceiling. */
+  limitFar: percentOf(MAX_PERP_SLIPPAGE_BPS),
+  /** How far from its trigger a stop may fill. */
+  stopSlippage: percentOf(STOP_SLIPPAGE_BPS),
+  collateralMin: `$${Number(MIN_COLLATERAL_MICRO / 1_000_000n)}`,
+  collateralMax: { en: `$${Number(MAX_COLLATERAL_MICRO / 1_000_000n).toLocaleString("en-US")}`, uk: `$${Number(MAX_COLLATERAL_MICRO / 1_000_000n).toLocaleString("en-US").replace(/,/g, " ")}` },
+} as const;
+
+/** Ryntra's fee on a prediction market's buy; a sell carries none (`lib/predictions/costs.ts`). */
+export const PREDICTION_BUY_FEE = { en: percentOf(RYNTRA_BUY_FEE_BIPS), uk: ukDecimal(percentOf(RYNTRA_BUY_FEE_BIPS)) } as const;
+
+/** Spot limit orders: Jupiter's Trigger and Meteora's DLMM bins (`lib/solana/limits/model.ts`). */
+export const LIMITS = {
+  triggerMinimum: `$${TRIGGER_V1_MIN_ORDER_USD}`,
+  triggerFloor: { en: percentOf(TRIGGER_V1_MIN_REFERRAL_FEE_BPS), uk: ukDecimal(percentOf(TRIGGER_V1_MIN_REFERRAL_FEE_BPS)) },
+  dlmmMaxBins: DLMM_LIMIT_MAX_BINS,
+  dlmmMakerShare: `${DLMM_LIMIT_MAKER_FEE_SHARE_PERCENT}%`,
+} as const;
+
+/** A grid: the levels it may hold and the one it opens on (`lib/bots/grid.ts`). */
+export const GRID = {
+  levels: GRID_LEVELS.join(" · "),
+  defaultLevels: DEFAULT_GRID_LEVELS,
+} as const;
+
+const CREDITS_DEFAULT = resolveCreditsConfig({});
+/** The assistant's credits as the plan sets them: what one action costs, the free daily credits and the welcome. */
+export const CREDITS = {
+  question: DEFAULT_CREDIT_PRICES.question,
+  tokenReport: DEFAULT_CREDIT_PRICES.tokenReport,
+  priceMove: DEFAULT_CREDIT_PRICES.priceMove,
+  voice: DEFAULT_CREDIT_PRICES.voice,
+  deep: DEFAULT_CREDIT_PRICES.deep,
+  plan: DEFAULT_CREDIT_PRICES.plan,
+  freeDaily: CREDITS_DEFAULT.freeDaily,
+  welcome: CREDITS_DEFAULT.welcome,
+  welcomeMinAgeDays: CREDITS_DEFAULT.welcomeMinAgeDays,
+  welcomeMinTxs: CREDITS_DEFAULT.welcomeMinTxs,
+  dailySpendCap: { en: CREDITS_DEFAULT.dailySpendCap.toLocaleString("en-US"), uk: CREDITS_DEFAULT.dailySpendCap.toLocaleString("en-US").replace(/,/g, " ") },
+} as const;
+
+const LAUNCH_FEE = launchPoolFee();
+/** A Ryntra launch's own fees — the curve's and the pool's — with Ryntra's part inside them, never on top. */
+export const LAUNCH_FEES = {
+  sniperStart: { en: percentOf(LAUNCH_FEE.sniperStartBps), uk: ukDecimal(percentOf(LAUNCH_FEE.sniperStartBps)) },
+  curve: { en: percentOf(LAUNCH_FEE.curve.baseBps), uk: ukDecimal(percentOf(LAUNCH_FEE.curve.baseBps)) },
+  poolStart: { en: percentOf(LAUNCH_FEE.pool.startBps), uk: ukDecimal(percentOf(LAUNCH_FEE.pool.startBps)) },
+  poolEnd: {
+    en: LAUNCH_FEE.pool.endLowBps === LAUNCH_FEE.pool.endHighBps ? percentOf(LAUNCH_FEE.pool.endLowBps) : `${percentOf(LAUNCH_FEE.pool.endLowBps).replace("%", "")}–${percentOf(LAUNCH_FEE.pool.endHighBps)}`,
+    uk: ukDecimal(LAUNCH_FEE.pool.endLowBps === LAUNCH_FEE.pool.endHighBps ? percentOf(LAUNCH_FEE.pool.endLowBps) : `${percentOf(LAUNCH_FEE.pool.endLowBps).replace("%", "")}–${percentOf(LAUNCH_FEE.pool.endHighBps)}`),
+  },
+} as const;
+
+/** The claim floor of the Rewards rules in force: with a USDC account in the wallet, and without one. */
+export const CLAIM_FLOOR = (() => {
+  const floor = REWARD_RULES_CURRENT.claimFloor;
+  const usdOf = (micros: bigint) => (Number(micros) / Number(USD_MICROS_PER_USD)).toFixed(2);
+  const withAccount = floor ? usdOf(floor.withAccountUsdMicros) : usdOf(REWARD_MINIMUM_CLAIM_USD_MICROS);
+  const withoutAccount = floor ? usdOf(floor.withoutAccountUsdMicros) : usdOf(REWARD_MINIMUM_CLAIM_USD_MICROS);
+  return { en: { withAccount: `$${withAccount}`, withoutAccount: `$${withoutAccount}` }, uk: { withAccount: `$${withAccount.replace(".", ",")}`, withoutAccount: `$${withoutAccount.replace(".", ",")}` } } as const;
+})();
+
+/** «Перші $10 назад» and the inviter's window of the Rewards rules in force, when they carry them. */
+export const REWARD_EXTRAS = {
+  firstTen: REWARD_RULES_CURRENT.firstTen
+    ? { cap: `$${Number(REWARD_RULES_CURRENT.firstTen.capUsdMicros / USD_MICROS_PER_USD)}`, days: REWARD_RULES_CURRENT.firstTen.days, wallets: REWARD_RULES_CURRENT.firstTen.walletsPerMonth }
+    : null,
+  inviterWindow: REWARD_RULES_CURRENT.inviterWindow ? { percent: REWARD_RULES_CURRENT.inviterWindow.bps / 100, days: REWARD_RULES_CURRENT.inviterWindow.days } : null,
+  version: REWARD_RULES_CURRENT.version,
+} as const;
+
+/* How long after its first earning a wallet may still change its inviter (`REFERRAL_BIND_WINDOW_DAYS`,
+   lib/rewards/referral.ts — written here rather than imported, since that module draws on node:crypto and the
+   documentation renders in the browser; docs.test.mjs holds the two equal). */
+export const REFERRAL_BIND_WINDOW_DAYS = 7;

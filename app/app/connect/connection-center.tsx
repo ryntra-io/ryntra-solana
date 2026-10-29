@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   ArrowCounterClockwise,
@@ -13,7 +14,6 @@ import {
 
 import { StatusChip } from "@/app/shell/status-chip";
 import type { CbCopy } from "../copy";
-import { WalletSignIn } from "../wallet-signin";
 import {
   HOME_CONNECTION_NETWORKS,
   HOME_READ_SCOPES,
@@ -76,7 +76,7 @@ export function ConnectionCenter({
   const storageKey = useMemo(() => `ryntra.home.v1.${ownerRef}`, [ownerRef]);
   const [storageState, setStorageState] = useState<StorageState>("LOADING");
   const [envelope, setEnvelope] = useState<HomeLocalEnvelope | null>(null);
-  const [identityWallet, setIdentityWallet] = useState(initialIdentityWallet);
+  const identityWallet = initialIdentityWallet;
   const [venueState, setVenueState] = useState<VenueState>("NONE");
   const [watchDraft, setWatchDraft] = useState<WatchDraftState>(EMPTY_DRAFT);
   const [connectionNotice, setConnectionNotice] = useState<string | null>(null);
@@ -270,15 +270,8 @@ export function ConnectionCenter({
         </dl>
         {!identityWallet && telegramVerified ? (
           <div className={styles.walletLink}>
-            <WalletSignIn
-              action="link"
-              label={copy.wallets.linkWallet}
-              className="btn btn-primary btn-sm"
-              onLinked={(wallet) => {
-                setIdentityWallet(wallet);
-                setConnectionNotice(copy.wallets.provedNow);
-              }}
-            />
+            {/* The Solana wallet is linked in the account settings (SOL-W1: no Ethereum sign-in on Solana pages). */}
+            <Link className="btn btn-primary btn-sm" href="/app/settings#account">{copy.wallets.linkWallet}</Link>
           </div>
         ) : null}
         {legacyWatchAddress ? (

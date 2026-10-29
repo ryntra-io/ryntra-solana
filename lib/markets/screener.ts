@@ -16,7 +16,11 @@ import type { SpotMarket } from "../spot/markets.ts";
 import { isUnsupportedMarket, marketAgeDays } from "../spot/markets.ts";
 import type { SessionPeriod } from "../stocks/session.ts";
 
-export const SCREENER_TABS = ["all", "memes", "crypto", "stocks", "private", "watchlist"] as const;
+/*
+ * «Гаманці» (SOL-R4) is no table of assets: the wallets a person follows, drawn by `app/app/markets/wallets/`. «Події»
+ * (DSC-1) beside the Radar («Меми») is no table either: one feed of market events, drawn by `app/app/markets/events/`.
+ */
+export const SCREENER_TABS = ["all", "memes", "events", "crypto", "stocks", "private", "watchlist", "wallets"] as const;
 export type ScreenerTab = (typeof SCREENER_TABS)[number];
 
 export function isScreenerTab(value: unknown): value is ScreenerTab {
@@ -90,6 +94,47 @@ export type ScreenerRow = Readonly<{
   /** Whether the issuer offers a new purchase. */
   tradable: boolean;
 }>;
+
+/** A token younger than this many days is new: its authorities are worth a word whatever its list says. */
+export const NEW_TOKEN_DAYS = 30;
+
+/**
+ * Whether a row carries «Випуск відкритий» / «Заморозка можлива» (B15): only a token not verified, flagged, or new. A
+ * bridged or staked token — cbBTC, ETH and WBTC through their bridges, JitoSOL — keeps its issuer's mint and freeze by
+ * design; a warning on every one of them is a false alarm that teaches people to skip the real ones. The authorities
+ * of every token stay stated on its own page.
+ */
+export function authorityFlagsShown(row: Pick<ScreenerRow, "verified" | "suspicious" | "ageDays">): boolean {
+  return !row.verified || row.suspicious || (row.ageDays !== null && row.ageDays < NEW_TOKEN_DAYS);
+}
+
+/** A stock token's pool under this, in dollars, is thin: its price is the pool's, not the share's. */
+export const THIN_POOL_LIQUIDITY_USD = 1_000;
+/** A stock token that traded under this over the day, in dollars, has no market to price it. */
+export const THIN_POOL_VOLUME_USD = 100;
+/** A stock token this far from the exchange's price, per cent, is said to be far from it — never coloured as a gain or a loss. */
+export const FAR_FROM_EXCHANGE_PCT = 5;
+/** A stock token this far from the exchange's price, per cent, is priced by its pool alone. */
+export const POOL_PRICE_OFF_PCT = 25;
+
+/**
+ * Whether a listed stock's token is priced by its pool and not the share (SOL-C5; аудит UX 21.10, UX-155): a pool under
+ * $1K, a price a quarter or more away from the exchange's, or — where no exchange price stands beside it — under $100
+ * traded over the day. Such a row never tops «Gainers», «Losers», the hour or the price: it goes below the rest, as a
+ * figure nobody stated does, and says «Pool price, not the share price». A coin is priced by its pools by design, and a
+ * private company's token has no share price to stand beside — «Not a share» says that — so neither is one.
+ */
+export function poolPriceOff(row: Pick<ScreenerRow, "kind" | "liquidity" | "volume24h" | "deviation">): boolean {
+  if (row.kind !== "stock") return false;
+  if (row.liquidity !== null && row.liquidity < THIN_POOL_LIQUIDITY_USD) return true;
+  if (row.deviation !== null) return Math.abs(row.deviation) >= POOL_PRICE_OFF_PCT;
+  return row.volume24h !== null && row.volume24h < THIN_POOL_VOLUME_USD;
+}
+
+/** The token's price is more than 5 % from the exchange's: a word of its own, not a gain's or a loss's colour. */
+export function farFromExchange(row: Pick<ScreenerRow, "deviation">): boolean {
+  return row.deviation !== null && Math.abs(row.deviation) > FAR_FROM_EXCHANGE_PCT;
+}
 
 /** Jupiter's tags of a lending or yield receipt — a deposit position, not a market. */
 const DEPOSIT_TAGS: ReadonlySet<string> = new Set(["jup-lend-earn", "yb"]);
@@ -185,6 +230,9 @@ export function rowsForTab(rows: readonly ScreenerRow[], tab: ScreenerTab, watch
       return rows.filter((row) => row.kind === "private");
     case "watchlist":
       return rows.filter((row) => watchlist.has(row.mint));
+    case "wallets":
+    case "events":
+      return [];
     default:
       return [...rows];
   }
@@ -210,6 +258,8 @@ export const SORT_FIRST_DIRECTION: Readonly<Record<ScreenerSort, "asc" | "desc">
 };
 
 function sortValue(row: ScreenerRow, key: ScreenerSort): number | string | null {
+  /* A pool's price is no share's: it never ranks a stock by price or by its moves (UX-155). */
+  if ((key === "price" || key === "change24h" || key === "change1h") && poolPriceOff(row)) return null;
   switch (key) {
     case "volume24h":
       return row.volume24h;
@@ -230,7 +280,10 @@ function sortValue(row: ScreenerRow, key: ScreenerSort): number | string | null 
   }
 }
 
-/** The rows in the order chosen; a row with no figure for the key goes last, whatever the direction — unknown is not small. */
+/**
+ * The rows in the order chosen; a row with no figure for the key goes last, whatever the direction — unknown is not
+ * small — and so does a stock token priced by its pool alone, for its price and its moves (`poolPriceOff`).
+ */
 export function sortScreener(rows: readonly ScreenerRow[], key: ScreenerSort, direction: "asc" | "desc"): ScreenerRow[] {
   const sign = direction === "asc" ? 1 : -1;
   return rows
@@ -255,5 +308,48 @@ export function matchScreener(rows: readonly ScreenerRow[], query: string): Scre
       row.symbol.toLowerCase().includes(needle) ||
       row.name.toLowerCase().includes(needle) ||
       (row.issuer?.toLowerCase().includes(needle) ?? false),
+  );
+}
+
+/** A figure the screener's table draws beside the asset itself. */
+export type ScreenerColumn = "price" | "change1h" | "change24h" | "volume24h" | "liquidity" | "marketCap" | "age" | "top10" | "organic" | "session" | "deviation" | "premium";
+
+/** The figures each tab draws: for every asset price, change, volume, liquidity and market cap; for coins the hour and the venue's facts; for stocks the exchange's session and the deviation; for a private company the token against the issuer's valuation. */
+export const SCREENER_COLUMNS: Readonly<Record<ScreenerTab, readonly ScreenerColumn[]>> = {
+  all: ["price", "change1h", "change24h", "volume24h", "liquidity", "marketCap"],
+  memes: ["price", "change1h", "change24h", "volume24h", "liquidity", "marketCap", "age", "top10", "organic"],
+  events: [],
+  crypto: ["price", "change1h", "change24h", "volume24h", "liquidity", "marketCap", "age", "top10", "organic"],
+  stocks: ["price", "change24h", "volume24h", "liquidity", "session", "deviation"],
+  private: ["price", "change24h", "volume24h", "liquidity", "premium"],
+  watchlist: ["price", "change1h", "change24h", "volume24h", "liquidity", "marketCap"],
+  wallets: [],
+};
+
+/**
+ * The figures a narrower table gives up, by the table's own width — never the window's, because the table's edge is
+ * what clips (B17), and on a laptop of 1280–1366 the rail takes 240 px of the window before the table begins.
+ *
+ * `instead` names the figure that keeps its place when this one goes: liquidity gives way on a laptop because the
+ * capitalisation — the one number that says how big a coin is — stays in its stead (UX-179, the laptop reading of the
+ * UX audit of 21.10). A tab that draws no capitalisation has nothing to stand in, so there its liquidity keeps the
+ * column: «Акції» and «Приватні» would otherwise lose a figure and get an empty place for it. Narrower than 680 px both
+ * go, as they always did — a phone keeps the asset, its price and its day.
+ */
+const NARROW: ReadonlyArray<Readonly<{ under: number; drop: readonly ScreenerColumn[]; instead?: ScreenerColumn }>> = [
+  { under: 1240, drop: ["organic", "top10"] },
+  { under: 1000, drop: ["age", "change1h"] },
+  { under: 1000, drop: ["liquidity"], instead: "marketCap" },
+  { under: 680, drop: ["marketCap", "liquidity", "volume24h", "session", "deviation", "premium"] },
+];
+
+/** The width a table is taken to have before the browser has measured it: a desk's, which is what the server streams. */
+export const SCREENER_DESK_PX = 1100;
+
+/** The figures a tab draws in a table this wide, in the tab's own order. */
+export function screenerColumns(tab: ScreenerTab, width: number): ScreenerColumn[] {
+  const drawn = SCREENER_COLUMNS[tab];
+  return drawn.filter(
+    (column) => !NARROW.some((rule) => width < rule.under && rule.drop.includes(column) && (rule.instead === undefined || drawn.includes(rule.instead))),
   );
 }

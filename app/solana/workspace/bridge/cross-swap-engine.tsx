@@ -2,8 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 
-import { EVM_WALLET_CHAINS, sendEvmTransaction, waitForEvmReceipt } from "@/lib/base/wallet.client";
-
+import { MAX_SIGNABLE_WINDOW_MS, mayOpenWallet, signableWindowClosed } from "@/lib/solana/blockhash-life";
 import { explorerTxUrl } from "@/lib/solana/explorer";
 import { crossSwapReceiptSummary, receiptBinding } from "@/lib/solana/receipt-view";
 import { downloadReceipt, storeBoundSolanaReceipt } from "@/lib/solana/send-receipt-vault.client";
@@ -14,7 +13,11 @@ import type { CrossSwapQuote } from "@/lib/swap/cross-swap-quote";
 import { reconcileNativeCost } from "@/lib/swap/gas-reserve";
 import { serviceFeeText } from "@/lib/swap/service-fee";
 import { bridgeContextKey, bridgeQuoteMatches, bridgeReviewCurrent, bridgeSubmitNeedsRecovery } from "@/lib/swap/bridge-client-state";
+import { Button } from "@ryntra/core/ui";
+
 import { useSolanaI18n } from "../i18n/provider.tsx";
+import { MoneyAction } from "../money/money-page.tsx";
+import { ConnectWalletButton } from "../wallet-gate.tsx";
 import styles from "./bridge-surface.module.css";
 
 /**
@@ -32,8 +35,14 @@ import styles from "./bridge-surface.module.css";
 
 type CrossRoute = Extract<SwapRouteClassification, { kind: "CROSS_SWAP" }>;
 
-/** What asking the browser for an Ethereum-style wallet came to. Codes, never the wallet's own words. */
-export type EvmConnectOutcome = "CONNECTED" | "NO_WALLET" | "REFUSED" | "FAILED";
+/*
+ * One wallet — Solana (SOL-W1, decision 58): on a Solana page every operation
+ * here starts on Solana and is signed by the Solana wallet; the address it pays
+ * on another network is text the person types. Money coming *in* from another
+ * network is an address to send to («З іншої мережі»), not a second wallet, so
+ * the EVM-origin signing this engine once had is gone from the Solana build —
+ * a plan that is not a Solana one is refused rather than signed.
+ */
 
 /* `buildable` is what this surface gates on. `lane` is carried for the words
    shown at rest; reading it as a two-state switch is how CANARY — a lane that
@@ -47,7 +56,8 @@ type PlanResponse = Readonly<{
     | Readonly<{ origin: "solana"; unsignedWireBase64: string; lastValidBlockHeight: number; programIds: readonly string[]; walletPrompts: number; simulation: { succeeded: boolean } }>
     | Readonly<{
         origin: "evm";
-        chain: Exclude<SwapNetwork, "solana">;
+        /* Never Arc: it is an arrival network here (`ARRIVAL_ONLY_NETWORKS`). */
+        chain: Exclude<SwapNetwork, "solana" | "arc">;
         chainId: number;
         calls: readonly Readonly<{ purpose: "APPROVE" | "SWAP"; to: string; data: string; value: string; maximumCostWei: string | null }>[];
         walletPrompts: number;
@@ -55,6 +65,8 @@ type PlanResponse = Readonly<{
       }>;
   builtAt: string;
   reviewExpiresAt: string;
+  /** AG-1: how long from arriving the Solana bytes may still be signed. */
+  signableMs?: number;
 }>;
 
 type OrderView = Readonly<{
@@ -192,9 +204,6 @@ export function CrossSwapEngine({
   amount,
   pro,
   solana,
-  evmAddress,
-  onConnectEvm,
-  onConnectSolana,
   onQuote,
   offerableRaw,
   gasBalanceRaw,
@@ -207,9 +216,6 @@ export function CrossSwapEngine({
   amount: string;
   pro: boolean;
   solana: Readonly<{ wallet: string; address: string }> | null;
-  evmAddress: string | null;
-  onConnectEvm: () => Promise<EvmConnectOutcome>;
-  onConnectSolana: () => void;
   /** The surface shows the expected amount in its own TO leg; this is the engine's number, nothing new. */
   /* `expired` travels with the figures rather than replacing them: the surface
      above keeps showing the amount for context and stops presenting it as an
@@ -232,7 +238,7 @@ export function CrossSwapEngine({
   onSettled?: () => void;
   onReset?: () => void;
 }) {
-  const { text } = useSolanaI18n();
+  const { text, locale } = useSolanaI18n();
   const fromDecimals = route.from.decimals ?? 0;
   const toDecimals = route.to.decimals ?? 0;
   /* Zero is not an amount. Without this the quote route is asked for a swap of
@@ -242,8 +248,8 @@ export function CrossSwapEngine({
   const typedRaw = amount.trim() === "" || route.from.decimals === null || route.to.decimals === null ? null : parseHumanAmount(amount, fromDecimals);
   const amountRaw = typedRaw === null || BigInt(typedRaw) === 0n ? null : typedRaw;
   const fromSolana = route.from.network === "solana";
-  const sourceAddress = fromSolana ? (solana?.address ?? null) : evmAddress;
-  const defaultDestination = route.to.network === "solana" ? (solana?.address ?? "") : (evmAddress ?? "");
+  const sourceAddress = fromSolana ? (solana?.address ?? null) : null;
+  const defaultDestination = route.to.network === "solana" ? (solana?.address ?? "") : "";
 
   const [quoteSnapshot, setQuoteSnapshot] = useState<{ key: string; value: QuoteResponse } | null>(null);
   const [quoting, setQuoting] = useState(false);
@@ -256,7 +262,6 @@ export function CrossSwapEngine({
   const [order, setOrder] = useState<OrderView | null>(null);
   const [reviewSecondsLeft, setReviewSecondsLeft] = useState<number | null>(null);
   const [quoteAgeSeconds, setQuoteAgeSeconds] = useState<number>(0);
-  const [evmConnect, setEvmConnect] = useState<EvmConnectOutcome | null>(null);
   const [impactAcknowledged, setImpactAcknowledged] = useState<number | null>(null);
   /**
    * The receipt for this operation, once it has one.
@@ -279,6 +284,8 @@ export function CrossSwapEngine({
   const submitting = useRef(false);
   const planning = useRef(false);
   const alive = useRef(true);
+  /* When the Review on screen arrived: its Solana bytes' signable window counts from here (AG-1). */
+  const planAt = useRef(0);
   const statusReading = useRef(false);
   const settledDigest = useRef<string | null>(null);
 
@@ -553,7 +560,7 @@ export function CrossSwapEngine({
   }, [tracking, phase, order?.intentDigest, pollStatus]);
 
   /* ── Review: exact bytes for the wallet, built on the quote just shown. ── */
-  const review = async () => {
+  const review = async (note: "BYTES_REFRESHED" | null = null) => {
     if (!quote || !amountRaw || !sourceAddress || !destinationValid || busy || planning.current || readRun()
       || quote.quote.deadlineUnix * 1000 <= Date.now() || overBalance || noGas || !quote.buildable
       || (severeImpact && impactAcknowledged !== impactBps)) return;
@@ -629,9 +636,11 @@ export function CrossSwapEngine({
       return;
     }
 
+    planAt.current = Date.now();
     setPlan(plan);
     setQuote({ ...quote, quote: plan.quote });
     setPhase("REVIEW");
+    if (note) setFailure({ code: note, message: "" });
   };
 
   /* ── The boundary, crossed once. ─────────────────────────────────────── */
@@ -646,11 +655,43 @@ export function CrossSwapEngine({
     try {
       if (plan.plan.origin === "solana") {
         if (!solana) return;
+        /*
+         * AG-1: the Review is readable for 45 s, its Solana bytes live ~30 s. Read for longer than they live, the plan
+         * is built again here — the person reads the fresh Review instead of the network's refusal.
+         */
+        const signableMs = typeof plan.signableMs === "number" ? plan.signableMs : MAX_SIGNABLE_WINDOW_MS;
+        if (!mayOpenWallet({ receivedAtMs: planAt.current, signableMs })) {
+          setPlan(null);
+          setPhase("IDLE");
+          submitting.current = false;
+          /* A quote past its own deadline cannot be planned again: the person is sent back to the figures instead. */
+          if (!quote || quote.quote.deadlineUnix * 1000 <= Date.now()) {
+            setFailure({ code: "REVIEW_EXPIRED", message: "" });
+            return;
+          }
+          setFailure({ code: "BYTES_REFRESHED", message: "" });
+          await review("BYTES_REFRESHED");
+          return;
+        }
         setPhase("SIGNING");
         const signed = await signTransaction({ wallet: solana.wallet, address: solana.address, unsignedWireBase64: plan.plan.unsignedWireBase64, chain: "solana:mainnet" });
         if (!signed.ok) {
           setPhase("REVIEW");
           setFailure({ code: "WALLET_DECLINED", message: signed.reason });
+          return;
+        }
+        /* The bytes aged out while the wallet was open: never sent — planned again instead. */
+        if (signableWindowClosed({ receivedAtMs: planAt.current, signableMs })) {
+          setPlan(null);
+          setPhase("IDLE");
+          submitting.current = false;
+          /* A quote past its own deadline cannot be planned again: the person is sent back to the figures instead. */
+          if (!quote || quote.quote.deadlineUnix * 1000 <= Date.now()) {
+            setFailure({ code: "REVIEW_EXPIRED", message: "" });
+            return;
+          }
+          setFailure({ code: "BYTES_REFRESHED", message: "" });
+          await review("BYTES_REFRESHED");
           return;
         }
         if (!stillCurrent()) {
@@ -687,111 +728,14 @@ export function CrossSwapEngine({
         return;
       }
 
-      /* EVM origin: approve if the plan says so, then arm, send, record. */
-      const chain = plan.plan.chain;
-      const owner = evmAddress;
-      if (!owner) return;
-      const approval = plan.plan.calls.find((call) => call.purpose === "APPROVE");
-      if (approval) {
-        setPhase("APPROVING");
-        const sent = await sendEvmTransaction({ chain: EVM_WALLET_CHAINS[chain], from: owner, to: approval.to, data: approval.data });
-        if (!sent.ok) {
-          setPhase("REVIEW");
-          setFailure({ code: sent.code === "REFUSED" ? "WALLET_DECLINED" : "APPROVAL_FAILED", message: sent.reason });
-          return;
-        }
-        /* An approval is only useful once it is on chain, and the allowance the
-           next plan reads does not exist a moment earlier. Waiting here is the
-           difference between one approval and two: on the Base canary a person
-           approved, was told to press Review again, and guessed for nearly four
-           minutes. Nothing is signed while this waits. */
-        const landed = await waitForEvmReceipt(sent.transactionHash);
-        setPlan(null);
-        if (!alive.current || currentContext.current !== signedContext) { setPhase("IDLE"); return; }
-        if (!landed.ok) {
-          setPhase("IDLE");
-          setFailure({ code: landed.code === "TIMEOUT" ? "APPROVAL_SLOW" : "APPROVED_REVIEW_AGAIN", message: "" });
-          return;
-        }
-        if (landed.status === "REVERTED") {
-          setPhase("IDLE");
-          setFailure({ code: "APPROVAL_FAILED", message: "" });
-          return;
-        }
-        /* The allowance exists now: price the swap against it without a second press. */
-        setFailure(null);
-        setPhase("IDLE");
-        await review();
-        return;
-      }
-      const swap = plan.plan.calls.find((call) => call.purpose === "SWAP");
-      if (!swap) return;
-      setPhase("SUBMITTING");
-      saveRun(plan.intentDigest, route.tuple.id);
-      const armed = await post<{ state: string }>("/api/solana/cross-swap/submit", { phase: "ARM", intentDigest: plan.intentDigest });
-      if (!armed.ok) {
-        setFailure(armed.failure);
-        setPlan(null);
-        if (bridgeSubmitNeedsRecovery(armed.failure)) { setPhase("RECOVERY"); void pollStatus(plan.intentDigest); }
-        else { clearRun(); setPhase("IDLE"); }
-        return;
-      }
-      if (!stillCurrent()) {
-        // Arming alone cannot send. Keep its record and release only if the
-        // server confirms this caller's never-broadcast branch.
-        const abandoned = await post("/api/solana/cross-swap/submit", { phase: "ABANDON", intentDigest: plan.intentDigest });
-        if (abandoned.ok) { clearRun(); setPlan(null); setPhase("IDLE"); }
-        else setPhase("RECOVERY");
-        return;
-      }
-      setPhase("SIGNING");
-      const sent = await sendEvmTransaction({ chain: EVM_WALLET_CHAINS[chain], from: owner, to: swap.to, data: swap.data, value: swap.value });
-      if (!sent.ok) {
-        if (sent.code === "REFUSED") {
-          const abandoned = await post("/api/solana/cross-swap/submit", { phase: "ABANDON", intentDigest: plan.intentDigest });
-          if (abandoned.ok) { clearRun(); setPlan(null); setPhase("IDLE"); }
-          else setPhase("RECOVERY");
-          setFailure({ code: "WALLET_DECLINED", message: sent.reason });
-          return;
-        }
-        saveRun(plan.intentDigest, route.tuple.id);
-        setPhase("RECOVERY");
-        setFailure({ code: "SUBMIT_UNKNOWN", message: sent.reason });
-        return;
-      }
-      saveRun(plan.intentDigest, route.tuple.id);
-      const recorded = await post<{ state: string }>("/api/solana/cross-swap/submit", {
-        phase: "RECORD",
-        intentDigest: plan.intentDigest,
-        transactionHash: sent.transactionHash,
-        call: { to: swap.to, data: swap.data, value: swap.value },
-      });
-      if (!recorded.ok) setFailure(recorded.failure);
-      setPhase("TRACKING");
-      void pollStatus(plan.intentDigest);
+      /* Not a Solana plan: nothing on a Solana page signs it (SOL-W1). */
+      setPlan(null);
+      setPhase("IDLE");
     } catch {
       setFailure({ code: readRun() ? "SUBMIT_UNKNOWN" : "NETWORK", message: "" });
       setPhase(readRun() ? "RECOVERY" : "IDLE");
     } finally {
       submitting.current = false;
-    }
-  };
-
-  const askEvmWallet = async () => {
-    setEvmConnect(null);
-    setEvmConnect(await onConnectEvm());
-  };
-
-  const evmConnectCopy = (outcome: EvmConnectOutcome): string | null => {
-    switch (outcome) {
-      case "NO_WALLET":
-        return text("No Ethereum-style wallet is available in this browser. Paste the address instead.");
-      case "REFUSED":
-        return text("The wallet did not share an address.");
-      case "FAILED":
-        return text("The wallet could not be read. Paste the address instead.");
-      default:
-        return null;
     }
   };
 
@@ -820,6 +764,7 @@ export function CrossSwapEngine({
     polygon: text("Polygon"),
     bnb: text("BNB Chain"),
     robinhood: text("Robinhood Chain"),
+    arc: text("Arc"),
   };
   const destinationLegLabel: Record<SwapNetwork, string> = {
     solana: text("To your Solana address"),
@@ -830,6 +775,7 @@ export function CrossSwapEngine({
     polygon: text("To your Polygon address"),
     bnb: text("To your BNB Chain address"),
     robinhood: text("To your Robinhood Chain address"),
+    arc: text("To your Arc address"),
   };
   const destinationPlaceholder: Record<SwapNetwork, string> = {
     solana: text("Solana address"),
@@ -840,26 +786,7 @@ export function CrossSwapEngine({
     polygon: text("Polygon address"),
     bnb: text("BNB Chain address"),
     robinhood: text("Robinhood Chain address"),
-  };
-  const useWalletLabel: Record<SwapNetwork, string> = {
-    solana: text("Use my Solana wallet"),
-    base: text("Use my Base wallet"),
-    ethereum: text("Use my Ethereum wallet"),
-    arbitrum: text("Use my Arbitrum wallet"),
-    optimism: text("Use my Optimism wallet"),
-    polygon: text("Use my Polygon wallet"),
-    bnb: text("Use my BNB Chain wallet"),
-    robinhood: text("Use my Robinhood Chain wallet"),
-  };
-  const connectWalletLabel: Record<SwapNetwork, string> = {
-    solana: text("Connect a Solana wallet"),
-    base: text("Connect a Base wallet"),
-    ethereum: text("Connect an Ethereum wallet"),
-    arbitrum: text("Connect an Arbitrum wallet"),
-    optimism: text("Connect an Optimism wallet"),
-    polygon: text("Connect a Polygon wallet"),
-    bnb: text("Connect a BNB Chain wallet"),
-    robinhood: text("Connect a Robinhood Chain wallet"),
+    arc: text("Arc address"),
   };
   const networkName = (network: SwapNetwork) => networkLabel[network];
   const eta = (seconds: number) => (seconds < 60 ? `~${seconds} ${text("s")}` : `~${Math.round(seconds / 60)} ${text("min")}`);
@@ -984,6 +911,8 @@ export function CrossSwapEngine({
         return text("Cross-chain swaps are not open yet.");
       case "REVIEW_EXPIRED":
         return text("The Review expired. Nothing left your wallet; look at the figures again.");
+      case "BYTES_REFRESHED":
+        return text("The transaction was built again — its bytes live about 30 seconds. Nothing left your wallet; check the fresh Review and sign.");
       case "EXPIRED_BEFORE_SUBMIT":
         return text("The Review expired before sending. Nothing left your wallet.");
       case "WALLET_DECLINED":
@@ -1048,7 +977,7 @@ export function CrossSwapEngine({
           return text("Connect the wallet you are sending from — this route is priced for the wallet that signs it.");
         }
         if (wantsDestination && !wantsSource) {
-          return text("Add the destination address — this route is priced for the wallet it pays.");
+          return text("Add the address the money goes to — then you will see how much arrives.");
         }
         return text("Connect the sending wallet and add the destination address — this route is priced for both.");
       }
@@ -1153,8 +1082,9 @@ export function CrossSwapEngine({
       {(quoteExpired || (quoteFailure && quoteFailure.code !== "QUOTE_ADDRESSES_REQUIRED")) && phase === "IDLE" ? <button className={styles.secondary} type="button" disabled={quoting} onClick={() => void fetchQuote(true)}>{text("Refresh quote")}</button> : null}
       {(phase === "TRACKING" || phase === "RECOVERY") && !order ? <p className={styles.note} role="status">{text("The outcome is not yet known. Keep checking this transaction; do not send another.")}</p> : null}
 
-      {quoting && !q ? <p className={styles.note}>{text("Quoting…")}</p> : null}
-      {quoteFailure && !tracking ? (
+      {/* «Котирування…» is said once, on the button (B18). A missing address is not a failure: it is said quietly,
+          under the field it asks for. */}
+      {quoteFailure && !tracking && quoteFailure.code !== "QUOTE_ADDRESSES_REQUIRED" ? (
         <p className={styles.error}>
           {failureCopy(quoteFailure, "QUOTE")}
         </p>
@@ -1199,15 +1129,10 @@ export function CrossSwapEngine({
               {route.to.network === "solana" ? text("That is not a Solana address.") : text("That is not an Ethereum-style address.")}
             </small>
           ) : null}
-          {/* The money lands wherever this address points. Reading it out of the person's
-              own wallet is the one way to fill it that cannot be mistyped. */}
-          {route.to.network !== "solana" && !evmAddress && !busy && phase !== "REVIEW" ? (
-            <button className={styles.inlineAction} type="button" onClick={() => void askEvmWallet()}>
-              {useWalletLabel[route.to.network]}
-            </button>
-          ) : null}
-          {evmConnect && evmConnectCopy(evmConnect) ? <small className={styles.error}>{evmConnectCopy(evmConnect)}</small> : null}
         </div>
+      ) : null}
+      {quoteFailure && !tracking && quoteFailure.code === "QUOTE_ADDRESSES_REQUIRED" ? (
+        <p className={styles.note}>{failureCopy(quoteFailure, "QUOTE")}</p>
       ) : null}
 
       {phase === "REVIEW" && plan ? (
@@ -1282,12 +1207,12 @@ export function CrossSwapEngine({
         </section>
       ) : null}
 
-      {failure && failure.code !== "REVIEW_EXPIRED" && failure.code !== "APPROVED_REVIEW_AGAIN" && failure.code !== "APPROVAL_SLOW" ? (
+      {failure && failure.code !== "REVIEW_EXPIRED" && failure.code !== "BYTES_REFRESHED" && failure.code !== "APPROVED_REVIEW_AGAIN" && failure.code !== "APPROVAL_SLOW" ? (
         <p className={styles.error}>
           {failureCopy(failure, "ACTION")}
         </p>
       ) : null}
-      {failure && (failure.code === "REVIEW_EXPIRED" || failure.code === "APPROVED_REVIEW_AGAIN" || failure.code === "APPROVAL_SLOW") ? <p className={styles.note}>{failureCopy(failure, "ACTION")}</p> : null}
+      {failure && (failure.code === "REVIEW_EXPIRED" || failure.code === "BYTES_REFRESHED" || failure.code === "APPROVED_REVIEW_AGAIN" || failure.code === "APPROVAL_SLOW") ? <p className={styles.note}>{failureCopy(failure, "ACTION")}</p> : null}
 
       {(tracking || phase === "DONE" || phase === "REFUNDED" || phase === "RECOVERY" || phase === "FAILED") && order ? (
         <section className={styles.review} aria-label={text("Where this swap is")}>
@@ -1381,43 +1306,41 @@ export function CrossSwapEngine({
         </section>
       ) : null}
 
+      {/* The form's one action, pinned above the bottom bar on a phone (B18). What each press does is unchanged. */}
       {!tracking && phase !== "FAILED" && phase !== "DONE" && phase !== "REFUNDED" && phase !== "RECOVERY" ? (
-        fromSolana && !solana ? (
-          <button className={styles.cta} type="button" onClick={onConnectSolana}>
-            {text("Connect a Solana wallet")}
-          </button>
-        ) : !fromSolana && !evmAddress ? (
-          <button className={styles.cta} type="button" onClick={() => void askEvmWallet()}>
-            {connectWalletLabel[route.from.network]}
-          </button>
+        <MoneyAction>
+        {fromSolana && !solana ? (
+          /* The guest's one button, as on every page (B14): it opens the header's wallet panel. */
+          <ConnectWalletButton block />
         ) : phase === "REVIEW" && plan ? (
           <div className={styles.actions}>
-            <button className={styles.cta} type="button" onClick={() => {
+            <Button variant="primary" block onClick={() => {
               if (bridgeReviewCurrent({ key: planSnapshot!.key, expiresAt: plan.reviewExpiresAt }, contextKey, Date.now())) void confirm();
               else { setPlan(null); setPhase("IDLE"); void fetchQuote(true); }
-            }} disabled={busy}>
+            }} disabled={busy} lang={locale === "uk" ? "uk" : "en"}>
               {!bridgeReviewCurrent({ key: planSnapshot!.key, expiresAt: plan.reviewExpiresAt }, contextKey, Date.now()) ? text("Refresh quote") :
               plan.plan.origin === "evm" && plan.plan.calls.some((call) => call.purpose === "APPROVE")
                 ? text("Approve in wallet")
                 : text("Confirm in wallet")}
-            </button>
-            <button
-              className={styles.secondary}
-              type="button"
+            </Button>
+            <Button
+              variant="secondary"
               disabled={busy}
               onClick={() => {
                 setPlan(null);
                 setPhase("IDLE");
               }}
+              lang={locale === "uk" ? "uk" : "en"}
             >
               {text("Back")}
-            </button>
+            </Button>
           </div>
         ) : (
-          <button className={styles.cta} type="button" onClick={() => void review()} disabled={cta.disabled}>
+          <Button variant="primary" block onClick={() => void review()} disabled={cta.disabled} lang={locale === "uk" ? "uk" : "en"}>
             {cta.label}
-          </button>
-        )
+          </Button>
+        )}
+        </MoneyAction>
       ) : null}
     </div>
   );

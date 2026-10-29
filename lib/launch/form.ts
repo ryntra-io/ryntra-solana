@@ -14,6 +14,7 @@
 import { z } from "zod";
 
 import { launchNameHits, type ModerationHit } from "../core/launch/moderation.ts";
+import { isOffensiveName } from "../spot/offensive-names.ts";
 
 export const NAME_MAX = 32;
 export const SYMBOL_MAX = 10;
@@ -62,7 +63,7 @@ export function normalizeLink(kind: LinkKind, raw: string): { ok: true; value: s
 /** What a creator wrote, each field as typed. */
 export type LaunchFormFields = Readonly<{ name: string; symbol: string; description: string; website: string; x: string; telegram: string }>;
 
-export type FieldProblem = "REQUIRED" | "TOO_LONG" | "SYMBOL_CHARS" | "LINK" | "BORROWED";
+export type FieldProblem = "REQUIRED" | "TOO_LONG" | "SYMBOL_CHARS" | "LINK" | "BORROWED" | "OFFENSIVE";
 
 export type FormCheck = Readonly<{
   problems: Readonly<Partial<Record<keyof LaunchFormFields, FieldProblem>>>;
@@ -95,6 +96,10 @@ export function checkLaunchForm(fields: LaunchFormFields): FormCheck {
   }
   const hits = launchNameHits({ name, symbol });
   for (const hit of hits) if (!problems[hit.field]) problems[hit.field] = "BORROWED";
+  /* A hate word or symbol, by the same guard that keeps such tokens out of Pulse and «Лаунчі на Ryntra»: in a mint it
+     would stay for ever, so it is never launched. */
+  if (name && isOffensiveName(name)) problems.name = "OFFENSIVE";
+  if (symbol && isOffensiveName(symbol)) problems.symbol = "OFFENSIVE";
   return { problems, hits, clean: { name, symbol, description, links } };
 }
 

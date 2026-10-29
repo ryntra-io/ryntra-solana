@@ -1,0 +1,171 @@
+{
+  "requestId": "0x1792086231c886a3bf5e2b509110c8da563c199c34d0c3f6c16bd0be1d0734ad",
+  "steps": [
+    {
+      "id": "deposit",
+      "action": "Confirm transaction in your wallet",
+      "description": "Depositing funds to the relayer to execute the swap for USDC",
+      "kind": "transaction",
+      "requestId": "0x1792086231c886a3bf5e2b509110c8da563c199c34d0c3f6c16bd0be1d0734ad",
+      "items": [
+        {
+          "status": "incomplete",
+          "data": {
+            "instructions": [
+              {
+                "keys": [
+                  {
+                    "pubkey": "Dodg2HifwU8rmaVVyMyUZDGTRbqAJTyVYxXPwcbNpBKc",
+                    "isSigner": false,
+                    "isWritable": false
+                  },
+                  {
+                    "pubkey": "5Q544fKrFoe6tsEbD7S8EmxGTJYAKtTVhAW5Q5pge4j1",
+                    "isSigner": true,
+                    "isWritable": true
+                  },
+                  {
+                    "pubkey": "5Q544fKrFoe6tsEbD7S8EmxGTJYAKtTVhAW5Q5pge4j1",
+                    "isSigner": false,
+                    "isWritable": false
+                  },
+                  {
+                    "pubkey": "7uTT8Xi5RWXzy7h9XL244GRgEycDYDhLjr3ZyNdXi8pZ",
+                    "isSigner": false,
+                    "isWritable": true
+                  },
+                  {
+                    "pubkey": "11111111111111111111111111111111",
+                    "isSigner": false,
+                    "isWritable": false
+                  }
+                ],
+                "programId": "99vQwtBwYtrqqD9YSXbdum3KBdxPAVxYTaQ3cfnJSrN2",
+                "data": "0d9e0ddf5fd51c0680f0fa02000000007d69ebaa3abe875f3b22c4944b7c8585d8bad82462fa5b4822edd93b6fb18b84"
+              }
+            ],
+            "addressLookupTableAddresses": [
+              "Hm9fUgcn7qwDaiNTFiGh6pNtVATgnaRcmK6Bbx6EMZfP"
+            ]
+          },
+          "check": {
+            "endpoint": "/intents/status?requestId=0x1792086231c886a3bf5e2b509110c8da563c199c34d0c3f6c16bd0be1d0734ad",
+            "method": "GET"
+          }
+        }
+      ]
+    }
+  ],
+  "fees": {
+    "gas": {
+      "currency": {
+        "chainId": 792703809,
+        "address": "11111111111111111111111111111111",
+        "symbol": "SOL",
+        "name": "Solana",
+        "decimals": 9
+      },
+      "amount": "1570",
+      "amountFormatted": "0.00000157",
+      "amountUsd": "0.000167"
+    },
+    "relayer": {
+      "currency": {
+        "chainId": 792703809,
+        "address": "11111111111111111111111111111111",
+        "symbol": "SOL",
+        "name": "Solana",
+        "decimals": 9
+      },
+      "amount": "307427",
+      "amountFormatted": "0.000307427",
+      "amountUsd": "0.032604"
+    },
+    "relayerGas": {
+      "currency": {
+        "chainId": 792703809,
+        "address": "11111111111111111111111111111111",
+        "symbol": "SOL",
+        "name": "Solana",
+        "decimals": 9
+      },
+      "amount": "13970",
+      "amountFormatted": "0.00001397",
+      "amountUsd": "0.001482"
+    },
+    "relayerService": {
+      "currency": {
+        "chainId": 792703809,
+        "address": "11111111111111111111111111111111",
+        "symbol": "SOL",
+        "name": "Solana",
+        "decimals": 9
+      },
+      "amount": "293457",
+      "amountFormatted": "0.000293457",
+      "amountUsd": "0.031122"
+    },
+    "app": {
+      "currency": {
+        "chainId": 792703809,
+        "address": "11111111111111111111111111111111",
+        "symbol": "SOL",
+        "name": "Solana",
+        "decimals": 9
+      },
+      "amount": "125000",
+      "amountFormatted": "0.000125",
+      "amountUsd": "0.013257"
+    }
+  },
+  "details": {
+    "operation": "swap",
+    "sender": "5Q544fKrFoe6tsEbD7S8EmxGTJYAKtTVhAW5Q5pge4j1",
+    "recipient": "0x000000000000000000000000000000000000dEaD",
+    "currencyIn": {
+      "currency": {
+        "chainId": 792703809,
+        "address": "11111111111111111111111111111111",
+        "symbol": "SOL",
+        "name": "Solana",
+        "decimals": 9
+      },
+      "amount": "50000000",
+      "amountFormatted": "0.05",
+      "amountUsd": "5.302665",
+      "minimumAmount": "50000000"
+    },
+    "currencyOut": {
+      "currency": {
+        "chainId": 5042,
+        "address": "0x3600000000000000000000000000000000000000",
+        "symbol": "USDC",
+        "name": "USD Coin",
+        "decimals": 6
+      },
+      "amount": "5248122",
+      "amountFormatted": "5.248122",
+      "amountUsd": "5.247560",
+      "minimumAmount": "5221882"
+    },
+    "rate": "104.96244",
+    "totalImpact": {
+      "usd": "-0.055105",
+      "percent": "-1.04"
+    },
+    "slippageTolerance": {
+      "total": "50",
+      "origin": {
+        "usd": "0.000000",
+        "value": "0",
+        "percent": "0.00"
+      },
+      "destination": {
+        "usd": "0.025713",
+        "value": "26240",
+        "percent": "0.49"
+      }
+    },
+    "timeEstimate": 1
+  }
+}

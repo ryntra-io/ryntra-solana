@@ -1,0 +1,452 @@
+/* Beacons (CITY-72): the editor over the tower card and the button on it, in the city's glass. One amber action;
+   everything else is quiet glass and violet edges. Tokens from city/styles/city.module.css. */
+
+.layer {
+  position: fixed;
+  inset: 0;
+  z-index: 12;
+  pointer-events: none;
+  font-family: var(--font-ui, system-ui), system-ui, sans-serif;
+  color: var(--ice);
+}
+
+.display {
+  font-family: var(--font-display, system-ui), system-ui, sans-serif;
+  font-stretch: 125%;
+  font-variation-settings: 'wdth' 125;
+  font-weight: 900;
+  letter-spacing: 0.01em;
+  text-transform: uppercase;
+}
+
+.sheet {
+  position: absolute;
+  left: 50%;
+  bottom: max(14px, env(safe-area-inset-bottom));
+  width: min(560px, calc(100% - 2 * var(--gutter)));
+  max-height: calc(100% - 92px - env(safe-area-inset-top));
+  /* Never shorter than the tower card it stands over, so the two never show at once. */
+  min-height: min(380px, calc(100% - 92px - env(safe-area-inset-top)));
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  transform: translateX(-50%);
+  padding: 18px 18px 10px;
+  pointer-events: auto;
+  background: linear-gradient(160deg, #141024, #08070f);
+  clip-path: polygon(16px 0, 100% 0, 100% calc(100% - 16px), calc(100% - 16px) 100%, 0 100%, 0 16px);
+  box-shadow: inset 0 0 0 2px rgba(153, 69, 255, 0.32), inset 0 1px 18px rgba(153, 69, 255, 0.18);
+  animation: sheetIn 260ms ease-out both;
+}
+
+@keyframes sheetIn {
+  from {
+    opacity: 0;
+    transform: translate(-50%, 24px);
+  }
+}
+
+/* ---------- Head ---------- */
+
+.head {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.icon {
+  width: 46px;
+  height: 46px;
+  flex: none;
+  border-radius: 50%;
+  object-fit: cover;
+  background: var(--graphite);
+  box-shadow: 0 0 0 2px rgba(255, 178, 63, 0.55);
+}
+
+.title {
+  min-width: 0;
+  flex: 1;
+}
+
+.symbol {
+  font-size: 28px;
+  line-height: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.now {
+  margin-top: 5px;
+  font-size: 15px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: var(--warm);
+}
+
+.close {
+  width: 44px;
+  height: 44px;
+  flex: none;
+  display: grid;
+  place-items: center;
+  border: 0;
+  padding: 0;
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--ice);
+}
+
+/* ---------- The tower's beacons ---------- */
+
+.list {
+  display: flex;
+  gap: 6px;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.list::-webkit-scrollbar {
+  display: none;
+}
+
+.chip {
+  height: 36px;
+  max-width: 100%;
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 12px;
+  border: 0;
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--text-dim);
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.chipText {
+  max-width: 220px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.chipOn {
+  background: rgba(153, 69, 255, 0.28);
+  color: var(--ice);
+  box-shadow: inset 0 -2px 0 var(--violet);
+}
+
+.chipNew {
+  width: 40px;
+  justify-content: center;
+  padding: 0;
+  font-size: 20px;
+}
+
+.dot {
+  width: 8px;
+  height: 8px;
+  flex: none;
+  border-radius: 50%;
+  box-shadow: inset 0 0 0 1.5px var(--amber);
+}
+
+.dotLit {
+  background: var(--amber);
+  box-shadow: 0 0 10px 2px rgba(255, 178, 63, 0.8);
+}
+
+/* ---------- One condition ---------- */
+
+.condition {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.conditionSmall .line {
+  height: 52px;
+}
+
+.conditionSmall .lineInput {
+  font-size: 22px;
+}
+
+.kinds {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 6px;
+}
+
+.pair {
+  display: flex;
+  gap: 6px;
+}
+
+.seg {
+  height: 44px;
+  flex: 1;
+  display: grid;
+  place-items: center;
+  border: 0;
+  padding: 0 8px;
+  font-size: 13px;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--text-dim);
+}
+
+.seg svg {
+  width: 16px;
+  height: 16px;
+}
+
+.segSmall {
+  flex: 0.7;
+  letter-spacing: 0.06em;
+  text-transform: none;
+}
+
+.segOn {
+  background: rgba(153, 69, 255, 0.28);
+  color: var(--ice);
+  box-shadow: inset 0 -2px 0 var(--violet);
+}
+
+.line {
+  height: 68px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 0 16px;
+  background: rgba(255, 255, 255, 0.06);
+  clip-path: polygon(10px 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%, 0 10px);
+  cursor: text;
+}
+
+.line:focus-within {
+  box-shadow: inset 0 0 0 2px rgba(153, 69, 255, 0.6);
+}
+
+.lineWrong,
+.lineWrong:focus-within {
+  box-shadow: inset 0 0 0 2px var(--flare);
+}
+
+.unit {
+  font-size: 20px;
+  font-weight: 800;
+  color: var(--amber);
+}
+
+.lineInput {
+  width: 100%;
+  min-width: 0;
+  border: 0;
+  padding: 0;
+  background: none;
+  outline: none;
+  font-size: clamp(26px, 8vw, 32px);
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+  color: var(--ice);
+}
+
+/* ---------- Action ---------- */
+
+.actions {
+  display: flex;
+  gap: 10px;
+  margin-top: auto;
+}
+
+.primary {
+  flex: 1;
+  height: 56px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  border: 0;
+  font-size: 16px;
+  color: var(--ink);
+  background: linear-gradient(100deg, var(--warm), var(--amber));
+  clip-path: polygon(12px 0, 100% 0, 100% calc(100% - 12px), calc(100% - 12px) 100%, 0 100%, 0 12px);
+  transition: filter 160ms ease;
+}
+
+.primary:disabled {
+  filter: grayscale(0.8) brightness(0.6);
+  cursor: default;
+}
+
+.tg {
+  width: 56px;
+  height: 56px;
+  flex: none;
+  display: grid;
+  place-items: center;
+  border: 0;
+  padding: 0;
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--text-dim);
+  clip-path: polygon(12px 0, 100% 0, 100% calc(100% - 12px), calc(100% - 12px) 100%, 0 100%, 0 12px);
+  transition: color 160ms ease, background 160ms ease;
+}
+
+.tgOn {
+  background: rgba(153, 69, 255, 0.28);
+  color: var(--ice);
+  box-shadow: inset 0 -2px 0 var(--violet);
+}
+
+.more {
+  align-self: center;
+  height: 36px;
+  border: 0;
+  padding: 0 14px;
+  background: none;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+}
+
+.details {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding-top: 2px;
+  animation: detailsIn 200ms ease-out both;
+}
+
+@keyframes detailsIn {
+  from {
+    opacity: 0;
+    transform: translateY(-6px);
+  }
+}
+
+.choice {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.choiceLabel {
+  width: 64px;
+  flex: none;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+}
+
+.choice .pair {
+  flex: 1;
+}
+
+.add,
+.remove {
+  height: 44px;
+  border: 0;
+  font-size: 13px;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--text-dim);
+}
+
+.remove {
+  background: none;
+  color: var(--flare);
+}
+
+/* ---------- The button on the tower card ---------- */
+
+.action {
+  height: 44px;
+  min-width: 44px;
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  border: 0;
+  padding: 0 14px;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--text-dim);
+}
+
+.action svg {
+  flex: none;
+}
+
+.actionSet svg {
+  color: var(--amber);
+}
+
+/* Lit: amber light inside the glass, never a second amber button beside the trade. */
+.actionLit {
+  color: var(--warm);
+  background: rgba(255, 178, 63, 0.16);
+  box-shadow: inset 0 0 0 2px rgba(255, 178, 63, 0.7);
+  animation: lit 1.8s ease-in-out infinite;
+}
+
+@keyframes lit {
+  50% {
+    background: rgba(255, 178, 63, 0.3);
+  }
+}
+
+@media (max-width: 420px) {
+  .action {
+    width: 44px;
+    padding: 0;
+  }
+
+  .actionWord {
+    display: none;
+  }
+}
+
+/* Desktop: the editor stands where the tower card stands, on the right; the city keeps the centre. */
+@media (min-aspect-ratio: 1/1) {
+  .sheet {
+    left: auto;
+    right: var(--gutter);
+    bottom: 24px;
+    width: 520px;
+    transform: none;
+    animation-name: sheetInSide;
+  }
+}
+
+@keyframes sheetInSide {
+  from {
+    opacity: 0;
+    transform: translateX(24px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sheet,
+  .details,
+  .actionLit {
+    animation: none;
+  }
+}

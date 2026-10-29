@@ -32,7 +32,7 @@ type ThreadDetail = {
 
 type ListRow = FeedbackListRow & { context?: FeedbackContextView | null };
 
-const TOPIC_LABEL: Record<FeedbackTopic, string> = { question: "Запитання", idea: "Ідея", bug: "Помилка", security: "Безпека" };
+const TOPIC_LABEL: Record<FeedbackTopic, string> = { question: "Запитання", idea: "Ідея", bug: "Помилка", security: "Безпека", report: "Скарга на токен" };
 const CATEGORY_LABEL: Record<string, string> = { bug: "Помилка", idea: "Ідея", security: "Безпека", other: "Інше" };
 const SOURCE_LABEL: Record<string, string> = { app: "кабінет", site: "сайт", bot: "бот" };
 

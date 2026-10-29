@@ -3,6 +3,7 @@ import { claimStatusText, type RewardClaim } from "./claim.ts";
 import { dollars, usdText } from "./format.ts";
 import type { RewardEntry } from "./model.ts";
 import { effectiveRewardEntries } from "./ledger.ts";
+import { firstTenHeldUsdMicros } from "./first-ten.ts";
 
 /**
  * What the Rewards page is allowed to know.
@@ -68,9 +69,15 @@ export type RewardsView = Readonly<{
 }>;
 
 /** A row's human detail: the assets, when they are known, and nothing else. */
-function detailOf(entry: RewardEntry): string | null {
+function detailOf(entry: RewardEntry, held: boolean, locale: "en" | "uk"): string | null {
   if (entry.type === "CLAIM") return null;
-  return entry.source?.symbol ?? null;
+  const symbol = entry.source?.symbol ?? null;
+  /* The rest of «First $10 back» still waiting for the wallet's check says so, beside the half that is already free. */
+  if (held && entry.window === "FIRST_TEN_REST") {
+    const note = locale === "uk" ? "після перевірки" : "after the check";
+    return symbol ? `${symbol} · ${note}` : note;
+  }
+  return symbol;
 }
 
 export function rewardsView(
@@ -86,12 +93,21 @@ export function rewardsView(
     locale: "en" | "uk";
     /** How many history rows to project. The page shows a compact list. */
     limit?: number;
+    /** The claim floor for this wallet (`claimMinimumUsdMicros`); absent — the dollar. */
+    minimumUsdMicros?: bigint;
   }>,
 ): RewardsView {
-  const balance = rewardBalance({ entries: args.entries, reserve: args.reserve, heldUsdMicros: args.heldUsdMicros, locale: args.locale });
+  const balance = rewardBalance({ entries: args.entries, reserve: args.reserve, heldUsdMicros: args.heldUsdMicros, locale: args.locale, minimumUsdMicros: args.minimumUsdMicros });
   const rows: RewardRow[] = [];
+  /* A cancelled «First $10 back» took its rest back: those rows are no longer the wallet's to list — unless an appeal
+     won and gave them back. */
+  const voided = args.entries.some((entry) => entry.window === "FIRST_TEN_VOID") && !args.entries.some((entry) => entry.window === "FIRST_TEN_REINSTATED");
+  const held = firstTenHeldUsdMicros(args.entries) > 0n;
   for (const entry of effectiveRewardEntries(args.entries)) {
+    if (voided && entry.window === "FIRST_TEN_REST") continue;
     if (entry.type === "ADJUSTMENT") continue;
+    /* The inviter's row of nothing inside «First $10 back» says a friend traded; it is no reward to list. */
+    if (entry.window === "FIRST_TEN" && entry.type === "REFERRAL_L1") continue;
     const micros = entry.usdMicros === null ? null : BigInt(entry.usdMicros);
     const magnitude = micros === null ? null : usdText(micros < 0n ? -micros : micros);
     rows.push({
@@ -99,7 +115,7 @@ export function rewardsView(
       display: magnitude === null ? "—" : `${micros! < 0n ? "−" : "+"}${dollars(magnitude)}`,
       amount: magnitude ?? "—",
       valued: micros !== null,
-      detail: detailOf(entry),
+      detail: detailOf(entry, held, args.locale),
       at: entry.createdAt,
     });
     if (rows.length >= (args.limit ?? 20)) break;

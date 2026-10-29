@@ -5,6 +5,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 
 import { useSolanaI18n } from "../i18n/provider.tsx";
 import { referralCopy, referralDeadline } from "./referral-copy.ts";
+import { walletCopy } from "./wallet-copy.ts";
 import styles from "./rewards.module.css";
 
 /**
@@ -146,14 +147,14 @@ export function ReferralCard({
   }, []);
 
   const refusal = useCallback((reason: string): string =>
-    reason === "PROOF_REQUIRED" ? text("Confirm this wallet first, then set your inviter.")
+    reason === "PROOF_REQUIRED" ? walletCopy(locale).inviterFirst
       : reason === "SELF_REFERRAL" ? text("That is your own link.")
         : reason === "ALREADY_REFERRED" ? text("This wallet already has an inviter.")
           : reason === "ALREADY_EARNING" ? words.refusedLate
             : reason === "ALREADY_CHANGED" ? words.refusedChanged
               : reason === "CYCLE" ? text("Those two wallets cannot invite each other.")
                 : words.notFound,
-  [text, words]);
+  [text, words, locale]);
 
   const closeEditor = useCallback(() => {
     setEditing(false);
@@ -204,7 +205,7 @@ export function ReferralCard({
 
   /** Bind, or make the one change, to this code. Needs the proven wallet. */
   const settle = useCallback(async (code: string | undefined, action: "confirm" | "change") => {
-    if (!code || !wallet) { setNotice(text("Confirm this wallet first, then set your inviter.")); return; }
+    if (!code || !wallet) { setNotice(walletCopy(locale).inviterFirst); return; }
     setNotice(null);
     setBusy(true);
     try {
@@ -228,7 +229,7 @@ export function ReferralCard({
     } finally {
       setBusy(false);
     }
-  }, [wallet, proven, onProve, post, load, onBound, text, refusal, closeEditor]);
+  }, [wallet, proven, onProve, post, load, onBound, text, refusal, closeEditor, locale]);
 
   const dismiss = useCallback(async () => {
     setBusy(true);

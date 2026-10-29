@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 
 import type { AutoinvestRule, RuleBudget, RuleBudgetRequest, RuleBudgetResponse, RuleCreateRequest, RuleListResponse, RuleResponse, RuleStatus } from "@/lib/api/v1/contract";
+import { ensureWalletActs } from "@/lib/account/wallet-proof-store.client";
 
 /**
  * The proven wallet's «Автоінвест» rules and the month's budget, read on a
@@ -22,6 +23,9 @@ async function readError(response: Response): Promise<string | null> {
   const body = (await response.json().catch(() => null)) as { error?: { code?: string } } | null;
   return body?.error?.code ?? null;
 }
+
+/** The event a rules write sends to every holder of the rules on the page. */
+const RULES_CHANGED = "ryntra:rules-changed";
 
 export function useAutoinvestRules(enabled: boolean) {
   const [state, setState] = useState<RulesState>({ status: "idle", rules: [], budget: null });
@@ -53,8 +57,18 @@ export function useAutoinvestRules(enabled: boolean) {
     void reload();
   }, [enabled, reload]);
 
+  /* SOL-C15: one page may hold the rules twice (Боти's list and the sheet «Обрати токен» opens); a write in one reloads the other. */
+  useEffect(() => {
+    if (!enabled) return undefined;
+    const again = () => void reload();
+    window.addEventListener(RULES_CHANGED, again);
+    return () => window.removeEventListener(RULES_CHANGED, again);
+  }, [enabled, reload]);
+
   const send = useCallback(async (url: string, method: "POST" | "PUT" | "DELETE", body?: unknown): Promise<Readonly<{ ok: true; answer: unknown }> | Readonly<{ ok: false; code: string | null }>> => {
     try {
+      /* A rule is a write: a wallet linked to an email account signs once for it (decision 62). */
+      if (!(await ensureWalletActs())) return { ok: false, code: "UNAUTHORIZED" };
       const response = await fetch(url, {
         method,
         headers: body === undefined ? API_HEADERS : { ...API_HEADERS, "content-type": "application/json" },
@@ -62,12 +76,12 @@ export function useAutoinvestRules(enabled: boolean) {
       });
       if (!response.ok) return { ok: false, code: await readError(response) };
       const answer = await response.json().catch(() => null);
-      void reload();
+      window.dispatchEvent(new Event(RULES_CHANGED));
       return { ok: true, answer };
     } catch {
       return { ok: false, code: null };
     }
-  }, [reload]);
+  }, []);
 
   const write = useCallback(
     async (url: string, method: "POST" | "DELETE", body?: unknown): Promise<RuleWrite> => {

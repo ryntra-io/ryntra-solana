@@ -6,12 +6,15 @@
  */
 
 import { AgentContextSchema, BASE58, PLAN_ID, type AgentContext } from "../api/v1/contract.ts";
+import { shownText } from "../world/text-safety/clean.ts";
 
 export function parseContextParam(raw: string | null): AgentContext | null {
   if (!raw) return null;
   const [kind, ...rest] = raw.split(":");
   if (kind === "asset" && rest[0] && BASE58.test(rest[0])) {
-    const parsed = AgentContextSchema.safeParse({ kind: "asset", mint: rest[0], ...(rest[1] ? { symbol: rest[1].slice(0, 32) } : {}) });
+    /* The ticker in a link is anyone's text (CITY-73): a held one is dropped, the mint still names the coin. */
+    const symbol = rest[1] ? shownText(rest[1], "symbol", 32) : null;
+    const parsed = AgentContextSchema.safeParse({ kind: "asset", mint: rest[0], ...(symbol ? { symbol } : {}) });
     return parsed.success ? parsed.data : null;
   }
   if (kind === "plan" && rest[0] && PLAN_ID.test(rest[0])) return { kind: "plan", planId: rest[0] };

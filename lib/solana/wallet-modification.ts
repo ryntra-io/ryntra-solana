@@ -8,7 +8,10 @@
  * the strongest answer, but it cannot be the only honest answer. This module
  * names one narrow compatible case — recognised ComputeBudget instructions —
  * and proves that every business instruction, account role, signer and the
- * blockhash stayed the same.
+ * blockhash stayed the same. Recognised: a unit limit, a unit price and (since
+ * SOL-4, 21.10) one loaded-accounts data limit up to 64 MiB, which only limits
+ * — a build may carry it itself (the treasury's legacy bytes do), and it then
+ * counts as the budget a wallet-guarded reply keeps.
  *
  * It is browser/server shared and contains no key or signing operation.
  */
@@ -26,6 +29,7 @@ export const LIGHTHOUSE_PROGRAM = "L2TExMFKdjpN9kozasaurPirfHy9P8sbXoAN1qA3S95";
     assertion fails; Phantom signs at 4, the Seeker Wallet at 5. */
 const LIGHTHOUSE_MAX_LOG_LEVEL = 6;
 const MAX_COMPUTE_UNITS = 1_400_000;
+const MAX_LOADED_ACCOUNTS_DATA = 64 * 1024 * 1024;
 const MICRO_LAMPORTS_PER_LAMPORT = 1_000_000n;
 
 type CompiledInstruction = Readonly<{
@@ -249,6 +253,7 @@ function changed(reasonCode: WalletModificationReason, detail: string, addedProg
 function computeBudget(instructions: readonly CompiledInstruction[]): ComputeBudgetSummary | "INVALID" {
   let unitLimit: number | null = null;
   let microLamportsPerUnit: bigint | null = null;
+  let loadedLimit: number | null = null;
   try {
     for (const instruction of instructions) {
       if ((instruction.accountIndices?.length ?? 0) !== 0 || !instruction.data) return "INVALID";
@@ -261,6 +266,13 @@ function computeBudget(instructions: readonly CompiledInstruction[]): ComputeBud
       }
       if (data[0] === 3 && data.length === 9 && microLamportsPerUnit === null) {
         microLamportsPerUnit = view.getBigUint64(1, true);
+        continue;
+      }
+      /* A loaded-accounts data limit, which Phantom asks a dApp to set and the treasury's bytes carry: it only limits,
+         up to the runtime's own 64 MiB. */
+      if (data[0] === 4 && data.length === 5 && loadedLimit === null) {
+        loadedLimit = view.getUint32(1, true);
+        if (loadedLimit <= 0 || loadedLimit > MAX_LOADED_ACCOUNTS_DATA) return "INVALID";
         continue;
       }
       return "INVALID";
@@ -512,7 +524,7 @@ export function compareWalletTransaction(args: {
       const logLevel = bytes[1];
       /* Every reason this can refuse, named.
          The refusal used to print one sentence and a discriminator for eight
-         different conditions, so a person who hit it on the bridge learned
+         different conditions, so a founder who hit it on the bridge learned
          only that something was wrong — and `06` is a variant this guard
          *accepts*, which made the sentence read as a contradiction. The rule is
          unchanged; what changed is that it says which clause stopped it, so the

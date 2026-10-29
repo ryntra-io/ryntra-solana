@@ -33,7 +33,7 @@ async function bounded<T>(work: Promise<T>, ms: number): Promise<T | null> {
 }
 
 /**
- * The operator's first screen. Every source is read independently and a
+ * The founder's first screen. Every source is read independently and a
  * failing one becomes an `unavailable` cell and an attention line — never a
  * blank page and never a zero.
  */

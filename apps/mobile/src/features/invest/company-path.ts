@@ -1,5 +1,5 @@
 /**
- * «Шлях компанії» on the phone — the pure half (the web's,
+ * «Шлях компанії» on the phone — the pure half (M24; the web's,
  * its `company-path-words.ts` and `company-path.tsx`).
  *
  * Where a company stands on its way from a private token to its stock on

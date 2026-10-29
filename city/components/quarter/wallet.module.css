@@ -1,0 +1,124 @@
+/* The wallet in the top bar: a chip like the LIVE one, and a small dark-glass menu under it. Tokens from
+   city/styles/city.module.css; the panel and chip shapes come from the HUD (hud.module.css). */
+
+.wrap {
+  position: relative;
+  display: inline-flex;
+  flex: none;
+}
+
+.chip {
+  border: 0;
+  color: var(--ice);
+  font-family: inherit;
+  cursor: pointer;
+}
+
+.chip:disabled {
+  cursor: default;
+}
+
+.short {
+  display: none;
+}
+
+.dot {
+  width: 8px;
+  height: 8px;
+  flex: none;
+  border-radius: 50%;
+  background: var(--player, var(--mint));
+  box-shadow: 0 0 10px var(--player, var(--mint));
+}
+
+.dotWait {
+  background: var(--amber);
+  box-shadow: 0 0 10px var(--amber);
+}
+
+/* An address is read as written: never uppercased, its letters as narrow as figures. */
+.address {
+  text-transform: none;
+  letter-spacing: 0.02em;
+  font-variant-numeric: tabular-nums;
+}
+
+.menu {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  z-index: 2;
+  width: min(300px, calc(100vw - 2 * var(--gutter, 16px)));
+  padding: 14px 16px 16px;
+  --cut: 14px;
+}
+
+.head {
+  font-size: 15px;
+  font-weight: 800;
+  color: var(--ice);
+}
+
+.note {
+  margin-top: 8px;
+  font-size: 14px;
+  line-height: 1.4;
+  color: var(--text-dim);
+}
+
+.note a {
+  color: var(--ice);
+}
+
+.error {
+  color: #ffb3aa;
+}
+
+.row {
+  display: flex;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.row > * {
+  min-height: 44px;
+}
+
+.act {
+  flex: 1;
+  min-width: 0;
+  padding: 0 14px;
+  border: 0;
+  font-size: 15px;
+  color: var(--ink);
+  background: linear-gradient(100deg, var(--warm), var(--amber));
+  clip-path: polygon(10px 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%, 0 10px);
+  white-space: nowrap;
+}
+
+.act:disabled {
+  opacity: 0.6;
+}
+
+.row > :only-child {
+  flex: 1;
+}
+
+/* A phone's top bar has room for an icon: the wallet glyph, or your colour once a wallet is here. */
+@media (max-width: 720px) {
+  .wrap .chip {
+    width: 40px;
+    padding: 0;
+    justify-content: center;
+  }
+  .long {
+    display: none;
+  }
+  .short {
+    display: inline-grid;
+  }
+  .dot {
+    width: 12px;
+    height: 12px;
+  }
+}

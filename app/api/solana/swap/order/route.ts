@@ -1,13 +1,16 @@
 import { z } from "zod";
 
 import { consumeAgentControlRequest, readAgentControlJson } from "@/lib/agent-control/http";
+import { serverTimingOf } from "@/lib/core/pipeline";
 import { prepareSolanaSwap, swapPrepareContext } from "@/lib/core/solana-swap/prepare";
 import { swapOrderLogLine } from "@/lib/core/solana-swap/refusal";
+import { kitChainReader, readSignableWindowMs } from "@/lib/solana/blockhash-life";
 import { resolveSolanaLaneState } from "@/lib/solana/lane-state";
 import { privateNoStoreHeaders, rateLimitHeaders, type RateLimitDecision } from "@/lib/http-control";
 import { readSwapCarrier, walletMismatch } from "@/lib/solana/swap-carrier.server";
 import { SolanaActionOriginRequestSchema } from "@/lib/solana/action-origin";
 import type { JupiterExecutableOrder } from "@/lib/solana/quotes";
+import { createSolanaRpcHandle } from "@/lib/solana/rpc";
 import { eventStateAt } from "@/lib/stocks/instrument";
 import { lifecycleEventFor } from "@/lib/stocks/lifecycle-events";
 import { isRetiredMint, RETIRED_REASON } from "@/lib/stocks/retired";
@@ -105,6 +108,7 @@ function failure(
   message: string,
   rate: RateLimitDecision,
   extra: object = {},
+  timing?: string,
 ) {
   /* A refusal this route decides is written down. Production carried five
      failed Reviews on 2026-09-10 and the log held five request lines and not
@@ -118,7 +122,7 @@ function failure(
   if (status >= 500) console.error(swapOrderLogLine("refused", { code, status, message, extra }));
   return Response.json(
     { error: { code, message, ...extra } },
-    { status, headers: responseHeaders(rate) },
+    { status, headers: { ...responseHeaders(rate), ...(timing ? { "server-timing": timing } : {}) } },
   );
 }
 
@@ -135,6 +139,7 @@ function describeIssues(error: z.ZodError): string {
 }
 
 export async function POST(request: Request) {
+  const startedAt = performance.now();
   const rate = consumeAgentControlRequest(request.headers);
   if (!rate.allowed) return failure(429, "RATE_LIMITED", "Too many requests.", rate);
   /* The site's origin for a browser, the native bearer for the phone; a
@@ -182,12 +187,27 @@ export async function POST(request: Request) {
   const checkContext = readCheckContext(input.inputMint, input.outputMint);
   const swap = swapPrepareContext({ request, carrier, input, origin });
   const run = await prepareSolanaSwap(swap);
-  if (!run.completed) return failure(run.stop.status, run.stop.code, run.stop.message, rate, run.stop.extra);
+  if (!run.completed) return failure(run.stop.status, run.stop.code, run.stop.message, rate, run.stop.extra, serverTimingOf(run.timings, [{ name: "total", ms: performance.now() - startedAt }]));
   const order = swap.order as JupiterExecutableOrder;
   const { review, bundle, proof, preSign, simulation, passports, decimals, reads, planReview } = swap;
 
+  /*
+   * AG-1: the Review stays readable for its window (at least 30 s, `MINIMUM_HUMAN_REVIEW_WINDOW_MS`), but the bytes
+   * live only as long as their blockhash — ~150 blocks ≈ 30 s on 200 ms slots, part of it spent by Jupiter already.
+   * This is how long the wallet may still open on them; later, the card fetches fresh bytes at the moment of signing.
+   * Read beside the four lines below, not after them (SOL-S1): neither waits on the other.
+   */
+  const lastReadsStarted = performance.now();
+  const [context, signableMs] = await Promise.all([
+    awaitCheckContext(checkContext),
+    readSignableWindowMs(
+      kitChainReader(createSolanaRpcHandle({ network: "mainnet", timeoutMs: 3_000, retries: 0 })),
+      order.lastValidBlockHeight,
+      { capMs: Math.max(0, Date.parse(order.reviewExpiresAt) - Date.now()) },
+    ),
+  ]);
+  const lastReadsMs = performance.now() - lastReadsStarted;
   /* The four lines on these exact bytes, with the reserve the simulation proved — what every client shows before the signature. */
-  const context = await awaitCheckContext(checkContext);
   const check = swapCheckOf({ context, basis: "order", order, decimals, mintRead: context ? (reads[context.stockMint] ?? null) : null, nowMs: Date.now() });
 
   return Response.json(
@@ -203,14 +223,18 @@ export async function POST(request: Request) {
       passports,
       decimals,
       assetReview: swap.outputAssetVerdict,
+      /* 1.85.0: the risk verdict over the trade, built by the core guard on these exact figures. */
+      risk: swap.risk,
       policy: { intent: swap.intent, verdict: swap.verdict },
       bundle,
       proof,
       preSign,
       expiresAt: order.reviewExpiresAt,
+      signableMs,
       planReview,
       check,
     },
-    { headers: responseHeaders(rate) },
+    /* SOL-S1: each step's time, so the Review's wait is measured on production without a signature. */
+    { headers: { ...responseHeaders(rate), "server-timing": serverTimingOf(run.timings, [{ name: "signable-and-check", ms: lastReadsMs }, { name: "total", ms: performance.now() - startedAt }]) } },
   );
 }

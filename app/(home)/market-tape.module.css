@@ -1,16 +1,14 @@
-/* The market tape (market-tape.tsx) — TradingView's Ticker Tape between the
-   hero and the orbit.
+/* The market tape (market-tape.tsx) — Ryntra's own, between the hero and the
+   orbit (SOL-T4): the place and the look TradingView's Ticker Tape had, drawn
+   by the core's sparkline.
 
    It sits on the landing's one ground, as wide as the hero's strip of four.
-   The widget draws itself in a closed shadow root and takes its colours and
-   its face from the public `--tv-widget-*` tokens, so its frame is the same
-   hairline the strip divides its items with, its words and figures are the
-   landing's ink in the landing's font, and up and down are the product's
-   own two colours. The attribution — TradingView's logo on the tape and its
-   «by TradingView» link under it — keeps TradingView's own colours: no token
-   of it is set here, and nothing clips, masks or covers it (no overflow, no
-   mask, no gradient over the tape's ends). The slot keeps the tape's height
-   before the script arrives, so the orbit below never moves. */
+   The core's compact chart reads the core's tokens; here they are the
+   landing's own — the frame is the same hairline the strip divides its items
+   with, the words and figures are the landing's ink in the landing's font,
+   and up and down are the product's own two colours — so the light theme is
+   the same drawing on a light ground. The slot keeps the tape's height before
+   the read arrives, so the orbit below never moves. */
 
 .tape {
   position: relative;
@@ -21,17 +19,168 @@
   padding: var(--ry-s4) clamp(24px, 3.2vw, 64px);
   box-sizing: border-box;
   color: var(--landing-ink);
+
+  /* The core's tokens, as the landing's (compact.css reads them). */
+  --ryntra-text: var(--landing-ink);
+  --ryntra-muted: var(--ry-muted);
+  --ryntra-surface: transparent;
+  --ryntra-border: color-mix(in srgb, var(--landing-ink) 10%, transparent);
+  --ryntra-border-hover: color-mix(in srgb, var(--landing-ink) 22%, transparent);
+  --ryntra-up: var(--ry-pnl-pos);
+  --ryntra-down: var(--ry-pnl-neg);
+  --ryntra-up-text: var(--ry-pnl-pos);
+  --ryntra-down-text: var(--ry-pnl-neg);
+  --ryntra-info: var(--ry-muted);
+  --ryntra-info-text: var(--ry-muted);
+  --ryntra-warn: var(--ry-caution);
+  --ryntra-warn-text: var(--ry-caution);
+  --ryntra-brand: var(--ry-accent);
+  --ryntra-font-sans: var(--ry-font-sans);
+  --ryntra-numeric: tabular-nums;
+  --ryntra-type-caption-size: 12px;
+  --ryntra-type-caption-line: 16px;
+  --ryntra-type-ui-size: 14px;
+  --ryntra-type-ui-line: 20px;
+  --ryntra-type-body-size: 16px;
+  --ryntra-type-body-line: 24px;
+  --ryntra-weight-medium: 500;
+  --ryntra-weight-semibold: 600;
+  --ryntra-space-1: 4px;
+  --ryntra-space-2: 8px;
+  --ryntra-space-3: 12px;
+  --ryntra-space-4: 16px;
+  --ryntra-radius-pill: 999px;
+  --ryntra-radius-field: 8px;
+  --ryntra-motion-fast: 150ms;
+  --ryntra-motion-ease: cubic-bezier(0.2, 0, 0, 1);
+  --ryntra-focus-outline: 2px solid var(--ry-focus);
+  --ryntra-focus-offset: 2px;
 }
+
 .slot {
-  --tv-widget-border-color: color-mix(in srgb, var(--landing-ink) 10%, transparent);
-  --tv-widget-font-family: var(--ry-font-sans);
-  --tv-widget-text-color: var(--landing-ink);
-  --tv-widget-price-text-color: var(--landing-ink);
-  --tv-widget-text-secondary-color: var(--ry-muted);
-  --tv-widget-text-tertiary-color: var(--ry-muted);
-  --tv-widget-positive-color: var(--ry-pnl-pos);
-  --tv-widget-negative-color: var(--ry-pnl-neg);
-  --tv-widget-hover-background-color: color-mix(in srgb, var(--landing-ink) 4%, transparent);
-  display: block;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
   min-height: 78px;
+}
+
+/* The frame: one hairline round the run, the run cut at its ends. */
+.frame {
+  width: 100%;
+  box-sizing: border-box;
+  overflow: hidden;
+  border: 1px solid var(--ryntra-border);
+  border-radius: 6px;
+  outline: none;
+}
+
+.frame:focus-visible {
+  outline: var(--ryntra-focus-outline);
+  outline-offset: var(--ryntra-focus-offset);
+}
+
+/* The run twice, end to end: half the track is one whole run, so a loop of -50% is seamless. */
+.track {
+  display: flex;
+  width: max-content;
+  animation: tape-run 60s linear infinite;
+}
+
+.frame:hover .track,
+.frame:focus-within .track {
+  animation-play-state: paused;
+}
+
+@keyframes tape-run {
+  from { transform: translateX(0); }
+  to { transform: translateX(-50%); }
+}
+
+.run {
+  display: flex;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  height: 54px;
+  padding: 0 16px;
+  border-inline-end: 1px solid var(--ryntra-border);
+  font-family: var(--ry-font-sans);
+  white-space: nowrap;
+}
+
+.icon {
+  flex: none;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--landing-ink) 8%, transparent);
+  object-fit: cover;
+}
+
+.symbol {
+  font-size: var(--ry-fs-copy);
+  font-weight: 600;
+  color: var(--landing-ink);
+}
+
+.price {
+  font-size: var(--ry-fs-copy);
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+  color: var(--landing-ink);
+}
+
+.price small {
+  font-size: var(--ry-fs-label-sm);
+  font-weight: 500;
+  color: var(--ry-muted);
+}
+
+.change {
+  font-size: var(--ry-fs-copy);
+  font-variant-numeric: tabular-nums;
+  color: var(--ry-muted);
+}
+
+.change[data-tone="up"] {
+  color: var(--ry-pnl-pos);
+}
+
+.change[data-tone="down"] {
+  color: var(--ry-pnl-neg);
+}
+
+/* The core's sparkline: a day's line beside the change, its plot as tall as the words. */
+.spark {
+  --ryntra-mini-height: 30px;
+  flex: none;
+  width: 88px;
+  margin-inline-start: 8px;
+}
+
+.caption {
+  font-size: var(--ry-fs-label);
+  color: var(--ry-muted);
+}
+
+/* Less motion: the run stands still and scrolls by hand. */
+@media (prefers-reduced-motion: reduce) {
+  .frame {
+    overflow-x: auto;
+  }
+
+  .track {
+    animation: none;
+  }
+
+  .run[aria-hidden] {
+    display: none;
+  }
 }

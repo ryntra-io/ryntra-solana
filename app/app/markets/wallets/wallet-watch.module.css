@@ -1,0 +1,773 @@
+/*
+ * «Ринки» → «Гаманці» (SOL-R4). The lookup on top; on a desk the followed wallets in a narrow column beside the open
+ * wallet, on a phone one under the other. Blocks, tables and the hero number are the core's; this file lays them out.
+ */
+
+.watch {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--ry-s3);
+  min-width: 0;
+}
+
+.srOnly {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+.mono {
+  font-family: var(--ry-font-mono);
+}
+
+/* ── The lookup ─────────────────────────────────────────────────────── */
+
+.lookup {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--ry-s2) var(--ry-s3);
+}
+
+.field {
+  display: flex;
+  flex: 1 1 280px;
+  min-width: 0;
+}
+
+.field input {
+  width: 100%;
+  min-width: 0;
+  height: 40px;
+  padding: 0 var(--ry-s3);
+  border: 1px solid var(--ry-border);
+  border-radius: var(--ry-r-btn-sm, 10px);
+  background: var(--ry-card);
+  color: var(--ry-text);
+  font-family: var(--ry-font-mono);
+  font-size: var(--ry-fs-dense);
+}
+
+.field input::placeholder {
+  color: var(--ry-muted);
+  font-family: var(--ry-font-sans);
+}
+
+.field input:focus-visible {
+  outline: 2px solid var(--ry-focus-ring, var(--ry-iris));
+  outline-offset: 2px;
+}
+
+.field input[aria-invalid="true"] {
+  border-color: var(--ry-pnl-neg);
+}
+
+.hint {
+  flex: 1 0 100%;
+  margin: 0;
+  color: var(--ry-muted);
+  font-size: var(--ry-fs-label);
+  line-height: 1.4;
+}
+
+.hint[data-error] {
+  color: var(--ry-pnl-neg);
+}
+
+/* ── Two columns on a desk ──────────────────────────────────────────── */
+
+.columns {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--ry-s3);
+  align-items: start;
+  min-width: 0;
+}
+
+@media (min-width: 1024px) {
+  .columns {
+    grid-template-columns: minmax(260px, 320px) minmax(0, 1fr);
+  }
+}
+
+.detail,
+.detailInner {
+  display: grid;
+  gap: var(--ry-s3);
+  min-width: 0;
+  scroll-margin-top: calc(var(--ryntra-size-header, 56px) + var(--ry-s3));
+}
+
+.list {
+  min-width: 0;
+}
+
+.count {
+  color: var(--ry-muted);
+  font-size: var(--ry-fs-label);
+  font-variant-numeric: tabular-nums;
+}
+
+.follows {
+  display: grid;
+  gap: 2px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.followRow {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 2px var(--ry-s2);
+  width: 100%;
+  min-height: 48px;
+  padding: var(--ry-s2) var(--ry-s3);
+  border: 0;
+  border-radius: var(--ry-r-btn-sm, 10px);
+  background: transparent;
+  color: var(--ry-text);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.followRow:hover {
+  background: var(--ry-hover);
+}
+
+.followRow[aria-current="true"] {
+  background: var(--ry-elevated);
+  box-shadow: inset 0 0 0 1px var(--ry-border);
+}
+
+.followRow:focus-visible {
+  outline: 2px solid var(--ry-focus-ring, var(--ry-iris));
+  outline-offset: 2px;
+}
+
+.followName {
+  display: flex;
+  align-items: baseline;
+  gap: var(--ry-s2);
+  min-width: 0;
+  overflow: hidden;
+  font-size: var(--ry-fs-dense);
+  font-weight: 600;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.followMeta {
+  grid-column: 1;
+  overflow: hidden;
+  color: var(--ry-muted);
+  font-size: var(--ry-fs-label);
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.followAlerts {
+  grid-column: 2;
+  grid-row: 1 / span 2;
+  align-self: center;
+  color: var(--ry-muted);
+  font-size: var(--ry-fs-label-sm);
+  white-space: nowrap;
+}
+
+.followAlerts[data-alerts="off"] {
+  opacity: 0.7;
+}
+
+.via {
+  overflow: hidden;
+  color: var(--ry-muted);
+  font-size: var(--ry-fs-label);
+  font-weight: 400;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* ── The open wallet ────────────────────────────────────────────────── */
+
+.walletTitle {
+  display: inline-flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 0 var(--ry-s2);
+  min-width: 0;
+}
+
+.titleActions {
+  display: inline-flex;
+  gap: var(--ry-s1);
+}
+
+.iconButton {
+  display: inline-grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border: 0;
+  border-radius: var(--ry-r-btn-sm, 8px);
+  background: transparent;
+  color: var(--ry-muted);
+  cursor: pointer;
+}
+
+.iconButton:hover {
+  background: var(--ry-hover);
+  color: var(--ry-text);
+}
+
+.iconButton:focus-visible {
+  outline: 2px solid var(--ry-focus-ring, var(--ry-iris));
+  outline-offset: 2px;
+}
+
+.summary {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: var(--ry-s3);
+}
+
+.summarySide {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: var(--ry-s2);
+}
+
+@media (max-width: 600px) {
+  .summarySide {
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+  }
+}
+
+.badges,
+.labels {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: var(--ry-s1);
+}
+
+.label {
+  display: inline-flex;
+  align-items: center;
+  height: 20px;
+  padding: 0 var(--ry-s2);
+  border: 1px solid var(--ry-border);
+  border-radius: var(--ry-r-pill);
+  color: var(--ry-text);
+  font-size: var(--ry-fs-label-sm);
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.badges .label {
+  height: 24px;
+}
+
+.label[data-label="creator"] {
+  border-color: color-mix(in srgb, var(--ry-info) 55%, var(--ry-border));
+}
+
+.label[data-label="sniper"],
+.label[data-label="bundle"] {
+  border-color: color-mix(in srgb, var(--ry-caution) 60%, var(--ry-border));
+}
+
+.followBar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--ry-s2) var(--ry-s3);
+  margin-top: var(--ry-s3);
+  padding-top: var(--ry-s3);
+  border-top: 1px solid var(--ry-border);
+}
+
+.rename {
+  display: flex;
+  flex: 1 1 260px;
+  align-items: center;
+  gap: var(--ry-s2);
+  min-width: 0;
+}
+
+.rename .field input {
+  font-family: var(--ry-font-sans);
+}
+
+.select {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--ry-s2);
+  color: var(--ry-muted);
+  font-size: var(--ry-fs-label);
+}
+
+.select select {
+  height: 40px;
+  padding: 0 var(--ry-s3);
+  border: 1px solid var(--ry-border);
+  border-radius: var(--ry-r-btn-sm, 10px);
+  background: var(--ry-card);
+  color: var(--ry-text);
+  font: inherit;
+  font-size: var(--ry-fs-dense);
+}
+
+.select select:focus-visible {
+  outline: 2px solid var(--ry-focus-ring, var(--ry-iris));
+  outline-offset: 2px;
+}
+
+/* ── Tables ─────────────────────────────────────────────────────────── */
+
+.tableBlock {
+  min-width: 0;
+}
+
+.table {
+  overflow-x: auto;
+}
+
+.table td {
+  height: 40px;
+}
+
+.asset {
+  display: flex;
+  align-items: center;
+  gap: var(--ry-s2);
+  min-width: 0;
+  color: inherit;
+  text-decoration: none;
+}
+
+.asset:focus-visible {
+  outline: 2px solid var(--ry-focus-ring, var(--ry-iris));
+  outline-offset: 2px;
+  border-radius: 6px;
+}
+
+.assetText {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 2px var(--ry-s2);
+  min-width: 0;
+}
+
+.symbol {
+  font-size: var(--ry-fs-dense);
+  font-weight: 600;
+  color: var(--ry-text);
+}
+
+.num {
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.num[data-tone="up"] {
+  color: var(--ry-pnl-pos);
+}
+
+.num[data-tone="down"] {
+  color: var(--ry-pnl-neg);
+}
+
+.muted {
+  color: var(--ry-muted);
+  white-space: nowrap;
+}
+
+.side {
+  white-space: nowrap;
+  font-weight: 600;
+}
+
+.side[data-side="buy"] {
+  color: var(--ry-pnl-pos);
+}
+
+.side[data-side="sell"] {
+  color: var(--ry-pnl-neg);
+}
+
+.side .muted {
+  font-weight: 400;
+}
+
+.heldCell {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: var(--ry-s1) var(--ry-s2);
+}
+
+.watchButton,
+.watchOn {
+  display: inline-flex;
+  align-items: center;
+  min-height: 28px;
+  padding: 0 var(--ry-s2);
+  border: 1px solid var(--ry-border);
+  border-radius: var(--ry-r-pill);
+  background: transparent;
+  color: var(--ry-text);
+  font: inherit;
+  font-size: var(--ry-fs-label-sm);
+  white-space: nowrap;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+/* A desk's row stays a row: the pill is a mouse's 32 px, not the global 44 of a finger. */
+@media (min-width: 601px) {
+  .table .watchButton,
+  .table .watchOn {
+    min-height: 32px;
+    height: 32px;
+  }
+}
+
+.tradeCell {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+.watchButton:hover:not(:disabled) {
+  background: var(--ry-hover);
+}
+
+.watchButton:disabled {
+  cursor: default;
+  opacity: 0.6;
+}
+
+.watchButton[data-state="failed"] {
+  border-color: var(--ry-pnl-neg);
+}
+
+.watchOn {
+  border-color: color-mix(in srgb, var(--ry-pnl-pos) 50%, var(--ry-border));
+  color: var(--ry-pnl-pos);
+}
+
+.watchButton:focus-visible,
+.watchOn:focus-visible,
+.txLink:focus-visible {
+  outline: 2px solid var(--ry-focus-ring, var(--ry-iris));
+  outline-offset: 2px;
+}
+
+.txLink {
+  display: inline-grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  color: var(--ry-muted);
+}
+
+.txLink:hover {
+  color: var(--ry-text);
+}
+
+.sources,
+.readOnly {
+  margin: 0;
+  color: var(--ry-muted);
+  font-size: var(--ry-fs-label);
+  line-height: 1.4;
+}
+
+.skeleton {
+  height: 120px;
+  border-radius: var(--ry-r-block, 12px);
+  background: linear-gradient(90deg, var(--ry-card), var(--ry-elevated), var(--ry-card));
+  background-size: 200% 100%;
+  animation: shimmer 1.4s linear infinite;
+}
+
+@keyframes shimmer {
+  to {
+    background-position: -200% 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .skeleton {
+    animation: none;
+  }
+}
+
+/* A phone: the follow bar stacks; a 44 px finger target everywhere a press acts. */
+@media (max-width: 600px) {
+  .followRow,
+  .txLink,
+  .iconButton {
+    min-height: 44px;
+  }
+
+  .txLink,
+  .iconButton {
+    width: 44px;
+  }
+
+  .watchButton,
+  .watchOn {
+    min-height: 36px;
+  }
+
+  .select {
+    flex: 1 1 100%;
+  }
+
+  .select select {
+    flex: 1 1 auto;
+  }
+
+  /* Under the token on a phone: what it holds, then the watch. */
+  .tradeCell .heldCell {
+    justify-content: flex-start;
+    color: var(--ry-muted);
+    font-size: var(--ry-fs-label);
+  }
+}
+
+/* ── «Якби ти копіював» (SOL-R3) ────────────────────────────────────── */
+
+.reality {
+  min-width: 0;
+}
+
+.realityIntro {
+  margin: 0 0 var(--ry-s2);
+  color: var(--ry-muted);
+  font-size: var(--ry-fs-dense);
+  line-height: 1.45;
+}
+
+.choices {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--ry-s2) var(--ry-s4, 24px);
+  margin-bottom: var(--ry-s3);
+}
+
+.choice {
+  display: grid;
+  gap: var(--ry-s1);
+  min-width: 0;
+}
+
+.choiceLabel {
+  color: var(--ry-muted);
+  font-size: var(--ry-fs-label);
+}
+
+.chips {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: var(--ry-s1);
+}
+
+.chip {
+  min-height: 32px;
+  padding: 0 var(--ry-s2);
+  border: 1px solid var(--ry-border);
+  border-radius: var(--ry-r-pill);
+  background: transparent;
+  color: var(--ry-text);
+  font: inherit;
+  font-size: var(--ry-fs-label);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.chip:hover {
+  background: var(--ry-hover);
+}
+
+.chip[aria-pressed="true"] {
+  border-color: var(--ry-text);
+  background: var(--ry-elevated);
+  font-weight: 600;
+}
+
+.chip:focus-visible {
+  outline: 2px solid var(--ry-focus-ring, var(--ry-iris));
+  outline-offset: 2px;
+}
+
+.compare {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: var(--ry-s3) var(--ry-s5, 32px);
+  margin-bottom: var(--ry-s3);
+}
+
+.compareSide {
+  display: grid;
+  gap: var(--ry-s1);
+  min-width: 0;
+}
+
+.compareValue {
+  color: var(--ry-text);
+  font-size: var(--ry-fs-title, 20px);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.compareValue[data-tone="up"] {
+  color: var(--ry-pnl-pos);
+}
+
+.compareValue[data-tone="down"] {
+  color: var(--ry-pnl-neg);
+}
+
+.breakdown {
+  display: grid;
+  gap: var(--ry-s2);
+  margin-bottom: var(--ry-s3);
+}
+
+.breakdownTitle {
+  margin: 0;
+  color: var(--ry-text);
+  font-size: var(--ry-fs-dense);
+  font-weight: 600;
+}
+
+.steps {
+  display: grid;
+  gap: 0;
+  margin: 0;
+}
+
+.step {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--ry-s3);
+  padding: var(--ry-s1) 0;
+  border-bottom: 1px solid var(--ry-border);
+  font-size: var(--ry-fs-dense);
+}
+
+.step dt {
+  min-width: 0;
+  color: var(--ry-text);
+}
+
+.step dd {
+  margin: 0;
+  white-space: nowrap;
+}
+
+.step[data-total] {
+  border-bottom: 0;
+  font-weight: 600;
+}
+
+.paper,
+.live {
+  display: grid;
+  gap: var(--ry-s2);
+  margin-top: var(--ry-s3);
+  padding-top: var(--ry-s3);
+  border-top: 1px solid var(--ry-border);
+}
+
+.paperHead {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--ry-s2);
+}
+
+.paperActions,
+.paperStart {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--ry-s2);
+}
+
+.paperStart .realityIntro {
+  flex: 1 1 100%;
+  margin: 0;
+}
+
+.paperBody {
+  display: grid;
+  gap: var(--ry-s2);
+}
+
+.fills {
+  display: grid;
+  gap: 0;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.fill {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 2px var(--ry-s3);
+  padding: var(--ry-s1) 0;
+  border-bottom: 1px solid var(--ry-border);
+  font-size: var(--ry-fs-dense);
+}
+
+.fill .num {
+  grid-row: 1 / span 2;
+  grid-column: 2;
+  align-self: center;
+}
+
+.fill .muted {
+  font-size: var(--ry-fs-label);
+}
+
+.liveTitle {
+  color: var(--ry-muted);
+  font-size: var(--ry-fs-dense);
+  font-weight: 600;
+}
+
+.live .realityIntro {
+  margin: 0;
+}
+
+@media (max-width: 600px) {
+  .chip {
+    min-height: 40px;
+  }
+
+  .choices {
+    display: grid;
+  }
+}

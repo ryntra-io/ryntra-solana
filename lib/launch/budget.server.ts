@@ -79,6 +79,11 @@ export type MarketBudgetRecord = Readonly<{
   seen: readonly PriceSeen[];
   /** The most of the token the creator's wallet held, as the executor read it; null before the first read. */
   creatorHighRaw: string | null;
+  /**
+   * When the executor first read the creator's wallet, unix seconds (SOL-L6); absent on records from before. A watch that
+   * began well after the launch cannot know of an earlier sale.
+   */
+  creatorWatchFrom?: number | null;
   /** A sale (or a move out) from the creator's wallet in the market's first week, unix seconds; null when none. */
   creatorSoldAt: number | null;
   /** The limits that held at the executor's last read, and since when. */
@@ -151,12 +156,15 @@ export function budgetFigures(args: Readonly<{ record: MarketBudgetRecord | null
   return { totals, placedRaw: args.placedRaw, costsRaw: args.costsRaw, reserveRaw: budgetReserveRaw({ earnedRaw: totals.earnedRaw, placedRaw: args.placedRaw, costsRaw: args.costsRaw }) };
 }
 
-/** How a market's budget is read for the answers. */
+/**
+ * How a market's budget is read for the answers. `claims` (SOL-L6): Ryntra's executor claims this market's budget — a
+ * market Ryntra launched, or a person's Micro market while the operator's switch of people's markets is open.
+ */
 export type BudgetRead =
   | Readonly<{ kind: "NOT_COUNTED" }>
-  /** No ladder here: what the partner earned waits in Meteora's pools — the budget's part of it; null when not read. */
-  | Readonly<{ kind: "IN_POOL"; inPool: Readonly<{ budgetRaw: bigint; bySource: Readonly<Record<BudgetSource, bigint>> }> | null }>
-  | Readonly<{ kind: "COUNTED"; figures: BudgetFigures; inPoolRaw: bigint | null; exhausted: boolean }>;
+  /** Not claimed yet: what the partner earned waits in Meteora's pools — the budget's part of it; null when not read. */
+  | Readonly<{ kind: "IN_POOL"; inPool: Readonly<{ budgetRaw: bigint; bySource: Readonly<Record<BudgetSource, bigint>> }> | null; claims?: boolean }>
+  | Readonly<{ kind: "COUNTED"; figures: BudgetFigures; inPoolRaw: bigint | null; exhausted: boolean; claims?: boolean }>;
 
 const raw = (value: bigint | null) => (value === null ? null : value.toString());
 const sources = (bySource: Readonly<Record<BudgetSource, bigint>>) => Object.fromEntries(BUDGET_SOURCES.map((source) => [source, bySource[source].toString()])) as Record<BudgetSource, string>;
@@ -176,6 +184,8 @@ export function marketBudget(ladder: LadderRead, budget: BudgetRead = { kind: "N
       revenueRaw: null,
       inPoolRaw: budget.inPool ? budget.inPool.budgetRaw.toString() : null,
       exhausted: false,
+      /* Not known (the switch not read): not said. */
+      ...(budget.claims !== undefined ? { claims: budget.claims } : {}),
     };
   }
   if (budget.kind === "COUNTED") {
@@ -191,6 +201,7 @@ export function marketBudget(ladder: LadderRead, budget: BudgetRead = { kind: "N
       revenueRaw: figures.totals.revenueRaw.toString(),
       inPoolRaw: raw(budget.inPoolRaw),
       exhausted: budget.exhausted,
+      ...(budget.claims !== undefined ? { claims: budget.claims } : {}),
     };
   }
   return { state: "NOT_COUNTED", earnedRaw: null, reserveRaw: null, ladder: ladder.state, deployed };

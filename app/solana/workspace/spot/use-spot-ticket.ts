@@ -6,11 +6,13 @@ import type { ExecutionPlanBinding, PlanReview, RuleBinding } from "@/lib/api/v1
 import type { SolanaActionOrigin } from "@/lib/solana/action-origin";
 import { parseHumanAmount, scaleRawAmount } from "@/lib/solana/amounts";
 import type { SolanaPolicyVerdict } from "@/lib/solana/contracts";
+import { MAX_SIGNABLE_WINDOW_MS, mayOpenWallet, msUntilBytesDie, signableWindowClosed } from "@/lib/solana/blockhash-life";
 import { SOLANA_MAINNET_USDC_MINT, WRAPPED_SOL_MINT } from "@/lib/solana/send-kinds";
 import { storeBoundSolanaReceipt } from "@/lib/solana/send-receipt-vault.client";
 import { assessSwapWalletAdoption } from "@/lib/solana/swap-adoption";
 import {
   assessSwapClientReview,
+  freshOrderNoWorse,
   swapQuoteMatches,
   parseSwapClientAttempt,
   readSwapClientSignature,
@@ -114,6 +116,11 @@ export type SpotQuote = Readonly<{
   check?: SwapCheck | null;
 }>;
 
+/** How long from arriving an order's bytes may still be signed; a server from before AG-1 sent no figure. */
+function signableMsOfOrder(order: SpotOrder): number {
+  return typeof order.signableMs === "number" && Number.isFinite(order.signableMs) ? order.signableMs : MAX_SIGNABLE_WINDOW_MS;
+}
+
 export type SpotOrder = Readonly<{
   order: SpotQuote["order"] & Readonly<{ transactionBase64: string; lastValidBlockHeight: string }>;
   simulation: Readonly<{ status: "OK" | "FAILED"; ownerEffects: Readonly<{ status: "VERIFIED"; outputAmountRaw: string; inputAmountRaw: string }> | null }>;
@@ -123,6 +130,8 @@ export type SpotOrder = Readonly<{
   proof: Readonly<{ status: "SIGNED" | "UNSIGNED"; digest?: string }>;
   preSign: Readonly<{ ready: boolean; code: string; reason: string }>;
   expiresAt: string;
+  /** AG-1: how long from arriving these bytes may still be signed. */
+  signableMs?: number;
   /** The Strategy block, when the order was made under a plan; null on a plain order. */
   planReview?: PlanReview | null;
   /** 1.20.0: «Перевірка» on this exact order, with the reserve the simulation proved; null unless a company is bought with USDC or sold into it. */
@@ -207,10 +216,12 @@ export type SpotTicketInput = Readonly<{
   /** Called once a fill settles, so balances and fills re-read. */
   onSettled?: () => void;
   onRefresh?: () => void;
+  /** Called once the wallet's signature is recorded and before the bytes are sent: what was signed, never a way to change it. */
+  onSigned?: (signed: Readonly<{ signature: string; requestId: string; inputMint: string; inAmountRaw: string }>) => void;
 }>;
 
 export function useSpotTicket(input: SpotTicketInput) {
-  const { connection, side, baseMint, baseDecimals, baseSymbol, quote, amount, planBinding = null, ruleBinding = null, text, onSettled, onRefresh } = input;
+  const { connection, side, baseMint, baseDecimals, baseSymbol, quote, amount, planBinding = null, ruleBinding = null, text, onSettled, onRefresh, onSigned } = input;
   const inputMint = side === "BUY" ? quote.mint : baseMint;
   const outputMint = side === "BUY" ? baseMint : quote.mint;
   const [knownDecimals, setKnownDecimals] = useState<Readonly<Record<string, number>>>({});
@@ -242,6 +253,10 @@ export function useSpotTicket(input: SpotTicketInput) {
   const [refreshTicket, setRefreshTicket] = useState(0);
   const quoteTicket = useRef(0);
   const actionTicket = useRef(0);
+  /* When the Review on screen arrived, and the order request that built it: the bytes' signable window counts from
+     here, and fresh bytes at the moment of signing are asked with the same request (AG-1). */
+  const preparedAt = useRef(0);
+  const orderRequest = useRef<unknown>(null);
   const chasedQuotes = useRef(0);
 
   useEffect(() => {
@@ -386,7 +401,7 @@ export function useSpotTicket(input: SpotTicketInput) {
       setPhase("IDLE");
       return;
     }
-    const ordered = await post<SpotOrder>("/api/solana/swap/order", {
+    const requested = {
       input: { inputMint, outputMint, amountRaw: parsed.raw, taker: connection.address },
       origin: {
         surface: "SPOT",
@@ -394,7 +409,8 @@ export function useSpotTicket(input: SpotTicketInput) {
         ...(planBinding ? { plan: { planId: planBinding.planId, version: planBinding.version } } : {}),
         ...(ruleBinding ? { rule: { ruleId: ruleBinding.ruleId, dueAt: ruleBinding.dueAt } } : {}),
       },
-    });
+    };
+    const ordered = await post<SpotOrder>("/api/solana/swap/order", requested);
     if (actionTicket.current !== my) return;
     if (!ordered.ok) {
       setActionFailure(ordered.failure);
@@ -429,6 +445,8 @@ export function useSpotTicket(input: SpotTicketInput) {
       setPhase("IDLE");
       return;
     }
+    preparedAt.current = Date.now();
+    orderRequest.current = requested;
     setPrepared(ordered.value);
     setReviewInvalidated(false);
     setPreparedContext({
@@ -441,10 +459,98 @@ export function useSpotTicket(input: SpotTicketInput) {
     setPhase("REVIEW");
   }, [amount, attempt, baseMint, baseSymbol, connection, inputDecimals, inputMint, outputDecimals, outputMint, planBinding, quote, rememberAttempt, ruleBinding, side]);
 
-  const sign = useCallback(async () => {
-    if (!connection || !prepared || attempt) return;
+  /**
+   * AG-1 — fresh bytes at the moment of signing, as the swap card does (`swap-card.tsx`, `refreshReviewedBytes`): the
+   * issued Review is released once the chain says its blockhash is gone, the same order is asked again, and the wallet
+   * opens on it only when the minimum and every fee are no worse; otherwise — and when the wallet answered late — the
+   * fresh Review is shown instead of the network's refusal.
+   */
+  const refreshReviewedBytes = useCallback(async (reviewed: SpotOrder, then: "sign" | "review"): Promise<SpotOrder | null> => {
+    if (!connection || attempt || !orderRequest.current) return null;
+    const my = ++actionTicket.current;
+    setActionFailure(null);
+    setPhase("PREPARING");
+    /*
+     * The old bytes may still land until their blockhash dies — about when their signable window plus its margin is
+     * over. Waiting for that first keeps the release to one or two asks of the chain (the action budget is 12 a
+     * minute and the order and the execute need it too); "dead" is still the chain's word, never this clock.
+     */
+    await new Promise((resolve) => window.setTimeout(resolve, msUntilBytesDie({ receivedAtMs: preparedAt.current, signableMs: signableMsOfOrder(reviewed) }) + 1_500));
+    if (actionTicket.current !== my) return null;
+    for (let asked = 1; ; asked += 1) {
+      const cancelled = await post<{ state: "EXPIRED_BEFORE_SUBMIT" }>(
+        "/api/solana/swap/cancel-review",
+        { owner: connection.address, requestId: reviewed.order.requestId },
+      );
+      if (actionTicket.current !== my) return null;
+      if (cancelled.ok) break;
+      if (cancelled.failure.code === "BLOCKHASH_STILL_VALID" && asked < 4) {
+        await new Promise((resolve) => window.setTimeout(resolve, 3_000));
+        if (actionTicket.current !== my) return null;
+        continue;
+      }
+      setActionFailure(cancelled.failure);
+      setPhase("REVIEW");
+      return null;
+    }
+    const ordered = await post<SpotOrder>("/api/solana/swap/order", orderRequest.current);
+    if (actionTicket.current !== my) return null;
+    setBytesChanged(false);
+    setReviewInvalidated(false);
+    setLockedReview(null);
+    if (!ordered.ok) {
+      setPrepared(null);
+      setActionFailure(ordered.failure);
+      /* The same lock answers the first order gets: a signature already out is recovered by it, an issued Review is held. */
+      if (ordered.failure.ownerLock?.signature) {
+        rememberAttempt({
+          schema: "ryntra.solana.swap-client-attempt",
+          schemaVersion: "1.0.0",
+          requestId: ordered.failure.ownerLock.requestId,
+          signature: ordered.failure.ownerLock.signature,
+          taker: connection.address,
+          state: "SUBMITTED_UNKNOWN",
+          recordedAt: new Date().toISOString(),
+        });
+        setPhase("RECOVERY");
+      } else if (ordered.failure.ownerLock?.state === "REVIEW_ISSUED") {
+        setLockedReview({ owner: connection.address, requestId: ordered.failure.ownerLock.requestId });
+        setPhase("REVIEW");
+      } else {
+        setPhase("IDLE");
+      }
+      return null;
+    }
+    const assessment = assessSwapClientReview({
+      verdict: ordered.value.policy.verdict,
+      proofStatus: ordered.value.proof.status,
+      simulationStatus: ordered.value.simulation.status,
+      ownerEffectsStatus: ordered.value.simulation.ownerEffects?.status ?? "MISSING",
+      expiresAt: ordered.value.expiresAt,
+    });
+    if (!ordered.value.preSign.ready || !assessment.ready) {
+      setPrepared(null);
+      setActionFailure({ code: assessment.code, message: assessment.reason });
+      setPhase("IDLE");
+      return null;
+    }
+    preparedAt.current = Date.now();
+    setPrepared(ordered.value);
+    if (then === "sign" && freshOrderNoWorse(reviewed.order, ordered.value.order)) return ordered.value;
+    setActionFailure({
+      code: "REVIEW_REFRESHED",
+      message: then === "review"
+        ? text("Your wallet answered after these bytes stopped living (about 30 seconds). Nothing was sent. Here is a fresh Review — check it and sign.")
+        : text("The bytes were built again at the moment of signing, and a figure changed. Check the fresh Review and sign."),
+    });
+    setPhase("REVIEW");
+    return null;
+  }, [attempt, connection, rememberAttempt, text]);
+
+  const signOrder = useCallback(async (prepared: SpotOrder, fresh: boolean) => {
+    if (!connection || attempt) return;
     const readiness = assessSwapClientReview({
-      invalidated: reviewInvalidated || bytesChanged,
+      invalidated: !fresh && (reviewInvalidated || bytesChanged),
       verdict: prepared.policy.verdict,
       proofStatus: prepared.proof.status,
       simulationStatus: prepared.simulation.status,
@@ -460,12 +566,15 @@ export function useSpotTicket(input: SpotTicketInput) {
     setPhase("SIGNING");
     const signedContext = preparedContext;
     attemptContext.current = { requestId: prepared.order.requestId, context: signedContext };
-    const signingDeadlineMs = Math.max(0, Date.parse(prepared.expiresAt) - Date.now()) + 5_000;
+    /* AG-1: the bytes' own signable window, never longer than the Review's. */
+    const bytesSignableMs = signableMsOfOrder(prepared);
+    const signingDeadlineMs = Math.max(0, Math.min(Date.parse(prepared.expiresAt), preparedAt.current + bytesSignableMs) - Date.now()) + 5_000;
+    let walletTimedOut = false;
     const signed = await Promise.race([
       signTransaction({ wallet: connection.wallet, address: connection.address, unsignedWireBase64: prepared.order.transactionBase64, chain: "solana:mainnet" }),
       new Promise<Awaited<ReturnType<typeof signTransaction>>>((resolve) =>
         window.setTimeout(
-          () => resolve({ ok: false, reason: text("Your wallet did not answer before this Review's window closed. Nothing was signed or sent; ask for a fresh order.") }),
+          () => { walletTimedOut = true; resolve({ ok: false, reason: text("Your wallet did not answer before this Review's window closed. Nothing was signed or sent; ask for a fresh order.") }); },
           signingDeadlineMs,
         ),
       ),
@@ -475,6 +584,11 @@ export function useSpotTicket(input: SpotTicketInput) {
       return;
     }
     if (!signed.ok) {
+      /* The wallet outlived the bytes: a fresh Review, not a refusal. */
+      if (walletTimedOut) {
+        await refreshReviewedBytes(prepared, "review");
+        return;
+      }
       setActionFailure({ code: "WALLET_REFUSED", message: signed.reason });
       setPhase("REVIEW");
       return;
@@ -503,6 +617,11 @@ export function useSpotTicket(input: SpotTicketInput) {
       setPhase("REVIEW");
       return;
     }
+    /* AG-1: the bytes aged out while the wallet was open — never sent; the person reads a fresh Review instead. */
+    if (signableWindowClosed({ receivedAtMs: preparedAt.current, signableMs: bytesSignableMs })) {
+      await refreshReviewedBytes(prepared, "review");
+      return;
+    }
     const stillFresh = assessSwapClientReview({
       verdict: prepared.policy.verdict,
       proofStatus: prepared.proof.status,
@@ -529,6 +648,11 @@ export function useSpotTicket(input: SpotTicketInput) {
       recordedAt: new Date().toISOString(),
     };
     rememberAttempt(pending);
+    try {
+      onSigned?.({ signature, requestId: prepared.order.requestId, inputMint: prepared.order.inputMint, inAmountRaw: prepared.order.inAmountRaw });
+    } catch {
+      /* A listener never stops a signed order from being sent. */
+    }
     setPhase("EXECUTING");
     const executed = await post<SpotSettlement>("/api/solana/swap/execute", {
       bundle: prepared.bundle,
@@ -559,7 +683,10 @@ export function useSpotTicket(input: SpotTicketInput) {
       }
       const unknown = transitionSwapClientAttempt(pending, { kind: "FAILURE" });
       rememberAttempt(unknown);
-      setActionFailure(executed.failure);
+      /* SOL-R2: a signed order whose execute answer is lost is unknown, not refused — the failure's own sentence
+         («Nothing was sent — try again») would say the opposite of the truth beside «Sent · Checking». The recovery
+         line below is the one thing said, as on the Swap card. */
+      setActionFailure(null);
       recordSettlement(
         { state: "SUBMITTED_UNKNOWN", signature, observation: null, facts: null, receipt: null, recovery: text("The execute answer is unknown. Recover only by this signature; never request or sign another order.") },
         connection.address,
@@ -575,7 +702,18 @@ export function useSpotTicket(input: SpotTicketInput) {
     recordSettlement(executed.value, connection.address, signedContext);
     setPhase(recorded.state === "SUBMITTED_UNKNOWN" ? "RECOVERY" : "SETTLED");
     if (recorded.state === "SETTLED") onSettled?.();
-  }, [attempt, bytesChanged, connection, forgetAttempt, onRefresh, onSettled, prepared, preparedContext, recordSettlement, rememberAttempt, reviewInvalidated, text]);
+  }, [attempt, bytesChanged, connection, forgetAttempt, onRefresh, onSettled, onSigned, preparedContext, recordSettlement, refreshReviewedBytes, rememberAttempt, reviewInvalidated, text]);
+
+  /** Sign pressed: bytes about to die are fetched fresh first (AG-1); the rest go to the wallet as they are. */
+  const sign = useCallback(async () => {
+    if (!connection || !prepared || attempt) return;
+    if (!(reviewInvalidated || bytesChanged) && !mayOpenWallet({ receivedAtMs: preparedAt.current, signableMs: signableMsOfOrder(prepared) })) {
+      const fresh = await refreshReviewedBytes(prepared, "sign");
+      if (fresh) await signOrder(fresh, true);
+      return;
+    }
+    await signOrder(prepared, false);
+  }, [attempt, bytesChanged, connection, prepared, refreshReviewedBytes, reviewInvalidated, signOrder]);
 
   const recover = useCallback(async () => {
     if (!attempt || attempt.state === "SETTLED") return;

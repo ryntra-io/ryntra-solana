@@ -5,7 +5,7 @@ import type { WorkspaceLocale } from "@/app/shell/locale";
  *
  * Kept here rather than in the workspace catalogue for the same reason as
  * `rank-copy.ts`: the catalogue is the core's file and the referral programme
- * is the growth module's. Sentences the card already said before stay in the
+ * is the Growth line's. Sentences the card already said before stay in the
  * catalogue; the ones that are new, or that had to stop saying something
  * untrue, live here.
  */
@@ -31,7 +31,7 @@ type Copy = Readonly<{
   changeOffer: (inviter: string, until: string | null) => string;
   changeTo: (inviter: string) => string;
   keep: string;
-  /** Before the wallet is even connected: connect, then confirm. */
+  /** Before the wallet is even connected: connect, then sign in. */
   autoLeadVisitor: string;
   /** The inviter row's mark: set on its own, so "set", not "confirmed". */
   setMark: string;
@@ -58,8 +58,8 @@ type Copy = Readonly<{
 
 const COPY: Readonly<Record<WorkspaceLocale, Copy>> = {
   en: {
-    autoLead: "Set automatically once you confirm your wallet — a new one, or one whose first trade or reward was within the last 7 days.",
-    autoLeadUntil: (until) => `It is set automatically once you confirm your wallet — until ${until}.`,
+    autoLead: "Set automatically when you sign in with your wallet — a new one, or one whose first trade or reward was within the last 7 days.",
+    autoLeadUntil: (until) => `It is set automatically when you sign in with your wallet — until ${until}.`,
     windowClosed: (inviter) => `The invitation from ${inviter} came too late: first trade or reward over 7 days ago.`,
     refusedLate: "Too late for this wallet: its first trade or reward was more than 7 days ago.",
     refusedChanged: "This wallet has already changed its inviter once.",
@@ -89,8 +89,8 @@ const COPY: Readonly<Record<WorkspaceLocale, Copy>> = {
     bannerLabel: "Invitation",
   },
   uk: {
-    autoLead: "Закріпиться автоматично після підтвердження гаманця — нового або з першою угодою чи винагородою за останні 7 днів.",
-    autoLeadUntil: (until) => `Закріпиться автоматично, щойно ви підтвердите гаманець, — до ${until}.`,
+    autoLead: "Закріпиться автоматично після входу гаманцем — новим або з першою угодою чи винагородою за останні 7 днів.",
+    autoLeadUntil: (until) => `Закріпиться автоматично, щойно ви увійдете гаманцем, — до ${until}.`,
     windowClosed: (inviter) => `Запрошення від ${inviter} запізнилося: перша угода чи винагорода — понад 7 днів тому.`,
     refusedLate: "Для цього гаманця вже пізно: перша угода чи винагорода була понад 7 днів тому.",
     refusedChanged: "Запрошувача вже змінювали — вдруге не можна.",

@@ -86,10 +86,16 @@ function PointsCard({ view }: { view: RewardsView }) {
           {points.rank !== null && !points.excluded ? copy.rank(points.rank, points.ranked) : copy.notRanked}
         </Txt>
       </View>
+      {/* The tiles stand as tall as the tallest; each figure sits at its tile's foot, so a label that wraps
+          («АКТИВНИХ ДНІВ») never sets its figure lower than its neighbours'. */}
       <View className="flex-row gap-2">
-        <StatTile label={copy.volume} value={points.volume} className="flex-1" />
-        <StatTile label={copy.trades} value={formatCount(points.trades, locale)} className="flex-1" />
-        <StatTile label={copy.activeDays} value={formatCount(points.activeDays, locale)} className="flex-1" />
+        <StatTile label={copy.volume} value={points.volume} className="flex-1 justify-between" />
+        <StatTile label={copy.trades} value={formatCount(points.trades, locale)} className="flex-1 justify-between" />
+        <StatTile
+          label={copy.activeDays}
+          value={formatCount(points.activeDays, locale)}
+          className="flex-1 justify-between"
+        />
       </View>
     </Card>
   )
@@ -162,8 +168,8 @@ export function RewardsScreen() {
         {query.isError ? <Chip label={shared.refreshFailed} tone="warning" caps={false} /> : null}
         <StatTile label={copy.available} value={view.available} size="lg" note={view.claimNote ?? copy.claimOnWeb} />
         <View className="flex-row gap-3">
-          <StatTile label={copy.pending} value={view.pending} className="flex-1" />
-          <StatTile label={copy.lifetime} value={view.lifetime} className="flex-1" />
+          <StatTile label={copy.pending} value={view.pending} className="flex-1 justify-between" />
+          <StatTile label={copy.lifetime} value={view.lifetime} className="flex-1 justify-between" />
         </View>
         {/* Every figure carries its time: the moment this read of the rewards arrived. */}
         <Txt variant="labelSm" tone="faint">
@@ -222,11 +228,8 @@ export function RewardsScreen() {
 
         <SectionLabel>{copy.recent}</SectionLabel>
         {view.entries.length === 0 ? (
-          <Card className="gap-1">
+          <Card>
             <Txt variant="ui">{copy.noEntries}</Txt>
-            <Txt variant="ui" tone="faint">
-              {copy.noEntriesDetail}
-            </Txt>
           </Card>
         ) : (
           <Card padded={false} className="px-4">

@@ -37,7 +37,7 @@ export function noteRefOfHref(href: string | null | undefined): NoteRef | null {
  * Where a note or a card leads on the phone.
  *
  * `plan` is the one owned plan the record speaks of. `choose` says the
- * surface names a plan only by its symbol and more than
+ * surface names a plan only by its symbol (line A request 22) and more than
  * one of the wallet's plans wears it — the person picks, the phone never
  * guesses. `web` is a record the phone has no surface for (a paper
  * prediction plan until its row lands). `gone` is a plan no longer among
@@ -49,15 +49,31 @@ export type NoteTarget =
   | Readonly<{ kind: 'web'; href: string }>
   | Readonly<{ kind: 'gone'; symbol: string | null }>
   | Readonly<{ kind: 'unknown' }>
-  /** An autoinvest rule's reminder: its company, with the rule and the occurrence — the rule is read afresh there. */
+  /** An autoinvest rule's reminder (M16): its company, with the rule and the occurrence — the rule is read afresh there. */
   | Readonly<{ kind: 'rule'; ruleId: string; dueAt: string | null; symbol: string | null }>
   /** The month's autoinvest budget, spent (1.13.0): Home, with the budget's sheet open — the note's one action, «Змінити бюджет». */
   | Readonly<{ kind: 'budget' }>
   /**
-   * An issuer's window to swap a token the wallet holds (1.15.0, `issuer-event`): the token's page with the
+   * An issuer's window to swap a token the wallet holds (1.15.0, `issuer-event`; M19): the token's page with the
    * swap's sheet open — its one action, «Обміняти на SpaceX (SPCXx)»; the page reads the wallet afresh.
    */
   | Readonly<{ kind: 'issuer'; mint: string }>
+  /**
+   * A spot limit's note (1.42.0, `limit-order`; C3): «Ордер виконано» or «Квитанція готова» — «Мої ордери» on the
+   * order its subject names, the same list the web shows; the note never signs anything.
+   */
+  | Readonly<{ kind: 'orders'; order: string }>
+  /** A morning brief's note (1.46.0, `assistant-brief`, `id` the person's day): the brief, opened on that day. */
+  | Readonly<{ kind: 'brief'; day: string }>
+  /** A token watch's note (1.57.0, `token-watch`, `id` the watch): «Стежу» with that watch in view. */
+  | Readonly<{ kind: 'watch'; watchId: string }>
+  /** A «Доручення»'s note (1.59.0, `assistant-task`, `id` the task): the task's conversation, every run's answer. */
+  | Readonly<{ kind: 'task'; taskId: string }>
+  /**
+   * A followed wallet's trade (1.63.0, `wallet-watch`, `id` the wallet): the phone has no «Гаманці», so the note itself
+   * is shown, with its words and its token, and how the wallet's trades are told.
+   */
+  | Readonly<{ kind: 'walletWatch'; wallet: string }>
 
 export type Resolved = Readonly<{
   target: NoteTarget
@@ -134,15 +150,67 @@ export function issuerTarget(note: MonitoringNote): NoteTarget | null {
   return typeof mint === 'string' && MINT.test(mint) ? { kind: 'issuer', mint } : { kind: 'unknown' }
 }
 
+/**
+ * Where a spot limit's note leads (1.42.0): «Мої ордери» on the order its
+ * subject names (`id` the order account). A note that names no order is
+ * unknown. Null for any other note.
+ */
+export function limitTarget(note: MonitoringNote): NoteTarget | null {
+  if (note.subject?.kind !== 'limit-order') return null
+  const order = note.subject.id
+  return typeof order === 'string' && MINT.test(order) ? { kind: 'orders', order } : { kind: 'unknown' }
+}
+
+/**
+ * Where a morning brief's note leads (1.46.0): Ryntra with the brief open — the note's own words are the brief's text,
+ * there is no plan behind it to explain. Null for any other note.
+ */
+export function briefTarget(note: MonitoringNote): NoteTarget | null {
+  if (note.subject?.kind !== 'assistant-brief') return null
+  const day = note.subject.id
+  return typeof day === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(day) ? { kind: 'brief', day } : { kind: 'unknown' }
+}
+
+/**
+ * Where a note of the assistant leads (1.57.0–1.63.0): a token watch's to «Стежу» on that watch, a task's to its
+ * conversation, a followed wallet's to the note itself. A note that names nothing it can open is unknown. Null for
+ * any other note.
+ */
+export function assistantTarget(note: MonitoringNote): NoteTarget | null {
+  const id = note.subject?.id
+  switch (note.subject?.kind) {
+    case 'token-watch':
+      return typeof id === 'string' && /^wch_[0-9a-f]{24}$/.test(id)
+        ? { kind: 'watch', watchId: id }
+        : { kind: 'unknown' }
+    case 'assistant-task':
+      return typeof id === 'string' && /^t_[0-9a-f]{12}$/.test(id) ? { kind: 'task', taskId: id } : { kind: 'unknown' }
+    case 'wallet-watch':
+      return typeof id === 'string' && MINT.test(id) ? { kind: 'walletWatch', wallet: id } : { kind: 'unknown' }
+    default:
+      return null
+  }
+}
+
+/** The newest note of a followed wallet in the inbox — a push names the wallet, not the note. */
+export function latestWalletNote(surface: MonitoringSurface, wallet: string): MonitoringNote | null {
+  return (
+    surface.recent
+      .filter((note) => note.subject?.kind === 'wallet-watch' && note.subject.id === wallet)
+      .sort((a, b) => Date.parse(b.createdAt) - Date.parse(a.createdAt))[0] ?? null
+  )
+}
+
 /** The phone's Home with the month's budget sheet open — where the budget's note and its Telegram button land. */
-export const BUDGET_EDIT_PATH = '/(tabs)?budget=edit'
+export const BUDGET_EDIT_PATH = '/(tabs)/home?budget=edit'
 
 /** Resolve a deep link's `n` against the wallet's own surface and plans. */
 export function resolveNote(ref: NoteRef, surface: MonitoringSurface, plans: readonly TradingPlan[]): Resolved {
   if (ref.kind === 'note') {
     const note = noteById(surface, ref.id)
     if (!note) return { target: { kind: 'unknown' }, note: null, card: null }
-    const other = autoinvestTarget(note) ?? issuerTarget(note)
+    const other =
+      autoinvestTarget(note) ?? issuerTarget(note) ?? limitTarget(note) ?? briefTarget(note) ?? assistantTarget(note)
     if (other) return { target: other, note, card: null }
     const card = cardById(surface, note.monitorId)
     if (!card) {
@@ -273,15 +341,25 @@ export function quietHoursText(hours: QuietHours | null | undefined): string | n
   return `${hours.start}–${hours.end}`
 }
 
-/** The language a note was written in, when the server says and it is not the one on screen. */
+/** The language a note was written in, when the server says and it is not the one on screen (request 20). */
 export function noteLanguageMismatch(note: MonitoringNote, locale: Locale): boolean {
   return typeof note.locale === 'string' && note.locale !== locale
 }
 
 /**
+ * The phone's own names for the places the server's words still call by the web's: a spot limit's note says
+ * «Мої ордери» / «My orders» (1.42.0), and on the phone that place is «Ордери» / «Orders» — «Портфель · Ордери»
+ * (NEW-LOOK §3, one name per thing). The server keeps its words for the web; request 57 (a) asks it for the phone's.
+ */
+export function phonePlaceNames(text: string): string {
+  return text.replace(/Мої ордери/g, 'Ордери').replace(/\bMy orders\b/g, 'Orders')
+}
+
+/**
  * A note's words in the reader's language, where the server keeps them in both
  * (a reminder is written in its rule's language; `text` carries the other);
- * otherwise the words as written, and whether they are in another language.
+ * otherwise the words as written, and whether they are in another language —
+ * the places named as the phone names them.
  */
 export function noteWords(
   note: MonitoringNote,
@@ -289,6 +367,14 @@ export function noteWords(
 ): Readonly<{ title: string; reason: string; foreign: boolean }> {
   const own = note.text?.[locale]
   if (own && typeof own.title === 'string' && own.title.length > 0)
-    return { title: own.title, reason: typeof own.reason === 'string' ? own.reason : '', foreign: false }
-  return { title: note.title, reason: note.reason, foreign: noteLanguageMismatch(note, locale) }
+    return {
+      title: phonePlaceNames(own.title),
+      reason: typeof own.reason === 'string' ? phonePlaceNames(own.reason) : '',
+      foreign: false,
+    }
+  return {
+    title: phonePlaceNames(note.title),
+    reason: phonePlaceNames(note.reason),
+    foreign: noteLanguageMismatch(note, locale),
+  }
 }

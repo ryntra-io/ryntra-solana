@@ -16,7 +16,7 @@ export type EvidenceSummary =
   'nothing-found' | 'evidence-found' | 'sanctioned' | 'partly-checked' | 'unsupported' | 'unavailable'
 
 export type MoneyCopy = Readonly<{
-  /** «Гроші» in «Ще» and its four doors. */
+  /** «Гроші», the place of the bar, and its doors. */
   money: string
   pages: Readonly<Record<MoneyPage, string>>
 
@@ -57,7 +57,6 @@ export type MoneyCopy = Readonly<{
   networkFee: string
   accountSetup: string
   newAddressMinimum: string
-  readBefore: string
   opensAccount: string
   cancel: string
   /* Outcome. */
@@ -69,11 +68,12 @@ export type MoneyCopy = Readonly<{
   notConfirmedYet: string
   earlierOpen: string
   checkingEarlier: string
-  signInToCheck: string
   explorer: string
   /** A past transfer's eyebrow — a noun, not the imperative «Надіслати». */
   transfer: string
   selfLink: string
+  /** An Ethereum «0x…» address typed into a Solana send. */
+  evmAddress: string
   sendAgain: string
   tryAgain: string
   /* Failures. */
@@ -84,6 +84,18 @@ export type MoneyCopy = Readonly<{
     window: string
     walletCancelled: string
     walletFailed: string
+    /** The wallet gave no answer within the wait (M45). */
+    walletTimeout: string
+    /** Ledger's 6808: «Blind signing» off in its Solana app. */
+    ledgerBlind: string
+    /** Bytes a Ledger cannot sign yet; the wallet was not opened. */
+    txVersion: string
+    /** AG-2: the wallet answered late twice in a row — a transaction lives ~30 s. */
+    deviceConfirm: string
+    /** AG-2: a wallet that only sends (MWA 2.0 without `signTransactions`). */
+    cannotSign: string
+    /** AG-2: the server's bytes arrived with too little life for a wallet, twice. */
+    bytesShort: string
     bytes: string
     earlier: string
     turnedOff: string
@@ -92,6 +104,13 @@ export type MoneyCopy = Readonly<{
     generic: string
     changed: string
     cannotSend: string
+    /** M41.2: a `.skr` name read again before a step — gone, moved, unread before the wallet, unread before the Review. */
+    nameGone: string
+    nameMoved: string
+    nameUnread: string
+    /** The read after the signature did not answer in time: the signature was not used. */
+    nameUnreadSigned: string
+    nameUnchecked: string
   }>
   recipientProblems: Readonly<Record<RecipientProblem, string>>
   /** A Solana Pay request's own words, when the scan carried them. */
@@ -112,7 +131,6 @@ export type MoneyCopy = Readonly<{
 
   /* ---- Scanner ---- */
   scanTitle: string
-  scanHint: string
   cameraNeeded: string
   allowCamera: string
   openSettings: string
@@ -122,14 +140,14 @@ export type MoneyCopy = Readonly<{
   myAddress: string
   requestPayment: string
   yourSolanaAddress: string
-  receiveLine: string
   networkWarning: string
   copyAddress: string
   copied: string
   share: string
   scanToPay: string
-  connectToReceive: string
   connectWallet: string
+  /** A guest's one line on Receive, over «Connect wallet»: what the page gives once a wallet is connected. */
+  receiveGuest: string
 
   /* ---- Payment link ---- */
   token: string
@@ -137,9 +155,9 @@ export type MoneyCopy = Readonly<{
   whatFor: string
   expiresIn: string
   expirations: Readonly<Record<PayLinkExpiration, string>>
+  /** Behind «?» beside a payment link: who picks the amount and where the link goes. */
   payerChooses: string
   sendThisLink: string
-  signInToCreate: string
   signInToPay: string
   signIn: string
   checkWallet: string
@@ -166,17 +184,20 @@ export type MoneyCopy = Readonly<{
   payPreparing: string
   paySent: string
   payAgainHint: string
-  feeNote: string
   createsAccountNote: string
   payFailed: string
   payRefused: string
   paySelf: string
   payPending: string
+  /** AG-2: the wallet answered after the payment's ~30 s twice in a row, or the bytes arrived too short-lived. */
+  payLate: string
+  /** AG-2: a wallet that only sends (MWA 2.0 without `signTransactions`). */
+  payCannotSign: string
 }>
 
 const EN: MoneyCopy = {
   money: 'Money',
-  pages: { topUp: 'Top up', send: 'Send', receive: 'Receive', link: 'Payment link' },
+  pages: { topUp: 'Add funds', send: 'Send', receive: 'Receive', link: 'Payment link' },
 
   sendTitle: 'Send',
   to: 'To',
@@ -212,8 +233,7 @@ const EN: MoneyCopy = {
   networkFee: 'Network fee estimate',
   accountSetup: 'Account setup',
   newAddressMinimum: 'Minimum for a new address',
-  readBefore: 'Read before confirming',
-  opensAccount: 'This address has no account for this token yet — you pay a one-time setup cost.',
+  opensAccount: 'First time this address gets this token: you pay a one-time setup cost.',
   cancel: 'Cancel',
   sent: 'Sent',
   notSent: 'Not sent',
@@ -223,10 +243,10 @@ const EN: MoneyCopy = {
   notConfirmedYet: 'This transfer is not confirmed yet. Check it on Solscan before sending again.',
   earlierOpen: 'An earlier transfer is still being confirmed. Do not send it again.',
   checkingEarlier: 'Checking an earlier transfer…',
-  signInToCheck: 'Sign in with your wallet to check it.',
   explorer: 'View on Solscan',
   transfer: 'Transfer',
   selfLink: 'This is your own payment link.',
+  evmAddress: 'This is an Ethereum address. Ryntra sends on Solana here — enter a Solana address.',
   sendAgain: 'New transfer',
   tryAgain: 'Try again',
   failures: {
@@ -234,8 +254,18 @@ const EN: MoneyCopy = {
     amount: 'That amount is unavailable.',
     recipient: 'Check the recipient address.',
     window: 'The transfer window closed. Review it again.',
-    walletCancelled: 'Wallet approval was cancelled.',
+    walletCancelled: 'Wallet approval was cancelled. Nothing was sent.',
     walletFailed: 'Your wallet did not approve this transfer.',
+    walletTimeout: 'Your wallet did not answer within 90 seconds. Nothing was sent — review the transfer again.',
+    deviceConfirm:
+      'A transaction lives about 30 seconds: confirm in the wallet, or on a Ledger, within 20 seconds. Nothing was sent — try again.',
+    bytesShort: 'The network was slow to prepare it. Nothing was sent — try again.',
+    cannotSign:
+      "This wallet does not sign transactions for apps — it only sends them itself. Nothing was sent; use Phantom, Solflare or the Seeker's wallet.",
+    ledgerBlind:
+      'The Ledger did not sign: “Blind signing” is off in its Solana app. Turn it on in the app’s settings and try again.',
+    txVersion:
+      'This transaction is in a format a Ledger cannot sign yet, so the wallet was not opened. Nothing was sent.',
     bytes: 'Your wallet returned a different transaction. Nothing was sent.',
     earlier: 'An earlier transfer is still being confirmed. Do not send it again.',
     turnedOff: 'Sending is turned off right now.',
@@ -244,6 +274,11 @@ const EN: MoneyCopy = {
     generic: 'The transfer could not continue. Try again.',
     changed: 'Something changed since you reviewed this transfer. Review it again.',
     cannotSend: 'This transfer cannot be sent.',
+    nameGone: 'The .skr name no longer points to a wallet. Nothing was sent.',
+    nameMoved: 'The name now points to another address. Check it and review again.',
+    nameUnread: 'The name could not be checked again before signing. Nothing was sent.',
+    nameUnreadSigned: 'The name could not be checked again before sending. Your signature was not used — nothing was sent.',
+    nameUnchecked: 'The name could not be checked right now.',
   },
   recipientProblems: {
     EMPTY: 'Enter a recipient.',
@@ -291,7 +326,6 @@ const EN: MoneyCopy = {
   evidenceNotSafe: 'not a guarantee — one source, today',
 
   scanTitle: 'Scan',
-  scanHint: 'Point the camera at an address or a payment code.',
   cameraNeeded: 'The camera is needed to scan a code.',
   allowCamera: 'Allow camera',
   openSettings: 'Open settings',
@@ -300,14 +334,13 @@ const EN: MoneyCopy = {
   myAddress: 'My address',
   requestPayment: 'Request a payment',
   yourSolanaAddress: 'Your Solana address',
-  receiveLine: 'Anything sent to this address arrives in your wallet. Scanning works in any Solana wallet.',
   networkWarning: 'Solana network only: funds sent from another network are lost.',
   copyAddress: 'Copy address',
   copied: 'Copied',
   share: 'Share',
   scanToPay: 'Scan to pay this address',
-  connectToReceive: 'Your address, and requests for an exact amount.',
   connectWallet: 'Connect wallet',
+  receiveGuest: 'Your address and QR to receive — from your wallet',
 
   token: 'Token',
   optional: 'optional',
@@ -316,7 +349,6 @@ const EN: MoneyCopy = {
   expirations: { '1h': '1 hour', '24h': '24 hours', '7d': '7 days', '30d': '30 days' },
   payerChooses: 'The payer chooses the amount.',
   sendThisLink: 'Send this link to the person who should pay. It opens in any browser, no app needed.',
-  signInToCreate: 'Sign in with your wallet to create a payment link.',
   signInToPay: 'Sign in with your wallet to pay this link.',
   signIn: 'Sign in with your wallet',
   checkWallet: 'Check your wallet…',
@@ -352,11 +384,13 @@ const EN: MoneyCopy = {
   payPreparing: 'Preparing the transaction…',
   paySent: 'Sent. Waiting for the network to confirm.',
   payAgainHint: 'The link updates on its own once the payment is confirmed.',
-  feeNote: 'Your wallet pays the network fee.',
-  createsAccountNote:
-    "The recipient's account for this token does not exist yet; this payment creates it and covers its rent.",
+  createsAccountNote: 'The recipient has never held this token — this payment also pays its one-time setup.',
   payFailed: 'The payment could not be prepared.',
   payRefused: 'The wallet did not sign. Nothing was sent.',
+  payLate:
+    'A payment lives about 30 seconds: confirm in the wallet, or on a Ledger, within 20 seconds. Nothing was sent — pay again.',
+  payCannotSign:
+    "This wallet does not sign transactions for apps — it only sends them itself. Nothing was sent; use Phantom, Solflare or the Seeker's wallet.",
   paySelf: 'This request is addressed to the wallet you connected.',
   payPending: 'A payment for this link is already on its way.',
 }
@@ -399,8 +433,7 @@ const UK: MoneyCopy = {
   networkFee: 'Комісія мережі (оцінка)',
   accountSetup: 'Відкриття рахунку',
   newAddressMinimum: 'Мінімум для нової адреси',
-  readBefore: 'Прочитай перед підтвердженням',
-  opensAccount: 'У цієї адреси ще немає рахунку для цього токена — ти одноразово платиш за його відкриття.',
+  opensAccount: 'Ця адреса вперше отримує цей токен: ти одноразово платиш за відкриття.',
   cancel: 'Скасувати',
   sent: 'Надіслано',
   notSent: 'Не надіслано',
@@ -410,10 +443,10 @@ const UK: MoneyCopy = {
   notConfirmedYet: 'Цей переказ ще не підтверджено. Перевір його в Solscan, перш ніж надсилати ще раз.',
   earlierOpen: 'Попередній переказ ще підтверджується. Не надсилай його вдруге.',
   checkingEarlier: 'Перевіряємо попередній переказ…',
-  signInToCheck: 'Увійди гаманцем, щоб перевірити його.',
   explorer: 'Переглянути в Solscan',
   transfer: 'Переказ',
   selfLink: 'Це твоє власне посилання на оплату.',
+  evmAddress: 'Це адреса Ethereum. Тут Ryntra надсилає в мережі Solana — введи адресу Solana.',
   sendAgain: 'Новий переказ',
   tryAgain: 'Спробувати ще раз',
   failures: {
@@ -421,8 +454,17 @@ const UK: MoneyCopy = {
     amount: 'Ця сума недоступна.',
     recipient: 'Перевір адресу отримувача.',
     window: 'Вікно переказу закрилося. Перевір його ще раз.',
-    walletCancelled: 'Підтвердження в гаманці скасовано.',
+    walletCancelled: 'Підтвердження в гаманці скасовано. Нічого не надіслано.',
     walletFailed: 'Гаманець не підтвердив цей переказ.',
+    walletTimeout: 'Гаманець не відповів за 90 секунд. Нічого не надіслано — перевір переказ ще раз.',
+    deviceConfirm:
+      'Транзакція живе ~30 секунд: підтверди в гаманці чи на Ledger за 20 секунд. Нічого не надіслано — спробуй ще раз.',
+    bytesShort: 'Мережа надто довго готувала транзакцію. Нічого не надіслано — спробуй ще раз.',
+    cannotSign:
+      'Цей гаманець не підписує транзакції для застосунків — лише надсилає їх сам. Нічого не надіслано; скористайся Phantom, Solflare чи гаманцем Seeker.',
+    ledgerBlind:
+      'Ledger не підписав: у застосунку Solana на Ledger вимкнено «Blind signing». Увімкни його в налаштуваннях застосунку й спробуй знову.',
+    txVersion: 'Цю транзакцію Ledger ще не вміє підписати, тож гаманець не відкрито. Нічого не надіслано.',
     bytes: 'Гаманець повернув іншу транзакцію. Нічого не надіслано.',
     earlier: 'Попередній переказ ще підтверджується. Не надсилай його вдруге.',
     turnedOff: 'Надсилання зараз вимкнено.',
@@ -431,6 +473,11 @@ const UK: MoneyCopy = {
     generic: 'Переказ не вдалося продовжити. Спробуй ще раз.',
     changed: 'Від моменту перевірки цього переказу дещо змінилося. Перевір його ще раз.',
     cannotSend: 'Цей переказ неможливо надіслати.',
+    nameGone: 'Ім’я .skr більше не веде до гаманця. Нічого не надіслано.',
+    nameMoved: 'Ім’я тепер веде на іншу адресу. Перевір її й переглянь ще раз.',
+    nameUnread: 'Ім’я не вдалося перевірити ще раз перед підписом. Нічого не надіслано.',
+    nameUnreadSigned: 'Ім’я не вдалося перевірити ще раз перед надсиланням. Твій підпис не використано — нічого не надіслано.',
+    nameUnchecked: 'Ім’я зараз не вдалося перевірити.',
   },
   recipientProblems: {
     EMPTY: 'Введи отримувача.',
@@ -478,7 +525,6 @@ const UK: MoneyCopy = {
   evidenceNotSafe: 'не гарантія — одне джерело, сьогодні',
 
   scanTitle: 'Сканувати',
-  scanHint: 'Наведи камеру на адресу чи код оплати.',
   cameraNeeded: 'Щоб сканувати код, потрібна камера.',
   allowCamera: 'Дозволити камеру',
   openSettings: 'Відкрити налаштування',
@@ -487,15 +533,13 @@ const UK: MoneyCopy = {
   myAddress: 'Моя адреса',
   requestPayment: 'Запит на оплату',
   yourSolanaAddress: 'Твоя адреса Solana',
-  receiveLine:
-    'Усе, що надіслано на цю адресу, потрапляє у твій гаманець. Сканування працює в будь-якому гаманці Solana.',
   networkWarning: 'Лише мережа Solana: кошти з іншої мережі загубляться.',
   copyAddress: 'Копіювати адресу',
   copied: 'Скопійовано',
   share: 'Поділитися',
   scanToPay: 'Скануй, щоб надіслати на цю адресу',
-  connectToReceive: 'Твоя адреса й запити на точну суму.',
   connectWallet: 'Під’єднати гаманець',
+  receiveGuest: 'Адреса й QR для поповнення — з твого гаманця',
 
   token: 'Токен',
   optional: 'необов’язково',
@@ -505,7 +549,6 @@ const UK: MoneyCopy = {
   payerChooses: 'Платник обирає суму.',
   sendThisLink:
     'Надішли це посилання тому, хто має заплатити. Воно відкривається в будь-якому браузері, без застосунку.',
-  signInToCreate: 'Увійди гаманцем, щоб створити посилання на оплату.',
   signInToPay: 'Увійди гаманцем, щоб оплатити це посилання.',
   signIn: 'Увійти гаманцем',
   checkWallet: 'Перевір гаманець…',
@@ -541,10 +584,13 @@ const UK: MoneyCopy = {
   payPreparing: 'Готуємо транзакцію…',
   paySent: 'Надіслано. Чекаємо підтвердження мережі.',
   payAgainHint: 'Посилання оновиться саме, щойно платіж підтвердиться.',
-  feeNote: 'Комісію мережі сплачує твій гаманець.',
-  createsAccountNote: 'В отримувача ще немає рахунку для цього токена; цей платіж відкриє його й покриє оренду.',
+  createsAccountNote: 'Отримувач ще не мав цього токена — цей платіж також оплачує одноразове відкриття.',
   payFailed: 'Не вдалося підготувати платіж.',
   payRefused: 'Гаманець не підписав. Нічого не надіслано.',
+  payLate:
+    'Оплата живе ~30 секунд: підтверди в гаманці чи на Ledger за 20 секунд. Нічого не надіслано — оплати ще раз.',
+  payCannotSign:
+    'Цей гаманець не підписує транзакції для застосунків — лише надсилає їх сам. Нічого не надіслано; скористайся Phantom, Solflare чи гаманцем Seeker.',
   paySelf: 'Цей запит адресований гаманцю, що зараз під’єднаний.',
   payPending: 'Платіж за цим посиланням уже в дорозі.',
 }

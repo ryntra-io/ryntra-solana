@@ -1,0 +1,52 @@
+{
+  "address": "MWDemoPoo1Graduated1111111111111111111111111",
+  "name": "DEMO-SOL",
+  "token_x": {
+    "address": "MWDemoLaunch1111111111111111111111111111111",
+    "name": "Demo Launch",
+    "symbol": "DEMO",
+    "decimals": 6,
+    "is_verified": false,
+    "holders": 1210,
+    "freeze_authority_disabled": true,
+    "total_supply": 1000000000,
+    "price": 0.00041,
+    "market_cap": 410000
+  },
+  "token_y": {
+    "address": "So11111111111111111111111111111111111111112",
+    "name": "Wrapped SOL",
+    "symbol": "SOL",
+    "decimals": 9,
+    "is_verified": true,
+    "holders": 3820662,
+    "freeze_authority_disabled": true,
+    "total_supply": 634453669.58,
+    "price": 112.857,
+    "market_cap": 66296570171.68
+  },
+  "token_x_amount": 98000000,
+  "token_y_amount": 356.1,
+  "created_at": 1756719000000,
+  "pool_config": {
+    "base_fee_pct": 0.25,
+    "collect_fee_mode": 1,
+    "pool_type": 1
+  },
+  "tvl": 80400.5,
+  "current_price": 3.633e-06,
+  "volume": {
+    "30m": 120.5,
+    "1h": 410.0,
+    "2h": 800.0,
+    "4h": 1500.0,
+    "12h": 5200.0,
+    "24h": 11240.0
+  },
+  "fees": {
+    "24h": 28.1
+  },
+  "is_blacklisted": false,
+  "launchpad": "met-dbc",
+  "tags": []
+}

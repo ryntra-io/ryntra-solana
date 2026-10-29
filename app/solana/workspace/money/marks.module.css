@@ -1,0 +1,42 @@
+/* A coin's or a network's mark: round, its own size, never squeezed by the row it stands in. */
+.mark {
+  position: relative;
+  display: inline-grid;
+  flex: none;
+  place-items: center;
+  border-radius: 50%;
+  line-height: 0;
+}
+
+.mark > svg {
+  display: block;
+  border-radius: 50%;
+}
+
+/* The picture of a coin from the site's own files or the catalogue — and, for a token nobody has a picture of, the
+   place its letters take, the same size and shape. */
+.picture,
+.letters {
+  display: grid;
+  place-items: center;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  border-radius: 50%;
+  object-fit: cover;
+  background: var(--ryntra-elevated, var(--ry-hover));
+  color: var(--ryntra-muted, var(--ry-muted));
+  font-weight: 600;
+  line-height: 1;
+}
+
+/* The network a coin is on, on its lower right corner, ringed in the page's ground so it reads as a badge. */
+.corner {
+  position: absolute;
+  right: -3px;
+  bottom: -3px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  box-shadow: 0 0 0 2px var(--ryntra-surface, var(--ry-card));
+}

@@ -1,13 +1,11 @@
-import Link from "next/link";
+import { Page } from "@/app/app/launch/launch-core";
 import { redirect } from "next/navigation";
 
-import { PanelGrid } from "@/app/shell/panel";
 import { isSwapNetwork, resolveSwapAsset } from "@/lib/swap/catalog";
-import { PageHead } from "../hub/parts.tsx";
 import { solanaServerText } from "../i18n/server.ts";
 import { SwapCard } from "../trade/swap-card.tsx";
 
-import styles from "./swap-entry.module.css";
+import styles from "./swap-page.module.css";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -38,6 +36,9 @@ export async function generateMetadata() {
  * *Route unavailable*, and nothing quietly becomes a cross-chain operation
  * behind the person's back.
  *
+ * SOL-C13: the core's page, as wide as the canvas like the terminals — the converter where Spot keeps its ticket, the
+ * pair beside it where Spot keeps its chart (`SwapCard`); named once, its purpose behind the «?».
+ *
  * ## Old links still land somewhere true
  *
  * Old URLs lead to the new place. The unified form used to write
@@ -55,7 +56,7 @@ export default async function SwapPage({
 }: {
   searchParams: Promise<{ in?: string; out?: string; amount?: string; from?: string; fa?: string; to?: string; ta?: string }>;
 }) {
-  const { text } = await solanaServerText();
+  const { text, locale } = await solanaServerText();
   const params = await searchParams;
 
   const amount = params.amount && AMOUNT_SHAPE.test(params.amount) ? params.amount : undefined;
@@ -81,23 +82,18 @@ export default async function SwapPage({
     return resolved?.solanaMint ?? undefined;
   };
 
+  const initialSell = mintOf(params.in, params.fa);
+  const initialBuy = mintOf(params.out, params.ta);
+
   return (
-    <>
-      <PageHead title="Swap" />
-      <div className="ry-money-flow">
-        <PanelGrid label={text("Swap")}>
-          <SwapCard initialSell={mintOf(params.in, params.fa)} initialBuy={mintOf(params.out, params.ta)} initialAmount={amount} />
-        </PanelGrid>
-        <p className={styles.out}>
-          <span>{text("Funds on another network?")}</span>
-          <Link className={styles.link} href="/app/bridge">
-            {text("Bring them to Solana")}
-            <span className={styles.arrow} aria-hidden="true">
-              →
-            </span>
-          </Link>
-        </p>
-      </div>
-    </>
+    <Page
+      kind="overview"
+      className={styles.page}
+      title={text("Swap")}
+      help={text("Swap one asset for another inside Solana at Jupiter's best route. Review shows every cost before your wallet signs.")}
+      lang={locale === "uk" ? "uk" : "en"}
+    >
+      <SwapCard initialSell={initialSell} initialBuy={initialBuy} initialAmount={amount} />
+    </Page>
   );
 }

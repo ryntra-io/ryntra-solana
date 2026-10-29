@@ -110,3 +110,19 @@ function OnOpen({ onOpen }: { onOpen: () => void }) {
   }, [onOpen]);
   return null;
 }
+
+/**
+ * «Нагляд» in the wallet's panel (Menu 3, NAV-1: nothing stands above the page): a row to its page with the unread
+ * count beside it once the surface is read — never a zero it did not read.
+ */
+export function NotificationsRow({ locale, label, onOpen }: { locale: WorkspaceLocale; label: string; onOpen: () => void }) {
+  const word = bellWords(locale);
+  const notes = useNotes(locale);
+  const unread = notes.phase === "ready" ? notes.unread : 0;
+  return (
+    <Link className="rs-menu-item" href="/app/alerts" prefetch={false} role="menuitem" onClick={onOpen} aria-label={unread > 0 ? `${label}, ${unread} ${word("unread")}` : undefined}>
+      <span className="rs-menu-item-label">{label}</span>
+      {unread > 0 ? <span className="rs-bell-count" aria-hidden="true">{unread > 99 ? "99+" : unread}</span> : null}
+    </Link>
+  );
+}

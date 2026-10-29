@@ -16,7 +16,10 @@ import type {
   AgentBudgetState,
   AgentCard,
   AgentCitation,
+  AgentContext,
   AgentFigure,
+  AgentGuestRequest,
+  AgentGuestResponse,
   AgentHandoff,
   AgentHandoffKind,
   AgentMessageResponse,
@@ -24,6 +27,7 @@ import type {
   AgentSession,
   AgentState,
   AgentTurn,
+  AssistantCredits,
 } from '../../lib/api/v1/types.ts'
 import { DASH } from '../../utils/format.ts'
 import { mapDeepLink } from '../monitoring/deep-link.ts'
@@ -61,6 +65,9 @@ export type RynTurnView = Readonly<{
   insufficient: boolean
   /** What is known now and what it means — the answer at rest. */
   lead: readonly SentenceView[]
+  /** The same answer as its two blocks — what is known now, what it means — titled where the whole answer is open. */
+  observation: readonly SentenceView[]
+  meaning: readonly SentenceView[]
   /** What could make it wrong, the risks and unknowns, what to check — one tap deeper. */
   deeper: Readonly<{ counter: readonly SentenceView[]; risks: readonly SentenceView[]; checks: readonly SentenceView[] }>
   deeperCount: number
@@ -116,7 +123,9 @@ export function rynTurnView(turn: AgentTurn): RynTurnView {
     risks: answer ? sentencesOf(answer.risks, numbers) : [],
     checks: answer ? sentencesOf(answer.checks, numbers) : [],
   }
-  const lead = answer ? [...sentencesOf(answer.observation, numbers), ...sentencesOf(answer.meaning, numbers)] : []
+  const observation = answer ? sentencesOf(answer.observation, numbers) : []
+  const meaning = answer ? sentencesOf(answer.meaning, numbers) : []
+  const lead = [...observation, ...meaning]
   const cited = new Set(
     answer
       ? [...answer.observation, ...answer.meaning, ...answer.counter, ...answer.risks, ...answer.checks, ...answer.actions]
@@ -135,6 +144,8 @@ export function rynTurnView(turn: AgentTurn): RynTurnView {
     refusal: turn.refusal?.code ?? null,
     insufficient: answer?.insufficient ?? false,
     lead,
+    observation,
+    meaning,
     deeper,
     deeperCount: deeper.counter.length + deeper.risks.length + deeper.checks.length,
     actions: answer ? sentencesOf(answer.actions, numbers) : [],
@@ -312,7 +323,8 @@ function wordsFor(path: string, cards: readonly AgentCard[]): HandoffWords {
   const bare = path.split('?')[0] ?? path
   if (bare === '/bots') return { kind: 'plans' }
   if (bare === '/results') return { kind: 'results' }
-  if (bare === '/(tabs)/portfolio') return { kind: 'portfolio' }
+  // «Портфель · Історія» — the web's activity on the phone — is said as History, the place it opens on.
+  if (bare === '/(tabs)/portfolio') return { kind: /[?&]open=history(?:&|$)/.test(path) ? 'history' : 'portfolio' }
   if (bare === '/history') return { kind: 'history' }
   if (bare === '/monitoring') return { kind: 'inbox' }
   if (bare === '/(tabs)/markets') return { kind: /[?&]tab=(?:stocks|private)(?:&|$)/.test(path) ? 'stocks' : 'markets' }
@@ -335,16 +347,51 @@ export type BudgetView =
   /** The model's allowance is spent: answers are composed from the reads until it resets. */
   | Readonly<{ kind: 'spent'; resetsAt: string }>
   | Readonly<{ kind: 'open'; left: number; allowance: number }>
+  /** 1.52.0, credits: the next question is paid by the day's free credits — `left` questions more today. */
+  | Readonly<{ kind: 'free'; left: number }>
+  /** The next question is paid from the balance, whole (`rest` = `price`) or in part beside the free ones. */
+  | Readonly<{ kind: 'balance'; price: number; free: number; rest: number; balance: number }>
+  /** The free ones are spent and the balance is short: answers are composed from the reads until they come back. */
+  | Readonly<{ kind: 'freeSpent'; resetsAt: string }>
+  /** The day's ceiling of credits is reached: from the reads until it resets. */
+  | Readonly<{ kind: 'dayCap'; resetsAt: string }>
+
+/** How much of the next question the balance pays — what the person must be shown before asking. */
+function fromBalanceOf(credits: AssistantCredits): number {
+  return Math.max(0, credits.prices.question - credits.free.left)
+}
 
 export function budgetView(budget: AgentBudgetState | null | undefined): BudgetView | null {
   if (!budget) return null
   if (budget.model === 'absent') return { kind: 'reads' }
+  // The wallet's safety cap (calls a day, a month) is said as it was; below it, with credits, the price of the next one.
+  const capSpent = budget.day.used >= budget.day.allowance || budget.month.used >= budget.month.allowance
+  const credits = budget.credits
+  if (credits && credits.prices.question > 0 && !capSpent) {
+    const price = credits.prices.question
+    const rest = fromBalanceOf(credits)
+    if (rest === 0) return { kind: 'free', left: Math.floor(Math.max(0, credits.free.left) / price) }
+    // `exhausted` is also true once the free credits are spent; the balance then pays, when it can and the day allows.
+    if (rest > credits.balance) return { kind: 'freeSpent', resetsAt: credits.free.resetsAt }
+    if (credits.dailySpend.used + rest > credits.dailySpend.cap) return { kind: 'dayCap', resetsAt: credits.dailySpend.resetsAt }
+    return { kind: 'balance', price, free: price - rest, rest, balance: credits.balance }
+  }
   if (budget.exhausted) {
     const monthSpent = budget.month.used >= budget.month.allowance && budget.day.used < budget.day.allowance
     return { kind: 'spent', resetsAt: monthSpent ? budget.month.resetsAt : budget.day.resetsAt }
   }
   const left = Math.max(0, Math.min(budget.day.allowance - budget.day.used, budget.month.allowance - budget.month.used))
   return { kind: 'open', left, allowance: budget.day.allowance }
+}
+
+/**
+ * The price the person was shown, sent with the question (`acceptCredits`): the whole price only while the line under
+ * the field says some of it comes from the balance; 0 while it says «free» — so if the free credits ran out elsewhere
+ * meanwhile, nothing of the balance is taken without the line saying so first. Undefined where credits are not served.
+ */
+export function shownPrice(budget: AgentBudgetState | null | undefined): number | undefined {
+  if (!budget?.credits) return undefined
+  return budgetView(budget)?.kind === 'balance' ? budget.credits.prices.question : 0
 }
 
 /* ---- a failure, in the app's words ---- */
@@ -362,6 +409,8 @@ export type AgentFailure =
   | 'invalid'
   | 'network'
   | 'unavailable'
+  /** Too many questions in a minute from this address (`RATE_LIMITED`) — a guest's six a minute. */
+  | 'rate'
 
 export function agentFailureOf(error: unknown): AgentFailure {
   if (!(error instanceof ApiError)) return 'network'
@@ -378,6 +427,8 @@ export function agentFailureOf(error: unknown): AgentFailure {
       return 'gone'
     case 'VALIDATION_ERROR':
       return 'invalid'
+    case 'RATE_LIMITED':
+      return 'rate'
     default:
       return error.status === 401 ? 'signIn' : 'unavailable'
   }
@@ -406,4 +457,75 @@ export function exchangeLanded(session: AgentSession, question: string, sentAt: 
   if (!last || !asked || last.role !== 'ryn' || asked.role !== 'person') return false
   // A minute of slack for the difference between the phone's clock and the server's.
   return asked.text.trim() === question.trim() && Date.parse(asked.at) >= sentAt - 60_000
+}
+
+/* ---- the guest: a market question without a wallet (1.43.0) ---- */
+
+/** What a guest may ask about: an asset or a page. Someone's own plan, portfolio or note is no context for a guest. */
+export function guestContextOf(context: AgentContext | null): AgentGuestRequest['context'] {
+  if (!context) return null
+  if (context.kind === 'asset') return context.symbol ? { kind: 'asset', mint: context.mint, symbol: context.symbol } : { kind: 'asset', mint: context.mint }
+  if (context.kind === 'page') return { kind: 'page', page: context.page }
+  return null
+}
+
+/** The guest's conversation as the phone holds it: only here, never on the server; the day's meter as last read. */
+export type GuestThread = Readonly<{
+  turns: readonly AgentTurn[]
+  day: AgentGuestResponse['guest']['day'] | null
+  model: AgentGuestResponse['guest']['model'] | null
+}>
+
+/** The guest's day as the server meters it: one per guest, whatever the context. */
+export type GuestMeter = Pick<GuestThread, 'day' | 'model'>
+
+/** Two answers may come back out of order: the later day wins, and within one day the larger count. */
+export function laterMeter(current: GuestMeter | undefined, answered: AgentGuestResponse): GuestMeter {
+  const next: GuestMeter = { day: answered.guest.day, model: answered.guest.model }
+  const day = current?.day
+  if (!day || !next.day) return next
+  const was = Date.parse(day.resetsAt)
+  const now = Date.parse(next.day.resetsAt)
+  if (now > was) return next
+  if (now < was) return current!
+  return next.day.used >= day.used ? next : current!
+}
+
+export const EMPTY_GUEST_THREAD: GuestThread = { turns: [], day: null, model: null }
+
+/** The thread with an answered guest exchange appended, none twice, the last forty kept. */
+export function withGuestExchange(thread: GuestThread, answered: AgentGuestResponse): GuestThread {
+  const known = new Set(thread.turns.map((turn) => turn.id))
+  const added = [answered.person, answered.ryn].filter((turn) => !known.has(turn.id))
+  return { turns: [...thread.turns, ...added].slice(-TURNS_KEPT), day: answered.guest.day, model: answered.guest.model }
+}
+
+export type GuestMeterView =
+  /** Before the first answer: what a guest's Ryntra reads. */
+  | Readonly<{ kind: 'note' }>
+  | Readonly<{ kind: 'reads' }>
+  | Readonly<{ kind: 'spent' }>
+  | Readonly<{ kind: 'open'; used: number; allowance: number }>
+
+/**
+ * The line under a guest's composer, from the meter the latest guest answer carried — one per guest and day on the
+ * server, so one on the phone, whatever the context it was asked in; past its reset it is not said.
+ */
+export function guestMeterView(thread: Pick<GuestThread, 'day' | 'model'>, now: number = Date.now()): GuestMeterView {
+  if (!thread.day || !thread.model) return { kind: 'note' }
+  const resetsAt = Date.parse(thread.day.resetsAt)
+  if (Number.isFinite(resetsAt) && resetsAt <= now) return { kind: 'note' }
+  if (thread.model === 'absent') return { kind: 'reads' }
+  if (thread.day.used >= thread.day.allowance) return { kind: 'spent' }
+  return { kind: 'open', used: thread.day.used, allowance: thread.day.allowance }
+}
+
+/* ---- «Що зрушило ціну?» ---- */
+
+/** The marks of a move's rows, strongest first — how sure each line is (1.44.0). */
+export const MOVE_MARKS = ['fact', 'unverified', 'inference', 'unknown'] as const
+
+/** A news or move card is the answer itself: drawn at rest with its sentences, not folded under «Деталі». */
+export function isAnswerCard(card: AgentCard): boolean {
+  return card.kind === 'news' || card.kind === 'move'
 }

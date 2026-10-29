@@ -5,11 +5,14 @@
  * line. Two halves, because the person's signature sits between them:
  *
  * - **Before the wallet** (`SOLANA_SWAP_REVIEW_GUARD`, with `ownerLockFreeStep`
- *   ahead of any venue): the wallet holds no open Review; the provider bytes
+ *   ahead of any venue): the wallet holds no outstanding signature (an
+ *   unsigned Review is replaced, SOL-S1); the provider bytes
  *   pass the pre-sign transaction check; a simulation of those exact bytes
  *   proves what they do to the signer (the effect firewall); the asset and
- *   the swap policy are judged on that proof; the issuer signs the bundle the
- *   wallet must hand back unchanged; the durable owner lock holds the Review.
+ *   the swap policy are judged on that proof; the trade's own risk verdict is
+ *   built over the thirteen named facts of the specification; the issuer signs
+ *   the bundle the wallet must hand back unchanged; the durable owner lock
+ *   holds the Review until a newer order of the same wallet replaces it.
  * - **After the wallet** (`SOLANA_SWAP_SIGNED_GUARD`): the bundle comes back
  *   under the issuer's own signature and still fresh; the signed bytes are the
  *   reviewed message, or a wallet's guarded change of it proved again; the
@@ -57,7 +60,6 @@ import { assessSwapSimulationEffects } from "../../solana/swap-effect-firewall.t
 import {
   createSwapExecutionProof,
   inspectionForBundle,
-  SwapExecutionBundleSchema,
   SwapExecutionSimulationSchema,
   verifySwapExecutionProof,
   type SwapExecutionProofSchema,
@@ -65,15 +67,17 @@ import {
 } from "../../solana/swap-execution-review.ts";
 import {
   claimSwapOwnerSignature,
-  expireUnclaimedSwapOwnerReview,
   isSwapOwnerLockSettled,
+  isSwapOwnerReviewReplaceable,
   readSwapOwnerLock,
   reserveSwapOwnerReview,
-  type SwapOwnerLockRecord,
 } from "../../solana/swap-owner-lock.ts";
 import { buildSwapPolicyIntent, evaluateSwapPolicy } from "../../solana/swap-policy.ts";
 import { proveBuildFee } from "../../solana/build-fee-proof.ts";
 import { buildSwapQuoteReview } from "../../solana/swap-review.ts";
+import { readTokenRiskFacts, type TokenRiskReading } from "../../solana/risk-facts.ts";
+import { swapTradeRisk } from "../../solana/trade-risk.server.ts";
+import type { TradeRiskVerdict } from "../../solana/trade-risk.ts";
 import { inspectJupiterSwapTransaction } from "../../solana/swap-transaction-check.ts";
 import type { SolanaAssetPassport } from "../../solana/types.ts";
 import { NEXT, need, type PipelineStep, type StepResult } from "../pipeline.ts";
@@ -98,6 +102,10 @@ export type SwapReviewGuardContext = {
   outputAssetVerdict: ReturnType<typeof evaluateOwnerPolicy> | null;
   intent: ReturnType<typeof buildSwapPolicyIntent> | null;
   verdict: ReturnType<typeof evaluateSwapPolicy> | null;
+  /** The token's chain facts, asked for early so the verdict waits on nothing of its own. */
+  riskFacts: Promise<TokenRiskReading> | null;
+  /** The risk verdict over the trade — the four words over the thirteen facts. */
+  risk: TradeRiskVerdict | null;
   planReview: PlanReview | null;
   bundleOrigin: SpotActionOrigin | undefined;
   review: ReturnType<typeof buildSwapQuoteReview> | null;
@@ -144,14 +152,6 @@ const refuse = (status: number, code: string, message: string, extra?: object): 
   stop: { status, code, message, ...(extra ? { extra } : {}) },
 });
 
-/**
- * A Solana blockhash is valid for at most 151 slots. Well past that, bytes
- * issued under it cannot land no matter who holds them — the fallback that
- * keeps an unclaimed Review from becoming a permanent dead end when no
- * independent operator is configured to say so directly.
- */
-const BLOCKHASH_CERTAINLY_DEAD_MS = 300_000;
-
 /* The review policy asks what receiving the output would subject ANY holder
    to, so it takes two stand-ins rather than inventing a counterparty — the
    same pair the read-only quote route uses. */
@@ -177,53 +177,21 @@ function quoteView(order: JupiterExecutableOrder): JupiterOrderQuote {
   };
 }
 
-/**
- * Whether an unclaimed issued Review can be recycled.
- *
- * A `REVIEW_ISSUED` lock with no signature holds bytes nobody has approved.
- * Once its window has closed AND its blockhash is dead, those bytes cannot
- * land and holding the lock open only stops the owner from asking again —
- * which is what turned one swap per wallet into one swap ever. The proof is
- * an independent operator saying the blockhash is invalid; the fallback is
- * the blockhash's own 151-slot ceiling, well exceeded. `SIGNED` and
- * `SUBMITTED_UNKNOWN` are never recycled: a signature exists in the world and
- * recovery by that signature is the only correct answer.
- */
-async function unclaimedReviewIsDead(record: SwapOwnerLockRecord): Promise<boolean> {
-  if (record.state !== "REVIEW_ISSUED" || record.signature !== null) return false;
-  const closedFor = Date.now() - Date.parse(record.reviewExpiresAt);
-  if (!Number.isFinite(closedFor) || closedFor <= 0) return false;
-
-  const bundle = SwapExecutionBundleSchema.safeParse(record.bundle);
-  if (!bundle.success) return true;
-  const independent = createIndependentReadHandle(createSolanaRpcHandle({ network: "mainnet" }));
-  if (independent) {
-    try {
-      const valid = Boolean(
-        (
-          await withRpcDiscipline(independent, (abortSignal) =>
-            independent.rpc
-              .isBlockhashValid(bundle.data.inspection.blockhash as never, { commitment: "confirmed" })
-              .send({ abortSignal }),
-          )
-        ).value,
-      );
-      return !valid;
-    } catch {
-      /* Fall through to the ceiling below rather than claiming knowledge. */
-    }
-  }
-  return closedFor > BLOCKHASH_CERTAINLY_DEAD_MS;
-}
-
 /* ------------------------------------------------------------ before the wallet */
 
 /**
- * The wallet holds no open Review. Asked before any venue, so a wallet that
- * is waiting on its own signature costs no quote. A settled swap is history,
- * not a lock: only an outstanding signature holds the wallet, and only until
- * it is recovered; an unclaimed Review whose bytes can no longer land is let
- * go.
+ * The wallet holds no outstanding signature. Asked before any venue, so a
+ * wallet that is waiting on its own signature costs no quote. A settled swap
+ * is history, not a lock: only an outstanding signature holds the wallet, and
+ * only until it is recovered.
+ *
+ * An unsigned Review does not hold it: the
+ * order goes on and `ownerLockReserve` replaces that Review in the same
+ * compare-and-set that would have refused it. Its bytes were never signed
+ * through this server and can no longer be — `execute` of the replaced bundle
+ * is refused before any send (`OWNER_SWAP_LOCK_MISMATCH`, «replaced»). Waiting for those bytes'
+ * death (~17 s after a long read) was the wait between «Підтвердити в
+ * гаманці» and the wallet.
  */
 export const ownerLockFreeStep: PipelineStep<SwapReviewGuardContext, SwapRefusal> = {
   stage: "guard",
@@ -239,28 +207,14 @@ export const ownerLockFreeStep: PipelineStep<SwapReviewGuardContext, SwapRefusal
     if (existingOwnerLock.ok) {
       const record = existingOwnerLock.record;
       const settled = isSwapOwnerLockSettled(record.state);
-      if (!settled) {
-        if (await unclaimedReviewIsDead(record)) {
-          const expired = await expireUnclaimedSwapOwnerReview({
-            store,
-            owner: input.taker,
+      if (!settled && !isSwapOwnerReviewReplaceable(record)) {
+        return refuse(409, "OWNER_SWAP_LOCKED", "This wallet already has an unresolved signed attempt.", {
+          ownerLock: {
+            state: record.state,
             requestId: record.requestId,
-            at: new Date().toISOString(),
-          });
-          if (!expired.ok) {
-            return refuse(409, expired.code, expired.reason, {
-              ownerLock: { state: record.state, requestId: record.requestId, signature: record.signature },
-            });
-          }
-        } else {
-          return refuse(409, "OWNER_SWAP_LOCKED", "This wallet already has an open swap Review or an unresolved signed attempt.", {
-            ownerLock: {
-              state: record.state,
-              requestId: record.requestId,
-              signature: record.signature,
-            },
-          });
-        }
+            signature: record.signature,
+          },
+        });
       }
     } else if (existingOwnerLock.code === "OWNER_SWAP_LOCK_UNAVAILABLE") {
       return refuse(503, existingOwnerLock.code, existingOwnerLock.reason);
@@ -304,14 +258,15 @@ const effectFirewall: PipelineStep<SwapReviewGuardContext, SwapRefusal> = {
     const inspection = need(context.inspection, "inspection");
     let order = need(context.order, "order");
     const unsigned = need(context.unsigned, "unsigned");
-    const rent = await readRentParameters(handle).catch(() => null);
+    /* Read beside the simulation, not before it (SOL-S1): neither waits on the other, and every millisecond here is spent of the bytes' ~30 s life. */
+    const rentRead = readRentParameters(handle).catch(() => null);
     /* Every static account but the programs themselves: an account the
        transaction opens for the taker is always static, and a program's
        bytecode is the one large answer nothing here needs. */
     const stateAddresses: readonly string[] = inspection.staticAccounts.filter((account) => !inspection.programs.includes(account));
     let simulation: Simulation;
     try {
-      const response = await withRpcDiscipline(handle, (abortSignal) =>
+      const [response, rent] = await Promise.all([withRpcDiscipline(handle, (abortSignal) =>
         handle.rpc
           .simulateTransaction(unsigned.wireBase64 as never, {
             encoding: "base64",
@@ -322,7 +277,7 @@ const effectFirewall: PipelineStep<SwapReviewGuardContext, SwapRefusal> = {
             accounts: { encoding: "base64", addresses: stateAddresses as readonly never[] },
           })
           .send({ abortSignal }),
-      );
+      ), rentRead]);
       const err = response.value.err === null || response.value.err === undefined
         ? null
         : JSON.stringify(response.value.err, (_key, entry) => (typeof entry === "bigint" ? entry.toString() : entry)).slice(0, 512);
@@ -469,6 +424,56 @@ const reviewPolicy: PipelineStep<SwapReviewGuardContext, SwapRefusal> = {
 };
 
 /**
+ * Ask for the token's chain facts.
+ *
+ * It is a step of its own, and the first, so the read runs while the bytes are
+ * decoded and simulated instead of after them: a Review costs the person no
+ * extra wait for it. It cannot refuse anything and never throws — the reader
+ * answers "not read" with a reason instead — so a gateway that is down slows
+ * nothing and stops nothing.
+ */
+const riskFactsAsk: PipelineStep<SwapReviewGuardContext, SwapRefusal> = {
+  stage: "guard",
+  name: "risk-facts-ask",
+  run(context) {
+    context.riskFacts ??= readTokenRiskFacts({ mint: context.input.outputMint });
+    return NEXT;
+  },
+};
+
+/**
+ * The risk verdict over the trade itself.
+ *
+ * The swap policy above judges the bytes; this judges the deal and the token
+ * behind it — the mint and its program, its extensions, the powers still held
+ * over it, what it does to a transfer, the price bound the chain will enforce,
+ * the route, the quote's age, the venue's state, how much of the supply sits
+ * in few hands, what the creator still holds, whether an issuer's own terms
+ * allow the trade, and what it is allowed to spend. Thirteen facts, each with
+ * its source and its time, and the same four words every other kind of trade
+ * is judged in.
+ *
+ * It reads the token's chain facts from the market-data gateway and nothing
+ * else. A gateway that cannot serve them does not quietly pass the trade: the
+ * verdict comes back `INCOMPLETE` with the missing facts named, and the card
+ * shows that instead of a verdict it did not earn. Nothing here can refuse a
+ * Review on its own — a person decides on what it says.
+ */
+const tradeRisk: PipelineStep<SwapReviewGuardContext, SwapRefusal> = {
+  stage: "guard",
+  name: "trade-risk",
+  async run(context) {
+    const order = need(context.order, "order");
+    context.risk = await swapTradeRisk({
+      order: quoteView(order),
+      assetReview: context.outputAssetVerdict,
+      chain: await (context.riskFacts ?? readTokenRiskFacts({ mint: context.input.outputMint })),
+    });
+    return NEXT;
+  },
+};
+
+/**
  * The issuer-signed bundle the execute step demands back unchanged, and the
  * pre-sign assessment: signable bytes leave only when every non-human rule
  * passes and the person's visible approval is the one step left.
@@ -549,7 +554,7 @@ const ownerLockReserve: PipelineStep<SwapReviewGuardContext, SwapRefusal> = {
 };
 
 /** The chain before the wallet, in order, after the bytes are built. */
-export const SOLANA_SWAP_REVIEW_GUARD = [transactionCheck, effectFirewall, reviewPolicy, reviewProof, ownerLockReserve] as const;
+export const SOLANA_SWAP_REVIEW_GUARD = [riskFactsAsk, transactionCheck, effectFirewall, reviewPolicy, tradeRisk, reviewProof, ownerLockReserve] as const;
 
 /* ------------------------------------------------------------ after the wallet */
 

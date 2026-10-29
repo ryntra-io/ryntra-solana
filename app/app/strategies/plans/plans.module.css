@@ -19,6 +19,8 @@
 
 .crumbs {
   display: flex;
+  flex-wrap: wrap;
+  align-items: center;
   gap: var(--ry-s2);
   margin: 0;
   font-size: var(--ry-fs-dense);
@@ -34,24 +36,10 @@
   color: var(--ry-text);
 }
 
-.head {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: var(--ry-s3);
-}
-
-.head h1 {
-  margin: 0;
-  font-family: var(--ry-font-sans);
-  font-size: var(--ry-fs-page);
-  line-height: var(--ry-lh-tight);
-  letter-spacing: var(--ry-ls-head);
+/* The asset's own market, at the end of the crumbs' row: a way out, never the page's main action. */
+.crumbs .crumbsAction {
+  margin-left: auto;
   color: var(--ry-text);
-}
-
-.headSpacer {
-  flex: 1 1 auto;
 }
 
 .lead {
@@ -473,31 +461,10 @@ a.count:hover {
 
 /* ── The builder ──────────────────────────────────────────────────────── */
 
-.builder {
-  display: grid;
-  grid-template-columns: minmax(0, 7fr) minmax(0, 5fr);
-  gap: var(--ry-s4);
-  align-items: start;
-}
-
-.aside {
-  display: grid;
-  gap: var(--ry-s4);
-  position: sticky;
-  top: var(--ry-s4);
-}
+/* The form and its estimate stand in the core's action page as a centred pair (`app/app/form-pair.module.css`); below,
+   the form's own parts. */
 
 @media (max-width: 960px) {
-  .builder {
-    grid-template-columns: minmax(0, 1fr);
-  }
-
-  /* Stacked, what you will buy comes first: the figure the form exists to make. */
-  .aside {
-    position: static;
-    order: -1;
-  }
-
   .fields.fieldsThree {
     grid-template-columns: minmax(0, 1fr);
   }
@@ -542,12 +509,26 @@ a.count:hover {
   width: 28px;
   height: 28px;
   border-radius: var(--ry-r-pill);
-  background: var(--ry-brand-soft);
-  border: 1px solid var(--ry-brand-line);
+  background: var(--ry-elevated);
+  border: 1px solid var(--ry-border-strong);
   font-family: var(--ry-font-mono);
   font-size: var(--ry-fs-dense);
   font-weight: 700;
+  color: var(--ry-muted);
+  transition: background-color var(--rt-duration-fast) var(--rt-ease), border-color var(--rt-duration-fast) var(--rt-ease), color var(--rt-duration-fast) var(--rt-ease);
+}
+
+/* The accent marks the step being filled — never all of them at once (DESIGN.md → «Page width», SOL-C19). */
+.step:focus-within .stepNumber {
+  background: var(--ry-brand-soft);
+  border-color: var(--ry-brand-line);
   color: var(--ry-accent-fg);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .stepNumber {
+    transition: none;
+  }
 }
 
 .stepUnit {

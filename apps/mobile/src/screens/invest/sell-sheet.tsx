@@ -1,4 +1,3 @@
-import { useRouter } from 'expo-router'
 import { useState, type ReactNode } from 'react'
 import { Keyboard, Pressable, TextInput, View } from 'react-native'
 
@@ -26,6 +25,8 @@ import { heldUnitsText, isCompanySale, type SaleCompany, type SalePct } from '@/
 import { useSale, useSaleCompany, type SaleController, type SaleHint } from '@/features/invest/use-sale'
 import { RECEIPTS_COPY } from '@/features/receipts/copy'
 import { docFromSwap, outcomeStatus } from '@/features/receipts/receipt-doc'
+import { useOpenPlace, usePlaceHold } from '@/features/shell/open-place'
+import { PORTFOLIO_HISTORY_PATH } from '@/features/shell/shell'
 import { useCopy } from '@/lib/i18n'
 import { TopUpSheet } from '@/screens/home/top-up-sheet'
 import { ShareReceiptSheet } from '@/screens/receipts/share-receipt'
@@ -33,7 +34,7 @@ import { type, useTheme } from '@/theme'
 import { DASH } from '@/utils/format'
 import { openLink } from '@/lib/open-link'
 
-import { BuyReceiptFace, QuietLinks, ReviewTable, type ReceiptFace } from './buy-sheet'
+import { BuyReceiptFace, QuietLinks, ReviewTable, SignInHelp, type ReceiptFace } from './buy-sheet'
 
 const QUOTE_UNREAD = new Set(['offline', 'tooLong', 'providerDown', 'rateLimited', 'failed'])
 
@@ -93,12 +94,14 @@ function SaleLoader({ mint, hint, onClose }: { mint: string; hint: SaleHint; onC
 }
 
 function SellFlow({ company, onClose }: { company: SaleCompany; onClose: () => void }) {
-  const router = useRouter()
+  const openPlace = useOpenPlace()
   const words = useCopy(SALE_COPY)
   const buyWords = useCopy(BUY_COPY)
   const fails = useCopy(CONVERT_COPY).failures
   const sale = useSale(company)
   const { trade } = sale
+  // While it is prepared, signed, sent or checked, a note's tap or a quick action waits for it (`place-hold.ts`).
+  usePlaceHold(trade.busy)
   const [topUp, setTopUp] = useState(false)
   const address = trade.account.address
 
@@ -113,7 +116,7 @@ function SellFlow({ company, onClose }: { company: SaleCompany; onClose: () => v
     // A sale being prepared, signed, sent or checked keeps its sheet: History opens once it is not.
     if (trade.busy) return
     close()
-    router.push('/history')
+    openPlace(PORTFOLIO_HISTORY_PATH)
   }
 
   const logo = <AssetIcon symbol={company.name} icon={company.icon} size={32} />
@@ -137,7 +140,12 @@ function SellFlow({ company, onClose }: { company: SaleCompany; onClose: () => v
           </Txt>
         </View>
         {trade.failure ? (
-          <Txt variant="ui" tone="danger">
+          <Txt
+            variant="ui"
+            tone={
+              trade.failure.code === 'BYTES_REBUILT' || trade.failure.code === 'REVIEW_RENEWED' ? 'warning' : 'danger'
+            }
+          >
             {failureWord(fails, trade.failure.code)}
           </Txt>
         ) : null}
@@ -412,11 +420,8 @@ export function SaleCompose({
           ) : null}
         </View>
       ) : null}
-      {action.kind === 'sign-in' ? (
-        <Txt variant="ui" tone="faint" className="text-center">
-          {buyWords.signInLine}
-        </Txt>
-      ) : null}
+      {/* That signing in moves nothing sits behind «?» (ST-4). */}
+      {action.kind === 'sign-in' ? <SignInHelp /> : null}
     </View>
   )
 }
@@ -467,7 +472,13 @@ export function SaleReview({
         }))}
       />
       {trade.failure ? (
-        <Txt variant="ui" tone="danger" className="text-center">
+        <Txt
+          variant="ui"
+          tone={
+            trade.failure.code === 'BYTES_REBUILT' || trade.failure.code === 'REVIEW_RENEWED' ? 'warning' : 'danger'
+          }
+          className="text-center"
+        >
           {failureWord(fails, trade.failure.code)}
         </Txt>
       ) : null}
@@ -516,7 +527,8 @@ export function saleReceiptFace(
         gave === null
           ? null
           : `${outcome.fromReview ? '≈ ' : ''}${unitsPhrase(gave, input.company.unit, input.company.name, locale)}`,
-      note: outcome.belowMinimum ? buyWords.belowMinimum : outcome.fromReview ? buyWords.fromReview : null,
+      // «≈» says the figure is the Review's; the receipt keeps the network's (ST-4: no line says so).
+      note: outcome.belowMinimum ? buyWords.belowMinimum : null,
       noteTone: outcome.belowMinimum ? 'warning' : 'faint',
     }
   }

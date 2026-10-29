@@ -1,5 +1,3 @@
-import { PanelGrid } from "@/app/shell/panel";
-import { PageHead } from "../hub/parts.tsx";
 import { solanaServerText } from "../i18n/server.ts";
 import { SendCard } from "./send-card.tsx";
 
@@ -24,15 +22,11 @@ export async function generateMetadata() {
  * a review-only boundary the code had already stopped enforcing. A paragraph
  * that is wrong is worse than no paragraph; a paragraph nobody reads is only
  * marginally better. The card says what it does.
+ *
+ * Since B18 the card draws the whole page — the heading once, the form and the
+ * recent transfers beside it (`../money/money-page.tsx`): the heading names the
+ * page, so the card carries no title of its own.
  */
-export default async function SolanaSendPage() {
-  const { text } = await solanaServerText();
-  return (
-    <>
-      <PageHead title="Send" />
-      <div className="ry-money-flow"><PanelGrid label={text("Send")}>
-        <SendCard />
-      </PanelGrid></div>
-    </>
-  );
+export default function SolanaSendPage() {
+  return <SendCard />;
 }

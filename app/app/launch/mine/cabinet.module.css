@@ -1,0 +1,158 @@
+/* The creator's cabinet in figures (SOL-L2): only what launch.module.css does not already draw. */
+
+/* What the launches earned by source: the core's table, a line under it when a period is a floor. */
+.sources {
+  display: grid;
+  gap: var(--ry-s2);
+  min-width: 0;
+}
+
+/* The sources' table under the summary's figures, across the summary's whole width. */
+.summaryWide {
+  grid-column: 1 / -1;
+  min-width: 0;
+}
+
+.tokenCell {
+  display: inline-flex;
+  align-items: baseline;
+  gap: var(--ry-s2);
+  white-space: nowrap;
+}
+
+/* A card's market: two columns on a phone, three when the card is wide. */
+.marketStats {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--ry-s3);
+  margin: 0;
+}
+
+@container mine-card (min-width: 520px) {
+  .marketStats {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+.links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--ry-s2) var(--ry-s4);
+  margin: var(--ry-s2) 0 0;
+}
+
+.sales {
+  display: grid;
+  gap: 4px;
+  margin: var(--ry-s2) 0 0;
+  padding: 0;
+  list-style: none;
+  font-size: var(--ry-fs-label);
+}
+
+.channels {
+  display: grid;
+  gap: 4px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-size: var(--ry-fs-label);
+  color: var(--ry-text);
+}
+
+/* The public profile: its few figures in a row, wrapping on a phone. */
+.profileFacts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--ry-s3) var(--ry-s6);
+  margin: 0;
+}
+
+.profileFacts div {
+  display: grid;
+  gap: 2px;
+}
+
+.profileFacts dt {
+  font-size: var(--ry-fs-label-sm);
+  color: var(--ry-muted);
+}
+
+.profileFacts dd {
+  margin: 0;
+  font-size: var(--ry-fs-data-m, 1.25rem);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  color: var(--ry-text);
+}
+
+/* A token in a table: its symbol, and under it when and how it launched. */
+.tokenName {
+  display: grid;
+  gap: 2px;
+  white-space: nowrap;
+}
+
+.picture {
+  display: inline-grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  flex: none;
+  overflow: hidden;
+  border-radius: 50%;
+  background: var(--ry-bg);
+  color: var(--ry-muted);
+}
+
+.picture img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* A table or a disclosure never widens its card: it scrolls inside its own width. */
+.fit {
+  min-width: 0;
+  max-width: 100%;
+}
+
+.fitAll > * {
+  min-width: 0;
+}
+
+/* On a phone the core's table keeps its rows and gives up a little of its side padding, so four columns fit 390 px. */
+@media (max-width: 600px) {
+  .tight :global(.ryntra-table th),
+  .tight :global(.ryntra-table td) {
+    padding-inline: 8px;
+  }
+}
+
+/* «Забрати все» (SOL-L12): the core's Review inside a launch's card, and its details a press deeper. */
+.claimReview {
+  min-width: 0;
+}
+
+.claimDetails {
+  display: grid;
+  gap: var(--ry-s2);
+  min-width: 0;
+}
+
+/* A label in the details may wrap on a phone; its value keeps its line. */
+.claimDetails dt {
+  flex-shrink: 1;
+  min-width: 0;
+}
+
+.claimDetails dd {
+  flex-shrink: 0;
+}
+
+.claimDetailsTitle {
+  margin: var(--ry-s2) 0 0;
+  font-size: var(--ry-fs-label);
+  font-weight: 600;
+  color: var(--ry-text);
+}

@@ -1,5 +1,3 @@
-import { POINTS_POLICY_V1, levelFor } from "../../lib/points/policy.ts";
-
 /**
  * What the fourth block says in numbers, and where each number comes from.
  *
@@ -10,27 +8,24 @@ import { POINTS_POLICY_V1, levelFor } from "../../lib/points/policy.ts";
  * imported so the landing carries no rewards code; rewards.test.mjs holds the
  * two in agreement, so a changed rate cannot leave the page saying the old one.
  *
- * The points figure is an example — a preview of the Points panel, not a
- * balance — and is marked as such on the page. Its level and the total the
- * next level begins at are read from the live policy through `levelFor`, so
- * the example can never show a level the policy does not have.
+ * The rank is here for the same reason, and it replaced something else
+ * (UX-751, following Ріст 19). This file used to carry `POINTS_EXAMPLE` —
+ * «12,480 PTS · LEVEL 03» — a preview of the Points V1 programme, levels and
+ * all. The server counts that programme; no screen a person can open draws it.
+ * So the landing was selling a balance and a level nobody could go and find,
+ * and support was answering «where are my 12,480 points?». What a person
+ * actually has is the rank: a dollar of the fee Ryntra received is a rank
+ * point, read over a window, and the rank sets the share from a friend's
+ * trade. The landing now says that, and the example is gone rather than
+ * relabelled — an example of a programme with no screen is the defect, not
+ * its wording.
  */
 export const REWARDS = {
   feeSharePercent: 50,
   referralLevel1Percent: "10–30",
   referralLevel2Percent: 5,
-} as const;
-
-/** One illustrative lifetime total, easy to change. */
-export const POINTS_EXAMPLE = 12_480n;
-
-const placed = levelFor(POINTS_POLICY_V1, POINTS_EXAMPLE);
-const levelStart = POINTS_POLICY_V1.levels[placed.level - 1] ?? 0n;
-
-export const POINTS = {
-  total: Number(POINTS_EXAMPLE),
-  level: placed.level,
-  nextAt: placed.nextAt === null ? null : Number(placed.nextAt),
-  /** How far the example sits between its level's start and the next one, 0–1. */
-  progress: placed.nextAt === null ? 1 : Number(POINTS_EXAMPLE - levelStart) / Number(placed.nextAt - levelStart),
+  /** A dollar of the fee Ryntra received is one rank point (`RANK_POINTS_PER_USD`). */
+  rankPointsPerUsd: 1,
+  /** The window a rank is read over (`RANK_WINDOW_DAYS`). */
+  rankWindowDays: 30,
 } as const;

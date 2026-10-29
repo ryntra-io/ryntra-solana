@@ -1,0 +1,124 @@
+/* «Консоль розробника» (DEV-2): the core's blocks carry the page; these are its forms, rows and the one banner that
+   shows a secret. 390 px first. */
+
+.page {
+  width: 100%;
+  padding: 0;
+}
+
+.startRow,
+.backRow,
+.formActions,
+.rowActions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--ry-s2);
+}
+
+.startRow {
+  margin-bottom: var(--ry-s4);
+}
+
+.backRow {
+  justify-content: space-between;
+  margin-bottom: var(--ry-s3);
+  color: var(--ry-muted);
+}
+
+.formActions {
+  justify-content: flex-end;
+}
+
+.form {
+  display: grid;
+  gap: var(--ry-s3);
+  min-width: 0;
+  margin-top: var(--ry-s3);
+}
+
+.field {
+  display: grid;
+  align-content: start;
+  gap: 6px;
+  min-width: 0;
+}
+
+.label {
+  font-size: var(--ry-fs-label);
+  font-weight: 500;
+  color: var(--ry-text);
+}
+
+.hint {
+  margin: 0;
+  font-size: var(--ry-fs-label);
+  line-height: var(--ry-lh-body);
+  color: var(--ry-muted);
+}
+
+.input {
+  width: 100%;
+  min-width: 0;
+  min-height: 44px;
+  padding: 10px 12px;
+  border: 1px solid var(--ry-border);
+  border-radius: var(--ry-r-btn);
+  background: var(--ry-bg);
+  color: var(--ry-text);
+  font: inherit;
+  font-size: var(--ry-fs-copy);
+}
+
+.input:focus-visible {
+  outline: none;
+  border-color: var(--ry-text);
+  box-shadow: 0 0 0 1px var(--ry-text);
+}
+
+.textarea {
+  min-height: 88px;
+  resize: vertical;
+  line-height: var(--ry-lh-body);
+}
+
+.checks {
+  display: grid;
+  gap: 6px;
+}
+
+.check {
+  display: flex;
+  align-items: baseline;
+  gap: var(--ry-s2);
+  font-size: var(--ry-fs-label);
+  color: var(--ry-text);
+}
+
+.mono {
+  font-family: var(--ry-font-mono);
+  font-variant-numeric: tabular-nums;
+  overflow-wrap: anywhere;
+}
+
+/* The one place a secret is ever on a screen. Marked, not styled to blend in. */
+.secret {
+  display: grid;
+  gap: var(--ry-s2);
+  margin-top: var(--ry-s3);
+  padding: var(--ry-s3);
+  border: 1px solid var(--ry-caution);
+  border-radius: var(--ry-r-btn);
+  background: var(--ry-bg);
+}
+
+.secretValue {
+  padding: 10px 12px;
+  border: 1px solid var(--ry-border);
+  border-radius: var(--ry-r-btn);
+  background: var(--ry-surface, var(--ry-bg));
+  font-family: var(--ry-font-mono);
+  font-size: var(--ry-fs-label);
+  overflow-wrap: anywhere;
+  user-select: all;
+}

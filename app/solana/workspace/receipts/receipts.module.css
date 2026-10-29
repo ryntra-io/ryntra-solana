@@ -30,6 +30,8 @@
 
 .item {
   display: grid;
+  /* The column is the panel's width, never a long status line's (SOL-X1: on a phone it pushed the card past the panel). */
+  grid-template-columns: minmax(0, 1fr);
   gap: var(--rt-space-sm);
   padding: var(--rt-space-md) 0;
   border-bottom: 1px solid var(--border);
@@ -226,3 +228,41 @@
 
 .archive { display: grid; gap: var(--ry-s2); padding: var(--ry-s3) 0; border-bottom: 1px solid var(--ry-border); }
 .archiveTitle { margin: 0; font-size: var(--ry-fs-dense); font-weight: 600; letter-spacing: var(--ry-ls-head); text-transform: uppercase; color: var(--ry-muted); }
+
+/* On a phone the head stacks: the kind and its line, then the status, then the time — the status wraps rather than
+   squeezing the kind into one word a line. */
+@media (max-width: 560px) {
+  .itemHead {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 4px;
+  }
+
+  .result {
+    justify-self: start;
+    white-space: normal;
+  }
+}
+
+/* Whom a transfer paid (SKR-4): «Кому», the `.skr` name when there is one, and the whole address. */
+.recipient {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 4px 10px;
+  margin: 0;
+  font-size: var(--fs-13);
+  color: var(--text-dim);
+}
+
+.recipient b {
+  font-family: var(--mono);
+  font-weight: 500;
+  color: var(--text);
+}
+
+.recipient code {
+  font-family: var(--mono);
+  font-size: var(--fs-12);
+  color: var(--text-dim);
+  overflow-wrap: anywhere;
+}

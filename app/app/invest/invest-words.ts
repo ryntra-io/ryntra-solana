@@ -22,22 +22,23 @@ export const INVEST_WORDS = {
   homeTitle: bi("Home", "Головна"),
   guestHeadline: bi("Stocks, crypto, memes — and your own token", "Акції, крипта, меми — і свій токен"),
   guestLine: bi("No broker — it stays in your own wallet.", "Без брокера — усе лишається у твоєму гаманці."),
-  connectWallet: bi("Connect wallet", "Під'єднати гаманець"),
+  connectWallet: bi("Connect wallet", "Підключити гаманець"),
   /* Home — a wallet */
   yourInvestments: bi("Your investments", "Твої інвестиції"),
   buy: bi("Buy", "Купити"),
-  topUp: bi("Top up", "Поповнити"),
+  topUp: bi("Add funds", "Поповнити"),
   askRyntra: bi("Ask Ryntra", "Спитати Ryntra"),
   youOwn: bi("You own", "У тебе є"),
   allInPortfolio: bi("All in Portfolio", "Усе в Портфелі"),
-  emptyWallet: bi("Nothing here yet — top up and make your first buy.", "Поки порожньо — поповни й зроби першу купівлю."),
+  portfolio: bi("Portfolio", "Портфель"),
+  emptyWallet: bi("Nothing here yet — add funds and make your first buy.", "Поки порожньо — поповни й зроби першу купівлю."),
   walletUnread: bi("Your wallet could not be read right now.", "Гаманець зараз не вдалося прочитати."),
   tryAgain: bi("Try again", "Спробувати ще"),
   /* Home beside the balance: what the money is in, and a guest's three steps */
   allocation: bi("Allocation", "Розподіл"),
   other: bi("Other", "Інше"),
-  stepConnect: bi("Connect a wallet", "Під'єднай гаманець"),
-  stepTopUp: bi("Top up with USDC or SOL", "Поповни USDC або SOL"),
+  stepConnect: bi("Connect wallet", "Підключи гаманець"),
+  stepTopUp: bi("Add funds with USDC or SOL", "Поповни USDC або SOL"),
   stepBuy: bi("Buy — or launch your token", "Купи — або запусти свій токен"),
   /* Home's right column: notes, «Автоінвест», «Спитати Ryntra», what moves today */
   asideLabel: bi("At a glance", "Коротко"),
@@ -110,7 +111,8 @@ export const INVEST_WORDS = {
   closedDrift: bi("the price may drift", "ціна може відхилятися"),
   details: bi("Details", "Деталі"),
   chartInSpot: bi("Candlestick chart in Spot", "Свічковий графік у Споті"),
-  companyDown: bi("This company could not be read right now.", "Компанію зараз не вдалося прочитати."),
+  companyDown: bi("Couldn't load this company right now. Try again in a minute.", "Не вдалося завантажити компанію. Спробуй за хвилину."),
+  priceDown: bi("The price couldn't be read right now — buying returns with it. Try again in a minute.", "Ціну зараз не вдалося прочитати — купівля повернеться разом із нею. Спробуй за хвилину."),
   notOffered: bi("The issuer is not offering new purchases right now.", "Емітент зараз не пропонує нових купівель."),
   halted: bi("The issuer has paused trading.", "Емітент призупинив торги."),
   /* The purchase in dollars */
@@ -118,6 +120,15 @@ export const INVEST_WORDS = {
   amount: bi("Amount in dollars", "Сума в доларах"),
   quickAmounts: bi("Quick amounts", "Швидкі суми"),
   quickShares: bi("A share of your USDC", "Частка твоїх USDC"),
+  quickBuy: bi("Quick buy", "Швидка купівля"),
+  maxBuy: bi("Up to $1,000,000 in one purchase.", "Не більше $1 000 000 за одну купівлю."),
+  quickBuyFor: bi("Buy for", "Купити на"),
+  quickSumsEdit: bi("Change quick sums", "Змінити швидкі суми"),
+  quickSumsSave: bi("Save quick sums", "Зберегти швидкі суми"),
+  quickSumField: bi("Quick sum", "Швидка сума"),
+  quickSumsRange: bi("Each from $1 to $1,000,000", "Кожна — від $1 до $1 000 000"),
+  quickSell: bi("Quick sell", "Швидкий продаж"),
+  quickSellAll: bi("All", "Усе"),
   minimum: bi(`The minimum is ${FROM}`, `Мінімум — ${FROM}`),
   /* A company whose live route starts above the sum asked says its own minimum, read from the quote. */
   findingMinimum: bi("Finding the least this company can be bought for…", "Шукаємо, від якої суми купується ця компанія…"),
@@ -137,6 +148,7 @@ export const INVEST_WORDS = {
   limitBlocked: bi("With this loss limit the purchase did not pass the check. Try again, or buy without a limit.", "З цією межею збитку купівля не пройшла перевірку. Спробуй ще раз або купи без межі."),
   needSol: bi("A little SOL is needed for the network", "Потрібно трохи SOL на мережу"),
   confirmWallet: bi("Confirm wallet", "Підтвердити гаманець"),
+  confirmWalletToBuy: bi("Confirm your wallet to buy under this rule.", "Підтверди гаманець, щоб купити за цим правилом."),
   confirming: bi("Confirming…", "Підтверджуємо…"),
   savingLimit: bi("Saving the loss limit…", "Зберігаємо межу збитку…"),
   limitFailed: bi("The loss limit could not be saved. Nothing was bought.", "Межу збитку не вдалося зберегти. Нічого не куплено."),
@@ -175,7 +187,9 @@ export const INVEST_WORDS = {
   nothingHappened: bi("Nothing happened — your money did not move. You can buy again.", "Нічого не сталося — гроші не рухались. Можна купити ще раз."),
   notFilled: bi("The network rejected the purchase. Only the network fee was spent.", "Мережа відхилила купівлю. Списано лише плату мережі."),
   walletDeclined: bi("The wallet did not sign — nothing was sent.", "Гаманець не підписав — нічого не надіслано."),
+  walletNotConfirmed: bi("The wallet could not be confirmed just now — nothing was saved. Try again.", "Гаманець зараз не вдалося підтвердити — нічого не збережено. Спробуй ще раз."),
   unavailableNow: bi("Buying is not available right now.", "Купівля зараз недоступна."),
+  ruleUnavailableNow: bi("This rule can't be turned on right now.", "Це правило зараз не можна увімкнути."),
   /* «Автоінвест»: a rule reminds, the person signs every purchase */
   autoinvest: bi("Recurring buy", "Регулярна купівля"),
   howOften: bi("How often", "Як часто"),
@@ -184,7 +198,7 @@ export const INVEST_WORDS = {
   timeOfDay: bi("Time", "Час"),
   firstPurchase: bi("First purchase", "Перша купівля"),
   nextPurchase: bi("Next purchase", "Наступна купівля"),
-  autoinvestPromise: bi("Ryntra will remind you — you confirm with one tap. Your money stays in your wallet.", "Ryntra нагадає — ти підтвердиш одним дотиком. Гроші лишаються у твоєму гаманці."),
+  autoinvestPromise: bi("Ryntra reminds you — you check the Review and sign. Your money stays in your wallet.", "Ryntra нагадає — ти переглянеш і підпишеш. Гроші лишаються у твоєму гаманці."),
   connectTelegramReminder: bi("Connect Telegram so you don't miss it", "Підключи Telegram, щоб не пропустити"),
   remindersTelegram: bi("Reminders come to Ryntra and Telegram", "Нагадування — у Ryntra і Telegram"),
   turnOn: bi("Turn on", "Увімкнути"),
@@ -243,7 +257,7 @@ export const INVEST_WORDS = {
   addRule: bi("Add a rule", "Додати правило"),
   pickCompany: bi("For which company?", "Для якої компанії?"),
   yourCompanies: bi("You own", "У тебе є"),
-  noRulesYet: bi("No rules yet. A rule buys a token every day, every week, when the price falls or from every payment — you sign each buy.", "Правил ще немає. Правило купує токен щодня, щотижня, коли ціна впаде або з кожної оплати — кожну купівлю підписуєш ти."),
+  noRulesYet: bi("No rules yet. A rule reminds you to buy a token every day, every week, when the price falls or from every payment — you sign each buy.", "Правил ще немає. Правило нагадує купити токен щодня, щотижня, коли ціна впаде або з кожної оплати — кожну купівлю підписуєш ти."),
   confirmForRules: bi("Confirm your wallet to see your rules and budget.", "Підтверди гаманець, щоб побачити свої правила й бюджет."),
   ruleOn: bi("On", "Увімкнено"),
   heldShort: bi("Budget spent · until the 1st", "Бюджет вичерпано · до 1-го числа"),
@@ -251,8 +265,14 @@ export const INVEST_WORDS = {
   pickFromMarkets: bi("Pick a company on Markets and press «Recurring buy» there.", "Обери компанію на Ринках і натисни там «Регулярна купівля»."),
   /* «Регулярна купівля для всього»: any token with liquidity — the floor and the facts of risk before the button. */
   pickToken: bi("For which token?", "Для якого токена?"),
-  allTokens: bi("All tokens on Markets", "Усі токени — на Ринках"),
-  pickTokenFromMarkets: bi("Pick a token on Markets: «Recurring» stands next to «Market» in its order.", "Обери токен на Ринках: «Регулярно» стоїть поруч із «Ринок» в ордері."),
+  /* SOL-C15 (UX-701): one picker everywhere — what the wallet holds, the popular companies, and a search over the rest. */
+  findToken: bi("Find a token or a company", "Знайти токен чи компанію"),
+  foundCompanies: bi("Companies", "Компанії"),
+  foundTokens: bi("Tokens", "Токени"),
+  searchingTokens: bi("Searching…", "Шукаємо…"),
+  nothingMatches: bi("Nothing matches. Try another name.", "Нічого не знайдено. Спробуй іншу назву."),
+  searchDown: bi("Search is unavailable right now.", "Пошук зараз недоступний."),
+  findHint: bi("Type a name — SOL, JUP, Apple.", "Введи назву — SOL, JUP, Apple."),
   riskFacts: bi("Facts of risk", "Факти ризику"),
   riskAge: bi("On the market", "На ринку"),
   riskLiquidity: bi("Liquidity", "Ліквідність"),
@@ -324,10 +344,10 @@ export const INVEST_WORDS = {
   readPartial: bi("Not every payment could be checked — Ryntra checks again.", "Не всі оплати вдалося перевірити — Ryntra перевірить знову."),
   readUnavailable: bi("The wallet can't be read right now — Ryntra checks again.", "Гаманець зараз не прочитати — Ryntra перевірить знову."),
   /* «Поповнити» and the first step without crypto */
-  fundFirst: bi("Top up — and make your first buy", "Поповни — і зроби першу купівлю"),
-  connectToBuy: bi("Connect a wallet to buy", "Під'єднай гаманець, щоб купувати"),
+  fundFirst: bi("Add funds — and make your first buy", "Поповни — і зроби першу купівлю"),
+  connectToBuy: bi("Connect a wallet to buy", "Підключи гаманець, щоб купувати"),
   openInPhantom: bi("Open in Phantom", "Відкрити в Phantom"),
-  topUpSol: bi("Top up SOL", "Поповнити SOL"),
+  topUpSol: bi("Add SOL", "Поповнити SOL"),
   topUpLede: bi("You buy with USDC — digital dollars. A little SOL pays the network.", "Купуєш за USDC — цифрові долари. Трохи SOL — плата мережі."),
   inYourWallet: bi("In your wallet", "У твоєму гаманці"),
   forPurchases: bi("for purchases", "на покупки"),
@@ -337,7 +357,7 @@ export const INVEST_WORDS = {
   readyToBuy: bi("Ready — you can buy.", "Готово — можна купувати."),
   continueBuying: bi("Continue the purchase", "Продовжити купівлю"),
   waitingMoney: bi("Waiting for the money — this page updates by itself.", "Чекаємо на гроші — сторінка оновиться сама."),
-  waysTitle: bi("How to top up", "Як поповнити"),
+  waysTitle: bi("How to add funds", "Як поповнити"),
   receiveUsdc: bi("Receive USDC", "Отримати USDC"),
   receiveSol: bi("Receive SOL", "Отримати SOL"),
   receiveSub: bi("From another wallet — a QR code or the address", "З іншого гаманця — QR-код або адреса"),
@@ -357,7 +377,7 @@ export const INVEST_WORDS = {
   solanaOnlyUsdc: bi("Send on Solana only. The same address takes SOL too.", "Надсилай лише в мережі Solana. Ця ж адреса приймає і SOL."),
   solanaOnly: bi("Send on Solana only.", "Надсилай лише в мережі Solana."),
   openPhantom: bi("Open Phantom", "Відкрий Phantom"),
-  cardPay: bi("Top up with a card, Apple Pay or Google Pay", "Поповни карткою, Apple Pay чи Google Pay"),
+  cardPay: bi("Add funds with a card, Apple Pay or Google Pay", "Поповни карткою, Apple Pay чи Google Pay"),
   cardBuy: bi("Buy USDC and a little SOL — they appear here", "Купи USDC і трохи SOL — вони з'являться тут"),
   cardFine: bi("Phantom's partner takes the payment; the methods and fees depend on your country.", "Оплату приймає партнер Phantom; способи й комісії залежать від країни."),
   solSwap: bi("Swap a little USDC for SOL — Phantom takes that swap's network fee from the USDC", "Обміняй трохи USDC на SOL — плату мережі за цей обмін Phantom візьме з USDC"),
@@ -386,6 +406,8 @@ export const INVEST_WORDS = {
   swapIsTrade: bi("The swap is an ordinary trade at the live price — no fixed ratio is promised.", "Обмін — звичайна угода за живою ціною; фіксованого курсу ніхто не обіцяє."),
   nothingSwapped: bi("Nothing happened — your tokens did not move. You can try again.", "Нічого не сталося — токени не рухались. Можна спробувати ще раз."),
   swapRejected: bi("The network rejected the swap. Only the network fee was spent.", "Мережа відхилила обмін. Списано лише плату мережі."),
+  swapUnknownTx: bi("The outcome is not known yet. Do not swap again until it is.", "Результат ще невідомий. Не обмінюй ще раз, доки він не з'ясується."),
+  saleIsTrade: bi("The sale is an ordinary trade at the live price — no fixed price is promised.", "Продаж — звичайна угода за живою ціною; фіксованої ціни ніхто не обіцяє."),
   /* «Продати з позиції»: a sale of what the wallet holds, in dollars or as a share of the position, on the purchase's own path */
   sell: bi("Sell", "Продати"),
   quickPositionShares: bi("A share of your position", "Частка твоєї позиції"),
@@ -528,7 +550,7 @@ export function reserveFirstLine(locale: WorkspaceLocale, reserveUsd: string, sp
 
 /** «На $1 маршруту зараз немає. IREN — від $5.» — a company's own minimum, the least sum its live quote routes. */
 export function routeMinimumLine(locale: WorkspaceLocale, asked: string, name: string, minimum: string): string {
-  return locale === "uk" ? `На ${asked} маршруту зараз немає. ${name} — від ${minimum}.` : `No route for ${asked} right now. ${name} from ${minimum}.`;
+  return locale === "uk" ? `${asked} — замало для ${name} зараз. Купується від ${minimum}.` : `${asked} is too little for ${name} right now. It can be bought from ${minimum}.`;
 }
 
 /** «Поставити $5» — the one action that brings that minimum into the sum. */

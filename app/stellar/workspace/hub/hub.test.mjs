@@ -1,10 +1,11 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync, readdirSync, statSync } from "node:fs";
+import { createRequire } from "node:module";
 import { join } from "node:path";
 
 /**
- * The gate that would have caught what shipped.
+ * The gate that would have caught what reached the founder.
  *
  * On 2026-08-13 the Stellar Hub shipped styled with `--line` and `--fg-faint`.
  * Neither token exists. CSS does not treat that as an error — it treats the
@@ -84,6 +85,7 @@ function walk(dir, test_, found = []) {
 }
 
 const STYLESHEETS = walk(ROOT, (name) => name.endsWith(".css"));
+const CORE_TOKENS = [createRequire(import.meta.url).resolve("@ryntra/core/tokens.css")];
 const SOURCES = walk(ROOT, (name) => name.endsWith(".ts") || name.endsWith(".tsx"));
 
 /** CSS comments are prose. A regex cannot tell the difference, so they go first. */
@@ -108,6 +110,12 @@ function sweep() {
 
   for (const file of SOURCES) {
     for (const [, token] of readFileSync(file, "utf8").matchAll(TS_DEFINITION)) defined.add(token);
+  }
+
+  /* The design system's tokens (`--ryntra-*`) are defined by the core package the shell loads before every page
+     (`app/app/product-shell.tsx`), not under `app/`: its stylesheet is a definition source too. */
+  for (const file of CORE_TOKENS) {
+    for (const [, token] of stripComments(readFileSync(file, "utf8")).matchAll(CSS_DEFINITION)) defined.add(token);
   }
 
   for (const file of STYLESHEETS) {

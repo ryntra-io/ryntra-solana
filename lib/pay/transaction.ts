@@ -24,6 +24,7 @@ import {
   SPL_TRANSFER_ACTION_REF,
 } from "../agent-control/adapters/solana-token-2022.ts";
 import type { GuardStore } from "../guard/store.ts";
+import { kitChainReader, readBuildWindows } from "../solana/blockhash-life.ts";
 import { readMintAccount } from "../solana/mint.ts";
 import { buildNativeSolTransaction } from "../solana/native-sol.ts";
 import { buildPassport } from "../solana/passport.ts";
@@ -32,15 +33,22 @@ import { verifySignatureOnly } from "../solana/signature.ts";
 import { sendTransactionOnce } from "../solana/submit-rpc.ts";
 import { buildTransferTransaction, type TransferPlan } from "../solana/transaction.ts";
 import { compareWalletTransaction } from "../solana/wallet-modification.ts";
-import { newPublicId, type PaymentRequestRecord } from "./model.ts";
+import { armPaymentAttempt, payerSignatureOf, releasePaymentAttempt, sendCertainlyRefused } from "./attempt.ts";
+import { emptySettlement, newPublicId, type PaymentRequestRecord } from "./model.ts";
 import {
   createPaymentIntent,
   markPaymentIntentSubmitted,
   readPaymentIntent,
+  readPaymentSettlement,
+  writePaymentSettlement,
   type PaymentIntentRecord,
 } from "./store.ts";
 
-/** How long a handed-out transaction stays acceptable at the submit boundary. */
+/**
+ * The longest a handed-out transaction stays acceptable at the submit boundary. The real window is the bytes' life —
+ * ~150 blocks ≈ 30 s on 200 ms slots, less a margin to land (`lib/solana/blockhash-life.ts`); signed later, the page
+ * prepares the payment again instead of sending bytes the network would refuse.
+ */
 export const PAYMENT_INTENT_TTL_MS = 3 * 60 * 1_000;
 
 export type PaymentTransactionFailure = Readonly<{
@@ -69,6 +77,8 @@ export type PaymentTransactionSuccess = Readonly<{
   simulated: Readonly<{ succeeded: boolean; error: string | null }> | null;
   createsRecipientAccount: boolean;
   networkFeeLamports: string;
+  /** How long from arriving the payer may still sign (AG-1). */
+  signableMs: number;
 }>;
 
 /**
@@ -87,6 +97,8 @@ export async function buildPaymentTransaction(args: {
   now?: Date;
 }): Promise<PaymentTransactionSuccess | PaymentTransactionFailure> {
   const now = args.now ?? new Date();
+  /* The bytes' life is measured at the build's end, so the hold counts from there. */
+  const startedReal = Date.now();
   const { request } = args;
   if (args.payer === request.recipient) {
     return { ok: false, code: "SELF_PAYMENT", reason: "This request is addressed to the wallet you connected." };
@@ -151,6 +163,10 @@ export async function buildPaymentTransaction(args: {
     return { ok: false, code: "SIMULATION_FAILED", reason: simulated.error ?? "The network says this transfer would not succeed." };
   }
 
+  /* The intent is held as long as the bytes live — a phone that signs late is refused only by dead bytes — and the
+     page is told how long it may still ask the wallet. */
+  const windows = await readBuildWindows(kitChainReader(args.handle), plan.lastValidBlockHeight, { capMs: PAYMENT_INTENT_TTL_MS });
+  const signableMs = windows.signableMs;
   const intent: PaymentIntentRecord = {
     schema: "ryntra.pay.intent",
     schemaVersion: "1.0.0",
@@ -162,7 +178,7 @@ export async function buildPaymentTransaction(args: {
     amountRaw,
     mint: request.mint,
     createdAt: now.toISOString(),
-    expiresAt: new Date(now.getTime() + PAYMENT_INTENT_TTL_MS).toISOString(),
+    expiresAt: new Date(now.getTime() + (Date.now() - startedReal) + windows.lifeMs).toISOString(),
     signature: null,
   };
   try {
@@ -182,6 +198,7 @@ export async function buildPaymentTransaction(args: {
     simulated,
     createsRecipientAccount: plan.createsRecipientAccount,
     networkFeeLamports: plan.baseFeeLamports,
+    signableMs,
   };
 }
 
@@ -226,9 +243,12 @@ export type PaymentSubmitFailure = Readonly<{
     | "SIGNATURE_MISSING"
     | "SUBMIT_FAILED";
   reason: string;
+  /** MC-1: the payment already on its way — the signature the page follows instead of paying again. */
+  signature?: string;
 }>;
 
-export type PaymentSubmitSuccess = Readonly<{ ok: true; signature: string; intent: PaymentIntentRecord }>;
+/** `unknown`: the bytes left and the node's answer was lost — the signature is followed on chain, never sent again. */
+export type PaymentSubmitSuccess = Readonly<{ ok: true; signature: string; intent: PaymentIntentRecord; unknown: boolean }>;
 
 /**
  * Accept signed bytes for a pinned intent and broadcast them once.
@@ -254,7 +274,7 @@ export async function submitPaymentTransaction(args: {
   if (intent.requestId !== args.requestId) {
     return { ok: false, code: "INTENT_MISMATCH", reason: "This payment was prepared for a different request." };
   }
-  if (intent.signature) return { ok: false, code: "ALREADY_SUBMITTED", reason: "This payment was already sent." };
+  if (intent.signature) return { ok: false, code: "ALREADY_SUBMITTED", reason: "This payment was already sent.", signature: intent.signature };
   if (now.getTime() > Date.parse(intent.expiresAt)) {
     return { ok: false, code: "INTENT_EXPIRED", reason: "This payment took too long to sign. Start again from the page." };
   }
@@ -266,14 +286,35 @@ export async function submitPaymentTransaction(args: {
   });
   if (!check.ok) return check;
 
-  let signature: string;
+  /*
+   * MC-1: the request's one attempt is armed before the bytes leave — the payer's signature recorded, the settlement
+   * «sent, the result unknown» (PENDING). While it can still land, no other payment for this request is built or sent.
+   */
+  const signature = payerSignatureOf(args.signedWireBase64, intent.payer);
+  if (!signature) return { ok: false, code: "SIGNATURE_MISSING", reason: "The wallet did not sign this payment." };
+  const armed = await armPaymentAttempt(args.store, { requestId: intent.requestId, intentId: intent.intentId, signature, intentExpiresAt: intent.expiresAt, now });
+  if (!armed.ok) {
+    return { ok: false, code: "ALREADY_SUBMITTED", reason: armed.code === "PAYMENT_IN_FLIGHT" ? "A payment for this request is already on its way; wait for it." : "This payment was already sent.", signature: armed.signature };
+  }
+  const previous = (await readPaymentSettlement(args.store, intent.requestId)) ?? emptySettlement(intent.requestId, now.toISOString());
+  await markPaymentIntentSubmitted(args.store, intent, signature);
+  if (previous.state !== "PAID" && previous.state !== "OVERPAID") {
+    await writePaymentSettlement(args.store, { ...previous, state: "PENDING", signature, checkedAt: now.toISOString() });
+  }
+
   try {
-    signature = await sendTransactionOnce({ handle: args.handle, signedWireBase64: args.signedWireBase64 });
+    await sendTransactionOnce({ handle: args.handle, signedWireBase64: args.signedWireBase64 });
   } catch (failure) {
+    if (!sendCertainlyRefused(failure)) return { ok: true, signature, intent: { ...intent, signature }, unknown: true };
+    /* The node refused before it took the bytes: nothing can land, the request is free again. */
+    await releasePaymentAttempt(args.store, armed.attempt);
+    await markPaymentIntentSubmitted(args.store, intent, null);
+    /* Put back only the PENDING this send wrote: a read that settled the request meanwhile stands. */
+    const current = await readPaymentSettlement(args.store, intent.requestId);
+    if (current?.state === "PENDING" && current.signature === signature) await writePaymentSettlement(args.store, previous);
     return { ok: false, code: "SUBMIT_FAILED", reason: failure instanceof Error ? failure.message : String(failure) };
   }
-  await markPaymentIntentSubmitted(args.store, intent, signature);
-  return { ok: true, signature, intent: { ...intent, signature } };
+  return { ok: true, signature, intent: { ...intent, signature }, unknown: false };
 }
 
 /**
@@ -284,7 +325,7 @@ export async function submitPaymentTransaction(args: {
  * transaction-modifying signers, and Phantom in particular recompiles the
  * message with a ComputeBudget pair and its own Lighthouse guard assertions
  * before signing. The first release refused exactly that as "a different
- * transaction", and a second wallet in testing could not pay. So a mismatch
+ * transaction", and the founder's second wallet could not pay. So a mismatch
  * goes to `compareWalletTransaction`, the shared module that proves every
  * business instruction, account role, signer and blockhash stayed the same
  * and that the additions are the recognised fee and guard programs only —

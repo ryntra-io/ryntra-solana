@@ -11,6 +11,7 @@ import { MONEY_COPY } from '@/features/money/copy'
 import { explorerUrl, linkAmount, linkAmountInput, linkTone } from '@/features/money/money-model'
 import { PAY_UNCONFIRMED_HOLD_MS, usePayLink, usePayLinkPayment } from '@/features/money/use-pay-links'
 import { useAccount } from '@/features/session/use-account'
+import { usePlaceHold } from '@/features/shell/open-place'
 import { useNow } from '@/hooks/use-now'
 import type { PayLink } from '@/lib/api'
 import { useCopy, useLocale } from '@/lib/i18n'
@@ -45,6 +46,8 @@ export function PayLinkPanel({ link: initial }: { link: PayLink }) {
     now - payment.heldAt < PAY_UNCONFIRMED_HOLD_MS
   const payable = link.status === 'AWAITING' && !holding
   const working = payment.phase === 'preparing' || payment.phase === 'signing' || payment.phase === 'sending'
+  // While it is prepared, signed, sent or checked, a note's tap or a quick action waits for it (`place-hold.ts`).
+  usePlaceHold(working)
   const needsSignIn = !account.session || payment.failure?.key === 'signIn'
   const failureWords =
     payment.failure === null || holding
@@ -118,9 +121,6 @@ export function PayLinkPanel({ link: initial }: { link: PayLink }) {
               error={typed === 'invalid' ? words.amountFormat : null}
             />
           )}
-          <Txt variant="ui" tone="faint">
-            {words.feeNote}
-          </Txt>
           {working && payment.createsAccount ? (
             <Txt variant="ui" tone="faint">
               {words.createsAccountNote}
@@ -132,19 +132,12 @@ export function PayLinkPanel({ link: initial }: { link: PayLink }) {
             </Txt>
           ) : null}
           {needsSignIn ? (
-            <>
-              {payment.failure ? null : (
-                <Txt variant="ui" tone="muted">
-                  {words.signInToPay}
-                </Txt>
-              )}
-              <Button
-                title={account.signingIn ? words.checkWallet : words.signIn}
-                size="lg"
-                loading={account.signingIn}
-                onPress={() => void account.signIn().then((ok) => ok && payment.clearFailure())}
-              />
-            </>
+            <Button
+              title={account.signingIn ? words.checkWallet : words.signIn}
+              size="lg"
+              loading={account.signingIn}
+              onPress={() => void account.signIn().then((ok) => ok && payment.clearFailure())}
+            />
           ) : (
             <Button
               title={

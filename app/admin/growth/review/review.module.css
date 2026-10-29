@@ -1,0 +1,109 @@
+.cases {
+  display: grid;
+  gap: 10px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.case {
+  display: grid;
+  gap: 8px;
+  padding: 13px 15px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--panel-2);
+  min-width: 0;
+}
+
+.caseHead {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  min-width: 0;
+}
+
+.caseTitle {
+  font-weight: 700;
+  font-size: 14px;
+}
+
+.signals {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--text);
+}
+
+.details {
+  display: grid;
+  gap: 10px;
+  min-width: 0;
+}
+
+.details > summary {
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-muted);
+  min-height: 32px;
+  display: flex;
+  align-items: center;
+}
+
+.details[open] > summary {
+  margin-bottom: 4px;
+}
+
+.facts {
+  display: grid;
+  grid-template-columns: max-content minmax(0, 1fr);
+  gap: 4px 12px;
+  margin: 0;
+  font-size: 13px;
+}
+
+.facts dt {
+  color: var(--text-muted);
+}
+
+.facts dd {
+  margin: 0;
+  overflow-wrap: anywhere;
+  min-width: 0;
+}
+
+.evidence {
+  display: grid;
+  gap: 6px;
+}
+
+.evidenceRow {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  font-size: 13px;
+}
+
+.note {
+  min-height: 72px;
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+
+.adjust {
+  display: inline-flex;
+  gap: 6px;
+  align-items: center;
+}
+
+.amount {
+  width: 96px;
+}

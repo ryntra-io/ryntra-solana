@@ -5,6 +5,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { Icon } from '@/components/icon'
 import { Txt } from '@/components/txt'
 import { useSharedCopy } from '@/lib/i18n'
+import { useSpace, type Rhythm } from '@/theme'
 import { cn } from '@/utils/cn'
 
 export type ScreenHeaderProps = {
@@ -15,10 +16,12 @@ export type ScreenHeaderProps = {
   /** A stack screen's way back, drawn as the arrow before the title; a tab has none. */
   onBack?: () => void
   backLabel?: string
+  /** Drawn in the title's place — Home's account, which names itself to a screen reader. */
+  lead?: ReactNode
 }
 
 /** The screen's own header: a headline, an optional fact line and one slot on the right. */
-export function ScreenHeader({ title, subtitle, right, onBack, backLabel }: ScreenHeaderProps) {
+export function ScreenHeader({ title, subtitle, right, onBack, backLabel, lead }: ScreenHeaderProps) {
   const shared = useSharedCopy()
   return (
     <View className="flex-row items-end justify-between gap-3 px-4 pb-3 pt-2">
@@ -33,16 +36,20 @@ export function ScreenHeader({ title, subtitle, right, onBack, backLabel }: Scre
           <Icon name="arrow-back" size={22} color="fg" />
         </Pressable>
       ) : null}
-      <View className="flex-1 gap-0.5">
-        <Txt variant="headline" accessibilityRole="header">
-          {title}
-        </Txt>
-        {subtitle ? (
-          <Txt variant="ui" tone="faint">
-            {subtitle}
+      {lead ? (
+        <View className="flex-1 justify-center">{lead}</View>
+      ) : (
+        <View className="flex-1 gap-0.5">
+          <Txt variant="headline" accessibilityRole="header">
+            {title}
           </Txt>
-        ) : null}
-      </View>
+          {subtitle ? (
+            <Txt variant="ui" tone="faint">
+              {subtitle}
+            </Txt>
+          ) : null}
+        </View>
+      )}
       {right ? <View className="pb-1">{right}</View> : null}
     </View>
   )
@@ -54,6 +61,8 @@ export type ScreenProps = ScreenHeaderProps & {
   scroll?: boolean
   /** Reserve room for a BottomAction docked below the content. */
   bottomInset?: number
+  /** The gap between the screen's parts, from the chosen density: `stack` by default. */
+  rhythm?: Rhythm
   contentClassName?: string
   refreshControl?: ScrollViewProps['refreshControl']
 }
@@ -63,18 +72,20 @@ export function Screen({
   children,
   scroll = true,
   bottomInset = 0,
+  rhythm = 'stack',
   contentClassName,
   refreshControl,
   ...header
 }: ScreenProps) {
   const insets = useSafeAreaInsets()
+  const space = useSpace()
   return (
     <View className="flex-1 bg-ground" style={{ paddingTop: insets.top }}>
       <ScreenHeader {...header} />
       {scroll ? (
         <ScrollView
           className="flex-1"
-          contentContainerClassName={cn('gap-3 px-4 pb-6', contentClassName)}
+          contentContainerClassName={cn(space.rhythm[rhythm], 'px-4 pb-6', contentClassName)}
           contentContainerStyle={{ paddingBottom: 24 + bottomInset }}
           refreshControl={refreshControl}
           keyboardShouldPersistTaps="handled"

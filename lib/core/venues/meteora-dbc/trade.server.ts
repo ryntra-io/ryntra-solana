@@ -19,14 +19,17 @@
  * signer. Nothing here holds a key.
  */
 
-import { CpAmm, SwapMode as DammSwapMode } from "@meteora-ag/cp-amm-sdk";
-import { DynamicBondingCurveClient, SwapMode } from "@meteora-ag/dynamic-bonding-curve-sdk";
-import { TOKEN_2022_PROGRAM_ID, TOKEN_PROGRAM_ID, createTransferCheckedInstruction, getAssociatedTokenAddressSync } from "@solana/spl-token";
+import { SwapMode as DammSwapMode } from "@meteora-ag/cp-amm-sdk";
+import { SwapMode } from "@meteora-ag/dynamic-bonding-curve-sdk";
+import { TOKEN_2022_PROGRAM_ID, TOKEN_PROGRAM_ID, createTransferCheckedInstruction, getAssociatedTokenAddressSync, unpackMint, type Mint } from "@solana/spl-token";
 import { PublicKey, type Connection, type Transaction } from "@solana/web3.js";
 import BN from "bn.js";
 
+import { cpAmmOf, dbcClientOf } from "../meteora-clients.server.ts";
 import { curveFeeSplit, poolFeeSplit, priceFromSqrtX64, type LaunchFeeSplit, type LaunchTradeSide, type LaunchTradeVenue } from "./market.ts";
 import { dammPrice, type MarketState } from "./market.server.ts";
+import { bpsAtEpoch, transferFeeOn } from "../../launch/transfer-fee.ts";
+import { configTransferFeeOf, mintTransferFeeOf } from "./launch.server.ts";
 
 /**
  * What `owner` holds of `mint`, raw, in its associated token accounts under either token program — read by their
@@ -138,8 +141,8 @@ export function createLaunchTradeVenue(
   }>,
 ) {
   const { connection } = args;
-  const client = new DynamicBondingCurveClient(connection, "confirmed");
-  const cpAmm = new CpAmm(connection);
+  const client = dbcClientOf(connection);
+  const cpAmm = cpAmmOf(connection);
 
   /** A mint's token program; it never changes, so it is read once. */
   async function programOf(mint: PublicKey): Promise<PublicKey> {
@@ -175,6 +178,20 @@ export function createLaunchTradeVenue(
     return account;
   }
 
+  /**
+   * The pair currency's own transfer fee for a quote on the curve (SOL-L11): where the pair is a Token-2022 token — a
+   * checked pair currency, never a preset's — DBC 2.0.0 prices the fee from the mint and the epoch and refuses a quote
+   * without them. Null on a classic-program pair, and on 1.5.13, which quotes no such pair at all.
+   */
+  async function curveQuoteFees(state: MarketState): Promise<Readonly<{ quoteMint: Mint; currentEpoch: number }> | null> {
+    const flag = Number((state.accounts.config as unknown as { quoteTokenFlag?: number | BN } | null)?.quoteTokenFlag ?? 0);
+    if (client.sdk !== "2.0.0" || flag !== 1) return null;
+    const mint = new PublicKey(state.curve.pairMint);
+    const [info, epoch] = await Promise.all([connection.getAccountInfo(mint, "confirmed"), connection.getEpochInfo("confirmed")]);
+    if (!info) throw new LaunchTradeRefusal("QUOTE_FAILED", "The pair currency's mint could not be read.");
+    return { quoteMint: unpackMint(mint, info, info.owner), currentEpoch: epoch.epoch };
+  }
+
   async function curveQuote(state: MarketState, side: LaunchTradeSide, amountRaw: bigint, slippageBps: number, referral: boolean) {
     /* The curve as the market read just saw it: one read for the page and its quote. */
     const virtual = state.accounts.curve;
@@ -182,7 +199,9 @@ export function createLaunchTradeVenue(
     if (!virtual || !config) throw new LaunchTradeRefusal("NO_POOL", "The curve could not be read.");
     const poolState = (virtual as unknown as { poolState: { quoteReserve: BN; sqrtPrice: BN } }).poolState;
     if (big(poolState.quoteReserve) >= big(config.migrationQuoteThreshold)) throw new LaunchTradeRefusal("CURVE_COMPLETE", "The curve is full and graduating.");
+    const pairFees = await curveQuoteFees(state);
     const quote = client.pool.swapQuote2({
+      ...(pairFees ?? {}),
       virtualPool: virtual as never,
       config,
       swapBaseForQuote: side === "sell",
@@ -193,7 +212,12 @@ export function createLaunchTradeVenue(
       ...(side === "buy" ? { swapMode: SwapMode.PartialFill as const, amountIn: new BN(amountRaw.toString()) } : { swapMode: SwapMode.ExactIn as const, amountIn: new BN(amountRaw.toString()) }),
     });
     const fee = curveFeeSplit({ tradingFeeRaw: big(quote.tradingFee), protocolFeeRaw: big(quote.protocolFee), referralFeeRaw: big(quote.referralFee), creatorPct: state.curve.creatorTradingFeePct });
-    const out = big(quote.outputAmount);
+    /*
+     * What the wallet receives: on a token with a transfer fee (SOL-L10, SDK 2.0.0) the curve's output less the fee the
+     * token program withholds — the amount the program holds `minimum_amount_out` to; on every other token the same.
+     */
+    const excluded = (quote as { excludedTransferFeeAmountOut?: BN }).excludedTransferFeeAmountOut;
+    const out = big(excluded ?? quote.outputAmount);
     const spent = big(quote.includedFeeInputAmount);
     const feeTotal = BigInt(fee.totalRaw);
     const gross = side === "buy" ? spent : out + feeTotal;
@@ -222,14 +246,31 @@ export function createLaunchTradeVenue(
     /* A pool graduated from a DBC curve holds the token as A and the pair as B; its fee is collected in B. Any other shape is not quoted. */
     if (!graduated.tokenIsA) throw new LaunchTradeRefusal("POOL_SHAPE", "The graduated pool is not in the shape Ryntra trades.");
     const pool = new PublicKey(graduated.pool);
-    const poolState = await cpAmm.fetchPoolState(pool);
+    /* The pool as the same read of the market saw it (SOL-P1): one read of it for the state and its quote. */
+    const poolState = (state.accounts.pool as Awaited<ReturnType<typeof cpAmm.fetchPoolState>> | null | undefined) ?? (await cpAmm.fetchPoolState(pool));
     const activationByTime = Number(poolState.activationType) === 1;
     const currentPoint = activationByTime ? new BN(Math.floor(Date.now() / 1000)) : new BN(await connection.getSlot("confirmed"));
     return { graduated, pool, poolState, currentPoint };
   }
 
+  /**
+   * «Комісія за переказ» (SOL-L10) in the DEX pool: until RevokeZeroFee's 0 % applies — two epochs after the move — a
+   * transfer of the token still pays the curve's rate. The token's mint and the epoch for the pool's quote; null when the
+   * token takes no fee now (every token whose config set none: no read is made for it).
+   */
+  async function poolTransferFee(state: MarketState, tokenMint: PublicKey): Promise<Readonly<{ mint: Mint; epoch: number; bps: number }> | null> {
+    if (!configTransferFeeOf(state.accounts.config)) return null;
+    const [info, epoch] = await Promise.all([connection.getAccountInfo(tokenMint, "confirmed"), connection.getEpochInfo("confirmed")]);
+    if (!info) throw new LaunchTradeRefusal("NO_POOL", "The token's mint could not be read.");
+    const mint = unpackMint(tokenMint, info, info.owner);
+    const fee = mintTransferFeeOf(mint);
+    const bps = fee ? bpsAtEpoch(fee, BigInt(epoch.epoch)) : 0;
+    return bps > 0 ? { mint, epoch: epoch.epoch, bps } : null;
+  }
+
   async function poolQuote(state: MarketState, side: LaunchTradeSide, amountRaw: bigint, slippageBps: number, referral: boolean) {
     const { graduated, poolState, currentPoint } = await poolContext(state);
+    const tokenFee = await poolTransferFee(state, poolState.tokenAMint);
     const inputMint = side === "buy" ? poolState.tokenBMint : poolState.tokenAMint;
     /* Ryntra's fee for a new token, where the fee wallet can take it: the buyer's input before the swap, the seller's output after it. */
     const bps = args.poolFee && (await feeAccount(state.curve.pairMint)) !== null ? args.poolFee.bps : 0;
@@ -245,11 +286,20 @@ export function createLaunchTradeVenue(
       hasReferral: referral,
       swapMode: DammSwapMode.ExactIn,
       amountIn: new BN(swapIn.toString()),
+      /* The token's side pays its transfer fee: what a seller sends reaches the pool less it, what a buyer gets arrives less it. */
+      ...(tokenFee ? (side === "buy" ? { outputTokenInfo: { mint: tokenFee.mint, currentEpoch: tokenFee.epoch } } : { inputTokenInfo: { mint: tokenFee.mint, currentEpoch: tokenFee.epoch } }) : {}),
     });
-    const out = big(quote.outputAmount);
+    const out = tokenFee && side === "buy" ? transferFeeOn(big(quote.outputAmount), tokenFee.bps).netRaw : big(quote.outputAmount);
     const after = poolFeeAfter(side, out, bps, slippageBps);
     const ryntraFee = buyFee + after.feeRaw;
-    const pool = poolFeeSplit({ claimingFeeRaw: big(quote.claimingFee), compoundingFeeRaw: big(quote.compoundingFee), protocolFeeRaw: big(quote.protocolFee), referralFeeRaw: big(quote.referralFee) });
+    const pool = poolFeeSplit({
+      claimingFeeRaw: big(quote.claimingFee),
+      compoundingFeeRaw: big(quote.compoundingFee),
+      protocolFeeRaw: big(quote.protocolFee),
+      referralFeeRaw: big(quote.referralFee),
+      liquidity: big(poolState.liquidity),
+      permanentLockedLiquidity: big(poolState.permanentLockLiquidity),
+    });
     const fee = { ...pool, totalRaw: (BigInt(pool.totalRaw) + ryntraFee).toString(), ryntraRaw: (BigInt(pool.ryntraRaw) + ryntraFee).toString() };
     const swapMinimum = after.swapMinimumRaw;
     const gross = side === "buy" ? amountRaw : out + BigInt(pool.totalRaw);

@@ -62,6 +62,8 @@ const PRICE_CHAIN_SLUG: Readonly<Record<SwapNetwork, string>> = {
      `bnb` here would silently return no price on every BNB asset. */
   bnb: "bsc",
   robinhood: "robinhood",
+  /* Read 2026-10-15: `arc:0x3600…` answers USDC with confidence 0.99. */
+  arc: "arc",
 };
 
 /** The address a chain's own coin is priced under; it has no contract of its own. */

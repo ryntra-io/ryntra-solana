@@ -398,7 +398,7 @@ async function readTransaction(
     try {
       const tx = await call<RpcTransaction | null>(endpoint, "getTransaction", [
         signature,
-        { encoding: "jsonParsed", maxSupportedTransactionVersion: 0, commitment: "finalized" },
+        { encoding: "jsonParsed", maxSupportedTransactionVersion: 1, commitment: "finalized" },
       ]);
       await sleep(PACE_MS);
       if (!tx || !tx.meta) continue;

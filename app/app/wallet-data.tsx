@@ -1,7 +1,7 @@
 "use client";
 
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
-import { usePathname } from "next/navigation";
+import { usePagePath } from "@/lib/site/use-page-path";
 import { verifyReceiptCandidates } from "./receipt-verification.client";
 import { readSolanaReceipts } from "@/lib/solana/send-receipt-vault.client";
 import { findReceiptForAction, projectVerifiedReceiptOutcome, type StoredReceiptView } from "@/lib/solana/receipt-view";
@@ -10,6 +10,7 @@ import { useSolanaConnection } from "@/app/solana/workspace/connection";
 import type { SolanaWalletAction } from "@/lib/solana/action-ledger";
 import { readWalletHoldingsUntilComplete } from "@/lib/solana/holdings.client";
 import { decodeWalletCollection, type WalletHolding } from "./wallet-view-model";
+import type { CashbackByTrade } from "@/lib/core/execution-truth";
 
 export type WalletRead<T> = Readonly<{ status: "idle" | "loading" | "ready" | "error"; data: readonly T[]; complete: boolean }>;
 /** One earned or claimed reward, exactly as `lib/rewards/view.ts` projects it. */
@@ -19,17 +20,19 @@ export type WalletRewardRow = Readonly<{ kind: string; display: string; amount: 
    yet" — and a surface that renders an empty list for the first one tells
    somebody they have earned nothing when it simply has not been allowed to
    look. */
-type Data = { owner: string | null; holdings: WalletRead<WalletHolding>; activity: WalletRead<SolanaWalletAction>; rewards: readonly WalletRewardRow[] | null; receiptRows: readonly StoredReceiptView[]; refresh(): void };
+/* `cashback` — each trade's actual cashback by its signature (SOL-X1), null on the same terms as `rewards`. */
+type Data = { owner: string | null; holdings: WalletRead<WalletHolding>; activity: WalletRead<SolanaWalletAction>; rewards: readonly WalletRewardRow[] | null; cashback: readonly CashbackByTrade[] | null; receiptRows: readonly StoredReceiptView[]; refresh(): void };
 const empty = <T,>(status: WalletRead<T>["status"]): WalletRead<T> => ({ status, data: [], complete: false });
 const Context = createContext<Data | null>(null);
 
 export function WalletDataProvider({children}:{children:ReactNode}) {
   const {connection}=useSolanaConnection();
   const owner=connection?.address??null;
-  const pathname=usePathname();
+  /* The route, not the address: on app.ryntra.io `/solana/send` is the page `/app/send`. */
+  const pathname=usePagePath();
   const previousPath=useRef(pathname);
   const [version,setVersion]=useState(0);
-  const [state,setState]=useState<Omit<Data,"refresh"|"receiptRows">>({owner:null,holdings:empty("idle"),activity:empty("idle"),rewards:null});
+  const [state,setState]=useState<Omit<Data,"refresh"|"receiptRows">>({owner:null,holdings:empty("idle"),activity:empty("idle"),rewards:null,cashback:null});
   const [receipts,setReceipts]=useState<{owner:string|null;rows:readonly StoredReceiptView[];verified:ReadonlySet<string>}>({owner:null,rows:[],verified:new Set()});
   const sequence=useRef(0);
   const refresh=useCallback(()=>setVersion(v=>v+1),[]);
@@ -39,11 +42,11 @@ export function WalletDataProvider({children}:{children:ReactNode}) {
   },[pathname,refresh]);
   useEffect(()=>{
     const request=++sequence.current;
-    if(!owner) { setState({owner:null,holdings:empty("idle"),activity:empty("idle"),rewards:null}); return; }
+    if(!owner) { setState({owner:null,holdings:empty("idle"),activity:empty("idle"),rewards:null,cashback:null}); return; }
     let live=true;
     const controller=new AbortController();
     const timer=setTimeout(()=>controller.abort(),60_000);
-    setState({owner,holdings:empty("loading"),activity:empty("loading"),rewards:null});
+    setState({owner,holdings:empty("loading"),activity:empty("loading"),rewards:null,cashback:null});
     const address=owner;
     async function read(kind:"holdings"|"activity") {
       try {
@@ -72,7 +75,12 @@ export function WalletDataProvider({children}:{children:ReactNode}) {
            for history to fail. */
         if(kind==="activity") {
           const rows=(payload as {data?:{rewards?:unknown}})?.data?.rewards;
-          setState(current=>({...current,rewards:Array.isArray(rows)?rows as readonly WalletRewardRow[]:null}));
+          const cashback=(payload as {data?:{cashback?:unknown}})?.data?.cashback;
+          /* Each cashback row checked rather than cast. One malformed row makes the whole list unreadable (null — «shown once
+             you sign in»): dropping it would make that trade read «none on record», which would be false. */
+          const cashbackRow=(row:unknown):row is CashbackByTrade=>typeof row==="object"&&row!==null&&typeof (row as CashbackByTrade).signature==="string"&&typeof (row as CashbackByTrade).held==="boolean"&&((row as CashbackByTrade).usdMicros===null||(typeof (row as CashbackByTrade).usdMicros==="string"&&/^(?:0|[1-9][0-9]*)$/.test((row as CashbackByTrade).usdMicros as string)));
+          const cashbackRows=Array.isArray(cashback)&&cashback.every(cashbackRow)?cashback as readonly CashbackByTrade[]:null;
+          setState(current=>({...current,rewards:Array.isArray(rows)?rows as readonly WalletRewardRow[]:null,cashback:cashbackRows}));
         }
       } catch {
         if(!live||sequence.current!==request) return;
@@ -95,7 +103,7 @@ export function WalletDataProvider({children}:{children:ReactNode}) {
     return ()=>{live=false;};
   },[owner,pathname,version,state.owner,state.activity]);
   // Never paint the previous wallet while the effect for a new one is pending.
-  const current=state.owner===owner?state:{owner,holdings:empty<WalletHolding>(owner?"loading":"idle"),activity:empty<SolanaWalletAction>(owner?"loading":"idle"),rewards:null};
+  const current=state.owner===owner?state:{owner,holdings:empty<WalletHolding>(owner?"loading":"idle"),activity:empty<SolanaWalletAction>(owner?"loading":"idle"),rewards:null,cashback:null};
   const receiptRows=useMemo(()=>receipts.owner===owner?receipts.rows:[],[receipts,owner]);
   const activity=useMemo(()=>({...current.activity,data:current.activity.data.map(raw=>{
     const action=enrichActivityMetadata(raw,current.holdings.status==="ready"?current.holdings.data:[]);
@@ -109,4 +117,9 @@ export function useWalletData() {
   const value=useContext(Context);
   if(!value) throw new Error("WalletDataProvider is missing");
   return value;
+}
+
+/** The same data where a card may stand outside `/app` (an embedded card): null rather than a throw. */
+export function useOptionalWalletData() {
+  return useContext(Context);
 }

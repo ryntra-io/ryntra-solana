@@ -182,7 +182,7 @@ export async function POST(request: Request) {
   const safety = evaluateCctpSafety({
     /* The network's own stop, beneath the lane's. Base answers with the lane
        state exactly as before; Ethereum stays PAUSED until its own variable is
-       set after the first owner-signed transfer is read back. */
+       set after the first founder-signed transfer is read back. */
     state: resolveSolanaBridgeNetworkState(lane.evmChain),
     direction: plan.direction,
     plan: cctpSafetyPlanFacts(plan),
@@ -300,12 +300,12 @@ export async function POST(request: Request) {
      thing that happens before the wire.
 
      The policy is resolved only when it is needed. It is read from the
-     operator's own environment and resolving it can fail, so resolving it for
-     every burn made the operator's experiment configuration a precondition for
-     a stranger's bridge. Outside the envelope there is no budget, no
-     reservation and no ceiling — nothing a policy could decide. Inside it, an
-     unreadable policy still refuses, because the ceiling it carries is what
-     protects the operator from their own instrument. */
+     founder's own environment and resolving it can fail, so resolving it for
+     every burn made his experiment configuration a precondition for a
+     stranger's bridge. Outside the envelope there is no budget, no reservation
+     and no ceiling — nothing a policy could decide. Inside it, an unreadable
+     policy still refuses, because the ceiling it carries is what protects him
+     from his own instrument. */
   let canaryPolicy: SolanaCanaryPolicy | null = null;
   let exposure: Awaited<ReturnType<typeof openCctpCanaryExposure>> = {
     kind: "OUT_OF_SCOPE",

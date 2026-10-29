@@ -299,7 +299,7 @@ function LegacyLoginSheet({ reason, onClose, attach = false }: { reason: IntentK
 
 
 export function LoginSheet({ reason, onClose, attach = false }: { reason: IntentKind; onClose: () => void; attach?: boolean }) {
-  const { copy, locale, customerDoors } = useAccount();
+  const { copy, locale, customerDoors, signedInHere } = useAccount();
   /* The legacy sheet (email, Google, Telegram sign-in) exists only while the
      customer doors are switched on; with them shut the wallet is the one way
      in and the sheet has nothing else to offer. */
@@ -329,10 +329,10 @@ export function LoginSheet({ reason, onClose, attach = false }: { reason: Intent
         <div><h2 id={titleId} className="ry-login-title">{copy.sheetTitle}</h2><p className="ry-login-reason">{copy.reasons[reason]}</p></div>
         <button type="button" className="ry-login-close" onClick={onClose} aria-label={copy.close}><X size={18} aria-hidden /></button>
       </header>
-      <WalletEntry onSuccess={() => { const url = new URL(window.location.href); url.searchParams.set("auth", "ok"); window.location.assign(url.href); }} />
+      <WalletEntry onSuccess={signedInHere} />
       {customerDoors ? (
         <button type="button" className="ry-action-link ry-wallet-legacy" onClick={() => setLegacy(true)}>
-          {locale === "uk" ? "Уже маєте акаунт через email, Google або Telegram?" : "Already have an account through email, Google or Telegram?"}
+          {locale === "uk" ? "Уже маєш акаунт через email, Google або Telegram?" : "Already have an account through email, Google or Telegram?"}
         </button>
       ) : null}
     </section>

@@ -110,6 +110,6 @@ test('a rule in the reader’s words and its unit', () => {
   assert.equal(thresholdText(metricOf(METRICS, 'mint_authority'), 1, FLAGS, 'en'), 'present')
   assert.equal(thresholdText(metricOf(METRICS, 'mint_authority'), 0, FLAGS, 'en'), 'renounced')
   assert.equal(thresholdText(null, 12, FLAGS, 'en'), '12')
-  assert.equal(thresholdText(volume, 1_500_000, FLAGS, 'uk'), '$1,5M')
+  assert.equal(thresholdText(volume, 1_500_000, FLAGS, 'uk'), '$1,5 млн')
   assert.equal(thresholdText(metricOf(METRICS, 'top10_holder_share_pct'), 12.5, FLAGS, 'uk'), '12,5%')
 })

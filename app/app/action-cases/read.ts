@@ -54,6 +54,11 @@ export type DecisionReads = Readonly<{
    * plan" are different facts and only one of them is about the reader.
    */
   paperStats: PaperStats | null;
+  /**
+   * The books themselves, for the honest standard (DSC-2) the Journal shows: every paper trade, open and closed, and
+   * every fill read — the opening fills too, whose fees are a part of the result. Null when that read did not answer.
+   */
+  books: Readonly<{ paper: Readonly<{ open: readonly PaperTrade[]; closed: readonly PaperTrade[] }> | null; fills: readonly ArcusFill[] | null }>;
   recovery: readonly string[];
 }>;
 
@@ -73,7 +78,7 @@ export async function loadDecisionReads(input: Readonly<{
     fillState(input, recovery),
   ]);
 
-  const actions = [...paperActions(paper), ...liveActions(fills)];
+  const actions = [...paperActions(paper), ...liveActions(fills.rows)];
 
   return {
     changes: research.changes,
@@ -82,6 +87,7 @@ export async function loadDecisionReads(input: Readonly<{
     reviews: [...paperReviews(paper), ...liveReviews(notes)],
     risk: portfolio,
     paperStats: paper.stats,
+    books: { paper: paper.stats === null && paper.open.length === 0 && paper.closed.length === 0 ? null : { open: paper.open, closed: paper.closed }, fills: fills.read ? fills.rows : null },
     recovery,
   };
 }
@@ -177,13 +183,13 @@ async function notesState(input: Readonly<{ telegramId: number | null; accountId
 async function fillState(
   input: Readonly<{ wallet: string | null }>,
   recovery: string[],
-): Promise<readonly ArcusFill[]> {
-  if (!input.wallet) return [];
+): Promise<Readonly<{ rows: readonly ArcusFill[]; read: boolean }>> {
+  if (!input.wallet) return { rows: [], read: false };
   try {
-    return await getFills(input.wallet, FILL_LIMIT);
+    return { rows: await getFills(input.wallet, FILL_LIMIT), read: true };
   } catch {
     recovery.push("The venue fill read did not complete, so no real action is shown on this read.");
-    return [];
+    return { rows: [], read: false };
   }
 }
 

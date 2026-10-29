@@ -9,14 +9,17 @@ import { buildEvmFastMctpCalls, buildSolanaSwiftTransaction } from "@/lib/mayan/
 import { claimCrossSwapOrder, crossSwapIntentDigest, crossSwapReviewDigest, sha256HexOf } from "@/lib/mayan/cross-swap-order";
 import { crossSwapQuoteMaterialChange, type MayanRawQuote } from "@/lib/mayan/price-api";
 import { wireHash } from "@/lib/mayan/signed-transaction";
+import { assessCrossSwapOwnerEffects, type CrossSwapOwnerEffects, type CrossSwapSimulationMeta } from "@/lib/mayan/solana-swift-guard";
 import { buildRelayEvmCalls, buildRelaySolanaTransaction } from "@/lib/relay/build.server";
 import type { RelayRawQuote } from "@/lib/relay/quote-api";
 import { mutationOriginAllowed } from "@/lib/security";
 import { effectiveCrossSwapRouteState, resolveSolanaCrossSwapRouteState, SOLANA_CROSS_SWAP_NETWORK_STATE_ENV } from "@/lib/solana/lane-state";
 import { claimCrossSwapCanaryPlan, readCrossSwapCanary } from "@/lib/solana/cross-swap-canary-record";
+import { kitChainReader, readSignableWindowMs } from "@/lib/solana/blockhash-life";
+import { readRentParameters, simulatedAccountStates } from "@/lib/solana/rent";
 import { createSolanaRpcHandle, withRpcDiscipline } from "@/lib/solana/rpc";
 import { isSwapNetwork, type SwapNetwork } from "@/lib/swap/catalog";
-import { addressShapeOk, crossSwapImpactBand, quoteCrossSwap, resolveCrossSwapRoute } from "@/lib/swap/cross-swap-service";
+import { addressShapeOk, crossSwapImpactBand, mayanTokenFor, quoteCrossSwap, resolveCrossSwapRoute } from "@/lib/swap/cross-swap-service";
 import { admitCrossSwapCanary } from "@/lib/swap/cross-swap-canary";
 import { buildCrossSwapPreSign } from "@/lib/swap/pre-sign";
 import { resolveServiceFeeConfig } from "@/lib/swap/service-fee.server";
@@ -39,11 +42,19 @@ export const maxDuration = 60;
  * second submit.
  */
 
+/**
+ * How long the Review stays readable. The Solana bytes in it live less — ~150 blocks ≈ 30 s on 200 ms slots, read
+ * from the chain as `signableMs` (`lib/solana/blockhash-life.ts`); a Review signed later is planned again on the page
+ * instead of handing the network bytes it would refuse (AG-1).
+ */
 const CROSS_SWAP_REVIEW_WINDOW_MS = 45_000;
 
 const SOLANA_ADDRESS = /^[1-9A-HJ-NP-Za-km-z]{32,44}$/;
 const EVM_ADDRESS = /^0x[0-9a-fA-F]{40}$/;
 const RAW = /^[1-9][0-9]{0,29}$/;
+
+/** The part of `simulateTransaction`'s answer this route reads, whichever options asked for it. */
+type PlanSimulation = Readonly<{ value: Readonly<{ err: unknown; unitsConsumed?: bigint; accounts?: readonly unknown[] | null }> }>;
 
 const RequestSchema = z
   .object({
@@ -100,6 +111,8 @@ export async function POST(request: Request) {
   const resolved = await resolveCrossSwapRoute({ network: input.from.network as SwapNetwork, asset: input.from.asset }, { network: input.to.network as SwapNetwork, asset: input.to.asset });
   if (!resolved.ok) return failure(409, resolved.code, resolved.reason, rate, resolved.detail);
   const route = resolved.route;
+  /* The switch the snapshot names: the pair's own network switch where it has one (Arc), the one it always named otherwise. */
+  const gateVariable = route.to.network === "arc" ? SOLANA_CROSS_SWAP_NETWORK_STATE_ENV.arc : SOLANA_CROSS_SWAP_NETWORK_STATE_ENV.robinhood;
   /* The gate is read for this pair, not for the lane in general: Robinhood
      Chain carries a switch of its own beneath the lane's, and a pair is open
      only when every network in it is. Read once the route is known, so the
@@ -239,11 +252,13 @@ export async function POST(request: Request) {
     /* Each provider describes a Solana origin in its own terms — Mayan through
        its SDK, Relay as instructions carried inside the quote — and each
        builder refuses anything that would need a second signer or reach an
-       unexpected program. Both answer in one shape, so all of the rest is
-       common: the same simulation, the same claim, the same Review. */
-    const built =
+       unexpected program: Relay's only its depository, Mayan's only the
+       programs a Swift order needs (`solana-swift-guard.ts`). Both answer in
+       one shape, so the rest is common — the same claim, the same Review —
+       except that Mayan's simulation also proves what leaves the wallet. */
+    const mayan =
       quote.provider === "RELAY"
-        ? await buildRelaySolanaTransaction({ quote: raw as RelayRawQuote, owner: input.owner, rpcUrl: handle.endpoint })
+        ? null
         : await buildSolanaSwiftTransaction({
             quote: raw as MayanRawQuote,
             owner: input.owner,
@@ -252,16 +267,45 @@ export async function POST(request: Request) {
             /* Relay carries its fee inside the quote's own steps; Mayan needs the
                address again here or the rate it quoted is collected by nobody. */
             referrer: feeConfig.mayanReferrerSolana,
+            /* What the person asked for, in Mayan's own terms: the builder reads
+               the quote back against it before the SDK runs (FIX-XSWAP-1). */
+            expected: {
+              fromChain: "solana",
+              fromToken: mayanTokenFor(route.from),
+              toChain: route.to.network,
+              toToken: mayanTokenFor(route.to),
+              amountInRaw: input.amountRaw,
+            },
           });
+    const built = mayan ?? (await buildRelaySolanaTransaction({ quote: raw as RelayRawQuote, owner: input.owner, rpcUrl: handle.endpoint }));
     if (!built.ok) return failure(built.code === "BUILD_FAILED" ? 502 : 409, built.code, built.reason, rate);
 
     let simulation: { succeeded: boolean; error: string | null; unitsConsumed: string | null; host: string };
+    let ownerEffects: CrossSwapOwnerEffects | null = null;
     try {
-      const response = await withRpcDiscipline(handle, (abortSignal) =>
-        handle.rpc
-          .simulateTransaction(built.unsignedWireBase64 as never, { encoding: "base64", sigVerify: false, replaceRecentBlockhash: false, commitment: "confirmed" })
-          .send({ abortSignal }),
-      );
+      /* Mayan's bytes carry instructions from its HTTP API, so their simulation
+         is asked for everything the owner-effect check reads: inner
+         instructions, and the post-states of every writable account. Relay's
+         bytes are one depository instruction and are simulated as before. */
+      const [response, rent] = await Promise.all([
+        withRpcDiscipline<PlanSimulation>(handle, (abortSignal) =>
+          mayan?.ok
+            ? handle.rpc
+                .simulateTransaction(built.unsignedWireBase64 as never, {
+                  encoding: "base64",
+                  sigVerify: false,
+                  replaceRecentBlockhash: false,
+                  commitment: "confirmed",
+                  innerInstructions: true,
+                  accounts: { encoding: "base64", addresses: mayan.writableAccounts as readonly never[] },
+                })
+                .send({ abortSignal })
+            : handle.rpc
+                .simulateTransaction(built.unsignedWireBase64 as never, { encoding: "base64", sigVerify: false, replaceRecentBlockhash: false, commitment: "confirmed" })
+                .send({ abortSignal }),
+        ),
+        mayan?.ok ? readRentParameters(handle) : Promise.resolve(null),
+      ]);
       const failed = response.value.err !== null && response.value.err !== undefined;
       simulation = {
         succeeded: !failed,
@@ -269,6 +313,25 @@ export async function POST(request: Request) {
         unitsConsumed: response.value.unitsConsumed === undefined ? null : String(response.value.unitsConsumed),
         host: handle.host(),
       };
+      if (!failed && mayan?.ok && rent) {
+        /* The wallet may lose the input up to the amount, SOL up to the network
+           fee and the order's rent, and nothing else — read from the chain's
+           own answer for these exact bytes, not from Mayan's description. */
+        const assessed = assessCrossSwapOwnerEffects({
+          owner: input.owner,
+          inputMint: mayan.inputMint,
+          nativeInput: mayan.nativeInput,
+          amountInRaw: mayan.amountInRaw,
+          staticAccounts: mayan.staticAccounts,
+          simulation: response.value as unknown as CrossSwapSimulationMeta,
+          accountStates: simulatedAccountStates(mayan.writableAccounts, (response.value as { accounts?: readonly unknown[] | null }).accounts),
+          rent,
+        });
+        if (!assessed.ok) {
+          return failure(409, `SIMULATION_EFFECT_${assessed.code}`, `${assessed.reason} Ask for a fresh quote; do not sign.`, rate);
+        }
+        ownerEffects = assessed.effects;
+      }
     } catch (cause) {
       return failure(502, "SIMULATION_UNAVAILABLE", `The order could not be simulated: ${cause instanceof Error ? cause.message : String(cause)}`, rate);
     }
@@ -283,6 +346,9 @@ export async function POST(request: Request) {
     if (canaryPlan && !canaryPlan.ok) return failure(409, canaryPlan.code, canaryPlan.reason, rate, { state: "CANARY" });
     const claim = await claimCrossSwapOrder({ ...common, reviewedWireHash: wireHash(built.unsignedWireBase64) });
     if (!claim.ok) return failure(claim.code === "CROSS_SWAP_ALREADY_STARTED" ? 409 : 503, claim.code, claim.reason, rate, { state: claim.record?.state ?? null });
+    const signableMs = await readSignableWindowMs(kitChainReader(handle), built.lastValidBlockHeight, {
+      capMs: Math.max(0, Date.parse(reviewExpiresAt) - Date.now()),
+    });
 
     return Response.json(
       {
@@ -299,7 +365,7 @@ export async function POST(request: Request) {
           sourceWallet: input.owner,
           fromContract: route.from.catalog?.address ?? (route.from.catalog ? null : route.from.asset),
           toContract: route.to.catalog?.address ?? (route.to.catalog ? null : route.to.asset),
-          gateVariable: SOLANA_CROSS_SWAP_NETWORK_STATE_ENV.robinhood,
+          gateVariable: gateVariable,
           builtAt,
           reviewExpiresAt,
           requiresImpactAcknowledgement: band === "SEVERE",
@@ -322,10 +388,13 @@ export async function POST(request: Request) {
           instructionCount: built.instructionCount,
           programIds: built.programIds,
           simulation,
+          /* Mayan only: what the simulation proved the wallet loses (FIX-XSWAP-1); null on Relay. */
+          ownerEffects,
           walletPrompts: 1,
         },
         builtAt,
         reviewExpiresAt,
+        signableMs,
         state: claim.record.state,
         attempt: claim.record.attempt,
       },
@@ -333,7 +402,10 @@ export async function POST(request: Request) {
     );
   }
 
-  /* Narrowed by the Solana branch above, which returns. */
+  /* Narrowed by the Solana branch above, which returns. Arc never reaches here:
+     the classifier refuses it as an origin (`ARRIVAL_ONLY_NETWORKS`); the check
+     stays so the compiler and a reader both see it. */
+  if (route.from.network === "arc") return failure(409, "ARRIVAL_ONLY_NETWORK", "Arc is a network money arrives on here.", rate);
   const chain = route.from.network;
   const evmHandle = createEvmRpcHandle(chain);
   /* The chain id is the handle's own, rather than a ternary that had to be
@@ -372,7 +444,7 @@ export async function POST(request: Request) {
         sourceWallet: input.owner,
         fromContract: route.from.catalog?.address ?? (route.from.catalog ? null : route.from.asset),
         toContract: route.to.catalog?.address ?? (route.to.catalog ? null : route.to.asset),
-        gateVariable: SOLANA_CROSS_SWAP_NETWORK_STATE_ENV.robinhood,
+        gateVariable: gateVariable,
         builtAt,
         reviewExpiresAt,
         requiresImpactAcknowledgement: band === "SEVERE",

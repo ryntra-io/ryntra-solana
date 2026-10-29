@@ -1,7 +1,7 @@
 import { redirect } from "next/navigation";
 
 /**
- * `/app/plans` leads to «Боти → Мої боти» since the menu v6.2 (2026-10-06,
+ * `/app/plans` leads to «Термінал → Автоінвест» since the menu v6.2 (2026-10-06,
  *), like `/app/strategies`.
  *
  * Until then it served the plans rather than redirecting: a 308 of

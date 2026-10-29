@@ -309,7 +309,7 @@ const REGISTERED: Workspace[] = [
            the manifest called it read-only, on a product that had been moving
            real money for days. */
         en: "Swap, send, receive and bridge from your own wallet, and see what each issuer can still do to it.",
-        uk: "Обмінюйте, надсилайте, отримуйте й переносіть кошти зі свого гаманця та бачте, що емітент ще може з ними зробити.",
+        uk: "Обмінюй, надсилай, отримуй і переноси кошти зі свого гаманця та бач, що емітент ще може з ними зробити.",
       },
     },
   },

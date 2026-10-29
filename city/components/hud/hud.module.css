@@ -1,0 +1,1284 @@
+/* Ryntra's home HUD over the city: monumental type, dark glass with chamfered corners and an inner light edge,
+   one amber action per screen, a district dock instead of a menu. No hairline grids, no walls of monospace, no
+   backdrop blur over the live canvas. Tokens from city/styles/city.module.css. */
+
+.layer {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 10;
+  font-family: var(--font-ui, system-ui), system-ui, sans-serif;
+  color: var(--ice);
+}
+
+.layer > * {
+  pointer-events: auto;
+}
+
+.display {
+  font-family: var(--font-display, system-ui), system-ui, sans-serif;
+  font-stretch: 125%;
+  font-variation-settings: 'wdth' 125;
+  font-weight: 900;
+  letter-spacing: 0.01em;
+  text-transform: uppercase;
+}
+
+.panel {
+  background: linear-gradient(160deg, rgba(20, 16, 36, 0.86), rgba(8, 7, 15, 0.9));
+  clip-path: polygon(var(--cut) 0, 100% 0, 100% calc(100% - var(--cut)), calc(100% - var(--cut)) 100%, 0 100%, 0 var(--cut));
+  box-shadow: inset 0 0 0 2px rgba(153, 69, 255, 0.28), inset 0 1px 18px rgba(153, 69, 255, 0.18);
+}
+
+.up {
+  color: var(--mint);
+}
+
+.down {
+  color: var(--flare);
+}
+
+/* ---------- Top bar ---------- */
+
+.top {
+  position: absolute;
+  top: max(12px, env(safe-area-inset-top));
+  left: var(--gutter);
+  right: var(--gutter);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  pointer-events: none;
+}
+
+.top > * {
+  pointer-events: auto;
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-right: auto;
+  min-width: 0;
+  min-height: 44px;
+  padding: 0 4px 0 0;
+  border: 0;
+  background: none;
+  color: var(--ice);
+  cursor: pointer;
+}
+
+.brand:focus-visible {
+  outline: 2px solid var(--amber);
+  outline-offset: 4px;
+}
+
+/* While a clip is filmed: only the way home stays over the viewfinder (city/lib/moments, z-index 40). */
+.layerFilming {
+  z-index: 41;
+}
+
+.brandName {
+  font-size: 20px;
+  line-height: 1;
+  letter-spacing: 0.06em;
+}
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  height: 40px;
+  padding: 0 14px;
+  font-size: 13px;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  --cut: 10px;
+}
+
+.chipTime {
+  font-variant-numeric: tabular-nums;
+  color: var(--text-dim);
+}
+
+.chipShort {
+  display: none;
+  font-variant-numeric: tabular-nums;
+}
+
+.dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--mint);
+  box-shadow: 0 0 10px var(--mint);
+  animation: blink 1.6s infinite;
+}
+
+.dotOff {
+  background: var(--amber);
+  box-shadow: 0 0 10px var(--amber);
+  animation: none;
+}
+
+@keyframes blink {
+  50% {
+    opacity: 0.35;
+  }
+}
+
+/* «Flashing effects» off in the feed's «Show on home» (CITY-66): the live dot and the Hot-now dot stay lit, still. */
+:global(html[data-city-flash='off']) .dot,
+:global(html[data-city-flash='off']) .pulse {
+  animation: none;
+}
+
+.iconBtn {
+  width: 44px;
+  height: 44px;
+  display: grid;
+  place-items: center;
+  flex: none;
+  border: 0;
+  padding: 0;
+  color: var(--ice);
+  --cut: 10px;
+}
+
+.iconBtn svg {
+  width: 20px;
+  height: 20px;
+}
+
+/* An icon button whose panel is open. */
+.iconOn {
+  box-shadow: inset 0 0 0 2px rgba(255, 178, 63, 0.7), inset 0 1px 18px rgba(153, 69, 255, 0.18);
+}
+
+/* ---------- The menu: how the city works, sound, docs and help ---------- */
+
+.menuWrap {
+  display: contents;
+}
+
+.menu {
+  position: absolute;
+  right: 0;
+  top: 54px;
+  width: min(360px, 100%);
+  max-height: calc(100dvh - 160px);
+  overflow-y: auto;
+  padding: 8px;
+  --cut: 14px;
+  color: var(--ice);
+  animation: rise 200ms ease-out both;
+}
+
+.menuRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  width: 100%;
+  min-height: 48px;
+  padding: 0 12px;
+  border: 0;
+  background: none;
+  font-size: var(--type-base);
+  font-weight: 700;
+  text-align: left;
+  color: var(--ice);
+}
+
+.menuRow:hover,
+.menuRow:focus-visible,
+.menuLink:hover,
+.menuLink:focus-visible {
+  background: rgba(153, 69, 255, 0.16);
+  outline: none;
+}
+
+/* «How the city works» opens its own window: the chevron points on. */
+.menuChevron {
+  width: 9px;
+  height: 9px;
+  border-right: 2px solid var(--text-dim);
+  border-bottom: 2px solid var(--text-dim);
+  transform: translateX(-2px) rotate(-45deg);
+}
+
+.menuSound {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.menuSound svg {
+  width: 18px;
+  height: 18px;
+}
+
+.menuState {
+  padding: 3px 10px;
+  font-size: var(--type-micro);
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+  background: rgba(238, 241, 255, 0.08);
+}
+
+.menuStateOn {
+  color: var(--ink);
+  background: var(--mint);
+}
+
+.menuLinks {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 2px;
+  margin-top: 6px;
+  padding-top: 6px;
+  border-top: 1px solid rgba(238, 241, 255, 0.1);
+}
+
+.menuLink {
+  display: grid;
+  gap: 2px;
+  padding: 10px 12px;
+  text-decoration: none;
+}
+
+.menuLinkName {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: var(--type-base);
+  font-weight: 700;
+  color: var(--ice);
+}
+
+.menuLinkName svg {
+  width: 14px;
+  height: 14px;
+  color: var(--amber);
+}
+
+.menuLinkLine {
+  font-size: var(--type-caption);
+  color: var(--text-dim);
+}
+
+.menuLegal {
+  display: flex;
+  gap: 18px;
+  margin-top: 4px;
+  padding: 10px 12px 6px;
+  border-top: 1px solid rgba(238, 241, 255, 0.1);
+  font-size: var(--type-caption);
+}
+
+.menuLegal a {
+  color: var(--text-dim);
+  text-decoration: none;
+}
+
+.menuLegal a:hover,
+.menuLegal a:focus-visible {
+  color: var(--ice);
+  text-decoration: underline;
+}
+
+/* ---------- The name beside the cursor (desktop) ---------- */
+
+.layer > .hover {
+  position: fixed;
+  left: 0;
+  top: 0;
+  z-index: 30;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  max-width: 300px;
+  padding: 8px 14px 8px 10px;
+  pointer-events: none;
+  background: linear-gradient(160deg, rgba(20, 16, 36, 0.94), rgba(8, 7, 15, 0.96));
+  clip-path: polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px);
+  box-shadow: inset 0 0 0 2px rgba(255, 178, 63, 0.45);
+  will-change: transform;
+}
+
+.hoverIcon {
+  width: 30px;
+  height: 30px;
+  flex: none;
+  border-radius: 50%;
+  object-fit: cover;
+  background: var(--graphite);
+}
+
+.hoverText {
+  min-width: 0;
+}
+
+.hoverHead {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  min-width: 0;
+}
+
+.hoverSym {
+  flex: none;
+  font-size: var(--type-lead);
+  line-height: 1.1;
+}
+
+.hoverName {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: var(--type-small);
+  color: var(--text-dim);
+}
+
+.hoverFigures {
+  display: flex;
+  gap: 10px;
+  margin-top: 2px;
+  font-size: var(--type-small);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+/* ---------- The first-visit hint ---------- */
+
+.firstHint {
+  position: absolute;
+  top: calc(max(12px, env(safe-area-inset-top)) + 58px);
+  left: var(--gutter);
+  right: var(--gutter);
+  width: fit-content;
+  max-width: calc(100% - 2 * var(--gutter));
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 4px 4px 16px;
+  font-size: var(--type-body);
+  font-weight: 700;
+  color: var(--ice);
+  --cut: 10px;
+  box-shadow: inset 0 0 0 2px rgba(255, 178, 63, 0.55), inset 0 1px 18px rgba(153, 69, 255, 0.18);
+  animation: rise 360ms ease-out both;
+}
+
+.firstHintClose {
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  flex: none;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--text-dim);
+}
+
+.firstHintClose svg {
+  width: 16px;
+  height: 16px;
+}
+
+/* ---------- The one card above the dock: the hot tower, a challenge, a district that opens soon ---------- */
+
+.slot {
+  position: absolute;
+  left: var(--gutter);
+  right: var(--gutter);
+  bottom: calc(max(14px, env(safe-area-inset-bottom)) + 96px);
+  max-width: 420px;
+  padding: 18px 20px 20px;
+  --cut: 16px;
+  animation: rise 420ms cubic-bezier(0.2, 1.3, 0.4, 1) both;
+}
+
+.slotLocked {
+  box-shadow: inset 0 0 0 2px rgba(255, 231, 194, 0.32), inset 0 1px 18px rgba(153, 69, 255, 0.18);
+}
+
+.kicker {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  font-weight: 800;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--amber);
+}
+
+.kickerSoon {
+  color: var(--warm);
+}
+
+.kickerLock {
+  width: 14px;
+  height: 14px;
+}
+
+.kickerLock svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.pulse {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: var(--flare);
+  box-shadow: 0 0 12px var(--flare);
+  animation: blink 1.2s infinite;
+}
+
+.hotRow {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 12px;
+}
+
+.hotIcon {
+  width: 44px;
+  height: 44px;
+  flex: none;
+  border-radius: 50%;
+  object-fit: cover;
+  background: var(--graphite);
+  box-shadow: 0 0 0 2px rgba(255, 178, 63, 0.6), 0 0 18px rgba(255, 178, 63, 0.35);
+}
+
+.hotSym {
+  min-width: 0;
+  font-size: 30px;
+  line-height: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.hotChange {
+  margin-left: auto;
+  flex: none;
+  font-size: 22px;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.hotChange small,
+.change small {
+  font-size: 12px;
+  opacity: 0.7;
+}
+
+.hotLine {
+  margin-top: 10px;
+  font-size: 15px;
+  line-height: 1.45;
+  color: var(--text-dim);
+}
+
+.hotLine b {
+  color: var(--ice);
+  font-variant-numeric: tabular-nums;
+}
+
+.slotTitle {
+  margin-top: 10px;
+  font-size: 30px;
+  line-height: 1;
+}
+
+.action {
+  width: 100%;
+  height: 56px;
+  margin-top: 16px;
+  padding: 0 22px;
+  border: 0;
+  font-size: 18px;
+  color: var(--ink);
+  background: linear-gradient(100deg, var(--warm), var(--amber));
+  clip-path: polygon(14px 0, 100% 0, 100% calc(100% - 14px), calc(100% - 14px) 100%, 0 100%, 0 14px);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  transition: transform 120ms ease-out;
+}
+
+.action:active {
+  transform: scale(0.97);
+}
+
+.pair {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 16px;
+}
+
+.pair .action {
+  flex: 1;
+  width: auto;
+  margin-top: 0;
+}
+
+.quiet {
+  height: 56px;
+  padding: 0 18px;
+  border: 0;
+  background: none;
+  font-size: 15px;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+}
+
+/* ---------- The district dock ---------- */
+
+.dock {
+  position: absolute;
+  left: var(--gutter);
+  right: var(--gutter);
+  bottom: max(14px, env(safe-area-inset-bottom));
+  max-width: 440px;
+  height: 74px;
+  margin: 0 auto;
+  padding: 0 6px 9px;
+  display: grid;
+  /* As many equal columns as the dock has districts: closing one (the run, 27.10) leaves no hole. */
+  grid-auto-flow: column;
+  grid-auto-columns: 1fr;
+  align-items: end;
+  isolation: isolate;
+}
+
+/* The glass behind the dock, so the centre diamond can rise above its edge. */
+.dock::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background: linear-gradient(160deg, rgba(20, 16, 36, 0.9), rgba(8, 7, 15, 0.94));
+  box-shadow: inset 0 0 0 2px rgba(153, 69, 255, 0.3), inset 0 1px 22px rgba(153, 69, 255, 0.2);
+  clip-path: polygon(18px 0, calc(100% - 18px) 0, 100% 18px, 100% 100%, 0 100%, 0 18px);
+}
+
+.dockItem {
+  position: relative;
+  display: grid;
+  justify-items: center;
+  gap: 5px;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--text-dim);
+}
+
+.dockGlyph {
+  width: 28px;
+  height: 28px;
+}
+
+.dockGlyph svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.dockLabel {
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.dockOn {
+  color: var(--warm);
+}
+
+.dockOn .dockGlyph {
+  filter: drop-shadow(0 0 8px rgba(255, 178, 63, 0.9));
+}
+
+.dockLocked .dockGlyph {
+  opacity: 0.6;
+}
+
+/* A district that opens later: a word, not a lock. */
+.dockSoon {
+  position: absolute;
+  top: -15px;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 1px 5px;
+  font-size: var(--type-micro);
+  font-weight: 800;
+  line-height: 1.3;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--ink);
+  background: var(--warm);
+}
+
+/* On a desktop the dock says what each district does, one line over the item. */
+@media (hover: hover) and (pointer: fine) {
+  .dockItem::after {
+    content: attr(data-hint);
+    position: absolute;
+    bottom: calc(100% + 14px);
+    left: 50%;
+    z-index: 2;
+    padding: 7px 12px;
+    font-size: var(--type-small);
+    font-weight: 700;
+    letter-spacing: 0;
+    text-transform: none;
+    white-space: nowrap;
+    color: var(--ice);
+    background: rgba(8, 7, 15, 0.94);
+    box-shadow: inset 0 0 0 1px rgba(153, 69, 255, 0.45);
+    opacity: 0;
+    transform: translate(-50%, 4px);
+    transition:
+      opacity 140ms ease-out,
+      transform 140ms ease-out;
+    pointer-events: none;
+  }
+  .dockItem:first-child::after {
+    left: 0;
+    transform: translate(0, 4px);
+  }
+  .dockItem:last-child::after {
+    left: auto;
+    right: 0;
+    transform: translate(0, 4px);
+  }
+  .dockCenter::after {
+    bottom: calc(100% + 40px);
+  }
+  .dockItem:hover::after,
+  .dockItem:focus-visible::after {
+    opacity: 1;
+    transform: translate(-50%, 0);
+  }
+  .dockItem:first-child:hover::after,
+  .dockItem:first-child:focus-visible::after,
+  .dockItem:last-child:hover::after,
+  .dockItem:last-child:focus-visible::after {
+    transform: translate(0, 0);
+  }
+  .dockItem:hover {
+    color: var(--ice);
+  }
+}
+
+.dockCenter {
+  color: var(--warm);
+}
+
+/* The run's diamond: the glow sits on the outer box, so the clipped shape keeps it. */
+.dockCenter .dockGlyph {
+  width: 60px;
+  height: 60px;
+  margin-top: -34px;
+  filter: drop-shadow(0 0 14px rgba(255, 178, 63, 0.75));
+  animation: breathe 2.4s ease-in-out infinite;
+}
+
+.diamond {
+  display: block;
+  width: 100%;
+  height: 100%;
+  padding: 16px;
+  color: var(--ink);
+  background: linear-gradient(160deg, var(--warm), var(--amber));
+  clip-path: polygon(50% 0, 100% 50%, 50% 100%, 0 50%);
+}
+
+.dockCenter:active .diamond {
+  transform: scale(0.94);
+}
+
+@keyframes breathe {
+  50% {
+    filter: drop-shadow(0 0 22px rgba(255, 178, 63, 0.95));
+  }
+}
+
+/* ---------- Event cut-in ---------- */
+
+.cutin {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 22%;
+  display: flex;
+  justify-content: center;
+  pointer-events: none;
+}
+
+.cutinSlab {
+  position: relative;
+  width: min(760px, 100%);
+  padding: 18px 28px 18px 34px;
+  transform-origin: left center;
+  clip-path: polygon(0 0, 100% 0, calc(100% - 26px) 100%, 0 100%);
+  background: linear-gradient(100deg, rgba(8, 7, 15, 0.94) 0%, rgba(20, 14, 38, 0.92) 70%, rgba(20, 14, 38, 0.6) 100%);
+  animation: cutin 2300ms cubic-bezier(0.2, 1.2, 0.3, 1) both;
+}
+
+.cutinSlab::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 10px;
+  background: var(--accent, var(--mint));
+  box-shadow: 0 0 24px var(--accent, var(--mint));
+}
+
+.cutinKind {
+  font-size: 14px;
+  font-weight: 800;
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+  color: var(--accent, var(--mint));
+}
+
+.cutinMain {
+  display: flex;
+  align-items: baseline;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.cutinSymbol {
+  font-size: clamp(38px, 8vw, 76px);
+  line-height: 1;
+}
+
+.cutinValue {
+  font-size: clamp(20px, 3.6vw, 34px);
+  font-weight: 800;
+  color: var(--accent, var(--mint));
+  font-variant-numeric: tabular-nums;
+}
+
+@keyframes cutin {
+  0% {
+    opacity: 0;
+    transform: translateX(-60px) skewX(-12deg) scaleX(1.3);
+  }
+  12% {
+    opacity: 1;
+    transform: translateX(0) skewX(-6deg) scaleX(1);
+  }
+  80% {
+    opacity: 1;
+    transform: translateX(10px) skewX(-6deg);
+  }
+  100% {
+    opacity: 0;
+    transform: translateX(80px) skewX(-6deg) scaleY(0.2);
+  }
+}
+
+/* «Flashing effects» off in the feed's «Show on home» (CITY-66): the slab still says the moment, standing still — it
+   fades in and out, nothing flies or glows. */
+:global(html[data-city-flash='off']) .cutinSlab {
+  transform: skewX(-6deg);
+  animation: cutinStill 2300ms linear both;
+}
+
+:global(html[data-city-flash='off']) .cutinSlab::before {
+  box-shadow: none;
+}
+
+@keyframes cutinStill {
+  0%,
+  100% {
+    opacity: 0;
+  }
+  8%,
+  86% {
+    opacity: 1;
+  }
+}
+
+/* ---------- Tower card ---------- */
+
+.card {
+  position: absolute;
+  left: 50%;
+  bottom: max(14px, env(safe-area-inset-bottom));
+  width: min(560px, calc(100% - 2 * var(--gutter)));
+  transform: translateX(-50%);
+  padding: 20px 20px 18px;
+  animation: cardIn 320ms cubic-bezier(0.2, 1.3, 0.4, 1);
+}
+
+@keyframes cardIn {
+  from {
+    opacity: 0;
+    transform: translate(-50%, 40px);
+  }
+}
+
+.cardHead {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.cardIcon {
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  object-fit: cover;
+  background: var(--graphite);
+  box-shadow: 0 0 0 2px var(--accent, var(--amber)), 0 0 22px var(--accent, var(--amber));
+  flex: none;
+}
+
+.cardTitle {
+  min-width: 0;
+  flex: 1;
+}
+
+.cardSymbol {
+  font-size: 30px;
+  line-height: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.cardName {
+  margin-top: 4px;
+  font-size: 14px;
+  color: var(--text-dim);
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.tag {
+  display: inline-block;
+  padding: 3px 8px;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  background: rgba(153, 69, 255, 0.22);
+  color: var(--ice);
+}
+
+.tagWarn {
+  background: rgba(255, 75, 58, 0.2);
+  color: #ffb3aa;
+}
+
+.tagOk {
+  background: rgba(20, 241, 149, 0.16);
+  color: var(--mint);
+}
+
+/* VERIFIED opens one line that says what was verified. */
+.tagButton {
+  border: 0;
+  cursor: pointer;
+  font: inherit;
+}
+
+.why {
+  margin-top: 10px;
+  padding: 10px 12px;
+  font-size: 14px;
+  line-height: 1.4;
+  color: var(--text-dim);
+  background: rgba(238, 241, 255, 0.06);
+}
+
+.close {
+  width: 44px;
+  height: 44px;
+  border: 0;
+  background: rgba(255, 255, 255, 0.06);
+  display: grid;
+  place-items: center;
+  flex: none;
+}
+
+.priceRow {
+  display: flex;
+  align-items: baseline;
+  gap: 14px;
+  margin: 16px 0 14px;
+  flex-wrap: wrap;
+}
+
+.price {
+  font-size: clamp(34px, 7vw, 46px);
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+
+.change {
+  font-size: 22px;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.gridLoose {
+  margin-top: 16px;
+}
+
+.cell {
+  padding: 10px 10px 9px;
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.cellLabel {
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  color: var(--text-dim);
+  text-transform: uppercase;
+}
+
+.cellValue {
+  margin-top: 4px;
+  font-size: 17px;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+}
+
+.actions {
+  display: flex;
+  gap: 10px;
+}
+
+.primary {
+  flex: 1.4;
+  height: 56px;
+  border: 0;
+  font-size: 16px;
+  color: var(--ink);
+  background: linear-gradient(100deg, var(--warm), var(--amber));
+  clip-path: polygon(12px 0, 100% 0, 100% calc(100% - 12px), calc(100% - 12px) 100%, 0 100%, 0 12px);
+}
+
+.secondary {
+  flex: 1;
+  height: 56px;
+  border: 0;
+  font-size: 14px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--text-dim);
+  clip-path: polygon(12px 0, 100% 0, 100% calc(100% - 12px), calc(100% - 12px) 100%, 0 100%, 0 12px);
+}
+
+.secondary:disabled {
+  cursor: default;
+}
+
+.soon {
+  margin-left: 6px;
+  padding: 2px 6px;
+  font-size: 10px;
+  background: rgba(153, 69, 255, 0.35);
+  color: var(--ice);
+}
+
+.note {
+  margin-top: 12px;
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--text-dim);
+}
+
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translateY(24px);
+  }
+}
+
+/* ---------- Phones ---------- */
+
+@media (max-width: 560px) {
+  .grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .card {
+    padding: 16px 16px 14px;
+  }
+  .cutin {
+    top: 15%;
+  }
+  .cutinSlab {
+    padding: 14px 20px 14px 26px;
+  }
+}
+
+@media (max-width: 400px) {
+  .top {
+    gap: 8px;
+  }
+  .brandName {
+    font-size: 17px;
+  }
+  .chip {
+    padding: 0 10px;
+  }
+  .chipTime,
+  .chipLong {
+    display: none;
+  }
+  .chipShort {
+    display: inline;
+  }
+  .iconBtn {
+    width: 40px;
+  }
+  .hotSym,
+  .slotTitle {
+    font-size: 26px;
+  }
+  .hotChange {
+    font-size: 19px;
+  }
+}
+
+/* ---------- Desktop: the card stands on the right, the city keeps the centre ---------- */
+
+@media (min-aspect-ratio: 1/1) {
+  .slot {
+    left: auto;
+    right: var(--gutter);
+    bottom: 110px;
+    width: 420px;
+  }
+  .card {
+    left: auto;
+    right: var(--gutter);
+    bottom: 24px;
+    width: 520px;
+    transform: none;
+    animation-name: cardInSide;
+  }
+}
+
+@keyframes cardInSide {
+  from {
+    opacity: 0;
+    transform: translateX(40px);
+  }
+}
+
+/* A phone's top bar keeps the mark and gives the wordmark's room to the wallet. */
+@media (max-width: 540px) {
+  .brandName {
+    display: none;
+  }
+}
+
+/* While filming on a narrow screen the filming bar takes the wordmark's room. */
+@media (max-width: 760px) {
+  .layerFilming .brandName {
+    display: none;
+  }
+}
+
+/* A phone held upright: the search is a sheet above the dock, where the one card stands; while it is open the card
+   steps aside, so the two never cross (CITY-6a). */
+@media (max-width: 560px) and (orientation: portrait) {
+  .layer:has([role='dialog'][aria-label='Search coins']) .slot {
+    visibility: hidden;
+  }
+}
+
+/* The same for the live event feed's open list on a phone held upright, which owns the frame like a tower card
+   (CITY-66, city/components/feed). */
+@media not all and (min-aspect-ratio: 1/1) {
+  .layer:has([data-city-feed][data-open]) .slot,
+  .layer:has([data-city-feed][data-open]) .cutin {
+    visibility: hidden;
+  }
+}
+
+/* The smallest phones: the search and the wallet need the room more than the feed's status; the mark stays. */
+@media (max-width: 340px) {
+  .liveChip {
+    display: none;
+  }
+}
+
+/* ---------- «Show on home», opened from the menu: the switches in one clean panel where the menu stands ---------- */
+
+.settings {
+  padding: 6px 8px 10px;
+}
+
+.settingsHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-height: 48px;
+  padding-left: 12px;
+}
+
+.settingsTitle {
+  font-size: var(--type-small);
+  font-weight: 800;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--amber);
+}
+
+.settingsClose {
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--text-dim);
+}
+
+.settingsClose:hover {
+  color: var(--ice);
+}
+
+.settingsClose svg {
+  width: 16px;
+  height: 16px;
+}
+
+.settingsGroup {
+  padding: 4px 0;
+}
+
+.settingsGroup + .settingsGroup {
+  border-top: 1px solid rgba(238, 241, 255, 0.1);
+}
+
+.settingsRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-height: 48px;
+  padding: 0 12px;
+  font-size: var(--type-base);
+  font-weight: 700;
+  color: var(--ice);
+}
+
+.switch {
+  position: relative;
+  flex: none;
+  width: 46px;
+  height: 26px;
+  padding: 0;
+  border: 0;
+  border-radius: 13px;
+  background: rgba(238, 241, 255, 0.18);
+  box-shadow: inset 0 0 0 1px rgba(238, 241, 255, 0.22);
+  cursor: pointer;
+  transition: background-color 160ms ease;
+}
+
+.switch[aria-checked='true'] {
+  background: var(--mint);
+  box-shadow: 0 0 12px rgba(20, 241, 149, 0.45);
+}
+
+.switch:focus-visible,
+.settingsClose:focus-visible {
+  outline: 2px solid var(--amber);
+  outline-offset: 2px;
+}
+
+.knob {
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: var(--ice);
+  box-shadow: 0 1px 4px rgba(6, 5, 12, 0.6);
+  transition: transform 160ms ease;
+}
+
+.switch[aria-checked='true'] .knob {
+  transform: translateX(20px);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .switch,
+  .knob {
+    transition: none;
+  }
+}
+
+/* ---------- The moment's slab beside the event feed, never over it ---------- */
+
+/* A desk: the slab takes the room right of the feed's column (city/components/feed, 340 px wide). */
+@media (min-aspect-ratio: 1/1) {
+  .cutin {
+    left: calc(340px + 2 * var(--gutter));
+    right: var(--gutter);
+  }
+}
+
+/* A phone held upright: the slab stands under the feed's strip, wherever the strip stands (feed.module.css). */
+@media not all and (min-aspect-ratio: 1/1) {
+  .cutin {
+    top: calc(max(12px, env(safe-area-inset-top)) + var(--cut-below, 122px));
+  }
+
+  .layer:has([data-city-hint]) .cutin {
+    --cut-below: 176px;
+  }
+
+  :global(body:has([aria-controls='city-mine'])) .cutin {
+    --cut-below: 158px;
+  }
+
+  :global(body:has([aria-controls='city-mine'])) .layer:has([data-city-hint]) .cutin {
+    --cut-below: 220px;
+  }
+}

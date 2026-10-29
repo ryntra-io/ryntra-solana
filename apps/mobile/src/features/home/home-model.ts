@@ -33,12 +33,12 @@ export function accountState(address: string | null, session: Session | null): A
 /* ---- what needs attention ---- */
 
 export type AttentionItem =
-  /** A signature the wallet gave whose outcome is not known — its recovery, checked before anything else. */
+  /** A signature the wallet gave whose outcome is not known — M3's recovery, checked before anything else. */
   | Readonly<{ kind: 'recovery'; attempt: TradeAttempt }>
   /**
    * The monitoring's own card. `plans` are the wallet's active plans that
    * wear the card's symbol; `shared` says more than one does, so the card
-   * cannot name one plan and the person chooses.
+   * cannot name one plan (line A request 22) and the person chooses.
    */
   | Readonly<{ kind: 'card'; card: MonitoringCard; plans: readonly TradingPlan[]; shared: boolean; target: NoteTarget }>
   /** An active plan whose entry rule has run out: its Review refuses until a new version. */
@@ -229,7 +229,7 @@ export function briefLines(input: BriefInput): readonly BriefLine[] {
     for (const plan of changed) lines.push({ kind: 'plan', plan })
   }
 
-  // A day's move belongs to its day: a read kept from an earlier day says nothing about today.
+  // A day's move belongs to its day: a read kept from an earlier day says nothing about today (M9).
   if (input.portfolio?.dayChange && isToday(input.portfolio.observedAt, input.now)) {
     lines.push({ kind: 'portfolio', change: input.portfolio.dayChange, total: input.portfolio.total })
   }

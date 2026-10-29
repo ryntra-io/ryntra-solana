@@ -290,7 +290,10 @@ export function saleCheckRows(
       value: check.costs ? approxUsd(check.costs.usd, locale) : DASH,
       fee: saleFeeLines(
         issuerFee
-          ? words.issuerFee(feePercentText(issuerFee.basisPoints, locale), keepTogether(approxUsd(issuerFee.usd, locale)))
+          ? words.issuerFee(
+              feePercentText(issuerFee.basisPoints, locale),
+              keepTogether(approxUsd(issuerFee.usd, locale)),
+            )
           : null,
         input.ryntraFee ?? null,
         words,

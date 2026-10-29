@@ -68,7 +68,7 @@ test('all token reads failing are unavailable, and native read failing has no ba
  t.mock.restoreAll();stub(t,{fetch:p=>p.method==='getBalance'?new Response('blocked',{status:403}):null});
  const response=await POST(request());const body=await response.json();assert.equal(response.status,502);assert.equal(body.data,undefined);assert.equal(body.error.code,'RPC_FAILED');
 });
-test('a token program silent on both hosts gets one bounded second attempt, and a wallet that answers then is COMPLETE, not PARTIAL',async t=>{
+test('a token program silent on both hosts gets one bounded second attempt, and a wallet that answers then is COMPLETE, not PARTIAL (request 19)',async t=>{
  let refusals=0;
  const calls=stub(t,{fetch:(p)=>{if(p.method==='getTokenAccountsByOwner'&&p.params[1].programId===TOKEN_2022_PROGRAM_ID&&refusals<2){refusals+=1;return new Response('unavailable',{status:503});}return null;}});
  const response=await POST(request());const {data}=await response.json();

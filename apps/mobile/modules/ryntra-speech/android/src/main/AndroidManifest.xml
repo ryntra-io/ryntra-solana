@@ -1,0 +1,10 @@
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+  <!-- The recording of the question field's paid fallback: asked for only on the person's press of the microphone. -->
+  <uses-permission android:name="android.permission.RECORD_AUDIO" />
+  <!-- Android 11+ shows the app only the activities it names: the system's own speech-to-text screen. -->
+  <queries>
+    <intent>
+      <action android:name="android.speech.action.RECOGNIZE_SPEECH" />
+    </intent>
+  </queries>
+</manifest>

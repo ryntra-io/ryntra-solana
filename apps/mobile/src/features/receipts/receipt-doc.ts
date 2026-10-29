@@ -24,7 +24,7 @@ import type {
 } from '../../lib/api/v1/types.ts'
 import type { Locale } from '../../lib/i18n.ts'
 import { DASH, formatAmount } from '../../utils/format.ts'
-import type { HistoryRow } from '../history/history-model.ts'
+import { unitsText, type HistoryRow } from '../history/history-model.ts'
 import { formatShareUnits, unitsFromRaw } from '../invest/buy-model.ts'
 import { decimalText } from '../money/money-model.ts'
 import type { LaunchWord } from '../launch/copy.ts'
@@ -111,9 +111,16 @@ const positive = (raw: string | null | undefined): raw is string => isRaw(raw) &
 /** A pair as a launch's preset or market names it; the preset does not say whether it is a dollar. */
 type PairUnits = Readonly<{ symbol: string; decimals: number; dollar?: boolean }>
 
+/** A raw amount at most `places` after the mark, never a false zero: a crumb below them is «< 0,0001». */
+function rawText(raw: string, decimals: number, places: number, locale: Locale): string {
+  const text = formatRaw(raw, decimals, locale, places)
+  if (!positive(raw) || /[1-9]/.test(text)) return text
+  return `< ${formatAmount(10 ** -places, places, locale)}`
+}
+
 function pairLeg(raw: string, pair: PairUnits, locale: Locale): DocLeg {
   const dollar = pair.dollar ?? false
-  if (!dollar) return leg(formatRaw(raw, pair.decimals, locale, Math.min(pair.decimals, 6)), pair.symbol)
+  if (!dollar) return leg(rawText(raw, pair.decimals, Math.min(pair.decimals, 6), locale), pair.symbol)
   // Dollars to the cent, cut and never rounded up; a crumb is «< 0,01», never a false zero.
   const cents = Number(fromRaw(raw, pair.decimals, 2))
   if (cents === 0 && BigInt(raw) > 0n) return leg(`< ${formatCents(0.01, locale)}`, pair.symbol, true)
@@ -127,7 +134,7 @@ const formatCents = (value: number, locale: Locale) =>
   }).format(value)
 
 function tokenLeg(raw: string, decimals: number, symbol: string, locale: Locale): DocLeg {
-  return leg(formatRaw(raw, decimals, locale, Math.min(decimals, 4)), `$${symbol}`)
+  return leg(rawText(raw, decimals, Math.min(decimals, 4), locale), `$${symbol}`)
 }
 
 const unique = (values: readonly (string | null | undefined)[]): string[] => [
@@ -191,13 +198,6 @@ export function docFromHistory(row: HistoryRow, title: string): ReceiptDoc {
     symbols: unique([row.out?.symbol, row.in?.symbol]),
     mints: unique([...row.mints, row.launch?.token]),
   }
-}
-
-/** An amount in units, never a false zero: a crumb below the last place shown is «< 0,000001». */
-function unitsText(raw: string, decimals: number, places: number, locale: Locale): string {
-  const text = formatUnits(raw, decimals, places, locale)
-  if (BigInt(raw) === 0n || /[1-9]/.test(text)) return text
-  return `< ${formatAmount(10 ** -places, places, locale)}`
 }
 
 /**

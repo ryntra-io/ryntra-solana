@@ -48,7 +48,7 @@ export default async function PayPage({ params }: { params: Promise<{ id: string
   /* The QR carries this page's own link. Any phone camera opens it, and the
      page then hands itself to the wallet app — Phantom's documented mobile
      path — instead of relying on a wallet's in-app scanner reading a
-     `solana:` transfer request, which Phantom's scanner refused in testing. */
+     `solana:` transfer request, which the founder's Phantom refused. */
   const pageUrl = `${await publicOrigin()}/pay/${view.request.id}`;
   const qr = await qrDataUrl(pageUrl, 640);
   const paidAmount =

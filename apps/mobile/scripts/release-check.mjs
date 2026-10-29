@@ -52,12 +52,13 @@ check('interface style follows the system', app.userInterfaceStyle === 'automati
 /* ---- the links the phone owns ---- */
 const filters = app.android?.intentFilters ?? []
 const paths = filters.flatMap((filter) =>
-  (filter.data ?? []).map((d) => `${d.scheme}://${d.host}${d.pathPrefix ?? ''}`),
+  (filter.data ?? []).map((d) => `${d.scheme}://${d.host}${d.path ?? d.pathPrefix ?? ''}`),
 )
-const wanted = ['https://ryntra.io/app/alerts', 'https://ryntra.io/app/strategies']
+// The app is the city (decision 75): it claims the city itself and a coin's tower, nothing else, auto-verified.
+const city = ['https://ryntra.io/', 'https://ryntra.io/c/']
 check(
-  'App Links intent filters for the monitoring and plan pages, auto-verified',
-  wanted.every((w) => paths.includes(w)) && filters.every((f) => f.autoVerify === true),
+  'App Links intent filters for the city and its towers only, auto-verified',
+  paths.length === city.length && city.every((w) => paths.includes(w)) && filters.every((f) => f.autoVerify === true),
   paths.join(', '),
 )
 
@@ -70,16 +71,22 @@ const BLOCKED = [
   'android.permission.WRITE_EXTERNAL_STORAGE',
   'android.permission.USE_BIOMETRIC',
   'android.permission.USE_FINGERPRINT',
+  // The city app (decision 75) has no camera, microphone or push of its own.
+  'android.permission.CAMERA',
+  'android.permission.RECORD_AUDIO',
+  'android.permission.POST_NOTIFICATIONS',
 ]
 const blocked = app.android?.blockedPermissions ?? []
 const unblocked = BLOCKED.filter((name) => !blocked.includes(name))
-check('unused permissions blocked in app.json', unblocked.length === 0, unblocked.join(', ') || `${blocked.length} blocked`)
+check(
+  'unused permissions blocked in app.json',
+  unblocked.length === 0,
+  unblocked.join(', ') || `${blocked.length} blocked`,
+)
 const manifest = join(root, 'android/app/src/main/AndroidManifest.xml')
 if (existsSync(manifest)) {
   const src = readFileSync(manifest, 'utf8')
-  const kept = BLOCKED.filter(
-    (name) => !new RegExp(`android:name="${name}"[^>]*tools:node="remove"`).test(src),
-  )
+  const kept = BLOCKED.filter((name) => !new RegExp(`android:name="${name}"[^>]*tools:node="remove"`).test(src))
   check('generated manifest removes them (run expo prebuild after a change)', kept.length === 0, kept.join(', '))
 }
 
@@ -112,7 +119,7 @@ if (existsSync(gradle)) {
 const keySet = KEY_VARS.filter((name) => process.env[name])
 if (requireKey) {
   check(
-    'the release keystore in the environment',
+    "the Owner's keystore in the environment",
     keySet.length === KEY_VARS.length,
     `${keySet.length} of ${KEY_VARS.length} variables set`,
   )
@@ -121,10 +128,10 @@ if (requireKey) {
   }
 } else {
   info(
-    'the release keystore in the environment',
+    "the Owner's keystore in the environment",
     keySet.length === KEY_VARS.length
       ? 'set'
-      : `${keySet.length} of ${KEY_VARS.length} variables set — a build signed from the environment needs all four; an unsigned one for the publisher's apksigner (--unsigned) none`,
+      : `${keySet.length} of ${KEY_VARS.length} variables set — a build signed from the environment needs all four; an unsigned one for the Owner's apksigner (--unsigned) none`,
   )
 }
 
@@ -148,16 +155,18 @@ check(
 )
 
 /* ---- the code as shipped ---- */
-// Wherever the door lives (More earlier, Settings now), it opens under __DEV__ only, and the route itself turns a release away.
-const galleryDoors = tracked.filter(
-  (file) => file.startsWith('src/screens/') && /\.tsx$/.test(file) && read(file).includes("'/gallery'"),
-)
+// The app is the city and nothing else (decision 75): its routes are the city, its links and its fallback.
+const routes = tracked.filter((file) => file.startsWith('src/app/')).sort()
 check(
-  'the design gallery door is development-only',
-  galleryDoors.length > 0 &&
-    galleryDoors.every((file) => /__DEV__\s*\?/.test(read(file))) &&
-    /if \(!__DEV__\) return <Redirect/.test(read('src/app/gallery.tsx')),
-  galleryDoors.join(', '),
+  'the only routes are the city',
+  JSON.stringify(routes) ===
+    JSON.stringify([
+      'src/app/+native-intent.tsx',
+      'src/app/+not-found.tsx',
+      'src/app/_layout.tsx',
+      'src/app/index.tsx',
+    ]),
+  routes.join(', '),
 )
 const api = read('src/lib/api.ts')
 check('the API base is production', api.includes(`API_BASE_URL = '${API}'`))
@@ -172,6 +181,24 @@ check(
   /^\d+\.\d+\.\d+$/.test(pin.contractVersion ?? '') && /^[0-9a-f]{8,}$/.test(pin.commit ?? ''),
   `${pin.contractVersion} @ ${pin.commit}`,
 )
+/* The professional chart's page (CH-21) is what the core's archive on `origin/master` and `chart-page/` build — a page
+   built from another core, or a hand edit, does not ship. */
+let chartPage = ''
+try {
+  chartPage = execFileSync(process.execPath, [join(root, 'scripts/chart-page.mjs'), '--check'], {
+    cwd: root,
+    encoding: 'utf8',
+    stdio: ['ignore', 'pipe', 'pipe'],
+  }).trim()
+} catch (error) {
+  // The build's own words: tsc speaks on stdout, the script's refusal on stderr — the first line that says what failed.
+  const said = `${error.stdout ?? ''}\n${error.stderr ?? ''}`
+    .split('\n')
+    .map((line) => line.trim())
+    .filter((line) => line && !line.startsWith('at ') && !/^Node\.js v/.test(line))
+  chartPage = `FAIL ${said.find((line) => /error|differs|Error:/.test(line)) ?? said[0] ?? error.message}`
+}
+check('the pro chart page is built from the core archive', !chartPage.startsWith('FAIL'), chartPage)
 check(
   'the Firebase client file is not required by the build',
   !read('app.config.js').includes('throw'),

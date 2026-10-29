@@ -41,12 +41,12 @@ export const LAUNCH_TERMS: Readonly<Record<PublicLocale, LaunchTerms>> = {
       "anything that breaks the law or infringes another person's trademark, copyright or other rights.",
     ],
     after: [
-      "Before anything is built, the Service refuses a name or ticker that reads as a known brand or a known person. Pictures, descriptions and links are not checked in advance.",
+      "Before anything is built, the Service refuses a name or ticker that reads as a known brand or a known person, and a picture that Ryntra took down before. Other pictures, descriptions and links are not checked in advance.",
       "If a token breaks this section, Ryntra may hide its picture, description and links on Ryntra's pages and in the Ryntra apps, without notice. The token itself lives on the blockchain: Ryntra cannot change or remove it, and hiding its content does not change what anyone holds.",
     ],
     report: {
       before: "To report a token, write to",
-      after: "with the token's address or the link to its page. The Ryntra team reads every report and acts on one that shows a breach without delay. In the Ryntra app for Android, the report button on a token's page opens that letter, and «Hide on this phone» hides the token's picture, description and links for you.",
+      after: "with the token's address or the link to its page. The Ryntra team reads every report and acts on one that shows a breach without delay. On a token's page on ryntra.io, «Report this token» sends the report to the team with the token's page. In the Ryntra app for Android, the report button on a token's page opens that letter, and «Hide on this phone» hides the token's picture, description and links for you.",
     },
     pointer: null,
   },
@@ -61,12 +61,12 @@ export const LAUNCH_TERMS: Readonly<Record<PublicLocale, LaunchTerms>> = {
       "будь-що, що порушує закон або чужі торговельні марки, авторські чи інші права.",
     ],
     after: [
-      "Ще до того, як щось буде створено, Сервіс відмовляє назві чи тікеру, що читається як відомий бренд або відома людина. Картинки, описи й посилання наперед не перевіряються.",
+      "Ще до того, як щось буде створено, Сервіс відмовляє назві чи тікеру, що читається як відомий бренд або відома людина, і картинці, яку Ryntra вже знімала. Інші картинки, описи й посилання наперед не перевіряються.",
       "Якщо токен порушує цей розділ, Ryntra може сховати його картинку, опис і посилання на своїх сторінках і в застосунках Ryntra без попередження. Сам токен живе в блокчейні: Ryntra не може його змінити чи видалити, а приховування його вмісту не змінює нічиїх активів.",
     ],
     report: {
       before: "Щоб поскаржитися на токен, напиши на",
-      after: "з адресою токена чи посиланням на його сторінку. Команда Ryntra читає кожну скаргу й без зволікань діє за тією, що показує порушення. У застосунку Ryntra для Android кнопка скарги на сторінці токена відкриває цей лист, а «Сховати на цьому телефоні» ховає картинку, опис і посилання токена для тебе.",
+      after: "з адресою токена чи посиланням на його сторінку. Команда Ryntra читає кожну скаргу й без зволікань діє за тією, що показує порушення. На сторінці токена на ryntra.io «Поскаржитися на токен» надсилає скаргу команді разом зі сторінкою токена. У застосунку Ryntra для Android кнопка скарги на сторінці токена відкриває цей лист, а «Сховати на цьому телефоні» ховає картинку, опис і посилання токена для тебе.",
     },
     pointer: { text: "Умови чинні англійською.", link: "Розділ про токени, які ти запускаєш, — українською" },
   },

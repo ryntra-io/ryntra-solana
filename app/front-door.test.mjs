@@ -2,8 +2,10 @@ import assert from "node:assert/strict";
 import { existsSync, readFileSync, readdirSync } from "node:fs";
 import test from "node:test";
 
-import nextConfig, { HOME_LANGUAGE_ADDRESSES, LANDING_ADDRESSES, LANDING_REDIRECTS, PARKED_LANGUAGE_ADDRESSES } from "../next.config.ts";
+import nextConfig, { HOME_ENGLISH_ONLY, HOME_LANGUAGE_ADDRESSES, HOME_TO_APP, LANDING_ADDRESSES, LANDING_REDIRECTS, PARKED_LANGUAGE_ADDRESSES } from "../next.config.ts";
+import { LANDING_IS_LIVE } from "../lib/site/home-to-app.ts";
 import { CUSTOMER_REDIRECTS } from "../lib/product/customer-routing.ts";
+import { matchHas } from "next/dist/shared/lib/router/utils/prepare-destination.js";
 import { HOMEPAGE_CATEGORY, HOMEPAGE_COPY } from "../lib/site/homepage-copy.ts";
 import { ENABLED_LOCALE_CODES } from "./i18n/locales.ts";
 import manifest from "./manifest.ts";
@@ -25,19 +27,36 @@ const RETIRED =
 
 const read = (path) => readFileSync(new URL(path, import.meta.url), "utf8");
 
-test("the landing answers at `/` and `/uk`; the temporary redirect into the app is gone; every other language address is one hop", async () => {
-  const rows = await nextConfig.redirects();
+/* Rows whose conditions never hold on ryntra.io — app.ryntra.io's (`lib/product/app-address.ts`), predict.ryntra.io's
+   (`lib/predictions/predict-host.ts`): Next's own matcher decides, so a host pattern that also takes ryntra.io stays in. */
+const onAppHostOnly = (row) => (row.has || row.missing ? !matchHas({ headers: { host: "ryntra.io" }, cookies: {} }, {}, row.has, row.missing) : false);
+
+test("on ryntra.io `/` is Mission Control and `/uk` leads to it; every other language address is one hop", async () => {
+  const rows = (await nextConfig.redirects()).filter((row) => !onAppHostOnly(row));
   /* Next answers with the first row that matches, so the first row per source is the one that counts. */
   const first = new Map();
   for (const row of rows) if (!first.has(row.source)) first.set(row.source, row);
 
   assert.deepEqual(LANDING_ADDRESSES, { en: "/", uk: "/uk" });
   assert.deepEqual(rows.slice(0, LANDING_REDIRECTS.length), LANDING_REDIRECTS, "the landing's language map is matched before every other row");
-  /* The two landing addresses are pages: nothing redirects them. */
-  for (const source of ["/", "/uk"]) assert.equal(first.get(source), undefined, `${source} is the landing and must answer itself`);
+  /* The home page is English only («українськомовний не
+     потрібно на головний», 25.10): on ryntra.io `/uk` leads to `/`, temporarily — the Ukrainian landing stays in the code. */
+  assert.deepEqual(HOME_TO_APP, []);
+  assert.equal(first.get("/"), undefined, "`/` is a page");
+  assert.deepEqual(first.get("/uk"), { source: "/uk", has: [{ type: "host", value: "ryntra\\.io" }], destination: "/", permanent: false });
+  assert.deepEqual(LANDING_REDIRECTS.slice(0, HOME_ENGLISH_ONLY.length), HOME_ENGLISH_ONLY);
+  for (const row of [...HOME_TO_APP, ...HOME_ENGLISH_ONLY]) {
+    assert.equal(row.permanent, false, "never a permanent redirect: browsers and search engines would keep it");
+    assert.ok(matchHas({ headers: { host: "ryntra.io" }, cookies: {} }, {}, row.has, row.missing), `${row.source} moves on ryntra.io`);
+    for (const host of ["app.ryntra.io", "predict.ryntra.io", "ryntra-git-x.vercel.app", "localhost:3000"]) {
+      assert.equal(matchHas({ headers: { host }, cookies: {} }, {}, row.has, row.missing), false, `${row.source} still answers itself on ${host}`);
+    }
+  }
+  for (const page of ["(home)/page.tsx", "(home)/uk/page.tsx"]) assert.ok(read(`./${page}`), `${page} stays, for the day the landing returns`);
   /* The same page under a second name, for good. */
   assert.deepEqual(first.get("/en"), { source: "/en", destination: "/", permanent: true });
-  assert.deepEqual(first.get("/ua"), { source: "/ua", destination: "/uk", permanent: true });
+  assert.deepEqual(first.get("/ua"), { source: "/ua", has: [{ type: "host", value: "ryntra\\.io" }], destination: "/", permanent: false });
+  assert.deepEqual(rows.find((row) => row.source === "/ua" && !row.has), { source: "/ua", destination: "/uk", permanent: true }, "elsewhere `/ua` stays `/uk`'s alias");
   /* Every language the home page once answered in, and its aliases, is paused, not gone: `/`, temporarily. */
   for (const code of ENABLED_LOCALE_CODES) {
     assert.ok(HOME_LANGUAGE_ADDRESSES.includes(`/${code}`), `/${code} is a language address of the home page`);
@@ -60,11 +79,14 @@ test("the landing answers at `/` and `/uk`; the temporary redirect into the app 
     assert.equal(row?.destination, destination, `${source} must lead to ${destination}`);
     assert.equal(row?.permanent, false, `${source} must stay a 307`);
   }
-  /* No hop lands where another waits: no row's destination is itself redirected. */
+  /* No hop lands where another waits: no row's destination is itself redirected — but for the landing's two addresses
+     while they lead into the app (`HOME_TO_APP`): elsewhere than ryntra.io they are pages, and on ryntra.io the old
+     addresses that led to the landing take one more hop into the app. */
   const sources = new Set(rows.map((row) => row.source));
+  const homeDoors = new Set([...HOME_TO_APP, ...HOME_ENGLISH_ONLY].map((row) => row.source));
   for (const row of rows) {
     const path = row.destination.split("?")[0];
-    assert.ok(!sources.has(path) || path === "/app", `${row.source} → ${row.destination} is a chain`);
+    assert.ok(!sources.has(path) || path === "/app" || homeDoors.has(path), `${row.source} → ${row.destination} is a chain`);
   }
   /* `/app` answers with Home, the first of the five places — the landing's «Відкрити застосунок» goes straight there. */
   assert.equal(CUSTOMER_REDIRECTS.find((row) => row.source === "/app")?.destination, "/app/home");
@@ -87,7 +109,7 @@ const HOME_WORDS = {
   },
   uk: {
     title: "Застосунок Ryntra — акції, крипта, меми й свій токен",
-    description: "Під'єднай гаманець Solana, поповни й купуй токенізовані акції, крипту й меми — або запусти свій токен. Ринки, боти й сповіщення в одному застосунку.",
+    description: "Підключи гаманець Solana, поповни й купуй токенізовані акції, крипту й меми — або запусти свій токен. Ринки, боти й сповіщення в одному застосунку.",
   },
 };
 
@@ -190,11 +212,16 @@ test("«Що ти купуєш» names the PreStocks fee the chain states, never
 
 test("the sitemap and robots name only what is live", async () => {
   const entries = sitemapEntries(["NVDAx", "SPACEX"]);
-  assert.equal(entries[0].url, SITE, "the landing in English comes first");
-  assert.equal(entries[1].url, SITE + "/uk", "then the landing in Ukrainian");
-  for (const entry of entries.slice(0, 2)) {
-    assert.equal(entry.priority, 1);
-    assert.deepEqual(entry.alternates?.languages, { en: SITE, uk: SITE + "/uk", "x-default": SITE }, "each names its language pair");
+  if (LANDING_IS_LIVE) {
+    /* Mission Control, in English alone: `/uk` leads to it and is never advertised. */
+    assert.equal(entries[0].url, SITE, "the home page comes first");
+    assert.equal(entries[0].priority, 1);
+    assert.equal(entries[0].alternates, undefined, "one language, no pair");
+    assert.ok(!entries.some((entry) => entry.url === SITE + "/uk"), "the Ukrainian home is a redirect");
+  } else {
+    /* While the home page leads into the app, the sitemap begins with the app's Home. */
+    assert.ok(!entries.some((entry) => entry.url === SITE || entry.url === SITE + "/uk"), "the landing is not advertised while it leads into the app");
+    assert.equal(entries[0].url, SITE + APP_HOME_PATH);
   }
   for (const path of [APP_HOME_PATH, "/app/markets", "/app/stocks/NVDAx", "/app/stocks/SPACEX"]) {
     const english = entries.find((entry) => entry.url === SITE + path);
@@ -204,7 +231,7 @@ test("the sitemap and robots name only what is live", async () => {
     assert.deepEqual(english.alternates?.languages, { en: SITE + path, uk: `${SITE}/uk${path}`, "x-default": SITE + path });
     assert.deepEqual(ukrainian.alternates, english.alternates);
   }
-  const rows = await nextConfig.redirects();
+  const rows = (await nextConfig.redirects()).filter((row) => !onAppHostOnly(row));
   const redirected = new Set(rows.map((row) => row.source).filter((source) => !source.includes(":")));
   for (const entry of entries) {
     const path = entry.url.replace(SITE, "") || "/";
@@ -225,7 +252,7 @@ test("the sitemap and robots name only what is live", async () => {
   const policy = robots();
   const rules = Array.isArray(policy.rules) ? policy.rules : [policy.rules];
   for (const rule of rules.filter((item) => item.allow)) {
-    assert.deepEqual(rule.allow, ["/", "/app/home$", "/app/markets$", "/app/stocks/", "/uk/app/home$", "/uk/app/markets$", "/uk/app/stocks/"], "the site, Home, Markets and the companies' pages — at both addresses — are open");
+    assert.deepEqual(rule.allow, ["/", "/app/home$", "/app/markets$", "/app/stocks/", "/uk/app/home$", "/uk/app/markets$", "/uk/app/stocks/", "/solana/home$", "/solana/markets$", "/solana/stocks/", "/uk/solana/home$", "/uk/solana/markets$", "/uk/solana/stocks/"], "the site, Home, Markets and the companies' pages — at both addresses, and at their addresses on app.ryntra.io — are open");
     assert.ok(rule.disallow.includes("/app/") && rule.disallow.includes("/uk/app/"), "the rest of the cabinet stays out, in either language");
     assert.ok(!rule.disallow.includes("/app$"), "/app itself is the one hop to Home");
   }

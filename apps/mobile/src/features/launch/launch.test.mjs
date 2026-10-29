@@ -9,7 +9,19 @@ import { fileURLToPath } from 'node:url'
 import { ApiError } from '../../lib/api.ts'
 import { LAUNCH_WORDS, launchWords } from './copy.ts'
 import { checkLaunchForm, EMPTY_FORM, linkProblem, shownProblem, utf8Length } from './form.ts'
-import { exactPair, formatBps, formatMove, formatTinyPrice, fromRaw, shortPair, toRaw } from './launch-format.ts'
+import {
+  exactPair,
+  feeShareBps,
+  formatBps,
+  formatFeeRaw,
+  formatMove,
+  formatMoveSize,
+  formatTinyPrice,
+  fromRaw,
+  shortPair,
+  toRaw,
+  typedAmount,
+} from './launch-format.ts'
 import { claimFees, launchToken, lostAfterSend, tradeLaunch, walletFailure } from './launch-flow.ts'
 import {
   agoText,
@@ -17,7 +29,10 @@ import {
   claimFailureKey,
   claimFailureTitleKey,
   claimView,
+  contractAtLeast,
   createFailureKey,
+  LAUNCH_V1_CONTRACT,
+  firstBuyMaxRaw,
   earningsUnreadKey,
   inAttention,
   isPaused,
@@ -40,7 +55,7 @@ const CREATOR = '4MS4RQ3Vj2oYFHJz4EtLyxtq6panVcDUpDyXdoGxfQ1n'
 const MINT = 'So11111111111111111111111111111111111111112'
 const USDC = { mint: 'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v', symbol: 'USDC', decimals: 6, dollar: true }
 
-test('the moderation module is the web app’s own, unedited', () => {
+test('the moderation module is the web line’s own, unedited', () => {
   const content = readFileSync(join(here, 'moderation.ts'), 'utf8').replace(/\r\n/g, '\n')
   const bytes = Buffer.from(content, 'utf8')
   const blob = createHash('sha1').update(`blob ${bytes.length}\0`).update(bytes).digest('hex')
@@ -107,6 +122,9 @@ test('amounts typed and raw, shares and money as the web writes them', () => {
   assert.equal(formatBps(46, 'uk').replace(/ /g, ' '), '0,46 %')
   assert.equal(formatMove(-80, 'en'), '−0.8%')
   assert.equal(formatTinyPrice(0.00000509, 'en').text, '0.0₅509')
+  // No price read is unknown: a dash, never a false zero.
+  assert.equal(formatTinyPrice(Number.NaN, 'uk').text, '—')
+  assert.equal(formatTinyPrice(0, 'en').plain, '—')
   assert.equal(exactPair('4200', USDC, 'en'), '< $0.01')
   assert.equal(exactPair('174090000', USDC, 'en'), '$174.09')
   assert.equal(shortPair('0', USDC, 'en'), '$0')
@@ -211,6 +229,113 @@ test('a lock is never asked without a first buy', async () => {
   })
   assert.equal(calls.find(([name]) => name === 'build')[1].lock, null)
   assert.deepEqual(calls.find(([name]) => name === 'sign')[1], ['CREATE'])
+})
+
+test('1.71.0, Micro with a wallet that signs v1: one transaction holds the buy and its lock — one signed, no lock wire', async () => {
+  const { api, wallet, calls } = doubles({
+    build: async (request) => {
+      calls.push(['build', request])
+      return {
+        buildId: 'b1',
+        network: 'solana:devnet',
+        unsignedWireBase64: 'CREATE+LOCK',
+        lockUnsignedWireBase64: null,
+        token: MINT,
+        firstBuyOutRaw: '0',
+        payerCoveredLamports: '1',
+        creatorCostLamports: '10000000',
+        expiresAt: '2026-10-25T12:00:00Z',
+      }
+    },
+  })
+  let built = null
+  const outcome = await launchToken({
+    api,
+    wallet,
+    creator: CREATOR,
+    preset: 'micro',
+    fields: FIELDS,
+    imageBase64: 'A',
+    firstBuyRaw: 5_000_000n,
+    lock: '6m-12m',
+    format: 'v1',
+    onBuilt: (b) => (built = b),
+  })
+  assert.equal(outcome.ok, true)
+  const request = calls.find(([name]) => name === 'build')[1]
+  assert.equal(request.format, 'v1')
+  assert.equal(request.lock, '6m-12m')
+  assert.deepEqual(calls.find(([name]) => name === 'sign')[1], ['CREATE+LOCK'])
+  assert.equal(built.transactions, 1)
+  const submit = calls.find(([name]) => name === 'submit')[1]
+  assert.equal(submit.signedWireBase64, 'CREATE+LOCK-signed')
+  assert.equal(submit.signedLockWireBase64, null)
+})
+
+test('the v1 format is sent only with a first buy; without one the build is as before', async () => {
+  const { api, wallet, calls } = doubles()
+  await launchToken({
+    api,
+    wallet,
+    creator: CREATOR,
+    preset: 'micro',
+    fields: FIELDS,
+    imageBase64: 'A',
+    firstBuyRaw: 0n,
+    lock: null,
+    format: 'v1',
+  })
+  assert.equal('format' in calls.find(([name]) => name === 'build')[1], false)
+  const legacy = doubles()
+  await launchToken({ ...legacy, creator: CREATOR, preset: 'classic', fields: FIELDS, imageBase64: 'A', firstBuyRaw: 1n, lock: null })
+  assert.equal('format' in legacy.calls.find(([name]) => name === 'build')[1], false)
+})
+
+test('1.71.0 refusals in the person’s words, before anything was sent', async () => {
+  for (const [code, key] of [
+    ['LAUNCH_WALLET_V1_REQUIRED', 'errWalletV1'],
+    ['LAUNCH_IMAGE_REFUSED', 'pictureRefused'],
+    ['LAUNCH_IMAGE_CHECK_UNAVAILABLE', 'pictureCheckLater'],
+    ['LAUNCH_V1_AGAIN', 'errV1Again'],
+    ['LAUNCH_WALLET_UNREAD', 'walletVersionUnread'],
+  ]) {
+    assert.equal(createFailureKey({ step: 'before', code, detail: null }), key)
+  }
+  const refused = doubles({
+    metadata: async () => {
+      throw new ApiError('LAUNCH_IMAGE_REFUSED', 'The picture reads as violence; choose another.', 422)
+    },
+  })
+  const outcome = await launchToken({ ...refused, creator: CREATOR, preset: 'classic', fields: FIELDS, imageBase64: 'A', firstBuyRaw: 0n, lock: null })
+  assert.equal(outcome.ok, false)
+  assert.equal(outcome.failure.step, 'before')
+  assert.equal(lostAfterSend(outcome.failure), false)
+  assert.equal(createFailureKey(outcome.failure), 'pictureRefused')
+  assert.equal(refused.calls.some(([name]) => name === 'build'), false)
+  // Said with no value to fill: the dock shows the key as it is.
+  for (const key of ['errWalletV1', 'errV1Again', 'walletVersionUnread', 'lockNone', 'pictureRefused', 'pictureCheckLater'])
+    for (const locale of ['en', 'uk']) assert.doesNotMatch(launchWords(locale)(key), /\{/)
+})
+
+test('v1 is sent only to a deployment that names 1.71.0 or later — before it the build refuses the field', () => {
+  assert.equal(LAUNCH_V1_CONTRACT, '1.71.0')
+  assert.equal(contractAtLeast('1.71.0', LAUNCH_V1_CONTRACT), true)
+  assert.equal(contractAtLeast('1.72.3', LAUNCH_V1_CONTRACT), true)
+  assert.equal(contractAtLeast('2.0.0', LAUNCH_V1_CONTRACT), true)
+  assert.equal(contractAtLeast('1.70.0', LAUNCH_V1_CONTRACT), false)
+  assert.equal(contractAtLeast('1.9.99', LAUNCH_V1_CONTRACT), false)
+  assert.equal(contractAtLeast(undefined, LAUNCH_V1_CONTRACT), false)
+  assert.equal(contractAtLeast('next', LAUNCH_V1_CONTRACT), false)
+})
+
+test('the required lock’s help is true on either server: no promise of one transaction', () => {
+  for (const locale of ['en', 'uk']) assert.doesNotMatch(LAUNCH_WORDS.lockRequiredHint[locale], /transaction|транзакц/i)
+})
+
+test('the launch’s end never promises a referral; the creator’s share is of every fee on the curve', () => {
+  for (const locale of ['en', 'uk']) assert.doesNotMatch(LAUNCH_WORDS.successLine[locale], /referral|реферал/i)
+  assert.equal(launchWords('uk')('presetCreator', { pct: formatBps(3200, 'uk') }), `Тобі ${formatBps(3200, 'uk')} кожної комісії на кривій`)
+  assert.match(formatBps(3200, 'en'), /^32\s?%$/)
 })
 
 test('the wallet’s cancel sends nothing; a paused build is the stop, not a failure', async () => {
@@ -573,5 +698,66 @@ test('English counts agree with their nouns: «1 holder», «2 holders», «1 la
   assert.equal(word('risk_HOLDERS_UNCOUNTED', { n: '1' }), 'At least 1 holder')
   assert.equal(word('tradesLatest', { n: '1,200' }), '1,200 trades read — not all')
   assert.ok(Object.values(LAUNCH_WORDS).every((pair) => !/\{(s|es):/.test(pair.uk)))
-  assert.equal(launchWords('uk')('risk_FEW_HOLDERS', { n: 1 }), 'Холдерів: 1')
+  assert.equal(launchWords('uk')('risk_FEW_HOLDERS', { n: 1 }), 'Власників: 1')
+})
+
+test('AG-2: a launch signed late twice, built too short, or moved on a rebuild is said in its own words — nothing sent', async () => {
+  const { createFailureKey } = await import('./launch-model.ts')
+  assert.equal(createFailureKey({ step: 'before', code: 'LAUNCH_SIGN_LATE', detail: null }), 'signLate')
+  assert.equal(createFailureKey({ step: 'before', code: 'LAUNCH_BYTES_SHORT', detail: null }), 'bytesShort')
+  assert.equal(createFailureKey({ step: 'before', code: 'LAUNCH_QUOTE_MOVED', detail: null }), 'quoteMoved')
+  assert.equal(createFailureKey({ step: 'before', code: 'WALLET_CANNOT_SIGN', detail: null }), 'walletCannotSign')
+})
+
+test('a fee is never shown smaller than it is: three significant digits below a whole unit, the last rounded up', () => {
+  // 1 USDC at 1.62 %: 0.0162 USDC, not «0.01».
+  assert.equal(formatFeeRaw('16200', 6, 'en'), '0.0162')
+  assert.equal(formatFeeRaw('16200', 6, 'uk'), '0,0162')
+  assert.equal(formatFeeRaw('16234', 6, 'en'), '0.0163')
+  assert.equal(formatFeeRaw('1200', 6, 'en'), '0.0012')
+  assert.equal(formatFeeRaw('410', 6, 'en'), '0.00041')
+  assert.equal(formatFeeRaw('1', 6, 'en'), '0.000001')
+  assert.equal(formatFeeRaw('162000', 6, 'en'), '0.162')
+  assert.equal(formatFeeRaw('1234567', 6, 'en'), '1.24')
+  assert.equal(formatFeeRaw('16200', 9, 'en'), '0.0000162')
+  assert.equal(formatFeeRaw('0', 6, 'en'), '0')
+})
+
+test('the first buy’s «Max» is the cap, never more than the wallet holds; none while the balance is unread or zero', () => {
+  assert.equal(firstBuyMaxRaw('102920000', 0n, false), null)
+  assert.equal(firstBuyMaxRaw('102920000', null, false), null)
+  assert.equal(firstBuyMaxRaw('102920000', 5_000_000n, false), 5_000_000n)
+  assert.equal(firstBuyMaxRaw('102920000', 500_000_000n, false), 102_920_000n)
+  assert.equal(firstBuyMaxRaw(null, 500_000_000n, false), null)
+  // A SOL pair pays the launch's own network costs in SOL: no «Max» guessed.
+  assert.equal(firstBuyMaxRaw('102920000', 500_000_000n, true), null)
+})
+
+test("a fee's share is counted from the same figures as its amount, rounded up — never smaller than it is", () => {
+  // 0.1206 USDC on 12 USDC is 1.005 %: «1,01 %» beside «0,121», never «1 %».
+  assert.equal(feeShareBps('120600', '12000000'), 101)
+  assert.equal(formatBps(feeShareBps('120600', '12000000'), 'uk'), '1,01 %')
+  assert.equal(feeShareBps('120000', '12000000'), 100)
+  assert.equal(feeShareBps('0', '12000000'), 0)
+  assert.equal(feeShareBps('1', '0'), null)
+})
+
+test('the curve’s room set with one press is the chip’s own figure, cut to cents, as the field reads it back', () => {
+  // 15 605,726236 USDC of room: the chip says 15 605,72 and writes 15605,72 — never more than the room, never 6 places.
+  assert.equal(typedAmount('15605726236', 6, 'uk', 2), '15605,72')
+  assert.equal(typedAmount('15605726236', 6, 'en', 2), '15605.72')
+  assert.equal(toRaw(typedAmount('15605726236', 6, 'uk', 2), 6), 15_605_720_000n)
+  assert.equal(typedAmount('15605000000', 6, 'uk', 2), '15605')
+  // A share of the wallet keeps every place the currency has.
+  assert.equal(typedAmount(1_234_567n, 6, 'uk'), '1,234567')
+})
+
+test('a price move is said by its size alone; one that rounds to nothing barely moves', () => {
+  assert.equal(formatMoveSize(-80, 'en'), '0.8%')
+  assert.equal(formatMoveSize(420, 'en'), '4.2%')
+  assert.equal(formatMoveSize(0, 'uk'), null)
+  assert.equal(formatMoveSize(-4, 'uk'), null)
+  assert.equal(formatMoveSize(Number.NaN, 'en'), null)
+  assert.equal(launchWords('en')('priceFlat'), 'The price barely moves')
+  assert.equal(launchWords('uk')('priceFlat'), 'Ціна майже не зміниться')
 })

@@ -147,7 +147,7 @@ export async function observeSwap(
         .getTransaction(args.signature as never, {
           encoding: "json",
           commitment: "confirmed",
-          maxSupportedTransactionVersion: 0,
+          maxSupportedTransactionVersion: 1,
         })
         .send({ abortSignal }),
     );

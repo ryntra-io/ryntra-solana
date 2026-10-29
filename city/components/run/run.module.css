@@ -1,0 +1,546 @@
+/* The run's HUD: as little as the run needs. Monumental numerals, a hairline of progress, one hint at a time.
+   The result is one card with one decision. Tokens come from app/globals.css. */
+
+.layer {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 20;
+  font-family: var(--font-ui, system-ui), system-ui, sans-serif;
+  color: var(--ice);
+}
+
+.layer button {
+  pointer-events: auto;
+}
+
+.top {
+  position: absolute;
+  top: max(12px, env(safe-area-inset-top));
+  left: max(var(--gutter), env(safe-area-inset-left));
+  right: max(var(--gutter), env(safe-area-inset-right));
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+
+.spacer {
+  flex: 1;
+}
+
+.icon {
+  width: 44px;
+  height: 44px;
+  display: grid;
+  place-items: center;
+  border: 0;
+  padding: 0;
+  color: var(--ice);
+  background: rgba(11, 10, 20, 0.62);
+  clip-path: polygon(10px 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%, 0 10px);
+  box-shadow: inset 0 0 0 2px rgba(153, 69, 255, 0.3);
+}
+
+.icon svg {
+  width: 20px;
+  height: 20px;
+}
+
+.iconOn {
+  color: var(--violet);
+  box-shadow: inset 0 0 0 2px rgba(153, 69, 255, 0.75);
+}
+
+.icon:focus-visible,
+.again:focus-visible,
+.second:focus-visible,
+.quiet:focus-visible {
+  outline: 2px solid var(--amber);
+  outline-offset: 3px;
+}
+
+/* ---------- Clock ---------- */
+
+.clock {
+  position: absolute;
+  top: calc(max(12px, env(safe-area-inset-top)) + 6px);
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+
+.time {
+  font-family: var(--font-display, system-ui), system-ui, sans-serif;
+  font-stretch: 125%;
+  font-variation-settings: 'wdth' 125;
+  font-weight: 900;
+  font-size: clamp(30px, 5vw, 44px);
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+  text-shadow: 0 0 24px rgba(255, 178, 63, 0.45);
+}
+
+.delta {
+  min-height: 1em;
+  font-weight: 800;
+  font-size: 15px;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+
+.delta[data-ahead='yes'] {
+  color: var(--ice);
+}
+
+.delta[data-ahead='no'] {
+  color: var(--flare);
+}
+
+.track {
+  position: relative;
+  width: min(240px, 44vw);
+  height: 4px;
+  background: rgba(238, 241, 255, 0.16);
+}
+
+.fill {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, var(--warm), var(--amber));
+  transform-origin: left center;
+  transform: scaleX(0);
+  box-shadow: 0 0 10px rgba(255, 178, 63, 0.6);
+}
+
+.ghostMark {
+  position: absolute;
+  top: -4px;
+  width: 4px;
+  height: 12px;
+  margin-left: -2px;
+  background: var(--violet);
+  box-shadow: 0 0 8px var(--violet);
+  opacity: 0;
+}
+
+/* ---------- Shields ---------- */
+
+.shields {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  height: 12px;
+}
+
+.pip {
+  width: 9px;
+  height: 9px;
+  transform: rotate(45deg);
+  background: var(--ice);
+  box-shadow: 0 0 9px rgba(238, 241, 255, 0.8);
+  transition:
+    background 200ms,
+    box-shadow 200ms;
+}
+
+.pipOff {
+  background: transparent;
+  box-shadow: inset 0 0 0 1.5px rgba(238, 241, 255, 0.32);
+}
+
+.pipCrack {
+  animation: crack 560ms ease-out;
+}
+
+@keyframes crack {
+  0% {
+    transform: rotate(45deg) scale(2);
+    background: var(--flare);
+    box-shadow: 0 0 22px var(--flare);
+  }
+  100% {
+    transform: rotate(45deg) scale(1);
+  }
+}
+
+.pipBack {
+  animation: back 600ms cubic-bezier(0.2, 1.5, 0.4, 1);
+}
+
+@keyframes back {
+  0% {
+    transform: rotate(45deg) scale(0.2);
+  }
+  100% {
+    transform: rotate(45deg) scale(1);
+  }
+}
+
+/* A hit: the screen's edges flash the danger colour. */
+.flash {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  box-shadow: inset 0 0 110px 14px rgba(255, 77, 92, 0.62);
+}
+
+.flashOn {
+  animation: flash 650ms ease-out;
+}
+
+@keyframes flash {
+  0% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+
+.target {
+  font-size: 13px;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--amber);
+}
+
+/* ---------- Countdown ---------- */
+
+.count {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+}
+
+.countNum {
+  font-family: var(--font-display, system-ui), system-ui, sans-serif;
+  font-stretch: 125%;
+  font-variation-settings: 'wdth' 125;
+  font-weight: 900;
+  font-size: clamp(88px, 22vw, 180px);
+  line-height: 1;
+  color: var(--warm);
+  text-shadow: 0 0 60px rgba(255, 178, 63, 0.75);
+}
+
+.pop {
+  animation: pop 520ms cubic-bezier(0.2, 1.4, 0.4, 1) both;
+}
+
+@keyframes pop {
+  0% {
+    opacity: 0;
+    transform: scale(1.8);
+  }
+  30% {
+    opacity: 1;
+    transform: scale(0.94);
+  }
+  100% {
+    opacity: 0.9;
+    transform: scale(1);
+  }
+}
+
+/* The first countdown's how-to card, under the number. */
+.howto {
+  position: absolute;
+  left: 50%;
+  top: calc(50% + clamp(66px, 14vw, 120px));
+  transform: translateX(-50%);
+  width: max-content;
+  max-width: calc(100% - 2 * var(--gutter));
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  padding: 16px 20px;
+  text-align: center;
+  background: rgba(11, 10, 20, 0.66);
+  clip-path: polygon(14px 0, 100% 0, 100% calc(100% - 14px), calc(100% - 14px) 100%, 0 100%, 0 14px);
+  animation: riseCentered 420ms cubic-bezier(0.2, 1.3, 0.4, 1) both;
+}
+
+.howtoMove {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-family: var(--font-display, system-ui), system-ui, sans-serif;
+  font-stretch: 125%;
+  font-variation-settings: 'wdth' 125;
+  font-weight: 900;
+  font-size: 20px;
+  text-transform: uppercase;
+  color: var(--warm);
+}
+
+.keys {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 8px;
+}
+
+.keys span {
+  padding: 7px 10px;
+  font-size: 15px;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  background: rgba(238, 241, 255, 0.08);
+}
+
+.howtoNote {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--text-dim);
+}
+
+/* ---------- Hints ---------- */
+
+.hint {
+  position: absolute;
+  left: 50%;
+  bottom: calc(max(28px, env(safe-area-inset-bottom)) + 24px);
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 18px;
+  font-size: 15px;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  background: rgba(11, 10, 20, 0.66);
+  clip-path: polygon(12px 0, 100% 0, 100% calc(100% - 12px), calc(100% - 12px) 100%, 0 100%, 0 12px);
+  animation: rise 300ms cubic-bezier(0.2, 1.3, 0.4, 1) both;
+}
+
+/* A cue: how to pass the next new obstacle, in the action colour. */
+.cue {
+  color: var(--warm);
+  box-shadow: inset 0 -3px 0 var(--amber);
+}
+
+.hintIcon {
+  display: grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  color: var(--amber);
+}
+
+.routes {
+  position: absolute;
+  left: max(var(--gutter), env(safe-area-inset-left));
+  right: max(var(--gutter), env(safe-area-inset-right));
+  bottom: calc(max(28px, env(safe-area-inset-bottom)) + 24px);
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  animation: rise 300ms cubic-bezier(0.2, 1.3, 0.4, 1) both;
+}
+
+.route {
+  flex: 0 1 30%;
+  padding: 11px 10px;
+  text-align: center;
+  font-size: 15px;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--ice);
+  background: rgba(11, 10, 20, 0.66);
+  box-shadow: inset 0 -3px 0 rgba(238, 241, 255, 0.7);
+}
+
+.routeFast {
+  box-shadow: inset 0 -3px 0 var(--amber);
+  color: var(--warm);
+}
+
+.routeRisky {
+  box-shadow: inset 0 -3px 0 var(--flare);
+  color: var(--flare);
+}
+
+.routeSave {
+  box-shadow: inset 0 -3px 0 var(--ice);
+}
+
+.routeGap {
+  flex: 0 1 30%;
+}
+
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+}
+
+.hint {
+  /* keeps the centring transform during the rise */
+  animation-name: riseCentered;
+}
+
+@keyframes riseCentered {
+  from {
+    opacity: 0;
+    transform: translate(-50%, 14px);
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, 0);
+  }
+}
+
+/* ---------- Result ---------- */
+
+.result {
+  position: absolute;
+  left: 50%;
+  bottom: max(16px, env(safe-area-inset-bottom));
+  width: min(520px, calc(100% - 2 * var(--gutter)));
+  transform: translateX(-50%);
+  padding: 22px 22px 20px;
+  background: linear-gradient(160deg, rgba(20, 16, 36, 0.92), rgba(8, 7, 15, 0.94));
+  clip-path: polygon(16px 0, 100% 0, 100% calc(100% - 16px), calc(100% - 16px) 100%, 0 100%, 0 16px);
+  box-shadow: inset 0 0 0 2px rgba(153, 69, 255, 0.3), inset 0 1px 22px rgba(153, 69, 255, 0.18);
+  animation: card 380ms cubic-bezier(0.2, 1.3, 0.4, 1) both;
+  pointer-events: auto;
+}
+
+@keyframes card {
+  from {
+    opacity: 0;
+    transform: translate(-50%, 28px);
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, 0);
+  }
+}
+
+@media (min-aspect-ratio: 1/1) {
+  .result {
+    bottom: auto;
+    top: 50%;
+    animation-name: cardCenter;
+    transform: translate(-50%, -50%);
+  }
+  @keyframes cardCenter {
+    from {
+      opacity: 0;
+      transform: translate(-50%, calc(-50% + 28px));
+    }
+    to {
+      opacity: 1;
+      transform: translate(-50%, -50%);
+    }
+  }
+}
+
+.kicker {
+  font-size: 14px;
+  font-weight: 800;
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+}
+
+.kickerFinish {
+  color: var(--amber);
+}
+
+.kickerCrash {
+  color: var(--flare);
+}
+
+.big {
+  margin-top: 6px;
+  font-family: var(--font-display, system-ui), system-ui, sans-serif;
+  font-stretch: 125%;
+  font-variation-settings: 'wdth' 125;
+  font-weight: 900;
+  font-size: clamp(54px, 13vw, 84px);
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+
+.line {
+  margin-top: 10px;
+  font-size: 17px;
+  font-weight: 700;
+  color: var(--text-dim);
+}
+
+.actions {
+  margin-top: 20px;
+  display: grid;
+  grid-template-columns: 1fr auto auto;
+  gap: 10px;
+}
+
+.again {
+  height: 60px;
+  border: 0;
+  font-family: var(--font-display, system-ui), system-ui, sans-serif;
+  font-stretch: 125%;
+  font-variation-settings: 'wdth' 125;
+  font-weight: 900;
+  font-size: 18px;
+  text-transform: uppercase;
+  color: var(--ink);
+  background: linear-gradient(100deg, var(--warm), var(--amber) 55%, #ff9a3c);
+  clip-path: polygon(14px 0, 100% 0, 100% calc(100% - 14px), calc(100% - 14px) 100%, 0 100%, 0 14px);
+  box-shadow: 0 0 36px rgba(255, 178, 63, 0.45);
+  transition: transform 140ms cubic-bezier(0.3, 1.6, 0.5, 1);
+}
+
+.again:active {
+  transform: scale(0.96);
+}
+
+.second,
+.quiet {
+  height: 60px;
+  padding: 0 16px;
+  border: 0;
+  font-weight: 800;
+  font-size: 15px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ice);
+  background: rgba(238, 241, 255, 0.07);
+  clip-path: polygon(10px 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%, 0 10px);
+}
+
+.quiet {
+  background: none;
+  color: var(--text-dim);
+}
+
+.actionsTwo {
+  grid-template-columns: 1fr auto;
+}
+
+@media (max-width: 420px) {
+  .actions {
+    grid-template-columns: 1fr 1fr;
+  }
+  .actionsTwo {
+    grid-template-columns: 1fr;
+  }
+  .again {
+    grid-column: 1 / -1;
+  }
+}

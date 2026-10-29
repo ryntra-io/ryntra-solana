@@ -19,12 +19,16 @@ google-services.json
 *.p12
 *.pem
 
+# read-only copy of the product law (refresh with scripts/sync-canon.mjs)
+docs/canon/
+
 # local
 .DS_Store
 Thumbs.db
 *.log
 
-# local tooling directories, never tracked
+# third-party agent skills: installed locally by scripts/skills/install.mjs from
+# scripts/skills/manifest.json; the pin of record is skills-lock.json + docs/SKILLS.md
 .agents/
 .codex/
 .claude/skills/
@@ -36,3 +40,7 @@ src/uniwind-types.d.ts
 web-build/
 .metro-health-check*
 *.tsbuildinfo
+
+# a local Expo module's Gradle output
+/modules/*/android/build
+/modules/*/android/.cxx

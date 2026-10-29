@@ -337,16 +337,18 @@ export const MARKET_ENFORCEMENT = ["rule", "policy"] as const;
 export type MarketEnforcement = (typeof MARKET_ENFORCEMENT)[number];
 
 /** Who enforces or runs it. */
-export const MARKET_KEEPERS = ["token-2022", "meteora-dbc", "meteora-damm-v2", "met-lock", "dynamic-fee-sharing", "ryntra"] as const;
+export const MARKET_KEEPERS = ["token-2022", "meteora-dbc", "meteora-damm-v2", "met-lock", "dynamic-fee-sharing", "solana-loader", "ryntra"] as const;
 export type MarketKeeper = (typeof MARKET_KEEPERS)[number];
 
 /** The token's own rules, as its launch receipt reads them from the mint: they hold whatever happens to its market. */
-export const TOKEN_RULE_CODES = ["MINT_REVOKED", "NO_FREEZE", "METADATA_FIXED", "NO_TRANSFER_HOOK"] as const;
+export const TOKEN_RULE_CODES = ["MINT_REVOKED", "NO_FREEZE", "METADATA_FIXED", "NO_TRANSFER_HOOK", "TRANSFER_FEE_UNTIL_DEX", "CURVE_RULES_UNTIL_DEX"] as const;
 export type TokenRuleCode = (typeof TOKEN_RULE_CODES)[number];
 
 /** The rules and policies that keep a market now — only what is live on it. */
 export const MARKET_RULE_CODES = [
   ...TOKEN_RULE_CODES,
+  /** «Правила на кривій» (SOL-L8): the rule program is frozen or upgraded only by one of Ryntra's multisigs — read at the program's own account. */
+  "CURVE_RULES_PROGRAM_GOVERNED",
   "CONFIG_FIXED",
   "CURVE_HOLDS_FUNDS",
   "GRADUATION_AT_THRESHOLD",
@@ -366,6 +368,9 @@ export const MARKET_RULE_KEEPING: Readonly<Record<MarketRuleCode, Readonly<{ enf
   NO_FREEZE: { enforcement: "rule", by: "token-2022" },
   METADATA_FIXED: { enforcement: "rule", by: "token-2022" },
   NO_TRANSFER_HOOK: { enforcement: "rule", by: "token-2022" },
+  TRANSFER_FEE_UNTIL_DEX: { enforcement: "rule", by: "token-2022" },
+  CURVE_RULES_UNTIL_DEX: { enforcement: "rule", by: "token-2022" },
+  CURVE_RULES_PROGRAM_GOVERNED: { enforcement: "rule", by: "solana-loader" },
   CONFIG_FIXED: { enforcement: "rule", by: "meteora-dbc" },
   CURVE_HOLDS_FUNDS: { enforcement: "rule", by: "meteora-dbc" },
   GRADUATION_AT_THRESHOLD: { enforcement: "rule", by: "meteora-dbc" },
@@ -395,6 +400,13 @@ export type MarketRulesInput = Readonly<{
   migrated: boolean;
   /** The token's marks its launch receipt read from the mint — each with the account it is seen at; empty when not read. */
   tokenMarks: readonly Readonly<{ code: string; account: string }>[];
+  /** «Комісія за переказ» (SOL-L10): the rate on the curve the receipt read; absent or null — none. */
+  transferFeeBps?: number | null;
+  /**
+   * «Правила на кривій» (SOL-L8): the launch's rules as its receipt holds them — the audited program read from the
+   * mint, the set its config was made with and the governance of that program; absent or null — the token runs none.
+   */
+  curveRules?: Readonly<{ program: string; rules: readonly string[]; upgrade: string; upgradeAuthority: string | null; audit: string }> | null;
   config: string;
   curve: string;
   /** The launch's creation — where the cap on the creator's first buy was applied. */
@@ -425,7 +437,15 @@ export function marketRules(input: MarketRulesInput): MarketRule[] {
     rules.push({ code, ...MARKET_RULE_KEEPING[code], source, values });
   for (const code of TOKEN_RULE_CODES) {
     const mark = input.tokenMarks.find((entry) => entry.code === code);
-    if (mark) add(code, { kind: "account", id: mark.account });
+    if (!mark) continue;
+    if (code === "TRANSFER_FEE_UNTIL_DEX") add(code, { kind: "account", id: mark.account }, { bps: input.transferFeeBps ?? 0 });
+    else if (code === "CURVE_RULES_UNTIL_DEX") {
+      const rules = input.curveRules;
+      if (!rules) continue;
+      add(code, { kind: "account", id: mark.account }, { program: rules.program, rules: rules.rules.join(",") });
+      /* Where anyone checks who may change the rules: the program's own account, which the loader holds. */
+      add("CURVE_RULES_PROGRAM_GOVERNED", { kind: "account", id: rules.program }, { upgrade: rules.upgrade, ...(rules.upgradeAuthority ? { multisig: rules.upgradeAuthority } : {}), audit: rules.audit });
+    } else add(code, { kind: "account", id: mark.account });
   }
   /* The curve's numbers and the graduated pool's starting fees are the config's, and a config never changes. */
   add("CONFIG_FIXED", { kind: "account", id: input.config });

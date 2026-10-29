@@ -28,8 +28,9 @@ test("it reads no wallet, no cookie and no account", () => {
   assert.doesNotMatch(code, /cookies\(|wallet|proof|session|account/i);
 });
 
-test("a partial index is private and uncached; only a whole one is cached at the edge", () => {
-  assert.match(source, /partial \? \{ \.\.\.rateLimitHeaders\(rate\), "cache-control": "private, no-store" \} : \{ \.\.\.publicCacheHeaders\(60, 300\)/);
+test("a partial or stale index is private and uncached; only a whole fresh one is cached at the edge, no longer than its prices stay fresh", () => {
+  assert.match(source, /partial \|\| stale \|\| !edge \? \{ \.\.\.rateLimitHeaders\(rate\), \.\.\.privateNoStoreHeaders\(\) \} : \{ \.\.\.publicCacheHeaders\(edge\.ttl, edge\.revalidate\)/);
+  assert.match(source, /spotListEdgeSeconds\(/, "SOL-D1: the edge window is bounded by the oldest list read");
   assert.match(source, /return failure\(503, "SEARCH_UNAVAILABLE"/);
 });
 

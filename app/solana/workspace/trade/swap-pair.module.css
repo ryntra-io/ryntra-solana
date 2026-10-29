@@ -1,0 +1,229 @@
+/* The pair beside the converter (SOL-C13): a quiet block of the core's look — its surface, border and radius — that
+   names the two assets once and the one price between them. Nothing orange here: the page's one action is the ticket's. */
+
+.pair {
+  display: grid;
+  gap: var(--ryntra-space-4);
+  min-width: 0;
+  padding: var(--ryntra-space-4);
+  border: 1px solid var(--ryntra-border);
+  border-radius: var(--ryntra-radius-block);
+  background: var(--ryntra-surface);
+  color: var(--ryntra-text);
+  container-type: inline-size;
+}
+
+.head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--ryntra-space-2) var(--ryntra-space-3);
+  min-width: 0;
+}
+
+.marks {
+  display: inline-flex;
+  flex: none;
+}
+
+.marks > * + * {
+  margin-inline-start: -8px;
+}
+
+.title {
+  margin: 0;
+  font-size: var(--ryntra-type-h2-size);
+  line-height: var(--ryntra-type-h2-line);
+  font-weight: var(--ryntra-weight-semibold);
+}
+
+/* The one price of the pair, its source and its age on the same line; on a narrow block, under the name. */
+.rate {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--ryntra-space-1) var(--ryntra-space-2);
+  margin: 0 0 0 auto;
+  min-width: 0;
+  font-variant-numeric: tabular-nums;
+}
+
+.rate > b {
+  font-size: var(--ryntra-type-ui-size);
+  font-weight: var(--ryntra-weight-semibold);
+}
+
+.rate[data-stale="true"] > b {
+  color: var(--ryntra-muted);
+}
+
+.meta {
+  color: var(--ryntra-muted);
+  font-size: var(--ryntra-type-caption-size);
+}
+
+/* The state for a reader: «Остання відома ціна» is already in the line beside it for the eye. */
+.live {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+.assets {
+  display: grid;
+  gap: 0;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.asset {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1.4fr) minmax(0, 1fr) minmax(0, 1fr) auto auto;
+  align-items: center;
+  gap: var(--ryntra-space-3);
+  min-width: 0;
+  padding-block: var(--ryntra-space-3);
+  border-top: 1px solid var(--ryntra-border);
+}
+
+/* A guest has no balance column: the check moves up beside the price. */
+.asset:not(:has(> .figure + .figure)) {
+  grid-template-columns: auto minmax(0, 1.4fr) minmax(0, 1fr) auto auto;
+}
+
+.name,
+.figure {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+.name > b,
+.figure > b {
+  overflow: hidden;
+  font-weight: var(--ryntra-weight-semibold);
+  font-variant-numeric: tabular-nums;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.label,
+.sub {
+  overflow: hidden;
+  color: var(--ryntra-muted);
+  font-size: var(--ryntra-type-caption-size);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Jupiter's check as a quiet word: never green (UX-151), the caution colour only for a flag. */
+.check {
+  padding: 2px var(--ryntra-space-2);
+  border: 1px solid var(--ryntra-border);
+  border-radius: var(--ryntra-radius-pill);
+  color: var(--ryntra-muted);
+  font-size: var(--ryntra-type-caption-size);
+  white-space: nowrap;
+}
+
+.check[data-tone="caution"] {
+  border-color: var(--ryntra-warn-text);
+  color: var(--ryntra-warn-text);
+}
+
+.details {
+  display: inline-flex;
+  align-items: center;
+  min-height: 24px;
+  color: var(--ryntra-muted);
+  font-size: var(--ryntra-type-caption-size);
+  text-decoration: underline;
+  text-underline-offset: 0.2em;
+  white-space: nowrap;
+}
+
+/* A finger's target on a touch screen, as every other link on the page. */
+@media (pointer: coarse) {
+  .details {
+    min-height: 44px;
+  }
+}
+
+.details:hover,
+.details:focus-visible,
+.door:hover b,
+.door:focus-visible b {
+  color: var(--ryntra-text);
+}
+
+.route {
+  margin: 0;
+  color: var(--ryntra-text);
+  font-size: var(--ryntra-type-caption-size);
+}
+
+/* The two ways out, quiet: a sentence and a link each, never a second orange action. */
+.doors {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: var(--ryntra-space-2);
+  padding-top: var(--ryntra-space-3);
+  border-top: 1px solid var(--ryntra-border);
+}
+
+.door {
+  display: grid;
+  gap: 2px;
+  min-height: 44px;
+  padding: var(--ryntra-space-2) var(--ryntra-space-3);
+  border-radius: var(--ryntra-radius-button);
+  color: var(--ryntra-muted);
+  font-size: var(--ryntra-type-caption-size);
+  text-decoration: none;
+}
+
+.door:hover {
+  background: var(--ryntra-surface-hover);
+}
+
+.door b {
+  color: var(--ryntra-muted);
+  font-size: var(--ryntra-type-ui-size);
+  font-weight: var(--ryntra-weight-medium);
+  text-decoration: underline;
+  text-underline-offset: 0.2em;
+}
+
+/* A phone, and a column too narrow for one row per asset: the name and the check on top, the figures under them. */
+@container (max-width: 560px) {
+  .asset,
+  .asset:not(:has(> .figure + .figure)) {
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    grid-auto-flow: row;
+  }
+
+  .figure {
+    grid-column: 2 / -1;
+    grid-template-columns: auto minmax(0, 1fr);
+    align-items: baseline;
+    gap: var(--ryntra-space-2);
+  }
+
+  .check {
+    grid-row: 1;
+    grid-column: 3;
+  }
+
+  .details {
+    grid-column: 2 / -1;
+  }
+
+  .rate {
+    margin-inline-start: 0;
+    flex-basis: 100%;
+  }
+}

@@ -1,0 +1,73 @@
+<!doctype html>
+<!--
+  Market Weather in a WebView (Seeker) or any page: one script, one element.
+
+  Data, in order of preference:
+    ?src=/api/market-weather   a JSON MarketWeather your server builds with readMarketWeather()
+    postMessage                { type: "market-weather", weather } from the host app (the element has `listen`)
+    no data                    a demo sky with made-up tickers, re-stamped now, so the page draws anywhere
+
+  Build the script first: node scripts/build.mjs
+-->
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="color-scheme" content="dark" />
+    <title>Market Weather</title>
+    <style>
+      html, body { margin: 0; height: 100%; background: #07080b; }
+      market-weather-city { position: fixed; inset: 0; aspect-ratio: auto; border-radius: 0; }
+    </style>
+    <script src="../dist/market-weather-city.js"></script>
+  </head>
+  <body>
+    <market-weather-city listen></market-weather-city>
+    <script>
+      const city = document.querySelector("market-weather-city");
+      const params = new URLSearchParams(location.search);
+      if (params.get("src")) {
+        city.setAttribute("src", params.get("src"));
+      } else {
+        city.weather = demoWeather(params.get("sky") || "sun");
+      }
+
+      /* Made-up tickers and figures, for looking at the city only. Nothing here is a market. */
+      function demoWeather(sky) {
+        const names = ["ALPHA", "BRAVO", "DELTA", "ECHO", "FOXTROT", "GOLF", "HOTEL", "INDIA", "JULIET", "KILO", "LIMA", "MIKE", "NOVEMBER", "OSCAR", "PAPA", "QUEBEC", "ROMEO", "SIERRA", "TANGO", "UNIFORM", "VICTOR", "WHISKEY"];
+        const bias = { sun: 3.5, clear: 0.6, cloud: -0.6, rain: -3.5, storm: -9, fog: 0 }[sky] ?? 0;
+        let seed = 7;
+        const rnd = () => ((seed = (seed * 16807) % 2147483647) / 2147483647);
+        const figure = (value) => ({ state: "measured", value });
+        const none = { state: "not_measured", why: "demo" };
+        const assets = names.map((name, index) => {
+          const depth = 10 ** (5 + rnd() * 4.2);
+          const verified = index % 7 !== 5;
+          const move = bias + (rnd() - 0.5) * 6;
+          const live = index % 9 !== 4;
+          const badge = (state) => ({ authority: "mint", state, reads: [] });
+          return {
+            asset: `Demo${index}`,
+            label: verified ? name.slice(0, 8) : null,
+            verified,
+            liquidityUsd: index === 13 ? none : figure(depth),
+            price: { status: "live", value: figure(0.01 + rnd() * 200) },
+            move: { status: live ? "live" : "single_read", value: figure(move) },
+            badges: { mint: badge(index % 6 === 2 ? "active" : index % 11 === 3 ? "not_measured" : "revoked"), freeze: badge(index % 8 === 1 ? "active" : "revoked") },
+            lifecycle: index === 17 ? { stage: "curve" } : index === 9 ? { stage: "graduated" } : null,
+          };
+        });
+        return {
+          schemaVersion: "1.0.0",
+          state: sky,
+          at: new Date().toISOString(),
+          delayed: sky === "fog",
+          move: figure(bias),
+          breadth: figure(0.6),
+          counted: assets.length,
+          assets,
+        };
+      }
+    </script>
+  </body>
+</html>

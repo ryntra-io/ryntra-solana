@@ -62,6 +62,12 @@ export type SwapPrepareRequest = Readonly<{
   origin: SolanaActionOriginRequest | undefined;
 }>;
 
+/** The venue's answer, asked beside the passports (SOL-S1) and read by the order step. */
+type VenueAsk =
+  | Readonly<{ ok: true; unsigned: NonNullable<SwapReviewGuardContext["unsigned"]>; order: NonNullable<SwapReviewGuardContext["order"]> }>
+  | Readonly<{ ok: false; refusal: SwapRefusal }>
+  | Readonly<{ ok: "THREW"; cause: unknown }>;
+
 export type SwapPrepareContext = SwapPrepareRequest &
   SwapReviewGuardContext & {
     planRecord: TradingPlanRecord | null;
@@ -69,6 +75,7 @@ export type SwapPrepareContext = SwapPrepareRequest &
     passports: Record<string, SolanaAssetPassport>;
     reads: Record<string, MintReadSuccess>;
     decimals: Record<string, number>;
+    venueAsk: Promise<VenueAsk> | null;
   };
 
 const refuse = (status: number, code: string, message: string, extra?: object): StepResult<SwapRefusal> => ({
@@ -149,8 +156,14 @@ const venueEndpoint: PipelineStep<SwapPrepareContext, SwapRefusal> = {
 };
 
 /**
- * Both Asset Passports, read live before the order so a refused mint never
- * reaches a quote. Nothing here is fabricated or cached.
+ * Both Asset Passports, read live. Nothing here is fabricated or cached.
+ *
+ * SOL-S1: the
+ * two mints are read at once, and the venue is asked for the order beside them
+ * rather than after them — the venue is the longest wait of the whole Review,
+ * and nothing it answers is used until both passports pass. A refused mint
+ * still refuses the order with its own words; its venue answer is dropped
+ * unread, having locked, stored and signed nothing.
  */
 const assetPassports: PipelineStep<SwapPrepareContext, SwapRefusal> = {
   stage: "quote",
@@ -158,8 +171,11 @@ const assetPassports: PipelineStep<SwapPrepareContext, SwapRefusal> = {
   async run(context) {
     const { input } = context;
     const handle = handleOf(context);
-    for (const mint of [input.inputMint, input.outputMint]) {
-      const read = await readMintAccount(handle, mint);
+    context.venueAsk ??= askVenue(context);
+    const mints = [input.inputMint, input.outputMint];
+    const reads = await Promise.all(mints.map((mint) => readMintAccount(handle, mint)));
+    for (const [index, mint] of mints.entries()) {
+      const read = reads[index];
       if (!read.ok) {
         return refuse(422, "MINT_UNREADABLE", `The mint ${mint} could not be read live: ${read.reason}`);
       }
@@ -202,10 +218,8 @@ const assetPassports: PipelineStep<SwapPrepareContext, SwapRefusal> = {
  * may write two lines: that one, and the route's «refused» if the second ask
  * fails too.
  */
-const venueOrder: PipelineStep<SwapPrepareContext, SwapRefusal> = {
-  stage: "build",
-  name: "venue-order",
-  async run(context) {
+async function askVenue(context: SwapPrepareContext): Promise<VenueAsk> {
+  try {
     const { input, planRecord } = context;
     const planSlippageBps = planRecord ? projectTradingPlan(planRecord, Date.now()).current.rules.execution.maxSlippageBps : undefined;
     const config = resolveServiceFeeConfig();
@@ -229,10 +243,25 @@ const venueOrder: PipelineStep<SwapPrepareContext, SwapRefusal> = {
     const answer = await askVenueOrder(venue, intent);
     if (!answer.ok) {
       const refusal = venueRefusal(answer);
-      return refuse(refusal.status, refusal.code, refusal.message, refusal.extra);
+      return { ok: false, refusal: { status: refusal.status, code: refusal.code, message: refusal.message, ...(refusal.extra ? { extra: refusal.extra } : {}) } };
     }
-    context.unsigned = await venue.build(answer.quote, account);
-    context.order = answer.quote.native;
+    const unsigned = await venue.build(answer.quote, account);
+    return { ok: true, unsigned, order: answer.quote.native };
+  } catch (cause) {
+    /* Held, not thrown here: the passports may refuse first, and an ask nobody reads must not surface as an unhandled rejection. */
+    return { ok: "THREW", cause };
+  }
+}
+
+const venueOrder: PipelineStep<SwapPrepareContext, SwapRefusal> = {
+  stage: "build",
+  name: "venue-order",
+  async run(context) {
+    const answer = await (context.venueAsk ??= askVenue(context));
+    if (answer.ok === "THREW") throw answer.cause;
+    if (!answer.ok) return { stop: answer.refusal };
+    context.unsigned = answer.unsigned;
+    context.order = answer.order;
     return NEXT;
   },
 };
@@ -321,7 +350,7 @@ const planReviewStep: PipelineStep<SwapPrepareContext, SwapRefusal> = {
   },
 };
 
-const [transactionCheck, effectFirewall, reviewPolicy, reviewProof, ownerLockReserve] = SOLANA_SWAP_REVIEW_GUARD;
+const [riskFactsAsk, transactionCheck, effectFirewall, reviewPolicy, tradeRisk, reviewProof, ownerLockReserve] = SOLANA_SWAP_REVIEW_GUARD;
 
 /**
  * The swap's prepare half. The guard steps are the shared safety chain; the
@@ -336,10 +365,12 @@ export const SOLANA_SWAP_PREPARE = definePipeline<SwapPrepareContext, SwapRefusa
     venueEndpoint,
     assetPassports,
     venueOrder,
+    riskFactsAsk,
     transactionCheck,
     effectFirewall,
     reviewPolicy,
     planReviewStep,
+    tradeRisk,
     reviewProof,
     ownerLockReserve,
   ],
@@ -357,6 +388,7 @@ export function swapPrepareContext(request: SwapPrepareRequest): SwapPrepareCont
     passports: {},
     reads: {},
     decimals: {},
+    venueAsk: null,
     order: null,
     unsigned: null,
     inspection: null,
@@ -364,6 +396,8 @@ export function swapPrepareContext(request: SwapPrepareRequest): SwapPrepareCont
     outputAssetVerdict: null,
     intent: null,
     verdict: null,
+    riskFacts: null,
+    risk: null,
     planReview: null,
     bundleOrigin: undefined,
     review: null,

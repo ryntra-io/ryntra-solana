@@ -28,6 +28,8 @@ import type {
   VenueMarket,
 } from "@agg-build/sdk";
 
+import type { PredictionRouteCosts, PredictionSoloQuote } from "./costs.ts";
+
 /* ------------------------------------------------------------- categories */
 
 export type PredictionCategory = Readonly<{
@@ -116,6 +118,14 @@ export type PredictionEventSummary = Readonly<{
   arbReturn: number | null;
   /** The first market's outcomes with their last price — the card's leading figures. */
   leading: readonly Readonly<{ id: string; label: string; probability: number | null; venueMarketId: string }>[];
+  /** The first market's question when the event holds more than one market — what the leading figures are the odds of; null otherwise. */
+  leadingQuestion?: string | null;
+  /** The provider's series cadence as an ISO-8601 duration (`PT5M`, `P1D`…); null for a one-off event. */
+  recurrence?: string | null;
+  /** The provider's sport slug; null for an event that is not a game. */
+  sport?: string | null;
+  /** The game's scheduled start, for a sports event: its markets may keep trading during play. */
+  gameStartTime?: string | null;
 }>;
 
 export type PredictionEvent = PredictionEventSummary &
@@ -239,6 +249,10 @@ export type PredictionRoute = Readonly<{
   fees: Readonly<{ venue: number; builder: number; settlement: number; app: number | null }>;
   fills: readonly PredictionRouteFill[];
   venueSolo: readonly Readonly<{ venue: string; fields: Readonly<Record<string, string | number | boolean | null>> }>[];
+  /** The route's own cost breakdown; null when the provider stated none. Absent on a Review stored before it was kept. */
+  costs?: PredictionRouteCosts | null;
+  /** Each venue's own quote for the same order, its cost read as the venue alone would charge it. */
+  solos?: readonly PredictionSoloQuote[];
   warnings: readonly Readonly<{ venue: string; reason: string }>[];
   matchedMarkets: readonly Readonly<{ venue: string; venueMarketId: string }>[];
   expiresAt: string;
@@ -307,6 +321,47 @@ export type PaperOrder = Readonly<{
   outcomeLabel: string | null;
 }>;
 
+/**
+ * One of the provider's limit orders, as it stands on the venue. The figures
+ * it leaves out are `null`, never zero: `filledShares` of null means the
+ * provider did not state it, which is not the same as nothing filled.
+ */
+export type PredictionLimitOrder = Readonly<{
+  id: string;
+  /** Ryntra's own id for the order, given to the venue when it was placed. */
+  clientOrderId: string | null;
+  status: string;
+  venue: string;
+  side: string;
+  limitPrice: number | null;
+  limitShares: number | null;
+  filledShares: number | null;
+  remainingShares: number | null;
+  filledUsd: number | null;
+  avgFillPrice: number | null;
+  /** What the provider holds against the order while it stands. */
+  reservedUsd: number | null;
+  timeInForce: string | null;
+  expiresAt: string | null;
+  cancelRequestedAt: string | null;
+  createdAt: string;
+  updatedAt: string;
+  error: string | null;
+}>;
+
+/** What the provider answered when a limit order was placed. */
+export type PredictionLimitPlaced = Readonly<{
+  orderId: string;
+  status: string;
+  venue: string;
+  venueOrderId: string | null;
+  limitPrice: number | null;
+  limitShares: number | null;
+  filledShares: number | null;
+  remainingShares: number | null;
+  reservedUsd: number | null;
+}>;
+
 export type PaperExecution = Readonly<{
   quoteId: string;
   executionId: string | null;
@@ -351,6 +406,61 @@ export function yesFirst<T extends Readonly<{ label: string }>>(outcomes: readon
   return [...outcomes].sort((a, b) => rank(a.label) - rank(b.label));
 }
 
+/**
+ * Whether a person can still trade an event: it is open (or the venue does not
+ * say) and its close is ahead. Past its close it is awaiting a result, never
+ * an offer — whatever its last price would pay.
+ */
+export function eventTradable(event: Readonly<{ status: PredictionMarketStatus; endDate?: string | null | undefined }>, nowMs: number = Date.now()): boolean {
+  if (event.status === "closed" || event.status === "resolved") return false;
+  if (!event.endDate) return true;
+  const end = Date.parse(event.endDate);
+  return !Number.isFinite(end) || end > nowMs;
+}
+
+const HOUR = 3_600_000;
+
+/** How long a game of a sport runs at most, stoppages and overtime in: past it the game is over, whatever the venue still lists. */
+const GAME_LENGTH_MS: Readonly<Record<string, number>> = {
+  soccer: 3 * HOUR,
+  basketball: 3.5 * HOUR,
+  hockey: 3.5 * HOUR,
+  football: 4.5 * HOUR,
+  baseball: 5 * HOUR,
+  tennis: 6 * HOUR,
+  cricket: 9 * HOUR,
+};
+
+/** A game of a sport not in the table is taken as over this long after its start. */
+export const IN_PLAY_MS = 4 * HOUR;
+
+/** How long after its start a game of this sport can still be under way. */
+export function gameLengthMs(sport: string | null | undefined): number {
+  const key = (sport ?? "").toLowerCase();
+  return GAME_LENGTH_MS[key] ?? (key.includes("football") ? GAME_LENGTH_MS.football : IN_PLAY_MS);
+}
+
+/**
+ * A game under way: a sports event whose start has passed no longer ago than
+ * its sport's longest game, that the venue has not closed, and whose own end
+ * (when it has one) is still ahead. Venues often date a game's markets by the
+ * start and keep them trading through play — live, not past their date. A
+ * game over by either clock is never live, whatever the venue still lists.
+ */
+export function eventInPlay(event: Readonly<{ status: PredictionMarketStatus; endDate?: string | null; sport?: string | null; gameStartTime?: string | null }>, nowMs: number = Date.now()): boolean {
+  if (!event.sport || !event.gameStartTime) return false;
+  if (event.status === "closed" || event.status === "resolved") return false;
+  const start = Date.parse(event.gameStartTime);
+  if (!Number.isFinite(start) || start > nowMs || nowMs - start >= gameLengthMs(event.sport)) return false;
+  const end = event.endDate ? Date.parse(event.endDate) : NaN;
+  return !Number.isFinite(end) || end > nowMs;
+}
+
+/** Whether a market still takes orders: the venue lists it open and has named no winner. */
+export function marketTradable(market: Readonly<{ status: PredictionMarketStatus; outcomes: readonly Readonly<{ winner: boolean | null }>[] }>): boolean {
+  return market.status === "open" && !market.outcomes.some((o) => o.winner === true);
+}
+
 /** An event whose end passed more than two days ago is not a market to decide on, whatever status the provider still keeps. */
 export function eventStale(event: Readonly<{ endDate?: string | null | undefined }>, nowMs: number = Date.now()): boolean {
   if (!event.endDate) return false;
@@ -358,7 +468,8 @@ export function eventStale(event: Readonly<{ endDate?: string | null | undefined
   return Number.isFinite(end) && end < nowMs - 48 * 3_600_000;
 }
 
-function statusOf(value: string | null | undefined): PredictionMarketStatus {
+/** A venue's status in the product's four words; anything not plainly open, closed or resolved is unknown. */
+export function statusOf(value: string | null | undefined): PredictionMarketStatus {
   if (!value) return "unknown";
   const s = value.toLowerCase();
   if (s === "open" || s === "active") return "open";
@@ -422,29 +533,88 @@ export function mapVenueMarket(market: VenueMarket): PredictionMarket {
   };
 }
 
-export function mapEventSummary(event: VenueEventWithMarkets, midpoints: ReadonlyMap<string, number> = new Map()): PredictionEventSummary {
+type Settleable = Readonly<{
+  status?: string | null;
+  endDate?: string | null;
+  venueMarketOutcomes?: readonly Readonly<{ winner?: boolean | null }>[] | null;
+  outcomes?: readonly Readonly<{ winner?: boolean | null }>[] | null;
+}>;
+
+/**
+ * A market that has stopped: the venue says closed or resolved, names a
+ * winner while still listing it open, or the market's own close has passed —
+ * the same close the market page reads, so a card and its page agree.
+ */
+export function marketSettled(market: Settleable, nowMs: number = Date.now(), inPlay = false): boolean {
+  const status = statusOf(market.status);
+  if (status === "closed" || status === "resolved") return true;
+  if ([...(market.venueMarketOutcomes ?? []), ...(market.outcomes ?? [])].some((o) => o.winner === true)) return true;
+  /* During a game the venue's date is the kick-off, not the end of trading. */
+  if (inPlay) return false;
+  const close = market.endDate ? Date.parse(market.endDate) : NaN;
+  return Number.isFinite(close) && close <= nowMs;
+}
+
+/**
+ * The market a card leads with: the first one still trading, else the first.
+ * A settled market's last price is what is left over, not an estimate — it
+ * must not stand for the event while another market still trades.
+ */
+export function leadMarket<T extends Settleable>(markets: readonly T[] | null | undefined, nowMs: number = Date.now(), inPlay = false): T | undefined {
+  return markets?.find((m) => !marketSettled(m, nowMs, inPlay)) ?? markets?.[0];
+}
+
+type RawGame = Readonly<{ status?: string | null; endDate?: string | null; sport?: string | null; gameStartTime?: string | null }>;
+
+/** Whether a provider's event, as read, is a game under way. */
+export function rawInPlay(event: RawGame, nowMs: number = Date.now()): boolean {
+  return eventInPlay({ status: statusOf(event.status), endDate: event.endDate ?? null, sport: event.sport ?? null, gameStartTime: event.gameStartTime ?? null }, nowMs);
+}
+
+/**
+ * The event's status as a person should read it: the venue's own word, except
+ * that an event every market of which has stopped trading is no longer open,
+ * whatever the venue still says of the event. Only when every market is in
+ * hand — a partial list says nothing of the markets left out.
+ */
+export function eventStatus(event: RawGame & Readonly<{ marketCount?: number | null; venueMarkets?: readonly Settleable[] | null }>, nowMs: number = Date.now()): PredictionMarketStatus {
+  const own = statusOf(event.status);
+  const markets = event.venueMarkets ?? [];
+  if (own === "closed" || own === "resolved" || markets.length === 0 || (event.marketCount ?? markets.length) > markets.length) return own;
+  const inPlay = rawInPlay(event, nowMs);
+  if (!markets.every((m) => marketSettled(m, nowMs, inPlay))) return own;
+  return markets.every((m) => statusOf(m.status) === "resolved" || [...(m.venueMarketOutcomes ?? []), ...(m.outcomes ?? [])].some((o) => o.winner === true)) ? "resolved" : "closed";
+}
+
+export function mapEventSummary(event: VenueEventWithMarkets, midpoints: ReadonlyMap<string, number> = new Map(), nowMs: number = Date.now()): PredictionEventSummary {
   const raw = event as VenueEventWithMarkets & { arbReturn?: number | null };
-  const first = event.venueMarkets?.[0];
+  const inPlay = rawInPlay(event, nowMs);
+  const first = leadMarket(event.venueMarkets, nowMs, inPlay);
   return {
     id: event.id,
     title: event.title,
     subtitle: event.subtitle ?? null,
     image: event.image ?? null,
-    status: statusOf(event.status),
+    status: eventStatus(event, nowMs),
     venue: event.venue,
     venues: event.venues && event.venues.length > 0 ? event.venues : [event.venue],
     volume: num(event.volume),
     endDate: event.endDate ?? null,
     categories: (event.categories ?? []).map((c) => ({ id: c.category.id, slug: c.category.name, name: c.category.displayName ?? c.category.name })),
     marketCount: event.venueMarkets?.length ?? event.marketCount ?? 0,
+    leadingQuestion: first && (event.venueMarkets?.length ?? 0) > 1 ? first.question : null,
+    recurrence: typeof event.recurrence === "string" && event.recurrence ? event.recurrence : null,
+    sport: typeof event.sport === "string" && event.sport ? event.sport : null,
+    gameStartTime: typeof event.gameStartTime === "string" && event.gameStartTime ? event.gameStartTime : null,
     aggKey: event.aggKey ?? null,
     structureType: event.structureType ?? null,
     arbReturn: num(raw.arbReturn),
+    /* A lead that has itself stopped (every market in hand settled, the list partial) carries no price: its leftover is no offer. */
     leading: first
       ? yesFirst(first.venueMarketOutcomes).map((o) => ({
           id: o.id,
           label: o.label,
-          probability: midpointFor(midpoints, first.id, o) ?? prob(o.price),
+          probability: marketSettled(first, nowMs, inPlay) ? null : (midpointFor(midpoints, first.id, o) ?? prob(o.price)),
           venueMarketId: first.id,
         }))
       : [],
@@ -460,8 +630,8 @@ function midpointFor(midpoints: ReadonlyMap<string, number>, marketId: string, o
   return null;
 }
 
-export function mapEvent(event: VenueEventWithMarkets, markets: readonly VenueMarket[], midpoints: ReadonlyMap<string, number> = new Map()): PredictionEvent {
-  const summary = mapEventSummary(event, midpoints);
+export function mapEvent(event: VenueEventWithMarkets, markets: readonly VenueMarket[], midpoints: ReadonlyMap<string, number> = new Map(), nowMs: number = Date.now()): PredictionEvent {
+  const summary = mapEventSummary(event, midpoints, nowMs);
   const mapped = markets.map(mapVenueMarket).map((market) => ({
     ...market,
     outcomes: market.outcomes.map((o) => ({ ...o, probability: midpointFor(midpoints, market.id, o) ?? o.probability })),
@@ -472,10 +642,12 @@ export function mapEvent(event: VenueEventWithMarkets, markets: readonly VenueMa
         differences: event.settlementDiff.differences.map((d) => ({ type: d.type, title: d.title, summary: d.summary ?? null, perVenue: d.perVenue })),
       }
     : null;
+  const lead = leadMarket(mapped, nowMs, eventInPlay(summary, nowMs));
   return {
     ...summary,
     marketCount: mapped.length || summary.marketCount,
-    leading: mapped[0] ? mapped[0].outcomes.map((o) => ({ id: o.id, label: o.label, probability: o.probability, venueMarketId: mapped[0].id })) : summary.leading,
+    leading: lead ? lead.outcomes.map((o) => ({ id: o.id, label: o.label, probability: o.probability, venueMarketId: lead.id })) : summary.leading,
+    leadingQuestion: lead && mapped.length > 1 ? lead.question : (summary.leadingQuestion ?? null),
     description: event.description ?? null,
     startDate: event.startDate ?? null,
     markets: mapped,
@@ -626,6 +798,16 @@ export function mapRoute(route: SmartRouteResponse, side: "buy" | "sell", reques
           .map(([k, v]) => [k, v as string | number | boolean | null]),
       ),
     })),
+    costs: mapCosts(route.feeBreakdown),
+    solos: (route.venueSoloQuotes ?? []).map((q) => ({
+      venue: q.venue,
+      status: String(q.status),
+      shares: num(q.filledQty) ?? 0,
+      avgPrice: num(q.avgPrice),
+      directCostUsd: q.feeBreakdown ? num(q.feeBreakdown.totalCost) : num(q.rawExecCost),
+      unavailableReason: q.unavailableReason ?? q.quoteFailure?.code ?? null,
+      levels: (q.fills ?? []).flatMap((f) => (f.fills ?? []).map((l) => ({ price: num(l.price) ?? 0, qty: num(l.fill) ?? 0 }))).slice(0, 1024),
+    })),
     warnings: (route.warnings ?? []).map((w) => ({ venue: w.venue, reason: w.reason })),
     matchedMarkets: (route.matchedMarkets ?? []).map((m) => ({ venue: m.venue, venueMarketId: m.venueMarketId })),
     expiresAt: route.expiresAt,
@@ -634,6 +816,24 @@ export function mapRoute(route: SmartRouteResponse, side: "buy" | "sell", reques
     verifyMs: route.verifyTimeMs,
     error: route.error ?? route.message ?? null,
     quotedAt,
+  };
+}
+
+/** The route's fee breakdown in Ryntra's names; null when the provider planned no feasible route. A fee it leaves out is zero only where its own total leaves it out too. */
+export function mapCosts(breakdown: SmartRouteResponse["feeBreakdown"]): PredictionRouteCosts | null {
+  if (!breakdown) return null;
+  const setup = num(breakdown.setupCostsTotal);
+  return {
+    contractsUsd: num(breakdown.rawExecCost) ?? 0,
+    venueFeesUsd: num(breakdown.venueFees) ?? 0,
+    builderFeeUsd: num(breakdown.builderFee) ?? 0,
+    bridgeUsd: num(breakdown.bridgeFees) ?? 0,
+    gasUsd: num(breakdown.executionGas) ?? 0,
+    appFeeUsd: num(breakdown.appFee),
+    appFeeBips: num(breakdown.appFeeBips),
+    referralUsd: num(breakdown.referralFee),
+    setupUsd: setup,
+    totalUsd: num(breakdown.totalCost) ?? 0,
   };
 }
 
@@ -696,6 +896,50 @@ export function mapPaperOrder(order: ExecutionOrderItem): PaperOrder {
     question: order.venueMarket?.question ?? null,
     venueEventId: order.venueMarket?.venueEventId ?? null,
     outcomeLabel: order.venueMarketOutcome?.label ?? null,
+  };
+}
+
+/**
+ * One limit order of the provider's list. Its `*Raw` fields are millionths —
+ * of a dollar for money, of a share for size — and a field the provider
+ * leaves out stays null.
+ */
+export function mapLimitOrder(order: ExecutionOrderItem): PredictionLimitOrder {
+  const row = order as ExecutionOrderItem & { errorMessage?: string | null };
+  return {
+    id: order.id,
+    clientOrderId: order.clientOrderId ?? null,
+    status: order.status,
+    venue: order.venue,
+    side: order.side,
+    limitPrice: rawToUsd(order.limitPriceRaw),
+    limitShares: rawToUsd(order.limitSizeRaw),
+    filledShares: rawToUsd(order.filledSizeRaw),
+    remainingShares: rawToUsd(order.remainingSizeRaw),
+    filledUsd: rawToUsd(order.filledCostRaw),
+    avgFillPrice: rawToUsd(order.averageFillPriceRaw),
+    reservedUsd: rawToUsd(order.reservedCostRaw),
+    timeInForce: order.timeInForce ? String(order.timeInForce) : null,
+    expiresAt: iso(order.expiresAt),
+    cancelRequestedAt: iso(order.cancelRequestedAt),
+    createdAt: iso(order.createdAt) ?? "",
+    updatedAt: iso(order.updatedAt) ?? "",
+    error: row.errorMessage ?? null,
+  };
+}
+
+/** The provider's answer to a limit order placed. */
+export function mapLimitPlaced(answer: Readonly<{ orderId: string; status: string; venue: string; venueOrderId?: string | null; limitPriceRaw?: string | null; limitSizeRaw?: string | null; filledSizeRaw?: string | null; remainingSizeRaw?: string | null; reservedCostRaw?: string | null }>): PredictionLimitPlaced {
+  return {
+    orderId: String(answer.orderId),
+    status: String(answer.status),
+    venue: String(answer.venue),
+    venueOrderId: answer.venueOrderId ?? null,
+    limitPrice: rawToUsd(answer.limitPriceRaw),
+    limitShares: rawToUsd(answer.limitSizeRaw),
+    filledShares: rawToUsd(answer.filledSizeRaw),
+    remainingShares: rawToUsd(answer.remainingSizeRaw),
+    reservedUsd: rawToUsd(answer.reservedCostRaw),
   };
 }
 

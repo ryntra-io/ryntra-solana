@@ -5,6 +5,7 @@ import {
   barMiddles,
   chartGeometry,
   coarserBars,
+  DAILY_BARS_SERVED,
   historyStartsLate,
   nearestPoint,
   RANGE_DRAWS_MIDDLES,
@@ -59,7 +60,7 @@ test('the nearest point answers a touch; the window change reads first to last',
 test('«Простий»’s four ranges: the bars that fit each, oldest first; a young history says since when; the change first to last', () => {
   assert.deepEqual(
     Object.fromEntries(Object.entries(RANGE_SOURCE).map(([range, source]) => [range, source.timeframe])),
-    { '1d': '5m', '1w': '1h', '1m': '4h', '1y': '1d' },
+    { '1d': '5m', '1w': '1h', '1m': '4h', '6m': '1d' },
   )
   const now = Date.UTC(2026, 8, 23, 20, 0) // seconds below
   const hour = 3600
@@ -80,10 +81,16 @@ test('«Простий»’s four ranges: the bars that fit each, oldest first; 
   assert.equal(historyStartsLate(day, '1d', now), false)
   assert.ok(Math.abs(rangeChangePct(day) - -1) < 1e-9)
   assert.equal(
-    historyStartsLate(rangeCandles(bars, '1y', now), '1y', now),
+    historyStartsLate(rangeCandles(bars, '6m', now), '6m', now),
     true,
-    'a year that starts yesterday is not a year',
+    'half a year that starts yesterday is not half a year',
   )
+  // The route's 183 daily bars fill the half year: a token older than them is not said to start with them.
+  const served = Array.from({ length: DAILY_BARS_SERVED }, (_, index) =>
+    bar(t - (DAILY_BARS_SERVED - 1 - index) * 24 * hour, 100),
+  )
+  assert.equal(historyStartsLate(rangeCandles(served, '6m', now), '6m', now), false)
+  assert.equal(rangeCandles(served, '6m', now).length, DAILY_BARS_SERVED)
   assert.equal(rangeChangePct([bar(t, 10)]), null)
   assert.equal(historyStartsLate([], '1w', now), false)
 })
@@ -126,5 +133,13 @@ test('a day’s line runs through each quarter hour’s middle; the other ranges
   assert.deepEqual(barMiddles([broken]), [broken])
   assert.equal(barMiddles(quarter)[1].open, 148.22)
   assert.equal(RANGE_DRAWS_MIDDLES['1d'], true)
-  for (const range of ['1w', '1m', '1y']) assert.equal(RANGE_DRAWS_MIDDLES[range], false)
+  for (const range of ['1w', '1m', '6m']) assert.equal(RANGE_DRAWS_MIDDLES[range], false)
+})
+
+test('a day of five-minute bars says the first mark’s day too — never «03:45 … 03:45» (M44.6)', async () => {
+  const { firstScale } = await import('./chart.ts')
+  const now = Date.UTC(2026, 9, 17, 12, 0) / 1000
+  assert.equal(firstScale(now - 86_400, now, 'intraday'), 'days')
+  assert.equal(firstScale(now - 3_600, now, 'intraday'), 'intraday')
+  assert.equal(firstScale(now - 86_400 * 30, now, 'months'), 'months')
 })

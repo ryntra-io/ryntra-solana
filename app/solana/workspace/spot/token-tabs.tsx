@@ -27,7 +27,7 @@ import { truthLine } from "@/lib/stocks/truth";
 
 import { RiskCard } from "../evidence/risk-card.tsx";
 import { useSolanaI18n } from "../i18n/provider.tsx";
-import { formatAge, formatAmount, formatPercent, formatUsdCompact, shortAddress, toneOf } from "./spot-format.ts";
+import { formatAge, formatAmount, formatPercent, formatTerminalPrice, formatUsdCompact, priceDecimals, shortAddress, toneOf } from "./spot-format.ts";
 import { useStockAsset } from "./stock-context.tsx";
 import { useTokenPart, type TokenPartRead } from "./use-spot-data.ts";
 
@@ -199,6 +199,8 @@ function TradesTab({ market, facts, owner }: { market: SpotMarket; facts: TokenF
       {(body) => {
         const matching = body.trades.filter((trade) => (filter === "all" ? true : filter === "big" ? (trade.usd ?? 0) >= 1_000 : trade.side === filter));
         const rows = matching.slice(0, shown);
+        /* One set of decimals for the whole tape, from the market's price, so the column's figures line up. */
+        const tapeDecimals = priceDecimals(market.price ?? body.trades.find((trade) => trade.priceUsd !== null)?.priceUsd ?? null);
         const buys = body.trades.filter((trade) => trade.side === "buy");
         const buyUsd = buys.reduce((sum, trade) => sum + (trade.usd ?? 0), 0);
         const sellUsd = body.trades.filter((trade) => trade.side === "sell").reduce((sum, trade) => sum + (trade.usd ?? 0), 0);
@@ -227,11 +229,12 @@ function TradesTab({ market, facts, owner }: { market: SpotMarket; facts: TokenF
                   <thead>
                     <tr>
                       <th scope="col">{text("When")}</th>
-                      <th scope="col">{text("Who")}</th>
+                      <th scope="col" data-panel-hide>{text("Who")}</th>
                       <th scope="col" data-narrow-hide>{text("Side")}</th>
+                      <th scope="col" data-num data-narrow-hide>{text("Price")}</th>
                       <th scope="col" data-num>{market.symbol}</th>
                       <th scope="col" data-num>USD</th>
-                      {body.capCounted ? <th scope="col" data-num data-optional>{text("Market cap then")}</th> : null}
+                      {body.capCounted ? <th scope="col" data-num data-optional title={text("market cap at the trade's price and today's supply")}>{text("Market cap then")}</th> : null}
                       <th scope="col"><span className="sr-only">{text("Explorer")}</span></th>
                     </tr>
                   </thead>
@@ -239,7 +242,7 @@ function TradesTab({ market, facts, owner }: { market: SpotMarket; facts: TokenF
                     {rows.map((trade) => (
                       <tr key={`${trade.signature}:${trade.side}`} data-side={trade.side}>
                         <td data-mono="true" title={new Date(trade.at).toLocaleString(locale)}>{ago(trade.at, uk, now)}</td>
-                        <td>
+                        <td data-panel-hide>
                           <Wallet
                             address={trade.wallet}
                             you={owner === trade.wallet}
@@ -247,6 +250,9 @@ function TradesTab({ market, facts, owner }: { market: SpotMarket; facts: TokenF
                           />
                         </td>
                         <td data-side-cell={trade.side} data-narrow-hide>{trade.side === "buy" ? text("Bought") : text("Sold")}</td>
+                        {/* The trade's own price, in the header's shape — a tape is time · price · size (B15); a phone keeps the
+                            size in the side's colour and the dollars, the price being the header's. */}
+                        <td data-mono="true" data-num data-narrow-hide>{trade.priceUsd === null ? "—" : `$${formatTerminalPrice(trade.priceUsd, locale, tapeDecimals)}`}</td>
                         {/* The amount in the side's colour, so a phone without the side's column still reads who bought and who sold. */}
                         <td data-mono="true" data-num data-side-cell={trade.side}>
                           <span className="sr-only">{trade.side === "buy" ? text("Bought") : text("Sold")} </span>
@@ -269,8 +275,6 @@ function TradesTab({ market, facts, owner }: { market: SpotMarket; facts: TokenF
             <SourceLine sources={["geckoterminal"]} observedAt={body.observedAt} stale={body.stale}>
               {text("The last trades of")} <b translate="no">{body.pool.name}{body.pool.dex ? ` · ${dexName(body.pool.dex)}` : ""}</b>
               {body.span ? ` · ${clock(body.span.from, locale)}–${clock(body.span.to, locale)}` : ""}
-              {body.capCounted ? ` · ${text("market cap at the trade's price and today's supply")}` : ""}
-              {` · ${text("on the chart, arrows mark the three largest trades read")}`}
             </SourceLine>
           </div>
         );

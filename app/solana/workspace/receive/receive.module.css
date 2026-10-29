@@ -54,14 +54,22 @@
 
 .body {
   display: grid;
-  grid-template-columns: minmax(0, 260px) minmax(0, 1fr);
+  grid-template-columns: minmax(0, 220px) minmax(0, 1fr);
   gap: var(--rt-space-lg);
   align-items: start;
 }
 
+/* A phone: the code first, in the middle, then the address under it. */
 @media (max-width: 720px) {
   .body {
     grid-template-columns: minmax(0, 1fr);
+  }
+
+  .qrWrap,
+  .qrGuest {
+    justify-self: center;
+    width: 240px;
+    box-sizing: border-box;
   }
 }
 
@@ -89,6 +97,45 @@
   height: 228px;
   border-radius: var(--radius-sm);
   background: color-mix(in srgb, var(--panel-2) 60%, transparent);
+}
+
+/* A guest: a grey square where the code will be, with the wallet's sign — the page keeps its shape (B18). */
+.qrGuest {
+  display: grid;
+  place-items: center;
+  width: 100%;
+  max-width: 228px;
+  aspect-ratio: 1;
+  border: 1px dashed var(--ryntra-border-hover, var(--border));
+  border-radius: var(--radius);
+  background: var(--ryntra-elevated, var(--panel-2));
+  color: var(--ryntra-muted, var(--text-dim));
+}
+
+.guestLine {
+  margin: 0;
+  font-size: var(--ryntra-type-body-size, 16px);
+  line-height: var(--ryntra-type-body-line, 24px);
+  color: var(--ryntra-text, var(--text));
+}
+
+/* The network, once, with its mark. */
+.networkChip {
+  display: inline-flex;
+  align-items: center;
+  justify-self: start;
+  gap: 6px;
+  min-height: 28px;
+  padding: 0 10px 0 6px;
+  border: 1px solid var(--ryntra-border, var(--border));
+  border-radius: 999px;
+  color: var(--ryntra-muted, var(--text-dim));
+  font-size: var(--fs-13);
+}
+
+.networkChip b {
+  color: var(--ryntra-text, var(--text));
+  font-weight: 600;
 }
 
 .detail {
@@ -141,7 +188,18 @@
   display: flex;
   flex-wrap: wrap;
   gap: var(--rt-space-xs);
-  margin-block-start: var(--rt-space-xs);
+}
+
+/* On a phone the pinned bar holds the orange copy and its companions in one row, each taking its share. */
+@media (max-width: 767px) {
+  .actions {
+    flex-wrap: nowrap;
+  }
+
+  .actions > * {
+    flex: 1 1 0;
+    min-width: 0;
+  }
 }
 
 .action {

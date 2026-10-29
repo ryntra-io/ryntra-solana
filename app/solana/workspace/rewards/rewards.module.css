@@ -1,60 +1,13 @@
 /* Rewards — money earned, drawn the way the Portfolio draws money owned.
-   Two columns on a desk: the earnings on the left (the figure, the claim,
-   where it came from), and on the right the two programmes — the rank and
-   the invitation — over the statement of every reward. One column on a phone.
-   Tokens only; both themes; the one warm light sits behind the figure. */
-
-.workspace {
-  --rw-side: clamp(300px, 26vw, 380px);
-  display: grid;
-  grid-template-columns: var(--rw-side) minmax(0, 1fr);
-  grid-template-rows: auto 1fr;
-  grid-template-areas:
-    "earn main"
-    "rules main";
-  gap: var(--ry-s3);
-  align-items: start;
-  min-width: 0;
-}
-
-.earn {
-  grid-area: earn;
-}
-
-.main {
-  grid-area: main;
-}
-
-/* The two programmes' rules, one disclosure each, under the earnings — so a
-   person opening one never moves a panel beside it. */
-.rulesStack {
-  grid-area: rules;
-  display: grid;
-  gap: var(--ry-s3);
-  align-self: start;
-}
+   One column at the core's action width (Ріст 19): one card of money, and «Details» under it for the invitation,
+   the rank, badges, the season, the history and the rules. Tokens only; both themes; the one warm light sits behind
+   the figure. */
 
 .panel {
   min-width: 0;
   background: var(--ry-card);
   border: 1px solid var(--ry-border);
   border-radius: var(--ry-r-card);
-}
-
-.main {
-  display: grid;
-  gap: var(--ry-s3);
-  min-width: 0;
-}
-
-/* Points beside the invitation while there is room for both. */
-.programmes {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(330px, 1fr));
-  gap: var(--ry-s3);
-  /* Each panel its own height: a long invitation panel must not open a void
-     in the rank card beside it. */
-  align-items: start;
 }
 
 /* ── Shared vocabulary ─────────────────────────────────────────────────── */
@@ -302,10 +255,68 @@
   color: var(--ry-caution);
 }
 
-.pendingWhy {
-  margin: calc(var(--ry-s2) * -1) 0 0;
+/* «First $10 back» (rules 2.1.0): how much of the cap came back, one quiet bar,
+   one line under. Green for money that came back — the orange stays the
+   claim's alone. */
+.firstTen {
+  display: grid;
+  gap: var(--ry-s2);
+  padding: var(--ry-s3);
+  border: 1px solid var(--ry-border);
+  border-radius: var(--ry-r-card);
+  background: var(--ry-elevated);
+}
+
+.firstTenHead {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--ry-s1) var(--ry-s3);
+}
+
+.firstTenFigure {
+  font-family: var(--ry-font-mono);
+  font-size: var(--ry-fs-label);
+  font-variant-numeric: tabular-nums;
+  color: var(--ry-text);
+}
+
+.firstTenBar {
+  height: 6px;
+  overflow: hidden;
+  border-radius: var(--ry-r-pill);
+  background: var(--ry-border);
+}
+
+.firstTenFill {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: var(--ry-verified);
+  transition: width 400ms ease-out;
+}
+
+.firstTenNote {
+  margin: 0;
   color: var(--ry-muted);
   font-size: var(--ry-fs-label);
+  line-height: 1.4;
+}
+
+.firstTen[data-state="refused"] .firstTenNote {
+  color: var(--ry-caution);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .firstTenFill { transition: none; }
+}
+
+/* Under the ladder: a friend's first days pay the window's share at any rank. */
+.ladderNote {
+  margin: 0;
+  color: var(--ry-muted);
+  font-size: var(--ry-fs-label-sm);
   line-height: 1.4;
 }
 
@@ -367,14 +378,6 @@
   color: var(--ry-text);
   font-size: var(--ry-fs-dense);
   font-weight: 600;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.sourceRate {
-  overflow: hidden;
-  color: var(--ry-muted);
-  font-size: var(--ry-fs-label);
   text-overflow: ellipsis;
   white-space: nowrap;
 }
@@ -703,8 +706,8 @@
   --badge-glow-chosen: 70%;
 }
 
-:global([data-theme="light"]) .badges,
-:global([data-theme="light"]) .rankTitle {
+:global(:is([data-theme="light"], [data-theme="porcelain"])) .badges,
+:global(:is([data-theme="light"], [data-theme="porcelain"])) .rankTitle {
   --badge-glow-rest: 25%;
   --badge-glow-chosen: 40%;
 }
@@ -1203,6 +1206,12 @@
   white-space: nowrap;
 }
 
+/* A detail that explains a wait («after the check») is read whole, on a second line if it must. */
+.rowDetail[data-note] {
+  white-space: normal;
+  text-overflow: clip;
+}
+
 .rowAt {
   font-family: var(--ry-font-mono);
   font-size: var(--ry-fs-label);
@@ -1301,48 +1310,32 @@
   font-size: var(--ry-fs-dense);
 }
 
+/* The gates: one panel the width of the page's column — as wide as the tabs
+   above it — with its content in the middle (Ріст 18, as SOL-C1). */
 .gateFrame {
   display: grid;
   gap: var(--ry-s4);
-  max-width: 640px;
-  margin: 0 auto;
+  justify-items: center;
   padding: var(--ry-s5);
   border: 1px solid var(--ry-border);
   border-radius: var(--ry-r-card);
   background: var(--ry-card);
 }
 
-.confirm {
-  display: grid;
-  gap: var(--ry-s3);
-  justify-items: center;
-  padding: var(--ry-s5) 0;
+.gateFrame > * {
+  width: min(100%, 640px);
+}
+
+.gateFrame > p {
+  margin: 0;
   text-align: center;
 }
 
-.confirm .claim {
+.gateFrame > .claim {
   width: auto;
 }
 
-.confirmLead {
-  margin: 0;
-  max-width: 40ch;
-  color: var(--ry-text);
-  font-size: var(--ry-fs-app);
-}
-
 /* ── Narrower screens ─────────────────────────────────────────────────── */
-
-@media (max-width: 1100px) {
-  .workspace {
-    grid-template-columns: minmax(0, 1fr);
-    grid-template-rows: none;
-    grid-template-areas:
-      "earn"
-      "main"
-      "rules";
-  }
-}
 
 @media (max-width: 760px) {
   .earn,
@@ -1355,10 +1348,6 @@
 
   .badgeGrid {
     grid-template-columns: repeat(5, minmax(0, 1fr));
-  }
-
-  .programmes {
-    grid-template-columns: minmax(0, 1fr);
   }
 
   .row {
@@ -1376,13 +1365,6 @@
 }
 
 /* ── The invitation and the code ──────────────────────────────────────── */
-
-/* An open invitation leads the page: somebody who followed a link sees who
-   invited them before the figures, and before their first trade. */
-.invitationTop {
-  max-width: 760px;
-  margin: 0 0 var(--ry-s3);
-}
 
 /* The inviter's own code beside their link — for friends who type. */
 .codeRow {
@@ -1482,4 +1464,245 @@
   outline: none;
   box-shadow: var(--ry-focus);
   border-radius: 4px;
+}
+
+/* ── Ріст 19: one column, one card ────────────────────────────────────── */
+
+/* Every state of the Overview is one column in the middle of the page — the core's action width (640 px), so
+   nothing on a 1440 or 1920 screen runs from edge to edge. */
+.column {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ry-s3);
+  width: 100%;
+  max-width: var(--ryntra-page-action, 640px);
+  margin-inline: auto;
+  min-width: 0;
+}
+
+/* A Rewards page whole — its title, the tabs and what is under them — in one column in the middle, never edge to
+   edge: the Overview at the core's action width, the pages of tables capped for reading — under the content width of
+   a 1440 screen, so margins show there too. */
+.frameAction,
+.frameWide {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ry-s3);
+  width: 100%;
+  margin-inline: auto;
+  min-width: 0;
+}
+
+.frameAction {
+  max-width: var(--ryntra-page-action, 640px);
+}
+
+.frameWide {
+  max-width: min(var(--ryntra-page-max, 1760px), 1040px);
+}
+
+/* The guest card: what the programme pays, each share a figure with its mark, then the one action. */
+.programme {
+  display: grid;
+  gap: var(--ry-s4);
+  padding: var(--ry-s5);
+}
+
+.programmeRows {
+  display: grid;
+  gap: 0;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.programmeRow {
+  display: grid;
+  grid-template-columns: 36px minmax(0, 1fr) auto;
+  align-items: start;
+  gap: var(--ry-s3);
+  padding: var(--ry-s3) 0;
+  border-top: 1px solid var(--ry-border);
+}
+
+/* The history's phone rule names the glyph's area; a programme row has no such area. */
+.programmeRow > .glyph {
+  grid-area: auto;
+}
+
+.programmeRow:first-child {
+  border-top: 0;
+  padding-top: 0;
+}
+
+.programmeText {
+  display: grid;
+  justify-items: start;
+  align-content: center;
+  min-height: 36px;
+  gap: 2px;
+  min-width: 0;
+}
+
+.programmeName {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px var(--ry-s2);
+  color: var(--ry-text);
+  font-size: var(--ry-fs-app);
+  font-weight: 600;
+}
+
+.programmeWhat {
+  color: var(--ry-muted);
+  font-size: var(--ry-fs-label);
+  line-height: 1.4;
+}
+
+.programmeFigure {
+  font-family: var(--ry-font-mono);
+  font-size: var(--ry-fs-data-lg, 24px);
+  font-weight: 600;
+  line-height: 36px;
+  color: var(--ry-text);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+/* The conditions of the shares: one quiet disclosure under the rows, so each row stays one line at rest. */
+.programmeTerms summary {
+  color: var(--ry-text);
+  font-size: var(--ry-fs-dense);
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.programmeTerms ul {
+  display: grid;
+  gap: var(--ry-s2);
+  margin: var(--ry-s2) 0 0;
+  padding-left: var(--ry-s4);
+  color: var(--ry-muted);
+  font-size: var(--ry-fs-label);
+  line-height: 1.45;
+}
+
+.programmeAction {
+  display: grid;
+  justify-items: center;
+  gap: var(--ry-s3);
+  padding-top: var(--ry-s3);
+  border-top: 1px solid var(--ry-border);
+}
+
+.programmeCode {
+  display: grid;
+}
+
+/* How a programme is paid — one mark, one style everywhere: green for money paid in USDC, amber for money counted
+   and not paid yet, quiet for status. Never the orange, which stays the action's. */
+.paidAs {
+  display: inline-flex;
+  align-items: center;
+  justify-self: start;
+  width: fit-content;
+  min-height: 22px;
+  padding: 0 var(--ry-s2);
+  border: 1px solid var(--ry-border);
+  border-radius: var(--ry-r-pill);
+  font-size: var(--ry-fs-label-sm);
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+  color: var(--ry-muted);
+}
+
+.paidAs[data-paid="usdc"] {
+  border-color: color-mix(in srgb, var(--ry-pnl-pos) 40%, var(--ry-border));
+  color: var(--ry-pnl-pos);
+}
+
+.paidAs[data-paid="counted"],
+.paidAs[data-paid="paused"] {
+  border-color: color-mix(in srgb, var(--ry-caution) 40%, var(--ry-border));
+  color: var(--ry-caution);
+}
+
+/* The one card after the sign-in. */
+.earnHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--ry-s2);
+}
+
+.fact .factWhy,
+.fact[data-tone] .factWhy {
+  font-family: var(--ry-font-sans);
+  color: var(--ry-muted);
+}
+
+.earnFoot {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--ry-s2);
+  padding-top: var(--ry-s3);
+  border-top: 1px solid var(--ry-border);
+}
+
+/* Quiet pill actions: «Invite friends», «Details», and «Get Phantom» for a desk browser with no wallet — the orange
+   stays the claim's. */
+.footAction {
+  display: inline-flex;
+  text-decoration: none;
+  align-items: center;
+  gap: var(--ry-s2);
+  min-height: 44px;
+  padding: 0 var(--ry-s3);
+  border: 1px solid var(--ry-border);
+  border-radius: var(--ry-r-pill);
+  background: transparent;
+  color: var(--ry-text);
+  font: inherit;
+  font-size: var(--ry-fs-dense);
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.footAction:hover {
+  background: var(--ry-hover);
+}
+
+.footAction:focus-visible {
+  outline: none;
+  box-shadow: var(--ry-focus);
+}
+
+.footAction svg[data-open] {
+  transform: rotate(180deg);
+}
+
+/* Everything past the card, in the same column. */
+.details {
+  display: grid;
+  gap: var(--ry-s3);
+  min-width: 0;
+}
+
+.details[hidden] {
+  display: none;
+}
+
+@media (max-width: 560px) {
+  .programme {
+    padding: var(--ry-s4);
+  }
+
+  .earnFoot > .footAction {
+    flex: 1 1 100%;
+    justify-content: center;
+  }
 }

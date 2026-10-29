@@ -40,6 +40,7 @@
 
 .tab {
   display: inline-flex;
+  flex-shrink: 0;
   align-items: center;
   min-height: 36px;
   padding: 0 var(--ry-s4);
@@ -199,6 +200,7 @@
 
 .strip {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   gap: var(--ry-s3);
   padding: var(--ry-s3) var(--ry-s4);
@@ -499,6 +501,15 @@
   font-size: var(--ry-fs-label-sm);
 }
 
+/* A liquidity badge the wallet chose to show: its medallion small, beside its name. */
+.liquidityTag {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  vertical-align: middle;
+  white-space: nowrap;
+}
+
 .value {
   color: var(--ry-text);
   font-family: var(--ry-font-mono);
@@ -517,7 +528,7 @@
 
 /* The core's light theme keeps the dark red (3.3:1 on white); the light
    one reads at about 5:1. */
-:global([data-theme="light"]) .value[data-sign="neg"] {
+:global(:is([data-theme="light"], [data-theme="porcelain"])) .value[data-sign="neg"] {
   color: var(--ry-pnl-neg-light);
 }
 
@@ -834,7 +845,7 @@
   filter: drop-shadow(0 3px 9px color-mix(in srgb, var(--badge-glow, transparent) 45%, transparent));
 }
 
-:global([data-theme="light"]) .badgeGlow {
+:global(:is([data-theme="light"], [data-theme="porcelain"])) .badgeGlow {
   filter: drop-shadow(0 3px 9px color-mix(in srgb, var(--badge-glow, transparent) 25%, transparent));
 }
 
@@ -959,6 +970,7 @@ h3.eyebrow {
 
 .cardHead {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   gap: var(--ry-s3);
 }
@@ -1038,6 +1050,18 @@ h3.eyebrow {
 
   .seasonBadges {
     grid-template-columns: minmax(0, 1fr);
+  }
+  /* The week's switch and the boards' tabs take the row's width in equal parts (Ріст 18, as SOL-C1). */
+  .controls > .segments,
+  .boardTabs {
+    display: flex;
+    width: 100%;
+  }
+
+  .controls > .segments .segment,
+  .boardTabs .segment {
+    flex: 1 1 0;
+    justify-content: center;
   }
 }
 
