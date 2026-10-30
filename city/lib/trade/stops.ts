@@ -1,5 +1,7 @@
 import { limitAmounts, rawToDecimal, scaledDecimal } from '../../../lib/solana/limits/model.ts';
+import { wordsNow } from '../i18n/dict.ts';
 import type { Side } from './tiles.ts';
+import { STOPS } from './words.ts';
 
 /**
  * A stop in the city: «sell when the price falls to», «buy when the price rises to». The engine's limits lane has no
@@ -80,11 +82,11 @@ export function stopThreshold(input: Pick<StopInput, 'side' | 'base' | 'quote' |
  */
 export function makeStop(input: StopInput, now: number, nowOutRaw: string | null, id: string): Readonly<{ ok: true; stop: Stop }> | Readonly<{ ok: false; problem: StopProblem }> {
   const scaled = scaledDecimal(input.price, 18);
-  if (scaled === null || scaled <= 0n) return { ok: false, problem: { code: 'PRICE', text: 'Type the stop price.' } };
+  if (scaled === null || scaled <= 0n) return { ok: false, problem: { code: 'PRICE', text: wordsNow(STOPS).typePrice } };
   const thresholdRaw = stopThreshold(input);
-  if (!thresholdRaw || thresholdRaw === '0') return { ok: false, problem: { code: 'AMOUNT', text: 'Pick an amount for the stop.' } };
+  if (!thresholdRaw || thresholdRaw === '0') return { ok: false, problem: { code: 'AMOUNT', text: wordsNow(STOPS).pickAmount } };
   if (nowOutRaw !== null && /^\d+$/.test(nowOutRaw) && BigInt(nowOutRaw) <= BigInt(thresholdRaw)) {
-    const text = input.side === 'sell' ? 'The price is already there. Use Market or set it lower.' : 'The price is already there. Use Market or set it higher.';
+    const text = input.side === 'sell' ? wordsNow(STOPS).thereLower : wordsNow(STOPS).thereHigher;
     return { ok: false, problem: { code: 'REACHED', text } };
   }
   const expiresAt = input.expiry === 'never' ? null : now + EXPIRY_MS[input.expiry];
@@ -166,9 +168,10 @@ export const stopsKey = (owner: string) => `ryntra.city.stops.v1:${owner}`;
 
 /** The stop's condition in words, for «My orders». */
 export function stopWhen(stop: Pick<Stop, 'side'>): string {
-  return stop.side === 'sell' ? 'Sell if the price falls to' : 'Buy if the price rises to';
+  return stop.side === 'sell' ? wordsNow(STOPS).sellIfFalls : wordsNow(STOPS).buyIfRises;
 }
 
 export function expiryWords(expiry: StopExpiry): string {
-  return expiry === '1d' ? '1 day' : expiry === '7d' ? '7 days' : expiry === '30d' ? '30 days' : 'Until cancelled';
+  const w = wordsNow(STOPS);
+  return expiry === '1d' ? w.day1 : expiry === '7d' ? w.days7 : expiry === '30d' ? w.days30 : w.untilCancelled;
 }

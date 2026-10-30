@@ -1,6 +1,8 @@
 import type { AgentCard, AgentSentence, AgentTurn } from '@/lib/api/v1/contract';
 import type { Tower } from '../market/types.ts';
+import { digits, wordsNow } from '../i18n/dict.ts';
 import { questionSymbol } from './clean.ts';
+import { ASSISTANT_TEXT } from './words.ts';
 
 /**
  * Ryntra in the city (CITY-10): a question goes to the assistant's engine, and the answer comes back as towers — the
@@ -28,10 +30,10 @@ export function intentOf(text: string, subject: Tower | null): Intent {
   return 'other';
 }
 
-/** A move as the city prints it everywhere: sign, one decimal and the window. */
-export function moveOf(change: number, window = '24H'): string | null {
+/** A move as the city prints it everywhere: sign, one decimal and the window, in the language on screen. */
+export function moveOf(change: number, window = wordsNow(ASSISTANT_TEXT).h24): string | null {
   if (!Number.isFinite(change)) return null;
-  return `${change >= 0 ? '+' : '−'}${Math.abs(change).toFixed(1)}% · ${window}`;
+  return digits(`${change >= 0 ? '+' : '−'}${Math.abs(change).toFixed(1)}% · ${window}`);
 }
 
 /** A tower's light follows its own move, never the question's words: mint for a rise, red for a fall, amber when flat. */
@@ -151,26 +153,29 @@ export function detailsOf(turn: AgentTurn): Details {
 
 /** The city's own line when Ryntra cannot answer now: what the towers on the screen are doing, from the city's read. */
 export function cityLine(intent: Intent, shown: readonly Tower[]): string {
+  const w = wordsNow(ASSISTANT_TEXT);
   const lead = shown[0];
-  if (!lead) return intent === 'rising' ? 'Nothing is rising hard right now.' : intent === 'falling' ? 'Nothing is falling hard right now.' : 'Ryntra can’t answer right now.';
+  if (!lead) return intent === 'rising' ? w.nothingRising : intent === 'falling' ? w.nothingFalling : w.cannotAnswer;
   const rest = shown.slice(1).map((t) => t.symbol);
-  const others = rest.length ? `, then ${rest.join(', ')}` : '';
+  const others = rest.length ? w.then(rest.join(', ')) : '';
   const move = moveOf(lead.change24h);
-  if (!move) return `${lead.symbol} has no move to show right now.`;
-  if (intent === 'rising') return `${lead.symbol} leads the rise at ${move}${others}.`;
-  if (intent === 'falling') return `${lead.symbol} falls the most at ${move}${others}.`;
-  return `${lead.symbol} is at ${move}.`;
+  if (!move) return w.noMove(lead.symbol);
+  if (intent === 'rising') return w.leadsRise(lead.symbol, move, others);
+  if (intent === 'falling') return w.fallsMost(lead.symbol, move, others);
+  return w.isAt(lead.symbol, move);
 }
 
 /** The ready questions: the day's rise and fall, and the picked tower when there is one. */
 export type Starter = { id: 'rising' | 'falling' | 'tower'; label: string; question: string };
 
+/** In the language on screen: the question goes as written, and the answer comes back in that language too. */
 export function startersFor(subject: Tower | null): Starter[] {
+  const w = wordsNow(ASSISTANT_TEXT);
   const starters: Starter[] = [
-    { id: 'rising', label: 'What’s rising and why?', question: 'What is rising on Solana today, and why?' },
-    { id: 'falling', label: 'What’s falling?', question: 'What is falling on Solana today, and why?' },
+    { id: 'rising', label: w.risingLabel, question: w.risingQuestion },
+    { id: 'falling', label: w.fallingLabel, question: w.fallingQuestion },
   ];
   const symbol = subject ? questionSymbol(subject.symbol) : null;
-  if (subject && symbol) starters.unshift({ id: 'tower', label: `What’s with ${symbol}?`, question: `What is happening with ${symbol} today, and why?` });
+  if (subject && symbol) starters.unshift({ id: 'tower', label: w.towerLabel(symbol), question: w.towerQuestion(symbol) });
   return starters;
 }

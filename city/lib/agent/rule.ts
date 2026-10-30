@@ -1,4 +1,8 @@
+import { NOT_MEASURED } from '../../../lib/world/text-safety/measured.ts';
+import { digits, wordsNow } from '../i18n/dict.ts';
+import { langNow } from '../i18n/lang.ts';
 import { isNamed, towerFigure, type District, type Tower } from '../market/types.ts';
+import { AGENT_RULE } from './words.ts';
 
 /**
  * The scout's rule, put together from fixed choices only: what move to look for, how much liquidity a coin needs,
@@ -24,19 +28,41 @@ export type Rule = Readonly<{
   budget: number;
 }>;
 
+/** A signal: its name in the language on screen (read each time it is shown), its window and the moves it offers. */
+const signal = (id: Signal, window: '1H' | '24H', moves: readonly number[]) => ({
+  get label() {
+    return wordsNow(AGENT_RULE)[id];
+  },
+  window,
+  moves,
+});
+
 export const SIGNALS: Readonly<Record<Signal, Readonly<{ label: string; window: '1H' | '24H'; moves: readonly number[] }>>> = {
-  rise1h: { label: 'Rising this hour', window: '1H', moves: [2, 5, 10] },
-  rise24h: { label: 'Rising today', window: '24H', moves: [5, 10, 25] },
-  dip24h: { label: 'Dipping today', window: '24H', moves: [5, 10, 20] },
+  rise1h: signal('rise1h', '1H', [2, 5, 10]),
+  rise24h: signal('rise24h', '24H', [5, 10, 25]),
+  dip24h: signal('dip24h', '24H', [5, 10, 20]),
 };
+
+/** A window as the city says it: «1H» · «1 год». */
+export const windowText = (window: '1H' | '24H'): string => (window === '1H' ? wordsNow(AGENT_RULE).window1h : wordsNow(AGENT_RULE).window24h);
 export const SIGNAL_ORDER: readonly Signal[] = ['rise1h', 'rise24h', 'dip24h'];
 export const LIQUIDITY: readonly number[] = [50_000, 250_000, 1_000_000, 10_000_000];
 export const AREAS: Readonly<Record<Area, string>> = {
-  any: 'Whole city',
-  core: 'Sol Core',
-  heights: 'DeFi Heights',
-  strip: 'Meme Strip',
-  avenue: 'Stock Avenue',
+  get any() {
+    return wordsNow(AGENT_RULE).any;
+  },
+  get core() {
+    return wordsNow(AGENT_RULE).core;
+  },
+  get heights() {
+    return wordsNow(AGENT_RULE).heights;
+  },
+  get strip() {
+    return wordsNow(AGENT_RULE).strip;
+  },
+  get avenue() {
+    return wordsNow(AGENT_RULE).avenue;
+  },
 };
 export const AREA_ORDER: readonly Area[] = ['any', 'core', 'heights', 'strip', 'avenue'];
 export const BUDGETS: readonly number[] = [50, 100, 250, 500];
@@ -108,24 +134,38 @@ export function matches(towers: readonly Tower[], rule: Rule): Tower[] {
 /** One line of «why this tower»: a figure from the city's data, its window, and the rule it passed. */
 export type Fact = Readonly<{ label: string; value: string; note: string }>;
 
-/** Why this tower: four short lines, each a real figure from the city's read and its window, beside the bar it cleared. */
+/**
+ * Why this tower: four short lines, each a real figure from the city's read and its window, beside the bar it cleared.
+ * Written in English, as the question to Ryntra carries them; the card shows them in the language on screen
+ * (`factShown`).
+ */
 export function explain(tower: Tower, rule: Rule): Fact[] {
   const s = SIGNALS[rule.signal];
   /* A figure the source did not measure reads «Not measured», never a zero (CITY-73). */
   return [
-    { label: `Move ${s.window}`, value: towerFigure(tower, rule.signal === 'rise1h' ? 'change1h' : 'change24h', signed), note: rule.signal === 'dip24h' ? `≤ −${rule.move}%` : `≥ +${rule.move}%` },
-    { label: 'Liquidity', value: towerFigure(tower, 'liquidity', usd), note: `≥ ${usd(rule.liquidity)}` },
-    { label: 'Traders 1H', value: towerFigure(tower, 'traders1h', count), note: `≥ ${MIN_TRADERS_1H}` },
-    { label: 'Organic', value: towerFigure(tower, 'organic', (v) => `${Math.round(v)}/100`), note: `≥ ${MIN_ORGANIC}` },
+    { label: `Move ${s.window}`, value: towerFigure(tower, rule.signal === 'rise1h' ? 'change1h' : 'change24h', signed, 'en'), note: rule.signal === 'dip24h' ? `≤ −${rule.move}%` : `≥ +${rule.move}%` },
+    { label: 'Liquidity', value: towerFigure(tower, 'liquidity', usd, 'en'), note: `≥ ${usd(rule.liquidity)}` },
+    { label: 'Traders 1H', value: towerFigure(tower, 'traders1h', count, 'en'), note: `≥ ${MIN_TRADERS_1H}` },
+    { label: 'Organic', value: towerFigure(tower, 'organic', (v) => `${Math.round(v)}/100`, 'en'), note: `≥ ${MIN_ORGANIC}` },
   ];
+}
+
+/** A fact of a find as the card shows it: its label, figure and bar in the language on screen. */
+export function factShown(fact: Fact): Fact {
+  const w = wordsNow(AGENT_RULE);
+  const label =
+    fact.label === 'Move 1H' ? w.move(w.window1h) : fact.label === 'Move 24H' ? w.move(w.window24h) : fact.label === 'Liquidity' ? w.liquidity : fact.label === 'Traders 1H' ? w.traders1h : fact.label === 'Organic' ? w.organic : fact.label;
+  const value = fact.value === NOT_MEASURED.en ? NOT_MEASURED[langNow()] : digits(fact.value);
+  return { label, value, note: digits(fact.note) };
 }
 
 /** The rule in one line, as the scout's card says it. */
 export function ruleLine(rule: Rule): string {
+  const w = wordsNow(AGENT_RULE);
   const s = SIGNALS[rule.signal];
   const move = rule.signal === 'dip24h' ? `−${rule.move}%` : `+${rule.move}%`;
-  const where = rule.area === 'any' ? '' : ` in ${AREAS[rule.area]}`;
-  return `${s.label} ${move}${where}, liquidity from ${usd(rule.liquidity)}, pause after ${usd(rule.budget)} a week`;
+  const where = rule.area === 'any' ? '' : w.inArea(AREAS[rule.area]);
+  return w.ruleLine(s.label, move, where, digits(usd(rule.liquidity)), digits(usd(rule.budget)));
 }
 
 export function usd(v: number): string {

@@ -1,7 +1,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 
-import { ACCOUNT_STALE_MS, ACCOUNT_WORDS, accountKind, cancelAllMarkets, collateralOf, healthOf, opensFrom, orderRows, positionRows, reducesFrom } from "./account.ts";
+import { ACCOUNT_STALE_MS, ACCOUNT_WORDS, accountKind, cancelAllMarkets, collateralOf, healthOf, opensFrom, orderRows, phoenixHolds, positionRows, reducesFrom } from "./account.ts";
 import { account, MARKETS, margin, NO_ACCOUNT, SOL } from "./test-fixtures.mjs";
 
 const ready = (value, at = 1_000) => ({ status: "ready", value, at });
@@ -17,6 +17,29 @@ test("the account panel's word: the wallet first, then Phoenix's own state of th
   }
   // A failed read with an earlier account keeps that account's word: the health says the figures are old.
   assert.equal(accountKind(true, { status: "failed", value: account(), at: 1 }), "active");
+});
+
+test("closing out (decision 86): an account that could open is closing only; one that could not keeps Phoenix's word", () => {
+  for (const state of ["active", "cold", "unknown"]) assert.equal(accountKind(true, ready(account({ state })), true), "reduceOnly", state);
+  assert.equal(accountKind(true, ready(account({ state: "frozen" })), true), "frozen");
+  assert.equal(accountKind(true, ready(NO_ACCOUNT), true), "invite");
+  assert.equal(accountKind(false, ready(account()), true), "connect");
+  assert.equal(accountKind(true, ready(account()), false), "active");
+  // Closing only still cuts, closes, cancels: and opens nothing.
+  assert.equal(reducesFrom(accountKind(true, ready(account()), true)), true);
+  assert.equal(opensFrom(accountKind(true, ready(account()), true)), false);
+});
+
+test("the wallet holds something on Phoenix while it has a position, an order or collateral of either kind", () => {
+  assert.equal(phoenixHolds(null), false);
+  assert.equal(phoenixHolds(NO_ACCOUNT), false);
+  assert.equal(phoenixHolds(account()), true);
+  const empty = { positions: [], orders: [], collateralUsd: 0, collateralSol: null };
+  assert.equal(phoenixHolds(account(empty)), false);
+  assert.equal(phoenixHolds(account({ ...empty, collateralUsd: 0.5 })), true);
+  assert.equal(phoenixHolds(account({ ...empty, collateralSol: 0.01 })), true);
+  assert.equal(phoenixHolds(account({ ...empty, orders: account().orders.length ? account().orders : [{}] })), true);
+  assert.equal(phoenixHolds(account({ ...empty, positions: account().positions })), true);
 });
 
 test("an account by invite says so honestly, and only an account Phoenix lets trade opens from here", () => {

@@ -1,4 +1,7 @@
+import { wordsNow } from '../../i18n/dict.ts';
+import { sideName } from './markets.ts';
 import { recordOf, valueOf, type Holding, type PracticeBook } from './practice.ts';
+import { PREDICT } from './words.ts';
 import type { Live, OrderLine, Position, Status } from './real.ts';
 
 /**
@@ -163,7 +166,7 @@ export function realBook(live: Live | null, orders: readonly OrderLine[], recent
       eventId: o.eventId,
       title: o.title,
       image: imageOf(o.eventId),
-      label: o.side === 'sell' ? `Sold ${o.label}` : o.label,
+      label: o.side === 'sell' ? wordsNow(PREDICT).soldLabel(sideName(o.label)) : o.label,
       word: o.status === 'accepted' ? (o.side === 'sell' ? 'Sold' : 'Bought') : 'Not filled',
       amount: o.totalUsd,
       pnl: null,
@@ -176,9 +179,9 @@ export function realBook(live: Live | null, orders: readonly OrderLine[], recent
     past.push({
       key: `receipt:${r.id}`,
       eventId: null,
-      title: r.lines[0]?.title ?? 'Winnings',
+      title: r.lines[0]?.title ?? wordsNow(PREDICT).winnings,
       image: null,
-      label: r.lines.length > 1 ? `${r.lines.length} wins` : (r.lines[0]?.label ?? ''),
+      label: r.lines.length > 1 ? wordsNow(PREDICT).wins(r.lines.length) : (r.lines[0]?.label ?? ''),
       word: r.paid ? 'Paid' : 'Collecting',
       amount: r.totalUsd,
       pnl: null,
@@ -218,5 +221,22 @@ export function linesOn(lines: readonly Line[], eventId: string): readonly Line[
 
 /** How a line's state reads, in one word; null for a position simply held. */
 export function statusWord(status: Status): string | null {
-  return status === 'pending' ? 'On its way' : status === 'failed' ? 'Not filled' : null;
+  const w = wordsNow(PREDICT);
+  return status === 'pending' ? w.statusOnWay : status === 'failed' ? w.pastNotFilled : null;
+}
+
+/** How a past line ended, in the language on screen: the line keeps its English word as its kind. */
+export function pastWord(word: Past['word']): string {
+  const w = wordsNow(PREDICT);
+  const said: Readonly<Record<Past['word'], string>> = {
+    Won: w.pastWon,
+    Lost: w.pastLost,
+    Sold: w.pastSold,
+    Void: w.pastVoid,
+    Bought: w.pastBought,
+    'Not filled': w.pastNotFilled,
+    Paid: w.pastPaid,
+    Collecting: w.pastCollecting,
+  };
+  return said[word];
 }

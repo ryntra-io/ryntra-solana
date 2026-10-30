@@ -16,14 +16,15 @@ export const FRAME_MAX = { width: 760, height: 980 } as const;
 /** The window never comes closer than this to the screen's edge. */
 export const EDGE = 8;
 
-export const FRAME_KEY = 'ryntra.city.trade-window.v1';
+/** v2 (CITY-78): the window is the tower's one window now, taller with the coin's figures on top; v1's size is let go. */
+export const FRAME_KEY = 'ryntra.city.trade-window.v2';
 
 const RIGHT = 16;
 const BOTTOM = 24;
 /** Room the city's top bar keeps over a window that grows upward. */
 export const TOP_ROOM = 76;
 const WIDTH = 520;
-const HEIGHT = 560;
+const HEIGHT = 760;
 
 export function windowed(viewport: Viewport): boolean {
   return viewport.width >= WINDOWED_FROM;

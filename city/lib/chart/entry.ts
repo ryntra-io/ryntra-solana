@@ -1,5 +1,7 @@
+import { wordsNow } from '../i18n/dict.ts';
 import { basisOf, type Basis, type HistoryTrade } from '../trade/mine.ts';
 import type { ChartLayer } from './layers.ts';
+import { CHART_MARKS } from './words.ts';
 
 /**
  * «Your entry» on a tower's chart: what the coins the wallet holds now cost on average, in dollars. It is the cost
@@ -25,7 +27,9 @@ export function entryMove(entry: number | null, price: number | null): number | 
 
 /** The chart's «Entry» layer: the entry as a level across the candles; none without an entry. */
 export function entryLayer(mint: string, entry: number | null): ChartLayer | null {
-  return entry === null ? null : { id: 'entry', label: 'Entry', mint, levels: [{ id: 'average', price: entry, label: 'Your entry' }] };
+  if (entry === null) return null;
+  const w = wordsNow(CHART_MARKS);
+  return { id: 'entry', label: w.entry, mint, levels: [{ id: 'average', price: entry, label: w.yourEntry }] };
 }
 
 /**

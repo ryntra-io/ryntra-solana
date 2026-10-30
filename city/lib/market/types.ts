@@ -1,4 +1,5 @@
 import { NOT_MEASURED } from '../../../lib/world/text-safety/measured.ts';
+import { langNow, type Lang } from '../i18n/lang.ts';
 
 /** Where a tower stands. Each district is a sector of the island with its own skyline rules. */
 export type District = 'core' | 'heights' | 'strip' | 'avenue' | 'docks';
@@ -34,9 +35,9 @@ export type Tower = {
 export const TOWER_FIGURES = ['price', 'mcap', 'liquidity', 'holders', 'change5m', 'change1h', 'change24h', 'volume24h', 'traders1h', 'organic'] as const;
 export type TowerFigure = (typeof TOWER_FIGURES)[number];
 
-/** A tower's figure for a screen: formatted when the source measured it, «Not measured» when it did not. */
-export const towerFigure = (tower: Pick<Tower, TowerFigure | 'unread'>, figure: TowerFigure, format: (value: number) => string): string =>
-  tower.unread?.includes(figure) ? NOT_MEASURED.en : format(tower[figure]);
+/** A tower's figure for a screen: formatted when the source measured it, «Not measured» (in the language on screen) when it did not. */
+export const towerFigure = (tower: Pick<Tower, TowerFigure | 'unread'>, figure: TowerFigure, format: (value: number) => string, lang: Lang = langNow()): string =>
+  tower.unread?.includes(figure) ? NOT_MEASURED[lang] : format(tower[figure]);
 
 /**
  * Only Jupiter-verified tokens are shown by name and logo. Unverified pools stand in the city as anonymous

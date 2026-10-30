@@ -1,5 +1,8 @@
 import type { Tower } from '../market/types.ts';
 import type { Fact } from './rule.ts';
+import { wordsNow } from '../i18n/dict.ts';
+import { langNow } from '../i18n/lang.ts';
+import { AGENT_RULE } from './words.ts';
 
 /**
  * Ryntra's word on a find, only when the person asks for it: the assistant's market question without a wallet. It is
@@ -50,14 +53,16 @@ export async function askRyntra(
       credentials: 'omit',
       body: JSON.stringify({
         text: adviceQuestion(tower, facts),
-        locale: 'en',
+        // Ryntra answers in the language on screen (CITY-79); the question itself stays as the engine reads it.
+        locale: langNow(),
         context: { kind: 'asset', mint: tower.id, symbol: tower.symbol.replace(/^\$/, '').slice(0, 32) },
       }),
     });
-    if (!response.ok) return { ok: false, message: response.status === 429 ? 'Ryntra has had enough questions for now. Try again shortly.' : 'Ryntra is not available here right now.' };
+    const w = wordsNow(AGENT_RULE);
+    if (!response.ok) return { ok: false, message: response.status === 429 ? w.tooMany : w.notHere };
     const lines = adviceLines(await response.json());
-    return lines.length ? { ok: true, lines } : { ok: false, message: 'Ryntra had nothing to add on this one.' };
+    return lines.length ? { ok: true, lines } : { ok: false, message: w.nothingToAdd };
   } catch {
-    return { ok: false, message: 'Ryntra could not be reached just now.' };
+    return { ok: false, message: wordsNow(AGENT_RULE).unreachable };
   }
 }

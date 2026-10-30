@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState, type ReactNode } from 'react';
 import { openExternal } from '@/city/lib/app-bridge/page';
 import { CoinIcon } from '@/city/components/chart/CoinIcon';
+import { digits, useWords, type TextKey } from '@/city/lib/i18n/dict';
 import { useCity } from '@/city/lib/city/store';
 import { SCOUTS_ART, scoutsSrcSet } from '@/city/lib/scouts/art';
 import { useScouts } from '@/city/lib/scouts/store';
@@ -12,15 +13,25 @@ import { useWallet } from '@/city/lib/trade/wallet';
 import { Connect } from '../money/bits';
 import { FlagGlyph, KindGlyph, XGlyph } from './glyphs';
 import s from './scouts.module.css';
+import { SCOUTS } from './words';
 
 /** The history shows this many rows; the rest are one tap away. */
 const FIRST_ROWS = 5;
 
-const KIND_LABEL: Readonly<Record<ScoutRow['kind'], string>> = {
-  CASHBACK: 'Cashback',
-  REFERRAL_L1: 'Friend',
-  REFERRAL_L2: "Friend's friend",
-  CLAIM: 'Payout',
+const KIND_LABEL: Readonly<Record<ScoutRow['kind'], TextKey<typeof SCOUTS>>> = {
+  CASHBACK: 'kindCashback',
+  REFERRAL_L1: 'kindFriend',
+  REFERRAL_L2: 'kindFriendOfFriend',
+  CLAIM: 'kindPayout',
+};
+
+/** The Growth engine's ranks by name; a rank the city does not know yet reads as the engine writes it. */
+const RANK_LABEL: Readonly<Record<string, TextKey<typeof SCOUTS>>> = {
+  BRONZE: 'bronze',
+  SILVER: 'silver',
+  GOLD: 'gold',
+  SAPPHIRE: 'sapphire',
+  DIAMOND: 'diamond',
 };
 
 /**
@@ -35,9 +46,10 @@ export default function ScoutsWindow() {
   const view = useScouts((st) => (st.owner === owner ? st.view : null));
   const message = useScouts((st) => st.message);
   const screen = screenOf(owner, status, view);
+  const w = useWords(SCOUTS);
 
   return (
-    <div className={`${s.framed} ${screen === 'ready' && view ? '' : s.gated}`} aria-label="Scouts">
+    <div className={`${s.framed} ${screen === 'ready' && view ? '' : s.gated}`} aria-label={w.scouts}>
       {screen === 'ready' && view ? (
         <Ready view={view} stale={status === 'failed'} />
       ) : (
@@ -54,16 +66,16 @@ export default function ScoutsWindow() {
                   disabled={status === 'proving'}
                   onClick={() => connection && void useScouts.getState().prove(connection)}
                 >
-                  {status === 'proving' ? 'Check your wallet' : 'Show my link'}
+                  {status === 'proving' ? w.checkWallet : w.showLink}
                 </button>
-                <p className={s.quiet}>{message ?? 'One signature. No transaction.'}</p>
+                <p className={s.quiet}>{message ?? w.oneSignature}</p>
               </>
             ) : screen === 'failed' ? (
               <button type="button" className={`${s.display} ${s.secondary}`} onClick={() => owner && void useScouts.getState().read(owner, true)}>
-                Try again
+                {w.tryAgain}
               </button>
             ) : (
-              <div className={s.bones} aria-busy="true" aria-label="Reading">
+              <div className={s.bones} aria-busy="true" aria-label={w.reading}>
                 <span />
                 <span />
               </div>
@@ -87,6 +99,7 @@ function Hero({ children }: { children?: ReactNode }) {
 }
 
 function Ready({ view, stale }: { view: ScoutsView; stale: boolean }) {
+  const w = useWords(SCOUTS);
   const towers = useCity((st) => st.snapshot.towers);
   const sol = useMemo(() => solPrice(towers), [towers]);
   const flags = useMemo(() => {
@@ -101,27 +114,27 @@ function Ready({ view, stale }: { view: ScoutsView; stale: boolean }) {
   return (
     <>
       <Hero>
-        <span className={`${s.display} ${s.kicker}`}>Earned</span>
-        <b className={`${s.display} ${s.big}`}>{earned.usd}</b>
-        {earned.sol ? <span className={s.sol}>{earned.sol}</span> : null}
-        <button type="button" className={`${s.info} ${rules ? s.infoOn : ''}`} aria-label="How shares work" aria-expanded={rules} onClick={() => setRules((v) => !v)}>
+        <span className={`${s.display} ${s.kicker}`}>{w.earned}</span>
+        <b className={`${s.display} ${s.big}`}>{digits(earned.usd)}</b>
+        {earned.sol ? <span className={s.sol}>{digits(earned.sol)}</span> : null}
+        <button type="button" className={`${s.info} ${rules ? s.infoOn : ''}`} aria-label={w.howShares} aria-expanded={rules} onClick={() => setRules((v) => !v)}>
           i
         </button>
       </Hero>
-      {stale ? <div className={s.stale} role="status" aria-label="Not updated" /> : null}
+      {stale ? <div className={s.stale} role="status" aria-label={w.notUpdated} /> : null}
 
       {rules ? <Rules view={view} sol={sol} /> : null}
 
       <div className={s.stats}>
-        <Stat label="Friends" value={String(view.friends)} extra={view.friendsOfFriends ? `+${view.friendsOfFriends}` : null} />
-        <Stat label="From friends" {...money(view.fromFriends, sol)} />
-        <Stat label="Cashback" {...money(view.cashback, sol)} />
+        <Stat label={w.friends} value={digits(String(view.friends))} extra={view.friendsOfFriends ? digits(`+${view.friendsOfFriends}`) : null} />
+        <Stat label={w.fromFriends} {...money(view.fromFriends, sol)} />
+        <Stat label={w.cashback} {...money(view.cashback, sol)} />
       </div>
 
       {view.link ? <Share link={view.link} /> : null}
 
       {flags.length ? (
-        <section className={s.flags} aria-label="Towers your friends trade">
+        <section className={s.flags} aria-label={w.towersFriends}>
           <span className={s.flagMark} aria-hidden="true">
             <FlagGlyph />
           </span>
@@ -131,7 +144,7 @@ function Ready({ view, stale }: { view: ScoutsView; stale: boolean }) {
                 key={tower.id}
                 type="button"
                 className={s.flagCoin}
-                aria-label={`Fly to ${ticker(tower.symbol)}`}
+                aria-label={w.flyTo(ticker(tower.symbol))}
                 onClick={() => {
                   useScouts.getState().close();
                   useCity.getState().select(tower.id);
@@ -146,7 +159,7 @@ function Ready({ view, stale }: { view: ScoutsView; stale: boolean }) {
       ) : null}
 
       {view.rows.length ? (
-        <section className={s.history} aria-label="History">
+        <section className={s.history} aria-label={w.history}>
           <ul className={s.rows}>
             {rows.map((row, i) => (
               <Row key={`${row.at}-${row.kind}-${i}`} row={row} sol={sol} />
@@ -154,7 +167,7 @@ function Ready({ view, stale }: { view: ScoutsView; stale: boolean }) {
           </ul>
           {view.rows.length > FIRST_ROWS ? (
             <button type="button" className={s.moreToggle} aria-expanded={all} onClick={() => setAll((v) => !v)}>
-              {all ? 'Less' : 'All'}
+              {all ? w.less : w.all}
               <span className={s.chevron} data-open={all ? '' : undefined} aria-hidden="true" />
             </button>
           ) : null}
@@ -169,7 +182,7 @@ const coinLabel = (coin: string) => (/^(SOL|WSOL|USDC|USDT)$/i.test(coin) ? coin
 
 const money = (text: string, sol: number | null) => {
   const f = figure(text, sol);
-  return { value: f.usd, extra: f.sol };
+  return { value: digits(f.usd), extra: f.sol ? digits(f.sol) : null };
 };
 
 function Stat({ label, value, extra }: { label: string; value: string; extra: string | null }) {
@@ -184,6 +197,7 @@ function Stat({ label, value, extra }: { label: string; value: string; extra: st
 
 /** Your link: copied whole with one tap, or posted on X. The one action of the window. */
 function Share({ link }: { link: string }) {
+  const w = useWords(SCOUTS);
   const [copied, setCopied] = useState(false);
   useEffect(() => setCopied(false), [link]);
   const copy = async () => {
@@ -196,15 +210,15 @@ function Share({ link }: { link: string }) {
     }
   };
   return (
-    <section className={s.share} aria-label="Your link">
+    <section className={s.share} aria-label={w.yourLink}>
       <span className={s.link} translate="no">
         {linkText(link)}
       </span>
       <div className={s.shareRow}>
         <button type="button" className={`${s.display} ${s.action}`} onClick={() => void copy()}>
-          {copied ? 'Copied' : 'Copy link'}
+          {copied ? w.copied : w.copyLink}
         </button>
-        <button type="button" className={`${s.display} ${s.secondary} ${s.x}`} aria-label="Share on X" onClick={() => openExternal(xIntent(link))}>
+        <button type="button" className={`${s.display} ${s.secondary} ${s.x}`} aria-label={w.shareOnX} onClick={() => openExternal(xIntent(link))}>
           <XGlyph />
         </button>
       </div>
@@ -213,6 +227,8 @@ function Share({ link }: { link: string }) {
 }
 
 function Row({ row, sol }: { row: ScoutRow; sol: number | null }) {
+  // Reading the words repaints the row, its age with it, when the language changes.
+  const w = useWords(SCOUTS);
   const f = figure(row.amount, sol);
   const [now] = useState(() => Date.now());
   return (
@@ -221,12 +237,12 @@ function Row({ row, sol }: { row: ScoutRow; sol: number | null }) {
         <KindGlyph kind={row.kind} />
       </span>
       <span className={s.what}>
-        <b>{KIND_LABEL[row.kind]}</b>
+        <b>{w[KIND_LABEL[row.kind]]}</b>
         {row.coin ? <span translate="no">{coinLabel(row.coin)}</span> : null}
       </span>
       <span className={s.amount}>
-        <b>{f.usd === '—' ? '—' : `${row.out ? '−' : '+'}${f.usd}`}</b>
-        {f.sol ? <span>{f.sol}</span> : null}
+        <b>{f.usd === '—' ? '—' : digits(`${row.out ? '−' : '+'}${f.usd}`)}</b>
+        {f.sol ? <span>{digits(f.sol)}</span> : null}
       </span>
       <time className={s.when} dateTime={row.at}>
         {ago(row.at, now)}
@@ -237,36 +253,40 @@ function Row({ row, sol }: { row: ScoutRow; sol: number | null }) {
 
 /** «How shares work», behind «i»: the Growth line's rules as they apply to this wallet. Payouts open later, in SOL. */
 function Rules({ view, sol }: { view: ScoutsView; sol: number | null }) {
+  const w = useWords(SCOUTS);
   const pending = figure(view.pending, sol);
+  const rankKey = view.rank ? RANK_LABEL[view.rank.toUpperCase()] : undefined;
+  const rank = view.rank ? (rankKey ? w[rankKey] : view.rank.toLowerCase()) : null;
   return (
     <dl className={s.rules}>
-      <dt>Your trades</dt>
-      <dd>{view.cashbackShare}% back</dd>
+      <dt>{w.yourTrades}</dt>
+      <dd>{w.back(digits(String(view.cashbackShare)))}</dd>
       {view.friendShare !== null ? (
         <>
-          <dt>A friend&apos;s trade</dt>
+          <dt>{w.friendTrade}</dt>
           <dd>
-            {view.friendShare}%{view.rank ? <span className={s.rank}> · {view.rank.toLowerCase()}</span> : null}
+            {digits(`${view.friendShare}%`)}
+            {rank ? <span className={s.rank}> · {rank}</span> : null}
           </dd>
         </>
       ) : null}
       {view.firstDays ? (
         <>
-          <dt>A friend&apos;s first {view.firstDays.days} days</dt>
-          <dd>{view.firstDays.share}%</dd>
+          <dt>{w.friendFirstDays(view.firstDays.days)}</dt>
+          <dd>{digits(`${view.firstDays.share}%`)}</dd>
         </>
       ) : null}
-      <dt>A friend&apos;s friend</dt>
-      <dd>{view.secondShare}%</dd>
+      <dt>{w.friendOfFriend}</dt>
+      <dd>{digits(`${view.secondShare}%`)}</dd>
       {view.pending !== '0.00' ? (
         <>
-          <dt>Waiting</dt>
-          <dd>{pending.usd}</dd>
+          <dt>{w.waiting}</dt>
+          <dd>{digits(pending.usd)}</dd>
         </>
       ) : null}
-      <dt>Paid in</dt>
-      <dd>SOL · opens soon</dd>
-      <dd className={s.rulesFoot}>Shares of the fee Ryntra keeps.</dd>
+      <dt>{w.paidIn}</dt>
+      <dd>{w.paidInSoon}</dd>
+      <dd className={s.rulesFoot}>{w.rulesFoot}</dd>
     </dl>
   );
 }

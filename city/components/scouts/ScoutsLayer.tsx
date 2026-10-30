@@ -7,8 +7,10 @@ import { useRun } from '@/city/lib/run/store';
 import { useScouts } from '@/city/lib/scouts/store';
 import { startWallets, useWallet } from '@/city/lib/trade/wallet';
 import { useCityWindow } from '../window/useCityWindow';
+import { useWords } from '@/city/lib/i18n/dict';
 import { FlagGlyph } from './glyphs';
 import s from './scouts.module.css';
+import { SCOUTS } from './words';
 
 // The window's contents load the first time it opens: the city's first frame carries none of them.
 const ScoutsWindow = dynamic(() => import('./ScoutsWindow'), { ssr: false, loading: () => <div className={s.pending} aria-busy="true" /> });
@@ -27,6 +29,7 @@ export function ScoutsLayer() {
   const owner = useWallet((st) => st.connection?.address ?? null);
   const running = useRun((st) => st.phase !== 'off');
   const filming = useFilming();
+  const title = useWords(SCOUTS).scouts;
 
   useEffect(() => {
     if (open) startWallets();
@@ -57,14 +60,15 @@ export function ScoutsLayer() {
   const spec = useMemo(
     () => ({
       id: 'scouts',
-      title: 'Scouts',
+      title,
       icon: <FlagGlyph />,
       render: renderScouts,
       size: { width: 440, height: 660 },
       min: { width: 360, height: 460 },
       onClose: closeScouts,
     }),
-    [],
+    // A new language is a new title: the open window's head follows it.
+    [title],
   );
   useCityWindow(shown, spec);
   return null;

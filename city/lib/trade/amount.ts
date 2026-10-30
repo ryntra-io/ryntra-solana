@@ -1,6 +1,8 @@
 import { parseHumanAmount } from '../../../lib/solana/amounts.ts';
+import { digits, wordsNow } from '../i18n/dict.ts';
 import { formatUnits } from './format.ts';
 import type { Balance } from './tiles.ts';
+import { AMOUNT } from './words.ts';
 
 /**
  * The amount in the card's field, typed or written there by a chip or the slider (`size.ts`). It becomes an exact raw
@@ -31,8 +33,6 @@ export function cleanAmountInput(text: string): string {
   return out.slice(0, LONGEST);
 }
 
-const COMMA_TEXT = 'Type the amount with a point and no commas, like 1000 or 2.5.';
-
 /**
  * The field's text with a point for decimals, or null when a comma in it could mean two things. One comma and no
  * point is the decimal comma («12,5», «0,125»); a comma beside a point, several commas, or one comma before exactly
@@ -54,7 +54,8 @@ function decimalText(clean: string): string | null {
  */
 export function typedAmount(text: string, asset: Readonly<{ symbol: string; decimals: number }>, balance: Balance | null, keepsFee = false): Typed | null {
   const decimal = decimalText(cleanAmountInput(text));
-  if (decimal === null) return { ok: false, problem: { kind: 'format', text: COMMA_TEXT } };
+  const w = wordsNow(AMOUNT);
+  if (decimal === null) return { ok: false, problem: { kind: 'format', text: w.comma } };
   let clean = decimal;
   if (clean.endsWith('.')) clean = clean.slice(0, -1);
   if (clean.startsWith('.')) clean = `0${clean}`;
@@ -63,15 +64,15 @@ export function typedAmount(text: string, asset: Readonly<{ symbol: string; deci
   if (!parsed.ok) {
     const fraction = clean.split('.')[1] ?? '';
     if (/^\d+(\.\d+)?$/.test(clean) && fraction.length > asset.decimals) {
-      const text = asset.decimals === 0 ? `${asset.symbol} comes in whole numbers only.` : `${asset.symbol} has at most ${asset.decimals} digits after the point.`;
+      const text = asset.decimals === 0 ? w.wholeOnly(asset.symbol) : w.maxDigits(asset.symbol, asset.decimals);
       return { ok: false, problem: { kind: 'decimals', text } };
     }
-    if (/^[0.]+$/.test(clean)) return { ok: false, problem: { kind: 'zero', text: 'Type an amount above zero.' } };
-    return { ok: false, problem: { kind: 'format', text: 'Type a number, like 2.5.' } };
+    if (/^[0.]+$/.test(clean)) return { ok: false, problem: { kind: 'zero', text: w.zero } };
+    return { ok: false, problem: { kind: 'format', text: w.number } };
   }
   if (balance && BigInt(parsed.raw) > BigInt(balance.spendableRaw)) {
     const have = formatUnits(balance.spendableRaw, balance.decimals, 'down');
-    const text = keepsFee ? `Up to ${have} ${asset.symbol}: the rest pays the network.` : `You have ${have} ${asset.symbol}. Type that or less.`;
+    const text = keepsFee ? w.upToRest(digits(have), asset.symbol) : w.tooMuch(digits(have), asset.symbol);
     return { ok: false, problem: { kind: 'balance', text } };
   }
   return { ok: true, amountRaw: parsed.raw };

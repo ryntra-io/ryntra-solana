@@ -1,6 +1,9 @@
 import type { PositionsAnswer, PositionView } from '../../../../lib/liquidity/catalog/positions.ts';
 import { SOLANA_MAINNET_USDC_MINT } from '../../../../lib/solana/send-kinds.ts';
+import { wordsNow } from '../../i18n/dict.ts';
+import { plainFigure } from '../../i18n/figures.ts';
 import { VENUE_OF, VENUE_NAME } from './pools.ts';
+import { HARBOR_FIGURES } from './words.ts';
 
 /**
  * The person's pool positions as the Harbor shows them, read from the chain by the engine: the fees earned and not yet
@@ -40,7 +43,7 @@ function amount(value: number): string {
   if (!(value > 0)) return '0';
   if (value >= 1000) return value.toLocaleString('en-US', { maximumFractionDigits: 0 });
   if (value >= 1) return Number(value.toFixed(2)).toString();
-  return Number(value.toPrecision(2)).toString();
+  return plainFigure(value, { significant: 2 });
 }
 
 export function harborPosition(view: PositionView): HarborPosition {
@@ -76,6 +79,7 @@ export function harborMints(positions: readonly HarborPosition[] | null): Readon
 
 /** The status line of a position in words: in range and earning, or out and why. */
 export function rangeLine(position: HarborPosition): string {
-  if (position.inRange) return 'In range · earning';
-  return position.side === 'above' ? 'Out of range · price fell below it' : 'Out of range · price rose above it';
+  const w = wordsNow(HARBOR_FIGURES);
+  if (position.inRange) return w.inRange;
+  return position.side === 'above' ? w.outBelow : w.outAbove;
 }

@@ -1,4 +1,6 @@
 import { displayAmount, scaleRawAmount } from '../../../lib/solana/amounts.ts';
+import { dateText, digits, wordsNow } from '../i18n/dict.ts';
+import { AGE_WORDS } from './words.ts';
 
 /**
  * The wallet's coins as the engine reads them (`POST /api/solana/holdings`): every row the chain holds, SOL first,
@@ -128,8 +130,12 @@ export function sendable(assets: readonly MoneyAsset[]): MoneyAsset[] {
     });
 }
 
-/** Dollars as the city writes them: $1,240 · $12.40 · <$0.01 · —. */
+/** Dollars as the city writes them: $1,240 · $12.40 · <$0.01 · —. For the eye only: in the language on screen. */
 export function formatUsd(value: number | null): string {
+  return digits(usdText(value));
+}
+
+function usdText(value: number | null): string {
   if (value === null || !Number.isFinite(value) || value < 0) return '—';
   if (value === 0) return '$0';
   if (value < 0.01) return '<$0.01';
@@ -138,8 +144,12 @@ export function formatUsd(value: number | null): string {
   return `$${value.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 }
 
-/** A coin amount for a row: grouped, at most six places — the exact figure lives on the Review. */
+/** A coin amount for a row: grouped, at most six places — the exact figure lives on the Review. For the eye only. */
 export function formatAmount(raw: string, decimals: number): string {
+  return digits(amountText(raw, decimals));
+}
+
+function amountText(raw: string, decimals: number): string {
   const exact = displayAmount(raw, decimals);
   const [whole, fraction] = exact.split('.');
   if (!fraction) return whole;
@@ -149,9 +159,10 @@ export function formatAmount(raw: string, decimals: number): string {
 
 /** How old a read is: just now, 40s ago, 3 min ago, at 14:05. */
 export function readAge(at: number, now: number): string {
+  const w = wordsNow(AGE_WORDS);
   const s = Math.max(0, Math.round((now - at) / 1000));
-  if (s < 10) return 'just now';
-  if (s < 60) return `${s}s ago`;
-  if (s < 3600) return `${Math.floor(s / 60)} min ago`;
-  return `at ${new Date(at).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })}`;
+  if (s < 10) return w.justNow;
+  if (s < 60) return w.seconds(s);
+  if (s < 3600) return w.minutes(Math.floor(s / 60));
+  return w.at(dateText(at, { hour: '2-digit', minute: '2-digit' }));
 }

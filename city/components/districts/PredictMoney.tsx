@@ -5,6 +5,9 @@ import { usd } from '@/city/lib/districts/predict/markets';
 import { rawUsd, usdcRaw, withdrawalWord, withdrawReason } from '@/city/lib/districts/predict/real';
 import { movingWithdrawal, useReal } from '@/city/lib/districts/predict/real-store';
 import { usePredict } from '@/city/lib/districts/predict/store';
+import { PREDICT } from '@/city/lib/districts/predict/words';
+import { useWords } from '@/city/lib/i18n/dict';
+import { fieldText, fieldValue } from '@/city/lib/i18n/figures';
 import { shortAddress } from '@/city/lib/trade/format';
 import { useWallet } from '@/city/lib/trade/wallet';
 import { CopyGlyph, PracticeCoin, UsdcCoin } from './predictGlyphs';
@@ -18,13 +21,14 @@ import s from './predict.module.css';
 export function PredictMoney({ tab }: { tab: 'deposit' | 'withdraw' }) {
   const mode = usePredict((st) => st.mode);
   const go = usePredict((st) => st.go);
+  const w = useWords(PREDICT);
   if (mode !== 'real') return <PracticeMoney />;
   return (
     <div className={s.money}>
-      <div className={s.ticketTabs} role="tablist" aria-label="Deposit or withdraw">
+      <div className={s.ticketTabs} role="tablist" aria-label={w.depositOrWithdraw}>
         {(['deposit', 'withdraw'] as const).map((t) => (
           <button key={t} role="tab" aria-selected={tab === t} className={`${s.ticketTab} ${tab === t ? s.ticketTabOn : ''}`} onClick={() => go({ kind: 'money', tab: t })}>
-            {t === 'deposit' ? 'Deposit' : 'Withdraw'}
+            {t === 'deposit' ? w.deposit : w.withdraw}
           </button>
         ))}
       </div>
@@ -35,6 +39,7 @@ export function PredictMoney({ tab }: { tab: 'deposit' | 'withdraw' }) {
 
 function PracticeMoney() {
   const cash = usePredict((st) => st.book.cash);
+  const w = useWords(PREDICT);
   return (
     <div className={s.money}>
       <div className={s.summary}>
@@ -42,7 +47,7 @@ function PracticeMoney() {
           <PracticeCoin />
         </span>
         <span className={s.summaryFigure}>{usd(cash)}</span>
-        <span className={s.summaryWord}>practice dollars on this device</span>
+        <span className={s.summaryWord}>{w.practiceDollars}</span>
       </div>
     </div>
   );
@@ -57,6 +62,7 @@ function Account({ children }: { children: ReactNode }) {
   const openError = useReal((st) => st.openError);
   const start = useReal((st) => st.start);
   const [picking, setPicking] = useState(false);
+  const w = useWords(PREDICT);
   useEffect(() => {
     if (connection) setPicking(false);
   }, [connection]);
@@ -71,23 +77,23 @@ function Account({ children }: { children: ReactNode }) {
           else setPicking(true);
         }}
       >
-        Connect wallet
+        {w.connectWallet}
       </button>
     );
   }
-  if (opening) return <button className={`${s.primary} ${s.action} ${s.waiting}`} disabled>{`Confirm in ${connection.wallet}`}</button>;
-  if (!live && liveRead === 'reading') return <button className={`${s.primary} ${s.action} ${s.waiting}`} disabled>Reading your account…</button>;
+  if (opening) return <button className={`${s.primary} ${s.action} ${s.waiting}`} disabled>{w.confirmIn(connection.wallet)}</button>;
+  if (!live && liveRead === 'reading') return <button className={`${s.primary} ${s.action} ${s.waiting}`} disabled>{w.readingAccount}</button>;
   if (!live || !live.linked) {
     return (
       <>
         <button className={`${s.primary} ${s.action}`} onClick={() => void start(connection)}>
-          {live ? 'Open your account' : 'Sign in to trade'}
+          {live ? w.openAccount : w.signIn}
         </button>
         {openError ? <div className={`${s.line} ${s.lineWarn}`}>{openError}</div> : null}
       </>
     );
   }
-  if (live.access.state !== 'open') return <div className={s.empty}>Real money opens soon.</div>;
+  if (live.access.state !== 'open') return <div className={s.empty}>{w.realSoonLine}</div>;
   return <>{children}</>;
 }
 
@@ -95,6 +101,7 @@ function Deposit() {
   const funding = useReal((st) => st.funding);
   const [qr, setQr] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
+  const w = useWords(PREDICT);
   const address = funding?.deposit.state === 'ready' ? funding.deposit.address : null;
   useEffect(() => {
     if (!address) return;
@@ -110,7 +117,7 @@ function Deposit() {
     };
   }, [address]);
   if (!funding) return <div className={`${s.hero} ${s.cardLoading}`}><span className={s.shimmer} /></div>;
-  if (!address) return <div className={s.empty}>{funding.deposit.state === 'preparing' ? 'Your deposit address is being made. A moment.' : 'Deposits are not open right now.'}</div>;
+  if (!address) return <div className={s.empty}>{funding.deposit.state === 'preparing' ? w.addressMaking : w.depositsClosed}</div>;
   return (
     <div className={s.depositPage}>
       <div className={s.balanceBig}>
@@ -138,10 +145,10 @@ function Deposit() {
           }}
         >
           <CopyGlyph />
-          {copied ? 'Copied' : 'Copy address'}
+          {copied ? w.copied : w.copyAddress}
         </button>
       </div>
-      <div className={s.line}>Send USDC on Solana only</div>
+      <div className={s.line}>{w.sendOnly}</div>
     </div>
   );
 }
@@ -153,31 +160,32 @@ function Withdraw() {
   const confirm = useReal((st) => st.confirmWithdraw);
   const reset = useReal((st) => st.resetWithdraw);
   const [text, setText] = useState('');
+  const w = useWords(PREDICT);
   // A Review belongs to the amount typed on this page: leaving the page puts it away.
   useEffect(() => () => reset(), [reset]);
   const raw = usdcRaw(text);
   const moving = movingWithdrawal(funding);
   const reviewing = withdraw.step === 'review' || withdraw.step === 'sending';
-  let label = 'Review';
+  let label = w.review;
   let press: () => void = () => raw && void preview({ amountRaw: raw });
   let disabled = !raw || withdraw.step === 'pricing';
   let note: string | null = null;
   let warn = false;
-  if (withdraw.step === 'pricing') label = 'Getting the fee…';
+  if (withdraw.step === 'pricing') label = w.gettingFee;
   if (reviewing) {
     const p = withdraw.preview;
     if (p.quoted && p.receiveRaw) {
-      label = withdraw.step === 'sending' ? 'Sending…' : `Withdraw · get ${usd(rawUsd(p.receiveRaw) ?? 0)}`;
+      label = withdraw.step === 'sending' ? w.sending : w.withdrawGet(usd(rawUsd(p.receiveRaw) ?? 0));
       press = () => void confirm();
       disabled = withdraw.step === 'sending';
-      note = `Fee ${usd(rawUsd(p.feeRaw) ?? 0)} · to your wallet`;
+      note = w.feeToWallet(usd(rawUsd(p.feeRaw) ?? 0));
     } else {
-      [label, disabled, note, warn] = ['Review', true, withdrawReason(p.reason), true];
+      [label, disabled, note, warn] = [w.review, true, withdrawReason(p.reason), true];
     }
   }
   if (withdraw.step === 'failed') [note, warn] = [withdraw.text, true];
-  if (withdraw.step === 'sent') note = withdraw.phase === 'completed' ? 'Arrived in your wallet' : withdraw.phase === 'unknown' ? 'Checking where it stands' : 'On its way to your wallet';
-  if (moving) [label, disabled, note] = [withdrawalWord(moving.phase), true, moving.amountUsd !== null ? `${usd(moving.amountUsd)} to your wallet` : null];
+  if (withdraw.step === 'sent') note = withdraw.phase === 'completed' ? w.arrived : withdraw.phase === 'unknown' ? w.checking : w.onItsWay;
+  if (moving) [label, disabled, note] = [withdrawalWord(moving.phase), true, moving.amountUsd !== null ? w.toWallet(usd(moving.amountUsd)) : null];
   return (
     <div className={s.withdraw}>
       <div className={s.balanceBig}>
@@ -187,7 +195,7 @@ function Withdraw() {
         <span className={s.summaryFigure}>{funding?.available !== null && funding?.available !== undefined ? usd(funding.available) : '—'}</span>
       </div>
       <label className={s.fieldLabel} htmlFor="predict-withdraw">
-        Amount (USDC)
+        {w.amountUsdc}
       </label>
       <div className={s.field}>
         <span className={s.fieldCoin}>
@@ -198,10 +206,10 @@ function Withdraw() {
           className={s.fieldInput}
           inputMode="decimal"
           autoComplete="off"
-          value={text}
-          placeholder="0.00"
+          value={fieldText(text)}
+          placeholder={fieldText('0.00')}
           onChange={(e) => {
-            setText(e.target.value.replace(/[^0-9.]/g, ''));
+            setText(fieldValue(e.target.value).replace(/[^0-9.]/g, ''));
             reset();
           }}
         />
@@ -212,7 +220,7 @@ function Withdraw() {
             reset();
           }}
         >
-          Max
+          {w.max}
         </button>
       </div>
       <button className={`${s.primary} ${s.action} ${withdraw.step === 'pricing' || withdraw.step === 'sending' ? s.waiting : ''}`} onClick={press} disabled={disabled}>

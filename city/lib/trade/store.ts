@@ -21,6 +21,8 @@ import {
   type TradeOutcome,
 } from './flow.ts';
 import { proveWallet, type ProofOutcome } from './proof.ts';
+import { wordsNow } from '../i18n/dict.ts';
+import { FLOW } from './words.ts';
 import { cleanAmountInput, typedAmount, type AmountProblem } from './amount.ts';
 import { ticker } from './format.ts';
 import { quoteLine } from './quote-copy.ts';
@@ -221,6 +223,13 @@ function startTyped(tower: TowerRef, side: Side, holdings: Holdings | null, pick
 /** The card's three ways to trade: at the market price now, a limit order that waits at its price, a stop. */
 export type Mode = 'market' | 'limit' | 'stop';
 
+/**
+ * Which window the card is: `swap` — what you
+ * pay, what you get and one flip between them, nothing else; `spot` — the coin's price and chart in the window, Market ·
+ * Limit · Stop and Buy · Sell. A tower opens Spot; the menu's Swap door opens Swap.
+ */
+export type View = 'swap' | 'spot';
+
 /** A coin to open the card on: a tower of the city, or any coin the search named. */
 export type CoinRef = Readonly<{ id: string; symbol: string; name: string; icon: string | null }>;
 
@@ -234,6 +243,12 @@ type TradeStore = {
   other: PayAsset | null;
   /** Market, Limit or Stop; limit and stop live in `spot-store.ts` and show only behind their switch. */
   mode: Mode;
+  view: View;
+  /**
+   * A Ryntra launch's tower (CITY-138): the window shows its Buy and Sell on its own curve or pool, through the Launch
+   * engine (`city/components/launch/LaunchTradePanel.tsx`), and this card asks Jupiter for nothing.
+   */
+  launch: boolean;
   /** A limit's signature is out (`spot-store.ts`): the card cannot be closed or changed under it. */
   held: boolean;
   /** The amount in the field, as typed or written there by a chip or the slider; empty for none. */
@@ -261,7 +276,7 @@ type TradeStore = {
    * The card for a tower or any coin, on buying unless `side` says otherwise: «Mine» opens it on selling. The way to
    * trade stays the card's own (Market unless `mode` says otherwise).
    */
-  openFor: (tower: Tower | CoinRef, side?: Side, options?: Readonly<{ mode?: Mode }>) => void;
+  openFor: (tower: Tower | CoinRef, side?: Side, options?: Readonly<{ mode?: Mode; launch?: boolean; view?: View }>) => void;
   close: () => void;
   setSide: (side: Side) => void;
   /**
@@ -270,6 +285,8 @@ type TradeStore = {
    */
   setShare: (share: number, settle?: 'now' | 'rest') => void;
   setMode: (mode: Mode) => void;
+  /** The plain swap or spot with its chart; a swap is always at the market price. */
+  setView: (view: View) => void;
   /** SOL or USDC by symbol, or the other coin by mint: what to pay with, and what a sale is paid in. */
   setPay: (key: string) => void;
   /** Any coin to pay with (from the wallet) or to be paid in (from the search); SOL and USDC are their own chips. */
@@ -296,6 +313,8 @@ const initial = {
   open: false,
   tower: null,
   side: 'buy' as Side,
+  view: 'spot' as View,
+  launch: false,
   typed: '',
   quote: { status: 'none' } as QuoteState,
   review: null,
@@ -376,7 +395,7 @@ export const useTrade = create<TradeStore>((set, get) => {
         set({ phase: 'idle', auto: false, review: null, notice: { tone: 'error', text: outcome.refusal.message } });
         return;
       case 'cancelled':
-        set({ phase: 'idle', auto: false, notice: { tone: 'info', text: 'Cancelled in your wallet. Nothing was sent.' } });
+        set({ phase: 'idle', auto: false, notice: { tone: 'info', text: wordsNow(FLOW).cancelledInWallet } });
         return;
       case 'locked':
         void get().recover(outcome.attempt);
@@ -439,7 +458,8 @@ export const useTrade = create<TradeStore>((set, get) => {
       const typed = startTyped(ref, side, env.wallet().holdings, { pay: get().pay, other: get().other });
       actionTicket += 1;
       typingTicket += 1;
-      set({ ...initial, open: true, tower: ref, side, mode: options.mode ?? 'market', typed });
+      const view = options.view ?? 'spot';
+      set({ ...initial, open: true, tower: ref, side, mode: view === 'swap' ? 'market' : (options.mode ?? 'market'), view, typed, launch: options.launch === true });
       void get().refreshQuote();
     },
 
@@ -468,6 +488,12 @@ export const useTrade = create<TradeStore>((set, get) => {
       const choice = current();
       if (!choice || choice.sizing.max === null || choice.spendDecimals === null) return;
       amountTo(amountText(slideAmount(BigInt(choice.sizing.max), share), choice.spendDecimals), settle);
+    },
+
+    setView: (view) => {
+      const state = get();
+      if (!state.tower || state.view === view || state.phase !== 'idle' || state.held) return;
+      set({ view, ...(view === 'swap' && state.mode !== 'market' ? { mode: 'market' as Mode, review: null, notice: null, autoKey: null } : {}) });
     },
 
     setMode: (mode) => {
@@ -503,7 +529,7 @@ export const useTrade = create<TradeStore>((set, get) => {
 
     refreshQuote: async () => {
       const choice = current();
-      if (!choice?.amountRaw || !choice.key) {
+      if (get().launch || !choice?.amountRaw || !choice.key) {
         set({ quote: { status: 'none' } });
         return;
       }
@@ -525,7 +551,7 @@ export const useTrade = create<TradeStore>((set, get) => {
       const state = get();
       const connection = env.wallet().connection;
       const choice = current();
-      if (!connection || !choice?.key || state.phase !== 'idle' || state.mode !== 'market' || state.review?.key === choice.key) return;
+      if (state.launch || !connection || !choice?.key || state.phase !== 'idle' || state.mode !== 'market' || state.review?.key === choice.key) return;
       // By itself the card orders only the amount whose price is on screen.
       if (auto && (state.autoKey === choice.key || state.quote.status !== 'ready' || state.quote.key !== choice.key)) return;
       const intent = intentOf(choice, connection);
@@ -559,7 +585,7 @@ export const useTrade = create<TradeStore>((set, get) => {
         phase: 'idle',
         auto: false,
         review: { key: review.key, order: fresh.order, receivedAt: fresh.receivedAt, renewals: review.renewals + 1 },
-        ...(same ? {} : { worseAt: env.now(), notice: { tone: 'warn' as const, text: 'The price moved. Check the new figures.' } }),
+        ...(same ? {} : { worseAt: env.now(), notice: { tone: 'warn' as const, text: wordsNow(FLOW).priceMoved } }),
       });
     },
 
@@ -642,14 +668,15 @@ export const useTrade = create<TradeStore>((set, get) => {
         set({ card: { status: 'ready', card: made.card } });
         return;
       }
+      const w = wordsNow(FLOW);
       const message =
         made.code === 'NOT_FOUND'
           ? request.kind === 'SELL'
-            ? 'No card for this sale: Ryntra has no record of what these coins cost.'
-            : 'Your trade is still being recorded. Try again in a minute.'
+            ? w.noCardForSale
+            : w.stillRecorded
           : made.code === 'PROOF_REQUIRED'
-            ? 'Ryntra could not confirm this wallet. Try again.'
-            : 'Cards are unavailable right now. Try again in a minute.';
+            ? w.walletNotConfirmed
+            : w.cardsUnavailable;
       set({ card: { status: 'error', message } });
     },
 

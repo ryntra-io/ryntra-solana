@@ -4,9 +4,12 @@ import { useEffect, useMemo, useState } from 'react';
 import * as THREE from 'three';
 import type { HallBoardId, HallView } from '@/city/lib/launch/hall';
 import { hallShown, useHall } from '@/city/lib/launch/hall-store';
-import { BOARD_NAMES, BOARD_WORDS, EMPTY_SHORT, figureText, shownBoards } from '@/city/lib/launch/hall-words';
+import { BOARD_NAMES, BOARD_WORDS, emptyShort, figureText, shownBoards } from '@/city/lib/launch/hall-words';
+import { wordsNow } from '@/city/lib/i18n/dict';
+import { useLang } from '@/city/lib/i18n/lang';
 import { cityFonts } from '@/city/lib/moments/draw';
 import { PALETTE } from '@/city/lib/palette';
+import { LAUNCH } from './words';
 
 /**
  * The Hall of Fame in the city: two billboard towers on the plaza, one each side of the Sol Spire and clear of it,
@@ -80,6 +83,8 @@ function Signs({ view, stub }: { view: HallView; stub: boolean }) {
 
 function Face({ view, board, stub, geometry }: { view: HallView; board: HallBoardId; stub: boolean; geometry: THREE.PlaneGeometry }) {
   const [texture, setTexture] = useState<THREE.CanvasTexture | null>(null);
+  // A sign is drawn in the language on screen, and drawn again when it changes.
+  const lang = useLang();
   useEffect(() => {
     let live = true;
     let made: THREE.CanvasTexture | null = null;
@@ -98,7 +103,7 @@ function Face({ view, board, stub, geometry }: { view: HallView; board: HallBoar
       live = false;
       made?.dispose();
     };
-  }, [view, board, stub]);
+  }, [view, board, stub, lang]);
   const material = useMemo(() => new THREE.MeshBasicMaterial({ toneMapped: false, color: new THREE.Color(INK_LEVEL, INK_LEVEL, INK_LEVEL) }), []);
   useEffect(() => {
     material.map = texture;
@@ -156,7 +161,7 @@ function drawSign(ctx: CanvasRenderingContext2D, fonts: Fonts, view: HallView, b
     font(ctx, 800, 28, fonts.ui, false, 4);
     ctx.fillStyle = PALETTE.amber;
     ctx.textAlign = 'right';
-    ctx.fillText('STUB DATA', w - pad, 94);
+    ctx.fillText(wordsNow(LAUNCH).signStub, w - pad, 94);
     ctx.textAlign = 'left';
   }
 
@@ -164,7 +169,7 @@ function drawSign(ctx: CanvasRenderingContext2D, fonts: Fonts, view: HallView, b
   if (!lead) {
     /* The honest empty sign: never a figure. */
     ctx.fillStyle = PALETTE.ice;
-    fit(ctx, EMPTY_SHORT.toUpperCase(), pad, 360, w - pad * 2, 900, 120, fonts.display, true);
+    fit(ctx, emptyShort().toUpperCase(), pad, 360, w - pad * 2, 900, 120, fonts.display, true);
     return;
   }
 

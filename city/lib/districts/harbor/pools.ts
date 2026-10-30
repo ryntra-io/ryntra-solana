@@ -1,4 +1,6 @@
 import type { CatalogPool, LiquidityPoolKind } from '../../../../lib/liquidity/catalog/model.ts';
+import { digits, wordsNow } from '../../i18n/dict.ts';
+import { HARBOR_FIGURES } from './words.ts';
 
 /**
  * The Harbor's pools: Meteora DLMM and DAMM v2 pools as the engine's catalogue reads them, cut down to what one line
@@ -112,7 +114,7 @@ export function defaultRange(pool: HarborPool): HarborRange {
 
 /** The range in a few words: 101.7 – 104.6 USDC, or every price. */
 export function rangeText(pool: HarborPool, range: HarborRange): string {
-  if (range.kind === 'curve') return 'Every price';
+  if (range.kind === 'curve') return wordsNow(HARBOR_FIGURES).everyPrice;
   const low = range.low === null ? '0' : formatPrice(range.low);
   const high = range.high === null ? '∞' : formatPrice(range.high);
   return `${low} – ${high} ${pool.y.symbol}`;
@@ -123,12 +125,13 @@ export function rangeText(pool: HarborPool, range: HarborRange): string {
  * on the plain curve, what a move does instead.
  */
 export function riskWords(pool: HarborPool, range: HarborRange): string {
+  const w = wordsNow(HARBOR_FIGURES);
   const coin = pool.x.symbol;
-  if (range.kind === 'curve') return `Earns at every price. If ${coin} moves, you end up holding more of the coin that fell.`;
-  if (range.kind === 'bins') return `If ${coin} moves about ${percent(Math.min(range.downPct, range.upPct))} either way, this stops earning and holds only one coin.`;
+  if (range.kind === 'curve') return w.riskCurve(coin);
+  if (range.kind === 'bins') return w.riskBins(coin, percent(Math.min(range.downPct, range.upPct)));
   // A band is the pool's own and rarely even: its two edges, as prices.
-  const edges = [range.low === null ? null : `below ${formatPrice(range.low)}`, range.high === null ? null : `above ${formatPrice(range.high)}`].filter(Boolean).join(' or ');
-  return `If ${coin} goes ${edges} ${pool.y.symbol}, this stops earning and holds only one coin.`;
+  const edges = [range.low === null ? null : w.below(formatPrice(range.low)), range.high === null ? null : w.above(formatPrice(range.high))].filter(Boolean).join(` ${w.or} `);
+  return w.riskBand(coin, edges, pool.y.symbol);
 }
 
 /**
@@ -142,7 +145,13 @@ export function feeShare(pool: HarborPool, depositUsd: number): Readonly<{ share
   return { sharePct: share * 100, dayUsd: pool.lpFees24hUsd * share };
 }
 
+/* The figures below are for the eye only: written the English way, then in the language on screen (`digits`). */
+
 export function percent(value: number): string {
+  return digits(percentText(value));
+}
+
+function percentText(value: number): string {
   if (!Number.isFinite(value)) return '—';
   if (value >= 10) return `${Math.round(value)}%`;
   if (value >= 1) return `${Number(value.toFixed(1))}%`;
@@ -153,15 +162,23 @@ export function percent(value: number): string {
 }
 
 export function formatPrice(p: number): string {
+  return digits(priceText(p));
+}
+
+function priceText(p: number): string {
   if (!(p > 0)) return '0';
   if (p >= 1000) return p.toLocaleString('en-US', { maximumFractionDigits: 0 });
   if (p >= 1) return Number(p.toFixed(p >= 100 ? 1 : 2)).toString();
   if (p >= 0.01) return Number(p.toFixed(4)).toString();
-  const digits = Math.max(2, -Math.floor(Math.log10(p)) + 2);
-  return Number(p.toFixed(Math.min(digits, 10))).toString();
+  const places = Math.max(2, -Math.floor(Math.log10(p)) + 2);
+  return Number(p.toFixed(Math.min(places, 10))).toString();
 }
 
 export function usd(v: number | null): string {
+  return digits(usdText(v));
+}
+
+function usdText(v: number | null): string {
   if (v === null || !Number.isFinite(v)) return '—';
   if (v >= 1e9) return `$${(v / 1e9).toFixed(2)}B`;
   if (v >= 1e6) return `$${(v / 1e6).toFixed(1)}M`;

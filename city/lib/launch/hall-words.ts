@@ -1,19 +1,25 @@
+import { digits, wordsNow } from '../i18n/dict.ts';
 import type { HallBoardId, HallFigure, HallPeriod, HallTally, HallView } from './hall.ts';
 import { HALL_BOARDS, rawToMicros } from './hall.ts';
+import { HALL_WORDS } from './words.ts';
 
 /**
- * How the Hall says its numbers: short, in English as the city speaks, every figure rounded down so it never reads as
- * more than it is, and every one with the word for what it is.
+ * How the Hall says its numbers: short, in the language on screen (`./words.ts`), every figure rounded down so it never
+ * reads as more than it is, and every one with the word for what it is.
  */
 
-export const BOARD_NAMES: Readonly<Record<HallBoardId, string>> = {
-  catch: 'Biggest × of the week',
-  hunters: 'Top hunters',
-  creators: 'Top creators',
-  scouts: 'Top scouts',
-};
+type Key = keyof (typeof HALL_WORDS)['en'];
 
-export const BOARD_TABS: Readonly<Record<HallBoardId, string>> = { catch: 'Biggest ×', hunters: 'Hunters', creators: 'Creators', scouts: 'Scouts' };
+/** A table by board whose words are read in the language of the moment they are read (CITY-79). */
+function byBoard(keys: Readonly<Record<HallBoardId, Key>>): Readonly<Record<HallBoardId, string>> {
+  const out = {} as Record<HallBoardId, string>;
+  for (const id of HALL_BOARDS) Object.defineProperty(out, id, { enumerable: true, get: () => wordsNow(HALL_WORDS)[keys[id]] as string });
+  return out;
+}
+
+export const BOARD_NAMES = byBoard({ catch: 'nameCatch', hunters: 'nameHunters', creators: 'nameCreators', scouts: 'nameScouts' });
+
+export const BOARD_TABS = byBoard({ catch: 'tabCatch', hunters: 'tabHunters', creators: 'tabCreators', scouts: 'tabScouts' });
 
 /** The boards people see: one without a public source is not shown at all until it has one. */
 export function shownBoards(view: Pick<HallView, 'boards'>): HallBoardId[] {
@@ -21,18 +27,14 @@ export function shownBoards(view: Pick<HallView, 'boards'>): HallBoardId[] {
 }
 
 /** One word for what a billboard's number is. */
-export const BOARD_WORDS: Readonly<Record<HallBoardId, string>> = { catch: 'multiple', hunters: 'multiple', creators: 'fee', scouts: 'fee' };
+export const BOARD_WORDS = byBoard({ catch: 'wordMultiple', hunters: 'wordMultiple', creators: 'wordFee', scouts: 'wordFee' });
 
-/** An empty board, said short; the reason is behind the panel's «i» (`emptyText`). */
-export const EMPTY_SHORT = 'None this week';
+/** An empty board, said short; the reason is behind the panel's «i» (`emptyText`). English; `emptyShort()` is the language on screen. */
+export const EMPTY_SHORT = HALL_WORDS.en.emptyShort;
+export const emptyShort = (): string => wordsNow(HALL_WORDS).emptyShort;
 
 /** What a board's number is, in one line — behind the panel's «i». */
-export const BOARD_KINDS: Readonly<Record<HallBoardId, string>> = {
-  catch: 'Market cap now ÷ the cap the buy left · not a profit',
-  hunters: 'Each hunter’s biggest catch · not a profit',
-  creators: 'Creator fee · the engine’s 7 days · before costs',
-  scouts: 'Scout fee per trade',
-};
+export const BOARD_KINDS = byBoard({ catch: 'kindCatch', hunters: 'kindHunters', creators: 'kindCreators', scouts: 'kindScouts' });
 
 /** A multiple from tenths: 34 → ×3.4, 1250 → ×125. */
 export function multipleText(tenths: number): string {
@@ -51,18 +53,15 @@ export function dollarsText(micros: bigint): string {
   return `$${dollars / 1_000_000n}.${((dollars % 1_000_000n) / 10_000n).toString().padStart(2, '0')}M`;
 }
 
-/** A figure as the billboard says it: the number, and the word for what it is. */
+/** A figure as the billboard says it: the number (in the language's own digits, for the eye), and the word for what it is. */
 export function figureText(figure: HallFigure): Readonly<{ value: string; word: string }> {
-  if (figure.kind === 'multiple') return { value: multipleText(figure.tenths), word: 'since the buy' };
+  const w = wordsNow(HALL_WORDS);
+  if (figure.kind === 'multiple') return { value: digits(multipleText(figure.tenths)), word: w.sinceBuy };
   const amount = figure.pair.dollar ? dollarsText(rawToMicros(figure.raw, figure.pair.decimals)) : `${rawToMicros(figure.raw, figure.pair.decimals) / 1_000_000n} ${figure.pair.symbol}`;
-  return { value: `${figure.atLeast ? '≥' : ''}${amount}`, word: 'creator fee' };
+  return { value: digits(`${figure.atLeast ? '≥' : ''}${amount}`), word: w.creatorFee };
 }
 
-const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-const day = (at: string) => {
-  const d = new Date(at);
-  return `${MONTHS[d.getUTCMonth()]} ${d.getUTCDate()}`;
-};
+const day = (at: string) => wordsNow(HALL_WORDS).day(at);
 const clock = (at: string) => {
   const d = new Date(at);
   return `${String(d.getUTCHours()).padStart(2, '0')}:${String(d.getUTCMinutes()).padStart(2, '0')}`;
@@ -77,30 +76,33 @@ export function periodText(period: HallPeriod): string {
 
 /** When the engine read it: «read 14:05 UTC», with the day when it is not today's. */
 export function readText(at: string, now: number): string {
-  return day(at) === day(new Date(now).toISOString()) ? `read ${clock(at)} UTC` : `read ${day(at)} ${clock(at)} UTC`;
+  const w = wordsNow(HALL_WORDS);
+  return day(at) === day(new Date(now).toISOString()) ? w.readToday(clock(at)) : w.readOn(day(at), clock(at));
 }
 
 /** A share in basis points, rounded down: 333 → 3.3%. */
 function share(bps: number): string {
-  return `${Math.floor(bps / 100)}.${Math.floor((bps % 100) / 10)}%`;
+  return digits(`${Math.floor(bps / 100)}.${Math.floor((bps % 100) / 10)}%`);
 }
 
 /** The week's trades and what was left out — the line the Hall always carries. */
 export function tallyText(tally: HallTally): string {
-  if (!tally.trades) return 'No trades on Ryntra launches read this week';
-  const parts = [`${tally.trades.toLocaleString('en-US')} trades`];
-  if (tally.insideBps !== null) parts.push(`${share(tally.insideBps)} inside one wallet cluster`);
-  if (tally.uncheckedBps) parts.push(`${share(tally.uncheckedBps)} not checked yet`);
+  const w = wordsNow(HALL_WORDS);
+  if (!tally.trades) return w.noTrades;
+  const parts = [w.trades(tally.trades)];
+  if (tally.insideBps !== null) parts.push(w.inside(share(tally.insideBps)));
+  if (tally.uncheckedBps) parts.push(w.unchecked(share(tally.uncheckedBps)));
   return parts.join(' · ');
 }
 
 /** Why a board is empty — behind the panel's «i»: what was read and why nothing stands, never a made-up figure. */
 export function emptyText(view: Pick<HallView, 'boards' | 'trades' | 'markets'>, board: HallBoardId): string {
-  if (view.boards[board].state === 'no_source') return 'No public record of scout fees per trade yet';
-  if (!view.markets.read) return 'No Ryntra launch traded this week';
+  const w = wordsNow(HALL_WORDS);
+  if (view.boards[board].state === 'no_source') return w.noSource;
+  if (!view.markets.read) return w.noLaunch;
   if (board === 'creators') {
     const left = Object.values(view.boards.creators.left).reduce((total, n) => total + n, 0);
-    return left ? `${left} creator week${left === 1 ? '' : 's'} left out — not counted whole` : 'No creator fee counted this week';
+    return left ? w.creatorWeeksLeft(left) : w.noCreatorFee;
   }
-  return view.trades.counted ? 'No coin is up since a counted buy' : 'No trade counted this week yet';
+  return view.trades.counted ? w.noCoinUp : w.noTradeCounted;
 }

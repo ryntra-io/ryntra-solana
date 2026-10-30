@@ -1,5 +1,7 @@
 import { bytesToBase64, type SignInInput } from '../../../../lib/solana/wallet-signin.client.ts';
 import { citySigner } from '../../app-bridge/route.ts';
+import { wordsNow } from '../../i18n/dict.ts';
+import { PREDICT_TEXT } from './words.ts';
 
 /**
  * The managed account's sign-in: AGG issues its own nonce and the engine writes the message; the wallet signs that text
@@ -17,9 +19,10 @@ export async function signText(wallet: string, address: string, text: string): P
   const signed = await citySigner.signIn(wallet, input, text);
   if (!signed.ok) {
     const declined = signed.state === 'CANCELLED' || signed.state === 'REFUSED';
-    return { ok: false, declined, message: declined ? 'Nothing was signed.' : signed.state === 'UNSUPPORTED' ? 'This wallet cannot sign in here.' : 'The wallet did not sign.' };
+    const w = wordsNow(PREDICT_TEXT);
+    return { ok: false, declined, message: declined ? w.nothingSigned : signed.state === 'UNSUPPORTED' ? w.cannotSign : w.didNotSign };
   }
-  if (signed.address !== address) return { ok: false, declined: false, message: 'The wallet changed. Try again.' };
-  if (signed.via !== 'signMessage' || !same(signed.signedMessage, new TextEncoder().encode(text))) return { ok: false, declined: false, message: 'This wallet cannot sign in here.' };
+  if (signed.address !== address) return { ok: false, declined: false, message: wordsNow(PREDICT_TEXT).walletChanged };
+  if (signed.via !== 'signMessage' || !same(signed.signedMessage, new TextEncoder().encode(text))) return { ok: false, declined: false, message: wordsNow(PREDICT_TEXT).cannotSign };
   return { ok: true, signature: bytesToBase64(signed.signature) };
 }

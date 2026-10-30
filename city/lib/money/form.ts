@@ -1,10 +1,12 @@
 import { exactDecimal } from '../../../lib/solana/amounts.ts';
 import type { SolanaEnvironmentContext } from '../../../lib/solana/environment.ts';
 import type { SkrResolve } from '../../../lib/solana/skr.client.ts';
+import { wordsNow } from '../i18n/dict.ts';
 import { readAmount } from './amount.ts';
 import type { MoneyAsset, WalletRead } from './assets.ts';
 import { checkProblemWords, guardOf, readRecipient, riskLine, type RecipientCheck, type RecipientRead, type RiskRead } from './recipient.ts';
 import { signable, type ResumeState, type SendBundle, type SendPhase, type Settled } from './send.ts';
+import { GATE_WORDS } from './words.ts';
 
 /**
  * The Send tab's form and its one decision: what the action says and does, from what was typed, the engine's answers
@@ -98,29 +100,30 @@ export type GateInput = Readonly<{
 
 export function sendGate(input: GateInput): SendGate {
   const { send } = input;
+  const w = wordsNow(GATE_WORDS);
   const none = { toLine: null, amountLine: null, recipient: null, lookalike: null, isNew: false, riskLine: null } as const;
-  if (!input.connected || !input.owner) return { ...none, label: 'Connect wallet', action: 'connect' };
-  if (send.phase === 'reviewing') return { ...none, label: 'Preparing transfer…', action: null };
-  if (send.phase === 'preparing') return { ...none, label: 'Checking it again…', action: null };
-  if (send.phase === 'wallet') return { ...none, label: 'Check your wallet…', action: null };
-  if (send.phase === 'sending') return { ...none, label: 'Sending…', action: null };
-  if (blocksSend(send)) return { ...none, label: 'Waiting for an earlier transfer', action: null };
-  if (!input.wallet) return { ...none, label: input.walletRead === 'failed' ? 'Balances unavailable' : 'Reading your balances…', action: null };
+  if (!input.connected || !input.owner) return { ...none, label: w.connectWallet, action: 'connect' };
+  if (send.phase === 'reviewing') return { ...none, label: w.preparing, action: null };
+  if (send.phase === 'preparing') return { ...none, label: w.checkingAgain, action: null };
+  if (send.phase === 'wallet') return { ...none, label: w.checkWallet, action: null };
+  if (send.phase === 'sending') return { ...none, label: w.sending, action: null };
+  if (blocksSend(send)) return { ...none, label: w.waitingEarlier, action: null };
+  if (!input.wallet) return { ...none, label: input.walletRead === 'failed' ? w.balancesUnavailable : w.readingBalances, action: null };
   const asset = chosenAsset(input.wallet, send.assetId);
-  if (!asset) return { ...none, label: 'Choose a coin', action: null };
+  if (!asset) return { ...none, label: w.chooseCoin, action: null };
 
   const read = readRecipient(send.to, input.owner);
   let toLine: Line | null = read.kind === 'problem' ? { tone: 'error', text: read.text } : null;
   if (read.kind === 'name') {
-    if (!send.name || send.name.state === 'RESOLVING') toLine = { tone: 'info', text: `Finding ${read.name}…` };
-    else if (send.name.state === 'NOT_FOUND') toLine = { tone: 'error', text: `No such name: ${read.name}.` };
-    else if (send.name.state === 'UNAVAILABLE') toLine = { tone: 'warn', text: 'The name could not be checked right now.' };
+    if (!send.name || send.name.state === 'RESOLVING') toLine = { tone: 'info', text: w.finding(read.name) };
+    else if (send.name.state === 'NOT_FOUND') toLine = { tone: 'error', text: w.noSuchName(read.name) };
+    else if (send.name.state === 'UNAVAILABLE') toLine = { tone: 'warn', text: w.nameUnchecked };
   }
   const recipient = recipientAddress(send, read);
   const check = recipient || read.kind === 'request' ? send.check : null;
   if (check?.status === 'done' && check.result) {
     if (check.result.next === 'none') toLine = { tone: 'error', text: checkProblemWords(check.result.problem) };
-    else if (check.result.next === 'pay-link') toLine = { tone: 'info', text: 'This is a Ryntra payment link. Open it to pay.' };
+    else if (check.result.next === 'pay-link') toLine = { tone: 'info', text: w.payLink };
     // An account opened for them is not a line under «To»: its cost is on the Review's one line, before the wallet.
   }
   const amount = readAmount(send.amount, { spendableRaw: asset.spendableRaw, decimals: asset.decimals, symbol: asset.symbol });
@@ -129,20 +132,20 @@ export function sendGate(input: GateInput): SendGate {
   const risk = recipient && send.risk?.address === recipient ? riskLine(send.risk.summary) : null;
   const base = { toLine, amountLine, recipient, lookalike: guard.lookalike, isNew: guard.isNew, riskLine: risk };
 
-  if (read.kind === 'empty') return { ...base, label: 'Enter who gets it', action: null };
-  if (read.kind === 'problem') return { ...base, label: read.problem === 'OTHER_NETWORK' ? 'Use Bridge' : 'Check the recipient', action: null };
+  if (read.kind === 'empty') return { ...base, label: w.enterWho, action: null };
+  if (read.kind === 'problem') return { ...base, label: read.problem === 'OTHER_NETWORK' ? w.useBridge : w.checkRecipient, action: null };
   if (read.kind === 'name' && send.name?.state !== 'FOUND') {
-    return { ...base, label: send.name?.state === 'RESOLVING' || !send.name ? 'Finding the name…' : 'Check the name', action: null };
+    return { ...base, label: send.name?.state === 'RESOLVING' || !send.name ? w.findingName : w.checkName, action: null };
   }
-  if (read.kind === 'request' && !recipient) return { ...base, label: check?.status === 'checking' || !check ? 'Reading the request…' : 'Check the recipient', action: null };
-  if (!recipient) return { ...base, label: 'Check the recipient', action: null };
-  if (check?.status === 'checking') return { ...base, label: 'Checking the recipient…', action: null };
-  if (check?.status === 'done' && check.result && check.result.next !== 'transfer') return { ...base, label: 'Check the recipient', action: null };
-  if (guard.lookalike && send.accepted.lookalike !== recipient) return { ...base, label: 'Check the whole address', action: 'accept-lookalike' };
-  if (guard.isNew && send.accepted.fresh !== recipient) return { ...base, label: 'Check the new address', action: 'accept-fresh' };
-  if (!amount.ok) return { ...base, label: amount.problem === 'OVER_BALANCE' ? `Not enough ${asset.symbol}` : 'Enter an amount', action: null };
-  if (send.review) return signable(send.review.bundle) ? { ...base, label: 'Confirm in wallet', action: 'confirm' } : { ...base, label: 'Cannot be sent', action: null };
-  return { ...base, label: 'Review transfer', action: 'review' };
+  if (read.kind === 'request' && !recipient) return { ...base, label: check?.status === 'checking' || !check ? w.readingRequest : w.checkRecipient, action: null };
+  if (!recipient) return { ...base, label: w.checkRecipient, action: null };
+  if (check?.status === 'checking') return { ...base, label: w.checkingRecipient, action: null };
+  if (check?.status === 'done' && check.result && check.result.next !== 'transfer') return { ...base, label: w.checkRecipient, action: null };
+  if (guard.lookalike && send.accepted.lookalike !== recipient) return { ...base, label: w.checkWhole, action: 'accept-lookalike' };
+  if (guard.isNew && send.accepted.fresh !== recipient) return { ...base, label: w.checkNew, action: 'accept-fresh' };
+  if (!amount.ok) return { ...base, label: amount.problem === 'OVER_BALANCE' ? w.notEnough(asset.symbol) : w.enterAmount, action: null };
+  if (send.review) return signable(send.review.bundle) ? { ...base, label: w.confirmInWallet, action: 'confirm' } : { ...base, label: w.cannotSend, action: null };
+  return { ...base, label: w.reviewTransfer, action: 'review' };
 }
 
 export type ReviewTotal = Readonly<{

@@ -1,5 +1,6 @@
 import type { AgentGuestResponse, AgentTurn } from '@/lib/api/v1/contract';
 import type { Tower } from '../market/types.ts';
+import { langNow, type Lang } from '../i18n/lang.ts';
 import { questionSymbol } from './clean.ts';
 
 /**
@@ -20,11 +21,14 @@ export type Asked =
 /** A Solana address as the contract takes it; anything else never travels as the question's context. */
 const MINT = /^[1-9A-HJ-NP-Za-km-z]{32,44}$/;
 
-/** The body of a question: the person's words, and the tower asked about as its context — its symbol cleaned (CITY-73). */
-export function guestBody(text: string, subject: Pick<Tower, 'id' | 'symbol'> | null) {
+/**
+ * The body of a question: the person's words, the language Ryntra answers in (the city's, CITY-79), and the tower asked
+ * about as its context — its symbol cleaned (CITY-73).
+ */
+export function guestBody(text: string, subject: Pick<Tower, 'id' | 'symbol'> | null, lang: Lang = langNow()) {
   const symbol = subject ? questionSymbol(subject.symbol) : null;
   const context = subject && MINT.test(subject.id) ? { kind: 'asset' as const, mint: subject.id, ...(symbol ? { symbol: symbol.slice(0, 32) } : {}) } : null;
-  return { text: text.trim().slice(0, QUESTION_MAX), locale: 'en' as const, context };
+  return { text: text.trim().slice(0, QUESTION_MAX), locale: lang, context };
 }
 
 /** Ryntra's turn out of a response, when the response is one: anything else reads as no answer. */

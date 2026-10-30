@@ -1,9 +1,9 @@
 'use client';
 
-import { useEffect, useRef, useState, type ComponentType } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState, type ComponentType } from 'react';
 import { useTowerChart } from '@/city/lib/chart/store';
 import { useCity } from '@/city/lib/city/store';
-import { EXCHANGE_OPEN } from '@/city/lib/exchange/flag';
+import { EXCHANGE_SHOWN } from '@/city/lib/exchange/flag';
 import { useExchange } from '@/city/lib/exchange/store';
 import type { CitySnapshot } from '@/city/lib/market/types';
 import { cameFromCity, DETACH_CHANNEL, OUT_MARK, parseDetachUrl, parseMessage, type Message, type Params } from '@/city/lib/window/detach';
@@ -12,6 +12,9 @@ import { ChartLayer } from '../chart/ChartLayer';
 import { ExchangeLayer } from '../exchange/ExchangeLayer';
 import { TradeLayer } from '../trade/TradeLayer';
 import { OutWindow } from './OutWindow';
+import { useWords } from '@/city/lib/i18n/dict';
+import { hydrateLang } from '@/city/lib/i18n/lang';
+import { WINDOW } from './words';
 import s from './window.module.css';
 
 type Kind = Readonly<{ layers: readonly ComponentType[]; open: (params: Params) => void }>;
@@ -29,7 +32,7 @@ const KINDS: Readonly<Record<string, Kind>> = {
       if (params.tower) useTowerChart.getState().open(params.tower);
     },
   },
-  ...(EXCHANGE_OPEN ? { exchange: { layers: [ExchangeLayer], open: (params: Params) => useExchange.getState().show(params.symbol ?? null) } } : {}),
+  ...(EXCHANGE_SHOWN ? { exchange: { layers: [ExchangeLayer], open: (params: Params) => useExchange.getState().show(params.symbol ?? null) } } : {}),
 };
 
 const READ_WAIT_MS = 4_000;
@@ -75,6 +78,9 @@ export function OutPage({ initial }: { initial: CitySnapshot }) {
   // The address is read in the browser: the server's page is the same for every window.
   const [route, setRoute] = useState<ReturnType<typeof parseDetachUrl> | undefined>(undefined);
   const [ready, setReady] = useState(false);
+
+  // The person's language before the first paint, as in the city (CITY-79).
+  useLayoutEffect(() => void hydrateLang(), []);
 
   // The page's window is never the city's layout; the window stands as on a computer, whatever this page's width.
   useEffect(() => {
@@ -126,6 +132,7 @@ export function OutPage({ initial }: { initial: CitySnapshot }) {
 
 /** The window itself, filling the page; and the channel to the city. */
 function Alone({ id, params, open }: { id: string; params: Params; open: (params: Params) => void }) {
+  const w = useWords(WINDOW);
   const spec = useWindows((st) => st.specs[id]);
   const shown = useRef(false);
   const leaving = useRef(false);
@@ -212,7 +219,7 @@ function Alone({ id, params, open }: { id: string; params: Params; open: (params
     return () => clearTimeout(timer);
   }, []);
 
-  return <main className={s.outPage}>{spec ? <OutWindow spec={spec} pip={false} onBack={back} /> : <div className={s.outWait} role="status" aria-label="Loading" />}</main>;
+  return <main className={s.outPage}>{spec ? <OutWindow spec={spec} pip={false} onBack={back} /> : <div className={s.outWait} role="status" aria-label={w.loading} />}</main>;
 }
 
 /** An address that is not a window: the city instead. */

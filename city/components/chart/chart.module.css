@@ -633,3 +633,51 @@
     display: none;
   }
 }
+
+/* ---------- Inside the spot window (30.10): the interval row and the candles, at a height of their own ---------- */
+
+.inTrade {
+  display: flex;
+  flex-direction: column;
+  height: 268px;
+  margin: 2px -12px 6px;
+  overflow: hidden;
+}
+
+@media (max-width: 560px) {
+  .inTrade {
+    height: 248px;
+  }
+}
+
+/* In the spot window the candles take the whole pane under the interval row: no empty band above them (the page's old
+   global styles pad every <section>, the core chart's too). */
+.inTrade .chart .core {
+  margin: 0;
+  padding: 0;
+  flex-direction: column;
+  justify-content: flex-start;
+}
+
+.inTrade .chart .core :global(.ryntra-chart__stage) {
+  flex: 1 1 auto;
+  min-height: 0;
+  height: 100%;
+}
+
+/* Spot carries our chart whole (30.10): the chart's own bar of tools and the bar under the crosshair are back. */
+.tooled .chart .core :global(.ryntra-chart__bar) {
+  display: flex;
+  padding: 0 0 6px;
+}
+
+.tooled .chart .core :global(.ryntra-chart__ohlc) {
+  display: block;
+}
+
+/* A phone: the chart's tools take their rows, so the candles keep a height of their own under them. */
+@media (max-width: 560px) {
+  .tooled.inTrade {
+    height: 440px;
+  }
+}

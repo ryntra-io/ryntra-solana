@@ -3,10 +3,11 @@
 import { useEffect, useMemo, useRef } from 'react';
 import { accountKind, hasBook } from '@/city/lib/exchange/account';
 import { BOOK_MS } from '@/city/lib/exchange/depth';
-import { EXCHANGE_OPEN } from '@/city/lib/exchange/flag';
+import { EXCHANGE_SHOWN } from '@/city/lib/exchange/flag';
 import { figuresKeyOf } from '@/city/lib/exchange/ticket';
 import { BUSY, LOCKED, setExchangeEnv, ticketView, useExchange } from '@/city/lib/exchange/store';
 import { useCity } from '@/city/lib/city/store';
+import { useWords } from '@/city/lib/i18n/dict';
 import { useQuarter } from '@/city/lib/quarter/store';
 import { useRun } from '@/city/lib/run/store';
 import { startWallets, useWallet } from '@/city/lib/trade/wallet';
@@ -16,9 +17,11 @@ import { useWindows } from '@/city/lib/window/store';
 import { useCityWindow } from '../window/useCityWindow';
 import { ExchangeWindow } from './ExchangeWindow';
 import { ExchangeGlyph } from './glyphs';
+import { EX } from './words';
 
 /** While the window is open: the markets (the mark and the funding move), the account, the history, how often. */
-const MARKETS_MS = 10_000;
+// The mark every 4 s: the route keeps a read 5 s at the edge, so the price on screen is never older than that.
+const MARKETS_MS = 4_000;
 const FUNDING_MS = 60_000;
 const ACCOUNT_MS = 15_000;
 const HISTORY_MS = 30_000;
@@ -41,13 +44,14 @@ function useEvery(on: boolean, ms: number, read: () => void) {
 }
 
 /**
- * The Exchange in the city: closed for people until the switch says `open`. Open, it follows the connected wallet,
- * keeps Phoenix's markets, the funding, the account and the history recent while the window is open, asks the engine
- * for the ticket's figures once the typing settles, and stands in the city's one window frame (CITY-65). A run or
- * building your quarter owns the screen, unless a signature holds the window — and holds it in the frame too.
+ * The Exchange in the city: closed for people until the switch says `open` (or `exit`, closing out). Open, it follows
+ * the connected wallet, keeps Phoenix's markets, the funding, the account and the history recent while the window is
+ * open, asks the engine for the ticket's figures once the typing settles, and stands in the city's one window frame
+ * (CITY-65). A run or building your quarter owns the screen, unless a signature holds the window — and holds it in the
+ * frame too.
  */
 export function ExchangeLayer() {
-  if (!EXCHANGE_OPEN) return null;
+  if (!EXCHANGE_SHOWN) return null;
   return <OpenExchange />;
 }
 
@@ -75,6 +79,7 @@ const readFigures = () => {
 };
 
 function OpenExchange() {
+  const w = useWords(EX);
   const open = useExchange((st) => st.open);
   const phase = useExchange((st) => st.phase);
   const tab = useExchange((st) => st.tab);
@@ -168,13 +173,15 @@ function OpenExchange() {
     if (open && !useWindows.getState().desk) useCity.getState().select(null);
   }, [open]);
 
-  // The frame holds the window while a signature is out: its «Close» waits, as the window's own close does.
+  // The frame holds the window while a signature is out: its «Close» waits, as the window's own close does. Its title
+  // follows the language: a switch sends the frame the new word.
   const held = LOCKED.has(phase);
-  // Out on another screen (CITY-75) its own page opens on the same market.
+  // Out on another screen (CITY-75) its own page opens on the same market. Its title follows the language (CITY-79).
+  const title = w.exchange;
   const spec = useMemo(
     () => ({
       id: 'exchange',
-      title: 'Exchange',
+      title,
       icon: <ExchangeGlyph />,
       render: renderExchange,
       size: { width: 860, height: 640 },
@@ -183,7 +190,7 @@ function OpenExchange() {
       onClose: hideExchange,
       detach: (symbol ? { symbol } : {}) as Params,
     }),
-    [held, symbol],
+    [held, symbol, title],
   );
   useCityWindow(shown, spec);
 

@@ -10,6 +10,7 @@ import type { PlacedTower } from '@/city/lib/city/layout';
 import { pickTower } from '@/city/lib/city/pick';
 import { useAssistant } from '@/city/lib/assistant/store';
 import { useCity } from '@/city/lib/city/store';
+import { useGameMap } from '@/city/lib/game/map';
 import { useRun } from '@/city/lib/run/store';
 
 type Preset = { pos: [number, number, number]; target: [number, number, number]; fov: number };
@@ -68,6 +69,9 @@ export function CameraRig({ world }: { world: RefObject<THREE.Group | null> }) {
   // A tour plays once per answer: the market's refresh every minute rebuilds the layout but never restarts it.
   const shown = useAssistant((s) => s.shown);
   const focusAt = useAssistant((s) => s.focusAt);
+  // The Play layer's Map (CITY-81): a district or a mover framed, with nothing picked.
+  const view = useGameMap((s) => s.view);
+  const viewed = useRef(0);
   const toured = useRef(0);
   const tourTimer = useRef(0);
   useEffect(() => () => window.clearTimeout(tourTimer.current), []);
@@ -80,6 +84,14 @@ export function CameraRig({ world }: { world: RefObject<THREE.Group | null> }) {
     window.clearTimeout(tourTimer.current);
     if (t) {
       void c.setLookAt(...towerShot(t, layout.towers, camera.position, portrait), true);
+      return;
+    }
+    const framed = answer.length || !view ? [] : view.ids.map((id) => layout.towers.find((p) => p.tower.id === id)).filter((p): p is PlacedTower => !!p);
+    if (framed.length) {
+      // Flown once per tap: the market's refresh every minute leaves the camera where the hand put it since.
+      if (viewed.current === view!.at) return;
+      viewed.current = view!.at;
+      void c.setLookAt(...(framed.length === 1 ? towerShot(framed[0]!, layout.towers, camera.position, portrait, TOUR_WIDE) : groupShot(framed, camera.position, portrait)), true);
       return;
     }
     if (!answer.length) {
@@ -99,7 +111,7 @@ export function CameraRig({ world }: { world: RefObject<THREE.Group | null> }) {
       if (step < tour.length) tourTimer.current = window.setTimeout(next, TOUR_STEP_MS);
     };
     next();
-  }, [selectedId, layout, camera, preset, portrait, homeAt, shown, focusAt]);
+  }, [selectedId, layout, camera, preset, portrait, homeAt, shown, focusAt, view]);
 
   // A run owns the camera. When it ends, the controls pick up from wherever the run left the camera
   // and glide back to the establishing shot.
@@ -203,8 +215,8 @@ export function CameraRig({ world }: { world: RefObject<THREE.Group | null> }) {
     lift.current += (liftGoal - lift.current) * Math.min(1, dt * 2.2);
     if (Math.abs(shift.current) > 0.001 || Math.abs(lift.current) > 0.001) camera.setViewOffset(size.width, size.height, -size.width * shift.current, size.height * lift.current, size.width, size.height);
     else if (camera.view?.enabled) camera.clearViewOffset();
-    // Attract orbit: a slow sway around the establishing shot while idle — never while an answer is on the screen.
-    if (c && !state.selectedId && !useAssistant.getState().shown.length && Date.now() - state.touchedAt > IDLE_MS && !c.active) {
+    // Attract orbit: a slow sway around the establishing shot while idle — never while an answer or the Map's view is on the screen.
+    if (c && !state.selectedId && !useAssistant.getState().shown.length && !useGameMap.getState().view && Date.now() - state.touchedAt > IDLE_MS && !c.active) {
       const t = clock.elapsedTime;
       const az = base.current.azimuth + Math.sin(t * 0.055) * 0.22;
       const polar = base.current.polar + Math.sin(t * 0.037) * 0.04;

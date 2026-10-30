@@ -2,11 +2,14 @@
 
 import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { tradable } from '@/city/lib/districts/predict/detail';
-import { cents, clock, closesIn, isDelayed, signedUsd, toWin, usd, volumeText, type Side } from '@/city/lib/districts/predict/markets';
+import { cents, clock, closesIn, isDelayed, sideName, signedUsd, toWin, usd, volumeText, type Side } from '@/city/lib/districts/predict/markets';
 import { AMOUNT_TILES, buyRefusal, SELL_TILES } from '@/city/lib/districts/predict/practice';
 import { useReal, type Connection } from '@/city/lib/districts/predict/real-store';
 import { doneNotice, practiceView, realView } from '@/city/lib/districts/predict/ticket';
 import { priceOf, usePredict } from '@/city/lib/districts/predict/store';
+import { PREDICT } from '@/city/lib/districts/predict/words';
+import { digits, useWords } from '@/city/lib/i18n/dict';
+import { fieldText, fieldValue } from '@/city/lib/i18n/figures';
 import { useWallet } from '@/city/lib/trade/wallet';
 import { isPhoneUserAgent, PHANTOM_DOWNLOAD_URL, phantomBrowseUrl } from '@/lib/solana/open-in-wallet';
 import { useNow, usePageMarket } from './predictHooks';
@@ -27,12 +30,13 @@ export function PredictTicket() {
   const setSide = usePredict((st) => st.setSide);
   const mode = usePredict((st) => st.mode);
   const resetTrade = useReal((st) => st.resetTrade);
+  const w = useWords(PREDICT);
   if (!at) return null;
   const { market } = at;
   return (
     <aside className={s.ticket}>
       {at.detail && at.detail.rows.length > 1 && market.question ? <div className={s.ticketMarket}>{market.question}</div> : null}
-      <div className={s.ticketTabs} role="tablist" aria-label="Buy or sell">
+      <div className={s.ticketTabs} role="tablist" aria-label={w.buyOrSell}>
         {(['buy', 'sell'] as const).map((a) => (
           <button
             key={a}
@@ -44,11 +48,11 @@ export function PredictTicket() {
               setAction(a);
             }}
           >
-            {a === 'buy' ? 'Buy' : 'Sell'}
+            {a === 'buy' ? w.buy : w.sell}
           </button>
         ))}
       </div>
-      <div className={s.choices} role="radiogroup" aria-label="Side" data-many={market.sides.length > 2 ? '' : undefined}>
+      <div className={s.choices} role="radiogroup" aria-label={w.side} data-many={market.sides.length > 2 ? '' : undefined}>
         {market.sides.map((x, i) => (
           <Choice
             key={x.id}
@@ -74,7 +78,7 @@ function Choice({ side, tone, on, onPick }: { side: Side; tone: 'yes' | 'no' | '
       <span className={s.choiceCheck} aria-hidden="true">
         <CheckGlyph />
       </span>
-      <span className={s.choiceLabel}>{side.label}</span>
+      <span className={s.choiceLabel}>{sideName(side.label)}</span>
       <span className={s.choicePrice}>{cents(side.p)}</span>
     </button>
   );
@@ -85,6 +89,7 @@ function Amount({ coin, label, unit }: { coin: ReactNode; label: string; unit: s
   const amount = usePredict((st) => st.amount);
   const setAmount = usePredict((st) => st.setAmount);
   const resetTrade = useReal((st) => st.resetTrade);
+  const w = useWords(PREDICT);
   const [text, setText] = useState(() => String(amount));
   useEffect(() => {
     // A tile tapped writes the field; what the person types stays as typed.
@@ -103,9 +108,9 @@ function Amount({ coin, label, unit }: { coin: ReactNode; label: string; unit: s
           className={s.fieldInput}
           inputMode="decimal"
           autoComplete="off"
-          value={text}
+          value={fieldText(text)}
           onChange={(e) => {
-            const v = e.target.value.replace(/[^0-9.]/g, '');
+            const v = fieldValue(e.target.value).replace(/[^0-9.]/g, '');
             setText(v);
             resetTrade();
             setAmount(Number(v) || 0);
@@ -113,7 +118,7 @@ function Amount({ coin, label, unit }: { coin: ReactNode; label: string; unit: s
         />
         <span className={s.fieldUnit}>{unit}</span>
       </div>
-      <div className={s.tiles} role="radiogroup" aria-label="Amount">
+      <div className={s.tiles} role="radiogroup" aria-label={w.amount}>
         {AMOUNT_TILES.map((n) => (
           <button
             key={n}
@@ -136,18 +141,19 @@ function Amount({ coin, label, unit }: { coin: ReactNode; label: string; unit: s
 /** «To win» with its quiet «i»: what it pays if right, the profit beside it, and what one share pays, on a tap. */
 function ToWin({ value, spend, label }: { value: number; spend: number; label: string }) {
   const [why, setWhy] = useState(false);
+  const w = useWords(PREDICT);
   const profit = Math.round((value - spend) * 100) / 100;
   return (
     <div className={s.win}>
       <div className={s.winRow}>
-        <span className={s.winWord}>To win</span>
+        <span className={s.winWord}>{w.toWin}</span>
         <span className={s.winFigure}>{usd(value)}</span>
         {value > 0 && profit > 0 ? <span className={`${s.winProfit} ${s.up}`}>{signedUsd(profit)}</span> : null}
-        <button className={s.info} aria-label="How it pays" aria-expanded={why} onClick={() => setWhy((v) => !v)}>
+        <button className={s.info} aria-label={w.howItPays} aria-expanded={why} onClick={() => setWhy((v) => !v)}>
           <InfoGlyph />
         </button>
       </div>
-      {why ? <div className={s.why}>Each share pays $1 if {label} wins.</div> : null}
+      {why ? <div className={s.why}>{w.eachShare(sideName(label))}</div> : null}
     </div>
   );
 }
@@ -163,6 +169,7 @@ function Action({ label, onPress, disabled, waiting }: { label: string; onPress:
 /** After a buy: the position is open, what it wins, and a way to it — until the ticket changes. */
 function Bought({ label, spend, wins, pending }: { label: string; spend: number; wins: number; pending: boolean }) {
   const go = usePredict((st) => st.go);
+  const w = useWords(PREDICT);
   const box = useRef<HTMLDivElement>(null);
   // Shown where the eye is: a ticket scrolled to its button brings the confirmation into view.
   useEffect(() => {
@@ -175,13 +182,11 @@ function Bought({ label, spend, wins, pending }: { label: string; spend: number;
         <CheckGlyph />
       </span>
       <span className={s.boughtText}>
-        <b>{pending ? `${label} · on its way` : `You're in · ${label}`}</b>
-        <span>
-          {usd(spend)} → wins {usd(wins)}
-        </span>
+        <b>{pending ? w.boughtPending(sideName(label)) : w.youreIn(sideName(label))}</b>
+        <span>{w.spendWins(usd(spend), usd(wins))}</span>
       </span>
       <button className={s.boughtGo} onClick={() => go({ kind: 'positions' })}>
-        Positions
+        {w.positions}
       </button>
     </div>
   );
@@ -197,6 +202,7 @@ function PracticeTicket() {
   const bought = usePredict((st) => st.bought);
   const practiceBuy = usePredict((st) => st.practiceBuy);
   const now = useNow(5_000);
+  const w = useWords(PREDICT);
   const chosen = at.market.sides.find((x) => x.id === side) ?? null;
   const open = at.detail ? tradable(at.detail, now) : true;
   if (action === 'sell') return <PracticeSell />;
@@ -207,7 +213,7 @@ function PracticeTicket() {
   return (
     <>
       {justBought ? <Bought label={justBought.label} spend={justBought.spendUsd} wins={holding ? Math.floor(holding.shares * 100 + 1e-7) / 100 : toWin(justBought.spendUsd, chosen?.p ?? 1)} pending={false} /> : null}
-      <Amount coin={<PracticeCoin />} label="Amount" unit="Practice $" />
+      <Amount coin={<PracticeCoin />} label={w.amount} unit={w.practiceUnit} />
       <div className={s.rule} />
       {chosen ? <ToWin value={toWin(amount, chosen.p)} spend={amount} label={chosen.label} /> : null}
       {v.note ? <div className={`${s.line} ${s.lineOver} ${v.warn ? s.lineWarn : ''}`}>{v.note}</div> : null}
@@ -225,6 +231,7 @@ function PracticeSell() {
   const practiceSell = usePredict((st) => st.practiceSell);
   const detail = usePredict((st) => st.detail);
   const lists = usePredict((st) => st.lists);
+  const w = useWords(PREDICT);
   const chosen = at.market.sides.find((x) => x.id === side) ?? null;
   const holding = book.holdings.find((h) => h.state === 'open' && h.marketId === at.market.marketId && h.outcomeId === side) ?? null;
   // A sale is priced by the page's own read only: never by a quote read for the positions list.
@@ -234,7 +241,7 @@ function PracticeSell() {
   if (!holding || !chosen) {
     return (
       <>
-        <div className={s.hold}>You hold no {chosen?.label ?? 'shares'} here.</div>
+        <div className={s.hold}>{chosen ? w.holdNone(sideName(chosen.label)) : w.holdNoShares}</div>
         <Action label={v.label} onPress={() => undefined} disabled />
       </>
     );
@@ -243,13 +250,13 @@ function PracticeSell() {
   return (
     <>
       <div className={s.hold}>
-        You hold <b>{holding.shares.toLocaleString('en-US', { maximumFractionDigits: 2 })}</b> {holding.label}
+        {w.youHold} <b>{digits(holding.shares.toLocaleString('en-US', { maximumFractionDigits: 2 }))}</b> {sideName(holding.label)}
       </div>
       <SellTiles fraction={fraction} onFraction={setFraction} />
       <div className={s.rule} />
       <div className={s.win}>
         <div className={s.winRow}>
-          <span className={s.winWord}>You get</span>
+          <span className={s.winWord}>{w.youGet}</span>
           <span className={s.winFigure}>{back !== null ? usd(back) : '—'}</span>
           {pnl !== null && Math.abs(pnl) >= 0.005 ? <span className={`${s.winProfit} ${pnl > 0 ? s.up : s.down}`}>{signedUsd(pnl)}</span> : null}
         </div>
@@ -261,11 +268,12 @@ function PracticeSell() {
 }
 
 function SellTiles({ fraction, onFraction }: { fraction: number; onFraction: (f: number) => void }) {
+  const w = useWords(PREDICT);
   return (
-    <div className={s.tiles} role="radiogroup" aria-label="How much to sell">
+    <div className={s.tiles} role="radiogroup" aria-label={w.howMuchToSell}>
       {SELL_TILES.map((f) => (
         <button key={f} role="radio" aria-checked={f === fraction} className={`${s.tile} ${f === fraction ? s.tileOn : ''}`} onClick={() => onFraction(f)}>
-          {f === 1 ? 'Max' : `${f * 100}%`}
+          {f === 1 ? w.max : `${f * 100}%`}
         </button>
       ))}
     </div>
@@ -295,6 +303,7 @@ function RealTicket() {
   const say = usePredict((st) => st.say);
   const [picking, setPicking] = useState(false);
   const now = useNow(5_000);
+  const w = useWords(PREDICT);
   useEffect(() => {
     if (connection) setPicking(false);
   }, [connection]);
@@ -369,13 +378,13 @@ function RealTicket() {
     <>
       {done ? <Bought label={done.review.label} spend={done.review.totalUsd} wins={done.review.toWinUsd} pending={done.state === 'submitted'} /> : null}
       {action === 'buy' ? (
-        <Amount coin={<UsdcCoin />} label="Amount (USDC)" unit="USDC" />
+        <Amount coin={<UsdcCoin />} label={w.amountUsdc} unit="USDC" />
       ) : shares === null ? (
-        <div className={s.hold}>You hold no {chosen?.label || 'shares'} here.</div>
+        <div className={s.hold}>{chosen?.label ? w.holdNone(sideName(chosen.label)) : w.holdNoShares}</div>
       ) : (
         <>
           <div className={s.hold}>
-            You hold <b>{shares.toLocaleString('en-US', { maximumFractionDigits: 2 })}</b> {chosen?.label ?? ''}
+            {w.youHold} <b>{digits(shares.toLocaleString('en-US', { maximumFractionDigits: 2 }))}</b> {chosen ? sideName(chosen.label) : ''}
           </div>
           <SellTiles fraction={fraction} onFraction={setFraction} />
         </>
@@ -387,7 +396,7 @@ function RealTicket() {
       <Action label={v.label} onPress={press} disabled={v.disabled} waiting={v.waiting} />
       {live && live.access.state === 'off' ? (
         <button className={s.quiet} onClick={() => setMode('practice')}>
-          Try it in Practice
+          {w.tryPractice}
         </button>
       ) : null}
     </>
@@ -400,6 +409,7 @@ export function WalletPicker({ onBack }: { onBack: () => void }) {
   const error = useWallet((st) => st.error);
   const connect = useWallet((st) => st.connect);
   const [phone, setPhone] = useState(false);
+  const w = useWords(PREDICT);
   useEffect(() => setPhone(isPhoneUserAgent(navigator.userAgent)), []);
   if (!wallets.length) {
     const here = typeof window === 'undefined' ? '' : window.location.href;
@@ -407,10 +417,10 @@ export function WalletPicker({ onBack }: { onBack: () => void }) {
     return (
       <div className={s.wallets}>
         <a className={`${s.primary} ${s.action}`} href={phone ? phantomBrowseUrl(here, origin) : PHANTOM_DOWNLOAD_URL} target={phone ? undefined : '_blank'} rel="noreferrer">
-          {phone ? 'Open in Phantom' : 'Get Phantom'}
+          {phone ? w.openInPhantom : w.getPhantom}
         </a>
         <button className={s.quiet} onClick={onBack}>
-          Back
+          {w.back}
         </button>
       </div>
     );
@@ -421,12 +431,12 @@ export function WalletPicker({ onBack }: { onBack: () => void }) {
         <button key={wallet.name} className={s.walletButton} onClick={() => void connect(wallet.name)} disabled={Boolean(connecting)}>
           {/* eslint-disable-next-line @next/next/no-img-element */}
           {wallet.icon ? <img src={wallet.icon} alt="" /> : null}
-          {connecting === wallet.name ? `Opening ${wallet.name}…` : wallet.name}
+          {connecting === wallet.name ? w.opening(wallet.name) : wallet.name}
         </button>
       ))}
       {error ? <div className={`${s.line} ${s.lineWarn}`}>{error}</div> : null}
       <button className={s.quiet} onClick={onBack}>
-        Back
+        {w.back}
       </button>
     </div>
   );
@@ -439,6 +449,7 @@ function Details() {
   const [open, setOpen] = useState(false);
   const body = useRef<HTMLDListElement>(null);
   const now = useNow(30_000);
+  const w = useWords(PREDICT);
   // Opened at the foot of a column that scrolls: brought into view, so the tap shows what it opened.
   useEffect(() => {
     if (!open) return;
@@ -449,21 +460,21 @@ function Details() {
     if (!at) return [];
     const d = at.detail;
     const out: [string, string][] = [];
-    if (d?.settlement) out.push(['Resolves', d.settlement]);
-    if (d?.rules) out.push(['Rules', d.rules]);
-    else if (d?.description) out.push(['Rules', d.description]);
-    out.push(['Closes in', closesIn(at.market.closes, now)]);
-    out.push(['Volume', volumeText(at.market.volume)]);
-    out.push(['Venues', at.market.venues.length ? at.market.venues.join(', ') : 'AGG']);
-    out.push(['Prices', `${clock(at.readAt)}${isDelayed(at.readAt, now) ? ' · delayed' : ''}`]);
-    out.push(['Money', mode === 'real' ? 'USDC in your Predictions account, held by AGG' : 'Practice dollars on this device']);
-    out.push(['Note', 'Not financial advice']);
+    if (d?.settlement) out.push([w.resolves, d.settlement]);
+    if (d?.rules) out.push([w.rules, d.rules]);
+    else if (d?.description) out.push([w.rules, d.description]);
+    out.push([w.closesIn, closesIn(at.market.closes, now)]);
+    out.push([w.volume, volumeText(at.market.volume)]);
+    out.push([w.venues, at.market.venues.length ? at.market.venues.join(', ') : 'AGG']);
+    out.push([w.prices, isDelayed(at.readAt, now) ? `${clock(at.readAt)} · ${w.delayed}` : clock(at.readAt)]);
+    out.push([w.money, mode === 'real' ? w.moneyReal : w.moneyPractice]);
+    out.push([w.note, w.notAdvice]);
     return out;
-  }, [at, mode, now]);
+  }, [at, mode, now, w]);
   return (
     <div className={s.details}>
       <button className={s.detailsToggle} aria-expanded={open} onClick={() => setOpen((v) => !v)}>
-        Details
+        {w.details}
         <span className={s.chevron} data-open={open ? '' : undefined} aria-hidden="true" />
       </button>
       {open ? (

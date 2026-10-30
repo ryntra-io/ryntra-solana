@@ -1,7 +1,8 @@
 import type { Metadata, Viewport } from "next";
-import { Hubot_Sans, Mona_Sans } from "next/font/google";
 
 import { CityApp } from "@/city/components/CityApp";
+import { LANG_BOOT_SCRIPT } from "@/city/lib/i18n/langs";
+import { CITY_FONTS } from "@/city/styles/fonts";
 import { CoinOpener } from "@/city/components/coin/CoinOpener";
 import { factsOf, readCoinCard } from "@/city/lib/coin/read.server";
 import { BUNDLED_CITY } from "@/city/lib/market/bundled";
@@ -16,8 +17,6 @@ import { buildCityMetadata, CITY_WORDS, SITE_NAME, TWITTER } from "../../seo";
    city as `/`, opened on the coin: its tower when it stands in the city, its trade card when it does not. An address
    that is not a mint is just the city. Its preview is the coin's own card (`opengraph-image.tsx`), read again every
    five minutes. `?coin=` on `/` keeps working as it did. */
-const display = Hubot_Sans({ subsets: ["latin"], axes: ["wdth"], variable: "--font-display", display: "swap" });
-const ui = Mona_Sans({ subsets: ["latin"], axes: ["wdth"], variable: "--font-ui", display: "swap" });
 
 export const revalidate = 300;
 
@@ -48,8 +47,8 @@ export default async function Page({ params }: Props) {
   const { mint } = await params;
   const coin = isMint(mint) ? await readCoinCard(mint) : null;
   return (
-    <main className={`${s.root} ${display.variable} ${ui.variable}`}>
-      <script dangerouslySetInnerHTML={{ __html: `document.documentElement.lang="en";document.documentElement.dir="ltr";` }} />
+    <main className={`${s.root} ${CITY_FONTS.className}`} style={CITY_FONTS.style}>
+      <script dangerouslySetInnerHTML={{ __html: LANG_BOOT_SCRIPT }} />
       <h1 className={s.hidden}>{coin ? `$${coin.symbol.toUpperCase()} in Ryntra City` : CITY_WORDS.title}</h1>
       <CityApp initial={BUNDLED_CITY} />
       {isMint(mint) ? <CoinOpener mint={mint} coin={coin ? factsOf(coin) : null} /> : null}

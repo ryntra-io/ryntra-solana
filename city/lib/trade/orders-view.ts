@@ -1,9 +1,11 @@
 import { typedPrice } from '../../../lib/solana/limits/model.ts';
 import { SOLANA_MAINNET_USDC_MINT, WRAPPED_SOL_MINT } from '../../../lib/solana/send-kinds.ts';
+import { dateText, wordsNow } from '../i18n/dict.ts';
 import { formatUnits, ticker } from './format.ts';
 import type { LimitOrderView, LimitToken } from './limits.ts';
 import { stopView, type Stop, type StopView } from './stops.ts';
 import { unitOf } from './tiles.ts';
+import { ORDERS } from './words.ts';
 
 /**
  * «My orders» as the panel writes them: the engine's limit orders of the wallet — open first, then the latest closed
@@ -23,16 +25,12 @@ const KNOWN: Readonly<Record<string, LimitToken>> = {
 /** The orders that can still fill — what «Cancel» is about. */
 export const OPEN_ORDER_STATES: ReadonlySet<string> = new Set(['PLACING', 'OPEN', 'PARTIAL', 'CANCELLING']);
 
-const STATE_WORDS: Readonly<Record<string, string>> = {
-  PLACING: 'Placing',
-  OPEN: 'Open',
-  PARTIAL: 'Part filled',
-  FILLED: 'Filled',
-  CANCELLING: 'Cancelling',
-  CANCELLED: 'Cancelled',
-  EXPIRED: 'Expired',
-  FAILED: 'Failed',
-};
+const STATES = ['PLACING', 'OPEN', 'PARTIAL', 'FILLED', 'CANCELLING', 'CANCELLED', 'EXPIRED', 'FAILED'] as const;
+
+/** An order's state in words, or the engine's own code for a state the panel does not know. */
+function stateWords(state: string): string {
+  return (STATES as readonly string[]).includes(state) ? wordsNow(ORDERS)[state as (typeof STATES)[number]] : state;
+}
 
 export type Tone = 'live' | 'done' | 'quiet' | 'danger';
 
@@ -89,7 +87,7 @@ export function orderRow(order: LimitOrderView, tokens: Readonly<Record<string, 
     unit: quote.symbol ? unitOf({ mint: order.quoteMint, symbol: quote.symbol }) : short(order.quoteMint),
     amount,
     price: price === null ? null : typedPrice(price),
-    state: STATE_WORDS[order.state] ?? order.state,
+    state: stateWords(order.state),
     tone: order.state === 'FAILED' ? 'danger' : order.state === 'FILLED' ? 'done' : open ? 'live' : 'quiet',
     filledPct,
     open,
@@ -123,17 +121,10 @@ export type StopRow = Readonly<{
   until: string;
 }>;
 
-const STOP_WORDS: Readonly<Record<StopView, string>> = {
-  watching: 'Watching',
-  reached: 'Reached',
-  done: 'Done',
-  cancelled: 'Cancelled',
-  expired: 'Expired',
-};
-
 /** A stop of this device as the panel's row. */
 export function stopRow(stop: Stop, now: number): StopRow {
   const view = stopView(stop, now);
+  const w = wordsNow(ORDERS);
   const unit = unitOf(stop.quote);
   const coin = ticker(stop.base.symbol);
   const spentDecimals = stop.side === 'buy' ? stop.quote.decimals : stop.base.decimals;
@@ -145,8 +136,8 @@ export function stopRow(stop: Stop, now: number): StopRow {
     spends: `${formatUnits(stop.amountRaw, spentDecimals)} ${stop.side === 'buy' ? unit : coin}`,
     price: stop.price,
     view,
-    state: STOP_WORDS[view],
+    state: w[view],
     tone: view === 'reached' ? 'live' : view === 'watching' ? 'live' : view === 'done' ? 'done' : 'quiet',
-    until: stop.expiresAt === null ? 'until cancelled' : `until ${new Date(stop.expiresAt).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}`,
+    until: stop.expiresAt === null ? w.untilCancelled : w.until(dateText(stop.expiresAt, { day: 'numeric', month: 'short' })),
   };
 }

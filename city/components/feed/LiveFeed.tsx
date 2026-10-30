@@ -7,11 +7,18 @@ import { visibleEvents, type FeedEvent } from '@/city/lib/feed/feed';
 import { ago, clock } from '@/city/lib/feed/format';
 import { shownKinds, SWITCHES } from '@/city/lib/feed/settings';
 import { sparkPath } from '@/city/lib/feed/spark';
+import { useFeedPanel } from '@/city/lib/feed/panel';
 import { useFeed } from '@/city/lib/feed/store';
+import { useMoments } from '@/city/lib/moments/stage';
+import { FEED, FEED_SWITCHES, retell } from '@/city/lib/feed/words';
+import { useWords } from '@/city/lib/i18n/dict';
+import { useLang } from '@/city/lib/i18n/lang';
 import s from './feed.module.css';
 
 /** Events on screen at most: a column on a desk; on a phone one in the strip and this many in its open list. */
 const SHOWN = 5;
+/** Events in the bell's panel at most. */
+const LISTED = 8;
 const SPARK = { w: 64, h: 24 } as const;
 
 /**
@@ -21,15 +28,19 @@ const SPARK = { w: 64, h: 24 } as const;
  * the same switches. While any window is open (`hidden`, city/lib/city/windows.ts) the feed and its controls step aside,
  * so nothing of it stands over the window.
  */
-export function LiveFeed({ hidden = false }: { hidden?: boolean }) {
+export function LiveFeed({ hidden = false, panel = false }: { hidden?: boolean; panel?: boolean }) {
   useEffect(() => startFeed(), []);
   const ready = useFeed((st) => st.ready);
   const settings = useFeed((st) => st.settings);
   const events = useFeed((st) => st.memory.events);
+  // No market read yet: the panel shows where the events will stand, never «quiet» before it has looked (CITY-150).
+  const waiting = useFeed((st) => st.memory.readAt === null);
   // The city's layout changes with every read: what a tap can reach is asked again then.
   useCity((st) => st.layout);
   const [gear, setGear] = useState(false);
-  const [open, setOpen] = useState(false);
+  const [opened, setOpen] = useState(false);
+  // Under the bell the list is always open: the panel is the list.
+  const open = panel || opened;
   // A window opening folds the phone's list and the gear's panel: the feed comes back as a strip.
   useEffect(() => {
     if (!hidden) return;
@@ -39,9 +50,11 @@ export function LiveFeed({ hidden = false }: { hidden?: boolean }) {
   // Each event's source and clock time, behind one quiet control.
   const [details, setDetails] = useState(false);
   const now = useNow(30_000);
+  const w = useWords(FEED);
 
   const shown = useMemo(() => shownKinds(settings), [settings]);
-  const list = useMemo(() => visibleEvents(events, shown, SHOWN), [events, shown]);
+  const list = useMemo(() => visibleEvents(events, shown, panel ? LISTED : SHOWN), [events, shown, panel]);
+  const clips = useMoments((st) => st.moments.length + (st.run ? 1 : 0));
 
   // The first events fill the feed quietly; the ones after them glow once as they arrive, if the flashing is on.
   const firstBatch = useRef<number | null>(null);
@@ -69,8 +82,8 @@ export function LiveFeed({ hidden = false }: { hidden?: boolean }) {
   // Escape closes the gear's panel, then the phone's open list, and nothing under them. The listener is the city's first
   // (it is set when the page opens), so it decides before the cards and sheets below it — but a modal window open over
   // the city, or the focus held by something else (the search, a sheet), owns its Escape, and the feed stays as it is.
-  const panels = useRef({ gear, open });
-  panels.current = { gear, open };
+  const panels = useRef({ gear, open, panel });
+  panels.current = { gear, open, panel };
   const moreRef = useRef<HTMLButtonElement>(null);
   const feedRef = useRef<HTMLElement>(null);
   useEffect(() => {
@@ -79,31 +92,47 @@ export function LiveFeed({ hidden = false }: { hidden?: boolean }) {
       if (document.querySelector('[aria-modal="true"]')) return;
       const focus = document.activeElement;
       if (focus && focus !== document.body && !feedRef.current?.contains(focus)) return;
-      // The open list counts only where it shows: on a phone held upright, where the chevron stands.
-      const list = panels.current.open && !!moreRef.current?.offsetParent;
+      // The open list counts only where it shows: on a phone held upright, where the chevron stands; under the bell always.
+      const list = panels.current.panel || (panels.current.open && !!moreRef.current?.offsetParent);
       if (!panels.current.gear && !list) return;
       event.preventDefault();
       event.stopImmediatePropagation();
       if (panels.current.gear) setGear(false);
+      else if (panels.current.panel) useFeedPanel.getState().close();
       else setOpen(false);
     };
     window.addEventListener('keydown', onKey, true);
     return () => window.removeEventListener('keydown', onKey, true);
   }, []);
 
+  // Under the bell a tap anywhere else folds the panel; the bell's own tap toggles it.
+  useEffect(() => {
+    if (!panel) return;
+    const onDown = (event: PointerEvent) => {
+      const target = event.target as Element | null;
+      if (feedRef.current?.contains(target) || target?.closest?.('[data-feed-bell]')) return;
+      useFeedPanel.getState().close();
+    };
+    window.addEventListener('pointerdown', onDown, true);
+    return () => window.removeEventListener('pointerdown', onDown, true);
+  }, [panel]);
+
   // One state in words, only when the person switched everything off; a feed still waiting stays empty (the top bar
   // already says when the market's data is delayed).
-  const empty = !shown.size && ready ? 'Everything is off.' : null;
+  const empty = !shown.size && ready ? w.allOff : null;
 
   const tap = (event: FeedEvent) => {
-    if (openEvent(event)) setOpen(false);
+    if (!openEvent(event)) return;
+    setOpen(false);
+    if (panel) useFeedPanel.getState().close();
   };
 
   return (
     <section
       ref={feedRef}
-      className={s.feed}
-      aria-label="Live event feed"
+      className={`${s.feed} ${panel ? s.panel : ''}`}
+      id={panel ? 'city-feed' : undefined}
+      aria-label={w.feed}
       data-city-feed=""
       data-open={open ? '' : undefined}
       data-details={details ? '' : undefined}
@@ -116,7 +145,7 @@ export function LiveFeed({ hidden = false }: { hidden?: boolean }) {
         {open && (
           <button
             className={s.gear}
-            aria-label="Show on home"
+            aria-label={w.showOnHome}
             aria-expanded={gear}
             aria-controls="city-feed-settings"
             onClick={() => setGear((v) => !v)}
@@ -126,13 +155,20 @@ export function LiveFeed({ hidden = false }: { hidden?: boolean }) {
         )}
         <span className={s.kicker}>
           <BoltGlyph />
+          {panel && <span className={s.panelTitle}>{w.events}</span>}
         </span>
-        <button className={s.info} aria-label="Sources and times" aria-pressed={details} onClick={() => setDetails((v) => !v)}>
+        <button className={s.info} aria-label={w.sources} aria-pressed={details} onClick={() => setDetails((v) => !v)}>
           <InfoGlyph />
         </button>
-        <button className={s.more} ref={moreRef} aria-label={open ? 'Fewer events' : 'All events'} aria-expanded={open} onClick={() => (setOpen((v) => !v), setGear(false))}>
-          <ChevronGlyph />
-        </button>
+        {panel ? (
+          <button className={s.close} aria-label={w.close} onClick={() => useFeedPanel.getState().close()}>
+            <CloseGlyph />
+          </button>
+        ) : (
+          <button className={s.more} ref={moreRef} aria-label={open ? w.fewer : w.all} aria-expanded={open} onClick={() => (setOpen((v) => !v), setGear(false))}>
+            <ChevronGlyph />
+          </button>
+        )}
       </div>
       {gear && open && <FeedSettingsPanel onClose={() => setGear(false)} />}
       {list.length ? (
@@ -143,25 +179,53 @@ export function LiveFeed({ hidden = false }: { hidden?: boolean }) {
         </ol>
       ) : empty ? (
         <p className={s.empty}>{empty}</p>
+      ) : panel && waiting ? (
+        <div className={s.bones} aria-busy="true">
+          <span />
+          <span />
+          <span />
+        </div>
+      ) : panel ? (
+        <p className={s.empty}>{w.quiet}</p>
       ) : null}
+      {/* This visit's clips live with the events: no second badge in the top bar. */}
+      {panel && clips > 0 && (
+        <button
+          type="button"
+          className={s.clips}
+          onClick={() => {
+            useFeedPanel.getState().close();
+            useMoments.setState({ sheet: { kind: 'list' } });
+          }}
+        >
+          <span>{w.clips}</span>
+          <b>{clips}</b>
+        </button>
+      )}
     </section>
   );
 }
 
 function FeedItem({ event, now, fresh, onOpen }: { event: FeedEvent; now: number; fresh: boolean; onOpen: (event: FeedEvent) => void }) {
-  const when = ago(event.at, now);
+  const w = useWords(FEED);
+  const lang = useLang();
+  // Written in English when it arrived; told in the language on screen (city/lib/feed/words.ts).
+  const title = retell(event.title, lang);
+  const line = retell(event.line, lang);
+  const detail = event.detail ? retell(event.detail, lang) : null;
+  const when = sayAgo(ago(event.at, now), w);
   const at = new Date(event.at);
   const body = (
     <>
       <EventIcon event={event} />
-      <span className={s.title}>{event.title}</span>
+      <span className={s.title}>{title}</span>
       <time className={s.time} dateTime={at.toISOString()}>
         {when}
       </time>
-      <span className={s.line}>{event.line}</span>
+      <span className={s.line}>{line}</span>
       <span className={s.meta}>
         {event.source} · {clock(event.at)}
-        {event.detail ? ` · ${event.detail}` : ''}
+        {detail ? ` · ${detail}` : ''}
       </span>
       {event.spark && (
         <svg className={s.spark} viewBox={`0 0 ${SPARK.w} ${SPARK.h}`} width={SPARK.w} height={SPARK.h} aria-hidden="true">
@@ -170,11 +234,11 @@ function FeedItem({ event, now, fresh, onOpen }: { event: FeedEvent; now: number
       )}
     </>
   );
-  const words = `${event.title}, ${event.line}${event.detail ? `, ${event.detail}` : ''}. ${event.source}, ${when === 'now' ? 'just now' : `${when} ago`}, at ${clock(event.at)}.`;
+  const words = w.told(`${title}, ${line}${detail ? `, ${detail}` : ''}`, event.source, when === w.now ? w.justNow : w.ago(when), clock(event.at));
   return (
     <li className={s.item} data-fresh={fresh ? '' : undefined}>
       {reachable(event) ? (
-        <button className={s.card} data-tone={event.tone} onClick={() => onOpen(event)} aria-label={`${words} ${'tower' in event.target ? 'Fly to it.' : 'Open the pool.'}`}>
+        <button className={s.card} data-tone={event.tone} onClick={() => onOpen(event)} aria-label={`${words} ${'tower' in event.target ? w.flyTo : w.openPool}`}>
           {body}
         </button>
       ) : (
@@ -195,22 +259,32 @@ function EventIcon({ event }: { event: FeedEvent }) {
   return <span className={`${s.icon} ${s.iconGlyph}`}>{event.kind === 'coins' ? <SparkGlyph /> : event.kind === 'pools' ? <PoolGlyph /> : <span>{event.title.slice(0, 1)}</span>}</span>;
 }
 
+/** The corner's «4m», «2h», «3d» in the language on screen. */
+function sayAgo(short: string, w: (typeof FEED)['en']): string {
+  const m = /^(\d+)([mhd])$/.exec(short);
+  if (!m) return w.now;
+  const n = Number(m[1]);
+  return m[2] === 'm' ? w.minutes(n) : m[2] === 'h' ? w.hours(n) : w.days(n);
+}
+
 function FeedSettingsPanel({ onClose }: { onClose: () => void }) {
   const settings = useFeed((st) => st.settings);
   const flip = useFeed((st) => st.set);
+  const w = useWords(FEED);
+  const names = useWords(FEED_SWITCHES);
   return (
     <div className={s.settings} id="city-feed-settings" role="group" aria-labelledby="city-feed-settings-title">
       <div className={s.settingsHead}>
         <span className={s.settingsTitle} id="city-feed-settings-title">
-          Show on home
+          {w.showOnHome}
         </span>
-        <button className={s.close} aria-label="Close" onClick={onClose}>
+        <button className={s.close} aria-label={w.close} onClick={onClose}>
           <CloseGlyph />
         </button>
       </div>
-      {SWITCHES.map(({ id, label }) => (
+      {SWITCHES.map(({ id }) => (
         <div className={s.row} key={id}>
-          <span id={`city-feed-${id}`}>{label}</span>
+          <span id={`city-feed-${id}`}>{names[id]}</span>
           <button className={s.switch} role="switch" aria-checked={settings[id]} aria-labelledby={`city-feed-${id}`} onClick={() => flip(id, !settings[id])}>
             <span className={s.knob} />
           </button>

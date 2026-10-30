@@ -7,6 +7,8 @@ import { rangeLine, towerMintOf, type HarborPosition } from '@/city/lib/district
 import { reviewFigures } from '@/city/lib/districts/harbor/review';
 import { BUSY, keyOf, LOCKED, ownHoldings, useHarbor, type Connection, type Notice, type Target } from '@/city/lib/districts/harbor/store';
 import { useCity } from '@/city/lib/city/store';
+import { HARBOR } from '@/city/lib/districts/harbor/words';
+import { dateText, digits, useWords } from '@/city/lib/i18n/dict';
 import { colourOf } from '@/city/lib/trade/colour';
 import { formatUnits, shortAddress } from '@/city/lib/trade/format';
 import { useWallet } from '@/city/lib/trade/wallet';
@@ -21,6 +23,7 @@ import s from './harbor.module.css';
  * motion inside: the city lights your tower outside the card.
  */
 export function HarborSheet() {
+  const w = useWords(HARBOR);
   const view = useHarbor((st) => st.view);
   const pool = useHarbor((st) => st.pool);
   const phase = useHarbor((st) => st.phase);
@@ -35,18 +38,18 @@ export function HarborSheet() {
   const finished = outcome !== null;
   const adding = view === 'add' && pool;
   return (
-    <div className={s.sheet} role="dialog" aria-label="Harbor">
+    <div className={s.sheet} role="dialog" aria-label={w.harbor}>
       <div className={s.head}>
         {adding && !finished ? (
-          <button className={s.iconButton} aria-label="Back to pools" onClick={() => setView('pools')} disabled={locked}>
+          <button className={s.iconButton} aria-label={w.backToPools} onClick={() => setView('pools')} disabled={locked}>
             ←
           </button>
         ) : null}
         <div className={s.title}>
-          <div className={`${s.display} ${s.name}`}>{adding ? pool.pair : 'Harbor'}</div>
-          <div className={s.sub}>{adding ? `Meteora ${VENUE_NAME[pool.kind]} · no Ryntra fee` : 'Earn a share of a pool’s trading fees.'}</div>
+          <div className={`${s.display} ${s.name}`}>{adding ? pool.pair : w.harbor}</div>
+          <div className={s.sub}>{adding ? w.venueLine(VENUE_NAME[pool.kind]) : w.tagline}</div>
         </div>
-        <button className={s.iconButton} aria-label="Close" onClick={hide} disabled={locked}>
+        <button className={s.iconButton} aria-label={w.close} onClick={hide} disabled={locked}>
           <CloseGlyph />
         </button>
       </div>
@@ -56,10 +59,10 @@ export function HarborSheet() {
         <AddCard pool={pool} />
       ) : (
         <>
-          <div className={s.tabs} role="tablist" aria-label="Pools or your positions">
+          <div className={s.tabs} role="tablist" aria-label={w.poolsOrMine}>
             {(['pools', 'mine'] as const).map((id) => (
               <button key={id} role="tab" aria-selected={view === id} className={`${s.tab} ${view === id ? s.tabOn : ''}`} onClick={() => setView(id)} disabled={locked}>
-                {id === 'pools' ? 'Pools' : `Mine${count ? ` · ${count}` : ''}`}
+                {id === 'pools' ? w.pools : count ? w.mineCount(count) : w.mine}
               </button>
             ))}
           </div>
@@ -71,6 +74,7 @@ export function HarborSheet() {
 }
 
 function Pools() {
+  const w = useWords(HARBOR);
   const list = useHarbor((st) => st.list);
   const choose = useHarbor((st) => st.choose);
   const loadPools = useHarbor((st) => st.loadPools);
@@ -81,14 +85,14 @@ function Pools() {
         <div className={s.empty}>{list.message}</div>
         <div className={s.grow} />
         <button className={`${s.display} ${s.action}`} onClick={() => void loadPools()}>
-          Try again
+          {w.tryAgain}
         </button>
       </>
     );
   }
   if (list.status !== 'ready') {
     return (
-      <div className={s.list} aria-label="Loading pools">
+      <div className={s.list} aria-label={w.loadingPools}>
         {[0, 1, 2, 3].map((i) => (
           <div key={i} className={s.row}>
             <span className={s.shimmer} />
@@ -97,7 +101,7 @@ function Pools() {
       </div>
     );
   }
-  if (!list.pools.length) return <div className={s.empty}>No pool deep enough to list right now.</div>;
+  if (!list.pools.length) return <div className={s.empty}>{w.noDeepPool}</div>;
   return (
     <>
       <div className={s.list}>
@@ -109,20 +113,21 @@ function Pools() {
             </span>
             <span className={s.rowFigure}>
               {usd(pool.lpFees24hUsd)}
-              <small>Fees 24H</small>
+              <small>{w.fees24h}</small>
             </span>
             <span className={s.rowLine}>
-              Liquidity <b>{usd(pool.tvlUsd)}</b> · volume 24H <b>{usd(pool.volume24hUsd)}</b> · {rangeText(pool, defaultRange(pool))}
+              {w.liquidity} <b>{usd(pool.tvlUsd)}</b> · {w.volume24h} <b>{usd(pool.volume24hUsd)}</b> · {rangeText(pool, defaultRange(pool))}
             </span>
           </button>
         ))}
       </div>
-      <div className={s.notice}>Meteora&apos;s figures{list.at ? `, read ${clock(Date.parse(list.at))}` : ''}. A day&apos;s fees are no promise of the next.</div>
+      <div className={s.notice}>{list.at && clock(Date.parse(list.at)) ? w.figuresRead(clock(Date.parse(list.at))) : w.figures}</div>
     </>
   );
 }
 
 function AddCard({ pool }: { pool: HarborPool }) {
+  const w = useWords(HARBOR);
   const tile = useHarbor((st) => st.tile);
   const setTile = useHarbor((st) => st.setTile);
   const phase = useHarbor((st) => st.phase);
@@ -139,25 +144,25 @@ function AddCard({ pool }: { pool: HarborPool }) {
   const key = connection ? keyOf(connection.address, { kind: 'add' }, pool, tile) : null;
   const shown = reviewed && reviewed.key === key ? reviewed : null;
   const figures = shown ? reviewFigures(shown.review, { x: pool.x.symbol, y: pool.y.symbol }, pool) : null;
-  const putIn = figures ? figures.amounts.join(' + ') : chosen.split ? `${chosen.split.xShown} ${pool.x.symbol} + ${chosen.split.yShown} ${pool.y.symbol}` : null;
+  const putIn = figures ? figures.amounts.join(' + ') : chosen.split ? `${digits(chosen.split.xShown)} ${pool.x.symbol} + ${digits(chosen.split.yShown)} ${pool.y.symbol}` : null;
   const share = feeShare(pool, figures?.valueUsd ?? chosen.usd);
   const hx = spendable(holdings, pool.x.mint);
   const hy = spendable(holdings, pool.y.mint);
-  const balance = holdings && hx !== null && hy !== null ? `You have ${formatUnits(hx.toString(), pool.x.decimals, 'down')} ${pool.x.symbol} · ${formatUnits(hy.toString(), pool.y.decimals, 'down')} ${pool.y.symbol}` : null;
+  const balance = holdings && hx !== null && hy !== null ? w.youHave(`${digits(formatUnits(hx.toString(), pool.x.decimals, 'down'))} ${pool.x.symbol}`, `${digits(formatUnits(hy.toString(), pool.y.decimals, 'down'))} ${pool.y.symbol}`) : null;
   const unpriced = !splitDeposit(pool, 1);
   return (
     <>
       <div className={s.block}>
-        <div className={s.label}>Range</div>
+        <div className={s.label}>{w.range}</div>
         <div className={s.value}>{rangeText(pool, range)}</div>
         <div className={`${s.line} ${s.risk}`}>{riskWords(pool, range)}</div>
       </div>
       <div className={s.block}>
         <div className={s.labelRow}>
-          <span className={s.label}>You put in</span>
+          <span className={s.label}>{w.youPutIn}</span>
           {balance && <span className={s.balance}>{balance}</span>}
         </div>
-        <div className={s.tiles} role="radiogroup" aria-label="Amount">
+        <div className={s.tiles} role="radiogroup" aria-label={w.amount}>
           {tiles.map((t, index) => (
             <button
               key={t.usd}
@@ -171,40 +176,40 @@ function AddCard({ pool }: { pool: HarborPool }) {
             </button>
           ))}
         </div>
-        {putIn ? <div className={s.value}>{figures ? putIn : `≈ ${putIn}`}</div> : <div className={s.line}>This pool has no dollar price now.</div>}
+        {putIn ? <div className={s.value}>{figures ? putIn : `≈ ${putIn}`}</div> : <div className={s.line}>{w.noDollarPrice}</div>}
       </div>
       <div className={s.block}>
-        <div className={s.label}>You get</div>
+        <div className={s.label}>{w.youGet}</div>
         {share ? (
           <div className={s.line}>
-            <b>{percent(share.sharePct)}</b> of the pool&apos;s fees while in range. Yesterday that share earned <b>≈ {usd(share.dayUsd)}</b>.
+            <b>{percent(share.sharePct)}</b> {w.shareMid} <b>≈ {usd(share.dayUsd)}</b>.
           </div>
         ) : (
-          <div className={s.line}>A share of the pool&apos;s fees while the price is in your range.</div>
+          <div className={s.line}>{w.shareGeneric}</div>
         )}
       </div>
       {figures ? (
         <div className={s.line} style={{ marginTop: 10 }}>
-          Network <b>{figures.networkSol} SOL</b>
+          {w.network} <b>{figures.networkSol} SOL</b>
           {figures.rentSol ? (
             <>
-              {' · new accounts '}
+              {` · ${w.newAccounts} `}
               <b>{figures.rentSol} SOL</b>
-              {figures.rentBack ? ', back on exit' : ''}
+              {figures.rentBack ? `, ${w.backOnExit}` : ''}
             </>
           ) : null}
-          {figures.transactions > 1 ? ` · ${figures.transactions} signatures` : ''}
+          {figures.transactions > 1 ? ` · ${w.signatures(figures.transactions)}` : ''}
         </div>
       ) : phase === 'reviewing' ? (
-        <span className={s.shimmer} aria-label="The engine is building the exact figures" />
+        <span className={s.shimmer} aria-label={w.building} />
       ) : null}
       <Note notice={notice ?? (figures?.note ? { tone: 'warn', text: figures.note } : null)} />
       <div className={s.grow} />
       <Action
         target={{ kind: 'add' }}
-        verb="Add liquidity"
+        verb={w.addLiquidity}
         ready={Boolean(shown)}
-        blocked={unpriced ? 'No price now' : !chosen.split ? 'No price now' : !chosen.fits ? `Not enough ${chosen.short}` : states && states.add.status !== 'on' ? 'Opens after a live check' : null}
+        blocked={unpriced ? w.noPrice : !chosen.split ? w.noPrice : !chosen.fits ? w.notEnough(chosen.short ?? '') : states && states.add.status !== 'on' ? w.opensAfterCheck : null}
       />
       <WalletLine />
     </>
@@ -212,6 +217,7 @@ function AddCard({ pool }: { pool: HarborPool }) {
 }
 
 function Mine() {
+  const w = useWords(HARBOR);
   const positions = useHarbor((st) => st.positions);
   const target = useHarbor((st) => st.target);
   const reviewed = useHarbor((st) => st.reviewed);
@@ -224,16 +230,16 @@ function Mine() {
   if (!connection) {
     return (
       <>
-        <div className={s.empty}>Connect your wallet to see your pool positions and what they earned.</div>
+        <div className={s.empty}>{w.connectToSee}</div>
         <div className={s.grow} />
         <Action target={null} verb="" ready={false} blocked={null} />
       </>
     );
   }
   if (positions.status !== 'ready' || positions.owner !== connection.address) {
-    return positions.status === 'error' ? <div className={s.empty}>{positions.message}</div> : <span className={s.shimmer} aria-label="Reading your positions" />;
+    return positions.status === 'error' ? <div className={s.empty}>{positions.message}</div> : <span className={s.shimmer} aria-label={w.readingPositions} />;
   }
-  if (!positions.positions.length) return <div className={s.empty}>No pool positions in this wallet yet. Pick a pool and add to it.</div>;
+  if (!positions.positions.length) return <div className={s.empty}>{w.noPositions}</div>;
   const states = statesFor?.owner === connection.address ? statesFor.value : null;
   const acting = target && target.kind !== 'add' ? target : null;
   const shown = acting && reviewed && reviewed.key === keyOf(connection.address, acting, null, 0) ? reviewed : null;
@@ -250,26 +256,26 @@ function Mine() {
               </span>
               <span className={`${s.rowFigure} ${s.in}`}>
                 {usd(p.earnedUsd)}
-                <small>Earned</small>
+                <small>{w.earned}</small>
               </span>
               <span className={s.rowLine}>
-                <span className={p.inRange ? s.in : s.out}>{rangeLine(p)}</span> · holds <b>{usd(p.valueUsd)}</b>
-                {p.earned ? ` · ${p.earned}` : ''}
+                <span className={p.inRange ? s.in : s.out}>{rangeLine(p)}</span> · {w.holds} <b>{usd(p.valueUsd)}</b>
+                {p.earned ? ` · ${digits(p.earned)}` : ''}
               </span>
               <span className={s.rowActions}>
-                <PositionButton label="Take fees" position={p} kind="claim" on={mine && acting?.kind === 'claim'} disabled={BUSY.has(phase) || !p.earned || p.feesElsewhere || states?.claim.status !== 'on'} onPrepare={() => void prepare(connection, { kind: 'claim', position: p }, holdings)} />
-                <PositionButton label="Exit" position={p} kind="exit" on={mine && acting?.kind === 'exit'} disabled={BUSY.has(phase) || states?.remove.status !== 'on'} onPrepare={() => void prepare(connection, { kind: 'exit', position: p }, holdings)} />
+                <PositionButton label={w.takeFees} position={p} kind="claim" on={mine && acting?.kind === 'claim'} disabled={BUSY.has(phase) || !p.earned || p.feesElsewhere || states?.claim.status !== 'on'} onPrepare={() => void prepare(connection, { kind: 'claim', position: p }, holdings)} />
+                <PositionButton label={w.exit} position={p} kind="exit" on={mine && acting?.kind === 'exit'} disabled={BUSY.has(phase) || states?.remove.status !== 'on'} onPrepare={() => void prepare(connection, { kind: 'exit', position: p }, holdings)} />
               </span>
             </div>
           );
         })}
       </div>
-      {states && states.claim.status !== 'on' && <div className={s.notice}>Taking fees and exiting open after a live check.</div>}
+      {states && states.claim.status !== 'on' && <div className={s.notice}>{w.claimLater}</div>}
       {acting && shown && <PositionReview target={acting} />}
-      {acting && !shown && phase === 'reviewing' && <span className={s.shimmer} aria-label="The engine is building the exact figures" />}
+      {acting && !shown && phase === 'reviewing' && <span className={s.shimmer} aria-label={w.building} />}
       <Note notice={notice} />
       <div className={s.grow} />
-      {acting && <Action target={acting} verb={acting.kind === 'claim' ? 'Take fees' : 'Exit position'} ready={Boolean(shown)} blocked={null} />}
+      {acting && <Action target={acting} verb={acting.kind === 'claim' ? w.takeFees : w.exitPosition} ready={Boolean(shown)} blocked={null} />}
       <WalletLine />
     </>
   );
@@ -284,22 +290,23 @@ function PositionButton({ label, on, disabled, onPrepare }: { label: string; pos
 }
 
 function PositionReview({ target }: { target: Exclude<Target, { kind: 'add' }> }) {
+  const w = useWords(HARBOR);
   const reviewed = useHarbor((st) => st.reviewed);
   if (!reviewed) return null;
   const f = reviewFigures(reviewed.review, target.position.symbols, null);
   return (
     <div className={s.block}>
-      <div className={s.label}>{target.kind === 'claim' ? 'You take' : 'You get back'}</div>
-      <div className={s.value}>{f.amounts.join(' + ') || 'Nothing to take now'}</div>
+      <div className={s.label}>{target.kind === 'claim' ? w.youTake : w.youGetBack}</div>
+      <div className={s.value}>{f.amounts.join(' + ') || w.nothingToTake}</div>
       <div className={s.line}>
-        Network <b>{f.networkSol} SOL</b>
+        {w.network} <b>{f.networkSol} SOL</b>
         {f.rentReturnedSol ? (
           <>
-            {' · rent back '}
+            {` · ${w.rentBack} `}
             <b>{f.rentReturnedSol} SOL</b>
           </>
         ) : null}
-        {target.kind === 'exit' ? ' · the position closes' : ' · the position stays'}
+        {` · ${target.kind === 'exit' ? w.positionCloses : w.positionStays}`}
       </div>
       {f.note && <div className={`${s.notice} ${s.noticeWarn}`}>{f.note}</div>}
     </div>
@@ -317,6 +324,7 @@ function Note({ notice }: { notice: Notice | null }) {
 
 /** The one amber action: connect, sign what the Review shows, or say plainly why not. */
 function Action({ target, verb, ready, blocked }: { target: Target | null; verb: string; ready: boolean; blocked: string | null }) {
+  const w = useWords(HARBOR);
   const phase = useHarbor((st) => st.phase);
   const confirm = useHarbor((st) => st.confirm);
   const prepare = useHarbor((st) => st.prepare);
@@ -331,11 +339,11 @@ function Action({ target, verb, ready, blocked }: { target: Target | null; verb:
   let label = verb;
   let disabled = false;
   let waiting = false;
-  if (phase === 'reviewing') [label, disabled, waiting] = ['Getting exact figures…', true, true];
-  else if (phase === 'wallet') [label, disabled, waiting] = [`Confirm in ${connection?.wallet ?? 'your wallet'}`, true, true];
-  else if (phase === 'sending') [label, disabled, waiting] = ['Reading the network…', true, true];
-  else if (connecting) [label, disabled, waiting] = ['Connecting…', true, true];
-  else if (!connection) label = 'Connect wallet';
+  if (phase === 'reviewing') [label, disabled, waiting] = [w.gettingFigures, true, true];
+  else if (phase === 'wallet') [label, disabled, waiting] = [connection?.wallet ? w.confirmIn(connection.wallet) : w.confirmInYours, true, true];
+  else if (phase === 'sending') [label, disabled, waiting] = [w.readingNetwork, true, true];
+  else if (connecting) [label, disabled, waiting] = [w.connecting, true, true];
+  else if (!connection) label = w.connectWallet;
   else if (blocked) [label, disabled] = [blocked, true];
   const press = () => {
     if (!connection) {
@@ -357,6 +365,7 @@ function Action({ target, verb, ready, blocked }: { target: Target | null; verb:
 }
 
 function WalletPicker({ onBack }: { onBack: () => void }) {
+  const w = useWords(HARBOR);
   const wallets = useWallet((st) => st.wallets);
   const connecting = useWallet((st) => st.connecting);
   const error = useWallet((st) => st.error);
@@ -368,12 +377,12 @@ function WalletPicker({ onBack }: { onBack: () => void }) {
     const origin = typeof window === 'undefined' ? '' : window.location.origin;
     return (
       <>
-        <div className={s.notice}>{phone ? 'This browser has no Solana wallet. Open Ryntra inside your wallet app.' : 'No Solana wallet in this browser. Add one, then come back.'}</div>
+        <div className={s.notice}>{phone ? w.noWalletPhone : w.noWalletDesk}</div>
         <a className={`${s.display} ${s.action}`} href={phone ? phantomBrowseUrl(here, origin) : PHANTOM_DOWNLOAD_URL} target={phone ? undefined : '_blank'} rel="noreferrer">
-          {phone ? 'Open in Phantom' : 'Get Phantom'}
+          {phone ? w.openInPhantom : w.getPhantom}
         </a>
         <button className={s.quiet} onClick={onBack}>
-          Back
+          {w.back}
         </button>
       </>
     );
@@ -385,19 +394,20 @@ function WalletPicker({ onBack }: { onBack: () => void }) {
           <button key={wallet.name} className={s.walletButton} onClick={() => void connect(wallet.name)} disabled={Boolean(connecting)}>
             {/* eslint-disable-next-line @next/next/no-img-element */}
             {wallet.icon ? <img src={wallet.icon} alt="" /> : null}
-            {connecting === wallet.name ? `Opening ${wallet.name}…` : wallet.name}
+            {connecting === wallet.name ? w.opening(wallet.name) : wallet.name}
           </button>
         ))}
       </div>
       {error && <div className={`${s.notice} ${s.noticeError}`}>{error}</div>}
       <button className={s.quiet} onClick={onBack}>
-        Back
+        {w.back}
       </button>
     </>
   );
 }
 
 function WalletLine() {
+  const w = useWords(HARBOR);
   const connection = useWallet((st) => st.connection);
   const disconnect = useWallet((st) => st.disconnect);
   const phase = useHarbor((st) => st.phase);
@@ -408,19 +418,14 @@ function WalletLine() {
       <span className={s.address}>{shortAddress(connection.address)}</span>
       <span>· {connection.wallet}</span>
       <button className={s.link} onClick={disconnect} disabled={BUSY.has(phase)}>
-        Disconnect
+        {w.disconnect}
       </button>
     </div>
   );
 }
 
-const DONE: Readonly<Record<string, Readonly<{ kicker: string; line: string }>>> = {
-  add: { kicker: 'In the pool', line: 'Your tower glows in your colour while the position is open.' },
-  claim: { kicker: 'Fees taken', line: 'The fees are in your wallet. The position keeps earning.' },
-  exit: { kicker: 'Out of the pool', line: 'Your coins and fees are back in your wallet.' },
-};
-
 function Outcome() {
+  const w = useWords(HARBOR);
   const outcome = useHarbor((st) => st.outcome);
   const target = useHarbor((st) => st.target);
   const pool = useHarbor((st) => st.pool);
@@ -436,18 +441,19 @@ function Outcome() {
   const symbols = target && target.kind !== 'add' ? target.position.symbols : pool ? { x: pool.x.symbol, y: pool.y.symbol } : null;
   const amounts = sent && symbols ? reviewFigures(sent.review, symbols, null).amounts.join(' + ') : '';
   // An add's Review states what goes in at most: the pool may take a little less.
-  const moved = amounts && what === 'add' ? `Up to ${amounts}` : amounts;
+  const moved = amounts && what === 'add' ? w.upTo(amounts) : amounts;
   const name = (outcome.kind === 'done' && moved) || (target && target.kind !== 'add' ? target.position.pair : (pool?.pair ?? ''));
   const signature = outcome.kind === 'failed' ? outcome.signature : 'signatures' in outcome ? (outcome.signatures.at(-1) ?? null) : null;
-  let kicker = DONE[what]!.kicker;
-  let line = DONE[what]!.line;
+  const done = what === 'claim' ? [w.feesTaken, w.feesTakenLine] : what === 'exit' ? [w.outOfPool, w.outOfPoolLine] : [w.inPool, w.inPoolLine];
+  let kicker = done[0]!;
+  let line = done[1]!;
   let tone = '';
   // A partly landed add has already opened a position: it is seen in your positions, never built a second time.
   const partialAdd = outcome.kind === 'partial' && what === 'add';
-  if (partialAdd) [kicker, line, tone] = ['Partly done', 'Part of it landed and the rest did not. What landed stays; see it in your positions.', s.kickerWarn];
-  else if (outcome.kind === 'partial') [kicker, line, tone] = ['Partly done', 'Part of it landed and the rest did not. What landed stays; try the rest again.', s.kickerWarn];
-  else if (outcome.kind === 'failed') [kicker, line, tone] = ['Didn’t go through', 'It reached the chain and failed. Only the network fee was spent.', s.kickerDanger];
-  else if (outcome.kind === 'unknown') [kicker, line, tone] = ['Still checking', 'The network has not said yet. Do not send it again; check in a moment.', s.kickerWarn];
+  if (partialAdd) [kicker, line, tone] = [w.partly, w.partialAddLine, s.kickerWarn];
+  else if (outcome.kind === 'partial') [kicker, line, tone] = [w.partly, w.partialLine, s.kickerWarn];
+  else if (outcome.kind === 'failed') [kicker, line, tone] = [w.failed, w.failedLine, s.kickerDanger];
+  else if (outcome.kind === 'unknown') [kicker, line, tone] = [w.unknown, w.unknownLine, s.kickerWarn];
   return (
     <>
       <div className={`${s.kicker} ${tone}`}>{kicker}</div>
@@ -455,21 +461,21 @@ function Outcome() {
       <div className={s.line}>{line}</div>
       {signature && (
         <a className={s.explorer} href={explorerTxUrl('mainnet', signature)} target="_blank" rel="noreferrer">
-          View transaction ↗
+          {w.viewTx}
         </a>
       )}
       <div className={s.grow} />
       {outcome.kind === 'unknown' ? (
         <button className={`${s.display} ${s.action} ${phase === 'sending' ? s.waiting : ''}`} onClick={() => connection && void recheck(connection.address)} disabled={phase === 'sending'}>
-          Check again
+          {w.checkAgain}
         </button>
       ) : partialAdd ? (
         <button className={`${s.display} ${s.action}`} onClick={() => seePositions(connection?.address ?? null)}>
-          See my positions
+          {w.seePositions}
         </button>
       ) : (
         <button className={`${s.display} ${s.action}`} onClick={outcome.kind === 'done' && what === 'add' ? () => seeTower(pool, hide) : again}>
-          {outcome.kind !== 'done' ? 'Try again' : what === 'add' ? 'Back to the city' : 'Back to my positions'}
+          {outcome.kind !== 'done' ? w.tryAgain : what === 'add' ? w.backToCity : w.backToPositions}
         </button>
       )}
       <WalletLine />
@@ -487,5 +493,5 @@ function seeTower(pool: HarborPool | null, hide: () => void) {
 }
 
 function clock(at: number): string {
-  return Number.isFinite(at) ? new Date(at).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' }) : '';
+  return Number.isFinite(at) ? dateText(at, { hour: '2-digit', minute: '2-digit' }) : '';
 }

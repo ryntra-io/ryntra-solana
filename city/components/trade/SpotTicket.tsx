@@ -3,6 +3,8 @@
 import { useEffect, useState, type ReactNode } from 'react';
 import { crossesMarket, distanceFromMarketPercent, limitAmounts, TRIGGER_V1_MIN_ORDER_USD, typedPrice } from '@/lib/solana/limits/model';
 import { explorerTxUrl } from '@/lib/solana/explorer';
+import { dateText, digits, useWords } from '@/city/lib/i18n/dict';
+import { fieldText, fieldValue, plainFigure } from '@/city/lib/i18n/figures';
 import { decimalsOf } from '@/city/lib/trade/figures';
 import { formatBps, formatUnits, ticker } from '@/city/lib/trade/format';
 import type { LimitIntent, LimitReview } from '@/city/lib/trade/limits';
@@ -12,7 +14,8 @@ import { expiryWords, STOP_EXPIRIES, type StopCoin } from '@/city/lib/trade/stop
 import { useTrade, type Choice, type TowerRef } from '@/city/lib/trade/store';
 import { unitOf } from '@/city/lib/trade/tiles';
 import { useWallet } from '@/city/lib/trade/wallet';
-import { WalletLine, WalletPicker } from './WalletParts';
+import { useWalletName, WalletLine, WalletPicker } from './WalletParts';
+import { riskWords, SPOT, TRADE } from './words';
 import s from './trade.module.css';
 
 /** The pair's price is read again this often while the ticket is open. */
@@ -36,6 +39,8 @@ export function SpotTicket({ tower, choice, mode, getChips }: { tower: TowerRef;
 }
 
 function SpotFields({ tower, choice, mode, getChips }: { tower: TowerRef; choice: Choice; mode: 'limit' | 'stop'; getChips: ReactNode }) {
+  const w = useWords(SPOT);
+  const t = useWords(TRADE);
   const side = useTrade((st) => st.side);
   const quote = useTrade((st) => st.quote);
   const market = useSpot((st) => st.market);
@@ -98,9 +103,9 @@ function SpotFields({ tower, choice, mode, getChips }: { tower: TowerRef; choice
 
   const problem =
     choice.problem?.text ??
-    (crosses ? (side === 'buy' ? 'At or above the market. Use Market or set it lower.' : 'At or below the market. Use Market or set it higher.') : wrongSide ? (side === 'sell' ? 'Set it below the market.' : 'Set it above the market.') : null);
+    (crosses ? (side === 'buy' ? w.atOrAbove : w.atOrBelow) : wrongSide ? (side === 'sell' ? w.setBelow : w.setAbove) : null);
 
-  const priceLabel = mode === 'limit' ? (side === 'buy' ? 'Buy at' : 'Sell at') : side === 'sell' ? 'Sell if it falls to' : 'Buy if it rises to';
+  const priceLabel = mode === 'limit' ? (side === 'buy' ? w.buyAt : w.sellAt) : side === 'sell' ? w.sellIfFalls : w.buyIfRises;
 
   const tap = async () => {
     if (!connection) {
@@ -121,19 +126,45 @@ function SpotFields({ tower, choice, mode, getChips }: { tower: TowerRef; choice
     else await useSpot.getState().reviewOrder(intent);
   };
 
+  // The minimum is in dollars; paid in another coin (SOL), what it is in that coin too (CITY-150).
+  const quoteUsd = market?.key === key && market.status === 'ready' ? market.quoteUsd : null;
+  const minInPay = quoteUsd && quoteUsd > 0 && !/^USD[CT]?$/i.test(unit) ? `${digits(plainFigure(TRIGGER_V1_MIN_ORDER_USD / quoteUsd, { significant: 3 }))} ${unit}` : null;
+
+  // The order's one line before the press: the Review's terms, the minimum and until when, or how a stop is watched.
+  const terms =
+    mode === 'limit' ? (
+      shown ? (
+        <LimitTerms review={shown} unit={unit} coin={coin} open={details} onInfo={() => setDetails((v) => !v)} />
+      ) : (
+        <div className={s.terms}>
+          <span className={s.termsText}>
+            {w.min} <b>{w.minUsd(TRIGGER_V1_MIN_ORDER_USD)}</b>
+            {minInPay ? ` ≈ ${minInPay}` : ''} · {w.untilYouCancel}
+          </span>
+        </div>
+      )
+    ) : (
+      <div className={s.terms}>
+        <span className={s.termsText}>{w.watchedWhileOpen}</span>
+        <button className={`${s.info} ${details ? s.infoOn : ''}`} aria-label={w.howStop} aria-expanded={details} onClick={() => setDetails((v) => !v)}>
+          i
+        </button>
+      </div>
+    );
+
   return (
     <>
       <div className={`${s.row} ${s.rowWrap}`}>
         <span className={s.labelGroup}>
           <span className={s.label}>{priceLabel}</span>
-          {distance !== null && Number.isFinite(distance) && !crosses && !wrongSide && <span className={s.distance}>{distanceWords(distance)}</span>}
+          {distance !== null && Number.isFinite(distance) && !crosses && !wrongSide && <span className={s.distance}>{distanceWords(distance, w)}</span>}
         </span>
         {marketPrice !== null ? (
-          <button className={s.marketRef} onClick={() => setPrice(typedPrice(marketPrice))} disabled={!idle} aria-label={`Market price ${typedPrice(marketPrice)} ${unit}. Use it`}>
-            Market {typedPrice(marketPrice)}
+          <button className={s.marketRef} onClick={() => setPrice(typedPrice(marketPrice))} disabled={!idle} aria-label={w.useMarketPrice(digits(typedPrice(marketPrice)), unit)}>
+            {w.marketAt(digits(typedPrice(marketPrice)))}
           </button>
         ) : market?.key === key && market.status === 'error' ? (
-          <span className={s.balance}>No market price now</span>
+          <span className={s.balance}>{w.noMarketPrice}</span>
         ) : null}
       </div>
       <label className={`${s.priceField} ${problem && (crosses || wrongSide) ? s.ownWrong : typedPriceOk ? s.ownOn : ''}`}>
@@ -142,10 +173,10 @@ function SpotFields({ tower, choice, mode, getChips }: { tower: TowerRef; choice
           inputMode="decimal"
           autoComplete="off"
           spellCheck={false}
-          placeholder={marketPrice !== null ? typedPrice(marketPrice) : '0.00'}
-          aria-label={`${priceLabel}, ${unit} per ${coin}`}
-          value={price}
-          onChange={(event) => setPrice(event.target.value)}
+          placeholder={fieldText(marketPrice !== null ? typedPrice(marketPrice) : '0.00')}
+          aria-label={w.priceField(priceLabel, unit, coin)}
+          value={fieldText(price)}
+          onChange={(event) => setPrice(fieldValue(event.target.value))}
           disabled={!idle}
         />
         <span className={s.priceUnit} aria-hidden="true">
@@ -155,13 +186,13 @@ function SpotFields({ tower, choice, mode, getChips }: { tower: TowerRef; choice
 
       <div className={`${s.row} ${s.rowWrap}`}>
         <span className={s.labelGroup}>
-          <span className={s.label}>You get</span>
+          <span className={s.label}>{t.youGet}</span>
           {getChips}
         </span>
         <span className={s.getInline} aria-live="polite">
           {getRaw && getDecimals !== null && !choice.problem ? (
             <>
-              <b className={s.display}>{`${mode === 'stop' ? '≈ ' : ''}${formatUnits(getRaw, getDecimals, 'down')}`}</b> {getUnit}
+              <b className={s.display}>{`${mode === 'stop' ? '≈ ' : ''}${digits(formatUnits(getRaw, getDecimals, 'down'))}`}</b> {getUnit}
             </>
           ) : (
             <b className={s.display}>—</b>
@@ -169,54 +200,42 @@ function SpotFields({ tower, choice, mode, getChips }: { tower: TowerRef; choice
         </span>
       </div>
 
-      {mode === 'limit' ? (
-        <>
-          {shown ? (
-            <LimitTerms review={shown} unit={unit} coin={coin} open={details} onInfo={() => setDetails((v) => !v)} />
-          ) : (
-            <div className={s.terms}>
-              <span className={s.termsText}>
-                Min <b>{TRIGGER_V1_MIN_ORDER_USD} USD</b> · until you cancel
-              </span>
-            </div>
-          )}
-          {shown && details && <LimitDetails review={shown} unit={unit} coin={coin} />}
-        </>
-      ) : (
-        <>
-          <div className={`${s.row} ${s.rowWrap}`}>
-            <span className={s.label}>Watch for</span>
-            <span className={s.expiries} role="radiogroup" aria-label="Watch for">
-              {STOP_EXPIRIES.map((id) => (
-                <button key={id} role="radio" aria-checked={expiry === id} className={`${s.payChip} ${expiry === id ? s.payOn : ''}`} onClick={() => setExpiry(id)} disabled={!idle}>
-                  {expiryWords(id)}
-                </button>
-              ))}
-            </span>
-          </div>
-          <div className={s.terms}>
-            <span className={s.termsText}>Watched while Ryntra is open</span>
-            <button className={`${s.info} ${details ? s.infoOn : ''}`} aria-label="How a stop works" aria-expanded={details} onClick={() => setDetails((v) => !v)}>
-              i
-            </button>
-          </div>
-          {details && <StopDetails side={side} />}
-        </>
+      {mode === 'stop' && (
+        <div className={`${s.row} ${s.rowWrap}`}>
+          <span className={s.label}>{w.watchFor}</span>
+          <span className={s.expiries} role="radiogroup" aria-label={w.watchFor}>
+            {STOP_EXPIRIES.map((id) => (
+              <button key={id} role="radio" aria-checked={expiry === id} className={`${s.payChip} ${expiry === id ? s.payOn : ''}`} onClick={() => setExpiry(id)} disabled={!idle}>
+                {expiryWords(id)}
+              </button>
+            ))}
+          </span>
+        </div>
       )}
+      {mode === 'limit' ? shown && details && <LimitDetails review={shown} unit={unit} coin={coin} /> : details && <StopDetails side={side} />}
 
-      <SpotNotes problem={problem} notice={notice} />
+      {/* The order's terms and any warning stand in the pinned dock with the one action: the card scrolls under the dock,
+          never these lines. */}
       {picking && !connection ? (
-        <WalletPicker onBack={() => setPicking(false)} />
+        <>
+          {terms}
+          <SpotNotes problem={problem} notice={notice} />
+          <WalletPicker onBack={() => setPicking(false)} />
+        </>
       ) : (
-        <SpotAction
-          mode={mode}
-          side={side}
-          coin={coin}
-          ready={mode === 'limit' ? Boolean(intent) && !problem : Boolean(pair && choice.amountRaw && typedPriceOk && priced) && !problem}
-          reviewed={Boolean(shown)}
-          needsPrice={!typedPriceOk}
-          onPress={() => void tap()}
-        />
+        <div className={s.dock}>
+          {terms}
+          <SpotNotes problem={problem} notice={notice} />
+          <SpotAction
+            mode={mode}
+            side={side}
+            coin={coin}
+            ready={mode === 'limit' ? Boolean(intent) && !problem : Boolean(pair && choice.amountRaw && typedPriceOk && priced) && !problem}
+            reviewed={Boolean(shown)}
+            needsPrice={!typedPriceOk}
+            onPress={() => void tap()}
+          />
+        </div>
       )}
       <WalletLine />
     </>
@@ -224,111 +243,114 @@ function SpotFields({ tower, choice, mode, getChips }: { tower: TowerRef; choice
 }
 
 /** «12.4% below» — how far the typed price sits from the pair's price now. */
-function distanceWords(pct: number): string {
+function distanceWords(pct: number, w: (typeof SPOT)['en']): string {
   const abs = Math.abs(pct);
-  if (abs < 0.01) return 'At market';
+  if (abs < 0.01) return w.atMarket;
   const text = abs >= 100 ? abs.toFixed(0) : abs >= 10 ? abs.toFixed(1) : abs.toFixed(2);
-  return `${Number(text)}% ${pct < 0 ? 'below' : 'above'}`;
+  const figure = digits(String(Number(text)));
+  return pct < 0 ? w.below(figure) : w.above(figure);
 }
 
 /** The limit's terms before the signature, in one line: Ryntra's fee or the venue's, the price it fills at. */
 function LimitTerms({ review, unit, coin, open, onInfo }: { review: LimitReview; unit: string; coin: string; open: boolean; onInfo: () => void }) {
+  const w = useWords(SPOT);
+  const t = useWords(TRADE);
   return (
     <div className={s.terms}>
       <span className={s.termsText}>
         {review.fee.ryntraBps > 0 ? (
           <>
-            Fee <b>{formatBps(review.fee.ryntraBps)}</b>
+            {t.fee} <b>{formatBps(review.fee.ryntraBps)}</b>
           </>
         ) : review.fee.venueBps > 0 ? (
           <>
-            Jupiter fee <b>{formatBps(review.fee.venueBps)}</b>
+            {w.jupiterFee} <b>{formatBps(review.fee.venueBps)}</b>
           </>
         ) : (
-          'No fee'
+          w.noFee
         )}
-        {' · fills at '}
+        {' · '}
+        {w.fillsAt}{' '}
         <b>
-          {typedPrice(review.fillPrice)} {unit}
+          {digits(typedPrice(review.fillPrice))} {unit}
         </b>
-        {` per ${coin} · until you cancel`}
+        {` ${w.per(coin)} · ${w.untilYouCancel}`}
       </span>
-      <button className={`${s.info} ${open ? s.infoOn : ''}`} aria-label="Order details" aria-expanded={open} onClick={onInfo}>
+      <button className={`${s.info} ${open ? s.infoOn : ''}`} aria-label={w.orderDetails} aria-expanded={open} onClick={onInfo}>
         i
       </button>
     </div>
   );
 }
 
-const RISK_WORDS: Record<string, string> = {
-  NO_KNOWN_BLOCKER: 'No known blocker (not a safety rating)',
-  REVIEW_REQUIRED: 'Needs care',
-  BLOCKED: 'Blocked',
-  INCOMPLETE: 'Not fully read',
-};
-
 function LimitDetails({ review, unit, coin }: { review: LimitReview; unit: string; coin: string }) {
+  const w = useWords(SPOT);
+  const t = useWords(TRADE);
   const out = review.side === 'buy' ? review.pair.baseDecimals : review.pair.quoteDecimals;
   const input = review.side === 'buy' ? review.pair.quoteDecimals : review.pair.baseDecimals;
   const outUnit = review.side === 'buy' ? coin : unit;
   const inUnit = review.side === 'buy' ? unit : coin;
   return (
     <dl className={s.details}>
-      <dt>You put in</dt>
+      <dt>{w.youPutIn}</dt>
       <dd>
-        {formatUnits(review.makingRaw, input)} {inUnit}
+        {digits(formatUnits(review.makingRaw, input))} {inUnit}
       </dd>
-      <dt>You get</dt>
+      <dt>{t.youGet}</dt>
       <dd>
-        {formatUnits(review.takingRaw, out, 'down')} {outUnit}, when it fills
+        {digits(formatUnits(review.takingRaw, out, 'down'))} {outUnit}
+        {w.whenFills}
       </dd>
-      <dt>Your price</dt>
+      <dt>{w.yourPrice}</dt>
       <dd>
-        {review.price} {unit}
+        {digits(review.price)} {unit}
       </dd>
-      <dt>Fills at</dt>
+      <dt>{w.fillsAtLabel}</dt>
       <dd>
-        {typedPrice(review.fillPrice)} {unit}
-        {review.fee.ryntraBps + review.fee.venueBps > 0 ? ', the fee on top' : ''}
+        {digits(typedPrice(review.fillPrice))} {unit}
+        {review.fee.ryntraBps + review.fee.venueBps > 0 ? w.feeOnTop : ''}
       </dd>
-      <dt>Ryntra fee</dt>
-      <dd>{review.fee.ryntraBps > 0 ? `${formatBps(review.fee.ryntraBps)} · ${formatUnits(review.fee.ryntraFeeRaw, out, 'nearest')} ${outUnit}` : 'None'}</dd>
+      <dt>{t.ryntraFee}</dt>
+      <dd>{review.fee.ryntraBps > 0 ? `${formatBps(review.fee.ryntraBps)} · ${digits(formatUnits(review.fee.ryntraFeeRaw, out, 'nearest'))} ${outUnit}` : t.none}</dd>
       {review.fee.venueBps > 0 && (
         <>
-          <dt>Jupiter fee</dt>
+          <dt>{w.jupiterFee}</dt>
           <dd>
-            {formatBps(review.fee.venueBps)} · {formatUnits(review.fee.venueFeeRaw, out, 'nearest')} {outUnit}
+            {formatBps(review.fee.venueBps)} · {digits(formatUnits(review.fee.venueFeeRaw, out, 'nearest'))} {outUnit}
           </dd>
         </>
       )}
-      <dt>Network fee</dt>
-      <dd>{formatUnits(String(review.networkFeeLamports), 9)} SOL</dd>
+      <dt>{t.networkFee}</dt>
+      <dd>{digits(formatUnits(String(review.networkFeeLamports), 9))} SOL</dd>
       {review.depositLamports !== null && review.depositLamports > 0 && (
         <>
-          <dt>Deposit</dt>
-          <dd>{formatUnits(String(review.depositLamports), 9)} SOL, back when it closes</dd>
+          <dt>{w.deposit}</dt>
+          <dd>
+            {digits(formatUnits(String(review.depositLamports), 9))} SOL{w.backWhenCloses}
+          </dd>
         </>
       )}
-      <dt>Lasts</dt>
-      <dd>Until you cancel it</dd>
-      <dt>Risk check</dt>
-      <dd>{RISK_WORDS[review.risk.verdict] ?? review.risk.verdict}</dd>
-      <dt>Venue</dt>
-      <dd>Jupiter limit order</dd>
+      <dt>{w.lasts}</dt>
+      <dd>{w.untilCancelIt}</dd>
+      <dt>{t.riskCheck}</dt>
+      <dd>{riskWords(review.risk.verdict, t)}</dd>
+      <dt>{w.venue}</dt>
+      <dd>{w.jupiterLimit}</dd>
     </dl>
   );
 }
 
 /** How a stop works, behind its «i»: kept on this device, the sale opens for the wallet to sign — nothing sells by itself. */
 function StopDetails({ side }: { side: 'buy' | 'sell' }) {
+  const w = useWords(SPOT);
   return (
     <dl className={s.details}>
-      <dt>Watched</dt>
-      <dd>On this device, while Ryntra is open</dd>
-      <dt>When reached</dt>
-      <dd>The {side === 'sell' ? 'sale' : 'purchase'} opens at the market price</dd>
-      <dt>Signing</dt>
-      <dd>Your wallet. Nothing trades by itself</dd>
+      <dt>{w.watched}</dt>
+      <dd>{w.onDevice}</dd>
+      <dt>{w.whenReached}</dt>
+      <dd>{w.opensAtMarket(side === 'sell')}</dd>
+      <dt>{w.signing}</dt>
+      <dd>{w.yourWallet}</dd>
     </dl>
   );
 }
@@ -361,25 +383,26 @@ function SpotAction({
   needsPrice: boolean;
   onPress: () => void;
 }) {
+  const w = useWords(SPOT);
+  const t = useWords(TRADE);
+  const nameOf = useWalletName();
   const phase = useSpot((st) => st.phase);
   const connection = useWallet((st) => st.connection);
   const connecting = useWallet((st) => st.connecting);
-  let label = mode === 'stop' ? `Set stop` : reviewed ? `Place ${side === 'buy' ? 'buy' : 'sell'} order` : 'Review order';
+  let label = mode === 'stop' ? w.setStop : reviewed ? w.placeOrder(side === 'buy') : w.reviewOrder;
   let disabled = !ready;
   let waiting = false;
-  if (phase === 'reviewing') [label, disabled, waiting] = ['Building your order…', true, true];
-  else if (phase === 'wallet') [label, disabled, waiting] = [`Confirm in ${connection?.wallet ?? 'your wallet'}`, true, true];
-  else if (phase === 'sending') [label, disabled, waiting] = ['Placing…', true, true];
-  else if (connecting) [label, disabled, waiting] = ['Connecting…', true, true];
-  else if (!connection) [label, disabled] = ['Connect wallet', false];
+  if (phase === 'reviewing') [label, disabled, waiting] = [w.building, true, true];
+  else if (phase === 'wallet') [label, disabled, waiting] = [connection?.wallet ? t.confirmIn(nameOf(connection.wallet)) : t.confirmInWallet, true, true];
+  else if (phase === 'sending') [label, disabled, waiting] = [w.placing, true, true];
+  else if (connecting) [label, disabled, waiting] = [t.connecting, true, true];
+  else if (!connection) [label, disabled] = [t.connectWallet, false];
   // The one thing missing, said on the button itself.
-  else if (needsPrice) [label, disabled] = [mode === 'stop' ? 'Set a stop price' : 'Set a price', true];
+  else if (needsPrice) [label, disabled] = [mode === 'stop' ? w.setStopPrice : w.setPrice, true];
   return (
-    <div className={s.dock}>
-      <button className={`${s.display} ${s.action} ${waiting ? s.waiting : ''}`} onClick={onPress} disabled={disabled} aria-label={label === 'Set stop' ? `Set stop for ${coin}` : undefined}>
-        {label}
-      </button>
-    </div>
+    <button className={`${s.display} ${s.action} ${waiting ? s.waiting : ''}`} onClick={onPress} disabled={disabled} aria-label={label === w.setStop ? w.setStopFor(coin) : undefined}>
+      {label}
+    </button>
   );
 }
 
@@ -391,6 +414,8 @@ function openOrders() {
 }
 
 function PlacedPanel() {
+  const w = useWords(SPOT);
+  const t = useWords(TRADE);
   const placed = useSpot((st) => st.placed);
   const again = useSpot((st) => st.again);
   if (!placed) return null;
@@ -400,22 +425,22 @@ function PlacedPanel() {
     const spent = stop.side === 'buy' ? stop.quote.decimals : stop.base.decimals;
     return (
       <>
-        <div className={s.kicker}>Stop set</div>
+        <div className={s.kicker}>{w.stopSet}</div>
         <div className={`${s.display} ${s.result}`}>
-          {stop.price} {unit}
+          {digits(stop.price)} {unit}
         </div>
         <div className={s.resultLine}>
-          {stop.side === 'sell' ? `Sell ${formatUnits(stop.amountRaw, spent)} ${ticker(stop.base.symbol)}` : `Buy ${ticker(stop.base.symbol)} with ${formatUnits(stop.amountRaw, spent)} ${unit}`}
-          {stop.expiresAt ? ` · until ${new Date(stop.expiresAt).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}` : ' · until cancelled'}
+          {stop.side === 'sell' ? w.sellLine(digits(formatUnits(stop.amountRaw, spent)), ticker(stop.base.symbol)) : w.buyWithLine(ticker(stop.base.symbol), digits(formatUnits(stop.amountRaw, spent)), unit)}
+          {stop.expiresAt ? w.untilDate(dateText(stop.expiresAt, { day: 'numeric', month: 'short' })) : w.untilCancelled}
         </div>
         <WalletLine />
         <div className={s.grow} />
         <div className={s.pair}>
           <button className={`${s.display} ${s.action}`} onClick={openOrders}>
-            My orders
+            {w.myOrders}
           </button>
           <button className={s.quiet} onClick={again}>
-            New stop
+            {w.newStop}
           </button>
         </div>
       </>
@@ -426,45 +451,46 @@ function PlacedPanel() {
   const quoteAmount = review.side === 'buy' ? review.makingRaw : review.takingRaw;
   return (
     <>
-      <div className={s.kicker}>{placed.settled ? 'Order placed' : 'Order sent'}</div>
+      <div className={s.kicker}>{placed.settled ? w.orderPlaced : w.orderSent}</div>
       <div className={`${s.display} ${s.result}`}>
-        {review.price} {placed.unit}
+        {digits(review.price)} {placed.unit}
       </div>
       <div className={s.resultLine}>
-        {review.side === 'buy' ? 'Buy' : 'Sell'} {formatUnits(baseAmount, review.pair.baseDecimals, 'down')} {placed.coin} for {formatUnits(quoteAmount, review.pair.quoteDecimals, 'down')} {placed.unit}
-        {placed.settled ? '' : '. Not confirmed yet. Do not place it again.'}
+        {w.placedLine(review.side === 'buy', digits(formatUnits(baseAmount, review.pair.baseDecimals, 'down')), placed.coin, digits(formatUnits(quoteAmount, review.pair.quoteDecimals, 'down')), placed.unit)}
+        {placed.settled ? '' : w.notConfirmed}
       </div>
       <WalletLine />
       <div className={s.grow} />
       <div className={s.pair}>
         <button className={`${s.display} ${s.action}`} onClick={openOrders}>
-          My orders
+          {w.myOrders}
         </button>
         <button className={s.quiet} onClick={again}>
-          New order
+          {w.newOrder}
         </button>
       </div>
       <a className={s.explorer} href={explorerTxUrl('mainnet', placed.signature)} target="_blank" rel="noreferrer">
-        View transaction ↗
+        {t.viewTx}
       </a>
     </>
   );
 }
 
 function SpotFailed() {
+  const t = useWords(TRADE);
   const signature = useSpot((st) => st.failed);
   const again = useSpot((st) => st.again);
   return (
     <>
-      <div className={`${s.kicker} ${s.kickerDanger}`}>Didn’t go through</div>
-      <div className={s.resultLine}>Only the network fee was spent.</div>
+      <div className={`${s.kicker} ${s.kickerDanger}`}>{t.didntGo}</div>
+      <div className={s.resultLine}>{t.onlyFee}</div>
       <div className={s.grow} />
       <button className={`${s.display} ${s.action}`} onClick={again}>
-        Try again
+        {t.tryAgain}
       </button>
       {signature && (
         <a className={s.explorer} href={explorerTxUrl('mainnet', signature)} target="_blank" rel="noreferrer">
-          View transaction ↗
+          {t.viewTx}
         </a>
       )}
     </>
@@ -472,19 +498,21 @@ function SpotFailed() {
 }
 
 function SpotUnclear() {
+  const w = useWords(SPOT);
+  const t = useWords(TRADE);
   const unclear = useSpot((st) => st.unclear);
   const phase = useSpot((st) => st.phase);
   return (
     <>
-      <div className={`${s.kicker} ${s.kickerWarn}`}>Still checking</div>
+      <div className={`${s.kicker} ${s.kickerWarn}`}>{t.stillChecking}</div>
       <div className={s.resultLine}>{unclear?.message}</div>
       <div className={s.grow} />
       <button className={`${s.display} ${s.action}`} onClick={openOrders} disabled={SPOT_BUSY.has(phase)}>
-        My orders
+        {w.myOrders}
       </button>
       {unclear?.signature && (
         <a className={s.explorer} href={explorerTxUrl('mainnet', unclear.signature)} target="_blank" rel="noreferrer">
-          View transaction ↗
+          {t.viewTx}
         </a>
       )}
     </>

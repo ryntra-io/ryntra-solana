@@ -1,0 +1,43 @@
+import { words } from '../../lib/i18n/dict.ts';
+
+/** The words of the city's search in the top bar (CITY-79). */
+export const SEARCH = words(
+  {
+    searchCoins: 'Search coins',
+    notFoundAt: 'No coin found at this address right now.',
+    readingMint: 'Reading this mint…',
+    findHint: 'Find a coin by its ticker, its name or a pasted mint address.',
+    searching: 'Searching…',
+    nothing: 'Nothing found. Try the ticker or paste the mint.',
+    placeholder: 'Ticker, name or mint',
+    fieldLabel: 'Ticker, name or mint address',
+    coins: 'Coins',
+    newPool: 'New pool',
+    ryntraLaunch: 'Ryntra Launch',
+    unverified: 'Unverified',
+    inCity: 'In the city',
+    notTower: 'Not a tower yet',
+    openMint: 'Open this mint',
+    reading: 'Reading…',
+    address: 'Address',
+  },
+  {
+    searchCoins: 'Пошук монет',
+    notFoundAt: 'За цією адресою зараз немає монети.',
+    readingMint: 'Читаємо цей мінт…',
+    findHint: 'Знайди монету за тікером, назвою чи вставленою адресою мінту.',
+    searching: 'Шукаємо…',
+    nothing: 'Нічого не знайдено. Спробуй тікер або встав мінт.',
+    placeholder: 'Тікер, назва чи мінт',
+    fieldLabel: 'Тікер, назва чи адреса мінту',
+    coins: 'Монети',
+    newPool: 'Новий пул',
+    ryntraLaunch: 'Ryntra Launch',
+    unverified: 'Не перевірено',
+    inCity: 'У місті',
+    notTower: 'Ще не вежа',
+    openMint: 'Відкрити цей мінт',
+    reading: 'Читаємо…',
+    address: 'Адреса',
+  },
+);

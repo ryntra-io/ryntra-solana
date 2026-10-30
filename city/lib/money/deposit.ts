@@ -1,5 +1,7 @@
 import { EVM_ADDRESS, isDepositNetwork, type DepositAddress, type DepositNetwork, type DepositProgress } from '../../../lib/relay/deposit-address.ts';
+import { digits, wordsNow } from '../i18n/dict.ts';
 import { ask, type FetchLike } from './engine.ts';
+import { DEPOSIT_WORDS } from './words.ts';
 
 /**
  * Top up from another network: USDC sent from an exchange or another network to an
@@ -51,20 +53,19 @@ export async function readDepositProgress(fetchImpl: FetchLike, address: string,
   return { progress: answer.value.progress, amount: typeof answer.value.amount === 'string' ? answer.value.amount : null };
 }
 
-export const PROGRESS_WORDS: Readonly<Record<DepositProgress, string>> = {
-  NONE: '',
-  ON_THE_WAY: 'A deposit is on its way.',
-  ARRIVED: 'Arrived in your wallet.',
-  REFUNDED: 'The deposit was refunded.',
-  FAILED: 'The deposit could not be filled. Relay support can recover it.',
-};
+/** What Relay says of a deposit, in a line; none while nothing has come. */
+export function progressWords(progress: DepositProgress | 'UNKNOWN'): string {
+  if (progress === 'NONE' || progress === 'UNKNOWN') return '';
+  return wordsNow(DEPOSIT_WORDS)[progress] ?? '';
+}
 
 export function feeWords(feeUsd: number | null, referenceUsd: number): string {
-  if (feeUsd === null) return 'The fee is set when the deposit is filled.';
-  return `About $${feeUsd.toFixed(2)} on $${referenceUsd}, taken from the deposit.`;
+  const w = wordsNow(DEPOSIT_WORDS);
+  if (feeUsd === null) return w.feeUnknown;
+  return w.feeAbout(digits(`$${feeUsd.toFixed(2)}`), digits(`$${referenceUsd}`));
 }
 
 /** The fee as the one line beside the address says it, or null when Relay named none yet. */
 export function feeShort(feeUsd: number | null): string | null {
-  return feeUsd === null || !Number.isFinite(feeUsd) || feeUsd < 0 ? null : `fee ≈ $${feeUsd.toFixed(2)}`;
+  return feeUsd === null || !Number.isFinite(feeUsd) || feeUsd < 0 ? null : wordsNow(DEPOSIT_WORDS).feeShort(digits(`$${feeUsd.toFixed(2)}`));
 }

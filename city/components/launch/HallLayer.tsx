@@ -4,10 +4,12 @@ import { useEffect, useState } from 'react';
 import { useCity } from '@/city/lib/city/store';
 import type { HallBoardId, HallRow, HallView } from '@/city/lib/launch/hall';
 import { hallShown, startHall, useHall } from '@/city/lib/launch/hall-store';
-import { BOARD_KINDS, BOARD_TABS, EMPTY_SHORT, emptyText, figureText, periodText, readText, shownBoards, tallyText } from '@/city/lib/launch/hall-words';
+import { BOARD_KINDS, BOARD_TABS, emptyShort, emptyText, figureText, periodText, readText, shownBoards, tallyText } from '@/city/lib/launch/hall-words';
+import { useWords } from '@/city/lib/i18n/dict';
 import { useRun } from '@/city/lib/run/store';
 import { CloseGlyph, InfoGlyph } from '../hud/glyphs';
 import s from './hall.module.css';
+import { LAUNCH } from './words';
 
 /**
  * The Hall of Fame's panel over the city: the week's boards as one compact table — who, coin, the number and an ↗ to
@@ -39,27 +41,28 @@ function HallPanel({ view }: { view: HallView }) {
   const picked = useHall((st) => st.board);
   const stub = useHall((st) => st.stub);
   const [more, setMore] = useState(false);
+  const w = useWords(LAUNCH);
   const boards = shownBoards(view);
   const board = boards.includes(picked) ? picked : (boards[0] ?? 'catch');
   const shown = view.boards[board];
   const lead = shown.rows[0] ?? null;
   return (
-    <div className={`${s.panel} ${s.sheet}`} role="dialog" aria-label="Hall of Fame">
+    <div className={`${s.panel} ${s.sheet}`} role="dialog" aria-label={w.hallOfFame}>
       <div className={s.head}>
         <div className={s.kicker}>
-          <span className={s.display}>Hall of Fame</span>
-          {view.network === 'solana:devnet' && <span className={s.tag}>Devnet</span>}
-          {stub && <span className={`${s.tag} ${s.tagStub}`}>Stub data</span>}
+          <span className={s.display}>{w.hallOfFame}</span>
+          {view.network === 'solana:devnet' && <span className={s.tag}>{w.devnet}</span>}
+          {stub && <span className={`${s.tag} ${s.tagStub}`}>{w.stub}</span>}
         </div>
-        <button className={`${s.info} ${more ? s.infoOn : ''}`} aria-label="Details" aria-expanded={more} aria-controls="city-hall-more" onClick={() => setMore((v) => !v)}>
+        <button className={`${s.info} ${more ? s.infoOn : ''}`} aria-label={w.details} aria-expanded={more} aria-controls="city-hall-more" onClick={() => setMore((v) => !v)}>
           <InfoGlyph />
         </button>
-        <button className={s.close} aria-label="Close" onClick={() => useHall.getState().close()}>
+        <button className={s.close} aria-label={w.close} onClick={() => useHall.getState().close()}>
           <CloseGlyph />
         </button>
       </div>
 
-      <div className={s.tabs} role="tablist" aria-label="Boards">
+      <div className={s.tabs} role="tablist" aria-label={w.boards}>
         {boards.map((id) => (
           <button key={id} role="tab" aria-selected={id === board} className={`${s.tab} ${id === board ? s.tabOn : ''}`} onClick={() => useHall.getState().pick(id)}>
             {BOARD_TABS[id]}
@@ -67,14 +70,14 @@ function HallPanel({ view }: { view: HallView }) {
         ))}
       </div>
 
-      {shown.rows.length ? <Table rows={shown.rows} board={board} more={more} /> : <p className={s.empty}>{EMPTY_SHORT}</p>}
+      {shown.rows.length ? <Table rows={shown.rows} board={board} more={more} /> : <p className={s.empty}>{emptyShort()}</p>}
       {more && (
         <div id="city-hall-more" className={s.more}>
           {!shown.rows.length && <p>{emptyText(view, board)}</p>}
           <p>{BOARD_KINDS[board]}</p>
           <p>
             {periodText(view.window)} · {tallyText(view.trades)}
-            {view.markets.read < view.markets.listed && ` · ${view.markets.read} of ${view.markets.listed} launches read`} · {readText(view.readAt ?? view.computedAt, Date.now())}
+            {view.markets.read < view.markets.listed && w.launchesRead(view.markets.read, view.markets.listed)} · {readText(view.readAt ?? view.computedAt, Date.now())}
           </p>
         </div>
       )}
@@ -84,38 +87,39 @@ function HallPanel({ view }: { view: HallView }) {
 }
 
 function Table({ rows, board, more }: { rows: readonly HallRow[]; board: HallBoardId; more: boolean }) {
+  const w = useWords(LAUNCH);
   return (
     <table className={s.table}>
       <thead>
         <tr>
           <th scope="col">#</th>
-          <th scope="col">{board === 'creators' ? 'Creator' : 'Hunter'}</th>
-          <th scope="col">Coin</th>
+          <th scope="col">{board === 'creators' ? w.creator : w.hunter}</th>
+          <th scope="col">{w.coin}</th>
           <th scope="col" className={s.num}>
-            {board === 'creators' ? 'Fee' : '×'}
+            {board === 'creators' ? w.fee : '×'}
           </th>
           <th scope="col" className={s.proofHead}>
-            <span className={s.hidden}>Proof</span>
+            <span className={s.hidden}>{w.proof}</span>
           </th>
         </tr>
       </thead>
       <tbody>
         {rows.map((row) => {
-          const words = figureText(row.figure);
+          const figure = figureText(row.figure);
           return (
             <tr key={`${row.place}-${row.proof.id}`}>
               <td className={s.place}>{row.place}</td>
               <td className={s.who}>
                 {row.name}
-                {row.labels.includes('sniper') && <span className={s.label}>Sniper</span>}
+                {row.labels.includes('sniper') && <span className={s.label}>{w.sniper}</span>}
               </td>
               <td className={s.coin}>${row.coin.symbol}</td>
               <td className={s.num}>
-                <b>{words.value}</b>
+                <b>{figure.value}</b>
                 {more && <span>{periodText(row.period)}</span>}
               </td>
               <td className={s.proof}>
-                <a href={row.proof.url} target="_blank" rel="noopener noreferrer" aria-label={`${row.proof.kind === 'tx' ? 'Transaction' : 'Account'} on Solscan`}>
+                <a href={row.proof.url} target="_blank" rel="noopener noreferrer" aria-label={row.proof.kind === 'tx' ? w.txOnSolscan : w.accountOnSolscan}>
                   <span aria-hidden="true">↗</span>
                 </a>
               </td>
@@ -130,16 +134,17 @@ function Table({ rows, board, more }: { rows: readonly HallRow[]; board: HallBoa
 /** The panel's one amber action: the lead coin's tower when the city shows it, else what the lead number rests on. */
 function LeadAction({ row }: { row: HallRow }) {
   const tower = useCity((st) => st.layout.towers.some((placed) => placed.tower.id === row.coin.token));
+  const w = useWords(LAUNCH);
   if (tower) {
     return (
       <button className={s.action} onClick={() => useCity.getState().select(row.coin.token)}>
-        Fly to ${row.coin.symbol}
+        {w.flyTo(row.coin.symbol)}
       </button>
     );
   }
   return (
     <a className={s.action} href={row.proof.url} target="_blank" rel="noopener noreferrer">
-      {row.proof.kind === 'tx' ? 'See the transaction' : 'See the account'}
+      {row.proof.kind === 'tx' ? w.seeTx : w.seeAccount}
     </a>
   );
 }

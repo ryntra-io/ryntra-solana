@@ -1,6 +1,7 @@
 'use client';
 
 import { playTick } from '@/city/lib/audio/engine';
+import { useWords } from '@/city/lib/i18n/dict';
 import { DayPanel } from '@/lib/city-economy/DayPanel';
 import { useCity } from '@/city/lib/city/store';
 import { MODULES, moduleById, moduleForKind, verdict, verdictLine } from '@/city/lib/quarter/modules';
@@ -12,6 +13,7 @@ import s from '../hud/hud.module.css';
 import { BuildingSheet } from './BuildingSheet';
 import { BackGlyph, MODULE_GLYPH } from './glyphs';
 import q from './quarter.module.css';
+import { QUARTER } from './words';
 
 const ACCENT = 'var(--amber)';
 
@@ -25,20 +27,21 @@ export function BuildHud({ onSound }: { onSound: (on: boolean) => void }) {
   const quarter = useQuarter((st) => st.me?.quarter ?? null);
   const slot = useQuarter((st) => st.slot);
   const sound = useCity((st) => st.sound);
+  const w = useWords(QUARTER);
   const leave = () => quarterStore.getState().leave();
-  const address = quarter ? `${streetName(quarter.street)} · Lot ${lotNumber(quarter.cell)}` : '';
+  const address = quarter ? w.address(streetName(quarter.street), lotNumber(quarter.cell)) : '';
   return (
     <div className={q.layer}>
       <div className={q.top}>
-        <button className={`${s.panel} ${q.back}`} onClick={leave} aria-label="Back to the city">
+        <button className={`${s.panel} ${q.back}`} onClick={leave} aria-label={w.backToCity}>
           <BackGlyph />
-          City
+          {w.city}
         </button>
         <span className={`${s.panel} ${q.address}`}>
-          <b>Arrivals</b>
+          <b>{w.arrivals}</b>
           <span>{address}</span>
         </span>
-        <button className={`${s.panel} ${s.iconBtn} ${q.sound}`} aria-label={sound ? 'Mute' : 'Sound on'} onClick={() => onSound(!sound)}>
+        <button className={`${s.panel} ${s.iconBtn} ${q.sound}`} aria-label={sound ? w.mute : w.soundOn} onClick={() => onSound(!sound)}>
           {sound ? <SpeakerOn /> : <SpeakerOff />}
         </button>
       </div>
@@ -50,12 +53,13 @@ export function BuildHud({ onSound }: { onSound: (on: boolean) => void }) {
 
 /** While the camera flies in: the city's own call-out, in amber. */
 function Welcome({ address }: { address: string }) {
+  const w = useWords(QUARTER);
   return (
     <div className={`${s.cutin} ${q.passive}`} aria-live="polite">
       <div className={s.cutinSlab} style={{ ['--accent' as string]: ACCENT }}>
-        <div className={s.cutinKind}>Arrivals</div>
+        <div className={s.cutinKind}>{w.arrivals}</div>
         <div className={s.cutinMain}>
-          <span className={`${s.display} ${s.cutinSymbol}`}>Your spot</span>
+          <span className={`${s.display} ${s.cutinSymbol}`}>{w.yourSpot}</span>
           <span className={s.cutinValue}>{address}</span>
         </div>
       </div>
@@ -68,6 +72,7 @@ function Hint() {
   const built = useQuarter((st) => st.me?.buildings.length ?? 0);
   const landing = useQuarter((st) => st.landing);
   const landed = useQuarter((st) => st.landed);
+  const w = useWords(QUARTER);
   const done = () => quarterStore.getState().leave();
   if (landing) return null;
   if (!built) {
@@ -75,25 +80,26 @@ function Hint() {
       <div className={`${s.panel} ${q.sheet}`}>
         <div className={s.kicker}>
           <span className={q.spark} aria-hidden="true" />
-          Your quarter
+          {w.yourQuarter}
         </div>
         <div className={q.hint}>
-          Tap a <b>glowing plot</b> to build your home.
+          {w.tapA} <b>{w.glowingPlot}</b>
+          {w.toBuildHome}
         </div>
       </div>
     );
   }
-  const name = landed ? (moduleForKind(landed.kind)?.name ?? 'Building') : null;
-  const line = !landed ? 'Build on the glowing plots, or come back tomorrow.' : landed.gained > 0 ? `Saved, and the day's task is done: +${landed.gained} points.` : 'Saved. It grows as you do.';
+  const name = landed ? (moduleForKind(landed.kind)?.name ?? w.building) : null;
+  const line = !landed ? w.idleLine : landed.gained > 0 ? w.gainedLine(landed.gained) : w.savedLine;
   return (
     <div className={`${s.panel} ${q.sheet} ${landed ? q.later : ''}`} key={landed?.at ?? 'idle'}>
       <div className={`${s.kicker} ${landed ? q.mint : ''}`}>
         <span className={q.spark} aria-hidden="true" />
-        {name ? `${name} built` : 'Your quarter'}
+        {name ? w.built(name) : w.yourQuarter}
       </div>
       <div className={q.hint}>{line}</div>
       <button className={`${s.display} ${s.action}`} onClick={done}>
-        Done
+        {w.done}
       </button>
     </div>
   );
@@ -105,12 +111,13 @@ function Picker({ slot }: { slot: number }) {
   const choice = useQuarter((st) => st.choice);
   const error = useQuarter((st) => st.error);
   const busy = useQuarter((st) => st.busy);
+  const w = useWords(QUARTER);
   if (!me) return null;
   const close = () => quarterStore.getState().pick(null);
   const head = (kicker: string) => (
     <div className={q.head}>
       <div className={s.kicker}>{kicker}</div>
-      <button className={q.close} aria-label="Close" onClick={close}>
+      <button className={q.close} aria-label={w.close} onClick={close}>
         <CloseGlyph />
       </button>
     </div>
@@ -119,10 +126,11 @@ function Picker({ slot }: { slot: number }) {
   // A plot a higher level opens: what opens it, and nothing to press.
   if (slot >= openPlots(me.quarter.level)) {
     return (
-      <div className={`${s.panel} ${q.sheet}`} role="dialog" aria-label="A closed plot">
-        {head('Closed plot')}
+      <div className={`${s.panel} ${q.sheet}`} role="dialog" aria-label={w.aClosedPlot}>
+        {head(w.closedPlot)}
         <div className={q.hint}>
-          Opens at <b>quarter level {plotLevel(slot)}</b>. Levels come with points from the day&apos;s tasks.
+          {w.opensAt} <b>{w.quarterLevel(plotLevel(slot))}</b>
+          {w.levelsCome}
         </div>
       </div>
     );
@@ -134,15 +142,15 @@ function Picker({ slot }: { slot: number }) {
   const def = choice ? moduleById(choice) : null;
   const v = def ? verdict(def, me.quarter, me.buildings, slot) : null;
   const ready = !!v?.ok && !busy;
-  const label = busy ? 'Building…' : def && v ? verdictLine(def, v) : 'More open soon';
-  const about = here && def?.kind === here.kind ? `${def.name} · level ${here.level}` : (def?.line ?? 'Nothing new goes here yet.');
+  const label = busy ? w.buildingNow : def && v ? verdictLine(def, v) : w.moreSoon;
+  const about = here && def?.kind === here.kind ? w.nameLevel(def.name, here.level) : (def?.line ?? w.nothingNew);
   const pick = (id: string) => {
     if (useCity.getState().sound) playTick();
     quarterStore.getState().choose(id);
   };
   return (
-    <div className={`${s.panel} ${q.sheet}`} role="dialog" aria-label="Build on this plot">
-      {head(here ? `${moduleForKind(here.kind)?.name ?? 'Building'} on this plot` : 'Empty plot')}
+    <div className={`${s.panel} ${q.sheet}`} role="dialog" aria-label={w.buildOnPlot}>
+      {head(here ? w.onPlot(moduleForKind(here.kind)?.name ?? w.building) : w.emptyPlot)}
       <div className={q.tiles}>
         {MODULES.map((m) => {
           const Glyph = MODULE_GLYPH[m.id];
@@ -150,7 +158,7 @@ function Picker({ slot }: { slot: number }) {
           const open = verdict(m, me.quarter, me.buildings, slot);
           const closed = !open.ok && open.why !== 'same' && open.why !== 'taken' && open.why !== 'limit';
           return (
-            <button key={m.id} className={`${q.tile} ${on ? q.tileOn : ''} ${closed ? q.tileLocked : ''}`} aria-pressed={on} aria-label={closed ? `${m.name}, ${verdictLine(m, open).toLowerCase()}` : m.name} onClick={() => pick(m.id)}>
+            <button key={m.id} className={`${q.tile} ${on ? q.tileOn : ''} ${closed ? q.tileLocked : ''}`} aria-pressed={on} aria-label={closed ? w.lockedTile(m.name, verdictLine(m, open).toLowerCase()) : m.name} onClick={() => pick(m.id)}>
               <span className={q.tileGlyph}>{Glyph ? <Glyph /> : null}</span>
               <span className={q.tileName}>{m.name}</span>
               {closed && (

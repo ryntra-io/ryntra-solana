@@ -4,28 +4,34 @@ import { useEffect, useRef } from 'react';
 import { howStore } from '@/city/lib/art/how';
 import { useCity } from '@/city/lib/city/store';
 import { useHudPanels } from '@/city/lib/city/windows';
-import { SETTINGS_GROUPS, SWITCHES, type FeedSwitch } from '@/city/lib/feed/settings';
+import { SETTINGS_GROUPS, type FeedSwitch } from '@/city/lib/feed/settings';
+import { FEED_SWITCHES } from '@/city/lib/feed/words';
 import { hydrateFeed, useFeed } from '@/city/lib/feed/store';
 import { openScouts } from '@/city/lib/scouts/store';
+import { useWords, type TextKey } from '@/city/lib/i18n/dict';
+import { LANG_LABEL, LANGS, setLang, useLang } from '@/city/lib/i18n/lang';
 import { CONTACTS } from '@/lib/site/contacts';
 import { FlagGlyph } from '../scouts/glyphs';
 import { CloseGlyph, SpeakerOff, SpeakerOn } from './glyphs';
+import { MENU } from './words';
 import s from './hud.module.css';
 
+type MenuText = TextKey<typeof MENU>;
+
 /** The site's own public pages, as the footer of ryntra.io links them (lib/site/homepage-copy.ts). */
-const LINKS: readonly { label: string; href: string; line: string }[] = [
-  { label: 'Docs', href: '/docs', line: 'How Ryntra works' },
-  { label: 'Developers', href: '/developers', line: 'The Ryntra API' },
-  { label: 'Support', href: '/support', line: 'Ask for help' },
-  { label: 'Feedback', href: '/feedback', line: 'Tell us what to fix' },
-  { label: 'Ryntra on X', href: CONTACTS.companyX, line: 'News, launches, clips' },
+const LINKS: readonly { label: MenuText; href: string; line: MenuText }[] = [
+  { label: 'docs', href: '/docs', line: 'docsLine' },
+  { label: 'developers', href: '/developers', line: 'developersLine' },
+  { label: 'support', href: '/support', line: 'supportLine' },
+  { label: 'feedback', href: '/feedback', line: 'feedbackLine' },
+  { label: 'onX', href: CONTACTS.companyX, line: 'onXLine' },
 ];
 /** One menu on the page: a fixed id, the same on the server and in the browser (a useId differs where the tree above does). */
 const MENU_ID = 'city-menu';
 const SETTINGS_ID = 'city-settings';
-const LEGAL: readonly { label: string; href: string }[] = [
-  { label: 'Terms', href: '/legal/terms' },
-  { label: 'Privacy', href: '/legal/privacy' },
+const LEGAL: readonly { label: MenuText; href: string }[] = [
+  { label: 'terms', href: '/legal/terms' },
+  { label: 'privacy', href: '/legal/privacy' },
 ];
 
 export const MenuGlyph = () => (
@@ -49,6 +55,7 @@ export function CityMenu({ onSound }: { onSound: (on: boolean) => void }) {
   const open = useHudPanels((st) => st.menu);
   const settings = useHudPanels((st) => st.settings);
   const wrap = useRef<HTMLDivElement>(null);
+  const w = useWords(MENU);
   // A tap anywhere else closes it, as the city's other panels do.
   useEffect(() => {
     if (!open && !settings) return;
@@ -62,7 +69,7 @@ export function CityMenu({ onSound }: { onSound: (on: boolean) => void }) {
     <div ref={wrap} className={s.menuWrap} data-city-menu="">
       <button
         className={`${s.panel} ${s.iconBtn} ${open || settings ? s.iconOn : ''}`}
-        aria-label="Menu"
+        aria-label={w.menu}
         aria-expanded={open || settings}
         aria-controls={settings ? SETTINGS_ID : MENU_ID}
         onClick={() => (settings ? useHudPanels.getState().closeSettings() : useHudPanels.getState().toggleMenu())}
@@ -77,8 +84,9 @@ export function CityMenu({ onSound }: { onSound: (on: boolean) => void }) {
 
 function MenuPanel({ onSound, onClose }: { onSound: (on: boolean) => void; onClose: () => void }) {
   const sound = useCity((st) => st.sound);
+  const w = useWords(MENU);
   return (
-    <div id={MENU_ID} className={`${s.panel} ${s.menu}`} role="dialog" aria-label="Menu">
+    <div id={MENU_ID} className={`${s.panel} ${s.menu}`} role="dialog" aria-label={w.menu}>
       <button
         className={s.menuRow}
         aria-haspopup="dialog"
@@ -89,7 +97,7 @@ function MenuPanel({ onSound, onClose }: { onSound: (on: boolean) => void; onClo
       >
         <span className={s.menuSound}>
           <FlagGlyph />
-          Scouts
+          {w.scouts}
         </span>
         <span className={s.menuChevron} aria-hidden="true" />
       </button>
@@ -101,38 +109,57 @@ function MenuPanel({ onSound, onClose }: { onSound: (on: boolean) => void; onClo
           howStore.getState().show();
         }}
       >
-        <span>How the city works</span>
+        <span>{w.how}</span>
         <span className={s.menuChevron} aria-hidden="true" />
       </button>
       <button className={s.menuRow} aria-haspopup="dialog" aria-controls={SETTINGS_ID} onClick={() => useHudPanels.getState().openSettings()}>
-        <span>Settings</span>
+        <span>{w.settings}</span>
         <span className={s.menuChevron} aria-hidden="true" />
       </button>
       <button className={s.menuRow} aria-pressed={sound} onClick={() => onSound(!sound)}>
         <span className={s.menuSound}>
           {sound ? <SpeakerOn /> : <SpeakerOff />}
-          Sound
+          {w.sound}
         </span>
-        <span className={`${s.menuState} ${sound ? s.menuStateOn : ''}`}>{sound ? 'On' : 'Off'}</span>
+        <span className={`${s.menuState} ${sound ? s.menuStateOn : ''}`}>{sound ? w.on : w.off}</span>
       </button>
+      <LanguageRow />
       <div className={s.menuLinks}>
         {LINKS.map((l) => (
           <a key={l.href} className={s.menuLink} href={l.href} target="_blank" rel="noopener">
             <span className={s.menuLinkName}>
-              {l.label}
+              {w[l.label]}
               <ArrowGlyph />
             </span>
-            <span className={s.menuLinkLine}>{l.line}</span>
+            <span className={s.menuLinkLine}>{w[l.line]}</span>
           </a>
         ))}
       </div>
       <div className={s.menuLegal}>
         {LEGAL.map((l) => (
           <a key={l.href} href={l.href} target="_blank" rel="noopener">
-            {l.label}
+            {w[l.label]}
           </a>
         ))}
       </div>
+    </div>
+  );
+}
+
+/** The language: EN · UA, one tap; the city repaints its words in place and keeps the choice on this device. */
+function LanguageRow() {
+  const w = useWords(MENU);
+  const lang = useLang();
+  return (
+    <div className={s.menuLang} role="group" aria-labelledby={`${MENU_ID}-lang`}>
+      <span id={`${MENU_ID}-lang`}>{w.language}</span>
+      <span className={s.menuLangPair}>
+        {LANGS.map((code) => (
+          <button key={code} lang={code} aria-pressed={lang === code} onClick={() => lang !== code && setLang(code)}>
+            {LANG_LABEL[code]}
+          </button>
+        ))}
+      </span>
     </div>
   );
 }
@@ -144,15 +171,17 @@ function MenuPanel({ onSound, onClose }: { onSound: (on: boolean) => void; onClo
 function SettingsPanel() {
   const settings = useFeed((st) => st.settings);
   const flip = useFeed((st) => st.set);
+  const w = useWords(MENU);
+  const feedWords = useWords(FEED_SWITCHES);
   useEffect(() => hydrateFeed(), []);
-  const label = (id: FeedSwitch) => SWITCHES.find((sw) => sw.id === id)?.label ?? id;
+  const label = (id: FeedSwitch) => feedWords[id];
   return (
     <div id={SETTINGS_ID} className={`${s.panel} ${s.menu} ${s.settings}`} role="dialog" aria-labelledby={`${SETTINGS_ID}-title`} data-city-settings="">
       <div className={s.settingsHead}>
         <span className={s.settingsTitle} id={`${SETTINGS_ID}-title`}>
-          Show on home
+          {w.showOnHome}
         </span>
-        <button className={s.settingsClose} aria-label="Close" onClick={() => useHudPanels.getState().closeSettings()}>
+        <button className={s.settingsClose} aria-label={w.close} onClick={() => useHudPanels.getState().closeSettings()}>
           <CloseGlyph />
         </button>
       </div>

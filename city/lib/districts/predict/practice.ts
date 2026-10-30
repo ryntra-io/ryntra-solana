@@ -1,5 +1,7 @@
+import { wordsNow } from '../../i18n/dict.ts';
 import { isDelayed, type Market } from './markets.ts';
 import type { SettleMarket } from './detail.ts';
+import { PREDICT_TEXT } from './words.ts';
 
 /**
  * Practice: the same markets with practice dollars, for anyone without money in Predictions. A buy is taken at the
@@ -68,18 +70,30 @@ const share = (v: number) => Math.round(v * 1e6) / 1e6;
 
 export type Refusal = 'amount' | 'cash' | 'delayed' | 'closing' | 'side' | 'price' | 'full' | 'holding' | 'closed';
 
+type Said = (typeof PREDICT_TEXT)['en'];
+
+/**
+ * The same table, read in the language of the moment: each entry is a getter, so `table[key]` and `Object.values(table)`
+ * give the words on screen now.
+ */
+export function saidNow<K extends string>(say: Readonly<Record<K, (w: Said) => string>>): Readonly<Record<K, string>> {
+  const table = {} as Record<K, string>;
+  for (const key of Object.keys(say) as K[]) Object.defineProperty(table, key, { enumerable: true, get: () => say[key](wordsNow(PREDICT_TEXT)) });
+  return table;
+}
+
 /** Why a practice act is not taken, in the city's words. */
-export const REFUSAL: Readonly<Record<Refusal, string>> = {
-  amount: 'Enter an amount.',
-  cash: 'Not enough practice dollars.',
-  delayed: 'Prices are delayed. Wait a moment.',
-  closing: 'Closes in minutes.',
-  side: 'Pick a side.',
-  price: 'This side is all but decided.',
-  full: `${MAX_OPEN} positions are open.`,
-  holding: 'Nothing to sell on this side.',
-  closed: 'This market is closed.',
-};
+export const REFUSAL: Readonly<Record<Refusal, string>> = saidNow<Refusal>({
+  amount: (w) => w.enterAmount,
+  cash: (w) => w.practiceCash,
+  delayed: (w) => w.pricesDelayed,
+  closing: (w) => w.closing,
+  side: (w) => w.pickSide,
+  price: (w) => w.decided,
+  full: (w) => w.full(MAX_OPEN),
+  holding: (w) => w.nothingHere,
+  closed: (w) => w.marketClosed,
+});
 
 export type BuyInput = Readonly<{ market: Market; sideId: string; spendUsd: number; readAt: string | null }>;
 

@@ -2,7 +2,9 @@
 
 import { useId, type CSSProperties } from 'react';
 import { BODIES, GROUND, type AgentBodyProps, type Silhouette } from '@/city/lib/ring/body';
+import { useWords } from '@/city/lib/i18n/dict';
 import r from './ring.module.css';
+import { RING_UI } from './words';
 
 /**
  * An agent's body as a stand-in until the characters line brings the real ones (CITY-57): a robot of separate dark
@@ -11,6 +13,7 @@ import r from './ring.module.css';
  */
 export function AgentBody({ archetype, state = 'ready', size = 160, dim = false }: AgentBodyProps) {
   const id = useId().replace(/[^a-zA-Z0-9_-]/g, '');
+  const w = useWords(RING_UI);
   const body = BODIES[archetype];
   const s = body.shape;
   const lit = !dim;
@@ -22,7 +25,7 @@ export function AgentBody({ archetype, state = 'ready', size = 160, dim = false 
       width={(size * 3) / 4}
       height={size}
       role="img"
-      aria-label={`${body.name} body`}
+      aria-label={w.bodyOf(body.name)}
     >
       <defs>
         <linearGradient id={`p${id}`} x1="0" y1="0" x2="0" y2="1">

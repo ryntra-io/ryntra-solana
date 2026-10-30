@@ -15,10 +15,13 @@ import { riskFacts } from '@/city/lib/chart/facts';
 import { marketOf, PRICE_BASIS, resolutionOf, tickFor, timeframeOf, TowerFeed, type Feed } from '@/city/lib/chart/feed';
 import { layersOf, mergeLayers, toggleChartLayer, useChartLayers, type ChartLayer } from '@/city/lib/chart/layers';
 import { marketLayer } from '@/city/lib/chart/marks';
+import { useTowerChart } from '@/city/lib/chart/store';
 import { crosshairChannel, readoutOf, readoutTime } from '@/city/lib/chart/readout';
 import { useCandles, useEntry, useMarketMarks, useTimeframe } from '@/city/lib/chart/use-chart';
 import { isStale } from '@/city/lib/city/events';
 import { useCity } from '@/city/lib/city/store';
+import { digits, useWords, type TextKey } from '@/city/lib/i18n/dict';
+import { useLang } from '@/city/lib/i18n/lang';
 import type { Tower } from '@/city/lib/market/types';
 import { formatPct } from '@/city/lib/trade/mine';
 // The tower card's own switch (`NEXT_PUBLIC_RYNTRA_CITY_TRADE`): `closed` puts Buy back to «soon» without a code change.
@@ -27,6 +30,7 @@ import { useTrade } from '@/city/lib/trade/store';
 import { useWindows } from '@/city/lib/window/store';
 import { formatPrice, sym } from '../hud/bits';
 import { CoinIcon } from './CoinIcon';
+import { CHART } from './words';
 import c from './chart.module.css';
 
 /** The core's indicator worker, from this site's own file (none are drawn; a set kept from elsewhere still has one). */
@@ -44,6 +48,8 @@ const NO_INDICATORS: readonly [] = [];
  * moving, the sticking and the whole screen on a desk, and the bottom sheet on a phone; these are its contents.
  */
 export function ChartWindow({ tower }: { tower: Tower }) {
+  const w = useWords(CHART);
+  const lang = useLang();
   const sheet = !useWindows((st) => st.desk);
   const [timeframe, setTimeframe] = useTimeframe();
   const data = useCandles(tower.id, timeframe);
@@ -55,9 +61,11 @@ export function ChartWindow({ tower }: { tower: Tower }) {
   const added = useChartLayers((st) => st.layers);
   const hidden = useChartLayers((st) => st.hidden);
 
+  // The chart's own layers are named in the language on screen: a switch names them again.
   const layers = useMemo(
     () => [marketLayer(tower.id, market), entryLayer(tower.id, entry), ...layersOf(added, tower.id)].filter((layer): layer is ChartLayer => layer !== null),
-    [tower.id, market, entry, added],
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [tower.id, market, entry, added, lang],
   );
   // The step follows the reads (a coin that fell draws finer prices): the levels are put on it again with each read.
   const tick = feed?.tick ?? tickFor(livePrice);
@@ -86,7 +94,7 @@ export function ChartWindow({ tower }: { tower: Tower }) {
     return () => before?.focus?.({ preventScroll: true });
   }, []);
 
-  const label = `${sym(tower)} chart`;
+  const label = w.chartOf(sym(tower));
 
   return (
     <section
@@ -108,18 +116,18 @@ export function ChartWindow({ tower }: { tower: Tower }) {
           <span className={`${c.display} ${c.price}`}>{formatPrice(price)}</span>
           <span className={`${c.change} ${up ? c.up : c.down}`}>
             {up ? '+' : '−'}
-            {Math.abs(tower.change24h).toFixed(1)}% <small>24H</small>
+            {digits(Math.abs(tower.change24h).toFixed(1))}% <small>{w.h24}</small>
           </span>
         </div>
-        <button type="button" className={c.info} aria-label="Details" title="Details" aria-pressed={details} onClick={() => setDetails((on) => !on)}>
+        <button type="button" className={c.info} aria-label={w.details} title={w.details} aria-pressed={details} onClick={() => setDetails((on) => !on)}>
           i
         </button>
       </header>
 
-      <div className={c.frames} role="radiogroup" aria-label="Interval">
+      <div className={c.frames} role="radiogroup" aria-label={w.interval}>
         {TIMEFRAMES.map((entry) => (
           <button key={entry} type="button" role="radio" className={c.frameChip} aria-checked={entry === timeframe} onClick={() => setTimeframe(entry)}>
-            {frameLabel(entry)}
+            {w[FRAME_WORDS[entry]]}
           </button>
         ))}
       </div>
@@ -142,7 +150,7 @@ export function ChartWindow({ tower }: { tower: Tower }) {
         ))}
         {entry !== null ? (
           <div className={`${c.fact} ${c.entry}`}>
-            <dt>Your entry</dt>
+            <dt>{w.yourEntry}</dt>
             <dd>
               {formatPrice(entry)}
               {move !== null ? <span className={move >= 0 ? c.up : c.down}>{formatPct(move)}</span> : null}
@@ -153,7 +161,7 @@ export function ChartWindow({ tower }: { tower: Tower }) {
 
       <div className={c.foot}>
         {layers.length && charted(data) ? (
-          <div className={c.layers} role="group" aria-label="Chart layers">
+          <div className={c.layers} role="group" aria-label={w.layers}>
             {layers.map((layer) => (
               <button key={layer.id} type="button" className={c.layer} aria-pressed={!hidden.has(layer.id)} onClick={() => toggleChartLayer(layer.id)}>
                 {layer.label}
@@ -164,12 +172,20 @@ export function ChartWindow({ tower }: { tower: Tower }) {
           <span />
         )}
         {TRADE_OPEN ? (
-          <button type="button" className={`${c.display} ${c.buy}`} onClick={() => useTrade.getState().openFor(tower, 'buy')}>
-            Buy {sym(tower)}
+          <button
+            type="button"
+            className={`${c.display} ${c.buy}`}
+            onClick={() => {
+              // The tower's window stands in the chart's place again, on buying (CITY-78).
+              useTrade.getState().openFor(tower, 'buy');
+              useTowerChart.getState().close();
+            }}
+          >
+            {w.buy(sym(tower))}
           </button>
         ) : (
           <button type="button" className={`${c.display} ${c.buy}`} disabled>
-            Trade · soon
+            {w.tradeSoon}
           </button>
         )}
       </div>
@@ -178,8 +194,45 @@ export function ChartWindow({ tower }: { tower: Tower }) {
   );
 }
 
+/**
+ * The tower's chart inside the spot window: the interval row and the candles, live as in the chart's own window; the price, the facts and Buy are the
+ * trade window's.
+ */
+export function TradeChart({ tower }: { tower: Tower }) {
+  const lang = useLang();
+  const [timeframe, setTimeframe] = useTimeframe();
+  const data = useCandles(tower.id, timeframe);
+  const fresh = useCity((st) => st.snapshot.source === 'live' && !isStale(st.snapshot.fetchedAt));
+  const livePrice = fresh && Number.isFinite(tower.price) && tower.price > 0 ? tower.price : null;
+  const feed = useFeed(tower, data, livePrice);
+  const market = useMarketMarks(tower.id);
+  const entry = useEntry(tower);
+  const added = useChartLayers((st) => st.layers);
+  const hidden = useChartLayers((st) => st.hidden);
+  const layers = useMemo(
+    () => [marketLayer(tower.id, market), entryLayer(tower.id, entry), ...layersOf(added, tower.id)].filter((layer): layer is ChartLayer => layer !== null),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [tower.id, market, entry, added, lang],
+  );
+  const tick = feed?.tick ?? tickFor(livePrice);
+  const drawn = useMemo(() => {
+    const merged = mergeLayers(layers, hidden, tick);
+    return { view: PRICE_BASIS, marks: merged.marks, levels: merged.levels };
+  }, [layers, hidden, tick]);
+  const pane = useRef<HTMLDivElement | null>(null);
+  const heal = useHeal(pane, data);
+  // Our chart whole (30.10): its own intervals, styles, scales, indicators and drawings over the candles.
+  return (
+    <div className={`${c.inTrade} ${c.tooled}`} data-trade-chart="">
+      <div className={c.chart} ref={pane}>
+        <ChartBody tower={tower} data={data} feed={feed} timeframe={timeframe} onTimeframe={setTimeframe} drawn={drawn} livePrice={livePrice} heal={heal} tools />
+      </div>
+    </div>
+  );
+}
+
 /** An interval as a chart writes it: minutes and hours small (1m is a minute, never a month), the day 1D. */
-const frameLabel = (timeframe: Timeframe): string => (timeframe === '1d' ? '1D' : timeframe);
+const FRAME_WORDS: Readonly<Record<Timeframe, TextKey<typeof CHART>>> = { '1m': 'tf1m', '5m': 'tf5m', '15m': 'tf15m', '1h': 'tf1h', '4h': 'tf4h', '1d': 'tf1d' };
 
 /** Whether there are candles to draw on: no chip for a layer that has no chart under it. */
 const charted = (data: ChartData) => data.status !== 'none' && !(data.status === 'unavailable' && !data.last);
@@ -194,6 +247,7 @@ function ChartBody({
   drawn,
   livePrice,
   heal,
+  tools = false,
 }: {
   tower: Tower;
   data: ChartData;
@@ -205,14 +259,18 @@ function ChartBody({
   livePrice: number | null;
   /** Bumped when bars arrive after the core chart gave up waiting: it starts again on them. */
   heal: number;
+  /** Inside the spot window: the chart's own tools — indicators as this browser drew them last, and drawings. */
+  tools?: boolean;
 }) {
   // The core chart says where its crosshair stands on the city's own channel; the readout below follows it.
   const [crosshair] = useState(() => ({ channel: crosshairChannel(), id: 'tower' }));
   const hover = useHover(crosshair.channel);
+  const w = useWords(CHART);
+  const lang = useLang();
   if (data.status === 'none') {
     return (
       <div className={`${c.state} ${c.artEmpty}`} role="status">
-        <b>No chart for {sym(tower)}</b>
+        <b>{w.noChartFor(sym(tower))}</b>
         {/* Why, in the engine's words, only behind «Details»: the screen says what is, not why. Another interval may
             still have bars: the row above stays. */}
         <span className={c.why}>{whyNoChart(data.code)}</span>
@@ -223,7 +281,7 @@ function ChartBody({
     return (
       <div className={`${c.state} ${c.artEmpty}`} role="status">
         {/* It is read again on its own: nothing for the person to do, so nothing more to say. */}
-        <b>Chart unavailable</b>
+        <b>{w.unavailable}</b>
       </div>
     );
   }
@@ -241,11 +299,12 @@ function ChartBody({
           if (picked) onTimeframe(picked);
         }}
         basis={PRICE_BASIS}
-        lang="en"
+        lang={lang}
         symbol={<span className="ryntra-visually-hidden">{sym(tower)}</span>}
-        label={`${sym(tower)} price`}
+        label={w.priceOf(sym(tower))}
         marks={drawn}
-        indicators={NO_INDICATORS}
+        indicators={tools ? undefined : NO_INDICATORS}
+        drawings={tools ? { profile: null } : null}
         indicatorWorker={indicatorWorker}
         crosshair={crosshair}
         className={c.core}

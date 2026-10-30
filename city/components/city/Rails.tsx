@@ -5,6 +5,7 @@ import * as THREE from 'three';
 import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 import type { Rail } from '@/city/lib/city/layout';
 import { SHARED } from '@/city/lib/city/shared';
+import { LENS_UNIFORMS } from '@/city/lib/lens/uniforms';
 import { PALETTE } from '@/city/lib/palette';
 
 /**
@@ -47,6 +48,7 @@ export function Rails({ rails, hidden }: { rails: Rail[]; hidden?: readonly numb
         uAmber: { value: new THREE.Color(PALETTE.amber) },
         uMint: { value: new THREE.Color(PALETTE.mint) },
         uHidden: { value: new Float32Array(MAX_RAILS) },
+        uLensMix: LENS_UNIFORMS.uLensMix,
       },
       vertexShader: /* glsl */ `
         attribute float aAlong;
@@ -69,6 +71,7 @@ export function Rails({ rails, hidden }: { rails: Rail[]; hidden?: readonly numb
         uniform vec3 uViolet;
         uniform vec3 uAmber;
         uniform vec3 uMint;
+        uniform float uLensMix;
         varying float vAlong;
         varying float vRail;
         varying float vDepth;
@@ -80,7 +83,8 @@ export function Rails({ rails, hidden }: { rails: Rail[]; hidden?: readonly numb
           float pulse = smoothstep(0.0, 0.04, t) * (1.0 - smoothstep(0.04, 0.16, t));
           vec3 pulseColor = h(vRail + 2.0) > 0.82 ? uMint : uAmber;
           vec3 col = uViolet * 0.32 + pulseColor * pulse * 4.0;
-          float fade = smoothstep(420.0, 120.0, vDepth);
+          // A lens on (CITY-86): the rails step back into the haze with the towers they tie.
+          float fade = smoothstep(420.0, 120.0, vDepth) * (1.0 - 0.8 * uLensMix);
           gl_FragColor = vec4(col * fade, 1.0);
         }
       `,

@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-import { openWindow, useHudPanels, windowOpen, WINDOWS } from "./windows.ts";
+import { openWindow, openWindows, useHudPanels, windowOpen, WINDOWS } from "./windows.ts";
 
 /* With a window open the feed, its gear and the moment banners piled up over it. One
    question — «a window is open» — for the feed, the banners, the hint and the card above the dock. */
@@ -76,4 +76,9 @@ test("the HUD's menu and its settings: one at a time, and both close together", 
   assert.deepEqual([useHudPanels.getState().menu, useHudPanels.getState().settings], [true, false], "the menu again closes Settings");
   useHudPanels.getState().closeMenu();
   assert.equal(windowOpen({ hud: useHudPanels.getState() }), false);
+});
+
+test("every open window is named, in the order they are asked — the layers «Back» closes (CITY-6e)", () => {
+  assert.deepEqual(openWindows(CLOSED), []);
+  assert.deepEqual(openWindows({ ...CLOSED, hud: { menu: true, settings: false }, chart: { mint: "M" }, trade: { open: true } }), ["trade", "chart", "menu"]);
 });

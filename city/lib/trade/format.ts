@@ -1,3 +1,6 @@
+import { digits, wordsNow } from '../i18n/dict.ts';
+import { FORMAT } from './words.ts';
+
 /**
  * How the trade card writes the engine's figures. Every figure arrives as raw units from the engine; this file only
  * places the point and shortens for the eye. A guaranteed minimum is always rounded down, so the card never promises
@@ -58,7 +61,7 @@ function group(text: string): string {
 /** A rate in basis points as a person reads it: 100 → 1%, 50 → 0.5%, 25 → 0.25%. */
 export function formatBps(bps: number): string {
   if (!Number.isFinite(bps) || bps < 0) return '—';
-  return `${Number((bps / 100).toFixed(2))}%`;
+  return digits(`${Number((bps / 100).toFixed(2))}%`);
 }
 
 export type ImpactLevel = 'low' | 'notable' | 'high';
@@ -71,8 +74,8 @@ export function formatImpact(pct: string | null | undefined): Readonly<{ text: s
   const value = Math.abs(Number(pct));
   if (pct === null || pct === undefined || pct === '' || !Number.isFinite(value)) return { text: '—', level: 'low' };
   const level: ImpactLevel = value >= 5 ? 'high' : value >= 1 ? 'notable' : 'low';
-  if (value < 0.01) return { text: '<0.01%', level };
-  return { text: `${Number(value.toFixed(2))}%`, level };
+  if (value < 0.01) return { text: digits('<0.01%'), level };
+  return { text: digits(`${Number(value.toFixed(2))}%`), level };
 }
 
 /** The pools a route crosses, by the venue's own names, at most two named. */
@@ -80,7 +83,7 @@ export function formatRoute(hops: readonly Readonly<{ label: string }>[]): strin
   const labels = [...new Set(hops.map((hop) => hop.label.trim()).filter(Boolean))];
   if (!labels.length) return 'Jupiter';
   if (labels.length <= 2) return labels.join(' + ');
-  return `${labels[0]} + ${labels.length - 1} more`;
+  return wordsNow(FORMAT).more(labels[0]!, labels.length - 1);
 }
 
 /** A coin's ticker as the city writes it. */

@@ -30,8 +30,9 @@ A window whose own store says whether it is open plugs in with one hook instead 
 `useCityWindow(shown, spec)` (`city/components/window/useCityWindow.ts`): the frame opens it while `shown` and closes it
 when not, and a new `spec` (memoised by the caller: a title, contents or `held` that changed) reaches the open window
 where it stands, never bringing it to the front (`updateWindow`). In the frame now: the chart (`ChartLayer`), the
-Exchange (`ExchangeLayer`, held while a signature is out) and Money (`MoneyLayer`, held while money is mid-way). Still
-on their own: the trade card with the swap and the spot (CITY-62) and the Oracle's sheet.
+Exchange (`ExchangeLayer`, held while a signature is out), Money (`MoneyLayer`, held while money is mid-way) and, since
+30.10, Swap and Spot (`TradeLayer`, two windows — `swap` narrow, `spot` wide with the chart beside the ticket — held while
+a trade is mid-way). Still on its own: the Oracle's sheet.
 
 Escape: the whole screen is given back first — the frame hears Escape before anything else and marks it
 (`preventDefault`); a window's own Escape, the chart's and the HUD's read `defaultPrevented`, so one press does one thing.

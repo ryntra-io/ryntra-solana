@@ -1,6 +1,8 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
+import { useBackPanel } from '@/city/lib/back/panels';
+import { useWords } from '@/city/lib/i18n/dict';
 import { cityAccount, useCityAccount, useReadiness } from '@/city/lib/quarter/account-live';
 import { colourOf } from '@/city/lib/trade/colour';
 import { shortAddress } from '@/city/lib/trade/format';
@@ -9,6 +11,7 @@ import { PHANTOM_DOWNLOAD_URL } from '@/lib/solana/open-in-wallet';
 import s from '../hud/hud.module.css';
 import q from './quarter.module.css';
 import w from './wallet.module.css';
+import { QUARTER } from './words';
 
 /**
  * The wallet in the top bar: «Connect wallet» when there is none — it connects and signs in to Ryntra with one
@@ -23,17 +26,20 @@ export function WalletChip() {
   const error = useCityAccount((st) => (st.from === 'top' ? st.error : null));
   const [open, setOpen] = useState(false);
   const wrap = useRef<HTMLDivElement>(null);
+  const t = useWords(QUARTER);
 
   // A tap outside or Escape closes the menu; a list of wallets left open closes with it.
   const showing = open || step === 'pick' || Boolean(error);
+  const close = () => {
+    setOpen(false);
+    const a = cityAccount.getState();
+    a.cancel();
+    if (a.from === 'top' && a.error) cityAccount.setState({ error: null });
+  };
+  // «Back» closes the menu first, in the city and in Play alike (CITY-150).
+  useBackPanel('wallet', showing, close);
   useEffect(() => {
     if (!showing) return;
-    const close = () => {
-      setOpen(false);
-      const a = cityAccount.getState();
-      a.cancel();
-      if (a.from === 'top' && a.error) cityAccount.setState({ error: null });
-    };
     const outside = (event: PointerEvent) => {
       if (wrap.current && !wrap.current.contains(event.target as Node)) close();
     };
@@ -54,7 +60,7 @@ export function WalletChip() {
   const signIn = () => void cityAccount.getState().begin(null, 'top');
 
   if (!connection) {
-    const label = step === 'connecting' ? `Opening ${to ?? 'wallet'}…` : step === 'signing' ? 'Check your wallet' : 'Connect wallet';
+    const label = step === 'connecting' ? t.opening(to ?? t.aWallet) : step === 'signing' ? t.checkYourWallet : t.connect;
     return (
       <div className={w.wrap} ref={wrap}>
         <button
@@ -71,7 +77,7 @@ export function WalletChip() {
           </span>
         </button>
         {(step === 'pick' || error) && (
-          <div className={`${s.panel} ${w.menu}`} role="dialog" aria-label="Connect wallet">
+          <div className={`${s.panel} ${w.menu}`} role="dialog" aria-label={t.connect}>
             {step === 'pick' ? <WalletList /> : null}
             {error ? <div className={`${w.note} ${w.error}`}>{error}</div> : null}
           </div>
@@ -88,28 +94,24 @@ export function WalletChip() {
         style={{ ['--player' as string]: colourOf(connection.address) }}
         onClick={() => setOpen((v) => !v)}
         aria-expanded={showing}
-        aria-label={`Wallet ${shortAddress(connection.address)}${signed ? '' : ', not signed in'}`}
+        aria-label={t.walletOf(shortAddress(connection.address), signed)}
       >
         <span className={`${w.dot} ${signed ? '' : w.dotWait}`} aria-hidden="true" />
-        <span className={`${w.address} ${w.long}`}>{step === 'signing' ? 'Check wallet' : shortAddress(connection.address)}</span>
+        <span className={`${w.address} ${w.long}`}>{step === 'signing' ? t.checkWallet : shortAddress(connection.address)}</span>
       </button>
       {showing && (
-        <div className={`${s.panel} ${w.menu}`} role="dialog" aria-label="Wallet">
+        <div className={`${s.panel} ${w.menu}`} role="dialog" aria-label={t.wallet}>
           <div className={w.head}>
             <span className={w.address}>{shortAddress(connection.address)}</span> · {connection.wallet}
           </div>
           <div className={w.note}>
-            {signed
-              ? 'Signed in. Your quarter is kept under this wallet.'
-              : ready === 'checking'
-                ? 'Checking your sign-in…'
-                : 'Not signed in. Sign one message to build here. No transaction.'}
+            {signed ? t.signedIn : ready === 'checking' ? t.checking : t.notSignedIn}
           </div>
           {error ? <div className={`${w.note} ${w.error}`}>{error}</div> : null}
           <div className={w.row}>
             {!signed && (
               <button className={`${s.display} ${w.act}`} onClick={signIn} disabled={busy || ready === 'checking'} aria-busy={busy}>
-                {step === 'signing' ? 'Check your wallet' : busy ? 'Opening…' : 'Sign in'}
+                {step === 'signing' ? t.checkYourWallet : busy ? t.openingPlain : t.signIn}
               </button>
             )}
             <button
@@ -120,7 +122,7 @@ export function WalletChip() {
               }}
               disabled={busy}
             >
-              Disconnect
+              {t.disconnect}
             </button>
           </div>
         </div>
@@ -132,20 +134,21 @@ export function WalletChip() {
 /** Phantom, Solflare, Backpack — whatever this browser has; none found says where to get one. */
 function WalletList() {
   const wallets = useWallet((st) => st.wallets);
+  const t = useWords(QUARTER);
   if (!wallets.length) {
     return (
       <div className={w.note}>
-        No Solana wallet in this browser.{' '}
+        {t.noWallet}{' '}
         <a href={PHANTOM_DOWNLOAD_URL} target="_blank" rel="noreferrer">
-          Get Phantom
+          {t.getPhantom}
         </a>
-        , then come back.
+        {t.comeBack}
       </div>
     );
   }
   return (
     <>
-      <div className={w.head}>Pick a wallet</div>
+      <div className={w.head}>{t.pickWallet}</div>
       <div className={q.wallets}>
         {wallets.map((wallet) => (
           <button key={wallet.name} className={q.choice} onClick={() => void cityAccount.getState().pick(wallet.name)}>
@@ -153,7 +156,7 @@ function WalletList() {
           </button>
         ))}
       </div>
-      <div className={w.note}>One message to sign in. No transaction, nothing moves.</div>
+      <div className={w.note}>{t.oneMessage}</div>
     </>
   );
 }

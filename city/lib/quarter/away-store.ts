@@ -1,10 +1,12 @@
 import { useStore } from 'zustand';
 import { createStore } from 'zustand/vanilla';
+import { wordsNow } from '../i18n/dict.ts';
 import { reelOf, sinceOf, worthPlaying, type Line, type Market } from './away.ts';
 import { world, type WorldClient } from './client.ts';
 import { randomId } from './ids.ts';
 import { browserStorage, type StorageLike } from './mock.ts';
 import { isWorldError, type AwayConsent, type MeResponse } from './types.ts';
+import { AWAY_WORDS } from './words.ts';
 
 /**
  * «While you were away», from the moment a signed-in wallet's quarter is on screen: when this browser last saw the
@@ -15,6 +17,25 @@ import { isWorldError, type AwayConsent, type MeResponse } from './types.ts';
  */
 
 export type AwayChannel = 'telegram' | 'push';
+
+/** The channels the reel offers, with their names on screen (Telegram by its name, the push in the language on screen). */
+export const AWAY_CHANNELS: readonly Readonly<{ id: AwayChannel; label: string }>[] = [
+  { id: 'telegram', label: 'Telegram' },
+  {
+    id: 'push',
+    get label() {
+      return wordsNow(AWAY_WORDS).push;
+    },
+  },
+];
+
+/**
+ * The channels to offer here (CITY-6e): inside the Ryntra app there is no push — the app registers none — so its switch
+ * is not shown there; a browser keeps both.
+ */
+export function awayChannels(inApp: boolean): readonly Readonly<{ id: AwayChannel; label: string }>[] {
+  return inApp ? AWAY_CHANNELS.filter((c) => c.id !== 'push') : AWAY_CHANNELS;
+}
 
 export type AwayState = {
   /** `idle` — not checked yet for this account; `reading`; `playing`; `done` — played, skipped or nothing to tell. */
@@ -54,10 +75,15 @@ export type AwayOptions = {
 export const SEEN_KEY = 'ryntra.city.away.v1';
 const seenKey = (owner: string) => `${SEEN_KEY}:${owner}`;
 
-export const CONSENT_LINES = {
-  refused: 'Sign in with your wallet to choose. Nothing changed.',
-  offline: 'Could not save that. Nothing changed.',
-} as const;
+/** The consent switches' answers, in the language on screen when they are said (`./words.ts`). */
+export const CONSENT_LINES: Readonly<Record<'refused' | 'offline', string>> = {
+  get refused() {
+    return wordsNow(AWAY_WORDS).consentRefused;
+  },
+  get offline() {
+    return wordsNow(AWAY_WORDS).consentOffline;
+  },
+};
 
 export function createAwayStore(options: AwayOptions = {}) {
   const client = options.client ?? world;

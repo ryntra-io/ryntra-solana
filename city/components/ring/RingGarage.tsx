@@ -13,6 +13,8 @@ import q from '../quarter/quarter.module.css';
 import { AgentBody } from './AgentBody';
 import { RingEditor } from './RingEditor';
 import r from './ring.module.css';
+import { RING_UI } from './words';
+import { useWords } from '@/city/lib/i18n/dict';
 
 export { RING_OPEN };
 
@@ -26,6 +28,7 @@ export function RingGarage({ building }: { building: Building }) {
   const read = useRing((st) => st.garages[key]);
   const editing = useRing((st) => st.editor?.quarterId === building.quarterId && st.editor.slot === building.slot);
   const [root, setRoot] = useState<HTMLElement | null>(null);
+  const w = useWords(RING_UI);
 
   useEffect(() => {
     void ringStore.getState().readGarage(building.quarterId, building.slot);
@@ -46,17 +49,17 @@ export function RingGarage({ building }: { building: Building }) {
   if (!read || read.status === 'reading') {
     return (
       <div ref={anchor}>
-        <div className={q.title}>Garage</div>
+        <div className={q.title}>{w.garage}</div>
       </div>
     );
   }
   if (read.status === 'failed') {
     return (
       <div ref={anchor}>
-        <div className={q.title}>The garage could not be read</div>
+        <div className={q.title}>{w.garageFailed}</div>
         <div className={`${q.about} ${q.error}`}>{read.line}</div>
         <button className={`${s.display} ${s.action}`} onClick={() => void ringStore.getState().readGarage(building.quarterId, building.slot)}>
-          Try again
+          {w.tryAgain}
         </button>
       </div>
     );
@@ -67,11 +70,11 @@ export function RingGarage({ building }: { building: Building }) {
         <div className={r.empty}>
           <AgentBody archetype="scout" dim size={96} />
           <div className={q.words}>
-            <div className={q.title}>Your agent lives here</div>
+            <div className={q.title}>{w.livesHere}</div>
           </div>
         </div>
         <button className={`${s.display} ${s.action}`} onClick={() => ringStore.getState().openEditor(building.quarterId, building.slot)}>
-          Make an agent
+          {w.makeAnAgent}
         </button>
         {editor}
       </div>
@@ -90,6 +93,7 @@ function AgentCard({ agent, mine }: { agent: AgentView; mine: boolean }) {
   const confirm = useRing((st) => st.confirmOff === agent.id);
   const offing = useRing((st) => st.offing);
   const offError = useRing((st) => st.offError);
+  const w = useWords(RING_UI);
   const ratings = new Map(agent.ratings.map((rating) => [rating.format, rating]));
   return (
     <>
@@ -108,21 +112,21 @@ function AgentCard({ agent, mine }: { agent: AgentView; mine: boolean }) {
           <div className={r.line}>{BODIES[agent.archetype].line}</div>
         </div>
       </div>
-      <dl className={r.ratings} aria-label="Ratings">
+      <dl className={r.ratings} aria-label={w.ratings}>
         {FORMATS.map((format) => {
           const rating = ratings.get(format);
           return (
             <div key={format} className={[r.rating, !rating && r.ratingOff].filter(Boolean).join(' ')}>
               <dt>{FORMAT_NAMES[format]}</dt>
               <dd>{rating ? ratingLine(rating) : '—'}</dd>
-              <dd className={r.games}>{rating ? gamesLine(rating) : 'This brain can’t play it'}</dd>
+              <dd className={r.games}>{rating ? gamesLine(rating) : w.cantPlay}</dd>
             </div>
           );
         })}
       </dl>
       {mine && agent.key && (
         <div className={r.keyLine}>
-          {agent.key.state === 'live' && agent.key.limitUsd !== null ? `Up to ${usd(agent.key.limitUsd * 1_000_000)} a month` : agent.key.state === 'quiet' ? 'Nothing spent yet' : 'Paused'}
+          {agent.key.state === 'live' && agent.key.limitUsd !== null ? w.upTo(usd(agent.key.limitUsd * 1_000_000)) : agent.key.state === 'quiet' ? w.nothingSpent : w.paused}
         </div>
       )}
       {offError && <div className={`${q.about} ${q.error}`}>{offError}</div>}
@@ -130,19 +134,19 @@ function AgentCard({ agent, mine }: { agent: AgentView; mine: boolean }) {
         (confirm ? (
           <div className={q.pair}>
             <button className={`${s.display} ${s.action}`} onClick={() => ringStore.getState().askOff(null)}>
-              Keep it
+              {w.keepIt}
             </button>
             <button className={q.quiet} disabled={offing} aria-busy={offing} onClick={() => void ringStore.getState().switchOff(agent)}>
-              {offing ? 'Switching off…' : 'Switch off'}
+              {offing ? w.switchingOff : w.switchOff}
             </button>
           </div>
         ) : (
           <div className={q.pair}>
             <button className={`${s.display} ${s.action}`} onClick={() => ringStore.getState().openEditor(agent.quarterId, agent.slot, agent)}>
-              Change
+              {w.change}
             </button>
             <button className={q.quiet} onClick={() => ringStore.getState().askOff(agent.id)}>
-              Switch off
+              {w.switchOff}
             </button>
           </div>
         ))}

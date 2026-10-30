@@ -6,6 +6,7 @@ import { cityLine, detailsOf, intentOf, LINE_MAX, moveOf, movers, pickTowers, sh
 import { guestBody, turnOf } from "./ask.ts";
 import { foreignWord, questionSymbol } from "./clean.ts";
 import { useAssistant } from "./store.ts";
+import { useLangStore } from "../i18n/lang.ts";
 
 /* CITY-10: Ryntra in the city — the answer becomes towers, the line stays short, and nothing but advice travels. */
 
@@ -176,6 +177,27 @@ test("the question carries the asked tower as its context — a real mint and a 
   assert.deepEqual(guestBody("hi", { id: "not a mint", symbol: "X" }).context, null);
   assert.deepEqual(guestBody("hi", null).context, null);
   assert.equal(guestBody("x".repeat(3000), null).text.length, 2000);
+});
+
+test("Ryntra answers in the city's language: the question carries it, the ready questions are written in it (CITY-79)", () => {
+  assert.equal(guestBody("Що росте?", null, "uk").locale, "uk");
+  assert.equal(guestBody("What is rising?", null, "en").locale, "en");
+  useLangStore.setState({ lang: "uk" });
+  try {
+    assert.equal(guestBody("Що росте?", null).locale, "uk", "the language on screen, when none is given");
+    const [rising, falling] = startersFor(null);
+    assert.equal(rising.label, "Що росте і чому?");
+    // A ready question in Ukrainian still reads as a rise or a fall, so the city's own read stands in the same way.
+    assert.equal(intentOf(rising.question, null), "rising");
+    assert.equal(intentOf(falling.question, null), "falling");
+    assert.equal(startersFor(WIF)[0].label, "Що з WIF?");
+    assert.equal(moveOf(18.44), "+18,4% · 24 год");
+    assert.equal(cityLine("rising", [WIF, BONK]), "WIF веде зростання: +18,4% · 24 год, далі BONK.");
+    assert.equal(cityLine("other", []), "Ryntra зараз не може відповісти.");
+  } finally {
+    useLangStore.setState({ lang: "en" });
+  }
+  assert.equal(guestBody("What is rising?", null).locale, "en");
 });
 
 test("only a response with Ryntra's turn reads as an answer", () => {

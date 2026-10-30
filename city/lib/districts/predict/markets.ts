@@ -1,4 +1,6 @@
 import type { PredictionCategory, PredictionEventSummary } from '../../../../lib/predictions/model.ts';
+import { dateText, digits, wordsNow } from '../../i18n/dict.ts';
+import { PREDICT_TEXT } from './words.ts';
 
 /**
  * Predictions' markets as the window shows them: one card per open event — the question, the event's picture, the
@@ -77,6 +79,23 @@ export function venueName(venue: string): string {
 
 const isYes = (label: string) => /^yes$/i.test(label.trim());
 const isNo = (label: string) => /^no$/i.test(label.trim());
+
+/**
+ * A side's name on the screen: the generic Yes and No in the language on screen, any other outcome as the venue names
+ * it. Only for the eye — the label itself (what matching and orders read) never changes.
+ */
+export function sideName(label: string): string {
+  const w = wordsNow(PREDICT_TEXT);
+  return isYes(label) ? w.yes : isNo(label) ? w.no : label;
+}
+
+/** A tab's name in the language on screen: Trending and Ending soon, the engine's known categories; a search keeps its words. */
+export function tabName(tab: Pick<Tab, 'id' | 'label'> & Partial<Pick<Tab, 'q'>>): string {
+  const w = wordsNow(PREDICT_TEXT);
+  if (tab.id === TRENDING.id) return w.trending;
+  if (tab.id === ENDING.id) return w.ending;
+  return tab.q ? tab.label : w.category(tab.id, tab.label);
+}
 const priced = (p: unknown): p is number => typeof p === 'number' && Number.isFinite(p) && p >= 0 && p <= 1;
 const IMAGE = /^https:\/\/[^\s"'<>]+$/;
 
@@ -204,11 +223,11 @@ export function toWin(spendUsd: number, p: number): number {
   return Math.floor((spendUsd / p) * 100 + 1e-7) / 100;
 }
 
-/** Dollars as the window prints them: $1,240.00. */
+/** Dollars as the window prints them: $1,240.00 (in Ukrainian $1 240,00). Only for the eye: never a field's value. */
 export function usd(v: number): string {
   if (!Number.isFinite(v)) return '—';
   const sign = v < 0 ? '−' : '';
-  return `${sign}$${Math.abs(v).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  return digits(`${sign}$${Math.abs(v).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`);
 }
 
 /** A profit or loss with its sign: +$324.50, −$12.00. */
@@ -222,14 +241,14 @@ export function signedUsd(v: number): string {
 export function signedPct(v: number | null): string {
   if (v === null || !Number.isFinite(v)) return '';
   const r = Math.round(v * 10) / 10;
-  return r > 0 ? `+${r.toFixed(1)}%` : r < 0 ? `−${Math.abs(r).toFixed(1)}%` : '0.0%';
+  return digits(r > 0 ? `+${r.toFixed(1)}%` : r < 0 ? `−${Math.abs(r).toFixed(1)}%` : '0.0%');
 }
 
 /** A volume in dollars, short; a dash when the source gives none. */
 export function volumeText(v: number | null): string {
   if (v === null) return '—';
-  if (v >= 1e9) return `$${(v / 1e9).toFixed(1)}B`;
-  if (v >= 1e6) return `$${(v / 1e6).toFixed(1)}M`;
+  if (v >= 1e9) return digits(`$${(v / 1e9).toFixed(1)}B`);
+  if (v >= 1e6) return digits(`$${(v / 1e6).toFixed(1)}M`);
   if (v >= 1e3) return `$${(v / 1e3).toFixed(0)}K`;
   return `$${Math.round(v)}`;
 }
@@ -240,21 +259,22 @@ const DAY = 24 * HOUR;
 
 /** The time left until a market closes: 42m, 5h 12m, 3d 4h, 41d. */
 export function closesIn(iso: string | null, nowMs: number = Date.now()): string {
-  if (!iso) return 'No set close';
+  const w = wordsNow(PREDICT_TEXT);
+  if (!iso) return w.noClose;
   const left = Date.parse(iso) - nowMs;
-  if (!Number.isFinite(left)) return 'No set close';
-  if (left <= 0) return 'Closed';
-  if (left < MINUTE) return '<1m';
-  if (left < HOUR) return `${Math.floor(left / MINUTE)}m`;
-  if (left < DAY) return `${Math.floor(left / HOUR)}h ${Math.floor((left % HOUR) / MINUTE)}m`;
-  if (left < 7 * DAY) return `${Math.floor(left / DAY)}d ${Math.floor((left % DAY) / HOUR)}h`;
-  return `${Math.floor(left / DAY)}d`;
+  if (!Number.isFinite(left)) return w.noClose;
+  if (left <= 0) return w.closed;
+  if (left < MINUTE) return w.underMinute;
+  if (left < HOUR) return w.minutes(Math.floor(left / MINUTE));
+  if (left < DAY) return w.hoursMinutes(Math.floor(left / HOUR), Math.floor((left % HOUR) / MINUTE));
+  if (left < 7 * DAY) return w.daysHours(Math.floor(left / DAY), Math.floor((left % DAY) / HOUR));
+  return w.days(Math.floor(left / DAY));
 }
 
 /** A read's time of day, as the city's top bar prints its own. */
 export function clock(iso: string | number): string {
   const at = typeof iso === 'number' ? iso : Date.parse(iso);
-  return Number.isFinite(at) ? new Date(at).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' }) : '—';
+  return Number.isFinite(at) ? dateText(at, { hour: '2-digit', minute: '2-digit' }) : '—';
 }
 
 /** The picture a card falls back to when the event has none (or the page may not load it): its first category's. */
@@ -277,10 +297,15 @@ export function artOf(market: Pick<Market, 'categories' | 'title'>): Art {
   return 'market';
 }
 
-/** The kicker over a market's title: its first category, in capitals. */
+/**
+ * The kicker over a market's title: its first category the window names as a tab, in the language on screen and in
+ * capitals. A category the window has no tab for (the source's own, often a race's tag — «US presidential election»
+ * on a House race, 29.10) is no kicker: the title says it better.
+ */
 export function kickerOf(market: Pick<Market, 'categories'>, tabs: readonly Tab[]): string | null {
-  const slug = market.categories[0];
-  if (!slug) return null;
-  const named = tabs.find((t) => t.category === slug);
-  return (named?.label ?? slug.replace(/[-_]+/g, ' ')).toUpperCase();
+  for (const slug of market.categories) {
+    const named = tabs.find((t) => t.category === slug);
+    if (named) return tabName(named).toUpperCase();
+  }
+  return null;
 }

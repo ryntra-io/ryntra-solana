@@ -91,6 +91,12 @@
   margin-top: 12px;
 }
 
+/* Ukrainian names are longer («Поповнити», CITY-79): each tab takes the room its name needs and the rest is shared,
+   so no name is cut on a phone. */
+:global(html:lang(uk)) .tabs {
+  grid-template-columns: repeat(5, auto);
+}
+
 .tab {
   position: relative;
   height: 54px;
@@ -263,12 +269,28 @@
   color: var(--text-dim);
 }
 
-/* The one action stays in reach while the form scrolls under it. */
-.cta {
+/* The one action stays in reach with what is read before it — the review, its fee line, any warning: the form scrolls
+   under this dock, never these lines. Pinned over a
+   short fade of the window's own ground (its top padding); in a form that fits, it sits where it always did. */
+.dock {
   position: sticky;
   bottom: 0;
   z-index: 1;
-  margin-top: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 0 -6px;
+  padding: 14px 6px 0;
+  background: linear-gradient(to bottom, rgba(11, 10, 20, 0), #0b0a14 14px);
+  box-shadow: 0 4px 0 #0b0a14;
+}
+
+.dock > :first-child {
+  margin-top: 0;
+}
+
+.cta {
+  margin-top: 0;
 }
 
 .cta:disabled {
@@ -339,6 +361,17 @@
   border-radius: 50%;
   object-fit: cover;
   background: var(--graphite);
+}
+
+/* A coin without a picture anywhere: its ticker's letters on the disc. */
+.coinLetters {
+  display: inline-grid;
+  place-items: center;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+  color: var(--ice);
+  background: linear-gradient(160deg, rgba(153, 69, 255, 0.45), rgba(255, 104, 28, 0.35));
+  box-shadow: inset 0 0 0 1px rgba(238, 241, 255, 0.18);
 }
 
 .names {
@@ -785,6 +818,71 @@
   display: none;
 }
 
+/* A receipt read in the window: what, where it stands and when, then the chain. */
+.receipt {
+  gap: 14px;
+}
+
+.receiptBack {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 44px;
+  align-self: flex-start;
+  padding: 0 10px 0 4px;
+  border: 0;
+  background: none;
+  font-size: var(--type-base);
+  font-weight: 800;
+  color: var(--ice);
+}
+
+.receiptCard {
+  display: grid;
+  gap: 6px;
+  padding: 18px 16px;
+  border: 1px solid rgba(238, 241, 255, 0.1);
+  background: rgba(238, 241, 255, 0.04);
+}
+
+.receiptTitle {
+  font-size: 20px;
+  line-height: 1.25;
+  color: var(--ice);
+  overflow-wrap: anywhere;
+}
+
+.receiptSub {
+  font-size: var(--type-base);
+  color: var(--ice);
+  font-variant-numeric: tabular-nums;
+  overflow-wrap: anywhere;
+}
+
+.receiptWhen {
+  font-size: var(--type-small);
+  color: var(--text-dim);
+}
+
+.receiptActs {
+  display: grid;
+  gap: 8px;
+}
+
+.receiptAct {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 48px;
+  padding: 0 14px;
+  border: 1px solid rgba(201, 162, 255, 0.35);
+  background: rgba(201, 162, 255, 0.08);
+  font-size: var(--type-base);
+  font-weight: 800;
+  color: var(--ice);
+  text-decoration: none;
+}
+
 /* ---------- Connect and soon ---------- */
 
 .connect {
@@ -1002,4 +1100,60 @@
   .tab {
     font-size: var(--type-micro);
   }
+}
+
+/* What is left on Phoenix since futures went off (30.10): one quiet row, one tap to close out. */
+.phoenixLeft {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  width: 100%;
+  min-height: 52px;
+  margin: 10px 0 2px;
+  padding: 8px 12px;
+  border: 0;
+  font: inherit;
+  text-align: left;
+  color: var(--ice);
+  background: rgba(255, 178, 63, 0.08);
+  box-shadow: inset 0 0 0 1px rgba(255, 178, 63, 0.35);
+  clip-path: polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px);
+  cursor: pointer;
+}
+
+.phoenixLeft > span:first-child {
+  display: grid;
+  gap: 2px;
+}
+
+.phoenixLeft > span:first-child > span {
+  font-size: var(--type-small);
+  color: var(--text-dim);
+}
+
+.phoenixOut {
+  font-size: var(--type-small);
+  font-weight: 800;
+  color: var(--warm);
+  white-space: nowrap;
+}
+
+/* ---------- Pay link (CITY-155): the link made, whole, with its copy and share ---------- */
+
+.payMade {
+  display: grid;
+  gap: 8px;
+  margin-top: 6px;
+  padding: 12px;
+  background: rgba(153, 69, 255, 0.08);
+  box-shadow: inset 0 0 0 1px rgba(153, 69, 255, 0.3);
+  clip-path: polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px);
+}
+
+.payUrl {
+  margin: 0;
+  font-size: var(--type-small);
+  color: var(--ice);
+  word-break: break-all;
 }

@@ -1,6 +1,8 @@
 import { exactDecimal } from '../../../lib/solana/amounts.ts';
 import { PRIORITY_CEILING_LAMPORTS, SIGNATURE_LAMPORTS, TOKEN_ACCOUNT_RENT_LAMPORTS } from '../../../lib/spot/radar-cost.ts';
+import { wordsNow } from '../i18n/dict.ts';
 import { SOL, USDC, isBase, type Balance, type PayAsset, type Side } from './tiles.ts';
+import { SIZE } from './words.ts';
 
 /**
  * How much the card spends: one model for buying and selling, and for Market, Limit and Stop alike. The chips are
@@ -97,13 +99,14 @@ export type Sizing = Readonly<{
 
 /** The chips and the slider for an amount (raw, or null when the field holds none) against the most. */
 export function sizingOf(max: bigint | null, amountRaw: string | null): Sizing {
+  const w = wordsNow(SIZE);
   const usable = max !== null && max > 0n;
   const amount = amountRaw && /^\d+$/.test(amountRaw) ? BigInt(amountRaw) : 0n;
   return {
     max: max === null ? null : max.toString(),
     chips: SHARES.map((share) => {
       const raw = usable ? amountAt(max, share) : 0n;
-      return { share, label: share === 100 ? 'MAX' : `${share}%`, amountRaw: raw.toString(), on: raw > 0n && amount === raw, usable: raw > 0n };
+      return { share, label: share === 100 ? w.max : w.share(share), amountRaw: raw.toString(), on: raw > 0n && amount === raw, usable: raw > 0n };
     }),
     share: usable ? shareOf(amount, max) : null,
   };

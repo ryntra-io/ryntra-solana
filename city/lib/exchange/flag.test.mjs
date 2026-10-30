@@ -2,7 +2,7 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 
-import { exchangeOpen } from "./flag.ts";
+import { exchangeMode, exchangeOpen } from "./flag.ts";
 
 const source = (path) => readFileSync(new URL(`../../components/exchange/${path}`, import.meta.url), "utf8");
 
@@ -12,10 +12,27 @@ test("the Exchange opens only where the switch says `open`", () => {
   for (const value of [undefined, "", "closed", "OPEN", "true", "1", "canary", "paper"]) assert.equal(exchangeOpen(value), false, String(value));
 });
 
+test("`exit` closes out (decision 86): no trading, but the window stands for a wallet that holds something on Phoenix", () => {
+  assert.equal(exchangeMode("exit"), "exit");
+  assert.equal(exchangeMode(" exit\n"), "exit");
+  assert.equal(exchangeMode("open"), "open");
+  for (const value of [undefined, "", "closed", "EXIT", "exits", "true"]) assert.equal(exchangeMode(value), "closed", String(value));
+  assert.equal(exchangeOpen("exit"), false);
+  // The tower card's «Trade futures» and the dock stay on `open` alone; the window stands for `exit` too.
+  assert.ok(source("FuturesAction.tsx").includes("if (!EXCHANGE_OPEN) return null;"));
+  assert.ok(source("ExchangeLayer.tsx").includes("if (!EXCHANGE_SHOWN) return null;"));
+  // Closing out puts nothing in: no deposit on the account, none built by the store, nothing opened from the ticket.
+  assert.match(source("Account.tsx"), /\{!EXCHANGE_EXIT && \(\s*<button[^>]*'deposit'/);
+  const store = readFileSync(new URL("./store.ts", import.meta.url), "utf8");
+  assert.match(store, /EXCHANGE_EXIT && intent\.kind === 'open'\) return;/);
+  assert.match(store, /EXCHANGE_EXIT && action === 'deposit'\)\) return;/);
+  assert.match(store, /EXCHANGE_EXIT && form\.action === 'deposit'\)\) return;/);
+});
+
 test("closed, the city shows no Exchange anywhere: no window, no dock button, no «Trade futures», and reads nothing", () => {
   // Every way into the Exchange asks the switch before anything of it renders or reads.
   for (const [file, gate] of [
-    ["ExchangeLayer.tsx", "if (!EXCHANGE_OPEN) return null;"],
+    ["ExchangeLayer.tsx", "if (!EXCHANGE_SHOWN) return null;"],
     ["ExchangeDockItem.tsx", "if (!EXCHANGE_OPEN) return null;"],
     ["FuturesAction.tsx", "if (!EXCHANGE_OPEN) return null;"],
   ]) {

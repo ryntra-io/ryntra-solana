@@ -6,7 +6,9 @@ import type { PerpSide } from '../../../lib/phoenix/orders-model.ts';
 import { MAX_SIGNABLE_WINDOW_MS } from '../../../lib/solana/blockhash-life.ts';
 import { walletSignsV1 } from '../../../lib/solana/wallet.client.ts';
 import { citySigner } from '../app-bridge/route.ts';
+import { wordsNow } from '../i18n/dict.ts';
 import type { AccountRead } from './account.ts';
+import { EXCHANGE_EXIT } from './flag.ts';
 import {
   createExchangeEngine,
   type CollateralBody,
@@ -25,6 +27,7 @@ import { clampLeverage } from './markets.ts';
 import { AGAIN, refusalWords } from './refusals.ts';
 import { CHART_DEFAULT, type ChartTimeframe } from './candles.ts';
 import { draftFor, draftIssue, feeBpsOf, figuresKeyOf, maxKeyOf, microOf, newDraft, openBody, sizeLotsOf, ticketQuery, type Draft, type DraftIssue } from './ticket.ts';
+import { EX_NOTICES } from './words.ts';
 
 /**
  * The Exchange's state: which market is open, Phoenix's markets and the funding now, the connected wallet's account,
@@ -257,10 +260,11 @@ export function collateralCheck(form: CollateralForm, states: CollateralStates |
 
 export const maxText = (micro: bigint | null): string => (micro === null ? '' : dollarsFromMicro(micro));
 
-const LOST = 'Signed, but no answer came. Check Positions before trying again.';
-const OLD = 'Terms refreshed. Check them, then sign.';
-const AGED = 'Nothing was sent. Terms refreshed: check them, then sign.';
-const BROKEN = 'Nothing was sent. Try again.';
+/* The moments' words, read in the language of the moment they are said (`words.ts`). */
+const LOST = () => wordsNow(EX_NOTICES).lost;
+const OLD = () => wordsNow(EX_NOTICES).old;
+const AGED = () => wordsNow(EX_NOTICES).aged;
+const BROKEN = () => wordsNow(EX_NOTICES).broken;
 /** After an action the account is read again at once and once more this much later, for Phoenix's record to catch up. */
 const AFTER_MS = 6_000;
 
@@ -506,6 +510,8 @@ export const useExchange = create<Store>((set, get) => ({
   review: async (connection, intent, given) => {
     const st = get();
     if (BUSY.has(st.phase)) return;
+    // Closing out (decision 86): nothing new opens from the city, whatever asks.
+    if (EXCHANGE_EXIT && intent.kind === 'open') return;
     let body: OrderBody | null = given ?? null;
     if (!body && intent.kind === 'open') {
       const view = ticketView(st);
@@ -524,7 +530,7 @@ export const useExchange = create<Store>((set, get) => ({
   reviewCollateral: async (connection) => {
     const st = get();
     const form = st.collateralForm;
-    if (!form || BUSY.has(st.phase)) return;
+    if (!form || BUSY.has(st.phase) || (EXCHANGE_EXIT && form.action === 'deposit')) return;
     const withdrawable = st.account.value?.margin?.withdrawableMicro;
     const check = collateralCheck(form, st.collateralStates, typeof withdrawable === 'string' && /^\d+$/.test(withdrawable) ? BigInt(withdrawable) : null);
     if (check.amount === null || check.issue) return;
@@ -554,7 +560,7 @@ export const useExchange = create<Store>((set, get) => ({
     // The wallet said no: the same Review stays to sign again. Any other refusal ends this Review.
     const refused = (code: string) => set({ phase: 'idle', ...(code === 'WALLET_REFUSED' ? {} : { pending: null, asking: pending.intent }), notice: refusal(code) });
     // A Review too old to sign never opens the wallet: it is built again and shown first.
-    if (!reviewFresh(pending.review, pending.at, run.now())) return rebuild(OLD);
+    if (!reviewFresh(pending.review, pending.at, run.now())) return rebuild(OLD());
     const ticket = ++reviewTicket;
     set({ phase: 'wallet', notice: null });
     let signed = false;
@@ -577,14 +583,14 @@ export const useExchange = create<Store>((set, get) => ({
         if (ticket !== reviewTicket) return;
         // Another wallet took over while this one signed: nothing of this Review or its receipt is shown to it.
         if (get().owner !== pending.owner) return set({ phase: 'idle', asking: null, pending: null, result: null, notice: null });
-        if (sent.kind === 'aged') return rebuild(AGED);
+        if (sent.kind === 'aged') return rebuild(AGED());
         if (sent.kind === 'refused') return refused(sent.code);
         result = { kind: 'order', intent: pending.intent, owner: pending.owner, review: pending.review, receipt: orderReceipt(pending.review, sent.relay) };
       } else {
         const sent = await sendCollateral(pending.review, pending.at, connection.address, deps);
         if (ticket !== reviewTicket) return;
         if (get().owner !== pending.owner) return set({ phase: 'idle', asking: null, pending: null, result: null, notice: null });
-        if (sent.kind === 'aged') return rebuild(AGED);
+        if (sent.kind === 'aged') return rebuild(AGED());
         if (sent.kind === 'refused') return refused(sent.code);
         result = { kind: 'collateral', intent: pending.intent, owner: pending.owner, review: pending.review, receipt: collateralReceipt(sent.relay) };
       }
@@ -592,7 +598,7 @@ export const useExchange = create<Store>((set, get) => ({
       // Nothing is ever left holding the window. Once the wallet signed, what happened is the chain's to say: the
       // positions and the history show it; the same Review is not offered again.
       if (ticket !== reviewTicket) return;
-      return set({ phase: 'idle', pending: signed ? null : pending, asking: signed ? pending.intent : null, notice: { tone: 'error', text: signed ? LOST : BROKEN, again: false } });
+      return set({ phase: 'idle', pending: signed ? null : pending, asking: signed ? pending.intent : null, notice: { tone: 'error', text: signed ? LOST() : BROKEN(), again: false } });
     }
     set({ phase: 'done', pending: null, result, collateralForm: null, protectForm: null });
     // What changed is read again: the account now and once more a little later, the gates and the wallet's coins.
@@ -633,7 +639,7 @@ export const useExchange = create<Store>((set, get) => ({
   },
 
   openCollateral: (action) => {
-    if (BUSY.has(get().phase)) return;
+    if (BUSY.has(get().phase) || (EXCHANGE_EXIT && action === 'deposit')) return;
     set({ collateralForm: action ? { action, text: '' } : null, pending: get().pending?.kind === 'collateral' ? null : get().pending, notice: null });
   },
   setCollateralText: (text) => {

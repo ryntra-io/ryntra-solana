@@ -8,11 +8,13 @@ import { shareImage } from '@/city/lib/share';
 import { challengePayload, openChallenge, readChallengeHead, worldFromVersion } from './challenge';
 import { cityFonts, composeMomentCard } from './draw';
 import { DraftsDesk, useDeskAsked } from './drafts/Desk';
-import { momentFileName, momentFromCityEvent, momentFromRun, momentFromWorldEvent, momentText, sourceTime, type Moment, type WorldEventLike } from './moment';
+import { momentFileName, momentFromCityEvent, momentFromRun, momentFromWorldEvent, momentShown, momentText, sourceTimeShown, type Moment, type WorldEventLike } from './moment';
 import { clipCodec } from './recorder';
 import { addMoments, cancelFilming, filmMoment, isFilming, runChallengeLink, runClipReady, useMoments, watchRuns, type Made } from './stage';
 import { resolveWorld } from './world-code';
+import { digits, useWords } from '@/city/lib/i18n/dict';
 import m from './moments.module.css';
+import { MOMENTS } from './words';
 
 /**
  * Moments in the city, always mounted beside the HUD: it opens challenge links (`#c=`), films every run in the
@@ -130,17 +132,18 @@ export function MomentsLayer() {
 
 /** While a clip is filmed: the 9:16 frame being recorded, its progress, and a way out. The city waits for it. */
 function Filming({ moment, progress }: { moment: Moment; progress: number }) {
+  const w = useWords(MOMENTS);
   return (
     <div className={m.rec} role="status" aria-live="polite">
       <div className={m.finder} aria-hidden="true" />
       <div className={m.recBar}>
         <span className={m.recDot} aria-hidden="true" />
-        <span className={m.recLabel}>Filming · {moment.kicker.toLowerCase()}</span>
+        <span className={m.recLabel}>{w.filming(momentShown(moment).kicker.toLowerCase())}</span>
         <span className={m.recTrack} aria-hidden="true">
           <i style={{ transform: `scaleX(${progress})` }} />
         </span>
         <button className={m.recCancel} onClick={cancelFilming}>
-          Cancel
+          {w.cancel}
         </button>
       </div>
     </div>
@@ -168,8 +171,9 @@ function Sheet({ label, children }: { label: string; children: ReactNode }) {
 }
 
 function CloseButton() {
+  const w = useWords(MOMENTS);
   return (
-    <button className={m.close} aria-label="Close" onClick={close}>
+    <button className={m.close} aria-label={w.close} onClick={close}>
       <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" aria-hidden="true">
         <path d="M6 6l12 12M18 6L6 18" />
       </svg>
@@ -184,34 +188,37 @@ function ListSheet() {
   const moments = useMoments((s) => s.moments);
   const run = useMoments((s) => s.run);
   const [film, setFilm] = useState(true);
+  const w = useWords(MOMENTS);
   useEffect(() => {
     void clipCodec().then((c) => setFilm(!!c));
   }, []);
   return (
-    <Sheet label="Moments">
+    <Sheet label={w.moments}>
       <div className={m.head}>
-        <div className={m.kicker}>Moments</div>
+        <div className={m.kicker}>{w.moments}</div>
         <CloseButton />
       </div>
       <ul className={m.list}>
-        {run && <Row moment={run.moment} action="Share" onAction={() => void openRunShare()} />}
+        {run && <Row moment={run.moment} action={w.share} onAction={() => void openRunShare()} />}
         {moments.map((x) => (
-          <Row key={x.id} moment={x} action={film ? 'Clip' : 'Card'} onAction={() => void clipMoment(x)} />
+          <Row key={x.id} moment={x} action={film ? w.clip : w.card} onAction={() => void clipMoment(x)} />
         ))}
       </ul>
-      <p className={m.small}>{film ? 'A clip is 9:16 with the moment’s real figure, ready for X.' : 'This browser cannot film video; each moment makes a card for X.'}</p>
+      <p className={m.small}>{film ? w.clipNote : w.cardNote}</p>
     </Sheet>
   );
 }
 
 function Row({ moment, action, onAction }: { moment: Moment; action: string; onAction: () => void }) {
+  useWords(MOMENTS);
+  const shown = momentShown(moment);
   return (
     <li className={m.row} style={{ ['--accent' as string]: ACCENT_VAR[moment.accent] }}>
       <div className={m.rowText}>
-        <div className={m.rowKicker}>{moment.kicker}</div>
-        <div className={m.rowTitle}>{moment.title}</div>
+        <div className={m.rowKicker}>{shown.kicker}</div>
+        <div className={m.rowTitle}>{shown.title}</div>
         <div className={m.rowFigure}>
-          {moment.figure} · {sourceTime(moment.sourceAt)}
+          {shown.figure} · {sourceTimeShown(moment.sourceAt)}
         </div>
       </div>
       <button className={m.rowAction} onClick={onAction}>
@@ -233,6 +240,8 @@ function canShareFiles(type: string, name: string): boolean {
 /** One moment made: the clip's frame, the words, and the ways out — the phone's share sheet, a download, the link. */
 function ShareSheet({ made, link }: { made: Made; link: string | null }) {
   const { moment, clip, card, hero } = made;
+  const w = useWords(MOMENTS);
+  const shown = momentShown(moment);
   const text = momentText(moment, link ?? undefined);
   const [done, setDone] = useState<string | null>(null);
   const [phone] = useState(() => canShareFiles('video/mp4', 'clip.mp4'));
@@ -243,20 +252,21 @@ function ShareSheet({ made, link }: { made: Made; link: string | null }) {
     if (!c || !ctx || !hero) return;
     ctx.drawImage(hero, 0, 0, c.width, c.height);
   }, [hero]);
-  const send = async (blob: Blob | null, ext: 'mp4' | 'png', what: string) => {
+  const send = async (blob: Blob | null, ext: 'mp4' | 'png', what: 'clip' | 'card') => {
     if (!blob) return;
     const outcome = await shareImage(blob, momentFileName(moment, ext), text);
-    setDone(outcome === 'shared' ? `${what} shared` : outcome === 'downloaded' ? `${what} saved` : null);
+    const said = what === 'clip' ? { shared: w.clipShared, saved: w.clipSaved } : { shared: w.cardShared, saved: w.cardSaved };
+    setDone(outcome === 'shared' ? said.shared : outcome === 'downloaded' ? said.saved : null);
   };
   const copy = async () => {
     try {
       await navigator.clipboard.writeText(text);
-      setDone(link ? 'Link copied' : 'Words copied');
+      setDone(link ? w.linkCopied : w.wordsCopied);
     } catch {
       setDone(null);
     }
   };
-  const label = moment.kind === 'record' ? (link ? 'Challenge' : 'Your run') : 'Moment';
+  const label = moment.kind === 'record' ? (link ? w.challenge : w.yourRun) : w.moment;
   return (
     <Sheet label={label}>
       <div className={m.head}>
@@ -266,36 +276,36 @@ function ShareSheet({ made, link }: { made: Made; link: string | null }) {
         <CloseButton />
       </div>
       <div className={m.made}>
-        {hero ? <canvas ref={preview} className={m.preview} width={180} height={320} aria-label="The clip's frame" /> : null}
+        {hero ? <canvas ref={preview} className={m.preview} width={180} height={320} aria-label={w.clipFrame} /> : null}
         <div className={m.madeText}>
-          <div className={m.madeKicker}>{moment.kicker}</div>
-          <div className={m.madeTitle}>{moment.title}</div>
-          <div className={m.madeFigure}>{moment.figure}</div>
-          <div className={m.madeMeta}>{clip ? `Clip 9:16 · ${Math.round(clip.size / 100_000) / 10} MB · no sound` : 'Card 4:5 for X'}</div>
+          <div className={m.madeKicker}>{shown.kicker}</div>
+          <div className={m.madeTitle}>{shown.title}</div>
+          <div className={m.madeFigure}>{shown.figure}</div>
+          <div className={m.madeMeta}>{clip ? w.clipMeta(digits(String(Math.round(clip.size / 100_000) / 10))) : w.cardMeta}</div>
           <p className={m.words}>{text}</p>
         </div>
       </div>
       <div className={m.actions}>
         {clip ? (
-          <button className={m.primary} onClick={() => void send(clip, 'mp4', 'Clip')} autoFocus>
-            {phone ? 'Share clip' : 'Save clip'}
+          <button className={m.primary} onClick={() => void send(clip, 'mp4', 'clip')} autoFocus>
+            {phone ? w.shareClip : w.saveClip}
           </button>
         ) : (
-          <button className={m.primary} onClick={() => void send(card, 'png', 'Card')} autoFocus>
-            {phone ? 'Share card' : 'Save card'}
+          <button className={m.primary} onClick={() => void send(card, 'png', 'card')} autoFocus>
+            {phone ? w.shareCard : w.saveCard}
           </button>
         )}
         {clip && card && (
-          <button className={m.secondary} onClick={() => void send(card, 'png', 'Card')}>
-            Card
+          <button className={m.secondary} onClick={() => void send(card, 'png', 'card')}>
+            {w.card}
           </button>
         )}
         <button className={m.secondary} onClick={() => void copy()}>
-          {link ? 'Copy link' : 'Copy words'}
+          {link ? w.copyLink : w.copyWords}
         </button>
       </div>
       <p className={m.small} aria-live="polite">
-        {done ?? (link ? 'The link opens the same city and your run as a ghost.' : 'Nothing is posted for you: you choose where it goes.')}
+        {done ?? (link ? w.linkNote : w.yoursNote)}
       </p>
     </Sheet>
   );
@@ -310,11 +320,13 @@ export function useFilming(): boolean {
 export function MomentsButton({ onOpen }: { onOpen?: () => void }) {
   const count = useMoments((s) => s.moments.length + (s.run ? 1 : 0));
   const open = useMoments((s) => s.sheet?.kind === 'list');
+  const w = useWords(MOMENTS);
   if (!count) return null;
   return (
     <button
       className={m.button}
-      aria-label={`Moments, ${count}`}
+      data-city-moments=""
+      aria-label={w.momentsOf(count)}
       aria-expanded={open}
       onClick={() => {
         onOpen?.();

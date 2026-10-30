@@ -53,6 +53,12 @@
   --cut: 14px;
 }
 
+/* Solid, not the bar's glass: nothing of the city or a hint under it reads through the wallet (CITY-150). Above the
+   HUD's panel rule whichever stylesheet loads first. */
+.wrap > .menu {
+  background: linear-gradient(160deg, #161226, #09080f);
+}
+
 .head {
   font-size: 15px;
   font-weight: 800;
@@ -120,5 +126,11 @@
   .dot {
     width: 12px;
     height: 12px;
+  }
+  /* The chip sits mid-bar on a phone: the menu stands on the screen's own right gutter, never past its left edge. */
+  .menu {
+    position: fixed;
+    top: calc(max(12px, env(safe-area-inset-top)) + 56px);
+    right: var(--gutter, 16px);
   }
 }

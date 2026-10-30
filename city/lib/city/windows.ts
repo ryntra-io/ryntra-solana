@@ -80,6 +80,11 @@ export function openWindow(src: WindowSources): WindowName | null {
   return null;
 }
 
+/** Every open window, in the order they are asked. */
+export function openWindows(src: WindowSources): WindowName[] {
+  return WINDOWS.filter((name) => IS_OPEN[name](src));
+}
+
 /** True while any window or panel is open. */
 export function windowOpen(src: WindowSources): boolean {
   return openWindow(src) !== null;

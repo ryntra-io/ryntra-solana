@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { FOG_COLOR, FOG_DENSITY, FOG_FALLOFF, GLSL_COMMON, GLSL_FOG_PARS } from '@/city/lib/city/glsl';
 import { GLSL_SHARED, share } from '@/city/lib/city/shared';
+import { GLSL_LENS, shareLens } from '@/city/lib/lens/uniforms';
 import { GLSL_LIGHT, shareLight } from './light';
 import { KIT_FLOOR } from './plan';
 
@@ -22,7 +23,7 @@ export const SURFACE = { frame: 0, slab: 1, glass: 2, stone: 3, accent: 4, louvr
  *
  * Per instance: instanceMatrix; aTower (index into uTowers); aFloor (first floor, floors per uv unit, 1 when the
  * module has no geometric fins). uTowers rows per tower: 0 accent rgb + activity, 1 event glow rgb + level,
- * 2 build + height + seed + kind, 3 x + z + width.
+ * 2 build + height + seed + kind, 3 x + z + width + the Lens's level (CITY-86).
  * `lowrise` draws the blocks between the towers: their windows sit on a world grid like the old boxes'.
  */
 export function createSkylineMaterial({ lowrise = false } = {}) {
@@ -52,8 +53,11 @@ export function createSkylineMaterial({ lowrise = false } = {}) {
       varying vec4 vInfo;
       varying vec3 vCell;
       varying float vLow;
+      varying float vLens;
+      ${GLSL_LENS}
       void main() {
         vLow = aFloor.x;
+        vLens = 0.0;
         #ifdef LOWRISE
           vAccent = vec4(0.0, 0.0, 0.0, 0.35);
           vGlow = vec4(0.0);
@@ -63,10 +67,12 @@ export function createSkylineMaterial({ lowrise = false } = {}) {
           vAccent = texelFetch(uTowers, ivec2(ti, 0), 0);
           vGlow = texelFetch(uTowers, ivec2(ti, 1), 0);
           vInfo = texelFetch(uTowers, ivec2(ti, 2), 0);
+          vLens = texelFetch(uTowers, ivec2(ti, 3), 0).w;
         #endif
         vec3 sc = vec3(length(instanceMatrix[0].xyz), length(instanceMatrix[1].xyz), length(instanceMatrix[2].xyz));
         vec4 world = modelMatrix * instanceMatrix * vec4(position, 1.0);
         world.y *= vInfo.x;
+        world.y = lensY(world.y, vInfo.y, vLens);
         vWorld = world.xyz;
         vNormalW = normalize(mat3(modelMatrix) * mat3(instanceMatrix) * (normal / (sc * sc)));
         vUv = vec2(uv.x, aFloor.x + uv.y * aFloor.y);
@@ -81,6 +87,7 @@ export function createSkylineMaterial({ lowrise = false } = {}) {
       uniform float uInterior;
       uniform vec3 uBrick;
       varying float vLow;
+      varying float vLens;
       varying vec3 vWorld;
       varying vec3 vNormalW;
       varying vec2 vUv;
@@ -94,6 +101,7 @@ export function createSkylineMaterial({ lowrise = false } = {}) {
       ${GLSL_COMMON}
       ${GLSL_FOG_PARS}
       ${GLSL_LIGHT}
+      ${GLSL_LENS}
 
       // How much of a pixel w cells wide, centred at x, the band [0, a) of every cell covers: the pattern filtered
       // over the pixel, exact at any size. A line a few pixels apart keeps its edge, one thinner than a pixel turns
@@ -380,9 +388,11 @@ export function createSkylineMaterial({ lowrise = false } = {}) {
           float burn = smoothstep(0.86, 1.0, y01);
           color += burn * vec3(1.6, 0.55, 0.18) * (0.6 + 0.4 * sin(uTime * 13.0 + vWorld.x));
         }
+        // The Lens: violet rim light on a tower looked at, the ink haze on one sunk.
+        color = lensColor(color, n, v, y01, vLens);
         gl_FragColor = vec4(applyFog(color, vWorld, cameraPosition), 1.0);
       }
     `,
   });
-  return shareLight(share(material));
+  return shareLens(shareLight(share(material)));
 }

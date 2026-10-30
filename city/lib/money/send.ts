@@ -14,7 +14,11 @@ import type { SendCheck } from '../../../lib/solana/send-check.ts';
 import type { SkrResolve } from '../../../lib/solana/skr.client.ts';
 import type { TransferPlan } from '../../../lib/solana/transaction.ts';
 import { nothingMoved, sendFailureCopy, sendOutcomeCopy, walletFailureCopy } from '../../../app/solana/workspace/send/send-copy.ts';
+import { wordsNow } from '../i18n/dict.ts';
+import { langNow } from '../i18n/lang.ts';
 import { ask, TIMEOUT_MS, type EngineFailure, type FetchLike } from './engine.ts';
+import { sayer } from './say.ts';
+import { SEND_COPY_WORDS, SEND_WORDS } from './words.ts';
 
 /**
  * One transfer from the Send tab, end to end, on the engine's own rules — the same steps Ryntra's web «Send» takes,
@@ -28,7 +32,8 @@ import { ask, TIMEOUT_MS, type EngineFailure, type FetchLike } from './engine.ts
 
 export const NETWORK = 'mainnet' as const;
 
-const ENGLISH = (text: string) => text;
+/** The shared transfer copy, said in the city's language (English as written). */
+const SAY = sayer(SEND_COPY_WORDS);
 
 export type SendAsset = Readonly<{ native: boolean; mint: string | null; decimals: number; symbol: string }>;
 
@@ -120,10 +125,12 @@ export function signable(bundle: SendBundle): boolean {
   }).ready;
 }
 
-/** Why a Review cannot be signed, in the engine's own words. */
+/** Why a Review cannot be signed, in the engine's own words, in the city's language when the engine gave it. */
 export function blockedLine(bundle: SendBundle): string {
   const stop = bundle.check?.warnings?.find((warning) => warning.stops);
-  return bundle.check?.blocked?.en ?? stop?.en ?? 'This transfer cannot be sent.';
+  const lang = langNow();
+  const blocked = bundle.check?.blocked;
+  return (blocked ? (blocked[lang] ?? blocked.en) : undefined) ?? (stop ? (stop[lang] ?? stop.en) : undefined) ?? wordsNow(SEND_WORDS).cannotBeSent;
 }
 
 export function isBundle(value: unknown): value is SendBundle {
@@ -147,7 +154,7 @@ export function isBundle(value: unknown): value is SendBundle {
 export type Refusal = Readonly<{ code: string; message: string }>;
 
 export function refusalOf(failure: Pick<EngineFailure, 'code'>): Refusal {
-  return { code: failure.code, message: sendFailureCopy(failure.code, ENGLISH) };
+  return { code: failure.code, message: sendFailureCopy(failure.code, SAY) };
 }
 
 const NAME_MOVED: Readonly<Record<string, string>> = { SKR_CHANGED: 'SKR_CHANGED', NOT_FOUND: 'SKR_GONE', UNAVAILABLE: 'SKR_UNREAD' };
@@ -158,13 +165,13 @@ async function nameMoved(deps: SendDeps, name: string | null, expected: string):
   const again = await deps.resolveName(name).catch(() => ({ state: 'UNAVAILABLE' as const, name }));
   if (again.state === 'FOUND' && again.address === expected) return null;
   const code = again.state === 'FOUND' ? 'SKR_CHANGED' : NAME_MOVED[again.state];
-  return { code, message: sendFailureCopy(code, ENGLISH) };
+  return { code, message: sendFailureCopy(code, SAY) };
 }
 
 async function plan(deps: SendDeps, intent: SendIntent): Promise<Readonly<{ ok: true; bundle: SendBundle }> | Readonly<{ ok: false; refusal: Refusal }>> {
   const answer = await ask<unknown>(deps.fetch, '/api/solana/transfer/plan', { body: { input: transferInput(intent) }, timeoutMs: TIMEOUT_MS.plan });
   if (!answer.ok) return { ok: false, refusal: refusalOf(answer.failure) };
-  if (!isBundle(answer.value)) return { ok: false, refusal: { code: 'BUILD_UNREADABLE', message: sendFailureCopy(null, ENGLISH) } };
+  if (!isBundle(answer.value)) return { ok: false, refusal: { code: 'BUILD_UNREADABLE', message: sendFailureCopy(null, SAY) } };
   return { ok: true, bundle: answer.value };
 }
 
@@ -176,7 +183,7 @@ export type ReviewOutcome =
 export async function reviewSend(deps: SendDeps, intent: SendIntent): Promise<ReviewOutcome> {
   deps.onPhase?.('reviewing');
   const moved = await nameMoved(deps, intent.name, intent.recipient);
-  if (moved) return { kind: 'refused', refusal: moved.code === 'SKR_UNREAD' ? { code: 'SKR_UNCHECKED', message: sendFailureCopy('SKR_UNCHECKED', ENGLISH) } : moved };
+  if (moved) return { kind: 'refused', refusal: moved.code === 'SKR_UNREAD' ? { code: 'SKR_UNCHECKED', message: sendFailureCopy('SKR_UNCHECKED', SAY) } : moved };
   const built = await plan(deps, intent);
   if (!built.ok) return { kind: 'refused', refusal: built.refusal };
   return { kind: 'review', bundle: built.bundle, authorized: environmentOf(built.bundle, intent.asset.symbol) };
@@ -220,13 +227,13 @@ export async function confirmSend(deps: SendDeps, intent: SendIntent, authorized
   const fresh = built.bundle;
   const current = environmentOf(fresh, intent.asset.symbol);
   if (checkEnvironmentLock({ authorized, current }).verdict !== 'LOCKED') {
-    return { kind: 'review', bundle: fresh, authorized: current, line: 'Something changed since you reviewed this transfer. Check it again.' };
+    return { kind: 'review', bundle: fresh, authorized: current, line: wordsNow(SEND_WORDS).changed };
   }
   if (!signable(fresh)) return { kind: 'review', bundle: fresh, authorized: current, line: blockedLine(fresh) };
 
   deps.onPhase?.('wallet');
   const signed = await deps.sign(fresh.plan.unsignedWireBase64);
-  if (!signed.ok) return { kind: 'cancelled', line: walletFailureCopy(signed.reason, ENGLISH) };
+  if (!signed.ok) return { kind: 'cancelled', line: walletFailureCopy(signed.reason, SAY) };
 
   let bundle = fresh;
   let check = await deps.checkReturned(fresh.plan, signed.signedWireBase64);
@@ -235,11 +242,11 @@ export async function confirmSend(deps: SendDeps, intent: SendIntent, authorized
     deps.onPhase?.('sending');
     const adopted = await ask<unknown>(deps.fetch, '/api/solana/transfer/adopt', { body: bundleBody(fresh, signed.signedWireBase64), timeoutMs: TIMEOUT_MS.plan });
     if (!adopted.ok) return { kind: 'refused', refusal: refusalOf(adopted.failure) };
-    if (!isBundle(adopted.value)) return { kind: 'refused', refusal: { code: 'SIGNED_BYTES_REJECTED', message: sendFailureCopy('SIGNED_BYTES_REJECTED', ENGLISH) } };
+    if (!isBundle(adopted.value)) return { kind: 'refused', refusal: { code: 'SIGNED_BYTES_REJECTED', message: sendFailureCopy('SIGNED_BYTES_REJECTED', SAY) } };
     bundle = adopted.value;
     check = await deps.checkReturned(bundle.plan, signed.signedWireBase64);
   }
-  if (check.verdict !== 'BYTES_MATCH') return { kind: 'refused', refusal: { code: 'SIGNED_BYTES_REJECTED', message: sendFailureCopy('SIGNED_BYTES_REJECTED', ENGLISH) } };
+  if (check.verdict !== 'BYTES_MATCH') return { kind: 'refused', refusal: { code: 'SIGNED_BYTES_REJECTED', message: sendFailureCopy('SIGNED_BYTES_REJECTED', SAY) } };
 
   // The wallet may have been open for minutes: a name is read once more before the signed bytes leave.
   deps.onPhase?.('sending');
@@ -253,20 +260,20 @@ export async function confirmSend(deps: SendDeps, intent: SendIntent, authorized
   if (!answer.ok) {
     const signature = typeof answer.failure.extra.signature === 'string' ? answer.failure.extra.signature : null;
     // An answer that names a signature is a transfer whose outcome is open; the kept record lets it be read back.
-    if (signature) return { kind: 'unresolved', signature, line: sendFailureCopy(answer.failure.code, ENGLISH) };
-    if (check.signature && /TIMEOUT|NETWORK/.test(answer.failure.code)) return { kind: 'unresolved', signature: check.signature, line: 'No answer from Ryntra yet. Reading what happened — do not send it again.' };
+    if (signature) return { kind: 'unresolved', signature, line: sendFailureCopy(answer.failure.code, SAY) };
+    if (check.signature && /TIMEOUT|NETWORK/.test(answer.failure.code)) return { kind: 'unresolved', signature: check.signature, line: wordsNow(SEND_WORDS).noAnswer };
     return { kind: 'refused', refusal: refusalOf(answer.failure) };
   }
   const value = answer.value;
   const signature = typeof value.signature === 'string' ? value.signature : check.signature;
   const state = typeof value.state === 'string' ? value.state : 'UNKNOWN';
-  if (!signature) return { kind: 'refused', refusal: { code: 'SETTLE_UNREADABLE', message: sendFailureCopy(null, ENGLISH) } };
+  if (!signature) return { kind: 'refused', refusal: { code: 'SETTLE_UNREADABLE', message: sendFailureCopy(null, SAY) } };
   const observed = !!value.observation && typeof value.observation === 'object';
   const receipt = value.receipt && typeof value.receipt === 'object' ? value.receipt : null;
   if (receipt) deps.keepReceipt(intent.sender, receipt);
   if (observed) deps.rememberRecipient(intent.sender, bundle.plan.recipient);
   deps.pending.forget(intent.sender);
-  return { kind: 'settled', settled: { state, signature, observed, receipt }, line: observed ? null : sendOutcomeCopy(state, ENGLISH) };
+  return { kind: 'settled', settled: { state, signature, observed, receipt }, line: observed ? null : sendOutcomeCopy(state, SAY) };
 }
 
 /** How a settled transfer reads: sent, not sent, or not confirmed yet. */

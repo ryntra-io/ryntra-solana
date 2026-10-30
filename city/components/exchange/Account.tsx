@@ -2,8 +2,11 @@
 
 import { useEffect, useState } from 'react';
 import { ACCOUNT_WORDS, accountKind, collateralOf, healthOf, HEALTH_WORDS, type AccountKind } from '@/city/lib/exchange/account';
-import { micro, percent, units, usd } from '@/city/lib/exchange/format';
-import { onboardingOf, ONBOARDING_WORDS, PHOENIX_URL } from '@/city/lib/exchange/onboarding';
+import { EXCHANGE_EXIT } from '@/city/lib/exchange/flag';
+import { clock, micro, percent, units, usd } from '@/city/lib/exchange/format';
+import { onboardingOf, onboardingWords, PHOENIX_URL } from '@/city/lib/exchange/onboarding';
+import { digits, useWords, type TextKey } from '@/city/lib/i18n/dict';
+import { fieldText, fieldValue } from '@/city/lib/i18n/figures';
 import { BUSY, collateralCheck, maxText, useExchange } from '@/city/lib/exchange/store';
 import { colourOf } from '@/city/lib/trade/colour';
 import { shortAddress } from '@/city/lib/trade/format';
@@ -12,6 +15,7 @@ import type { GuardianView } from '@/lib/phoenix/risk-guardian';
 import { isPhoneUserAgent, PHANTOM_DOWNLOAD_URL, phantomBrowseUrl } from '@/lib/solana/open-in-wallet';
 import { ArtState } from './Art';
 import { ArrowGlyph } from './glyphs';
+import { EX } from './words';
 import s from './exchange.module.css';
 
 /** A clock that moves every fifteen seconds, so a health read long ago says it is out of date without a new read. */
@@ -45,12 +49,14 @@ const TONE: Readonly<Record<GuardianView['state'], string>> = {
  */
 export function AccountPanel({ compact = false }: { compact?: boolean }) {
   const kind = useAccountKind();
+  const w = useWords(EX);
   const words = ACCOUNT_WORDS[kind];
-  if (kind === 'connect') return <ConnectCard compact={compact} />;
+  // No wallet: the ticket's own foot connects one (`ConnectAction`) — no second «Connect» over it.
+  if (kind === 'connect') return compact ? null : <ConnectCard />;
   if (kind === 'loading') {
     return (
-      <div className={s.block} aria-label="Reading your Phoenix account">
-        <div className={s.label}>Your account</div>
+      <div className={s.block} aria-label={w.readingAccount}>
+        <div className={s.label}>{w.yourAccount}</div>
         <span className={s.shimmer} />
         <span className={`${s.shimmer} ${s.shimmerShort}`} />
       </div>
@@ -77,6 +83,7 @@ function OpenAccount({ kind }: { kind: 'invite' | 'frozen' }) {
   const loadAccount = useExchange((st) => st.loadAccount);
   const [checking, setChecking] = useState(false);
   const [details, setDetails] = useState(false);
+  const w = useWords(EX);
   // Back from Phoenix's site: the account is read again at once, not on the next round.
   useEffect(() => {
     const back = () => {
@@ -86,7 +93,7 @@ function OpenAccount({ kind }: { kind: 'invite' | 'frozen' }) {
     return () => document.removeEventListener('visibilitychange', back);
   }, []);
   if (!step || step.step === 'connect') return null;
-  const words = ONBOARDING_WORDS[step.step];
+  const words = onboardingWords(step.step);
   const check = () => {
     setChecking(true);
     void loadAccount().finally(() => setChecking(false));
@@ -100,14 +107,14 @@ function OpenAccount({ kind }: { kind: 'invite' | 'frozen' }) {
               {words.action} <ArrowGlyph />
             </a>
             <button className={s.quiet} aria-expanded={details} onClick={() => setDetails((on) => !on)}>
-              Details
+              {w.details}
             </button>
             {details && (
               <div className={s.details}>
                 {words.detail}
                 <div>
                   <button className={s.quiet} onClick={check} disabled={checking}>
-                    {checking ? 'Checking…' : 'Check again'}
+                    {checking ? w.checking : w.checkAgain}
                   </button>
                 </div>
               </div>
@@ -115,7 +122,7 @@ function OpenAccount({ kind }: { kind: 'invite' | 'frozen' }) {
           </>
         ) : (
           <button className={s.quiet} onClick={check} disabled={checking}>
-            {checking ? 'Checking…' : 'Check again'}
+            {checking ? w.checking : w.checkAgain}
           </button>
         )}
       </ArtState>
@@ -125,6 +132,8 @@ function OpenAccount({ kind }: { kind: 'invite' | 'frozen' }) {
 
 /** No wallet yet: the still, «Connect a wallet» and the wallets this browser has; above a phone's ticket, without the still. */
 export function ConnectCard({ compact = false }: { compact?: boolean }) {
+  // Its title is read from the account's words in the language on screen: a switch reads it again.
+  useWords(EX);
   if (compact) {
     return (
       <div className={s.block}>
@@ -152,33 +161,37 @@ function Account({ kind }: { kind: AccountKind }) {
   const collateral = collateralOf(read.value);
   const health = healthOf(read, now);
   const words = ACCOUNT_WORDS[kind];
+  const w = useWords(EX);
   // Why a move is not offered is said on hover: the two buttons stay the one place to look.
-  const closed = states === null ? 'Reading what this wallet may do' : !states.deposit && !states.withdraw ? 'Not open for this wallet yet' : undefined;
+  const closed = states === null ? w.readingRights : !states.deposit && !states.withdraw ? w.notOpen : undefined;
   const busy = BUSY.has(phase);
   return (
     <div className={s.block}>
       <div className={s.labelRow}>
-        <div className={s.label} title={read.at ? `Phoenix, read ${new Date(read.at).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })}` : undefined}>
-          {kind === 'active' ? 'Account' : words.title}
+        <div className={s.label} title={read.at ? w.phoenixRead(clock(read.at)) : undefined}>
+          {kind === 'active' ? w.account : words.title}
         </div>
         {health && <Health health={health} />}
       </div>
       {kind !== 'active' && words.line && <div className={s.line}>{words.line}</div>}
       {collateral && (
         <div className={`${s.grid} ${s.gridWide}`}>
-          <Cell label="Collateral" value={usd(collateral.collateralUsd)} />
-          <Cell label="Value" value={usd(collateral.portfolioUsd)} />
-          <Cell label="In use" value={usd(collateral.heldUsd)} />
-          <Cell label="Free" value={micro(collateral.withdrawableMicro)} />
-          {collateral.collateralSol !== null && collateral.collateralSol > 0 && <Cell label="SOL collateral" value={units(collateral.collateralSol, 'SOL')} />}
+          <Cell label={w.collateral} value={usd(collateral.collateralUsd)} />
+          <Cell label={w.value} value={usd(collateral.portfolioUsd)} />
+          <Cell label={w.inUse} value={usd(collateral.heldUsd)} />
+          <Cell label={w.free} value={micro(collateral.withdrawableMicro)} />
+          {collateral.collateralSol !== null && collateral.collateralSol > 0 && <Cell label={w.solCollateral} value={units(collateral.collateralSol, 'SOL')} />}
         </div>
       )}
       <div className={s.itemActions}>
-        <button className={`${s.small} ${form?.action === 'deposit' ? s.chipOn : ''}`} title={closed} disabled={busy || !states?.deposit || !collateral?.canDeposit} onClick={() => openCollateral(form?.action === 'deposit' ? null : 'deposit')}>
-          Deposit
-        </button>
+        {/* Closing out (decision 86): collateral only comes home. */}
+        {!EXCHANGE_EXIT && (
+          <button className={`${s.small} ${form?.action === 'deposit' ? s.chipOn : ''}`} title={closed} disabled={busy || !states?.deposit || !collateral?.canDeposit} onClick={() => openCollateral(form?.action === 'deposit' ? null : 'deposit')}>
+            {w.deposit}
+          </button>
+        )}
         <button className={`${s.small} ${form?.action === 'withdraw' ? s.chipOn : ''}`} title={closed} disabled={busy || !states?.withdraw || !collateral?.canWithdraw} onClick={() => openCollateral(form?.action === 'withdraw' ? null : 'withdraw')}>
-          Withdraw
+          {w.withdraw}
         </button>
       </div>
       {form && collateral && <CollateralForm withdrawableMicro={collateral.withdrawableMicro} />}
@@ -188,17 +201,18 @@ function Account({ kind }: { kind: AccountKind }) {
 
 /** The account's health: one word and the margin left; a tap opens Phoenix's own detail under it, and closes it. */
 function Health({ health }: { health: GuardianView }) {
+  const w = useWords(EX);
   const words = HEALTH_WORDS[health.state];
   const [open, setOpen] = useState(false);
-  const detail = [health.state === 'healthy' ? null : words.line, health.tier ? `Phoenix risk tier: ${health.tier}` : null, health.stale && health.state !== 'stale' ? 'Figures from the last read' : null, health.partial ? 'Not every subaccount read' : null]
+  const detail = [health.state === 'healthy' ? null : words.line, health.tier ? w.riskTier(health.tier) : null, health.stale && health.state !== 'stale' ? w.lastRead : null, health.partial ? w.partial : null]
     .filter(Boolean)
     .join(' · ');
   return (
     <>
-      <button className={s.health} style={{ ['--tone' as string]: TONE[health.state] }} aria-label={`Account health: ${words.word}`} aria-expanded={open} onClick={() => setOpen((v) => !v)} disabled={!detail}>
+      <button className={s.health} style={{ ['--tone' as string]: TONE[health.state] }} aria-label={w.health(words.word)} aria-expanded={open} onClick={() => setOpen((v) => !v)} disabled={!detail}>
         <span className={s.healthDot} aria-hidden="true" />
         <span className={s.healthWord}>{words.word}</span>
-        {health.room !== null && <span className={s.healthRoom}>{percent(health.room, 0)} margin left</span>}
+        {health.room !== null && <span className={s.healthRoom}>{w.marginLeft(percent(health.room, 0))}</span>}
       </button>
       {open && detail && (
         <span className={s.details} role="status">
@@ -209,11 +223,11 @@ function Health({ health }: { health: GuardianView }) {
   );
 }
 
-const ISSUE: Readonly<Record<'MIN' | 'WALLET' | 'WITHDRAWABLE' | 'CANARY', string>> = {
-  MIN: 'From $1.',
-  WALLET: 'More than the wallet holds.',
-  WITHDRAWABLE: 'More than the account may withdraw now.',
-  CANARY: 'Over the current limit.',
+const ISSUE: Readonly<Record<'MIN' | 'WALLET' | 'WITHDRAWABLE' | 'CANARY', TextKey<typeof EX>>> = {
+  MIN: 'issueMin',
+  WALLET: 'issueWallet',
+  WITHDRAWABLE: 'issueWithdrawable',
+  CANARY: 'issueCanary',
 };
 
 function CollateralForm({ withdrawableMicro }: { withdrawableMicro: bigint | null }) {
@@ -228,34 +242,35 @@ function CollateralForm({ withdrawableMicro }: { withdrawableMicro: bigint | nul
   const deposit = form.action === 'deposit';
   const wallet = states?.walletUsdc ?? null;
   const reviewing = phase === 'reviewing' && asking?.kind === form.action;
+  const w = useWords(EX);
   return (
     <div className={s.block}>
       <div className={s.labelRow}>
-        <div className={s.label}>{deposit ? 'Deposit USDC' : 'Withdraw USDC'}</div>
-        <div className={s.labelSide}>{deposit ? `Wallet ${micro(wallet)}` : `Free ${micro(withdrawableMicro)}`}</div>
+        <div className={s.label}>{deposit ? w.depositUsdc : w.withdrawUsdc}</div>
+        <div className={s.labelSide}>{deposit ? w.walletOf(micro(wallet)) : w.freeOf(micro(withdrawableMicro))}</div>
       </div>
       <div className={s.field}>
         <span className={s.fieldUnit}>$</span>
         <input
           className={s.input}
           inputMode="decimal"
-          placeholder="0.00"
-          aria-label={deposit ? 'Amount to add, USDC' : 'Amount to withdraw, USDC'}
-          value={form.text}
-          onChange={(event) => setText(event.target.value)}
+          placeholder={digits('0.00')}
+          aria-label={deposit ? w.amountAdd : w.amountWithdraw}
+          value={fieldText(form.text)}
+          onChange={(event) => setText(fieldValue(event.target.value))}
           disabled={BUSY.has(phase)}
         />
         <button className={s.small} disabled={check.maxMicro === null || BUSY.has(phase)} onClick={() => setText(maxText(check.maxMicro))}>
-          Max
+          {w.max}
         </button>
       </div>
-      {check.issue && <div className={`${s.notice} ${s.noticeWarn}`}>{ISSUE[check.issue]}</div>}
+      {check.issue && <div className={`${s.notice} ${s.noticeWarn}`}>{w[ISSUE[check.issue]]}</div>}
       <button
         className={`${s.choice} ${s.choiceOn} ${s.formAction}`}
         disabled={!connection || check.amount === null || check.issue !== null || BUSY.has(phase)}
         onClick={() => connection && void review(connection)}
       >
-        {reviewing ? 'Preparing…' : deposit ? 'Review deposit' : 'Review withdrawal'}
+        {reviewing ? w.preparing : deposit ? w.reviewDeposit : w.reviewWithdrawal}
       </button>
     </div>
   );
@@ -270,21 +285,45 @@ function Cell({ label, value }: { label: string; value: string }) {
   );
 }
 
+/**
+ * The ticket's foot without a wallet: the one action connects — the browser's only wallet straight away, several to pick
+ * from, none — Phantom to get or open.
+ */
+export function ConnectAction() {
+  const wallets = useWallet((st) => st.wallets);
+  const connecting = useWallet((st) => st.connecting);
+  const connect = useWallet((st) => st.connect);
+  const [picking, setPicking] = useState(false);
+  const w = useWords(EX);
+  if (!wallets.length || picking) return <WalletPicker />;
+  const only = wallets.length === 1 ? wallets[0]! : null;
+  return (
+    <button
+      className={`${s.display} ${s.action} ${connecting ? s.waiting : ''}`}
+      disabled={Boolean(connecting)}
+      onClick={() => (only ? void connect(only.name) : setPicking(true))}
+    >
+      {connecting ? w.opening(connecting) : w.connectWallet}
+    </button>
+  );
+}
+
 export function WalletPicker() {
   const wallets = useWallet((st) => st.wallets);
   const connecting = useWallet((st) => st.connecting);
   const error = useWallet((st) => st.error);
   const connect = useWallet((st) => st.connect);
   const [phone, setPhone] = useState(false);
+  const w = useWords(EX);
   useEffect(() => setPhone(isPhoneUserAgent(navigator.userAgent)), []);
   if (!wallets.length) {
     const here = typeof window === 'undefined' ? '' : window.location.href;
     const origin = typeof window === 'undefined' ? '' : window.location.origin;
     return (
       <>
-        <div className={s.notice}>No wallet in this browser</div>
+        <div className={s.notice}>{w.noWallet}</div>
         <a className={`${s.display} ${s.artAction}`} href={phone ? phantomBrowseUrl(here, origin) : PHANTOM_DOWNLOAD_URL} target={phone ? undefined : '_blank'} rel="noreferrer">
-          {phone ? 'Open in Phantom' : 'Get Phantom'} <ArrowGlyph />
+          {phone ? w.openInPhantom : w.getPhantom} <ArrowGlyph />
         </a>
       </>
     );
@@ -296,7 +335,7 @@ export function WalletPicker() {
           <button key={wallet.name} className={s.walletButton} onClick={() => void connect(wallet.name)} disabled={Boolean(connecting)}>
             {/* eslint-disable-next-line @next/next/no-img-element */}
             {wallet.icon ? <img src={wallet.icon} alt="" /> : null}
-            {connecting === wallet.name ? `Opening ${wallet.name}…` : wallet.name}
+            {connecting === wallet.name ? w.opening(wallet.name) : wallet.name}
           </button>
         ))}
       </div>
@@ -309,6 +348,7 @@ export function WalletLine() {
   const connection = useWallet((st) => st.connection);
   const disconnect = useWallet((st) => st.disconnect);
   const phase = useExchange((st) => st.phase);
+  const w = useWords(EX);
   if (!connection) return null;
   return (
     <div className={s.walletLine} style={{ ['--player' as string]: colourOf(connection.address) }}>
@@ -316,7 +356,7 @@ export function WalletLine() {
       <span className={s.address}>{shortAddress(connection.address)}</span>
       <span>· {connection.wallet}</span>
       <button className={s.linkButton} onClick={disconnect} disabled={BUSY.has(phase)}>
-        Disconnect
+        {w.disconnect}
       </button>
     </div>
   );

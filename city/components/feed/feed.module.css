@@ -447,6 +447,30 @@ button.card:active {
 }
 
 /* The one state in words: everything switched off. */
+.bones {
+  display: grid;
+  gap: 8px;
+}
+
+.bones > span {
+  height: 61px;
+  background: linear-gradient(100deg, rgba(238, 241, 255, 0.04) 30%, rgba(238, 241, 255, 0.1) 50%, rgba(238, 241, 255, 0.04) 70%) 0 0 / 300% 100%;
+  box-shadow: inset 0 0 0 1px rgba(153, 69, 255, 0.16);
+  animation: bonesSweep 1.4s linear infinite;
+}
+
+@keyframes bonesSweep {
+  to {
+    background-position: -150% 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .bones > span {
+    animation: none;
+  }
+}
+
 .empty {
   margin: 0;
   padding: 10px 14px;
@@ -636,7 +660,7 @@ button.card:active {
 
 /* A narrow phone puts the moments' button under the top bar on the right (moments.module.css): the strip leaves it room. */
 @media (max-width: 460px) and (max-aspect-ratio: 1/1) {
-  :global(body:has([data-city-top] [aria-label^='Moments'])) .feed {
+  :global(body:has([data-city-top] [data-city-moments])) .feed {
     right: calc(var(--gutter) + 52px);
   }
 }
@@ -665,4 +689,137 @@ button.card:active {
 .feed[data-flash='off'] .knob,
 .feed[data-flash='off'] .more svg {
   transition: none;
+}
+
+/* ---------- Under the bell: the events' one place ---------- */
+
+/* The bell in the top bar; a quiet amber dot for what arrived since the panel was open. */
+.bell {
+  position: relative;
+}
+
+.bellDot {
+  position: absolute;
+  top: 9px;
+  right: 10px;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--amber);
+  box-shadow: 0 0 8px rgba(255, 178, 63, 0.9);
+}
+
+/* The panel: dark glass under the bell, as tall as the events, scrolling when the screen is short. */
+section.feed.panel {
+  top: calc(max(12px, env(safe-area-inset-top)) + 62px);
+  left: auto;
+  right: var(--gutter);
+  z-index: 12;
+  width: min(380px, calc(100vw - 2 * var(--gutter)));
+  max-height: min(620px, calc(100dvh - max(12px, env(safe-area-inset-top)) - 62px - 120px));
+  gap: 8px;
+  padding: 0 12px 12px;
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: none;
+  pointer-events: auto;
+  background: linear-gradient(160deg, rgba(20, 16, 36, 0.97), rgba(8, 7, 15, 0.98));
+  clip-path: polygon(14px 0, 100% 0, 100% calc(100% - 14px), calc(100% - 14px) 100%, 0 100%, 0 14px);
+  box-shadow:
+    inset 0 0 0 1.5px rgba(153, 69, 255, 0.36),
+    inset 0 1px 22px rgba(153, 69, 255, 0.2);
+  animation: panelIn 200ms ease-out backwards;
+}
+
+section.feed.panel::-webkit-scrollbar {
+  display: none;
+}
+
+section.feed.panel > .head {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  margin: 0 -12px;
+  padding: 4px 6px 0 14px;
+  pointer-events: auto;
+  background: rgba(16, 13, 30, 0.98);
+}
+
+.panel .more {
+  display: none;
+}
+
+.panel .kicker {
+  text-shadow: none;
+}
+
+.panelTitle {
+  font-family: var(--font-display, system-ui), system-ui, sans-serif;
+  font-stretch: 125%;
+  font-variation-settings: 'wdth' 125;
+  font-weight: 900;
+  font-size: 13px;
+  letter-spacing: 0.14em;
+  color: var(--ice);
+}
+
+.panel .list {
+  overflow: visible;
+  mask-image: none;
+}
+
+.panel .item[data-over] {
+  visibility: visible;
+}
+
+/* This visit's clips: one quiet row at the foot of the events. */
+.clips {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-height: 44px;
+  padding: 0 14px;
+  border: 0;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--ice);
+  background: rgba(153, 69, 255, 0.1);
+  box-shadow: inset 0 0 0 1px rgba(153, 69, 255, 0.3);
+  clip-path: polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px);
+  cursor: pointer;
+}
+
+.clips b {
+  min-width: 22px;
+  padding: 2px 6px;
+  font-size: 11px;
+  text-align: center;
+  color: var(--ink);
+  background: var(--amber);
+}
+
+@keyframes panelIn {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+}
+
+/* A phone held upright: the panel spans the screen under the top bar and the lens's strip. */
+@media not all and (min-aspect-ratio: 1/1) {
+  section.feed.panel {
+    top: calc(max(12px, env(safe-area-inset-top)) + 118px);
+    left: var(--gutter);
+    right: var(--gutter);
+    width: auto;
+    max-height: calc(100dvh - max(12px, env(safe-area-inset-top)) - 118px - max(14px, env(safe-area-inset-bottom)) - 96px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  section.feed.panel {
+    animation: none;
+  }
 }

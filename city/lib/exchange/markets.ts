@@ -1,6 +1,9 @@
 import { dayChange, fundingPayer, markIndexGap, stateOf, symbolKey, type FuturesFunding, type FuturesMarket, type FuturesMarketState } from '../../../lib/phoenix/market-data.ts';
 import type { PerpUnits } from '../../../lib/phoenix/orders-model.ts';
+import { wordsNow } from '../i18n/dict.ts';
 import type { Tower } from '../market/types.ts';
+import { liveTable } from './live.ts';
+import { EX_STATE } from './words.ts';
 
 /**
  * Phoenix's markets as the Exchange lists them, and which towers have one. Every figure is the engine's read of
@@ -32,13 +35,10 @@ export function unitsOf(market: Pick<FuturesMarket, 'tickSize' | 'baseLotsDecima
 /** Whether Phoenix takes orders on the market now: listed as active and trading by its own state. */
 export const tradable = (market: Pick<FuturesMarket, 'status' | 'state'>): boolean => market.status === 'active' && stateOf(market) === 'trading';
 
-export const STATE_WORDS: Readonly<Record<FuturesMarketState, string>> = {
-  trading: 'Trading',
-  underlyingClosed: 'Its market is closed',
-  internalPricing: 'After hours: Phoenix prices it',
-  paused: 'Paused by Phoenix',
-  unknown: 'Session not known',
-};
+const STATES: readonly FuturesMarketState[] = ['trading', 'underlyingClosed', 'internalPricing', 'paused', 'unknown'];
+
+/** A market's state in the language on screen. */
+export const STATE_WORDS: Readonly<Record<FuturesMarketState, string>> = liveTable(STATES, (state) => wordsNow(EX_STATE)[state]);
 
 /** The list in the picker: what trades now first, then the day's volume, largest first. */
 export function marketRows(markets: readonly FuturesMarket[]): FuturesMarket[] {

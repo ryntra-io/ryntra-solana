@@ -5,13 +5,14 @@ import { readWalletHoldingsUntilComplete } from '../../../lib/solana/holdings.cl
 import { fetchReceiptForAction } from '../../../lib/solana/receipt-fetch.client.ts';
 import { findReceiptForAction, receiptBinding, type StoredReceiptView } from '../../../lib/solana/receipt-view.ts';
 import { forgetPendingSend, readPendingSend, rememberPendingSend } from '../../../lib/solana/send-pending.client.ts';
-import { downloadReceipt, readSolanaReceipts, storeBoundSolanaReceipt, storeSolanaReceipt } from '../../../lib/solana/send-receipt-vault.client.ts';
+import { readSolanaReceipts, storeBoundSolanaReceipt, storeSolanaReceipt } from '../../../lib/solana/send-receipt-vault.client.ts';
 import { recentSendRecipients, rememberSendRecipient } from '../../../lib/solana/send-recipients.client.ts';
 import { resolveSkrName, type SkrResolve } from '../../../lib/solana/skr.client.ts';
 import type { SolanaWalletAction } from '../../../lib/solana/action-ledger.ts';
 import { SOLANA_USDC_MINT } from '../../../lib/swap/catalog.ts';
 import type { CrossSwapQuote } from '../../../lib/swap/cross-swap-quote.ts';
 import { citySigner } from '../app-bridge/route.ts';
+import { wordsNow } from '../i18n/dict.ts';
 import { useWallet } from '../trade/wallet.ts';
 import { readActivity, type ActivityRead } from './activity.ts';
 import { readAmount } from './amount.ts';
@@ -39,6 +40,7 @@ import { MONEY_OPEN } from './flag.ts';
 import { useMoney } from './open.ts';
 import { chosenAsset, EMPTY_SEND, recipientAddress, sendGate, type Line, type SendState } from './form.ts';
 import { parseRecipientCheck, readRecipient, riskOf } from './recipient.ts';
+import { BRIDGE_WORDS, STORE_WORDS } from './words.ts';
 import { blockedLine, confirmSend, resumeSend, reviewSend, signable, type SendDeps, type SendIntent, type SignResult } from './send.ts';
 
 export type { Line, SendState } from './form.ts';
@@ -71,7 +73,17 @@ export type DepositState = Readonly<{
   since: number;
 }>;
 
-export type ActivityState = Readonly<{ read: ActivityRead | null; status: 'none' | 'reading' | 'ready' | 'failed'; opening: string | null; line: Line | null }>;
+/** A receipt open in the window: the action's row and the receipt the engine issued for it. */
+export type ShownReceipt = Readonly<{ actionId: string; receipt: Readonly<Record<string, unknown>> }>;
+
+export type ActivityState = Readonly<{
+  read: ActivityRead | null;
+  status: 'none' | 'reading' | 'ready' | 'failed';
+  opening: string | null;
+  line: Line | null;
+  /** The receipt open over the rows (CITY-150): a WebView downloads nothing, so it is shown, not saved. */
+  shown: ShownReceipt | null;
+}>;
 
 export type MoneyEnv = Readonly<{
   fetch: FetchLike;
@@ -124,7 +136,7 @@ const ORDER_POLL_MS = 4_000;
 
 const EMPTY_BRIDGE: BridgeState = { network: 'base', to: '', amount: '', quote: null, plan: null, phase: 'idle', line: null, order: null, receipt: null };
 const EMPTY_DEPOSIT: DepositState = { network: null, address: null, status: 'idle', progress: null, since: 0 };
-const EMPTY_ACTIVITY: ActivityState = { read: null, status: 'none', opening: null, line: null };
+const EMPTY_ACTIVITY: ActivityState = { read: null, status: 'none', opening: null, line: null, shown: null };
 
 type MoneyStore = {
   owner: string | null;
@@ -162,7 +174,9 @@ type MoneyStore = {
   readDepositProgress: () => Promise<void>;
 
   readActivity: () => Promise<void>;
+  /** Opens an action's receipt in the window: the copy this browser keeps, or the one the engine issues again. */
   openReceipt: (action: SolanaWalletAction) => Promise<void>;
+  closeReceipt: () => void;
 };
 
 let tickets = { wallet: 0, to: 0, quote: 0, deposit: 0, activity: 0, resume: 0 };
@@ -544,7 +558,7 @@ export const useMoneyStore = create<MoneyStore>((set, get) => {
       }
       patchBridge({
         quote: { key, body: answer.body, at: env.now() },
-        line: answer.body.buildable ? null : { tone: 'warn', text: 'Moving money to this network is paused right now.' },
+        line: answer.body.buildable ? null : { tone: 'warn', text: wordsNow(BRIDGE_WORDS).pausedHere },
       });
     },
 
@@ -673,7 +687,7 @@ export const useMoneyStore = create<MoneyStore>((set, get) => {
       const kept = keptReceipts(owner);
       const local = findReceiptForAction(kept, action);
       if (local) {
-        downloadReceipt(local.receipt);
+        set({ activity: { ...get().activity, line: null, shown: { actionId: action.actionId, receipt: local.receipt } } });
         return;
       }
       set({ activity: { ...get().activity, opening: action.actionId, line: null } });
@@ -681,11 +695,14 @@ export const useMoneyStore = create<MoneyStore>((set, get) => {
       if (get().owner !== owner) return;
       if (fetched.ok) {
         storeBoundSolanaReceipt(env.storage() ?? memory, receiptBinding(fetched.receipt as never)?.wallet ?? owner, owner, fetched.receipt);
-        downloadReceipt(fetched.receipt);
-        set({ activity: { ...get().activity, opening: null } });
+        set({ activity: { ...get().activity, opening: null, shown: { actionId: action.actionId, receipt: fetched.receipt } } });
       } else {
-        set({ activity: { ...get().activity, opening: null, line: { tone: 'warn', text: 'The receipt could not be issued right now. Try again in a moment.' } } });
+        set({ activity: { ...get().activity, opening: null, line: { tone: 'warn', text: wordsNow(STORE_WORDS).receiptFailed } } });
       }
+    },
+
+    closeReceipt: () => {
+      if (get().activity.shown) set({ activity: { ...get().activity, shown: null } });
     },
   };
 });

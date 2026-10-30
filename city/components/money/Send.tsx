@@ -3,6 +3,9 @@
 import { useEffect, useMemo, useState } from 'react';
 import { explorerTxUrl } from '@/lib/solana/explorer';
 import { downloadReceipt } from '@/lib/solana/send-receipt-vault.client';
+import { digits, useWords } from '@/city/lib/i18n/dict';
+import { fieldText } from '@/city/lib/i18n/figures';
+import { useLang } from '@/city/lib/i18n/lang';
 import { cleanAmount, shareOf } from '@/city/lib/money/amount';
 import { formatAmount, sendable } from '@/city/lib/money/assets';
 import { MONEY_OPEN } from '@/city/lib/money/flag';
@@ -13,15 +16,16 @@ import { settledWord } from '@/city/lib/money/send';
 import { useMoneyStore } from '@/city/lib/money/store';
 import { useWallet } from '@/city/lib/trade/wallet';
 import { CoinIcon, Note, Soon, Terms } from './bits';
+import { MONEY } from './words';
 import s from './money.module.css';
 
 /** Coins shown before «more»: a wallet of seventy tokens is not seventy chips. */
 const COINS_SHOWN = 8;
 
 const SHARES = [
-  { label: '25%', numerator: 1n, denominator: 4n },
-  { label: '50%', numerator: 1n, denominator: 2n },
-  { label: 'Max', numerator: 1n, denominator: 1n },
+  { id: '25', label: '25%', numerator: 1n, denominator: 4n },
+  { id: '50', label: '50%', numerator: 1n, denominator: 2n },
+  { id: 'max', label: null, numerator: 1n, denominator: 1n },
 ] as const;
 
 /**
@@ -31,11 +35,12 @@ const SHARES = [
  * owner's canary passes.
  */
 export function Send({ owner }: { owner: string }) {
+  const w = useWords(MONEY);
   if (!MONEY_OPEN) {
     return (
-      <Soon title="Send">
+      <Soon title={w.send}>
         <button type="button" className={`${s.display} ${s.secondary}`} onClick={() => useMoney.getState().setTab('topup')}>
-          Top up instead
+          {w.topUpInstead}
         </button>
       </Soon>
     );
@@ -44,6 +49,7 @@ export function Send({ owner }: { owner: string }) {
 }
 
 function SendForm({ owner }: { owner: string }) {
+  const w = useWords(MONEY);
   const connected = useWallet((st) => st.connection?.address === owner);
   const wallet = useMoneyStore((st) => st.wallet);
   const walletRead = useMoneyStore((st) => st.walletRead);
@@ -76,11 +82,11 @@ function SendForm({ owner }: { owner: string }) {
   if (send.settled) return <SendDone />;
 
   return (
-    <section className={s.tabBody} aria-label="Send">
+    <section className={s.tabBody} aria-label={w.send}>
       {send.resumed ? <Resumed signature={send.resumed.signature} state={send.resumed.state} /> : null}
 
       <span className={s.label} id="money-coin">
-        Coin
+        {w.coin}
       </span>
       {coins.length ? (
         <div className={s.chips} role="radiogroup" aria-labelledby="money-coin">
@@ -94,38 +100,38 @@ function SendForm({ owner }: { owner: string }) {
               onClick={() => useMoneyStore.getState().setSendAsset(coin.id)}
               disabled={!idle}
             >
-              <CoinIcon mint={coin.mint} size={20} />
+              <CoinIcon mint={coin.mint} size={20} icon={coin.icon} symbol={coin.symbol} />
               {coin.symbol}
             </button>
           ))}
           {shown.length < coins.length ? (
             <button type="button" className={s.coinChip} onClick={() => setAllCoins(true)} disabled={!idle}>
-              +{coins.length - shown.length} more
+              {w.more(coins.length - shown.length)}
             </button>
           ) : null}
         </div>
       ) : wallet ? (
         <div className={s.bar}>
-          <p className={s.empty}>Nothing to send yet.</p>
+          <p className={s.empty}>{w.nothingToSend}</p>
           <button type="button" className={`${s.display} ${s.secondary}`} onClick={() => useMoney.getState().setTab('topup')}>
-            Top up
+            {w.topUp}
           </button>
         </div>
       ) : walletRead === 'failed' ? (
         <p className={s.empty}>
-          Balances unavailable.{' '}
+          {w.balancesUnavailable}{' '}
           <button type="button" className={s.link} onClick={() => useMoneyStore.getState().readWallet()}>
-            Try again
+            {w.tryAgain}
           </button>
         </p>
       ) : (
-        <div className={s.bones} aria-label="Reading your balances">
+        <div className={s.bones} aria-label={w.readingBalances}>
           <span />
         </div>
       )}
 
       <label className={s.label} htmlFor="money-to">
-        To
+        {w.to}
       </label>
       <div className={s.field}>
         <input
@@ -133,7 +139,7 @@ function SendForm({ owner }: { owner: string }) {
           className={s.input}
           value={send.to}
           onChange={(event) => useMoneyStore.getState().setTo(event.target.value)}
-          placeholder="Solana address or name.skr"
+          placeholder={w.toPlaceholder}
           autoComplete="off"
           autoCapitalize="off"
           autoCorrect="off"
@@ -143,7 +149,7 @@ function SendForm({ owner }: { owner: string }) {
         />
         {canPaste && !send.to ? (
           <button type="button" className={s.inline} onClick={() => void paste()} disabled={!idle}>
-            Paste
+            {w.paste}
           </button>
         ) : null}
       </div>
@@ -161,28 +167,28 @@ function SendForm({ owner }: { owner: string }) {
       <Note line={gate.riskLine} />
       {gate.toLine && send.check?.result?.next === 'pay-link' && send.check.result.linkUrl ? (
         <a className={s.link} href={send.check.result.linkUrl}>
-          Open the payment link
+          {w.openPayLink}
         </a>
       ) : null}
 
       {gate.recipient && gate.lookalike ? (
         <div className={s.hold} role="alert">
-          <span>{gate.lookalike === owner ? 'Looks like your address — it is not.' : 'Looks like a recent address — it is not.'}</span>
+          <span>{gate.lookalike === owner ? w.looksYours : w.looksRecent}</span>
           <code translate="no">{grouped(gate.recipient)}</code>
           {gate.action === 'accept-lookalike' ? (
             <button type="button" className={s.inline} onClick={() => useMoneyStore.getState().acceptLookalike()}>
-              It is the right address
+              {w.rightAddress}
             </button>
           ) : null}
         </div>
       ) : null}
       {gate.recipient && gate.isNew ? (
         <div className={s.hold} role="alert">
-          <span>New address. Check it with whoever gave it.</span>
+          <span>{w.newAddress}</span>
           {gate.lookalike ? null : <code translate="no">{grouped(gate.recipient)}</code>}
           {gate.action === 'accept-fresh' ? (
             <button type="button" className={s.inline} onClick={() => useMoneyStore.getState().acceptFresh()}>
-              Address checked
+              {w.addressChecked}
             </button>
           ) : null}
         </div>
@@ -190,19 +196,17 @@ function SendForm({ owner }: { owner: string }) {
 
       <div className={s.amountHead}>
         <label className={s.label} htmlFor="money-amount">
-          Amount
+          {w.amount}
         </label>
         {asset ? (
-          <span className={s.balance}>
-            {formatAmount(asset.spendableRaw, asset.decimals)} {asset.symbol} available
-          </span>
+          <span className={s.balance}>{w.available(formatAmount(asset.spendableRaw, asset.decimals), asset.symbol)}</span>
         ) : null}
       </div>
       <div className={s.field}>
         <input
           id="money-amount"
           className={`${s.input} ${s.amount}`}
-          value={send.amount}
+          value={fieldText(send.amount)}
           onChange={(event) => useMoneyStore.getState().setAmount(cleanAmount(event.target.value))}
           placeholder="0"
           inputMode="decimal"
@@ -215,30 +219,31 @@ function SendForm({ owner }: { owner: string }) {
         <div className={s.shares}>
           {SHARES.map((share) => (
             <button
-              key={share.label}
+              key={share.id}
               type="button"
               className={s.share}
               disabled={!idle}
               onClick={() => useMoneyStore.getState().setAmount(shareOf(asset.spendableRaw, asset.decimals, share.numerator, share.denominator))}
             >
-              {share.label}
+              {share.label ?? w.max}
             </button>
           ))}
         </div>
       ) : null}
       {gate.amountLine ? <Note line={{ tone: 'error', text: gate.amountLine }} /> : null}
 
-      {send.review ? <Review /> : null}
-      <Note line={send.line} />
-
-      <button
-        type="button"
-        className={`${s.display} ${s.action} ${s.cta} ${idle ? '' : s.waiting}`}
-        disabled={gate.action !== 'review' && gate.action !== 'confirm'}
-        onClick={act}
-      >
-        {gate.label}
-      </button>
+      <div className={s.dock}>
+        {send.review ? <Review /> : null}
+        <Note line={send.line} />
+        <button
+          type="button"
+          className={`${s.display} ${s.action} ${s.cta} ${idle ? '' : s.waiting}`}
+          disabled={gate.action !== 'review' && gate.action !== 'confirm'}
+          onClick={act}
+        >
+          {gate.label}
+        </button>
+      </div>
     </section>
   );
 }
@@ -248,6 +253,8 @@ function SendForm({ owner }: { owner: string }) {
  * fee, an account opened for them, the least a new address takes and the total — the breakdown behind the «i».
  */
 function Review() {
+  const w = useWords(MONEY);
+  const lang = useLang();
   const review = useMoneyStore((st) => st.send.review);
   const name = useMoneyStore((st) => (st.send.name?.state === 'FOUND' ? st.send.name.name : null));
   const wallet = useMoneyStore((st) => st.wallet);
@@ -256,72 +263,73 @@ function Review() {
   const check = review.bundle.check;
   const symbol = chosenAsset(wallet, assetId)?.symbol ?? (check.asset.mint === null ? 'SOL' : '');
   const total = reviewTotal(check, symbol);
-  const unread = 'Could not be read';
+  const unread = w.unread;
+  const sol = (value: string | null) => (value === null ? unread : `${digits(value)} SOL`);
+  const totalText = total.whole ? digits([total.coin, total.sol].filter(Boolean).join(' + ')) : null;
   return (
-    <div className={s.review} aria-label="Review">
-      <span className={`${s.display} ${s.kicker}`}>They get</span>
+    <div className={s.review} aria-label={w.review}>
+      <span className={`${s.display} ${s.kicker}`}>{w.theyGet}</span>
       <b className={`${s.display} ${s.hero}`}>
-        {check.receive.amount} {symbol}
+        {digits(check.receive.amount)} {symbol}
       </b>
       <span className={s.fine} translate="no">
-        to {name ? `${name} · ` : ''}
-        {short(check.to.owner)}
+        {w.toWho(name ? `${name} · ${short(check.to.owner)}` : short(check.to.owner))}
       </span>
       <Terms
-        label="Transfer details"
+        label={w.transferDetails}
         line={
           <>
-            Fee <b>{check.networkFee.sol} SOL</b>
+            {w.fee} <b>{digits(check.networkFee.sol)} SOL</b>
             {check.setup ? (
               <>
-                {' · their account '}
-                <b>{check.setup.sol === null ? '—' : `${check.setup.sol} SOL`}</b>
+                {` · ${w.theirAccount} `}
+                <b>{check.setup.sol === null ? '—' : `${digits(check.setup.sol)} SOL`}</b>
               </>
             ) : null}
             {check.minimum ? (
               <>
-                {' · least '}
-                <b>{check.minimum.sol === null ? '—' : `${check.minimum.sol} SOL`}</b>
+                {` · ${w.least} `}
+                <b>{check.minimum.sol === null ? '—' : `${digits(check.minimum.sol)} SOL`}</b>
               </>
             ) : null}
-            {' · total '}
-            <b>{total.whole ? [total.coin, total.sol].filter(Boolean).join(' + ') : '—'}</b>
+            {` · ${w.totalWord} `}
+            <b>{totalText ?? '—'}</b>
           </>
         }
       >
-        <dt>You send</dt>
+        <dt>{w.youSend}</dt>
         <dd>
-          {check.send.amount} {symbol}
+          {digits(check.send.amount)} {symbol}
         </dd>
         {check.issuerFee ? (
           <>
-            <dt>The coin&apos;s issuer keeps</dt>
+            <dt>{w.issuerKeeps}</dt>
             <dd>
-              {check.issuerFee.amount} {symbol}
+              {digits(check.issuerFee.amount)} {symbol}
             </dd>
           </>
         ) : null}
-        <dt>They get</dt>
+        <dt>{w.theyGet}</dt>
         <dd>
-          {check.receive.amount} {symbol}
+          {digits(check.receive.amount)} {symbol}
         </dd>
-        <dt>Network fee</dt>
-        <dd>{check.networkFee.sol} SOL</dd>
+        <dt>{w.networkFee}</dt>
+        <dd>{digits(check.networkFee.sol)} SOL</dd>
         {check.setup ? (
           <>
-            <dt>Their account opens</dt>
-            <dd>{check.setup.sol === null ? unread : `${check.setup.sol} SOL`}</dd>
+            <dt>{w.accountOpens}</dt>
+            <dd>{sol(check.setup.sol)}</dd>
           </>
         ) : null}
         {check.minimum ? (
           <>
-            <dt>Least a new address takes</dt>
-            <dd>{check.minimum.sol === null ? unread : `${check.minimum.sol} SOL`}</dd>
+            <dt>{w.leastNew}</dt>
+            <dd>{sol(check.minimum.sol)}</dd>
           </>
         ) : null}
-        <dt>Leaves your wallet</dt>
-        <dd>{total.whole ? [total.coin, total.sol].filter(Boolean).join(' + ') : 'Not every cost could be read'}</dd>
-        <dt>To</dt>
+        <dt>{w.leaves}</dt>
+        <dd>{totalText ?? w.notEveryCost}</dd>
+        <dt>{w.to}</dt>
         <dd translate="no">
           {name ? <b>{name} · </b> : null}
           {grouped(check.to.owner)}
@@ -331,7 +339,7 @@ function Review() {
         <ul className={s.warnings}>
           {check.warnings.map((warning) => (
             <li key={warning.code} className={warning.stops ? s.stop : ''}>
-              {warning.en}
+              {warning[lang] ?? warning.en}
             </li>
           ))}
         </ul>
@@ -342,31 +350,32 @@ function Review() {
 
 /** What the engine settled: the chain read back, the transaction and the receipt. */
 function SendDone() {
+  const w = useWords(MONEY);
   const settled = useMoneyStore((st) => st.send.settled);
   const line = useMoneyStore((st) => st.send.line);
   if (!settled) return null;
   const word = settledWord(settled);
   return (
-    <section className={s.tabBody} aria-label="Sent">
+    <section className={s.tabBody} aria-label={w.sent}>
       <div className={`${s.result} ${word === 'Sent' ? s.resultGood : word === 'Not sent' ? s.resultBad : ''}`}>
-        <span className={`${s.display} ${s.resultWord}`}>{word}</span>
+        <span className={`${s.display} ${s.resultWord}`}>{word === 'Sent' ? w.sent : word === 'Not sent' ? w.notSent : w.notConfirmed}</span>
         <Note line={line} />
         <div className={s.links}>
           <a className={s.link} href={explorerTxUrl('mainnet', settled.signature)} target="_blank" rel="noreferrer">
-            {short(settled.signature)} on Solana
+            {w.onSolana(short(settled.signature))}
           </a>
           {settled.receipt ? (
             <button type="button" className={s.link} onClick={() => downloadReceipt(settled.receipt)}>
-              Download receipt
+              {w.downloadReceipt}
             </button>
           ) : null}
         </div>
       </div>
       <button type="button" className={`${s.display} ${s.secondary}`} onClick={() => useMoneyStore.getState().newSend()}>
-        New transfer
+        {w.newTransfer}
       </button>
       <button type="button" className={s.link} onClick={() => useMoney.getState().setTab('activity')}>
-        See it in Activity
+        {w.seeInActivity}
       </button>
     </section>
   );
@@ -374,19 +383,13 @@ function SendDone() {
 
 /** A transfer this device signed and never saw the end of, read back by its signature. */
 function Resumed({ signature, state }: { signature: string; state: 'CHECKING' | 'LANDED' | 'FAILED' | 'UNKNOWN' }) {
-  const text =
-    state === 'CHECKING'
-      ? 'Checking an earlier transfer…'
-      : state === 'LANDED'
-        ? 'Your earlier transfer arrived.'
-        : state === 'FAILED'
-          ? 'Your earlier transfer did not go through. Nothing moved.'
-          : 'An earlier transfer is still being confirmed. Do not send it again.';
+  const w = useWords(MONEY);
+  const text = state === 'CHECKING' ? w.resumeChecking : state === 'LANDED' ? w.resumeLanded : state === 'FAILED' ? w.resumeFailed : w.resumeUnknown;
   return (
     <div className={`${s.hold} ${state === 'LANDED' ? s.holdGood : ''}`} role="status">
       <span>{text}</span>
       <a className={s.link} href={explorerTxUrl('mainnet', signature)} target="_blank" rel="noreferrer">
-        {short(signature)} on Solana
+        {w.onSolana(short(signature))}
       </a>
     </div>
   );

@@ -1,5 +1,7 @@
 import type { TokenMark } from '../../../lib/spot/token-page.ts';
+import { digits, wordsNow } from '../i18n/dict.ts';
 import type { ChartLayer, LayerMark } from './layers.ts';
+import { CHART_MARKS } from './words.ts';
 
 /**
  * The meme coin's own marks on its chart — the layer the core chart draws over the candles: the largest trades, the
@@ -12,11 +14,12 @@ const ONE_DP = (value: number) => (Math.abs(value) < 1 ? value.toFixed(2) : valu
 
 function share(pct: number | null): string {
   if (pct === null || !Number.isFinite(pct)) return '';
-  return pct < 0.01 ? ' <0.01%' : ` ${ONE_DP(pct)}%`;
+  return digits(pct < 0.01 ? ' <0.01%' : ` ${ONE_DP(pct)}%`);
 }
 
 /** The engine's marks as the chart's «Market» layer, oldest first. */
 export function marketMarks(marks: readonly TokenMark[]): LayerMark[] {
+  const w = wordsNow(CHART_MARKS);
   const out: LayerMark[] = [];
   marks.forEach((mark, index) => {
     if (!Number.isFinite(mark.t) || mark.t <= 0) return;
@@ -24,19 +27,19 @@ export function marketMarks(marks: readonly TokenMark[]): LayerMark[] {
     const at = mark.t * 1000;
     const trade = (side: 'buy' | 'sell', label: string): LayerMark => ({ id, kind: 'trade', t: at, side, label, own: false });
     const event = (label: string): LayerMark => ({ id, kind: 'event', t: at, side: null, label, own: false });
-    if (mark.kind === 'big-buy') out.push(trade('buy', 'Large buy'));
-    else if (mark.kind === 'big-sell') out.push(trade('sell', 'Large sale'));
-    else if (mark.kind === 'creator-buy') out.push(trade('buy', 'Creator bought'));
-    else if (mark.kind === 'creator-sell') out.push(trade('sell', `Creator sold${share(mark.pct)}`));
-    else if (mark.kind === 'dex') out.push(event('Left the curve'));
-    else if (mark.kind === 'liquidity-drop' && mark.pct !== null && Number.isFinite(mark.pct)) out.push(event(`Liquidity ${mark.pct < 0 ? '−' : '+'}${Math.abs(Math.round(mark.pct))}%`));
+    if (mark.kind === 'big-buy') out.push(trade('buy', w.largeBuy));
+    else if (mark.kind === 'big-sell') out.push(trade('sell', w.largeSale));
+    else if (mark.kind === 'creator-buy') out.push(trade('buy', w.creatorBought));
+    else if (mark.kind === 'creator-sell') out.push(trade('sell', w.creatorSold(share(mark.pct))));
+    else if (mark.kind === 'dex') out.push(event(w.leftCurve));
+    else if (mark.kind === 'liquidity-drop' && mark.pct !== null && Number.isFinite(mark.pct)) out.push(event(w.liquidityMove(`${mark.pct < 0 ? '−' : '+'}${Math.abs(Math.round(mark.pct))}%`)));
   });
   return out.sort((a, b) => a.t - b.t);
 }
 
 /** The chart's «Market» layer; none while the coin has no marks. */
 export function marketLayer(mint: string, marks: readonly LayerMark[]): ChartLayer | null {
-  return marks.length ? { id: 'market', label: 'Market', mint, marks } : null;
+  return marks.length ? { id: 'market', label: wordsNow(CHART_MARKS).market, mint, marks } : null;
 }
 
 export type MarksRead = Readonly<{ kind: 'ready'; marks: readonly LayerMark[] } | { kind: 'failed' }>;

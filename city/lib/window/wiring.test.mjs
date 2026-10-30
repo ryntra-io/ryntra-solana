@@ -21,7 +21,11 @@ test("each window opens in the city's one frame, under its own id and title", ()
   for (const w of WINDOWS) {
     const layer = read(w.layer);
     assert.match(layer, /import \{ useCityWindow \} from '\.\.\/window\/useCityWindow';/, w.layer);
-    assert.match(layer, new RegExp(`id: '${w.id}',\\s*title: '${w.title}'`), w.layer);
+    // The title comes from the district's words (CITY-79): its English half names the window as before.
+    assert.match(layer, new RegExp(`id: '${w.id}',\\s*title[,\\s]`), w.layer);
+    const key = layer.match(/const title = w\.(\w+);/)?.[1];
+    assert.ok(key, `${w.layer}: the title from the words`);
+    assert.match(read(w.layer.replace(/[^/]+$/, "words.ts")), new RegExp(`\\b${key}: '${w.title}'`), w.layer);
     assert.match(layer, /useCityWindow\(/, w.layer);
   }
 });
@@ -71,7 +75,9 @@ test("onto another screen (CITY-75): the chart and the Exchange say how; the fra
   assert.match(read("city/components/exchange/ExchangeLayer.tsx"), /detach: \(symbol \? \{ symbol \} : \{\}\) as Params/);
   const frame = read("city/components/window/WindowFrame.tsx");
   assert.match(frame, /spec\.detach && !app && canGoOut\(\)/);
-  assert.match(frame, /aria-label="Open in a new window"/);
+  // The button's words live in the frame's dictionary (CITY-79).
+  assert.match(frame, /aria-label=\{w\.goOut\}/);
+  assert.match(read("city/components/window/words.ts"), /goOut: 'Open in a new window'/);
   assert.doesNotMatch(read("city/components/window/WindowSheet.tsx"), /goOut|Open in a new window/, "the phone's sheet has no way out");
   // A chart out there stays when the tower card closes; home leaves the Exchange out there.
   assert.match(read("city/components/chart/ChartLayer.tsx"), /else if \(!useWindows\.getState\(\)\.out\.chart\) chart\.close\(\);/);
@@ -88,8 +94,8 @@ test("onto another screen (CITY-75): the chart and the Exchange say how; the fra
 test("a window on its own page keeps the city's switches and its signature; the city reads nothing twice", () => {
   const page = read("city/components/window/OutPage.tsx");
   // The Exchange's page exists only where the city has the Exchange; a closed switch sends the address to the city.
-  assert.match(page, /\.\.\.\(EXCHANGE_OPEN \? \{ exchange:/);
-  assert.match(read("city/components/exchange/ExchangeLayer.tsx"), /if \(!EXCHANGE_OPEN\) return null;/);
+  assert.match(page, /\.\.\.\(EXCHANGE_SHOWN \? \{ exchange:/);
+  assert.match(read("city/components/exchange/ExchangeLayer.tsx"), /if \(!EXCHANGE_SHOWN\) return null;/);
   // Neither Money nor Launch lives there.
   assert.doesNotMatch(page, /MoneyLayer|Launch/);
   // Only a page the city opened is a window; it lets go of the city's page at once.

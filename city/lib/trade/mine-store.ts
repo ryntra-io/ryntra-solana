@@ -1,6 +1,8 @@
 import { create } from 'zustand';
+import { wordsNow } from '../i18n/dict.ts';
 import { basisOf, type Basis, type HistoryTrade } from './mine.ts';
 import { proveWallet, type ProofOutcome } from './proof.ts';
+import { LINE } from './words.ts';
 
 /**
  * The «Mine» panel's own state: open or not, and what the engine says the held coins cost. The cost comes from the
@@ -146,7 +148,7 @@ export const useMine = create<MineStore>((set, get) => ({
       });
     }
     if (failed === coins.length) {
-      set({ status: 'failed', bases: new Map(), at: null, against, message: 'Your trade history is unavailable right now.' });
+      set({ status: 'failed', bases: new Map(), at: null, against, message: wordsNow(LINE).historyUnavailable });
       return;
     }
     set({ status: 'ready', bases, at: env.now(), against, message: null });

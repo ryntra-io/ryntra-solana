@@ -211,25 +211,19 @@ test("«Що ти купуєш» names the PreStocks fee the chain states, never
 });
 
 test("the sitemap and robots name only what is live", async () => {
-  const entries = sitemapEntries(["NVDAx", "SPACEX"]);
+  const entries = sitemapEntries();
   if (LANDING_IS_LIVE) {
-    /* Mission Control, in English alone: `/uk` leads to it and is never advertised. */
+    /* The city, in English alone: `/uk` leads to it and is never advertised. */
     assert.equal(entries[0].url, SITE, "the home page comes first");
     assert.equal(entries[0].priority, 1);
     assert.equal(entries[0].alternates, undefined, "one language, no pair");
     assert.ok(!entries.some((entry) => entry.url === SITE + "/uk"), "the Ukrainian home is a redirect");
   } else {
-    /* While the home page leads into the app, the sitemap begins with the app's Home. */
     assert.ok(!entries.some((entry) => entry.url === SITE || entry.url === SITE + "/uk"), "the landing is not advertised while it leads into the app");
-    assert.equal(entries[0].url, SITE + APP_HOME_PATH);
   }
-  for (const path of [APP_HOME_PATH, "/app/markets", "/app/stocks/NVDAx", "/app/stocks/SPACEX"]) {
-    const english = entries.find((entry) => entry.url === SITE + path);
-    const ukrainian = entries.find((entry) => entry.url === `${SITE}/uk${path}`);
-    assert.ok(english && ukrainian, `${path} is advertised at both addresses`);
-    assert.ok(english.priority < 1, `${path} sits under the landing`);
-    assert.deepEqual(english.alternates?.languages, { en: SITE + path, uk: `${SITE}/uk${path}`, "x-default": SITE + path });
-    assert.deepEqual(ukrainian.alternates, english.alternates);
+  /* The old interface leads into the city since CITY-13 (decision 75): none of its pages is offered to the index. */
+  for (const path of [APP_HOME_PATH, "/app/markets", "/app/stocks/NVDAx"]) {
+    for (const url of [SITE + path, `${SITE}/uk${path}`]) assert.equal(entries.find((entry) => entry.url === url), undefined, `${url} is an old address`);
   }
   const rows = (await nextConfig.redirects()).filter((row) => !onAppHostOnly(row));
   const redirected = new Set(rows.map((row) => row.source).filter((source) => !source.includes(":")));
@@ -252,9 +246,8 @@ test("the sitemap and robots name only what is live", async () => {
   const policy = robots();
   const rules = Array.isArray(policy.rules) ? policy.rules : [policy.rules];
   for (const rule of rules.filter((item) => item.allow)) {
-    assert.deepEqual(rule.allow, ["/", "/app/home$", "/app/markets$", "/app/stocks/", "/uk/app/home$", "/uk/app/markets$", "/uk/app/stocks/", "/solana/home$", "/solana/markets$", "/solana/stocks/", "/uk/solana/home$", "/uk/solana/markets$", "/uk/solana/stocks/"], "the site, Home, Markets and the companies' pages — at both addresses, and at their addresses on app.ryntra.io — are open");
-    assert.ok(rule.disallow.includes("/app/") && rule.disallow.includes("/uk/app/"), "the rest of the cabinet stays out, in either language");
-    assert.ok(!rule.disallow.includes("/app$"), "/app itself is the one hop to Home");
+    assert.deepEqual(rule.allow, ["/"], "the city and the site are open; nothing of the old interface is named");
+    assert.ok(!rule.disallow.some((path) => /^\/(?:uk\/)?(?:app|solana)/.test(path)), "its old addresses stay crawlable, so a crawler sees their 308 into the city");
   }
   assert.doesNotMatch(JSON.stringify(policy), /strategy-lab-qa/, "robots names no route that no longer exists");
 });

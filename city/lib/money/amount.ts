@@ -1,4 +1,6 @@
 import { exactDecimal, parseHumanAmount } from '../../../lib/solana/amounts.ts';
+import { digits, wordsNow } from '../i18n/dict.ts';
+import { AMOUNT_WORDS } from './words.ts';
 
 /**
  * «How much» on Send and Bridge: what was typed, in the coin's own units, against what the wallet can spend. The
@@ -21,23 +23,24 @@ export function cleanAmount(typed: string): string {
 }
 
 export function readAmount(typed: string, spendable: Spendable | null): AmountRead {
+  const w = wordsNow(AMOUNT_WORDS);
   const value = cleanAmount(typed);
-  if (value === '' || value === '.') return { ok: false, problem: 'EMPTY', text: 'Enter an amount.' };
-  if (!spendable) return { ok: false, problem: 'NO_BALANCE', text: 'Your balance is still being read.' };
+  if (value === '' || value === '.') return { ok: false, problem: 'EMPTY', text: w.empty };
+  if (!spendable) return { ok: false, problem: 'NO_BALANCE', text: w.noBalance };
   const normal = value.startsWith('.') ? `0${value}` : value.endsWith('.') ? value.slice(0, -1) : value;
-  if (!/^\d+(\.\d+)?$/.test(normal)) return { ok: false, problem: 'NOT_A_NUMBER', text: 'Enter a plain number.' };
+  if (!/^\d+(\.\d+)?$/.test(normal)) return { ok: false, problem: 'NOT_A_NUMBER', text: w.notANumber };
   const fraction = normal.split('.')[1] ?? '';
   if (fraction.length > spendable.decimals) {
     return {
       ok: false,
       problem: 'TOO_PRECISE',
-      text: `${spendable.symbol} has ${spendable.decimals} decimal place${spendable.decimals === 1 ? '' : 's'}. Shorten the amount.`,
+      text: w.tooPrecise(spendable.symbol, spendable.decimals),
     };
   }
   const parsed = parseHumanAmount(normal, spendable.decimals);
-  if (!parsed.ok) return { ok: false, problem: 'ZERO', text: 'Enter more than zero.' };
+  if (!parsed.ok) return { ok: false, problem: 'ZERO', text: w.zero };
   if (BigInt(parsed.raw) > BigInt(spendable.spendableRaw)) {
-    return { ok: false, problem: 'OVER_BALANCE', text: `More than you can send: ${exactDecimal(spendable.spendableRaw, spendable.decimals)} ${spendable.symbol}.` };
+    return { ok: false, problem: 'OVER_BALANCE', text: w.overBalance(digits(exactDecimal(spendable.spendableRaw, spendable.decimals)), spendable.symbol) };
   }
   return { ok: true, raw: parsed.raw };
 }

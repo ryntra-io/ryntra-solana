@@ -236,6 +236,53 @@
   background: var(--mint);
 }
 
+/* The language: one quiet pair, the language on screen lit (CITY-79). Each half is a full-height target. */
+.menuLang {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-height: 48px;
+  padding: 0 4px 0 12px;
+  font-size: var(--type-base);
+  font-weight: 700;
+  color: var(--ice);
+}
+
+.menuLangPair {
+  display: inline-flex;
+  padding: 3px;
+  gap: 2px;
+  background: rgba(238, 241, 255, 0.06);
+}
+
+.menuLangPair button {
+  min-width: 46px;
+  min-height: 38px;
+  padding: 0 10px;
+  border: 0;
+  font-family: var(--font-display, system-ui), system-ui, sans-serif;
+  font-size: var(--type-micro);
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  color: var(--text-dim);
+  background: none;
+  transition:
+    color 160ms ease,
+    background-color 160ms ease;
+}
+
+.menuLangPair button:hover,
+.menuLangPair button:focus-visible {
+  color: var(--ice);
+  outline: none;
+}
+
+.menuLangPair button[aria-pressed='true'] {
+  color: var(--ink);
+  background: var(--ice);
+}
+
 .menuLinks {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -973,6 +1020,12 @@
   text-transform: uppercase;
 }
 
+/* Ukrainian words run longer: a little less air between the capitals keeps each label on one line (CITY-79). */
+.cellLabel:lang(uk) {
+  letter-spacing: 0.06em;
+  white-space: nowrap;
+}
+
 .cellValue {
   margin-top: 4px;
   font-size: 17px;
@@ -1123,7 +1176,7 @@
 /* A phone held upright: the search is a sheet above the dock, where the one card stands; while it is open the card
    steps aside, so the two never cross (CITY-6a). */
 @media (max-width: 560px) and (orientation: portrait) {
-  .layer:has([role='dialog'][aria-label='Search coins']) .slot {
+  .layer:has([data-city-search]) .slot {
     visibility: hidden;
   }
 }
@@ -1280,5 +1333,34 @@
 
   :global(body:has([aria-controls='city-mine'])) .layer:has([data-city-hint]) .cutin {
     --cut-below: 220px;
+  }
+}
+
+/* The top bar hidden by its arrow (the Deck's `TopHandle`): it slides up out of the frame. */
+.top {
+  transition:
+    transform 340ms cubic-bezier(0.2, 0.9, 0.3, 1),
+    opacity 220ms ease-out;
+}
+
+.layer[data-top-hidden] .top {
+  transform: translateY(calc(-100% - 40px));
+  opacity: 0;
+  pointer-events: none;
+}
+
+.layer[data-top-hidden] .top > * {
+  pointer-events: none;
+}
+
+/* A phone: «Live» is its dot alone (30.10) — the bar keeps room for the bell, and nothing runs into the brand. */
+@media (max-width: 460px) {
+  .liveChip {
+    padding: 0 14px;
+  }
+  .liveChip .chipShort,
+  .liveChip .chipLong,
+  .liveChip .chipTime {
+    display: none;
   }
 }

@@ -4,7 +4,9 @@ import type { LimitReview } from '../../../lib/solana/limits/review.server.ts';
 import type { LimitOrderView } from '../../../lib/solana/limits/sync.server.ts';
 import { signFreshBytes } from '../../../lib/solana/sign-fresh.ts';
 import { postJson, type EngineFailure, type EngineResult, type FetchLike, type Timers } from './engine.ts';
+import { wordsNow } from '../i18n/dict.ts';
 import type { Refusal, SignResult } from './flow.ts';
+import { LIMIT_CODES, LIMITS } from './words.ts';
 
 /**
  * The city's line to Ryntra's spot limits engine — the same five routes the rest of Ryntra uses, on the same origin.
@@ -114,23 +116,9 @@ export type LimitDeps = Readonly<{
 
 /** The engine's refusal in the person's words: the routes answer in English for logs, the card speaks by the code. */
 export function limitRefusal(failure: EngineFailure): Refusal {
-  const words: Record<string, string> = {
-    RATE_LIMITED: 'Too many requests. Try again in a moment.',
-    SWAP_PAUSED: 'Trading is turned off right now.',
-    BELOW_MINIMUM: `Limit orders start at ${TRIGGER_V1_MIN_ORDER_USD} USD.`,
-    INVALID_TERMS: 'The amount or the price is not a positive number.',
-    SAME_TOKEN: 'A pair needs two different coins.',
-    MINT_UNREADABLE: 'This coin could not be read from the chain. Try again.',
-    SIMULATION_FAILED: 'The network would refuse this order. Check your balance and SOL for fees.',
-    TRIGGER_BUSY: 'Jupiter is busy right now. Try again in a moment.',
-    TRIGGER_REFUSED: 'Jupiter would not take this order.',
-    NOT_CANCELLABLE: 'This order is already closed or being closed.',
-    ALREADY_SUBMITTED: 'This order was already sent.',
-    WALLET_MISMATCH: 'This order belongs to another wallet.',
-    TIMEOUT: 'The server did not answer in time. Nothing was sent.',
-    NETWORK: 'No answer from Ryntra. Nothing was sent.',
-  };
-  const message = words[failure.code] ?? 'The order could not be built right now. Nothing was sent.';
+  const words = wordsNow(LIMIT_CODES) as Readonly<Record<string, string | ((usd: number) => string)>>;
+  const entry = Object.prototype.hasOwnProperty.call(words, failure.code) ? words[failure.code] : undefined;
+  const message = typeof entry === 'function' ? entry(TRIGGER_V1_MIN_ORDER_USD) : (entry ?? wordsNow(LIMITS).buildFailed);
   return { code: failure.code, message, retryable: failure.code !== 'WALLET_MISMATCH' && failure.code !== 'SAME_TOKEN' };
 }
 
@@ -147,7 +135,7 @@ export async function reviewLimit(intent: LimitIntent, deps: LimitDeps): Promise
   if (!answer.ok) return { kind: 'refused', refusal: limitRefusal(answer.failure) };
   const review = answer.value.review;
   if (!review || typeof review.transactionBase64 !== 'string' || review.side !== intent.side || review.pair?.baseMint !== intent.baseMint || review.pair?.quoteMint !== intent.quoteMint) {
-    return { kind: 'refused', refusal: { code: 'REVIEW_UNREADABLE', message: 'The order came back unreadable. Nothing was sent.', retryable: true } };
+    return { kind: 'refused', refusal: { code: 'REVIEW_UNREADABLE', message: wordsNow(LIMITS).unreadable, retryable: true } };
   }
   return { kind: 'ready', review, receivedAt: deps.now() };
 }
@@ -176,10 +164,6 @@ export type PlaceOutcome =
   /** Sent, and the answer is not clear: the engine's record holds it; never placed again. */
   | Readonly<{ kind: 'unclear'; signature: string | null; message: string }>;
 
-const LATE = 'Signed too late. Nothing was sent. Sign again.';
-const MOVED = 'The order changed. Nothing was sent. Check the new figures.';
-const UNCLEAR = 'Not confirmed yet. Do not place it again.';
-
 function termsOf(review: LimitReview): SubmitBody['terms'] {
   return {
     side: review.side,
@@ -207,16 +191,16 @@ export async function placeLimit(args: Readonly<{ intent: LimitIntent; review: L
   if (!mayOpenWallet({ receivedAtMs: receivedAt, signableMs: signableMsOf(review), nowMs: deps.now() })) {
     const fresh = await reviewLimit(args.intent, deps);
     if (fresh.kind !== 'ready') return fresh;
-    if (!sameTerms(review, fresh.review)) return { kind: 'review', review: fresh.review, receivedAt: fresh.receivedAt, note: MOVED };
+    if (!sameTerms(review, fresh.review)) return { kind: 'review', review: fresh.review, receivedAt: fresh.receivedAt, note: wordsNow(LIMITS).moved };
     review = fresh.review;
     receivedAt = fresh.receivedAt;
   }
   deps.onPhase?.('wallet');
   const signed = await deps.sign(review.transactionBase64);
-  if (!signed.ok) return { kind: 'cancelled', message: signed.reason || 'The wallet did not sign. Nothing was sent.' };
+  if (!signed.ok) return { kind: 'cancelled', message: signed.reason || wordsNow(LIMITS).noSign };
   if (signableWindowClosed({ receivedAtMs: receivedAt, signableMs: signableMsOf(review), nowMs: deps.now() })) {
     const fresh = await reviewLimit(args.intent, deps);
-    return fresh.kind === 'ready' ? { kind: 'review', review: fresh.review, receivedAt: fresh.receivedAt, note: LATE } : fresh;
+    return fresh.kind === 'ready' ? { kind: 'review', review: fresh.review, receivedAt: fresh.receivedAt, note: wordsNow(LIMITS).late } : fresh;
   }
   deps.onPhase?.('sending');
   const answer = await deps.api.submit({
@@ -232,7 +216,7 @@ export async function placeLimit(args: Readonly<{ intent: LimitIntent; review: L
   const failure = answer.failure;
   if (failure.submitBoundary === 'NOT_CROSSED') return { kind: 'refused', refusal: limitRefusal(failure) };
   if (failure.code === 'PLACEMENT_FAILED') return { kind: 'failed', signature: failure.signature ?? null };
-  return { kind: 'unclear', signature: failure.signature ?? null, message: UNCLEAR };
+  return { kind: 'unclear', signature: failure.signature ?? null, message: wordsNow(LIMITS).unclear };
 }
 
 export type CancelOutcome =
@@ -263,14 +247,14 @@ export async function cancelLimit(args: Readonly<{ owner: string; venue: LimitVe
   });
   if (!fresh.ok) {
     if (fresh.stage === 'build') return { kind: 'refused', refusal: limitRefusal(fresh.failure.failure) };
-    if (fresh.stage === 'sign') return { kind: 'kept', message: 'Not signed. The order stays open.' };
-    return { kind: 'kept', message: 'Signed too late. The order stays open.' };
+    if (fresh.stage === 'sign') return { kind: 'kept', message: wordsNow(LIMITS).keptNotSigned };
+    return { kind: 'kept', message: wordsNow(LIMITS).keptLate };
   }
   deps.onPhase?.('sending');
   const answer = await deps.api.submit({ kind: 'cancel', venue: args.venue, owner: args.owner, order: args.order, requestId: fresh.built.requestId, signedTransactionBase64: fresh.signed, terms: null });
   if (answer.ok) return { kind: 'cancelled', state: answer.value.state, signature: answer.value.signature, settled: answer.value.settled === true };
   const failure = answer.failure;
   if (failure.submitBoundary === 'NOT_CROSSED') return { kind: 'refused', refusal: limitRefusal(failure) };
-  if (failure.code === 'CANCEL_FAILED') return { kind: 'refused', refusal: { code: failure.code, message: 'Cancel failed. The order stays open.', retryable: true } };
-  return { kind: 'unclear', signature: failure.signature ?? null, message: 'Cancellation not confirmed yet.' };
+  if (failure.code === 'CANCEL_FAILED') return { kind: 'refused', refusal: { code: failure.code, message: wordsNow(LIMITS).cancelFailed, retryable: true } };
+  return { kind: 'unclear', signature: failure.signature ?? null, message: wordsNow(LIMITS).cancelUnclear };
 }

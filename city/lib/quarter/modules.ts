@@ -1,6 +1,8 @@
 import { KINDS } from '../../../lib/world/catalog.ts';
 import { planBuild } from '../../../lib/world/rules.ts';
+import { wordsNow } from '../i18n/dict.ts';
 import type { Building, BuildingKind, ClientErrorCode, LinkRefusal, LockReason, PublicBuilding, Quarter } from './types.ts';
+import { BUILD_WORDS } from './words.ts';
 
 /**
  * What a person can put on a plot of their quarter, until the premium kit draws it: a building kind and the kit
@@ -21,16 +23,37 @@ export type ModuleDef = {
   later: string | null;
 };
 
+/**
+ * One building the city offers. Its name, its line and what it waits for are read in the language on screen each time
+ * they are read (`./words.ts`), so every caller — the picker, the hover label — says them in it.
+ */
+function offer(id: string, kind: BuildingKind, modules: readonly string[], later = false): ModuleDef {
+  return {
+    id,
+    kind,
+    get name() {
+      return wordsNow(BUILD_WORDS).moduleName(id);
+    },
+    get line() {
+      return wordsNow(BUILD_WORDS).moduleLine(id);
+    },
+    modules,
+    get later() {
+      return later ? wordsNow(BUILD_WORDS).comesLater : null;
+    },
+  };
+}
+
 export const MODULES: readonly ModuleDef[] = [
-  { id: 'home', kind: 'home', name: 'Home', line: 'Your place in the city', modules: ['base.stone', 'roof.flat'], later: null },
-  { id: 'lamp', kind: 'decor', name: 'Lamp', line: 'Light for your street', modules: ['base.stone', 'light.amber'], later: null },
-  { id: 'coin_tower', kind: 'coin_tower', name: 'Coin tower', line: 'Shows a coin you launched', modules: ['base.stone', 'floor.glass', 'roof.flat'], later: null },
-  { id: 'harbor', kind: 'harbor', name: 'Harbor', line: 'Your pool, lit by its fees', modules: ['base.stone', 'roof.flat'], later: null },
-  { id: 'workshop', kind: 'workshop', name: 'Workshop', line: 'A strategy, on paper first', modules: ['base.stone', 'roof.flat'], later: null },
-  { id: 'oracle', kind: 'oracle', name: 'Oracle', line: 'Your calls, on paper', modules: ['base.stone', 'sign.plain'], later: null },
-  { id: 'crew_hq', kind: 'crew_hq', name: 'Crew HQ', line: 'Your team and its treasury', modules: ['base.stone', 'roof.flat'], later: null },
-  { id: 'garage', kind: 'garage', name: 'Garage', line: 'Where your agent will live', modules: ['base.stone', 'roof.flat'], later: null },
-  { id: 'showcase', kind: 'showcase', name: 'Showcase', line: 'Where visitors buy in', modules: ['base.stone', 'sign.plain'], later: 'Comes later' },
+  offer('home', 'home', ['base.stone', 'roof.flat']),
+  offer('lamp', 'decor', ['base.stone', 'light.amber']),
+  offer('coin_tower', 'coin_tower', ['base.stone', 'floor.glass', 'roof.flat']),
+  offer('harbor', 'harbor', ['base.stone', 'roof.flat']),
+  offer('workshop', 'workshop', ['base.stone', 'roof.flat']),
+  offer('oracle', 'oracle', ['base.stone', 'sign.plain']),
+  offer('crew_hq', 'crew_hq', ['base.stone', 'roof.flat']),
+  offer('garage', 'garage', ['base.stone', 'roof.flat']),
+  offer('showcase', 'showcase', ['base.stone', 'sign.plain'], true),
 ];
 
 export const moduleById = (id: string): ModuleDef | null => MODULES.find((m) => m.id === id) ?? null;
@@ -69,46 +92,48 @@ export function firstBuildable(quarter: Quarter, buildings: readonly (Building |
 
 /** One line for a verdict, for the picker's button. */
 export function verdictLine(def: ModuleDef, v: Verdict): string {
-  if (v.ok) return `Build ${def.name}`;
+  const w = wordsNow(BUILD_WORDS);
+  if (v.ok) return w.build(def.name);
   switch (v.why) {
     case 'later':
-      return def.later ?? 'Comes later';
+      return def.later ?? w.comesLater;
     case 'slot':
-      return `Plot opens at level ${v.need ?? 2}`;
+      return w.plotOpensAt(v.need ?? 2);
     case 'kind':
     case 'module':
     case 'level':
-      return `Opens at level ${v.need ?? 2}`;
+      return w.opensAt(v.need ?? 2);
     case 'limit':
-      return 'You have one already';
+      return w.haveOne;
     case 'taken':
-      return 'This plot is taken';
+      return w.taken;
     case 'same':
-      return 'Floors come with the kit';
+      return w.floors;
     case 'linked':
-      return 'It shows an engine object';
+      return w.linked;
     default:
-      return 'Not here';
+      return w.notHere;
   }
 }
 
 /** One plain sentence for a refused write. */
 export function refusalLine(code: ClientErrorCode, reason: LockReason | LinkRefusal | null = null, need: number | null = null): string {
+  const w = wordsNow(BUILD_WORDS);
   switch (code) {
     case 'LOCKED':
-      if (reason === 'limit') return 'Your quarter has one already.';
-      if (reason === 'linked') return 'This building shows an engine object.';
-      return `That opens at quarter level ${need ?? 2}.`;
+      if (reason === 'limit') return w.hasOne;
+      if (reason === 'linked') return w.showsObject;
+      return w.opensAtQuarter(need ?? 2);
     case 'VERSION_CONFLICT':
-      return 'Your quarter changed on another screen. Try again.';
+      return w.conflict;
     case 'RATE_LIMITED':
-      return 'Too many taps at once. Try again in a moment.';
+      return w.tooMany;
     case 'NO_RESIDENT':
-      return 'This device lost its place. Claim your spot again.';
+      return w.lostPlace;
     case 'OFFLINE':
     case 'UNAVAILABLE':
-      return 'The city is out of reach. Try again.';
+      return w.outOfReach;
     default:
-      return 'That did not save. Try again.';
+      return w.notSaved;
   }
 }

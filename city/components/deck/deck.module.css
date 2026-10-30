@@ -1,0 +1,544 @@
+/* The Deck, the city's menu: dark glass with chamfered corners and an inner violet edge, one amber diamond in the
+   middle (Agents), seven places on fixed spots. Tokens from city/styles/city.module.css; drawn as the brandbook draws the HUD. */
+
+.deck {
+  position: absolute;
+  left: var(--gutter);
+  right: var(--gutter);
+  bottom: max(14px, env(safe-area-inset-bottom));
+  max-width: 660px;
+  height: 78px;
+  margin: 0 auto;
+  padding: 0 10px 11px;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr)) 108px repeat(3, minmax(0, 1fr));
+  align-items: end;
+  isolation: isolate;
+  font-family: var(--font-ui, system-ui), system-ui, sans-serif;
+  transition:
+    transform 380ms cubic-bezier(0.2, 0.9, 0.3, 1),
+    opacity 260ms ease-out;
+  animation: deckIn 520ms cubic-bezier(0.2, 1.1, 0.4, 1) backwards;
+}
+
+/* The glass, so the diamond can rise above its edge. */
+.deck::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -2;
+  background:
+    radial-gradient(120% 140% at 50% 120%, rgba(255, 178, 63, 0.14), transparent 46%),
+    linear-gradient(160deg, rgba(22, 17, 40, 0.92), rgba(8, 7, 15, 0.95));
+  box-shadow:
+    inset 0 0 0 1.5px rgba(153, 69, 255, 0.34),
+    inset 0 1px 24px rgba(153, 69, 255, 0.2);
+  clip-path: polygon(20px 0, calc(100% - 20px) 0, 100% 20px, 100% 100%, 0 100%, 0 20px);
+}
+
+/* The light edge along the top: violet at the ends, amber under the diamond. */
+.deck::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 20px;
+  right: 20px;
+  z-index: -1;
+  height: 1.5px;
+  background: linear-gradient(90deg, transparent, rgba(153, 69, 255, 0.55) 22%, rgba(255, 178, 63, 0.95) 50%, rgba(153, 69, 255, 0.55) 78%, transparent);
+  box-shadow: 0 0 12px rgba(255, 178, 63, 0.35);
+  pointer-events: none;
+}
+
+.away {
+  transform: translateY(calc(100% + 28px));
+  opacity: 0;
+  pointer-events: none;
+}
+
+.item {
+  position: relative;
+  display: grid;
+  justify-items: center;
+  gap: 6px;
+  min-height: 52px;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--text-dim);
+  cursor: pointer;
+  transition: color 160ms ease-out;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.glyph,
+.doorGlyph {
+  width: 26px;
+  height: 26px;
+  transition:
+    transform 180ms cubic-bezier(0.2, 0.9, 0.3, 1),
+    filter 180ms ease-out;
+}
+
+.glyph svg,
+.doorGlyph svg,
+.diamond svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.label {
+  font-size: 11px;
+  font-weight: 800;
+  line-height: 1;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.item:active .glyph {
+  transform: scale(0.92);
+}
+
+/* The place whose window is open: warm, with a short amber bar beneath. */
+.on {
+  color: var(--warm);
+}
+
+.on .glyph {
+  filter: drop-shadow(0 0 8px rgba(255, 178, 63, 0.85));
+}
+
+.item.on:not(.center)::before {
+  content: '';
+  position: absolute;
+  left: 50%;
+  bottom: -8px;
+  width: 20px;
+  height: 2px;
+  transform: translateX(-50%);
+  background: var(--amber);
+  box-shadow: 0 0 10px rgba(255, 178, 63, 0.9);
+}
+
+/* A place that opens later: on its spot, quieter, with its word. */
+.shut .glyph,
+.shut .doorGlyph,
+.shut .label {
+  opacity: 0.5;
+}
+
+.soonTag {
+  position: absolute;
+  top: -15px;
+  left: 50%;
+  z-index: 1;
+  transform: translateX(-50%);
+  padding: 2px 6px 1px;
+  font-size: 9px;
+  font-weight: 800;
+  line-height: 1.3;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--ink);
+  background: linear-gradient(160deg, var(--warm), #ffd38a);
+  clip-path: polygon(4px 0, 100% 0, 100% calc(100% - 4px), calc(100% - 4px) 100%, 0 100%, 0 4px);
+}
+
+/* «Soon», said once over the place tapped. */
+.bubble {
+  position: absolute;
+  bottom: calc(100% + 22px);
+  left: 50%;
+  z-index: 3;
+  padding: 8px 12px;
+  font-size: 12px;
+  font-weight: 700;
+  white-space: nowrap;
+  color: var(--ice);
+  background: rgba(8, 7, 15, 0.95);
+  box-shadow: inset 0 0 0 1px rgba(255, 178, 63, 0.5);
+  transform: translateX(-50%);
+  animation: bubble 1600ms ease-out both;
+  pointer-events: none;
+}
+
+/* Money stands quietly, as a wallet does: a step back until it is open or under the pointer. */
+.quiet:not(.on) .glyph {
+  opacity: 0.72;
+}
+
+/* ---------- Agents, the diamond ---------- */
+
+.center {
+  color: var(--warm);
+  gap: 7px;
+}
+
+.diamondBox {
+  display: block;
+  width: 64px;
+  height: 64px;
+  margin-top: -40px;
+  filter: drop-shadow(0 0 14px rgba(255, 178, 63, 0.7));
+  animation: breathe 2.8s ease-in-out infinite;
+  transition: transform 220ms cubic-bezier(0.2, 1.2, 0.4, 1);
+}
+
+.diamond {
+  display: block;
+  width: 100%;
+  height: 100%;
+  padding: 18px;
+  color: var(--ink);
+  background:
+    linear-gradient(160deg, rgba(255, 255, 255, 0.4), transparent 42%),
+    linear-gradient(160deg, var(--warm), var(--amber) 58%, #ff8a2a);
+  clip-path: polygon(50% 0, 100% 50%, 50% 100%, 0 50%);
+}
+
+.center:active .diamondBox {
+  transform: scale(0.93);
+}
+
+.center[aria-expanded='true'] .diamondBox {
+  transform: translateY(-3px);
+  filter: drop-shadow(0 0 22px rgba(255, 178, 63, 1));
+}
+
+.center.shut .diamondBox {
+  filter: none;
+  animation: none;
+  opacity: 0.55;
+}
+
+/* ---------- The trays: Swap · Spot · Futures, Hangar · Bots, Ring · Hack · Vault ---------- */
+
+.tray {
+  position: absolute;
+  bottom: calc(100% + 26px);
+  left: 50%;
+  display: grid;
+  grid-template-columns: repeat(var(--doors, 3), 104px);
+  gap: 8px;
+  padding: 10px;
+  transform: translateX(-50%);
+  background: linear-gradient(160deg, rgba(22, 17, 40, 0.95), rgba(8, 7, 15, 0.97));
+  box-shadow:
+    inset 0 0 0 1.5px rgba(255, 178, 63, 0.36),
+    inset 0 1px 22px rgba(153, 69, 255, 0.22);
+  clip-path: polygon(14px 0, calc(100% - 14px) 0, 100% 14px, 100% 100%, 0 100%, 0 14px);
+  animation: trayIn 260ms cubic-bezier(0.2, 1.2, 0.4, 1) both;
+}
+
+.door {
+  position: relative;
+  display: grid;
+  justify-items: center;
+  align-content: center;
+  gap: 8px;
+  height: 84px;
+  padding: 0;
+  border: 0;
+  color: var(--ice);
+  background: rgba(153, 69, 255, 0.08);
+  box-shadow: inset 0 0 0 1px rgba(153, 69, 255, 0.26);
+  clip-path: polygon(10px 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%, 0 10px);
+  cursor: pointer;
+  transition:
+    background 160ms ease-out,
+    color 160ms ease-out;
+}
+
+.door .soonTag {
+  top: 6px;
+}
+
+.door .bubble {
+  bottom: calc(100% + 12px);
+}
+
+.door:active .doorGlyph {
+  transform: scale(0.92);
+}
+
+/* A door out of the city (Futures → RXN): the place it leads to, with the arrow out, where «Soon» would stand. */
+.outTag {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  padding: 2px 5px 1px 6px;
+  font-size: 9px;
+  font-weight: 800;
+  line-height: 1.3;
+  letter-spacing: 0.1em;
+  color: var(--warm);
+  box-shadow: inset 0 0 0 1px rgba(255, 178, 63, 0.55);
+  clip-path: polygon(4px 0, 100% 0, 100% calc(100% - 4px), calc(100% - 4px) 100%, 0 100%, 0 4px);
+}
+
+.outTag svg {
+  width: 9px;
+  height: 9px;
+}
+
+/* ---------- The arrows ---------- */
+
+.handle {
+  position: absolute;
+  /* One arrow, in the middle: under the menu, where the arrow that brings it back stands. */
+  top: auto;
+  bottom: -15px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 2;
+  display: grid;
+  place-items: center;
+  width: 46px;
+  height: 16px;
+  padding: 0;
+  border: 0;
+  color: var(--text-dim);
+  background: linear-gradient(180deg, rgba(22, 17, 40, 0.96), rgba(12, 10, 22, 0.96));
+  box-shadow: inset 0 0 0 1px rgba(153, 69, 255, 0.4);
+  clip-path: polygon(0 0, 100% 0, calc(100% - 8px) 100%, 8px 100%);
+  cursor: pointer;
+  opacity: 0.75;
+  transition:
+    opacity 160ms ease-out,
+    color 160ms ease-out;
+}
+
+.handle svg {
+  width: 14px;
+  height: 14px;
+}
+
+.deck:hover .handle,
+.handle:focus-visible {
+  opacity: 1;
+}
+
+/* Brought back from the bottom edge. */
+.restore {
+  position: absolute;
+  top: auto;
+  right: auto;
+  left: 50%;
+  bottom: max(0px, env(safe-area-inset-bottom));
+  width: 64px;
+  height: 22px;
+  opacity: 1;
+  color: var(--warm);
+  transform: translateX(-50%);
+  clip-path: polygon(10px 0, calc(100% - 10px) 0, 100% 100%, 0 100%);
+  animation: deckIn 380ms ease-out backwards;
+}
+
+.restore svg {
+  transform: rotate(180deg);
+}
+
+.topHandle {
+  position: absolute;
+  top: max(0px, env(safe-area-inset-top));
+  left: 50%;
+  z-index: 3;
+  display: grid;
+  place-items: center;
+  width: 46px;
+  height: 14px;
+  padding: 0;
+  border: 0;
+  color: var(--text-dim);
+  background: linear-gradient(0deg, rgba(22, 17, 40, 0.96), rgba(12, 10, 22, 0.96));
+  box-shadow: inset 0 0 0 1px rgba(153, 69, 255, 0.4);
+  clip-path: polygon(0 0, 100% 0, calc(100% - 8px) 100%, 8px 100%);
+  transform: translateX(-50%);
+  cursor: pointer;
+  transition: color 160ms ease-out;
+}
+
+.topHandle svg {
+  width: 13px;
+  height: 13px;
+  transform: rotate(180deg);
+}
+
+.topAway svg {
+  transform: none;
+}
+
+.topAway {
+  height: 20px;
+  width: 60px;
+  transform: translateX(-50%);
+  color: var(--warm);
+}
+
+/* ---------- Hints on a desktop ---------- */
+
+@media (hover: hover) and (pointer: fine) {
+  .item::after,
+  .door::after {
+    content: attr(data-hint);
+    position: absolute;
+    bottom: calc(100% + 16px);
+    left: 50%;
+    z-index: 2;
+    padding: 7px 12px;
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0;
+    text-transform: none;
+    white-space: nowrap;
+    color: var(--ice);
+    background: rgba(8, 7, 15, 0.95);
+    box-shadow: inset 0 0 0 1px rgba(153, 69, 255, 0.45);
+    opacity: 0;
+    transform: translate(-50%, 4px);
+    transition:
+      opacity 140ms ease-out 260ms,
+      transform 140ms ease-out 260ms;
+    pointer-events: none;
+  }
+  .center::after {
+    bottom: calc(100% + 44px);
+  }
+  .item:hover::after,
+  .door:hover::after {
+    opacity: 1;
+    transform: translate(-50%, 0);
+  }
+  .deck:has(.tray) .item::after,
+  .item:has(.bubble)::after,
+  .door:has(.bubble)::after {
+    display: none;
+  }
+  .item:hover:not(.on) {
+    color: var(--ice);
+  }
+  .item:hover .glyph {
+    transform: translateY(-2px);
+  }
+  .center:hover .diamondBox {
+    transform: translateY(-3px);
+  }
+  .door:hover {
+    color: var(--warm);
+    background: rgba(255, 178, 63, 0.1);
+  }
+  .handle:hover,
+  .topHandle:hover {
+    color: var(--warm);
+  }
+}
+
+/* ---------- A phone ---------- */
+
+@media (max-width: 560px) {
+  .deck {
+    height: 70px;
+    padding: 0 4px 10px;
+    grid-template-columns: repeat(3, minmax(0, 1fr)) 64px repeat(3, minmax(0, 1fr));
+  }
+
+  .glyph {
+    width: 23px;
+    height: 23px;
+  }
+  .label {
+    font-size: 8.5px;
+    letter-spacing: 0.01em;
+  }
+  .diamondBox {
+    width: 56px;
+    height: 56px;
+    margin-top: -34px;
+  }
+  .diamond {
+    padding: 16px;
+  }
+  .soonTag {
+    top: -13px;
+    padding: 1px 4px 0;
+    font-size: 8px;
+    letter-spacing: 0.06em;
+  }
+  .tray {
+    grid-template-columns: repeat(var(--doors, 3), 96px);
+  }
+  .door {
+    height: 78px;
+  }
+  .bubble {
+    font-size: 11px;
+  }
+  /* The ends: «Soon» keeps inside the screen. */
+  .item:first-child + .item .bubble,
+  .item:nth-child(2) .bubble {
+    left: 0;
+    transform: none;
+  }
+  .item:last-of-type .bubble {
+    left: auto;
+    right: 0;
+    transform: none;
+  }
+}
+
+/* ---------- Motion ---------- */
+
+@keyframes deckIn {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+}
+
+@keyframes trayIn {
+  from {
+    opacity: 0;
+    transform: translate(-50%, 10px) scale(0.96);
+  }
+}
+
+@keyframes breathe {
+  50% {
+    filter: drop-shadow(0 0 22px rgba(255, 178, 63, 0.95));
+  }
+}
+
+@keyframes bubble {
+  0% {
+    opacity: 0;
+    margin-bottom: -4px;
+  }
+  12%,
+  82% {
+    opacity: 1;
+    margin-bottom: 0;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .deck,
+  .tray,
+  .restore,
+  .diamondBox,
+  .bubble {
+    animation: none;
+  }
+  .deck,
+  .glyph,
+  .diamondBox {
+    transition: none;
+  }
+}

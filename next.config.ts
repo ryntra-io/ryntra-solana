@@ -5,7 +5,8 @@ import { CUSTOMER_REDIRECTS } from "./lib/product/customer-routing.ts";
 import { treasuryNetworkFrom } from "./lib/solana/treasury/model.ts";
 import { onPredictHost, predictHostRedirects } from "./lib/predictions/predict-host.ts";
 import { seekerRelayCspSources } from "./lib/solana/seeker-connect.ts";
-import { appHostRedirects, appHostRewrites, atBothAddresses, everywhereButProxied, siteHostRedirects } from "./lib/product/app-address.ts";
+import { appHostRedirects, appHostRewrites, atBothAddresses, everywhereButProxied, ON_APP_HOST, siteHostRedirects, SITE_ORIGIN } from "./lib/product/app-address.ts";
+import { OLD_PREFIXES, oldAddressRedirects, shadowedByOldAddresses } from "./city/lib/open/old-addresses.ts";
 
 /* The landing is a page again — English at `/`, Ukrainian at `/uk`. What stays of it is the language map of the
    home page:
@@ -36,10 +37,15 @@ export const LANDING_REDIRECTS = [
   { source: "/en", destination: LANDING_ADDRESSES.en, permanent: true },
   { source: "/ua", destination: LANDING_ADDRESSES.uk, permanent: true },
   ...PARKED_LANGUAGE_ADDRESSES.map((source) => ({ source, destination: LANDING_ADDRESSES.en, permanent: false })),
-  /* The app's door in Ukrainian, as `/app` is in English: one hop to Home at
-     its Ukrainian address. */
-  { source: "/uk/app", destination: "/uk/app/home", permanent: false },
+  /* `/uk/app` led to Home at its Ukrainian address until CITY-13: it is an old address of the cabinet now, and
+     opens the city with the rest of them (`OLD_ADDRESS_REDIRECTS` below). */
 ];
+
+/* The old interface is closed (decision 75, CITY-13): every address of the cabinet, of its Solana workspace, of
+   Mission Control and of the aliases that led into them opens the district or window of the city that does the same
+   work, for good, in one hop — the table and its reasons are `city/lib/open/old-addresses.ts` and
+   `docs/city/OLD-ADDRESSES.md`. On app.ryntra.io the cabinet's `/solana/…` addresses lead to the city on ryntra.io. */
+export const OLD_ADDRESS_REDIRECTS = oldAddressRedirects({ condition: ON_APP_HOST[0]!, origin: SITE_ORIGIN });
 
 /* The Vercel hosts that answer beside ryntra.io — the project's default
    domain, the team alias and every preview deployment. They stay reachable
@@ -236,6 +242,8 @@ const nextConfig: NextConfig = {
          and the event covers, for this route and its markets only. */
       ...atBothAddresses("/app/predictions", [{ key: "Content-Security-Policy", value: PREDICTIONS_CSP }]),
       ...atBothAddresses("/app/predictions/:path*", [{ key: "Content-Security-Policy", value: PREDICTIONS_CSP }]),
+      /* The old interface's addresses only redirect now (CITY-13); a crawler that still holds one drops it. */
+      ...OLD_PREFIXES.flatMap((prefix) => [prefix, `${prefix}/:path*`]).map((source) => ({ source, headers: [{ key: "X-Robots-Tag", value: "noindex, nofollow" }] })),
       /* predict.ryntra.io only leads into the section (NAV-6c): nothing on it is
          a page to index. */
       { source: "/:path*", has: PREDICT_HOST, headers: [{ key: "X-Robots-Tag", value: "noindex, nofollow" }] },
@@ -404,15 +412,21 @@ const nextConfig: NextConfig = {
     return [
       ...LANDING_REDIRECTS,
       /* predict.ryntra.io only leads into the Solana cabinet's Predictions section; every other path there opens on
-         ryntra.io. Right after the landing's language map, ahead of every other row. */
-      ...predictHostRedirects(),
-      /* The application's own host, and — once it is live — the old
-         addresses on ryntra.io moving there with their path and query
-         (`lib/product/app-address.ts`). Each row names its host, so before
-         the switch ryntra.io answers exactly as below. */
-      ...appHostRedirects(table),
-      ...siteHostRedirects(table),
-      ...table.slice(LANDING_REDIRECTS.length),
+         ryntra.io. Right after the landing's language map, ahead of every other row. Only the host's own rows: the old
+         product shell `/predict` on the other hosts is an old address now, and the city's table leads it to the Oracle. */
+      ...predictHostRedirects().filter((row) => row.has),
+      /* The old interface, ahead of every row that still names one of its pages (CITY-13). The rows below that answer
+         under one of its prefixes are never reached, so they are left out: what is left leads to the city in one hop. */
+      ...OLD_ADDRESS_REDIRECTS,
+      ...[
+        /* The application's own host, and — once it is live — the old
+           addresses on ryntra.io moving there with their path and query
+           (`lib/product/app-address.ts`). Each row names its host, so before
+           the switch ryntra.io answers exactly as below. */
+        ...appHostRedirects(table),
+        ...siteHostRedirects(table),
+        ...table.slice(LANDING_REDIRECTS.length),
+      ].filter((row) => !shadowedByOldAddresses(row.source)),
     ];
   },
   /* On app.ryntra.io the Solana pages answer at `/solana/…`, served from

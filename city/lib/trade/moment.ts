@@ -1,4 +1,5 @@
 import { streamFrames } from '../capture.ts';
+import { digits } from '../i18n/dict.ts';
 import { PALETTE } from '../palette.ts';
 
 /**
@@ -76,7 +77,7 @@ function drawMark(ctx: CanvasRenderingContext2D, x: number, y: number, size: num
 }
 
 function amountText(value: number, decimals: number, suffix = ''): string {
-  return value.toLocaleString('en-US', { minimumFractionDigits: decimals, maximumFractionDigits: decimals }) + suffix;
+  return digits(value.toLocaleString('en-US', { minimumFractionDigits: decimals, maximumFractionDigits: decimals })) + suffix;
 }
 
 /**
@@ -180,6 +181,7 @@ function paint(ctx: CanvasRenderingContext2D, source: HTMLCanvasElement | null, 
     ctx.fillRect(72, H - 86, 54, 6);
     ctx.font = `800 30px ${display}`;
     ctx.fillStyle = PALETTE.ice;
+    // The brand's line, the same in every language: the clip travels beyond the city (the brandbook reads it here).
     ctx.fillText('EVERY COIN IS A TOWER · RYNTRA.IO', 146, H - 74);
     ctx.globalAlpha = 1;
   }

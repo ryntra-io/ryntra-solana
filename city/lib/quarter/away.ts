@@ -1,6 +1,8 @@
+import { digits as digitsOf, wordsNow } from '../i18n/dict.ts';
 import { frontAzimuth, orbit, type Pose } from './camera.ts';
 import { lotOf, streetName } from './plot.ts';
 import type { AwayBeat, AwayReport, Cell, MeResponse } from './types.ts';
+import { AWAY_WORDS } from './words.ts';
 
 /**
  * «While you were away», as the city plays it: twenty seconds over what changed, one line at a time, the camera
@@ -49,54 +51,51 @@ export const RISER_LIQUIDITY = 50_000;
 /** Back after less than this, there is nothing to tell. */
 export const AWAY_MIN_MS = 20 * 60_000;
 
-export const SOURCE_LABEL = { world: 'Ryntra world', engine: 'Ryntra engine', market: 'Market feed', jupiter: 'Jupiter' } as const;
+const w = () => wordsNow(AWAY_WORDS);
 
-const VERBS: Record<string, string> = {
-  pump: 'is pumping',
-  flare: 'took a hit',
-  launch: 'launched',
-  graduate: 'graduated to its pool',
-  survival: 'is still standing',
-  war: 'joined the district war',
-  build: 'changed',
-  claim: 'was claimed',
-  visit: 'had visitors',
-};
-
-const OBJECT_NAMES: Record<string, string> = {
-  mint: 'Your coin',
-  lp_position: 'Your pool position',
-  strategy: 'Your strategy',
-  team: 'Your crew',
-  agent: 'Your agent',
+/** Who said a line, in the language on screen when the reel is made (`./words.ts`). */
+export const SOURCE_LABEL: Readonly<Record<'world' | 'engine' | 'market' | 'jupiter', string>> = {
+  get world() {
+    return w().sourceWorld;
+  },
+  get engine() {
+    return w().sourceEngine;
+  },
+  get market() {
+    return w().sourceMarket;
+  },
+  get jupiter() {
+    return w().sourceJupiter;
+  },
 };
 
 /** A fraction (0.184) as a signed percent, as the market says it: +18.4%, −3.0%. A world event's `change` is a fraction. */
 export function percent(fraction: number): string {
   const v = fraction * 100;
-  const digits = Math.abs(v) >= 100 ? 0 : 1;
-  return `${v >= 0 ? '+' : '−'}${Math.abs(v).toFixed(digits)}%`;
+  const places = Math.abs(v) >= 100 ? 0 : 1;
+  return digitsOf(`${v >= 0 ? '+' : '−'}${Math.abs(v).toFixed(places)}%`);
 }
 
 /** «just now», «5 min ago», «3 h ago», «2 days ago». */
 export function ago(at: string, now: number): string {
+  const x = w();
   const s = Math.max(0, (now - Date.parse(at)) / 1000);
-  if (!Number.isFinite(s) || s < 60) return 'just now';
-  if (s < 3600) return `${Math.floor(s / 60)} min ago`;
-  if (s < 86_400) return `${Math.floor(s / 3600)} h ago`;
+  if (!Number.isFinite(s) || s < 60) return x.justNow;
+  if (s < 3600) return x.minutesAgo(Math.floor(s / 60));
+  if (s < 86_400) return x.hoursAgo(Math.floor(s / 3600));
   const d = Math.floor(s / 86_400);
-  return d === 1 ? 'yesterday' : `${d} days ago`;
+  return d === 1 ? x.yesterday : x.daysAgo(d);
 }
 
 /** «Away 3 h», for the header. */
 export function awayFor(since: string, until: string): string {
   const s = Math.max(0, (Date.parse(until) - Date.parse(since)) / 1000);
-  if (!Number.isFinite(s) || s < 3600) return `${Math.max(1, Math.floor(s / 60) || 1)} min`;
-  if (s < 86_400) return `${Math.floor(s / 3600)} h`;
-  return `${Math.floor(s / 86_400)} d`;
+  const x = w();
+  if (!Number.isFinite(s) || s < 3600) return x.forMinutes(Math.max(1, Math.floor(s / 60) || 1));
+  if (s < 86_400) return x.forHours(Math.floor(s / 3600));
+  return x.forDays(Math.floor(s / 86_400));
 }
 
-const plural = (n: number, one: string, many: string) => (n === 1 ? one : `${n} ${many}`);
 /** A coin's ticker as people write it: $WIF, whether or not the symbol carries its own «$». */
 export const ticker = (symbol: string) => (symbol.startsWith('$') ? symbol : `$${symbol}`);
 const symbolOf = (towers: readonly MarketTower[], mint: string) => {
@@ -116,7 +115,9 @@ export function lineOfBeat(beat: AwayBeat, me: MeResponse, market: Market | null
   const source = SOURCE_LABEL[beat.source];
   const base = { id: beat.id, source, at: beat.at };
   const tower = (mint: string): Focus => (towers.some((t) => t.id === mint) ? { kind: 'tower', mint } : { kind: 'city' });
-  const verb = VERBS[beat.kind] ?? beat.kind;
+  const x = w();
+  const verb = x.verb(beat.kind);
+  const times = beat.count > 1 ? x.times(beat.count) : null;
 
   if (beat.about === 'quarter') {
     const q = me.quarters.find((x) => x.id === beat.subject) ?? me.quarter;
@@ -126,23 +127,23 @@ export function lineOfBeat(beat: AwayBeat, me: MeResponse, market: Market | null
       return {
         ...base,
         tone: 'mine',
-        text: beat.count === 1 ? 'Someone came by your quarter' : `${beat.count} visitors came by your quarter`,
-        sub: verified > 0 ? `${plural(verified, 'One', 'of them')} signed in with a wallet` : null,
+        text: beat.count === 1 ? x.someoneCame : x.visitorsCame(beat.count),
+        sub: verified > 0 ? x.signedIn(verified) : null,
         focus,
       };
     }
-    return { ...base, tone: 'mine', text: `Your quarter ${verb}`, sub: beat.count > 1 ? `${beat.count} times` : null, focus };
+    return { ...base, tone: 'mine', text: x.quarterDid(verb), sub: times, focus };
   }
 
   if (beat.about === 'object') {
     const kind = typeof beat.detail.linkKind === 'string' ? beat.detail.linkKind : 'mint';
-    const name = (kind === 'mint' ? symbolOf(towers, beat.subject) : null) ?? OBJECT_NAMES[kind] ?? 'Your building';
+    const name = (kind === 'mint' ? symbolOf(towers, beat.subject) : null) ?? (x.mine(kind) || x.yourBuilding);
     const figure = change(beat);
     return {
       ...base,
       tone: 'mine',
-      text: `${name} ${verb}`,
-      sub: [figure, beat.count > 1 ? `${beat.count} times` : null].filter(Boolean).join(' · ') || null,
+      text: x.did(name, verb),
+      sub: [figure, times].filter(Boolean).join(' · ') || null,
       focus: kind === 'mint' ? tower(beat.subject) : home,
     };
   }
@@ -151,19 +152,19 @@ export function lineOfBeat(beat: AwayBeat, me: MeResponse, market: Market | null
     // The terrace is drawn as far south as my own street: a street past it is shown by mine.
     const index = streetIndex(beat.street);
     const z = index === null ? null : Math.min(index, Math.max(0, Math.floor(me.quarter.cell.z) || 0));
-    const where = beat.street ? streetName(beat.street) : 'your district';
+    const where = beat.street ? streetName(beat.street) : x.yourDistrict;
     const focus: Focus = z === null ? home : { kind: 'street', z };
-    if (beat.kind === 'claim') return { ...base, tone: 'around', text: beat.count === 1 ? `A newcomer settled on ${where}` : `${beat.count} newcomers settled on ${where}`, sub: null, focus };
-    if (beat.kind === 'build') return { ...base, tone: 'around', text: beat.count === 1 ? `A neighbour built on ${where}` : `Neighbours built ${beat.count} times on ${where}`, sub: null, focus };
-    return { ...base, tone: 'around', text: `${where}: ${beat.kind}`, sub: beat.count > 1 ? `${beat.count} times` : null, focus };
+    if (beat.kind === 'claim') return { ...base, tone: 'around', text: beat.count === 1 ? x.newcomer(where) : x.newcomers(beat.count, where), sub: null, focus };
+    if (beat.kind === 'build') return { ...base, tone: 'around', text: beat.count === 1 ? x.neighbour(where) : x.neighbours(beat.count, where), sub: null, focus };
+    return { ...base, tone: 'around', text: `${where}: ${beat.kind}`, sub: times, focus };
   }
 
-  const name = symbolOf(towers, beat.subject) ?? 'A coin';
+  const name = symbolOf(towers, beat.subject) ?? x.aCoin;
   return {
     ...base,
     tone: 'around',
-    text: `${name} ${verb}`,
-    sub: [change(beat), beat.count > 1 ? `${beat.count} moments` : null].filter(Boolean).join(' · ') || null,
+    text: x.did(name, verb),
+    sub: [change(beat), beat.count > 1 ? x.moments(beat.count) : null].filter(Boolean).join(' · ') || null,
     focus: tower(beat.subject),
   };
 }
@@ -178,13 +179,14 @@ export function marketLines(input: { market: Market | null; mine: ReadonlySet<st
   if (!market || market.source !== 'live') return [];
   const base = { source: SOURCE_LABEL.jupiter, at: market.fetchedAt };
   const lines: Omit<Line, 'ms'>[] = [];
+  const x = w();
   const named = market.towers.filter((t) => t.verified && Number.isFinite(t.change24h));
   const mine = named
     .filter((t) => input.mine.has(t.id) && !input.covered.has(t.id) && Math.abs(t.change24h) >= MOVE_MIN)
     .sort((a, b) => Math.abs(b.change24h) - Math.abs(a.change24h))
     .slice(0, 2);
   for (const t of mine) {
-    lines.push({ ...base, id: `mine:${t.id}`, tone: 'mine', text: `Your coin ${ticker(t.symbol)} ${t.change24h >= 0 ? 'grew' : 'fell'} ${percent(t.change24h / 100)}`, sub: 'over 24H', focus: { kind: 'tower', mint: t.id } });
+    lines.push({ ...base, id: `mine:${t.id}`, tone: 'mine', text: x.coinMoved(ticker(t.symbol), t.change24h >= 0, percent(t.change24h / 100)), sub: x.over24h, focus: { kind: 'tower', mint: t.id } });
   }
   const risers = named
     .filter((t) => t.change24h > 0 && t.liquidity >= RISER_LIQUIDITY && !input.mine.has(t.id))
@@ -196,8 +198,8 @@ export function marketLines(input: { market: Market | null; mine: ReadonlySet<st
       ...base,
       id: `rising:${top!.id}`,
       tone: 'around',
-      text: `Rising: ${ticker(top!.symbol)} ${percent(top!.change24h / 100)}`,
-      sub: next ? `then ${ticker(next.symbol)} ${percent(next.change24h / 100)} · over 24H` : 'over 24H',
+      text: x.rising(ticker(top!.symbol), percent(top!.change24h / 100)),
+      sub: next ? x.then(ticker(next.symbol), percent(next.change24h / 100)) : x.over24h,
       focus: { kind: 'tower', mint: top!.id },
     });
   }

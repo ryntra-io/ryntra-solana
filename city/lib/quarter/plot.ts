@@ -1,5 +1,7 @@
 import { ARRIVALS as WORLD_ARRIVALS, QUARTER_SLOTS, openSlots, quarterLevelForSlot } from '../../../lib/world/catalog.ts';
+import { wordsNow } from '../i18n/dict.ts';
 import type { Cell } from './types.ts';
+import { BUILD_WORDS } from './words.ts';
 
 /**
  * Where quarters stand and how a quarter is cut into plots. The world numbers both; drawing them is the city's.
@@ -178,7 +180,7 @@ export const streetOf = (z: number): string => `arrivals-${Math.max(0, Math.floo
 /** «arrivals-3» reads as «Street 3». */
 export function streetName(street: string): string {
   const n = /^[a-z]+-(\d+)$/.exec(street)?.[1];
-  return n ? `Street ${n}` : street;
+  return n ? wordsNow(BUILD_WORDS).street(n) : street;
 }
 
 /** A lot's number on its street, from 1. */

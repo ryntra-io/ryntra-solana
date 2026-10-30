@@ -8,6 +8,8 @@ import { moduleForKind } from '@/city/lib/quarter/modules';
 import { useQuarter } from '@/city/lib/quarter/store';
 import { formatPrice, money, signed, sym, TokenIcon } from './bits';
 import { bindHoverLabel, useHover } from './hover';
+import { HUD } from './words';
+import { useWords } from '@/city/lib/i18n/dict';
 import s from './hud.module.css';
 
 type Words = { title: string; name: string | null; figure: string | null; move: { text: string; up: boolean } | null };
@@ -24,13 +26,14 @@ export function HoverLabel() {
   const mine = useLaunch((st) => st.mine);
   const me = useQuarter((st) => st.me);
   const ref = useRef<HTMLDivElement>(null);
+  const w = useWords(HUD);
 
   const view = useMemo(() => {
     if (!target) return null;
     if (target.kind === 'building') {
       const b = me?.buildings.find((x) => x.slot === target.slot);
       if (!b) return null;
-      const words: Words = { title: moduleForKind(b.kind)?.name ?? 'Building', name: `Your quarter · level ${b.level}`, figure: null, move: null };
+      const words: Words = { title: moduleForKind(b.kind)?.name ?? w.building, name: w.quarterLevel(b.level), figure: null, move: null };
       return { words, tower: null };
     }
     const tower = layout.towers.find((p) => p.tower.id === target.id)?.tower ?? null;
@@ -38,22 +41,22 @@ export function HoverLabel() {
     const launch = launchTowerIn({ feed, mine }, tower.id);
     if (launch) {
       const cap = launch.marketCapUsd;
-      const words: Words = { title: sym(launch), name: launch.name, figure: cap ? `${money(cap)} cap` : 'Launched on Ryntra', move: null };
+      const words: Words = { title: sym(launch), name: launch.name, figure: cap ? w.capOf(money(cap)) : w.launchedOnRyntra, move: null };
       return { words, tower: null };
     }
     if (!isNamed(tower)) {
       // Unverified pools stand without a name (the city never promotes a coin nobody vetted).
-      const words: Words = { title: 'New pool', name: 'Unverified', figure: tower.liquidity > 0 ? `${money(tower.liquidity)} liquidity` : null, move: null };
+      const words: Words = { title: w.newPool, name: w.unverified, figure: tower.liquidity > 0 ? w.liquidityOf(money(tower.liquidity)) : null, move: null };
       return { words, tower: null };
     }
     const words: Words = {
       title: sym(tower),
       name: tower.name,
       figure: tower.price > 0 ? formatPrice(tower.price) : null,
-      move: Number.isFinite(tower.change1h) ? { text: `${signed(tower.change1h)} 1H`, up: tower.change1h >= 0 } : null,
+      move: Number.isFinite(tower.change1h) ? { text: `${signed(tower.change1h)} ${w.h1}`, up: tower.change1h >= 0 } : null,
     };
     return { words, tower };
-  }, [target, layout, feed, mine, me]);
+  }, [target, layout, feed, mine, me, w]);
 
   // The label tells the cursor's mover its size whenever its words change, so it can stay on the screen.
   useLayoutEffect(() => {

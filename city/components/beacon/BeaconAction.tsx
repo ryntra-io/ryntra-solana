@@ -3,6 +3,8 @@
 import { useBeacons } from '@/city/lib/beacon/store';
 import { BEACONS } from '@/city/lib/beacon/switch';
 import type { Tower } from '@/city/lib/market/types';
+import { BEACON } from '@/city/lib/beacon/words';
+import { useWords } from '@/city/lib/i18n/dict';
 import { BeaconGlyph } from './glyphs';
 import s from './beacon.module.css';
 
@@ -14,10 +16,11 @@ export function BeaconAction({ tower }: { tower: Tower }) {
 function BeaconButton({ tower }: { tower: Tower }) {
   const glow = useBeacons((st) => st.glow.get(tower.id) ?? null);
   const open = useBeacons((st) => st.open);
+  const w = useWords(BEACON);
   return (
-    <button className={`${s.action} ${glow === 'lit' ? s.actionLit : glow === 'set' ? s.actionSet : ''}`} onClick={() => open(tower.id)} aria-label="Beacon">
+    <button className={`${s.action} ${glow === 'lit' ? s.actionLit : glow === 'set' ? s.actionSet : ''}`} onClick={() => open(tower.id)} aria-label={w.beacon}>
       <BeaconGlyph />
-      <span className={s.actionWord}>Beacon</span>
+      <span className={s.actionWord}>{w.beacon}</span>
     </button>
   );
 }

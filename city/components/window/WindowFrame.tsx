@@ -16,7 +16,9 @@ import { canGoOut, goOut } from '@/city/lib/window/out';
 import { useWindows } from '@/city/lib/window/store';
 import { useRyntraApp } from '@/city/lib/app-mode';
 import { Mark } from '../hud/Mark';
+import { useWords } from '@/city/lib/i18n/dict';
 import { CloseGlyph, FullGlyph, OutGlyph, PopOutGlyph } from './glyphs';
+import { WINDOW } from './words';
 import s from './window.module.css';
 
 const HANDLES: readonly Handle[] = ['n', 's', 'e', 'w', 'nw', 'ne', 'sw', 'se'];
@@ -37,6 +39,7 @@ const HANDLE_CLASS: Record<Handle, string> = {
  * screen». What is inside comes from the window's own `render` and is not drawn again while the frame moves.
  */
 export function WindowFrame({ id, z }: { id: string; z: number }) {
+  const w = useWords(WINDOW);
   const spec = useWindows((st) => st.specs[id]);
   const win = useWindows((st) => placed(st.layout, id));
   const full = useWindows((st) => st.layout.full === id);
@@ -60,7 +63,7 @@ export function WindowFrame({ id, z }: { id: string; z: number }) {
   const actions = useWindows.getState();
   // Onto another screen (CITY-75): a window that says how to open on its own, in a browser that can.
   const out = spec.detach && !app && canGoOut() ? (
-    <button type="button" className={s.tool} aria-label="Open in a new window" title="Open in a new window" onClick={() => void goOut(id)}>
+    <button type="button" className={s.tool} aria-label={w.goOut} title={w.goOut} onClick={() => void goOut(id)}>
       <OutGlyph />
     </button>
   ) : null;
@@ -92,12 +95,12 @@ export function WindowFrame({ id, z }: { id: string; z: number }) {
             </h2>
             <div className={s.tools}>
               {out}
-              <button type="button" className={s.tool} aria-label="Pop out" title="Pop out" onClick={() => actions.popOut(id)}>
+              <button type="button" className={s.tool} aria-label={w.popOut} title={w.popOut} onClick={() => actions.popOut(id)}>
                 <PopOutGlyph />
               </button>
               <button type="button" className={s.exit} onClick={() => actions.exitFull()}>
                 <CloseGlyph />
-                Exit full screen
+                {w.exitFull}
               </button>
             </div>
           </div>
@@ -109,13 +112,13 @@ export function WindowFrame({ id, z }: { id: string; z: number }) {
             </h2>
             <div className={s.tools}>
               {out}
-              <button type="button" className={s.tool} aria-label="Full screen" title="Full screen" onClick={() => actions.full(id)}>
+              <button type="button" className={s.tool} aria-label={w.full} title={w.full} onClick={() => actions.full(id)}>
                 <FullGlyph />
               </button>
-              <button type="button" className={s.tool} aria-label="Pop out" title="Pop out" disabled={!docked} onClick={() => actions.popOut(id)}>
+              <button type="button" className={s.tool} aria-label={w.popOut} title={w.popOut} disabled={!docked} onClick={() => actions.popOut(id)}>
                 <PopOutGlyph />
               </button>
-              <button type="button" className={s.tool} aria-label="Close" title="Close" disabled={spec.held} onClick={() => actions.dismiss(id)}>
+              <button type="button" className={s.tool} aria-label={w.close} title={w.close} disabled={spec.held} onClick={() => actions.dismiss(id)}>
                 <CloseGlyph />
               </button>
             </div>

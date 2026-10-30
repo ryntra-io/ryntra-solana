@@ -4,7 +4,11 @@ import { receiptFetchable } from '../../../lib/solana/receipt-fetch.client.ts';
 import { findReceiptForAction, type StoredReceiptView } from '../../../lib/solana/receipt-view.ts';
 import { EVM_EXPLORER_TX, type SwapNetwork } from '../../../lib/swap/catalog.ts';
 import { actionStateWord, describeAction } from '../../../app/solana/workspace/history/history-lines.ts';
+import { dateText, digits, wordsNow } from '../i18n/dict.ts';
+import { shortFigures } from '../i18n/figures.ts';
 import { ask, type FetchLike } from './engine.ts';
+import { sayer } from './say.ts';
+import { ACTIVITY_WORDS, HISTORY_WORDS } from './words.ts';
 
 /**
  * Activity: what this wallet did through Ryntra, as the engine's ledger says it (`POST /api/solana/activity`) — each
@@ -14,7 +18,8 @@ import { ask, type FetchLike } from './engine.ts';
  * halves says so.
  */
 
-const ENGLISH = (text: string) => text;
+/** History's shared words, said in the city's language (English as written). */
+const SAY = sayer(HISTORY_WORDS);
 
 export type ActivityRead = Readonly<{ actions: readonly SolanaWalletAction[]; complete: boolean; at: number }>;
 
@@ -55,8 +60,8 @@ export function whenWords(iso: string, now: number): string {
   const today = new Date(now);
   const sameDay = date.getFullYear() === today.getFullYear() && date.getMonth() === today.getMonth() && date.getDate() === today.getDate();
   return sameDay
-    ? date.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })
-    : date.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' });
+    ? dateText(date, { hour: '2-digit', minute: '2-digit' })
+    : dateText(date, { day: 'numeric', month: 'short' });
 }
 
 const EVM_OF: Readonly<Record<string, Exclude<SwapNetwork, 'solana'>>> = { BASE: 'base', ETHEREUM: 'ethereum', ROBINHOOD: 'robinhood' };
@@ -65,7 +70,7 @@ function linkOf(action: SolanaWalletAction): ActivityLine['link'] {
   if (action.signature) return { label: 'Solana', href: explorerTxUrl(action.network, action.signature) };
   if (action.sourceTx && /^[1-9A-HJ-NP-Za-km-z]{64,90}$/.test(action.sourceTx)) return { label: 'Solana', href: explorerTxUrl(action.network, action.sourceTx) };
   const evm = action.destination ? EVM_OF[action.destination] : undefined;
-  if (evm && action.destinationTx && /^0x[0-9a-fA-F]{64}$/.test(action.destinationTx)) return { label: 'Explorer', href: `${EVM_EXPLORER_TX[evm]}${action.destinationTx}` };
+  if (evm && action.destinationTx && /^0x[0-9a-fA-F]{64}$/.test(action.destinationTx)) return { label: wordsNow(ACTIVITY_WORDS).explorer, href: `${EVM_EXPLORER_TX[evm]}${action.destinationTx}` };
   return null;
 }
 
@@ -74,12 +79,13 @@ export function activityLines(actions: readonly SolanaWalletAction[], kept: read
   return [...actions]
     .sort((a, b) => Date.parse(b.startedAt) - Date.parse(a.startedAt))
     .map((action) => {
-      const words = describeAction(action, ENGLISH);
+      const words = describeAction(action, SAY);
       return {
         id: action.actionId,
-        title: words.title,
-        sub: words.sub,
-        state: actionStateWord(action.outcome, ENGLISH),
+        // History's words carry the ledger's exact figures (0.099796891 SOL): the row shortens them, the receipt keeps them.
+        title: digits(shortFigures(words.title)),
+        sub: digits(shortFigures(words.sub)),
+        state: actionStateWord(action.outcome, SAY),
         tone: TONE[action.outcome] ?? 'moving',
         when: whenWords(action.startedAt, now),
         link: linkOf(action),

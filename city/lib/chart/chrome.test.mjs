@@ -31,10 +31,13 @@ test("the core chart's toolbar, legend, wordmark and status line are hidden; the
     assert.match(css, new RegExp(`\\.chart \\.core :global\\(\\.ryntra-chart__${part}\\)[^{]*\\{[^}]*display: none;|\\.chart \\.core :global\\(\\.ryntra-chart__${part}\\),`), part);
   }
   const window = read("city/components/chart/ChartWindow.tsx");
-  assert.match(window, /className=\{c\.frames\} role="radiogroup" aria-label="Interval"/, "the city's interval row");
+  assert.match(window, /className=\{c\.frames\} role="radiogroup" aria-label=\{w\.interval\}/, "the city's interval row");
   assert.match(window, /className=\{c\.readout\}/, "the city's readout of the bar under the pointer");
   assert.match(window, /className=\{c\.details\}/, "the city's «Details»");
-  assert.match(window, /indicators=\{NO_INDICATORS\}/, "no indicator set carried over from the old terminal's charts");
+  assert.match(window, /indicators=\{tools \? undefined : NO_INDICATORS\}/, "the tower's own chart window carries no indicator set");
+  // Spot carries our chart whole: its own bar of tools, indicators and drawings.
+  assert.match(window, /<ChartBody [^>]*tools \/>/);
+  assert.match(css, /\.tooled \.chart \.core :global\(\.ryntra-chart__bar\)/);
   assert.match(window, /crosshair=\{crosshair\}/);
 });
 

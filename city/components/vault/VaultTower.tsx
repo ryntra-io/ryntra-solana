@@ -6,6 +6,7 @@ import * as THREE from 'three';
 import { SHARED } from '@/city/lib/city/shared';
 import { useCity } from '@/city/lib/city/store';
 import { PALETTE } from '@/city/lib/palette';
+import { layerNow } from '@/city/lib/game/layer';
 import { quarterStore } from '@/city/lib/quarter/store';
 import { useRun } from '@/city/lib/run/store';
 import { VAULT_OPEN } from '@/city/lib/vault/flag';
@@ -172,7 +173,8 @@ function VaultTap() {
     const onUp = (e: PointerEvent) => {
       const d = down;
       down = null;
-      if (!d || useRun.getState().phase !== 'off' || quarterStore.getState().mode !== 'city') return;
+      // The vault is a door of the Play layer (CITY-81): in City it is scenery, and the tap goes on to the city.
+      if (!d || useRun.getState().phase !== 'off' || quarterStore.getState().mode !== 'city' || layerNow() !== 'play') return;
       if (Math.hypot(e.clientX - d.x, e.clientY - d.y) > 8 || performance.now() - d.t > 350) return;
       const rect = el.getBoundingClientRect();
       ndc.set(((e.clientX - rect.left) / rect.width) * 2 - 1, -((e.clientY - rect.top) / rect.height) * 2 + 1);

@@ -7,6 +7,8 @@ import { useHarbor } from '@/city/lib/districts/harbor/store';
 import { PREDICT_OPEN, PREDICT_REAL } from '@/city/lib/districts/predict/flag';
 import { realBusy, useReal } from '@/city/lib/districts/predict/real-store';
 import { usePredict } from '@/city/lib/districts/predict/store';
+import { PREDICT } from '@/city/lib/districts/predict/words';
+import { useWords } from '@/city/lib/i18n/dict';
 import { useLaunch } from '@/city/lib/launch/district';
 import { quarterStore } from '@/city/lib/quarter/store';
 import { useRun } from '@/city/lib/run/store';
@@ -140,7 +142,9 @@ function Layer() {
   // The frame holds the window while real money is on its way: its «Close» waits, as the window's own close did.
   const held = useReal((st) => st.trade.step === 'placing' || st.withdraw.step === 'sending' || st.opening !== null || st.collecting === 'sending');
   const page = usePredict((st) => st.page.kind);
-  const title = windowTitle(page, mode);
+  // The frame keeps the title as a string: a new language makes a new title, and the memo below sends it again.
+  const w = useWords(PREDICT);
+  const title = windowTitle(page, mode, w);
   const spec = useMemo(
     () => ({ id: 'predict', title, icon: <PredictGlyph />, render: renderPredict, size: { width: 1240, height: 800 }, min: { width: 720, height: 520 }, held, onClose: closePredict }),
     [title, held],

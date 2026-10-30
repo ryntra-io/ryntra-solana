@@ -1,7 +1,9 @@
 import type { LaunchBuildResponse, LaunchPresetView } from '../../../lib/api/v1/contract.ts';
 import { signFreshBytes } from '../../../lib/solana/sign-fresh.ts';
 import type { Answer, LaunchEngine, Network } from './engine.ts';
+import { wordsNow } from '../i18n/dict.ts';
 import { cityLaunchOpen } from './gate.ts';
+import { FAILURE_WORDS } from './words.ts';
 
 /**
  * One launch from the city, start to end: the picture and the words go to the engine's store, the engine builds the
@@ -105,7 +107,7 @@ export async function runLaunch(args: Readonly<{
     return fail(BUILD_AGED);
   }
   const signed = fresh.signed[0];
-  if (fresh.signed.length !== 1 || !signed) return fail(WALLET_REFUSED, 'The wallet returned another number of signed transactions.');
+  if (fresh.signed.length !== 1 || !signed) return fail(WALLET_REFUSED, wordsNow(FAILURE_WORDS).otherCount);
 
   onPhase({ step: 'send' });
   const sent = await engine.submit({ buildId: fresh.built.buildId, creator: signer.address, signedWireBase64: signed, signedLockWireBase64: null });
@@ -131,46 +133,47 @@ export async function runLaunch(args: Readonly<{
 /** A failure in the city's words: what happened, and whether anything left. At most two short sentences. */
 export function failureWords(failure: LaunchFailure, wallet: string | null = null): string {
   const message = failure.message.trim();
+  const w = wordsNow(FAILURE_WORDS);
   switch (failure.code) {
     case CITY_CLOSED:
-      return 'Launching from the city opens soon. Nothing was sent.';
+      return w.closed;
     case WALLET_REFUSED:
-      return /closed|cancel|reject|declin|refus/i.test(message) || !message ? `${wallet ?? 'The wallet'} did not sign. Nothing was sent.` : `${message.replace(/\.$/, '')}. Nothing was sent.`;
+      return /closed|cancel|reject|declin|refus/i.test(message) || !message ? w.notSigned(wallet ?? w.theWallet) : w.walletSaid(message.replace(/\.$/, ''));
     case BUILD_AGED:
     case 'LAUNCH_BUILD_EXPIRED':
-      return 'The wallet took too long and the launch aged. Nothing was sent; try again.';
+      return w.aged;
     case BUILD_UNEXPECTED:
-      return 'The engine built something the review did not show. Nothing was signed.';
+      return w.unexpected;
     case 'LAUNCH_NAME_BORROWED':
-      return message ? `${message} Choose your own.` : 'The name or ticker reads as someone else’s. Choose your own.';
+      return message ? w.borrowedSaid(message) : w.borrowed;
     case 'VALIDATION_ERROR':
-      return 'The name, ticker or picture does not pass the rules. Check them and try again.';
+      return w.invalid;
     case 'LAUNCH_IMAGE_INVALID':
-      return 'The picture must be a PNG, JPEG, WebP or GIF under 256 KB.';
+      return w.imageInvalid;
     case 'LAUNCH_IMAGE_REFUSED':
-      return 'This picture can’t be used. Choose another.';
+      return w.imageRefused;
     case 'LAUNCH_IMAGE_CHECK_UNAVAILABLE':
-      return 'The picture could not be checked right now. Nothing was stored; try again in a moment.';
+      return w.imageUnchecked;
     case 'LAUNCH_LIMIT':
-      return 'This wallet has launched as many coins today as one wallet may.';
+      return w.limit;
     case 'LAUNCH_PAUSED':
     case 'LAUNCH_QUOTE_PAUSED':
-      return 'Launching is paused right now. Nothing was sent.';
+      return w.paused;
     case 'LAUNCH_BUSY':
-      return 'Too many launches this hour. Nothing was sent; try again later.';
+      return w.busy;
     case 'LAUNCH_UNAVAILABLE':
-      return 'Launch is not served here.';
+      return w.unavailable;
     case 'RATE_LIMITED':
-      return 'Too many tries in a row. Wait a minute and try again.';
+      return w.rateLimited;
     case 'WALLET_MISMATCH':
-      return 'The wallet changed while signing. Nothing was sent; try again.';
+      return w.mismatch;
     case 'LAUNCH_SIGNED_OTHER_BYTES':
-      return 'The wallet signed something other than the launch. Nothing was sent.';
+      return w.otherBytes;
     case 'LAUNCH_BUILD_USED':
-      return 'This launch was already sent. Your tower appears once Solana confirms it.';
+      return w.used;
     case 'LAUNCH_SUBMIT_FAILED':
-      return message ? `Solana did not confirm the launch: ${message.replace(/\.$/, '')}.` : 'Solana did not confirm the launch.';
+      return message ? w.submitSaid(message.replace(/\.$/, '')) : w.submit;
     default:
-      return failure.stage === 'send' ? 'No answer came back. If the launch landed, your tower appears in the docks.' : 'Something went wrong. Nothing was sent; try again.';
+      return failure.stage === 'send' ? w.noAnswer : w.wrong;
   }
 }

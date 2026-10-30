@@ -71,3 +71,9 @@ export const CloseGlyph = () => (
     <path d="M6 6l12 12M18 6L6 18" />
   </svg>
 );
+
+export const ShareGlyph = () => (
+  <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+    <path d="M12 15V4M7.5 8.5L12 4l4.5 4.5M5 13v6h14v-6" />
+  </svg>
+);

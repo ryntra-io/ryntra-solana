@@ -1,9 +1,11 @@
 import { KINDS } from '../../../lib/world/catalog.ts';
 import { shownText } from '../../../lib/world/text-safety/clean.ts';
+import { digits, num, wordsNow } from '../i18n/dict.ts';
 import { pct, usd } from '../launch/format.ts';
 import { formatUnits, ticker } from '../trade/format.ts';
 import type { Signal } from './kit/blueprint.ts';
 import type { BuildingKind, ChainLink, LinkKind } from './types.ts';
+import { BUILD_WORDS, OBJECT_WORDS } from './words.ts';
 
 /**
  * What a building on the engine shows: the object it is linked to, read from the engine or the chain each time, never
@@ -30,15 +32,16 @@ export function linkKindOf(kind: BuildingKind): LinkKind | null {
 /** Whether a building of this kind stands on the engine. */
 export const onEngine = (kind: BuildingKind): boolean => linkKindOf(kind) !== null;
 
-/** What each link is called on a building's sheet. */
-export const OBJECT_NAMES: Record<LinkKind, string> = {
-  mint: 'coin',
-  lp_position: 'pool position',
-  strategy: 'strategy',
-  team: 'team',
-  agent: 'agent',
-  prediction_book: 'paper predictions',
-};
+const LINK_KINDS: readonly LinkKind[] = ['mint', 'lp_position', 'strategy', 'team', 'agent', 'prediction_book'];
+
+/** What each link is called on a building's sheet, in the language on screen when it is read (`./words.ts`). */
+export const OBJECT_NAMES: Readonly<Record<LinkKind, string>> = (() => {
+  const out = {} as Record<LinkKind, string>;
+  for (const kind of LINK_KINDS) Object.defineProperty(out, kind, { enumerable: true, get: () => wordsNow(OBJECT_WORDS).objectName(kind) });
+  return out;
+})();
+
+const w = () => wordsNow(OBJECT_WORDS);
 
 /** A stable key for a link: the same object reads once, whichever building shows it. */
 export function linkKey(link: ChainLink): string {
@@ -153,7 +156,7 @@ const older = (a: string, b: string | null) => (b && b < a ? b : a);
 function count(figure: unknown): string | null {
   const f = obj(figure);
   if (!f || !isNum(f.count)) return null;
-  return `${f.atLeast === true ? '≥ ' : ''}${f.count.toLocaleString('en-US')}`;
+  return `${f.atLeast === true ? '≥ ' : ''}${num(f.count)}`;
 }
 
 /** A refusal that means «prove who you are first». */
@@ -182,26 +185,26 @@ async function readCoin(mint: string, ctx: ReadContext): Promise<ObjectRead> {
   if (s) {
     at = older(at, iso(s.observedAt));
     const holders = count(s.holders);
-    if (holders) figures.push({ label: 'Holders', value: holders });
+    if (holders) figures.push({ label: w().holders, value: holders });
     const cap = obj(s.marketCap);
     const pair = obj(s.pair);
-    if (cap && isNum(cap.usd)) figures.push({ label: 'Market cap', value: usd(cap.usd) });
-    else if (cap && isNum(cap.pair) && pair && isStr(pair.symbol)) figures.push({ label: 'Market cap', value: `${Number(cap.pair.toPrecision(3)).toLocaleString('en-US')} ${pair.symbol}` });
+    if (cap && isNum(cap.usd)) figures.push({ label: w().marketCap, value: usd(cap.usd) });
+    else if (cap && isNum(cap.pair) && pair && isStr(pair.symbol)) figures.push({ label: w().marketCap, value: `${num(Number(cap.pair.toPrecision(3)))} ${pair.symbol}` });
     const day = obj(obj(s.volume)?.day);
-    if (day && isStr(day.raw) && pair && isNum(pair.decimals) && isStr(pair.symbol)) figures.push({ label: 'Volume · 24H', value: `${day.atLeast === true ? '≥ ' : ''}${formatUnits(day.raw, pair.decimals)} ${pair.symbol}` });
+    if (day && isStr(day.raw) && pair && isNum(pair.decimals) && isStr(pair.symbol)) figures.push({ label: w().volume24h, value: `${day.atLeast === true ? '≥ ' : ''}${digits(formatUnits(day.raw, pair.decimals))} ${pair.symbol}` });
   }
-  if (v.migrated === true) figures.push({ label: 'Curve', value: 'On the DEX' });
-  else if (isNum(v.progressBps)) figures.push({ label: 'Curve', value: pct(v.progressBps) });
+  if (v.migrated === true) figures.push({ label: w().curve, value: w().onDex });
+  else if (isNum(v.progressBps)) figures.push({ label: w().curve, value: pct(v.progressBps) });
   return {
     state: 'ok',
     view: {
       title: name,
-      line: `${ticker(symbol)} · Ryntra Launch`,
+      line: w().launchLine(ticker(symbol)),
       figures,
-      source: s ? 'Ryntra Launch · chain' : 'Ryntra Launch · chain (holders not read)',
+      source: s ? w().launchSource : w().launchSourceNoHolders,
       at,
       signal: null,
-      action: { kind: 'trade', label: `Trade ${ticker(symbol)}`, mint, symbol, name, icon: isStr(v.image) ? v.image : null },
+      action: { kind: 'trade', label: w().trade(ticker(symbol)), mint, symbol, name, icon: isStr(v.image) ? v.image : null },
     },
   };
 }
@@ -224,21 +227,21 @@ async function readPosition(position: string, ctx: ReadContext): Promise<ObjectR
     return { state: allRead ? 'gone' : 'unavailable' };
   }
   const figures: Figure[] = [];
-  if (isNum(p.valueUsd)) figures.push({ label: 'Value', value: usd(p.valueUsd) });
-  if (isNum(p.unclaimedUsd)) figures.push({ label: 'Unclaimed fees', value: usd(p.unclaimedUsd) });
+  if (isNum(p.valueUsd)) figures.push({ label: w().value, value: usd(p.valueUsd) });
+  if (isNum(p.unclaimedUsd)) figures.push({ label: w().unclaimed, value: usd(p.unclaimedUsd) });
   const inRange = p.rangeState === 'in_range';
-  if (p.rangeState === 'in_range' || p.rangeState === 'above' || p.rangeState === 'below') figures.push({ label: 'Price', value: inRange ? 'In range' : 'Out of range' });
+  if (p.rangeState === 'in_range' || p.rangeState === 'above' || p.rangeState === 'below') figures.push({ label: w().price, value: inRange ? w().inRange : w().outOfRange });
   const at = isNum(p.at) ? new Date(p.at).toISOString() : isNum(got.body!.at) ? new Date(got.body!.at as number).toISOString() : nowIso(ctx);
   return {
     state: 'ok',
     view: {
-      title: isStr(p.name) ? p.name : 'Pool position',
+      title: isStr(p.name) ? p.name : w().poolPosition,
       line: VENUES[String(p.kind)] ?? 'Meteora',
       figures,
-      source: isStr(p.pricesAt) ? 'Meteora programs · venue prices' : 'Meteora programs (no USD prices now)',
+      source: isStr(p.pricesAt) ? w().meteoraSource : w().meteoraSourceNoUsd,
       at,
       signal: p.rangeState === undefined ? null : inRange ? 'value' : 'danger',
-      action: { kind: 'route', label: 'Open pool', href: isStr(p.pool) ? `/app/markets/pools/${enc(p.pool)}` : '/app/markets/pools' },
+      action: { kind: 'route', label: w().openPool, href: '/?open=harbor' },
     },
   };
 }
@@ -251,26 +254,24 @@ async function readStrategy(strategyId: string, ctx: ReadContext): Promise<Objec
   const strategy = obj(got.body!.strategy);
   if (!strategy || !isStr(strategy.title)) return { state: 'unavailable' };
   const figures: Figure[] = [];
-  if (Array.isArray(got.body!.runs)) figures.push({ label: 'Paper runs', value: got.body!.runs.length >= 100 ? '100+' : String(got.body!.runs.length) });
+  if (Array.isArray(got.body!.runs)) figures.push({ label: w().paperRuns, value: got.body!.runs.length >= 100 ? '100+' : String(got.body!.runs.length) });
   const since = iso(strategy.createdAt);
-  if (since) figures.push({ label: 'Since', value: day(since) });
+  if (since) figures.push({ label: w().since, value: day(since) });
   const changed = iso(strategy.updatedAt);
-  if (changed) figures.push({ label: 'Last change', value: day(changed) });
+  if (changed) figures.push({ label: w().lastChange, value: day(changed) });
   return {
     state: 'ok',
     view: {
       title: strategy.title,
-      line: 'Strategy Lab · paper',
+      line: w().strategyLine,
       figures,
       source: 'Strategy Lab',
       at: nowIso(ctx),
       signal: null,
-      action: { kind: 'route', label: 'Open Strategy Lab', href: '/app/strategy-lab' },
+      action: { kind: 'route', label: w().openAgents, href: '/?open=agents' },
     },
   };
 }
-
-const title = (s: string) => s.charAt(0) + s.slice(1).toLowerCase().replace(/_/g, ' ');
 
 /** An engine team, as the proven wallet may read it: who is in it, the wallet's role, the treasury. */
 async function readTeam(teamId: string, ctx: ReadContext): Promise<ObjectRead> {
@@ -280,20 +281,20 @@ async function readTeam(teamId: string, ctx: ReadContext): Promise<ObjectRead> {
   const team = obj(got.body!.team);
   if (!team || !isStr(team.name)) return { state: 'unavailable' };
   const figures: Figure[] = [];
-  if (Array.isArray(team.members)) figures.push({ label: 'Members', value: String(team.members.filter((m) => obj(m)?.status === 'ACTIVE').length) });
+  if (Array.isArray(team.members)) figures.push({ label: w().members, value: String(team.members.filter((m) => obj(m)?.status === 'ACTIVE').length) });
   const you = obj(team.you);
-  if (you && isStr(you.role)) figures.push({ label: 'Your role', value: title(you.role) });
-  figures.push({ label: 'Treasury', value: isStr(team.treasury) ? 'Squads' : 'Not linked yet' });
+  if (you && isStr(you.role)) figures.push({ label: w().yourRole, value: w().role(you.role) });
+  figures.push({ label: w().treasury, value: isStr(team.treasury) ? 'Squads' : w().notLinkedYet });
   return {
     state: 'ok',
     view: {
       title: team.name,
-      line: isStr(team.kind) ? `${title(team.kind)} team` : 'Team',
+      line: isStr(team.kind) ? w().teamLine(team.kind) : w().team,
       figures,
-      source: 'Ryntra teams',
+      source: w().teamsSource,
       at: nowIso(ctx),
       signal: null,
-      action: { kind: 'route', label: 'Open team', href: '/app/treasury/team' },
+      action: { kind: 'route', label: w().openTeam, href: '/?open=agents' },
     },
   };
 }
@@ -307,26 +308,26 @@ async function readPredictions(ctx: ReadContext): Promise<ObjectRead> {
   // No paper account opened yet, or the venue did not answer.
   if (!balance) return obj(got.body!.link)?.state === 'active' ? { state: 'unavailable' } : { state: 'gone' };
   const figures: Figure[] = [];
-  if (isNum(balance.cashBalance)) figures.push({ label: 'Paper cash', value: usd(balance.cashBalance) });
-  if (Array.isArray(got.body!.positions)) figures.push({ label: 'Open calls', value: String(got.body!.positions.length) });
+  if (isNum(balance.cashBalance)) figures.push({ label: w().paperCash, value: usd(balance.cashBalance) });
+  if (Array.isArray(got.body!.positions)) figures.push({ label: w().openCalls, value: String(got.body!.positions.length) });
   // The engine's own total; without it, its two figures side by side — the world never adds money up.
   const signed = (n: number) => `${n < 0 ? '−' : '+'}${usd(Math.abs(n))}`;
   const pnl = isNum(balance.earnings) ? balance.earnings : null;
-  if (pnl !== null) figures.push({ label: 'Paper P&L', value: signed(pnl) });
+  if (pnl !== null) figures.push({ label: w().paperPnl, value: signed(pnl) });
   else {
-    if (isNum(balance.realizedPnl)) figures.push({ label: 'Realized', value: signed(balance.realizedPnl) });
-    if (isNum(balance.unrealizedPnl)) figures.push({ label: 'Unrealized', value: signed(balance.unrealizedPnl) });
+    if (isNum(balance.realizedPnl)) figures.push({ label: w().realized, value: signed(balance.realizedPnl) });
+    if (isNum(balance.unrealizedPnl)) figures.push({ label: w().unrealized, value: signed(balance.unrealizedPnl) });
   }
   return {
     state: 'ok',
     view: {
-      title: 'Paper predictions',
-      line: 'Predictions · paper',
+      title: w().paperPredictions,
+      line: w().predictionsLine,
       figures,
-      source: 'Ryntra Predictions',
+      source: w().predictionsSource,
       at: iso(got.body!.readAt) ?? nowIso(ctx),
       signal: pnl !== null && pnl > 0 ? 'value' : null,
-      action: { kind: 'route', label: 'Open Predictions', href: '/app/predictions' },
+      action: { kind: 'route', label: w().openPredictions, href: '/?open=oracle' },
     },
   };
 }
@@ -372,7 +373,7 @@ export async function listMine(kind: BuildingKind, ctx: ReadContext): Promise<Ca
       const items = got.body.launches
         .map(obj)
         .filter((l): l is Record<string, unknown> => !!l && l.role === 'creator' && isStr(l.token) && isStr(l.symbol))
-        .map((l) => ({ link: { kind: 'mint', mint: l.token as string } as ChainLink, title: isStr(l.name) ? l.name : ticker(l.symbol as string), line: `${ticker(l.symbol as string)} · Ryntra Launch` }));
+        .map((l) => ({ link: { kind: 'mint', mint: l.token as string } as ChainLink, title: isStr(l.name) ? l.name : ticker(l.symbol as string), line: w().launchLine(ticker(l.symbol as string)) }));
       return { state: 'ok', items };
     }
     case 'lp_position': {
@@ -382,7 +383,7 @@ export async function listMine(kind: BuildingKind, ctx: ReadContext): Promise<Ca
       const items = got.body.positions
         .map(obj)
         .filter((p): p is Record<string, unknown> => !!p && isStr(p.address))
-        .map((p) => ({ link: { kind: 'lp_position', position: p.address as string } as ChainLink, title: isStr(p.name) ? p.name : 'Pool position', line: VENUES[String(p.kind)] ?? 'Meteora' }));
+        .map((p) => ({ link: { kind: 'lp_position', position: p.address as string } as ChainLink, title: isStr(p.name) ? p.name : w().poolPosition, line: VENUES[String(p.kind)] ?? 'Meteora' }));
       return { state: 'ok', items };
     }
     case 'strategy': {
@@ -392,7 +393,7 @@ export async function listMine(kind: BuildingKind, ctx: ReadContext): Promise<Ca
       const items = got.body.strategies
         .map(obj)
         .filter((s): s is Record<string, unknown> => !!s && isStr(s.strategyId) && isStr(s.title))
-        .map((s) => ({ link: { kind: 'strategy', strategyId: s.strategyId as string } as ChainLink, title: s.title as string, line: 'Strategy Lab · paper' }));
+        .map((s) => ({ link: { kind: 'strategy', strategyId: s.strategyId as string } as ChainLink, title: s.title as string, line: w().strategyLine }));
       return { state: 'ok', items };
     }
     case 'team': {
@@ -404,13 +405,13 @@ export async function listMine(kind: BuildingKind, ctx: ReadContext): Promise<Ca
       const items = got.body.teams
         .map(obj)
         .filter((t): t is Record<string, unknown> => !!t && t.status === 'ACTIVE' && isStr(t.id) && isStr(t.name))
-        .map((t) => ({ link: { kind: 'team', teamId: t.id as string } as ChainLink, title: t.name as string, line: isStr(t.kind) ? `${title(t.kind)} team` : 'Team' }));
+        .map((t) => ({ link: { kind: 'team', teamId: t.id as string } as ChainLink, title: t.name as string, line: isStr(t.kind) ? w().teamLine(t.kind) : w().team }));
       return { state: 'ok', items };
     }
     case 'prediction_book':
       // The book is the account's own: there is exactly one, and only an account has it.
       if (!ctx.accountId) return { state: 'proof' };
-      return { state: 'ok', items: [{ link: { kind: 'prediction_book', accountId: ctx.accountId }, title: 'Your paper predictions', line: 'Predictions · paper' }] };
+      return { state: 'ok', items: [{ link: { kind: 'prediction_book', accountId: ctx.accountId }, title: w().yourPaperPredictions, line: w().predictionsLine }] };
     case 'agent':
       return { state: 'not_yet' };
     default:
@@ -418,40 +419,40 @@ export async function listMine(kind: BuildingKind, ctx: ReadContext): Promise<Ca
   }
 }
 
-const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-
 /** A day, short and the same on every device: «12 Oct 2026». */
 function day(at: string): string {
-  const d = new Date(at);
-  return `${d.getUTCDate()} ${MONTHS[d.getUTCMonth()]} ${d.getUTCFullYear()}`;
+  return w().day(at);
 }
 
 /** How old a read is, the way the city says it, and in its shortest form for a sign; past five minutes it is delayed. */
 export function freshness(at: string, now: number): Readonly<{ text: string; short: string; stale: boolean }> {
   const t = Date.parse(at);
-  if (!Number.isFinite(t)) return { text: 'time unknown', short: '?', stale: true };
+  const x = w();
+  if (!Number.isFinite(t)) return { text: x.timeUnknown, short: '?', stale: true };
   const s = Math.max(0, Math.round((now - t) / 1000));
   const stale = s > 300;
-  if (s < 10) return { text: 'just now', short: 'now', stale };
-  if (s < 60) return { text: `${s} s ago`, short: `${s}s`, stale };
-  if (s < 3600) return { text: `${Math.floor(s / 60)} min ago`, short: `${Math.floor(s / 60)}m`, stale };
-  if (s < 86_400) return { text: `${Math.floor(s / 3600)} h ago`, short: `${Math.floor(s / 3600)}h`, stale };
-  return { text: `${Math.floor(s / 86_400)} d ago`, short: `${Math.floor(s / 86_400)}d`, stale };
+  if (s < 10) return { text: x.justNow, short: x.now, stale };
+  if (s < 60) return { text: x.secondsAgo(s), short: x.secondsShort(s), stale };
+  if (s < 3600) return { text: x.minutesAgo(Math.floor(s / 60)), short: x.minutesShort(Math.floor(s / 60)), stale };
+  if (s < 86_400) return { text: x.hoursAgo(Math.floor(s / 3600)), short: x.hoursShort(Math.floor(s / 3600)), stale };
+  return { text: x.daysAgo(Math.floor(s / 86_400)), short: x.daysShort(Math.floor(s / 86_400)), stale };
 }
 
 /** One plain sentence for a link the world refused. */
 export function linkRefusalLine(code: string, reason: string | null): string {
-  if (code === 'WALLET_REQUIRED') return 'Sign in with your wallet to link what is yours.';
-  if (code === 'LINK_TAKEN') return 'Another building already shows this.';
-  if (code === 'NOT_OWNER') return 'Only the owner links here.';
+  const x = w();
+  const b = wordsNow(BUILD_WORDS);
+  if (code === 'WALLET_REQUIRED') return x.signInToLink;
+  if (code === 'LINK_TAKEN') return x.linkTaken;
+  if (code === 'NOT_OWNER') return x.notOwner;
   if (code === 'LINK_REFUSED') {
-    if (reason === 'not_yours') return 'The engine says this is not yours.';
-    if (reason === 'account_required') return 'Sign in with your wallet first.';
-    if (reason === 'kind_mismatch') return 'This building shows another kind of object.';
-    return 'The engine cannot vouch for this yet.';
+    if (reason === 'not_yours') return x.notYours;
+    if (reason === 'account_required') return x.signInFirst;
+    if (reason === 'kind_mismatch') return x.kindMismatch;
+    return x.cannotVouch;
   }
-  if (code === 'VERSION_CONFLICT') return 'Your quarter changed on another screen. Try again.';
-  if (code === 'RATE_LIMITED') return 'Too many taps at once. Try again in a moment.';
-  if (code === 'UNAVAILABLE' || code === 'OFFLINE') return 'The city is out of reach. Try again.';
-  return 'That did not save. Try again.';
+  if (code === 'VERSION_CONFLICT') return b.conflict;
+  if (code === 'RATE_LIMITED') return b.tooMany;
+  if (code === 'UNAVAILABLE' || code === 'OFFLINE') return b.outOfReach;
+  return b.notSaved;
 }

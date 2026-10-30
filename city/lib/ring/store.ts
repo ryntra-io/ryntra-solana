@@ -4,6 +4,11 @@ import { SCENARIO_MAX, type AgentView, type Archetype, type ModelOption, type Mo
 import { randomId } from '../quarter/ids.ts';
 import { httpRing, RingClientError, type Draft, type RingClient, type RingClientCode } from './client.ts';
 import { charCount } from './format.ts';
+import { wordsNow } from '../i18n/dict.ts';
+import { langNow } from '../i18n/lang.ts';
+import { RING_LINES } from './words.ts';
+
+type RingLine = keyof (typeof RING_LINES)['en'];
 
 /**
  * The Ring in the city (CITY-50): a garage's agent as the sheet shows it, and the screen that makes or changes one —
@@ -65,22 +70,43 @@ export type RingStoreOptions = { client?: () => RingClient; newKey?: () => strin
 
 export const garageKey = (quarterId: string, slot: number) => `${quarterId}:${slot}`;
 
-const OFFLINE = 'No connection. Nothing was changed.';
-/** Short lines for the codes whose server message is written for developers; the others are already said plainly. */
-const PLAIN: Partial<Record<RingClientCode, string>> = {
-  OFFLINE,
-  BAD_REQUEST: 'Something went wrong. Nothing was changed.',
-  BAD_ANSWER: 'Something went wrong. Nothing was changed.',
-  PAYLOAD_TOO_LARGE: 'That is too long.',
-  IDEMPOTENCY_KEY_REQUIRED: 'Something went wrong. Nothing was changed.',
-  IDEMPOTENCY_KEY_REUSED: 'Something went wrong. Nothing was changed.',
-  MODEL_REFUSED: 'This brain can’t be used in the Ring.',
-  MODELS_UNAVAILABLE: 'Brains can’t be read right now. Try again in a moment.',
-  UNAVAILABLE: 'The Ring is busy. Try again in a moment.',
-  CLOSED: 'The Ring is closed.',
-  FORBIDDEN: 'Something went wrong. Nothing was changed.',
+/**
+ * Short lines for the codes whose server message is written for developers; the others are said plainly by the server
+ * in English, and in the city's own words in another language.
+ */
+const PLAIN: Partial<Record<RingClientCode, RingLine>> = {
+  OFFLINE: 'offline',
+  BAD_REQUEST: 'wrong',
+  BAD_ANSWER: 'wrong',
+  PAYLOAD_TOO_LARGE: 'tooLarge',
+  IDEMPOTENCY_KEY_REQUIRED: 'wrong',
+  IDEMPOTENCY_KEY_REUSED: 'wrong',
+  MODEL_REFUSED: 'modelRefused',
+  MODELS_UNAVAILABLE: 'modelsUnavailable',
+  UNAVAILABLE: 'unavailable',
+  CLOSED: 'closed',
+  FORBIDDEN: 'wrong',
 };
-const lineOf = (error: unknown) => (error instanceof RingClientError ? (PLAIN[error.code] ?? error.message) : 'The Ring could not be reached. Nothing was changed.');
+const SAID: Partial<Record<RingClientCode, RingLine>> = {
+  SIGN_IN: 'signIn',
+  NOT_FOUND: 'notFound',
+  NOT_YOURS: 'notYours',
+  NOT_GARAGE: 'notGarage',
+  SLOT_TAKEN: 'slotTaken',
+  VERSION: 'version',
+  OFF: 'off',
+  TOO_LONG: 'tooLong',
+  KEY_FAILED: 'keyFailed',
+  RATE_LIMITED: 'rateLimited',
+};
+function lineOf(error: unknown): string {
+  const w = wordsNow(RING_LINES);
+  if (!(error instanceof RingClientError)) return w.unreachable;
+  const plain = PLAIN[error.code];
+  if (plain) return w[plain];
+  const said = SAID[error.code];
+  return said && langNow() !== 'en' ? w[said] : error.message;
+}
 
 /** The models a tab shows: one class, matching the search by name or id, cheapest first, at most `limit`. */
 export function visibleModels(list: readonly ModelOption[], weight: Weight, search: string, limit = 40): { shown: ModelOption[]; more: number } {
@@ -223,7 +249,7 @@ export function createRingStore(options: RingStoreOptions = {}) {
             // The agent moved on: show it as it is, keep the person's draft, and the next save goes at the new version.
             putGarage(error.current, true);
             const off = error.current.status !== 'active';
-            set({ editor: off ? null : { ...now, agent: error.current, saving: false, key: newKey(), error: 'The agent changed since you opened it. Your edits are still here.' } });
+            set({ editor: off ? null : { ...now, agent: error.current, saving: false, key: newKey(), error: wordsNow(RING_LINES).changed } });
             return false;
           }
           if (error instanceof RingClientError && error.code === 'SLOT_TAKEN') void get().readGarage(now.quarterId, now.slot);

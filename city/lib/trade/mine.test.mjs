@@ -34,12 +34,13 @@ test("the holdings read keeps the time it was read", () => {
   assert.equal(typeof holdingsOf(OWNER, [], true).at, "number");
 });
 
-test("the wallet's towers, worth the most first; SOL and coins without a tower stay out of the rows", () => {
+test("the wallet's towers, worth the most first; SOL is money beside them and counts in the total", () => {
   const mine = mineOf(HOLDINGS, TOWERS);
   assert.deepEqual(mine.rows.map((row) => row.tower.symbol), ["JUP", "BONK"]);
   assert.equal(mine.rows[0].valueUsd, 120 * 0.5);
   assert.equal(mine.rows[1].valueUsd, 50000 * 0.00002);
-  assert.equal(mine.totalUsd, 61);
+  assert.deepEqual(mine.cash.map((row) => [row.symbol, row.valueUsd]), [["SOL", 2.4 * 150]]);
+  assert.equal(mine.totalUsd, 61 + 360);
   assert.equal(mine.elsewhere, 1);
   assert.equal(mine.unvalued, 0);
 });
@@ -57,7 +58,7 @@ test("with what the holding cost, the coin says its move since it was bought", (
 });
 
 test("no wallet, an empty wallet, and a coin with no price are each said as they are", () => {
-  assert.deepEqual(mineOf(null, TOWERS), { rows: [], totalUsd: null, unvalued: 0, elsewhere: 0 });
+  assert.deepEqual(mineOf(null, TOWERS), { rows: [], cash: [], totalUsd: null, unvalued: 0, elsewhere: 0 });
   assert.deepEqual(mineOf(holdingsOf(OWNER, [ROWS[0]], true), TOWERS).rows, []);
   const mine = mineOf(HOLDINGS, [tower(JUP, "JUP", 0), tower(BONK, "BONK", Number.NaN)]);
   assert.equal(mine.totalUsd, null);
@@ -197,4 +198,12 @@ test("the engine is asked about a bounded number of coins", async () => {
   const many = Array.from({ length: MAX_BASIS_COINS + 5 }, (_, i) => ({ mint: `${JUP.slice(0, 40)}${String(i).padStart(4, "0")}`, balanceRaw: "1" }));
   await useMine.getState().readBases(OWNER, many);
   assert.equal(stub.asked.length, MAX_BASIS_COINS);
+});
+
+test("a dollar coin with no tower is money at a dollar, not a coin «elsewhere» (CITY-150: $0.74 beside $37.63)", () => {
+  const holdings = holdingsOf(OWNER, [ROWS[0], ROWS[1], { kind: "TOKEN", mint: USDC.mint, spendableRaw: "26100000", decimals: 6 }], true);
+  const mine = mineOf(holdings, TOWERS.filter((t) => t.id !== USDC.mint));
+  assert.deepEqual(mine.cash.map((row) => [row.symbol, row.valueUsd]), [["SOL", 360], ["USDC", 26.1]]);
+  assert.equal(mine.elsewhere, 0);
+  assert.equal(mine.totalUsd, 360 + 26.1 + 60);
 });

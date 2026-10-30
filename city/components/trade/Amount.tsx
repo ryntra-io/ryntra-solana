@@ -1,10 +1,13 @@
 'use client';
 
 import { useRef, type KeyboardEvent, type PointerEvent as ReactPointerEvent } from 'react';
+import { digits, useWords } from '@/city/lib/i18n/dict';
+import { fieldText, fieldValue } from '@/city/lib/i18n/figures';
 import { formatUnits } from '@/city/lib/trade/format';
 import { keyShare, pointerShare } from '@/city/lib/trade/size';
 import type { Choice } from '@/city/lib/trade/store';
 import s from './trade.module.css';
+import { TRADE } from './words';
 
 /**
  * How much the card spends, the same for Buy and Sell, Market, Limit and Stop: the amount in one big field, the four
@@ -24,6 +27,7 @@ export function AmountPart({
   onType: (text: string) => void;
   onShare: (share: number, settle: 'now' | 'rest') => void;
 }) {
+  const w = useWords(TRADE);
   const { sizing } = choice;
   const resting = !typable || sizing.share === null;
   const amount = choice.amountRaw && choice.spendDecimals !== null ? formatUnits(choice.amountRaw, choice.spendDecimals, 'down') : '0';
@@ -36,22 +40,22 @@ export function AmountPart({
           autoComplete="off"
           spellCheck={false}
           placeholder="0"
-          aria-label={`Amount in ${choice.spendUnit}`}
+          aria-label={w.amountIn(choice.spendUnit)}
           aria-invalid={Boolean(choice.problem)}
-          value={typed}
-          onChange={(event) => onType(event.target.value)}
+          value={fieldText(typed)}
+          onChange={(event) => onType(fieldValue(event.target.value))}
           disabled={!typable}
         />
         <span className={`${s.display} ${s.amountUnit}`}>{choice.spendUnit}</span>
       </label>
-      <div className={s.shares} role="group" aria-label="Share of your balance">
+      <div className={s.shares} role="group" aria-label={w.shareOfBalance}>
         {sizing.chips.map((chip) => (
           <button key={chip.share} className={`${s.share} ${chip.on ? s.shareOn : ''}`} aria-pressed={chip.on} onClick={() => onShare(chip.share, 'now')} disabled={resting || !chip.usable}>
             {chip.label}
           </button>
         ))}
       </div>
-      <ShareSlider share={sizing.share} resting={resting} valueText={`${Math.round(sizing.share ?? 0)}%, ${amount} ${choice.spendUnit}`} onShare={onShare} />
+      <ShareSlider share={sizing.share} resting={resting} valueText={`${Math.round(sizing.share ?? 0)}%, ${digits(amount)} ${choice.spendUnit}`} onShare={onShare} />
     </div>
   );
 }
@@ -61,6 +65,7 @@ export function AmountPart({
  * the keyboard — arrows by one, Page Up and Down by ten, Home and End to its ends; priced once it rests.
  */
 function ShareSlider({ share, resting, valueText, onShare }: { share: number | null; resting: boolean; valueText: string; onShare: (share: number, settle: 'now' | 'rest') => void }) {
+  const w = useWords(TRADE);
   const track = useRef<HTMLDivElement>(null);
   const value = share ?? 0;
   const at = (event: ReactPointerEvent<HTMLElement>) => {
@@ -88,7 +93,7 @@ function ShareSlider({ share, resting, valueText, onShare }: { share: number | n
       className={`${s.slider} ${resting ? s.sliderResting : ''}`}
       role="slider"
       tabIndex={resting ? -1 : 0}
-      aria-label="Share of your balance"
+      aria-label={w.shareOfBalance}
       aria-valuemin={0}
       aria-valuemax={100}
       aria-valuenow={Math.round(value)}

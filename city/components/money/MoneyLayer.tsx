@@ -2,12 +2,14 @@
 
 import dynamic from 'next/dynamic';
 import { useEffect, useMemo } from 'react';
+import { useWords } from '@/city/lib/i18n/dict';
 import { useFilming } from '@/city/lib/moments/MomentsLayer';
 import { useMoney } from '@/city/lib/money/open';
 import { useRun } from '@/city/lib/run/store';
 import { startWallets } from '@/city/lib/trade/wallet';
 import { useCityWindow } from '../window/useCityWindow';
 import { TabGlyph } from './bits';
+import { MONEY } from './words';
 import s from './money.module.css';
 
 // The window's contents and their flows load the first time it opens: the city's first frame carries none of them.
@@ -26,6 +28,8 @@ export function MoneyLayer() {
   const busy = useMoney((st) => st.busy);
   const running = useRun((st) => st.phase !== 'off');
   const filming = useFilming();
+  const w = useWords(MONEY);
+  const title = w.money;
 
   useEffect(() => {
     if (open) startWallets();
@@ -47,7 +51,7 @@ export function MoneyLayer() {
   const spec = useMemo(
     () => ({
       id: 'money',
-      title: 'Money',
+      title,
       icon: <TabGlyph tab="portfolio" />,
       render: renderMoney,
       size: { width: 480, height: 680 },
@@ -55,7 +59,8 @@ export function MoneyLayer() {
       held: busy,
       onClose: closeMoney,
     }),
-    [busy],
+    // A new language is a new title: the open window's head follows it.
+    [busy, title],
   );
   useCityWindow(shown, spec);
   return null;

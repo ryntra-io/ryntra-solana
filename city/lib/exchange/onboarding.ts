@@ -1,4 +1,6 @@
+import { wordsNow } from '../i18n/dict.ts';
 import type { AccountKind } from './account.ts';
+import { ONBOARDING } from './words.ts';
 
 /**
  * The Exchange's one step before a first trade: a wallet without a Phoenix account opens one. Phoenix opens a trader
@@ -34,17 +36,24 @@ export function onboardingOf(kind: AccountKind): Onboarding | null {
 /** Phoenix's own site, where an account opens: the one place the Exchange sends a person away to. */
 export const PHOENIX_URL = 'https://phoenix.trade';
 
+type StepWords = Readonly<{ title: string; line: string; action: string; detail: string }>;
+
+/** What the step says, in the language given (CITY-79). */
+function stepWords(w: (typeof ONBOARDING)['en']): Readonly<Record<Onboarding['step'], StepWords>> {
+  return {
+    connect: { title: w.connectTitle, line: '', action: '', detail: '' },
+    open: { title: w.openTitle, line: w.openLine, action: w.openAction, detail: w.openDetail },
+    wait: { title: w.waitTitle, line: w.waitLine, action: '', detail: '' },
+  };
+}
+
 /**
  * What the step says: a title, one calm line and the one action on screen; `detail` stands behind «Details» — read,
- * then closed again (the clean interface of 28.10).
+ * then closed again (the clean interface of 28.10). The English words, as the tests read them.
  */
-export const ONBOARDING_WORDS: Readonly<Record<Onboarding['step'], Readonly<{ title: string; line: string; action: string; detail: string }>>> = {
-  connect: { title: 'Connect a wallet', line: '', action: '', detail: '' },
-  open: {
-    title: 'Open a Phoenix account',
-    line: 'Phoenix opens accounts by invite.',
-    action: 'Open on phoenix.trade',
-    detail: 'Open it on phoenix.trade with your invite, then come back: this window looks again by itself.',
-  },
-  wait: { title: 'Waiting for access', line: 'Phoenix grants access to new accounts.', action: '', detail: '' },
-};
+export const ONBOARDING_WORDS: Readonly<Record<Onboarding['step'], StepWords>> = stepWords(ONBOARDING.en);
+
+/** The step's words in the language on screen. */
+export function onboardingWords(step: Onboarding['step']): StepWords {
+  return stepWords(wordsNow(ONBOARDING))[step];
+}

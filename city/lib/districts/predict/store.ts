@@ -3,7 +3,9 @@ import { chartPlan, within, type Point, type Range } from './chart.ts';
 import { pickRow, tradable, type Detail } from './detail.ts';
 import { createPredictEngine, type PredictEngine } from './engine.ts';
 import { PREDICT_REAL } from './flag.ts';
-import { headSide, marketsOf, searchTab, tabsOf, TRENDING, type Market, type Tab } from './markets.ts';
+import { wordsNow } from '../../i18n/dict.ts';
+import { headSide, marketsOf, searchTab, sideName, tabsOf, TRENDING, type Market, type Tab } from './markets.ts';
+import { PREDICT_TEXT } from './words.ts';
 import {
   buy,
   carryOracle,
@@ -230,11 +232,18 @@ export const usePredict = create<Store>((set, get) => {
     const plan = chartPlan(outcomeId, matched, range);
     for (let round = 0; round <= CHART_RETRIES; round++) {
       if (round > 0) await new Promise((resolve) => setTimeout(resolve, CHART_RETRY_MS * round));
+      if (get().chart?.key !== key) return;
+      // The market's own first ask alone — it usually answers; when it is empty, the rest of the plan at once, read in
+      // its order: a round takes the slowest answer, not the sum of them.
+      const ask = (step: (typeof plan)[number]) => predictEnv().engine.chart(step.outcomeId, step.ask);
+      const head = await ask(plan[0]!);
+      if (get().chart?.key !== key) return;
+      const headPoints = head.ok ? within(head.value, range, predictEnv().now()) : [];
+      if (headPoints.length >= 2) return set({ chart: { key, status: 'ready', points: headPoints } });
+      const answers = [head, ...(await Promise.all(plan.slice(1).map(ask)))];
+      if (get().chart?.key !== key) return;
       let failed = 0;
-      for (const step of plan) {
-        if (get().chart?.key !== key) return;
-        const got = await predictEnv().engine.chart(step.outcomeId, step.ask);
-        if (get().chart?.key !== key) return;
+      for (const got of answers) {
         if (!got.ok) {
           failed++;
           continue;
@@ -383,7 +392,7 @@ export const usePredict = create<Store>((set, get) => {
       }
       save(placed.book);
       set({
-        notice: { tone: 'ok', text: `Bought ${placed.holding.label}` },
+        notice: { tone: 'ok', text: wordsNow(PREDICT_TEXT).boughtPractice(sideName(placed.holding.label)) },
         bought: { eventId: at.market.eventId, marketId: at.market.marketId, outcomeId: placed.holding.outcomeId, label: placed.holding.label, spendUsd: st.amount, at: predictEnv().now() },
       });
       return null;
@@ -399,7 +408,7 @@ export const usePredict = create<Store>((set, get) => {
         return sold.why;
       }
       save(sold.book);
-      set({ notice: { tone: 'ok', text: `Sold ${holding.label}` }, fraction: 1 });
+      set({ notice: { tone: 'ok', text: wordsNow(PREDICT_TEXT).soldPractice(sideName(holding.label)) }, fraction: 1 });
       return null;
     },
     settleDue: async () => {
@@ -433,8 +442,9 @@ export const usePredict = create<Store>((set, get) => {
       }
       if (!won && !lost && !voided) return;
       save(book);
-      const parts = [won && `${won} won`, lost && `${lost} lost`, voided && `${voided} void`].filter(Boolean);
-      set({ notice: { tone: 'ok', text: `Practice settled: ${parts.join(', ')}` } });
+      const w = wordsNow(PREDICT_TEXT);
+      const parts = [won && w.won(won), lost && w.lost(lost), voided && w.voided(voided)].filter(Boolean);
+      set({ notice: { tone: 'ok', text: w.settled(parts.join(', ')) } });
     },
     priceHeld: async () => {
       get().hydrate();

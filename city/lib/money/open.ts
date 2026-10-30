@@ -1,5 +1,8 @@
 import { create } from 'zustand';
-import { isMoneyTab, type MoneyTab } from './flag.ts';
+import { isMoneyAsk, type MoneyAsk, type MoneyTab } from './flag.ts';
+
+/** Send's two ways: to a Solana address, or to another network through the Bridge's engine. */
+export type SendWay = 'solana' | 'network';
 
 /**
  * Whether the Money window is open and on which tab — the one light piece of money in the city, so any window can open
@@ -13,9 +16,11 @@ import { isMoneyTab, type MoneyTab } from './flag.ts';
 type MoneyWindow = {
   open: boolean;
   tab: MoneyTab;
+  way: SendWay;
   /** Set by a flow while a signature is out or bytes are on their way. */
   busy: boolean;
-  show: (tab?: MoneyTab) => void;
+  show: (tab?: MoneyAsk) => void;
+  setWay: (way: SendWay) => void;
   setTab: (tab: MoneyTab) => void;
   close: () => void;
   setBusy: (busy: boolean) => void;
@@ -24,8 +29,15 @@ type MoneyWindow = {
 export const useMoney = create<MoneyWindow>((set, get) => ({
   open: false,
   tab: 'portfolio',
+  way: 'solana',
   busy: false,
-  show: (tab) => set({ open: true, tab: tab && isMoneyTab(tab) ? tab : get().tab }),
+  show: (tab) => {
+    if (!tab || !isMoneyAsk(tab)) return set({ open: true });
+    // «bridge» is Send's way to another network now (CITY-155).
+    if (tab === 'bridge') return set({ open: true, tab: 'send', way: 'network' });
+    set({ open: true, tab });
+  },
+  setWay: (way) => (get().busy ? undefined : set({ way })),
   // Mid-way the tab stays: the flow on screen is the one the person is waiting on.
   setTab: (tab) => (get().busy ? undefined : set({ tab })),
   close: () => (get().busy ? undefined : set({ open: false })),
@@ -36,7 +48,7 @@ export const useMoney = create<MoneyWindow>((set, get) => ({
  * Open the Money window on a tab: `topup`, `send`, `bridge`, `activity` or `portfolio`. Without one it opens where it
  * was last. While a transfer is mid-way the window stays on that transfer.
  */
-export function openMoney(tab?: MoneyTab): void {
+export function openMoney(tab?: MoneyAsk): void {
   const money = useMoney.getState();
   if (money.busy) return money.show();
   money.show(tab);

@@ -3,7 +3,8 @@ import * as THREE from 'three';
 /**
  * Every tower's state on the GPU (CITY-56): one small float texture the skyline's modules read by tower index, so a
  * moment (a pump's glow, a flare knocking the top off, a launch growing) reaches every module of a tower with one
- * write. Rows: 0 accent rgb + activity, 1 event glow rgb + level, 2 build + height + seed + kind, 3 x + z + width.
+ * write. Rows: 0 accent rgb + activity, 1 event glow rgb + level, 2 build + height + seed + kind, 3 x + z + width + the
+ * Lens's level (CITY-86: 1 looked at, −1 sunk into the haze, 0 untouched).
  */
 export class TowerState {
   readonly texture: THREE.DataTexture;
@@ -42,6 +43,13 @@ export class TowerState {
 
   build(i: number, value: number) {
     const o = (2 * this.width + i) * 4;
+    if (this.data[o] === value) return;
+    this.data[o] = value;
+    this.dirty = true;
+  }
+
+  lens(i: number, value: number) {
+    const o = (3 * this.width + i) * 4 + 3;
     if (this.data[o] === value) return;
     this.data[o] = value;
     this.dirty = true;

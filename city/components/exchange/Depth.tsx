@@ -4,9 +4,11 @@ import { useLayoutEffect, useMemo, useRef } from 'react';
 import { bookStale, depthView, type DepthRow } from '@/city/lib/exchange/depth';
 import { percent, plainPrice, price, units, usd } from '@/city/lib/exchange/format';
 import { currentMarket, useExchange } from '@/city/lib/exchange/store';
+import { useWords } from '@/city/lib/i18n/dict';
 import { symbolKey } from '@/lib/phoenix/market-data';
 import { useNow } from './Account';
 import s from './exchange.module.css';
+import { EX } from './words';
 
 /**
  * The Book tab: Phoenix's order book of the open market — the asks above, the bids below, each level's depth as a bar
@@ -14,6 +16,7 @@ import s from './exchange.module.css';
  * into a limit order on the ticket; on a phone, where the ticket is a tab of its own, the ticket comes forward with it.
  */
 export function OrderBook({ toTicket = false }: { toTicket?: boolean }) {
+  const w = useWords(EX);
   const symbol = useExchange((st) => st.symbol);
   const read = useExchange((st) => st.book);
   const market = useExchange((st) => currentMarket(st));
@@ -30,8 +33,8 @@ export function OrderBook({ toTicket = false }: { toTicket?: boolean }) {
     mid.current.scrollIntoView({ block: 'center' });
   }, [empty, symbol]);
   if (empty) {
-    if (read.status === 'failed') return <div className={s.empty}>Phoenix isn’t answering</div>;
-    if (read.status === 'ready' && read.value && symbol && symbolKey(read.value.symbol) === symbolKey(symbol)) return <div className={s.empty}>The book is empty</div>;
+    if (read.status === 'failed') return <div className={s.empty}>{w.phoenixSilent}</div>;
+    if (read.status === 'ready' && read.value && symbol && symbolKey(read.value.symbol) === symbolKey(symbol)) return <div className={s.empty}>{w.bookEmpty}</div>;
     return (
       <div className={s.depth} aria-busy="true">
         <span className={s.shimmer} />
@@ -41,10 +44,10 @@ export function OrderBook({ toTicket = false }: { toTicket?: boolean }) {
   }
   const name = symbol ?? '';
   return (
-    <div className={s.depth} aria-label={`${name}-PERP order book`}>
+    <div className={s.depth} aria-label={w.orderBookOf(name)}>
       <div className={s.depthHead} aria-hidden="true">
-        <span>Price</span>
-        <span>Size</span>
+        <span>{w.price}</span>
+        <span>{w.size}</span>
       </div>
       <div className={s.depthSide}>
         {[...view.asks].reverse().map((row) => (
@@ -54,10 +57,10 @@ export function OrderBook({ toTicket = false }: { toTicket?: boolean }) {
       <div className={s.depthMid} ref={mid}>
         <span className={`${s.display} ${s.depthMark}`}>{price(market?.markPrice)}</span>
         <span className={s.depthSpread}>
-          Spread {view.spreadUsd !== null && view.spreadUsd >= 0.01 ? usd(view.spreadUsd) : price(view.spreadUsd)}
+          {w.spread} {view.spreadUsd !== null && view.spreadUsd >= 0.01 ? usd(view.spreadUsd) : price(view.spreadUsd)}
           {view.spreadPercent !== null && ` · ${percent(view.spreadPercent, 3)}`}
         </span>
-        {bookStale(read, now) && <span className={`${s.depthSpread} ${s.warnText}`}>Delayed</span>}
+        {bookStale(read, now) && <span className={`${s.depthSpread} ${s.warnText}`}>{w.delayed}</span>}
       </div>
       <div className={s.depthSide}>
         {view.bids.map((row) => (
@@ -69,13 +72,14 @@ export function OrderBook({ toTicket = false }: { toTicket?: boolean }) {
 }
 
 function Level({ row, side, symbol, toTicket }: { row: DepthRow; side: 'ask' | 'bid'; symbol: string; toTicket: boolean }) {
+  const w = useWords(EX);
   const setDraft = useExchange((st) => st.setDraft);
   const setTab = useExchange((st) => st.setTab);
   return (
     <button
       className={`${s.depthRow} ${side === 'ask' ? s.depthAsk : s.depthBid}`}
       style={{ ['--depth' as string]: `${Math.round(row.depth * 1000) / 10}%` }}
-      aria-label={`${side === 'ask' ? 'Ask' : 'Bid'} ${price(row.price)}, ${units(row.size, symbol)}: limit at this price`}
+      aria-label={w.levelOf(side === 'ask', price(row.price), units(row.size, symbol))}
       onClick={() => {
         setDraft({ type: 'limit', price: plainPrice(row.price) });
         if (toTicket) setTab('trade');

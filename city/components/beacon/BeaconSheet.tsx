@@ -5,8 +5,10 @@ import {
   COOLDOWN_CHOICES, HOLD_CHOICES, PERIODS, TOWER_LIMIT, beaconOf, draftOf, firstDraft, isLit,
   type BeaconCondition, type BeaconKind, type BeaconRule, type Draft, type MovePeriod, type TowerRead,
 } from '@/lib/world/beacons/rules';
-import { ruleWords } from '@/lib/world/beacons/words';
-import { conditionOf, lineText, readFor, suggestLine } from '@/city/lib/beacon/form';
+import { conditionOf, lineText, periodText, readFor, ruleShown, suggestLine } from '@/city/lib/beacon/form';
+import { BEACON } from '@/city/lib/beacon/words';
+import { useWords, type TextKey } from '@/city/lib/i18n/dict';
+import { fieldText, fieldValue } from '@/city/lib/i18n/figures';
 import { beaconsOn, useBeacons } from '@/city/lib/beacon/store';
 import { BEACONS } from '@/city/lib/beacon/switch';
 import type { Tower } from '@/city/lib/market/types';
@@ -19,14 +21,16 @@ import s from './beacon.module.css';
 type Op = 'above' | 'below';
 type Row = { kind: BeaconKind; op: Op; period: MovePeriod; text: string };
 
-const KINDS: readonly { kind: BeaconKind; label: string }[] = [
-  { kind: 'price', label: 'Price' },
-  { kind: 'move', label: 'Move' },
-  { kind: 'liquidity', label: 'Liquidity' },
+type BeaconText = TextKey<typeof BEACON>;
+
+const KINDS: readonly { kind: BeaconKind; label: BeaconText }[] = [
+  { kind: 'price', label: 'price' },
+  { kind: 'move', label: 'move' },
+  { kind: 'liquidity', label: 'liquidity' },
 ];
 
-const HOLD_LABEL: Readonly<Record<number, string>> = { 0: 'Off', 60: '1m', 300: '5m', 900: '15m' };
-const PAUSE_LABEL: Readonly<Record<number, string>> = { 300: '5m', 3600: '1h', 86_400: '1d' };
+const HOLD_LABEL: Readonly<Record<number, BeaconText>> = { 0: 'holdOff', 60: 'm1', 300: 'm5', 900: 'm15' };
+const PAUSE_LABEL: Readonly<Record<number, BeaconText>> = { 300: 'm5', 3600: 'h1', 86_400: 'd1' };
 
 const readOf = (t: Tower): TowerRead => ({ price: t.price, liquidity: t.liquidity, change5m: t.change5m, change1h: t.change1h, change24h: t.change24h });
 
@@ -50,6 +54,7 @@ export function BeaconSheet({ tower }: { tower: Tower }) {
   const signedIn = useBeacons((st) => st.signedIn);
   const close = useBeacons((st) => st.close);
   const readiness = useReadiness();
+  const w = useWords(BEACON);
   const read = useMemo(() => readOf(tower), [tower]);
   const mine = useMemo(() => beaconsOn(rules, tower.id), [rules, tower.id]);
 
@@ -121,14 +126,14 @@ export function BeaconSheet({ tower }: { tower: Tower }) {
   const tgOn = draft.notify && telegram === 'linked';
 
   return (
-    <div className={s.sheet} data-beacon-sheet role="dialog" aria-label={`Beacon on ${sym(tower)}`}>
+    <div className={s.sheet} data-beacon-sheet role="dialog" aria-label={w.beaconOn(sym(tower))}>
       <div className={s.head}>
         <TokenIcon t={tower} className={s.icon} />
         <div className={s.title}>
           <div className={`${s.display} ${s.symbol}`}>{sym(tower)}</div>
           <div className={s.now}>{nowText(rows[0] ?? { kind: 'price', period: '1h' }, read)}</div>
         </div>
-        <button className={s.close} aria-label="Close" onClick={close}>
+        <button className={s.close} aria-label={w.close} onClick={close}>
           <CloseGlyph />
         </button>
       </div>
@@ -138,11 +143,11 @@ export function BeaconSheet({ tower }: { tower: Tower }) {
           {mine.map((rule) => (
             <button key={rule.id} role="tab" aria-selected={rule.id === editing} className={`${s.chip} ${rule.id === editing ? s.chipOn : ''}`} onClick={() => pick(rule)}>
               <span className={`${s.dot} ${isLit(rule, states[rule.id], Date.now()) ? s.dotLit : ''}`} aria-hidden="true" />
-              <span className={s.chipText}>{ruleWords(rule)}</span>
+              <span className={s.chipText}>{ruleShown(rule)}</span>
             </button>
           ))}
           {mine.length < TOWER_LIMIT && (
-            <button role="tab" aria-selected={editing === null} className={`${s.chip} ${s.chipNew} ${editing === null ? s.chipOn : ''}`} onClick={() => pick(null)} aria-label="New beacon">
+            <button role="tab" aria-selected={editing === null} className={`${s.chip} ${s.chipNew} ${editing === null ? s.chipOn : ''}`} onClick={() => pick(null)} aria-label={w.newBeacon}>
               +
             </button>
           )}
@@ -158,10 +163,10 @@ export function BeaconSheet({ tower }: { tower: Tower }) {
               <div className={s.pair}>
                 {(['and', 'or'] as const).map((join) => (
                   <button key={join} className={`${s.seg} ${draft.join === join ? s.segOn : ''}`} onClick={() => setDraft((d) => ({ ...d, join }))}>
-                    {join === 'and' ? 'And' : 'Or'}
+                    {join === 'and' ? w.and : w.or}
                   </button>
                 ))}
-                <button className={s.seg} aria-label="Remove condition" onClick={() => setRows((all) => all.slice(0, 1))}>
+                <button className={s.seg} aria-label={w.removeCondition} onClick={() => setRows((all) => all.slice(0, 1))}>
                   <CloseGlyph />
                 </button>
               </div>
@@ -169,25 +174,25 @@ export function BeaconSheet({ tower }: { tower: Tower }) {
             </>
           ) : (
             <button className={s.add} onClick={() => setRows((all) => [...all, { kind: 'move', op: 'above', period: '1h', text: '5' }])}>
-              + Condition
+              {w.addCondition}
             </button>
           )}
-          <Choice label="Hold" values={HOLD_CHOICES} names={HOLD_LABEL} value={draft.holdSeconds} onPick={(holdSeconds) => setDraft((d) => ({ ...d, holdSeconds }))} />
-          <Choice label="Pause" values={COOLDOWN_CHOICES} names={PAUSE_LABEL} value={draft.cooldownSeconds} onPick={(cooldownSeconds) => setDraft((d) => ({ ...d, cooldownSeconds }))} />
+          <Choice label={w.hold} values={HOLD_CHOICES} names={HOLD_LABEL} value={draft.holdSeconds} onPick={(holdSeconds) => setDraft((d) => ({ ...d, holdSeconds }))} />
+          <Choice label={w.pause} values={COOLDOWN_CHOICES} names={PAUSE_LABEL} value={draft.cooldownSeconds} onPick={(cooldownSeconds) => setDraft((d) => ({ ...d, cooldownSeconds }))} />
           <div className={s.choice}>
-            <span className={s.choiceLabel}>Repeat</span>
+            <span className={s.choiceLabel}>{w.repeat}</span>
             <div className={s.pair}>
               <button className={`${s.seg} ${draft.repeat ? s.segOn : ''}`} onClick={() => setDraft((d) => ({ ...d, repeat: true }))}>
-                Always
+                {w.always}
               </button>
               <button className={`${s.seg} ${!draft.repeat ? s.segOn : ''}`} onClick={() => setDraft((d) => ({ ...d, repeat: false }))}>
-                Once
+                {w.once}
               </button>
             </div>
           </div>
           {before && (
             <button className={s.remove} onClick={remove}>
-              Remove beacon
+              {w.removeBeacon}
             </button>
           )}
         </div>
@@ -196,17 +201,17 @@ export function BeaconSheet({ tower }: { tower: Tower }) {
       <div className={s.actions}>
         {/* Telegram only where the account keeps beacons (`NEXT_PUBLIC_RYNTRA_CITY_BEACONS=open`). */}
         {BEACONS === 'open' && (
-          <button className={`${s.tg} ${tgOn ? s.tgOn : ''}`} onClick={onTelegram} aria-pressed={tgOn} aria-label={telegram === 'linked' ? 'Telegram' : 'Connect Telegram'}>
+          <button className={`${s.tg} ${tgOn ? s.tgOn : ''}`} onClick={onTelegram} aria-pressed={tgOn} aria-label={telegram === 'linked' ? w.telegram : w.connectTelegram}>
             <TelegramGlyph />
           </button>
         )}
         <button className={`${s.display} ${s.primary}`} onClick={save} disabled={!ready || full || phase === 'saving'}>
           <BeaconGlyph />
-          {phase === 'saved' ? 'Beacon set' : before ? 'Save beacon' : 'Set beacon'}
+          {phase === 'saved' ? w.beaconSet : before ? w.saveBeacon : w.setBeacon}
         </button>
       </div>
       <button className={s.more} onClick={() => setDetails((v) => !v)} aria-expanded={details}>
-        Details <span aria-hidden="true">{details ? '▴' : '▾'}</span>
+        {w.details} <span aria-hidden="true">{details ? '▴' : '▾'}</span>
       </button>
     </div>
   );
@@ -214,25 +219,26 @@ export function BeaconSheet({ tower }: { tower: Tower }) {
 
 function Condition({ row, onChange, big = false }: { row: Row; onChange: (patch: Partial<Row>) => void; big?: boolean }) {
   const valid = conditionOf(row.kind, row.op, row.period, row.text) !== null;
+  const w = useWords(BEACON);
   return (
     <div className={big ? s.condition : `${s.condition} ${s.conditionSmall}`}>
       <div className={s.kinds}>
         {KINDS.map(({ kind, label }) => (
           <button key={kind} className={`${s.seg} ${row.kind === kind ? s.segOn : ''}`} onClick={() => row.kind !== kind && onChange({ kind })}>
-            {label}
+            {w[label]}
           </button>
         ))}
       </div>
       <div className={s.pair}>
         {(['above', 'below'] as const).map((op) => (
           <button key={op} className={`${s.seg} ${row.op === op ? s.segOn : ''}`} onClick={() => row.op !== op && onChange({ op })}>
-            {op === 'above' ? 'Above' : 'Below'}
+            {op === 'above' ? w.above : w.below}
           </button>
         ))}
         {row.kind === 'move' &&
           PERIODS.map((period) => (
             <button key={period} className={`${s.seg} ${s.segSmall} ${row.period === period ? s.segOn : ''}`} onClick={() => row.period !== period && onChange({ period })}>
-              {period}
+              {periodText(period)}
             </button>
           ))}
       </div>
@@ -243,23 +249,24 @@ function Condition({ row, onChange, big = false }: { row: Row; onChange: (patch:
           inputMode="decimal"
           autoComplete="off"
           spellCheck={false}
-          aria-label="Level"
-          value={row.text}
-          onChange={(e) => onChange({ text: e.target.value })}
+          aria-label={w.level}
+          value={fieldText(row.text)}
+          onChange={(e) => onChange({ text: fieldValue(e.target.value) })}
         />
       </label>
     </div>
   );
 }
 
-function Choice({ label, values, names, value, onPick }: { label: string; values: readonly number[]; names: Readonly<Record<number, string>>; value: number; onPick: (v: number) => void }) {
+function Choice({ label, values, names, value, onPick }: { label: string; values: readonly number[]; names: Readonly<Record<number, BeaconText>>; value: number; onPick: (v: number) => void }) {
+  const w = useWords(BEACON);
   return (
     <div className={s.choice}>
       <span className={s.choiceLabel}>{label}</span>
       <div className={s.pair}>
         {values.map((v) => (
           <button key={v} className={`${s.seg} ${s.segSmall} ${value === v ? s.segOn : ''}`} onClick={() => onPick(v)}>
-            {names[v] ?? v}
+            {names[v] ? w[names[v]] : v}
           </button>
         ))}
       </div>

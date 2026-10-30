@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { rawToDecimal } from '../../../lib/solana/limits/model.ts';
 import { citySigner } from '../app-bridge/route.ts';
+import { digits, wordsNow } from '../i18n/dict.ts';
 import { createEngine, type Engine } from './engine.ts';
 import type { SignResult } from './flow.ts';
 import { SPOT_OPEN } from './gates.ts';
@@ -33,6 +34,7 @@ import {
 import { useTrade, type Connection, type Notice } from './store.ts';
 import { isBase, unitOf, type PayAsset } from './tiles.ts';
 import { useWallet } from './wallet.ts';
+import { LIMITS } from './words.ts';
 
 /**
  * The trade card's Limit and Stop, and «My orders». A limit order is the engine's: the card reads the pair's price,
@@ -330,7 +332,7 @@ export const useSpot = create<SpotStore>((set, get) => {
           set({ phase: 'idle', review: { key: shown.key, review: outcome.review, receivedAt: outcome.receivedAt }, notice: { tone: 'warn', text: outcome.note } });
           return;
         case 'cancelled':
-          set({ phase: 'idle', notice: { tone: 'info', text: 'Not signed. Nothing was sent.' } });
+          set({ phase: 'idle', notice: { tone: 'info', text: wordsNow(LIMITS).notSigned } });
           return;
         case 'refused':
           set({ phase: 'idle', review: null, notice: { tone: 'error', text: outcome.refusal.message } });
@@ -395,7 +397,7 @@ export const useSpot = create<SpotStore>((set, get) => {
       );
       const notice: Notice =
         outcome.kind === 'cancelled'
-          ? { tone: 'info', text: outcome.settled ? 'Order cancelled' : 'Cancellation sent' }
+          ? { tone: 'info', text: outcome.settled ? wordsNow(LIMITS).orderCancelled : wordsNow(LIMITS).cancelSent }
           : outcome.kind === 'kept'
             ? { tone: 'info', text: outcome.message }
             : outcome.kind === 'refused'
@@ -454,7 +456,7 @@ export const useSpot = create<SpotStore>((set, get) => {
       if (isBase(pay)) useTrade.getState().setPay(pay.symbol);
       else useTrade.getState().pickCoin(pay);
       useTrade.getState().setTyped(rawToDecimal(stop.amountRaw, stop.side === 'buy' ? stop.quote.decimals : stop.base.decimals));
-      useTrade.setState({ notice: { tone: 'warn', text: `Stop reached at ${stop.price} ${unitOf(stop.quote)}` } });
+      useTrade.setState({ notice: { tone: 'warn', text: wordsNow(LIMITS).stopReached(digits(stop.price), unitOf(stop.quote)) } });
     },
   };
 });

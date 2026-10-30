@@ -6,7 +6,9 @@ import { classifySwapRoute, type SwapRouteClassification } from '../../../lib/sw
 import type { CrossSwapQuote } from '../../../lib/swap/cross-swap-quote.ts';
 import { serviceFeeText } from '../../../lib/swap/service-fee.ts';
 import { ask, TIMEOUT_MS, type EngineFailure, type FetchLike } from './engine.ts';
+import { wordsNow } from '../i18n/dict.ts';
 import type { SignResult } from './send.ts';
+import { BRIDGE_WORDS as WORDS, ORDER_WORDS as ORDER } from './words.ts';
 
 /**
  * Bridge out of Solana from the city: USDC in this wallet → USDC on another network, to an address the person types,
@@ -38,11 +40,12 @@ export type DestinationProblem = 'EMPTY' | 'NOT_EVM' | 'SOLANA';
 
 /** The address on the other network: a 0x address. A Solana one is a Send, not a Bridge. */
 export function readDestination(typed: string): Readonly<{ ok: true; address: string }> | Readonly<{ ok: false; problem: DestinationProblem; text: string }> {
+  const w = wordsNow(WORDS);
   const value = typed.trim();
-  if (value === '') return { ok: false, problem: 'EMPTY', text: 'Enter the address that gets it.' };
+  if (value === '') return { ok: false, problem: 'EMPTY', text: w.destEmpty };
   if (EVM_ADDRESS.test(value)) return { ok: true, address: value };
-  if (/^[1-9A-HJ-NP-Za-km-z]{32,44}$/.test(value)) return { ok: false, problem: 'SOLANA', text: 'That is a Solana address. Use Send for it.' };
-  return { ok: false, problem: 'NOT_EVM', text: 'An address there starts with 0x and has 40 more characters.' };
+  if (/^[1-9A-HJ-NP-Za-km-z]{32,44}$/.test(value)) return { ok: false, problem: 'SOLANA', text: w.destSolana };
+  return { ok: false, problem: 'NOT_EVM', text: w.destNotEvm };
 }
 
 export type QuoteBody = Readonly<{ quote: CrossSwapQuote; buildable: boolean; lane: string }>;
@@ -97,14 +100,15 @@ export function quoteFacts(quote: CrossSwapQuote): QuoteFacts {
     etaSeconds: quote.etaSeconds,
     // `relayerUsd` is the parent of the relayer gas and the protocol fee: one figure, never their sum.
     providerUsd: quote.fees.relayerUsd ?? quote.fees.protocolUsd,
-    ryntraFee: serviceFeeText(quote.serviceFee, 'None'),
+    ryntraFee: serviceFeeText(quote.serviceFee, wordsNow(WORDS).none),
     networkUsd: quote.fees.sourceGasUsd,
   };
 }
 
 export function etaWords(seconds: number): string {
-  if (!Number.isFinite(seconds) || seconds <= 0) return 'about a minute';
-  return seconds < 60 ? `about ${Math.max(1, Math.round(seconds))} s` : `about ${Math.round(seconds / 60)} min`;
+  const w = wordsNow(WORDS);
+  if (!Number.isFinite(seconds) || seconds <= 0) return w.etaMinute;
+  return seconds < 60 ? w.etaSeconds(Math.max(1, Math.round(seconds))) : w.etaMinutes(Math.round(seconds / 60));
 }
 
 /** Whether the Bridge form takes edits: at rest, or while a price is asked for — never once a transfer is being built. */
@@ -188,23 +192,17 @@ export type BridgeConfirm =
   | Readonly<{ kind: 'cancelled'; line: string }>
   | Readonly<{ kind: 'refused'; line: string; code: string }>;
 
-const BRIDGE_WORDS: Readonly<Record<string, string>> = {
-  QUOTE_CHANGED: 'The price moved. Check the new figures.',
-  IMPACT_NOT_ACKNOWLEDGED: 'The price moved too far from the market. Try a smaller amount.',
-  CROSS_SWAP_ALREADY_STARTED: 'An earlier transfer between networks is still open.',
-  RATE_LIMITED: 'Too many requests. Try again in a moment.',
-  QUOTE_RATE_LIMITED: 'Too many requests. Try again in a moment.',
-  TIMEOUT: 'No answer from Ryntra. Try again.',
-  NETWORK: 'No connection. Try again.',
-};
+/** The lane's refusals the window names by their code. */
+const REFUSAL_CODES = new Set<string>(['QUOTE_CHANGED', 'IMPACT_NOT_ACKNOWLEDGED', 'CROSS_SWAP_ALREADY_STARTED', 'RATE_LIMITED', 'QUOTE_RATE_LIMITED', 'TIMEOUT', 'NETWORK']);
 
 /** A refusal of the cross-network lane as the window says it. Provider codes are never shown. */
 export function bridgeRefusalWords(code: string): string {
-  if (BRIDGE_WORDS[code]) return BRIDGE_WORDS[code];
-  if (/PAUSED|CLOSED|NOT_PERMITTED|GATE|LANE/.test(code)) return 'Moving money between networks is paused right now.';
-  if (/INSUFFICIENT|BALANCE|AMOUNT|MINIMUM/.test(code)) return 'That amount cannot be moved. Check it and try again.';
-  if (/ADDRESS|DESTINATION/.test(code)) return 'Check the address that gets it.';
-  return 'This transfer could not continue. Nothing was sent.';
+  const w = wordsNow(WORDS);
+  if (REFUSAL_CODES.has(code)) return (w as unknown as Readonly<Record<string, string>>)[code];
+  if (/PAUSED|CLOSED|NOT_PERMITTED|GATE|LANE/.test(code)) return w.paused;
+  if (/INSUFFICIENT|BALANCE|AMOUNT|MINIMUM/.test(code)) return w.amountBad;
+  if (/ADDRESS|DESTINATION/.test(code)) return w.addressBad;
+  return w.stopped;
 }
 
 /**
@@ -212,17 +210,17 @@ export function bridgeRefusalWords(code: string): string {
  * follows the same order. A refusal that may have crossed the submit boundary is followed, never retried.
  */
 export async function confirmBridge(deps: BridgeDeps, plan: BridgePlan, tupleId: string): Promise<BridgeConfirm> {
-  if (deps.runs.read()) return { kind: 'refused', line: BRIDGE_WORDS.CROSS_SWAP_ALREADY_STARTED, code: 'CROSS_SWAP_ALREADY_STARTED' };
+  if (deps.runs.read()) return { kind: 'refused', line: wordsNow(WORDS).CROSS_SWAP_ALREADY_STARTED, code: 'CROSS_SWAP_ALREADY_STARTED' };
   // The Review is read for a while; past its own time, or its bytes', the figures are asked for again.
   const reviewLeft = Date.parse(plan.reviewExpiresAt) - deps.now();
   if (!(reviewLeft >= REVIEW_MARGIN_MS) || !mayOpenWallet({ receivedAtMs: plan.receivedAt, signableMs: plan.signableMs, nowMs: deps.now() })) {
-    return { kind: 'stale', line: 'The transfer was built a while ago. Check the fresh figures.' };
+    return { kind: 'stale', line: wordsNow(WORDS).builtAgo };
   }
   deps.onPhase?.('wallet');
   const signed = await deps.sign(plan.unsignedWireBase64);
-  if (!signed.ok) return { kind: 'cancelled', line: /reject|denie|cancel|declin/i.test(signed.reason) ? 'Wallet approval was cancelled.' : 'Your wallet did not approve this transfer.' };
+  if (!signed.ok) return { kind: 'cancelled', line: /reject|denie|cancel|declin/i.test(signed.reason) ? wordsNow(WORDS).cancelled : wordsNow(WORDS).notApproved };
   if (signableWindowClosed({ receivedAtMs: plan.receivedAt, signableMs: plan.signableMs, nowMs: deps.now() })) {
-    return { kind: 'stale', line: 'The wallet took longer than the transfer lives. Nothing was sent — check the fresh figures.' };
+    return { kind: 'stale', line: wordsNow(WORDS).tooLong };
   }
   deps.onPhase?.('sending');
   deps.runs.save(plan.intentDigest, tupleId);
@@ -261,22 +259,15 @@ export function orderPhase(state: string): OrderPhase {
 }
 
 /** The order's one word, large. */
-export const ORDER_WORD: Readonly<Record<OrderPhase, string>> = {
-  moving: 'On its way',
-  done: 'Arrived',
-  refunded: 'Came back',
-  failed: 'Not sent',
-  recovery: 'Checking',
-};
+export function orderWord(phase: OrderPhase): string {
+  return wordsNow(ORDER)[phase];
+}
 
 /** The one line under the word, only where it changes what the person does or believes; none while it simply moves. */
-export const ORDER_WORDS: Readonly<Record<OrderPhase, string>> = {
-  moving: '',
-  done: '',
-  refunded: 'Back in your Solana wallet.',
-  failed: 'Nothing left your wallet.',
-  recovery: 'Do not send it again.',
-};
+export function orderLine(phase: OrderPhase): string {
+  const w = wordsNow(ORDER);
+  return phase === 'refunded' ? w.refundedLine : phase === 'failed' ? w.failedLine : phase === 'recovery' ? w.recoveryLine : '';
+}
 
 /** The order as the engine follows it. */
 export async function readOrder(fetchImpl: FetchLike, intentDigest: string): Promise<OrderView | null> {

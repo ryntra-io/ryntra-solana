@@ -9,9 +9,12 @@ import {
 } from '../../../lib/solana/swap-client-safety.ts';
 import { pressRoute, walletAnswerRoute } from '../../../lib/solana/swap-press.ts';
 import { inspectJupiterSwapTransaction } from '../../../lib/solana/swap-transaction-check.ts';
+import { wordsNow } from '../i18n/dict.ts';
+import { langNow } from '../i18n/lang.ts';
 import type { Engine, EngineFailure, ExecuteBody, OrderBody, RecoverBody } from './engine.ts';
 import { orderMatchesReview } from './figures.ts';
 import type { Side } from './tiles.ts';
+import { FLOW, REVIEW_REASONS, SWAP_COPY } from './words.ts';
 
 /**
  * One trade from the card, end to end, on the engine's own safety rules: the exact order is built for the wallet,
@@ -93,11 +96,23 @@ function timerDeadline(ms: number): Readonly<{ done: Promise<void>; cancel: () =
   return { done, cancel: () => clearTimeout(timer) };
 }
 
-const LATE = 'Your wallet answered after the price stopped holding. Nothing was sent. Check the new figures.';
-const MOVED = 'The price moved. Nothing was sent. Check the new figures.';
+const has = (table: object, key: string) => Object.prototype.hasOwnProperty.call(table, key);
+
+/** A sentence of the swap engine's refusals (`swap-failure-copy.ts`), in the language on screen. */
+export function swapText(english: string): string {
+  const table = wordsNow(SWAP_COPY) as Readonly<Record<string, string>>;
+  return has(table, english) ? table[english]! : english;
+}
+
+/** Why the exact order may not go to the wallet: the check's own sentence in English, its code's words otherwise. */
+function reasonText(code: string, reason: string): string {
+  if (langNow() === 'en') return reason;
+  const table = wordsNow(REVIEW_REASONS) as Readonly<Record<string, string>>;
+  return has(table, code) ? table[code]! : reason;
+}
 
 function refusalOf(failure: EngineFailure): Refusal {
-  const copy = swapFailureCopy(failure.code, (english) => english);
+  const copy = swapFailureCopy(failure.code, swapText);
   return { code: failure.code, message: copy.message, retryable: copy.retryable };
 }
 
@@ -137,7 +152,7 @@ export async function prepareOrder(intent: Intent, deps: FlowDeps): Promise<Prep
   }
   const order = ordered.value;
   const ready = readiness(order, deps.now());
-  if (!order.preSign?.ready || !ready.ready) return { kind: 'refused', refusal: { code: ready.code, message: ready.reason, retryable: true } };
+  if (!order.preSign?.ready || !ready.ready) return { kind: 'refused', refusal: { code: ready.code, message: reasonText(ready.code, ready.reason), retryable: true } };
   return { kind: 'ready', order, receivedAt: deps.now() };
 }
 
@@ -149,18 +164,18 @@ export async function prepareOrder(intent: Intent, deps: FlowDeps): Promise<Prep
 export async function confirmTrade(args: Readonly<{ intent: Intent; order: OrderBody; receivedAt: number }>, deps: FlowDeps): Promise<TradeOutcome> {
   const shown = readiness(args.order, deps.now());
   const route = pressRoute({ readinessCode: shown.code, ready: shown.ready, receivedAtMs: args.receivedAt, signableMs: signableMsOf(args.order), nowMs: deps.now() });
-  if (route === 'REFUSE') return { kind: 'refused', refusal: { code: shown.code, message: shown.reason, retryable: true } };
+  if (route === 'REFUSE') return { kind: 'refused', refusal: { code: shown.code, message: reasonText(shown.code, shown.reason), retryable: true } };
   if (route === 'WALLET_NOW') return signAndSend(args.intent, args.order, args.receivedAt, deps);
   const fresh = await prepareOrder(args.intent, deps);
   if (fresh.kind !== 'ready') return fresh;
-  if (!orderMatchesReview(args.order, fresh.order)) return { kind: 'review', order: fresh.order, receivedAt: fresh.receivedAt, note: MOVED };
+  if (!orderMatchesReview(args.order, fresh.order)) return { kind: 'review', order: fresh.order, receivedAt: fresh.receivedAt, note: wordsNow(FLOW).moved };
   return signAndSend(args.intent, fresh.order, fresh.receivedAt, deps);
 }
 
 /** Fresh figures after the wallet answered too late for its bytes: shown, never signed by themselves. */
 async function lateReview(intent: Intent, deps: FlowDeps): Promise<TradeOutcome> {
   const fresh = await prepareOrder(intent, deps);
-  return fresh.kind === 'ready' ? { kind: 'review', order: fresh.order, receivedAt: fresh.receivedAt, note: LATE } : fresh;
+  return fresh.kind === 'ready' ? { kind: 'review', order: fresh.order, receivedAt: fresh.receivedAt, note: wordsNow(FLOW).late } : fresh;
 }
 
 async function signAndSend(intent: Intent, order: OrderBody, receivedAt: number, deps: FlowDeps): Promise<TradeOutcome> {
@@ -172,15 +187,15 @@ async function signAndSend(intent: Intent, order: OrderBody, receivedAt: number,
   const signed = await Promise.race([deps.sign(wire), deadline.done.then(() => 'TIMED_OUT' as const)]);
   deadline.cancel();
   if (signed === 'TIMED_OUT') return lateReview(intent, deps);
-  if (!signed.ok) return { kind: 'cancelled', message: signed.reason || 'The wallet did not sign. Nothing was sent.' };
+  if (!signed.ok) return { kind: 'cancelled', message: signed.reason || wordsNow(FLOW).noSign };
 
   // A wallet may re-price its compute budget and add its guards; anything else is a different transaction.
   const adoption = assessSwapWalletAdoption({ reviewedWireBase64: wire, signedWireBase64: signed.signedWireBase64 });
-  if (!adoption.ok) return { kind: 'refused', refusal: { code: adoption.code, message: 'The wallet changed this transaction, so it was not sent.', retryable: true } };
+  if (!adoption.ok) return { kind: 'refused', refusal: { code: adoption.code, message: wordsNow(FLOW).walletChanged, retryable: true } };
   const returned = await inspectJupiterSwapTransaction({ wireBase64: signed.signedWireBase64, expectedTaker: intent.taker });
-  if (!returned.ok) return { kind: 'refused', refusal: { code: `SIGNED_${returned.code}`, message: 'The signed transaction did not pass its check, so it was not sent.', retryable: true } };
+  if (!returned.ok) return { kind: 'refused', refusal: { code: `SIGNED_${returned.code}`, message: wordsNow(FLOW).checkFailed, retryable: true } };
   const signature = readSwapClientSignature({ signedWireBase64: signed.signedWireBase64, expectedTaker: intent.taker });
-  if (!signature) return { kind: 'refused', refusal: { code: 'SIGNATURE_UNREADABLE', message: 'The wallet signature could not be read. Nothing was sent.', retryable: true } };
+  if (!signature) return { kind: 'refused', refusal: { code: 'SIGNATURE_UNREADABLE', message: wordsNow(FLOW).unreadableSignature, retryable: true } };
   // Bytes that aged out while the wallet was open would be refused by the network: never sent.
   if (walletAnswerRoute({ receivedAtMs: receivedAt, signableMs, answeredAtMs: deps.now() }) === 'FRESH_REVIEW') return lateReview(intent, deps);
   if (!readiness(order, deps.now()).ready) return lateReview(intent, deps);
@@ -202,7 +217,7 @@ async function signAndSend(intent: Intent, order: OrderBody, receivedAt: number,
       deps.attempts.clear();
       if (/^(ORDER_EXPIRED|REVIEW_NOT_FRESH)$/.test(failure.code)) return lateReview(intent, deps);
       if (failure.code === 'OWNER_SWAP_LOCK_MISMATCH') {
-        return { kind: 'refused', refusal: { code: failure.code, message: 'A newer order for this wallet replaced this one. Nothing was sent.', retryable: true } };
+        return { kind: 'refused', refusal: { code: failure.code, message: wordsNow(FLOW).replaced, retryable: true } };
       }
       return { kind: 'refused', refusal: refusalOf(failure) };
     }
@@ -250,26 +265,26 @@ export async function recoverTrade(attempt: SwapClientAttempt, deps: FlowDeps, p
         await deps.sleep(RECOVERY_INTERVAL_MS);
         continue;
       }
-      return { kind: 'unknown', signature: attempt.signature, message: 'Ryntra could not read the network just now. Do not send another; check again.' };
+      return { kind: 'unknown', signature: attempt.signature, message: wordsNow(FLOW).cantRead };
     }
     missed = 0;
     const body = read.value;
     switch (body.state) {
       case 'PENDING':
-        if (deps.now() >= deadline) return { kind: 'unknown', signature: attempt.signature, message: 'The outcome is not known yet. Do not send another; check again.' };
+        if (deps.now() >= deadline) return { kind: 'unknown', signature: attempt.signature, message: wordsNow(FLOW).notKnown };
         await deps.sleep(RECOVERY_INTERVAL_MS);
         continue;
       case 'SEEN_WITHOUT_RECORD':
-        return { kind: 'unknown', signature: attempt.signature, message: 'The network has seen this transaction, but its receipt is not ready. Check the explorer.' };
+        return { kind: 'unknown', signature: attempt.signature, message: wordsNow(FLOW).seen };
       case 'UNKNOWN_TO_CHAIN':
         deps.attempts.clear();
-        return { kind: 'nothing', message: 'Nothing was sent under this signature. You can trade again.' };
+        return { kind: 'nothing', message: wordsNow(FLOW).nothingSent };
       case 'EXPIRED_BEFORE_SUBMIT':
         deps.attempts.clear();
-        return { kind: 'nothing', message: 'The transaction was never sent and its time has passed. Nothing moved.' };
+        return { kind: 'nothing', message: wordsNow(FLOW).neverSent };
       case 'EXPIRED_AFTER_SUBMIT':
         deps.attempts.clear();
-        return { kind: 'nothing', message: 'The transaction never reached the chain and its time has passed. Nothing moved.' };
+        return { kind: 'nothing', message: wordsNow(FLOW).neverReached };
       case 'FAILED':
         deps.attempts.clear();
         return { kind: 'failed', signature: attempt.signature };
@@ -280,7 +295,7 @@ export async function recoverTrade(attempt: SwapClientAttempt, deps: FlowDeps, p
         return { kind: 'settled', trade: { ...trade, inputMint: pair?.inputMint ?? '', outputMint: pair?.outputMint ?? '' } };
       }
       default:
-        return { kind: 'unknown', signature: attempt.signature, message: 'The outcome is not known yet. Do not send another; check again.' };
+        return { kind: 'unknown', signature: attempt.signature, message: wordsNow(FLOW).notKnown };
     }
   }
 }

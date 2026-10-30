@@ -34,7 +34,7 @@ export const RING_ROADS = [30, 50] as const;
 export const SPOKES = 8;
 const ROAD_HALF = 1.7;
 
-type Sector = { from: number; to: number; rMin: number; rMax: number; kind: TowerKind };
+export type Sector = Readonly<{ from: number; to: number; rMin: number; rMax: number; kind: TowerKind }>;
 
 const SECTORS: Record<District, Sector> = {
   core: { from: -180, to: 180, rMin: 15, rMax: 23, kind: 0 },
@@ -112,11 +112,11 @@ export function onRoad(x: number, z: number, pad = 0): boolean {
 
 export function layoutCity(towers: readonly Tower[]): CityLayout {
   const placed: PlacedTower[] = [];
-  const blocks: { x: number; z: number; r: number }[] = [];
+  const blocks = new Blocks();
   const free = (x: number, z: number, r: number) => {
     if (Math.hypot(x, z) + r > ISLAND_RADIUS - 2) return false;
     if (onRoad(x, z, r * 0.9)) return false;
-    return blocks.every((b) => Math.hypot(b.x - x, b.z - z) > b.r + r + 1.6);
+    return blocks.clear(x, z, r, 1.6);
   };
 
   const sol = towers.find((t) => t.id === SOL_MINT);
@@ -126,7 +126,9 @@ export function layoutCity(towers: readonly Tower[]): CityLayout {
     blocks.push({ x: 0, z: 0, r: width });
   }
 
-  for (const district of ['core', 'heights', 'avenue', 'strip', 'docks'] as const) {
+  // First every district's own band, exactly as the plan has always laid it: the tallest coins take the inner slots.
+  const left: { district: District; t: Tower; h: number; w: number }[] = [];
+  for (const district of DISTRICT_ORDER) {
     const sector = SECTORS[district];
     const members = towers
       .filter((t) => t.district === district && t.id !== SOL_MINT)
@@ -134,23 +136,146 @@ export function layoutCity(towers: readonly Tower[]): CityLayout {
       .sort((a, b) => b.h - a.h);
     const random = rng(hashString(district));
     for (const { t, h, w } of members) {
-      // Try rings from the inside out; the tallest coins take the inner slots.
-      let spot: { x: number; z: number } | null = null;
-      for (let tries = 0; tries < 400 && !spot; tries += 1) {
-        const spread = Math.min(1, tries / 160);
-        const r = sector.rMin + (sector.rMax - sector.rMin) * Math.min(1, spread * 0.85 + random() * 0.35);
-        const a = toRad(sector.from + (sector.to - sector.from) * random());
-        const x = Math.sin(a) * r;
-        const z = -Math.cos(a) * r;
-        if (free(x, z, w)) spot = { x, z };
+      const spot = tryBand(sector, w, 400, random, free, true);
+      if (!spot) {
+        left.push({ district, t, h, w });
+        continue;
       }
-      if (!spot) continue;
       placed.push({ tower: t, x: spot.x, z: spot.z, height: h, width: w, kind: sector.kind, seed: hashString(t.id) });
       blocks.push({ x: spot.x, z: spot.z, r: w });
     }
   }
 
-  return { towers: placed, fillers: layoutFillers(blocks), rails: layoutRails(placed), islandRadius: ISLAND_RADIUS };
+  // Then a full district grows a second ring (CITY-86) for the towers its band had no room for, and a tower that finds
+  // none there takes the nearest free plot of the island: no tower is left out. After every band is laid and with its
+  // own generator, so a tower that stands in its band never moves for one that does not.
+  for (const district of DISTRICT_ORDER) {
+    const rest = left.filter((m) => m.district === district);
+    if (!rest.length) continue;
+    const sector = SECTORS[district];
+    const second = secondRing(sector);
+    const random = rng(hashString(`${district}/second`));
+    for (const { t, h, w } of rest) {
+      const ring = tryBand(second, w, 240, random, free, false);
+      const spot = ring ? { ...ring, width: w } : scanIsland(sector, w, free);
+      placed.push({ tower: t, x: spot.x, z: spot.z, height: h, width: spot.width, kind: sector.kind, seed: hashString(t.id) });
+      blocks.push({ x: spot.x, z: spot.z, r: spot.width });
+    }
+  }
+
+  return { towers: placed, fillers: layoutFillers(blocks.all), rails: layoutRails(placed), islandRadius: ISLAND_RADIUS };
+}
+
+type Block = { x: number; z: number; r: number };
+
+/**
+ * The plots taken so far, in a coarse grid so a free-plot test reads only the blocks near it: the same answer as testing
+ * every block (one farther than the reach cannot touch), at a fraction of the work on a crowded island.
+ */
+class Blocks {
+  static readonly CELL = 8;
+  readonly all: Block[] = [];
+  private readonly cells = new Map<number, Block[]>();
+  private widest = 0;
+
+  push(b: Block) {
+    this.all.push(b);
+    this.widest = Math.max(this.widest, b.r);
+    const k = Blocks.key(Math.floor(b.x / Blocks.CELL), Math.floor(b.z / Blocks.CELL));
+    const cell = this.cells.get(k);
+    if (cell) cell.push(b);
+    else this.cells.set(k, [b]);
+  }
+
+  /** No block within its own radius, r and the gap of the point. */
+  clear(x: number, z: number, r: number, gap: number): boolean {
+    const reach = r + this.widest + gap;
+    const x0 = Math.floor((x - reach) / Blocks.CELL);
+    const x1 = Math.floor((x + reach) / Blocks.CELL);
+    const z0 = Math.floor((z - reach) / Blocks.CELL);
+    const z1 = Math.floor((z + reach) / Blocks.CELL);
+    for (let cx = x0; cx <= x1; cx += 1) {
+      for (let cz = z0; cz <= z1; cz += 1) {
+        const cell = this.cells.get(Blocks.key(cx, cz));
+        if (!cell) continue;
+        for (const b of cell) if (!(Math.hypot(b.x - x, b.z - z) > b.r + r + gap)) return false;
+      }
+    }
+    return true;
+  }
+
+  private static key(cx: number, cz: number) {
+    return (cx + 512) * 1024 + (cz + 512);
+  }
+}
+
+/** The order the districts are laid in: the spire's ring first, the launch docks last. */
+const DISTRICT_ORDER = ['core', 'heights', 'avenue', 'strip', 'docks'] as const satisfies readonly District[];
+
+/** A district's own band (read-only), for the plan's tests. */
+export function districtSector(district: District): Sector {
+  return { ...SECTORS[district] };
+}
+
+/** The district's second ring: outside its band, or inside it where the band already meets the island's edge. */
+export function secondRing(sector: Sector): Sector {
+  const depth = sector.rMax - sector.rMin;
+  const edge = ISLAND_RADIUS - 4;
+  if (sector.rMax + 4 < edge) return { ...sector, rMin: sector.rMax + 1.5, rMax: Math.min(edge, sector.rMax + 1.5 + depth * 0.7) };
+  return { ...sector, rMin: Math.max(PLAZA_RADIUS + 3, sector.rMin - 1.5 - depth * 0.7), rMax: sector.rMin - 1.5 };
+}
+
+type Spot = { x: number; z: number };
+type Free = (x: number, z: number, r: number) => boolean;
+
+function tryBand(sector: Sector, w: number, tries: number, random: () => number, free: Free, spreading: boolean): Spot | null {
+  for (let i = 0; i < tries; i += 1) {
+    const spread = spreading ? Math.min(1, i / 160) : 1;
+    const r = sector.rMin + (sector.rMax - sector.rMin) * Math.min(1, spread * 0.85 + random() * 0.35);
+    const a = toRad(sector.from + (sector.to - sector.from) * random());
+    const x = Math.sin(a) * r;
+    const z = -Math.cos(a) * r;
+    if (free(x, z, w)) return { x, z };
+  }
+  return null;
+}
+
+/** Every plot of the island the last resort looks at, ring by ring from the plaza out: laid once. */
+let plots: readonly Spot[] | null = null;
+function islandPlots(): readonly Spot[] {
+  if (plots) return plots;
+  const out: Spot[] = [];
+  for (let r = PLAZA_RADIUS + 3; r < ISLAND_RADIUS - 2; r += 1.2) {
+    const step = Math.min(6, (180 / Math.PI) * (1.2 / r));
+    for (let deg = 0; deg < 360; deg += step) out.push({ x: Math.sin(toRad(deg)) * r, z: -Math.cos(toRad(deg)) * r });
+  }
+  plots = out;
+  return out;
+}
+
+/** The island's plots nearest a point first, ties in plot order. */
+function nearest(home: Spot): readonly Spot[] {
+  const all = islandPlots();
+  return all
+    .map((p, i) => ({ p, i, d: Math.hypot(p.x - home.x, p.z - home.z) }))
+    .sort((a, b) => a.d - b.d || a.i - b.i)
+    .map(({ p }) => p);
+}
+/** The plots by distance from each district's centre: the districts never change, so they are sorted once. */
+const byDistance = new WeakMap<Sector, readonly Spot[]>();
+
+/**
+ * The last resort: the free plot of the island nearest the district's centre, then the same with the tower a size
+ * narrower (it is drawn at the width it found room for). Deterministic, so the city stays the same on every device.
+ */
+function scanIsland(sector: Sector, w: number, free: Free): Spot & { width: number } {
+  const mid = toRad((sector.from + sector.to) / 2);
+  const home = { x: Math.sin(mid) * sector.rMin, z: -Math.cos(mid) * sector.rMin };
+  const order = byDistance.get(sector) ?? byDistance.set(sector, nearest(home)).get(sector)!;
+  for (let width = w; width >= 0.9; width *= 0.8) {
+    for (const p of order) if (free(p.x, p.z, width)) return { ...p, width };
+  }
+  return { ...home, width: w };
 }
 
 function layoutFillers(blocks: { x: number; z: number; r: number }[]): Filler[] {

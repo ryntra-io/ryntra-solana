@@ -19,7 +19,7 @@ export type Phase =
   | { step: 'idle' }
   | { step: 'sending'; text: string; key: string }
   | { step: 'answered'; result: AttemptResponse; at: number }
-  | { step: 'refused'; code: string; line: string; retryAfterS: number | null; text: string; key: string };
+  | { step: 'refused'; code: string; line: string; retryAfterS: number | null; window?: 'minute' | 'day' | null; text: string; key: string };
 
 export type VaultRoomState = {
   open: boolean;
@@ -178,7 +178,7 @@ export function createVaultStore({ client = () => httpVault, now = () => Date.no
         const out = get().limited ? usedUp(get().state) : null;
         if (out) {
           const left = Math.max(1, Math.ceil((until - now()) / 1000));
-          set({ phase: { step: 'refused', code: 'RATE_LIMITED', line: LIMIT_LINE[out.window], retryAfterS: left, text, key: newKey() } });
+          set({ phase: { step: 'refused', code: 'RATE_LIMITED', line: LIMIT_LINE[out.window], retryAfterS: left, window: out.window, text, key: newKey() } });
           return;
         }
         // The same text again after a refusal it may retry is the same attempt: the same key, counted once.
@@ -196,7 +196,7 @@ export function createVaultStore({ client = () => httpVault, now = () => Date.no
           apply(result.state);
         } catch (error) {
           const e = error instanceof VaultClientError ? error : new VaultClientError(0, 'OFFLINE', 'No connection. Nothing was counted.');
-          set({ phase: { step: 'refused', code: e.code, line: e.message, retryAfterS: e.retryAfterS, text, key } });
+          set({ phase: { step: 'refused', code: e.code, line: e.message, retryAfterS: e.retryAfterS, window: e.window, text, key } });
           if (e.code === 'RATE_LIMITED' || e.code === 'LOCKED') void read();
         }
       },

@@ -1,12 +1,14 @@
 'use client';
 
 import { useState } from 'react';
-import { cents, signedPct, signedUsd, usd } from '@/city/lib/districts/predict/markets';
-import { recordOf } from '@/city/lib/districts/predict/practice';
-import { statusWord, type Line, type Past } from '@/city/lib/districts/predict/positions';
+import { cents, sideName, signedPct, signedUsd, usd } from '@/city/lib/districts/predict/markets';
+import { recordOf, START_USD } from '@/city/lib/districts/predict/practice';
+import { pastWord, statusWord, type Line, type Past } from '@/city/lib/districts/predict/positions';
 import type { Payout } from '@/city/lib/districts/predict/real';
 import { useReal } from '@/city/lib/districts/predict/real-store';
 import { usePredict } from '@/city/lib/districts/predict/store';
+import { PREDICT } from '@/city/lib/districts/predict/words';
+import { dateText, digits, useWords } from '@/city/lib/i18n/dict';
 import { useWallet } from '@/city/lib/trade/wallet';
 import { PredictArt } from './PredictArt';
 import { ChevronGlyph } from './predictGlyphs';
@@ -21,6 +23,7 @@ const sideOf = (label: string) => (/^yes$/i.test(label) ? 'yes' : /^no$/i.test(l
 /** A position: the market, the side with its price now, what it is worth and its move — a tap opens its market on Sell. */
 function Row({ line }: { line: Line }) {
   const openMarket = usePredict((st) => st.openMarket);
+  const w = useWords(PREDICT);
   const up = (line.pnl ?? 0) >= 0.005;
   const down = (line.pnl ?? 0) <= -0.005;
   const word = statusWord(line.status);
@@ -30,13 +33,13 @@ function Row({ line }: { line: Line }) {
     else openMarket(line.eventId, line.outcomeId, 'buy', line.marketId);
   };
   return (
-    <button className={s.posRow} onClick={go} disabled={!line.eventId} aria-label={`${line.title}, ${line.label}${word ? `, ${word}` : ''}`} data-status={line.status}>
+    <button className={s.posRow} onClick={go} disabled={!line.eventId} aria-label={`${line.title}, ${sideName(line.label)}${word ? `, ${word}` : ''}`} data-status={line.status}>
       <PredictArt market={{ image: line.image, categories: [], title: line.title }} size="row" />
       <span className={s.posText}>
         <span className={s.posTitle}>{line.title}</span>
         <span className={s.posSide} data-side={sideOf(line.label)}>
-          {line.label}
-          {line.shares !== null ? <span className={s.posShares}> · {line.shares.toLocaleString('en-US', { maximumFractionDigits: 2 })} sh</span> : null}
+          {sideName(line.label)}
+          {line.shares !== null ? <span className={s.posShares}> · {w.sharesShort(digits(line.shares.toLocaleString('en-US', { maximumFractionDigits: 2 })), line.shares)}</span> : null}
           {line.avg !== null && line.price !== null ? (
             <span className={s.posShares}>
               {' '}
@@ -73,19 +76,20 @@ function Row({ line }: { line: Line }) {
 /** A closed position or a finished order: how it ended, and what came back. */
 function PastRow({ past }: { past: Past }) {
   const openMarket = usePredict((st) => st.openMarket);
+  const said = pastWord(past.word);
   return (
-    <button className={s.posRow} onClick={() => past.eventId && openMarket(past.eventId)} disabled={!past.eventId} aria-label={`${past.title}, ${past.word}`}>
+    <button className={s.posRow} onClick={() => past.eventId && openMarket(past.eventId)} disabled={!past.eventId} aria-label={`${past.title}, ${said}`}>
       <PredictArt market={{ image: past.image, categories: [], title: past.title }} size="row" />
       <span className={s.posText}>
         <span className={s.posTitle}>{past.title}</span>
         <span className={s.posSide} data-side={sideOf(past.label)}>
-          {past.label}
-          <span className={s.posShares}> · {past.at ? new Date(past.at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : ''}</span>
+          {sideName(past.label)}
+          <span className={s.posShares}> · {past.at ? dateText(past.at, { month: 'short', day: 'numeric' }) : ''}</span>
         </span>
       </span>
       <span className={s.posFigures}>
         <span className={s.pastWord} data-tone={past.tone}>
-          {past.word}
+          {said}
         </span>
         <span className={`${s.posPnl} ${past.tone === 'up' ? s.up : past.tone === 'down' ? s.down : s.flat}`}>{past.pnl !== null && past.tone !== 'flat' ? signedUsd(past.pnl) : past.amount !== null ? usd(past.amount) : ''}</span>
       </span>
@@ -100,10 +104,11 @@ function PastRow({ past }: { past: Past }) {
 export function PositionsAside() {
   const { open, summary } = usePositions();
   const go = usePredict((st) => st.go);
+  const w = useWords(PREDICT);
   return (
-    <aside className={s.aside} aria-label="Your positions">
+    <aside className={s.aside} aria-label={w.yourPositions}>
       <button className={s.asideTitle} onClick={() => go({ kind: 'positions' })}>
-        Your positions
+        {w.yourPositions}
         {summary.pnl !== null && Math.abs(summary.pnl) >= 0.005 ? <span className={`${s.asidePnl} ${summary.pnl > 0 ? s.up : s.down}`}>{signedUsd(summary.pnl)}</span> : null}
       </button>
       {open.length ? (
@@ -113,7 +118,7 @@ export function PositionsAside() {
           ))}
         </div>
       ) : (
-        <div className={s.asideEmpty}>No positions yet</div>
+        <div className={s.asideEmpty}>{w.noPositionsYet}</div>
       )}
     </aside>
   );
@@ -125,17 +130,18 @@ function Collect() {
   const payouts = useReal((st) => (address && st.owner === address ? (st.live?.payouts ?? NONE) : NONE));
   const collecting = useReal((st) => st.collecting);
   const collect = useReal((st) => st.collect);
+  const w = useWords(PREDICT);
   if (!payouts.length) return null;
   const total = payouts.reduce((sum, p) => sum + p.valueUsd, 0);
   return (
     <div className={s.collect}>
       <span className={s.collectText}>
-        <b>{usd(total)}</b> won
+        <b>{usd(total)}</b> {w.wonWord}
       </span>
       <button className={`${s.primary} ${s.collectButton} ${collecting === 'sending' ? s.waiting : ''}`} disabled={collecting === 'sending'} onClick={() => void collect(payouts.map((p) => p.outcomeId))}>
-        {collecting === 'sending' ? 'Collecting…' : 'Collect'}
+        {collecting === 'sending' ? w.collecting : w.collect}
       </button>
-      {collecting === 'failed' ? <span className={`${s.line} ${s.lineWarn}`}>Not collected. Try again.</span> : null}
+      {collecting === 'failed' ? <span className={`${s.line} ${s.lineWarn}`}>{w.notCollected}</span> : null}
     </div>
   );
 }
@@ -148,6 +154,7 @@ export function PredictPositions() {
   const restart = usePredict((st) => st.restart);
   const back = usePredict((st) => st.back);
   const [tab, setTab] = useState<'open' | 'past'>('open');
+  const w = useWords(PREDICT);
   const record = recordOf(book);
   const real = mode === 'real';
   const up = (summary.pnl ?? 0) >= 0.005;
@@ -156,11 +163,11 @@ export function PredictPositions() {
     <div className={s.positions}>
       <div className={s.summary}>
         <span className={s.summaryBlock}>
-          <span className={s.summaryWord}>{real ? 'In positions' : 'Practice total'}</span>
+          <span className={s.summaryWord}>{real ? w.inPositions : w.practiceTotal}</span>
           <span className={s.summaryFigure}>{usd(real ? summary.value : record.cash + summary.value)}</span>
         </span>
         <span className={s.summaryBlock}>
-          <span className={s.summaryWord}>Profit / loss</span>
+          <span className={s.summaryWord}>{w.pnl}</span>
           <span className={`${s.summaryFigure} ${up ? s.up : down ? s.down : ''}`}>
             {summary.pnl !== null ? signedUsd(summary.pnl) : '—'}
             {summary.pct !== null && (up || down) ? <span className={s.summaryPct}>{signedPct(summary.pct)}</span> : null}
@@ -168,16 +175,16 @@ export function PredictPositions() {
         </span>
         {!real ? (
           <span className={s.summaryBlock}>
-            <span className={s.summaryWord}>Cash</span>
+            <span className={s.summaryWord}>{w.cash}</span>
             <span className={s.summaryFigure}>{usd(record.cash)}</span>
           </span>
         ) : null}
       </div>
       {real ? <Collect /> : null}
-      <div className={s.ticketTabs} role="tablist" aria-label="Open or past">
+      <div className={s.ticketTabs} role="tablist" aria-label={w.openOrPast}>
         {(['open', 'past'] as const).map((t) => (
           <button key={t} role="tab" aria-selected={tab === t} className={`${s.ticketTab} ${tab === t ? s.ticketTabOn : ''}`} onClick={() => setTab(t)}>
-            {t === 'open' ? `Open${open.length ? ` · ${open.length}` : ''}` : 'History'}
+            {t === 'open' ? (open.length ? `${w.openTab} · ${open.length}` : w.openTab) : w.history}
           </button>
         ))}
       </div>
@@ -190,9 +197,9 @@ export function PredictPositions() {
           </div>
         ) : (
           <div className={s.empty}>
-            <span>No open positions.</span>
+            <span>{w.noOpenPositions}</span>
             <button className={s.quiet} onClick={back}>
-              Browse markets
+              {w.browseMarkets}
             </button>
           </div>
         )
@@ -203,11 +210,11 @@ export function PredictPositions() {
           ))}
         </div>
       ) : (
-        <div className={s.empty}>Nothing closed yet.</div>
+        <div className={s.empty}>{w.nothingClosed}</div>
       )}
       {mode === 'practice' && record.canReset ? (
         <button className={`${s.primary} ${s.action}`} onClick={restart}>
-          Start again with $1,000
+          {w.startAgain(digits(`$${START_USD.toLocaleString('en-US')}`))}
         </button>
       ) : null}
     </div>

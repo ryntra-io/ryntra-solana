@@ -3,23 +3,26 @@
 import { useFrame, useThree } from '@react-three/fiber';
 import { useEffect, useMemo, useRef } from 'react';
 import * as THREE from 'three';
-import { useCity } from '@/city/lib/city/store';
 import { PREDICT_OPEN } from '@/city/lib/districts/predict/flag';
-import { chance, headSide, type Market } from '@/city/lib/districts/predict/markets';
+import { chance, headSide, sideName, TRENDING, type Market } from '@/city/lib/districts/predict/markets';
 import { BOARD, BOARD_FACING, BOARD_ISLET, BOARD_SPOT } from '@/city/lib/districts/predict/place';
 import { usePredict } from '@/city/lib/districts/predict/store';
+import { PREDICT } from '@/city/lib/districts/predict/words';
+import { useWords } from '@/city/lib/i18n/dict';
 import { PALETTE } from '@/city/lib/palette';
-import { quarterStore } from '@/city/lib/quarter/store';
-import { useRun } from '@/city/lib/run/store';
-import { openPredictions } from './PredictDockItem';
+
+/** The billboard's own read of the day's markets: once the city has drawn, then now and then while the window is shut. */
+export const BOARD_FIRST_READ_MS = 4_000;
+export const BOARD_READ_MS = 5 * 60_000;
 
 const TEX_W = 1024;
 const TEX_H = Math.round((TEX_W * BOARD.height) / BOARD.width);
 
 /**
  * The Predictions district in the city, once it is open: a billboard on its own islet over the water, its face to the
- * city. It shows the day's most traded market with its chance once the window has read the markets, and the district's
- * name until then — it reads nothing of its own. A tap on it opens the window.
+ * city. Scenery with live figures (CITY-81): it shows the day's most traded market with its chance, from the same read
+ * the window uses (one store, one request in flight), and the district's name until the first read lands. Predictions
+ * has one door, «Predict» in the dock, so a tap on the billboard opens nothing and passes on like a tap on the water.
  */
 export function PredictBillboard() {
   if (!PREDICT_OPEN) return null;
@@ -32,7 +35,23 @@ function Billboard() {
     return list?.status === 'ready' ? (list.markets[0] ?? null) : null;
   });
   const gl = useThree((s) => s.gl);
+  const w = useWords(PREDICT);
   const board = useRef<THREE.Group>(null);
+  // Live figures without the window: the trending list read once the city has drawn, then now and then. While the
+  // window is open it reads the list itself, every half minute.
+  useEffect(() => {
+    const read = () => {
+      const st = usePredict.getState();
+      if (st.open || document.visibilityState !== 'visible') return;
+      void st.loadList(TRENDING.id);
+    };
+    const first = window.setTimeout(read, BOARD_FIRST_READ_MS);
+    const every = window.setInterval(read, BOARD_READ_MS);
+    return () => {
+      window.clearTimeout(first);
+      window.clearInterval(every);
+    };
+  }, []);
   const parts = useMemo(() => {
     const canvas = document.createElement('canvas');
     canvas.width = TEX_W;
@@ -64,18 +83,18 @@ function Billboard() {
     [parts],
   );
 
-  // The face is drawn again when the top market changes, and once the city's faces have loaded.
+  // The face is drawn again when the top market or the language changes, and once the city's faces have loaded.
   useEffect(() => {
     let live = true;
     const draw = () => {
-      if (live && paint(parts.canvas, top, faces(gl.domElement))) parts.texture.needsUpdate = true;
+      if (live && paint(parts.canvas, top, faces(gl.domElement), w)) parts.texture.needsUpdate = true;
     };
     draw();
     void document.fonts?.ready.then(draw);
     return () => {
       live = false;
     };
-  }, [parts, top, gl]);
+  }, [parts, top, gl, w]);
 
   useFrame(({ clock }) => {
     // A slow breath, like a sign over water.
@@ -98,7 +117,6 @@ function Billboard() {
         <mesh geometry={parts.barV} material={parts.edge} position={[-BOARD.width / 2 - 0.3, 0, 0]} />
         <mesh geometry={parts.barV} material={parts.edge} position={[BOARD.width / 2 + 0.3, 0, 0]} />
       </group>
-      <BoardTap />
     </group>
   );
 }
@@ -128,7 +146,7 @@ function lines(ctx: CanvasRenderingContext2D, text: string, width: number, max: 
 }
 
 /** The billboard's face: the district's name, and the top market with its chance once it is read. */
-function paint(canvas: HTMLCanvasElement, top: Market | null, face: { display: string; ui: string }): boolean {
+function paint(canvas: HTMLCanvasElement, top: Market | null, face: { display: string; ui: string }, w: (typeof PREDICT)['en']): boolean {
   const ctx = canvas.getContext('2d');
   if (!ctx) return false;
   const W = canvas.width;
@@ -164,13 +182,13 @@ function paint(canvas: HTMLCanvasElement, top: Market | null, face: { display: s
   ctx.fillStyle = '#FFA34A';
   ctx.font = `900 64px ${face.display}`;
   ctx.textBaseline = 'middle';
-  ctx.fillText('PREDICT', pad + 132, pad + 38);
+  ctx.fillText(w.billboardKicker, pad + 132, pad + 38);
   ctx.shadowBlur = 0;
 
   if (!top) {
     ctx.fillStyle = '#EEF1FF';
     ctx.font = `800 118px ${face.ui}`;
-    ctx.fillText('Live markets', pad, H * 0.5);
+    ctx.fillText(w.liveMarkets, pad, H * 0.5);
     // A chance rising, in the market's mint.
     ctx.strokeStyle = '#22D68E';
     ctx.lineWidth = 9;
@@ -203,7 +221,7 @@ function paint(canvas: HTMLCanvasElement, top: Market | null, face: { display: s
   const wBig = ctx.measureText(big).width;
   ctx.fillStyle = 'rgba(238,241,255,0.7)';
   ctx.font = `700 46px ${face.ui}`;
-  ctx.fillText(top.binary ? 'chance' : side.label, pad + wBig + 22, y - 6);
+  ctx.fillText(top.binary ? w.chance : sideName(side.label), pad + wBig + 22, y - 6);
 
   // The split bar.
   const barY = H - pad + 4;
@@ -218,44 +236,4 @@ function paint(canvas: HTMLCanvasElement, top: Market | null, face: { display: s
   ctx.roundRect(pad + barW * k + 6, barY, barW * (1 - k) - 6, 14, 7);
   ctx.fill();
   return true;
-}
-
-/** A tap on the billboard opens the window; the tap is not passed on, so no tower behind it gets picked. */
-function BoardTap() {
-  const gl = useThree((s) => s.gl);
-  const camera = useThree((s) => s.camera);
-  useEffect(() => {
-    const el = gl.domElement;
-    const raycaster = new THREE.Raycaster();
-    const ndc = new THREE.Vector2();
-    const box = new THREE.Box3();
-    const hit = new THREE.Vector3();
-    const r = BOARD.width / 2 + 0.6;
-    box.set(new THREE.Vector3(BOARD_SPOT.x - r, 0, BOARD_SPOT.z - r), new THREE.Vector3(BOARD_SPOT.x + r, BOARD.y + BOARD.height / 2 + 1, BOARD_SPOT.z + r));
-    let down: { x: number; y: number; t: number } | null = null;
-    const onDown = (e: PointerEvent) => {
-      down = { x: e.clientX, y: e.clientY, t: performance.now() };
-    };
-    const onUp = (e: PointerEvent) => {
-      const d = down;
-      down = null;
-      if (!d || useRun.getState().phase !== 'off' || quarterStore.getState().mode !== 'city') return;
-      if (Math.hypot(e.clientX - d.x, e.clientY - d.y) > 8 || performance.now() - d.t > 350) return;
-      const rect = el.getBoundingClientRect();
-      ndc.set(((e.clientX - rect.left) / rect.width) * 2 - 1, -((e.clientY - rect.top) / rect.height) * 2 + 1);
-      raycaster.setFromCamera(ndc, camera);
-      if (!raycaster.ray.intersectBox(box, hit)) return;
-      e.stopImmediatePropagation();
-      if (usePredict.getState().open) return;
-      useCity.getState().select(null);
-      openPredictions();
-    };
-    el.addEventListener('pointerdown', onDown);
-    el.addEventListener('pointerup', onUp);
-    return () => {
-      el.removeEventListener('pointerdown', onDown);
-      el.removeEventListener('pointerup', onUp);
-    };
-  }, [gl, camera]);
-  return null;
 }

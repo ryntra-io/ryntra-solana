@@ -107,7 +107,16 @@ test("a market whose own venue keeps no history is drawn from the venue the engi
   assert.equal(st.detail.detail.marketId, "fed-hike25", "the bracket the card led with");
   assert.equal(st.chart.status, "ready");
   assert.equal(st.chart.points.length, 200);
-  assert.deepEqual(reads, ["fed-hike25-yes:5m", "fed-hike25-yes:1h", "k-hike25-yes:5m"]);
+  // The own first ask alone; when it is empty the rest go at once — a round waits for the slowest, not the sum.
+  assert.deepEqual(reads, ["fed-hike25-yes:5m", "fed-hike25-yes:1h", "k-hike25-yes:5m", "k-hike25-yes:1h", "p-hike25-yes:5m", "p-hike25-yes:1h"]);
+});
+
+test("asked at once, the line still comes from the first place in the plan's order that has one", async () => {
+  // Both the market's own hourly bars and a matched venue answer: the market's own wins, as it did one by one.
+  charts["fed-hike25-yes:1h"] = ok(line(0.6, 0.62, HOUR, 24));
+  charts["k-hike25-yes:5m"] = ok(line(0.7, 0.765, 5 * 60_000, 200));
+  await openPage("ev-fed");
+  assert.equal(usePredict.getState().chart.points.length, 24);
 });
 
 test("every pill works on the real history: 1W, 1M and All each ask their own size", async () => {

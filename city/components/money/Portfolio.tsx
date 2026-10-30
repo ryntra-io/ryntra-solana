@@ -2,9 +2,12 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import { formatAmount, formatUsd, portfolioOf, readAge } from '@/city/lib/money/assets';
+import { useWords } from '@/city/lib/i18n/dict';
 import { useMoney } from '@/city/lib/money/open';
 import { useMoneyStore } from '@/city/lib/money/store';
 import { CoinIcon, Refresh } from './bits';
+import { PhoenixLeft } from './PhoenixLeft';
+import { MONEY } from './words';
 import s from './money.module.css';
 
 /** Read the balances again when the last read is older than this. */
@@ -16,6 +19,7 @@ const STALE_MS = 60_000;
  * list may be short.
  */
 export function Portfolio() {
+  const w = useWords(MONEY);
   const wallet = useMoneyStore((st) => st.wallet);
   const walletRead = useMoneyStore((st) => st.walletRead);
   const portfolio = useMemo(() => (wallet ? portfolioOf(wallet.assets) : null), [wallet]);
@@ -31,13 +35,13 @@ export function Portfolio() {
   if (!wallet || !portfolio) {
     return walletRead === 'failed' ? (
       <p className={s.empty}>
-        Your balances are unavailable right now.{' '}
+        {w.balancesUnavailableNow}{' '}
         <button type="button" className={s.link} onClick={() => useMoneyStore.getState().readWallet()}>
-          Try again
+          {w.tryAgain}
         </button>
       </p>
     ) : (
-      <div className={s.bones} aria-label="Reading your wallet">
+      <div className={s.bones} aria-label={w.readingWallet}>
         <span />
         <span />
         <span />
@@ -46,29 +50,30 @@ export function Portfolio() {
   }
 
   return (
-    <section className={s.tabBody} aria-label="Portfolio">
+    <section className={s.tabBody} aria-label={w.portfolio}>
       <div className={s.bar}>
         <div className={s.total}>
-          <span className={`${s.display} ${s.kicker}`}>Total</span>
+          <span className={`${s.display} ${s.kicker}`}>{w.total}</span>
           <b className={`${s.display} ${s.figure}`}>{formatUsd(portfolio.totalUsd)}</b>
         </div>
-        <Refresh onClick={() => useMoneyStore.getState().readWallet()} title={`Read ${readAge(wallet.at, now)}`} />
+        <Refresh onClick={() => useMoneyStore.getState().readWallet()} title={w.readAt(readAge(wallet.at, now))} />
       </div>
       <div className={s.quick}>
         <button type="button" className={`${s.display} ${s.secondary}`} onClick={() => useMoney.getState().setTab('topup')}>
-          Top up
+          {w.topUp}
         </button>
         <button type="button" className={`${s.display} ${s.secondary}`} onClick={() => useMoney.getState().setTab('send')}>
-          Send
+          {w.send}
         </button>
       </div>
+      <PhoenixLeft />
       <ul className={s.rows}>
         {portfolio.rows.map((row) => (
           <li key={row.asset.id} className={s.row}>
-            <CoinIcon mint={row.asset.mint} />
+            <CoinIcon mint={row.asset.mint} icon={row.asset.icon} symbol={row.asset.symbol} />
             <span className={s.names}>
               <b>{row.asset.symbol}</b>
-              <span>{row.asset.name ?? (row.asset.verified ? '' : 'Not verified')}</span>
+              <span>{row.asset.name ?? (row.asset.verified ? '' : w.notVerified)}</span>
             </span>
             <span className={s.figures}>
               <b>{formatUsd(row.valueUsd)}</b>
@@ -79,8 +84,8 @@ export function Portfolio() {
           </li>
         ))}
       </ul>
-      {!wallet.complete ? <p className={s.note}>Some coins could not be read.</p> : null}
-      {portfolio.unpriced > 0 ? <p className={s.note}>{portfolio.unpriced} without a price · not in the total</p> : null}
+      {!wallet.complete ? <p className={s.note}>{w.someCoins}</p> : null}
+      {portfolio.unpriced > 0 ? <p className={s.note}>{w.unpriced(portfolio.unpriced)}</p> : null}
     </section>
   );
 }

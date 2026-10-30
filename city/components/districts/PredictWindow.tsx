@@ -2,10 +2,12 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { PREDICT_REAL } from '@/city/lib/districts/predict/flag';
-import { artOf, cents, chance, closesIn, ENDING, headSide, isDelayed, leadOf, TRENDING, usd, volumeText, type Market, type Tab } from '@/city/lib/districts/predict/markets';
+import { artOf, cents, chance, closesIn, ENDING, headSide, isDelayed, leadOf, sideName, tabName, TRENDING, usd, volumeText, type Market, type Tab } from '@/city/lib/districts/predict/markets';
 import { linesOn, statusWord, type Line } from '@/city/lib/districts/predict/positions';
 import { realBusy, useReal } from '@/city/lib/districts/predict/real-store';
 import { usePredict, type ListState, type Mode, type Page } from '@/city/lib/districts/predict/store';
+import { PREDICT } from '@/city/lib/districts/predict/words';
+import { useWords, wordsNow } from '@/city/lib/i18n/dict';
 import { useWallet } from '@/city/lib/trade/wallet';
 import { PredictArt } from './PredictArt';
 import { PredictMarket } from './PredictMarket';
@@ -45,8 +47,8 @@ export function PredictWindow() {
 }
 
 /** The words in the frame's head for a page of the window. */
-export function windowTitle(page: Page['kind'], mode: Mode): string {
-  return page === 'positions' ? 'Positions' : page === 'money' ? (mode === 'real' ? 'Money' : 'Practice') : 'Predictions';
+export function windowTitle(page: Page['kind'], mode: Mode, w: (typeof PREDICT)['en'] = wordsNow(PREDICT)): string {
+  return page === 'positions' ? w.positions : page === 'money' ? (mode === 'real' ? w.money : w.practice) : w.predictions;
 }
 
 /** Under the frame's head (the name, full screen, close): back from a page, and the money — mode, positions, balance, Deposit. */
@@ -55,11 +57,12 @@ function Head() {
   const mode = usePredict((st) => st.mode);
   const back = usePredict((st) => st.back);
   const go = usePredict((st) => st.go);
+  const w = useWords(PREDICT);
   const sub = page.kind !== 'markets';
   return (
     <header className={s.head} data-sub={sub ? '' : undefined}>
       {sub ? (
-        <button className={s.iconButton} aria-label="Back to markets" onClick={() => !realBusy() && back()}>
+        <button className={s.iconButton} aria-label={w.backToMarkets} onClick={() => !realBusy() && back()}>
           <BackGlyph />
         </button>
       ) : (
@@ -71,7 +74,7 @@ function Head() {
         <Balance onOpen={() => go(mode === 'real' ? { kind: 'money', tab: 'deposit' } : { kind: 'positions' })} />
         {mode === 'real' ? (
           <button className={`${s.primary} ${s.deposit}`} onClick={() => go({ kind: 'money', tab: 'deposit' })}>
-            Deposit
+            {w.deposit}
           </button>
         ) : null}
       </div>
@@ -84,8 +87,9 @@ function ModeSwitch() {
   const mode = usePredict((st) => st.mode);
   const setMode = usePredict((st) => st.setMode);
   const reset = useReal((st) => st.resetTrade);
+  const w = useWords(PREDICT);
   return (
-    <div className={s.modeSwitch} role="radiogroup" aria-label="Money">
+    <div className={s.modeSwitch} role="radiogroup" aria-label={w.money}>
       {(['practice', 'real'] as const).map((m) => (
         <button
           key={m}
@@ -97,7 +101,7 @@ function ModeSwitch() {
             setMode(m);
           }}
         >
-          {m === 'practice' ? 'Practice' : 'Real'}
+          {m === 'practice' ? w.practice : w.real}
         </button>
       ))}
     </div>
@@ -107,9 +111,10 @@ function ModeSwitch() {
 /** Your positions, on every page and every width: how many are open, a pulse while an order is on its way. */
 function PositionsButton({ onOpen }: { onOpen: () => void }) {
   const { summary } = usePositions();
+  const w = useWords(PREDICT);
   const count = summary.count + summary.pending;
   return (
-    <button className={s.posButton} onClick={onOpen} aria-label={`Your positions${count ? `, ${count}` : ''}`} data-pending={summary.pending ? '' : undefined}>
+    <button className={s.posButton} onClick={onOpen} aria-label={count ? `${w.yourPositions}, ${count}` : w.yourPositions} data-pending={summary.pending ? '' : undefined}>
       <StackGlyph />
       {count ? <span className={s.posCount}>{count}</span> : null}
     </button>
@@ -123,10 +128,11 @@ function Balance({ onOpen }: { onOpen: () => void }) {
   const available = useReal((st) => (st.live?.linked ? st.live.available : null));
   const connected = useWallet((st) => Boolean(st.connection));
   const real = mode === 'real';
+  const w = useWords(PREDICT);
   return (
-    <button className={s.balance} onClick={onOpen} aria-label={real ? 'USDC balance' : 'Practice balance'}>
+    <button className={s.balance} onClick={onOpen} aria-label={real ? w.usdcBalance : w.practiceBalance}>
       <span className={s.balanceCoin}>{real ? <UsdcCoin /> : <PracticeCoin />}</span>
-      <span className={s.balanceLabel}>{real ? 'USDC' : 'Practice'}</span>
+      <span className={s.balanceLabel}>{real ? 'USDC' : w.practice}</span>
       <span className={s.balanceFigure}>{real ? (available !== null && connected ? usd(available).slice(1) : '—') : usd(cash).slice(1)}</span>
     </button>
   );
@@ -149,6 +155,7 @@ function Tabs() {
   const find = usePredict((st) => st.find);
   const [open, setOpen] = useState(Boolean(search));
   const [words, setWords] = useState(search?.q ?? '');
+  const w = useWords(PREDICT);
   const field = useRef<HTMLInputElement>(null);
   useEffect(() => {
     if (!open) return;
@@ -166,7 +173,7 @@ function Tabs() {
       <div className={s.search} data-open={open ? '' : undefined}>
         <button
           className={s.searchButton}
-          aria-label={open ? 'Close search' : 'Search markets'}
+          aria-label={open ? w.closeSearch : w.searchMarkets}
           aria-expanded={open}
           onClick={() => {
             if (open) {
@@ -186,8 +193,8 @@ function Tabs() {
             inputMode="search"
             enterKeyHint="search"
             autoComplete="off"
-            placeholder="Search"
-            aria-label="Search markets"
+            placeholder={w.search}
+            aria-label={w.searchMarkets}
             value={words}
             maxLength={80}
             onChange={(e) => setWords(e.target.value)}
@@ -197,13 +204,13 @@ function Tabs() {
           />
         ) : null}
       </div>
-      <nav className={s.tabs} role="tablist" aria-label="Categories">
+      <nav className={s.tabs} role="tablist" aria-label={w.categories}>
         {shown.map((t) => (
           <button key={t.id} role="tab" aria-selected={t.id === tab} className={`${s.tab} ${t.id === tab ? s.tabOn : ''}`} onClick={() => setTab(t.id)}>
             <span className={s.tabGlyph} aria-hidden="true">
               <TabGlyph tab={t} />
             </span>
-            {t.label}
+            {tabName(t)}
           </button>
         ))}
       </nav>
@@ -230,9 +237,10 @@ function Cards({ list }: { list: ListState | undefined }) {
   const tab = usePredict((st) => st.tab);
   const { open } = usePositions();
   const now = useNow();
+  const w = useWords(PREDICT);
   if (!list || (list.status !== 'ready' && list.status !== 'error')) {
     return (
-      <div className={s.grid} aria-label="Reading the markets">
+      <div className={s.grid} aria-label={w.readingMarkets}>
         {[0, 1, 2, 3, 4, 5].map((i) => (
           <div key={i} className={`${s.card} ${s.cardLoading}`}>
             <span className={s.shimmer} />
@@ -244,14 +252,14 @@ function Cards({ list }: { list: ListState | undefined }) {
   if (list.status === 'error') {
     return (
       <div className={s.empty}>
-        <span>Markets are not answering.</span>
+        <span>{w.marketsDown}</span>
         <button className={s.quiet} onClick={() => void loadList()}>
-          Try again
+          {w.tryAgain}
         </button>
       </div>
     );
   }
-  if (!list.markets.length) return <div className={s.empty}>{search?.id === tab ? 'Nothing found.' : 'No open market here right now.'}</div>;
+  if (!list.markets.length) return <div className={s.empty}>{search?.id === tab ? w.nothingFound : w.noMarket}</div>;
   const delayed = isDelayed(list.readAt, now);
   return (
     <div className={s.grid} data-delayed={delayed ? '' : undefined}>
@@ -271,7 +279,7 @@ function HoldChip({ lines }: { lines: readonly Line[] }) {
   return (
     <span className={s.holdChip} data-status={line.status}>
       <span className={s.holdDot} aria-hidden="true" />
-      {word ? `${line.label} · ${word}` : `${line.label} · ${line.value !== null ? usd(line.value) : usd(line.cost ?? 0)}`}
+      {`${sideName(line.label)} · ${word ?? usd(line.value ?? line.cost ?? 0)}`}
       {more}
     </span>
   );
@@ -283,6 +291,7 @@ function HoldChip({ lines }: { lines: readonly Line[] }) {
  */
 function Card({ market, held, now }: { market: Market; held: readonly Line[]; now: number }) {
   const openMarket = usePredict((st) => st.openMarket);
+  const w = useWords(PREDICT);
   const head = headSide(market);
   const lead = leadOf(market);
   const [a, b] = market.binary ? market.sides : [lead, market.sides.find((x) => x.id !== lead.id)!];
@@ -292,8 +301,8 @@ function Card({ market, held, now }: { market: Market; held: readonly Line[]; no
   const odds = (
     <>
       <div className={s.odds}>
-        <span className={s.oddsLead}>{market.binary ? `${chance(head.p)}${market.question ? '' : ' chance'}` : `${lead.label} ${chance(lead.p)}`}</span>
-        <span className={s.oddsTrail}>{market.binary ? chance(market.sides[1]!.p) : `${b!.label} ${chance(b!.p)}`}</span>
+        <span className={s.oddsLead}>{market.binary ? (market.question ? chance(head.p) : w.chanceOf(chance(head.p))) : `${sideName(lead.label)} ${chance(lead.p)}`}</span>
+        <span className={s.oddsTrail}>{market.binary ? chance(market.sides[1]!.p) : `${sideName(b!.label)} ${chance(b!.p)}`}</span>
       </div>
       <div className={s.bar} aria-hidden="true" data-multi={market.binary ? undefined : ''}>
         <span className={s.barYes} style={{ width: `${Math.max(3, Math.min(97, split * 100))}%` }} />
@@ -323,7 +332,7 @@ function Card({ market, held, now }: { market: Market; held: readonly Line[]; no
             {market.question ? (
               <span className={s.cardQuestion}>
                 {market.question}
-                {market.marketCount > 1 ? <span className={s.moreMarkets}> · {market.marketCount} markets</span> : null}
+                {market.marketCount > 1 ? <span className={s.moreMarkets}> · {w.marketsCount(market.marketCount)}</span> : null}
               </span>
             ) : null}
           </span>
@@ -338,16 +347,16 @@ function Card({ market, held, now }: { market: Market; held: readonly Line[]; no
         {market.binary ? (
           <>
             <button className={s.yes} onClick={() => pick(a!.id)}>
-              Yes {cents(a!.p)}
+              {w.yesAt(cents(a!.p))}
             </button>
             <button className={s.no} onClick={() => pick(b!.id)}>
-              No {cents(b!.p)}
+              {w.noAt(cents(b!.p))}
             </button>
           </>
         ) : (
           [a!, b!].map((side) => (
             <button key={side.id} className={s.alt} onClick={() => pick(side.id)}>
-              <span className={s.altLabel}>{side.label}</span> {cents(side.p)}
+              <span className={s.altLabel}>{sideName(side.label)}</span> {cents(side.p)}
             </button>
           ))
         )}

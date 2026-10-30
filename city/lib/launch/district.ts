@@ -9,6 +9,7 @@ import { startLaunchFeed } from './feed.ts';
 import type { Liftoff, Phase } from './flow.ts';
 import { cityLaunchOpen, cityPreset } from './gate.ts';
 import { launchesKey, MINE_KEEP_MS, shownLaunches, withLaunches, type LaunchTower } from './towers.ts';
+import { httpTradeEngine, type LaunchTradeEngine } from './trade.ts';
 import type { CityWallet, Connection } from './wallet.ts';
 
 /**
@@ -109,6 +110,29 @@ export function launchEngine(): LaunchEngine {
   return engine ?? httpEngine();
 }
 
+/* The district's store for the development stand's shots (`trade-shots.mjs`); never in a production bundle. */
+if (typeof window !== 'undefined' && process.env.NODE_ENV !== 'production') Object.assign(window, { __launch: useLaunch });
+
+let tradeEngine: Promise<LaunchTradeEngine> | null = null;
+const loadTradeStub = process.env.NODE_ENV === 'production' ? null : () => import('./trade-stub.ts');
+
+/**
+ * The engine's trade routes for a launch's tower (L1): over HTTP, or the stand-in's beside the stub engine. A load that
+ * fails is let go, so the next read asks again.
+ */
+export function launchTradeEngine(): Promise<LaunchTradeEngine> {
+  if (tradeEngine) return tradeEngine;
+  const made =
+    useLaunch.getState().stub && loadTradeStub
+      ? loadTradeStub().then((trade) => trade.stubTradeEngine({ market: (token) => launchEngine().market(token), delayMs: 450 * stubPace() }))
+      : Promise.resolve(httpTradeEngine());
+  tradeEngine = made;
+  made.catch(() => {
+    if (tradeEngine === made) tradeEngine = null;
+  });
+  return made;
+}
+
 /** The creator's wallet: the browser's, or the stand-in's beside the stub engine. Loaded when the sheet first needs it. */
 export function launchWallet(): Promise<CityWallet> {
   wallet ??= useLaunch.getState().stub && loadStub ? loadStub().then((stub) => stub.stubWallet({ delayMs: 4000 * stubPace() })) : import('./wallet.ts').then((module) => module.browserWallet());
@@ -131,6 +155,8 @@ async function boot() {
     const stub = await loadStub();
     engine = stub.stubEngine({ delayMs: 650 * stubPace() });
     useLaunch.setState({ stub: true });
+    /* The stand-in's trade routes load with it, not on the first tap. */
+    void launchTradeEngine().catch(() => undefined);
   }
   const source = launchEngine();
   useLaunch.subscribe((state, before) => {

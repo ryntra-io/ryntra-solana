@@ -2,7 +2,9 @@
 
 import type { Tower } from '@/city/lib/market/types';
 import { useTowerChart } from '@/city/lib/chart/store';
+import { useWords } from '@/city/lib/i18n/dict';
 import { CandlesGlyph } from './glyphs';
+import { CHART } from './words';
 import c from './chart.module.css';
 
 export { chartOpen } from '@/city/lib/chart/store';
@@ -15,6 +17,7 @@ const preload = () => void import('./ChartWindow').catch(() => {});
 
 /** The tower card's «Chart»: the tower's live chart opens in the card's place; closing it brings the card back. */
 export function ChartAction({ tower }: { tower: Pick<Tower, 'id'> }) {
+  const w = useWords(CHART);
   return (
     <button
       type="button"
@@ -24,7 +27,7 @@ export function ChartAction({ tower }: { tower: Pick<Tower, 'id'> }) {
       onClick={() => useTowerChart.getState().open(tower.id)}
     >
       <CandlesGlyph />
-      Chart
+      {w.chart}
     </button>
   );
 }

@@ -3,6 +3,9 @@ import { BRAND } from '../brand.ts';
 import { isNamed, type District, type Tower } from '../market/types.ts';
 import type { RunForm } from '../run/course.ts';
 import type { Facts } from '../x/facts.ts';
+import { dateText, digits, wordsNow } from '../i18n/dict.ts';
+import { langNow } from '../i18n/lang.ts';
+import { MOMENTS, retellMoment } from './words.ts';
 
 /**
  * A moment worth a clip: a launch, a coin graduating from its curve into a pool, a coin surviving day 7, 30 or
@@ -75,6 +78,26 @@ export function sourceTime(iso: string): string {
   const hh = String(at.getUTCHours()).padStart(2, '0');
   const mm = String(at.getUTCMinutes()).padStart(2, '0');
   return `${MONTHS[at.getUTCMonth()]} ${at.getUTCDate()} · ${hh}:${mm} UTC`;
+}
+
+/** A moment's source time as the city's list shows it, in the language on screen («26 жовт. · 14:02 UTC»). */
+export function sourceTimeShown(iso: string): string {
+  const lang = langNow();
+  if (lang === 'en') return sourceTime(iso);
+  const at = new Date(iso);
+  if (Number.isNaN(at.getTime())) return '';
+  const day = dateText(at, { day: 'numeric', month: 'short', timeZone: 'UTC' }, lang);
+  const clock = dateText(at, { hour: '2-digit', minute: '2-digit', hourCycle: 'h23', timeZone: 'UTC' }, lang);
+  return `${day} · ${clock} UTC`;
+}
+
+/**
+ * A moment's kicker, title and figure as the city shows them, in the language on screen. The moment itself keeps them
+ * in English: the clip and the card for X carry them so.
+ */
+export function momentShown(m: Pick<Moment, 'kicker' | 'title' | 'figure'>): { kicker: string; title: string; figure: string } {
+  const lang = langNow();
+  return { kicker: retellMoment(m.kicker, lang), title: retellMoment(m.title, lang), figure: retellMoment(m.figure, lang) };
 }
 
 export function money(v: number): string {
@@ -297,33 +320,39 @@ export function momentFromRun(r: { time: number; newBest: boolean; form: RunForm
   };
 }
 
-/** The words that go with the clip or the card: plain facts, the figure's window, a link — never a promise. */
+/**
+ * The words that go with the clip or the card: plain facts, the figure's window, a link — never a promise. They are
+ * the words a person sends from the share sheet, so they are written in the language on screen.
+ */
 export function momentText(m: Moment, link?: string): string {
-  const coin = m.symbol ?? 'A Ryntra launch';
+  const w = wordsNow(MOMENTS);
+  const coin = m.symbol ?? w.aRyntraLaunch;
   let line: string;
   switch (m.kind) {
     case 'launch':
-      if (m.source === 'Ryntra Launch') line = `${m.symbol ?? 'A new coin'} launched on Ryntra and rose as a new tower in the Launch Docks of the live Solana skyline.`;
-      else line = m.symbol ? `${m.symbol} rose as a new tower in the Launch Docks of the live Solana skyline.` : 'A new tower just rose in the Launch Docks of the live Solana skyline.';
+      if (m.source === 'Ryntra Launch') line = w.launchedOnRyntra(m.symbol ?? w.aNewCoin);
+      else line = m.symbol ? w.roseInDocks(m.symbol) : w.newTowerRose;
       break;
     case 'graduate':
-      line = `${coin} graduated: past $75K on its curve, now a DAMM v2 pool with its liquidity locked.`;
+      line = w.graduated(coin);
       break;
     case 'survival':
-      line = `${coin} ${m.kicker.toLowerCase()} in the Ryntra skyline, checked on chain.`;
+      line = w.survived(coin, m.kicker, Number(m.id.split(':').pop()));
       break;
-    case 'record':
-      line = m.run?.newBest ? `New record: ${m.run.time.toFixed(1)} s through the live Solana skyline.` : `${m.run?.time.toFixed(1)} s through the live Solana skyline.`;
-      if (link) return `${line} Beat my run: ${link}`;
+    case 'record': {
+      const time = digits(`${m.run?.time.toFixed(1)}`);
+      line = m.run?.newBest ? w.newRecord(time) : w.runTime(time);
+      if (link) return w.beatMyRun(line, link);
       break;
+    }
     case 'war':
-      line = `${DISTRICT_NAMES[m.district ?? 'core']} won this week's district war in Ryntra City.`;
+      line = w.wonWar(w[m.district ?? 'core']);
       break;
     case 'bigx':
-      line = `${coin}: a trade in Ryntra City closed at ${m.figure.split(' · ')[0]!.toLowerCase()} its entry, on chain.`;
+      line = w.bigX(coin, digits(m.figure.split(' · ')[0]!.toLowerCase()));
       break;
     case 'agent':
-      line = `A Ryntra agent spotted ${coin} in the live Solana skyline: ${m.figure.toLowerCase()}. A lead to check, not advice.`;
+      line = w.agentSpotted(coin, retellMoment(m.figure, langNow()).toLowerCase());
       break;
     case 'studio':
       // The queue writes a studio post's words from its facts (`../x/post.ts`); this is the share sheet's short line.

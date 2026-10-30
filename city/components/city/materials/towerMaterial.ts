@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { FOG_COLOR, FOG_DENSITY, FOG_FALLOFF, GLSL_COMMON, GLSL_FOG_PARS } from '@/city/lib/city/glsl';
 import { GLSL_SHARED } from '@/city/lib/city/shared';
+import { GLSL_LENS, shareLens } from '@/city/lib/lens/uniforms';
 import { PALETTE } from '@/city/lib/palette';
 
 /**
@@ -17,9 +18,10 @@ import { PALETTE } from '@/city/lib/palette';
  *  aGlow     event glow (linear rgb, intensity in w)
  *  aActivity 0–1, how many windows are lit
  *  aBuild    0–1, how much of the tower stands (launches grow, flares knock the top off)
+ *  aLens     the Lens's level (CITY-86): 1 looked at, −1 sunk into the haze, 0 untouched
  */
 export function createTowerMaterial() {
-  return new THREE.ShaderMaterial({
+  return shareLens(new THREE.ShaderMaterial({
     uniforms: {
       uAmber: { value: new THREE.Color(PALETTE.amber) },
       uWarm: { value: new THREE.Color(PALETTE.warmWhite) },
@@ -39,6 +41,7 @@ export function createTowerMaterial() {
       attribute vec4 aGlow;
       attribute float aActivity;
       attribute float aBuild;
+      attribute float aLens;
 
       varying vec3 vWorld;
       varying vec3 vNormalW;
@@ -52,6 +55,8 @@ export function createTowerMaterial() {
       varying float vWidth;
       varying float vTotalH;
       varying float vBuild;
+      varying float vLens;
+      ${GLSL_LENS}
 
       float shapeScale(float kind, float y) {
         if (kind < 0.5) return 1.0 - 0.34 * smoothstep(0.72, 1.0, y);                    // spire: tapers into the crown
@@ -68,6 +73,8 @@ export function createTowerMaterial() {
         float h = aSize.y * aBuild;
         vec3 scaled = vec3(p.x * aSize.x, p.y * h, p.z * aSize.x);
         vec4 world = modelMatrix * instanceMatrix * vec4(scaled, 1.0);
+        world.y = lensY(world.y, aSize.y, aLens);
+        vLens = aLens;
         vWorld = world.xyz;
         vNormalW = normalize(mat3(modelMatrix) * mat3(instanceMatrix) * normal);
         vHeightU = scaled.y;
@@ -102,8 +109,10 @@ export function createTowerMaterial() {
       varying float vWidth;
       varying float vTotalH;
       varying float vBuild;
+      varying float vLens;
 
       ${GLSL_SHARED}
+      ${GLSL_LENS}
       ${GLSL_COMMON}
       ${GLSL_FOG_PARS}
 
@@ -121,7 +130,7 @@ export function createTowerMaterial() {
         // Roof: dark with a thin accent ring at the edge.
         if (n.y > 0.6) {
           float edge = smoothstep(0.78, 0.98, length(vLocal.xz));
-          vec3 roof = uGraphite * 0.35 + vAccent * edge * 2.2 + flash * 0.5;
+          vec3 roof = lensColor(uGraphite * 0.35 + vAccent * edge * 2.2 + flash * 0.5, n, viewDir, 1.0, vLens);
           gl_FragColor = vec4(applyFog(roof, vWorld, cameraPosition), 1.0);
           return;
         }
@@ -210,9 +219,9 @@ export function createTowerMaterial() {
           color += burn * vec3(1.6, 0.55, 0.18) * (0.6 + 0.4 * sin(uTime * 13.0 + vWorld.x));
         }
 
-        color = applyFog(color, vWorld, cameraPosition);
+        color = applyFog(lensColor(color, n, viewDir, y01, vLens), vWorld, cameraPosition);
         gl_FragColor = vec4(color, 1.0);
       }
     `,
-  });
+  }));
 }

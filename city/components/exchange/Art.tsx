@@ -15,13 +15,12 @@ export function ArtImage({ art, className, sizes = '(min-width: 900px) 560px, 10
   );
 }
 
-/** An empty or waiting state: the still, one title, at most one short line, and the one thing to do. */
+/**
+ * An empty or waiting state: one title, at most one short line, and the one thing to do. No still in it; `art` stays for the callers and says which state it is.
+ */
 export function ArtState({ art, title, line, children }: { art: ExchangeArt; title: string; line?: string; children?: ReactNode }) {
   return (
-    <div className={s.artState}>
-      <div className={s.artFrame}>
-        <ArtImage art={art} className={s.artImage} />
-      </div>
+    <div className={s.artState} data-state={art}>
       <div className={`${s.display} ${s.title}`}>{title}</div>
       {line ? <div className={s.line}>{line}</div> : null}
       {children}

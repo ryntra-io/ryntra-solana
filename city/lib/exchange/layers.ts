@@ -1,5 +1,7 @@
 import { symbolKey } from '../../../lib/phoenix/market-data.ts';
+import { wordsNow } from '../i18n/dict.ts';
 import type { OrderRow, PositionRow } from './account.ts';
+import { EX_LAYERS } from './words.ts';
 
 /**
  * The perpetual's layers for a price chart (CITY-5d → CITY-5a): where a position was entered, where Phoenix would
@@ -37,21 +39,21 @@ const finite = (value: number | null | undefined): value is number => typeof val
 /** The layers of one market: its positions' entry, liquidation, TP and SL, and its resting orders that are not a TP/SL leg. */
 export function perpLayers(symbol: string, positions: readonly PositionRow[], orders: readonly OrderRow[]): PerpLayer[] {
   const key = symbolKey(symbol);
+  const w = wordsNow(EX_LAYERS);
   const layers: PerpLayer[] = [];
   for (const row of positions) {
     if (symbolKey(row.symbol) !== key) continue;
-    const side = row.side === 'long' ? 'Long' : 'Short';
     const add = (kind: LayerKind, price: number | null, label: string) => {
       if (finite(price)) layers.push({ id: `${row.key}:${kind}`, kind, price, label, tone: TONE[kind], dashed: kind !== 'entry' });
     };
-    add('entry', row.entry, `${side} entry`);
-    add('liquidation', row.liquidationUsd, 'Liquidation');
-    add('tp', row.tp, 'Take profit');
-    add('sl', row.sl, 'Stop loss');
+    add('entry', row.entry, row.side === 'long' ? w.longEntry : w.shortEntry);
+    add('liquidation', row.liquidationUsd, w.liquidation);
+    add('tp', row.tp, w.takeProfit);
+    add('sl', row.sl, w.stopLoss);
   }
   for (const order of orders) {
     if (symbolKey(order.symbol) !== key || order.leg !== null || !finite(order.price)) continue;
-    layers.push({ id: `order:${order.key}`, kind: 'order', price: order.price, label: order.side === 'buy' ? 'Buy order' : 'Sell order', tone: TONE.order, dashed: true });
+    layers.push({ id: `order:${order.key}`, kind: 'order', price: order.price, label: order.side === 'buy' ? w.buyOrder : w.sellOrder, tone: TONE.order, dashed: true });
   }
   return layers.sort((a, b) => b.price - a.price);
 }

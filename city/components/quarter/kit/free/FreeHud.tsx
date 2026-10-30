@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { playTick } from '@/city/lib/audio/engine';
 import { useCity } from '@/city/lib/city/store';
+import { useWords, type Same } from '@/city/lib/i18n/dict';
 import { PIECES, PIECE_KINDS, pieceCap, signText, type PieceKind } from '@/lib/world/layout';
 import { focused, freeStore, useFree, type Note, type Tool } from '@/city/lib/quarter/kit/free/store';
 import { useQuarter } from '@/city/lib/quarter/store';
@@ -11,51 +12,38 @@ import { LockGlyph } from '../../../hud/glyphs';
 import s from '../../../hud/hud.module.css';
 import { EraseGlyph, FreeGlyph, PIECE_GLYPH, TurnGlyph, UndoGlyph } from './glyphs';
 import f from './free.module.css';
+import { QUARTER } from '../../words';
+
+type W = Same<(typeof QUARTER)['en']>;
 
 /** The order pieces come in the dock: houses, the street, the light, then the game buildings. */
 const ORDER: readonly PieceKind[] = ['block', 'glass', 'arch', 'turret', 'path', 'hedge', 'tree', 'lamp', 'fountain', 'sign', 'arcade', 'vault_house', 'mini_ring'];
 
-export const PIECE_NAMES: Record<PieceKind, string> = {
-  block: 'Block',
-  glass: 'Glass',
-  arch: 'Arch',
-  turret: 'Turret',
-  path: 'Path',
-  hedge: 'Hedge',
-  tree: 'Tree',
-  lamp: 'Lamp',
-  fountain: 'Fountain',
-  sign: 'Sign',
-  arcade: 'Arcade',
-  vault_house: 'Vault',
-  mini_ring: 'Ring',
-};
-
 /** How long a note stays over the dock. */
 const NOTE_MS = 2200;
 
-function noteLine(note: Note, tool: Tool): string {
+function noteLine(w: W, note: Note, tool: Tool): string {
   if (note.kind !== 'refused') {
-    if (note.kind === 'full') return 'Your quarter is full';
-    return note.kind === 'offline' ? 'No connection — kept on screen' : 'Updated from your other device';
+    if (note.kind === 'full') return w.full;
+    return note.kind === 'offline' ? w.offline : w.synced;
   }
   switch (note.reason) {
     case 'support':
-      return 'Needs a block under it';
+      return w.support;
     case 'built':
-      return 'A building stands here';
+      return w.builtHere;
     case 'closed':
-      return 'This plot opens later';
+      return w.closedLater;
     case 'kind':
-      return tool === 'erase' ? 'Opens later' : `Opens at quarter level ${PIECES[tool].from}`;
+      return tool === 'erase' ? w.opensLater : w.opensAtQuarter(PIECES[tool].from);
     case 'limit':
-      return 'One per quarter';
+      return w.onePerQuarter;
     case 'cap':
-      return 'Your quarter is full';
+      return w.full;
     case 'sign':
-      return 'Letters and digits only';
+      return w.lettersOnly;
     default:
-      return 'No room here';
+      return w.noRoom;
   }
 }
 
@@ -68,6 +56,7 @@ function FreeEntryOpen() {
   const mode = useQuarter((st) => st.mode);
   const slot = useQuarter((st) => st.slot);
   const landing = useQuarter((st) => st.landing);
+  const w = useWords(QUARTER);
   if (mode !== 'build' || slot !== null || landing) return null;
   return (
     <button
@@ -78,7 +67,7 @@ function FreeEntryOpen() {
       }}
     >
       <FreeGlyph />
-      Free build
+      {w.freeBuild}
     </button>
   );
 }
@@ -101,6 +90,7 @@ export function FreeHud() {
   });
   const level = me?.quarter.level ?? 1;
   const cap = pieceCap(level);
+  const w = useWords(QUARTER);
 
   // A note fades on its own.
   const [shown, setShown] = useState<Note | null>(null);
@@ -126,7 +116,7 @@ export function FreeHud() {
   return (
     <div className={f.layer}>
       <div className={f.top}>
-        <span className={`${s.panel} ${f.count}`} aria-label={`${count} of ${cap} pieces`}>
+        <span className={`${s.panel} ${f.count}`} aria-label={w.pieces(count, cap)}>
           <b>{count}</b>
           <span>/ {cap}</span>
           <i className={f.meter} style={{ ['--fill' as string]: `${Math.min(1, count / cap)}` }} aria-hidden="true" />
@@ -135,14 +125,14 @@ export function FreeHud() {
 
       {shown && (
         <div className={`${f.note} ${shown.kind === 'synced' ? f.noteCalm : ''}`} role="status" key={shown.at}>
-          {noteLine(shown, tool)}
+          {noteLine(w, shown, tool)}
         </div>
       )}
 
-      <div className={`${s.panel} ${f.dock}`} role="toolbar" aria-label="Free build">
+      <div className={`${s.panel} ${f.dock}`} role="toolbar" aria-label={w.freeBuild}>
         {sign && <SignWords key={`${sign.gx}:${sign.gz}:${sign.y}`} text={sign.text ?? ''} />}
         <div className={f.strip}>
-          <button className={`${f.piece} ${tool === 'erase' ? f.pieceOn : ''}`} aria-pressed={tool === 'erase'} aria-label="Erase" onClick={() => pick('erase')}>
+          <button className={`${f.piece} ${tool === 'erase' ? f.pieceOn : ''}`} aria-pressed={tool === 'erase'} aria-label={w.erase} onClick={() => pick('erase')}>
             <span className={f.glyph}>
               <EraseGlyph />
             </span>
@@ -152,11 +142,11 @@ export function FreeHud() {
             const locked = level < PIECES[k].from;
             const on = tool === k;
             return (
-              <button key={k} className={`${f.piece} ${on ? f.pieceOn : ''} ${locked ? f.pieceLocked : ''}`} aria-pressed={on} aria-label={PIECE_NAMES[k]} onClick={() => pick(k)}>
+              <button key={k} className={`${f.piece} ${on ? f.pieceOn : ''} ${locked ? f.pieceLocked : ''}`} aria-pressed={on} aria-label={w.piece(k)} onClick={() => pick(k)}>
                 <span className={f.glyph}>
                   <Glyph />
                 </span>
-                <span className={f.name}>{PIECE_NAMES[k]}</span>
+                <span className={f.name}>{w.piece(k)}</span>
                 {locked && (
                   <span className={f.lock} aria-hidden="true">
                     <LockGlyph />
@@ -169,7 +159,7 @@ export function FreeHud() {
         <div className={f.row}>
           <button
             className={f.round}
-            aria-label="Turn"
+            aria-label={w.turn}
             disabled={tool === 'erase'}
             onClick={() => {
               tick();
@@ -180,7 +170,7 @@ export function FreeHud() {
           </button>
           <button
             className={f.round}
-            aria-label="Undo"
+            aria-label={w.undo}
             disabled={history === 0}
             onClick={() => {
               tick();
@@ -190,7 +180,7 @@ export function FreeHud() {
             <UndoGlyph />
           </button>
           <button className={`${s.display} ${s.action} ${f.done}`} disabled={status === 'loading'} onClick={() => freeStore.getState().close()}>
-            Done
+            {w.done}
           </button>
         </div>
       </div>
@@ -201,13 +191,14 @@ export function FreeHud() {
 /** A sign's own words, up to twelve plain letters; only its owner sees them until the city cleans foreign text. */
 function SignWords({ text }: { text: string }) {
   const [value, setValue] = useState(text);
+  const w = useWords(QUARTER);
   return (
     <label className={f.words}>
       <input
         value={value}
         maxLength={12}
-        placeholder="Your words"
-        aria-label="Sign"
+        placeholder={w.yourWords}
+        aria-label={w.sign}
         enterKeyHint="done"
         autoComplete="off"
         spellCheck={false}

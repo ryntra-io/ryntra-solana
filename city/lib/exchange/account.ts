@@ -1,6 +1,10 @@
 import { liquidationDistancePercent, readSubaccounts, type PhoenixMarginWire } from '../../../lib/phoenix/collateral-model.ts';
 import { symbolKey, unrealisedPnl, type FuturesAccount, type FuturesMarket, type FuturesOrder, type FuturesSide } from '../../../lib/phoenix/market-data.ts';
 import { guardianView, type GuardianView } from '../../../lib/phoenix/risk-guardian.ts';
+import { wordsNow } from '../i18n/dict.ts';
+import { EXCHANGE_EXIT } from './flag.ts';
+import { liveTable } from './live.ts';
+import { EX_ACCOUNT, EX_HEALTH } from './words.ts';
 
 /**
  * A wallet's Phoenix account as the Exchange shows it, every figure the engine's: the account read
@@ -35,7 +39,16 @@ export type AccountKind =
 
 export type AccountRead = Readonly<{ status: 'idle' | 'loading' | 'ready' | 'failed'; value: FuturesAccount | null; at: number | null }>;
 
-export function accountKind(connected: boolean, read: AccountRead): AccountKind {
+/**
+ * The account's kind. With the Exchange in `exit` (decision 86: futures have gone to RXN) an account that could open is
+ * read as closing only: from the city it cuts, closes, cancels and withdraws, and opens nothing.
+ */
+export function accountKind(connected: boolean, read: AccountRead, exit: boolean = EXCHANGE_EXIT): AccountKind {
+  const kind = phoenixKind(connected, read);
+  return exit && opensFrom(kind) ? 'reduceOnly' : kind;
+}
+
+function phoenixKind(connected: boolean, read: AccountRead): AccountKind {
   if (!connected) return 'connect';
   const account = read.value;
   if (!account) return read.status === 'failed' ? 'unavailable' : 'loading';
@@ -56,18 +69,13 @@ export function accountKind(connected: boolean, read: AccountRead): AccountKind 
   }
 }
 
-export const ACCOUNT_WORDS: Readonly<Record<AccountKind, Readonly<{ title: string; line: string }>>> = {
-  // One title, and at most one short line where the title alone would not be honest (the clean interface rule of 28.10).
-  connect: { title: 'Connect a wallet', line: '' },
-  loading: { title: 'Reading Phoenix', line: '' },
-  unavailable: { title: 'Phoenix isn’t answering', line: '' },
-  invite: { title: 'No Phoenix account', line: 'Phoenix opens accounts by invite.' },
-  frozen: { title: 'Waiting for access', line: '' },
-  reduceOnly: { title: 'Closing only', line: '' },
-  inactive: { title: 'Inactive on Phoenix', line: '' },
-  active: { title: 'Account', line: '' },
-  unknown: { title: 'Account', line: '' },
-};
+const KINDS: readonly AccountKind[] = ['connect', 'loading', 'unavailable', 'invite', 'frozen', 'reduceOnly', 'inactive', 'active', 'unknown'];
+
+/** One title, and at most one short line where the title alone would not be honest (the clean interface rule of 28.10). */
+export const ACCOUNT_WORDS: Readonly<Record<AccountKind, Readonly<{ title: string; line: string }>>> = liveTable(KINDS, (kind) => {
+  const w = wordsNow(EX_ACCOUNT);
+  return { title: w[kind], line: kind === 'invite' ? w.inviteLine : '' };
+});
 
 /** Whether the account may open or add to a position from here, by Phoenix's word on it. */
 export const opensFrom = (kind: AccountKind): boolean => kind === 'active' || kind === 'inactive' || kind === 'unknown';
@@ -75,6 +83,12 @@ export const opensFrom = (kind: AccountKind): boolean => kind === 'active' || ki
 export const reducesFrom = (kind: AccountKind): boolean => opensFrom(kind) || kind === 'reduceOnly';
 /** Whether there is an account whose book, positions, orders and history are worth a tab: not without a wallet or an account. */
 export const hasBook = (kind: AccountKind): boolean => kind !== 'connect' && kind !== 'invite' && kind !== 'frozen' && kind !== 'unavailable';
+
+/** Whether the wallet still holds anything on Phoenix: a position, a resting order, or collateral of either kind. */
+export function phoenixHolds(account: FuturesAccount | null): boolean {
+  if (!account) return false;
+  return account.positions.length > 0 || account.orders.length > 0 || (account.collateralUsd ?? 0) > 0 || (account.collateralSol ?? 0) > 0;
+}
 
 /** Every margin view the account read holds: the cross-margin subaccount's and each isolated one's. */
 export function marginsOf(account: FuturesAccount | null): PhoenixMarginWire[] {
@@ -106,13 +120,12 @@ export function healthOf(read: AccountRead, now: number): GuardianView | null {
   });
 }
 
-export const HEALTH_WORDS: Readonly<Record<GuardianView['state'], Readonly<{ word: string; line: string }>>> = {
-  healthy: { word: 'Healthy', line: 'Phoenix grades this account at its lowest risk.' },
-  raised: { word: 'Elevated risk', line: 'Phoenix moved this account up a risk grade. Closing a position or adding collateral moves it back.' },
-  critical: { word: 'Critical', line: 'Phoenix may start cancelling this account’s resting orders to free margin.' },
-  stale: { word: 'Data is out of date', line: 'Phoenix’s reads stopped: these are the last figures read. Closing still works.' },
-  liquidation: { word: 'Liquidation', line: 'Phoenix reports this account as being liquidated. What happened is in the history, each fill with its receipt.' },
-};
+const HEALTH_STATES: readonly GuardianView['state'][] = ['healthy', 'raised', 'critical', 'stale', 'liquidation'];
+
+export const HEALTH_WORDS: Readonly<Record<GuardianView['state'], Readonly<{ word: string; line: string }>>> = liveTable(HEALTH_STATES, (state) => {
+  const w = wordsNow(EX_HEALTH);
+  return { word: w[state], line: w[`${state}Line`] };
+});
 
 export type PositionRow = Readonly<{
   key: string;

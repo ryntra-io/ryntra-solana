@@ -1,10 +1,9 @@
 import type { MetadataRoute } from "next";
 import { CUSTOMER_REDIRECTS } from "../lib/product/customer-routing.ts";
 import { LANDING_IS_LIVE } from "../lib/site/home-to-app.ts";
-import { hasUkAddress } from "../lib/site/localized.ts";
 import { COMPANY_PAGES_UPDATED, DOCS_UPDATED, HOME_UPDATED, LANDING_UPDATED, MARKETS_UPDATED, MISSION_CONTROL_UPDATED } from "../lib/site/page-dates.ts";
 import { DOC_PAGES, docsHref } from "./docs/content/index.ts";
-import { APP_HOME_PATH, APP_MARKETS_PATH, languageAlternates, localizedUrl, SITE } from "./seo.ts";
+import { languageAlternates, localizedUrl, SITE } from "./seo.ts";
 
 export { COMPANY_PAGES_UPDATED, DOCS_UPDATED, HOME_UPDATED, LANDING_UPDATED, MARKETS_UPDATED, MISSION_CONTROL_UPDATED };
 
@@ -29,7 +28,9 @@ export { COMPANY_PAGES_UPDATED, DOCS_UPDATED, HOME_UPDATED, LANDING_UPDATED, MAR
  * English only until a lawyer's word. The creator partner Terms name their
  * language in the query (`?lang=en|uk`) and are listed at both.
  *
- * What is deliberately absent: the rest of the cabinet (`/app/*`, `noindex`);
+ * What is deliberately absent: the old interface — the cabinet (`/app/*`,
+ * Home, Markets and the companies' pages among it), its Solana workspace and
+ * Mission Control — which only leads into the city since CITY-13;
  * older pages kept for whoever holds their link, not offered to the index;
  * the open-source page `/developers` and the developer references for Guard
  * and Agent Control (reachable, `noindex`: not the product the site
@@ -75,12 +76,6 @@ export const PUBLIC_PAGES: readonly PublicPage[] = [
   { path: "/legal/privacy", priority: 0.3, updated: "2026-09-29", changeFrequency: "monthly" },
 ];
 
-/** The cabinet's pages offered to the index: Home, Markets, and every company the shelf opens (read live). */
-export const APP_PAGES: readonly PublicPage[] = [
-  { path: APP_HOME_PATH, priority: 0.9, updated: HOME_UPDATED, changeFrequency: "weekly" },
-  { path: APP_MARKETS_PATH, priority: 0.8, updated: MARKETS_UPDATED, changeFrequency: "weekly" },
-];
-
 /**
  * The creator partner programme's public Terms. Its
  * language is in the query, not a `/uk` prefix — `?lang=en` and `?lang=uk`,
@@ -120,33 +115,19 @@ function entriesOf(page: PublicPage): Entry[] {
 }
 
 /**
- * Every entry, for the company pages it is handed: the landing first, then
- * Home and Markets, the public pages and the documentation, then the
- * companies — each at both addresses.
+ * Every entry: the city at `/`, then the public pages and the documentation —
+ * each at both addresses — and the partner Terms.
  */
-export function sitemapEntries(companyTickers: readonly string[]): MetadataRoute.Sitemap {
-  const companies = [...new Set(companyTickers)]
-    .sort()
-    .map((ticker): PublicPage => ({ path: `/app/stocks/${ticker}`, priority: 0.6, updated: COMPANY_PAGES_UPDATED, changeFrequency: "weekly" }))
-    .filter((page) => hasUkAddress(page.path));
+export function sitemapEntries(): MetadataRoute.Sitemap {
   return [
-    /* Mission Control at `/`, in English alone — the Ukrainian home leads to it; while ryntra.io's home page leads into the app (`lib/site/home-to-app.ts`) it is not advertised. */
+    /* The city at `/`, in English alone (decision 70); while ryntra.io's home page leads into the app
+       (`lib/site/home-to-app.ts`) it is not advertised. */
     ...(LANDING_IS_LIVE ? [{ url: localizedUrl("/", "en"), lastModified: new Date(`${MISSION_CONTROL_UPDATED}T00:00:00.000Z`), changeFrequency: "weekly" as const, priority: 1 }] : []),
-    ...APP_PAGES.flatMap(entriesOf),
     ...PUBLIC_PAGES.filter((page) => !redirected.has(page.path)).flatMap(entriesOf),
     ...partnerTermsEntries(),
-    ...companies.flatMap(entriesOf),
   ];
 }
 
-/* Read on request from the catalogue the server keeps warm, so the companies
-   are the shelf's of the day — never a list baked into a build. */
-export const dynamic = "force-dynamic";
-
-export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  /* Loaded here, not at the top, so a test of the entries never reaches for the network. */
-  const [{ readStockUniverse }, { shelfTickers }] = await Promise.all([import("../lib/stocks/universe.server.ts"), import("../lib/site/company-page.ts")]);
-  const read = await readStockUniverse();
-  /* A silent catalogue drops the companies for this answer and nothing else: the site's own pages are always listed. */
-  return sitemapEntries(read.ok ? [...shelfTickers(read.universe)] : []);
+export default function sitemap(): MetadataRoute.Sitemap {
+  return sitemapEntries();
 }

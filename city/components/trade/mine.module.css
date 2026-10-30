@@ -4,7 +4,7 @@
 
 .wrap {
   position: fixed;
-  top: calc(max(12px, env(safe-area-inset-top)) + 52px);
+  top: calc(max(12px, env(safe-area-inset-top)) + 60px);
   right: var(--gutter);
   z-index: 11;
   display: flex;
@@ -319,6 +319,35 @@
   border-top: 1px solid rgba(255, 255, 255, 0.08);
 }
 
+/* The money rows: no sell button, so the value takes the last two columns. */
+.cashRow .figures {
+  grid-column: 2 / -1;
+}
+
+.about {
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  margin: 8px 0 0 auto;
+  border: 0;
+  border-radius: 50%;
+  font-size: 13px;
+  font-weight: 800;
+  font-style: italic;
+  color: var(--text-dim);
+  background: rgba(255, 255, 255, 0.07);
+}
+
+.aboutOn {
+  color: var(--ink);
+  background: var(--amber);
+}
+
+.aboutBody {
+  margin-top: 4px;
+}
+
 .cash {
   flex: 1;
   min-width: 0;
@@ -422,6 +451,7 @@
 
 @media (max-width: 560px) {
   .wrap {
+    top: calc(max(12px, env(safe-area-inset-top)) + 118px);
     left: var(--gutter);
   }
   .panel {
@@ -432,6 +462,6 @@
 
 /* Another window open (the Oracle, the trade card, Money…): «Mine» steps aside until it closes, so nothing of the HUD
    stands over a window. Its own open panel stays. */
-:global(body:has([data-window])) .wrap:not(:has([aria-expanded='true'])) {
+:global(body:has([data-window])) .wrap:not(:has(#city-mine)) {
   visibility: hidden;
 }

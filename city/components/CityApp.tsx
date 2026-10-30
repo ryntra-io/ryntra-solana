@@ -1,8 +1,9 @@
 'use client';
 
 import dynamic from 'next/dynamic';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { quietInstall } from '@/city/lib/app-mode';
+import { hydrateLang } from '@/city/lib/i18n/lang';
 import { lookMode, type Look } from '@/city/lib/look';
 import { MomentsLayer } from '@/city/lib/moments/MomentsLayer';
 import { playMoment, prepareAudio, setMuted, startAudio } from '@/city/lib/audio/engine';
@@ -22,6 +23,7 @@ import { ScoutsLayer } from './scouts/ScoutsLayer';
 import { PredictLayer } from './districts/PredictLayer';
 import { ExchangeLayer } from './exchange/ExchangeLayer';
 import { Hud } from './hud/Hud';
+import { useBackLayers } from './hud/useBackLayers';
 import { windowOpenNow } from './hud/useWindowOpen';
 import { TradeLayer } from './trade/TradeLayer';
 import { WindowLayer } from './window/WindowLayer';
@@ -29,6 +31,7 @@ import { QuarterLayer } from './quarter/QuarterLayer';
 import { VaultLayer } from './vault/VaultLayer';
 import { BeaconLayer } from './beacon/BeaconLayer';
 import { HallLayer } from './launch/HallLayer';
+import { OpenFromAddress } from './open/OpenFromAddress';
 
 const CityCanvas = dynamic(() => import('./city/CityCanvas').then((m) => m.CityCanvas), { ssr: false });
 // The concept screens of the steps still to build: development builds only, never in the production bundle.
@@ -71,6 +74,9 @@ export function CityApp({ initial }: { initial: CitySnapshot }) {
     return () => clearInterval(timer);
   }, []);
 
+  // The person's language before the first paint after hydration: the words repaint in it in the same frame (CITY-79).
+  useLayoutEffect(() => void hydrateLang(), []);
+
   useEffect(() => {
     setSnapshot(initial);
   }, [initial, setSnapshot]);
@@ -87,6 +93,8 @@ export function CityApp({ initial }: { initial: CitySnapshot }) {
 
   // Inside the Ryntra app the page never asks to be installed (docs/city/APP-BRIDGE.md).
   useEffect(() => quietInstall(), []);
+  // «Back» closes the top window, sheet or panel; on the city's own view it leaves (CITY-6e).
+  useBackLayers();
 
   useEffect(() => {
     useCity.getState().enter();
@@ -202,6 +210,7 @@ export function CityApp({ initial }: { initial: CitySnapshot }) {
       <ScoutsLayer />
       <ExchangeLayer />
       <AssistantLayer />
+      <OpenFromAddress />
     </>
   );
 }

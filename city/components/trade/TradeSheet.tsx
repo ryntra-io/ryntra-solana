@@ -1,15 +1,18 @@
 'use client';
 
-import { useEffect, useLayoutEffect, useMemo, useRef, useState, type PointerEvent as ReactPointerEvent, type ReactNode } from 'react';
+import dynamic from 'next/dynamic';
+import { useEffect, useMemo, useState, type ReactNode } from 'react';
+import { iconAttempt, ICON_RETRY_MS, iconSource, monogram } from '@/city/lib/chart/icon';
 import { useCity } from '@/city/lib/city/store';
+import { dateText, digits, useWords } from '@/city/lib/i18n/dict';
 import type { Tower } from '@/city/lib/market/types';
 import { colourOf } from '@/city/lib/trade/colour';
 import { decimalsOf, figuresOf, type Figures } from '@/city/lib/trade/figures';
-import { defaultFrame, fitFrame, moveFrame, readFrame, resizeFrame, standingOf, windowed, writeFrame, type Corner, type Frame } from '@/city/lib/trade/frame';
 import { formatUnits, ticker } from '@/city/lib/trade/format';
-import { SPOT_OPEN } from '@/city/lib/trade/gates';
-import { SPOT_BUSY, SPOT_IDLE, useSpot } from '@/city/lib/trade/spot-store';
-import { balanceOf, BUSY, choiceOf, payKey, reviewNotes, useTrade, type Choice, type Mode, type Review, type TowerRef } from '@/city/lib/trade/store';
+import { SPOT_OPEN, TRADE_OPEN } from '@/city/lib/trade/gates';
+import { SPOT_IDLE, useSpot } from '@/city/lib/trade/spot-store';
+import { balanceOf, choiceOf, payKey, reviewNotes, useTrade, type Choice, type Mode, type Review, type TowerRef } from '@/city/lib/trade/store';
+import { sellLine, sellWords, towerRank, type SellLine } from '@/city/lib/trade/tower-window';
 import { isBase, unitOf, type PayAsset, type Side } from '@/city/lib/trade/tiles';
 import { quarterStore } from '@/city/lib/quarter/store';
 import { useWallet } from '@/city/lib/trade/wallet';
@@ -18,134 +21,72 @@ import { explorerTxUrl } from '@/lib/solana/explorer';
 import { openExternal, shareThroughApp } from '@/city/lib/app-bridge/page';
 import { coinLink } from '@/city/lib/share/coin-link';
 import { useRyntraApp } from '@/city/lib/app-mode';
-import { CloseGlyph } from '../hud/glyphs';
+import { BeaconAction } from '../beacon/BeaconAction';
+import { FuturesAction } from '../exchange/FuturesAction';
+import { LaunchTowerBody } from '../launch/LaunchTowerBody';
 import { AmountPart } from './Amount';
+import { CoinFacts, CoinPrice, ShareTower } from './CoinFacts';
 import { CoinPicker, type PickerKind } from './CoinPicker';
 import { SpotTicket } from './SpotTicket';
-import { WalletLine, WalletPicker } from './WalletParts';
+import { useWalletName, WalletLine, WalletPicker } from './WalletParts';
+import { riskWords, TRADE, type TextKeyOfTrade } from './words';
 import s from './trade.module.css';
 
+/** The chart inside the spot window, loaded with it: the plain swap never carries the chart's code. */
+const TradeChart = dynamic(() => import('../chart/ChartWindow').then((m) => m.TradeChart), {
+  ssr: false,
+  loading: () => <div className={s.chartWait} aria-hidden="true" />,
+});
+
 /**
- * The trade card: a plain financial card over the city. The amount is a share of the balance or typed; before the one
- * amber tap it shows what you get, Ryntra's fee, the route, the least you get and the price impact — every figure from
- * the engine. The person signs in their own wallet. No game motion inside the card: the city celebrates outside it.
- * On a computer the card is a window: dragged by its head, stretched by any corner; on a phone, the bottom sheet.
+ * The tower's one window (CITY-78): a tap on a tower opens it straight away, with no card of its own beside it. On top
+ * the coin — its price, the day's move, the chart, its key figures, whether it is verified and what its issuer can do,
+ * the rest behind «Details»; under them Buy and Sell, always both. The amount is a share of the balance or typed;
+ * before the one amber tap it shows what you get, Ryntra's fee, the route, the least you get and the price impact —
+ * every figure from the engine. The person signs in their own wallet. No game motion inside the card: the city
+ * celebrates outside it. It stands in the city's one window frame (CITY-65, `TradeLayer`): moved, stretched by any edge,
+ * the whole screen on a computer, the bottom sheet on a phone. Spot in a wide window puts the chart left of the ticket.
  */
 export function TradeSheet() {
+  const w = useWords(TRADE);
   const tower = useTrade((st) => st.tower);
   const phase = useTrade((st) => st.phase);
-  const spotPhase = useSpot((st) => st.phase);
-  const close = useTrade((st) => st.close);
+  const swap = useTrade((st) => st.view === 'swap' && !st.launch);
   const live = useCity((st) => (tower ? (st.snapshot.towers.find((t) => t.id === tower.mint) ?? null) : null));
-  const { frame, onHeadDown, onCornerDown } = useFrame();
-  const dialog = useRef<HTMLDivElement>(null);
-  const windowedNow = Boolean(frame);
-  const mint = tower?.mint ?? null;
-  // On a computer the window takes the keyboard when it opens; Escape still closes it (TradeLayer).
-  useEffect(() => {
-    if (!windowedNow || !mint) return;
-    const node = dialog.current;
-    if (node && !node.contains(document.activeElement)) node.focus({ preventScroll: true });
-  }, [windowedNow, mint]);
+  const towers = useCity((st) => st.layout.towers);
+  const rank = live ? towerRank(towers, live.id) : 0;
   if (!tower) return null;
-  const busy = BUSY.has(phase) || SPOT_BUSY.has(spotPhase);
-  const card = (
-    <div ref={dialog} tabIndex={-1} className={`${s.sheet} ${frame ? s.floating : ''}`} role="dialog" aria-label={`Trade ${ticker(tower.symbol)}`}>
-      <div className={`${s.head} ${frame ? s.grab : ''}`} onPointerDown={frame ? onHeadDown : undefined}>
-        <TokenIcon tower={tower} />
-        <div className={s.title}>
-          <div className={`${s.display} ${s.symbol}`}>{ticker(tower.symbol)}</div>
-          {live && <PriceLine tower={live} />}
-        </div>
-        <button className={s.close} aria-label="Close" onClick={close} disabled={busy}>
-          <CloseGlyph />
-        </button>
-      </div>
-      {phase === 'done' ? <DonePanel /> : phase === 'failed' ? <FailedPanel /> : phase === 'unknown' ? <UnknownPanel /> : <TradeBody tower={tower} />}
-    </div>
-  );
-  if (!frame) return card;
-  // Anchored by its bottom edge: a taller card grows upward into the free room, then scrolls with its action pinned.
-  const stand = standingOf(frame, viewport());
   return (
-    <div className={s.window} style={{ left: stand.left, bottom: stand.bottom, width: stand.width, minHeight: stand.minHeight, maxHeight: stand.maxHeight }}>
-      {card}
-      <span className={`${s.corner} ${s.cornerNw}`} aria-hidden="true" onPointerDown={(event) => onCornerDown(event, 'nw')} />
-      <span className={`${s.corner} ${s.cornerNe}`} aria-hidden="true" onPointerDown={(event) => onCornerDown(event, 'ne')} />
-      <span className={`${s.corner} ${s.cornerSw}`} aria-hidden="true" onPointerDown={(event) => onCornerDown(event, 'sw')} />
-      <span className={`${s.corner} ${s.cornerSe}`} aria-hidden="true" onPointerDown={(event) => onCornerDown(event, 'se')} />
+    <div className={`${s.sheet} ${s.framed}`} role="group" aria-label={w.tradeOf(ticker(tower.symbol))} data-trade-view={swap ? 'swap' : 'spot'}>
+      {/* The frame's head says «Swap» or «Spot» and closes it; Spot names its coin here, with Share and the beacon. */}
+      {!swap && (
+        <div className={s.head}>
+          <TokenIcon tower={tower} />
+          <div className={s.title}>
+            <div className={`${s.display} ${s.symbol}`}>{ticker(tower.symbol)}</div>
+          </div>
+          {live && <ShareTower tower={live} rank={rank} total={towers.length} />}
+          {live && <BeaconAction tower={live} />}
+        </div>
+      )}
+      {phase === 'done' ? <DonePanel /> : phase === 'failed' ? <FailedPanel /> : phase === 'unknown' ? <UnknownPanel /> : <TradeBody tower={tower} coin={live} rank={rank} />}
     </div>
   );
 }
 
-const viewport = () => ({ width: window.innerWidth, height: window.innerHeight });
-const local = () => window.localStorage;
-
-/**
- * The card's window on a computer: where it stands and how big it is, remembered in this browser. Null on a phone,
- * where the card is the bottom sheet.
- */
-function useFrame() {
-  const [frame, setFrame] = useState<Frame | null>(null);
-  const drag = useRef<{ kind: 'move' | Corner; x: number; y: number; start: Frame } | null>(null);
-
-  useLayoutEffect(() => {
-    const place = () => {
-      const view = viewport();
-      if (!windowed(view)) return setFrame(null);
-      setFrame((now) => fitFrame(now ?? readFrame(local) ?? defaultFrame(view), view));
-    };
-    place();
-    window.addEventListener('resize', place);
-    return () => window.removeEventListener('resize', place);
-  }, []);
-
-  const begin = (event: ReactPointerEvent<HTMLElement>, kind: 'move' | Corner) => {
-    if (!frame || event.button !== 0) return;
-    event.preventDefault();
-    drag.current = { kind, x: event.clientX, y: event.clientY, start: frame };
-    const target = event.currentTarget;
-    target.setPointerCapture(event.pointerId);
-    const onMove = (move: PointerEvent) => {
-      const now = drag.current;
-      if (!now) return;
-      const dx = move.clientX - now.x;
-      const dy = move.clientY - now.y;
-      setFrame(now.kind === 'move' ? moveFrame(now.start, dx, dy, viewport()) : resizeFrame(now.start, now.kind, dx, dy, viewport()));
-    };
-    const onUp = () => {
-      drag.current = null;
-      target.removeEventListener('pointermove', onMove);
-      target.removeEventListener('pointerup', onUp);
-      target.removeEventListener('pointercancel', onUp);
-      setFrame((now) => {
-        if (now) writeFrame(local, now);
-        return now;
-      });
-    };
-    target.addEventListener('pointermove', onMove);
-    target.addEventListener('pointerup', onUp);
-    target.addEventListener('pointercancel', onUp);
-  };
-
-  return {
-    frame,
-    // The close button in the head stays a button, never a handle.
-    onHeadDown: (event: ReactPointerEvent<HTMLElement>) => {
-      if (!(event.target as HTMLElement).closest('button')) begin(event, 'move');
-    },
-    onCornerDown: (event: ReactPointerEvent<HTMLElement>, corner: Corner) => begin(event, corner),
-  };
-}
+/** A launch trade's signature out holds the window as a limit's does: it is not closed under it. */
+const holdWindow = (busy: boolean) => useTrade.setState({ held: busy });
 
 /** Which coin the card's picker is choosing: the one paid with or paid in, or the coin traded itself. */
 type Picking = Readonly<{ kind: PickerKind; target: 'counter' | 'subject' }>;
 
-function TradeBody({ tower }: { tower: TowerRef }) {
+function TradeBody({ tower, coin, rank }: { tower: TowerRef; coin: Tower | null; rank: number }) {
+  const w = useWords(TRADE);
   const side = useTrade((st) => st.side);
   const pay = useTrade((st) => st.pay);
   const other = useTrade((st) => st.other);
   const storeMode = useTrade((st) => st.mode);
+  const view = useTrade((st) => st.view);
   const typed = useTrade((st) => st.typed);
   const phase = useTrade((st) => st.phase);
   const auto = useTrade((st) => st.auto);
@@ -157,13 +98,19 @@ function TradeBody({ tower }: { tower: TowerRef }) {
   const pickCoin = useTrade((st) => st.pickCoin);
   const spotPhase = useSpot((st) => st.phase);
   const holdings = useWallet((st) => st.holdings);
+  const connected = useWallet((st) => Boolean(st.connection));
+  const launch = useTrade((st) => st.launch);
   const [picking, setPicking] = useState<Picking | null>(null);
+
+  // A Ryntra launch's tower: its Buy and Sell on its own curve or pool, through the Launch engine (CITY-138).
+  if (launch) return <LaunchTowerBody token={tower.mint} onBusy={holdWindow} />;
 
   const choice = choiceOf(tower, side, holdings, { pay, typed, other });
   // Limit and Stop exist only behind their switch: shut, the card is the market ticket whatever the store says.
   const mode = SPOT_OPEN ? storeMode : 'market';
   const owned = balanceOf(holdings, tower.mint);
-  const sellable = Boolean(owned && owned.spendableRaw !== '0');
+  // Nothing to sell: the Sell tab says so in one line, never an empty ticket.
+  const nothing = sellLine(side, connected, Boolean(holdings), owned);
   // A limit or a stop under way holds the card the way a market trade does.
   const idle = phase === 'idle' && (mode === 'market' || SPOT_IDLE.has(spotPhase));
   // An order the card builds by itself never shuts the field: typing on drops that order.
@@ -174,7 +121,7 @@ function TradeBody({ tower }: { tower: TowerRef }) {
 
   if (picking) {
     const counter = picking.target === 'counter';
-    const title = counter ? (side === 'buy' ? 'Pay with' : 'Get') : side === 'buy' ? 'Get' : 'Sell';
+    const title = counter ? (side === 'buy' ? w.payWith : w.get) : side === 'buy' ? w.get : w.sell;
     return (
       <CoinPicker
         kind={picking.kind}
@@ -200,52 +147,150 @@ function TradeBody({ tower }: { tower: TowerRef }) {
     const balance = balanceOf(holdings, mint);
     return balance === null || balance.spendableRaw !== '0';
   };
-  const payChips = <PaySwitch choice={choice} onPick={setPay} onMore={pickCounter} disabled={!idle} label={side === 'buy' ? 'Pay with' : 'Sell for'} held={side === 'buy' ? holds : undefined} />;
+  const payChips = <PaySwitch choice={choice} onPick={setPay} onMore={pickCounter} disabled={!idle} label={side === 'buy' ? w.payWith : w.sellFor} held={side === 'buy' ? holds : undefined} />;
+
+  // The plain swap: what you pay, one flip, what you get — at the market price, nothing else in the window.
+  if (view === 'swap' && TRADE_OPEN) {
+    const counterChip = (
+      <span className={s.pays}>
+        <button className={`${s.payChip} ${s.payOn}`} onClick={pickCounter} disabled={!idle} aria-label={side === 'buy' ? w.payAnother : w.getAnother}>
+          {unitOf(choice.pay)} <ChevronGlyph />
+        </button>
+      </span>
+    );
+    return (
+      <>
+        <div className={`${s.row} ${s.rowWrap}`}>
+          <span className={s.labelGroup}>
+            <span className={s.label}>{w.youPay}</span>
+            {side === 'buy' ? counterChip : subjectChip}
+          </span>
+          {balance && choice.spendDecimals !== null && (
+            <span className={s.balance}>
+              {w.youHave(digits(formatUnits(balance.spendableRaw, choice.spendDecimals, 'down')), choice.spendUnit)}
+            </span>
+          )}
+        </div>
+        {nothing ? <NothingToSell line={nothing} coin={ticker(tower.symbol)} /> : <AmountPart choice={choice} typed={typed} typable={typable} onType={setTyped} onShare={setShare} />}
+        <button type="button" className={s.flip} onClick={() => setSide(side === 'buy' ? 'sell' : 'buy')} disabled={!idle} aria-label={w.flip}>
+          <FlipGlyph />
+        </button>
+        {!nothing && <MarketPart tower={tower} choice={choice} getChips={side === 'buy' ? subjectChip : counterChip} />}
+      </>
+    );
+  }
+
+  // Spot: the price and the chart in the window (no chart opened apart), the facts and Futures under the ticket.
+  const coinTop = coin && (
+    <>
+      <CoinPrice tower={coin} chart={false} />
+      <TradeChart tower={coin} />
+    </>
+  );
+  const coinFoot = coin && (
+    <>
+      <CoinFacts tower={coin} rank={rank} />
+      <FuturesAction tower={coin} />
+    </>
+  );
+
+  // Trading from a tower shut by its switch: the coin, and the quiet «soon» in place of the ticket.
+  if (!TRADE_OPEN) {
+    return (
+      <>
+        {coinTop}
+        <button className={`${s.display} ${s.action}`} disabled>
+          {w.tradeSoon}
+        </button>
+        {coinFoot}
+      </>
+    );
+  }
 
   return (
-    <>
+    <div className={s.spotGrid}>
+      <div className={s.spotChart}>{coinTop}</div>
+      <div className={s.spotTicket}>
       {SPOT_OPEN && (
-        <div className={s.modes} role="tablist" aria-label="Order type">
+        <div className={s.modes} role="tablist" aria-label={w.orderType}>
           {MODES.map((id) => (
             <button key={id} role="tab" aria-selected={mode === id} className={`${s.mode} ${mode === id ? s.modeOn : ''}`} onClick={() => setMode(id)} disabled={!idle}>
-              {MODE_WORDS[id]}
+              {w[MODE_WORDS[id]]}
             </button>
           ))}
         </div>
       )}
-      {(sellable || side === 'sell') && (
-        <div className={s.sides} role="tablist" aria-label="Buy or sell">
-          {(['buy', 'sell'] as const).map((id) => (
-            <button key={id} role="tab" aria-selected={side === id} className={`${s.side} ${side === id ? s.sideOn : ''}`} onClick={() => setSide(id)} disabled={!idle}>
-              {id === 'buy' ? 'Buy' : 'Sell'}
-            </button>
-          ))}
-        </div>
-      )}
-      <div className={`${s.row} ${s.rowWrap}`}>
-        <span className={s.labelGroup}>
-          <span className={s.label}>{side === 'buy' ? 'You pay' : 'You sell'}</span>
-          {side === 'buy' ? payChips : subjectChip}
-        </span>
-        {balance && choice.spendDecimals !== null && (
-          <span className={s.balance}>
-            You have {formatUnits(balance.spendableRaw, choice.spendDecimals, 'down')} {choice.spendUnit}
-          </span>
-        )}
+      <div className={s.sides} role="tablist" aria-label={w.buyOrSell}>
+        {(['buy', 'sell'] as const).map((id) => (
+          <button key={id} role="tab" aria-selected={side === id} className={`${s.side} ${side === id ? s.sideOn : ''}`} onClick={() => setSide(id)} disabled={!idle}>
+            {id === 'buy' ? w.buy : w.sell}
+          </button>
+        ))}
       </div>
-      <AmountPart choice={choice} typed={typed} typable={typable} onType={setTyped} onShare={setShare} />
-      {mode === 'market' ? (
-        <MarketPart tower={tower} choice={choice} getChips={side === 'buy' ? subjectChip : payChips} />
+      {nothing ? (
+        <NothingToSell line={nothing} coin={ticker(tower.symbol)} />
       ) : (
-        <SpotTicket tower={tower} choice={choice} mode={mode} getChips={side === 'buy' ? subjectChip : payChips} />
+        <>
+          <div className={`${s.row} ${s.rowWrap}`}>
+            <span className={s.labelGroup}>
+              <span className={s.label}>{side === 'buy' ? w.youPay : w.youSell}</span>
+              {side === 'buy' ? payChips : subjectChip}
+            </span>
+            {balance && choice.spendDecimals !== null && (
+              <span className={s.balance}>
+                {w.youHave(digits(formatUnits(balance.spendableRaw, choice.spendDecimals, 'down')), choice.spendUnit)}
+              </span>
+            )}
+          </div>
+          <AmountPart choice={choice} typed={typed} typable={typable} onType={setTyped} onShare={setShare} />
+          {mode === 'market' ? (
+            <MarketPart tower={tower} choice={choice} getChips={side === 'buy' ? subjectChip : payChips} />
+          ) : (
+            <SpotTicket tower={tower} choice={choice} mode={mode} getChips={side === 'buy' ? subjectChip : payChips} />
+          )}
+        </>
       )}
+      {coinFoot}
+      </div>
+    </div>
+  );
+}
+
+/**
+ * The Sell tab when there is nothing to sell, in one line: no wallet yet (and the way to connect one), the wallet's
+ * balances on their way, or none of the coin in it.
+ */
+function NothingToSell({ line, coin }: { line: SellLine; coin: string }) {
+  const w = useWords(TRADE);
+  const connecting = useWallet((st) => st.connecting);
+  const [picking, setPicking] = useState(false);
+  const connect = () => {
+    // One wallet in this browser: ask it straight away; several: let the person pick.
+    const { wallets, connect: open } = useWallet.getState();
+    if (wallets.length === 1) void open(wallets[0]!.name);
+    else setPicking(true);
+  };
+  return (
+    <>
+      <div className={s.nothing} role="status">
+        {sellWords(line, coin)}
+      </div>
+      {line === 'connect' &&
+        (picking ? (
+          <WalletPicker onBack={() => setPicking(false)} />
+        ) : (
+          <button className={`${s.display} ${s.action} ${connecting ? s.waiting : ''}`} onClick={connect} disabled={Boolean(connecting)}>
+            {connecting ? w.connecting : w.connectWallet}
+          </button>
+        ))}
+      <WalletLine />
     </>
   );
 }
 
 const MODES = ['market', 'limit', 'stop'] as const;
 const SPOT_RESULT: ReadonlySet<string> = new Set(['placed', 'set', 'failed', 'unclear']);
-const MODE_WORDS: Record<Mode, string> = { market: 'Market', limit: 'Limit', stop: 'Stop' };
+const MODE_WORDS: Record<Mode, TextKeyOfTrade> = { market: 'market', limit: 'limit', stop: 'stop' };
 
 /**
  * Another coin to trade on the same card: a tower is flown to, its card under this one, and any other coin has no
@@ -259,6 +304,7 @@ function retarget(asset: PayAsset, side: Side, mode: Mode) {
 
 /** The market ticket: what you get at the engine's price, its terms, and the one amber tap. */
 function MarketPart({ tower, choice, getChips }: { tower: TowerRef; choice: Choice; getChips: ReactNode }) {
+  const w = useWords(TRADE);
   const side = useTrade((st) => st.side);
   const quote = useTrade((st) => st.quote);
   const review = useTrade((st) => st.review);
@@ -296,7 +342,7 @@ function MarketPart({ tower, choice, getChips }: { tower: TowerRef; choice: Choi
     <>
       <div className={s.row}>
         <span className={s.labelGroup}>
-          <span className={s.label}>{figures && !shown ? 'You get about' : 'You get'}</span>
+          <span className={s.label}>{figures && !shown ? w.youGetAbout : w.youGet}</span>
           {getChips}
         </span>
       </div>
@@ -305,22 +351,30 @@ function MarketPart({ tower, choice, getChips }: { tower: TowerRef; choice: Choi
           <span className={`${s.display} ${s.getFigure} ${s.getWaiting}`}>—</span>
         ) : figures ? (
           <>
-            <span className={`${s.display} ${s.getFigure}`}>{figures.get}</span>
+            <span className={`${s.display} ${s.getFigure}`}>{digits(figures.get)}</span>
             <span className={`${s.display} ${s.getSymbol}`}>{getSymbol}</span>
           </>
         ) : (quote.status === 'error' && quote.key === choice.key) || !choice.amountRaw ? (
           <span className={`${s.display} ${s.getFigure} ${s.getWaiting}`}>—</span>
         ) : (
-          <span className={s.shimmer} aria-label="Getting the price" />
+          <span className={s.shimmer} aria-label={w.gettingPrice} />
         )}
       </div>
-      {figures && <Terms figures={figures} exact={Boolean(shown)} getSymbol={getSymbol} open={details} onInfo={() => setDetails((v) => !v)} />}
       {figures && details && <Details figures={figures} review={shown} quoteAt={quote.status === 'ready' ? quote.at : null} getSymbol={getSymbol} />}
-      <Notes review={shown} problem={choice.problem?.text ?? null} quoteError={quote.status === 'error' && quote.key === choice.key ? quote.refusal.message : null} notice={notice} />
+      {/* The fee, the least you get, the impact and any warning stand in the pinned dock with the one action: whatever
+          the card holds above them scrolls under the dock, never these lines. */}
       {picking && !connection ? (
-        <WalletPicker onBack={() => setPicking(false)} />
+        <>
+          {figures && <Terms figures={figures} exact={Boolean(shown)} getSymbol={getSymbol} open={details} onInfo={() => setDetails((v) => !v)} />}
+          <Notes review={shown} problem={choice.problem?.text ?? null} quoteError={quote.status === 'error' && quote.key === choice.key ? quote.refusal.message : null} notice={notice} />
+          <WalletPicker onBack={() => setPicking(false)} />
+        </>
       ) : (
-        <Action choice={choice} side={side} tower={tower} exact={Boolean(shown)} priced={Boolean(priced)} quoteFailed={quote.status === 'error' && quote.key === choice.key && quote.refusal.retryable} onPress={tap} onRetry={() => void refreshQuote()} />
+        <div className={s.dock}>
+          {figures && <Terms figures={figures} exact={Boolean(shown)} getSymbol={getSymbol} open={details} onInfo={() => setDetails((v) => !v)} />}
+          <Notes review={shown} problem={choice.problem?.text ?? null} quoteError={quote.status === 'error' && quote.key === choice.key ? quote.refusal.message : null} notice={notice} />
+          <Action choice={choice} side={side} tower={tower} exact={Boolean(shown)} priced={Boolean(priced)} quoteFailed={quote.status === 'error' && quote.key === choice.key && quote.refusal.retryable} onPress={tap} onRetry={() => void refreshQuote()} />
+        </div>
       )}
       <WalletLine />
     </>
@@ -333,6 +387,7 @@ function MarketPart({ tower, choice, getChips }: { tower: TowerRef; choice: Choi
  */
 function PaySwitch({ choice, onPick, onMore, disabled, label, held }: { choice: Choice; onPick: (key: string) => void; onMore: () => void; disabled: boolean; label: string; held?: (mint: string) => boolean }) {
   // Paying, only a coin the wallet holds is offered; a coin found to be paid in waits for the sale side.
+  const w = useWords(TRADE);
   const others = choice.options.filter((asset) => !isBase(asset) && (!held || asset.mint === choice.pay.mint || held(asset.mint)));
   return (
     <span className={s.pays} role="radiogroup" aria-label={label}>
@@ -353,8 +408,8 @@ function PaySwitch({ choice, onPick, onMore, disabled, label, held }: { choice: 
           {unitOf(asset)}
         </button>
       ))}
-      <button className={`${s.payChip} ${s.moreChip}`} onClick={onMore} disabled={disabled} aria-label={label === 'Pay with' ? 'Pay with another coin' : 'Get another coin'}>
-        {others.length ? <ChevronGlyph /> : <>More <ChevronGlyph /></>}
+      <button className={`${s.payChip} ${s.moreChip}`} onClick={onMore} disabled={disabled} aria-label={label === w.payWith ? w.payAnother : w.getAnother}>
+        <ChevronGlyph />
       </button>
     </span>
   );
@@ -362,9 +417,10 @@ function PaySwitch({ choice, onPick, onMore, disabled, label, held }: { choice: 
 
 /** The coin the card trades, with the way to trade another: any coin to get when buying, a coin of the wallet when selling. */
 function SubjectChip({ tower, side, onPick, disabled }: { tower: TowerRef; side: Side; onPick: () => void; disabled: boolean }) {
+  const w = useWords(TRADE);
   return (
     <span className={s.pays}>
-      <button className={`${s.payChip} ${s.payOn}`} onClick={onPick} disabled={disabled} aria-label={side === 'buy' ? `Getting ${ticker(tower.symbol)}. Get another coin` : `Selling ${ticker(tower.symbol)}. Sell another coin`}>
+      <button className={`${s.payChip} ${s.payOn}`} onClick={onPick} disabled={disabled} aria-label={side === 'buy' ? w.gettingOf(ticker(tower.symbol)) : w.sellingOf(ticker(tower.symbol))}>
         {ticker(tower.symbol)} <ChevronGlyph />
       </button>
     </span>
@@ -381,83 +437,82 @@ function ChevronGlyph() {
 
 /** The terms before the signature, in one line: fee, route, the least you get, price impact. */
 function Terms({ figures, exact, getSymbol, open, onInfo }: { figures: Figures; exact: boolean; getSymbol: string; open: boolean; onInfo: () => void }) {
+  const w = useWords(TRADE);
   const impactClass = figures.impactLevel === 'high' ? s.high : figures.impactLevel === 'notable' ? s.notable : '';
   return (
     <div className={s.terms}>
       <span className={s.termsText}>
         {figures.fee ? (
           <>
-            Fee <b>{figures.fee}</b>
+            {w.fee} <b>{figures.fee}</b>
           </>
         ) : (
-          'No Ryntra fee'
+          w.noRyntraFee
         )}
         {' · '}
         {figures.route}
         {exact && (
           <>
-            {' · at least '}
+            {' · '}
+            {w.atLeast}{' '}
             <b>
-              {figures.minimum} {getSymbol}
+              {digits(figures.minimum)} {getSymbol}
             </b>
           </>
         )}
-        {' · impact '}
-        <b className={impactClass}>{figures.impact}</b>
+        {' · '}
+        {w.impact}{' '}
+        <b className={impactClass}>{digits(figures.impact)}</b>
       </span>
-      <button className={`${s.info} ${open ? s.infoOn : ''}`} aria-label="Trade details" aria-expanded={open} onClick={onInfo}>
+      <button className={`${s.info} ${open ? s.infoOn : ''}`} aria-label={w.tradeDetails} aria-expanded={open} onClick={onInfo}>
         i
       </button>
     </div>
   );
 }
 
-const RISK_WORDS: Record<string, string> = {
-  NO_KNOWN_BLOCKER: 'No known blocker (not a safety rating)',
-  REVIEW_REQUIRED: 'Needs care',
-  BLOCKED: 'Blocked',
-  INCOMPLETE: 'Not fully read',
-};
-
 function Details({ figures, review, quoteAt, getSymbol }: { figures: Figures; review: Review | null; quoteAt: number | null; getSymbol: string }) {
+  const w = useWords(TRADE);
   const risk = review?.order.risk.verdict;
   const route = review ? review.order.order.route.map((hop) => hop.label).join(' → ') : figures.route;
   return (
     <dl className={s.details}>
-      <dt>Ryntra fee</dt>
-      <dd>{figures.fee ?? 'None'}</dd>
-      <dt>Route</dt>
+      <dt>{w.ryntraFee}</dt>
+      <dd>{figures.fee ?? w.none}</dd>
+      <dt>{w.route}</dt>
       <dd>{route || figures.route}</dd>
-      <dt>You get at least</dt>
-      <dd>{review ? `${figures.minimum} ${getSymbol}` : 'Set when your order is built'}</dd>
-      <dt>Price impact</dt>
-      <dd>{figures.impact}</dd>
+      <dt>{w.youGetAtLeast}</dt>
+      <dd>{review ? `${digits(figures.minimum)} ${getSymbol}` : w.setWhenBuilt}</dd>
+      <dt>{w.priceImpact}</dt>
+      <dd>{digits(figures.impact)}</dd>
       {review && (
         <>
-          <dt>Slippage</dt>
-          <dd>{figures.slippage}</dd>
+          <dt>{w.slippage}</dt>
+          <dd>{digits(figures.slippage)}</dd>
           {figures.networkSol && (
             <>
-              <dt>Network fee</dt>
-              <dd>{figures.networkSol} SOL</dd>
+              <dt>{w.networkFee}</dt>
+              <dd>{digits(figures.networkSol)} SOL</dd>
             </>
           )}
           {figures.depositSol && (
             <>
-              <dt>New token account</dt>
-              <dd>{figures.depositSol} SOL, once</dd>
+              <dt>{w.newTokenAccount}</dt>
+              <dd>
+                {digits(figures.depositSol)} SOL{w.once}
+              </dd>
             </>
           )}
           {risk && (
             <>
-              <dt>Risk check</dt>
-              <dd>{RISK_WORDS[risk] ?? risk}</dd>
+              <dt>{w.riskCheck}</dt>
+              <dd>{riskWords(risk, w)}</dd>
             </>
           )}
         </>
       )}
-      <dt>Price</dt>
-      <dd>Jupiter{quoteAt ? `, ${new Date(quoteAt).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}` : ''}</dd>
+      <dt>{w.price}</dt>
+      <dd>Jupiter{quoteAt ? `, ${dateText(quoteAt, { hour: '2-digit', minute: '2-digit', second: '2-digit' })}` : ''}</dd>
     </dl>
   );
 }
@@ -495,41 +550,40 @@ function Action({
   onPress: () => void;
   onRetry: () => void;
 }) {
+  const w = useWords(TRADE);
+  const nameOf = useWalletName();
   const phase = useTrade((st) => st.phase);
   const connection = useWallet((st) => st.connection);
   const connecting = useWallet((st) => st.connecting);
-  const verb = `${side === 'buy' ? 'Buy' : 'Sell'} ${ticker(tower.symbol)}`;
+  const verb = side === 'buy' ? w.buyOf(ticker(tower.symbol)) : w.sellOf(ticker(tower.symbol));
   let label = verb;
   let disabled = false;
   let waiting = false;
-  if (phase === 'preparing') [label, disabled, waiting] = ['Getting your order…', true, true];
-  else if (phase === 'wallet') [label, disabled, waiting] = [`Confirm in ${connection?.wallet ?? 'your wallet'}`, true, true];
-  else if (phase === 'sending') [label, disabled, waiting] = ['Sending…', true, true];
-  else if (phase === 'checking') [label, disabled, waiting] = ['Reading the network…', true, true];
-  else if (connecting) [label, disabled, waiting] = ['Connecting…', true, true];
-  else if (choice.problem?.kind === 'balance') [label, disabled] = [`Not enough ${choice.spendUnit}`, true];
+  if (phase === 'preparing') [label, disabled, waiting] = [w.gettingOrder, true, true];
+  else if (phase === 'wallet') [label, disabled, waiting] = [connection?.wallet ? w.confirmIn(nameOf(connection.wallet)) : w.confirmInWallet, true, true];
+  else if (phase === 'sending') [label, disabled, waiting] = [w.sending, true, true];
+  else if (phase === 'checking') [label, disabled, waiting] = [w.readingNetwork, true, true];
+  else if (connecting) [label, disabled, waiting] = [w.connecting, true, true];
+  else if (choice.problem?.kind === 'balance') [label, disabled] = [w.notEnough(choice.spendUnit), true];
   else if (choice.problem) [label, disabled] = [verb, true];
-  else if (!connection) label = 'Connect wallet';
+  else if (!connection) label = w.connectWallet;
   // Nothing in the field: a wallet with nothing to spend says so; otherwise the verb waits for an amount.
-  else if (!choice.amountRaw) [label, disabled] = [choice.sizing.max === '0' ? (side === 'sell' ? 'Nothing to sell' : `Not enough ${choice.spendUnit}`) : verb, true];
+  else if (!choice.amountRaw) [label, disabled] = [choice.sizing.max === '0' ? (side === 'sell' ? w.nothingToSell : w.notEnough(choice.spendUnit)) : verb, true];
   else if (quoteFailed && !exact) return (
-    <div className={s.dock}>
-      <button className={`${s.display} ${s.action}`} onClick={onRetry}>
-        Try again
-      </button>
-    </div>
+    <button className={`${s.display} ${s.action}`} onClick={onRetry}>
+      {w.tryAgain}
+    </button>
   );
   else if (!priced && !exact) [label, disabled] = [verb, true];
   return (
-    <div className={s.dock}>
-      <button className={`${s.display} ${s.action} ${waiting ? s.waiting : ''}`} onClick={onPress} disabled={disabled}>
-        {label}
-      </button>
-    </div>
+    <button className={`${s.display} ${s.action} ${waiting ? s.waiting : ''}`} onClick={onPress} disabled={disabled}>
+      {label}
+    </button>
   );
 }
 
 function DonePanel() {
+  const w = useWords(TRADE);
   const done = useTrade((st) => st.done);
   const close = useTrade((st) => st.close);
   const again = useTrade((st) => st.again);
@@ -542,21 +596,31 @@ function DonePanel() {
   const bought = side === 'buy';
   return (
     <>
-      <div className={s.kicker}>{bought ? 'You’re in' : 'Sold'}</div>
-      <div className={`${s.display} ${s.result}`}>{got ? `${got} ${bought ? coin : paid}` : bought ? `${coin} is yours` : 'Done'}</div>
+      <div className={s.kicker}>{bought ? w.youreIn : w.sold}</div>
+      <div className={`${s.display} ${s.result}`}>{got ? `${digits(got)} ${bought ? coin : paid}` : bought ? w.isYours(coin) : w.done}</div>
       <div className={s.resultLine}>
-        {gave ? `For ${gave} ${bought ? paid : coin}. ` : ''}
-        {bought ? 'Your tower glows in your colour.' : 'Read back from the chain.'}
+        {gave ? w.forPaid(digits(gave), bought ? paid : coin) : ''}
+        {bought ? w.glows : w.readBack}
       </div>
       <WalletLine />
       <div className={s.grow} />
-      <MomentShare key={trade.signature} towerId={tower.mint} symbol={coin} kicker={bought ? 'You’re in' : 'Sold'} got={got} unit={bought ? coin : paid} line={gave ? `For ${gave} ${bought ? paid : coin} · on Ryntra` : 'On Ryntra'} onAgain={again} />
+      <MomentShare
+        key={trade.signature}
+        towerId={tower.mint}
+        symbol={coin}
+        sold={!bought}
+        kicker={bought ? w.youreIn : w.sold}
+        got={got}
+        unit={bought ? coin : paid}
+        line={gave ? w.momentLine(digits(gave), bought ? paid : coin) : w.onRyntra}
+        onAgain={again}
+      />
       <div className={s.walletLine}>
         <a className={s.explorer} href={explorerTxUrl('mainnet', trade.signature)} target="_blank" rel="noreferrer">
-          View transaction ↗
+          {w.viewTx}
         </a>
         <button className={s.link} onClick={close}>
-          Close
+          {w.close}
         </button>
       </div>
     </>
@@ -567,7 +631,8 @@ function DonePanel() {
  * The moment of the trade, made from the city: the camera flies to the tower, it takes your colour and throws
  * fireworks while a clip records; then the clip loops here, ready for X or the phone's share sheet.
  */
-function MomentShare({ towerId, symbol, kicker, got, unit, line, onAgain }: { towerId: string; symbol: string; kicker: string; got: string | null; unit: string; line: string; onAgain: () => void }) {
+function MomentShare({ towerId, symbol, sold, kicker, got, unit, line, onAgain }: { towerId: string; symbol: string; sold: boolean; kicker: string; got: string | null; unit: string; line: string; onAgain: () => void }) {
+  const w = useWords(TRADE);
   const address = useWallet((st) => st.connection?.address ?? null);
   const [moment, setMoment] = useState<Moment | null>(null);
   const [state, setState] = useState<'making' | 'ready' | 'shared' | 'saved'>('making');
@@ -604,7 +669,7 @@ function MomentShare({ towerId, symbol, kicker, got, unit, line, onAgain }: { to
     // One moment per trade: the key on this component is the signature.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
-  const words = `${kicker === 'Sold' ? 'Sold' : 'I’m in'} ${got ? `${got} ` : ''}${unit} on Ryntra. Every Solana coin is a tower.`;
+  const words = w.shareWords(sold, got ? digits(got) : '', unit);
   const file = (): File | null => {
     if (moment?.video) return new File([moment.video], clipName(symbol, moment.type), { type: moment.video.type });
     if (moment?.still) return new File([moment.still], clipName(symbol, null).replace(/\.\w+$/, '.png'), { type: 'image/png' });
@@ -644,24 +709,27 @@ function MomentShare({ towerId, symbol, kicker, got, unit, line, onAgain }: { to
           <img className={s.card} src={url} alt={words} />
         )
       ) : (
-        <div className={`${s.notice}`}>{state === 'making' ? 'Filming your moment in the city…' : 'The moment could not be filmed on this device.'}</div>
+        <div className={`${s.notice}`}>{state === 'making' ? w.filmingMoment : w.notFilmed}</div>
       )}
-      {state === 'saved' && <div className={s.notice}>Clip saved. Attach it to your post on X.</div>}
+      {state === 'saved' && <div className={s.notice}>{w.clipSaved}</div>}
       <div className={s.pair}>
         <button className={`${s.display} ${s.action} ${state === 'making' ? s.waiting : ''}`} onClick={() => void post()} disabled={state === 'making' || !url}>
-          {state === 'making' ? 'Filming…' : app ? 'Share clip' : 'Post on X'}
+          {state === 'making' ? w.filming : app ? w.shareClip : w.postOnX}
         </button>
-        <button
-          className={s.quiet}
-          onClick={() => {
-            const f = file();
-            if (f) download(f);
-            else onAgain();
-          }}
-          disabled={state === 'making'}
-        >
-          {url ? 'Save' : 'Again'}
-        </button>
+        {/* The app's WebView saves no file: its share sheet saves the clip too, so the app keeps the one button. */}
+        {app && url ? null : (
+          <button
+            className={s.quiet}
+            onClick={() => {
+              const f = file();
+              if (f) download(f);
+              else onAgain();
+            }}
+            disabled={state === 'making'}
+          >
+            {url ? w.save : w.again}
+          </button>
+        )}
       </div>
     </>
   );
@@ -679,19 +747,20 @@ function download(file: File) {
 }
 
 function FailedPanel() {
+  const w = useWords(TRADE);
   const signature = useTrade((st) => st.failed);
   const again = useTrade((st) => st.again);
   return (
     <>
-      <div className={`${s.kicker} ${s.kickerDanger}`}>Didn’t go through</div>
-      <div className={s.resultLine}>The trade reached the chain and failed. Only the network fee was spent.</div>
+      <div className={`${s.kicker} ${s.kickerDanger}`}>{w.didntGo}</div>
+      <div className={s.resultLine}>{w.chainFailed}</div>
       <div className={s.grow} />
       <button className={`${s.display} ${s.action}`} onClick={again}>
-        Try again
+        {w.tryAgain}
       </button>
       {signature && (
         <a className={s.explorer} href={explorerTxUrl('mainnet', signature)} target="_blank" rel="noreferrer">
-          View transaction ↗
+          {w.viewTx}
         </a>
       )}
     </>
@@ -699,51 +768,60 @@ function FailedPanel() {
 }
 
 function UnknownPanel() {
+  const w = useWords(TRADE);
   const unknown = useTrade((st) => st.unknown);
   const press = useTrade((st) => st.press);
   return (
     <>
-      <div className={`${s.kicker} ${s.kickerWarn}`}>Still checking</div>
-      <div className={s.resultLine}>{unknown?.message ?? 'The outcome is not known yet. Do not send another; check again.'}</div>
+      <div className={`${s.kicker} ${s.kickerWarn}`}>{w.stillChecking}</div>
+      <div className={s.resultLine}>{unknown?.message ?? w.notKnown}</div>
       <div className={s.grow} />
       <button className={`${s.display} ${s.action}`} onClick={() => void press()}>
-        Check again
+        {w.checkAgain}
       </button>
       {unknown && (
         <a className={s.explorer} href={explorerTxUrl('mainnet', unknown.signature)} target="_blank" rel="noreferrer">
-          View transaction ↗
+          {w.viewTx}
         </a>
       )}
     </>
   );
 }
 
-function PriceLine({ tower }: { tower: Tower }) {
-  const up = tower.change24h >= 0;
+/**
+ * The coin's logo through Ryntra's own proxy (the URL Jupiter lists for the coin, or a Ryntra launch's own picture),
+ * with the chart's rules (`city/lib/chart/icon.ts`): a busy gateway is asked once more a moment later, and the coin's
+ * first letter stands in its circle until the logo comes and for a coin without one — never an empty disc. Per coin:
+ * another coin in the same window starts again from its own first try.
+ */
+function TokenIcon({ tower }: { tower: TowerRef }) {
+  const [state, setState] = useState(() => ({ mint: tower.mint, attempt: 0 }));
+  const attempt = state.mint === tower.mint ? state.attempt : 0;
+  // The proxy also serves a launch's picture for a coin the market lists without a logo: it is always asked.
+  const src = iconSource({ id: tower.mint, icon: tower.icon ?? tower.mint }, attempt);
+
+  useEffect(() => {
+    if (attempt !== 1) return;
+    const timer = setTimeout(() => setState({ mint: tower.mint, attempt: 2 }), ICON_RETRY_MS);
+    return () => clearTimeout(timer);
+  }, [attempt, tower.mint]);
+
   return (
-    <div className={s.priceLine}>
-      {price(tower.price)}{' '}
-      <span className={up ? s.up : s.down}>
-        {up ? '+' : '−'}
-        {Math.abs(tower.change24h).toFixed(1)}% <small>24H</small>
-      </span>
-    </div>
+    <span className={s.icon} aria-hidden="true">
+      <span className={s.iconLetter}>{monogram(tower.symbol)}</span>
+      {src ? (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img key={src} className={s.iconLogo} src={src} alt="" draggable={false} onError={() => setState({ mint: tower.mint, attempt: iconAttempt(attempt) })} />
+      ) : null}
+    </span>
   );
 }
 
-/** The coin's logo through Ryntra's own proxy; a logo it cannot bring leaves the plain disc. */
-function TokenIcon({ tower }: { tower: TowerRef }) {
-  const [failed, setFailed] = useState(false);
-  if (failed) return <span className={s.icon} />;
-  // eslint-disable-next-line @next/next/no-img-element
-  return <img className={s.icon} src={`/api/icon/${tower.mint}`} alt="" draggable={false} onError={() => setFailed(true)} />;
-}
-
-function price(p: number): string {
-  if (!(p > 0)) return '';
-  if (p >= 1000) return `$${p.toLocaleString('en-US', { maximumFractionDigits: 0 })}`;
-  if (p >= 1) return `$${p.toFixed(2)}`;
-  if (p >= 0.01) return `$${p.toFixed(4)}`;
-  const digits = Math.max(2, -Math.floor(Math.log10(p)) + 2);
-  return `$${p.toFixed(Math.min(digits, 10))}`;
+/** The swap's flip: what is paid and what is got change places. */
+function FlipGlyph() {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinejoin="round" strokeLinecap="square" aria-hidden="true">
+      <path d="M8 4v15M4 15l4 4 4-4M16 20V5M12 9l4-4 4 4" />
+    </svg>
+  );
 }

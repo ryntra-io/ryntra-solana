@@ -8,34 +8,20 @@ import { SITE } from "./seo.ts";
  * every answer-time group so a more specific User-Agent rule cannot bypass
  * the wildcard group under the Robots Exclusion Protocol.
  */
-const PROTECTED_PATHS = [
-  "/api/",
-  "/admin",
-  /* The cabinet — all of it but the addresses below — at both languages' addresses. */
-  "/app/",
-  "/uk/app/",
-  /* The same cabinet at its addresses on app.ryntra.io. */
-  "/solana/",
-  "/uk/solana/",
-];
+const PROTECTED_PATHS = ["/api/", "/admin"];
 
 /*
- * Where crawlers may go: the site — the landing at `/` and `/uk`, the public
- * pages and the documentation at both addresses among it — and, of the
- * cabinet, the pages offered to the index: Home and Markets, `$` keeping each
- * to that one page, and the companies' pages under `/app/stocks/`, in English
- * and at `/uk`. The longer rule wins under the Robots Exclusion Protocol.
- * `/app` itself stays open: it is the one hop to Home that every shared link
- * to the app takes.
+ * Where crawlers may go: the city at `/`, the public pages and the
+ * documentation. The old interface (`/app/…`, `/uk/app/…`, `/solana/…`,
+ * Mission Control) answers nothing but a 308 into the city since CITY-13,
+ * with `X-Robots-Tag: noindex` on the way: it is left crawlable on purpose, so
+ * a crawler that still holds one of its addresses sees where it went and drops
+ * it — a disallowed address keeps its place in an index with no page under it.
  *
  * Only what is live is named: the QA route this file used to list
  * (`/strategy-lab-qa`) no longer exists.
  */
-const OPEN_PATHS = [
-  "/", "/app/home$", "/app/markets$", "/app/stocks/", "/uk/app/home$", "/uk/app/markets$", "/uk/app/stocks/",
-  /* The same pages at their addresses on app.ryntra.io, which serves this file too. */
-  "/solana/home$", "/solana/markets$", "/solana/stocks/", "/uk/solana/home$", "/uk/solana/markets$", "/uk/solana/stocks/",
-];
+const OPEN_PATHS = ["/"];
 
 const USER_TRIGGERED_AGENTS = ["ChatGPT-User", "Claude-User", "Perplexity-User"];
 const ANSWER_AND_SEARCH_AGENTS = ["OAI-SearchBot", "Claude-SearchBot", "PerplexityBot"];

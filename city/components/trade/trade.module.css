@@ -27,14 +27,14 @@
   max-height: calc(100% - 92px - env(safe-area-inset-top));
   overflow-y: auto;
   overscroll-behavior: contain;
-  /* Never shorter than the tower card it stands over, so the two never show at once. */
+  /* A steady height: Buy and Sell, a price on its way or the one line of an empty Sell never make the sheet jump. */
   min-height: min(440px, calc(100% - 92px - env(safe-area-inset-top)));
   display: flex;
   flex-direction: column;
   transform: translateX(-50%);
   padding: 18px 18px 14px;
   pointer-events: auto;
-  /* Solid: the tower card it stands over never shows through. */
+  /* Solid: the city's lights never show through the figures. */
   background: linear-gradient(160deg, #141024, #08070f);
   clip-path: polygon(16px 0, 100% 0, 100% calc(100% - 16px), calc(100% - 16px) 100%, 0 100%, 0 16px);
   box-shadow: inset 0 0 0 2px rgba(153, 69, 255, 0.32), inset 0 1px 18px rgba(153, 69, 255, 0.18);
@@ -62,13 +62,34 @@
 }
 
 .icon {
+  position: relative;
   width: 46px;
   height: 46px;
   flex: none;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 30%, rgba(153, 69, 255, 0.85), rgba(42, 22, 64, 0.95));
+  box-shadow: 0 0 0 2px rgba(255, 178, 63, 0.55);
+}
+
+/* The coin's first letter: under the logo while it comes, and for good when the engine has none. */
+.iconLetter {
+  font-family: var(--font-display, system-ui), system-ui, sans-serif;
+  font-size: 19px;
+  font-weight: 900;
+  line-height: 1;
+  color: var(--ice);
+}
+
+.iconLogo {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
   border-radius: 50%;
   object-fit: cover;
-  background: var(--graphite);
-  box-shadow: 0 0 0 2px rgba(255, 178, 63, 0.55);
 }
 
 .title {
@@ -82,19 +103,6 @@
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-}
-
-.priceLine {
-  margin-top: 5px;
-  font-size: 14px;
-  font-weight: 700;
-  font-variant-numeric: tabular-nums;
-  white-space: nowrap;
-}
-
-.priceLine small {
-  font-size: 11px;
-  opacity: 0.7;
 }
 
 .up {
@@ -125,6 +133,203 @@
 .close:disabled {
   opacity: 0.35;
   cursor: default;
+}
+
+/* ---------- The coin: price, key figures, tags (CITY-78) ---------- */
+
+/* The price, the day's move and the chart, on one line under the head. */
+.coinPrice {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 12px;
+  min-width: 0;
+}
+
+.coinFigure {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 26px;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+
+.coinMove {
+  flex: none;
+  font-size: 14px;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.coinMove small {
+  font-size: 11px;
+  opacity: 0.7;
+}
+
+/* Four figures in one row of thin glass cells: market cap, liquidity, traders this hour, the rank. */
+.facts {
+  display: grid;
+  /* The rank is short, «Traders 1h» the longest label: the two share their room. */
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1.2fr) minmax(0, 0.8fr);
+  gap: 6px;
+  margin-top: 12px;
+}
+
+.fact {
+  min-width: 0;
+  padding: 9px 10px 8px;
+  background: rgba(255, 255, 255, 0.04);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.05);
+}
+
+.factLabel {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+}
+
+.factValue {
+  margin-top: 4px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 16px;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Ukrainian names the four figures in longer words (CITY-79: «Капіталізація», «Трейдери за 1 год»): a label takes a
+   second line rather than an ellipsis, the figures stand level at the cells' foot, and a phone sets the cells two by
+   two, so no word is cut. */
+:global(html:lang(uk)) .fact {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+:global(html:lang(uk)) .factLabel {
+  white-space: normal;
+  text-overflow: clip;
+  letter-spacing: 0.08em;
+  line-height: 1.25;
+}
+
+@media (max-width: 520px) {
+  :global(html:lang(uk)) .facts {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+/* Verified and the issuer's powers as tags; Details quiet at the end of the row. */
+.tagRow {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-top: 10px;
+  min-width: 0;
+}
+
+.tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  flex: 1;
+  min-width: 0;
+}
+
+.tag {
+  padding: 4px 8px;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  background: rgba(153, 69, 255, 0.22);
+  color: var(--ice);
+}
+
+.tagOk {
+  background: rgba(20, 241, 149, 0.13);
+  color: var(--mint);
+}
+
+.tagWarn {
+  background: rgba(255, 178, 63, 0.14);
+  color: var(--amber);
+}
+
+.factLink {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 44px;
+  padding: 0 8px;
+  border: 0;
+  background: none;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+}
+
+.factLink:hover,
+.factLinkOn {
+  color: var(--ice);
+}
+
+.factLink:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+/* «Share tower» in the head: quiet glass beside the close, its word dropped on a narrow phone. */
+.shareTower {
+  height: 44px;
+  min-width: 44px;
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 0 14px;
+  border: 0;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--text-dim);
+}
+
+.shareTower:hover {
+  color: var(--ice);
+}
+
+.shareTower:disabled {
+  cursor: default;
+}
+
+/* The Sell tab with nothing to sell: one calm line where the ticket would be. */
+.nothing {
+  margin-top: 16px;
+  padding: 16px 14px;
+  font-size: 15px;
+  font-weight: 700;
+  line-height: 1.35;
+  text-align: center;
+  color: var(--ice);
+  background: rgba(255, 255, 255, 0.04);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.06);
 }
 
 /* ---------- Market · Limit · Stop ---------- */
@@ -616,16 +821,24 @@
   transition: transform 120ms ease-out;
 }
 
-/* The ticket's one action stays in view: a card taller than its room scrolls under it, the action pinned at the
-   bottom over a short fade of the card's own ground. In a card that fits, it sits where it always did. */
+/* The ticket's one action stays in view with the lines read before it — the fee, the least you get, the impact, any
+   warning: a card taller than its room scrolls under them, the dock pinned at the bottom over a short fade of the card's
+   own ground (its top padding). Nothing the person must read before the press can sit under it. In a card that fits, it
+   sits where it always did. */
 .dock {
   position: sticky;
   bottom: 0;
   z-index: 1;
-  background: linear-gradient(to bottom, rgba(10, 8, 19, 0), #0a0813 14px);
+  padding-top: 14px;
+  /* Solid from its fourth pixel: a figure scrolled under the pinned lines never reads through them (CITY-150). */
+  background: linear-gradient(to bottom, rgba(10, 8, 19, 0), #0a0813 4px);
   /* The same ground over the card's bottom padding (short of its 2 px rim), so nothing shows under the pinned action. A shadow takes no
      room: a card that fits keeps its layout and never scrolls for it. */
   box-shadow: 0 12px 0 #0a0813;
+}
+
+.dock > :first-child {
+  margin-top: 0;
 }
 
 /* The wallet's line under the action starts below the action's ground. */
@@ -843,6 +1056,39 @@
   .payChip {
     padding: 0 8px;
   }
+  .coinFigure {
+    font-size: 22px;
+  }
+  .fact {
+    padding: 8px 7px 7px;
+  }
+  .factLabel {
+    letter-spacing: 0.04em;
+  }
+  .factValue {
+    font-size: 14px;
+  }
+  .tags {
+    gap: 4px;
+  }
+  .tag {
+    padding: 4px 6px;
+    letter-spacing: 0.06em;
+  }
+  .factLink {
+    padding: 0 4px;
+    letter-spacing: 0.06em;
+  }
+}
+
+@media (max-width: 420px) {
+  .shareTower {
+    width: 44px;
+    padding: 0;
+  }
+  .shareTowerWord {
+    display: none;
+  }
 }
 
 /* ---------- Desktop: the card stands on the right, the city keeps the centre ---------- */
@@ -852,7 +1098,6 @@
     left: auto;
     right: var(--gutter);
     bottom: 24px;
-    /* As wide as the tower card it stands over, so the two never show at once. */
     width: 520px;
     min-height: 380px;
     max-height: calc(100% - 100px);
@@ -1184,4 +1429,103 @@
 
 .expiries .payOn {
   background: rgba(153, 69, 255, 0.32);
+}
+
+/* ---------- The plain swap (30.10): one flip between what you pay and what you get ---------- */
+
+.flip {
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  margin: 4px auto;
+  padding: 0;
+  border: 0;
+  color: var(--warm);
+  background: rgba(153, 69, 255, 0.14);
+  box-shadow: inset 0 0 0 1px rgba(153, 69, 255, 0.42);
+  clip-path: polygon(50% 0, 100% 50%, 50% 100%, 0 50%);
+  cursor: pointer;
+  transition: transform 220ms cubic-bezier(0.2, 1.2, 0.4, 1);
+}
+
+.flip svg {
+  width: 18px;
+  height: 18px;
+}
+
+.flip:active {
+  transform: rotate(180deg) scale(0.94);
+}
+
+.flip:disabled {
+  cursor: default;
+  opacity: 0.5;
+}
+
+/* The chart's place in the spot window while its code arrives: the same height, no jump. */
+.chartWait {
+  height: 268px;
+  margin: 2px 0 6px;
+  box-shadow: inset 0 0 0 1px rgba(153, 69, 255, 0.2);
+}
+
+@media (max-width: 560px) {
+  .chartWait {
+    height: 248px;
+  }
+}
+
+/* ---------- In the city's window frame (30.10): the card is the window's contents ---------- */
+
+.sheet.framed {
+  position: relative;
+  inset: auto;
+  left: auto;
+  right: auto;
+  bottom: auto;
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  max-height: none;
+  transform: none;
+  clip-path: none;
+  box-shadow: none;
+  background: none;
+  animation: none;
+}
+
+/* A wide window (a desk, or the whole screen): the chart fills the left, the ticket stands on the right. */
+@container window (min-width: 760px) {
+  .spotGrid {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(340px, 380px);
+    gap: 22px;
+    flex: 1 1 auto;
+    min-height: 0;
+  }
+
+  .spotChart {
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+  }
+
+  .spotChart :global([data-trade-chart]) {
+    flex: 1 1 auto;
+    height: auto;
+    min-height: 300px;
+    margin: 6px 0 0;
+  }
+
+  .spotTicket {
+    min-height: 0;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    padding-right: 2px;
+  }
+
+  .sheet.framed:has(.spotGrid) {
+    overflow: hidden;
+  }
 }

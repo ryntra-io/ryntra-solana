@@ -225,7 +225,7 @@ for (const size of SIZES) {
     await page.mouse.up();
     await page.waitForTimeout(600);
     await shot("moved");
-    const saved = await page.evaluate(() => window.localStorage.getItem("ryntra.city.trade-window.v1"));
+    const saved = await page.evaluate(() => window.localStorage.getItem("ryntra.city.trade-window.v2"));
     // Remembered after a reload, and still whole on a smaller screen.
     await page.reload({ waitUntil: "domcontentloaded" });
     await page.waitForTimeout(8000);

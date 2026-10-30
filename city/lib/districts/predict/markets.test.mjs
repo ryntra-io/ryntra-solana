@@ -159,4 +159,7 @@ test("a card without a picture falls back to its category's art; the kicker is i
   assert.equal(artOf({ categories: [], title: "Counter-Strike: Vitality vs Natus Vincere (BO3)" }), "sports");
   assert.equal(kickerOf(markets.find((m) => m.eventId === "ev-btc"), tabs), "CRYPTO");
   assert.equal(kickerOf({ categories: [] }, tabs), null);
+  // The source's own tag first, a named category after it: the named one; no named one at all, no kicker.
+  assert.equal(kickerOf({ categories: ["us-presidential-election", "crypto"] }, tabs), "CRYPTO");
+  assert.equal(kickerOf({ categories: ["us-presidential-election"] }, tabs), null);
 });

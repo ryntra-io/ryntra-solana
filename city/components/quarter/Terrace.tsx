@@ -6,6 +6,7 @@ import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import * as THREE from 'three';
 import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 import { useCity, type Quality } from '@/city/lib/city/store';
+import { useWords } from '@/city/lib/i18n/dict';
 import { useMoments } from '@/city/lib/moments/stage';
 import { PALETTE } from '@/city/lib/palette';
 import { defaultModules, isKind, isLevel, renderBuilding } from '@/city/lib/quarter/kit';
@@ -17,6 +18,7 @@ import { AFAR, TERRACE_TOP } from './afar';
 import { createBeaconMaterial, createHaloMaterial, createLampMaterial } from './materials';
 import { BUILDING_SCALE, seedOf } from './QuarterBuilding';
 import q from './quarter.module.css';
+import { QUARTER } from './words';
 
 /**
  * What lives on the newcomers' terrace besides this visitor's own quarter: the neighbours' buildings, the lamp posts
@@ -141,6 +143,7 @@ const BEACON = { height: 30, bottom: 1.1, top: 2.6 };
  */
 export function MyMark({ lot }: { lot: Lot }) {
   const me = useQuarter((s) => s.me);
+  const w = useWords(QUARTER);
   const quiet = useQuiet();
   const geometry = useMemo(() => new THREE.CylinderGeometry(BEACON.top, BEACON.bottom, BEACON.height, 28, 1, true).translate(0, BEACON.height / 2, 0), []);
   const material = useMemo(() => createBeaconMaterial(), []);
@@ -156,14 +159,14 @@ export function MyMark({ lot }: { lot: Lot }) {
   });
   if (!me) return null;
   const name = me.resident.displayName?.trim();
-  const place = `${streetName(me.quarter.street || streetOf(me.quarter.cell.z))} · Lot ${lotNumber(me.quarter.cell)}`;
+  const place = w.address(streetName(me.quarter.street || streetOf(me.quarter.cell.z)), lotNumber(me.quarter.cell));
   return (
     <>
       <mesh geometry={geometry} material={material} position={[lot.x, TERRACE_TOP, lot.z]} renderOrder={3} frustumCulled={false} />
       {/* Kept mounted and hidden when quiet: a sign's own root is never torn down in the middle of a render. */}
       <Html position={[lot.x, TERRACE_TOP + 11, lot.z]} center zIndexRange={[3, 0]} pointerEvents="none" className={q.tagWrap} style={quiet ? HIDDEN : undefined}>
         <div className={q.mark}>
-          <span className={q.markTitle}>{name || 'Your quarter'}</span>
+          <span className={q.markTitle}>{name || w.yourQuarter}</span>
           <span className={q.markLine}>{place}</span>
         </div>
       </Html>
@@ -182,6 +185,7 @@ export function NeighbourHover({ quarters, streets, mine }: { quarters: readonly
   const gl = useThree((s) => s.gl);
   const camera = useThree((s) => s.camera);
   const quiet = useQuiet();
+  const w = useWords(QUARTER);
   // The last neighbour found stays in the sign while it is hidden, so the sign is moved, never torn down.
   const [hover, setHover] = useState<{ quarter: QuarterSketch | null; on: boolean }>({ quarter: null, on: false });
   const byCell = useMemo(() => new Map(quarters.filter((x) => x.id !== mine).map((x) => [`${x.cell.x}:${x.cell.z}`, x])), [quarters, mine]);
@@ -237,8 +241,8 @@ export function NeighbourHover({ quarters, streets, mine }: { quarters: readonly
     <Html position={[lot.x, TERRACE_TOP + 6, lot.z]} center zIndexRange={[2, 0]} pointerEvents="none" className={q.tagWrap} style={!hover.on || quiet ? HIDDEN : undefined}>
       <div className={`${q.tag} ${q.tagNeighbour}`}>
         <span className={q.tagLine}>
-          {streetName(shown.street || streetOf(shown.cell.z))} · Lot {lotNumber(shown.cell)}
-          <i> · Level {shown.level}</i>
+          {w.address(streetName(shown.street || streetOf(shown.cell.z)), lotNumber(shown.cell))}
+          <i>{w.levelTag(shown.level)}</i>
         </span>
       </div>
     </Html>

@@ -1,10 +1,11 @@
 'use client';
 
 import { useEffect, useId, useRef, useState, type FormEvent, type ReactNode } from 'react';
-import { startersFor, moveOf, type Details } from '@/city/lib/assistant/answer';
+import { cityLine, startersFor, moveOf, type Details } from '@/city/lib/assistant/answer';
 import { QUESTION_MAX } from '@/city/lib/assistant/ask';
 import { useAssistant } from '@/city/lib/assistant/store';
 import { useCity } from '@/city/lib/city/store';
+import { dateText, useWords, type TextKey } from '@/city/lib/i18n/dict';
 import { useKeyboardInset } from '@/city/lib/keyboard';
 import type { Tower } from '@/city/lib/market/types';
 import { useQuarter } from '@/city/lib/quarter/store';
@@ -13,6 +14,7 @@ import { useWindows } from '@/city/lib/window/store';
 import { TokenIcon } from '../hud/bits';
 import hud from '../hud/hud.module.css';
 import s from './assistant.module.css';
+import { ASSISTANT } from './words';
 
 /**
  * Ryntra in the city (CITY-10): one button in the top bar (`AssistantButton`), one glass panel. A question goes to the assistant; the answer is the towers
@@ -63,6 +65,7 @@ const close = () => {
 export function AssistantButton() {
   const open = useAssistant((st) => st.open);
   const button = useRef<HTMLButtonElement>(null);
+  const w = useWords(ASSISTANT);
   useEffect(() => {
     if (!open && refocus) button.current?.focus({ preventScroll: true });
     refocus = false;
@@ -76,9 +79,9 @@ export function AssistantButton() {
     useAssistant.getState().show(subject);
   };
   return (
-    <button ref={button} type="button" className={`${hud.panel} ${s.entry} ${open ? hud.iconOn : ''}`} aria-label="Ask Ryntra" aria-expanded={open} onClick={ask}>
+    <button ref={button} type="button" className={`${hud.panel} ${s.entry} ${open ? hud.iconOn : ''}`} aria-label={w.ask} aria-expanded={open} onClick={ask}>
       <SparkGlyph />
-      <span className={s.entryWord}>Ask Ryntra</span>
+      <span className={s.entryWord}>{w.ask}</span>
     </button>
   );
 }
@@ -92,6 +95,8 @@ function Panel() {
   const shown = useAssistant((st) => st.shown);
   const details = useAssistant((st) => st.details);
   const day = useAssistant((st) => st.day);
+  const intent = useAssistant((st) => st.intent);
+  const w = useWords(ASSISTANT);
   const [text, setText] = useState('');
   const [more, setMore] = useState(false);
   const input = useRef<HTMLInputElement>(null);
@@ -122,6 +127,9 @@ function Panel() {
   }, []);
 
   const answered = phase === 'answered';
+  // The city's own line is its read of the towers on screen: written again in the language on screen. Ryntra's line
+  // stays as Ryntra wrote it, in the language it was asked in.
+  const said = voice === 'city' && answered ? cityLine(intent, shown) : line;
   return (
     // On a phone the panel is a sheet at the bottom, above the keyboard (`--kb`) while it is up.
     <div className={s.layer} style={{ ['--kb' as string]: `${keyboard}px` }}>
@@ -131,7 +139,7 @@ function Panel() {
             <SparkGlyph />
             Ryntra
           </span>
-          <button type="button" className={s.close} aria-label="Close" onClick={close}>
+          <button type="button" className={s.close} aria-label={w.close} onClick={close}>
             <CloseGlyph />
           </button>
         </header>
@@ -147,17 +155,17 @@ function Panel() {
         )}
 
         {phase === 'asking' && (
-          <div className={s.thinking} role="status" aria-label="Ryntra is reading the market">
+          <div className={s.thinking} role="status" aria-label={w.reading}>
             <span />
             <span />
             <span />
           </div>
         )}
 
-        <div aria-live="polite">{answered && line && <p className={s.line}>{line}</p>}</div>
+        <div aria-live="polite">{answered && said && <p className={s.line}>{said}</p>}</div>
 
         {answered && shown.length > 0 && (
-          <ul className={s.towers} aria-label="Towers in the answer">
+          <ul className={s.towers} aria-label={w.towers}>
             {shown.map((t) => (
               <li key={t.id}>
                 <TowerChip t={t} />
@@ -169,7 +177,7 @@ function Panel() {
         {answered && (
           <>
             <button type="button" className={s.more} aria-expanded={more} aria-controls={moreId} onClick={() => setMore((v) => !v)}>
-              Details
+              {w.details}
               <ChevronGlyph />
             </button>
             {more && <More id={moreId} details={details} voice={voice} busy={busy} day={day} />}
@@ -183,12 +191,12 @@ function Panel() {
             value={text}
             maxLength={QUESTION_MAX}
             onChange={(e) => setText(e.target.value)}
-            placeholder={answered ? 'Ask more' : 'Ask about any coin'}
-            aria-label="Your question"
+            placeholder={answered ? w.askMore : w.askAny}
+            aria-label={w.yourQuestion}
             enterKeyHint="send"
             autoComplete="off"
           />
-          <button type="submit" className={s.send} aria-label="Ask" disabled={!text.trim() || phase === 'asking'}>
+          <button type="submit" className={s.send} aria-label={w.send} disabled={!text.trim() || phase === 'asking'}>
             <SendGlyph />
           </button>
         </form>
@@ -201,9 +209,10 @@ function Panel() {
 function TowerChip({ t: asked }: { t: Tower }) {
   // The tower as the city reads it now: the figure follows the market's refresh, not the moment of the question.
   const t = useCity((st) => st.snapshot.towers.find((x) => x.id === asked.id)) ?? asked;
+  const w = useWords(ASSISTANT);
   const move = moveOf(t.change24h);
   return (
-    <button type="button" className={s.chip} aria-label={`Open ${t.symbol}`} onClick={() => useCity.getState().select(t.id)}>
+    <button type="button" className={s.chip} aria-label={w.open(t.symbol)} onClick={() => useCity.getState().select(t.id)}>
       <TokenIcon t={t} className={s.chipIcon} />
       <span className={s.chipSym}>{t.symbol}</span>
       {move && <span className={t.change24h >= 0 ? s.chipUp : s.chipDown}>{move}</span>}
@@ -211,25 +220,26 @@ function TowerChip({ t: asked }: { t: Tower }) {
   );
 }
 
-const MARK: Record<Details['why'][number]['mark'], string> = { fact: 'Fact', unverified: 'Reported', inference: 'Ryntra’s read', unknown: 'Unknown' };
+const MARK: Record<Details['why'][number]['mark'], TextKey<typeof ASSISTANT>> = { fact: 'markFact', unverified: 'markReported', inference: 'markRead', unknown: 'markUnknown' };
 
 /** Behind «Details»: why it moved, what could make the reading wrong, what to check, the sources, and how Ryntra answers. */
 function More({ id, details, voice, busy, day }: { id: string; details: Details | null; voice: 'ryntra' | 'city'; busy: boolean; day: { used: number; allowance: number } | null }) {
+  const w = useWords(ASSISTANT);
   return (
     <div id={id} className={s.details}>
       {details && details.why.length > 0 && (
-        <Part title="Why">
-          {details.why.map((w, i) => (
+        <Part title={w.why}>
+          {details.why.map((row, i) => (
             <li key={i}>
-              <span className={s.mark}>{MARK[w.mark]}</span> {w.text}
+              <span className={s.mark}>{w[MARK[row.mark]]}</span> {row.text}
             </li>
           ))}
         </Part>
       )}
-      {details && details.risks.length > 0 && <Part title="Could be wrong">{details.risks.map((r, i) => <li key={i}>{r}</li>)}</Part>}
-      {details && details.checks.length > 0 && <Part title="Worth checking">{details.checks.map((c, i) => <li key={i}>{c}</li>)}</Part>}
+      {details && details.risks.length > 0 && <Part title={w.couldBeWrong}>{details.risks.map((r, i) => <li key={i}>{r}</li>)}</Part>}
+      {details && details.checks.length > 0 && <Part title={w.worthChecking}>{details.checks.map((c, i) => <li key={i}>{c}</li>)}</Part>}
       {details && details.sources.length > 0 && (
-        <Part title="Sources">
+        <Part title={w.sources}>
           {details.sources.map((src) => (
             <li key={src.source}>
               {src.source}
@@ -238,14 +248,10 @@ function More({ id, details, voice, busy, day }: { id: string; details: Details 
           ))}
         </Part>
       )}
-      <Part title="How Ryntra answers">
-        <li>Ryntra reads the market and explains it. Advice only: it never trades, signs or holds keys.</li>
-        {voice === 'city' && <li>{busy ? 'Ryntra has had many questions this minute' : 'Ryntra could not answer just now'}, so the city shows its own read of the market.</li>}
-        {day && day.allowance > 0 && (
-          <li>
-            Answers today: {Math.min(day.used, day.allowance)} of {day.allowance}
-          </li>
-        )}
+      <Part title={w.how}>
+        <li>{w.adviceOnly}</li>
+        {voice === 'city' && <li>{busy ? w.busyRead : w.awayRead}</li>}
+        {day && day.allowance > 0 && <li>{w.answersToday(Math.min(day.used, day.allowance), day.allowance)}</li>}
       </Part>
     </div>
   );
@@ -262,7 +268,7 @@ function Part({ title, children }: { title: string; children: ReactNode }) {
 
 const clock = (iso: string) => {
   const d = new Date(iso);
-  return Number.isNaN(d.getTime()) ? '' : d.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
+  return Number.isNaN(d.getTime()) ? '' : dateText(d, { hour: '2-digit', minute: '2-digit' });
 };
 
 /** Ryntra's spark: the eclipse ring with a light breaking out of it, drawn for 24 px like the HUD's glyphs. */

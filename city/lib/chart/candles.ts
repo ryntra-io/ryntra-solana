@@ -1,5 +1,7 @@
 import type { NormalizedCandle } from '../../../lib/chart/types.ts';
 import { isSpotTimeframe, SPOT_TIMEFRAMES, TIMEFRAME_TTL_MS, type SpotTimeframe } from '../../../lib/spot/candles.ts';
+import { wordsNow } from '../i18n/dict.ts';
+import { CHART_READ } from './words.ts';
 
 /**
  * The tower chart's candles (CITY-5a): the engine's own read of a market, `/api/spot/candles` — the deepest pool's
@@ -168,8 +170,9 @@ export function headPrice(livePrice: number | null, data: ChartData, mint: strin
 
 /** How old a read is, in the city's short words: 8s · 3m · 2h. */
 export function ageText(ms: number): string {
+  const w = wordsNow(CHART_READ);
   const s = Math.max(0, Math.round(ms / 1000));
-  return s < 60 ? `${s}s` : s < 3600 ? `${Math.floor(s / 60)}m` : `${Math.floor(s / 3600)}h`;
+  return s < 60 ? w.seconds(s) : s < 3600 ? w.minutes(Math.floor(s / 60)) : w.hours(Math.floor(s / 3600));
 }
 
 /**
@@ -179,23 +182,14 @@ export function ageText(ms: number): string {
 export function detailsOf(data: ChartData, now: number): string[] {
   const read = data.last;
   if (!read) return [];
+  const w = wordsNow(CHART_READ);
   const parts: string[] = [];
   if (read.source) parts.push(read.source);
   if (read.pool) parts.push(read.pool);
-  parts.push(`${ageText(now - read.observedAt)} ago`);
-  if (read.stale) parts.push('Delayed');
+  parts.push(w.ago(ageText(now - read.observedAt)));
+  if (read.stale) parts.push(w.delayed);
   return parts;
 }
 
-const WHY: Readonly<Record<NoChart, string>> = {
-  NO_POOL: 'No pool prices this coin yet.',
-  NO_MAJOR_QUOTE: 'It only trades against coins without a trusted dollar price.',
-  THIN: 'No pool holds enough liquidity to chart it.',
-  QUIET: 'No pool traded it in the last day.',
-  STALE: 'Its newest candle is more than three days old.',
-  PRICE_MISMATCH: "The pool's price disagrees with the market price.",
-  EMPTY: 'No candles for this coin yet.',
-};
-
-/** One sentence on why a market has no chart. */
-export const whyNoChart = (code: NoChart | null): string => WHY[code ?? 'NO_POOL'];
+/** One sentence on why a market has no chart, in the language on screen. */
+export const whyNoChart = (code: NoChart | null): string => wordsNow(CHART_READ)[code ?? 'NO_POOL'];

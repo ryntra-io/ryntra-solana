@@ -6,19 +6,18 @@
  * none of the three asks the engine anything. Activity and Portfolio only read: they are open with the window itself.
  */
 
-export const MONEY_TABS = ['topup', 'send', 'bridge', 'activity', 'portfolio'] as const;
+/**
+ * The tabs: Top up and Send each have two ways — Solana and another network —
+ * so the Bridge is Send's second way, not a tab; Pay link asks for a payment.
+ */
+export const MONEY_TABS = ['topup', 'send', 'paylink', 'activity', 'portfolio'] as const;
 export type MoneyTab = (typeof MONEY_TABS)[number];
 
-export const TAB_LABEL: Readonly<Record<MoneyTab, string>> = {
-  topup: 'Top up',
-  send: 'Send',
-  bridge: 'Bridge',
-  activity: 'Activity',
-  portfolio: 'Portfolio',
-};
+/** What may ask for a tab: the tabs, and «bridge» — an old address of Send's way to another network. */
+export type MoneyAsk = MoneyTab | 'bridge';
 
 /** The tabs that move money: behind the switch. */
-export const MONEY_PATHS: ReadonlySet<MoneyTab> = new Set<MoneyTab>(['send', 'bridge']);
+export const MONEY_PATHS: ReadonlySet<MoneyTab> = new Set<MoneyTab>(['send']);
 
 export function moneyOpen(value: string | undefined): boolean {
   return value?.trim() === 'open';
@@ -42,4 +41,8 @@ export function flowLive(flow: MoneyFlow, open: boolean = MONEY_OPEN): boolean {
 
 export function isMoneyTab(value: unknown): value is MoneyTab {
   return typeof value === 'string' && (MONEY_TABS as readonly string[]).includes(value);
+}
+
+export function isMoneyAsk(value: unknown): value is MoneyAsk {
+  return value === 'bridge' || isMoneyTab(value);
 }

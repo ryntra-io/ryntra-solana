@@ -1,4 +1,4 @@
-/* The Launch Docks over the city: the sheet that raises a tower and the card of a launch's tower. The HUD's language —
+/* The Launch Docks over the city: the sheet that raises a tower and a launch tower's part of the tower's window. The HUD's language —
    dark glass with chamfered corners and an inner violet edge, monumental type, one amber action on screen, mint for
    value, red only for danger. Tokens from city/styles/city.module.css. */
 
@@ -496,15 +496,8 @@
 
 /* ---------- A launch's tower ---------- */
 
-.card {
-  position: absolute;
-  left: 50%;
-  bottom: max(14px, env(safe-area-inset-bottom));
-  width: min(560px, calc(100% - 2 * var(--gutter)));
-  transform: translateX(-50%);
-  padding: 16px 18px 18px;
-  clip-path: polygon(16px 0, 100% 0, 100% calc(100% - 16px), calc(100% - 16px) 100%, 0 100%, 0 16px);
-  animation: cardIn 320ms cubic-bezier(0.2, 1.3, 0.4, 1);
+.body {
+  padding-top: 2px;
 }
 
 .cardTop {
@@ -549,45 +542,6 @@
   }
 }
 
-.cardHead {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  margin-top: 10px;
-}
-
-.cardPic {
-  width: 48px;
-  height: 48px;
-  flex: none;
-  border-radius: 50%;
-  object-fit: cover;
-  background: var(--graphite);
-  box-shadow: 0 0 0 2px var(--accent, var(--amber)), 0 0 20px var(--accent, var(--amber));
-}
-
-.cardTitle {
-  min-width: 0;
-  flex: 1;
-}
-
-.cardSymbol {
-  font-size: 32px;
-  line-height: 1;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.cardName {
-  margin-top: 3px;
-  font-size: 14px;
-  color: var(--text-dim);
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
 .holders {
   flex: none;
   font-size: 15px;
@@ -630,22 +584,6 @@
 .tagWarn {
   background: rgba(238, 241, 255, 0.07);
   color: var(--text-dim);
-}
-
-.bar {
-  position: relative;
-  height: 10px;
-  margin-top: 14px;
-  background: rgba(238, 241, 255, 0.12);
-  clip-path: polygon(5px 0, 100% 0, 100% 100%, 0 100%, 0 5px);
-}
-
-.barFill {
-  position: absolute;
-  inset: 0 auto 0 0;
-  background: linear-gradient(90deg, var(--violet), var(--amber));
-  box-shadow: 0 0 16px rgba(255, 178, 63, 0.6);
-  transition: width 600ms ease-out;
 }
 
 .cardLine {
@@ -695,19 +633,9 @@
   }
 }
 
-@keyframes cardIn {
-  from {
-    opacity: 0;
-    transform: translate(-50%, 40px);
-  }
-}
-
 @media (max-width: 400px) {
   .title {
     font-size: 21px;
-  }
-  .cardSymbol {
-    font-size: 28px;
   }
   .launchRow {
     grid-template-columns: 88px minmax(0, 1fr);
@@ -717,7 +645,7 @@
   }
 }
 
-/* ---------- Desktop: the sheet and the card stand on the right, the city keeps the centre ---------- */
+/* ---------- Desktop: the sheet stands on the right, the city keeps the centre ---------- */
 
 @media (min-aspect-ratio: 1/1) {
   .sheet {
@@ -728,14 +656,6 @@
     max-height: calc(100% - 100px);
     padding: 22px;
     clip-path: polygon(22px 0, 100% 0, 100% calc(100% - 22px), calc(100% - 22px) 100%, 0 100%, 0 22px);
-    animation-name: sideIn;
-  }
-  .card {
-    left: auto;
-    right: var(--gutter);
-    bottom: 24px;
-    width: 460px;
-    transform: none;
     animation-name: sideIn;
   }
 }

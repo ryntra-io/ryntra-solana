@@ -9,10 +9,10 @@ moved counts as new. Generated at every update from the development history.
 
 | Since the tag | Files |
 |---|---|
-| New | 3,907 |
+| New | 4,031 |
 | Changed | 895 |
 | Unchanged | 832 |
-| Lines added / removed | +900,430 / −27,373 |
+| Lines added / removed | +918,558 / −27,380 |
 
 ## New since the tag
 
@@ -1714,6 +1714,7 @@ moved counts as new. Generated at every update from the development history.
 - `city/components/agent/ScoutDrone.tsx`
 - `city/components/agent/agent.module.css`
 - `city/components/agent/useScout.ts`
+- `city/components/agent/words.ts`
 - `city/components/art/Art.tsx`
 - `city/components/art/DistrictArt.tsx`
 - `city/components/art/HowItWorks.tsx`
@@ -1724,6 +1725,7 @@ moved counts as new. Generated at every update from the development history.
 - `city/components/assistant/AssistantLayer.tsx`
 - `city/components/assistant/Beacons.tsx`
 - `city/components/assistant/assistant.module.css`
+- `city/components/assistant/words.ts`
 - `city/components/beacon/BeaconAction.tsx`
 - `city/components/beacon/BeaconLayer.tsx`
 - `city/components/beacon/BeaconSheet.tsx`
@@ -1752,6 +1754,7 @@ moved counts as new. Generated at every update from the development history.
 - `city/components/chart/chart.module.css`
 - `city/components/chart/glyphs.tsx`
 - `city/components/chart/indicator-worker.ts`
+- `city/components/chart/words.ts`
 - `city/components/city/CameraRig.tsx`
 - `city/components/city/Capturer.tsx`
 - `city/components/city/CityCanvas.tsx`
@@ -1791,6 +1794,10 @@ moved counts as new. Generated at every update from the development history.
 - `city/components/city/skyline/state.ts`
 - `city/components/city/skyline/store.ts`
 - `city/components/coin/CoinOpener.tsx`
+- `city/components/deck/Deck.tsx`
+- `city/components/deck/deck.module.css`
+- `city/components/deck/glyphs.tsx`
+- `city/components/deck/words.ts`
 - `city/components/districts/HarborLayer.tsx`
 - `city/components/districts/HarborSheet.tsx`
 - `city/components/districts/HarborTowers.tsx`
@@ -1810,6 +1817,7 @@ moved counts as new. Generated at every update from the development history.
 - `city/components/exchange/Account.tsx`
 - `city/components/exchange/Art.tsx`
 - `city/components/exchange/Book.tsx`
+- `city/components/exchange/CoreChart.tsx`
 - `city/components/exchange/Depth.tsx`
 - `city/components/exchange/ExchangeDockItem.tsx`
 - `city/components/exchange/ExchangeLayer.tsx`
@@ -1820,8 +1828,16 @@ moved counts as new. Generated at every update from the development history.
 - `city/components/exchange/Ticket.tsx`
 - `city/components/exchange/exchange.module.css`
 - `city/components/exchange/glyphs.tsx`
+- `city/components/exchange/words.ts`
+- `city/components/feed/EventsBell.tsx`
 - `city/components/feed/LiveFeed.tsx`
 - `city/components/feed/feed.module.css`
+- `city/components/game/GameDock.tsx`
+- `city/components/game/LayerSwitch.tsx`
+- `city/components/game/MapPanel.tsx`
+- `city/components/game/game.module.css`
+- `city/components/game/glyphs.tsx`
+- `city/components/game/play.ts`
 - `city/components/hud/HoverLabel.tsx`
 - `city/components/hud/HoverPick.tsx`
 - `city/components/hud/Hud.tsx`
@@ -1831,15 +1847,25 @@ moved counts as new. Generated at every update from the development history.
 - `city/components/hud/glyphs.tsx`
 - `city/components/hud/hover.ts`
 - `city/components/hud/hud.module.css`
+- `city/components/hud/useBackLayers.ts`
 - `city/components/hud/useWindowOpen.ts`
+- `city/components/hud/words.ts`
 - `city/components/launch/HallDockItem.tsx`
 - `city/components/launch/HallLayer.tsx`
 - `city/components/launch/HallSigns.tsx`
 - `city/components/launch/LaunchSheet.tsx`
 - `city/components/launch/LaunchSlot.tsx`
-- `city/components/launch/LaunchTowerCard.tsx`
+- `city/components/launch/LaunchTowerBody.tsx`
+- `city/components/launch/LaunchTradePanel.tsx`
 - `city/components/launch/hall.module.css`
+- `city/components/launch/launch-trade.module.css`
 - `city/components/launch/launch.module.css`
+- `city/components/launch/words.ts`
+- `city/components/lens/LensBar.tsx`
+- `city/components/lens/LensScene.tsx`
+- `city/components/lens/lens.module.css`
+- `city/components/lens/useLensSet.ts`
+- `city/components/lens/useTowerLens.ts`
 - `city/components/look/Look.tsx`
 - `city/components/look/LookScene.tsx`
 - `city/components/look/look.module.css`
@@ -1847,11 +1873,16 @@ moved counts as new. Generated at every update from the development history.
 - `city/components/money/Bridge.tsx`
 - `city/components/money/MoneyLayer.tsx`
 - `city/components/money/MoneyWindow.tsx`
+- `city/components/money/PayLink.tsx`
+- `city/components/money/PhoenixLeft.tsx`
 - `city/components/money/Portfolio.tsx`
 - `city/components/money/Send.tsx`
+- `city/components/money/SendWays.tsx`
 - `city/components/money/TopUp.tsx`
 - `city/components/money/bits.tsx`
 - `city/components/money/money.module.css`
+- `city/components/money/words.ts`
+- `city/components/open/OpenFromAddress.tsx`
 - `city/components/quarter/Arrivals.tsx`
 - `city/components/quarter/AwayCamera.tsx`
 - `city/components/quarter/AwayReel.tsx`
@@ -1890,35 +1921,41 @@ moved counts as new. Generated at every update from the development history.
 - `city/components/quarter/quarter.module.css`
 - `city/components/quarter/sound.ts`
 - `city/components/quarter/wallet.module.css`
+- `city/components/quarter/words.ts`
 - `city/components/ring/AgentBody.tsx`
 - `city/components/ring/RingEditor.tsx`
 - `city/components/ring/RingGarage.tsx`
 - `city/components/ring/ring-shots.mjs`
 - `city/components/ring/ring.module.css`
+- `city/components/ring/words.ts`
 - `city/components/run/RunHud.tsx`
 - `city/components/run/RunWarmup.tsx`
 - `city/components/run/RunWorld.tsx`
 - `city/components/run/run.module.css`
 - `city/components/run/runMaterials.ts`
+- `city/components/run/words.ts`
 - `city/components/scouts/ScoutFlags.tsx`
 - `city/components/scouts/ScoutsLayer.tsx`
 - `city/components/scouts/ScoutsWindow.tsx`
 - `city/components/scouts/glyphs.tsx`
 - `city/components/scouts/scouts.module.css`
+- `city/components/scouts/words.ts`
 - `city/components/search/CitySearch.tsx`
 - `city/components/search/search.module.css`
+- `city/components/search/words.ts`
 - `city/components/trade/Amount.tsx`
+- `city/components/trade/CoinFacts.tsx`
 - `city/components/trade/CoinPicker.tsx`
 - `city/components/trade/MinePanel.tsx`
 - `city/components/trade/MyOrders.tsx`
 - `city/components/trade/MyTowers.tsx`
 - `city/components/trade/SpotTicket.tsx`
-- `city/components/trade/TradeAction.tsx`
 - `city/components/trade/TradeLayer.tsx`
 - `city/components/trade/TradeSheet.tsx`
 - `city/components/trade/WalletParts.tsx`
 - `city/components/trade/mine.module.css`
 - `city/components/trade/trade.module.css`
+- `city/components/trade/words.ts`
 - `city/components/vault/Guardian.tsx`
 - `city/components/vault/VaultDockItem.tsx`
 - `city/components/vault/VaultLayer.tsx`
@@ -1928,6 +1965,7 @@ moved counts as new. Generated at every update from the development history.
 - `city/components/vault/materials.ts`
 - `city/components/vault/vault-shots.mjs`
 - `city/components/vault/vault.module.css`
+- `city/components/vault/words.ts`
 - `city/components/window/OutPage.tsx`
 - `city/components/window/OutWindow.tsx`
 - `city/components/window/WindowDemo.tsx`
@@ -1937,6 +1975,7 @@ moved counts as new. Generated at every update from the development history.
 - `city/components/window/glyphs.tsx`
 - `city/components/window/useCityWindow.ts`
 - `city/components/window/window.module.css`
+- `city/components/window/words.ts`
 - `city/lib/agent/advice.test.mjs`
 - `city/lib/agent/advice.ts`
 - `city/lib/agent/flag.ts`
@@ -1947,6 +1986,7 @@ moved counts as new. Generated at every update from the development history.
 - `city/lib/agent/shots.mjs`
 - `city/lib/agent/store.test.mjs`
 - `city/lib/agent/store.ts`
+- `city/lib/agent/words.ts`
 - `city/lib/app-bridge/app-mode.test.mjs`
 - `city/lib/app-bridge/bridge.test.mjs`
 - `city/lib/app-bridge/client.ts`
@@ -1963,6 +2003,7 @@ moved counts as new. Generated at every update from the development history.
 - `city/lib/art/frames.ts`
 - `city/lib/art/how.ts`
 - `city/lib/art/viewer.ts`
+- `city/lib/art/words.ts`
 - `city/lib/assistant/answer.ts`
 - `city/lib/assistant/ask.ts`
 - `city/lib/assistant/assistant.test.mjs`
@@ -1989,12 +2030,19 @@ moved counts as new. Generated at every update from the development history.
 - `city/lib/assistant/shots/assistant-tower-panel-desk.jpg`
 - `city/lib/assistant/shots/assistant-tower-panel-phone.jpg`
 - `city/lib/assistant/store.ts`
+- `city/lib/assistant/words.ts`
 - `city/lib/audio/engine.ts`
+- `city/lib/back/panels.test.mjs`
+- `city/lib/back/panels.ts`
+- `city/lib/back/stack.test.mjs`
+- `city/lib/back/stack.ts`
+- `city/lib/back/wiring.test.mjs`
 - `city/lib/beacon/form.ts`
 - `city/lib/beacon/shots.mjs`
 - `city/lib/beacon/store.test.mjs`
 - `city/lib/beacon/store.ts`
 - `city/lib/beacon/switch.ts`
+- `city/lib/beacon/words.ts`
 - `city/lib/brand.ts`
 - `city/lib/capture.ts`
 - `city/lib/characters/README.md`
@@ -2033,6 +2081,7 @@ moved counts as new. Generated at every update from the development history.
 - `city/lib/chart/store.ts`
 - `city/lib/chart/use-chart.ts`
 - `city/lib/chart/window.test.mjs`
+- `city/lib/chart/words.ts`
 - `city/lib/city/drawn.ts`
 - `city/lib/city/events.ts`
 - `city/lib/city/gesture.ts`
@@ -2040,6 +2089,7 @@ moved counts as new. Generated at every update from the development history.
 - `city/lib/city/home-shots.mjs`
 - `city/lib/city/hot.ts`
 - `city/lib/city/icons.ts`
+- `city/lib/city/layout.test.mjs`
 - `city/lib/city/layout.ts`
 - `city/lib/city/phone.test.mjs`
 - `city/lib/city/pick.ts`
@@ -2051,6 +2101,9 @@ moved counts as new. Generated at every update from the development history.
 - `city/lib/coin/og.server.tsx`
 - `city/lib/coin/open.ts`
 - `city/lib/coin/read.server.ts`
+- `city/lib/deck/chrome.ts`
+- `city/lib/deck/deck.test.mjs`
+- `city/lib/deck/items.ts`
 - `city/lib/districts/harbor/deposit.test.mjs`
 - `city/lib/districts/harbor/deposit.ts`
 - `city/lib/districts/harbor/engine.ts`
@@ -2066,6 +2119,7 @@ moved counts as new. Generated at every update from the development history.
 - `city/lib/districts/harbor/store.test.mjs`
 - `city/lib/districts/harbor/store.ts`
 - `city/lib/districts/harbor/test-fixtures.mjs`
+- `city/lib/districts/harbor/words.ts`
 - `city/lib/districts/predict/chart.test.mjs`
 - `city/lib/districts/predict/chart.ts`
 - `city/lib/districts/predict/cover-serve.test.mjs`
@@ -2094,6 +2148,7 @@ moved counts as new. Generated at every update from the development history.
 - `city/lib/districts/predict/test-fixtures.mjs`
 - `city/lib/districts/predict/ticket.test.mjs`
 - `city/lib/districts/predict/ticket.ts`
+- `city/lib/districts/predict/words.ts`
 - `city/lib/exchange/account.test.mjs`
 - `city/lib/exchange/account.ts`
 - `city/lib/exchange/art.test.mjs`
@@ -2101,6 +2156,7 @@ moved counts as new. Generated at every update from the development history.
 - `city/lib/exchange/box.ts`
 - `city/lib/exchange/candles.test.mjs`
 - `city/lib/exchange/candles.ts`
+- `city/lib/exchange/core-feed.ts`
 - `city/lib/exchange/depth.test.mjs`
 - `city/lib/exchange/depth.ts`
 - `city/lib/exchange/engine.test.mjs`
@@ -2113,6 +2169,7 @@ moved counts as new. Generated at every update from the development history.
 - `city/lib/exchange/format.ts`
 - `city/lib/exchange/layers.test.mjs`
 - `city/lib/exchange/layers.ts`
+- `city/lib/exchange/live.ts`
 - `city/lib/exchange/markets.test.mjs`
 - `city/lib/exchange/markets.ts`
 - `city/lib/exchange/onboarding.test.mjs`
@@ -2128,17 +2185,34 @@ moved counts as new. Generated at every update from the development history.
 - `city/lib/exchange/test-fixtures.mjs`
 - `city/lib/exchange/ticket.test.mjs`
 - `city/lib/exchange/ticket.ts`
+- `city/lib/exchange/words.ts`
 - `city/lib/feed/driver.ts`
 - `city/lib/feed/feed.test.mjs`
 - `city/lib/feed/feed.ts`
 - `city/lib/feed/format.ts`
 - `city/lib/feed/motion.ts`
+- `city/lib/feed/panel.test.mjs`
+- `city/lib/feed/panel.ts`
 - `city/lib/feed/settings.test.mjs`
 - `city/lib/feed/settings.ts`
 - `city/lib/feed/shots.mjs`
 - `city/lib/feed/spark.test.mjs`
 - `city/lib/feed/spark.ts`
 - `city/lib/feed/store.ts`
+- `city/lib/feed/words.ts`
+- `city/lib/game/flag.test.mjs`
+- `city/lib/game/flag.ts`
+- `city/lib/game/game.test.mjs`
+- `city/lib/game/layer.ts`
+- `city/lib/game/map.ts`
+- `city/lib/game/shots.mjs`
+- `city/lib/game/words.ts`
+- `city/lib/i18n/dict.ts`
+- `city/lib/i18n/figures.test.mjs`
+- `city/lib/i18n/figures.ts`
+- `city/lib/i18n/i18n.test.mjs`
+- `city/lib/i18n/lang.ts`
+- `city/lib/i18n/langs.ts`
 - `city/lib/keyboard.ts`
 - `city/lib/launch/district.ts`
 - `city/lib/launch/engine.ts`
@@ -2166,7 +2240,37 @@ moved counts as new. Generated at every update from the development history.
 - `city/lib/launch/terms.ts`
 - `city/lib/launch/towers.test.mjs`
 - `city/lib/launch/towers.ts`
+- `city/lib/launch/trade-flow.test.mjs`
+- `city/lib/launch/trade-flow.ts`
+- `city/lib/launch/trade-shots.mjs`
+- `city/lib/launch/trade-stub.ts`
+- `city/lib/launch/trade-words.test.mjs`
+- `city/lib/launch/trade-words.ts`
+- `city/lib/launch/trade.test.mjs`
+- `city/lib/launch/trade.ts`
 - `city/lib/launch/wallet.ts`
+- `city/lib/launch/words.ts`
+- `city/lib/lens/lens.test.mjs`
+- `city/lib/lens/lens.ts`
+- `city/lib/lens/shot.ts`
+- `city/lib/lens/shots.mjs`
+- `city/lib/lens/shots/lens-all-desk.jpg`
+- `city/lib/lens/shots/lens-all-phone.jpg`
+- `city/lib/lens/shots/lens-crypto-desk.jpg`
+- `city/lib/lens/shots/lens-crypto-phone.jpg`
+- `city/lib/lens/shots/lens-memes-desk-still.jpg`
+- `city/lib/lens/shots/lens-memes-desk.jpg`
+- `city/lib/lens/shots/lens-memes-phone.jpg`
+- `city/lib/lens/shots/lens-mine-desk.jpg`
+- `city/lib/lens/shots/lens-mine-phone.jpg`
+- `city/lib/lens/shots/lens-new-desk.jpg`
+- `city/lib/lens/shots/lens-new-phone.jpg`
+- `city/lib/lens/shots/lens-stocks-desk.jpg`
+- `city/lib/lens/shots/lens-stocks-phone.jpg`
+- `city/lib/lens/stocks.ts`
+- `city/lib/lens/store.ts`
+- `city/lib/lens/uniforms.ts`
+- `city/lib/lens/words.ts`
 - `city/lib/look.ts`
 - `city/lib/market/bundled.ts`
 - `city/lib/market/curated.ts`
@@ -2205,6 +2309,7 @@ moved counts as new. Generated at every update from the development history.
 - `city/lib/moments/recorder.ts`
 - `city/lib/moments/run-challenge.test.mjs`
 - `city/lib/moments/stage.ts`
+- `city/lib/moments/words.ts`
 - `city/lib/moments/world-code.ts`
 - `city/lib/money/activity.test.mjs`
 - `city/lib/money/activity.ts`
@@ -2227,17 +2332,23 @@ moved counts as new. Generated at every update from the development history.
 - `city/lib/money/open.ts`
 - `city/lib/money/recipient.test.mjs`
 - `city/lib/money/recipient.ts`
+- `city/lib/money/say.ts`
 - `city/lib/money/send.test.mjs`
 - `city/lib/money/send.ts`
 - `city/lib/money/shots.mjs`
 - `city/lib/money/store.test.mjs`
 - `city/lib/money/store.ts`
 - `city/lib/money/test-fixtures.mjs`
+- `city/lib/money/words.ts`
 - `city/lib/net.ts`
+- `city/lib/open/address.test.mjs`
+- `city/lib/open/address.ts`
+- `city/lib/open/old-addresses.ts`
 - `city/lib/palette.ts`
 - `city/lib/quarter/account-live.ts`
 - `city/lib/quarter/account.test.mjs`
 - `city/lib/quarter/account.ts`
+- `city/lib/quarter/away-push.test.mjs`
 - `city/lib/quarter/away-store.ts`
 - `city/lib/quarter/away.test.mjs`
 - `city/lib/quarter/away.ts`
@@ -2273,6 +2384,7 @@ moved counts as new. Generated at every update from the development history.
 - `city/lib/quarter/store.test.mjs`
 - `city/lib/quarter/store.ts`
 - `city/lib/quarter/types.ts`
+- `city/lib/quarter/words.ts`
 - `city/lib/quarter/world.test.mjs`
 - `city/lib/ring/body.ts`
 - `city/lib/ring/client.ts`
@@ -2280,6 +2392,7 @@ moved counts as new. Generated at every update from the development history.
 - `city/lib/ring/format.ts`
 - `city/lib/ring/store.test.mjs`
 - `city/lib/ring/store.ts`
+- `city/lib/ring/words.ts`
 - `city/lib/run/autopilot.ts`
 - `city/lib/run/bus.ts`
 - `city/lib/run/course.ts`
@@ -2289,6 +2402,8 @@ moved counts as new. Generated at every update from the development history.
 - `city/lib/run/store.ts`
 - `city/lib/run/track.ts`
 - `city/lib/run/world.ts`
+- `city/lib/rxn/flag.test.mjs`
+- `city/lib/rxn/flag.ts`
 - `city/lib/scouts/art.ts`
 - `city/lib/scouts/scouts.test.mjs`
 - `city/lib/scouts/shots.mjs`
@@ -2309,6 +2424,7 @@ moved counts as new. Generated at every update from the development history.
 - `city/lib/scouts/shots/scouts-sign-in-phone.jpg`
 - `city/lib/scouts/store.ts`
 - `city/lib/scouts/view.ts`
+- `city/lib/scouts/words.ts`
 - `city/lib/search/mint.ts`
 - `city/lib/search/rank.ts`
 - `city/lib/search/search.test.mjs`
@@ -2331,6 +2447,8 @@ moved counts as new. Generated at every update from the development history.
 - `city/lib/trade/frame.test.mjs`
 - `city/lib/trade/frame.ts`
 - `city/lib/trade/gates.ts`
+- `city/lib/trade/issuer.test.mjs`
+- `city/lib/trade/issuer.ts`
 - `city/lib/trade/limit-fixtures.mjs`
 - `city/lib/trade/limits.test.mjs`
 - `city/lib/trade/limits.ts`
@@ -2361,7 +2479,11 @@ moved counts as new. Generated at every update from the development history.
 - `city/lib/trade/test-fixtures.mjs`
 - `city/lib/trade/tiles.test.mjs`
 - `city/lib/trade/tiles.ts`
+- `city/lib/trade/tower-window-shots.mjs`
+- `city/lib/trade/tower-window.test.mjs`
+- `city/lib/trade/tower-window.ts`
 - `city/lib/trade/wallet.ts`
+- `city/lib/trade/words.ts`
 - `city/lib/vault/client.ts`
 - `city/lib/vault/flag.ts`
 - `city/lib/vault/place.test.mjs`
@@ -2437,6 +2559,7 @@ moved counts as new. Generated at every update from the development history.
 - `city/lib/x/vision-drafts.ts`
 - `city/styles/brand.ts`
 - `city/styles/city.module.css`
+- `city/styles/fonts.ts`
 - `lib/account/config.test.mjs`
 - `lib/account/notifications.test.mjs`
 - `lib/account/notifications.ts`
@@ -2669,6 +2792,7 @@ moved counts as new. Generated at every update from the development history.
 - `lib/city-economy/clusters.server.ts`
 - `lib/city-economy/day-panel.module.css`
 - `lib/city-economy/day-shots.mjs`
+- `lib/city-economy/day-words.ts`
 - `lib/city-economy/day.test.mjs`
 - `lib/city-economy/day.ts`
 - `lib/city-economy/fixtures.mjs`

@@ -2,6 +2,8 @@ import { summarizeAddressEvidence, type AddressEvidenceRead, type AddressEvidenc
 import { addressProblem } from '../../../lib/solana/address.ts';
 import { lookalikeOf, skrNameOf } from '../../../lib/solana/skr-name.ts';
 import { isNewRecipient } from '../../../lib/solana/send-recipients.client.ts';
+import { wordsNow } from '../i18n/dict.ts';
+import { RECIPIENT_CHECK_WORDS, RECIPIENT_PROBLEM_WORDS } from './words.ts';
 
 /**
  * «To» on the Send tab, read the engine's way. What was typed is one of: a Solana address (the engine's own shape and
@@ -32,18 +34,11 @@ export type RecipientRead =
 const EVM = /^0x[0-9a-fA-F]{40}$/;
 const SOL_NAME = /^[^\s]+\.sol$/i;
 
-export const RECIPIENT_WORDS: Readonly<Record<RecipientProblem, string>> = {
-  NOT_AN_ADDRESS: 'That is not a Solana address.',
-  MISREAD_CHARACTER: 'It has 0, O, I or l, which Solana addresses never use. Copy the address instead of retyping it.',
-  WRONG_LENGTH: 'A Solana address is 32 to 44 characters. Check the whole address was pasted.',
-  BAD_NAME: 'A .skr name is letters, digits, - and _ before .skr.',
-  SOL_NAME: 'Ryntra reads .skr names. For a .sol name, paste the address it points to.',
-  OTHER_NETWORK: 'That is an address on another network. Send there from Bridge.',
-  SELF: 'That is your own wallet.',
-};
+/** The problems in English, as written (the words on screen follow the language: `RECIPIENT_PROBLEM_WORDS`). */
+export const RECIPIENT_WORDS: Readonly<Record<RecipientProblem, string>> = RECIPIENT_PROBLEM_WORDS.en;
 
 function problem(code: RecipientProblem): RecipientRead {
-  return { kind: 'problem', problem: code, text: RECIPIENT_WORDS[code] };
+  return { kind: 'problem', problem: code, text: wordsNow(RECIPIENT_PROBLEM_WORDS)[code] };
 }
 
 /** What was typed in «To». `self` is the connected wallet: sending to it is refused before anything is asked. */
@@ -65,33 +60,13 @@ export function readRecipient(typed: string, self: string | null = null): Recipi
 }
 
 /** The engine's recipient check, as the city says its answers (contract 1.22.0, `RECIPIENT_PROBLEMS`). */
-const CHECK_WORDS: Readonly<Record<string, string>> = {
-  EMPTY: 'Enter who gets it.',
-  NOT_AN_ADDRESS: RECIPIENT_WORDS.NOT_AN_ADDRESS,
-  MISREAD_CHARACTER: RECIPIENT_WORDS.MISREAD_CHARACTER,
-  WRONG_LENGTH: RECIPIENT_WORDS.WRONG_LENGTH,
-  REQUEST_INVALID: 'That payment request cannot be read.',
-  REQUEST_UNSUPPORTED: 'That payment request asks for something Ryntra does not pay from here.',
-  REFERENCE_UNSUPPORTED: 'That payment request carries a reference Ryntra does not pay from here.',
-  LINK_INVALID: 'That is not a Ryntra payment link.',
-  LINK_NOT_FOUND: 'That payment link does not exist.',
-  LINK_PAID: 'That payment link is already paid.',
-  LINK_EXPIRED: 'That payment link has expired.',
-  LINK_MISMATCH: 'That request does not match its payment link.',
-  LINK_UNCONFIRMED: 'That payment link could not be checked right now. It may already be paid.',
-  SELF: RECIPIENT_WORDS.SELF,
-  MINT_UNREADABLE: 'The coin could not be read right now. Try again in a moment.',
-  UNSAFE_SOL_RECIPIENT: 'This address cannot safely receive SOL.',
-  RECIPIENT_MINT_MISMATCH: 'That account holds a different coin.',
-  RECIPIENT_PROGRAM_MISMATCH: 'That account belongs to another token program.',
-  RECIPIENT_ACCOUNT_MALFORMED: 'That account cannot receive this coin.',
-  OFF_CURVE_OWNER_UNSUPPORTED: 'That address is a program account, not a wallet.',
-  RECIPIENT_FROZEN: 'That account is frozen and cannot receive.',
-  RECIPIENT_UNREADABLE: 'The address could not be checked right now. Try again in a moment.',
-};
+const SAME_AS_PROBLEM = new Set<string>(['NOT_AN_ADDRESS', 'MISREAD_CHARACTER', 'WRONG_LENGTH', 'SELF']);
+const CHECK_CODES = new Set<string>(Object.keys(RECIPIENT_CHECK_WORDS.en).filter((code) => code === code.toUpperCase()));
 
 export function checkProblemWords(code: string | null | undefined): string {
-  return (code && CHECK_WORDS[code]) || 'That recipient cannot be paid from here.';
+  if (code && SAME_AS_PROBLEM.has(code)) return wordsNow(RECIPIENT_PROBLEM_WORDS)[code as RecipientProblem];
+  const w = wordsNow(RECIPIENT_CHECK_WORDS);
+  return code && CHECK_CODES.has(code) ? (w as Readonly<Record<string, string>>)[code] : w.fallback;
 }
 
 /** The engine's recipient check, as much of it as the Send tab acts on. */
@@ -174,7 +149,7 @@ export function riskOf(body: unknown): AddressEvidenceSummary {
 }
 
 export function riskLine(summary: AddressEvidenceSummary | null | undefined): Readonly<{ tone: 'warn' | 'error'; text: string }> | null {
-  if (summary === 'sanctioned') return { tone: 'error', text: 'This address is on a sanctions list.' };
-  if (summary === 'evidence-found') return { tone: 'warn', text: 'Risk reports on this address. Check before you send.' };
+  if (summary === 'sanctioned') return { tone: 'error', text: wordsNow(RECIPIENT_CHECK_WORDS).sanctioned };
+  if (summary === 'evidence-found') return { tone: 'warn', text: wordsNow(RECIPIENT_CHECK_WORDS).evidence };
   return null;
 }

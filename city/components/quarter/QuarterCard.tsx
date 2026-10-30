@@ -2,6 +2,7 @@
 
 import { useEffect, type ReactNode } from 'react';
 import { hydrateFeed, useFeed } from '@/city/lib/feed/store';
+import { useWords } from '@/city/lib/i18n/dict';
 import { cityAccount, useCityAccount } from '@/city/lib/quarter/account-live';
 import { moduleForKind } from '@/city/lib/quarter/modules';
 import { lotNumber, streetName } from '@/city/lib/quarter/plot';
@@ -14,6 +15,7 @@ import s from '../hud/hud.module.css';
 import { LotGlyph } from './glyphs';
 import { wakeSound } from './sound';
 import q from './quarter.module.css';
+import { QUARTER } from './words';
 
 /**
  * The one card above the dock, for the living world: a newcomer gets one amber action, «Claim your quarter»; a
@@ -44,6 +46,7 @@ function closeCard() {
 }
 
 function Head({ kicker }: { kicker: string }) {
+  const w = useWords(QUARTER);
   return (
     <>
       <DistrictArt id="home" />
@@ -52,7 +55,7 @@ function Head({ kicker }: { kicker: string }) {
           <span className={q.spark} aria-hidden="true" />
           {kicker}
         </div>
-        <button className={q.close} aria-label="Close the Arrivals card" onClick={closeCard}>
+        <button className={q.close} aria-label={w.closeArrivals} onClick={closeCard}>
           <CloseGlyph />
         </button>
       </div>
@@ -67,29 +70,31 @@ function useStepLabel(idle: string): { label: string; busy: boolean; line: strin
   const accountError = useCityAccount((st) => (st.from === 'card' ? st.error : null));
   const claiming = useQuarter((st) => st.busy);
   const worldError = useQuarter((st) => st.error);
-  if (step === 'connecting') return { label: `Opening ${to ?? 'wallet'}…`, busy: true, line: null, error: null, picking: false };
-  if (step === 'signing') return { label: 'Check your wallet', busy: true, line: 'Sign one message to keep it yours. No transaction.', error: null, picking: false };
-  if (step === 'opening') return { label: 'Opening your quarter…', busy: true, line: null, error: null, picking: false };
-  if (claiming) return { label: 'Claiming…', busy: true, line: null, error: null, picking: false };
+  const w = useWords(QUARTER);
+  if (step === 'connecting') return { label: w.opening(to ?? w.aWallet), busy: true, line: null, error: null, picking: false };
+  if (step === 'signing') return { label: w.checkYourWallet, busy: true, line: w.signToKeep, error: null, picking: false };
+  if (step === 'opening') return { label: w.openingQuarter, busy: true, line: null, error: null, picking: false };
+  if (claiming) return { label: w.claiming, busy: true, line: null, error: null, picking: false };
   return { label: idle, busy: false, line: null, error: accountError ?? worldError, picking: step === 'pick' };
 }
 
 function ClaimCard() {
-  const step = useStepLabel('Claim your quarter');
+  const w = useWords(QUARTER);
+  const step = useStepLabel(w.claim);
   const claim = () => {
     wakeSound();
     void cityAccount.getState().begin('claim', 'card');
   };
   return (
     <div className={`${s.panel} ${s.slot}`}>
-      <Head kicker="Arrivals" />
+      <Head kicker={w.arrivals} />
       <div className={q.row}>
         <span className={q.badge}>
           <LotGlyph />
         </span>
         <div className={q.words}>
-          <div className={q.title}>Your own quarter of the city</div>
-          <div className={`${q.line} ${step.error ? q.lineError : ''}`}>{step.error ?? step.line ?? 'Free, kept under your wallet.'}</div>
+          <div className={q.title}>{w.ownQuarter}</div>
+          <div className={`${q.line} ${step.error ? q.lineError : ''}`}>{step.error ?? step.line ?? w.free}</div>
         </div>
       </div>
       {step.picking ? (
@@ -106,6 +111,7 @@ function ClaimCard() {
 /** The wallets in this browser, one tap each; none found says where to get one. «Back» changes nothing. */
 function Wallets() {
   const wallets = useWallet((st) => st.wallets);
+  const t = useWords(QUARTER);
   return (
     <>
       {wallets.length ? (
@@ -118,16 +124,16 @@ function Wallets() {
         </div>
       ) : (
         <div className={q.hint}>
-          No Solana wallet in this browser.{' '}
+          {t.noWallet}{' '}
           <a href={PHANTOM_DOWNLOAD_URL} target="_blank" rel="noreferrer">
-            Get Phantom
+            {t.getPhantom}
           </a>
-          , then come back.
+          {t.comeBack}
         </div>
       )}
       <div className={q.pair}>
         <button className={q.quiet} onClick={() => cityAccount.getState().cancel()}>
-          Back
+          {t.back}
         </button>
       </div>
     </>
@@ -136,15 +142,17 @@ function Wallets() {
 
 function ResidentCard() {
   const me = useQuarter((st) => st.me);
+  const w = useWords(QUARTER);
   if (!me) return null;
   const built = me.buildings.length;
   const home = me.buildings.find((b) => b.kind === 'home');
-  const line = home ? `${moduleForKind('home')?.name ?? 'Home'} · level ${home.level}${built > 1 ? ` · ${built} buildings` : ''}` : 'An empty lot, ready for your home.';
-  const title = `${streetName(me.quarter.street)} · Lot ${lotNumber(me.quarter.cell)}`;
-  return <ResidentBody title={title} line={line} idle={home ? 'Build' : 'Build your home'} />;
+  const line = home ? w.homeLine(moduleForKind('home')?.name ?? w.home, home.level, built) : w.emptyLot;
+  const title = w.address(streetName(me.quarter.street), lotNumber(me.quarter.cell));
+  return <ResidentBody title={title} line={line} idle={home ? w.build : w.buildHome} />;
 }
 
 function ResidentBody({ title, line, idle }: { title: string; line: string; idle: string }) {
+  const w = useWords(QUARTER);
   const step = useStepLabel(idle);
   // Building asks for the signed-in wallet too: one that came back locked or changed signs in first.
   const open = () => {
@@ -153,7 +161,7 @@ function ResidentBody({ title, line, idle }: { title: string; line: string; idle
   };
   return (
     <div className={`${s.panel} ${s.slot}`}>
-      <Head kicker="Your quarter" />
+      <Head kicker={w.yourQuarter} />
       <div className={q.row}>
         <span className={q.badge}>
           <LotGlyph />

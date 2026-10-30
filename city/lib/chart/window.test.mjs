@@ -64,18 +64,20 @@ test("the pane that stands while the code arrives is inside the window's own fra
 
 test("Buy on the chart opens the city's trade card, behind the switch the tower card's Buy has", () => {
   const window = read("city/components/chart/ChartWindow.tsx");
-  const action = read("city/components/trade/TradeAction.tsx");
+  // The tower's own window is the trade card since CITY-78: its ticket and the chart's Buy read one switch.
+  const action = read("city/components/trade/TradeSheet.tsx");
   // One switch for both Buys: `NEXT_PUBLIC_RYNTRA_CITY_TRADE` through `city/lib/trade/gates.ts`, never a copy.
-  const gate = /import \{ TRADE_OPEN \} from '@\/city\/lib\/trade\/gates';/;
+  const gate = /import \{ (?:SPOT_OPEN, )?TRADE_OPEN \} from '@\/city\/lib\/trade\/gates';/;
   assert.match(window, gate, "the chart reads the trade card's switch");
-  assert.match(action, gate, "the tower card's Buy reads the same one");
+  assert.match(action, gate, "the tower's window reads the same one");
   assert.doesNotMatch(window, /process\.env/, "no switch of the chart's own");
   // Its default: open unless the deployment says `closed`.
   assert.equal(tradeOpen(undefined), true);
   assert.equal(tradeOpen("closed"), false);
   // Closed: the same quiet «soon» as the tower card; open: the card, on buying, and nothing else.
   assert.match(window, /TRADE_OPEN \? \(/);
-  assert.match(window, /Trade · soon/);
+  assert.match(window, /\{w\.tradeSoon\}/);
+  assert.match(read("city/components/chart/words.ts"), /tradeSoon: 'Trade · soon'/);
   const calls = window.match(/useTrade\.getState\(\)\.\w+\([^)]*\)/g) ?? [];
   assert.deepEqual(calls, ["useTrade.getState().openFor(tower, 'buy')"]);
 });

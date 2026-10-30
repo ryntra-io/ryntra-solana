@@ -3,7 +3,8 @@
 import { useMemo } from 'react';
 import { playTick } from '@/city/lib/audio/engine';
 import { askRyntra } from '@/city/lib/agent/advice';
-import { AREA_ORDER, AREAS, BUDGETS, LIQUIDITY, ruleLine, SIGNAL_ORDER, SIGNALS, usd, withSignal, type Rule } from '@/city/lib/agent/rule';
+import { AREA_ORDER, AREAS, BUDGETS, factShown, LIQUIDITY, ruleLine, SIGNAL_ORDER, SIGNALS, usd as usdRaw, windowText, withSignal, type Rule } from '@/city/lib/agent/rule';
+import { dateText, digits, useWords, type TextKey } from '@/city/lib/i18n/dict';
 import { leftInWeek } from '@/city/lib/agent/scout';
 import { useAgent, type Find } from '@/city/lib/agent/store';
 import { useCity } from '@/city/lib/city/store';
@@ -12,6 +13,10 @@ import { useTrade } from '@/city/lib/trade/store';
 import { AgentGlyph, CloseGlyph } from '../hud/glyphs';
 import hud from '../hud/hud.module.css';
 import s from './agent.module.css';
+import { AGENT } from './words';
+
+/** Dollars for the eye, in the language on screen. */
+const usd = (v: number) => digits(usdRaw(v));
 
 /** The buy from a find is the tower's own trade card, with the same switch as the tower card's button. */
 const TRADE_OPEN = process.env.NEXT_PUBLIC_RYNTRA_CITY_TRADE !== 'closed';
@@ -37,6 +42,7 @@ const tick = () => {
 
 function Head({ kicker, title, live }: { kicker: string; title: string; live?: boolean }) {
   const close = useAgent((st) => st.closePanel);
+  const w = useWords(AGENT);
   return (
     <div className={s.head}>
       <div className={s.headText}>
@@ -46,7 +52,7 @@ function Head({ kicker, title, live }: { kicker: string; title: string; live?: b
         </div>
         <div className={`${hud.display} ${hud.slotTitle}`}>{title}</div>
       </div>
-      <button className={hud.close} aria-label="Close" onClick={close}>
+      <button className={hud.close} aria-label={w.close} onClick={close}>
         <CloseGlyph />
       </button>
     </div>
@@ -87,16 +93,17 @@ function RuleCard() {
   const set = (next: Partial<Rule>) => setDraft({ ...draft, ...next });
   const signal = SIGNALS[draft.signal];
   const sign = draft.signal === 'dip24h' ? '−' : '+';
+  const w = useWords(AGENT);
   return (
     <div className={`${hud.panel} ${hud.slot} ${s.slot}`}>
-      <Head kicker="Scout" title={on ? 'Change rule' : 'Your rule'} />
-      <Choices label="Look for" options={SIGNAL_ORDER} value={draft.signal} name={(v) => SIGNALS[v].label} onPick={(v) => setDraft(withSignal(draft, v))} />
-      <Choices label={`Move in ${signal.window}`} options={signal.moves} value={draft.move} name={(v) => `${sign}${v}%`} onPick={(v) => set({ move: v })} />
-      <Choices label="Liquidity from" options={LIQUIDITY} value={draft.liquidity} name={usd} onPick={(v) => set({ liquidity: v })} />
-      <Choices label="Where" options={AREA_ORDER} value={draft.area} name={(v) => AREAS[v]} onPick={(v) => set({ area: v })} />
+      <Head kicker={w.scout} title={on ? w.changeRule : w.yourRule} />
+      <Choices label={w.lookFor} options={SIGNAL_ORDER} value={draft.signal} name={(v) => SIGNALS[v].label} onPick={(v) => setDraft(withSignal(draft, v))} />
+      <Choices label={w.moveIn(windowText(signal.window))} options={signal.moves} value={draft.move} name={(v) => `${sign}${v}%`} onPick={(v) => set({ move: v })} />
+      <Choices label={w.liquidityFrom} options={LIQUIDITY} value={draft.liquidity} name={usd} onPick={(v) => set({ liquidity: v })} />
+      <Choices label={w.where} options={AREA_ORDER} value={draft.area} name={(v) => AREAS[v]} onPick={(v) => set({ area: v })} />
       <Choices
-        label="Pause after, a week"
-        hint="Counted from your trades in SOL or USDC within 30 minutes of a find. A pause, not a cap: the trade card's amounts stay yours."
+        label={w.pauseAfter}
+        hint={w.pauseHint}
         options={BUDGETS}
         value={draft.budget}
         name={usd}
@@ -109,20 +116,20 @@ function RuleCard() {
           launch();
         }}
       >
-        {on ? 'Fly with this rule' : 'Launch scout'}
+        {on ? w.flyWithRule : w.launchScout}
       </button>
-      <div className={hud.note}>The scout only finds. Every buy is yours: you open it, you sign it in your own wallet.</div>
+      <div className={hud.note}>{w.ruleNote}</div>
     </div>
   );
 }
 
-const STATUS: Record<'patrol' | 'quiet' | 'waiting' | 'resting' | 'found' | 'off', string> = {
-  patrol: 'Scanning the city',
-  found: 'Flying to a find',
-  quiet: 'Nothing fits right now',
-  waiting: 'Waiting for live prices',
-  resting: 'Paused for this week',
-  off: 'Landed',
+const STATUS: Record<'patrol' | 'quiet' | 'waiting' | 'resting' | 'found' | 'off', TextKey<typeof AGENT>> = {
+  patrol: 'patrol',
+  found: 'found',
+  quiet: 'quiet',
+  waiting: 'waiting',
+  resting: 'resting',
+  off: 'off',
 };
 
 function StatusCard() {
@@ -132,18 +139,19 @@ function StatusCard() {
   const ledger = useAgent((st) => st.ledger);
   const edit = useAgent((st) => st.edit);
   const stop = useAgent((st) => st.stop);
+  const w = useWords(AGENT);
   const left = leftInWeek(rule.budget, ledger, Date.now());
   const line =
     phase === 'resting'
-      ? `It looks again ${until ? `from ${new Date(until).toLocaleString('en-GB', { weekday: 'short', hour: '2-digit', minute: '2-digit' })}` : 'when older trades leave the week'}.`
+      ? w.looksAgain(until ? dateText(new Date(until), { weekday: 'short', hour: '2-digit', minute: '2-digit' }) : null)
       : phase === 'waiting'
-        ? 'It brings nothing from old figures: the city’s read is not live and fresh.'
+        ? w.waitingLine
         : phase === 'quiet'
-          ? 'It keeps flying and looks again with every new read.'
-          : 'Watch the drone: when a tower fits, it hangs over it.';
+          ? w.quietLine
+          : w.patrolLine;
   return (
     <div className={`${hud.panel} ${hud.slot} ${s.slot}`}>
-      <Head kicker="Scout · flying" title={STATUS[phase]} live />
+      <Head kicker={w.flying} title={w[STATUS[phase]]} live />
       <div className={hud.hotLine}>{line}</div>
       <div className={s.rule}>{ruleLine(rule)}</div>
       <Budget left={left} budget={rule.budget} />
@@ -155,10 +163,10 @@ function StatusCard() {
             edit();
           }}
         >
-          Change rule
+          {w.changeRule}
         </button>
         <button className={hud.quiet} onClick={stop}>
-          Land
+          {w.land}
         </button>
       </div>
     </div>
@@ -167,12 +175,13 @@ function StatusCard() {
 
 function Budget({ left, budget }: { left: number; budget: number }) {
   const share = budget > 0 ? Math.max(0, Math.min(1, left / budget)) : 0;
+  const w = useWords(AGENT);
   return (
     <div className={s.budget}>
       <div className={s.budgetLine}>
-        <span>Until pause this week</span>
+        <span>{w.untilPause}</span>
         <b>
-          {usd(left)} <small>of {usd(budget)}</small>
+          {usd(left)} <small>{w.of(usd(budget))}</small>
         </b>
       </div>
       <div className={s.bar} aria-hidden="true">
@@ -192,6 +201,7 @@ function FindCard({ find }: { find: Find }) {
   const tower = useMemo(() => layout.towers.find((p) => p.tower.id === find.tower.id)?.tower ?? find.tower, [layout, find]);
   const left = leftInWeek(rule.budget, ledger, Date.now());
   const sym = ticker(tower.symbol);
+  const w = useWords(AGENT);
 
   const open = () => {
     tick();
@@ -210,52 +220,55 @@ function FindCard({ find }: { find: Find }) {
   const said = advice.status !== 'none' && advice.mint === tower.id ? advice : null;
 
   return (
-    <div className={`${hud.panel} ${hud.slot} ${s.slot} ${s.find}`} role="dialog" aria-label={`Scout found ${sym}`}>
+    <div className={`${hud.panel} ${hud.slot} ${s.slot} ${s.find}`} role="dialog" aria-label={w.scoutFoundOf(sym)}>
       <div className={s.head}>
         <div className={s.headText}>
           <div className={`${hud.kicker} ${s.kickMint}`}>
             <span className={s.kickGlyph}>
               <AgentGlyph />
             </span>
-            Scout found
+            {w.scoutFound}
           </div>
           <div className={s.findRow}>
             <span className={`${hud.display} ${hud.hotSym}`}>{sym}</span>
             <span className={s.findName}>{tower.name}</span>
           </div>
         </div>
-        <button className={hud.close} aria-label="Skip" onClick={() => useAgent.getState().skip()}>
+        <button className={hud.close} aria-label={w.skip} onClick={() => useAgent.getState().skip()}>
           <CloseGlyph />
         </button>
       </div>
-      <div className={s.whyTitle}>Why this tower</div>
+      <div className={s.whyTitle}>{w.whyTower}</div>
       <div className={s.facts}>
-        {find.facts.map((f) => (
-          <div className={s.fact} key={f.label}>
-            <div className={hud.cellLabel}>{f.label}</div>
-            <div className={hud.cellValue}>{f.value}</div>
-            <div className={s.factNote}>{f.note}</div>
-          </div>
-        ))}
+        {find.facts.map((f) => {
+          const shown = factShown(f);
+          return (
+            <div className={s.fact} key={f.label}>
+              <div className={hud.cellLabel}>{shown.label}</div>
+              <div className={hud.cellValue}>{shown.value}</div>
+              <div className={s.factNote}>{shown.note}</div>
+            </div>
+          );
+        })}
       </div>
       <Budget left={left} budget={rule.budget} />
       {said && (
         <div className={s.advice} aria-live="polite">
-          <div className={s.adviceTitle}>Ryntra’s advice · not a signal</div>
-          {said.status === 'loading' ? <p>Asking Ryntra…</p> : said.status === 'error' ? <p>{said.message}</p> : said.lines.map((l) => <p key={l}>{l}</p>)}
+          <div className={s.adviceTitle}>{w.adviceTitle}</div>
+          {said.status === 'loading' ? <p>{w.asking}</p> : said.status === 'error' ? <p>{said.message}</p> : said.lines.map((l) => <p key={l}>{l}</p>)}
         </div>
       )}
       <div className={hud.pair}>
         <button className={`${hud.display} ${hud.action} ${s.buy}`} onClick={open}>
-          {TRADE_OPEN ? `Buy ${sym}` : `Open ${sym}`}
+          {TRADE_OPEN ? w.buy(sym) : w.open(sym)}
         </button>
         {!said && (
           <button className={`${hud.quiet} ${s.ask}`} onClick={() => void ask()}>
-            Ask Ryntra
+            {w.ask}
           </button>
         )}
       </div>
-      <div className={hud.note}>The scout never buys or signs. You do, in your own wallet.</div>
+      <div className={hud.note}>{w.findNote}</div>
     </div>
   );
 }

@@ -108,7 +108,7 @@ test("a harbor reads its position by its wallet: value, unclaimed fees and the r
   assert.equal(inRange.view.signal, "value");
   assert.equal(inRange.view.line, "Meteora DLMM");
   assert.equal(inRange.view.at, new Date(NOW - 20_000).toISOString());
-  assert.deepEqual(inRange.view.action, { kind: "route", label: "Open pool", href: `/app/markets/pools/${POOL}` });
+  assert.deepEqual(inRange.view.action, { kind: "route", label: "Open pool", href: "/?open=harbor" });
   const out = await readObject({ kind: "lp_position", position: POSITION }, ctx({ "/api/liquidity/positions": [200, positions("below", { valueUsd: null })] }).ctx);
   assert.equal(out.view.signal, "danger");
   assert.deepEqual(out.view.figures.map((f) => f.label), ["Unclaimed fees", "Price"], "a value without a price is left out");

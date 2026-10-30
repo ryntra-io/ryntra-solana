@@ -1,4 +1,6 @@
 import { MAX_BUILDING_LEVEL, MAX_FLOORS, MODULES as WORLD_MODULES, quarterLevelForBuilding } from '../../../../lib/world/catalog.ts';
+import { wordsNow } from '../../i18n/dict.ts';
+import { BUILD_WORDS } from '../words.ts';
 
 /**
  * The quarter's building kit as data: ten kinds of building, five levels each, and the modules a building is made of —
@@ -26,19 +28,12 @@ export type ModuleDef = {
   from: number;
 };
 
-/** What people call each kind in the city. */
-export const KIND_NAMES: Record<BuildingKind, string> = {
-  home: 'Home',
-  coin_tower: 'Coin tower',
-  harbor: 'Harbor',
-  workshop: 'Workshop',
-  crew_hq: 'Crew HQ',
-  garage: 'Garage',
-  oracle: 'Oracle board',
-  showcase: 'Showcase',
-  billboard: 'Billboard',
-  decor: 'Decor & light',
-};
+/** What people call each kind in the city, in the language on screen when it is read (`../words.ts`). */
+export const KIND_NAMES: Readonly<Record<BuildingKind, string>> = (() => {
+  const out = {} as Record<BuildingKind, string>;
+  for (const kind of BUILDING_KINDS) Object.defineProperty(out, kind, { enumerable: true, get: () => wordsNow(BUILD_WORDS).kindName(kind) });
+  return out;
+})();
 
 /** The name of every module the server knows. A module the server adds later shows its id until it is named here. */
 const NAMES: Record<string, string> = {

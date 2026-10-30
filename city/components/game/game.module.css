@@ -1,0 +1,296 @@
+/* The Play layer (CITY-81): the «City / Play» switch beside the brand and the Map. The HUD's language — dark glass,
+   chamfered corners, an inner light edge, amber for the one thing on — from city/components/hud/hud.module.css. */
+
+/* The brand and the switch, one group at the left of the top bar: the group, not the brand, takes the free room. */
+.lead {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-right: auto;
+  min-width: 0;
+}
+
+.lead > :first-child {
+  margin-right: 0;
+}
+
+/* ---------- City / Play ---------- */
+
+.switch {
+  position: relative;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  flex: none;
+  height: 40px;
+  padding: 3px;
+  background: linear-gradient(160deg, rgba(20, 16, 36, 0.86), rgba(8, 7, 15, 0.9));
+  box-shadow: inset 0 0 0 2px rgba(153, 69, 255, 0.28), inset 0 1px 18px rgba(153, 69, 255, 0.18);
+  clip-path: polygon(10px 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%, 0 10px);
+  isolation: isolate;
+}
+
+/* The lit half slides under the layer that is on. */
+.thumb {
+  position: absolute;
+  top: 3px;
+  bottom: 3px;
+  left: 3px;
+  width: calc(50% - 3px);
+  z-index: -1;
+  background: linear-gradient(100deg, var(--warm), var(--amber));
+  clip-path: polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px);
+  transition: transform 220ms cubic-bezier(0.2, 1.1, 0.4, 1);
+}
+
+.switch[data-layer='play'] .thumb {
+  transform: translateX(100%);
+}
+
+.segment {
+  min-width: 64px;
+  padding: 0 14px;
+  border: 0;
+  background: none;
+  font-size: 13px;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+  cursor: pointer;
+  transition: color 160ms ease;
+}
+
+.segment[aria-pressed='true'] {
+  color: var(--ink);
+  cursor: default;
+}
+
+.segment:not([aria-pressed='true']):hover {
+  color: var(--ice);
+}
+
+.segment:focus-visible {
+  outline: 2px solid var(--amber);
+  outline-offset: -2px;
+}
+
+.segment {
+  display: grid;
+  place-items: center;
+}
+
+.icon {
+  display: none;
+  width: 22px;
+  height: 22px;
+}
+
+.icon svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+/* A phone: no room for the logo and the words side by side. The logo steps back; the City segment carries the mark and
+   is the way home, Play its glyph — one pill where the logo stood. */
+@media (max-width: 540px) {
+  .lead > :first-child {
+    display: none;
+  }
+  .switch {
+    height: 44px;
+  }
+  .segment {
+    min-width: 0;
+    width: 40px;
+    padding: 0;
+  }
+  .word {
+    display: none;
+  }
+  .icon {
+    display: block;
+  }
+}
+
+/* ---------- The Map ---------- */
+
+.map {
+  padding: 12px 16px 16px;
+}
+
+.mapHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-height: 40px;
+}
+
+.mapClose {
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  margin-right: -10px;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--text-dim);
+}
+
+.mapClose:hover {
+  color: var(--ice);
+}
+
+.mapClose svg {
+  width: 16px;
+  height: 16px;
+}
+
+/* The island from above: a square that keeps its shape, as tall as the screen allows. */
+.island {
+  position: relative;
+  width: min(100%, 250px, 26vh);
+  aspect-ratio: 1;
+  margin: 2px auto 0;
+}
+
+.islandArt {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.shore {
+  fill: rgba(11, 10, 20, 0.7);
+  stroke: rgba(153, 69, 255, 0.5);
+  stroke-width: 1;
+}
+
+/* A district's name where its towers stand: a target for the finger, its dot in the district's light. */
+.place {
+  position: absolute;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 30px;
+  padding: 0 9px;
+  border: 0;
+  transform: translate(-50%, -50%);
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  color: var(--ice);
+  background: rgba(8, 7, 15, 0.82);
+  box-shadow: inset 0 0 0 1px rgba(153, 69, 255, 0.45);
+  clip-path: polygon(6px 0, 100% 0, 100% calc(100% - 6px), calc(100% - 6px) 100%, 0 100%, 0 6px);
+  cursor: pointer;
+}
+
+.place::before {
+  content: '';
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--dot);
+  box-shadow: 0 0 8px var(--dot);
+}
+
+.place:hover {
+  box-shadow: inset 0 0 0 1px rgba(255, 231, 194, 0.7);
+}
+
+.place[aria-pressed='true'] {
+  color: var(--ink);
+  background: linear-gradient(100deg, var(--warm), var(--amber));
+  box-shadow: none;
+}
+
+.place[aria-pressed='true']::before {
+  background: var(--ink);
+  box-shadow: none;
+}
+
+.place:focus-visible,
+.mover:focus-visible,
+.mapClose:focus-visible {
+  outline: 2px solid var(--amber);
+  outline-offset: 2px;
+}
+
+/* The towers moving most: three chips, one tap each — the coin's logo, its ticker over its move. */
+.movers {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.mover {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  height: 52px;
+  padding: 0 10px;
+  border: 0;
+  text-align: left;
+  color: var(--ice);
+  background: rgba(255, 255, 255, 0.06);
+  clip-path: polygon(10px 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%, 0 10px);
+  cursor: pointer;
+}
+
+.mover:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.mover[aria-pressed='true'] {
+  box-shadow: inset 0 0 0 2px var(--amber);
+}
+
+.moverIcon {
+  flex: none;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: rgba(238, 241, 255, 0.12);
+  object-fit: cover;
+}
+
+.moverWords {
+  display: grid;
+  min-width: 0;
+  font-size: 12px;
+  font-weight: 800;
+  line-height: 1.25;
+  font-variant-numeric: tabular-nums;
+}
+
+.moverSym {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 13px;
+}
+
+@media (max-width: 400px) {
+  .mover {
+    padding: 0 8px;
+    gap: 6px;
+  }
+  .moverIcon {
+    width: 20px;
+    height: 20px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .thumb,
+  .segment {
+    transition: none;
+  }
+}

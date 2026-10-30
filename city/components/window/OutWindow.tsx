@@ -5,7 +5,9 @@ import { createPortal } from 'react-dom';
 import { comeBack, pipWindowOf } from '@/city/lib/window/out';
 import { useWindows, type WindowSpec } from '@/city/lib/window/store';
 import { Body } from './WindowFrame';
+import { useWords } from '@/city/lib/i18n/dict';
 import { BackGlyph } from './glyphs';
+import { WINDOW } from './words';
 import s from './window.module.css';
 
 /**
@@ -15,6 +17,7 @@ import s from './window.module.css';
  */
 export function OutWindow({ spec, onBack, pip }: { spec: WindowSpec; onBack: () => void; pip: boolean }) {
   const titleId = useId();
+  const w = useWords(WINDOW);
   return (
     <div className={s.out} role="region" aria-labelledby={titleId} data-window={spec.id} data-window-out={pip ? 'pip' : 'tab'}>
       <div className={s.outHead}>
@@ -24,7 +27,7 @@ export function OutWindow({ spec, onBack, pip }: { spec: WindowSpec; onBack: () 
         </h2>
         <div className={s.tools}>
           {/* A signature out holds the window where it is, as the frame's «Close» waits in the city. */}
-          <button type="button" className={s.tool} aria-label="Back to the city" title="Back to the city" disabled={Boolean(spec.held)} onClick={onBack}>
+          <button type="button" className={s.tool} aria-label={w.backToCity} title={w.backToCity} disabled={Boolean(spec.held)} onClick={onBack}>
             <BackGlyph />
           </button>
         </div>
@@ -32,7 +35,7 @@ export function OutWindow({ spec, onBack, pip }: { spec: WindowSpec; onBack: () 
       {pip && spec.held && (
         <p className={s.outHeld} role="status">
           <span className={s.outDot} aria-hidden="true" />
-          Confirm in your wallet
+          {w.confirmInWallet}
         </p>
       )}
       <div className={s.body}>
@@ -88,17 +91,18 @@ export function OutTray() {
   const out = useWindows((st) => st.out);
   const specs = useWindows((st) => st.specs);
   const desk = useWindows((st) => st.desk);
+  const w = useWords(WINDOW);
   const ids = Object.keys(out).filter((id) => specs[id]);
   if (!desk || !ids.length) return null;
   return (
-    <div className={s.tray} role="group" aria-label="Windows on another screen">
+    <div className={s.tray} role="group" aria-label={w.outTray}>
       {ids.map((id) => (
         <button
           key={id}
           type="button"
           className={s.trayItem}
-          aria-label={`Bring ${specs[id]!.title} back`}
-          title={`Bring ${specs[id]!.title} back`}
+          aria-label={w.bringBack(specs[id]!.title)}
+          title={w.bringBack(specs[id]!.title)}
           disabled={Boolean(specs[id]!.held)}
           onClick={() => comeBack(id)}
         >

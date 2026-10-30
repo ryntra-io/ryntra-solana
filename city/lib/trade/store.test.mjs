@@ -69,6 +69,27 @@ test("the card opens on a price, before any wallet", async () => {
   assert.equal(routes("order").length, 0);
 });
 
+test("a launch's tower opens the same window and asks Jupiter for nothing: the Launch engine prices it (CITY-138)", async () => {
+  const { routes } = scene({});
+  useTrade.getState().openFor({ ...TOWER, verified: false }, "buy", { launch: true });
+  await flush();
+  let state = useTrade.getState();
+  assert.equal(state.open, true);
+  assert.equal(state.launch, true);
+  assert.equal(state.quote.status, "none");
+  await state.refreshQuote();
+  await state.prepare(true);
+  assert.equal(routes("quote").length, 0);
+  assert.equal(routes("order").length, 0);
+  // Another tower after it is a Jupiter card again.
+  useTrade.getState().close();
+  useTrade.getState().openFor(TOWER);
+  await flush();
+  state = useTrade.getState();
+  assert.equal(state.launch, false);
+  assert.equal(routes("quote").length, 1);
+});
+
 test("«Mine» opens the card on selling, the whole holding priced into SOL", async () => {
   const { routes } = scene({}, { holdings: WITH_USDT });
   useTrade.getState().openFor(TOWER, "sell");

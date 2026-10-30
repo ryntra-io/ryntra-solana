@@ -7,8 +7,10 @@ import { seamsIn, togetherIn } from '@/city/lib/window/layout';
 import { startOut } from '@/city/lib/window/out';
 import { useWindows } from '@/city/lib/window/store';
 import type { Guide } from '@/city/lib/window/geometry';
+import { useWords } from '@/city/lib/i18n/dict';
 import { GridGlyph } from './glyphs';
 import { OutHosts, OutTray } from './OutWindow';
+import { WINDOW } from './words';
 import { WindowFrame } from './WindowFrame';
 import { WindowSheet } from './WindowSheet';
 import s from './window.module.css';
@@ -127,11 +129,12 @@ function Guides() {
 /** «Snap together»: every open window stuck into one grid (macet M2); hidden once they all stick. */
 function SnapTogether() {
   const together = useWindows((st) => togetherIn(st.layout));
+  const w = useWords(WINDOW);
   if (together) return null;
   return (
     <button type="button" className={s.snap} onClick={() => useWindows.getState().grid()}>
       <GridGlyph />
-      Snap together
+      {w.snap}
     </button>
   );
 }

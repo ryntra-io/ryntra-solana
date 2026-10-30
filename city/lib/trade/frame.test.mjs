@@ -15,7 +15,7 @@ test("a window from 900 px of width; below it, the phone's bottom sheet", () => 
 
 test("the window first opens on the right, whole on the screen", () => {
   const frame = defaultFrame(DESK);
-  assert.deepEqual(frame, { x: 1440 - 16 - 520, y: 860 - 24 - 560, width: 520, height: 560 });
+  assert.deepEqual(frame, { x: 1440 - 16 - 520, y: 860 - 24 - 760, width: 520, height: 760 });
   assert.ok(inside(frame, DESK));
   const short = defaultFrame({ width: 1000, height: 500 });
   assert.ok(inside(short, { width: 1000, height: 500 }));

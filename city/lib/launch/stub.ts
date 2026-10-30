@@ -135,9 +135,13 @@ const DAY = 86_400_000;
 /** A launch of the stub's stand: what the engine's list and reads would say of it. */
 type StubLaunch = Readonly<{ token: string; name: string; symbol: string; launchedAt: number; creator: string; progressBps: (now: number) => number; migrated: boolean; holders: number; checks: readonly ('young' | 'alive' | 'quiet')[]; liquidityUsd: number | null }>;
 
+/** The stand's youngest coin is always in the last two minutes of its launch fee's fall, so the fee is seen falling live. */
+const YOUNG_CYCLE = 2 * MINUTE;
+
 function standLaunches(now: number): StubLaunch[] {
   const at = (ago: number) => now - ago;
   return [
+    { token: stubAddress('SPARK'), name: 'Spark', symbol: 'SPARK', launchedAt: now - 8 * MINUTE - (now % YOUNG_CYCLE), creator: stubAddress('creator:spark'), progressBps: () => 4215, migrated: false, holders: 58, checks: ['young', 'young', 'young'], liquidityUsd: null },
     { token: stubAddress('NOVA'), name: 'Nova', symbol: 'NOVA', launchedAt: at(3 * 3600_000), creator: stubAddress('creator:nova'), progressBps: () => 6200, migrated: false, holders: 41, checks: ['young', 'young', 'young'], liquidityUsd: null },
     { token: stubAddress('KITE'), name: 'Kite', symbol: 'KITE', launchedAt: at(42 * MINUTE), creator: stubAddress('creator:kite'), progressBps: () => 2500, migrated: false, holders: 37, checks: ['young', 'young', 'young'], liquidityUsd: null },
     { token: stubAddress('MOTH'), name: 'Moth', symbol: 'MOTH', launchedAt: at(12 * DAY), creator: stubAddress('creator:moth'), progressBps: () => 10_000, migrated: true, holders: 214, checks: ['alive', 'young', 'young'], liquidityUsd: 31_200 },
@@ -151,6 +155,15 @@ const iso = (ms: number) => new Date(ms).toISOString();
 /** The curve's market cap at a share of its way, for the stand's made-up reads: from the preset's start to its exit. */
 function capAt(bps: number, preset: LaunchPresetView): number {
   return Math.round(preset.startMarketCapUsd + ((preset.graduationMarketCapUsd - preset.startMarketCapUsd) * bps) / 10_000);
+}
+
+/** The curve's fee for a buy now: the preset's falling fee for snipers in its first minutes, a straight line on the stand. */
+function curveFeeAt(launch: StubLaunch, now: number, preset: LaunchPresetView): NonNullable<LaunchMarketResponse['curveFee']> {
+  const { startBps, endBps, seconds } = preset.sniperFee;
+  const until = launch.launchedAt + seconds * 1000;
+  if (now >= until) return { nowBps: endBps, endBps, sniperUntil: null };
+  const gone = Math.max(0, (now - launch.launchedAt) / (seconds * 1000));
+  return { nowBps: Math.round(startBps - (startBps - endBps) * gone), endBps, sniperUntil: iso(until) };
 }
 
 function rowOf(launch: StubLaunch, now: number): LaunchMarketRow {
@@ -199,7 +212,7 @@ function marketOf(launch: StubLaunch, now: number, preset: LaunchPresetView): La
     liquidity: { pair: launch.liquidityUsd ?? Math.round(cap / 8), usd: launch.liquidityUsd ?? Math.round(cap / 8) },
     volume24h: { pair: 0, usd: 0, complete: true },
     progress: { bps, migrated: launch.migrated, reserveRaw: '0', thresholdRaw: '0' },
-    curveFee: launch.migrated ? null : { nowBps: preset.sniperFee.endBps, endBps: preset.sniperFee.endBps, sniperUntil: null },
+    curveFee: launch.migrated ? null : curveFeeAt(launch, now, preset),
     holders: { count: launch.holders, atLeast: false, rows: [], groups: { creatorBps: 0, snipers: null, bundle: null, top10Bps: 0 } },
     trades: { rows: [], complete: true, read: 0 },
     chart: { points: [], markers: [] },

@@ -2,7 +2,9 @@
 
 import { useEffect, useRef, useState, type RefObject } from 'react';
 import { AGENTS_OPEN } from '@/city/lib/agent/flag';
-import { CITY_NEVER, CITY_RULES, DISTRICT_WORDS, HOW_LEAD, MARKET_SOURCE, RUN_RULE } from '@/city/lib/art/districts';
+import { cityNever, cityRules, districtWords } from '@/city/lib/art/districts';
+import { HOW } from '@/city/lib/art/words';
+import { useWords } from '@/city/lib/i18n/dict';
 import { DISTRICT_FILMS, DISTRICT_IDS, districtFrame, playsFilm, srcSet, type DistrictId, type Film } from '@/city/lib/art/frames';
 import { howStore, useHow } from '@/city/lib/art/how';
 import { readViewer } from '@/city/lib/art/viewer';
@@ -35,6 +37,7 @@ function HowWindow() {
   const opened: Record<DistrictId, boolean> = { market: true, launch: launchOpen, harbor: HARBOR_OPEN, agents: AGENTS_OPEN, vault: VAULT_OPEN, ring: false, home: true };
   const [films] = useState(() => playsFilm(readViewer()));
   const [rules, setRules] = useState(false);
+  const w = useWords(HOW);
   const box = useRef<HTMLDivElement>(null);
   const closeButton = useRef<HTMLButtonElement>(null);
 
@@ -78,16 +81,16 @@ function HowWindow() {
           <div className={h.heroShade} />
           <div className={h.heroWords}>
             <h2 id="city-how-title" className={`${s.display} ${h.title}`}>
-              How the city works
+              {w.title}
             </h2>
-            <p className={h.lead}>{HOW_LEAD}</p>
+            <p className={h.lead}>{w.lead}</p>
           </div>
-          <button ref={closeButton} className={h.close} aria-label="Close" onClick={() => howStore.getState().hide()}>
+          <button ref={closeButton} className={h.close} aria-label={w.close} onClick={() => howStore.getState().hide()}>
             <CloseGlyph />
           </button>
         </header>
 
-        <ul className={h.grid} aria-label="Districts">
+        <ul className={h.grid} aria-label={w.districts}>
           {DISTRICT_IDS.map((id) => (
             <Plate key={id} id={id} open={opened[id]} film={films ? DISTRICT_FILMS[id] : undefined} root={box} />
           ))}
@@ -96,28 +99,28 @@ function HowWindow() {
         {/* A div, not a section: the site's global sheet pads every section (app/globals.css). */}
         <div className={`${s.panel} ${h.rules}`}>
           <button className={h.rulesToggle} aria-expanded={rules} aria-controls="city-how-rules" onClick={() => setRules((v) => !v)}>
-            <span className={`${s.display} ${h.rulesTitle}`}>The rules of the city</span>
+            <span className={`${s.display} ${h.rulesTitle}`}>{w.rulesTitle}</span>
             <span className={`${h.chevron} ${rules ? h.chevronOn : ''}`} aria-hidden="true" />
           </button>
           {rules && (
             <div id="city-how-rules" className={h.rulesBody}>
               <div>
-                <h3 className={h.rulesHead}>How it reads the market</h3>
+                <h3 className={h.rulesHead}>{w.readsHead}</h3>
                 <ul className={h.list}>
-                  {(RUN_OPEN ? [...CITY_RULES, RUN_RULE] : CITY_RULES).map((line) => (
+                  {(RUN_OPEN ? [...cityRules(w), w.runRule] : cityRules(w)).map((line) => (
                     <li key={line}>{line}</li>
                   ))}
                 </ul>
               </div>
               <div>
-                <h3 className={h.rulesHead}>What it never does</h3>
+                <h3 className={h.rulesHead}>{w.neverHead}</h3>
                 <ul className={h.list}>
-                  {CITY_NEVER.map((line) => (
+                  {cityNever(w).map((line) => (
                     <li key={line}>{line}</li>
                   ))}
                 </ul>
               </div>
-              <p className={h.source}>{MARKET_SOURCE}</p>
+              <p className={h.source}>{w.source}</p>
             </div>
           )}
         </div>
@@ -128,7 +131,8 @@ function HowWindow() {
 
 /** One district: its frame with its name and whether it is open, then what it is and what you do there. */
 function Plate({ id, open, film, root }: { id: DistrictId; open: boolean; film?: Film; root: RefObject<HTMLDivElement | null> }) {
-  const words = DISTRICT_WORDS[id];
+  const w = useWords(HOW);
+  const words = districtWords(w, id);
   const frame = districtFrame(id);
   const feature = id === 'market';
   return (
@@ -145,7 +149,7 @@ function Plate({ id, open, film, root }: { id: DistrictId; open: boolean; film?:
               <LockGlyph />
             </span>
           )}
-          {open ? 'Open' : 'Soon'}
+          {open ? w.open : w.soon}
         </span>
         <h3 className={`${s.display} ${h.name}`}>{words.name}</h3>
       </div>

@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { advance, emptyFeed, type FeedInput, type FeedMemory } from './feed.ts';
-import { defaultSettings, readSettings, shownKinds, toggled, touchedIn, writeSettings, type FeedSettings, type FeedSwitch, type StorageLike } from './settings.ts';
+import { defaultSettings, migrateSettings, readSettings, shownKinds, toggled, touchedIn, writeSettings, type FeedSettings, type FeedSwitch, type StorageLike } from './settings.ts';
 import { browserStorage, flashingOn, prefersReducedMotion, resetMotion, setFlashing, useFlashing } from './motion.ts';
 
 export { flashingOn, useFlashing };
@@ -52,6 +52,8 @@ export function hydrateFeed(env?: Readonly<{ storage: StorageLike | null; reduce
   const reduced = env ? env.reducedMotion : prefersReducedMotion();
   const phone = env ? env.phone === true : isPhone();
   storage = env ? env.storage : browserStorage();
+  // A value kept before the current version is brought up to it once (CITY-81: «Arrivals» off everywhere).
+  migrateSettings(storage);
   useFeed.setState({ settings: readSettings(storage, reduced, phone), touched: touchedIn(storage), reducedMotion: reduced, ready: true });
   if (!env) watchMotion();
 }

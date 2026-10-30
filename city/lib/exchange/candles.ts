@@ -8,7 +8,8 @@ import { symbolKey, type FuturesCandle, type FuturesCandles, type FuturesTimefra
 
 /** The intervals the chart offers: few, so the row stays one quiet line. */
 export const CHART_TIMEFRAMES = ['15m', '1h', '4h', '1d'] as const satisfies readonly FuturesTimeframe[];
-export type ChartTimeframe = (typeof CHART_TIMEFRAMES)[number];
+/** Any interval Phoenix's reads serve: the core chart's own menu offers them all. */
+export type ChartTimeframe = FuturesTimeframe;
 
 /** What the chart opens on. */
 export const CHART_DEFAULT: ChartTimeframe = '1h';
@@ -48,10 +49,28 @@ const good = (bar: FuturesCandle): boolean =>
  * The drawn chart of a read; null for another market's or another interval's read, or one without a bar to draw, so a
  * market just picked never shows the last one's shape.
  */
-export function chartView(read: FuturesCandles | null, symbol: string | null, timeframe: ChartTimeframe, bars = CHART_BARS): ChartView | null {
+/**
+ * A read with its newest bar still forming at the live mark: the close is the mark, the high and the low stretch to it.
+ * The same read when there is no mark or no bar. Pure.
+ */
+export function withLiveMark(read: FuturesCandles, live: number | null): FuturesCandles {
+  if (live === null || !Number.isFinite(live) || live <= 0 || read.last.length === 0) return read;
+  const order = [...read.last].sort((a, b) => a.t - b.t);
+  const forming = order[order.length - 1]!;
+  const moved = { ...forming, c: live, h: Math.max(forming.h, live), l: Math.min(forming.l, live) };
+  return { ...read, last: read.last.map((bar) => (bar === forming ? moved : bar)) };
+}
+
+export function chartView(read: FuturesCandles | null, symbol: string | null, timeframe: ChartTimeframe, bars = CHART_BARS, live: number | null = null): ChartView | null {
   if (!read || !symbol || symbolKey(read.symbol) !== symbolKey(symbol) || read.timeframe !== timeframe) return null;
   const drawn = [...read.last].filter(good).sort((a, b) => a.t - b.t).slice(-bars);
   if (drawn.length === 0) return null;
+  // The newest bar is still forming: it closes at the live mark between the reads of the bars, so the chart moves with
+  // the price on screen (30.10).
+  if (live !== null && Number.isFinite(live) && live > 0) {
+    const forming = drawn[drawn.length - 1]!;
+    drawn[drawn.length - 1] = { ...forming, c: live, h: Math.max(forming.h, live), l: Math.min(forming.l, live) };
+  }
   let high = Math.max(...drawn.map((bar) => bar.h));
   let low = Math.min(...drawn.map((bar) => bar.l));
   // A flat market still has a height: a hair above and below its one price.

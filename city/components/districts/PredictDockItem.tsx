@@ -6,6 +6,8 @@ import { useCity } from '@/city/lib/city/store';
 import { useHarbor } from '@/city/lib/districts/harbor/store';
 import { PREDICT_OPEN } from '@/city/lib/districts/predict/flag';
 import { usePredict } from '@/city/lib/districts/predict/store';
+import { PREDICT } from '@/city/lib/districts/predict/words';
+import { useWords } from '@/city/lib/i18n/dict';
 import { vaultStore } from '@/city/lib/vault/store';
 import s from '../hud/hud.module.css';
 import p from './predict.module.css';
@@ -24,13 +26,14 @@ export function openPredictions(): void {
 /** «Predict» in the city's dock, once the district is open: one more district beside the others, drawn as they are. */
 export function PredictDockItem() {
   const open = usePredict((st) => st.open);
+  const w = useWords(PREDICT);
   if (!PREDICT_OPEN) return null;
   return (
     <button
       className={[s.dockItem, p.dockPredict, open && s.dockOn].filter(Boolean).join(' ')}
-      aria-label="Predict"
+      aria-label={w.predict}
       aria-pressed={open}
-      data-hint="Live prediction markets"
+      data-hint={w.dockHint}
       onClick={() => {
         if (useCity.getState().sound) playTick();
         if (usePredict.getState().open) return usePredict.getState().hide();
@@ -40,7 +43,7 @@ export function PredictDockItem() {
       <span className={s.dockGlyph}>
         <PredictGlyph />
       </span>
-      <span className={s.dockLabel}>Predict</span>
+      <span className={s.dockLabel}>{w.predict}</span>
     </button>
   );
 }

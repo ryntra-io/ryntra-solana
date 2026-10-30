@@ -1,5 +1,6 @@
 import type { RyntraChartProps } from '@ryntra/core/chart';
 import type { NormalizedCandle } from '../../../lib/chart/types.ts';
+import { dateText } from '../i18n/dict.ts';
 
 /**
  * The city's own readout of the bar under the pointer (CITY-5a), in place of the core chart's legend: the core chart
@@ -51,8 +52,7 @@ export function readoutOf(candles: readonly NormalizedCandle[], t: number | null
 
 /** A bar's time as the readout says it, in the browser's zone: the day on daily bars, the day and the hour on others. */
 export function readoutTime(t: number, daily: boolean, timeZone?: string): string {
-  const date = new Date(t);
   return daily
-    ? date.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric', timeZone })
-    : date.toLocaleString('en-GB', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit', hour12: false, timeZone });
+    ? dateText(t, { day: 'numeric', month: 'short', year: 'numeric', timeZone })
+    : dateText(t, { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit', hour12: false, timeZone });
 }

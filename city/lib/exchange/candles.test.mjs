@@ -49,6 +49,33 @@ test("the wide view leads with the chart, so the full-screen Exchange never stan
   const columns = window.slice(window.indexOf("function Columns"), window.indexOf("function Stacked"));
   assert.equal(columns.match(/<PriceChart \/>/g)?.length, 2);
   const chart = readFileSync(new URL("../../components/exchange/PriceChart.tsx", import.meta.url), "utf8");
-  // Phoenix silent with nothing to draw: the frame goes, it is never left empty.
-  assert.match(chart, /if \(!view && read\.status === 'failed'\) return null;/);
+  // Phoenix silent with nothing ever read: the frame goes, it is never left empty.
+  assert.match(chart, /if \(!read\.value && read\.status === 'failed'\) return null;/);
+  // Our chart, not a drawing (30.10): the core chart on Phoenix's own feed.
+  const core = readFileSync(new URL("../../components/exchange/CoreChart.tsx", import.meta.url), "utf8");
+  assert.match(core, /<RyntraChart/);
+  assert.match(core, /new FuturesChartFeed\(/);
+});
+
+test("the forming bar follows the live mark between the reads of the bars (30.10)", () => {
+  const bars = [bar(1, 140, 151, 138, 150), bar(2, 150, 156, 149, 155)];
+  const still = chartView(read(bars), "SOL", "1h");
+  const rising = chartView(read(bars), "SOL", "1h", CHART_BARS, 160);
+  assert.equal(still.last, 155);
+  assert.equal(rising.last, 160);
+  assert.equal(rising.high, 160, "a new high stretches the box");
+  const falling = chartView(read(bars), "SOL", "1h", CHART_BARS, 130);
+  assert.equal(falling.low, 130);
+  assert.equal(falling.candles.at(-1).up, false, "below its open the forming bar turns red");
+  assert.deepEqual(chartView(read(bars), "SOL", "1h", CHART_BARS, null), still, "no mark — the bars as read");
+});
+
+test("the core feed gets the read with its forming bar at the live mark (30.10)", async () => {
+  const { withLiveMark } = await import("./candles.ts");
+  const candles = read([bar(1, 140, 151, 138, 150), bar(2, 150, 156, 149, 155)]);
+  assert.equal(withLiveMark(candles, null), candles);
+  const moved = withLiveMark(candles, 160);
+  assert.equal(moved.last.find((b) => b.t === 2).c, 160);
+  assert.equal(moved.last.find((b) => b.t === 2).h, 160);
+  assert.equal(moved.last.find((b) => b.t === 1).c, 150, "older bars stay as read");
 });

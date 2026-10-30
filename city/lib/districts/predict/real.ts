@@ -1,3 +1,7 @@
+import { wordsNow } from '../../i18n/dict.ts';
+import { saidNow } from './practice.ts';
+import { PREDICT_TEXT } from './words.ts';
+
 /**
  * Real money in the window, as Ryntra Predictions states it — the managed account AGG holds for a proven Solana
  * wallet: whether live trading is open to the wallet here, the dollars it can spend, its positions with their profit
@@ -319,14 +323,14 @@ export const MIN_ORDER_USD = 1;
 
 export type RealRefusal = 'amount' | 'min' | 'max' | 'cash' | 'closed' | 'access';
 
-export const REAL_REFUSAL: Readonly<Record<RealRefusal, string>> = {
-  amount: 'Enter an amount.',
-  min: `At least $${MIN_ORDER_USD}.`,
-  max: 'Above the limit for one order.',
-  cash: 'Not enough USDC. Deposit first.',
-  closed: 'This market is closed.',
-  access: 'Real money is not open for this wallet yet.',
-};
+export const REAL_REFUSAL: Readonly<Record<RealRefusal, string>> = saidNow<RealRefusal>({
+  amount: (w) => w.enterAmount,
+  min: (w) => w.atLeast(MIN_ORDER_USD),
+  max: (w) => w.aboveLimit,
+  cash: (w) => w.realCash,
+  closed: (w) => w.marketClosed,
+  access: (w) => w.realAccess,
+});
 
 /** Why a real buy would not be asked for, before the Review; null when it would. */
 export function realBuyRefusal(input: Readonly<{ spendUsd: number; access: Access | null; available: number | null; tradable: boolean }>): RealRefusal | null {
@@ -341,57 +345,59 @@ export function realBuyRefusal(input: Readonly<{ spendUsd: number; access: Acces
 
 /** The engine's failure, said shortly in the city's words; the engine's own text never reaches the screen. */
 export function failureWords(code: string): string {
+  const w = wordsNow(PREDICT_TEXT);
   switch (code) {
     case 'NETWORK':
     case 'TIMEOUT':
     case 'PROVIDER_UNAVAILABLE':
     case 'UNAVAILABLE':
-      return 'Predictions did not answer. Try again.';
+      return w.noAnswer;
     case 'UNAUTHORIZED':
     case 'WALLET_MISMATCH':
-      return 'Sign in with your wallet first.';
+      return w.signInFirst;
     case 'NOT_LINKED':
     case 'SESSION_EXPIRED':
-      return 'Open your account again.';
+      return w.openAgain;
     case 'RATE_LIMITED':
-      return 'Too many tries. Wait a minute.';
+      return w.tooMany;
     case 'CHALLENGE_REQUIRED':
     case 'CHALLENGE_FAILED':
-      return 'Busy right now. Try again in a minute.';
+      return w.busy;
     case 'QUOTE_EXPIRED':
-      return 'The price moved. Try again.';
+      return w.priceMoved;
     case 'QUOTE_UNAVAILABLE':
-      return 'No price for this amount right now.';
+      return w.noPrice;
     case 'ORDER_REFUSED':
-      return 'The order was not taken. Nothing was spent.';
+      return w.notTaken;
     case 'FUNDING_OFF':
-      return 'Real money is closed here.';
+      return w.realClosed;
     case 'WITHDRAWAL_OPEN':
-      return 'A withdrawal is still on its way.';
+      return w.withdrawalOpen;
     case 'SIGNATURE_INVALID':
-      return 'The signature did not check out.';
+      return w.badSignature;
     case 'NOT_FOUND':
-      return 'This market is gone.';
+      return w.marketGone;
     default:
-      return 'Something went wrong. Try again.';
+      return w.wentWrong;
   }
 }
 
 /** A withdrawal's state in a word. */
 export function withdrawalWord(phase: string): string {
+  const w = wordsNow(PREDICT_TEXT);
   switch (phase) {
     case 'completed':
-      return 'Arrived';
+      return w.arrived;
     case 'partial':
-      return 'Partly arrived';
+      return w.partlyArrived;
     case 'failed':
     case 'refused':
-      return 'Not sent';
+      return w.notSent;
     case 'in_flight':
     case 'sending':
-      return 'On its way';
+      return w.onItsWay;
     default:
-      return 'Checking';
+      return w.checking;
   }
 }
 
@@ -420,18 +426,19 @@ export function readWithdrawPreview(json: unknown): WithdrawPreview | null {
 
 /** Why a withdrawal cannot go, in a few words. */
 export function withdrawReason(reason: string | null): string {
+  const w = wordsNow(PREDICT_TEXT);
   switch (reason) {
     case 'below_minimum':
-      return 'At least $1.';
+      return w.atLeast(1);
     case 'insufficient':
-      return 'More than the account holds.';
+      return w.moreThanHeld;
     case 'above_max':
-      return 'More than can go out right now.';
+      return w.moreThanCan;
     case 'fee_exceeds':
-      return 'The fee is more than the amount.';
+      return w.feeOverAmount;
     case 'route_unavailable':
-      return 'Not available right now. Try again.';
+      return w.notAvailable;
     default:
-      return 'This amount cannot go out.';
+      return w.cannotGo;
   }
 }

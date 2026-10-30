@@ -1,14 +1,17 @@
 'use client';
 
 import { useEffect, useRef } from 'react';
+import { useWords } from '@/city/lib/i18n/dict';
 import { ago, awayFor } from '@/city/lib/quarter/away';
-import { awayStore, useAway, type AwayChannel } from '@/city/lib/quarter/away-store';
+import { useRyntraApp } from '@/city/lib/app-mode';
+import { awayChannels, awayStore, useAway } from '@/city/lib/quarter/away-store';
 import { useQuarter } from '@/city/lib/quarter/store';
 import { useCity } from '@/city/lib/city/store';
 import { useRun } from '@/city/lib/run/store';
 import { ownedMints, useWallet } from '@/city/lib/trade/wallet';
 import s from '../hud/hud.module.css';
 import a from './away.module.css';
+import { QUARTER } from './words';
 
 /** How long the reel waits for the city's live read before it plays without the market's lines. */
 const MARKET_WAIT_MS = 4_000;
@@ -73,8 +76,8 @@ export function useAwayWatch() {
 /**
  * The reel over the city: twenty seconds, one line at a time, while the camera flies over each change
  * (`AwayCamera`). Every line says its source and when; a tap goes to the next, «Skip» or Escape ends it, and the city's
- * screen comes back. Below the line, the person may let the report reach them in Telegram or by push: off until they
- * turn it on, and nothing is sent from here.
+ * screen comes back. Below the line, the person may let the report reach them in Telegram or, in a browser, by push: off
+ * until they turn it on, and nothing is sent from here.
  */
 export function AwayReel() {
   const lines = useAway((st) => st.lines);
@@ -83,6 +86,7 @@ export function AwayReel() {
   const since = useAway((st) => st.since);
   const until = useAway((st) => st.until);
   const line = lines[index] ?? null;
+  const w = useWords(QUARTER);
 
   useEffect(() => {
     if (!line || paused) return;
@@ -118,19 +122,19 @@ export function AwayReel() {
         <div className={a.head}>
           <div className={`${s.kicker} ${a.kicker}`}>
             <span className={a.spark} aria-hidden="true" />
-            While you were away
+            {w.whileAway}
             {since && until && <span className={a.for}>· {awayFor(since, until)}</span>}
           </div>
           <button className={`${s.display} ${a.skip}`} onClick={() => awayStore.getState().finish()}>
-            Skip
+            {w.skip}
           </button>
         </div>
       </div>
 
       <div className={`${s.panel} ${a.card}`}>
-        <button className={a.tap} onClick={() => awayStore.getState().next()} aria-label={index + 1 < lines.length ? 'Next' : 'Done'}>
+        <button className={a.tap} onClick={() => awayStore.getState().next()} aria-label={index + 1 < lines.length ? w.next : w.done}>
           <span key={line.id} className={a.lineIn}>
-            <span className={`${a.tone} ${line.tone === 'mine' ? a.toneMine : a.toneAround}`}>{line.tone === 'mine' ? 'Yours' : 'Around you'}</span>
+            <span className={`${a.tone} ${line.tone === 'mine' ? a.toneMine : a.toneAround}`}>{line.tone === 'mine' ? w.yours : w.around}</span>
             <span className={a.text}>{line.text}</span>
             {line.sub && <span className={a.sub}>{line.sub}</span>}
             <span className={a.meta}>
@@ -150,21 +154,19 @@ export function AwayReel() {
   );
 }
 
-const CHANNELS: { id: AwayChannel; label: string }[] = [
-  { id: 'telegram', label: 'Telegram' },
-  { id: 'push', label: 'Push' },
-];
-
-/** Where else the report may reach the person: two switches, off until they turn one on. */
+/** Where else the report may reach the person: a switch per channel, off until they turn one on. */
 function Consent() {
   const consent = useAway((st) => st.consent);
   const busy = useAway((st) => st.consentBusy);
   const error = useAway((st) => st.consentError);
+  const w = useWords(QUARTER);
+  // In the Ryntra app: Telegram only, the app registers no push (CITY-6e).
+  const channels = awayChannels(useRyntraApp());
   if (!consent?.canConsent) return null;
   return (
     <div className={a.consent}>
-      <span className={a.consentWord}>{error ?? 'Also tell me in'}</span>
-      {CHANNELS.map((c) => (
+      <span className={a.consentWord}>{error ?? w.alsoTell}</span>
+      {channels.map((c) => (
         <button
           key={c.id}
           role="switch"

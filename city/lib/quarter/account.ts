@@ -1,6 +1,8 @@
 import { useStore } from 'zustand';
 import { createStore } from 'zustand/vanilla';
+import { wordsNow } from '../i18n/dict.ts';
 import type { QuarterStore } from './store.ts';
+import { ACCOUNT_WORDS } from './words.ts';
 
 /**
  * Whose quarter this is. A quarter is kept under a Ryntra account, and in the city that account is a wallet signed in
@@ -91,12 +93,21 @@ export type AccountDeps = {
   signOut(): Promise<void>;
 };
 
-export const LINES = {
-  noWallet: 'No wallet connected. Nothing changed.',
-  declined: 'Nothing was signed. Nothing changed.',
-  changed: 'The wallet changed. Try again.',
-  notHeld: 'The sign-in did not hold. Try again.',
-} as const;
+/** The sign-in's one-line answers, in the language on screen when they are said (`./words.ts`). */
+export const LINES: Readonly<Record<'noWallet' | 'declined' | 'changed' | 'notHeld', string>> = {
+  get noWallet() {
+    return wordsNow(ACCOUNT_WORDS).noWallet;
+  },
+  get declined() {
+    return wordsNow(ACCOUNT_WORDS).declined;
+  },
+  get changed() {
+    return wordsNow(ACCOUNT_WORDS).changed;
+  },
+  get notHeld() {
+    return wordsNow(ACCOUNT_WORDS).notHeld;
+  },
+};
 
 export function createAccountStore(deps: AccountDeps) {
   const { quarter, wallet, session } = deps;

@@ -4,7 +4,9 @@ import { useEffect, useId, useRef } from 'react';
 import { useKeyboardInset } from '@/city/lib/keyboard';
 import { useWindows } from '@/city/lib/window/store';
 import { Body } from './WindowFrame';
+import { useWords } from '@/city/lib/i18n/dict';
 import { CloseGlyph, ExitFullGlyph, FullGlyph } from './glyphs';
+import { WINDOW } from './words';
 import s from './window.module.css';
 
 /**
@@ -12,6 +14,7 @@ import s from './window.module.css';
  * or sticks. With more than one open, a row of tabs under the head switches between them.
  */
 export function WindowSheet() {
+  const words = useWords(WINDOW);
   const windows = useWindows((st) => st.layout.windows);
   const fullId = useWindows((st) => st.layout.full);
   const specs = useWindows((st) => st.specs);
@@ -54,18 +57,18 @@ export function WindowSheet() {
           <button
             type="button"
             className={`${s.tool} ${s.toolTouch}`}
-            aria-label={full ? 'Exit full screen' : 'Full screen'}
+            aria-label={full ? words.exitFull : words.full}
             onClick={() => (full ? actions.exitFull() : actions.full(active.id))}
           >
             {full ? <ExitFullGlyph /> : <FullGlyph />}
           </button>
-          <button type="button" className={`${s.tool} ${s.toolTouch}`} aria-label="Close" disabled={spec.held} onClick={() => actions.dismiss(active.id)}>
+          <button type="button" className={`${s.tool} ${s.toolTouch}`} aria-label={words.close} disabled={spec.held} onClick={() => actions.dismiss(active.id)}>
             <CloseGlyph />
           </button>
         </div>
       </div>
       {tabs.length > 1 && (
-        <div className={s.tabs} role="tablist" aria-label="Open windows">
+        <div className={s.tabs} role="tablist" aria-label={words.openWindows}>
           {tabs.map((w) => (
             <button key={w.id} type="button" role="tab" aria-selected={w.id === active.id} className={s.tab} onClick={() => show(w.id)}>
               {specs[w.id]?.title ?? w.id}

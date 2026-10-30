@@ -1,4 +1,6 @@
 import { askOnceMore, SWAP_TIMEOUT_MS } from '../../../lib/solana/swap-press.ts';
+import { wordsNow } from '../i18n/dict.ts';
+import { LINE } from './words.ts';
 import type {
   SwapExecuteResponse,
   SwapOrderResponse,
@@ -69,14 +71,14 @@ export async function postJson<T>(fetchImpl: FetchLike, url: string, payload: un
   }, timeoutMs);
   const lost = (fallback: string): EngineResult<T> => ({
     ok: false,
-    failure: timedOut ? { code: 'TIMEOUT', message: 'The server did not answer in time.' } : { code: 'NETWORK', message: fallback },
+    failure: timedOut ? { code: 'TIMEOUT', message: wordsNow(LINE).serverLate } : { code: 'NETWORK', message: fallback },
   });
   let response: Awaited<ReturnType<FetchLike>>;
   try {
     response = await fetchImpl(url, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(payload), signal: bound.signal });
   } catch {
     timers.clear(timer);
-    return lost('The request did not complete.');
+    return lost(wordsNow(LINE).notComplete);
   }
   let json: unknown;
   let readable = true;
@@ -87,7 +89,7 @@ export async function postJson<T>(fetchImpl: FetchLike, url: string, payload: un
   }
   timers.clear(timer);
   // A success whose body was cut off is no answer at all, never an empty success.
-  if (!readable && (response.ok || response.status === 202)) return lost('The answer did not arrive whole.');
+  if (!readable && (response.ok || response.status === 202)) return lost(wordsNow(LINE).notWhole);
   const value = (json && typeof json === 'object' ? json : {}) as Record<string, unknown>;
   if (!response.ok && response.status !== 202) {
     const error = (value.error && typeof value.error === 'object' ? value.error : {}) as Partial<EngineFailure>;
@@ -95,7 +97,7 @@ export async function postJson<T>(fetchImpl: FetchLike, url: string, payload: un
       ok: false,
       failure: {
         code: typeof error.code === 'string' ? error.code : `HTTP_${response.status}`,
-        message: typeof error.message === 'string' ? error.message : 'The request failed.',
+        message: typeof error.message === 'string' ? error.message : wordsNow(LINE).failed,
         ...(error.submitBoundary === 'NOT_CROSSED' ? { submitBoundary: 'NOT_CROSSED' as const } : {}),
         ...(typeof error.signature === 'string' ? { signature: error.signature } : {}),
         ownerLock: error.ownerLock ?? null,

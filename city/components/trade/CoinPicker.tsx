@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useRef, useState, type KeyboardEvent } from 'react';
 import { withoutOffensiveNames } from '@/lib/spot/offensive-names';
 import { useCity } from '@/city/lib/city/store';
+import { digits, useWords } from '@/city/lib/i18n/dict';
 import { pastedMint } from '@/city/lib/search/mint';
 import { catalogHits, cityHits, indexHits, mergeHits, type CatalogRow, type CoinHit, type IndexCoin } from '@/city/lib/search/rank';
 import { readCoinFacts, readIndex, searchCatalog } from '@/city/lib/search/sources';
@@ -10,6 +11,7 @@ import { shortAddress } from '@/city/lib/trade/format';
 import { coinMatches, suggestedCoins, walletCoins } from '@/city/lib/trade/pair';
 import { unitOf, type PayAsset } from '@/city/lib/trade/tiles';
 import { useWallet } from '@/city/lib/trade/wallet';
+import { PICK } from './words';
 import s from './trade.module.css';
 
 /** A pause in typing this long asks Jupiter's catalogue; the towers and the index answer at every key. */
@@ -39,6 +41,7 @@ type Row = Readonly<{ asset: PayAsset; amount: string | null }>;
  * Jupiter has not verified says so. Nothing is priced here; the card asks the engine once a coin is picked.
  */
 export function CoinPicker({ kind, title, exclude, onPick, onBack }: { kind: PickerKind; title: string; exclude: readonly string[]; onPick: (asset: PayAsset) => void; onBack: () => void }) {
+  const w = useWords(PICK);
   const [query, setQuery] = useState('');
   const field = useRef<HTMLInputElement>(null);
   const holdings = useWallet((st) => st.holdings);
@@ -99,28 +102,28 @@ export function CoinPicker({ kind, title, exclude, onPick, onBack }: { kind: Pic
   const status =
     kind === 'wallet'
       ? !connection
-        ? 'Connect a wallet to see its coins'
+        ? w.connectToSee
         : !holdings
           ? holdingsRead === 'failed'
-            ? 'Balances unavailable right now'
-            : 'Reading your wallet…'
+            ? w.balancesUnavailable
+            : w.readingWallet
           : !rows.length
             ? query.trim()
-              ? 'Nothing found'
-              : 'No other coins yet'
+              ? w.nothingFound
+              : w.noOtherCoins
             : null
       : miss
-        ? 'Nothing found'
+        ? w.nothingFound
         : reading
-          ? 'Looking it up…'
+          ? w.lookingUp
           : !rows.length && !offerMint && query.trim().length >= 2
-            ? 'Nothing found'
+            ? w.nothingFound
             : null;
 
   return (
     <div className={s.picker} role="group" aria-label={title}>
       <div className={s.pickerHead}>
-        <button className={s.pickerBack} onClick={onBack} aria-label="Back to the trade">
+        <button className={s.pickerBack} onClick={onBack} aria-label={w.backToTrade}>
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
             <path d="M15 5l-7 7 7 7" />
           </svg>
@@ -134,8 +137,8 @@ export function CoinPicker({ kind, title, exclude, onPick, onBack }: { kind: Pic
         inputMode="search"
         autoComplete="off"
         spellCheck={false}
-        placeholder={kind === 'wallet' ? 'Search your coins' : 'Search any coin'}
-        aria-label={kind === 'wallet' ? 'Search your coins' : 'Search any coin'}
+        placeholder={kind === 'wallet' ? w.searchYours : w.searchAny}
+        aria-label={kind === 'wallet' ? w.searchYours : w.searchAny}
         value={query}
         onChange={(event) => setQuery(event.target.value)}
         onKeyDown={onKey}
@@ -147,9 +150,9 @@ export function CoinPicker({ kind, title, exclude, onPick, onBack }: { kind: Pic
               <CoinIcon asset={row.asset} />
               <span className={s.pickerNames}>
                 <b>{unitOf(row.asset)}</b>
-                <span className={`${s.pickerName} ${row.asset.verified === false ? s.pickerRisk : ''}`}>{row.asset.verified === false ? 'Unverified' : (row.asset.name ?? shortAddress(row.asset.mint))}</span>
+                <span className={`${s.pickerName} ${row.asset.verified === false ? s.pickerRisk : ''}`}>{row.asset.verified === false ? w.unverified : (row.asset.name ?? shortAddress(row.asset.mint))}</span>
               </span>
-              {row.amount !== null && <span className={s.pickerAmount}>{row.amount}</span>}
+              {row.amount !== null && <span className={s.pickerAmount}>{digits(row.amount)}</span>}
             </button>
           </li>
         ))}
@@ -159,7 +162,7 @@ export function CoinPicker({ kind, title, exclude, onPick, onBack }: { kind: Pic
               <span className={s.pickerIcon} aria-hidden="true" />
               <span className={s.pickerNames}>
                 <b>{shortAddress(mint)}</b>
-                <span className={s.pickerName}>Look up this coin</span>
+                <span className={s.pickerName}>{w.lookUp}</span>
               </span>
             </button>
           </li>

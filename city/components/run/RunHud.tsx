@@ -6,7 +6,15 @@ import { onRunEvent, runLive } from '@/city/lib/run/bus';
 import { useCity } from '@/city/lib/city/store';
 import { track } from '@/city/lib/run/track';
 import { useRun, type RunResult } from '@/city/lib/run/store';
+import { digits, useWords, wordsNow } from '@/city/lib/i18n/dict';
 import r from './run.module.css';
+import { CUE_KEYS, RUN } from './words';
+
+/** A cue of the course, in the language on screen. */
+function cueShown(text: string, w: (typeof RUN)['en']): string {
+  const key = CUE_KEYS.find((k) => RUN.en[k] === text);
+  return key ? w[key] : text;
+}
 
 /**
  * The run's HUD: one screen, one goal. While running: the timer, a thin progress line with your ghost on it,
@@ -35,18 +43,19 @@ function TopRow({ onSound }: { onSound: (on: boolean) => void }) {
   const showGhost = useRun((s) => s.showGhost);
   const toggleGhost = useRun((s) => s.toggleGhost);
   const exit = useRun((s) => s.exit);
+  const w = useWords(RUN);
   return (
     <div className={r.top}>
-      <button className={r.icon} aria-label={sound ? 'Mute' : 'Sound on'} onClick={() => onSound(!sound)}>
+      <button className={r.icon} aria-label={sound ? w.mute : w.soundOn} onClick={() => onSound(!sound)}>
         {sound ? <SpeakerOn /> : <SpeakerOff />}
       </button>
       <span className={r.spacer} />
       {best && (
-        <button className={`${r.icon} ${showGhost ? r.iconOn : ''}`} aria-label={showGhost ? 'Hide your ghost' : 'Show your ghost'} aria-pressed={showGhost} onClick={toggleGhost}>
+        <button className={`${r.icon} ${showGhost ? r.iconOn : ''}`} aria-label={showGhost ? w.hideGhost : w.showGhost} aria-pressed={showGhost} onClick={toggleGhost}>
           <GhostIcon />
         </button>
       )}
-      <button className={r.icon} aria-label="Back to the city" onClick={exit}>
+      <button className={r.icon} aria-label={w.backToCity} onClick={exit}>
         <CloseIcon />
       </button>
     </div>
@@ -80,7 +89,8 @@ function HitFlash() {
 function HowTo() {
   const form = useRun((s) => s.form);
   const touch = useTouch();
-  const move = form === 'flight' ? (touch ? 'Drag to fly' : 'Move the mouse to fly') : touch ? 'Swipe to run' : 'Arrow keys to run';
+  const w = useWords(RUN);
+  const move = form === 'flight' ? (touch ? w.dragToFly : w.mouseToFly) : touch ? w.swipeToRun : w.keysToRun;
   return (
     <div className={r.howto}>
       <div className={r.howtoMove}>
@@ -89,9 +99,9 @@ function HowTo() {
       </div>
       {form === 'roofs' && (
         <div className={r.keys}>
-          <span>← → lane</span>
-          <span>↑ jump</span>
-          <span>↓ slide</span>
+          <span>{w.lane}</span>
+          <span>{w.jump}</span>
+          <span>{w.slide}</span>
         </div>
       )}
       <div className={r.howtoNote}>
@@ -100,7 +110,7 @@ function HowTo() {
           <i className={r.pip} />
           <i className={r.pip} />
         </span>
-        A hit costs a shield, not the run
+        {w.hitCosts}
       </div>
     </div>
   );
@@ -117,7 +127,7 @@ function Countdown() {
       const beat = Math.ceil(left / (countdownLen / 3));
       const el = ref.current;
       if (el) {
-        const text = beat > 0 ? String(beat) : 'GO';
+        const text = beat > 0 ? String(beat) : wordsNow(RUN).go;
         if (el.textContent !== text) {
           el.textContent = text;
           el.classList.remove(r.pop!);
@@ -151,11 +161,12 @@ function Clock() {
   const ghost = useRef<HTMLDivElement>(null);
   const shields = useRef<HTMLDivElement>(null);
   const challenge = useRun((s) => s.challenge);
+  const w = useWords(RUN);
   useEffect(() => {
     let raf = 0;
     let shown = 3;
     const paint = () => {
-      if (time.current) time.current.textContent = fmt(runLive.t);
+      if (time.current) time.current.textContent = digits(fmt(runLive.t));
       const box = shields.current;
       if (box && runLive.shields !== shown) {
         // A lost shield cracks red; one that comes back pops in.
@@ -168,7 +179,7 @@ function Clock() {
           void (changed as HTMLElement).offsetWidth;
           changed.classList.add(cls);
         }
-        box.setAttribute('aria-label', `${runLive.shields} of 3 shields`);
+        box.setAttribute('aria-label', wordsNow(RUN).shields(runLive.shields));
         shown = runLive.shields;
       }
       if (fill.current) fill.current.style.transform = `scaleX(${runLive.progress})`;
@@ -181,7 +192,7 @@ function Clock() {
         if (Number.isNaN(d) || runLive.t < 1) {
           delta.current.textContent = '';
         } else {
-          delta.current.textContent = `${d > 0 ? '+' : '−'}${Math.abs(d).toFixed(1)}`;
+          delta.current.textContent = digits(`${d > 0 ? '+' : '−'}${Math.abs(d).toFixed(1)}`);
           delta.current.dataset.ahead = d <= 0 ? 'yes' : 'no';
         }
       }
@@ -193,19 +204,19 @@ function Clock() {
   return (
     <div className={r.clock}>
       <span ref={time} className={r.time}>
-        00:00.0
+        {digits('00:00.0')}
       </span>
       <div className={r.track} aria-hidden="true">
         <div ref={fill} className={r.fill} />
         <div ref={ghost} className={r.ghostMark} />
       </div>
-      <div ref={shields} className={r.shields} role="img" aria-label="3 of 3 shields">
+      <div ref={shields} className={r.shields} role="img" aria-label={w.shields(3)}>
         <i className={r.pip} />
         <i className={r.pip} />
         <i className={r.pip} />
       </div>
-      <span ref={delta} className={r.delta} aria-label="Gap to your best" />
-      {challenge && <div className={r.target}>To beat {challenge.beat.toFixed(1)} s</div>}
+      <span ref={delta} className={r.delta} aria-label={w.gap} />
+      {challenge && <div className={r.target}>{w.toBeat(digits(challenge.beat.toFixed(1)))}</div>}
     </div>
   );
 }
@@ -215,6 +226,7 @@ function Hint() {
   const phase = useRun((s) => s.phase);
   const attempt = useRun((s) => s.attempt);
   const touch = useTouch();
+  const w = useWords(RUN);
   const [hint, setHint] = useState<string>('');
   useEffect(() => {
     let raf = 0;
@@ -232,51 +244,52 @@ function Hint() {
     return (
       <div className={r.hint} key="learn">
         <span className={r.hintIcon}>{form === 'flight' ? <DragIcon /> : <SwipeIcon />}</span>
-        {form === 'flight' ? (touch ? 'Drag to fly' : 'Move the mouse to fly') : '← → lane · ↑ jump · ↓ slide'}
+        {form === 'flight' ? (touch ? w.dragToFly : w.mouseToFly) : w.keysLine}
       </div>
     );
   }
   if (hint.startsWith('cue:')) {
     return (
       <div className={`${r.hint} ${r.cue}`} key={hint}>
-        {hint.slice(4)}
+        {cueShown(hint.slice(4), w)}
       </div>
     );
   }
   if (hint === 'fork') {
     return (
       <div className={r.routes} key="fork">
-        <span className={r.route}>Safe</span>
-        <span className={`${r.route} ${r.routeFast}`}>Fast</span>
-        <span className={`${r.route} ${r.routeRisky}`}>Risky</span>
+        <span className={r.route}>{w.safe}</span>
+        <span className={`${r.route} ${r.routeFast}`}>{w.fast}</span>
+        <span className={`${r.route} ${r.routeRisky}`}>{w.risky}</span>
       </div>
     );
   }
   if (hint === 'node') {
     return (
       <div className={r.routes} key="node">
-        <span className={`${r.route} ${r.routeRisky}`}>{form === 'flight' ? 'Break' : '↓ Break'}</span>
+        <span className={`${r.route} ${r.routeRisky}`}>{form === 'flight' ? w.breakIt : w.breakDown}</span>
         <span className={r.routeGap} />
-        <span className={`${r.route} ${r.routeSave}`}>Save</span>
+        <span className={`${r.route} ${r.routeSave}`}>{w.save}</span>
       </div>
     );
   }
   return null;
 }
 
-function consequence(res: RunResult): string {
-  if (res.status === 'crash') return res.reason === 'the drop' ? 'No shields left · you fell' : `No shields left · you hit ${res.reason}`;
-  const hits = res.hits === 0 ? 'clean run' : `${res.hits} ${res.hits === 1 ? 'hit' : 'hits'}`;
-  if (res.toBeat !== null && res.toBeat < -0.05) return `Challenge beaten by ${(-res.toBeat).toFixed(1)} s · ${hits}`;
-  if (res.toBeat !== null && Math.abs(res.toBeat) <= 0.05) return `Tied the challenge · ${hits}`;
-  if (res.toBeat !== null) return `+${res.toBeat.toFixed(1)} s to beat the challenge · ${hits}`;
-  if (res.newBest && res.toBest === null) return `First finish today · ${hits}`;
-  if (res.newBest) return `New best · ${hits}`;
-  if (res.toBest !== null && Math.abs(res.toBest) < 0.05) return `Tied your best · ${hits}`;
-  if (res.toBest !== null) return `+${res.toBest.toFixed(1)} s to your best · ${hits}`;
-  if (res.node === 'break') return `You broke the bridge · ${hits}`;
-  if (res.node === 'save') return `You saved the bridge · ${hits}`;
-  return `Finished · ${hits}`;
+function consequence(res: RunResult, w: (typeof RUN)['en']): string {
+  if (res.status === 'crash') return res.reason === 'the drop' ? w.fell : w.hit(res.reason);
+  const hits = res.hits === 0 ? w.clean : w.hits(res.hits);
+  const sec = (v: number) => digits(v.toFixed(1));
+  if (res.toBeat !== null && res.toBeat < -0.05) return w.beaten(sec(-res.toBeat), hits);
+  if (res.toBeat !== null && Math.abs(res.toBeat) <= 0.05) return w.tiedChallenge(hits);
+  if (res.toBeat !== null) return w.toBeatChallenge(sec(res.toBeat), hits);
+  if (res.newBest && res.toBest === null) return w.firstFinish(hits);
+  if (res.newBest) return w.newBest(hits);
+  if (res.toBest !== null && Math.abs(res.toBest) < 0.05) return w.tiedBest(hits);
+  if (res.toBest !== null) return w.toBest(sec(res.toBest), hits);
+  if (res.node === 'break') return w.broke(hits);
+  if (res.node === 'save') return w.saved(hits);
+  return w.finished(hits);
 }
 
 function Result({ result }: { result: RunResult }) {
@@ -285,6 +298,7 @@ function Result({ result }: { result: RunResult }) {
   const form = useRun((s) => s.form);
   const course = useRun((s) => s.course);
   const finished = result.status === 'finish';
+  const w = useWords(RUN);
 
   // The challenge: the link with this run's world and ghost, the run's clip and card, in one sheet.
   const challenge = () => {
@@ -305,21 +319,21 @@ function Result({ result }: { result: RunResult }) {
   }, [start]);
 
   return (
-    <div className={r.result} role="dialog" aria-label={finished ? 'Run finished' : 'Run crashed'}>
-      <div className={`${r.kicker} ${finished ? r.kickerFinish : r.kickerCrash}`}>{finished ? 'Finish' : 'Crashed'}</div>
-      <div className={r.big}>{finished ? `${result.time.toFixed(1)} s` : `${Math.round(result.progress * 100)}%`}</div>
-      <div className={r.line}>{consequence(result)}</div>
+    <div className={r.result} role="dialog" aria-label={finished ? w.runFinished : w.runCrashed}>
+      <div className={`${r.kicker} ${finished ? r.kickerFinish : r.kickerCrash}`}>{finished ? w.finish : w.crashed}</div>
+      <div className={r.big}>{finished ? w.seconds(digits(result.time.toFixed(1))) : `${Math.round(result.progress * 100)}%`}</div>
+      <div className={r.line}>{consequence(result, w)}</div>
       <div className={finished ? r.actions : `${r.actions} ${r.actionsTwo}`}>
         <button className={r.again} onClick={() => start('result')} autoFocus>
-          Run again
+          {w.runAgain}
         </button>
         {finished && (
           <button className={r.second} onClick={challenge}>
-            Challenge
+            {w.challenge}
           </button>
         )}
         <button className={r.quiet} onClick={exit}>
-          City
+          {w.city}
         </button>
       </div>
     </div>

@@ -7,8 +7,10 @@ import { createIconAtlas, slotUv, SLOTS_PER_ROW, MAX_SLOTS, type IconAtlas } fro
 import type { PlacedTower } from '@/city/lib/city/layout';
 import { share, SHARED } from '@/city/lib/city/shared';
 import { useCity, useCityEvents, type CityEvent } from '@/city/lib/city/store';
+import { lensY } from '@/city/lib/lens/uniforms';
 import { isNamed, type District } from '@/city/lib/market/types';
 import { PALETTE } from '@/city/lib/palette';
+import { useTowerLens } from '../lens/useTowerLens';
 import { createTowerMaterial } from './materials/towerMaterial';
 import { Skyline } from './skyline/Skyline';
 import { TowerState } from './skyline/state';
@@ -55,6 +57,7 @@ export function Towers({ towers }: { towers: PlacedTower[] }) {
     const glow = new Float32Array(count * 4);
     const activity = new Float32Array(count);
     const build = new Float32Array(count);
+    const lens = new Float32Array(count);
     towers.forEach((t, i) => {
       size.set([t.width, t.height], i * 2);
       seed[i] = t.seed % 100000;
@@ -70,6 +73,7 @@ export function Towers({ towers }: { towers: PlacedTower[] }) {
     geometry.setAttribute('aGlow', new THREE.InstancedBufferAttribute(glow, 4));
     geometry.setAttribute('aActivity', new THREE.InstancedBufferAttribute(activity, 1));
     geometry.setAttribute('aBuild', new THREE.InstancedBufferAttribute(build, 1));
+    geometry.setAttribute('aLens', new THREE.InstancedBufferAttribute(lens, 1));
     return { geometry, material: share(createTowerMaterial()) };
   }, [towers, count]);
 
@@ -167,6 +171,7 @@ export function Towers({ towers }: { towers: PlacedTower[] }) {
     const scale = new Float32Array(count);
     const uv = new Float32Array(count * 2);
     const ring = new Float32Array(count * 3);
+    const lens = new Float32Array(count * 2);
     towers.forEach((t, i) => {
       const lift = t.kind === 3 ? 2.2 : t.width * 1.2 + 2.6;
       center.set([t.x, t.height + lift, t.z], i * 3);
@@ -179,6 +184,8 @@ export function Towers({ towers }: { towers: PlacedTower[] }) {
     geometry.setAttribute('aScale', new THREE.InstancedBufferAttribute(scale, 1));
     geometry.setAttribute('aSlot', new THREE.InstancedBufferAttribute(uv, 2));
     geometry.setAttribute('aRing', new THREE.InstancedBufferAttribute(ring, 3));
+    // The Lens (CITY-86): x the tower's level (a sunk tower's sign goes), y how far its roof moved.
+    geometry.setAttribute('aLens', new THREE.InstancedBufferAttribute(lens, 2));
     const material = new THREE.ShaderMaterial({
       uniforms: { uAtlas: { value: null as THREE.Texture | null }, uSlot: { value: 1 / SLOTS_PER_ROW }, uTime: SHARED.uTime },
       vertexShader: /* glsl */ `
@@ -186,15 +193,18 @@ export function Towers({ towers }: { towers: PlacedTower[] }) {
         attribute float aScale;
         attribute vec2 aSlot;
         attribute vec3 aRing;
+        attribute vec2 aLens;
         varying vec2 vUv;
         varying vec2 vSlot;
         varying vec3 vRing;
         uniform float uTime;
         void main() {
-          vec3 toCam = cameraPosition - aCenter;
+          vec3 centre = aCenter + vec3(0.0, aLens.y, 0.0);
+          float scale = aScale * (1.0 - clamp(-aLens.x, 0.0, 1.0));
+          vec3 toCam = cameraPosition - centre;
           vec3 right = normalize(cross(vec3(0.0, 1.0, 0.0), toCam));
           float bob = sin(uTime * 1.3 + aCenter.x) * 0.25;
-          vec3 world = aCenter + right * position.x * aScale + vec3(0.0, position.y * aScale + bob, 0.0);
+          vec3 world = centre + right * position.x * scale + vec3(0.0, position.y * scale + bob, 0.0);
           vUv = uv;
           vSlot = aSlot;
           vRing = aRing;
@@ -387,6 +397,36 @@ export function Towers({ towers }: { towers: PlacedTower[] }) {
     }
   });
 
+  // The Lens (CITY-86): the towers of the picked chip rise in violet light, the rest sink into the haze — the bodies and
+  // modules in their shaders, the crowns, signs and halos here.
+  const lens = useTowerLens(towers, (levels, move) => {
+    const bodyLens = body.geometry.getAttribute('aLens') as THREE.InstancedBufferAttribute;
+    const signLens = signs.geometry.getAttribute('aLens') as THREE.InstancedBufferAttribute;
+    const crowns = crownRef.current;
+    const m = new THREE.Matrix4();
+    towers.forEach((t, i) => {
+      const level = levels[i] ?? 0;
+      bodyLens.setX(i, level);
+      state.lens(i, level);
+      signLens.setXY(i, level, lensY(t.height, t.height, level, move) - t.height);
+      if (!crowns) return;
+      const build = motions.current.get(t.tower.id)?.build ?? 1;
+      const crownSize = t.kind === 3 ? 0.35 : Math.max(0.55, t.width * 0.34);
+      crowns.setMatrixAt(i, m.makeScale(crownSize, crownSize, crownSize).setPosition(t.x, lensY(t.height * build, t.height, level, move) + 0.15, t.z));
+    });
+    bodyLens.needsUpdate = true;
+    signLens.needsUpdate = true;
+    if (crowns) crowns.instanceMatrix.needsUpdate = true;
+    const rings = haloRef.current;
+    if (rings) {
+      halos.forEach((t, i) => {
+        const r = t.width * 1.45;
+        rings.setMatrixAt(i, m.makeScale(r, 0.5, r).setPosition(t.x, lensY(t.height * 0.7, t.height, levels[indexOf.get(t.tower.id) ?? -1] ?? 0, move), t.z));
+      });
+      rings.instanceMatrix.needsUpdate = true;
+    }
+  });
+
   const buffer = useMemo(() => new THREE.Vector2(), []);
   useFrame(({ gl }) => {
     crown.material.uniforms.uViewportH!.value = gl.getDrawingBufferSize(buffer).y;
@@ -417,7 +457,7 @@ export function Towers({ towers }: { towers: PlacedTower[] }) {
         const t = towers[i]!;
         const m = new THREE.Matrix4();
         const crownSize = t.kind === 3 ? 0.35 : Math.max(0.55, t.width * 0.34);
-        m.makeScale(crownSize, crownSize, crownSize).setPosition(t.x, t.height * motion.build + 0.15, t.z);
+        m.makeScale(crownSize, crownSize, crownSize).setPosition(t.x, lensY(t.height * motion.build, t.height, lens.current[i] ?? 0, lens.move) + 0.15, t.z);
         crowns.setMatrixAt(i, m);
         crowns.instanceMatrix.needsUpdate = true;
       }

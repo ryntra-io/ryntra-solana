@@ -4,8 +4,10 @@ import { playTick } from '@/city/lib/audio/engine';
 import { useCity } from '@/city/lib/city/store';
 import { EXCHANGE_OPEN } from '@/city/lib/exchange/flag';
 import { LOCKED, useExchange } from '@/city/lib/exchange/store';
+import { useWords } from '@/city/lib/i18n/dict';
 import s from '../hud/hud.module.css';
 import { ExchangeGlyph } from './glyphs';
+import { EX } from './words';
 
 /**
  * The Exchange in the city's dock, once its switch is open: one more district beside the others, drawn as they are.
@@ -19,12 +21,13 @@ export function ExchangeDockItem() {
 
 function OpenExchangeDockItem() {
   const open = useExchange((st) => st.open);
+  const w = useWords(EX);
   return (
     <button
       className={[s.dockItem, open && s.dockOn].filter(Boolean).join(' ')}
-      aria-label="Exchange"
+      aria-label={w.exchange}
       aria-pressed={open}
-      data-hint="Perps on Phoenix, long or short"
+      data-hint={w.exchangeHint}
       onClick={() => {
         if (useCity.getState().sound) playTick();
         const exchange = useExchange.getState();
@@ -38,7 +41,7 @@ function OpenExchangeDockItem() {
       <span className={s.dockGlyph}>
         <ExchangeGlyph />
       </span>
-      <span className={s.dockLabel}>Exchange</span>
+      <span className={s.dockLabel}>{w.exchange}</span>
     </button>
   );
 }

@@ -2,9 +2,11 @@
 
 import { playTick } from '@/city/lib/audio/engine';
 import { useCity } from '@/city/lib/city/store';
+import { useWords } from '@/city/lib/i18n/dict';
 import { hallShown, useHall } from '@/city/lib/launch/hall-store';
 import s from '../hud/hud.module.css';
 import h from './hall.module.css';
+import { LAUNCH } from './words';
 
 /** The Hall's glyph, drawn like the HUD's: one stroke weight, square joins, 24 px — a billboard on its mast. */
 const HallGlyph = () => (
@@ -21,13 +23,14 @@ const HallGlyph = () => (
 export function HallDockItem() {
   const shown = useHall(hallShown);
   const open = useHall((st) => st.panel);
+  const w = useWords(LAUNCH);
   if (!shown) return null;
   return (
     <button
       className={[s.dockItem, h.dockHall, open && s.dockOn].filter(Boolean).join(' ')}
-      aria-label="Hall of Fame"
+      aria-label={w.hallOfFame}
       aria-pressed={open}
-      data-hint="The week’s biggest ×, hunters and creators"
+      data-hint={w.hallHint}
       onClick={() => {
         if (useCity.getState().sound) playTick();
         const hall = useHall.getState();
@@ -39,7 +42,7 @@ export function HallDockItem() {
       <span className={s.dockGlyph}>
         <HallGlyph />
       </span>
-      <span className={s.dockLabel}>Hall</span>
+      <span className={s.dockLabel}>{w.hall}</span>
     </button>
   );
 }

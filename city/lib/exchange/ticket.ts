@@ -11,8 +11,11 @@ import {
   type PerpUnits,
 } from '../../../lib/phoenix/orders-model.ts';
 import type { OrderRow } from './account.ts';
+import { wordsNow } from '../i18n/dict.ts';
 import type { OrderBody, TicketQuery } from './engine.ts';
+import { liveTable } from './live.ts';
 import { CAREFUL_LEVERAGE, clampLeverage, unitsOf } from './markets.ts';
+import { EX_ISSUES } from './words.ts';
 
 /**
  * The Exchange's ticket: long or short, market or limit, the leverage, the size, TP/SL — what the person sets, and how
@@ -159,17 +162,10 @@ export function legTicksOf(side: PerpSide, tpText: string, slText: string, units
 
 export type DraftIssue = 'UNITS' | 'MARK' | 'SIDE' | 'SIZE' | 'PRICE' | 'TP_TEXT' | 'SL_TEXT' | 'TP_SIDE' | 'SL_SIDE';
 
-export const ISSUE_WORDS: Readonly<Record<DraftIssue, string>> = {
-  UNITS: 'Market not ready',
-  MARK: 'Waiting for the price',
-  SIDE: 'Choose long or short',
-  SIZE: 'Choose a size',
-  PRICE: 'Type a limit price',
-  TP_TEXT: 'Check the take profit',
-  SL_TEXT: 'Check the stop loss',
-  TP_SIDE: 'Take profit on the wrong side',
-  SL_SIDE: 'Stop loss on the wrong side',
-};
+const ISSUES: readonly DraftIssue[] = ['UNITS', 'MARK', 'SIDE', 'SIZE', 'PRICE', 'TP_TEXT', 'SL_TEXT', 'TP_SIDE', 'SL_SIDE'];
+
+/** The issue in the language on screen. */
+export const ISSUE_WORDS: Readonly<Record<DraftIssue, string>> = liveTable(ISSUES, (issue) => wordsNow(EX_ISSUES)[issue]);
 
 /**
  * What still stands between the draft and a Review, before the engine is asked: the side, a size, a limit's price, and

@@ -1,3 +1,5 @@
+import { dateText } from '../i18n/dict.ts';
+
 /** How the feed writes its figures and times: short, the way the city writes every move. */
 
 /** A signed move with its window: «+12.4% · 1h». */
@@ -26,7 +28,7 @@ export function ago(at: number, now: number): string {
 
 /** The time of day, for the event's full line: 12:03. */
 export function clock(at: number): string {
-  return new Date(at).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
+  return dateText(at, { hour: '2-digit', minute: '2-digit' });
 }
 
 /** A ticker as the feed shows it: no leading $, at most twelve characters. */

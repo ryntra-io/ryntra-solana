@@ -8,9 +8,14 @@ import { failureWords, runLaunch, type Phase } from '@/city/lib/launch/flow';
 import { shortAddress } from '@/city/lib/launch/format';
 import { reviewRows, ruleLines } from '@/city/lib/launch/terms';
 import type { WalletOption } from '@/city/lib/launch/wallet';
+import { useLang } from '@/city/lib/i18n/lang';
+import { useWords, type Same } from '@/city/lib/i18n/dict';
 import { useKeyboardInset } from '@/city/lib/keyboard';
 import { CloseGlyph } from '../hud/glyphs';
 import s from './launch.module.css';
+import { LAUNCH } from './words';
+
+type W = Same<(typeof LAUNCH)['en']>;
 
 const BACK = (
   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
@@ -30,13 +35,14 @@ export function LaunchSheet() {
   const stub = useLaunch((st) => st.stub);
   const close = useLaunch((st) => st.closeSheet);
   const inset = useKeyboardInset();
+  const w = useWords(LAUNCH);
   if (!preset || !network) return null;
   return (
-    <div className={`${s.sheet} ${s.panel}`} style={{ ['--kb' as string]: `${inset}px` }} role="dialog" aria-label={step === 'form' ? 'Raise your tower' : 'Review the launch'}>
+    <div className={`${s.sheet} ${s.panel}`} style={{ ['--kb' as string]: `${inset}px` }} role="dialog" aria-label={step === 'form' ? w.raise : w.review}>
       {step === 'form' ? <FormStep onClose={close} /> : <ReviewStep onClose={close} />}
       {(network === 'solana:devnet' || stub) && (
         <div className={s.netLine}>
-          {stub ? 'Stub data: nothing leaves this browser.' : 'Devnet: test coins, no real money.'}
+          {stub ? w.stubLine : w.devnetLine}
         </div>
       )}
     </div>
@@ -50,6 +56,7 @@ function FormStep({ onClose }: { onClose: () => void }) {
   const setDraft = useLaunch((st) => st.setDraft);
   const setStep = useLaunch((st) => st.setStep);
   const preset = useLaunch((st) => st.preset)!;
+  const w = useWords(LAUNCH);
   const [attempted, setAttempted] = useState(false);
   const [pictureBad, setPictureBad] = useState(false);
   const check = useMemo(() => checkLaunchForm({ name: draft.name, symbol: draft.symbol, description: '', website: '', x: '', telegram: '' }), [draft.name, draft.symbol]);
@@ -69,7 +76,7 @@ function FormStep({ onClose }: { onClose: () => void }) {
     if (picture) setDraft({ picture });
   };
   const symbol = check.clean.symbol;
-  const problem = firstProblem(check, draft.picture !== null, pictureBad, attempted);
+  const problem = firstProblem(w, check, draft.picture !== null, pictureBad, attempted);
   const valid = Object.keys(check.problems).length === 0 && draft.picture !== null;
   const review = () => {
     setAttempted(true);
@@ -79,8 +86,8 @@ function FormStep({ onClose }: { onClose: () => void }) {
   return (
     <>
       <div className={s.head}>
-        <h2 className={`${s.display} ${s.title}`}>Raise your tower</h2>
-        <button className={s.close} aria-label="Close" onClick={onClose}>
+        <h2 className={`${s.display} ${s.title}`}>{w.raise}</h2>
+        <button className={s.close} aria-label={w.close} onClick={onClose}>
           <CloseGlyph />
         </button>
       </div>
@@ -89,24 +96,24 @@ function FormStep({ onClose }: { onClose: () => void }) {
           {!draft.picture && (
             <>
               <b aria-hidden="true">+</b>
-              <span>Picture</span>
+              <span>{w.picture}</span>
             </>
           )}
-          <input id={ids.picture} className={s.file} type="file" accept="image/png,image/jpeg,image/webp,image/gif" onChange={choosePicture} aria-label={draft.picture ? 'Change the picture' : 'Add a picture'} />
+          <input id={ids.picture} className={s.file} type="file" accept="image/png,image/jpeg,image/webp,image/gif" onChange={choosePicture} aria-label={draft.picture ? w.changePicture : w.addPicture} />
         </label>
         <div className={s.fields}>
           <label className={`${s.field} ${problem?.field === 'name' ? s.fieldBad : ''}`} htmlFor={ids.name}>
-            <span>Name</span>
-            <input ref={nameRef} id={ids.name} value={draft.name} maxLength={64} placeholder="Kite" autoComplete="off" spellCheck={false} onChange={(event) => setDraft({ name: event.target.value })} />
+            <span>{w.name}</span>
+            <input ref={nameRef} id={ids.name} value={draft.name} maxLength={64} placeholder={w.namePlaceholder} autoComplete="off" spellCheck={false} onChange={(event) => setDraft({ name: event.target.value })} />
           </label>
           <label className={`${s.field} ${problem?.field === 'symbol' ? s.fieldBad : ''}`} htmlFor={ids.symbol}>
-            <span>Ticker</span>
+            <span>{w.ticker}</span>
             <i aria-hidden="true">$</i>
             <input
               id={ids.symbol}
               value={draft.symbol}
               maxLength={16}
-              placeholder="KITE"
+              placeholder={w.tickerPlaceholder}
               autoComplete="off"
               autoCapitalize="characters"
               spellCheck={false}
@@ -128,9 +135,9 @@ function FormStep({ onClose }: { onClose: () => void }) {
         </div>
       )}
       <button className={`${s.display} ${s.action} ${s.actionBig}`} onClick={review}>
-        {symbol && !check.problems.symbol ? `Review $${symbol}` : 'Review'}
+        {symbol && !check.problems.symbol ? w.reviewSymbol(symbol) : w.reviewPlain}
       </button>
-      <div className={s.fine}>One signature in your wallet</div>
+      <div className={s.fine}>{w.oneSignature}</div>
     </>
   );
 }
@@ -138,20 +145,20 @@ function FormStep({ onClose }: { onClose: () => void }) {
 type Shown = Readonly<{ field: 'name' | 'symbol' | 'picture'; words: string }>;
 
 /** The first thing to fix, in one line: a borrowed or bad name at once, an empty field only after the first press. */
-function firstProblem(check: ReturnType<typeof checkLaunchForm>, hasPicture: boolean, pictureBad: boolean, attempted: boolean): Shown | null {
+function firstProblem(w: W, check: ReturnType<typeof checkLaunchForm>, hasPicture: boolean, pictureBad: boolean, attempted: boolean): Shown | null {
   const words = (field: 'name' | 'symbol', problem: FieldProblem): string => {
-    if (problem === 'BORROWED') return `Reads as ${check.hits.find((hit) => hit.field === field)?.label ?? 'a known name'}. Choose your own.`;
-    if (problem === 'OFFENSIVE') return `Choose another ${field === 'name' ? 'name' : 'ticker'}.`;
-    if (problem === 'TOO_LONG') return field === 'name' ? 'The name is too long: up to 32 letters.' : 'The ticker is too long: up to 10 characters.';
-    if (problem === 'SYMBOL_CHARS') return 'The ticker takes letters and digits only.';
-    return field === 'name' ? 'Name your coin.' : 'Give it a ticker.';
+    if (problem === 'BORROWED') return w.readsAs(check.hits.find((hit) => hit.field === field)?.label ?? w.aKnownName);
+    if (problem === 'OFFENSIVE') return field === 'name' ? w.anotherName : w.anotherTicker;
+    if (problem === 'TOO_LONG') return field === 'name' ? w.nameLong : w.tickerLong;
+    if (problem === 'SYMBOL_CHARS') return w.tickerChars;
+    return field === 'name' ? w.nameIt : w.tickerIt;
   };
   for (const field of ['name', 'symbol'] as const) {
     const problem = check.problems[field];
     if (problem && (problem !== 'REQUIRED' || attempted)) return { field, words: words(field, problem) };
   }
-  if (pictureBad) return { field: 'picture', words: 'Use a PNG, JPEG, WebP or GIF picture.' };
-  if (attempted && !hasPicture) return { field: 'picture', words: 'Add a picture: it becomes the face of your tower.' };
+  if (pictureBad) return { field: 'picture', words: w.pictureKind };
+  if (attempted && !hasPicture) return { field: 'picture', words: w.pictureNeeded };
   return null;
 }
 
@@ -166,6 +173,8 @@ function ReviewStep({ onClose }: { onClose: () => void }) {
   const setStep = useLaunch((st) => st.setStep);
   const setDraft = useLaunch((st) => st.setDraft);
   const connection = useLaunch((st) => st.connection);
+  const w = useWords(LAUNCH);
+  const lang = useLang();
   const setConnection = useLaunch((st) => st.setConnection);
   const [options, setOptions] = useState<readonly WalletOption[] | null>(null);
   const [connecting, setConnecting] = useState<string | null>(null);
@@ -253,7 +262,7 @@ function ReviewStep({ onClose }: { onClose: () => void }) {
   return (
     <>
       <div className={s.head}>
-        <button className={s.back} aria-label="Back to the fields" onClick={() => setStep('form')} disabled={working}>
+        <button className={s.back} aria-label={w.backToFields} onClick={() => setStep('form')} disabled={working}>
           {BACK}
         </button>
         {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -261,10 +270,10 @@ function ReviewStep({ onClose }: { onClose: () => void }) {
         <div className={s.headTitle}>
           <h2 className={`${s.display} ${s.title}`}>${symbol}</h2>
           <div className={s.headName}>
-            {check.clean.name} · {preset.name.en}
+            {check.clean.name} · {preset.name[lang] ?? preset.name.en}
           </div>
         </div>
-        <button className={s.close} aria-label="Close" onClick={onClose}>
+        <button className={s.close} aria-label={w.close} onClick={onClose}>
           <CloseGlyph />
         </button>
       </div>
@@ -288,7 +297,7 @@ function ReviewStep({ onClose }: { onClose: () => void }) {
           </span>
           {!working && (
             <button className={s.link} onClick={() => setConnection(null)}>
-              Change
+              {w.change}
             </button>
           )}
         </div>
@@ -300,26 +309,27 @@ function ReviewStep({ onClose }: { onClose: () => void }) {
           }} />
       ) : connection ? (
         <button className={`${s.display} ${s.action} ${s.actionBig}`} onClick={launch}>
-          Launch ${symbol}
+          {w.launchSymbol(symbol)}
         </button>
       ) : options ? (
         <WalletList options={options} connecting={connecting} onPick={pick} />
       ) : (
         <button className={`${s.display} ${s.action} ${s.actionBig}`} onClick={connect}>
-          Connect wallet
+          {w.connect}
         </button>
       )}
       {walletProblem && !connection && <div className={s.problem}>{walletProblem}</div>}
-      {!phase && <div className={s.fine}>{connection ? 'One signature. Your wallet shows it before you sign.' : 'Phantom, Solflare, Backpack or Seeker'}</div>}
+      {!phase && <div className={s.fine}>{connection ? w.signLine : w.wallets}</div>}
     </>
   );
 }
 
 function WalletList({ options, connecting, onPick }: { options: readonly WalletOption[]; connecting: string | null; onPick: (name: string) => void }) {
+  const w = useWords(LAUNCH);
   if (!options.length) {
     return (
       <div className={s.noWallet}>
-        No Solana wallet in this browser. Open this page in Phantom, Solflare or Backpack.
+        {w.noWallet}
       </div>
     );
   }
@@ -329,7 +339,7 @@ function WalletList({ options, connecting, onPick }: { options: readonly WalletO
         <button key={option.name} role="listitem" className={s.walletPick} onClick={() => onPick(option.name)} disabled={connecting !== null}>
           {/* eslint-disable-next-line @next/next/no-img-element */}
           {option.icon ? <img src={option.icon} alt="" /> : <span className={s.walletBlank} />}
-          <span>{connecting === option.name ? `Opening ${option.name}…` : option.name}</span>
+          <span>{connecting === option.name ? w.opening(option.name) : option.name}</span>
         </button>
       ))}
     </div>
@@ -338,6 +348,7 @@ function WalletList({ options, connecting, onPick }: { options: readonly WalletO
 
 /** Where the launch is: one line while it runs, the reason and the way back when it stopped. */
 function Progress({ phase, wallet, onRetry, onEdit }: { phase: Exclude<Phase, { step: 'done' }>; wallet: string | null; onRetry: () => void; onEdit: () => void }) {
+  const w = useWords(LAUNCH);
   if (phase.step === 'failed') {
     return (
       <div className={s.failed} role="alert">
@@ -345,10 +356,10 @@ function Progress({ phase, wallet, onRetry, onEdit }: { phase: Exclude<Phase, { 
         {phase.failure.stage === 'before' && (
           <div className={s.pair}>
             <button className={`${s.display} ${s.action}`} onClick={onRetry}>
-              Try again
+              {w.tryAgain}
             </button>
             <button className={s.quiet} onClick={onEdit}>
-              Edit
+              {w.edit}
             </button>
           </div>
         )}
@@ -357,12 +368,12 @@ function Progress({ phase, wallet, onRetry, onEdit }: { phase: Exclude<Phase, { 
   }
   const words =
     phase.step === 'upload'
-      ? ['Saving the picture and the name', 'Ryntra keeps them for the coin’s page.']
+      ? [w.saving, w.savingLine]
       : phase.step === 'build'
-        ? ['Building your launch', 'Solana simulates it before you sign.']
+        ? [w.building, w.buildingLine]
         : phase.step === 'sign'
-          ? [`Confirm in ${phase.wallet}`, phase.again ? 'The first signature aged. One more, please.' : 'One transaction: your coin and its curve.']
-          : ['Sending to Solana', 'Your tower rises as soon as it lands.'];
+          ? [w.confirmIn(phase.wallet), phase.again ? w.signAged : w.signLineTx]
+          : [w.sending, w.sendingLine];
   return (
     <div className={s.progress} role="status" aria-live="polite">
       <span className={s.spinner} aria-hidden="true" />

@@ -4,6 +4,8 @@ import type { Json } from './engine.ts';
 import { failureWords, moving, readFunding, readLinked, readLive, readOrder, readReview, readWithdrawPreview, statusOf, type Funding, type Live, type OrderLine, type OrderState, type Review, type WithdrawPreview } from './real.ts';
 import type { Signed } from './sign.ts';
 import { predictEnv } from './store.ts';
+import { wordsNow } from '../../i18n/dict.ts';
+import { PREDICT_TEXT } from './words.ts';
 
 /**
  * Real money in the window, for one proven Solana wallet, through the engine's own routes and gates: the wallet proves
@@ -324,7 +326,7 @@ export const useReal = create<Store>((set, get) => {
         return set({ withdraw: preview ? { step: 'review', preview, requestId: uuid() } : { step: 'failed', text: failureWords('QUOTE_EXPIRED') } });
       }
       const phase = (got.value.withdrawal as { phase?: unknown } | undefined)?.phase;
-      if (phase === 'refused' || phase === 'failed') set({ withdraw: { step: 'failed', text: 'The withdrawal did not go. Nothing was sent.' } });
+      if (phase === 'refused' || phase === 'failed') set({ withdraw: { step: 'failed', text: wordsNow(PREDICT_TEXT).withdrawalFailed } });
       else set({ withdraw: { step: 'sent', requestId: w.requestId, phase: typeof phase === 'string' ? phase : 'unknown' } });
       if (owner) void get().refresh(owner);
     },

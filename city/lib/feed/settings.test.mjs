@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-import { DEFAULT_SETTINGS, defaultSettings, FEED_KINDS, readSettings, SETTINGS_GROUPS, SETTINGS_KEY, shownKinds, SWITCHES, toggled, touchedIn, writeSettings } from "./settings.ts";
+import { DEFAULT_SETTINGS, defaultSettings, FEED_KINDS, migrateSettings, readSettings, SETTINGS_GROUPS, SETTINGS_KEY, SETTINGS_VERSION, shownKinds, SWITCHES, toggled, touchedIn, writeSettings } from "./settings.ts";
 import { flashingOn, hydrateFeed, resetFeed, useFeed } from "./store.ts";
 
 /* CITY-66: «Show on home» — five kinds and the flashing, each a switch kept on this device. */
@@ -27,9 +27,9 @@ test("on a phone the «Hot now» card starts off — it covered half the screen 
   assert.equal(readSettings(storage, false, true).hot, true);
 });
 
-test("by default everything is on; a device asking for reduced motion starts with the flashing off", () => {
+test("by default everything but «Arrivals» is on; a device asking for reduced motion starts with the flashing off", () => {
   assert.deepEqual(defaultSettings(false), DEFAULT_SETTINGS);
-  assert.ok(Object.values(DEFAULT_SETTINGS).every(Boolean));
+  assert.ok(Object.entries(DEFAULT_SETTINGS).every(([id, on]) => on === (id !== "arrivals")));
   assert.deepEqual(defaultSettings(true), { ...DEFAULT_SETTINGS, flashing: false });
   assert.deepEqual(readSettings(memoryStorage(), true), { ...DEFAULT_SETTINGS, flashing: false });
   assert.deepEqual(readSettings(null, false), DEFAULT_SETTINGS);
@@ -39,7 +39,7 @@ test("a switch flipped is kept and read back; only the switches the person touch
   const storage = memoryStorage();
   const off = toggled(toggled(DEFAULT_SETTINGS, "losers", false), "flashing", false);
   assert.equal(writeSettings(storage, off, new Set(["losers", "flashing"])), true);
-  assert.deepEqual(JSON.parse(storage.data.get(SETTINGS_KEY)), { losers: false, flashing: false });
+  assert.deepEqual(JSON.parse(storage.data.get(SETTINGS_KEY)), { v: SETTINGS_VERSION, losers: false, flashing: false });
   assert.deepEqual(readSettings(storage, false), { ...DEFAULT_SETTINGS, losers: false, flashing: false });
   assert.deepEqual([...touchedIn(storage)].sort(), ["flashing", "losers"]);
   assert.deepEqual([...shownKinds(readSettings(storage, false))], ["gainers", "inflows", "coins", "pools"]);
@@ -82,7 +82,7 @@ test("the store: hydrated once from the device, a flip is kept, and the flashing
   st.set("flashing", true);
   st = useFeed.getState();
   assert.equal(flashingOn(), true);
-  assert.deepEqual(JSON.parse(storage.data.get(SETTINGS_KEY)), { inflows: false, flashing: true });
+  assert.deepEqual(JSON.parse(storage.data.get(SETTINGS_KEY)), { v: SETTINGS_VERSION, inflows: false, flashing: true });
   st.set("gainers", false);
   assert.deepEqual(readSettings(storage, true), { ...DEFAULT_SETTINGS, inflows: false, gainers: false, flashing: true });
 
@@ -103,41 +103,58 @@ test("the store's step makes events only for the kinds switched on", () => {
   resetFeed();
 });
 
-/* «Arrivals» — «what is it, I cannot turn it off». A switch beside «Hot now card». */
+/* «Arrivals» — «what is it, I cannot turn it off». CITY-81 (29.10): the game left the first
+   screen, so the card starts off on every device, and a choice kept before is dropped once. */
 
-test("the «Arrivals» card starts off on a phone and on at a desk; a kept choice wins either way", () => {
+const v2 = (kept) => JSON.stringify({ v: SETTINGS_VERSION, ...kept });
+
+test("the «Arrivals» card starts off on a phone and at a desk; a choice kept at this version wins", () => {
   assert.equal(defaultSettings(false, true).arrivals, false);
-  assert.equal(defaultSettings(false, false).arrivals, true);
-  assert.equal(readSettings(null, false, true).arrivals, false);
-  assert.equal(readSettings(memoryStorage({ [SETTINGS_KEY]: JSON.stringify({ arrivals: true }) }), false, true).arrivals, true);
-  assert.equal(readSettings(memoryStorage({ [SETTINGS_KEY]: JSON.stringify({ arrivals: false }) }), false, false).arrivals, false);
+  assert.equal(defaultSettings(false, false).arrivals, false);
+  assert.equal(readSettings(null, false, false).arrivals, false);
+  assert.equal(readSettings(memoryStorage({ [SETTINGS_KEY]: v2({ arrivals: true }) }), false, true).arrivals, true);
+  assert.equal(readSettings(memoryStorage({ [SETTINGS_KEY]: v2({ arrivals: false }) }), false, false).arrivals, false);
 });
 
-test("closing «Arrivals» on a desk sticks: the switch is kept off, and the next visit reads it off", () => {
-  resetFeed();
-  const storage = memoryStorage();
-  hydrateFeed({ storage, reducedMotion: false, phone: false });
-  assert.equal(useFeed.getState().settings.arrivals, true, "a desk shows it once");
-  // The card's close: the switch off on this device.
-  useFeed.getState().set("arrivals", false);
-  assert.deepEqual(JSON.parse(storage.data.get(SETTINGS_KEY)), { arrivals: false });
-  resetFeed();
-  hydrateFeed({ storage, reducedMotion: false, phone: false });
-  assert.equal(useFeed.getState().settings.arrivals, false, "a reload keeps it closed");
-  // The settings bring it back.
-  useFeed.getState().set("arrivals", true);
-  assert.equal(readSettings(storage, false, false).arrivals, true);
-  resetFeed();
+test("a value kept before version 2 loses its «Arrivals» once, keeps every other switch, and is written back at version 2", () => {
+  const storage = memoryStorage({ [SETTINGS_KEY]: JSON.stringify({ arrivals: true, losers: false, hot: true }) });
+  assert.equal(readSettings(storage, false, false).arrivals, false, "read before the migration, it already follows the new default");
+  assert.equal(migrateSettings(storage), true);
+  assert.deepEqual(JSON.parse(storage.data.get(SETTINGS_KEY)), { v: SETTINGS_VERSION, losers: false, hot: true });
+  assert.equal(migrateSettings(storage), false, "once");
+  assert.deepEqual([...touchedIn(storage)].sort(), ["hot", "losers"]);
+  assert.deepEqual(readSettings(storage, false, true), { ...DEFAULT_SETTINGS, losers: false, hot: true });
+  // Nothing kept, nothing readable, or a device that refuses: nothing to migrate.
+  assert.equal(migrateSettings(memoryStorage()), false);
+  assert.equal(migrateSettings(memoryStorage({ [SETTINGS_KEY]: "{" })), false);
+  assert.equal(migrateSettings(refusing), false);
+  assert.equal(migrateSettings(null), false);
 });
 
-test("a phone that never set it keeps «Arrivals» off; a device that keeps nothing still closes it for the visit", () => {
+test("the store migrates once on hydration: an old «on» is gone, and a new «on» then sticks across reloads", () => {
   resetFeed();
-  hydrateFeed({ storage: memoryStorage(), reducedMotion: false, phone: true });
+  const storage = memoryStorage({ [SETTINGS_KEY]: JSON.stringify({ arrivals: true }) });
+  hydrateFeed({ storage, reducedMotion: false, phone: false });
   assert.equal(useFeed.getState().settings.arrivals, false);
+  assert.deepEqual(JSON.parse(storage.data.get(SETTINGS_KEY)), { v: SETTINGS_VERSION });
+  useFeed.getState().set("arrivals", true);
+  resetFeed();
+  hydrateFeed({ storage, reducedMotion: false, phone: false });
+  assert.equal(useFeed.getState().settings.arrivals, true, "turned on after the migration, it stays on");
+  // The card's close turns it off again, and that sticks too.
+  useFeed.getState().set("arrivals", false);
+  resetFeed();
+  hydrateFeed({ storage, reducedMotion: false, phone: false });
+  assert.equal(useFeed.getState().settings.arrivals, false);
+  resetFeed();
+});
+
+test("a device that keeps nothing starts «Arrivals» off and still closes it for the visit", () => {
   resetFeed();
   hydrateFeed({ storage: refusing, reducedMotion: false, phone: false });
-  useFeed.getState().set("arrivals", false);
   assert.equal(useFeed.getState().settings.arrivals, false);
+  useFeed.getState().set("arrivals", true);
+  assert.equal(useFeed.getState().settings.arrivals, true);
   resetFeed();
 });
 

@@ -1,31 +1,54 @@
 import type { RatingView, RingFormat, Weight } from '../../../lib/ring/contract.ts';
 import { scenarioText } from '../../../lib/ring/agent.ts';
 import { WEIGHT_BOUNDS } from '../../../lib/ring/weight.ts';
+import { digits, wordsNow } from '../i18n/dict.ts';
+import { RING } from './words.ts';
 
 /**
  * The Ring's figures as the city writes them: dollars from micro-dollars, the classes and formats by name, a rating with
  * its interval. Pure, so every line is tested.
  */
 
-export const WEIGHT_NAMES: Readonly<Record<Weight, string>> = { light: 'Light', middle: 'Middle', heavy: 'Heavy' };
+/** The names in the language on screen: each one is read when it is shown. */
+export const WEIGHT_NAMES: Readonly<Record<Weight, string>> = {
+  get light() {
+    return wordsNow(RING).light;
+  },
+  get middle() {
+    return wordsNow(RING).middle;
+  },
+  get heavy() {
+    return wordsNow(RING).heavy;
+  },
+};
 
-export const FORMAT_NAMES: Readonly<Record<RingFormat, string>> = { 'duo-crack': 'Duo Crack', code: 'Code', 'market-replay': 'Market Replay' };
+export const FORMAT_NAMES: Readonly<Record<RingFormat, string>> = {
+  get 'duo-crack'() {
+    return wordsNow(RING).duoCrack;
+  },
+  get code() {
+    return wordsNow(RING).code;
+  },
+  get 'market-replay'() {
+    return wordsNow(RING).marketReplay;
+  },
+};
 
-/** Dollars from micro-dollars: `Free`, `<$0.01`, `$0.17`, `$12`. */
+/** Dollars from micro-dollars: `Free`, `<$0.01`, `$0.17`, `$12` — for the eye, in the language on screen. */
 export function usd(micro: number): string {
   if (!Number.isFinite(micro) || micro < 0) return '—';
-  if (micro === 0) return 'Free';
-  if (micro < 10_000) return '<$0.01';
+  if (micro === 0) return wordsNow(RING).free;
+  if (micro < 10_000) return digits('<$0.01');
   const dollars = micro / 1_000_000;
-  return dollars < 10 ? `$${dollars.toFixed(2)}` : `$${Math.round(dollars)}`;
+  return digits(dollars < 10 ? `$${dollars.toFixed(2)}` : `$${Math.round(dollars)}`);
 }
 
 /** What one standard match costs one agent. */
-export const perMatch = (micro: number) => (micro === 0 ? 'Free a match' : `${usd(micro)} a match`);
+export const perMatch = (micro: number) => (micro === 0 ? wordsNow(RING).freeMatch : wordsNow(RING).aMatch(usd(micro)));
 
 /** A class's span of match prices, from the server's own bounds. */
 export function classSpan(weight: Weight): string {
-  if (weight === 'light') return `under ${usd(WEIGHT_BOUNDS.light)}`;
+  if (weight === 'light') return wordsNow(RING).under(usd(WEIGHT_BOUNDS.light));
   if (weight === 'middle') return `${usd(WEIGHT_BOUNDS.light)}–${usd(WEIGHT_BOUNDS.middle).slice(1)}`;
   return `${usd(WEIGHT_BOUNDS.middle)}–${usd(WEIGHT_BOUNDS.heavy).slice(1)}`;
 }
@@ -44,9 +67,10 @@ const JOIN = '\u2060';
 
 /** Games so far, said plainly: `No games yet`, `1 game`, `14 games · 9–1–4` (wins, draws, losses; never broken across lines). */
 export function gamesLine(r: RatingView): string {
-  if (r.games === 0) return 'No games yet';
-  if (r.games === 1) return '1 game';
-  return `${r.games} games · ${[r.wins, r.draws, r.losses].join(`${JOIN}–${JOIN}`)}`;
+  const w = wordsNow(RING);
+  if (r.games === 0) return w.noGames;
+  if (r.games === 1) return w.oneGame;
+  return w.games(r.games, [r.wins, r.draws, r.losses].join(`${JOIN}–${JOIN}`));
 }
 
 /** A script's length as the server counts it: code points of the text it keeps (`scenarioText`). */

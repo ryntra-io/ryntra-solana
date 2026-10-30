@@ -1,5 +1,8 @@
+import { dateText, digits, wordsNow } from '../i18n/dict.ts';
 import type { Tower } from '../market/types.ts';
+import { SOL, USDC } from './tiles.ts';
 import { ownedMints, type Holdings } from './wallet.ts';
+import { FORMAT } from './words.ts';
 
 /**
  * «Mine»: the coins of the connected wallet that stand in the city, what they are worth at the city's price and how
@@ -57,9 +60,21 @@ export type MineRow = Readonly<{
   change: Change | null;
 }>;
 
+/** The wallet's money that is no tower of its own: native SOL and the dollar coins (USDC, USDT). */
+export type CashRow = Readonly<{
+  mint: string;
+  symbol: string;
+  amountRaw: string;
+  decimals: number;
+  /** SOL at its tower's price, a dollar coin at one dollar; null when SOL has no usable price. */
+  valueUsd: number | null;
+}>;
+
 export type Mine = Readonly<{
   rows: readonly MineRow[];
-  /** The sum of the rows that have a value; null when none has. */
+  /** SOL and the dollar coins, first in the panel and in the total (CITY-150: «Mine» said $0.74 beside Money's $37.63). */
+  cash: readonly CashRow[];
+  /** The sum of the rows and the cash that have a value; null when none has. */
   totalUsd: number | null;
   /** Rows without a value, left out of the total. */
   unvalued: number;
@@ -72,14 +87,41 @@ function units(raw: string, decimals: number): number {
   return Number(raw) / 10 ** decimals;
 }
 
-/** The wallet's coins that stand in the city, worth the most first. SOL itself stays out: every wallet keeps it for fees. */
+/** The dollar coins «Mine» counts at a dollar when the city has no tower for them. */
+const DOLLAR_COINS: ReadonlyMap<string, string> = new Map([
+  [USDC.mint, 'USDC'],
+  ['Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB', 'USDT'],
+]);
+
+/** SOL the wallet can spend and its dollar coins, as money: SOL at its tower's price, a dollar coin at a dollar. */
+function cashOf(holdings: Holdings, byMint: ReadonlyMap<string, Tower>): CashRow[] {
+  const cash: CashRow[] = [];
+  const sol = holdings.sol;
+  if (sol && sol.spendableRaw !== '0') {
+    const price = byMint.get(SOL.mint)?.price;
+    cash.push({ mint: SOL.mint, symbol: SOL.symbol, amountRaw: sol.spendableRaw, decimals: sol.decimals, valueUsd: price && Number.isFinite(price) && price > 0 ? units(sol.spendableRaw, sol.decimals) * price : null });
+  }
+  for (const [mint, symbol] of DOLLAR_COINS) {
+    const balance = holdings.tokens.get(mint);
+    if (!balance || balance.spendableRaw === '0' || byMint.has(mint)) continue;
+    cash.push({ mint, symbol, amountRaw: balance.spendableRaw, decimals: balance.decimals, valueUsd: units(balance.spendableRaw, balance.decimals) });
+  }
+  return cash;
+}
+
+/**
+ * The wallet's money and its coins that stand in the city, worth the most first. SOL is money here, not a coin row:
+ * every wallet keeps it for fees, and the dollar coins without a tower are money beside it — both count in the total.
+ */
 export function mineOf(holdings: Holdings | null, towers: readonly Tower[], bases: ReadonlyMap<string, Basis | null> = new Map()): Mine {
+  if (!holdings) return { rows: [], cash: [], totalUsd: null, unvalued: 0, elsewhere: 0 };
   const owned = ownedMints(holdings);
-  if (!holdings || owned.size === 0) return { rows: [], totalUsd: null, unvalued: 0, elsewhere: 0 };
   const byMint = new Map(towers.map((tower) => [tower.id, tower]));
+  const cash = cashOf(holdings, byMint);
   const rows: MineRow[] = [];
   let elsewhere = 0;
   for (const mint of owned) {
+    if (cash.some((row) => row.mint === mint)) continue;
     const tower = byMint.get(mint);
     const balance = holdings.tokens.get(mint);
     if (!tower || !balance) {
@@ -95,11 +137,12 @@ export function mineOf(holdings: Holdings | null, towers: readonly Tower[], base
     rows.push({ tower, amountRaw: balance.spendableRaw, decimals: balance.decimals, valueUsd, change });
   }
   rows.sort((a, b) => (b.valueUsd ?? -1) - (a.valueUsd ?? -1));
-  const valued = rows.filter((row) => row.valueUsd !== null);
+  const valued = [...cash, ...rows].map((row) => row.valueUsd).filter((value): value is number => value !== null);
   return {
     rows,
-    totalUsd: valued.length ? valued.reduce((sum, row) => sum + row.valueUsd!, 0) : null,
-    unvalued: rows.length - valued.length,
+    cash,
+    totalUsd: valued.length ? valued.reduce((sum, value) => sum + value, 0) : null,
+    unvalued: rows.filter((row) => row.valueUsd === null).length,
     elsewhere,
   };
 }
@@ -108,10 +151,10 @@ export function mineOf(holdings: Holdings | null, towers: readonly Tower[], base
 export function formatUsd(value: number | null): string {
   if (value === null || !Number.isFinite(value) || value < 0) return '—';
   if (value === 0) return '$0';
-  if (value < 0.01) return '<$0.01';
-  if (value >= 1_000_000) return `$${Number((value / 1_000_000).toFixed(2))}M`;
-  if (value >= 10_000) return `$${Math.round(value).toLocaleString('en-US')}`;
-  return `$${value.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  if (value < 0.01) return digits('<$0.01');
+  if (value >= 1_000_000) return digits(`$${Number((value / 1_000_000).toFixed(2))}M`);
+  if (value >= 10_000) return digits(`$${Math.round(value).toLocaleString('en-US')}`);
+  return digits(`$${value.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`);
 }
 
 /** A move as a signed percent: +12.4%, −3.1%, 0%. */
@@ -120,14 +163,15 @@ export function formatPct(pct: number): string {
   const abs = Math.abs(pct);
   const text = abs >= 100 ? abs.toFixed(0) : abs >= 10 ? abs.toFixed(1) : abs.toFixed(2);
   if (Number(text) === 0) return '0%';
-  return `${pct > 0 ? '+' : '−'}${Number(text)}%`;
+  return digits(`${pct > 0 ? '+' : '−'}${Number(text)}%`);
 }
 
 /** How old a read is, in words: just now, 40s ago, 3 min ago, at 14:05. */
 export function readAge(at: number, now: number): string {
   const s = Math.max(0, Math.round((now - at) / 1000));
-  if (s < 10) return 'just now';
-  if (s < 60) return `${s}s ago`;
-  if (s < 3600) return `${Math.floor(s / 60)} min ago`;
-  return `at ${new Date(at).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })}`;
+  const w = wordsNow(FORMAT);
+  if (s < 10) return w.justNow;
+  if (s < 60) return w.secondsAgo(s);
+  if (s < 3600) return w.minutesAgo(Math.floor(s / 60));
+  return w.atTime(dateText(at, { hour: '2-digit', minute: '2-digit' }));
 }

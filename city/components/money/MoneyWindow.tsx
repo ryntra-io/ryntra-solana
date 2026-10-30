@@ -2,7 +2,8 @@
 
 import { useEffect, useMemo } from 'react';
 import { formatUsd, portfolioOf } from '@/city/lib/money/assets';
-import { MONEY_TABS, TAB_LABEL, tabLive } from '@/city/lib/money/flag';
+import { useWords } from '@/city/lib/i18n/dict';
+import { MONEY_TABS, tabLive } from '@/city/lib/money/flag';
 import { useMoney } from '@/city/lib/money/open';
 import { short } from '@/city/lib/money/recipient';
 import { useMoneyStore } from '@/city/lib/money/store';
@@ -10,18 +11,22 @@ import { colourOf } from '@/city/lib/trade/colour';
 import { useWallet } from '@/city/lib/trade/wallet';
 import { Activity } from './Activity';
 import { Connect, TabGlyph } from './bits';
-import { Bridge } from './Bridge';
+import { PayLink } from './PayLink';
 import { Portfolio } from './Portfolio';
-import { Send } from './Send';
+import { SendWays } from './SendWays';
 import { TopUp } from './TopUp';
+import { MONEY } from './words';
+import { TAB_WORDS } from '@/city/lib/money/words';
 import s from './money.module.css';
 
 /**
- * The Money window's contents: Top up, Send, Bridge, Activity and Portfolio in one place in the city, on Ryntra's own
+ * The Money window's contents: Top up, Send, Pay link, Activity and Portfolio in one place in the city, on Ryntra's own
  * money engine. The city's one window frame (CITY-65) brings the head, the moving, the sticking and the whole screen on
  * a computer and the bottom sheet on a phone; while a signature is out the frame holds the window, on that transfer.
  */
 export default function MoneyWindow() {
+  const w = useWords(MONEY);
+  const tabs = useWords(TAB_WORDS);
   const tab = useMoney((st) => st.tab);
   const busy = useMoney((st) => st.busy);
   const connection = useWallet((st) => st.connection);
@@ -37,7 +42,7 @@ export default function MoneyWindow() {
   }, [owner]);
 
   return (
-    <div className={s.framed} aria-label="Money">
+    <div className={s.framed} aria-label={w.money}>
       {owner ? (
         <div className={s.head}>
           <span className={s.who} style={{ ['--player' as string]: colourOf(owner) }}>
@@ -47,7 +52,7 @@ export default function MoneyWindow() {
           </span>
         </div>
       ) : null}
-      <nav className={s.tabs} role="tablist" aria-label="Money">
+      <nav className={s.tabs} role="tablist" aria-label={w.money}>
         {MONEY_TABS.map((id) => (
           <button
             key={id}
@@ -59,8 +64,8 @@ export default function MoneyWindow() {
             disabled={busy && tab !== id}
           >
             <TabGlyph tab={id} />
-            <span>{TAB_LABEL[id]}</span>
-            {tabLive(id) ? null : <i className={s.soonDot} aria-label="opens soon" />}
+            <span>{tabs[id]}</span>
+            {tabLive(id) ? null : <i className={s.soonDot} aria-label={w.opensSoon} />}
           </button>
         ))}
       </nav>
@@ -70,9 +75,9 @@ export default function MoneyWindow() {
         ) : tab === 'topup' ? (
           <TopUp owner={owner} />
         ) : tab === 'send' ? (
-          <Send owner={owner} />
-        ) : tab === 'bridge' ? (
-          <Bridge />
+          <SendWays owner={owner} />
+        ) : tab === 'paylink' ? (
+          <PayLink owner={owner} />
         ) : tab === 'activity' ? (
           <Activity owner={owner} />
         ) : (

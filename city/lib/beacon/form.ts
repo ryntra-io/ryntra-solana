@@ -1,4 +1,7 @@
-import { roundLine, sanitizeCondition, type BeaconCondition, type BeaconKind, type MovePeriod, type TowerRead } from '../../../lib/world/beacons/rules.ts';
+import { roundLine, sanitizeCondition, type BeaconCondition, type BeaconKind, type BeaconRule, type MovePeriod, type TowerRead } from '../../../lib/world/beacons/rules.ts';
+import { pct, usd } from '../../../lib/world/beacons/words.ts';
+import { digits, wordsNow } from '../i18n/dict.ts';
+import { BEACON } from './words.ts';
 
 /**
  * The beacon editor's field: what a person types for a line, read as a number. Dollars may carry `$`, commas and a
@@ -41,4 +44,26 @@ export function conditionOf(kind: BeaconKind, op: 'above' | 'below', period: Mov
   const value = parseLine(text);
   if (value === null) return null;
   return sanitizeCondition(kind === 'move' ? { kind, op, period, value } : { kind, op, value });
+}
+
+const PERIOD_WORD: Readonly<Record<MovePeriod, 'm5' | 'h1' | 'h24'>> = { '5m': 'm5', '1h': 'h1', '24h': 'h24' };
+
+/** A move's window as the city says it: «5m» · «5 хв». */
+export function periodText(period: MovePeriod): string {
+  return wordsNow(BEACON)[PERIOD_WORD[period]];
+}
+
+/**
+ * A beacon's rule in one line, in the language on screen — in English exactly what its tower and Telegram say
+ * (`ruleWords`), with its figures in the language's own way.
+ */
+export function ruleShown(rule: Pick<BeaconRule, 'groups'>): string {
+  const w = wordsNow(BEACON);
+  const one = (c: BeaconCondition) => {
+    const op = c.op === 'above' ? w.opAbove : w.opBelow;
+    if (c.kind === 'price') return w.priceIs(op, digits(usd(c.value)));
+    if (c.kind === 'liquidity') return w.liquidityIs(op, digits(usd(c.value)));
+    return w.moveIs(periodText(c.period), op, digits(pct(c.value)));
+  };
+  return rule.groups.map((group) => group.map(one).join(w.joinAnd)).join(w.joinOr);
 }

@@ -4,23 +4,47 @@ import { useEffect, useRef, type FormEvent, type KeyboardEvent } from 'react';
 import type { AttemptResponse, PublicEntry, Title, VaultView } from '@/lib/vault/contract';
 import { MAX_ATTEMPT_CHARS, charCount } from '@/lib/vault/size';
 import { useVault, vaultStore, type Phase } from '@/city/lib/vault/store';
+import { useWords, type TextKey } from '@/city/lib/i18n/dict';
 import { CloseGlyph } from '../hud/glyphs';
 import hud from '../hud/hud.module.css';
 import { CheckGlyph, LockGlyph } from './glyphs';
 import s from './vault.module.css';
+import { VAULT } from './words';
 
-const OUTCOME: Record<PublicEntry['outcome'], string> = {
-  held: 'Held',
-  leaked: 'Slipped',
-  caught: 'Caught',
-  cracked: 'Cracked',
-  screened: 'Plain words only',
+type VaultText = TextKey<typeof VAULT>;
+
+const OUTCOME: Record<PublicEntry['outcome'], VaultText> = {
+  held: 'held',
+  leaked: 'leaked',
+  caught: 'caught',
+  cracked: 'cracked',
+  screened: 'screened',
 };
 
-const TAB: Record<VaultView['id'], string> = { 'practice-1': '1', 'practice-2': '2', 'practice-3': '3', daily: 'Daily' };
+const TAB: Record<Exclude<VaultView['id'], 'daily'>, string> = { 'practice-1': '1', 'practice-2': '2', 'practice-3': '3' };
 
 /** «Зломщик» in the registry: the title for cracking every practice level. */
-const TITLE: Record<Title, string> = { breaker: 'Breaker' };
+const TITLE: Record<Title, VaultText> = { breaker: 'breaker' };
+
+/** Why an attempt was refused, by the refusal's code, in the language on screen; an unknown code keeps its own line. */
+const REFUSAL: Readonly<Record<string, VaultText>> = {
+  OFFLINE: 'noConnection',
+  CLOSED: 'closed',
+  UNAVAILABLE: 'unavailable',
+  LOCKED: 'locked',
+  EMPTY: 'empty',
+  TOO_LONG: 'tooLong',
+  GUARD_SILENT: 'guardSilent',
+  BAD_ANSWER: 'badAnswer',
+};
+
+type VaultWords = (typeof VAULT)['en'];
+
+function refusalLine(phase: Extract<Phase, { step: 'refused' }>, w: VaultWords): string {
+  if (phase.code === 'RATE_LIMITED' && phase.window) return phase.window === 'minute' ? w.limitMinute : w.limitDay;
+  const key = REFUSAL[phase.code];
+  return key ? w[key] : phase.line;
+}
 
 /**
  * The room: which vault, who guards it, what the guard last said to you, one field for one message and the one amber
@@ -37,6 +61,7 @@ export function VaultRoom() {
   // A used-up limit: the room reads the vaults again when it resets, and Try comes back by itself.
   const out = useVault((st) => st.limited);
   const field = useRef<HTMLTextAreaElement>(null);
+  const w = useWords(VAULT);
   const current = state?.vaults.find((v) => v.id === vault) ?? null;
   const cracked = phase.step === 'answered' && phase.result.outcome === 'cracked';
   const next = cracked ? state?.vaults.find((v) => v.open && !v.cracked) : null;
@@ -64,34 +89,34 @@ export function VaultRoom() {
   const left = state?.me.limits;
 
   return (
-    <section className={s.room} role="dialog" aria-label="Vault">
+    <section className={s.room} role="dialog" aria-label={w.vault}>
       <div className={s.head}>
         <div className={`${hud.kicker} ${s.kicker}`}>
           <span className={s.dot} aria-hidden="true" />
-          Vault · {current?.kind === 'daily' ? 'Daily' : 'Practice'}
+          {w.vault} · {current?.kind === 'daily' ? w.daily : w.practice}
         </div>
         {state && state.me.points > 0 && (
           <span className={s.points}>
-            {state.me.title ? `${TITLE[state.me.title]} · ` : ''}
-            <b>{state.me.points}</b> pts
+            {state.me.title ? `${w[TITLE[state.me.title]]} · ` : ''}
+            <b>{state.me.points}</b> {w.pts(state.me.points)}
           </span>
         )}
-        <button className={hud.close} aria-label="Close" onClick={() => vaultStore.getState().leave()}>
+        <button className={hud.close} aria-label={w.close} onClick={() => vaultStore.getState().leave()}>
           <CloseGlyph />
         </button>
       </div>
 
-      <nav className={s.tabs} aria-label="Vaults">
+      <nav className={s.tabs} aria-label={w.vaults}>
         {(state?.vaults ?? []).map((v) => (
           <button
             key={v.id}
             className={[s.tab, v.id === vault && s.tabOn, !v.open && s.tabLocked].filter(Boolean).join(' ')}
-            aria-label={`${v.kind === 'daily' ? 'Daily vault' : `Level ${v.level}`}${v.cracked ? ', cracked' : v.open ? '' : ', locked'}`}
+            aria-label={w.tabLabel(v.kind === 'daily', v.level, v.cracked, v.open)}
             aria-current={v.id === vault}
             disabled={!v.open || sending}
             onClick={() => vaultStore.getState().choose(v.id)}
           >
-            {TAB[v.id]}
+            {v.id === 'daily' ? w.daily : TAB[v.id]}
             {v.cracked ? (
               <span className={s.tabMark}>
                 <CheckGlyph />
@@ -113,17 +138,17 @@ export function VaultRoom() {
         </div>
       ) : (
         <div className={s.guard}>
-          <div className={s.guardLine}>{status === 'offline' ? 'The vault could not be reached. Try again in a moment.' : 'Opening the vault…'}</div>
+          <div className={s.guardLine}>{status === 'offline' ? w.offline : w.opening}</div>
         </div>
       )}
 
-      <Said phase={phase} />
+      <Said phase={phase} w={w} />
 
       <form className={s.ask} onSubmit={submit}>
         {!cracked && (
           <>
             <label className={s.hidden} htmlFor="vault-attempt">
-              Your message to the guard
+              {w.fieldLabel}
             </label>
             <textarea
               id="vault-attempt"
@@ -131,7 +156,7 @@ export function VaultRoom() {
               className={s.field}
               rows={2}
               value={draft}
-              placeholder="Say something to the guard"
+              placeholder={w.placeholder}
               onChange={(e) => vaultStore.getState().setDraft(e.target.value)}
               onKeyDown={onKey}
               disabled={!current}
@@ -145,83 +170,85 @@ export function VaultRoom() {
               </span>
               {left && (
                 <span>
-                  {left.minute.left} this minute · {left.day.left} left today
+                  {w.limits(left.minute.left, left.day.left)}
                 </span>
               )}
             </div>
           </>
         )}
         <button className={`${hud.display} ${hud.action} ${s.action}`} type="submit" disabled={!cracked && (!current || sending || !draft.trim() || out)}>
-          {cracked ? (next ? `Next: ${next.kind === 'daily' ? 'Daily vault' : `level ${next.level}`}` : 'Back to the city') : sending ? 'The guard reads…' : 'Try'}
+          {cracked ? (next ? w.next(next.kind === 'daily', next.level) : w.backToCity) : sending ? w.reading : w.try}
         </button>
       </form>
 
-      <Feed entries={feed ?? []} />
+      <Feed entries={feed ?? []} w={w} />
     </section>
   );
 }
 
 /** The phrase as dots: one per word, lit for each word the guard's last reply gave away. */
 function Phrase({ words, pressure, cracked }: { words: number; pressure: number; cracked: boolean }) {
+  const w = useWords(VAULT);
   const lit = cracked ? words : Math.round(pressure * words);
   return (
-    <div className={s.phrase} aria-label={`The phrase has ${words} words${lit && !cracked ? `; the last reply gave away ${lit}` : ''}`}>
+    <div className={s.phrase} aria-label={w.phraseLabel(words, cracked ? 0 : lit)}>
       {Array.from({ length: words }, (_, i) => (
         <span key={i} className={[s.word, i < lit && s.wordLit, cracked && s.wordOpen].filter(Boolean).join(' ')} />
       ))}
-      <span className={s.phraseLabel}>{words}-word phrase</span>
+      <span className={s.phraseLabel}>{w.phraseWords(words)}</span>
     </div>
   );
 }
 
 /** What the guard said to you, or why nothing was said. */
-function Said({ phase }: { phase: Phase }) {
-  if (phase.step === 'idle') return <p className={`${s.said} ${s.saidIdle}`}>One message, up to 280 characters. Type the phrase itself to open the door. Your words join the feed in 10 minutes.</p>;
-  if (phase.step === 'sending') return <p className={`${s.said} ${s.saidIdle}`} aria-live="polite">The guard reads your message…</p>;
+function Said({ phase, w }: { phase: Phase; w: VaultWords }) {
+  if (phase.step === 'idle') return <p className={`${s.said} ${s.saidIdle}`}>{w.idle}</p>;
+  if (phase.step === 'sending') return <p className={`${s.said} ${s.saidIdle}`} aria-live="polite">{w.sending}</p>;
   if (phase.step === 'refused') {
     return (
       <p className={`${s.said} ${s.saidRefused}`} role="status">
-        {phase.line}
-        {phase.retryAfterS && phase.code === 'RATE_LIMITED' && phase.retryAfterS < 120 ? ` ${phase.retryAfterS} s.` : ''}
+        {refusalLine(phase, w)}
+        {phase.retryAfterS && phase.code === 'RATE_LIMITED' && phase.retryAfterS < 120 ? w.seconds(phase.retryAfterS) : ''}
       </p>
     );
   }
-  return <Answer result={phase.result} />;
+  return <Answer result={phase.result} w={w} />;
 }
 
-function Answer({ result }: { result: AttemptResponse }) {
+function Answer({ result, w }: { result: AttemptResponse; w: VaultWords }) {
   if (result.outcome === 'cracked') {
     return (
       <div className={s.crack} role="status">
-        <div className={`${hud.display} ${s.crackWord}`}>Cracked</div>
+        <div className={`${hud.display} ${s.crackWord}`}>{w.cracked}</div>
         <div className={s.crackLine}>
           {result.award ? (
             <>
-              <b>+{result.award.points}</b> points{result.award.title ? ` · title: ${TITLE[result.award.title]}` : ''}
+              <b>+{result.award.points}</b> {w.points(result.award.points)}
+              {result.award.title ? w.awardTitle(w[TITLE[result.award.title]]) : ''}
             </>
           ) : (
-            'The door opens. No points this time: you cracked it before.'
+            w.noPoints
           )}
         </div>
       </div>
     );
   }
-  if (result.outcome === 'screened') return <p className={`${s.said} ${s.saidRefused}`} role="status">The guard only hears plain words. That try counted.</p>;
+  if (result.outcome === 'screened') return <p className={`${s.said} ${s.saidRefused}`} role="status">{w.screenedLine}</p>;
   return (
     <blockquote className={s.said} aria-live="polite">
       <span className={s.quote}>“{result.reply}”</span>
-      {result.outcome !== 'held' && <span className={s.slip}>{result.outcome === 'caught' ? 'It slipped, and the vault masked it.' : 'It slipped.'}</span>}
+      {result.outcome !== 'held' && <span className={s.slip}>{result.outcome === 'caught' ? w.caughtSlip : w.slipped}</span>}
     </blockquote>
   );
 }
 
 /** The live feed: what the guards told everyone, newest first; an attempt shows ten minutes after it was made. */
-function Feed({ entries }: { entries: readonly PublicEntry[] }) {
+function Feed({ entries, w }: { entries: readonly PublicEntry[]; w: VaultWords }) {
   return (
     <div className={s.feed}>
       <div className={s.feedHead}>
         <span className={s.dot} aria-hidden="true" />
-        Live
+        {w.live}
       </div>
       {entries.length ? (
         <ol className={s.feedList}>
@@ -229,15 +256,15 @@ function Feed({ entries }: { entries: readonly PublicEntry[] }) {
             <li key={e.id} className={s.entry}>
               <div className={s.entryHead}>
                 <span className={s.who}>{e.who}</span>
-                <span className={`${s.tag} ${s[`tag_${e.outcome}`] ?? ''}`}>{OUTCOME[e.outcome]}</span>
+                <span className={`${s.tag} ${s[`tag_${e.outcome}`] ?? ''}`}>{w[OUTCOME[e.outcome]]}</span>
               </div>
               {e.reply && <p className={s.entryReply}>{e.reply}</p>}
-              {e.attempt && <p className={s.entryTry}>Tried: {e.attempt}</p>}
+              {e.attempt && <p className={s.entryTry}>{w.tried(e.attempt)}</p>}
             </li>
           ))}
         </ol>
       ) : (
-        <p className={s.feedEmpty}>No one has tried this vault today. Be the first.</p>
+        <p className={s.feedEmpty}>{w.feedEmpty}</p>
       )}
     </div>
   );

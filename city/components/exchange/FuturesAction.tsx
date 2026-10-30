@@ -6,8 +6,10 @@ import { useCity } from '@/city/lib/city/store';
 import { EXCHANGE_OPEN } from '@/city/lib/exchange/flag';
 import { marketForTower, tradable } from '@/city/lib/exchange/markets';
 import { useExchange } from '@/city/lib/exchange/store';
+import { useWords } from '@/city/lib/i18n/dict';
 import type { Tower } from '@/city/lib/market/types';
 import { ExchangeGlyph } from './glyphs';
+import { EX } from './words';
 import s from './exchange.module.css';
 
 /**
@@ -23,6 +25,7 @@ export function FuturesAction({ tower }: { tower: Tower }) {
 const RETRY_MS = 15_000;
 
 function OpenFuturesAction({ tower }: { tower: Tower }) {
+  const w = useWords(EX);
   const read = useExchange((st) => st.markets);
   const markets = read.value?.markets ?? null;
   // The tower card asks once whether the coin has a perpetual; the list is kept for a minute (MARKETS_FRESH_MS).
@@ -35,7 +38,7 @@ function OpenFuturesAction({ tower }: { tower: Tower }) {
   }, [read]);
   const market = markets ? marketForTower(tower, markets) : null;
   if (!market) return null;
-  const top = market.maxLeverage !== null && market.maxLeverage >= 1 ? `${Math.floor(market.maxLeverage)}×` : 'long or short';
+  const top = market.maxLeverage !== null && market.maxLeverage >= 1 ? `${Math.floor(market.maxLeverage)}×` : w.longOrShort;
   return (
     <button
       className={s.towerLine}
@@ -45,8 +48,8 @@ function OpenFuturesAction({ tower }: { tower: Tower }) {
       }}
     >
       <ExchangeGlyph />
-      <span className={`${s.display} ${s.towerLineWord}`}>Trade futures</span>
-      <span className={s.towerLineMore}>{tradable(market) ? `${market.symbol}-PERP · ${top}` : `${market.symbol}-PERP · paused`}</span>
+      <span className={`${s.display} ${s.towerLineWord}`}>{w.tradeFutures}</span>
+      <span className={s.towerLineMore}>{`${w.perp(market.symbol)} · ${tradable(market) ? top : w.paused}`}</span>
     </button>
   );
 }

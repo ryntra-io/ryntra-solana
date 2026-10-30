@@ -4,14 +4,17 @@ import { displayAmount } from '@/lib/solana/amounts';
 import { explorerTxUrl } from '@/lib/solana/explorer';
 import { downloadReceipt } from '@/lib/solana/send-receipt-vault.client';
 import { EVM_EXPLORER_TX } from '@/lib/swap/catalog';
+import { digits, useWords } from '@/city/lib/i18n/dict';
+import { fieldText } from '@/city/lib/i18n/figures';
 import { cleanAmount, readAmount, shareOf } from '@/city/lib/money/amount';
 import { formatAmount, formatUsd } from '@/city/lib/money/assets';
-import { BRIDGE_NETWORKS, bridgeEditable, etaWords, NETWORK_LABEL, ORDER_WORD, ORDER_WORDS, orderPhase, quoteFacts, readDestination } from '@/city/lib/money/bridge';
+import { BRIDGE_NETWORKS, bridgeEditable, etaWords, NETWORK_LABEL, orderLine, orderPhase, orderWord, quoteFacts, readDestination } from '@/city/lib/money/bridge';
 import { MONEY_OPEN } from '@/city/lib/money/flag';
 import { useMoney } from '@/city/lib/money/open';
 import { short } from '@/city/lib/money/recipient';
 import { bridgeUsdc, useMoneyStore } from '@/city/lib/money/store';
 import { Note, Soon, Terms } from './bits';
+import { MONEY } from './words';
 import s from './money.module.css';
 
 /**
@@ -20,11 +23,12 @@ import s from './money.module.css';
  * order until the money lands or comes back. Behind the money switch until the owner's canary passes.
  */
 export function Bridge() {
+  const w = useWords(MONEY);
   if (!MONEY_OPEN) {
     return (
-      <Soon title="Bridge">
+      <Soon title={w.bridge}>
         <button type="button" className={`${s.display} ${s.secondary}`} onClick={() => useMoney.getState().setTab('topup')}>
-          Top up instead
+          {w.topUpInstead}
         </button>
       </Soon>
     );
@@ -33,6 +37,7 @@ export function Bridge() {
 }
 
 function BridgeForm() {
+  const w = useWords(MONEY);
   const bridge = useMoneyStore((st) => st.bridge);
   const wallet = useMoneyStore((st) => st.wallet);
   const walletRead = useMoneyStore((st) => st.walletRead);
@@ -45,26 +50,26 @@ function BridgeForm() {
 
   if (bridge.order) return <Order />;
 
-  let label = 'Review';
+  let label = w.reviewAction;
   let action: (() => void) | null = null;
-  if (!wallet) label = walletRead === 'failed' ? 'Balances unavailable' : 'Reading your balances…';
-  else if (!usdc || BigInt(usdc.spendableRaw) === 0n) label = 'No USDC to move';
-  else if (!destination.ok) label = 'Enter the address there';
-  else if (!amount.ok) label = amount.problem === 'OVER_BALANCE' ? 'Not enough USDC' : 'Enter an amount';
-  else if (bridge.phase === 'quoting' || !bridge.quote) label = 'Getting a price…';
-  else if (bridge.phase === 'planning') label = 'Preparing transfer…';
-  else if (bridge.phase === 'wallet') label = 'Check your wallet…';
-  else if (bridge.phase === 'sending') label = 'Sending…';
-  else if (!bridge.quote.body.buildable) label = 'Paused right now';
+  if (!wallet) label = walletRead === 'failed' ? w.balancesUnavailableShort : w.readingBalancesNow;
+  else if (!usdc || BigInt(usdc.spendableRaw) === 0n) label = w.noUsdc;
+  else if (!destination.ok) label = w.enterAddressThere;
+  else if (!amount.ok) label = amount.problem === 'OVER_BALANCE' ? w.notEnoughUsdc : w.enterAmount;
+  else if (bridge.phase === 'quoting' || !bridge.quote) label = w.gettingPrice;
+  else if (bridge.phase === 'planning') label = w.preparing;
+  else if (bridge.phase === 'wallet') label = w.checkWallet;
+  else if (bridge.phase === 'sending') label = w.sending;
+  else if (!bridge.quote.body.buildable) label = w.paused;
   else if (bridge.plan) {
-    label = 'Confirm in wallet';
+    label = w.confirmInWallet;
     action = () => void useMoneyStore.getState().confirmBridge();
   } else action = () => void useMoneyStore.getState().reviewBridge();
 
   return (
-    <section className={s.tabBody} aria-label="Bridge">
+    <section className={s.tabBody} aria-label={w.bridge}>
       <span className={s.label} id="money-bridge-networks">
-        To
+        {w.to}
       </span>
       <div className={s.chips} role="radiogroup" aria-labelledby="money-bridge-networks">
         {BRIDGE_NETWORKS.map((network) => (
@@ -82,7 +87,7 @@ function BridgeForm() {
         ))}
       </div>
       <label className={s.label} htmlFor="money-bridge-to">
-        Address on {NETWORK_LABEL[bridge.network]}
+        {w.addressOn(NETWORK_LABEL[bridge.network])}
       </label>
       <input
         id="money-bridge-to"
@@ -100,15 +105,15 @@ function BridgeForm() {
 
       <div className={s.amountHead}>
         <label className={s.label} htmlFor="money-bridge-amount">
-          Amount
+          {w.amount}
         </label>
-        {usdc ? <span className={s.balance}>{formatAmount(usdc.spendableRaw, usdc.decimals)} USDC available</span> : null}
+        {usdc ? <span className={s.balance}>{w.available(formatAmount(usdc.spendableRaw, usdc.decimals), 'USDC')}</span> : null}
       </div>
       <div className={s.field}>
         <input
           id="money-bridge-amount"
           className={`${s.input} ${s.amount}`}
-          value={bridge.amount}
+          value={fieldText(bridge.amount)}
           onChange={(event) => useMoneyStore.getState().setBridgeAmount(cleanAmount(event.target.value))}
           placeholder="0"
           inputMode="decimal"
@@ -123,97 +128,100 @@ function BridgeForm() {
             50%
           </button>
           <button type="button" className={s.share} disabled={!idle} onClick={() => useMoneyStore.getState().setBridgeAmount(shareOf(usdc.spendableRaw, usdc.decimals, 1n, 1n))}>
-            Max
+            {w.max}
           </button>
         </div>
       ) : null}
       {bridge.amount && !amount.ok && amount.problem !== 'EMPTY' ? <Note line={{ tone: 'error', text: amount.text }} /> : null}
 
-      {facts && destination.ok && amount.ok ? (
-        <div className={`${s.review} ${bridge.phase === 'quoting' ? s.dim : ''}`} aria-label={bridge.plan ? 'Review' : 'Price'}>
-          <span className={`${s.display} ${s.kicker}`}>They get at least</span>
-          <b className={`${s.display} ${s.hero}`}>
-            {formatAmount(facts.minimumRaw, facts.decimals)} {facts.symbol}
-          </b>
-          <span className={s.fine} translate="no">
-            on {NETWORK_LABEL[bridge.network]} · {short(destination.address)} · {etaWords(facts.etaSeconds)}
-          </span>
-          <Terms
-            label="Transfer details"
-            line={
-              <>
-                Fee <b>{facts.providerUsd === null ? 'in the amount' : `≈ ${formatUsd(facts.providerUsd)}`}</b>
-                {' · Ryntra '}
-                <b>{facts.ryntraFee}</b>
-                {' · network '}
-                <b>{facts.networkUsd === null ? 'a few cents' : `≈ ${formatUsd(facts.networkUsd)}`}</b>
-              </>
-            }
-          >
-            <dt>You send</dt>
-            <dd>{usdc ? displayAmount(amount.raw, usdc.decimals) : bridge.amount} USDC</dd>
-            <dt>They get at least</dt>
-            <dd>
+      <div className={s.dock}>
+        {facts && destination.ok && amount.ok ? (
+          <div className={`${s.review} ${bridge.phase === 'quoting' ? s.dim : ''}`} aria-label={bridge.plan ? w.review : w.price}>
+            <span className={`${s.display} ${s.kicker}`}>{w.theyGetLeast}</span>
+            <b className={`${s.display} ${s.hero}`}>
               {formatAmount(facts.minimumRaw, facts.decimals)} {facts.symbol}
-            </dd>
-            <dt>Moving it costs</dt>
-            <dd>{facts.providerUsd === null ? 'Inside the amount' : `≈ ${formatUsd(facts.providerUsd)}, inside the amount`}</dd>
-            <dt>Ryntra fee</dt>
-            <dd>{facts.ryntraFee}</dd>
-            <dt>Solana network fee</dt>
-            <dd>{facts.networkUsd === null ? 'A few cents of SOL' : `≈ ${formatUsd(facts.networkUsd)} in SOL`}</dd>
-            <dt>Arrives in</dt>
-            <dd>{etaWords(facts.etaSeconds)}</dd>
-            <dt>To</dt>
-            <dd translate="no">{destination.address}</dd>
-          </Terms>
-        </div>
-      ) : null}
-      <Note line={bridge.line} />
+            </b>
+            <span className={s.fine} translate="no">
+              {w.onNetwork(NETWORK_LABEL[bridge.network])} · {short(destination.address)} · {etaWords(facts.etaSeconds)}
+            </span>
+            <Terms
+              label={w.transferDetails}
+              line={
+                <>
+                  {w.fee} <b>{facts.providerUsd === null ? w.inAmount : `≈ ${formatUsd(facts.providerUsd)}`}</b>
+                  {' · Ryntra '}
+                  <b>{digits(facts.ryntraFee)}</b>
+                  {` · ${w.networkWord} `}
+                  <b>{facts.networkUsd === null ? w.fewCents : `≈ ${formatUsd(facts.networkUsd)}`}</b>
+                </>
+              }
+            >
+              <dt>{w.youSend}</dt>
+              <dd>{usdc ? digits(displayAmount(amount.raw, usdc.decimals)) : bridge.amount} USDC</dd>
+              <dt>{w.theyGetLeast}</dt>
+              <dd>
+                {formatAmount(facts.minimumRaw, facts.decimals)} {facts.symbol}
+              </dd>
+              <dt>{w.movingCosts}</dt>
+              <dd>{facts.providerUsd === null ? w.insideAmount : w.insideAmountOf(`≈ ${formatUsd(facts.providerUsd)}`)}</dd>
+              <dt>{w.ryntraFee}</dt>
+              <dd>{digits(facts.ryntraFee)}</dd>
+              <dt>{w.solanaFee}</dt>
+              <dd>{facts.networkUsd === null ? w.fewCentsSol : w.inSol(`≈ ${formatUsd(facts.networkUsd)}`)}</dd>
+              <dt>{w.arrivesIn}</dt>
+              <dd>{etaWords(facts.etaSeconds)}</dd>
+              <dt>{w.to}</dt>
+              <dd translate="no">{destination.address}</dd>
+            </Terms>
+          </div>
+        ) : null}
+        <Note line={bridge.line} />
 
-      <button type="button" className={`${s.display} ${s.action} ${s.cta} ${idle ? '' : s.waiting}`} disabled={!action} onClick={action ?? undefined}>
-        {label}
-      </button>
+        <button type="button" className={`${s.display} ${s.action} ${s.cta} ${idle ? '' : s.waiting}`} disabled={!action} onClick={action ?? undefined}>
+          {label}
+        </button>
+      </div>
     </section>
   );
 }
 
 /** One order out of Solana, followed until it lands or comes back. */
 function Order() {
+  const w = useWords(MONEY);
   const order = useMoneyStore((st) => st.bridge.order);
   const receipt = useMoneyStore((st) => st.bridge.receipt);
   if (!order) return null;
   const phase = orderPhase(order.state);
   const evm = order.to.network === 'solana' ? null : order.to.network;
   return (
-    <section className={s.tabBody} aria-label="Transfer between networks">
+    <section className={s.tabBody} aria-label={w.betweenNetworks}>
       <div className={`${s.result} ${phase === 'done' ? s.resultGood : phase === 'failed' ? s.resultBad : ''}`}>
-        <span className={`${s.display} ${s.resultWord}`}>{ORDER_WORD[phase]}</span>
+        <span className={`${s.display} ${s.resultWord}`}>{orderWord(phase)}</span>
         <p className={s.lead}>
-          {formatAmount(order.from.amountRaw, order.from.decimals)} {order.from.symbol} → {order.to.symbol} on {evm ? NETWORK_LABEL[evm as keyof typeof NETWORK_LABEL] ?? evm : 'Solana'}
+          {formatAmount(order.from.amountRaw, order.from.decimals)} {order.from.symbol} → {order.to.symbol} {w.onNetwork(evm ? (NETWORK_LABEL[evm as keyof typeof NETWORK_LABEL] ?? evm) : 'Solana')}
         </p>
-        {ORDER_WORDS[phase] ? <p className={s.note}>{ORDER_WORDS[phase]}</p> : null}
+        {orderLine(phase) ? <p className={s.note}>{orderLine(phase)}</p> : null}
         <div className={s.links}>
           {order.sourceTxHash ? (
             <a className={s.link} href={explorerTxUrl('mainnet', order.sourceTxHash)} target="_blank" rel="noreferrer">
-              {short(order.sourceTxHash)} on Solana
+              {w.onSolana(short(order.sourceTxHash))}
             </a>
           ) : null}
           {order.destinationTxHash && evm ? (
             <a className={s.link} href={`${EVM_EXPLORER_TX[evm]}${order.destinationTxHash}`} target="_blank" rel="noreferrer">
-              {short(order.destinationTxHash)} there
+              {w.there(short(order.destinationTxHash))}
             </a>
           ) : null}
           {receipt ? (
             <button type="button" className={s.link} onClick={() => downloadReceipt(receipt)}>
-              Download receipt
+              {w.downloadReceipt}
             </button>
           ) : null}
         </div>
       </div>
       {phase === 'moving' || phase === 'recovery' ? null : (
         <button type="button" className={`${s.display} ${s.secondary}`} onClick={() => useMoneyStore.getState().newBridge()}>
-          New transfer
+          {w.newTransfer}
         </button>
       )}
     </section>

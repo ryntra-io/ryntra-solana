@@ -1,3 +1,6 @@
+import { dateText } from '../../i18n/dict.ts';
+import { langNow } from '../../i18n/lang.ts';
+
 /**
  * The chance of a side over time, from the bars the engine reads (`/api/predictions/outcomes/<id>/chart`): one range
  * per pill — a day, a week, a month, everything — the line itself and the change it shows. Every point is a venue's
@@ -147,6 +150,11 @@ export function timeLabels(points: readonly Point[], range: Range, count = 5): r
   const out: string[] = [];
   for (let i = 0; i < count; i++) {
     const at = new Date(t0 + ((t1 - t0) * i) / (count - 1));
+    if (langNow() !== 'en') {
+      // Another language writes its own clock and months (14:05, 29 жовт.).
+      out.push(dateText(at, range === '1D' ? { hour: '2-digit', minute: '2-digit' } : range === 'ALL' ? { month: 'short', year: '2-digit' } : { month: 'short', day: 'numeric' }));
+      continue;
+    }
     out.push(
       range === '1D'
         ? at.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })
@@ -183,5 +191,6 @@ export function xAt(points: readonly Point[], i: number): number {
 /** A point's moment as the tip under a finger says it: the time on a day, the date beyond. */
 export function momentOf(t: number, range: Range): string {
   const at = new Date(t);
+  if (langNow() !== 'en') return dateText(at, range === '1D' ? { hour: '2-digit', minute: '2-digit' } : { month: 'short', day: 'numeric', ...(range === 'ALL' ? { year: '2-digit' } : {}) });
   return range === '1D' ? at.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' }) : at.toLocaleDateString('en-US', { month: 'short', day: 'numeric', ...(range === 'ALL' ? { year: '2-digit' } : {}) });
 }

@@ -1,16 +1,28 @@
 # Ryntra on Solana — source
 
-Ryntra is an app to invest in tokenized stocks from $1, in your own wallet, on
-Solana. Choose a dollar amount to invest, or set Autoinvest by your own
-rule; Ryntra prepares each purchase and shows it before you sign, and your
-wallet signs it. Around it: swaps and a spot terminal, trading plans, a review
-before every signature, a portfolio and a history with receipts. It runs at
-[ryntra.io](https://ryntra.io/app) on desktop and phone, and as an Android app.
+Ryntra is agentic finance on Solana: create an asset, let agents work it, and
+keep it from being stolen. Its face is Ryntra City — the whole Solana market as
+a living night city, every coin a tower as tall as its market cap and the
+liquidity behind it. Tap a tower to see it and buy or sell from your own wallet
+in one signature; swap and trade spot with limits and stops; ask Ryntra, the
+assistant, what moved and why; top up and send — on Solana or to another
+network — and ask for a payment with a link in Money. Every transaction is
+shown in the person's wallet and signed there — Ryntra never holds keys or
+money. It runs at [ryntra.io](https://ryntra.io) on desktop and phone, and as
+an Android app in the Solana dApp Store.
 
-This repository is the product's source code as released — the web app, the
-Android app, the Evidence Kernel and the database schema, with their tests. It
-is private and shared read-only with invited reviewers. Every update is one
-commit, named for what it released; the latest is from 2026-10-29.
+The city grows around three pillars, each district opening once it works:
+**Create** — launch a token on a Meteora bonding curve and watch it rise in the
+Launch Docks; **Work** — agents with a budget in the person's own wallet and
+hard on-chain limits (a Squads treasury), for buying, grids, recurring buys and
+pools; **Protect** — a guardian agent that checks every transaction before the
+signature. The **Arena** is the showcase: agents with real budgets, results
+checked on-chain.
+
+This repository is the product's source code as released — the web app and the
+city, the Android app, the Evidence Kernel and the database schema, with their
+tests. It is private and shared read-only with invited reviewers. Every update
+is one commit, named for what it released; the latest is from 2026-10-30.
 
 ## What is here
 
@@ -19,11 +31,12 @@ commit, named for what it released; the latest is from 2026-10-29.
 | `app/` | The web app and its API — Next.js App Router: the pages people use and the routes behind them |
 | `lib/` | The product's logic: `solana/` execution, receipts and recovery, `stocks/` tokenized equities, `plans/` and `autoinvest/` the person's own rules, `guard/` the Evidence Kernel that records and proves each operation, `home/` Portfolio and risk, `agent/` the assistant |
 | `packages/` | Libraries with their own interface: the API client the phone uses, the tokenized-stocks and trading-plans models, the evidence SDK and its MCP servers |
-| `apps/mobile/` | The Android app — React Native with Expo; it reads the same versioned API and signs in the person's wallet through Mobile Wallet Adapter |
+| `city/` | Ryntra City — the 3D market, its districts and windows, on the same engine and the same versioned API |
+| `apps/mobile/` | The Android app — React Native with Expo; since 1.18.0 it opens Ryntra City full screen and bridges the city to the person's wallet through Mobile Wallet Adapter (sign-in, every signature in the wallet's own window, share, links to a coin's tower) |
 | `supabase/migrations/`, `supabase/prepared/` | The database schema migration by migration, and the prepared SQL that is applied by hand (corrections and rollbacks) |
 | `public/` | Static assets |
 
-5,634 files come from the development repository as released, and each test
+5,758 files come from the development repository as released, and each test
 sits beside the code it tests (`*.test.mjs`); `README.md`, `BOUNDARY.md`,
 `LICENSE`, `.gitignore` and the scripts of `package.json` are written for this
 snapshot.
@@ -85,15 +98,15 @@ build-tools).
 
 The code as it stood before the hackathon is tagged
 `pre-hackathon-baseline-2026-09-11` in the development repository — commit `7fc5776f`,
-2026-09-11. Measured against that tag, path by path, for the 5,634 files
+2026-09-11. Measured against that tag, path by path, for the 5,758 files
 that come from the development repository:
 
 | Since the tag | Files |
 |---|---|
-| New | 3,907 |
+| New | 4,031 |
 | Changed | 895 |
 | Unchanged | 832 |
-| Lines added / removed | +900,430 / −27,373 |
+| Lines added / removed | +918,558 / −27,380 |
 
 [BOUNDARY.md](BOUNDARY.md) lists every new and every changed file. Shipped since
 then, as the public build log records it:

@@ -49,6 +49,12 @@
   -webkit-font-smoothing: antialiased;
 }
 
+/* A language other than the server's English (CITY-79): the boot script hides the city's words for the frame before
+   they are painted in it (city/lib/i18n/langs.ts), so no English flashes first. The city itself stays in view. */
+:global(html.city-lang-wait) .root :is([data-city-top], [data-city-feed], nav) {
+  visibility: hidden;
+}
+
 /* No weight of its own: every class in the city's sheets still wins over it. */
 :where(.root) button {
   font: inherit;

@@ -7,6 +7,7 @@ import { howStore } from '@/city/lib/art/how';
 import { useTowerChart } from '@/city/lib/chart/store';
 import { useCity } from '@/city/lib/city/store';
 import { useHarbor } from '@/city/lib/districts/harbor/store';
+import { useWords } from '@/city/lib/i18n/dict';
 import { isNamed } from '@/city/lib/market/types';
 import { useFilming } from '@/city/lib/moments/MomentsLayer';
 import { useMoments } from '@/city/lib/moments/stage';
@@ -18,6 +19,7 @@ import { useTrade } from '@/city/lib/trade/store';
 import { useWindows } from '@/city/lib/window/store';
 import { useCityWindow } from '../window/useCityWindow';
 import { CandlesGlyph } from './glyphs';
+import { CHART } from './words';
 import c from './chart.module.css';
 
 /**
@@ -31,11 +33,12 @@ const ChartWindow = dynamic(() => import('./ChartWindow').then((m) => m.ChartWin
 });
 
 function PendingPane({ failed }: { failed: boolean }) {
+  const w = useWords(CHART);
   return (
-    <div className={`${c.pending} ${failed ? c.artEmpty : c.artLoading}`} role="status" aria-label={failed ? 'The chart could not load' : 'Loading chart'}>
+    <div className={`${c.pending} ${failed ? c.artEmpty : c.artLoading}`} role="status" aria-label={failed ? w.couldNotLoad : w.loading}>
       {failed ? (
         <span className={c.state}>
-          <b>Chart unavailable</b>
+          <b>{w.unavailable}</b>
         </span>
       ) : null}
     </div>
@@ -51,6 +54,7 @@ const closeChart = () => useTowerChart.getState().close();
  * card, when open over it, closes before it.
  */
 export function ChartLayer() {
+  const w = useWords(CHART);
   const mint = useTowerChart((st) => st.mint);
   const layout = useCity((st) => st.layout);
   const running = useRun((st) => st.phase !== 'off');
@@ -96,13 +100,14 @@ export function ChartLayer() {
   }, [mint]);
 
   // The frame follows the tower: its contents change with it, the window keeps its place — in the city or out on
-  // another screen (CITY-75), where its own page opens on the same tower.
+  // another screen (CITY-75), where its own page opens on the same tower. Its title follows the language (CITY-79).
   const render = useCallback(() => (tower ? <ChartWindow tower={tower} /> : null), [tower]);
   const towerId = tower?.id ?? null;
+  const title = w.chart;
   const spec = useMemo(
     () => ({
       id: 'chart',
-      title: 'Chart',
+      title,
       icon: <CandlesGlyph />,
       render,
       size: { width: 720, height: 600 },
@@ -110,7 +115,7 @@ export function ChartLayer() {
       onClose: closeChart,
       detach: towerId ? { tower: towerId } : undefined,
     }),
-    [render, towerId],
+    [render, towerId, title],
   );
   // A clip being filmed hides the windows over the city; a chart out on another screen is not in the clip and stays.
   const out = useWindows((st) => Boolean(st.out.chart));

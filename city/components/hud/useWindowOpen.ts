@@ -22,7 +22,7 @@ import { vaultStore } from '@/city/lib/vault/store';
 import { useWindows } from '@/city/lib/window/store';
 
 /** Every window's store as it stands now. A window out on another screen (CITY-75) is not over the city. */
-function sources(): WindowSources {
+export function windowSources(): WindowSources {
   const out = useWindows.getState().out;
   return {
     predict: usePredict.getState(),
@@ -48,7 +48,7 @@ function sources(): WindowSources {
 
 /** «A window is open», asked once, outside React (the moments' line in CityApp). */
 export function windowOpenNow(): boolean {
-  return windowOpen(sources());
+  return windowOpen(windowSources());
 }
 
 /** «A window is open», for a component: true while any window or panel of the city is open. */

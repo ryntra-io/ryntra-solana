@@ -7,6 +7,8 @@ import { follow, outcomeOf, reviewFresh, signAndSend, type ActionOutcome, type S
 import type { HarborPool } from './pools.ts';
 import { harborPositions, type HarborPosition } from './positions.ts';
 import { failureWords } from './review.ts';
+import { HARBOR_FAILURES } from './words.ts';
+import { wordsNow } from '../../i18n/dict.ts';
 import type { Holdings } from '../../trade/wallet.ts';
 
 /**
@@ -165,7 +167,7 @@ export const useHarbor = create<Store>((set, get) => ({
     set({ list: { status: 'loading' } });
     const answer = await harborEnv().engine.pools();
     if (answer.ok && Array.isArray(answer.value.pools)) set({ list: { status: 'ready', pools: answer.value.pools, at: answer.value.at ?? null } });
-    else set({ list: { status: 'error', message: 'The pools did not load. Try again in a moment.' } });
+    else set({ list: { status: 'error', message: wordsNow(HARBOR_FAILURES).poolsFailed } });
   },
   choose: (pool, holdings) => {
     if (BUSY.has(get().phase)) return;
@@ -189,7 +191,7 @@ export const useHarbor = create<Store>((set, get) => ({
     const answer = await harborEnv().engine.positions(owner, fresh);
     const rows = answer.ok ? harborPositions(answer.value, owner) : null;
     if (rows) set({ positions: { status: 'ready', owner, positions: rows, at: harborEnv().now() } });
-    else if (!(before.status === 'ready' && before.owner === owner)) set({ positions: { status: 'error', owner, message: answer.ok ? 'The positions did not read.' : failureWords(answer.failure.code) } });
+    else if (!(before.status === 'ready' && before.owner === owner)) set({ positions: { status: 'error', owner, message: answer.ok ? wordsNow(HARBOR_FAILURES).positionsFailed : failureWords(answer.failure.code) } });
   },
   prepare: async (connection, target, holdings) => {
     const st = get();
@@ -217,7 +219,7 @@ export const useHarbor = create<Store>((set, get) => ({
     const e = harborEnv();
     if (!reviewed || !reviewFresh(reviewed.review, reviewed.at, e.now())) {
       await get().prepare(connection, target, holdings);
-      if (get().reviewed) set({ notice: { tone: 'warn', text: 'Fresh figures from the engine. Tap again to sign.' } });
+      if (get().reviewed) set({ notice: { tone: 'warn', text: wordsNow(HARBOR_FAILURES).fresh } });
       return;
     }
     const mine = ++ticket;
@@ -235,7 +237,7 @@ export const useHarbor = create<Store>((set, get) => ({
     if (outcome.kind === 'aged') {
       set({ phase: 'idle', reviewed: null });
       await get().prepare(connection, target, holdings);
-      if (get().reviewed) set({ notice: { tone: 'warn', text: 'The figures aged while the wallet was open. Nothing was sent. Tap again.' } });
+      if (get().reviewed) set({ notice: { tone: 'warn', text: wordsNow(HARBOR_FAILURES).aged } });
       return;
     }
     if (outcome.kind === 'refused') {

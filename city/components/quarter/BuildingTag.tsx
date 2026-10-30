@@ -2,10 +2,12 @@
 
 import { Html } from '@react-three/drei';
 import { useEffect, useState } from 'react';
+import { useWords, wordsNow } from '@/city/lib/i18n/dict';
 import { freshness, type ObjectRead } from '@/city/lib/quarter/objects';
 import type { ReadEntry } from '@/city/lib/quarter/site';
 import type { ChainLink } from '@/city/lib/quarter/types';
 import q from './quarter.module.css';
+import { QUARTER } from './words';
 
 /** The clock the tags count ages by, a tick every 15 s: enough for «2 min ago», cheap for twelve tags. */
 export function useNow(stepMs = 15_000): number {
@@ -19,16 +21,17 @@ export function useNow(stepMs = 15_000): number {
 
 /** What a building's sheet says for a read that is not a view: always the reason, never a number. */
 export function readLine(read: ObjectRead | null | undefined): string {
-  if (!read) return 'Reading…';
+  const w = wordsNow(QUARTER);
+  if (!read) return w.toRead;
   switch (read.state) {
     case 'wallet':
-      return 'Connect a wallet to read';
+      return w.connectToRead;
     case 'proof':
-      return 'Sign in to read';
+      return w.signInToRead;
     case 'gone':
-      return 'Not found now';
+      return w.notFoundNow;
     case 'unavailable':
-      return 'Not read now';
+      return w.notReadNow;
     default:
       return '';
   }
@@ -36,16 +39,17 @@ export function readLine(read: ObjectRead | null | undefined): string {
 
 /** The same reason, in a word or two, for the small sign over the building. */
 function shortLine(read: ObjectRead | null | undefined): string {
-  if (!read) return 'Reading';
+  const w = wordsNow(QUARTER);
+  if (!read) return w.shortReading;
   switch (read.state) {
     case 'wallet':
-      return 'Connect wallet';
+      return w.shortConnect;
     case 'proof':
-      return 'Sign in';
+      return w.shortSignIn;
     case 'gone':
-      return 'Not found';
+      return w.shortNotFound;
     case 'unavailable':
-      return 'Not read';
+      return w.shortNotRead;
     default:
       return '';
   }
@@ -60,17 +64,18 @@ export function BuildingTag({ x, y, z, link, read }: { x: number; y: number; z: 
   const view = read?.read?.state === 'ok' ? read.read.view : null;
   const first = view?.figures[0];
   const age = view ? freshness(view.at, now) : null;
+  const w = useWords(QUARTER);
   return (
     <Html position={[x, y, z]} center zIndexRange={[4, 0]} pointerEvents="none" className={q.tagWrap}>
       <div className={`${q.tag} ${!link ? q.tagEmpty : ''} ${view?.signal === 'danger' ? q.tagDanger : view?.signal === 'value' ? q.tagValue : ''}`}>
         {!link ? (
-          <span className={q.tagTitle}>Not linked</span>
+          <span className={q.tagTitle}>{w.notLinked}</span>
         ) : view ? (
           <>
             <span className={q.tagTitle}>{view.title}</span>
             <span className={q.tagLine}>
               {first ? `${first.label} ${first.value}` : view.line}
-              {age && <i className={age.stale ? q.tagStale : ''}> · {age.stale ? 'delayed' : age.short}</i>}
+              {age && <i className={age.stale ? q.tagStale : ''}> · {age.stale ? w.delayed : age.short}</i>}
             </span>
           </>
         ) : (

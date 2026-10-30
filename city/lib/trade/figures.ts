@@ -1,6 +1,8 @@
 import { freshOrderWithinReview } from '../../../lib/solana/swap-press.ts';
 import type { OrderBody, QuoteBody } from './engine.ts';
+import { wordsNow } from '../i18n/dict.ts';
 import { formatBps, formatImpact, formatRoute, formatUnits, type ImpactLevel } from './format.ts';
+import { WARNINGS } from './words.ts';
 
 /**
  * The figures on the trade card, read from the engine's quote or order and never computed here: what you get, the
@@ -70,16 +72,17 @@ export function orderWarnings(order: OrderBody): readonly string[] {
 
 /** What each warning says on the card, in one line. */
 export function warningLine(rule: string, order: OrderBody): string {
-  if (rule === 'OUTPUT_ASSET_REVIEWED') return 'This token needs extra care. Check it before you sign.';
+  const w = wordsNow(WARNINGS);
+  if (rule === 'OUTPUT_ASSET_REVIEWED') return w.extraCare;
   if (rule === 'SLIPPAGE_BOUNDED') {
     const quoted = BigInt(order.order.outAmountRaw);
     const least = BigInt(order.order.minReceivedRaw);
     const implied = quoted > 0n ? Number(((quoted - least) * 10_000n) / quoted) : 0;
-    return Math.max(order.order.slippageBps, implied) > 300 ? 'The price may move more than 3% before it lands.' : 'Check the least you get.';
+    return Math.max(order.order.slippageBps, implied) > 300 ? w.moveMore : w.checkLeast;
   }
-  if (rule === 'PRICE_IMPACT_DISCLOSED') return 'This size moves the price.';
-  if (rule === 'VALUE_DISCLOSED') return 'No dollar value for this swap right now.';
-  return 'Check this swap before you sign.';
+  if (rule === 'PRICE_IMPACT_DISCLOSED') return w.movesPrice;
+  if (rule === 'VALUE_DISCLOSED') return w.noValue;
+  return w.checkSwap;
 }
 
 /**

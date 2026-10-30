@@ -2,11 +2,13 @@
 
 import { useEffect, useState } from 'react';
 import { DEPOSIT_MIN_USD, DEPOSIT_NETWORK_LABEL, DEPOSIT_NETWORKS, DEPOSIT_REFERENCE_USD } from '@/lib/relay/deposit-address';
-import { feeShort, feeWords, PROGRESS_WORDS } from '@/city/lib/money/deposit';
+import { digits, useWords } from '@/city/lib/i18n/dict';
+import { feeShort, feeWords, progressWords } from '@/city/lib/money/deposit';
 import { flowLive } from '@/city/lib/money/flag';
 import { grouped } from '@/city/lib/money/recipient';
 import { useMoneyStore } from '@/city/lib/money/store';
 import { CopyButton, More, Qr } from './bits';
+import { MONEY } from './words';
 import s from './money.module.css';
 
 /** While an address from another network is on screen, Relay and the wallet are asked this often, this many times. */
@@ -20,20 +22,21 @@ const PROGRESS_LIMIT = 240;
  * Bridge. Nothing on this tab signs or sends.
  */
 export function TopUp({ owner }: { owner: string }) {
+  const w = useWords(MONEY);
   const networks = flowLive('deposit');
   const deposit = useMoneyStore((st) => st.deposit);
   const [picked, setMode] = useState<'solana' | 'network'>(deposit.network ? 'network' : 'solana');
   const mode = networks ? picked : 'solana';
 
   return (
-    <section className={s.tabBody} aria-label="Top up">
+    <section className={s.tabBody} aria-label={w.topUp}>
       {networks ? (
-        <div className={s.segment} role="tablist" aria-label="Where the money comes from">
+        <div className={s.segment} role="tablist" aria-label={w.whereFrom}>
           <button type="button" role="tab" aria-selected={mode === 'solana'} className={mode === 'solana' ? s.segmentOn : ''} onClick={() => setMode('solana')}>
-            From Solana
+            {w.fromSolana}
           </button>
           <button type="button" role="tab" aria-selected={mode === 'network'} className={mode === 'network' ? s.segmentOn : ''} onClick={() => setMode('network')}>
-            From another network
+            {w.fromNetwork}
           </button>
         </div>
       ) : null}
@@ -44,19 +47,20 @@ export function TopUp({ owner }: { owner: string }) {
 
 /** The wallet's own address: the QR, the address whole, one copy. */
 function SolanaAddress({ owner }: { owner: string }) {
+  const w = useWords(MONEY);
   return (
     <div className={s.address}>
-      <Qr value={owner} label="Your Solana address as a QR code" />
+      <Qr value={owner} label={w.qrSolana} />
       <div className={s.addressFacts}>
-        <span className={s.label}>Your Solana address</span>
+        <span className={s.label}>{w.yourAddress}</span>
         <p className={s.addressValue} translate="no">
           {grouped(owner)}
         </p>
-        <span className={s.chip}>Solana network only</span>
+        <span className={s.chip}>{w.solanaOnly}</span>
       </div>
       <CopyButton value={owner} primary />
       <More>
-        <p className={s.fine}>SOL, USDC and any Solana coin arrive here. From an exchange, choose the Solana network when you withdraw.</p>
+        <p className={s.fine}>{w.solanaFine}</p>
       </More>
     </div>
   );
@@ -64,6 +68,7 @@ function SolanaAddress({ owner }: { owner: string }) {
 
 /** An address on another network that Relay fills into this wallet as USDC on Solana. */
 function NetworkAddress({ owner }: { owner: string }) {
+  const w = useWords(MONEY);
   const deposit = useMoneyStore((st) => st.deposit);
   const shown = deposit.address && deposit.address.recipient === owner && deposit.address.network === deposit.network ? deposit.address : null;
 
@@ -84,7 +89,7 @@ function NetworkAddress({ owner }: { owner: string }) {
   return (
     <div className={s.address}>
       <span className={s.label} id="money-networks">
-        Where is your USDC?
+        {w.whereUsdc}
       </span>
       <div className={s.chips} role="radiogroup" aria-labelledby="money-networks">
         {DEPOSIT_NETWORKS.map((network) => (
@@ -102,37 +107,34 @@ function NetworkAddress({ owner }: { owner: string }) {
       </div>
       {deposit.network === null ? null : deposit.status === 'failed' ? (
         <p className={s.note} role="alert">
-          The address could not be made right now.{' '}
+          {w.addressFailed}{' '}
           <button type="button" className={s.link} onClick={() => void useMoneyStore.getState().pickDeposit(deposit.network!)}>
-            Try again
+            {w.tryAgain}
           </button>
         </p>
       ) : !shown ? (
-        <div className={s.bones} aria-label="Asking for an address">
+        <div className={s.bones} aria-label={w.askingAddress}>
           <span />
         </div>
       ) : (
         <>
-          <Qr value={shown.address} label={`Your ${DEPOSIT_NETWORK_LABEL[shown.network]} deposit address as a QR code`} />
+          <Qr value={shown.address} label={w.qrNetwork(DEPOSIT_NETWORK_LABEL[shown.network])} />
           <div className={s.addressFacts}>
-            <span className={s.label}>Send USDC on {DEPOSIT_NETWORK_LABEL[shown.network]} to</span>
+            <span className={s.label}>{w.sendOn(DEPOSIT_NETWORK_LABEL[shown.network])}</span>
             <p className={s.addressValue} translate="no">
               {grouped(shown.address)}
             </p>
-            <span className={s.chip}>{['USDC only', `from $${DEPOSIT_MIN_USD}`, fee].filter(Boolean).join(' · ')}</span>
+            <span className={s.chip}>{[w.usdcOnly, w.fromMin(digits(`$${DEPOSIT_MIN_USD}`)), fee].filter(Boolean).join(' · ')}</span>
           </div>
           <CopyButton value={shown.address} primary />
-          {deposit.progress && PROGRESS_WORDS[deposit.progress.progress] ? (
+          {deposit.progress && progressWords(deposit.progress.progress) ? (
             <p className={`${s.note} ${deposit.progress.progress === 'ARRIVED' ? s.noteGood : deposit.progress.progress === 'FAILED' ? s.noteError : ''}`} aria-live="polite">
-              {PROGRESS_WORDS[deposit.progress.progress]}
-              {deposit.progress.amount ? ` ${deposit.progress.amount} USDC.` : ''}
+              {progressWords(deposit.progress.progress)}
+              {deposit.progress.amount ? ` ${digits(deposit.progress.amount)} USDC.` : ''}
             </p>
           ) : null}
           <More>
-            <p className={s.fine}>
-              It arrives here as USDC on Solana, usually within minutes. {feeWords(shown.feeUsd, DEPOSIT_REFERENCE_USD)} Another coin or another network sent here
-              is not filled.
-            </p>
+            <p className={s.fine}>{w.networkFine(feeWords(shown.feeUsd, DEPOSIT_REFERENCE_USD))}</p>
           </More>
         </>
       )}

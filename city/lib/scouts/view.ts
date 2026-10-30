@@ -1,6 +1,8 @@
 import { REWARD_RULES_CURRENT } from '../../../lib/rewards/rules.ts';
 import { SOLANA_MAINNET_USDC_MINT, WRAPPED_SOL_MINT } from '../../../lib/solana/send-kinds.ts';
+import { dateText, wordsNow } from '../i18n/dict.ts';
 import type { Tower } from '../market/types.ts';
+import { SCOUTS_LINE } from './words.ts';
 
 /**
  * «Scouts» (CITY-8): what the Growth engine says about the people you brought, as the city shows it. Everything comes
@@ -179,7 +181,7 @@ export function linkText(link: string): string {
 
 /** The post a scout shares on X: a line and the link. */
 export function xIntent(link: string): string {
-  const words = 'Every Solana coin is a tower. Come build the city with me.';
+  const words = wordsNow(SCOUTS_LINE).post;
   return `https://x.com/intent/post?text=${encodeURIComponent(words)}&url=${encodeURIComponent(link)}`;
 }
 
@@ -194,13 +196,14 @@ export function screenOf(owner: string | null, status: 'none' | 'reading' | 'pro
   return 'reading';
 }
 
-/** How long ago, short: `now`, `5m`, `3h`, `2d`, then the day. */
+/** How long ago, short, in the language on screen: `now`, `5m`, `3h`, `2d`, then the day. */
 export function ago(at: string, now: number): string {
   const ms = now - Date.parse(at);
   if (!Number.isFinite(ms)) return '';
-  if (ms < 60_000) return 'now';
-  if (ms < 3_600_000) return `${Math.floor(ms / 60_000)}m`;
-  if (ms < 86_400_000) return `${Math.floor(ms / 3_600_000)}h`;
-  if (ms < 7 * 86_400_000) return `${Math.floor(ms / 86_400_000)}d`;
-  return new Date(at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' });
+  const w = wordsNow(SCOUTS_LINE);
+  if (ms < 60_000) return w.now;
+  if (ms < 3_600_000) return w.minutes(Math.floor(ms / 60_000));
+  if (ms < 86_400_000) return w.hours(Math.floor(ms / 3_600_000));
+  if (ms < 7 * 86_400_000) return w.days(Math.floor(ms / 86_400_000));
+  return dateText(new Date(at), { day: 'numeric', month: 'short' });
 }

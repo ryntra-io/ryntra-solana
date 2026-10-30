@@ -15,7 +15,9 @@ import { APP_READY_WAIT_MS, catchExternalLinks, pageBridge } from '../app-bridge
 import type { AppWallet } from '../app-bridge/protocol.ts';
 import { appSigner } from '../app-bridge/route.ts';
 import { spotIcon } from '../search/rank.ts';
+import { wordsNow } from '../i18n/dict.ts';
 import { SOL, type Balance } from './tiles.ts';
+import { LINE } from './words.ts';
 
 /**
  * The person's wallet in the city, through Ryntra's own wallet modules (Wallet Standard: Phantom, Solflare, Backpack,
@@ -180,7 +182,7 @@ export const useWallet = create<WalletStore>((set, get) => ({
       return true;
     }
     // Closing the wallet's own window is an answer, not an error.
-    if (result.state !== 'CANCELLED') set({ error: result.state === 'REFUSED' ? 'The wallet said no. Nothing was shared.' : result.reason });
+    if (result.state !== 'CANCELLED') set({ error: result.state === 'REFUSED' ? wordsNow(LINE).walletSaidNo : result.reason });
     return false;
   },
   disconnect: () => {

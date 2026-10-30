@@ -20,13 +20,16 @@ test("every still of the Exchange is a WebP in both widths, light enough for a p
   }
 });
 
-test("no grey placeholder: the empty, no-wallet and no-account states and the head stand on a still", () => {
+test("a terminal, not a splash screen (30.10): the states keep their words, the window carries no still", () => {
   const read = (file) => readFileSync(new URL(`../../components/exchange/${file}`, import.meta.url), "utf8");
   // The one step to open an account stands on the invite still; waiting for access and Phoenix silent on the empty one.
   assert.match(read("Account.tsx"), /art=\{step\.step === 'open' \? 'invite' : 'empty'\}/);
   assert.match(read("Account.tsx"), /<ArtState art="empty" title=\{words\.title\}/);
   assert.match(read("Account.tsx"), /<ArtState art="empty" title=\{ACCOUNT_WORDS\.connect\.title\}>/);
-  assert.match(read("Book.tsx"), /<ArtState art="empty" title="No open positions" \/>/);
-  assert.match(read("Book.tsx"), /<ArtState art="empty" title="No open orders" \/>/);
-  assert.equal(read("ExchangeWindow.tsx").match(/<ArtImage art="head"/g)?.length, 1, "one head still, at the top of the window in either layout");
+  assert.match(read("Book.tsx"), /<ArtState art="empty" title=\{w\.noPositions\} \/>/);
+  assert.match(read("Book.tsx"), /<ArtState art="empty" title=\{w\.noOrders\} \/>/);
+  assert.match(read("words.ts"), /noPositions: 'No open positions',[\s\S]*noOrders: 'No open orders',/);
+  assert.doesNotMatch(read("ExchangeWindow.tsx"), /<ArtImage/, "no still over the market's head");
+  assert.doesNotMatch(read("Art.tsx").split("export function ArtState")[1] ?? "", /<ArtImage/, "an empty state is its title and its line");
+  assert.match(read("Ticket.tsx"), /<ConnectAction \/>/, "no wallet: the ticket's own foot connects one");
 });

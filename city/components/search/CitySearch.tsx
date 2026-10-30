@@ -4,6 +4,7 @@ import { useEffect, useId, useMemo, useRef, useState, type KeyboardEvent } from 
 import { withoutOffensiveNames } from '@/lib/spot/offensive-names';
 import { useCity } from '@/city/lib/city/store';
 import { useKeyboardInset } from '@/city/lib/keyboard';
+import { useBackPanel } from '@/city/lib/back/panels';
 import { openCoin, openTower, openTradeCard } from '@/city/lib/coin/open';
 import { allLaunches, useLaunch } from '@/city/lib/launch/district';
 import { pastedMint } from '@/city/lib/search/mint';
@@ -11,6 +12,8 @@ import { catalogHits, cityHits, indexHits, launchHits, mergeHits, type CatalogRo
 import { readIndex, searchCatalog } from '@/city/lib/search/sources';
 import hud from '../hud/hud.module.css';
 import s from './search.module.css';
+import { SEARCH } from './words';
+import { useWords } from '@/city/lib/i18n/dict';
 
 /** A pause in typing this long asks Jupiter's catalogue; the towers and the index answer at every key. */
 const TYPING_MS = 280;
@@ -39,12 +42,15 @@ function marketIndex(): Promise<IndexCoin[]> {
  */
 export function CitySearch() {
   const [open, setOpen] = useState(false);
+  const w = useWords(SEARCH);
   const wrap = useRef<HTMLDivElement>(null);
   const button = useRef<HTMLButtonElement>(null);
   const close = (focusButton = false) => {
     setOpen(false);
     if (focusButton) button.current?.focus();
   };
+  // «Back» closes it, as it closes a window (CITY-150).
+  useBackPanel('search', open, () => setOpen(false));
   // A tap anywhere else closes it, as the city's other panels do.
   useEffect(() => {
     if (!open) return;
@@ -56,7 +62,7 @@ export function CitySearch() {
   }, [open]);
   return (
     <div ref={wrap} className={s.wrap}>
-      <button ref={button} className={`${hud.panel} ${hud.iconBtn} ${open ? s.on : ''}`} aria-label="Search coins" aria-expanded={open} onClick={() => setOpen((v) => !v)}>
+      <button ref={button} className={`${hud.panel} ${hud.iconBtn} ${open ? s.on : ''}`} aria-label={w.searchCoins} aria-expanded={open} onClick={() => setOpen((v) => !v)}>
         <SearchGlyph />
       </button>
       {open && <SearchPanel onClose={close} />}
@@ -66,6 +72,7 @@ export function CitySearch() {
 
 function SearchPanel({ onClose }: { onClose: (focusButton?: boolean) => void }) {
   const listId = useId();
+  const w = useWords(SEARCH);
   const [query, setQuery] = useState('');
   const [active, setActive] = useState(0);
   const [indexRows, setIndexRows] = useState<IndexCoin[]>([]);
@@ -177,20 +184,20 @@ function SearchPanel({ onClose }: { onClose: (focusButton?: boolean) => void }) 
 
   const optionId = (n: number) => `${listId}-${n}`;
   const status = miss
-    ? 'No coin found at this address right now.'
+    ? w.notFoundAt
     : opening
-      ? 'Reading this mint…'
+      ? w.readingMint
       : !typed
-        ? 'Find a coin by its ticker, its name or a pasted mint address.'
+        ? w.findHint
         : !rows && asking
-          ? 'Searching…'
+          ? w.searching
           : !rows && typed.length >= 2
-            ? 'Nothing found. Try the ticker or paste the mint.'
+            ? w.nothing
             : null;
 
   return (
     // On a phone the panel is a sheet at the bottom, above the dock and above the keyboard (`--kb`).
-    <div className={`${hud.panel} ${s.panel}`} style={{ ['--kb' as string]: `${keyboard}px` }} role="dialog" aria-label="Search coins">
+    <div className={`${hud.panel} ${s.panel}`} style={{ ['--kb' as string]: `${keyboard}px` }} role="dialog" aria-label={w.searchCoins} data-city-search="">
       <div className={s.field}>
         <SearchGlyph />
         <input
@@ -204,8 +211,8 @@ function SearchPanel({ onClose }: { onClose: (focusButton?: boolean) => void }) 
           spellCheck={false}
           autoFocus
           maxLength={64}
-          placeholder="Ticker, name or mint"
-          aria-label="Ticker, name or mint address"
+          placeholder={w.placeholder}
+          aria-label={w.fieldLabel}
           role="combobox"
           aria-expanded={rows > 0}
           aria-controls={listId}
@@ -218,7 +225,7 @@ function SearchPanel({ onClose }: { onClose: (focusButton?: boolean) => void }) 
         {asking && <span className={s.spinner} aria-hidden="true" />}
       </div>
       {rows > 0 && (
-        <ul className={s.list} id={listId} role="listbox" aria-label="Coins">
+        <ul className={s.list} id={listId} role="listbox" aria-label={w.coins}>
           {hits.map((hit, n) => (
             <li
               key={hit.mint}
@@ -231,13 +238,13 @@ function SearchPanel({ onClose }: { onClose: (focusButton?: boolean) => void }) 
             >
               <HitIcon src={hit.icon} />
               <span className={s.words}>
-                <span className={`${hud.display} ${s.symbol}`}>{hit.symbol ? `$${hit.symbol}` : 'New pool'}</span>
+                <span className={`${hud.display} ${s.symbol}`}>{hit.symbol ? `$${hit.symbol}` : w.newPool}</span>
                 <span className={s.name}>{hit.name ?? short(hit.mint)}</span>
               </span>
               <span className={s.tags}>
-                {hit.launch && <span className={hud.tag}>Ryntra Launch</span>}
-                {!hit.launch && hit.verified === false && <span className={`${hud.tag} ${hud.tagWarn}`}>Unverified</span>}
-                <span className={`${s.where} ${hit.inCity ? s.inCity : ''}`}>{hit.inCity ? 'In the city' : 'Not a tower yet'}</span>
+                {hit.launch && <span className={hud.tag}>{w.ryntraLaunch}</span>}
+                {!hit.launch && hit.verified === false && <span className={`${hud.tag} ${hud.tagWarn}`}>{w.unverified}</span>}
+                <span className={`${s.where} ${hit.inCity ? s.inCity : ''}`}>{hit.inCity ? w.inCity : w.notTower}</span>
               </span>
             </li>
           ))}
@@ -252,11 +259,11 @@ function SearchPanel({ onClose }: { onClose: (focusButton?: boolean) => void }) 
             >
               <HitIcon src={null} />
               <span className={s.words}>
-                <span className={`${hud.display} ${s.symbol}`}>Open this mint</span>
+                <span className={`${hud.display} ${s.symbol}`}>{w.openMint}</span>
                 <span className={s.name}>{short(mint)}</span>
               </span>
               <span className={s.tags}>
-                <span className={s.where}>{opening === mint ? 'Reading…' : 'Address'}</span>
+                <span className={s.where}>{opening === mint ? w.reading : w.address}</span>
               </span>
             </li>
           )}
