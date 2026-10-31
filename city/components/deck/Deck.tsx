@@ -12,6 +12,8 @@ import { useChrome } from '@/city/lib/deck/chrome';
 import { CENTER, LEFT, RIGHT, doorOpen, doorsOf, futuresWay, isTray, placeOpen, type Door, type Place, type Switches, type Tray } from '@/city/lib/deck/items';
 import { HARBOR_OPEN } from '@/city/lib/districts/harbor/flag';
 import { useHarbor } from '@/city/lib/districts/harbor/store';
+import { EARN_OPEN } from '@/city/lib/earn/flag';
+import { closeEarn, openEarn, useEarn } from '@/city/lib/earn/open';
 import { EXCHANGE_EXIT, EXCHANGE_MODE, EXCHANGE_SHOWN } from '@/city/lib/exchange/flag';
 import { marketForTower } from '@/city/lib/exchange/markets';
 import { DEFAULT_SYMBOL, useExchange } from '@/city/lib/exchange/store';
@@ -173,12 +175,15 @@ export function Deck({ onAgent }: { onAgent: () => void }) {
   const exchanging = useExchange((st) => st.open);
   const moneyOpen = useMoney((st) => st.open);
   const botsOn = useAgent((st) => st.on || st.panel !== 'none');
-  const earning = useHarbor((st) => st.open);
+  const harboring = useHarbor((st) => st.open);
+  const earnWindow = useEarn((st) => st.open);
+  const earning = EARN_OPEN ? earnWindow : harboring;
   const vaulting = useVault((st) => st.open);
 
   const on: Switches = {
     launch: launch.open,
-    earn: HARBOR_OPEN,
+    // Earn's own window (CITY-92) where its switch is open; until then the Harbor stands in for it.
+    earn: EARN_OPEN || HARBOR_OPEN,
     guard: false,
     money: MONEY_OPEN,
     trade: TRADE_OPEN,
@@ -251,6 +256,7 @@ export function Deck({ onAgent }: { onAgent: () => void }) {
         return launch.start();
       case 'earn':
         useAgent.getState().closePanel();
+        if (EARN_OPEN) return useEarn.getState().open ? closeEarn() : openEarn();
         return useHarbor.getState().open ? useHarbor.getState().hide() : useHarbor.getState().show();
       case 'money':
         return useMoney.getState().open ? useMoney.getState().close() : openMoney();

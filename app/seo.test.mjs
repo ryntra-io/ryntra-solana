@@ -14,11 +14,11 @@ import {
   SITE,
   buildMetadata,
   hreflangsFor,
-  languageAlternates,
-  localizedUrl,
   urlForSurface,
 } from "./seo.ts";
-import { DOCS_UPDATED, MISSION_CONTROL_UPDATED, PARTNER_TERMS_PATH, PARTNER_TERMS_UPDATED, PUBLIC_PAGES, sitemapEntries } from "./sitemap.ts";
+import { sitemapEntries } from "./sitemap.ts";
+import { DOCS_UPDATED } from "../lib/site/page-dates.ts";
+import { AWAITING_CITY, awaitingSources, CITY_PAGES } from "../city/lib/open/site-map.ts";
 import { hasUkAddress } from "../lib/site/localized.ts";
 import { HOMEPAGE_CATEGORY } from "../lib/site/homepage-copy.ts";
 import { DOC_PAGES, docsHref } from "./docs/content/index.ts";
@@ -111,25 +111,23 @@ test("SEO locale registry is exact and every public surface has canonical hrefla
 });
 
 /**
- * The public pages the sitemap advertises, by name.
+ * What the sitemap advertises, by name: the city's live addresses and nothing else (CITY-159).
  *
- * Asserted by name rather than by count so a route cannot join the sitemap
- * without someone deciding it should be indexed — which is the whole point
- * of listing it here. Everything else that once sat in this list (the product
- * map, the handbook chapters, the developer portal's old addresses, `/uk`)
- * redirects now, and the sitemap of 2026-09-14 was still advertising all of
- * it — nineteen redirects among twenty-four entries.
+ * Asserted by name rather than by count so a route cannot join the sitemap without someone deciding it should be
+ * indexed. Until 2026-10-31 it named 103 addresses and 102 were pages of the old site, drawn in the old interface
+ * nobody is to see (decision 75); each comes back here when the city takes it over at its own address (CITY-157).
  */
-const ADVERTISED_PATHS = [
+const ADVERTISED_PATHS = ["/"];
+
+/**
+ * The site's old public pages: reachable at their addresses, never in the sitemap, and answering noindex until the
+ * city draws them. Every documentation page among them, derived, so a page added to the documentation is held too.
+ */
+const WAITING_PATHS = [
   "/docs",
-  /* Every documentation page, in the documentation's own reading order —
-     derived, because the documentation is data and a page added to it should
-     be found without anyone editing this list. */
   ...DOC_PAGES.filter((page) => page.slug).map((page) => docsHref(page.slug)),
-  /* Since the public pages of the new site (2026-09-26): About, and where the figures come from. */
   "/company",
   "/contact",
-  /* Since 2026-09-29: the support page the Android app's store listing names. */
   "/support",
   "/security",
   "/methodology",
@@ -150,30 +148,22 @@ const NEVER_ADVERTISED = [
   "/docs/product-paper", "/docs/current-capabilities", "/docs/introduction", "/docs/how-ryntra-works",
   "/docs/core-principles", "/docs/glossary", "/docs/receipts-journal", "/docs/ryntra-home",
   "/docs/agent-control", "/docs/ecosystems", "/docs/roadmap", "/docs/changelog", "/docs/faq",
-  /* The reviewer pages this deployment still serves assert their own absence
-     from the sitemap beside themselves. */
-  /* Since 2026-09-26: the developer references and the open-source page are `noindex`, the landing's
-     other language addresses lead to `/` and `/uk`, and the documentation's moved pages answer by
-     308; `/company` and `/methodology` are pages again and advertised above. */
   "/en", "/ua", "/ru", "/app", "/docs/developers", "/docs/developers/guard", "/docs/developers/agent-control",
   "/docs/trade/tokenized-stocks", "/docs/reference/security",
   "/stellar", "/robinhood",
+  /* The short addresses lead into the city (CITY-159); the partner Terms are the Growth line's page. */
+  "/launch", "/trade", "/rewards", "/terms", "/privacy", "/promo/partners/terms",
 ];
 /* 27: the prediction demo's page left with the demo; 33 since the new site (2026-09-26). */
 assert.ok(DOC_PAGES.length >= 33, "the documentation set is not the full one");
 assert.ok(DOC_PAGES.every((page) => !page.slug || /^[a-z]+(?:[/][a-z-]+)*$/.test(page.slug)), "every documentation page has a documentation path");
 assert.equal(typeof DOCS_UPDATED, "string");
 
-test("sitemap advertises only pages that answer, at both of their addresses, dated by their own content", async () => {
+test("the sitemap advertises the city's live addresses alone, each a page that answers, dated by its own content", async () => {
   const entries = sitemapEntries();
-  /* Every page offered to the index at both addresses; the legal texts English only. */
-  const twoLanguage = ADVERTISED_PATHS.filter((path) => hasUkAddress(path));
-  const english = ADVERTISED_PATHS.filter((path) => !hasUkAddress(path));
-  assert.deepEqual(english, ["/legal/terms", "/legal/privacy"], "only the legal texts have one address");
-  /* The landing's two addresses only while it is a page (`lib/site/home-to-app.ts`). */
-  assert.equal(entries.length, (LANDING_IS_LIVE ? 1 : 0) + twoLanguage.length * 2 + english.length + 2, "the city, the advertised pages and the partner Terms — each at its addresses — nothing else");
+  assert.deepEqual(CITY_PAGES.map((page) => page.path), ADVERTISED_PATHS, "the advertised addresses are exactly these, in this order");
+  assert.equal(entries.length, ADVERTISED_PATHS.length, "one entry per address: the city's address has no Ukrainian twin");
   assert.equal(new Set(entries.map((entry) => entry.url)).size, entries.length);
-  assert.deepEqual(PUBLIC_PAGES.map((page) => page.path), ADVERTISED_PATHS, "the advertised pages are exactly these, in this order");
   /* The old interface leads into the city since CITY-13: nothing of it is offered to the index. */
   assert.ok(!entries.some((entry) => /^\/(?:uk\/)?(?:app|solana|mission|live)(?:[/?]|$)/.test(entry.url.replace(SITE, ""))), "no address of the old interface");
 
@@ -188,47 +178,36 @@ test("sitemap advertises only pages that answer, at both of their addresses, dat
     assert.ok(!redirected.has(path), `${path} redirects and must not be advertised in the sitemap`);
   }
 
-  for (const path of ADVERTISED_PATHS) {
-    const page = PUBLIC_PAGES.find((item) => item.path === path);
-    for (const locale of hasUkAddress(path) ? ["en", "uk"] : ["en"]) {
-      const entry = entries.find((item) => item.url === localizedUrl(path, locale));
-      assert.ok(entry, `missing sitemap entry for ${path} (${locale})`);
-      assert.equal(new Date(entry.lastModified).toISOString(), `${page.updated}T00:00:00.000Z`);
-      assert.ok(new Date(entry.lastModified) <= new Date(), `${path} is dated in the future`);
-      assert.ok(entry.priority > 0 && entry.priority < 1, `${path} sits under the landing`);
-      /* A page with an address per language names the pair; one with a single address names none —
-         an alternates map naming an address that does not exist is worse than none. */
-      assert.deepEqual(entry.alternates?.languages, languageAlternates(path));
-    }
-  }
-
-  /* The city comes first — `/` alone, in English. While the home page leads into the app (`lib/site/home-to-app.ts`) `/` is not advertised at all. */
+  /* The city comes first — `/` alone, in English. */
+  const home = entries[0];
+  assert.equal(home.url, urlForSurface("en", "landing"));
+  assert.equal(home.priority, 1);
+  assert.equal(home.alternates, undefined, "one language, no pair");
+  assert.ok(new Date(home.lastModified) <= new Date(), "not dated in the future");
   assert.ok(!entries.some((entry) => entry.url === urlForSurface("uk", "landing")), "the Ukrainian home is a redirect, never advertised");
-  if (!LANDING_IS_LIVE) assert.ok(!entries.some((entry) => entry.url === urlForSurface("en", "landing")));
-  if (LANDING_IS_LIVE) {
-    const entry = entries[0];
-    assert.equal(entry.url, urlForSurface("en", "landing"));
-    assert.equal(entry.priority, 1);
-    assert.equal(new Date(entry.lastModified).toISOString(), `${MISSION_CONTROL_UPDATED}T00:00:00.000Z`);
-    assert.equal(entry.alternates, undefined, "one language, no pair");
-  }
+  assert.ok(LANDING_IS_LIVE, "ryntra.io's home is the city itself");
 
-  /* The creator partner Terms (Ріст GR-08): the language in the query, both addresses, each naming the pair as the page does. */
-  for (const locale of ["en", "uk"]) {
-    const entry = entries.find((item) => item.url === `${SITE}${PARTNER_TERMS_PATH}?lang=${locale}`);
-    assert.ok(entry, `missing the partner Terms (${locale})`);
-    assert.equal(new Date(entry.lastModified).toISOString(), `${PARTNER_TERMS_UPDATED}T00:00:00.000Z`);
-    assert.deepEqual(entry.alternates?.languages, { en: `${SITE}${PARTNER_TERMS_PATH}?lang=en`, uk: `${SITE}${PARTNER_TERMS_PATH}?lang=uk`, "x-default": `${SITE}${PARTNER_TERMS_PATH}?lang=en` });
-  }
-
-  for (const path of NEVER_ADVERTISED) {
+  for (const path of [...WAITING_PATHS, ...NEVER_ADVERTISED]) {
     for (const url of [SITE + path, `${SITE}/uk${path}`]) {
-      assert.equal(entries.find((entry) => entry.url === url), undefined, `${url} redirects or is a reviewer artifact and must not be advertised in the sitemap`);
+      assert.equal(entries.find((entry) => entry.url.split("?")[0] === url), undefined, `${url} is not the city's page and must not be advertised in the sitemap`);
     }
   }
+});
 
-  /* The reviewer pages this deployment still serves keep themselves out of
-     the index; each asserts that beside its own page. */
+test("the site's old public pages stay reachable but answer noindex until the city takes each over (CITY-157)", async () => {
+  const headers = await nextConfig.headers();
+  const noindex = (source) => headers.some((row) => row.source === source && !row.has && row.headers.some((header) => header.key === "X-Robots-Tag" && /noindex/.test(header.value)));
+  for (const source of awaitingSources()) assert.ok(noindex(source), `${source} answers noindex`);
+  /* Every waiting page is matched by one of the patterns, at both of its addresses where it has two. */
+  const { getPathMatch } = await import("next/dist/shared/lib/router/utils/path-match.js");
+  const matched = (path) => awaitingSources().some((source) => getPathMatch(source, { strict: true })(path));
+  for (const path of WAITING_PATHS) {
+    assert.ok(matched(path), `${path} is held out of the index`);
+    if (hasUkAddress(path)) assert.ok(matched(`/uk${path}`), `/uk${path} is held out of the index`);
+  }
+  /* The city itself, a coin's tower and the engine are never held out by this list. */
+  for (const path of ["/", "/c/DezXAZ8z7PnrnRJjz3wXBoRgixCa6xjnB7YaB1pPB263", "/api/v1/health", "/window"]) assert.ok(!matched(path), `${path} is not an old page`);
+  assert.ok(AWAITING_CITY.length > 0);
 });
 
 test("every documentation page's search title fits 60 and its description 160, in both languages", () => {

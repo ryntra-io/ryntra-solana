@@ -11,6 +11,7 @@ import { useHarbor } from '@/city/lib/districts/harbor/store';
 import { usePredict } from '@/city/lib/districts/predict/store';
 import { useExchange } from '@/city/lib/exchange/store';
 import { useLaunch } from '@/city/lib/launch/district';
+import { useBerth } from '@/city/lib/launch/berth-store';
 import { useHall } from '@/city/lib/launch/hall-store';
 import { useMoments } from '@/city/lib/moments/stage';
 import { freeStore, useFree } from '@/city/lib/quarter/kit/free/store';
@@ -35,6 +36,7 @@ export function windowSources(): WindowSources {
     scouts: useScouts.getState(),
     vault: vaultStore.getState(),
     hall: useHall.getState(),
+    berth: useBerth.getState(),
     agent: useAgent.getState(),
     beacon: useBeacons.getState(),
     assistant: useAssistant.getState(),
@@ -63,6 +65,7 @@ export function useWindowOpen(): boolean {
   const scouts = useScouts((st) => st.open);
   const vault = useStore(vaultStore, (st) => st.open);
   const hall = useHall((st) => st.panel);
+  const berth = useBerth((st) => st.open);
   const agent = useAgent((st) => st.panel);
   const beacon = useBeacons((st) => st.openFor);
   const assistant = useAssistant((st) => st.open);
@@ -85,6 +88,7 @@ export function useWindowOpen(): boolean {
     scouts: { open: scouts },
     vault: { open: vault },
     hall: { panel: hall },
+    berth: { open: berth },
     agent: { panel: agent },
     beacon: { openFor: beacon },
     assistant: { open: assistant },

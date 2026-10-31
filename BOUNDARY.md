@@ -9,10 +9,10 @@ moved counts as new. Generated at every update from the development history.
 
 | Since the tag | Files |
 |---|---|
-| New | 4,031 |
+| New | 4,089 |
 | Changed | 895 |
 | Unchanged | 832 |
-| Lines added / removed | +918,558 / −27,380 |
+| Lines added / removed | +926,936 / −27,387 |
 
 ## New since the tag
 
@@ -111,6 +111,9 @@ moved counts as new. Generated at every update from the development history.
 - `app/api/agents/services/token-report/handler.ts`
 - `app/api/agents/services/token-report/route.test.mjs`
 - `app/api/agents/services/token-report/route.ts`
+- `app/api/city/earn/piers/route.ts`
+- `app/api/city/earn/route.ts`
+- `app/api/city/earn/stocks/route.ts`
 - `app/api/city/hall/route.ts`
 - `app/api/city/harbor/route.ts`
 - `app/api/city/predict/cover/route.ts`
@@ -914,7 +917,9 @@ moved counts as new. Generated at every update from the development history.
 - `app/embed/chart/[mint]/page.tsx`
 - `app/embed/chart/embed-params.ts`
 - `app/embed/chart/embed.test.mjs`
+- `app/error.tsx`
 - `app/front-door.test.mjs`
+- `app/global-error.tsx`
 - `app/health/route.test.mjs`
 - `app/legal/licenses/page.tsx`
 - `app/legal/privacy/android.ts`
@@ -927,6 +932,7 @@ moved counts as new. Generated at every update from the development history.
 - `app/mission/[mint]/mission-post.module.css`
 - `app/mission/[mint]/mission-post.tsx`
 - `app/mission/[mint]/page.tsx`
+- `app/not-found.tsx`
 - `app/og/[locale]/[...key]/route.tsx`
 - `app/pay/pay-brand.tsx`
 - `app/preview/agg-lab/adaptation.module.css`
@@ -1732,6 +1738,10 @@ moved counts as new. Generated at every update from the development history.
 - `city/components/beacon/BeaconTowers.tsx`
 - `city/components/beacon/beacon.module.css`
 - `city/components/beacon/glyphs.tsx`
+- `city/components/berth/BerthLayer.tsx`
+- `city/components/berth/BerthWindow.tsx`
+- `city/components/berth/berth.module.css`
+- `city/components/berth/glyphs.tsx`
 - `city/components/bridge/BridgeStand.tsx`
 - `city/components/bridge/BridgeStandEntry.tsx`
 - `city/components/bridge/bridge.module.css`
@@ -1814,6 +1824,17 @@ moved counts as new. Generated at every update from the development history.
 - `city/components/districts/predict.module.css`
 - `city/components/districts/predictGlyphs.tsx`
 - `city/components/districts/predictHooks.ts`
+- `city/components/earn/EarnLayer.tsx`
+- `city/components/earn/EarnWindow.tsx`
+- `city/components/earn/Mine.tsx`
+- `city/components/earn/Piers.tsx`
+- `city/components/earn/Product.tsx`
+- `city/components/earn/Saver.tsx`
+- `city/components/earn/Shelf.tsx`
+- `city/components/earn/bits.tsx`
+- `city/components/earn/context.ts`
+- `city/components/earn/earn.module.css`
+- `city/components/earn/useMine.ts`
 - `city/components/exchange/Account.tsx`
 - `city/components/exchange/Art.tsx`
 - `city/components/exchange/Book.tsx`
@@ -1882,7 +1903,10 @@ moved counts as new. Generated at every update from the development history.
 - `city/components/money/bits.tsx`
 - `city/components/money/money.module.css`
 - `city/components/money/words.ts`
+- `city/components/open/Lost.tsx`
 - `city/components/open/OpenFromAddress.tsx`
+- `city/components/open/lost.module.css`
+- `city/components/open/words.ts`
 - `city/components/quarter/Arrivals.tsx`
 - `city/components/quarter/AwayCamera.tsx`
 - `city/components/quarter/AwayReel.tsx`
@@ -2149,6 +2173,30 @@ moved counts as new. Generated at every update from the development history.
 - `city/lib/districts/predict/ticket.test.mjs`
 - `city/lib/districts/predict/ticket.ts`
 - `city/lib/districts/predict/words.ts`
+- `city/lib/earn/README.md`
+- `city/lib/earn/corporate.test.mjs`
+- `city/lib/earn/corporate.ts`
+- `city/lib/earn/device.ts`
+- `city/lib/earn/engine.ts`
+- `city/lib/earn/feed.server.ts`
+- `city/lib/earn/feed.ts`
+- `city/lib/earn/flag.test.mjs`
+- `city/lib/earn/flag.ts`
+- `city/lib/earn/lst.test.mjs`
+- `city/lib/earn/lst.ts`
+- `city/lib/earn/mine.test.mjs`
+- `city/lib/earn/mine.ts`
+- `city/lib/earn/open.ts`
+- `city/lib/earn/saver-store.test.mjs`
+- `city/lib/earn/saver-store.ts`
+- `city/lib/earn/saver.test.mjs`
+- `city/lib/earn/saver.ts`
+- `city/lib/earn/shots.mjs`
+- `city/lib/earn/stake-pool.ts`
+- `city/lib/earn/stocks.server.ts`
+- `city/lib/earn/stocks.ts`
+- `city/lib/earn/store.ts`
+- `city/lib/earn/words.ts`
 - `city/lib/exchange/account.test.mjs`
 - `city/lib/exchange/account.ts`
 - `city/lib/exchange/art.test.mjs`
@@ -2214,6 +2262,13 @@ moved counts as new. Generated at every update from the development history.
 - `city/lib/i18n/lang.ts`
 - `city/lib/i18n/langs.ts`
 - `city/lib/keyboard.ts`
+- `city/lib/launch/berth-flow.ts`
+- `city/lib/launch/berth-shots.mjs`
+- `city/lib/launch/berth-store.ts`
+- `city/lib/launch/berth-stub.ts`
+- `city/lib/launch/berth-words.ts`
+- `city/lib/launch/berth.test.mjs`
+- `city/lib/launch/berth.ts`
 - `city/lib/launch/district.ts`
 - `city/lib/launch/engine.ts`
 - `city/lib/launch/feed.test.mjs`
@@ -2343,7 +2398,10 @@ moved counts as new. Generated at every update from the development history.
 - `city/lib/net.ts`
 - `city/lib/open/address.test.mjs`
 - `city/lib/open/address.ts`
+- `city/lib/open/lost.test.mjs`
+- `city/lib/open/lost.ts`
 - `city/lib/open/old-addresses.ts`
+- `city/lib/open/site-map.ts`
 - `city/lib/palette.ts`
 - `city/lib/quarter/account-live.ts`
 - `city/lib/quarter/account.test.mjs`

@@ -81,7 +81,8 @@ export type TradeEnv = Readonly<{
 /** The one record of an open signature, shared with every other trade surface of Ryntra in this tab. */
 const ATTEMPT_KEY = 'ryntra.solana.m2.swap-client-attempt.v1';
 
-const browserAttempts: AttemptStore = {
+/** The open signature record every trade surface of the city shares (the SOL Saver in Earn reads the same one). */
+export const browserAttempts: AttemptStore = {
   read: () => {
     try {
       return parseSwapClientAttempt(window.sessionStorage.getItem(ATTEMPT_KEY));

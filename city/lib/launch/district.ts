@@ -26,6 +26,8 @@ type DistrictState = {
   status: 'reading' | 'ready' | 'unavailable';
   network: Network | null;
   preset: LaunchPresetView | null;
+  /** Every preset the engine serves: a launch's rates in «Мій причал» are its own preset's (CITY-141). */
+  presets: readonly LaunchPresetView[];
   /** Running on the development stand-in: every screen says so. */
   stub: boolean;
   feed: readonly LaunchTower[];
@@ -50,6 +52,7 @@ export const useLaunch = create<DistrictState>((set) => ({
   status: 'reading',
   network: null,
   preset: null,
+  presets: [],
   stub: false,
   feed: [],
   mine: [],
@@ -177,7 +180,7 @@ async function readPresets(source: LaunchEngine): Promise<boolean> {
   for (let attempt = 0; attempt < 6; attempt += 1) {
     const answer = await source.presets();
     if (answer.ok) {
-      useLaunch.setState({ status: 'ready', network: answer.data.network, preset: cityPreset(answer.data) });
+      useLaunch.setState({ status: 'ready', network: answer.data.network, preset: cityPreset(answer.data), presets: answer.data.presets });
       return true;
     }
     if (answer.code === 'LAUNCH_UNAVAILABLE' || answer.code === 'UNSUPPORTED_API') break;

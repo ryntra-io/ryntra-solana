@@ -10,7 +10,6 @@
   </defs>
   <circle cx="32" cy="34" r="19" fill="none" stroke="url(#ri)" stroke-width="5"/>
   <circle cx="32" cy="34" r="16.2" fill="#0B0A14"/>
-  <circle cx="45.6" cy="20.4" r="2.6" fill="#FFF6E6"/>
   <path d="M32 2 L37.2 30 L36.2 60 L27.8 60 L26.8 30 Z" fill="url(#si)"/>
 </g>
 </svg>

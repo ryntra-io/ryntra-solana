@@ -101,6 +101,12 @@
   height: 20px;
 }
 
+/* «Мій причал» beside the sheet's close: the same quiet square, its glyph in the action's amber. */
+.berth {
+  color: var(--amber);
+  box-shadow: inset 0 0 0 1px rgba(255, 178, 63, 0.35);
+}
+
 .back:disabled {
   opacity: 0.35;
   cursor: default;
@@ -579,6 +585,28 @@
 .tagNet {
   background: rgba(255, 178, 63, 0.16);
   color: var(--warm);
+}
+
+/* The creator's own tower: a quiet tag that opens «Мій причал» (CITY-141) — amber stays the window's one action. */
+.tagBerth {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border: 0;
+  font: inherit;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--warm);
+  background: rgba(255, 178, 63, 0.12);
+  box-shadow: inset 0 0 0 1px rgba(255, 178, 63, 0.5);
+  cursor: pointer;
+}
+
+.tagBerth svg {
+  width: 14px;
+  height: 14px;
 }
 
 .tagWarn {

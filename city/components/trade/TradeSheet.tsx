@@ -16,7 +16,7 @@ import { sellLine, sellWords, towerRank, type SellLine } from '@/city/lib/trade/
 import { isBase, unitOf, type PayAsset, type Side } from '@/city/lib/trade/tiles';
 import { quarterStore } from '@/city/lib/quarter/store';
 import { useWallet } from '@/city/lib/trade/wallet';
-import { clipName, MOMENT_BEATS, momentFigure, momentSubject, recordMoment, type Moment } from '@/city/lib/trade/moment';
+import { cardName, MOMENT_BEATS, momentCard, momentFigure, momentSubject } from '@/city/lib/trade/moment';
 import { explorerTxUrl } from '@/lib/solana/explorer';
 import { openExternal, shareThroughApp } from '@/city/lib/app-bridge/page';
 import { coinLink } from '@/city/lib/share/coin-link';
@@ -586,7 +586,6 @@ function DonePanel() {
   const w = useWords(TRADE);
   const done = useTrade((st) => st.done);
   const close = useTrade((st) => st.close);
-  const again = useTrade((st) => st.again);
   if (!done) return null;
   const { trade, side, tower, pay, decimals } = done;
   const coin = ticker(tower.symbol);
@@ -613,7 +612,6 @@ function DonePanel() {
         got={got}
         unit={bought ? coin : paid}
         line={gave ? w.momentLine(digits(gave), bought ? paid : coin) : w.onRyntra}
-        onAgain={again}
       />
       <div className={s.walletLine}>
         <a className={s.explorer} href={explorerTxUrl('mainnet', trade.signature)} target="_blank" rel="noreferrer">
@@ -628,62 +626,49 @@ function DonePanel() {
 }
 
 /**
- * The moment of the trade, made from the city: the camera flies to the tower, it takes your colour and throws
- * fireworks while a clip records; then the clip loops here, ready for X or the phone's share sheet.
+ * The moment of the trade in the city: the camera flies to the tower, it takes your colour and throws fireworks.
+ * Nothing is filmed: Share is ready at once and makes a card from the frame on screen, for
+ * X or the phone's share sheet.
  */
-function MomentShare({ towerId, symbol, sold, kicker, got, unit, line, onAgain }: { towerId: string; symbol: string; sold: boolean; kicker: string; got: string | null; unit: string; line: string; onAgain: () => void }) {
+function MomentShare({ towerId, symbol, sold, kicker, got, unit, line }: { towerId: string; symbol: string; sold: boolean; kicker: string; got: string | null; unit: string; line: string }) {
   const w = useWords(TRADE);
   const address = useWallet((st) => st.connection?.address ?? null);
-  const [moment, setMoment] = useState<Moment | null>(null);
-  const [state, setState] = useState<'making' | 'ready' | 'shared' | 'saved'>('making');
-  // In the Ryntra app the clip goes to the app's own share sheet through the bridge (CITY-6b): the button says so.
+  const [state, setState] = useState<'ready' | 'making' | 'shared' | 'saved'>('ready');
+  // In the Ryntra app the card goes to the app's own share sheet through the bridge (CITY-6b); on a phone, to the
+  // system's. Either way the button says Share; a computer posts on X.
   const app = useRyntraApp();
-  const url = useMemo(() => (moment?.video ? URL.createObjectURL(moment.video) : moment?.still ? URL.createObjectURL(moment.still) : null), [moment]);
-  useEffect(() => () => {
-    if (url) URL.revokeObjectURL(url);
-  }, [url]);
+  const phone = useMemo(() => (typeof window !== 'undefined' && window.matchMedia?.('(pointer: coarse)').matches) || false, []);
+  const colour = address ? colourOf(address) : '#FFB23F';
+  // In my quarter the camera is the quarter's: the card is framed on the building of this coin. In the city the
+  // camera flies to the coin's tower, if the city has one; a coin without a tower is never selected (a selection of a
+  // missing tower holds the city's moments and its idle orbit until something clears it).
+  const subject = useMemo(() => (quarterStore.getState().mode !== 'city' ? momentSubject(towerId) : null), [towerId]);
   useEffect(() => {
-    let alive = true;
     const city = useCity.getState();
-    const colour = address ? colourOf(address) : '#FFB23F';
-    // In my quarter the camera is the quarter's: the clip films what it sees, framed on the building of this coin.
-    // In the city the camera flies to the coin's tower, if the city has one; a coin without a tower is never
-    // selected (a selection of a missing tower holds the city's moments and its idle orbit until something clears it).
-    const inQuarter = quarterStore.getState().mode !== 'city';
-    const subject = inQuarter ? momentSubject(towerId) : null;
-    const tower = !inQuarter && city.layout.towers.some((t) => t.tower.id === towerId);
+    const tower = quarterStore.getState().mode === 'city' && city.layout.towers.some((t) => t.tower.id === towerId);
     if (tower) city.select(towerId);
-    void recordMoment({ kicker, ...momentFigure(got), unit, line, colour }, (beat) => {
-      const st = useCity.getState();
-      if (tower) st.play({ kind: 'pump', towerId, symbol, value: '', title: '' });
-      else subject?.burst(colour);
-      st.shake(beat === MOMENT_BEATS.length - 1 ? 0.45 : 0.25);
-    }, { focus: subject?.focus }).then((made) => {
-      if (!alive) return;
-      setMoment(made);
-      setState('ready');
-    });
-    return () => {
-      alive = false;
-    };
+    const timers = MOMENT_BEATS.map((at, beat) =>
+      window.setTimeout(() => {
+        const st = useCity.getState();
+        if (tower) st.play({ kind: 'pump', towerId, symbol, value: '', title: '' });
+        else subject?.burst(colour);
+        st.shake(beat === MOMENT_BEATS.length - 1 ? 0.45 : 0.25);
+      }, at * 1000),
+    );
+    return () => timers.forEach((t) => window.clearTimeout(t));
     // One moment per trade: the key on this component is the signature.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
   const words = w.shareWords(sold, got ? digits(got) : '', unit);
-  const file = (): File | null => {
-    if (moment?.video) return new File([moment.video], clipName(symbol, moment.type), { type: moment.video.type });
-    if (moment?.still) return new File([moment.still], clipName(symbol, null).replace(/\.\w+$/, '.png'), { type: 'image/png' });
-    return null;
-  };
   const post = async () => {
-    const f = file();
-    // The system share sheet is a phone's way to post a clip. On a computer it is the system's own panel, which many
-    // close without posting: there the clip is saved and X opens with the words, ready for the clip.
-    const phone = window.matchMedia?.('(pointer: coarse)').matches ?? false;
-    // In the Ryntra app the clip goes to the app's own share sheet.
+    setState('making');
+    const card = await momentCard({ kicker, ...momentFigure(got), unit, line, colour }, { focus: subject?.focus });
+    const f = card ? new File([card], cardName(symbol), { type: 'image/png' }) : null;
+    // The system share sheet is a phone's way to post a card. On a computer it is the system's own panel, which many
+    // close without posting: there the card is saved and X opens with the words and the coin's link.
     const viaApp = f ? await shareThroughApp(f, f.name, words) : null;
     if (viaApp) {
-      if (viaApp === 'shared') setState('shared');
+      setState(viaApp === 'shared' ? 'shared' : 'ready');
       return;
     }
     if (f && phone && navigator.canShare?.({ files: [f] })) {
@@ -692,45 +677,20 @@ function MomentShare({ towerId, symbol, sold, kicker, got, unit, line, onAgain }
         setState('shared');
       } catch {
         // The person closed the share sheet.
+        setState('ready');
       }
       return;
     }
     if (f) download(f);
     openExternal(`https://x.com/intent/post?text=${encodeURIComponent(words)}&url=${encodeURIComponent(coinLink(towerId))}`);
-    setState('saved');
+    setState(f ? 'saved' : 'ready');
   };
   return (
     <>
-      {url ? (
-        moment?.video ? (
-          <video className={s.card} src={url} autoPlay loop muted playsInline aria-label={words} />
-        ) : (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img className={s.card} src={url} alt={words} />
-        )
-      ) : (
-        <div className={`${s.notice}`}>{state === 'making' ? w.filmingMoment : w.notFilmed}</div>
-      )}
-      {state === 'saved' && <div className={s.notice}>{w.clipSaved}</div>}
-      <div className={s.pair}>
-        <button className={`${s.display} ${s.action} ${state === 'making' ? s.waiting : ''}`} onClick={() => void post()} disabled={state === 'making' || !url}>
-          {state === 'making' ? w.filming : app ? w.shareClip : w.postOnX}
-        </button>
-        {/* The app's WebView saves no file: its share sheet saves the clip too, so the app keeps the one button. */}
-        {app && url ? null : (
-          <button
-            className={s.quiet}
-            onClick={() => {
-              const f = file();
-              if (f) download(f);
-              else onAgain();
-            }}
-            disabled={state === 'making'}
-          >
-            {url ? w.save : w.again}
-          </button>
-        )}
-      </div>
+      {state === 'saved' && <div className={s.notice}>{w.cardSaved}</div>}
+      <button className={`${s.display} ${s.action} ${state === 'making' ? s.waiting : ''}`} onClick={() => void post()} disabled={state === 'making'}>
+        {app || phone ? w.shareClip : w.postOnX}
+      </button>
     </>
   );
 }

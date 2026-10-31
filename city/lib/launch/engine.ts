@@ -42,9 +42,9 @@ export const API_HEADERS = { 'content-type': 'application/json', 'X-Ryntra-API':
 
 const BASE58 = /^[1-9A-HJ-NP-Za-km-z]{32,44}$/;
 
-/** The engine over HTTP. A network failure or an answer that is not the engine's reads as `UNAVAILABLE`, never as data. */
-export function httpEngine(fetcher: typeof fetch = (input, init) => fetch(input, init)): LaunchEngine {
-  async function call<T>(path: string, init?: RequestInit): Promise<Answer<T>> {
+/** One call to the engine on the same origin: its answer, or its error code. A network failure or an answer that is not the engine's reads as `UNAVAILABLE`, never as data. */
+export function engineCall(fetcher: typeof fetch) {
+  return async function call<T>(path: string, init?: RequestInit): Promise<Answer<T>> {
     try {
       const response = await fetcher(path, { cache: 'no-store', ...init, headers: { ...API_HEADERS, ...(init?.headers ?? {}) } });
       const body = (await response.json().catch(() => null)) as { error?: { code?: unknown; message?: unknown } } | null;
@@ -57,7 +57,12 @@ export function httpEngine(fetcher: typeof fetch = (input, init) => fetch(input,
     } catch {
       return { ok: false, code: 'UNAVAILABLE', message: '' };
     }
-  }
+  };
+}
+
+/** The engine over HTTP. */
+export function httpEngine(fetcher: typeof fetch = (input, init) => fetch(input, init)): LaunchEngine {
+  const call = engineCall(fetcher);
   const post = <T>(path: string, body: unknown) => call<T>(path, { method: 'POST', body: JSON.stringify(body) });
   return {
     presets: () => call('/api/v1/launch/presets'),

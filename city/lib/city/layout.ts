@@ -2,7 +2,9 @@ import type { District, Tower } from '../market/types.ts';
 
 /**
  * The island plan, computed the same way for every visitor: SOL is the spire at the centre, each district
- * is a sector around it, bigger coins stand closer to the centre so the skyline peaks at the Sol Spire.
+ * is a sector around it. A tower's plot comes from its own mint (CITY-148), never from its place in the list or its
+ * height, so a coin that arrives, leaves or grows moves no other tower; a plan grown from the one on screen keeps every
+ * tower that stands in both on its plot.
  * Angles are measured from north (-Z, where the Eclipse hangs) clockwise; x = sin(a)·r, z = -cos(a)·r.
  */
 
@@ -16,6 +18,8 @@ export type PlacedTower = {
   width: number;
   kind: TowerKind;
   seed: number;
+  /** The radius of the plot it holds: every tower its district draws fits it, so a wider tower keeps its plot. */
+  room: number;
 };
 
 export type Filler = { x: number; z: number; width: number; depth: number; height: number; seed: number };
@@ -33,8 +37,15 @@ export const PLAZA_RADIUS = 11;
 export const RING_ROADS = [30, 50] as const;
 export const SPOKES = 8;
 const ROAD_HALF = 1.7;
+/** The clear ground between two plots. */
+const GAP = 0.8;
+/** A tower is drawn at most this much wider than its plot's radius: its corners (√2·FIT/2 < 1) stay inside the plot. */
+const FIT = 1.3;
 
 export type Sector = Readonly<{ from: number; to: number; rMin: number; rMax: number; kind: TowerKind }>;
+
+/** A district's plot: room for the widest tower the district draws (`towerWidth` ≤ ROOM·FIT). */
+const ROOM: Record<District, number> = { core: 3.4, heights: 3.0, strip: 2.8, avenue: 2.7, docks: 1.9 };
 
 const SECTORS: Record<District, Sector> = {
   core: { from: -180, to: 180, rMin: 15, rMax: 23, kind: 0 },
@@ -63,6 +74,12 @@ export function hashString(text: string): number {
 }
 
 const SOL_MINT = 'So11111111111111111111111111111111111111112';
+
+/**
+ * The key a tower's plot comes from: 24 bits of the hash of its mint, or the key a world read from a link carries for it.
+ * Two towers of a city share a key about once in four thousand cities; between those two the list's order decides.
+ */
+export const seatOf = (tower: Tower): number => tower.seat ?? hashString(tower.id) >>> 8;
 
 /**
  * Height follows market cap on a log scale, but never more than liquidity can carry:
@@ -110,60 +127,63 @@ export function onRoad(x: number, z: number, pad = 0): boolean {
   return dist < ROAD_HALF + pad && Math.cos(angle - nearest) > 0;
 }
 
-export function layoutCity(towers: readonly Tower[]): CityLayout {
+/**
+ * Lays the island out. Every tower takes the first free plot of its own walk through its district's band, the walk
+ * seeded by its mint; a full band sends it on to the district's second ring (CITY-86), then to the free plot of the
+ * island nearest the district. With `keep` (the plan on screen), a tower that stood there in the same district keeps
+ * its plot and the others walk around them: no tower moves for one that arrives, leaves or changes height.
+ */
+export function layoutCity(towers: readonly Tower[], keep: CityLayout | null = null): CityLayout {
   const placed: PlacedTower[] = [];
   const blocks = new Blocks();
   const free = (x: number, z: number, r: number) => {
     if (Math.hypot(x, z) + r > ISLAND_RADIUS - 2) return false;
     if (onRoad(x, z, r * 0.9)) return false;
-    return blocks.clear(x, z, r, 1.6);
+    return blocks.clear(x, z, r, GAP);
+  };
+  const stand = (t: Tower, x: number, z: number, room: number) => {
+    const kind = SECTORS[t.district].kind;
+    placed.push({ tower: t, x, z, height: towerHeight(t), width: Math.min(towerWidth(t), room * FIT), kind, seed: hashString(t.id), room });
+    blocks.push({ x, z, r: room });
   };
 
   const sol = towers.find((t) => t.id === SOL_MINT);
   if (sol) {
     const width = towerWidth(sol);
-    placed.push({ tower: sol, x: 0, z: 0, height: towerHeight(sol), width, kind: 0, seed: hashString(sol.id) });
+    placed.push({ tower: sol, x: 0, z: 0, height: towerHeight(sol), width, kind: 0, seed: hashString(sol.id), room: width });
     blocks.push({ x: 0, z: 0, r: width });
   }
 
-  // First every district's own band, exactly as the plan has always laid it: the tallest coins take the inner slots.
-  const left: { district: District; t: Tower; h: number; w: number }[] = [];
-  for (const district of DISTRICT_ORDER) {
-    const sector = SECTORS[district];
-    const members = towers
-      .filter((t) => t.district === district && t.id !== SOL_MINT)
-      .map((t) => ({ t, h: towerHeight(t), w: towerWidth(t) }))
-      .sort((a, b) => b.h - a.h);
-    const random = rng(hashString(district));
-    for (const { t, h, w } of members) {
-      const spot = tryBand(sector, w, 400, random, free, true);
-      if (!spot) {
-        left.push({ district, t, h, w });
-        continue;
-      }
-      placed.push({ tower: t, x: spot.x, z: spot.z, height: h, width: w, kind: sector.kind, seed: hashString(t.id) });
-      blocks.push({ x: spot.x, z: spot.z, r: w });
+  const members = towers.filter((t) => t.id !== SOL_MINT && t.district in SECTORS);
+  const before = new Map(keep?.towers.map((p) => [p.tower.id, p]));
+  const walking: Tower[] = [];
+  for (const t of members) {
+    const was = before.get(t.id);
+    if (was && was.tower.district === t.district && free(was.x, was.z, was.room)) stand(t, was.x, was.z, was.room);
+    else walking.push(t);
+  }
+
+  // The rest in the order of their keys, which no list order or height can change.
+  walking.sort((a, b) => seatOf(a) - seatOf(b));
+  for (const t of walking) {
+    const sector = SECTORS[t.district];
+    const room = ROOM[t.district];
+    const seat = seatOf(t);
+    const spot = tryBand(sector, room, 400, rng(seat), free, true) ?? tryBand(secondRing(sector), room, 240, rng(seat ^ 0x9e3779b9), free, false);
+    if (spot) stand(t, spot.x, spot.z, room);
+    else {
+      const last = scanIsland(sector, room, free);
+      stand(t, last.x, last.z, last.room);
     }
   }
 
-  // Then a full district grows a second ring (CITY-86) for the towers its band had no room for, and a tower that finds
-  // none there takes the nearest free plot of the island: no tower is left out. After every band is laid and with its
-  // own generator, so a tower that stands in its band never moves for one that does not.
-  for (const district of DISTRICT_ORDER) {
-    const rest = left.filter((m) => m.district === district);
-    if (!rest.length) continue;
-    const sector = SECTORS[district];
-    const second = secondRing(sector);
-    const random = rng(hashString(`${district}/second`));
-    for (const { t, h, w } of rest) {
-      const ring = tryBand(second, w, 240, random, free, false);
-      const spot = ring ? { ...ring, width: w } : scanIsland(sector, w, free);
-      placed.push({ tower: t, x: spot.x, z: spot.z, height: h, width: spot.width, kind: sector.kind, seed: hashString(t.id) });
-      blocks.push({ x: spot.x, z: spot.z, r: spot.width });
-    }
-  }
-
-  return { towers: placed, fillers: layoutFillers(blocks.all), rails: layoutRails(placed), islandRadius: ISLAND_RADIUS };
+  // The list reads as before: SOL first, then district by district, the tallest first.
+  const rank = new Map<District, number>(DISTRICT_ORDER.map((d, i) => [d, i]));
+  const ordered = placed.slice(sol ? 1 : 0).sort(
+    (a, b) => rank.get(a.tower.district)! - rank.get(b.tower.district)! || b.height - a.height || seatOf(a.tower) - seatOf(b.tower),
+  );
+  const all = sol ? [placed[0]!, ...ordered] : ordered;
+  return { towers: all, fillers: layoutFillers(blocks.all), rails: layoutRails(all), islandRadius: ISLAND_RADIUS };
 }
 
 type Block = { x: number; z: number; r: number };
@@ -265,17 +285,17 @@ function nearest(home: Spot): readonly Spot[] {
 const byDistance = new WeakMap<Sector, readonly Spot[]>();
 
 /**
- * The last resort: the free plot of the island nearest the district's centre, then the same with the tower a size
- * narrower (it is drawn at the width it found room for). Deterministic, so the city stays the same on every device.
+ * The last resort: the free plot of the island nearest the district's centre, then the same with a plot a size
+ * smaller (the tower is drawn at the width it found room for). Deterministic, so the city stays the same on every device.
  */
-function scanIsland(sector: Sector, w: number, free: Free): Spot & { width: number } {
+function scanIsland(sector: Sector, room: number, free: Free): Spot & { room: number } {
   const mid = toRad((sector.from + sector.to) / 2);
   const home = { x: Math.sin(mid) * sector.rMin, z: -Math.cos(mid) * sector.rMin };
   const order = byDistance.get(sector) ?? byDistance.set(sector, nearest(home)).get(sector)!;
-  for (let width = w; width >= 0.9; width *= 0.8) {
-    for (const p of order) if (free(p.x, p.z, width)) return { ...p, width };
+  for (let r = room; r >= 0.7; r *= 0.8) {
+    for (const p of order) if (free(p.x, p.z, r)) return { ...p, room: r };
   }
-  return { ...home, width: w };
+  return { ...home, room };
 }
 
 function layoutFillers(blocks: { x: number; z: number; r: number }[]): Filler[] {
@@ -284,29 +304,33 @@ function layoutFillers(blocks: { x: number; z: number; r: number }[]): Filler[] 
   const cell = 3.3;
   for (let gx = -ISLAND_RADIUS; gx <= ISLAND_RADIUS; gx += cell) {
     for (let gz = -ISLAND_RADIUS; gz <= ISLAND_RADIUS; gz += cell) {
-      const x = gx + (random() - 0.5) * 0.9;
-      const z = gz + (random() - 0.5) * 0.9;
+      // Every cell draws its numbers whether it builds or not, so a tower that arrives or leaves changes only the
+      // low buildings on its own plot (CITY-148).
+      const [jx, jz, park, w, d, h, tall, seed] = [random(), random(), random(), random(), random(), random(), random(), random()];
+      const x = gx + (jx - 0.5) * 0.9;
+      const z = gz + (jz - 0.5) * 0.9;
       const r = Math.hypot(x, z);
       if (r > ISLAND_RADIUS - 3 || r < PLAZA_RADIUS + 3) continue;
       if (onRoad(x, z, 1.1)) continue;
       if (blocks.some((b) => Math.hypot(b.x - x, b.z - z) < b.r + 2.2)) continue;
-      if (random() < 0.12) continue; // small parks and courtyards
-      const width = 1.5 + random() * 1.1;
-      const depth = 1.5 + random() * 1.1;
+      if (park < 0.12) continue; // small parks and courtyards
+      const width = 1.5 + w * 1.1;
+      const depth = 1.5 + d * 1.1;
       const falloff = 1 - r / (ISLAND_RADIUS + 10);
-      let height = (2 + 9 * falloff) * (0.45 + random() * 0.9);
-      if (random() < 0.05) height *= 1.9;
-      fillers.push({ x, z, width, depth, height: Math.max(1.2, height), seed: Math.floor(random() * 1e9) });
+      let height = (2 + 9 * falloff) * (0.45 + h * 0.9);
+      if (tall < 0.05) height *= 1.9;
+      fillers.push({ x, z, width, depth, height: Math.max(1.2, height), seed: Math.floor(seed * 1e9) });
     }
   }
   return fillers;
 }
 
 function layoutRails(towers: PlacedTower[]): Rail[] {
-  const random = rng(11);
   const rails: Rail[] = [];
   const sol = towers[0];
   const anchor = (t: PlacedTower, f: number): [number, number, number] => [t.x, t.height * f, t.z];
+  // Each rail draws from the two towers it ties, so a rail stays as it was while its towers stand (CITY-148).
+  const between = (a: PlacedTower, b: PlacedTower) => rng(Math.imul(seatOf(a.tower), 0x9e3779b1) ^ seatOf(b.tower));
   const byDistrict = new Map<District, PlacedTower[]>();
   for (const t of towers.slice(1)) {
     const list = byDistrict.get(t.tower.district) ?? [];
@@ -317,6 +341,7 @@ function layoutRails(towers: PlacedTower[]): Rail[] {
     for (const [district, list] of byDistrict) {
       const leaders = list.slice(0, district === 'core' ? list.length : 3);
       for (const t of leaders) {
+        const random = between(sol, t);
         rails.push({ a: anchor(sol, 0.55 + random() * 0.2), b: anchor(t, 0.7 + random() * 0.15), arch: 3 + random() * 6, seed: Math.floor(random() * 1e9) });
       }
     }
@@ -328,7 +353,9 @@ function layoutRails(towers: PlacedTower[]): Rail[] {
         .filter((o) => o !== t)
         .map((o) => ({ o, d: Math.hypot(o.x - t.x, o.z - t.z) }))
         .sort((p, q) => p.d - q.d)[0];
-      if (!nearest || nearest.d > 22 || random() < 0.45) continue;
+      if (!nearest || nearest.d > 22) continue;
+      const random = between(t, nearest.o);
+      if (random() < 0.45) continue;
       const lo = Math.min(t.height, nearest.o.height);
       rails.push({ a: [t.x, lo * (0.35 + random() * 0.3), t.z], b: [nearest.o.x, lo * (0.35 + random() * 0.3), nearest.o.z], arch: 1 + random() * 3, seed: Math.floor(random() * 1e9) });
     }

@@ -3,6 +3,7 @@
 import { useEffect, useId, useMemo, useRef, useState, type ChangeEvent } from 'react';
 import { checkLaunchForm, type FieldProblem } from '@/lib/launch/form';
 import { shrinkPicture } from '@/lib/launch/picture.client';
+import { openBerth } from '@/city/lib/launch/berth-store';
 import { landed, launchEngine, launchWallet, useLaunch } from '@/city/lib/launch/district';
 import { failureWords, runLaunch, type Phase } from '@/city/lib/launch/flow';
 import { shortAddress } from '@/city/lib/launch/format';
@@ -11,6 +12,7 @@ import type { WalletOption } from '@/city/lib/launch/wallet';
 import { useLang } from '@/city/lib/i18n/lang';
 import { useWords, type Same } from '@/city/lib/i18n/dict';
 import { useKeyboardInset } from '@/city/lib/keyboard';
+import { BerthGlyph } from '../berth/glyphs';
 import { CloseGlyph } from '../hud/glyphs';
 import s from './launch.module.css';
 import { LAUNCH } from './words';
@@ -87,6 +89,10 @@ function FormStep({ onClose }: { onClose: () => void }) {
     <>
       <div className={s.head}>
         <h2 className={`${s.display} ${s.title}`}>{w.raise}</h2>
+        {/* The creator's berth (CITY-141): what their launches earned and «Забрати», one quiet tap from the sheet. */}
+        <button className={`${s.close} ${s.berth}`} aria-label={w.myBerth} data-hint={w.myBerth} data-launch-berth="" onClick={() => openBerth()}>
+          <BerthGlyph />
+        </button>
         <button className={s.close} aria-label={w.close} onClick={onClose}>
           <CloseGlyph />
         </button>

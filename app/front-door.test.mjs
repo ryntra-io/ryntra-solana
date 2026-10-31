@@ -12,6 +12,7 @@ import manifest from "./manifest.ts";
 import robots from "./robots.ts";
 import { APP_HOME_PATH, SITE, buildAppHomeMetadata, buildMetadata, landingOgImage } from "./seo.ts";
 import { sitemapEntries } from "./sitemap.ts";
+import { CITY_PAGES } from "../city/lib/open/site-map.ts";
 import { helpTopic } from "./shell/help-topics.ts";
 import { LANDING_META } from "./(home)/landing-meta.ts";
 
@@ -231,10 +232,10 @@ test("the sitemap and robots name only what is live", async () => {
     const path = entry.url.replace(SITE, "") || "/";
     assert.ok(!redirected.has(path), `${path} redirects and must not be advertised`);
   }
-  /* `/company` is a page again and advertised since the public pages of the new site (2026-09-26), in both languages. */
-  assert.ok(entries.find((entry) => entry.url === SITE + "/company"), "/company is advertised again");
-  assert.ok(entries.find((entry) => entry.url === SITE + "/uk/company"), "and at its Ukrainian address");
-  for (const gone of ["/en", "/ua", "/docs/developers", "/docs/developers/guard", "/docs/developers/agent-control", "/app/portfolio", "/uk/legal/terms"]) {
+  /* Since CITY-159 the sitemap names only the city's live addresses: the site's old public pages (`/company` among
+     them) stay reachable, out of the index, until the city takes each over at its own address (CITY-157). */
+  assert.deepEqual(entries.map((entry) => entry.url.replace(SITE, "") || "/"), CITY_PAGES.map((page) => page.path), "the city's live addresses, nothing else");
+  for (const gone of ["/en", "/ua", "/company", "/uk/company", "/docs", "/legal/terms", "/docs/developers", "/docs/developers/guard", "/docs/developers/agent-control", "/app/portfolio", "/uk/legal/terms", "/launch", "/trade"]) {
     assert.equal(entries.find((entry) => entry.url === SITE + gone), undefined, `${gone} is not advertised`);
   }
   /* Kept for whoever holds the link, and say so themselves. */

@@ -1,0 +1,931 @@
+/* «Мій причал» (L4 · CITY-141): the launch's head on a frame of our own docks with the one figure on it and the day
+   ring, three quiet stream tiles, two cards on frames of the live city, and the one amber action in a pinned dock. The
+   glass, the head and the moving are the city's window frame (CITY-65) — a window on a computer, the bottom sheet on a
+   phone. Mint is value only; amber is the one action; red only for a real problem. Tokens: city/styles/city.module.css. */
+
+.display {
+  font-family: var(--font-display, system-ui), system-ui, sans-serif;
+  font-stretch: 125%;
+  font-variation-settings: 'wdth' 125;
+  font-weight: 900;
+  letter-spacing: 0.01em;
+  text-transform: uppercase;
+}
+
+.framed {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 0 16px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+.framed > * {
+  flex: none;
+}
+
+/* Before the figures: the frame takes the free height and the action sits at the foot. */
+.gated > .hero {
+  flex: 1 1 220px;
+}
+
+.gate {
+  display: grid;
+  gap: 10px;
+  padding-bottom: 16px;
+}
+
+.gateTitle {
+  position: relative;
+  align-self: end;
+  padding: 0 16px 18px;
+  font-size: var(--type-headline);
+  line-height: 1.05;
+  color: var(--ice);
+  text-shadow: 0 2px 18px rgba(6, 5, 12, 0.9);
+}
+
+.pending {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(100deg, transparent 30%, rgba(238, 241, 255, 0.05) 50%, transparent 70%) 0 0 / 220% 100%;
+  animation: sweep 1.4s ease-in-out infinite;
+}
+
+.bones {
+  display: grid;
+  gap: 8px;
+}
+
+.bones span {
+  height: 54px;
+  background: linear-gradient(100deg, rgba(238, 241, 255, 0.04) 30%, rgba(238, 241, 255, 0.09) 50%, rgba(238, 241, 255, 0.04) 70%) 0 0 / 220% 100%;
+  clip-path: polygon(12px 0, 100% 0, 100% calc(100% - 12px), calc(100% - 12px) 100%, 0 100%, 0 12px);
+  animation: sweep 1.4s ease-in-out infinite;
+}
+
+.bones span:last-child {
+  height: 20px;
+  width: 60%;
+}
+
+.quiet {
+  margin: 0;
+  font-size: var(--type-small);
+  line-height: 1.4;
+  color: var(--text-dim);
+}
+
+/* ---------- The launches, when there is more than one ---------- */
+
+.strip {
+  display: flex;
+  gap: 6px;
+  /* A scroll container in the grid would shrink under its chips. */
+  min-height: 44px;
+  margin: 0 -16px;
+  padding: 2px 16px;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.strip::-webkit-scrollbar {
+  display: none;
+}
+
+.chip {
+  position: relative;
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  height: 40px;
+  padding: 0 14px 0 6px;
+  border: 0;
+  border-radius: 20px;
+  font-size: var(--type-small);
+  font-weight: 800;
+  letter-spacing: 0.02em;
+  color: var(--text-dim);
+  background: rgba(238, 241, 255, 0.05);
+  box-shadow: inset 0 0 0 1px rgba(238, 241, 255, 0.1);
+  cursor: pointer;
+  transition: color 160ms ease-out, box-shadow 160ms ease-out;
+}
+
+.chip > span:first-child {
+  width: 28px;
+  height: 28px;
+}
+
+.chipOn {
+  color: var(--ice);
+  background: rgba(255, 178, 63, 0.1);
+  box-shadow: inset 0 0 0 1.5px var(--amber);
+}
+
+.chipDot {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--mint);
+  box-shadow: 0 0 8px var(--mint);
+}
+
+.chip:disabled {
+  cursor: default;
+}
+
+/* ---------- The head: a frame of our docks, the figure and the days ---------- */
+
+.hero {
+  position: relative;
+  margin: 0 -16px;
+  min-height: 228px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: 14px 16px 16px;
+  background: var(--ink) center 42% / cover no-repeat;
+  overflow: hidden;
+  animation: settle 600ms ease-out both;
+}
+
+.heroShade {
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(180deg, rgba(11, 10, 20, 0.55) 0%, rgba(11, 10, 20, 0.05) 34%, rgba(11, 10, 20, 0.2) 58%, #0a0813 100%),
+    linear-gradient(90deg, rgba(11, 10, 20, 0.6) 0%, transparent 60%);
+}
+
+.heroTop,
+.heroFoot {
+  position: relative;
+  display: flex;
+  gap: 12px;
+}
+
+.heroTop {
+  align-items: center;
+}
+
+.heroFoot {
+  align-items: flex-end;
+  justify-content: space-between;
+}
+
+.coin {
+  flex: none;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  box-shadow: 0 0 0 2px rgba(11, 10, 20, 0.8), 0 0 0 3.5px rgba(255, 178, 63, 0.7), 0 0 24px rgba(255, 178, 63, 0.35);
+}
+
+.coin > span {
+  width: 100%;
+  height: 100%;
+}
+
+.coinWords {
+  min-width: 0;
+  display: grid;
+  line-height: 1.15;
+  text-shadow: 0 2px 14px rgba(6, 5, 12, 0.9);
+}
+
+.coinWords b {
+  font-size: var(--type-title);
+  color: var(--ice);
+}
+
+.coinWords span {
+  font-size: var(--type-small);
+  font-weight: 600;
+  color: var(--text-dim);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.tag {
+  margin-left: auto;
+  align-self: flex-start;
+  padding: 4px 9px;
+  font-size: var(--type-micro);
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--warm);
+  background: rgba(11, 10, 20, 0.62);
+  box-shadow: inset 0 0 0 1px rgba(255, 178, 63, 0.45);
+}
+
+.earned {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+  text-shadow: 0 2px 18px rgba(6, 5, 12, 0.9);
+}
+
+.kicker {
+  font-size: var(--type-caption);
+  letter-spacing: 0.16em;
+  color: var(--warm);
+}
+
+.big {
+  font-size: 44px;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+  color: var(--mint);
+  text-shadow: 0 0 28px rgba(20, 241, 149, 0.35), 0 2px 18px rgba(6, 5, 12, 0.9);
+  white-space: nowrap;
+}
+
+/* ---------- The day ring ---------- */
+
+.ring {
+  position: relative;
+  flex: none;
+  width: 92px;
+  height: 92px;
+  display: grid;
+  place-items: center;
+}
+
+.ring svg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  transform: rotate(0deg);
+  overflow: visible;
+}
+
+.ringTrack {
+  fill: rgba(11, 10, 20, 0.55);
+  stroke: rgba(238, 241, 255, 0.14);
+  stroke-width: 5;
+}
+
+.ringFill {
+  fill: none;
+  stroke: var(--amber);
+  stroke-width: 5;
+  stroke-linecap: round;
+  transform: rotate(-90deg);
+  transform-origin: 50% 50%;
+  filter: drop-shadow(0 0 6px rgba(255, 178, 63, 0.7));
+  transition: stroke-dasharray 800ms ease-out;
+}
+
+.tick {
+  fill: #0a0813;
+  stroke: rgba(238, 241, 255, 0.5);
+  stroke-width: 2;
+}
+
+.tickAlive {
+  fill: var(--mint);
+  stroke: #0a0813;
+}
+
+.tickQuiet {
+  fill: rgba(255, 75, 58, 0.7);
+  stroke: #0a0813;
+}
+
+.ringFigure {
+  position: relative;
+  display: grid;
+  justify-items: center;
+  line-height: 1;
+}
+
+.ringFigure b {
+  font-size: var(--type-figure);
+  font-variant-numeric: tabular-nums;
+  color: var(--ice);
+}
+
+.ringFigure span {
+  margin-top: 2px;
+  font-size: var(--type-micro);
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+}
+
+/* ---------- The three streams ---------- */
+
+.streamsBlock {
+  display: grid;
+  gap: 6px;
+  /* The site's own pages pad every <section> (app/globals.css); a window's do not. */
+  padding: 0;
+}
+
+.streamsHead {
+  font-size: var(--type-micro);
+  letter-spacing: 0.16em;
+  color: var(--text-dim);
+}
+
+.streams {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 6px;
+}
+
+.stream {
+  position: relative;
+  min-width: 0;
+  display: grid;
+  gap: 4px;
+  padding: 12px 10px 10px;
+  background: rgba(255, 255, 255, 0.045);
+  box-shadow: inset 0 0 0 1px rgba(238, 241, 255, 0.08);
+  clip-path: polygon(10px 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%, 0 10px);
+}
+
+.stream::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 10px;
+  right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, var(--amber), transparent);
+}
+
+.streamAhead::before {
+  background: linear-gradient(90deg, rgba(153, 69, 255, 0.8), transparent);
+}
+
+.streamLabel {
+  font-size: var(--type-caption);
+  letter-spacing: 0.14em;
+  color: var(--warm);
+}
+
+.streamAhead .streamLabel {
+  color: #c9a2ff;
+}
+
+.rate {
+  font-size: var(--type-title-l);
+  line-height: 1.1;
+  font-variant-numeric: tabular-nums;
+  color: var(--ice);
+  white-space: nowrap;
+}
+
+.share {
+  font-size: var(--type-caption);
+  font-weight: 700;
+  line-height: 1.25;
+  color: var(--text-dim);
+}
+
+.streamEarned {
+  margin-top: 4px;
+  padding-top: 8px;
+  border-top: 1px solid rgba(238, 241, 255, 0.08);
+  font-size: var(--type-base);
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  color: var(--mint);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.streamAhead .streamEarned {
+  font-size: var(--type-small);
+  font-weight: 700;
+  line-height: 1.25;
+  color: var(--text-dim);
+  white-space: normal;
+}
+
+/* ---------- The two cards ---------- */
+
+.cards {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.card {
+  position: relative;
+  aspect-ratio: 16 / 10;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: 10px 12px;
+  color: var(--ice);
+  text-decoration: none;
+  background: var(--ink) center / cover no-repeat;
+  box-shadow: inset 0 0 0 1px rgba(238, 241, 255, 0.12);
+  clip-path: polygon(12px 0, 100% 0, 100% calc(100% - 12px), calc(100% - 12px) 100%, 0 100%, 0 12px);
+  overflow: hidden;
+  transition: transform 160ms ease-out;
+}
+
+a.card:active {
+  transform: scale(0.98);
+}
+
+.cardShade {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, rgba(11, 10, 20, 0.5) 0%, rgba(11, 10, 20, 0) 40%, rgba(11, 10, 20, 0.88) 100%);
+}
+
+.cardAhead {
+  filter: saturate(0.25) brightness(0.7);
+}
+
+.cardKicker {
+  position: relative;
+  font-size: var(--type-caption);
+  letter-spacing: 0.14em;
+  color: var(--warm);
+  text-shadow: 0 1px 10px rgba(6, 5, 12, 0.9);
+}
+
+.cardFoot {
+  position: relative;
+  display: grid;
+  line-height: 1.2;
+  text-shadow: 0 1px 10px rgba(6, 5, 12, 0.9);
+}
+
+.cardFoot b {
+  font-size: var(--type-lead);
+}
+
+.cardFoot span {
+  font-size: var(--type-caption);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: rgba(238, 241, 255, 0.82);
+}
+
+.cardBar {
+  position: absolute;
+  left: 12px;
+  right: 12px;
+  bottom: 6px;
+  height: 3px;
+  background: rgba(238, 241, 255, 0.16);
+}
+
+.cardBar > span {
+  display: block;
+  height: 100%;
+  background: linear-gradient(90deg, var(--violet), var(--amber));
+}
+
+/* ---------- Behind «i» ---------- */
+
+.details {
+  display: grid;
+  gap: 8px;
+  padding: 12px 14px;
+  font-size: var(--type-small);
+  line-height: 1.4;
+  color: var(--text-dim);
+  background: rgba(238, 241, 255, 0.05);
+  box-shadow: inset 0 0 0 1px rgba(238, 241, 255, 0.08);
+  animation: open 180ms ease-out both;
+}
+
+.details p {
+  margin: 0;
+}
+
+.detailsHead {
+  margin-top: 4px;
+  font-size: var(--type-caption);
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--warm);
+}
+
+.pairs {
+  margin: 0;
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 6px 14px;
+}
+
+.pairs dd {
+  margin: 0;
+  text-align: right;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  color: var(--ice);
+}
+
+.pockets,
+.receipts {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 6px;
+}
+
+.pockets li,
+.receipts li {
+  display: grid;
+  grid-template-columns: 1fr auto auto;
+  align-items: baseline;
+  gap: 10px;
+}
+
+.pockets em {
+  font-style: normal;
+  font-size: var(--type-caption);
+  color: var(--text-dim);
+}
+
+.pockets b,
+.receipts b {
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  color: var(--ice);
+}
+
+.receipts a {
+  color: var(--ice);
+  text-decoration: none;
+}
+
+/* ---------- The pinned dock: the one line, «i» and the action ---------- */
+
+.dock {
+  position: sticky;
+  bottom: 0;
+  z-index: 1;
+  margin-top: auto;
+  padding: 10px 0 16px;
+  background: linear-gradient(to bottom, rgba(10, 8, 19, 0), #0a0813 14px);
+}
+
+.lineRow {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 32px;
+}
+
+.line {
+  flex: 1;
+  min-width: 0;
+  font-size: var(--type-small);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  line-height: 1.35;
+  text-wrap: balance;
+  color: var(--ice);
+}
+
+.lineQuiet {
+  color: var(--text-dim);
+}
+
+.info {
+  width: 32px;
+  height: 32px;
+  flex: none;
+  display: grid;
+  place-items: center;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  font: italic 700 15px/1 Georgia, serif;
+  color: var(--text-dim);
+  background: rgba(238, 241, 255, 0.07);
+  box-shadow: inset 0 0 0 1px rgba(238, 241, 255, 0.18);
+  cursor: pointer;
+}
+
+.infoOn {
+  color: var(--ink);
+  background: var(--warm);
+}
+
+.action {
+  display: grid;
+  place-items: center;
+  width: 100%;
+  height: 56px;
+  margin-top: 10px;
+  padding: 0 18px;
+  border: 0;
+  font-size: var(--type-action);
+  color: var(--ink);
+  background: linear-gradient(100deg, var(--warm), var(--amber) 55%, #ff9a3c);
+  clip-path: polygon(14px 0, 100% 0, 100% calc(100% - 14px), calc(100% - 14px) 100%, 0 100%, 0 14px);
+  box-shadow: 0 0 40px rgba(255, 178, 63, 0.45);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  cursor: pointer;
+  transition: transform 120ms ease-out, opacity 160ms ease-out;
+}
+
+.action:active:not(:disabled) {
+  transform: scale(0.97);
+}
+
+.action:disabled {
+  cursor: default;
+  color: var(--text-dim);
+  background: rgba(255, 255, 255, 0.08);
+  box-shadow: none;
+}
+
+.secondary {
+  min-height: 52px;
+  padding: 0 16px;
+  border: 0;
+  font-size: var(--type-small);
+  letter-spacing: 0.08em;
+  color: var(--ice);
+  background: rgba(255, 255, 255, 0.06);
+  box-shadow: inset 0 0 0 1px rgba(238, 241, 255, 0.16);
+  clip-path: polygon(10px 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%, 0 10px);
+  cursor: pointer;
+}
+
+.wide {
+  width: 100%;
+  margin-top: 10px;
+}
+
+.closed,
+.problem {
+  margin-top: 10px;
+  padding: 12px 14px;
+  font-size: var(--type-small);
+  font-weight: 700;
+  line-height: 1.35;
+  color: var(--text-dim);
+  background: rgba(238, 241, 255, 0.05);
+}
+
+.problem {
+  color: #ffb3a8;
+  background: rgba(255, 75, 58, 0.1);
+  box-shadow: inset 0 0 0 1px rgba(255, 75, 58, 0.35);
+}
+
+.wallets {
+  display: grid;
+  gap: 6px;
+}
+
+.walletPick {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  height: 52px;
+  padding: 0 14px;
+  border: 0;
+  font-size: var(--type-base);
+  font-weight: 800;
+  color: var(--ice);
+  background: rgba(238, 241, 255, 0.06);
+  box-shadow: inset 0 0 0 1px rgba(238, 241, 255, 0.14);
+  cursor: pointer;
+}
+
+.walletPick img {
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+}
+
+.working {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-top: 10px;
+  min-height: 56px;
+  padding: 10px 14px;
+  background: rgba(20, 241, 149, 0.06);
+  box-shadow: inset 0 0 0 1px rgba(20, 241, 149, 0.3);
+}
+
+.workingTitle {
+  font-size: var(--type-base);
+  color: var(--ice);
+}
+
+.workingLine {
+  margin-top: 2px;
+  font-size: var(--type-small);
+  color: var(--text-dim);
+}
+
+.spinner {
+  width: 24px;
+  height: 24px;
+  flex: none;
+  border-radius: 50%;
+  border: 3px solid rgba(20, 241, 149, 0.25);
+  border-top-color: var(--mint);
+  animation: spin 900ms linear infinite;
+}
+
+.done {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 14px 16px;
+  background: rgba(20, 241, 149, 0.08);
+  box-shadow: inset 0 0 0 2px rgba(20, 241, 149, 0.4);
+  clip-path: polygon(12px 0, 100% 0, 100% calc(100% - 12px), calc(100% - 12px) 100%, 0 100%, 0 12px);
+  animation: open 260ms ease-out both;
+}
+
+.doneTitle {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+  font-size: var(--type-lead);
+  color: var(--ice);
+}
+
+.check {
+  display: grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  flex: none;
+  border-radius: 50%;
+  font-size: 15px;
+  color: var(--ink);
+  background: var(--mint);
+}
+
+.doneLink {
+  flex: none;
+  font-size: var(--type-small);
+  font-weight: 700;
+  color: var(--ice);
+  text-decoration: none;
+  border-bottom: 1px solid rgba(238, 241, 255, 0.3);
+}
+
+/* ---------- Wide: the cards stand beside the head and the streams, the dock across the foot ---------- */
+
+@container window (min-width: 700px) {
+  .framed:not(.gated) {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(220px, 34%);
+    grid-template-rows: auto auto auto auto 1fr;
+    grid-template-areas:
+      'strip strip'
+      'head cards'
+      'streams cards'
+      'details details'
+      'dock dock';
+    align-content: start;
+    gap: 12px;
+    padding-top: 12px;
+  }
+
+  .strip {
+    grid-area: strip;
+    margin: 0;
+    padding: 0;
+  }
+
+  .head {
+    grid-area: head;
+    margin: 0;
+    min-height: 192px;
+    clip-path: polygon(14px 0, 100% 0, 100% calc(100% - 14px), calc(100% - 14px) 100%, 0 100%, 0 14px);
+  }
+
+  .head .heroShade {
+    background:
+      linear-gradient(180deg, rgba(11, 10, 20, 0.5) 0%, rgba(11, 10, 20, 0.05) 36%, rgba(11, 10, 20, 0.2) 58%, rgba(11, 10, 20, 0.92) 100%),
+      linear-gradient(90deg, rgba(11, 10, 20, 0.6) 0%, transparent 60%);
+  }
+
+  .streamsBlock {
+    grid-area: streams;
+  }
+
+  .cards {
+    grid-area: cards;
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: repeat(2, minmax(0, 1fr));
+  }
+
+  .card {
+    aspect-ratio: auto;
+    min-height: 120px;
+  }
+
+  .details {
+    grid-area: details;
+  }
+
+  .dock {
+    grid-area: dock;
+    align-self: end;
+  }
+}
+
+/* ---------- Narrow: a phone, or a window pulled thin ---------- */
+
+@container window (max-width: 420px) {
+  .hero {
+    min-height: 152px;
+    padding-top: 12px;
+    padding-bottom: 12px;
+  }
+
+  .sig {
+    display: none;
+  }
+
+  .big {
+    font-size: 36px;
+  }
+
+  .ring {
+    width: 80px;
+    height: 80px;
+  }
+
+  .ringFigure b {
+    font-size: var(--type-headline);
+  }
+
+  .stream {
+    padding: 11px 8px 9px;
+  }
+
+  .rate {
+    font-size: var(--type-title);
+  }
+
+  .streamEarned {
+    font-size: var(--type-body);
+  }
+}
+
+@keyframes settle {
+  from {
+    opacity: 0.4;
+  }
+}
+
+@keyframes sweep {
+  to {
+    background-position: -120% 0;
+  }
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes open {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hero,
+  .pending,
+  .bones span,
+  .spinner,
+  .details,
+  .done {
+    animation: none;
+  }
+}

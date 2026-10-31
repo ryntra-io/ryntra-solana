@@ -1,11 +1,13 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
+import { openBerth } from '@/city/lib/launch/berth-store';
 import { launchTowerIn, useLaunch } from '@/city/lib/launch/district';
 import { sinceLaunch } from '@/city/lib/launch/format';
 import type { LaunchTower } from '@/city/lib/launch/towers';
 import type { Progress } from '@/city/lib/launch/trade';
 import { num, useWords, type Same } from '@/city/lib/i18n/dict';
+import { BerthGlyph } from '../berth/glyphs';
 import { LaunchTradePanel } from './LaunchTradePanel';
 import s from './launch.module.css';
 import { LAUNCH } from './words';
@@ -26,6 +28,7 @@ export function LaunchTowerBody({ token, onBusy }: { token: string; onBusy?: (bu
   const mine = useLaunch((st) => st.mine);
   const launch = useMemo(() => launchTowerIn({ feed, mine }, token), [feed, mine, token]);
   const stub = useLaunch((st) => st.stub);
+  const wallet = useLaunch((st) => st.connection?.address ?? null);
   const now = useNow();
   const w = useWords(LAUNCH);
   if (!launch) return null;
@@ -49,6 +52,13 @@ export function LaunchTowerBody({ token, onBusy }: { token: string; onBusy?: (bu
       {launch.phase === 'lost' && <div className={s.cardLine}>{lostLine(w, launch)}</div>}
       <div className={s.tags}>
         {launch.mine && <span className={`${s.tag} ${s.tagMine}`}>{w.yourTower}</span>}
+        {/* The creator's own tower opens their berth on it (CITY-141). */}
+        {(launch.mine || (wallet !== null && launch.creator === wallet)) && (
+          <button type="button" className={`${s.tag} ${s.tagBerth}`} data-launch-berth="" onClick={() => openBerth(launch.token)}>
+            <BerthGlyph />
+            {w.myBerth}
+          </button>
+        )}
         <span className={s.tag}>{w.ryntraLaunch}</span>
         {launch.network === 'solana:devnet' && <span className={`${s.tag} ${s.tagNet}`}>{w.devnet}</span>}
         {launch.ryntraTest && <span className={s.tag}>{w.ryntraTest}</span>}

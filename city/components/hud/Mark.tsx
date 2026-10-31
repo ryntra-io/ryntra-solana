@@ -1,6 +1,6 @@
 /**
- * The mark: the Sol Spire rising through the Eclipse. A black disc in a violet-to-warm corona, the diamond-ring
- * point at the upper right, and an amber spire that breaks out of the ring's top — "up", in one shape.
+ * The mark: the Sol Spire rising through the Eclipse. A black disc in a violet-to-warm corona and an amber spire that
+ * breaks out of the ring's top — "up", in one shape.
  */
 export function Mark({ size = 40, glow = true }: { size?: number; glow?: boolean }) {
   // Fixed ids, not useId: the definitions are the same in every copy of the mark, so a repeated id draws the same
@@ -31,7 +31,6 @@ export function Mark({ size = 40, glow = true }: { size?: number; glow?: boolean
       <g filter={glow ? `url(#glow${id})` : undefined}>
         <circle cx="32" cy="34" r="19" fill="none" stroke={`url(#ring${id})`} strokeWidth="4.2" />
         <circle cx="32" cy="34" r="16.6" fill="#0B0A14" />
-        <circle cx="45.6" cy="20.4" r="2.6" fill="#FFF6E6" />
         <path d="M32 2 L37.2 30 L36.2 60 L27.8 60 L26.8 30 Z" fill={`url(#spire${id})`} />
         <path d="M32 2 L34.2 30 L33.4 60 L30.6 60 L29.8 30 Z" fill="#FFFFFF" opacity="0.35" />
       </g>

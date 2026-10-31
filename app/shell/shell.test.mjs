@@ -356,13 +356,15 @@ test("the Workspace Map carries the directions the switcher stopped carrying", a
   /* `/docs/current-capabilities` has redirected into the documentation since
      2026-09-05 (to the cabinet page since 2026-09-14), and the sitemap
      advertises only addresses that answer — so the register's public home is
-     the documentation's cabinet page, which the sitemap does carry. */
+     the documentation's cabinet page. Since CITY-159 the sitemap names only the
+     city: the documentation stays reachable, out of the index, until the city's
+     document window takes it over (CITY-157). */
   const { CUSTOMER_REDIRECTS } = await import("../../lib/product/customer-routing.ts");
   const register = CUSTOMER_REDIRECTS.find((row) => row.source === "/docs/current-capabilities");
   assert.ok(register, "the register's old address must still redirect");
   assert.doesNotMatch(read("app/sitemap.ts"), /path: "\/docs\/current-capabilities"/);
-  const sitemap = (await import("../sitemap.ts")).sitemapEntries([]);
-  assert.ok(sitemap.some((entry) => entry.url === `https://ryntra.io${register.destination}`), "the register's page is advertised");
+  const sitemap = (await import("../sitemap.ts")).sitemapEntries();
+  assert.ok(!sitemap.some((entry) => entry.url === `https://ryntra.io${register.destination}`), "the register's page waits for the city, out of the index");
 
   /* The one control the map renders inline is a link inside a line of text, and
      a line of text is 17px tall. Measured on the deployed page at 375px before

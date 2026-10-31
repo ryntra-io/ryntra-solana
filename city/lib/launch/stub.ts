@@ -119,7 +119,7 @@ export function seededBytes(seed: string, length: number): Uint8Array {
 }
 
 export const stubAddress = (seed: string) => base58(seededBytes(`address:${seed}`, 32));
-const stubSignature = (seed: string) => base58(seededBytes(`signature:${seed}`, 64));
+export const stubSignature = (seed: string) => base58(seededBytes(`signature:${seed}`, 64));
 const hex = (seed: string, length: number) => Array.from(seededBytes(`hex:${seed}`, length / 2), (byte) => byte.toString(16).padStart(2, '0')).join('');
 const toBase64 = (bytes: Uint8Array) => {
   let binary = '';
@@ -138,13 +138,14 @@ type StubLaunch = Readonly<{ token: string; name: string; symbol: string; launch
 /** The stand's youngest coin is always in the last two minutes of its launch fee's fall, so the fee is seen falling live. */
 const YOUNG_CYCLE = 2 * MINUTE;
 
+/** The stand's coins. Spark and Moth are the stub wallet's own, so «Мій причал» (CITY-141) has a test launch on the curve and one in its pool. */
 function standLaunches(now: number): StubLaunch[] {
   const at = (ago: number) => now - ago;
   return [
-    { token: stubAddress('SPARK'), name: 'Spark', symbol: 'SPARK', launchedAt: now - 8 * MINUTE - (now % YOUNG_CYCLE), creator: stubAddress('creator:spark'), progressBps: () => 4215, migrated: false, holders: 58, checks: ['young', 'young', 'young'], liquidityUsd: null },
+    { token: stubAddress('SPARK'), name: 'Spark', symbol: 'SPARK', launchedAt: now - 8 * MINUTE - (now % YOUNG_CYCLE), creator: STUB_CREATOR, progressBps: () => 4215, migrated: false, holders: 58, checks: ['young', 'young', 'young'], liquidityUsd: null },
     { token: stubAddress('NOVA'), name: 'Nova', symbol: 'NOVA', launchedAt: at(3 * 3600_000), creator: stubAddress('creator:nova'), progressBps: () => 6200, migrated: false, holders: 41, checks: ['young', 'young', 'young'], liquidityUsd: null },
     { token: stubAddress('KITE'), name: 'Kite', symbol: 'KITE', launchedAt: at(42 * MINUTE), creator: stubAddress('creator:kite'), progressBps: () => 2500, migrated: false, holders: 37, checks: ['young', 'young', 'young'], liquidityUsd: null },
-    { token: stubAddress('MOTH'), name: 'Moth', symbol: 'MOTH', launchedAt: at(12 * DAY), creator: stubAddress('creator:moth'), progressBps: () => 10_000, migrated: true, holders: 214, checks: ['alive', 'young', 'young'], liquidityUsd: 31_200 },
+    { token: stubAddress('MOTH'), name: 'Moth', symbol: 'MOTH', launchedAt: at(12 * DAY), creator: STUB_CREATOR, progressBps: () => 10_000, migrated: true, holders: 214, checks: ['alive', 'young', 'young'], liquidityUsd: 31_200 },
     { token: stubAddress('OWL'), name: 'Night Owl', symbol: 'OWL', launchedAt: at(96 * DAY), creator: stubAddress('creator:owl'), progressBps: () => 10_000, migrated: true, holders: 862, checks: ['alive', 'alive', 'alive'], liquidityUsd: 88_400 },
     { token: stubAddress('DUSK'), name: 'Dusk', symbol: 'DUSK', launchedAt: at(9 * DAY), creator: stubAddress('creator:dusk'), progressBps: () => 800, migrated: false, holders: 6, checks: ['quiet', 'young', 'young'], liquidityUsd: null },
   ];
@@ -215,7 +216,8 @@ function marketOf(launch: StubLaunch, now: number, preset: LaunchPresetView): La
     curveFee: launch.migrated ? null : curveFeeAt(launch, now, preset),
     holders: { count: launch.holders, atLeast: false, rows: [], groups: { creatorBps: 0, snipers: null, bundle: null, top10Bps: 0 } },
     trades: { rows: [], complete: true, read: 0 },
-    chart: { points: [], markers: [] },
+    /* The move to the DEX a day after the launch, as the engine marks it on the chart. */
+    chart: { points: [], markers: launch.migrated ? [{ t: Math.floor((launch.launchedAt + DAY) / 1000), kind: 'graduated', signature: stubSignature(`graduated:${launch.token}`) }] : [] },
     risk: [],
     creator: { address: launch.creator, curves: null, tradesComplete: true },
     trading: { venue: launch.migrated ? 'pool' : 'curve', pool: stubAddress(`pool:${launch.token}`), referral: true, jupiter: false },

@@ -24,6 +24,11 @@ export type CityEvent = {
 type CityState = {
   snapshot: CitySnapshot;
   layout: CityLayout;
+  /**
+   * The layout is the snapshot's own plan, as every device lays it out (a run's course is built on it). Otherwise it
+   * grew from the city on screen: every tower that stood there keeps its plot (CITY-148).
+   */
+  exact: boolean;
   selectedId: string | null;
   entered: boolean;
   sound: boolean;
@@ -36,7 +41,8 @@ type CityState = {
   touchedAt: number;
   /** When the logo last asked for the overview (ms): the camera flies back to the establishing shot. */
   homeAt: number;
-  setSnapshot: (snapshot: CitySnapshot) => void;
+  /** The next city; `exact` lays it out on its own instead of growing it from the one on screen. */
+  setSnapshot: (snapshot: CitySnapshot, exact?: boolean) => void;
   select: (id: string | null) => void;
   enter: () => void;
   setSound: (on: boolean) => void;
@@ -53,6 +59,7 @@ let nextId = 1;
 export const useCity = create<CityState>((set) => ({
   snapshot: { towers: [], fetchedAt: new Date(0).toISOString(), source: 'snapshot' },
   layout: layoutCity([]),
+  exact: true,
   selectedId: null,
   entered: false,
   sound: false,
@@ -61,7 +68,7 @@ export const useCity = create<CityState>((set) => ({
   trauma: 0,
   touchedAt: 0,
   homeAt: 0,
-  setSnapshot: (snapshot) => set({ snapshot, layout: layoutCity(snapshot.towers) }),
+  setSnapshot: (snapshot, exact = false) => set((state) => ({ snapshot, exact, layout: layoutCity(snapshot.towers, exact ? null : state.layout) })),
   select: (selectedId) => set({ selectedId, touchedAt: Date.now() }),
   enter: () => set({ entered: true }),
   setSound: (sound) => set({ sound }),

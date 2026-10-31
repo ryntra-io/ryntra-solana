@@ -17,6 +17,7 @@ export type WindowName =
   | 'scouts'
   | 'vault'
   | 'hall'
+  | 'berth'
   | 'agent'
   | 'beacon'
   | 'assistant'
@@ -39,6 +40,7 @@ export type WindowSources = Readonly<{
   scouts?: Readonly<{ open: boolean }>;
   vault?: Readonly<{ open: boolean }>;
   hall?: Readonly<{ panel: boolean }>;
+  berth?: Readonly<{ open: boolean }>;
   agent?: Readonly<{ panel: string }>;
   beacon?: Readonly<{ openFor: string | null }>;
   assistant?: Readonly<{ open: boolean }>;
@@ -50,7 +52,7 @@ export type WindowSources = Readonly<{
 }>;
 
 /** The windows in the order they are asked; the first open one is named. */
-export const WINDOWS: readonly WindowName[] = ['predict', 'trade', 'money', 'chart', 'exchange', 'harbor', 'mine', 'scouts', 'vault', 'hall', 'agent', 'beacon', 'assistant', 'how', 'moments', 'launch', 'build', 'menu', 'settings'];
+export const WINDOWS: readonly WindowName[] = ['predict', 'trade', 'money', 'chart', 'exchange', 'harbor', 'mine', 'scouts', 'vault', 'hall', 'berth', 'agent', 'beacon', 'assistant', 'how', 'moments', 'launch', 'build', 'menu', 'settings'];
 
 const IS_OPEN: Readonly<Record<WindowName, (src: WindowSources) => boolean>> = {
   predict: (s) => !!s.predict?.open,
@@ -63,6 +65,7 @@ const IS_OPEN: Readonly<Record<WindowName, (src: WindowSources) => boolean>> = {
   scouts: (s) => !!s.scouts?.open,
   vault: (s) => !!s.vault?.open,
   hall: (s) => !!s.hall?.panel,
+  berth: (s) => !!s.berth?.open,
   agent: (s) => s.agent != null && s.agent.panel !== 'none',
   beacon: (s) => s.beacon?.openFor != null,
   assistant: (s) => !!s.assistant?.open,

@@ -27,6 +27,10 @@ export class ByteWriter {
     return this.u8(v >>> 8).u8(v);
   }
 
+  u24(v: number): this {
+    return this.u8(v >>> 16).u8(v >>> 8).u8(v);
+  }
+
   u32(v: number): this {
     return this.u8(v >>> 24).u8(v >>> 16).u8(v >>> 8).u8(v);
   }
@@ -103,6 +107,10 @@ export class ByteReader {
 
   u16(): number {
     return (this.u8() << 8) | this.u8();
+  }
+
+  u24(): number {
+    return (this.u8() << 16) | (this.u8() << 8) | this.u8();
   }
 
   u32(): number {

@@ -5,7 +5,7 @@ import test from "node:test";
 
 import { STATS_COPY } from "./copy.ts";
 import { buildLedgerStats, buildOnchainStats, chainAttributionOf, decimalText, symbolOfMint } from "../../lib/attribution/stats-model.ts";
-import { PUBLIC_PAGES } from "../sitemap.ts";
+import { AWAITING_CITY, CITY_PAGES } from "../../city/lib/open/site-map.ts";
 import { HOMEPAGE_COPY } from "../../lib/site/homepage-copy.ts";
 
 const root = new URL("../../", import.meta.url);
@@ -154,7 +154,7 @@ test("both languages carry every sentence, and no internal vocabulary reaches th
   }
 });
 
-test("the page is on the frozen chrome, follows the reader's language, is in the sitemap and in the site's one menu; the methodology is a disclosure", () => {
+test("the page is on the frozen chrome, follows the reader's language, is in the site's one menu (out of the sitemap until the city draws it); the methodology is a disclosure", () => {
   const page = read("app/stats/page.tsx");
   assert.match(page, /PublicHeader locale=\{locale\}/);
   assert.match(page, /FrozenFooter locale=\{locale\}/);
@@ -169,7 +169,9 @@ test("the page is on the frozen chrome, follows the reader's language, is in the
   assert.match(content, /ledger\.summaries\[product\]\[range\]/, "the totals are the server's, for the same filter");
   assert.match(content, /row\.links\[0\]/, "every row carries its proof link");
   assert.doesNotMatch(content, /\d{2,}\.\d+ ?(USDC|SOL)/, "no figure typed into the markup");
-  assert.ok(PUBLIC_PAGES.some((entry) => entry.path === "/stats"), "the sitemap lists /stats");
+  /* Out of the sitemap and the index while it is the old page (CITY-159), until the city's Stats window takes it over. */
+  assert.ok(!CITY_PAGES.some((entry) => entry.path === "/stats"), "the sitemap does not list /stats yet");
+  assert.ok(AWAITING_CITY.includes("/stats"), "it answers noindex meanwhile");
   for (const locale of ["en", "uk"]) {
     assert.ok(HOMEPAGE_COPY[locale].footer.links.some((link) => link.href === "/stats"), `${locale}: /stats is in the one menu`);
   }

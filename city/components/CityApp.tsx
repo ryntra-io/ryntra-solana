@@ -15,9 +15,11 @@ import { RUN_OPEN } from '@/city/lib/run/flag';
 import { useRun } from '@/city/lib/run/store';
 import { track } from '@/city/lib/run/track';
 import { Art } from './art/Art';
+import { BerthLayer } from './berth/BerthLayer';
 import { AssistantLayer } from './assistant/AssistantLayer';
 import { ChartLayer } from './chart/ChartLayer';
 import { HarborLayer } from './districts/HarborLayer';
+import { EarnLayer } from './earn/EarnLayer';
 import { MoneyLayer } from './money/MoneyLayer';
 import { ScoutsLayer } from './scouts/ScoutsLayer';
 import { PredictLayer } from './districts/PredictLayer';
@@ -85,9 +87,11 @@ export function CityApp({ initial }: { initial: CitySnapshot }) {
   const running = useRun((s) => s.phase !== 'off');
   const world = useRun((s) => s.world);
   useEffect(() => {
-    const shown = useCity.getState().snapshot.fetchedAt;
-    // Swap the city only when the data really differs: rebuilding the skyline costs a few frames.
-    if (running && world && world.fetchedAt !== shown) setSnapshot(world);
+    const { snapshot, exact } = useCity.getState();
+    const shown = snapshot.fetchedAt;
+    // Swap the city only when the data really differs: rebuilding the skyline costs a few frames. A run flies the
+    // world's own plan, the one its course was built on, not the city grown on screen.
+    if (running && world && (world.fetchedAt !== shown || !exact)) setSnapshot(world, true);
     else if (!running && latest.current.fetchedAt !== shown) setSnapshot(latest.current);
   }, [running, world, setSnapshot]);
 
@@ -206,7 +210,9 @@ export function CityApp({ initial }: { initial: CitySnapshot }) {
       <BeaconLayer />
       <VaultLayer />
       <HallLayer />
+      <BerthLayer />
       <MoneyLayer />
+      <EarnLayer />
       <ScoutsLayer />
       <ExchangeLayer />
       <AssistantLayer />

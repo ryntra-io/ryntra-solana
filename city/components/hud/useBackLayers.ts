@@ -17,6 +17,7 @@ import { useFeedPanel } from '@/city/lib/feed/panel';
 import { useLayer } from '@/city/lib/game/layer';
 import { useGameMap } from '@/city/lib/game/map';
 import { useLaunch } from '@/city/lib/launch/district';
+import { useBerth } from '@/city/lib/launch/berth-store';
 import { useHall } from '@/city/lib/launch/hall-store';
 import { useMoments } from '@/city/lib/moments/stage';
 import { useMoney } from '@/city/lib/money/open';
@@ -44,6 +45,7 @@ const CLOSE: Readonly<Record<WindowName, () => void>> = {
   scouts: () => useScouts.getState().close(),
   vault: () => vaultStore.getState().leave(),
   hall: () => useHall.getState().close(),
+  berth: () => useBerth.getState().close(),
   agent: () => useAgent.getState().closePanel(),
   beacon: () => useBeacons.getState().close(),
   assistant: () => useAssistant.getState().hide(),

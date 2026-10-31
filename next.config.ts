@@ -7,6 +7,7 @@ import { onPredictHost, predictHostRedirects } from "./lib/predictions/predict-h
 import { seekerRelayCspSources } from "./lib/solana/seeker-connect.ts";
 import { appHostRedirects, appHostRewrites, atBothAddresses, everywhereButProxied, ON_APP_HOST, siteHostRedirects, SITE_ORIGIN } from "./lib/product/app-address.ts";
 import { OLD_PREFIXES, oldAddressRedirects, shadowedByOldAddresses } from "./city/lib/open/old-addresses.ts";
+import { awaitingSources } from "./city/lib/open/site-map.ts";
 
 /* The landing is a page again — English at `/`, Ukrainian at `/uk`. What stays of it is the language map of the
    home page:
@@ -244,6 +245,9 @@ const nextConfig: NextConfig = {
       ...atBothAddresses("/app/predictions/:path*", [{ key: "Content-Security-Policy", value: PREDICTIONS_CSP }]),
       /* The old interface's addresses only redirect now (CITY-13); a crawler that still holds one drops it. */
       ...OLD_PREFIXES.flatMap((prefix) => [prefix, `${prefix}/:path*`]).map((source) => ({ source, headers: [{ key: "X-Robots-Tag", value: "noindex, nofollow" }] })),
+      /* The site's public pages still drawn in the old interface, until the city takes each over at its own address
+         (CITY-159 → CITY-157): reachable, out of the sitemap, and out of the index (`city/lib/open/site-map.ts`). */
+      ...awaitingSources().map((source) => ({ source, headers: [{ key: "X-Robots-Tag", value: "noindex, nofollow" }] })),
       /* predict.ryntra.io only leads into the section (NAV-6c): nothing on it is
          a page to index. */
       { source: "/:path*", has: PREDICT_HOST, headers: [{ key: "X-Robots-Tag", value: "noindex, nofollow" }] },
@@ -415,8 +419,9 @@ const nextConfig: NextConfig = {
          ryntra.io. Right after the landing's language map, ahead of every other row. Only the host's own rows: the old
          product shell `/predict` on the other hosts is an old address now, and the city's table leads it to the Oracle. */
       ...predictHostRedirects().filter((row) => row.has),
-      /* The old interface, ahead of every row that still names one of its pages (CITY-13). The rows below that answer
-         under one of its prefixes are never reached, so they are left out: what is left leads to the city in one hop. */
+      /* The old interface and the short addresses, ahead of every row that still names one of their pages (CITY-13,
+         CITY-159). The rows below that answer under one of its prefixes, or at an address it answers as it is
+         (`/status`, `/home`), are never reached, so they are left out: what is left leads to the city in one hop. */
       ...OLD_ADDRESS_REDIRECTS,
       ...[
         /* The application's own host, and — once it is live — the old

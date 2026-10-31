@@ -6,6 +6,7 @@ import { ANDROID_PRIVACY, ANDROID_SECTION_ID } from "../legal/privacy/android.ts
 import { CONTACT_COPY } from "../contact/contact-copy.ts";
 import { DOC_PAGES, docsHref } from "../docs/content/index.ts";
 import { sitemapEntries } from "../sitemap.ts";
+import { AWAITING_CITY } from "../../city/lib/open/site-map.ts";
 import { HOMEPAGE_COPY } from "../../lib/site/homepage-copy.ts";
 import { hasUkAddress, localizedPath } from "../../lib/site/localized.ts";
 import { SUPPORT_COPY, SUPPORT_PRIVACY_ANDROID } from "./support-copy.ts";
@@ -120,14 +121,15 @@ test("the Terms carry the content rules a launch agrees to, in both languages (r
   assert.equal(LAUNCH_SECTION_ID, "launch");
 });
 
-test("both pages are in the sitemap and the footer, the support page at both of its addresses", () => {
+test("both pages are in the footer, the support page at both of its addresses; out of the sitemap until the city draws them", () => {
   assert.ok(hasUkAddress("/support"));
   assert.equal(localizedPath("/support", "uk"), "/uk/support");
   assert.equal(localizedPath("/legal/privacy", "uk"), "/legal/privacy", "the policy has one address; the cookie keeps the language");
-  const urls = sitemapEntries([]).map((entry) => entry.url);
-  assert.ok(urls.includes("https://ryntra.io/support"));
-  assert.ok(urls.includes("https://ryntra.io/uk/support"));
-  assert.ok(urls.includes("https://ryntra.io/legal/privacy"));
+  /* Both stay at their addresses (the Android app's store listing names them), out of the sitemap and the index while
+     they are drawn in the old interface (CITY-159), until the city's Help window takes them over (CITY-157). */
+  const urls = sitemapEntries().map((entry) => entry.url);
+  for (const url of ["https://ryntra.io/support", "https://ryntra.io/uk/support", "https://ryntra.io/legal/privacy"]) assert.ok(!urls.includes(url), `${url} is not offered to the index yet`);
+  assert.ok(AWAITING_CITY.includes("/support") && AWAITING_CITY.includes("/legal/:path*"), "they answer noindex meanwhile");
   for (const locale of LOCALES) {
     const hrefs = HOMEPAGE_COPY[locale].footer.legal.map((link) => link.href);
     assert.ok(hrefs.includes("/legal/privacy") && hrefs.includes("/support"), `${locale} footer`);

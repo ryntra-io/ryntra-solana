@@ -1,11 +1,11 @@
-import { streamFrames } from '../capture.ts';
+import { requestFrame } from '../capture.ts';
 import { digits } from '../i18n/dict.ts';
 import { PALETTE } from '../palette.ts';
 
 /**
- * The moment of a trade, as a clip made from the city itself: the camera arrives at your tower, the tower takes your
- * colour and throws fireworks, the amount counts up, and the clip ends on the mark and the address. 4:5 at 1080×1350
- * fills a phone and an X feed. The words on it are the trade's own figures read back from the chain; nothing else.
+ * The moment of a trade, as a card made from the city itself: your tower in the frame, the amount, the line and the
+ * mark. 4:5 at 1080×1350 fills a phone and an X feed. The words on it are the trade's own figures read back from the
+ * chain; nothing else. Nothing is filmed: the card is one frame, taken when the person taps Share.
  */
 export type MomentWords = Readonly<{
   kicker: string;
@@ -18,8 +18,6 @@ export type MomentWords = Readonly<{
   suffix?: string;
 }>;
 
-export type Moment = Readonly<{ video: Blob | null; still: Blob | null; type: string | null }>;
-
 const W = 1080;
 const H = 1350;
 const SECONDS = 6;
@@ -27,13 +25,6 @@ const SECONDS = 6;
 export const MOMENT_BEATS = [0.9, 2.5] as const;
 /** Where the camera puts a city tower it flies to, across the frame: a little left of centre. */
 export const TOWER_FOCUS = 0.47;
-
-const TYPES = ['video/mp4;codecs=avc1.42E01E', 'video/mp4', 'video/webm;codecs=vp9', 'video/webm'];
-
-function recorderType(): string | null {
-  if (typeof MediaRecorder === 'undefined') return null;
-  return TYPES.find((t) => MediaRecorder.isTypeSupported(t)) ?? null;
-}
 
 const ease = (x: number) => 1 - Math.pow(1 - Math.min(1, Math.max(0, x)), 3);
 const fade = (t: number, from: number, length = 0.35) => ease((t - from) / length);
@@ -56,10 +47,6 @@ function drawMark(ctx: CanvasRenderingContext2D, x: number, y: number, size: num
   ctx.fillStyle = '#0B0A14';
   ctx.beginPath();
   ctx.arc(32, 34, 16.6, 0, Math.PI * 2);
-  ctx.fill();
-  ctx.fillStyle = '#FFF6E6';
-  ctx.beginPath();
-  ctx.arc(45.6, 20.4, 2.6, 0, Math.PI * 2);
   ctx.fill();
   const spire = ctx.createLinearGradient(0, 60, 0, 2);
   spire.addColorStop(0, '#FFB23F');
@@ -108,7 +95,7 @@ export function cropOf(width: number, height: number, t: number, focus: number =
   return { sx, sy, sw, sh };
 }
 
-/** One frame of the clip: the scene, cropped to 4:5 around its subject (`focus`), and the words. */
+/** The moment at `t` seconds: the scene, cropped to 4:5 around its subject (`focus`), and the words. */
 function paint(ctx: CanvasRenderingContext2D, source: HTMLCanvasElement | null, t: number, words: MomentWords, display: string, ui: string, focus: number = TOWER_FOCUS) {
   ctx.fillStyle = PALETTE.inkDeep;
   ctx.fillRect(0, 0, W, H);
@@ -187,61 +174,25 @@ function paint(ctx: CanvasRenderingContext2D, source: HTMLCanvasElement | null, 
   }
 }
 
+/** How long the card waits for the city to draw a frame (a hidden tab draws none) before it goes without the city. */
+const FRAME_WAIT_MS = 600;
+
 /**
- * Records the moment while the city plays it. `onBeat(i)` is called at each beat so the caller can fire the city's
- * effects; the clip keeps going if no frame arrives (a hidden tab) and returns only the still then. `focus`, read on
- * every frame, says where across the frame the subject stands (a building in my quarter); without it the crop sits
- * where the camera puts a city tower.
+ * The card of the moment, made at once: one frame of the city, cropped to 4:5 around its subject (`focus`, read now;
+ * without it the crop sits where the camera puts a city tower), with every word shown as the end of the moment reads.
  */
-export async function recordMoment(words: MomentWords, onBeat: (beat: number) => void, options: { focus?: () => number | null } = {}): Promise<Moment> {
+export async function momentCard(words: MomentWords, options: { focus?: () => number | null } = {}): Promise<Blob | null> {
   const canvas = document.createElement('canvas');
   canvas.width = W;
   canvas.height = H;
   const ctx = canvas.getContext('2d');
-  if (!ctx) return { video: null, still: null, type: null };
+  if (!ctx) return null;
   const css = getComputedStyle(document.documentElement);
   const display = css.getPropertyValue('--font-display').trim() || 'system-ui';
   const ui = css.getPropertyValue('--font-ui').trim() || 'system-ui';
-
-  const type = recorderType();
-  const chunks: Blob[] = [];
-  let recorder: MediaRecorder | null = null;
-  if (type && typeof canvas.captureStream === 'function') {
-    recorder = new MediaRecorder(canvas.captureStream(30), { mimeType: type, videoBitsPerSecond: 8_000_000 });
-    recorder.ondataavailable = (e) => {
-      if (e.data.size) chunks.push(e.data);
-    };
-  }
-
-  const started = performance.now();
-  let last: HTMLCanvasElement | null = null;
-  let still: Blob | null = null;
-  let beat = 0;
-  const elapsed = () => (performance.now() - started) / 1000;
-  const stop = streamFrames((frame) => {
-    last = frame;
-    paint(ctx, frame, elapsed(), words, display, ui, options.focus?.() ?? TOWER_FOCUS);
-  });
-  // A clock of its own, so the words and beats run even when the scene draws slowly.
-  const clock = window.setInterval(() => {
-    const t = elapsed();
-    while (beat < MOMENT_BEATS.length && t >= MOMENT_BEATS[beat]!) onBeat(beat++);
-    if (!last) paint(ctx, null, t, words, display, ui);
-  }, 33);
-  recorder?.start(250);
-
-  await new Promise((resolve) => setTimeout(resolve, 4800));
-  still = await new Promise<Blob | null>((resolve) => canvas.toBlob((b) => resolve(b), 'image/png'));
-  await new Promise((resolve) => setTimeout(resolve, (SECONDS - 4.8) * 1000));
-
-  window.clearInterval(clock);
-  stop();
-  if (!recorder) return { video: null, still, type: null };
-  const done = new Promise<void>((resolve) => (recorder!.onstop = () => resolve()));
-  recorder.stop();
-  await done;
-  const video = chunks.length ? new Blob(chunks, { type: type! }) : null;
-  return { video, still, type };
+  const frame = await Promise.race([requestFrame(), new Promise<null>((resolve) => setTimeout(() => resolve(null), FRAME_WAIT_MS))]);
+  paint(ctx, frame, SECONDS, words, display, ui, options.focus?.() ?? TOWER_FOCUS);
+  return new Promise<Blob | null>((resolve) => canvas.toBlob((b) => resolve(b), 'image/png'));
 }
 
 /**
@@ -260,11 +211,10 @@ export function momentSubject(mint: string): MomentSubject | null {
   return subjects ? subjects(mint) : null;
 }
 
-/** The file name and extension for a clip of this type. */
-export function clipName(symbol: string, type: string | null): string {
-  const ext = type?.startsWith('video/mp4') ? 'mp4' : 'webm';
-  return `ryntra-${symbol.replace(/^\$/, '').toLowerCase()}.${ext}`;
+/** The file name of a coin's card. */
+export function cardName(symbol: string): string {
+  return `ryntra-${symbol.replace(/^\$/, '').toLowerCase()}.png`;
 }
 
-// Development hook: lets the screenshot scripts film a moment without a trade.
-if (typeof window !== 'undefined' && process.env.NODE_ENV !== 'production') Object.assign(window, { __recordMoment: recordMoment });
+// Development hook: lets the screenshot scripts make a card without a trade.
+if (typeof window !== 'undefined' && process.env.NODE_ENV !== 'production') Object.assign(window, { __momentCard: momentCard });

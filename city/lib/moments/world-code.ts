@@ -1,18 +1,18 @@
-import { hashString, layoutCity, type CityLayout } from '../city/layout.ts';
+import { hashString, layoutCity, seatOf, type CityLayout } from '../city/layout.ts';
 import type { CitySnapshot, District, Tower } from '../market/types.ts';
 import { ByteReader, ByteWriter } from './bytes.ts';
 
 /**
  * The frozen city of the day, small enough for a link, so a friend runs the very same skyline.
  *
- * The plan of the city depends only on each tower's district, market cap and liquidity (its height and width) and
- * on their order, so that is what travels, with the crown's light (the day's move) and the traders behind the
- * window lights. A verified coin carries the first six letters of its mint; the friend's device finds the coin in
+ * The plan of the city depends only on each tower's district, the key it is seated by (the hash of its mint, CITY-148)
+ * and its market cap and liquidity (its height and width), so that is what travels, with the crown's light (the day's
+ * move) and the traders behind the window lights. A verified coin carries the first six letters of its mint; the friend's device finds the coin in
  * its own reads and names it only if it can verify it itself — a link can never make the city name a coin.
  * Everything else (names, logos, prices) comes from the friend's own data or stays blank: the run shows no card.
  *
- * Before a link is made the city is laid out again from what the link carries; if one tower or one low building
- * would stand anywhere else (two towers a hair apart in height can swap places), the amounts travel as float64.
+ * Before a link is made the city is laid out again from what the link carries; if one tower would come out a hair
+ * taller or wider, the amounts travel as float64.
  * The link also carries a fingerprint of the plan, so a device whose city code has changed since knows the worlds
  * differ.
  */
@@ -25,8 +25,10 @@ const F_VERIFIED = 8;
 const F_SOL = 16;
 const BASE58 = /^[1-9A-HJ-NP-Za-km-z]+$/;
 
-/** 0: market cap and liquidity as float32, 1: as float64 — for the rare city where float32 moves a tower. */
+/** 0: market cap and liquidity as float32, 1: as float64 — for the rare city where float32 changes a tower. */
 type Precision = 0 | 1;
+/** Set on the precision byte: every tower carries its seat. A link without it is from before CITY-148. */
+const F_SEATS = 2;
 
 function writeAmount(w: ByteWriter, v: number, precision: Precision) {
   const n = Number.isFinite(v) && v > 0 ? v : 0;
@@ -49,7 +51,7 @@ const fromTraders = (q: number) => Math.round(10 ** (q / 40) - 1);
 function writeTowers(w: ByteWriter, snapshot: CitySnapshot, precision: Precision) {
   const towers = snapshot.towers;
   if (towers.length > MAX_TOWERS) throw new RangeError('too many towers');
-  w.u8(precision).varint(towers.length).u32(Math.max(0, Math.floor(new Date(snapshot.fetchedAt).getTime() / 1000) || 0)).u8(snapshot.source === 'live' ? 1 : 0);
+  w.u8(precision | F_SEATS).varint(towers.length).u32(Math.max(0, Math.floor(new Date(snapshot.fetchedAt).getTime() / 1000) || 0)).u8(snapshot.source === 'live' ? 1 : 0);
   for (const t of towers) {
     const district = DISTRICTS.indexOf(t.district);
     if (district < 0) throw new RangeError('unknown district');
@@ -59,6 +61,7 @@ function writeTowers(w: ByteWriter, snapshot: CitySnapshot, precision: Precision
     if (named) w.bytes(new TextEncoder().encode(t.id.slice(0, PREFIX)));
     writeAmount(w, t.mcap, precision);
     writeAmount(w, t.liquidity, precision);
+    w.u24(seatOf(t));
     w.i16(toTenths(t.change24h));
     w.u8(toTraders(t.traders1h));
   }
@@ -85,8 +88,10 @@ const blank = (id: string, district: District): Tower => ({
 });
 
 function readTowers(r: ByteReader): CitySnapshot {
-  const precision = r.u8();
-  if (precision > 1) throw new RangeError('not a city');
+  const head = r.u8();
+  if (head > (1 | F_SEATS)) throw new RangeError('not a city');
+  const precision = (head & 1) as Precision;
+  const seats = (head & F_SEATS) !== 0;
   const count = r.varint();
   if (count < 1 || count > MAX_TOWERS) throw new RangeError('not a city');
   const fetchedAt = new Date(r.u32() * 1000).toISOString();
@@ -109,8 +114,9 @@ function readTowers(r: ByteReader): CitySnapshot {
       id = `~${prefix}`;
     } else id = `~#${anonymous++}`;
     const tower = blank(id, district);
-    tower.mcap = readAmount(r, precision as Precision);
-    tower.liquidity = readAmount(r, precision as Precision);
+    tower.mcap = readAmount(r, precision);
+    tower.liquidity = readAmount(r, precision);
+    if (seats) tower.seat = r.u24();
     tower.change24h = r.i16() / 10;
     tower.traders1h = fromTraders(r.u8());
     if (isSol) {

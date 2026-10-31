@@ -29,6 +29,11 @@ export type Tower = {
    * a screen writes «Not measured» for them, never the zero (`towerFigure`). Absent when every figure was read.
    */
   unread?: readonly TowerFigure[];
+  /**
+   * The key the plan seats the tower by (CITY-148): absent, the hash of its mint. A world read from a link carries it,
+   * so a tower whose mint the link cuts short still stands on the challenger's plot.
+   */
+  seat?: number;
 };
 
 /** The figures of a tower a source may leave out. */

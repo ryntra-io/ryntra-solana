@@ -1,5 +1,6 @@
 /**
- * The old interface's addresses, and the place of the city each one opens (CITY-13, decision 75).
+ * The old interface's addresses, and the place of the city each one opens (CITY-13, decision 75); and the short
+ * addresses a person types by hand, each in one hop to its district or window (CITY-159).
  *
  * The old cabinet (`app/app/**`, `app/solana/workspace/**`), its aliases and Mission Control are closed: nobody sees
  * them. Every address they answered at leads, for good (308; a few for now, `TEMPORARY`), to the district or window of the city that does the same
@@ -14,8 +15,11 @@
  * Pure data, no imports: the build's config reads this file before anything is compiled.
  */
 
-/** The places of the city an old address can open. */
-export const CITY_PLACES = ['home', 'coin', 'trade', 'exchange', 'oracle', 'money', 'mine', 'launch', 'hall', 'harbor', 'agents', 'assistant', 'settings'] as const;
+/**
+ * The places of the city an old address can open; `page` is a document of the site at its own address (the help, the
+ * legal texts, About, the documentation), which the city's document windows take over where it stands (CITY-157).
+ */
+export const CITY_PLACES = ['home', 'coin', 'trade', 'exchange', 'oracle', 'money', 'mine', 'launch', 'hall', 'harbor', 'agents', 'assistant', 'settings', 'page'] as const;
 export type CityPlace = (typeof CITY_PLACES)[number];
 
 /** The windows `/?open=<window>` opens; `coin` and `home` are addresses of their own. */
@@ -139,8 +143,8 @@ const CABINET: readonly Row[] = [
   ['/app/connect/:path*', open('settings'), 'settings'],
 
   /* The developer pages were always the site's documentation. */
-  ['/app/developers/:path*', '/docs/developers', 'home'],
-  ['/app/coverage/:path*', '/docs', 'home'],
+  ['/app/developers/:path*', '/docs/developers', 'page'],
+  ['/app/coverage/:path*', '/docs', 'page'],
 
   /* Everything else of the cabinet — Home, Markets, Trends, the stocks, fees, any page not named — is the city. */
   ['/app/:path*', HOME, 'home'],
@@ -167,7 +171,7 @@ const OTHERS: readonly Row[] = [
   ['/solana/workspace/rewards/:path*', open('hall'), 'hall'],
   ['/solana/workspace/earn/:path*', open('harbor'), 'harbor'],
   ['/solana/workspace/settings/:path*', open('settings'), 'settings'],
-  ['/solana/workspace/developers/:path*', '/docs/developers', 'home'],
+  ['/solana/workspace/developers/:path*', '/docs/developers', 'page'],
   ['/solana/:path*', HOME, 'home'],
 
   /* Mission Control (decision 68): a mission is its coin's tower; Launch Night and the rest are the city. */
@@ -199,6 +203,59 @@ function rows(): OldAddress[] {
 /** Every old address, in the order it is matched. */
 export const OLD_ADDRESSES: readonly OldAddress[] = rows();
 
+/**
+ * The short addresses a person types by hand or a post names (CITY-159): each opens its district or window in one
+ * hop. None of them ever had a page; each answered with the framework's bare 404. They lead into the city for now
+ * (307), never for good: an address this short may yet be wanted for a page of its own, and a browser keeps a 308
+ * forever.
+ *
+ * The documents lead to the address the site keeps for them — the legal texts at `/legal/…` (a store listing and the
+ * law name those), the help at `/support`, About at `/company` — which the city's document windows take over where
+ * they stand (CITY-157). What the city has no place for (`/blog`, `/press`, `/brand`) is not led anywhere: it is the
+ * city's own 404, with its one way back (`city/components/open/Lost.tsx`).
+ */
+const SHORT: readonly Row[] = [
+  /* A coin by its mint: its tower. */
+  [`/token/:mint(${MINT_PATTERN})`, COIN, 'coin'],
+  [`/coin/:mint(${MINT_PATTERN})`, COIN, 'coin'],
+
+  /* Trading: the trade window, the Exchange, the Oracle. */
+  ...['/trade', '/swap', '/spot'].map((source): Row => [source, open('trade'), 'trade']),
+  ...['/exchange', '/perps', '/futures'].map((source): Row => [source, open('exchange'), 'exchange']),
+  ...['/predictions', '/oracle'].map((source): Row => [source, open('oracle'), 'oracle']),
+
+  /* Money, each on its tab. */
+  ['/money', open('money'), 'money'],
+  ['/send', open('money', '&tab=send'), 'money'],
+  ...['/receive', '/deposit', '/top-up'].map((source): Row => [source, open('money', '&tab=topup'), 'money']),
+  ['/bridge', open('money', '&tab=bridge'), 'money'],
+  ...['/history', '/activity'].map((source): Row => [source, open('money', '&tab=activity'), 'money']),
+
+  /* The districts. */
+  ...['/portfolio', '/holdings'].map((source): Row => [source, open('mine'), 'mine']),
+  ['/launch', open('launch'), 'launch'],
+  ...['/rewards', '/hall'].map((source): Row => [source, open('hall'), 'hall']),
+  ...['/earn', '/pools', '/harbor', '/yield'].map((source): Row => [source, open('harbor'), 'harbor']),
+  ['/bots', open('agents'), 'agents'],
+  ['/assistant', open('assistant'), 'assistant'],
+  ...['/settings', '/connect', '/login', '/signin', '/account'].map((source): Row => [source, open('settings'), 'settings']),
+
+  /* `/status` led to the old documentation; the city is what is live. */
+  ...['/status', '/city', '/map'].map((source): Row => [source, HOME, 'home']),
+
+  /* The documents, at the addresses the site keeps for them. The legal texts are English only. */
+  ...['/terms', '/tos', '/legal', `${UK}/legal/terms`].map((source): Row => [source, '/legal/terms', 'page']),
+  ...['/privacy', `${UK}/legal/privacy`].map((source): Row => [source, '/legal/privacy', 'page']),
+  ...['/help', '/faq'].map((source): Row => [source, '/support', 'page']),
+  ['/about', '/company', 'page'],
+];
+
+/** Every short address, in the order it is matched after the old ones; each for now (307). */
+export const SHORT_ADDRESSES: readonly OldAddress[] = SHORT.map(([source, destination, place]) => ({ source, destination, place, permanent: false }));
+
+/** Where a short address may lead that is not the city's own page yet: the site's documents, which CITY-157 takes over. */
+export const DOCUMENT_PREFIXES = ['/docs', '/legal', '/support', '/company'] as const;
+
 type HostCondition = Readonly<{ type: 'host'; value: string }>;
 type QueryCondition = Readonly<{ type: 'query'; key: string; value: string }>;
 export type CityRedirect = {
@@ -229,10 +286,11 @@ function redirectOf(row: OldAddress, host?: Readonly<{ condition: HostCondition;
  * own links at `/app/…`. There the host's root opens the city on the site's origin, and every old address hands over
  * to the same address on the site, whose rows below lead it on: the host never shows the city itself. The workspace of
  * the first years (`/solana/workspace/…`) is the same address on the site, not a page of the cabinet. The host's root
- * leads to the city only for now (307): what that host becomes is the domains' own decision (`docs/domains/`).
+ * and the short addresses lead to the city only for now (307): what that host becomes is the domains' own decision
+ * (`docs/domains/`).
  */
 export function oldAddressRedirects(appHost?: Readonly<{ condition: HostCondition; origin: string }>): CityRedirect[] {
-  const plain = OLD_ADDRESSES.map((row) => redirectOf(row));
+  const plain = [...OLD_ADDRESSES, ...SHORT_ADDRESSES].map((row) => redirectOf(row));
   if (!appHost) return plain;
   const to = (source: string, destination: string, permanent = true): CityRedirect => ({ source, destination: `${appHost.origin}${destination}`, permanent, has: [appHost.condition] });
   return [
@@ -242,6 +300,8 @@ export function oldAddressRedirects(appHost?: Readonly<{ condition: HostConditio
     to(`${UK}/solana/:path*`, '/app/:path*'),
     to('/app/:path*', '/app/:path*'),
     to(`${UK}/app/:path*`, '/app/:path*'),
+    /* A short address on the application's host opens its place on the site, in one hop too. */
+    ...SHORT_ADDRESSES.map((row) => to(row.source, row.destination, false)),
     ...plain,
   ];
 }
@@ -249,10 +309,14 @@ export function oldAddressRedirects(appHost?: Readonly<{ condition: HostConditio
 /** The path prefixes of the old interface, for the headers that keep them out of every index. */
 export const OLD_PREFIXES = ['/app', '/uk/app', '/solana', '/mission', '/live'] as const;
 
+/** The addresses this table answers whatever the query: no coin to read from it, no friend's code to wait for. */
+const ANSWERED = new Set([...OLD_ADDRESSES, ...SHORT_ADDRESSES].filter((row) => !row.query && !REFERRAL_LISTENS.test(row.source)).map((row) => row.source));
+
 /**
  * Whether a row of the build's older tables answers under a prefix this table takes whole (`/app/:path*` and the
- * like, unconditional): such a row is never reached, so the config leaves it out rather than keep a dead chain.
+ * like, unconditional), or at an address one of its rows answers as it is (`/status`, `/home`): such a row is never
+ * reached, so the config leaves it out rather than keep a dead chain.
  */
 export function shadowedByOldAddresses(source: string): boolean {
-  return /^\/(?:uk\/)?(?:app|solana|mission|agents|predict)(?:\/|$)|^\/live$/.test(source);
+  return ANSWERED.has(source) || /^\/(?:uk\/)?(?:app|solana|mission|agents|predict)(?:\/|$)|^\/live$/.test(source);
 }
