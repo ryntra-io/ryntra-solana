@@ -91,7 +91,7 @@ export function spreadLabels(labels: readonly Label[], size: number, gap = 2): {
   return out;
 }
 
-export type MapView = Readonly<{ ids: readonly string[]; at: number }>;
+export type MapView = Readonly<{ ids: readonly string[]; at: number; aboveSheet?: boolean }>;
 
 type MapState = {
   open: boolean;
@@ -99,7 +99,7 @@ type MapState = {
   view: MapView | null;
   toggle: () => void;
   close: () => void;
-  look: (ids: readonly string[]) => void;
+  look: (ids: readonly string[], options?: Readonly<{ aboveSheet?: boolean }>) => void;
   clear: () => void;
 };
 
@@ -108,7 +108,7 @@ export const useGameMap = create<MapState>((set, get) => ({
   view: null,
   toggle: () => set({ open: !get().open }),
   close: () => set({ open: false }),
-  look: (ids) => set({ view: ids.length ? { ids: [...ids], at: Date.now() } : null }),
+  look: (ids, options) => set({ view: ids.length ? { ids: [...ids], at: Date.now(), aboveSheet: options?.aboveSheet === true } : null }),
   clear: () => set({ view: null }),
 }));
 

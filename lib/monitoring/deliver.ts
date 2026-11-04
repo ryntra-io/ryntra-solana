@@ -13,6 +13,9 @@ import { readRule } from "../autoinvest/store.ts";
 import { reminderTelegramText } from "../autoinvest/words.ts";
 import type { GuardStore } from "../guard/store.ts";
 import { limitOrderSpotHref } from "../solana/limits/notes.server.ts";
+import { isStopNote, stopTelegramText } from "../stops/notes.ts";
+import { earnTelegramText, isEarnNote } from "../../city/lib/earn/notes.ts";
+import { isAgentReportNote, reportKeyboard } from "../../city/lib/autopilot/report.ts";
 import { telegramText, words } from "./copy.ts";
 import { readChat } from "../assistant/telegram/link.ts";
 import { briefTelegramText } from "../assistant/brief/telegram.ts";
@@ -54,6 +57,18 @@ export type TelegramKeyboard = readonly (readonly Readonly<{ text: string; url?:
  * the note falls back to the note itself.
  */
 async function reminderMessage(store: GuardStore, inbox: InboxRecord): Promise<Readonly<{ href: string; text: string; button: string }> | null> {
+  /* A reached stop (CITY-149): «Стоп SOL досягнуто — продати?», and the button to the city on the stop's sale (`lib/stops/notes.ts`). */
+  if (isStopNote(inbox)) {
+    const href = `${APP}${inbox.href}`;
+    const words = inbox.text?.[inbox.locale] ?? { title: inbox.title, reason: inbox.reason };
+    return { href, text: stopTelegramText(words), button: inbox.cta };
+  }
+  /* An Earn note of the city (CITY-100), or the agent's daily report (CITY-194): its line and its reason, and the button to its window in the city. */
+  if (isEarnNote(inbox) || isAgentReportNote(inbox)) {
+    const href = `${APP}${inbox.href}`;
+    const words = inbox.text?.[inbox.locale] ?? { title: inbox.title, reason: inbox.reason };
+    return { href, text: earnTelegramText(words), button: inbox.cta };
+  }
   /* The month's budget spent (1.13.0): its words, and the button straight to the budget's sheet on Home. */
   if (inbox.subject?.kind === "autoinvest-budget") {
     const href = `${APP}${BUDGET_HREF}`;
@@ -159,7 +174,9 @@ export async function deliverOutbox(store: GuardStore, nowMs: number, deps: Read
               : telegramText({ label: null, reason: null, href, paper: false }, said);
           const button = reminder?.button ?? (inbox?.cta || words(said).reviewPlan);
           const link = { text: button, url: href };
-          const sent = await telegram.send(chatId, text, inbox && telegram.buttons ? telegram.buttons(inbox, link) : [[link]]);
+          /* CITY-194: the agent's daily report carries its own «Turn off daily report» under the link. */
+          const keyboard = inbox && isAgentReportNote(inbox) ? reportKeyboard(inbox, link) : inbox && telegram.buttons ? telegram.buttons(inbox, link) : [[link]];
+          const sent = await telegram.send(chatId, text, keyboard);
           if (!sent) throw new Error("not delivered");
           return sent;
         });
@@ -199,9 +216,11 @@ export async function deliverOutbox(store: GuardStore, nowMs: number, deps: Read
       continue;
     }
     const inbox = (await listInbox(store, row.owner)).find((item) => item.id === row.inboxId);
-    const href = inbox ? `${APP}${inbox.subject?.kind === "assistant-brief" ? briefHref(inbox.subject.id) : inbox.subject?.kind === "token-watch" ? tokenWatchHref(inbox.subject.id) : inbox.subject?.kind === "assistant-task" ? assistantTaskHref(inbox.subject.id) : inbox.subject?.kind === "wallet-watch" ? walletWatchHref(inbox.subject.id) : inbox.href}` : `${APP}/app/alerts`;
+    /* A reached stop (CITY-149) and an Earn note (CITY-100) open their own city address and say their one line. */
+    const stop = inbox !== undefined && (isStopNote(inbox) || isEarnNote(inbox) || isAgentReportNote(inbox));
+    const href = inbox ? `${APP}${stop ? inbox.href : inbox.subject?.kind === "assistant-brief" ? briefHref(inbox.subject.id) : inbox.subject?.kind === "token-watch" ? tokenWatchHref(inbox.subject.id) : inbox.subject?.kind === "assistant-task" ? assistantTaskHref(inbox.subject.id) : inbox.subject?.kind === "wallet-watch" ? walletWatchHref(inbox.subject.id) : inbox.href}` : `${APP}/app/alerts`;
     const title = "Ryntra";
-    const body = inbox ? (inbox.subject?.kind === "assistant-brief" || inbox.subject?.kind === "token-watch" || inbox.subject?.kind === "assistant-task" || inbox.subject?.kind === "wallet-watch" ? inbox.title : `${inbox.context} — ${inbox.title}`) : "Your plan needs attention.";
+    const body = inbox ? (stop || inbox.subject?.kind === "assistant-brief" || inbox.subject?.kind === "token-watch" || inbox.subject?.kind === "assistant-task" || inbox.subject?.kind === "wallet-watch" ? inbox.title : `${inbox.context} — ${inbox.title}`) : "Your plan needs attention.";
     let sent = 0;
     let unregistered = 0;
     let failed = 0;

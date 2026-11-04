@@ -37,7 +37,8 @@ type Refusal = {
   buildings?: Building[];
 };
 
-function refusedBy(status: number, body: Refusal | null): WorldError {
+/** A refusal of the world as the city's own error: its code, its reason, what opens it, the quarter as it is now. */
+export function refusedBy(status: number, body: Refusal | null): WorldError {
   const e = body?.error;
   const code = (typeof e?.code === 'string' ? e.code : status === 409 ? 'VERSION_CONFLICT' : 'UNAVAILABLE') as WorldErrorCode;
   const need = e?.need && typeof e.need === 'object' ? (e.need as { quarterLevel?: number }) : null;

@@ -26,7 +26,8 @@ import { FLOW } from './words.ts';
 import { cleanAmountInput, typedAmount, type AmountProblem } from './amount.ts';
 import { ticker } from './format.ts';
 import { quoteLine } from './quote-copy.ts';
-import { amountText, sizingOf, slideAmount, spendMax, startAmount, type Sizing } from './size.ts';
+import { amountText, SHARES, sizingOf, slideAmount, spendMax, startAmount, type Sizing } from './size.ts';
+import { boltLamports, tradePrefsNow } from '../settings/trade.ts';
 import { isBase, payAssetFor, payOptionsFor, SOL, unitOf, type Balance, type PayAsset, type Side } from './tiles.ts';
 import { useWallet, type Holdings } from './wallet.ts';
 
@@ -202,7 +203,7 @@ export function choiceOf(tower: TowerRef, side: Side, holdings: Holdings | null,
     pay,
     options: payOptionsFor(tower.mint, other),
     holding: spending,
-    sizing: sizingOf(asset ? max : null, amountRaw),
+    sizing: sizingOf(asset ? max : null, amountRaw, side === 'sell' ? tradePrefsNow().sells : SHARES),
     amountRaw,
     problem: typed && !typed.ok ? typed.problem : null,
     all: side === 'sell' && Boolean(amountRaw && spending && amountRaw === spending.spendableRaw),
@@ -218,7 +219,7 @@ export function choiceOf(tower: TowerRef, side: Side, holdings: Holdings | null,
 function startTyped(tower: TowerRef, side: Side, holdings: Holdings | null, picks: Picks): string {
   const choice = choiceOf(tower, side, holdings, { ...picks, typed: '' });
   if (choice.spendDecimals === null) return '';
-  return amountText(startAmount(side, choice.pay, choice.sizing.max === null ? null : BigInt(choice.sizing.max)), choice.spendDecimals);
+  return amountText(startAmount(side, choice.pay, choice.sizing.max === null ? null : BigInt(choice.sizing.max), boltLamports()), choice.spendDecimals);
 }
 
 /** The card's three ways to trade: at the market price now, a limit order that waits at its price, a stop. */
@@ -488,7 +489,7 @@ export const useTrade = create<TradeStore>((set, get) => {
     setShare: (share, settle = 'now') => {
       const choice = current();
       if (!choice || choice.sizing.max === null || choice.spendDecimals === null) return;
-      amountTo(amountText(slideAmount(BigInt(choice.sizing.max), share), choice.spendDecimals), settle);
+      amountTo(amountText(slideAmount(BigInt(choice.sizing.max), share, choice.sizing.chips.map((chip) => chip.share)), choice.spendDecimals), settle);
     },
 
     setView: (view) => {

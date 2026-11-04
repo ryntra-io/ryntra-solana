@@ -188,6 +188,11 @@
   .shelf {
     grid-template-columns: 1fr 1fr;
   }
+
+  /* Side by side the cards keep one height; in one column a card without its number is no taller than its words. */
+  .card {
+    min-height: 176px;
+  }
 }
 
 @container window (min-width: 980px) {
@@ -201,7 +206,6 @@
   display: flex;
   flex-direction: column;
   gap: 10px;
-  min-height: 176px;
   padding: 14px 14px 12px;
   background: linear-gradient(160deg, rgba(42, 22, 64, 0.55), rgba(11, 10, 20, 0.35));
   box-shadow: inset 0 0 0 1px rgba(238, 241, 255, 0.08);
@@ -846,6 +850,10 @@
   gap: 2px;
 }
 
+.rowLink {
+  position: relative;
+}
+
 .row,
 .pierRow {
   display: grid;
@@ -888,6 +896,28 @@
   background: var(--graphite);
 }
 
+.coinLetter {
+  position: relative;
+  overflow: hidden;
+  display: grid;
+  place-items: center;
+  font-weight: 800;
+  line-height: 1;
+  color: var(--ice);
+  background: linear-gradient(160deg, rgba(153, 69, 255, 0.55), rgba(42, 22, 64, 0.95));
+  box-shadow: inset 0 0 0 1px rgba(238, 241, 255, 0.16);
+}
+
+/* The logo covers the letter once it loads. */
+.coinLogo {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
 .names {
   display: grid;
   min-width: 0;
@@ -907,6 +937,12 @@
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+/* A pier's depth and fee wrap onto a second line rather than end on «Trade fe…» (CITY-188). */
+.pierRow .names span {
+  white-space: normal;
+  text-wrap: balance;
 }
 
 .figures {
@@ -969,10 +1005,752 @@
   }
 }
 
+/* ---------- The Piers (CITY-93): boats at the pier, the SOL piers, one pier's card ---------- */
+
+.dock {
+  display: grid;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+
+.boats {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: minmax(132px, 1fr);
+  gap: 6px;
+  margin: 0 -6px;
+  padding: 0 6px 6px;
+  list-style: none;
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  overscroll-behavior-x: contain;
+}
+
+.boats li {
+  scroll-snap-align: start;
+}
+
+.boatTile {
+  width: 100%;
+  min-height: 112px;
+  display: grid;
+  justify-items: center;
+  align-content: center;
+  gap: 4px;
+  border: 0;
+  padding: 10px 8px;
+  color: var(--text-dim);
+  background: radial-gradient(ellipse 80% 60% at 50% 100%, rgba(238, 241, 255, 0.05), transparent 70%), rgba(238, 241, 255, 0.03);
+  clip-path: polygon(10px 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%, 0 10px);
+  transition: background 240ms ease-out;
+}
+
+.boatTile b {
+  font-size: var(--type-small);
+  color: var(--ice);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+}
+
+.boatTile span {
+  font-size: var(--type-caption);
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+}
+
+.boatLit {
+  background: radial-gradient(ellipse 80% 70% at 50% 100%, rgba(20, 241, 149, 0.16), transparent 70%), rgba(238, 241, 255, 0.04);
+}
+
+.boat {
+  display: block;
+  color: rgba(238, 241, 255, 0.32);
+  overflow: visible;
+}
+
+.boatOn {
+  color: var(--ice);
+  filter: drop-shadow(0 0 10px rgba(20, 241, 149, 0.35));
+}
+
+.boatLamp {
+  fill: rgba(238, 241, 255, 0.25);
+}
+
+.boatOn .boatLamp {
+  fill: var(--mint);
+  filter: drop-shadow(0 0 4px var(--mint));
+  animation: lamp 2.4s ease-in-out infinite;
+}
+
+.boatWindow {
+  fill: rgba(11, 10, 20, 0.6);
+}
+
+.boatOn .boatWindow {
+  fill: var(--amber);
+}
+
+@keyframes lamp {
+  50% {
+    opacity: 0.55;
+  }
+}
+
+.boatHero {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 14px 16px;
+  background: radial-gradient(ellipse 70% 90% at 20% 100%, rgba(238, 241, 255, 0.05), transparent 70%), rgba(238, 241, 255, 0.03);
+  clip-path: polygon(14px 0, 100% 0, 100% calc(100% - 14px), calc(100% - 14px) 100%, 0 100%, 0 14px);
+}
+
+.boatHero.boatLit {
+  background: radial-gradient(ellipse 70% 90% at 20% 100%, rgba(20, 241, 149, 0.18), transparent 70%), rgba(238, 241, 255, 0.04);
+}
+
+.boatName {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+}
+
+.boatName span {
+  font-size: var(--type-small);
+  font-weight: 800;
+}
+
+.pair2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.pair2 .secondary {
+  min-height: 50px;
+}
+
+.chosen {
+  background: rgba(153, 69, 255, 0.3);
+  box-shadow: inset 0 -2px 0 var(--violet);
+}
+
+.secondary:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+.pierHit {
+  width: 100%;
+  border: 0;
+  text-align: left;
+  color: inherit;
+  cursor: pointer;
+  transition: background 160ms ease-out;
+}
+
+.pierHit:hover {
+  background: rgba(238, 241, 255, 0.07);
+}
+
+.rows .pierRow.pierHit {
+  grid-template-columns: auto 1fr auto;
+}
+
+.pierTitle {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+}
+
+.styles {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 6px;
+}
+
+.styleButton {
+  min-height: 72px;
+  display: grid;
+  justify-items: center;
+  align-content: center;
+  gap: 4px;
+  border: 0;
+  padding: 8px 4px;
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--text-dim);
+  clip-path: polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px);
+}
+
+.styleButton b {
+  font-size: var(--type-small);
+  color: var(--ice);
+}
+
+.styleButton span {
+  font-size: var(--type-caption);
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+}
+
+.styleOn {
+  background: rgba(153, 69, 255, 0.3);
+  box-shadow: inset 0 -2px 0 var(--violet);
+}
+
+.styleButton:disabled {
+  cursor: default;
+}
+
+.styleGlyph {
+  width: 54px;
+  height: 26px;
+}
+
+.barOn {
+  fill: var(--amber);
+}
+
+.styleOn .barOn {
+  fill: var(--warm);
+  filter: drop-shadow(0 0 4px rgba(255, 178, 63, 0.6));
+}
+
+.barOff {
+  fill: rgba(238, 241, 255, 0.16);
+}
+
+.goesIn {
+  margin: -4px 0 0;
+  font-size: var(--type-small);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: var(--text-dim);
+}
+
+.past {
+  margin: 0;
+  display: grid;
+  gap: 10px;
+  padding: 12px 14px 14px;
+  background: rgba(238, 241, 255, 0.035);
+  box-shadow: inset 2px 0 0 var(--violet);
+}
+
+.pastPlot {
+  width: 100%;
+  height: 64px;
+  display: block;
+  overflow: visible;
+}
+
+.pastEdge {
+  stroke: rgba(153, 69, 255, 0.55);
+  stroke-width: 1;
+  stroke-dasharray: 3 4;
+  vector-effect: non-scaling-stroke;
+}
+
+.pastLine {
+  fill: none;
+  stroke: rgba(238, 241, 255, 0.3);
+  stroke-width: 1.6;
+  stroke-linejoin: round;
+  vector-effect: non-scaling-stroke;
+}
+
+.pastLit {
+  fill: none;
+  stroke: var(--mint);
+  stroke-width: 2.2;
+  stroke-linejoin: round;
+  vector-effect: non-scaling-stroke;
+  filter: drop-shadow(0 0 4px rgba(20, 241, 149, 0.55));
+}
+
+.pastDot {
+  fill: var(--warm);
+}
+
+.pastFigures {
+  display: grid;
+  gap: 6px;
+}
+
+.pastPair {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.pastPair > span {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+.pastPair small {
+  font-size: var(--type-caption);
+  color: var(--text-dim);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.pastPair b {
+  font-family: var(--font-display, system-ui), system-ui, sans-serif;
+  font-stretch: 125%;
+  font-variation-settings: 'wdth' 125;
+  font-weight: 900;
+  font-size: var(--type-headline);
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+@container window (max-width: 480px) {
+  .pastPair b {
+    font-size: var(--type-lead);
+  }
+
+  .pastPair small {
+    white-space: normal;
+  }
+
+  .boatHero {
+    gap: 10px;
+    padding: 12px;
+  }
+
+  .boatHero .boat {
+    width: 92px;
+    height: auto;
+  }
+
+}
+
 @media (prefers-reduced-motion: reduce) {
   .pending,
   .bones span,
-  .waiting {
+  .waiting,
+  .boatOn .boatLamp {
     animation: none;
+  }
+}
+
+/* ---------- The Stock Pier (CITY-98) ---------- */
+
+.hours {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin: -2px 0 0;
+  font-size: var(--type-caption);
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+}
+
+.hours i {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: rgba(238, 241, 255, 0.28);
+}
+
+.hoursOpen i {
+  background: var(--mint);
+  box-shadow: 0 0 8px rgba(20, 241, 149, 0.6);
+}
+
+.hoursClosing i {
+  background: var(--amber);
+  box-shadow: 0 0 8px rgba(255, 178, 63, 0.6);
+}
+
+.stockRow {
+  display: flex;
+  gap: 6px;
+  overflow-x: auto;
+  scrollbar-width: none;
+  margin: 0 -2px;
+  padding: 2px;
+}
+
+.stockRow::-webkit-scrollbar {
+  display: none;
+}
+
+.stockChip {
+  flex: 0 0 auto;
+  min-width: 86px;
+  min-height: 68px;
+  display: grid;
+  justify-items: center;
+  align-content: center;
+  gap: 3px;
+  border: 0;
+  padding: 6px 10px;
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--text-dim);
+  clip-path: polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px);
+}
+
+.stockChip b {
+  font-size: var(--type-small);
+  color: var(--ice);
+}
+
+.stockChip span {
+  font-size: var(--type-caption);
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  color: var(--mint);
+}
+
+.stockOn {
+  background: rgba(153, 69, 255, 0.3);
+  box-shadow: inset 0 -2px 0 var(--violet);
+}
+
+.stockChip:disabled {
+  cursor: default;
+}
+
+.stockFacts {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.stockFacts > span {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+.stockFacts b {
+  font-size: var(--type-headline);
+  font-variant-numeric: tabular-nums;
+  color: var(--ice);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.segment {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+}
+
+.segmentButton {
+  min-height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  border: 0;
+  padding: 8px 10px;
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--text-dim);
+  clip-path: polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px);
+}
+
+.segmentButton b {
+  font-size: var(--type-small);
+  color: var(--ice);
+}
+
+.segmentOn {
+  background: rgba(153, 69, 255, 0.3);
+  box-shadow: inset 0 -2px 0 var(--violet);
+}
+
+.segmentButton:disabled {
+  cursor: default;
+}
+
+.planButton {
+  min-height: 66px;
+  display: grid;
+  justify-items: center;
+  align-content: center;
+  gap: 3px;
+}
+
+.planButton span {
+  font-size: var(--type-caption);
+  font-weight: 700;
+  color: var(--text-dim);
+}
+
+.planGlyph {
+  width: 22px;
+  height: 22px;
+  color: var(--amber);
+}
+
+.segmentOn .planGlyph {
+  color: var(--warm);
+  filter: drop-shadow(0 0 4px rgba(255, 178, 63, 0.6));
+}
+
+.pierState {
+  margin: -4px 0 0;
+  font-size: var(--type-small);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: var(--text-dim);
+}
+
+.stepNote {
+  margin: 0;
+  padding: 8px 10px;
+  font-size: var(--type-small);
+  font-weight: 700;
+  color: var(--ice);
+  background: rgba(255, 255, 255, 0.05);
+  box-shadow: inset 2px 0 0 rgba(238, 241, 255, 0.3);
+}
+
+.stepHold {
+  color: var(--amber);
+  background: rgba(255, 178, 63, 0.08);
+  box-shadow: inset 2px 0 0 var(--amber);
+}
+
+/* ---------- Like the Captain (CITY-99): strategies with a proven record ---------- */
+
+.captainList {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+@container window (min-width: 640px) {
+  .captainList {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+@container window (min-width: 1040px) {
+  .captainList {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+.strategy {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 14px 14px 12px;
+  background: linear-gradient(160deg, rgba(42, 22, 64, 0.55), rgba(11, 10, 20, 0.35));
+  box-shadow: inset 0 0 0 1px rgba(238, 241, 255, 0.08);
+  clip-path: polygon(14px 0, 100% 0, 100% calc(100% - 14px), calc(100% - 14px) 100%, 0 100%, 0 14px);
+  transition: box-shadow 160ms ease-out;
+}
+
+.strategy:hover {
+  box-shadow: inset 0 0 0 1px rgba(153, 69, 255, 0.45);
+}
+
+.strategyName {
+  display: grid;
+  gap: 3px;
+  min-width: 0;
+}
+
+.strategyName b {
+  font-size: var(--type-body);
+  letter-spacing: 0.05em;
+  white-space: nowrap;
+}
+
+.styleChip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: var(--type-caption);
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+}
+
+.styleChip .styleGlyph {
+  width: 30px;
+  height: 14px;
+}
+
+.strategyBody {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  align-items: end;
+  gap: 14px;
+  pointer-events: none;
+}
+
+.strategyBig {
+  display: grid;
+  gap: 6px;
+}
+
+.strategyBig b {
+  font-size: clamp(30px, 7.5vw, 38px);
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+  color: var(--ice);
+}
+
+.strategyBig b.gain {
+  color: var(--mint);
+}
+
+.strategyBig b.loss {
+  color: var(--flare);
+}
+
+.spark {
+  width: 100%;
+  height: 44px;
+  display: block;
+  overflow: visible;
+}
+
+.sparkZero {
+  stroke: rgba(238, 241, 255, 0.22);
+  stroke-width: 1;
+  stroke-dasharray: 3 4;
+  vector-effect: non-scaling-stroke;
+}
+
+.sparkLine {
+  fill: none;
+  stroke: var(--mint);
+  stroke-width: 2;
+  stroke-linejoin: round;
+  vector-effect: non-scaling-stroke;
+  filter: drop-shadow(0 0 4px rgba(20, 241, 149, 0.45));
+}
+
+.sparkDown {
+  stroke: var(--flare);
+  filter: drop-shadow(0 0 4px rgba(255, 92, 72, 0.45));
+}
+
+.facts {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+  margin: 0;
+  padding: 10px 0 0;
+  border-top: 1px solid rgba(238, 241, 255, 0.08);
+  pointer-events: none;
+}
+
+.facts div {
+  display: grid;
+  gap: 3px;
+  min-width: 0;
+}
+
+.facts dt {
+  font-size: var(--type-caption);
+  color: var(--text-dim);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.facts dd {
+  margin: 0;
+  font-family: var(--font-display, system-ui), system-ui, sans-serif;
+  font-stretch: 125%;
+  font-variation-settings: 'wdth' 125;
+  font-weight: 900;
+  font-size: var(--type-body);
+  font-variant-numeric: tabular-nums;
+  color: var(--ice);
+}
+
+.facts dd.loss {
+  color: var(--flare);
+}
+
+.calm {
+  display: grid;
+  gap: 8px;
+  padding: 16px 14px;
+  background: rgba(238, 241, 255, 0.035);
+  box-shadow: inset 2px 0 0 var(--amber);
+}
+
+.calm b {
+  font-size: var(--type-body);
+  letter-spacing: 0.05em;
+  color: var(--ice);
+}
+
+.recordRow {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+}
+
+.recordRow > span {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+.recordRow small {
+  font-size: var(--type-caption);
+  color: var(--text-dim);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.recordRow b {
+  font-family: var(--font-display, system-ui), system-ui, sans-serif;
+  font-stretch: 125%;
+  font-variation-settings: 'wdth' 125;
+  font-weight: 900;
+  font-size: var(--type-headline);
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.zapLine {
+  margin: -2px 0 0;
+  text-align: center;
+  font-size: var(--type-caption);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: var(--text-dim);
+}
+
+.noteGood {
+  color: var(--mint);
+}
+
+@container window (max-width: 480px) {
+  .recordRow b {
+    font-size: var(--type-lead);
+  }
+
+  .recordRow small {
+    white-space: normal;
   }
 }

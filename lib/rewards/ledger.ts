@@ -1,4 +1,5 @@
 import { withBoundedCasRetry, type GuardStore } from "../guard/store.ts";
+import { normalizeReferralSub } from "./referral-sub.ts";
 import { listPointsEntries } from "../points/ledger.ts";
 import {
   formatUsdMicros,
@@ -252,7 +253,7 @@ export async function walletForCode(store: GuardStore, code: string): Promise<st
  */
 export async function bindReferrer(
   store: GuardStore,
-  args: Readonly<{ wallet: string; code: string; now: string; at?: string }>,
+  args: Readonly<{ wallet: string; code: string; now: string; at?: string; subId?: string | null }>,
 ): Promise<ReferralBindDecision> {
   const referrer = await walletForCode(store, args.code);
   return withBoundedCasRetry(async () => {
@@ -284,10 +285,12 @@ export async function bindReferrer(
     const referredAt = Number.isFinite(at) && at <= nowMs && nowMs - at <= BIND_AT_MAX_AGE_MS && at >= since
       ? new Date(at).toISOString()
       : args.now;
+    const subId = normalizeReferralSub(args.subId);
     const next = RewardAccountSchema.parse({
       ...account,
       referrer,
       referredAt,
+      ...(subId ? { referralSubId: subId } : {}),
       version: account.version + 1,
     });
     // Fence every ancestor read in the same transaction as the binding. Two
@@ -351,8 +354,11 @@ export async function changeReferrer(
     if (!verdict.ok || account.referrer === referrer) return verdict;
     const previous = await readRewardAccount(store, account.referrer);
     old = { referrer: account.referrer, grand: previous?.referrer ?? null };
+    /* The sub-ID was the first inviter's link's, not the new one's: it goes. */
+    const { referralSubId: _firstLinkSub, ...kept } = account;
+    void _firstLinkSub;
     const next = RewardAccountSchema.parse({
-      ...account,
+      ...kept,
       referrer,
       referredAt: args.now,
       previousReferrer: account.referrer,

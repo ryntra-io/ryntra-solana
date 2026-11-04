@@ -23,6 +23,7 @@ import { budgetFiguresOf } from "./autopilot.server.ts";
 import { executorClaimsPreset, exhaustedNow, marketBudget, type BudgetRead } from "./budget.server.ts";
 import { launchPair } from "./config.server.ts";
 import type { LaunchRecord } from "./flow.server.ts";
+import type { Takedown } from "./metadata.server.ts";
 import { budgetClaimed, lastGoodMarket, marketRow, readMarket, type HealthDeps, type MarketRead } from "./health.server.ts";
 
 /**
@@ -147,6 +148,26 @@ export function marketOrder(a: LaunchMarketRow, b: LaunchMarketRow): number {
   return Date.parse(b.launchedAt) - Date.parse(a.launchedAt) || a.token.localeCompare(b.token);
 }
 
+/** The tokens Ryntra holds down now (MC-1): one read of the takedown rows, whatever the rows' cache says. */
+async function takenDownTokens(deps: Pick<HealthDeps, "store">): Promise<ReadonlySet<string>> {
+  const rows = await deps.store.collection<Takedown>("launchTakedowns").valuesWithPrefix("mint:");
+  return new Set(rows.filter((row) => !row.restoredAt).map((row) => row.token));
+}
+
+/**
+ * CITY-139 — the rows as the takedowns stand now: a token held down says so (`hidden`) and points at no picture; one put
+ * back says nothing. Not read (`null`): the rows stay as they were read, a takedown already in them kept.
+ */
+export function withTakedowns(rows: readonly LaunchMarketRow[], down: ReadonlySet<string> | null): LaunchMarketRow[] {
+  if (!down) return [...rows];
+  return rows.map((row) => {
+    if (down.has(row.token)) return { ...row, image: null, hidden: true as const };
+    const rest = { ...row };
+    delete rest.hidden;
+    return rest;
+  });
+}
+
 async function assemble(deps: HealthDeps): Promise<LaunchMarketsResponse> {
   const cluster = deps.network.cluster;
   const records = (await deps.store.collection<LaunchRecord>("launches").valuesWithPrefix(`solana:${cluster}:`))
@@ -206,6 +227,6 @@ async function assemble(deps: HealthDeps): Promise<LaunchMarketsResponse> {
   );
   /* A launch whose pair this network no longer names (a community taken out of its configuration) cannot be said in its
      currency: it is left out, and the list says it is not whole. */
-  const markets = listed.filter((row): row is LaunchMarketRow => Boolean(row)).sort(marketOrder);
+  const markets = withTakedowns(listed.filter((row): row is LaunchMarketRow => Boolean(row)), await takenDownTokens(deps).catch(() => null)).sort(marketOrder);
   return { network: deps.network.chain, markets, complete: markets.length === records.length && markets.every((row) => row.read), observedAt: deps.now().toISOString() };
 }

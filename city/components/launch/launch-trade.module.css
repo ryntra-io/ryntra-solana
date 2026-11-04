@@ -222,6 +222,11 @@
   clip-path: polygon(10px 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%, 0 10px);
 }
 
+/* A coin Ryntra took down: Sell alone, across. */
+.sidesOne {
+  grid-template-columns: 1fr;
+}
+
 .side {
   height: 44px;
   border: 0;
@@ -516,6 +521,41 @@
   box-shadow: 0 0 10px var(--mint);
 }
 
+/* ---------- The round trip after a sale (CITY-145) ---------- */
+
+.round {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+  margin-top: 14px;
+  font-variant-numeric: tabular-nums;
+  animation: open 260ms ease-out both;
+}
+
+.round b {
+  font-size: var(--type-figure);
+  line-height: 1;
+  color: var(--ice);
+}
+
+.round span {
+  font-size: var(--type-lead);
+  font-weight: 800;
+  color: var(--mint);
+}
+
+.saved {
+  margin-top: 10px;
+  font-size: var(--type-small);
+  font-weight: 700;
+  color: var(--warm);
+}
+
+/* The card is being drawn: the action breathes until the share sheet opens. */
+.actionWaiting {
+  animation: pulse 900ms ease-in-out infinite;
+}
+
 @keyframes spin {
   to {
     transform: rotate(360deg);
@@ -546,7 +586,9 @@
 
 @media (prefers-reduced-motion: reduce) {
   .feeFalling::before,
-  .spinner {
+  .spinner,
+  .round,
+  .actionWaiting {
     animation: none;
   }
 }

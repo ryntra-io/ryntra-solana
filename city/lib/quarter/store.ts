@@ -4,7 +4,7 @@ import { world, type WorldClient } from './client.ts';
 import { randomId } from './ids.ts';
 import { firstBuildable, moduleById, moduleForKind, refusalLine, verdict, verdictLine } from './modules.ts';
 import { openPlots } from './plot.ts';
-import { isWorldError, type Building, type BuildingKind, type ChainLink, type ClientErrorCode, type LinkRefusal, type LockReason, type MeResponse } from './types.ts';
+import { isWorldError, type Building, type BuildingKind, type ChainLink, type ClientErrorCode, type MeResponse, type WorldError } from './types.ts';
 
 /**
  * My quarter, from the first tap to a home on its plot. The city knows whether this visitor has a quarter, flies
@@ -64,7 +64,7 @@ export type QuarterState = {
   dismiss: () => void;
 };
 
-export type LinkOutcome = { ok: true } | { ok: false; code: ClientErrorCode; reason: LockReason | LinkRefusal | null };
+export type LinkOutcome = { ok: true } | { ok: false; code: ClientErrorCode; reason: WorldError['reason'] };
 
 export type QuarterOptions = {
   client?: () => WorldClient;

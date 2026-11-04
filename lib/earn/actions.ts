@@ -60,8 +60,30 @@ export type EarnDeps = Readonly<{
    * took. A fixed number here would be a promise about somebody else's blockhash.
    */
   signableWindowMs: (startedAtMs: number) => Promise<number>;
+  /**
+   * The wallet's native SOL, lamports, or null when it was not read (CITY-192). Jupiter Lend's SOL market supplies
+   * wrapped SOL and its deposit wraps the native balance itself, so a SOL deposit is checked against both; without
+   * this reader only SOL already wrapped counts.
+   */
+  readNative?: (owner: string) => Promise<bigint | null>;
   now?: () => number;
 }>;
+
+/** Wrapped SOL's mint: Jupiter Lend's SOL market supplies it. */
+export const WSOL_MINT = "So11111111111111111111111111111111111111112";
+
+/**
+ * What a SOL deposit leaves in the wallet for the network: the deposit's signature and priority fees and the
+ * deposit for a new wrapped-SOL account, which comes back when it closes. 0.01 SOL covers all of it.
+ */
+export const NATIVE_RESERVE_LAMPORTS = 10_000_000n;
+
+/** The SOL a deposit may take: wrapped SOL held, and native SOL beyond the reserve; null when neither was read. */
+export function solSpendable(wrapped: bigint | null, native: bigint | null): bigint | null {
+  if (wrapped === null && native === null) return null;
+  const free = native === null ? 0n : native > NATIVE_RESERVE_LAMPORTS ? native - NATIVE_RESERVE_LAMPORTS : 0n;
+  return (wrapped ?? 0n) + free;
+}
 
 export type Answer<T> = Readonly<{ ok: true; value: T }> | Readonly<{ ok: false; status: number; code: string; reason: string }>;
 
@@ -240,7 +262,11 @@ async function holdings(
   const held = deps.readHeld;
   if (request.action === "deposit") {
     const chain = await held(request.owner, [market.asset.mint]);
-    return { walletRaw: chain.held.get(market.asset.mint) ?? null, positionRaw: null };
+    const wrapped = chain.held.get(market.asset.mint) ?? null;
+    if (market.asset.mint === WSOL_MINT && deps.readNative) {
+      return { walletRaw: solSpendable(wrapped, await deps.readNative(request.owner).catch(() => null)), positionRaw: null };
+    }
+    return { walletRaw: wrapped, positionRaw: null };
   }
   const positions = await adapter.positions(request.owner, [market]);
   const position = positions.ok ? positions.positions.find((entry) => entry.marketId === market.id) : undefined;

@@ -108,8 +108,9 @@ export function TradeLayer() {
       const reached = await useSpot.getState().watchStops();
       const first = reached[0];
       const trade = useTrade.getState();
-      // A card in use is never taken over: the reached stop waits in «My orders», the «Mine» pill marked.
-      if (!first || trade.open || useRun.getState().phase !== 'off') return;
+      // A card in use is never taken over: the reached stop waits in «My orders», the «Mine» pill marked. The stop's own
+      // coin open — a note's link opens the city on it (CITY-149) — is where its sale belongs.
+      if (!first || (trade.open && trade.tower?.mint !== first.base.mint) || useRun.getState().phase !== 'off') return;
       const city = useCity.getState();
       city.select(city.layout.towers.some((placed) => placed.tower.id === first.base.mint) ? first.base.mint : null);
       useSpot.getState().openSale(first);

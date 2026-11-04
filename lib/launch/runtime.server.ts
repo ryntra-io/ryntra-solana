@@ -45,6 +45,7 @@ import {
   type LaunchNetwork,
 } from "./config.server.ts";
 import { bindLaunchPartner, type LaunchDeps, type LaunchReadDeps, type LaunchRecord } from "./flow.server.ts";
+import { storeJournal } from "./signer/journal.server.ts";
 import { DESCRIPTION_MAX, IMAGE_MAX_BYTES, IMAGE_TYPES, NAME_MAX, SYMBOL_MAX } from "./form.ts";
 
 /**
@@ -57,7 +58,8 @@ export function launchDeps(): LaunchDeps | null {
   if (!network || !launchOpen() || !launchWritesHere(network)) return null;
   const store = getGuardRuntime().store;
   if (network.cluster === "mainnet" && !storeSupportsConcurrentInstances(store)) return null;
-  const poolPayer = launchPoolPayer(process.env, network);
+  /* Every signature of the pool payer's is written to the journal in this store first (CITY-162). */
+  const poolPayer = launchPoolPayer(process.env, network, { journal: storeJournal(() => store) });
   if (!poolPayer) return null;
   /* On mainnet the demo market takes only Ryntra's own wallets; the devnet stand is Ryntra's own throughout. */
   const ownWallet = async (wallet: string) => network.cluster !== "mainnet" || (await ryntraOwnWallets(network, store)).wallets.has(wallet);

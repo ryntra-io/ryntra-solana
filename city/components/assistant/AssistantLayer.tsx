@@ -5,7 +5,16 @@ import { cityLine, startersFor, moveOf, type Details } from '@/city/lib/assistan
 import { QUESTION_MAX } from '@/city/lib/assistant/ask';
 import { useAssistant } from '@/city/lib/assistant/store';
 import { useCity } from '@/city/lib/city/store';
+import { bookNow, cityDoors, contextNow, gatesNow, withCoinOnScreen } from '@/city/lib/command/doors';
+import { toggleCommand, useCommand } from '@/city/lib/command/store';
 import { dateText, useWords, type TextKey } from '@/city/lib/i18n/dict';
+import { ONE_SENTENCE_OPEN } from '@/city/lib/instruct/flag';
+import { readAsk } from '@/city/lib/autopilot/read';
+import { readDollarAsk } from '@/city/lib/earn/dollar-read';
+import { useAutopilot } from '@/city/lib/autopilot/store';
+import { fit } from '@/city/lib/command/parse';
+import { readInstruction } from '@/city/lib/instruct/read';
+import { useInstruct } from '@/city/lib/instruct/store';
 import { useKeyboardInset } from '@/city/lib/keyboard';
 import type { Tower } from '@/city/lib/market/types';
 import { useQuarter } from '@/city/lib/quarter/store';
@@ -59,31 +68,54 @@ const close = () => {
 };
 
 /**
- * «Ask Ryntra» in the city's top bar, beside the search: the spark, and its words where the bar has room. A second tap
- * closes the panel.
+ * «Ask Ryntra» in the city's top bar, beside the search: the spark, and its words where the bar has room. Since CITY-85
+ * it opens the command line (helm SPEC §1: Ryntra lives in the command line) — say what to open, or ask; on a phone it
+ * is the line's own way in, on a computer ⌘K is the other. A second tap closes the line, or Ryntra's panel.
  */
 export function AssistantButton() {
   const open = useAssistant((st) => st.open);
+  const command = useCommand((st) => st.open);
   const button = useRef<HTMLButtonElement>(null);
   const w = useWords(ASSISTANT);
+  const keys = useCommandKeys();
   useEffect(() => {
     if (!open && refocus) button.current?.focus({ preventScroll: true });
     refocus = false;
   }, [open]);
   const ask = () => {
     if (useAssistant.getState().open) return close();
-    const city = useCity.getState();
-    const subject = city.snapshot.towers.find((t) => t.id === city.selectedId) ?? null;
-    // The tower card gives way to Ryntra; the question is about that tower.
-    if (subject) city.select(null);
-    useAssistant.getState().show(subject);
+    toggleCommand();
   };
   return (
-    <button ref={button} type="button" className={`${hud.panel} ${s.entry} ${open ? hud.iconOn : ''}`} aria-label={w.ask} aria-expanded={open} onClick={ask}>
+    <button
+      ref={button}
+      type="button"
+      className={`${hud.panel} ${s.entry} ${open || command ? hud.iconOn : ''}`}
+      aria-label={w.ask}
+      aria-expanded={open || command}
+      aria-keyshortcuts={keys ? (keys === '⌘K' ? 'Meta+K' : 'Control+K') : undefined}
+      onClick={ask}
+    >
       <SparkGlyph />
       <span className={s.entryWord}>{w.ask}</span>
+      {keys && (
+        <kbd className={s.entryKey} aria-hidden="true">
+          {keys}
+        </kbd>
+      )}
     </button>
   );
+}
+
+/** The command line's keys as this computer writes them, once mounted (the server paints none); none on a touch screen. */
+function useCommandKeys(): string | null {
+  const [keys, setKeys] = useState<string | null>(null);
+  useEffect(() => {
+    if (!window.matchMedia?.('(pointer: fine)').matches) return;
+    const platform = (navigator as Navigator & { userAgentData?: { platform?: string } }).userAgentData?.platform ?? navigator.platform ?? '';
+    setKeys(/mac|iphone|ipad/i.test(platform) ? '⌘K' : 'Ctrl K');
+  }, []);
+  return keys;
 }
 
 function Panel() {
@@ -105,6 +137,31 @@ function Panel() {
 
   const send = (q: string) => {
     if (!q.trim()) return;
+    // «Trade 1 SOL a day», «launch me a token» said to Ryntra is the agent on its word (CITY-175): the card opens.
+    const gates = gatesNow();
+    // «Put my USDC to work», «поклади 50 USDC під відсоток» said to Ryntra opens the Dollar Saver's card (CITY-192).
+    const saver = gates.dollar ? readDollarAsk(q) : null;
+    if (saver) {
+      setText('');
+      useAssistant.getState().hide();
+      cityDoors.openDollar(saver);
+      return;
+    }
+    const ask = gates.agentTrade || gates.agentLaunch ? readAsk(q, bookNow()) : null;
+    if (ask && fit({ kind: 'autopilot', ask }, gates)) {
+      setText('');
+      useAssistant.getState().hide();
+      useAutopilot.getState().show(withCoinOnScreen(ask));
+      return;
+    }
+    // «Buy $20 of SOL every week» said to Ryntra is the agent's card (CITY-176): Ryntra steps aside, the card opens.
+    const instruction = ONE_SENTENCE_OPEN && gatesNow().instruct ? readInstruction(q, bookNow(), contextNow()) : null;
+    if (instruction) {
+      setText('');
+      useAssistant.getState().hide();
+      useInstruct.getState().show(instruction);
+      return;
+    }
     setMore(false);
     setText('');
     input.current?.blur();
@@ -272,7 +329,7 @@ const clock = (iso: string) => {
 };
 
 /** Ryntra's spark: the eclipse ring with a light breaking out of it, drawn for 24 px like the HUD's glyphs. */
-const SparkGlyph = () => (
+export const SparkGlyph = () => (
   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinejoin="round" aria-hidden="true">
     <path d="M10 4.5l1.6 4.4 4.4 1.6-4.4 1.6L10 16.5l-1.6-4.4L4 10.5l4.4-1.6z" />
     <path d="M18 14.5l.8 2 2 .8-2 .8-.8 2-.8-2-2-.8 2-.8z" />

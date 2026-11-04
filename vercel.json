@@ -20,6 +20,12 @@
     { "path": "/api/predictions/watch/sweep", "schedule": "*/5 * * * *" },
     { "path": "/api/predictions/limit/sweep", "schedule": "*/5 * * * *" },
     { "path": "/api/x/cron", "schedule": "*/10 * * * *" },
-    { "path": "/api/cron/city-beacons", "schedule": "*/2 * * * *" }
+    { "path": "/api/cron/city-beacons", "schedule": "*/2 * * * *" },
+    { "path": "/api/cron/spot-stops", "schedule": "* * * * *" },
+    { "path": "/api/cron/city-earn-notes", "schedule": "*/5 * * * *" },
+    { "path": "/api/cron/city-earn-captain", "schedule": "41 3 * * *" },
+    { "path": "/api/cron/agent-mandate", "schedule": "*/5 * * * *" },
+    { "path": "/api/cron/agent-report", "schedule": "7 * * * *" },
+    { "path": "/api/cron/partner-payouts", "schedule": "20 */6 * * *" }
   ]
 }

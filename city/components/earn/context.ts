@@ -2,10 +2,14 @@
 
 import { useMemo } from 'react';
 import { useCity } from '@/city/lib/city/store';
+import { pctText } from '@/city/lib/earn/captain';
 import { bestLst } from '@/city/lib/earn/feed';
 import { lstOf, percentText, SOL_MINT } from '@/city/lib/earn/lst';
 import type { ProductId } from '@/city/lib/earn/flag';
 import { useEarnData } from '@/city/lib/earn/store';
+import { usdShort } from '@/city/lib/earn/stock-pier';
+import { useStockPier } from '@/city/lib/earn/stock-pier-store';
+import { digits } from '@/city/lib/i18n/dict';
 import { formatPrice, usd } from '@/city/lib/districts/harbor/pools';
 
 /** One product's big number on its card and in its window: a live figure with its unit, or none — never a made-up one. */
@@ -13,14 +17,17 @@ export type Big = Readonly<{ value: string; unit: string }> | null;
 
 /**
  * The live context of each product of the Shelf, from what the city and Earn already read: the LSTs' last-epoch rate,
- * the Piers' fees, SOL-3's lending rate, SOL's and a stock's price from the city's own towers. A source that did not
+ * the Piers' fees, SOL-3's lending rate, SOL's and a stock's price from the city's own towers, the best proven record
+ * of «Like the Captain». A source that did not
  * answer leaves its product without a number.
  */
 export function useShelfContext(): Readonly<Record<ProductId, Big>> {
   const feed = useEarnData((st) => st.feed);
   const piers = useEarnData((st) => st.piers);
   const lend = useEarnData((st) => st.lend);
+  const captainRead = useEarnData((st) => st.captain);
   const towers = useCity((st) => st.layout.towers);
+  const stockList = useStockPier((st) => st.list);
 
   return useMemo(() => {
     const value = feed.status === 'ready' ? feed.value : null;
@@ -45,8 +52,15 @@ export function useShelfContext(): Readonly<Record<ProductId, Big>> {
       .sort((a, b) => b.volume24h - a.volume24h)[0];
     const stocks: Big = stock ? { value: `$${formatPrice(stock.price)}`, unit: stock.symbol } : null;
 
-    const captain: Big = pools.length ? { value: String(pools.length), unit: '' } : null;
+    // The best proven record on a pier listed now — none until a strategy has thirty days and five copies.
+    const listed = new Set(pools.map((p) => p.address));
+    const record = captainRead.status === 'ready' ? captainRead.value.strategies.find((st) => listed.has(st.pool)) : undefined;
+    const captain: Big = record ? { value: pctText(record.resultPct), unit: '' } : null;
 
-    return { saver, pier, dollar, sell, stocks, captain };
-  }, [feed, piers, lend, towers]);
+    // The Stock Pier: the busiest verified stock's seven days of trading.
+    const topStock = stockList?.status === 'ready' ? stockList.value.pairs[0] : undefined;
+    const stockpier: Big = topStock ? { value: digits(usdShort(topStock.volume7dUsd)), unit: topStock.symbol } : null;
+
+    return { saver, pier, dollar, sell, stockpier, stocks, captain };
+  }, [feed, piers, lend, towers, stockList, captainRead]);
 }

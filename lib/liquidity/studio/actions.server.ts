@@ -11,11 +11,18 @@ import { Keypair, type Connection } from "@solana/web3.js";
 
 import { KIND_OF_VENUE, forgetWalletPositions, positionsConnections } from "../catalog/chain.server.ts";
 import { readPoolRecord } from "../catalog/service.server.ts";
-import { reviewLiquidityAction as review, signatureStates, submitLiquidityAction as submit, type ActionDeps } from "./actions.ts";
+import { reviewLimitAction as reviewLimit, reviewLiquidityAction as review, signatureStates, submitLiquidityAction as submit, type ActionDeps } from "./actions.ts";
 import type { LiquidityVenueAdapter, LiquidityVenueId } from "./contract.ts";
-import { liquidityVenues } from "./venues.server.ts";
+import type { LimitOrderView, LimitPool, LimitVenue } from "./limit-orders.ts";
+import { limitVenue, liquidityVenues } from "./venues.server.ts";
 
 const venueCache = new WeakMap<Connection, Readonly<Record<LiquidityVenueId, LiquidityVenueAdapter>>>();
+const limitCache = new WeakMap<Connection, LimitVenue>();
+function limitVenueFor(connection: Connection): LimitVenue {
+  const known = limitCache.get(connection) ?? limitVenue(connection, freshKeypair);
+  limitCache.set(connection, known);
+  return known;
+}
 
 /*
  * The fresh keys builds made, by public key, until the Review that made them takes them (at once, in the same request).
@@ -51,11 +58,43 @@ function deps(): ActionDeps {
     },
     forget: forgetWalletPositions,
     takeFreshKey,
+    limitVenueFor,
   };
 }
 
 export function reviewLiquidityAction(body: unknown) {
   return review(body, deps());
+}
+
+/** A limit order's Review (CITY-97): place, cancel, or roll a filled order into the other side. */
+export function reviewLimitAction(body: unknown) {
+  return reviewLimit(body, deps());
+}
+
+/**
+ * A wallet's limit orders, or one pool's limit facts, from the first endpoint that answers. Read-only; null when no
+ * endpoint answered — never an empty list in place of a failure.
+ */
+export async function readLimitOrders(owner: string, pool?: string): Promise<readonly LimitOrderView[] | null> {
+  for (const connection of positionsConnections()) {
+    try {
+      return await limitVenueFor(connection).orders(owner, pool ? { pool } : undefined);
+    } catch (error) {
+      if (error instanceof Error && error.name === "LiquidityRefusal") throw error;
+    }
+  }
+  return null;
+}
+
+export async function readLimitPool(address: string): Promise<LimitPool | null> {
+  for (const connection of positionsConnections()) {
+    try {
+      return await limitVenueFor(connection).pool(address);
+    } catch (error) {
+      if (error instanceof Error && error.name === "LiquidityRefusal") return null;
+    }
+  }
+  return null;
 }
 
 export function submitLiquidityAction(body: unknown) {
@@ -73,4 +112,4 @@ export async function readSignatureStates(signatures: readonly string[]) {
   }
 }
 
-export type { LiquidityRelay, LiquidityReview, RelayState } from "./actions.ts";
+export type { LimitReview, LiquidityRelay, LiquidityReview, RelayState } from "./actions.ts";

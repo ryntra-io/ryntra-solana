@@ -66,6 +66,12 @@ test("«New» has three stages: fresh in the docks, near graduation, graduated i
   assert.ok(rings.fresh.radius > rings.near.radius && rings.near.radius > rings.graduated.radius, "outside in");
 });
 
+test("a graduation kept in the docks by the city's rule (CITY-144) is graduated, never «near»", () => {
+  const fastExit = placed("FAST", "docks");
+  const graduated = { ...ctx, launches: new Map([...ctx.launches, ["FAST", { progress: 100, migrated: true }]]) };
+  assert.equal(newStage(fastExit, graduated), "graduated");
+});
+
 test("a tower with no launch time and no launch is never new", () => {
   assert.equal(inLens("new", placed("OLD", "heights"), ctx), false);
   assert.equal(inLens("new", placed("FUTURE", "heights", { launchedAt: new Date(NOW + DAY).toISOString() }), ctx), false);

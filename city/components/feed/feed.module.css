@@ -807,6 +807,14 @@ section.feed.panel > .head {
   }
 }
 
+/* «Event feed: left» in Settings (CITY-87): on a computer the panel opens under the logo instead of the bell. */
+@media (min-aspect-ratio: 1/1) {
+  section.feed.panel[data-side='left'] {
+    left: var(--gutter);
+    right: auto;
+  }
+}
+
 /* A phone held upright: the panel spans the screen under the top bar and the lens's strip. */
 @media not all and (min-aspect-ratio: 1/1) {
   section.feed.panel {

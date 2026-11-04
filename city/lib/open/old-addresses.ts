@@ -143,7 +143,7 @@ const CABINET: readonly Row[] = [
   ['/app/connect/:path*', open('settings'), 'settings'],
 
   /* The developer pages were always the site's documentation. */
-  ['/app/developers/:path*', '/docs/developers', 'page'],
+  ['/app/developers/:path*', '/developers', 'page'],
   ['/app/coverage/:path*', '/docs', 'page'],
 
   /* Everything else of the cabinet — Home, Markets, Trends, the stocks, fees, any page not named — is the city. */
@@ -171,7 +171,7 @@ const OTHERS: readonly Row[] = [
   ['/solana/workspace/rewards/:path*', open('hall'), 'hall'],
   ['/solana/workspace/earn/:path*', open('harbor'), 'harbor'],
   ['/solana/workspace/settings/:path*', open('settings'), 'settings'],
-  ['/solana/workspace/developers/:path*', '/docs/developers', 'page'],
+  ['/solana/workspace/developers/:path*', '/developers', 'page'],
   ['/solana/:path*', HOME, 'home'],
 
   /* Mission Control (decision 68): a mission is its coin's tower; Launch Night and the rest are the city. */
@@ -210,8 +210,8 @@ export const OLD_ADDRESSES: readonly OldAddress[] = rows();
  * forever.
  *
  * The documents lead to the address the site keeps for them — the legal texts at `/legal/…` (a store listing and the
- * law name those), the help at `/support`, About at `/company` — which the city's document windows take over where
- * they stand (CITY-157). What the city has no place for (`/blog`, `/press`, `/brand`) is not led anywhere: it is the
+ * law name those), the help at `/support` — the city's document pages since CITY-157, as `/about` is.
+ * The old About at `/company` stays a page until the city leads it somewhere. What the city has no place for (`/blog`, `/press`, `/brand`) is not led anywhere: it is the
  * city's own 404, with its one way back (`city/components/open/Lost.tsx`).
  */
 const SHORT: readonly Row[] = [
@@ -238,7 +238,8 @@ const SHORT: readonly Row[] = [
   ...['/earn', '/pools', '/harbor', '/yield'].map((source): Row => [source, open('harbor'), 'harbor']),
   ['/bots', open('agents'), 'agents'],
   ['/assistant', open('assistant'), 'assistant'],
-  ...['/settings', '/connect', '/login', '/signin', '/account'].map((source): Row => [source, open('settings'), 'settings']),
+  /* `/connect` is the AI-chat connector's consent page since CITY-154: no short address takes it. */
+  ...['/settings', '/login', '/signin', '/account'].map((source): Row => [source, open('settings'), 'settings']),
 
   /* `/status` led to the old documentation; the city is what is live. */
   ...['/status', '/city', '/map'].map((source): Row => [source, HOME, 'home']),
@@ -247,14 +248,13 @@ const SHORT: readonly Row[] = [
   ...['/terms', '/tos', '/legal', `${UK}/legal/terms`].map((source): Row => [source, '/legal/terms', 'page']),
   ...['/privacy', `${UK}/legal/privacy`].map((source): Row => [source, '/legal/privacy', 'page']),
   ...['/help', '/faq'].map((source): Row => [source, '/support', 'page']),
-  ['/about', '/company', 'page'],
 ];
 
 /** Every short address, in the order it is matched after the old ones; each for now (307). */
 export const SHORT_ADDRESSES: readonly OldAddress[] = SHORT.map(([source, destination, place]) => ({ source, destination, place, permanent: false }));
 
 /** Where a short address may lead that is not the city's own page yet: the site's documents, which CITY-157 takes over. */
-export const DOCUMENT_PREFIXES = ['/docs', '/legal', '/support', '/company'] as const;
+export const DOCUMENT_PREFIXES = ['/docs', '/developers', '/legal', '/support', '/about', '/company'] as const;
 
 type HostCondition = Readonly<{ type: 'host'; value: string }>;
 type QueryCondition = Readonly<{ type: 'query'; key: string; value: string }>;

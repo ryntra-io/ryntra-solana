@@ -1,7 +1,4 @@
 /* eslint-disable @next/next/no-img-element -- the card is drawn by next/og, where <img> is the only picture there is. */
-import { readFile } from 'node:fs/promises';
-import { join } from 'node:path';
-
 import { ImageResponse } from 'next/og';
 
 import { getGuardRuntime } from '@/lib/guard/runtime';
@@ -9,52 +6,19 @@ import { readLaunchImage } from '@/lib/launch/metadata.server';
 import { BRAND } from '@/city/lib/brand';
 import { publicHttps } from '@/city/lib/net';
 import { PALETTE } from '@/city/lib/palette';
+import { cityFonts, markUri, sceneUri } from '@/city/lib/share/card.server';
 import type { CoinCard } from './read.server';
 
 /**
  * A coin's own share card, 1200×630: the city at night behind it, the coin's picture, `$SYMBOL`, its name, and its
- * price and 24h move when the engine read them — a figure not read is left out, never drawn as a guess. The mark is the
- * city's (`city/components/hud/Mark.tsx`), the colours the city's palette, the type the city's Hubot Sans.
+ * price and 24h move when the engine read them — a figure not read is left out, never drawn as a guess. The mark, the
+ * faces and the frame of the live city are the city's share card's (`city/lib/share/card.server.tsx`), the colours the
+ * city's palette.
  */
 
 export const COIN_OG_SIZE = { width: 1200, height: 630 } as const;
 /** How long a card is kept: about as long as its price stays worth showing. */
 export const COIN_OG_SECONDS = 300;
-
-type Font = { name: string; data: ArrayBuffer; weight: 600 | 800 | 900; style: 'normal' };
-const FONT_MS = 4_000;
-let fonts: Promise<Font[] | null> | null = null;
-
-async function googleFace(query: string): Promise<ArrayBuffer> {
-  /* Asked without a browser's agent, Google answers with TrueType, which the engine reads (it cannot read woff2). */
-  const css = await fetch(`https://fonts.googleapis.com/css2?family=${query}`, { signal: AbortSignal.timeout(FONT_MS) }).then((r) => (r.ok ? r.text() : Promise.reject(new Error(String(r.status)))));
-  const src = css.match(/src: url\((https:[^)]+)\) format\('(?:truetype|opentype)'\)/)?.[1];
-  if (!src) throw new Error('no truetype face');
-  return fetch(src, { signal: AbortSignal.timeout(FONT_MS) }).then((r) => (r.ok ? r.arrayBuffer() : Promise.reject(new Error(String(r.status)))));
-}
-
-/** The city's faces, kept for the life of the instance; without them the card still draws in the engine's own face. */
-function cityFonts(): Promise<Font[] | null> {
-  fonts ??= Promise.all([
-    googleFace('Hubot+Sans:wdth,wght@125,900').then((data): Font => ({ name: 'Hubot Sans', data, weight: 900, style: 'normal' })),
-    googleFace('Mona+Sans:wght@600').then((data): Font => ({ name: 'Mona Sans', data, weight: 600, style: 'normal' })),
-    googleFace('Mona+Sans:wght@800').then((data): Font => ({ name: 'Mona Sans', data, weight: 800, style: 'normal' })),
-  ]).catch(() => {
-    fonts = null;
-    return null;
-  });
-  return fonts;
-}
-
-let backdrop: Promise<string | null> | null = null;
-
-/** The city's own still (`public/city/card.jpg`), the share card of the home. */
-function cityBackdrop(): Promise<string | null> {
-  backdrop ??= readFile(join(process.cwd(), 'public', 'city', 'card.jpg'))
-    .then((bytes) => `data:image/jpeg;base64,${bytes.toString('base64')}`)
-    .catch(() => null);
-  return backdrop;
-}
 
 /** PNG, JPEG or GIF by their bytes: the only pictures the engine draws. */
 function drawable(bytes: Uint8Array): string | null {
@@ -107,12 +71,6 @@ async function picture(coin: CoinCard | null): Promise<string | null> {
   return null;
 }
 
-/** The mark of `Mark.tsx`, as one SVG for the card. */
-function markUri(): string {
-  const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><defs><linearGradient id="r" x1="0" y1="1" x2="1" y2="0"><stop offset="0" stop-color="#9945FF"/><stop offset="0.65" stop-color="#C9A2FF"/><stop offset="1" stop-color="#FFE7C2"/></linearGradient><linearGradient id="s" x1="0" y1="1" x2="0" y2="0"><stop offset="0" stop-color="#FFB23F"/><stop offset="1" stop-color="#FFF6E6"/></linearGradient></defs><circle cx="32" cy="34" r="19" fill="none" stroke="url(#r)" stroke-width="4.2"/><circle cx="32" cy="34" r="16.6" fill="#0B0A14"/><path d="M32 2 L37.2 30 L36.2 60 L27.8 60 L26.8 30 Z" fill="url(#s)"/><path d="M32 2 L34.2 30 L33.4 60 L30.6 60 L29.8 30 Z" fill="#FFFFFF" opacity="0.35"/></svg>`;
-  return `data:image/svg+xml;base64,${Buffer.from(svg).toString('base64')}`;
-}
-
 export function formatPrice(p: number): string {
   if (p >= 1000) return `$${p.toLocaleString('en-US', { maximumFractionDigits: 0 })}`;
   if (p >= 1) return `$${p.toFixed(2)}`;
@@ -128,7 +86,7 @@ function symbolSize(symbol: string): number {
 }
 
 export async function coinOpenGraph(coin: CoinCard | null): Promise<ImageResponse> {
-  const [faces, city, pic] = await Promise.all([cityFonts(), cityBackdrop(), picture(coin).catch(() => null)]);
+  const [faces, city, pic] = await Promise.all([cityFonts(), sceneUri(), picture(coin).catch(() => null)]);
   const display = faces ? 'Hubot Sans' : 'sans-serif';
   const ui = faces ? 'Mona Sans' : 'sans-serif';
   const symbol = coin ? `$${coin.symbol.toUpperCase().slice(0, 14)}` : BRAND.name.toUpperCase();
@@ -140,8 +98,7 @@ export async function coinOpenGraph(coin: CoinCard | null): Promise<ImageRespons
   const headers = { 'cache-control': faces ? `public, max-age=${COIN_OG_SECONDS}, s-maxage=${COIN_OG_SECONDS}, stale-while-revalidate=${COIN_OG_SECONDS * 4}` : 'public, max-age=60, s-maxage=60' };
   return new ImageResponse(
     <div style={{ display: 'flex', position: 'relative', width: '100%', height: '100%', background: PALETTE.inkDeep, color: PALETTE.ice, fontFamily: ui }}>
-      {/* The still's upper part only: its own words stand in its lower left and must not show through this card's. */}
-      {city ? <img src={city} alt="" width={1626} height={915} style={{ position: 'absolute', left: 60, top: 0, width: 1626, height: 915 }} /> : null}
+      {city ? <img src={city} alt="" width={1200} height={630} style={{ position: 'absolute', left: 0, top: 0, width: 1200, height: 630 }} /> : null}
       <div style={{ position: 'absolute', left: 0, top: 0, width: 1200, height: 630, display: 'flex', background: 'linear-gradient(90deg, rgba(6,5,12,0.96) 0%, rgba(6,5,12,0.86) 46%, rgba(6,5,12,0.25) 100%)' }} />
       <div style={{ position: 'absolute', left: 0, bottom: 0, width: 1200, height: 220, display: 'flex', background: 'linear-gradient(0deg, rgba(6,5,12,0.92) 0%, rgba(6,5,12,0) 100%)' }} />
       <div style={{ position: 'relative', display: 'flex', flexDirection: 'column', width: '100%', height: '100%', padding: '52px 64px 48px' }}>

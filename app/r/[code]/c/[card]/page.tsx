@@ -8,6 +8,8 @@ import { PublicHeader } from "@/app/site/frozen/public-header";
 import "@/app/site/frozen/primitives.css";
 import "@/app/site/frozen/module.css";
 import { cardOrigin } from "@/app/api/growth/cards/origin";
+import { CITY_CARD_SIZE } from "@/city/lib/share/card";
+import { coinLink } from "@/city/lib/share/coin-link";
 import { getGuardRuntime } from "@/lib/guard/runtime";
 import { LiveCard } from "@/app/solana/workspace/rewards/live-card";
 import { cardPercent, cardWords } from "@/lib/growth/card-copy";
@@ -69,7 +71,9 @@ export async function generateMetadata({ params }: { params: Params }): Promise<
   const word = cardWords(card.locale);
   const base = await origin();
   const title = word.tradeLine(card.token.symbol, figureOf(card), daysOf(card));
-  const image = { url: `${base}${tradeCardImagePath(card)}`, width: 1200, height: 630, alt: word.alt(card.token.symbol, figureOf(card)) };
+  /* The preview is the traded coin's tower card in the city (CITY-158), the picture `/c/<mint>` shares; the card's own
+     still stays the page's poster. */
+  const image = { url: `${coinLink(card.token.mint)}/opengraph-image`, ...CITY_CARD_SIZE, alt: word.alt(card.token.symbol, figureOf(card)) };
   return {
     title,
     description: `${word.pageLead} ${word.offerWhy}.`,

@@ -13,6 +13,7 @@ import { readRankStanding, rewardRulesFor } from "./rank-store.ts";
 import { hasWindows, rewardRulesOf, type RewardRank, storedVersion } from "./rules.ts";
 import { FIRST_TEN_COLLECTION, FirstTenRecordSchema, inviterWindowOpen, planFirstTen, readFirstTen, type FirstTenPlan } from "./first-ten.ts";
 import { internalWalletsForMoney, levelsWithoutInternal } from "./internal.ts";
+import { stoppedReferralLevels } from "../growth/referral-guard-store.ts";
 
 type Price = Readonly<{ price: string; sourceRef: string; observedAt: string }>;
 /** `rules` is absent for an accrual written under rules `1.0.0`, and it never changes after the first write. */
@@ -148,7 +149,11 @@ async function recordRewardsCore(
        that settled before it — and that inviter's own account for Level 2. */
     const inviterAtSettlement = referrerAt(account, settledAt);
     const above = inviterAtSettlement ? await readRewardAccount(store, inviterAtSettlement) : null;
-    const levels = prior ? { l1: prior.entries.find(entry => entry.type === "REFERRAL_L1")?.recipient ?? null, l2: prior.entries.find(entry => entry.type === "REFERRAL_L2")?.recipient ?? null } : levelsWithoutInternal(referralLevelsAt(account, above, settledAt), internal);
+    const bound = prior ? { l1: prior.entries.find(entry => entry.type === "REFERRAL_L1")?.recipient ?? null, l2: prior.entries.find(entry => entry.type === "REFERRAL_L2")?.recipient ?? null } : levelsWithoutInternal(referralLevelsAt(account, above, settledAt), internal);
+    /* A pair a person stopped after its review (Ryntra Partners R3, `referral-guard.ts`): its share stays with Ryntra,
+       as an internal inviter's does. Only on a first write — a row priced later keeps the levels it was written with. */
+    const stopped = prior ? new Set<string>() : await stoppedReferralLevels(store, args.trader, bound, now);
+    const levels = { l1: bound.l1 && !stopped.has(bound.l1) ? bound.l1 : null, l2: bound.l2 && !stopped.has(bound.l2) ? bound.l2 : null };
     const rules = prior ? rewardRulesOf(prior.rules) : rulesInForce ?? await rewardRulesFor(store, settledAt, now, env);
     /* The inviter's share follows the inviter's rank when the trade settled —
        frozen on the first write, so pricing a pending row later can never
@@ -325,6 +330,11 @@ async function recordRewardsCore(
     if (!await store.compareAndSetMany(writes)) return false;
     /* A window waiting for its check: the check is queued — again on each window trade, so a lost write is mended. */
     if (plan?.queueCheck) await enqueueBenefitJob(store, { kind: "FIRST_TEN_CHECK", wallet: args.trader, operationId: "first-ten", settledAt }, now).catch(() => undefined);
+    /* Each wallet paid for this trade: its pair is checked before the share pays or the points count — again after
+       each trade, so circular trades and a new link between the two are seen. */
+    for (const inviter of new Set([levels.l1, levels.l2])) {
+      if (inviter && inviter !== args.trader) await enqueueBenefitJob(store, { kind: "REFERRAL_CHECK", wallet: args.trader, operationId: inviter, settledAt }, now).catch(() => undefined);
+    }
     return { state: "RECORDED", created, existing: accrual.entries.length - created, pending: canonicalEntries.some(entry => entry.usdMicros === null) };
     });
   } catch (failure) {

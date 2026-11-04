@@ -84,7 +84,12 @@ export function createJupiterSwapVenue(args: Readonly<{
    * sizes and checks `/build`'s bytes. Absent, the
    * venue asks `/order` with `referral` as production did before the policy.
    */
-  lanes?: Readonly<{ handle: SolanaRpcHandle; onChoice?: (choice: Readonly<{ flow: FeeFlow; lane: "BUILD" | "ORDER" }>) => void }>;
+  lanes?: Readonly<{
+    handle: SolanaRpcHandle;
+    onChoice?: (choice: Readonly<{ flow: FeeFlow; lane: "BUILD" | "ORDER" }>) => void;
+    /** The taker's discount on Ryntra's fee as a partner's friend, basis points of the fee (`../referee-discount.ts`); 0 or absent: none. */
+    feeDiscountBps?: number;
+  }>;
 }>): JupiterSwapVenue {
   const { endpoint, referral, config, lanes } = args;
   return {
@@ -100,6 +105,7 @@ export function createJupiterSwapVenue(args: Readonly<{
           endpoint,
           handle: lanes.handle,
           config,
+          ...(lanes.feeDiscountBps ? { feeDiscountBps: lanes.feeDiscountBps } : {}),
         });
         if (!choice.ok) throw new JupiterOrderRefusal(choice.failure);
         lanes.onChoice?.({ flow: choice.flow, lane: choice.lane });

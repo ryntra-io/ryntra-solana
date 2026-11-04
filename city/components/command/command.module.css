@@ -1,0 +1,391 @@
+/* The city's command line (CITY-85): one field over the city and under it what will open, filled in — in the HUD's
+   dark glass with its cut corners, the windows' orange for the row the keyboard is on, Ryntra's amber for its spark.
+   On a phone held upright it is a sheet at the bottom, above the keyboard, the best row nearest the thumb. Tokens from
+   city/styles/city.module.css. */
+
+.layer {
+  --accent: #ff681c;
+  position: fixed;
+  inset: 0;
+  /* Over the windows (12–14) and Ryntra's panel (12); under the hover label (30) and the moments' viewfinder (40). */
+  z-index: 26;
+  font-family: var(--font-ui, system-ui), system-ui, sans-serif;
+  color: var(--ice);
+}
+
+/* The city stays in view, a step quieter: no blur over the canvas, it keeps its frames. */
+.scrim {
+  position: absolute;
+  inset: 0;
+  background: rgba(4, 3, 10, 0.42);
+  animation: commandFade 160ms ease-out both;
+}
+
+.panel {
+  position: absolute;
+  /* Under the top bar and the category chips, never over them. */
+  top: calc(max(12px, env(safe-area-inset-top)) + max(124px, 14vh));
+  left: 50%;
+  width: min(640px, calc(100% - 2 * var(--gutter)));
+  max-height: calc(100dvh - 164px - env(safe-area-inset-top));
+  display: flex;
+  flex-direction: column;
+  padding: 10px;
+  background: linear-gradient(160deg, rgb(22, 17, 40), rgb(8, 7, 15));
+  clip-path: polygon(16px 0, 100% 0, 100% calc(100% - 16px), calc(100% - 16px) 100%, 0 100%, 0 16px);
+  box-shadow:
+    inset 0 0 0 2px rgba(153, 69, 255, 0.34),
+    inset 0 1px 24px rgba(153, 69, 255, 0.16);
+  transform: translateX(-50%);
+  animation: commandIn 180ms ease-out both;
+}
+
+@keyframes commandIn {
+  from {
+    opacity: 0;
+    transform: translate(-50%, -8px);
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, 0);
+  }
+}
+
+@keyframes commandFade {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* ---------- The field ---------- */
+
+.field {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  height: 60px;
+  padding: 0 8px 0 16px;
+  background: rgba(255, 255, 255, 0.05);
+  box-shadow: inset 0 0 0 1px rgba(153, 69, 255, 0.38);
+  clip-path: polygon(10px 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%, 0 10px);
+  transition: box-shadow 140ms ease-out;
+}
+
+.field:focus-within {
+  box-shadow: inset 0 0 0 2px var(--amber);
+}
+
+.spark {
+  flex: none;
+  display: grid;
+  width: 24px;
+  height: 24px;
+  color: var(--amber);
+}
+
+.spark svg {
+  width: 100%;
+  height: 100%;
+}
+
+.input {
+  flex: 1;
+  min-width: 0;
+  height: 100%;
+  padding: 0;
+  border: 0;
+  outline: none;
+  background: transparent;
+  color: var(--ice);
+  font: 600 var(--type-action) var(--font-ui, system-ui), system-ui, sans-serif;
+  letter-spacing: 0.005em;
+}
+
+.input::placeholder {
+  color: var(--text-dim);
+  font-weight: 500;
+}
+
+/* The way out on a phone; a desk has Escape and the city around the line. */
+.close {
+  flex: none;
+  display: none;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  border: 0;
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--ice);
+  clip-path: polygon(10px 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%, 0 10px);
+}
+
+.close svg {
+  width: 20px;
+  height: 20px;
+}
+
+.close:focus-visible {
+  outline: 2px solid var(--amber);
+  outline-offset: -2px;
+}
+
+/* ---------- What will open ---------- */
+
+.list {
+  flex: 0 1 auto;
+  min-height: 0;
+  margin: 8px 0 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+.row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 58px;
+  padding: 0 14px 0 12px;
+  cursor: pointer;
+  clip-path: polygon(10px 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%, 0 10px);
+  transition: background 120ms ease-out;
+  animation: commandRow 160ms ease-out both;
+}
+
+/* A slide only, never a fade: a row is never unseen, even on a frame that comes late. */
+@keyframes commandRow {
+  from {
+    transform: translateY(-4px);
+  }
+  to {
+    transform: none;
+  }
+}
+
+.active {
+  background: linear-gradient(90deg, rgba(255, 104, 28, 0.2), rgba(255, 104, 28, 0.05) 60%, transparent);
+  box-shadow: inset 3px 0 0 var(--accent);
+}
+
+.icon {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  color: var(--accent);
+}
+
+.icon > svg {
+  width: 22px;
+  height: 22px;
+}
+
+.rowAsk .icon {
+  color: var(--amber);
+}
+
+.coin,
+.disc {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  object-fit: cover;
+  /* The disc stands behind a logo still on its way, so a row never shows a hole. */
+  background: radial-gradient(circle at 35% 30%, rgba(153, 69, 255, 0.6), rgba(42, 22, 64, 0.95));
+}
+
+.disc {
+  display: grid;
+  place-items: center;
+  font-size: var(--type-body);
+  font-weight: 800;
+  color: var(--ice);
+  background: radial-gradient(circle at 35% 30%, rgba(153, 69, 255, 0.6), rgba(42, 22, 64, 0.95));
+}
+
+.label {
+  flex: none;
+  font-size: var(--type-lead);
+  font-weight: 700;
+  letter-spacing: 0.005em;
+  white-space: nowrap;
+}
+
+/* What the window opens with: the amount, the share, the price — one chip, the figures in line. */
+.fill {
+  flex: none;
+  padding: 5px 10px;
+  font-size: var(--type-body);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  color: var(--warm);
+  background: rgba(255, 255, 255, 0.06);
+  box-shadow: inset 0 0 0 1px rgba(255, 178, 63, 0.35);
+  clip-path: polygon(6px 0, 100% 0, 100% calc(100% - 6px), calc(100% - 6px) 100%, 0 100%, 0 6px);
+}
+
+/* The question as typed, quiet, cut short where the row ends. */
+.quote {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  font-size: var(--type-base);
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  color: var(--text-dim);
+}
+
+.where {
+  margin-left: auto;
+  padding-left: 8px;
+  overflow: hidden;
+  font-size: var(--type-caption);
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  color: var(--text-dim);
+}
+
+.enter {
+  flex: none;
+  display: grid;
+  width: 20px;
+  height: 20px;
+  margin-left: auto;
+  color: var(--text-dim);
+  opacity: 0;
+  transition: opacity 120ms ease-out;
+}
+
+.where + .enter {
+  margin-left: 4px;
+}
+
+.enter svg {
+  width: 100%;
+  height: 100%;
+}
+
+.active .enter {
+  opacity: 1;
+}
+
+/* ---------- The ready picks, while nothing is typed ---------- */
+
+.picks {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 12px 2px 4px;
+}
+
+.pick {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 44px;
+  padding: 0 16px;
+  border: 0;
+  font-size: var(--type-base);
+  font-weight: 650;
+  color: var(--ice);
+  background: linear-gradient(160deg, rgba(42, 22, 64, 0.85), rgba(20, 16, 36, 0.85));
+  box-shadow: inset 0 0 0 1px rgba(153, 69, 255, 0.4);
+  clip-path: polygon(10px 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%, 0 10px);
+  transition: box-shadow 140ms ease-out;
+}
+
+.pick svg {
+  width: 16px;
+  height: 16px;
+  color: var(--amber);
+}
+
+.pick:hover,
+.pick:focus-visible {
+  box-shadow: inset 0 0 0 2px var(--amber);
+  outline: none;
+}
+
+/* ---------- Ryntra in every window: the quiet spark in the head ---------- */
+
+.askTool:hover:not(:disabled),
+.askTool:focus-visible {
+  color: var(--amber);
+}
+
+/* ---------- A phone held upright: a sheet at the bottom, above the keyboard ---------- */
+
+@media (max-width: 560px) and (orientation: portrait) {
+  .panel {
+    top: auto;
+    left: var(--gutter);
+    right: var(--gutter);
+    width: auto;
+    bottom: max(calc(var(--kb, 0px) + 8px), max(14px, env(safe-area-inset-bottom)));
+    max-height: calc(72dvh - var(--kb, 0px));
+    flex-direction: column-reverse;
+    transform: none;
+    animation-name: commandUp;
+  }
+  /* The best row nearest the field and the thumb; Ryntra at the far end. */
+  .list {
+    flex-direction: column-reverse;
+    margin: 0 0 8px;
+  }
+  .picks {
+    padding: 4px 2px 12px;
+  }
+  .close {
+    display: grid;
+  }
+  .enter,
+  .where {
+    display: none;
+  }
+  .label {
+    font-size: var(--type-base);
+  }
+  /* 16px keeps a phone from zooming in on the field. */
+  .input {
+    font-size: 16px;
+  }
+}
+
+@media (pointer: coarse) {
+  .close {
+    display: grid;
+  }
+}
+
+@keyframes commandUp {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .panel,
+  .scrim,
+  .row {
+    animation: none;
+  }
+}

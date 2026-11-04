@@ -15,13 +15,23 @@ import { RUN_OPEN } from '@/city/lib/run/flag';
 import { useRun } from '@/city/lib/run/store';
 import { track } from '@/city/lib/run/track';
 import { Art } from './art/Art';
+import { GarageLayer } from './agent/garage/GarageLayer';
 import { BerthLayer } from './berth/BerthLayer';
 import { AssistantLayer } from './assistant/AssistantLayer';
+import { CommandLayer } from './command/CommandLayer';
+import { InstructLayer } from './instruct/InstructLayer';
+import { AutopilotLayer } from './autopilot/AutopilotLayer';
 import { ChartLayer } from './chart/ChartLayer';
 import { HarborLayer } from './districts/HarborLayer';
 import { EarnLayer } from './earn/EarnLayer';
+import { GuardLayer } from './guard/GuardLayer';
 import { MoneyLayer } from './money/MoneyLayer';
+import { BotsLayer } from './bots/BotsLayer';
 import { ScoutsLayer } from './scouts/ScoutsLayer';
+import { PartnersLayer } from './partners/PartnersLayer';
+import { SettingsLayer } from './settings/SettingsLayer';
+import { PagesLayer } from './pages/PagesLayer';
+import { GuidesLayer } from './how/GuidesLayer';
 import { PredictLayer } from './districts/PredictLayer';
 import { ExchangeLayer } from './exchange/ExchangeLayer';
 import { Hud } from './hud/Hud';
@@ -33,6 +43,8 @@ import { QuarterLayer } from './quarter/QuarterLayer';
 import { VaultLayer } from './vault/VaultLayer';
 import { BeaconLayer } from './beacon/BeaconLayer';
 import { HallLayer } from './launch/HallLayer';
+import { LaunchedLayer } from './launch/LaunchedLayer';
+import { NightLayer } from './launch/NightLayer';
 import { OpenFromAddress } from './open/OpenFromAddress';
 
 const CityCanvas = dynamic(() => import('./city/CityCanvas').then((m) => m.CityCanvas), { ssr: false });
@@ -210,12 +222,24 @@ export function CityApp({ initial }: { initial: CitySnapshot }) {
       <BeaconLayer />
       <VaultLayer />
       <HallLayer />
+      <NightLayer />
       <BerthLayer />
+      <LaunchedLayer />
+      <InstructLayer />
+      <AutopilotLayer />
       <MoneyLayer />
+      <BotsLayer />
+      <GarageLayer />
       <EarnLayer />
+      <GuardLayer />
       <ScoutsLayer />
+      <PartnersLayer />
+      <PagesLayer />
+      <GuidesLayer />
+      <SettingsLayer onSound={sound} />
       <ExchangeLayer />
       <AssistantLayer />
+      <CommandLayer />
       <OpenFromAddress />
     </>
   );

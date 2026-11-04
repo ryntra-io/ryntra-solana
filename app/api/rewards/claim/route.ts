@@ -16,6 +16,7 @@ import { claimMinimumUsdMicros, rewardBalance } from "@/lib/rewards/balance";
 import { mutationOriginAllowed } from "@/lib/security";
 import { getWalletProof } from "@/lib/session";
 import { walletHold } from "@/lib/growth/review-store";
+import { readReferralHold } from "@/lib/growth/referral-guard-store";
 import { internalPayoutText, internalWalletsForMoney } from "@/lib/rewards/internal";
 
 export const runtime = "nodejs";
@@ -64,7 +65,10 @@ export async function POST(req: NextRequest) {
       listRewardEntries(store, wallet), readRewardsReserve(), readReserveLedger(store),
       rules?.claimFloor ? readPayoutAccount(wallet) : Promise.resolve("UNKNOWN" as const),
     ]);
-    const balance = rewardBalance({ entries, reserve, heldUsdMicros: heldUsdMicros(ledger, now), minimumUsdMicros: claimMinimumUsdMicros(rules, usdcAccount) });
+    /* Friends' shares whose pair is not clear, or all of them before this wallet's own first real trade, are not paid
+       (Ryntra Partners R3): they stay earned and wait. */
+    const referralHold = await readReferralHold(store, wallet, entries, now);
+    const balance = rewardBalance({ entries, reserve, heldUsdMicros: heldUsdMicros(ledger, now), minimumUsdMicros: claimMinimumUsdMicros(rules, usdcAccount), referralHeldUsdMicros: referralHold.heldUsdMicros });
     if (!balance.claimable) return json({ state: "NOT_CLAIMABLE", reason: balance.claimBlockedReason, available: formatUsdMicros(balance.availableUsdMicros) }, 409);
     const amount = balance.availableUsdMicros;
     const opened = await openClaim(store, { wallet, usdMicros: amount, now, expectedVersion: existing?.version ?? null });

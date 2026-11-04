@@ -12,6 +12,8 @@ import { useFeed } from '@/city/lib/feed/store';
 import { useMoments } from '@/city/lib/moments/stage';
 import { FEED, FEED_SWITCHES, retell } from '@/city/lib/feed/words';
 import { useWords } from '@/city/lib/i18n/dict';
+import { useNotify } from '@/city/lib/notify/store';
+import { PLAY_OPEN } from '@/city/lib/game/flag';
 import { useLang } from '@/city/lib/i18n/lang';
 import s from './feed.module.css';
 
@@ -35,6 +37,8 @@ export function LiveFeed({ hidden = false, panel = false }: { hidden?: boolean; 
   const events = useFeed((st) => st.memory.events);
   // No market read yet: the panel shows where the events will stand, never «quiet» before it has looked (CITY-150).
   const waiting = useFeed((st) => st.memory.readAt === null);
+  // The side the panel opens on, from Settings (CITY-87).
+  const side = useNotify((st) => st.prefs.feed);
   // The city's layout changes with every read: what a tap can reach is asked again then.
   useCity((st) => st.layout);
   const [gear, setGear] = useState(false);
@@ -137,6 +141,7 @@ export function LiveFeed({ hidden = false, panel = false }: { hidden?: boolean; 
       data-open={open ? '' : undefined}
       data-details={details ? '' : undefined}
       data-flash={settings.flashing ? 'on' : 'off'}
+      data-side={panel ? side : undefined}
       data-hidden={hidden ? '' : undefined}
       aria-hidden={hidden || undefined}
     >
@@ -282,7 +287,8 @@ function FeedSettingsPanel({ onClose }: { onClose: () => void }) {
           <CloseGlyph />
         </button>
       </div>
-      {SWITCHES.map(({ id }) => (
+      {/* The «Hot now» card no longer stands on the home, and «Arrivals» only in Play (CITY-87): their switches go with them. */}
+      {SWITCHES.filter(({ id }) => id !== 'hot' && (id !== 'arrivals' || PLAY_OPEN)).map(({ id }) => (
         <div className={s.row} key={id}>
           <span id={`city-feed-${id}`}>{names[id]}</span>
           <button className={s.switch} role="switch" aria-checked={settings[id]} aria-labelledby={`city-feed-${id}`} onClick={() => flip(id, !settings[id])}>

@@ -126,8 +126,13 @@ export const DISTRICT_FILMS: Readonly<Partial<Record<DistrictId, Film>>> = {};
 /** The districts with a card above the dock: the Market's hot tower, Home, and the three that open soon. */
 export const CARD_DISTRICTS: readonly DistrictId[] = ['market', 'home', 'launch', 'harbor', 'agents'];
 
-/** The share card of `/` (Open Graph and X): 1200 × 630. */
-export const OG_CARD = Object.freeze({ src: `${ART_DIR}/og-1200x630.jpg`, width: 1200, height: 630 });
+/**
+ * The frame behind every share card of the city (CITY-158): our own live 3D city at night, 1200 × 630 — the shape Open
+ * Graph and X draw a large card at — with no HUD and no words, filmed through `window.__cityView` by
+ * `scripts/city/card.mjs`. The card (`city/lib/share/card.server.tsx`) lays the mark and the line over it. The generated
+ * still that stood here until 31.10 showed a city that is not ours.
+ */
+export const SHARE_SCENE = Object.freeze({ src: '/city/share-scene.jpg', width: 1200, height: 630 });
 
 function round(n: number): number {
   return Math.round(n * 100) / 100;

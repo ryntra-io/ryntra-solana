@@ -7,6 +7,7 @@ import { cityAccount, useCityAccount, useReadiness } from '@/city/lib/quarter/ac
 import { colourOf } from '@/city/lib/trade/colour';
 import { shortAddress } from '@/city/lib/trade/format';
 import { useWallet } from '@/city/lib/trade/wallet';
+import { openSettings } from '@/city/lib/settings/view';
 import { PHANTOM_DOWNLOAD_URL } from '@/lib/solana/open-in-wallet';
 import s from '../hud/hud.module.css';
 import q from './quarter.module.css';
@@ -108,6 +109,18 @@ export function WalletChip() {
             {signed ? t.signedIn : ready === 'checking' ? t.checking : t.notSignedIn}
           </div>
           {error ? <div className={`${w.note} ${w.error}`}>{error}</div> : null}
+          {/* The avatar's window (CITY-87): wallet, trading, notifications, layouts, language, sound, display, security. */}
+          <button
+            className={w.settings}
+            aria-haspopup="dialog"
+            onClick={() => {
+              setOpen(false);
+              openSettings('wallet');
+            }}
+          >
+            <GearGlyph />
+            {t.settings}
+          </button>
           <div className={w.row}>
             {!signed && (
               <button className={`${s.display} ${w.act}`} onClick={signIn} disabled={busy || ready === 'checking'} aria-busy={busy}>
@@ -158,6 +171,16 @@ function WalletList() {
       </div>
       <div className={w.note}>{t.oneMessage}</div>
     </>
+  );
+}
+
+/** Settings, in the wallet's menu. */
+function GearGlyph() {
+  return (
+    <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinejoin="round" aria-hidden="true">
+      <path d="M10.3 2.8h3.4l.5 2.6a7.4 7.4 0 0 1 1.8 1l2.5-.9 1.7 2.9-2 1.8a7.4 7.4 0 0 1 0 2l2 1.8-1.7 2.9-2.5-.9a7.4 7.4 0 0 1-1.8 1l-.5 2.6h-3.4l-.5-2.6a7.4 7.4 0 0 1-1.8-1l-2.5.9-1.7-2.9 2-1.8a7.4 7.4 0 0 1 0-2l-2-1.8 1.7-2.9 2.5.9a7.4 7.4 0 0 1 1.8-1z" />
+      <circle cx="12" cy="12" r="3" />
+    </svg>
   );
 }
 

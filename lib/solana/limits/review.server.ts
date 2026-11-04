@@ -26,6 +26,8 @@ import {
   type TriggerFeeReason,
 } from "./model.ts";
 import { buildTriggerCancel, buildTriggerOrder, triggerFeeContext } from "./trigger.server.ts";
+import { readRefereeDiscountBps, refereeDiscountInForce } from "../../core/referee-discount.ts";
+import { getGuardRuntime } from "../../guard/runtime.ts";
 import { tradeRiskVerdict } from "../trade-risk.server.ts";
 import type { TradeRiskSource, TradeRiskVerdict } from "../trade-risk.ts";
 
@@ -130,7 +132,7 @@ async function limitOrderRisk(
 
 export async function reviewLimitOrder(
   request: LimitReviewRequest,
-  deps: Readonly<{ connection?: Connection; now?: () => Date }> = {},
+  deps: Readonly<{ connection?: Connection; now?: () => Date; feeDiscount?: (owner: string) => Promise<number> }> = {},
 ): Promise<Readonly<{ ok: true; review: LimitReview }> | LimitReviewFailure> {
   const connection = deps.connection ?? limitsConnection();
   const [baseDecimals, quoteDecimals] = await Promise.all([mintDecimals(request.baseMint, connection), mintDecimals(request.quoteMint, connection)]);
@@ -147,7 +149,9 @@ export async function reviewLimitOrder(
   const startedAtMs = Date.now();
 
   if (request.venue === "trigger") {
-    const context = await triggerFeeContext(amounts, { connection });
+    /* A partner's friend pays the discounted rate (CITY-182); the store is asked only while the switch is on. */
+    const feeDiscountBps = await (deps.feeDiscount ?? ((owner: string) => (refereeDiscountInForce() ? readRefereeDiscountBps(getGuardRuntime().store, owner) : Promise.resolve(0))))(request.owner);
+    const context = await triggerFeeContext(amounts, { connection, feeDiscountBps });
     const built = await buildTriggerOrder({ owner: request.owner, amounts, plan: context.plan }, { connection });
     if (!built.ok) return { ok: false, status: built.code === "TRIGGER_BUSY" ? 503 : 422, code: built.code, reason: built.reason };
     const ryntraBps = context.plan.feeAccount !== null ? built.onChain.feeBps : 0;

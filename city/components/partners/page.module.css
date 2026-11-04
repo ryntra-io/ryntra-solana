@@ -1,0 +1,240 @@
+/* `/partners` (CITY-177): the partner page of the site — a still of our own city at the head with the one sentence, the
+   offer and «Copy my link» right under it, three steps, the calculator, the rules behind «Details». No block is taller
+   than what it holds: every row is its own height, and the page ends where its words end. Tokens from
+   city/styles/city.module.css (CITY-11); the pieces are the partner window's (partners.module.css). */
+
+.page {
+  position: relative;
+  width: min(1120px, 100%);
+  margin: 0 auto;
+  padding: 0 var(--gutter) 36px;
+  display: grid;
+  gap: 18px;
+  color: var(--ice);
+}
+
+/* A language other than English: the words wait for the frame the boot script hides them in (CITY-79). */
+:global(html.city-lang-wait) .page [data-words] {
+  visibility: hidden;
+}
+
+/* ---------- The still and the sentence ---------- */
+
+.hero {
+  position: relative;
+  /* The still runs edge to edge; its words stand in the page's column. */
+  margin: 0 calc(50% - 50vw);
+  min-height: clamp(230px, 34vh, 330px);
+  padding: 0 max(var(--gutter), calc(50vw - 560px + var(--gutter)));
+  display: flex;
+  align-items: flex-end;
+  overflow: hidden;
+}
+
+.art {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: 50% 45%;
+  animation: settle 700ms ease-out both;
+  -webkit-mask-image: linear-gradient(180deg, #000 35%, transparent 100%);
+  mask-image: linear-gradient(180deg, #000 35%, transparent 100%);
+}
+
+@keyframes settle {
+  from {
+    transform: scale(1.04);
+  }
+}
+
+.heroBody {
+  position: relative;
+  display: grid;
+  justify-items: start;
+  gap: 8px;
+  padding-bottom: 2px;
+  text-shadow: 0 2px 18px rgba(6, 5, 12, 0.92);
+}
+
+.title {
+  margin: 0;
+  max-width: 18ch;
+  font-size: clamp(32px, 5vw, 54px);
+  line-height: 0.98;
+  color: var(--ice);
+}
+
+/* ---------- The offer and the one action ---------- */
+
+.top {
+  display: grid;
+  gap: 12px;
+  align-items: center;
+  /* The old site's global stylesheet pads every <section>; these are the page's own. */
+  padding: 0;
+}
+
+.top > * {
+  min-width: 0;
+}
+
+.offer {
+  gap: 10px;
+}
+
+.big {
+  font-size: clamp(40px, 6vw, 56px);
+}
+
+.copyBox {
+  display: grid;
+  gap: 10px;
+}
+
+.status {
+  display: flex;
+  justify-content: center;
+}
+
+@media (min-width: 900px) {
+  .top {
+    grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr);
+    gap: 24px;
+  }
+}
+
+/* ---------- Steps and the calculator ---------- */
+
+.block {
+  display: grid;
+  gap: 10px;
+  padding: 0;
+}
+
+.head {
+  margin: 0;
+  font-size: var(--type-caption);
+  letter-spacing: 0.16em;
+  color: var(--warm);
+}
+
+.steps {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 8px;
+}
+
+@media (min-width: 900px) {
+  .steps {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+.step {
+  display: grid;
+  grid-template-columns: 34px minmax(0, 1fr);
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+  background: linear-gradient(160deg, rgba(42, 22, 64, 0.5), rgba(11, 10, 20, 0.55));
+  box-shadow: inset 0 0 0 1px rgba(153, 69, 255, 0.24);
+  clip-path: polygon(10px 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%, 0 10px);
+}
+
+.stepNo {
+  font-size: var(--type-figure);
+  line-height: 1;
+  text-align: center;
+  color: var(--amber);
+}
+
+.stepText {
+  display: grid;
+  gap: 2px;
+  font-size: var(--type-body);
+  line-height: 1.4;
+  color: rgba(238, 241, 255, 0.78);
+}
+
+.stepText b {
+  font-size: var(--type-base);
+  font-weight: 800;
+  color: var(--ice);
+}
+
+/* ---------- Behind «Details» ---------- */
+
+.terms {
+  margin-bottom: 4px;
+}
+
+@media (min-width: 900px) {
+  .terms {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    column-gap: 32px;
+  }
+}
+
+.rules {
+  margin: 12px 0 4px;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 8px;
+}
+
+@media (min-width: 900px) {
+  .rules {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 16px;
+  }
+}
+
+.rules li {
+  display: grid;
+  gap: 2px;
+  font-size: var(--type-small);
+  line-height: 1.4;
+  color: var(--text-dim);
+}
+
+.rules b {
+  font-size: var(--type-body);
+  color: var(--ice);
+}
+
+.row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-height: 48px;
+  border-top: 1px solid rgba(238, 241, 255, 0.08);
+  font-size: var(--type-body);
+  font-weight: 700;
+  text-decoration: none;
+  color: var(--ice);
+}
+
+.row:hover,
+.row:focus-visible {
+  color: var(--warm);
+  outline: none;
+}
+
+.row svg {
+  width: 14px;
+  height: 14px;
+  flex: none;
+  color: var(--amber);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .art {
+    animation: none;
+  }
+}

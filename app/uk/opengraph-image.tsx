@@ -1,15 +1,15 @@
-import { homepageOpenGraph } from "@/app/brand/homepage-og";
-import { HOMEPAGE_COPY } from "@/lib/site/homepage-copy";
+import { CITY_CARD_SIZE } from "@/city/lib/share/card";
+import { cityCard } from "@/city/lib/share/card.server";
+import { CARD_WORDS } from "@/city/lib/share/words";
 
-/* The share card of `/uk` — the same card as `/`, in Ukrainian. It lives
-   outside the landing's route group on purpose: Next gives a metadata image
-   inside a group (`app/(home)/uk/…`) a hashed address
-   (`/uk/opengraph-image-<hash>`), and the page names its card at the plain
-   `/uk/opengraph-image` (`landingOgImage` in `app/seo.ts`). This folder holds
-   the card only; the page is `app/(home)/uk/page.tsx`. */
-export const alt = HOMEPAGE_COPY.uk.ogAlt;
-export const size = { width: 1200, height: 630 };
+/* The share card of the Ukrainian addresses: the city's card (CITY-158) with its line in Ukrainian. It lives outside
+   the landing's route group on purpose: Next gives a metadata image inside a group (`app/(home)/uk/…`) a hashed
+   address, and the pages name their card at the plain `/uk/opengraph-image` (`landingOgImage` in `app/seo.ts`). */
+export const runtime = "nodejs";
+export const revalidate = 86400;
+export const alt = CARD_WORDS.uk.alt;
+export const size = CITY_CARD_SIZE;
 export const contentType = "image/png";
 export default function Image() {
-  return homepageOpenGraph("uk");
+  return cityCard({ lang: "uk" });
 }

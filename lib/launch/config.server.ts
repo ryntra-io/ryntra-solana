@@ -19,7 +19,9 @@
  * a launch, a trade, a claim — obeys the Launch lane's operator stop
  * (`RYNTRA_SOLANA_LAUNCH_STATE`, fail-closed), and a launch needs Ryntra's pool
  * payer too: its key comes through `RYNTRA_LAUNCH_POOL_PAYER_SECRET` (a JSON
- * array of 64 numbers, or the base58 string a wallet exports). On mainnet the
+ * array of 64 numbers, or the base58 string a wallet exports) — or, once the
+ * Owner switches `RYNTRA_LAUNCH_SIGNER` to `kms`, stays in Google Cloud KMS and
+ * only signs there (CITY-162, `./signer/`). On mainnet the
  * key must be the pool payer the attribution registry publishes, or nothing
  * launches: a pool Ryntra opens is always one a counter can attribute. The key
  * is never in the repository and never printed.
@@ -31,8 +33,7 @@
  * point it at someone else's server.
  */
 
-import { getBase58Encoder } from "@solana/kit";
-import { Connection, Keypair } from "@solana/web3.js";
+import { Connection } from "@solana/web3.js";
 
 import { ATTRIBUTION_REGISTRY, SOLANA_FEE_WALLET, type RegistryEntry } from "../attribution/registry.ts";
 import { DEVNET_ADVANCED_BOUNDS, parseAdvancedBounds, type AdvancedBounds } from "../core/launch/advanced.ts";
@@ -45,6 +46,10 @@ import type { PresetConfigs } from "../core/venues/meteora-dbc/launch.server.ts"
 import type { LaunchPresetId } from "../core/venues/meteora-dbc/presets.ts";
 import { resolveSolanaLaneState } from "../solana/lane-state.ts";
 import { resolveEndpoint, resolveEndpoints } from "../solana/rpc.ts";
+import type { Idl } from "./executor-signing.server.ts";
+import { executorBounds, poolPayerBounds } from "./signer/bounds.server.ts";
+import { launchKey } from "./signer/select.server.ts";
+import { boundedSigner, NO_JOURNAL, type LaunchSigner, type SignJournal } from "./signer/signer.server.ts";
 
 export type LaunchCluster = "devnet" | "mainnet";
 
@@ -371,14 +376,23 @@ function publicOrigin(raw: string | undefined): string | null {
 }
 
 /**
- * Ryntra's pool payer here; null when there is none, and then nothing launches. On mainnet only the key of the pool payer
- * the attribution registry publishes is one: a key for another address is refused, never used.
+ * What a launch signer needs from its caller: the journal every signature is written to (`./signer/journal.server.ts`;
+ * without one the signer signs nothing), and — the executor — DLMM's IDL, which only the chain's module loads.
  */
-export function launchPoolPayer(env: NodeJS.ProcessEnv = process.env, network: LaunchNetwork | null = launchNetwork(env)): Keypair | null {
+export type LaunchSignerOptions = Readonly<{ journal?: SignJournal; dlmm?: Idl | null; fetch?: typeof fetch }>;
+
+/**
+ * Ryntra's pool payer here — a signer (`./signer/signer.server.ts`) that signs a launch's creation and nothing else;
+ * null when there is none, and then nothing launches. Which key: `RYNTRA_LAUNCH_SIGNER` (`./signer/select.server.ts`) —
+ * the environment's, as before, or a KMS key version. On mainnet only the pool payer the attribution registry publishes
+ * is one: a key for another address is refused, never used.
+ */
+export function launchPoolPayer(env: NodeJS.ProcessEnv = process.env, network: LaunchNetwork | null = launchNetwork(env), options: LaunchSignerOptions = {}): LaunchSigner | null {
   if (!network) return null;
-  const payer = keypairOf(env.RYNTRA_LAUNCH_POOL_PAYER_SECRET);
-  if (!payer || network.cluster !== "mainnet") return payer;
-  return payer.publicKey.toBase58() === registryAddress("solana-launch-pool-payer") ? payer : null;
+  const key = launchKey("pool-payer", env, options.fetch ? { fetch: options.fetch } : {});
+  if (!key) return null;
+  if (network.cluster === "mainnet" && key.address !== registryAddress("solana-launch-pool-payer")) return null;
+  return boundedSigner(key.key, { role: "pool-payer", address: key.address, cluster: network.cluster, bounds: poolPayerBounds(key.address), journal: options.journal ?? NO_JOURNAL });
 }
 
 /**
@@ -387,44 +401,38 @@ export function launchPoolPayer(env: NodeJS.ProcessEnv = process.env, network: L
  */
 export function launchPoolPayerAddress(network: LaunchNetwork, env: NodeJS.ProcessEnv = process.env): string | null {
   if (network.cluster === "mainnet") return registryAddress("solana-launch-pool-payer");
-  return launchPoolPayer(env, network)?.publicKey.toBase58() ?? null;
+  return launchPoolPayer(env, network)?.address ?? null;
 }
 
 /**
  * Ryntra's executor here — the wallet that sends a curve's graduation and holds Ryntra's own liquidity on graduated
- * launches; null when there is none, and then nothing of it runs. Its key comes through
- * `RYNTRA_LAUNCH_EXECUTOR_SECRET`, in the pool payer's formats. On mainnet only the key of the executor the attribution
- * registry publishes is one: every action it takes is then one a counter can attribute.
+ * launches: a signer that signs only the executor's list (`./executor-signing.server.ts`); null when there is none, and
+ * then nothing of it runs. Its key, by the same switch as the pool payer's: `RYNTRA_LAUNCH_EXECUTOR_SECRET` in the pool
+ * payer's formats, or a KMS key version. On mainnet only the executor the attribution registry publishes is one: every
+ * action it takes is then one a counter can attribute.
  */
-export function launchExecutor(env: NodeJS.ProcessEnv = process.env, network: LaunchNetwork | null = launchNetwork(env)): Keypair | null {
+export function launchExecutor(env: NodeJS.ProcessEnv = process.env, network: LaunchNetwork | null = launchNetwork(env), options: LaunchSignerOptions = {}): LaunchSigner | null {
   if (!network) return null;
-  const executor = keypairOf(env.RYNTRA_LAUNCH_EXECUTOR_SECRET);
-  if (!executor || network.cluster !== "mainnet") return executor;
-  return executor.publicKey.toBase58() === registryAddress("solana-launch-executor") ? executor : null;
+  const key = launchKey("executor", env, options.fetch ? { fetch: options.fetch } : {});
+  if (!key) return null;
+  if (network.cluster === "mainnet" && key.address !== registryAddress("solana-launch-executor")) return null;
+  return boundedSigner(key.key, { role: "executor", address: key.address, cluster: network.cluster, bounds: executorBounds(key.address, options.dlmm ?? null), journal: options.journal ?? NO_JOURNAL });
+}
+
+/** The executor mainnet had before its key moved to KMS (CITY-163): it signs nothing now, and what it already holds is still Ryntra's. */
+export function launchRetiredExecutorAddress(network: LaunchNetwork): string | null {
+  return network.cluster === "mainnet" ? (ATTRIBUTION_REGISTRY.find((row) => row.id === "solana-launch-executor-env")?.address ?? null) : null;
 }
 
 /** The executor's address a token's log names — the registry's on mainnet, read without the key; the stand's own key's on devnet. */
 export function launchExecutorAddress(network: LaunchNetwork, env: NodeJS.ProcessEnv = process.env): string | null {
   if (network.cluster === "mainnet") return registryAddress("solana-launch-executor");
-  return launchExecutor(env, network)?.publicKey.toBase58() ?? null;
+  return launchExecutor(env, network)?.address ?? null;
 }
 
 /** Whether the executor may place and move Ryntra's liquidity now: its own operator stop says `OPEN`, and Launch's does. */
 export function launchFloorOpen(env: NodeJS.ProcessEnv = process.env): boolean {
   return launchOpen(env) && resolveSolanaLaneState("LAUNCH_FLOOR", env) === "OPEN";
-}
-
-/** A secret key as configured: a JSON array of 64 bytes, or the base58 string a wallet exports. Null for anything else. */
-function keypairOf(raw: string | undefined): Keypair | null {
-  const text = raw?.trim();
-  if (!text) return null;
-  try {
-    const bytes = text.startsWith("[") ? (JSON.parse(text) as unknown) : Array.from(getBase58Encoder().encode(text));
-    if (!Array.isArray(bytes) || bytes.length !== 64 || !bytes.every((b) => Number.isInteger(b) && b >= 0 && b < 256)) return null;
-    return Keypair.fromSecretKey(Uint8Array.from(bytes as number[]));
-  } catch {
-    return null;
-  }
 }
 
 let cached: { url: string; connection: Connection } | null = null;

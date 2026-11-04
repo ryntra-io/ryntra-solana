@@ -1,28 +1,37 @@
 # Ryntra on Solana — source
 
-Ryntra is agentic finance on Solana: create an asset, let agents work it, and
-keep it from being stolen. Its face is Ryntra City — the whole Solana market as
-a living night city, every coin a tower as tall as its market cap and the
-liquidity behind it. Tap a tower to see it and buy or sell from your own wallet
-in one signature; swap and trade spot with limits and stops; ask Ryntra, the
-assistant, what moved and why; top up and send — on Solana or to another
-network — and ask for a payment with a link in Money. Every transaction is
-shown in the person's wallet and signed there — Ryntra never holds keys or
-money. It runs at [ryntra.io](https://ryntra.io) on desktop and phone, and as
-an Android app in the Solana dApp Store.
+**Say it. Your agent does the rest.** Ryntra is your AI agent on Solana: it
+launches coins and trades for you inside a budget you sign once, and the whole
+market is a living 3D city where every coin is a tower and yours rises live.
+Keys and money stay in the person's wallet; every transaction is shown there and
+signed there. It runs at [ryntra.io](https://ryntra.io) on desktop and phone,
+and as an Android app in the Solana dApp Store.
 
-The city grows around three pillars, each district opening once it works:
-**Create** — launch a token on a Meteora bonding curve and watch it rise in the
-Launch Docks; **Work** — agents with a budget in the person's own wallet and
-hard on-chain limits (a Squads treasury), for buying, grids, recurring buys and
-pools; **Protect** — a guardian agent that checks every transaction before the
-signature. The **Arena** is the showcase: agents with real budgets, results
-checked on-chain.
+![Ryntra City — the Solana market as a living city, every coin a tower](public/reviewers/city.jpg)
+
+## Live on Solana mainnet
+
+| | What a person does | Built on |
+|---|---|---|
+| **Launch** | Name, ticker, picture, one signature — the coin starts on a bonding curve and its tower rises; at about $75K it graduates into a pool by itself | Meteora DBC → DAMM v2, DLMM ([METEORA.md](METEORA.md)) |
+| **Trade** | Tap a tower, buy or sell in one signature; limits and stops | Jupiter |
+| **Your agent** | «Trade BONK 0.1 SOL a day» — sign a budget once; the agent buys and sells by itself: steady buys, dips, grids, new launches; practice on paper first; a daily report | Squads Smart Account policy, Jupiter, a key in Google Cloud KMS |
+| **Earn** | Put dollars or SOL to work in one signature; Meteora pools in the Piers | Jupiter Lend, Meteora DLMM |
+| **Partners** | Bring people and earn a share of Ryntra's fee, paid weekly in USDC | Squads multisig |
+
+| Launch a coin | Its tower on the curve |
+|---|---|
+| ![The launch sheet in the city](public/reviewers/launch-sheet.jpg) | ![A coin's window on its curve, on the devnet stand](public/reviewers/coin-on-curve.jpg) |
+| **Your agent, in one sentence** | **Earn on Meteora pools** |
+| ![The agent's card from one sentence](public/reviewers/agent-card.jpg) | ![The Piers: Meteora DLMM pools in the Earn window](public/reviewers/earn-piers.jpg) |
+
+The coin's window above is from the devnet stand, where the curve is shown filling;
+the other pictures are the live site.
 
 This repository is the product's source code as released — the web app and the
 city, the Android app, the Evidence Kernel and the database schema, with their
 tests. It is private and shared read-only with invited reviewers. Every update
-is one commit, named for what it released; the latest is from 2026-10-31.
+is one commit, named for what it released; the latest is from 2026-11-04.
 
 ## What is here
 
@@ -36,7 +45,7 @@ is one commit, named for what it released; the latest is from 2026-10-31.
 | `supabase/migrations/`, `supabase/prepared/` | The database schema migration by migration, and the prepared SQL that is applied by hand (corrections and rollbacks) |
 | `public/` | Static assets |
 
-5,816 files come from the development repository as released, and each test
+6,578 files come from the development repository as released, and each test
 sits beside the code it tests (`*.test.mjs`); `README.md`, `BOUNDARY.md`,
 `METEORA.md`, `LICENSE`, `.gitignore` and the scripts of `package.json` are
 written for this snapshot.
@@ -51,7 +60,7 @@ Node >=22 <25, 22.18 or later — the tests import TypeScript directly.
 
 ```bash
 npm ci
-npm run dev          # http://localhost:3000 — the app is at /app
+npm run dev          # http://localhost:3000 — Ryntra City
 ```
 
 ```bash
@@ -102,15 +111,15 @@ build-tools).
 
 The code as it stood before the hackathon is tagged
 `pre-hackathon-baseline-2026-09-11` in the development repository — commit `7fc5776f`,
-2026-09-11. Measured against that tag, path by path, for the 5,816 files
+2026-09-11. Measured against that tag, path by path, for the 6,578 files
 that come from the development repository:
 
 | Since the tag | Files |
 |---|---|
-| New | 4,089 |
-| Changed | 895 |
-| Unchanged | 832 |
-| Lines added / removed | +926,936 / −27,387 |
+| New | 4,854 |
+| Changed | 896 |
+| Unchanged | 828 |
+| Lines added / removed | +1,048,704 / −27,618 |
 
 [BOUNDARY.md](BOUNDARY.md) lists every new and every changed file. Shipped since
 then, as the public build log records it:

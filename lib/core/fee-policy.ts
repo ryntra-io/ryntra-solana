@@ -192,6 +192,24 @@ export function inputSideFeeRaw(amountRaw: string, bps: number): string {
   return ((BigInt(amountRaw) * BigInt(bps)) / 10_000n).toString();
 }
 
+/**
+ * A rate less a discount of `discountBps` of it, rounded down to a whole basis
+ * point — in the person's favour: 100 → 90, 50 → 45, 25 → 22 at 10 %. The
+ * partner programme's discount for a brought friend (`./referee-discount.ts`).
+ *
+ * One rule on every venue: the discount never takes a rate under the venue's
+ * smallest fee (`minimumBps` — one basis point unless the venue names more).
+ * Where the discounted rate would fall under it, the discount is not possible
+ * there and the rate stays the table's: never a trade made free by a discount,
+ * never a discount the order does not carry.
+ */
+export function discountedFeeBps(bps: number, discountBps: number, minimumBps = 1): number {
+  if (bps <= 0 || discountBps <= 0) return Math.max(0, bps);
+  const off = Math.min(discountBps, 10_000);
+  const discounted = Math.floor((bps * (10_000 - off)) / 10_000);
+  return discounted >= Math.max(1, minimumBps) ? discounted : bps;
+}
+
 /** The `/order` referral this flow asks for, or none: Jupiter refuses a referral below its minimum. */
 export function orderReferralBps(flow: FeeFlow, minimumBps: number): number | null {
   const bps = FEE_POLICY_V2[flow].bps;

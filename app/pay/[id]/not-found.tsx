@@ -1,26 +1,24 @@
-import Link from "next/link";
+import type { Metadata, Viewport } from "next";
 
-import { payCopy } from "@/lib/site/pay-copy";
-import { publicServerLocale } from "@/lib/site/server-locale";
+import { Missing } from "@/city/components/pay/PayerPage";
+import { LANG_BOOT_SCRIPT } from "@/city/lib/i18n/langs";
+import { PALETTE } from "@/city/lib/palette";
+import { payMetadata } from "@/city/lib/pay/meta";
+import { CITY_FONTS } from "@/city/styles/fonts";
+import s from "@/city/styles/city.module.css";
 
-import { PayBrand } from "../pay-brand";
-import styles from "../pay.module.css";
+/* A wrong or retired payment link (CITY-156): the city's window says so in the city's words and leads into the city.
+   Its tab carries the same words, never the site's old line. */
 
-/** A wrong or retired link says so in the payer's words, and offers nothing else. */
-export default async function PayNotFound() {
-  const copy = payCopy(await publicServerLocale());
+export const metadata: Metadata = payMetadata(null);
+
+export const viewport: Viewport = { themeColor: PALETTE.inkDeep, colorScheme: "dark", viewportFit: "cover" };
+
+export default function PayNotFound() {
   return (
-    <main className={styles.page} id="main-content">
-      <div className={styles.frame}>
-        <header className={styles.top}>
-          <PayBrand />
-        </header>
-        <section className={styles.missing}>
-          <h1>{copy.notFoundTitle}</h1>
-          <p>{copy.notFoundBody}</p>
-          <Link className={styles.secondary} href="/">{copy.aboutRyntra}</Link>
-        </section>
-      </div>
-    </main>
+    <div className={`${s.root} ${CITY_FONTS.className}`} style={CITY_FONTS.style}>
+      <script dangerouslySetInnerHTML={{ __html: LANG_BOOT_SCRIPT }} />
+      <Missing />
+    </div>
   );
 }

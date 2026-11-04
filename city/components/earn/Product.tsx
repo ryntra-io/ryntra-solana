@@ -14,6 +14,7 @@ const FRAME: Readonly<Record<ProductId, DistrictId>> = {
   pier: 'harbor',
   dollar: 'vault',
   sell: 'market',
+  stockpier: 'harbor',
   stocks: 'vault',
   captain: 'harbor',
 };

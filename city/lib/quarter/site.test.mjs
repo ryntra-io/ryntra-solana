@@ -134,7 +134,7 @@ test("a declined signature or a refused link keeps the picker, with one plain li
   const item = refused.site.getState().picking.list.items[0];
   assert.equal(await refused.site.getState().choose(item), false);
   assert.equal(refused.site.getState().picking.step, "list");
-  assert.equal(refused.site.getState().picking.error, "The engine says this is not yours.");
+  assert.equal(refused.site.getState().picking.error, "Ryntra sees this is not yours.");
   assert.equal(refused.quarter.getState().me.buildings.find((b) => b.slot === 1).link, null, "nothing is shown that the world did not keep");
 
   const expired = setup({ linkFails: [new WorldError(401, "WALLET_REQUIRED")] });

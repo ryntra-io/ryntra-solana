@@ -2,9 +2,10 @@ import { create } from 'zustand';
 import { rawToDecimal } from '../../../lib/solana/limits/model.ts';
 import { citySigner } from '../app-bridge/route.ts';
 import { digits, wordsNow } from '../i18n/dict.ts';
+import { langNow } from '../i18n/lang.ts';
 import { createEngine, type Engine } from './engine.ts';
 import type { SignResult } from './flow.ts';
-import { SPOT_OPEN } from './gates.ts';
+import { SPOT_OPEN, STOPS_ENGINE } from './gates.ts';
 import {
   cancelLimit,
   createLimits,
@@ -17,15 +18,20 @@ import {
   type LimitsApi,
   type LimitToken,
 } from './limits.ts';
+import { proveWallet, type ProofOutcome } from './proof.ts';
+import { createStopsApi, stopOfView, type StopsApi, type StopsFailure } from './stops-api.ts';
 import {
   inputMintOf,
+  isEngineStop,
   keptStops,
   makeStop,
+  MAX_STOPS,
   outputMintOf,
   parseStops,
   stopReached,
   stopsKey,
   stopsToWatch,
+  stopView,
   withState,
   type Stop,
   type StopExpiry,
@@ -34,7 +40,7 @@ import {
 import { useTrade, type Connection, type Notice } from './store.ts';
 import { isBase, unitOf, type PayAsset } from './tiles.ts';
 import { useWallet } from './wallet.ts';
-import { LIMITS } from './words.ts';
+import { LIMITS, STOPS } from './words.ts';
 
 /**
  * The trade card's Limit and Stop, and «My orders». A limit order is the engine's: the card reads the pair's price,
@@ -43,6 +49,12 @@ import { LIMITS } from './words.ts';
  * engine's quote while Ryntra is open, and when it is reached the city opens the sale's exact order for the person to
  * sign. All of it stands behind `NEXT_PUBLIC_RYNTRA_CITY_SPOT` (`gates.ts`): shut, nothing here asks the engine for
  * an order, places one, or watches a stop.
+ *
+ * Since CITY-149, behind `NEXT_PUBLIC_RYNTRA_CITY_STOPS`, a new stop is the engine's: the wallet proves itself with one
+ * signed message (no transaction), the engine keeps the stop under the wallet, watches it around the clock and tells
+ * the person when it is reached — Telegram, the browser's push. The device keeps a copy for «My orders», and the city
+ * still asks the quote while it is open. A reached stop is offered once on this device: the one a note's link names
+ * (`?stop=`) first, else the newest the engine reached — so a tap on the note opens the city on that sale.
  */
 
 export type SpotPhase = 'idle' | 'reviewing' | 'wallet' | 'sending' | 'placed' | 'set' | 'failed' | 'unclear';
@@ -94,6 +106,13 @@ export type SpotEnv = Readonly<{
   refreshHoldings: (delaysMs?: readonly number[]) => void;
   later: (run: () => void, ms: number) => void;
   id: () => string;
+  /** CITY-149: the engine's stops, the wallet's proof for a change, and the switch that puts stops in the engine. */
+  stops: StopsApi;
+  prove: (connection: Connection) => Promise<ProofOutcome>;
+  engineStops: boolean;
+  locale: () => 'en' | 'uk';
+  /** The stop a note's link names (`?stop=`), read once and taken off the address. */
+  askedStop: () => string | null;
 }>;
 
 const browserStorage: Storage = {
@@ -124,11 +143,41 @@ let env: SpotEnv = {
   refreshHoldings: (delays) => useWallet.getState().refreshHoldings(delays),
   later: (run, ms) => void setTimeout(run, ms),
   id: () => (typeof crypto !== 'undefined' && 'randomUUID' in crypto ? crypto.randomUUID() : `${Date.now()}-${Math.random().toString(36).slice(2)}`),
+  stops: createStopsApi(),
+  prove: (connection) => proveWallet(connection),
+  engineStops: STOPS_ENGINE,
+  locale: () => langNow(),
+  askedStop: () => {
+    if (typeof window === 'undefined') return null;
+    const query = new URLSearchParams(window.location.search);
+    const id = query.get('stop');
+    if (id === null) return null;
+    query.delete('stop');
+    const rest = query.toString();
+    window.history.replaceState(window.history.state, '', `${window.location.pathname}${rest ? `?${rest}` : ''}${window.location.hash}`);
+    return id;
+  },
 };
+
+/** Where a wallet's offered stops are remembered: a reached stop opens its sale by itself once on this device. */
+export const offeredKey = (owner: string) => `ryntra.city.stops.offered.v1:${owner}`;
+const OFFERED_KEPT = 60;
+/** The engine's stops are read again after this while the page is open; the cron checks them every minute. */
+const ENGINE_READ_MS = 30_000;
+
+/** A refusal of the engine's, said in the card's words. */
+function stopRefusal(failure: StopsFailure, side: 'buy' | 'sell'): string {
+  if (failure.code === 'STOP_REACHED') return side === 'sell' ? wordsNow(STOPS).thereLower : wordsNow(STOPS).thereHigher;
+  if (failure.code === 'STOP_LIMIT') return wordsNow(STOPS).tooMany(MAX_STOPS);
+  if (failure.status === 401 || failure.status === 403) return wordsNow(LIMITS).notSigned;
+  return wordsNow(STOPS).notKept;
+}
 
 /** Swap what the ticket reaches: for tests, and nothing else. */
 export function setSpotEnv(next: Partial<SpotEnv>): void {
   env = { ...env, ...next };
+  engineRead = null;
+  asked = undefined;
 }
 
 /** After a placement or a cancellation the orders are read again a little later, for a venue that lags. */
@@ -202,8 +251,8 @@ type SpotStore = {
   reviewOrder: (intent: LimitIntent) => Promise<void>;
   /** The wallet signs the Review on screen; the engine relays it once. `words` name the coin and its price's unit. */
   placeOrder: (intent: LimitIntent, words?: Readonly<{ coin: string; unit: string }>) => Promise<void>;
-  /** Keep a stop on this device. `nowOutRaw` is the engine's quote for its amount now. */
-  setStop: (input: Omit<StopInput, 'owner'>, nowOutRaw: string | null) => void;
+  /** Set a stop: the engine's under the wallet (CITY-149), or this device's while that switch is shut. `nowOutRaw` is the engine's quote for its amount now. */
+  setStop: (input: Omit<StopInput, 'owner'>, nowOutRaw: string | null) => Promise<void>;
   /** The ticket back to its fields, for another order. */
   again: () => void;
   /** Everything of the ticket let go: another coin, the card closed. */
@@ -211,9 +260,15 @@ type SpotStore = {
 
   readOrders: (force?: boolean) => Promise<void>;
   cancelOrder: (order: Pick<LimitOrderView, 'key' | 'venue' | 'order'>) => Promise<void>;
+  /** The wallet's stops: this device's copy at once, then the engine's when they live there. */
   loadStops: () => void;
-  cancelStop: (id: string) => void;
-  /** Ask the engine's quote once for every watched stop; the reached ones are returned, the sale is the person's. */
+  /** Read the engine's stops into this device's copy (at most every half a minute unless forced). */
+  readEngineStops: (force?: boolean) => Promise<void>;
+  cancelStop: (id: string) => Promise<void>;
+  /**
+   * Ask the engine's quote once for every watched stop, and the engine for the ones it reached; the reached ones not
+   * offered on this device yet are returned, a note's own stop first — the sale is the person's.
+   */
   watchStops: () => Promise<readonly Stop[]>;
   /** A reached stop's sale on the trade card, at the market price, for the person to read and sign. */
   openSale: (stop: Stop) => void;
@@ -232,6 +287,9 @@ let marketTicket = 0;
 let actionTicket = 0;
 let ordersTicket = 0;
 let watching = false;
+let engineRead: Readonly<{ owner: string; at: number }> | null = null;
+/** The stop a note's link named, until it is offered; `undefined` until the address is read. */
+let asked: string | null | undefined;
 
 export const useSpot = create<SpotStore>((set, get) => {
   const deps = (connection: Connection, my: number): LimitDeps => ({
@@ -249,6 +307,40 @@ export const useSpot = create<SpotStore>((set, get) => {
   };
 
   const ownStops = (owner: string) => parseStops(env.storage.read(stopsKey(owner))).filter((stop) => stop.owner === owner);
+
+  const offered = (owner: string): readonly string[] => {
+    try {
+      const list = JSON.parse(env.storage.read(offeredKey(owner)) ?? '[]') as unknown;
+      return Array.isArray(list) ? list.filter((id): id is string => typeof id === 'string') : [];
+    } catch {
+      return [];
+    }
+  };
+  const markOffered = (owner: string, ids: readonly string[]) => {
+    if (!ids.length) return;
+    env.storage.write(offeredKey(owner), JSON.stringify([...ids, ...offered(owner).filter((id) => !ids.includes(id))].slice(0, OFFERED_KEPT)));
+  };
+  const askedNow = (): string | null => {
+    if (asked === undefined) asked = env.askedStop();
+    return asked;
+  };
+
+  /**
+   * The reached stops to offer: not offered on this device yet, the note's own stop first (even one this device has
+   * not seen reached: the person tapped «sell?»), then the newest. Each is offered once.
+   */
+  const toOffer = (owner: string, stops: readonly Stop[], reachedNow: readonly Stop[]): readonly Stop[] => {
+    const seen = new Set(offered(owner));
+    const named = askedNow();
+    const mine = named ? stops.find((stop) => stop.id === named && (stop.state === 'reached' || stopView(stop, env.now()) === 'watching')) : undefined;
+    const fresh = [...reachedNow, ...stops.filter((stop) => stop.state === 'reached' && isEngineStop(stop))]
+      .filter((stop, index, all) => all.findIndex((other) => other.id === stop.id) === index && !seen.has(stop.id) && stop.id !== mine?.id && (stop.state === 'watching' || stop.state === 'reached') && stopView(stop, env.now()) !== 'expired')
+      .sort((a, b) => (b.reachedAt ?? 0) - (a.reachedAt ?? 0));
+    const list = mine ? [mine, ...fresh] : fresh;
+    if (mine) asked = null;
+    markOffered(owner, list.map((stop) => stop.id));
+    return list;
+  };
 
   return {
     ...initial,
@@ -348,13 +440,29 @@ export const useSpot = create<SpotStore>((set, get) => {
       }
     },
 
-    setStop: (input, nowOutRaw) => {
+    setStop: async (input, nowOutRaw) => {
       const connection = env.wallet().connection;
       if (!env.open || !connection || get().phase !== 'idle') return;
-      const made = makeStop({ ...input, owner: connection.address }, env.now(), nowOutRaw, env.id());
+      const owner = connection.address;
+      const made = makeStop({ ...input, owner }, env.now(), nowOutRaw, env.id());
       if (!made.ok) return set({ notice: { tone: 'error', text: made.problem.text } });
-      writeStops(connection.address, [made.stop, ...ownStops(connection.address)]);
-      set({ phase: 'set', placed: { kind: 'stop', stop: made.stop }, notice: null });
+      if (!env.engineStops) {
+        writeStops(owner, [made.stop, ...ownStops(owner)]);
+        return set({ phase: 'set', placed: { kind: 'stop', stop: made.stop }, notice: null });
+      }
+      // The engine keeps it: the wallet proves itself with one signed message (none when its proof is fresh), then the stop is sent.
+      const my = ++actionTicket;
+      set({ phase: 'wallet', notice: null });
+      const proof = await env.prove(connection);
+      if (my !== actionTicket) return;
+      if (!proof.ok) return set({ phase: 'idle', notice: proof.state === 'declined' ? { tone: 'info', text: wordsNow(LIMITS).notSigned } : { tone: 'error', text: proof.message } });
+      set({ phase: 'sending' });
+      const answer = await env.stops.create({ side: input.side, base: input.base, quote: input.quote, amountRaw: input.amountRaw, price: input.price, expiry: input.expiry, locale: env.locale() });
+      if (my !== actionTicket) return;
+      if (!answer.ok) return set({ phase: 'idle', notice: { tone: answer.failure.code === 'STOP_REACHED' ? 'error' : 'warn', text: stopRefusal(answer.failure, input.side) } });
+      const stop = stopOfView(answer.value, owner);
+      writeStops(owner, [stop, ...ownStops(owner)]);
+      set({ phase: 'set', placed: { kind: 'stop', stop }, notice: null });
     },
 
     again: () => {
@@ -415,11 +523,35 @@ export const useSpot = create<SpotStore>((set, get) => {
       const owner = env.wallet().connection?.address ?? null;
       if (!owner) return set({ stops: [], stopsOwner: null });
       set({ stops: keptStops(ownStops(owner), env.now()), stopsOwner: owner });
+      if (env.open && env.engineStops) void get().readEngineStops();
     },
 
-    cancelStop: (id) => {
-      const owner = env.wallet().connection?.address;
-      if (!owner) return;
+    readEngineStops: async (force = false) => {
+      const owner = env.wallet().connection?.address ?? null;
+      if (!env.open || !env.engineStops || !owner) return;
+      if (!force && engineRead?.owner === owner && env.now() - engineRead.at < ENGINE_READ_MS) return;
+      engineRead = { owner, at: env.now() };
+      const answer = await env.stops.list();
+      // A wallet that has not proved itself, or an engine that did not answer: the device's copy stays as it was.
+      if (!answer.ok || env.wallet().connection?.address !== owner) return;
+      const ids = new Set(answer.value.map((view) => view.id));
+      // The engine's word for its stops; the device's own stops (set before, or while the switch was shut) as they were.
+      writeStops(owner, [...answer.value.map((view) => stopOfView(view, owner)), ...ownStops(owner).filter((stop) => !isEngineStop(stop) || (!ids.has(stop.id) && stop.state !== 'watching'))]);
+    },
+
+    cancelStop: async (id) => {
+      const connection = env.wallet().connection;
+      if (!connection) return;
+      const owner = connection.address;
+      const stop = ownStops(owner).find((item) => item.id === id);
+      if (stop && isEngineStop(stop) && env.engineStops && (stop.state === 'watching' || stop.state === 'reached')) {
+        // The engine lets it go only on the wallet's own word: one signed message when its proof is not fresh.
+        const proof = await env.prove(connection);
+        if (!proof.ok) return set({ ordersNotice: { tone: proof.state === 'declined' ? 'info' : 'error', text: proof.state === 'declined' ? wordsNow(LIMITS).notSigned : proof.message } });
+        const answer = await env.stops.cancel(id);
+        if (!answer.ok && answer.failure.code !== 'STOP_NOT_FOUND') return set({ ordersNotice: { tone: 'warn', text: wordsNow(STOPS).notKept } });
+        if (env.wallet().connection?.address !== owner) return;
+      }
       writeStops(owner, withState(ownStops(owner), id, { state: 'cancelled' }));
     },
 
@@ -439,7 +571,10 @@ export const useSpot = create<SpotStore>((set, get) => {
         let stops: readonly Stop[] = ownStops(owner);
         for (const stop of reached) stops = withState(stops, stop.id, { state: 'reached', reachedAt: env.now() });
         writeStops(owner, stops);
-        return reached;
+        // The engine's word too: the stops it reached, with the city closed or on another device.
+        await get().readEngineStops();
+        if (env.wallet().connection?.address !== owner) return [];
+        return toOffer(owner, ownStops(owner), reached);
       } finally {
         watching = false;
       }
@@ -489,4 +624,6 @@ useTrade.subscribe((state, before) => {
   const kept = keptStops(withState(stops, match.id, { state: 'done' }), env.now());
   env.storage.write(stopsKey(owner), JSON.stringify(kept));
   useSpot.setState({ stops: kept });
+  // The engine's stop is told too, on the proof the wallet already gave; without it the stop simply stays «reached» there.
+  if (env.engineStops && isEngineStop(match)) void env.stops.finish(match.id).catch(() => undefined);
 });

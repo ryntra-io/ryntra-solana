@@ -5,13 +5,15 @@ import type { PlacedTower } from '@/city/lib/city/layout';
 import { useCity } from '@/city/lib/city/store';
 import { allLaunches, useLaunch } from '@/city/lib/launch/district';
 import { lensTowers, type LensContext } from '@/city/lib/lens/lens';
+import { useNewLaunches } from '@/city/lib/lens/new-store';
 import { useLens } from '@/city/lib/lens/store';
 import { glowingMints, useTrade } from '@/city/lib/trade/store';
 import { ownedMints, useWallet } from '@/city/lib/trade/wallet';
 
 /**
  * What the Lens reads from the rest of the city: the engine's listed companies, the coins of the connected wallet (as
- * «Mine» in the trade card reads them, a buy of a moment ago included) and Ryntra's own launches with their curves.
+ * «Mine» in the trade card reads them, a buy of a moment ago included), Ryntra's own launches with their curves, and
+ * the rings of every new launch of the network (CITY-142).
  */
 export function useLensContext(): LensContext {
   const stocks = useLens((st) => st.stocks);
@@ -19,11 +21,12 @@ export function useLensContext(): LensContext {
   const optimistic = useTrade((st) => st.optimistic);
   const feed = useLaunch((st) => st.feed);
   const mine = useLaunch((st) => st.mine);
+  const stages = useNewLaunches((st) => st.stages);
   return useMemo(() => {
     const now = Date.now();
     const launches = new Map(allLaunches({ feed, mine }, now).map((launch) => [launch.token, { progress: launch.progress, migrated: launch.migrated }]));
-    return { stocks, owned: glowingMints(ownedMints(holdings), optimistic, now), launches, now };
-  }, [stocks, holdings, optimistic, feed, mine]);
+    return { stocks, owned: glowingMints(ownedMints(holdings), optimistic, now), launches, stages, now };
+  }, [stocks, holdings, optimistic, feed, mine, stages]);
 }
 
 /** The towers of the picked chip in today's layout, and the context they were picked with. */

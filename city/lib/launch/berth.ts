@@ -147,6 +147,67 @@ export function earnedAcross(rows: readonly Pick<LaunchCabinetRow, 'earnings' | 
   return new Map([...sums].map(([mint, raw]) => [mint, raw.toString()]));
 }
 
+/* ---------------------------------------------------------------- the tower's figures */
+
+/** «Моя вежа»'s figures, as the engine's market of the launch reads them now. Nothing here is counted by the city. */
+export type TowerFigures = Readonly<{
+  price: Readonly<{ pair: number; usd: number | null }>;
+  /** The price now against the curve's opening price, signed basis points. */
+  sinceLaunchBps: number;
+  holders: number;
+  holdersAtLeast: boolean;
+  /** The curve's way to the DEX, whole per cent; null once it moved. */
+  progressPct: number | null;
+}>;
+
+export function towerFiguresOf(market: Pick<LaunchMarketResponse, 'price' | 'sinceLaunchBps' | 'holders' | 'progress'> | null): TowerFigures | null {
+  if (!market) return null;
+  return {
+    price: market.price,
+    sinceLaunchBps: market.sinceLaunchBps,
+    holders: market.holders.count,
+    holdersAtLeast: market.holders.atLeast,
+    progressPct: market.progress.migrated ? null : Math.floor(market.progress.bps / 100),
+  };
+}
+
+/* ---------------------------------------------------------------- a launch that just landed */
+
+/** A launch of this wallet the city already knows from its own liftoff. */
+type JustLanded = Readonly<{ token: string; symbol: string; name: string; image: string | null; launchedAt: string | null; creator: string | null; preset: string | null }>;
+
+/**
+ * The wallet's launches to show: the cabinet's, and before them each one this wallet just launched that the cabinet does
+ * not list yet — named as it landed, with its earnings unread, never zero — so the window never says «no towers» right
+ * after a liftoff.
+ */
+export function withJustLanded(rows: readonly LaunchCabinetRow[], landed: readonly JustLanded[], wallet: string, presets: readonly LaunchPresetView[]): readonly LaunchCabinetRow[] {
+  const listed = new Set(rows.map((row) => row.token));
+  const fresh: LaunchCabinetRow[] = [];
+  for (const launch of landed) {
+    const preset = presets.find((entry) => entry.id === launch.preset);
+    if (listed.has(launch.token) || launch.creator !== wallet || !preset || !launch.launchedAt) continue;
+    fresh.push({
+      token: launch.token,
+      name: launch.name,
+      symbol: launch.symbol,
+      /* The creator's own picture is a data address until the engine's copy is listed: only an address the row may carry. */
+      image: launch.image?.startsWith('http') ? launch.image : null,
+      preset: preset.id,
+      creator: wallet,
+      role: 'creator',
+      launchedAt: launch.launchedAt,
+      pair: { ...preset.pair, dollar: preset.pair.symbol.startsWith('USD') },
+      progressBps: null,
+      migrated: null,
+      earnings: null,
+      feeSharing: null,
+      claimable: false,
+    });
+  }
+  return [...fresh, ...rows];
+}
+
 /* ---------------------------------------------------------------- which launch the berth opens on */
 
 /**

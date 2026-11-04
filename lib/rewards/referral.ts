@@ -3,6 +3,7 @@ import { randomBytes } from "node:crypto";
 import { z } from "zod";
 
 import { normalizeReferralCode, REFERRAL_CODE_ALPHABET as ALPHABET, REFERRAL_CODE_LENGTH as CODE_LENGTH, REFERRAL_CODE_PATTERN } from "./referral-code.ts";
+import { REFERRAL_SUB_PATTERN } from "./referral-sub.ts";
 
 /**
  * Who invited whom, and the four ways that can go wrong.
@@ -107,6 +108,12 @@ export const RewardAccountSchema = z
      */
     directReferrals: z.number().int().min(0).default(0),
     level2Referrals: z.number().int().min(0).default(0),
+    /**
+     * The sub-ID of the link that bound this wallet (`referral-sub.ts`), kept for the inviter's own funnel; absent
+     * when the link carried none, after a change of inviter, and on every record written before sub-IDs existed —
+     * so a record without one keeps exactly the shape it always had. It never decides who is paid.
+     */
+    referralSubId: z.string().regex(REFERRAL_SUB_PATTERN).optional(),
     version: z.number().int().min(0),
   })
   .strict();
@@ -337,9 +344,18 @@ export const REFERRAL_COOKIE = "rref";
  * longer remembers. A code without this cookie is treated as stale.
  */
 export const REFERRAL_COOKIE_AT = "rref_at";
-export const REFERRAL_FIRST_TOUCH_MS = 24 * 60 * 60 * 1000;
+/** The sub-ID of the carried code's link (`referral-sub.ts`), set and cleared with it. */
+export const REFERRAL_SUB_COOKIE = "rref_s";
 
-/** Does a carried code still hold against a newly opened link? */
+/**
+ * How long a carried code holds against a later link: the cookie's whole life (Ryntra Partners R3 — «the first valid
+ * link wins»). Before 29.10 it was a day, after which a newer link replaced it — which let anybody who got a person to
+ * open one more link a day later take the binding. A code that belongs to nobody holds nothing: the route asks before
+ * keeping it (`app/r/[code]/route.ts`). A different code is still chosen on purpose with «Change code».
+ */
+export const REFERRAL_FIRST_TOUCH_MS = 30 * 24 * 60 * 60 * 1000;
+
+/** Does a carried code still hold against a newly opened link? Only by its moment — whether it is valid is the route's question. */
 export function carriedCodeHolds(carriedAt: string | null | undefined, nowMs: number): boolean {
   const at = Number(carriedAt);
   return Number.isFinite(at) && at > 0 && at <= nowMs && nowMs - at < REFERRAL_FIRST_TOUCH_MS;

@@ -19,6 +19,7 @@ import { stopView } from '@/city/lib/trade/stops';
 import { useTrade } from '@/city/lib/trade/store';
 import { useWallet } from '@/city/lib/trade/wallet';
 import { FlagGlyph } from '../scouts/glyphs';
+import { AgentMine } from '../autopilot/AgentMine';
 import { MyOrders } from './MyOrders';
 import { MINE } from './words';
 import s from './mine.module.css';
@@ -167,6 +168,8 @@ export function MinePanel() {
               ))}
             </div>
           )}
+
+          {tab === 'coins' ? <AgentMine onOpen={() => useMine.getState().close()} /> : null}
 
           {tab === 'orders' ? (
             <MyOrders now={now} />

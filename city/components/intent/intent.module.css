@@ -1,0 +1,370 @@
+/* The confirm sheet of a prepared action (CITY-161), in the city's own words: dark glass, thin edges, warm figures,
+   chamfered corners, one action at the bottom. The window frame brings the head, the body scrolls. */
+
+.pending {
+  height: 100%;
+  min-height: 240px;
+}
+
+.body {
+  min-height: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  padding: 18px 20px 20px;
+  color: var(--ice);
+}
+
+.opening {
+  margin: 40px 0;
+  text-align: center;
+  color: var(--text-dim);
+  font-size: var(--type-body);
+}
+
+/* ---------- Who prepared it ---------- */
+
+.originBox {
+  display: grid;
+  gap: 8px;
+}
+
+.origin {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 12px;
+  background: linear-gradient(100deg, rgba(153, 69, 255, 0.16), rgba(153, 69, 255, 0.05));
+  box-shadow: inset 0 0 0 1px rgba(153, 69, 255, 0.38);
+  clip-path: polygon(10px 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%, 0 10px);
+}
+
+.originGlyph {
+  width: 34px;
+  height: 34px;
+  flex: none;
+  display: grid;
+  place-items: center;
+  color: var(--amber);
+  background: rgba(255, 178, 63, 0.1);
+  box-shadow: inset 0 0 0 1px rgba(255, 178, 63, 0.3);
+  border-radius: 50%;
+}
+
+.originText {
+  min-width: 0;
+  flex: 1;
+  display: grid;
+  gap: 2px;
+}
+
+/* The name is never cut short on a phone: it wraps to a second line before it ever ends in an ellipsis. */
+.originName {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  overflow: hidden;
+  overflow-wrap: anywhere;
+  font-size: var(--type-base);
+  font-weight: 700;
+}
+
+/* Kind, time left and «Unverified» share one line where it fits; on a phone the mark drops below, whole. */
+.originMeta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 8px;
+  font-size: var(--type-micro);
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+}
+
+.originWhen {
+  white-space: nowrap;
+}
+
+.originNote {
+  margin: 0;
+  padding: 0 4px;
+  font-size: var(--type-small);
+  line-height: 1.45;
+  color: var(--text-dim);
+}
+
+.info {
+  width: 30px;
+  height: 30px;
+  flex: none;
+  display: grid;
+  place-items: center;
+  border: 0;
+  border-radius: 50%;
+  font: italic 700 15px/1 Georgia, 'Times New Roman', serif;
+  color: var(--ice);
+  background: rgba(153, 69, 255, 0.45);
+  cursor: pointer;
+}
+
+.infoSmall {
+  width: 24px;
+  height: 24px;
+  margin-left: auto;
+  font-size: 13px;
+}
+
+.infoOn {
+  background: var(--violet);
+}
+
+/* ---------- The figures ---------- */
+
+.head {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.coin {
+  width: 48px;
+  height: 48px;
+  flex: none;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 30%, rgba(255, 231, 194, 0.22), rgba(255, 255, 255, 0.04));
+  box-shadow: inset 0 0 0 1px rgba(255, 231, 194, 0.28), 0 0 24px rgba(255, 178, 63, 0.16);
+}
+
+.coin img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.coinSol {
+  background: radial-gradient(circle at 35% 30%, #c79bff, var(--violet));
+}
+
+.coinUsdc {
+  background: radial-gradient(circle at 35% 30%, #6fa8e8, #2775ca);
+}
+
+.coinSol .coinLetter,
+.coinUsdc .coinLetter {
+  color: #fff;
+}
+
+.coinLetter {
+  font-size: 20px;
+  font-weight: 900;
+  color: var(--warm);
+}
+
+.title {
+  margin: 0;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: var(--type-headline);
+  line-height: 1.1;
+  color: var(--ice);
+}
+
+.label {
+  margin-bottom: 6px;
+  font-size: var(--type-caption);
+  font-weight: 800;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+}
+
+.pay {
+  font-size: var(--type-lead);
+  color: var(--text-dim);
+}
+
+.pay b {
+  font-size: var(--type-title-l);
+  color: var(--ice);
+}
+
+.figure {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 4px 10px;
+  font-size: 44px;
+  line-height: 1;
+  color: var(--ice);
+}
+
+.unit {
+  font-size: var(--type-title-l);
+  color: var(--warm);
+}
+
+.sub {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-top: 10px;
+  font-size: var(--type-body);
+  color: var(--text-dim);
+}
+
+.rows {
+  margin: 0;
+  display: grid;
+  gap: 8px;
+  padding: 12px 14px;
+  background: rgba(255, 255, 255, 0.04);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.05);
+}
+
+.rowLine {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  font-size: var(--type-small);
+}
+
+.rowLine dt {
+  color: var(--text-dim);
+}
+
+.rowLine dd {
+  margin: 0;
+  text-align: right;
+  color: var(--ice);
+}
+
+/* ---------- The recipient ---------- */
+
+.address {
+  padding: 14px 16px;
+  font: 600 16px/1.5 ui-monospace, 'SFMono-Regular', Menlo, Consolas, monospace;
+  letter-spacing: 0.05em;
+  word-break: break-word;
+  color: var(--ice);
+  background: rgba(255, 255, 255, 0.05);
+  box-shadow: inset 0 0 0 1px rgba(255, 231, 194, 0.16);
+  clip-path: polygon(10px 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%, 0 10px);
+}
+
+.labelRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 6px;
+}
+
+.labelRow .label {
+  margin-bottom: 0;
+}
+
+.tag {
+  padding: 3px 8px;
+  font-size: var(--type-micro);
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--amber);
+  background: rgba(255, 178, 63, 0.12);
+  box-shadow: inset 0 0 0 1px rgba(255, 178, 63, 0.35);
+}
+
+/* ---------- The action ---------- */
+
+.spacer {
+  flex: 1;
+}
+
+/* The action and its one line sit on solid glass, so nothing that scrolls under them shows through; above them the
+   figures fade out instead of being cut by an edge. */
+.dock {
+  position: sticky;
+  bottom: 0;
+  margin: 0 -20px -20px;
+  padding: 8px 20px 20px;
+  background: rgb(11, 10, 20);
+}
+
+.dock::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 100%;
+  height: 32px;
+  background: linear-gradient(rgba(11, 10, 20, 0), rgb(11, 10, 20));
+  pointer-events: none;
+}
+
+/* ---------- How it ended ---------- */
+
+.ending {
+  margin: auto 0;
+  display: grid;
+  justify-items: center;
+  gap: 12px;
+  padding: 24px 0 4px;
+  text-align: center;
+}
+
+.endMark {
+  width: 76px;
+  height: 76px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+}
+
+.endOk {
+  color: var(--ink);
+  background: radial-gradient(circle at 35% 30%, #8ff7c9, var(--mint));
+  box-shadow: 0 0 40px rgba(20, 241, 149, 0.35);
+}
+
+.endBad {
+  color: var(--ice);
+  background: rgba(255, 75, 58, 0.25);
+  box-shadow: inset 0 0 0 1px rgba(255, 75, 58, 0.6);
+}
+
+.endGone {
+  color: var(--amber);
+  background: rgba(255, 178, 63, 0.12);
+  box-shadow: inset 0 0 0 1px rgba(255, 178, 63, 0.45);
+}
+
+.endTitle {
+  margin: 4px 0 0;
+  font-size: var(--type-headline);
+}
+
+.endLine {
+  margin: 0;
+  font-size: var(--type-base);
+  color: var(--text-dim);
+}
+
+.endLink {
+  font-size: var(--type-small);
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--warm);
+  text-underline-offset: 4px;
+}
+
+.ending > button {
+  margin-top: 18px;
+}

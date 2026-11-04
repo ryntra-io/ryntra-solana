@@ -10,7 +10,8 @@ import { HOMEPAGE_CATEGORY, HOMEPAGE_COPY } from "../lib/site/homepage-copy.ts";
 import { ENABLED_LOCALE_CODES } from "./i18n/locales.ts";
 import manifest from "./manifest.ts";
 import robots from "./robots.ts";
-import { APP_HOME_PATH, SITE, buildAppHomeMetadata, buildMetadata, landingOgImage } from "./seo.ts";
+import { APP_HOME_PATH, CITY_WORDS, SITE, buildAppHomeMetadata, buildMetadata, landingOgImage } from "./seo.ts";
+import { CARD_WORDS } from "../city/lib/share/words.ts";
 import { sitemapEntries } from "./sitemap.ts";
 import { CITY_PAGES } from "../city/lib/open/site-map.ts";
 import { helpTopic } from "./shell/help-topics.ts";
@@ -135,7 +136,7 @@ test("Home has words of its own as the app's page, at both of its addresses, wit
     assert.equal(metadata.openGraph?.url, pair[locale]);
     assert.equal(metadata.openGraph?.locale, locale === "uk" ? "uk_UA" : "en_US");
     assert.equal(metadata.openGraph?.images?.[0]?.url, landingOgImage(locale), "the landing's card in the page's language (plan §6)");
-    assert.equal(metadata.openGraph?.images?.[0]?.alt, HOMEPAGE_COPY[locale].ogAlt);
+    assert.equal(metadata.openGraph?.images?.[0]?.alt, CARD_WORDS[locale].alt, "the alt is the city card's own words (CITY-158)");
     assert.equal(metadata.twitter?.card, "summary_large_image");
     assert.equal(metadata.twitter?.title, HOME_WORDS[locale].title);
     assert.equal(metadata.twitter?.description, description);
@@ -150,23 +151,31 @@ test("Home has words of its own as the app's page, at both of its addresses, wit
   assert.equal(HOMEPAGE_CATEGORY, "Tokenized stock investing on Solana");
 });
 
-test("the manifest, the share card and the structured data say the same line", () => {
+test("the manifest, the share card and the structured data say the city's line (CITY-158)", () => {
   const app = manifest();
-  assert.equal(app.description, "Invest in tokenized stocks from $1, in your own wallet, on Solana.");
-  assert.equal(app.start_url, "/app/home", "an installed app opens the app, not the site's front door");
+  assert.equal(app.description, CITY_WORDS.description);
+  assert.equal(app.start_url, "/", "an installed app opens the city");
   assert.equal(app.scope, "/", "the installed app keeps the whole site in scope");
-  assert.deepEqual(HOMEPAGE_COPY.en.ogLines, ["Invest in tokenized", "stocks from $1."]);
-  assert.deepEqual(HOMEPAGE_COPY.uk.ogLines, ["Інвестуй у токенізовані", "акції від $1."]);
-  assert.equal(HOMEPAGE_COPY.en.ogContext, "In your own wallet, on Solana.");
-  assert.equal(HOMEPAGE_COPY.uk.ogContext, "У своєму гаманці, на Solana.");
-  assert.match(read("./layout.tsx"), /slogan: HOMEPAGE_COPY\.en\.tagline,/);
-  assert.match(read("./opengraph-image.tsx"), /export const alt = HOMEPAGE_COPY\.en\.ogAlt;/);
-  assert.match(read("./uk/opengraph-image.tsx"), /export const alt = HOMEPAGE_COPY\.uk\.ogAlt;/);
-  assert.match(read("./uk/opengraph-image.tsx"), /return homepageOpenGraph\("uk"\);/, "the Ukrainian landing shares its own card");
+  assert.equal(app.background_color, "#06050C");
+  assert.equal(app.theme_color, "#06050C");
+  assert.deepEqual(
+    app.icons.map((icon) => [icon.src, icon.sizes, icon.purpose]),
+    [
+      ["/brand/city/icon-192.png", "192x192", "any"],
+      ["/brand/city/icon-512.png", "512x512", "any"],
+      ["/brand/city/icon-maskable-512.png", "512x512", "maskable"],
+    ],
+  );
+  for (const icon of app.icons) assert.ok(existsSync(new URL(`../public${icon.src}`, import.meta.url)), `${icon.src} is published`);
+  assert.match(read("./layout.tsx"), /slogan: BRAND\.hook,/);
+  assert.match(read("./layout.tsx"), /logo: SITE \+ "\/brand\/city\/icon-512\.png"/);
+  assert.match(read("./opengraph-image.tsx"), /export const alt = CARD_WORDS\.en\.alt;/);
+  assert.match(read("./uk/opengraph-image.tsx"), /export const alt = CARD_WORDS\.uk\.alt;/);
+  assert.match(read("./uk/opengraph-image.tsx"), /return cityCard\(\{ lang: "uk" \}\);/, "the Ukrainian addresses share the card in Ukrainian");
   /* Outside the route group, so its address is the plain one the page names — inside `(home)` Next would hash it. */
   assert.equal(existsSync(new URL("./(home)/uk/opengraph-image.tsx", import.meta.url)), false);
-  /* A public page without a card of its own shares the landing's, in its language, and the alt is the card's own words — never «Paper-first». */
-  assert.match(read("./site/seo.ts"), /image \?\? \{ url: landingOgImage\(locale\), alt: HOMEPAGE_COPY\[locale\]\.ogAlt \}/);
+  /* A public page without a card of its own shares the city's, in its language, and the alt is the card's own words — never «Paper-first». */
+  assert.match(read("./site/seo.ts"), /image \?\? \{ url: landingOgImage\(locale\), alt: cardAltFor\(locale\) \}/);
   assert.doesNotMatch(read("./site/seo.ts"), /trustLine/);
 });
 
@@ -235,7 +244,7 @@ test("the sitemap and robots name only what is live", async () => {
   /* Since CITY-159 the sitemap names only the city's live addresses: the site's old public pages (`/company` among
      them) stay reachable, out of the index, until the city takes each over at its own address (CITY-157). */
   assert.deepEqual(entries.map((entry) => entry.url.replace(SITE, "") || "/"), CITY_PAGES.map((page) => page.path), "the city's live addresses, nothing else");
-  for (const gone of ["/en", "/ua", "/company", "/uk/company", "/docs", "/legal/terms", "/docs/developers", "/docs/developers/guard", "/docs/developers/agent-control", "/app/portfolio", "/uk/legal/terms", "/launch", "/trade"]) {
+  for (const gone of ["/en", "/ua", "/company", "/uk/company", "/docs/developers", "/docs/developers/guard", "/docs/developers/agent-control", "/app/portfolio", "/uk/legal/terms", "/launch", "/trade"]) {
     assert.equal(entries.find((entry) => entry.url === SITE + gone), undefined, `${gone} is not advertised`);
   }
   /* Kept for whoever holds the link, and say so themselves. */

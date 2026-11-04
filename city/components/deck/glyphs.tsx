@@ -81,6 +81,15 @@ export const HangarGlyph = () => (
   </svg>
 );
 
+/** Garage: the agent's garage with its roll-up door, an antenna on the roof — it reports in (CITY-29). */
+export const GarageGlyph = () => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+    <path d="M3 21V10l9-4 9 4v11" />
+    <path d="M7 21v-8h10v8M7 16h10M7 18.5h10" />
+    <path d="M12 6V2.5M10 3.5a3 3 0 014 0" />
+  </svg>
+);
+
 /** Hack: a lock opened from inside. */
 export const HackGlyph = () => (
   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinejoin="round" aria-hidden="true">

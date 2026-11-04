@@ -10,14 +10,21 @@
 
 import "server-only";
 
-import DLMM, { createProgram, ClockLayout, DEFAULT_BIN_PER_POSITION, getPriceOfBinByBinId, wrapPosition } from "@meteora-ag/dlmm";
+import DLMM, { createProgram, ClockLayout, DEFAULT_BIN_PER_POSITION, getPriceOfBinByBinId, isSupportLimitOrder, limitOrderFilter, limitOrderOwnerFilter, wrapPosition } from "@meteora-ag/dlmm";
 import type { Connection, Keypair } from "@solana/web3.js";
 
 import type { LiquidityVenueAdapter, LiquidityVenueId } from "./contract.ts";
 import { createDammV2Venue } from "./damm-v2.ts";
 import { createDlmmVenue, type DlmmSdk } from "./dlmm.ts";
+import { createLimitVenue, type DlmmLimitSdk, type LimitVenue } from "./limit-orders.ts";
 
 export const DLMM_SDK: DlmmSdk = { DLMM, createProgram, ClockLayout, DEFAULT_BIN_PER_POSITION, getPriceOfBinByBinId, wrapPosition };
+export const DLMM_LIMIT_SDK: DlmmLimitSdk = { DLMM, createProgram, getPriceOfBinByBinId, isSupportLimitOrder, limitOrderFilter, limitOrderOwnerFilter };
+
+/** DLMM's limit orders on the caller's connection (CITY-97); `newKeypair` as for the venues. */
+export function limitVenue(connection: Connection, newKeypair?: () => Keypair): LimitVenue {
+  return createLimitVenue({ connection, sdk: DLMM_LIMIT_SDK, ...(newKeypair ? { newKeypair } : {}) });
+}
 
 /** `newKeypair`: where a build gets the fresh key of a new position (or its NFT) — the actions keep it for the relay. */
 export function liquidityVenues(connection: Connection, newKeypair?: () => Keypair): Readonly<Record<LiquidityVenueId, LiquidityVenueAdapter>> {

@@ -8,6 +8,7 @@ import { seekerRelayCspSources } from "./lib/solana/seeker-connect.ts";
 import { appHostRedirects, appHostRewrites, atBothAddresses, everywhereButProxied, ON_APP_HOST, siteHostRedirects, SITE_ORIGIN } from "./lib/product/app-address.ts";
 import { OLD_PREFIXES, oldAddressRedirects, shadowedByOldAddresses } from "./city/lib/open/old-addresses.ts";
 import { awaitingSources } from "./city/lib/open/site-map.ts";
+import { oldChapterRedirects, shadowedByChapters, throughChapters } from "./city/lib/docs/old-chapters.ts";
 
 /* The landing is a page again — English at `/`, Ukrainian at `/uk`. What stays of it is the language map of the
    home page:
@@ -326,7 +327,18 @@ const nextConfig: NextConfig = {
          true. */
       { source: "/capabilities", destination: "/docs", permanent: true },
       { source: "/status", destination: "/docs", permanent: true },
-      { source: "/roadmap", destination: "/docs", permanent: true },
+      /* `/roadmap` left this list on 2026-10-31 (CITY-173): it is the public
+         roadmap in the city's language again. A browser that followed the old
+         308 keeps landing on `/docs` until its own cache expires. `/updates`
+         leads to it; a 307, because `/updates` may yet become a page of its own
+         and a cached 308 could not be taken back. */
+      { source: "/updates", destination: "/roadmap", permanent: false },
+      /* «For investors» is «What we're building» now. The old deck's address and its PDFs keep answering, each in one hop: the investor
+         deck and its PDFs to the page that offers the new PDF, the partner deck's PDFs to the partner page. Permanent —
+         the old decks are not coming back. */
+      { source: "/investors", destination: "/build", permanent: true },
+      { source: "/decks/ryntra-investors-:rest", destination: "/build", permanent: true },
+      { source: "/decks/ryntra-partners-:rest", destination: "/partners", permanent: true },
       /* Old shortcuts keep answering. */
       { source: "/guard", destination: "/docs/developers/guard", permanent: true },
       /* «Points and levels» merged into «Rewards» on 2026-10-26 (SOL-C17,
@@ -423,6 +435,9 @@ const nextConfig: NextConfig = {
          CITY-159). The rows below that answer under one of its prefixes, or at an address it answers as it is
          (`/status`, `/home`), are never reached, so they are left out: what is left leads to the city in one hop. */
       ...OLD_ADDRESS_REDIRECTS,
+      /* The old handbook's chapters lead to the documentation's sections, in one hop, ahead of the rows that chained them
+         from one old chapter to another (CITY-180). */
+      ...oldChapterRedirects(),
       ...[
         /* The application's own host, and — once it is live — the old
            addresses on ryntra.io moving there with their path and query
@@ -431,7 +446,9 @@ const nextConfig: NextConfig = {
         ...appHostRedirects(table),
         ...siteHostRedirects(table),
         ...table.slice(LANDING_REDIRECTS.length),
-      ].filter((row) => !shadowedByOldAddresses(row.source)),
+      ]
+        .filter((row) => !shadowedByOldAddresses(row.source) && !shadowedByChapters(row.source))
+        .map(throughChapters),
     ];
   },
   /* On app.ryntra.io the Solana pages answer at `/solana/…`, served from

@@ -36,7 +36,7 @@ export type ReferralRead = Readonly<{ body: Record<string, unknown>; clearCookie
 
 export async function readReferralState(
   store: GuardStore,
-  args: Readonly<{ wallet: string | null; carried: string | null; now: string }>,
+  args: Readonly<{ wallet: string | null; carried: string | null; now: string; /** The carried link's sub-ID, kept on the binding. */ carriedSub?: string | null }>,
 ): Promise<ReferralRead> {
   const carriedWallet = args.carried ? await walletForCode(store, args.carried) : null;
   let pending = args.carried && carriedWallet
@@ -59,7 +59,7 @@ export async function readReferralState(
     const window = await readReferralBindWindow(store, account, args.now);
     if (window?.open) {
       try {
-        const decision = await bindReferrer(store, { wallet: args.wallet, code: pending.code, now: args.now });
+        const decision = await bindReferrer(store, { wallet: args.wallet, code: pending.code, now: args.now, subId: args.carriedSub ?? null });
         if (decision.ok) {
           bound = true;
           account = await readRewardAccount(store, args.wallet);

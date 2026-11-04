@@ -1,23 +1,24 @@
-import { limitAmounts, rawToDecimal, scaledDecimal } from '../../../lib/solana/limits/model.ts';
+import { scaledDecimal } from '../../../lib/solana/limits/model.ts';
+import { expiresAtOf, inputMintOf, MAX_STOPS, outputMintOf, STOP_EXPIRIES, STOP_ID, stopReached, stopThreshold, type StopExpiry } from '../../../lib/stops/model.ts';
 import { wordsNow } from '../i18n/dict.ts';
 import type { Side } from './tiles.ts';
 import { STOPS } from './words.ts';
 
 /**
  * A stop in the city: «sell when the price falls to», «buy when the price rises to». The engine's limits lane has no
- * stop that rests at a venue so a stop here is the engine's watched kind, the same as Ryntra's exit plan: an intent kept
- * on this device, never an order. While Ryntra is open, the city asks the swap engine's quote for the stop's exact
- * amount; when what that amount would bring is no more than it brings at the stop's price, the stop is reached and
- * the city opens the sale's exact order — the person's wallet signs it, or nothing is sold. Nothing here holds a key,
- * and nothing moves by itself.
+ * stop that rests at a venue so a stop here is the engine's watched kind: an intent, never an order. Since CITY-149 the
+ * engine keeps it under the wallet's account (`lib/stops`, `stops-api.ts`), watches it with the swap engine's quote
+ * around the clock and tells the person when it is reached; while Ryntra is open the city asks the same quote too.
+ * Reached, the city opens the sale's exact order — the person's wallet signs it, or nothing is sold. A stop set before
+ * the engine kept stops (or while its switch is shut) stays on this device, watched while Ryntra is open. Nothing here
+ * holds a key, and nothing moves by itself.
  *
- * The stop's price is checked the engine's way: its line is `limitAmounts` of the limits engine — what the amount
- * delivers at that price, in the output's raw units — and the quote's own `outAmountRaw` is compared with it.
+ * The stop's price is checked the engine's way, by the same two functions the cron uses (`lib/stops/model.ts`): its
+ * line is `limitAmounts` of the limits engine — what the amount delivers at that price, in the output's raw units —
+ * and the quote's own `outAmountRaw` is compared with it.
  */
 
-export type StopExpiry = '1d' | '7d' | '30d' | 'never';
-export const STOP_EXPIRIES: readonly StopExpiry[] = ['1d', '7d', '30d', 'never'];
-const EXPIRY_MS: Record<Exclude<StopExpiry, 'never'>, number> = { '1d': 86_400_000, '7d': 7 * 86_400_000, '30d': 30 * 86_400_000 };
+export { inputMintOf, MAX_STOPS, outputMintOf, STOP_EXPIRIES, stopReached, stopThreshold, type StopExpiry };
 
 /** A stop's life: watched, reached and waiting for the person, done (the sale settled), or let go. */
 export type StopState = 'watching' | 'reached' | 'done' | 'cancelled';
@@ -45,8 +46,8 @@ export type Stop = Readonly<{
   reachedAt: number | null;
 }>;
 
-/** At most this many stops are kept per wallet on this device. */
-export const MAX_STOPS = 20;
+/** A stop the engine keeps under the wallet (its id is the engine's); any other is kept on this device only. */
+export const isEngineStop = (stop: Pick<Stop, 'id'>): boolean => STOP_ID.test(stop.id);
 
 export type StopInput = Readonly<{
   owner: string;
@@ -59,22 +60,6 @@ export type StopInput = Readonly<{
 }>;
 
 export type StopProblem = Readonly<{ code: 'PRICE' | 'AMOUNT' | 'REACHED'; text: string }>;
-
-export const inputMintOf = (stop: Pick<Stop, 'side' | 'base' | 'quote'>): string => (stop.side === 'buy' ? stop.quote.mint : stop.base.mint);
-export const outputMintOf = (stop: Pick<Stop, 'side' | 'base' | 'quote'>): string => (stop.side === 'buy' ? stop.base.mint : stop.quote.mint);
-
-/** What `amountRaw` brings at `price`, raw units of the output, by the limits engine's own arithmetic. */
-export function stopThreshold(input: Pick<StopInput, 'side' | 'base' | 'quote' | 'amountRaw' | 'price'>): string | null {
-  if (!/^\d+$/.test(input.amountRaw) || BigInt(input.amountRaw) === 0n) return null;
-  const spentDecimals = input.side === 'buy' ? input.quote.decimals : input.base.decimals;
-  const amounts = limitAmounts({
-    pair: { baseMint: input.base.mint, baseDecimals: input.base.decimals, quoteMint: input.quote.mint, quoteDecimals: input.quote.decimals },
-    side: input.side,
-    amount: rawToDecimal(input.amountRaw, spentDecimals),
-    price: input.price,
-  });
-  return amounts?.takingRaw ?? null;
-}
 
 /**
  * A new stop, or why it cannot be one. `nowOutRaw` is what the engine's quote says the amount brings now: a stop that
@@ -89,16 +74,11 @@ export function makeStop(input: StopInput, now: number, nowOutRaw: string | null
     const text = input.side === 'sell' ? wordsNow(STOPS).thereLower : wordsNow(STOPS).thereHigher;
     return { ok: false, problem: { code: 'REACHED', text } };
   }
-  const expiresAt = input.expiry === 'never' ? null : now + EXPIRY_MS[input.expiry];
+  const expiresAt = expiresAtOf(input.expiry, now);
   return {
     ok: true,
     stop: { id, owner: input.owner, side: input.side, base: input.base, quote: input.quote, amountRaw: input.amountRaw, price: input.price, thresholdRaw, createdAt: now, expiresAt, state: 'watching', reachedAt: null },
   };
-}
-
-/** Whether the engine's quote for the stop's amount has come to the stop's price. */
-export function stopReached(stop: Pick<Stop, 'thresholdRaw'>, outAmountRaw: string): boolean {
-  return /^\d+$/.test(outAmountRaw) && BigInt(outAmountRaw) <= BigInt(stop.thresholdRaw);
 }
 
 /** How the stop stands now: a watched or reached stop past its time has expired. */

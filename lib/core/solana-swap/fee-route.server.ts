@@ -51,7 +51,7 @@ import {
   WRAPPED_SOL_MINT,
   buildFeeSide,
   classifyPair,
-  orderReferralBps,
+  discountedFeeBps,
   preferOrder,
   productOfFlow,
   type FeeFlow,
@@ -154,14 +154,17 @@ export async function feeWalletAccounts(owner: string, handle: SolanaRpcHandle):
   }
 }
 
-/** The fee a `/build` swap of this flow carries, or why it carries none here. */
+/**
+ * The fee a `/build` swap of this flow carries, or why it carries none here. `bps` is the flow's rate unless the
+ * person's discount lowered it (`../referee-discount.ts`); the wallet and the product stay the flow's.
+ */
 export async function buildFeeFor(
   flow: FeeFlow,
   inputMint: string,
   outputMint: string,
   handle: SolanaRpcHandle,
+  bps: number = FEE_POLICY_V2[flow].bps,
 ): Promise<Readonly<{ ok: true; fee: JupiterBuildFee | null }> | Readonly<{ ok: false; reason: string }>> {
-  const bps = FEE_POLICY_V2[flow].bps;
   if (bps <= 0) return { ok: true, fee: null };
   const side = buildFeeSide(inputMint, outputMint);
   if (!side) return { ok: false, reason: "Neither side is a mint the fee wallet takes." };
@@ -183,17 +186,17 @@ export function orderSignableByTaker(order: Pick<JupiterExecutableOrder, "gasles
 }
 
 /**
- * The referral `/order` asks for on this flow: the flow's rate, on the
- * verified account. A rate under Jupiter's minimum goes to the order client
- * as asked, which keeps it off the wire and records why — so the order says
- * «under the provider's minimum», never «not configured». A flow with no fee
- * asks for none.
+ * The referral `/order` asks for on this flow: the flow's rate — or the
+ * person's discounted one — on the verified account. A rate under Jupiter's
+ * minimum goes to the order client as asked, which keeps it off the wire and
+ * records why — so the order says «under the provider's minimum», never «not
+ * configured», and the person pays no Ryntra fee there rather than more than
+ * their rate. A flow with no fee asks for none.
  */
-async function referralFor(flow: FeeFlow | null, config: ServiceFeeConfig): Promise<JupiterReferral | null> {
+async function referralFor(flow: FeeFlow | null, config: ServiceFeeConfig, bps: number | null = flow === null ? null : FEE_POLICY_V2[flow].bps): Promise<JupiterReferral | null> {
   const verified = (await verifiedJupiterReferral(config)).referral;
-  if (!verified || flow === null) return verified;
-  const bps = FEE_POLICY_V2[flow].bps;
-  return bps > 0 ? { account: verified.account, feeBps: orderReferralBps(flow, JUPITER_REFERRAL_FEE_MIN_BPS) ?? bps } : null;
+  if (!verified || flow === null || bps === null) return verified;
+  return bps > 0 ? { account: verified.account, feeBps: bps } : null;
 }
 
 /** The `/order` dollar figure for the same input carried onto the `/build` quote: the provider's valuation of exactly this amount, nothing derived. */
@@ -207,7 +210,7 @@ export type LaneChoiceDeps = Readonly<{
   policy?: "v2" | "as-now";
   flow?: (inputMint: string, outputMint: string) => Promise<FeeFlow>;
   fee?: typeof buildFeeFor;
-  referral?: (flow: FeeFlow | null, config: ServiceFeeConfig) => Promise<JupiterReferral | null>;
+  referral?: (flow: FeeFlow | null, config: ServiceFeeConfig, bps?: number | null) => Promise<JupiterReferral | null>;
   fetchBuild?: typeof fetchJupiterBuild;
   fetchOrder?: typeof fetchJupiterExecutableOrder;
   fetchQuote?: typeof fetchJupiterOrder;
@@ -231,6 +234,15 @@ export type LaneChoice<T> = Readonly<{ ok: true; order: T; flow: FeeFlow; lane: 
  * The person's own order, on the web and the phone alike: the flow's lane, both lanes where both
  * may win, the better net price, and — when `/build` wins — its bytes
  * assembled for the wallet. A refusal is the lane's own answer.
+ *
+ * `feeDiscountBps` is the discount a partner's friend gets on Ryntra's fee
+ * (`../referee-discount.ts`), read for the taker by the caller. Each lane is
+ * asked at the discounted rate where that lane can carry it, so the price
+ * compared, the bytes built and the fee the Review states are that rate's.
+ * The discount never takes a lane under its smallest fee: `/order` refuses a
+ * referral under Jupiter's minimum, so a 50 bps flow asks it the full 50 —
+ * and then `/order` cannot win over a `/build` that carries the discount; it
+ * stays the swap only where `/build` cannot be. Absent or 0, the table's rate.
  */
 export async function chooseExecutableOrder(args: Readonly<{
   inputMint: string;
@@ -241,8 +253,10 @@ export async function chooseExecutableOrder(args: Readonly<{
   endpoint: JupiterSwapEndpoint;
   handle: SolanaRpcHandle;
   config: ServiceFeeConfig;
+  feeDiscountBps?: number;
 }>, deps: LaneChoiceDeps = {}): Promise<LaneChoice<JupiterExecutableOrder>> {
   const { inputMint, outputMint, amountRaw, taker, slippageBps, endpoint, handle, config } = args;
+  const discount = args.feeDiscountBps ?? 0;
   const fetchOrder = deps.fetchOrder ?? fetchJupiterExecutableOrder;
   const askOrder = (referral: JupiterReferral | null) =>
     askOnceMoreAfterRate(
@@ -251,15 +265,20 @@ export async function chooseExecutableOrder(args: Readonly<{
     );
   /* One product, one fee: the phone reads contract 1.24.0 (line B, M30), so who carries the request no longer picks the lane. */
   if ((deps.policy ?? feePolicyInForce()) === "as-now") {
-    const result = await askOrder(deps.referral ? await deps.referral(null, config) : await asNowReferral(config));
+    const asNow = deps.referral ? await deps.referral(null, config) : await asNowReferral(config);
+    const result = await askOrder(asNow && discount > 0 ? { ...asNow, feeBps: discountedFeeBps(asNow.feeBps, discount, JUPITER_REFERRAL_FEE_MIN_BPS) } : asNow);
     return result.ok ? { ok: true, order: result.order, flow: "AS_NOW", lane: "ORDER" } : { ok: false, failure: result, flow: "AS_NOW" };
   }
   const flow = await (deps.flow ?? flowOfSwap)(inputMint, outputMint);
   const rule = FEE_POLICY_V2[flow];
+  const buildBps = discountedFeeBps(rule.bps, discount);
+  const orderBps = discountedFeeBps(rule.bps, discount, JUPITER_REFERRAL_FEE_MIN_BPS);
+  /* `/order` charges this flow but cannot carry the discount `/build` carries: it never wins on price then. */
+  const orderLacksDiscount = buildBps < rule.bps && orderBps === rule.bps && orderBps >= JUPITER_REFERRAL_FEE_MIN_BPS;
   /* Neither waits on the other (SOL-S1): the fee wallet's accounts and the referral are read at once. */
   const [fee, referral] = await Promise.all([
-    rule.lane === "BUILD" ? (deps.fee ?? buildFeeFor)(flow, inputMint, outputMint, handle) : Promise.resolve(null),
-    (deps.referral ?? referralFor)(flow, config),
+    rule.lane === "BUILD" ? (deps.fee ?? buildFeeFor)(flow, inputMint, outputMint, handle, buildBps) : Promise.resolve(null),
+    (deps.referral ?? referralFor)(flow, config, orderBps),
   ]);
   if (!fee || !fee.ok) {
     const result = await askOrder(referral);
@@ -275,6 +294,7 @@ export async function chooseExecutableOrder(args: Readonly<{
   if (build.ok) {
     const orderWins =
       orderUsable !== null &&
+      !orderLacksDiscount &&
       preferOrder(
         { outputRaw: build.answer.quote.outAmountRaw, feeBps: build.answer.quote.ryntraFee.basisPoints },
         { outputRaw: orderUsable.outAmountRaw, feeBps: orderUsable.ryntraFee.basisPoints, referral: orderUsable.ryntraFee.mechanism === "JUPITER_REFERRAL" && orderUsable.ryntraFee.state === "QUOTED" },

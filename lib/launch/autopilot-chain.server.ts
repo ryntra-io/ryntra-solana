@@ -1,9 +1,10 @@
 /**
  * The chain as Ryntra Launch's executor reaches it — Meteora's own SDKs for
  * the curve, the graduated pool and the DLMM steps, the partner's fees where
- * the executor is the config's fee claimer, the executor's key for signing —
- * only what its list allows (`./executor-signing.server.ts`) —, one send per
- * transaction and the chain's own word on each.
+ * the executor is the config's fee claimer, the executor's signer —
+ * only what its list allows (`./executor-signing.server.ts`), its key in the
+ * environment or in KMS, every signature in the journal (CITY-162,
+ * `./signer/`) —, one send per transaction and the chain's own word on each.
  *
  * `autopilotDeps()` gives the executor's pass everything it needs here, or the
  * reason it does not run: no network, Launch's operator stop closed, or no
@@ -15,7 +16,7 @@ import { CpAmm } from "@meteora-ag/cp-amm-sdk";
 import { IDL as DlmmIdl } from "@meteora-ag/dlmm";
 import { DAMM_V2_MIGRATION_FEE_ADDRESS, deriveDammV2PoolAddress } from "@meteora-ag/dynamic-bonding-curve-sdk";
 import { getBase58Decoder } from "@solana/kit";
-import { ComputeBudgetProgram, Connection, Keypair, PublicKey, type Transaction } from "@solana/web3.js";
+import { ComputeBudgetProgram, Connection, PublicKey, type Transaction } from "@solana/web3.js";
 
 import { partnerEarnedRaw } from "../core/launch/autopilot.ts";
 import { readCreatorFees } from "../core/venues/meteora-dbc/claim.server.ts";
@@ -40,6 +41,8 @@ import { executorPaused, operatorTelegramId, readExecutorStops, type AutopilotPa
 import { sendOnce, signatureOutcome } from "./flow.server.ts";
 import { ryntraOwnWallets } from "./runtime.server.ts";
 import { getTransactionAnyVersion } from "../solana/v1-tx.ts";
+import { storeJournal } from "./signer/journal.server.ts";
+import { signTransaction, type LaunchSigner } from "./signer/signer.server.ts";
 
 const SEND = { confirmMs: 25_000, settleMs: 8_000 } as const;
 /** A priority fee on the executor's transactions, so they land on a busy network; a few thousand lamports at most. */
@@ -49,7 +52,8 @@ const PRIORITY_MICRO_LAMPORTS = 50_000;
 export function autopilotDeps(): AutopilotDeps | Readonly<{ paused: AutopilotPaused }> {
   const network = launchNetwork();
   const store = getGuardRuntime().store;
-  const executor = network ? launchExecutor(process.env, network) : null;
+  /* The executor's signer: its list with DLMM's IDL, and every signature written to the journal in this store first (CITY-162). */
+  const executor = network ? launchExecutor(process.env, network, { dlmm: DlmmIdl as unknown as Idl, journal: storeJournal(() => store) }) : null;
   const paused = executorPaused({ network, laneOpen: launchOpen(), writesHere: network ? launchWritesHere(network) : false, sharedStore: storeSupportsConcurrentInstances(store), key: executor !== null });
   if (paused || !network || !executor) return { paused: paused ?? "NO_EXECUTOR" };
   /* A launch is Ryntra's own by its creator — one of Ryntra's internal wallets; a list read in part leaves a creator out, never in. */
@@ -94,7 +98,7 @@ const DECIMALS = new Map<string, number>();
 
 const CONFIGS = new Map<string, Readonly<{ migrationQuoteThreshold: { toString(): string }; migrationFeeOption: number; quoteMint: PublicKey }>>();
 
-export function autopilotChain(network: LaunchNetwork, executor: Keypair): AutopilotChain & Readonly<{ nodes(): FailoverHealth }> {
+export function autopilotChain(network: LaunchNetwork, executor: LaunchSigner): AutopilotChain & Readonly<{ nodes(): FailoverHealth }> {
   /*
    * The executor's own connections (SOL-L6): the main node with the second behind it for every read — a read the main
    * node does not answer goes to the second at once, and after two failures in a row the main node rests a minute. The
@@ -125,7 +129,10 @@ export function autopilotChain(network: LaunchNetwork, executor: Keypair): Autop
     tx.feePayer = owner;
     tx.recentBlockhash = latest.blockhash;
     tx.signatures = [];
-    tx.sign(executor, ...extra);
+    /* The fresh keys first (a position's own), then the executor's signer over the same message: it reads the bytes
+       again against its list, signs with its key — in the environment or in KMS — and writes the journal's row. */
+    if (extra.length) tx.partialSign(...extra);
+    await signTransaction(executor, tx, { payees });
     return { signature: getBase58Decoder().decode(new Uint8Array(tx.signatures[0]?.signature ?? new Uint8Array())), validUntil: latest.lastValidBlockHeight };
   };
 

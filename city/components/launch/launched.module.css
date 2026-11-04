@@ -1,0 +1,417 @@
+/* «Launched on Ryntra» (CITY-185): the launchpad's coins in the city's window — dark glass, thin edges, one amber action. */
+
+.display {
+  font-family: var(--font-display, system-ui), system-ui, sans-serif;
+  font-stretch: 125%;
+  font-variation-settings: 'wdth' 125;
+  font-weight: 900;
+  letter-spacing: 0.01em;
+  text-transform: uppercase;
+}
+
+.pending {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(100deg, transparent 30%, rgba(238, 241, 255, 0.05) 50%, transparent 70%) 0 0 / 220% 100%;
+  animation: sweep 1.4s ease-in-out infinite;
+}
+
+.framed {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 0 16px 16px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+.framed > * {
+  flex: none;
+}
+
+/* ---------- The Docks behind the head ---------- */
+
+.head,
+.first {
+  position: relative;
+  margin: 0 -16px;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  padding: 16px;
+  background: var(--ink) center 38% / cover no-repeat;
+  overflow: hidden;
+  animation: settle 600ms ease-out both;
+}
+
+.head {
+  min-height: 168px;
+}
+
+.shade {
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(180deg, rgba(11, 10, 20, 0.35) 0%, rgba(11, 10, 20, 0.05) 40%, rgba(11, 10, 20, 0.55) 78%, #0a0813 100%),
+    linear-gradient(90deg, rgba(11, 10, 20, 0.55) 0%, transparent 60%);
+}
+
+.head > :not(.shade),
+.first > :not(.shade) {
+  position: relative;
+}
+
+.emptyFrame > .first {
+  flex: 1 0 300px;
+  gap: 16px;
+}
+
+.firstTitle {
+  margin: 0;
+  font-size: var(--type-headline);
+  line-height: 1.02;
+  color: var(--ice);
+  text-shadow: 0 2px 18px rgba(6, 5, 12, 0.9);
+}
+
+.action {
+  display: grid;
+  place-items: center;
+  width: 100%;
+  max-width: 360px;
+  height: 56px;
+  padding: 0 18px;
+  border: 0;
+  font-size: var(--type-action);
+  color: var(--ink);
+  background: linear-gradient(100deg, var(--warm), var(--amber) 55%, #ff9a3c);
+  clip-path: polygon(14px 0, 100% 0, 100% calc(100% - 14px), calc(100% - 14px) 100%, 0 100%, 0 14px);
+  box-shadow: 0 0 40px rgba(255, 178, 63, 0.45);
+  white-space: nowrap;
+  cursor: pointer;
+  transition: transform 140ms ease-out;
+}
+
+.action:active {
+  transform: scale(0.97);
+}
+
+/* ---------- The coins ---------- */
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 10px;
+}
+
+.card {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 14px;
+  background: linear-gradient(180deg, rgba(42, 22, 64, 0.42), rgba(11, 10, 20, 0.72));
+  box-shadow: inset 0 0 0 1px rgba(238, 241, 255, 0.1);
+  clip-path: polygon(12px 0, 100% 0, 100% calc(100% - 12px), calc(100% - 12px) 100%, 0 100%, 0 12px);
+  animation: settle 500ms ease-out both;
+}
+
+.cardTop {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+}
+
+.face {
+  position: relative;
+  flex: none;
+  display: block;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  overflow: hidden;
+  box-shadow: 0 0 0 2px rgba(11, 10, 20, 0.8), 0 0 0 3.5px rgba(255, 178, 63, 0.6), 0 0 22px rgba(255, 178, 63, 0.3);
+}
+
+.face > span {
+  width: 100%;
+  height: 100%;
+}
+
+.face img {
+  position: absolute;
+  z-index: 2;
+  inset: 0;
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.coinWords {
+  min-width: 0;
+  display: grid;
+  line-height: 1.15;
+}
+
+.coinWords b {
+  font-size: var(--type-title);
+  color: var(--ice);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.coinWords span {
+  font-size: var(--type-small);
+  color: var(--text-dim);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.tag {
+  margin-left: auto;
+  align-self: flex-start;
+  padding: 4px 9px;
+  font-size: var(--type-micro);
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--warm);
+  background: rgba(11, 10, 20, 0.62);
+  box-shadow: inset 0 0 0 1px rgba(255, 178, 63, 0.45);
+}
+
+.figures {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+  min-height: 24px;
+}
+
+.figure {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+}
+
+.figure small {
+  font-size: var(--type-micro);
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+}
+
+.figure b {
+  font-size: var(--type-title);
+  color: var(--ice);
+}
+
+.holders {
+  margin-left: auto;
+  font-size: var(--type-small);
+  font-weight: 700;
+  color: var(--text-dim);
+  white-space: nowrap;
+}
+
+.way {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 10px;
+}
+
+.bar {
+  height: 4px;
+  background: rgba(238, 241, 255, 0.1);
+  overflow: hidden;
+}
+
+.bar > span {
+  display: block;
+  height: 100%;
+  background: linear-gradient(90deg, var(--amber), var(--warm));
+  box-shadow: 0 0 10px rgba(255, 178, 63, 0.55);
+  transition: width 600ms ease-out;
+}
+
+.wayWords {
+  font-size: var(--type-caption);
+  font-weight: 700;
+  color: var(--text-dim);
+  white-space: nowrap;
+}
+
+.pool {
+  align-self: flex-start;
+  padding: 4px 10px;
+  font-size: var(--type-micro);
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #c9a2ff;
+  background: rgba(11, 10, 20, 0.5);
+  box-shadow: inset 0 0 0 1px rgba(153, 69, 255, 0.55);
+}
+
+.trade {
+  margin-top: auto;
+  min-height: 48px;
+  padding: 0 16px;
+  border: 0;
+  font-size: var(--type-small);
+  letter-spacing: 0.08em;
+  color: var(--ice);
+  background: rgba(255, 255, 255, 0.06);
+  box-shadow: inset 0 0 0 1px rgba(238, 241, 255, 0.18);
+  clip-path: polygon(10px 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%, 0 10px);
+  cursor: pointer;
+  transition:
+    background 140ms ease-out,
+    box-shadow 140ms ease-out;
+}
+
+.trade:hover,
+.trade:focus-visible {
+  background: rgba(255, 178, 63, 0.12);
+  box-shadow: inset 0 0 0 1px rgba(255, 178, 63, 0.55);
+}
+
+/* ---------- Ryntra's own test launches: apart, closed until asked for ---------- */
+
+.tests {
+  color: var(--text-dim);
+}
+
+.tests summary {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 44px;
+  font-size: var(--type-small);
+  font-weight: 700;
+  list-style: none;
+  cursor: pointer;
+}
+
+.tests summary::-webkit-details-marker {
+  display: none;
+}
+
+.tests summary::after {
+  content: '';
+  width: 7px;
+  height: 7px;
+  margin-left: 2px;
+  border-right: 2px solid currentColor;
+  border-bottom: 2px solid currentColor;
+  transform: translateY(-2px) rotate(45deg);
+  transition: transform 160ms ease-out;
+}
+
+.tests[open] summary::after {
+  transform: translateY(2px) rotate(-135deg);
+}
+
+.tests ul {
+  display: grid;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.testRow {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  min-height: 48px;
+  padding: 6px 12px;
+  border: 0;
+  font: inherit;
+  font-size: var(--type-small);
+  text-align: left;
+  color: var(--text-dim);
+  background: rgba(238, 241, 255, 0.04);
+  cursor: pointer;
+}
+
+.testRow .face {
+  width: 28px;
+  height: 28px;
+  box-shadow: 0 0 0 1px rgba(238, 241, 255, 0.18);
+  opacity: 0.8;
+}
+
+.testRow b {
+  color: var(--ice);
+  font-weight: 800;
+}
+
+.testTag {
+  padding: 2px 7px;
+  font-size: var(--type-micro);
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  box-shadow: inset 0 0 0 1px rgba(238, 241, 255, 0.22);
+}
+
+.testState {
+  margin-left: auto;
+  white-space: nowrap;
+}
+
+/* ---------- Reading ---------- */
+
+.bones {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 10px;
+  padding-top: 16px;
+}
+
+.bones span {
+  height: 168px;
+  background: linear-gradient(100deg, rgba(238, 241, 255, 0.04) 30%, rgba(238, 241, 255, 0.09) 50%, rgba(238, 241, 255, 0.04) 70%) 0 0 / 220% 100%;
+  clip-path: polygon(12px 0, 100% 0, 100% calc(100% - 12px), calc(100% - 12px) 100%, 0 100%, 0 12px);
+  animation: sweep 1.4s ease-in-out infinite;
+}
+
+@keyframes settle {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes sweep {
+  from {
+    background-position: 100% 0;
+  }
+  to {
+    background-position: -100% 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .head,
+  .first,
+  .card,
+  .pending,
+  .bones span {
+    animation: none;
+  }
+}

@@ -78,6 +78,11 @@ export type SendDeps = Readonly<{
   rememberRecipient: (wallet: string, recipient: string) => void;
   now: () => number;
   onPhase?: (phase: SendPhase) => void;
+  /**
+   * Called once the signed bytes matched the Review and just before they go to the engine; a refusal stops the transfer
+   * there and nothing is sent (a prepared action's mark, CITY-161). Absent: nothing changes.
+   */
+  beforeSend?: (signed: Readonly<{ signedWireBase64: string; signature: string }>) => Promise<Readonly<{ ok: true }> | Readonly<{ ok: false; message: string }>>;
 }>;
 
 export type SendPhase = 'reviewing' | 'preparing' | 'wallet' | 'sending';
@@ -252,6 +257,10 @@ export async function confirmSend(deps: SendDeps, intent: SendIntent, authorized
   deps.onPhase?.('sending');
   const after = await nameMoved(deps, intent.name, bundle.plan.recipient);
   if (after) return { kind: 'refused', refusal: after };
+  if (deps.beforeSend) {
+    const gate = check.signature ? await deps.beforeSend({ signedWireBase64: signed.signedWireBase64, signature: check.signature }) : null;
+    if (!gate?.ok) return { kind: 'refused', refusal: { code: 'BEFORE_SEND_REFUSED', message: gate && !gate.ok ? gate.message : sendFailureCopy('SIGNED_BYTES_REJECTED', SAY) } };
+  }
 
   // Kept before the request: everything after this line may be lost, and these bytes are signed.
   if (check.signature) deps.pending.remember({ wallet: intent.sender, signature: check.signature, network: NETWORK, signedAt: new Date(deps.now()).toISOString() });

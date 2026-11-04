@@ -3,6 +3,8 @@ import { heldPartnerPools } from "../growth/review-store.ts";
 import { listRewardEntries } from "./ledger.ts";
 import { rankStanding, RankEventSchema, type RankEvent, type RankStanding } from "./rank.ts";
 import { RANK_EVENT_POINTS, REWARD_RULES_V1, REWARD_RULES_V2, REWARD_RULES_V2_1, REWARD_RULES_V2_1_NOT_BEFORE, REWARD_RULES_V2_2, REWARD_RULES_V2_2_NOT_BEFORE, type RewardRules } from "./rules.ts";
+import { rankCountedEntries } from "../growth/referral-guard.ts";
+import { readReferralGuard } from "../growth/referral-guard-store.ts";
 
 /**
  * The durable half of ranks: when rules `2.0.0` came into force, the events
@@ -112,6 +114,16 @@ export async function readRewardRulesInForce(store: GuardStore, at: string): Pro
   return v22 && ms >= Date.parse(v22.effectiveFrom) && ms >= Date.parse(REWARD_RULES_V2_2_NOT_BEFORE) ? REWARD_RULES_V2_2 : REWARD_RULES_V2_1;
 }
 
+/**
+ * When each version of the traders' rules came into force on this store, read only — nothing is started. A version
+ * whose moment is not stored is null: it has not come into force here.
+ */
+export async function readRewardRuleMoments(store: GuardStore): Promise<Readonly<Record<"2.0.0" | "2.1.0" | "2.2.0", string | null>>> {
+  const collection = store.collection<RulesRecord>(RULES);
+  const [v2, v21, v22] = await Promise.all([collection.get(REWARD_RULES_V2.version), collection.get(REWARD_RULES_V2_1.version), collection.get(REWARD_RULES_V2_2.version)]);
+  return { "2.0.0": v2?.effectiveFrom ?? null, "2.1.0": v21?.effectiveFrom ?? null, "2.2.0": v22?.effectiveFrom ?? null };
+}
+
 /** The rules an operation that settled at `settledAt` is computed by. */
 export async function rewardRulesFor(store: GuardStore, settledAt: string, now: string, env: NodeJS.ProcessEnv = process.env): Promise<RewardRules> {
   const from = await rewardRulesEffectiveFrom(store, now, env);
@@ -209,10 +221,12 @@ export async function recordPartnerPoolBase(
 
 /** One wallet's standing at one moment. */
 export async function readRankStanding(store: GuardStore, wallet: string, at: string): Promise<RankStanding> {
-  const [entries, events, rules] = await Promise.all([listRewardEntries(store, wallet), listCountedRankEvents(store, wallet, at), readRewardRulesInForce(store, at)]);
+  const [entries, events, rules, guard] = await Promise.all([listRewardEntries(store, wallet), listCountedRankEvents(store, wallet, at), readRewardRulesInForce(store, at), readReferralGuard(store, wallet, at)]);
   /* The ladder of the moment, not of today: a trade that settled under the old ladder keeps it even when the
-     accrual is written later (rules `2.2.0`). */
-  return rankStanding({ wallet, entries, events, at, rules });
+     accrual is written later (rules `2.2.0`). Only the rows the referral guard lets count: no point for half of a
+     circular trade, none for a friend whose pair is not clear (Ryntra Partners R3). A guard that cannot be read
+     throws — the accrual that asked waits for its retry rather than freezing a rank on a guess. */
+  return rankStanding({ wallet, entries: rankCountedEntries(entries, wallet, guard), events, at, rules });
 }
 
 /**

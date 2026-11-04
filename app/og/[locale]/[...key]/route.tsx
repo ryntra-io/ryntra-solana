@@ -1,5 +1,5 @@
 import { companyCard, docsCard, isPageCardId, marketsCard, pageCard, type CardLocale, type CardSpec } from "@/app/brand/page-card";
-import { pageOpenGraph } from "@/app/brand/page-og";
+import { cityCard } from "@/city/lib/share/card.server";
 import { companyCardInputOf } from "@/lib/site/company-page";
 import { findStockRow } from "@/lib/stocks/universe.server";
 
@@ -7,8 +7,9 @@ export const runtime = "nodejs";
 export const maxDuration = 30;
 
 /**
- * The share card of a page offered to the index, drawn from the same words
- * the page is:
+ * The share card older posts of a page name: since CITY-158 the city's card
+ * (`city/lib/share/card.server.tsx`) in the page's language — the pages now
+ * name `/opengraph-image` themselves (`pageCardImage` in `app/seo.ts`) — for
  *
  * - `/og/{en|uk}/page/{company|security|methodology|contact|stats}`
  * - `/og/{en|uk}/docs` and `/og/{en|uk}/docs/{slug}`
@@ -18,7 +19,7 @@ export const maxDuration = 30;
  * The landing's own cards stay where they are (`/opengraph-image`,
  * `/uk/opengraph-image`). The address a page names carries the card's
  * fingerprint (`?v=`), so the picture behind one address never changes and
- * the edge keeps it for a year; anything the list above does not name is not
+ * the edge keeps it for a week; anything the list above does not name is not
  * found.
  */
 async function cardFor(locale: CardLocale, key: readonly string[]): Promise<CardSpec | null> {
@@ -48,5 +49,5 @@ export async function GET(_request: Request, { params }: { params: Promise<{ loc
   }
   const card = await cardFor(locale, parts);
   if (!card) return notFound();
-  return pageOpenGraph(card, locale);
+  return cityCard({ lang: locale });
 }

@@ -1,0 +1,696 @@
+/* The agent on its word (CITY-175): what the agent card of CITY-176 does not already draw — a picked chip, the one big
+   figure of what the agent earned, the coin it prepared, a quiet second action, and its row in «Mine». The card's own
+   body, hero, chips, dock and details are `../instruct/instruct.module.css`. */
+
+.chipOn {
+  background: rgba(255, 178, 63, 0.18);
+  box-shadow: inset 0 0 0 1.5px var(--amber);
+  color: var(--warm);
+}
+
+.live {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: var(--type-micro);
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--mint);
+}
+
+.live::before {
+  content: '';
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--mint);
+  box-shadow: 0 0 10px var(--mint);
+  animation: pulse 1.8s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  50% {
+    opacity: 0.4;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .live::before {
+    animation: none;
+  }
+}
+
+.figure {
+  display: grid;
+  gap: 4px;
+  padding: 18px 16px;
+  background:
+    radial-gradient(110% 120% at 100% 0%, rgba(87, 230, 178, 0.14), transparent 62%),
+    rgba(255, 255, 255, 0.03);
+  box-shadow: inset 0 0 0 1px rgba(238, 241, 255, 0.1);
+  clip-path: polygon(10px 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%, 0 10px);
+}
+
+.figureLabel {
+  font-size: var(--type-micro);
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--ice);
+  opacity: 0.7;
+}
+
+.figureValue {
+  font-family: var(--font-display, system-ui), system-ui, sans-serif;
+  font-size: clamp(34px, 9vw, 44px);
+  font-weight: 800;
+  line-height: 1.05;
+  font-variant-numeric: tabular-nums;
+  color: var(--ice);
+}
+
+.figureValue[data-tone='up'] {
+  color: var(--mint);
+}
+
+.figureValue[data-tone='down'] {
+  color: var(--flare);
+}
+
+.figureLine {
+  font-size: var(--type-body);
+  font-variant-numeric: tabular-nums;
+  color: var(--warm);
+}
+
+.coinArt {
+  width: 72px;
+  height: 72px;
+  flex: none;
+  border-radius: 50%;
+  object-fit: cover;
+  background: rgba(255, 255, 255, 0.05);
+  box-shadow: 0 0 0 1px rgba(255, 231, 194, 0.24), 0 10px 32px rgba(255, 178, 63, 0.26);
+}
+
+.coinArt[data-drawing] {
+  animation: pulse 1.4s ease-in-out infinite;
+}
+
+.pair {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.second {
+  height: 52px;
+  padding: 0 16px;
+  border: 0;
+  font-family: var(--font-display, system-ui), system-ui, sans-serif;
+  font-size: var(--type-base);
+  font-weight: 700;
+  color: var(--ice);
+  background: rgba(255, 255, 255, 0.05);
+  box-shadow: inset 0 0 0 1px rgba(238, 241, 255, 0.22);
+  clip-path: polygon(12px 0, 100% 0, 100% calc(100% - 12px), calc(100% - 12px) 100%, 0 100%, 0 12px);
+  cursor: pointer;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.second:disabled {
+  opacity: 0.55;
+  cursor: default;
+}
+
+.facts {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 8px;
+}
+
+.facts li {
+  font-size: var(--type-body);
+  line-height: 1.4;
+  color: var(--ice);
+  opacity: 0.86;
+}
+
+.net {
+  align-self: center;
+  font-size: var(--type-micro);
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--amber);
+  opacity: 0.8;
+}
+
+/* ---------- «My agent» in «Mine» ---------- */
+
+.mine {
+  width: 100%;
+  min-height: 56px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 12px;
+  margin-bottom: 8px;
+  border: 0;
+  font: inherit;
+  text-align: left;
+  color: var(--ice);
+  background:
+    radial-gradient(120% 140% at 0% 0%, rgba(255, 178, 63, 0.16), transparent 60%),
+    rgba(255, 255, 255, 0.035);
+  box-shadow: inset 0 0 0 1px rgba(255, 178, 63, 0.3);
+  clip-path: polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px);
+  cursor: pointer;
+}
+
+.mineMark {
+  width: 36px;
+  height: 36px;
+  flex: none;
+  display: grid;
+  place-items: center;
+  color: var(--amber);
+  background: rgba(255, 178, 63, 0.12);
+  border-radius: 50%;
+}
+
+.mineText {
+  min-width: 0;
+  flex: 1;
+  display: grid;
+  gap: 2px;
+}
+
+.mineTitle {
+  font-weight: 700;
+}
+
+.mineSub {
+  font-size: var(--type-micro);
+  color: var(--ice);
+  opacity: 0.75;
+}
+
+.mineFigure {
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  color: var(--mint);
+}
+
+.mineFigure[data-tone='down'] {
+  color: var(--flare);
+}
+
+/* ---------- «Your agent holds» in the tower's window (CITY-187) ---------- */
+
+.sell {
+  display: grid;
+  gap: 10px;
+  margin: 14px 0 4px;
+  padding: 12px 12px 14px;
+  background:
+    radial-gradient(120% 140% at 0% 0%, rgba(255, 178, 63, 0.14), transparent 62%),
+    rgba(255, 255, 255, 0.035);
+  box-shadow: inset 0 0 0 1px rgba(255, 178, 63, 0.28);
+  clip-path: polygon(10px 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%, 0 10px);
+}
+
+.sellHead {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+
+.sellMark {
+  width: 30px;
+  height: 30px;
+  flex: none;
+  display: grid;
+  place-items: center;
+  color: var(--amber);
+  background: rgba(255, 178, 63, 0.12);
+  border-radius: 50%;
+}
+
+.sellMark svg {
+  width: 18px;
+  height: 18px;
+}
+
+.sellLabel {
+  font-size: var(--type-caption);
+  font-weight: 800;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--warm);
+  white-space: nowrap;
+}
+
+.sellHead .sellLabel {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.sellHeld {
+  margin-top: -2px;
+  font-family: var(--font-display, system-ui), system-ui, sans-serif;
+  font-size: var(--type-headline);
+  font-weight: 800;
+  line-height: 1.1;
+  font-variant-numeric: tabular-nums;
+  color: var(--ice);
+  overflow-wrap: anywhere;
+}
+
+.sellShares {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 6px;
+}
+
+.sellGet {
+  margin: 2px 0 0;
+  font-size: var(--type-base);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: var(--ice);
+}
+
+.sellFee {
+  margin: -6px 0 0;
+  font-size: var(--type-small);
+  font-variant-numeric: tabular-nums;
+  color: var(--warm);
+  opacity: 0.85;
+}
+
+.sellGo {
+  height: 52px;
+  border: 0;
+  font-family: var(--font-display, system-ui), system-ui, sans-serif;
+  font-size: var(--type-base);
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  color: var(--warm);
+  background: rgba(255, 178, 63, 0.1);
+  box-shadow: inset 0 0 0 1.5px rgba(255, 178, 63, 0.6);
+  clip-path: polygon(12px 0, 100% 0, 100% calc(100% - 12px), calc(100% - 12px) 100%, 0 100%, 0 12px);
+  cursor: pointer;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  transition: background 140ms ease, transform 120ms ease-out;
+}
+
+.sellGo:hover:not(:disabled) {
+  background: rgba(255, 178, 63, 0.18);
+}
+
+.sellGo:active:not(:disabled) {
+  transform: scale(0.98);
+}
+
+.sellGo:disabled {
+  cursor: default;
+  opacity: 0.5;
+}
+
+.sellDone {
+  margin: 0;
+  min-height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  font-size: var(--type-base);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: var(--mint);
+}
+
+.sellLink {
+  width: 36px;
+  height: 36px;
+  flex: none;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  color: var(--ice);
+  background: rgba(255, 255, 255, 0.08);
+  text-decoration: none;
+  font-weight: 800;
+}
+
+.sellLost {
+  margin: 0;
+  font-size: var(--type-base);
+  font-weight: 700;
+  color: var(--flare);
+}
+
+/* ---------------------------------------------------------------- the agent's day (CITY-194) */
+
+/* «While you were away»: one card under the HUD's top, dark glass with the agent's amber edge. */
+.away {
+  position: fixed;
+  z-index: 26;
+  top: calc(max(12px, env(safe-area-inset-top)) + 70px);
+  left: 50%;
+  transform: translateX(-50%);
+  width: min(420px, calc(100vw - 32px));
+  display: flex;
+  align-items: stretch;
+  gap: 8px;
+  padding: 8px;
+  background: linear-gradient(160deg, rgba(24, 18, 30, 0.96), rgba(9, 8, 15, 0.98));
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 178, 63, 0.34),
+    0 18px 44px rgba(0, 0, 0, 0.5);
+  clip-path: polygon(12px 0, 100% 0, 100% calc(100% - 12px), calc(100% - 12px) 100%, 0 100%, 0 12px);
+  animation: awayIn 260ms cubic-bezier(0.2, 1, 0.3, 1) both;
+}
+
+@keyframes awayIn {
+  from {
+    opacity: 0;
+    transform: translate(-50%, -8px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .away {
+    animation: none;
+  }
+}
+
+.awayBody {
+  flex: 1;
+  min-width: 0;
+  min-height: 52px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 4px 6px;
+  border: 0;
+  font: inherit;
+  text-align: left;
+  color: var(--ice);
+  background: none;
+  cursor: pointer;
+}
+
+.awayText {
+  min-width: 0;
+  display: grid;
+  gap: 2px;
+}
+
+.awayKicker {
+  font-size: var(--type-micro);
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--amber);
+}
+
+.awayHead {
+  font-family: var(--font-display, system-ui), system-ui, sans-serif;
+  font-size: var(--type-base);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.awayHead b {
+  font-weight: 800;
+  color: var(--ice);
+  white-space: nowrap;
+}
+
+.awayHead b[data-tone='up'] {
+  color: var(--mint);
+}
+
+.awayHead b[data-tone='down'] {
+  color: var(--flare);
+}
+
+.awaySaved {
+  font-size: var(--type-micro);
+  color: var(--ice);
+  opacity: 0.75;
+}
+
+.awayDock {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.awayShare {
+  height: 44px;
+  padding: 0 16px;
+  border: 0;
+  font-family: var(--font-display, system-ui), system-ui, sans-serif;
+  font-size: var(--type-small);
+  font-weight: 800;
+  color: var(--ink);
+  background: linear-gradient(100deg, var(--warm), var(--amber));
+  clip-path: polygon(10px 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%, 0 10px);
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.awayShare:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.awayClose {
+  width: 44px;
+  height: 44px;
+  display: grid;
+  place-items: center;
+  border: 0;
+  color: var(--ice);
+  opacity: 0.7;
+  background: none;
+  cursor: pointer;
+}
+
+.awayClose:hover {
+  opacity: 1;
+}
+
+/* The quiet line over the agent's tower: what it did today, in one line. */
+.towerWrap {
+  pointer-events: none;
+}
+
+.towerTag {
+  width: max-content;
+  max-width: 220px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 9px 5px;
+  white-space: nowrap;
+  font-family: var(--font-ui, system-ui), system-ui, sans-serif;
+  font-size: var(--type-micro);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: var(--ice);
+  background: rgba(11, 10, 20, 0.72);
+  box-shadow: inset 0 0 0 1px rgba(255, 178, 63, 0.32);
+  clip-path: polygon(6px 0, 100% 0, 100% calc(100% - 6px), calc(100% - 6px) 100%, 0 100%, 0 6px);
+}
+
+.towerTag::before {
+  content: '';
+  width: 6px;
+  height: 6px;
+  flex: none;
+  border-radius: 50%;
+  background: var(--amber);
+  box-shadow: 0 0 8px var(--amber);
+}
+
+.towerTag b {
+  font-weight: 800;
+}
+
+.towerTag b[data-tone='up'] {
+  color: var(--mint);
+}
+
+.towerTag b[data-tone='down'] {
+  color: var(--flare);
+}
+
+/* The agent's card: its day in one quiet line, and the daily report's one switch. */
+.today {
+  margin: 0;
+  font-size: var(--type-small);
+  font-variant-numeric: tabular-nums;
+  color: var(--ice);
+  opacity: 0.85;
+}
+
+.today b[data-tone='up'] {
+  color: var(--mint);
+}
+
+.today b[data-tone='down'] {
+  color: var(--flare);
+}
+
+.daily {
+  width: 100%;
+  min-height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 0 14px;
+  border: 0;
+  font: inherit;
+  font-size: var(--type-small);
+  font-weight: 700;
+  color: var(--ice);
+  background: rgba(255, 255, 255, 0.035);
+  box-shadow: inset 0 0 0 1px rgba(238, 241, 255, 0.12);
+  clip-path: polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px);
+  cursor: pointer;
+}
+
+.daily:disabled {
+  cursor: default;
+}
+
+.dailyKnob {
+  position: relative;
+  width: 36px;
+  height: 20px;
+  flex: none;
+  border-radius: 10px;
+  background: rgba(238, 241, 255, 0.18);
+  transition: background 160ms ease;
+}
+
+.dailyKnob::after {
+  content: '';
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: var(--ice);
+  transition: transform 160ms ease;
+}
+
+.daily[aria-checked='true'] .dailyKnob {
+  background: var(--amber);
+}
+
+.daily[aria-checked='true'] .dailyKnob::after {
+  transform: translateX(16px);
+  background: var(--ink);
+}
+
+/* A phone: the card stands under the filter row, and the day's figure is never cut. */
+@media (max-width: 640px) {
+  .away {
+    top: calc(max(12px, env(safe-area-inset-top)) + 122px);
+    gap: 4px;
+    padding: 6px;
+  }
+
+  .awayBody {
+    gap: 10px;
+    padding: 2px 4px;
+  }
+
+  .awayKicker {
+    letter-spacing: 0.1em;
+    white-space: nowrap;
+  }
+
+  .awayHead {
+    white-space: normal;
+    overflow: visible;
+  }
+
+  .awayShare {
+    padding: 0 12px;
+  }
+
+  .awayClose {
+    width: 40px;
+  }
+}
+
+/* CITY-193 — the strategy in one line, the practice's own kicker, a quiet second action, the run on history. */
+.plan {
+  margin: 2px 0 0;
+  font-size: var(--type-small, 14px);
+  font-weight: 650;
+  color: var(--amber);
+  letter-spacing: 0.01em;
+}
+
+.paperKicker {
+  font-size: var(--type-micro);
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--amber);
+}
+
+.quiet {
+  justify-self: center;
+  min-height: 44px;
+  padding: 10px 18px;
+  border: 0;
+  background: transparent;
+  color: var(--ice);
+  opacity: 0.78;
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+  transition: opacity 160ms ease;
+}
+
+.quiet:hover,
+.quiet:focus-visible {
+  opacity: 1;
+}
+
+.tested {
+  display: grid;
+  gap: 2px;
+  margin: 6px 0 0;
+  font-weight: 700;
+  color: var(--ice);
+  font-variant-numeric: tabular-nums;
+}
+
+.tested span {
+  font-weight: 500;
+  opacity: 0.6;
+}

@@ -69,7 +69,7 @@ export function httpTradeEngine(fetcher: typeof fetch = (input, init) => fetch(i
  * (`swapQuote2`) and the pool (`getQuote2`) each spend their quote mint, USDC on every preset the city launches on —
  * and the build signs exactly that swap. There is no SOL leg to ride, so the city's chips are in the pair currency.
  */
-export const BUY_CHIPS = [10, 25, 50, 100] as const;
+export const BUY_CHIPS = [1, 5, 10, 25] as const;
 export const SELL_CHIPS = [25, 50, 100] as const;
 export const SLIPPAGES = [100, 300, 500, 1000] as const;
 export const DEFAULT_SLIPPAGE_BPS = 300;

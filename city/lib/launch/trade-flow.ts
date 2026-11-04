@@ -23,6 +23,10 @@ export type TradeDone = Readonly<{
   feeRaw: string;
   receiptHash: string | null;
   network: Network;
+  /** Where it traded: the curve, or the pool after the move to the DEX — the quote's own venue. */
+  venue: 'curve' | 'pool';
+  /** The coin's page through the person's own referral code, for sharing; null when the engine could not make it. */
+  shareLink: string | null;
 }>;
 
 export type TradeFailure = Readonly<{ code: string; stage: 'before' | 'send'; message: string }>;
@@ -112,6 +116,8 @@ export async function runLaunchTrade(args: Readonly<{
       feeRaw: fresh.built.quote.fee.totalRaw,
       receiptHash: sent.data.receiptHash ?? null,
       network,
+      venue: fresh.built.quote.venue,
+      shareLink: sent.data.shareLink ?? null,
     },
   };
   onPhase(done);

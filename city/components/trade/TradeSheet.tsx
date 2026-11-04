@@ -1,13 +1,13 @@
 'use client';
 
 import dynamic from 'next/dynamic';
-import { useEffect, useMemo, useState, type ReactNode } from 'react';
+import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { iconAttempt, ICON_RETRY_MS, iconSource, monogram } from '@/city/lib/chart/icon';
 import { useCity } from '@/city/lib/city/store';
 import { dateText, digits, useWords } from '@/city/lib/i18n/dict';
 import type { Tower } from '@/city/lib/market/types';
 import { colourOf } from '@/city/lib/trade/colour';
-import { decimalsOf, figuresOf, type Figures } from '@/city/lib/trade/figures';
+import { decimalsOf, figuresOf, friendDiscountOf, type Figures } from '@/city/lib/trade/figures';
 import { formatUnits, ticker } from '@/city/lib/trade/format';
 import { SPOT_OPEN, TRADE_OPEN } from '@/city/lib/trade/gates';
 import { SPOT_IDLE, useSpot } from '@/city/lib/trade/spot-store';
@@ -18,9 +18,10 @@ import { quarterStore } from '@/city/lib/quarter/store';
 import { useWallet } from '@/city/lib/trade/wallet';
 import { cardName, MOMENT_BEATS, momentCard, momentFigure, momentSubject } from '@/city/lib/trade/moment';
 import { explorerTxUrl } from '@/lib/solana/explorer';
-import { openExternal, shareThroughApp } from '@/city/lib/app-bridge/page';
+import { postCard, touchScreen } from '@/city/lib/share/post';
 import { coinLink } from '@/city/lib/share/coin-link';
 import { useRyntraApp } from '@/city/lib/app-mode';
+import { AgentSell } from '../autopilot/AgentSell';
 import { BeaconAction } from '../beacon/BeaconAction';
 import { FuturesAction } from '../exchange/FuturesAction';
 import { LaunchTowerBody } from '../launch/LaunchTowerBody';
@@ -28,6 +29,7 @@ import { AmountPart } from './Amount';
 import { CoinFacts, CoinPrice, ShareTower } from './CoinFacts';
 import { CoinPicker, type PickerKind } from './CoinPicker';
 import { SpotTicket } from './SpotTicket';
+import { DockGet } from './DockGet';
 import { useWalletName, WalletLine, WalletPicker } from './WalletParts';
 import { riskWords, TRADE, type TextKeyOfTrade } from './words';
 import s from './trade.module.css';
@@ -69,6 +71,8 @@ export function TradeSheet() {
           {live && <BeaconAction tower={live} />}
         </div>
       )}
+      {/* CITY-187: where the person's agent holds this coin, she sells a share of it right here. */}
+      <AgentSell mint={tower.mint} symbol={ticker(tower.symbol)} />
       {phase === 'done' ? <DonePanel /> : phase === 'failed' ? <FailedPanel /> : phase === 'unknown' ? <UnknownPanel /> : <TradeBody tower={tower} coin={live} rank={rank} />}
     </div>
   );
@@ -314,6 +318,7 @@ function MarketPart({ tower, choice, getChips }: { tower: TowerRef; choice: Choi
   const connection = useWallet((st) => st.connection);
   const [picking, setPicking] = useState(false);
   const [details, setDetails] = useState(false);
+  const getRef = useRef<HTMLDivElement>(null);
 
   const shown = review && review.key === choice.key ? review : null;
   const priced = quote.status === 'ready' && quote.key === choice.key ? quote.body : null;
@@ -324,6 +329,8 @@ function MarketPart({ tower, choice, getChips }: { tower: TowerRef; choice: Choi
     if (shown) return figuresOf(shown.order.order, outputDecimals, 'order');
     return priced ? figuresOf(priced.order, outputDecimals, 'quote') : null;
   }, [shown, priced, outputDecimals]);
+  /* A partner's friend: the order the wallet signs states the discounted fee of the one the card quoted (CITY-182). */
+  const off = shown ? friendDiscountOf(priced?.order ?? null, shown.order.order) : null;
 
   // A wallet that connects closes the list of wallets.
   useEffect(() => {
@@ -346,7 +353,7 @@ function MarketPart({ tower, choice, getChips }: { tower: TowerRef; choice: Choi
           {getChips}
         </span>
       </div>
-      <div className={s.get} aria-live="polite">
+      <div ref={getRef} className={s.get} aria-live="polite">
         {choice.problem ? (
           <span className={`${s.display} ${s.getFigure} ${s.getWaiting}`}>—</span>
         ) : figures ? (
@@ -360,18 +367,23 @@ function MarketPart({ tower, choice, getChips }: { tower: TowerRef; choice: Choi
           <span className={s.shimmer} aria-label={w.gettingPrice} />
         )}
       </div>
-      {figures && details && <Details figures={figures} review={shown} quoteAt={quote.status === 'ready' ? quote.at : null} getSymbol={getSymbol} />}
+      {figures && details && <Details figures={figures} off={off} review={shown} quoteAt={quote.status === 'ready' ? quote.at : null} getSymbol={getSymbol} />}
       {/* The fee, the least you get, the impact and any warning stand in the pinned dock with the one action: whatever
           the card holds above them scrolls under the dock, never these lines. */}
       {picking && !connection ? (
         <>
-          {figures && <Terms figures={figures} exact={Boolean(shown)} getSymbol={getSymbol} open={details} onInfo={() => setDetails((v) => !v)} />}
+          {figures && <Terms figures={figures} off={off} exact={Boolean(shown)} getSymbol={getSymbol} open={details} onInfo={() => setDetails((v) => !v)} />}
           <Notes review={shown} problem={choice.problem?.text ?? null} quoteError={quote.status === 'error' && quote.key === choice.key ? quote.refusal.message : null} notice={notice} />
           <WalletPicker onBack={() => setPicking(false)} />
         </>
       ) : (
         <div className={s.dock}>
-          {figures && <Terms figures={figures} exact={Boolean(shown)} getSymbol={getSymbol} open={details} onInfo={() => setDetails((v) => !v)} />}
+          {figures && !choice.problem && (
+            <DockGet target={getRef} label={shown ? w.youGet : w.youGetAbout}>
+              <b className={s.display}>{digits(figures.get)}</b> {getSymbol}
+            </DockGet>
+          )}
+          {figures && <Terms figures={figures} off={off} exact={Boolean(shown)} getSymbol={getSymbol} open={details} onInfo={() => setDetails((v) => !v)} />}
           <Notes review={shown} problem={choice.problem?.text ?? null} quoteError={quote.status === 'error' && quote.key === choice.key ? quote.refusal.message : null} notice={notice} />
           <Action choice={choice} side={side} tower={tower} exact={Boolean(shown)} priced={Boolean(priced)} quoteFailed={quote.status === 'error' && quote.key === choice.key && quote.refusal.retryable} onPress={tap} onRetry={() => void refreshQuote()} />
         </div>
@@ -436,7 +448,7 @@ function ChevronGlyph() {
 }
 
 /** The terms before the signature, in one line: fee, route, the least you get, price impact. */
-function Terms({ figures, exact, getSymbol, open, onInfo }: { figures: Figures; exact: boolean; getSymbol: string; open: boolean; onInfo: () => void }) {
+function Terms({ figures, off, exact, getSymbol, open, onInfo }: { figures: Figures; off: string | null; exact: boolean; getSymbol: string; open: boolean; onInfo: () => void }) {
   const w = useWords(TRADE);
   const impactClass = figures.impactLevel === 'high' ? s.high : figures.impactLevel === 'notable' ? s.notable : '';
   return (
@@ -445,6 +457,14 @@ function Terms({ figures, exact, getSymbol, open, onInfo }: { figures: Figures; 
         {figures.fee ? (
           <>
             {w.fee} <b>{figures.fee}</b>
+            {off && (
+              <>
+                {' '}
+                <span className={s.friendOff} title={w.friendOff}>
+                  {off}
+                </span>
+              </>
+            )}
           </>
         ) : (
           w.noRyntraFee
@@ -471,14 +491,14 @@ function Terms({ figures, exact, getSymbol, open, onInfo }: { figures: Figures; 
   );
 }
 
-function Details({ figures, review, quoteAt, getSymbol }: { figures: Figures; review: Review | null; quoteAt: number | null; getSymbol: string }) {
+function Details({ figures, off, review, quoteAt, getSymbol }: { figures: Figures; off: string | null; review: Review | null; quoteAt: number | null; getSymbol: string }) {
   const w = useWords(TRADE);
   const risk = review?.order.risk.verdict;
   const route = review ? review.order.order.route.map((hop) => hop.label).join(' → ') : figures.route;
   return (
     <dl className={s.details}>
       <dt>{w.ryntraFee}</dt>
-      <dd>{figures.fee ?? w.none}</dd>
+      <dd>{figures.fee ? (off ? `${figures.fee} · ${w.friendOff} ${off}` : figures.fee) : w.none}</dd>
       <dt>{w.route}</dt>
       <dd>{route || figures.route}</dd>
       <dt>{w.youGetAtLeast}</dt>
@@ -637,7 +657,7 @@ function MomentShare({ towerId, symbol, sold, kicker, got, unit, line }: { tower
   // In the Ryntra app the card goes to the app's own share sheet through the bridge (CITY-6b); on a phone, to the
   // system's. Either way the button says Share; a computer posts on X.
   const app = useRyntraApp();
-  const phone = useMemo(() => (typeof window !== 'undefined' && window.matchMedia?.('(pointer: coarse)').matches) || false, []);
+  const phone = useMemo(touchScreen, []);
   const colour = address ? colourOf(address) : '#FFB23F';
   // In my quarter the camera is the quarter's: the card is framed on the building of this coin. In the city the
   // camera flies to the coin's tower, if the city has one; a coin without a tower is never selected (a selection of a
@@ -663,27 +683,8 @@ function MomentShare({ towerId, symbol, sold, kicker, got, unit, line }: { tower
   const post = async () => {
     setState('making');
     const card = await momentCard({ kicker, ...momentFigure(got), unit, line, colour }, { focus: subject?.focus });
-    const f = card ? new File([card], cardName(symbol), { type: 'image/png' }) : null;
-    // The system share sheet is a phone's way to post a card. On a computer it is the system's own panel, which many
-    // close without posting: there the card is saved and X opens with the words and the coin's link.
-    const viaApp = f ? await shareThroughApp(f, f.name, words) : null;
-    if (viaApp) {
-      setState(viaApp === 'shared' ? 'shared' : 'ready');
-      return;
-    }
-    if (f && phone && navigator.canShare?.({ files: [f] })) {
-      try {
-        await navigator.share({ files: [f], text: words });
-        setState('shared');
-      } catch {
-        // The person closed the share sheet.
-        setState('ready');
-      }
-      return;
-    }
-    if (f) download(f);
-    openExternal(`https://x.com/intent/post?text=${encodeURIComponent(words)}&url=${encodeURIComponent(coinLink(towerId))}`);
-    setState(f ? 'saved' : 'ready');
+    const outcome = await postCard({ blob: card, name: cardName(symbol), text: words, x: { text: words, url: coinLink(towerId) }, phone });
+    setState(outcome === 'shared' ? 'shared' : outcome === 'saved' ? 'saved' : 'ready');
   };
   return (
     <>
@@ -693,17 +694,6 @@ function MomentShare({ towerId, symbol, sold, kicker, got, unit, line }: { tower
       </button>
     </>
   );
-}
-
-function download(file: File) {
-  const href = URL.createObjectURL(file);
-  const a = document.createElement('a');
-  a.href = href;
-  a.download = file.name;
-  document.body.appendChild(a);
-  a.click();
-  a.remove();
-  setTimeout(() => URL.revokeObjectURL(href), 4000);
 }
 
 function FailedPanel() {

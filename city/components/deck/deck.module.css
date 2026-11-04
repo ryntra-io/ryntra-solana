@@ -129,23 +129,6 @@
   opacity: 0.5;
 }
 
-.soonTag {
-  position: absolute;
-  top: -15px;
-  left: 50%;
-  z-index: 1;
-  transform: translateX(-50%);
-  padding: 2px 6px 1px;
-  font-size: 9px;
-  font-weight: 800;
-  line-height: 1.3;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-  color: var(--ink);
-  background: linear-gradient(160deg, var(--warm), #ffd38a);
-  clip-path: polygon(4px 0, 100% 0, 100% calc(100% - 4px), calc(100% - 4px) 100%, 0 100%, 0 4px);
-}
-
 /* «Soon», said once over the place tapped. */
 .bubble {
   position: absolute;
@@ -249,10 +232,6 @@
   transition:
     background 160ms ease-out,
     color 160ms ease-out;
-}
-
-.door .soonTag {
-  top: 6px;
 }
 
 .door .bubble {
@@ -419,6 +398,10 @@
   .door:has(.bubble)::after {
     display: none;
   }
+  /* A window open over the city covers a hint's end: the place is already open, the hint stays away (CITY-188). */
+  :global(main:has([data-window]:not([data-window='']))) .item::after {
+    display: none;
+  }
   .item:hover:not(.on) {
     color: var(--ice);
   }
@@ -462,12 +445,6 @@
   }
   .diamond {
     padding: 16px;
-  }
-  .soonTag {
-    top: -13px;
-    padding: 1px 4px 0;
-    font-size: 8px;
-    letter-spacing: 0.06em;
   }
   .tray {
     grid-template-columns: repeat(var(--doors, 3), 96px);

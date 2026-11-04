@@ -8,10 +8,14 @@ import type { HarborEngine } from './engine.ts';
  * sent again. Bytes that aged out while the wallet was open are not sent: the card builds a fresh Review instead.
  */
 
+/** What the flow needs of a Review: its bytes, its ticket and how long they may be signed — a pool action's or a limit order's. */
+export type SignableReview = Pick<LiquidityReview, 'transactions' | 'ticket' | 'signableMs'>;
+
 export type SignMany = (unsignedWireBase64: readonly string[]) => Promise<Readonly<{ ok: true; signed: readonly string[] }> | Readonly<{ ok: false }>>;
 
 export type FlowDeps = Readonly<{
-  engine: HarborEngine;
+  /** The relay and the chain's word on a signature: all the flow asks of an engine. */
+  engine: Pick<HarborEngine, 'submit' | 'status'>;
   sign: SignMany;
   now: () => number;
   sleep: (ms: number) => Promise<void>;
@@ -35,12 +39,12 @@ export type ActionOutcome =
   | Readonly<{ kind: 'unknown'; signatures: readonly string[] }>;
 
 /** How long from arriving a Review's bytes may still be signed; an engine that sends no figure gets the longest window. */
-export function signableMsOf(review: LiquidityReview): number {
+export function signableMsOf(review: SignableReview): number {
   return Number.isFinite(review.signableMs) ? review.signableMs : MAX_SIGNABLE_WINDOW_MS;
 }
 
 /** Whether a Review on the card may still open the wallet, or must be built again first. */
-export function reviewFresh(review: LiquidityReview, receivedAt: number, now: number): boolean {
+export function reviewFresh(review: SignableReview, receivedAt: number, now: number): boolean {
   return mayOpenWallet({ receivedAtMs: receivedAt, signableMs: signableMsOf(review), nowMs: now });
 }
 
@@ -98,7 +102,7 @@ export async function follow(relay: LiquidityRelay, deps: FlowDeps): Promise<Liq
 }
 
 /** Sign the Review's bytes and hand them to the relay, once. */
-export async function signAndSend(review: LiquidityReview, receivedAt: number, deps: FlowDeps): Promise<ActionOutcome> {
+export async function signAndSend(review: SignableReview, receivedAt: number, deps: FlowDeps): Promise<ActionOutcome> {
   if (!reviewFresh(review, receivedAt, deps.now())) return { kind: 'aged' };
   const signed = await deps.sign(review.transactions.map((tx) => tx.wireBase64));
   if (!signed.ok) return { kind: 'refused', code: 'WALLET_REFUSED' };

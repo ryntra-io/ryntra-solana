@@ -206,6 +206,10 @@ export const GUARD_COLLECTIONS = [
      lines, written together. Values in the same column; no DDL. */
   "rewardWelcome",
   "rewardWelcomeMonths",
+  /* Ryntra Partners R3 (the Growth line): one row per pair `inviter:trader` — the check of a friend's trade before
+     its share pays or its points count (`lib/growth/referral-guard.ts`). Hashless: the evidence stays in
+     `growthSignals`. Values in the same column; no DDL. */
+  "rewardReferralPairs",
   "rewardBudget",
   "rewardBudgetEntries",
   /* Leaderboards and seasons (the Growth line). `growthBoards` caches each
@@ -391,6 +395,11 @@ export const GUARD_COLLECTIONS = [
      verify what drifted. Values in the same column; no DDL. */
   "monitoringIssuerWatch",
   "issuerNoticeChecks",
+  /* Earn's notes in the city (CITY-100, `city/lib/earn/notes-watch.ts`): one row per wallet that asked under its own
+     proof to be told of Earn with Ryntra closed, keyed `solana:mainnet:<wallet>` and versioned — its language, when it
+     was last read, the positions out of range and the loans' grades at that read. The notes themselves are the
+     monitoring inbox's and outbox's, claimed once in `monitoringTriggers`. A value in the same column; no DDL. */
+  "cityEarnNotes",
   /* Ryn, the agent: the durable conversation keyed by the proven wallet —
      structured turns, never a raw chat log as the source of any state; the
      drafts a turn prepared (a plan's rules, a condition, a trade intention),
@@ -621,6 +630,11 @@ export const GUARD_COLLECTIONS = [
   "launchEngineQueue",
   "launchEngineAlerts",
   "launchEnginePeople",
+  /* Ryntra Launch's signers (CITY-162): one row for every signature the pool payer or the executor made and every
+     request it refused — role, address, adapter (env or KMS) and key version, what the message does, its sha256, the
+     signature, when — keyed `solana:<cluster>:<role>:<time>:<message hash>:<outcome>`, written once, never changed.
+     Public data only. A value in the same column; no DDL. */
+  "launchSignatures",
   /* Spot limits on Solana (B3): every Jupiter Trigger and Meteora DLMM limit order Ryntra relayed — the terms, the fee the
      chain wrote, and the signatures of its placing, fills and cancelling — keyed `mainnet:<wallet>:<venue>:<order>`, a
      version-checked record. Its own collection, not a lane of `solanaWalletActions`, whose lane list the public API and the
@@ -665,6 +679,33 @@ export const GUARD_COLLECTIONS = [
      terminal state arriving from the other party moves a field named for a claim and never the delivery axis. A value
      in the same column; no DDL. */
   "agentExternalTasks",
+  /* Ryntra's Solana connector for AI chats (CITY-154, `lib/connector/`): the clients that registered themselves
+     (`<clientId>`), the wallet consents issued for one authorization request (`<nonce>`, spent once), the codes
+     (`<codeId>`), the tokens (`<tokenId>` and the grant mirror `grant:<grantId>:<tokenId>`), each wallet's quota window
+     (`<wallet>`) and one receipt per tool call (`<wallet>:<receiptId>`, inserted once). Beside Agent Control's OAuth
+     records rather than inside them: a wallet grant is not a tenant key grant. A value in the same column; no DDL. */
+  "connectorClients",
+  "connectorConsents",
+  "connectorCodes",
+  "connectorTokens",
+  "connectorQuotas",
+  "connectorReceipts",
+  /* The agent with a budget (CITY-174, CITY-175, `lib/mandate/`): the agent's book — each mandate it works for, with the
+     person's strategy and the agent's trades (`m:<cluster>:<policy>`) and one claim per trading slot (`c:…`), so two
+     instances never trade the same slot — and the journal of the agent's signatures, one row per signature or refusal.
+     Public data only; a value in the same column; no DDL. */
+  "agentMandates",
+  "agentSignatures",
+  /* The agent's daily report (CITY-194, `city/lib/autopilot/report-watch.ts`): per wallet, whether the person hears it, at
+     which hour of her own day and in which language, and the last day it was told (`r:<owner>`, versioned). Public data
+     only; a value in the same column; no DDL. */
+  "agentReports",
+  /* The partners' weekly payout (CITY-128, `lib/partner-payouts/`): one statement per closed week, keyed
+     `<cluster>:<YYYY-MM-DD>` (versioned) — what each partner earned, what the week's one Squads proposal pays and what is
+     carried, with the operations it credited, so no operation is credited twice. A value in the same column; the
+     prepared migration `supabase/prepared/20261102_city_128_partner_payouts_v1.sql` adds the database's refusal to
+     rewrite a statement's lines once written. */
+  "partnerPayoutWeeks",
 ] as const;
 
 export type GuardCollectionName = (typeof GUARD_COLLECTIONS)[number];

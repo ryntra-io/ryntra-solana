@@ -53,7 +53,7 @@ test("SOL in: the engine's quote takes the pair currency only — no input mint 
 });
 
 test("chips: whole USDC to raw, shares of a holding rounded down, a chip over the balance closed", () => {
-  assert.deepEqual([...BUY_CHIPS], [10, 25, 50, 100]);
+  assert.deepEqual([...BUY_CHIPS], [1, 5, 10, 25]);
   assert.deepEqual([...SELL_CHIPS], [25, 50, 100]);
   assert.equal(wholeToRaw(25, 6), "25000000");
   assert.equal(wholeToRaw(0, 9), "0");

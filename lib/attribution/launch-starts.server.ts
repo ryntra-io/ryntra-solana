@@ -92,7 +92,7 @@ export function withFeeClaimer(rows: readonly RegistryEntry[], starts: readonly 
   };
   const configs = rows.filter((row) => row.role === "LAUNCH_CONFIG");
   const vault = earliestOf(configs.filter((row) => row.parent === null));
-  const executor = earliestOf(configs.filter((row) => row.parent !== null && row.countedAs === "FEES"));
+  const executor = earliestOf(configs.filter((row) => row.parent !== null && row.countedAs === "FEES" && row.end === null));
   return [
     ...starts,
     ...(vault ? rows.filter((row) => row.role === "LAUNCH_FEE_CLAIMER").map((row) => ({ id: row.id, moment: vault })) : []),

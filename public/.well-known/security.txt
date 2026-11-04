@@ -1,0 +1,7 @@
+# Ryntra — how to report a security issue (RFC 9116).
+# PLACEHOLDER: the contact below is a stand-in until the owner names the security inbox.
+# Until then a report goes through Help with the topic «Security», which the team reads first.
+Contact: https://ryntra.io/support
+Expires: 2027-04-30T00:00:00.000Z
+Preferred-Languages: en, uk
+Canonical: https://ryntra.io/.well-known/security.txt

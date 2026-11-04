@@ -2,12 +2,16 @@
 
 import { useEffect } from 'react';
 import { AGENTS_OPEN } from '@/city/lib/agent/flag';
-import { useAgent } from '@/city/lib/agent/store';
+import { AUTOPILOT_NET } from '@/city/lib/autopilot/flag';
+import { useAutopilot } from '@/city/lib/autopilot/store';
 import { useAssistant } from '@/city/lib/assistant/store';
+import { openBots } from '@/city/lib/bots/open';
 import { hotTower } from '@/city/lib/city/hot';
 import { useCity } from '@/city/lib/city/store';
 import { useHudPanels } from '@/city/lib/city/windows';
 import { HARBOR_OPEN } from '@/city/lib/districts/harbor/flag';
+import { EARN_OPEN } from '@/city/lib/earn/flag';
+import { openEarn } from '@/city/lib/earn/open';
 import { useHarbor } from '@/city/lib/districts/harbor/store';
 import { PREDICT_OPEN } from '@/city/lib/districts/predict/flag';
 import { usePredict } from '@/city/lib/districts/predict/store';
@@ -15,6 +19,7 @@ import { EXCHANGE_OPEN } from '@/city/lib/exchange/flag';
 import { useExchange } from '@/city/lib/exchange/store';
 import { launchOpenHere, startDistrict, useLaunch } from '@/city/lib/launch/district';
 import { hallShown, useHall } from '@/city/lib/launch/hall-store';
+import { openLaunched } from '@/city/lib/launch/launched-store';
 import { openMoney } from '@/city/lib/money/open';
 import { readOpenAsk, withoutAsk, type OpenAsk } from '@/city/lib/open/address';
 import { TRADE_OPEN } from '@/city/lib/trade/gates';
@@ -83,13 +88,26 @@ async function openAsk(ask: OpenAsk): Promise<void> {
       if (HARBOR_OPEN) useHarbor.getState().show();
       return;
     case 'agents':
-      if (AGENTS_OPEN && useAgent.getState().panel === 'none') useAgent.getState().toggle();
+      // The old bots, strategies and agents pages: the Agents section's bots window (CITY-134), where the scout is too.
+      if (AGENTS_OPEN) openBots();
       return;
     case 'assistant':
       useAssistant.getState().show(null);
       return;
     case 'settings':
       useHudPanels.getState().openSettings();
+      return;
+    case 'earn':
+      // A note of Earn's opens it from Telegram or the phone (CITY-100); closed in this deployment, the home stays.
+      if (EARN_OPEN) openEarn(ask.earnTab);
+      return;
+    case 'launches':
+      // Every coin launched on Ryntra (CITY-185): its own page is `/launches`.
+      openLaunched();
+      return;
+    case 'agent':
+      // The agent's daily report opens the person's agent from Telegram or the phone (CITY-194).
+      if (AUTOPILOT_NET) useAutopilot.getState().showAgent();
       return;
   }
 }

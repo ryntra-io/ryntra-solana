@@ -111,7 +111,9 @@ test("the city's first screen has no game card, no «Soon», no Market tour; Pla
   assert.doesNotMatch(hud, /QuarterCard|ResidentCard|ClaimCard/, "the quarter's card is not on the city view");
   assert.doesNotMatch(hud, /Soon|soon|LockedCard|dockLocked/, "a closed district is simply not drawn");
   assert.doesNotMatch(hud, /label="Market"|label="Home"|label="Run"/, "Market, Home and Run left the city's dock");
-  assert.match(hud, /play \? \(\s*<GameSlot \/>\s*\) : null/);
+  // After Play's card, only Launch Night's (CITY-146) — behind its own switch, and only with a show of confirmed launches.
+  assert.match(hud, /play \? \(\s*<GameSlot \/>\s*\) : nightCard \? \(\s*<NightCard \/>\s*\) : null/);
+  assert.match(read("../launch/night-store.ts"), /if \(!switchOpen\) \{\s*useNight\.setState\(\{ status: 'off' \}\);/);
   assert.doesNotMatch(hud, /<HotCard \/>/, "what moves is in the events under the bell, not a card on the city (30.10)");
   assert.match(hud, /<GameDock /);
   assert.match(hud, /<BrandWithLayers onHome=\{onHome\}>\s*<Brand onHome=\{onHome\} \/>\s*<\/BrandWithLayers>/, "the switch stands next to the brand");

@@ -8,6 +8,8 @@ export type BenefitJobData = Readonly<{ wallet: string; operationId: string; set
   | Readonly<{ kind: "CROSS_SWAP" }>
   /* «First $10 back»: the cluster check of a wallet that holds the window (rules 2.1.0), until it decides. */
   | Readonly<{ kind: "FIRST_TEN_CHECK" }>
+  /* Ryntra Partners R3: the pair check of a friend's trade — `wallet` the trader, `operationId` the wallet paid for it. */
+  | Readonly<{ kind: "REFERRAL_CHECK" }>
 );
 type BenefitJob = Readonly<{ version: number; data: BenefitJobData; createdAt: string; nextAttemptAt: string; attempts: number }>;
 const keyOf = (data: BenefitJobData) => `${data.wallet}:${data.kind}:${data.operationId}`;
@@ -65,7 +67,7 @@ export async function drainBenefitJobs(store: GuardStore, args: Readonly<{
     if (Date.now() >= deadline) break;
     const key = keyOf(row.data);
     /* The cluster check may wait days for a person: it backs off, doubling up to six hours, so it never crowds out the rest. */
-    const delay = row.data.kind === "FIRST_TEN_CHECK" ? Math.min(90_000 * 2 ** Math.min(row.attempts, 8), 6 * 3_600_000) : 90_000;
+    const delay = row.data.kind === "FIRST_TEN_CHECK" || row.data.kind === "REFERRAL_CHECK" ? Math.min(90_000 * 2 ** Math.min(row.attempts, 8), 6 * 3_600_000) : 90_000;
     const leased = { ...row, version: row.version + 1, attempts: row.attempts + 1, nextAttemptAt: new Date(Date.parse(args.now) + delay).toISOString() };
     if (!await collection.compareAndSet(key, row.version, leased)) continue;
     attempted++;

@@ -14,6 +14,8 @@ import {
   API_MAJOR,
   API_VERSION_HEADER,
   type AgentBriefResponse,
+  type WardCheckRequest,
+  type WardCheckResponse,
   type AgentBudgetState,
   type AgentCriticResponse,
   type AgentDraftResponse,
@@ -73,6 +75,9 @@ import {
   type PlanUpdateRequest,
   type PlanVersionResponse,
   type PopularCompaniesResponse,
+  type IntentCreateRequest,
+  type IntentCreatedResponse,
+  type IntentResponse,
   type PayLinkCreateRequest,
   type PayLinkListResponse,
   type PayLinkResponse,
@@ -389,6 +394,13 @@ export function createRyntraApiClient(options: RyntraApiClientOptions) {
       /* 1.23.0 — «Ризик портфеля»: one word for the wallet as a whole, with every rule broken or what could not be read, decided by the server. */
       risk: () => call<PortfolioRiskResponse>("GET", "/api/v1/positions/risk", undefined, true),
     },
+    /* 1.90.0 — prepared actions (CITY-161): an agent, a chat or a partner prepares a swap; the person opens `intent.links.url` and signs in their own wallet. Making and reading need no bearer; the creator's key (shown once) reads the receipt and withdraws the intent. The claim, release and receipt are the city's own steps on Ryntra's origin. */
+    intents: {
+      create: (request: IntentCreateRequest) => call<IntentCreatedResponse>("POST", "/api/v1/intents", request),
+      get: (id: string, creatorKey?: string) =>
+        call<IntentResponse>("GET", `/api/v1/intents/${encodeURIComponent(id)}`, undefined, false, creatorKey ? { "X-Ryntra-Intent-Key": creatorKey } : undefined),
+      cancel: (id: string, creatorKey: string) => call<IntentResponse>("POST", `/api/v1/intents/${encodeURIComponent(id)}/cancel`, undefined, false, { "X-Ryntra-Intent-Key": creatorKey }),
+    },
     /* 1.22.0 — «Гроші»: payment links. Making and listing need the bearer (the recipient is always its wallet); one link reads for anyone with it. Paying a Ryntra link runs on the page's own routes, the bearer paying as its own wallet (`RyntraRouteError`). */
     pay: {
       create: (request: PayLinkCreateRequest) => call<PayLinkResponse>("POST", "/api/v1/pay/requests", request, true),
@@ -408,6 +420,10 @@ export function createRyntraApiClient(options: RyntraApiClientOptions) {
     money: {
       recipient: (request: RecipientCheckQuery) => call<RecipientCheckResponse>("GET", `/api/v1/money/recipient${query({ to: request.to, mint: request.mint, from: request.from })}`),
       returned: (request: SendReturnedRequest) => call<SendReturnedResponse>("POST", "/api/v1/money/send/returned", request),
+    },
+    /* 1.88.0 — the pre-sign check (CITY-152): public, no session; it signs, sends and keeps nothing. */
+    ward: {
+      check: (request: WardCheckRequest) => call<WardCheckResponse>("POST", "/api/v1/ward/check", request),
     },
     /* 1.8.0 — Ryn, the agent: the proven wallet's conversation; every call but the suggestions needs the bearer. */
     agent: {

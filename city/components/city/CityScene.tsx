@@ -11,13 +11,19 @@ import { LookScene } from '../look/LookScene';
 import { HarborTowers } from '../districts/HarborTowers';
 import { MyTowers } from '../trade/MyTowers';
 import { ScoutFlags } from '../scouts/ScoutFlags';
+import { NetworkStreets } from '../partners/NetworkStreets';
 import { ScoutDrone } from '../agent/ScoutDrone';
+import { BotDrones } from '../bots/BotDrones';
 import { QuarterScene } from '../quarter/QuarterScene';
 import { VaultTower } from '../vault/VaultTower';
 import { HallSigns } from '../launch/HallSigns';
+import { NightSpot } from '../launch/NightSpot';
+import { LaunchCrowns } from '../launch/LaunchCrowns';
+import { LaunchHalos } from '../launch/LaunchHalos';
 import { HoverPick } from '../hud/HoverPick';
 import { Selected } from './Selected';
 import { BeaconTowers } from '../beacon/BeaconTowers';
+import { AgentTowerTag } from '../autopilot/AgentTowerTag';
 import { LensCamera, LensRings } from '../lens/LensScene';
 import { PALETTE } from '@/city/lib/palette';
 import { CameraRig } from './CameraRig';
@@ -61,12 +67,18 @@ export function CityScene() {
         <Selected />
         <MyTowers />
         <ScoutFlags />
+        <NetworkStreets />
         <BeaconTowers />
+        <AgentTowerTag />
         <HarborTowers />
         <ScoutDrone />
+        <BotDrones />
         <QuarterScene />
         <VaultTower />
         <HallSigns />
+        <NightSpot />
+        <LaunchCrowns />
+        <LaunchHalos />
         <RunWorld />
         {process.env.NODE_ENV !== 'production' && <LookScene />}
       </group>

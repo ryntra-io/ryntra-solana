@@ -122,6 +122,24 @@ test("a figure the source did not measure is a calm dash in the window's cells, 
   assert.ok(facts.includes("{cell(tower, 'price', formatPrice)}"), "the price line too");
 });
 
+test("what you get stays in sight beside the action: the dock carries it while the ticket's own figure is out of view (CITY-189)", () => {
+  // On a phone the tower's window is half the screen and the pinned dock stood over «You get about» until the card was
+  // scrolled to its end. Both tickets give the dock the figure as its first line, measured against the ticket's own.
+  const sheet = read("city/components/trade/TradeSheet.tsx");
+  const market = sheet.slice(sheet.indexOf("<div className={s.dock}>", sheet.indexOf("{figures && details && <Details")));
+  assert.ok(market.indexOf("<DockGet target={getRef}") > 0 && market.indexOf("<DockGet") < market.indexOf("<Terms"), "the market dock: what you get, then the terms");
+  assert.match(sheet, /<div ref=\{getRef\} className=\{s\.get\}/, "measured against the ticket's own figure");
+  const spot = read("city/components/trade/SpotTicket.tsx");
+  const order = spot.slice(spot.indexOf("<div className={s.dock}>"));
+  assert.ok(order.indexOf("<DockGet target={getRef}") > 0 && order.indexOf("<DockGet") < order.indexOf("{terms}"), "the order dock: what you get, then the terms");
+  assert.match(spot, /<div ref=\{getRef\} className=\{`\$\{s\.row\} \$\{s\.rowWrap\}`\}>\s*<span className=\{s\.labelGroup\}>\s*<span className=\{s\.label\}>\{t\.youGet\}/, "measured against the order's own «You get» row");
+  // Folded, the line takes no room and the next line keeps its old place: a card that fits, as on a desk, is unchanged.
+  const css = read("city/components/trade/trade.module.css");
+  assert.match(css, /\.dockGet \{[^}]*grid-template-rows: 0fr;[^}]*opacity: 0;/, "folded to nothing by default");
+  assert.match(css, /\.dockGet \+ \* \{\s*margin-top: 0;/, "no gap left behind it");
+  assert.match(read("city/components/trade/DockGet.tsx"), /aria-hidden="true"/, "screen readers read the figure itself, once");
+});
+
 test("the fee, the least you get and any warning are read before the press: they stand in the pinned dock with the action", () => {
   // A card taller than its room (Ukrainian, a short phone) scrolls under the pinned action: whatever must be read before
   // the signature lives inside that dock, never above it where the dock would cover it at rest.

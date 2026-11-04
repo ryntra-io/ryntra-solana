@@ -2,7 +2,9 @@
  * Ryntra's push on a computer (AI-19). An empty Web Push wakes this worker; it
  * reads the wallet's newest note from Ryntra itself (the wallet's cookie, the
  * same origin) and shows it. No words travel through the push service. A
- * click opens the note in Ryntra — the tab already open, or a new one.
+ * click opens the note in Ryntra — the tab already open, or a new one. The
+ * icon and the badge are the city's mark (CITY-158); a push without a note
+ * opens the city's assistant.
  */
 
 self.addEventListener("install", () => self.skipWaiting());
@@ -28,12 +30,12 @@ self.addEventListener("push", (event) => {
       const uk = /^uk/i.test(lang);
       const title = note ? note.title : "Ryntra";
       const body = note ? note.body : uk ? "Нове сповіщення в Ryntra." : "A new note in Ryntra.";
-      const href = note ? note.href : "/app/alerts";
+      const href = note ? note.href : "/?open=assistant";
       await self.registration.showNotification(title, {
         body,
         tag: note ? note.id : "ryntra",
-        icon: "/brand/icon-192.png",
-        badge: "/brand/favicon-32x32.png",
+        icon: "/brand/city/icon-192.png",
+        badge: "/brand/city/badge-96.png",
         data: { href },
       });
     })(),
@@ -42,7 +44,7 @@ self.addEventListener("push", (event) => {
 
 self.addEventListener("notificationclick", (event) => {
   event.notification.close();
-  const href = (event.notification.data && event.notification.data.href) || "/app/alerts";
+  const href = (event.notification.data && event.notification.data.href) || "/?open=assistant";
   const target = new URL(href, self.location.origin).href;
   event.waitUntil(
     (async () => {

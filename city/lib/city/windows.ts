@@ -15,16 +15,20 @@ export type WindowName =
   | 'harbor'
   | 'mine'
   | 'scouts'
+  | 'partners'
   | 'vault'
   | 'hall'
   | 'berth'
   | 'agent'
+  | 'garage'
   | 'beacon'
   | 'assistant'
   | 'how'
+  | 'guides'
   | 'moments'
   | 'launch'
   | 'build'
+  | 'pages'
   | 'menu'
   | 'settings';
 
@@ -38,21 +42,28 @@ export type WindowSources = Readonly<{
   harbor?: Readonly<{ open: boolean }>;
   mine?: Readonly<{ open: boolean }>;
   scouts?: Readonly<{ open: boolean }>;
+  partners?: Readonly<{ open: boolean; landing: boolean }>;
   vault?: Readonly<{ open: boolean }>;
   hall?: Readonly<{ panel: boolean }>;
   berth?: Readonly<{ open: boolean }>;
   agent?: Readonly<{ panel: string }>;
+  /** The garage agent (CITY-29): its window, or its towers shown with the window stepped aside. */
+  garage?: Readonly<{ open: boolean }>;
   beacon?: Readonly<{ openFor: string | null }>;
   assistant?: Readonly<{ open: boolean }>;
   how?: Readonly<{ open: boolean }>;
+  /** «How it works»: the lessons (CITY-43). */
+  guides?: Readonly<{ open: boolean }>;
   moments?: Readonly<{ sheet: unknown }>;
   launch?: Readonly<{ sheet: boolean }>;
   build?: Readonly<{ on: boolean }>;
+  /** The city's pages open as windows: Docs, Developers, Help, About, the Terms, the Privacy Policy (CITY-157). */
+  pages?: Readonly<{ open: readonly string[] }>;
   hud?: Readonly<{ menu: boolean; settings: boolean }>;
 }>;
 
 /** The windows in the order they are asked; the first open one is named. */
-export const WINDOWS: readonly WindowName[] = ['predict', 'trade', 'money', 'chart', 'exchange', 'harbor', 'mine', 'scouts', 'vault', 'hall', 'berth', 'agent', 'beacon', 'assistant', 'how', 'moments', 'launch', 'build', 'menu', 'settings'];
+export const WINDOWS: readonly WindowName[] = ['predict', 'trade', 'money', 'chart', 'exchange', 'harbor', 'mine', 'scouts', 'partners', 'vault', 'hall', 'berth', 'agent', 'garage', 'beacon', 'assistant', 'how', 'guides', 'moments', 'launch', 'build', 'pages', 'menu', 'settings'];
 
 const IS_OPEN: Readonly<Record<WindowName, (src: WindowSources) => boolean>> = {
   predict: (s) => !!s.predict?.open,
@@ -63,16 +74,20 @@ const IS_OPEN: Readonly<Record<WindowName, (src: WindowSources) => boolean>> = {
   harbor: (s) => !!s.harbor?.open,
   mine: (s) => !!s.mine?.open,
   scouts: (s) => !!s.scouts?.open,
+  partners: (s) => !!s.partners?.open || !!s.partners?.landing,
   vault: (s) => !!s.vault?.open,
   hall: (s) => !!s.hall?.panel,
   berth: (s) => !!s.berth?.open,
   agent: (s) => s.agent != null && s.agent.panel !== 'none',
+  garage: (s) => !!s.garage?.open,
   beacon: (s) => s.beacon?.openFor != null,
   assistant: (s) => !!s.assistant?.open,
   how: (s) => !!s.how?.open,
+  guides: (s) => !!s.guides?.open,
   moments: (s) => s.moments?.sheet != null && s.moments.sheet !== false,
   launch: (s) => !!s.launch?.sheet,
   build: (s) => !!s.build?.on,
+  pages: (s) => (s.pages?.open.length ?? 0) > 0,
   menu: (s) => !!s.hud?.menu,
   settings: (s) => !!s.hud?.settings,
 };
@@ -94,7 +109,7 @@ export function windowOpen(src: WindowSources): boolean {
 }
 
 /**
- * The HUD's own two panels: the menu (☰) and «Settings» opened from it. One at a time: opening one closes the other.
+ * The HUD's menu (☰) and the settings window opened from it (CITY-87). One at a time: opening one closes the other.
  */
 type HudPanels = Readonly<{
   menu: boolean;

@@ -32,6 +32,8 @@ const INTRO_SHIFT = 0.17;
 /** How far the city slides from under Ryntra's panel: left on a desk, up on a phone, where the sheet covers its lower half. */
 const ASSISTANT_SHIFT = 0.12;
 const ASSISTANT_LIFT = 0.16;
+/** A tower framed for a window, on a phone: into the strip of city between the top bar and the sheet (CITY-168). */
+const SHEET_LIFT = 0.25;
 /** Up to this width a screen held upright shows Ryntra's panel as a sheet at the bottom (assistant.module.css). */
 const SHEET_MAX_WIDTH = 560;
 
@@ -211,7 +213,7 @@ export function CameraRig({ world }: { world: RefObject<THREE.Group | null> }) {
     const goal = !state.entered && !portrait ? INTRO_SHIFT : open && !sheet ? -ASSISTANT_SHIFT : 0;
     shift.current += (goal - shift.current) * Math.min(1, dt * 2.2);
     // A phone held upright with Ryntra's sheet open: the city slides up into the sky above the sheet (CITY-10).
-    const liftGoal = open && sheet ? ASSISTANT_LIFT : 0;
+    const liftGoal = !sheet ? 0 : open ? ASSISTANT_LIFT : useGameMap.getState().view?.aboveSheet ? SHEET_LIFT : 0;
     lift.current += (liftGoal - lift.current) * Math.min(1, dt * 2.2);
     if (Math.abs(shift.current) > 0.001 || Math.abs(lift.current) > 0.001) camera.setViewOffset(size.width, size.height, -size.width * shift.current, size.height * lift.current, size.width, size.height);
     else if (camera.view?.enabled) camera.clearViewOffset();

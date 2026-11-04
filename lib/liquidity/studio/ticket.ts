@@ -36,6 +36,7 @@ import { ed25519Valid, LIGHTHOUSE_FIRST_ASSERTION, MAX_PRIORITY_LAMPORTS } from 
 
 import type { LiquidityVenueId } from "./contract.ts";
 import type { Env, GatedAction } from "./gate.ts";
+import type { LimitAction } from "./limit-orders.ts";
 
 export const TICKET_KEY_ENV = "BETA_TOKEN_SECRET";
 /**
@@ -45,11 +46,15 @@ export const TICKET_KEY_ENV = "BETA_TOKEN_SECRET";
 export const TICKET_TTL_MS = BLOCKHASH_LIFE_MS;
 const PURPOSE = "liquidity.review.v1";
 
+/** What a ticket seals: a pool action, or a limit order (`limit-orders.ts`). */
+export type TicketAction = GatedAction | LimitAction;
+const TICKET_ACTIONS: ReadonlySet<string> = new Set<TicketAction>(["add", "remove", "claim", "limit_place", "limit_cancel", "limit_roll"]);
+
 export type LiquidityTicket = Readonly<{
   v: 1;
   owner: string;
   venue: LiquidityVenueId;
-  action: GatedAction;
+  action: TicketAction;
   pool: string;
   position: string;
   /** The digest of what each transaction does (`reviewedDigest`), hex, in the order they are signed and sent. */
@@ -173,7 +178,8 @@ export function readTicket(value: unknown, env: Env, now = Date.now()): TicketRe
     parsed.v !== 1 ||
     !isString(parsed.owner) ||
     (parsed.venue !== "meteora-dlmm" && parsed.venue !== "meteora-damm2") ||
-    (parsed.action !== "add" && parsed.action !== "remove" && parsed.action !== "claim") ||
+    typeof parsed.action !== "string" ||
+    !TICKET_ACTIONS.has(parsed.action) ||
     !isString(parsed.pool) ||
     !isString(parsed.position) ||
     !Array.isArray(parsed.messages) ||

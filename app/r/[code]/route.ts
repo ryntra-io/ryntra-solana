@@ -5,9 +5,11 @@ import { getGuardRuntime } from "@/lib/guard/runtime";
 import { isLinkPreview, openCountAllowed, recordLinkOpen } from "@/lib/growth/link-opens";
 import { keepTouch } from "@/lib/growth/touch-http";
 import { clientIp } from "@/lib/http-control";
-import { referralDestination } from "@/lib/growth/referral-destination";
+import { consumeSolanaReadRequest } from "@/lib/agent-control/http";
+import { referralTarget } from "@/lib/growth/referral-landing";
 import { walletForCode } from "@/lib/rewards/ledger";
-import { carriedCodeHolds, normalizeReferralCode, REFERRAL_COOKIE, REFERRAL_COOKIE_AT } from "@/lib/rewards/referral";
+import { carriedCodeHolds, normalizeReferralCode, REFERRAL_COOKIE, REFERRAL_COOKIE_AT, REFERRAL_SUB_COOKIE } from "@/lib/rewards/referral";
+import { normalizeReferralSub, REFERRAL_SUB_PARAM } from "@/lib/rewards/referral-sub";
 import { getWalletProofFrom } from "@/lib/session";
 
 export const runtime = "nodejs";
@@ -39,15 +41,24 @@ export const dynamic = "force-dynamic";
  * thirty-day cookie and nothing else, which also means an unclaimed code costs
  * nobody anything and expires on its own.
  *
- * ## First touch
+ * ## The first valid link wins (Ryntra Partners R3, 29.10)
  *
- * A code carried for less than a day is not replaced by a later link. The
- * invitation binds on its own the moment the browser proves a wallet, so a
- * link that overwrote a fresh one would let anybody who gets a person to open
- * one — a redirect, a shortened URL — take the binding. After a day the newer
- * link wins: a stale code from a month ago must not beat the friend who just
- * sent theirs. A different code is always chosen deliberately with «Change
- * code» on «Винагороди», or, after binding, the one change.
+ * A carried code that belongs to somebody is not replaced by a later link for
+ * the cookie's whole life (`REFERRAL_FIRST_TOUCH_MS`). The invitation binds on
+ * its own the moment the browser proves a wallet, so a link that overwrote it
+ * would let anybody who gets a person to open one — a redirect, a shortened
+ * URL — take the binding; until 29.10 that was possible a day after the first.
+ * A carried code nobody owns holds nothing: the next link takes its place. That
+ * one look is behind the read limiter, and a limited look keeps the first.
+ * A different code is always chosen deliberately with «Change code», or, after
+ * binding, the one change.
+ *
+ * ## Where it lands, and the sub-ID
+ *
+ * The page a link names (`?to=`, this site's `/app/**` only — a token, a
+ * launch), else the city: `/?invite=<code>&s=<sub-ID>` (`referral-landing.ts`),
+ * never the old «Винагороди». The sub-ID
+ * (`?s=`, `referral-sub.ts`) is kept beside the code and written on the binding.
  *
  * ## Why an unknown code still redirects
  *
@@ -69,11 +80,16 @@ async function countOpen(code: string, headers: Headers, proven: boolean): Promi
 export async function GET(req: NextRequest, context: { params: Promise<{ code: string }> }) {
   const { code } = await context.params;
   const normalized = normalizeReferralCode(code ?? "");
-  /* «Винагороди», or the product page the link names (`?to=`, this site's `/app` only). */
-  const destination = referralDestination(new URL(req.url).searchParams.get("to"), req.url);
-  const response = NextResponse.redirect(destination, 302);
+  const sub = normalizeReferralSub(new URL(req.url).searchParams.get(REFERRAL_SUB_PARAM));
+  /* The page the link names (a token, a launch), or else the city with the invitation — the friend landing reads it. */
+  const response = NextResponse.redirect(referralTarget(new URL(req.url).searchParams.get("to"), normalized, sub, req.url), 302);
   const carried = normalizeReferralCode(req.cookies.get(REFERRAL_COOKIE)?.value ?? "");
-  const holds = carried !== null && carriedCodeHolds(req.cookies.get(REFERRAL_COOKIE_AT)?.value, Date.now());
+  let holds = carried !== null && carriedCodeHolds(req.cookies.get(REFERRAL_COOKIE_AT)?.value, Date.now());
+  /* The first *valid* link: a carried code that belongs to nobody gives way to this one. The same code again needs
+     no look; a look the limiter refuses, or a store that does not answer, keeps the first. */
+  if (holds && carried !== normalized && normalized !== null && consumeSolanaReadRequest(req.headers).allowed) {
+    holds = await walletForCode(getGuardRuntime().store, carried!).then((owner) => owner !== null).catch(() => true);
+  }
   /* One look at the address's minute for both counts below: the link's open and the growth panel's visit. */
   const counted = normalized !== null && !isLinkPreview(req.headers.get("user-agent")) && openCountAllowed(clientIp(req.headers));
   if (normalized) {
@@ -114,6 +130,12 @@ export async function GET(req: NextRequest, context: { params: Promise<{ code: s
       path: "/",
       maxAge: THIRTY_DAYS_SECONDS,
     });
+    /* The sub-ID travels with its code: a new code without one clears the old code's. */
+    if (sub) {
+      response.cookies.set({ name: REFERRAL_SUB_COOKIE, value: sub, httpOnly: true, sameSite: "lax", secure: secureCookies(), path: "/", maxAge: THIRTY_DAYS_SECONDS });
+    } else {
+      response.cookies.delete(REFERRAL_SUB_COOKIE);
+    }
   }
   /* Never cached: the whole point of this route is a `Set-Cookie` that belongs
      to one person, and a shared cache would hand it to the next reader. */

@@ -285,6 +285,7 @@ export type Capabilities = {
     readonly stats?: "/api/v1/launch/{mint}/stats";
     readonly profile?: "/api/v1/launch/creators/{address}/profile";
     readonly survival?: "/api/v1/launch/survival";
+    readonly flow?: "/api/v1/launch/{mint}/flow";
     readonly advancedConfigBuild?: "/api/v1/launch/advanced/config/build";
     readonly advancedConfigSubmit?: "/api/v1/launch/advanced/config/submit";
     readonly boost?: "/api/v1/launch/{mint}/boost";
@@ -386,6 +387,47 @@ export type DevPlanResponse = {
     readonly stated: false;
   };
   readonly keyHeader: string;
+};
+
+export type IntentResponse = {
+  readonly intent: {
+    readonly id: string;
+    readonly status: "OPEN" | "CLAIMED" | "DONE" | "EXPIRED" | "LAPSED" | "CANCELLED";
+    readonly network: "solana:mainnet";
+    readonly spec: {
+      readonly action: "swap";
+      readonly coin: string;
+      readonly side: "buy" | "sell";
+      readonly pay: "SOL" | "USDC";
+      readonly amountRaw: string;
+    } | {
+      readonly action: "transfer";
+      readonly coin: "SOL" | string;
+      readonly amountRaw: string;
+      readonly to: string;
+    };
+    readonly origin: {
+      readonly kind: "agent" | "chat" | "partner";
+      readonly name: string;
+      readonly verified: boolean;
+    };
+    readonly for: string | null;
+    readonly createdAt: string;
+    readonly expiresAt: string;
+    readonly digest: string;
+    readonly claimedUntil: string | null;
+    readonly sentSignature: string | null;
+    readonly receipt: {
+      readonly wallet: string;
+      readonly signature: string;
+      readonly at: string;
+      readonly chain: "CONFIRMED" | "FAILED" | "UNCHECKED";
+    } | null;
+    readonly links: {
+      readonly url: string;
+      readonly qr: string;
+    };
+  };
 };
 
 export type LaunchBoostView = {
@@ -949,6 +991,112 @@ export type LaunchEarlyAccessView = {
   } | null;
 };
 
+export type LaunchFlowResponse = {
+  readonly network: "solana:devnet" | "solana:mainnet";
+  readonly token: string;
+  readonly creator: string;
+  readonly rules: {
+    readonly version: string;
+    readonly floorUsd: number | null;
+    readonly singleTradeBps: number;
+    readonly hops: number;
+  };
+  readonly launchSlot: {
+    readonly slot: number;
+    readonly at: string | null;
+    readonly buys: number;
+    readonly wallets: number;
+    readonly supplyBps: number;
+    readonly signatures: readonly (string)[];
+  } | null;
+  readonly bundles: {
+    readonly groups: readonly ({
+      readonly slot: number;
+      readonly at: string;
+      readonly wallets: number;
+      readonly buys: number;
+      readonly supplyBps: number;
+      readonly why: readonly ("launch_slot" | "same_tx" | "same_payer" | "same_cluster")[];
+      readonly signatures: readonly (string)[];
+    })[];
+    readonly count: number;
+    readonly wallets: number;
+    readonly supplyBps: number;
+    readonly holdsBps: number;
+    readonly complete: boolean;
+  };
+  readonly dev: {
+    readonly wallet: string;
+    readonly boughtBps: number;
+    readonly soldBps: number;
+    readonly soldOfBoughtBps: number | null;
+    readonly sales: number;
+    readonly lastSale: {
+      readonly signature: string;
+      readonly at: string;
+    } | null;
+    readonly holdsBps: number;
+    readonly linked: {
+      readonly wallets: number;
+      readonly boughtBps: number;
+      readonly holdsBps: number;
+    };
+    readonly complete: boolean;
+  };
+  readonly buyers: {
+    readonly wallets: number;
+    readonly independent: number;
+    readonly merged: number;
+    readonly creatorLinked: number;
+    readonly unknown: number;
+    readonly roundTrips: number;
+    readonly atLeast: boolean;
+  };
+  readonly graduation: {
+    readonly graduated: boolean;
+    readonly at: string | null;
+    readonly signature: string | null;
+    readonly buyers: {
+      readonly wallets: number;
+      readonly independent: number;
+    } | null;
+    readonly largestBuy: {
+      readonly signature: string;
+      readonly thresholdBps: number;
+    } | null;
+    readonly singleTrade: boolean;
+    readonly complete: boolean;
+  };
+  readonly survival: readonly ({
+    readonly days: 7 | 30 | 90;
+    readonly state: "young" | "alive" | "quiet" | "unread";
+    readonly proof: {
+      readonly signature: string;
+      readonly at: string;
+    } | null;
+    readonly independent: boolean | null;
+  })[];
+  readonly creatorRecord: {
+    readonly launches: readonly ({
+      readonly token: string;
+      readonly symbol: string;
+      readonly launchedAt: string;
+      readonly link: "same_wallet" | "same_cluster";
+      readonly outcomes: readonly ({
+        readonly days: 7 | 30 | 90;
+        readonly state: "young" | "alive" | "quiet" | "unread";
+      })[];
+      readonly survived: boolean | null;
+    })[];
+    readonly count: number;
+    readonly judged: number;
+    readonly survived: number;
+    readonly complete: boolean;
+  };
+  readonly complete: boolean;
+  readonly observedAt: string;
+};
+
 export type LaunchHolderPositionsResponse = {
   readonly network: "solana:devnet" | "solana:mainnet";
   readonly wallet: string;
@@ -1205,6 +1353,7 @@ export type LaunchMarketCardResponse = {
       readonly endsAt: string | null;
     } | null;
     readonly creatorSold: boolean | null;
+    readonly hidden?: true;
     readonly observedAt: string;
   };
   readonly addresses: {
@@ -1517,6 +1666,7 @@ export type LaunchMarketsResponse = {
       readonly endsAt: string | null;
     } | null;
     readonly creatorSold: boolean | null;
+    readonly hidden?: true;
     readonly observedAt: string;
   })[];
   readonly complete: boolean;
@@ -3522,6 +3672,7 @@ export type OperationId =
   | "getAgentSuggestions"
   | "getCapabilities"
   | "getDeveloperPlan"
+  | "getIntent"
   | "getLaunch"
   | "getLaunchBoost"
   | "getLaunchCreator"
@@ -3533,6 +3684,7 @@ export type OperationId =
   | "getLaunchDistributionClaim"
   | "getLaunchDistributions"
   | "getLaunchEarlyAccess"
+  | "getLaunchFlow"
   | "getLaunchHolder"
   | "getLaunchHolderPositions"
   | "getLaunchJournal"
@@ -3584,6 +3736,7 @@ export type ResponseOf = {
   readonly getAgentSuggestions: AgentSuggestionsResponse;
   readonly getCapabilities: Capabilities;
   readonly getDeveloperPlan: DevPlanResponse;
+  readonly getIntent: IntentResponse;
   readonly getLaunch: LaunchTokenResponse;
   readonly getLaunchBoost: LaunchBoostView;
   readonly getLaunchCreator: LaunchCreatorResponse;
@@ -3595,6 +3748,7 @@ export type ResponseOf = {
   readonly getLaunchDistributionClaim: LaunchDistributionClaimView;
   readonly getLaunchDistributions: LaunchDistributionList;
   readonly getLaunchEarlyAccess: LaunchEarlyAccessView;
+  readonly getLaunchFlow: LaunchFlowResponse;
   readonly getLaunchHolder: LaunchHolderResponse;
   readonly getLaunchHolderPositions: LaunchHolderPositionsResponse;
   readonly getLaunchJournal: LaunchJournalResponse;
@@ -3659,6 +3813,9 @@ export type ParamsOf = {
   };
   readonly getCapabilities: Readonly<Record<string, never>>;
   readonly getDeveloperPlan: Readonly<Record<string, never>>;
+  readonly getIntent: {
+    readonly id: string;
+  };
   readonly getLaunch: {
     readonly mint: string;
   };
@@ -3693,6 +3850,9 @@ export type ParamsOf = {
   readonly getLaunchEarlyAccess: {
     readonly mint: string;
     readonly wallet?: string;
+  };
+  readonly getLaunchFlow: {
+    readonly mint: string;
   };
   readonly getLaunchHolder: {
     readonly mint: string;

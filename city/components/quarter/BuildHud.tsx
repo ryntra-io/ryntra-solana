@@ -4,13 +4,18 @@ import { playTick } from '@/city/lib/audio/engine';
 import { useWords } from '@/city/lib/i18n/dict';
 import { DayPanel } from '@/lib/city-economy/DayPanel';
 import { useCity } from '@/city/lib/city/store';
+import { CREW_LIGHT } from '@/lib/world/crew';
+import { useCrew } from '@/city/lib/quarter/crew-store';
 import { MODULES, moduleById, moduleForKind, verdict, verdictLine } from '@/city/lib/quarter/modules';
 import { onEngine } from '@/city/lib/quarter/objects';
 import { lotNumber, openPlots, plotLevel, streetName } from '@/city/lib/quarter/plot';
 import { quarterStore, useQuarter } from '@/city/lib/quarter/store';
+import { RING_OPEN } from '@/city/lib/ring/flag';
 import { CloseGlyph, LockGlyph, SpeakerOff, SpeakerOn } from '../hud/glyphs';
 import s from '../hud/hud.module.css';
+import { GARAGE_OPEN, GarageOpener } from '../agent/garage/GarageOpener';
 import { BuildingSheet } from './BuildingSheet';
+import { CrewButton, CrewSheet } from './CrewSheet';
 import { BackGlyph, MODULE_GLYPH } from './glyphs';
 import q from './quarter.module.css';
 import { QUARTER } from './words';
@@ -18,9 +23,10 @@ import { QUARTER } from './words';
 const ACCENT = 'var(--amber)';
 
 /**
- * Build mode over my quarter: the way back to the city, where the quarter stands, the sound, and one sheet at the
- * bottom — a call-out while the camera flies in, one hint over the plots, the picker of a plot, the sheet of a
- * building on the engine (`BuildingSheet`), or the building that just landed. One goal on the screen, one amber action.
+ * Build mode over my quarter: the way back to the city, where the quarter stands, the crew, the sound, and one sheet at
+ * the bottom — a call-out while the camera flies in, one hint over the plots, the picker of a plot, the sheet of a
+ * building on the engine (`BuildingSheet`), the crew's sheet (`CrewSheet`), or the building that just landed. One goal
+ * on the screen, one amber action.
  */
 export function BuildHud({ onSound }: { onSound: (on: boolean) => void }) {
   const mode = useQuarter((st) => st.mode);
@@ -28,6 +34,9 @@ export function BuildHud({ onSound }: { onSound: (on: boolean) => void }) {
   const slot = useQuarter((st) => st.slot);
   const sound = useCity((st) => st.sound);
   const w = useWords(QUARTER);
+  const crewOpen = useCrew((st) => st.view !== null);
+  // On a crew's street the street is the crew: its name stands where the district's does.
+  const crew = useCrew((st) => (st.crew && quarter && st.crew.row === quarter.cell.z ? st.crew : null));
   const leave = () => quarterStore.getState().leave();
   const address = quarter ? w.address(streetName(quarter.street), lotNumber(quarter.cell)) : '';
   return (
@@ -35,18 +44,19 @@ export function BuildHud({ onSound }: { onSound: (on: boolean) => void }) {
       <div className={q.top}>
         <button className={`${s.panel} ${q.back}`} onClick={leave} aria-label={w.backToCity}>
           <BackGlyph />
-          {w.city}
+          <span className={q.backLabel}>{w.city}</span>
         </button>
         <span className={`${s.panel} ${q.address}`}>
-          <b>{w.arrivals}</b>
+          {crew ? <b style={{ color: CREW_LIGHT[crew.colour] }}>{crew.name}</b> : <b>{w.arrivals}</b>}
           <span>{address}</span>
         </span>
+        <CrewButton />
         <button className={`${s.panel} ${s.iconBtn} ${q.sound}`} aria-label={sound ? w.mute : w.soundOn} onClick={() => onSound(!sound)}>
           {sound ? <SpeakerOn /> : <SpeakerOff />}
         </button>
       </div>
       <DayPanel />
-      {mode === 'arrive' ? <Welcome address={address} /> : slot !== null ? <Picker slot={slot} /> : <Hint />}
+      {mode === 'arrive' ? <Welcome address={address} /> : crewOpen ? <CrewSheet /> : slot !== null ? <Picker slot={slot} /> : <Hint />}
     </div>
   );
 }
@@ -137,7 +147,9 @@ function Picker({ slot }: { slot: number }) {
   }
 
   const here = me.buildings.find((b) => b.slot === slot) ?? null;
-  // A building on the engine opens on the object it shows, not on the build tiles.
+  // The garage opens its agent's window (CITY-29), unless the Ring is open: then its sheet keeps the garage (CITY-50).
+  // Any other building on the engine opens on the object it shows, not on the build tiles.
+  if (here?.kind === 'garage' && GARAGE_OPEN && !RING_OPEN) return <GarageOpener key={slot} building={here} />;
   if (here && onEngine(here.kind)) return <BuildingSheet key={slot} building={here} />;
   const def = choice ? moduleById(choice) : null;
   const v = def ? verdict(def, me.quarter, me.buildings, slot) : null;

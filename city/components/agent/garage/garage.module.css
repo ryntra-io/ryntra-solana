@@ -1,0 +1,756 @@
+/* The garage agent's window (CITY-29) inside the city's one frame (CITY-65): the frame brings the glass and the head,
+   this only what is inside. One amber action per screen, mint only for a figure that grew, flare only for one that fell.
+   Tokens and the type scale from city/styles/city.module.css (CITY-11). */
+
+.framed {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  padding: 10px 16px 14px;
+}
+
+.display {
+  font-family: var(--font-display, system-ui), system-ui, sans-serif;
+  font-stretch: 125%;
+  font-variation-settings: 'wdth' 125;
+  font-weight: 900;
+  letter-spacing: 0.01em;
+  text-transform: uppercase;
+}
+
+/* ---------- The portrait and the status ---------- */
+
+.portrait {
+  position: relative;
+  flex: none;
+  height: 150px;
+  margin: -10px -16px 0;
+  overflow: hidden;
+  background: #07060d;
+  border-bottom: 1px solid rgba(153, 69, 255, 0.22);
+}
+
+.still {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: 72% 30%;
+  transform: scale(1.22);
+  transform-origin: 74% 28%;
+  opacity: 0;
+  transition: opacity 420ms ease-out;
+}
+
+.stillOn {
+  opacity: 1;
+}
+
+/* A narrow window (a phone's sheet): a lower band, so the report stays in reach. */
+@container window (max-width: 400px) {
+  .portrait {
+    height: 120px;
+  }
+}
+
+.portraitOff .still {
+  filter: grayscale(0.85) brightness(0.55);
+}
+
+/* The words sit on the dark side of the frame, the robot on the light one. */
+.portraitShade {
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(90deg, rgba(7, 6, 13, 0.92) 0%, rgba(7, 6, 13, 0.55) 38%, rgba(7, 6, 13, 0) 62%),
+    linear-gradient(0deg, rgba(7, 6, 13, 0.85) 0%, rgba(7, 6, 13, 0) 45%);
+}
+
+.portrait .status {
+  position: absolute;
+  left: 16px;
+  right: 16px;
+  bottom: 10px;
+  min-height: 0;
+}
+
+.gear {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  margin: 0;
+}
+
+.status {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex: none;
+}
+
+.statusBar {
+  min-height: 44px;
+}
+
+.dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex: none;
+  background: rgba(238, 241, 255, 0.28);
+}
+
+.dotLive {
+  background: var(--amber);
+  box-shadow: 0 0 10px var(--amber);
+  animation: breathe 2.4s ease-in-out infinite;
+}
+
+.statusLine {
+  flex: 1;
+  min-width: 0;
+  font-size: var(--type-small);
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: rgba(238, 241, 255, 0.78);
+}
+
+.icon {
+  width: 44px;
+  height: 44px;
+  margin: 0 -10px;
+  display: grid;
+  place-items: center;
+  border: 0;
+  border-radius: 10px;
+  background: transparent;
+  color: var(--text-dim);
+  cursor: pointer;
+  transition: color 120ms ease-out, background 120ms ease-out;
+}
+
+.icon:hover,
+.icon:focus-visible {
+  color: var(--ice);
+  background: rgba(238, 241, 255, 0.06);
+}
+
+.icon svg {
+  width: 20px;
+  height: 20px;
+}
+
+/* ---------- Blocks ---------- */
+
+.scroll {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: none;
+  margin: 0 -16px;
+  padding: 2px 16px 12px;
+}
+
+.scroll::-webkit-scrollbar {
+  display: none;
+}
+
+.block {
+  display: block;
+  margin-top: 14px;
+}
+
+.block:first-child {
+  margin-top: 12px;
+}
+
+.kicker {
+  display: block;
+  font-size: var(--type-micro);
+  font-weight: 800;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--amber);
+  margin-bottom: 8px;
+}
+
+.quiet {
+  padding: 14px 0 6px;
+  font-size: var(--type-lead);
+  font-weight: 600;
+  color: var(--ice);
+}
+
+.rows {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 6px;
+}
+
+.row {
+  width: 100%;
+  min-height: 52px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 0 12px;
+  border: 1px solid rgba(238, 241, 255, 0.07);
+  border-radius: 10px;
+  /* A flat fill: a gradient this faint bands into a hard line on 8-bit screens. */
+  background: rgba(238, 241, 255, 0.03);
+  color: var(--ice);
+  font: inherit;
+  text-align: left;
+}
+
+button.row {
+  cursor: pointer;
+  transition: border-color 140ms ease-out, background 140ms ease-out, transform 120ms ease-out;
+}
+
+button.row:hover,
+button.row:focus-visible {
+  border-color: rgba(255, 178, 63, 0.45);
+  background: rgba(255, 178, 63, 0.06);
+}
+
+button.row:active {
+  transform: scale(0.99);
+}
+
+.coin {
+  width: 28px;
+  height: 28px;
+  flex: none;
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 30%, #3a3550, #1a1824);
+  object-fit: cover;
+}
+
+.letter {
+  display: grid;
+  place-items: center;
+  color: var(--ice);
+  font-size: 13px;
+  font-weight: 800;
+  background: radial-gradient(circle at 35% 30%, rgba(153, 69, 255, 0.85), rgba(42, 22, 64, 0.95));
+}
+
+.rowSym {
+  font-family: var(--font-display, system-ui), system-ui, sans-serif;
+  font-stretch: 125%;
+  font-variation-settings: 'wdth' 125;
+  font-weight: 900;
+  font-size: var(--type-base);
+  letter-spacing: 0.02em;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.tag {
+  flex: none;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+  background: rgba(238, 241, 255, 0.06);
+}
+
+.value {
+  margin-left: auto;
+  font-size: var(--type-lead);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.up {
+  color: var(--mint);
+}
+
+.down {
+  color: var(--flare);
+}
+
+.fly {
+  width: 18px;
+  height: 18px;
+  flex: none;
+  color: rgba(238, 241, 255, 0.4);
+  transition: color 140ms ease-out;
+}
+
+button.row:hover .fly,
+button.row:focus-visible .fly {
+  color: var(--amber);
+}
+
+.fly svg,
+.remGlyph svg,
+.emptyMark svg,
+.backGlyph svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.remGlyph {
+  width: 20px;
+  height: 20px;
+  flex: none;
+  color: var(--text-dim);
+}
+
+.remLit {
+  color: var(--amber);
+  filter: drop-shadow(0 0 6px rgba(255, 178, 63, 0.7));
+}
+
+.remText {
+  font-size: var(--type-body);
+  font-weight: 600;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.when {
+  margin-left: auto;
+  flex: none;
+  font-size: var(--type-small);
+  font-variant-numeric: tabular-nums;
+  color: var(--text-dim);
+}
+
+.remText + .fly,
+.when + .fly {
+  margin-left: 2px;
+}
+
+.remText:last-child {
+  margin-right: auto;
+}
+
+/* ---------- Empty and off ---------- */
+
+.empty {
+  display: grid;
+  justify-items: center;
+  gap: 8px;
+  padding: 36px 8px 24px;
+  text-align: center;
+}
+
+.emptyMark {
+  width: 56px;
+  height: 56px;
+  padding: 12px;
+  border-radius: 50%;
+  color: var(--amber);
+  background: radial-gradient(circle, rgba(255, 178, 63, 0.16), rgba(255, 178, 63, 0) 70%);
+  filter: drop-shadow(0 0 14px rgba(255, 178, 63, 0.35));
+}
+
+.emptyDim {
+  color: rgba(238, 241, 255, 0.36);
+  background: radial-gradient(circle, rgba(238, 241, 255, 0.06), rgba(238, 241, 255, 0) 70%);
+  filter: none;
+}
+
+.emptyTitle {
+  font-size: var(--type-lead);
+  font-weight: 700;
+}
+
+.emptyLine {
+  font-size: var(--type-body);
+  color: var(--text-dim);
+  max-width: 28ch;
+}
+
+/* ---------- Advice ---------- */
+
+.advice {
+  margin-top: 16px;
+  padding: 14px;
+  border-radius: 12px;
+  border: 1px solid rgba(153, 69, 255, 0.32);
+  background: linear-gradient(160deg, rgba(42, 22, 64, 0.72), rgba(18, 11, 42, 0.55));
+  box-shadow: inset 0 1px 0 rgba(201, 162, 255, 0.12);
+}
+
+.advice .kicker {
+  color: #c9a2ff;
+}
+
+.adviceLine {
+  margin: 0;
+  font-size: var(--type-base);
+  line-height: 1.45;
+  color: var(--ice);
+}
+
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.chip {
+  min-height: 40px;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 14px 0 6px;
+  border: 1px solid rgba(255, 178, 63, 0.4);
+  border-radius: 999px;
+  background: rgba(255, 178, 63, 0.08);
+  color: var(--ice);
+  font-family: var(--font-display, system-ui), system-ui, sans-serif;
+  font-stretch: 125%;
+  font-variation-settings: 'wdth' 125;
+  font-weight: 900;
+  font-size: var(--type-small);
+  cursor: pointer;
+  transition: background 140ms ease-out;
+}
+
+.chip:hover,
+.chip:focus-visible {
+  background: rgba(255, 178, 63, 0.18);
+}
+
+.chipCoin {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 30%, #3a3550, #1a1824);
+  object-fit: cover;
+}
+
+.details {
+  margin-top: 10px;
+  min-height: 36px;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--text-dim);
+  font: inherit;
+  font-size: var(--type-small);
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.details svg {
+  width: 16px;
+  height: 16px;
+}
+
+.details:hover,
+.details:focus-visible {
+  color: var(--ice);
+}
+
+.more {
+  display: grid;
+  gap: 8px;
+  padding-top: 4px;
+  animation: rise 180ms ease-out;
+}
+
+.more p {
+  margin: 0;
+  font-size: var(--type-body);
+  line-height: 1.45;
+  color: rgba(238, 241, 255, 0.86);
+}
+
+.more .fine {
+  font-size: var(--type-caption);
+  color: var(--text-dim);
+}
+
+/* ---------- The one action ---------- */
+
+.cta {
+  flex: none;
+  display: grid;
+  gap: 6px;
+  padding-top: 10px;
+}
+
+.action {
+  width: 100%;
+  min-height: 54px;
+  display: grid;
+  place-items: center;
+  padding: 0 20px;
+  border: 0;
+  font-family: var(--font-display, system-ui), system-ui, sans-serif;
+  font-stretch: 125%;
+  font-variation-settings: 'wdth' 125;
+  font-weight: 900;
+  font-size: var(--type-action);
+  letter-spacing: 0.01em;
+  text-transform: uppercase;
+  color: var(--ink);
+  background: linear-gradient(100deg, var(--warm), var(--amber));
+  clip-path: polygon(14px 0, 100% 0, 100% calc(100% - 14px), calc(100% - 14px) 100%, 0 100%, 0 14px);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  cursor: pointer;
+  transition: transform 120ms ease-out, filter 140ms ease-out;
+}
+
+.action:hover:not(:disabled) {
+  filter: brightness(1.06);
+}
+
+.action:active:not(:disabled) {
+  transform: scale(0.98);
+}
+
+.action:disabled {
+  cursor: default;
+  background: #1d1a2b;
+  color: var(--text-dim);
+}
+
+.again {
+  min-height: 40px;
+  border: 0;
+  background: none;
+  color: var(--text-dim);
+  font: inherit;
+  font-size: var(--type-small);
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+
+.again:hover,
+.again:focus-visible {
+  color: var(--ice);
+}
+
+/* ---------- Settings ---------- */
+
+.input {
+  width: 100%;
+  min-height: 48px;
+  padding: 0 14px;
+  border: 1px solid rgba(238, 241, 255, 0.12);
+  border-radius: 10px;
+  background: rgba(6, 5, 12, 0.6);
+  color: var(--ice);
+  font: inherit;
+  font-size: var(--type-lead);
+  font-weight: 600;
+  outline: none;
+  transition: border-color 140ms ease-out;
+}
+
+.input:focus {
+  border-color: rgba(255, 178, 63, 0.6);
+}
+
+.inputRefused {
+  border-color: rgba(255, 75, 58, 0.7);
+}
+
+.toggles {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.toggle {
+  min-height: 44px;
+  padding: 0 16px;
+  border: 1px solid rgba(238, 241, 255, 0.12);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--text-dim);
+  font: inherit;
+  font-size: var(--type-body);
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 140ms ease-out, color 140ms ease-out, border-color 140ms ease-out;
+}
+
+.toggleOn {
+  border-color: rgba(255, 178, 63, 0.55);
+  background: rgba(255, 178, 63, 0.12);
+  color: var(--ice);
+}
+
+.switchRow {
+  width: 100%;
+  min-height: 52px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 14px;
+  border: 1px solid rgba(238, 241, 255, 0.07);
+  border-radius: 10px;
+  background: rgba(238, 241, 255, 0.03);
+  color: var(--ice);
+  font: inherit;
+  font-size: var(--type-base);
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.switch {
+  position: relative;
+  width: 44px;
+  height: 26px;
+  border-radius: 999px;
+  background: rgba(238, 241, 255, 0.14);
+  transition: background 160ms ease-out;
+}
+
+.switch::after {
+  content: '';
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: var(--ice);
+  transition: transform 160ms ease-out;
+}
+
+.switchOn {
+  background: var(--amber);
+}
+
+.switchOn::after {
+  transform: translateX(18px);
+  background: var(--ink);
+}
+
+/* ---------- The chip back to the window, on a phone ---------- */
+
+.chipBar {
+  position: fixed;
+  z-index: 13;
+  left: 50%;
+  bottom: calc(env(safe-area-inset-bottom) + 104px);
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  padding: 4px;
+  border-radius: 999px;
+  border: 1px solid var(--glass-edge);
+  background: var(--glass);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.45), inset 0 1px 0 rgba(238, 241, 255, 0.06);
+  animation: rise 220ms ease-out;
+}
+
+.back {
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 16px 0 12px;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--ice);
+  font-family: var(--font-display, system-ui), system-ui, sans-serif;
+  font-stretch: 125%;
+  font-variation-settings: 'wdth' 125;
+  font-weight: 900;
+  font-size: var(--type-small);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+
+.backGlyph {
+  width: 18px;
+  height: 18px;
+  color: var(--amber);
+}
+
+.backClose {
+  width: 44px;
+  height: 44px;
+  display: grid;
+  place-items: center;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--text-dim);
+  cursor: pointer;
+}
+
+.backClose svg {
+  width: 16px;
+  height: 16px;
+}
+
+/* ---------- Motion ---------- */
+
+.breathe {
+  animation: breathe 1.6s ease-in-out infinite;
+}
+
+@keyframes breathe {
+  50% {
+    opacity: 0.55;
+  }
+}
+
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+}
+
+.chipBar {
+  animation-name: chipRise;
+}
+
+@keyframes chipRise {
+  from {
+    opacity: 0;
+    transform: translate(-50%, 8px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .still {
+    transition: none;
+  }
+
+  .breathe,
+  .dotLive,
+  .more,
+  .chipBar {
+    animation: none;
+  }
+}

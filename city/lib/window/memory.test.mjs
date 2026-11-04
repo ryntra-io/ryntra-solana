@@ -70,13 +70,13 @@ test("on another screen the remembered grid comes back carried onto it, still st
 });
 
 test("what is not a remembered layout is not trusted: junk, other versions, bad places, too much", () => {
-  for (const raw of [null, "", "{", "[]", "null", "42", '{"v":2,"area":{"x":0,"y":0,"width":10,"height":10},"places":{}}', '{"v":1,"area":{"x":0,"y":0,"width":0,"height":10},"places":{}}', '{"v":1,"area":{"x":0,"y":0,"width":10,"height":10},"places":[]}', "x".repeat(9000)]) {
+  for (const raw of [null, "", "{", "[]", "null", "42", '{"v":1,"area":{"x":0,"y":0,"width":10,"height":10},"places":{}}', '{"v":3,"area":{"x":0,"y":0,"width":10,"height":10},"places":{}}', '{"v":2,"area":{"x":0,"y":0,"width":0,"height":10},"places":{}}', '{"v":2,"area":{"x":0,"y":0,"width":10,"height":10},"places":[]}', "x".repeat(9000)]) {
     assert.equal(parseMemory(raw), null, String(raw).slice(0, 40));
   }
   const area = { x: 16, y: 72, width: 1408, height: 684 };
   const mixed = parseMemory(
     JSON.stringify({
-      v: 1,
+      v: 2,
       area,
       places: {
         swap: { rect: { x: 16, y: 72, width: 500, height: 400 }, full: true },
@@ -84,11 +84,14 @@ test("what is not a remembered layout is not trusted: junk, other versions, bad 
         nan: { rect: { x: "1", y: 0, width: 10, height: 10 } },
         neg: { rect: { x: 0, y: 0, width: -10, height: 10 } },
         none: null,
-        spot: { rect: { x: 16, y: 72, width: 500, height: 400 }, full: "yes", extra: 1 },
+        spot: { rect: { x: 16, y: 72, width: 500, height: 400 }, full: "yes", extra: 1, bay: "middle" },
+        chart: { rect: { x: 16, y: 72, width: 432, height: 684 }, full: false, bay: "left" },
       },
     }),
   );
-  assert.deepEqual(Object.keys(mixed.places), ["swap", "spot"]);
+  assert.deepEqual(Object.keys(mixed.places), ["swap", "spot", "chart"]);
+  // A bay is one of the two; anything else is no bay at all.
+  assert.equal(mixed.places.chart.bay, "left");
   assert.equal(mixed.places.spot.full, false);
   assert.deepEqual(mixed.places.spot, { rect: { x: 16, y: 72, width: 500, height: 400 }, full: false });
 });

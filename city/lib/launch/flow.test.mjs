@@ -3,7 +3,7 @@ import test from "node:test";
 
 import { LaunchBuildRequestSchema, LaunchMetadataRequestSchema, LaunchSubmitRequestSchema } from "../../../lib/api/v1/contract.ts";
 import { API_HEADERS, httpEngine } from "./engine.ts";
-import { BUILD_UNEXPECTED, CITY_CLOSED, WALLET_REFUSED, failureWords, runLaunch } from "./flow.ts";
+import { BUILD_UNEXPECTED, CITY_CLOSED, WALLET_REFUSED, failureWords, pictureRefused, runLaunch } from "./flow.ts";
 import { STUB_CREATOR, STUB_PRESETS, STUB_WALLET, stubEngine, stubWallet } from "./stub.ts";
 
 const PROTECTED = STUB_PRESETS.find((preset) => preset.id === "protected");
@@ -82,7 +82,7 @@ test("the build asks for the launch alone: no first purchase, no lock, the city'
 });
 
 test("on mainnet the city launches nothing, and asks the engine nothing", async () => {
-  const { result, engine } = await launch({ network: "solana:mainnet" });
+  const { result, engine } = await launch({ network: "solana:mainnet", ownerWord: false });
   assert.equal(result.step, "failed");
   assert.equal(result.failure.code, CITY_CLOSED);
   assert.deepEqual(engine.calls, []);
@@ -107,14 +107,14 @@ test("a wallet that does not sign stops the launch before anything is sent", asy
   assert.equal(result.failure.code, WALLET_REFUSED);
   assert.equal(result.failure.stage, "before");
   assert.deepEqual(engine.calls, ["metadata", "build"]);
-  assert.equal(failureWords(result.failure, STUB_WALLET), `${STUB_WALLET} did not sign. Nothing was sent.`);
+  assert.equal(failureWords(result.failure, STUB_WALLET), `${STUB_WALLET} didn’t sign. Nothing was sent.`);
 });
 
 test("the engine's refusals come back in its own codes, with the city's words", async () => {
   for (const [route, code, words] of [
-    ["metadata", "LAUNCH_IMAGE_REFUSED", /picture can’t be used/],
+    ["metadata", "LAUNCH_IMAGE_REFUSED", /picture check refused this picture/],
     ["build", "LAUNCH_PAUSED", /paused/],
-    ["build", "LAUNCH_LIMIT", /as many coins today/],
+    ["build", "LAUNCH_LIMIT", /today’s maximum of coins/],
     ["build", "LAUNCH_BUSY", /this hour/],
   ]) {
     const { result, engine } = await launch({ engine: stubEngine({ refuse: { [route]: { ok: false, code, message: "" } } }) });
@@ -124,6 +124,26 @@ test("the engine's refusals come back in its own codes, with the city's words", 
     assert.ok(!engine.calls.includes("submit"), `${code}: nothing sent`);
     assert.match(failureWords(result.failure), words);
   }
+});
+
+test("with the image check on, a refused picture says why in plain words and sends the creator back to the picture", async () => {
+  /* The engine's own words from `POST /api/v1/launch/metadata` (MC-1, `RYNTRA_LAUNCH_IMAGE_CHECK=openai`). */
+  for (const [code, message, words] of [
+    ["LAUNCH_IMAGE_REFUSED", "The picture reads as sexual, violence/graphic; choose another.", /reads this as sexual, graphic content\. Nothing was sent or stored\./],
+    ["LAUNCH_IMAGE_REFUSED", "The picture reads as self-harm, self-harm/intent; choose another.", /reads this as self-harm content/],
+    ["LAUNCH_IMAGE_REFUSED", "Ryntra took this picture down before; choose another.", /Ryntra took this picture down before/],
+    ["LAUNCH_IMAGE_INVALID", "The picture could not be read by the check; use a still PNG, JPEG or WebP.", /couldn’t read this file — use a still PNG/],
+  ]) {
+    const { result, engine } = await launch({ engine: stubEngine({ refuse: { metadata: { ok: false, code, message } } }) });
+    assert.equal(result.step, "failed");
+    assert.deepEqual(engine.calls, ["metadata"], "nothing built, nothing signed");
+    assert.equal(pictureRefused(result.failure), true);
+    assert.match(failureWords(result.failure), words);
+  }
+  /* A check that could not run is a later try, not another picture. */
+  const { result } = await launch({ engine: stubEngine({ refuse: { metadata: { ok: false, code: "LAUNCH_IMAGE_CHECK_UNAVAILABLE", message: "" } } }) });
+  assert.equal(pictureRefused(result.failure), false);
+  assert.match(failureWords(result.failure), /couldn’t be checked right now/);
 });
 
 test("a borrowed name is refused by the engine's own rule", async () => {
@@ -176,7 +196,7 @@ test("a send the network did not confirm names the coin, and says what landed ma
   const { result } = await launch({ engine: stubEngine({ refuse: { submit: { ok: false, code: "UNAVAILABLE", message: "" } } }) });
   assert.equal(result.failure.stage, "send");
   assert.match(result.failure.token, /^[1-9A-HJ-NP-Za-km-z]{32,44}$/);
-  assert.match(failureWords(result.failure), /If the launch landed, your tower appears/);
+  assert.match(failureWords(result.failure), /If it went through, your tower appears in the docks/);
 });
 
 test("every failure reads in at most two short sentences", () => {

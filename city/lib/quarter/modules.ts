@@ -1,7 +1,7 @@
 import { KINDS } from '../../../lib/world/catalog.ts';
 import { planBuild } from '../../../lib/world/rules.ts';
 import { wordsNow } from '../i18n/dict.ts';
-import type { Building, BuildingKind, ClientErrorCode, LinkRefusal, LockReason, PublicBuilding, Quarter } from './types.ts';
+import type { Building, BuildingKind, ClientErrorCode, LockReason, PublicBuilding, Quarter, WorldError } from './types.ts';
 import { BUILD_WORDS } from './words.ts';
 
 /**
@@ -117,7 +117,7 @@ export function verdictLine(def: ModuleDef, v: Verdict): string {
 }
 
 /** One plain sentence for a refused write. */
-export function refusalLine(code: ClientErrorCode, reason: LockReason | LinkRefusal | null = null, need: number | null = null): string {
+export function refusalLine(code: ClientErrorCode, reason: WorldError['reason'] = null, need: number | null = null): string {
   const w = wordsNow(BUILD_WORDS);
   switch (code) {
     case 'LOCKED':

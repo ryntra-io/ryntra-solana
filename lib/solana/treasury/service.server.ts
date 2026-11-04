@@ -95,10 +95,10 @@ let cached: { url: string; connection: Connection } | null = null;
 
 /**
  * What the routes need, or null where the treasury is not served: no network named, or a deployment whose store is
- * not one every instance shares (a build kept on one instance must be found by the submit on another).
+ * not one every instance shares (a build kept on one instance must be found by the submit on another). The network is
+ * the treasury page's own unless a caller names another — the partners' payout names its own (CITY-128b).
  */
-export function treasuryDeps(): TreasuryDeps | null {
-  const network = treasuryNetwork();
+export function treasuryDeps(network: TreasuryNetwork | null = treasuryNetwork()): TreasuryDeps | null {
   if (!network) return null;
   const store = getGuardRuntime().store;
   if (process.env.VERCEL && !storeSupportsConcurrentInstances(store)) return null;

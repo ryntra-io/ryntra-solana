@@ -128,6 +128,7 @@ export const STATS_COPY = {
         LAUNCH_REFERRAL: "Launch referral",
         LAUNCH_REVENUE: "Ryntra revenue from Micro",
         PERPS_BUILDER: "Perps builder fee",
+        AGENT_SIGNER: "Agent",
       } satisfies RoleWords,
       kinds: {
         FEE_WALLET: "Fee wallet",
@@ -143,6 +144,7 @@ export const STATS_COPY = {
         METEORA_REFERRAL_TOKEN_ACCOUNT: "Meteora referral account, USDC",
         PHOENIX_FLIGHT_BUILDER: "Builder on Phoenix Flight",
         PHOENIX_BUILDER_TRADER_ACCOUNT: "The builder's Phoenix trader account",
+        AGENT_SIGNER: "The agent's key, in Google Cloud KMS",
       } satisfies KindWords,
       block: (network: string, block: string) => (network === "Solana" ? `Slot ${block}` : `${network} block ${block}`),
       noTransaction: "No transaction yet",
@@ -283,6 +285,7 @@ export const STATS_COPY = {
         LAUNCH_REFERRAL: "Реферал лаунчу",
         LAUNCH_REVENUE: "Дохід Ryntra з Micro",
         PERPS_BUILDER: "Комісія білдера Perps",
+        AGENT_SIGNER: "Агент",
       } satisfies RoleWords,
       kinds: {
         FEE_WALLET: "Гаманець комісій",
@@ -298,6 +301,7 @@ export const STATS_COPY = {
         METEORA_REFERRAL_TOKEN_ACCOUNT: "Реферальний рахунок Meteora, USDC",
         PHOENIX_FLIGHT_BUILDER: "Білдер у Phoenix Flight",
         PHOENIX_BUILDER_TRADER_ACCOUNT: "Торговий рахунок білдера в Phoenix",
+        AGENT_SIGNER: "Ключ агента в Google Cloud KMS",
       } satisfies KindWords,
       block: (network: string, block: string) => (network === "Solana" ? `Слот ${block}` : `Блок ${network} ${block}`),
       noTransaction: "Транзакцій ще немає",

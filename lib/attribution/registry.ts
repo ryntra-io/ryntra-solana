@@ -107,7 +107,7 @@ export const ATTRIBUTION_REGISTRY_VERSION = "1.0.0";
 export const REGISTRY_NETWORKS = [...NETWORK_IDS, "relay"] as const;
 export type RegistryNetwork = NetworkId | "relay";
 
-export const REGISTRY_ROLES = ["FEE", "PAYOUT_CASHBACK", "PAYOUT_FRIENDS", "PAYOUT_INTEGRATORS", "PAYOUT_REWARDS", "TREASURY", "LAUNCH_CONFIG", "LAUNCH_FEE_CLAIMER", "LAUNCH_POOL_PAYER", "LAUNCH_EXECUTOR", "LAUNCH_REFERRAL", "LAUNCH_REVENUE", "PERPS_BUILDER"] as const;
+export const REGISTRY_ROLES = ["FEE", "PAYOUT_CASHBACK", "PAYOUT_FRIENDS", "PAYOUT_INTEGRATORS", "PAYOUT_REWARDS", "TREASURY", "LAUNCH_CONFIG", "LAUNCH_FEE_CLAIMER", "LAUNCH_POOL_PAYER", "LAUNCH_EXECUTOR", "LAUNCH_REFERRAL", "LAUNCH_REVENUE", "PERPS_BUILDER", "AGENT_SIGNER"] as const;
 export type RegistryRole = (typeof REGISTRY_ROLES)[number];
 
 /** How the identity exists on its network. */
@@ -138,6 +138,8 @@ export const REGISTRY_KINDS = [
   "PHOENIX_FLIGHT_BUILDER",
   /** The builder's Phoenix trader account, where Flight moves the builder's fee as collateral. */
   "PHOENIX_BUILDER_TRADER_ACCOUNT",
+  /** The agent's key with a budget: the one signer a person's mandate policy names; it trades only inside that policy. */
+  "AGENT_SIGNER",
 ] as const;
 export type RegistryKind = (typeof REGISTRY_KINDS)[number];
 
@@ -267,18 +269,26 @@ export const ATTRIBUTION_REGISTRY: readonly RegistryEntry[] = Object.freeze([
      the same multisig's vault 0 its fee claimer; read back from the chain whole — 167 fields as the rehearsal's. */
   { ...place("solana-launch-config-community-jup", "LAUNCH_CONFIG", "DBC_CONFIG", ["launch"], "FEES"), mint: "JUPyiwrYJFskUPiHa7hkeR8VUtAeFoSYbKedZNsDvCN", address: "6PmbsMGNeFifnshbBYn2MC5mNhxexzfqVQceGJ2bv9qC" },
   { ...place("solana-launch-fee-claimer", "LAUNCH_FEE_CLAIMER", "DBC_FEE_CLAIMER", ["launch"], "NONE"), address: "22BZNVD9FuZPQvGwALBwhopSyxUCTuNNeTW1Lr1KsSvA" },
-  /* Created 2026-10-06 for this job alone; its key is held outside this repository, and a launch pays it back in its own transaction. */
-  { ...place("solana-launch-pool-payer", "LAUNCH_POOL_PAYER", "LAUNCH_POOL_PAYER", ["launch"], "NONE"), address: "H2Bzv5pcrEGug1STGbZhvX98DGb3SCFa4pnAtUwktyyV" },
-  /* The executor: a wallet of its own with a small budget, its key held outside this repository (since 2026-10-09). It
-     sends graduations and holds the Fee-Funded Liquidity Ladder; on mainnet only a key for this address is used. */
-  { ...place("solana-launch-executor", "LAUNCH_EXECUTOR", "LAUNCH_EXECUTOR", ["launch"], "NONE"), address: "J7zLmXSewhb1kcqwpL4SKpKfivivwn6wmSHwSg6H4JeU" },
-  /* Micro and the demo market, created on mainnet 2026-10-10: their partner's fees go to the executor, which keeps each
-     market's budget from them. The demo market is Ryntra's technical validation and counts nothing. */
-  { ...place("solana-launch-config-micro", "LAUNCH_CONFIG", "DBC_CONFIG", ["launch"], "FEES"), parent: "solana-launch-executor", address: "3xh95YxdDBDiR35mWJo4E3hVoXNDqW4hdXemuWwsBD8w" },
-  { ...place("solana-launch-config-demo", "LAUNCH_CONFIG", "DBC_CONFIG", ["launch"], "NONE"), parent: "solana-launch-executor", technicalValidation: true, address: "GVDLyxgHraJcbmzds6i6hMgb3jSUUhSaHq5XVFnq6AS5" },
+  /* Its key is made in Google Cloud KMS and never leaves it (CITY-162); a launch pays it back in its own transaction. */
+  { ...place("solana-launch-pool-payer", "LAUNCH_POOL_PAYER", "LAUNCH_POOL_PAYER", ["launch"], "NONE"), address: "7KUPNJRr6hmUDZXCL6AxJiHy4VYEVnEqwNkyJsbhbdKh" },
+  /* The executor: a wallet of its own with a small budget, its key in Google Cloud KMS (CITY-162). It sends graduations
+     and holds the Fee-Funded Liquidity Ladder; on mainnet only a key for this address is used. */
+  { ...place("solana-launch-executor", "LAUNCH_EXECUTOR", "LAUNCH_EXECUTOR", ["launch"], "NONE"), address: "9o6PpWvnkoxeGHvKddzV6UgfzVxqBPimT9Q619bWYow6" },
+  /* Micro and the demo market on the new executor: a config never changes, so the move to KMS made new ones. Their
+     partner's fees go to the executor, which keeps each market's budget from them. The demo market is Ryntra's technical
+     validation and counts nothing. */
+  { ...place("solana-launch-config-micro", "LAUNCH_CONFIG", "DBC_CONFIG", ["launch"], "FEES"), parent: "solana-launch-executor", address: "6SwkHZqfYc77gwi6eKTw5atR7cn78deR73xGn88T7614" },
+  { ...place("solana-launch-config-demo", "LAUNCH_CONFIG", "DBC_CONFIG", ["launch"], "NONE"), parent: "solana-launch-executor", technicalValidation: true, address: "AkYhPZaJme13FAWordkRSwSHX5R6nGLPvnaykoN2SzvX" },
   /* Ryntra's revenue from Micro: three quarters of the partner's trading and position fees, on the executor's wallet outside
      the markets' budgets until the operator moves it to the multisig. */
-  { ...place("solana-launch-revenue-micro", "LAUNCH_REVENUE", "LAUNCH_EXECUTOR", ["launch"], "NONE"), parent: "solana-launch-executor", address: "J7zLmXSewhb1kcqwpL4SKpKfivivwn6wmSHwSg6H4JeU" },
+  { ...place("solana-launch-revenue-micro", "LAUNCH_REVENUE", "LAUNCH_EXECUTOR", ["launch"], "NONE"), parent: "solana-launch-executor", address: "9o6PpWvnkoxeGHvKddzV6UgfzVxqBPimT9Q619bWYow6" },
+  /* The identities before KMS, retired at their last transaction: the keys that lived in the environment (pool payer from
+     2026-10-06, executor from 2026-10-09), and the Micro and demo configs of 2026-10-10 that name that executor. Their
+     history stays Ryntra's and stays public; the executor's old key still holds what it took on the demo market. */
+  { ...place("solana-launch-pool-payer-env", "LAUNCH_POOL_PAYER", "LAUNCH_POOL_PAYER", ["launch"], "NONE"), address: "H2Bzv5pcrEGug1STGbZhvX98DGb3SCFa4pnAtUwktyyV", end: { block: 455314404, time: "2026-10-10T16:02:57.000Z" } },
+  { ...place("solana-launch-executor-env", "LAUNCH_EXECUTOR", "LAUNCH_EXECUTOR", ["launch"], "NONE"), address: "J7zLmXSewhb1kcqwpL4SKpKfivivwn6wmSHwSg6H4JeU", end: { block: 460075158, time: "2026-10-22T14:49:27.000Z" } },
+  { ...place("solana-launch-config-micro-env", "LAUNCH_CONFIG", "DBC_CONFIG", ["launch"], "FEES"), parent: "solana-launch-executor-env", address: "3xh95YxdDBDiR35mWJo4E3hVoXNDqW4hdXemuWwsBD8w", end: { block: 455172778, time: "2026-10-10T07:28:11.000Z" } },
+  { ...place("solana-launch-config-demo-env", "LAUNCH_CONFIG", "DBC_CONFIG", ["launch"], "NONE"), parent: "solana-launch-executor-env", technicalValidation: true, address: "GVDLyxgHraJcbmzds6i6hMgb3jSUUhSaHq5XVFnq6AS5", end: { block: 455348450, time: "2026-10-10T18:07:34.000Z" } },
   /* Meteora's referral in a launch's trades: the partner's vault's USDC account, which every trade through Ryntra names as
      its referral since 2026-10-08 — never the creator's first purchase, which goes without one so the program grants it
      the minimum fee. Counted by the swap event's referral fee, never by its credits. */
@@ -293,6 +303,11 @@ export const ATTRIBUTION_REGISTRY: readonly RegistryEntry[] = Object.freeze([
      through it — post-only orders stay Phoenix's own and pay none — and moves it into the builder's trader account. */
   { ...place("solana-perps-builder", "PERPS_BUILDER", "PHOENIX_FLIGHT_BUILDER", ["perps"], "FEES"), address: "AAsopcXAB2WzeaTtCfuPS7nanGod8EefReaeVQCSopyN" },
   { ...place("solana-perps-builder-trader", "PERPS_BUILDER", "PHOENIX_BUILDER_TRADER_ACCOUNT", ["perps"], "FEES"), parent: "solana-perps-builder", address: "4e2gmdF9VF4dLJB6DiLKmEfnYSJJMiDY8vUriroj6nqB" },
+  /* The agent with a budget (CITY-186): its key made in Google Cloud KMS by the operator on 2026-11-02 (`agent-mandate`,
+     version 1) and never leaving it. Every person's mandate names this one address as its signer; it pays its own network
+     fees from SOL the person moved to it, and Ryntra's fee goes to the fee wallet, never here. On devnet now; on mainnet
+     only a key for this address is used. */
+  { ...place("solana-agent-signer", "AGENT_SIGNER", "AGENT_SIGNER", ["bots"], "NONE"), address: "E1w1XFq33ft6rGz19qTSzKKNuFvChbrUCZuY47adMfLV" },
 ]);
 
 /* ------------------------------------------------------------ validation */
@@ -359,6 +374,8 @@ export function validateRegistry(rows: readonly RegistryEntry[] = ATTRIBUTION_RE
                       ? row.kind === "LAUNCH_EXECUTOR" && row.countedAs === "NONE"
                       : row.role === "PERPS_BUILDER"
                         ? (row.kind === "PHOENIX_FLIGHT_BUILDER" || row.kind === "PHOENIX_BUILDER_TRADER_ACCOUNT") && row.countedAs === "FEES"
+                      : row.role === "AGENT_SIGNER"
+                        ? row.kind === "AGENT_SIGNER" && row.countedAs === "NONE"
                     : row.kind === "PAYOUT_WALLET" && row.countedAs === "SUPPLY_SIDE";
     if (!roleFits) problems.push(`${row.id}: the role, the kind and how it is counted disagree`);
     if (row.role !== "TREASURY" && row.products.length === 0) problems.push(`${row.id}: names no product`);
@@ -394,6 +411,8 @@ export function validateRegistry(rows: readonly RegistryEntry[] = ATTRIBUTION_RE
   }
   for (const row of rows) if (row.role.startsWith("LAUNCH_") && (row.products.length !== 1 || row.products[0] !== "launch")) problems.push(`${row.id}: a launch identity serves Ryntra Launch alone`);
   for (const row of rows) if (row.role === "PERPS_BUILDER" && (row.products.length !== 1 || row.products[0] !== "perps")) problems.push(`${row.id}: the builder serves Perps alone`);
+  for (const row of rows) if (row.role === "AGENT_SIGNER" && (row.products.length !== 1 || row.products[0] !== "bots")) problems.push(`${row.id}: the agent's key serves the agent alone`);
+  if (rows.filter((row) => row.role === "AGENT_SIGNER" && row.network === "solana" && row.end === null).length > 1) problems.push("AGENT_SIGNER: more than one open row");
   return problems;
 }
 
@@ -411,10 +430,11 @@ export const UNPUBLISHED_ROLES: ReadonlySet<RegistryRole> = new Set(["PAYOUT_FRI
  * Roles drawn only once their product is open to people: an identity that
  * exists on chain before people can use its product is held here and named on
  * a public page when the product opens — the address is never written twice.
- * Ryntra Launch's identities were held so until it opened on 2026-10-06; none
- * waits now.
+ * Ryntra Launch's identities were held so until it opened on 2026-10-06; the
+ * agent's key, until its mainnet opened to people of
+ * 2026-11-04 (CITY-186). None waits now.
  */
-export const NOT_YET_OPEN_ROLES: ReadonlySet<RegistryRole> = new Set<RegistryRole>();
+export const NOT_YET_OPEN_ROLES: ReadonlySet<RegistryRole> = new Set<RegistryRole>([]);
 
 /** Whether a row may be published — on the page, in the JSON, in a public query. */
 export function isPublishable(row: RegistryEntry): boolean {

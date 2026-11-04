@@ -16,14 +16,17 @@ const read = (path) => readFileSync(new URL("../../" + path, import.meta.url), "
 const code = (path) => read(path).replace(/\/\*[\s\S]*?\*\//g, " ").replace(/^\s*\/\/.*$/gm, " ");
 
 test("the payer page and its status route read only the public projection", () => {
-  for (const path of ["app/pay/[id]/page.tsx", "app/pay/[id]/pay-client.tsx", "app/api/pay/[id]/route.ts"]) {
+  for (const path of ["app/pay/[id]/page.tsx", "city/components/pay/PayerPage.tsx", "city/lib/pay/flow.ts", "app/api/pay/[id]/route.ts"]) {
     const source = code(path);
     assert.doesNotMatch(source, /paymentRequestOwners|listPaymentRequestsByWallet|readPaymentSettlement|proofSessionId|accountId/, path);
     assert.doesNotMatch(source, /getWalletProof|getSession\(/, `${path} must not read a creator session`);
   }
   assert.match(code("app/api/pay/[id]/route.ts"), /loadPublicPaymentRequest/);
   assert.match(code("app/pay/[id]/page.tsx"), /loadPublicPaymentRequest/);
-  assert.match(code("app/pay/[id]/page.tsx"), /robots: \{ index: false, follow: false \}/, "a payment link is never indexed");
+  /* CITY-156: the page and its «not found» take their tab and preview from one place. */
+  assert.match(code("app/pay/[id]/page.tsx"), /return payMetadata\(await loadPublicPaymentRequest\(/);
+  assert.match(code("app/pay/[id]/not-found.tsx"), /export const metadata: Metadata = payMetadata\(null\);/);
+  assert.match(code("city/lib/pay/meta.ts"), /robots: \{ index: false, follow: false \}/, "a payment link is never indexed");
 });
 
 test("creating and listing requests sit behind proof of wallet ownership and same-origin", () => {

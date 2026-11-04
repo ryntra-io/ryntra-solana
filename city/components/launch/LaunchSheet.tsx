@@ -3,17 +3,24 @@
 import { useEffect, useId, useMemo, useRef, useState, type ChangeEvent } from 'react';
 import { checkLaunchForm, type FieldProblem } from '@/lib/launch/form';
 import { shrinkPicture } from '@/lib/launch/picture.client';
+import type { LaunchPresetView } from '@/lib/api/v1/contract';
 import { openBerth } from '@/city/lib/launch/berth-store';
-import { landed, launchEngine, launchWallet, useLaunch } from '@/city/lib/launch/district';
-import { failureWords, runLaunch, type Phase } from '@/city/lib/launch/flow';
+import { landed, launchEngine, launchPrep, launchWallet, useLaunch } from '@/city/lib/launch/district';
+import { failureWords, pictureRefused, readRefusal, runLaunch, type LaunchFailure, type Phase } from '@/city/lib/launch/flow';
+import { openMoney } from '@/city/lib/money/open';
+import { REFUSAL_WORDS } from '@/city/lib/launch/words';
 import { shortAddress } from '@/city/lib/launch/format';
-import { reviewRows, ruleLines } from '@/city/lib/launch/terms';
+import { cityPresets } from '@/city/lib/launch/gate';
+import { cityShieldOpen, shieldServed } from '@/city/lib/launch/shield';
+import { FIELDS_REFUSED, fieldsKey, type PrepFields } from '@/city/lib/launch/prepare';
+import { costLine, launchFacts, reviewRows, shieldLine } from '@/city/lib/launch/terms';
 import type { WalletOption } from '@/city/lib/launch/wallet';
 import { useLang } from '@/city/lib/i18n/lang';
 import { useWords, type Same } from '@/city/lib/i18n/dict';
 import { useKeyboardInset } from '@/city/lib/keyboard';
 import { BerthGlyph } from '../berth/glyphs';
 import { CloseGlyph } from '../hud/glyphs';
+import { LaunchPreview } from './LaunchPreview';
 import s from './launch.module.css';
 import { LAUNCH } from './words';
 
@@ -25,10 +32,18 @@ const BACK = (
   </svg>
 );
 
+/** The fields stay still this long before they go to the engine's store in the background. */
+const STORE_AFTER_MS = 900;
+/** The kinds of picture every wallet shows (`shrinkPicture` reads the file itself). */
+const PICTURES = 'image/png,image/jpeg,image/webp,image/gif';
+
 /**
- * «Raise your tower»: a picture, a name and a ticker; then the review of what the launch signs up to, every figure the
- * engine's; then one signature in the creator's wallet. The rules of the fields are the engine's own (`checkLaunchForm`),
- * so the sheet says at once what the engine would refuse. The sheet decides nothing for the creator and holds no key.
+ * «Raise your tower» (CITY-143, `docs/research/ryntra-launch-2026-10-29/SPEC.md` «Створення»): the cost line first; a
+ * picture, a name and a ticker over a live preview of the tower; then the rules — the bot shield, two facts and one line
+ * of who gets what, the rest behind «i»; then one signature in the creator's wallet. The rules of the fields are the
+ * engine's own (`checkLaunchForm`), so the sheet says at once what the engine would refuse; the picture goes to the
+ * engine's store while the creator types, and the engine simulates the launch before the press (`prepare.ts`). The
+ * sheet decides nothing for the creator and holds no key.
  */
 export function LaunchSheet() {
   const step = useLaunch((st) => st.step);
@@ -40,7 +55,7 @@ export function LaunchSheet() {
   const w = useWords(LAUNCH);
   if (!preset || !network) return null;
   return (
-    <div className={`${s.sheet} ${s.panel}`} style={{ ['--kb' as string]: `${inset}px` }} role="dialog" aria-label={step === 'form' ? w.raise : w.review}>
+    <div className={`${s.sheet} ${s.panel}`} style={{ ['--kb' as string]: `${inset}px` }} role="dialog" aria-label={step === 'form' ? w.raise : w.review} data-launch-sheet="">
       {step === 'form' ? <FormStep onClose={close} /> : <ReviewStep onClose={close} />}
       {(network === 'solana:devnet' || stub) && (
         <div className={s.netLine}>
@@ -64,6 +79,9 @@ function FormStep({ onClose }: { onClose: () => void }) {
   const check = useMemo(() => checkLaunchForm({ name: draft.name, symbol: draft.symbol, description: '', website: '', x: '', telegram: '' }), [draft.name, draft.symbol]);
   const ids = { name: useId(), symbol: useId(), picture: useId() };
   const nameRef = useRef<HTMLInputElement>(null);
+  const fileRef = useRef<HTMLInputElement>(null);
+  /* A finger gets two doors to the picture, the camera first (CITY-168); a mouse keeps the one file picker. */
+  const [touch] = useState(() => window.matchMedia?.('(pointer: coarse)').matches === true);
   useEffect(() => {
     /* A desk types at once; a phone opens its keyboard only on a tap. */
     if (window.matchMedia?.('(pointer: fine)').matches) nameRef.current?.focus({ preventScroll: true });
@@ -78,17 +96,28 @@ function FormStep({ onClose }: { onClose: () => void }) {
     if (picture) setDraft({ picture });
   };
   const symbol = check.clean.symbol;
-  const problem = firstProblem(w, check, draft.picture !== null, pictureBad, attempted);
-  const valid = Object.keys(check.problems).length === 0 && draft.picture !== null;
+  const fieldsValid = Object.keys(check.problems).length === 0;
+  const { fields, refused } = usePrepared(fieldsValid ? check.clean.name : null, fieldsValid ? symbol : null);
+  /* The fields go to the engine's store once they stand still; its refusal of the picture or the name shows at once. */
+  useEffect(() => {
+    if (!fields) return;
+    const timer = setTimeout(() => void launchPrep().store(fields, { background: true }), STORE_AFTER_MS);
+    return () => clearTimeout(timer);
+  }, [fields]);
+  const problem = firstProblem(w, check, draft.picture !== null, pictureBad, attempted, refused);
+  const valid = fieldsValid && draft.picture !== null && !refused;
   const review = () => {
     setAttempted(true);
     if (valid) setStep('review');
   };
+  const rise = ((draft.picture ? 1 : 0) + (!check.problems.name ? 1 : 0) + (!check.problems.symbol ? 1 : 0)) / 3;
+  /* The engine refused the picture itself: the one action is another picture. */
+  const newPicture = refused !== null && pictureRefused(refused);
 
   return (
     <>
       <div className={s.head}>
-        <h2 className={`${s.display} ${s.title}`}>{w.raise}</h2>
+        <h2 className={`${s.display} ${s.title} ${s.titleWrap}`}>{w.raise}</h2>
         {/* The creator's berth (CITY-141): what their launches earned and «Забрати», one quiet tap from the sheet. */}
         <button className={`${s.close} ${s.berth}`} aria-label={w.myBerth} data-hint={w.myBerth} data-launch-berth="" onClick={() => openBerth()}>
           <BerthGlyph />
@@ -97,61 +126,93 @@ function FormStep({ onClose }: { onClose: () => void }) {
           <CloseGlyph />
         </button>
       </div>
-      <div className={s.launchRow}>
-        <label className={`${s.pic} ${draft.picture ? s.picSet : ''}`} htmlFor={ids.picture} style={draft.picture ? { backgroundImage: `url(${draft.picture.url})` } : undefined}>
-          {!draft.picture && (
-            <>
-              <b aria-hidden="true">+</b>
-              <span>{w.picture}</span>
-            </>
-          )}
-          <input id={ids.picture} className={s.file} type="file" accept="image/png,image/jpeg,image/webp,image/gif" onChange={choosePicture} aria-label={draft.picture ? w.changePicture : w.addPicture} />
+      <CostLine preset={preset} />
+      <LaunchPreview
+        inputId={ids.picture}
+        picture={draft.picture?.url ?? null}
+        symbol={check.problems.symbol === 'SYMBOL_CHARS' ? '' : symbol}
+        name={check.clean.name}
+        rise={rise}
+        bad={problem?.field === 'picture'}
+        words={w}
+        doors={
+          touch
+            ? {
+                camera: <input className={s.file} type="file" accept="image/*" capture="environment" onChange={choosePicture} aria-label={w.takePhoto} data-launch-camera="" />,
+                gallery: <input ref={fileRef} className={s.file} type="file" accept={PICTURES} onChange={choosePicture} aria-label={w.gallery} data-launch-gallery="" />,
+              }
+            : null
+        }
+      >
+        {!touch && <input ref={fileRef} id={ids.picture} className={s.file} type="file" accept={PICTURES} onChange={choosePicture} aria-label={draft.picture ? w.changePicture : w.addPicture} />}
+      </LaunchPreview>
+      <div className={s.fields}>
+        <label className={`${s.field} ${problem?.field === 'name' ? s.fieldBad : ''}`} htmlFor={ids.name}>
+          <span>{w.name}</span>
+          <input ref={nameRef} id={ids.name} value={draft.name} maxLength={64} placeholder={w.namePlaceholder} autoComplete="off" spellCheck={false} onChange={(event) => setDraft({ name: event.target.value })} />
         </label>
-        <div className={s.fields}>
-          <label className={`${s.field} ${problem?.field === 'name' ? s.fieldBad : ''}`} htmlFor={ids.name}>
-            <span>{w.name}</span>
-            <input ref={nameRef} id={ids.name} value={draft.name} maxLength={64} placeholder={w.namePlaceholder} autoComplete="off" spellCheck={false} onChange={(event) => setDraft({ name: event.target.value })} />
-          </label>
-          <label className={`${s.field} ${problem?.field === 'symbol' ? s.fieldBad : ''}`} htmlFor={ids.symbol}>
-            <span>{w.ticker}</span>
-            <i aria-hidden="true">$</i>
-            <input
-              id={ids.symbol}
-              value={draft.symbol}
-              maxLength={16}
-              placeholder={w.tickerPlaceholder}
-              autoComplete="off"
-              autoCapitalize="characters"
-              spellCheck={false}
-              style={{ ['--chars' as string]: `${Math.max(draft.symbol.length, 4) + 1}ch` }}
-              onChange={(event) => setDraft({ symbol: event.target.value.replace(/^\$+/, '').toUpperCase() })}
-            />
-          </label>
-        </div>
+        <label className={`${s.field} ${problem?.field === 'symbol' ? s.fieldBad : ''}`} htmlFor={ids.symbol}>
+          <span>{w.ticker}</span>
+          <i aria-hidden="true">$</i>
+          <input
+            id={ids.symbol}
+            value={draft.symbol}
+            maxLength={16}
+            placeholder={w.tickerPlaceholder}
+            autoComplete="off"
+            autoCapitalize="characters"
+            spellCheck={false}
+            style={{ ['--chars' as string]: `${Math.max(draft.symbol.length, 4) + 1}ch` }}
+            onChange={(event) => setDraft({ symbol: event.target.value.replace(/^\$+/, '').toUpperCase() })}
+          />
+        </label>
       </div>
-      {problem ? (
+      {problem && (
         <div className={s.problem} role="status">
           {problem.words}
         </div>
-      ) : (
-        <div className={s.rules}>
-          {ruleLines(preset).map((line) => (
-            <span key={line}>{line}</span>
-          ))}
-        </div>
       )}
-      <button className={`${s.display} ${s.action} ${s.actionBig}`} onClick={review}>
-        {symbol && !check.problems.symbol ? w.reviewSymbol(symbol) : w.reviewPlain}
+      <button className={`${s.display} ${s.action} ${s.actionBig}`} onClick={newPicture ? () => fileRef.current?.click() : review}>
+        {newPicture ? w.newPicture : symbol && !check.problems.symbol ? w.reviewSymbol(symbol) : w.reviewPlain}
       </button>
-      <div className={s.fine}>{w.oneSignature}</div>
     </>
+  );
+}
+
+/**
+ * The three fields as the engine's store takes them, once they pass the rules, and the store's refusal of exactly these
+ * fields when it said one that would repeat (the picture, a borrowed name).
+ */
+function usePrepared(name: string | null, symbol: string | null): Readonly<{ fields: PrepFields | null; key: string | null; refused: LaunchFailure | null }> {
+  const picture = useLaunch((st) => st.draft.picture);
+  const stored = useLaunch((st) => st.stored);
+  const fields = useMemo<PrepFields | null>(() => (name !== null && symbol !== null && picture ? { name, symbol, picture } : null), [name, symbol, picture]);
+  const key = useMemo(() => (fields ? fieldsKey(fields) : null), [fields]);
+  const answer = key !== null && stored?.key === key ? stored.answer : null;
+  const refused = answer && !answer.ok && FIELDS_REFUSED.has(answer.code) ? { code: answer.code, stage: 'before' as const, message: answer.message, token: null } : null;
+  return { fields, key, refused };
+}
+
+/** The cost line, first on both steps: no launch fee, and the network's cost once the engine simulated it. */
+function CostLine({ preset }: { preset: LaunchPresetView }) {
+  const cost = useLaunch((st) => st.costLamports);
+  useLang();
+  const [free, network] = costLine(preset, cost);
+  return (
+    <div className={s.cost} data-launch-cost="">
+      <b>{free}</b>
+      <span>{network}</span>
+    </div>
   );
 }
 
 type Shown = Readonly<{ field: 'name' | 'symbol' | 'picture'; words: string }>;
 
-/** The first thing to fix, in one line: a borrowed or bad name at once, an empty field only after the first press. */
-function firstProblem(w: W, check: ReturnType<typeof checkLaunchForm>, hasPicture: boolean, pictureBad: boolean, attempted: boolean): Shown | null {
+/**
+ * The first thing to fix, in one line: a borrowed or bad name at once, an empty field only after the first press, and
+ * the engine's own refusal of the stored picture or name as soon as it said it.
+ */
+function firstProblem(w: W, check: ReturnType<typeof checkLaunchForm>, hasPicture: boolean, pictureBad: boolean, attempted: boolean, refused: LaunchFailure | null): Shown | null {
   const words = (field: 'name' | 'symbol', problem: FieldProblem): string => {
     if (problem === 'BORROWED') return w.readsAs(check.hits.find((hit) => hit.field === field)?.label ?? w.aKnownName);
     if (problem === 'OFFENSIVE') return field === 'name' ? w.anotherName : w.anotherTicker;
@@ -165,6 +226,7 @@ function firstProblem(w: W, check: ReturnType<typeof checkLaunchForm>, hasPictur
   }
   if (pictureBad) return { field: 'picture', words: w.pictureKind };
   if (attempted && !hasPicture) return { field: 'picture', words: w.pictureNeeded };
+  if (refused) return { field: pictureRefused(refused) ? 'picture' : 'name', words: failureWords(refused) };
   return null;
 }
 
@@ -174,28 +236,39 @@ function ReviewStep({ onClose }: { onClose: () => void }) {
   const draft = useLaunch((st) => st.draft);
   const preset = useLaunch((st) => st.preset)!;
   const network = useLaunch((st) => st.network)!;
+  const stub = useLaunch((st) => st.stub);
   const phase = useLaunch((st) => st.phase);
   const setPhase = useLaunch((st) => st.setPhase);
   const setStep = useLaunch((st) => st.setStep);
   const setDraft = useLaunch((st) => st.setDraft);
   const connection = useLaunch((st) => st.connection);
+  const cost = useLaunch((st) => st.costLamports);
   const w = useWords(LAUNCH);
   const lang = useLang();
   const setConnection = useLaunch((st) => st.setConnection);
   const [options, setOptions] = useState<readonly WalletOption[] | null>(null);
   const [connecting, setConnecting] = useState<string | null>(null);
   const [walletProblem, setWalletProblem] = useState<string | null>(null);
+  const [details, setDetails] = useState(false);
   const busy = useRef(false);
   const check = useMemo(() => checkLaunchForm({ name: draft.name, symbol: draft.symbol, description: '', website: '', x: '', telegram: '' }), [draft.name, draft.symbol]);
   const symbol = check.clean.symbol;
   const working = phase !== null && phase.step !== 'failed' && phase.step !== 'done';
-  /* The engine's simulated cost, once a build said it, stays on the review until the launch ends. */
-  const [cost, setCost] = useState<string | null>(null);
+  const { fields, key } = usePrepared(check.clean.name, symbol);
+  const storedOk = useLaunch((st) => key !== null && st.stored?.key === key && st.stored.answer?.ok === true);
+  /* The shield (CITY-169): the launch goes on it only where it is open and the engine serves it number for number. */
+  const halo = cityShieldOpen(network) && shieldServed(preset);
+  const rows = reviewRows(preset, network, cost, halo);
+  const line = rows.find((row) => row.id === 'line')!;
+
+  /* The fields go to the store now if they have not yet; with a wallet there, the engine simulates the launch once. */
   useEffect(() => {
-    if (phase?.step === 'sign') setCost(phase.costLamports);
-    else if (!working) setCost(null);
-  }, [phase, working]);
-  const rows = reviewRows(preset, network, cost);
+    if (fields) void launchPrep().store(fields);
+  }, [fields]);
+  useEffect(() => {
+    if (!fields || !connection || !storedOk || working) return;
+    void launchPrep().simulate({ fields, creator: connection.address, preset, network, switchOpen: stub || undefined });
+  }, [fields, connection, storedOk, working, preset, network, stub]);
 
   /* A wallet this browser connected before is restored without a prompt. */
   useEffect(() => {
@@ -240,10 +313,11 @@ function ReviewStep({ onClose }: { onClose: () => void }) {
     setOptions(list);
   };
   const launch = async () => {
-    if (busy.current || !connection || !draft.picture) return;
+    if (busy.current || !connection || !draft.picture || !fields) return;
     busy.current = true;
     try {
       const wallet = await launchWallet();
+      const prep = launchPrep();
       const result = await runLaunch({
         engine: launchEngine(),
         signer: wallet.signer(connection),
@@ -252,10 +326,13 @@ function ReviewStep({ onClose }: { onClose: () => void }) {
         network,
         onPhase: setPhase,
         // The development stand-in launches nothing real, so it does not wait for the deployment's switch.
-        switchOpen: useLaunch.getState().stub || undefined,
+        switchOpen: stub || undefined,
+        stored: prep.store(fields),
+        takePrebuilt: prep.take,
       });
       if (result.step === 'done') {
         landed(result.liftoff, preset);
+        openBerth(result.liftoff.token);
         setDraft({ name: '', symbol: '', picture: null });
         setStep('form');
         setPhase(null);
@@ -283,18 +360,42 @@ function ReviewStep({ onClose }: { onClose: () => void }) {
           <CloseGlyph />
         </button>
       </div>
-      <dl className={s.review}>
-        {rows
-          .filter((row) => row.id !== 'network')
-          .map((row) => (
-            <div key={row.id} className={s.row}>
-              <dt>{row.label}</dt>
-              {row.lines.map((text) => (
-                <dd key={text}>{text}</dd>
-              ))}
-            </div>
+      <CostLine preset={preset} />
+      {halo ? <HaloRow preset={preset} /> : <ShieldSwitch disabled={working} />}
+      <div className={s.facts}>
+        {launchFacts(preset).map((fact) => (
+          <div key={fact.id} className={s.fact}>
+            <span>{fact.label}</span>
+            <b className={s.display}>{fact.value}</b>
+          </div>
+        ))}
+      </div>
+      <div className={s.signLine} data-launch-line="">
+        <p>
+          {line.lines.map((part, i) => (
+            <span key={part} className={i === line.lines.length - 1 ? s.signRisk : undefined}>
+              {part}
+            </span>
           ))}
-      </dl>
+        </p>
+        <button type="button" className={`${s.info} ${details ? s.infoOn : ''}`} aria-label={details ? w.hideDetails : w.details} aria-expanded={details} onClick={() => setDetails((open) => !open)}>
+          i
+        </button>
+      </div>
+      {details && (
+        <dl className={s.review}>
+          {rows
+            .filter((row) => row.id !== 'line' && row.id !== 'network')
+            .map((row) => (
+              <div key={row.id} className={s.row}>
+                <dt>{row.label}</dt>
+                {row.lines.map((text) => (
+                  <dd key={text}>{text}</dd>
+                ))}
+              </div>
+            ))}
+        </dl>
+      )}
       {connection && (
         <div className={s.wallet}>
           <span className={s.walletDot} aria-hidden="true" />
@@ -309,10 +410,26 @@ function ReviewStep({ onClose }: { onClose: () => void }) {
         </div>
       )}
       {phase && phase.step !== 'done' ? (
-        <Progress phase={phase} wallet={connection?.wallet ?? null} onRetry={launch} onEdit={() => {
+        <Progress
+          phase={phase}
+          wallet={connection?.wallet ?? null}
+          onRetry={launch}
+          onEdit={() => {
             setPhase(null);
             setStep('form');
-          }} />
+          }}
+          onPicture={() => {
+            setDraft({ picture: null });
+            setPhase(null);
+            setStep('form');
+          }}
+          onTopUp={() => {
+            /* The review stays as it was: back from the Money window, the launch is one press again. */
+            setPhase(null);
+            openMoney('topup');
+          }}
+          onClose={onClose}
+        />
       ) : connection ? (
         <button className={`${s.display} ${s.action} ${s.actionBig}`} onClick={launch}>
           {w.launchSymbol(symbol)}
@@ -325,8 +442,54 @@ function ReviewStep({ onClose }: { onClose: () => void }) {
         </button>
       )}
       {walletProblem && !connection && <div className={s.problem}>{walletProblem}</div>}
-      {!phase && <div className={s.fine}>{connection ? w.signLine : w.wallets}</div>}
+      {!phase && <div className={s.fine}>{connection ? w.promise : w.wallets}</div>}
     </>
+  );
+}
+
+/**
+ * «Bot shield»: what bots pay at the start, and — where the engine serves both — the switch between Protected, where
+ * bots pay the most in the first minutes, and Classic. The review's line and rows follow the preset it picks.
+ */
+function ShieldSwitch({ disabled }: { disabled: boolean }) {
+  const presets = useLaunch((st) => st.presets);
+  const preset = useLaunch((st) => st.preset);
+  const choose = useLaunch((st) => st.choosePreset);
+  const w = useWords(LAUNCH);
+  useLang();
+  const served = useMemo(() => cityPresets({ presets }), [presets]);
+  if (!preset) return null;
+  const on = preset.id === 'protected';
+  const label = (
+    <>
+      <span className={s.shieldLabel}>{w.botShield}</span>
+      <span className={s.shieldValue}>{shieldLine(preset)}</span>
+    </>
+  );
+  if (!served.classic || !served.protected) return <div className={`${s.shield} ${s.shieldStill}`}>{label}</div>;
+  return (
+    <button type="button" role="switch" aria-checked={on} className={`${s.shield} ${on ? s.shieldOn : ''}`} disabled={disabled} onClick={() => choose(on ? 'classic' : 'protected')}>
+      {label}
+      <span className={s.shieldTrack} aria-hidden="true">
+        <span className={s.shieldKnob} />
+      </span>
+    </button>
+  );
+}
+
+/**
+ * The shielded launch (CITY-169): no switch to think about — the halo is on, with what bots pay at the start beside it.
+ * What keeps the halo is behind «i» (`reviewRows`).
+ */
+function HaloRow({ preset }: { preset: LaunchPresetView }) {
+  const w = useWords(LAUNCH);
+  useLang();
+  return (
+    <div className={`${s.shield} ${s.shieldStill} ${s.halo}`} data-launch-halo="">
+      <span className={s.haloMark} aria-hidden="true" />
+      <span className={s.shieldLabel}>{w.halo}</span>
+      <span className={s.shieldValue}>{shieldLine(preset)}</span>
+    </div>
   );
 }
 
@@ -352,26 +515,12 @@ function WalletList({ options, connecting, onPick }: { options: readonly WalletO
   );
 }
 
-/** Where the launch is: one line while it runs, the reason and the way back when it stopped. */
-function Progress({ phase, wallet, onRetry, onEdit }: { phase: Exclude<Phase, { step: 'done' }>; wallet: string | null; onRetry: () => void; onEdit: () => void }) {
+type Ways = Readonly<{ onRetry: () => void; onEdit: () => void; onPicture: () => void; onTopUp: () => void; onClose: () => void }>;
+
+/** Where the launch is: one line while it runs; when it stopped, what happened, whether money moved, and one way on. */
+function Progress({ phase, wallet, ...ways }: { phase: Exclude<Phase, { step: 'done' }>; wallet: string | null } & Ways) {
   const w = useWords(LAUNCH);
-  if (phase.step === 'failed') {
-    return (
-      <div className={s.failed} role="alert">
-        <div className={s.failedWords}>{failureWords(phase.failure, wallet)}</div>
-        {phase.failure.stage === 'before' && (
-          <div className={s.pair}>
-            <button className={`${s.display} ${s.action}`} onClick={onRetry}>
-              {w.tryAgain}
-            </button>
-            <button className={s.quiet} onClick={onEdit}>
-              {w.edit}
-            </button>
-          </div>
-        )}
-      </div>
-    );
-  }
+  if (phase.step === 'failed') return <Refused failure={phase.failure} wallet={wallet} ways={ways} />;
   const words =
     phase.step === 'upload'
       ? [w.saving, w.savingLine]
@@ -387,6 +536,47 @@ function Progress({ phase, wallet, onRetry, onEdit }: { phase: Exclude<Phase, { 
         <div className={`${s.display} ${s.progressTitle}`}>{words[0]}</div>
         <div className={s.progressLine}>{words[1]}</div>
       </div>
+    </div>
+  );
+}
+
+/**
+ * A stopped launch (CITY-181): one sentence of what happened, one of whether money moved — said every time — and one
+ * action. The contract's code and the engine's words are for support, behind a quiet «Details».
+ */
+function Refused({ failure, wallet, ways }: { failure: LaunchFailure; wallet: string | null; ways: Ways }) {
+  const rw = useWords(REFUSAL_WORDS);
+  const [open, setOpen] = useState(false);
+  const [at] = useState(() => new Date());
+  const refusal = readRefusal(failure, wallet, at);
+  const act = { retry: ways.onRetry, topUp: ways.onTopUp, picture: ways.onPicture, edit: ways.onEdit, close: ways.onClose }[refusal.action];
+  const label = refusal.details.length ? (open ? rw.hideDetails : rw.details) : null;
+  return (
+    <div className={s.failed} role="alert" data-launch-refusal={refusal.kind}>
+      <div className={s.failedWords}>
+        <b className={s.failedWhat}>{refusal.what}</b>
+        <span className={`${s.failedMoney} ${refusal.moneyKind === 'maybeLanded' || refusal.moneyKind === 'landing' ? s.failedMoneyOpen : ''}`}>{refusal.money}</span>
+      </div>
+      <div className={s.failedWays}>
+        <button className={`${s.display} ${s.action}`} onClick={act} data-launch-refusal-act={refusal.action}>
+          {refusal.act}
+        </button>
+        {label && (
+          <button type="button" className={s.failedMore} aria-expanded={open} onClick={() => setOpen((was) => !was)}>
+            {label}
+          </button>
+        )}
+      </div>
+      {open && (
+        <dl className={s.failedDetails}>
+          {refusal.details.map((row) => (
+            <div key={row.label}>
+              <dt>{row.label}</dt>
+              <dd>{row.value}</dd>
+            </div>
+          ))}
+        </dl>
+      )}
     </div>
   );
 }

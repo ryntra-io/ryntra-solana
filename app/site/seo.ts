@@ -1,8 +1,8 @@
 import type { Metadata } from "next";
 
 import { PRODUCT_CANON } from "@/lib/product/canon";
-import { HOMEPAGE_CATEGORY, HOMEPAGE_COPY } from "@/lib/site/homepage-copy";
-import { SITE_NAME, TWITTER, landingOgImage, languageAlternates, localizedUrl, openGraphLocales } from "@/app/seo";
+import { HOMEPAGE_CATEGORY } from "@/lib/site/homepage-copy";
+import { SITE_NAME, TWITTER, cardAltFor, landingOgImage, languageAlternates, localizedUrl, openGraphLocales } from "@/app/seo";
 
 /**
  * Metadata for the redesigned public pages.
@@ -46,9 +46,8 @@ export function sitePageMetadata({
   const canonical = localizedUrl(path, locale);
   const languages = index ? languageAlternates(path) : undefined;
   const category = audience === "guard" ? PRODUCT_CANON.guardCategory : HOMEPAGE_CATEGORY;
-  /* The landing's card, where a page has none of its own. The old trust line
-     said «Paper-first», which the product no longer is. */
-  const card = image ?? { url: landingOgImage(locale), alt: HOMEPAGE_COPY[locale].ogAlt };
+  /* The city's card (CITY-158), where a page has none of its own, and its own words as the alt. */
+  const card = image ?? { url: landingOgImage(locale), alt: cardAltFor(locale) };
 
   return {
     title,

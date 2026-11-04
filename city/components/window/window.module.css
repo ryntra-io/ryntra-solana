@@ -133,6 +133,12 @@
 
 .tool:focus-visible,
 .tab:focus-visible,
+.headTab:focus-visible,
+.chip:focus-visible,
+.desksButton:focus-visible,
+.preset:focus-visible,
+.slot:focus-visible,
+.slotClear:focus-visible,
 .snap:focus-visible {
   outline: 2px solid var(--accent);
   outline-offset: -2px;
@@ -460,12 +466,12 @@
   user-select: none;
 }
 
-/* «Snap together», low on the left beside the dock, where the city has no control of its own. */
+/* «Snap together», low on the left beside the dock, where the city has no control of its own — beside the layouts. */
 .snap {
   position: absolute;
   z-index: 1050;
   bottom: max(34px, calc(env(safe-area-inset-bottom) + 20px));
-  left: var(--gutter);
+  left: calc(var(--gutter) + 44px);
   display: inline-flex;
   align-items: center;
   gap: 8px;
@@ -535,6 +541,10 @@
   background: rgba(238, 241, 255, 0.22);
 }
 
+.sheet[hidden] {
+  display: none;
+}
+
 .sheetFull {
   inset: 0;
   height: auto;
@@ -593,6 +603,7 @@
   background: rgba(255, 104, 28, 0.12);
   color: var(--ice);
 }
+
 
 
 /* ---------- On another screen (CITY-75) ---------- */
@@ -729,5 +740,459 @@
 @keyframes outSweep {
   to {
     background-position: -220% 0;
+  }
+}
+
+
+/* ---------- The bays, the tabs, the tray and the layouts (CITY-84) ---------- */
+
+/* A command moved the frames (a layout, a bay, the tray, the whole screen): they glide there, never during a drag. */
+.glide {
+  transition:
+    transform 260ms cubic-bezier(0.2, 0.9, 0.3, 1),
+    width 260ms cubic-bezier(0.2, 0.9, 0.3, 1),
+    height 260ms cubic-bezier(0.2, 0.9, 0.3, 1);
+}
+
+:global(html[data-window-drag]) .glide {
+  transition: none;
+}
+
+/* A tab not in front: its frame stands under the one shown, out of sight, its contents kept. */
+.tabHidden {
+  visibility: hidden;
+  pointer-events: none;
+}
+
+.tabHidden .bracket {
+  opacity: 0;
+}
+
+/* The title of a frame with tabs is said, not shown: the tabs name every window in it. */
+.unseen {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+.headTabs {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  height: 100%;
+  margin-left: -6px;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.headTabs::-webkit-scrollbar {
+  display: none;
+}
+
+.headTab {
+  flex: 0 1 auto;
+  min-width: 44px;
+  max-width: 200px;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  height: 32px;
+  padding: 0 10px;
+  border: 0;
+  border-radius: 2px;
+  background: transparent;
+  color: var(--text-dim);
+  font-size: var(--type-small);
+  font-weight: 700;
+  letter-spacing: 0.01em;
+  white-space: nowrap;
+  transition:
+    color 140ms ease-out,
+    background 140ms ease-out;
+}
+
+.headTab .icon {
+  width: 15px;
+  height: 15px;
+  color: inherit;
+}
+
+.headTabTitle {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.headTab:hover {
+  color: var(--ice);
+  background: rgba(238, 241, 255, 0.06);
+}
+
+.headTab[aria-selected='true'] {
+  color: var(--ice);
+  background: rgba(255, 104, 28, 0.1);
+  box-shadow: inset 0 -2px 0 var(--accent);
+}
+
+.headTab[aria-selected='true'] .icon {
+  color: var(--accent);
+}
+
+/* Where a dragged window would land: the bay lit along its whole height, or the head of the frame it would join. */
+.landing {
+  position: absolute;
+  left: 0;
+  top: 0;
+  z-index: 1090;
+  border-radius: 3px;
+  background: linear-gradient(180deg, rgba(255, 104, 28, 0.14), rgba(255, 104, 28, 0.05));
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 104, 28, 0.75),
+    0 0 28px rgba(255, 104, 28, 0.22);
+  pointer-events: none;
+  animation: windowIn 140ms ease-out both;
+  transition:
+    transform 140ms ease-out,
+    width 140ms ease-out,
+    height 140ms ease-out;
+}
+
+.landingTab {
+  border-radius: 3px 3px 0 0;
+  background: rgba(255, 104, 28, 0.18);
+}
+
+/* Both bays hold a window: the city between them steps back, under the top bar and the Deck. */
+.dim {
+  position: fixed;
+  inset: 0;
+  z-index: 9;
+  pointer-events: none;
+  background: radial-gradient(ellipse at 50% 44%, rgba(6, 5, 12, 0.34), rgba(6, 5, 12, 0.66) 82%);
+  opacity: 0;
+  transition: opacity 420ms ease-out;
+}
+
+.dimOn {
+  opacity: 1;
+}
+
+/* The tray over the Deck: the folded windows, one glass chip each, in the middle above the diamond — over a floating
+   window, so a folded one is always a tap away. */
+.fold {
+  --accent: #ff681c;
+  position: fixed;
+  z-index: 13;
+  left: 50%;
+  bottom: calc(max(14px, env(safe-area-inset-bottom)) + 112px);
+  display: flex;
+  gap: 8px;
+  max-width: min(560px, calc(100vw - 2 * var(--gutter)));
+  padding: 2px;
+  overflow-x: auto;
+  scrollbar-width: none;
+  transform: translateX(-50%);
+  font-family: var(--font-ui, system-ui), system-ui, sans-serif;
+  transition: bottom 380ms cubic-bezier(0.2, 0.9, 0.3, 1);
+}
+
+.fold::-webkit-scrollbar {
+  display: none;
+}
+
+/* The Deck hidden: the tray comes down to the bottom edge. */
+.foldLow {
+  bottom: max(34px, calc(env(safe-area-inset-bottom) + 20px));
+}
+
+/* A phone with a sheet up: the tray stands over the sheet, on the city above it. */
+.foldOverSheet {
+  bottom: calc(min(64dvh, calc(100dvh - 96px - env(safe-area-inset-top))) + 12px);
+}
+
+.chip {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  height: 36px;
+  padding: 0 12px 0 10px;
+  border: 0;
+  border-radius: 3px;
+  background: linear-gradient(160deg, rgba(22, 17, 40, 0.94), rgba(8, 7, 15, 0.96));
+  box-shadow:
+    inset 0 0 0 1px rgba(153, 69, 255, 0.34),
+    0 12px 28px -14px rgba(0, 0, 0, 0.8);
+  color: var(--ice);
+  font-size: var(--type-small);
+  font-weight: 700;
+  white-space: nowrap;
+  cursor: pointer;
+  animation: chipIn 240ms cubic-bezier(0.2, 0.9, 0.3, 1) both;
+  transition:
+    box-shadow 140ms ease-out,
+    transform 140ms ease-out;
+}
+
+@keyframes chipIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px) scale(0.96);
+  }
+}
+
+.chip:hover {
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 104, 28, 0.7),
+    0 12px 28px -14px rgba(0, 0, 0, 0.8);
+}
+
+.chip:active {
+  transform: scale(0.97);
+}
+
+.chipText {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 6px;
+}
+
+.chipSymbol {
+  letter-spacing: 0.04em;
+}
+
+.chipTitle {
+  color: var(--text-dim);
+}
+
+.chipValue {
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+}
+
+.up {
+  color: var(--mint);
+}
+
+.down {
+  color: var(--flare);
+}
+
+/* The layouts: one quiet glyph low on the left, the panel opening above it. */
+.desks {
+  --accent: #ff681c;
+  --accent-soft: rgba(255, 104, 28, 0.5);
+  position: fixed;
+  z-index: 13;
+  left: var(--gutter);
+  bottom: max(34px, calc(env(safe-area-inset-bottom) + 20px));
+  font-family: var(--font-ui, system-ui), system-ui, sans-serif;
+  color: var(--ice);
+}
+
+.desksButton {
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  border: 0;
+  border-radius: 3px;
+  background: rgba(11, 10, 20, 0.88);
+  box-shadow: inset 0 0 0 1px rgba(153, 69, 255, 0.34);
+  color: var(--accent);
+  cursor: pointer;
+  transition: box-shadow 140ms ease-out;
+}
+
+.desksButton svg {
+  width: 18px;
+  height: 18px;
+}
+
+.desksButton:hover,
+.desksOpen {
+  box-shadow: inset 0 0 0 1px var(--accent);
+}
+
+.desksPanel {
+  position: absolute;
+  left: 0;
+  bottom: 46px;
+  width: 232px;
+  display: grid;
+  gap: 4px;
+  padding: 8px;
+  border-radius: 4px;
+  background: linear-gradient(165deg, #161228, #09080f);
+  box-shadow:
+    inset 0 0 0 1px rgba(153, 69, 255, 0.3),
+    0 22px 48px -18px rgba(0, 0, 0, 0.85);
+  animation: desksIn 180ms cubic-bezier(0.2, 0.9, 0.3, 1) both;
+}
+
+@keyframes desksIn {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+}
+
+.preset {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  height: 44px;
+  padding: 0 10px;
+  border: 0;
+  border-radius: 3px;
+  background: transparent;
+  color: var(--ice);
+  font-size: var(--type-body);
+  font-weight: 700;
+  text-align: left;
+  cursor: pointer;
+}
+
+.preset:hover {
+  background: rgba(238, 241, 255, 0.06);
+}
+
+.deskOn {
+  background: rgba(255, 104, 28, 0.1);
+  box-shadow: inset 0 0 0 1px rgba(255, 104, 28, 0.6);
+}
+
+.scheme {
+  flex: none;
+  width: 30px;
+  height: 20px;
+}
+
+.schemeFrame {
+  fill: none;
+  stroke: rgba(238, 241, 255, 0.28);
+  stroke-width: 1.5;
+}
+
+.schemeOn {
+  fill: var(--accent);
+}
+
+.schemeOff {
+  fill: rgba(238, 241, 255, 0.1);
+}
+
+.slots {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 6px;
+  margin-top: 4px;
+  padding-top: 8px;
+  border-top: 1px solid rgba(238, 241, 255, 0.07);
+}
+
+.slotBox {
+  position: relative;
+}
+
+.slot {
+  width: 100%;
+  height: 52px;
+  display: grid;
+  place-items: center;
+  align-content: center;
+  gap: 4px;
+  padding: 0;
+  border: 0;
+  border-radius: 3px;
+  background: transparent;
+  box-shadow: inset 0 0 0 1px rgba(238, 241, 255, 0.14);
+  color: var(--text-dim);
+  cursor: pointer;
+}
+
+/* An empty place: a dashed edge, the number faint — a tap keeps the windows as they stand. */
+.slot:not(.slotKept) {
+  box-shadow: none;
+  outline: 1px dashed rgba(238, 241, 255, 0.2);
+  outline-offset: -1px;
+}
+
+.slot:not(.slotKept) .scheme {
+  opacity: 0.4;
+}
+
+.slotKept {
+  color: var(--ice);
+}
+
+.slot:hover {
+  background: rgba(238, 241, 255, 0.06);
+}
+
+.slot.deskOn {
+  outline: none;
+  box-shadow: inset 0 0 0 1px rgba(255, 104, 28, 0.7);
+}
+
+.slotNumber {
+  font-size: var(--type-micro);
+  font-weight: 800;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+
+.slotClear {
+  position: absolute;
+  top: -6px;
+  right: -6px;
+  display: grid;
+  place-items: center;
+  width: 20px;
+  height: 20px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: #1b1630;
+  box-shadow: inset 0 0 0 1px rgba(238, 241, 255, 0.2);
+  color: var(--text-dim);
+  opacity: 0;
+  cursor: pointer;
+  transition: opacity 120ms ease-out;
+}
+
+.slotClear svg {
+  width: 10px;
+  height: 10px;
+}
+
+.slotBox:hover .slotClear,
+.slotBox:focus-within .slotClear {
+  opacity: 1;
+}
+
+.slotClear:hover {
+  color: var(--ice);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .glide,
+  .landing,
+  .fold,
+  .dim {
+    transition: none;
+  }
+
+  .chip,
+  .desksPanel,
+  .landing {
+    animation: none;
   }
 }

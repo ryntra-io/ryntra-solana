@@ -1,0 +1,497 @@
+{
+  "skyline": {
+    "network": "solana:devnet",
+    "token": "75bmgPLGpfZurnEPpMSPM5QiXZYJ9SQGar3MAsJRcr4J",
+    "creator": "UYn4Bu56onshJMBHU49CUwhAht463epZyekBMCwANHXh",
+    "rules": {
+      "version": "launch-flow-1.0.0",
+      "floorUsd": 1,
+      "singleTradeBps": 5000,
+      "hops": 2
+    },
+    "launchSlot": {
+      "slot": 368446800,
+      "at": "2026-09-26T18:20:00.000Z",
+      "buys": 0,
+      "wallets": 0,
+      "supplyBps": 0,
+      "signatures": []
+    },
+    "bundles": {
+      "groups": [],
+      "count": 0,
+      "wallets": 0,
+      "supplyBps": 0,
+      "holdsBps": 0,
+      "complete": true
+    },
+    "dev": {
+      "wallet": "UYn4Bu56onshJMBHU49CUwhAht463epZyekBMCwANHXh",
+      "boughtBps": 140,
+      "soldBps": 0,
+      "soldOfBoughtBps": null,
+      "sales": 0,
+      "lastSale": null,
+      "holdsBps": 140,
+      "linked": {
+        "wallets": 0,
+        "boughtBps": 0,
+        "holdsBps": 0
+      },
+      "complete": true
+    },
+    "buyers": {
+      "wallets": 114,
+      "independent": 77,
+      "merged": 2,
+      "creatorLinked": 1,
+      "unknown": 0,
+      "roundTrips": 0,
+      "atLeast": false
+    },
+    "graduation": {
+      "graduated": true,
+      "at": "2026-09-26T20:30:00.000Z",
+      "signature": "qDTF8BFU65hp9dvQ4hq5uToSGnt9tLcH87VBs7vSjiKTA3tuF9EXjdqnds8ePKg6KdSthfBHcpdNxKLMD4kLt1C1",
+      "buyers": {
+        "wallets": 88,
+        "independent": 64
+      },
+      "largestBuy": {
+        "signature": "VNPLUiJzFDyKFGA95wTxnNiz17U4cDpQ5nJAF3vt53QGQVQ94zSQtJi3Bjn7gbuvg7iYUDKLHx1SFJR74CFBKqQW",
+        "thresholdBps": 900
+      },
+      "singleTrade": false,
+      "complete": true
+    },
+    "survival": [
+      {
+        "days": 7,
+        "state": "alive",
+        "proof": {
+          "signature": "Yr5MwJwcTr6UzhvgthvUHEVtj1Qs2XStwGoBimvu3wcHNyoam4dss5MWBHE4AfkVVSGDabbtHL6mB78yNLD8HiBD",
+          "at": "2026-10-02T18:20:00.000Z"
+        },
+        "independent": true
+      },
+      {
+        "days": 30,
+        "state": "alive",
+        "proof": {
+          "signature": "Zkb3VrD4HGGBTcHSRggS7HKVLB4DMNvSuitk9zrHAjFn7NQa5wXmShsnYYKTuGx1azLtEkCCFeqHhMWeoedd9YHR",
+          "at": "2026-10-25T18:20:00.000Z"
+        },
+        "independent": null
+      },
+      {
+        "days": 90,
+        "state": "young",
+        "proof": null,
+        "independent": null
+      }
+    ],
+    "creatorRecord": {
+      "launches": [],
+      "count": 0,
+      "judged": 0,
+      "survived": 0,
+      "complete": true
+    },
+    "complete": true,
+    "observedAt": "2026-10-30T18:20:00.000Z"
+  },
+  "fast": {
+    "network": "solana:devnet",
+    "token": "5Ke5JUMRJbvoYQ245EDacLS3QotN2zBBtXCox9LEuyQD",
+    "creator": "tw2WCLb4j4gXwfd3wbgmDJqHSCWbYvJ9bAzjF72aQEFu",
+    "rules": {
+      "version": "launch-flow-1.0.0",
+      "floorUsd": 1,
+      "singleTradeBps": 5000,
+      "hops": 2
+    },
+    "launchSlot": {
+      "slot": 368125200,
+      "at": "2026-10-27T18:20:00.000Z",
+      "buys": 4,
+      "wallets": 4,
+      "supplyBps": 960,
+      "signatures": [
+        "qgujUAMWiUNRBgBGCvuJZGDsb4GC14te1K2Z4CVHFW2r4j76yUHocSPUUnxnwpJsHGWoZPdWvwoA7iArUY3Mp3P3",
+        "3fkzc1UNPCHQ19fT7eZi7t1o4eVVBCwa2wwN1xfvQ8vKnpFcYfmMWjGTY11XEnmy9yEvZCAzm56aX2FCR8MMYiAt",
+        "FwrDrvqeUjrsNpcycoRA81U6u4JX2tyTGaqvDxFkSuhjgecUTb7VQyFFb1gAUNKJvByCHj6zM9XAyqKWboWrHfCW",
+        "L2cBDvXRv8mr2gyNiKJnDxCDNP1n2FRGSZ45DyKcz6NrG8tkBHJ8vzCtiKUK3MhmB56GBDdZPuK8q69ugHjEELpy"
+      ]
+    },
+    "bundles": {
+      "groups": [],
+      "count": 0,
+      "wallets": 0,
+      "supplyBps": 0,
+      "holdsBps": 0,
+      "complete": true
+    },
+    "dev": {
+      "wallet": "tw2WCLb4j4gXwfd3wbgmDJqHSCWbYvJ9bAzjF72aQEFu",
+      "boughtBps": 140,
+      "soldBps": 0,
+      "soldOfBoughtBps": null,
+      "sales": 0,
+      "lastSale": null,
+      "holdsBps": 140,
+      "linked": {
+        "wallets": 0,
+        "boughtBps": 0,
+        "holdsBps": 0
+      },
+      "complete": true
+    },
+    "buyers": {
+      "wallets": 12,
+      "independent": 4,
+      "merged": 2,
+      "creatorLinked": 1,
+      "unknown": 0,
+      "roundTrips": 0,
+      "atLeast": false
+    },
+    "graduation": {
+      "graduated": true,
+      "at": "2026-10-27T18:26:20.000Z",
+      "signature": "vMd6mCfcN3hENEZCMqKzA9icsTPqN4N6Fx1W4bFK1ZFzkt5rdHEMs7dk7G3s9JUvXr4yke3c6BsbtRSxHeZ234nU",
+      "buyers": {
+        "wallets": 9,
+        "independent": 3
+      },
+      "largestBuy": {
+        "signature": "1NXd16ecFW3bNP6EgczFUK4EyYgP6TGJVfcV17EE1sNnAhZu7tpxAazRSXNQX1TeC17BGHwkzJHjZTDMSmi1D92k",
+        "thresholdBps": 6200
+      },
+      "singleTrade": true,
+      "complete": true
+    },
+    "survival": [
+      {
+        "days": 7,
+        "state": "young",
+        "proof": null,
+        "independent": null
+      },
+      {
+        "days": 30,
+        "state": "young",
+        "proof": null,
+        "independent": null
+      },
+      {
+        "days": 90,
+        "state": "young",
+        "proof": null,
+        "independent": null
+      }
+    ],
+    "creatorRecord": {
+      "launches": [],
+      "count": 0,
+      "judged": 0,
+      "survived": 0,
+      "complete": true
+    },
+    "complete": true,
+    "observedAt": "2026-10-30T18:20:00.000Z"
+  },
+  "few": {
+    "network": "solana:devnet",
+    "token": "6b57qNviMbkKWbToPdhBpqqW2djL16H4zgynA91jwssW",
+    "creator": "eJjSGHyanjGtnmhDanMDoKDkNzvKpRmtPD3WFnZxJfKW",
+    "rules": {
+      "version": "launch-flow-1.0.0",
+      "floorUsd": 1,
+      "singleTradeBps": 5000,
+      "hops": 2
+    },
+    "launchSlot": {
+      "slot": 368434000,
+      "at": "2026-10-19T18:20:00.000Z",
+      "buys": 0,
+      "wallets": 0,
+      "supplyBps": 0,
+      "signatures": []
+    },
+    "bundles": {
+      "groups": [],
+      "count": 0,
+      "wallets": 0,
+      "supplyBps": 0,
+      "holdsBps": 0,
+      "complete": true
+    },
+    "dev": {
+      "wallet": "eJjSGHyanjGtnmhDanMDoKDkNzvKpRmtPD3WFnZxJfKW",
+      "boughtBps": 140,
+      "soldBps": 0,
+      "soldOfBoughtBps": null,
+      "sales": 0,
+      "lastSale": null,
+      "holdsBps": 140,
+      "linked": {
+        "wallets": 0,
+        "boughtBps": 0,
+        "holdsBps": 0
+      },
+      "complete": true
+    },
+    "buyers": {
+      "wallets": 53,
+      "independent": 26,
+      "merged": 2,
+      "creatorLinked": 1,
+      "unknown": 4,
+      "roundTrips": 0,
+      "atLeast": true
+    },
+    "graduation": {
+      "graduated": true,
+      "at": "2026-10-19T21:20:00.000Z",
+      "signature": "drhkQYQKZWUudBQJwDFEFNjZmiJdstQMvJ5DVvBdXoHoBMzBNPMXGEPYxd7J4umUPKF2WxsWkTRB2L46asGh2DjB",
+      "buyers": {
+        "wallets": 41,
+        "independent": 22
+      },
+      "largestBuy": {
+        "signature": "uH2CVBPLLh48FpYsr4jfPZVuuwJMBibAyBDwXRTeQvxtLPfLBf244fUQEAcod2pBmhvG9zn7ataSBP5VW1GPt6aF",
+        "thresholdBps": 1400
+      },
+      "singleTrade": false,
+      "complete": true
+    },
+    "survival": [
+      {
+        "days": 7,
+        "state": "alive",
+        "proof": {
+          "signature": "28cHa8FHtVG8Nu2Uo9Lp492wEZ6Fv6cCHgJMcFo9VB1AMb9NZWoGyMvdbSAhJCADgxpgWsu3hjDo8wXETovbmBgr",
+          "at": "2026-10-25T18:20:00.000Z"
+        },
+        "independent": false
+      },
+      {
+        "days": 30,
+        "state": "young",
+        "proof": null,
+        "independent": null
+      },
+      {
+        "days": 90,
+        "state": "young",
+        "proof": null,
+        "independent": null
+      }
+    ],
+    "creatorRecord": {
+      "launches": [],
+      "count": 0,
+      "judged": 0,
+      "survived": 0,
+      "complete": true
+    },
+    "complete": false,
+    "observedAt": "2026-10-30T18:20:00.000Z"
+  },
+  "curve": {
+    "network": "solana:devnet",
+    "token": "LBJpPunbzQNHxJQDQnAqqp7qy2GAx5HYiMEBifa5N3Wx",
+    "creator": "zjCVfSWpXLM7uZ4gs1MN6ZZf7t4Nb4d7owVR5NKxgZWx",
+    "rules": {
+      "version": "launch-flow-1.0.0",
+      "floorUsd": 1,
+      "singleTradeBps": 5000,
+      "hops": 2
+    },
+    "launchSlot": {
+      "slot": 368366400,
+      "at": "2026-10-30T13:20:00.000Z",
+      "buys": 0,
+      "wallets": 0,
+      "supplyBps": 0,
+      "signatures": []
+    },
+    "bundles": {
+      "groups": [],
+      "count": 0,
+      "wallets": 0,
+      "supplyBps": 0,
+      "holdsBps": 0,
+      "complete": true
+    },
+    "dev": {
+      "wallet": "zjCVfSWpXLM7uZ4gs1MN6ZZf7t4Nb4d7owVR5NKxgZWx",
+      "boughtBps": 140,
+      "soldBps": 0,
+      "soldOfBoughtBps": null,
+      "sales": 0,
+      "lastSale": null,
+      "holdsBps": 140,
+      "linked": {
+        "wallets": 0,
+        "boughtBps": 0,
+        "holdsBps": 0
+      },
+      "complete": true
+    },
+    "buyers": {
+      "wallets": 0,
+      "independent": 0,
+      "merged": 2,
+      "creatorLinked": 1,
+      "unknown": 4,
+      "roundTrips": 0,
+      "atLeast": true
+    },
+    "graduation": {
+      "graduated": false,
+      "at": null,
+      "signature": null,
+      "buyers": null,
+      "largestBuy": {
+        "signature": "p4V14xDQc9TZ3F5WCDL7zRbqj7P9Aviw7t4J5MN8TgcX358QoMW97YEa3bcAmQ2t14Y94vcEPzFTSZWhdHC843Xs",
+        "thresholdBps": 700
+      },
+      "singleTrade": false,
+      "complete": true
+    },
+    "survival": [
+      {
+        "days": 7,
+        "state": "young",
+        "proof": null,
+        "independent": null
+      },
+      {
+        "days": 30,
+        "state": "young",
+        "proof": null,
+        "independent": null
+      },
+      {
+        "days": 90,
+        "state": "young",
+        "proof": null,
+        "independent": null
+      }
+    ],
+    "creatorRecord": {
+      "launches": [],
+      "count": 0,
+      "judged": 0,
+      "survived": 0,
+      "complete": true
+    },
+    "complete": false,
+    "observedAt": "2026-10-30T18:20:00.000Z"
+  },
+  "untimed": {
+    "network": "solana:devnet",
+    "token": "8a99qnLSRT24U4XiBA5Jj868dG958qS1Ezr5P3eLqiD3",
+    "creator": "rXrb9vqSyp5DrCMasWtHJBFPuGc8gECGA8pLYryiU3Cz",
+    "rules": {
+      "version": "launch-flow-1.0.0",
+      "floorUsd": 1,
+      "singleTradeBps": 5000,
+      "hops": 2
+    },
+    "launchSlot": {
+      "slot": 368016400,
+      "at": "2026-07-02T18:20:00.000Z",
+      "buys": 0,
+      "wallets": 0,
+      "supplyBps": 0,
+      "signatures": []
+    },
+    "bundles": {
+      "groups": [],
+      "count": 0,
+      "wallets": 0,
+      "supplyBps": 0,
+      "holdsBps": 0,
+      "complete": true
+    },
+    "dev": {
+      "wallet": "rXrb9vqSyp5DrCMasWtHJBFPuGc8gECGA8pLYryiU3Cz",
+      "boughtBps": 140,
+      "soldBps": 0,
+      "soldOfBoughtBps": null,
+      "sales": 0,
+      "lastSale": null,
+      "holdsBps": 140,
+      "linked": {
+        "wallets": 0,
+        "boughtBps": 0,
+        "holdsBps": 0
+      },
+      "complete": true
+    },
+    "buyers": {
+      "wallets": 533,
+      "independent": 280,
+      "merged": 2,
+      "creatorLinked": 1,
+      "unknown": 4,
+      "roundTrips": 0,
+      "atLeast": true
+    },
+    "graduation": {
+      "graduated": true,
+      "at": null,
+      "signature": "ro4aUNKJ2MBBAD4taQcP47sYRfwDzWFwy5iHF3zPdha7PYG5vp4ytmJz8pTCM9M11XHUTzmCPF21iBKdLa18SDtC",
+      "buyers": {
+        "wallets": 410,
+        "independent": 233
+      },
+      "largestBuy": {
+        "signature": "L9rdQGwZZjkEekedXfL1qHWsj7UJCaGShbeRwggkp971QUnYF2RULoyqhrFT1VStR5A57n8M9BUXmNixucCbGxcs",
+        "thresholdBps": 300
+      },
+      "singleTrade": false,
+      "complete": true
+    },
+    "survival": [
+      {
+        "days": 7,
+        "state": "alive",
+        "proof": {
+          "signature": "PP3o9AxEhnRLrTD74W3amWMNg8fGLX7DXo7D9sYuEp76EoCWbvgVyjM74nEgw6uz9kRd7cPVbDK4ppkeYg7CUkce",
+          "at": "2026-07-08T18:20:00.000Z"
+        },
+        "independent": true
+      },
+      {
+        "days": 30,
+        "state": "alive",
+        "proof": {
+          "signature": "3EBMQkcWcFitfsMAGoWoTD56sJHh6yEWwmZ3GvNkXd1LScBkC5GwiDj61tD7XvYMoQG3SP2sqbSLCHjqJd1QKLNR",
+          "at": "2026-07-31T18:20:00.000Z"
+        },
+        "independent": true
+      },
+      {
+        "days": 90,
+        "state": "alive",
+        "proof": {
+          "signature": "kW2meGP2N7pRUbXe6ALJH9FvYWoQxCmqF5rq3qnYfW3YLjcrWvrm5ff6HUFNPHpEcx63JfBeQjtaEfzWmfRhKgxQ",
+          "at": "2026-09-29T18:20:00.000Z"
+        },
+        "independent": true
+      }
+    ],
+    "creatorRecord": {
+      "launches": [],
+      "count": 0,
+      "judged": 0,
+      "survived": 0,
+      "complete": true
+    },
+    "complete": false,
+    "observedAt": "2026-10-30T18:20:00.000Z"
+  }
+}

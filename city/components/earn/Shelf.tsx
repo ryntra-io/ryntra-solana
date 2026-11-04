@@ -1,16 +1,29 @@
 'use client';
 
-import { HARBOR_OPEN } from '@/city/lib/districts/harbor/flag';
 import { PRODUCTS, RISK, type ProductId } from '@/city/lib/earn/flag';
 import { useEarn } from '@/city/lib/earn/open';
+import { LIMIT_MODE } from '@/city/lib/earn/limit-gate';
+import { PIER_MODE } from '@/city/lib/earn/pier-gate';
+import { STOCK_PIER_MODE } from '@/city/lib/earn/stock-pier-gate';
+import { DOLLAR_OPEN } from '@/city/lib/earn/dollar-gate';
 import type { Words } from '@/city/lib/earn/words';
 import { RiskDots } from './bits';
 import { useShelfContext } from './context';
 import s from './earn.module.css';
 
-/** The products that act now: the SOL Saver always, the SOL Pier where the Harbor's own switch is open. */
+/**
+ * The products that act now: the SOL Saver always, the SOL Pier where the Harbor's own switch is open, Sell Higher and
+ * the Stock Pier and the Dollar Saver (CITY-192, `NEXT_PUBLIC_RYNTRA_CITY_EARN_DOLLAR`) where each one's own switch is open (under a canary each looks as it does closed — the canary is not
+ * announced).
+ */
 export function live(product: ProductId): boolean {
-  return product === 'saver' || (product === 'pier' && HARBOR_OPEN);
+  return (
+    product === 'saver' ||
+    (product === 'dollar' && DOLLAR_OPEN) ||
+    (product === 'pier' && PIER_MODE === 'open') ||
+    (product === 'sell' && LIMIT_MODE === 'open') ||
+    (product === 'stockpier' && STOCK_PIER_MODE === 'open')
+  );
 }
 
 /**
@@ -24,8 +37,10 @@ export function Shelf({ words }: { words: Words }) {
       {PRODUCTS.map((id) => {
         const w = words.products[id];
         const big = context[id];
-        const acts = live(id);
-        const open = () => (id === 'pier' && acts ? useEarn.getState().setTab('piers') : useEarn.getState().openProduct(id));
+        // «Like the Captain» acts once a strategy has a proven record and the Harbor takes copies.
+        const acts = live(id) || (id === 'captain' && PIER_MODE === 'open' && big !== null);
+        // The SOL Pier is the Piers tab itself: its piers read and shown even while the Harbor is closed.
+        const open = () => (id === 'pier' ? useEarn.getState().setTab('piers') : useEarn.getState().openProduct(id));
         return (
           <article key={id} className={`${s.card} ${acts ? s.cardLive : ''}`} data-earn-product={id}>
             <button type="button" className={s.cardHit} onClick={open} aria-label={w.name} />

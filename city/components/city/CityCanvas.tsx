@@ -6,6 +6,8 @@ import { useEffect, useRef, useState } from 'react';
 import * as THREE from 'three';
 import { dprAt, LADDER, meanFps, move, rangeFor, startMoves, stepDown, stepUp, type Device } from '@/city/lib/city/quality';
 import { useCity } from '@/city/lib/city/store';
+import { leanIn } from '@/city/lib/window/layout';
+import { settledLayout, useWindows } from '@/city/lib/window/store';
 import { CityScene } from './CityScene';
 import { useSkyline } from './skyline/store';
 import { Pacer } from './Pacer';
@@ -19,6 +21,9 @@ const KIT_WAIT_MS = 12_000;
 const REVEAL_MS = 900;
 
 /** What this device says about itself; the canvas mounts on the client only, so the browser is there. */
+/** The city is behind windows on a computer (CITY-84): drawn lean. */
+const leanNow = () => useWindows.getState().desk && leanIn(settledLayout(useWindows.getState()));
+
 function readDevice(): Device {
   const nav = navigator as Navigator & { deviceMemory?: number; connection?: { saveData?: boolean } };
   return {
@@ -37,6 +42,9 @@ function readDevice(): Device {
  * `?quality=high|mid|low` pins the start for a test. The frame loop starts once the shaders are compiled (`Warmup`) and
  * leaves the page's thread a breath after a heavy frame, so a tap is answered (`Pacer`).
  * WebGL2 for every phone in 2026; WebGPU later.
+ *
+ * Behind windows (CITY-84, helm §4) — both bays taken, or one window on the whole screen — the city is drawn lean: at
+ * a pixel ratio of 1 and half as often (`Pacer`), and the frame rate it then shows moves no rung.
  */
 export function CityCanvas() {
   const [device] = useState(() => {
@@ -49,7 +57,10 @@ export function CityCanvas() {
   const [rung, setRung] = useState(device.range.start);
   // Every move of the rung goes through `move`: a climb at the top is no move, and rocking settles on the cheaper rung.
   const moves = useRef(startMoves(device.range.start));
+  const lean = useWindows((st) => st.desk && leanIn(settledLayout(st)));
   const go = (next: (rung: number) => number) => {
+    // Drawn lean on purpose behind windows: its frame rate says nothing about the device.
+    if (leanNow()) return;
     moves.current = move(moves.current, next(moves.current.rung));
     setRung(moves.current.rung);
   };
@@ -65,7 +76,7 @@ export function CityCanvas() {
     return () => clearTimeout(timer);
   }, [warm]);
   const quality = LADDER[rung]!.quality;
-  const dpr = dprAt(rung, device.screen);
+  const dpr = lean ? Math.min(1, dprAt(rung, device.screen)) : dprAt(rung, device.screen);
 
   useEffect(() => {
     useCity.getState().setQuality(quality);
@@ -92,6 +103,8 @@ export function CityCanvas() {
       style={{ position: 'fixed', inset: 0, touchAction: 'none', opacity: shown ? 1 : 0, transition: `opacity ${REVEAL_MS}ms ease-out` }}
     >
       <PerformanceMonitor
+        // A new monitor each time the city goes lean or comes back: frames drawn lean never weigh on a verdict after.
+        key={lean ? 'lean' : 'full'}
         bounds={(refresh) => (refresh > 90 ? [50, 80] : [38, 56])}
         // The verdict's mean frame rate decides a collapse (two rungs), never its last sample alone.
         onDecline={({ averages }) => go((r) => stepDown(r, device.screen, meanFps(averages)))}
@@ -99,7 +112,7 @@ export function CityCanvas() {
       />
       <CityScene />
       <Warmup onReady={() => setWarm(true)} />
-      <Pacer on={warm} />
+      <Pacer on={warm} lean={lean} />
     </Canvas>
   );
 }

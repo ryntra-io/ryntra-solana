@@ -24,12 +24,13 @@ import {
   streamRates,
   streamsOf,
   totalsOf,
+  towerFiguresOf,
+  withJustLanded,
 } from "./berth.ts";
 import { BUILD_UNEXPECTED, CLAIM_CLOSED, WALLET_REFUSED, claimBuildMatches, receivedOf, runClaim } from "./berth-flow.ts";
 import { stubBerthEngine } from "./berth-stub.ts";
-import { amountText, claimFailureText, moneyText, shareText } from "./berth-words.ts";
+import { amountText, claimFailureText, moneyText, moveText, priceText, shareText } from "./berth-words.ts";
 import { API_HEADERS } from "./engine.ts";
-import { CITY_LAUNCH_MAINNET } from "./gate.ts";
 import { STUB_CREATOR, STUB_PRESETS, STUB_WALLET, stubAddress, stubEngine, stubWallet } from "./stub.ts";
 
 /* «Мій причал» (L4 · CITY-141): the creator's three streams by $1,000 from the engine's own terms and counters, the day
@@ -271,11 +272,10 @@ test("over HTTP: only the engine's existing reads and its creator claim — no r
   assert.equal((await http.build("../../x", { wallet: STUB_CREATOR })).code, "VALIDATION_ERROR");
   assert.equal(asked.length, 5, "a bad address never leaves the page");
 
-  // The berth's code names no route but these, and the city's gate on mainnet stays shut.
+  // The berth's code names no route but these.
   const code = ["berth.ts", "berth-flow.ts", "berth-store.ts"].map((name) => readFileSync(new URL(`./${name}`, import.meta.url), "utf8")).join("\n");
   const routes = [...code.matchAll(/`(\/api\/v1\/[^`]*\$\{[^`]*)`/g)].map((m) => m[1]);
   assert.deepEqual(routes, ["/api/v1/launch/${token}/claim/${route}", "/api/v1/launch/creators/${wallet}", "/api/v1/launch/${token}/market", "/api/v1/launch/${token}/claim/review?wallet=${wallet}"]);
-  assert.equal(CITY_LAUNCH_MAINNET, false);
 });
 
 test("the words: money rounded down to the cent, a dollar pair as dollars, Ukrainian digits, the half as ½", () => {
@@ -291,4 +291,57 @@ test("the words: money rounded down to the cent, a dollar pair as dollars, Ukrai
   assert.equal(claimFailureText({ code: CLAIM_CLOSED, stage: "before", message: "" }, null, "uk"), "Забрати тут можна буде разом із Лаунчем.");
   assert.equal(claimFailureText({ code: WALLET_REFUSED, stage: "before", message: "" }, "Phantom", "en"), "Phantom did not sign. Nothing was sent.");
   assert.equal(claimFailureText({ code: "SOMETHING", stage: "send", message: "" }, null, "en"), "No answer came back. If the claim landed, it shows in your wallet.");
+});
+
+/* «Моя вежа» (CITY-168): the coin's figures are the engine's market as it reads them; a launch not listed yet is named as it
+   landed, its earnings unread; the camera is one tap on a phone. */
+
+test("the tower's figures are the market's own, and a move to the pool ends the way there", () => {
+  const market = { price: { pair: 0.000005, usd: 0.000005 }, sinceLaunchBps: 590, holders: { count: 58, atLeast: true }, progress: { bps: 4_299, migrated: false } };
+  assert.deepEqual(towerFiguresOf(market), { price: market.price, sinceLaunchBps: 590, holders: 58, holdersAtLeast: true, progressPct: 42 });
+  assert.equal(towerFiguresOf({ ...market, progress: { bps: 10_000, migrated: true } }).progressPct, null);
+  assert.equal(towerFiguresOf(null), null);
+});
+
+test("the stand's market gives the tower's figures through the berth engine", async () => {
+  const engine = stand();
+  const answer = await engine.market(SPARK);
+  assert.equal(answer.ok, true);
+  const figures = towerFiguresOf(answer.data);
+  assert.equal(figures.holders, answer.data.holders.count);
+  assert.equal(figures.price.usd, answer.data.price.usd);
+});
+
+test("the price reads in dollars where the engine says them, rounded down, and the move never reads better than it is", () => {
+  const dollar = { symbol: "USDC", decimals: 6, dollar: true };
+  const sol = { symbol: "SOL", decimals: 9, dollar: false };
+  assert.equal(priceText({ pair: 0.000005, usd: 0.000005 }, dollar, "en"), "$0.000005");
+  assert.equal(priceText({ pair: 0.25, usd: null }, sol, "en"), "0.25 SOL");
+  assert.equal(moveText(599, "en"), "+5%");
+  assert.equal(moveText(-599, "en"), "−5%");
+  assert.equal(moveText(1200, "uk"), "+12 %");
+});
+
+test("a launch that just landed stands first, its earnings unread and never zero, until the cabinet lists it", () => {
+  const landed = { token: "Landed1111111111111111111111111111", symbol: "SUNNY", name: "Sunny", image: "data:image/webp;base64,AAAA", launchedAt: "2026-11-02T00:00:00.000Z", creator: STUB_CREATOR, preset: "classic" };
+  const listed = row();
+  const rows = withJustLanded([listed], [landed], STUB_CREATOR, STUB_PRESETS);
+  assert.deepEqual(rows.map((entry) => entry.symbol), ["SUNNY", "MOTH"]);
+  assert.equal(rows[0].earnings, null);
+  assert.equal(rows[0].claimable, false);
+  assert.equal(rows[0].image, null, "a data address is not the engine's picture");
+  assert.deepEqual(claimReady(rows[0], null), { can: false, why: "unread" });
+  /* Once listed, the cabinet's row is the only one; another wallet's launch, or an unknown preset, is not this window's. */
+  assert.deepEqual(withJustLanded([{ ...listed, token: landed.token }], [landed], STUB_CREATOR, STUB_PRESETS).length, 1);
+  assert.equal(withJustLanded([], [{ ...landed, creator: "another" }], STUB_CREATOR, STUB_PRESETS).length, 0);
+  assert.equal(withJustLanded([], [{ ...landed, preset: "none" }], STUB_CREATOR, STUB_PRESETS).length, 0);
+});
+
+test("on a phone the sheet opens the camera in one tap, and the liftoff lands on «Моя вежа», not on the trade window", () => {
+  const read = (file) => readFileSync(new URL(file, import.meta.url), "utf8");
+  const sheet = read("../../components/launch/LaunchSheet.tsx");
+  assert.match(sheet, /capture="environment"/);
+  assert.match(sheet, /openBerth\(result\.liftoff\.token\)/);
+  assert.doesNotMatch(read("./district.ts"), /city\.select\(liftoff\.token\)/);
+  assert.match(read("../../components/hud/Menu.tsx"), /openBerth\(\)/);
 });

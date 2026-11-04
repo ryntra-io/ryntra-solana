@@ -1,0 +1,478 @@
+/* The Guard window's contents (CITY-152): one field, one orange action, one verdict — mint when nothing stands
+   against it, amber when a person should look, flare when it stops. The glass, the head and the moving are the city's
+   one window frame (CITY-65). Tokens and the type scale from city/styles/city.module.css (CITY-11). */
+
+.display {
+  font-family: var(--font-display, system-ui), system-ui, sans-serif;
+  font-stretch: 125%;
+  font-variation-settings: 'wdth' 125;
+  font-weight: 900;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+}
+
+.framed {
+  --accent: #ff681c;
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 14px 16px 16px;
+  overflow-y: auto;
+  color: var(--ice);
+}
+
+.pending {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(100deg, transparent 30%, rgba(238, 241, 255, 0.05) 50%, transparent 70%) 0 0 / 220% 100%;
+  animation: sweep 1.4s ease-in-out infinite;
+}
+
+@keyframes sweep {
+  to {
+    background-position: -120% 0;
+  }
+}
+
+/* ---------- Before a paste: the emblem and one line ---------- */
+
+.hero {
+  display: grid;
+  justify-items: center;
+  gap: 10px;
+  padding: 10px 0 4px;
+  transition: padding 220ms ease-out;
+}
+
+.emblem {
+  width: 132px;
+  height: 132px;
+  display: block;
+  filter: drop-shadow(0 10px 28px rgba(255, 104, 28, 0.28));
+  transition:
+    width 220ms ease-out,
+    height 220ms ease-out;
+  animation: float 5.5s ease-in-out infinite;
+}
+
+.emblem svg {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+@keyframes float {
+  50% {
+    transform: translateY(-4px);
+  }
+}
+
+.heroSmall {
+  padding: 0;
+}
+
+.heroSmall .emblem {
+  width: 72px;
+  height: 72px;
+}
+
+.lead {
+  margin: 0;
+  font-size: var(--type-title);
+  text-align: center;
+}
+
+/* ---------- The field ---------- */
+
+.field {
+  position: relative;
+  background: rgba(255, 255, 255, 0.05);
+  box-shadow: inset 0 0 0 1px rgba(238, 241, 255, 0.1);
+  clip-path: polygon(10px 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%, 0 10px);
+  transition: box-shadow 160ms ease-out;
+}
+
+.field:focus-within {
+  box-shadow: inset 0 0 0 2px rgba(255, 104, 28, 0.6);
+}
+
+.paste {
+  display: block;
+  width: 100%;
+  min-height: 112px;
+  resize: none;
+  border: 0;
+  padding: 14px 14px 46px;
+  background: none;
+  outline: none;
+  font: 500 var(--type-body) / 1.45 var(--font-mono, ui-monospace), ui-monospace, monospace;
+  color: var(--ice);
+  overflow-wrap: anywhere;
+}
+
+.paste::placeholder {
+  font-family: var(--font-sans, system-ui), system-ui, sans-serif;
+  font-size: var(--type-base);
+  color: var(--text-dim);
+}
+
+.fieldTools {
+  position: absolute;
+  right: 8px;
+  bottom: 8px;
+  display: flex;
+  gap: 6px;
+}
+
+.tool {
+  min-height: 34px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0 12px;
+  border: 0;
+  font-size: var(--type-small);
+  font-weight: 700;
+  color: var(--ice);
+  background: rgba(255, 255, 255, 0.08);
+  clip-path: polygon(7px 0, 100% 0, 100% calc(100% - 7px), calc(100% - 7px) 100%, 0 100%, 0 7px);
+  cursor: pointer;
+}
+
+.tool svg {
+  width: 16px;
+  height: 16px;
+  color: var(--accent);
+}
+
+.tool:hover {
+  background: rgba(255, 104, 28, 0.16);
+}
+
+.intentToggle,
+.disclose {
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 0;
+  border: 0;
+  background: none;
+  font-size: var(--type-small);
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  color: var(--text-dim);
+  cursor: pointer;
+}
+
+.intentToggle svg,
+.disclose svg {
+  width: 16px;
+  height: 16px;
+}
+
+.intentToggle:hover,
+.disclose:hover {
+  color: var(--ice);
+}
+
+.intent {
+  width: 100%;
+  height: 48px;
+  border: 0;
+  padding: 0 14px;
+  outline: none;
+  font-size: var(--type-base);
+  color: var(--ice);
+  background: rgba(255, 255, 255, 0.05);
+  box-shadow: inset 0 0 0 1px rgba(238, 241, 255, 0.1);
+  clip-path: polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px);
+  animation: open 180ms ease-out both;
+}
+
+.intent:focus {
+  box-shadow: inset 0 0 0 2px rgba(255, 104, 28, 0.6);
+}
+
+.intent::placeholder {
+  color: var(--text-dim);
+}
+
+.failure {
+  margin: 0;
+  padding: 10px 12px;
+  font-size: var(--type-body);
+  color: #ffd2cc;
+  background: rgba(255, 75, 58, 0.12);
+  box-shadow: inset 2px 0 0 var(--flare);
+  animation: open 180ms ease-out both;
+}
+
+/* ---------- The one action ---------- */
+
+.dock {
+  position: sticky;
+  bottom: 0;
+  margin-top: auto;
+  padding-top: 10px;
+  background: linear-gradient(to bottom, rgba(11, 10, 20, 0), #0b0a14 10px);
+}
+
+.action,
+.secondary {
+  width: 100%;
+  min-height: 54px;
+  display: grid;
+  place-items: center;
+  padding: 0 20px;
+  border: 0;
+  font-size: var(--type-action);
+  clip-path: polygon(14px 0, 100% 0, 100% calc(100% - 14px), calc(100% - 14px) 100%, 0 100%, 0 14px);
+  cursor: pointer;
+  transition: transform 120ms ease-out;
+}
+
+.action {
+  color: var(--ink);
+  background: linear-gradient(100deg, #ff8a3d, var(--accent));
+  box-shadow: 0 10px 30px rgba(255, 104, 28, 0.25);
+}
+
+.action:active:not(:disabled),
+.secondary:active {
+  transform: scale(0.98);
+}
+
+.action:disabled {
+  cursor: default;
+  color: var(--text-dim);
+  background: rgba(255, 255, 255, 0.09);
+  box-shadow: none;
+}
+
+.secondary {
+  font-size: var(--type-body);
+  letter-spacing: 0.08em;
+  color: var(--ice);
+  background: rgba(255, 255, 255, 0.06);
+  box-shadow: inset 0 0 0 1px rgba(238, 241, 255, 0.16);
+}
+
+.waiting {
+  animation: breathe 1.6s ease-in-out infinite;
+}
+
+@keyframes breathe {
+  50% {
+    opacity: 0.6;
+  }
+}
+
+/* ---------- The verdict ---------- */
+
+.result {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  animation: open 220ms ease-out both;
+}
+
+.verdict {
+  --tone: var(--mint);
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 18px 18px;
+  background:
+    radial-gradient(120% 140% at 0% 0%, color-mix(in srgb, var(--tone) 22%, transparent), transparent 60%),
+    rgba(255, 255, 255, 0.04);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--tone) 45%, transparent);
+  clip-path: polygon(16px 0, 100% 0, 100% calc(100% - 16px), calc(100% - 16px) 100%, 0 100%, 0 16px);
+}
+
+.allow {
+  --tone: var(--mint);
+}
+
+.warn {
+  --tone: var(--amber);
+}
+
+.block {
+  --tone: var(--flare);
+}
+
+.verdictMark {
+  width: 46px;
+  height: 46px;
+  flex: none;
+  color: var(--tone);
+  filter: drop-shadow(0 0 14px color-mix(in srgb, var(--tone) 55%, transparent));
+}
+
+.verdictMark svg {
+  width: 100%;
+  height: 100%;
+}
+
+.verdictWord {
+  font-family: var(--font-display, system-ui), system-ui, sans-serif;
+  font-stretch: 125%;
+  font-variation-settings: 'wdth' 125;
+  font-weight: 900;
+  font-size: var(--type-headline);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--tone);
+}
+
+.line {
+  margin: 2px 2px 0;
+  font-size: var(--type-lead);
+  font-weight: 600;
+  line-height: 1.35;
+}
+
+.details {
+  display: grid;
+  gap: 14px;
+  animation: open 180ms ease-out both;
+}
+
+.reasons {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 8px;
+}
+
+.reason {
+  --tone: var(--text-dim);
+  display: grid;
+  grid-template-columns: 10px 1fr;
+  gap: 10px;
+  padding: 10px 12px;
+  background: rgba(255, 255, 255, 0.04);
+  clip-path: polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px);
+}
+
+.reason b {
+  font-size: var(--type-body);
+  font-weight: 700;
+}
+
+.reason p {
+  margin: 4px 0 0;
+  font-size: var(--type-small);
+  line-height: 1.45;
+  color: var(--text-dim);
+}
+
+.level_block {
+  --tone: var(--flare);
+}
+
+.level_warn {
+  --tone: var(--amber);
+}
+
+.level_unknown {
+  --tone: #9fa6c8;
+}
+
+.level_info {
+  --tone: rgba(238, 241, 255, 0.35);
+}
+
+.dot {
+  width: 8px;
+  height: 8px;
+  margin-top: 6px;
+  border-radius: 50%;
+  background: var(--tone);
+  box-shadow: 0 0 10px var(--tone);
+}
+
+.accounts {
+  font-family: var(--font-mono, ui-monospace), ui-monospace, monospace;
+}
+
+.moves h3 {
+  margin: 0 0 8px;
+  font-size: var(--type-small);
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+}
+
+.moves dl {
+  margin: 0;
+  display: grid;
+  gap: 6px;
+}
+
+.move {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  font-size: var(--type-body);
+}
+
+.move dt {
+  color: var(--text-dim);
+}
+
+.move dd {
+  margin: 0;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+  overflow-wrap: anywhere;
+}
+
+.out {
+  color: #ffb8ad;
+}
+
+.in {
+  color: var(--mint);
+}
+
+.muted {
+  margin: 0;
+  font-size: var(--type-small);
+  color: var(--text-dim);
+}
+
+/* Movement only: what opens is readable from its first frame, however slowly the frames come. */
+@keyframes open {
+  from {
+    transform: translateY(4px);
+  }
+}
+
+/* A phone's sheet, or a narrow window: the emblem steps back so the field and the action stay in reach. */
+@container window (max-width: 420px) {
+  .emblem {
+    width: 104px;
+    height: 104px;
+  }
+
+  .heroSmall .emblem {
+    width: 56px;
+    height: 56px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .emblem,
+  .waiting,
+  .pending {
+    animation: none;
+  }
+}

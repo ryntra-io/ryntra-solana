@@ -4,7 +4,9 @@ import type { ExchangeMode } from '../exchange/flag.ts';
  * The city's menu, the Deck: seven places on fixed
  * spots — Launch · Exchange · Earn on the left, Agents the diamond in the middle, Arena · Guard · Money on the right. A
  * place whose switch is closed stays on its spot with «Soon»; nothing moves when it opens. Exchange, Agents and the Arena
- * open a tray of their doors. The Exchange's place keeps its id `spot` (addresses, tests, the phone's shots).
+ * open a tray of their open doors — a door not open yet is not shown (CITY-188: no row of «Soon»), a tray with one open
+ * door opens it straight away, and a tray with none is a shut place. The Exchange's place keeps its id `spot` (addresses,
+ * tests, the phone's shots).
  */
 
 export type Place = 'launch' | 'spot' | 'earn' | 'agents' | 'arena' | 'guard' | 'money';
@@ -14,14 +16,15 @@ export const CENTER = 'agents' as const satisfies Place;
 export const RIGHT = ['arena', 'guard', 'money'] as const satisfies readonly Place[];
 export const PLACES: readonly Place[] = [...LEFT, CENTER, ...RIGHT];
 
-export type Door = 'swap' | 'spot' | 'futures' | 'hangar' | 'bots' | 'ring' | 'hack' | 'vault';
+export type Door = 'swap' | 'spot' | 'futures' | 'hangar' | 'bots' | 'garage' | 'ring' | 'hack' | 'vault';
 
 /** The places that open a tray, and their doors in order. */
 export const TRAYS = {
   // «Обмін»: Swap · Spot — the bridge is Money's Send to another network now (CITY-155);
   // Futures only as the door out to RXN, once it is live.
   spot: ['swap', 'spot', 'futures'],
-  agents: ['hangar', 'bots'],
+  // The agents at work: the Ring's agent in its hangar (CITY-50), the bots (CITY-134), the garage agent (CITY-29).
+  agents: ['hangar', 'bots', 'garage'],
   arena: ['ring', 'hack', 'vault'],
 } as const satisfies Partial<Record<Place, readonly Door[]>>;
 
@@ -56,6 +59,8 @@ export type Switches = Readonly<{
   futures: FuturesWay;
   hangar: boolean;
   bots: boolean;
+  /** The garage agent's window (CITY-29). */
+  garage: boolean;
   ring: boolean;
   hack: boolean;
   vault: boolean;
@@ -74,12 +79,12 @@ export function doorOpen(door: Door, on: Switches): boolean {
   }
 }
 
-/** A tray's doors on screen: Futures stands only where it leads somewhere; every other door, open or «Soon». */
+/** A tray's doors on screen: only the open ones, in order (Futures where it leads somewhere). */
 export function doorsOf(tray: Tray, on: Switches): Door[] {
-  return TRAYS[tray].filter((door) => door !== 'futures' || on.futures !== null);
+  return TRAYS[tray].filter((door) => doorOpen(door, on));
 }
 
-/** A place is open when its switch is, or — for a tray — when any of its doors is. A shut tray still opens, all «Soon». */
+/** A place is open when its switch is, or — for a tray — when any of its doors is; a shut tray is a shut place. */
 export function placeOpen(place: Place, on: Switches): boolean {
   return isTray(place) ? TRAYS[place].some((door) => doorOpen(door, on)) : on[place];
 }

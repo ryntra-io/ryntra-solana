@@ -12,6 +12,9 @@ test("the home's address names a window of the city, and only one it knows", () 
   assert.deepEqual(readOpenAsk("?open=oracle&market=evt_42"), { window: "oracle", market: "evt_42" });
   assert.deepEqual(readOpenAsk("?open=oracle&page=positions"), { window: "oracle", positions: true });
   assert.deepEqual(readOpenAsk("?open=oracle&market=%3Cscript%3E"), { window: "oracle" }, "a market id is a plain id or nothing");
+  // CITY-100: Earn's notes open Earn on «Mine» from Telegram and the phone; a tab Earn does not have opens it where it was.
+  assert.deepEqual(readOpenAsk("?open=earn&tab=mine"), { window: "earn", earnTab: "mine" });
+  assert.deepEqual(readOpenAsk("?open=earn&tab=vault"), { window: "earn" });
   for (const search of ["", "?coin=BONK", "?open=", "?open=vault", "?open=__proto__", "?open=TRADE"]) assert.equal(readOpenAsk(search), null, search);
 });
 

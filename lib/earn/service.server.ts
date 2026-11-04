@@ -18,7 +18,7 @@ import {
   submitEarn as submitWith,
   type EarnDeps,
 } from "./actions.ts";
-import { readHeld } from "./chain.server.ts";
+import { readHeld, readNative } from "./chain.server.ts";
 import type { EarnAdapter } from "./contract.ts";
 import { jupiterLendAdapter } from "./jupiter-adapter.ts";
 import { KAMINO_API_ENV } from "./kamino.ts";
@@ -39,6 +39,7 @@ export function earnDeps(env: NodeJS.ProcessEnv = process.env): EarnDeps {
     env,
     adapters: earnAdapters(env),
     readHeld,
+    readNative: (owner) => readNative(owner),
     /* One handle per call rather than one per process: the handle carries the record of which endpoint
        answered, and that record belongs to one action rather than to the server's whole uptime. */
     handle: () => createSolanaRpcHandle({ network: "mainnet", timeoutMs: 8_000, retries: 0 }),

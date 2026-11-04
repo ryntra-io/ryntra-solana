@@ -1,45 +1,19 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 
-import { docsCard } from "@/app/brand/page-card";
-import { localizedUrl, pageCardImage } from "@/app/seo";
-import { sitePageMetadata } from "@/app/site/seo";
-import { DOCS_UPDATED } from "@/lib/site/page-dates";
-import { publicServerLocale } from "@/lib/site/server-locale";
-import { breadcrumbList, jsonLdScript, webPage } from "@/lib/site/structured-data";
+import { CityDocument } from "@/city/components/pages/CityDocument";
+import { PALETTE } from "@/city/lib/palette";
+import { buildCityPageMetadata } from "@/app/seo";
 
-import { OVERVIEW } from "./content/start";
-import { DocsPage } from "./docs-page";
+/* `/docs` — the documentation of the city (CITY-180): a short opening and every section by group, with a search through their
+   headings. Each section stands at its own address (`[...slug]/page.tsx`); the old handbook's chapters lead to them
+   (`city/lib/docs/old-chapters.ts`). */
 
-export const revalidate = 3600;
+export const dynamic = "force-static";
 
-export async function generateMetadata(): Promise<Metadata> {
-  const locale = await publicServerLocale();
-  const card = docsCard("", locale);
-  return sitePageMetadata({
-    path: "/docs",
-    title: OVERVIEW.seoTitle?.[locale] ?? (locale === "uk" ? "Документація Ryntra" : "Ryntra Docs"),
-    description: OVERVIEW.summary[locale],
-    keywords: ["ryntra documentation", "solana trading", "phoenix perps", "launch a token on solana", "meteora grid", "tokenized stocks", "prediction markets"],
-    locale,
-    ...(card ? { image: pageCardImage(locale, ["docs"], card) } : {}),
-  });
-}
+export const metadata: Metadata = buildCityPageMetadata("docs", "/docs");
 
-export default async function Page() {
-  const locale = await publicServerLocale();
-  const url = localizedUrl("/docs", locale);
-  const name = locale === "uk" ? "Документація Ryntra" : "Ryntra Docs";
-  const graph = [
-    webPage({ type: "CollectionPage", url, name, description: OVERVIEW.summary[locale], locale, crumbs: [], extra: { dateModified: DOCS_UPDATED } }),
-    breadcrumbList(url, [
-      { name: "Ryntra", url: localizedUrl("/", locale) },
-      { name, url },
-    ]),
-  ];
-  return (
-    <>
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLdScript(graph) }} />
-      <DocsPage view={{ kind: "page", page: OVERVIEW }} />
-    </>
-  );
+export const viewport: Viewport = { themeColor: PALETTE.inkDeep, colorScheme: "dark" };
+
+export default function Page() {
+  return <CityDocument id="docs" />;
 }

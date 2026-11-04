@@ -30,6 +30,26 @@
   font-weight: 800;
   letter-spacing: 0.12em;
   text-transform: uppercase;
+  white-space: nowrap;
+}
+
+/* ⌘K or Ctrl K beside the words on a computer: the command line's keys, quiet. */
+.entryKey {
+  padding: 3px 6px;
+  font: 700 var(--type-micro) var(--font-ui, system-ui), system-ui, sans-serif;
+  letter-spacing: 0.04em;
+  color: var(--text-dim);
+  background: rgba(255, 255, 255, 0.06);
+  box-shadow: inset 0 0 0 1px rgba(238, 241, 255, 0.14);
+  border-radius: 3px;
+  white-space: nowrap;
+}
+
+/* A narrow desk: the key hint goes first, so the words keep one line. */
+@media (max-width: 1100px) {
+  .entryKey {
+    display: none;
+  }
 }
 
 .entry:hover,
@@ -384,12 +404,15 @@
   outline-offset: 2px;
 }
 
-/* A phone: the top bar has room for the spark alone; its words stay for screen readers. */
-@media (max-width: 560px) {
+/* A tablet or a phone: the top bar has room for the spark alone; its words stay for screen readers. */
+@media (max-width: 1023px) {
   .entry {
     width: 44px;
     padding: 0;
     justify-content: center;
+  }
+  .entryKey {
+    display: none;
   }
   .entryWord {
     position: absolute;

@@ -4,17 +4,20 @@ import { useFrame } from '@react-three/fiber';
 import { useMemo, useRef } from 'react';
 import * as THREE from 'three';
 import { useCity } from '@/city/lib/city/store';
+import { useGameMap } from '@/city/lib/game/map';
 import { PALETTE } from '@/city/lib/palette';
 import { Beacons } from '../assistant/Beacons';
 
 /**
- * The tower you picked: warm rings climb it and a light stands on its roof, so a flight always ends on it. Beside it,
- * the towers Ryntra's answer is about (CITY-10).
+ * The tower you picked, or your own one framed above «Моя вежа» (CITY-168): warm rings climb it and a light stands on its
+ * roof, so a flight always ends on it. Beside it, the towers Ryntra's answer is about (CITY-10).
  */
 export function Selected() {
   const selectedId = useCity((st) => st.selectedId);
   const layout = useCity((st) => st.layout);
-  const t = useMemo(() => layout.towers.find((p) => p.tower.id === selectedId) ?? null, [layout, selectedId]);
+  const framedId = useGameMap((st) => (st.view?.aboveSheet ? (st.view.ids[0] ?? null) : null));
+  const markedId = selectedId ?? framedId;
+  const t = useMemo(() => layout.towers.find((p) => p.tower.id === markedId) ?? null, [layout, markedId]);
   return (
     <>
       {t && <Rings key={t.tower.id} x={t.x} z={t.z} top={t.height} width={t.width} />}

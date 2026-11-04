@@ -313,3 +313,31 @@ export function createMockWorld(options: MockOptions = {}): WorldClient {
     },
   };
 }
+
+/**
+ * This device's resident, as the device's crews read it (`crew-mock.ts`): who, which quarter, how many points, and the
+ * builds the device's world kept. Null before a claim.
+ */
+export function mockResident(storage: StorageLike | null): { residentId: Id; quarter: Quarter; points: number; builds: { day: string }[] } | null {
+  const s = parse(storage?.getItem(MOCK_KEY) ?? null);
+  if (!s) return null;
+  return {
+    residentId: s.resident.id,
+    quarter: copy(s.quarter),
+    points: s.points.reduce((sum, p) => sum + p.delta, 0),
+    builds: s.events.filter((e) => e.kind === 'build').map((e) => ({ day: e.at.slice(0, 10) })),
+  };
+}
+
+/** Moves this device's quarter to a lot of Arrivals, as a crew's street does on the server: its street, cell and version. */
+export function moveMockQuarter(storage: StorageLike | null, cell: { x: number; z: number }, at: Date): Quarter | null {
+  const s = parse(storage?.getItem(MOCK_KEY) ?? null);
+  if (!s || !storage) return null;
+  s.quarter = { ...s.quarter, street: streetOf(cell.z), cell: { ...cell }, version: s.quarter.version + 1, updatedAt: at.toISOString() };
+  try {
+    storage.setItem(MOCK_KEY, JSON.stringify(s));
+  } catch {
+    return null;
+  }
+  return copy(s.quarter);
+}

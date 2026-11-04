@@ -39,15 +39,24 @@ export type LensContext = Readonly<{
   owned: ReadonlySet<string>;
   /** Ryntra's launches by mint: how far along the curve (0…100, null unread) and whether it moved to its pool. */
   launches: ReadonlyMap<string, Readonly<{ progress: number | null; migrated: boolean }>>;
+  /**
+   * Every new launch of the network by mint and the ring it stands on (CITY-142): the engine's Pulse, whichever
+   * launchpad it was born on. Read first; a tower it does not name is placed by the city's own reads.
+   */
+  stages?: ReadonlyMap<string, NewStage>;
   now: number;
 }>;
 
-export const EMPTY_CONTEXT: LensContext = { stocks: new Set(), owned: new Set(), launches: new Map(), now: 0 };
+export const EMPTY_CONTEXT: LensContext = { stocks: new Set(), owned: new Set(), launches: new Map(), stages: new Map(), now: 0 };
 
 /** Where a tower stands among the new ones, or null when it is not new. */
 export function newStage(t: PlacedTower, ctx: LensContext): NewStage | null {
+  const ring = ctx.stages?.get(t.tower.id);
+  if (ring) return ring;
   const launch = ctx.launches.get(t.tower.id);
   if (t.tower.district === 'docks') {
+    /* A graduation below the city's rule keeps its tower in the Docks (CITY-144): graduated, never «near». */
+    if (launch?.migrated) return 'graduated';
     const progress = launch?.progress ?? null;
     return progress !== null && progress >= NEAR_GRADUATION ? 'near' : 'fresh';
   }

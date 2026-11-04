@@ -62,6 +62,9 @@ const MINT_VARIABLE = "RYNTRA_REWARDS_PAYOUT_MINT";
 /** USDC on Solana mainnet. Overridable only so a stand can point elsewhere. */
 const DEFAULT_MINT = "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v";
 
+/** What a claim pays in today: a USDC transfer from the rewards treasury (`payRewardClaim`). Read by the programme's facts. */
+export const REWARD_CLAIM_ASSET = "USDC" as const;
+
 const BASE58 = /^[1-9A-HJ-NP-Za-km-z]{32,44}$/;
 
 export type RewardsTreasuryConfig =

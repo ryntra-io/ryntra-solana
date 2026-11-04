@@ -1,0 +1,646 @@
+/* The payer's page (CITY-156): one window of the city over a still of the live city — the window frame's own glass,
+   edge and corner brackets (city/components/window/window.module.css), the Money window's action, notes and fee line
+   (city/components/money/money.module.css). One amber action on the screen; mint only for money that arrived; flare
+   only when something is wrong. Tokens and the type scale from city/styles/city.module.css (the brandbook, CITY-11). */
+
+.page {
+  --accent: #ff681c;
+  --line: rgba(238, 241, 255, 0.07);
+
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  isolation: isolate;
+}
+
+/* A language other than the server's English: the words wait one frame for it (city/lib/i18n/langs.ts). */
+:global(html.city-lang-wait) .page :is(.top, .window) {
+  visibility: hidden;
+}
+
+/* ---------- The city behind ---------- */
+
+.backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: -2;
+  margin: 0;
+  background: var(--ink-deep);
+}
+
+.backdrop img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: 50% 60%;
+  animation: settle 1.6s ease-out both;
+}
+
+@keyframes settle {
+  from {
+    opacity: 0;
+    transform: scale(1.04);
+  }
+}
+
+.shade {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background:
+    radial-gradient(90% 70% at 50% 52%, rgba(6, 5, 12, 0.2), rgba(6, 5, 12, 0.82) 78%),
+    linear-gradient(to bottom, rgba(6, 5, 12, 0.7), rgba(6, 5, 12, 0.1) 26%, rgba(6, 5, 12, 0.1) 62%, rgba(6, 5, 12, 0.86));
+}
+
+/* ---------- The top: the mark home, the language ---------- */
+
+.top {
+  flex: none;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: max(14px, env(safe-area-inset-top)) var(--gutter) 0;
+}
+
+.brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 44px;
+  padding-right: 4px;
+  color: var(--ice);
+  text-decoration: none;
+}
+
+.brand:focus-visible,
+.lang button:focus-visible {
+  outline: 2px solid var(--amber);
+  outline-offset: 3px;
+}
+
+.word {
+  font-family: var(--font-display, system-ui), system-ui, sans-serif;
+  font-stretch: 125%;
+  font-variation-settings: 'wdth' 125;
+  font-weight: 900;
+  font-size: var(--type-title);
+  line-height: 1;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.lang {
+  display: inline-flex;
+  gap: 2px;
+  padding: 3px;
+  background: rgba(11, 10, 20, 0.72);
+  box-shadow: inset 0 0 0 1px rgba(238, 241, 255, 0.12);
+  clip-path: polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px);
+}
+
+.lang button {
+  min-width: 44px;
+  height: 38px;
+  border: 0;
+  padding: 0 10px;
+  background: transparent;
+  font-size: var(--type-caption);
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  color: var(--text-dim);
+}
+
+.lang button[aria-pressed='true'] {
+  color: var(--ice);
+  background: rgba(153, 69, 255, 0.34);
+}
+
+/* ---------- The window ---------- */
+
+.stage {
+  flex: 1;
+  display: grid;
+  place-items: center;
+  padding: 28px var(--gutter) max(32px, env(safe-area-inset-bottom));
+}
+
+.window {
+  position: relative;
+  width: min(780px, 100%);
+  /* The site's old sheet pads every <section> (app/globals.css); the city's window owns its own room. */
+  margin: 0;
+  padding: 0;
+  animation: rise 320ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+
+/* No code for a phone beside it (on its way, paid, ended): one column, as wide as it reads. */
+.single {
+  width: min(600px, 100%);
+}
+
+.narrow {
+  width: min(460px, 100%);
+}
+
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+}
+
+.panel {
+  position: relative;
+  overflow: hidden;
+  border-radius: 3px;
+  /* Solid, as every window of the city: what stands behind never shows through its figures. */
+  background: linear-gradient(165deg, #171230, #0a0912 62%, #08070e);
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 104, 28, 0.26),
+    0 34px 80px -28px rgba(0, 0, 0, 0.9),
+    0 0 0 1px rgba(6, 5, 12, 0.6);
+}
+
+/* A low violet glow from the window's top edge: the afterglow the city's panels carry. */
+.panel::before {
+  content: '';
+  position: absolute;
+  inset: 0 0 auto;
+  height: 120px;
+  pointer-events: none;
+  background: radial-gradient(70% 100% at 50% 0, rgba(153, 69, 255, 0.16), transparent 70%);
+}
+
+.bracket {
+  position: absolute;
+  z-index: 1;
+  width: 14px;
+  height: 14px;
+  border: 0 solid var(--accent);
+  opacity: 0.75;
+  pointer-events: none;
+}
+
+.nw {
+  left: -1px;
+  top: -1px;
+  border-left-width: 2px;
+  border-top-width: 2px;
+}
+
+.ne {
+  right: -1px;
+  top: -1px;
+  border-right-width: 2px;
+  border-top-width: 2px;
+}
+
+.sw {
+  left: -1px;
+  bottom: -1px;
+  border-left-width: 2px;
+  border-bottom-width: 2px;
+}
+
+.se {
+  right: -1px;
+  bottom: -1px;
+  border-right-width: 2px;
+  border-bottom-width: 2px;
+}
+
+.head {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 48px;
+  padding: 0 14px 0 16px;
+  border-bottom: 1px solid var(--line);
+}
+
+.icon {
+  flex: none;
+  display: grid;
+  width: 18px;
+  height: 18px;
+  color: var(--accent);
+}
+
+.icon svg {
+  width: 100%;
+  height: 100%;
+}
+
+.title {
+  flex: 1;
+  min-width: 0;
+  margin: 0;
+  overflow: hidden;
+  font-size: var(--type-base);
+  font-weight: 700;
+  letter-spacing: 0.01em;
+  line-height: 1.2;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+/* ---------- The status ---------- */
+
+.status {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  height: 30px;
+  padding: 0 12px;
+  font-size: var(--type-caption);
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  color: var(--amber);
+  background: rgba(255, 178, 63, 0.1);
+  clip-path: polygon(7px 0, 100% 0, 100% calc(100% - 7px), calc(100% - 7px) 100%, 0 100%, 0 7px);
+}
+
+.status i {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: currentColor;
+  box-shadow: 0 0 10px currentColor;
+}
+
+.status[data-shown='awaiting'] i,
+.status[data-shown='pending'] i,
+.status[data-shown='checking'] i {
+  animation: breathe 1.6s ease-in-out infinite;
+}
+
+.status[data-shown='paid'] {
+  color: var(--mint);
+  background: rgba(20, 241, 149, 0.1);
+}
+
+.status[data-shown='expired'] {
+  color: var(--text-dim);
+  background: rgba(238, 241, 255, 0.07);
+}
+
+.status[data-shown='expired'] i {
+  box-shadow: none;
+}
+
+.status[data-shown='checking'] {
+  color: #c9a2ff;
+  background: rgba(153, 69, 255, 0.14);
+}
+
+@keyframes breathe {
+  50% {
+    opacity: 0.35;
+  }
+}
+
+/* ---------- The body: what is asked, and how to pay ---------- */
+
+.body {
+  position: relative;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 28px;
+  padding: 24px 24px 22px;
+}
+
+.main {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.sum {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  min-width: 0;
+}
+
+.figure {
+  margin: 0;
+  min-width: 0;
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 0 12px;
+  font-family: var(--font-display, system-ui), system-ui, sans-serif;
+  font-stretch: 125%;
+  font-variation-settings: 'wdth' 125;
+  font-weight: 900;
+  font-size: clamp(34px, 9vw, 52px);
+  line-height: 1;
+  letter-spacing: 0.01em;
+  text-transform: uppercase;
+  font-variant-numeric: tabular-nums;
+  overflow-wrap: anywhere;
+}
+
+.unit {
+  font-size: 0.5em;
+  color: var(--amber);
+  letter-spacing: 0.04em;
+}
+
+.open {
+  font-size: clamp(24px, 6vw, 32px);
+}
+
+.got {
+  color: var(--mint);
+}
+
+.got .unit {
+  color: var(--mint);
+}
+
+.faded {
+  color: var(--text-dim);
+}
+
+.faded .unit {
+  color: var(--text-dim);
+}
+
+.facts {
+  display: grid;
+  gap: 6px;
+}
+
+.what {
+  margin: 0;
+  font-size: var(--type-lead);
+  font-weight: 600;
+  line-height: 1.35;
+  color: var(--ice);
+  overflow-wrap: anywhere;
+}
+
+.who {
+  margin: 0;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0 6px;
+  font-size: var(--type-body);
+  line-height: 1.4;
+  color: var(--text-dim);
+}
+
+.who b {
+  font-weight: 800;
+  color: var(--ice);
+}
+
+.address {
+  font-variant-numeric: tabular-nums;
+}
+
+.field {
+  display: grid;
+  gap: 6px;
+}
+
+.fieldLabel {
+  font-size: var(--type-micro);
+  font-weight: 800;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+}
+
+.amountBox {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  height: 58px;
+  padding: 0 16px;
+  background: rgba(238, 241, 255, 0.05);
+  box-shadow: inset 0 0 0 1px rgba(238, 241, 255, 0.12);
+  clip-path: polygon(10px 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%, 0 10px);
+}
+
+.amountBox:focus-within {
+  box-shadow: inset 0 0 0 1px rgba(255, 178, 63, 0.7);
+}
+
+.amountBox input {
+  flex: 1;
+  min-width: 0;
+  height: 100%;
+  border: 0;
+  padding: 0;
+  outline: none;
+  background: transparent;
+  color: var(--ice);
+  font-family: var(--font-display, system-ui), system-ui, sans-serif;
+  font-stretch: 125%;
+  font-variation-settings: 'wdth' 125;
+  font-weight: 900;
+  font-size: var(--type-headline);
+  font-variant-numeric: tabular-nums;
+}
+
+.amountBox input::placeholder {
+  color: rgba(238, 241, 255, 0.28);
+}
+
+.amountBox span {
+  font-size: var(--type-base);
+  font-weight: 800;
+  color: var(--amber);
+}
+
+.act {
+  display: grid;
+  gap: 10px;
+  margin-top: 4px;
+}
+
+/* The action's words stay whole on a phone: «Підтвердь у гаманці», «Pay 1,250.5 USDC». */
+.act > :first-child {
+  font-size: clamp(15px, 4.2vw, var(--type-action));
+}
+
+.ways {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+/* A way to pay that is a link: laid out as the Money window's buttons are. */
+.way {
+  display: grid;
+  place-items: center;
+  min-height: 48px;
+  text-align: center;
+  text-decoration: none;
+}
+
+.foot {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px 14px;
+  font-size: var(--type-small);
+  color: var(--text-dim);
+}
+
+.foot button {
+  border: 0;
+  padding: 0;
+  background: none;
+  font-size: var(--type-small);
+  font-weight: 700;
+  color: #c9a2ff;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.when {
+  font-variant-numeric: tabular-nums;
+}
+
+/* ---------- The code for a phone ---------- */
+
+.scan {
+  display: grid;
+  justify-items: center;
+  align-content: start;
+  gap: 12px;
+  padding: 14px 14px 12px;
+  background: rgba(238, 241, 255, 0.035);
+  box-shadow: inset 0 0 0 1px var(--line);
+}
+
+.qr {
+  width: 196px;
+  height: 196px;
+  display: grid;
+  place-items: center;
+  background: #fff6e6;
+  clip-path: polygon(12px 0, 100% 0, 100% calc(100% - 12px), calc(100% - 12px) 100%, 0 100%, 0 12px);
+}
+
+.qr img {
+  width: 180px;
+  height: 180px;
+  image-rendering: pixelated;
+}
+
+.scanWord {
+  font-size: var(--type-small);
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  color: var(--text-dim);
+}
+
+/* ---------- What happened ---------- */
+
+.result {
+  display: grid;
+  gap: 10px;
+  padding: 14px 16px;
+  background: rgba(238, 241, 255, 0.05);
+  box-shadow: inset 2px 0 0 var(--amber);
+}
+
+.resultGood {
+  box-shadow: inset 2px 0 0 var(--mint);
+}
+
+.resultLine {
+  margin: 0;
+  font-size: var(--type-body);
+  line-height: 1.45;
+}
+
+.links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.links a {
+  display: inline-grid;
+  place-items: center;
+  text-decoration: none;
+}
+
+/* ---------- Not found ---------- */
+
+.missing {
+  display: grid;
+  gap: 14px;
+  padding: 28px 24px 24px;
+}
+
+.missingTitle {
+  margin: 0;
+  font-family: var(--font-display, system-ui), system-ui, sans-serif;
+  font-stretch: 125%;
+  font-variation-settings: 'wdth' 125;
+  font-weight: 900;
+  font-size: clamp(26px, 7vw, 34px);
+  line-height: 1;
+  letter-spacing: 0.01em;
+  text-transform: uppercase;
+}
+
+.missingLine {
+  margin: 0 0 6px;
+  font-size: var(--type-base);
+  line-height: 1.45;
+  color: var(--text-dim);
+}
+
+.missing a {
+  text-decoration: none;
+}
+
+/* ---------- A phone ---------- */
+
+@media (max-width: 720px) {
+  .body {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 18px;
+    padding: 20px 18px 18px;
+  }
+
+  /* A phone does not scan its own screen: it pays with the wallet in it, or opens the page in one. */
+  .scan {
+    display: none;
+  }
+
+  .stage {
+    place-items: start center;
+    padding-top: 18px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .window,
+  .backdrop img {
+    animation: none;
+  }
+
+  .status i {
+    animation: none !important;
+  }
+}

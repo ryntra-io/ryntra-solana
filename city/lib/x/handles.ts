@@ -59,7 +59,7 @@ export const HANDLES: readonly Handle[] = [
     status: 'verified',
     checkedAt: '2026-08-06',
     checkedBy: 'the account holder',
-    source: 'the product\'s own pages name it (app/seo.ts TWITTER, the X links on /partners and /investors); the live profile read on 2026-08-06',
+    source: 'the product\'s own pages name it (app/seo.ts TWITTER, the X links at the foot of the site\'s pages and on /build); the live profile read on 2026-08-06',
     note: 'Older than HANDLE_FRESH_DAYS: recheck the profile (bio, name) before the first post of this playbook.',
   },
   {

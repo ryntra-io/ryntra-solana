@@ -4,6 +4,7 @@ import { solText } from '@/city/lib/earn/lst';
 import { useEarn } from '@/city/lib/earn/open';
 import { useMoneyStore } from '@/city/lib/money/store';
 import type { Words } from '@/city/lib/earn/words';
+import { DOLLAR_MINT, dollarText } from '@/city/lib/earn/dollar';
 import { CityFrame, Coin, Line, SolFigure, Wallets } from './bits';
 import type { MineFigures } from './useMine';
 import s from './earn.module.css';
@@ -63,6 +64,34 @@ export function Mine({ words, owner, mine }: { words: Words; owner: string | nul
   }
   return (
     <section className={s.tabBody} aria-label={words.tabs.mine}>
+      {mine.dollars.length ? (
+        <>
+          <h4 className={s.label}>{w.dollars}</h4>
+          <ul className={s.rows}>
+            {mine.dollars.map((row) => (
+              <li key={row.asset} className={`${s.row} ${s.rowLink}`}>
+                <button type="button" className={s.cardHit} onClick={() => useEarn.getState().openProduct('dollar')} aria-label={`${w.dollars} · ${row.asset}`} />
+                <Coin mint={DOLLAR_MINT[row.asset]} symbol={row.asset} />
+                <span className={s.names}>
+                  <b>{row.asset}</b>
+                  <span>{row.worthRaw !== null ? `${dollarText(row.worthRaw, row.asset)} ${row.asset}` : words.notMeasured}</span>
+                </span>
+                <span className={s.figures}>
+                  {row.earnedRaw !== null ? (
+                    <b className={`${s.figure} ${row.earnedRaw > 0n ? s.gain : ''} ${s.rowFigure}`}>
+                      +{dollarText(row.earnedRaw, row.asset)}
+                      <small> {row.asset}</small>
+                    </b>
+                  ) : (
+                    <b className={`${s.figure} ${s.rowFigure} ${s.dim}`}>—</b>
+                  )}
+                  <span>{row.earnedRaw !== null ? words.dollar.earnedSoFar : words.notMeasured}</span>
+                </span>
+              </li>
+            ))}
+          </ul>
+        </>
+      ) : null}
       {mine.lsts.length ? (
         <>
           <h4 className={s.label}>{w.lsts}</h4>

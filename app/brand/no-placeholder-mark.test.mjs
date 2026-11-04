@@ -107,25 +107,29 @@ test("no line-A route outside the shell draws an «R» in a square, through any 
   assert.deepEqual(failures, [], "a page outside the shell draws the mark from app/brand/, never a lettered tile");
 });
 
-test("the payment link, the credits it sells and its «not found» carry the brand from app/brand/", () => {
+test("the payment link, the credits it sells and its «not found» carry the city's mark (CITY-156)", () => {
   /* The assistant's credits are bought on the same `/pay/<id>` page (AI-12): one page, one identity. */
   assert.match(code(read("lib/assistant/credits/order-view.ts")), /\/pay\/\$\{/, "credits are paid on the payment page");
+  /* Since CITY-156 the page is a window of Ryntra City: the mark is the city's own (the brandbook, CITY-11), and nothing
+     of the old face — its lockup, its tile, the core's shell — is reached from either route. */
   for (const route of ["app/pay/[id]/page.tsx", "app/pay/[id]/not-found.tsx"]) {
-    assert.ok(graph(route).has("app/brand/ryntra-brand.tsx"), `${route} renders the brand lockup`);
+    const reached = graph(route);
+    assert.ok(reached.has("city/components/hud/Mark.tsx"), `${route} renders the city's mark`);
+    assert.ok(![...reached].some((path) => path.startsWith("app/brand/") || path.startsWith("components/") || path.startsWith("app/app/")), `${route} reaches nothing of the old face`);
   }
-  const brand = code(read("app/pay/pay-brand.tsx"));
-  assert.match(brand, /<RyntraBrand size=\{\d+\} \/>/);
-  assert.match(code(read("app/pay/[id]/pay-client.tsx")), /<PayBrand \/>/, "the payer page's header is the brand");
-  assert.match(code(read("app/pay/[id]/not-found.tsx")), /<PayBrand \/>/, "a wrong link still says whose page it is");
-  assert.doesNotMatch(read("app/pay/pay.module.css"), /\.brandMark\b/, "the tile's style is gone with it");
+  const page = code(read("city/components/pay/PayerPage.tsx"));
+  assert.match(page, /<Mark size=\{\d+\} \/>/, "the page's top is the mark, a way home");
+  assert.match(page, /export function Missing\(\)[\s\S]*?<Frame>/, "a wrong link still says whose page it is");
 });
 
-test("the short launch address's preview names Ryntra with the brand lockup and icon", () => {
+test("the short launch address's preview names Ryntra with the city's logo and icon (CITY-158)", () => {
   const serve = code(read("app/t/serve.ts"));
-  assert.match(serve, /const BRAND_LOCKUP = "\/brand\/ryntra-wordmark-light\.svg"/);
-  assert.ok(existsSync(join(ROOT, "public/brand/ryntra-wordmark-light.svg")), "the lockup the preview names is published");
+  assert.match(serve, /const BRAND_LOCKUP = "\/brand\/city\/logo-transparent\.png"/);
+  assert.ok(existsSync(join(ROOT, "public/brand/city/logo-transparent.png")), "the logo the preview names is published");
   assert.match(serve, /<img src="\$\{BRAND_LOCKUP\}" alt="Ryntra"/, "a path on the page's own host: its CSP takes images from itself only");
-  assert.match(serve, /<link rel="icon" href="\/brand\/favicon\.svg"/);
-  /* The card the preview points at draws the wordmark, never a lettered box. */
-  assert.match(read("app/brand/launch-og.tsx"), /WORDMARK_DARK_UI_DATA_URI/);
+  assert.match(serve, /<link rel="icon" href="\/icon\.svg"/);
+  assert.match(serve, /<body style="background:#06050C/, "the mark stands on the night ground, never a light one");
+  /* The card the preview points at is the token's tower card in the city, the mark the city's. */
+  assert.match(serve, /coinOpenGraph\(await readCoinCard\(launch\.token\)\)/);
+  assert.doesNotMatch(serve, /app\/brand\//);
 });

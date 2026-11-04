@@ -186,6 +186,15 @@ export function clientIp(headers: Headers): string {
   return first.length > 0 && first.length <= 64 && /^[0-9a-f:.]+$/i.test(first) ? first : "unknown";
 }
 
+/**
+ * The header an in-process call carries so the read window counts it under `key` — an address-shaped key the caller
+ * derived for its own principal (the AI-chat connector's per-wallet key, `lib/connector/ledger.ts`), never a person's
+ * address and never a place. The pair of `clientIp`: the window reads what this writes.
+ */
+export function readWindowHeaders(key: string): Record<string, string> {
+  return { "x-forwarded-for": key };
+}
+
 export function rateLimitHeaders(decision: RateLimitDecision): Record<string, string> {
   const headers: Record<string, string> = {
     "RateLimit-Limit": String(decision.limit),

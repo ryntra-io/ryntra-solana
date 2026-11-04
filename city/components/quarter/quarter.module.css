@@ -366,6 +366,13 @@
   .address b {
     display: none;
   }
+  /* With the crew's button in the bar (CITY-20) the way back is its arrow alone; the address keeps its room. */
+  .top:has([data-crew-entry]) .back {
+    padding: 0 12px;
+  }
+  .top:has([data-crew-entry]) .backLabel {
+    display: none;
+  }
 }
 
 /* ---------- A building on the engine: its object, its figures and their age, the steps that link one ---------- */

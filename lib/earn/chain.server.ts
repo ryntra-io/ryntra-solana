@@ -39,3 +39,15 @@ export async function readHeld(owner: string, mints: readonly string[], handle?:
   }
   return { held, host: rpc.host(), readAt: new Date().toISOString() };
 }
+
+/** The wallet's native SOL, lamports; null when the chain did not answer (CITY-192: a SOL deposit wraps it). */
+export async function readNative(owner: string, handle?: SolanaRpcHandle): Promise<bigint | null> {
+  const rpc = handle ?? createSolanaRpcHandle({ network: "mainnet", timeoutMs: 5_000, retries: 0 });
+  try {
+    const response = await withRpcDiscipline(rpc, (abortSignal) => rpc.rpc.getBalance(owner as never, { commitment: "confirmed" }).send({ abortSignal }));
+    const value = (response as { value?: unknown }).value;
+    return typeof value === "bigint" ? value : typeof value === "number" && Number.isSafeInteger(value) && value >= 0 ? BigInt(value) : null;
+  } catch {
+    return null;
+  }
+}

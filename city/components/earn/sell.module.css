@@ -1,0 +1,245 @@
+/* Sell Higher · Buy Lower · the Wheel (CITY-97): the Earn window's own language — violet for what is chosen, amber for
+   the one action, mint for what an order brought — with the city's tokens from city/styles/city.module.css. */
+
+.head {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.head .intents {
+  flex: 1;
+}
+
+.intents,
+.forms {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 6px;
+}
+
+.intent {
+  min-height: 48px;
+  border: 0;
+  padding: 8px 6px;
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--text-dim);
+  font-size: var(--type-small);
+  font-weight: 800;
+  clip-path: polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px);
+  transition: background 160ms ease, color 160ms ease;
+}
+.intent small {
+  font-weight: 700;
+  color: var(--text-dim);
+}
+.intentOn {
+  background: rgba(153, 69, 255, 0.3);
+  box-shadow: inset 0 -2px 0 var(--violet);
+  color: var(--ice);
+}
+.intent:disabled {
+  cursor: default;
+}
+
+.forms {
+  margin-bottom: 10px;
+}
+
+.markets {
+  display: flex;
+  gap: 6px;
+  margin: 0 -6px;
+  padding: 0 6px 4px;
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  overscroll-behavior-x: contain;
+  scrollbar-width: none;
+}
+.markets::-webkit-scrollbar {
+  display: none;
+}
+
+.market {
+  flex: 0 0 auto;
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  border: 0;
+  padding: 6px 14px 6px 8px;
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--text-dim);
+  scroll-snap-align: start;
+  clip-path: polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px);
+}
+.market b {
+  font-size: var(--type-small);
+  color: var(--ice);
+}
+.marketOn {
+  background: rgba(153, 69, 255, 0.3);
+  box-shadow: inset 0 -2px 0 var(--violet);
+}
+.market:disabled {
+  cursor: default;
+}
+
+.pct {
+  align-self: center;
+  margin-right: 10px;
+  font-size: var(--type-small);
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+}
+
+/* The amount's unit, coin or dollars (CITY-190): two quiet halves inside the field, the chosen one warm. */
+.units {
+  flex: none;
+  display: flex;
+  margin-right: 8px;
+  background: rgba(255, 255, 255, 0.05);
+  clip-path: polygon(6px 0, 100% 0, 100% calc(100% - 6px), calc(100% - 6px) 100%, 0 100%, 0 6px);
+}
+.unitPick {
+  min-width: 44px;
+  height: 40px;
+  padding: 0 10px;
+  border: 0;
+  background: none;
+  color: var(--text-dim);
+  font-size: var(--type-body);
+  font-weight: 800;
+  transition: background 160ms ease, color 160ms ease;
+}
+.unitPick:hover:not(:disabled) {
+  color: var(--ice);
+}
+.unitOn {
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--warm);
+}
+.unitPick:disabled {
+  cursor: default;
+}
+
+.echo {
+  margin: -4px 0 0;
+  font-size: var(--type-body);
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  color: var(--ice);
+}
+
+.steps {
+  display: flex;
+  gap: 6px;
+  margin-top: -4px;
+}
+.step {
+  min-height: 36px;
+  flex: 1;
+  border: 0;
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--text-dim);
+  font-size: var(--type-small);
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  clip-path: polygon(6px 0, 100% 0, 100% calc(100% - 6px), calc(100% - 6px) 100%, 0 100%, 0 6px);
+}
+.step:hover:not(:disabled) {
+  color: var(--ice);
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.orders {
+  display: grid;
+  gap: 8px;
+  margin-top: 18px;
+}
+.orderList {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.order {
+  display: grid;
+  gap: 8px;
+  padding: 12px;
+  background: rgba(238, 241, 255, 0.04);
+  box-shadow: inset 2px 0 0 rgba(153, 69, 255, 0.6);
+  clip-path: polygon(10px 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%, 0 10px);
+}
+.orderFilled {
+  box-shadow: inset 2px 0 0 var(--mint);
+}
+
+.orderHead {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+}
+.orderName {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+.orderName b {
+  font-size: var(--type-small);
+  color: var(--ice);
+}
+.orderName small {
+  font-size: var(--type-caption);
+  font-weight: 700;
+  color: var(--text-dim);
+  white-space: nowrap;
+}
+.orderStatus {
+  font-size: var(--type-caption);
+  font-weight: 800;
+  color: var(--text-dim);
+  white-space: nowrap;
+}
+.orderFilled .orderStatus {
+  color: var(--mint);
+}
+
+.orderFigures {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+  font-size: var(--type-body, 15px);
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  color: var(--warm);
+}
+
+.orderFigures small {
+  font-size: var(--type-small);
+  font-weight: 700;
+  color: var(--text-dim);
+}
+
+.orderActions > button {
+  min-height: 44px;
+  padding: 6px 10px;
+  font-size: var(--type-small);
+  line-height: 1.1;
+  white-space: normal;
+}
+
+.fill {
+  height: 3px;
+  background: rgba(238, 241, 255, 0.08);
+}
+.fill span {
+  display: block;
+  height: 100%;
+  background: linear-gradient(90deg, var(--violet), var(--mint));
+  transition: width 320ms ease;
+}

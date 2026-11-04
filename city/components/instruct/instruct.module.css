@@ -1,0 +1,447 @@
+/* The agent's card and «My instructions» (CITY-176), in the city's own words: dark glass, thin edges, warm figures,
+   chamfered corners, one action. The window frame brings the head; the body fills it and scrolls. */
+
+.pending {
+  height: 100%;
+  min-height: 240px;
+}
+
+.body {
+  min-height: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 20px 20px 18px;
+  color: var(--ice);
+}
+
+/* ---------- What the agent will do ---------- */
+
+.hero {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  padding: 16px;
+  background:
+    radial-gradient(120% 140% at 0% 0%, rgba(255, 178, 63, 0.16), transparent 60%),
+    linear-gradient(160deg, rgba(153, 69, 255, 0.14), rgba(11, 10, 20, 0.2));
+  box-shadow: inset 0 0 0 1px rgba(255, 178, 63, 0.26);
+  clip-path: polygon(var(--cut) 0, 100% 0, 100% calc(100% - var(--cut)), calc(100% - var(--cut)) 100%, 0 100%, 0 var(--cut));
+}
+
+.coin {
+  width: 48px;
+  height: 48px;
+  flex: none;
+  border-radius: 50%;
+  object-fit: cover;
+  background: rgba(255, 255, 255, 0.06);
+  box-shadow: 0 0 0 1px rgba(255, 231, 194, 0.22), 0 6px 22px rgba(255, 178, 63, 0.18);
+}
+
+.coinSmall {
+  width: 30px;
+  height: 30px;
+  flex: none;
+  border-radius: 50%;
+  object-fit: cover;
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.coinLetter {
+  display: grid;
+  place-items: center;
+  font-weight: 800;
+  color: var(--amber);
+  font-size: 0.5em;
+}
+
+.coin.coinLetter {
+  font-size: 20px;
+}
+
+.coinSmall.coinLetter {
+  font-size: 14px;
+}
+
+.heroText {
+  min-width: 0;
+  display: grid;
+  gap: 4px;
+}
+
+.kicker {
+  font-size: var(--type-micro);
+  font-weight: 800;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--amber);
+}
+
+.headline {
+  margin: 0;
+  font-family: var(--font-display, system-ui), system-ui, sans-serif;
+  font-size: var(--type-title-l);
+  font-weight: 700;
+  line-height: 1.2;
+  overflow-wrap: anywhere;
+}
+
+.sub {
+  margin: 2px 0 0;
+  font-size: var(--type-body);
+  font-variant-numeric: tabular-nums;
+  color: var(--warm);
+}
+
+/* ---------- One question, answered with taps ---------- */
+
+.ask {
+  display: grid;
+  gap: 10px;
+}
+
+.question {
+  margin: 0;
+  font-size: var(--type-base);
+  font-weight: 700;
+}
+
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.chip {
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 16px;
+  border: 0;
+  font: inherit;
+  font-size: var(--type-base);
+  font-weight: 700;
+  color: var(--ice);
+  background: rgba(255, 255, 255, 0.05);
+  box-shadow: inset 0 0 0 1px rgba(238, 241, 255, 0.18);
+  clip-path: polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px);
+  cursor: pointer;
+  transition:
+    background 140ms ease-out,
+    box-shadow 140ms ease-out;
+}
+
+.chip:hover,
+.chip:focus-visible {
+  background: rgba(255, 178, 63, 0.14);
+  box-shadow: inset 0 0 0 1px rgba(255, 178, 63, 0.6);
+}
+
+.chip .coinSmall {
+  width: 22px;
+  height: 22px;
+  margin-left: -6px;
+}
+
+/* ---------- The lines read before the press ---------- */
+
+.problem,
+.notice {
+  margin: 0;
+  font-size: var(--type-body);
+  font-weight: 600;
+}
+
+.problem {
+  color: var(--flare);
+}
+
+.notice {
+  color: var(--warm);
+}
+
+.dock {
+  margin-top: auto;
+  display: grid;
+  gap: 10px;
+}
+
+.fee {
+  margin: 0;
+  font-size: var(--type-body);
+  font-variant-numeric: tabular-nums;
+  color: var(--ice);
+  opacity: 0.86;
+}
+
+.action {
+  width: 100%;
+  height: 56px;
+  padding: 0 20px;
+  border: 0;
+  font-family: var(--font-display, system-ui), system-ui, sans-serif;
+  font-size: var(--type-action);
+  font-weight: 700;
+  color: var(--ink);
+  background: linear-gradient(100deg, var(--warm), var(--amber));
+  clip-path: polygon(14px 0, 100% 0, 100% calc(100% - 14px), calc(100% - 14px) 100%, 0 100%, 0 14px);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  cursor: pointer;
+  transition: transform 120ms ease-out;
+}
+
+.action:active:not(:disabled) {
+  transform: scale(0.98);
+}
+
+.action:disabled {
+  cursor: default;
+  background: rgba(255, 255, 255, 0.09);
+  color: var(--text-dim);
+}
+
+.waiting {
+  animation: breathe 1.6s ease-in-out infinite;
+}
+
+@keyframes breathe {
+  50% {
+    opacity: 0.6;
+  }
+}
+
+/* ---------- Details ---------- */
+
+.detailsBox {
+  display: grid;
+  gap: 10px;
+}
+
+.more {
+  justify-self: center;
+  min-height: 40px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0 12px;
+  border: 0;
+  background: none;
+  font: inherit;
+  font-size: var(--type-body);
+  font-weight: 700;
+  color: var(--ice);
+  opacity: 0.8;
+  cursor: pointer;
+}
+
+.chevronUp {
+  display: inline-flex;
+  transform: rotate(180deg);
+}
+
+.details {
+  margin: 0;
+  display: grid;
+  gap: 10px;
+  padding: 14px 16px;
+  background: rgba(255, 255, 255, 0.035);
+  box-shadow: inset 0 0 0 1px rgba(238, 241, 255, 0.1);
+}
+
+.details > div {
+  display: grid;
+  gap: 2px;
+}
+
+.details dt {
+  font-size: var(--type-micro);
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--amber);
+}
+
+.details dd {
+  margin: 0;
+  font-size: var(--type-body);
+  overflow-wrap: anywhere;
+}
+
+.how {
+  margin: 0;
+  font-size: var(--type-body);
+  line-height: 1.45;
+}
+
+/* ---------- Done ---------- */
+
+.ending {
+  margin: auto 0;
+  display: grid;
+  justify-items: center;
+  gap: 12px;
+  padding: 28px 20px 20px;
+  text-align: center;
+}
+
+.endMark {
+  width: 76px;
+  height: 76px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  color: var(--ink);
+  background: linear-gradient(140deg, var(--warm), var(--amber));
+  box-shadow: 0 0 0 8px rgba(255, 178, 63, 0.12), 0 10px 40px rgba(255, 178, 63, 0.35);
+}
+
+.endTitle {
+  margin: 6px 0 0;
+  font-family: var(--font-display, system-ui), system-ui, sans-serif;
+  font-size: var(--type-title);
+  font-weight: 700;
+}
+
+.endLine {
+  margin: 0 0 12px;
+  font-size: var(--type-base);
+  color: var(--warm);
+}
+
+/* ---------- My instructions ---------- */
+
+.listBody {
+  display: grid;
+  gap: 12px;
+  padding: 14px 14px 18px;
+}
+
+.rows {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 8px;
+}
+
+.row {
+  min-height: 64px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 12px;
+  background: linear-gradient(100deg, rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0.02));
+  box-shadow: inset 0 0 0 1px rgba(238, 241, 255, 0.1);
+  clip-path: polygon(10px 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%, 0 10px);
+}
+
+.rowText {
+  min-width: 0;
+  flex: 1;
+  display: grid;
+  gap: 3px;
+}
+
+/* The whole instruction is read, never cut to an ellipsis: on a phone it wraps to a second line. */
+.rowTitle {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  overflow: hidden;
+  overflow-wrap: anywhere;
+  font-size: var(--type-base);
+  font-weight: 700;
+  line-height: 1.3;
+}
+
+.state {
+  font-size: var(--type-small);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.tone_calm {
+  color: var(--warm);
+}
+
+.tone_hot {
+  color: var(--amber);
+}
+
+.tone_good {
+  color: var(--mint);
+}
+
+.tone_quiet {
+  color: var(--ice);
+  opacity: 0.7;
+}
+
+.rowGo,
+.rowCancel {
+  min-height: 44px;
+  flex: none;
+  padding: 0 12px;
+  border: 0;
+  font: inherit;
+  font-size: var(--type-small);
+  font-weight: 800;
+  cursor: pointer;
+  clip-path: polygon(7px 0, 100% 0, 100% calc(100% - 7px), calc(100% - 7px) 100%, 0 100%, 0 7px);
+}
+
+.rowGo {
+  color: var(--ink);
+  background: linear-gradient(100deg, var(--warm), var(--amber));
+}
+
+.rowCancel {
+  color: var(--ice);
+  background: rgba(255, 255, 255, 0.06);
+  box-shadow: inset 0 0 0 1px rgba(238, 241, 255, 0.16);
+}
+
+.rowCancel:disabled {
+  cursor: default;
+  opacity: 0.5;
+}
+
+.empty {
+  min-height: 100%;
+  display: grid;
+  align-content: center;
+  justify-items: center;
+  gap: 12px;
+  padding: 20px;
+  text-align: center;
+}
+
+.emptyArt {
+  width: 100%;
+  max-width: 380px;
+  aspect-ratio: 16 / 9;
+  object-fit: cover;
+  clip-path: polygon(var(--cut) 0, 100% 0, 100% calc(100% - var(--cut)), calc(100% - var(--cut)) 100%, 0 100%, 0 var(--cut));
+  box-shadow: inset 0 0 0 1px rgba(255, 178, 63, 0.25);
+}
+
+.emptyTitle {
+  margin: 8px 0 0;
+  font-family: var(--font-display, system-ui), system-ui, sans-serif;
+  font-size: var(--type-title);
+  font-weight: 700;
+}
+
+.emptyHint {
+  margin: 0 0 8px;
+  font-size: var(--type-base);
+  color: var(--warm);
+}
+
+.empty .action {
+  max-width: 320px;
+}

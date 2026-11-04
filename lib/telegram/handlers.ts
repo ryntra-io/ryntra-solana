@@ -20,6 +20,7 @@ import { assistantCallback, assistantCommand, assistantMessage, assistantStart, 
 import { rememberChat } from "@/lib/assistant/telegram/link";
 import { assistantBotDeps } from "@/lib/assistant/telegram/runtime.server";
 import { ensureBotProfile } from "@/lib/assistant/telegram/profile";
+import { handleReportPress } from "@/city/lib/autopilot/report-telegram.server";
 import { answerCallback, editMessage, editReplyMarkup, sendForceReply, sendMessage, tg, type InlineKeyboard } from "./api";
 
 /**
@@ -234,6 +235,8 @@ async function handleCallback(cb: TgCallback) {
     return;
   }
   if (await assistantCallback(assistantBotDeps(), cb)) return;
+  /* CITY-194: the agent's daily report — «Turn off daily report» and back on (`agr:…`). */
+  if (await handleReportPress(cb)) return;
   const state = (await getState(user.id)) ?? (await ensureState(user));
   const lang = langOf(state, user.language_code);
   const c = BETA_COPY[lang];

@@ -6,11 +6,13 @@ import { CoinIcon } from '@/city/components/chart/CoinIcon';
 import { digits, useWords, type TextKey } from '@/city/lib/i18n/dict';
 import { useCity } from '@/city/lib/city/store';
 import { SCOUTS_ART, scoutsSrcSet } from '@/city/lib/scouts/art';
+import { openPartners } from '@/city/lib/partners/store';
 import { useScouts } from '@/city/lib/scouts/store';
 import { ago, figure, flaggedMints, linkText, screenOf, solPrice, xIntent, type ScoutRow, type ScoutsView } from '@/city/lib/scouts/view';
 import { ticker } from '@/city/lib/trade/format';
 import { useWallet } from '@/city/lib/trade/wallet';
 import { Connect } from '../money/bits';
+import { PARTNERS } from '../partners/words';
 import { FlagGlyph, KindGlyph, XGlyph } from './glyphs';
 import s from './scouts.module.css';
 import { SCOUTS } from './words';
@@ -254,6 +256,7 @@ function Row({ row, sol }: { row: ScoutRow; sol: number | null }) {
 /** «How shares work», behind «i»: the Growth line's rules as they apply to this wallet. Payouts open later, in SOL. */
 function Rules({ view, sol }: { view: ScoutsView; sol: number | null }) {
   const w = useWords(SCOUTS);
+  const partners = useWords(PARTNERS).kicker;
   const pending = figure(view.pending, sol);
   const rankKey = view.rank ? RANK_LABEL[view.rank.toUpperCase()] : undefined;
   const rank = view.rank ? (rankKey ? w[rankKey] : view.rank.toLowerCase()) : null;
@@ -287,6 +290,20 @@ function Rules({ view, sol }: { view: ScoutsView; sol: number | null }) {
       <dt>{w.paidIn}</dt>
       <dd>{w.paidInSoon}</dd>
       <dd className={s.rulesFoot}>{w.rulesFoot}</dd>
+      {/* The partner programme (CITY-126): the whole offer and «Мій район», one tap away. */}
+      <dd className={s.rulesFoot}>
+        <button
+          type="button"
+          className={s.moreToggle}
+          onClick={() => {
+            useScouts.getState().close();
+            openPartners();
+          }}
+        >
+          {partners}
+          <span className={s.chevron} aria-hidden="true" style={{ transform: 'rotate(-45deg)' }} />
+        </button>
+      </dd>
     </dl>
   );
 }

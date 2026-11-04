@@ -2,10 +2,14 @@
 
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { AGENTS_OPEN } from '@/city/lib/agent/flag';
+import { GARAGE_OPEN } from '@/city/lib/agent/garage/flag';
+import { toggleGarage } from '@/city/lib/agent/garage/show';
+import { useGarage } from '@/city/lib/agent/garage/store';
 import { useAgent } from '@/city/lib/agent/store';
 import { openExternal } from '@/city/lib/app-bridge/page';
 import { playTick } from '@/city/lib/audio/engine';
 import { useBackPanel } from '@/city/lib/back/panels';
+import { closeBots, openBots, useBotsWindow } from '@/city/lib/bots/open';
 import { useCity } from '@/city/lib/city/store';
 import { openTradeCard } from '@/city/lib/coin/open';
 import { useChrome } from '@/city/lib/deck/chrome';
@@ -18,6 +22,8 @@ import { EXCHANGE_EXIT, EXCHANGE_MODE, EXCHANGE_SHOWN } from '@/city/lib/exchang
 import { marketForTower } from '@/city/lib/exchange/markets';
 import { DEFAULT_SYMBOL, useExchange } from '@/city/lib/exchange/store';
 import { useLayer } from '@/city/lib/game/layer';
+import { GUARD_OPEN } from '@/city/lib/guard/flag';
+import { useGuard } from '@/city/lib/guard/store';
 import { useWords } from '@/city/lib/i18n/dict';
 import { isNamed } from '@/city/lib/market/types';
 import { MONEY_OPEN } from '@/city/lib/money/flag';
@@ -41,6 +47,7 @@ import {
   ChevronGlyph,
   EarnGlyph,
   FuturesGlyph,
+  GarageGlyph,
   GuardGlyph,
   HackGlyph,
   HangarGlyph,
@@ -71,6 +78,7 @@ const DOOR_GLYPH: Readonly<Record<Door, () => ReactNode>> = {
   futures: FuturesGlyph,
   hangar: HangarGlyph,
   bots: BotGlyph,
+  garage: GarageGlyph,
   ring: RingGlyph,
   hack: HackGlyph,
   vault: VaultGlyph,
@@ -92,6 +100,7 @@ const DOOR_WORD = {
   futures: 'futures',
   hangar: 'hangar',
   bots: 'bots',
+  garage: 'garage',
   ring: 'ring',
   hack: 'hack',
   vault: 'vault',
@@ -103,6 +112,7 @@ const DOOR_HINT = {
   futures: 'hintFutures',
   hangar: 'hintHangar',
   bots: 'hintBots',
+  garage: 'hintGarage',
   ring: 'hintRing',
   hack: 'hintHack',
   vault: 'hintVault',
@@ -160,31 +170,37 @@ function openHangar(): void {
  * The Deck, the city's menu: Launch · Spot · Earn, the Agents diamond, Arena · Guard · Money
  * — every place on its spot, the ones not open yet with «Soon». Spot, Agents and the Arena open a tray of their doors;
  * Futures in Spot's tray leads to RXN once it is live, or to Phoenix while the wallet still holds something there. An
- * arrow on its edge hides it; another brings it back. Nothing here signs or moves money: each place opens its own window.
+ * arrow on its edge hides it; another brings it back. Nothing here signs or moves money: each place opens its own window
+ * — Agents' «Bots» the bots window (CITY-134), where the scout is one of the bots, and «Garage» the garage agent's window
+ * (CITY-29).
  */
-export function Deck({ onAgent }: { onAgent: () => void }) {
+export function Deck() {
   const w = useWords(DECK);
   const launch = useLaunchDistrict();
   const shown = useChrome((st) => st.bottom);
   const toggle = useChrome((st) => st.toggle);
   const [tray, setTray] = useState<Tray | null>(null);
-  const [soon, setSoon] = useState<Place | Door | null>(null);
+  const [soon, setSoon] = useState<Place | null>(null);
   const ref = useRef<HTMLElement>(null);
 
   const trading = useTrade((st) => st.open);
   const exchanging = useExchange((st) => st.open);
   const moneyOpen = useMoney((st) => st.open);
-  const botsOn = useAgent((st) => st.on || st.panel !== 'none');
+  const scouting = useAgent((st) => st.on || st.panel !== 'none');
+  const botsWindow = useBotsWindow((st) => st.open);
+  const garageWindow = useGarage((st) => st.open || st.away);
   const harboring = useHarbor((st) => st.open);
   const earnWindow = useEarn((st) => st.open);
   const earning = EARN_OPEN ? earnWindow : harboring;
   const vaulting = useVault((st) => st.open);
+  const guarding = useGuard((st) => st.open);
 
   const on: Switches = {
     launch: launch.open,
     // Earn's own window (CITY-92) where its switch is open; until then the Harbor stands in for it.
     earn: EARN_OPEN || HARBOR_OPEN,
-    guard: false,
+    // «Охорона» (CITY-152): the pre-sign check's window, behind its own switch until the operator opens it.
+    guard: GUARD_OPEN,
     money: MONEY_OPEN,
     trade: TRADE_OPEN,
     spot: SPOT_OPEN,
@@ -192,6 +208,8 @@ export function Deck({ onAgent }: { onAgent: () => void }) {
     futures: futuresWay(EXCHANGE_MODE, RXN_OPEN, false),
     hangar: RING_OPEN,
     bots: AGENTS_OPEN,
+    // The garage agent (CITY-29): a character without money — reports, heads-ups and advice; behind its own switch.
+    garage: GARAGE_OPEN,
     ring: false,
     hack: false,
     vault: VAULT_OPEN,
@@ -200,9 +218,9 @@ export function Deck({ onAgent }: { onAgent: () => void }) {
     launch: launch.showing,
     spot: trading || exchanging || tray === 'spot',
     earn: earning,
-    agents: botsOn || tray === 'agents',
+    agents: botsWindow || scouting || tray === 'agents' || garageWindow,
     arena: vaulting || tray === 'arena',
-    guard: false,
+    guard: guarding,
     money: moneyOpen,
   };
 
@@ -247,9 +265,18 @@ export function Deck({ onAgent }: { onAgent: () => void }) {
   }, [tray, toPhoenix]);
 
   const go = (place: Place) => {
+    if (!placeOpen(place, on)) {
+      tick();
+      return setSoon(place);
+    }
+    if (isTray(place)) {
+      // One open door is the place itself: no tray to pick from.
+      const only = doorsOf(place, on);
+      if (only.length === 1) return enter(only[0]);
+      tick();
+      return setTray((open) => (open === place ? null : place));
+    }
     tick();
-    if (isTray(place)) return setTray((open) => (open === place ? null : place));
-    if (!placeOpen(place, on)) return setSoon(place);
     setTray(null);
     switch (place) {
       case 'launch':
@@ -258,6 +285,8 @@ export function Deck({ onAgent }: { onAgent: () => void }) {
         useAgent.getState().closePanel();
         if (EARN_OPEN) return useEarn.getState().open ? closeEarn() : openEarn();
         return useHarbor.getState().open ? useHarbor.getState().hide() : useHarbor.getState().show();
+      case 'guard':
+        return useGuard.getState().open ? useGuard.getState().close() : useGuard.getState().show();
       case 'money':
         return useMoney.getState().open ? useMoney.getState().close() : openMoney();
     }
@@ -265,7 +294,7 @@ export function Deck({ onAgent }: { onAgent: () => void }) {
 
   const enter = (door: Door) => {
     tick();
-    if (!doorOpen(door, on)) return setSoon(door);
+    if (!doorOpen(door, on)) return;
     setTray(null);
     switch (door) {
       case 'swap':
@@ -277,7 +306,9 @@ export function Deck({ onAgent }: { onAgent: () => void }) {
       case 'hangar':
         return openHangar();
       case 'bots':
-        return onAgent();
+        return useBotsWindow.getState().open ? closeBots() : openBots();
+      case 'garage':
+        return toggleGarage();
       case 'vault':
         return openVault();
     }
@@ -293,15 +324,14 @@ export function Deck({ onAgent }: { onAgent: () => void }) {
         key={place}
         type="button"
         className={[s.item, center && s.center, place === 'money' && s.quiet, lit[place] && s.on, !open && s.shut].filter(Boolean).join(' ')}
-        aria-label={open || isTray(place) ? label : w.opensSoon(label)}
+        aria-label={open ? label : w.opensSoon(label)}
         aria-pressed={!isTray(place) && open ? lit[place] : undefined}
-        aria-expanded={isTray(place) ? tray === place : undefined}
+        aria-expanded={isTray(place) && open && doorsOf(place, on).length > 1 ? tray === place : undefined}
         data-hint={w[PLACE_HINT[place]]}
         data-deck-place={place}
         onClick={() => go(place)}
       >
-        {/* A tray always opens — its doors say «Soon» themselves; a place of its own says it here. */}
-        {!open && !isTray(place) && <span className={s.soonTag}>{w.soon}</span>}
+        {/* A place not open yet is dimmed, no tag: a tap says «opens soon» (CITY-188). */}
         {soon === place && <span className={s.bubble}>{w.opensSoon(label)}</span>}
         {center ? (
           <span className={s.diamondBox}>
@@ -320,7 +350,6 @@ export function Deck({ onAgent }: { onAgent: () => void }) {
   };
 
   const door = (id: Door) => {
-    const open = doorOpen(id, on);
     const out = id === 'futures' && on.futures === 'rxn';
     const label = w[DOOR_WORD[id]];
     const Glyph = DOOR_GLYPH[id];
@@ -328,21 +357,19 @@ export function Deck({ onAgent }: { onAgent: () => void }) {
       <button
         key={id}
         type="button"
-        className={[s.door, !open && s.shut].filter(Boolean).join(' ')}
-        aria-label={out ? w.futuresOnRxn : open ? label : w.opensSoon(label)}
+        className={s.door}
+        aria-label={out ? w.futuresOnRxn : label}
         data-hint={w[out ? 'hintRxn' : DOOR_HINT[id]]}
         data-deck-door={id}
         data-deck-out={out ? '' : undefined}
         onClick={() => enter(id)}
       >
-        {!open && <span className={s.soonTag}>{w.soon}</span>}
         {out && (
           <span className={s.outTag}>
             {w.rxn}
             <OutGlyph />
           </span>
         )}
-        {soon === id && <span className={s.bubble}>{w.opensSoon(label)}</span>}
         <span className={s.doorGlyph}>
           <Glyph />
         </span>
@@ -362,7 +389,7 @@ export function Deck({ onAgent }: { onAgent: () => void }) {
         {item(CENTER)}
         {RIGHT.map(item)}
         {tray && (
-          <div key={tray} className={s.tray} style={{ ['--doors' as string]: doors.length }} role="group" aria-label={w[tray]} data-deck-tray={tray}>
+          <div key={`tray-${tray}`} className={s.tray} style={{ ['--doors' as string]: doors.length }} role="group" aria-label={w[tray]} data-deck-tray={tray}>
             {doors.map(door)}
           </div>
         )}

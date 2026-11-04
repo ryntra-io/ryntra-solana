@@ -165,7 +165,7 @@ export function registerSeekerConnectOnce(overrides: Partial<SeekerRegistrationD
         /* What the Seeker wallet shows on its consent screen: our name, this
            exact origin, and the mark — the icon path is resolved against the
            origin. */
-        identity: { name: "Ryntra", uri: deps.origin(), icon: "/brand/icon-192.png" },
+        identity: { name: "Ryntra", uri: deps.origin(), icon: "/brand/city/icon-192.png" },
         relayDomain: seekerRelayDomain(),
         chain: SEEKER_CHAIN,
         presenter: pagePresenter(ui),

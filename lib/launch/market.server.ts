@@ -82,6 +82,8 @@ export type LaunchMarketFacts = Readonly<{
   creatorTradesComplete: boolean;
   supplyRaw: string;
   graduated: Readonly<{ at: number; signature: string }> | null;
+  /** The creation's block and time, when the history read reached it; null otherwise (L3: the launch slot). */
+  created: Readonly<{ slot: number; at: number | null }> | null;
   /** The chain's state the read was made from: the curve with its config's prices and segments, the graduated pool. */
   state: MarketState;
   /** Every account of the mint with a balance, from the node's scan; null when the node would not answer it. */
@@ -456,6 +458,7 @@ async function assembleInTwo(deps: MarketDeps, token: string, onFirst: (facts: L
       creatorTradesComplete: history.complete || creatorRead.complete,
       supplyRaw: state.supplyRaw,
       graduated: history.graduated,
+      created: history.created,
       state,
       mintAccounts: read.accounts,
       foundHolders: read.balances,

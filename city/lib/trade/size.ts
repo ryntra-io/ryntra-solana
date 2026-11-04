@@ -63,9 +63,9 @@ export function shareOf(amount: bigint, max: bigint): number {
  * What the slider writes at a share: a short amount, rounded down — but a chip's share and the two ends exactly, so
  * the slider at 50 is the 50 % chip and at 100 is MAX.
  */
-export function slideAmount(max: bigint, share: number): bigint {
+export function slideAmount(max: bigint, share: number, chips: readonly number[] = SHARES): bigint {
   const exact = amountAt(max, share);
-  if (share <= 0 || share >= 100 || (SHARES as readonly number[]).includes(share)) return exact;
+  if (share <= 0 || share >= 100 || chips.includes(share)) return exact;
   const length = exact.toString().length;
   if (length <= SLIDE_DIGITS) return exact;
   const unit = 10n ** BigInt(length - SLIDE_DIGITS);
@@ -78,7 +78,8 @@ export function amountText(raw: bigint, decimals: number): string {
 }
 
 export type Chip = Readonly<{
-  share: Share;
+  /** 25, 50, 75, 100 — or the person's own sale chips (CITY-87, `city/lib/settings/trade.ts`). */
+  share: number;
   /** 25%, 50%, 75%, MAX. */
   label: string;
   /** The exact amount the chip writes, in raw units of the coin spent. */
@@ -97,14 +98,17 @@ export type Sizing = Readonly<{
   share: number | null;
 }>;
 
-/** The chips and the slider for an amount (raw, or null when the field holds none) against the most. */
-export function sizingOf(max: bigint | null, amountRaw: string | null): Sizing {
+/**
+ * The chips and the slider for an amount (raw, or null when the field holds none) against the most. `shares`: the
+ * chips' shares — the person's own sale chips when selling (CITY-87); 25, 50, 75, MAX otherwise.
+ */
+export function sizingOf(max: bigint | null, amountRaw: string | null, shares: readonly number[] = SHARES): Sizing {
   const w = wordsNow(SIZE);
   const usable = max !== null && max > 0n;
   const amount = amountRaw && /^\d+$/.test(amountRaw) ? BigInt(amountRaw) : 0n;
   return {
     max: max === null ? null : max.toString(),
-    chips: SHARES.map((share) => {
+    chips: shares.map((share) => {
       const raw = usable ? amountAt(max, share) : 0n;
       return { share, label: share === 100 ? w.max : w.share(share), amountRaw: raw.toString(), on: raw > 0n && amount === raw, usable: raw > 0n };
     }),
@@ -115,11 +119,12 @@ export function sizingOf(max: bigint | null, amountRaw: string | null): Sizing {
 /**
  * Where the amount starts. Selling, all of it. Buying with SOL or USDC, a small first amount — 0.1 SOL, 10 USDC —
  * while the wallet covers it or is not known yet, else a quarter of what it can spend; buying with any other coin of
- * the wallet, a quarter of it. Nothing when there is nothing to spend.
+ * the wallet, a quarter of it. Nothing when there is nothing to spend. `solStart`: the person's ⚡ amount in lamports
+ * (CITY-87), in place of 0.1 SOL.
  */
-export function startAmount(side: Side, pay: PayAsset, max: bigint | null): bigint {
+export function startAmount(side: Side, pay: PayAsset, max: bigint | null, solStart?: bigint): bigint {
   if (side === 'sell') return max ?? 0n;
-  const start = isBase(pay) ? START_RAW[pay.mint] : undefined;
+  const start = isBase(pay) ? (pay.mint === SOL.mint && solStart !== undefined && solStart > 0n ? solStart : START_RAW[pay.mint]) : undefined;
   if (start !== undefined && (max === null || start <= max)) return start;
   return max === null ? 0n : amountAt(max, START_SHARE);
 }

@@ -10,6 +10,7 @@ import {
   exitFullIn,
   fullIn,
   gridIn,
+  gridRoomIn,
   moveIn,
   openIn,
   placed,
@@ -83,11 +84,14 @@ test("full screen: one window at a time, in front; back from it, the window is w
   assert.equal(fullIn(back, "nothing"), back);
 });
 
-test("the grid sticks every window into the workspace in the order they opened (macet M2)", () => {
+test("the grid sticks every window together in the order they opened (macet M2), leaving the city its share", () => {
   const grid = gridIn(fullIn(four(), "spot"));
   assert.equal(grid.full, null);
   const [chart, swap, spot, futures] = ["chart", "swap", "spot", "futures"].map((id) => placed(grid, id).rect);
-  assert.ok(chart.width > swap.width && swap.x === spot.x && futures.width === grid.area.width);
+  // The room: the workspace's whole height, 60 % of the screen's width in its middle (CITY-84).
+  const room = gridRoomIn(four());
+  assert.deepEqual(room, { x: grid.area.x + (grid.area.width - 864) / 2, y: grid.area.y, width: 864, height: grid.area.height });
+  assert.ok(chart.width > swap.width && swap.x === spot.x && futures.width === room.width && futures.x === room.x);
   assert.ok(stuck(chart, swap) && stuck(swap, spot) && stuck(spot, futures));
   for (const id of ["chart", "swap", "spot", "futures"]) assert.ok(dockedIn(grid, id));
   assert.ok(togetherIn(grid));

@@ -68,14 +68,14 @@ async function triggerCall<T>(path: string, init?: Readonly<{ method: "GET" | "P
 
 export type TriggerFeeContext = Readonly<{ flow: FeeFlow; plan: TriggerFeePlan; feeAccount: ReferralFeeAccount }>;
 
-/** The pair's flow by the fee policy, the account it would be paid into, and the plan. */
-export async function triggerFeeContext(amounts: LimitAmounts, deps: Readonly<{ connection?: Connection }> = {}): Promise<TriggerFeeContext> {
+/** The pair's flow by the fee policy, the account it would be paid into, and the plan — at the owner's discount as a partner's friend, when they have one. */
+export async function triggerFeeContext(amounts: LimitAmounts, deps: Readonly<{ connection?: Connection; feeDiscountBps?: number }> = {}): Promise<TriggerFeeContext> {
   const flow: FeeFlow = feePolicyInForce() === "as-now"
     ? "AS_NOW"
     : await flowOfSwap(amounts.inputMint, amounts.outputMint).catch(() => classifyPair({ inputMint: amounts.inputMint, outputMint: amounts.outputMint, input: null, output: null, nowMs: Date.now() }));
   const feeAccount = await triggerReferralFeeAccount(amounts.outputMint, { connection: deps.connection });
   const stablePair = DOLLAR_MINTS.has(amounts.inputMint) && DOLLAR_MINTS.has(amounts.outputMint);
-  const plan = triggerFeePlan({ flow, stablePair, referralTokenAccount: feeAccount.ok ? feeAccount.account : null });
+  const plan = triggerFeePlan({ flow, stablePair, referralTokenAccount: feeAccount.ok ? feeAccount.account : null, discountBps: deps.feeDiscountBps ?? 0 });
   return { flow, plan, feeAccount };
 }
 

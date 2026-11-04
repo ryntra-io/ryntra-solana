@@ -21,7 +21,8 @@ import { DOCS_UPDATED } from "../lib/site/page-dates.ts";
 import { AWAITING_CITY, awaitingSources, CITY_PAGES } from "../city/lib/open/site-map.ts";
 import { hasUkAddress } from "../lib/site/localized.ts";
 import { HOMEPAGE_CATEGORY } from "../lib/site/homepage-copy.ts";
-import { DOC_PAGES, docsHref } from "./docs/content/index.ts";
+import { DOC_IDS } from "../city/lib/docs/model.ts";
+import { DOC_PAGES } from "./docs/content/index.ts";
 import { METHODOLOGY_SUMMARY } from "./methodology/content.ts";
 
 /*
@@ -117,23 +118,19 @@ test("SEO locale registry is exact and every public surface has canonical hrefla
  * indexed. Until 2026-10-31 it named 103 addresses and 102 were pages of the old site, drawn in the old interface
  * nobody is to see (decision 75); each comes back here when the city takes it over at its own address (CITY-157).
  */
-const ADVERTISED_PATHS = ["/"];
+const ADVERTISED_PATHS = ["/", "/launches", "/roadmap", "/build", "/partners", "/docs", ...DOC_IDS.map((id) => `/docs/${id}`), "/developers", "/connector", "/support", "/about", "/legal/terms", "/legal/privacy"];
 
 /**
  * The site's old public pages: reachable at their addresses, never in the sitemap, and answering noindex until the
- * city draws them. Every documentation page among them, derived, so a page added to the documentation is held too.
+ * city draws them. The old handbook left this list with CITY-180: its addresses lead to the documentation's sections.
  */
 const WAITING_PATHS = [
-  "/docs",
-  ...DOC_PAGES.filter((page) => page.slug).map((page) => docsHref(page.slug)),
   "/company",
   "/contact",
-  "/support",
   "/security",
   "/methodology",
   "/stats",
-  "/legal/terms",
-  "/legal/privacy",
+  "/legal/licenses",
 ];
 
 /**
@@ -144,7 +141,7 @@ const WAITING_PATHS = [
  */
 const NEVER_ADVERTISED = [
   "/status", "/guard",
-  "/product", "/product-map", "/developers", "/developers/guard", "/developers/agent-control",
+  "/product", "/product-map", "/developers/guard", "/developers/agent-control",
   "/docs/product-paper", "/docs/current-capabilities", "/docs/introduction", "/docs/how-ryntra-works",
   "/docs/core-principles", "/docs/glossary", "/docs/receipts-journal", "/docs/ryntra-home",
   "/docs/agent-control", "/docs/ecosystems", "/docs/roadmap", "/docs/changelog", "/docs/faq",
@@ -382,7 +379,7 @@ test("the Handbook and structured data consume the product's own facts without i
   assert.match(handbook, /getSiteTruth\(\)/);
   assert.match(handbook, /truth\.capabilities/);
   assert.doesNotMatch(layout, /\bfeatureList\b/, "static root JSON-LD must not freeze drift-prone capability claims");
-  assert.match(layout, /HOMEPAGE_COPY/);
+  assert.match(layout, /CITY_WORDS/, "the root's words and structured data are the city's (CITY-158)");
   assert.doesNotMatch(layout, /PRODUCT_CANON\.(shippedLoopBoundary|northStar|arcusBoundary)/);
   assert.doesNotMatch(layout, /offers:\s*\{/);
   /* The landing's graph is the page's own words: the
@@ -404,8 +401,9 @@ test("the Handbook and structured data consume the product's own facts without i
   assert.doesNotMatch(graphCode, /InternalCapabilityEvidence|evidence:\s*\{/);
   /* The share card used to stage a mock risk panel, which is why it carried
      "NOT A LIVE VERDICT" and "planned, not shipped" — disclaimers for a
-     fabricated example. */
-  assert.match(readFileSync(new URL("./brand/homepage-og.tsx", import.meta.url), "utf8"), /R_MARK_PATHS/);
-  assert.match(og, /HOMEPAGE_COPY/);
+     fabricated example. Since CITY-158 it is the city's card: the live city's
+     frame, the mark and one line, with no verdict to disclaim. */
+  assert.match(og, /cityCard\(/);
+  assert.match(og, /CARD_WORDS/);
   assert.doesNotMatch(og, /RISK STATE|EVIDENCE REQUIRED|LIVE VERDICT/);
 });

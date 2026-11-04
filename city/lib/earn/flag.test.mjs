@@ -45,7 +45,7 @@ test("the words follow the browser: Ukrainian first, English otherwise, and both
   assert.equal(langOf([]), "en");
   const keys = (o) => Object.keys(o).sort();
   assert.deepEqual(keys(WORDS.uk), keys(WORDS.en));
-  for (const k of ["saver", "piers", "mine", "products", "tabs"]) assert.deepEqual(keys(WORDS.uk[k]), keys(WORDS.en[k]), k);
+  for (const k of ["saver", "piers", "mine", "products", "tabs", "dollar"]) assert.deepEqual(keys(WORDS.uk[k]), keys(WORDS.en[k]), k);
   for (const words of Object.values(WORDS)) {
     const text = JSON.stringify(words);
     assert.doesNotMatch(text, /\bsoon\b|згодом|guarantee|гарант/i, "no «soon», no promise");

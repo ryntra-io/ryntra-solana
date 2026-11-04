@@ -4,6 +4,7 @@ import dynamic from 'next/dynamic';
 import { useCallback, useEffect, useMemo } from 'react';
 import { useStore } from 'zustand';
 import { howStore } from '@/city/lib/art/how';
+import { useGuides } from '@/city/lib/how/store';
 import { useTowerChart } from '@/city/lib/chart/store';
 import { useCity } from '@/city/lib/city/store';
 import { useHarbor } from '@/city/lib/districts/harbor/store';
@@ -90,7 +91,7 @@ export function ChartLayer() {
     if (!mint) return;
     const onKey = (event: KeyboardEvent) => {
       if (event.key !== 'Escape' || event.defaultPrevented) return;
-      const over = [useTrade.getState().open, useMine.getState().open, useMoney.getState().open, useHarbor.getState().open, Boolean(useMoments.getState().sheet), howStore.getState().open];
+      const over = [useTrade.getState().open, useMine.getState().open, useMoney.getState().open, useHarbor.getState().open, Boolean(useMoments.getState().sheet), howStore.getState().open, useGuides.getState().open];
       if (over.some(Boolean)) return;
       event.preventDefault();
       useTowerChart.getState().close();

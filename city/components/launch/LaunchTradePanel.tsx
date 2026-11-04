@@ -24,11 +24,17 @@ import {
   type Side,
 } from '@/city/lib/launch/trade';
 import { awaitReceipt, runLaunchTrade, type TradePhase } from '@/city/lib/launch/trade-flow';
+import { cardTag, legOf, roundTrip, type Leg, type RoundTrip } from '@/city/lib/launch/cards';
+import { moneyText } from '@/city/lib/launch/berth-words';
+import { multipleText } from '@/city/lib/launch/card-words';
+import { fillsOf, keepFill } from '@/city/lib/launch/fills';
+import { coinLink } from '@/city/lib/share/coin-link';
 import { earnerText, feeLineText, getText, honestText, pctText, progressText, riskText, tradeFailureText, unitsText } from '@/city/lib/launch/trade-words';
 import { LAUNCH_TRADE } from '@/city/lib/launch/words';
 import { useWords } from '@/city/lib/i18n/dict';
 import { useLang, type Lang } from '@/city/lib/i18n/lang';
 import type { WalletOption } from '@/city/lib/launch/wallet';
+import { useShareCard } from './useShareCard';
 import s from './launch-trade.module.css';
 
 /** The market is read again this often while the panel is open; the price on screen, as often. */
@@ -42,6 +48,12 @@ export type LaunchTradePanelProps = Readonly<{
   fallback: Progress;
   /** Told when a trade starts and ends, so the window holding the panel is not closed under a signature. */
   onBusy?: (busy: boolean) => void;
+  /** A coin Ryntra took down (MC-1): its holders can still sell, nobody is offered to buy it. */
+  sellOnly?: boolean;
+  /** The launch's time as the city's feed has it: a buy in its first minutes was bought «at birth» (CITY-145). */
+  launchedAt?: string | null;
+  /** Whether the engine serves the coin's picture, for its logo on the share card. */
+  logo?: boolean;
 }>;
 
 type Held = Readonly<{ tokenRaw: string; pairRaw: string }>;
@@ -53,18 +65,19 @@ type Quote = Readonly<{ key: string; quote: LaunchTradeQuoteResponse }> | Readon
  * engine and the city's one wallet itself — so the tower's card mounts it today and the tower's one window (CITY-78)
  * can mount it as it is. The button never waits on the 3D city: everything here is the engine's reads.
  */
-export function LaunchTradePanel({ token, symbol, fallback, onBusy }: LaunchTradePanelProps) {
+export function LaunchTradePanel({ token, symbol, fallback, onBusy, sellOnly = false, launchedAt = null, logo = false }: LaunchTradePanelProps) {
   const lang = useLang();
   const w = useWords(LAUNCH_TRADE);
   const now = useNow();
   const network = useLaunch((st) => st.network);
   const open = useLaunch((st) => st.stub || cityLaunchOpen(st.network));
+  const stub = useLaunch((st) => st.stub);
   const connection = useLaunch((st) => st.connection);
   const setConnection = useLaunch((st) => st.setConnection);
 
   const [market, setMarket] = useState<LaunchMarketResponse | null>(null);
   const [marketFailed, setMarketFailed] = useState(false);
-  const [side, setSide] = useState<Side>('buy');
+  const [side, setSide] = useState<Side>(sellOnly ? 'sell' : 'buy');
   const [buyChip, setBuyChip] = useState<number>(BUY_CHIPS[1]);
   const [sellChip, setSellChip] = useState<number>(SELL_CHIPS[1]);
   const [slippageBps, setSlippageBps] = useState<number>(DEFAULT_SLIPPAGE_BPS);
@@ -72,6 +85,8 @@ export function LaunchTradePanel({ token, symbol, fallback, onBusy }: LaunchTrad
   const [held, setHeld] = useState<Held | null>(null);
   const [phase, setPhase] = useState<TradePhase | null>(null);
   const [receipt, setReceipt] = useState<'wait' | 'done' | 'failed' | null>(null);
+  /* The trade just done, as a leg of the wallet's round trip: the engine's own fill, at the moment it answered. */
+  const [fresh, setFresh] = useState<Leg | null>(null);
   const [details, setDetails] = useState(false);
   const [options, setOptions] = useState<readonly WalletOption[] | null>(null);
   const [connecting, setConnecting] = useState<string | null>(null);
@@ -195,6 +210,10 @@ export function LaunchTradePanel({ token, symbol, fallback, onBusy }: LaunchTrad
       const result = await runLaunchTrade({ engine, signer: wallet.signer(connection), order: { token, side, amountRaw, slippageBps }, network, open, onPhase: setPhase });
       if (result.step !== 'done') return;
       const { done } = result;
+      /* The fill is kept by its signature, so the round trip's card still finds this buy once the market's rows move on. */
+      const leg = legOf(done, Date.now());
+      setFresh(leg);
+      if (leg) keepFill(connection.address, token, leg);
       /* The position is on screen at once: the fill moved onto the last read, then the chain read again. */
       if (done.filled) setHeld((before) => (before ? heldAfter(before, done.side, done.filled!) : before));
       setTimeout(() => void readHeld(), 2_500);
@@ -217,16 +236,29 @@ export function LaunchTradePanel({ token, symbol, fallback, onBusy }: LaunchTrad
   const verdict = shown?.tradeRisk.verdict ?? null;
   const blocked = verdict === 'BLOCKED';
 
+  /* After a sale: the wallet's round trip on this coin, counted only from the market's own trades, the city's own fills
+     and the balance the chain shows — no card when it does not add up (CITY-145). */
+  const sold = phase?.step === 'done' && phase.done.side === 'sell';
+  const address = connection?.address ?? null;
+  const sale = sold ? phase.done.signature : null;
+  const round = useMemo(() => {
+    /* A coin Ryntra took down (MC-1) is sold, never shared. */
+    if (!sale || !market || !address || sellOnly) return null;
+    const born = launchedAt ? Date.parse(launchedAt) : NaN;
+    const extra = [...fillsOf(address, token), ...(fresh ? [fresh] : [])];
+    return roundTrip({ market, symbol, logo, wallet: address, launchedAt: Number.isFinite(born) ? born : null, heldRaw: held?.tokenRaw ?? null, extra, sale, tag: cardTag(market.network, stub) });
+  }, [sale, market, address, sellOnly, token, fresh, symbol, logo, launchedAt, held, stub]);
+
   return (
     <div className={s.panel}>
       <ProgressBlock progress={progress} lang={lang} />
 
       {phase?.step === 'done' ? (
-        <Done phase={phase} receipt={receipt} symbol={symbol} units={units} lang={lang} onAgain={() => setPhase(null)} />
+        <Done phase={phase} receipt={receipt} symbol={symbol} units={units} lang={lang} round={round?.up ? round : null} onAgain={() => setPhase(null)} />
       ) : (
         <>
-          <div className={s.sides} role="tablist" aria-label={w.buyOrSell}>
-            {(['buy', 'sell'] as const).map((each) => (
+          <div className={`${s.sides} ${sellOnly ? s.sidesOne : ''}`} role="tablist" aria-label={w.buyOrSell}>
+            {(sellOnly ? (['sell'] as const) : (['buy', 'sell'] as const)).map((each) => (
               <button key={each} role="tab" aria-selected={side === each} className={`${s.side} ${side === each ? (each === 'buy' ? s.sideBuy : s.sideSell) : ''}`} onClick={() => setSide(each)} disabled={working}>
                 {each === 'buy' ? w.buy : w.sell}
               </button>
@@ -442,8 +474,9 @@ function Working({ phase, wallet, units, side, lang }: { phase: TradePhase | nul
   );
 }
 
-function Done({ phase, receipt, symbol, units, lang, onAgain }: { phase: Extract<TradePhase, { step: 'done' }>; receipt: 'wait' | 'done' | 'failed' | null; symbol: string; units: { tokenDecimals: number; pair: string; pairDecimals: number } | null; lang: Lang; onAgain: () => void }) {
+function Done({ phase, receipt, symbol, units, lang, round, onAgain }: { phase: Extract<TradePhase, { step: 'done' }>; receipt: 'wait' | 'done' | 'failed' | null; symbol: string; units: { tokenDecimals: number; pair: string; pairDecimals: number } | null; lang: Lang; round: RoundTrip | null; onAgain: () => void }) {
   const w = useWords(LAUNCH_TRADE);
+  const sharing = useShareCard();
   const { done } = phase;
   const filled = done.filled && units ? done.filled : null;
   const title = !filled
@@ -467,6 +500,24 @@ function Done({ phase, receipt, symbol, units, lang, onAgain }: { phase: Extract
           {w.explorer} ↗
         </a>
       </div>
+      {/* The round trip, when it adds up and came out ahead: its multiple, its gain, and one tap to share its card. */}
+      {round && (
+        <>
+          <div className={s.round} data-round-trip="">
+            <b className={s.display}>{multipleText(round.multiple, lang)}</b>
+            <span>+{moneyText(round.gainRaw, round.pair, lang)}</span>
+          </div>
+          {sharing.saved && <div className={s.saved}>{sharing.savedLine}</div>}
+          <button
+            className={`${s.display} ${s.action} ${sharing.making ? s.actionWaiting : ''}`}
+            onClick={() => void sharing.share('round', round, done.shareLink ?? coinLink(round.coin.token))}
+            disabled={sharing.making !== null}
+            data-share-card="round"
+          >
+            {sharing.label}
+          </button>
+        </>
+      )}
       <button className={`${s.display} ${s.again}`} onClick={onAgain}>
         {w.again}
       </button>

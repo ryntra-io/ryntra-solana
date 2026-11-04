@@ -324,7 +324,8 @@ test("the navigation is the menu's sections with every page once, and the develo
   assert.match(dynamic, /dynamicParams = false/);
   assert.match(dynamic, /generateStaticParams/);
   assert.match(dynamic, /notFound\(\)/);
-  assert.match(read("app/docs/page.tsx"), /page: OVERVIEW/);
+  /* `/docs` and its sections are the city's documentation since CITY-180; these chapters' addresses lead there. */
+  assert.match(read("app/docs/page.tsx"), /<CityDocument id="docs" \/>/);
   /* Reading order is a line: every page but the ends has a neighbour on each side. */
   const inner = DOC_PAGES.slice(1, -1);
   for (const page of inner) {

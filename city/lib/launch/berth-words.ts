@@ -1,8 +1,9 @@
 import type { LaunchClaimReviewResponse } from '../../../lib/api/v1/contract.ts';
 import { dateText, digits } from '../i18n/dict.ts';
 import type { Lang } from '../i18n/langs.ts';
-import { unitsOf } from './berth.ts';
+import { unitsOf, type TowerFigures } from './berth.ts';
 import { BUILD_AGED, BUILD_UNEXPECTED, CLAIM_CLOSED, WALLET_REFUSED, type ClaimFailure } from './berth-flow.ts';
+import { unitsText } from './trade-words.ts';
 import { BERTH } from './words.ts';
 
 /**
@@ -26,6 +27,17 @@ export function amountText(value: number, pair: Pair, lang: Lang): string {
 /** A raw amount of the pair currency, as `amountText` says it. */
 export function moneyText(raw: string, pair: Pair, lang: Lang): string {
   return amountText(unitsOf(raw, pair.decimals), pair, lang);
+}
+
+/** The price of one coin, rounded down: in dollars where the engine says them, else in the pair currency. */
+export function priceText(price: TowerFigures['price'], pair: Pair, lang: Lang): string {
+  return price.usd !== null ? `$${unitsText(price.usd, 'down', lang)}` : `${unitsText(price.pair, 'down', lang)} ${pair.symbol}`;
+}
+
+/** The move since the launch: +12%, −3%; whole per cent, cut toward zero, so it never reads better than it is. */
+export function moveText(bps: number, lang: Lang): string {
+  const whole = digits(String(Math.trunc(Math.abs(bps) / 100)), lang);
+  return `${bps >= 0 ? '+' : '−'}${lang === 'uk' ? `${whole} %` : `${whole}%`}`;
 }
 
 /** A share in basis points: 3200 → 32%, the half of a position → ½ (32 % in Ukrainian). */

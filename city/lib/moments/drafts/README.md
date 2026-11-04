@@ -39,5 +39,5 @@ Producers still to wire (other lines' paths): the engine's Launch (launch, gradu
 trader's consent) and the agents of CITY-4. Each calls `POST /api/moments/events` with the secret.
 
 Tests: `node --test "city/lib/moments/drafts/*.test.mjs" app/api/moments/routes.test.mjs`. Add
-`MOMENTS_TEST_DATABASE_URL=postgres://…` (a local server, never a project) to run the queue through the real SQL.
+`MOMENTS_TEST_DATABASE_URL=<local Postgres URL>` (a local server, never a project) to run the queue through the real SQL.
 Shots: `shots.mjs` (see its header).

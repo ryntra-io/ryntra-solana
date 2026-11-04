@@ -374,7 +374,9 @@ test("the shared chrome carries its own tokens, because not every page wraps it"
      message asked a reader to check. */
   for (const [file, wrapped] of [
     ["app/beta/page.tsx", false],
-    ["app/legal/layout.tsx", false],
+    /* The old legal shell, for the pages it still serves (the licences); the Terms and the Privacy Policy are the
+       city's own pages since CITY-157. */
+    ["app/legal/(frozen)/layout.tsx", false],
   ]) {
     const source = read(file);
     assert.match(source, /<(PublicHeader|FrozenHeader)/, `${file} must mount the shared header`);
@@ -409,7 +411,8 @@ test("the consolidated routes redirect rather than disappearing", () => {
        this test encodes still holds for it in the other direction: the Handbook
        anchor stays and points at the page, because reversing a 308 does not
        un-cache it. `lib/site/security.test.mjs` asserts that pair. */
-    ["/roadmap", "/docs"],
+    /* `/roadmap` was here until 2026-10-31: it is a page again — the public
+       roadmap in the city's language (CITY-173, `app/roadmap/`). */
     /* `/guard` and `/proof` lead into the Guard reference and the verifier; their
        redirects are asserted beside that reference, in its own test. */
   ];
@@ -827,7 +830,7 @@ test("every public page mounts the one shared chrome, not a second navigation", 
    */
   for (const file of [
     "app/beta/page.tsx",
-    "app/legal/layout.tsx",
+    "app/legal/(frozen)/layout.tsx",
   ]) {
     const source = read(file);
     assert.match(
@@ -1075,7 +1078,6 @@ test("every retained public composition mounts one chrome and a focusable skip t
     /* The public pages of the new site mount the one frame that holds the chrome and the landmark. */
     ["/company", ["app/company/page.tsx", "app/site/info/info.tsx"], "main"],
     ["/contact", ["app/contact/page.tsx", "app/site/info/info.tsx"], "main"],
-    ["/support", ["app/support/page.tsx", "app/site/info/info.tsx"], "main"],
   ];
   for (const [route, files, mainId] of compositions) {
     const source = files.map(read).join("\n");
@@ -1087,8 +1089,15 @@ test("every retained public composition mounts one chrome and a focusable skip t
     assert.match(mains[0], /tabIndex=\{-1\}/, `${route} skip target must accept focus`);
     assert.doesNotMatch(source, /className=["'][^"']*\b(?:rx-skip|lp-skip-link)\b/, `${route} must not draw a second skip link`);
   }
+  /* `/docs`, `/developers`, `/support` and the legal documents are the city's pages since CITY-157: one bar of the
+     city's own, one main, none of the old site's chrome. */
+  const cityPage = read("city/components/pages/DocumentPage.tsx");
+  assert.equal((cityPage.match(/<main\b/g) ?? []).length, 1, "the city's page has one main landmark");
+  assert.doesNotMatch(cityPage, /<(?:PublicHeader|FrozenHeader|FrozenFooter)\b/);
+  for (const file of ["app/docs/page.tsx", "app/developers/page.tsx", "app/support/page.tsx", "app/legal/terms/page.tsx", "app/legal/privacy/page.tsx"]) {
+    assert.match(read(file), /<CityDocument id="[a-z]+" \/>/, `${file} is the city's page`);
+  }
   for (const [file, view] of [
-    ["app/docs/page.tsx", "guides"],
     ["app/docs/developers/page.tsx", "developers"],
     /* The Guard reference is asserted beside it, in its own test. */
     ["app/docs/developers/agent-control/page.tsx", "agent-control"],
@@ -1112,7 +1121,7 @@ test("every retained public composition mounts one chrome and a focusable skip t
   assert.match(chrome, /mainId = "main"/);
   /* A page that mounts a different id must say so. The pages that own their
      content layer keep `main-content`, and each declares it. */
-  for (const file of ["app/beta/page.tsx", "app/legal/layout.tsx"]) {
+  for (const file of ["app/beta/page.tsx", "app/legal/(frozen)/layout.tsx"]) {
     const source = read(file);
     assert.match(source, /mainId="main-content"/, `${file} must declare the id it actually mounts`);
     assert.match(source, /id="main-content"/, `${file} must mount the id it declares`);

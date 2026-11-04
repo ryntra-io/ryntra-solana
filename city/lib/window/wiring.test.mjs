@@ -114,3 +114,80 @@ test("a window on its own page keeps the city's switches and its signature; the 
   assert.match(hud, /chart: \{ mint: chartOut \? null : chart \}/);
   assert.match(hud, /exchange: \{ open: exchange && !exchangeOut \}/);
 });
+
+// ---------- CITY-84: the bays, the tray, the layouts, the city behind the windows ----------
+
+test("behind both bays (or one window on the whole screen) the city is drawn lean, and its frame rate then moves no rung", () => {
+  const canvas = read("city/components/city/CityCanvas.tsx");
+  assert.match(canvas, /const lean = useWindows\(\(st\) => st\.desk && leanIn\(settledLayout\(st\)\)\);/);
+  assert.match(canvas, /const dpr = lean \? Math\.min\(1, dprAt\(rung, device\.screen\)\) : dprAt\(rung, device\.screen\);/);
+  assert.match(canvas, /if \(leanNow\(\)\) return;/, "the monitor's verdicts wait while the city is drawn lean");
+  assert.match(canvas, /<Pacer on=\{warm\} lean=\{lean\} \/>/);
+  const pacer = read("city/components/city/Pacer.tsx");
+  assert.match(pacer, /const LEAN_FPS = 30;/);
+  assert.match(pacer, /if \(leanNow\.current && t - drawn < 1000 \/ LEAN_FPS - 4\) return;/);
+  // The shade over the city sits under the HUD (z-index 10): the top bar and the Deck stay bright.
+  const css = read("city/components/window/window.module.css");
+  assert.match(css, /\.dim \{\n  position: fixed;\n  inset: 0;\n  z-index: 9;\n  pointer-events: none;/);
+  assert.match(read("city/components/hud/hud.module.css"), /\.layer \{[^}]*z-index: 10;/);
+  const layer = read("city/components/window/WindowLayer.tsx");
+  assert.match(layer, /bothBaysIn\(settledLayout\(st\)\)/);
+  for (const part of ["<CityDim />", "<Tray />", "<Layouts />", "<Landing />"]) assert.ok(layer.includes(part), part);
+});
+
+test("minimise waits on a signature, on the computer and on the phone, and folds only a window the city can open again", () => {
+  const frame = read("city/components/window/WindowFrame.tsx");
+  assert.match(frame, /const fold = canOpen\(id\) \? \(/);
+  assert.match(frame, /aria-label=\{w\.fold\} title=\{w\.fold\} disabled=\{spec\.held\} onClick=\{\(\) => foldWindow\(id\)\}/);
+  const sheet = read("city/components/window/WindowSheet.tsx");
+  assert.match(sheet, /\{canOpen\(active\.id\) && \(/);
+  assert.match(sheet, /aria-label=\{words\.fold\} disabled=\{spec\.held\} onClick=\{\(\) => foldWindow\(active\.id\)\}/);
+  // Folding closes the window as its own «Close» does: its owner hears of it, nothing of it stays over the city.
+  const store = read("city/lib/window/store.ts");
+  assert.match(store, /if \(!spec \|\| spec\.held \|\| !placed\(now\.layout, id\)\) return;/);
+  assert.match(store, /get\(\)\.close\(id\);\n      spec\.onClose\?\.\(\);\n    \},\n    dropChip/);
+  // A tab out of sight keeps its frame, inert, so what was typed is still there.
+  assert.match(frame, /inert=\{hidden \|\| undefined\}/);
+  // The tray steps aside while the Deck's doors are open over it.
+  assert.match(read("city/components/window/Tray.tsx"), /const doors = useBackPanels\(\(st\) => st\.open\.includes\('tray'\)\);/);
+});
+
+test("the layouts open each window through its own owner, behind its own switch, and never sign or move money", () => {
+  const openers = read("city/components/window/openers.ts");
+  for (const id of ["spot", "money", "chart", "exchange", "predict"]) assert.match(openers, new RegExp(`\\n  ${id}: \\{`), id);
+  assert.match(openers, /exchange: \{\n    can: \(\) => EXCHANGE_OPEN,/);
+  // The trade card held out of sight behind the chart goes when a layout has no trade window (it would come back).
+  assert.match(openers, /if \(wanted\.has\('swap'\) \|\| wanted\.has\('spot'\)\) shut\.delete\(tradeShut\);/);
+  assert.match(read("city/components/window/Layouts.tsx"), /shutOutside\(wantedBy\(key\)\);\n  for \(const p of useWindows\.getState\(\)\.applyDesk\(key, canOpen\)\.later\)/);
+  // A saved id that is a name on every object («constructor») is no window: only the openers' own keys count.
+  assert.match(openers, /Object\.hasOwn\(OPENERS, id\)/);
+  assert.match(openers, /predict: \{ can: \(\) => PREDICT_OPEN,/);
+  assert.match(openers, /swap: \{ can: \(\) => TRADE_OPEN,/);
+  // Nothing it imports signs, submits or reads the wallet.
+  for (const from of openers.matchAll(/from '([^']+)'/g)) assert.doesNotMatch(from[1], /sign|submit|send|wallet|solana/i, from[1]);
+  assert.doesNotMatch(openers, /\.(sign|submit|prepare|buy|sell)\(/);
+  // Never through the coin's link, which lets the picked tower — and its chart — go.
+  assert.doesNotMatch(openers, /openTradeCard/);
+});
+
+test("a folded trade card comes back on its own coin, through the Launch engine when it is a launch's", () => {
+  const openers = read("city/components/window/openers.ts");
+  // The chip keeps the coin and whether it trades through the Launch engine.
+  assert.match(openers, /return \{ tower: tower\.mint, symbol: tower\.symbol, \.\.\.\(launch \? \{ launch: '1' \} : \{\}\) \};/);
+  // Reopened on that coin — any tower in the city, named or not, or the coin itself — with its Launch flag.
+  assert.match(openers, /const standing = mint \? \(useCity\.getState\(\)\.layout\.towers\.find\(\(t\) => t\.tower\.id === mint\)\?\.tower \?\? null\) : null;/);
+  assert.match(openers, /const launch = params\?\.launch === '1' \|\| launchTowerIn\(useLaunch\.getState\(\), coin\.id\) !== null;/);
+  assert.match(openers, /trade\.openFor\(coin, 'buy', \{ view, launch \}\);/);
+  // A preset's chart and Exchange open on the coin in front of the person, taken before the card lets it go.
+  assert.match(read("city/components/window/Layouts.tsx"), /const subject = layoutSubject\(\);\n  shutOutside\(wantedBy\(key\)\);/);
+  // «Snap together» shows only where the city has room to spare.
+  assert.match(read("city/components/window/WindowLayer.tsx"), /togetherIn\(st\.layout\) \|\| gridRoomIn\(st\.layout\) === null/);
+});
+
+test("what the window layer draws on the first paint is the same on the server and on a phone: the layouts wait for the page", () => {
+  const layouts = read("city/components/window/Layouts.tsx");
+  assert.match(layouts, /useEffect\(\(\) => setMounted\(true\), \[\]\);/);
+  assert.match(layouts, /if \(!desk \|\| !mounted\) return null;/);
+  // The tray has nothing before a window folds; the shade starts off.
+  assert.match(read("city/components/window/Tray.tsx"), /if \(!chips\.length \|\| away \|\| doors\) return null;/);
+});

@@ -110,7 +110,7 @@ test("every icon artifact embeds the canonical geometry", { skip: needsDevelopme
   assert.match(script, /app\/brand\/mark\.ts/);
   assert.match(script, /traceMark\(/, "the render script traces the mark from the master on every run");
   assert.doesNotMatch(script, /LOGO1?\.png|LOGO2\.png/, "the retired masters are not read");
-  assert.match(read("app/manifest.ts"), /icon-192\.png[\s\S]*icon-512\.png/, "the manifest carries the home-screen icons");
+  assert.match(read("app/manifest.ts"), /\/brand\/city\/icon-192\.png[\s\S]*\/brand\/city\/icon-512\.png/, "the manifest carries the city's home-screen icons (CITY-158)");
 });
 
 test("the wordmark is one traced geometry with the ground's ink", { skip: needsDevelopmentRepository("the traced brand geometry under scripts/brand/") }, () => {
@@ -172,15 +172,12 @@ test("no chrome draws a logo of its own", () => {
   }
 });
 
-test("the share card renders the canonical mark and the official wordmark, not a lettered box", () => {
-  const og = read("app/opengraph-image.tsx") + read("app/brand/homepage-og.tsx");
-  assert.match(og, /R_MARK_PATHS/);
-  assert.match(og, /R_MARK_MATERIAL_AXIS/, "the card draws the R in the master's ramp along its axis");
-  assert.match(og, /RYNTRA_GRADIENT/);
-  assert.match(og, /WORDMARK_DARK_UI_DATA_URI/, "the card carries the wordmark raster, embedded");
-  assert.match(read("app/brand/generated/wordmark-dark-ui.ts"), /^export const WORDMARK_DARK_UI_DATA_URI = "data:image\/png;base64,/m);
-  assert.doesNotMatch(og, />\s*RYNTRA\s*</, "the card never sets the name in type beside the mark");
-  assert.doesNotMatch(og, /border: "2px solid[^"]*"[\s\S]{0,200}?>\s*R\s*</, "the boxed-R logo is retired");
+test("the share card is the city's (CITY-158): the live city's frame and the city's mark, not the R", () => {
+  const og = read("app/opengraph-image.tsx");
+  assert.match(og, /from "@\/city\/lib\/share\/card\.server"/);
+  assert.match(og, /return cityCard\(/);
+  assert.doesNotMatch(og, /app\/brand\/|R_MARK_PATHS|WORDMARK_DARK_UI_DATA_URI/, "the old card is drawn nowhere");
+  assert.match(read("city/lib/share/card.server.tsx"), /M32 2 L37\.2 30 L36\.2 60 L27\.8 60 L26\.8 30 Z/, "the city's spire");
 });
 
 test("Ryn stays a mascot: on public pages the raven never renders as the logo", () => {

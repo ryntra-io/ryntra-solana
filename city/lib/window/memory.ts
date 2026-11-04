@@ -1,4 +1,4 @@
-import { carryFree, carryRect, docked, type Rect } from './geometry.ts';
+import { carryFree, carryRect, docked, type Bay, type Rect } from './geometry.ts';
 import type { Layout, Recall } from './layout.ts';
 
 /**
@@ -6,9 +6,12 @@ import type { Layout, Recall } from './layout.ts';
  * place, open or closed, so the swap opens again where the person put it and four windows stuck together come back
  * stuck. A place is remembered with the workspace it was on and carried onto a different one. Storage that is
  * missing, full or refuses just means the first places again.
+ *
+ * Since CITY-84 a place may be a bay (`bay`): the window opens in it again, as a tab of the frame standing there. The
+ * key moved to v2 with the bays, so every window first opens in a bay once.
  */
 
-export const LAYOUT_KEY = 'ryntra.city.windows.v1';
+export const LAYOUT_KEY = 'ryntra.city.windows.v2';
 /** No more places than this are kept; the oldest go first. */
 export const MEMORY_LIMIT = 24;
 const RAW_LIMIT = 8_000;
@@ -16,8 +19,10 @@ const RAW_LIMIT = 8_000;
 export type Memory = Readonly<{
   area: Rect;
   /** Oldest first. */
-  places: Readonly<Record<string, Readonly<{ rect: Rect; full: boolean }>>>;
+  places: Readonly<Record<string, Place>>;
 }>;
+
+type Place = Readonly<{ rect: Rect; full: boolean; bay?: Bay }>;
 
 type Store = Readonly<{ getItem: (key: string) => string | null; setItem: (key: string, value: string) => void }>;
 
@@ -40,19 +45,20 @@ export function parseMemory(raw: string | null): Memory | null {
   }
   if (!value || typeof value !== 'object') return null;
   const { v, area, places } = value as Record<string, unknown>;
-  if (v !== 1 || !isRect(area) || !places || typeof places !== 'object' || Array.isArray(places)) return null;
-  const kept: Record<string, { rect: Rect; full: boolean }> = {};
+  if (v !== 2 || !isRect(area) || !places || typeof places !== 'object' || Array.isArray(places)) return null;
+  const kept: Record<string, Place> = {};
   for (const [id, place] of Object.entries(places as Record<string, unknown>).slice(-MEMORY_LIMIT)) {
     if (!ID.test(id) || !place || typeof place !== 'object') continue;
-    const { rect, full } = place as Record<string, unknown>;
+    const { rect, full, bay } = place as Record<string, unknown>;
     if (!isRect(rect)) continue;
-    kept[id] = { rect: { x: rect.x, y: rect.y, width: rect.width, height: rect.height }, full: full === true };
+    const kept1 = { rect: { x: rect.x, y: rect.y, width: rect.width, height: rect.height }, full: full === true };
+    kept[id] = bay === 'left' || bay === 'right' ? { ...kept1, bay } : kept1;
   }
   return { area: { x: area.x, y: area.y, width: area.width, height: area.height }, places: kept };
 }
 
 export function serializeMemory(memory: Memory): string {
-  return JSON.stringify({ v: 1, area: memory.area, places: memory.places });
+  return JSON.stringify({ v: 2, area: memory.area, places: memory.places });
 }
 
 /**
@@ -60,24 +66,25 @@ export function serializeMemory(memory: Memory): string {
  * workspace first. Only one window is remembered on the whole screen.
  */
 export function remember(memory: Memory | null, layout: Layout): Memory {
-  const places: Record<string, { rect: Rect; full: boolean }> = {};
+  const places: Record<string, Place> = {};
   for (const [id, place] of Object.entries(memory?.places ?? {})) {
     if (layout.windows.some((w) => w.id === id)) continue;
-    places[id] = { rect: memory ? carryRect(place.rect, memory.area, layout.area) : place.rect, full: layout.full ? false : place.full };
+    places[id] = { ...place, rect: memory ? carryRect(place.rect, memory.area, layout.area) : place.rect, full: layout.full ? false : place.full };
   }
-  for (const w of layout.windows) places[w.id] = { rect: w.rect, full: layout.full === w.id };
+  for (const w of layout.windows) places[w.id] = w.bay ? { rect: w.rect, full: layout.full === w.id, bay: w.bay } : { rect: w.rect, full: layout.full === w.id };
   const ids = Object.keys(places).slice(-MEMORY_LIMIT);
   return { area: layout.area, places: Object.fromEntries(ids.map((id) => [id, places[id]!])) };
 }
 
 /**
- * The place this device remembers for a window, carried onto the given workspace: stuck with the others it stuck to,
- * or floating at its own size.
+ * The place this device remembers for a window, carried onto the given workspace: its bay, stuck with the others it
+ * stuck to, or floating at its own size.
  */
 export function recall(memory: Memory | null, id: string, area: Rect): Recall | null {
   const place = memory?.places[id];
   if (!memory || !place) return null;
-  const others = Object.entries(memory.places).filter(([other]) => other !== id).map(([, p]) => p.rect);
+  if (place.bay) return { rect: carryRect(place.rect, memory.area, area), full: place.full, bay: place.bay };
+  const others = Object.entries(memory.places).filter(([other]) => other !== id && !memory.places[other]!.bay).map(([, p]) => p.rect);
   const stuckThere = docked(place.rect, others, memory.area);
   return { rect: stuckThere ? carryRect(place.rect, memory.area, area) : carryFree(place.rect, memory.area, area), full: place.full, docked: stuckThere };
 }

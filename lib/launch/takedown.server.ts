@@ -1,7 +1,7 @@
 /**
  * MC-1 — taking a launched token's picture, description and links down, and putting them back.
  *
- * The terms say Ryntra may hide them (`app/legal/terms/launch.ts`); this is how. A token's metadata URI and its
+ * The terms say Ryntra may hide them (`lib/legal/texts/launch.ts`); this is how. A token's metadata URI and its
  * picture's address name the same bytes for ever — the mint holds the URI — so nothing is rewritten: Ryntra stops
  * serving them (`metadata.server.ts`: `readLaunchImage`, `metadataOfUri`), and the same picture or details are refused
  * when they come again (the upload, a new launch). The name and the ticker stay: the chain holds them.

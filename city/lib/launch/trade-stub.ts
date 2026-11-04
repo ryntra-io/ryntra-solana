@@ -47,6 +47,7 @@ const big = (n: number) => BigInt(Math.max(0, Math.floor(n)));
 
 export function stubTradeEngine(options: StubTradeOptions): LaunchTradeEngine & Readonly<{ calls: string[] }> {
   const now = options.now ?? Date.now;
+  const salt = `${Date.now().toString(36)}${Math.random().toString(36).slice(2, 8)}`;
   const refuse = { ...(options.refuse ?? {}) };
   const calls: string[] = [];
   const holdings = new Map<string, { tokenRaw: bigint; pairRaw: bigint }>();
@@ -145,12 +146,29 @@ export function stubTradeEngine(options: StubTradeOptions): LaunchTradeEngine & 
     return market.ok ? market.data : null;
   };
 
+  /* The stand's made-up history: a wallet starts with what its own trades in the market's rows left it (CITY-145). */
+  const seeding = new Map<string, Promise<void>>();
+  const holding = async (wallet: string, token: string) => {
+    const key = `${wallet}:${token}`;
+    if (!seeding.has(key))
+      seeding.set(
+        key,
+        read(token).then((market) => {
+          let tokens = 0n;
+          for (const row of market?.trades.rows ?? []) if (row.trader === wallet) tokens += row.side === 'buy' ? BigInt(row.tokensRaw) : -BigInt(row.tokensRaw);
+          if (tokens > 0n) held(wallet, token).tokenRaw += tokens;
+        }),
+      );
+    await seeding.get(key);
+    return held(wallet, token);
+  };
+
   return {
     calls,
     market: (token) => answer('market', () => options.market(token)),
     wallet: (token, address) =>
-      answer('wallet', () => {
-        const entry = held(address, token);
+      answer('wallet', async () => {
+        const entry = await holding(address, token);
         return { ok: true, data: { wallet: address, token, tokenRaw: entry.tokenRaw.toString(), pairRaw: entry.pairRaw.toString(), observedAt: iso(now()) } };
       }),
     quote: (token, body) =>
@@ -164,7 +182,7 @@ export function stubTradeEngine(options: StubTradeOptions): LaunchTradeEngine & 
       answer('build', async () => {
         const market = await read(token);
         if (!market) return { ok: false, code: 'LAUNCH_NOT_FOUND', message: 'No launch by that mint.' };
-        const entry = held(body.wallet, token);
+        const entry = await holding(body.wallet, token);
         if (BigInt(body.amountRaw) > (body.side === 'buy' ? entry.pairRaw : entry.tokenRaw)) return { ok: false, code: 'LAUNCH_BALANCE_LOW', message: 'The wallet does not hold that much.' };
         const quote = quoteOf(market, body.side, body.amountRaw, body.slippageBps);
         const buildId = `${builds.size + 1}`.padStart(32, '0');
@@ -190,7 +208,8 @@ export function stubTradeEngine(options: StubTradeOptions): LaunchTradeEngine & 
           entry.tokenRaw -= tokens;
           entry.pairRaw += pair;
         }
-        const signature = stubAddress(`trade:${body.buildId}`) + stubAddress(`trade2:${body.buildId}`).slice(0, 44);
+        /* Each stand engine its own signatures, so a fill a browser kept from an earlier visit is never taken for this one. */
+        const signature = stubAddress(`trade:${salt}:${body.buildId}`) + stubAddress(`trade2:${salt}:${body.buildId}`).slice(0, 44);
         sent.set(signature, build);
         return { ok: true, data: { signature, state: 'CONFIRMED', filled: { tokensRaw: tokens.toString(), pairRaw: pair.toString() }, receiptHash: null, shareLink: null } };
       }),

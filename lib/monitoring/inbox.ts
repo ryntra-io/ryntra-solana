@@ -9,6 +9,9 @@ import { readRule } from "../autoinvest/store.ts";
 import type { GuardStore } from "../guard/store.ts";
 import { swapHref } from "../stocks/conversion-watch.ts";
 import { limitOrderSpotHref } from "../solana/limits/notes.server.ts";
+import { isStopNote } from "../stops/notes.ts";
+import { isEarnNote } from "../../city/lib/earn/notes.ts";
+import { isAgentReportNote } from "../../city/lib/autopilot/report.ts";
 import { lifecycleEventFor } from "../stocks/lifecycle-events.ts";
 import { inboxKeyOf } from "./apply.ts";
 import { positionSaleHref, readPositionWatch } from "./position-watch.ts";
@@ -62,6 +65,12 @@ export async function resolveInboxLink(store: GuardStore, owner: string, id: str
   const inbox = await inboxOf(store).get(inboxKeyOf(owner, id));
   if (inbox && inbox.owner === owner) {
     await markInboxRead(store, owner, id);
+    /* A reached stop (CITY-149): the city on the stop's coin, its sale opening for the wallet to sign. */
+    if (isStopNote(inbox)) return inbox.href;
+    /* An Earn note of the city (CITY-100): the city with Earn open on «Mine». */
+    if (isEarnNote(inbox)) return inbox.href;
+    /* The agent's daily report (CITY-194): the city with the person's agent open. */
+    if (isAgentReportNote(inbox)) return inbox.href;
     /* The month's budget spent (1.13.0): Home, the budget's sheet open — its one action, «Змінити бюджет». */
     if (inbox.subject?.kind === "autoinvest-budget") return `${BUDGET_HREF}&from=monitoring`;
     /* An issuer's event (1.15.0): the token's page, the swap's Review opening on arrival — the page reads the wallet afresh. An event the registry no longer carries lands in Portfolio. */

@@ -24,7 +24,7 @@ test("every window has its close, and the other layers are named", () => {
 
 test("the stack follows every store a layer lives in", () => {
   const stores = hook.slice(hook.indexOf("const STORES"), hook.indexOf("];", hook.indexOf("const STORES")));
-  for (const store of ["useLayer", "useGameMap", "useFeedPanel", "useBackPanels", "useCity", "quarterStore", "useRun", "awayStore", "useWindows", "usePredict", "useTrade", "useMoney", "useTowerChart", "useExchange", "useHarbor", "useMine", "useScouts", "vaultStore", "useHall", "useAgent", "useBeacons", "useAssistant", "howStore", "useMoments", "useLaunch", "freeStore", "useHudPanels"]) {
+  for (const store of ["useLayer", "useGameMap", "useFeedPanel", "useBackPanels", "useCity", "quarterStore", "useRun", "awayStore", "useWindows", "usePredict", "useTrade", "useMoney", "useTowerChart", "useExchange", "useHarbor", "useMine", "useScouts", "usePartners", "vaultStore", "useHall", "useAgent", "useBeacons", "useAssistant", "howStore", "useMoments", "useLaunch", "freeStore", "useHudPanels"]) {
     assert.match(stores, new RegExp(`\\b${store}\\b`), `${store} is followed`);
   }
 });

@@ -26,7 +26,7 @@
  */
 
 export const API_MAJOR = 1 as const;
-export const API_CONTRACT_VERSION = "1.86.0" as const;
+export const API_CONTRACT_VERSION = "1.90.0" as const;
 export const API_HEADER = "X-Ryntra-API" as const;
 export const API_VERSION_HEADER = "X-Ryntra-API-Version" as const;
 export const NETWORK = "solana:mainnet" as const;
@@ -150,7 +150,24 @@ export type ApiErrorCode =
   | "DEV_KEY_INVALID"
   | "DEV_ORIGIN_REFUSED"
   | "DEV_SCOPE_REFUSED"
-  | "DEV_QUOTA_EXCEEDED";
+  | "DEV_QUOTA_EXCEEDED"
+  /* 1.90.0 — prepared actions (CITY-161) */
+  | "INTENT_NOT_FOUND"
+  | "INTENT_EXPIRED"
+  | "INTENT_USED"
+  | "INTENT_BUSY"
+  | "INTENT_CHANGED"
+  | "INTENT_NOT_CLAIMED"
+  | "INTENT_RECEIPT_UNSEEN"
+  | "INTENT_RECEIPT_MISMATCH"
+  | "INTENT_ORIGIN_REFUSED"
+  | "INTENT_ACTION_CLOSED"
+  | "INTENT_LIMIT"
+  | "INTENT_CANCELLED"
+  | "INTENT_WRONG_WALLET"
+  | "INTENT_KEY_INVALID"
+  | "INTENT_SENT"
+  | "INTENT_SIGNATURE_INVALID";
 
 /** 1.7.0: the stable ids a plan issue may carry beside its message. */
 export type PlanIssueCode =
@@ -320,6 +337,8 @@ export type Capabilities = Readonly<{
     profile?: "/api/v1/launch/creators/{address}/profile";
     /* 1.55.0 — the survival of the markets launched on Ryntra at 7, 30 and 90 days */
     survival?: "/api/v1/launch/survival";
+    /* 1.89.0 — a launch's flow: the launch slot, the bundles, the creator's strip, the independent buyers */
+    flow?: "/api/v1/launch/{mint}/flow";
     /* 1.56.0 — «Розширений»: the launch's own config, built and sent */
     advancedConfigBuild?: "/api/v1/launch/advanced/config/build";
     advancedConfigSubmit?: "/api/v1/launch/advanced/config/submit";
@@ -6269,6 +6288,8 @@ export type LaunchMarketRow = Readonly<{
   holdersAtLeast: boolean;
   creatorLock: LaunchMarketLock | null;
   creatorSold: boolean | null;
+  /** 1.87.0 — Ryntra took the token's picture, description and links down; the chain keeps the token. Absent when not. */
+  hidden?: true;
   observedAt: string;
 }>;
 
@@ -6516,3 +6537,158 @@ export type TeamCheckResponse = Readonly<{
   multisig: string | null;
   squadsPermission: "initiate" | "vote" | null;
 }>;
+
+/* ---- 1.88.0 — the pre-sign check (CITY-152; working name «ward»): allow · warn · block with every reason, never a score */
+
+export type WardVerdict = "allow" | "warn" | "block";
+export type WardLevel = "block" | "warn" | "unknown" | "info";
+export type WardCheckKind = "input" | "simulation" | "authority" | "nonce" | "recipient" | "token" | "intent" | "program";
+export type WardNetwork = "mainnet" | "devnet";
+export type WardReasonCode =
+  | "LINK_NOT_READ"
+  | "TX_SIGNER_ABSENT"
+  | "SIMULATION_FAILED"
+  | "SIMULATION_UNAVAILABLE"
+  | "LOOKUPS_UNREAD"
+  | "SWEEPS_ASSETS"
+  | "OWNER_CHANGED"
+  | "TOKEN_OWNER_CHANGED"
+  | "CLOSE_AUTHORITY_CHANGED"
+  | "CLOSE_TO_OTHER"
+  | "DELEGATE_UNLIMITED"
+  | "DELEGATE_SET"
+  | "STAKE_AUTHORITY_CHANGED"
+  | "UPGRADE_AUTHORITY_CHANGED"
+  | "MINT_AUTHORITY_CHANGED"
+  | "NONCE_AUTHORITY_CHANGED"
+  | "DURABLE_NONCE"
+  | "RECIPIENT_KNOWN_THREAT"
+  | "RECIPIENT_SANCTIONED"
+  | "RECIPIENT_LOOKALIKE"
+  | "RECIPIENT_REFUSED"
+  | "RECIPIENT_FLAGGED"
+  | "RECIPIENT_NEW"
+  | "RECIPIENT_LINK"
+  | "RECIPIENT_UNREAD"
+  | "RECIPIENT_PROGRAM"
+  | "TOKEN_NON_TRANSFERABLE"
+  | "TOKEN_FROZEN_ON_ARRIVAL"
+  | "TOKEN_PAUSED"
+  | "TOKEN_PERMANENT_DELEGATE"
+  | "TOKEN_TRANSFER_HOOK"
+  | "TOKEN_FREEZE_AUTHORITY"
+  | "TOKEN_MINT_AUTHORITY"
+  | "TOKEN_PAUSABLE"
+  | "TOKEN_TRANSFER_FEE"
+  | "TOKEN_CONCENTRATED"
+  | "TOKEN_UNREAD"
+  | "TOKEN_FACTS_UNREAD"
+  | "INTENT_AMOUNT_OVER"
+  | "INTENT_RECIPIENT"
+  | "INTENT_ASSET"
+  | "INTENT_AMOUNT_UNDER"
+  | "INTENT_NOT_RECEIVED"
+  | "INTENT_UNREADABLE"
+  | "INTENT_UNCHECKED"
+  | "INTENT_MATCH"
+  | "PROGRAMS_UNKNOWN";
+
+/** What the agent says the transaction does. `mint: null` is SOL; amounts are plain decimals in the asset's units. */
+export type WardIntent =
+  | Readonly<{ kind: "transfer"; to: string; amount: string; mint: string | null }>
+  | Readonly<{ kind: "swap"; give: Readonly<{ mint: string | null; amount: string }>; get: Readonly<{ mint: string | null; min: string | null }> }>;
+
+/** `POST /api/v1/ward/check` — exactly one of `transaction` (base64) and `link`. */
+export type WardCheckRequest = Readonly<{
+  transaction?: string;
+  link?: string;
+  signer?: string;
+  intent?: WardIntent;
+  intentText?: string;
+  known?: readonly string[];
+  network?: WardNetwork;
+}>;
+
+export type WardReason = Readonly<{
+  code: WardReasonCode;
+  check: WardCheckKind;
+  level: WardLevel;
+  line: string;
+  detail: string | null;
+  accounts: readonly string[];
+  source: string;
+}>;
+
+/** The verdict: `allow` is only «nothing known stands against it, and what it does was read» — never «safe». */
+export type WardCheckResponse = Readonly<{
+  schema: "ryntra.ward.check";
+  schemaVersion: "1.0.0";
+  verdict: WardVerdict;
+  line: string;
+  reasons: readonly WardReason[];
+  notRead: number;
+  input: Readonly<{
+    kind: "transaction" | "link";
+    network: WardNetwork;
+    version: "legacy" | "v0" | null;
+    signer: string | null;
+    signed: boolean;
+    programs: readonly Readonly<{ id: string; label: string | null }>[];
+  }>;
+  effects: Readonly<{
+    simulated: boolean;
+    changes: readonly Readonly<{ holder: string; kind: "you" | "wallet" | "program"; mint: string | null; symbol: string | null; decimals: number | null; raw: string }>[];
+    feeLamports: string | null;
+    rentLamports: string | null;
+  }>;
+  intent: WardIntent | null;
+  checkedAt: string;
+}>;
+
+/* ------------------------------------------------------------ prepared actions (1.90.0, CITY-161) */
+
+export const INTENT_STATUSES = ["OPEN", "CLAIMED", "DONE", "EXPIRED", "LAPSED", "CANCELLED"] as const;
+export type IntentStatus = (typeof INTENT_STATUSES)[number];
+export const INTENT_ORIGIN_KINDS = ["agent", "chat", "partner"] as const;
+export type IntentOriginKind = (typeof INTENT_ORIGIN_KINDS)[number];
+
+/** Who prepared the intent, as the sheet says «Prepared by …». */
+export type IntentOrigin = Readonly<{ kind: IntentOriginKind; name: string }>;
+/** A swap: the coin, bought with `pay` or sold into it; `amountRaw` is what leaves the wallet. */
+export type IntentSwapSpec = Readonly<{ action: "swap"; coin: string; side: "buy" | "sell"; pay: "SOL" | "USDC"; amountRaw: string }>;
+/** A transfer: `"SOL"` or a mint, the raw amount and the recipient. */
+export type IntentTransferSpec = Readonly<{ action: "transfer"; coin: string; amountRaw: string; to: string }>;
+export type IntentSpec = IntentSwapSpec | IntentTransferSpec;
+
+export type IntentReceipt = Readonly<{ wallet: string; signature: string; at: string; chain: "CONFIRMED" | "FAILED" | "UNCHECKED" }>;
+
+/** 1.90.0: an intent as served — its frozen fields, where it stands, its digest and Ryntra's own https links. `receipt` only to the creator's key and the claiming wallet's own step; `origin.verified` false in phase 1. */
+export type Intent = Readonly<{
+  id: string;
+  status: IntentStatus;
+  network: "solana:mainnet";
+  spec: IntentSpec;
+  origin: IntentOrigin & Readonly<{ verified: boolean }>;
+  for: string | null;
+  createdAt: string;
+  expiresAt: string;
+  digest: string;
+  claimedUntil: string | null;
+  sentSignature: string | null;
+  receipt: IntentReceipt | null;
+  links: Readonly<{ url: string; qr: string }>;
+}>;
+export type IntentResponse = Readonly<{ intent: Intent }>;
+/** `POST /api/v1/intents` (201): the intent and the creator's key, shown once. */
+export type IntentCreatedResponse = Readonly<{ intent: Intent; creatorKey: string }>;
+
+/** `POST /api/v1/intents` — no wallet, no key; `pay` defaults to SOL, `expiresIn` to 900 seconds; `for` binds one wallet. A transfer is closed in phase 1. */
+export type IntentCreateRequest =
+  | Readonly<{ action: "swap"; coin: string; side: "buy" | "sell"; pay?: "SOL" | "USDC"; amountRaw: string; expiresIn?: number; origin: IntentOrigin; for?: string }>
+  | Readonly<{ action: "transfer"; coin: string; amountRaw: string; to: string; expiresIn?: number; origin: IntentOrigin; for?: string }>;
+/** `POST /api/v1/intents/{id}/claim` and `/release` — the digest the sheet showed and the pressing wallet. */
+export type IntentStepRequest = Readonly<{ digest: string; wallet: string }>;
+/** `POST /api/v1/intents/{id}/signed` — the claiming wallet's signed bytes, before they may leave. */
+export type IntentMarkRequest = Readonly<{ digest: string; wallet: string; signedWireBase64: string; replaces?: string | null }>;
+/** `POST /api/v1/intents/{id}/receipt` — the claiming wallet's signature (the marked one). */
+export type IntentReceiptRequest = Readonly<{ digest: string; wallet: string; signature: string }>;

@@ -2,7 +2,10 @@ import assert from "node:assert/strict";
 import { existsSync, readFileSync } from "node:fs";
 import test from "node:test";
 
-import { ANDROID_PRIVACY, ANDROID_SECTION_ID } from "../legal/privacy/android.ts";
+import { ANDROID_PRIVACY, ANDROID_SECTION_ID } from "../../lib/legal/texts/android.ts";
+import { privacyPolicy } from "../../lib/legal/texts/privacy.ts";
+import { termsOfUse } from "../../lib/legal/texts/terms.ts";
+import { CONTACTS } from "../../lib/site/contacts.ts";
 import { CONTACT_COPY } from "../contact/contact-copy.ts";
 import { DOC_PAGES, docsHref } from "../docs/content/index.ts";
 import { sitemapEntries } from "../sitemap.ts";
@@ -69,12 +72,16 @@ test("the privacy policy's Android section says what stays on the phone, the wal
   assert.match(words, /Google Firebase Cloud Messaging/);
   assert.equal(en.pointer, null, "an English reader needs no pointer");
   assert.ok(uk.pointer, "a Ukrainian reader of the English policy is shown where the section is");
-  const page = read("app/legal/privacy/page.tsx");
-  assert.match(page, /<h2 id=\{ANDROID_SECTION_ID\} lang=\{locale\}>/);
-  /* Numbered in order, the section second, and the processor named where the processors are. */
-  const numbers = [...page.matchAll(/<h2>(\d+)\./g)].map((match) => Number(match[1]));
-  assert.deepEqual(numbers, [1, 3, 4, 5, 6, 7, 8, 9, 10]);
-  assert.match(page, /<strong>Google Firebase Cloud Messaging<\/strong>/);
+  /* The published policy as data (CITY-157: the city's page draws it): the section second, in the reader's language,
+     numbered in order, and the processor named where the processors are. */
+  for (const locale of LOCALES) {
+    const policy = privacyPolicy(locale);
+    assert.equal(policy.sections[1].id, ANDROID_SECTION_ID);
+    assert.equal(policy.sections[1].lang, locale);
+    assert.deepEqual(policy.sections.map((section) => Number.parseInt(section.heading, 10)), [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]);
+  }
+  const processors = JSON.stringify(privacyPolicy().sections.find((section) => section.id === "processed"));
+  assert.match(processors, /\{"strong":"Google Firebase Cloud Messaging"\}/);
 });
 
 test("the privacy policy's Android section names the two permissions, the photo picker and a launch's public content (request 51)", () => {
@@ -100,7 +107,7 @@ test("the privacy policy's Android section names the two permissions, the photo 
 });
 
 test("the Terms carry the content rules a launch agrees to, in both languages (request 52)", async () => {
-  const { LAUNCH_TERMS, LAUNCH_SECTION_ID } = await import("../legal/terms/launch.ts");
+  const { LAUNCH_TERMS, LAUNCH_SECTION_ID } = await import("../../lib/legal/texts/launch.ts");
   const [en, uk] = LOCALES.map((locale) => LAUNCH_TERMS[locale]);
   assert.match(en.heading, /^10\. Tokens you launch$/);
   assert.match(uk.heading, /^10\. Токени, які ти запускаєш$/);
@@ -112,12 +119,18 @@ test("the Terms carry the content rules a launch agrees to, in both languages (r
   assert.match(JSON.stringify(uk), /може сховати його картинку, опис і посилання/);
   assert.equal(en.pointer, null);
   assert.ok(uk.pointer);
-  const page = read("app/legal/terms/page.tsx");
-  assert.match(page, /<h2 id=\{LAUNCH_SECTION_ID\} lang=\{locale\}>/);
-  assert.match(page, /\{launch\.report\.before\} <a href=\{contactMailto\(\)\}>\{CONTACTS\.email\}<\/a>/);
-  assert.match(page, /the Ryntra app for Android/);
-  const numbers = [...page.matchAll(/<h2>(\d+)\./g)].map((match) => Number(match[1]));
-  assert.deepEqual(numbers, [1, 2, 3, 4, 5, 6, 7, 8, 9, 11, 12, 13, 14, 15, 16]);
+  /* The published Terms as data (CITY-157): the section tenth, in the reader's language, the report going to the inbox. */
+  for (const locale of LOCALES) {
+    const terms = termsOfUse(locale);
+    const launch = terms.sections[9];
+    assert.equal(launch.id, LAUNCH_SECTION_ID);
+    assert.equal(launch.lang, locale);
+    const report = launch.blocks.at(-1);
+    assert.equal(report.kind, "p");
+    assert.deepEqual(report.line[1], { link: CONTACTS.email, href: `mailto:${CONTACTS.email}` });
+    assert.deepEqual(terms.sections.map((section) => Number.parseInt(section.heading, 10)), [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16]);
+  }
+  assert.match(JSON.stringify(termsOfUse().intro), /the Ryntra app for Android/);
   assert.equal(LAUNCH_SECTION_ID, "launch");
 });
 
@@ -125,11 +138,12 @@ test("both pages are in the footer, the support page at both of its addresses; o
   assert.ok(hasUkAddress("/support"));
   assert.equal(localizedPath("/support", "uk"), "/uk/support");
   assert.equal(localizedPath("/legal/privacy", "uk"), "/legal/privacy", "the policy has one address; the cookie keeps the language");
-  /* Both stay at their addresses (the Android app's store listing names them), out of the sitemap and the index while
-     they are drawn in the old interface (CITY-159), until the city's Help window takes them over (CITY-157). */
+  /* Both stay at their addresses (the Android app's store listing names them) and are the city's pages since CITY-157:
+     offered to the index in English, never held out as old pages. */
   const urls = sitemapEntries().map((entry) => entry.url);
-  for (const url of ["https://ryntra.io/support", "https://ryntra.io/uk/support", "https://ryntra.io/legal/privacy"]) assert.ok(!urls.includes(url), `${url} is not offered to the index yet`);
-  assert.ok(AWAITING_CITY.includes("/support") && AWAITING_CITY.includes("/legal/:path*"), "they answer noindex meanwhile");
+  for (const url of ["https://ryntra.io/support", "https://ryntra.io/legal/privacy"]) assert.ok(urls.includes(url), `${url} is offered to the index`);
+  assert.ok(!urls.includes("https://ryntra.io/uk/support"), "one address per page in the sitemap");
+  assert.ok(!AWAITING_CITY.includes("/support") && !AWAITING_CITY.some((source) => source === "/legal/:path*"), "they no longer answer noindex");
   for (const locale of LOCALES) {
     const hrefs = HOMEPAGE_COPY[locale].footer.legal.map((link) => link.href);
     assert.ok(hrefs.includes("/legal/privacy") && hrefs.includes("/support"), `${locale} footer`);

@@ -19,10 +19,13 @@ const CLOSED = {
   hall: { panel: false },
   berth: { open: false },
   agent: { panel: "none" },
+  garage: { open: false },
   assistant: { open: false },
   how: { open: false },
+  guides: { open: false },
   moments: { sheet: null },
   launch: { sheet: false },
+  pages: { open: [] },
   hud: { menu: false, settings: false },
 };
 
@@ -42,16 +45,20 @@ test("each window, open alone, is named", () => {
     harbor: { harbor: { open: true } },
     mine: { mine: { open: true } },
     scouts: { scouts: { open: true } },
+    partners: { partners: { open: true, landing: false } },
     vault: { vault: { open: true } },
     hall: { hall: { panel: true } },
     berth: { berth: { open: true } },
     agent: { agent: { panel: "rule" } },
+    garage: { garage: { open: true } },
     beacon: { beacon: { openFor: "So11111111111111111111111111111111111111112" } },
     assistant: { assistant: { open: true } },
     how: { how: { open: true } },
+    guides: { guides: { open: true } },
     moments: { moments: { sheet: { kind: "share" } } },
     launch: { launch: { sheet: true } },
     build: { build: { on: true } },
+    pages: { pages: { open: ["help"] } },
     menu: { hud: { menu: true, settings: false } },
     settings: { hud: { menu: false, settings: true } },
   };
@@ -60,6 +67,11 @@ test("each window, open alone, is named", () => {
     assert.equal(openWindow({ ...CLOSED, ...src }), name, name);
     assert.equal(windowOpen({ ...CLOSED, ...src }), true, name);
   }
+});
+
+test("the partners' landing counts as their window, closed or open", () => {
+  assert.equal(openWindow({ partners: { open: false, landing: true } }), "partners");
+  assert.equal(windowOpen({ partners: { open: false, landing: false } }), false);
 });
 
 test("the agent's closed panel, an empty chart and no moments sheet are not windows", () => {

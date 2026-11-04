@@ -9,8 +9,9 @@ import { useCity } from '@/city/lib/city/store';
 import { useFlashing } from '@/city/lib/feed/motion';
 import { newRings } from '@/city/lib/lens/lens';
 import { lensShot } from '@/city/lib/lens/shot';
+import { useNewLaunches } from '@/city/lib/lens/new-store';
 import { useLens } from '@/city/lib/lens/store';
-import { easeLens, LENS_MS } from '@/city/lib/lens/uniforms';
+import { easeLens, LENS_MS, lensY } from '@/city/lib/lens/uniforms';
 import { PALETTE } from '@/city/lib/palette';
 import { quarterStore } from '@/city/lib/quarter/store';
 import { useRun } from '@/city/lib/run/store';
@@ -101,7 +102,136 @@ export function LensRings() {
     const k = easeLens((performance.now() - fade.current.at) / LENS_MS);
     u.uOn!.value = fade.current.from + ((on ? 1 : 0) - fade.current.from) * k;
   });
-  return <mesh geometry={mesh.geometry} material={mesh.material} position={[0, 0.08, 0]} renderOrder={2} frustumCulled={false} />;
+  return (
+    <>
+      <mesh geometry={mesh.geometry} material={mesh.material} position={[0, 0.08, 0]} renderOrder={2} frustumCulled={false} />
+      <LensLighthouse />
+    </>
+  );
+}
+
+/** How tall the beacon's shaft of light stands over its tower, and how far its sweep reaches. */
+const SHAFT = 34;
+const SWEEP = 22;
+/** A turn of the sweep, in seconds: slow, a harbour's lighthouse, not a siren. */
+const TURN_S = 9;
+
+/**
+ * «Маяк» in the city (CITY-142): over the one coin the most different wallets bought, a shaft of the stored sun's light
+ * and a slow beam sweeping round from its crown, while «New» is looked at. Three small draws, shared by nothing else. Without
+ * motion the beam stands still and the shaft is all there is to see.
+ */
+function LensLighthouse() {
+  const lens = useLens((st) => st.lens);
+  const mint = useNewLaunches((st) => st.lighthouse?.mint ?? null);
+  const layout = useCity((st) => st.layout);
+  const still = !useFlashing();
+  const placed = useMemo(() => (mint ? (layout.towers.find((t) => t.tower.id === mint) ?? null) : null), [mint, layout]);
+  const group = useRef<THREE.Group>(null);
+  const sweep = useRef<THREE.Group>(null);
+  const parts = useMemo(() => {
+    const uniforms = { uOn: { value: 0 }, uTime: { value: 0 }, uColor: { value: new THREE.Color(PALETTE.amber).multiplyScalar(1.8) }, uCore: { value: new THREE.Color(PALETTE.warmWhite).multiplyScalar(2.2) } };
+    const shaftGeometry = new THREE.CylinderGeometry(0.42, 0.42, SHAFT, 18, 1, true);
+    shaftGeometry.translate(0, SHAFT / 2, 0);
+    const shaft = new THREE.ShaderMaterial({
+      transparent: true,
+      depthWrite: false,
+      blending: THREE.AdditiveBlending,
+      side: THREE.DoubleSide,
+      uniforms,
+      vertexShader: /* glsl */ `
+        varying vec2 vUv;
+        varying vec3 vNormal;
+        varying vec3 vView;
+        void main() {
+          vUv = uv;
+          vec4 world = modelMatrix * vec4(position, 1.0);
+          vNormal = normalize(mat3(modelMatrix) * normal);
+          vView = normalize(cameraPosition - world.xyz);
+          gl_Position = projectionMatrix * viewMatrix * world;
+        }
+      `,
+      fragmentShader: /* glsl */ `
+        uniform float uOn;
+        uniform float uTime;
+        uniform vec3 uColor;
+        uniform vec3 uCore;
+        varying vec2 vUv;
+        varying vec3 vNormal;
+        varying vec3 vView;
+        void main() {
+          // Brightest at the crown, gone at the top; a soft core where the shaft faces the eye.
+          float rise = pow(1.0 - vUv.y, 1.6);
+          float core = pow(abs(dot(vNormal, vView)), 2.0);
+          float shimmer = 0.88 + 0.12 * sin(vUv.y * 40.0 - uTime * 2.0);
+          vec3 color = mix(uColor, uCore, core * 0.6) * (0.25 + core * 0.9) * rise * shimmer;
+          gl_FragColor = vec4(color * uOn, 1.0);
+        }
+      `,
+    });
+    // The sweep: two blades of light, a lamp's two lenses, fading out from the crown.
+    const bladeGeometry = new THREE.PlaneGeometry(SWEEP, 3.2, 1, 1);
+    bladeGeometry.translate(SWEEP / 2, 0, 0);
+    bladeGeometry.rotateX(-Math.PI / 2);
+    const blade = new THREE.ShaderMaterial({
+      transparent: true,
+      depthWrite: false,
+      blending: THREE.AdditiveBlending,
+      side: THREE.DoubleSide,
+      uniforms,
+      vertexShader: /* glsl */ `
+        varying vec2 vUv;
+        void main() {
+          vUv = uv;
+          gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+        }
+      `,
+      fragmentShader: /* glsl */ `
+        uniform float uOn;
+        uniform vec3 uColor;
+        varying vec2 vUv;
+        void main() {
+          float out_ = pow(1.0 - vUv.x, 1.8);
+          float edge = pow(1.0 - abs(vUv.y - 0.5) * 2.0, 1.5) * smoothstep(0.0, 0.08, vUv.x + 0.02);
+          gl_FragColor = vec4(uColor * 0.55 * out_ * edge * uOn, 1.0);
+        }
+      `,
+    });
+    return { uniforms, shaftGeometry, shaft, bladeGeometry, blade };
+  }, []);
+  useEffect(
+    () => () => {
+      parts.shaftGeometry.dispose();
+      parts.shaft.dispose();
+      parts.bladeGeometry.dispose();
+      parts.blade.dispose();
+    },
+    [parts],
+  );
+  const on = lens === 'new' && placed !== null;
+  const fade = useRef({ from: 0, at: 0 });
+  useEffect(() => {
+    fade.current = { from: parts.uniforms.uOn.value, at: performance.now() };
+  }, [on, parts]);
+  useFrame(({ clock }, delta) => {
+    const u = parts.uniforms;
+    const k = easeLens((performance.now() - fade.current.at) / LENS_MS);
+    u.uOn.value = fade.current.from + ((on ? 1 : 0) - fade.current.from) * k;
+    u.uTime.value = clock.elapsedTime;
+    if (group.current) group.current.visible = u.uOn.value > 0.002 && placed !== null;
+    if (sweep.current && !still) sweep.current.rotation.y -= (delta * Math.PI * 2) / TURN_S;
+  });
+  // The crown of the tower as the lens raised it: the beacon's tower is one of the looked-at.
+  const top = placed ? lensY(placed.height, placed.height, 1, still ? 0 : 1) + 0.4 : 0;
+  return (
+    <group ref={group} position={[placed?.x ?? 0, top, placed?.z ?? 0]} visible={false}>
+      <mesh geometry={parts.shaftGeometry} material={parts.shaft} renderOrder={3} frustumCulled={false} />
+      <group ref={sweep} rotation={[0, 0.6, 0]}>
+        <mesh geometry={parts.bladeGeometry} material={parts.blade} renderOrder={3} frustumCulled={false} />
+        <mesh geometry={parts.bladeGeometry} material={parts.blade} rotation={[0, Math.PI, 0]} renderOrder={3} frustumCulled={false} />
+      </group>
+    </group>
+  );
 }
 
 /**

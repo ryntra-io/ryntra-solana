@@ -48,6 +48,8 @@
  * would be worse than unsigned, because it would look verified.
  */
 
+import { CONNECTOR_MCP_PATH, CONNECTOR_SCOPES, CONNECT_PAGE_PATH, CONNECT_TOKEN_PATH } from "../../connector/metadata.ts";
+import { CONNECTOR_TOOLS } from "../../connector/tools.ts";
 import { HOSTED_LOCAL_READ_TOOLS } from "../mcp/hosted.ts";
 import { MCP_WRITE_TOOLS } from "../mcp/write-tools.ts";
 import { EXTERNAL_ROUTER_SKILLS } from "../external/router.ts";
@@ -160,6 +162,17 @@ export type A2aHttpAuthScheme = Readonly<{
   httpAuthSecurityScheme: Readonly<{ description: string; scheme: string; bearerFormat: string }>;
 }>;
 
+/** A2A 1.0 `OAuth2SecurityScheme` with the one flow it uses here, in the protocol encoder's JSON names. */
+export type A2aOAuth2Scheme = Readonly<{
+  oauth2SecurityScheme: Readonly<{
+    description: string;
+    flows: Readonly<{
+      authorizationCode: Readonly<{ authorizationUrl: string; tokenUrl: string; refreshUrl: string; scopes: Readonly<Record<string, string>>; pkceRequired: boolean }>;
+    }>;
+    oauth2MetadataUrl: string;
+  }>;
+}>;
+
 export type A2aAgentSkill = Readonly<{
   id: string;
   name: string;
@@ -179,7 +192,7 @@ export type RyntraAgentCard = Readonly<{
   version: string;
   documentationUrl: string;
   capabilities: A2aAgentCapabilities;
-  securitySchemes: Readonly<Record<string, A2aHttpAuthScheme>>;
+  securitySchemes: Readonly<Record<string, A2aHttpAuthScheme | A2aOAuth2Scheme>>;
   securityRequirements: readonly A2aSecurityRequirement[];
   defaultInputModes: readonly string[];
   defaultOutputModes: readonly string[];
@@ -195,13 +208,23 @@ export type RyntraAgentCard = Readonly<{
  * tell whether the skills they cached are the skills being served, and a value
  * that changed on every deployment would make that question unanswerable.
  */
-export const RYNTRA_AGENT_CARD_VERSION = "1.0.0" as const;
+export const RYNTRA_AGENT_CARD_VERSION = "1.1.0" as const;
 
 /** The scheme name the card's security requirements point at. */
 export const A2A_BEARER_SCHEME = "ryntraAgentKey" as const;
 
 const BEARER_REQUIREMENT: A2aSecurityRequirement = Object.freeze({
   schemes: Object.freeze({ [A2A_BEARER_SCHEME]: Object.freeze({ list: Object.freeze([]) }) }),
+});
+
+/**
+ * The Solana connector's scheme (CITY-154, 1.1.0): OAuth 2.1 with PKCE, the consent at `/connect` approved by the
+ * person's wallet. Its skills are the read-only tools of the MCP endpoint `/mcp`.
+ */
+export const CONNECTOR_OAUTH_SCHEME = "ryntraWalletOAuth" as const;
+
+const CONNECTOR_REQUIREMENT: A2aSecurityRequirement = Object.freeze({
+  schemes: Object.freeze({ [CONNECTOR_OAUTH_SCHEME]: Object.freeze({ list: Object.freeze([...CONNECTOR_SCOPES]) }) }),
 });
 
 /**
@@ -258,6 +281,25 @@ function toolSkills(): readonly A2aAgentSkill[] {
   return Object.freeze([...reads, ...proposals]);
 }
 
+/** The Solana connector's read-only tools, served over MCP at `/mcp` (CITY-154). */
+function connectorSkills(origin: string): readonly A2aAgentSkill[] {
+  return Object.freeze(
+    CONNECTOR_TOOLS.map(
+      (tool): A2aAgentSkill =>
+        Object.freeze({
+          id: tool.name,
+          name: tool.title,
+          description: `${tool.description} Read-only, over MCP at ${origin}${CONNECTOR_MCP_PATH}; every answer carries its time and source.`,
+          tags: Object.freeze(["read", "mcp", "solana"]),
+          examples: Object.freeze([]),
+          inputModes: Object.freeze([JSON_MODE]),
+          outputModes: Object.freeze([JSON_MODE]),
+          securityRequirements: Object.freeze([CONNECTOR_REQUIREMENT]),
+        }),
+    ),
+  );
+}
+
 /** The skills this interface serves directly, over A2A rather than over MCP. */
 function routerSkills(): readonly A2aAgentSkill[] {
   return Object.freeze(
@@ -312,7 +354,7 @@ export function buildRyntraAgentCard({ origin }: { origin: string }): RyntraAgen
   return Object.freeze({
     name: "Ryntra",
     description:
-      "Solana-native financial operations platform for people, teams and autonomous agents. This agent answers reads and quotes and records proposals; a person signs anything that moves money.",
+      `Solana-native financial operations platform for people, teams and autonomous agents. This agent answers reads and quotes and records proposals; a person signs anything that moves money. Its Solana connector for AI chats is the MCP endpoint ${origin}${CONNECTOR_MCP_PATH}, read-only, approved with the person's wallet.`,
     supportedInterfaces: Object.freeze([
       Object.freeze({
         url: `${origin}${A2A_INTERFACE_PATH}`,
@@ -322,7 +364,7 @@ export function buildRyntraAgentCard({ origin }: { origin: string }): RyntraAgen
     ]),
     provider: Object.freeze({ organization: "Ryntra", url: origin }),
     version: RYNTRA_AGENT_CARD_VERSION,
-    documentationUrl: `${origin}/developers/agent-control`,
+    documentationUrl: `${origin}${CONNECT_PAGE_PATH}`,
     capabilities: Object.freeze({
       /* Both false because neither is built. `message:stream` and the push
          notification configs are refused by name in `./interface.ts`, and a
@@ -345,11 +387,27 @@ export function buildRyntraAgentCard({ origin }: { origin: string }): RyntraAgen
           bearerFormat: "opaque",
         }),
       }),
+      [CONNECTOR_OAUTH_SCHEME]: Object.freeze({
+        oauth2SecurityScheme: Object.freeze({
+          description:
+            "OAuth 2.1 with PKCE for the Solana connector. The person approves at the consent page by signing one Sign In With Solana message with their wallet; the grant is read-only and moves nothing.",
+          flows: Object.freeze({
+            authorizationCode: Object.freeze({
+              authorizationUrl: `${origin}${CONNECT_PAGE_PATH}`,
+              tokenUrl: `${origin}${CONNECT_TOKEN_PATH}`,
+              refreshUrl: `${origin}${CONNECT_TOKEN_PATH}`,
+              scopes: Object.freeze({ "market:read": "Read Solana market facts: towers, markets, tokens, stocks, launches, events, recipient checks and evidence." }),
+              pkceRequired: true,
+            }),
+          }),
+          oauth2MetadataUrl: `${origin}/.well-known/oauth-authorization-server`,
+        }),
+      }),
     }),
     securityRequirements: Object.freeze([BEARER_REQUIREMENT]),
     defaultInputModes: Object.freeze([JSON_MODE, TEXT]),
     defaultOutputModes: Object.freeze([JSON_MODE, TEXT]),
-    skills: Object.freeze([...routerSkills(), ...toolSkills()]),
+    skills: Object.freeze([...routerSkills(), ...toolSkills(), ...connectorSkills(origin)]),
     signatures: Object.freeze([]),
   });
 }

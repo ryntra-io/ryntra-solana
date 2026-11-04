@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import type { PositionView } from '../../../lib/liquidity/catalog/positions.ts';
 import type { HarborPool } from '../districts/harbor/pools.ts';
+import type { CaptainAnswer } from './captain.ts';
 import { stepFromConfig, type MultiplierStep } from './corporate.ts';
 import { keepLot, keepSteps, keepWishes, lotsOf, stepsSeen, wishes } from './device.ts';
 import { createEarnEngine, type EarnEngine, type LendRates } from './engine.ts';
@@ -28,6 +29,8 @@ type EarnData = {
   feed: Loaded<LstFeed>;
   piers: Loaded<Readonly<{ pools: readonly HarborPool[]; at: string | null }>>;
   lend: Loaded<LendRates>;
+  /** «Like the Captain»: the strategies with a proven record (CITY-99). */
+  captain: Loaded<CaptainAnswer>;
   positions: Owned<readonly PositionView[]>;
   stocks: Owned<readonly ScaledConfig[]>;
   /** The multiplier steps seen on this device, every stock. */
@@ -37,6 +40,7 @@ type EarnData = {
   loadFeed: () => Promise<void>;
   loadPiers: () => Promise<void>;
   loadLend: () => Promise<void>;
+  loadCaptain: () => Promise<void>;
   /** The wallet changed (or none): its reads are read again and the last wallet's go. */
   follow: (owner: string | null) => void;
   loadPositions: (owner: string) => Promise<void>;
@@ -61,6 +65,7 @@ export const useEarnData = create<EarnData>((set, get) => ({
   feed: { status: 'idle' },
   piers: { status: 'idle' },
   lend: { status: 'idle' },
+  captain: { status: 'idle' },
   positions: null,
   stocks: null,
   steps: [],
@@ -88,6 +93,14 @@ export const useEarnData = create<EarnData>((set, get) => ({
     set({ lend: { status: 'loading' } });
     const read = await engine.lend();
     set({ lend: read.ok ? { status: 'ready', value: read.value, at: now() } : { status: 'error' } });
+  },
+
+  loadCaptain: async () => {
+    if (fresh(get().captain)) return;
+    const keep = get().captain;
+    if (keep.status !== 'ready') set({ captain: { status: 'loading' } });
+    const read = await engine.captain();
+    set({ captain: read.ok ? { status: 'ready', value: read.value, at: now() } : keep.status === 'ready' ? keep : { status: 'error' } });
   },
 
   follow: (owner) => {

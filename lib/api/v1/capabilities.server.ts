@@ -293,6 +293,7 @@ function launchCapability(env: NodeJS.ProcessEnv): Pick<Capabilities, "launch"> 
       stats: "/api/v1/launch/{mint}/stats",
       profile: "/api/v1/launch/creators/{address}/profile",
       survival: "/api/v1/launch/survival",
+      flow: "/api/v1/launch/{mint}/flow",
       advancedConfigBuild: "/api/v1/launch/advanced/config/build",
       advancedConfigSubmit: "/api/v1/launch/advanced/config/submit",
       boost: "/api/v1/launch/{mint}/boost",

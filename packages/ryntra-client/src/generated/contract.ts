@@ -3,7 +3,7 @@
 
 
 /** The contract this build of the package was generated from. */
-export const CONTRACT_VERSION = "1.86.0";
+export const CONTRACT_VERSION = "1.90.0";
 export const CONTRACT_MAJOR = 1;
 
 /** The header a client names its contract major in; a major the server does not serve is refused UNSUPPORTED_API. */
@@ -114,6 +114,22 @@ export const ERRORS = {
   DEV_ORIGIN_REFUSED: { status: 403, retryable: false },
   DEV_SCOPE_REFUSED: { status: 403, retryable: false },
   DEV_QUOTA_EXCEEDED: { status: 429, retryable: true },
+  INTENT_NOT_FOUND: { status: 404, retryable: false },
+  INTENT_EXPIRED: { status: 410, retryable: false },
+  INTENT_USED: { status: 409, retryable: false },
+  INTENT_BUSY: { status: 409, retryable: false },
+  INTENT_CHANGED: { status: 409, retryable: false },
+  INTENT_NOT_CLAIMED: { status: 409, retryable: false },
+  INTENT_RECEIPT_UNSEEN: { status: 409, retryable: false },
+  INTENT_RECEIPT_MISMATCH: { status: 422, retryable: false },
+  INTENT_ORIGIN_REFUSED: { status: 422, retryable: false },
+  INTENT_ACTION_CLOSED: { status: 422, retryable: false },
+  INTENT_LIMIT: { status: 429, retryable: true },
+  INTENT_CANCELLED: { status: 410, retryable: false },
+  INTENT_WRONG_WALLET: { status: 403, retryable: false },
+  INTENT_KEY_INVALID: { status: 403, retryable: false },
+  INTENT_SENT: { status: 409, retryable: false },
+  INTENT_SIGNATURE_INVALID: { status: 422, retryable: false },
 } as const;
 
 export type ApiErrorCode = keyof typeof ERRORS;
@@ -193,6 +209,16 @@ export const OPERATIONS = {
     response: "DevPlanResponse",
     paged: false,
     parameters: [],
+  },
+  getIntent: {
+    operationId: "getIntent",
+    path: "/api/v1/intents/{id}",
+    tag: "Intents",
+    response: "IntentResponse",
+    paged: false,
+    parameters: [
+      { name: "id", in: "path", required: true },
+    ],
   },
   getLaunch: {
     operationId: "getLaunch",
@@ -304,6 +330,16 @@ export const OPERATIONS = {
     parameters: [
       { name: "mint", in: "path", required: true },
       { name: "wallet", in: "query", required: false },
+    ],
+  },
+  getLaunchFlow: {
+    operationId: "getLaunchFlow",
+    path: "/api/v1/launch/{mint}/flow",
+    tag: "Launch",
+    response: "LaunchFlowResponse",
+    paged: false,
+    parameters: [
+      { name: "mint", in: "path", required: true },
     ],
   },
   getLaunchHolder: {

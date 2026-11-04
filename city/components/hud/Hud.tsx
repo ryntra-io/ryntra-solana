@@ -12,6 +12,7 @@ import { useHall } from '@/city/lib/launch/hall-store';
 import { isNamed, towerFigure, type District, type Tower } from '@/city/lib/market/types';
 import { useFilming } from '@/city/lib/moments/MomentsLayer';
 import { cancelFilming, useMoments } from '@/city/lib/moments/stage';
+import { usePages } from '@/city/lib/pages/store';
 import { useLaunch } from '@/city/lib/launch/district';
 import { BUSY, useTrade } from '@/city/lib/trade/store';
 import { RUN_OPEN } from '@/city/lib/run/flag';
@@ -22,12 +23,14 @@ import { PLAY_OPEN } from '@/city/lib/game/flag';
 import { useLayer } from '@/city/lib/game/layer';
 import { quarterStore } from '@/city/lib/quarter/store';
 import { howStore } from '@/city/lib/art/how';
+import { useGuides } from '@/city/lib/how/store';
 import { AgentCard, useAgentCard } from '../agent/AgentCard';
 import { chartOpen, useChartOpen } from '../chart/ChartAction';
 import { EventsBell } from '../feed/EventsBell';
 import { LiveFeed } from '../feed/LiveFeed';
 import { LensBar } from '../lens/LensBar';
 import { LaunchSlot, useLaunchDistrict } from '../launch/LaunchSlot';
+import { NightCard, useNightCard, useNightPlaying } from '../launch/NightLayer';
 import { WalletChip } from '../quarter/WalletChip';
 import { RunHud } from '../run/RunHud';
 import { CitySearch } from '../search/CitySearch';
@@ -46,6 +49,7 @@ import { HUD } from './words';
 import { dateText, digits, useWords, type TextKey } from '@/city/lib/i18n/dict';
 import { useLang, type Lang } from '@/city/lib/i18n/lang';
 import { retellLaunchMoment } from '@/city/lib/launch/words';
+import { useAgentReport } from '@/city/lib/autopilot/report-client';
 import s from './hud.module.css';
 
 type HudText = TextKey<typeof HUD>;
@@ -93,6 +97,12 @@ export function Hud({ onPlay, onSound }: { onPlay: Play; onSound: (on: boolean) 
   // The scout's card, once its flag is open: its rule, its status, or a find.
   const agentCard = useAgentCard() && AGENTS_OPEN;
   const hall = useHall((state) => state.panel);
+  // Launch Night (CITY-146): its card takes the empty slot while a show stands ready; while it plays, the stage owns
+  // the bottom of the screen and the menu steps aside.
+  const nightCard = useNightCard();
+  const nightPlaying = useNightPlaying();
+  // The agent's «While you were away» stands where the first hint would (CITY-194): the hint waits for it.
+  const agentAway = useAgentReport((st) => st.away !== null);
   // The Launch district owns the card slot while its sheet is open or a launch's tower is picked.
   const launch = useLaunchDistrict();
   // The tower's window owns the bottom of the screen while it is open (CITY-78): nothing of the home stands under it.
@@ -115,7 +125,7 @@ export function Hud({ onPlay, onSound }: { onPlay: Play; onSound: (on: boolean) 
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => {
       if (event.key !== 'Escape' || event.defaultPrevented) return;
-      if (useTrade.getState().open || useHarbor.getState().open || useMoments.getState().sheet || howStore.getState().open || chartOpen()) return;
+      if (useTrade.getState().open || useHarbor.getState().open || useMoments.getState().sheet || howStore.getState().open || useGuides.getState().open || chartOpen()) return;
       // A window on the whole screen takes this Escape back from the whole screen itself (city/components/window).
       if (document.querySelector('[data-window-full]')) return;
       if (document.querySelector('[data-city-top] [aria-expanded="true"]:not([data-city-menu] *)')) return;
@@ -155,7 +165,7 @@ export function Hud({ onPlay, onSound }: { onPlay: Play; onSound: (on: boolean) 
       <TopHandle />
       <CutIn hidden={windowOpen} />
       <HoverLabel />
-      <FirstHint hidden={windowOpen || trading || !!selectedId || launch.showing} />
+      <FirstHint hidden={windowOpen || trading || !!selectedId || launch.showing || nightPlaying || agentAway} />
       {trading || charting ? null : launch.showing ? (
         <LaunchSlot />
       ) : selectedId ? (
@@ -170,22 +180,16 @@ export function Hud({ onPlay, onSound }: { onPlay: Play; onSound: (on: boolean) 
             <ChallengeCard beat={challenge.beat} onPlay={() => onPlay('home')} onLater={() => setChallenge(null)} />
           ) : play ? (
             <GameSlot />
+          ) : nightCard ? (
+            <NightCard />
           ) : null}
           {playDock && <GameDock onRun={() => onPlay('city')} />}
         </>
       )}
       {/* The menu stays under every window of the frame and under a picked tower (30.10): Spot stands as the Exchange
           does. A launch's sheet and Play's own dock, where its switch is open, keep the bottom for themselves. */}
-      {!playDock && !launch.showing && (
-        <Deck
-          onAgent={() => {
-            closeMenu();
-            // One panel at a time: the Harbor gives way, unless it is waiting on the wallet or sending.
-            useHarbor.getState().hide();
-            if (useHarbor.getState().open) return;
-            useAgent.getState().toggle();
-          }}
-        />
+      {!playDock && !launch.showing && !nightPlaying && (
+        <Deck />
       )}
     </div>
   );
@@ -205,6 +209,7 @@ export function goHome() {
   if (trade.open && !BUSY.has(trade.phase)) trade.close();
   useHarbor.getState().hide();
   useAgent.getState().closePanel();
+  usePages.getState().closeAll();
   const sheet = useLaunch.getState();
   if (sheet.sheet && closable(sheet.phase)) sheet.closeSheet();
   const quarter = quarterStore.getState();
@@ -350,7 +355,8 @@ function cutTitle(title: string, w: (typeof HUD)['en'], lang: Lang): string {
 }
 
 function cutValue(value: string, w: (typeof HUD)['en'], lang: Lang): string {
-  if (value === 'UNVERIFIED') return w.cutUnverified;
+  // A new pool is announced, never labelled on the slab: the check is the trade card's, before the signature (decision 91).
+  if (value === 'UNVERIFIED') return '';
   const launch = retellLaunchMoment(value, lang);
   if (launch) return digits(launch, lang);
   return digits(value.replace(/(\d+)([MHD])$/, (_, n: string, unit: string) => w.cutWindow(n, unit)), lang);
@@ -370,13 +376,14 @@ function CutIn({ hidden }: { hidden: boolean }) {
   }, [event]);
   // An open tower card owns the frame. «Flashing effects» off (CITY-66) keeps the slab, still (hud.module.css).
   if (!event || selectedId || hidden) return null;
+  const value = cutValue(event.value, w, lang);
   return (
     <div className={s.cutin} key={event.id}>
       <div className={s.cutinSlab} style={{ ['--accent' as string]: ACCENT[event.kind] }}>
         <div className={s.cutinKind}>{cutTitle(event.title, w, lang)}</div>
         <div className={s.cutinMain}>
           <span className={`${s.display} ${s.cutinSymbol}`}>{event.symbol ? `$${event.symbol.replace(/^\$/, '')}` : w.newPool}</span>
-          <span className={s.cutinValue}>{cutValue(event.value, w, lang)}</span>
+          {value && <span className={s.cutinValue}>{value}</span>}
         </div>
       </div>
     </div>

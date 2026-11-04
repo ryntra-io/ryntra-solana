@@ -24,6 +24,8 @@ import { rewardsView } from "@/lib/rewards/view";
 import { getWalletProofFrom } from "@/lib/session";
 import { noteDevice } from "@/lib/growth/protect-deps.server";
 import { walletHold } from "@/lib/growth/review-store";
+import { rankCountedEntries } from "@/lib/growth/referral-guard";
+import { readReferralGuard, readReferralHold } from "@/lib/growth/referral-guard-store";
 import { replayBenefitJobs } from "@/lib/rewards/benefit-replay.server";
 import { enqueueBenefitJob, hurryBenefitJob } from "@/lib/rewards/benefit-jobs";
 import { readSubjectEvents } from "@/lib/growth/review-store";
@@ -77,7 +79,7 @@ export async function GET(req: NextRequest) {
   const now = new Date().toISOString();
   // Only this proven wallet's already queued settlements; no history backfill.
   /* The cluster check reads the chain and may wait for a person: it is the schedule's, never the page's. */
-  await replayBenefitJobs(store, { wallet: address, limit: 2, budgetMs: 6_000, now, exclude: ["FIRST_TEN_CHECK"] }).catch(() => undefined);
+  await replayBenefitJobs(store, { wallet: address, limit: 2, budgetMs: 6_000, now, exclude: ["FIRST_TEN_CHECK", "REFERRAL_CHECK"] }).catch(() => undefined);
   /* Creating the record here is what gives a person a referral link the first
      time they open the page, without asking them to sign anything extra. */
 
@@ -126,6 +128,9 @@ export async function GET(req: NextRequest) {
     rulesNow?.firstTen ? readFirstTen(store, address).catch(() => null) : Promise.resolve(null),
   ]);
   const minimumUsdMicros = claimMinimumUsdMicros(rulesNow, usdcAccount);
+  /* Friends' shares whose pair is not clear, or all of them before the wallet's own first real trade, wait (Ryntra
+     Partners R3) — earned, shown as waiting, never offered. */
+  const referralHold = await readReferralHold(store, address, entries, now);
   /* A window still waiting for its check keeps its check queued — and a cancelled one whose wallet a person cleared
      since (an appeal that won) is looked at again, to be given back. */
   if (firstTen?.window && (firstTen.window.check === "PENDING" || (firstTen.window.check === "FAILED" && (await walletHold(store, address, now).catch(() => "REVIEW")) === "NONE"))) {
@@ -152,6 +157,7 @@ export async function GET(req: NextRequest) {
     locale,
     referral: { code: account.code, link: referralLink(publicOrigin(req), account.code) },
     minimumUsdMicros,
+    referralHeldUsdMicros: referralHold.heldUsdMicros,
   });
 
   const latestAccount = await readRewardAccount(store, address);
@@ -263,14 +269,16 @@ async function readRankAndBadges(
   } catch {
     return { rank: null, achievements: null };
   }
+  /* The rows the referral guard lets a rank count — the same as the accrual's own read (`readRankStanding`). */
+  const guard = await readReferralGuard(store, wallet, now).catch(() => null);
   /* When ranks began on this store — badges are dated from it, never before;
      null while rules 2.0.0 have not begun here. A failed read leaves only the
      badges unavailable, never the rank. */
   const since = await rewardRulesEffectiveFrom(store, now).catch(() => undefined);
   const rank = (() => {
-    if (!rules) return null;
+    if (!rules || !guard) return null;
     try {
-      return rankSummary(rankStanding({ wallet, entries, events, at: now }), rules);
+      return rankSummary(rankStanding({ wallet, entries: rankCountedEntries(entries, wallet, guard), events, at: now }), rules);
     } catch {
       return null;
     }

@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, type ReactNode } from 'react';
+import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { crossesMarket, distanceFromMarketPercent, limitAmounts, TRIGGER_V1_MIN_ORDER_USD, typedPrice } from '@/lib/solana/limits/model';
 import { explorerTxUrl } from '@/lib/solana/explorer';
 import { dateText, digits, useWords } from '@/city/lib/i18n/dict';
@@ -9,11 +9,13 @@ import { decimalsOf } from '@/city/lib/trade/figures';
 import { formatBps, formatUnits, ticker } from '@/city/lib/trade/format';
 import type { LimitIntent, LimitReview } from '@/city/lib/trade/limits';
 import { useMine } from '@/city/lib/trade/mine-store';
+import { STOPS_ENGINE } from '@/city/lib/trade/gates';
 import { engineAmount, enginePrice, pairKey, reviewKey, SPOT_BUSY, useSpot } from '@/city/lib/trade/spot-store';
 import { expiryWords, STOP_EXPIRIES, type StopCoin } from '@/city/lib/trade/stops';
 import { useTrade, type Choice, type TowerRef } from '@/city/lib/trade/store';
 import { unitOf } from '@/city/lib/trade/tiles';
 import { useWallet } from '@/city/lib/trade/wallet';
+import { DockGet } from './DockGet';
 import { useWalletName, WalletLine, WalletPicker } from './WalletParts';
 import { riskWords, SPOT, TRADE } from './words';
 import s from './trade.module.css';
@@ -26,8 +28,9 @@ const MARKET_REFRESH_MS = 20_000;
  *
  * A limit order is the engine's: it waits at Jupiter at its price and fills there or not at all, the coins in a
  * program account of this order alone; its Review — what leaves, what comes back, Ryntra's fee and the venue's, the
- * network fee and the refundable deposit — is built by the engine before the wallet opens. A stop is watched on this
- * device while Ryntra is open: reached, the card opens the sale at the market price for the wallet to sign. Every
+ * network fee and the refundable deposit — is built by the engine before the wallet opens. A stop is kept by the engine
+ * under the wallet (CITY-149): reached, the person is reminded and the card opens the sale at the market price for the
+ * wallet to sign; while that switch is shut it is watched on this device while Ryntra is open. Every
  * figure is the engine's: the price from its market read, the amounts from its Review or its own arithmetic.
  */
 export function SpotTicket({ tower, choice, mode, getChips }: { tower: TowerRef; choice: Choice; mode: 'limit' | 'stop'; getChips: ReactNode }) {
@@ -54,6 +57,7 @@ function SpotFields({ tower, choice, mode, getChips }: { tower: TowerRef; choice
   const connection = useWallet((st) => st.connection);
   const [picking, setPicking] = useState(false);
   const [details, setDetails] = useState(false);
+  const getRef = useRef<HTMLDivElement>(null);
 
   const base = tower.mint;
   const quoteMint = choice.pay.mint;
@@ -100,6 +104,7 @@ function SpotFields({ tower, choice, mode, getChips }: { tower: TowerRef; choice
   const getRaw = shown ? shown.takingRaw : pair && amount && typedPriceOk ? (limitAmounts({ pair, side, amount, price: typedPriceOk })?.takingRaw ?? null) : null;
   const getDecimals = side === 'buy' ? baseDecimals : quoteDecimals;
   const getUnit = side === 'buy' ? coin : unit;
+  const getFigure = getRaw && getDecimals !== null && !choice.problem ? `${mode === 'stop' ? '≈ ' : ''}${digits(formatUnits(getRaw, getDecimals, 'down'))}` : null;
 
   const problem =
     choice.problem?.text ??
@@ -118,7 +123,7 @@ function SpotFields({ tower, choice, mode, getChips }: { tower: TowerRef; choice
       if (!pair || !choice.amountRaw || !typedPriceOk) return;
       const baseCoin: StopCoin & { name: string } = { mint: base, symbol: tower.symbol.replace(/^\$+/, ''), name: tower.name, decimals: pair.baseDecimals };
       const quoteCoin: StopCoin = { mint: quoteMint, symbol: choice.pay.symbol, decimals: pair.quoteDecimals };
-      useSpot.getState().setStop({ side, base: baseCoin, quote: quoteCoin, amountRaw: choice.amountRaw, price: typedPriceOk, expiry }, priced ? priced.order.outAmountRaw : null);
+      await useSpot.getState().setStop({ side, base: baseCoin, quote: quoteCoin, amountRaw: choice.amountRaw, price: typedPriceOk, expiry }, priced ? priced.order.outAmountRaw : null);
       return;
     }
     if (!intent) return;
@@ -145,7 +150,7 @@ function SpotFields({ tower, choice, mode, getChips }: { tower: TowerRef; choice
       )
     ) : (
       <div className={s.terms}>
-        <span className={s.termsText}>{w.watchedWhileOpen}</span>
+        <span className={s.termsText}>{STOPS_ENGINE ? w.remindWhenThere(side === 'sell') : w.watchedWhileOpen}</span>
         <button className={`${s.info} ${details ? s.infoOn : ''}`} aria-label={w.howStop} aria-expanded={details} onClick={() => setDetails((v) => !v)}>
           i
         </button>
@@ -184,15 +189,15 @@ function SpotFields({ tower, choice, mode, getChips }: { tower: TowerRef; choice
         </span>
       </label>
 
-      <div className={`${s.row} ${s.rowWrap}`}>
+      <div ref={getRef} className={`${s.row} ${s.rowWrap}`}>
         <span className={s.labelGroup}>
           <span className={s.label}>{t.youGet}</span>
           {getChips}
         </span>
         <span className={s.getInline} aria-live="polite">
-          {getRaw && getDecimals !== null && !choice.problem ? (
+          {getFigure ? (
             <>
-              <b className={s.display}>{`${mode === 'stop' ? '≈ ' : ''}${digits(formatUnits(getRaw, getDecimals, 'down'))}`}</b> {getUnit}
+              <b className={s.display}>{getFigure}</b> {getUnit}
             </>
           ) : (
             <b className={s.display}>—</b>
@@ -224,6 +229,11 @@ function SpotFields({ tower, choice, mode, getChips }: { tower: TowerRef; choice
         </>
       ) : (
         <div className={s.dock}>
+          {getFigure && (
+            <DockGet target={getRef} label={t.youGet}>
+              <b className={s.display}>{getFigure}</b> {getUnit}
+            </DockGet>
+          )}
           {terms}
           <SpotNotes problem={problem} notice={notice} />
           <SpotAction
@@ -340,13 +350,19 @@ function LimitDetails({ review, unit, coin }: { review: LimitReview; unit: strin
   );
 }
 
-/** How a stop works, behind its «i»: kept on this device, the sale opens for the wallet to sign — nothing sells by itself. */
+/** How a stop works, behind its «i»: who watches it, the sale opens for the wallet to sign — nothing sells by itself. */
 function StopDetails({ side }: { side: 'buy' | 'sell' }) {
   const w = useWords(SPOT);
   return (
     <dl className={s.details}>
       <dt>{w.watched}</dt>
-      <dd>{w.onDevice}</dd>
+      <dd>{STOPS_ENGINE ? w.byRyntra : w.onDevice}</dd>
+      {STOPS_ENGINE && (
+        <>
+          <dt>{w.reminder}</dt>
+          <dd>{w.reminderWays}</dd>
+        </>
+      )}
       <dt>{w.whenReached}</dt>
       <dd>{w.opensAtMarket(side === 'sell')}</dd>
       <dt>{w.signing}</dt>

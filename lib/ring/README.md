@@ -79,5 +79,5 @@ CITY-57 підміняє малюнок справжнім персонажем,
 ## Тести
 
 `node --test lib/ring/*.test.mjs city/lib/ring/*.test.mjs`. Сховище на справжній базі — з
-`RING_TEST_DATABASE_URL=postgres://…` на локальному сервері (тест створює й видаляє свою базу).
+`RING_TEST_DATABASE_URL=<local Postgres URL>` на локальному сервері (тест створює й видаляє свою базу).
 Знімки — `NEXT_PUBLIC_RYNTRA_CITY_RING=open npm run dev`, потім `node city/components/ring/ring-shots.mjs`.

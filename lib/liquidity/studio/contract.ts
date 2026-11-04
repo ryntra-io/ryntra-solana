@@ -165,10 +165,12 @@ export type ClaimFeesRequest = Readonly<{ position: string; owner: string }>;
 
 /**
  * SOL besides the deposit: rent of an account a build opens (`pay`) or closes (`return`). A position's own rent comes
- * back when it is closed; a DLMM bin array is the pool's, shared by everyone, and its rent does not come back.
+ * back when it is closed; a DLMM bin array is the pool's, shared by everyone, and its rent does not come back. A new
+ * pool's own accounts (`pool` — a DAMM v2 pool and its two vaults, paid by whoever makes it: the city's Stock Pier,
+ * CITY-98) stay the pool's and do not come back either.
  */
 export type RentCost = Readonly<{
-  what: "position" | "bin_arrays" | "bitmap_extension";
+  what: "position" | "bin_arrays" | "bitmap_extension" | "pool";
   direction: "pay" | "return";
   lamports: string;
   refundable: boolean;
@@ -315,6 +317,10 @@ export const LIQUIDITY_REFUSALS = [
   "POSITION_LOCKED",
   "FEES_GO_ELSEWHERE",
   "PREVIEW_EXPIRED",
+  /** Limit orders (`limit-orders.ts`): the pool takes none (it runs farm rewards), no order at the address, a roll of an order not yet filled. */
+  "LIMIT_NOT_SUPPORTED",
+  "ORDER_NOT_FOUND",
+  "NOT_FILLED",
 ] as const;
 export type LiquidityRefusalCode = (typeof LIQUIDITY_REFUSALS)[number];
 

@@ -8,6 +8,7 @@
 import type { z } from "zod";
 
 import type * as Client from "../../../packages/ryntra-api-client/src/types.ts";
+import type { IntentCreatedResponseSchema, IntentCreateRequestSchema, IntentMarkRequestSchema, IntentReceiptRequestSchema, IntentResponseSchema, IntentSchema, IntentStepRequestSchema } from "./contract.ts";
 import type { LaunchReceiptFactsSchema } from "../../core/venues/meteora-dbc/receipt.ts";
 import type {
   LaunchBuildRequestSchema,
@@ -116,6 +117,8 @@ import type {
   PayTransactionResponseSchema as MoneyPayTransactionResponseSchema,
   RecipientCheckQuerySchema as MoneyRecipientCheckQuerySchema,
   RecipientCheckResponseSchema as MoneyRecipientCheckResponseSchema,
+  WardCheckRequestSchema,
+  WardCheckResponseSchema,
   SendReturnedRequestSchema as MoneySendReturnedRequestSchema,
   SendReturnedResponseSchema as MoneySendReturnedResponseSchema,
   TransferCheckSchema as MoneyTransferCheckSchema,
@@ -775,3 +778,20 @@ export type TeamClientChecks = [
 ];
 
 export const teamClientChecks: TeamClientChecks = [true, true, true, true, true, true, true, true, true];
+
+/* 1.88.0 — the pre-sign check (CITY-152): the request and the verdict, both directions. */
+export type WardChecks = [Same<z.input<typeof WardCheckRequestSchema>, Client.WardCheckRequest>, Same<z.output<typeof WardCheckResponseSchema>, Client.WardCheckResponse>];
+export const wardChecks: WardChecks = [true, true];
+
+/* 1.90.0 — prepared actions (CITY-161). */
+export type IntentClientChecks = [
+  Same<z.output<typeof IntentSchema>, Client.Intent>,
+  Same<z.output<typeof IntentResponseSchema>, Client.IntentResponse>,
+  Same<z.output<typeof IntentCreatedResponseSchema>, Client.IntentCreatedResponse>,
+  Same<z.input<typeof IntentCreateRequestSchema>, Client.IntentCreateRequest>,
+  Same<z.input<typeof IntentStepRequestSchema>, Client.IntentStepRequest>,
+  Same<z.input<typeof IntentMarkRequestSchema>, Client.IntentMarkRequest>,
+  Same<z.input<typeof IntentReceiptRequestSchema>, Client.IntentReceiptRequest>,
+];
+
+export const intentClientChecks: IntentClientChecks = [true, true, true, true, true, true, true];

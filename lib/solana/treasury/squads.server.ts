@@ -59,9 +59,11 @@ const computeLimit = () => ComputeBudgetProgram.setComputeUnitLimit({ units: EXE
  * The accounts' data a treasury transaction may load, set explicitly as Phantom asks of a dApp («set compute unit and
  * loaded account data limits explicitly», docs.phantom.com, domain and transaction warnings). What it loads is mostly
  * programs: Squads v4's program data is 1.47 MB, the Token program's 109 KB, the token-account program's 105 KB (read
- * on mainnet 21.10.2026); its own accounts are small. 4 MiB leaves room for an upgrade, far under the runtime's 64 MiB.
+ * on mainnet 21.10.2026); its own accounts are small. A launch's claim line loads more: DBC 2.33 MB, DAMM v2 2.17 MB,
+ * Token-2022 1.38 MB (mainnet 1.11.2026), 7.6 MB with Squads. 16 MiB leaves room for an upgrade, far under the runtime's
+ * 64 MiB; the limit changes no fee.
  */
-export const LOADED_ACCOUNTS_LIMIT = 4 * 1024 * 1024;
+export const LOADED_ACCOUNTS_LIMIT = 16 * 1024 * 1024;
 /** What the runtime gives an instruction when nothing sets a limit, and the most a transaction may use. */
 const UNITS_PER_INSTRUCTION = 200_000;
 const MAX_UNITS = 1_400_000;

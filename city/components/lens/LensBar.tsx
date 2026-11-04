@@ -1,10 +1,12 @@
 'use client';
 
-import { useEffect, useLayoutEffect, useRef, useState, type CSSProperties, type RefObject } from 'react';
+import { Fragment, useEffect, useLayoutEffect, useRef, useState, type CSSProperties, type RefObject } from 'react';
 import { playTick } from '@/city/lib/audio/engine';
 import { useCity } from '@/city/lib/city/store';
+import { useHudPanels } from '@/city/lib/city/windows';
 import { useWords } from '@/city/lib/i18n/dict';
 import { LENSES, type LensId } from '@/city/lib/lens/lens';
+import { startNewLaunches, useNewLaunches } from '@/city/lib/lens/new-store';
 import { useLens } from '@/city/lib/lens/store';
 import { cityAccount } from '@/city/lib/quarter/account-live';
 import { SPOT_OPEN } from '@/city/lib/trade/gates';
@@ -12,7 +14,9 @@ import { useMine } from '@/city/lib/trade/mine-store';
 import { useSpot } from '@/city/lib/trade/spot-store';
 import { stopView } from '@/city/lib/trade/stops';
 import { useWallet } from '@/city/lib/trade/wallet';
-import { LENS } from '@/city/lib/lens/words';
+import { LENS, NEW_WORDS } from '@/city/lib/lens/words';
+import { ListGlyph, RingsGlyph } from './glyphs';
+import { NewList } from './NewList';
 import { useLensSet } from './useLensSet';
 import s from './lens.module.css';
 
@@ -24,6 +28,8 @@ const MINE_WAIT_MS = 120_000;
  * picks the kind of tower to look at. The picked chip says how many towers it found; the city does the rest. «Mine»
  * with no wallet here opens the wallet first and lights once it is connected; with one, it lights your towers and opens
  * your coins and orders under the bar — the one place for them.
+ * «New» picked grows a toggle beside it: the three rings over the city, or the same launches of all Solana as a list
+ * (CITY-142) — the city's window «New launches on Solana» since CITY-191.
  */
 export function LensBar() {
   const lens = useLens((st) => st.lens);
@@ -36,13 +42,45 @@ export function LensBar() {
   const wasOpen = useRef(false);
   const { set } = useLensSet();
   const w = useWords(LENS);
+  const nw = useWords(NEW_WORDS);
+  const list = useNewLaunches((st) => st.list);
   const row = useRef<HTMLDivElement>(null);
   const nav = useRef<HTMLElement>(null);
   const place = usePlace(nav, row);
-  useEffect(() => useLens.getState().hydrate(), []);
-  // The picked chip stays in view on a phone's strip.
+  // The phone's strip steps away under the open menu, so its chips never read through the menu's rows (CITY-188).
+  const menuOpen = useHudPanels((st) => st.menu);
+  // A strip wider than the screen fades at its edge (CITY-188).
+  const [overflows, setOverflows] = useState(false);
   useEffect(() => {
-    row.current?.querySelector<HTMLElement>('[aria-pressed="true"]')?.scrollIntoView({ block: 'nearest', inline: 'nearest' });
+    const strip = nav.current;
+    if (place !== null || !strip) return setOverflows(false);
+    const measure = () => setOverflows(strip.scrollWidth > strip.clientWidth + 1);
+    measure();
+    const observer = new ResizeObserver(measure);
+    observer.observe(strip);
+    if (row.current) observer.observe(row.current);
+    return () => observer.disconnect();
+  }, [place]);
+  useEffect(() => {
+    useLens.getState().hydrate();
+    // Every new launch of Solana, read once the city is up: the Docks fill, «New» has its rings (CITY-142).
+    startNewLaunches();
+  }, []);
+  // The picked chip stays in view on a phone's strip — with «New»'s toggle beside it.
+  useEffect(() => {
+    const show = () => {
+      const picked = row.current?.querySelector<HTMLElement>('[data-lens-list-toggle]') ?? row.current?.querySelector<HTMLElement>('[aria-pressed="true"]');
+      picked?.scrollIntoView({ block: 'nearest', inline: 'nearest' });
+    };
+    show();
+    // The toggle grows in over a quarter second: in view once it has its width.
+    const toggle = row.current?.querySelector<HTMLElement>('[data-lens-list-toggle]');
+    toggle?.addEventListener('animationend', show, { once: true });
+    const timer = toggle ? setTimeout(show, 600) : null;
+    return () => {
+      toggle?.removeEventListener('animationend', show);
+      if (timer) clearTimeout(timer);
+    };
   }, [lens, ready]);
   // «Mine» with no wallet here opens the wallet and waits for it: the chip lights once there is a wallet to read, never
   // as an empty «Mine» over a city that has nothing to show.
@@ -62,6 +100,7 @@ export function LensBar() {
       return;
     }
     pick(id);
+    if (id !== 'new') useNewLaunches.getState().setList(false);
     // Pressed by a pointer, the list closed on the press already (MinePanel); by a key, it is still open.
     const was = wasOpen.current || useMine.getState().open;
     wasOpen.current = false;
@@ -71,32 +110,51 @@ export function LensBar() {
   return (
     <nav
       ref={nav}
-      className={`${s.lens} ${place === null ? s.below : s.inline}`}
+      className={`${s.lens} ${place === null ? s.below : s.inline} ${place === null && overflows ? s.overflows : ''} ${place === null && menuOpen ? s.away : ''}`}
       style={place === null ? undefined : ({ '--lens-x': `${place}px` } as CSSProperties)}
       aria-label={w.label}
       data-city-lens=""
+      data-lens-place={place === null ? 'below' : 'inline'}
     >
       <div className={s.row} ref={row}>
         {LENSES.map((id) => {
           const on = ready && lens === id;
           return (
-            <button
-              key={id}
-              type="button"
-              className={`${s.chip} ${on ? s.on : ''}`}
-              aria-pressed={on}
-              onPointerDown={() => (wasOpen.current = id === 'mine' && useMine.getState().open)}
-              onClick={() => choose(id)}
-              data-lens={id}
-            >
-              <span>{w[id]}</span>
-              {id === 'mine' && reached && <span className={s.alert} aria-hidden="true" />}
-              {/* Every picked chip, «All» too, carries its count in a slot of one width: the row never shifts in the bar. */}
-              {on && <span className={s.count}>{set.length}</span>}
-            </button>
+            <Fragment key={id}>
+              <button
+                type="button"
+                className={`${s.chip} ${on ? s.on : ''}`}
+                aria-pressed={on}
+                onPointerDown={() => (wasOpen.current = id === 'mine' && useMine.getState().open)}
+                onClick={() => choose(id)}
+                data-lens={id}
+              >
+                <span>{w[id]}</span>
+                {id === 'mine' && reached && <span className={s.alert} aria-hidden="true" />}
+                {/* Every picked chip, «All» too, carries its count in a slot of one width: the row never shifts in the bar. */}
+                {on && <span className={s.count}>{set.length}</span>}
+              </button>
+              {/* «New» picked: the rings over the city, or the same launches as a list — one toggle, grown beside the chip. */}
+              {id === 'new' && on && (
+                <button
+                  type="button"
+                  className={`${s.toggle} ${list ? s.toggleOn : ''}`}
+                  aria-pressed={list}
+                  aria-label={list ? nw.rings : nw.list}
+                  onClick={() => {
+                    if (useCity.getState().sound) playTick();
+                    useNewLaunches.getState().setList(!list);
+                  }}
+                  data-lens-list-toggle=""
+                >
+                  {list ? <RingsGlyph /> : <ListGlyph />}
+                </button>
+              )}
+            </Fragment>
           );
         })}
       </div>
+      <NewList />
     </nav>
   );
 }

@@ -40,7 +40,7 @@ async function withProof(connection: Readonly<{ wallet: string; address: string 
 /**
  * Pay link: ask for a payment — a sum in USDC or SOL — and copy the link to send it. The
  * engine is `lib/pay/**` behind `/api/v1/pay/requests`: the link always pays the proven wallet, never another, and
- * nothing here moves money. The payer's page is the engine's own (`/pay/<id>`).
+ * nothing here moves money. The payer's page is a window of the city on the same engine (`/pay/<id>`, CITY-156).
  */
 export function PayLink({ owner }: { owner: string }) {
   const w = useWords(MONEY);

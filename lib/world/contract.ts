@@ -201,6 +201,72 @@ export type ConsentResponse = { consent: AwayConsent; canConsent: boolean };
 /** `POST /api/world/visit` — `counted` is false for a repeat on the same day or for one's own quarter. */
 export type VisitResponse = { visit: Visit | null; counted: boolean; reason: "counted" | "already_today" | "own_quarter" };
 
+/* ----------------------------------------------------------------- crews -- */
+
+/**
+ * A crew is a street (CITY-20): its members' quarters stand in one row of one street of Arrivals, and they build its
+ * headquarters together, with modules and points — never money. The rules are `lib/world/crew.ts`.
+ */
+
+/** The street's colour, one of the city's player lights (`city/lib/trade/colour.ts`): never amber, mint or red. */
+export const CREW_COLOURS = ["cyan", "sky", "periwinkle", "lilac", "orchid", "rose", "lime", "pearl"] as const;
+export type CrewColour = (typeof CREW_COLOURS)[number];
+
+/** The headquarters as everyone sees it: its level, the units given towards it, the units the next level needs, its modules. */
+export type CrewHq = { level: number; units: number; next: number | null; modules: string[] };
+
+/** A crew's street as anyone may read it: on the terrace, and behind an invite. */
+export type CrewStreet = {
+  id: Id;
+  name: string;
+  colour: CrewColour;
+  street: string; // the Arrivals street the crew holds, «arrivals-7»
+  row: number; // that street as a row of the terrace, from 0
+  members: number;
+  limit: number;
+  hq: CrewHq;
+};
+
+/** A member as the crew sees them. `verified` — signed in to a Ryntra account, not a guest. */
+export type CrewMember = { quarterId: Id; name: string | null; lot: number; level: number; verified: boolean; joinedAt: string };
+
+/**
+ * The war of districts (CITY-21) counts a street by what its people do and how many of them are real: actions of the
+ * week (builds, visits, gifts — at most a few a person a day) and verified members. Nothing bought counts.
+ */
+export type CrewScore = { week: Day; actions: number; verified: number; total: number };
+
+/** What I may still give today, and how many of my points are not given yet. */
+export type CrewMe = { quarterId: Id; gave: { module: boolean; points: boolean }; points: number };
+
+/** My crew, as a member reads it: the street, its people, its invite, its score and what I can give. */
+export type MyCrew = CrewStreet & { invite: string; people: CrewMember[]; score: CrewScore; me: CrewMe };
+
+export type CreateCrewRequest = { name: string; colour: CrewColour };
+export type JoinCrewRequest = { code: string };
+export type GiftRequest = { kind: "module"; module: string } | { kind: "points"; points: number };
+
+/** `GET /api/world/crew` — null while I am in no crew. */
+export type CrewResponse = { crew: MyCrew | null };
+/** `GET /api/world/crews` — every crew street of Arrivals. */
+export type CrewsResponse = { crews: CrewStreet[] };
+/** `GET /api/world/crew/invite/:code`. */
+export type InviteResponse = { crew: CrewStreet };
+/** `POST /api/world/crew`, `/crew/join` and `/crew/gift`; `quarter` is my home quarter where it stands now. */
+export type CrewWriteResponse = { crew: MyCrew; quarter: Quarter };
+/** `POST /api/world/crew/leave` — my quarter back on a newcomers' street. */
+export type LeaveCrewResponse = { quarter: Quarter };
+
+/** Why a crew step was refused. */
+export type CrewRefusal =
+  | "name" // the name cannot be shown
+  | "full" // the crew has as many members as it may
+  | "in_crew" // I am in a crew already
+  | "not_in_crew"
+  | "today" // this kind of gift was already given today
+  | "points" // more points than I have left to give
+  | "module"; // a module my quarter's level does not open
+
 /* ---------------------------------------------------------------- errors -- */
 
 /**
@@ -223,6 +289,7 @@ export const WORLD_ERROR_CODES = [
   "LINK_TAKEN", // 409: another building already shows this object
   "LOCKED", // 422, with `reason` and `need`
   "LINK_REFUSED", // 422, with `reason`
+  "CREW_REFUSED", // 422, with `reason` (`CrewRefusal`)
   "IDEMPOTENCY_KEY_REUSED", // 422: the same key with a different request
   "PAYLOAD_TOO_LARGE", // 413
   "RATE_LIMITED", // 429
@@ -240,7 +307,7 @@ export type WorldError = {
   error: {
     code: WorldErrorCode;
     message: string;
-    reason?: LockReason | LinkRefusal;
+    reason?: LockReason | LinkRefusal | CrewRefusal;
     need?: { quarterLevel?: number };
     module?: string;
   };

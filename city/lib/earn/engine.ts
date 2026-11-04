@@ -1,5 +1,6 @@
 import type { PositionsAnswer } from '../../../lib/liquidity/catalog/positions.ts';
 import type { HarborPool } from '../districts/harbor/pools.ts';
+import { readCaptainAnswer, type CaptainAnswer } from './captain.ts';
 import { readFeed, type LstFeed } from './feed.ts';
 import { readStocks, type ScaledConfig } from './stocks.ts';
 
@@ -7,7 +8,7 @@ import { readStocks, type ScaledConfig } from './stocks.ts';
  * Earn's reads, all on Ryntra's own origin and all read-only: the LST yield feed and the Piers list (`/api/city/earn`),
  * the Scaled UI multipliers of the stocks a wallet holds, the lending markets of SOL-3 (`/api/solana/earn`, the
  * engine's own read, for the Dollar Saver's live context) and the wallet's pool positions (`/api/liquidity/positions`,
- * SOL-2b's read). Earn builds and signs nothing through here: the SOL Saver's swap is the trade card's engine.
+ * SOL-2b's read), and «Like the Captain»'s proven records (`/api/city/earn/captain`). Earn builds and signs nothing through here: the SOL Saver's swap is the trade card's engine.
  */
 
 export type Read<T> = Readonly<{ ok: true; value: T }> | Readonly<{ ok: false; code: string }>;
@@ -23,6 +24,8 @@ export type EarnEngine = Readonly<{
   stocks: (mints: readonly string[]) => Promise<Read<readonly ScaledConfig[]>>;
   lend: () => Promise<Read<LendRates>>;
   positions: (owner: string) => Promise<Read<PositionsAnswer>>;
+  /** «Like the Captain»: the strategies with a proven record (CITY-99). */
+  captain: () => Promise<Read<CaptainAnswer>>;
 }>;
 
 const READ_MS = 12_000;
@@ -43,23 +46,26 @@ async function getJson(fetchImpl: GetLike, url: string, timeoutMs: number): Prom
   }
 }
 
+/** USDC's and wrapped SOL's mints: Jupiter Lend names its SOL market «WSOL», so the rate is found by mint. */
+const LEND_MINTS = { usdc: 'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v', sol: 'So11111111111111111111111111111111111111112' } as const;
+
 /** The supply rate of the first market of an asset among the providers that answered; null when none did. */
 export function lendRates(surface: unknown): LendRates {
   const value = surface && typeof surface === 'object' ? (surface as Record<string, unknown>) : {};
   const providers = Array.isArray(value.providers) ? value.providers : [];
-  const rate = (symbol: string): number | null => {
+  const rate = (mint: string): number | null => {
     for (const provider of providers) {
       if (!provider || typeof provider !== 'object' || (provider as { ok?: unknown }).ok !== true) continue;
       const markets = (provider as { markets?: unknown }).markets;
       if (!Array.isArray(markets)) continue;
       for (const market of markets) {
-        const m = market as { asset?: { symbol?: unknown }; rateAnnualPercent?: unknown };
-        if (m?.asset?.symbol === symbol && typeof m.rateAnnualPercent === 'number' && Number.isFinite(m.rateAnnualPercent) && m.rateAnnualPercent >= 0 && m.rateAnnualPercent < 100) return m.rateAnnualPercent;
+        const m = market as { asset?: { mint?: unknown }; rateAnnualPercent?: unknown };
+        if (m?.asset?.mint === mint && typeof m.rateAnnualPercent === 'number' && Number.isFinite(m.rateAnnualPercent) && m.rateAnnualPercent >= 0 && m.rateAnnualPercent < 100) return m.rateAnnualPercent;
       }
     }
     return null;
   };
-  return { usdc: rate('USDC'), sol: rate('SOL'), at: typeof value.readAt === 'string' ? value.readAt : null };
+  return { usdc: rate(LEND_MINTS.usdc), sol: rate(LEND_MINTS.sol), at: typeof value.readAt === 'string' ? value.readAt : null };
 }
 
 export function createEarnEngine(fetchImpl: GetLike = ((url: string, init: RequestInit) => fetch(url, { cache: 'no-store', ...init })) as unknown as GetLike): EarnEngine {
@@ -91,6 +97,12 @@ export function createEarnEngine(fetchImpl: GetLike = ((url: string, init: Reque
       if (!read.ok) return read;
       const answer = read.value as PositionsAnswer;
       return answer && answer.owner === owner && Array.isArray(answer.positions) ? { ok: true, value: answer } : { ok: false, code: 'SHAPE' };
+    },
+    captain: async () => {
+      const read = await getJson(fetchImpl, '/api/city/earn/captain', READ_MS);
+      if (!read.ok) return read;
+      const answer = readCaptainAnswer(read.value);
+      return answer ? { ok: true, value: answer } : { ok: false, code: 'SHAPE' };
     },
   };
 }

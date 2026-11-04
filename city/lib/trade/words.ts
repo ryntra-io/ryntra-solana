@@ -60,6 +60,8 @@ export const STOPS = words(
     days7: '7 days',
     days30: '30 days',
     untilCancelled: 'Until cancelled',
+    tooMany: (max: number) => `You have ${max} stops already. Cancel one first.`,
+    notKept: 'The stop was not set. Try again.',
   },
   {
     typePrice: 'Введи ціну стопу.',
@@ -72,6 +74,8 @@ export const STOPS = words(
     days7: '7 днів',
     days30: '30 днів',
     untilCancelled: 'Доки не скасуєш',
+    tooMany: (max: number) => `У тебе вже ${max} стопів. Спершу скасуй один.`,
+    notKept: 'Стоп не поставлено. Спробуй ще раз.',
   },
 );
 

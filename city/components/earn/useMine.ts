@@ -9,6 +9,8 @@ import { activeMultiplier } from '@/city/lib/earn/stocks';
 import { useEarnData } from '@/city/lib/earn/store';
 import { NATIVE_ID, type MoneyAsset } from '@/city/lib/money/assets';
 import { useMoneyStore } from '@/city/lib/money/store';
+import { DOLLAR_ASSETS, type DollarPosition } from '@/city/lib/earn/dollar';
+import { useDollar } from '@/city/lib/earn/dollar-store';
 
 export type StockRow = Readonly<{ mint: string; symbol: string; line: DividendLine; splitSeen: boolean; units: number }>;
 
@@ -19,6 +21,8 @@ export type MineFigures = Readonly<{
   lsts: readonly LstHolding[];
   piers: readonly PierRow[];
   stocks: readonly StockRow[];
+  /** The Dollar Saver's positions at Jupiter Lend (CITY-192), in their own coins: never added to the SOL headline. */
+  dollars: readonly DollarPosition[];
   head: Headline;
   /** Nothing earning and nothing to measure: the empty state. */
   empty: boolean;
@@ -38,6 +42,7 @@ export function useMine(owner: string | null): MineFigures {
   const positions = useEarnData((st) => st.positions);
   const stocks = useEarnData((st) => st.stocks);
   const steps = useEarnData((st) => st.steps);
+  const dollarSurface = useDollar((st) => st.surface);
 
   return useMemo(() => {
     const assets: readonly MoneyAsset[] = wallet && wallet.owner === owner ? wallet.assets : [];
@@ -61,7 +66,9 @@ export function useMine(owner: string | null): MineFigures {
       const units = (Number(raw) / 10 ** asset.decimals) * activeMultiplier(config, Date.now());
       return [{ mint: config.mint, symbol: asset.symbol, line, splitSeen, units }];
     });
+    const lend = dollarSurface.status === 'ready' && dollarSurface.value.owner === owner ? dollarSurface.value.positions : {};
+    const dollars = DOLLAR_ASSETS.flatMap((asset) => (lend[asset] ? [lend[asset]!] : []));
     const head = headline(lsts, piers);
-    return { ready, failed: walletRead === 'failed', lsts, piers, stocks: stockRows, head, empty: ready && !lsts.length && !piers.length && !stockRows.length };
-  }, [wallet, walletRead, owner, feed, lots, positions, stocks, steps]);
+    return { ready, failed: walletRead === 'failed', lsts, piers, stocks: stockRows, dollars, head, empty: ready && !lsts.length && !piers.length && !stockRows.length && !dollars.length };
+  }, [wallet, walletRead, owner, feed, lots, positions, stocks, steps, dollarSurface]);
 }

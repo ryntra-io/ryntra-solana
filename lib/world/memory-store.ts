@@ -49,6 +49,8 @@ export class MemoryWorldStore implements WorldStore {
   private readonly consents = new Map<string, { telegram: boolean; push: boolean; updatedAt: number }>();
   private arrivals = 0;
   private seq = 0;
+  /** Streets of Arrivals a crew holds (CITY-20), as rows: a newcomer's claim never lands on one. */
+  private readonly crewRows = new Set<number>();
 
   /** Accounts that exist, as `public.beta_users` would say. */
   readonly accounts = new Set<string>();
@@ -127,6 +129,69 @@ export class MemoryWorldStore implements WorldStore {
     return this.eventOut(e);
   }
 
+  /** The next newcomer's lot as a running number, past every street a crew holds. */
+  private nextArrival(): number {
+    const length = ARRIVALS.streetLength;
+    let k = this.arrivals;
+    while (this.crewRows.has(Math.floor(k / length))) k = (Math.floor(k / length) + 1) * length;
+    this.arrivals = k + 1;
+    return k;
+  }
+
+  /* ----------------------------------------- crews (`crew-store.ts`) -- */
+
+  /**
+   * A street for a new crew: the first one no newcomer has reached and no crew holds. Claims step over it from now on.
+   * One atomic step, like the database's under its lock.
+   */
+  reserveCrewRow(): number {
+    const length = ARRIVALS.streetLength;
+    let row = Math.ceil(this.arrivals / length);
+    while (this.crewRows.has(row)) row += 1;
+    this.crewRows.add(row);
+    return row;
+  }
+
+  /** The street of a crew that ended: a newcomer may land there again. */
+  releaseCrewRow(row: number): void {
+    this.crewRows.delete(row);
+  }
+
+  /** Moves a quarter to a lot of Arrivals: only its street and cell change, and its version, so a stale build meets the move. */
+  moveQuarter(quarterId: string, cell: { x: number; z: number }, now: Date): Quarter | null {
+    const q = this.quarters.get(quarterId);
+    if (!q) return null;
+    q.district = "arrivals";
+    q.street = `arrivals-${cell.z + 1}`;
+    q.x = cell.x;
+    q.z = cell.z;
+    q.version += 1;
+    q.updatedAt = now.getTime();
+    return this.quarterOut(q);
+  }
+
+  /** A quarter back on a newcomers' street, on the next free lot. */
+  rehomeQuarter(quarterId: string, now: Date): Quarter | null {
+    if (!this.quarters.has(quarterId)) return null;
+    const k = this.nextArrival();
+    const length = ARRIVALS.streetLength;
+    return this.moveQuarter(quarterId, { x: k % length, z: Math.floor(k / length) }, now);
+  }
+
+  /** The builds and counted visits of these residents since a moment: what a crew's score counts. */
+  actionsOf(residentIds: readonly string[], since: Date): { residentId: string; day: string; kind: string }[] {
+    const who = new Set(residentIds);
+    const from = since.getTime();
+    return this.events
+      .filter((e) => e.actorId !== null && who.has(e.actorId) && e.at >= from && (e.kind === "build" || e.kind === "visit"))
+      .map((e) => ({ residentId: e.actorId!, day: iso(e.at).slice(0, 10), kind: e.kind }));
+  }
+
+  /** A resident's points, all of them. */
+  pointsOf(residentId: string): number {
+    return this.total(residentId);
+  }
+
   /* -------------------------------------------------------------- API -- */
 
   async resident(by: { id: string } | { accountId: string }): Promise<StoredResident | null> {
@@ -143,7 +208,7 @@ export class MemoryWorldStore implements WorldStore {
       if (existing) return { ok: true, created: false, resident: this.residentOut(existing), quarter: this.quarterOut(this.quarters.get(existing.homeQuarterId)!) };
       if (!this.accounts.has(input.accountId)) return { ok: false, error: "no_account" };
     }
-    const k = this.arrivals++;
+    const k = this.nextArrival();
     const length = ARRIVALS.streetLength;
     const resident: ResidentRow = { id: randomUUID(), accountId: input.accountId, guestSalt: input.guestSalt, displayName: input.displayName?.trim() || null, homeQuarterId: "", createdAt: now };
     const quarter: QuarterRow = { id: randomUUID(), ownerId: resident.id, district: "arrivals", street: `arrivals-${Math.floor(k / length) + 1}`, x: k % length, z: Math.floor(k / length), level: 1, version: 1, createdAt: now, updatedAt: now };

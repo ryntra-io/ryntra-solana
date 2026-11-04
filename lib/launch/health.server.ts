@@ -48,7 +48,7 @@ import { launchPreset } from "../core/venues/meteora-dbc/presets.ts";
 import { creatorWatchProven, inPoolBudget, type BudgetRisk } from "../core/launch/budget.ts";
 import { autopilotReceipts, budgetFiguresOf, floorRecord, type AutopilotReceipt } from "./autopilot.server.ts";
 import { executorClaimsPreset, exhaustedNow, marketBudget, type BudgetRead, type LadderRead, type MarketBudgetRecord } from "./budget.server.ts";
-import { launchExecutorAddress, launchPair } from "./config.server.ts";
+import { launchExecutorAddress, launchPair, launchRetiredExecutorAddress } from "./config.server.ts";
 import type { ExecutorMarket } from "./executor.server.ts";
 import { readLaunchRecord, type LaunchRecord } from "./flow.server.ts";
 import { readLaunchMarketFacts, type LaunchMarketFacts, type MarketDeps } from "./market.server.ts";
@@ -116,6 +116,8 @@ export type MarketRead = Readonly<{
   name: string;
   symbol: string;
   image: string | null;
+  /** Ryntra took the token's picture, description and links down (MC-1). */
+  hidden: boolean;
   technicalValidation: boolean;
   /** Every list of Ryntra's own wallets was read: the technical validation and the holders' exclusions are whole. */
   walletsComplete: boolean;
@@ -341,7 +343,7 @@ async function assemble(deps: HealthDeps, token: string): Promise<MarketRead | n
   const { budget, risks } = await readBudget(deps, record, wallets.wallets.has(record.creator));
   return marketReadOf({
     record,
-    metadata: stored ? { name: stored.metadata.name, symbol: stored.metadata.symbol, image: stored.takenDown ? null : (stored.metadata.image ?? null) } : null,
+    metadata: stored ? { name: stored.metadata.name, symbol: stored.metadata.symbol, image: stored.takenDown ? null : (stored.metadata.image ?? null), hidden: stored.takenDown } : null,
     wallets,
     receipts,
     lock,
@@ -398,7 +400,7 @@ export async function budgetClaimed(deps: Pick<HealthDeps, "peopleServed">, ours
 /** A market's read from its parts — what the answers need of them, and the figures. Pure: the parts are its input. */
 export function marketReadOf(args: Readonly<{
   record: LaunchRecord;
-  metadata: Readonly<{ name: string; symbol: string; image: string | null }> | null;
+  metadata: Readonly<{ name: string; symbol: string; image: string | null; hidden?: boolean }> | null;
   wallets: OwnWallets;
   receipts: readonly AutopilotReceipt[];
   lock: LockRead | null;
@@ -422,6 +424,7 @@ export function marketReadOf(args: Readonly<{
     name: args.metadata?.name ?? record.name,
     symbol: args.metadata?.symbol ?? record.symbol,
     image: args.metadata?.image ?? null,
+    hidden: args.metadata?.hidden === true,
     technicalValidation: args.wallets.wallets.has(record.creator) || (executor !== null && record.creator === executor),
     walletsComplete: args.wallets.complete,
     executor,
@@ -633,6 +636,7 @@ export function marketRow(read: MarketRead, network: HealthDeps["network"]): Lau
     holdersAtLeast: figures?.holders.atLeast ?? false,
     creatorLock: lockView(read.lock),
     creatorSold: figures?.creatorSold ?? null,
+    ...(read.hidden ? { hidden: true as const } : {}),
     observedAt: read.observedAt,
   };
 }
@@ -642,7 +646,8 @@ export function lockedPositions(read: Pick<MarketRead, "record">, network: Healt
   const creatorRoles = new Set([read.record.creator, ...(read.record.feeSharing?.vault ? [read.record.feeSharing.vault] : [])]);
   /* Ryntra's side of the exit: the config's partner (its fee claimer) and, on Micro and the demo market, the executor. An exit
      NFT anyone else holds now is neither's share by name — its liquidity is still locked for ever, said plainly. */
-  const partners = new Set([network.referralOwner, launchExecutorAddress(network)].filter((address): address is string => Boolean(address)));
+  /* Ryntra's earlier executor (CITY-163: its key moved to KMS at a new address) keeps the positions it already holds. */
+  const partners = new Set([network.referralOwner, launchExecutorAddress(network), launchRetiredExecutorAddress(network)].filter((address): address is string => Boolean(address)));
   const ownerOf = (address: string) => (creatorRoles.has(address) ? ("creator" as const) : partners.has(address) ? ("partner" as const) : ("other" as const));
   return (view?.receipt?.graduated?.positions ?? []).map((position) => ({ position: position.position, owner: ownerOf(position.owner), address: position.owner }));
 }

@@ -2,6 +2,8 @@ import { rpcResult } from "../supabase-rpc";
 import { intentWalletProof } from "../account/wallet-session";
 import { readSession, readWalletProofFrom } from "../session";
 import { createWorldApi, type AccountRead, type WalletRead, type WorldApi } from "./api";
+import { createCrewApi, type CrewApi } from "./crew-api";
+import { SupabaseCrewStore } from "./crew-store";
 import { createLayoutApi, type LayoutApi } from "./layout-api";
 import { SupabaseLayoutStore } from "./layout-store";
 import { verifyLinkOwnership } from "./link-verify";
@@ -18,6 +20,7 @@ import type { WorldStore } from "./store";
 let store: WorldStore | null = null;
 let api: WorldApi | null = null;
 let layouts: LayoutApi | null = null;
+let crews: CrewApi | null = null;
 
 export function worldStore(): WorldStore {
   store ??= new SupabaseWorldStore((fn, args) => rpcResult("world", fn, args));
@@ -59,4 +62,15 @@ export function layoutApi(): LayoutApi {
     account: () => account(),
   });
   return layouts;
+}
+
+/** Crews (CITY-20): their own tables, the same store, session and guest key as the world. */
+export function crewApi(): CrewApi {
+  crews ??= createCrewApi({
+    world: worldStore(),
+    crews: new SupabaseCrewStore((fn, args) => rpcResult("world", fn, args)),
+    secret: () => process.env.BETA_TOKEN_SECRET ?? null,
+    account: () => account(),
+  });
+  return crews;
 }

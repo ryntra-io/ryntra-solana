@@ -1,4 +1,5 @@
 import { normalizeReferralCode } from "../rewards/referral-code.ts";
+import { normalizeReferralSub, REFERRAL_SUB_PARAM } from "../rewards/referral-sub.ts";
 import { touchLanding, utmTagOf, withoutUtm } from "./touch-param.ts";
 
 /**
@@ -55,6 +56,12 @@ export function refParamRedirect(url: URL): URL | null {
   const rest = new URL(url.href);
   rest.searchParams.delete("ref");
   const target = new URL(`/r/${code}`, url.origin);
+  /* The link's sub-ID (`?ref=CODE&s=x-thread`, Ryntra Partners R3) goes with the code to `/r/<code>`. */
+  const sub = normalizeReferralSub(rest.searchParams.get(REFERRAL_SUB_PARAM));
+  if (sub) {
+    target.searchParams.set(REFERRAL_SUB_PARAM, sub);
+    rest.searchParams.delete(REFERRAL_SUB_PARAM);
+  }
   const page = productPage(rest.pathname);
   if (page === "/app" || page.startsWith("/app/")) target.searchParams.set("to", `${page}${rest.search}`);
   return target;

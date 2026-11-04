@@ -1288,6 +1288,39 @@
  * (TEAM-1), checked on the server on every request. New codes: `DEV_NOT_FOUND` 404, `DEV_FORBIDDEN` ·
  * `DEV_ORIGIN_REFUSED` · `DEV_SCOPE_REFUSED` 403, `DEV_LIMIT` · `DEV_CHANGED` 409, `DEV_KEY_INVALID` 401,
  * `DEV_QUOTA_EXCEEDED` 429. A client that does not show the console needs no release.
+ *
+ * **1.88.0 — the pre-sign check (CITY-152 phase 1, 2026-10-31; working name «ward», never «Guard»).** Additive: one
+ * route. `POST /api/v1/ward/check` — `{ transaction | link, signer?, intent? | intentText?, known?, network? }`: an
+ * unsigned transaction (canonical base64 of a wire transaction or of its message) or a payment link in; one of three
+ * words out — `allow` · `warn` · `block` — with the reasons that put it there, heaviest first, each naming its check
+ * (simulation, authority, nonce, recipient, token, intent, program), its level (block · warn · unknown · info) and its
+ * source. What it reads: the simulation of the exact bytes diffed against every writable account now (who loses what,
+ * who gains it, which account changes hands, which gains a delegate); the instructions that hand over control
+ * (`assign`, SetAuthority, Approve, CloseAccount to another, stake and upgrade authorities, a durable nonce); every
+ * wallet that gains (Ryntra's threat list, a look-alike of an address the signer knows, the address security source,
+ * whether it has any history); every token received (Token-2022 permanent delegate, transfer hook, frozen accounts,
+ * pause, fee; mint and freeze authorities; holders from the gateway where it answers); and the declared intent against
+ * all of it. No score and no word for «safe»: `allow` means nothing known stands against it and what it does was read
+ * — a core reading that did not happen keeps the verdict at `warn`, and every unknown is counted in `notRead`. Input
+ * that is neither a transaction nor a link is `VALIDATION_ERROR`. A client that does not show the check needs no
+ * release.
+ *
+ * **1.89.0 — a launch's flow (Launch strategy L3, CITY-140, line A, 2026-10-29).** Additive: one public read. `GET
+ * /api/v1/launch/{mint}/flow` — the facts of who bought a launch and how, each resting on a transaction: the buys in
+ * the creation's own block (count, share of supply), same-slot bundles grouped with what tied them (one transaction,
+ * one payer, one funding cluster), what the creator's wallet bought, sold and holds and how many wallets are of their
+ * party, the buyers above the one-dollar floor with each funding cluster counted once (the Growth line's protection
+ * rules, read only — a wallet whose start was not read is never counted, so the figure is a floor), how many
+ * independent buyers filled the curve and whether one buy did it alone, the survival at 7, 30 and 90 days with each
+ * proof checked against the creator's party, and the creator's earlier Ryntra coins with what became of each. No
+ * verdict, and whatever was not read is said as not read. A client that does not show it needs no release.
+ *
+ * **1.90.0 — prepared actions (CITY-161, line A, 2026-10-31).** Additive: the intents. `POST /api/v1/intents` — an
+ * agent, a chat or a partner prepares a swap for a person to sign, with no wallet and no key, and gets Ryntra's own https
+ * link, a QR and the creator's key shown once; `GET /api/v1/intents/{id}` reads it; claim, release, signed, receipt and
+ * cancel are the person's and the creator's steps. The fields are frozen under a SHA-256 digest every step names; an
+ * intent is used once, expires unclaimed at its deadline, and Ryntra never signs for the person. Served where the
+ * deployment says RYNTRA_INTENTS; elsewhere CAPABILITY_UNAVAILABLE. A client that does not show it needs no release.
  */
 
 import {
@@ -1374,6 +1407,7 @@ import {
 import { MINT_PROFILE_FIELDS } from "../../solana/mint-profile-fields.ts";
 import { TRADE_KINDS, TRADE_RISK_FACTS, TRADE_RISK_NETWORKS } from "../../solana/trade-risk.ts";
 import { SURVIVAL_HORIZONS_DAYS, SURVIVAL_STATES, SURVIVAL_WINDOW_DAYS } from "../../core/launch/survival-stats.ts";
+import { BUNDLE_REASONS, CREATOR_LINKS, FLOW_LISTED } from "../../launch/flow/rules.ts";
 import { CREW_MAX_MEMBERS, CREW_MEMBER_STATES, CREW_MIN_BPS, CREW_MIN_MEMBERS, CREW_PRESETS } from "../../core/launch/crew.ts";
 import { EVENING_WINDOW_HOUR_UTC, EVENING_WINDOW_MINUTES, HOURLY_WINDOW_MINUTES, WINDOW_KINDS } from "../../core/launch/windows.ts";
 import { TEAM_GRANTS, TEAM_JOURNAL_ACTIONS, TEAM_KINDS, TEAM_MEMBER_STATUSES, TEAM_PERMISSIONS, TEAM_REFUSALS, TEAM_RISKS, TEAM_ROLES } from "../../core/team/roles.ts";
@@ -1400,10 +1434,27 @@ import {
   TEAM_LAUNCH_PROBLEMS,
   TEAM_LAUNCH_STEP_KEYS,
 } from "../../core/launch/team-launch.ts";
+import {
+  AMOUNT_RAW as INTENT_AMOUNT_RAW,
+  CREATOR_KEY as INTENT_CREATOR_KEY,
+  DIGEST as INTENT_DIGEST,
+  INTENT_EXPIRY,
+  INTENT_ID,
+  INTENT_NETWORK,
+  INTENT_ORIGIN_KINDS,
+  INTENT_PAY_ASSETS,
+  INTENT_SIDES,
+  INTENT_STATUSES,
+  NATIVE_SOL as INTENT_NATIVE_SOL,
+  ORIGIN_NAME as INTENT_ORIGIN_NAME,
+  RECEIPT_CHAIN as INTENT_RECEIPT_CHAIN,
+  SIGNATURE as INTENT_SIGNATURE,
+} from "../../intents/model.ts";
 import { EVENT_FINALITY, EVENT_FLAGS, EVENT_KINDS, EVENT_SOURCES, EVENT_UNSTATED, EVENT_VENUES, EVENTS_MAX, SUSPICION_REASONS } from "../../events/market-events.ts";
+import { WARD_CHECKS, WARD_HOLDERS, WARD_INPUTS, WARD_LEVELS, WARD_NETWORKS, WARD_REASON_CODES, WARD_VERDICTS, type WardReasonCode } from "../../ward/codes.ts";
 
 export const API_MAJOR = 1;
-export const API_CONTRACT_VERSION = "1.86.0";
+export const API_CONTRACT_VERSION = "1.90.0";
 export const API_HEADER = "X-Ryntra-API";
 export const API_VERSION_HEADER = "X-Ryntra-API-Version";
 export const NETWORK = "solana:mainnet";
@@ -1607,6 +1658,38 @@ export const ERROR_CODES = [
   "DEV_SCOPE_REFUSED",
   /** The project has spent a quota window whose number this deployment states; the answer says when it starts again. */
   "DEV_QUOTA_EXCEEDED",
+  /** 1.90.0 (CITY-161): no intent has this id. */
+  "INTENT_NOT_FOUND",
+  /** 1.90.0: the intent's deadline passed before anyone claimed it. */
+  "INTENT_EXPIRED",
+  /** 1.90.0: the intent was already used — receipted, or claimed and never finished. It never opens again. */
+  "INTENT_USED",
+  /** 1.90.0: another wallet holds the intent's claim right now. */
+  "INTENT_BUSY",
+  /** 1.90.0: the digest the step names is not the intent's (or the stored intent no longer matches its digest). */
+  "INTENT_CHANGED",
+  /** 1.90.0: a receipt for an intent no wallet has claimed. */
+  "INTENT_NOT_CLAIMED",
+  /** 1.90.0: the receipt's transaction is not on chain yet; send the receipt again. */
+  "INTENT_RECEIPT_UNSEEN",
+  /** 1.90.0: the receipt is not the signature the claim was marked with, its transaction did not do what the intent asks (or was not paid by the claiming wallet), or its signature answers another intent. */
+  "INTENT_RECEIPT_MISMATCH",
+  /** 1.90.0: who prepared the intent may not use that name (Ryntra's, a wallet's). */
+  "INTENT_ORIGIN_REFUSED",
+  /** 1.90.0: this kind of intent cannot be prepared from outside Ryntra yet (phase 1: a transfer to another address). */
+  "INTENT_ACTION_CLOSED",
+  /** 1.90.0: the wallet named in `for` already has as many open intents as one wallet may. */
+  "INTENT_LIMIT",
+  /** 1.90.0: its creator withdrew the intent. It never opens again. */
+  "INTENT_CANCELLED",
+  /** 1.90.0: the intent is bound to another wallet (`for`). */
+  "INTENT_WRONG_WALLET",
+  /** 1.90.0: the creator's key on the request is not this intent's. */
+  "INTENT_KEY_INVALID",
+  /** 1.90.0: bytes of this claim may have left (its mark is set): it is read back and receipted, never let go. */
+  "INTENT_SENT",
+  /** 1.90.0: the signed bytes are not signed by the wallet that pays for them, or that wallet is not the claiming one. */
+  "INTENT_SIGNATURE_INVALID",
 ] as const;
 export type ApiErrorCode = (typeof ERROR_CODES)[number];
 
@@ -1750,6 +1833,22 @@ export const ERROR_STATUS: Readonly<Record<ApiErrorCode, number>> = {
   DEV_ORIGIN_REFUSED: 403,
   DEV_SCOPE_REFUSED: 403,
   DEV_QUOTA_EXCEEDED: 429,
+  INTENT_NOT_FOUND: 404,
+  INTENT_EXPIRED: 410,
+  INTENT_USED: 409,
+  INTENT_BUSY: 409,
+  INTENT_CHANGED: 409,
+  INTENT_NOT_CLAIMED: 409,
+  INTENT_RECEIPT_UNSEEN: 409,
+  INTENT_RECEIPT_MISMATCH: 422,
+  INTENT_ORIGIN_REFUSED: 422,
+  INTENT_ACTION_CLOSED: 422,
+  INTENT_LIMIT: 429,
+  INTENT_CANCELLED: 410,
+  INTENT_WRONG_WALLET: 403,
+  INTENT_KEY_INVALID: 403,
+  INTENT_SENT: 409,
+  INTENT_SIGNATURE_INVALID: 422,
 };
 
 /* ------------------------------------------------------------ capabilities */
@@ -2075,6 +2174,8 @@ export const CapabilitiesSchema = z
         profile: z.literal("/api/v1/launch/creators/{address}/profile").optional(),
         /** 1.55.0 — the survival of the markets launched on Ryntra at 7, 30 and 90 days (SOL-L3). */
         survival: z.literal("/api/v1/launch/survival").optional(),
+        /** 1.89.0 — a launch's flow: the launch slot, the bundles, the creator's strip, the independent buyers (L3). */
+        flow: z.literal("/api/v1/launch/{mint}/flow").optional(),
         /** 1.56.0 — «Розширений»: the launch's own config, built and sent (SOL-L5). */
         advancedConfigBuild: z.literal("/api/v1/launch/advanced/config/build").optional(),
         advancedConfigSubmit: z.literal("/api/v1/launch/advanced/config/submit").optional(),
@@ -13826,6 +13927,11 @@ export const LaunchMarketRowSchema = z
     creatorLock: LaunchMarketLockView.nullable(),
     /** Whether the creator sold any of the token; null when their trades were not read whole and no sale was seen. */
     creatorSold: z.boolean().nullable(),
+    /**
+     * 1.87.0 (CITY-139) — Ryntra took the token's picture, description and links down (MC-1, `takedown.server.ts`): they
+     * are not served, the name and the ticker stay, and the chain keeps the token and its trading. Absent when not.
+     */
+    hidden: z.literal(true).optional(),
     observedAt: Iso,
   })
   .strict();
@@ -13905,6 +14011,139 @@ export const LaunchSurvivalResponseSchema = z
   })
   .strict();
 export type LaunchSurvivalResponse = z.infer<typeof LaunchSurvivalResponseSchema>;
+
+/**
+ * `GET /api/v1/launch/{mint}/flow` (1.89.0, Launch strategy L3) — who bought a launch and how, as facts of the chain
+ * counted by fixed rules (`lib/launch/flow/rules.ts`): never a verdict, and what was not read is said as not read.
+ */
+const LaunchFlowSignatures = z.array(LaunchSignature).max(FLOW_LISTED.signatures);
+const LaunchFlowCount = z.number().int().min(0);
+export const LaunchFlowResponseSchema = z
+  .object({
+    network: LaunchNetworkId,
+    token: Address,
+    creator: Address,
+    /** The rules the figures are counted by; `floorUsd` null on a pair that is not a dollar — no floor is applied there. */
+    rules: z
+      .object({ version: z.string().max(40), floorUsd: z.number().min(0).nullable(), singleTradeBps: LaunchBps, hops: z.number().int().min(1).max(5) })
+      .strict(),
+    /** The creation's block: every buy in it besides the creator's own first purchase. Null when the read did not reach it. */
+    launchSlot: z
+      .object({ slot: LaunchFlowCount, at: Iso.nullable(), buys: LaunchFlowCount, wallets: LaunchFlowCount, supplyBps: LaunchBps, signatures: LaunchFlowSignatures })
+      .strict()
+      .nullable(),
+    /** Same-slot bundles on the curve, the earliest first; `complete` — the whole history was read. */
+    bundles: z
+      .object({
+        groups: z
+          .array(
+            z
+              .object({
+                slot: LaunchFlowCount,
+                at: Iso,
+                wallets: LaunchFlowCount,
+                buys: LaunchFlowCount,
+                supplyBps: LaunchBps,
+                why: z.array(z.enum(BUNDLE_REASONS)).min(1).max(BUNDLE_REASONS.length),
+                signatures: LaunchFlowSignatures,
+              })
+              .strict(),
+          )
+          .max(FLOW_LISTED.bundles),
+        count: LaunchFlowCount,
+        wallets: LaunchFlowCount,
+        supplyBps: LaunchBps,
+        /** What the bundles' wallets hold now, of the supply. */
+        holdsBps: LaunchBps,
+        complete: z.boolean(),
+      })
+      .strict(),
+    /** The creator's wallet: bought, sold and holds (its lock counted), of the supply; and the wallets of its party. */
+    dev: z
+      .object({
+        wallet: Address,
+        boughtBps: LaunchBps,
+        soldBps: LaunchBps,
+        /** Sold, of what they bought here; null when they sold nothing, or more than they bought here. */
+        soldOfBoughtBps: LaunchBps.nullable(),
+        sales: LaunchFlowCount,
+        lastSale: z.object({ signature: LaunchSignature, at: Iso }).strict().nullable(),
+        holdsBps: LaunchBps,
+        linked: z.object({ wallets: LaunchFlowCount, boughtBps: LaunchBps, holdsBps: LaunchBps }).strict(),
+        /** Every trade of the creator's wallet was read. */
+        complete: z.boolean(),
+      })
+      .strict(),
+    /** The buyers above the floor, each funding cluster once; `atLeast` — a floor: some starts or trades were not read. */
+    buyers: z
+      .object({
+        wallets: LaunchFlowCount,
+        independent: LaunchFlowCount,
+        merged: LaunchFlowCount,
+        creatorLinked: LaunchFlowCount,
+        unknown: LaunchFlowCount,
+        roundTrips: LaunchFlowCount,
+        atLeast: z.boolean(),
+      })
+      .strict(),
+    graduation: z
+      .object({
+        graduated: z.boolean(),
+        at: Iso.nullable(),
+        signature: LaunchSignature.nullable(),
+        /** The buyers that filled the curve, each cluster once; null before it graduated. */
+        buyers: z.object({ wallets: LaunchFlowCount, independent: LaunchFlowCount }).strict().nullable(),
+        /** The largest buy on the curve and its share of the migration threshold; null when the threshold or no buy was read. */
+        largestBuy: z.object({ signature: LaunchSignature, thresholdBps: LaunchBps }).strict().nullable(),
+        /** It graduated on one buy of at least `rules.singleTradeBps` of the threshold, or with one independent buyer or none. */
+        singleTrade: z.boolean(),
+        complete: z.boolean(),
+      })
+      .strict(),
+    /** Survival at 7, 30 and 90 days; `independent` — the proof's trader is not of the creator's party (null: not known). */
+    survival: z
+      .array(
+        z
+          .object({
+            days: LaunchSurvivalDays,
+            state: z.enum(SURVIVAL_STATES),
+            proof: z.object({ signature: LaunchSignature, at: Iso }).strict().nullable(),
+            independent: z.boolean().nullable(),
+          })
+          .strict(),
+      )
+      .length(SURVIVAL_HORIZONS_DAYS.length),
+    /** The creator's earlier Ryntra coins — their wallet's and their cluster's — the newest first. */
+    creatorRecord: z
+      .object({
+        launches: z
+          .array(
+            z
+              .object({
+                token: Address,
+                symbol: z.string().max(16),
+                launchedAt: Iso,
+                link: z.enum(CREATOR_LINKS),
+                outcomes: z.array(z.object({ days: LaunchSurvivalDays, state: z.enum(SURVIVAL_STATES) }).strict()).length(SURVIVAL_HORIZONS_DAYS.length),
+                /** Alive at the longest horizon decided for it; null while none is. */
+                survived: z.boolean().nullable(),
+              })
+              .strict(),
+          )
+          .max(FLOW_LISTED.launches),
+        count: LaunchFlowCount,
+        judged: LaunchFlowCount,
+        survived: LaunchFlowCount,
+        /** Every creator of the cluster was traced. */
+        complete: z.boolean(),
+      })
+      .strict(),
+    /** Every figure above was counted from a whole read. */
+    complete: z.boolean(),
+    observedAt: Iso,
+  })
+  .strict();
+export type LaunchFlowResponse = z.infer<typeof LaunchFlowResponseSchema>;
 
 /* ---------------------------------------------------------------- 1.74.0 (MC-2): launch windows and crews */
 
@@ -14909,3 +15148,248 @@ export type DevUsageResponse = z.infer<typeof DevUsageResponseSchema>;
 /** `GET /api/v1/developer/events` (1.86.0) — the key's own project's delivery log. Scope `read:events`. */
 export const DevEventsResponseSchema = z.object({ deliveries: z.array(DevDeliverySchema).max(DEV_LIMITS.deliveriesKept) }).strict();
 export type DevEventsResponse = z.infer<typeof DevEventsResponseSchema>;
+
+/* ---------------------------------------------------------------- 1.88.0 (CITY-152): the pre-sign check */
+
+/**
+ * `POST /api/v1/ward/check` (1.88.0, CITY-152 phase 1; working name «ward») — one unsigned transaction (base64, a
+ * wire transaction or a bare message) or one payment link in, one of three words out. Public and read-only: it
+ * simulates, reads accounts and asks the security sources the engine already reads; it holds no key, signs, sends
+ * and keeps nothing.
+ */
+const WardAmount = z.string().regex(/^\d{1,30}(?:\.\d{1,18})?$/);
+const WardMint = Address.nullable();
+
+export const WardIntentSchema = z.discriminatedUnion("kind", [
+  z.object({ kind: z.literal("transfer"), to: Address, amount: WardAmount, mint: WardMint }).strict(),
+  z
+    .object({
+      kind: z.literal("swap"),
+      give: z.object({ mint: WardMint, amount: WardAmount }).strict(),
+      get: z.object({ mint: WardMint, min: WardAmount.nullable() }).strict(),
+    })
+    .strict(),
+]);
+export type WardIntent = z.infer<typeof WardIntentSchema>;
+
+export const WardCheckRequestSchema = z
+  .object({
+    /** Canonical base64 of an unsigned (or signed) transaction, or of its message alone. */
+    transaction: z.string().min(1).max(4_096).optional(),
+    /** A Solana address, a Solana Pay transfer request or a Ryntra payment link. */
+    link: z.string().min(1).max(2_048).optional(),
+    /** The wallet the check judges for; the fee payer when absent. */
+    signer: Address.optional(),
+    /** What the agent (or the person) says the transaction does. */
+    intent: WardIntentSchema.optional(),
+    /** The same as one line: «send 4 SOL to <address>», «swap 1 SOL for USDC» (English or Ukrainian). */
+    intentText: z.string().min(1).max(280).optional(),
+    /** Addresses the signer knows — compared for a look-alike, and not called new. */
+    known: z.array(Address).max(32).optional(),
+    network: z.enum(WARD_NETWORKS).optional(),
+  })
+  .strict()
+  .refine((body) => Boolean(body.transaction) !== Boolean(body.link), { message: "Send a transaction or a link — exactly one." });
+export type WardCheckRequest = z.infer<typeof WardCheckRequestSchema>;
+
+export const WardReasonSchema = z
+  .object({
+    code: z.enum(WARD_REASON_CODES as [WardReasonCode, ...WardReasonCode[]]),
+    check: z.enum(WARD_CHECKS),
+    level: z.enum(WARD_LEVELS),
+    line: z.string().min(1).max(512),
+    detail: z.string().min(1).max(2_048).nullable(),
+    accounts: z.array(Address).max(64),
+    source: z.string().min(1).max(256),
+  })
+  .strict();
+export type WardReason = z.infer<typeof WardReasonSchema>;
+
+export const WardCheckResponseSchema = z
+  .object({
+    schema: z.literal("ryntra.ward.check"),
+    schemaVersion: z.literal("1.0.0"),
+    /** `allow` — nothing known stands against it and what it does was read; `warn` — look, or a core reading did not happen; `block` — a known dangerous effect. Never «safe», never a score. */
+    verdict: z.enum(WARD_VERDICTS),
+    line: z.string().min(1).max(512),
+    /** Heaviest first: block, warn, unknown, info. */
+    reasons: z.array(WardReasonSchema).max(128),
+    /** How many readings did not happen. */
+    notRead: z.number().int().nonnegative(),
+    input: z
+      .object({
+        kind: z.enum(WARD_INPUTS),
+        network: z.enum(WARD_NETWORKS),
+        version: z.enum(["legacy", "v0"]).nullable(),
+        signer: Address.nullable(),
+        signed: z.boolean(),
+        programs: z.array(z.object({ id: Address, label: z.string().min(1).max(64).nullable() }).strict()).max(64),
+      })
+      .strict(),
+    effects: z
+      .object({
+        simulated: z.boolean(),
+        changes: z
+          .array(
+            z
+              .object({
+                holder: z.union([Address, z.literal("you")]),
+                kind: z.enum(WARD_HOLDERS),
+                mint: Address.nullable(),
+                symbol: z.string().min(1).max(16).nullable(),
+                decimals: z.number().int().min(0).max(255).nullable(),
+                raw: z.string().regex(/^-?\d{1,40}$/),
+              })
+              .strict(),
+          )
+          .max(128),
+        feeLamports: z.string().regex(/^\d{1,20}$/).nullable(),
+        rentLamports: z.string().regex(/^\d{1,20}$/).nullable(),
+      })
+      .strict(),
+    intent: WardIntentSchema.nullable(),
+    checkedAt: Iso,
+  })
+  .strict();
+export type WardCheckResponse = z.infer<typeof WardCheckResponseSchema>;
+
+/* ------------------------------------------------------------ intents (1.90.0, CITY-161) */
+
+/**
+ * 1.90.0: a prepared action — what an agent, a chat or a partner site asks a person to sign. A swap with its coin, raw
+ * amount, side and a deadline, who prepared it and, if known, the one wallet it is for; nothing else. There is no field
+ * for a transaction, a message to the person, a memo or a link: the city builds the exact transaction from these fields
+ * when the person presses, shows the engine's own live quote, and the person's wallet signs. Ryntra never signs for the
+ * person; the swap engine accepts back only the bytes it built and pinned for that wallet, and sends them once.
+ * Phase 1: every beneficiary is the signer, and a transfer to another address from an outside client is closed
+ * (`INTENT_ACTION_CLOSED`) unless the deployment opens it. Unknown fields are refused (`VALIDATION_ERROR`).
+ */
+const IntentId = z.string().regex(INTENT_ID);
+const IntentDigest = z.string().regex(INTENT_DIGEST);
+const IntentAmountRaw = z.string().regex(INTENT_AMOUNT_RAW);
+const IntentExpiresIn = z.number().int().min(INTENT_EXPIRY.minSeconds).max(INTENT_EXPIRY.maxSeconds);
+
+export const IntentOriginSchema = z
+  .object({
+    /** Who prepared it: an AI agent, a chat assistant, or a partner's site or app. */
+    kind: z.enum(INTENT_ORIGIN_KINDS),
+    /** The name the sheet says in «Prepared by …», marked unverified: plain ASCII, up to 32 characters; Ryntra's and wallets' names are refused (`INTENT_ORIGIN_REFUSED`). */
+    name: z.string().regex(INTENT_ORIGIN_NAME),
+  })
+  .strict();
+
+export const IntentSwapSpecSchema = z
+  .object({
+    action: z.literal("swap"),
+    /** The coin bought or sold (its mint). */
+    coin: Address,
+    side: z.enum(INTENT_SIDES),
+    /** What the coin is priced against: bought with it (`buy`) or sold into it (`sell`). */
+    pay: z.enum(INTENT_PAY_ASSETS),
+    /** What leaves the wallet, in the smallest unit: of `pay` on a buy, of `coin` on a sell. */
+    amountRaw: IntentAmountRaw,
+  })
+  .strict();
+
+export const IntentTransferSpecSchema = z
+  .object({
+    action: z.literal("transfer"),
+    /** `"SOL"` for native SOL, or the token's mint. */
+    coin: z.union([z.literal(INTENT_NATIVE_SOL), Address]),
+    amountRaw: IntentAmountRaw,
+    /** The recipient's address — shown whole on the sheet, checked by the engine's recipient check. */
+    to: Address,
+  })
+  .strict();
+
+export const IntentSpecSchema = z.discriminatedUnion("action", [IntentSwapSpecSchema, IntentTransferSpecSchema]);
+
+const IntentCreateCommon = { expiresIn: IntentExpiresIn.optional(), origin: IntentOriginSchema, for: Address.optional() };
+
+/**
+ * `POST /api/v1/intents` (1.90.0). No wallet and no key: anyone may prepare a request, and only the person's own wallet
+ * can act on it. `expiresIn` — seconds, 60 to 86 400, 900 when not given. `pay` defaults to `SOL`. `for` — the one wallet
+ * that may confirm it (at most 20 open a wallet, `INTENT_LIMIT`). A `transfer` answers `INTENT_ACTION_CLOSED` until the
+ * deployment opens it.
+ */
+export const IntentCreateRequestSchema = z.discriminatedUnion("action", [
+  IntentSwapSpecSchema.extend({ pay: z.enum(INTENT_PAY_ASSETS).default("SOL"), ...IntentCreateCommon }).strict(),
+  IntentTransferSpecSchema.extend(IntentCreateCommon).strict(),
+]);
+export type IntentCreateRequest = z.input<typeof IntentCreateRequestSchema>;
+
+export const IntentReceiptSchema = z
+  .object({
+    wallet: Address,
+    signature: z.string().regex(INTENT_SIGNATURE),
+    at: Iso,
+    /** `CONFIRMED` · `FAILED` — read on mainnet, paid by `wallet`; `UNCHECKED` — a stand without a chain recorded it as sent. */
+    chain: z.enum(INTENT_RECEIPT_CHAIN),
+  })
+  .strict();
+
+/**
+ * 1.90.0: an intent as served. `status`: `OPEN` — waiting for its person; `CLAIMED` — one wallet is confirming it until
+ * `claimedUntil`; `DONE` — ended by a signature; `EXPIRED` — nobody claimed it in time; `LAPSED` — its claim was marked
+ * and never receipted, so it never opens again (that signature still receipts it); `CANCELLED` — withdrawn by its
+ * creator. `receipt` (the wallet and signature that
+ * ended it) is served only to the creator's key (`X-Ryntra-Intent-Key`) and to the claiming wallet's own step; null
+ * otherwise. `digest` is SHA-256 over the frozen fields' canonical JSON; every step names it. `origin.verified` is false
+ * in phase 1. `links` are Ryntra's own, built from the id, https only: the page (on Seeker, the app's verified link) and
+ * an SVG QR of it.
+ */
+export const IntentSchema = z
+  .object({
+    id: IntentId,
+    status: z.enum(INTENT_STATUSES),
+    network: z.literal(INTENT_NETWORK),
+    spec: IntentSpecSchema,
+    origin: IntentOriginSchema.extend({ verified: z.boolean() }).strict(),
+    for: Address.nullable(),
+    createdAt: Iso,
+    expiresAt: Iso,
+    digest: IntentDigest,
+    claimedUntil: Iso.nullable(),
+    /** The signature the claim was marked with before its bytes could leave; only on the claiming wallet's own steps. */
+    sentSignature: z.string().regex(INTENT_SIGNATURE).nullable(),
+    receipt: IntentReceiptSchema.nullable(),
+    links: z.object({ url: z.string().url(), qr: z.string().url() }).strict(),
+  })
+  .strict();
+export type Intent = z.infer<typeof IntentSchema>;
+
+/** 1.90.0: the answer to a read and to each step (200). */
+export const IntentResponseSchema = z.object({ intent: IntentSchema }).strict();
+export type IntentResponse = z.infer<typeof IntentResponseSchema>;
+
+/**
+ * 1.90.0: the answer to `POST /api/v1/intents` (201) — the intent and the creator's key. The key is shown here once and
+ * kept nowhere (the server holds its SHA-256): it reads the receipt back (`X-Ryntra-Intent-Key` on the read) and
+ * withdraws the intent (`POST /api/v1/intents/{id}/cancel`).
+ */
+export const IntentCreatedResponseSchema = z.object({ intent: IntentSchema, creatorKey: z.string().regex(INTENT_CREATOR_KEY) }).strict();
+export type IntentCreatedResponse = z.infer<typeof IntentCreatedResponseSchema>;
+
+/**
+ * 1.90.0: `POST /api/v1/intents/{id}/claim` and `/release` — the digest the sheet was shown and the wallet that presses.
+ * Only the city at Ryntra's own origin takes these steps (a cross-site request is `FORBIDDEN`).
+ */
+export const IntentStepRequestSchema = z.object({ digest: IntentDigest, wallet: Address }).strict();
+export type IntentStepRequest = z.infer<typeof IntentStepRequestSchema>;
+
+/**
+ * 1.90.0: `POST /api/v1/intents/{id}/signed` — the claiming wallet's signed bytes, handed over before the swap engine may
+ * send them. The server checks the wallet pays for them and signed them, keeps only the signature as the claim's mark,
+ * and sends nothing. From then on the claim is never let go (`INTENT_SENT`) and the same wallet's claim answers that
+ * signature (`sentSignature`) instead of a fresh start.
+ */
+export const IntentMarkRequestSchema = IntentStepRequestSchema.extend({
+  signedWireBase64: z.string().min(80).max(2_000).regex(/^[A-Za-z0-9+/]+=*$/),
+  /** The mark this press began from (`sentSignature` of its claim), null for none; any other current mark is `INTENT_SENT`. */
+  replaces: z.string().regex(INTENT_SIGNATURE).nullable().optional(),
+}).strict();
+export type IntentMarkRequest = z.infer<typeof IntentMarkRequestSchema>;
+
+/** 1.90.0: `POST /api/v1/intents/{id}/receipt` — the claiming wallet's transaction signature (the marked one), which ends the intent. */
+export const IntentReceiptRequestSchema = IntentStepRequestSchema.extend({ signature: z.string().regex(INTENT_SIGNATURE) }).strict();
+export type IntentReceiptRequest = z.infer<typeof IntentReceiptRequestSchema>;

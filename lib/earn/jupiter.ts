@@ -56,18 +56,18 @@ function intOf(value: unknown): number | null {
 }
 
 /**
- * A per-cent-a-year figure as the API states it, refusing nonsense rather than drawing it.
- *
- * The ceiling is deliberate. If a later release of the API moved this field to basis points, `412` would read
- * as 412 % a year on the page — a figure no lending market pays and the kind of number a person believes once
- * and never forgives. 300 % is above every rate these markets have paid and below any plausible unit mix-up.
+ * A rate a year as the API states it — in basis points (live 3.11.2026: USDC `totalRate` "530" is 5.30 %) — as a
+ * per-cent figure, refusing nonsense rather than drawing it. The ceiling is deliberate: 300 % is above every rate
+ * these markets have paid, so a unit mix-up reads as no rate, never as a figure a person believes once and never
+ * forgives.
  */
 const MAX_PLAUSIBLE_RATE_PERCENT = 300;
 
 export function ratePercentOf(value: unknown): number | null {
-  const raw = typeof value === "number" ? value : typeof value === "string" ? Number(value.trim()) : Number.NaN;
-  if (!Number.isFinite(raw) || raw < 0 || raw > MAX_PLAUSIBLE_RATE_PERCENT) return null;
-  return raw;
+  const bps = typeof value === "number" ? value : typeof value === "string" ? Number(value.trim()) : Number.NaN;
+  if (!Number.isFinite(bps) || bps < 0) return null;
+  const percent = Math.round(bps) / 100;
+  return percent <= MAX_PLAUSIBLE_RATE_PERCENT ? percent : null;
 }
 
 function priceOf(value: unknown): number | null {

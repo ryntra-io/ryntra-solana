@@ -1,4 +1,7 @@
+import { discountedFeeBps } from '../../../lib/core/fee-policy.ts';
 import { freshOrderWithinReview } from '../../../lib/solana/swap-press.ts';
+import { DISCOUNT_ON } from '../partners/discount.ts';
+import { PARTNER_TERMS } from '../partners/terms.ts';
 import type { OrderBody, QuoteBody } from './engine.ts';
 import { wordsNow } from '../i18n/dict.ts';
 import { formatBps, formatImpact, formatRoute, formatUnits, type ImpactLevel } from './format.ts';
@@ -57,6 +60,24 @@ export function figuresOf(priced: Priced, outputDecimals: number, kind: 'quote' 
     networkSol: network !== null && network > 0n ? formatUnits(network.toString(), 9) : null,
     depositSol: deposit !== null && deposit > 0n ? formatUnits(deposit.toString(), 9) : null,
   };
+}
+
+/**
+ * The friend's discount on this order, as the card prints it beside the fee — «−10%» — or null. Read, not computed:
+ * the order the wallet will sign states the discounted rate of exactly the fee the card quoted for the same swap
+ * (CITY-182). Any other difference between the two, or the switch off, prints nothing.
+ */
+export function friendDiscountOf(
+  quote: Pick<QuoteBody['order'], 'ryntraFee'> | null,
+  order: Pick<OrderBody['order'], 'ryntraFee'> | null,
+  on: boolean = DISCOUNT_ON,
+  discountBps: number | null = PARTNER_TERMS.refereeDiscountBps,
+): string | null {
+  if (!on || !quote || !order || !discountBps || discountBps <= 0) return null;
+  const full = quote.ryntraFee?.basisPoints ?? 0;
+  const paid = order.ryntraFee?.basisPoints ?? 0;
+  if (full <= 0 || paid <= 0 || paid >= full || paid !== discountedFeeBps(full, discountBps)) return null;
+  return `−${formatBps(discountBps)}`;
 }
 
 /** The decimals of a mint as the engine read them from the chain, or null when it did not say. */

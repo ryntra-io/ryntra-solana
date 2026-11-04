@@ -63,6 +63,32 @@ export function readLaunchSurvival(deps: HealthDeps): Promise<LaunchSurvivalResp
 
 const decidedKey = (cluster: string, token: string, days: number) => `${cluster}:${token}:${days}`;
 
+/**
+ * The outcomes the store keeps for these launches, nothing read from the chain: a decided one as it was decided, a week
+ * not over yet as young, any other as not read — what the next survival answer reads. For a launch's flow (L3), which
+ * shows a token's own outcomes and its creator's earlier coins' without waiting on a read of every market.
+ */
+export async function keptLaunchSurvival(
+  deps: Pick<HealthDeps, "network" | "store" | "now">,
+  launches: readonly Readonly<{ token: string; launchedAt: string }>[],
+): Promise<Map<string, SurvivalOutcome[]>> {
+  const cluster = deps.network.cluster;
+  const now = Math.floor(deps.now().getTime() / 1000);
+  const kept = deps.store.collection<Decided>("launchSurvival");
+  const out = new Map<string, SurvivalOutcome[]>();
+  await Promise.all(
+    launches.map(async (launch) => {
+      const launchedAt = Math.floor(Date.parse(launch.launchedAt) / 1000);
+      const known = await Promise.all(SURVIVAL_HORIZONS_DAYS.map((days) => kept.get(decidedKey(cluster, launch.token, days)).catch(() => undefined)));
+      out.set(
+        launch.token,
+        SURVIVAL_HORIZONS_DAYS.map((days, index): SurvivalOutcome => known[index]?.outcome ?? { days, state: survivalWindow(launchedAt, days).to > now ? "young" : "unread", proof: null }),
+      );
+    }),
+  );
+  return out;
+}
+
 /** One answer made now; `reader` is the chain's market reader (a test hands in its own). */
 export async function assembleLaunchSurvival(
   deps: Pick<HealthDeps, "network" | "connection" | "store" | "now" | "ryntraWallets">,

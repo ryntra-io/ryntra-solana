@@ -1,4 +1,4 @@
-import type { Building, LinkRefusal, LockReason, Quarter, WorldErrorCode } from '../../../lib/world/contract.ts';
+import type { Building, CrewRefusal, LinkRefusal, LockReason, Quarter, WorldErrorCode } from '../../../lib/world/contract.ts';
 
 /**
  * The living world's shapes come from the world server's own contract (lib/world/contract.ts, which
@@ -19,17 +19,33 @@ export type {
   ClaimResponse,
   ConsentRequest,
   ConsentResponse,
+  CreateCrewRequest,
+  CrewColour,
+  CrewHq,
+  CrewMe,
+  CrewMember,
+  CrewRefusal,
+  CrewResponse,
+  CrewScore,
+  CrewsResponse,
+  CrewStreet,
+  CrewWriteResponse,
   DailyTask,
   Day,
   District,
   DistrictResponse,
+  GiftRequest,
   Id,
+  InviteResponse,
+  JoinCrewRequest,
+  LeaveCrewResponse,
   LinkKind,
   LinkRefusal,
   LinkRequest,
   LinkResponse,
   LockReason,
   MeResponse,
+  MyCrew,
   PointsEntry,
   PublicBuilding,
   Quarter,
@@ -57,14 +73,14 @@ export class WorldError extends Error {
   /** The HTTP status; 0 when the world could not be reached. */
   readonly status: number;
   readonly code: ClientErrorCode;
-  readonly reason: LockReason | LinkRefusal | null;
+  readonly reason: LockReason | LinkRefusal | CrewRefusal | null;
   readonly need: { quarterLevel?: number } | null;
   readonly current: { quarter: Quarter; buildings: Building[] } | null;
 
   constructor(
     status: number,
     code: ClientErrorCode,
-    more: { reason?: LockReason | LinkRefusal | null; need?: { quarterLevel?: number } | null; current?: { quarter: Quarter; buildings: Building[] } | null } = {},
+    more: { reason?: LockReason | LinkRefusal | CrewRefusal | null; need?: { quarterLevel?: number } | null; current?: { quarter: Quarter; buildings: Building[] } | null } = {},
   ) {
     super(`world ${status} ${code}${more.reason ? ` (${more.reason})` : ''}`);
     this.name = 'WorldError';

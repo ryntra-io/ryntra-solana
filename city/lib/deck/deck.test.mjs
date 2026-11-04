@@ -4,7 +4,7 @@ import assert from "node:assert/strict";
 import { CENTER, CHROME_KEY, LEFT, PLACES, RIGHT, SHOWN, TRAYS, doorOpen, doorsOf, futuresWay, isTray, placeOpen, readChrome, writeChrome } from "./items.ts";
 import { DECK } from "../../components/deck/words.ts";
 
-const ALL_SHUT = { launch: false, earn: false, guard: false, money: false, trade: false, spot: false, futures: null, hangar: false, bots: false, ring: false, hack: false, vault: false };
+const ALL_SHUT = { launch: false, earn: false, guard: false, money: false, trade: false, spot: false, futures: null, hangar: false, bots: false, garage: false, ring: false, hack: false, vault: false };
 
 test("seven places on fixed spots (decision 86): Launch · Spot · Earn, Agents in the middle, Arena · Guard · Money", () => {
   assert.deepEqual(PLACES, ["launch", "spot", "earn", "agents", "arena", "guard", "money"]);
@@ -23,7 +23,7 @@ test("no Exchange, no Predict, no City, no Studio and no islands among the place
 });
 
 test("the trays: Spot — Swap · Spot · Futures; Agents — Hangar · Bots; Arena — Ring · Hack · Vault", () => {
-  assert.deepEqual(TRAYS, { spot: ["swap", "spot", "futures"], agents: ["hangar", "bots"], arena: ["ring", "hack", "vault"] });
+  assert.deepEqual(TRAYS, { spot: ["swap", "spot", "futures"], agents: ["hangar", "bots", "garage"], arena: ["ring", "hack", "vault"] });
   for (const place of PLACES) assert.equal(isTray(place), place in TRAYS, place);
 });
 
@@ -35,6 +35,7 @@ test("a place of its own whose switch is shut stays on its spot; a tray is open 
   assert.equal(placeOpen("spot", ALL_SHUT), false);
   assert.equal(placeOpen("spot", { ...ALL_SHUT, futures: "rxn" }), true);
   assert.equal(placeOpen("agents", { ...ALL_SHUT, bots: true }), true);
+  assert.equal(placeOpen("agents", { ...ALL_SHUT, garage: true }), true, "the garage agent alone opens the Agents tray");
   assert.equal(placeOpen("arena", { ...ALL_SHUT, vault: true }), true);
   assert.equal(placeOpen("arena", ALL_SHUT), false);
 });
@@ -45,7 +46,7 @@ test("Swap rides on trading, Spot needs its own switch too, and the rest each st
   assert.equal(doorOpen("spot", on), false);
   assert.equal(doorOpen("spot", { ...on, spot: true }), true);
   assert.equal(doorOpen("spot", { ...ALL_SHUT, spot: true }), false);
-  for (const door of ["hangar", "bots", "ring", "hack", "vault"]) {
+  for (const door of ["hangar", "bots", "garage", "ring", "hack", "vault"]) {
     assert.equal(doorOpen(door, ALL_SHUT), false, door);
     assert.equal(doorOpen(door, { ...ALL_SHUT, [door]: true }), true, door);
   }
@@ -63,17 +64,21 @@ test("Futures: Phoenix first while the wallet holds something there, then RXN on
   // The whole Exchange only while its switch still says `open`.
   assert.equal(futuresWay("open", false, false), "exchange");
   assert.equal(futuresWay("open", true, false), "rxn");
-  assert.deepEqual(doorsOf("spot", { ...ALL_SHUT, trade: true }), ["swap", "spot"]);
-  assert.deepEqual(doorsOf("spot", { ...ALL_SHUT, futures: "rxn" }), ["swap", "spot", "futures"]);
+  assert.deepEqual(doorsOf("spot", { ...ALL_SHUT, trade: true, spot: true }), ["swap", "spot"]);
+  assert.deepEqual(doorsOf("spot", { ...ALL_SHUT, trade: true }), ["swap"]);
+  assert.deepEqual(doorsOf("spot", { ...ALL_SHUT, trade: true, spot: true, futures: "rxn" }), ["swap", "spot", "futures"]);
   // «Обмін» (30.10): Swap · Spot — the bridge is Money's Send to another network (CITY-155); futures are off.
   assert.equal(futuresWay("exit", false, false), null);
-  assert.deepEqual(doorsOf("arena", ALL_SHUT), ["ring", "hack", "vault"]);
+  // CITY-188: a door not open yet is not shown — no row of «Soon»; a tray with none open is a shut place.
+  assert.deepEqual(doorsOf("arena", ALL_SHUT), []);
+  assert.deepEqual(doorsOf("agents", { ...ALL_SHUT, bots: true }), ["bots"]);
+  assert.deepEqual(doorsOf("spot", { ...ALL_SHUT, futures: "rxn" }), ["futures"]);
 });
 
 test("every place and door has its words in English and Ukrainian", () => {
   for (const lang of ["en", "uk"]) {
     const w = DECK[lang];
-    for (const key of [...PLACES, "swap", "spotDoor", "futures", "hangar", "bots", "ring", "hack", "vault", "soon", "futuresOnRxn"]) {
+    for (const key of [...PLACES, "swap", "spotDoor", "futures", "hangar", "bots", "garage", "hintGarage", "ring", "hack", "vault", "soon", "futuresOnRxn"]) {
       assert.equal(typeof w[key], "string", `${lang}.${key}`);
       assert.ok(w[key].length > 0, `${lang}.${key}`);
     }

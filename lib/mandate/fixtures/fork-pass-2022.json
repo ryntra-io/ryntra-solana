@@ -1,0 +1,442 @@
+{
+ "epoch": 1075,
+ "slot": 464499252,
+ "human": "J4Y2xnixve78jJNAEEg1t8bPde3RtE8uJuE4s5LiSKzq",
+ "agent": "9KhFbhR5cQHyQEYnrCcGj7n2wxiAuyeoBzprHhC1C6Pt",
+ "vault": "8NSc4Q3y9dwQ9nMiBV2ibiheVaNaugEAqGKWrttgExT3",
+ "rows": [
+  {
+   "step": "людина вмикає агента: 0,05 SOL за угоду, 0,25 на добу; рахунки монет Token-2022 — під їхньою програмою (1/2)",
+   "expected": "pass",
+   "ok": true,
+   "size": 864,
+   "computeUnits": 112999,
+   "depth": 2,
+   "code": null,
+   "reason": null
+  },
+  {
+   "step": "людина вмикає агента: 0,05 SOL за угоду, 0,25 на добу; рахунки монет Token-2022 — під їхньою програмою (2/2)",
+   "expected": "pass",
+   "ok": true,
+   "size": 1022,
+   "computeUnits": 50818,
+   "depth": 2,
+   "code": null,
+   "reason": null
+  },
+  {
+   "step": "рахунок людини BTC — Token-2022",
+   "expected": "pass",
+   "ok": true
+  },
+  {
+   "step": "агент купує BTC (Token-2022, лише метадані — як монета лаунчпада) на 0,05 SOL",
+   "expected": "pass",
+   "ok": true,
+   "status": "landed",
+   "size": 816,
+   "computeUnits": 145781,
+   "depth": 4,
+   "code": null,
+   "reason": null,
+   "route": "Meteora DLMM",
+   "instruction": "route_v2",
+   "spent": "50000000",
+   "quoted": "614700172",
+   "minOut": "608553170",
+   "received": "614700172",
+   "receivedOfQuote": 100,
+   "feeBps": 100,
+   "ryntraFee": "500000",
+   "instructions": 6
+  },
+  {
+   "step": "SI читається: комісія за переказ 1 % у межах 2 %",
+   "expected": "pass",
+   "ok": true,
+   "rate": 100
+  },
+  {
+   "step": "агент купує SI (комісія за переказ 1 %) на 0,05 SOL — правило рахує комісію з мінімуму",
+   "expected": "pass",
+   "ok": true,
+   "status": "landed",
+   "size": 909,
+   "computeUnits": 146769,
+   "depth": 4,
+   "code": null,
+   "reason": null,
+   "route": "Meteora DLMM",
+   "instruction": "route_v2",
+   "spent": "50000000",
+   "quoted": "447018044",
+   "minOut": "442547863",
+   "received": "442547862",
+   "receivedOfQuote": 98.9999,
+   "feeBps": 100,
+   "ryntraFee": "500000",
+   "instructions": 6
+  },
+  {
+   "step": "  до людини дійшло 98.9999 % котирування",
+   "expected": "pass",
+   "ok": true,
+   "quoted": "447018044",
+   "received": "442547862"
+  },
+  {
+   "step": "SI: правило без комісії за переказ — підписувач агента",
+   "expected": "refused",
+   "ok": false,
+   "reason": "the rule does not count the coin's transfer fee off the minimum"
+  },
+  {
+   "step": "SI: правило без комісії за переказ — ключ украдено, ланцюг",
+   "expected": "refused",
+   "ok": false,
+   "size": 909,
+   "computeUnits": 146785,
+   "depth": 4,
+   "code": "ReceivedTooLittle",
+   "reason": "the person's account did not receive the minimum",
+   "logsTail": [
+    "Program log: Instruction: TransferChecked",
+    "Program log: Instruction: LogEvent",
+    "Program log: Instruction: LogEvent",
+    "Program L2TExMFKdjpN9kozasaurPirfHy9P8sbXoAN1qA3S95 failed: custom program error: 0x1771"
+   ]
+  },
+  {
+   "step": "SI: правило з двома комісіями дорогою (дослід, мимо підписувача)",
+   "expected": "pass",
+   "ok": true,
+   "size": 909,
+   "computeUnits": 146748,
+   "depth": 4,
+   "code": null,
+   "reason": null
+  },
+  {
+   "step": "PUMP (transfer hook): двигун не просить маршруту",
+   "expected": "refused",
+   "ok": false,
+   "reason": "the agent does not trade this coin: the coin runs its issuer's own program on every transfer"
+  },
+  {
+   "step": "EUROP (permanent delegate): двигун не просить маршруту",
+   "expected": "refused",
+   "ok": false,
+   "reason": "the agent does not trade this coin: its issuer can take the coin out of any wallet"
+  },
+  {
+   "step": "стенд: справжній рахунок BTC зловмисника (Token-2022)",
+   "expected": "pass",
+   "ok": true,
+   "size": 306,
+   "computeUnits": 21040,
+   "depth": 2,
+   "code": null,
+   "reason": null
+  },
+  {
+   "step": "вихід BTC на рахунок зловмисника — підписувач агента",
+   "expected": "refused",
+   "ok": false,
+   "reason": "account 7: the bytes at 32 are not the pinned ones"
+  },
+  {
+   "step": "вихід BTC на рахунок зловмисника — ключ украдено, ланцюг",
+   "expected": "refused",
+   "ok": false,
+   "size": 732,
+   "computeUnits": 33862,
+   "depth": 1,
+   "code": "ProgramInteractionInvalidNumericValue",
+   "reason": "a value is outside the mandate (amount, price or receiving account)",
+   "logsTail": [
+    "Program log: Instruction: ExecuteTransactionSyncV2",
+    "Program log: AnchorError occurred. Error Code: ProgramInteractionInvalidNumericValue. Error Number: 6064. Error Message: Program interaction data constraint failed: invalid numeric value.",
+    "Program SMRTzfY6DfH5ik3TKiyLFfXexV8uSG3d2UksSCYdunG failed: custom program error: 0x17b0"
+   ]
+  },
+  {
+   "step": "вихід на підроблений рахунок з байтами людини — ключ украдено, ланцюг",
+   "expected": "refused",
+   "ok": false,
+   "size": 684,
+   "computeUnits": 102342,
+   "depth": 4,
+   "code": null,
+   "reason": null,
+   "logsTail": [
+    "Program log: Error: IncorrectProgramId",
+    "Program TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb failed: incorrect program id for instruction",
+    "Program JUP6LkbZbjS1jKKwapdHNy74zcZ3tLUZoi5QNyVTaV4 failed: incorrect program id for instruction",
+    "Program SMRTzfY6DfH5ik3TKiyLFfXexV8uSG3d2UksSCYdunG failed: incorrect program id for instruction"
+   ]
+  },
+  {
+   "step": "після атак: у зловмисника 0 BTC",
+   "expected": "pass",
+   "ok": true
+  },
+  {
+   "step": "у людини BTC після купівлі: 614700172",
+   "expected": "pass",
+   "ok": true
+  },
+  {
+   "step": "людина дає агенту 461025129 BTC на продаж: рівно 153675043 за раз, не дешевше 11058552 лампортів, у SOL на її гаманець (1/2)",
+   "expected": "pass",
+   "ok": true,
+   "size": 535,
+   "computeUnits": 35783,
+   "depth": 2,
+   "code": null,
+   "reason": null
+  },
+  {
+   "step": "людина дає агенту 461025129 BTC на продаж: рівно 153675043 за раз, не дешевше 11058552 лампортів, у SOL на її гаманець (2/2)",
+   "expected": "pass",
+   "ok": true,
+   "size": 1030,
+   "computeUnits": 47490,
+   "depth": 2,
+   "code": null,
+   "reason": null
+  },
+  {
+   "step": "рахунок сховища BTC — Token-2022",
+   "expected": "pass",
+   "ok": true,
+   "budget": "461025129"
+  },
+  {
+   "step": "агент продає 153675043 BTC за SOL — SOL людині, комісія Ryntra в SOL",
+   "expected": "pass",
+   "ok": true,
+   "status": "landed",
+   "size": 868,
+   "computeUnits": 133387,
+   "depth": 4,
+   "code": null,
+   "reason": null,
+   "route": "Meteora DLMM",
+   "instruction": "route_v2",
+   "spent": "153675043",
+   "quoted": "12176584",
+   "minOut": "12054818",
+   "received": "12176584",
+   "receivedOfQuote": 100,
+   "feeBps": 100,
+   "ryntraFee": "122995",
+   "instructions": 5
+  },
+  {
+   "step": "  SOL прийшли людині, не менше межі ціни",
+   "expected": "pass",
+   "ok": true,
+   "received": "12176584",
+   "floor": "11058552",
+   "ryntraFee": "122995"
+  },
+  {
+   "step": "стенд: рахунок wSOL зловмисника",
+   "expected": "pass",
+   "ok": true,
+   "size": 306,
+   "computeUnits": 14913,
+   "depth": 2,
+   "code": null,
+   "reason": null
+  },
+  {
+   "step": "продаж: SOL на рахунок зловмисника — підписувач агента",
+   "expected": "refused",
+   "ok": false,
+   "reason": "account 7 is not a pinned one"
+  },
+  {
+   "step": "продаж: SOL на рахунок зловмисника — ключ украдено, ланцюг",
+   "expected": "refused",
+   "ok": false,
+   "size": 794,
+   "computeUnits": 31007,
+   "depth": 1,
+   "code": "ProgramInteractionAccountConstraintViolated",
+   "reason": "an account is outside the mandate",
+   "logsTail": [
+    "Program log: Instruction: ExecuteTransactionSyncV2",
+    "Program log: AnchorError occurred. Error Code: ProgramInteractionAccountConstraintViolated. Error Number: 6069. Error Message: Program interaction constraint violation: account constraint.",
+    "Program SMRTzfY6DfH5ik3TKiyLFfXexV8uSG3d2UksSCYdunG failed: custom program error: 0x17b5"
+   ]
+  },
+  {
+   "step": "продаж: удвічі більше BTC за раз — підписувач агента",
+   "expected": "refused",
+   "ok": false,
+   "reason": "the number at 8 (307350086) breaks equals 153675043"
+  },
+  {
+   "step": "продаж: удвічі більше BTC за раз — ключ украдено, ланцюг",
+   "expected": "refused",
+   "ok": false,
+   "size": 794,
+   "computeUnits": 31172,
+   "depth": 1,
+   "code": "ProgramInteractionInvalidNumericValue",
+   "reason": "a value is outside the mandate (amount, price or receiving account)",
+   "logsTail": [
+    "Program log: Instruction: ExecuteTransactionSyncV2",
+    "Program log: AnchorError occurred. Error Code: ProgramInteractionInvalidNumericValue. Error Number: 6064. Error Message: Program interaction data constraint failed: invalid numeric value.",
+    "Program SMRTzfY6DfH5ik3TKiyLFfXexV8uSG3d2UksSCYdunG failed: custom program error: 0x17b0"
+   ]
+  },
+  {
+   "step": "продаж: ціна майже нуль — підписувач агента",
+   "expected": "refused",
+   "ok": false,
+   "reason": "the number at 16 (2) breaks greaterThanOrEqualTo 11170255"
+  },
+  {
+   "step": "продаж: ціна майже нуль — ключ украдено, ланцюг",
+   "expected": "refused",
+   "ok": false,
+   "size": 746,
+   "computeUnits": 31253,
+   "depth": 1,
+   "code": "ProgramInteractionInvalidNumericValue",
+   "reason": "a value is outside the mandate (amount, price or receiving account)",
+   "logsTail": [
+    "Program log: Instruction: ExecuteTransactionSyncV2",
+    "Program log: AnchorError occurred. Error Code: ProgramInteractionInvalidNumericValue. Error Number: 6064. Error Message: Program interaction data constraint failed: invalid numeric value.",
+    "Program SMRTzfY6DfH5ik3TKiyLFfXexV8uSG3d2UksSCYdunG failed: custom program error: 0x17b0"
+   ]
+  },
+  {
+   "step": "агент продає ще раз — друга угода за добу",
+   "expected": "pass",
+   "ok": true,
+   "status": "landed",
+   "size": 868,
+   "computeUnits": 133387,
+   "depth": 4,
+   "code": null,
+   "reason": null,
+   "route": "Meteora DLMM",
+   "instruction": "route_v2",
+   "spent": "153675043",
+   "quoted": "12176584",
+   "minOut": "12054818",
+   "received": "12176584",
+   "receivedOfQuote": 100,
+   "feeBps": 100,
+   "ryntraFee": "122995",
+   "instructions": 5
+  },
+  {
+   "step": "третій продаж за добу — понад денну межу в монеті",
+   "expected": "refused",
+   "ok": false,
+   "size": 868,
+   "computeUnits": 115029,
+   "depth": 4,
+   "code": "ProgramInteractionInsufficientTokenAllowance",
+   "reason": "the day's budget is spent",
+   "logsTail": [
+    "Program log: AnchorError thrown in programs/squads_smart_account_program/src/state/policies/utils/account_tracking.rs:147. Error Code: ProgramInteractionInsufficientTokenAllowance. Error Number: 6073. Error Message: Program interaction constraint violation: insufficient remaining token allowance.",
+    "Program log: Left: 0",
+    "Program log: Right: 153675043",
+    "Program SMRTzfY6DfH5ik3TKiyLFfXexV8uSG3d2UksSCYdunG failed: custom program error: 0x17b9"
+   ]
+  },
+  {
+   "step": "людина зупиняє продаж і забирає 153675043 BTC",
+   "expected": "pass",
+   "ok": true,
+   "size": 576,
+   "computeUnits": 58078,
+   "depth": 2,
+   "code": null,
+   "reason": null
+  },
+  {
+   "step": "  монети в гаманці людини",
+   "expected": "pass",
+   "ok": true
+  },
+  {
+   "step": "людина дає агенту 442547862 SI на продаж (комісія за переказ 1 %: у сховище дійде на 1 % менше) (1/2)",
+   "expected": "pass",
+   "ok": true,
+   "size": 535,
+   "computeUnits": 26150,
+   "depth": 1,
+   "code": null,
+   "reason": null
+  },
+  {
+   "step": "людина дає агенту 442547862 SI на продаж (комісія за переказ 1 %: у сховище дійде на 1 % менше) (2/2)",
+   "expected": "pass",
+   "ok": true,
+   "size": 1030,
+   "computeUnits": 51990,
+   "depth": 2,
+   "code": null,
+   "reason": null
+  },
+  {
+   "step": "  у сховищі — на 1 % менше, ніж надіслано",
+   "expected": "pass",
+   "ok": true,
+   "inVault": "438122383"
+  },
+  {
+   "step": "агент продає 221273931 SI за SOL",
+   "expected": "pass",
+   "ok": true,
+   "status": "landed",
+   "size": 1105,
+   "computeUnits": 228262,
+   "depth": 4,
+   "code": null,
+   "reason": null,
+   "route": "Meteora DLMM → GoonFi V2",
+   "instruction": "shared_accounts_route_v2",
+   "spent": "221273931",
+   "quoted": "23635603",
+   "minOut": "23399246",
+   "received": "23609397",
+   "receivedOfQuote": 99.8891,
+   "feeBps": 100,
+   "ryntraFee": "238478",
+   "instructions": 5
+  },
+  {
+   "step": "людина зупиняє продаж SI і забирає 216848452 (утримана комісія спершу йде в mint)",
+   "expected": "pass",
+   "ok": true,
+   "size": 583,
+   "computeUnits": 62538,
+   "depth": 2,
+   "code": null,
+   "reason": null
+  },
+  {
+   "step": "  рахунок сховища SI закрито",
+   "expected": "pass",
+   "ok": true
+  },
+  {
+   "step": "людина зупиняє агента й забирає 0.35 SOL",
+   "expected": "pass",
+   "ok": true,
+   "size": 450,
+   "computeUnits": 45218,
+   "depth": 2,
+   "code": null,
+   "reason": null
+  }
+ ]
+}

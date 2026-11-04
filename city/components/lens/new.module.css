@@ -1,0 +1,873 @@
+/* «New launches on Solana» (CITY-142, a terminal in the city's window frame since CITY-191): the three rings side by
+   side — one at a time behind three tabs where the window is narrow — the beacon in the stored sun's amber, Ryntra's
+   own coins in Ryntra's orange, «Buy» an orange outline that fills under the pointer. The window's width decides how
+   much of a row shows: the ring's own width (a container), not the screen's. Figures in tabular digits; nothing under
+   11 px. */
+
+.pending {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(100deg, transparent 30%, rgba(238, 241, 255, 0.05) 50%, transparent 70%) 0 0 / 220% 100%;
+  animation: pendingSweep 1.4s ease-in-out infinite;
+}
+
+@keyframes pendingSweep {
+  to {
+    background-position: -120% 0;
+  }
+}
+
+.root {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  color: var(--ice);
+  font-family: var(--font-ui, system-ui), system-ui, sans-serif;
+  container: news / inline-size;
+}
+
+.symbol,
+.beaconWord,
+.tab,
+.head,
+.cap,
+.buy,
+.letter {
+  font-family: var(--font-display, system-ui), system-ui, sans-serif;
+  font-stretch: 125%;
+  font-variation-settings: 'wdth' 125;
+}
+
+/* ---------- The bar: the beacon or «Live», the one quiet control, «i» ---------- */
+
+.topbar {
+  position: relative;
+  z-index: 3;
+  display: flex;
+  flex: none;
+  align-items: center;
+  gap: 10px;
+  min-height: 54px;
+  padding: 8px 12px 8px 14px;
+  box-shadow: inset 0 -1px 0 rgba(153, 69, 255, 0.2);
+}
+
+.live {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: var(--type-caption);
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+}
+
+.live i {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--mint, #2ee6a6);
+  box-shadow: 0 0 0 0 rgba(46, 230, 166, 0.55);
+  animation: livePulse 2s ease-out infinite;
+}
+
+.liveOff i {
+  background: rgba(238, 241, 255, 0.35);
+  animation: none;
+}
+
+@keyframes livePulse {
+  to {
+    box-shadow: 0 0 0 8px rgba(46, 230, 166, 0);
+  }
+}
+
+/* The beacon: one coin, the most different buyers, lit in the stored sun. */
+.beacon {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+  height: 38px;
+  padding: 0 14px 0 10px;
+  border: 0;
+  color: var(--ice);
+  cursor: pointer;
+  background: linear-gradient(100deg, rgba(255, 178, 63, 0.2), rgba(255, 104, 28, 0.07) 60%, rgba(255, 178, 63, 0.02));
+  box-shadow: inset 0 0 0 1.5px rgba(255, 178, 63, 0.42);
+  clip-path: polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px);
+}
+
+.beaconLamp {
+  width: 22px;
+  height: 22px;
+  flex: none;
+  color: var(--amber);
+  filter: drop-shadow(0 0 6px rgba(255, 178, 63, 0.85));
+}
+
+.beaconLamp svg {
+  width: 100%;
+  height: 100%;
+}
+
+.beaconWord {
+  font-size: var(--type-micro);
+  font-weight: 900;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--amber);
+}
+
+.beaconCount {
+  font-size: var(--type-caption);
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  color: var(--warm);
+  white-space: nowrap;
+}
+
+.beacon .symbol {
+  font-size: var(--type-body);
+}
+
+.tools {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-left: auto;
+}
+
+.tool {
+  width: 36px;
+  height: 36px;
+  display: grid;
+  place-items: center;
+  padding: 0;
+  border: 0;
+  color: var(--text-dim);
+  background: rgba(255, 255, 255, 0.05);
+  cursor: pointer;
+  clip-path: polygon(7px 0, 100% 0, 100% calc(100% - 7px), calc(100% - 7px) 100%, 0 100%, 0 7px);
+  transition:
+    color 0.15s ease,
+    background-color 0.15s ease;
+}
+
+.tool svg {
+  width: 18px;
+  height: 18px;
+}
+
+.toolI {
+  font-size: 15px;
+  font-weight: 800;
+  font-style: italic;
+  font-family: Georgia, 'Times New Roman', serif;
+}
+
+.toolOn {
+  color: var(--ice);
+  background: rgba(153, 69, 255, 0.26);
+  box-shadow: inset 0 0 0 1.5px rgba(186, 130, 255, 0.55);
+}
+
+/* A launchpad picked: its name, and one tap brings every launchpad back. */
+.picked {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 30px;
+  padding: 0 8px 0 10px;
+  border: 0;
+  color: var(--ice);
+  font-size: var(--type-caption);
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  background: rgba(153, 69, 255, 0.18);
+  box-shadow: inset 0 0 0 1px rgba(186, 130, 255, 0.45);
+  cursor: pointer;
+}
+
+.picked svg {
+  width: 13px;
+  height: 13px;
+  opacity: 0.8;
+}
+
+/* The quiet control open: the order and the launchpads, under the bar on the right. */
+.menu {
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 12px;
+  width: min(380px, calc(100% - 24px));
+  display: grid;
+  gap: 8px;
+  padding: 14px;
+  background: linear-gradient(165deg, #1b1531, #0c0a16);
+  box-shadow:
+    inset 0 0 0 1px rgba(153, 69, 255, 0.36),
+    0 20px 40px -14px rgba(0, 0, 0, 0.85);
+  clip-path: polygon(10px 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%, 0 10px);
+  animation: menuIn 160ms ease-out both;
+}
+
+@keyframes menuIn {
+  from {
+    transform: translateY(-4px);
+  }
+}
+
+.menuLabel {
+  font-size: var(--type-micro);
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+}
+
+.choices {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 4px;
+}
+
+.choice {
+  height: 34px;
+  padding: 0 12px;
+  border: 0;
+  color: rgba(238, 241, 255, 0.82);
+  font-size: var(--type-caption);
+  font-weight: 700;
+  background: rgba(255, 255, 255, 0.05);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.08);
+  cursor: pointer;
+}
+
+.choiceOn {
+  color: var(--ice);
+  background: rgba(153, 69, 255, 0.28);
+  box-shadow: inset 0 0 0 1.5px rgba(186, 130, 255, 0.6);
+}
+
+/* ---------- The rings ---------- */
+
+/* The tabs are a narrow window's: wide, the three rings stand side by side. */
+.tabs {
+  display: none;
+}
+
+.columns {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  /* One row the window's height, so each ring scrolls in its own column. */
+  grid-template-rows: minmax(0, 1fr);
+  flex: 1;
+  min-height: 0;
+}
+
+.column {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 0;
+  /* A section of the page, with none of the page's own spacing. */
+  margin: 0;
+  padding: 0;
+  container: ring / inline-size;
+}
+
+.column + .column {
+  box-shadow: inset 1px 0 0 rgba(153, 69, 255, 0.16);
+}
+
+.head {
+  display: flex;
+  flex: none;
+  align-items: center;
+  gap: 8px;
+  height: 40px;
+  padding: 0 14px;
+  font-size: var(--type-caption);
+  font-weight: 900;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: #cfb2ff;
+  background: rgba(153, 69, 255, 0.05);
+  box-shadow: inset 0 -1px 0 rgba(153, 69, 255, 0.18);
+}
+
+.head svg,
+.tab svg {
+  width: 14px;
+  height: 14px;
+  flex: none;
+}
+
+.count {
+  margin-left: auto;
+  min-width: 2ch;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.02em;
+  color: var(--ice);
+}
+
+.rows {
+  flex: 1;
+  min-height: 0;
+  margin: 0;
+  padding: 0 0 24px;
+  list-style: none;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(153, 69, 255, 0.4) transparent;
+  /* A ring longer than its column fades out at the foot: there is more below. */
+  mask-image: linear-gradient(to bottom, #000 calc(100% - 28px), transparent);
+}
+
+.item {
+  position: relative;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  padding-right: 10px;
+  box-shadow: inset 0 -1px 0 rgba(255, 255, 255, 0.05);
+  transition: background-color 0.15s ease;
+}
+
+.ryntra::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 10px;
+  bottom: 10px;
+  width: 2px;
+  background: #ff681c;
+  box-shadow: 0 0 8px rgba(255, 104, 28, 0.7);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .item:hover {
+    background: rgba(153, 69, 255, 0.09);
+  }
+  .beacon:hover {
+    box-shadow: inset 0 0 0 1.5px rgba(255, 178, 63, 0.72);
+  }
+  .tool:hover {
+    color: var(--ice);
+  }
+  .buy:hover {
+    color: #1a0b02;
+    background: #ff681c;
+    box-shadow: 0 0 16px rgba(255, 104, 28, 0.45);
+  }
+}
+
+.row {
+  display: grid;
+  grid-template-columns: 40px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+  min-height: 64px;
+  padding: 10px 10px 10px 14px;
+  border: 0;
+  color: inherit;
+  background: none;
+  text-align: left;
+  cursor: pointer;
+}
+
+.row:focus-visible,
+.buy:focus-visible,
+.beacon:focus-visible,
+.tab:focus-visible,
+.tool:focus-visible,
+.choice:focus-visible,
+.picked:focus-visible {
+  outline: 2px solid var(--violet);
+  outline-offset: -2px;
+}
+
+.coin {
+  position: relative;
+  width: 40px;
+  height: 40px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  overflow: hidden;
+  background: radial-gradient(circle at 35% 30%, #2d2546, #120e20 70%);
+  box-shadow: 0 0 0 1.5px rgba(153, 69, 255, 0.45);
+}
+
+.coinSmall {
+  width: 24px;
+  height: 24px;
+  flex: none;
+}
+
+.coinRyntra {
+  box-shadow:
+    0 0 0 1.5px #ff681c,
+    0 0 10px rgba(255, 104, 28, 0.45);
+}
+
+/* The logo over the letter, shown once it has drawn. */
+.logo,
+.logoOn {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  opacity: 0;
+}
+
+.logoOn {
+  opacity: 1;
+}
+
+.letter {
+  font-size: 15px;
+  font-weight: 900;
+  color: #cfb2ff;
+}
+
+.coinSmall .letter {
+  font-size: 11px;
+}
+
+.coinRyntra .letter {
+  color: #ff8a4c;
+}
+
+.main {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  min-width: 0;
+}
+
+.line {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+}
+
+/* The row's facts: as many whole as the ring has room for — the last ones step out, never cut in half. */
+.facts {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  column-gap: 8px;
+  row-gap: 12px;
+  height: 18px;
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+}
+
+.symbol {
+  flex: none;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-size: var(--type-base);
+  font-weight: 900;
+  letter-spacing: 0.03em;
+}
+
+.rowLamp {
+  width: 15px;
+  height: 15px;
+  flex: none;
+  color: var(--amber);
+  filter: drop-shadow(0 0 5px rgba(255, 178, 63, 0.8));
+}
+
+.rowLamp svg {
+  width: 100%;
+  height: 100%;
+}
+
+/* The coin's name: a wide ring's, or any ring's when its ticker is shared — it tells the two apart. */
+.name {
+  display: none;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-size: var(--type-caption);
+  color: var(--text-dim);
+}
+
+.nameTwin {
+  display: block;
+  color: #d9c6ff;
+}
+
+.age {
+  flex: none;
+  min-width: 3ch;
+  font-size: var(--type-caption);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: var(--mint, #2ee6a6);
+}
+
+.pad {
+  flex: none;
+  padding: 1px 6px;
+  font-size: var(--type-micro);
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: rgba(238, 241, 255, 0.74);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.14);
+}
+
+.padRyntra {
+  color: #ff8a4c;
+  background: rgba(255, 104, 28, 0.1);
+  box-shadow: inset 0 0 0 1px rgba(255, 104, 28, 0.65);
+}
+
+.stat {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  gap: 4px;
+  font-size: var(--type-caption);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  color: rgba(238, 241, 255, 0.7);
+}
+
+.stat svg {
+  width: 13px;
+  height: 13px;
+  opacity: 0.75;
+}
+
+.figures {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 5px;
+  font-variant-numeric: tabular-nums;
+}
+
+.cap {
+  font-size: var(--type-base);
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+.change {
+  font-size: var(--type-caption);
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.up {
+  color: var(--mint, #2ee6a6);
+}
+
+.down {
+  color: var(--flare, #ff5d6c);
+}
+
+.progress {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.bar {
+  width: 38px;
+  height: 4px;
+  background: rgba(255, 255, 255, 0.1);
+  overflow: hidden;
+}
+
+.bar > span {
+  display: block;
+  height: 100%;
+  background: linear-gradient(90deg, var(--amber), #ff681c);
+  box-shadow: 0 0 8px rgba(255, 140, 50, 0.7);
+}
+
+.pct {
+  font-size: var(--type-caption);
+  font-weight: 700;
+  color: rgba(238, 241, 255, 0.78);
+}
+
+/* «Buy»: the trade card in one tap — an orange outline, filled under the pointer. */
+.buy {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  height: 34px;
+  min-width: 44px;
+  padding: 0 11px 0 9px;
+  border: 0;
+  color: #ff8a4c;
+  font-size: var(--type-caption);
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  background: rgba(255, 104, 28, 0.08);
+  box-shadow: inset 0 0 0 1.5px rgba(255, 104, 28, 0.6);
+  cursor: pointer;
+  clip-path: polygon(6px 0, 100% 0, 100% calc(100% - 6px), calc(100% - 6px) 100%, 0 100%, 0 6px);
+  transition:
+    color 0.15s ease,
+    background-color 0.15s ease;
+}
+
+.buy svg {
+  width: 13px;
+  height: 13px;
+  flex: none;
+}
+
+.buy:active {
+  color: #1a0b02;
+  background: #ff681c;
+}
+
+/* A ring under 500 px: «Buy» is its bolt alone (its name stays for the reader). */
+@container ring (max-width: 499px) {
+  .buy {
+    width: 40px;
+    min-width: 0;
+    padding: 0;
+  }
+  .buy span {
+    display: none;
+  }
+}
+
+/* A phone's ring, a narrow window's: «Buy» a thumb's size. */
+@container ring (max-width: 399px) {
+  .row {
+    gap: 10px;
+    padding-left: 12px;
+  }
+  .buy {
+    width: 44px;
+    height: 44px;
+  }
+}
+
+/* A ring of 420 px and more: the coin's name beside its ticker. */
+@container ring (min-width: 420px) {
+  .name {
+    display: block;
+  }
+}
+
+/* ---------- States ---------- */
+
+.none {
+  padding: 22px 14px;
+  font-size: var(--type-small);
+  color: rgba(238, 241, 255, 0.6);
+}
+
+/* While the first read is on its way: the rows' own shape, breathing, never an empty frame. */
+.shadow {
+  height: 52px;
+  margin: 6px 12px 0;
+  background: linear-gradient(90deg, rgba(153, 69, 255, 0.06), rgba(153, 69, 255, 0.16), rgba(153, 69, 255, 0.06));
+  background-size: 200% 100%;
+  animation: breathe 1.4s ease-in-out infinite;
+}
+
+@keyframes breathe {
+  from {
+    background-position: 100% 0;
+  }
+  to {
+    background-position: -100% 0;
+  }
+}
+
+.silent {
+  display: flex;
+  flex: 1;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  min-height: 120px;
+  font-size: var(--type-body);
+  color: rgba(238, 241, 255, 0.8);
+}
+
+.retry {
+  height: 40px;
+  padding: 0 16px;
+  border: 0;
+  color: var(--ice);
+  font-weight: 800;
+  background: rgba(153, 69, 255, 0.22);
+  box-shadow: inset 0 0 0 1.5px rgba(186, 130, 255, 0.5);
+  cursor: pointer;
+}
+
+/* «i»: how it is counted, over the foot of the window until closed. */
+.about {
+  position: absolute;
+  z-index: 4;
+  left: 12px;
+  right: 12px;
+  bottom: 12px;
+  max-width: 640px;
+  margin: 0 auto;
+  padding: 16px 48px 10px 18px;
+  font-size: var(--type-small);
+  line-height: 1.5;
+  color: rgba(238, 241, 255, 0.86);
+  background: linear-gradient(165deg, #1b1531, #0c0a16);
+  box-shadow:
+    inset 0 0 0 1px rgba(153, 69, 255, 0.36),
+    0 -12px 40px -10px rgba(0, 0, 0, 0.85);
+  clip-path: polygon(10px 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%, 0 10px);
+  animation: menuIn 160ms ease-out both;
+}
+
+.about p {
+  margin: 0 0 8px;
+}
+
+.aboutClose {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  width: 34px;
+  height: 34px;
+  display: grid;
+  place-items: center;
+  padding: 0;
+  border: 0;
+  color: var(--text-dim);
+  background: none;
+  cursor: pointer;
+}
+
+.aboutClose svg {
+  width: 16px;
+  height: 16px;
+}
+
+/* ---------- A narrow window, a phone's sheet: one ring at a time behind three tabs, every target a thumb's ---------- */
+
+@container news (max-width: 699px) {
+  .topbar {
+    padding-left: 12px;
+  }
+
+  .beaconWord {
+    display: none;
+  }
+
+  .tabs {
+    display: flex;
+    flex: none;
+    gap: 4px;
+    margin: 10px 12px 4px;
+    padding: 3px;
+    background: rgba(255, 255, 255, 0.03);
+    box-shadow: inset 0 0 0 1px rgba(153, 69, 255, 0.22);
+  }
+
+  /* Each tab as wide as its words, the room left shared: «Final stretch» is longer than «Graduated». */
+  .tab {
+    display: flex;
+    flex: 1 1 auto;
+    align-items: center;
+    justify-content: center;
+    gap: 5px;
+    min-width: 0;
+    height: 44px;
+    padding: 0 4px;
+    border: 0;
+    color: var(--text-dim);
+    background: none;
+    font-size: var(--type-micro);
+    font-weight: 900;
+    /* The tabs' words at the face's own width: three of them fit a phone. */
+    font-stretch: 100%;
+    font-variation-settings: 'wdth' 100;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    white-space: nowrap;
+    cursor: pointer;
+    clip-path: polygon(6px 0, 100% 0, 100% calc(100% - 6px), calc(100% - 6px) 100%, 0 100%, 0 6px);
+  }
+
+  .tab .count {
+    margin-left: 0;
+    min-width: 0;
+  }
+
+  .tabOn {
+    color: var(--ice);
+    background: linear-gradient(160deg, rgba(153, 69, 255, 0.34), rgba(80, 30, 150, 0.22));
+    box-shadow: inset 0 0 0 1.5px rgba(186, 130, 255, 0.6);
+  }
+
+  .columns {
+    display: flex;
+  }
+
+  .column {
+    display: none;
+    flex: 1;
+  }
+
+  .columnOn {
+    display: flex;
+  }
+
+  .column + .column {
+    box-shadow: none;
+  }
+
+  .head {
+    display: none;
+  }
+}
+
+/* The tab's ring glyph waits for room. */
+@container news (max-width: 540px) {
+  .tab svg {
+    display: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pending,
+  .shadow,
+  .live i,
+  .menu,
+  .about {
+    animation: none;
+  }
+  .item,
+  .tool,
+  .buy {
+    transition: none;
+  }
+}

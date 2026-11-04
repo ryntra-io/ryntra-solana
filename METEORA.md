@@ -8,6 +8,28 @@ Ryntra City's Earn district (the Harbor) lists Meteora DLMM and DAMM v2 pools an
 builds every transaction a person makes unsigned, and the person signs it in their own wallet; Ryntra never holds
 people's funds or keys (its executor signs only its own acts, from an allowlist: graduations, its own claims, its own liquidity).
 
+## In one picture
+
+```mermaid
+flowchart LR
+  A["Person in Ryntra City<br/>name · ticker · picture"] -->|one signature| B["Meteora DBC<br/>Ryntra's partner config<br/>anti-sniper fee · USDC pair"]
+  B -->|"curve fills to ~$75K"| C["DAMM v2 pool<br/>LP locked for ever<br/>half creator · half partner"]
+  C --> D["DLMM ladder<br/>buy-side liquidity<br/>from Ryntra's partner fees"]
+  B -.->|"curve fees"| E["Claims<br/>creator: one signature<br/>Ryntra: Squads multisig"]
+  C -.->|"locked-LP fees"| E
+  F["Earn · Piers<br/>Meteora DLMM / DAMM v2"] --- G["Person's own position<br/>in their wallet"]
+```
+
+| A person launches in the city | The coin's tower on its curve |
+|---|---|
+| ![The launch sheet in Ryntra City](public/reviewers/launch-sheet.jpg) | ![A coin's window: curve progress to the DEX, buy and sell — on the devnet stand](public/reviewers/coin-on-curve.jpg) |
+| **The Piers in Earn: Meteora pools, the person's own position** | **The city: every coin a tower** |
+| ![Meteora DLMM pools in the Earn window](public/reviewers/earn-piers.jpg) | ![Ryntra City](public/reviewers/city.jpg) |
+
+Pictures from the live site, except the coin's window, which is the devnet stand where a curve is shown filling.
+
+## Meteora in the code
+
 Meteora SDKs, pinned exactly in `package.json`: `@meteora-ag/dynamic-bonding-curve-sdk` 1.5.13 and 2.0.0 side by side,
 `cp-amm-sdk` 1.5.1, `dlmm` 1.9.14, `alpha-vault` 1.1.16, `dynamic-fee-sharing-sdk` 1.1.0, `met-lock-sdk` 1.0.1,
 `zap-sdk` 1.3.2. One DBC and one DAMM v2 client per connection: `lib/core/venues/meteora-clients.server.ts`.
@@ -106,14 +128,16 @@ node --test lib/agent-control/external/router.test.mjs    # 16 pass
 
 - The launch engine and `/api/v1/launch` run on Solana mainnet since 6 October 2026, on the preset configs Ryntra
   created as the partner. The executor's cron (`vercel.json`) graduates curves and, where its stops allow, runs the ladder.
-- In the city, Launch opens on mainnet only after a final canary launch: `CITY_LAUNCH_MAINNET` is `false` in
-  `city/lib/launch/gate.ts` and a deployment switch gates it too, so a visitor of ryntra.io may see Launch marked
-  "Soon". Until then the city launches on the devnet stand.
-- Earn on Meteora pools (the Harbor) stays closed unless the deployment flag `NEXT_PUBLIC_RYNTRA_CITY_HARBOR` opens it
-  (`city/lib/districts/harbor/flag.ts`). Adding, withdrawing and claiming have their own gate: closed, one canary
-  wallet up to $5, or open (`lib/liquidity/studio/gate.ts`).
-- Behind switches on mainnet: Advanced, Community configs, the Token-2022 transfer fee, extra pair currencies and the
-  newer claim path (`lib/launch/config.server.ts`). Early access is open on the devnet stand and closed for people on
+- In the city, Launch runs on mainnet: `CITY_LAUNCH_MAINNET` in `city/lib/launch/gate.ts` is the one value, and the
+  deployment switch `NEXT_PUBLIC_RYNTRA_CITY_LAUNCH` closes it without a code change.
+- Earn on Meteora pools is open on mainnet: the Piers in the city's Earn window list Meteora pools, and adding,
+  withdrawing and claiming are open (`NEXT_PUBLIC_RYNTRA_CITY_HARBOR` in `city/lib/districts/harbor/flag.ts`; the
+  actions' own gate — closed, one canary wallet up to $5, or open — in `lib/liquidity/studio/gate.ts`).
+- The newer claim path is open on mainnet since 3 November 2026: a creator claims their share of the curve's fees from
+  the city with one signature, and on 4 November 2026 Ryntra's partner share was claimed through the same path from
+  the partner's Squads multisig (`RYNTRA_LAUNCH_CLAIMS_V2` in `lib/launch/config.server.ts`).
+- Behind switches on mainnet: Advanced, Community configs, the Token-2022 transfer fee and extra pair currencies
+  (`lib/launch/config.server.ts`). Early access is open on the devnet stand and closed for people on
   mainnet by a constant in `lib/launch/early-access.server.ts`. A transfer-hook preset is defined, but `buildConfig`
   refuses it until its rule program passes an independent security review.
 - DBC SDK 1.5.13 is the default; `RYNTRA_DBC_SDK=2` moves every client call to 2.0.0, and removing it rolls back.

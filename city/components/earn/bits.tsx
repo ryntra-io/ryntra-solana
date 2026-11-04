@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { districtFrame, srcSet, type DistrictId } from '@/city/lib/art/frames';
+import { monogram } from '@/city/lib/chart/icon';
 import { isPhoneUserAgent, phantomBrowseUrl, PHANTOM_DOWNLOAD_URL } from '@/lib/solana/open-in-wallet';
 import { useWallet } from '@/city/lib/trade/wallet';
 import { solText } from '@/city/lib/earn/lst';
@@ -74,11 +75,24 @@ export function Notify({ product, words }: { product: ProductId; words: Words })
 }
 
 /** A coin's logo through Ryntra's icon route, as every window of the city draws it. */
-export function Coin({ mint, size = 28 }: { mint: string; size?: number }) {
+/**
+ * A coin's logo over its first letter: while the logo loads, and for a coin the engine has no logo for, the letter
+ * stands in its circle — never an empty one (CITY-188).
+ */
+export function Coin({ mint, size = 28, symbol }: { mint: string; size?: number; symbol?: string }) {
   const [failed, setFailed] = useState(false);
-  if (failed) return <span className={s.coin} style={{ width: size, height: size }} aria-hidden="true" />;
-  // eslint-disable-next-line @next/next/no-img-element
-  return <img className={s.coin} style={{ width: size, height: size }} src={`/api/icon/${mint}`} alt="" draggable={false} onError={() => setFailed(true)} />;
+  if (!symbol) {
+    if (failed) return <span className={s.coin} style={{ width: size, height: size }} aria-hidden="true" />;
+    // eslint-disable-next-line @next/next/no-img-element
+    return <img className={s.coin} style={{ width: size, height: size }} src={`/api/icon/${mint}`} alt="" draggable={false} onError={() => setFailed(true)} />;
+  }
+  return (
+    <span className={`${s.coin} ${s.coinLetter}`} style={{ width: size, height: size, fontSize: Math.round(size * 0.46) }} aria-hidden="true">
+      {monogram(symbol)}
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      {failed ? null : <img className={s.coinLogo} src={`/api/icon/${mint}`} alt="" draggable={false} onError={() => setFailed(true)} />}
+    </span>
+  );
 }
 
 export function EarnGlyph() {

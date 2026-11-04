@@ -1,6 +1,9 @@
 import { words } from '../../lib/i18n/dict.ts';
 
-/** The window frame's own controls (CITY-65), in both languages (CITY-79). The title is the window owner's. */
+/**
+ * The window frame's own controls (CITY-65), in both languages (CITY-79). The title is the window owner's. Since CITY-84:
+ * the tray, the tabs and the layouts — the four presets' names are the only words a layout shows.
+ */
 export const WINDOW = words(
   {
     popOut: 'Pop out',
@@ -15,6 +18,18 @@ export const WINDOW = words(
     outTray: 'Windows on another screen',
     bringBack: (title: string) => `Bring ${title} back`,
     loading: 'Loading',
+    fold: 'Minimise',
+    unfold: (title: string) => `Open ${title}`,
+    tray: 'Minimised windows',
+    tabs: 'Tabs',
+    layouts: 'Layouts',
+    trader: 'Trader',
+    futures: 'Futures',
+    predict: 'Predictions',
+    money: 'Money',
+    slot: (n: number) => `Layout ${n}`,
+    keepSlot: (n: number) => `Keep these windows as layout ${n}`,
+    clearSlot: (n: number) => `Forget layout ${n}`,
   },
   {
     popOut: 'Відкріпити',
@@ -29,5 +44,17 @@ export const WINDOW = words(
     outTray: 'Вікна на іншому екрані',
     bringBack: (title: string) => `Повернути «${title}»`,
     loading: 'Завантаження',
+    fold: 'Згорнути',
+    unfold: (title: string) => `Розгорнути «${title}»`,
+    tray: 'Згорнуті вікна',
+    tabs: 'Вкладки',
+    layouts: 'Макети',
+    trader: 'Трейдер',
+    futures: 'Ф’ючерси',
+    predict: 'Прогнози',
+    money: 'Гроші',
+    slot: (n: number) => `Макет ${n}`,
+    keepSlot: (n: number) => `Зберегти ці вікна як макет ${n}`,
+    clearSlot: (n: number) => `Забути макет ${n}`,
   },
 );

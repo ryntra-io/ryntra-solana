@@ -41,6 +41,20 @@ function OpenEarn() {
     if (open) startWallets();
   }, [open]);
 
+  // Earn's notes (CITY-100) — out of range, the exchange's weekend, dividend dates — told through the notification
+  // centre while Ryntra is open; loaded after the first paint, never with the city's first frame.
+  useEffect(() => {
+    let stop: (() => void) | null = null;
+    let gone = false;
+    void import('@/city/lib/earn/notes-source').then((notes) => {
+      if (!gone) stop = notes.startEarnNotes();
+    });
+    return () => {
+      gone = true;
+      stop?.();
+    };
+  }, []);
+
   const shown = open && (!(running || filming) || busy);
   useEffect(() => {
     if (!shown) return;

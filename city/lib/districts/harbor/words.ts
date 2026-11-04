@@ -33,7 +33,7 @@ export const HARBOR = words(
     newAccounts: 'new accounts',
     backOnExit: 'back on exit',
     signatures: (n: number) => `${n} signatures`,
-    building: 'The engine is building the exact figures',
+    building: 'Working out the exact figures',
     addLiquidity: 'Add liquidity',
     noPrice: 'No price now',
     notEnough: (symbol: string) => `Not enough ${symbol}`,
@@ -250,7 +250,7 @@ export const HARBOR_FAILURES = words(
     fallback: 'That did not work. Nothing was sent.',
     poolsFailed: 'The pools did not load. Try again in a moment.',
     positionsFailed: 'The positions did not read.',
-    fresh: 'Fresh figures from the engine. Tap again to sign.',
+    fresh: 'Fresh figures. Tap again to sign.',
     aged: 'The figures aged while the wallet was open. Nothing was sent. Tap again.',
   },
   {

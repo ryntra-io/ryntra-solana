@@ -43,6 +43,7 @@ import { findStockRow } from "../../stocks/universe.server.ts";
 import { resolveServiceFeeConfig } from "../../swap/service-fee.server.ts";
 import type { TradeIntent } from "../contracts.ts";
 import { definePipeline, NEXT, need, runPipeline, type PipelineRun, type PipelineStep, type StepResult } from "../pipeline.ts";
+import { readRefereeDiscountBps } from "../referee-discount.ts";
 import { createJupiterSwapVenue } from "../venues/jupiter.ts";
 import {
   SOLANA_SWAP_REVIEW_GUARD,
@@ -223,13 +224,15 @@ async function askVenue(context: SwapPrepareContext): Promise<VenueAsk> {
     const { input, planRecord } = context;
     const planSlippageBps = planRecord ? projectTradingPlan(planRecord, Date.now()).current.rules.execution.maxSlippageBps : undefined;
     const config = resolveServiceFeeConfig();
-    const referral = (await verifiedJupiterReferral(config)).referral;
+    /* The taker's discount as a partner's friend (CITY-182) is read beside the referral: the order is built at that rate, so the Review states it before the wallet opens. */
+    const [verified, feeDiscountBps] = await Promise.all([verifiedJupiterReferral(config), readRefereeDiscountBps(storeOf(context), input.taker)]);
+    const referral = verified.referral;
     /* Fee policy v2 picks the lane and the fee per flow, for the web and the phone alike. */
     const venue = createJupiterSwapVenue({
       endpoint: need(context.endpoint, "endpoint"),
       referral,
       config,
-      lanes: { handle: handleOf(context) },
+      lanes: { handle: handleOf(context), feeDiscountBps },
     });
     const account = { kind: "WALLET", network: "solana", address: input.taker } as const;
     const intent: TradeIntent = {

@@ -7,7 +7,9 @@ import { useRun } from '../run/store.ts';
 import { httpEngine, type LaunchEngine, type Network } from './engine.ts';
 import { startLaunchFeed } from './feed.ts';
 import type { Liftoff, Phase } from './flow.ts';
-import { cityLaunchOpen, cityPreset } from './gate.ts';
+import { cityLaunchOpen, cityPreset, cityPresets, type CityPresetId } from './gate.ts';
+import { createPrep, type Prep, type PrepState } from './prepare.ts';
+import { cityStartPreset } from './shield.ts';
 import { launchesKey, MINE_KEEP_MS, shownLaunches, withLaunches, type LaunchTower } from './towers.ts';
 import { httpTradeEngine, type LaunchTradeEngine } from './trade.ts';
 import type { CityWallet, Connection } from './wallet.ts';
@@ -25,8 +27,12 @@ type DistrictState = {
   /** `reading` until the engine names its presets; `unavailable` where it does not serve Launch. */
   status: 'reading' | 'ready' | 'unavailable';
   network: Network | null;
+  /** The preset the next launch goes on: the city's default, or the other one the review's switch chose. */
   preset: LaunchPresetView | null;
-  /** Every preset the engine serves: a launch's rates in «Мій причал» are its own preset's (CITY-141). */
+  /**
+   * Every preset the engine serves: a launch's rates in «Мій причал» are its own preset's (CITY-141), and the review's
+   * Bot shield offers the city's other one (CITY-139, `cityPresets`).
+   */
   presets: readonly LaunchPresetView[];
   /** Running on the development stand-in: every screen says so. */
   stub: boolean;
@@ -38,10 +44,15 @@ type DistrictState = {
   draft: Draft;
   phase: Phase | null;
   connection: Connection | null;
+  /** The engine's simulated cost of a launch from this sheet, lamports — the cost line's «≈» (CITY-143). */
+  costLamports: string | null;
+  /** The fields last handed to the engine's store in the background and its answer (`prepare.ts`). */
+  stored: PrepState['stored'];
   setDraft: (draft: Partial<Draft>) => void;
   setStep: (step: SheetStep) => void;
   setPhase: (phase: Phase | null) => void;
   setConnection: (connection: Connection | null) => void;
+  choosePreset: (id: CityPresetId) => void;
   openSheet: () => void;
   closeSheet: () => void;
 };
@@ -61,10 +72,14 @@ export const useLaunch = create<DistrictState>((set) => ({
   draft: EMPTY,
   phase: null,
   connection: null,
+  costLamports: null,
+  stored: null,
   setDraft: (draft) => set((state) => ({ draft: { ...state.draft, ...draft } })),
   setStep: (step) => set({ step }),
-  setPhase: (phase) => set({ phase }),
+  /* The cost a build simulated, at the wallet's prompt, is the cost line's figure from then on. */
+  setPhase: (phase) => set(phase?.step === 'sign' && phase.costLamports !== null ? { phase, costLamports: phase.costLamports } : { phase }),
   setConnection: (connection) => set({ connection }),
+  choosePreset: (id) => set((state) => ({ preset: cityPresets({ presets: state.presets })[id] ?? state.preset })),
   openSheet: () => {
     useCity.getState().select(null);
     set((state) => ({ sheet: true, ...(state.phase?.step === 'done' ? { phase: null, step: 'form' as const, draft: EMPTY } : {}) }));
@@ -105,6 +120,21 @@ const stubAsked = () => typeof window !== 'undefined' && new URLSearchParams(win
 /* `&pace=4` makes the stand-in four times slower, so a slow screenshot still catches each step. */
 const stubPace = () => Math.min(10, Math.max(1, Number(new URLSearchParams(window.location.search).get('pace')) || 1));
 
+/* `&refuse=picture` makes the stand-in refuse the first picture as the engine's image check does, for the eyes. */
+/* The stand's refusals for the shots (`sheet-shots.mjs`, CITY-181), in the engine's own words: `?refuse=picture`, `payer`,
+   `sol`, `answer`; `sign` makes the stand's wallet decline. */
+const STUB_REFUSALS = {
+  picture: { metadata: { ok: false as const, code: 'LAUNCH_IMAGE_REFUSED', message: 'The picture reads as violence/graphic; choose another.' } },
+  payer: { submit: { ok: false as const, code: 'LAUNCH_SUBMIT_FAILED', message: "Ryntra's pool payer did not sign the launch; nothing was sent." } },
+  sol: { submit: { ok: false as const, code: 'LAUNCH_SUBMIT_FAILED', message: 'Simulation failed. Message: Transaction simulation failed: Error processing Instruction 2: insufficient lamports 1200, need 9874320.' } },
+  answer: { submit: { ok: false as const, code: 'UNAVAILABLE', message: 'No answer could be read from the network now; if the launch was sent, its page shows it.' } },
+} as const;
+const stubRefusal = () => new URLSearchParams(window.location.search).get('refuse');
+const stubRefusals = () => {
+  const asked = stubRefusal();
+  return asked && Object.hasOwn(STUB_REFUSALS, asked) ? STUB_REFUSALS[asked as keyof typeof STUB_REFUSALS] : undefined;
+};
+
 let engine: LaunchEngine | null = null;
 let wallet: Promise<CityWallet> | null = null;
 
@@ -136,9 +166,23 @@ export function launchTradeEngine(): Promise<LaunchTradeEngine> {
   return made;
 }
 
+let prep: Prep | null = null;
+
+/**
+ * The launch made ready while the creator types (CITY-143): the fields stored in the background, the launch built once
+ * for its cost. Through the district's engine, so the development stand-in answers on the stand.
+ */
+export function launchPrep(): Prep {
+  prep ??= createPrep({
+    engine: launchEngine,
+    onChange: (state) => useLaunch.setState((now) => ({ stored: state.stored, costLamports: state.costLamports ?? now.costLamports })),
+  });
+  return prep;
+}
+
 /** The creator's wallet: the browser's, or the stand-in's beside the stub engine. Loaded when the sheet first needs it. */
 export function launchWallet(): Promise<CityWallet> {
-  wallet ??= useLaunch.getState().stub && loadStub ? loadStub().then((stub) => stub.stubWallet({ delayMs: 4000 * stubPace() })) : import('./wallet.ts').then((module) => module.browserWallet());
+  wallet ??= useLaunch.getState().stub && loadStub ? loadStub().then((stub) => stub.stubWallet({ delayMs: 4000 * stubPace(), refuse: stubRefusal() === 'sign' })) : import('./wallet.ts').then((module) => module.browserWallet());
   return wallet;
 }
 
@@ -156,7 +200,7 @@ export function startDistrict(): void {
 async function boot() {
   if (loadStub && stubAsked()) {
     const stub = await loadStub();
-    engine = stub.stubEngine({ delayMs: 650 * stubPace() });
+    engine = stub.stubEngine({ delayMs: 650 * stubPace(), refuse: stubRefusals() });
     useLaunch.setState({ stub: true });
     /* The stand-in's trade routes load with it, not on the first tap. */
     void launchTradeEngine().catch(() => undefined);
@@ -180,7 +224,7 @@ async function readPresets(source: LaunchEngine): Promise<boolean> {
   for (let attempt = 0; attempt < 6; attempt += 1) {
     const answer = await source.presets();
     if (answer.ok) {
-      useLaunch.setState({ status: 'ready', network: answer.data.network, preset: cityPreset(answer.data), presets: answer.data.presets });
+      useLaunch.setState({ status: 'ready', network: answer.data.network, preset: cityPreset(answer.data, cityStartPreset(answer.data.network)), presets: answer.data.presets });
       return true;
     }
     if (answer.code === 'LAUNCH_UNAVAILABLE' || answer.code === 'UNSUPPORTED_API') break;
@@ -285,8 +329,9 @@ function remember(token: string) {
 }
 
 /**
- * The creator's coin is on chain: its tower rises in the docks at once, the camera flies to it and its card opens, and
- * the feed reads its market from now on. The engine's list takes over the tower once it carries the coin.
+ * The creator's coin is on chain: its tower rises in the docks at once and plays its liftoff, and the feed reads its
+ * market from now on. The engine's list takes over the tower once it carries the coin. «Моя вежа» opens on it from the
+ * sheet (CITY-168), and frames the tower itself.
  */
 export function landed(liftoff: Liftoff, preset: LaunchPresetView) {
   const tower: LaunchTower = {
@@ -311,13 +356,18 @@ export function landed(liftoff: Liftoff, preset: LaunchPresetView) {
     ryntraTest: false,
     network: liftoff.network,
     mine: true,
+    hidden: false,
+    flow: null,
+    awaitingFlow: false,
+    /* The city's launch buys nothing at birth, so there is nothing of the creator's to lock, and nothing sold yet. */
+    creatorSold: false,
   };
   remember(liftoff.token);
+  launchPrep().reset();
   useLaunch.setState((state) => ({ mine: [tower, ...state.mine.filter((launch) => launch.token !== tower.token)], sheet: false }));
   /* The city lays the new tower out first; the light column and the climb from the ground play on the next frames. */
   setTimeout(() => {
     const city = useCity.getState();
-    city.select(liftoff.token);
     city.play({ kind: 'launch', towerId: liftoff.token, symbol: liftoff.symbol, title: 'Liftoff', value: 'NEW TOWER IN THE DOCKS' });
   }, 400);
 }

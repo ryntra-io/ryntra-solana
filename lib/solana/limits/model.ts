@@ -40,7 +40,7 @@
  * Pure and client-safe: no network, no `process.env`, no clock.
  */
 
-import { FEE_POLICY_V2, type FeeFlow } from "../../core/fee-policy.ts";
+import { FEE_POLICY_V2, discountedFeeBps, type FeeFlow } from "../../core/fee-policy.ts";
 
 export const TRIGGER_V1_BASE_URL = "https://api.jup.ag/trigger/v1";
 export const TRIGGER_V1_PROGRAM = "j1o2qRpjcyUwEvwtcfhEQefh773ZgjxcVRry7LDqg5X";
@@ -191,13 +191,17 @@ export type TriggerFeePlan = Readonly<{
  * only to a referral token account proved for the output mint. Anything else
  * leaves the order with Jupiter's own fee and no Ryntra fee: never a guessed
  * account a keeper could not pay into.
+ *
+ * A partner's friend pays the rate less their discount (`discountBps`, CITY-182),
+ * never below the program's floor: a major coin's 10 bps less 10 % is under it,
+ * so that order pays the full rate.
  */
 export function triggerFeePlan(
-  args: Readonly<{ flow: FeeFlow; stablePair: boolean; referralTokenAccount: string | null }>,
+  args: Readonly<{ flow: FeeFlow; stablePair: boolean; referralTokenAccount: string | null; discountBps?: number }>,
 ): TriggerFeePlan {
   const jupiterOwn = args.stablePair ? TRIGGER_V1_JUPITER_FEE_BPS.stable : TRIGGER_V1_JUPITER_FEE_BPS.normal;
-  const bps = FEE_POLICY_V2[args.flow].bps;
-  if (bps === 0) return { reason: "FLOW_FREE", ryntraBps: 0, jupiterBps: jupiterOwn, feeBpsParam: null, feeAccount: null };
+  const bps = discountedFeeBps(FEE_POLICY_V2[args.flow].bps, args.discountBps ?? 0, TRIGGER_V1_MIN_REFERRAL_FEE_BPS);
+  if (FEE_POLICY_V2[args.flow].bps === 0) return { reason: "FLOW_FREE", ryntraBps: 0, jupiterBps: jupiterOwn, feeBpsParam: null, feeAccount: null };
   if (!args.referralTokenAccount) {
     return { reason: "NO_FEE_ACCOUNT", ryntraBps: 0, jupiterBps: jupiterOwn, feeBpsParam: null, feeAccount: null };
   }

@@ -462,6 +462,6 @@
 
 /* Another window open (the Oracle, the trade card, Money…): «Mine» steps aside until it closes, so nothing of the HUD
    stands over a window. Its own open panel stays. */
-:global(body:has([data-window])) .wrap:not(:has(#city-mine)) {
+:global(body:has([data-window])) .wrap:not(:has(:global(#city-mine))) {
   visibility: hidden;
 }

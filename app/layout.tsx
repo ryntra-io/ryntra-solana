@@ -7,8 +7,9 @@ import { Analytics } from "@vercel/analytics/next";
    names onto it (the site rung of the migration ladder). */
 import "./design/tokens.css";
 import "./globals.css";
-import { HOMEPAGE_CATEGORY, HOMEPAGE_COPY } from "@/lib/site/homepage-copy";
-import { ALL_LOCALES, SITE, SEO_COPY } from "./seo";
+import { HOMEPAGE_CATEGORY } from "@/lib/site/homepage-copy";
+import { BRAND } from "@/city/lib/brand";
+import { ALL_LOCALES, CITY_WORDS, SITE } from "./seo";
 import { CONTACTS, ORGANIZATION_PROFILES } from "@/lib/site/contacts";
 import { THEME_BOOT_SCRIPT } from "@/app/app/theme";
 
@@ -33,10 +34,11 @@ const geist = Geist({ subsets: ["latin", "cyrillic"], display: "swap", variable:
 const geistMono = Geist_Mono({ subsets: ["latin", "cyrillic"], weight: ["400", "500", "600"], display: "swap", variable: "--font-geist-mono" });
 const sora = Unbounded({ subsets: ["latin"], weight: ["400", "600", "700"], display: "swap", variable: "--font-sora" });
 
+/* The words a page without its own say: the city's (CITY-158), as `/` says them. */
 export const metadata: Metadata = {
   metadataBase: new URL(SITE),
-  title: SEO_COPY.en.title,
-  description: HOMEPAGE_COPY.en.description,
+  title: CITY_WORDS.title,
+  description: CITY_WORDS.description,
   applicationName: "Ryntra",
   category: HOMEPAGE_CATEGORY,
   creator: "Ryntra",
@@ -53,14 +55,14 @@ const jsonLd = [
     "@id": SITE + "/#organization",
     name: "Ryntra",
     url: SITE,
-    /* The logo a search engine may show beside the name: the R on the dark
-       tile at 512 px — a square raster, which is what the logo guidelines
-       ask for; the SVG favicon is too small a promise for a knowledge panel.
-       The wordmark is the `image`. */
-    logo: SITE + "/brand/icon-512.png",
-    image: SITE + "/brand/ryntra-wordmark-dark.png",
-    slogan: HOMEPAGE_COPY.en.tagline,
-    description: HOMEPAGE_COPY.en.description,
+    /* The logo a search engine may show beside the name: the city's mark on
+       the night tile at 512 px (CITY-158) — a square raster, which is what the
+       logo guidelines ask for; the SVG favicon is too small a promise for a
+       knowledge panel. The mark with the word is the `image`. */
+    logo: SITE + "/brand/city/icon-512.png",
+    image: SITE + "/brand/city/logo-dark.png",
+    slogan: BRAND.hook,
+    description: CITY_WORDS.description,
     email: CONTACTS.email,
     /* The identities Ryntra actually posts from. The retired Telegram channel
        outlived its removal from every visible surface here, because `sameAs` is
@@ -74,7 +76,7 @@ const jsonLd = [
     "@id": SITE + "/#website",
     name: "Ryntra",
     url: SITE,
-    description: HOMEPAGE_COPY.en.description,
+    description: CITY_WORDS.description,
     publisher: { "@id": SITE + "/#organization" },
     inLanguage: [...ALL_LOCALES],
   },

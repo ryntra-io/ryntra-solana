@@ -46,6 +46,12 @@ export type FlowDeps = Readonly<{
   /** How long the wallet may take: resolves when the time is up; cancelled when the wallet answers first. */
   walletDeadline?: (ms: number) => Readonly<{ done: Promise<void>; cancel: () => void }>;
   onPhase?: (phase: FlowPhase) => void;
+  /**
+   * Called once the wallet's signed bytes passed every check here and just before they go to the engine; a refusal
+   * stops the trade there and nothing is sent. A surface that must record the signature before any bytes can leave (a
+   * prepared action's mark, CITY-161) does it here. Absent: nothing changes.
+   */
+  beforeSend?: (signed: Readonly<{ signedWireBase64: string; signature: string; requestId: string }>) => Promise<Readonly<{ ok: true }> | Readonly<{ ok: false; message: string }>>;
 }>;
 
 /** A trade that reached the chain and was read back: what left the wallet and what arrived. */
@@ -199,6 +205,10 @@ async function signAndSend(intent: Intent, order: OrderBody, receivedAt: number,
   // Bytes that aged out while the wallet was open would be refused by the network: never sent.
   if (walletAnswerRoute({ receivedAtMs: receivedAt, signableMs, answeredAtMs: deps.now() }) === 'FRESH_REVIEW') return lateReview(intent, deps);
   if (!readiness(order, deps.now()).ready) return lateReview(intent, deps);
+  if (deps.beforeSend) {
+    const gate = await deps.beforeSend({ signedWireBase64: signed.signedWireBase64, signature, requestId: order.order.requestId });
+    if (!gate.ok) return { kind: 'refused', refusal: { code: 'BEFORE_SEND_REFUSED', message: gate.message, retryable: true } };
+  }
 
   // Written down before the send: from here on every unclear answer is read back by this signature.
   const pending: SwapClientAttempt = { ...ATTEMPT_SCHEMA, requestId: order.order.requestId, signature, taker: intent.taker, state: 'SIGNED_NOT_SENT', recordedAt: new Date(deps.now()).toISOString() };

@@ -62,7 +62,7 @@ export function CitySearch() {
   }, [open]);
   return (
     <div ref={wrap} className={s.wrap}>
-      <button ref={button} className={`${hud.panel} ${hud.iconBtn} ${open ? s.on : ''}`} aria-label={w.searchCoins} aria-expanded={open} onClick={() => setOpen((v) => !v)}>
+      <button ref={button} className={`${hud.panel} ${hud.iconBtn} ${open ? s.on : ''}`} aria-label={w.searchCoins} aria-expanded={open} onClick={() => setOpen((v) => !v)} data-city-search-open="">
         <SearchGlyph />
       </button>
       {open && <SearchPanel onClose={close} />}

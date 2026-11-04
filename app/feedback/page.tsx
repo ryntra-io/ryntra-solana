@@ -1,36 +1,15 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 
-import { FrozenFooter } from "@/app/site/frozen/chrome";
-import { MarkDefs } from "@/app/site/frozen/mark";
-import { PublicHeader } from "@/app/site/frozen/public-header";
-import { PageHero } from "@/app/site/parts";
-import "@/app/site/frozen/primitives.css";
-import "@/app/site/frozen/module.css";
+import { CityDocument } from "@/city/components/pages/CityDocument";
+import { PALETTE } from "@/city/lib/palette";
+import { buildCityPageMetadata } from "@/app/seo";
 
-import { FeedbackForm } from "./feedback-form";
+/* `/feedback` — the same Help as `/support` (CITY-157: Support and Feedback are one form); out of the index, its canonical is `/support`. */
 
-export const metadata: Metadata = {
-  title: "Feedback — Ryntra",
-  description: "Send product feedback to Ryntra. Not a support SLA.",
-  robots: { index: false, follow: false },
-};
+export const metadata: Metadata = buildCityPageMetadata("help", "/feedback");
 
-export default function FeedbackPage() {
-  return (
-    <div className="rx">
-      <MarkDefs />
-      <PublicHeader />
-      <main id="main" tabIndex={-1}>
-        <PageHero
-          eyebrow="Feedback"
-          heading="What should change."
-          lead="One inbox for the site, the cabinet and the bot. Security reports belong here too — they are marked, not mixed into marketing."
-        />
-        <section className="rx-shell" style={{ paddingBottom: "4rem" }}>
-          <FeedbackForm source="site" />
-        </section>
-      </main>
-      <FrozenFooter />
-    </div>
-  );
+export const viewport: Viewport = { themeColor: PALETTE.inkDeep, colorScheme: "dark" };
+
+export default function Page() {
+  return <CityDocument id="help" />;
 }

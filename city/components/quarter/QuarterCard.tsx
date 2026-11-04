@@ -4,6 +4,7 @@ import { useEffect, type ReactNode } from 'react';
 import { hydrateFeed, useFeed } from '@/city/lib/feed/store';
 import { useWords } from '@/city/lib/i18n/dict';
 import { cityAccount, useCityAccount } from '@/city/lib/quarter/account-live';
+import { useCrew } from '@/city/lib/quarter/crew-store';
 import { moduleForKind } from '@/city/lib/quarter/modules';
 import { lotNumber, streetName } from '@/city/lib/quarter/plot';
 import { quarterStore, useQuarter } from '@/city/lib/quarter/store';
@@ -33,8 +34,10 @@ export function QuarterCard({ hot }: { hot: ReactNode }) {
   // Nothing shows before the kept choice is read: a card that would go a moment later never flashes up.
   const ready = useFeed((st) => st.ready);
   const on = useFeed((st) => st.settings.arrivals);
+  // An invite to a crew holds the screen with its own one action (`CrewSheet`): the card waits behind it.
+  const invite = useCrew((st) => st.view === 'invite');
   useEffect(() => hydrateFeed(), []);
-  if (status === 'unknown' || !ready) return null;
+  if (invite || status === 'unknown' || !ready) return null;
   if (status === 'offline' || !(asked || (on && !later))) return <>{hot}</>;
   return status === 'none' ? <ClaimCard /> : <ResidentCard />;
 }

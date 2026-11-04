@@ -24,6 +24,24 @@ export type CityPage = Readonly<{
 export const CITY_PAGES: readonly CityPage[] = [
   /* The city itself: the live market, every coin a tower — its towers change by the minute. */
   { path: '/', updated: '2026-10-31', priority: 1, changeFrequency: 'daily' },
+  /* Every coin launched on Ryntra (CITY-185): the city opened on «Launched on Ryntra» — new launches by the hour. */
+  { path: '/launches', updated: '2026-11-02', priority: 0.8, changeFrequency: 'daily' },
+  /* The public roadmap (CITY-173): what is done, being built and next — read from the registry at every release. */
+  { path: '/roadmap', updated: '2026-10-31', priority: 0.6, changeFrequency: 'weekly' },
+  /* «What we're building» — how Ryntra works, in full, with its PDF; and the partner page with «Copy my link» (CITY-177). */
+  { path: '/build', updated: '2026-11-01', priority: 0.6, changeFrequency: 'weekly' },
+  { path: '/partners', updated: '2026-11-01', priority: 0.6, changeFrequency: 'monthly' },
+  /* The documents the city's windows took over at their own addresses (CITY-157). */
+  { path: '/docs', updated: '2026-11-02', priority: 0.7, changeFrequency: 'weekly' },
+  /* The documentation's sections, each at its own address (CITY-180). */
+  ...['start', 'city', 'trade', 'orders', 'launch', 'earn', 'agent', 'money', 'partners', 'security', 'fees', 'guard', 'help'].map((id): CityPage => ({ path: `/docs/${id}`, updated: '2026-11-02', priority: 0.6, changeFrequency: 'weekly' })),
+  { path: '/developers', updated: '2026-10-31', priority: 0.6, changeFrequency: 'monthly' },
+  /* Ryntra in AI chats: the connector's documentation (CITY-170). */
+  { path: '/connector', updated: '2026-10-31', priority: 0.6, changeFrequency: 'monthly' },
+  { path: '/support', updated: '2026-10-31', priority: 0.5, changeFrequency: 'monthly' },
+  { path: '/about', updated: '2026-10-31', priority: 0.5, changeFrequency: 'monthly' },
+  { path: '/legal/terms', updated: '2026-10-07', priority: 0.3, changeFrequency: 'monthly' },
+  { path: '/legal/privacy', updated: '2026-10-07', priority: 0.3, changeFrequency: 'monthly' },
 ];
 
 /**
@@ -35,14 +53,14 @@ export const CITY_PAGES: readonly CityPage[] = [
  * The partner Terms (`/promo/partners/terms`) are the Growth line's page: out of the sitemap, the rest is that line's.
  */
 export const AWAITING_CITY = [
-  '/docs/:path*',
   '/company',
   '/contact',
-  '/support',
   '/security',
   '/methodology',
   '/stats',
-  '/legal/:path*',
+  /* The library notices and the drafts for signature still stand in the old frame. */
+  '/legal/licenses',
+  '/legal/review/:path*',
 ] as const;
 
 /** The sources the old pages answer at: each pattern, and its Ukrainian twin where the site has one. */

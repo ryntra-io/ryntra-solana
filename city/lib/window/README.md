@@ -24,7 +24,8 @@ closeWindow('swap');
 | `size` | Its size the first time it opens on this device; 560 × 440 when not given. |
 | `held` | While true, «Close» in the frame waits (a signature in the wallet, a transaction on its way). Open again with `held: false` to let go. |
 | `onClose` | Called after the person closes the window from its frame. Not called on `closeWindow`. |
-| `detach` | The window can go onto another screen (CITY-75): what its own page needs to show the same thing — `{ tower }` for the chart, `{ symbol }` for the Exchange. Without it the frame has no «Open in a new window». |
+| `detach` | The window can go onto another screen (CITY-75): what its own page needs to show the same thing — `{ tower }` for the chart, `{ symbol }` for the Exchange. Without it the frame has no «Open in a new window». A layout of the person's keeps it too (CITY-84), so the window opens on the same thing again. |
+| `figure` | Its chip in the tray while folded (CITY-84): `(title, params) => <OwnFigure />`, a small component of the window's own reading its own store — a price, a balance. Without it the frame's own figures (`figures.tsx`: the chart, the trade card, the Exchange, Money) or the title. |
 
 A window whose own store says whether it is open plugs in with one hook instead —
 `useCityWindow(shown, spec)` (`city/components/window/useCityWindow.ts`): the frame opens it while `shown` and closes it
@@ -60,9 +61,57 @@ both.
 - **Pop out**: a window that sticks — or is on the whole screen — floats free again, a step away, in front.
 - **Phone**: the front window is a bottom sheet that can take the whole screen; tabs under its head switch between open
   windows, each keeping what was typed in it. Nothing floats or sticks.
-- **Memory**: every window's last place is remembered on the device (`localStorage`, key `ryntra.city.windows.v1`), open
+- **Memory**: every window's last place is remembered on the device (`localStorage`, key `ryntra.city.windows.v2`), open
   or closed, so the swap opens again where it stood and four windows stuck together come back stuck. A smaller screen
   carries the layout onto it with the seams kept; storage that is missing or refuses means the first places again.
+
+## Bays, tabs, the tray and layouts (CITY-84)
+
+Helm §4 (`docs/research/ryntra-city-helm-2026-10-29/SPEC.md`): the windows stand beside the city, never over all of it.
+
+- **Two bays.** The workspace's left and right side, the whole height, 432 px each on a 1440 screen (`bayCap`: at most
+  520, and never more than the city leaves them — the bays together cover at most 60 % of the screen's width, so at
+  least 40 % of the city is always in view under them). From 1200 px both; on a narrower computer screen the right one
+  alone. A window opens the first time in a free bay, the right one first; with both taken it becomes a tab of the bay
+  in front. A bay holds one frame; it stretches by its inner edge only, between 360 px and its cap.
+- **Dragging.** By the head a frame lifts out of its bay and floats under the pointer; near the screen's side
+  (`BAY_REACH`) the bay lights up and the frame docks there; over another frame's head that head lights up and the
+  frame becomes its tab (every tab it had with it). Floating frames stick and stretch as before.
+- **Tabs.** Windows sharing a frame show their glyph and title in its head; a tap shows one. «Pop out» takes a tab out of
+  its frame (and a window out of its bay) to float.
+- **The tray.** «Minimise» (a bar, beside «Close») folds a window into the tray over the Deck: it closes as its own
+  «Close» closes it — its owner knows, nothing of it stays over the city or hears Escape — and its chip keeps what it
+  showed (the tower, the market, Money's tab; `openers.ts` `showing`). The chip shows the live figure — the tower's
+  price on the chart and the trade card (the city's own read), the market's mark on the Exchange, the wallet's worth on
+  Money — green or red by the day's move. A tap opens the window again through its owner, on the same thing, where it
+  stood; the chip also goes when the window opens any other way (the Deck, a tower). Only a window the city can open
+  by itself folds (`canOpen`); a signature holds it. The trade card comes back on its own coin, and a launch's coin
+  through the Launch engine. What was typed in it is not kept. A chip whose figure is old (the Exchange and Money read
+  only while open) or another wallet's shows the title. The tray keeps to the city
+  between the bays, stands over the sheet on a phone, and steps aside on the whole screen and while the Deck's doors
+  are open.
+- **Layouts.** One quiet glyph low on the left (computer only). Ryntra's four — «Trader» (the trade card with its chart,
+  the wallet beside it), «Futures» (the Exchange beside the chart), «Predictions» (beside the futures where they are
+  open), «Money» — each offered only where the windows it cannot do without are open here (`presetReady`). And the
+  person's four: an empty place keeps the windows as they stand; a kept one puts them back; the one in use in this visit
+  keeps every change by itself. Kept on the device per wallet (`localStorage`, key `ryntra.city.layouts.v1`, the
+  connected wallet's address or «guest»; at most 8 wallets, never more than a read accepts). It follows the screen
+  (`mergeShot`): windows not on the screen now — folded, closed by their owner for a run or a clip — stay in it; only a
+  window the person closes with the frame's «Close» leaves it. A layout closes the windows it does not have,
+  as their own «Close» would (a held one stays; a trade card held behind the chart goes too), and opens the rest
+  through their owners (`openers.ts`) — nothing signs.
+- **The city's share.** What the system arranges never covers more than 60 % of the screen (`coverIn`, the union of
+  the frames): the bays, a first place (with both bays taken a new window joins the bay in front — never one a
+  signature holds, not even by a remembered place — or floats small), the layouts, «Snap together» (the floating frames, in the room between the bays
+  that the city can spare; no room, no button's work), a pop out (smaller if it must) and a frame stretched by hand
+  (it stops there). Only the person's own drag and the whole screen may cover more.
+- **The city behind.** With both bays taken the city dims (a shade under the top bar and the Deck) and, like with a
+  window on the whole screen, is drawn lean: a pixel ratio of 1 and about 30 frames a second (`CityCanvas`, `Pacer` —
+  the city's traffic and lights keep moving, so «frames on demand» is a steady half rate); the frame rate it then shows
+  moves no quality rung, and a fresh monitor judges it after. Moves glide (260 ms) and nothing dims or sharpens while
+  a frame is dragged.
+- **Memory.** Every window's place now includes its bay: `ryntra.city.windows.v2` (from v1, so everyone's windows open
+  in the bays once).
 
 ## On another screen (CITY-75)
 
@@ -100,14 +149,18 @@ Predictions (CITY-67) get it with one field once they stand in the frame.
 
 | File | What |
 | --- | --- |
-| `geometry.ts` | The rules as geometry: the workspace, sticking, seams, stretching, the grid, carrying onto another screen. |
-| `layout.ts` | The open windows as one value and every change to it. |
-| `memory.ts` | The places remembered on the device. |
+| `geometry.ts` | The rules as geometry: the workspace, the bays, sticking, seams, stretching, the grid, carrying onto another screen. |
+| `layout.ts` | The open windows as one value and every change to it: bays, tabs (stacks), the tray, where a drag lands. |
+| `memory.ts` | The places remembered on the device, bays included. |
+| `desks.ts` | The layouts (CITY-84): Ryntra's four presets, the person's four kept per wallet, what a layout opens where. |
 | `detach.ts` | Another screen (CITY-75), the rules alone: which way out, the route, the messages, what is remembered. |
 | `out.ts` | Another screen in the browser: Picture-in-Picture and its styles, the page of its own, the channel. |
 | `store.ts` | The store and the API above. |
 | `demo.ts` | The stand: `?windows=demo` (development builds only) opens the city's own windows — the chart of the first named tower, the Exchange (where its switch is open) and Money — through their own stores, stuck into M2; `&full=exchange` opens one on the whole screen. |
 | `out-shots.mjs` | Another screen, both ways, for review (`docs/shots/city-75/`): `xvfb-run -a node city/lib/window/out-shots.mjs` with `npm run dev` running; a full Chromium (the headless shell has no Picture-in-Picture). |
 | `shots.mjs` | The stand's screens (`shots/`) and the city's frame rate with and without the windows: `node city/lib/window/shots.mjs [out] [baseUrl]` with `npm run dev` running. |
+| `bays-shots.mjs` | The bays, the tray, the tabs and the layouts for review (`docs/shots/city-84/`), desk 1440 and phone 390, against a running build. |
 
-The frames are `city/components/window/` (`WindowLayer` is mounted once in `CityApp`, between the HUD and the trade card).
+The frames are `city/components/window/` (`WindowLayer` is mounted once in `CityApp`, between the HUD and the trade card):
+`WindowFrame`, `WindowSheet`, `Tray`, `Layouts`, `figures.tsx`, `openers.ts`. Review shots of CITY-84 —
+`docs/shots/city-84/`.

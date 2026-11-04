@@ -52,7 +52,7 @@ export async function readLaunchImage(store: GuardStore, id: string): Promise<St
 }
 
 /*
- * MC-1 — what Ryntra took down (`app/legal/terms/launch.ts`: Ryntra may hide a token's picture, description and links).
+ * MC-1 — what Ryntra took down (`lib/legal/texts/launch.ts`: Ryntra may hide a token's picture, description and links).
  * The addresses still name the same bytes; Ryntra stops serving them. One row per address and per token that holds it,
  * keyed `<kind>:<address>:<token>` in `launchTakedowns` — two tokens sharing a picture each hold it down on their own.
  * Putting back marks the row restored, never deletes it: who took down, who put back, when and why stay.

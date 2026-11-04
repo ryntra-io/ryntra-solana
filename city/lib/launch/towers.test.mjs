@@ -10,6 +10,20 @@ import { DOCKS_MAX, SKYLINE_MAX, launchesKey, sameOriginImage, shownLaunches, to
 const BUNDLED_CITY = JSON.parse(readFileSync(new URL("../market/snapshot.json", import.meta.url), "utf8"));
 const SHA = "a".repeat(64);
 let n = 0;
+/** A graduation that passed the city's rule (CITY-144): 64 independent buyers after two hours on its curve. */
+const PASSED = {
+  graduated: true,
+  graduatedAt: "2026-10-20T14:00:00Z",
+  createdAt: "2026-10-20T12:00:00Z",
+  buyers: 64,
+  atLeast: false,
+  survival: [
+    { state: "alive", independent: true },
+    { state: "alive", independent: true },
+    { state: "alive", independent: true },
+  ],
+};
+
 /** A launch as the feed gives it; a fresh made-up mint each time. */
 function launch(over = {}) {
   n += 1;
@@ -35,21 +49,26 @@ function launch(over = {}) {
     ryntraTest: false,
     network: "solana:devnet",
     mine: false,
+    hidden: false,
+    flow: null,
+    awaitingFlow: false,
     ...over,
   };
 }
 
-test("a launch on its curve stands in the docks; in its pool, in the skyline; never verified, unread figures zero", () => {
+test("a launch on its curve stands in the docks; in its pool past the city's rule, in the skyline; never verified, unread figures zero", () => {
   const rising = towerOf(launch());
   assert.equal(rising.district, "docks");
   assert.equal(rising.verified, false);
   assert.equal(rising.mcap, 0);
   assert.equal(rising.price, 0);
   assert.equal(rising.icon, null);
-  const landed = towerOf(launch({ migrated: true, phase: "orbit", marketCapUsd: 120_000, liquidityUsd: 31_000 }));
+  const landed = towerOf(launch({ migrated: true, phase: "orbit", marketCapUsd: 120_000, liquidityUsd: 31_000, flow: PASSED }));
   assert.equal(landed.district, "strip");
   assert.equal(landed.mcap, 120_000);
   assert.equal(landed.liquidity, 31_000);
+  assert.equal(towerOf(launch({ migrated: true, phase: "orbit", flow: { ...PASSED, buyers: 20 } })).district, "docks", "too few buyers: the Docks");
+  assert.equal(towerOf(launch({ migrated: true, phase: "orbit" })).district, "docks", "its graduation not read: the Docks");
 });
 
 test("the city's read keeps its time and source, and a launched mint Jupiter also lists stands once, as the launch", () => {
@@ -69,7 +88,7 @@ test("the city's read keeps its time and source, and a launched mint Jupiter als
 
 test("the new towers find their places in the docks and the skyline", () => {
   const rising = launch();
-  const landed = launch({ migrated: true, phase: "orbit", marketCapUsd: 90_000, liquidityUsd: 30_000 });
+  const landed = launch({ migrated: true, phase: "orbit", marketCapUsd: 90_000, liquidityUsd: 30_000, flow: PASSED });
   const layout = layoutCity(withLaunches(BUNDLED_CITY, [rising, landed]).towers);
   const docks = layout.towers.find((placed) => placed.tower.id === rising.token);
   const skyline = layout.towers.find((placed) => placed.tower.id === landed.token);
@@ -83,8 +102,9 @@ test("the docks and the skyline keep room for the market: this browser's first, 
   const mine = launch({ mine: true, launchedAt: "2026-01-01T00:00:00Z" });
   const lost = launch({ phase: "lost", checks: ["quiet", "young", "young"] });
   const myLost = launch({ phase: "lost", checks: ["quiet", "young", "young"], mine: true });
-  const stars = Array.from({ length: SKYLINE_MAX + 3 }, () => launch({ migrated: true, phase: "orbit" }));
-  const star = launch({ migrated: true, phase: "star", launchedAt: "2026-01-01T00:00:00Z" });
+  const young = { ...PASSED, survival: PASSED.survival.map(() => ({ state: "young", independent: null })) };
+  const stars = Array.from({ length: SKYLINE_MAX + 3 }, () => launch({ migrated: true, phase: "orbit", flow: young }));
+  const star = launch({ migrated: true, phase: "star", launchedAt: "2026-01-01T00:00:00Z", checks: ["alive", "alive", "alive"], flow: PASSED });
   const shown = shownLaunches([...many, mine, lost, myLost, ...stars, star]);
   const docks = shown.filter((entry) => !entry.migrated);
   const skyline = shown.filter((entry) => entry.migrated);
@@ -101,7 +121,8 @@ test("only a change the eye can see lays the city out again", () => {
   const key = launchesKey([a, b]);
   assert.equal(launchesKey([{ ...a, marketCapUsd: 18_700, holders: 40 }, b]), key, "a small move and a new holder: the same city");
   assert.notEqual(launchesKey([{ ...a, marketCapUsd: 60_000 }, b]), key, "a tower that grew");
-  assert.notEqual(launchesKey([{ ...a, migrated: true, phase: "orbit" }, b]), key, "a tower that moved into the skyline");
+  assert.notEqual(launchesKey([{ ...a, migrated: true, phase: "orbit", flow: PASSED }, b]), key, "a tower that moved into the skyline");
+  assert.equal(launchesKey([{ ...a, migrated: true, phase: "orbit", flow: { ...PASSED, buyers: 12 } }, b]), key, "a graduation below the rule keeps its place in the Docks");
   assert.notEqual(launchesKey([a]), key, "a tower that left");
 });
 

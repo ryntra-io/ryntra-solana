@@ -167,7 +167,7 @@ Ryntra, кожен пост схвалює людина, без автовідп
 `node --test "city/lib/x/*.test.mjs" app/api/x/routes.test.mjs` — nothing reaches X: a fake X on 127.0.0.1
 (`fake-x.mjs`) checks every OAuth signature. They cover the studio's facts, words, storyboards and queue, the encoder's
 arguments and a real encode checked with ffprobe, the rehearsal's flight log, the clock, and the publisher's client,
-schedule, pass, ledger and routes. Add `MOMENTS_TEST_DATABASE_URL=postgres://…` (a local server, never a project) to run
+schedule, pass, ledger and routes. Add `MOMENTS_TEST_DATABASE_URL=<local Postgres URL>` (a local server, never a project) to run
 the queue, the ledger and a whole pass through the real SQL, two connections at once.
 
 Samples of all five are in `docs/shots/city-38/`: cards, posters, post text and sources. The clips (MP4) are not kept in

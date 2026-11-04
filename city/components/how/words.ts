@@ -1,0 +1,168 @@
+import { words } from '../../lib/i18n/dict.ts';
+
+/**
+ * The words of «How it works» (CITY-43): the window, the page, and each lesson's name, its one line and the two or
+ * three steps behind «Details» (CITY-79). Short: what you get, then what you tap — the film shows the rest.
+ */
+export const GUIDE_WORDS = words(
+  {
+    title: 'How it works',
+    kicker: 'Lessons',
+    lead: 'Short films. Watch one, then try it yourself.',
+    lessons: 'Lessons',
+    details: 'Details',
+    play: (name: string) => `Play: ${name}`,
+    tryIt: 'Try it',
+    ask: 'Ask',
+    goHome: 'Go home',
+    english: 'English',
+    ukrainian: 'Українська',
+    backToCity: 'Back to the city',
+
+    agentsName: 'Your agent',
+    agentsLine: 'Give it a rule. It hunts the market; you sign every buy.',
+    agentsStep1: 'Open Agents.',
+    agentsStep2: 'Pick the rule it hunts by.',
+    agentsStep3: 'It finds the coin. You sign the buy.',
+
+    launchName: 'Launch a coin',
+    launchLine: 'A name, a picture, one signature — it rises as a tower.',
+    launchStep1: 'Open Launch.',
+    launchStep2: 'Give it a name, a ticker and a picture.',
+    launchStep3: 'Your wallet signs. Your coin stands in the city.',
+
+    tradeName: 'Buy from a tower',
+    tradeLine: 'Tap any tower and buy it from your own wallet.',
+    tradeStep1: 'Tap a tower in the city.',
+    tradeStep2: 'Pick an amount. The fee shows before you sign.',
+    tradeStep3: 'Your wallet signs. The coins land in your wallet.',
+
+    cityName: 'The city in 60 seconds',
+    cityLine: 'Every coin is a tower. Read the whole market at a glance.',
+    cityStep1: 'The taller the tower, the bigger the coin.',
+    cityStep2: 'Hot now flies you to what moves most.',
+    cityStep3: 'Tap a tower to open its card.',
+
+    searchName: 'Find any coin',
+    searchLine: 'By ticker, name or address — the city flies you there.',
+    searchStep1: 'Tap the search at the top.',
+    searchStep2: 'Type a ticker, a name or an address.',
+    searchStep3: "Share a coin's link: it opens its tower.",
+
+    chartName: 'Tower chart',
+    chartLine: 'Live candles of any coin, one tap from its tower.',
+    chartStep1: 'Tap a tower.',
+    chartStep2: 'Tap Chart.',
+    chartStep3: 'Pick the range you want to see.',
+
+    assistantName: 'Ask Ryntra',
+    assistantLine: 'Ask about the market. The answer lights up the towers.',
+    assistantStep1: 'Tap Ask Ryntra at the top.',
+    assistantStep2: 'Ask in your own words.',
+    assistantStep3: 'Ryntra answers and flies you to the towers.',
+
+    quarterName: 'Your quarter',
+    quarterLine: 'Claim your own corner of the city and build on it.',
+    quarterStep1: 'Connect your wallet.',
+    quarterStep2: 'Claim your quarter.',
+    quarterStep3: 'Place your buildings and make it yours.',
+
+    spotName: 'Limit & stop',
+    spotLine: 'Buy at your price, or sell before a fall goes further.',
+    spotStep1: 'Open Exchange, then Spot.',
+    spotStep2: 'Choose Limit or Stop and set your price.',
+    spotStep3: 'The order waits until the price gets there.',
+
+    beaconsName: 'Beacons',
+    beaconsLine: 'Light a beacon on a tower. It glows when the coin moves.',
+    beaconsStep1: 'Tap a tower, then Beacon.',
+    beaconsStep2: 'Set the move or the price that matters to you.',
+    beaconsStep3: 'The tower glows when it gets there.',
+
+    moneyName: 'Send money',
+    moneyLine: 'Send to anyone, or bring money in from another network.',
+    moneyStep1: 'Open Money, then Send.',
+    moneyStep2: 'Enter who and how much.',
+    moneyStep3: 'Your wallet signs. You see it until it lands.',
+  },
+  {
+    title: 'Як це працює',
+    kicker: 'Уроки',
+    lead: 'Короткі фільми. Подивись — і спробуй сам.',
+    lessons: 'Уроки',
+    details: 'Деталі',
+    play: (name: string) => `Дивитися: ${name}`,
+    tryIt: 'Спробувати',
+    ask: 'Спитати',
+    goHome: 'До кварталу',
+    english: 'Англійська',
+    ukrainian: 'Українська',
+    backToCity: 'Назад у місто',
+
+    agentsName: 'Твій агент',
+    agentsLine: 'Дай йому правило. Він шукає на ринку, кожну покупку підписуєш ти.',
+    agentsStep1: 'Відкрий «Агенти».',
+    agentsStep2: 'Обери правило, за яким він шукає.',
+    agentsStep3: 'Він знаходить монету. Ти підписуєш покупку.',
+
+    launchName: 'Запусти монету',
+    launchLine: 'Назва, картинка, один підпис — і вона зростає вежею.',
+    launchStep1: 'Відкрий «Запуск».',
+    launchStep2: 'Дай їй назву, тікер і картинку.',
+    launchStep3: 'Гаманець підписує. Твоя монета стоїть у місті.',
+
+    tradeName: 'Купівля з вежі',
+    tradeLine: 'Торкнись будь-якої вежі й купи її зі свого гаманця.',
+    tradeStep1: 'Торкнись вежі в місті.',
+    tradeStep2: 'Обери суму. Комісію видно до підпису.',
+    tradeStep3: 'Гаманець підписує. Монети — у твоєму гаманці.',
+
+    cityName: 'Місто за 60 секунд',
+    cityLine: 'Кожна монета — вежа. Увесь ринок одним поглядом.',
+    cityStep1: 'Що вища вежа, то більша монета.',
+    cityStep2: '«Гаряче зараз» веде до того, що рухається найбільше.',
+    cityStep3: 'Торкнись вежі — відкриється її картка.',
+
+    searchName: 'Знайди будь-яку монету',
+    searchLine: 'За тікером, назвою чи адресою — місто перенесе тебе туди.',
+    searchStep1: 'Торкнись пошуку вгорі.',
+    searchStep2: 'Введи тікер, назву чи адресу.',
+    searchStep3: 'Поділись посиланням монети: воно відкриває її вежу.',
+
+    chartName: 'Графік вежі',
+    chartLine: 'Живі свічки будь-якої монети — один дотик від її вежі.',
+    chartStep1: 'Торкнись вежі.',
+    chartStep2: 'Торкнись «Графік».',
+    chartStep3: 'Обери проміжок, який хочеш бачити.',
+
+    assistantName: 'Спитай Ryntra',
+    assistantLine: 'Питай про ринок. Відповідь підсвічує вежі.',
+    assistantStep1: 'Торкнись «Спитати Ryntra» вгорі.',
+    assistantStep2: 'Питай своїми словами.',
+    assistantStep3: 'Ryntra відповідає й переносить тебе до веж.',
+
+    quarterName: 'Твій квартал',
+    quarterLine: 'Займи свій куточок міста й будуй на ньому.',
+    quarterStep1: 'Підключи гаманець.',
+    quarterStep2: 'Займи свій квартал.',
+    quarterStep3: 'Став будівлі — і він твій.',
+
+    spotName: 'Ліміт і стоп',
+    spotLine: 'Купуй за своєю ціною або продай, поки падіння не пішло далі.',
+    spotStep1: 'Відкрий «Обмін», потім «Спот».',
+    spotStep2: 'Обери «Ліміт» чи «Стоп» і встанови ціну.',
+    spotStep3: 'Ордер чекає, доки ціна туди дійде.',
+
+    beaconsName: 'Маяки',
+    beaconsLine: 'Засвіти маяк на вежі. Він сяє, коли монета рухається.',
+    beaconsStep1: 'Торкнись вежі, потім «Маяк».',
+    beaconsStep2: 'Встанови рух чи ціну, що важать для тебе.',
+    beaconsStep3: 'Вежа засяє, коли ціна туди дійде.',
+
+    moneyName: 'Надсилай гроші',
+    moneyLine: 'Надсилай будь-кому або заводь гроші з іншої мережі.',
+    moneyStep1: 'Відкрий «Гроші», потім «Надіслати».',
+    moneyStep2: 'Вкажи, кому й скільки.',
+    moneyStep3: 'Гаманець підписує. Ти бачиш переказ, доки він не дійде.',
+  },
+);

@@ -1,0 +1,389 @@
+/* «How it works» (CITY-43): the lessons, in a window of the city (the frame of CITY-65: a window on a computer, the
+   bottom sheet on a phone) and as a page of its own (`/how-it-works`). A still of our own city at the head, a film per
+   lesson in dark glass with cut corners, one amber action each. Tokens from city/styles/city.module.css (CITY-11). */
+
+.display {
+  font-family: var(--font-display, system-ui), system-ui, sans-serif;
+  font-stretch: 125%;
+  font-variation-settings: 'wdth' 125;
+  font-weight: 900;
+  letter-spacing: 0.01em;
+  text-transform: uppercase;
+}
+
+/* A language other than English: the words wait for the frame the boot script hides them in (CITY-79). */
+:global(html.city-lang-wait) .body [data-words] {
+  visibility: hidden;
+}
+
+.pending {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(100deg, transparent 30%, rgba(238, 241, 255, 0.05) 50%, transparent 70%) 0 0 / 220% 100%;
+  animation: sweep 1.4s ease-in-out infinite;
+}
+
+@keyframes sweep {
+  to {
+    background-position: -120% 0;
+  }
+}
+
+/* ---------- The scroller ---------- */
+
+.body {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  color: var(--ice);
+  container-type: inline-size;
+}
+
+.body > * {
+  flex: none;
+}
+
+.body[data-where='window'] {
+  position: absolute;
+  inset: 0;
+  padding: 0 16px 20px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+.body[data-where='page'] {
+  width: min(1160px, 100%);
+  margin: 0 auto;
+  padding: 0 var(--gutter) 48px;
+  gap: 24px;
+}
+
+/* ---------- The still and the words on it ---------- */
+
+.hero {
+  position: relative;
+  min-height: 168px;
+  display: flex;
+  align-items: flex-end;
+  overflow: hidden;
+  margin: 0 -16px;
+  /* The site's own pages pad every <section>; a header here is the page's own. */
+  padding: 0;
+}
+
+.body[data-where='page'] .hero {
+  /* The still runs edge to edge; its words stand in the page's column. */
+  margin: 0 calc(50% - 50vw);
+  min-height: clamp(260px, 40vh, 400px);
+  padding: 0 max(var(--gutter), calc(50vw - 580px + var(--gutter)));
+}
+
+.art {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: 50% 40%;
+  animation: settle 700ms ease-out both;
+  -webkit-mask-image: linear-gradient(180deg, #000 35%, transparent 100%);
+  mask-image: linear-gradient(180deg, #000 35%, transparent 100%);
+}
+
+@keyframes settle {
+  from {
+    transform: scale(1.04);
+  }
+}
+
+.heroBody {
+  position: relative;
+  width: 100%;
+  display: grid;
+  justify-items: start;
+  gap: 6px;
+  padding: 0 16px 2px;
+  text-shadow: 0 2px 18px rgba(6, 5, 12, 0.92);
+}
+
+.body[data-where='page'] .heroBody {
+  padding: 0 0 4px;
+}
+
+.kicker {
+  font-size: var(--type-caption);
+  letter-spacing: 0.16em;
+  color: var(--warm);
+}
+
+.title {
+  margin: 0;
+  font-size: var(--type-figure);
+  line-height: 0.98;
+  color: var(--ice);
+  overflow-wrap: anywhere;
+}
+
+.body[data-where='page'] .title {
+  font-size: clamp(36px, 6.4vw, 60px);
+}
+
+.lead {
+  margin: 4px 0 0;
+  max-width: 40ch;
+  font-size: var(--type-lead);
+  font-weight: 600;
+  line-height: 1.35;
+  color: var(--ice);
+}
+
+/* ---------- The lessons ---------- */
+
+.grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 16px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+@container (min-width: 640px) {
+  .grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@container (min-width: 1000px) {
+  .grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+.card {
+  display: flex;
+  flex-direction: column;
+  background: linear-gradient(160deg, rgba(20, 16, 36, 0.86), rgba(8, 7, 15, 0.9));
+  box-shadow: inset 0 0 0 1px rgba(153, 69, 255, 0.28), inset 0 1px 18px rgba(153, 69, 255, 0.14);
+  clip-path: polygon(14px 0, 100% 0, 100% calc(100% - 14px), calc(100% - 14px) 100%, 0 100%, 0 14px);
+}
+
+/* ---------- The film ---------- */
+
+.frame {
+  position: relative;
+  aspect-ratio: 16 / 9;
+  overflow: hidden;
+  background: var(--ink-deep);
+}
+
+.cover {
+  position: absolute;
+  inset: 0;
+  display: block;
+  width: 100%;
+  height: 100%;
+  padding: 0;
+  border: 0;
+  background: none;
+  cursor: pointer;
+}
+
+.cover:focus-visible {
+  outline: 2px solid var(--amber);
+  outline-offset: -2px;
+}
+
+.poster,
+.video {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.poster {
+  object-fit: cover;
+  transition: transform 400ms ease-out, filter 200ms ease;
+}
+
+.cover:hover .poster {
+  transform: scale(1.03);
+  filter: brightness(1.06);
+}
+
+.video {
+  object-fit: contain;
+  background: var(--ink-deep);
+}
+
+.play {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 64px;
+  height: 64px;
+  display: grid;
+  place-items: center;
+  color: var(--ink);
+  background: linear-gradient(100deg, var(--warm), var(--amber));
+  clip-path: polygon(12px 0, 100% 0, 100% calc(100% - 12px), calc(100% - 12px) 100%, 0 100%, 0 12px);
+  transform: translate(-50%, -50%);
+  transition: transform 120ms ease-out;
+}
+
+.cover:active .play {
+  transform: translate(-50%, -50%) scale(0.96);
+}
+
+.play svg {
+  width: 28px;
+  height: 28px;
+  margin-left: 3px;
+}
+
+.length {
+  position: absolute;
+  right: 10px;
+  bottom: 10px;
+  padding: 3px 8px;
+  font-size: var(--type-caption);
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.04em;
+  color: var(--ice);
+  background: rgba(6, 5, 12, 0.78);
+}
+
+/* ---------- The words under it ---------- */
+
+.words {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 14px 16px 16px;
+}
+
+.name {
+  margin: 0;
+  font-size: var(--type-title);
+  line-height: 1.05;
+  color: var(--ice);
+}
+
+.line {
+  margin: 0;
+  font-size: var(--type-base);
+  font-weight: 600;
+  line-height: 1.4;
+  color: rgba(238, 241, 255, 0.86);
+}
+
+/* The actions stand at the card's foot: in a row of cards they line up, whatever the lines above say. */
+.actions {
+  display: flex;
+  gap: 10px;
+  margin-top: auto;
+  padding-top: 6px;
+}
+
+.try {
+  flex: 1;
+  min-height: 52px;
+  display: grid;
+  place-items: center;
+  padding: 0 18px;
+  border: 0;
+  font-size: var(--type-action);
+  text-decoration: none;
+  white-space: nowrap;
+  color: var(--ink);
+  background: linear-gradient(100deg, var(--warm), var(--amber));
+  clip-path: polygon(12px 0, 100% 0, 100% calc(100% - 12px), calc(100% - 12px) 100%, 0 100%, 0 12px);
+  cursor: pointer;
+  transition: transform 120ms ease-out, filter 160ms ease;
+}
+
+.try:hover {
+  filter: brightness(1.06);
+}
+
+.try:active {
+  transform: scale(0.98);
+}
+
+.try:focus-visible {
+  outline: 2px solid var(--ice);
+  outline-offset: 3px;
+}
+
+.details {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 52px;
+  padding: 0 14px;
+  border: 0;
+  font-size: var(--type-small);
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  color: var(--ice);
+  background: rgba(255, 255, 255, 0.05);
+  box-shadow: inset 0 0 0 1px rgba(238, 241, 255, 0.14);
+  cursor: pointer;
+}
+
+.details:focus-visible {
+  outline: 2px solid var(--amber);
+  outline-offset: 2px;
+}
+
+.chevron {
+  width: 8px;
+  height: 8px;
+  border-right: 2px solid currentColor;
+  border-bottom: 2px solid currentColor;
+  transform: translateY(-2px) rotate(45deg);
+  transition: transform 180ms ease;
+}
+
+.details[aria-expanded='true'] .chevron {
+  transform: translateY(1px) rotate(-135deg);
+}
+
+.steps {
+  display: grid;
+  gap: 6px;
+  margin: 4px 0 0;
+  padding: 0 0 0 20px;
+  font-size: var(--type-body);
+  line-height: 1.45;
+  color: rgba(238, 241, 255, 0.86);
+  animation: open 180ms ease-out both;
+}
+
+.steps li::marker {
+  font-weight: 800;
+  color: var(--amber);
+}
+
+/* What opens never starts invisible: a slow frame (a busy phone, the 3D city behind) must not hide the words. */
+@keyframes open {
+  from {
+    transform: translateY(-4px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .art,
+  .steps {
+    animation: none;
+  }
+
+  .poster,
+  .try,
+  .play {
+    transition: none;
+  }
+}

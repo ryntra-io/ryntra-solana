@@ -1,12 +1,12 @@
 import { create } from 'zustand';
 import type { LaunchClaimReviewResponse, LaunchCreatorCabinetResponse } from '../../../lib/api/v1/contract.ts';
-import { graduationOf, httpBerthEngine, type BerthEngine } from './berth.ts';
+import { graduationOf, httpBerthEngine, towerFiguresOf, type BerthEngine, type TowerFigures } from './berth.ts';
 import { launchEngine, useLaunch } from './district.ts';
 
 /**
- * «Мій причал» as a window of the city: whether it is open and on which launch, and what the engine last said about the
- * connected wallet's launches. Reads only — the cabinet, a launch's graduation mark, the claim's Review; the claim itself
- * runs in the window (`berth-flow.ts`), which holds the window open while a signature is out.
+ * «Моя вежа» as a window of the city: whether it is open and on which launch, and what the engine last said about the
+ * connected wallet's launches. Reads only — the cabinet, a launch's market (its price, holders and graduation mark), the
+ * claim's Review; the claim itself runs in the window (`berth-flow.ts`), which holds the window open while a signature is out.
  */
 
 export type Graduation = Readonly<{ at: number; signature: string }>;
@@ -25,6 +25,8 @@ type BerthState = {
   status: 'idle' | 'reading' | 'ready' | 'failed';
   reviews: Readonly<Record<string, LaunchClaimReviewResponse | null>>;
   graduations: Readonly<Record<string, Graduation | null>>;
+  /** A launch's price and holders as last read; a read that failed keeps the last one. */
+  figures: Readonly<Record<string, TowerFigures>>;
   show: (focus?: string | null) => void;
   close: () => void;
   pick: (token: string) => void;
@@ -41,6 +43,7 @@ export const useBerth = create<BerthState>((set, get) => ({
   status: 'idle',
   reviews: {},
   graduations: {},
+  figures: {},
   show: (focus = null) => {
     /* One panel at a time: the launch sheet gives way, unless a launch is under way in it. */
     const launch = useLaunch.getState();
@@ -52,7 +55,7 @@ export const useBerth = create<BerthState>((set, get) => ({
   setBusy: (busy) => set({ busy }),
 }));
 
-/** Open «Мій причал», on a launch when one is asked for. */
+/** Open «Моя вежа», on a launch when one is asked for. */
 export function openBerth(focus?: string | null): void {
   useBerth.getState().show(focus ?? null);
 }
@@ -82,28 +85,39 @@ export function berthEngine(): Promise<BerthEngine> {
 /* ---------------------------------------------------------------- reads */
 
 let readSeq = 0;
+/** The wallet whose read is on its way. */
+let reading: string | null = null;
 
-/** The wallet's launches as the engine reads them now. Another wallet clears the last one's figures first. */
-export async function readCabinet(wallet: string): Promise<void> {
+/**
+ * The wallet's launches as the engine reads them now. Another wallet clears the last one's figures first. A read may
+ * take longer than the window's poll: `poll` waits for the one on its way rather than cancelling it, or a slow engine
+ * would never show a figure. A read after a claim supersedes one started before it.
+ */
+export async function readCabinet(wallet: string, options: Readonly<{ poll?: boolean }> = {}): Promise<void> {
+  if (options.poll && reading === wallet) return;
+  reading = wallet;
   const seq = ++readSeq;
   const before = useBerth.getState();
-  if (before.wallet !== wallet) useBerth.setState({ wallet, cabinet: null, reviews: {}, graduations: {}, picked: before.focus });
+  if (before.wallet !== wallet) useBerth.setState({ wallet, cabinet: null, reviews: {}, graduations: {}, figures: {}, picked: before.focus });
   useBerth.setState({ status: useBerth.getState().cabinet ? 'ready' : 'reading' });
   const source = await berthEngine().catch(() => null);
   const answer = await source?.cabinet(wallet);
   if (seq !== readSeq) return;
+  reading = null;
   if (answer?.ok) useBerth.setState({ cabinet: answer.data, status: 'ready' });
   else useBerth.setState((st) => ({ status: st.cabinet ? 'ready' : 'failed' }));
 }
 
-/** A launch's own reads: where its move to the DEX rests on the chain, and what «Забрати» takes now. */
-export async function readLaunch(token: string, wallet: string, need: Readonly<{ graduation: boolean; review: boolean }>): Promise<void> {
+/** A launch's own reads: its market — the price, the holders, where its move to the DEX rests — and what «Забрати» takes now. */
+export async function readLaunch(token: string, wallet: string, need: Readonly<{ market: boolean; review: boolean }>): Promise<void> {
   const source = await berthEngine().catch(() => null);
   if (!source) return;
-  const [market, review] = await Promise.all([need.graduation ? source.market(token) : null, need.review ? source.review(token, wallet) : null]);
+  const [market, review] = await Promise.all([need.market ? source.market(token) : null, need.review ? source.review(token, wallet) : null]);
   if (useBerth.getState().wallet !== wallet) return;
+  const figures = market?.ok ? towerFiguresOf(market.data) : null;
   useBerth.setState((st) => ({
-    ...(need.graduation ? { graduations: { ...st.graduations, [token]: market?.ok ? graduationOf(market.data) : null } } : {}),
+    ...(need.market && (market?.ok || !(token in st.graduations)) ? { graduations: { ...st.graduations, [token]: market?.ok ? graduationOf(market.data) : null } } : {}),
+    ...(figures ? { figures: { ...st.figures, [token]: figures } } : {}),
     ...(need.review ? { reviews: { ...st.reviews, [token]: review?.ok ? review.data : null } } : {}),
   }));
 }

@@ -736,6 +736,19 @@
   font-variant-numeric: tabular-nums;
 }
 
+/* A partner's friend: the discount beside the fee it lowered — a quiet mint pill, no sentence. */
+.friendOff {
+  display: inline-block;
+  padding: 0 6px;
+  border: 1px solid color-mix(in srgb, var(--mint) 45%, transparent);
+  border-radius: 999px;
+  color: var(--mint);
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 18px;
+  font-variant-numeric: tabular-nums;
+}
+
 .notable {
   color: var(--amber) !important;
 }
@@ -839,6 +852,50 @@
 
 .dock > :first-child {
   margin-top: 0;
+}
+
+/* What you get, in the dock while the ticket's own figure is out of sight (CITY-189): folded to nothing otherwise, so
+   the dock that shows it not is the dock as it was — the next line keeps no margin of its own after it. */
+.dockGet {
+  display: grid;
+  grid-template-rows: 0fr;
+  opacity: 0;
+  transition:
+    grid-template-rows 180ms ease-out,
+    opacity 180ms ease-out;
+}
+
+.dockGetOn {
+  grid-template-rows: 1fr;
+  opacity: 1;
+}
+
+.dockGetInner {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+  min-height: 0;
+  min-width: 0;
+  overflow: hidden;
+}
+
+.dockGetOn .dockGetInner {
+  padding-bottom: 6px;
+}
+
+.dockGet .label {
+  flex-shrink: 0;
+}
+
+.dockGet + * {
+  margin-top: 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .dockGet {
+    transition: none;
+  }
 }
 
 /* The wallet's line under the action starts below the action's ground. */

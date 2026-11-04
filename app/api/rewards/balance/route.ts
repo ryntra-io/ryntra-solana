@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { consumeSolanaReadRequest } from "@/lib/agent-control/http";
 import { getGuardRuntime } from "@/lib/guard/runtime";
 import { walletHold } from "@/lib/growth/review-store";
+import { readReferralHold } from "@/lib/growth/referral-guard-store";
 import { privateNoStoreHeaders } from "@/lib/http-control";
 import { claimMinimumUsdMicros, rewardBalance } from "@/lib/rewards/balance";
 import { readRewardRulesInForce } from "@/lib/rewards/rank-store";
@@ -96,7 +97,8 @@ export async function GET(req: NextRequest) {
       rules?.claimFloor ? payoutAccount(address) : Promise.resolve<RewardPayoutAccount>("UNKNOWN"),
     ]);
     const minimum = claimMinimumUsdMicros(rules, account);
-    const balance = rewardBalance({ entries, reserve: treasury, heldUsdMicros: heldUsdMicros(ledger, now), minimumUsdMicros: minimum });
+    const referralHold = await readReferralHold(store, address, entries, now);
+    const balance = rewardBalance({ entries, reserve: treasury, heldUsdMicros: heldUsdMicros(ledger, now), minimumUsdMicros: minimum, referralHeldUsdMicros: referralHold.heldUsdMicros });
     const config = rewardsTreasuryConfig();
     /* The header says what the Rewards page says: a wallet a review holds or stopped has nothing ready to claim. */
     const hold = await walletHold(store, address, new Date().toISOString()).catch(() => "REVIEW" as const);

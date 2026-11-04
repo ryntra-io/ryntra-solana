@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect } from 'react';
+import { closeGarage } from '@/city/lib/agent/garage/show';
 import { useAgent } from '@/city/lib/agent/store';
 import { useAssistant } from '@/city/lib/assistant/store';
 import { howStore } from '@/city/lib/art/how';
@@ -12,6 +13,7 @@ import { useCity } from '@/city/lib/city/store';
 import { openWindows, useHudPanels, type WindowName } from '@/city/lib/city/windows';
 import { useHarbor } from '@/city/lib/districts/harbor/store';
 import { usePredict } from '@/city/lib/districts/predict/store';
+import { useGuides } from '@/city/lib/how/store';
 import { useExchange } from '@/city/lib/exchange/store';
 import { useFeedPanel } from '@/city/lib/feed/panel';
 import { useLayer } from '@/city/lib/game/layer';
@@ -21,10 +23,12 @@ import { useBerth } from '@/city/lib/launch/berth-store';
 import { useHall } from '@/city/lib/launch/hall-store';
 import { useMoments } from '@/city/lib/moments/stage';
 import { useMoney } from '@/city/lib/money/open';
+import { usePages } from '@/city/lib/pages/store';
 import { awayStore } from '@/city/lib/quarter/away-store';
 import { freeStore } from '@/city/lib/quarter/kit/free/store';
 import { quarterStore } from '@/city/lib/quarter/store';
 import { useRun } from '@/city/lib/run/store';
+import { usePartners } from '@/city/lib/partners/store';
 import { useScouts } from '@/city/lib/scouts/store';
 import { useMine } from '@/city/lib/trade/mine-store';
 import { useTrade } from '@/city/lib/trade/store';
@@ -43,19 +47,28 @@ const CLOSE: Readonly<Record<WindowName, () => void>> = {
   harbor: () => useHarbor.getState().hide(),
   mine: () => useMine.getState().close(),
   scouts: () => useScouts.getState().close(),
+  // The page first; the friend's greeting, when it is the one on top, goes as its own «Увійти» would.
+  partners: () => (usePartners.getState().open ? usePartners.getState().close() : usePartners.getState().enter()),
   vault: () => vaultStore.getState().leave(),
   hall: () => useHall.getState().close(),
   berth: () => useBerth.getState().close(),
   agent: () => useAgent.getState().closePanel(),
+  garage: () => closeGarage(),
   beacon: () => useBeacons.getState().close(),
   assistant: () => useAssistant.getState().hide(),
   how: () => howStore.getState().hide(),
+  guides: () => useGuides.getState().hide(),
   moments: () => useMoments.setState({ sheet: null }),
   launch: () => {
     const sheet = useLaunch.getState();
     if (sheet.sheet && closable(sheet.phase)) sheet.closeSheet();
   },
   build: () => freeStore.getState().close(),
+  // The city's pages: «Back» closes the one opened last, as Escape does.
+  pages: () => {
+    const last = usePages.getState().open.at(-1);
+    if (last) usePages.getState().close(last);
+  },
   menu: () => useHudPanels.getState().closeMenu(),
   settings: () => useHudPanels.getState().closeSettings(),
 };
@@ -112,8 +125,8 @@ function close(id: string) {
 
 const STORES: readonly { subscribe: (listener: () => void) => () => void }[] = [
   useLayer, useCity, quarterStore, useRun, awayStore, useWindows, useGameMap, useFeedPanel, useBackPanels,
-  usePredict, useTrade, useMoney, useTowerChart, useExchange, useHarbor, useMine, useScouts, vaultStore, useHall, useAgent,
-  useBeacons, useAssistant, howStore, useMoments, useLaunch, freeStore, useHudPanels,
+  usePredict, useTrade, useMoney, useTowerChart, useExchange, useHarbor, useMine, useScouts, usePartners, vaultStore, useHall, useAgent,
+  useBeacons, useAssistant, howStore, useGuides, useMoments, useLaunch, freeStore, usePages, useHudPanels,
 ];
 
 /**

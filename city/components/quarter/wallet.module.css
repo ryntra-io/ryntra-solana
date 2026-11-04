@@ -86,6 +86,28 @@
   margin-top: 12px;
 }
 
+/* Settings (CITY-87): one quiet row of the menu, the gear and the word. */
+.settings {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  min-height: 44px;
+  margin-top: 10px;
+  padding: 0 12px;
+  border: 0;
+  font-size: 14px;
+  font-weight: 700;
+  text-align: left;
+  color: var(--ice);
+  background: rgba(238, 241, 255, 0.06);
+}
+
+.settings:hover,
+.settings:focus-visible {
+  background: rgba(153, 69, 255, 0.22);
+}
+
 .row > * {
   min-height: 44px;
 }

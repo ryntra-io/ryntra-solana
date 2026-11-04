@@ -30,7 +30,7 @@ const ease = (x: number) => 1 - Math.pow(1 - Math.min(1, Math.max(0, x)), 3);
 const fade = (t: number, from: number, length = 0.35) => ease((t - from) / length);
 
 /** The mark (the Sol Spire through the Eclipse) drawn at `size` with its top-left at x, y. */
-function drawMark(ctx: CanvasRenderingContext2D, x: number, y: number, size: number) {
+export function drawMark(ctx: CanvasRenderingContext2D, x: number, y: number, size: number) {
   const k = size / 64;
   ctx.save();
   ctx.translate(x, y);

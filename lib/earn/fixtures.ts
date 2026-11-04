@@ -40,8 +40,8 @@ export const JUPITER_TOKENS: readonly unknown[] = [
     asset: { address: USDC_MINT, name: "USD Coin", symbol: "USDC", decimals: 6, price: "1.0" },
     totalAssets: "12000000000000",
     totalSupply: "11800000000000",
-    supplyRate: "4.12",
-    totalRate: "4.12",
+    supplyRate: "412",
+    totalRate: "412",
     liquiditySupplyData: {
       modeWithInterest: true,
       supply: "12000000000000",
@@ -59,8 +59,8 @@ export const JUPITER_TOKENS: readonly unknown[] = [
     asset: { address: USDT_MINT, name: "Tether USD", symbol: "USDT", decimals: 6, price: "1.0" },
     totalAssets: "900000000000",
     totalSupply: "890000000000",
-    supplyRate: "6.40",
-    totalRate: "6.40",
+    supplyRate: "640",
+    totalRate: "640",
     liquiditySupplyData: { modeWithInterest: true, supply: "900000000000", withdrawalLimit: "40000000", withdrawable: "40000000" },
   },
   {
@@ -72,8 +72,8 @@ export const JUPITER_TOKENS: readonly unknown[] = [
     asset: { address: WSOL_MINT, name: "Wrapped SOL", symbol: "SOL", decimals: 9, price: "180.5" },
     totalAssets: "40000000000000",
     totalSupply: "39000000000000",
-    supplyRate: "2.05",
-    totalRate: "2.05",
+    supplyRate: "205",
+    totalRate: "205",
     liquiditySupplyData: { modeWithInterest: true, supply: "40000000000000", withdrawalLimit: "0", withdrawable: "0" },
   },
 ];
@@ -81,7 +81,7 @@ export const JUPITER_TOKENS: readonly unknown[] = [
 /** The same three markets with USDC's rate down from 4.12 % to 3.10 %: a move of 102 bp, past the tolerance. */
 export const JUPITER_TOKENS_RATE_FELL: readonly unknown[] = JUPITER_TOKENS.map((entry) => {
   const token = entry as Record<string, unknown>;
-  return token.address === JL_USDC_MINT ? { ...token, supplyRate: "3.10", totalRate: "3.10" } : token;
+  return token.address === JL_USDC_MINT ? { ...token, supplyRate: "310", totalRate: "310" } : token;
 });
 
 /** The same three markets with USDT's liquidity gone: the case a signed withdrawal must be stopped on. */

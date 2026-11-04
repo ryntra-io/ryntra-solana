@@ -82,9 +82,10 @@ const RETELL_UK: readonly (readonly [RegExp, string | ((...m: string[]) => strin
   // The more particular phrase first: «Unverified · … liquidity» before «… liquidity».
   [/^Unverified · (.+) liquidity$/, (_, v) => `Не перевірено · ${v} ліквідності`],
   [/^(.+) liquidity$/, (_, v) => `${v} ліквідності`],
-  [/^(.+) pool$/, (_, pair) => `Пул ${pair}`],
+  // «New pool» before «… pool», or it reads «Пул New» (CITY-188).
   [/^New coin$/, 'Нова монета'],
   [/^New pool$/, 'Новий пул'],
+  [/^(.+) pool$/, (_, pair) => `Пул ${pair}`],
   [/^(\$\S+) launched on Ryntra$/, (_, t) => `${t} запущено на Ryntra`],
   [/^([+−-][\d.]+%) · (\d+)h$/, (_, p, h) => `${p} · ${h} год`],
   [/^([+−-][\d.]+%) · (\d+)m$/, (_, p, m) => `${p} · ${m} хв`],

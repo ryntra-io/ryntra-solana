@@ -54,6 +54,13 @@
   white-space: nowrap;
 }
 
+/* The sheet's own title beside its two buttons: two lines on a narrow phone rather than cut short. */
+.titleWrap {
+  white-space: normal;
+  text-overflow: clip;
+  overflow-wrap: anywhere;
+}
+
 .headPic {
   width: 44px;
   height: 44px;
@@ -112,48 +119,257 @@
   cursor: default;
 }
 
-/* ---------- The three fields ---------- */
+/* ---------- The cost line: first on both steps (CITY-143) ---------- */
 
-.launchRow {
-  display: grid;
-  grid-template-columns: 96px minmax(0, 1fr);
-  gap: 12px;
-  margin-top: 16px;
+.cost {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 2px 10px;
+  margin-top: 12px;
+  font-size: var(--type-small);
+  line-height: 1.3;
 }
 
-.pic {
+.cost b {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  color: var(--mint);
+}
+
+.cost b::before {
+  content: '';
+  width: 7px;
+  height: 7px;
+  background: var(--mint);
+  transform: rotate(45deg);
+  box-shadow: 0 0 8px var(--mint);
+}
+
+.cost span {
+  color: var(--text-dim);
+  font-variant-numeric: tabular-nums;
+}
+
+.cost span::before {
+  content: '·';
+  margin-right: 10px;
+  color: rgba(238, 241, 255, 0.35);
+}
+
+/* ---------- The live preview of the tower: our own docks, the coin's face rising as the sheet fills ---------- */
+
+.preview {
+  --lift: calc(var(--rise, 0) * 44px);
   position: relative;
-  height: 96px;
+  display: block;
+  height: 216px;
+  margin-top: 12px;
+  overflow: hidden;
+  cursor: pointer;
+  isolation: isolate;
+  background: var(--ink-deep, #06050c);
+  clip-path: polygon(14px 0, 100% 0, 100% calc(100% - 14px), calc(100% - 14px) 100%, 0 100%, 0 14px);
+  box-shadow: inset 0 0 0 1px rgba(153, 69, 255, 0.35);
+}
+
+.previewFrame {
+  position: absolute;
+  inset: 0;
+  z-index: -2;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: 50% 30%;
+  filter: saturate(1.05) brightness(0.86);
+  transform: scale(1.04);
+  transition: filter 600ms ease-out, transform 900ms ease-out;
+}
+
+.previewReady .previewFrame {
+  filter: saturate(1.15) brightness(0.98);
+  transform: scale(1.08);
+}
+
+.previewShade {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background:
+    radial-gradient(60% 50% at 50% calc(70% - var(--lift)), rgba(255, 178, 63, calc(0.08 + var(--rise, 0) * 0.16)), transparent 70%),
+    linear-gradient(180deg, rgba(6, 5, 12, 0.55) 0%, rgba(6, 5, 12, 0) 34%, rgba(6, 5, 12, 0.2) 58%, rgba(6, 5, 12, 0.92) 100%);
+  transition: background 600ms ease-out;
+}
+
+.preview:focus-within {
+  outline: 2px solid var(--amber);
+  outline-offset: -2px;
+}
+
+/* The light column under the coin's face: it grows as the face rises, the liftoff the docks play when the coin lands. */
+.beam {
+  position: absolute;
+  left: 50%;
+  bottom: 52px;
+  width: 4px;
+  height: calc(12px + var(--lift));
+  transform: translateX(-50%);
+  background: linear-gradient(to top, rgba(255, 178, 63, 0), rgba(255, 178, 63, 0.95));
+  box-shadow: 0 0 22px 6px rgba(255, 178, 63, 0.38);
+  opacity: calc(0.2 + var(--rise, 0) * 0.8);
+  transition: height 700ms cubic-bezier(0.2, 1.2, 0.4, 1), opacity 400ms ease-out;
+}
+
+.badge {
+  position: absolute;
+  left: 50%;
+  bottom: calc(62px + var(--lift));
+  width: 72px;
+  height: 72px;
   display: grid;
   place-items: center;
   align-content: center;
-  gap: 2px;
-  cursor: pointer;
+  gap: 1px;
+  border-radius: 50%;
+  transform: translateX(-50%);
   color: var(--amber);
-  background: rgba(255, 178, 63, 0.06) center / cover no-repeat;
-  box-shadow: inset 0 0 0 2px rgba(255, 178, 63, 0.5);
-  clip-path: polygon(12px 0, 100% 0, 100% calc(100% - 12px), calc(100% - 12px) 100%, 0 100%, 0 12px);
+  background: rgba(11, 10, 20, 0.62) center / cover no-repeat;
+  box-shadow: 0 0 0 2px rgba(255, 178, 63, 0.55), 0 10px 30px rgba(0, 0, 0, 0.55);
+  backdrop-filter: blur(6px);
+  transition: bottom 700ms cubic-bezier(0.2, 1.2, 0.4, 1), box-shadow 400ms ease-out;
 }
 
-.pic b {
-  font-size: 30px;
+.badge::before {
+  content: '';
+  position: absolute;
+  inset: -7px;
+  border-radius: 50%;
+  border: 1.5px dashed rgba(255, 178, 63, 0.55);
+}
+
+.badge b {
+  font-size: var(--type-headline);
   line-height: 1;
 }
 
-.pic > span {
-  font-size: 11px;
+.badge > span {
+  font-size: var(--type-micro);
   font-weight: 800;
-  letter-spacing: 0.16em;
+  letter-spacing: 0.06em;
   text-transform: uppercase;
 }
 
-.picSet {
-  box-shadow: inset 0 0 0 2px rgba(20, 241, 149, 0.55);
+.badgeSet {
+  box-shadow: 0 0 0 2px var(--amber), 0 0 26px rgba(255, 178, 63, 0.55), 0 10px 30px rgba(0, 0, 0, 0.55);
 }
 
-.pic:focus-within {
-  outline: 2px solid var(--amber);
-  outline-offset: 2px;
+.badgeSet::before {
+  border-style: solid;
+  border-color: rgba(255, 178, 63, 0.22);
+}
+
+.previewReady .badgeSet::before {
+  border-color: rgba(255, 178, 63, 0.45);
+  animation: halo 2.4s ease-out infinite;
+}
+
+.badgeBad {
+  box-shadow: 0 0 0 2px var(--flare), 0 0 22px rgba(255, 75, 58, 0.45);
+}
+
+.badgeBad::before {
+  border-color: rgba(255, 75, 58, 0.5);
+}
+
+@keyframes halo {
+  0% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(1.35);
+    opacity: 0;
+  }
+}
+
+.plate {
+  position: absolute;
+  left: 14px;
+  right: 14px;
+  bottom: 10px;
+  display: grid;
+  justify-items: center;
+  gap: 2px;
+  text-align: center;
+  pointer-events: none;
+}
+
+.plate b {
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: var(--type-title);
+  line-height: 1.05;
+  color: var(--warm);
+  text-shadow: 0 2px 12px rgba(0, 0, 0, 0.7);
+}
+
+.plate > span {
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: var(--type-caption);
+  font-weight: 600;
+  color: var(--ice);
+  text-shadow: 0 1px 8px rgba(0, 0, 0, 0.8);
+}
+
+.plate .plateEmpty {
+  color: rgba(238, 241, 255, 0.34);
+}
+
+/* The windows' clock: a show only, quiet in the preview's corner. */
+.clock {
+  position: absolute;
+  top: 10px;
+  left: 12px;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  height: 24px;
+  padding: 0 10px;
+  font-size: var(--type-micro);
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  font-variant-numeric: tabular-nums;
+  color: rgba(238, 241, 255, 0.78);
+  background: rgba(6, 5, 12, 0.55);
+  box-shadow: inset 0 0 0 1px rgba(238, 241, 255, 0.12);
+  backdrop-filter: blur(8px);
+  pointer-events: none;
+}
+
+.clock i {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: rgba(238, 241, 255, 0.45);
+}
+
+.clockOpen {
+  color: var(--warm);
+}
+
+.clockOpen i {
+  background: var(--amber);
+  box-shadow: 0 0 8px var(--amber);
+  animation: blink 1.2s infinite;
 }
 
 /* The file input stays in the label's box, invisible: a tap on the tile is a tap on it. */
@@ -164,11 +380,91 @@
   cursor: pointer;
 }
 
+/* A finger's two doors to the picture (CITY-168): big and side by side until there is a picture, then two small ones up
+   the preview's edge, out of the way of the coin and its ticker. Each is a label: a tap anywhere on it is a tap on its file input. */
+.doors {
+  position: absolute;
+  left: 12px;
+  right: 12px;
+  top: 52px;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.door {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-height: 84px;
+  padding: 8px;
+  color: var(--amber);
+  background: rgba(11, 10, 20, 0.72);
+  box-shadow: inset 0 0 0 1.5px rgba(255, 178, 63, 0.55);
+  backdrop-filter: blur(8px);
+  clip-path: polygon(12px 0, 100% 0, 100% calc(100% - 12px), calc(100% - 12px) 100%, 0 100%, 0 12px);
+  cursor: pointer;
+  transition: transform 140ms ease-out, background 140ms ease-out;
+}
+
+.door:active {
+  transform: scale(0.97);
+  background: rgba(255, 178, 63, 0.18);
+}
+
+.door svg {
+  width: 28px;
+  height: 28px;
+}
+
+.doorWord {
+  font-size: var(--type-caption);
+  line-height: 1.1;
+  letter-spacing: 0.04em;
+  text-align: center;
+  color: var(--ice);
+}
+
+.doorsBad .door {
+  box-shadow: inset 0 0 0 1.5px var(--flare);
+}
+
+.doorsFolded {
+  left: auto;
+  right: 10px;
+  top: auto;
+  bottom: 10px;
+  grid-template-columns: 48px;
+  gap: 8px;
+}
+
+.doorsFolded .door {
+  min-height: 48px;
+  padding: 0;
+  clip-path: polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px);
+}
+
+.doorsFolded .door svg {
+  width: 22px;
+  height: 22px;
+}
+
+/* Folded, the input's own label names the door. */
+.doorsFolded .doorWord {
+  display: none;
+}
+
+/* ---------- The two fields ---------- */
+
 .fields {
   display: grid;
   grid-template-columns: minmax(0, 1fr);
   gap: 8px;
   min-width: 0;
+  margin-top: 12px;
 }
 
 .field {
@@ -233,32 +529,6 @@
 
 .field input::placeholder {
   color: rgba(238, 241, 255, 0.28);
-}
-
-.rules {
-  display: grid;
-  gap: 6px;
-  margin-top: 14px;
-}
-
-.rules span {
-  position: relative;
-  padding-left: 18px;
-  font-size: 14px;
-  line-height: 1.35;
-  color: var(--text-dim);
-}
-
-.rules span::before {
-  content: '';
-  position: absolute;
-  left: 2px;
-  top: 6px;
-  width: 7px;
-  height: 7px;
-  background: var(--mint);
-  transform: rotate(45deg);
-  box-shadow: 0 0 8px var(--mint);
 }
 
 .problem {
@@ -346,10 +616,236 @@
 
 /* ---------- The review ---------- */
 
+.shield {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  min-height: 52px;
+  margin-top: 16px;
+  padding: 0 14px;
+  border: 0;
+  color: var(--ice);
+  background: rgba(238, 241, 255, 0.04);
+  transition: background 160ms ease-out;
+}
+
+.shield:disabled {
+  opacity: 0.55;
+}
+
+.shieldOn {
+  background: rgba(20, 241, 149, 0.08);
+}
+
+.shieldLabel {
+  font-size: 13px;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  text-align: left;
+  white-space: nowrap;
+}
+
+/* What bots pay at the start, beside the switch: the preset's own schedule. */
+.shieldValue {
+  margin-left: auto;
+  margin-right: 12px;
+  font-size: var(--type-small);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: var(--text-dim);
+  white-space: nowrap;
+}
+
+.shieldOn .shieldValue {
+  color: var(--mint);
+}
+
+.shieldStill .shieldValue {
+  margin-right: 0;
+}
+
+.shieldTrack {
+  position: relative;
+  width: 46px;
+  height: 26px;
+  border-radius: 13px;
+  background: rgba(238, 241, 255, 0.16);
+  transition: background 160ms ease-out;
+}
+
+.shieldOn .shieldTrack {
+  background: var(--mint);
+  box-shadow: 0 0 14px rgba(20, 241, 149, 0.45);
+}
+
+.shieldKnob {
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: var(--ice);
+  transition: transform 180ms cubic-bezier(0.2, 1.3, 0.4, 1);
+}
+
+.shieldOn .shieldKnob {
+  transform: translateX(20px);
+  background: var(--ink);
+}
+
+/* The shielded launch (CITY-169): the halo is on, no switch — a ring of the tower's own light before the label. */
+.halo {
+  justify-content: flex-start;
+  gap: 12px;
+  background: linear-gradient(90deg, rgba(255, 178, 63, 0.12), rgba(255, 178, 63, 0.03));
+  box-shadow: inset 0 0 0 1px rgba(255, 178, 63, 0.18);
+}
+
+.halo .shieldLabel {
+  color: var(--warm);
+}
+
+.halo .shieldValue {
+  color: var(--amber);
+}
+
+.haloMark {
+  flex: none;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  border: 2px solid var(--amber);
+  box-shadow:
+    0 0 10px rgba(255, 178, 63, 0.55),
+    inset 0 0 6px rgba(255, 178, 63, 0.4);
+  animation: haloBreath 3.2s ease-in-out infinite;
+}
+
+@keyframes haloBreath {
+  50% {
+    box-shadow:
+      0 0 16px rgba(255, 178, 63, 0.8),
+      inset 0 0 8px rgba(255, 178, 63, 0.55);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .haloMark {
+    animation: none;
+  }
+}
+
+/* The halo on a launch tower's window: the same ring, small, as one of its tags. */
+.tagHalo {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(255, 178, 63, 0.14);
+  color: var(--amber);
+}
+
+.tagHalo .haloMark {
+  width: 10px;
+  height: 10px;
+  border-width: 1.5px;
+  animation: none;
+}
+
+/* ---------- The two facts and the one line before the signature ---------- */
+
+.facts {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.fact {
+  display: grid;
+  gap: 4px;
+  padding: 10px 12px 11px;
+  background: rgba(238, 241, 255, 0.04);
+  clip-path: polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px);
+}
+
+.fact span {
+  font-size: var(--type-micro);
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+}
+
+.fact b {
+  font-size: var(--type-title-l);
+  line-height: 1;
+  color: var(--warm);
+}
+
+.signLine {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  margin-top: 12px;
+  padding: 11px 10px 11px 12px;
+  background: rgba(255, 178, 63, 0.06);
+  box-shadow: inset 2px 0 0 var(--amber);
+}
+
+.signLine p {
+  flex: 1;
+  margin: 0;
+  font-size: var(--type-small);
+  line-height: 1.45;
+  font-variant-numeric: tabular-nums;
+  color: var(--ice);
+}
+
+.signLine p span + span::before {
+  content: ' · ';
+  color: var(--text-dim);
+}
+
+.signLine .signRisk {
+  color: var(--warm);
+}
+
+.info {
+  width: 32px;
+  height: 32px;
+  flex: none;
+  display: grid;
+  place-items: center;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  font: italic 700 15px/1 Georgia, serif;
+  color: var(--text-dim);
+  background: rgba(238, 241, 255, 0.07);
+  box-shadow: inset 0 0 0 1px rgba(238, 241, 255, 0.18);
+  cursor: pointer;
+}
+
+.infoOn {
+  color: var(--ink);
+  background: var(--warm);
+}
+
 .review {
   display: grid;
-  gap: 10px;
-  margin: 16px 0 0;
+  gap: 8px;
+  margin: 10px 0 0;
+  animation: unfold 260ms ease-out both;
+}
+
+@keyframes unfold {
+  from {
+    opacity: 0;
+    transform: translateY(-6px);
+  }
 }
 
 .row {
@@ -493,11 +989,106 @@
 }
 
 .failedWords {
-  padding: 12px 14px;
-  font-size: 14px;
-  line-height: 1.45;
+  display: grid;
+  gap: 4px;
+  padding: 14px 16px 13px;
+  line-height: 1.4;
+  background: rgba(255, 178, 63, 0.09);
+  box-shadow: inset 3px 0 0 var(--amber);
+  animation: unfold 260ms ease-out both;
+}
+
+/* What happened: one sentence. */
+.failedWhat {
+  font-size: 17px;
+  font-weight: 700;
   color: var(--warm);
-  background: rgba(255, 178, 63, 0.1);
+}
+
+/* Whether money moved: said every time, calm when nothing did. */
+.failedMoney {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  color: var(--ice);
+}
+
+.failedMoney::before {
+  content: '';
+  width: 7px;
+  height: 7px;
+  flex: none;
+  border-radius: 50%;
+  background: var(--mint);
+  box-shadow: 0 0 10px rgba(20, 241, 149, 0.6);
+}
+
+.failedMoneyOpen::before {
+  background: var(--amber);
+  box-shadow: 0 0 10px rgba(255, 178, 63, 0.6);
+}
+
+/* One action; «Details» is a quiet word beside it. */
+.failedWays {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 14px;
+}
+
+.failedWays .action {
+  flex: 1;
+  width: auto;
+  margin-top: 0;
+}
+
+.failedMore {
+  height: 56px;
+  min-width: 56px;
+  padding: 0 14px;
+  border: 0;
+  background: none;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+}
+
+.failedMore[aria-expanded='true'] {
+  color: var(--ice);
+}
+
+.failedDetails {
+  display: grid;
+  gap: 6px;
+  margin: 10px 0 0;
+  padding: 10px 12px;
+  background: rgba(238, 241, 255, 0.04);
+  animation: unfold 200ms ease-out both;
+}
+
+.failedDetails div {
+  display: grid;
+  grid-template-columns: 84px 1fr;
+  gap: 10px;
+}
+
+.failedDetails dt {
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+}
+
+.failedDetails dd {
+  margin: 0;
+  font-size: 12px;
+  line-height: 1.4;
+  color: var(--text-dim);
+  overflow-wrap: anywhere;
 }
 
 /* ---------- A launch's tower ---------- */
@@ -508,14 +1099,26 @@
 
 .cardTop {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
-  gap: 10px;
+  gap: 6px 10px;
 }
 
+/* On a phone the way and the time keep their line; the holders and «Report» move under them, to the right. */
+.cardTop .kicker {
+  flex: 1 1 auto;
+}
+
+.cardTop .holders {
+  margin-left: auto;
+}
+
+/* A long status (CITY-144: «Graduated with ≥22 buyers») wraps the time onto its own line rather than past the edge. */
 .kicker {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
-  gap: 8px;
+  gap: 2px 8px;
   min-width: 0;
   flex: 1;
   font-size: 13px;
@@ -523,13 +1126,13 @@
   letter-spacing: 0.22em;
   text-transform: uppercase;
   color: var(--accent, var(--amber));
-  white-space: nowrap;
 }
 
 .kickerTime {
   font-variant-numeric: tabular-nums;
   letter-spacing: 0.14em;
   color: var(--amber);
+  white-space: nowrap;
 }
 
 .pulse {
@@ -577,10 +1180,6 @@
   color: var(--ice);
 }
 
-.tagMine {
-  background: rgba(20, 241, 149, 0.16);
-  color: var(--mint);
-}
 
 .tagNet {
   background: rgba(255, 178, 63, 0.16);
@@ -654,6 +1253,215 @@
   text-decoration: line-through rgba(238, 241, 255, 0.35);
 }
 
+/* The status's «i» closes the row of rings (CITY-144): the rule and «not advice» open under it. */
+.checksInfo {
+  align-self: center;
+  margin-left: 4px;
+}
+
+/* ---------- The launch's flow: facts as pills, the creator's strip, the method behind «i» ---------- */
+
+.trust {
+  margin-top: 12px;
+  animation: fadeIn 260ms ease-out both;
+}
+
+.trustHold {
+  height: 58px;
+  margin-top: 12px;
+}
+
+.pills {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+}
+
+.pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  min-height: 26px;
+  padding: 4px 10px;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  font-variant-numeric: tabular-nums;
+  color: var(--ice);
+  background: rgba(238, 241, 255, 0.06);
+  box-shadow: inset 0 0 0 1px rgba(238, 241, 255, 0.1);
+  clip-path: polygon(6px 0, 100% 0, 100% calc(100% - 6px), calc(100% - 6px) 100%, 0 100%, 0 6px);
+}
+
+.pill::before {
+  content: '';
+  width: 6px;
+  height: 6px;
+  flex: none;
+  border-radius: 50%;
+  background: var(--mint);
+  box-shadow: 0 0 8px var(--mint);
+}
+
+.pillWatch {
+  color: var(--warm);
+  background: rgba(255, 104, 28, 0.1);
+  box-shadow: inset 0 0 0 1px rgba(255, 104, 28, 0.35);
+}
+
+.pillWatch::before {
+  background: var(--amber);
+  box-shadow: 0 0 8px var(--amber);
+}
+
+.info {
+  width: 26px;
+  height: 26px;
+  flex: none;
+  display: grid;
+  place-items: center;
+  margin-left: auto;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  font: italic 700 13px/1 Georgia, serif;
+  color: var(--text-dim);
+  background: rgba(238, 241, 255, 0.06);
+  box-shadow: inset 0 0 0 1px rgba(238, 241, 255, 0.14);
+  cursor: pointer;
+  position: relative;
+}
+
+/* A finger's target, larger than the mark. */
+.info::after {
+  content: '';
+  position: absolute;
+  inset: -9px;
+}
+
+.infoOpen {
+  color: var(--ink);
+  background: var(--amber);
+}
+
+.dev {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 12px;
+  margin-top: 8px;
+  padding: 8px 10px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-dim);
+  font-variant-numeric: tabular-nums;
+  background: rgba(238, 241, 255, 0.035);
+  border-left: 2px solid rgba(255, 178, 63, 0.55);
+}
+
+.dev > span + span::before {
+  content: '·';
+  margin-right: 12px;
+  color: rgba(238, 241, 255, 0.3);
+}
+
+.devBought {
+  color: var(--ice);
+}
+
+.devWatch {
+  color: var(--warm);
+}
+
+/* The creator's other wallets: a line of their own under the strip. */
+.devLinked {
+  flex-basis: 100%;
+  color: var(--warm);
+}
+
+.dev > .devLinked::before {
+  content: none;
+}
+
+.method {
+  margin: 8px 0 0;
+  padding: 10px 12px;
+  list-style: none;
+  font-size: 12.5px;
+  line-height: 1.45;
+  color: var(--text-dim);
+  background: rgba(8, 7, 15, 0.6);
+  box-shadow: inset 0 0 0 1px rgba(153, 69, 255, 0.25);
+  animation: fadeIn 200ms ease-out both;
+}
+
+.method li + li {
+  margin-top: 4px;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+}
+
+/* ---------- Report ---------- */
+
+.action:disabled {
+  opacity: 0.5;
+}
+
+.dockDone {
+  margin-top: 12px;
+  padding: 10px 12px;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--mint);
+  background: rgba(20, 241, 149, 0.1);
+}
+
+.flag svg {
+  width: 18px;
+  height: 18px;
+}
+
+.flag[aria-pressed='true'] {
+  color: var(--warm);
+  background: rgba(255, 178, 63, 0.14);
+}
+
+.report {
+  display: grid;
+  gap: 10px;
+  margin-top: 14px;
+}
+
+.report .action {
+  margin-top: 4px;
+}
+
+.reasons {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.reason {
+  min-height: 48px;
+  padding: 0 12px;
+  border: 0;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--ice);
+  background: rgba(238, 241, 255, 0.06);
+  transition: background 140ms ease-out;
+}
+
+.reasonOn {
+  color: var(--ink);
+  background: var(--warm);
+}
+
 @keyframes rise {
   from {
     opacity: 0;
@@ -665,11 +1473,44 @@
   .title {
     font-size: 21px;
   }
-  .launchRow {
-    grid-template-columns: 88px minmax(0, 1fr);
+  .preview {
+    height: 204px;
+    --lift: calc(var(--rise, 0) * 38px);
   }
-  .pic {
-    height: 96px;
+  .fact b {
+    font-size: var(--type-title);
+  }
+  .cost {
+    font-size: var(--type-caption);
+    column-gap: 8px;
+  }
+  .cost span::before {
+    margin-right: 8px;
+  }
+  .shield {
+    padding: 0 12px;
+  }
+  .shieldLabel {
+    font-size: var(--type-caption);
+    letter-spacing: 0.08em;
+  }
+  .shieldValue {
+    margin-right: 10px;
+    font-size: var(--type-caption);
+  }
+}
+
+/* Less motion: the face stands where the sheet puts it, without the climb or the halo. */
+@media (prefers-reduced-motion: reduce) {
+  .beam,
+  .badge,
+  .previewFrame,
+  .previewShade {
+    transition: none;
+  }
+  .previewReady .badgeSet::before,
+  .clockOpen i {
+    animation: none;
   }
 }
 

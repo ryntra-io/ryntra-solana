@@ -95,9 +95,11 @@ export function rewardsView(
     limit?: number;
     /** The claim floor for this wallet (`claimMinimumUsdMicros`); absent — the dollar. */
     minimumUsdMicros?: bigint;
+    /** Friends' shares the referral guard holds back (`readReferralHold`); absent — none. */
+    referralHeldUsdMicros?: bigint;
   }>,
 ): RewardsView {
-  const balance = rewardBalance({ entries: args.entries, reserve: args.reserve, heldUsdMicros: args.heldUsdMicros, locale: args.locale, minimumUsdMicros: args.minimumUsdMicros });
+  const balance = rewardBalance({ entries: args.entries, reserve: args.reserve, heldUsdMicros: args.heldUsdMicros, locale: args.locale, minimumUsdMicros: args.minimumUsdMicros, referralHeldUsdMicros: args.referralHeldUsdMicros });
   const rows: RewardRow[] = [];
   /* A cancelled «First $10 back» took its rest back: those rows are no longer the wallet's to list — unless an appeal
      won and gave them back. */

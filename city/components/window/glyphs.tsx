@@ -50,3 +50,18 @@ export const BackGlyph = () => (
     <path d="M14 12H3M6 9l-3 3 3 3" />
   </svg>
 );
+
+/** Minimise: the window drops to a bar at the bottom — the tray over the Deck. */
+export const FoldGlyph = () => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="square" aria-hidden="true">
+    <path d="M6 18h12" />
+  </svg>
+);
+
+/** The layouts: the two bays with the city between them. */
+export const BaysGlyph = () => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinejoin="round" aria-hidden="true">
+    <path d="M3 4h5v16H3zM16 4h5v16h-5z" />
+    <path d="M11 15v5M13.5 11v9" strokeLinecap="square" />
+  </svg>
+);

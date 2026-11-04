@@ -3,15 +3,18 @@
 import { useFrame, useThree } from '@react-three/fiber';
 import { useEffect, useMemo } from 'react';
 import * as THREE from 'three';
+import { crewStore } from '@/city/lib/quarter/crew-store';
 import { arrivalStreets, arrivalsStore, useArrivals } from '@/city/lib/quarter/district';
 import { KitWorld } from '@/city/lib/quarter/kit';
 import { lotOf } from '@/city/lib/quarter/plot';
 import { quarterStore, useQuarter } from '@/city/lib/quarter/store';
 import type { Cell } from '@/city/lib/quarter/types';
+import { GarageAgent } from '../agent/garage/GarageAgent';
 import { AFAR } from './afar';
 import { Arrivals } from './Arrivals';
 import { FreeLayout } from './kit/free/FreeLayout';
 import { AwayCamera } from './AwayCamera';
+import { CrewBuildings, CrewStreets } from './CrewStreets';
 import { MyQuarter } from './MyQuarter';
 import { QuarterCamera } from './QuarterCamera';
 import { QuarterMoment } from './QuarterMoment';
@@ -22,7 +25,7 @@ const REREAD_MS = 5 * 60_000;
 
 /**
  * The living world inside the city's canvas: the newcomers' terrace with only the streets that live, the neighbours'
- * quarters and this visitor's own on it under one kit, its camera, the camera of «While you were away», and the subject
+ * quarters and this visitor's own on it under one kit, the crews' streets with their headquarters, its camera, the camera of «While you were away», and the subject
  * of a trade's moment filmed there.
  */
 export function QuarterScene() {
@@ -36,7 +39,9 @@ export function QuarterScene() {
   // The district, read once the city is on screen and again rarely, and when the tab comes back after a while.
   useEffect(() => {
     const again = () => {
-      if (document.visibilityState === 'visible') void arrivalsStore.getState().read();
+      if (document.visibilityState !== 'visible') return;
+      void arrivalsStore.getState().read();
+      void crewStore.getState().readStreets();
     };
     again();
     const timer = setInterval(again, REREAD_MS);
@@ -66,10 +71,13 @@ export function QuarterScene() {
       <TerraceLamps occupied={streets.occupied} />
       <KitWorld afar={AFAR}>
         <Neighbours quarters={others} />
+        <CrewBuildings />
         {lot && <MyQuarter lot={lot} />}
         {lot && <FreeLayout lot={lot} />}
       </KitWorld>
+      <CrewStreets />
       {lot && <MyMark lot={lot} />}
+      {lot && <GarageAgent lot={lot} />}
       <NeighbourHover quarters={others} streets={streets.count} mine={myId} />
       <QuarterCamera lot={lot} />
       <AwayCamera />

@@ -1,5 +1,5 @@
-/* «Мій причал» (L4 · CITY-141): the launch's head on a frame of our own docks with the one figure on it and the day
-   ring, three quiet stream tiles, two cards on frames of the live city, and the one amber action in a pinned dock. The
+/* «Моя вежа» (CITY-141, CITY-168): the launch's head on a frame of our own docks with the one figure on it and the day
+   ring, the coin's price and holders, two cards on frames of the live city, and the one amber action in a pinned dock. The
    glass, the head and the moving are the city's window frame (CITY-65) — a window on a computer, the bottom sheet on a
    phone. Mint is value only; amber is the one action; red only for a real problem. Tokens: city/styles/city.module.css. */
 
@@ -194,6 +194,30 @@
   height: 100%;
 }
 
+.face {
+  position: relative;
+  display: block;
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  overflow: hidden;
+}
+
+.face > span {
+  width: 100%;
+  height: 100%;
+}
+
+.face img {
+  position: absolute;
+  z-index: 2;
+  inset: 0;
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
 .coinWords {
   min-width: 0;
   display: grid;
@@ -204,6 +228,9 @@
 .coinWords b {
   font-size: var(--type-title);
   color: var(--ice);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .coinWords span {
@@ -247,6 +274,126 @@
   font-variant-numeric: tabular-nums;
   color: var(--mint);
   text-shadow: 0 0 28px rgba(20, 241, 149, 0.35), 0 2px 18px rgba(6, 5, 12, 0.9);
+  white-space: nowrap;
+}
+
+/* ---------- The tower's own window, one tap from the head ---------- */
+
+.toTower {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  margin-left: auto;
+  border: 0;
+  padding: 0;
+  color: var(--ice);
+  background: rgba(11, 10, 20, 0.62);
+  box-shadow: inset 0 0 0 1px rgba(238, 241, 255, 0.22);
+  clip-path: polygon(9px 0, 100% 0, 100% calc(100% - 9px), calc(100% - 9px) 100%, 0 100%, 0 9px);
+  cursor: pointer;
+}
+
+.tag + .toTower {
+  margin-left: 0;
+}
+
+.toTower svg {
+  width: 20px;
+  height: 20px;
+}
+
+/* ---------- The coin as the market reads it ---------- */
+
+.figures {
+  display: grid;
+  grid-template-columns: minmax(0, 1.7fr) minmax(0, 1fr);
+  gap: 6px;
+  padding: 0;
+}
+
+.figure {
+  min-width: 0;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: baseline;
+  gap: 4px 8px;
+  padding: 12px;
+  background: rgba(255, 255, 255, 0.045);
+  box-shadow: inset 0 0 0 1px rgba(238, 241, 255, 0.08);
+  clip-path: polygon(10px 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%, 0 10px);
+}
+
+.figureLabel {
+  font-size: var(--type-caption);
+  letter-spacing: 0.14em;
+  color: var(--warm);
+}
+
+.figureValue {
+  grid-column: 1 / -1;
+  min-width: 0;
+  font-size: var(--type-title);
+  line-height: 1.1;
+  font-variant-numeric: tabular-nums;
+  color: var(--ice);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* A price with many zeros stays whole: smaller, never cut. */
+.figureLong {
+  font-size: var(--type-base);
+  line-height: 1.45;
+}
+
+.moveUp,
+.moveDown {
+  grid-row: 1;
+  grid-column: 2;
+  font-size: var(--type-small);
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.moveUp {
+  color: var(--mint);
+}
+
+.moveDown {
+  color: var(--text-dim);
+}
+
+.way {
+  grid-column: 1 / -1;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 10px;
+  padding: 2px 2px 0;
+}
+
+.wayBar {
+  height: 4px;
+  background: rgba(238, 241, 255, 0.1);
+  overflow: hidden;
+}
+
+.wayBar > span {
+  display: block;
+  height: 100%;
+  background: linear-gradient(90deg, var(--amber), var(--warm));
+  box-shadow: 0 0 10px rgba(255, 178, 63, 0.55);
+  transition: width 600ms ease-out;
+}
+
+.wayWords {
+  font-size: var(--type-caption);
+  font-weight: 700;
+  color: var(--text-dim);
   white-space: nowrap;
 }
 
@@ -420,6 +567,7 @@
 /* ---------- The two cards ---------- */
 
 .cards {
+  position: relative;
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 8px;
@@ -431,18 +579,87 @@
   display: flex;
   flex-direction: column;
   justify-content: space-between;
+  width: 100%;
+  margin: 0;
   padding: 10px 12px;
+  border: 0;
+  font: inherit;
+  text-align: left;
   color: var(--ice);
   text-decoration: none;
   background: var(--ink) center / cover no-repeat;
   box-shadow: inset 0 0 0 1px rgba(238, 241, 255, 0.12);
   clip-path: polygon(12px 0, 100% 0, 100% calc(100% - 12px), calc(100% - 12px) 100%, 0 100%, 0 12px);
   overflow: hidden;
-  transition: transform 160ms ease-out;
+  transition: transform 160ms ease-out, box-shadow 160ms ease-out;
 }
 
-a.card:active {
+button.card {
+  cursor: pointer;
+}
+
+button.card:focus-visible {
+  box-shadow: inset 0 0 0 1px rgba(255, 178, 63, 0.55);
+}
+
+@media (hover: hover) {
+  button.card:hover {
+    box-shadow: inset 0 0 0 1px rgba(255, 178, 63, 0.55);
+  }
+}
+
+button.card:active {
   transform: scale(0.98);
+}
+
+/* The card is being drawn: its frame breathes until the share sheet opens. */
+.cardMaking {
+  animation: settle 700ms ease-in-out infinite alternate;
+}
+
+.cardTop {
+  position: relative;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.cardShare {
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  flex: none;
+  color: var(--ice);
+  background: rgba(11, 10, 20, 0.55);
+  box-shadow: inset 0 0 0 1px rgba(238, 241, 255, 0.22);
+  clip-path: polygon(7px 0, 100% 0, 100% calc(100% - 7px), calc(100% - 7px) 100%, 0 100%, 0 7px);
+}
+
+.cardShare svg {
+  width: 16px;
+  height: 16px;
+}
+
+/* «Card saved»: one line over the foot of the cards after a computer saved one and opened X. */
+.notice {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 1;
+  margin: 0;
+  padding: 10px 12px;
+  font-size: var(--type-small);
+  font-weight: 700;
+  line-height: 1.3;
+  color: var(--warm);
+  background: rgba(11, 10, 20, 0.88);
+  box-shadow: inset 0 0 0 1px rgba(255, 178, 63, 0.45);
+  backdrop-filter: blur(8px);
+  pointer-events: none;
+  animation: open 220ms ease-out both;
 }
 
 .cardShade {
@@ -793,7 +1010,7 @@ a.card:active {
   border-bottom: 1px solid rgba(238, 241, 255, 0.3);
 }
 
-/* ---------- Wide: the cards stand beside the head and the streams, the dock across the foot ---------- */
+/* ---------- Wide: the cards stand beside the head and the figures, the dock across the foot ---------- */
 
 @container window (min-width: 700px) {
   .framed:not(.gated) {
@@ -803,7 +1020,7 @@ a.card:active {
     grid-template-areas:
       'strip strip'
       'head cards'
-      'streams cards'
+      'figures cards'
       'details details'
       'dock dock';
     align-content: start;
@@ -830,8 +1047,8 @@ a.card:active {
       linear-gradient(90deg, rgba(11, 10, 20, 0.6) 0%, transparent 60%);
   }
 
-  .streamsBlock {
-    grid-area: streams;
+  .figures {
+    grid-area: figures;
   }
 
   .cards {
@@ -921,6 +1138,8 @@ a.card:active {
 
 @media (prefers-reduced-motion: reduce) {
   .hero,
+  .cardMaking,
+  .notice,
   .pending,
   .bones span,
   .spinner,

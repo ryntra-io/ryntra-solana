@@ -47,6 +47,61 @@ const clamp = (value: number, low: number, high: number) => Math.min(Math.max(va
 const right = (r: Rect) => r.x + r.width;
 const bottom = (r: Rect) => r.y + r.height;
 
+/**
+ * The bays (CITY-84, helm §4): the workspace's left and right side, where windows stand the workspace's whole height
+ * at the bay's width — the city stays in the middle. A bay holds one frame; more windows there are its tabs.
+ */
+export type Bay = 'left' | 'right';
+export const BAYS: readonly Bay[] = ['left', 'right'];
+/** A bay's narrowest and widest (design A of the helm research: 360–520 px). */
+export const BAY = { min: 360, max: 520 } as const;
+/** Under the bays the city always keeps at least this share of the screen's width (helm §4: «не менше 40 % міста»). */
+export const CITY_SHARE = 0.4;
+/** A window's head: what it is dragged by, and what another window is dropped on to become its tab. */
+export const HEAD = 44;
+/** How near the screen's side the pointer comes, dragging a window, to dock it in that side's bay. */
+export const BAY_REACH = 56;
+
+/** The screen's width, from its workspace. */
+const screenOf = (area: Rect) => area.width + INSET.left + INSET.right;
+
+/**
+ * The bays this screen has: both where two of the narrowest still leave the city its share — from 1200 px — and the
+ * right one alone on a narrower computer screen.
+ */
+export function baysOf(area: Rect): readonly Bay[] {
+  return 2 * BAY.min <= (1 - CITY_SHARE) * screenOf(area) ? BAYS : ['right'];
+}
+
+/** The widest a bay may be here: the bays together never cover more of the screen's width than the city leaves them. */
+export function bayCap(area: Rect): number {
+  const cover = Math.floor(((1 - CITY_SHARE) * screenOf(area)) / baysOf(area).length);
+  return Math.max(0, Math.min(BAY.max, cover, area.width));
+}
+
+/** A bay's width: the one the person gave it, within its narrowest and the cap; the cap when none was given. */
+export function bayWidth(area: Rect, width?: number): number {
+  const cap = bayCap(area);
+  return clamp(Math.round(width ?? cap), Math.min(BAY.min, cap), cap);
+}
+
+/** A bay as a rectangle: the workspace's whole height against its side. */
+export function bayRect(area: Rect, bay: Bay, width?: number): Rect {
+  const w = bayWidth(area, width);
+  return { x: bay === 'left' ? area.x : right(area) - w, y: area.y, width: w, height: area.height };
+}
+
+/**
+ * A window leaving its bay for the pointer: the bay's width, about three quarters of the workspace's height, the
+ * pointer still on the same spot of its head.
+ */
+export function liftRect(rect: Rect, at: Readonly<{ x: number; y: number }>, area: Rect, min: Size = MIN): Rect {
+  const height = clamp(Math.round(area.height * 0.72), Math.min(min.height, area.height), area.height);
+  const width = Math.min(rect.width, area.width);
+  const grab = clamp(at.y - rect.y, 0, HEAD);
+  return fitRect({ x: at.x - (at.x - rect.x), y: at.y - grab, width, height }, area, min);
+}
+
 export function windowed(viewport: Viewport): boolean {
   return viewport.width >= WINDOWED_FROM;
 }

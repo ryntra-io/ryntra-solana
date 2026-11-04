@@ -55,6 +55,7 @@ import { ed25519Valid } from "../solana/limits/trigger-tx.ts";
 import { ensureRewardAccount } from "../rewards/ledger.ts";
 import { NEXT_TRANSACTION_MARGIN_MS, readBuildWindows, web3ChainReader } from "../solana/blockhash-life.ts";
 import { composeAtomicCreation, readSignedV1, V1Creation, type AtomicCreation } from "./atomic-lock.server.ts";
+import { signTransaction, type LaunchSigner } from "./signer/signer.server.ts";
 import { LAUNCHES_PER_CREATOR_PER_DAY, LAUNCHES_PER_HOUR, POOL_PAYER_FLOOR_LAMPORTS, launchPair, launchWritesHere, type LaunchNetwork } from "./config.server.ts";
 import { advancedConfigFor, markAdvancedConfigUsed, returnAdvancedConfig, takeAdvancedConfig } from "./advanced.server.ts";
 import { checkLaunchForm } from "./form.ts";
@@ -77,7 +78,8 @@ export type LaunchDeps = Readonly<{
   network: LaunchNetwork;
   connection: Connection;
   store: GuardStore;
-  poolPayer: Keypair;
+  /** Ryntra's pool payer: a signer that signs a launch's creation and nothing else; its key in the environment or in KMS (CITY-162). */
+  poolPayer: LaunchSigner;
   /**
    * Whether a wallet is one of Ryntra's own — the demo market, Ryntra's technical validation, takes a launch from no one
    * else. Absent or failing: no wallet is, and the demo market is refused.
@@ -605,6 +607,15 @@ export async function bindLaunchPartner(
   clearTimeout(timer);
 }
 
+/** The pool payer's signature on the creation, legacy or v1, made by its signer and written into its slot. */
+async function payerSigns(payer: LaunchSigner, creation: Transaction | V1Creation): Promise<void> {
+  if (creation instanceof V1Creation) {
+    creation.addSignature(payer.address, await payer.signMessage(creation.messageBytes()));
+    return;
+  }
+  await signTransaction(payer, creation);
+}
+
 /** MC-1: the creation and the lock as one v1 transaction (`atomic-lock.server.ts`); a refusal builds nothing. */
 async function atomicCreation(deps: LaunchDeps, input: Readonly<{ creation: Transaction; lock: Transaction; creator: string; validUntil: number }>): Promise<AtomicCreation | LaunchFailure> {
   const composed = await composeAtomicCreation(deps.connection, { ...input, payer: deps.poolPayer.publicKey }).catch((error: unknown) => ({ ok: false as const, reason: error instanceof Error ? error.message : "The launch could not be built." }));
@@ -980,7 +991,18 @@ export async function submitLaunch(
     return fail("BUILD_USED", "A launch was already sent on this config; make another.");
   }
 
-  creation.partialSign(deps.poolPayer);
+  /* The pool payer signs last, through its signer (CITY-162): these bytes as built, or nothing — a refusal, or a key that
+     did not answer, sends nothing, and what was held for this send is let go as after a refusal before the chain. */
+  const unsigned = await payerSigns(deps.poolPayer, creation).then(
+    () => false,
+    () => true,
+  );
+  if (unsigned) {
+    if (build.preset === "advanced") await returnAdvancedConfig(deps, build.config).catch(() => undefined);
+    if (heldCrew && build.crew) await releaseCrew(deps.store, build.cluster, build.crew, build.token);
+    await deps.store.collection<LaunchAttempt>("launchAttempts").delete(creatorKey(build.cluster, build.creator, build.id));
+    return fail("SUBMIT_FAILED", "Ryntra's pool payer did not sign the launch; nothing was sent.");
+  }
   const signature = getBase58Decoder().decode(new Uint8Array(creation.signatures[0]?.signature ?? new Uint8Array()));
   /* In one v1 transaction the lock is the creation's: it lands with it, under its signature. */
   const lockInCreation = (state: "LOCKED" | "PENDING"): LaunchRecord["lock"] => (build.lock?.inCreation ? { schedule: build.lock.schedule, escrow: build.lock.escrow, signature, state, reason: null } : null);

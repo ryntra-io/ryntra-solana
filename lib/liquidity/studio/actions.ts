@@ -33,7 +33,8 @@ import {
   type UnsignedLiquidityTx,
 } from "./contract.ts";
 import { admitLiquidityAction, depositUsd, type Env, type GatedAction } from "./gate.ts";
-import { builtCallsOnly, checkSigned, issueTicket, messageDigest, openCosigners, readTicket, sealCosigners, ticketKeyConfigured, TICKET_TTL_MS, withoutSignaturesOf, type Cosigner } from "./ticket.ts";
+import { LIMIT_SIDES, type BuiltLimit, type CancelLimitRequest, type LimitBins, type LimitPreview, type LimitSide, type LimitVenue, type PlaceLimitRequest, type RollLimitRequest } from "./limit-orders.ts";
+import { builtCallsOnly, checkSigned, issueTicket, messageDigest, openCosigners, readTicket, sealCosigners, ticketKeyConfigured, TICKET_TTL_MS, withoutSignaturesOf, type Cosigner, type TicketAction } from "./ticket.ts";
 
 export type ActionFailure = Readonly<{ ok: false; status: number; code: string; reason: string }>;
 
@@ -101,6 +102,8 @@ export type ActionDeps = Readonly<{
   pollMs?: number;
   /** The chain reads that measure the bytes' life; the answering endpoint by default. */
   chainReader?: (connection: Connection) => ChainReader;
+  /** DLMM's limit orders on an endpoint (`limit-orders.ts`); without it no limit order is built. */
+  limitVenueFor?: (connection: Connection) => LimitVenue;
 }>;
 
 const failure = (status: number, code: string, reason: string): ActionFailure => ({ ok: false, status, code, reason });
@@ -183,7 +186,7 @@ async function onFirstAnswering<T>(connections: readonly Connection[], run: (con
   throw last;
 }
 
-const REFUSAL_STATUS: Readonly<Record<string, number>> = { POOL_NOT_FOUND: 404, POSITION_NOT_FOUND: 404, NOT_OWNER: 403, PREVIEW_EXPIRED: 409 };
+const REFUSAL_STATUS: Readonly<Record<string, number>> = { POOL_NOT_FOUND: 404, POSITION_NOT_FOUND: 404, ORDER_NOT_FOUND: 404, NOT_OWNER: 403, PREVIEW_EXPIRED: 409 };
 
 /** What the network takes for one transaction: five thousand lamports a signature, plus units × the price the build set. */
 export function networkFeeOf(wireBase64: string): bigint {
@@ -215,7 +218,6 @@ export async function reviewLiquidityAction(body: unknown, deps: ActionDeps): Pr
   if (!admitted.ok) return failure(403, "ACTIONS_CLOSED", "Pool actions are not open for this wallet yet.");
   if (!ticketKeyConfigured(env)) return failure(503, "ACTIONS_UNAVAILABLE", "The server cannot seal a Review now.");
   const { connections, venuesFor } = deps;
-  const now = deps.now ?? Date.now;
 
   let built: BuiltLiquidity;
   let connection: Connection;
@@ -254,8 +256,132 @@ export async function reviewLiquidityAction(body: unknown, deps: ActionDeps): Pr
     return failure(503, "UNAVAILABLE", "Solana did not answer. Nothing was built.");
   }
 
+  const sealed = await sealBuilt({ owner, venue: input.venue, action: input.action, pool: built.preview.pool, position: built.position, transactions: built.transactions, validUntil: built.validUntil }, connection, venuesFor(connection)[input.venue].program, deps);
+  if (!sealed.ok) return sealed;
+  const { transactions, ticket, expiresAt, signableMs, networkFeeLamports } = sealed.value;
+  return { ok: true, value: { preview: built.preview, transactions, position: built.position, ticket, expiresAt, signableMs, networkFeeLamports, depositUsd: usd } };
+}
+
+/* ------------------------------------------------------------ limit orders */
+
+export type LimitReviewInput =
+  | Readonly<{ action: "limit_place"; venue: "meteora-dlmm"; request: PlaceLimitRequest }>
+  | Readonly<{ action: "limit_cancel"; venue: "meteora-dlmm"; request: CancelLimitRequest }>
+  | Readonly<{ action: "limit_roll"; venue: "meteora-dlmm"; request: RollLimitRequest }>;
+
+/** A limit order's Review: the same seal as a pool action's, with the order's own preview. */
+export type LimitReview = Readonly<{
+  preview: LimitPreview;
+  transactions: readonly UnsignedLiquidityTx[];
+  /** The order acted on — for a place or a roll, the new order's account. */
+  position: string;
+  ticket: string;
+  expiresAt: number;
+  signableMs: number;
+  networkFeeLamports: string;
+  /** What goes into a new order at the venue's token prices; null when not priced or nothing goes in. */
+  depositUsd: number | null;
+}>;
+
+const isLimitBins = (value: unknown): value is LimitBins => {
+  if (!value || typeof value !== "object") return false;
+  const b = value as Record<string, unknown>;
+  return isBin(b.lower) && isBin(b.upper);
+};
+
+/** The browser's body for a limit order, field by field; anything else is refused before the chain is asked. */
+export function parseLimitInput(body: unknown): LimitReviewInput | null {
+  if (!body || typeof body !== "object") return null;
+  const { action, venue, request } = body as Record<string, unknown>;
+  if (venue !== "meteora-dlmm" || !request || typeof request !== "object") return null;
+  const r = request as Record<string, unknown>;
+  if (!isKey(r.owner)) return null;
+  if (action === "limit_place") {
+    if (!isKey(r.pool) || !isUnits(r.amount) || !(typeof r.side === "string" && (LIMIT_SIDES as readonly string[]).includes(r.side)) || !isLimitBins(r.bins)) return null;
+    return { action, venue, request: { pool: r.pool, owner: r.owner, side: r.side as LimitSide, amount: r.amount, bins: { lower: r.bins.lower, upper: r.bins.upper } } };
+  }
+  if (action === "limit_cancel") {
+    if (!isKey(r.order)) return null;
+    return { action, venue, request: { order: r.order, owner: r.owner } };
+  }
+  if (action === "limit_roll") {
+    if (!isKey(r.order) || !isLimitBins(r.bins)) return null;
+    return { action, venue, request: { order: r.order, owner: r.owner, bins: { lower: r.bins.lower, upper: r.bins.upper } } };
+  }
+  return null;
+}
+
+/**
+ * Review a limit order — place, cancel, or roll a filled one into the other side — exactly as a pool action: the same
+ * gate (and the canary's ceiling on what goes in), a build made afresh on the chain, the same checks of every call and
+ * signer, the first transaction simulated, the same sealed ticket for the relay. Nothing is signed or sent here.
+ */
+export async function reviewLimitAction(body: unknown, deps: ActionDeps): Promise<Readonly<{ ok: true; value: LimitReview }> | ActionFailure> {
+  const env = deps.env;
+  const input = parseLimitInput(body);
+  if (!input) return failure(400, "BAD_REQUEST", "The action is not one this route builds.");
+  const owner = input.request.owner;
+  const admitted = admitLiquidityAction(owner, env);
+  if (!admitted.ok) return failure(403, "ACTIONS_CLOSED", "Pool actions are not open for this wallet yet.");
+  if (!ticketKeyConfigured(env)) return failure(503, "ACTIONS_UNAVAILABLE", "The server cannot seal a Review now.");
+  const limitVenueFor = deps.limitVenueFor;
+  if (!limitVenueFor) return failure(503, "ACTIONS_UNAVAILABLE", "Limit orders are not wired on this server.");
+
+  let built: BuiltLimit;
+  let connection: Connection;
+  let usd: number | null = null;
+  try {
+    const answer = await onFirstAnswering(deps.connections, async (candidate) => {
+      const venue = limitVenueFor(candidate);
+      const preview = input.action === "limit_place" ? await venue.previewPlace(input.request) : input.action === "limit_roll" ? await venue.previewRoll(input.request) : await venue.previewCancel(input.request);
+      if (preview.action !== "limit_cancel") {
+        const deposit = preview.place.deposit;
+        const prices = await deps.pricesOf("meteora-dlmm", preview.pool);
+        const price = prices.xMint === deposit.asset ? prices.x : prices.yMint === deposit.asset ? prices.y : null;
+        const zero = { units: "0", decimals: 0 };
+        usd = depositUsd({ x: deposit, y: zero }, { x: price, y: null });
+        if (admitted.maxDepositUsd !== null) {
+          if (usd === null) throw new CanaryRefusal("CANARY_UNPRICED", "The order has no dollar price to hold it to the check's ceiling.");
+          if (usd > admitted.maxDepositUsd) throw new CanaryRefusal("CANARY_LIMIT", `The check takes at most ${admitted.maxDepositUsd} USD.`);
+        }
+      }
+      if (preview.action === "limit_place") return venue.buildPlace(preview);
+      if (preview.action === "limit_roll") return venue.buildRoll(preview);
+      return venue.buildCancel(preview);
+    });
+    built = answer.value;
+    connection = answer.connection;
+  } catch (error) {
+    if (error instanceof CanaryRefusal) return failure(403, error.code, error.message);
+    if (error instanceof LiquidityRefusal) return failure(REFUSAL_STATUS[error.code] ?? 422, error.code, error.message);
+    console.warn(`liquidity review: ${input.venue} ${input.action} — ${redacted(error)}`);
+    return failure(503, "UNAVAILABLE", "Solana did not answer. Nothing was built.");
+  }
+
+  const sealed = await sealBuilt({ owner, venue: input.venue, action: input.action, pool: built.preview.pool, position: built.order, transactions: built.transactions, validUntil: built.validUntil }, connection, limitVenueFor(connection).program, deps);
+  if (!sealed.ok) return sealed;
+  const { transactions, ticket, expiresAt, signableMs, networkFeeLamports } = sealed.value;
+  return { ok: true, value: { preview: built.preview, transactions, position: built.order, ticket, expiresAt, signableMs, networkFeeLamports, depositUsd: usd } };
+}
+
+type Sealed = Readonly<{ transactions: readonly UnsignedLiquidityTx[]; ticket: string; expiresAt: number; signableMs: number; networkFeeLamports: string }>;
+
+/**
+ * A build's bytes made ready for the wallet and sealed: the fresh keys' signatures taken off and kept for the relay,
+ * every signer one the relay holds, every call the venue's or the wallet's own plumbing, the first transaction run
+ * against the chain, and a ticket that dies with the bytes' blockhash. Shared by the pool actions and the limit orders.
+ */
+async function sealBuilt(
+  built: Readonly<{ owner: string; venue: LiquidityVenueId; action: TicketAction; pool: string; position: string; transactions: readonly UnsignedLiquidityTx[]; validUntil: string }>,
+  connection: Connection,
+  venueProgram: string,
+  deps: ActionDeps,
+): Promise<Readonly<{ ok: true; value: Sealed }> | ActionFailure> {
+  const env = deps.env;
+  const now = deps.now ?? Date.now;
+  const owner = built.owner;
+  const input = { venue: built.venue, action: built.action };
   if (built.transactions.length === 0 || built.transactions.length > 16) return failure(500, "BUILD_REFUSED", "The build gave no transaction, or too many.");
-  const venueProgram = venuesFor(connection)[input.venue].program;
   const digests: string[] = [];
   let fee = 0n;
   /*
@@ -321,10 +447,10 @@ export async function reviewLiquidityAction(body: unknown, deps: ActionDeps): Pr
   const signableMs = Math.min(signableWindowMs(life), Math.max(0, ttlMs - BLOCKHASH_SUBMIT_MARGIN_MS));
   const cosign = sealCosigners(cosigners, env);
   const issuedAt = now();
-  const ticket = issueTicket({ owner, venue: input.venue, action: input.action, pool: built.preview.pool, position: built.position, messages: digests, cosign }, env, issuedAt, ttlMs);
+  const ticket = issueTicket({ owner, venue: built.venue, action: built.action, pool: built.pool, position: built.position, messages: digests, cosign }, env, issuedAt, ttlMs);
   if (!ticket) return failure(503, "ACTIONS_UNAVAILABLE", "The server cannot seal a Review now.");
   const expiresAt = issuedAt + signableMs;
-  return { ok: true, value: { preview: built.preview, transactions, position: built.position, ticket, expiresAt, signableMs, networkFeeLamports: fee.toString(), depositUsd: usd } };
+  return { ok: true, value: { transactions, ticket, expiresAt, signableMs, networkFeeLamports: fee.toString() } };
 }
 
 /** An error for the server's log: no address of an endpoint, which may carry its key. */
@@ -427,4 +553,4 @@ export async function submitLiquidityAction(body: unknown, deps: ActionDeps): Pr
   return { ok: true, value: { results, settled: results.every((r) => r.state === "LANDED") } };
 }
 
-export type { GatedAction };
+export type { GatedAction, TicketAction };

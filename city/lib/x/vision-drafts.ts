@@ -118,8 +118,8 @@ export const VISION_THREAD: VisionDraft = {
       { media: { kind: 'shot', shot: 'search' }, live: [{ state: STATE_LINK_SEARCH }] },
     ),
     post(
-      'Live now: your own quarter.\n\nClaim your spot. Your wallet signs one message: no transaction, nothing moves. Your quarter is kept under that wallet. The camera flies to your plot; tap a glowing plot and your Home goes up.',
-      { media: { kind: 'shot', shot: 'quarter' }, live: [...reg('CITY-15', 'CITY-14'), { state: STATE_SIGNED_BUILD }] },
+      'Live now: your own quarter.\n\nClaim your spot. Your wallet signs one message: no transaction, nothing moves. Your quarter is kept under that wallet. The camera flies to your plot; tap a glowing plot and your Home goes up. Daily tasks cost nothing.',
+      { media: { kind: 'shot', shot: 'quarter' }, live: [...reg('CITY-15', 'CITY-14', 'CITY-19'), { state: STATE_SIGNED_BUILD }] },
     ),
     post(
       'Live now: moment clips.\n\nWhen a new pool rises in the Launch Docks, the city keeps the moment and films a 9:16 clip with the real figure and the time it was read. After your own trade it films a 4:5 clip of your tower in your colour.',
@@ -138,12 +138,12 @@ export const VISION_THREAD: VisionDraft = {
       { building: ['CITY-5b', 'CITY-5d'] },
     ),
     post(
-      'Building: agents and the Oracle.\n\nA scout agent flies the city by your rule and brings a find back to you. Nothing is bought until you sign it. The Oracle puts prediction markets above the city as a board, on paper first.',
-      { building: ['CITY-4', 'CITY-5c'] },
+      'Building: agents.\n\nA scout agent flies the city by your rule and brings a find back to you. Nothing is bought until you sign it.',
+      { building: ['CITY-4'] },
     ),
     post(
-      'Building: the quarter comes alive.\n\nA 20-second "while you were away". Daily tasks that cost nothing. Crew streets you build together. A weekly district war counted in actions, not purchases. Seasons that move active quarters closer to the centre.',
-      { building: ['CITY-18', 'CITY-19', 'CITY-20', 'CITY-21', 'CITY-22'] },
+      'Building: the quarter comes alive.\n\nA 20-second "while you were away". Crew streets you build together. A weekly district war counted in actions, not purchases. Seasons that move active quarters closer to the centre.',
+      { building: ['CITY-18', 'CITY-20', 'CITY-21', 'CITY-22'] },
     ),
     post(
       'Building: your towers, and the phone.\n\nYour coins glow as your own towers, with what grew and a one-tap sell. A live chart inside each tower. And the same city in the Ryntra app on Seeker, signed with the phone’s wallet.',
@@ -228,8 +228,8 @@ export const FEATURE_POSTS: readonly VisionDraft[] = [
       { live: reg('CITY-14', 'CITY-15') },
     ),
     post(
-      `Coming to the quarter next: daily tasks that cost nothing and crew streets you build together.\n\nClaim your spot:\n\n${HOME}`,
-      { live: reg('CITY-15'), building: ['CITY-19', 'CITY-20'] },
+      `Already in your quarter: daily tasks that cost nothing. Coming next: crew streets you build together.\n\nClaim your spot:\n\n${HOME}`,
+      { live: reg('CITY-15', 'CITY-19'), building: ['CITY-20'] },
     ),
   ]),
   feature('moment-clip', 'Moment clips', [

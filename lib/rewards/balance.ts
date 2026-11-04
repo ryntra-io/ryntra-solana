@@ -115,6 +115,12 @@ export function rewardBalance(
      * wallet holds a USDC account is never told a lower one.
      */
     minimumUsdMicros?: bigint;
+    /**
+     * Friends' shares the referral guard holds back (Ryntra Partners R3, `readReferralHold`): a pair not clear yet,
+     * or a wallet before its own first real trade. Earned, never available. Absent — none; a payout route always
+     * passes it.
+     */
+    referralHeldUsdMicros?: bigint;
   }>,
 ): RewardBalance {
   const locale = args.locale ?? "en";
@@ -123,7 +129,7 @@ export function rewardBalance(
   const entitled = totals.entitledUsdMicros > 0n ? totals.entitledUsdMicros : 0n;
   /* The rest of «First $10 back» is earned, not yet claimable: it waits for the wallet's check, read from the rows
      themselves, so every reader of a balance holds it back alike. */
-  const check = firstTenHeldUsdMicros(args.entries);
+  const check = firstTenHeldUsdMicros(args.entries) + (args.referralHeldUsdMicros && args.referralHeldUsdMicros > 0n ? args.referralHeldUsdMicros : 0n);
   const owed = entitled > check ? entitled - check : 0n;
   const unheld = args.reserve.usdMicros - args.heldUsdMicros;
   /* Floored: a treasury drained below its outstanding holds offers nobody

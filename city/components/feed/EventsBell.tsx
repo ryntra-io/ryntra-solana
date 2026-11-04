@@ -8,6 +8,7 @@ import { hasNews, useFeedPanel } from '@/city/lib/feed/panel';
 import { useFeed } from '@/city/lib/feed/store';
 import { FEED } from '@/city/lib/feed/words';
 import { useWords } from '@/city/lib/i18n/dict';
+import { useNotify } from '@/city/lib/notify/store';
 import hud from '../hud/hud.module.css';
 import s from './feed.module.css';
 
@@ -31,6 +32,12 @@ export function EventsBell({ hidden = false }: { hidden?: boolean }) {
     if (hidden) useFeedPanel.getState().close();
   }, [hidden]);
   const news = hasNews(seen, newest);
+  // «Event feed: hidden» in Settings (CITY-87): no bell; the feed still reads, for what goes to the computer.
+  const side = useNotify((st) => st.prefs.feed);
+  useEffect(() => {
+    if (side === 'hidden') useFeedPanel.getState().close();
+  }, [side]);
+  if (side === 'hidden') return null;
   return (
     <button
       type="button"

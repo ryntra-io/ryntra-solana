@@ -1,12 +1,14 @@
 import type { CheckState, MissionPhase } from '../../../lib/mission-control/types.ts';
 import type { CitySnapshot, Tower, TowerFigure } from '../market/types.ts';
 import type { Network } from './engine.ts';
+import { crownRings, silhouetteOf, type TowerFlow } from './silhouette.ts';
 
 /**
  * Coins launched on Ryntra as towers of the city. On the curve a launch stands in the Launch Docks; once its curve fills
- * and it moves to its Meteora pool (at $75K on Classic and Protected) it stands in the skyline. Every figure is the
- * engine's read — a figure not read stays null here and zero on the tower, never a guess — and the tower is never
- * marked verified: only Jupiter verifies a coin.
+ * and it moves to its Meteora pool (at $75K on Classic and Protected) it stands in the skyline — when its graduation
+ * passed the city's rule (L7, `silhouette.ts`): enough independent buyers and enough time on the curve; below it, it
+ * stays in the Docks. Every figure is the engine's read — a figure not read stays null here and zero on the tower,
+ * never a guess — and the tower is never marked verified: only Jupiter verifies a coin.
  */
 export type LaunchTower = Readonly<{
   token: string;
@@ -36,6 +38,16 @@ export type LaunchTower = Readonly<{
   network: Network;
   /** Launched from this browser just now: kept until the engine's list carries it. */
   mine: boolean;
+  /** Ryntra took its picture, description and links down (MC-1): the tower stands without them; the chain keeps the coin. */
+  hidden: boolean;
+  /** The flow's facts the silhouette and the crown's rings rest on (L3, L7), as the feed last read them; null — not read. */
+  flow: TowerFlow | null;
+  /** Its flow's first read is on its way and the city has not shown it yet: a graduated tower waits for it (`silhouetteOf`). */
+  awaitingFlow: boolean;
+  /** The creator's first purchase is under the creator's lock, as the engine's list says (CITY-169); absent — not read. */
+  creatorLocked?: boolean;
+  /** The creator sold some of it, as the engine's list says; null — their trades were not read whole; absent — not read. */
+  creatorSold?: boolean | null;
 }>;
 
 /** How many launches stand in the docks and in the skyline at most, so the city's own coins keep their places. */
@@ -69,7 +81,7 @@ export function towerOf(launch: LaunchTower): Tower {
     symbol: launch.symbol,
     name: launch.name,
     icon: null,
-    district: launch.migrated ? 'strip' : 'docks',
+    district: silhouetteOf(launch).stand === 'skyline' ? 'strip' : 'docks',
     price: 0,
     mcap: launch.marketCapUsd ?? 0,
     liquidity: launch.liquidityUsd ?? 0,
@@ -86,14 +98,22 @@ export function towerOf(launch: LaunchTower): Tower {
   };
 }
 
-/** The launches the city shows: this browser's first, then the ones in flight, newest first; a lost signal fades. */
+/** Whether its day-90 ring burns: a landmark of the skyline. */
+const landmark = (launch: LaunchTower) => crownRings(launch.checks, launch.flow?.survival ?? null)[2] === 'alive';
+
+/**
+ * The launches the city shows: this browser's first, then the ones in flight, newest first; a lost signal fades. The
+ * skyline takes only the towers whose graduation passed the city's rule, the day-90 landmarks first; a graduation below
+ * it keeps its place in the Docks, and one whose first read is on its way waits for it.
+ */
 export function shownLaunches(launches: readonly LaunchTower[]): readonly LaunchTower[] {
   const newest = (a: LaunchTower, b: LaunchTower) => Number(b.mine) - Number(a.mine) || (Date.parse(b.launchedAt ?? '') || 0) - (Date.parse(a.launchedAt ?? '') || 0);
   const kept = launches.filter((launch) => launch.mine || launch.phase !== 'lost');
-  const docks = kept.filter((launch) => !launch.migrated).sort(newest).slice(0, DOCKS_MAX);
+  const stands = new Map(kept.map((launch) => [launch.token, silhouetteOf(launch).stand]));
+  const docks = kept.filter((launch) => stands.get(launch.token) === 'docks').sort(newest).slice(0, DOCKS_MAX);
   const skyline = kept
-    .filter((launch) => launch.migrated)
-    .sort((a, b) => Number(b.phase === 'star') - Number(a.phase === 'star') || newest(a, b))
+    .filter((launch) => stands.get(launch.token) === 'skyline')
+    .sort((a, b) => Number(landmark(b)) - Number(landmark(a)) || newest(a, b))
     .slice(0, SKYLINE_MAX);
   return [...docks, ...skyline];
 }
@@ -115,6 +135,6 @@ export function withLaunches(base: CitySnapshot, launches: readonly LaunchTower[
  */
 export function launchesKey(launches: readonly LaunchTower[]): string {
   return shownLaunches(launches)
-    .map((launch) => `${launch.token}:${launch.migrated ? 's' : 'd'}:${Math.round(Math.log10(Math.max(launch.marketCapUsd ?? 1, 1)) * 4)}:${Math.round(Math.log10(Math.max(launch.liquidityUsd ?? 1, 1)) * 4)}`)
+    .map((launch) => `${launch.token}:${silhouetteOf(launch).stand === 'skyline' ? 's' : 'd'}:${Math.round(Math.log10(Math.max(launch.marketCapUsd ?? 1, 1)) * 4)}:${Math.round(Math.log10(Math.max(launch.liquidityUsd ?? 1, 1)) * 4)}`)
     .join('|');
 }

@@ -11,6 +11,7 @@ import { getAgentControlRuntime } from "../../../../lib/agent-control/runtime.ts
 import { createAgentTenancy } from "../../../../lib/agent-control/tenancy.ts";
 import { GET as protectedResourceMetadataRoute } from "../../../.well-known/oauth-protected-resource/api/agents/mcp/route.ts";
 import { GET as authorizationServerMetadataRoute } from "../../../.well-known/oauth-authorization-server/route.ts";
+import { authorizationServerMetadata } from "../../../../lib/agent-control/oauth/metadata.ts";
 import { POST as approveRoute } from "../oauth/authorize/route.ts";
 import { POST as registerRoute } from "../oauth/register/route.ts";
 import { POST as revokeRoute } from "../oauth/revoke/route.ts";
@@ -249,7 +250,13 @@ test("the two discovery documents describe this deployment and only S256", async
   assert.equal(asm.issuer, ORIGIN);
   assert.deepEqual(asm.code_challenge_methods_supported, ["S256"]);
   assert.deepEqual(asm.token_endpoint_auth_methods_supported, ["none"]);
-  assert.equal(asm.registration_endpoint, `${ORIGIN}/api/agents/oauth/register`);
+  /* Since CITY-154 (31.10) the origin's authorization server is the Solana connector's — its consent `/connect`
+     replaced `/agents/connect`, which has led into the city since CITY-13. Agent Control's own OAuth routes keep
+     answering exactly as before, and its own document still names them; where its hosted MCP goes next is the
+     owner's question in the CITY-154 PR. */
+  assert.equal(asm.registration_endpoint, `${ORIGIN}/api/connect/register`);
+  const own = authorizationServerMetadata(new Request(`${ORIGIN}/`, { headers: HEADERS }));
+  assert.equal(own.registration_endpoint, `${ORIGIN}/api/agents/oauth/register`);
 });
 
 /* ── the connected client ──────────────────────────────────────────────── */

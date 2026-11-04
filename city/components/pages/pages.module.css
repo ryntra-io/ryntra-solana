@@ -1,0 +1,998 @@
+/* The city's pages (CITY-157): Docs, Developers, Help, About, the Terms and the Privacy Policy. The same contents stand
+   in a window of the city (the frame of CITY-65: a window on a computer, the bottom sheet on a phone) and as a page of
+   their own at their address (`DocumentPage`). A still of our own city at the head, monumental words on it, dark glass
+   with cut corners below, one amber action. Tokens from city/styles/city.module.css (CITY-11). */
+
+.display {
+  font-family: var(--font-display, system-ui), system-ui, sans-serif;
+  font-stretch: 125%;
+  font-variation-settings: 'wdth' 125;
+  font-weight: 900;
+  letter-spacing: 0.01em;
+  text-transform: uppercase;
+}
+
+/* A language other than English: the words wait for the frame the boot script hides them in (CITY-79). */
+:global(html.city-lang-wait) .body [data-words],
+:global(html.city-lang-wait) .scroller [data-words] {
+  visibility: hidden;
+}
+
+.pending {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(100deg, transparent 30%, rgba(238, 241, 255, 0.05) 50%, transparent 70%) 0 0 / 220% 100%;
+  animation: sweep 1.4s ease-in-out infinite;
+}
+
+@keyframes sweep {
+  to {
+    background-position: -120% 0;
+  }
+}
+
+/* ---------- The scroller ---------- */
+
+.body {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  color: var(--ice);
+}
+
+.body > * {
+  flex: none;
+}
+
+.body[data-where='window'] {
+  position: absolute;
+  inset: 0;
+  padding: 0 16px 20px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+.body[data-where='page'] {
+  width: min(760px, 100%);
+  margin: 0 auto;
+  padding: 0 var(--gutter) 48px;
+  gap: 20px;
+}
+
+/* A page at its address, in the documentation's frame (CITY-180): the frame draws the still; the words stand in its column. */
+.body[data-where='doc'] {
+  width: 100%;
+  max-width: 740px;
+  gap: 20px;
+  scroll-margin-top: 84px;
+}
+
+.docHead {
+  display: grid;
+  justify-items: start;
+  gap: 8px;
+  padding: 0;
+}
+
+.body[data-where='doc'] .title {
+  font-size: clamp(28px, 3.6vw, 42px);
+  line-height: 1.04;
+}
+
+.body[data-where='doc'] .lead {
+  max-width: 60ch;
+}
+
+.body[data-where='doc'] .action {
+  clip-path: polygon(14px 0, 100% 0, 100% calc(100% - 14px), calc(100% - 14px) 100%, 0 100%, 0 14px);
+}
+
+@media (max-width: 420px) {
+  .body[data-where='doc'] .tiles {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ---------- The still and the words on it ---------- */
+
+.hero {
+  position: relative;
+  min-height: 176px;
+  display: flex;
+  align-items: flex-end;
+  overflow: hidden;
+  margin: 0 -16px;
+  /* The site's own pages pad every <section>; a header here is the page's own. */
+  padding: 0;
+}
+
+.body[data-where='page'] .hero {
+  /* The still runs edge to edge; its words stand in the page's column. */
+  margin: 0 calc(50% - 50vw);
+  min-height: clamp(260px, 42vh, 420px);
+  /* The words line up with the column below: its 760 px, less its own gutter. */
+  padding: 0 max(var(--gutter), calc(50vw - 380px + var(--gutter)));
+}
+
+.art {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  animation: settle 700ms ease-out both;
+  -webkit-mask-image: linear-gradient(180deg, #000 35%, transparent 100%);
+  mask-image: linear-gradient(180deg, #000 35%, transparent 100%);
+}
+
+@keyframes settle {
+  from {
+    transform: scale(1.04);
+  }
+}
+
+.heroBody {
+  position: relative;
+  width: 100%;
+  display: grid;
+  justify-items: start;
+  gap: 6px;
+  padding: 0 16px 2px;
+  text-shadow: 0 2px 18px rgba(6, 5, 12, 0.92);
+}
+
+.body[data-where='page'] .heroBody {
+  padding: 0 0 4px;
+}
+
+.kicker {
+  font-size: var(--type-caption);
+  letter-spacing: 0.16em;
+  color: var(--warm);
+}
+
+.title {
+  margin: 0;
+  font-size: var(--type-figure);
+  line-height: 0.98;
+  color: var(--ice);
+  overflow-wrap: anywhere;
+}
+
+.body[data-where='page'] .title {
+  font-size: clamp(36px, 6.4vw, 60px);
+}
+
+.lead {
+  margin: 4px 0 0;
+  max-width: 40ch;
+  font-size: var(--type-lead);
+  font-weight: 600;
+  line-height: 1.35;
+  color: var(--ice);
+}
+
+.effective {
+  font-size: var(--type-small);
+  font-weight: 700;
+  color: var(--warm);
+}
+
+/* ---------- Tiles ---------- */
+
+.tiles {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
+@container window (max-width: 380px) {
+  .tiles {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 420px) {
+  .body[data-where='page'] .tiles {
+    grid-template-columns: 1fr;
+  }
+}
+
+.tile {
+  min-width: 0;
+  display: grid;
+  align-content: start;
+  gap: 6px;
+  padding: 14px 14px 16px;
+  border: 0;
+  text-align: left;
+  text-decoration: none;
+  color: var(--ice);
+  background: linear-gradient(160deg, rgba(42, 22, 64, 0.55), rgba(11, 10, 20, 0.6));
+  box-shadow: inset 0 0 0 1px rgba(153, 69, 255, 0.28), inset 0 1px 14px rgba(153, 69, 255, 0.12);
+  clip-path: polygon(10px 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%, 0 10px);
+}
+
+.tileDoor {
+  cursor: pointer;
+  transition: box-shadow 160ms ease;
+}
+
+.tileDoor:hover,
+.tileDoor:focus-visible {
+  outline: none;
+  box-shadow: inset 0 0 0 1px rgba(255, 178, 63, 0.7), inset 0 1px 14px rgba(153, 69, 255, 0.18);
+}
+
+.tileTitle {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  font-size: var(--type-base);
+  font-weight: 800;
+  line-height: 1.2;
+}
+
+.tileChevron,
+.moreChevron {
+  display: inline-grid;
+  place-items: center;
+  width: 18px;
+  height: 18px;
+  flex: none;
+  color: var(--amber);
+}
+
+.tileChevron svg,
+.moreChevron svg {
+  width: 16px;
+  height: 16px;
+}
+
+.tileLine {
+  font-size: var(--type-body);
+  line-height: 1.4;
+  color: rgba(238, 241, 255, 0.78);
+}
+
+/* ---------- The one amber action ---------- */
+
+.action {
+  width: 100%;
+  min-height: 54px;
+  display: grid;
+  place-items: center;
+  padding: 0 20px;
+  border: 0;
+  font-size: var(--type-action);
+  text-decoration: none;
+  color: var(--ink);
+  background: linear-gradient(100deg, var(--warm), var(--amber));
+  clip-path: polygon(14px 0, 100% 0, 100% calc(100% - 14px), calc(100% - 14px) 100%, 0 100%, 0 14px);
+  white-space: nowrap;
+  cursor: pointer;
+  transition: transform 120ms ease-out, filter 160ms ease;
+}
+
+.action:hover:not(:disabled) {
+  filter: brightness(1.06);
+}
+
+.action:active:not(:disabled) {
+  transform: scale(0.98);
+}
+
+.action:focus-visible {
+  outline: 2px solid var(--ice);
+  outline-offset: 3px;
+}
+
+.action:disabled {
+  cursor: default;
+  background: rgba(255, 255, 255, 0.09);
+  color: rgba(238, 241, 255, 0.5);
+}
+
+.secondary {
+  min-height: 48px;
+  padding: 0 18px;
+  border: 0;
+  font-size: var(--type-body);
+  font-weight: 800;
+  color: var(--ice);
+  background: rgba(255, 255, 255, 0.06);
+  box-shadow: inset 0 0 0 1px rgba(238, 241, 255, 0.16);
+  clip-path: polygon(10px 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%, 0 10px);
+  cursor: pointer;
+}
+
+.quiet {
+  min-height: 40px;
+  padding: 0 14px;
+  border: 0;
+  font-size: var(--type-small);
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  color: var(--ice);
+  background: rgba(255, 255, 255, 0.06);
+  box-shadow: inset 0 0 0 1px rgba(238, 241, 255, 0.14);
+  cursor: pointer;
+}
+
+.quiet[aria-pressed='true'] {
+  box-shadow: inset 0 0 0 1px rgba(255, 178, 63, 0.6);
+}
+
+/* ---------- One quiet disclosure ---------- */
+
+.more {
+  background: rgba(255, 255, 255, 0.035);
+  box-shadow: inset 0 0 0 1px rgba(238, 241, 255, 0.09);
+}
+
+.moreHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-height: 52px;
+  padding: 0 14px;
+  font-size: var(--type-base);
+  font-weight: 800;
+  list-style: none;
+  cursor: pointer;
+  user-select: none;
+}
+
+.moreHead::-webkit-details-marker {
+  display: none;
+}
+
+.moreHead:focus-visible {
+  outline: 2px solid var(--amber);
+  outline-offset: -2px;
+}
+
+.moreChevron {
+  transition: transform 180ms ease;
+}
+
+details[open] > summary .moreChevron {
+  transform: rotate(90deg);
+}
+
+.moreBody {
+  display: grid;
+  gap: 2px;
+  padding: 0 14px 12px;
+  animation: open 180ms ease-out both;
+}
+
+/* What opens never starts invisible: a slow frame (a busy phone, the 3D city behind) must not hide the words. */
+@keyframes open {
+  from {
+    transform: translateY(-4px);
+  }
+}
+
+.moreLine {
+  margin: 0;
+  padding: 6px 0;
+  font-size: var(--type-body);
+  line-height: 1.45;
+  color: rgba(238, 241, 255, 0.82);
+}
+
+.moreRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  width: 100%;
+  min-height: 48px;
+  padding: 0;
+  border: 0;
+  border-top: 1px solid rgba(238, 241, 255, 0.08);
+  background: none;
+  font-size: var(--type-body);
+  font-weight: 700;
+  text-align: left;
+  text-decoration: none;
+  color: var(--ice);
+  cursor: pointer;
+}
+
+.moreRow:hover,
+.moreRow:focus-visible {
+  color: var(--warm);
+  outline: none;
+}
+
+/* A row that only says something (the line of «AI chats» on what the connector never does): no door, no hover. */
+.plainRow,
+.plainRow:hover {
+  margin: 0;
+  cursor: default;
+  color: var(--ice);
+}
+
+.moreRow > svg {
+  width: 14px;
+  height: 14px;
+  flex: none;
+  color: var(--amber);
+}
+
+.moreValue {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--amber);
+}
+
+.rowIcon {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.rowIcon svg {
+  width: 16px;
+  height: 16px;
+}
+
+/* ---------- Developers ---------- */
+
+.steps {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 8px;
+}
+
+.step {
+  display: grid;
+  grid-template-columns: 40px minmax(0, 1fr);
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+  background: linear-gradient(160deg, rgba(42, 22, 64, 0.5), rgba(11, 10, 20, 0.55));
+  box-shadow: inset 0 0 0 1px rgba(153, 69, 255, 0.24);
+  clip-path: polygon(10px 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%, 0 10px);
+}
+
+.stepNo {
+  font-size: var(--type-figure);
+  line-height: 1;
+  color: var(--amber);
+  text-align: center;
+}
+
+.stepText {
+  display: grid;
+  gap: 3px;
+  font-size: var(--type-body);
+  line-height: 1.4;
+  color: rgba(238, 241, 255, 0.78);
+}
+
+.stepText b {
+  font-size: var(--type-base);
+  font-weight: 800;
+  color: var(--ice);
+}
+
+.soon {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-height: 44px;
+  padding: 0 14px;
+  font-size: var(--type-body);
+  font-weight: 700;
+  color: rgba(238, 241, 255, 0.82);
+  box-shadow: inset 0 0 0 1px rgba(238, 241, 255, 0.09);
+}
+
+.soonTag {
+  padding: 3px 10px;
+  font-size: var(--type-micro);
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--ink);
+  background: var(--warm);
+}
+
+.code {
+  margin: 0;
+  display: grid;
+}
+
+.codeRow {
+  display: grid;
+  gap: 4px;
+  padding: 10px 0;
+  border-top: 1px solid rgba(238, 241, 255, 0.08);
+}
+
+.codeRow:first-child {
+  border-top: 0;
+}
+
+.codeRow dt {
+  font-size: var(--type-small);
+  font-weight: 700;
+  color: rgba(238, 241, 255, 0.72);
+}
+
+.codeRow dd {
+  margin: 0;
+}
+
+.codeRow code {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: var(--type-small);
+  color: var(--warm);
+  overflow-wrap: anywhere;
+  user-select: all;
+}
+
+/* ---------- Docs ---------- */
+
+.docsGroup {
+  padding: 12px 0 6px;
+}
+
+/* ---------- About ---------- */
+
+.contacts {
+  display: grid;
+  gap: 2px;
+}
+
+.contacts > .kicker {
+  padding-bottom: 6px;
+}
+
+/* ---------- Help ---------- */
+
+.form {
+  display: grid;
+  gap: 10px;
+}
+
+.topics {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 2px;
+  padding: 3px;
+  background: rgba(238, 241, 255, 0.06);
+}
+
+@container window (max-width: 380px) {
+  .topics {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+.topicBtn {
+  min-height: 44px;
+  padding: 0 6px;
+  border: 0;
+  font-size: var(--type-body);
+  font-weight: 800;
+  color: rgba(238, 241, 255, 0.72);
+  background: none;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  cursor: pointer;
+  transition: color 160ms ease, background-color 160ms ease;
+}
+
+.topicBtn:hover,
+.topicBtn:focus-visible {
+  color: var(--ice);
+  outline: none;
+}
+
+.topicBtn[aria-checked='true'] {
+  color: var(--ink);
+  background: var(--ice);
+}
+
+.field {
+  width: 100%;
+  min-height: 48px;
+  padding: 12px 14px;
+  border: 0;
+  font: inherit;
+  font-size: var(--type-base);
+  line-height: 1.45;
+  color: var(--ice);
+  background: rgba(11, 10, 20, 0.6);
+  box-shadow: inset 0 0 0 1px rgba(153, 69, 255, 0.32);
+  resize: vertical;
+}
+
+.field::placeholder {
+  color: rgba(238, 241, 255, 0.5);
+}
+
+.field:focus {
+  outline: none;
+  box-shadow: inset 0 0 0 2px rgba(255, 178, 63, 0.75);
+}
+
+textarea.field {
+  min-height: 132px;
+}
+
+.hiddenLabel {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+.alert {
+  margin: 0;
+  font-size: var(--type-body);
+  font-weight: 700;
+  color: var(--flare);
+}
+
+.done {
+  display: grid;
+  justify-items: start;
+  gap: 8px;
+  padding: 18px 16px;
+  background: linear-gradient(160deg, rgba(42, 22, 64, 0.55), rgba(11, 10, 20, 0.6));
+  box-shadow: inset 0 0 0 1px rgba(20, 241, 149, 0.4);
+  clip-path: polygon(12px 0, 100% 0, 100% calc(100% - 12px), calc(100% - 12px) 100%, 0 100%, 0 12px);
+}
+
+.doneMark {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--mint);
+  box-shadow: 0 0 12px var(--mint);
+}
+
+.doneTitle {
+  font-size: var(--type-headline);
+  line-height: 1;
+}
+
+.doneRef {
+  font-size: var(--type-base);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: var(--warm);
+  user-select: all;
+}
+
+/* ---------- The legal documents ---------- */
+
+.legal {
+  display: grid;
+  gap: 12px;
+  font-size: var(--type-base);
+  line-height: 1.6;
+  color: rgba(238, 241, 255, 0.88);
+}
+
+.legal p {
+  margin: 0;
+}
+
+.legal ul {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 10px;
+}
+
+.legal li {
+  position: relative;
+  padding-left: 18px;
+}
+
+.legal li::before {
+  content: '';
+  position: absolute;
+  left: 2px;
+  top: 0.65em;
+  width: 6px;
+  height: 6px;
+  background: var(--amber);
+}
+
+.legal a {
+  color: var(--warm);
+  text-decoration: underline;
+  text-decoration-color: rgba(255, 178, 63, 0.45);
+  text-underline-offset: 3px;
+}
+
+.legal strong {
+  font-weight: 800;
+  color: var(--ice);
+}
+
+.legalBar {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.sections {
+  display: grid;
+  gap: 2px;
+}
+
+.section {
+  background: rgba(255, 255, 255, 0.035);
+  box-shadow: inset 0 0 0 1px rgba(238, 241, 255, 0.08);
+  scroll-margin-top: 76px;
+}
+
+.section[open] {
+  background: rgba(42, 22, 64, 0.32);
+  box-shadow: inset 0 0 0 1px rgba(153, 69, 255, 0.3);
+}
+
+.sectionHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-height: 54px;
+  padding: 8px 14px;
+  list-style: none;
+  cursor: pointer;
+  user-select: none;
+}
+
+.sectionHead::-webkit-details-marker {
+  display: none;
+}
+
+.sectionHead:focus-visible {
+  outline: 2px solid var(--amber);
+  outline-offset: -2px;
+}
+
+.sectionTitle {
+  margin: 0;
+  font-size: var(--type-base);
+  font-weight: 800;
+  line-height: 1.3;
+  color: var(--ice);
+}
+
+.sectionBody {
+  display: grid;
+  gap: 12px;
+  padding: 2px 14px 16px;
+  animation: open 180ms ease-out both;
+}
+
+.legalFoot {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 10px;
+  margin-top: 6px !important;
+  font-size: var(--type-body);
+  font-weight: 700;
+  color: rgba(238, 241, 255, 0.82);
+}
+
+@media print {
+  .legalBar,
+  .art {
+    display: none;
+  }
+}
+
+/* ---------- The page around the contents (`DocumentPage`) ---------- */
+
+.scroller {
+  position: absolute;
+  inset: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+  touch-action: pan-y;
+}
+
+.bar {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: max(10px, env(safe-area-inset-top)) var(--gutter) 10px;
+  background: linear-gradient(180deg, rgba(6, 5, 12, 0.9) 0%, rgba(6, 5, 12, 0.55) 70%, transparent 100%);
+  transition: background-color 200ms ease, box-shadow 200ms ease;
+}
+
+/* Past the still the bar is solid glass: the words below never show through it. */
+.bar[data-solid] {
+  background: #06050c;
+  box-shadow: 0 1px 0 rgba(153, 69, 255, 0.28);
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-right: auto;
+  min-height: 44px;
+  text-decoration: none;
+  color: var(--ice);
+}
+
+.brand:focus-visible {
+  outline: 2px solid var(--amber);
+  outline-offset: 4px;
+}
+
+.brandName {
+  font-size: 20px;
+  line-height: 1;
+  letter-spacing: 0.06em;
+}
+
+.glass {
+  background: linear-gradient(160deg, rgba(20, 16, 36, 0.86), rgba(8, 7, 15, 0.9));
+  clip-path: polygon(10px 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%, 0 10px);
+  box-shadow: inset 0 0 0 2px rgba(153, 69, 255, 0.28), inset 0 1px 18px rgba(153, 69, 255, 0.18);
+}
+
+.langPair {
+  display: inline-flex;
+  padding: 3px;
+  gap: 2px;
+}
+
+.langPair button {
+  min-width: 44px;
+  min-height: 38px;
+  padding: 0 8px;
+  border: 0;
+  font-family: var(--font-display, system-ui), system-ui, sans-serif;
+  font-size: var(--type-micro);
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  color: rgba(238, 241, 255, 0.72);
+  background: none;
+  cursor: pointer;
+}
+
+.langPair button[aria-pressed='true'] {
+  color: var(--ink);
+  background: var(--ice);
+}
+
+.back {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  height: 44px;
+  padding: 0 14px 0 10px;
+  font-size: var(--type-small);
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  text-decoration: none;
+  white-space: nowrap;
+  color: var(--ice);
+}
+
+.back svg {
+  width: 18px;
+  height: 18px;
+  color: var(--amber);
+}
+
+.back:focus-visible {
+  outline: 2px solid var(--amber);
+  outline-offset: 3px;
+}
+
+@media (max-width: 520px) {
+  .backWords {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+  }
+
+  .back {
+    width: 44px;
+    padding: 0;
+    justify-content: center;
+  }
+
+  .brandName {
+    font-size: 17px;
+  }
+}
+
+/* The page's hero rises under the bar: the bar floats over the still. */
+.docMain {
+  margin-top: -64px;
+}
+
+.foot {
+  width: min(760px, 100%);
+  margin: 0 auto;
+  padding: 8px var(--gutter) max(28px, env(safe-area-inset-bottom));
+}
+
+/* A wide document (CITY-177: «What we're building», the partner page) keeps its foot as wide as its column. */
+.foot[data-wide] {
+  width: min(1120px, 100%);
+}
+
+/* The documentation's column (CITY-180). */
+.foot[data-wide='docs'] {
+  width: min(1280px, 100%);
+}
+
+.footNav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding-top: 16px;
+  border-top: 1px solid rgba(238, 241, 255, 0.1);
+}
+
+.footLink {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 40px;
+  padding: 0 12px;
+  font-size: var(--type-small);
+  font-weight: 800;
+  text-decoration: none;
+  color: rgba(238, 241, 255, 0.82);
+  background: rgba(255, 255, 255, 0.04);
+  box-shadow: inset 0 0 0 1px rgba(238, 241, 255, 0.1);
+}
+
+.footLinkMain {
+  color: var(--warm);
+}
+
+.footLink:hover,
+.footLink:focus-visible {
+  color: var(--ice);
+  outline: none;
+  box-shadow: inset 0 0 0 1px rgba(255, 178, 63, 0.6);
+}
+
+.footLink[aria-current='page'] {
+  color: var(--ink);
+  background: var(--ice);
+  box-shadow: none;
+}
+
+.footLink svg {
+  width: 14px;
+  height: 14px;
+}

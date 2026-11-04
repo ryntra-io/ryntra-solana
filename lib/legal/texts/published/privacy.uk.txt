@@ -1,0 +1,54 @@
+Privacy Policy
+Effective date: October 7, 2026
+This Privacy Policy explains what data Ryntra (“we”, “us”) collects through ryntra.io, the Ryntra cabinet, the Ryntra app for Android and the Ryntra Telegram bot, how we use it, and the choices you have. Our approach is data minimalism: we collect only what the product needs to work, and the product needs remarkably little — your account is your wallet.
+Політика чинна англійською. Розділ про застосунок Ryntra для Android — українською.
+1. Data we collect
+Wallet address (public) — when you connect a wallet. A wallet address is public blockchain information; it lets us show what the wallet holds, prepare transactions for it and keep the record of the operations you make through Ryntra. We never ask for seed phrases, private keys or wallet passwords.
+Sign-in signature and sessions — when you sign in with your wallet. Signing in is a message your wallet signs; we keep the signature’s proof, the account it created for that address, and server-side session records (issue and expiry times, last activity, revocation state) so that sessions can be managed, and ended on one device or on all of them. There is no email, password or social sign-in for customers.
+Operations and receipts — the swaps, trades, bridges, transfers and rewards claims you make through Ryntra: what you reviewed, what the network did, the transaction signatures and their status. This is the Activity history and the receipts you can open there.
+Rewards, Points and referrals — the ledgers that record cashback and referral shares accrued to your wallet, your Points and level, your referral code, the wallet that invited you and the wallets you invited, and the claims you made.
+Preferences kept on the account — your Spot watchlist. Language, theme and the Simple/Pro depth are kept in your browser only and are not sent to us.
+Telegram channel data (optional) — if you connect Telegram as a notification channel from Settings, or interact with the bot: your Telegram identifier and the basic profile data Telegram supplies, such as your username, name and interface language, and the messages you send the bot. Telegram is a notification channel, not a way to sign in.
+Correspondence and feedback — if you email us or use the feedback form, we process your message and any details you include in order to answer you or act on it, and we keep the thread while it is needed for that. We do not operate an email waitlist.
+First-party cookies — a session cookie for the signed-in account, short-lived sign-in state, a wallet-proof cookie when you request proof of ownership, and a preference cookie for the public site’s language. We do not use advertising or cross-site tracking cookies.
+Usage events — we record page and call-to-action events in our own database to understand how the product is used. Each event may include the event name, the placement and locale, the page path, and the referring URL (truncated). We also use Vercel Analytics for aggregate traffic. None of this is used to build individual advertising profiles or sold.
+2. Застосунок Ryntra для Android
+Застосунок Ryntra для Android працює з тим самим акаунтом, що й сайт, і розділ 1 стосується твого акаунта і в застосунку. Що інакше на телефоні:
+Що отримує Ryntra — публічну адресу гаманця, який ти під'єднуєш, — щоб показати, що на ньому є, а коли ти ввійдеш через нього, — твої плани, правила й нотатки. Дані застосунок отримує з ryntra.io; логотипи активів завантажуються з публічних адрес, де їх опубліковано, і ці сервери бачать IP-адресу твого телефона.
+Що лишається на телефоні — твоя сесія — у захищеному сховищі телефона; твоє обране; останній показаний тобі екран Головної (публічні ціни й час); знеособлений короткий запис твоїх кроків у застосунку; твої уподобання — мова, тема, приховані суми. Вихід видаляє з телефона сесію й приватні дані, що на ньому зберігалися; після видалення застосунку не лишається нічого.
+Твої ключі — підписуєш ти — у застосунку гаманця на телефоні, через Mobile Wallet Adapter; сід-фраза й приватні ключі ніколи не потрапляють у застосунок Ryntra.
+Push-токен — лише коли ти вмикаєш сповіщення на телефоні — тоді push-токен телефона, версія застосунку, твоя мова, тихі години й вид нотаток, які отримує телефон (зміни твоїх планів), зберігаються з твоїм акаунтом, а нотатки доставляє Google Firebase Cloud Messaging. Вимкнення сповіщень на телефоні чи вихід видаляє реєстрацію цього телефона з твого акаунта. Поки сповіщення вимкнені, push-токен у Ryntra не надсилається.
+Камера (CAMERA) — застосунок просить її лише тоді, коли ти обираєш сканувати чи зняти фото, — щоб сканувати адресу гаманця чи QR-код оплати й щоб зняти фото для токена, який ти запускаєш. Нічого не записується; зняте фото надсилається в Ryntra лише тоді, коли ти натискаєш запустити з ним токен, і відтоді лежить за публічною адресою, навіть якщо ти не підпишеш.
+Сповіщення (POST_NOTIFICATIONS) — оголошений для сповіщень на телефоні — нагадувань і стану твоїх операцій. Поточна версія (1.11.0) сповіщень на телефоні не має й цього дозволу не просить; нотатки лишаються у вхідних застосунку. Версія, що принесе сповіщення на телефоні, попросить його лише тоді, коли ти їх увімкнеш.
+Чого застосунок не просить — доступу до твоїх фото чи файлів, геолокації, контактів, мікрофона, облікових записів телефона чи рекламного ідентифікатора; сторонніх бібліотек аналітики чи реклами в ньому немає. Камеру чи сповіщення можна не дозволити або забрати в налаштуваннях телефона — решта застосунку працює далі.
+Токен, який ти запускаєш — його картинку можна також вибрати в системному вікні вибору фото, який передає застосунку лише це одне зображення, без дозволу на твої фото чи файли. Картинка, назва, тікер, опис і посилання токена, який ти запускаєш, стають публічними разом із токеном: їх бачить будь-хто на сторінках Ryntra, у застосунку й за публічною адресою, яку токен називає в блокчейні. Не вписуй туди нічого, що не має бути публічним. Чого не може містити запущений токен — в Умовах використання.
+3. Data we never collect
+Seed phrases, wallet private keys, wallet passwords, or any credential that controls funds.
+Deposits or funds of any kind — Ryntra is non-custodial by design.
+Payment or card data — there is nothing to pay Ryntra; its service fee is part of the on-chain transaction your wallet signs.
+An email address or password for a customer account — the wallet is the account.
+4. How we use data
+To provide the cabinet: read what your wallet holds, prepare and simulate the transactions you ask for, and record their results as Activity and receipts.
+To run the Rewards and Points programme: accrue cashback and referral shares on collected fees, count Points, and pay claims to the wallet you are signed in with.
+To send the notifications you asked for through the Telegram channel you connected, or to your phone if you turn phone notifications on.
+To respond to you, prevent abuse, and keep the Service secure (including rate limiting and session management).
+To understand aggregate product usage and improve the Service.
+We do not sell your data, and we do not share it with advertisers.
+5. Where data is processed
+Your data is processed by the infrastructure and service providers we rely on to run the Service:
+Supabase — database hosting for accounts and proven wallets, session records, operations and receipts, the Rewards, Points and referral ledgers, watchlists, notification channels, feedback and usage events.
+Vercel — website hosting and privacy-friendly aggregate analytics.
+Telegram — bot messaging for the notification channel you connect; your interaction is also subject to Telegram’s own privacy policy.
+Google Firebase Cloud Messaging — delivers the phone notifications you turn on in the Ryntra app for Android; it receives the phone’s push token and the note.
+Blockchain and market providers — a Solana RPC provider and the liquidity, routing, bridging and market-data providers that price and execute your operations receive what the operation needs: your public wallet address and the transaction your wallet will sign. A transaction you sign is public on the blockchain by nature.
+These providers process data on our behalf and under their own security and compliance programs. We do not transfer your data to anyone else, except where required by law.
+6. Retention and deletion
+We keep your data while your account is in use. You can request deletion of your account data at any time — email hello@ryntra.io from a way we can link to your account (for example, by mentioning the wallet address you sign in with; we may ask you to prove ownership with a signature). We will delete your account data within 30 days of a verified request. Transactions recorded on a public blockchain cannot be deleted by anyone, including us. Residual copies may persist in encrypted backups for a limited period before being purged.
+7. Your rights
+Depending on your jurisdiction, you may have rights to access, correct, export, or delete your personal data, and to object to or restrict certain processing. To exercise any of these rights, contact us at hello@ryntra.io. We will respond within a reasonable time and in accordance with applicable law.
+8. Children
+The Service is not directed to persons under 18, and we do not knowingly collect data from them. If you believe a minor has provided us data, contact us and we will delete it.
+9. Changes to this policy
+We may update this Privacy Policy from time to time. The effective date above reflects the latest revision. Material changes will be announced in the Service.
+10. Contact
+Ryntra — hello@ryntra.io

@@ -13,7 +13,9 @@ import {
   normalizeReferralCode,
   REFERRAL_COOKIE,
   REFERRAL_COOKIE_AT,
+  REFERRAL_SUB_COOKIE,
 } from "@/lib/rewards/referral";
+import { normalizeReferralSub } from "@/lib/rewards/referral-sub";
 import { mutationOriginAllowed } from "@/lib/security";
 import { getWalletProof } from "@/lib/session";
 
@@ -97,11 +99,12 @@ export async function GET(req: NextRequest) {
   const normalized = carried ? normalizeReferralCode(carried) : null;
   const proof = await getWalletProof();
   const own = proof && proof.chain === "solana" && proof.address === req.nextUrl.searchParams.get("address") ? proof.address : null;
-  const read = await readReferralState(getGuardRuntime().store, { wallet: own, carried: normalized, now: new Date().toISOString() });
+  const read = await readReferralState(getGuardRuntime().store, { wallet: own, carried: normalized, now: new Date().toISOString(), carriedSub: normalizeReferralSub(req.cookies.get(REFERRAL_SUB_COOKIE)?.value) });
   const response = json(read.body);
   if (carried && read.clearCookie) {
     response.cookies.delete(REFERRAL_COOKIE);
     response.cookies.delete(REFERRAL_COOKIE_AT);
+    response.cookies.delete(REFERRAL_SUB_COOKIE);
   }
   return response;
 }
@@ -121,6 +124,7 @@ export async function POST(req: NextRequest) {
     const response = json({ ok: true, pending: null, confirmed: null });
     response.cookies.delete(REFERRAL_COOKIE);
     response.cookies.delete(REFERRAL_COOKIE_AT);
+    response.cookies.delete(REFERRAL_SUB_COOKIE);
     return response;
   }
 
@@ -141,6 +145,8 @@ export async function POST(req: NextRequest) {
       path: "/",
       maxAge: THIRTY_DAYS_SECONDS,
     });
+    /* A code chosen by hand came from no link: the previous link's sub-ID goes with it. */
+    response.cookies.delete(REFERRAL_SUB_COOKIE);
     /* Chosen on purpose, so it holds as a first touch from now. */
     response.cookies.set({
       name: REFERRAL_COOKIE_AT,
@@ -166,7 +172,9 @@ export async function POST(req: NextRequest) {
      yet it is a plain binding. */
   const decision = parsed.data.action === "change"
     ? await changeReferrer(store, { wallet: proof.address, code, now })
-    : await bindReferrer(store, { wallet: proof.address, code, now });
+    : await bindReferrer(store, { wallet: proof.address, code, now,
+      /* The carried link's sub-ID, when the code confirmed is the one that link left. */
+      subId: normalizeReferralCode(req.cookies.get(REFERRAL_COOKIE)?.value ?? "") === code ? normalizeReferralSub(req.cookies.get(REFERRAL_SUB_COOKIE)?.value) : null });
   if (!decision.ok) {
     /* Self-referral, a cycle, an inviter already settled, a wallet whose
        seven days after its first trade are over. Every one of them is
@@ -184,5 +192,6 @@ export async function POST(req: NextRequest) {
   });
   response.cookies.delete(REFERRAL_COOKIE);
   response.cookies.delete(REFERRAL_COOKIE_AT);
+  response.cookies.delete(REFERRAL_SUB_COOKIE);
   return response;
 }
