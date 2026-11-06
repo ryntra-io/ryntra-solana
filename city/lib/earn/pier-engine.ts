@@ -1,20 +1,23 @@
-import type { LiquidityReview } from '../../../lib/liquidity/studio/actions.ts';
+import type { LiquidityReview, ZapReview } from '../../../lib/liquidity/studio/actions.ts';
 import { createHarborEngine, type GetLike, type HarborEngine } from '../districts/harbor/engine.ts';
 import type { ReviewBody } from '../districts/harbor/deposit.ts';
 import { postJson, type EngineResult, type FetchLike } from '../trade/engine.ts';
+import type { PierRestBody, PierZapBody } from './pier.ts';
 import type { PierStates } from './pier-gate.ts';
 import { HISTORY_BARS, HISTORY_TIMEFRAME } from './pier-history.ts';
 
 /**
  * The SOL Pier's line to the server (CITY-93): the Harbor's own engine line for the relay and the chain's word on a
  * signature, with the city's door in front of the Review (`/api/city/earn/piers/review`), what one wallet may do
- * (`/api/city/earn/piers/admit`), and the engine's candle read for the «Past 30 days» picture. The window only asks and
- * shows; the engine builds and decides.
+ * (`/api/city/earn/piers/admit`), the city's door in front of the engine's Zap (`/api/city/earn/piers/zap`, CITY-198: SOL
+ * in, one approval; and «Take the rest»), and the engine's candle read for the «Past 30 days» picture. The window only
+ * asks and shows; the engine builds and decides.
  */
 
 export type PierEngine = HarborEngine &
   Readonly<{
     admit: (owner: string) => Promise<EngineResult<PierStates>>;
+    zap: (body: PierZapBody | PierRestBody) => Promise<EngineResult<ZapReview>>;
     candles: (mint: string) => Promise<EngineResult<unknown>>;
   }>;
 
@@ -52,6 +55,7 @@ export function createPierEngine(
     ...harbor,
     review: (body: ReviewBody) => postJson<LiquidityReview>(fetchImpl, '/api/city/earn/piers/review', body, REVIEW_MS),
     admit: (owner) => getJson<PierStates>(fetchImpl, `/api/city/earn/piers/admit?owner=${q(owner)}`, READ_MS),
+    zap: (body) => postJson<ZapReview>(fetchImpl, '/api/city/earn/piers/zap', body, REVIEW_MS),
     candles: (mint) => getJson<unknown>(fetchImpl, `/api/spot/candles?mint=${q(mint)}&tf=${HISTORY_TIMEFRAME}&limit=${HISTORY_BARS}`, READ_MS),
   };
 }

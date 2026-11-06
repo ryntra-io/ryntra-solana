@@ -11,9 +11,11 @@ import { useLang } from '@/city/lib/i18n/lang';
 import { agentCard, cardTag } from '@/city/lib/launch/cards';
 import { useLaunch } from '@/city/lib/launch/district';
 import { rhythmOf, solText } from '@/city/lib/autopilot/plan';
+import { calmPlan, STEADY } from '@/lib/mandate/plans';
+import { steadyRhythm } from '@/lib/mandate/strategy';
 import { pctText, planLine, planOfText, planRules, signedPct, testedLine } from '@/city/lib/autopilot/plan-line';
 import { launchProposal, readAgentView, readPaper, signTrade, startPaper, stopTrade, useAutopilot, type AgentView } from '@/city/lib/autopilot/store';
-import { AGENT_REPORT, AGENT_REPORT_OPEN, hourText, solFigure, worthTelling } from '@/city/lib/autopilot/report';
+import { AGENT_REPORT, AGENT_REPORT_OPEN, holdFigure, hourText, resultRaw, solFigure, toneOf, worthTelling } from '@/city/lib/autopilot/report';
 import { useAgentReport } from '@/city/lib/autopilot/report-client';
 import { AUTOPILOT } from '@/city/lib/autopilot/words';
 import { startWallets, useWallet } from '@/city/lib/trade/wallet';
@@ -121,6 +123,9 @@ function SignButton({ label, busy, disabled, onPress }: { label: string; busy: b
   );
 }
 
+/** CITY-197: what the agent really trades a day at its pace — the buys it makes, never more than the day's cap. */
+const dayAtPace = (rhythm: Readonly<{ buys: number; perTrade: number; perDay: number }>) => Math.min(rhythm.perDay, Math.round(rhythm.buys * rhythm.perTrade * 1e9) / 1e9);
+
 function noteText(w: W, kind: 'on' | 'stopped' | 'walletNo' | 'refused' | 'unreachable'): string {
   return { on: w.noteOn, stopped: w.noteStopped, walletNo: w.noteWalletNo, refused: w.noteRefused, unreachable: w.noteUnreachable }[kind];
 }
@@ -134,7 +139,10 @@ function TradeStart({ said }: { said: string }) {
   const capped = useAutopilot((st) => st.capped);
   const busy = useMandate((st) => st.busy === 'enable');
   const note = useMandate((st) => st.note);
-  const rhythm = preset ? rhythmOf(preset) : null;
+  // CITY-197: the rhythm at the plan's calm pace — the buys it will really make.
+  const asked = useAutopilot((st) => st.plan);
+  const pace = calmPlan(asked ?? STEADY).pace ?? null;
+  const rhythm = preset ? rhythmOf(preset, pace) : null;
   const largest = presetLimits(MANDATE_PRESETS.at(-1)!).perDay;
   const fee = agentFeeFigures(lang);
   // Mainnet: the agent buys a coin the person named — in her words, the tower on screen, or one tap here.
@@ -157,7 +165,7 @@ function TradeStart({ said }: { said: string }) {
         </span>
         <div className={i.heroText}>
           <span className={i.kicker}>{w.kicker}</span>
-          <h2 className={i.headline}>{rhythm ? w.trades(sol(rhythm.perDay, lang)) : w.tradesAsk}</h2>
+          <h2 className={i.headline}>{rhythm ? w.trades(sol(dayAtPace(rhythm), lang)) : w.tradesAsk}</h2>
           {needsCoin && coin ? <p className={i.sub} data-autopilot-coin={coin.mint}>{w.buys(coin.symbol)}</p> : null}
           {early && launch?.state === 'picking' ? <p className={i.sub}>{w.pickingLaunch}</p> : null}
           {line ? (
@@ -229,7 +237,7 @@ function PaperFace({ said }: { said: string }) {
   if (!paper) return null;
   const plan = planOfText(paper.plan);
   const line = planLine(plan, w, lang);
-  const rhythm = preset ? rhythmOf(preset) : null;
+  const rhythm = preset ? rhythmOf(preset, plan?.pace ?? null) : null;
   const pct = run?.resultPct ?? null;
   const tone = pct === null ? undefined : pct > 0 ? 'up' : pct < 0 ? 'down' : undefined;
   const earned = run && pct !== null ? (run.heldSol + run.gotSol - run.spentSol) : null;
@@ -247,7 +255,7 @@ function PaperFace({ said }: { said: string }) {
         </span>
         <div className={i.heroText}>
           <span className={s.paperKicker}>{w.paperKicker}</span>
-          <h2 className={i.headline}>{rhythm ? w.trades(sol(rhythm.perDay, lang)) : w.tradesAsk}</h2>
+          <h2 className={i.headline}>{rhythm ? w.trades(sol(dayAtPace(rhythm), lang)) : w.tradesAsk}</h2>
           {paper.symbol ? <p className={i.sub}>{w.buys(paper.symbol)}</p> : null}
           {line ? <p className={s.plan}>{line}</p> : null}
         </div>
@@ -291,14 +299,16 @@ export function TradeWorking({ said }: { said: string | null }) {
   const { share, making, saved, label } = useShareCard();
   if (!record) return null;
   const result = view?.result ?? null;
-  const earned = result?.earnedRaw ?? null;
+  /* CITY-197: the result after every fee, when the book counted them; plain holding beside it. */
+  const net = view?.net ?? null;
+  const earned = net ? net.netRaw : (result?.earnedRaw ?? null);
+  const hold = net?.holdRaw ?? null;
   const tone = earned === null ? undefined : BigInt(earned) > 0n ? 'up' : BigInt(earned) < 0n ? 'down' : undefined;
-  const sign = earned !== null && BigInt(earned) > 0n ? '+' : earned !== null && BigInt(earned) < 0n ? '−' : '';
-  const earnedText = earned !== null ? `${sign}${solOf((BigInt(earned) < 0n ? -BigInt(earned) : BigInt(earned)).toString(), lang)} SOL` : null;
+  const earnedText = earned !== null ? solFigure(earned, lang) : null;
   const left = status?.budgetLamports ? sol(Number(status.budgetLamports) / 1e9, lang) : null;
   const lastAt = view?.last.find((trade) => trade.ok)?.at ?? null;
   const nextHours = view && lastAt !== null ? Math.max(0, (lastAt + view.everyMs - Date.now()) / 3_600_000) : null;
-  const card = view && result ? agentCard({ coin: { token: view.receiveMint, symbol: symbolOf(view), logo: false }, trades: result.trades, spentRaw: result.spentRaw, worthRaw: result.worthRaw, tag: cardTag(MANDATE_CHAIN, false) }) : null;
+  const card = view && result ? agentCard({ coin: { token: view.receiveMint, symbol: symbolOf(view), logo: false }, trades: result.trades, spentRaw: result.spentRaw, worthRaw: net ? (net.netRaw === null ? null : (BigInt(result.spentRaw) + BigInt(net.netRaw)).toString()) : result.worthRaw, tag: cardTag(MANDATE_CHAIN, false) }) : null;
   const plan = planOfText(view?.plan);
   const line = planLine(plan, w, lang);
   const paused = pausedText(w, view?.pausedBy ?? null, plan, lang);
@@ -311,7 +321,7 @@ export function TradeWorking({ said }: { said: string | null }) {
         </span>
         <div className={i.heroText}>
           {active ? <span className={s.live}>{w.working}</span> : <span className={i.kicker}>{w.kicker}</span>}
-          <h2 className={i.headline}>{w.trades(sol(Number(record.perDay) / 1e9, lang))}</h2>
+          <h2 className={i.headline}>{w.trades(sol(dayAtPace({ buys: steadyRhythm(BigInt(record.perTrade), BigInt(record.perDay), plan?.pace ?? null).buys, perTrade: Number(record.perTrade) / 1e9, perDay: Number(record.perDay) / 1e9 }), lang))}</h2>
           {line ? <p className={s.plan}>{line}</p> : null}
           {result && result.trades > 0 ? (
             <p className={i.sub}>
@@ -324,13 +334,19 @@ export function TradeWorking({ said }: { said: string | null }) {
         </div>
       </div>
       <div className={s.figure} data-agent-earned="">
-        <span className={s.figureLabel}>{w.earned}</span>
+        <span className={s.figureLabel}>{net ? w.earnedNet : w.earned}</span>
         {earnedText && result && result.trades > 0 ? (
           <>
             <span className={s.figureValue} data-tone={tone}>
               {earnedText}
             </span>
-            {result.worthRaw ? <span className={s.figureLine}>{w.spentBought(solOf(result.spentRaw, lang)!, solOf(result.worthRaw, lang)!)}</span> : null}
+            {net ? (
+              <span className={s.figureLine} data-agent-hold="">
+                {w.netLine(solOf(result.spentRaw, lang)!, hold === null ? null : solFigure(hold, lang))}
+              </span>
+            ) : result.worthRaw ? (
+              <span className={s.figureLine}>{w.spentBought(solOf(result.spentRaw, lang)!, solOf(result.worthRaw, lang)!)}</span>
+            ) : null}
           </>
         ) : (
           <span className={s.figureLine}>{active ? w.earnedNone : (ended ?? w.earnedNone)}</span>
@@ -349,7 +365,7 @@ export function TradeWorking({ said }: { said: string | null }) {
           </button>
         </div>
       </div>
-      <Details said={said} lines={[...planRules(plan, w, lang, null, SELLS), w.fact1, w.fact2, w.fact3]} />
+      <Details said={said} lines={[...planRules(plan, w, lang, null, SELLS), w.factNet, w.factHold, w.fact1, w.fact2, w.fact3]} />
     </>
   );
 }
@@ -376,7 +392,8 @@ function AgentToday({ view }: { view: AgentView | null }) {
     if (owner) void useAgentReport.getState().readReport(owner, lang);
   }, [owner, lang]);
   const day = view?.day;
-  const earned = day?.earnedRaw ?? null;
+  const earned = day ? resultRaw(day) : null;
+  const hold = day ? holdFigure(day.holdRaw, lang) : null;
   return (
     <>
       {worthTelling(day) ? (
@@ -385,9 +402,10 @@ function AgentToday({ view }: { view: AgentView | null }) {
           {earned !== null ? (
             <>
               {', '}
-              <b data-tone={BigInt(earned) > 0n ? 'up' : BigInt(earned) < 0n ? 'down' : undefined}>{solFigure(earned, lang)}</b>
+              <b data-tone={toneOf(earned)}>{solFigure(earned, lang)}</b>
             </>
           ) : null}
+          {hold ? ` · ${hold}` : null}
         </p>
       ) : null}
       {report && owner ? (

@@ -7,6 +7,8 @@ Fee Sharing, a creator's first purchase can be locked in Met Lock, and an early-
 Ryntra City's Earn district (the Harbor) lists Meteora DLMM and DAMM v2 pools and builds deposits into them. The engine
 builds every transaction a person makes unsigned, and the person signs it in their own wallet; Ryntra never holds
 people's funds or keys (its executor signs only its own acts, from an allowlist: graduations, its own claims, its own liquidity).
+A person can also hand a DLMM or DAMM v2 position to an agent with one approval: it stays in the person's own Squads smart
+account, and on-chain policies decide what the agent may do.
 
 ## In one picture
 
@@ -32,7 +34,7 @@ Pictures from the live site, except the coin's window, which is the devnet stand
 
 Meteora SDKs, pinned exactly in `package.json`: `@meteora-ag/dynamic-bonding-curve-sdk` 1.5.13 and 2.0.0 side by side,
 `cp-amm-sdk` 1.5.1, `dlmm` 1.9.14, `alpha-vault` 1.1.16, `dynamic-fee-sharing-sdk` 1.1.0, `met-lock-sdk` 1.0.1,
-`zap-sdk` 1.3.2. One DBC and one DAMM v2 client per connection: `lib/core/venues/meteora-clients.server.ts`.
+`zap-sdk` 1.3.2 and 2.0.0 side by side. One DBC and one DAMM v2 client per connection: `lib/core/venues/meteora-clients.server.ts`.
 
 ## The launch lifecycle on DBC
 
@@ -70,7 +72,8 @@ All paths under `lib/core/venues/meteora-dbc/` unless written in full.
 
 ## Earn
 
-The city's Earn district, the Harbor, shows Meteora pools and lets a person put money in. It adds no Ryntra fee.
+The city's Earn district, the Harbor, shows Meteora pools and lets a person put money in. A deposit of both coins adds no
+Ryntra fee; a deposit from one coin through Zap pays Ryntra's swap fee on its Jupiter leg.
 
 | Layer | Files |
 |---|---|
@@ -79,8 +82,42 @@ The city's Earn district, the Harbor, shows Meteora pools and lets a person put 
 | Chain reads: which program owns a pool, its state, DLMM bins around the price, a wallet's positions on both venues | `lib/liquidity/catalog/chain.server.ts`, `lib/liquidity/catalog/positions.ts` |
 | Add, withdraw, claim built with `@meteora-ag/dlmm` and `@meteora-ag/cp-amm-sdk`; a Review builds, checks and simulates the transactions and seals them in a server-signed ticket; the relay sends only those bytes, once each | `lib/liquidity/studio/dlmm.ts`, `lib/liquidity/studio/damm-v2.ts`, `lib/liquidity/studio/venues.server.ts`, `lib/liquidity/studio/actions.ts`, `lib/liquidity/studio/ticket.ts` |
 | "In the pool or just holding" and impermanent-loss tracking, shown as pictures, never as a projected return | `lib/liquidity/catalog/simulate.ts`, `lib/liquidity/catalog/track.ts` |
+| One coin in, one approval: Meteora Zap, up to three v0 transactions signed together; a Review allows only the Zap, DLMM and Jupiter programs and outputs to the person's own accounts; a partial batch has an honest state and a way out as SOL | `lib/liquidity/studio/zap.ts`, `lib/liquidity/studio/zap-check.ts`, `app/api/city/earn/piers/zap/` |
 | Routes | `app/api/city/harbor/route.ts`, `app/api/liquidity/` |
 | The city: pools with at least $100 000 TVL, the 24 busiest, a DLMM range of 34 bins each side, the person's positions | `city/lib/districts/harbor/` |
+
+## An agent looks after a position
+
+A person says "look after it" and gives one approval. The agent then claims fees, reinvests them, moves a DLMM range back
+to the price when the price leaves it, exits at the person's stop and reports the day.
+
+```mermaid
+flowchart LR
+  A["Person<br/>one approval"] --> B["Squads smart account<br/>the person's own"]
+  B --> C["Care vault<br/>index 1, 2, …"]
+  B --> D["Two on-chain policies per pool"]
+  E["Agent key in KMS<br/>cron every 10 minutes"] -->|"one action per tick"| D
+  D -->|"tend: money stays in the vault and the pool"| F["Meteora DLMM / DAMM v2"]
+  D -->|"exit: only to the person's accounts"| G["Person's wallet"]
+```
+
+| What | How | Files |
+|---|---|---|
+| Limits | The chain holds them, not our code. Policy "tend" keeps money inside the vault and the pool and bounds the active bin's slippage; policy "exit" pays fees, liquidity and rent only to the person's own accounts. No swaps, transfers, other pools or other programs | `lib/care/ssa-care.ts`, `lib/care/terms.ts` |
+| One approval | Smart account if there is none, SOL into a care vault, both policies; vault 0 of the budget agent is untouched | `lib/care/enable.ts` |
+| Deciding | One pure function reads the position and picks one action | `lib/care/decide.ts` |
+| Acting | Meteora's SDK builds, Ryntra's signer checks, the policy executes. A DLMM range moves with `rebalance_liquidity`, which claims, withdraws and re-adds in one instruction | `lib/care/venue.server.ts`, `lib/care/signer.server.ts`, `lib/care/run.server.ts` |
+| Value | A position in dollars from the pool's Meteora record; no price, no figure | `lib/care/worth.ts` |
+
+Every path ran twice on devnet with different amounts, then on a mainnet fork, and the failures were run on purpose: the
+price jumping mid-rebalance, an empty pool, a spent policy, a dead RPC, two ticks at once. Sending with the agent's raw key
+around our signer, with a stranger's key, or after the stop was refused by the chain itself.
+
+## Liquidity shapes and DLMM Pro
+
+The Studio engine accepts Spot, Curve and Bid-Ask (`LIQUIDITY_SHAPES` in `lib/liquidity/studio/contract.ts`). The city and
+the agent use Spot today. Meteora's DLMM Pro and its Wave strategy have no public program or SDK yet; Ryntra adds them
+when they do, and does not imitate a shape that is not published.
 
 ## Agents
 
@@ -91,19 +128,21 @@ The city's Earn district, the Harbor, shows Meteora pools and lets a person put 
   adapter and a wallet-signed launch trade as a value-transfer action. `lib/launch/record.server.ts` pins every launch
   trade's Outcome Receipt to those entries, so any verifier classifies it as moving value.
 - No agent tool builds or signs a launch; every launch and launch trade is signed by the person in their own wallet.
+- The one agent that acts on Meteora is the care agent above, inside the person's smart account and its policies.
 
 ## How to check it
 
-Node 22.18 or later. Counts measured on 31 October 2026 with the files this snapshot carries.
+Node 22.18 or later. Counts measured on 6 November 2026.
 
 ```bash
 npm ci
-node --test lib/core/venues/meteora-dbc/*.test.mjs        # 56 pass: presets 10, receipt 14, market 14, SDK comparison 18
-node --test lib/liquidity/*.test.mjs lib/liquidity/catalog/*.test.mjs lib/liquidity/studio/*.test.mjs   # 76 pass
-node --test lib/core/launch/*.test.mjs                    # 264 pass: launch rules, ladder, budget, early access, transfer fee
-node --test lib/launch/*.test.mjs                         # 292 tests: 289 pass, 3 skip here (they read API examples kept outside)
+node --test lib/core/venues/meteora-dbc/*.test.mjs        # 63 pass: presets, receipt, market, exit positions, SDK comparison
+node --test lib/liquidity/*.test.mjs lib/liquidity/catalog/*.test.mjs lib/liquidity/studio/*.test.mjs   # 107 pass, Zap and limit orders included
+node --test lib/core/launch/*.test.mjs                    # 298 pass: launch rules, ladder, budget, early access, transfer fee
+node --test lib/launch/*.test.mjs                         # 307 tests; 3 skip here (they read API examples kept outside)
 node --test lib/solana/treasury/launch-claims.test.mjs    # 11 pass: Squads proposal lines are Meteora claims only
-node --test city/lib/launch/*.test.mjs city/lib/districts/harbor/*.test.mjs   # 141 pass (98 + 43)
+node --test city/lib/launch/*.test.mjs city/lib/districts/harbor/*.test.mjs   # 287 pass
+node --test lib/care/*.test.mjs                           # 12 pass: the agent's decisions, policies and failures
 node --test lib/agent-control/external/router.test.mjs    # 16 pass
 ```
 
@@ -140,4 +179,6 @@ node --test lib/agent-control/external/router.test.mjs    # 16 pass
   (`lib/launch/config.server.ts`). Early access is open on the devnet stand and closed for people on
   mainnet by a constant in `lib/launch/early-access.server.ts`. A transfer-hook preset is defined, but `buildConfig`
   refuses it until its rule program passes an independent security review.
+- The care agent runs behind its own switches (`RYNTRA_AGENT_CARE`, `NEXT_PUBLIC_RYNTRA_AGENT_CARE`); the cron is `/api/cron/agent-care`.
+  Its paths are proven on devnet and a mainnet fork; no person has yet handed it a position on mainnet.
 - DBC SDK 1.5.13 is the default; `RYNTRA_DBC_SDK=2` moves every client call to 2.0.0, and removing it rolls back.

@@ -49,7 +49,7 @@ export function AutopilotLayer() {
   }, [open]);
 
   const card = useMemo(
-    () => ({ id: 'autopilot', title: w.title, icon: <AgentGlyph />, render: renderCard, size: { width: 440, height: 600 }, min: { width: 360, height: 440 }, held: busy, onClose: closeCard }),
+    () => ({ id: 'autopilot', title: w.title, icon: <AgentGlyph />, render: renderCard, fit: true, size: { width: 440, height: 600 }, min: { width: 360, height: 440 }, held: busy, onClose: closeCard }),
     [w.title, busy],
   );
   useCityWindow(Boolean(AUTOPILOT_NET) && open && (!quiet || busy), card);

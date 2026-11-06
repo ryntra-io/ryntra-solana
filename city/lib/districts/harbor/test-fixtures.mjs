@@ -91,7 +91,7 @@ export function scriptedEngine(script) {
     if (!next) throw new Error(`Nothing scripted for ${route}.`);
     return Promise.resolve(structuredClone(next));
   };
-  const engine = Object.fromEntries(["pools", "actions", "positions", "review", "submit", "status"].map((route) => [route, (...args) => answer(route, args)]));
+  const engine = Object.fromEntries(["pools", "actions", "positions", "review", "zap", "submit", "status"].map((route) => [route, (...args) => answer(route, args)]));
   return { engine, calls, routes: (route) => calls.filter((call) => call.route === route) };
 }
 

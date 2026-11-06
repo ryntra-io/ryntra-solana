@@ -170,7 +170,11 @@ export type ClaimFeesRequest = Readonly<{ position: string; owner: string }>;
  * CITY-98) stay the pool's and do not come back either.
  */
 export type RentCost = Readonly<{
-  what: "position" | "bin_arrays" | "bitmap_extension" | "pool";
+  /**
+   * A Zap (CITY-198) may also open the wallet's own account of the pier's other coin (`token_account`, the wallet's to
+   * close) and finds or leaves the Zap program's ledger (`ledger`, the wallet's own; it comes back when closed).
+   */
+  what: "position" | "bin_arrays" | "bitmap_extension" | "pool" | "token_account" | "ledger";
   direction: "pay" | "return";
   lamports: string;
   refundable: boolean;
@@ -321,6 +325,8 @@ export const LIQUIDITY_REFUSALS = [
   "LIMIT_NOT_SUPPORTED",
   "ORDER_NOT_FOUND",
   "NOT_FILLED",
+  /** A Zap (`zap.ts`): no swap route between SOL and the pier's other coin at this size. */
+  "ZAP_NO_ROUTE",
 ] as const;
 export type LiquidityRefusalCode = (typeof LIQUIDITY_REFUSALS)[number];
 

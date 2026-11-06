@@ -9,10 +9,10 @@ moved counts as new. Generated at every update from the development history.
 
 | Since the tag | Files |
 |---|---|
-| New | 4,854 |
+| New | 5,055 |
 | Changed | 896 |
 | Unchanged | 828 |
-| Lines added / removed | +1,048,704 / −27,618 |
+| Lines added / removed | +1,071,956 / −28,029 |
 
 ## New since the tag
 
@@ -69,6 +69,7 @@ moved counts as new. Generated at every update from the development history.
 - `app/admin/finance/finance-words.ts`
 - `app/admin/finance/finance.module.css`
 - `app/admin/finance/page.tsx`
+- `app/admin/growth/demand-week.tsx`
 - `app/admin/growth/growth-panel.tsx`
 - `app/admin/growth/growth.module.css`
 - `app/admin/growth/page.tsx`
@@ -93,6 +94,7 @@ moved counts as new. Generated at every update from the development history.
 - `app/api/admin/evidence/route.ts`
 - `app/api/admin/finance/route.ts`
 - `app/api/admin/growth/codes/route.ts`
+- `app/api/admin/growth/demand/route.ts`
 - `app/api/admin/growth/panel/route.ts`
 - `app/api/admin/growth/payouts/route.ts`
 - `app/api/admin/growth/review/route.ts`
@@ -117,6 +119,7 @@ moved counts as new. Generated at every update from the development history.
 - `app/api/agents/services/token-report/handler.ts`
 - `app/api/agents/services/token-report/route.test.mjs`
 - `app/api/agents/services/token-report/route.ts`
+- `app/api/bots/agents/route.ts`
 - `app/api/bots/backtest/route.ts`
 - `app/api/bots/hangar/route.ts`
 - `app/api/bots/ladder/cancel/route.ts`
@@ -134,10 +137,12 @@ moved counts as new. Generated at every update from the development history.
 - `app/api/bots/mandate/stop/route.ts`
 - `app/api/bots/mandate/submit/route.ts`
 - `app/api/bots/mandate/test/route.ts`
+- `app/api/bots/pilot/route.ts`
 - `app/api/bots/safety/route.ts`
 - `app/api/bots/weather/route.ts`
 - `app/api/city/earn/captain/copies/route.ts`
 - `app/api/city/earn/captain/route.ts`
+- `app/api/city/earn/care/route.ts`
 - `app/api/city/earn/limits/admit/route.ts`
 - `app/api/city/earn/limits/orders/route.ts`
 - `app/api/city/earn/limits/review/route.ts`
@@ -146,6 +151,7 @@ moved counts as new. Generated at every update from the development history.
 - `app/api/city/earn/piers/admit/route.ts`
 - `app/api/city/earn/piers/review/route.ts`
 - `app/api/city/earn/piers/route.ts`
+- `app/api/city/earn/piers/zap/route.ts`
 - `app/api/city/earn/route.ts`
 - `app/api/city/earn/stock-piers/admit/route.ts`
 - `app/api/city/earn/stock-piers/review/route.ts`
@@ -160,12 +166,14 @@ moved counts as new. Generated at every update from the development history.
 - `app/api/connect/register/route.ts`
 - `app/api/connect/revoke/route.ts`
 - `app/api/connect/token/route.ts`
+- `app/api/cron/agent-care/route.ts`
 - `app/api/cron/agent-mandate/route.ts`
 - `app/api/cron/agent-report/route.ts`
 - `app/api/cron/benefits/route.ts`
 - `app/api/cron/city-beacons/route.ts`
 - `app/api/cron/city-earn-captain/route.ts`
 - `app/api/cron/city-earn-notes/route.ts`
+- `app/api/cron/demand-week/route.ts`
 - `app/api/cron/launch-autopilot/route.ts`
 - `app/api/cron/launch-creator-notes/route.ts`
 - `app/api/cron/launch-ipfs/route.ts`
@@ -300,6 +308,7 @@ moved counts as new. Generated at every update from the development history.
 - `app/api/solana/treasury/state/[address]/route.ts`
 - `app/api/solana/treasury/submit/route.ts`
 - `app/api/spot/about/route.ts`
+- `app/api/spot/icon/route.test.mjs`
 - `app/api/spot/pulse/route.ts`
 - `app/api/spot/radar/cost/route.ts`
 - `app/api/spot/tape/route.ts`
@@ -1834,6 +1843,7 @@ moved counts as new. Generated at every update from the development history.
 - `city/components/autopilot/AutopilotCard.tsx`
 - `city/components/autopilot/AutopilotLayer.tsx`
 - `city/components/autopilot/autopilot.module.css`
+- `city/components/autopilot/away-fit.test.mjs`
 - `city/components/beacon/BeaconAction.tsx`
 - `city/components/beacon/BeaconLayer.tsx`
 - `city/components/beacon/BeaconSheet.tsx`
@@ -1929,6 +1939,11 @@ moved counts as new. Generated at every update from the development history.
 - `city/components/connect/ConnectConsent.tsx`
 - `city/components/connect/connect.module.css`
 - `city/components/connect/words.ts`
+- `city/components/crew/Crew.tsx`
+- `city/components/crew/JobCard.tsx`
+- `city/components/crew/crew-shots.mjs`
+- `city/components/crew/crew.module.css`
+- `city/components/crew/glyphs.tsx`
 - `city/components/deck/Deck.tsx`
 - `city/components/deck/deck.module.css`
 - `city/components/deck/glyphs.tsx`
@@ -1956,6 +1971,7 @@ moved counts as new. Generated at every update from the development history.
 - `city/components/docs/words.ts`
 - `city/components/earn/Boat.tsx`
 - `city/components/earn/Captain.tsx`
+- `city/components/earn/CareSwitch.tsx`
 - `city/components/earn/Copy.tsx`
 - `city/components/earn/Dollar.tsx`
 - `city/components/earn/EarnLayer.tsx`
@@ -1969,6 +1985,7 @@ moved counts as new. Generated at every update from the development history.
 - `city/components/earn/Shelf.tsx`
 - `city/components/earn/StockPier.tsx`
 - `city/components/earn/bits.tsx`
+- `city/components/earn/care.module.css`
 - `city/components/earn/context.ts`
 - `city/components/earn/earn.module.css`
 - `city/components/earn/sell.module.css`
@@ -2027,6 +2044,7 @@ moved counts as new. Generated at every update from the development history.
 - `city/components/instruct/AgentCard.tsx`
 - `city/components/instruct/InstructLayer.tsx`
 - `city/components/instruct/Instructions.tsx`
+- `city/components/instruct/card-fit.test.mjs`
 - `city/components/instruct/glyphs.tsx`
 - `city/components/instruct/instruct.module.css`
 - `city/components/intent/IntentLayer.tsx`
@@ -2056,6 +2074,12 @@ moved counts as new. Generated at every update from the development history.
 - `city/components/launch/night.module.css`
 - `city/components/launch/useShareCard.ts`
 - `city/components/launch/words.ts`
+- `city/components/learn/LearnBody.tsx`
+- `city/components/learn/LearnLayer.tsx`
+- `city/components/learn/glyphs.tsx`
+- `city/components/learn/learn-shots.mjs`
+- `city/components/learn/learn.module.css`
+- `city/components/learn/words.ts`
 - `city/components/lens/LensBar.tsx`
 - `city/components/lens/LensScene.tsx`
 - `city/components/lens/NewLaunchesWindow.tsx`
@@ -2080,6 +2104,8 @@ moved counts as new. Generated at every update from the development history.
 - `city/components/money/TopUp.tsx`
 - `city/components/money/bits.tsx`
 - `city/components/money/money.module.css`
+- `city/components/money/portfolio.module.css`
+- `city/components/money/usePortfolio.ts`
 - `city/components/money/words.ts`
 - `city/components/notify/Banners.tsx`
 - `city/components/notify/notify.module.css`
@@ -2116,6 +2142,9 @@ moved counts as new. Generated at every update from the development history.
 - `city/components/partners/words.ts`
 - `city/components/pay/PayerPage.tsx`
 - `city/components/pay/pay.module.css`
+- `city/components/pilot/PilotCard.tsx`
+- `city/components/pilot/PilotLayer.tsx`
+- `city/components/pilot/pilot.module.css`
 - `city/components/quarter/Arrivals.tsx`
 - `city/components/quarter/AwayCamera.tsx`
 - `city/components/quarter/AwayReel.tsx`
@@ -2297,12 +2326,17 @@ moved counts as new. Generated at every update from the development history.
 - `city/lib/assistant/store.ts`
 - `city/lib/assistant/words.ts`
 - `city/lib/audio/engine.ts`
+- `city/lib/audio/gate.test.mjs`
+- `city/lib/audio/gate.ts`
 - `city/lib/autopilot/README.md`
 - `city/lib/autopilot/autopilot.test.mjs`
 - `city/lib/autopilot/emblem.ts`
 - `city/lib/autopilot/flag.ts`
+- `city/lib/autopilot/net-shots.mjs`
+- `city/lib/autopilot/net-words.test.mjs`
 - `city/lib/autopilot/plan-line.ts`
 - `city/lib/autopilot/plan.ts`
+- `city/lib/autopilot/qa-walk-shots.mjs`
 - `city/lib/autopilot/read.ts`
 - `city/lib/autopilot/report-client.ts`
 - `city/lib/autopilot/report-shots.mjs`
@@ -2335,6 +2369,8 @@ moved counts as new. Generated at every update from the development history.
 - `city/lib/beacon/words.ts`
 - `city/lib/bots/README.md`
 - `city/lib/bots/agent-fee.ts`
+- `city/lib/bots/agents.test.mjs`
+- `city/lib/bots/agents.ts`
 - `city/lib/bots/chain.ts`
 - `city/lib/bots/decode.ts`
 - `city/lib/bots/demo.ts`
@@ -2408,9 +2444,13 @@ moved counts as new. Generated at every update from the development history.
 - `city/lib/chart/use-chart.ts`
 - `city/lib/chart/window.test.mjs`
 - `city/lib/chart/words.ts`
+- `city/lib/city/context-loss.test.mjs`
+- `city/lib/city/context-loss.ts`
 - `city/lib/city/drawn.ts`
 - `city/lib/city/events.ts`
 - `city/lib/city/gesture.ts`
+- `city/lib/city/ghost.test.mjs`
+- `city/lib/city/ghost.ts`
 - `city/lib/city/glsl.ts`
 - `city/lib/city/home-shots.mjs`
 - `city/lib/city/hot.ts`
@@ -2421,6 +2461,8 @@ moved counts as new. Generated at every update from the development history.
 - `city/lib/city/pick.ts`
 - `city/lib/city/quality.ts`
 - `city/lib/city/shared.ts`
+- `city/lib/city/signed.test.mjs`
+- `city/lib/city/signed.ts`
 - `city/lib/city/store.ts`
 - `city/lib/city/windows.test.mjs`
 - `city/lib/city/windows.ts`
@@ -2453,6 +2495,10 @@ moved counts as new. Generated at every update from the development history.
 - `city/lib/command/shots/command-window-ryntra-desk.jpg`
 - `city/lib/command/shots/command-window-ryntra-phone.jpg`
 - `city/lib/command/store.ts`
+- `city/lib/crew/crew.test.mjs`
+- `city/lib/crew/hire.ts`
+- `city/lib/crew/read.ts`
+- `city/lib/crew/words.ts`
 - `city/lib/deck/chrome.ts`
 - `city/lib/deck/deck.test.mjs`
 - `city/lib/deck/items.ts`
@@ -2526,6 +2572,8 @@ moved counts as new. Generated at every update from the development history.
 - `city/lib/earn/captain.server.ts`
 - `city/lib/earn/captain.test.mjs`
 - `city/lib/earn/captain.ts`
+- `city/lib/earn/care-shots.mjs`
+- `city/lib/earn/care.ts`
 - `city/lib/earn/corporate.test.mjs`
 - `city/lib/earn/corporate.ts`
 - `city/lib/earn/device.ts`
@@ -2599,9 +2647,9 @@ moved counts as new. Generated at every update from the development history.
 - `city/lib/earn/stocks.server.ts`
 - `city/lib/earn/stocks.ts`
 - `city/lib/earn/store.ts`
+- `city/lib/earn/voice.test.mjs`
 - `city/lib/earn/words.ts`
-- `city/lib/earn/zap-store.test.mjs`
-- `city/lib/earn/zap-store.ts`
+- `city/lib/earn/zap-shots.mjs`
 - `city/lib/exchange/account.test.mjs`
 - `city/lib/exchange/account.ts`
 - `city/lib/exchange/art.test.mjs`
@@ -2764,6 +2812,8 @@ moved counts as new. Generated at every update from the development history.
 - `city/lib/launch/stub.ts`
 - `city/lib/launch/terms.test.mjs`
 - `city/lib/launch/terms.ts`
+- `city/lib/launch/ticker.test.mjs`
+- `city/lib/launch/ticker.ts`
 - `city/lib/launch/tower-shots.mjs`
 - `city/lib/launch/towers.test.mjs`
 - `city/lib/launch/towers.ts`
@@ -2780,6 +2830,11 @@ moved counts as new. Generated at every update from the development history.
 - `city/lib/launch/trust.ts`
 - `city/lib/launch/wallet.ts`
 - `city/lib/launch/words.ts`
+- `city/lib/learn/ask.ts`
+- `city/lib/learn/guide.generated.ts`
+- `city/lib/learn/learn.test.mjs`
+- `city/lib/learn/store.ts`
+- `city/lib/learn/types.ts`
 - `city/lib/lens/launches.test.mjs`
 - `city/lib/lens/launches.ts`
 - `city/lib/lens/lens.test.mjs`
@@ -2815,6 +2870,8 @@ moved counts as new. Generated at every update from the development history.
 - `city/lib/market/jupiter.ts`
 - `city/lib/market/normalize.test.mjs`
 - `city/lib/market/normalize.ts`
+- `city/lib/market/serve.test.mjs`
+- `city/lib/market/serve.ts`
 - `city/lib/market/snapshot.json`
 - `city/lib/market/types.ts`
 - `city/lib/moments/MomentsLayer.tsx`
@@ -2868,8 +2925,12 @@ moved counts as new. Generated at every update from the development history.
 - `city/lib/money/frame.test.mjs`
 - `city/lib/money/frame.ts`
 - `city/lib/money/open.ts`
+- `city/lib/money/portfolio.test.mjs`
+- `city/lib/money/portfolio.ts`
 - `city/lib/money/recipient.test.mjs`
 - `city/lib/money/recipient.ts`
+- `city/lib/money/rewards.test.mjs`
+- `city/lib/money/rewards.ts`
 - `city/lib/money/say.ts`
 - `city/lib/money/send.test.mjs`
 - `city/lib/money/send.ts`
@@ -2925,6 +2986,13 @@ moved counts as new. Generated at every update from the development history.
 - `city/lib/pay/qr.server.ts`
 - `city/lib/pay/shots.mjs`
 - `city/lib/pay/words.ts`
+- `city/lib/pilot/pilot.test.mjs`
+- `city/lib/pilot/read.ts`
+- `city/lib/pilot/shots.mjs`
+- `city/lib/pilot/sign.ts`
+- `city/lib/pilot/store.ts`
+- `city/lib/pilot/wallet-check.ts`
+- `city/lib/pilot/words.ts`
 - `city/lib/quarter/account-live.ts`
 - `city/lib/quarter/account.test.mjs`
 - `city/lib/quarter/account.ts`
@@ -3234,6 +3302,8 @@ moved counts as new. Generated at every update from the development history.
 - `lib/agent/model.ts`
 - `lib/agent/move-lead-ai21.test.mjs`
 - `lib/agent/provenance.ts`
+- `lib/agent/providers-city205.test.mjs`
+- `lib/agent/providers.ts`
 - `lib/agent/runtime.server.ts`
 - `lib/agent/security.test.mjs`
 - `lib/agent/service.test.mjs`
@@ -3430,6 +3500,17 @@ moved counts as new. Generated at every update from the development history.
 - `lib/bots/weather/indicators.ts`
 - `lib/bots/weather/weather.test.mjs`
 - `lib/bots/weather/weather.ts`
+- `lib/care/care.test.mjs`
+- `lib/care/decide.ts`
+- `lib/care/enable.ts`
+- `lib/care/failures.test.mjs`
+- `lib/care/run.server.ts`
+- `lib/care/service.server.ts`
+- `lib/care/signer.server.ts`
+- `lib/care/ssa-care.ts`
+- `lib/care/terms.ts`
+- `lib/care/venue.server.ts`
+- `lib/care/worth.ts`
 - `lib/city-economy/DayPanel.tsx`
 - `lib/city-economy/ceilings.test.mjs`
 - `lib/city-economy/clusters.server.test.mjs`
@@ -3602,6 +3683,8 @@ moved counts as new. Generated at every update from the development history.
 - `lib/earn/chain.server.ts`
 - `lib/earn/chain.ts`
 - `lib/earn/contract.ts`
+- `lib/earn/deposit-setup.test.mjs`
+- `lib/earn/deposit-setup.ts`
 - `lib/earn/earn.test.mjs`
 - `lib/earn/fixtures.ts`
 - `lib/earn/gate.ts`
@@ -3666,6 +3749,10 @@ moved counts as new. Generated at every update from the development history.
 - `lib/growth/cluster-check.server.ts`
 - `lib/growth/cluster-check.test.mjs`
 - `lib/growth/cluster-check.ts`
+- `lib/growth/demand-week-telegram.server.ts`
+- `lib/growth/demand-week.server.ts`
+- `lib/growth/demand-week.test.mjs`
+- `lib/growth/demand-week.ts`
 - `lib/growth/fixtures/tx-v1-mainnet-parsed.json`
 - `lib/growth/guest-programme.server.ts`
 - `lib/growth/leaderboard.ts`
@@ -3897,6 +3984,7 @@ moved counts as new. Generated at every update from the development history.
 - `lib/liquidity/studio/fixtures/damm-v2.tape.json.gz`
 - `lib/liquidity/studio/fixtures/dlmm.tape.json.gz`
 - `lib/liquidity/studio/fixtures/scenarios.mjs`
+- `lib/liquidity/studio/fixtures/zap-tape.mjs`
 - `lib/liquidity/studio/gate.ts`
 - `lib/liquidity/studio/http.server.ts`
 - `lib/liquidity/studio/limit-orders.test.mjs`
@@ -3906,6 +3994,9 @@ moved counts as new. Generated at every update from the development history.
 - `lib/liquidity/studio/studio.test.mjs`
 - `lib/liquidity/studio/ticket.ts`
 - `lib/liquidity/studio/venues.server.ts`
+- `lib/liquidity/studio/zap-check.ts`
+- `lib/liquidity/studio/zap.test.mjs`
+- `lib/liquidity/studio/zap.ts`
 - `lib/mandate/agent-service.server.ts`
 - `lib/mandate/agent.ts`
 - `lib/mandate/autopilot.test.mjs`
@@ -3928,11 +4019,17 @@ moved counts as new. Generated at every update from the development history.
 - `lib/mandate/jupiter.server.ts`
 - `lib/mandate/mainnet.test.mjs`
 - `lib/mandate/mandate.test.mjs`
+- `lib/mandate/net.test.mjs`
+- `lib/mandate/net.ts`
+- `lib/mandate/owner.server.ts`
+- `lib/mandate/owner.test.mjs`
+- `lib/mandate/owner.ts`
 - `lib/mandate/plans.ts`
 - `lib/mandate/presets.ts`
 - `lib/mandate/report.ts`
 - `lib/mandate/result.ts`
 - `lib/mandate/run.server.ts`
+- `lib/mandate/ryntra-coins.server.ts`
 - `lib/mandate/sale-mainnet.test.mjs`
 - `lib/mandate/sale.server.ts`
 - `lib/mandate/sale.test.mjs`
@@ -4068,6 +4165,13 @@ moved counts as new. Generated at every update from the development history.
 - `lib/phoenix/risk-guardian.ts`
 - `lib/phoenix/telemetry.test.mjs`
 - `lib/phoenix/telemetry.ts`
+- `lib/pilot/book.server.ts`
+- `lib/pilot/care.ts`
+- `lib/pilot/pass.server.ts`
+- `lib/pilot/pilot.test.mjs`
+- `lib/pilot/plan.ts`
+- `lib/pilot/service.server.ts`
+- `lib/pilot/view.ts`
 - `lib/plans/builder-defaults.test.mjs`
 - `lib/plans/builder-defaults.ts`
 - `lib/plans/decimal-input.test.mjs`
@@ -4320,6 +4424,8 @@ moved counts as new. Generated at every update from the development history.
 - `lib/solana/fixtures/jupiter-build-sol-usdc.json`
 - `lib/solana/fixtures/token-2022-mints.mjs`
 - `lib/solana/fixtures/tx-v1-mainnet.json`
+- `lib/solana/holdings-catalog.server.test.mjs`
+- `lib/solana/holdings-catalog.server.ts`
 - `lib/solana/holdings.client.test.mjs`
 - `lib/solana/holdings.client.ts`
 - `lib/solana/jupiter-ask-again.test.mjs`
@@ -4794,6 +4900,101 @@ moved counts as new. Generated at every update from the development history.
 - `public/city/models/people.webp`
 - `public/city/models/rooms.webp`
 - `public/city/share-scene.jpg`
+- `public/learn/diagrams/en-agent-1-tall.svg`
+- `public/learn/diagrams/en-agent-1.svg`
+- `public/learn/diagrams/en-agent-2.svg`
+- `public/learn/diagrams/en-city-1-tall.svg`
+- `public/learn/diagrams/en-city-1.svg`
+- `public/learn/diagrams/en-consultant-agents-1-tall.svg`
+- `public/learn/diagrams/en-consultant-agents-1.svg`
+- `public/learn/diagrams/en-earn-1-tall.svg`
+- `public/learn/diagrams/en-earn-1.svg`
+- `public/learn/diagrams/en-index-1.svg`
+- `public/learn/diagrams/en-launch-1-tall.svg`
+- `public/learn/diagrams/en-launch-1.svg`
+- `public/learn/diagrams/en-money-1.svg`
+- `public/learn/diagrams/en-partners-1-tall.svg`
+- `public/learn/diagrams/en-partners-1.svg`
+- `public/learn/diagrams/en-phone-1.svg`
+- `public/learn/diagrams/en-search-ask-1.svg`
+- `public/learn/diagrams/en-security-1-tall.svg`
+- `public/learn/diagrams/en-security-1.svg`
+- `public/learn/diagrams/en-strategies-1.svg`
+- `public/learn/diagrams/en-trade-1.svg`
+- `public/learn/diagrams/uk-agent-1-tall.svg`
+- `public/learn/diagrams/uk-agent-1.svg`
+- `public/learn/diagrams/uk-agent-2.svg`
+- `public/learn/diagrams/uk-city-1-tall.svg`
+- `public/learn/diagrams/uk-city-1.svg`
+- `public/learn/diagrams/uk-consultant-agents-1-tall.svg`
+- `public/learn/diagrams/uk-consultant-agents-1.svg`
+- `public/learn/diagrams/uk-earn-1-tall.svg`
+- `public/learn/diagrams/uk-earn-1.svg`
+- `public/learn/diagrams/uk-index-1.svg`
+- `public/learn/diagrams/uk-launch-1-tall.svg`
+- `public/learn/diagrams/uk-launch-1.svg`
+- `public/learn/diagrams/uk-money-1.svg`
+- `public/learn/diagrams/uk-partners-1-tall.svg`
+- `public/learn/diagrams/uk-partners-1.svg`
+- `public/learn/diagrams/uk-phone-1.svg`
+- `public/learn/diagrams/uk-search-ask-1.svg`
+- `public/learn/diagrams/uk-security-1-tall.svg`
+- `public/learn/diagrams/uk-security-1.svg`
+- `public/learn/diagrams/uk-strategies-1.svg`
+- `public/learn/diagrams/uk-trade-1.svg`
+- `public/learn/fonts/LICENSE.md`
+- `public/learn/fonts/geist-cyrillic.woff2`
+- `public/learn/fonts/hubot-latin.woff2`
+- `public/learn/fonts/mona-latin.woff2`
+- `public/learn/fonts/unbounded-cyrillic.woff2`
+- `public/learn/img/en/01-city-desk.webp`
+- `public/learn/img/en/01-city-phone.webp`
+- `public/learn/img/en/02-ask-desk.webp`
+- `public/learn/img/en/02-ask-phone.webp`
+- `public/learn/img/en/02-search-desk.webp`
+- `public/learn/img/en/02-search-phone.webp`
+- `public/learn/img/en/03-tower-desk.webp`
+- `public/learn/img/en/03-tower-phone.webp`
+- `public/learn/img/en/04-launch-desk.webp`
+- `public/learn/img/en/04-launch-phone.webp`
+- `public/learn/img/en/05-agent-desk.webp`
+- `public/learn/img/en/05-agent-phone.webp`
+- `public/learn/img/en/06-strategies-desk.webp`
+- `public/learn/img/en/06-strategies-phone.webp`
+- `public/learn/img/en/07-earn-desk.webp`
+- `public/learn/img/en/07-earn-phone.webp`
+- `public/learn/img/en/08-money-desk.webp`
+- `public/learn/img/en/08-money-phone.webp`
+- `public/learn/img/en/09-partners-phone.webp`
+- `public/learn/img/en/11-security-desk.webp`
+- `public/learn/img/en/11-security-phone.webp`
+- `public/learn/img/en/12-crew-desk.webp`
+- `public/learn/img/en/12-crew-phone.webp`
+- `public/learn/img/uk/01-city-desk.webp`
+- `public/learn/img/uk/01-city-phone.webp`
+- `public/learn/img/uk/02-ask-desk.webp`
+- `public/learn/img/uk/02-ask-phone.webp`
+- `public/learn/img/uk/02-search-desk.webp`
+- `public/learn/img/uk/02-search-phone.webp`
+- `public/learn/img/uk/03-tower-desk.webp`
+- `public/learn/img/uk/03-tower-phone.webp`
+- `public/learn/img/uk/04-launch-desk.webp`
+- `public/learn/img/uk/04-launch-phone.webp`
+- `public/learn/img/uk/05-agent-desk.webp`
+- `public/learn/img/uk/05-agent-phone.webp`
+- `public/learn/img/uk/06-strategies-desk.webp`
+- `public/learn/img/uk/06-strategies-phone.webp`
+- `public/learn/img/uk/07-earn-desk.webp`
+- `public/learn/img/uk/07-earn-phone.webp`
+- `public/learn/img/uk/08-money-desk.webp`
+- `public/learn/img/uk/08-money-phone.webp`
+- `public/learn/img/uk/09-partners-phone.webp`
+- `public/learn/img/uk/11-security-desk.webp`
+- `public/learn/img/uk/11-security-phone.webp`
+- `public/learn/img/uk/12-crew-desk.webp`
+- `public/learn/img/uk/12-crew-phone.webp`
+- `public/learn/index.html`
+- `public/learn/uk.html`
 - `public/llms.txt`
 - `public/marks/coins/bnb.svg`
 - `public/marks/coins/eth.svg`

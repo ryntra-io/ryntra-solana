@@ -49,7 +49,11 @@ export type PrepareDeps = Readonly<{
   readOperations: () => Promise<readonly OperationIn[]>;
   /** The Rewards record of a wallet: who brought it, since when. */
   readAccount: (wallet: string) => Promise<Account | null>;
-  /** The sanctions source's word for a wallet; anything but `sanctioned` pays (a source that did not answer is not a listing). */
+  /**
+   * The sanctions source's word for a wallet. CITY-196 — fails closed: only `clean` pays; `sanctioned` is held; anything
+   * else — no answer, an error, `unknown`, a word it does not read — holds the payout as a listing does, under its own
+   * reason, carried to the next week and screened again then. As Send reads it (`lib/ward`): only `clean` is «not listed».
+   */
   screen: (wallet: string) => Promise<string>;
   /**
    * The referral guard's word on each pair a pass would count (CITY-125), checking first the pairs that need it; a pair
@@ -88,6 +92,14 @@ export async function accountsOf(events: readonly FeeEvent[], read: PrepareDeps[
   return accounts;
 }
 
+export type Screening = "clear" | "sanctioned" | "unscreened";
+
+/** The source's word as the payout reads it (CITY-196): only `clean` is clear. */
+export function screeningOf(word: string): Screening {
+  if (word === "sanctioned") return "sanctioned";
+  return word === "clean" ? "clear" : "unscreened";
+}
+
 /** Prepare every closed week that has no statement yet, oldest first. Safe to run as often as anyone likes. */
 export async function prepareWeeks(deps: PrepareDeps): Promise<PrepareResult> {
   const now = deps.now();
@@ -102,12 +114,13 @@ export async function prepareWeeks(deps: PrepareDeps): Promise<PrepareResult> {
   };
   const prepared: string[] = [];
   const existing: string[] = [];
-  const screened = new Map<string, boolean>();
-  const sanctionedAmong = async (partners: readonly string[]) => {
+  const screened = new Map<string, Screening>();
+  const screenAmong = async (partners: readonly string[]) => {
     for (const partner of partners) {
-      if (!screened.has(partner)) screened.set(partner, (await deps.screen(partner).catch(() => "unavailable")) === "sanctioned");
+      if (!screened.has(partner)) screened.set(partner, screeningOf(await deps.screen(partner).catch(() => "unavailable")));
     }
-    return new Set(partners.filter((partner) => screened.get(partner)));
+    const of = (word: Screening) => new Set(partners.filter((partner) => screened.get(partner) === word));
+    return { sanctioned: of("sanctioned"), unscreened: of("unscreened") };
   };
 
   for (const week of weeks) {
@@ -121,8 +134,8 @@ export async function prepareWeeks(deps: PrepareDeps): Promise<PrepareResult> {
       const base = { cluster: deps.cluster, week, events, accounts, credited: creditedOf(before), previous, voided, guard, now: now.toISOString() };
       /* Counted once to learn who would be paid, screened, then counted again with the screening's answer. */
       const draft = prepareStatement({ ...base, sanctioned: new Set() });
-      const sanctioned = await sanctionedAmong(payoutsOf(draft).map((line) => line.to));
-      const statement = prepareStatement({ ...base, sanctioned });
+      const { sanctioned, unscreened } = await screenAmong(payoutsOf(draft).map((line) => line.to));
+      const statement = prepareStatement({ ...base, sanctioned, unscreened });
       const ok = await deps.store.compareAndSetMany([
         { collection: WEEKS, key: statementKey(deps.cluster, week), expectedVersion: null, next: statement },
         ...voided.map((row) => ({ collection: WEEKS, key: statementKey(deps.cluster, row.week), expectedVersion: row.version, next: { ...row, version: row.version + 1, rolledInto: week } })),

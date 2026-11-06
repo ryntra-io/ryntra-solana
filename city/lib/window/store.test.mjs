@@ -48,13 +48,9 @@ test("layout('grid') sticks the open frames together, and the device remembers i
   reload();
   for (const spec of FOUR) openWindow(spec);
   const grid = Object.fromEntries(layout("grid").map((p) => [p.id, p.rect]));
-  // The first two stood in the bays; the next two joined the bay in front as its tabs (CITY-84). With both bays taken
-  // the grid has no room the city can spare: the bays stay as they are.
+  // New windows float in the middle: the grid lays the four out whole in the workspace.
   const area = useWindows.getState().layout.area;
-  assert.equal(grid.chart.x + grid.chart.width, area.x + area.width);
-  assert.equal(grid.swap.x, area.x);
-  assert.deepEqual(grid.spot, grid.swap);
-  assert.deepEqual(grid.futures, grid.swap);
+  for (const r of Object.values(grid)) assert.ok(r.x >= area.x && r.y >= area.y && r.x + r.width <= area.x + area.width && r.y + r.height <= area.y + area.height);
   void stuck;
   assert.ok(items.has(LAYOUT_KEY));
   reload();
@@ -149,13 +145,16 @@ function fresh() {
   reload();
 }
 
-test("the first windows stand in the bays; a held window never folds; folded, it closes and its chip opens it again in place", () => {
+test("the first windows float in the middle; a held window never folds; folded, it closes and its chip opens it again in place", () => {
   fresh();
   let closed = 0;
   openWindow(spec("spot", { onClose: () => (closed += 1) }));
   openWindow(spec("money", { held: true }));
   const places = Object.fromEntries(useWindows.getState().layout.windows.map((w) => [w.id, w.bay]));
-  assert.deepEqual(places, { spot: "right", money: "left" });
+  assert.deepEqual(places, { spot: null, money: null });
+  const area = useWindows.getState().layout.area;
+  const spotRect = useWindows.getState().layout.windows.find((w) => w.id === "spot").rect;
+  assert.ok(Math.abs(spotRect.x + spotRect.width / 2 - (area.x + area.width / 2)) <= 1, "the first one stands in the middle");
   useWindows.getState().fold("money", {});
   assert.ok(useWindows.getState().layout.windows.some((w) => w.id === "money"), "a signature keeps it in sight");
   assert.deepEqual(useWindows.getState().chips, []);
@@ -167,7 +166,7 @@ test("the first windows stand in the bays; a held window never folds; folded, it
   // The layout in use is not changed by a fold, and a chip goes when its window opens — however it was asked for.
   openWindow(spec("spot"));
   assert.deepEqual(useWindows.getState().chips, []);
-  assert.equal(useWindows.getState().layout.windows.find((w) => w.id === "spot").bay, "right", "where it stood");
+  assert.deepEqual(useWindows.getState().layout.windows.find((w) => w.id === "spot").rect, spotRect, "where it stood");
   useWindows.getState().fold("spot", {});
   useWindows.getState().dropChip("spot");
   assert.deepEqual(useWindows.getState().chips, []);
@@ -273,7 +272,7 @@ test("a window remembered in a bay whose frame waits on a signature stands elsew
   const money = now.windows.find((w) => w.id === "money");
   assert.equal(spot.bay, "left");
   assert.notEqual(money.stack, spot.stack, "the held card stays in sight");
-  assert.equal(money.bay, "right");
+  assert.equal(money.bay, null, "it floats where it stood");
 });
 
 test("the layout in use keeps what a run closed through its owner, and lets go what the person closed", () => {

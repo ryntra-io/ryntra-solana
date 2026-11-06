@@ -123,3 +123,22 @@ test('the answer parses with HoldingsResponseSchema, and native SOL carries no m
  const partial=HoldingsResponseSchema.parse(await(await POST(request())).json());
  assert.equal(partial.data.tokenRead,'PARTIAL');
 });
+test('Jupiter answering 429 on every catalogue host still names USDC — never a bare address (2026-11-05)',async t=>{
+ const { resetHoldingsCatalogMemory } = await import('../../../../lib/solana/holdings-catalog.server.ts');
+ resetHoldingsCatalogMemory();
+ const jupiter=[];
+ t.mock.method(globalThis,'fetch',async(url,init)=>{
+  if(!init?.body){jupiter.push(String(url));return new Response('',{status:429,headers:{'retry-after':'0'}});}
+  const payload=JSON.parse(init.body);
+  if(payload.method==='getBalance')return reply(payload,'{"context":{"slot":100},"value":5000000000}');
+  if(payload.method==='getTokenAccountsByOwner')return reply(payload,JSON.stringify({context:{slot:100},value:fixture[payload.params[1].programId]}));
+  if(payload.method==='getMultipleAccounts')return reply(payload,JSON.stringify({context:{slot:100},value:payload.params[0].map(()=>null)}));
+  throw new Error('Unexpected method '+payload.method);
+ });
+ const response=await POST(request());const {data}=await response.json();
+ assert.equal(response.status,200);
+ assert.ok(jupiter.some(u=>u.includes('lite-api.jup.ag')),'the keyless host was asked');
+ const usdc=data.holdings.find(row=>row.mint===MINT);
+ assert.equal(usdc.catalog.symbol,'USDC');assert.equal(usdc.catalog.isVerified,true);assert.equal(usdc.catalog.usdPrice,null,'no price is invented');
+ assert.equal(data.holdings[0].catalog.symbol,'SOL');
+});

@@ -31,6 +31,7 @@ import { tokenAccountOf, type Mandate } from "./human.ts";
 import { tradeTerms } from "./result.ts";
 import { agentTrade, fateOf, policyOf, type TradeOutcome } from "./run.server.ts";
 import { mandateSigner, type AgentJournal, type AgentSigner } from "./signer.server.ts";
+import { storeScreen, type AgentScreen } from "./ryntra-coins.server.ts";
 import { readPolicyHead, refusalOf } from "./ssa.ts";
 import { AUTOSTOP, autostop, decide, steadyRhythm, type AgentTrade, type PauseReason } from "./strategy.ts";
 
@@ -81,6 +82,8 @@ export type TickDeps = Readonly<{
   key: KeySigner;
   journal: AgentJournal;
   venue: Venue;
+  /** CITY-196: what the agent never buys and whom it never trades with; the store's own registry when not handed in. */
+  screen?: AgentScreen;
   now?: () => number;
   /** The one trade, end to end — `./run.server.ts` `agentTrade`; the tests hand in their own chain. */
   trade?: typeof agentTrade;
@@ -266,11 +269,12 @@ async function workFor(given: BookEntry, deps: TickDeps, now: () => number, trad
     (balance) => BigInt(balance.value.amount),
     () => null,
   );
-  const decision = decide({ strategy: entry.strategy, perTrade: mandate.terms.perTrade, perDay: mandate.terms.perDay, expiresAt: mandate.terms.expiresAt, trades: entry.trades, budgetLeft: left, now: at });
-  if (decision.action === "end") return settle(deps.store, entry, decision.reason === "ended" ? "ended" : decision.reason === "spent" ? "spent" : "paused", at, decision.reason === "failing" ? "failing" : undefined);
-
   /* CITY-193 — the person's strategy: its prices, its exit, its launch's age. It holds a buy back; it never adds one. */
   const plan = planOfEntry(entry);
+  /* CITY-197: its pace slows the rhythm; it never quickens it. */
+  const decision = decide({ strategy: entry.strategy, perTrade: mandate.terms.perTrade, perDay: mandate.terms.perDay, expiresAt: mandate.terms.expiresAt, trades: entry.trades, budgetLeft: left, now: at, pace: plan.pace ?? null });
+  if (decision.action === "end") return settle(deps.store, entry, decision.reason === "ended" ? "ended" : decision.reason === "spent" ? "spent" : "paused", at, decision.reason === "failing" ? "failing" : undefined);
+
   let working: BookEntry = entry;
   if ((plan.id === "dip" || plan.id === "grid") && decimals !== null) {
     const marks = await withMark(entry.marks ?? [], at, () => deps.venue.worth(mandate, 10n ** BigInt(decimals), coin));
@@ -320,11 +324,11 @@ async function workFor(given: BookEntry, deps: TickDeps, now: () => number, trad
   if (working !== entry || entry.unreadSince !== undefined || entry.status !== "working") await writeEntry(deps.store, seeing);
 
   /* One claim per slot of the rhythm: a second instance on the same pass finds it taken and waits. */
-  const { everyMs } = steadyRhythm(mandate.terms.perTrade, mandate.terms.perDay);
+  const { everyMs } = steadyRhythm(mandate.terms.perTrade, mandate.terms.perDay, plan.pace ?? null);
   const slot = Math.floor(at / everyMs);
   if (!(await bookOf(deps.store).insertIfAbsent(claimKey(entry.cluster, entry.record.policy, slot), { claimedAt: at }))) return "waited";
 
-  const signer: AgentSigner = mandateSigner(deps.key, { mandate, policy: policyOf(mandate), journal: deps.journal });
+  const signer: AgentSigner = mandateSigner(deps.key, { mandate, policy: policyOf(mandate), journal: deps.journal, screen: deps.screen ?? storeScreen(deps.store, deps.gate.network) });
   let outcome: TradeOutcome;
   let minOut: bigint | null = null;
   /* From here on the trade may be on its way, whatever happens to this process. */

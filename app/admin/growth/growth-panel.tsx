@@ -12,6 +12,7 @@ import ext from "../panels.module.css";
 import biz from "../analytics/analytics.module.css";
 import { formatDate, formatInt, formatPercent, formatUsd } from "../format";
 import own from "./growth.module.css";
+import { DemandWeekCard } from "./demand-week";
 
 /**
  * The growth panel: where people come from and where they drop off — external wallets only. Ворота етапу and the
@@ -532,6 +533,8 @@ export function GrowthPanel() {
           </p>
         </InfoControl>
       </div>
+
+      <DemandWeekCard />
 
       <div className={biz.toolbar}>
         <Segment value={range} onChange={setRange} />

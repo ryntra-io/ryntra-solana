@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useId, useState } from 'react';
+import { syncAgents } from '@/city/lib/bots/agents';
 import { MANDATE_NET, MANDATE_PRESETS, presetLimits, useMandate } from '@/city/lib/bots/mandate';
 import { agentCoins, bookNow } from '@/city/lib/command/doors';
 import { agentFeeFigures } from '@/city/lib/bots/agent-fee';
@@ -35,6 +36,11 @@ export function AgentBudget() {
   useEffect(() => {
     useMandate.getState().hydrate();
   }, []);
+
+  // CITY-207: the engine's book over this browser's note — the agent hired on another device shows here too.
+  useEffect(() => {
+    if (owner && MANDATE_NET) void syncAgents(owner);
+  }, [owner]);
 
   // The mandate's state on devnet, read when the wallet's mandate is known and now and then while the window is open.
   useEffect(() => {

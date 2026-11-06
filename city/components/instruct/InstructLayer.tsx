@@ -49,7 +49,7 @@ export function InstructLayer() {
   }, [open, listOpen]);
 
   const card = useMemo(
-    () => ({ id: 'agent', title: w.title, icon: <AgentGlyph />, render: renderCard, size: { width: 440, height: 560 }, min: { width: 360, height: 420 }, held: busy, onClose: closeCard }),
+    () => ({ id: 'agent', title: w.title, icon: <AgentGlyph />, render: renderCard, fit: true, size: { width: 440, height: 560 }, min: { width: 360, height: 420 }, held: busy, onClose: closeCard }),
     [w.title, busy],
   );
   const list = useMemo(

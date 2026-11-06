@@ -377,6 +377,12 @@ const REVIEWED = new Set([
   "openAutopilot", "readAsk", "presetFor", "rhythmOf", "wordsNow", "trades",
   // the Dollar Saver on its word (CITY-192): it reads the coin and the amount and opens the card; the person signs there
   "openDollar", "readDollarAsk", "fromAsk", "rateText", "earnWords",
+  // the money autopilot on its word (CITY-204): it reads the plan and opens the card; the person practises and signs there
+  "openPilot", "readPilotAsk", "solPrice", "agentCoins", "filter", "Boolean",
+  // «Learn» (CITY-202): the guide on a chapter — it only explains
+  "openLearn",
+  // a job for an agent (CITY-205): that agent's card or the crew in «Bots» — they open; the person signs in the card
+  "openCrew",
   "fillPay", "fillAmount", "fillShare", "fillPrice", "fillSend", "gatesNow",
   "buy", "sell", "order", "chart", "share", "launchAs",
   "getState", "setState", "subscribe",

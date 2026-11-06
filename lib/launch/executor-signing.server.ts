@@ -5,7 +5,9 @@
  * - Meteora DBC: the migration of a full curve, and — on a config whose fee claimer it is — the partner's trading fee,
  *   migration fee and surplus;
  * - Meteora DAMM v2: the fees of a position it owns, and the cent's purchase a DLMM pool asks its creator for — a swap of
- *   at most `PROOF_SWAP_MAX_RAW`, between the executor's own accounts, with no referral account;
+ *   at most `PROOF_SWAP_MAX_RAW`, between the executor's own accounts, with no referral account, and only as that proof:
+ *   the same message opens the DLMM pool after it, and the swap buys that pool's coin into the executor's own account
+ *   (CITY-196 — Ryntra's keys buy no coin of Ryntra's launchpad; the proof is Meteora's price of opening a pool, not a buy);
  * - Meteora DLMM: its own pool, position and steps — open, add, remove, move, close;
  * - the compute budget, and the opening of its own token accounts.
  * Every token account a Meteora instruction pays into must be one of the executor's own (its associated accounts of
@@ -101,11 +103,23 @@ export const PROOF_SWAP_MAX_RAW = 100_000n;
 export const COMPUTE_UNIT_PRICE_MAX = 1_000_000n;
 const COMPUTE_UNIT_LIMIT_MAX = 1_400_000;
 
+/** The DLMM pool's opening a proof is bought for: the one instruction that asks its creator to hold the coin. */
+const PROOF_POOL_OPENING = "initialize_customizable_permissionless_lb_pair2";
+
 /** Why a transaction is not the executor's to sign; null when it is. */
 export function executorSigningRefusal(instructions: readonly TransactionInstruction[], executor: string, dlmm: Idl, payees: readonly string[] = []): string | null {
   const self = new PublicKey(executor);
   const wallets = [self, ...payees.map((payee) => new PublicKey(payee))];
   const PROGRAMS = programs(dlmm);
+  /* CITY-196: the pools this message opens, by position and coin — a swap is signed only as the proof of one after it. */
+  const openings = instructions.flatMap((ix, index) => {
+    if (ix.programId.toBase58() !== dlmm.address) return [];
+    const head = [...ix.data.subarray(0, 8)];
+    const shape = dlmm.instructions.find((entry) => entry.name === PROOF_POOL_OPENING && entry.discriminator.length === 8 && entry.discriminator.every((byte, at) => byte === head[at]));
+    const slot = shape ? shape.accounts.findIndex((account) => account.name === "token_mint_x") : -1;
+    const mint = slot >= 0 ? ix.keys[slot]?.pubkey : undefined;
+    return mint ? [{ index, mint }] : [];
+  });
   for (const [index, ix] of instructions.entries()) {
     const program = ix.programId.toBase58();
     if (program === COMPUTE) {
@@ -141,6 +155,12 @@ export function executorSigningRefusal(instructions: readonly TransactionInstruc
       if (amountIn === null || amountIn > PROOF_SWAP_MAX_RAW) return `instruction ${index}: a swap above the proof's ceiling`;
       const referral = at("referral_token_account");
       if (referral && !referral.equals(ix.programId)) return `instruction ${index}: a swap that pays a referral account`;
+      /* Only as a new pool's proof: the pool opened after it in this message, its coin bought into the executor's own account. */
+      const output = at("output_token_account");
+      const pool = openings.find((opening) => opening.index > index);
+      if (!pool) return `instruction ${index}: a swap that is no new pool's proof — the executor buys no coin`;
+      const proof = [TOKEN_PROGRAM_ID, TOKEN_2022_PROGRAM_ID].map((tokenProgram) => getAssociatedTokenAddressSync(pool.mint, self, true, tokenProgram));
+      if (!output || !proof.some((account) => account.equals(output))) return `instruction ${index}: a swap that does not buy the new pool's coin into the executor's own account`;
     }
     for (const account of shape.accounts) {
       const key = at(account.name);

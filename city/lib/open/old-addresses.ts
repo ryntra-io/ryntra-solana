@@ -46,9 +46,10 @@ export type OldAddress = Readonly<{
  * The old addresses that lead into the city for now, not for good (307): a browser caches a 308 forever, so an address
  * another product or a later step may take back is never answered with one. `/agents` and `/agent-control` were another
  * product's, not this one (decision 69), temporary in the cabinet's own table too; `/live` was
- * Launch Night's, which the city's Launch brings back (CITY-146).
+ * Launch Night's, which the city's Launch brings back (CITY-146); the site's shortcuts to another product's pages
+ * (decision 69) are that product's to take back.
  */
-const TEMPORARY = /^\/(?:agents(?:\/|$)|agent-control$|live$)/;
+const TEMPORARY = /^\/(?:agents(?:\/|$)|agent-control$|live$|verify(?:\/|$)|guard$|proof$)/;
 
 /**
  * A friend's code in `?ref=` (`lib/rewards/referral-code.ts`: twelve symbols of its alphabet, a letter among them),
@@ -183,6 +184,11 @@ const OTHERS: readonly Row[] = [
   ['/predict/portfolio', open('oracle', '&page=positions'), 'oracle'],
   ['/predict/:eventId', open('oracle', '&market=:eventId'), 'oracle'],
   ['/predict/:path*', open('oracle'), 'oracle'],
+
+  /* The site's own shortcuts to another product's pages (decision 69), whose code left this build on 4 November 2026:
+     the city's home, for now. That product's own addresses are not the city's — they are its 404, with its one way back
+     (`city/components/open/Lost.tsx`). */
+  ...['/verify/:path*', '/guard', '/proof'].map((source): Row => [source, HOME, 'home']),
 
   /* The aliases that led into the cabinet, each in one hop now. */
   [`/assets/:mint(${MINT_PATTERN})`, COIN, 'coin'],

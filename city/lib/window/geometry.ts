@@ -476,5 +476,5 @@ export function openRect(size: Size, min: Size, area: Rect, index: number): Rect
   const width = clamp(size.width, Math.min(min.width, area.width), Math.round(area.width * 0.8));
   const height = clamp(size.height, Math.min(min.height, area.height), Math.round(area.height * 0.85));
   const step = (index % 6) * STEP;
-  return fitRect({ x: area.x + (area.width - width) / 2 - 2 * STEP + step, y: area.y + (area.height - height) / 2 - 2 * STEP + step, width, height }, area, min);
+  return fitRect({ x: Math.round(area.x + (area.width - width) / 2 + step), y: Math.round(area.y + (area.height - height) / 2 + step), width, height }, area, min);
 }

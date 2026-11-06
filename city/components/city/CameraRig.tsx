@@ -9,6 +9,7 @@ import { Press, twist, TWIST_MIN_SPAN, type Point } from '@/city/lib/city/gestur
 import type { PlacedTower } from '@/city/lib/city/layout';
 import { pickTower } from '@/city/lib/city/pick';
 import { useAssistant } from '@/city/lib/assistant/store';
+import { ghostGuard } from '@/city/lib/city/ghost';
 import { useCity } from '@/city/lib/city/store';
 import { useGameMap } from '@/city/lib/game/map';
 import { useRun } from '@/city/lib/run/store';
@@ -141,6 +142,8 @@ export function CameraRig({ world }: { world: RefObject<THREE.Group | null> }) {
   useEffect(() => {
     const el = gl.domElement;
     const press = new Press();
+    // The tap that opened a tower's window does not also press what the window put under the finger (CITY-200).
+    const ghost = ghostGuard();
     const fingers = new Map<number, Point>();
     const raycaster = new THREE.Raycaster();
     const ndc = new THREE.Vector2();
@@ -149,6 +152,7 @@ export function CameraRig({ world }: { world: RefObject<THREE.Group | null> }) {
       if (e.isPrimary) {
         press.reset();
         fingers.clear();
+        ghost.reset();
       }
       press.down(e.pointerId, { x: e.clientX, y: e.clientY }, performance.now());
       if (e.pointerType === 'touch') fingers.set(e.pointerId, { x: e.clientX, y: e.clientY });
@@ -176,8 +180,10 @@ export function CameraRig({ world }: { world: RefObject<THREE.Group | null> }) {
       raycaster.setFromCamera(ndc, camera);
       const state = useCity.getState();
       const hit = pickTower(raycaster.ray, state.layout.towers);
+      if (hit) ghost.arm(e.pointerType);
       state.select(hit ? hit.tower.id : null);
     };
+    const onTouchEnd = (e: TouchEvent) => ghost.onTouchEnd(e);
     const onCancel = (e: PointerEvent) => {
       fingers.delete(e.pointerId);
       press.cancel(e.pointerId);
@@ -186,7 +192,9 @@ export function CameraRig({ world }: { world: RefObject<THREE.Group | null> }) {
     el.addEventListener('pointermove', onMove);
     el.addEventListener('pointerup', onUp);
     el.addEventListener('pointercancel', onCancel);
+    el.addEventListener('touchend', onTouchEnd, { passive: false });
     return () => {
+      el.removeEventListener('touchend', onTouchEnd);
       el.removeEventListener('pointerdown', onDown);
       el.removeEventListener('pointermove', onMove);
       el.removeEventListener('pointerup', onUp);

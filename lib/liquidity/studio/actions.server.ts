@@ -11,10 +11,15 @@ import { Keypair, type Connection } from "@solana/web3.js";
 
 import { KIND_OF_VENUE, forgetWalletPositions, positionsConnections } from "../catalog/chain.server.ts";
 import { readPoolRecord } from "../catalog/service.server.ts";
-import { reviewLimitAction as reviewLimit, reviewLiquidityAction as review, signatureStates, submitLiquidityAction as submit, type ActionDeps } from "./actions.ts";
+import { FEE_POLICY_V2, WRAPPED_SOL_MINT } from "../../core/fee-policy.ts";
+import { buildFeeFor, feePolicyInForce, flowOfSwap } from "../../core/solana-swap/fee-route.server.ts";
+import { resolveJupiterSwapEndpoint } from "../../solana/quotes.ts";
+import { createSolanaRpcHandle } from "../../solana/rpc.ts";
+import { reviewLimitAction as reviewLimit, reviewLiquidityAction as review, reviewZapAction as reviewZap, signatureStates, submitLiquidityAction as submit, type ActionDeps } from "./actions.ts";
 import type { LiquidityVenueAdapter, LiquidityVenueId } from "./contract.ts";
 import type { LimitOrderView, LimitPool, LimitVenue } from "./limit-orders.ts";
-import { limitVenue, liquidityVenues } from "./venues.server.ts";
+import { limitVenue, liquidityVenues, zapVenue } from "./venues.server.ts";
+import type { ZapFee, ZapVenue } from "./zap.ts";
 
 const venueCache = new WeakMap<Connection, Readonly<Record<LiquidityVenueId, LiquidityVenueAdapter>>>();
 const limitCache = new WeakMap<Connection, LimitVenue>();
@@ -22,6 +27,34 @@ function limitVenueFor(connection: Connection): LimitVenue {
   const known = limitCache.get(connection) ?? limitVenue(connection, freshKeypair);
   limitCache.set(connection, known);
   return known;
+}
+
+const zapCache = new WeakMap<Connection, ZapVenue>();
+/** Jupiter's keyed production endpoint for the Zap's swap leg: the SDK asks `{apiUrl}/swap/v2/build` with the key. */
+function zapJupiter(): Readonly<{ apiUrl: string; apiKey: string }> | null {
+  const selection = resolveJupiterSwapEndpoint({ access: "production" });
+  if (!selection.ok) return null;
+  const apiKey = selection.authorizationHeaders()["x-api-key"];
+  return apiKey ? { apiUrl: "https://api.jup.ag", apiKey } : null;
+}
+function zapVenueFor(connection: Connection): ZapVenue {
+  const known = zapCache.get(connection) ?? zapVenue(connection, zapJupiter(), freshKeypair);
+  zapCache.set(connection, known);
+  return known;
+}
+
+/**
+ * Ryntra's fee on a Zap's Jupiter leg, SOL → the pier's other coin: fee policy v2's own flow and rate on its `/build`
+ * lane, into the fee wallet's wrapped-SOL account (the input side, exact before the signature). A flow whose lane is not
+ * `/build`, an unread side («as now»), or a fee account the chain does not show — no fee, never a guess.
+ */
+async function zapFeeFor(outputMint: string): Promise<ZapFee | null> {
+  if (feePolicyInForce() !== "v2") return null;
+  const flow = await flowOfSwap(WRAPPED_SOL_MINT, outputMint).catch(() => null);
+  if (!flow || FEE_POLICY_V2[flow].lane !== "BUILD" || FEE_POLICY_V2[flow].bps <= 0) return null;
+  const read = await buildFeeFor(flow, WRAPPED_SOL_MINT, outputMint, createSolanaRpcHandle({ network: "mainnet" })).catch(() => null);
+  if (!read?.ok || !read.fee || read.fee.side !== "INPUT" || read.fee.mint !== WRAPPED_SOL_MINT) return null;
+  return { bps: read.fee.bps, account: read.fee.account, mint: read.fee.mint };
 }
 
 /*
@@ -59,7 +92,14 @@ function deps(): ActionDeps {
     forget: forgetWalletPositions,
     takeFreshKey,
     limitVenueFor,
+    zapVenueFor,
+    zapFeeFor,
   };
+}
+
+/** A Zap's Review (CITY-198): SOL into a new position of a SOL pier in one approval, or «Take the rest» of one. */
+export function reviewZapAction(body: unknown) {
+  return reviewZap(body, deps());
 }
 
 export function reviewLiquidityAction(body: unknown) {
@@ -112,4 +152,4 @@ export async function readSignatureStates(signatures: readonly string[]) {
   }
 }
 
-export type { LimitReview, LiquidityRelay, LiquidityReview, RelayState } from "./actions.ts";
+export type { LimitReview, LiquidityRelay, LiquidityReview, RelayState, ZapReview } from "./actions.ts";

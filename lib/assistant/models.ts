@@ -62,6 +62,94 @@ export const MODEL_CLASS_DEFAULT: Readonly<Record<Exclude<ModelClass, "L0">, str
   L2: "gpt-6.1-sol",
 };
 
+/**
+ * CITY-205: the provider the assistant's words come from. OpenAI stays the default; `RYNTRA_ASSISTANT_PROVIDER` names
+ * `anthropic` (Anthropic's own API) or `openrouter` (any model through OpenRouter) — and is taken only when that
+ * provider's key and both its model variables are on the deployment, so a name without them keeps answering on OpenAI.
+ * Another provider's models are never written in the code: the deployment names them (and their prices), so the operator
+ * picks the model without a release. Rules decide money, never a model: whichever answers only writes words.
+ */
+export const ASSISTANT_PROVIDERS = ["openai", "anthropic", "openrouter"] as const;
+export type AssistantProvider = (typeof ASSISTANT_PROVIDERS)[number];
+
+export const ASSISTANT_PROVIDER_ENV = "RYNTRA_ASSISTANT_PROVIDER";
+
+/** The key each provider is called with — set on the deployment by the operator, never in the code. */
+export const PROVIDER_KEY_ENV: Readonly<Record<AssistantProvider, string>> = {
+  openai: "OPENAI_API_KEY",
+  anthropic: "ANTHROPIC_API_KEY",
+  openrouter: "OPENROUTER_API_KEY",
+};
+
+/** Each provider's variables that name a model per class. */
+export const PROVIDER_CLASS_ENV: Readonly<Record<AssistantProvider, Readonly<Record<Exclude<ModelClass, "L0">, string>>>> = {
+  openai: MODEL_CLASS_ENV,
+  anthropic: { L1: "ANTHROPIC_ASSISTANT_MODEL_L1", L2: "ANTHROPIC_ASSISTANT_MODEL_L2" },
+  openrouter: { L1: "OPENROUTER_ASSISTANT_MODEL_L1", L2: "OPENROUTER_ASSISTANT_MODEL_L2" },
+};
+
+/**
+ * Each provider's price per class, USD per 1M tokens as «input/cached/output» («0.1/0.01/0.5»): the price book knows
+ * OpenAI's models; another provider's model is priced from here, or its calls stay unpriced — never free.
+ */
+export const PROVIDER_PRICE_ENV: Readonly<Record<Exclude<AssistantProvider, "openai">, Readonly<Record<Exclude<ModelClass, "L0">, string>>>> = {
+  anthropic: { L1: "ANTHROPIC_ASSISTANT_PRICE_L1", L2: "ANTHROPIC_ASSISTANT_PRICE_L2" },
+  openrouter: { L1: "OPENROUTER_ASSISTANT_PRICE_L1", L2: "OPENROUTER_ASSISTANT_PRICE_L2" },
+};
+
+const hasKey = (value: string | undefined): boolean => Boolean(value?.trim());
+
+/** A model's id as the deployment names it: OpenAI's and Anthropic's plain names, OpenRouter's `vendor/model`. */
+const MODEL_NAME = /^[a-z0-9][a-z0-9._-]{1,63}(\/[a-z0-9][a-z0-9._:-]{1,63})?$/i;
+
+/** The model a provider's variable names for a class, or null when it names none a call could send. */
+function namedModel(provider: AssistantProvider, klass: Exclude<ModelClass, "L0">, env: Readonly<Record<string, string | undefined>>): string | null {
+  const named = env[PROVIDER_CLASS_ENV[provider][klass]]?.trim();
+  return named && MODEL_NAME.test(named) ? named : null;
+}
+
+/** Whether this provider's key is on the deployment (set, never read out). */
+export function providerKeyed(provider: AssistantProvider, env: Readonly<Record<string, string | undefined>>): boolean {
+  return hasKey(env[PROVIDER_KEY_ENV[provider]]);
+}
+
+/** The provider the assistant answers with on this deployment: the one named, with its key and both models; else OpenAI. */
+export function assistantProviderOf(env: Readonly<Record<string, string | undefined>> = {}): AssistantProvider {
+  const asked = env[ASSISTANT_PROVIDER_ENV]?.trim().toLowerCase();
+  if ((asked === "anthropic" || asked === "openrouter") && providerKeyed(asked, env) && namedModel(asked, "L1", env) && namedModel(asked, "L2", env)) return asked;
+  return "openai";
+}
+
+type Price = Readonly<{ input: number; cached: number; output: number }>;
+
+/** «0.1/0.01/0.5» → a price; anything else (a missing figure, a negative one) → null. */
+export function priceOf(value: string | undefined): Price | null {
+  const parts = value?.trim().split("/").map((part) => Number(part.trim())) ?? [];
+  if (parts.length !== 3 || parts.some((n) => !Number.isFinite(n) || n < 0)) return null;
+  return { input: parts[0]!, cached: parts[1]!, output: parts[2]! };
+}
+
+/** Another provider's models with the prices the deployment gives them: the book its calls are priced from. */
+export function providerPrices(env: Readonly<Record<string, string | undefined>>): Readonly<Record<string, Price>> {
+  const provider = assistantProviderOf(env);
+  if (provider === "openai") return {};
+  const out: Record<string, Price> = {};
+  for (const klass of ["L1", "L2"] as const) {
+    const name = namedModel(provider, klass, env);
+    const price = priceOf(env[PROVIDER_PRICE_ENV[provider][klass]]);
+    if (name && price) out[name] = price;
+  }
+  return out;
+}
+
+/** The prices the running deployment's provider was given (`lib/agent/providers.ts` sets them as the model is made). */
+let providerBook: Readonly<Record<string, Price>> = {};
+
+/** Sets the book another provider's calls are priced from; OpenAI's own table is never overwritten. */
+export function setProviderPrices(book: Readonly<Record<string, Price>>): void {
+  providerBook = Object.fromEntries(Object.entries(book).filter(([name]) => !(name in TEXT_PRICES)));
+}
+
 export const PRICES_READ_AT = "2026-10-17";
 
 /** USD per 1M tokens. */
@@ -91,15 +179,16 @@ export function servedTier(raw: unknown): ServiceTier {
   return raw === "flex" ? "flex" : "default";
 }
 
-const MODEL_NAME = /^[a-z0-9][a-z0-9._-]{1,63}$/i;
-
 export type ModelChoice = Readonly<{ task: ModelTask; class: Exclude<ModelClass, "L0">; name: string }>;
 
-/** The model a task calls on this deployment: the class's variable when it names a model, else the class's default. */
-export function modelFor(task: ModelTask, env: Readonly<Record<string, string | undefined>> = {}): ModelChoice {
+/**
+ * The model a task calls on this deployment: the class's variable of the provider when it names a model, else OpenAI's
+ * default for the class (another provider is chosen only with both its models named). Without a provider given, the
+ * deployment's own (`assistantProviderOf`).
+ */
+export function modelFor(task: ModelTask, env: Readonly<Record<string, string | undefined>> = {}, provider: AssistantProvider = assistantProviderOf(env)): ModelChoice {
   const klass = TASK_CLASS[task];
-  const named = env[MODEL_CLASS_ENV[klass]]?.trim();
-  return { task, class: klass, name: named && MODEL_NAME.test(named) ? named : MODEL_CLASS_DEFAULT[klass] };
+  return { task, class: klass, name: namedModel(provider, klass, env) ?? MODEL_CLASS_DEFAULT[klass] };
 }
 
 /** The usage a Responses call returned, in the four figures a price needs. */
@@ -126,7 +215,7 @@ export function usageFromResponse(raw: unknown): CallUsage {
 
 /** Micro-dollars (1e-6 USD) for one call, rounded up so a sum never understates; `null` for a model the table does not price. */
 export function costMicroUsd(model: string, usage: CallUsage, tier: ServiceTier = "default"): number | null {
-  const price = tier === "flex" ? FLEX_PRICES[model] : TEXT_PRICES[model];
+  const price = tier === "flex" ? FLEX_PRICES[model] : (TEXT_PRICES[model] ?? providerBook[model]);
   if (!price) return null;
   const uncached = Math.max(0, usage.input - usage.cached);
   /* Price per 1M tokens × tokens = micro-dollars exactly. */

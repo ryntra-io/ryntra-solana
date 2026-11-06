@@ -1148,6 +1148,18 @@
   }
 }
 
+/* A window in its bay is as narrow as a phone (CITY-200: «$SOL» read «$S…» beside two worded buttons at 1440 px): the
+   head's buttons keep only their glyphs while the window, not the screen, is narrow, so the coin's name stays whole. */
+@container window (max-width: 520px) {
+  .shareTower {
+    width: 44px;
+    padding: 0;
+  }
+  .shareTowerWord {
+    display: none;
+  }
+}
+
 /* ---------- Desktop: the card stands on the right, the city keeps the centre ---------- */
 
 @media (min-aspect-ratio: 1/1) {

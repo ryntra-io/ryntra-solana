@@ -9,7 +9,6 @@ import { PIER_MODE } from '@/city/lib/earn/pier-gate';
 import { PIER_LOCKED, usePier } from '@/city/lib/earn/pier-store';
 import { useEarnData } from '@/city/lib/earn/store';
 import type { Words } from '@/city/lib/earn/words';
-import { useZap } from '@/city/lib/earn/zap-store';
 import { digits } from '@/city/lib/i18n/dict';
 import { BackGlyph, CityFrame, Coin, Line, Notify, RiskDots } from './bits';
 import { PierCard, StyleGlyph } from './PierCard';
@@ -102,7 +101,6 @@ function StrategyCard({ words, strategy, pier }: { words: Words; strategy: Prove
     // The copy's card starts at its top, wherever the list was scrolled to.
     let scroller: HTMLElement | null = event.currentTarget.parentElement;
     while (scroller && scroller.scrollHeight <= scroller.clientHeight) scroller = scroller.parentElement;
-    useZap.getState().reset();
     usePier.getState().openCopy(pier.pool, { strategy: strategy.id, style: strategy.style });
     scroller?.scrollTo({ top: 0 });
   };

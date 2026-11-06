@@ -25,11 +25,18 @@ export type PlanId = (typeof PLAN_IDS)[number];
 
 export type PlanExit = Readonly<{ takeBps: number | null; stopBps: number | null }>;
 
+/**
+ * CITY-197 — the plan's pace: at most this many buys a day, however many the day's cap would allow. A ceiling under the
+ * rhythm, never over it: a slower agent trades less, pays fewer fees and makes the budget last. Absent — the rhythm of
+ * the mandate's caps, as before.
+ */
+type Paced = Readonly<{ pace?: number }>;
+
 export type StrategyPlan =
-  | Readonly<{ id: "steady"; exit: PlanExit | null }>
-  | Readonly<{ id: "dip"; dropBps: number; exit: PlanExit | null }>
-  | Readonly<{ id: "grid"; stepBps: number; levels: number; exit: PlanExit | null }>
-  | Readonly<{ id: "early"; maxAgeH: number; exit: PlanExit | null }>;
+  | (Readonly<{ id: "steady"; exit: PlanExit | null }> & Paced)
+  | (Readonly<{ id: "dip"; dropBps: number; exit: PlanExit | null }> & Paced)
+  | (Readonly<{ id: "grid"; stepBps: number; levels: number; exit: PlanExit | null }> & Paced)
+  | (Readonly<{ id: "early"; maxAgeH: number; exit: PlanExit | null }> & Paced);
 
 /** Every bound of the strategies, in one place: a plan outside them is not read. */
 export const PLAN_BOUNDS = Object.freeze({
@@ -40,7 +47,19 @@ export const PLAN_BOUNDS = Object.freeze({
   takeBps: { min: 300, max: 50_000 },
   /** The person's stop may be tighter than the autostop's 15 %, never looser: a looser one is the autostop. */
   stopBps: { min: 300, max: 1_500 },
+  /** CITY-197: buys a day at most. */
+  pace: { min: 1, max: 24 },
 });
+
+/**
+ * CITY-197 — the pace a new agent starts at in the city: regular buys once a day; a strategy that waits for its moment —
+ * a dip, a grid's level, a young launch — at most twice. The default strategies trade little: the fees stay small and the
+ * budget lasts. The caps the person signs do not change; the pace only spaces the buys inside them.
+ */
+export const CALM_PACE: Readonly<Record<PlanId, number>> = Object.freeze({ steady: 1, dip: 2, grid: 2, early: 2 });
+
+/** The plan at the city's calm pace, unless it names its own. */
+export const calmPlan = (plan: StrategyPlan): StrategyPlan => (plan.pace === undefined ? { ...plan, pace: CALM_PACE[plan.id] } : plan);
 
 /** The day the dip's high is measured over. */
 export const DIP_WINDOW_MS = 86_400_000;
@@ -58,7 +77,7 @@ export const STEADY: StrategyPlan = Object.freeze({ id: "steady", exit: null });
 export function planText(plan: StrategyPlan): string {
   const head = plan.id === "dip" ? `dip:${plan.dropBps}` : plan.id === "grid" ? `grid:${plan.stepBps}:${plan.levels}` : plan.id === "early" ? `early:${plan.maxAgeH}` : "steady";
   const exit = plan.exit;
-  return [head, exit?.takeBps ? `take:${exit.takeBps}` : null, exit?.stopBps ? `stop:${exit.stopBps}` : null].filter(Boolean).join(",");
+  return [head, exit?.takeBps ? `take:${exit.takeBps}` : null, exit?.stopBps ? `stop:${exit.stopBps}` : null, plan.pace !== undefined ? `pace:${plan.pace}` : null].filter(Boolean).join(",");
 }
 
 const INT = /^\d{1,6}$/u;
@@ -70,15 +89,23 @@ export function planFrom(text: unknown): StrategyPlan | null {
   const parts = head!.split(":");
   let takeBps: number | null = null;
   let stopBps: number | null = null;
+  let pace: number | null = null;
   for (const part of rest) {
     const [name, value, ...more] = part.split(":");
     if (more.length || !value || !INT.test(value)) return null;
     const n = Number(value);
-    if (name === "take" && takeBps === null && within(n, PLAN_BOUNDS.takeBps)) takeBps = n;
-    else if (name === "stop" && stopBps === null && within(n, PLAN_BOUNDS.stopBps)) stopBps = n;
+    if (name === "take" && takeBps === null && pace === null && within(n, PLAN_BOUNDS.takeBps)) takeBps = n;
+    else if (name === "stop" && stopBps === null && pace === null && within(n, PLAN_BOUNDS.stopBps)) stopBps = n;
+    else if (name === "pace" && pace === null && within(n, PLAN_BOUNDS.pace)) pace = n;
     else return null;
   }
   const exit = takeBps === null && stopBps === null ? null : { takeBps, stopBps };
+  const head0 = planHead(parts, exit);
+  return head0 && pace !== null ? { ...head0, pace } : head0;
+}
+
+/** The plan's head — its strategy and numbers — with its exit; null outside the strategies' bounds. */
+function planHead(parts: readonly string[], exit: PlanExit | null): StrategyPlan | null {
   const ints = parts.slice(1);
   if (!ints.every((part) => INT.test(part))) return null;
   const [a, b] = ints.map(Number);
@@ -97,7 +124,13 @@ export function planFrom(text: unknown): StrategyPlan | null {
 }
 
 /** A plan with its numbers drawn into bounds: what the reader of a sentence builds. Never outside `PLAN_BOUNDS`. */
-export function boundedPlan(input: Readonly<{ id: PlanId; dropBps?: number | null; stepBps?: number | null; levels?: number | null; maxAgeH?: number | null; takeBps?: number | null; stopBps?: number | null }>): StrategyPlan {
+export function boundedPlan(input: Readonly<{ id: PlanId; dropBps?: number | null; stepBps?: number | null; levels?: number | null; maxAgeH?: number | null; takeBps?: number | null; stopBps?: number | null; pace?: number | null }>): StrategyPlan {
+  const plan = boundedHead(input);
+  const pace = input.pace === null || input.pace === undefined || !Number.isFinite(input.pace) ? null : Math.min(PLAN_BOUNDS.pace.max, Math.max(PLAN_BOUNDS.pace.min, Math.round(input.pace)));
+  return pace === null ? plan : { ...plan, pace };
+}
+
+function boundedHead(input: Readonly<{ id: PlanId; dropBps?: number | null; stepBps?: number | null; levels?: number | null; maxAgeH?: number | null; takeBps?: number | null; stopBps?: number | null }>): StrategyPlan {
   const clamp = (value: number | null | undefined, bound: Readonly<{ min: number; max: number; default?: number }>) => {
     if (value === null || value === undefined || !Number.isFinite(value)) return bound.default ?? null;
     return Math.min(bound.max, Math.max(bound.min, Math.round(value)));

@@ -20,6 +20,7 @@ import { useWords, type Same } from '@/city/lib/i18n/dict';
 import { useKeyboardInset } from '@/city/lib/keyboard';
 import { BerthGlyph } from '../berth/glyphs';
 import { CloseGlyph } from '../hud/glyphs';
+import { tickerAfterName } from '@/city/lib/launch/ticker';
 import { LaunchPreview } from './LaunchPreview';
 import s from './launch.module.css';
 import { LAUNCH } from './words';
@@ -149,7 +150,7 @@ function FormStep({ onClose }: { onClose: () => void }) {
       <div className={s.fields}>
         <label className={`${s.field} ${problem?.field === 'name' ? s.fieldBad : ''}`} htmlFor={ids.name}>
           <span>{w.name}</span>
-          <input ref={nameRef} id={ids.name} value={draft.name} maxLength={64} placeholder={w.namePlaceholder} autoComplete="off" spellCheck={false} onChange={(event) => setDraft({ name: event.target.value })} />
+          <input ref={nameRef} id={ids.name} value={draft.name} maxLength={64} placeholder={w.namePlaceholder} autoComplete="off" spellCheck={false} onChange={(event) => setDraft({ name: event.target.value, symbol: tickerAfterName(draft.name, event.target.value, draft.symbol) })} />
         </label>
         <label className={`${s.field} ${problem?.field === 'symbol' ? s.fieldBad : ''}`} htmlFor={ids.symbol}>
           <span>{w.ticker}</span>

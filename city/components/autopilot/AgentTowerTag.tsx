@@ -8,7 +8,7 @@ import { useWords } from '@/city/lib/i18n/dict';
 import { useLang } from '@/city/lib/i18n/lang';
 import { useRun } from '@/city/lib/run/store';
 import { AUTOPILOT_NET } from '@/city/lib/autopilot/flag';
-import { AGENT_REPORT, AGENT_REPORT_OPEN, solFigure, worthTelling } from '@/city/lib/autopilot/report';
+import { AGENT_REPORT, AGENT_REPORT_OPEN, solFigure, worthTelling, resultRaw, toneOf } from '@/city/lib/autopilot/report';
 import { useAutopilot } from '@/city/lib/autopilot/store';
 import { useWallet } from '@/city/lib/trade/wallet';
 import s from './autopilot.module.css';
@@ -33,16 +33,17 @@ function TowerTag() {
   const tower = useMemo(() => (view ? (layout.towers.find((t) => t.tower.id === view.receiveMint) ?? null) : null), [layout, view]);
   const day = view?.day;
   if (running || !tower || !worthTelling(day)) return null;
-  const earned = day.earnedRaw === null ? null : BigInt(day.earnedRaw);
+  /* CITY-197: after every fee, when the book counted them. */
+  const raw = resultRaw(day);
   return (
     <Html position={[tower.x, tower.height + tower.width * 1.6 + 4, tower.z]} center zIndexRange={[4, 0]} pointerEvents="none" className={s.towerWrap}>
       <div className={s.towerTag} data-agent-tower="">
         <span>
           {w.today} · {w.trades(day.trades)}
-          {earned !== null ? (
+          {raw !== null ? (
             <>
               {' · '}
-              <b data-tone={earned > 0n ? 'up' : earned < 0n ? 'down' : undefined}>{solFigure(day.earnedRaw!, lang)}</b>
+              <b data-tone={toneOf(raw)}>{solFigure(raw, lang)}</b>
             </>
           ) : null}
         </span>

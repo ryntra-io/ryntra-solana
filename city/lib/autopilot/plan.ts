@@ -28,9 +28,10 @@ export function lamports(sol: string): bigint {
 }
 
 /** How the agent spends a budget: so many buys a day, this far apart, each this big (SOL). */
-export function rhythmOf(id: BudgetPresetId): Readonly<{ buys: number; everyHours: number; perTrade: number; perDay: number; days: number }> {
+export function rhythmOf(id: BudgetPresetId, pace: number | null = null): Readonly<{ buys: number; everyHours: number; perTrade: number; perDay: number; days: number }> {
   const preset = BUDGET_PRESETS[id];
-  const { buys, everyMs } = steadyRhythm(preset.perTrade, preset.perDay);
+  /* CITY-197: the plan's pace spaces the buys inside the caps. */
+  const { buys, everyMs } = steadyRhythm(preset.perTrade, preset.perDay, pace);
   return { buys, everyHours: Math.round((everyMs / 3_600_000) * 10) / 10, perTrade: Number(preset.perTrade) / 1e9, perDay: Number(preset.perDay) / 1e9, days: preset.days };
 }
 

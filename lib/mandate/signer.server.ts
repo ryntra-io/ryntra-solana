@@ -16,6 +16,9 @@
  *    the key is never asked;
  * 2. the check — the signature verifies against the agent's address before it is given back;
  * 3. the journal — what was signed, under which policy, its hash and signature: public data only. No row, no signature.
+ * Before the key, too (CITY-196, `./ryntra-coins.server.ts`): the coin bought is no coin of Ryntra's launchpad and none of
+ * the person's own, and no other key of Ryntra's — no other agent's vault — stands in the trade. The registry not read
+ * is a refusal.
  *
  * The chain holds the same rules again and is the authority: this signer only keeps the agent from signing, or paying
  * for, a trade the program would refuse — or one a bug of ours built.
@@ -37,6 +40,7 @@ import { SSA_PROGRAM_ID, TOKEN_PROGRAM_ID, readPolicyExecute, type ProgramIntera
 import { feeMintOf } from "./terms.ts";
 import { TOKEN_2022_PROGRAM_ID, afterTransferFee, isTokenProgram, readCoin, type Coin } from "./token-2022.ts";
 import type { Mandate } from "./human.ts";
+import { coinRefusal, ryntraAccountRefusal, type AgentScreen } from "./ryntra-coins.server.ts";
 
 const ASSOCIATED_TOKEN_PROGRAM = new PublicKey("ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL");
 
@@ -245,13 +249,42 @@ export function tradeRefusal(message: Uint8Array, mandate: Mandate, policy: Prog
   return results === 1 ? null : "not exactly one rule on what reached the person";
 }
 
+/**
+ * What a trade the bounds let through buys, and every account its instructions name; null when the message is not such a
+ * trade. Read only after `tradeRefusal` passed it.
+ */
+export function tradeSides(message: Uint8Array, request: AgentSignRequest): Readonly<{ bought: PublicKey; accounts: readonly PublicKey[] }> | null {
+  try {
+    const decoded = VersionedMessage.deserialize(message);
+    const instructions = TransactionMessage.decompile(decoded, { addressLookupTableAccounts: [...(request.lookupTables ?? [])] }).instructions;
+    const execution = instructions.find((instruction) => instruction.programId.equals(SSA_PROGRAM_ID));
+    if (!execution) return null;
+    const view = readPolicyExecute({ programId: execution.programId, keys: execution.keys.map((key) => key.pubkey), data: execution.data });
+    const trade = tradeTerms(view.instructions.at(-1)!);
+    const bought = trade ? request.facts.get(trade.receiver.toBase58())?.data : undefined;
+    if (!bought || bought.length < 32) return null;
+    const accounts = [...instructions.flatMap((instruction) => instruction.keys.map((key) => key.pubkey)), ...view.instructions.flatMap((inner) => inner.accounts)];
+    return { bought: new PublicKey(bought.subarray(0, 32)), accounts };
+  } catch {
+    return null;
+  }
+}
+
+/** CITY-196: why the trade buys a coin, or meets a key, Ryntra's agent never deals with; null when it does not. Throws when the screen is not read. */
+export async function screenRefusal(message: Uint8Array, mandate: Mandate, request: AgentSignRequest, screen: AgentScreen): Promise<string | null> {
+  const sides = tradeSides(message, request);
+  if (!sides) return "the coin bought could not be read";
+  const [origin, ryntra] = await Promise.all([screen.origin(sides.bought.toBase58()), screen.ryntra()]);
+  return coinRefusal(sides.bought, origin, mandate, ryntra, request.facts) ?? ryntraAccountRefusal(sides.accounts, mandate, ryntra, request.facts);
+}
+
 const sha256 = (bytes: Uint8Array) => createHash("sha256").update(bytes).digest("hex");
 const reasonOf = (error: unknown) => (error instanceof Error ? error.message : String(error)).split("\n")[0]!.slice(0, 200);
 
 /** The agent's key under the mandate's bounds, its check and its journal. */
 export function mandateSigner(
   key: KeySigner,
-  options: Readonly<{ mandate: Mandate; policy: ProgramInteractionPolicy; journal: AgentJournal; now?: () => Date }>,
+  options: Readonly<{ mandate: Mandate; policy: ProgramInteractionPolicy; journal: AgentJournal; screen: AgentScreen; now?: () => Date }>,
 ): AgentSigner {
   const { mandate } = options;
   const publicKey = mandate.terms.agent;
@@ -280,7 +313,14 @@ export function mandateSigner(
     keyRef: key.keyRef,
     async signMessage(message, request) {
       const messageSha256 = sha256(message);
-      const refusal = tradeRefusal(message, mandate, options.policy, request);
+      let refusal = tradeRefusal(message, mandate, options.policy, request);
+      if (!refusal) {
+        try {
+          refusal = await screenRefusal(message, mandate, request, options.screen);
+        } catch (error) {
+          refusal = `Ryntra's registry did not answer (${reasonOf(error)})`;
+        }
+      }
       if (refusal) return refuse(refusal, messageSha256);
       let signature: Uint8Array;
       try {

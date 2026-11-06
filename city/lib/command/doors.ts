@@ -11,11 +11,16 @@ import { useHarbor } from '../districts/harbor/store.ts';
 import { EARN_OPEN } from '../earn/flag.ts';
 import { DOLLAR_OPEN } from '../earn/dollar-gate.ts';
 import { useDollar } from '../earn/dollar-store.ts';
+import { PILOT_OPEN, usePilot } from '../pilot/store.ts';
+import { solPrice } from '../scouts/view.ts';
 import { openEarn } from '../earn/open.ts';
 import { ONE_SENTENCE_OPEN } from '../instruct/flag.ts';
 import { useInstruct } from '../instruct/store.ts';
 import { useExchange } from '../exchange/store.ts';
 import { launchOpenHere, launchTowerIn, useLaunch } from '../launch/district.ts';
+import { openLearn } from '../learn/store.ts';
+import { hire } from '../crew/hire.ts';
+import { langNow } from '../i18n/lang.ts';
 import type { Tower } from '../market/types.ts';
 import { NATIVE_ID } from '../money/assets.ts';
 import { MONEY_OPEN } from '../money/flag.ts';
@@ -213,6 +218,12 @@ export const cityDoors: Doors = {
     });
   },
 
+  openLearn: (chapter) => {
+    nextCommand();
+    clearPanels();
+    openLearn(chapter);
+  },
+
   openEarn: () => {
     nextCommand();
     useAgent.getState().closePanel();
@@ -249,12 +260,26 @@ export const cityDoors: Doors = {
     useAutopilot.getState().show(withCoinOnScreen(ask));
   },
 
+  openPilot: (ask) => {
+    nextCommand();
+    clearPanels();
+    // The trade's coin: the one named, else the city's first pick of the agent's coins.
+    const first = agentCoins(bookNow())[0] ?? null;
+    usePilot.getState().show(ask, solPrice(useCity.getState().snapshot.towers), first ? { mint: first.mint, symbol: first.symbol, icon: first.icon } : null);
+  },
+
   openDollar: (ask) => {
     nextCommand();
     clearPanels();
     // A signature out holds the card as it is: the sentence only opens it.
     useDollar.getState().fromAsk(ask);
     openEarn('shelf', 'dollar');
+  },
+
+  openCrew: (role) => {
+    nextCommand();
+    clearPanels();
+    hire(role, bookNow(), langNow() === 'uk' ? 'uk' : 'en', { pilot: (ask) => cityDoors.openPilot(ask) });
   },
 
   askRyntra: (question) => {
@@ -288,6 +313,7 @@ export function gatesNow(): Gates {
     agentTrade: AUTOPILOT_NET !== null && MANDATE_NET !== null,
     agentLaunch: AUTOPILOT_NET !== null,
     dollar: EARN_OPEN && DOLLAR_OPEN,
+    pilot: PILOT_OPEN,
   };
 }
 

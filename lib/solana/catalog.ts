@@ -192,12 +192,15 @@ export async function fetchTokenCatalog(
   mints: readonly string[],
   timeoutMs = 8_000,
   signal?: AbortSignal,
+  /** `lite` asks the keyless host even where a key is configured — its own budget, for when the keyed one is spent. */
+  tier?: JupiterTier,
 ): Promise<TokenCatalogResult> {
   const unique = [...new Set(mints.filter((mint) => mint.length >= 32))].slice(0, 50);
   if (unique.length === 0) {
     return { ok: true, byMint: {}, missing: [], observedAt: new Date().toISOString() };
   }
-  const endpoint = resolveJupiterCatalogEndpoint();
+  const configured = resolveJupiterCatalogEndpoint();
+  const endpoint = tier === "lite" ? { tier: "lite" as const, apiKey: null } : configured;
   const query = unique.join(",");
   const tokens = await getJson(`${tokensUrl(endpoint.tier)}?query=${encodeURIComponent(query)}`, endpoint.apiKey, timeoutMs, signal);
   if (!tokens.ok) return tokens;

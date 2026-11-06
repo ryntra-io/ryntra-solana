@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import type { BudgetPresetId } from '../../../lib/mandate/presets.ts';
 import type { AgentDay } from '../../../lib/mandate/report.ts';
+import type { AgentNet } from '../../../lib/mandate/net.ts';
 import type { Picture } from '../../../lib/launch/picture.client.ts';
 import { MANDATE_NET, MANDATE_PRESETS, useMandate, type MandateRecord } from '../bots/mandate.ts';
 import { useMine } from '../trade/mine-store.ts';
@@ -9,7 +10,7 @@ import { launchOpenHere, useLaunch } from '../launch/district.ts';
 import { AUTOPILOT_NET } from './flag.ts';
 import { presetFor, proposal, type Proposal } from './plan.ts';
 import type { AgentAsk } from './read.ts';
-import { planText, type StrategyPlan } from '../../../lib/mandate/plans.ts';
+import { calmPlan, planText, type StrategyPlan } from '../../../lib/mandate/plans.ts';
 import type { Paper, RunResult } from '../../../lib/mandate/backtest.ts';
 import { pickLaunch, readRun } from './runs.ts';
 
@@ -48,12 +49,21 @@ export type AgentView = Readonly<{
   /** CITY-194: its last day, and — when asked with `since` — what it did since the person last looked. */
   day?: AgentDay;
   away?: AgentDay;
+  /** CITY-197: the whole mandate after every fee, and plain holding beside it. */
+  net?: AgentNet;
 }>;
 
 const isDay = (value: unknown): value is AgentDay => {
   if (typeof value !== 'object' || value === null) return false;
   const v = value as Record<string, unknown>;
   return typeof v.trades === 'number' && typeof v.since === 'number' && typeof v.until === 'number' && typeof v.spentRaw === 'string' && (v.earnedRaw === null || typeof v.earnedRaw === 'string');
+};
+
+const rawOrNull = (value: unknown) => value === null || (typeof value === 'string' && /^-?\d{1,30}$/u.test(value));
+const isNet = (value: unknown): value is AgentNet => {
+  if (typeof value !== 'object' || value === null) return false;
+  const v = value as Record<string, unknown>;
+  return typeof v.trades === 'number' && typeof v.spentRaw === 'string' && rawOrNull(v.netRaw) && rawOrNull(v.holdRaw) && rawOrNull(v.feesRaw);
 };
 
 export const isAgentView = (value: unknown): value is AgentView => {
@@ -73,8 +83,8 @@ export async function readAgentView(record: MandateRecord, fetcher: Fetcher = (u
     const value: unknown = await response.json();
     if (!isAgentView(value)) return null;
     /* A span the book did not answer whole is left out, never shown half. */
-    const { day, away, ...rest } = value;
-    return { ...rest, ...(isDay(day) ? { day } : {}), ...(isDay(away) ? { away } : {}) };
+    const { day, away, net, ...rest } = value;
+    return { ...rest, ...(isDay(day) ? { day } : {}), ...(isDay(away) ? { away } : {}), ...(isNet(net) ? { net } : {}) };
   } catch {
     return null;
   }
@@ -213,7 +223,9 @@ export const useAutopilot = create<AutopilotState>((set, get) => ({
 }));
 
 /** The plan the card proposes: the one said, or the steady one. */
-const planNow = (): StrategyPlan => useAutopilot.getState().plan ?? { id: 'steady', exit: null };
+/** CITY-197: the strategy at the city's calm pace — few trades, small fees — unless it names its own. */
+const planNow = (): StrategyPlan => calmPlan(useAutopilot.getState().plan ?? { id: 'steady', exit: null });
+export const planShown = planNow;
 const bornNow = (): number | null => {
   const launch = useAutopilot.getState().launch;
   return launch && launch.state === 'picked' ? launch.bornAt : null;

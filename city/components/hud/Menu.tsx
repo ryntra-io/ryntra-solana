@@ -9,6 +9,7 @@ import { openBerth } from '@/city/lib/launch/berth-store';
 import { launchOpenHere, useLaunch } from '@/city/lib/launch/district';
 import { openPartners } from '@/city/lib/partners/store';
 import { openScouts } from '@/city/lib/scouts/store';
+import { openLearn } from '@/city/lib/learn/store';
 import { useWords } from '@/city/lib/i18n/dict';
 import { LANG_LABEL, LANGS, setLang, useLang } from '@/city/lib/i18n/lang';
 import { MENU_LEGAL, MENU_PAGES, MENU_SITE_DOCS, SITE_DOC_PATHS, type PageId } from '@/city/lib/pages/pages';
@@ -17,6 +18,7 @@ import { openSettings } from '@/city/lib/settings/view';
 import { CONTACTS } from '@/lib/site/contacts';
 import { BerthGlyph } from '../berth/glyphs';
 import { PlayGlyph } from '../how/glyphs';
+import { LearnGlyph } from '../learn/glyphs';
 import { useLessons } from '../how/useLessons';
 import { XGlyph } from '../pages/glyphs';
 import { PAGES } from '../pages/words';
@@ -131,6 +133,22 @@ function MenuPanel({ onSound, onClose }: { onSound: (on: boolean) => void; onClo
         <span className={s.menuSound}>
           <PartnersGlyph />
           {partners}
+        </span>
+        <span className={s.menuChevron} aria-hidden="true" />
+      </button>
+      {/* «Learn» (CITY-202): every function from A to Z, chapter by chapter. */}
+      <button
+        className={s.menuRow}
+        aria-haspopup="dialog"
+        onClick={() => {
+          onClose();
+          openLearn();
+        }}
+        data-city-menu-learn=""
+      >
+        <span className={s.menuSound}>
+          <LearnGlyph />
+          {w.learn}
         </span>
         <span className={s.menuChevron} aria-hidden="true" />
       </button>

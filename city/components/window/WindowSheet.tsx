@@ -55,7 +55,7 @@ export function WindowSheet() {
   return (
     <div
       ref={sheet}
-      className={`${s.sheet} ${full ? s.sheetFull : ''}`}
+      className={`${s.sheet} ${full ? s.sheetFull : spec?.fit ? s.sheetFit : ''}`}
       style={full || !on ? undefined : { bottom: inset }}
       hidden={!on}
       role={on ? 'dialog' : undefined}

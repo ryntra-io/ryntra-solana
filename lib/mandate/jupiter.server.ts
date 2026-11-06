@@ -33,6 +33,16 @@ const ASSOCIATED_TOKEN_PROGRAM = "ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL";
 
 export const AGENT_MAX_ACCOUNTS = Object.freeze({ min: 40, max: 50, default: 48 });
 
+/**
+ * The venues the vault cannot trade through (CITY-201), by Jupiter's labels, asked as `excludeDexes`. Manifest's swap
+ * writes to its taker (rent for the trader's seat), and Jupiter lists the taker read-only, trusting it to be the
+ * transaction's writable fee payer; the vault signs through the policy's CPI with exactly the privileges listed, so
+ * a route through Manifest ends in `PrivilegeEscalation` and the agent's buy or the person's sale never lands. Found on
+ * the mainnet fork on 5.11: BTC (`C5xph2…pump`) for 0.02 SOL went 100 % through Manifest; without it, the same pass
+ * bought, sold and stopped (`docs/research/city-201-qa/REPORT.md`).
+ */
+export const AGENT_EXCLUDED_DEXES = Object.freeze(["Manifest"]);
+
 export type AgentRouteRequest = Readonly<{
   inputMint: PublicKey;
   outputMint: PublicKey;
@@ -124,6 +134,7 @@ export function agentRouteQuery(request: AgentRouteRequest): URLSearchParams {
     maxAccounts: String(maxAccounts),
     platformFeeBps: String(request.fee.bps),
     feeAccount: request.fee.account.toBase58(),
+    excludeDexes: AGENT_EXCLUDED_DEXES.join(","),
   });
 }
 

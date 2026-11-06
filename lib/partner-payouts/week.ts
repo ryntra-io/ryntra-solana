@@ -17,7 +17,8 @@
  *   the first week after it is — never lost, never twice.
  * - **The minimum and the rest.** A partner is paid when what they are owed — this week's share plus what was carried —
  *   reaches $5; less is carried to the next week, for as long as it takes. A partner the sanctions source lists is held
- *   and carried, never paid. One proposal pays at most `MAX_PAYOUTS_PER_WEEK` partners, the largest
+ *   and carried, never paid; so is one the source did not answer for — held as a listing is, under a
+ *   reason of its own, and screened again the next week (CITY-196: the screening fails closed). One proposal pays at most `MAX_PAYOUTS_PER_WEEK` partners, the largest
  *   first; the others are carried, so the week keeps one proposal.
  * - **Guarded (CITY-125).** A share is counted only for a pair the referral guard lets pay (`lib/growth/referral-guard.ts`):
  *   the partner and the person were checked and are not one person — no second own wallet, no shared device, no money
@@ -163,8 +164,8 @@ export function pairsOf(events: readonly FeeEvent[], accounts: ReadonlyMap<strin
 
 /* ------------------------------------------------------------------ the statement */
 
-/** Why a partner owed something is not paid this week. */
-export type Held = "MINIMUM" | "SANCTIONS" | "OVERFLOW";
+/** Why a partner owed something is not paid this week. `UNSCREENED` — the sanctions source did not answer for them (CITY-196). */
+export type Held = "MINIMUM" | "SANCTIONS" | "UNSCREENED" | "OVERFLOW";
 
 export type StatementLine = Readonly<{
   partner: string;
@@ -222,6 +223,8 @@ export type PrepareInput = Readonly<{
   voided: readonly Statement[];
   /** Partners the sanctions source lists. */
   sanctioned: ReadonlySet<string>;
+  /** Partners the sanctions source did not answer for: held like a listing, carried to the next week (CITY-196). */
+  unscreened?: ReadonlySet<string>;
   /** The referral guard's word on the pairs and the partners' own trades. */
   guard: PayoutGuard;
   now: string;
@@ -274,9 +277,10 @@ export function prepareStatement(input: PrepareInput): Statement {
   for (const voided of input.voided) for (const before of voided.lines) if (big(before.payMicros) > 0n) line(before.partner).carried += big(before.payMicros);
 
   const minimum = minimumMicros(terms);
+  const unscreened = input.unscreened ?? new Set<string>();
   const due = [...lines.entries()].map(([partner, acc]) => ({ partner, acc, due: acc.accrued + acc.carried }));
   const payable = due
-    .filter((row) => row.due >= minimum && row.due > 0n && !input.sanctioned.has(row.partner))
+    .filter((row) => row.due >= minimum && row.due > 0n && !input.sanctioned.has(row.partner) && !unscreened.has(row.partner))
     .sort((a, b) => (b.due > a.due ? 1 : b.due < a.due ? -1 : a.partner.localeCompare(b.partner)));
   const paying = new Set(payable.slice(0, MAX_PAYOUTS_PER_WEEK).map((row) => row.partner));
 
@@ -285,7 +289,7 @@ export function prepareStatement(input: PrepareInput): Statement {
     .sort((a, b) => a.partner.localeCompare(b.partner))
     .map(({ partner, acc, due: owed }) => {
       const pay = paying.has(partner) ? owed : 0n;
-      const held: Held | null = pay > 0n || owed === 0n ? null : input.sanctioned.has(partner) ? "SANCTIONS" : owed < minimum ? "MINIMUM" : "OVERFLOW";
+      const held: Held | null = pay > 0n || owed === 0n ? null : input.sanctioned.has(partner) ? "SANCTIONS" : unscreened.has(partner) ? "UNSCREENED" : owed < minimum ? "MINIMUM" : "OVERFLOW";
       return {
         partner,
         people: acc.people.size,

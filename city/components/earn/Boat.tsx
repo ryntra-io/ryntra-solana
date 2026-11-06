@@ -5,7 +5,7 @@ import type { PositionView } from '@/lib/liquidity/catalog/positions';
 import { reviewFigures } from '@/city/lib/districts/harbor/review';
 import type { PierRow } from '@/city/lib/earn/mine';
 import { solPiers, solShort, solUsd } from '@/city/lib/earn/pier';
-import { PIER_BUSY, targetKey, usePier } from '@/city/lib/earn/pier-store';
+import { PIER_BUSY, poolReviewOf, targetKey, usePier } from '@/city/lib/earn/pier-store';
 import { SOL_MINT } from '@/city/lib/earn/lst';
 import { useEarnData } from '@/city/lib/earn/store';
 import type { Words } from '@/city/lib/earn/words';
@@ -75,7 +75,8 @@ export function BoatCard({ words, view, row }: { words: Words; view: PositionVie
 
   const acting = target && target.kind !== 'add' && target.position.address === view.address ? target : null;
   const shown = acting && connection && reviewed?.key === targetKey(connection.address, acting) ? reviewed : null;
-  const figures = shown && acting ? reviewFigures(shown.review, { x: view.x.symbol, y: view.y.symbol }, null) : null;
+  const poolReview = poolReviewOf(shown);
+  const figures = poolReview && acting ? reviewFigures(poolReview, { x: view.x.symbol, y: view.y.symbol }, null) : null;
   const choose = (kind: 'claim' | 'exit') => {
     if (!connection || busy) return;
     void usePier.getState().prepare(connection, { kind, position: view }, holdings);

@@ -72,6 +72,35 @@ function answerWords(turn: AgentTurn): string[] {
 
 const escape = (text: string) => text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
+/** A sentence about the day's moves: «over 24 h», «за 24 год». */
+const DAY_SPAN = /\b24\s?(h|hours?|год)/iu;
+
+/**
+ * The move an answer states right after a coin's name — «AMD −73.36 % (vol. …)», «AMD −73,36 %», «HIGH +2,615.17 %» —
+ * in percent, or null when no move follows the name.
+ */
+export function statedMove(after: string): number | null {
+  const m = /^\s*([+\-−])\s?([\d\s ,.]*\d)\s?%/u.exec(after);
+  if (!m) return null;
+  let digits = m[2]!.replace(/[\s ]/g, '');
+  if (digits.includes('.')) digits = digits.replace(/,/g, '');
+  else digits = /,\d{3}$/.test(digits) ? digits.replace(/,/g, '') : digits.replace(',', '.');
+  const value = Number(digits);
+  if (!Number.isFinite(value)) return null;
+  return m[1] === '+' ? value : -value;
+}
+
+/**
+ * Whether a tower moved the way the answer says the named coin moved: the same direction and about as far. No stated
+ * move keeps the tower; a tower without a figure is not that coin.
+ */
+export function sameMove(stated: number | null, change: number): boolean {
+  if (stated === null) return true;
+  if (!Number.isFinite(change)) return false;
+  if (Math.sign(stated) !== Math.sign(change) && Math.abs(stated - change) > 1) return false;
+  return Math.abs(stated - change) <= Math.max(5, Math.abs(stated) * 0.5);
+}
+
 /** The towers an answer names, by its cards' mints first and then by the vetted symbols its words mention, in order. */
 export function towersOf(turn: AgentTurn, towers: readonly Tower[], limit = TOWERS_MAX): Tower[] {
   const byId = new Map(towers.map((t) => [t.id, t]));
@@ -86,10 +115,14 @@ export function towersOf(turn: AgentTurn, towers: readonly Tower[], limit = TOWE
   const words = answerWords(turn);
   const found: { at: number; tower: Tower }[] = [];
   words.forEach((text, line) => {
+    const day = DAY_SPAN.test(text);
     for (const t of named) {
       const dollar = t.symbol.length < 3 ? '\\$' : '\\$?';
-      const at = text.search(new RegExp(`(^|[^\\p{L}\\p{N}$])${dollar}${escape(t.symbol)}(?![\\p{L}\\p{N}])`, 'u'));
-      if (at >= 0) found.push({ at: line * 10_000 + at, tower: t });
+      const match = new RegExp(`(^|[^\\p{L}\\p{N}$])${dollar}${escape(t.symbol)}(?![\\p{L}\\p{N}])`, 'u').exec(text);
+      if (!match) continue;
+      // A ticker is not a coin: «AMD −73 %» in a day's movers is another AMD than the stock tower that moved −4 % (CITY-200).
+      if (day && !sameMove(statedMove(text.slice(match.index + match[0].length)), t.change24h)) continue;
+      found.push({ at: line * 10_000 + match.index, tower: t });
     }
   });
   found.sort((a, b) => a.at - b.at).forEach((f) => add(f.tower));
@@ -110,6 +143,15 @@ export function pickTowers(turn: AgentTurn | null, towers: readonly Tower[], int
   if (subject) return [subject];
   if (intent === 'rising' || intent === 'falling') return movers(towers, intent);
   return [];
+}
+
+/**
+ * Ryntra's day of guest answers is spent and its turn named no tower (CITY-200: «what is rising?» read «come back
+ * tomorrow» over an empty city): a rise or a fall is the city's own read, so the city answers it from its towers.
+ */
+export function cityAnswers(shown: readonly Tower[], intent: Intent, day: Readonly<{ used: number; allowance: number }> | null): boolean {
+  if (shown.length || (intent !== 'rising' && intent !== 'falling')) return false;
+  return Boolean(day && day.allowance > 0 && day.used >= day.allowance);
 }
 
 /** At most this many characters of words on the panel: the towers carry the rest. */

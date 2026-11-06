@@ -10,11 +10,10 @@ import {
   depthSol,
   feesSol24h,
   otherInSol,
-  pierAddBody,
   pierCosts,
-  pierFit,
-  pierMax,
   pierMinimum,
+  pierRestBody,
+  pierZapBody,
   pierOf,
   pierRange,
   pierSplit,
@@ -22,8 +21,12 @@ import {
   rangePrices,
   solShort,
   unitsShort,
+  zapFeePct,
+  zapFigures,
+  zapFit,
+  zapMax,
 } from "./pier.ts";
-import { JITOSOL, SOL, SOL_USDC, USDC, lstPool } from "./pier-fixtures.mjs";
+import { SOL, SOL_USDC, USDC, lstPool, zapReview } from "./pier-fixtures.mjs";
 
 const OWNER = "4EeXyPQ1u3bWMZ3C3BaG2Tn9z8W1E6uN9rT5aS8dPGWw";
 const holdings = (sol, tokens = {}, complete = true) => ({
@@ -94,30 +97,14 @@ test("an amount of SOL goes in as half SOL and half the other coin, never rounde
   assert.equal(pierSplit(pier, 0n), null);
 });
 
-test("the wallet must hold both sides and the SOL kept aside", () => {
-  const pier = pierOf(lstPool());
-  const split = pierSplit(pier, 1_000_000_000n);
-  assert.deepEqual(pierFit(pier, split, null), { fits: true, short: null, otherMissing: 0n, otherMissingLamports: 0n });
-  assert.equal(pierFit(pier, split, holdings(5e9, { [JITOSOL]: 1e9 })).fits, true);
-  assert.equal(pierFit(pier, split, holdings(500_000_000, { [JITOSOL]: 1e9 })).short, "sol");
-  const short = pierFit(pier, split, holdings(5e9, { [JITOSOL]: 100_000_000 }));
-  assert.equal(short.short, "other");
-  assert.equal(short.otherMissing, BigInt(split.x) - 100_000_000n);
-  assert.ok(short.otherMissingLamports > 0n);
-  // A coin the wallet does not hold at all, on a complete read, is zero.
-  assert.equal(pierFit(pier, split, holdings(5e9, {})).short, "other");
-  // A read by halves leaves it unknown.
-  assert.equal(pierFit(pier, split, holdings(5e9, {}, false)).fits, true);
-});
-
-test("the most it can put in is twice the smaller side", () => {
-  const pier = pierOf(lstPool());
-  const max = pierMax(pier, holdings(3_000_000_000, { [JITOSOL]: 500_000_000 }));
-  const fromOther = BigInt(Math.floor(0.5 * 1.2603 * 1e9));
-  assert.equal(max, fromOther * 2n);
-  const bySol = pierMax(pier, holdings(400_000_000, { [JITOSOL]: 9e9 }));
-  assert.equal(bySol, (400_000_000n - PIER_RESERVE_LAMPORTS) * 2n);
-  assert.equal(pierMax(pier, null), null);
+test("a Zap needs SOL only: what goes in and the SOL kept aside", () => {
+  assert.equal(zapFit(1_000_000_000n, null), true, "a wallet not read yet fits; the engine has the last word");
+  assert.equal(zapFit(1_000_000_000n, holdings(5e9)), true, "no other coin is needed");
+  assert.equal(zapFit(1_000_000_000n, holdings(1_000_000_000n + PIER_RESERVE_LAMPORTS)), true);
+  assert.equal(zapFit(1_000_000_000n, holdings(1_000_000_000n + PIER_RESERVE_LAMPORTS - 1n)), false);
+  assert.equal(zapMax(holdings(3_000_000_000)), 3_000_000_000n - PIER_RESERVE_LAMPORTS);
+  assert.equal(zapMax(holdings(10_000)), 0n);
+  assert.equal(zapMax(null), null);
 });
 
 test("costs and the minimum come from the Review", () => {
@@ -133,13 +120,32 @@ test("costs and the minimum come from the Review", () => {
   assert.equal(pierMinimum(cheap), PIER_MIN_LAMPORTS);
 });
 
-test("the add asks the engine for an even spread of the style's bins around the price", () => {
+test("the Zap asks the engine for the SOL and the style's bins around the price; the rest keeps what the wallet held", () => {
   const pier = pierOf(lstPool());
-  const body = pierAddBody(pier, OWNER, pierSplit(pier, 1_000_000_000n), "dense");
-  assert.equal(body.venue, "meteora-dlmm");
-  assert.equal(body.request.shape, "spot");
-  assert.deepEqual(body.range, { place: "around", half: STYLE_HALF.dense });
-  assert.equal(body.request.owner, OWNER);
+  const body = pierZapBody(pier, OWNER, 1_000_000_000n, "dense");
+  assert.deepEqual(body, { action: "zap_in", venue: "meteora-dlmm", request: { pool: pier.pool.address, owner: OWNER, amountIn: "1000000000", half: STYLE_HALF.dense, slippageBps: 100 } });
+  assert.deepEqual(pierRestBody(pier.pool.address, OWNER, "42").request, { pool: pier.pool.address, owner: OWNER, otherBefore: "42" });
+});
+
+test("a Zap's figures: what goes in, the swap and its floor, Ryntra's fee on Jupiter only, one approval", () => {
+  const pier = pierOf(lstPool());
+  const figures = zapFigures(zapReview(), pier);
+  assert.deepEqual(figures.amounts, ["0.3963 JitoSOL", "0.5 SOL"]);
+  assert.equal(figures.route, "jupiter");
+  assert.equal(figures.labels, "Meteora DLMM → Sanctum");
+  assert.equal(figures.swapInSol, "0.5 SOL");
+  assert.equal(figures.swapFloor, "0.3943 JitoSOL");
+  assert.equal(figures.feePct, "0.1%");
+  assert.equal(figures.feeSol, "0.0005");
+  assert.equal(figures.transactions, 2);
+  assert.equal(figures.rentBack, true);
+  const pool = zapFigures(zapReview({}, { route: "pool" }), pier);
+  assert.equal(pool.feePct, null, "the pool's own swap carries no Ryntra fee");
+  assert.equal(zapFeePct(zapReview({}, { route: "pool" })), null);
+  const rest = zapFigures(zapReview({}, { rest: true }), pier);
+  assert.equal(rest.backSol, solShort(502_039_280n + 495_500_000n + 1_280_000n), "the wrapped SOL, the swap's least and the ledger's deposit");
+  assert.deepEqual(rest.amounts, []);
+  assert.equal(pierCosts(zapReview()).network, 40_000n);
 });
 
 test("SOL figures read short", () => {

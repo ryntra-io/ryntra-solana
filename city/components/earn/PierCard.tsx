@@ -2,23 +2,20 @@
 
 import { useEffect, useMemo } from 'react';
 import { percent } from '@/city/lib/districts/harbor/pools';
-import { reviewFigures } from '@/city/lib/districts/harbor/review';
-import { openTradeCard } from '@/city/lib/coin/open';
-import { useEarn } from '@/city/lib/earn/open';
-import { PIER_STYLES, pierRange, rangePrices, solShort, STYLE_HALF, STYLE_RISK, unitsShort, usdToSol, PIER_SLIPPAGE_BPS, type Pier, type PierStyle } from '@/city/lib/earn/pier';
+import { PIER_STYLES, pierRange, rangePrices, solShort, STYLE_HALF, STYLE_RISK, unitsShort, usdToSol, PIER_SLIPPAGE_BPS, zapFigures, type Pier, type PierStyle } from '@/city/lib/earn/pier';
 import { PIER_MODE } from '@/city/lib/earn/pier-gate';
 import { historyPicture, pierSeries, plotOf, type HistoryPicture } from '@/city/lib/earn/pier-history';
-import { PIER_BUSY, PIER_LOCKED, pierChoice, usePier, type PierNotice } from '@/city/lib/earn/pier-store';
-import { useSaver } from '@/city/lib/earn/saver-store';
+import { PIER_BUSY, PIER_LOCKED, pierChoice, usePier, zapReviewOf, type PierNotice } from '@/city/lib/earn/pier-store';
 import { pctText, type ProvenStrategy } from '@/city/lib/earn/captain';
-import { zapLamports, type ZapLeg } from '@/city/lib/earn/zap-store';
 import type { Words } from '@/city/lib/earn/words';
 import { digits } from '@/city/lib/i18n/dict';
 import { amountText } from '@/city/lib/trade/size';
 import { useWallet } from '@/city/lib/trade/wallet';
 import { explorerTxUrl } from '@/lib/solana/explorer';
 import { BackGlyph, Coin, Line, Notify, RiskDots, Wallets } from './bits';
-import { CopyRecord, useZapView, ZapAction } from './Copy';
+import { CopyRecord } from './Copy';
+import { CareAction, CareSwitch, careOpen } from './CareSwitch';
+import { useCare } from '@/city/lib/earn/care';
 import s from './earn.module.css';
 
 /** With a wallet the Harbor admits, the exact Review follows the card after this pause, once per choice. */
@@ -26,10 +23,11 @@ const AUTO_REVIEW_MS = 450;
 
 /**
  * One SOL pier: the amount in SOL, the style, the month gone as a picture, the one line before the signature and the
- * one amber action. The engine builds and checks; the person signs in their own wallet; the result is said in SOL.
+ * one amber action — «Put in». The engine's Zap (CITY-198) swaps the part of the SOL the other coin needs and opens the
+ * position in one approval of the wallet; the person signs in their own wallet; the result is said in SOL.
  *
  * A copy of «Like the Captain» (CITY-99) is the same card on the strategy's pier: its style fixed, its record in place
- * of the month gone, and — when the wallet holds only SOL — the Zap: the missing coin bought first, then the add.
+ * of the month gone, the same one approval from SOL.
  */
 export function PierCard({ words, pier, copy = null }: { words: Words; pier: Pier; copy?: ProvenStrategy | null }) {
   const w = words.pier;
@@ -51,10 +49,13 @@ export function PierCard({ words, pier, copy = null }: { words: Words; pier: Pie
   const costs = costsFor?.pool === pier.pool.address ? costsFor.value : null;
   const choice = useMemo(() => pierChoice(pier, style, typed, holdings, owner, states?.ceilingUsd ?? null, costs), [pier, style, typed, holdings, owner, states, costs]);
   const shown = reviewed && choice.key && reviewed.key === choice.key ? reviewed : null;
-  const figures = shown ? reviewFigures(shown.review, { x: pier.pool.x.symbol, y: pier.pool.y.symbol }, pier.pool) : null;
+  const zapped = zapReviewOf(shown);
+  const figures = zapped ? zapFigures(zapped, pier) : null;
   const busy = PIER_BUSY.has(phase);
   const range = pierRange(pier, style);
   const prices = rangePrices(range.low, range.high);
+  // CITY-203: with the care on, the agent opens and looks after the position — the card's one action becomes the care's.
+  const caring = useCare((st) => st.on) && careOpen() && !copy;
 
   // Opened from the Shelf (a copy) the Piers tab has not asked what this wallet may do here: asked once.
   useEffect(() => {
@@ -63,10 +64,10 @@ export function PierCard({ words, pier, copy = null }: { words: Words; pier: Pie
 
   // The exact Review of what is on the card, while the person reads it.
   useEffect(() => {
-    if (!connection || !admitted || !choice.key || phase !== 'idle' || notice || shown) return;
+    if (!connection || !admitted || !choice.key || phase !== 'idle' || notice || shown || caring) return;
     const timer = setTimeout(() => void usePier.getState().prepare(connection, { kind: 'add' }, useWallet.getState().holdings), AUTO_REVIEW_MS);
     return () => clearTimeout(timer);
-  }, [connection, admitted, choice.key, phase, notice, shown]);
+  }, [connection, admitted, choice.key, phase, notice, shown, caring]);
 
   const sol = candles[pier.sol.mint];
   const other = pier.pair === 'lst' ? candles[pier.other.mint] : null;
@@ -76,24 +77,15 @@ export function PierCard({ words, pier, copy = null }: { words: Words; pier: Pie
     return historyPicture(pier, series, style, choice.lamports);
   }, [pier, sol, other, style, choice.lamports]);
   const pastLoading = sol?.status === 'loading' || other?.status === 'loading';
-  const short = choice.problem === 'other' && choice.fit.otherMissingLamports > 0n;
-  // A copy's Zap: the coin the wallet lacks, bought with SOL first, a little over what is missing.
-  const leg: ZapLeg | null = copy && short ? { mint: pier.other.mint, symbol: pier.other.symbol, decimals: pier.other.decimals, lamports: zapLamports(choice.fit.otherMissingLamports) } : null;
-  const zap = useZapView(leg);
 
-  if (outcome) return <Outcome words={words} copied={Boolean(copy)} />;
+  if (outcome) return <Outcome words={words} pier={pier} copied={Boolean(copy)} />;
 
   const minText = digits(solShort(choice.minimum));
-  const goesIn = figures ? figures.amounts.join(' + ') : choice.split ? `≈ ${digits(solShort(choice.split.solLamports))} SOL + ${digits(unitsShort(choice.split.otherUnits, pier.other.decimals))} ${pier.other.symbol}` : null;
-  const shareSol = figures?.valueUsd != null || choice.lamports ? dayShare(pier, figures?.valueUsd ?? null, choice.lamports) : null;
-  const problem = typed && choice.problem && !leg ? problemText(words, choice.problem, choice, pier) : null;
-  const getOther = () => {
-    if (pier.lst) {
-      useSaver.getState().setLst(pier.lst.id);
-      useSaver.getState().setTyped(amountText((choice.fit.otherMissingLamports * 102n) / 100n, 9));
-      useEarn.getState().openProduct('saver');
-    } else openTradeCard({ mint: pier.other.mint, symbol: pier.other.symbol, name: pier.other.symbol, icon: null });
-  };
+  const goesIn = figures && figures.amounts.length ? `≈ ${digits(figures.amounts.join(' + '))}` : choice.split ? `≈ ${digits(solShort(choice.split.solLamports))} SOL + ${digits(unitsShort(choice.split.otherUnits, pier.other.decimals))} ${pier.other.symbol}` : null;
+  const shareSol = choice.lamports ? dayShare(pier, null, choice.lamports) : null;
+  const problem = typed && choice.problem ? problemText(words, choice.problem, choice) : null;
+  // Ryntra's fee is on the swap only, and only through Jupiter: the line says the rate the Review carries.
+  const feeLine = figures ? (figures.feePct ? w.swapFee(digits(figures.feePct)) : w.noFee) : w.swapFee('…');
   // Closed — and, under the canary, closed to every wallet it does not name: the canary is never announced.
   const closed = PIER_MODE === 'closed' || (PIER_MODE === 'canary' && !admitted) || (states !== null && !admitted && !states.stopped && states.exit !== 'on');
 
@@ -151,13 +143,17 @@ export function PierCard({ words, pier, copy = null }: { words: Words; pier: Pie
       </div>
       {goesIn ? <p className={s.goesIn}>{goesIn}</p> : null}
 
+      {copy ? null : <CareSwitch busy={busy} />}
+
       {copy ? null : <PierPast words={words} picture={picture} loading={pastLoading} />}
 
+      {/* With the care on, the Zap's swap, fee and route are not this action's: its card says only what the care does. */}
+      {caring ? null : (
       <Line
         label={words.details}
         line={
           <>
-            {leg ? `${words.captain.zapFee} ${zap.fee ?? '…'}` : w.noFee} · {w.minimum} {minText} SOL · {w.risk}
+            {feeLine} · {w.minimum} {minText} SOL · {w.risk}
           </>
         }
       >
@@ -174,12 +170,22 @@ export function PierCard({ words, pier, copy = null }: { words: Words; pier: Pie
               <dd>{digits(String(copy.live))}</dd>
             </>
           ) : null}
-          {leg ? (
+          <dt>{w.swap}</dt>
+          <dd>{figures ? (figures.route === 'jupiter' ? w.viaJupiter(figures.labels) : figures.route === 'pool' ? w.viaPool : '—') : '…'}</dd>
+          {figures?.swapInSol ? (
             <>
-              <dt>{words.captain.zapGet}</dt>
-              <dd>{zap.minimum ? digits(zap.minimum) : '—'}</dd>
-              <dt>{words.captain.zapFee}</dt>
-              <dd>{zap.fee ? digits(zap.fee) : '—'}</dd>
+              <dt>{w.swapGets}</dt>
+              <dd>
+                {digits(figures.swapInSol)} → {digits(figures.swapFloor ?? '—')}
+              </dd>
+            </>
+          ) : null}
+          <dt>{w.ryntraFee}</dt>
+          <dd>{figures ? (figures.feePct ? `${digits(figures.feePct)} · ${digits(figures.feeSol ?? '—')} SOL` : w.poolNoFee) : '…'}</dd>
+          {figures?.swapInSol ? (
+            <>
+              <dt>{w.checked}</dt>
+              <dd>✓</dd>
             </>
           ) : null}
           <dt>{w.range}</dt>
@@ -189,9 +195,9 @@ export function PierCard({ words, pier, copy = null }: { words: Words; pier: Pie
           <dt>{w.bins}</dt>
           <dd>{digits(String(STYLE_HALF[style]))}</dd>
           <dt>{w.rent}</dt>
-          <dd>{figures?.rentSol ? `${figures.rentSol} SOL${figures.rentBack ? `, ${w.rentBack}` : ''}` : '—'}</dd>
+          <dd>{figures?.rentSol ? `${digits(figures.rentSol)} SOL${figures.rentBack ? `, ${w.rentBack}` : ''}` : '—'}</dd>
           <dt>{w.network}</dt>
-          <dd>{figures ? `${figures.networkSol} SOL` : '—'}</dd>
+          <dd>{figures ? `${digits(figures.networkSol)} SOL` : '—'}</dd>
           <dt>{w.slippage}</dt>
           <dd>{digits(`${PIER_SLIPPAGE_BPS / 100}%`)}</dd>
           <dt>{w.tradeFee}</dt>
@@ -205,30 +211,29 @@ export function PierCard({ words, pier, copy = null }: { words: Words; pier: Pie
           <dt>Meteora</dt>
           <dd>{w.venue}</dd>
         </dl>
-        {figures && figures.transactions > 1 ? <p className={s.fine}>{w.signatures(figures.transactions)}</p> : null}
+        {figures ? <p className={s.fine}>{w.approval(figures.transactions)}</p> : null}
+        <p className={s.fine}>{w.zapFine}</p>
         <p className={s.fine}>{copy ? words.captain.fine : w.pastFine}</p>
         <p className={s.fine}>{w.fine}</p>
       </Line>
+      )}
 
       {problem ? <p className={`${s.note} ${s.noteWarn}`}>{problem}</p> : null}
       {states?.stopped ? <p className={`${s.note} ${s.noteWarn}`}>{w.stopped}</p> : null}
-      <PierNote notice={notice ?? (figures?.note ? { tone: 'warn', text: figures.note } : null)} />
+      <PierNote notice={notice} />
 
       <div className={s.grow} />
-      {closed ? (
+      {caring ? (
+        /* The care is its own door (`lib/care/**`): the Harbor's canary admits Zap's wallets, the care's switch its own. */
+        <CareAction words={words} pool={pier.pool.address} lamports={choice.lamports} width={STYLE_HALF[style] * 2 + 1} blocked={Boolean(choice.problem && choice.problem !== 'ceiling')} />
+      ) : closed ? (
         <Notify product="pier" words={words} />
-      ) : leg && connection ? (
-        <ZapAction words={words} pier={pier} leg={leg} admitted={admitted && !states?.stopped} />
-      ) : short && connection ? (
-        <button type="button" className={`${s.display} ${s.action} ${s.cta}`} onClick={getOther}>
-          {w.get(pier.other.symbol)}
-        </button>
       ) : (
         <PierAction
           words={words}
-          verb={copy ? words.captain.copy : w.add}
+          verb={copy ? words.captain.copy : w.put}
           ready={Boolean(shown)}
-          blocked={connection && (!admitted || choice.problem) ? (copy ? words.captain.copy : w.add) : null}
+          blocked={connection && (!admitted || choice.problem) ? (copy ? words.captain.copy : w.put) : null}
           onPrepare={() => connection && void usePier.getState().prepare(connection, { kind: 'add' }, holdings)}
         />
       )}
@@ -245,11 +250,10 @@ function dayShare(pier: Pier, valueUsd: number | null, lamports: bigint | null):
   return usdToSol(pier, (fees * usd) / (pier.pool.tvlUsd + usd));
 }
 
-function problemText(words: Words, problem: NonNullable<ReturnType<typeof pierChoice>['problem']>, choice: ReturnType<typeof pierChoice>, pier: Pier): string {
+function problemText(words: Words, problem: NonNullable<ReturnType<typeof pierChoice>['problem']>, choice: ReturnType<typeof pierChoice>): string {
   const p = words.pier.problem;
   if (problem === 'min') return p.min(digits(solShort(choice.minimum)));
   if (problem === 'ceiling') return p.ceiling(digits(solShort(choice.ceiling)));
-  if (problem === 'other') return p.other(pier.other.symbol);
   return p[problem]('');
 }
 
@@ -348,38 +352,66 @@ export function PierAction({ words, verb, ready, blocked, onPrepare }: { words: 
   );
 }
 
-/** What happened, in the window's words: moored, partly, not at all, or not known yet — never sent twice. */
-export function Outcome({ words, copied = false }: { words: Words; copied?: boolean }) {
+/**
+ * What happened, in the window's words: moored, partly, not at all, or not known yet — never sent twice. A Zap that
+ * landed only in part says it plainly — the swap went through, the deposit did not — and offers «Take back as SOL»:
+ * one more approval, its figure built while the card is read.
+ */
+export function Outcome({ words, pier = null, copied = false }: { words: Words; pier?: Pier | null; copied?: boolean }) {
   const w = words.pier;
   const outcome = usePier((st) => st.outcome);
   const phase = usePier((st) => st.phase);
+  const sent = usePier((st) => st.sent);
+  const rest = usePier((st) => st.rest);
   const connection = useWallet((st) => st.connection);
+  const zapped = outcome?.kind === 'partial' ? zapReviewOf(sent) : null;
+  const halfZap = Boolean(zapped && zapped.preview.action === 'zap_in' && pier);
+
+  // «Take the rest» is built while the person reads what happened, so its figure stands before the tap.
+  useEffect(() => {
+    if (halfZap && connection && !rest && phase === 'partial') void usePier.getState().prepareRest(connection);
+  }, [halfZap, connection, rest, phase]);
+
   if (!outcome) return null;
-  const signature = outcome.kind === 'failed' ? outcome.signature : 'signatures' in outcome ? outcome.signatures.at(-1) ?? null : null;
-  const good = outcome.kind === 'done';
-  const word = outcome.kind === 'done' ? (copied ? words.captain.copied : w.done) : outcome.kind === 'partial' ? w.partial : outcome.kind === 'failed' ? w.failed : w.unknown;
+  const restDone = rest?.outcome?.kind === 'done';
+  const signature = restDone ? (rest!.outcome as { signatures: readonly string[] }).signatures.at(-1) ?? null : outcome.kind === 'failed' ? outcome.signature : 'signatures' in outcome ? outcome.signatures.at(-1) ?? null : null;
+  const good = outcome.kind === 'done' || restDone;
+  const word = restDone ? w.restDone : outcome.kind === 'done' ? (copied ? words.captain.copied : w.done) : halfZap ? w.partialZap(pier!.other.symbol) : outcome.kind === 'partial' ? w.partial : outcome.kind === 'failed' ? w.failed : w.unknown;
+  const back = rest?.reviewed ? zapFigures(rest.reviewed.review as Parameters<typeof zapFigures>[0], pier!).backSol : null;
+  const waiting = phase === 'wallet' || phase === 'sending';
   return (
     <section className={s.saver}>
       <div className={`${s.result} ${good ? s.resultGood : ''}`} role="status">
         {good ? (
           <>
             <span className={`${s.display} ${s.resultWord}`}>{word}</span>
-            <p className={s.fine}>{copied ? words.captain.copiedLine : w.doneLine}</p>
+            <p className={s.fine}>{restDone ? w.restLine : copied ? words.captain.copiedLine : w.doneLine}</p>
           </>
         ) : (
           <p className={s.lead}>{word}</p>
         )}
+        {halfZap && !restDone && back ? <p className={s.goesIn}>{digits(w.restBack(back))}</p> : null}
         {signature ? (
           <a className={s.link} href={explorerTxUrl('mainnet', signature)} target="_blank" rel="noreferrer">
             {w.explorer}
           </a>
         ) : null}
       </div>
+      {halfZap && !restDone ? <PierNote notice={rest?.notice ?? null} /> : null}
       <div className={s.grow} />
       {outcome.kind === 'unknown' && connection ? (
         <button type="button" className={`${s.display} ${s.action} ${phase === 'sending' ? s.waiting : ''}`} onClick={() => void usePier.getState().recheck(connection.address)} disabled={phase === 'sending'}>
           {phase === 'sending' ? w.sending : w.checking}
         </button>
+      ) : halfZap && !restDone && connection ? (
+        <>
+          <button type="button" className={`${s.display} ${s.action} ${s.cta} ${waiting || !rest?.reviewed ? s.waiting : ''}`} onClick={() => void usePier.getState().takeRest(connection)} disabled={waiting}>
+            {phase === 'wallet' ? w.wallet : phase === 'sending' ? w.sending : !rest?.reviewed && !rest?.notice ? w.building : w.takeRest}
+          </button>
+          <button type="button" className={`${s.display} ${s.secondary}`} onClick={() => usePier.getState().again()} disabled={waiting}>
+            {w.toPiers}
+          </button>
+        </>
       ) : (
         <button type="button" className={`${s.display} ${good ? s.action : s.secondary}`} onClick={() => usePier.getState().again()}>
           {good || outcome.kind === 'partial' ? (copied ? words.back : w.toPiers) : w.again}

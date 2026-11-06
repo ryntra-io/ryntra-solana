@@ -8,6 +8,7 @@ import { SHARE_SCENE } from '@/city/lib/art/frames';
 import { BRAND } from '@/city/lib/brand';
 import type { Lang } from '@/city/lib/i18n/langs';
 import { PALETTE } from '@/city/lib/palette';
+import { SITE_ORIGIN } from '@/lib/product/app-address';
 import { CITY_CARD_SIZE } from './card';
 import type { Words } from '@/city/lib/i18n/dict';
 import { CARD_WORDS, type CardLine } from './words';
@@ -62,12 +63,25 @@ export function markUri(): string {
 }
 
 let scene: Promise<string | null> | null = null;
+const SCENE_MS = 4_000;
 
-/** The live city's frame (`SHARE_SCENE`), read once per instance. */
+/**
+ * The live city's frame (`SHARE_SCENE`), read once per instance. On Vercel the function bundle does not carry
+ * `public/`, so the file read fails there and the card was drawn on bare ink: a black preview in every chat. The frame
+ * is then fetched from the site itself, where `public/` is served. A miss is not kept, so the next card asks again.
+ */
 export function sceneUri(): Promise<string | null> {
   scene ??= readFile(join(process.cwd(), 'public', ...SHARE_SCENE.src.split('/').filter(Boolean)))
+    .catch(() =>
+      fetch(`${SITE_ORIGIN}${SHARE_SCENE.src}`, { signal: AbortSignal.timeout(SCENE_MS) }).then((r) =>
+        r.ok ? r.arrayBuffer().then((b) => Buffer.from(b)) : Promise.reject(new Error(String(r.status))),
+      ),
+    )
     .then((bytes) => `data:image/jpeg;base64,${bytes.toString('base64')}`)
-    .catch(() => null);
+    .catch(() => {
+      scene = null;
+      return null;
+    });
   return scene;
 }
 

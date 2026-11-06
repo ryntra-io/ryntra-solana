@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import test from "node:test";
 
-import { cityLine, detailsOf, intentOf, LINE_MAX, moveOf, movers, pickTowers, shortLine, startersFor, toneOf, towersOf, TOWERS_MAX } from "./answer.ts";
+import { cityAnswers, cityLine, detailsOf, intentOf, LINE_MAX, moveOf, movers, pickTowers, sameMove, shortLine, startersFor, statedMove, toneOf, towersOf, TOWERS_MAX } from "./answer.ts";
 import { guestBody, turnOf } from "./ask.ts";
 import { foreignWord, questionSymbol } from "./clean.ts";
 import { useAssistant } from "./store.ts";
@@ -265,4 +265,41 @@ test("one place in the city: the button in the top bar, the panel in CityApp, co
   const layer = read("../../components/assistant/AssistantLayer.tsx");
   assert.match(layer, /e\.key === 'Escape' && !e\.defaultPrevented/, "one Escape does one thing");
   assert.match(layer, /useWindows\.subscribe/, "a window of the frame opening sends the panel aside");
+});
+
+/* CITY-200: on ryntra.io «what is pumping right now?» named a meme «AMD −73.36 %» among the day's fallers, and the city
+   lit the AMD stock tower at −4.4 % — another coin under the same ticker, with a figure that matched nothing said. */
+test("a ticker named with its day's move is that tower only when the tower moved that way", () => {
+  const AMD = tower("AMD", -4.4, { id: "AMDstock111111111111111111111111111111111111" });
+  const said = (text) => turn({ answer: { ...turn().answer, observation: [sentence(text)] } });
+  assert.deepEqual(towersOf(said("Fell most over 24 h: AMD −73.36 % (vol. $11.8M); E −71.26 % (vol. $2.93M)."), [AMD, WIF]), []);
+  assert.deepEqual(towersOf(said("Найбільше впали за 24 год: AMD −73,36 % (обсяг $11,8M)."), [AMD]), [], "the Ukrainian answer too");
+  assert.deepEqual(towersOf(said("Rose most over 24 h: WIF +18.4 % (vol. $1M)."), [AMD, WIF]), [WIF], "the tower that moved as said is lit");
+  assert.deepEqual(towersOf(said("AMD dipped today after earnings."), [AMD]), [AMD], "no move stated: the ticker still names the tower");
+  assert.equal(statedMove(" −73.36 % (vol."), -73.36);
+  assert.equal(statedMove(" +5,603.07 %"), 5603.07);
+  assert.equal(statedMove(" −73,36 %"), -73.36);
+  assert.equal(statedMove(" +6,039 %"), 6039);
+  assert.equal(statedMove(" (vol. $1M)"), null);
+  assert.equal(sameMove(-73.36, -4.4), false);
+  assert.equal(sameMove(18.4, 18.4), true);
+  assert.equal(sameMove(12, 9.1), true, "about as far: the answer and the city read a few minutes apart");
+  assert.equal(sameMove(9, -9), false, "the other way is another coin");
+  assert.equal(sameMove(null, 1), true);
+});
+
+test("the day's guest answers spent, a rise or a fall is the city's own read, not «come back tomorrow» (CITY-200)", async () => {
+  assert.equal(cityAnswers([], "rising", { used: 5, allowance: 5 }), true);
+  assert.equal(cityAnswers([], "rising", { used: 2, allowance: 5 }), false, "questions left: Ryntra's words stand");
+  assert.equal(cityAnswers([WIF], "rising", { used: 5, allowance: 5 }), false, "a turn that named towers stands");
+  assert.equal(cityAnswers([], "other", { used: 5, allowance: 5 }), false);
+  const st = useAssistant.getState();
+  st.show(null);
+  const spent = turn({ answer: { ...turn().answer, observation: [sentence("Free guest questions are over for today.")] } });
+  await st.ask("What's rising right now?", CITY, async () => ({ ok: true, turn: spent, day: { used: 5, allowance: 5 } }));
+  const now = useAssistant.getState();
+  assert.equal(now.voice, "city");
+  assert.deepEqual(now.shown.map((t) => t.symbol), ["WIF", "BONK", "POPCAT"]);
+  assert.deepEqual(now.day, { used: 5, allowance: 5 }, "the count stays behind «Details»");
+  st.hide();
 });

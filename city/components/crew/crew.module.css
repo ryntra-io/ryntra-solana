@@ -1,0 +1,305 @@
+/* The two kinds of help (CITY-205): the consultant's word in its panel, the job card, and the crew on top of «Bots». */
+
+.consultant {
+  display: inline-flex;
+  align-items: center;
+  min-height: 22px;
+  padding: 0 8px;
+  border: 1px solid rgba(201, 162, 255, 0.45);
+  background: rgba(42, 22, 64, 0.6);
+  color: var(--violet, #c9a2ff);
+  font-family: var(--font-ui, system-ui), system-ui, sans-serif;
+  font-size: var(--type-micro);
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  clip-path: polygon(6px 0, 100% 0, 100% calc(100% - 6px), calc(100% - 6px) 100%, 0 100%, 0 6px);
+}
+
+/* ---------- The job card: «This is a job for an agent → Hire» ---------- */
+
+.job {
+  display: grid;
+  gap: 12px;
+  margin: 2px 0 14px;
+  animation: crewIn 240ms ease-out both;
+}
+
+.jobLine {
+  margin: 0;
+  color: var(--ice);
+  font-size: var(--type-lead);
+  font-weight: 700;
+  line-height: 1.3;
+}
+
+.jobAgent {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  align-items: center;
+  gap: 12px;
+  padding: 12px;
+  border: 1px solid rgba(255, 178, 63, 0.35);
+  background: linear-gradient(160deg, rgba(58, 34, 12, 0.55), rgba(20, 16, 36, 0.85));
+  clip-path: polygon(10px 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%, 0 10px);
+}
+
+.jobAgent b {
+  display: block;
+  color: var(--ice);
+  font-size: var(--type-base);
+  font-weight: 800;
+}
+
+.jobAgent span {
+  display: block;
+  margin-top: 2px;
+  color: var(--text-dim);
+  font-size: var(--type-small);
+}
+
+.badge {
+  display: inline-grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  border: 1px solid rgba(255, 178, 63, 0.45);
+  background: rgba(255, 178, 63, 0.1);
+  color: var(--amber);
+  clip-path: polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px);
+}
+
+.hire {
+  width: 100%;
+  min-height: 52px;
+  border: 0;
+  background: linear-gradient(180deg, var(--warm), var(--amber));
+  color: var(--ink);
+  font-family: var(--font-display, system-ui), system-ui, sans-serif;
+  font-stretch: 125%;
+  font-variation-settings: 'wdth' 125;
+  font-size: var(--type-action);
+  font-weight: 900;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  cursor: pointer;
+  --cut: 12px;
+  clip-path: polygon(var(--cut) 0, 100% 0, 100% calc(100% - var(--cut)), calc(100% - var(--cut)) 100%, 0 100%, 0 var(--cut));
+  box-shadow: 0 10px 30px rgba(255, 178, 63, 0.25);
+}
+
+.hire:hover {
+  filter: brightness(1.06);
+}
+
+.hire:focus-visible {
+  outline: 2px solid var(--ice);
+  outline-offset: 2px;
+}
+
+/* ---------- The crew on top of «Bots → Start» ---------- */
+
+.crew {
+  margin: 0 0 18px;
+  padding: 0;
+}
+
+.kicker {
+  display: block;
+  margin: 0 0 10px;
+  color: var(--text-dim);
+  font-family: var(--font-display, system-ui), system-ui, sans-serif;
+  font-stretch: 125%;
+  font-variation-settings: 'wdth' 125;
+  font-size: var(--type-micro);
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+/* Two across in the window's column and on a phone, four when the window is made whole. */
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(132px, 1fr));
+  gap: 8px;
+}
+
+.tile {
+  position: relative;
+  display: grid;
+  grid-template-rows: auto 1fr auto;
+  gap: 8px;
+  min-height: 116px;
+  padding: 12px;
+  text-align: left;
+  border: 1px solid rgba(238, 241, 255, 0.09);
+  background: linear-gradient(165deg, rgba(42, 22, 64, 0.5), rgba(14, 12, 24, 0.9));
+  color: var(--ice);
+  font: inherit;
+  cursor: pointer;
+  clip-path: polygon(10px 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%, 0 10px);
+  transition: border-color 160ms ease-out, transform 160ms ease-out;
+}
+
+.tile:hover:not(:disabled) {
+  border-color: rgba(255, 178, 63, 0.55);
+}
+
+.tile:active:not(:disabled) {
+  transform: translateY(1px);
+}
+
+.tile:focus-visible {
+  outline: 2px solid var(--amber);
+  outline-offset: 2px;
+}
+
+.tile:disabled {
+  cursor: default;
+  opacity: 0.55;
+}
+
+.tile[data-focus] {
+  border-color: var(--amber);
+  box-shadow: inset 0 0 0 1px var(--amber), 0 0 24px rgba(255, 178, 63, 0.25);
+}
+
+.tile[data-working] .badge {
+  border-color: rgba(20, 241, 149, 0.55);
+  background: rgba(20, 241, 149, 0.1);
+  color: var(--mint, #14f195);
+}
+
+.tileHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.tileText b {
+  display: block;
+  font-size: var(--type-base);
+  font-weight: 800;
+}
+
+.tileText span {
+  display: block;
+  margin-top: 3px;
+  color: var(--text-dim);
+  font-size: var(--type-small);
+  line-height: 1.3;
+}
+
+.state {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 24px;
+  color: var(--amber);
+  font-size: var(--type-small);
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.state[data-state='working'] {
+  color: var(--mint, #14f195);
+}
+
+.state[data-state='working']::before {
+  content: '';
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: currentColor;
+  box-shadow: 0 0 8px currentColor;
+}
+
+.state[data-state='soon'] {
+  color: var(--text-dim);
+}
+
+.more {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  min-height: 44px;
+  margin: 4px 0 0 -6px;
+  padding: 0 6px;
+  border: 0;
+  background: none;
+  color: var(--text-dim);
+  font: inherit;
+  font-size: var(--type-small);
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.more svg {
+  width: 16px;
+  height: 16px;
+  transition: transform 160ms ease-out;
+}
+
+.more[aria-expanded='true'] svg {
+  transform: rotate(180deg);
+}
+
+.how {
+  display: grid;
+  gap: 10px;
+  margin: 0 0 4px;
+  padding: 0;
+  list-style: none;
+  color: var(--text-dim);
+  font-size: var(--type-small);
+  line-height: 1.45;
+}
+
+.skills {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 6px;
+  margin: 2px 0 0;
+}
+
+.skillRow {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+}
+
+.skillRow b {
+  min-width: 108px;
+  color: var(--ice);
+  font-weight: 700;
+}
+
+.chip {
+  padding: 2px 8px;
+  border: 1px solid rgba(238, 241, 255, 0.12);
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--ice);
+  font-size: var(--type-micro);
+}
+
+@keyframes crewIn {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .job,
+  .tile {
+    animation: none;
+    transition: none;
+  }
+}

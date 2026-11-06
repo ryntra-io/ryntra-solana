@@ -10,6 +10,7 @@ import { fitOf, type Weather } from '@/city/lib/bots/weather';
 import { pct, price } from '@/city/lib/bots/format';
 import { useHarbor } from '@/city/lib/districts/harbor/store';
 import { AgentBudget } from './AgentBudget';
+import { Crew } from '../crew/Crew';
 import { BotDetail } from './BotDetail';
 import { Newcomer } from './Newcomer';
 import { RyntraCard } from './Ryntra';
@@ -48,6 +49,7 @@ function Home({ coin }: Readonly<{ coin: Coin | null }>) {
   const tryable = coin !== null && !noHistory(path);
   return (
     <div className={s.home}>
+      <Crew />
       <AgentBudget />
       <WeatherHero coin={coin} path={path} />
       {tryable ? <RyntraCard coin={coin} /> : null}

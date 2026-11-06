@@ -24,6 +24,10 @@ export type AgentDay = Readonly<{
   worthRaw: string | null;
   /** worth − spent, lamports; null with the worth. */
   earnedRaw: string | null;
+  /** CITY-197: after every fee — the exit's and the network's share too (`./net.ts`); null — not read; absent — not counted. */
+  netRaw?: string | null;
+  /** CITY-197: plain holding of the same SOL, after the same fees; null — cannot be priced. */
+  holdRaw?: string | null;
 }>;
 
 /** What the coins the agent holds for her are worth now: the holding and its worth, as `agentResult` read them. */

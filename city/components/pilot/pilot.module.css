@@ -1,0 +1,179 @@
+/* CITY-204 — the money autopilot's card: the parts as one bar, a legend of four, the week's figure. The rest of the card is
+   the instruct and autopilot modules' (glass, hero, dock, details), so it reads as the agent's own window. */
+
+.bar {
+  display: flex;
+  height: 12px;
+  gap: 3px;
+  overflow: hidden;
+  border-radius: 6px;
+}
+
+.seg {
+  min-width: 6px;
+  height: 100%;
+  border-radius: 3px;
+  transition: flex-grow 420ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.seg[data-part='trade'],
+.dot[data-part='trade'] {
+  background: #ff681c;
+  box-shadow: 0 0 12px rgba(255, 104, 28, 0.45);
+}
+
+.seg[data-part='save'],
+.dot[data-part='save'] {
+  background: var(--mint);
+  box-shadow: 0 0 12px rgba(20, 241, 149, 0.35);
+}
+
+.seg[data-part='pool'],
+.dot[data-part='pool'] {
+  background: var(--violet);
+  box-shadow: 0 0 12px rgba(153, 69, 255, 0.45);
+}
+
+.seg[data-part='reserve'],
+.dot[data-part='reserve'] {
+  background: rgba(238, 241, 255, 0.34);
+}
+
+.legend {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px 14px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.legend li {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+}
+
+.name {
+  overflow: hidden;
+  font-size: var(--type-body);
+  font-weight: 650;
+  color: var(--ice);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.pct {
+  font-size: var(--type-body);
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  color: var(--warm);
+}
+
+.sum {
+  font-size: var(--type-small);
+  font-variant-numeric: tabular-nums;
+  color: var(--text-dim);
+}
+
+.split {
+  display: grid;
+  gap: 14px;
+  padding: 16px;
+  background:
+    radial-gradient(120% 140% at 0% 0%, rgba(255, 104, 28, 0.12), transparent 60%),
+    rgba(255, 255, 255, 0.03);
+  box-shadow: inset 0 0 0 1px rgba(238, 241, 255, 0.1);
+  clip-path: polygon(10px 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%, 0 10px);
+}
+
+/* How a person pays: one line, centred over the honest one, in the card's own light. */
+.pay {
+  margin: 0;
+  font-size: var(--type-small);
+  font-weight: 650;
+  color: var(--ice);
+  text-align: center;
+  opacity: 0.9;
+}
+
+.risk {
+  margin: 0;
+  font-size: var(--type-small);
+  font-weight: 650;
+  color: var(--warm);
+  text-align: center;
+  opacity: 0.86;
+}
+
+.status {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: var(--type-micro);
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--amber);
+}
+
+.table {
+  display: grid;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.table li {
+  display: grid;
+  grid-template-columns: 1fr auto auto;
+  gap: 12px;
+  font-size: var(--type-body);
+  font-variant-numeric: tabular-nums;
+  color: var(--ice);
+}
+
+.table li span:not(:first-child) {
+  min-width: 48px;
+  text-align: right;
+  opacity: 0.8;
+}
+
+.table .head {
+  font-size: var(--type-micro);
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  opacity: 0.6;
+}
+
+/* A phone: the names stay whole — smaller type, closer columns. */
+@media (max-width: 480px) {
+  .legend {
+    column-gap: 10px;
+  }
+
+  .legend li {
+    gap: 6px;
+  }
+
+  .name,
+  .pct {
+    font-size: var(--type-small);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .seg {
+    transition: none;
+  }
+}

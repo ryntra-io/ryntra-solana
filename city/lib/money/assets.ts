@@ -27,6 +27,8 @@ export type MoneyAsset = Readonly<{
   verified: boolean;
   suspicious: boolean;
   icon: string | null;
+  /** The day's price change in per cent, as the catalogue read it; absent or null without one. */
+  dayChangePct?: number | null;
 }>;
 
 export type WalletRead = Readonly<{
@@ -80,6 +82,7 @@ export function assetsOf(rows: readonly unknown[]): MoneyAsset[] {
       verified: native || catalog?.isVerified === true,
       suspicious: catalog?.isSuspicious === true,
       icon: text(catalog?.icon),
+      dayChangePct: typeof catalog?.dayChangePct === 'number' && Number.isFinite(catalog.dayChangePct) ? catalog.dayChangePct : null,
     });
   }
   return assets;

@@ -6,7 +6,8 @@
  * A mandate joins the book only as the chain has it: the policy exists under the smart account program, its one signer
  * is this agent, the person is the account's settings signer, and the vault and the budget's account are the ones the
  * program derives. Its numbers are one of the city's presets, so the agent never trades by numbers the person did not
- * choose; the chain holds the very same caps again.
+ * choose; the chain holds the very same caps again. And its coin is no coin of Ryntra's launchpad and none of the
+ * person's own (CITY-196, `./ryntra-coins.server.ts`) — the signer asks the same again before every trade.
  */
 
 import { Connection, PublicKey } from "@solana/web3.js";
@@ -21,6 +22,7 @@ import { NATIVE_MINT, readPolicyHead, readSettings, ssaAddress, SSA_PROGRAM_ID }
 import { STARTER_CAPS } from "./terms.ts";
 import { planFrom, planText, STEADY, type Mark, type StrategyPlan } from "./plans.ts";
 import { type AgentTrade, type PauseReason, type StrategyId } from "./strategy.ts";
+import { storeScreen, type AgentScreen } from "./ryntra-coins.server.ts";
 
 export const AGENT_BOOK = "agentMandates";
 
@@ -137,7 +139,7 @@ export function presetOf(record: Pick<MandateRecord, "perTrade" | "perDay">): Bu
 export async function registerMandate(
   input: Readonly<{ record: MandateRecord; strategy: StrategyId; said: string | null; plan?: StrategyPlan | null; bornAt?: number | null }>,
   gate: OpenGate,
-  deps: Readonly<{ store: GuardStore; connection: Pick<Connection, "getAccountInfo">; receiveMint: () => Promise<PublicKey>; now?: () => number }>,
+  deps: Readonly<{ store: GuardStore; connection: Pick<Connection, "getAccountInfo">; receiveMint: () => Promise<PublicKey>; screen?: AgentScreen; now?: () => number }>,
 ): Promise<RegisterResult> {
   const now = (deps.now ?? Date.now)();
   const plan = input.plan ?? STEADY;
@@ -161,6 +163,10 @@ export async function registerMandate(
   } catch {
     return { ok: false, code: "UNAVAILABLE", reason: "The coin the agent buys is not readable." };
   }
+  /* CITY-196: Ryntra's agent buys no coin of Ryntra's launchpad, and none the person launched. */
+  const origin = await (deps.screen ?? storeScreen(deps.store, gate.network)).origin(receive.toBase58()).catch(() => null);
+  if (!origin) return { ok: false, code: "UNAVAILABLE", reason: "Ryntra's launch registry is not readable." };
+  if (origin.launchedHere) return { ok: false, code: "REFUSED", reason: origin.creator === input.record.owner ? "The agent does not buy your own coin." : "The agent does not buy coins launched on Ryntra." };
   const entry: BookEntry = {
     v: 1,
     cluster: gate.network,

@@ -67,7 +67,7 @@ export function rowFromSanctum(id: LstId, symbol: string, decimals: number, apys
   const value = valueMap[symbol];
   const lamports = typeof value === 'string' || typeof value === 'number' ? String(value).split('.')[0]! : '';
   const rate = /^\d{1,24}$/.test(lamports) ? rateOf(lamports, 10n ** BigInt(decimals)) : null;
-  const apyPct = apy !== null && apy > -0.5 && apy < 1 ? apy * 100 : null;
+  const apyPct = apy !== null && apy > 0 && apy < 1 ? apy * 100 : null; // Sanctum answers 0 when it has no figure; an LST never earns exactly 0
   if (!rate && apyPct === null) return EMPTY_ROW(id);
   return { id, rate, apyPct, rewardsFeePct: null, unstakeFeePct: null, source: 'sanctum', epoch: null };
 }

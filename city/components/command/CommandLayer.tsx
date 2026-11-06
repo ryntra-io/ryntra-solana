@@ -15,11 +15,17 @@ import { headline } from '@/city/lib/instruct/face';
 import { presetFor, rhythmOf } from '@/city/lib/autopilot/plan';
 import { readAsk } from '@/city/lib/autopilot/read';
 import { readDollarAsk } from '@/city/lib/earn/dollar-read';
+import { readPilotAsk } from '@/city/lib/pilot/read';
+import { PILOT } from '@/city/lib/pilot/words';
 import { rateText } from '@/city/lib/earn/dollar';
 import { useDollar } from '@/city/lib/earn/dollar-store';
 import { earnWords } from '@/city/lib/earn/words';
 import { AUTOPILOT } from '@/city/lib/autopilot/words';
 import { readInstruction } from '@/city/lib/instruct/read';
+import { hireFit, readHire, type Role } from '@/city/lib/crew/read';
+import { crewGatesNow } from '@/city/lib/crew/hire';
+import { CREW_WORDS } from '@/city/lib/crew/words';
+import { CrewGlyph, RoleGlyph } from '../crew/glyphs';
 import { INSTRUCT } from '@/city/lib/instruct/words';
 import { useKeyboardInset } from '@/city/lib/keyboard';
 import { launchOpenHere, useLaunch } from '@/city/lib/launch/district';
@@ -28,6 +34,8 @@ import { useRun } from '@/city/lib/run/store';
 import { SparkGlyph } from '../assistant/AssistantLayer';
 import { EarnGlyph, MoneyGlyph } from '../deck/glyphs';
 import { CloseGlyph, LaunchGlyph } from '../hud/glyphs';
+import { LearnGlyph } from '../learn/glyphs';
+import { LEARN_WORDS } from '../learn/words';
 import s from './command.module.css';
 import { COMMAND } from './words';
 
@@ -84,11 +92,15 @@ function Palette() {
   const rows = useMemo(() => {
     const listed = suggest(text, book, context, gates);
     // The Dollar Saver on its word (CITY-192): «put my USDC to work» is its card, before anything else the words could open.
-    const saver = gates.dollar ? readDollarAsk(text) : null;
-    const ask = !saver && (gates.agentTrade || gates.agentLaunch) ? readAsk(text, book) : null;
-    const agent = saver ? fit({ kind: 'dollar', ask: saver }, gates) : ask ? fit({ kind: 'autopilot', ask }, gates) : null;
+    // The money autopilot on its word (CITY-204): money given and spread over places — one plan — before either.
+    const pilot = gates.pilot ? readPilotAsk(text, book) : null;
+    const saver = !pilot && gates.dollar ? readDollarAsk(text) : null;
+    const ask = !pilot && !saver && (gates.agentTrade || gates.agentLaunch) ? readAsk(text, book) : null;
+    const agent = pilot ? fit({ kind: 'pilot', ask: pilot }, gates) : saver ? fit({ kind: 'dollar', ask: saver }, gates) : ask ? fit({ kind: 'autopilot', ask }, gates) : null;
     const instruction = !agent && gates.instruct ? readInstruction(text, book, context) : null;
-    const command = agent ?? (instruction ? fit({ kind: 'instruct', instruction }, gates) : null);
+    // A job for an agent (CITY-205): «trade for me», «доглядай мій пул» — the agent's card, never a question for Ryntra.
+    const job = !agent && !instruction ? readHire(text) : null;
+    const command = agent ?? (instruction ? fit({ kind: 'instruct', instruction }, gates) : null) ?? (job ? ({ kind: 'hire', ask: hireFit(job, crewGatesNow()) } as const) : null);
     return command ? [{ key: keyOf(command), command }, ...listed.filter((row) => row.key !== keyOf(command))].slice(0, ROWS_MAX) : listed;
   }, [text, book, context, gates]);
   useEffect(() => setActive(0), [text]);
@@ -139,6 +151,7 @@ function Palette() {
     add('portfolio', w.examplePortfolio, { kind: 'money', place: 'portfolio', send: null });
     add('launch', w.exampleLaunch, { kind: 'launch', symbol: null, name: null });
     add('instructions', w.exampleInstructions, { kind: 'instructions' });
+    add('hire', wordsNow(CREW_WORDS).kicker, { kind: 'hire', ask: { said: '', role: null } });
     for (const starter of startersFor(subjectTower())) list.push({ key: starter.id, label: starter.label, command: { kind: 'ask', question: starter.question }, ask: true });
     return list;
   }, [book, context, gates, w]);
@@ -223,7 +236,8 @@ function RowFace({ command, w }: { command: Command; w: Words }) {
       <span className={s.icon}>{face.icon}</span>
       <span className={s.label}>{face.label}</span>
       {face.fill && <span className={command.kind === 'ask' ? s.quote : s.fill}>{face.fill}</span>}
-      {face.where && <span className={s.where}>{face.where}</span>}
+      {/* «Consultant» and «Agent» stay on a phone too: which of the two helps is the one thing a row must say (CITY-205). */}
+      {face.where && <span className={s.where} data-role-mark={command.kind === 'ask' || command.kind === 'hire' ? '' : undefined}>{face.where}</span>}
     </>
   );
 }
@@ -272,8 +286,18 @@ function faceOf(command: Command, w: Words, agent: (typeof INSTRUCT)['en']): { i
       return { icon: <EarnGlyph />, label: w.earn, fill: null, where: null };
     case 'launch':
       return { icon: <LaunchGlyph />, label: command.symbol ? w.launchAs(command.symbol) : w.launch, fill: command.name, where: null };
+    case 'learn': {
+      const lw = wordsNow(LEARN_WORDS);
+      return { icon: <LearnGlyph />, label: lw.title, fill: null, where: lw.kicker };
+    }
     case 'ask':
-      return { icon: <SparkGlyph />, label: w.askRyntra, fill: `«${command.question}»`, where: null };
+      // The consultant: it reads the market and advises — one word says so (CITY-205).
+      return { icon: <SparkGlyph />, label: w.askRyntra, fill: `«${command.question}»`, where: wordsNow(CREW_WORDS).consultant };
+    case 'hire': {
+      const c = wordsNow(CREW_WORDS);
+      const role: Role | null = command.ask.role;
+      return { icon: role ? <RoleGlyph role={role} /> : <CrewGlyph />, label: role ? `${c.hire} · ${c[role]}` : c.kicker, fill: null, where: c.agentRow };
+    }
     case 'instruct':
       return {
         icon: command.instruction.coin ? <CoinIcon coin={command.instruction.coin} /> : <SparkGlyph />,
@@ -293,6 +317,11 @@ function faceOf(command: Command, w: Words, agent: (typeof INSTRUCT)['en']): { i
         fill: command.ask.amount ? digits(`${command.ask.amount} ${command.ask.asset}`) : command.ask.asset,
         where: r !== null ? digits(`${rateText(r)} · ${d.dollar.provider}`) : d.dollar.provider,
       };
+    }
+    case 'pilot': {
+      const p = wordsNow(PILOT);
+      const money = [command.ask.solRaw ? `${Number(command.ask.solRaw) / 1e9} SOL` : null, command.ask.usdcRaw ? `${Number(command.ask.usdcRaw) / 1e6} USDC` : null].filter(Boolean).join(' + ');
+      return { icon: <SparkGlyph />, label: p.headline, fill: digits(money), where: p.kicker };
     }
     case 'autopilot': {
       const a = wordsNow(AUTOPILOT);

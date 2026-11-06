@@ -10,6 +10,7 @@ import { formatPrice, money, signed, sym, TokenIcon } from './bits';
 import { bindHoverLabel, useHover } from './hover';
 import { HUD } from './words';
 import { useWords } from '@/city/lib/i18n/dict';
+import { signedMove } from '@/city/lib/city/signed';
 import s from './hud.module.css';
 
 type Words = { title: string; name: string | null; figure: string | null; move: { text: string; up: boolean } | null };
@@ -53,7 +54,7 @@ export function HoverLabel() {
       title: sym(tower),
       name: tower.name,
       figure: tower.price > 0 ? formatPrice(tower.price) : null,
-      move: Number.isFinite(tower.change1h) ? { text: `${signed(tower.change1h)} ${w.h1}`, up: tower.change1h >= 0 } : null,
+      move: Number.isFinite(tower.change1h) ? { text: `${signed(tower.change1h)} ${w.h1}`, up: signedMove(tower.change1h).up } : null,
     };
     return { words, tower };
   }, [target, layout, feed, mine, me, w]);

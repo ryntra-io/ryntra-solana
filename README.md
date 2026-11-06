@@ -31,7 +31,7 @@ the other pictures are the live site.
 This repository is the product's source code as released — the web app and the
 city, the Android app, the Evidence Kernel and the database schema, with their
 tests. It is private and shared read-only with invited reviewers. Every update
-is one commit, named for what it released; the latest is from 2026-11-04.
+is one commit, named for what it released; the latest is from 2026-11-06.
 
 ## What is here
 
@@ -45,14 +45,18 @@ is one commit, named for what it released; the latest is from 2026-11-04.
 | `supabase/migrations/`, `supabase/prepared/` | The database schema migration by migration, and the prepared SQL that is applied by hand (corrections and rollbacks) |
 | `public/` | Static assets |
 
-6,578 files come from the development repository as released, and each test
+6,779 files come from the development repository as released, and each test
 sits beside the code it tests (`*.test.mjs`); `README.md`, `BOUNDARY.md`,
-`METEORA.md`, `LICENSE`, `.gitignore` and the scripts of `package.json` are
+`METEORA.md`, `LEARN.md`, `LICENSE`, `.gitignore` and the scripts of `package.json` are
 written for this snapshot.
 
 How Ryntra uses the Meteora stack — the launch on a Dynamic Bonding Curve, the
 move to DAMM v2, DLMM liquidity and the Earn district — file by file, with the
 commands that check it: [METEORA.md](METEORA.md).
+
+Every feature from A to Z — what it is in plain words, what a person presses, a
+diagram and the files and functions that do it, with real frames of ryntra.io:
+[LEARN.md](LEARN.md) (the same guide people read at [ryntra.io/learn](https://ryntra.io/learn)).
 
 ## Run the web app
 
@@ -111,15 +115,15 @@ build-tools).
 
 The code as it stood before the hackathon is tagged
 `pre-hackathon-baseline-2026-09-11` in the development repository — commit `7fc5776f`,
-2026-09-11. Measured against that tag, path by path, for the 6,578 files
+2026-09-11. Measured against that tag, path by path, for the 6,779 files
 that come from the development repository:
 
 | Since the tag | Files |
 |---|---|
-| New | 4,854 |
+| New | 5,055 |
 | Changed | 896 |
 | Unchanged | 828 |
-| Lines added / removed | +1,048,704 / −27,618 |
+| Lines added / removed | +1,071,956 / −28,029 |
 
 [BOUNDARY.md](BOUNDARY.md) lists every new and every changed file. Shipped since
 then, as the public build log records it:

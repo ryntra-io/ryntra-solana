@@ -167,3 +167,11 @@ test("the fee, the least you get and any warning are read before the press: they
   }
   assert.doesNotMatch(read("city/components/money/money.module.css"), /\.cta \{[^}]*position: sticky/, "Money's button is not pinned alone");
 });
+
+test("the coin's name stays whole in a narrow window: Share and the beacon drop their words by the window's width (CITY-200)", () => {
+  const trade = read("city/components/trade/trade.module.css");
+  const beacon = read("city/components/beacon/beacon.module.css");
+  assert.match(trade, /@container window \(max-width: 520px\) \{\s*\.shareTower \{[^}]*width: 44px;[^}]*\}\s*\.shareTowerWord \{\s*display: none;/);
+  assert.match(beacon, /@container window \(max-width: 520px\) \{\s*\.action \{[^}]*width: 44px;[^}]*\}\s*\.actionWord \{\s*display: none;/);
+  assert.match(read("city/components/window/window.module.css"), /container: window \/ inline-size;/, "the window's body is the container the rule reads");
+});

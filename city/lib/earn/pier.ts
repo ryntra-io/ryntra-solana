@@ -1,5 +1,5 @@
 import { SOLANA_MAINNET_USDC_MINT } from '../../../lib/solana/send-kinds.ts';
-import type { LiquidityReview } from '../../../lib/liquidity/studio/actions.ts';
+import type { LiquidityReview, ZapReview } from '../../../lib/liquidity/studio/actions.ts';
 import { spendable, toUnits } from '../districts/harbor/deposit.ts';
 import type { HarborPool, HarborToken } from '../districts/harbor/pools.ts';
 import type { Holdings } from '../trade/wallet.ts';
@@ -8,8 +8,9 @@ import { LST_BY_MINT, SOL_MINT, type Lst } from './lst.ts';
 /**
  * The SOL Pier (CITY-93, `docs/research/ryntra-earn-2026-10-29/SPEC.md` E2): the Harbor inside the Earn window. A pier
  * is a Meteora DLMM pool of SOL against an LST or against USDC; the person types an amount in SOL, picks one of three
- * styles, and the engine's Liquidity Studio builds the position around the price — its own `shape` and `range.half`,
- * nothing new in the engine. Every result is said in SOL; what a pool paid is the day gone, never a promise.
+ * styles, and the engine's Liquidity Studio builds the position around the price. Since CITY-198 the SOL alone is
+ * enough: the engine's Zap (Meteora's Zap program) swaps the part the other coin needs and opens the position, in one
+ * approval of the wallet. Every result is said in SOL; what a pool paid is the day gone, never a promise.
  *
  * Pure: the window, the store, the routes and the tests import it alike.
  */
@@ -144,45 +145,10 @@ export function pierSplit(pier: Pier, lamports: bigint): PierSplit | null {
   return { x: pier.solSide === 'x' ? sol : other, y: pier.solSide === 'x' ? other : sol, solLamports, otherUnits };
 }
 
-export type PierFit = Readonly<{
-  /** The wallet holds both sides and the SOL kept aside; true while the wallet is unknown — the engine has the last word. */
-  fits: boolean;
-  short: 'sol' | 'other' | null;
-  /** How much of the other coin is missing, base units, and its worth in lamports. */
-  otherMissing: bigint;
-  otherMissingLamports: bigint;
-}>;
-
-/** Whether the wallet can put the split in and still pay `reserve` lamports of rent and network. */
-export function pierFit(pier: Pier, split: PierSplit | null, holdings: Holdings | null, reserve: bigint = PIER_RESERVE_LAMPORTS): PierFit {
-  const none: PierFit = { fits: true, short: null, otherMissing: 0n, otherMissingLamports: 0n };
-  if (!split) return none;
-  const sol = spendable(holdings, SOL_MINT);
-  const other = spendable(holdings, pier.other.mint);
-  if (sol !== null && split.solLamports + reserve > sol) return { fits: false, short: 'sol', otherMissing: 0n, otherMissingLamports: 0n };
-  if (other !== null && split.otherUnits > other) {
-    const missing = split.otherUnits - other;
-    const lamports = BigInt(Math.ceil((Number(missing) / 10 ** pier.other.decimals) * otherInSol(pier) * 1e9));
-    return { fits: false, short: 'other', otherMissing: missing, otherMissingLamports: lamports };
-  }
-  return none;
-}
-
-/** The most the wallet can put in, lamports of worth: twice the smaller side it can spend; null while the wallet is unknown. */
-export function pierMax(pier: Pier, holdings: Holdings | null, reserve: bigint = PIER_RESERVE_LAMPORTS): bigint | null {
-  const sol = spendable(holdings, SOL_MINT);
-  const other = spendable(holdings, pier.other.mint);
-  if (sol === null || other === null) return null;
-  const fromSol = sol > reserve ? sol - reserve : 0n;
-  const fromOther = BigInt(Math.floor((Number(other) / 10 ** pier.other.decimals) * otherInSol(pier) * 1e9));
-  const side = fromSol < fromOther ? fromSol : fromOther;
-  return side * 2n;
-}
-
 /** What a Review costs in SOL besides the deposit: rent paid (and the part of it that comes back) and the network. */
 export type PierCosts = Readonly<{ rent: bigint; rentBack: bigint; network: bigint; lost: bigint; total: bigint }>;
 
-export function pierCosts(review: LiquidityReview): PierCosts {
+export function pierCosts(review: Pick<LiquidityReview | ZapReview, 'preview' | 'networkFeeLamports'>): PierCosts {
   let rent = 0n;
   let rentBack = 0n;
   for (const row of review.preview.rent) {
@@ -204,20 +170,102 @@ export function pierMinimum(costs: PierCosts | null): bigint {
   return byCost > PIER_MIN_LAMPORTS ? byCost : PIER_MIN_LAMPORTS;
 }
 
-export type PierAddBody = Readonly<{
-  action: 'add';
+/**
+ * CITY-198 — the wallet needs SOL only: what goes in, and the SOL kept aside for rent and the network. A wallet not read
+ * yet fits (the engine has the last word).
+ */
+export function zapFit(lamports: bigint | null, holdings: Holdings | null, reserve: bigint = PIER_RESERVE_LAMPORTS): boolean {
+  const sol = spendable(holdings, SOL_MINT);
+  return lamports === null || sol === null || lamports + reserve <= sol;
+}
+
+/** The most SOL a Zap may take from the wallet now: what it can spend less the SOL kept aside; null while unknown. */
+export function zapMax(holdings: Holdings | null, reserve: bigint = PIER_RESERVE_LAMPORTS): bigint | null {
+  const sol = spendable(holdings, SOL_MINT);
+  if (sol === null) return null;
+  return sol > reserve ? sol - reserve : 0n;
+}
+
+export type PierZapBody = Readonly<{
+  action: 'zap_in';
   venue: 'meteora-dlmm';
-  request: Readonly<{ pool: string; owner: string; amountX: string; amountY: string; shape: 'spot'; slippageBps: number }>;
-  range: Readonly<{ place: 'around'; half: number }>;
+  request: Readonly<{ pool: string; owner: string; amountIn: string; half: number; slippageBps: number }>;
 }>;
 
-/** A new position of the style around the price; the engine counts the bins from the active bin it reads. */
-export function pierAddBody(pier: Pier, owner: string, split: PierSplit, style: PierStyle): PierAddBody {
+export type PierRestBody = Readonly<{
+  action: 'zap_rest';
+  venue: 'meteora-dlmm';
+  request: Readonly<{ pool: string; owner: string; otherBefore: string }>;
+}>;
+
+/** A Zap of this much SOL into a new position of the style around the price: the engine counts the bins from the active bin. */
+export function pierZapBody(pier: Pier, owner: string, lamports: bigint, style: PierStyle): PierZapBody {
+  return { action: 'zap_in', venue: 'meteora-dlmm', request: { pool: pier.pool.address, owner, amountIn: lamports.toString(), half: STYLE_HALF[style], slippageBps: PIER_SLIPPAGE_BPS } };
+}
+
+/** «Take the rest» of a Zap that landed in part: what the wallet held of the other coin before stays untouched. */
+export function pierRestBody(pool: string, owner: string, otherBefore: string): PierRestBody {
+  return { action: 'zap_rest', venue: 'meteora-dlmm', request: { pool, owner, otherBefore } };
+}
+
+/** Ryntra's fee on a Zap as one short figure: the rate on the swap, or nothing when the pool's own swap carries none. */
+export function zapFeePct(review: ZapReview | null): string | null {
+  const fee = review?.preview.swap.fee;
+  return fee ? `${(fee.bps / 100).toFixed(fee.bps % 10 === 0 ? 1 : 2)}%` : null;
+}
+
+export type ZapFigures = Readonly<{
+  /** What goes into the position after the swap, «0.05 SOL», «5.2 USDC». */
+  amounts: readonly string[];
+  /** The swap: where it goes, what goes in, the least it brings, and Ryntra's fee on it. */
+  route: 'jupiter' | 'pool' | 'none';
+  labels: string;
+  swapInSol: string | null;
+  swapFloor: string | null;
+  feePct: string | null;
+  feeSol: string | null;
+  rentSol: string | null;
+  rentBack: boolean;
+  networkSol: string;
+  transactions: number;
+  /** «Take the rest»: about how much SOL comes back. */
+  backSol: string | null;
+}>;
+
+/** A Zap's Review as the card reads it: every figure from the engine's own preview, short. */
+export function zapFigures(review: ZapReview, pier: Pier): ZapFigures {
+  const preview = review.preview;
+  const symbolOf = (mint: string) => (mint === SOL_MINT ? 'SOL' : mint === pier.other.mint ? pier.other.symbol : '');
+  const decimalsOf = (mint: string) => (mint === preview.tokenX.mint ? preview.tokenX.decimals : preview.tokenY.decimals);
+  const side = (units: string, mint: string) => (/^\d+$/.test(units) && BigInt(units) > 0n ? `${unitsShort(BigInt(units), decimalsOf(mint))} ${symbolOf(mint)}` : null);
+  const amounts = preview.deposit ? [side(preview.deposit.x.units, preview.deposit.x.asset), side(preview.deposit.y.units, preview.deposit.y.asset)].filter((text): text is string => text !== null) : [];
+  let paid = 0n;
+  let back = 0n;
+  let returned = 0n;
+  for (const rent of preview.rent) {
+    if (!/^\d+$/.test(rent.lamports)) continue;
+    if (rent.direction === 'pay') {
+      paid += BigInt(rent.lamports);
+      if (rent.refundable) back += BigInt(rent.lamports);
+    } else returned += BigInt(rent.lamports);
+  }
+  const swap = preview.swap;
+  const swapped = swap.route !== 'none' && /^\d+$/.test(swap.inAmount);
+  // What «Take the rest» brings back: the wrapped SOL unwrapped, the swap's least, the ledger's deposit.
+  const backLamports = preview.action === 'zap_rest' ? BigInt(preview.unwrapLamports) + (swapped ? BigInt(swap.floor) : 0n) + returned : null;
   return {
-    action: 'add',
-    venue: 'meteora-dlmm',
-    request: { pool: pier.pool.address, owner, amountX: split.x, amountY: split.y, shape: 'spot', slippageBps: PIER_SLIPPAGE_BPS },
-    range: { place: 'around', half: STYLE_HALF[style] },
+    amounts,
+    route: swap.route,
+    labels: swap.labels.join(' → '),
+    swapInSol: swapped ? side(swap.inAmount, swap.inMint) : null,
+    swapFloor: swapped ? side(swap.floor, swap.outMint) : null,
+    feePct: zapFeePct(review),
+    feeSol: swap.fee && /^\d+$/.test(swap.fee.amount) ? solShort(BigInt(swap.fee.amount)) : null,
+    rentSol: paid > 0n ? solShort(paid) : null,
+    rentBack: paid > 0n && back === paid,
+    networkSol: /^\d+$/.test(review.networkFeeLamports) ? solShort(BigInt(review.networkFeeLamports)) : '—',
+    transactions: review.transactions.length,
+    backSol: backLamports !== null && backLamports > 0n ? solShort(backLamports) : null,
   };
 }
 

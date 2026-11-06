@@ -700,12 +700,21 @@ export const GUARD_COLLECTIONS = [
      which hour of her own day and in which language, and the last day it was told (`r:<owner>`, versioned). Public data
      only; a value in the same column; no DDL. */
   "agentReports",
+  /* The money autopilot (CITY-204, `lib/pilot/`): per wallet and network, the plan for the whole budget — its parts, its
+     care rules, the signatures of the legs that moved money, SOL's marks, what it earned and the agent's last holds
+     (`p:<cluster>:<owner>`). Public data only; a value in the same column; no DDL. */
+  "moneyPilots",
   /* The partners' weekly payout (CITY-128, `lib/partner-payouts/`): one statement per closed week, keyed
      `<cluster>:<YYYY-MM-DD>` (versioned) — what each partner earned, what the week's one Squads proposal pays and what is
      carried, with the operations it credited, so no operation is credited twice. A value in the same column; the
      prepared migration `supabase/prepared/20261102_city_128_partner_payouts_v1.sql` adds the database's refusal to
      rewrite a statement's lines once written. */
   "partnerPayoutWeeks",
+  /* The agent looks after a person's Meteora pier (CITY-203, `lib/care/`): one row per care, keyed
+     `c:<cluster>:<owner>:<vault index>` — the policies and the vault it lives in, the messages the person was asked to
+     sign, what the agent did (`open`, `claim`, `reinvest`, `rebalance`, `exit`) with its signature. Public data only; a
+     value in the same column; no DDL. */
+  "agentCare",
 ] as const;
 
 export type GuardCollectionName = (typeof GUARD_COLLECTIONS)[number];

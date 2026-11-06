@@ -38,6 +38,7 @@ import {
   type JupiterPositionRead,
 } from "./jupiter.ts";
 import { withdrawPlan, type EarnMarket } from "./model.ts";
+import { WSOL, withDepositSetup } from "./deposit-setup.ts";
 import type { EarnAdapter, EarnBuildRequest, EarnBuilt, EarnFailure, EarnMarketsRead, EarnPositionsRead } from "./contract.ts";
 import type { HeldReader } from "./chain.ts";
 
@@ -191,9 +192,16 @@ export function jupiterLendAdapter(deps: JupiterLendDeps): EarnAdapter {
         fetchImpl,
       );
       if (!built.ok) return built;
-      const wireBase64 = transactionFrom(built.value);
-      if (!wireBase64) {
+      const apiWire = transactionFrom(built.value);
+      if (!apiWire) {
         return { ok: false, code: "UNREADABLE", reason: "Jupiter Lend answered without a transaction to sign.", status: 502 };
+      }
+      /* CITY-204: the API's deposit takes accounts a first deposit does not have yet — the jlToken account, and wrapped SOL
+         for SOL. They go into the same bytes, before the deposit (`deposit-setup.ts`). */
+      let wireBase64 = apiWire;
+      if (request.action === "deposit") {
+        const wsol = market.asset.mint === WSOL.toBase58() ? ((await held(request.owner, [WSOL.toBase58()]).catch(() => null))?.held.get(WSOL.toBase58()) ?? null) : null;
+        wireBase64 = withDepositSetup(apiWire, { owner: request.owner, assetMint: market.asset.mint, shareMint: market.share.mint, amountRaw: planned.amountRaw, heldWsolRaw: wsol }).wireBase64;
       }
       return { ok: true, wireBase64, market, amountRaw: planned.amountRaw, partial: planned.partial, leftRaw: planned.leftRaw };
     },

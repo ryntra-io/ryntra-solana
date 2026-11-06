@@ -28,7 +28,7 @@
 import { createCipheriv, createDecipheriv, createHash, createHmac, randomBytes, timingSafeEqual } from "node:crypto";
 
 import { getAssociatedTokenAddressSync, NATIVE_MINT } from "@solana/spl-token";
-import { Keypair, PublicKey, Transaction, VersionedTransaction, type TransactionInstruction } from "@solana/web3.js";
+import { Keypair, PublicKey, Transaction, TransactionMessage, VersionedTransaction, type AddressLookupTableAccount, type TransactionInstruction } from "@solana/web3.js";
 
 import { BLOCKHASH_LIFE_MS } from "../../solana/blockhash-life.ts";
 import { base58, LIGHTHOUSE_PROGRAM } from "../../solana/limits/model.ts";
@@ -46,9 +46,14 @@ export const TICKET_KEY_ENV = "BETA_TOKEN_SECRET";
 export const TICKET_TTL_MS = BLOCKHASH_LIFE_MS;
 const PURPOSE = "liquidity.review.v1";
 
-/** What a ticket seals: a pool action, or a limit order (`limit-orders.ts`). */
-export type TicketAction = GatedAction | LimitAction;
-const TICKET_ACTIONS: ReadonlySet<string> = new Set<TicketAction>(["add", "remove", "claim", "limit_place", "limit_cancel", "limit_roll"]);
+/** A Zap (CITY-198, `zap.ts`): SOL into a pier in one approval, or what a half-landed one left taken back as SOL. */
+export type ZapAction = "zap_in" | "zap_rest";
+
+/** What a ticket seals: a pool action, a limit order (`limit-orders.ts`), or a Zap (`zap.ts`). */
+export type TicketAction = GatedAction | LimitAction | ZapAction;
+const TICKET_ACTIONS: ReadonlySet<string> = new Set<TicketAction>(["add", "remove", "claim", "limit_place", "limit_cancel", "limit_roll", "zap_in", "zap_rest"]);
+/** The most address lookup tables one sealed build may name. */
+export const MAX_TICKET_LOOKUPS = 8;
 
 export type LiquidityTicket = Readonly<{
   v: 1;
@@ -61,6 +66,12 @@ export type LiquidityTicket = Readonly<{
   messages: readonly string[];
   /** The fresh keys the relay signs with after the wallet, sealed (`sealCosigners`); null when the wallet is the only signer. */
   cosign: string | null;
+  /**
+   * The address lookup tables the build's version-0 transactions read (a Zap's Jupiter leg); absent — legacy bytes only.
+   * A table only ever grows and its old entries never change, so the relay reads them again to resolve exactly what
+   * the Review resolved.
+   */
+  lookups?: readonly string[] | undefined;
   issuedAt: number;
   expiresAt: number;
 }>;
@@ -84,8 +95,45 @@ function walletsOwn(instruction: TransactionInstruction): boolean {
   return program === COMPUTE_BUDGET || program === LIGHTHOUSE_PROGRAM;
 }
 
+/** What a transaction does, read off either wire format: its payer, its blockhash, its instructions and who signs it. */
+export type DecodedTransaction = Readonly<{
+  version: "legacy" | 0;
+  feePayer: PublicKey | null;
+  recentBlockhash: string | null;
+  instructions: readonly TransactionInstruction[];
+  /** The keys whose signatures the message requires, in order. */
+  signers: readonly PublicKey[];
+  /** The lookup tables a version-0 message reads. */
+  lookups: readonly string[];
+}>;
+
+/**
+ * A wire read as what it does. Legacy bytes need nothing more; version-0 bytes need the lookup tables they name, and
+ * are refused (null) without every one of them.
+ */
+export function decodeWire(wireBase64: string, tables: readonly AddressLookupTableAccount[] = []): DecodedTransaction | null {
+  try {
+    const bytes = Buffer.from(wireBase64, "base64");
+    const exact = VersionedTransaction.deserialize(bytes);
+    const message = exact.message;
+    const signers = message.staticAccountKeys.slice(0, message.header.numRequiredSignatures);
+    if (exact.version === "legacy") {
+      const legacy = Transaction.from(bytes);
+      return { version: "legacy", feePayer: legacy.feePayer ?? null, recentBlockhash: legacy.recentBlockhash ?? null, instructions: legacy.instructions, signers, lookups: [] };
+    }
+    if (exact.version !== 0) return null;
+    const lookups = message.addressTableLookups.map((lookup) => lookup.accountKey.toBase58());
+    const known = new Map(tables.map((table) => [table.key.toBase58(), table]));
+    if (!lookups.every((key) => known.has(key))) return null;
+    const decompiled = TransactionMessage.decompile(message, { addressLookupTableAccounts: lookups.map((key) => known.get(key)!) });
+    return { version: 0, feePayer: decompiled.payerKey, recentBlockhash: decompiled.recentBlockhash, instructions: decompiled.instructions, signers, lookups };
+  } catch {
+    return null;
+  }
+}
+
 /** sha256 over the payer, the blockhash and every instruction but a wallet's own — program, accounts with their signer flag, data. */
-export function reviewedDigest(transaction: Transaction): string {
+export function reviewedDigest(transaction: Readonly<{ feePayer?: PublicKey | null | undefined; recentBlockhash?: string | null | undefined; instructions: readonly TransactionInstruction[] }>): string {
   const hash = createHash("sha256");
   const field = (value: string | Uint8Array) => {
     const bytes = typeof value === "string" ? Buffer.from(value, "utf8") : Buffer.from(value);
@@ -104,17 +152,14 @@ export function reviewedDigest(transaction: Transaction): string {
   return hash.digest("hex");
 }
 
-/** The digest of a built transaction, or null when the wire is not a legacy transaction. */
-export function messageDigest(wireBase64: string): string | null {
-  try {
-    return reviewedDigest(Transaction.from(Buffer.from(wireBase64, "base64")));
-  } catch {
-    return null;
-  }
+/** The digest of a built transaction, or null when the wire cannot be read — a version-0 one without its lookup tables. */
+export function messageDigest(wireBase64: string, tables: readonly AddressLookupTableAccount[] = []): string | null {
+  const decoded = decodeWire(wireBase64, tables);
+  return decoded ? reviewedDigest(decoded) : null;
 }
 
 /** What a wallet added is allowed: assertions only from Lighthouse, and a priority fee under the ceiling. */
-function budgetAllowed(transaction: Transaction): boolean {
+function budgetAllowed(transaction: Readonly<{ instructions: readonly TransactionInstruction[] }>): boolean {
   let unitLimit = 200_000n;
   let unitPrice = 0n;
   for (const instruction of transaction.instructions) {
@@ -135,7 +180,7 @@ function budgetAllowed(transaction: Transaction): boolean {
 }
 
 /** What a wallet added on signing stays within its rules, and the signers are exactly the payer and those the reviewed instructions name. */
-export function walletAdditionsAllowed(transaction: Transaction): boolean {
+export function walletAdditionsAllowed(transaction: Transaction | DecodedTransaction): boolean {
   if (!budgetAllowed(transaction)) return false;
   /* Signer flags are the message's, not the instruction's: the signers must be exactly the payer and those the reviewed instructions name. */
   const named = new Set([transaction.feePayer?.toBase58() ?? ""]);
@@ -143,7 +188,7 @@ export function walletAdditionsAllowed(transaction: Transaction): boolean {
     if (walletsOwn(instruction)) continue;
     for (const key of instruction.keys) if (key.isSigner) named.add(key.pubkey.toBase58());
   }
-  const signing = transaction.signatures.map((entry) => entry.publicKey.toBase58());
+  const signing = ("signers" in transaction ? transaction.signers : transaction.signatures.map((entry) => entry.publicKey)).map((key) => key.toBase58());
   return signing.length === named.size && signing.every((signer) => named.has(signer));
 }
 
@@ -187,6 +232,7 @@ export function readTicket(value: unknown, env: Env, now = Date.now()): TicketRe
     parsed.messages.length > 16 ||
     !parsed.messages.every((digest) => typeof digest === "string" && /^[0-9a-f]{64}$/.test(digest)) ||
     !(parsed.cosign === null || (typeof parsed.cosign === "string" && parsed.cosign.length <= 4096)) ||
+    !(parsed.lookups === undefined || (Array.isArray(parsed.lookups) && parsed.lookups.length <= MAX_TICKET_LOOKUPS && parsed.lookups.every(isString))) ||
     typeof parsed.issuedAt !== "number" ||
     typeof parsed.expiresAt !== "number"
   ) {
@@ -252,22 +298,27 @@ export type SignedCheck = Readonly<{ ok: true; signatures: readonly string[]; wi
  * The ticket's fresh keys then sign over the exact message the wallet signed, and every signature must be real.
  * Returns each transaction's own id (its first signature, the wallet's) and the bytes to send.
  */
-export function checkSigned(ticket: LiquidityTicket, signedWireBase64: readonly unknown[], cosigners: readonly Cosigner[] = []): SignedCheck {
+export function checkSigned(ticket: LiquidityTicket, signedWireBase64: readonly unknown[], cosigners: readonly Cosigner[] = [], tables: readonly AddressLookupTableAccount[] = []): SignedCheck {
+  const sealedLookups = new Set(ticket.lookups ?? []);
   if (signedWireBase64.length !== ticket.messages.length) return { ok: false, code: "SIGNED_MISMATCH", index: Math.min(signedWireBase64.length, ticket.messages.length) };
   const signatures: string[] = [];
   const wires: string[] = [];
   for (let index = 0; index < signedWireBase64.length; index += 1) {
     const wire = signedWireBase64[index];
     if (typeof wire !== "string" || wire.length > 4096) return { ok: false, code: "SIGNED_MISMATCH", index };
-    let transaction: Transaction;
     let exact: VersionedTransaction;
     try {
-      transaction = Transaction.from(Buffer.from(wire, "base64"));
       exact = VersionedTransaction.deserialize(Buffer.from(wire, "base64"));
     } catch {
       return { ok: false, code: "SIGNED_MISMATCH", index };
     }
-    if (exact.version !== "legacy") return { ok: false, code: "SIGNED_MISMATCH", index };
+    /* Version-0 bytes only where the Review sealed their lookup tables, and naming no other table. */
+    if (exact.version !== "legacy") {
+      if (exact.version !== 0 || sealedLookups.size === 0) return { ok: false, code: "SIGNED_MISMATCH", index };
+      if (!exact.message.addressTableLookups.every((lookup) => sealedLookups.has(lookup.accountKey.toBase58()))) return { ok: false, code: "SIGNED_MISMATCH", index };
+    }
+    const transaction = decodeWire(wire, tables);
+    if (!transaction) return { ok: false, code: "SIGNED_MISMATCH", index };
     if (reviewedDigest(transaction) !== ticket.messages[index] || !walletAdditionsAllowed(transaction)) return { ok: false, code: "SIGNED_MISMATCH", index };
     if (transaction.feePayer?.toBase58() !== ticket.owner) return { ok: false, code: "SIGNED_MISMATCH", index };
     /* The fresh keys sign after the wallet, over the exact message the wallet signed. */

@@ -17,3 +17,11 @@ test("the bell: the visit's first events are seen, a newer one lights the dot, o
   useFeedPanel.getState().close();
   assert.equal(useFeedPanel.getState().open, false);
 });
+
+test("a card without a spark lets its line run into the spark's column (CITY-200)", async () => {
+  const { readFileSync } = await import("node:fs");
+  const css = readFileSync(new URL("../../components/feed/feed.module.css", import.meta.url), "utf8");
+  assert.match(css, /\.card:not\(:has\(\.spark\)\) \.line \{\s*grid-column: 2 \/ 4;\s*\}/);
+  assert.match(css, /'icon line spark'/, "the spark's column is the line's neighbour it borrows");
+  assert.match(css, /\.feed:not\(\[data-open\]\) \.card \.line \{\s*grid-area: line;/, "the collapsed strip keeps its own row");
+});

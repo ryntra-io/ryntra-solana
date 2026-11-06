@@ -1,6 +1,7 @@
 import { citySigner } from '../app-bridge/route.ts';
 import type { BudgetPresetId } from '../../../lib/mandate/presets.ts';
 import type { StrategyId } from '../../../lib/mandate/strategy.ts';
+import { forgetAgents } from './agents.ts';
 import { checkUnsigned, sameMessage } from './mandate-check.ts';
 import { MANDATE_CHAIN, MANDATE_NET, useMandate, type MandateRecord, type MandateStatus } from './mandate.ts';
 
@@ -107,6 +108,7 @@ export async function tapEnable(who: Who, ask: AgentAskOf = { strategy: 'steady'
     const { result, record } = await enableAgent(who, st.preset, previous?.settings ?? null, { coin });
     if (record) {
       await joinAgent(record, { ...ask, coin });
+      forgetAgents(who.owner);
       useMandate.getState().keep(record);
       useMandate.getState().setStatus(record.policy, { active: true, budgetLamports: null });
       const status = await readStatus(record);
@@ -126,6 +128,7 @@ export async function tapStop(who: Who, record: MandateRecord): Promise<void> {
   st.say(null);
   try {
     const result = await stopAgent(who, record);
+    forgetAgents(who.owner);
     if (result.kind === 'stopped') useMandate.getState().setStatus(record.policy, { active: false, budgetLamports: null });
     useMandate.getState().say({ kind: result.kind, at: Date.now() });
   } finally {

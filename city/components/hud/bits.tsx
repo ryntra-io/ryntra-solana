@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { digits } from '@/city/lib/i18n/dict';
+import { signedMove } from '@/city/lib/city/signed';
 import type { Tower } from '@/city/lib/market/types';
 
 /** The coin's logo through our own proxy; a logo the proxy cannot bring leaves the plain disc, never a broken image. */
@@ -39,5 +40,5 @@ export function formatPrice(p: number) {
 
 /** A signed percentage with its window, as the city writes every move: «+4.2% 1H». */
 export function signed(v: number) {
-  return digits(`${v >= 0 ? '+' : '−'}${Math.abs(v).toFixed(1)}%`);
+  return digits(signedMove(v).text);
 }

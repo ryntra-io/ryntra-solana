@@ -49,6 +49,18 @@
     0 22px 48px -22px rgba(0, 0, 0, 0.75);
 }
 
+/* A window that fits its contents (CITY-201): the panel stands in the flow, as tall as they are, up to the frame's own
+   ceiling (its place's height, set on the frame); more than fits scrolls in the body. */
+.fit .panel {
+  position: relative;
+  inset: auto;
+  max-height: inherit;
+}
+
+.fit .body {
+  flex: 0 1 auto;
+}
+
 /* The window in front has the keyboard: a window comes to the front when the pointer or the keyboard enters it. */
 .front .panel {
   box-shadow:
@@ -554,6 +566,16 @@
 
 .sheetFull::before {
   display: none;
+}
+
+/* The sheet of a window that fits its contents (CITY-201): as tall as they are, never taller than the sheet's height. */
+.sheetFit {
+  height: auto;
+  max-height: min(64dvh, calc(100dvh - 96px - env(safe-area-inset-top)));
+}
+
+.sheetFit .body {
+  flex: 0 1 auto;
 }
 
 .sheetHead {

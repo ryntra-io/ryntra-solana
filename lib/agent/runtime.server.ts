@@ -34,7 +34,8 @@ import { readSpotMarket, searchSpotMarkets } from "../spot/markets.server.ts";
 import { readSpotWatchlist } from "../spot/watchlist.ts";
 import { findStockRow } from "../stocks/universe.server.ts";
 import { resolveAgentBudgetConfig, type AgentBudgetConfig } from "./budget.ts";
-import { createOpenAiAgentModel, type AgentModel } from "./model.ts";
+import { type AgentModel } from "./model.ts";
+import { createProviderAgentModel } from "./providers.ts";
 import type { AgentDeps } from "./service.ts";
 import type { AgentReaders, HoldingsRead } from "./tools/readers.ts";
 
@@ -209,7 +210,8 @@ export function createMarketDataReaders(): Pick<AgentReaders, "dexPairs" | "toke
 export function createAgentModel(env: Readonly<Record<string, string | undefined>> = process.env): AgentModel | null {
   const config = resolveAgentBudgetConfig(env);
   if (!config.modelEnabled) return null;
-  return createOpenAiAgentModel({ env });
+  // CITY-205: OpenAI, or Anthropic or OpenRouter when the deployment names it, holds its key and names its models.
+  return createProviderAgentModel({ env });
 }
 
 export function createAgentDeps(input: Readonly<{ store: GuardStore; holdings: HoldingsReader; env?: Readonly<Record<string, string | undefined>>; budget?: AgentBudgetConfig; model?: AgentModel | null }>): AgentDeps {

@@ -36,6 +36,7 @@ import { heldIn, tradeTerms } from "./result.ts";
 import { agentTrade, policyOf, type TradeOutcome } from "./run.server.ts";
 import { SALE_REVIEW_MS, SALE_SECONDS, SALE_SLIPPAGE_BPS, agentHolding, countsAsSold, jupiterSaleFloor, saleAmount, saleFloor, type SaleShare, type SaleStatus } from "./sale.ts";
 import { mandateSigner, type AgentJournal } from "./signer.server.ts";
+import { storeScreen, type AgentScreen } from "./ryntra-coins.server.ts";
 import { NATIVE_MINT, SSA_PROGRAM_ID, TOKEN_PROGRAM_ID, readPolicyHead, readSettings, ssaAddress } from "./ssa.ts";
 import { onNetwork, recordOf, type MandateNetwork, type MandateRecord, type StopTidy } from "./service.server.ts";
 import type { AgentTrade } from "./strategy.ts";
@@ -436,6 +437,8 @@ export type SaleWorkDeps = Readonly<{
   key: KeySigner | null;
   journal: AgentJournal;
   venue: SaleVenue;
+  /** CITY-196: what the agent never buys and whom it never trades with; the store's own registry when not handed in. */
+  screen?: AgentScreen;
   now?: () => number;
   trade?: typeof agentTrade;
 }>;
@@ -526,7 +529,7 @@ async function sellNow(row: SaleRow, deps: SaleWorkDeps, key: KeySigner): Promis
     outcome = await trade({
       connection: deps.connection,
       mandate,
-      signer: mandateSigner(key, { mandate, policy: policyOf(mandate), journal: deps.journal }),
+      signer: mandateSigner(key, { mandate, policy: policyOf(mandate), journal: deps.journal, screen: deps.screen ?? storeScreen(deps.store, deps.gate.network) }),
       venueInstruction: built.instruction,
       promisedOut: built.quoteOut,
       feeSides: built.feeSides,

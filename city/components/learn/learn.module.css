@@ -1,0 +1,544 @@
+/* «Learn» (CITY-202): the guide in a window of the city (the frame of CITY-65: a window on a computer, the bottom sheet
+   on a phone). The chapters on the left, the chapter on the right; dark glass with cut corners, one amber action, the
+   city's own faces and type steps. Tokens from city/styles/city.module.css (CITY-11); the shapes are «How it works»'s
+   (city/components/how/guides.module.css). */
+
+.display {
+  font-family: var(--font-display, system-ui), system-ui, sans-serif;
+  font-stretch: 125%;
+  font-variation-settings: 'wdth' 125;
+  font-weight: 900;
+  letter-spacing: 0.01em;
+  text-transform: uppercase;
+}
+
+/* A language other than English: the words wait for the frame the boot script hides them in (CITY-79). */
+:global(html.city-lang-wait) .body {
+  visibility: hidden;
+}
+
+.pending {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(100deg, transparent 30%, rgba(238, 241, 255, 0.05) 50%, transparent 70%) 0 0 / 220% 100%;
+  animation: sweep 1.4s ease-in-out infinite;
+}
+
+@keyframes sweep {
+  to {
+    background-position: -120% 0;
+  }
+}
+
+/* ---------- The two panes ---------- */
+
+.body {
+  position: absolute;
+  inset: 0;
+  container-type: inline-size;
+  color: var(--ice);
+}
+
+.grid {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  grid-template-columns: 236px minmax(0, 1fr);
+}
+
+.list {
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: 14px 10px 20px 14px;
+  border-right: 1px solid rgba(153, 69, 255, 0.22);
+}
+
+.listHead {
+  padding: 4px 6px 12px;
+}
+
+.listHead .kicker {
+  display: block;
+  letter-spacing: 0.08em;
+  text-wrap: balance;
+}
+
+.items {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 4px;
+}
+
+.item {
+  width: 100%;
+  min-height: 48px;
+  display: grid;
+  grid-template-columns: 30px minmax(0, 1fr);
+  align-items: center;
+  gap: 8px;
+  padding: 8px 10px;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--text-dim);
+  font: inherit;
+  font-size: var(--type-body);
+  font-weight: 600;
+  line-height: 1.25;
+  text-align: left;
+  cursor: pointer;
+  transition: background 160ms ease, color 160ms ease;
+}
+
+.item:hover {
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--ice);
+}
+
+.item[data-here] {
+  background: linear-gradient(100deg, rgba(255, 178, 63, 0.16), rgba(255, 178, 63, 0.04));
+  color: var(--ice);
+  box-shadow: inset 2px 0 0 var(--amber);
+}
+
+.item:focus-visible {
+  outline: 2px solid var(--amber);
+  outline-offset: 1px;
+}
+
+.num {
+  font-size: var(--type-caption);
+  color: var(--amber);
+}
+
+.itemTitle {
+  overflow-wrap: anywhere;
+}
+
+.page {
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+/* ---------- One chapter ---------- */
+
+.chapter {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  padding: 18px 22px 24px;
+  max-width: 760px;
+}
+
+/* The chapters as one row of numbers over a narrow window's chapter; a wide window has the list instead. */
+.rail {
+  display: none;
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  gap: 4px;
+  padding: 8px 14px;
+  overflow-x: auto;
+  scrollbar-width: none;
+  background: rgba(11, 10, 20, 0.97);
+  border-bottom: 1px solid rgba(153, 69, 255, 0.22);
+}
+
+.rail::-webkit-scrollbar {
+  display: none;
+}
+
+.railAll,
+.railNum {
+  flex: none;
+  width: 44px;
+  height: 44px;
+  display: grid;
+  place-items: center;
+  border: 0;
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--text-dim);
+  font-size: var(--type-small);
+  cursor: pointer;
+}
+
+.railAll {
+  color: var(--ice);
+}
+
+.railNum[aria-current] {
+  background: linear-gradient(100deg, var(--warm), var(--amber));
+  color: var(--ink);
+}
+
+.railAll:focus-visible,
+.railNum:focus-visible {
+  outline: 2px solid var(--amber);
+  outline-offset: -2px;
+}
+
+.head {
+  display: grid;
+  gap: 8px;
+}
+
+.kicker {
+  font-size: var(--type-caption);
+  letter-spacing: 0.16em;
+  color: var(--warm);
+}
+
+.title {
+  margin: 0;
+  font-size: var(--type-figure);
+  line-height: 0.98;
+  color: var(--ice);
+  overflow-wrap: anywhere;
+  text-wrap: balance;
+}
+
+.short {
+  margin: 0;
+  font-size: var(--type-lead);
+  font-weight: 600;
+  line-height: 1.4;
+  color: var(--ice);
+}
+
+.frame {
+  margin: 0;
+  overflow: hidden;
+  background: var(--ink-deep);
+  border: 1px solid rgba(153, 69, 255, 0.35);
+  clip-path: polygon(14px 0, 100% 0, 100% calc(100% - 14px), calc(100% - 14px) 100%, 0 100%, 0 14px);
+}
+
+.frame img {
+  display: block;
+  width: 100%;
+  height: auto;
+  aspect-ratio: 16 / 10;
+  object-fit: cover;
+}
+
+.frame[data-tall] {
+  align-self: center;
+  width: min(320px, 100%);
+}
+
+.frame[data-tall] img {
+  aspect-ratio: auto;
+}
+
+.analogy {
+  position: relative;
+  margin: 0;
+  padding: 14px 16px 14px 46px;
+  background: linear-gradient(160deg, rgba(42, 22, 64, 0.72), rgba(11, 10, 20, 0.6));
+  clip-path: polygon(12px 0, 100% 0, 100% calc(100% - 12px), calc(100% - 12px) 100%, 0 100%, 0 12px);
+  font-size: var(--type-base);
+  font-weight: 600;
+  line-height: 1.45;
+  color: var(--ice);
+}
+
+.analogy::before {
+  content: '“';
+  position: absolute;
+  left: 14px;
+  top: 4px;
+  font-family: var(--font-display, system-ui), system-ui, sans-serif;
+  font-size: var(--type-figure);
+  font-weight: 900;
+  line-height: 1;
+  color: var(--amber);
+}
+
+.steps {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.step {
+  display: grid;
+  grid-template-columns: 28px minmax(0, 1fr);
+  gap: 10px;
+  align-items: start;
+  padding: 12px;
+  background: linear-gradient(160deg, rgba(20, 16, 36, 0.86), rgba(8, 7, 15, 0.9));
+  clip-path: polygon(10px 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%, 0 10px);
+  font-size: var(--type-body);
+  line-height: 1.45;
+  color: var(--text-dim);
+}
+
+.step strong {
+  color: var(--warm);
+}
+
+.step em {
+  color: var(--ice);
+}
+
+.stepNum {
+  width: 28px;
+  height: 28px;
+  display: grid;
+  place-items: center;
+  background: linear-gradient(100deg, var(--warm), var(--amber));
+  clip-path: polygon(6px 0, 100% 0, 100% calc(100% - 6px), calc(100% - 6px) 100%, 0 100%, 0 6px);
+  color: var(--ink);
+  font-size: var(--type-small);
+}
+
+.flow {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+}
+
+.node {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.chip {
+  display: inline-block;
+  padding: 7px 11px;
+  border: 1px solid rgba(255, 178, 63, 0.5);
+  border-radius: 5px;
+  background: rgba(255, 178, 63, 0.06);
+  font-size: var(--type-small);
+  font-weight: 700;
+  color: var(--ice);
+}
+
+.arrow {
+  width: 14px;
+  height: 2px;
+  background: #c9a2ff;
+  position: relative;
+}
+
+.arrow::after {
+  content: '';
+  position: absolute;
+  right: -1px;
+  top: -3px;
+  border-left: 6px solid #c9a2ff;
+  border-top: 4px solid transparent;
+  border-bottom: 4px solid transparent;
+}
+
+.details {
+  align-self: flex-start;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 44px;
+  padding: 0 16px;
+  border: 0;
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--ice);
+  font: inherit;
+  font-size: var(--type-body);
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.details:focus-visible,
+.prev:focus-visible,
+.next:focus-visible {
+  outline: 2px solid var(--amber);
+  outline-offset: 2px;
+}
+
+.chevron {
+  width: 7px;
+  height: 7px;
+  border-right: 2px solid currentColor;
+  border-bottom: 2px solid currentColor;
+  transform: translateY(-2px) rotate(45deg);
+  transition: transform 160ms ease;
+}
+
+.details[aria-expanded='true'] .chevron {
+  transform: translateY(2px) rotate(-135deg);
+}
+
+.backChevron {
+  width: 7px;
+  height: 7px;
+  border-left: 2px solid currentColor;
+  border-bottom: 2px solid currentColor;
+  transform: rotate(45deg);
+}
+
+.inside {
+  display: grid;
+  gap: 16px;
+  padding: 16px;
+  background: rgba(6, 5, 12, 0.6);
+  border: 1px solid rgba(153, 69, 255, 0.22);
+}
+
+.part {
+  display: grid;
+  gap: 8px;
+  min-width: 0;
+}
+
+.partHead {
+  margin: 0;
+  font-size: var(--type-caption);
+  letter-spacing: 0.14em;
+  color: #c9a2ff;
+}
+
+.p,
+.bullets {
+  margin: 0;
+  font-size: var(--type-small);
+  line-height: 1.55;
+  color: var(--text-dim);
+}
+
+.bullets {
+  padding-left: 18px;
+  display: grid;
+  gap: 6px;
+}
+
+.bullets strong,
+.p strong {
+  color: var(--ice);
+}
+
+.code {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 0.92em;
+  color: var(--warm);
+  background: rgba(255, 178, 63, 0.08);
+  padding: 1px 4px;
+  border-radius: 3px;
+  overflow-wrap: anywhere;
+}
+
+.foot {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  padding-top: 6px;
+}
+
+.prev {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 48px;
+  padding: 0 16px 0 12px;
+  border: 0;
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--ice);
+  font: inherit;
+  font-size: var(--type-body);
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.next {
+  min-height: 48px;
+  max-width: 100%;
+  padding: 0 20px;
+  border: 0;
+  background: linear-gradient(100deg, var(--warm), var(--amber));
+  clip-path: polygon(12px 0, 100% 0, 100% calc(100% - 12px), calc(100% - 12px) 100%, 0 100%, 0 12px);
+  color: var(--ink);
+  font-size: var(--type-body);
+  cursor: pointer;
+  overflow-wrap: anywhere;
+  transition: filter 160ms ease;
+}
+
+.next:hover {
+  filter: brightness(1.06);
+}
+
+.next:active {
+  transform: translateY(1px);
+}
+
+/* ---------- A narrow window — the phone's sheet: the list first, then one chapter ---------- */
+
+@container (max-width: 640px) {
+  .grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .list {
+    border-right: 0;
+    padding: 10px 12px 20px;
+  }
+
+  .grid[data-picked] .list,
+  .grid:not([data-picked]) .page {
+    display: none;
+  }
+
+  .item[data-here]:not([aria-current]) {
+    background: transparent;
+    box-shadow: none;
+    color: var(--text-dim);
+  }
+
+  .rail {
+    display: flex;
+  }
+
+  .chapter {
+    padding: 10px 14px 22px;
+    gap: 16px;
+  }
+
+  .title {
+    font-size: var(--type-headline);
+  }
+
+  .steps {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .next {
+    flex: 1 1 auto;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pending {
+    animation: none;
+  }
+
+  .item,
+  .chevron,
+  .next {
+    transition: none;
+  }
+}

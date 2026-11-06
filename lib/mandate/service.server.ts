@@ -22,9 +22,12 @@ import { resolveEndpoint } from "../solana/rpc.ts";
 import { ed25519Valid } from "../solana/limits/trigger-tx.ts";
 import { onDevnet } from "../bots/ladder/connection.server.ts";
 import { planEnable, planStopAndWithdraw, tokenAccountOf, unsignedTransaction, type Mandate } from "./human.ts";
-import { NATIVE_MINT, readProgramConfig, readSettings, ssaAddress, SSA_PROGRAM_ID } from "./ssa.ts";
+import { NATIVE_MINT, readPolicyHead, readProgramConfig, readSettings, ssaAddress, SSA_PROGRAM_ID } from "./ssa.ts";
 import { budgetPreset, presetOpenOn, type BudgetPresetId } from "./presets.ts";
 import { NO_TIDY, withTidy, type Tidy } from "./tidy.ts";
+import { getGuardRuntime } from "../guard/runtime.ts";
+import type { GuardStore } from "../guard/store.ts";
+import { storeScreen, type CoinOrigin } from "./ryntra-coins.server.ts";
 
 export const MANDATE_ENV = "RYNTRA_AGENT_MANDATE";
 export const MANDATE_POOL_ENV = "RYNTRA_AGENT_MANDATE_POOL";
@@ -139,7 +142,7 @@ export async function reviewEnable(
   input: Readonly<{ owner: string; preset: BudgetPresetId; smartAccount?: string | null; coin?: string | null }>,
   gate: Extract<MandateGate, { open: true }>,
   connection: Connection = mandateConnection(gate.network),
-  dependencies: Readonly<{ receiveMint?: (connection: Connection, pool: PublicKey) => Promise<PublicKey> }> = {},
+  dependencies: Readonly<{ receiveMint?: (connection: Connection, pool: PublicKey) => Promise<PublicKey>; origin?: (mint: string) => Promise<CoinOrigin> }> = {},
 ): Promise<ReviewResult> {
   if (!(await onNetwork(connection, gate.network))) return notNetwork(gate.network);
   const owner = addressOf(input.owner);
@@ -147,6 +150,12 @@ export async function reviewEnable(
   if (owner.equals(gate.agent)) return { ok: false, code: "VALIDATION_ERROR", reason: "The agent is not the person." };
   const named = gate.network === "mainnet" ? addressOf(input.coin ?? undefined) : null;
   if (gate.network === "mainnet" && (!named || named.equals(NATIVE_MINT))) return { ok: false, code: "VALIDATION_ERROR", reason: "Name the coin the agent buys." };
+  /* CITY-196: before she signs anything — a coin of Ryntra's launchpad, or her own, is never the agent's to buy. */
+  if (named) {
+    const origin = await (dependencies.origin ?? storeScreen(getGuardRuntime().store, gate.network).origin)(named.toBase58()).catch(() => null);
+    if (!origin) return { ok: false, code: "UNAVAILABLE", reason: "Ryntra's launch registry is not readable." };
+    if (origin.launchedHere) return { ok: false, code: "REFUSED", reason: origin.creator === owner.toBase58() ? "The agent does not buy your own coin." : "The agent does not buy coins launched on Ryntra." };
+  }
   if (!presetOpenOn(gate.network, input.preset)) return { ok: false, code: "VALIDATION_ERROR", reason: `The budget is not one ${gate.network} offers.` };
   const preset = budgetPreset(input.preset);
   const now = BigInt((await connection.getBlockTime(await connection.getSlot("confirmed"))) ?? Math.floor(Date.now() / 1000));
@@ -256,15 +265,46 @@ export async function reviewStop(
 
 export type MandateStatus = Readonly<{ active: boolean; budgetLamports: string | null }>;
 
-export async function mandateStatus(input: Readonly<{ policy: string; vault: string }>, network: MandateNetwork = "devnet", connection: Connection = mandateConnection(network)): Promise<MandateStatus | null> {
+/** What the status route answers: the mandate's state, or — `not-addresses` (400), `not-found` (404, not this agent's mandate). */
+export type MandateStatusRead = Readonly<{ ok: true; status: MandateStatus }> | Readonly<{ ok: false; code: "not-addresses" | "not-found" }>;
+
+/**
+ * What stands now — only of a real mandate of this agent (CITY-196): a policy on chain must be a Squads Smart Account
+ * policy whose one signer is the agent, at the address its settings and seed derive, and the vault must be that account's.
+ * A policy no longer on chain (a stop removed it) is known only from the agent's book, with the same vault. Anything else
+ * — any other address, the System Program — is not found.
+ */
+export async function mandateStatus(
+  input: Readonly<{ policy: string; vault: string }>,
+  gate: Readonly<{ network: MandateNetwork; agent: PublicKey }>,
+  connection: Pick<Connection, "getAccountInfo" | "getTokenAccountBalance"> = mandateConnection(gate.network),
+  deps: Readonly<{ store?: GuardStore }> = {},
+): Promise<MandateStatusRead> {
   const policy = addressOf(input.policy);
   const vault = addressOf(input.vault);
-  if (!policy || !vault) return null;
+  if (!policy || !vault) return { ok: false, code: "not-addresses" };
   const [policyInfo, balance] = await Promise.all([
     connection.getAccountInfo(policy),
     connection.getTokenAccountBalance(tokenAccountOf(vault, NATIVE_MINT)).then((r) => r.value.amount, () => null),
   ]);
-  return { active: Boolean(policyInfo), budgetLamports: balance };
+  if (policyInfo) {
+    if (!policyInfo.owner.equals(SSA_PROGRAM_ID)) return { ok: false, code: "not-found" };
+    let head;
+    try {
+      head = readPolicyHead(policyInfo.data);
+    } catch {
+      return { ok: false, code: "not-found" };
+    }
+    if (!ssaAddress.policy(head.settings, head.seed).equals(policy)) return { ok: false, code: "not-found" };
+    if (head.signers.length !== 1 || !head.signers[0]!.key.equals(gate.agent)) return { ok: false, code: "not-found" };
+    if (!ssaAddress.vault(head.settings, 0).equals(vault)) return { ok: false, code: "not-found" };
+    return { ok: true, status: { active: true, budgetLamports: balance } };
+  }
+  const store = deps.store ?? getGuardRuntime().store;
+  const book = store.collection<Readonly<{ record?: Readonly<{ vault?: string }> }>>("agentMandates");
+  const rows = await Promise.all([book.get(`m:${gate.network}:${policy.toBase58()}`), book.get(`s:${gate.network}:${policy.toBase58()}`)]).catch(() => [undefined, undefined]);
+  if (!rows.some((row) => row?.record?.vault === vault.toBase58())) return { ok: false, code: "not-found" };
+  return { ok: true, status: { active: false, budgetLamports: balance } };
 }
 
 export type RelayResult = Readonly<{ ok: true; signatures: readonly string[] }> | Readonly<{ ok: false; code: string; reason: string; signatures: readonly string[] }>;

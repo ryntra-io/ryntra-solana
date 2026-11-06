@@ -409,3 +409,10 @@ test("time reads short: now, minutes, hours, days; a clock ahead is now", () => 
   assert.equal(money(999_999_000_0), "$10.00B");
   assert.equal(money(NaN), "$0");
 });
+
+test("a pool with no money in it is no news: «New pool · $0 liquidity» never stands in the feed (CITY-200)", () => {
+  const empty = tower({ district: "docks", verified: false, liquidity: 0, launchedAt: new Date(NOW - 10 * MIN).toISOString() });
+  const unread = tower({ district: "docks", verified: false, liquidity: undefined, launchedAt: new Date(NOW - 10 * MIN).toISOString() });
+  const real = tower({ district: "docks", verified: false, liquidity: 5_000, launchedAt: new Date(NOW - 10 * MIN).toISOString() });
+  assert.deepEqual(newPools([empty, unread, real], new Set(), NOW).map((e) => e.key), [`pools:${real.id}`]);
+});

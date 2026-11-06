@@ -71,6 +71,8 @@ export function WindowFrame({ id, z }: { id: string; z: number }) {
 
   if (!spec || !win) return null;
   const rect = full ? fullRect(viewport) : win.rect;
+  // A window that fits its contents stands as tall as they are, up to its place's height (CITY-201).
+  const fit = Boolean(spec.fit) && !full;
   const actions = useWindows.getState();
   const tabIds = tabs.split(' ');
   const hidden = !shown;
@@ -92,10 +94,10 @@ export function WindowFrame({ id, z }: { id: string; z: number }) {
   return (
     <div
       ref={frame}
-      className={[s.window, full && s.full, front && s.front, docked && !full && s.docked, !shown && s.tabHidden, glide && s.glide]
+      className={[s.window, full && s.full, fit && s.fit, front && s.front, docked && !full && s.docked, !shown && s.tabHidden, glide && s.glide]
         .filter(Boolean)
         .join(' ')}
-      style={{ transform: `translate3d(${rect.x}px, ${rect.y}px, 0)`, width: rect.width, height: rect.height, zIndex: full ? 1000 : z + 1 }}
+      style={{ transform: `translate3d(${rect.x}px, ${rect.y}px, 0)`, width: rect.width, ...(fit ? { maxHeight: rect.height } : { height: rect.height }), zIndex: full ? 1000 : z + 1 }}
       role="dialog"
       aria-modal={full || undefined}
       aria-labelledby={titleId}

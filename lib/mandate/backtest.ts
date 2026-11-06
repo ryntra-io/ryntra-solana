@@ -84,7 +84,7 @@ export function runPlan(
   const sells = options.sells ?? false;
   const keep = 1 - (costs.feeBps + costs.slippageBps) / 10_000;
   const barMs = options.barMs ?? (bars.length > 1 ? bars[1]!.t - bars[0]!.t : 3_600_000);
-  const { everyMs } = steadyRhythm(units(budget.perTrade), units(budget.perDay));
+  const { everyMs } = steadyRhythm(units(budget.perTrade), units(budget.perDay), plan.pace ?? null);
   const start = bars[0]?.t ?? 0;
   const ends = start + budget.days * DAY_MS;
 

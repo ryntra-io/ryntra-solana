@@ -8,10 +8,11 @@ import type { Layout, Recall } from './layout.ts';
  * missing, full or refuses just means the first places again.
  *
  * Since CITY-84 a place may be a bay (`bay`): the window opens in it again, as a tab of the frame standing there. The
- * key moved to v2 with the bays, so every window first opens in a bay once.
+ * key moved to v2 with the bays, so every window first opens in a bay once; to v3 when a new window opened in the
+ * middle instead, so every remembered bay is forgotten once.
  */
 
-export const LAYOUT_KEY = 'ryntra.city.windows.v2';
+export const LAYOUT_KEY = 'ryntra.city.windows.v3';
 /** No more places than this are kept; the oldest go first. */
 export const MEMORY_LIMIT = 24;
 const RAW_LIMIT = 8_000;

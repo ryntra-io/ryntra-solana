@@ -11,7 +11,7 @@ import { CARD_WORDS } from './words.ts';
 export const CITY_CARD_SIZE = { width: 1200, height: 630 } as const;
 
 /** Bump when the card's drawing (`card.server.tsx`) changes and neither its words nor its frame do. */
-export const CITY_CARD_REVISION = '2026-10-31';
+export const CITY_CARD_REVISION = '2026-11-05';
 
 /** FNV-1a, 32-bit: a short fingerprint for a query string, not a secret. */
 function fnv1a(input: string): string {

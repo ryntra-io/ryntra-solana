@@ -15,7 +15,7 @@
  * reviews again.
  */
 
-import { Connection, VersionedTransaction, type Keypair } from "@solana/web3.js";
+import { Connection, PublicKey, VersionedTransaction, type AddressLookupTableAccount, type Keypair } from "@solana/web3.js";
 
 import { BLOCKHASH_LIFE_BLOCKS, BLOCKHASH_SUBMIT_MARGIN_MS, readBlockhashLife, signableWindowMs, web3ChainReader, type ChainReader } from "../../solana/blockhash-life.ts";
 import { isPoolAddress } from "../catalog/model.ts";
@@ -34,7 +34,9 @@ import {
 } from "./contract.ts";
 import { admitLiquidityAction, depositUsd, type Env, type GatedAction } from "./gate.ts";
 import { LIMIT_SIDES, type BuiltLimit, type CancelLimitRequest, type LimitBins, type LimitPreview, type LimitSide, type LimitVenue, type PlaceLimitRequest, type RollLimitRequest } from "./limit-orders.ts";
-import { builtCallsOnly, checkSigned, issueTicket, messageDigest, openCosigners, readTicket, sealCosigners, ticketKeyConfigured, TICKET_TTL_MS, withoutSignaturesOf, type Cosigner, type TicketAction } from "./ticket.ts";
+import { builtCallsOnly, checkSigned, decodeWire, issueTicket, MAX_TICKET_LOOKUPS, messageDigest, openCosigners, readTicket, sealCosigners, ticketKeyConfigured, TICKET_TTL_MS, withoutSignaturesOf, type Cosigner, type TicketAction } from "./ticket.ts";
+import { ZAP_MAX_HALF, ZAP_SWAP_SLIPPAGE_BPS, type BuiltZap, type ZapFee, type ZapInRequest, type ZapPreview, type ZapRestRequest, type ZapVenue } from "./zap.ts";
+import { againstReference, zapCallsOnly, type ZapCheckContext } from "./zap-check.ts";
 
 export type ActionFailure = Readonly<{ ok: false; status: number; code: string; reason: string }>;
 
@@ -104,6 +106,12 @@ export type ActionDeps = Readonly<{
   chainReader?: (connection: Connection) => ChainReader;
   /** DLMM's limit orders on an endpoint (`limit-orders.ts`); without it no limit order is built. */
   limitVenueFor?: (connection: Connection) => LimitVenue;
+  /** The Zap on an endpoint (`zap.ts`, CITY-198); without it no Zap is built. */
+  zapVenueFor?: (connection: Connection) => ZapVenue;
+  /** Ryntra's fee on a Zap's Jupiter leg from SOL into `outputMint` (fee policy v2's `/build` lane), or null for none. */
+  zapFeeFor?: (outputMint: string) => Promise<ZapFee | null>;
+  /** The lookup tables a relay resolves version-0 bytes with; the endpoint's own read by default. */
+  lookupTables?: (connection: Connection, addresses: readonly string[]) => Promise<readonly AddressLookupTableAccount[] | null>;
 }>;
 
 const failure = (status: number, code: string, reason: string): ActionFailure => ({ ok: false, status, code, reason });
@@ -364,6 +372,136 @@ export async function reviewLimitAction(body: unknown, deps: ActionDeps): Promis
   return { ok: true, value: { preview: built.preview, transactions, position: built.order, ticket, expiresAt, signableMs, networkFeeLamports, depositUsd: usd } };
 }
 
+/* -------------------------------------------------------------------- zap */
+
+const SOL_MINT = "So11111111111111111111111111111111111111112";
+
+export type ZapReviewInput =
+  | Readonly<{ action: "zap_in"; venue: "meteora-dlmm"; request: ZapInRequest }>
+  | Readonly<{ action: "zap_rest"; venue: "meteora-dlmm"; request: ZapRestRequest }>;
+
+/** A Zap's Review (CITY-198): the same seal as a pool action's, with the Zap's own preview and the swap leg's reference. */
+export type ZapReview = Readonly<{
+  preview: ZapPreview;
+  transactions: readonly UnsignedLiquidityTx[];
+  /** zap_in: the new position; zap_rest: the pool. */
+  position: string;
+  ticket: string;
+  expiresAt: number;
+  signableMs: number;
+  networkFeeLamports: string;
+  /** What the SOL put in is worth at the venue's prices; null for «Take the rest». */
+  depositUsd: number | null;
+  /** What the venue's dollar prices say the swap's input is worth in its output coin, base units; null when nothing is swapped. */
+  referenceOut: string | null;
+}>;
+
+/** The browser's body for a Zap, field by field; anything else is refused before the chain is asked. */
+export function parseZapInput(body: unknown): ZapReviewInput | null {
+  if (!body || typeof body !== "object") return null;
+  const { action, venue, request } = body as Record<string, unknown>;
+  if (venue !== "meteora-dlmm" || !request || typeof request !== "object") return null;
+  const r = request as Record<string, unknown>;
+  if (!isKey(r.owner) || !isKey(r.pool)) return null;
+  if (action === "zap_in") {
+    if (!isUnits(r.amountIn) || !isBps(r.half, 0, ZAP_MAX_HALF) || !isBps(r.slippageBps, 1, 1_000)) return null;
+    return { action, venue, request: { pool: r.pool, owner: r.owner, amountIn: r.amountIn, half: r.half, slippageBps: r.slippageBps } };
+  }
+  if (action === "zap_rest") {
+    if (!isUnits(r.otherBefore)) return null;
+    return { action, venue, request: { pool: r.pool, owner: r.owner, otherBefore: r.otherBefore } };
+  }
+  return null;
+}
+
+/**
+ * Review a Zap — SOL into a new position of a pier in one approval, or «Take the rest» of one that landed in part —
+ * exactly as a pool action: the same gate (and the canary's ceiling on the SOL put in), a build made afresh on the
+ * chain, Ryntra's fee only on a Jupiter leg, the swap's floor held to the venue's own prices, every instruction held to
+ * the wallet-only rules (`zap-check.ts`), the first transaction simulated, the same sealed ticket — with the lookup
+ * tables its version-0 bytes read. Nothing is signed or sent here.
+ */
+export async function reviewZapAction(body: unknown, deps: ActionDeps): Promise<Readonly<{ ok: true; value: ZapReview }> | ActionFailure> {
+  const env = deps.env;
+  const input = parseZapInput(body);
+  if (!input) return failure(400, "BAD_REQUEST", "The action is not one this route builds.");
+  const owner = input.request.owner;
+  const admitted = admitLiquidityAction(owner, env);
+  if (!admitted.ok) return failure(403, "ACTIONS_CLOSED", "Pool actions are not open for this wallet yet.");
+  if (!ticketKeyConfigured(env)) return failure(503, "ACTIONS_UNAVAILABLE", "The server cannot seal a Review now.");
+  const zapVenueFor = deps.zapVenueFor;
+  if (!zapVenueFor) return failure(503, "ACTIONS_UNAVAILABLE", "The Zap is not wired on this server.");
+
+  let built: BuiltZap;
+  let connection: Connection;
+  let usd: number | null = null;
+  let referenceOut: string | null = null;
+  try {
+    const prices = await deps.pricesOf("meteora-dlmm", input.request.pool);
+    /* Ryntra's fee is asked of Jupiter for the leg SOL → the pier's other coin; the pool's own swap carries none. */
+    const other = prices.xMint === SOL_MINT ? prices.yMint : prices.yMint === SOL_MINT ? prices.xMint : null;
+    const fee = input.action === "zap_in" && other && deps.zapFeeFor ? await deps.zapFeeFor(other) : null;
+    const answer = await onFirstAnswering(deps.connections, async (candidate) => {
+      const venue = zapVenueFor(candidate);
+      return input.action === "zap_in" ? venue.buildIn(input.request, fee) : venue.buildRest(input.request);
+    });
+    built = answer.value;
+    connection = answer.connection;
+    const preview = built.preview;
+    const priceOf = (mint: string) => (prices.xMint === mint ? prices.x : prices.yMint === mint ? prices.y : null);
+    const decimalsOf = (mint: string) => (preview.tokenX.mint === mint ? preview.tokenX.decimals : preview.tokenY.decimals);
+    if (input.action === "zap_in") {
+      const solMint = preview.swap.inMint;
+      const value = depositUsd({ x: { units: preview.amountIn, decimals: 9 }, y: { units: "0", decimals: 0 } }, { x: priceOf(solMint), y: null });
+      usd = value;
+      if (admitted.maxDepositUsd !== null) {
+        if (value === null) throw new CanaryRefusal("CANARY_UNPRICED", "The Zap has no dollar price to hold it to the check's ceiling.");
+        if (value > admitted.maxDepositUsd) throw new CanaryRefusal("CANARY_LIMIT", `The check takes at most ${admitted.maxDepositUsd} USD.`);
+      }
+    }
+    if (preview.swap.route !== "none") {
+      const leg = preview.swap;
+      const checked = againstReference({
+        inAmount: BigInt(leg.inAmount),
+        inDecimals: decimalsOf(leg.inMint),
+        inUsd: priceOf(leg.inMint),
+        floor: BigInt(leg.floor),
+        outDecimals: decimalsOf(leg.outMint),
+        outUsd: priceOf(leg.outMint),
+        feeBps: leg.fee?.bps ?? 0,
+        slippageBps: ZAP_SWAP_SLIPPAGE_BPS,
+      });
+      if (!checked.ok) {
+        console.warn(`zap review: ${input.action} swap floor against the reference — ${checked.code} short ${checked.shortBps ?? "?"} bps`);
+        return failure(checked.code === "ZAP_UNPRICED" ? 422 : 409, checked.code, checked.code === "ZAP_UNPRICED" ? "The swap has no reference price to be checked against." : "The swap would bring less than the coins are worth now.");
+      }
+      referenceOut = checked.referenceOut.toString();
+    }
+  } catch (error) {
+    if (error instanceof CanaryRefusal) return failure(403, error.code, error.message);
+    if (error instanceof LiquidityRefusal) return failure(REFUSAL_STATUS[error.code] ?? 422, error.code, error.message);
+    console.warn(`zap review: ${input.action} — ${redacted(error)}`);
+    return failure(503, "UNAVAILABLE", "Solana did not answer. Nothing was built.");
+  }
+
+  const sealed = await sealBuilt(
+    { owner, venue: "meteora-dlmm", action: input.action, pool: built.preview.pool, position: built.position, transactions: built.transactions, validUntil: built.validUntil },
+    connection,
+    zapVenueFor(connection).program,
+    deps,
+    { tables: built.lookupTables, check: built.check },
+  );
+  if (!sealed.ok) return sealed;
+  const { transactions, ticket, expiresAt, signableMs, networkFeeLamports } = sealed.value;
+  return { ok: true, value: { preview: built.preview, transactions, position: built.position, ticket, expiresAt, signableMs, networkFeeLamports, depositUsd: usd, referenceOut } };
+}
+
+/** The tables an endpoint holds for these addresses, or null when any is missing. */
+async function readLookupTables(connection: Connection, addresses: readonly string[]): Promise<readonly AddressLookupTableAccount[] | null> {
+  const tables = await Promise.all(addresses.map((address) => within(connection.getAddressLookupTable(new PublicKey(address)), CALL_MS).then((answer) => answer.value)));
+  return tables.every((table) => table !== null) ? (tables as AddressLookupTableAccount[]) : null;
+}
+
 type Sealed = Readonly<{ transactions: readonly UnsignedLiquidityTx[]; ticket: string; expiresAt: number; signableMs: number; networkFeeLamports: string }>;
 
 /**
@@ -376,6 +514,7 @@ async function sealBuilt(
   connection: Connection,
   venueProgram: string,
   deps: ActionDeps,
+  zap: Readonly<{ tables: readonly AddressLookupTableAccount[]; check: ZapCheckContext }> | null = null,
 ): Promise<Readonly<{ ok: true; value: Sealed }> | ActionFailure> {
   const env = deps.env;
   const now = deps.now ?? Date.now;
@@ -402,6 +541,7 @@ async function sealBuilt(
     }
     transactions.push({ wireBase64: withoutSignaturesOf(tx.wireBase64, tx.presigned), presigned: [] });
   }
+  if (zap && zap.tables.length > MAX_TICKET_LOOKUPS) return failure(500, "BUILD_REFUSED", "The build reads more lookup tables than a ticket seals.");
   /* Each transaction's signers are the wallet and the fresh keys held for it — nobody the relay could not sign for. */
   for (const [index, tx] of transactions.entries()) {
     const message = VersionedTransaction.deserialize(Buffer.from(tx.wireBase64, "base64")).message;
@@ -409,13 +549,30 @@ async function sealBuilt(
     const held = new Set([owner, ...cosigners.filter((c) => c.index === index).map((c) => c.key.publicKey.toBase58())]);
     if (signers.length !== held.size || !signers.every((signer) => held.has(signer))) return failure(500, "BUILD_REFUSED", "A built transaction names a signer the relay does not hold.");
   }
+  let zapCalls = 0;
+  let swaps = 0;
   for (const tx of built.transactions) {
-    const calls = builtCallsOnly(tx.wireBase64, owner, venueProgram);
-    if (!calls.ok) return failure(500, "BUILD_REFUSED", calls.reason);
-    const digest = messageDigest(tx.wireBase64);
+    if (zap) {
+      /* A Zap is several programs: every instruction is held to the wallet-only rules of `zap-check.ts`. */
+      const decoded = decodeWire(tx.wireBase64, zap.tables);
+      if (!decoded) return failure(500, "BUILD_REFUSED", "A built transaction could not be read.");
+      const calls = zapCallsOnly(decoded.instructions, decoded.feePayer?.toBase58() ?? null, zap.check);
+      if (!calls.ok) return failure(500, "BUILD_REFUSED", calls.reason);
+      zapCalls += calls.zapCalls;
+      swaps += calls.swaps;
+    } else {
+      const calls = builtCallsOnly(tx.wireBase64, owner, venueProgram);
+      if (!calls.ok) return failure(500, "BUILD_REFUSED", calls.reason);
+    }
+    const digest = messageDigest(tx.wireBase64, zap?.tables ?? []);
     if (!digest) return failure(500, "BUILD_REFUSED", "A built transaction could not be read.");
     digests.push(digest);
     fee += networkFeeOf(tx.wireBase64);
+  }
+  if (zap) {
+    if (zapCalls === 0) return failure(500, "BUILD_REFUSED", "The built Zap does not call the Zap program.");
+    /* Exactly the swaps the Review showed: one, or none when nothing is swapped. */
+    if (swaps !== (zap.check.swap ? 1 : 0)) return failure(500, "BUILD_REFUSED", "The built Zap swaps other than the Review showed.");
   }
 
   /*
@@ -447,7 +604,8 @@ async function sealBuilt(
   const signableMs = Math.min(signableWindowMs(life), Math.max(0, ttlMs - BLOCKHASH_SUBMIT_MARGIN_MS));
   const cosign = sealCosigners(cosigners, env);
   const issuedAt = now();
-  const ticket = issueTicket({ owner, venue: built.venue, action: built.action, pool: built.pool, position: built.position, messages: digests, cosign }, env, issuedAt, ttlMs);
+  const lookups = zap && zap.tables.length ? { lookups: zap.tables.map((table) => table.key.toBase58()) } : {};
+  const ticket = issueTicket({ owner, venue: built.venue, action: built.action, pool: built.pool, position: built.position, messages: digests, cosign, ...lookups }, env, issuedAt, ttlMs);
   if (!ticket) return failure(503, "ACTIONS_UNAVAILABLE", "The server cannot seal a Review now.");
   const expiresAt = issuedAt + signableMs;
   return { ok: true, value: { transactions, ticket, expiresAt, signableMs, networkFeeLamports: fee.toString() } };
@@ -514,11 +672,18 @@ export async function submitLiquidityAction(body: unknown, deps: ActionDeps): Pr
   if (!admitLiquidityAction(ticket.owner, env).ok) return failure(403, "ACTIONS_CLOSED", "Pool actions are not open for this wallet now.");
   const cosigners = openCosigners(ticket.cosign, env);
   if (!cosigners) return failure(400, "TICKET_INVALID", "The Review's ticket is not one this server sealed.");
-  const checked = checkSigned(ticket, signed, cosigners);
-  if (!checked.ok) return failure(422, checked.code, checked.code === "NOT_SIGNED" ? "A signature is missing or does not match." : "The signed bytes are not the ones Review showed.");
-
   const connection = deps.connections[0];
   if (!connection) return failure(503, "UNAVAILABLE", "No Solana endpoint is configured.");
+  /* Version-0 bytes (a Zap) are resolved with the very tables the Review sealed: read again, as a table only grows. */
+  let tables: readonly AddressLookupTableAccount[] = [];
+  if (ticket.lookups?.length) {
+    const read = await (deps.lookupTables ?? readLookupTables)(connection, ticket.lookups).catch(() => null);
+    if (!read || read.length !== ticket.lookups.length) return failure(503, "UNAVAILABLE", "Solana did not answer for the Review's lookup tables. Nothing was sent.");
+    tables = read;
+  }
+  const checked = checkSigned(ticket, signed, cosigners, tables);
+  if (!checked.ok) return failure(422, checked.code, checked.code === "NOT_SIGNED" ? "A signature is missing or does not match." : "The signed bytes are not the ones Review showed.");
+
   const deadline = Date.now() + (deps.relayMs ?? RELAY_MS);
   const results: { signature: string; state: RelayState; reason: string | null }[] = checked.signatures.map((signature) => ({ signature, state: "NOT_SENT", reason: null }));
   for (const [index, wire] of checked.wires.entries()) {

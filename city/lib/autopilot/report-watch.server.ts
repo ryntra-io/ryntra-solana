@@ -6,6 +6,7 @@ import { AGENT_SYMBOL_ENV, agentResult } from '@/lib/mandate/agent-service.serve
 import { mandateGate } from '@/lib/mandate/service.server';
 import { deliverOutbox } from '@/lib/monitoring/service.server';
 import { fetchTokenCatalog } from '@/lib/solana/catalog';
+import { readPilot } from '@/lib/pilot/book.server';
 import { WRAPPED_SOL_MINT } from '@/lib/solana/send-kinds';
 import { agentReportSends, AGENT_REPORT_SEND_ENV } from './report';
 import { runReportPass, type ReportPass, type ReportRead } from './report-watch';
@@ -36,7 +37,10 @@ export async function runAgentReport(env: Env, guard: Readonly<{ store: GuardSto
     const catalog = await fetchTokenCatalog([WRAPPED_SOL_MINT, entry.receiveMint], 5_000).catch(() => null);
     const sol = catalog?.ok ? Number(catalog.byMint[WRAPPED_SOL_MINT]?.usdPrice ?? NaN) : NaN;
     const ticker = view.symbol ?? (catalog?.ok ? (catalog.byMint[entry.receiveMint]?.symbol ?? null) : null);
-    return { day: view.away, symbol: ticker && SYMBOL.test(ticker) ? ticker : null, solUsd: Number.isFinite(sol) && sol > 0 ? sol : null };
+    /* CITY-204: her money autopilot's week, when this mandate is its trade. */
+    const pilot = await readPilot(guard.store, gate.network, entry.record.owner).catch(() => null);
+    const ours = pilot && pilot.status === 'working' && pilot.policy === entry.record.policy ? { weekUsd: pilot.care?.weekUsd ?? null, held: pilot.held?.why ?? null } : null;
+    return { day: view.away, symbol: ticker && SYMBOL.test(ticker) ? ticker : null, solUsd: Number.isFinite(sol) && sol > 0 ? sol : null, total: view.net ? { netRaw: view.net.netRaw } : null, pilot: ours };
   };
   const pass = await runReportPass({
     store: guard.store,

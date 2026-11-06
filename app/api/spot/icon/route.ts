@@ -71,8 +71,10 @@ function publicHttpsUrl(value: string): boolean {
   return host.includes(".");
 }
 
+/* No logo is an answer, not an error (CITY-200): a 404 put «Failed to load resource» in the console for every coin of a
+   search without a picture. 204, as the city's own `/api/icon` answers; the page keeps the coin's badge either way. */
 function notFound(): Response {
-  return new Response(null, { status: 404, headers: { "cache-control": "public, max-age=300, s-maxage=600" } });
+  return new Response(null, { status: 204, headers: { "cache-control": "public, max-age=300, s-maxage=600" } });
 }
 
 /**

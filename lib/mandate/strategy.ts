@@ -70,8 +70,10 @@ export type AgentTrade = Readonly<{
 /**
  * Why the agent paused itself. CITY-193: `take` and `stop` — the person's own exit was reached; `late` — an early plan's
  * launch is past its first hours. None of them sells anything: the agent stops buying and holds.
+ * CITY-204: `market` and `balance` — the money autopilot's care (`lib/pilot/care.ts`): SOL fell sharply, or the trade's
+ * part outgrew its share. Only that care lifts them; the tick never does.
  */
-export type PauseReason = "failing" | "loss" | "losses" | "short" | "unread" | "take" | "stop" | "late";
+export type PauseReason = "failing" | "loss" | "losses" | "short" | "unread" | "take" | "stop" | "late" | "market" | "balance";
 
 export type StrategyInput = Readonly<{
   strategy: StrategyId;
@@ -83,6 +85,8 @@ export type StrategyInput = Readonly<{
   /** What the vault still holds of the budget, base units; null when not read. */
   budgetLeft: bigint | null;
   now: number;
+  /** CITY-197: the plan's pace — buys a day at most (`./plans.ts`); absent — the caps' rhythm. */
+  pace?: number | null;
 }>;
 
 export type Decision =
@@ -91,9 +95,11 @@ export type Decision =
   | Readonly<{ action: "end"; reason: "ended" | "spent" | "failing" }>;
 
 /** How many buys a day the steady strategy makes, and how far apart. */
-export function steadyRhythm(perTrade: bigint, perDay: bigint): Readonly<{ buys: number; everyMs: number }> {
-  const buys = perTrade > 0n ? Number(perDay / perTrade) : 0;
-  return { buys: Math.max(1, buys), everyMs: Math.floor(DAY_MS / Math.max(1, buys)) };
+export function steadyRhythm(perTrade: bigint, perDay: bigint, pace?: number | null): Readonly<{ buys: number; everyMs: number }> {
+  const allowed = Math.max(1, perTrade > 0n ? Number(perDay / perTrade) : 0);
+  /* CITY-197: the plan's pace is a ceiling under the caps' rhythm, never over it. */
+  const buys = typeof pace === "number" && Number.isInteger(pace) && pace >= 1 ? Math.min(allowed, pace) : allowed;
+  return { buys, everyMs: Math.floor(DAY_MS / buys) };
 }
 
 /** The agent's next move on this tick. */
@@ -108,7 +114,7 @@ export function decide(input: StrategyInput): Decision {
   }
   if (failures >= AUTOSTOP.failuresInARow) return { action: "end", reason: "failing" };
 
-  const { buys, everyMs } = steadyRhythm(perTrade, perDay);
+  const { buys, everyMs } = steadyRhythm(perTrade, perDay, input.pace);
   const done = input.trades.filter((trade) => trade.status === "ok");
   const today = done.filter((trade) => now - trade.at < DAY_MS);
   const spentToday = today.reduce((sum, trade) => sum + BigInt(trade.spentRaw), 0n);

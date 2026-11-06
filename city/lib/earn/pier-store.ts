@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import type { PositionView } from '../../../lib/liquidity/catalog/positions.ts';
-import type { LiquidityReview } from '../../../lib/liquidity/studio/actions.ts';
+import type { LiquidityReview, ZapReview } from '../../../lib/liquidity/studio/actions.ts';
 import { citySigner } from '../app-bridge/route.ts';
 import { claimBody, exitBody, type ReviewBody } from '../districts/harbor/deposit.ts';
 import { follow, outcomeOf, reviewFresh, signAndSend, type ActionOutcome, type SignMany } from '../districts/harbor/flow.ts';
@@ -10,20 +10,22 @@ import type { Holdings } from '../trade/wallet.ts';
 import { useEarn } from './open.ts';
 import {
   DEFAULT_STYLE,
-  pierAddBody,
   pierCosts,
-  pierFit,
-  pierMax,
   pierMinimum,
   pierOf,
+  pierRestBody,
   pierSplit,
+  pierZapBody,
   PIER_RESERVE_LAMPORTS,
   solUsd,
+  zapFit,
+  zapMax,
   type Pier,
   type PierCosts,
-  type PierFit,
+  type PierRestBody,
   type PierSplit,
   type PierStyle,
+  type PierZapBody,
 } from './pier.ts';
 import { createPierEngine, type PierEngine } from './pier-engine.ts';
 import type { PierStates } from './pier-gate.ts';
@@ -37,6 +39,10 @@ import { earnWords } from './words.ts';
  * engine's Review of exactly what is on screen, and where an action is. A Review is built as soon as a wallet is here
  * and admitted, so every figure the person signs stands on the card before the one amber tap; a tap on a Review too
  * old to sign builds it again and shows it first. While the wallet signs or bytes are on their way, the window holds.
+ *
+ * CITY-198: a pier takes SOL alone. The add is the engine's Zap — the swap of the part the other coin needs and the
+ * deposit, in one approval of the wallet (several transactions signed together). When only part of it lands, the card
+ * says so plainly and offers «Take back as SOL»: one more approval, and what the Zap left in the wallet comes back.
  */
 
 export type Connection = Readonly<{ wallet: string; address: string }>;
@@ -47,17 +53,35 @@ export const PIER_BUSY: ReadonlySet<PierPhase> = new Set(['reviewing', 'wallet',
 export const PIER_LOCKED: ReadonlySet<PierPhase> = new Set(['wallet', 'sending']);
 
 export type PierTarget = Readonly<{ kind: 'add' }> | Readonly<{ kind: 'claim' | 'exit'; position: PositionView }>;
-export type PierReviewed = Readonly<{ key: string; body: ReviewBody; review: LiquidityReview; at: number }>;
+export type PierBody = ReviewBody | PierZapBody | PierRestBody;
+export type PierReviewed = Readonly<{ key: string; body: PierBody; review: LiquidityReview | ZapReview; at: number }>;
+
+const isZapBody = (body: PierBody): body is PierZapBody | PierRestBody => body.action === 'zap_in' || body.action === 'zap_rest';
+
+/** A pool action's own Review (a boat's fees or exit) when the reviewed action is one; null for a Zap. */
+export function poolReviewOf(reviewed: PierReviewed | null): LiquidityReview | null {
+  return reviewed && !isZapBody(reviewed.body) ? (reviewed.review as LiquidityReview) : null;
+}
+
+/** The Zap's own Review when the reviewed action is one; null otherwise. */
+export function zapReviewOf(reviewed: PierReviewed | null): ZapReview | null {
+  return reviewed && isZapBody(reviewed.body) ? (reviewed.review as ZapReview) : null;
+}
+
+/** «Take the rest» after a Zap that landed in part: its own Review, where it is, and how it ended. */
+export type PierRest = Readonly<{ reviewed: PierReviewed | null; outcome: ActionOutcome | null; notice: PierNotice | null }>;
 export type PierNotice = Readonly<{ tone: 'warn' | 'error'; text: string }>;
 
 export type Loaded<T> = Readonly<{ status: 'loading' }> | Readonly<{ status: 'ready'; value: T; at: number }> | Readonly<{ status: 'error' }>;
 
-export type PierProblem = 'format' | 'min' | 'ceiling' | 'sol' | 'other';
+export type PierProblem = 'format' | 'min' | 'ceiling' | 'sol';
 
 export type PierChoice = Readonly<{
   lamports: bigint | null;
+  /** The even split the Zap aims at, for the eye before the Review says exactly what goes in. */
   split: PierSplit | null;
-  fit: PierFit;
+  /** The wallet holds the SOL and what is kept aside; true while it is not read. */
+  fits: boolean;
   minimum: bigint;
   /** The most this wallet may put in now under the ceiling, lamports; null when no ceiling is known. */
   ceiling: bigint | null;
@@ -71,8 +95,8 @@ export type PierChoice = Readonly<{
 const CEILING_MARGIN = 0.98;
 
 /**
- * What the card stands on for a typed amount: the split, whether the wallet holds it, the live minimum (from the
- * Review's costs once there is one) and the ceiling this wallet has now.
+ * What the card stands on for a typed amount of SOL: whether the wallet holds it with the SOL kept aside, the live
+ * minimum (from the Review's costs once there is one) and the ceiling this wallet has now. The wallet needs no other coin.
  */
 export function pierChoice(pier: Pier, style: PierStyle, typed: string, holdings: Holdings | null, owner: string | null, ceilingUsd: number | null, costs: PierCosts | null): PierChoice {
   const lamports = lamportsFromText(typed);
@@ -83,16 +107,16 @@ export function pierChoice(pier: Pier, style: PierStyle, typed: string, holdings
   const minimum = ceiling !== null && floor * 2n > ceiling ? ceiling / 2n : floor;
   const reserve = costs ? costs.total : PIER_RESERVE_LAMPORTS;
   const split = lamports ? pierSplit(pier, lamports) : null;
-  const fit = pierFit(pier, split, holdings, reserve);
-  const held = pierMax(pier, holdings, reserve);
+  const fits = zapFit(lamports, holdings, reserve);
+  const held = zapMax(holdings, reserve);
   const max = held !== null && ceiling !== null ? (held < ceiling ? held : ceiling) : (held ?? ceiling);
   let problem: PierProblem | null = null;
   if (!lamports || !split) problem = 'format';
   else if (lamports < minimum) problem = 'min';
   else if (ceiling !== null && lamports > ceiling) problem = 'ceiling';
-  else if (!fit.fits) problem = fit.short;
-  const key = owner && lamports && !problem ? `add:${owner}:${pier.pool.address}:${style}:${lamports}` : null;
-  return { lamports, split, fit, minimum, ceiling, max, problem, key };
+  else if (!fits) problem = 'sol';
+  const key = owner && lamports && !problem ? `zap:${owner}:${pier.pool.address}:${style}:${lamports}` : null;
+  return { lamports, split, fits, minimum, ceiling, max, problem, key };
 }
 
 export function targetKey(owner: string, target: Exclude<PierTarget, { kind: 'add' }>): string {
@@ -165,6 +189,8 @@ type Store = {
   outcome: ActionOutcome | null;
   sent: PierReviewed | null;
   notice: PierNotice | null;
+  /** «Take the rest» of the Zap last sent, when it landed in part. */
+  rest: PierRest | null;
   candles: Readonly<Record<string, Loaded<ReadonlyMap<number, number>>>>;
   openPier: (pool: HarborPool) => void;
   /** The same card on a strategy's pier, its style fixed (CITY-99). */
@@ -179,6 +205,10 @@ type Store = {
   prepare: (connection: Connection, target: PierTarget, holdings: Holdings | null) => Promise<void>;
   confirm: (connection: Connection, holdings: Holdings | null) => Promise<void>;
   recheck: (owner: string) => Promise<void>;
+  /** Build «Take the rest» for the Zap that landed in part, while the card says what happened. */
+  prepareRest: (connection: Connection) => Promise<void>;
+  /** The one action of a half-landed Zap: sign «Take the rest», or build it first. */
+  takeRest: (connection: Connection) => Promise<void>;
   again: () => void;
   forget: () => void;
 };
@@ -191,7 +221,7 @@ export const usePier = create<Store>((set, get) => {
     set({ phase });
     useEarn.getState().setBusy(PIER_LOCKED.has(phase));
   };
-  const keyFor = (owner: string, target: PierTarget, holdings: Holdings | null): Readonly<{ key: string; body: ReviewBody }> | null => {
+  const keyFor = (owner: string, target: PierTarget, holdings: Holdings | null): Readonly<{ key: string; body: PierBody }> | null => {
     const st = get();
     if (target.kind !== 'add') {
       const venue = VENUE_OF[target.position.kind];
@@ -205,7 +235,7 @@ export const usePier = create<Store>((set, get) => {
     const costs = st.costs?.pool === pier.pool.address ? st.costs.value : null;
     const choice = pierChoice(pier, st.style, st.typed, holdings, owner, states.ceilingUsd, costs);
     if (!choice.key || !choice.split) return null;
-    return { key: choice.key, body: pierAddBody(pier, owner, choice.split, st.style) };
+    return { key: choice.key, body: pierZapBody(pier, owner, choice.lamports!, st.style) };
   };
 
   return {
@@ -222,12 +252,13 @@ export const usePier = create<Store>((set, get) => {
     outcome: null,
     sent: null,
     notice: null,
+    rest: null,
     candles: {},
 
     openPier: (pool) => {
       if (PIER_BUSY.has(get().phase)) return;
       ticket += 1;
-      set({ pool, copy: null, boat: null, target: { kind: 'add' }, reviewed: null, phase: 'idle', outcome: null, notice: null, ...(get().costs?.pool === pool.address ? {} : { costs: null }) });
+      set({ pool, copy: null, boat: null, target: { kind: 'add' }, reviewed: null, phase: 'idle', outcome: null, notice: null, rest: null, ...(get().costs?.pool === pool.address ? {} : { costs: null }) });
       const pier = pierOf(pool);
       if (pier) {
         void get().loadCandles(pier.sol.mint);
@@ -237,18 +268,18 @@ export const usePier = create<Store>((set, get) => {
     openCopy: (pool, copy) => {
       if (PIER_BUSY.has(get().phase) || !pierOf(pool)) return;
       ticket += 1;
-      set({ pool, copy, style: copy.style, boat: null, target: { kind: 'add' }, reviewed: null, phase: 'idle', outcome: null, notice: null, ...(get().costs?.pool === pool.address ? {} : { costs: null }) });
+      set({ pool, copy, style: copy.style, boat: null, target: { kind: 'add' }, reviewed: null, phase: 'idle', outcome: null, notice: null, rest: null, ...(get().costs?.pool === pool.address ? {} : { costs: null }) });
     },
     openBoat: (position) => {
       if (PIER_BUSY.has(get().phase)) return;
       ticket += 1;
-      set({ boat: position, pool: null, copy: null, target: null, reviewed: null, phase: 'idle', outcome: null, notice: null });
+      set({ boat: position, pool: null, copy: null, target: null, reviewed: null, phase: 'idle', outcome: null, notice: null, rest: null });
     },
     back: () => {
       if (PIER_LOCKED.has(get().phase)) return;
       ticket += 1;
       useEarn.getState().setBusy(false);
-      set({ pool: null, copy: null, boat: null, target: null, reviewed: null, phase: 'idle', outcome: null, notice: null });
+      set({ pool: null, copy: null, boat: null, target: null, reviewed: null, phase: 'idle', outcome: null, notice: null, rest: null });
     },
     setStyle: (style) => {
       // A copy is its recipe: the style is the strategy's own.
@@ -283,7 +314,8 @@ export const usePier = create<Store>((set, get) => {
       const kept = get().reviewed?.key === asked.key ? get().reviewed : null;
       set({ target, notice: null, outcome: null, reviewed: kept });
       hold('reviewing');
-      const answer = await pierEnv().engine.review(asked.body);
+      const engine = pierEnv().engine;
+      const answer = isZapBody(asked.body) ? await engine.zap(asked.body) : await engine.review(asked.body);
       if (mine !== ticket) return;
       if (!answer.ok) {
         set({ reviewed: null, notice: { tone: 'error', text: pierFailure(answer.failure.code) } });
@@ -335,12 +367,13 @@ export const usePier = create<Store>((set, get) => {
         set({ notice: { tone: 'error', text: pierFailure(outcome.code) }, ...(outcome.code === 'WALLET_REFUSED' ? {} : { reviewed: null }) });
         return hold('idle');
       }
-      set({ outcome, sent: reviewed, reviewed: null });
+      set({ outcome, sent: reviewed, reviewed: null, rest: null });
       hold(outcome.kind);
       if (outcome.kind === 'done' || outcome.kind === 'partial') {
         e.after(connection.address);
         const pool = get().pool;
-        if (target.kind === 'add' && pool) e.report({ owner: connection.address, position: reviewed.review.position, pool: pool.address, style: get().style });
+        // A Zap's position exists only once its last transaction landed: a part of it is no copy.
+        if (target.kind === 'add' && pool && (outcome.kind === 'done' || !isZapBody(reviewed.body))) e.report({ owner: connection.address, position: reviewed.review.position, pool: pool.address, style: get().style });
       }
     },
 
@@ -361,13 +394,54 @@ export const usePier = create<Store>((set, get) => {
       if (next.kind === 'done' || next.kind === 'partial') e.after(owner);
     },
 
+    prepareRest: async (connection) => {
+      const st = get();
+      const zapped = st.outcome?.kind === 'partial' ? zapReviewOf(st.sent) : null;
+      if (!zapped || zapped.preview.action !== 'zap_in' || PIER_BUSY.has(st.phase) || st.rest?.outcome?.kind === 'done') return;
+      const body = pierRestBody(zapped.preview.pool, connection.address, zapped.preview.otherBefore);
+      const key = `rest:${connection.address}:${zapped.preview.pool}:${zapped.preview.otherBefore}`;
+      const mine = ++ticket;
+      set({ rest: { reviewed: null, outcome: null, notice: null } });
+      const answer = await pierEnv().engine.zap(body);
+      if (mine !== ticket) return;
+      if (!answer.ok) return set({ rest: { reviewed: null, outcome: null, notice: { tone: 'error', text: pierFailure(answer.failure.code) } } });
+      set({ rest: { reviewed: { key, body, review: answer.value, at: pierEnv().now() }, outcome: null, notice: null } });
+    },
+
+    takeRest: async (connection) => {
+      const st = get();
+      const kept = st.rest?.reviewed ?? null;
+      const e = pierEnv();
+      if (PIER_BUSY.has(st.phase) || st.rest?.outcome?.kind === 'done') return;
+      if (!kept || !reviewFresh(kept.review, kept.at, e.now())) return get().prepareRest(connection);
+      const mine = ++ticket;
+      hold('wallet');
+      const sign = e.sign(connection);
+      const outcome = await signAndSend(kept.review, kept.at, {
+        engine: e.engine,
+        now: e.now,
+        sleep: e.sleep,
+        sign: async (unsigned) => {
+          const signed = await sign(unsigned);
+          if (signed.ok && mine === ticket) hold('sending');
+          return signed;
+        },
+      });
+      if (mine !== ticket) return;
+      hold('partial');
+      if (outcome.kind === 'aged') return get().prepareRest(connection);
+      if (outcome.kind === 'refused') return set({ rest: { reviewed: outcome.code === 'WALLET_REFUSED' ? kept : null, outcome: null, notice: { tone: 'error', text: pierFailure(outcome.code) } } });
+      set({ rest: { reviewed: null, outcome, notice: null } });
+      if (outcome.kind === 'done' || outcome.kind === 'partial') e.after(connection.address);
+    },
+
     again: () => {
       if (PIER_BUSY.has(get().phase)) return;
       const st = get();
       ticket += 1;
       // A partly landed add already opened a position: a new Review of the whole amount could open a second one.
       if (st.outcome?.kind === 'partial' || st.outcome?.kind === 'done' || st.target?.kind !== 'add') {
-        set({ pool: null, copy: null, boat: null, target: null, reviewed: null, phase: 'idle', outcome: null, notice: null });
+        set({ pool: null, copy: null, boat: null, target: null, reviewed: null, phase: 'idle', outcome: null, notice: null, rest: null });
         return;
       }
       set({ phase: 'idle', outcome: null, reviewed: null, notice: null });
@@ -379,7 +453,7 @@ export const usePier = create<Store>((set, get) => {
         return;
       }
       ticket += 1;
-      set({ states: null, reviewed: null, phase: 'idle', outcome: null, notice: null, boat: null, target: get().pool ? { kind: 'add' } : null });
+      set({ states: null, reviewed: null, phase: 'idle', outcome: null, notice: null, rest: null, boat: null, target: get().pool ? { kind: 'add' } : null });
     },
   };
 });

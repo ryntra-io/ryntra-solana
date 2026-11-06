@@ -1,6 +1,9 @@
 import type { AgentAsk } from '../autopilot/read.ts';
 import type { DollarAsk } from '../earn/dollar-read.ts';
+import type { PilotAsk } from '../pilot/read.ts';
+import type { HireAsk } from '../crew/read.ts';
 import type { Instruction } from '../instruct/types.ts';
+import { learnAsk } from '../learn/ask.ts';
 import { SOL, USDC } from '../trade/tiles.ts';
 
 /**
@@ -50,6 +53,12 @@ export type Command =
   | Readonly<{ kind: 'autopilot'; ask: AgentAsk }>
   /** The Dollar Saver on its word (CITY-192): «put my USDC to work» — its card with the coin and the amount; the person signs there. */
   | Readonly<{ kind: 'dollar'; ask: DollarAsk }>
+  /** The money autopilot on its word (CITY-204): «work with my 2 SOL and 100 USDC: some into savings, trade some, some into pools» — one plan; the person signs in its card. */
+  | Readonly<{ kind: 'pilot'; ask: PilotAsk }>
+  /** A job for an agent (CITY-205): «trade for me», «доглядай мій пул», «запусти бота» — that agent's card, or the crew in «Bots». */
+  | Readonly<{ kind: 'hire'; ask: HireAsk }>
+  /** «Learn» (CITY-202): the guide, on the chapter the sentence names (null — the list of chapters). */
+  | Readonly<{ kind: 'learn'; chapter: string | null }>
   /** Everything else: a question for Ryntra, who reads the market and advises — and does nothing else. */
   | Readonly<{ kind: 'ask'; question: string }>;
 
@@ -339,6 +348,9 @@ export function parse(input: string, book: Book, context: Context = { subject: n
   const question = text;
   const list = tokens(text);
   if (!list.length) return { kind: 'ask', question };
+  // «How does the agent work?» is the guide's to answer, before any question goes to Ryntra.
+  const learn = learnAsk(text);
+  if (learn !== undefined) return { kind: 'learn', chapter: learn };
   if (QUESTION.test(list[0]!.text) || /\?\s*$/u.test(text)) return { kind: 'ask', question };
   if (list.some((token) => IF.test(token.text) || NOT.test(token.text))) return { kind: 'ask', question };
 
@@ -541,6 +553,8 @@ export type Gates = Readonly<{
   agentLaunch?: boolean;
   /** The Dollar Saver (CITY-192): Earn's window and the Saver's own switch, both open. */
   dollar?: boolean;
+  /** The money autopilot (CITY-204): its switch over the agent's and the mandate's. */
+  pilot?: boolean;
 }>;
 
 /**
@@ -565,6 +579,8 @@ export function fit(command: Command, gates: Gates): Command | null {
       return gates.instruct === true ? command : null;
     case 'dollar':
       return gates.dollar === true ? command : null;
+    case 'pilot':
+      return gates.pilot === true ? command : null;
     case 'autopilot':
       return (command.ask.kind === 'trade' ? gates.agentTrade === true : gates.agentLaunch === true && gates.launch) ? command : null;
     default:
@@ -583,6 +599,7 @@ const PLACES: readonly { command: Command; words: readonly string[] }[] = [
   { command: { kind: 'money', place: 'paylink', send: null }, words: ['pay link', 'invoice', 'посилання на оплату', 'рахунок'] },
   { command: { kind: 'earn' }, words: ['earn', 'pools', 'stake', 'заробіток', 'пули'] },
   { command: { kind: 'launch', symbol: null, name: null }, words: ['launch', 'create token', 'запустити', 'запуск'] },
+  { command: { kind: 'learn', chapter: null }, words: ['learn', 'tutorial', 'guide', 'навчання', 'підручник'] },
   { command: { kind: 'instructions' }, words: ['my instructions', 'instructions', 'мої доручення', 'доручення', 'автоматика'] },
 ];
 
@@ -611,6 +628,12 @@ export function keyOf(command: Command): string {
       return `autopilot:${command.ask.kind}`;
     case 'dollar':
       return `dollar:${command.ask.side}:${command.ask.asset}`;
+    case 'pilot':
+      return 'pilot';
+    case 'learn':
+      return `learn:${command.chapter ?? ''}`;
+    case 'hire':
+      return `hire:${command.ask.role ?? ''}`;
     case 'ask':
       return 'ask';
     default:

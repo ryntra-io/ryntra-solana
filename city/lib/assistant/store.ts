@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import type { Tower } from '../market/types.ts';
-import { cityLine, detailsOf, intentOf, pickTowers, shortLine, type Details, type Intent } from './answer.ts';
+import { cityAnswers, cityLine, detailsOf, intentOf, pickTowers, shortLine, type Details, type Intent } from './answer.ts';
 import { askGuest, type Asked } from './ask.ts';
 
 /**
@@ -73,6 +73,12 @@ export const useAssistant = create<AssistantState>((set, get) => ({
     inFlight = null;
     if (answer.ok) {
       const shown = pickTowers(answer.turn, towers, intent, subject);
+      if (cityAnswers(shown, intent, answer.day)) {
+        // The day's answers are spent: a rise or a fall is still the city's own read, with the count behind «Details».
+        const own = pickTowers(null, towers, intent, subject);
+        set({ phase: 'answered', voice: 'city', busy: false, line: cityLine(intent, own), details: null, shown: own, focusAt: Date.now(), day: answer.day });
+        return;
+      }
       set({ phase: 'answered', voice: 'ryntra', line: shortLine(answer.turn), details: detailsOf(answer.turn), shown, focusAt: Date.now(), day: answer.day });
       return;
     }

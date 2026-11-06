@@ -47,6 +47,7 @@ export function GuardLayer() {
       title,
       icon: <ShieldGlyph />,
       render: renderGuard,
+      fit: true,
       size: { width: 460, height: 640 },
       min: { width: 380, height: 440 },
       onClose: closeGuard,

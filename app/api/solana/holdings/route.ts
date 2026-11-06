@@ -2,8 +2,8 @@ import { z } from "zod";
 
 import { consumeSolanaReadRequest, readAgentControlJson } from "@/lib/agent-control/http";
 import { FEATURED_MINTS } from "@/app/solana/workspace/assets/featured.ts";
-import { fetchTokenCatalog, nativeSolPriceMint, type TokenCatalogEntry } from "@/lib/solana/catalog";
-import { readSpotMarketsByMint } from "@/lib/spot/markets.server";
+import { nativeSolPriceMint } from "@/lib/solana/catalog";
+import { readHoldingsCatalog } from "@/lib/solana/holdings-catalog.server";
 import { buildPassport } from "@/lib/solana/passport";
 import { rpcPairHealth } from "@/lib/solana/health";
 import { decodeRawMintAccount, type MintReadSuccess } from "@/lib/solana/mint";
@@ -133,6 +133,19 @@ function readSelfDeclaredName(
 }
 
 const NO_NAME = { name: null, symbol: null, nameAuthority: null } as const;
+
+/** New canonical addresses derived in one read; the rest wait for the next one (see the derivation below). */
+const CANONICAL_PER_READ = 500;
+const CANONICAL_MEMO_CAP = 50_000;
+/** owner:mint:program → its associated token account ("" when underivable). Deterministic, so never stale. */
+const canonicalMemo = new Map<string, string>();
+function rememberCanonical(key: string, address: string): void {
+  canonicalMemo.set(key, address);
+  if (canonicalMemo.size > CANONICAL_MEMO_CAP) {
+    const oldest = canonicalMemo.keys().next().value;
+    if (oldest !== undefined) canonicalMemo.delete(oldest);
+  }
+}
 
 export async function POST(request: Request) {
   const startedAt = performance.now();
@@ -287,17 +300,36 @@ async function readHoldings(request: Request, rate: RateLimitDecision, signal: A
      It is a local program-derived address, not another network read, and
      planning prefers it whenever it alone can cover the amount. */
   const canonicalByKey = new Map<string, string>();
-  for (const key of new Set(
-    holdings.map((holding) => sendInventoryKey(holding.mint, holding.tokenProgram)),
-  )) {
+  /* A derivation is a hash search, about a millisecond each and CPU-bound:
+     a wallet of three thousand airdropped accounts spent three seconds of its
+     4.5 s deadline here (2026-11-05). The address is a pure function of
+     owner, mint and program, so it is remembered, and at most
+     `CANONICAL_PER_READ` new ones are derived per read — the featured mints
+     first. An asset left underived only lacks the Send planner's preference;
+     its accounts and amounts are untouched, and the next read derives more. */
+  let derived = 0;
+  const keys = [...new Set(holdings.map((holding) => sendInventoryKey(holding.mint, holding.tokenProgram)))]
+    .sort((a, b) => Number(FEATURED_RANK.has(b.split(":")[0])) - Number(FEATURED_RANK.has(a.split(":")[0])));
+  for (const key of keys) {
     const [mint, tokenProgram] = key.split(":");
+    const memo = canonicalMemo.get(`${owner}:${key}`);
+    if (memo !== undefined) {
+      if (memo) canonicalByKey.set(key, memo);
+      continue;
+    }
+    if (derived >= CANONICAL_PER_READ) continue;
+    derived += 1;
     try {
-      canonicalByKey.set(key, await associatedTokenAccount({ owner, mint, tokenProgram }));
+      const address = await associatedTokenAccount({ owner, mint, tokenProgram });
+      canonicalByKey.set(key, address);
+      rememberCanonical(`${owner}:${key}`, address);
     } catch {
       /* An underivable address is not a canonical one. The asset still lists
          every account it has; only the preference is unavailable. */
+      rememberCanonical(`${owner}:${key}`, "");
     }
   }
+  signal.throwIfAborted();
   const sourceAccounts: SendSourceAccount[] = holdings.map((holding) => ({
     address: holding.address,
     mint: holding.mint,
@@ -376,70 +408,24 @@ async function readHoldings(request: Request, rate: RateLimitDecision, signal: A
     } catch { /* Optional mint details are unavailable; balances stay intact. */ }
     finally { detailsMs = performance.now() - detailsStartedAt; }
   };
-  const catalogMints = [nativeSolPriceMint(), ...toDetail.map((asset) => asset.mint as string)];
-  /* Every other held mint is named and priced too — by the Spot catalogue,
-     a hundred mints a call, which costs no mint read. Twelve was the cap on
-     passports and had quietly become the cap on names: a person's fresh
-     STONK fill sat in the Portfolio as `6GmA…UNgx · —` under *Without a
-     price* while the Spot page priced it a click away (2026-09-12). Three
-     hundred mints is three calls; a wallet with more keeps the rest unnamed,
-     which the row already says honestly. */
-  const WIDE_CATALOG_CAP = 300;
-  const WIDE_CATALOG_BATCH = 100;
-  /* Every held mint, the featured ones included: the wide read is also where
-     the icon, the category and the day's change come from, which the price
-     feed's own read does not carry. */
-  const wideMints = [nativeSolPriceMint(), ...assets.map((asset) => asset.mint as string)].slice(0, WIDE_CATALOG_CAP);
-  const readWideCatalog = async (batch: readonly string[]): Promise<Record<string, TokenCatalogEntry>> => {
-    try {
-      const read = await readSpotMarketsByMint(batch, 2_500);
-      if (!read.ok) return {};
-      const source = { ref: `jupiter:mainnet:tokens:search:${batch.length}`, label: "Jupiter Tokens API, search by mint" };
-      const entries: Record<string, TokenCatalogEntry> = {};
-      for (const [mint, market] of read.byMint) {
-        entries[mint] = {
-          mint,
-          symbol: market.symbol || null,
-          name: market.name || null,
-          isVerified: market.verified,
-          isSuspicious: market.audit.suspicious,
-          usdPrice: market.price !== null && market.price > 0 ? String(market.price) : null,
-          source,
-          icon: market.icon,
-          category: market.category,
-          dayChangePct: market.change24hPct,
-        };
-      }
-      return entries;
-    } catch {
-      /* The wide read is a convenience over the balances; a refusal leaves
-         the rows it would have named exactly as they were. */
-      return {};
-    }
-  };
-  const [, catalog, wide] = await Promise.all([
+  /* Names and prices: the twelve detailed mints through the price feed, every
+     held mint (to three hundred) through the catalogue search — and, when
+     Jupiter refuses or is slow, the keyless host, the last good read and the
+     Spot lists this instance holds, so a spent minute of the provider's budget
+     no longer turns a person's USDC into a bare address (2026-11-05;
+     `lib/solana/holdings-catalog.server.ts`). */
+  const [, names] = await Promise.all([
     Promise.all(Array.from({ length: Math.ceil(toDetail.length / DETAIL_BATCH_SIZE) }, (_, index) =>
       readDetails(toDetail.slice(index * DETAIL_BATCH_SIZE, (index + 1) * DETAIL_BATCH_SIZE)),
     )),
-    fetchTokenCatalog(catalogMints, 1_000, signal).finally(() => { catalogMs = performance.now() - detailsStartedAt; }),
-    Promise.all(Array.from({ length: Math.ceil(wideMints.length / WIDE_CATALOG_BATCH) }, (_, index) =>
-      readWideCatalog(wideMints.slice(index * WIDE_CATALOG_BATCH, (index + 1) * WIDE_CATALOG_BATCH)),
-    )),
+    readHoldingsCatalog(
+      toDetail.map((asset) => asset.mint as string),
+      assets.map((asset) => asset.mint as string),
+      signal,
+    ).finally(() => { catalogMs = performance.now() - detailsStartedAt; }),
   ]);
-  /* The featured read answers first for the mints it covers — it carries the
-     price feed's own figure — and the wide read names everything else and
-     adds what the price read does not carry: the icon, the category, the
-     day's change. */
-  const wideByMint: Record<string, TokenCatalogEntry> = Object.assign({}, ...wide);
-  const overlay: Record<string, TokenCatalogEntry> = { ...wideByMint };
-  if (catalog.ok) {
-    for (const [mint, entry] of Object.entries(catalog.byMint)) {
-      const wideEntry = wideByMint[mint];
-      overlay[mint] = wideEntry
-        ? { ...entry, icon: wideEntry.icon ?? null, category: wideEntry.category ?? null, dayChangePct: wideEntry.dayChangePct ?? null, usdPrice: entry.usdPrice ?? wideEntry.usdPrice }
-        : entry;
-    }
-  }
+  const catalog = names.catalog;
+  const overlay = names.byMint;
 
   const nativeAsset = nativeSendInventoryAsset(lamports);
   const native = {
@@ -527,7 +513,7 @@ async function readHoldings(request: Request, rate: RateLimitDecision, signal: A
           detail: health.detail,
         },
         catalog: catalog.ok
-          ? { status: "PRESENT" as const, missing: catalog.missing }
+          ? { status: "PRESENT" as const, missing: catalog.missing.filter((mint) => !overlay[mint]) }
           : { status: "ABSENT" as const, reason: catalog.reason },
       },
     },
@@ -537,6 +523,7 @@ async function readHoldings(request: Request, rate: RateLimitDecision, signal: A
         `balances;dur=${balancesMs.toFixed(1)}`,
         `details;dur=${detailsMs.toFixed(1)}`,
         `catalog;dur=${catalogMs.toFixed(1)}`,
+        `names;desc="${names.fromMemory} from memory"`,
         `rpc;desc="${handle.attempts().length + (retryHandle?.attempts().length ?? 0)} attempts"`,
         `total;dur=${(performance.now() - startedAt).toFixed(1)}`,
       ].join(", "),

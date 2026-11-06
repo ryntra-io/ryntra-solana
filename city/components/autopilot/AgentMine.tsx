@@ -5,7 +5,7 @@ import { MANDATE_NET, useMandate } from '@/city/lib/bots/mandate';
 import { useWords } from '@/city/lib/i18n/dict';
 import { useLang } from '@/city/lib/i18n/lang';
 import { AUTOPILOT_NET } from '@/city/lib/autopilot/flag';
-import { solText } from '@/city/lib/autopilot/plan';
+import { solFigure } from '@/city/lib/autopilot/report';
 import { readAgentView, useAutopilot } from '@/city/lib/autopilot/store';
 import { AUTOPILOT } from '@/city/lib/autopilot/words';
 import { useWallet } from '@/city/lib/trade/wallet';
@@ -35,8 +35,10 @@ export function AgentMine({ onOpen }: { onOpen?: () => void }) {
     };
   }, [record]);
   if (!AUTOPILOT_NET || !MANDATE_NET || !record || !view) return null;
-  const earned = view.result.earnedRaw === null ? null : BigInt(view.result.earnedRaw);
-  const figure = earned === null || view.result.trades === 0 ? null : `${earned > 0n ? '+' : earned < 0n ? '−' : ''}${solText(Number(earned < 0n ? -earned : earned) / 1e9, lang)} SOL`;
+  /* CITY-197: after every fee, when the book counted them. */
+  const netRaw = view.net ? view.net.netRaw : view.result.earnedRaw;
+  const earned = netRaw === null ? null : BigInt(netRaw);
+  const figure = netRaw === null || view.result.trades === 0 ? null : solFigure(netRaw, lang);
   const state = view.status === 'working' ? w.working : view.status === 'paused' ? w.paused : view.status === 'stopped' ? w.noteStopped : w.ended;
   return (
     <button

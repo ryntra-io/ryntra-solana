@@ -7,7 +7,6 @@ import {
   dropIn,
   emptyLayout,
   exitFullIn,
-  firstPlace,
   framesIn,
   fullIn,
   gridIn,
@@ -67,6 +66,11 @@ export type WindowSpec = Readonly<{
   min?: Partial<Size>;
   /** Its size the first time it opens on this device; 560 × 440 when not given. */
   size?: Size;
+  /**
+   * The frame stands as tall as what is inside it, never taller than its place (CITY-201): a card that says one thing —
+   * the agent's — in a bay or on a phone's sheet shows no empty glass under its last line; more than fits scrolls.
+   */
+  fit?: boolean;
   /**
    * While true the person cannot close the window from its frame (a signature is in the wallet, a transaction on its
    * way): «Close» waits. Open the window again with `held: false` when it may close.
@@ -237,7 +241,6 @@ export const useWindows = create<State>((set, get) => {
     clearTimeout(glideTimer);
     glideTimer = setTimeout(() => set({ glide: false }), GLIDE_MS);
   };
-  /** Where a window opening for the first time stands: where a layout planned it, where this device remembers it, or a free bay. */
   const placeFor = (id: string, layout: Layout): Recall | null => {
     const planned = get().plan[id];
     if (planned) {
@@ -252,7 +255,7 @@ export const useWindows = create<State>((set, get) => {
     const bay = remembered?.bay ? (baysOf(layout.area).includes(remembered.bay) ? remembered.bay : 'right') : null;
     const holder = bay ? framesIn(layout).find((f) => f.bay === bay) : null;
     if (remembered && !(holder && heldNow(holder.id))) return remembered;
-    return firstPlace(layout, heldNow);
+    return null;
   };
   /** A signature holds this window: a new one never hides it as a tab. */
   const heldNow = (id: string) => Boolean(get().specs[id]?.held);
@@ -366,7 +369,7 @@ export const useWindows = create<State>((set, get) => {
       set({ out });
       keepOut(id, false, size ?? now.out[id].size);
       const spec = now.specs[id];
-      if (spec) commit(openIn(get().layout, spec, recall(memoryNow(), id, get().layout.area) ?? firstPlace(get().layout, heldNow)));
+      if (spec) commit(openIn(get().layout, spec, recall(memoryNow(), id, get().layout.area)));
     },
     fold: (id, params = {}) => {
       const now = get();

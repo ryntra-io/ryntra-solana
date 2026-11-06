@@ -31,7 +31,7 @@ import { zodTextFormat } from "openai/helpers/zod";
 import { z } from "zod";
 
 import { AGENT_NEWS_TOPICS, AgentAnswerSchema, AgentBriefSchema, AgentCriticSchema, type AgentAnswer, type AgentBrief, type AgentCritic } from "../api/v1/contract.ts";
-import { modelFor, NO_CALL_USAGE, servedTier, usageFromResponse, type CallUsage, type ModelTask, type ServiceTier } from "../assistant/models.ts";
+import { modelFor, NO_CALL_USAGE, servedTier, usageFromResponse, type AssistantProvider, type CallUsage, type ModelTask, type ServiceTier } from "../assistant/models.ts";
 import { answerNotes, BLOCK_MAX_CHARS, composeDeterministic, moveLead, type AnswerPacket } from "./answer.ts";
 import { lensModelInput, type LensPacket } from "./lens/packet.ts";
 import { TALK_STARTER_IDS, type TalkKind } from "./talk.ts";
@@ -392,13 +392,19 @@ export function modelInput(packet: AnswerPacket): Record<string, unknown> {
 
 export type ModelEnv = Readonly<Record<string, string | undefined>>;
 
-export function createOpenAiAgentModel(input: Readonly<{ env?: ModelEnv; client?: ResponsesParseClient; timeoutMs?: number }> = {}): AgentModel | null {
+/**
+ * The assistant's model over one Responses-shaped client. OpenAI's own client by default; CITY-205 hands in Anthropic's
+ * or OpenRouter's through the same shape (`./providers.ts`) with `provider` naming whose models the tasks call.
+ */
+export function createOpenAiAgentModel(input: Readonly<{ env?: ModelEnv; client?: ResponsesParseClient; timeoutMs?: number; provider?: AssistantProvider }> = {}): AgentModel | null {
   const env = input.env ?? process.env;
   const apiKey = env.OPENAI_API_KEY?.trim();
   const timeout = input.timeoutMs ?? 30_000;
   const client = input.client ?? (apiKey ? (new OpenAI({ apiKey, maxRetries: 0, timeout }) as unknown as ResponsesParseClient) : null);
   if (!client) return null;
-  const names = { intent: modelFor("intent", env).name, answer: modelFor("answer", env).name, brief: modelFor("brief", env).name, critic: modelFor("critic", env).name, news_tag: modelFor("news_tag", env).name, morning_brief: modelFor("morning_brief", env).name, talk: modelFor("talk", env).name, talk_check: modelFor("talk_check", env).name } as const;
+  const provider = input.provider ?? "openai";
+  const name = (task: ModelTask) => modelFor(task, env, provider).name;
+  const names = { intent: name("intent"), answer: name("answer"), brief: name("brief"), critic: name("critic"), news_tag: name("news_tag"), morning_brief: name("morning_brief"), talk: name("talk"), talk_check: name("talk_check") } as const;
   return {
     name: names.answer,
     models: names,

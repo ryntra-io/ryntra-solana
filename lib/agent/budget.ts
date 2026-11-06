@@ -42,7 +42,7 @@ import { z } from "zod";
 import { BASE58, type AgentBudgetState } from "../api/v1/contract.ts";
 import { readCredits, reserveCredits, settleCredits, type ReserveRefusal } from "../assistant/credits/ledger.ts";
 import { CREDIT_ACTIONS, priceOf, type CreditAction, type CreditsConfig } from "../assistant/credits/prices.ts";
-import { costMicroUsd, MODEL_TASKS, modelFor, TASK_CLASS, type CallUsage, type ModelTask, type ServiceTier } from "../assistant/models.ts";
+import { assistantProviderOf, costMicroUsd, MODEL_TASKS, modelFor, providerKeyed, TASK_CLASS, type CallUsage, type ModelTask, type ServiceTier } from "../assistant/models.ts";
 import { withBoundedCasRetry, type GuardStore } from "../guard/store.ts";
 
 const BUDGET = "agentBudget" as const;
@@ -98,7 +98,8 @@ export function resolveAgentBudgetConfig(env: Readonly<Record<string, string | u
     globalDailyCalls,
     globalMonthlyCalls: positive(env[AGENT_BUDGET_ENV.globalMonthly], 3000),
     leaseMs: 90_000,
-    modelEnabled: env[AGENT_BUDGET_ENV.modelEnabled]?.trim() === "1" && Boolean(env.OPENAI_API_KEY?.trim()),
+    /* CITY-205: the key of the provider the assistant answers with (OpenAI unless another is named and keyed). */
+    modelEnabled: env[AGENT_BUDGET_ENV.modelEnabled]?.trim() === "1" && providerKeyed(assistantProviderOf(env), env),
     guestDailyCalls: positive(env[AGENT_BUDGET_ENV.guestDaily], 5),
     guestGlobalDailyCalls: Math.max(1, Math.min(positive(env[AGENT_BUDGET_ENV.guestGlobalDaily], 100), Math.floor(globalDailyCalls / 2))),
     /* `0` switches every task off; absent or not a number — 300. */

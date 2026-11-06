@@ -146,6 +146,7 @@ test("Sanctum's answers become a row; anything malformed stays hidden", () => {
   assert.deepEqual(row.rate, { lamports: "1305000000", supply: "1000000000" });
   assert.equal(rowFromSanctum("inf", "INF", 9, { INF: "lots" }, {}).apyPct, null);
   assert.equal(rowFromSanctum("inf", "INF", 9, { INF: 4 }, {}).apyPct, null, "400 % is no staking yield");
+  assert.equal(rowFromSanctum("inf", "INF", 9, { INF: 0.0 }, { INF: "1407837461" }).apyPct, null, "Sanctum answers 0 when it has no figure: shown as no rate, never 0 %");
 });
 
 test("the feed read from the route keeps the catalogue's order and drops what it does not know", () => {

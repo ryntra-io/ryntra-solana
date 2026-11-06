@@ -580,6 +580,30 @@ export async function readSpotMarket(mint: string): Promise<{ ok: true; market: 
 }
 
 /**
+ * The markets this instance already holds for these mints — the detail reads,
+ * the ranked lists and the verified universe — without asking Jupiter. The
+ * wallet's holdings read leans on it when the provider refuses: a coin the
+ * Spot page priced a minute ago keeps its name and price in the Portfolio
+ * rather than turning into a bare address (2026-11-05, HTTP 429 on the
+ * catalogue). Each market comes with the time it was read.
+ */
+export function cachedSpotMarkets(mints: readonly string[]): ReadonlyMap<string, { market: SpotMarket; readAt: number }> {
+  const wanted = new Set(mints);
+  const out = new Map<string, { market: SpotMarket; readAt: number }>();
+  const keep = (market: SpotMarket, readAt: number) => {
+    if (!wanted.has(market.mint)) return;
+    const held = out.get(market.mint);
+    if (!held || held.readAt < readAt) out.set(market.mint, { market, readAt });
+  };
+  for (const mint of wanted) {
+    const detail = details.get(mint);
+    if (detail) keep(detail.value, detail.readAt);
+  }
+  for (const cached of caches.values()) for (const market of cached.value) keep(market, cached.readAt);
+  return out;
+}
+
+/**
  * The icon the catalogue names for a mint, from what is already in memory
  * first — the universe, the ranked lists, the detail reads — and by one
  * search only when nothing here has seen the mint. The icon route calls this

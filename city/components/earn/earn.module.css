@@ -1732,15 +1732,6 @@
   white-space: nowrap;
 }
 
-.zapLine {
-  margin: -2px 0 0;
-  text-align: center;
-  font-size: var(--type-caption);
-  font-weight: 700;
-  font-variant-numeric: tabular-nums;
-  color: var(--text-dim);
-}
-
 .noteGood {
   color: var(--mint);
 }

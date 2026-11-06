@@ -36,6 +36,8 @@ import { NATIVE_MINT } from "./ssa.ts";
 import { earnedWithSales } from "./sale.ts";
 import { boughtOf, readSales, runSalePass, saleVenueOf, salesView, walletHolding, type SalesView } from "./sale.server.ts";
 import { dayOf, DAY_MS, type AgentDay } from "./report.ts";
+import { netOf, type AgentNet } from "./net.ts";
+import { BUDGET_PRESETS } from "./presets.ts";
 import { resultOf, steadyRhythm, type AgentResult, type PauseReason, type StrategyId } from "./strategy.ts";
 import { agentJournal, markUnread, receivedIn, runAgentPass, type PassLine, type Venue } from "./tick.server.ts";
 import { TOKEN_2022_PROGRAM_ID, readCoin } from "./token-2022.ts";
@@ -219,6 +221,8 @@ export type AgentView = Readonly<{
   symbol: string | null;
   everyMs: number;
   result: AgentResult;
+  /** CITY-197: the whole mandate after every fee, and plain holding beside it (`./net.ts`). */
+  net?: AgentNet;
   last: readonly Readonly<{ at: number; ok: boolean; signature: string | null; spentRaw: string; receivedRaw: string | null }>[];
   /** When the agent last did anything, ms. */
   updatedAt: number;
@@ -231,11 +235,25 @@ export type AgentView = Readonly<{
 
 export type ViewSpans = Readonly<{ now: number; since?: number | null }>;
 
-export function viewOf(entry: BookEntry, worthRaw: bigint | null, symbol: string | null = null, sales: SalesView | null = null, spans: ViewSpans | null = null): AgentView {
+/** CITY-197: Ryntra's fee on selling the coin back, the table's rate; null — not read (the highest rate is counted). */
+export type ViewCosts = Readonly<{ exitBps: number | null }>;
+
+/** The SOL she put in for the agent's network fees with this mandate's budget (`./presets.ts`). */
+export const networkOf = (entry: Pick<BookEntry, "preset">): string => (BUDGET_PRESETS[entry.preset]?.agentFee ?? 0n).toString();
+
+export function viewOf(entry: BookEntry, worthRaw: bigint | null, symbol: string | null = null, sales: SalesView | null = null, spans: ViewSpans | null = null, costs: ViewCosts | null = null): AgentView {
   const result = resultOf(entry.trades, worthRaw);
   /* The span's coins are priced as a share of what the worth was read for: what it holds for her, or all it bought. */
   const holding = { heldRaw: sales?.heldRaw ?? result.boughtRaw, worthRaw: worthRaw === null ? null : worthRaw.toString() };
-  const away = spans && typeof spans.since === "number" && Number.isFinite(spans.since) && spans.since < spans.now ? dayOf(entry.trades, { since: Math.max(spans.since, spans.now - 30 * DAY_MS), until: spans.now }, holding) : null;
+  /* CITY-197: every figure after every fee, plain holding beside it. */
+  const priced = { trades: entry.trades, heldRaw: holding.heldRaw, worthRaw: holding.worthRaw, exitBps: costs?.exitBps ?? null, networkRaw: networkOf(entry) };
+  const honest = (day: AgentDay): AgentDay => {
+    const net = netOf({ ...priced, span: { since: day.since, until: day.until } });
+    return { ...day, netRaw: net.netRaw, holdRaw: net.holdRaw };
+  };
+  const awayDay = spans && typeof spans.since === "number" && Number.isFinite(spans.since) && spans.since < spans.now ? dayOf(entry.trades, { since: Math.max(spans.since, spans.now - 30 * DAY_MS), until: spans.now }, holding) : null;
+  const away = awayDay ? honest(awayDay) : null;
+  const net = netOf({ ...priced, gotRaw: sales?.gotRaw ?? null });
   const earned = sales && result.worthRaw !== null ? earnedWithSales(BigInt(result.spentRaw), BigInt(result.worthRaw), BigInt(sales.gotRaw)) : null;
   const spent = BigInt(result.spentRaw);
   return {
@@ -245,11 +263,12 @@ export function viewOf(entry: BookEntry, worthRaw: bigint | null, symbol: string
     plan: planText(planOfEntry(entry)),
     receiveMint: entry.receiveMint,
     symbol: symbol && /^[A-Za-z0-9]{1,10}$/u.test(symbol) ? symbol : null,
-    everyMs: steadyRhythm(BigInt(entry.record.perTrade), BigInt(entry.record.perDay)).everyMs,
+    everyMs: steadyRhythm(BigInt(entry.record.perTrade), BigInt(entry.record.perDay), planOfEntry(entry).pace ?? null).everyMs,
     result: earned === null ? result : { ...result, earnedRaw: earned.toString(), multiple: spent === 0n ? null : Number(((earned + spent) * 1_000_000n) / spent) / 1_000_000 },
+    net,
     last: entry.trades.slice(-5).reverse().map((trade) => ({ at: trade.at, ok: trade.status === "ok", signature: trade.signature, spentRaw: trade.spentRaw, receivedRaw: trade.receivedRaw })),
     updatedAt: entry.updatedAt,
-    ...(spans ? { day: dayOf(entry.trades, { since: spans.now - DAY_MS, until: spans.now }, holding) } : {}),
+    ...(spans ? { day: honest(dayOf(entry.trades, { since: spans.now - DAY_MS, until: spans.now }, holding)) } : {}),
     ...(away ? { away } : {}),
     ...(sales ?? {}),
   };
@@ -259,7 +278,7 @@ export function viewOf(entry: BookEntry, worthRaw: bigint | null, symbol: string
 export async function agentResult(
   input: Readonly<{ policy: string; owner: string; since?: number | null }>,
   gate: OpenGate,
-  deps: Readonly<{ store?: GuardStore; connection?: Connection; worth?: (bought: bigint) => Promise<bigint>; symbol?: string | null; now?: () => number }> = {},
+  deps: Readonly<{ store?: GuardStore; connection?: Connection; worth?: (bought: bigint) => Promise<bigint>; symbol?: string | null; now?: () => number; exitBps?: (coin: PublicKey) => Promise<number | null> }> = {},
 ): Promise<AgentView | null> {
   const store = deps.store ?? getGuardRuntime().store;
   const entry = await readEntry(store, input.policy, gate.network);
@@ -271,6 +290,18 @@ export async function agentResult(
   const sales = salesView(boughtOf(entry.trades), await readSales(store, input.policy, gate.network), wallet);
   /* What it still holds for her is worth the venue's price; what her sales brought is SOL already in her wallet. */
   const read = gate.network === "mainnet" ? (amount: bigint) => jupiterWorth({ coin, budgetMint: NATIVE_MINT, amount }, resolveJupiterSwapEndpoint()) : (amount: bigint) => dlmmWorth(connection, { pool: gate.pool, budgetMint: NATIVE_MINT, amount });
-  const worth = await (deps.worth ?? read)(BigInt(sales.heldRaw)).catch(() => null);
-  return viewOf(entry, worth, deps.symbol ?? null, sales, { now: (deps.now ?? Date.now)(), since: input.since ?? null });
+  const [worth, exitBps] = await Promise.all([(deps.worth ?? read)(BigInt(sales.heldRaw)).catch(() => null), (deps.exitBps ?? ((mint: PublicKey) => exitFeeBps(mint, gate.network)))(coin).catch(() => null)]);
+  return viewOf(entry, worth, deps.symbol ?? null, sales, { now: (deps.now ?? Date.now)(), since: input.since ?? null }, { exitBps });
+}
+
+/**
+ * CITY-197 — Ryntra's fee on selling the coin back into SOL, the table's rate for the pair as a sale reads it; devnet's
+ * coins by their mint alone. Null when the catalogue does not answer: the result then counts the highest rate.
+ */
+export async function exitFeeBps(coin: PublicKey, network: "devnet" | "mainnet"): Promise<number | null> {
+  const nowMs = Date.now();
+  if (network === "devnet") return pairFeeBps(coin.toBase58(), NATIVE_MINT.toBase58(), { input: uncataloguedFacts(coin.toBase58()), output: uncataloguedFacts(NATIVE_MINT.toBase58()), nowMs });
+  const { readSideFacts } = await import("../core/solana-swap/fee-route.server.ts");
+  const [input, output] = await Promise.all([readSideFacts(coin.toBase58()), readSideFacts(NATIVE_MINT.toBase58())]);
+  return pairFeeBps(coin.toBase58(), NATIVE_MINT.toBase58(), { input, output, nowMs });
 }

@@ -242,7 +242,7 @@ export default function AgentCard() {
   const sub = subline(instruction, facts, plan, w);
   const fee = feeLine(instruction, facts, review, w);
   return (
-    <div className={s.body}>
+    <div className={s.body} data-instruct="">
       <div className={s.hero}>
         {instruction.coin ? <CoinMark symbol={instruction.coin.symbol} icon={instruction.coin.icon} /> : <span className={`${s.coin} ${s.coinLetter}`}>?</span>}
         <div className={s.heroText}>

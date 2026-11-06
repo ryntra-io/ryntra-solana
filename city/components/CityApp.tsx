@@ -7,6 +7,7 @@ import { hydrateLang } from '@/city/lib/i18n/lang';
 import { lookMode, type Look } from '@/city/lib/look';
 import { MomentsLayer } from '@/city/lib/moments/MomentsLayer';
 import { playMoment, prepareAudio, setMuted, startAudio } from '@/city/lib/audio/engine';
+import { mayAssemble, type Activation } from '@/city/lib/audio/gate';
 import { cityDrawn } from '@/city/lib/city/drawn';
 import { ambient, diff, isStale, showcase, type EventDraft } from '@/city/lib/city/events';
 import { useCity, useCityEvents } from '@/city/lib/city/store';
@@ -21,6 +22,7 @@ import { AssistantLayer } from './assistant/AssistantLayer';
 import { CommandLayer } from './command/CommandLayer';
 import { InstructLayer } from './instruct/InstructLayer';
 import { AutopilotLayer } from './autopilot/AutopilotLayer';
+import { PilotLayer } from './pilot/PilotLayer';
 import { ChartLayer } from './chart/ChartLayer';
 import { HarborLayer } from './districts/HarborLayer';
 import { EarnLayer } from './earn/EarnLayer';
@@ -32,6 +34,7 @@ import { PartnersLayer } from './partners/PartnersLayer';
 import { SettingsLayer } from './settings/SettingsLayer';
 import { PagesLayer } from './pages/PagesLayer';
 import { GuidesLayer } from './how/GuidesLayer';
+import { LearnLayer } from './learn/LearnLayer';
 import { PredictLayer } from './districts/PredictLayer';
 import { ExchangeLayer } from './exchange/ExchangeLayer';
 import { Hud } from './hud/Hud';
@@ -117,11 +120,12 @@ export function CityApp({ initial }: { initial: CitySnapshot }) {
     // A touch screen or not: the report sets phone players apart from desktop ones.
     track({ ev: 'home', challenge: !!useRun.getState().challenge, touch: !!window.matchMedia?.('(pointer: coarse)').matches });
     // Assemble the score while the title screen is idle; the PLAY tap then only switches the sound on. It waits for the
-    // city's first frame: on a phone the score's assembly would otherwise hold that frame back (CITY-6a).
+    // city's first frame: on a phone the score's assembly would otherwise hold that frame back (CITY-6a). And it waits
+    // for the person's first gesture: a context made before it stays suspended and warns for every node (CITY-200).
     const idle = (window as Window & { requestIdleCallback?: (cb: () => void, o?: { timeout: number }) => number }).requestIdleCallback;
     const go = () => void prepareAudio().catch(() => {});
     const wait = setInterval(() => {
-      if (!cityDrawn()) return;
+      if (!mayAssemble(cityDrawn(), (navigator as Navigator & { userActivation?: Activation }).userActivation)) return;
       clearInterval(wait);
       if (idle) idle(go, { timeout: 4000 });
       else setTimeout(go, 2500);
@@ -227,6 +231,7 @@ export function CityApp({ initial }: { initial: CitySnapshot }) {
       <LaunchedLayer />
       <InstructLayer />
       <AutopilotLayer />
+      <PilotLayer />
       <MoneyLayer />
       <BotsLayer />
       <GarageLayer />
@@ -236,6 +241,7 @@ export function CityApp({ initial }: { initial: CitySnapshot }) {
       <PartnersLayer />
       <PagesLayer />
       <GuidesLayer />
+      <LearnLayer />
       <SettingsLayer onSound={sound} />
       <ExchangeLayer />
       <AssistantLayer />

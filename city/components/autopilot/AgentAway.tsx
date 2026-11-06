@@ -5,7 +5,7 @@ import { BRAND } from '@/city/lib/brand';
 import { useWords } from '@/city/lib/i18n/dict';
 import { useLang } from '@/city/lib/i18n/lang';
 import { agentCard, cardTag } from '@/city/lib/launch/cards';
-import { AGENT_REPORT, agentSymbol, daySummary, solFigure } from '@/city/lib/autopilot/report';
+import { AGENT_REPORT, agentSymbol, daySummary, solFigure, resultRaw, shareWorth, toneOf } from '@/city/lib/autopilot/report';
 import { useAgentReport } from '@/city/lib/autopilot/report-client';
 import { useAutopilot } from '@/city/lib/autopilot/store';
 import { useWallet } from '@/city/lib/trade/wallet';
@@ -28,8 +28,9 @@ export default function AgentAway() {
   const { share, making, saved, savedLine, label } = useShareCard();
   if (!away || !record || away.policy !== record.policy) return null;
   const day = away.day;
-  const earned = day.earnedRaw === null ? null : BigInt(day.earnedRaw);
-  const card = view ? agentCard({ coin: { token: view.receiveMint, symbol: agentSymbol(view), logo: false }, trades: day.trades, spentRaw: day.spentRaw, worthRaw: day.worthRaw, tag: cardTag(MANDATE_CHAIN, false), span: 'away' }) : null;
+  /* CITY-197: after every fee, when the book counted them; the card shares the same figure. */
+  const raw = resultRaw(day);
+  const card = view ? agentCard({ coin: { token: view.receiveMint, symbol: agentSymbol(view), logo: false }, trades: day.trades, spentRaw: day.spentRaw, worthRaw: shareWorth(day), tag: cardTag(MANDATE_CHAIN, false), span: 'away' }) : null;
   const open = () => {
     useAgentReport.getState().dismiss();
     useAutopilot.getState().showAgent();
@@ -44,10 +45,10 @@ export default function AgentAway() {
           <span className={s.awayKicker}>{w.away}</span>
           <span className={s.awayHead}>
             {w.trades(day.trades)}
-            {earned !== null ? (
+            {raw !== null ? (
               <>
                 {', '}
-                <b data-tone={earned > 0n ? 'up' : earned < 0n ? 'down' : undefined}>{solFigure(day.earnedRaw!, lang)}</b>
+                <b data-tone={toneOf(raw)}>{solFigure(raw, lang)}</b>
               </>
             ) : null}
           </span>

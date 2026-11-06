@@ -5,7 +5,7 @@ import { addReview, clock, no, ok, positionView, scriptedEngine, wire } from "..
 import { useEarn } from "./open.ts";
 import { pierCosts, pierOf, STYLE_HALF } from "./pier.ts";
 import { pierChoice, pierFailure, setPierEnv, usePier } from "./pier-store.ts";
-import { JITOSOL, SOL, lstPool } from "./pier-fixtures.mjs";
+import { JITOSOL, SOL, lstPool, zapReview } from "./pier-fixtures.mjs";
 
 const OWNER = "4EeXyPQ1u3bWMZ3C3BaG2Tn9z8W1E6uN9rT5aS8dPGWw";
 const connection = { wallet: "Phantom", address: OWNER };
@@ -18,7 +18,8 @@ const holdings = (sol, jito) => ({
 });
 const rich = holdings(10e9, 10e9);
 const ADMITTED = { add: "on", exit: "on", ceilingUsd: 1000, stopped: false };
-const reset = () => usePier.setState({ pool: null, copy: null, boat: null, style: "balanced", typed: "1", states: null, reviewed: null, costs: null, target: null, phase: "idle", outcome: null, sent: null, notice: null, candles: {} });
+const reset = () => usePier.setState({ pool: null, copy: null, boat: null, style: "balanced", typed: "1", states: null, reviewed: null, costs: null, target: null, phase: "idle", outcome: null, sent: null, notice: null, rest: null, candles: {} });
+const withRent = (rent) => zapReview({ preview: { ...zapReview().preview, rent } });
 
 function setup(script) {
   const harness = scriptedEngine({ candles: [ok({ timeframe: "4h", candles: [] })], admit: [ok(ADMITTED)], ...script });
@@ -50,12 +51,12 @@ beforeEach(() => {
   useEarn.setState({ busy: false });
 });
 
-test("the choice: half SOL, the rest JitoSOL, the live minimum, the ceiling and the key", () => {
+test("the choice: SOL alone, the live minimum, the ceiling and the key", () => {
   const pier = pierOf(lstPool());
   const choice = pierChoice(pier, "calm", "1", rich, OWNER, 1000, null);
   assert.equal(choice.problem, null);
-  assert.equal(choice.split.solLamports, 500_000_000n);
-  assert.equal(choice.key, `add:${OWNER}:${pier.pool.address}:calm:1000000000`);
+  assert.equal(choice.split.solLamports, 500_000_000n, "the even split the Zap aims at, for the eye");
+  assert.equal(choice.key, `zap:${OWNER}:${pier.pool.address}:calm:1000000000`);
   assert.equal(pierChoice(pier, "calm", "abc", rich, OWNER, 1000, null).problem, "format");
   assert.equal(pierChoice(pier, "calm", "0.01", rich, OWNER, 1000, null).problem, "min");
   // $5 at SOL's price is under 0.05 SOL: the canary's minimum stays within half its ceiling.
@@ -63,23 +64,26 @@ test("the choice: half SOL, the rest JitoSOL, the live minimum, the ceiling and 
   assert.ok(canary.minimum <= canary.ceiling / 2n);
   assert.equal(canary.problem, null);
   assert.equal(pierChoice(pier, "calm", "1", rich, OWNER, 5, null).problem, "ceiling");
-  assert.equal(pierChoice(pier, "calm", "1", holdings(10e9, 0), OWNER, 1000, null).problem, "other");
-  assert.equal(pierChoice(pier, "calm", "1", holdings(0.3e9, 10e9), OWNER, 1000, null).problem, "sol");
+  assert.equal(pierChoice(pier, "calm", "1", holdings(10e9, 0), OWNER, 1000, null).problem, null, "no JitoSOL needed");
+  assert.equal(pierChoice(pier, "calm", "1", holdings(1.03e9, 10e9), OWNER, 1000, null).problem, "sol", "the SOL kept aside counts");
+  assert.equal(pierChoice(pier, "calm", "1", holdings(10e9, 0), OWNER, 1_000_000, null).max, 10_000_000_000n - 65_000_000n, "all the SOL but what is kept aside");
   // Costs from a Review that opens the pool's shared accounts raise the minimum.
   assert.equal(pierChoice(pier, "calm", "1", rich, OWNER, 1000, pierCosts(addReview())).problem, "min");
   assert.equal(pierChoice(pier, "calm", "1", rich, null, 1000, null).key, null);
 });
 
-test("an add: the Review of the style's bins, one signature, the relay, done — the window held only while signing", async () => {
-  const h = setup({ review: [ok(addReview({ preview: { ...addReview().preview, rent: [{ what: "position", direction: "pay", lamports: "57000000", refundable: true }] } }))], submit: [ok({ results: [{ signature: "sig1", state: "LANDED", reason: null }], settled: true })] });
+test("an add is a Zap from SOL: the style's bins, one approval for its transactions, the relay, done — the window held only while signing", async () => {
+  const h = setup({ zap: [ok(zapReview())], submit: [ok({ results: [{ signature: "sig1", state: "LANDED", reason: null }, { signature: "sig2", state: "LANDED", reason: null }], settled: true })] });
   usePier.getState().openPier(lstPool());
   await usePier.getState().loadStates(OWNER);
   usePier.getState().setStyle("dense");
   await usePier.getState().prepare(connection, { kind: "add" }, rich);
-  const [review] = h.routes("review");
+  assert.equal(h.routes("review").length, 0, "the old two-coin add is not asked");
+  const [review] = h.routes("zap");
+  assert.equal(review.args[0].action, "zap_in");
   assert.equal(review.args[0].venue, "meteora-dlmm");
-  assert.deepEqual(review.args[0].range, { place: "around", half: STYLE_HALF.dense });
-  assert.equal(review.args[0].request.shape, "spot");
+  assert.equal(review.args[0].request.half, STYLE_HALF.dense);
+  assert.equal(review.args[0].request.amountIn, "1000000000");
   assert.ok(usePier.getState().reviewed);
   let held = false;
   const stop = useEarn.subscribe((st) => (held ||= st.busy));
@@ -88,37 +92,39 @@ test("an add: the Review of the style's bins, one signature, the relay, done —
   assert.equal(held, true);
   assert.equal(useEarn.getState().busy, false);
   assert.equal(usePier.getState().phase, "done");
-  assert.equal(h.signs.length, 1);
+  assert.equal(h.signs.length, 1, "one approval");
+  assert.equal(h.signs[0].length, 2, "for both transactions");
   assert.deepEqual(h.after, [OWNER]);
 });
 
 test("nothing is asked without the city's word for this wallet", async () => {
-  const h = setup({ admit: [ok({ add: "off", exit: "off", ceilingUsd: null, stopped: false })], review: [ok(addReview())] });
+  const h = setup({ admit: [ok({ add: "off", exit: "off", ceilingUsd: null, stopped: false })], zap: [ok(zapReview())] });
   usePier.getState().openPier(lstPool());
   await usePier.getState().loadStates(OWNER);
   await usePier.getState().prepare(connection, { kind: "add" }, rich);
-  assert.equal(h.routes("review").length, 0);
+  assert.equal(h.routes("zap").length, 0);
 });
 
 test("a refusal at the door is said in the window's words and nothing is signed", async () => {
-  const h = setup({ review: [no("PIER_CEILING")] });
+  const h = setup({ zap: [no("PIER_CEILING")] });
   usePier.getState().openPier(lstPool());
   await usePier.getState().loadStates(OWNER);
   await usePier.getState().prepare(connection, { kind: "add" }, rich);
   assert.equal(usePier.getState().notice.text, pierFailure("PIER_CEILING"));
   assert.equal(h.signs.length, 0);
   assert.equal(pierFailure("POOL_DISABLED").length > 0, true);
+  assert.notEqual(pierFailure("ZAP_PRICE"), pierFailure("SOMETHING_ELSE"), "the reference price's refusal has its own words");
 });
 
 test("a Review whose own costs lift the minimum over the amount is not offered, and is not asked again", async () => {
-  const h = setup({ review: [ok(addReview())] });
+  const h = setup({ zap: [ok(withRent(addReview().preview.rent))] });
   usePier.getState().openPier(lstPool());
   await usePier.getState().loadStates(OWNER);
   await usePier.getState().prepare(connection, { kind: "add" }, rich);
   assert.equal(usePier.getState().reviewed, null);
   assert.ok(usePier.getState().costs);
   await usePier.getState().prepare(connection, { kind: "add" }, rich);
-  assert.equal(h.routes("review").length, 1);
+  assert.equal(h.routes("zap").length, 1);
 });
 
 test("a boat: leave builds the full exit for its venue", async () => {
@@ -145,7 +151,7 @@ test("back never leaves a signature behind", async () => {
 });
 
 test("a copy is the strategy's recipe: its style fixed, and the landed add told to the ledger", async () => {
-  const h = setup({ review: [ok(addReview({ position: "PoSiTion1111111111111111111111111111111111" , preview: { ...addReview().preview, rent: [{ what: "position", direction: "pay", lamports: "57000000", refundable: true }] } }))], submit: [ok({ results: [{ signature: "sig1", state: "LANDED", reason: null }], settled: true })] });
+  const h = setup({ zap: [ok(zapReview())], submit: [ok({ results: [{ signature: "sig1", state: "LANDED", reason: null }, { signature: "sig2", state: "LANDED", reason: null }], settled: true })] });
   const pool = lstPool();
   usePier.getState().openCopy(pool, { strategy: `${pool.address}:calm`, style: "calm" });
   assert.equal(usePier.getState().style, "calm");
@@ -153,8 +159,8 @@ test("a copy is the strategy's recipe: its style fixed, and the landed add told 
   assert.equal(usePier.getState().style, "calm", "a copy's style is the strategy's own");
   await usePier.getState().loadStates(OWNER);
   await usePier.getState().prepare(connection, { kind: "add" }, rich);
-  const [review] = h.routes("review");
-  assert.deepEqual(review.args[0].range, { place: "around", half: STYLE_HALF.calm });
+  const [review] = h.routes("zap");
+  assert.equal(review.args[0].request.half, STYLE_HALF.calm);
   await usePier.getState().confirm(connection, rich);
   assert.equal(usePier.getState().phase, "done");
   assert.deepEqual(h.reports, [{ owner: OWNER, position: "PoSiTion1111111111111111111111111111111111", pool: pool.address, style: "calm" }]);
@@ -164,11 +170,37 @@ test("a copy is the strategy's recipe: its style fixed, and the landed add told 
 });
 
 test("an add from the Piers is a position of its recipe too; a refused one is never told", async () => {
-  const h = setup({ review: [ok(addReview({ preview: { ...addReview().preview, rent: [{ what: "position", direction: "pay", lamports: "57000000", refundable: true }] } }))], submit: [ok({ results: [{ signature: "sig1", state: "FAILED", reason: "x" }], settled: false })] });
+  const h = setup({ zap: [ok(zapReview())], submit: [ok({ results: [{ signature: "sig1", state: "FAILED", reason: "x" }, { signature: "sig2", state: "NOT_SENT", reason: null }], settled: false })] });
   usePier.getState().openPier(lstPool());
   await usePier.getState().loadStates(OWNER);
   await usePier.getState().prepare(connection, { kind: "add" }, rich);
   await usePier.getState().confirm(connection, rich);
   assert.notEqual(usePier.getState().phase, "done");
   assert.deepEqual(h.reports, []);
+});
+
+test("a Zap that lands in part: said plainly, never told to the ledger, and «Take back as SOL» in one more approval", async () => {
+  const h = setup({
+    zap: [ok(zapReview()), ok(zapReview({}, { rest: true }))],
+    submit: [
+      ok({ results: [{ signature: "sig1", state: "LANDED", reason: null }, { signature: "sig2", state: "FAILED", reason: "slippage" }], settled: false }),
+      ok({ results: [{ signature: "sig3", state: "LANDED", reason: null }], settled: true }),
+    ],
+  });
+  usePier.getState().openPier(lstPool());
+  await usePier.getState().loadStates(OWNER);
+  await usePier.getState().prepare(connection, { kind: "add" }, rich);
+  await usePier.getState().confirm(connection, rich);
+  assert.equal(usePier.getState().phase, "partial");
+  assert.deepEqual(h.reports, [], "no position yet: the ledger is not told");
+  await usePier.getState().prepareRest(connection);
+  const rest = h.routes("zap")[1].args[0];
+  assert.deepEqual(rest, { action: "zap_rest", venue: "meteora-dlmm", request: { pool: zapReview().preview.pool, owner: OWNER, otherBefore: "0" } }, "what the wallet held before the Zap stays untouched");
+  assert.ok(usePier.getState().rest.reviewed);
+  await usePier.getState().takeRest(connection);
+  assert.equal(usePier.getState().rest.outcome.kind, "done");
+  assert.equal(h.signs.length, 2, "the Zap's approval, then the rest's");
+  assert.equal(useEarn.getState().busy, false);
+  await usePier.getState().takeRest(connection);
+  assert.equal(h.signs.length, 2, "taken once");
 });

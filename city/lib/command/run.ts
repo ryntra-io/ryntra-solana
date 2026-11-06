@@ -1,5 +1,7 @@
 import type { AgentAsk } from '../autopilot/read.ts';
 import type { DollarAsk } from '../earn/dollar-read.ts';
+import type { PilotAsk } from '../pilot/read.ts';
+import type { Role } from '../crew/read.ts';
 import type { Instruction } from '../instruct/types.ts';
 import type { Base, Coin, Command, MoneyPlace, Side, View } from './parse.ts';
 
@@ -42,8 +44,14 @@ export type Doors = Readonly<{
   openInstructions: () => void;
   /** The agent on its word (CITY-175): the card with the budget or the launch it prepared; the person signs there. */
   openAutopilot: (ask: AgentAsk) => void;
+  /** «Learn» (CITY-202): the guide on a chapter (null — the list); it only explains. */
+  openLearn: (chapter: string | null) => void;
   /** The Dollar Saver's card with the coin, the side and the amount said (CITY-192); the person signs there. */
   openDollar: (ask: DollarAsk) => void;
+  /** The money autopilot's card with the plan read (CITY-204); the person practises and signs there. */
+  openPilot: (ask: PilotAsk) => void;
+  /** A job for an agent (CITY-205): that agent's own card, or the crew in «Bots» (null); the person signs in the card. */
+  openCrew: (role: Role | null) => void;
 }>;
 
 export type DoorName = keyof Doors;
@@ -67,6 +75,9 @@ export const DOORS: readonly DoorName[] = [
   'openInstructions',
   'openAutopilot',
   'openDollar',
+  'openPilot',
+  'openLearn',
+  'openCrew',
 ];
 
 /** One command through the doors: the window first, then its fields, in the order a person would fill them. */
@@ -114,5 +125,11 @@ export function run(command: Command, doors: Doors): void {
       return doors.openAutopilot(command.ask);
     case 'dollar':
       return doors.openDollar(command.ask);
+    case 'pilot':
+      return doors.openPilot(command.ask);
+    case 'learn':
+      return doors.openLearn(command.chapter);
+    case 'hire':
+      return doors.openCrew(command.ask.role);
   }
 }

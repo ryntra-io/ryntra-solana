@@ -16,9 +16,13 @@ import {
   REPORT_HOUR,
   reportDue,
   worthTelling,
+  usdFigure,
   type Lang,
   type ReportSettings,
 } from './report.ts';
+
+/** CITY-204: a day without a trade is still told when her autopilot has a week to tell. */
+const pilotWorth = (read: NonNullable<ReportRead>) => Boolean(read.pilot && read.pilot.weekUsd !== null);
 
 /**
  * The agent's daily report on Ryntra's server (CITY-194): once an hour the cron reads every person whose hour has come
@@ -76,7 +80,15 @@ export async function keepReport(store: GuardStore, change: ReportChange, nowMs:
 }
 
 /** What the agent did for one mandate in a span, and the names that say it; null when the book did not answer. */
-export type ReportRead = Readonly<{ day: AgentDay; symbol: string | null; solUsd: number | null }> | null;
+export type ReportRead = Readonly<{
+  day: AgentDay;
+  symbol: string | null;
+  solUsd: number | null;
+  /** CITY-197: the whole mandate after every fee. */
+  total?: Readonly<{ netRaw: string | null }> | null;
+  /** CITY-204: her money autopilot — what it earned over the week, USD, and whether the agent holds its trading for the market. */
+  pilot?: Readonly<{ weekUsd: number | null; held: 'market' | 'balance' | null }> | null;
+}> | null;
 
 export type ReportDeps = Readonly<{
   store: GuardStore;
@@ -95,7 +107,16 @@ const hash = (text: string) => createHash('sha256').update(text).digest('hex').s
 
 /** The report as the engine's inbox keeps it: both languages, said in hers; it opens her agent in the city. */
 export function reportNote(owner: string, identity: string, read: NonNullable<ReportRead>, locale: Lang, nowMs: number): InboxRecord {
-  const say = (lang: Lang) => ({ title: AGENT_REPORT[lang].noteTitle(daySummary(read.day, lang, read.solUsd, true)), reason: dayDetail(read.day, lang, read.symbol) });
+  const say = (lang: Lang) => {
+    const w = AGENT_REPORT[lang];
+    /* CITY-204: the autopilot's week in one more part; on a day without a trade it is the whole title. */
+    const week = read.pilot && read.pilot.weekUsd !== null ? w.pilotWeek(usdFigure(read.pilot.weekUsd, lang)) : null;
+    const held = read.pilot?.held === 'market' ? w.pilotHeld : null;
+    const traded = read.day.trades > 0;
+    const title = w.noteTitle(traded || !week ? daySummary(read.day, lang, read.solUsd, true) : week);
+    const reason = [traded ? dayDetail(read.day, lang, read.symbol, read.total ?? null) : null, traded ? week : null, held].filter((part): part is string => Boolean(part)).join(' · ');
+    return { title, reason: reason || (week ?? dayDetail(read.day, lang, read.symbol, read.total ?? null)) };
+  };
   const en = say('en');
   const uk = say('uk');
   const own = locale === 'uk' ? uk : en;
@@ -171,7 +192,7 @@ export async function runReportPass(deps: ReportDeps): Promise<ReportPass> {
     // Her day first: a pass that lost the race to another tells nothing twice.
     const next: ReportSettings = { ...settings, version: settings.version + 1, toldDay: clock.day, toldAt: now, updatedAt: new Date(now).toISOString() };
     if (!(await reports.compareAndSet(reportKey(settings.owner), settings.version, next))) continue;
-    if (!read || !worthTelling(read.day)) {
+    if (!read || (!worthTelling(read.day) && !pilotWorth(read))) {
       quiet += 1;
       continue;
     }

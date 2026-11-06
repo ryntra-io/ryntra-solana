@@ -370,7 +370,10 @@
   top: calc(max(12px, env(safe-area-inset-top)) + 70px);
   left: 50%;
   transform: translateX(-50%);
-  width: min(420px, calc(100vw - 32px));
+  /* As wide as its line and its button (CITY-201): a fixed 420 px cut «+0,008 SOL» to «+0,008 S…» beside «Опублікувати в X». */
+  width: max-content;
+  min-width: min(420px, calc(100vw - 32px));
+  max-width: calc(100vw - 32px);
   display: flex;
   align-items: stretch;
   gap: 8px;
@@ -381,6 +384,14 @@
     0 18px 44px rgba(0, 0, 0, 0.5);
   clip-path: polygon(12px 0, 100% 0, 100% calc(100% - 12px), calc(100% - 12px) 100%, 0 100%, 0 12px);
   animation: awayIn 260ms cubic-bezier(0.2, 1, 0.3, 1) both;
+}
+
+/* The lens as a strip under the top bar (a desk too narrow for it in the bar, a long language): the card steps down by
+   the strip's height, as the first-visit hint and the feed do (lens.module.css), instead of lying over the chips. */
+@media (min-width: 641px) {
+  :global(body):has([data-lens-place='below']) .away {
+    margin-top: var(--lens-strip, 58px);
+  }
 }
 
 @keyframes awayIn {
@@ -617,6 +628,8 @@
 @media (max-width: 640px) {
   .away {
     top: calc(max(12px, env(safe-area-inset-top)) + 122px);
+    width: min(420px, calc(100vw - 32px));
+    min-width: 0;
     gap: 4px;
     padding: 6px;
   }

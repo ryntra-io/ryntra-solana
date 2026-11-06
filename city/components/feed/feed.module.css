@@ -374,6 +374,12 @@ button.card:active {
   color: rgba(238, 241, 255, 0.82);
 }
 
+/* A card without a spark (a new pool, a new coin, a volume) gives its line the spark's column too (CITY-200: «Не
+   перевірено · $5K ліквідно…» was cut on a 390 px phone beside an empty column). */
+.card:not(:has(.spark)) .line {
+  grid-column: 2 / 4;
+}
+
 .card[data-tone='up'] .line,
 .card[data-tone='down'] .line,
 .card[data-tone='flow'] .title {
@@ -585,6 +591,11 @@ button.card:active {
     background: none;
     clip-path: none;
     box-shadow: none;
+  }
+
+  /* The strip keeps its own row: the spark's column a card without one lends its line is the open list's. */
+  .feed:not([data-open]) .card .line {
+    grid-area: line;
   }
 
   .feed:not([data-open]) .icon {

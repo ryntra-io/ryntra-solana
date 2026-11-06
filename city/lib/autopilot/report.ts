@@ -54,6 +54,10 @@ export const AGENT_REPORT = words(
     spent: (amount: string) => `Spent ${amount} SOL`,
     bought: (symbol: string) => `bought ${symbol}`,
     worth: (amount: string) => `worth ${amount} SOL now`,
+    /** CITY-197: every figure is after all fees; beside it, plain holding of the same SOL. */
+    afterFees: 'after all fees',
+    vsHold: (figure: string) => `holding: ${figure}`,
+    total: (figure: string) => `since start ${figure}`,
     share: 'Share',
     later: 'Later',
     open: 'Open',
@@ -68,6 +72,9 @@ export const AGENT_REPORT = words(
     toldOff: 'Daily report off',
     toldOn: 'Daily report on',
     notYours: 'Connect this Telegram in Ryntra first',
+    /** CITY-204: the money autopilot's week, and its hold. */
+    pilotWeek: (figure: string) => `Autopilot this week ${figure}`,
+    pilotHeld: 'trading paused: market fell',
   },
   {
     away: 'Поки тебе не було',
@@ -77,6 +84,9 @@ export const AGENT_REPORT = words(
     spent: (amount) => `Витрачено ${amount} SOL`,
     bought: (symbol) => `куплено ${symbol}`,
     worth: (amount) => `зараз ${amount} SOL`,
+    afterFees: 'після всіх комісій',
+    vsHold: (figure) => `тримання: ${figure}`,
+    total: (figure) => `від старту ${figure}`,
     share: 'Поділитись',
     later: 'Пізніше',
     open: 'Відкрити',
@@ -90,14 +100,26 @@ export const AGENT_REPORT = words(
     toldOff: 'Щоденний звіт вимкнено',
     toldOn: 'Щоденний звіт увімкнено',
     notYours: 'Спершу підключи цей Telegram у Ryntra',
+    pilotWeek: (figure) => `Автопілот за тиждень ${figure}`,
+    pilotHeld: 'торгівля на паузі: ринок упав',
   },
 );
 
-/** Lamports as SOL, signed: «+0.012 SOL», «−0,003 SOL», rounded toward zero (`solText`). */
+/**
+ * Lamports as SOL, signed: «+0.012 SOL», «−0,003 SOL». Counted in whole lamports, never in floats, and never flattering
+ * (CITY-197): a gain is rounded down, a loss up.
+ */
 export function solFigure(raw: string, lang: Lang): string {
   const value = BigInt(raw);
   const sign = value > 0n ? '+' : value < 0n ? '−' : '';
-  return `${sign}${solText(Number(value < 0n ? -value : value) / 1e9, lang)} SOL`;
+  const abs = value < 0n ? -value : value;
+  const places = abs >= 10_000_000_000n ? 2 : abs >= 1_000_000_000n ? 3 : 4;
+  const step = 10n ** BigInt(9 - places);
+  const units = value < 0n ? (abs + step - 1n) / step : abs / step;
+  const whole = units / 10n ** BigInt(places);
+  const fraction = (units % 10n ** BigInt(places)).toString().padStart(places, '0').replace(/0+$/u, '');
+  const text = fraction ? `${whole}.${fraction}` : `${whole}`;
+  return `${units === 0n ? '' : sign}${lang === 'uk' ? text.replace('.', ',') : text} SOL`;
 }
 
 /** Dollars, signed, to the cent: «+$1.80», «−$0,40». */
@@ -106,12 +128,33 @@ export function usdFigure(usd: number, lang: Lang): string {
   return digits(`${sign}$${Math.abs(usd).toFixed(2)}`, lang);
 }
 
+/**
+ * What the span did for her, lamports: after every fee when the book counted them (CITY-197), else what the trades did
+ * at the price now; null — not read. A span without its fees counted is never shown as after them.
+ */
+export const resultRaw = (day: Pick<AgentDay, 'earnedRaw' | 'netRaw'>): string | null => (day.netRaw !== undefined ? day.netRaw : day.earnedRaw);
+
 /** The result of the span: in SOL, with dollars when the price was read; null when the worth was not. */
 export function resultFigure(day: AgentDay, lang: Lang, solUsd: number | null, withUsd = true): string | null {
-  if (day.earnedRaw === null) return null;
-  const sol = solFigure(day.earnedRaw, lang);
-  const usd = withUsd ? usdOf(day.earnedRaw, solUsd) : null;
+  const raw = resultRaw(day);
+  if (raw === null) return null;
+  const sol = solFigure(raw, lang);
+  const usd = withUsd ? usdOf(raw, solUsd) : null;
   return usd === null ? sol : `${sol} (${usdFigure(usd, lang)})`;
+}
+
+/** What a share card prices the span at: what it spent plus its result after every fee — the card's «x» is honest too. */
+export function shareWorth(day: Pick<AgentDay, 'spentRaw' | 'worthRaw' | 'earnedRaw' | 'netRaw'>): string | null {
+  if (day.netRaw === undefined) return day.worthRaw;
+  return day.netRaw === null ? null : (BigInt(day.spentRaw) + BigInt(day.netRaw)).toString();
+}
+
+/** The tone of a signed figure: up, down or none. */
+export const toneOf = (raw: string | null | undefined): 'up' | 'down' | undefined => (raw === null || raw === undefined ? undefined : BigInt(raw) > 0n ? 'up' : BigInt(raw) < 0n ? 'down' : undefined);
+
+/** «holding: +0.002 SOL» — plain holding of the same SOL beside the agent's result; null when it cannot be priced. */
+export function holdFigure(raw: string | null | undefined, lang: Lang): string | null {
+  return raw === null || raw === undefined ? null : AGENT_REPORT[lang].vsHold(solFigure(raw, lang));
 }
 
 /** «3 trades, +0.012 SOL» — what the line over the tower, the return card and the report's title say. */
@@ -120,12 +163,21 @@ export function daySummary(day: AgentDay, lang: Lang, solUsd: number | null = nu
   return w.summary(w.trades(day.trades), resultFigure(day, lang, solUsd, withUsd));
 }
 
-/** «Spent 0.3 SOL · bought BONK · worth 0.312 SOL now» — the quiet line under it; the worth only when read. */
-export function dayDetail(day: AgentDay, lang: Lang, symbol: string | null): string {
+/**
+ * «Spent 0.3 SOL · bought BONK · after all fees · holding: +0.004 SOL · since start −0.001 SOL» — the quiet line under
+ * it. CITY-197: once the fees are counted, the line says so and puts plain holding beside the result, and the whole
+ * mandate's result after them when given; before, the worth now. A figure not read is left out.
+ */
+export function dayDetail(day: AgentDay, lang: Lang, symbol: string | null, total: Readonly<{ netRaw: string | null }> | null = null): string {
   const w = AGENT_REPORT[lang];
   const parts = [w.spent(solText(Number(BigInt(day.spentRaw)) / 1e9, lang))];
   if (symbol) parts.push(w.bought(symbol));
-  if (day.worthRaw !== null) parts.push(w.worth(solText(Number(BigInt(day.worthRaw)) / 1e9, lang)));
+  if (day.netRaw !== undefined) {
+    if (day.netRaw !== null) parts.push(w.afterFees);
+    const hold = holdFigure(day.holdRaw, lang);
+    if (hold) parts.push(hold);
+    if (total && total.netRaw !== null) parts.push(w.total(solFigure(total.netRaw, lang)));
+  } else if (day.worthRaw !== null) parts.push(w.worth(solText(Number(BigInt(day.worthRaw)) / 1e9, lang)));
   return parts.join(' · ');
 }
 

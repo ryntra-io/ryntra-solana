@@ -11,9 +11,15 @@ import { dateText, useWords, type TextKey } from '@/city/lib/i18n/dict';
 import { ONE_SENTENCE_OPEN } from '@/city/lib/instruct/flag';
 import { readAsk } from '@/city/lib/autopilot/read';
 import { readDollarAsk } from '@/city/lib/earn/dollar-read';
+import { readPilotAsk } from '@/city/lib/pilot/read';
 import { useAutopilot } from '@/city/lib/autopilot/store';
 import { fit } from '@/city/lib/command/parse';
 import { readInstruction } from '@/city/lib/instruct/read';
+import { hireFit, readHire, type Role } from '@/city/lib/crew/read';
+import { crewGatesNow } from '@/city/lib/crew/hire';
+import { CREW_WORDS } from '@/city/lib/crew/words';
+import { JobCard } from '../crew/JobCard';
+import crew from '../crew/crew.module.css';
 import { useInstruct } from '@/city/lib/instruct/store';
 import { useKeyboardInset } from '@/city/lib/keyboard';
 import type { Tower } from '@/city/lib/market/types';
@@ -131,6 +137,9 @@ function Panel() {
   const w = useWords(ASSISTANT);
   const [text, setText] = useState('');
   const [more, setMore] = useState(false);
+  // A job for an agent said to the consultant (CITY-205): the agent and «Hire» instead of words.
+  const [job, setJob] = useState<{ role: Role | null } | null>(null);
+  const c = useWords(CREW_WORDS);
   const input = useRef<HTMLInputElement>(null);
   const moreId = useId();
   const keyboard = useKeyboardInset();
@@ -139,6 +148,14 @@ function Panel() {
     if (!q.trim()) return;
     // «Trade 1 SOL a day», «launch me a token» said to Ryntra is the agent on its word (CITY-175): the card opens.
     const gates = gatesNow();
+    // «Поклади 0,2 SOL і 5 USDC працювати» said to Ryntra opens the money autopilot's card (CITY-204), as from the line.
+    const pilot = gates.pilot ? readPilotAsk(q, bookNow()) : null;
+    if (pilot && fit({ kind: 'pilot', ask: pilot }, gates)) {
+      setText('');
+      useAssistant.getState().hide();
+      cityDoors.openPilot(pilot);
+      return;
+    }
     // «Put my USDC to work», «поклади 50 USDC під відсоток» said to Ryntra opens the Dollar Saver's card (CITY-192).
     const saver = gates.dollar ? readDollarAsk(q) : null;
     if (saver) {
@@ -162,6 +179,16 @@ function Panel() {
       useInstruct.getState().show(instruction);
       return;
     }
+    // «Торгуй за мене», «доглядай мій пул», «запусти бота»: the consultant advises — the work is an agent's.
+    const hired = readHire(q);
+    if (hired) {
+      setText('');
+      setMore(false);
+      input.current?.blur();
+      setJob({ role: hireFit(hired, crewGatesNow()).role });
+      return;
+    }
+    setJob(null);
     setMore(false);
     setText('');
     input.current?.blur();
@@ -195,13 +222,25 @@ function Panel() {
           <span className={s.title}>
             <SparkGlyph />
             Ryntra
+            <span className={crew.consultant}>{c.consultant}</span>
           </span>
           <button type="button" className={s.close} aria-label={w.close} onClick={close}>
             <CloseGlyph />
           </button>
         </header>
 
-        {phase === 'idle' && (
+        {job && (
+          <JobCard
+            role={job.role}
+            onHire={() => {
+              setJob(null);
+              useAssistant.getState().hide();
+              cityDoors.openCrew(job.role);
+            }}
+          />
+        )}
+
+        {!job && phase === 'idle' && (
           <div className={s.starters}>
             {startersFor(subject).map((st) => (
               <button key={st.id} type="button" className={s.starter} onClick={() => send(st.question)}>
@@ -211,7 +250,7 @@ function Panel() {
           </div>
         )}
 
-        {phase === 'asking' && (
+        {!job && phase === 'asking' && (
           <div className={s.thinking} role="status" aria-label={w.reading}>
             <span />
             <span />
@@ -219,9 +258,9 @@ function Panel() {
           </div>
         )}
 
-        <div aria-live="polite">{answered && said && <p className={s.line}>{said}</p>}</div>
+        <div aria-live="polite">{!job && answered && said && <p className={s.line}>{said}</p>}</div>
 
-        {answered && shown.length > 0 && (
+        {!job && answered && shown.length > 0 && (
           <ul className={s.towers} aria-label={w.towers}>
             {shown.map((t) => (
               <li key={t.id}>
@@ -231,7 +270,7 @@ function Panel() {
           </ul>
         )}
 
-        {answered && (
+        {!job && answered && (
           <>
             <button type="button" className={s.more} aria-expanded={more} aria-controls={moreId} onClick={() => setMore((v) => !v)}>
               {w.details}
@@ -282,6 +321,7 @@ const MARK: Record<Details['why'][number]['mark'], TextKey<typeof ASSISTANT>> = 
 /** Behind «Details»: why it moved, what could make the reading wrong, what to check, the sources, and how Ryntra answers. */
 function More({ id, details, voice, busy, day }: { id: string; details: Details | null; voice: 'ryntra' | 'city'; busy: boolean; day: { used: number; allowance: number } | null }) {
   const w = useWords(ASSISTANT);
+  const c = useWords(CREW_WORDS);
   return (
     <div id={id} className={s.details}>
       {details && details.why.length > 0 && (
@@ -307,6 +347,7 @@ function More({ id, details, voice, busy, day }: { id: string; details: Details 
       )}
       <Part title={w.how}>
         <li>{w.adviceOnly}</li>
+        <li>{c.credits}</li>
         {voice === 'city' && <li>{busy ? w.busyRead : w.awayRead}</li>}
         {day && day.allowance > 0 && <li>{w.answersToday(Math.min(day.used, day.allowance), day.allowance)}</li>}
       </Part>

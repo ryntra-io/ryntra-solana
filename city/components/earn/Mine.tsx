@@ -6,6 +6,9 @@ import { useMoneyStore } from '@/city/lib/money/store';
 import type { Words } from '@/city/lib/earn/words';
 import { DOLLAR_MINT, dollarText } from '@/city/lib/earn/dollar';
 import { CityFrame, Coin, Line, SolFigure, Wallets } from './bits';
+import { CaredPiers, careOpen } from './CareSwitch';
+import { useEffect } from 'react';
+import { useCare } from '@/city/lib/earn/care';
 import type { MineFigures } from './useMine';
 import s from './earn.module.css';
 
@@ -18,17 +21,22 @@ function units(value: number): string {
 /**
  * «Mine»: what the wallet holds in Earn, read only — staked SOL valued in SOL with what it earned since it went in
  * through Earn, the piers with their status and SOL-2b's result, and each stock's dividend line read from its
- * multiplier (a split is never a dividend). No wallet: one way to connect. Nothing yet: where to start.
+ * multiplier (a split is never a dividend). No wallet: one way to connect. Nothing yet: where to start. Either action
+ * follows its line straight on (CITY-201): pushed to the window's foot it left a dark hole of 400 px under the line.
  */
 export function Mine({ words, owner, mine }: { words: Words; owner: string | null; mine: MineFigures }) {
   const w = words.mine;
+  // CITY-203: a pier the agent looks after is something the wallet has in Earn — «Mine» is not empty with one.
+  const cared = useCare((st) => (st.cares ?? []).some((row) => row.status === 'working'));
+  useEffect(() => {
+    if (owner && careOpen()) void useCare.getState().load(owner);
+  }, [owner]);
   if (!owner) {
     return (
       <section className={s.emptyState} aria-label={words.tabs.mine}>
         <CityFrame district="harbor" />
         <h3 className={`${s.display} ${s.productName}`}>{w.connectTitle}</h3>
         <p className={s.lead}>{w.connectLine}</p>
-        <div className={s.grow} />
         <Wallets words={words} />
       </section>
     );
@@ -49,13 +57,12 @@ export function Mine({ words, owner, mine }: { words: Words; owner: string | nul
       </div>
     );
   }
-  if (mine.empty) {
+  if (mine.empty && !cared) {
     return (
       <section className={s.emptyState} aria-label={words.tabs.mine}>
         <CityFrame district="home" />
         <h3 className={`${s.display} ${s.productName}`}>{w.emptyTitle}</h3>
         <p className={s.lead}>{w.emptyLine}</p>
-        <div className={s.grow} />
         <button type="button" className={`${s.display} ${s.action}`} onClick={() => useEarn.getState().openProduct('saver')}>
           {w.start}
         </button>
@@ -112,6 +119,7 @@ export function Mine({ words, owner, mine }: { words: Words; owner: string | nul
           </ul>
         </>
       ) : null}
+      <CaredPiers owner={owner} />
       {mine.piers.length ? (
         <>
           <h4 className={s.label}>{w.piers}</h4>

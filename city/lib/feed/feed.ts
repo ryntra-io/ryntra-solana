@@ -27,6 +27,8 @@ export const FEED = {
   fall: { '1h': -2, '24h': -5 },
   /** 24-hour volume a coin or a pool needs to be named under «Volume». */
   minVolume: 250_000,
+  /** Liquidity a new pool needs to be news (CITY-200: «New pool · Unverified · $0 liquidity» stood in the feed). */
+  minPoolLiquidity: 1_000,
   /** How many of each kind's best are in turn. */
   candidates: 4,
   /** One coin, pool or tower is said once in this long. */
@@ -287,7 +289,7 @@ export function newCoins(launches: readonly LaunchTower[] | null, now: number): 
  */
 export function newPools(towers: readonly Tower[], launchTokens: ReadonlySet<string>, now: number): Draft[] {
   return list(towers)
-    .filter((t) => t && typeof t.id === 'string' && t.district === 'docks' && !launchTokens.has(t.id))
+    .filter((t) => t && typeof t.id === 'string' && t.district === 'docks' && !launchTokens.has(t.id) && num(t.liquidity) >= FEED.minPoolLiquidity)
     .map((t) => ({ t, at: time(t.launchedAt) }))
     .filter((x): x is { t: Tower; at: number } => x.at !== null && x.at <= now + 60_000 && now - x.at <= FEED.newMs)
     .sort((a, b) => b.at - a.at || a.t.id.localeCompare(b.t.id))

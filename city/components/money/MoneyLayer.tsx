@@ -54,7 +54,7 @@ export function MoneyLayer() {
       title,
       icon: <TabGlyph tab="portfolio" />,
       render: renderMoney,
-      size: { width: 480, height: 680 },
+      size: { width: 520, height: 720 },
       min: { width: 400, height: 460 },
       held: busy,
       onClose: closeMoney,

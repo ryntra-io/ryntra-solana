@@ -48,7 +48,7 @@ export default function MoneyWindow() {
           <span className={s.who} style={{ ['--player' as string]: colourOf(owner) }}>
             <span className={s.dot} aria-hidden="true" />
             <span translate="no">{short(owner)}</span>
-            {total !== null ? <b>{formatUsd(total)}</b> : null}
+            {total !== null && tab !== 'portfolio' ? <b>{formatUsd(total)}</b> : null}
           </span>
         </div>
       ) : null}

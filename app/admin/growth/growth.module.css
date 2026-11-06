@@ -163,3 +163,30 @@
     grid-column: 1 / -1;
   }
 }
+
+/* CITY-197 — Тиждень попиту: одна метрика великим числом, чотири цифри під нею. */
+.demand {
+  margin: 0 0 16px;
+}
+
+.demandHero {
+  display: grid;
+  gap: 6px;
+}
+
+.demandLine {
+  margin: 0;
+  font-size: 12px;
+  color: var(--text-dim);
+}
+
+.demandNote {
+  font-size: 11px;
+  color: var(--text-dim);
+  font-family: var(--mono);
+}
+
+.demandPick {
+  width: auto;
+  flex: 0 0 auto;
+}

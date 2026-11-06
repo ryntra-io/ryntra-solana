@@ -131,7 +131,8 @@ export type Words = Readonly<{
     rent: string;
     rentBack: string;
     network: string;
-    signatures: (n: number) => string;
+    /** One approval of the wallet, however many transactions it signs (CITY-198). */
+    approval: (n: number) => string;
     dayFees: string;
     venue: string;
     bins: string;
@@ -164,8 +165,24 @@ export type Words = Readonly<{
     stopped: string;
     get: (symbol: string) => string;
     fresh: string;
-    problem: Readonly<Record<'format' | 'min' | 'ceiling' | 'sol' | 'other', (figure: string) => string>>;
-    failures: Readonly<Record<'PIER_CLOSED' | 'PIER_STOPPED' | 'PIER_CEILING' | 'PIER_UNPRICED' | 'PIER_PAIR' | 'PIER_VENUE', string>>;
+    /** The Zap (CITY-198): SOL in, one approval. */
+    put: string;
+    swapFee: (pct: string) => string;
+    swap: string;
+    swapGets: string;
+    viaJupiter: (labels: string) => string;
+    viaPool: string;
+    ryntraFee: string;
+    poolNoFee: string;
+    checked: string;
+    zapFine: string;
+    partialZap: (symbol: string) => string;
+    takeRest: string;
+    restBack: (sol: string) => string;
+    restDone: string;
+    restLine: string;
+    problem: Readonly<Record<'format' | 'min' | 'ceiling' | 'sol', (figure: string) => string>>;
+    failures: Readonly<Record<'PIER_CLOSED' | 'PIER_STOPPED' | 'PIER_CEILING' | 'PIER_UNPRICED' | 'PIER_PAIR' | 'PIER_VENUE' | 'ZAP_PRICE' | 'ZAP_UNPRICED' | 'ZAP_NO_ROUTE' | 'NOTHING_TO_WITHDRAW', string>>;
   }>;
   captain: Readonly<{
     strategies: string;
@@ -181,11 +198,6 @@ export type Words = Readonly<{
     noneTitle: string;
     noneLine: string;
     fine: string;
-    zap: (symbol: string) => string;
-    zapLine: (sol: string, symbol: string) => string;
-    zapDone: (symbol: string) => string;
-    zapFee: string;
-    zapGet: string;
     copied: string;
     copiedLine: string;
   }>;
@@ -360,7 +372,7 @@ const EN: Words = {
     rent: 'Account deposit',
     rentBack: 'back on exit',
     network: 'Network',
-    signatures: (n) => `${n} signatures in one wallet prompt`,
+    approval: (n) => (n > 1 ? `${n} transactions, one approval` : 'One approval'),
     dayFees: 'The day gone, this amount’s share of fees',
     venue: 'Meteora DLMM · even spread',
     bins: 'Bins each side',
@@ -393,12 +405,26 @@ const EN: Words = {
     stopped: 'New deposits are paused. Taking fees and leaving still work.',
     get: (symbol) => `Get ${symbol}`,
     fresh: 'Prices moved — the figures are fresh. Check them and confirm again.',
+    put: 'Put in',
+    swapFee: (pct) => `Fee ${pct} on the swap`,
+    swap: 'Swap',
+    swapGets: 'Swap brings at least',
+    viaJupiter: (labels) => `Jupiter${labels ? ` · ${labels}` : ''}`,
+    viaPool: 'The pool itself',
+    ryntraFee: 'Ryntra fee',
+    poolNoFee: 'none — the pool’s own swap',
+    checked: 'Checked against the market price',
+    zapFine: 'Part of your SOL is swapped for the other coin and both go in, in one approval. The swap goes through Jupiter or the pool itself, whichever brings more; through Jupiter, Ryntra takes its swap fee — in the pool, none. Your wallet signs; you can leave any time.',
+    partialZap: (symbol) => `The swap went through, the deposit did not. Your SOL and ${symbol} are in your wallet.`,
+    takeRest: 'Take back as SOL',
+    restBack: (sol) => `≈ ${sol} SOL back to your wallet`,
+    restDone: 'Back in your wallet',
+    restLine: 'What the Zap left is SOL again.',
     problem: {
       format: () => 'Type an amount of SOL.',
       min: (figure) => `At least ${figure} SOL.`,
       ceiling: (figure) => `Up to ${figure} SOL for now.`,
       sol: () => 'Not enough SOL, with the deposit for the account.',
-      other: (symbol) => `Not enough ${symbol} for the other half.`,
     },
     failures: {
       PIER_CLOSED: 'The Harbor is not open to this wallet yet.',
@@ -407,6 +433,10 @@ const EN: Words = {
       PIER_UNPRICED: 'Meteora gives no price for this pool right now.',
       PIER_PAIR: 'Only SOL piers open from here.',
       PIER_VENUE: 'Only SOL piers open from here.',
+      ZAP_PRICE: 'The swap would bring less than the coins are worth now. Nothing was sent.',
+      ZAP_UNPRICED: 'No market price to check the swap against right now.',
+      ZAP_NO_ROUTE: 'No swap for this amount right now. Try a little later.',
+      NOTHING_TO_WITHDRAW: 'Nothing of it is left in your wallet.',
     },
   },
   captain: {
@@ -423,11 +453,6 @@ const EN: Words = {
     noneTitle: 'No strategy has a record yet',
     noneLine: 'A strategy shows here after 30 days and 5 copies.',
     fine: 'The record of people’s own copies, measured from the chain once a day since each opened: fees, and the price’s move, against keeping the same coins. A strategy shows only after 30 days of record and copies from 5 wallets; its deepest fall always stands beside it. The past — not a promise.',
-    zap: (symbol) => `Get ${symbol} and copy`,
-    zapLine: (sol, symbol) => `First ${sol} SOL → ${symbol}, then the copy · two signatures`,
-    zapDone: (symbol) => `${symbol} is in. Now the copy.`,
-    zapFee: 'Swap fee',
-    zapGet: 'First you get',
     copied: 'Copied',
     copiedLine: 'Your boat sails the captain’s course. It earns while the price stays in range.',
   },
@@ -646,8 +671,8 @@ const UK: Words = {
     unknown: 'Ще невідомо',
     again: 'Ще раз',
     explorer: 'Оглядач',
-    fine: 'Ставка — за останню епоху й змінюється щоепохи; це не обіцянка. Підписує ваш гаманець; ключів Ryntra не тримає.',
-    problem: { format: 'Введіть суму в SOL.', zero: 'Більше за нуль.', decimals: 'У SOL 9 знаків після коми.', balance: 'Більше, ніж можна витратити з гаманця.' },
+    fine: 'Ставка — за останню епоху й змінюється щоепохи; це не обіцянка. Підписує твій гаманець; ключів Ryntra не тримає.',
+    problem: { format: 'Введи суму в SOL.', zero: 'Більше за нуль.', decimals: 'У SOL 9 знаків після коми.', balance: 'Більше, ніж можна витратити з гаманця.' },
   },
   piers: {
     fees24h: 'Комісії 24 год',
@@ -655,10 +680,10 @@ const UK: Words = {
     add: 'Додати ліквідність',
     read: 'Дані Meteora',
     empty: 'Зараз немає достатньо глибокого причалу.',
-    fine: 'Комісії за день не обіцяють наступного. Якщо ціна вийде з діапазону, токени лишаються вашими, але заробіток зупиняється.',
+    fine: 'Комісії за день не обіцяють наступного. Якщо ціна вийде з діапазону, токени лишаються твоїми, але заробіток зупиняється.',
   },
   pier: {
-    boats: 'Ваші човни',
+    boats: 'Твої човни',
     piers: 'SOL-причали',
     inRange: 'Заробляє',
     outOfRange: 'Поза діапазоном',
@@ -681,21 +706,21 @@ const UK: Words = {
     rent: 'Депозит рахунку',
     rentBack: 'повернеться при виході',
     network: 'Мережа',
-    signatures: (n) => `${n} підписи в одному вікні гаманця`,
+    approval: (n) => (n > 1 ? `${n} транзакції, одне схвалення` : 'Одне схвалення'),
     dayFees: 'Минулої доби частка комісій на цю суму',
     venue: 'Meteora DLMM · рівномірно',
     bins: 'Кошиків з кожного боку',
     slippage: 'Ціна може зрушити',
     pastFine: 'Якби цей стиль відкрили 30 днів тому: скільки часу ціна була всередині й де позиція опинилась проти простого тримання тих самих монет — без комісій, бо Meteora дає їх лише за останню добу. Це минуле, а не обіцянка.',
-    fine: 'Комісії нараховуються в обох монетах і рахуються тут у SOL за сьогоднішньою ціною. Якщо ціна вийде з діапазону, монети лишаються вашими, а заробіток зупиняється, доки вона не повернеться. Кожен крок підписує ваш гаманець; ключів Ryntra не тримає й комісії до позиції не додає.',
+    fine: 'Комісії нараховуються в обох монетах і рахуються тут у SOL за сьогоднішньою ціною. Якщо ціна вийде з діапазону, монети лишаються твоїми, а заробіток зупиняється, доки вона не повернеться. Кожен крок підписує твій гаманець; ключів Ryntra не тримає й комісії до позиції не додає.',
     review: 'Перевірити',
     add: 'Додати ліквідність',
     building: 'Рахуємо точні цифри…',
-    wallet: 'Підтвердіть у гаманці',
+    wallet: 'Підтверди в гаманці',
     sending: 'Читаємо мережу…',
     checking: 'Перевірити ще раз',
     done: 'Пришвартовано',
-    doneLine: 'Ваш човен біля причалу. Він заробляє, доки ціна в діапазоні.',
+    doneLine: 'Твій човен біля причалу. Він заробляє, доки ціна в діапазоні.',
     partial: 'Частина пройшла. Решті потрібна нова перевірка — дивіться свої човни.',
     failed: 'Не пройшло. Витрачено лише комісію мережі.',
     unknown: 'Надіслано; мережа ще не відповіла. Повторно нічого не надсилаємо.',
@@ -713,13 +738,27 @@ const UK: Words = {
     feesElsewhere: 'Комісії цієї позиції йдуть на іншу адресу.',
     stopped: 'Нові внески призупинено. Забрати комісії й вийти можна.',
     get: (symbol) => `Отримати ${symbol}`,
-    fresh: 'Ціни зрушили — цифри оновлено. Перегляньте й підтвердіть ще раз.',
+    fresh: 'Ціни зрушили — цифри оновлено. Переглянь і підтверди ще раз.',
+    put: 'Покласти',
+    swapFee: (pct) => `Комісія ${pct} на обмін`,
+    swap: 'Обмін',
+    swapGets: 'Обмін дасть щонайменше',
+    viaJupiter: (labels) => `Jupiter${labels ? ` · ${labels}` : ''}`,
+    viaPool: 'Сам пул',
+    ryntraFee: 'Комісія Ryntra',
+    poolNoFee: 'немає — обмін у самому пулі',
+    checked: 'Звірено з ринковою ціною',
+    zapFine: 'Частина твого SOL обмінюється на другу монету, і обидві йдуть у пул — одним схваленням. Обмін іде через Jupiter або сам пул — де вигідніше; через Jupiter Ryntra бере комісію обміну, у пулі — ні. Підписує твій гаманець; вийти можна будь-коли.',
+    partialZap: (symbol) => `Обмін пройшов, внесок — ні. Твої SOL і ${symbol} у гаманці.`,
+    takeRest: 'Забрати як SOL',
+    restBack: (sol) => `≈ ${sol} SOL повернеться в гаманець`,
+    restDone: 'Повернуто в гаманець',
+    restLine: 'Те, що лишилось від Zap, знову в SOL.',
     problem: {
-      format: () => 'Введіть суму в SOL.',
+      format: () => 'Введи суму в SOL.',
       min: (figure) => `Щонайменше ${figure} SOL.`,
       ceiling: (figure) => `Поки до ${figure} SOL.`,
       sol: () => 'Бракує SOL разом із депозитом рахунку.',
-      other: (symbol) => `Бракує ${symbol} на другу половину.`,
     },
     failures: {
       PIER_CLOSED: 'Гавань для цього гаманця ще не відкрита.',
@@ -728,6 +767,10 @@ const UK: Words = {
       PIER_UNPRICED: 'Meteora зараз не дає ціни цього пулу.',
       PIER_PAIR: 'Звідси відкриваються лише SOL-причали.',
       PIER_VENUE: 'Звідси відкриваються лише SOL-причали.',
+      ZAP_PRICE: 'Обмін дав би менше, ніж монети варті зараз. Нічого не надіслано.',
+      ZAP_UNPRICED: 'Зараз немає ринкової ціни, щоб звірити обмін.',
+      ZAP_NO_ROUTE: 'Зараз немає обміну на цю суму. Спробуй трохи пізніше.',
+      NOTHING_TO_WITHDRAW: 'У гаманці нічого з цього не лишилось.',
     },
   },
   captain: {
@@ -744,13 +787,8 @@ const UK: Words = {
     noneTitle: 'Ще жодна стратегія не має результату',
     noneLine: 'Стратегія з’явиться тут після 30 днів і 5 копій.',
     fine: 'Результат власних копій людей, виміряний із мережі щодня від відкриття кожної: комісії й рух ціни проти тих самих монет у гаманці. Стратегія з’являється лише після 30 днів результату й копій із 5 гаманців; її найглибше просідання завжди поруч. Це минуле — не обіцянка.',
-    zap: (symbol) => `Отримати ${symbol} і копіювати`,
-    zapLine: (sol, symbol) => `Спершу ${sol} SOL → ${symbol}, потім копія · два підписи`,
-    zapDone: (symbol) => `${symbol} уже є. Тепер копія.`,
-    zapFee: 'Комісія обміну',
-    zapGet: 'Спершу отримаєте',
     copied: 'Скопійовано',
-    copiedLine: 'Ваш човен іде курсом капітана. Він заробляє, поки ціна в діапазоні.',
+    copiedLine: 'Твій човен іде курсом капітана. Він заробляє, поки ціна в діапазоні.',
   },
   dollar: {
     deposit: 'Покласти',
@@ -765,13 +803,13 @@ const UK: Words = {
     noFee: 'Ryntra 0%',
     minimum: 'мін.',
     risk: 'Ризик: ринок позик',
-    riskWhat: 'Ваші монети позичаються через Jupiter Lend. Ставка змінюється з попитом позичальників. Головний ризик — сам ринок позик: збій смарт-контракту або день, коли позичальники забрали стільки, що виведення чекає ліквідності.',
-    rateFloats: 'Ставка — ринкова й рухається з ринком; «за рік за сьогоднішньою ставкою» — орієнтир, не обіцянка. Jupiter Lend не бере плати за внесок і виведення, Ryntra не бере нічого. Мережеву плату сплачує ваш гаманець.',
+    riskWhat: 'Твої монети позичаються через Jupiter Lend. Ставка змінюється з попитом позичальників. Головний ризик — сам ринок позик: збій смарт-контракту або день, коли позичальники забрали стільки, що виведення чекає ліквідності.',
+    rateFloats: 'Ставка — ринкова й рухається з ринком; «за рік за сьогоднішньою ставкою» — орієнтир, не обіцянка. Jupiter Lend не бере плати за внесок і виведення, Ryntra не бере нічого. Мережеву плату сплачує твій гаманець.',
     partialFine: 'Якщо ринок сьогодні не може виплатити все, забирається те, що він може, а решта лишається й далі заробляє.',
     provider: 'Jupiter Lend',
     unavailable: 'Ставку зараз не прочитано',
     building: 'Готуємо…',
-    wallet: 'Підтвердіть у гаманці',
+    wallet: 'Підтверди в гаманці',
     sending: 'Надсилаємо…',
     checking: 'Перевіряємо…',
     put: 'Покласти',
@@ -782,7 +820,7 @@ const UK: Words = {
     again: 'Ще раз',
     explorer: 'Відкрити в експлорері',
     problem: {
-      zero: 'Введіть суму',
+      zero: 'Введи суму',
       minimum: 'Менше за мінімум',
       balance: 'Більше, ніж у гаманці',
       position: 'Більше, ніж у скарбничці',
@@ -790,13 +828,13 @@ const UK: Words = {
       canary: 'Поки що менші суми',
     },
     refusals: {
-      fallback: 'Не надіслано. Спробуйте ще раз.',
+      fallback: 'Не надіслано. Спробуй ще раз.',
       CANCELLED: 'Скасовано в гаманці. Нічого не змінилося.',
       UNKNOWN: 'Надіслано — мережа ще не підтвердила. Баланс покаже.',
       FAILED: 'Мережа не прийняла. Нічого не змінилося.',
-      RATE_MOVED: 'Ставка змінилася. Нічого не змінилося — спробуйте ще раз.',
+      RATE_MOVED: 'Ставка змінилася. Нічого не змінилося — спробуй ще раз.',
       NO_LIQUIDITY: 'Ринок сьогодні не може виплатити цю суму. Нічого не змінилося.',
-      TICKET_EXPIRED: 'Задовго. Нічого не змінилося — спробуйте ще раз.',
+      TICKET_EXPIRED: 'Задовго. Нічого не змінилося — спробуй ще раз.',
       BELOW_MINIMUM: 'Менше за мінімум.',
       OVER_WALLET: 'Більше, ніж у гаманці.',
       OVER_POSITION: 'Більше, ніж у скарбничці.',
@@ -805,7 +843,7 @@ const UK: Words = {
       ACTIONS_CLOSED: 'Ще не відкрито.',
       NO_KEY: 'Jupiter Lend зараз недоступний.',
       PROVIDER_DOWN: 'Jupiter Lend зараз недоступний.',
-      RATE_LIMITED: 'Забагато спроб. Зачекайте хвилинку.',
+      RATE_LIMITED: 'Забагато спроб. Зачекай хвилинку.',
     },
   },
   mine: {
@@ -821,10 +859,10 @@ const UK: Words = {
     split: 'Спліт — не дохід',
     unmeasured: 'Частина позицій без цифри',
     emptyTitle: 'Ще нічого не заробляє',
-    emptyLine: 'Почніть із SOL: застейкайте одним підписом.',
+    emptyLine: 'Почни з SOL: застейкай одним підписом.',
     start: 'SOL-скарбничка',
-    connectTitle: 'Ваш заробіток у SOL',
-    connectLine: 'Підключіть гаманець, щоб бачити позиції й результат проти тримання.',
+    connectTitle: 'Твій заробіток у SOL',
+    connectLine: 'Підключи гаманець, щоб бачити позиції й результат проти тримання.',
     dividendFine: 'xStocks реінвестують дивіденди, піднімаючи множник токена. Рахуємо на кількість, що є зараз; спліт змінює кількість, а не вартість, і ніколи не рахується.',
     vsHoldFine: 'Зароблено — що заплатили продукти, за вирахуванням витрат на вході. Проти тримання — порівняно з тими самими монетами в гаманці. Долари причалів — у SOL за сьогоднішньою ціною. Різні активи не складаємо.',
   },
@@ -867,24 +905,24 @@ const UK: Words = {
     poolRentStays: 'лишаються пулу',
     positionRent: 'Депозит позиції',
     templateFine: 'Години біржі: пул покриває всю криву ціни, тож геп через закриття не виводить його з діапазону. Комісію задано раз, при будівництві, — 0,30 % плюс частина, що росте, коли ціна стрибає, як на відкритті, — і платиться лише в монеті пари.',
-    closeFine: '«Лишитися» — заробляє і через закриття. «Вийти» — нагадаємо тут до закриття біржі, вийти одним дотиком; після відкриття пришвартуєтесь знову. Без вашого підпису нічого не рухається.',
+    closeFine: '«Лишитися» — заробляє і через закриття. «Вийти» — нагадаємо тут до закриття біржі, вийти одним дотиком; після відкриття пришвартуєшся знову. Без твого підпису нічого не рухається.',
     dividendFine: 'xStock платить дивіденд, піднімаючи множник токена в заданий час, а ціна акції падає на відкритті. Поміж цим ціна пулу може відставати від ринку, тож нова ліквідність чекає від доби до кроку й до чверті години після. Акція в пулі свій дивіденд отримує.',
     issuerFine: 'Емітент xStock може призупинити чи перемістити токен, зокрема частку пулу. Ціну задаємо з живого ринку в момент будівництва.',
     hoursFine: 'Години — власний торговий період емітента для біржі-орієнтира.',
-    fine: 'Лише акції, які називають емітент і Jupiter, які Meteora приймає як є і якими торгували за 7 днів. Підписує ваш гаманець; ключів Ryntra не тримає й комісії до пулу не додає.',
+    fine: 'Лише акції, які називають емітент і Jupiter, які Meteora приймає як є і якими торгували за 7 днів. Підписує твій гаманець; ключів Ryntra не тримає й комісії до пулу не додає.',
     built: 'Причал збудовано',
-    builtLine: (quote) => `Ваш причал стоїть і заробляє комісії в ${quote}.`,
+    builtLine: (quote) => `Твій причал стоїть і заробляє комісії в ${quote}.`,
     moored: 'Пришвартовано',
-    mooredLine: 'Ваш човен біля причалу й заробляє комісії.',
+    mooredLine: 'Твій човен біля причалу й заробляє комісії.',
     taken: 'Комісії забрано',
     left: 'Ви вийшли з причалу',
-    boats: 'Ваші причали акцій',
+    boats: 'Твої причали акцій',
     stepOut: 'Вийти',
-    stepOutLine: 'Ваш план: вийти до закриття.',
+    stepOutLine: 'Твій план: вийти до закриття.',
     empty: 'Зараз жодна акція не має достатнього обігу для причалу.',
     stopped: 'Нові причали призупинено. Забрати комісії й вийти можна.',
     problem: {
-      format: (unit) => `Введіть суму в ${unit}.`,
+      format: (unit) => `Введи суму в ${unit}.`,
       min: (figure) => `Щонайменше ${figure}.`,
       ceiling: (figure) => `Поки до ${figure}.`,
       quote: (unit) => (unit === 'SOL' ? 'Бракує SOL разом із депозитом рахунків.' : `Бракує ${unit} або SOL на рахунки.`),

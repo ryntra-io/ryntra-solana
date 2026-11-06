@@ -21,11 +21,16 @@
   display: flex;
   align-items: flex-start;
   gap: 14px;
+  --edge: rgba(255, 178, 63, 0.26);
+  --chamfer: linear-gradient(135deg, transparent calc(50% - 0.75px), var(--edge) calc(50% - 0.75px), var(--edge) calc(50% + 0.75px), transparent calc(50% + 0.75px));
   padding: 16px;
+  /* The thin edge goes round the cut corners too (CITY-201): the clip alone left the frame open at both of them. */
   background:
+    var(--chamfer) 0 0 / var(--cut) var(--cut) no-repeat,
+    var(--chamfer) 100% 100% / var(--cut) var(--cut) no-repeat,
     radial-gradient(120% 140% at 0% 0%, rgba(255, 178, 63, 0.16), transparent 60%),
     linear-gradient(160deg, rgba(153, 69, 255, 0.14), rgba(11, 10, 20, 0.2));
-  box-shadow: inset 0 0 0 1px rgba(255, 178, 63, 0.26);
+  box-shadow: inset 0 0 0 1px var(--edge);
   clip-path: polygon(var(--cut) 0, 100% 0, 100% calc(100% - var(--cut)), calc(100% - var(--cut)) 100%, 0 100%, 0 var(--cut));
 }
 
@@ -162,8 +167,9 @@
   color: var(--warm);
 }
 
+/* The limits, the fee and the one action follow the card straight on (CITY-201): the window stands taller than the card
+   in a bay and on a phone, and a dock pushed to its foot left a dark hole under the plan. */
 .dock {
-  margin-top: auto;
   display: grid;
   gap: 10px;
 }

@@ -356,6 +356,10 @@
   .where {
     display: none;
   }
+  .where[data-role-mark] {
+    display: block;
+    flex: none;
+  }
   .label {
     font-size: var(--type-base);
   }

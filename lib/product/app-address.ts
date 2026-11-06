@@ -1,36 +1,25 @@
 /**
- * The application's one address: `app.ryntra.io`, with the network as the
- * first segment — `app.ryntra.io/solana/…`, `app.ryntra.io/arc/…` and
- * `app.ryntra.io/starknet/…`. `ryntra.io` stays the site and the
- * documentation. Starknet's pages are this build's own `/starknet/…`, so
- * they answer on the application's host as they are. The full map, and the order the switches are
- * turned on in, is `docs/domains/ADDRESS-MAP.md`.
+ * The application's one address: `app.ryntra.io/solana/…`. `ryntra.io` stays
+ * the site and the documentation. The full map, and the order the switches are
+ * turned on in, is `docs/domains/ADDRESS-MAP.md`. Ryntra is Solana only
+ * (decision 69): the other products' addresses are not served by this build on
+ * either host — app.ryntra.io sends them to ryntra.io, where the city answers
+ * (`city/lib/open/old-addresses.ts`).
  *
  * This build serves the Solana product under `/app`, and every link it draws
  * still says `/app/…`. On `app.ryntra.io` the same pages answer at
  * `/solana/…`: a rewrite serves `/solana/<page>` from `/app/<page>`, and the
- * build's own `/app/<page>` links move there by a temporary redirect. The
- * cabinet at `/arc` is another deployment; until it runs on this build, its
- * addresses on `app.ryntra.io` reach it through a proxy — or, until that
- * deployment answers behind one, a temporary redirect to its own old host.
- * Neither deployment is named here: the project says where they are.
+ * build's own `/app/<page>` links move there by a temporary redirect.
  *
- * Read when the build is made, all unset by default, so a build changes
- * nothing on ryntra.io until the project is told so:
+ * Read when the build is made, unset by default, so a build changes nothing on
+ * ryntra.io until the project is told so:
  *
  * - `RYNTRA_APP_HOST_LIVE=1` — `app.ryntra.io` is a verified domain of this
  *   project. Then every old address on `ryntra.io` (`/app/…`, `/uk/app/…`,
- *   `/solana/workspace/…`, `/starknet/…`, `/arc/workspace/…`) moves there for good (308)
+ *   `/solana/workspace/…`) moves there for good (308)
  *   with its path and query, and the pages offered to the index name their
  *   new address as canonical. Before that, a 308 would send people — and
  *   every browser cache — to a host that does not answer.
- * - `RYNTRA_ARC_SITE=<https origin>` — the cabinet's old host, where its
- *   rows are `/app/<row>`: `app.ryntra.io/arc/<row>` opens the same page there,
- *   temporarily, until the proxy is on.
- * - `RYNTRA_ARC_ORIGIN=<https origin>` — the cabinet's deployment answers
- *   behind the proxy (its files under `/_arc`, its links under `/arc/…`,
- *   writes from this origin accepted): `app.ryntra.io/arc/…`, its APIs and
- *   its files are served from there.
  */
 
 type Env = Readonly<Record<string, string | undefined>>;
@@ -43,26 +32,12 @@ export const APP_HOST = "app.ryntra.io";
 export const APP_ORIGIN = `https://${APP_HOST}`;
 
 /** Each network's entry on the application's host. */
-export const NETWORK_ENTRIES = { solana: "/solana", arc: "/arc", starknet: "/starknet" } as const;
+export const NETWORK_ENTRIES = { solana: "/solana" } as const;
 /** Where the Solana product's routes live inside this build. */
 export const SOLANA_ROUTES = "/app";
 /** The page under `/app` that stays on ryntra.io after the move: Receipts, where this origin's receipts reach the server archive. */
 export const RECEIPTS_HANDOVER = "receipts";
 const UK = "/uk";
-
-/** The cabinet's root on its old host: its rows are `/app/<row>` there. */
-const CABINET_OLD_ROOT = "/app";
-/** Where the cabinet's build puts its own files behind the proxy, so they never meet this build's `/_next`. */
-export const CABINET_ASSET_PREFIX = "/_arc";
-/**
- * The rows of the cabinet at `/arc` — the same list its deployment serves on
- * its main network. An old `/arc/workspace/<row>` on ryntra.io opens its
- * row; any other page of it opens the cabinet.
- */
-export const CABINET_ROWS = [
-  "portfolio", "send", "request", "payouts", "treasury", "bridge", "swap", "markets", "spot",
-  "futures", "cash-out", "verifier", "agents", "settings",
-] as const;
 
 /** Next anchors a `has` host value as `^…$`. */
 const hostPattern = (host: string) => host.replace(/\./g, "\\.");
@@ -73,27 +48,6 @@ export const ON_SITE_HOST: HostCondition[] = [{ type: "host", value: hostPattern
 
 export function appHostLive(env: Env = process.env): boolean {
   return env.RYNTRA_APP_HOST_LIVE?.trim() === "1";
-}
-
-/** An https origin the project names, or null: nothing else is ever proxied to or redirected to. */
-function namedOrigin(value: string | undefined): string | null {
-  const named = value?.trim();
-  return named && /^https:\/\/[a-z0-9.-]+$/.test(named) ? named : null;
-}
-
-/** The cabinet's deployment the proxy reaches (`RYNTRA_ARC_ORIGIN`), or null while the proxy is off. */
-export function arcProxyOrigin(env: Env = process.env): string | null {
-  return namedOrigin(env.RYNTRA_ARC_ORIGIN);
-}
-
-/** The cabinet's old host (`RYNTRA_ARC_SITE`), or null. */
-export function arcSiteOrigin(env: Env = process.env): string | null {
-  return namedOrigin(env.RYNTRA_ARC_SITE);
-}
-
-/** Whether `app.ryntra.io/arc` opens the cabinet at all: through the proxy, or on its old host. */
-export function arcCabinetReachable(env: Env = process.env): boolean {
-  return arcProxyOrigin(env) !== null || arcSiteOrigin(env) !== null;
 }
 
 /** A path of this build's Solana routes at its address on app.ryntra.io: `/app/swap` → `/solana/swap`, `/uk/app/home` → `/uk/solana/home`. Anything else as it is. */
@@ -143,23 +97,13 @@ function onAppHost(destination: string): string {
  * is a Solana route answers here at its Solana address, with the same
  * permanence, so an alias works the same on both hosts in one hop.
  */
-export function appHostRedirects(rows: readonly TableRow[], env: Env = process.env): AddressRedirect[] {
+export function appHostRedirects(rows: readonly TableRow[]): AddressRedirect[] {
   const to = (source: string, destination: string, permanent = false): AddressRedirect => ({ source, destination, permanent, has: ON_APP_HOST });
   const solana = NETWORK_ENTRIES.solana;
-  const arc = NETWORK_ENTRIES.arc;
-  const site = arcSiteOrigin(env);
   const seen = new Set<string>();
   const translated: AddressRedirect[] = [];
   for (const row of rows) {
     if (row.has) continue;
-    /* An alias into the old copy of the cabinet (`/arc/proof`) reads its row under `/arc` here. */
-    const intoCabinet = /^\/arc\/workspace(?=\/|\?|$)/;
-    if (row.source.startsWith(`${arc}/`) && intoCabinet.test(row.destination) && arcCabinetReachable(env)) {
-      if (seen.has(row.source)) continue;
-      seen.add(row.source);
-      translated.push(to(row.source, row.destination.replace(intoCabinet, arc), row.permanent));
-      continue;
-    }
     const source = solanaAddress(row.source);
     if (source === row.source || seen.has(source)) continue;
     seen.add(source);
@@ -170,8 +114,9 @@ export function appHostRedirects(rows: readonly TableRow[], env: Env = process.e
      link (`/r/<code>`, whose cookie the app must read on this host), a sign-in
      return (`/auth/…`, which needs the cookies its start set on this host), the
      operators' pages (`/admin`, which read the same session), an API or a file
-     moves there for good — this host is the application only. */
-  const NOT_SITE = ["solana", "uk/solana", "arc", "starknet", "r", "auth", "admin", "api", "_next", "_vercel", CABINET_ASSET_PREFIX.slice(1)]
+     moves there for good — this host is the application only. The other
+     products' old addresses are the site's too: there the city answers. */
+  const NOT_SITE = ["solana", "uk/solana", "r", "auth", "admin", "api", "_next", "_vercel"]
     .map((segment) => `${segment}(?:/|$)`)
     .join("|");
   return [
@@ -183,12 +128,6 @@ export function appHostRedirects(rows: readonly TableRow[], env: Env = process.e
     to(`${SOLANA_ROUTES}/:path*`, `${solana}/:path*`),
     to(`${UK}${SOLANA_ROUTES}`, `${UK}${solana}`),
     to(`${UK}${SOLANA_ROUTES}/:path*`, `${UK}${solana}/:path*`),
-    /* Until the cabinet's deployment answers behind the proxy, its pages open on its old host. */
-    ...(arcProxyOrigin(env) === null && site !== null
-      ? [to(arc, `${site}${CABINET_OLD_ROOT}`), to(`${arc}/:path*`, `${site}${CABINET_OLD_ROOT}/:path*`)]
-      : []),
-    /* While the project names neither, this host does not serve the old copy this build keeps under `/arc`: the site does. */
-    ...(arcCabinetReachable(env) ? [] : [to(arc, `${SITE_ORIGIN}${arc}`), to(`${arc}/:path*`, `${SITE_ORIGIN}${arc}/:path*`)]),
     { source: `/:path((?!${NOT_SITE})(?!.*[.][A-Za-z0-9]+$).+)`, destination: `${SITE_ORIGIN}/:path`, permanent: true, has: ON_APP_HOST },
   ];
 }
@@ -203,7 +142,6 @@ export function siteHostRedirects(rows: readonly TableRow[], env: Env = process.
   if (!appHostLive(env)) return [];
   const to = (source: string, destination: string, permanent = true): AddressRedirect => ({ source, destination, permanent, has: ON_SITE_HOST });
   const solana = `${APP_ORIGIN}${NETWORK_ENTRIES.solana}`;
-  const arc = `${APP_ORIGIN}${NETWORK_ENTRIES.arc}`;
   const workspace = "/solana/workspace";
   const named = rows
     .filter((row) => !row.has && /^\/solana(?:\/workspace(?:\/[^:]*)?)?$/.test(row.source))
@@ -235,34 +173,6 @@ export function siteHostRedirects(rows: readonly TableRow[], env: Env = process.
        the host whose cookie it clears. */
     { ...to("/auth/confirm", `${APP_ORIGIN}/auth/confirm`), missing: [{ type: "query", key: "code" }] },
     { ...to("/api/session", `${APP_ORIGIN}/api/session`), has: [...ON_SITE_HOST, { type: "query", key: "t" }] },
-    /* Starknet's pages are the same routes on both hosts. */
-    to(NETWORK_ENTRIES.starknet, `${APP_ORIGIN}${NETWORK_ENTRIES.starknet}`),
-    to(`${NETWORK_ENTRIES.starknet}/:path((?!api(?:/|$)).+)`, `${APP_ORIGIN}${NETWORK_ENTRIES.starknet}/:path`),
-    /* The old copy of the cabinet on ryntra.io — only once `app.ryntra.io/arc` opens it. */
-    ...(arcCabinetReachable(env)
-      ? [
-          to("/arc/workspace", arc),
-          ...CABINET_ROWS.map((row) => to(`/arc/workspace/${row}`, `${arc}/${row}`)),
-          /* A page of it the cabinet has no row for opens the cabinet — temporarily, so it can take its address back. */
-          to("/arc/workspace/:path((?!api(?:/|$)).+)", arc, false),
-        ]
-      : []),
-  ];
-}
-
-/**
- * The addresses on app.ryntra.io whose answer comes from the cabinet's own
- * deployment: this build's response headers must not be laid over its own
- * (two policies intersect, and the cabinet's sockets would be refused).
- */
-export const PROXIED_ON_APP_HOST = `(?:${NETWORK_ENTRIES.arc.slice(1)}|${CABINET_ASSET_PREFIX.slice(1)}|api/arc-[a-z0-9-]+)(?:/|$)`;
-
-/** A headers rule for every path but the proxied ones on app.ryntra.io (only while the proxy is on), and every path on every other host. */
-export function everywhereButProxied<T>(headers: T, env: Env = process.env) {
-  if (arcProxyOrigin(env) === null) return [{ source: "/:path*", headers }];
-  return [
-    { source: "/:path*", missing: ON_APP_HOST, headers },
-    { source: `/:path((?!${PROXIED_ON_APP_HOST}).*)`, has: ON_APP_HOST, headers },
   ];
 }
 
@@ -274,26 +184,11 @@ export function atBothAddresses<T>(source: string, headers: T) {
 
 /**
  * What app.ryntra.io serves from where, after the redirects: the Solana
- * addresses from this build's `/app` routes, and — once the cabinet's
- * deployment answers behind the proxy — the cabinet, its APIs and its files
- * from there. Before files, so no route of this build answers them first.
+ * addresses from this build's `/app` routes. Before files, so no route of this
+ * build answers them first.
  */
-export function appHostRewrites(env: Env = process.env) {
+export function appHostRewrites() {
   const solana = NETWORK_ENTRIES.solana;
-  const arc = NETWORK_ENTRIES.arc;
-  const origin = arcProxyOrigin(env);
   const at = (source: string, destination: string) => ({ source, destination, has: ON_APP_HOST });
-  return [
-    at(solana, SOLANA_ROUTES),
-    at(`${solana}/:path*`, `${SOLANA_ROUTES}/:path*`),
-    ...(origin !== null
-      ? [
-          at(arc, `${origin}${arc}`),
-          at(`${arc}/:path*`, `${origin}${arc}/:path*`),
-          at("/api/:api(arc-[a-z0-9-]+)", `${origin}/api/:api`),
-          at("/api/:api(arc-[a-z0-9-]+)/:path*", `${origin}/api/:api/:path*`),
-          at(`${CABINET_ASSET_PREFIX}/:path*`, `${origin}${CABINET_ASSET_PREFIX}/:path*`),
-        ]
-      : []),
-  ];
+  return [at(solana, SOLANA_ROUTES), at(`${solana}/:path*`, `${SOLANA_ROUTES}/:path*`)];
 }

@@ -424,6 +424,18 @@
   }
 }
 
+/* The tower window in its bay (CITY-200): only the glyph while the window is narrow, as on a phone. */
+@container window (max-width: 520px) {
+  .action {
+    width: 44px;
+    padding: 0;
+  }
+
+  .actionWord {
+    display: none;
+  }
+}
+
 /* Desktop: the editor stands where the tower card stands, on the right; the city keeps the centre. */
 @media (min-aspect-ratio: 1/1) {
   .sheet {

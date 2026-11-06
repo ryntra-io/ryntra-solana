@@ -71,8 +71,6 @@ const settled: readonly (readonly [string, string])[] = [
      it is a page again — the public repository, what is open and how to run
      it. A browser that cached the old 308 still lands on the developer
      references, which is somewhere true. */
-  ["/guard", "/docs/developers/guard"],
-  ["/developers/guard", "/docs/developers/guard"],
   ["/developers/agent-control", "/docs/developers/agent-control"],
   /* The handbook's chapters, to the documentation page that answers the same
      question since the rewrite of 2026-09-14 — a page each, not an anchor on

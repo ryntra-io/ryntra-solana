@@ -11,21 +11,22 @@
   text-transform: uppercase;
 }
 
+/* In the flow, as tall as the window or as its contents (CITY-201): the frame fits the Guard to them, and the window's
+   own body scrolls a long verdict under the sticky dock. */
 .framed {
   --accent: #ff681c;
-  position: absolute;
-  inset: 0;
+  position: relative;
+  min-height: 100%;
   display: flex;
   flex-direction: column;
   gap: 12px;
   padding: 14px 16px 16px;
-  overflow-y: auto;
   color: var(--ice);
 }
 
 .pending {
-  position: absolute;
-  inset: 0;
+  height: 100%;
+  min-height: 360px;
   background: linear-gradient(100deg, transparent 30%, rgba(238, 241, 255, 0.05) 50%, transparent 70%) 0 0 / 220% 100%;
   animation: sweep 1.4s ease-in-out infinite;
 }

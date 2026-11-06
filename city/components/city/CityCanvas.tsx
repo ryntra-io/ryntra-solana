@@ -5,6 +5,7 @@ import { Canvas } from '@react-three/fiber';
 import { useEffect, useRef, useState } from 'react';
 import * as THREE from 'three';
 import { dprAt, LADDER, meanFps, move, rangeFor, startMoves, stepDown, stepUp, type Device } from '@/city/lib/city/quality';
+import { watchContext } from '@/city/lib/city/context-loss';
 import { useCity } from '@/city/lib/city/store';
 import { leanIn } from '@/city/lib/window/layout';
 import { settledLayout, useWindows } from '@/city/lib/window/store';
@@ -66,6 +67,10 @@ export function CityCanvas() {
   };
   // The frame loop waits for the shaders: compiled in parallel, then the first frame draws without a long freeze.
   const [warm, setWarm] = useState(false);
+  // A lost WebGL context (CITY-200): the night colour holds, and a fresh canvas comes back when the browser allows.
+  const [generation, setGeneration] = useState(0);
+  const unwatch = useRef<(() => void) | null>(null);
+  useEffect(() => () => unwatch.current?.(), []);
   // The city appears once: with the kit's towers and their reflection, or with the fallback when the kit cannot come.
   const shown = useSkyline((s) => (s.ready && s.lit) || s.fallback);
   useEffect(() => {
@@ -88,6 +93,7 @@ export function CityCanvas() {
 
   return (
     <Canvas
+      key={generation}
       dpr={dpr}
       // The city drives its own frames (`Pacer`), once the shaders are ready (`Warmup`).
       frameloop="never"
@@ -95,12 +101,14 @@ export function CityCanvas() {
       camera={{ fov: 40, near: 0.5, far: 2400, position: [0, 44, 182] }}
       onCreated={({ gl }) => {
         gl.setClearColor(new THREE.Color('#06050C'));
+        unwatch.current?.();
+        unwatch.current = watchContext(gl.domElement, () => setWarm(false), () => setGeneration((g) => g + 1));
         // Checking every shader's log forces the browser to finish compiling at once; production skips it.
         gl.debug.checkShaderErrors = process.env.NODE_ENV !== 'production';
         // Development hook: lets the profiling scripts list compiled programs.
         if (process.env.NODE_ENV !== 'production') Object.assign(window, { __gl: gl });
       }}
-      style={{ position: 'fixed', inset: 0, touchAction: 'none', opacity: shown ? 1 : 0, transition: `opacity ${REVEAL_MS}ms ease-out` }}
+      style={{ position: 'fixed', inset: 0, touchAction: 'none', background: '#06050C', opacity: shown ? 1 : 0, transition: `opacity ${REVEAL_MS}ms ease-out` }}
     >
       <PerformanceMonitor
         // A new monitor each time the city goes lean or comes back: frames drawn lean never weigh on a verdict after.

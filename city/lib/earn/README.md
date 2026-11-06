@@ -89,9 +89,13 @@ The Harbor inside the window (spec E2). A **pier** is a Meteora DLMM pool of SOL
   rent and the network, from the Review — at most a twentieth) · out of range → stops earning. Its «i» holds the range
   prices, bins, the account deposit and whether it comes back, the network, slippage, the trade fee, the day gone's
   share of fees for this amount, and how fees are counted.
-- **Short of the other coin**: «Get JitoSOL» opens the SOL Saver on that LST with what is missing; «Get USDC» opens the
-  trade card. A one-signature Zap (swap and deposit together) is not in the engine yet — adding it is an engine change
-  under spec §18.3, a task of its own.
+- **SOL alone is enough (CITY-198)**: the add is the engine's Zap (`lib/liquidity/studio/zap.ts`, Meteora's Zap program
+  through `@meteora-ag/zap-sdk` 2.0.0) — the part of the SOL the other coin needs is swapped (Jupiter `/swap/v2/build`
+  with Ryntra's fee of the table, or the pool itself with none, whichever brings more) and the position opened, in one
+  approval of the wallet for up to three version-0 transactions. The city's door is `POST /api/city/earn/piers/zap`; the
+  Review holds every instruction to the wallet's own accounts and the swap's floor to the venue's price
+  (`zap-check.ts`). A Zap that lands in part says so and offers «Take back as SOL» (`zap_rest`): one more approval, and
+  what the Zap left in the wallet is SOL again.
 - **Boats**: your positions (SOL-2b's read) as boats at the pier — lit while in range, dark out of it. A boat's card says
   what it earned and stands against holding in SOL, with Take fees · Leave (the engine's claim and full exit).
 - **The flow** is the Harbor's own (`districts/harbor/flow.ts`): the Review built while the card is read, one wallet
@@ -139,12 +143,8 @@ city with that recipe; any add that lands from the Piers or from a copy is one.
   copies and the fees — and one action, **Copy**. Losses are the same size as gains. Before any record: a calm window
   that says when one will show, and «Tell me when».
 - **Copy** (`PierCard` with `copy`, `pier-store.openCopy`): the strategy's pier with its style fixed and its record in
-  place of the month gone; the person types the amount; the same Harbor door, the engine's unchanged Review, one
-  signature. **The Zap** (`zap-store.ts`, `components/earn/Copy.tsx`): when the wallet holds only SOL, the missing coin
-  (3 % over what is missing) is bought first on the trade card's own engine and flow — its exact order and fee on the
-  card before the tap — and the add follows on the same card once the wallet is read again. Two signatures in the
-  person's own wallet. A one-signature Zap through Meteora's Zap program needs the engine's Review to admit that program
-  — an engine change under spec §18.3, not this pass.
+  place of the month gone; the person types the amount in SOL; the same Harbor door, the engine's Zap Review, one
+  approval — the same Zap from SOL as every pier add (CITY-198).
 
 | | Where | What |
 | --- | --- | --- |
@@ -286,7 +286,7 @@ screen. All of it is closed with `NEXT_PUBLIC_RYNTRA_CITY_EARN`. Loan health wai
 | `pier-engine.ts`, `pier-store.ts` | The Piers' line to the server and their state and flow. |
 | `captain.ts` | Recipes, copies held to the chain, the daily point, the line, the fall, the gate, the answer. |
 | `captain-store.ts`, `captain-db.ts`, `captain-ledger.ts`, `captain.server.ts` | The ledger: memory and the database, the report, the daily pass, the record; the server's wiring. |
-| `zap-store.ts` | The Zap's first half on the trade card's own flow. |
+| `zap-shots.mjs` | The Zap's screens for review (`docs/shots/city-198/`): `LANG_EARN=uk\|en node city/lib/earn/zap-shots.mjs [out] [baseUrl]` with Earn and the Harbor open on a dev stand. |
 | `captain-shots.mjs` | «Like the Captain»'s screens for review (`docs/shots/city-99/`): `node city/lib/earn/captain-shots.mjs [out] [baseUrl]` with both switches open on a dev stand; `LANG_EARN=en` for English. |
 | `notes.ts` | Earn's notes: the four judges, their words in both languages, the engine's trigger and Telegram line. |
 | `notes-source.ts` | The city's source of them, through the notification centre. |

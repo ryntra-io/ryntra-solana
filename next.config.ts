@@ -5,7 +5,7 @@ import { CUSTOMER_REDIRECTS } from "./lib/product/customer-routing.ts";
 import { treasuryNetworkFrom } from "./lib/solana/treasury/model.ts";
 import { onPredictHost, predictHostRedirects } from "./lib/predictions/predict-host.ts";
 import { seekerRelayCspSources } from "./lib/solana/seeker-connect.ts";
-import { appHostRedirects, appHostRewrites, atBothAddresses, everywhereButProxied, ON_APP_HOST, siteHostRedirects, SITE_ORIGIN } from "./lib/product/app-address.ts";
+import { appHostRedirects, appHostRewrites, atBothAddresses, ON_APP_HOST, siteHostRedirects, SITE_ORIGIN } from "./lib/product/app-address.ts";
 import { OLD_PREFIXES, oldAddressRedirects, shadowedByOldAddresses } from "./city/lib/open/old-addresses.ts";
 import { awaitingSources } from "./city/lib/open/site-map.ts";
 import { oldChapterRedirects, shadowedByChapters, throughChapters } from "./city/lib/docs/old-chapters.ts";
@@ -233,8 +233,8 @@ const nextConfig: NextConfig = {
   },
   async headers() {
     return [
-      /* Every path of every host — but not the cabinet's answers on app.ryntra.io, which carry their own. */
-      ...everywhereButProxied(SECURITY_HEADERS),
+      /* Every path of every host. */
+      { source: "/:path*", headers: SECURITY_HEADERS },
       /* The lab's own policy, declared after the site-wide one so that for this
          route the later Content-Security-Policy value replaces the earlier;
          every other security header above stays as it is. */
@@ -339,8 +339,6 @@ const nextConfig: NextConfig = {
       { source: "/investors", destination: "/build", permanent: true },
       { source: "/decks/ryntra-investors-:rest", destination: "/build", permanent: true },
       { source: "/decks/ryntra-partners-:rest", destination: "/partners", permanent: true },
-      /* Old shortcuts keep answering. */
-      { source: "/guard", destination: "/docs/developers/guard", permanent: true },
       /* «Points and levels» merged into «Rewards» on 2026-10-26 (SOL-C17,
          audit card UX-751, following Ріст 19). It documented the Points V1
          programme — levels, a lifetime total, a daily cap — which the server
@@ -352,7 +350,6 @@ const nextConfig: NextConfig = {
          slug (`apps/mobile/src/features/monitoring/deep-link.ts`). */
       { source: "/docs/money/points", destination: "/docs/money/rewards", permanent: true },
       { source: "/uk/docs/money/points", destination: "/uk/docs/money/rewards", permanent: true },
-      { source: "/proof", destination: "/verify", permanent: true },
 
       /* Public surface consolidation, 2026-08-26. Competing doors become
          permanent redirects. */
@@ -378,18 +375,10 @@ const nextConfig: NextConfig = {
       },
       { source: "/demo", destination: "/app", permanent: true },
       /* Addresses already given out keep answering as they did. */
-      { source: "/arc/demo", destination: "/arc/workspace", permanent: true },
-      {
-        source: "/arc/proof",
-        destination: "/arc/workspace/verifier?ref=rcp_62a901894bac4b9cbdd335445e101635",
-        permanent: true,
-      },
-      { source: "/arc/deck", destination: "/arc", permanent: true },
       { source: "/workspaces", destination: "/docs/current-capabilities", permanent: true },
       { source: "/solana", destination: "/solana/workspace", permanent: true },
       { source: "/stellar", destination: "/stellar/workspace", permanent: true },
       { source: "/robinhood", destination: "/robinhood/workspace", permanent: true },
-      { source: "/agents/verify", destination: "/verify", permanent: true },
 
       /* The new homepage was built and reviewed at `/v2` before it took `/`.
          The route is gone now, and anyone holding that link — a bookmark from
@@ -452,11 +441,17 @@ const nextConfig: NextConfig = {
     ];
   },
   /* On app.ryntra.io the Solana pages answer at `/solana/…`, served from
-     their `/app/…` routes; the other network's cabinet, its APIs and its
-     files reach its own deployment once it answers behind the proxy. Every
-     rule names that host. */
+     their `/app/…` routes. Every rule names that host. */
   async rewrites() {
-    return { beforeFiles: [...appHostRewrites()], afterFiles: [], fallback: [] };
+    return {
+      beforeFiles: [...appHostRewrites()],
+      /* «Ryntra from A to Z» (CITY-202): a static page in public/learn/, built by scripts/learn/build.mjs. */
+      afterFiles: [
+        { source: "/learn", destination: "/learn/index.html" },
+        { source: "/learn/uk", destination: "/learn/uk.html" },
+      ],
+      fallback: [],
+    };
   },
 };
 
