@@ -13,7 +13,7 @@ import { useLaunch } from '@/city/lib/launch/district';
 import { rhythmOf, solText } from '@/city/lib/autopilot/plan';
 import { calmPlan, STEADY } from '@/lib/mandate/plans';
 import { steadyRhythm } from '@/lib/mandate/strategy';
-import { pctText, planLine, planOfText, planRules, signedPct, testedLine } from '@/city/lib/autopilot/plan-line';
+import { budgetLines, pctText, planLine, planOfText, planRules, signedPct, testedLine } from '@/city/lib/autopilot/plan-line';
 import { launchProposal, readAgentView, readPaper, signTrade, startPaper, stopTrade, useAutopilot, type AgentView } from '@/city/lib/autopilot/store';
 import { AGENT_REPORT, AGENT_REPORT_OPEN, holdFigure, hourText, resultRaw, solFigure, toneOf, worthTelling } from '@/city/lib/autopilot/report';
 import { useAgentReport } from '@/city/lib/autopilot/report-client';
@@ -123,9 +123,6 @@ function SignButton({ label, busy, disabled, onPress }: { label: string; busy: b
   );
 }
 
-/** CITY-197: what the agent really trades a day at its pace — the buys it makes, never more than the day's cap. */
-const dayAtPace = (rhythm: Readonly<{ buys: number; perTrade: number; perDay: number }>) => Math.min(rhythm.perDay, Math.round(rhythm.buys * rhythm.perTrade * 1e9) / 1e9);
-
 function noteText(w: W, kind: 'on' | 'stopped' | 'walletNo' | 'refused' | 'unreachable'): string {
   return { on: w.noteOn, stopped: w.noteStopped, walletNo: w.noteWalletNo, refused: w.noteRefused, unreachable: w.noteUnreachable }[kind];
 }
@@ -157,6 +154,7 @@ function TradeStart({ said }: { said: string }) {
   const line = planLine(plan, w, lang);
   const rules = planRules(plan, w, lang, rhythm ? { buys: rhythm.buys, perTrade: sol(rhythm.perTrade, lang) } : null, SELLS);
   const testedText = testedLine(tested?.run ?? null, w, lang);
+  const budget = budgetLines(rhythm, plan, w, lang);
   return (
     <>
       <div className={i.hero}>
@@ -165,15 +163,14 @@ function TradeStart({ said }: { said: string }) {
         </span>
         <div className={i.heroText}>
           <span className={i.kicker}>{w.kicker}</span>
-          <h2 className={i.headline}>{rhythm ? w.trades(sol(dayAtPace(rhythm), lang)) : w.tradesAsk}</h2>
+          <h2 className={i.headline} data-autopilot-budget="">{budget.headline}</h2>
+          {budget.size ? <p className={i.sub} data-autopilot-size="">{budget.size}</p> : null}
           {needsCoin && coin ? <p className={i.sub} data-autopilot-coin={coin.mint}>{w.buys(coin.symbol)}</p> : null}
           {early && launch?.state === 'picking' ? <p className={i.sub}>{w.pickingLaunch}</p> : null}
           {line ? (
             <p className={s.plan} data-autopilot-plan={plan?.id}>
               {line}
             </p>
-          ) : rhythm ? (
-            <p className={i.sub}>{digits(w.rhythm(rhythm.buys, String(rhythm.everyHours), sol(rhythm.perTrade, lang)), lang)}</p>
           ) : null}
         </div>
       </div>
@@ -241,6 +238,7 @@ function PaperFace({ said }: { said: string }) {
   const pct = run?.resultPct ?? null;
   const tone = pct === null ? undefined : pct > 0 ? 'up' : pct < 0 ? 'down' : undefined;
   const earned = run && pct !== null ? (run.heldSol + run.gotSol - run.spentSol) : null;
+  const budget = budgetLines(rhythm, plan, w, lang);
   const goLive = (who: { wallet: string; owner: string }) => {
     // Live, the agent takes the very plan and coin it practised.
     useAutopilot.setState({ plan });
@@ -255,7 +253,8 @@ function PaperFace({ said }: { said: string }) {
         </span>
         <div className={i.heroText}>
           <span className={s.paperKicker}>{w.paperKicker}</span>
-          <h2 className={i.headline}>{rhythm ? w.trades(sol(dayAtPace(rhythm), lang)) : w.tradesAsk}</h2>
+          <h2 className={i.headline} data-autopilot-budget="">{budget.headline}</h2>
+          {budget.size ? <p className={i.sub} data-autopilot-size="">{budget.size}</p> : null}
           {paper.symbol ? <p className={i.sub}>{w.buys(paper.symbol)}</p> : null}
           {line ? <p className={s.plan}>{line}</p> : null}
         </div>
@@ -312,6 +311,8 @@ export function TradeWorking({ said }: { said: string | null }) {
   const plan = planOfText(view?.plan);
   const line = planLine(plan, w, lang);
   const paused = pausedText(w, view?.pausedBy ?? null, plan, lang);
+  /* CITY-216: the signed day's budget in the headline, one trade's size under it — never one trade as the day. */
+  const budget = budgetLines({ buys: steadyRhythm(BigInt(record.perTrade), BigInt(record.perDay), plan?.pace ?? null).buys, perTrade: Number(record.perTrade) / 1e9, perDay: Number(record.perDay) / 1e9 }, plan, w, lang);
   const ended = view && view.status !== 'working' ? (view.status === 'stopped' ? w.noteStopped : view.status === 'paused' ? paused : w.ended) : status && !status.active ? w.noteStopped : null;
   return (
     <>
@@ -321,7 +322,8 @@ export function TradeWorking({ said }: { said: string | null }) {
         </span>
         <div className={i.heroText}>
           {active ? <span className={s.live}>{w.working}</span> : <span className={i.kicker}>{w.kicker}</span>}
-          <h2 className={i.headline}>{w.trades(sol(dayAtPace({ buys: steadyRhythm(BigInt(record.perTrade), BigInt(record.perDay), plan?.pace ?? null).buys, perTrade: Number(record.perTrade) / 1e9, perDay: Number(record.perDay) / 1e9 }), lang))}</h2>
+          <h2 className={i.headline} data-autopilot-budget="">{budget.headline}</h2>
+          {view && budget.size ? <p className={i.sub} data-autopilot-size="">{budget.size}</p> : null}
           {line ? <p className={s.plan}>{line}</p> : null}
           {result && result.trades > 0 ? (
             <p className={i.sub}>

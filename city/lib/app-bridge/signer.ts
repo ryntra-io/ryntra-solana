@@ -1,7 +1,7 @@
 import type { ConnectResult, SignManyResult, SignResult, WalletConnection } from '../../../lib/solana/wallet.client.ts';
 import type { SignInInput, SignInResult } from '../../../lib/solana/wallet-signin.client.ts';
 import type { AppBridge, BridgeAnswer } from './client.ts';
-import { base64ToBytes, bytesToBase64, type ErrorCode } from './protocol.ts';
+import { base64ToBytes, bytesToBase64, MAX_TRANSACTIONS, type ErrorCode } from './protocol.ts';
 
 /**
  * The external signer: the city's wallet when the city is open in the Ryntra app. It answers in the very shapes the
@@ -70,11 +70,18 @@ export function externalSigner(bridge: AppBridge): ExternalSigner {
   const holds = (address: string) => bridge.wallet()?.address === address;
 
   const signTransactions: ExternalSigner['signTransactions'] = async ({ address, unsignedWireBase64 }) => {
+    // The app takes four at a time (CITY-213): a plan of more is signed in two windows, and nothing is sent before the last.
+    const signed: string[] = [];
+    let at = 0;
+    do {
+      if (!holds(address)) return { ok: false, reason: SIGNER_LINES.changed };
+      const answer = await bridge.request('wallet.signTransactions', { transactions: unsignedWireBase64.slice(at, at + MAX_TRANSACTIONS) });
+      if (!answer.ok) return { ok: false, reason: line(answer.code, answer.message) };
+      signed.push(...answer.result.signed);
+      at += MAX_TRANSACTIONS;
+    } while (at < unsignedWireBase64.length);
     if (!holds(address)) return { ok: false, reason: SIGNER_LINES.changed };
-    const answer = await bridge.request('wallet.signTransactions', { transactions: unsignedWireBase64 });
-    if (!answer.ok) return { ok: false, reason: line(answer.code, answer.message) };
-    if (!holds(address)) return { ok: false, reason: SIGNER_LINES.changed };
-    return { ok: true, signedWireBase64: answer.result.signed };
+    return { ok: true, signedWireBase64: signed };
   };
 
   return {

@@ -1,4 +1,5 @@
 import { planFrom, type StrategyPlan } from '../../../lib/mandate/plans.ts';
+import { solText } from './plan.ts';
 import type { AUTOPILOT } from './words.ts';
 
 /**
@@ -21,6 +22,18 @@ export function planLine(plan: StrategyPlan | null, w: W, lang: 'en' | 'uk'): st
   if (!head) return null;
   const exit = [plan.exit?.takeBps ? w.planTake(pctText(plan.exit.takeBps, lang)) : null, plan.exit?.stopBps ? w.planStop(pctText(plan.exit.stopBps, lang)) : null].filter(Boolean);
   return [head, ...exit].join(' · ');
+}
+
+/**
+ * CITY-216 — the agent's budget on its card as the person said it: the day's budget in the headline («up to 0.1 SOL a
+ * day»), one trade's size on its own line under it («0.02 SOL a trade · 1 buy a day»). The calm pace spaces the buys
+ * inside the day's budget; it never shrinks the headline to one trade. A strategy's buys a day are a ceiling, the steady
+ * rhythm's are what it does. Without a budget — the ask, no size.
+ */
+export function budgetLines(rhythm: Readonly<{ buys: number; perTrade: number; perDay: number }> | null, plan: StrategyPlan | null, w: W, lang: 'en' | 'uk'): Readonly<{ headline: string; size: string | null }> {
+  if (!rhythm) return { headline: w.tradesAsk, size: null };
+  const waits = Boolean(plan && plan.id !== 'steady');
+  return { headline: w.trades(solText(rhythm.perDay, lang)), size: w.size(solText(rhythm.perTrade, lang), rhythm.buys, waits) };
 }
 
 /** The plan's rules, for «Details»: what decides a buy, the rhythm as its ceiling, the exit, the same limits. */

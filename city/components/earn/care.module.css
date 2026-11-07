@@ -159,7 +159,10 @@
 }
 
 .take {
-  margin-top: 4px;
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  margin: -10px 0;
   border: 0;
   padding: 0;
   background: none;

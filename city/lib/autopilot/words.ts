@@ -9,9 +9,11 @@ export const AUTOPILOT = words(
     title: 'Your agent',
     kicker: 'Agent',
     // Trading.
-    trades: (perDay: string) => `Trades ${perDay} SOL a day for you`,
+    /** CITY-216: the day's budget as she said it — never one trade's size. */
+    trades: (perDay: string) => `Trades up to ${perDay} SOL a day for you`,
     tradesAsk: 'Trades for you within a budget',
-    rhythm: (buys: number, hours: string, perTrade: string) => `${buys} buys a day · ${perTrade} SOL each · every ${hours} h`,
+    /** CITY-216: one trade's size, apart from the day's budget; a strategy's buys are a ceiling («up to»). */
+    size: (perTrade: string, buys: number, upTo: boolean) => `${perTrade} SOL a trade · ${upTo ? 'up to ' : ''}${buys} ${buys === 1 ? 'buy' : 'buys'} a day`,
     budget: 'Budget a day',
     amount: (value: string) => `${value} SOL`,
     limits: (perTrade: string, perDay: string, days: number) => `≤ ${perTrade} SOL a trade · ${perDay} SOL a day · ${days} days · stop anytime`,
@@ -122,9 +124,9 @@ export const AUTOPILOT = words(
   {
     title: 'Твій агент',
     kicker: 'Агент',
-    trades: (perDay) => `Торгує за тебе на ${perDay} SOL на день`,
+    trades: (perDay) => `Торгує за тебе до ${perDay} SOL на день`,
     tradesAsk: 'Торгує за тебе в межах бюджету',
-    rhythm: (buys, hours, perTrade) => `${buys} ${pl(buys, 'покупка', 'покупки', 'покупок')} на день · по ${perTrade} SOL · кожні ${hours} год`,
+    size: (perTrade, buys, upTo) => `${perTrade} SOL за угоду · ${upTo ? `до ${buys} ${pl(buys, 'покупки', 'покупок', 'покупок')}` : `${buys} ${pl(buys, 'покупка', 'покупки', 'покупок')}`} на день`,
     budget: 'Бюджет на день',
     amount: (value) => `${value} SOL`,
     limits: (perTrade, perDay, days) => `≤ ${perTrade} SOL за угоду · ${perDay} SOL на день · ${days} днів · стоп будь-коли`,

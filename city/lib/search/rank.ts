@@ -3,7 +3,7 @@ import { bareSymbol, pastedMint } from './mint.ts';
 /**
  * The city's search: one list of coins from four places — the towers of the city (instant, on this device), the Ryntra
  * launches the Launch Docks read, the engine's index of the coins Markets lists (`GET /api/search`), and Jupiter's
- * catalogue through the engine (`POST /api/solana/tokens/search`) for everything else. A coin found in several is one
+ * catalogue through the engine (`GET /api/solana/tokens/search`) for everything else. A coin found in several is one
  * row, and a tower is always said as one.
  */
 

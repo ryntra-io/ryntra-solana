@@ -77,8 +77,8 @@ const BASE58_ADDRESS = /^[1-9A-HJ-NP-Za-km-z]{32,44}$/;
 const BASE64 = /^(?:[A-Za-z0-9+/]{4})*(?:[A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=)?$/;
 /** The base64 length of the largest share file. */
 const MAX_SHARE_BASE64 = Math.ceil(MAX_SHARE_BYTES / 3) * 4;
-/** A serialized Solana transaction is at most 1232 bytes; its base64 at most 1644 characters. */
-const MAX_TRANSACTION_BASE64 = 1644;
+/** One transaction at most, as the app reads it: a v1 transaction's 4096 bytes; legacy and v0 stop at 1232. */
+const MAX_TRANSACTION_BASE64 = Math.ceil(4096 / 3) * 4;
 /** A sign-in message is a few hundred bytes; this leaves room and no more. */
 const MAX_MESSAGE_BASE64 = 8192;
 

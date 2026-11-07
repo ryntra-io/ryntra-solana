@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { readAgentView, type AgentView } from '@/city/lib/autopilot/store';
 import { syncAgents } from '@/city/lib/bots/agents';
 import { MANDATE_NET, useMandate, type MandateStatus } from '@/city/lib/bots/mandate';
@@ -30,7 +30,7 @@ const loaded = (status: string | undefined): ReadState => (status === 'ready' ? 
  * Every engine read the portfolio needs, started when the window opens for a wallet and shared with the windows that
  * own them — the same stores Earn, the trade card and the agent use, so a figure never disagrees between two windows.
  */
-export function usePortfolio(): Readonly<{ owner: string | null; view: PortfolioView | null }> {
+export function usePortfolio(): Readonly<{ owner: string | null; view: PortfolioView | null; reread: () => void }> {
   const owner = useWallet((st) => st.connection?.address ?? null);
   const pw = useWords(PORTFOLIO);
   const rowWords = useWords(PORTFOLIO_ROWS);
@@ -39,10 +39,15 @@ export function usePortfolio(): Readonly<{ owner: string | null; view: Portfolio
   const dollar = useDollar((st) => st.surface);
   const positions = useEarnData((st) => st.positions);
   const cares = useCare((st) => st.cares);
+  const caresFailed = useCare((st) => st.caresFailed);
   const spotOrders = useSpot((st) => st.orders);
   const poolOrders = useLimit((st) => st.orders);
   const records = useMandate((st) => st.records);
   const account = useExchange((st) => (owner && st.owner === owner && st.account.value?.wallet === owner ? st.account.value : null));
+  const accountFailed = useExchange((st) => !!owner && st.owner === owner && st.account.status === 'failed');
+  /* Bumped by «Try again»: every read that did not answer is asked once more, the others keep what they read. */
+  const [round, setRound] = useState(0);
+  const reread = useCallback(() => setRound((n) => n + 1), []);
   const [agent, setAgent] = useState<Readonly<{ owner: string; status: MandateStatus | null; view: AgentView | null; done: boolean }> | null>(null);
 
   const record = owner ? (records[owner] ?? null) : null;
@@ -65,15 +70,27 @@ export function usePortfolio(): Readonly<{ owner: string | null; view: Portfolio
   }, [owner]);
 
   useEffect(() => {
+    if (!owner || round === 0) return;
+    useMoneyStore.getState().readWallet();
+    void useEarnData.getState().loadPositions(owner);
+    if (DOLLAR_OPEN) void useDollar.getState().load(owner);
+    if (CARE_MODE !== 'closed') void useCare.getState().load(owner);
+    void useSpot.getState().readOrders(true);
+    if (EARN_OPEN && LIMIT_MODE !== 'closed') void useLimit.getState().loadOrders(owner);
+    if (EXCHANGE_SHOWN) void useExchange.getState().loadAccount();
+  }, [owner, round]);
+
+  useEffect(() => {
     if (!owner || !record) return;
     let live = true;
-    void Promise.all([readStatus(record), readAgentView(record)]).then(([status, view]) => {
+    /* Each read stands alone: a vault that did not answer leaves the agent «not read», never «reading» for ever. */
+    void Promise.all([readStatus(record).catch(() => null), readAgentView(record).catch(() => null)]).then(([status, view]) => {
       if (live) setAgent({ owner, status, view, done: true });
     });
     return () => {
       live = false;
     };
-  }, [owner, record]);
+  }, [owner, record, round]);
 
   const view = useMemo(() => {
     if (!owner) return null;
@@ -130,7 +147,7 @@ export function usePortfolio(): Readonly<{ owner: string | null; view: Portfolio
       : null;
 
     const collateral = collateralOf(account);
-    const phoenixState: ReadState = !EXCHANGE_SHOWN ? 'off' : account ? 'ready' : 'loading';
+    const phoenixState: ReadState = !EXCHANGE_SHOWN ? 'off' : account ? 'ready' : accountFailed ? 'failed' : 'loading';
     const phoenixUsd = collateral && collateral.collateralUsd !== null && collateral.collateralUsd >= 0.01 ? collateral.collateralUsd : null;
 
     return portfolioView({
@@ -138,13 +155,13 @@ export function usePortfolio(): Readonly<{ owner: string | null; view: Portfolio
       walletState,
       lend: { state: lendState, rows: lendRows },
       piers: { state: mine ? loaded(mine.status) : 'loading', rows: pierRows },
-      care: { state: CARE_MODE === 'closed' ? 'off' : cares ? 'ready' : 'loading', rows: careRows },
+      care: { state: CARE_MODE === 'closed' ? 'off' : caresFailed ? 'failed' : cares ? 'ready' : 'loading', rows: careRows },
       agent: { state: agentState, row: agentRow },
       orders: { state: ordersState, rows: [...spotRows, ...poolRows] },
       phoenix: { state: phoenixState, usd: phoenixUsd },
       words: rowWords,
     });
-  }, [owner, wallet, walletRead, dollar, positions, cares, spotOrders, poolOrders, record, agent, account, pw, rowWords]);
+  }, [owner, wallet, walletRead, dollar, positions, cares, caresFailed, spotOrders, poolOrders, record, agent, account, accountFailed, pw, rowWords]);
 
-  return { owner, view };
+  return { owner, view, reread };
 }

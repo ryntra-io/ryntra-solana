@@ -80,8 +80,11 @@ The Harbor inside the window (spec E2). A **pier** is a Meteora DLMM pool of SOL
 (each LST looked up by its mint too). Fees and depth are said in SOL at the venue's own SOL price.
 
 - **Amount in SOL, three styles.** Half the worth goes in as SOL, half as the other coin at the pool's price. Calm ·
-  Balanced · Dense are 34 · 16 · 5 bins each side of the price, spread evenly (`spot`) — the engine's own `range.half`
-  and `shape`, nothing new in Liquidity Studio. Risk dots follow the style.
+  Balanced · Dense are 34 · 16 · 5 bins each side of the price — the engine's own `range.half`. Risk dots follow the
+  style.
+- **A goal, not a shape (CITY-210).** Even · Near price · Catch moves are the engine's `spot` · `curve` · `bid_ask`, for
+  the Zap and for the agent's care alike. Until the person picks, a staked SOL pair stands near the price and SOL
+  against dollars even. A copy of «Like the Captain» stays even: a recipe is a pool and a style.
 - **Past 30 days** (`pier-history.ts`): the engine's candle read (`/api/spot/candles`, 4 h) as the pool's price; the
   style's band around where the month began; the share of closes inside it; and the end against just holding, in SOL,
   before fees (Meteora states fees for the last day only — they are never invented). The past, never a forecast.

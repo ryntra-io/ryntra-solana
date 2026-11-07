@@ -8,3 +8,10 @@ export function ringOpen(value: string | undefined): boolean {
 }
 
 export const RING_OPEN = ringOpen(process.env.NEXT_PUBLIC_RYNTRA_CITY_RING);
+
+/** The Ring's duels (CITY-51): their own switch on top of the Ring's, closed by default. */
+export function duelsOpen(ring: string | undefined, duels: string | undefined): boolean {
+  return ringOpen(ring) && duels?.trim() === 'open';
+}
+
+export const RING_DUELS_OPEN = duelsOpen(process.env.NEXT_PUBLIC_RYNTRA_CITY_RING, process.env.NEXT_PUBLIC_RYNTRA_CITY_RING_DUELS);

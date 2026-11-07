@@ -5,6 +5,7 @@ import { privateNoStoreHeaders, publicCacheHeaders, rateLimitHeaders, type RateL
 import { isSpotView } from "@/lib/spot/markets";
 import { listSpotMarkets, readSpotMarketsByMint, searchSpotMarkets, spotListEdgeSeconds } from "@/lib/spot/markets.server";
 import { toListRow } from "@/lib/spot/markets";
+import { retryAfterHeader } from "@/lib/spot/shared-reads";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -41,8 +42,8 @@ function listHeaders(rate: RateLimitDecision, oldestReadAt: string) {
   return edge ? { ...publicCacheHeaders(edge.ttl, edge.revalidate), ...rateLimitHeaders(rate) } : { ...rateLimitHeaders(rate), ...privateNoStoreHeaders() };
 }
 
-function failure(status: number, code: string, message: string, rate: RateLimitDecision) {
-  return Response.json({ error: { code, message } }, { status, headers: { ...rateLimitHeaders(rate), "cache-control": "private, no-store" } });
+function failure(status: number, code: string, message: string, rate: RateLimitDecision, retryAfterMs?: number | null) {
+  return Response.json({ error: { code, message } }, { status, headers: { ...rateLimitHeaders(rate), ...retryAfterHeader(retryAfterMs), "cache-control": "private, no-store" } });
 }
 
 export async function GET(request: Request) {
@@ -56,16 +57,23 @@ export async function GET(request: Request) {
   if (mints !== undefined) {
     const list = mints.split(",").map((mint) => mint.trim()).filter((mint) => BASE58.test(mint));
     if (list.length === 0) return Response.json({ rows: [], observedAt: new Date().toISOString(), stale: false }, { headers: headers(rate, 15) });
-    const read = await readSpotMarketsByMint(list);
-    if (!read.ok) return failure(read.code === "RATE_LIMITED" ? 429 : 503, `MARKETS_${read.code}`, read.reason, rate);
+    /* When Jupiter refuses, the last good read of this set (CITY-208), stated stale with the time it was read; `missing` is that read's. */
+    const read = await readSpotMarketsByMint(list, 8_000, { held: true });
+    if (!read.ok) return failure(read.code === "RATE_LIMITED" ? 429 : 503, `MARKETS_${read.code}`, read.reason, rate, read.retryAfterMs);
     const rows = list.map((mint) => read.byMint.get(mint)).filter((market) => market !== undefined).map(toListRow);
-    return Response.json({ rows, missing: list.filter((mint) => !read.byMint.has(mint)), observedAt: read.observedAt, stale: false }, { headers: headers(rate, 15) });
+    return Response.json(
+      { rows, missing: list.filter((mint) => !read.byMint.has(mint)), observedAt: read.observedAt, stale: read.stale, ...(read.stale ? { lastGoodAt: read.observedAt } : {}) },
+      { headers: read.stale ? { ...publicCacheHeaders(3, 15), ...rateLimitHeaders(rate) } : headers(rate, 15) },
+    );
   }
 
   if (q !== undefined && q.trim().length > 0) {
     const read = await searchSpotMarkets(q, Math.min(limit, 40));
-    if (!read.ok) return failure(read.code === "RATE_LIMITED" ? 429 : 503, `MARKETS_${read.code}`, read.reason, rate);
-    return Response.json({ rows: read.rows, observedAt: read.observedAt, stale: read.stale, source: read.source }, { headers: headers(rate, 10) });
+    if (!read.ok) return failure(read.code === "RATE_LIMITED" ? 429 : 503, `MARKETS_${read.code}`, read.reason, rate, read.retryAfterMs);
+    return Response.json(
+      { rows: read.rows, observedAt: read.observedAt, stale: read.stale, ...(read.lastGoodAt ? { lastGoodAt: read.lastGoodAt } : {}), source: read.source },
+      { headers: read.stale ? { ...publicCacheHeaders(3, 15), ...rateLimitHeaders(rate) } : headers(rate, 10) },
+    );
   }
 
   const resolvedView = view === undefined ? "all" : view;
@@ -73,7 +81,7 @@ export async function GET(request: Request) {
     return failure(400, "VALIDATION_ERROR", "Unknown market view.", rate);
   }
   const read = await listSpotMarkets(resolvedView, limit);
-  if (!read.ok) return failure(read.code === "RATE_LIMITED" ? 429 : 503, `MARKETS_${read.code}`, read.reason, rate);
+  if (!read.ok) return failure(read.code === "RATE_LIMITED" ? 429 : 503, `MARKETS_${read.code}`, read.reason, rate, read.retryAfterMs);
   /* A partial or stale read is not cached at the edge: the next visitor must
      not inherit a category list the universe never filled, nor a «stale» the
      server has since mended. */

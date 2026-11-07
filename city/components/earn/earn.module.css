@@ -19,6 +19,28 @@
   padding: 12px 16px 14px;
 }
 
+/* CITY-209: the window stands as tall as its contents (`fit`), up to its place — no empty glass under a short tab. The
+   contents then stand in the flow and shrink to the frame's ceiling, the tabs stay put and the tab's body scrolls. On the
+   whole screen the window is not `fit` and the contents fill it as before. */
+:global([data-window-fit]) .framed {
+  position: relative;
+  inset: auto;
+  flex: 0 1 auto;
+  min-height: 0;
+}
+
+:global([data-window-fit]) .framed .body {
+  flex: 0 1 auto;
+}
+
+/* While the window's code arrives the glass keeps a calm height, so the first frame does not open as a sliver. */
+:global([data-window-fit]) .pending {
+  position: relative;
+  inset: auto;
+  flex: none;
+  height: min(520px, 56dvh);
+}
+
 .pending {
   position: absolute;
   inset: 0;
@@ -266,6 +288,37 @@
   font-size: var(--type-caption);
   font-weight: 700;
   color: var(--text-dim);
+}
+
+/* A big number on its way (CITY-209): its place held at its own height, so the Shelf does not jump when it lands. */
+.boneBig,
+.boneSmall {
+  display: block;
+  background: linear-gradient(90deg, rgba(255, 255, 255, 0.04), rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0.04)) 0 0 / 200% 100%;
+  animation: boneSweep 1.2s linear infinite;
+}
+
+.boneBig {
+  width: 42%;
+  height: clamp(28px, 7vw, 34px);
+}
+
+.boneSmall {
+  width: 58%;
+  height: calc(var(--type-caption, 12px) * 1.25);
+}
+
+@keyframes boneSweep {
+  to {
+    background-position: -200% 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .boneBig,
+  .boneSmall {
+    animation: none;
+  }
 }
 
 .cardLine {

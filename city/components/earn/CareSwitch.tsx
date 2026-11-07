@@ -60,7 +60,7 @@ export function CareSwitch({ busy }: { busy: boolean }) {
 }
 
 /** The card's one action with the care on: one approval in the wallet, then the agent opens and looks after it. */
-export function CareAction({ words, pool, lamports, width, blocked }: { words: Words; pool: string; lamports: bigint | null; width: number; blocked: boolean }) {
+export function CareAction({ words, pool, lamports, width, shape, blocked }: { words: Words; pool: string; lamports: bigint | null; width: number; shape: string; blocked: boolean }) {
   const w = careWords();
   const phase = useCare((st) => st.phase);
   const notice = useCare((st) => st.notice);
@@ -88,7 +88,7 @@ export function CareAction({ words, pool, lamports, width, blocked }: { words: W
         type="button"
         className={`${s.display} ${s.action} ${s.cta} ${waiting ? s.waiting : ''}`}
         disabled={waiting || blocked || !lamports}
-        onClick={() => lamports && void useCare.getState().give(connection, { pool, lamports, width })}
+        onClick={() => lamports && void useCare.getState().give(connection, { pool, lamports, width, shape })}
       >
         {label}
       </button>
@@ -101,6 +101,7 @@ export function CaredPiers({ owner }: { owner: string | null }) {
   const w = careWords();
   const cares = useCare((st) => st.cares);
   const connection = useWallet((st) => st.connection);
+  const notice = useCare((st) => st.notice);
   useEffect(() => {
     if (owner && careOpen()) void useCare.getState().load(owner);
   }, [owner]);
@@ -132,6 +133,7 @@ export function CaredPiers({ owner }: { owner: string | null }) {
           </li>
         ))}
       </ul>
+      {notice ? <p className={`${s.note} ${s.noteWarn}`}>{notice === 'cancelled' ? w.cancelled : w.failed}</p> : null}
     </>
   );
 }

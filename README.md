@@ -31,7 +31,7 @@ the other pictures are the live site.
 This repository is the product's source code as released — the web app and the
 city, the Android app, the Evidence Kernel and the database schema, with their
 tests. It is private and shared read-only with invited reviewers. Every update
-is one commit, named for what it released; the latest is from 2026-11-06.
+is one commit, named for what it released; the latest is from 2026-11-07.
 
 ## What is here
 
@@ -45,7 +45,7 @@ is one commit, named for what it released; the latest is from 2026-11-06.
 | `supabase/migrations/`, `supabase/prepared/` | The database schema migration by migration, and the prepared SQL that is applied by hand (corrections and rollbacks) |
 | `public/` | Static assets |
 
-6,779 files come from the development repository as released, and each test
+6,836 files come from the development repository as released, and each test
 sits beside the code it tests (`*.test.mjs`); `README.md`, `BOUNDARY.md`,
 `METEORA.md`, `LEARN.md`, `LICENSE`, `.gitignore` and the scripts of `package.json` are
 written for this snapshot.
@@ -115,15 +115,15 @@ build-tools).
 
 The code as it stood before the hackathon is tagged
 `pre-hackathon-baseline-2026-09-11` in the development repository — commit `7fc5776f`,
-2026-09-11. Measured against that tag, path by path, for the 6,779 files
+2026-09-11. Measured against that tag, path by path, for the 6,836 files
 that come from the development repository:
 
 | Since the tag | Files |
 |---|---|
-| New | 5,055 |
-| Changed | 896 |
-| Unchanged | 828 |
-| Lines added / removed | +1,071,956 / −28,029 |
+| New | 5,112 |
+| Changed | 898 |
+| Unchanged | 826 |
+| Lines added / removed | +1,080,476 / −28,079 |
 
 [BOUNDARY.md](BOUNDARY.md) lists every new and every changed file. Shipped since
 then, as the public build log records it:

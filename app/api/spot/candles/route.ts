@@ -2,6 +2,7 @@ import { consumeSolanaReadRequest } from "@/lib/agent-control/http";
 import { publicCacheHeaders, rateLimitHeaders, type RateLimitDecision } from "@/lib/http-control";
 import { TIMEFRAME_TTL_MS, isSpotTimeframe } from "@/lib/spot/candles";
 import { readSpotCandles } from "@/lib/spot/candles.server";
+import { retryAfterHeader } from "@/lib/spot/shared-reads";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -23,8 +24,8 @@ export const maxDuration = 30;
 
 const BASE58 = /^[1-9A-HJ-NP-Za-km-z]{32,44}$/;
 
-function failure(status: number, code: string, message: string, rate: RateLimitDecision) {
-  return Response.json({ error: { code, message } }, { status, headers: { ...rateLimitHeaders(rate), "cache-control": "private, no-store" } });
+function failure(status: number, code: string, message: string, rate: RateLimitDecision, retryAfterMs?: number | null) {
+  return Response.json({ error: { code, message } }, { status, headers: { ...rateLimitHeaders(rate), ...retryAfterHeader(retryAfterMs), "cache-control": "private, no-store" } });
 }
 
 export async function GET(request: Request) {
@@ -44,11 +45,12 @@ export async function GET(request: Request) {
        429/503: the source, not the market; the last read stays on screen. */
     const noChart = read.code === "NO_POOL" || read.code === "NO_MAJOR_QUOTE" || read.code === "THIN" || read.code === "QUIET" || read.code === "STALE" || read.code === "PRICE_MISMATCH";
     const status = noChart ? 404 : read.code === "RATE_LIMITED" ? 429 : 503;
-    return failure(status, `CANDLES_${read.code}`, read.reason, rate);
+    return failure(status, `CANDLES_${read.code}`, read.reason, rate, read.retryAfterMs);
   }
   const ttl = Math.max(5, Math.floor(TIMEFRAME_TTL_MS[timeframe] / 1000));
   return Response.json(
     { timeframe: read.timeframe, candles: limit === null ? read.candles : read.candles.slice(-limit), pool: read.pool, observedAt: read.observedAt, stale: read.stale, source: read.source, ...(limit === null ? {} : { limit, available: read.candles.length }) },
-    { headers: { ...publicCacheHeaders(ttl, ttl * 6), ...rateLimitHeaders(rate) } },
+    /* A held copy (CITY-208: the source refused, the last good read is answered with its own time) is kept at the edge briefly. */
+    { headers: { ...(read.stale ? publicCacheHeaders(5, 30) : publicCacheHeaders(ttl, ttl * 6)), ...rateLimitHeaders(rate) } },
   );
 }

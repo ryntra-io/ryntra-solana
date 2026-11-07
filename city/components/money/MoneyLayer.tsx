@@ -54,6 +54,8 @@ export function MoneyLayer() {
       title,
       icon: <TabGlyph tab="portfolio" />,
       render: renderMoney,
+      // CITY-209: as tall as the tab, up to its place — a short tab leaves no empty glass under it.
+      fit: true,
       size: { width: 520, height: 720 },
       min: { width: 400, height: 460 },
       held: busy,

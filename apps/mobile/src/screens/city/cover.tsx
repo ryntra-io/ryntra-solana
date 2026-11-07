@@ -4,14 +4,14 @@ import { AccessibilityInfo, Animated, Easing, Pressable, StyleSheet, Text, View 
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 
 import {
-  CITY_FLARE,
+  CITY_AMBER,
   CITY_FONT,
   CITY_FONT_STRONG,
   CITY_GROUND,
+  CITY_ICE,
   CITY_MARK,
   CITY_MARK_SIZE,
-  CITY_ON_FLARE,
-  CITY_PEARL,
+  CITY_ON_AMBER,
 } from '@/features/city/city-look'
 import type { CityCover as CoverKind } from '@/features/city/city-page'
 
@@ -147,18 +147,18 @@ const styles = StyleSheet.create({
     right: 0,
     alignItems: 'center',
   },
-  line: { width: 56, height: 2, borderRadius: 1, backgroundColor: CITY_FLARE },
+  line: { width: 56, height: 2, borderRadius: 1, backgroundColor: CITY_AMBER },
   say: { position: 'absolute', left: 24, right: 24, bottom: 0, alignItems: 'center', gap: 20 },
-  title: { color: CITY_PEARL, fontFamily: CITY_FONT_STRONG, fontSize: 22, lineHeight: 28, textAlign: 'center' },
+  title: { color: CITY_ICE, fontFamily: CITY_FONT_STRONG, fontSize: 22, lineHeight: 28, textAlign: 'center' },
   button: {
     minWidth: 200,
     height: 52,
     paddingHorizontal: 28,
     borderRadius: 26,
-    backgroundColor: CITY_FLARE,
+    backgroundColor: CITY_AMBER,
     alignItems: 'center',
     justifyContent: 'center',
   },
   pressed: { opacity: 0.85, transform: [{ scale: 0.98 }] },
-  buttonText: { color: CITY_ON_FLARE, fontFamily: CITY_FONT, fontSize: 16, letterSpacing: 0.2 },
+  buttonText: { color: CITY_ON_AMBER, fontFamily: CITY_FONT, fontSize: 16, letterSpacing: 0.2 },
 })

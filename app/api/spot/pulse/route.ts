@@ -6,6 +6,7 @@ import { readMarketsBehind } from "@/lib/launch/markets.server";
 import { isPulseFeed, pulseModeOf, pulseWindowOf, watchlistMintsOf } from "@/lib/spot/pulse";
 import { withoutOffensiveNames } from "@/lib/spot/offensive-names";
 import { readPulse } from "@/lib/spot/pulse.server";
+import { retryAfterHeader } from "@/lib/spot/shared-reads";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -35,8 +36,8 @@ const CACHE: Readonly<Record<string, readonly [number, number]>> = {
   watchlist: [15, 45],
 };
 
-function failure(status: number, code: string, message: string, rate: RateLimitDecision) {
-  return Response.json({ error: { code, message } }, { status, headers: { ...rateLimitHeaders(rate), "cache-control": "private, no-store" } });
+function failure(status: number, code: string, message: string, rate: RateLimitDecision, retryAfterMs?: number | null) {
+  return Response.json({ error: { code, message } }, { status, headers: { ...rateLimitHeaders(rate), ...retryAfterHeader(retryAfterMs), "cache-control": "private, no-store" } });
 }
 
 export async function GET(request: Request) {
@@ -48,7 +49,7 @@ export async function GET(request: Request) {
   const read = await readPulse(feed, pulseWindowOf(feed, params.get("window")), { mode: pulseModeOf(params.get("mode")), mints: feed === "watchlist" ? watchlistMintsOf(params.get("mints")) : [] });
   /* Ryntra's markets the answer could not read in time are read behind it, so the next answer has them. */
   after(() => readMarketsBehind());
-  if (!read.ok) return failure(read.code === "RATE_LIMITED" ? 429 : 503, `PULSE_${read.code}`, read.reason, rate);
+  if (!read.ok) return failure(read.code === "RATE_LIMITED" ? 429 : 503, `PULSE_${read.code}`, read.reason, rate, read.retryAfterMs);
   const { ok: _ok, ...answer } = read;
   /* A token named with a hate word is not offered (B2b): anyone can mint any name, and Pulse is open on Home. */
   const body = { ...answer, rows: withoutOffensiveNames(answer.rows), ...(answer.down ? { down: withoutOffensiveNames(answer.down) } : {}) };

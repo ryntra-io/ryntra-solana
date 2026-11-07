@@ -45,6 +45,7 @@ import { creatorLockSchedule, type CreatorLockId } from "../core/launch/creator-
 import { advancedPresetOf, type AdvancedTerms } from "../core/launch/advanced.ts";
 import type { CurveRuleSet } from "../core/launch/curve-rules.ts";
 import { feeShareProblems, type FeeShare } from "../core/launch/fee-shares.ts";
+import { crewOpenOn, isCrewPreset } from "../core/launch/crew.ts";
 import { quoteAssetRefusalWords } from "../core/launch/quote-asset.ts";
 import { crewSharesFor, holdCrew, releaseCrew } from "./crew.server.ts";
 import type { GuardStore } from "../guard/store.ts";
@@ -335,7 +336,9 @@ export async function prepareLaunch(deps: LaunchDeps, input: PrepareInput, conte
   let shares = input.feeShares ?? [];
   if (shares.length > 0) {
     if (input.crew !== undefined) return fail("SHARES_INVALID", "A crew's launch takes its rows from the crew, not the request.");
-    if (preset.id !== "community") return fail("SHARES_INVALID", "Only «Спільнота» and a crew share the creator's fees.");
+    /* CITY-212: the city's launch shares the creator's fees between wallets the creator types, on Classic and Protected
+       too. */
+    if (preset.id !== "community" && !(isCrewPreset(preset.id) && crewOpenOn(deps.network.cluster))) return fail("SHARES_INVALID", "Only «Спільнота» and a crew share the creator's fees.");
   }
   /* MC-2: a crew's rows — the creator and every member who said yes — from the crew's own record. */
   if (input.crew !== undefined) {
@@ -416,7 +419,7 @@ export async function prepareLaunch(deps: LaunchDeps, input: PrepareInput, conte
         creatorFirstBuyRaw: input.firstBuyRaw,
         pairMint,
       },
-      { creatorCoversPayer: true, feeShares: shares, ...(input.crew !== undefined ? { crew: true } : {}), ...(advanced ? { custom: advancedPresetOf(advanced) } : {}) },
+      { creatorCoversPayer: true, feeShares: shares, ...(input.crew !== undefined || (shares.length > 0 && isCrewPreset(preset.id)) ? { crew: true } : {}), ...(advanced ? { custom: advancedPresetOf(advanced) } : {}) },
     );
   } catch (error) {
     if (error instanceof LaunchRefusal && error.code === "CREATOR_BUY_ABOVE_CAP") return fail("FIRST_BUY_ABOVE_CAP", "The first purchase is above the preset's cap.");

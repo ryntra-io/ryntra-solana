@@ -14,6 +14,7 @@ import { createAssociatedTokenAccountIdempotentInstruction } from "@solana/spl-t
 import { ComputeBudgetProgram, Keypair, PublicKey, TransactionInstruction, type Connection } from "@solana/web3.js";
 import BN from "bn.js";
 
+import { SHAPE_TO_STRATEGY, type LiquidityShape } from "../liquidity/studio/contract.ts";
 import { ownTokenAccount, type Care } from "./enable.ts";
 import { CARE_MAX_ACTIVE_BIN_SLIPPAGE, DAMM_V2_PROGRAM_ID, DISC, DLMM_PROGRAM_ID, LAYOUT, careRuleOf } from "./terms.ts";
 
@@ -29,8 +30,6 @@ export type CareBuild = Readonly<{
 
 /** Bins per DLMM bin array (the program's `MAX_BIN_ARRAY_SIZE`). */
 const BIN_ARRAY_SIZE = 70;
-/** The SDK's `StrategyType.Spot`: the same amount in every bin. */
-const SPOT = 0;
 const SYSTEM_PROGRAM = new PublicKey("11111111111111111111111111111111");
 const head = (data: Uint8Array, disc: Uint8Array) => disc.every((byte, index) => data[index] === byte);
 
@@ -137,7 +136,7 @@ export async function dlmmOpen(pool: DlmmPool, care: Care, width: number): Promi
 
 /**
  * The position's money put back around the price — and the vault's idle coins (`topUp`) with it — in one `rebalance_liquidity`:
- * the fees claimed into the vault, everything withdrawn, the same width deposited around the active bin («Spot»). The
+ * the fees claimed into the vault, everything withdrawn, the same width deposited around the active bin, in the shape the person chose. The
  * active bin's slippage is capped by the policy (`CARE_MAX_ACTIVE_BIN_SLIPPAGE`).
  */
 export async function dlmmRebalance(
@@ -145,7 +144,7 @@ export async function dlmmRebalance(
   care: Care,
   position: PublicKey,
   topUp: Readonly<{ x: bigint; y: bigint }>,
-  options: Readonly<{ withdraw: boolean }> = { withdraw: true },
+  options: Readonly<{ withdraw: boolean; shape?: LiquidityShape }> = { withdraw: true },
 ): Promise<CareBuild> {
   const read = await pool.getPosition(position);
   const withdrawBps = new BN(options.withdraw ? 10_000 : 0);
@@ -158,7 +157,7 @@ export async function dlmmRebalance(
   const back = options.withdraw ? { x: whole(read.positionData.totalXAmount) + whole(read.positionData.feeX), y: whole(read.positionData.totalYAmount) + whole(read.positionData.feeY) } : { x: 0n, y: 0n };
   const depositX = topUp.x + back.x;
   const depositY = topUp.y + back.y;
-  const simulated = await pool.simulateRebalancePositionWithBalancedStrategy(position, read.positionData, SPOT as never, new BN(depositX.toString()), new BN(depositY.toString()), withdrawBps, withdrawBps);
+  const simulated = await pool.simulateRebalancePositionWithBalancedStrategy(position, read.positionData, SHAPE_TO_STRATEGY[options.shape ?? "spot"] as never, new BN(depositX.toString()), new BN(depositY.toString()), withdrawBps, withdrawBps);
   const built = await pool.rebalancePosition(simulated, new BN(CARE_MAX_ACTIVE_BIN_SLIPPAGE), care.vault);
   const { inside, outside } = split([...built.initBinArrayInstructions, ...built.rebalancePositionInstruction], DLMM_PROGRAM_ID, care.terms.agent);
   const rebalance = inside.filter((instruction) => head(instruction.data, DISC.dlmmRebalance));

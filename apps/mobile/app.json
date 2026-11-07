@@ -3,14 +3,14 @@
     "name": "Ryntra",
     "slug": "ryntra",
     "scheme": "ryntra",
-    "version": "1.18.0",
+    "version": "1.20.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
     "userInterfaceStyle": "automatic",
-    "backgroundColor": "#080D13",
+    "backgroundColor": "#0B0A14",
     "android": {
       "package": "io.ryntra.app",
-      "versionCode": 23,
+      "versionCode": 26,
       "blockedPermissions": [
         "android.permission.SYSTEM_ALERT_WINDOW",
         "android.permission.READ_EXTERNAL_STORAGE",
@@ -24,7 +24,8 @@
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/adaptive-foreground.png",
         "monochromeImage": "./assets/images/adaptive-monochrome.png",
-        "backgroundColor": "#06080D"
+        "backgroundImage": "./assets/images/adaptive-background.png",
+        "backgroundColor": "#0B0A14"
       },
       "predictiveBackGestureEnabled": false,
       "intentFilters": [
@@ -59,11 +60,11 @@
       [
         "expo-splash-screen",
         {
-          "backgroundColor": "#080D13",
+          "backgroundColor": "#0B0A14",
           "image": "./assets/images/splash-icon.png",
           "imageWidth": 112,
           "dark": {
-            "backgroundColor": "#080D13",
+            "backgroundColor": "#0B0A14",
             "image": "./assets/images/splash-icon.png"
           }
         }

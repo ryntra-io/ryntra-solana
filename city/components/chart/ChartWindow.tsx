@@ -9,7 +9,7 @@ import '@ryntra/core/chart.css';
 
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { RyntraChart } from '@ryntra/core/chart';
-import { detailsOf, headPrice, TIMEFRAMES, whyNoChart, type ChartData, type Timeframe } from '@/city/lib/chart/candles';
+import { detailsOf, headPrice, saysUnavailable, TIMEFRAMES, whyNoChart, type ChartData, type Timeframe } from '@/city/lib/chart/candles';
 import { entryLayer, entryMove } from '@/city/lib/chart/entry';
 import { riskFacts } from '@/city/lib/chart/facts';
 import { marketOf, PRICE_BASIS, resolutionOf, tickFor, timeframeOf, TowerFeed, type Feed } from '@/city/lib/chart/feed';
@@ -18,6 +18,7 @@ import { marketLayer } from '@/city/lib/chart/marks';
 import { useTowerChart } from '@/city/lib/chart/store';
 import { crosshairChannel, readoutOf, readoutTime } from '@/city/lib/chart/readout';
 import { useCandles, useEntry, useMarketMarks, useTimeframe } from '@/city/lib/chart/use-chart';
+import { useScrollThrough } from '@/city/lib/chart/use-gesture';
 import { isStale } from '@/city/lib/city/events';
 import { useCity } from '@/city/lib/city/store';
 import { digits, useWords, type TextKey } from '@/city/lib/i18n/dict';
@@ -80,6 +81,8 @@ export function ChartWindow({ tower }: { tower: Tower }) {
   const frame = useRef<HTMLElement | null>(null);
   const pane = useRef<HTMLDivElement | null>(null);
   const heal = useHeal(pane, data);
+  // Up or down over the candles scrolls the window the chart stands in; across and a pinch stay the chart's.
+  useScrollThrough(pane);
   const up = tower.change24h >= 0;
   // The price in the head is the chart's own: the city's live price, else the engine's newest close, so the head and the
   // last bar never say two prices while the city's read is a held snapshot.
@@ -221,6 +224,7 @@ export function TradeChart({ tower }: { tower: Tower }) {
   }, [layers, hidden, tick]);
   const pane = useRef<HTMLDivElement | null>(null);
   const heal = useHeal(pane, data);
+  useScrollThrough(pane);
   // Our chart whole (30.10): its own intervals, styles, scales, indicators and drawings over the candles.
   return (
     <div className={`${c.inTrade} ${c.tooled}`} data-trade-chart="">
@@ -277,7 +281,7 @@ function ChartBody({
       </div>
     );
   }
-  if (data.status === 'unavailable' && !data.last) {
+  if (saysUnavailable(data)) {
     return (
       <div className={`${c.state} ${c.artEmpty}`} role="status">
         {/* It is read again on its own: nothing for the person to do, so nothing more to say. */}
@@ -285,6 +289,8 @@ function ChartBody({
       </div>
     );
   }
+  // The first tries that failed are quiet (CITY-215): the frame waits, as for a first read, while the chart asks again.
+  if (data.status === 'unavailable' && !data.last) return <div className={`${c.state} ${c.artLoading}`} aria-busy="true" />;
   if (!feed) return <div className={`${c.state} ${c.artLoading}`} aria-busy="true" />;
   const readout = data.last ? readoutOf(data.last.candles, hover, livePrice) : null;
   return (

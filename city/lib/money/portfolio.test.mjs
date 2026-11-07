@@ -10,7 +10,7 @@ const BONK = "DezXAZ8z7PnrnRJjz3wXBoRgixCa6xjnB7YaB1pPB263";
 const ODD = "Odd1111111111111111111111111111111111111111";
 
 const words = {
-  inRange: "In range", outOfRange: "Out of range", locked: "Part locked", caring: "Caring", working: "Working", stopped: "Stopped",
+  inRange: "In range", outOfRange: "Out of range", locked: "Part locked", caring: "Caring", carePier: "Your pier", working: "Working", stopped: "Stopped",
   test: "devnet", trades: (n) => `${n} trades`, agent: "Agent", phoenix: "Left on Phoenix", phoenixLine: "Collateral", earned: "earned",
 };
 
@@ -93,6 +93,7 @@ test("pools show the fees to take; a cared pool is listed with its stop", () => 
   const pools = view.places.find((p) => p.kind === "pools");
   assert.equal(pools.rows[0].gainUsd, 4.5);
   assert.equal(pools.rows[1].action.kind, "care");
+  assert.equal(pools.rows[1].title, "Your pier", "never the pool's address");
   assert.match(pools.rows[1].line, /Caring/);
 });
 
@@ -106,4 +107,76 @@ test("a place still reading is named as such, so a short total never passes for 
   const view = portfolioView({ ...base, piers: { state: "loading", rows: [] } });
   assert.deepEqual(view.reading, ["pools"]);
   assert.deepEqual(view.unread, []);
+});
+
+/* CITY-209: when one engine read does not answer, every other place still stands, the unread one is named, and the
+   total never passes for the whole. One failure at a time, each source of the portfolio. */
+const failing = {
+  wallet: { assets: [], walletState: "failed" },
+  lend: { lend: { state: "failed", rows: [] } },
+  piers: { piers: { state: "failed", rows: [] } },
+  care: { care: { state: "failed", rows: [] } },
+  agent: { agent: { state: "failed", row: null } },
+  orders: { orders: { state: "failed", rows: [] } },
+  phoenix: { phoenix: { state: "failed", usd: null } },
+};
+const placeOf = { wallet: "wallet", lend: "savings", piers: "pools", care: "pools", agent: "agents", orders: "orders", phoenix: "phoenix" };
+
+test("the whole portfolio, every source answered, is complete", () => {
+  const view = portfolioView(base);
+  assert.equal(view.complete, true);
+  assert.deepEqual(view.unread, []);
+});
+
+for (const [source, patch] of Object.entries(failing)) {
+  test(`${source} does not answer: its place is named unread, the others stand, the total is not the whole`, () => {
+    const view = portfolioView({ ...base, ...patch });
+    const kind = placeOf[source];
+    assert.ok(view.unread.includes(kind), `${kind} is unread`);
+    assert.equal(view.complete, false, "the total never passes for the whole");
+    assert.equal(view.places.length, 6, "every place is still in the view");
+    for (const other of view.places.filter((p) => p.kind !== kind && !view.unread.includes(p.kind))) {
+      assert.notEqual(other.state, "failed", `${other.kind} still stands`);
+    }
+    /* What answered is still on screen: the pool position and Phoenix are priced by their own venues. */
+    if (source !== "piers") assert.ok(view.places.find((p) => p.kind === "pools").rows.some((r) => r.id.startsWith("pier:")));
+    if (source !== "phoenix") assert.equal(view.places.find((p) => p.kind === "phoenix").usd, 7);
+    assert.ok(view.totalUsd !== null && view.totalUsd > 0, "what was read still adds up");
+    /* Short of the whole where the silent source held money (no cared pool in the fixture), never padded. */
+    if (source === "care") assert.equal(view.totalUsd, 847);
+    else assert.ok(view.totalUsd < 847, "short of the whole, not padded");
+  });
+}
+
+test("balances do not answer: savings, pools, the agent and orders are all still listed", () => {
+  const view = portfolioView({ ...base, ...failing.wallet });
+  const rows = Object.fromEntries(view.places.map((p) => [p.kind, p.rows.map((r) => r.id)]));
+  assert.deepEqual(rows.wallet, []);
+  assert.deepEqual(rows.savings, ["lend:USDC"], "Lend answered; the LSTs live in the wallet read");
+  assert.equal(view.places.find((p) => p.kind === "savings").state, "failed", "savings are short of their LSTs");
+  assert.deepEqual(rows.pools, ["pier:Pier1111111111111111111111111111111111111111"]);
+  assert.deepEqual(rows.agents, ["agent:mandate"]);
+  assert.deepEqual(rows.orders, ["order:k1"]);
+  /* Without the catalogue's prices a coin amount has no dollar figure: «—», never a guess. */
+  assert.equal(view.places.find((p) => p.kind === "agents").usd, null);
+  assert.equal(view.places.find((p) => p.kind === "savings").rows[0].usd, null);
+  assert.equal(view.places.find((p) => p.kind === "savings").rows[0].line, "100 USDC");
+  assert.equal(view.totalUsd, 300 + 7, "pools and Phoenix carry their own dollar figures");
+  assert.deepEqual(view.unread, ["wallet", "savings"]);
+});
+
+test("every source silent at once: nothing is invented", () => {
+  const view = portfolioView(Object.values(failing).reduce((acc, patch) => ({ ...acc, ...patch }), base));
+  assert.equal(view.totalUsd, null);
+  assert.equal(view.complete, false);
+  assert.deepEqual(view.bar, []);
+  assert.deepEqual(view.unread, ["wallet", "savings", "pools", "agents", "orders", "phoenix"]);
+});
+
+test("a place still reading keeps the total open; the cared pools alone do not close it", () => {
+  const view = portfolioView({ ...base, care: { state: "loading", rows: [] } });
+  assert.equal(view.complete, false);
+  assert.deepEqual(view.unread, []);
+  const off = portfolioView({ ...base, care: { state: "off", rows: [] }, lend: { state: "off", rows: [] } });
+  assert.equal(off.complete, true, "a place the deployment does not serve is not missing");
 });

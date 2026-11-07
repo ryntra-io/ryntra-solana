@@ -167,7 +167,7 @@ for (const size of SIZES) {
       },
     }),
   );
-  await page.route("**/api/solana/tokens/search", (route) =>
+  await page.route("**/api/solana/tokens/search*", (route) =>
     json(route, 200, { tokens: [{ mint: BONK, symbol: "Bonk", name: "Bonk", icon: null, isVerified: true, isSuspicious: false }] }),
   );
   await page.route("**/api/search", (route) => json(route, 200, { coins: [{ mint: BONK, symbol: "BONK", name: "Bonk", icon: null }], memes: [], dollars: [] }));

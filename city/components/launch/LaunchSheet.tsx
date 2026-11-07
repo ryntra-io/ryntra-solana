@@ -7,6 +7,9 @@ import type { LaunchPresetView } from '@/lib/api/v1/contract';
 import { openBerth } from '@/city/lib/launch/berth-store';
 import { landed, launchEngine, launchPrep, launchWallet, useLaunch } from '@/city/lib/launch/district';
 import { failureWords, pictureRefused, readRefusal, runLaunch, type LaunchFailure, type Phase } from '@/city/lib/launch/flow';
+import { runEarlyAccess } from '@/city/lib/launch/early-flow';
+import { earlyDoorOpen, earlyRules } from '@/city/lib/launch/early';
+import { othersOf, shareOpen, shareProblem, sharesOf, type ShareRow } from '@/city/lib/launch/share';
 import { openMoney } from '@/city/lib/money/open';
 import { REFUSAL_WORDS } from '@/city/lib/launch/words';
 import { shortAddress } from '@/city/lib/launch/format';
@@ -22,6 +25,7 @@ import { BerthGlyph } from '../berth/glyphs';
 import { CloseGlyph } from '../hud/glyphs';
 import { tickerAfterName } from '@/city/lib/launch/ticker';
 import { LaunchPreview } from './LaunchPreview';
+import { EarlyDoor, EarlyFacts, OpenedCard, ShareDoor } from './LaunchDoors';
 import s from './launch.module.css';
 import { LAUNCH } from './words';
 
@@ -35,6 +39,8 @@ const BACK = (
 
 /** The fields stay still this long before they go to the engine's store in the background. */
 const STORE_AFTER_MS = 900;
+/** No split: the same empty list every render. */
+const NO_SHARES: readonly ShareRow[] = [];
 /** The kinds of picture every wallet shows (`shrinkPicture` reads the file itself). */
 const PICTURES = 'image/png,image/jpeg,image/webp,image/gif';
 
@@ -195,10 +201,10 @@ function usePrepared(name: string | null, symbol: string | null): Readonly<{ fie
 }
 
 /** The cost line, first on both steps: no launch fee, and the network's cost once the engine simulated it. */
-function CostLine({ preset }: { preset: LaunchPresetView }) {
+function CostLine({ preset, simulated = true }: { preset: LaunchPresetView; simulated?: boolean }) {
   const cost = useLaunch((st) => st.costLamports);
   useLang();
-  const [free, network] = costLine(preset, cost);
+  const [free, network] = costLine(preset, simulated ? cost : null);
   return (
     <div className={s.cost} data-launch-cost="">
       <b>{free}</b>
@@ -244,6 +250,12 @@ function ReviewStep({ onClose }: { onClose: () => void }) {
   const setDraft = useLaunch((st) => st.setDraft);
   const connection = useLaunch((st) => st.connection);
   const cost = useLaunch((st) => st.costLamports);
+  const shareRows = useLaunch((st) => st.shares);
+  const setShares = useLaunch((st) => st.setShares);
+  const early = useLaunch((st) => st.early);
+  const setEarly = useLaunch((st) => st.setEarly);
+  const earlyBounds = useLaunch((st) => st.earlyBounds);
+  const earlySwitch = useLaunch((st) => st.earlySwitch);
   const w = useWords(LAUNCH);
   const lang = useLang();
   const setConnection = useLaunch((st) => st.setConnection);
@@ -259,17 +271,32 @@ function ReviewStep({ onClose }: { onClose: () => void }) {
   const storedOk = useLaunch((st) => key !== null && st.stored?.key === key && st.stored.answer?.ok === true);
   /* The shield (CITY-169): the launch goes on it only where it is open and the engine serves it number for number. */
   const halo = cityShieldOpen(network) && shieldServed(preset);
+  /* CITY-212: the two doors. Early access is its own launch — a pool, not a curve —, so with it on the curve's rows give way. */
+  const earlyDoor = earlyDoorOpen(network, earlyBounds, earlySwitch);
+  const earlyOn = earlyDoor && early !== null && earlyBounds !== null;
+  const earlyPreview = useMemo(() => (earlyOn ? earlyRules(early, earlyBounds, Math.floor(Date.now() / 1000)) : null), [earlyOn, early, earlyBounds]);
+  const shareDoor = shareOpen(network) && !earlyOn;
+  const shared = shareDoor ? shareRows : NO_SHARES;
+  const splitProblem = shareProblem(shared, connection?.address ?? null);
+  const splitReady = shared.length > 0 && splitProblem === null;
   const rows = reviewRows(preset, network, cost, halo);
   const line = rows.find((row) => row.id === 'line')!;
+  const lineParts = earlyOn ? [w.earlyLineOne, w.earlyLineLocked, w.earlyLineFree, line.lines[line.lines.length - 1]!] : line.lines;
+  const detailRows = earlyOn
+    ? [{ id: 'early', label: w.earlyDetails, lines: [w.earlyHow, w.earlyPublic, w.earlyKeeps] }]
+    : [...rows.filter((row) => row.id !== 'line' && row.id !== 'network'), ...(splitReady ? [{ id: 'share', label: w.shareDetails, lines: [w.shareFixed, w.shareClaims] }] : [])];
 
   /* The fields go to the store now if they have not yet; with a wallet there, the engine simulates the launch once. */
   useEffect(() => {
     if (fields) void launchPrep().store(fields);
   }, [fields]);
+  const simShares = useMemo(() => (connection && splitReady ? sharesOf(connection.address, shared) : null), [connection, splitReady, shared]);
   useEffect(() => {
-    if (!fields || !connection || !storedOk || working) return;
-    void launchPrep().simulate({ fields, creator: connection.address, preset, network, switchOpen: stub || undefined });
-  }, [fields, connection, storedOk, working, preset, network, stub]);
+    if (!fields || !connection || !storedOk || working || earlyOn) return;
+    /* While the split is being typed the engine is not asked: a half-typed split would cost the creator's hourly builds. */
+    if (shared.length > 0 && !simShares) return;
+    void launchPrep().simulate({ fields, creator: connection.address, preset, network, switchOpen: stub || undefined, shares: simShares });
+  }, [fields, connection, storedOk, working, preset, network, stub, earlyOn, shared.length, simShares]);
 
   /* A wallet this browser connected before is restored without a prompt. */
   useEffect(() => {
@@ -315,10 +342,27 @@ function ReviewStep({ onClose }: { onClose: () => void }) {
   };
   const launch = async () => {
     if (busy.current || !connection || !draft.picture || !fields) return;
+    if (shared.length > 0 && splitProblem !== null) return;
     busy.current = true;
     try {
       const wallet = await launchWallet();
       const prep = launchPrep();
+      if (earlyOn && earlyBounds) {
+        const choice = early;
+        await runEarlyAccess({
+          engine: launchEngine(),
+          signer: wallet.signer(connection),
+          fields: { name: check.clean.name, symbol: check.clean.symbol, picture: draft.picture },
+          network,
+          bounds: earlyBounds,
+          rulesAt: (now) => earlyRules(choice, earlyBounds, now),
+          onPhase: setPhase,
+          switchOpen: stub || undefined,
+          earlySwitch,
+          stored: prep.store(fields),
+        });
+        return;
+      }
       const result = await runLaunch({
         engine: launchEngine(),
         signer: wallet.signer(connection),
@@ -330,6 +374,7 @@ function ReviewStep({ onClose }: { onClose: () => void }) {
         switchOpen: stub || undefined,
         stored: prep.store(fields),
         takePrebuilt: prep.take,
+        others: shared.length ? othersOf(shared) : undefined,
       });
       if (result.step === 'done') {
         landed(result.liftoff, preset);
@@ -354,27 +399,34 @@ function ReviewStep({ onClose }: { onClose: () => void }) {
         <div className={s.headTitle}>
           <h2 className={`${s.display} ${s.title}`}>${symbol}</h2>
           <div className={s.headName}>
-            {check.clean.name} · {preset.name[lang] ?? preset.name.en}
+            {earlyOn ? check.clean.name : `${check.clean.name} · ${preset.name[lang] ?? preset.name.en}`}
           </div>
         </div>
         <button className={s.close} aria-label={w.close} onClick={onClose}>
           <CloseGlyph />
         </button>
       </div>
-      <CostLine preset={preset} />
-      {halo ? <HaloRow preset={preset} /> : <ShieldSwitch disabled={working} />}
-      <div className={s.facts}>
-        {launchFacts(preset).map((fact) => (
-          <div key={fact.id} className={s.fact}>
-            <span>{fact.label}</span>
-            <b className={s.display}>{fact.value}</b>
-          </div>
-        ))}
-      </div>
+      {/* Early access is its own creation: the curve's simulated cost is not its cost, so the line says the network's fee alone. */}
+      <CostLine preset={preset} simulated={!earlyOn} />
+      {!earlyOn && (halo ? <HaloRow preset={preset} /> : <ShieldSwitch disabled={working} />)}
+      {earlyDoor && <EarlyDoor disabled={working} />}
+      {earlyOn && earlyPreview ? (
+        <EarlyFacts rules={earlyPreview} />
+      ) : (
+        <div className={s.facts}>
+          {launchFacts(preset).map((fact) => (
+            <div key={fact.id} className={s.fact}>
+              <span>{fact.label}</span>
+              <b className={s.display}>{fact.value}</b>
+            </div>
+          ))}
+        </div>
+      )}
+      {shareDoor && <ShareDoor disabled={working} creator={connection?.address ?? null} />}
       <div className={s.signLine} data-launch-line="">
         <p>
-          {line.lines.map((part, i) => (
-            <span key={part} className={i === line.lines.length - 1 ? s.signRisk : undefined}>
+          {lineParts.map((part, i) => (
+            <span key={part} className={i === lineParts.length - 1 ? s.signRisk : undefined}>
               {part}
             </span>
           ))}
@@ -385,9 +437,7 @@ function ReviewStep({ onClose }: { onClose: () => void }) {
       </div>
       {details && (
         <dl className={s.review}>
-          {rows
-            .filter((row) => row.id !== 'line' && row.id !== 'network')
-            .map((row) => (
+          {detailRows.map((row) => (
               <div key={row.id} className={s.row}>
                 <dt>{row.label}</dt>
                 {row.lines.map((text) => (
@@ -410,7 +460,20 @@ function ReviewStep({ onClose }: { onClose: () => void }) {
           )}
         </div>
       )}
-      {phase && phase.step !== 'done' ? (
+      {phase?.step === 'opened' ? (
+        <OpenedCard
+          opened={phase.opened}
+          onClose={() => {
+            launchPrep().reset();
+            setDraft({ name: '', symbol: '', picture: null });
+            setShares([]);
+            setEarly(null);
+            setPhase(null);
+            setStep('form');
+            onClose();
+          }}
+        />
+      ) : phase && phase.step !== 'done' ? (
         <Progress
           phase={phase}
           wallet={connection?.wallet ?? null}
@@ -432,7 +495,7 @@ function ReviewStep({ onClose }: { onClose: () => void }) {
           onClose={onClose}
         />
       ) : connection ? (
-        <button className={`${s.display} ${s.action} ${s.actionBig}`} onClick={launch}>
+        <button className={`${s.display} ${s.action} ${s.actionBig}`} onClick={launch} disabled={shared.length > 0 && splitProblem !== null}>
           {w.launchSymbol(symbol)}
         </button>
       ) : options ? (
@@ -519,7 +582,7 @@ function WalletList({ options, connecting, onPick }: { options: readonly WalletO
 type Ways = Readonly<{ onRetry: () => void; onEdit: () => void; onPicture: () => void; onTopUp: () => void; onClose: () => void }>;
 
 /** Where the launch is: one line while it runs; when it stopped, what happened, whether money moved, and one way on. */
-function Progress({ phase, wallet, ...ways }: { phase: Exclude<Phase, { step: 'done' }>; wallet: string | null } & Ways) {
+function Progress({ phase, wallet, ...ways }: { phase: Exclude<Phase, { step: 'done' } | { step: 'opened' }>; wallet: string | null } & Ways) {
   const w = useWords(LAUNCH);
   if (phase.step === 'failed') return <Refused failure={phase.failure} wallet={wallet} ways={ways} />;
   const words =
@@ -528,7 +591,7 @@ function Progress({ phase, wallet, ...ways }: { phase: Exclude<Phase, { step: 'd
       : phase.step === 'build'
         ? [w.building, w.buildingLine]
         : phase.step === 'sign'
-          ? [w.confirmIn(phase.wallet), phase.again ? w.signAged : w.signLineTx]
+          ? [w.confirmIn(phase.wallet), phase.again ? w.signAged : phase.early ? w.signLineEarly : phase.shared ? w.signLineSplit : w.signLineTx]
           : [w.sending, w.sendingLine];
   return (
     <div className={s.progress} role="status" aria-live="polite">

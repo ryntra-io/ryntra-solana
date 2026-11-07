@@ -24,6 +24,7 @@ import {
   type SpotTimeframe,
 } from "./candles.ts";
 import { readSpotMarket } from "./markets.server.ts";
+import { pauseAfterRate, ratePauseLeftMs, resetRatePauses } from "./shared-reads.ts";
 
 const MULTIPLIER_TTL_MS = 10 * 60_000;
 const multipliers = new Map<string, { value: number | null; at: number }>();
@@ -84,6 +85,8 @@ export type SpotCandlesFailure = Readonly<{
     | "UNREACHABLE"
     | "MALFORMED";
   reason: string;
+  /** After a refusal for rate: how long the source's reads pause in this instance (CITY-208). */
+  retryAfterMs?: number | null;
 }>;
 
 /** The reasons a market has no chart, in words the frame can print. */
@@ -109,6 +112,9 @@ function takeCall(priority: "chart" | "page"): boolean {
 
 /** One read of GeckoTerminal inside this instance's minute budget — the chart, the pools and the trades share it. */
 export async function getJson(url: string, priority: "chart" | "page" = "chart"): Promise<{ ok: true; body: unknown } | SpotCandlesFailure> {
+  /* CITY-208: after the source refused for rate, nothing is asked of it until its pause ends — a refused minute is not spent twice. */
+  const paused = ratePauseLeftMs("geckoterminal");
+  if (paused > 0) return { ok: false, code: "RATE_LIMITED", reason: "The chart source is pausing after a refusal for rate; the last read is shown.", retryAfterMs: paused };
   if (!takeCall(priority)) return { ok: false, code: "RATE_LIMITED", reason: "The chart source's minute budget is spent; the last read is shown." };
   let response: Response;
   try {
@@ -117,8 +123,10 @@ export async function getJson(url: string, priority: "chart" | "page" = "chart")
     return { ok: false, code: "UNREACHABLE", reason: `GeckoTerminal did not answer: ${failure instanceof Error ? failure.message : String(failure)}` };
   }
   if (response.status === 429) {
+    const header = Number(response.headers.get("retry-after") ?? "");
+    const until = pauseAfterRate("geckoterminal", Number.isFinite(header) && header > 0 ? header * 1_000 : null);
     await response.body?.cancel();
-    return { ok: false, code: "RATE_LIMITED", reason: "GeckoTerminal rate-limited the chart read." };
+    return { ok: false, code: "RATE_LIMITED", reason: "GeckoTerminal rate-limited the chart read.", retryAfterMs: Math.max(0, until - Date.now()) };
   }
   if (!response.ok) {
     await response.body?.cancel();
@@ -138,6 +146,18 @@ export async function getJson(url: string, priority: "chart" | "page" = "chart")
   }
 }
 
+/** One read per key in flight: everyone asking the same thing at once waits on the same answer (CITY-208). */
+const flying = new Map<string, Promise<unknown>>();
+function once<T>(key: string, read: () => Promise<T>): Promise<T> {
+  const pending = flying.get(key);
+  if (pending) return pending as Promise<T>;
+  const promise = read().finally(() => {
+    if (flying.get(key) === promise) flying.delete(key);
+  });
+  flying.set(key, promise);
+  return promise;
+}
+
 type PoolRefusal = "NO_POOL" | "NO_MAJOR_QUOTE" | "THIN" | "QUIET";
 const pools = new Map<string, { value: SpotPool | null; refusal: PoolRefusal | null; readAt: number }>();
 /* The answer the choice was made from, kept for the token page's pools and trades: one read of the mint's pools serves both. */
@@ -153,7 +173,8 @@ export async function readTokenPoolsBody(mint: string, priority: "chart" | "page
   const hit = poolBodies.get(mint);
   const now = Date.now();
   if (hit && now - hit.readAt < POOL_BODY_TTL_MS) return { ok: true, body: hit.body, observedAt: new Date(hit.readAt).toISOString() };
-  const read = await getJson(`${BASE}/tokens/${encodeURIComponent(mint)}/pools?page=1`, priority);
+  /* The chart and the page's pools ask for the same mint at once: one read (CITY-208). */
+  const read = await once(`pools:${mint}`, () => getJson(`${BASE}/tokens/${encodeURIComponent(mint)}/pools?page=1`, priority));
   if (!read.ok) {
     if (hit) return { ok: true, body: hit.body, observedAt: new Date(hit.readAt).toISOString() };
     return read;
@@ -195,6 +216,14 @@ const NO_CHART_TTL_MS = 10 * 60_000;
  * "page", which leaves the minute's reserve to the charts people have open.
  */
 export async function readSpotCandles(mint: string, timeframe: SpotTimeframe, priority: "chart" | "page" = "chart"): Promise<SpotCandlesRead | SpotCandlesFailure> {
+  const key = `${mint}:${timeframe}`;
+  const hit = reads.get(key);
+  if (hit && Date.now() - hit.readAt < TIMEFRAME_TTL_MS[timeframe]) return hit.value;
+  /* Every chart of this market and interval opened at once is one read (CITY-208). */
+  return once(`candles:${key}`, () => readSpotCandlesNow(mint, timeframe, priority));
+}
+
+async function readSpotCandlesNow(mint: string, timeframe: SpotTimeframe, priority: "chart" | "page"): Promise<SpotCandlesRead | SpotCandlesFailure> {
   const key = `${mint}:${timeframe}`;
   const hit = reads.get(key);
   const now = Date.now();
@@ -251,5 +280,7 @@ export function resetSpotCandleCaches(): void {
   reads.clear();
   noChart.clear();
   multipliers.clear();
+  flying.clear();
   calls.length = 0;
+  resetRatePauses();
 }

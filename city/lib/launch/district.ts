@@ -9,6 +9,8 @@ import { startLaunchFeed } from './feed.ts';
 import type { Liftoff, Phase } from './flow.ts';
 import { cityLaunchOpen, cityPreset, cityPresets, type CityPresetId } from './gate.ts';
 import { createPrep, type Prep, type PrepState } from './prepare.ts';
+import { CITY_EARLY_ACCESS_SWITCH, type EarlyBounds, type EarlyChoice } from './early.ts';
+import type { ShareRow } from './share.ts';
 import { cityStartPreset } from './shield.ts';
 import { launchesKey, MINE_KEEP_MS, shownLaunches, withLaunches, type LaunchTower } from './towers.ts';
 import { httpTradeEngine, type LaunchTradeEngine } from './trade.ts';
@@ -48,6 +50,15 @@ type DistrictState = {
   costLamports: string | null;
   /** The fields last handed to the engine's store in the background and its answer (`prepare.ts`). */
   stored: PrepState['stored'];
+  /** CITY-212: the other wallets sharing the creator's fees, as the review shows them; empty — the creator keeps all. */
+  shares: readonly ShareRow[];
+  /** CITY-212: early access — the engine's bounds where it serves the format here (null elsewhere), and the creator's choice. */
+  earlyBounds: EarlyBounds | null;
+  /** The city's switch for early access: the deployment's, or the stand's `&early=open` for the shots. */
+  earlySwitch: boolean;
+  early: EarlyChoice | null;
+  setShares: (shares: readonly ShareRow[]) => void;
+  setEarly: (early: EarlyChoice | null) => void;
   setDraft: (draft: Partial<Draft>) => void;
   setStep: (step: SheetStep) => void;
   setPhase: (phase: Phase | null) => void;
@@ -74,6 +85,12 @@ export const useLaunch = create<DistrictState>((set) => ({
   connection: null,
   costLamports: null,
   stored: null,
+  shares: [],
+  earlyBounds: null,
+  earlySwitch: CITY_EARLY_ACCESS_SWITCH,
+  early: null,
+  setShares: (shares) => set({ shares }),
+  setEarly: (early) => set({ early }),
   setDraft: (draft) => set((state) => ({ draft: { ...state.draft, ...draft } })),
   setStep: (step) => set({ step }),
   /* The cost a build simulated, at the wallet's prompt, is the cost line's figure from then on. */
@@ -82,7 +99,7 @@ export const useLaunch = create<DistrictState>((set) => ({
   choosePreset: (id) => set((state) => ({ preset: cityPresets({ presets: state.presets })[id] ?? state.preset })),
   openSheet: () => {
     useCity.getState().select(null);
-    set((state) => ({ sheet: true, ...(state.phase?.step === 'done' ? { phase: null, step: 'form' as const, draft: EMPTY } : {}) }));
+    set((state) => ({ sheet: true, ...(state.phase?.step === 'done' || state.phase?.step === 'opened' ? { phase: null, step: 'form' as const, draft: EMPTY, shares: [], early: null } : {}) }));
   },
   closeSheet: () => set((state) => ({ sheet: false, ...(state.phase?.step === 'failed' ? { phase: null } : {}) })),
 }));
@@ -201,7 +218,8 @@ async function boot() {
   if (loadStub && stubAsked()) {
     const stub = await loadStub();
     engine = stub.stubEngine({ delayMs: 650 * stubPace(), refuse: stubRefusals() });
-    useLaunch.setState({ stub: true });
+    /* The stand opens early access only when asked (`&early=open`): shut by default there too. */
+    useLaunch.setState({ stub: true, earlySwitch: CITY_EARLY_ACCESS_SWITCH || new URLSearchParams(window.location.search).get('early') === 'open' });
     /* The stand-in's trade routes load with it, not on the first tap. */
     void launchTradeEngine().catch(() => undefined);
   }
@@ -224,7 +242,7 @@ async function readPresets(source: LaunchEngine): Promise<boolean> {
   for (let attempt = 0; attempt < 6; attempt += 1) {
     const answer = await source.presets();
     if (answer.ok) {
-      useLaunch.setState({ status: 'ready', network: answer.data.network, preset: cityPreset(answer.data, cityStartPreset(answer.data.network)), presets: answer.data.presets });
+      useLaunch.setState({ status: 'ready', network: answer.data.network, preset: cityPreset(answer.data, cityStartPreset(answer.data.network)), presets: answer.data.presets, earlyBounds: answer.data.formats?.earlyAccess?.bounds ?? null });
       return true;
     }
     if (answer.code === 'LAUNCH_UNAVAILABLE' || answer.code === 'UNSUPPORTED_API') break;
@@ -352,7 +370,8 @@ export function landed(liftoff: Liftoff, preset: LaunchPresetView) {
     holdersAtLeast: false,
     checks: ['young', 'young', 'young'],
     phase: 'ascent',
-    crew: 0,
+    /* The others in the creator's fees, once the vault's rows went out with the launch. */
+    crew: liftoff.sharing && liftoff.sharing.state !== 'FAILED' ? Math.max(0, liftoff.sharing.shares.length - 1) : 0,
     ryntraTest: false,
     network: liftoff.network,
     mine: true,
@@ -364,7 +383,7 @@ export function landed(liftoff: Liftoff, preset: LaunchPresetView) {
   };
   remember(liftoff.token);
   launchPrep().reset();
-  useLaunch.setState((state) => ({ mine: [tower, ...state.mine.filter((launch) => launch.token !== tower.token)], sheet: false }));
+  useLaunch.setState((state) => ({ mine: [tower, ...state.mine.filter((launch) => launch.token !== tower.token)], sheet: false, shares: [] }));
   /* The city lays the new tower out first; the light column and the climb from the ground play on the next frames. */
   setTimeout(() => {
     const city = useCity.getState();

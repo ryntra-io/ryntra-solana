@@ -1,5 +1,6 @@
 import { consumeSolanaReadRequest } from "@/lib/agent-control/http";
 import { publicCacheHeaders, rateLimitHeaders, type RateLimitDecision } from "@/lib/http-control";
+import { retryAfterHeader } from "@/lib/spot/shared-reads";
 import { readTokenHolders, readTokenOverview, readTokenPools, readTokenRisk, readTokenTrades } from "@/lib/spot/token-page.server";
 
 export const runtime = "nodejs";
@@ -32,8 +33,8 @@ const CACHE: Readonly<Record<Part, readonly [number, number]>> = {
   pools: [120, 300],
 };
 
-function failure(status: number, code: string, message: string, rate: RateLimitDecision) {
-  return Response.json({ error: { code, message } }, { status, headers: { ...rateLimitHeaders(rate), "cache-control": "private, no-store" } });
+function failure(status: number, code: string, message: string, rate: RateLimitDecision, retryAfterMs?: number | null) {
+  return Response.json({ error: { code, message } }, { status, headers: { ...rateLimitHeaders(rate), ...retryAfterHeader(retryAfterMs), "cache-control": "private, no-store" } });
 }
 
 export async function GET(request: Request) {
@@ -55,10 +56,12 @@ export async function GET(request: Request) {
     if (read.code === "NOT_LISTED" || read.code === "NO_POOL" || read.code === "NOT_READ") {
       return Response.json({ none: { code: read.code, reason: read.reason }, observedAt: new Date().toISOString() }, { headers: { ...publicCacheHeaders(60, 180), ...rateLimitHeaders(rate) } });
     }
-    return failure(read.code === "RATE_LIMITED" ? 429 : 503, `TOKEN_${read.code}`, read.reason, rate);
+    return failure(read.code === "RATE_LIMITED" ? 429 : 503, `TOKEN_${read.code}`, read.reason, rate, read.retryAfterMs);
   }
   const { ok: _ok, ...body } = read;
   void _ok;
   const [maxAge, stale] = CACHE[part as Part];
-  return Response.json(body, { headers: { ...publicCacheHeaders(maxAge, stale), ...rateLimitHeaders(rate) } });
+  /* A held copy (CITY-208) is kept at the edge briefly, so the fresh read reaches people as soon as there is one. */
+  const held = "stale" in body && body.stale === true;
+  return Response.json(body, { headers: { ...(held ? publicCacheHeaders(5, 30) : publicCacheHeaders(maxAge, stale)), ...rateLimitHeaders(rate) } });
 }

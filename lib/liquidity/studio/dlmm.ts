@@ -32,7 +32,7 @@ import {
   type LiquidityNotice,
   type LiquidityPool,
   type LiquidityPosition,
-  type LiquidityShape,
+  SHAPE_TO_STRATEGY,
   type LiquidityToken,
   type LiquidityVenueAdapter,
   type RemoveLiquidityPreview,
@@ -68,8 +68,6 @@ export type DlmmVenueDeps = Readonly<{
 }>;
 
 type Dlmm = InstanceType<typeof DLMMClass>;
-
-const SHAPE_TO_STRATEGY: Readonly<Record<LiquidityShape, number>> = { spot: 0, curve: 1, bid_ask: 2 };
 
 /** The pair's own bound on a bin id for its step: past it the price leaves what the program can hold. */
 function maxBinIdFor(binStep: number): number {

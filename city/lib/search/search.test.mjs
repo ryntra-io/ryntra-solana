@@ -138,11 +138,11 @@ test("a mint is named by its Ryntra launch first, else by Jupiter's market, else
   assert.equal(none.asked.length, 0, "a string that is not a mint is never asked about");
 });
 
-test("the catalogue is asked by POST with the query, and an aborted read stays aborted", async () => {
+test("the catalogue is asked by GET with the query in its address (the edge keeps it), and an aborted read stays aborted", async () => {
   const gen = engine({ "/api/solana/tokens/search": { tokens: [{ mint: JUP, symbol: "JUP", name: "Jupiter", icon: null, isVerified: true, isSuspicious: false }] } });
   const rows = await searchCatalog(" jup ", gen);
   assert.equal(rows[0].mint, JUP);
-  assert.deepEqual(gen.asked[0], { url: "/api/solana/tokens/search", method: "POST", body: JSON.stringify({ query: "jup", limit: 8 }) });
+  assert.deepEqual(gen.asked[0], { url: "/api/solana/tokens/search?query=jup&limit=8", method: "GET", body: null });
   const abort = new AbortController();
   abort.abort();
   const aborting = { fetch: async () => Promise.reject(new DOMException("aborted", "AbortError")), signal: abort.signal };

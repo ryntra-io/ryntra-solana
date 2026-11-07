@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import type { Tower } from '../market/types.ts';
 import { useMine } from '../trade/mine-store.ts';
 import { useWallet } from '../trade/wallet.ts';
-import { fetchCandles, loading, refreshMs, RETRY_MS, settle, TIMEFRAME_KEY, timeframeFrom, type ChartData, type Timeframe } from './candles.ts';
+import { fetchCandles, loading, nextReadMs, settle, TIMEFRAME_KEY, timeframeFrom, type ChartData, type Timeframe } from './candles.ts';
 import { entryPrice, knownBasis, readEntryBasis } from './entry.ts';
 import { kept } from './kept.ts';
 import { fetchMarks } from './marks.ts';
@@ -34,15 +34,18 @@ export function useTimeframe(): [Timeframe, (next: Timeframe) => void] {
 }
 
 /**
- * One market's bars at one interval, read again at the interval's own cadence while the page is in view; a read that
- * failed is tried once more after a short pause, and its last good bars stay on screen, stale.
+ * One market's bars at one interval, read again at the interval's own cadence while the page is in view. A read that
+ * failed is tried again quietly, sooner at first and then less often, never before the engine's `Retry-After`; its last
+ * good bars stay on screen, stale, and with none the frame keeps waiting for a few tries before it says anything.
  */
 export function useCandles(mint: string, timeframe: Timeframe): ChartData {
   const [data, setData] = useState<ChartData>(() => loading(mint, timeframe, null));
   useEffect(() => {
     const controller = new AbortController();
     let live = true;
-    let retry: ReturnType<typeof setTimeout> | undefined;
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    // Failed reads in a row, as the state counts them: the pause before the next try grows with them.
+    let misses = 0;
     setData((before) => loading(mint, timeframe, before));
     const read = async () => {
       const answer = await fetchCandles(mint, timeframe, {
@@ -51,23 +54,23 @@ export function useCandles(mint: string, timeframe: Timeframe): ChartData {
         signal: controller.signal,
       });
       if (!live) return;
+      misses = answer.status === 'unavailable' ? misses + 1 : 0;
       setData((before) => settle(before.mint === mint && before.timeframe === timeframe ? before : loading(mint, timeframe, null), answer));
-      if (answer.status === 'unavailable' && retry === undefined) {
-        retry = setTimeout(() => {
-          retry = undefined;
-          if (live && visible()) void read();
-        }, RETRY_MS);
-      }
+      wait(nextReadMs(answer, misses, timeframe));
+    };
+    // The page out of view reads nothing: it looks again after the same pause.
+    const wait = (ms: number) => {
+      timer = setTimeout(() => {
+        if (!live) return;
+        if (visible()) void read();
+        else wait(ms);
+      }, ms);
     };
     void read();
-    const timer = setInterval(() => {
-      if (visible()) void read();
-    }, refreshMs(timeframe));
     return () => {
       live = false;
       controller.abort();
-      clearInterval(timer);
-      if (retry !== undefined) clearTimeout(retry);
+      if (timer !== undefined) clearTimeout(timer);
     };
   }, [mint, timeframe]);
   return data;

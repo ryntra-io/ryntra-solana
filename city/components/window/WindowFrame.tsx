@@ -106,6 +106,7 @@ export function WindowFrame({ id, z }: { id: string; z: number }) {
       tabIndex={-1}
       data-window={id}
       data-window-full={full ? '' : undefined}
+      data-window-fit={fit ? '' : undefined}
       data-window-bay={win.bay ?? undefined}
       onPointerDownCapture={() => actions.raise(id)}
       onFocusCapture={() => !full && actions.raise(id)}

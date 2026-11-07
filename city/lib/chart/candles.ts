@@ -31,8 +31,33 @@ export function refreshMs(timeframe: Timeframe): number {
   return Math.max(15_000, TIMEFRAME_TTL_MS[timeframe]);
 }
 
-/** After a read that failed, one more try this soon, before the interval's own cadence takes over. */
-export const RETRY_MS = 8_000;
+/**
+ * A read that failed is tried again quietly (CITY-215): first this soon, then twice as long each time up to
+ * `RETRY_MAX_MS`, and never sooner than the engine's own `Retry-After` — a source that asked for a pause gets it.
+ */
+export const RETRY_MS = 2_000;
+export const RETRY_MAX_MS = 30_000;
+/** A `Retry-After` longer than this is not waited out whole: the chart asks again by then. */
+export const RETRY_AFTER_MAX_MS = 60_000;
+
+/** Until this many reads in a row failed with no bars on screen, the chart only waits; then it says it is unavailable. */
+export const QUIET_MISSES = 3;
+
+/** The pause before the next try after `misses` failed reads in a row (one or more), and the engine's `Retry-After`. */
+export function retryDelayMs(misses: number, retryAfterMs: number | null = null): number {
+  const step = Math.min(RETRY_MAX_MS, RETRY_MS * 2 ** Math.max(0, Math.min(misses, 16) - 1));
+  const asked = retryAfterMs !== null && Number.isFinite(retryAfterMs) && retryAfterMs > 0 ? Math.min(retryAfterMs, RETRY_AFTER_MAX_MS) : 0;
+  return Math.max(step, asked);
+}
+
+/** A `Retry-After` header in ms: whole seconds, or a date (HTTP's two forms); null when absent or unreadable. */
+export function retryAfterOf(header: string | null | undefined, now: number): number | null {
+  if (!header) return null;
+  const text = header.trim();
+  if (/^\d+$/.test(text)) return Number(text) * 1000;
+  const at = Date.parse(text);
+  return Number.isFinite(at) ? Math.max(0, at - now) : null;
+}
 
 /** The reasons the engine gives for a market without a chart (its 404), and one of the city's own: no bars at all. */
 export const NO_CHART = ['NO_POOL', 'NO_MAJOR_QUOTE', 'THIN', 'QUIET', 'STALE', 'PRICE_MISMATCH', 'EMPTY'] as const;
@@ -56,7 +81,7 @@ export type Ready = Readonly<{
 export type CandlesRead =
   | Ready
   | Readonly<{ status: 'none'; code: NoChart | null }>
-  | Readonly<{ status: 'unavailable'; reason: 'busy' | 'offline' | 'failed' }>;
+  | Readonly<{ status: 'unavailable'; reason: 'busy' | 'offline' | 'failed'; retryAfterMs?: number }>;
 
 const positive = (value: unknown): value is number => typeof value === 'number' && Number.isFinite(value) && value > 0;
 
@@ -109,7 +134,10 @@ export function readCandles(timeframe: Timeframe, status: number, body: unknown,
   };
 }
 
-export type CandlesFetch = (url: string, init: { signal?: AbortSignal }) => Promise<Readonly<{ status: number; json: () => Promise<unknown> }>>;
+export type CandlesFetch = (
+  url: string,
+  init: { signal?: AbortSignal },
+) => Promise<Readonly<{ status: number; json: () => Promise<unknown>; headers?: { get: (name: string) => string | null } }>>;
 
 /** The URL of one market's bars at one interval. */
 export const candlesUrl = (mint: string, timeframe: Timeframe): string => `/api/spot/candles?${new URLSearchParams({ mint, tf: timeframe })}`;
@@ -128,7 +156,11 @@ export async function fetchCandles(mint: string, timeframe: Timeframe, deps: Rea
   } catch {
     if (answer.status >= 200 && answer.status < 300) return { status: 'unavailable', reason: 'failed' };
   }
-  return readCandles(timeframe, answer.status, body, deps.now());
+  const read = readCandles(timeframe, answer.status, body, deps.now());
+  if (read.status !== 'unavailable') return read;
+  // The engine says how long the source asked it to wait: the next try waits at least that long.
+  const retryAfterMs = retryAfterOf(answer.headers?.get('retry-after'), deps.now());
+  return retryAfterMs === null ? read : { ...read, retryAfterMs };
 }
 
 /** What the window shows: the newest answer, and the last bars it had for this market and interval. */
@@ -139,12 +171,14 @@ export type ChartData = Readonly<{
   /** The last good read of this market and interval; kept, marked stale, while the source does not answer. */
   last: Ready | null;
   code: NoChart | null;
+  /** Reads in a row that failed for this market and interval: the chart says it is unavailable only after a few. */
+  misses: number;
 }>;
 
 /** The state of a market and interval before any answer: the bars it already had, only if they are this market's. */
 export function loading(mint: string, timeframe: Timeframe, before: ChartData | null): ChartData {
-  const keep = before && before.mint === mint && before.timeframe === timeframe ? before.last : null;
-  return { mint, timeframe, status: 'loading', last: keep, code: null };
+  const same = before && before.mint === mint && before.timeframe === timeframe ? before : null;
+  return { mint, timeframe, status: 'loading', last: same?.last ?? null, code: null, misses: same?.misses ?? 0 };
 }
 
 /**
@@ -152,9 +186,21 @@ export function loading(mint: string, timeframe: Timeframe, before: ChartData | 
  * ones and marks them stale, so the age under the chart counts from them.
  */
 export function settle(state: ChartData, read: CandlesRead): ChartData {
-  if (read.status === 'ready') return { ...state, status: 'ready', last: read, code: null };
-  if (read.status === 'none') return { ...state, status: 'none', last: null, code: read.code };
-  return { ...state, status: 'unavailable', last: state.last ? { ...state.last, stale: true } : null };
+  if (read.status === 'ready') return { ...state, status: 'ready', last: read, code: null, misses: 0 };
+  if (read.status === 'none') return { ...state, status: 'none', last: null, code: read.code, misses: 0 };
+  return { ...state, status: 'unavailable', last: state.last ? { ...state.last, stale: true } : null, misses: state.misses + 1 };
+}
+
+/**
+ * Whether the chart says «unavailable»: only with no bars to show and after `QUIET_MISSES` failed reads in a row. A
+ * first read refused for rate (the engine's 429 when a phone opens the city) is tried again in silence — the frame
+ * waits as it does for a first read.
+ */
+export const saysUnavailable = (data: ChartData): boolean => data.status === 'unavailable' && !data.last && data.misses >= QUIET_MISSES;
+
+/** When to read again after this answer: the interval's cadence after an answer, the quiet retry after a failure. */
+export function nextReadMs(read: CandlesRead, misses: number, timeframe: Timeframe): number {
+  return read.status === 'unavailable' ? retryDelayMs(misses, read.retryAfterMs ?? null) : refreshMs(timeframe);
 }
 
 /**

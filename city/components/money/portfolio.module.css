@@ -32,6 +32,33 @@
   font-variant-numeric: tabular-nums;
 }
 
+/* CITY-209: a total that is not the whole yet stands a step quieter, so it never reads as the full sum. */
+.bigOpen {
+  color: var(--text-dim);
+}
+
+/* The total's place while the first reads answer: the same height as the figure, so nothing jumps. */
+.bigBone {
+  display: block;
+  width: 168px;
+  height: clamp(34px, 9vw, 46px);
+  background: linear-gradient(90deg, rgba(255, 255, 255, 0.04), rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0.04));
+  background-size: 200% 100%;
+  animation: bone 1.2s linear infinite;
+}
+
+@keyframes bone {
+  to {
+    background-position: -200% 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .bigBone {
+    animation: none;
+  }
+}
+
 .day {
   font-size: var(--type-small);
   font-weight: 700;
@@ -228,6 +255,29 @@
   font-size: var(--type-caption);
   color: var(--text-dim);
   background: rgba(238, 241, 255, 0.025);
+}
+
+.quietLine:has(.retry) {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+/* «Try again» beside a place that did not answer: quiet, but a full finger's target. */
+.retry {
+  min-height: 32px;
+  padding: 0 10px;
+  border: 1px solid rgba(238, 241, 255, 0.14);
+  background: transparent;
+  color: var(--text);
+  font: inherit;
+  cursor: pointer;
+}
+
+.retry:hover,
+.retry:focus-visible {
+  border-color: var(--amber, #ff681c);
 }
 
 /* ---------- Rewards ---------- */

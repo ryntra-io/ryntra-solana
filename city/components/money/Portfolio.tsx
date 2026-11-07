@@ -147,7 +147,21 @@ function RowLine({ row, place }: { row: Row; place: PlaceKind }) {
   );
 }
 
-function PlaceSection({ place }: { place: Place }) {
+/** A place that did not answer: one quiet line and a quiet «Try again» — the rest of the portfolio stands (CITY-209). */
+function Unread({ reread }: { reread: () => void }) {
+  const pw = useWords(PORTFOLIO);
+  const w = useWords(MONEY);
+  return (
+    <p className={p.quietLine}>
+      {pw.unread}
+      <button type="button" className={p.retry} onClick={reread}>
+        {w.tryAgain}
+      </button>
+    </p>
+  );
+}
+
+function PlaceSection({ place, reread, quiet }: { place: Place; reread: () => void; quiet?: boolean }) {
   const pw = useWords(PORTFOLIO);
   if (place.state === 'off' && place.rows.length === 0) return null;
   if (place.rows.length === 0 && place.state === 'ready') return null;
@@ -164,9 +178,10 @@ function PlaceSection({ place }: { place: Place }) {
             <RowLine key={row.id} row={row} place={place.kind} />
           ))}
         </ul>
-      ) : (
-        <p className={p.quietLine}>{place.state === 'loading' ? pw.reading : pw.unread}</p>
-      )}
+      ) : place.state === 'loading' ? (
+        <p className={p.quietLine}>{pw.reading}</p>
+      ) : null}
+      {place.state === 'failed' && !quiet ? <Unread reread={reread} /> : null}
     </section>
   );
 }
@@ -238,9 +253,8 @@ function Rewards({ owner }: { owner: string }) {
 export function Portfolio() {
   const w = useWords(MONEY);
   const pw = useWords(PORTFOLIO);
-  const { owner, view } = usePortfolio();
-  const wallet = useMoneyStore((st) => st.wallet);
-  const walletRead = useMoneyStore((st) => st.walletRead);
+  const { owner, view, reread } = usePortfolio();
+  const wallet = useMoneyStore((st) => (owner && st.wallet?.owner === owner ? st.wallet : null));
   const [now, setNow] = useState(() => Date.now());
 
   useEffect(() => {
@@ -250,15 +264,8 @@ export function Portfolio() {
     return () => clearInterval(timer);
   }, []);
 
-  if (!owner || !view || !wallet) {
-    return walletRead === 'failed' ? (
-      <p className={s.empty}>
-        {w.balancesUnavailableNow}{' '}
-        <button type="button" className={s.link} onClick={() => useMoneyStore.getState().readWallet()}>
-          {w.tryAgain}
-        </button>
-      </p>
-    ) : (
+  if (!owner || !view) {
+    return (
       <div className={s.bones} aria-label={w.readingWallet}>
         <span />
         <span />
@@ -268,9 +275,7 @@ export function Portfolio() {
   }
 
   const refresh = () => {
-    useMoneyStore.getState().readWallet();
-    void useEarnData.getState().loadPositions(owner);
-    void useSpot.getState().readOrders(true);
+    reread();
     void useRewards.getState().read(owner, true);
   };
   const unpriced = view.places.reduce((sum, place) => sum + (place.kind === 'pools' || place.kind === 'agents' ? 0 : place.unpriced), 0);
@@ -279,15 +284,20 @@ export function Portfolio() {
     <section className={`${s.tabBody} ${p.body}`} aria-label={w.portfolio}>
       <div className={p.hero}>
         <div className={p.heroText}>
-          <span className={`${s.display} ${s.kicker}`}>{pw.total}</span>
-          <b className={`${s.display} ${p.big}`}>{formatUsd(view.totalUsd)}</b>
+          {/* The total says what it is: the whole, or what has answered so far — never a short sum dressed as the whole. */}
+          <span className={`${s.display} ${s.kicker}`}>{view.complete ? pw.total : pw.totalSoFar}</span>
+          {view.totalUsd === null && view.reading.length ? (
+            <span className={p.bigBone} aria-label={pw.reading} />
+          ) : (
+            <b className={`${s.display} ${p.big} ${view.complete ? '' : p.bigOpen}`}>{formatUsd(view.totalUsd)}</b>
+          )}
           {view.dayUsd !== null && view.dayPct !== null ? (
             <span className={`${p.day} ${view.dayUsd > 0 ? p.up : view.dayUsd < 0 ? p.down : ''}`}>
               {signedUsd(view.dayUsd)} · {percent(view.dayPct)} <small>{pw.today}</small>
             </span>
           ) : null}
         </div>
-        <Refresh onClick={refresh} title={w.readAt(readAge(wallet.at, now))} />
+        <Refresh onClick={refresh} title={wallet ? w.readAt(readAge(wallet.at, now)) : w.tryAgain} />
       </div>
 
       {view.bar.length ? (
@@ -329,7 +339,13 @@ export function Portfolio() {
       </div>
 
       {view.places.map((place) => (
-        <PlaceSection key={place.kind} place={place} />
+        <PlaceSection
+          key={place.kind}
+          place={place}
+          reread={reread}
+          // Savings short only of the wallet's LSTs: the wallet's own line already says it, once.
+          quiet={place.kind === 'savings' && place.rows.length > 0 && view.unread.includes('wallet')}
+        />
       ))}
 
       <Rewards owner={owner} />
@@ -339,7 +355,7 @@ export function Portfolio() {
         <p className={s.fine}>{pw.day}</p>
         {unpriced > 0 ? <p className={s.fine}>{pw.unpriced(unpriced)}</p> : null}
         {view.unread.length ? <p className={s.fine}>{pw.unreadLine(view.unread.map((k) => pw[k]).join(', '))}</p> : null}
-        {!wallet.complete ? <p className={s.fine}>{w.someCoins}</p> : null}
+        {wallet && !wallet.complete ? <p className={s.fine}>{w.someCoins}</p> : null}
         <p className={s.fine}>{pw.safe}</p>
       </More>
     </section>

@@ -9,10 +9,10 @@ moved counts as new. Generated at every update from the development history.
 
 | Since the tag | Files |
 |---|---|
-| New | 5,055 |
-| Changed | 896 |
-| Unchanged | 828 |
-| Lines added / removed | +1,071,956 / −28,029 |
+| New | 5,112 |
+| Changed | 898 |
+| Unchanged | 826 |
+| Lines added / removed | +1,080,476 / −28,079 |
 
 ## New since the tag
 
@@ -1255,6 +1255,7 @@ moved counts as new. Generated at every update from the development history.
 - `apps/mobile/.prettierrc`
 - `apps/mobile/app.config.js`
 - `apps/mobile/app.json`
+- `apps/mobile/assets/images/adaptive-background.png`
 - `apps/mobile/assets/images/adaptive-foreground.png`
 - `apps/mobile/assets/images/adaptive-monochrome.png`
 - `apps/mobile/assets/images/icon.png`
@@ -2054,6 +2055,7 @@ moved counts as new. Generated at every update from the development history.
 - `city/components/launch/HallLayer.tsx`
 - `city/components/launch/HallSigns.tsx`
 - `city/components/launch/LaunchCrowns.tsx`
+- `city/components/launch/LaunchDoors.tsx`
 - `city/components/launch/LaunchHalos.tsx`
 - `city/components/launch/LaunchPreview.tsx`
 - `city/components/launch/LaunchReport.tsx`
@@ -2106,6 +2108,7 @@ moved counts as new. Generated at every update from the development history.
 - `city/components/money/money.module.css`
 - `city/components/money/portfolio.module.css`
 - `city/components/money/usePortfolio.ts`
+- `city/components/money/window-fit.test.mjs`
 - `city/components/money/words.ts`
 - `city/components/notify/Banners.tsx`
 - `city/components/notify/notify.module.css`
@@ -2191,6 +2194,11 @@ moved counts as new. Generated at every update from the development history.
 - `city/components/ring/AgentBody.tsx`
 - `city/components/ring/RingEditor.tsx`
 - `city/components/ring/RingGarage.tsx`
+- `city/components/ring/duel/DuelsLayer.tsx`
+- `city/components/ring/duel/DuelsWindow.tsx`
+- `city/components/ring/duel/duel-shots.mjs`
+- `city/components/ring/duel/duel.module.css`
+- `city/components/ring/duel/words.ts`
 - `city/components/ring/ring-shots.mjs`
 - `city/components/ring/ring.module.css`
 - `city/components/ring/words.ts`
@@ -2330,6 +2338,8 @@ moved counts as new. Generated at every update from the development history.
 - `city/lib/audio/gate.ts`
 - `city/lib/autopilot/README.md`
 - `city/lib/autopilot/autopilot.test.mjs`
+- `city/lib/autopilot/budget-shots.mjs`
+- `city/lib/autopilot/budget-words.test.mjs`
 - `city/lib/autopilot/emblem.ts`
 - `city/lib/autopilot/flag.ts`
 - `city/lib/autopilot/net-shots.mjs`
@@ -2356,6 +2366,8 @@ moved counts as new. Generated at every update from the development history.
 - `city/lib/autopilot/strategies.test.mjs`
 - `city/lib/autopilot/strategy-shots.mjs`
 - `city/lib/autopilot/words.ts`
+- `city/lib/back/frames.test.mjs`
+- `city/lib/back/frames.ts`
 - `city/lib/back/panels.test.mjs`
 - `city/lib/back/panels.ts`
 - `city/lib/back/stack.test.mjs`
@@ -2432,16 +2444,20 @@ moved counts as new. Generated at every update from the development history.
 - `city/lib/chart/facts.ts`
 - `city/lib/chart/feed.test.mjs`
 - `city/lib/chart/feed.ts`
+- `city/lib/chart/gesture.test.mjs`
+- `city/lib/chart/gesture.ts`
 - `city/lib/chart/icon.test.mjs`
 - `city/lib/chart/icon.ts`
 - `city/lib/chart/kept.ts`
 - `city/lib/chart/layers.test.mjs`
 - `city/lib/chart/layers.ts`
 - `city/lib/chart/marks.ts`
+- `city/lib/chart/phone-shots.mjs`
 - `city/lib/chart/place.ts`
 - `city/lib/chart/readout.ts`
 - `city/lib/chart/store.ts`
 - `city/lib/chart/use-chart.ts`
+- `city/lib/chart/use-gesture.ts`
 - `city/lib/chart/window.test.mjs`
 - `city/lib/chart/words.ts`
 - `city/lib/city/context-loss.test.mjs`
@@ -2763,6 +2779,11 @@ moved counts as new. Generated at every update from the development history.
 - `city/lib/launch/curve.test.mjs`
 - `city/lib/launch/curve.ts`
 - `city/lib/launch/district.ts`
+- `city/lib/launch/doors-shots.mjs`
+- `city/lib/launch/doors.test.mjs`
+- `city/lib/launch/early-check.ts`
+- `city/lib/launch/early-flow.ts`
+- `city/lib/launch/early.ts`
 - `city/lib/launch/engine.ts`
 - `city/lib/launch/feed.test.mjs`
 - `city/lib/launch/feed.ts`
@@ -2799,6 +2820,7 @@ moved counts as new. Generated at every update from the development history.
 - `city/lib/launch/refusal.ts`
 - `city/lib/launch/report.test.mjs`
 - `city/lib/launch/report.ts`
+- `city/lib/launch/share.ts`
 - `city/lib/launch/sheet-shots.mjs`
 - `city/lib/launch/shield-shots.mjs`
 - `city/lib/launch/shield.test.mjs`
@@ -2808,6 +2830,8 @@ moved counts as new. Generated at every update from the development history.
 - `city/lib/launch/silhouette.fixture.json`
 - `city/lib/launch/silhouette.test.mjs`
 - `city/lib/launch/silhouette.ts`
+- `city/lib/launch/split-check.ts`
+- `city/lib/launch/split-stub.ts`
 - `city/lib/launch/stub.test.mjs`
 - `city/lib/launch/stub.ts`
 - `city/lib/launch/terms.test.mjs`
@@ -3039,6 +3063,8 @@ moved counts as new. Generated at every update from the development history.
 - `city/lib/quarter/world.test.mjs`
 - `city/lib/ring/body.ts`
 - `city/lib/ring/client.ts`
+- `city/lib/ring/duels.test.mjs`
+- `city/lib/ring/duels.ts`
 - `city/lib/ring/flag.ts`
 - `city/lib/ring/format.ts`
 - `city/lib/ring/store.test.mjs`
@@ -4353,6 +4379,31 @@ moved counts as new. Generated at every update from the development history.
 - `lib/ring/dice/testing/helpers.mjs`
 - `lib/ring/dice/tournament.test.mjs`
 - `lib/ring/dice/tournament.ts`
+- `lib/ring/duel/README.md`
+- `lib/ring/duel/api.ts`
+- `lib/ring/duel/code.ts`
+- `lib/ring/duel/crack.test.mjs`
+- `lib/ring/duel/crack.ts`
+- `lib/ring/duel/harness.test.mjs`
+- `lib/ring/duel/harness.ts`
+- `lib/ring/duel/house.ts`
+- `lib/ring/duel/index.ts`
+- `lib/ring/duel/market.test.mjs`
+- `lib/ring/duel/market.ts`
+- `lib/ring/duel/model-agent.ts`
+- `lib/ring/duel/pairing.test.mjs`
+- `lib/ring/duel/pairing.ts`
+- `lib/ring/duel/phrases.ts`
+- `lib/ring/duel/prompt.ts`
+- `lib/ring/duel/ready.ts`
+- `lib/ring/duel/rounds.ts`
+- `lib/ring/duel/segment.ts`
+- `lib/ring/duel/server.ts`
+- `lib/ring/duel/service.test.mjs`
+- `lib/ring/duel/service.ts`
+- `lib/ring/duel/spectate.test.mjs`
+- `lib/ring/duel/spectate.ts`
+- `lib/ring/duel/testing/kit.mjs`
 - `lib/ring/engine.test.mjs`
 - `lib/ring/engine.ts`
 - `lib/ring/garage.ts`
@@ -4519,10 +4570,14 @@ moved counts as new. Generated at every update from the development history.
 - `lib/solana/v1-tx.ts`
 - `lib/solana/wallet-restore-retry.test.mjs`
 - `lib/solana/wallet-restore.client.ts`
+- `lib/spot/candles-shared.test.mjs`
+- `lib/spot/catalog-search.server.ts`
+- `lib/spot/catalog-search.test.mjs`
 - `lib/spot/coin-shelf.test.mjs`
 - `lib/spot/coin-shelf.ts`
 - `lib/spot/markets-budget.test.mjs`
 - `lib/spot/markets-freshness.test.mjs`
+- `lib/spot/markets-shared.test.mjs`
 - `lib/spot/meme-exits.test.mjs`
 - `lib/spot/meme-exits.ts`
 - `lib/spot/offensive-names.test.mjs`
@@ -4537,6 +4592,8 @@ moved counts as new. Generated at every update from the development history.
 - `lib/spot/radar.test.mjs`
 - `lib/spot/read-retry.test.mjs`
 - `lib/spot/read-retry.ts`
+- `lib/spot/shared-reads.test.mjs`
+- `lib/spot/shared-reads.ts`
 - `lib/spot/tape.server.ts`
 - `lib/spot/tape.test.mjs`
 - `lib/spot/tape.ts`
@@ -5160,11 +5217,13 @@ moved counts as new. Generated at every update from the development history.
 - `app/api/solana/swap/order/route.ts`
 - `app/api/solana/swap/quote/route.ts`
 - `app/api/solana/swap/recover/route.ts`
+- `app/api/solana/tokens/search/route.ts`
 - `app/api/solana/transfer/adopt/route.ts`
 - `app/api/solana/transfer/plan/route.ts`
 - `app/api/solana/transfer/recover/route.ts`
 - `app/api/spot/candles/route.ts`
 - `app/api/spot/icon/route.ts`
+- `app/api/spot/market/route.ts`
 - `app/api/spot/markets/route.ts`
 - `app/api/spot/watchlist/route.ts`
 - `app/api/swap/balance/route.ts`

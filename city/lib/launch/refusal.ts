@@ -17,6 +17,8 @@ export const CITY_CLOSED = 'CITY_LAUNCH_CLOSED';
 export const BUILD_UNEXPECTED = 'CITY_BUILD_UNEXPECTED';
 export const WALLET_REFUSED = 'WALLET_REFUSED';
 export const BUILD_AGED = 'LAUNCH_BUILD_EXPIRED';
+/** CITY-212: an early-access creation landed only in part. */
+export const EARLY_PARTIAL = 'CITY_EARLY_PARTIAL';
 
 export type RefusalKind =
   | 'closed'
@@ -30,6 +32,8 @@ export type RefusalKind =
   | 'ryntraNotSigned'
   | 'unreachable'
   | 'unexpected'
+  | 'shares'
+  | 'partial'
   | 'picture'
   | 'pictureUnchecked'
   | 'ticker'
@@ -48,7 +52,7 @@ export type RefusalKind =
 export type RefusalAction = 'retry' | 'topUp' | 'picture' | 'edit' | 'close';
 
 /** Whether money moved: nothing was sent; it was sent and nothing left the wallet; or the chain may still hold it. */
-export type RefusalMoney = 'nothingSent' | 'nothingSigned' | 'nothingStored' | 'nothingLeft' | 'maybeLanded' | 'landing';
+export type RefusalMoney = 'nothingSent' | 'nothingSigned' | 'nothingStored' | 'nothingLeft' | 'maybeLanded' | 'landing' | 'partLanded';
 
 export type Refusal = Readonly<{
   kind: RefusalKind;
@@ -130,6 +134,10 @@ function read(failure: LaunchFailure, wallet: string | null, w: W): Read {
       return by('aged', w.aged, 'retry');
     case BUILD_UNEXPECTED:
       return by('unexpected', w.unexpected, 'retry', 'nothingSigned');
+    case EARLY_PARTIAL:
+      return by('partial', w.partial, 'close', 'partLanded');
+    case 'LAUNCH_SHARES_INVALID':
+      return by('shares', w.sharesInvalid, 'edit');
     case 'LAUNCH_NAME_BORROWED': {
       const label = borrowedAs(message);
       return by('ticker', label ? w.borrowedAs(label) : w.borrowed, 'edit');

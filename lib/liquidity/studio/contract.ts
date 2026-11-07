@@ -134,6 +134,8 @@ export type LiquidityPosition = Readonly<{
 /** DLMM's three ways to spread an add over the bins. DAMM v2 has one curve and ignores it. */
 export const LIQUIDITY_SHAPES = ["spot", "curve", "bid_ask"] as const;
 export type LiquidityShape = (typeof LIQUIDITY_SHAPES)[number];
+/** A shape as the DLMM SDK's `StrategyType`. */
+export const SHAPE_TO_STRATEGY: Readonly<Record<LiquidityShape, number>> = { spot: 0, curve: 1, bid_ask: 2 };
 
 export type AddLiquidityRequest = Readonly<{
   pool: string;

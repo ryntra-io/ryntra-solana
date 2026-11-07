@@ -57,8 +57,12 @@
   max-height: inherit;
 }
 
-.fit .body {
+.fit .body:not([hidden]) {
   flex: 0 1 auto;
+  /* CITY-209: a column, so a window whose contents keep their own scroller under fixed tabs («Earn», «Money») can
+     shrink them to the frame's ceiling; one block child (an agent's card) stands exactly as it did. */
+  display: flex;
+  flex-direction: column;
 }
 
 /* The window in front has the keyboard: a window comes to the front when the pointer or the keyboard enters it. */
@@ -574,8 +578,10 @@
   max-height: min(64dvh, calc(100dvh - 96px - env(safe-area-inset-top)));
 }
 
-.sheetFit .body {
+.sheetFit .body:not([hidden]) {
   flex: 0 1 auto;
+  display: flex;
+  flex-direction: column;
 }
 
 .sheetHead {

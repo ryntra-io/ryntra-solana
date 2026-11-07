@@ -64,6 +64,7 @@ export function WindowSheet() {
       tabIndex={-1}
       data-window={active?.id}
       data-window-full={full ? '' : undefined}
+      data-window-fit={on && !full && spec?.fit ? '' : undefined}
     >
       {active && spec ? (
         <div className={s.sheetHead}>

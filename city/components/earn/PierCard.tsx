@@ -2,10 +2,10 @@
 
 import { useEffect, useMemo } from 'react';
 import { percent } from '@/city/lib/districts/harbor/pools';
-import { PIER_STYLES, pierRange, rangePrices, solShort, STYLE_HALF, STYLE_RISK, unitsShort, usdToSol, PIER_SLIPPAGE_BPS, zapFigures, type Pier, type PierStyle } from '@/city/lib/earn/pier';
+import { GOAL_SHAPE, PIER_GOALS, PIER_STYLES, pierRange, rangePrices, solShort, STYLE_HALF, STYLE_RISK, unitsShort, usdToSol, PIER_SLIPPAGE_BPS, zapFigures, type PierGoal, type Pier, type PierStyle } from '@/city/lib/earn/pier';
 import { PIER_MODE } from '@/city/lib/earn/pier-gate';
 import { historyPicture, pierSeries, plotOf, type HistoryPicture } from '@/city/lib/earn/pier-history';
-import { PIER_BUSY, PIER_LOCKED, pierChoice, usePier, zapReviewOf, type PierNotice } from '@/city/lib/earn/pier-store';
+import { PIER_BUSY, PIER_LOCKED, pierChoice, pierGoal, usePier, zapReviewOf, type PierNotice } from '@/city/lib/earn/pier-store';
 import { pctText, type ProvenStrategy } from '@/city/lib/earn/captain';
 import type { Words } from '@/city/lib/earn/words';
 import { digits } from '@/city/lib/i18n/dict';
@@ -32,6 +32,8 @@ const AUTO_REVIEW_MS = 450;
 export function PierCard({ words, pier, copy = null }: { words: Words; pier: Pier; copy?: ProvenStrategy | null }) {
   const w = words.pier;
   const style = usePier((st) => st.style);
+  const picked = usePier((st) => st.goal);
+  const goal = pierGoal(pier, picked);
   const typed = usePier((st) => st.typed);
   const phase = usePier((st) => st.phase);
   const reviewed = usePier((st) => st.reviewed);
@@ -47,7 +49,7 @@ export function PierCard({ words, pier, copy = null }: { words: Words; pier: Pie
   const states = owner && statesFor?.owner === owner ? statesFor.value : null;
   const admitted = states?.add === 'on';
   const costs = costsFor?.pool === pier.pool.address ? costsFor.value : null;
-  const choice = useMemo(() => pierChoice(pier, style, typed, holdings, owner, states?.ceilingUsd ?? null, costs), [pier, style, typed, holdings, owner, states, costs]);
+  const choice = useMemo(() => pierChoice(pier, style, typed, holdings, owner, states?.ceilingUsd ?? null, costs, goal), [pier, style, goal, typed, holdings, owner, states, costs]);
   const shown = reviewed && choice.key && reviewed.key === choice.key ? reviewed : null;
   const zapped = zapReviewOf(shown);
   const figures = zapped ? zapFigures(zapped, pier) : null;
@@ -115,6 +117,16 @@ export function PierCard({ words, pier, copy = null }: { words: Words; pier: Pie
               <StyleGlyph style={id} />
               <b>{w.styles[id]}</b>
               <span>±{percent(pierRange(pier, id).upPct)}</span>
+            </button>
+          ))}
+        </div>
+      )}
+      {copy ? null : (
+        <div className={s.styles} role="radiogroup" aria-label={w.goal}>
+          {PIER_GOALS.map((id) => (
+            <button key={id} type="button" role="radio" aria-checked={goal === id} className={`${s.styleButton} ${goal === id ? s.styleOn : ''}`} onClick={() => usePier.getState().setGoal(id)} disabled={busy}>
+              <GoalGlyph goal={id} />
+              <b>{w.goals[id]}</b>
             </button>
           ))}
         </div>
@@ -194,6 +206,8 @@ export function PierCard({ words, pier, copy = null }: { words: Words; pier: Pie
           </dd>
           <dt>{w.bins}</dt>
           <dd>{digits(String(STYLE_HALF[style]))}</dd>
+          <dt>{w.goal}</dt>
+          <dd>{w.goals[goal]}</dd>
           <dt>{w.rent}</dt>
           <dd>{figures?.rentSol ? `${digits(figures.rentSol)} SOL${figures.rentBack ? `, ${w.rentBack}` : ''}` : '—'}</dd>
           <dt>{w.network}</dt>
@@ -225,7 +239,7 @@ export function PierCard({ words, pier, copy = null }: { words: Words; pier: Pie
       <div className={s.grow} />
       {caring ? (
         /* The care is its own door (`lib/care/**`): the Harbor's canary admits Zap's wallets, the care's switch its own. */
-        <CareAction words={words} pool={pier.pool.address} lamports={choice.lamports} width={STYLE_HALF[style] * 2 + 1} blocked={Boolean(choice.problem && choice.problem !== 'ceiling')} />
+        <CareAction words={words} pool={pier.pool.address} lamports={choice.lamports} width={STYLE_HALF[style] * 2 + 1} shape={GOAL_SHAPE[goal]} blocked={Boolean(choice.problem && choice.problem !== 'ceiling')} />
       ) : closed ? (
         <Notify product="pier" words={words} />
       ) : (
@@ -269,6 +283,18 @@ export function StyleGlyph({ style }: { style: PierStyle }) {
         const h = on ? height : 2;
         return <rect key={i} x={i * 6 + 0.5} y={25 - h} width="4.4" height={h} rx="1" className={on ? s.barOn : s.barOff} />;
       })}
+    </svg>
+  );
+}
+
+/** The goal's spread over the bins: level, a hill by the price, or high at the edges. */
+export function GoalGlyph({ goal }: { goal: PierGoal }) {
+  const heights = goal === 'even' ? [10, 10, 10, 10, 10, 10, 10, 10, 10] : goal === 'near' ? [3, 6, 10, 16, 22, 16, 10, 6, 3] : [22, 16, 10, 6, 3, 6, 10, 16, 22];
+  return (
+    <svg className={s.styleGlyph} viewBox="0 0 54 26" aria-hidden="true">
+      {heights.map((h, i) => (
+        <rect key={i} x={i * 6 + 0.5} y={25 - h} width="4.4" height={h} rx="1" className={s.barOn} />
+      ))}
     </svg>
   );
 }

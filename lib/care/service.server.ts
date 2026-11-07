@@ -18,6 +18,7 @@
  * Ryntra takes no fee here: the fee table names none for looking after a position.
  */
 
+import { LIQUIDITY_SHAPES, type LiquidityShape } from "../liquidity/studio/contract.ts";
 import { createHash } from "node:crypto";
 import { PublicKey, VersionedTransaction, type Connection } from "@solana/web3.js";
 
@@ -107,6 +108,8 @@ export type CareEntry = Readonly<{
   stopMessages?: readonly string[];
   /** The range's width in bins the agent keeps around the price. */
   width: number;
+  /** How the money spreads over those bins; a care written before CITY-210 is even (`spot`). */
+  shape?: LiquidityShape;
   position: string | null;
   outOfRangeSince: number | null;
   lastRebalanceAt: number | null;
@@ -173,7 +176,7 @@ export async function caresOf(store: GuardStore, cluster: string, owner: string)
 export type CareFailure = Readonly<{ ok: false; code: string; reason: string }>;
 const fail = (code: string, reason: string): CareFailure => ({ ok: false, code, reason });
 
-export type CareReviewInput = Readonly<{ owner: string; pool: string; lamports: string; fees?: FeeMode; width?: number; stopPct?: number }>;
+export type CareReviewInput = Readonly<{ owner: string; pool: string; lamports: string; fees?: FeeMode; width?: number; shape?: LiquidityShape; stopPct?: number }>;
 
 /** The stops the window offers: none, or leave when the price falls 10 % or 25 % from now. */
 export const CARE_STOP_PCTS = [0, 10, 25] as const;
@@ -222,6 +225,8 @@ export async function reviewCare(input: CareReviewInput, deps: Readonly<{ env?: 
   if (!(CARE_STOP_PCTS as readonly number[]).includes(stopPct)) return fail("BAD_REQUEST", "The stop is one the window offers.");
   const width = Math.round(input.width ?? CARE_WIDTH);
   if (!(width >= 6 && width <= 69)) return fail("BAD_REQUEST", "The range is 6 to 69 bins wide.");
+  const shape = input.shape ?? "spot";
+  if (!LIQUIDITY_SHAPES.includes(shape)) return fail("BAD_REQUEST", "The shape is one the window offers.");
   let stopBelow: number | null = null;
   if (stopPct > 0) {
     const read = await dlmmPool(connection, { cluster: gate.network, terms: { pool } } as unknown as Care);
@@ -252,7 +257,7 @@ export async function reviewCare(input: CareReviewInput, deps: Readonly<{ env?: 
   const txs = plan.transactions.map((instructions) => unsignedTransaction(owner, instructions, blockhash, []));
   const care = careToJson(plan.care);
   const key = keyOf(gate.network, owner.toBase58(), vaultIndex);
-  const entry: CareEntry = { v: 1, key, care, status: "signing", messages: txs.map((tx) => sha(tx.message.serialize())), width, position: null, outOfRangeSince: null, lastRebalanceAt: null, lastClaimAt: null, events: [], createdAt: now, updatedAt: now };
+  const entry: CareEntry = { v: 1, key, care, status: "signing", messages: txs.map((tx) => sha(tx.message.serialize())), width, shape, position: null, outOfRangeSince: null, lastRebalanceAt: null, lastClaimAt: null, events: [], createdAt: now, updatedAt: now };
   const existing = await bookOf(store).get(key);
   if (existing && existing.status !== "signing") return fail("CARE_TAKEN", "This care is already working.");
   await bookOf(store).set(key, entry);
@@ -331,7 +336,7 @@ export async function careStep(entry: CareEntry, deps: Readonly<{ env: Env; conn
     push(opened.event, opened.ok ? { position: open.position.toBase58() } : {});
     if (!opened.ok) return next;
     const fresh = await dlmmPool(deps.connection, care);
-    const deposit = await act(await dlmmRebalance(fresh, care, open.position, idle, { withdraw: false }), "open", Number(p.mintX.equals(NATIVE_MINT) ? idle.x : idle.y) / LAMPORTS);
+    const deposit = await act(await dlmmRebalance(fresh, care, open.position, idle, { withdraw: false, shape: entry.shape }), "open", Number(p.mintX.equals(NATIVE_MINT) ? idle.x : idle.y) / LAMPORTS);
     push(deposit.event);
     return next;
   }
@@ -361,10 +366,10 @@ export async function careStep(entry: CareEntry, deps: Readonly<{ env: Env; conn
     const out = await act(await dlmmExit(pool, care, position), "exit", 0);
     push(out.event, out.ok ? { status: "stopped", position: null } : {});
   } else if (action.kind === "rebalance") {
-    const moved = await act(await dlmmRebalance(pool, care, position.address, idle, { withdraw: true }), "rebalance", 0);
+    const moved = await act(await dlmmRebalance(pool, care, position.address, idle, { withdraw: true, shape: entry.shape }), "rebalance", 0);
     push(moved.event, moved.ok ? { lastRebalanceAt: deps.now, outOfRangeSince: null } : {});
   } else if (action.kind === "claim") {
-    const build = action.to === "wallet" ? await dlmmClaimToWallet(pool, care, position.address) : await dlmmRebalance(pool, care, position.address, idle, { withdraw: false });
+    const build = action.to === "wallet" ? await dlmmClaimToWallet(pool, care, position.address) : await dlmmRebalance(pool, care, position.address, idle, { withdraw: false, shape: entry.shape });
     const claimed = await act(build, action.to === "wallet" ? "claim" : "reinvest", feesInY);
     push(claimed.event, claimed.ok ? { lastClaimAt: deps.now } : {});
   }

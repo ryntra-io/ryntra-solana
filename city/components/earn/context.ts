@@ -64,3 +64,30 @@ export function useShelfContext(): Readonly<Record<ProductId, Big>> {
     return { saver, pier, dollar, sell, stockpier, stocks, captain };
   }, [feed, piers, lend, towers, stockList, captainRead]);
 }
+
+const waiting = (status: string | undefined): boolean => status === undefined || status === 'idle' || status === 'loading';
+
+/**
+ * Which products' big numbers are still on their way (CITY-209): their cards hold the number's place with a quiet bone
+ * of the same height, so the Shelf does not jump when the figures land. A source that answered — with a number or
+ * without — is no longer waited on.
+ */
+export function useShelfReading(): Readonly<Record<ProductId, boolean>> {
+  const feed = useEarnData((st) => st.feed.status);
+  const piers = useEarnData((st) => st.piers.status);
+  const lend = useEarnData((st) => st.lend.status);
+  const captain = useEarnData((st) => st.captain.status);
+  const stockList = useStockPier((st) => st.list?.status);
+  return useMemo(
+    () => ({
+      saver: waiting(feed),
+      pier: waiting(piers),
+      dollar: waiting(lend),
+      sell: false,
+      stockpier: waiting(stockList),
+      stocks: false,
+      captain: waiting(captain) || waiting(piers),
+    }),
+    [feed, piers, lend, captain, stockList],
+  );
+}

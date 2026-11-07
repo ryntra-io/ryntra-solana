@@ -2,6 +2,7 @@
 
 import dynamic from 'next/dynamic';
 import { useEffect, useMemo } from 'react';
+import { cityDrawn } from '@/city/lib/city/drawn';
 import { EARN_OPEN } from '@/city/lib/earn/flag';
 import { useEarn } from '@/city/lib/earn/open';
 import { earnWords } from '@/city/lib/earn/words';
@@ -13,8 +14,46 @@ import { useCityWindow } from '../window/useCityWindow';
 import { EarnGlyph } from './bits';
 import s from './earn.module.css';
 
-// The window's contents load the first time it opens: the city's first frame carries none of them.
-const EarnWindow = dynamic(() => import('./EarnWindow'), { ssr: false, loading: () => <div className={s.pending} aria-busy="true" /> });
+// The window's contents never ride with the city's first frame. Since CITY-209 they are fetched once the city is drawn
+// and the page is idle, so the first tap on «Earn» does not wait for them (2.8–5.5 s on the first open before).
+const loadEarnWindow = () => import('./EarnWindow');
+const EarnWindow = dynamic(loadEarnWindow, { ssr: false, loading: () => <div className={s.pending} aria-busy="true" /> });
+
+/** After the city's first frame, in the page's idle time: the window's code, warm for the first tap. Reads nothing. */
+function warmEarnWindow(): () => void {
+  type Idle = (cb: () => void, o?: { timeout: number }) => number;
+  const idle = (window as Window & { requestIdleCallback?: Idle }).requestIdleCallback;
+  let done = false;
+  const wait = window.setInterval(() => {
+    if (!cityDrawn()) return;
+    window.clearInterval(wait);
+    const go = () => {
+      if (!done) void loadEarnWindow().catch(() => {});
+    };
+    if (idle) idle(go, { timeout: 6000 });
+    else window.setTimeout(go, 2500);
+  }, 700);
+  return () => {
+    done = true;
+    window.clearInterval(wait);
+  };
+}
+
+/**
+ * The window's reads start with the tap, side by side with its code, not after it (CITY-209): the feed, the Piers, the
+ * lending markets, the Captain's records and the Stock Pier list. Each store keeps a fresh answer and skips a second
+ * call, so the window's own start of the same reads costs nothing.
+ */
+function startEarnReads(): void {
+  void import('@/city/lib/earn/store').then(({ useEarnData }) => {
+    const data = useEarnData.getState();
+    void data.loadFeed();
+    void data.loadPiers();
+    void data.loadLend();
+    void data.loadCaptain();
+  });
+  void import('@/city/lib/earn/stock-pier-store').then(({ useStockPier }) => void useStockPier.getState().load());
+}
 
 const renderEarn = () => <EarnWindow />;
 const closeEarn = () => useEarn.getState().close();
@@ -38,8 +77,12 @@ function OpenEarn() {
   const lang = useLang();
 
   useEffect(() => {
-    if (open) startWallets();
+    if (!open) return;
+    startWallets();
+    startEarnReads();
   }, [open]);
+
+  useEffect(() => warmEarnWindow(), []);
 
   // Earn's notes (CITY-100) — out of range, the exchange's weekend, dividend dates — told through the notification
   // centre while Ryntra is open; loaded after the first paint, never with the city's first frame.
@@ -72,6 +115,8 @@ function OpenEarn() {
       title: earnWords(lang).title,
       icon: <EarnGlyph />,
       render: renderEarn,
+      // CITY-209: as tall as the tab, up to its place — «Mine» with one line leaves no empty glass under it.
+      fit: true,
       size: { width: 680, height: 740 },
       min: { width: 380, height: 480 },
       held: busy,

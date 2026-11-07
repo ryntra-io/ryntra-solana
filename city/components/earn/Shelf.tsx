@@ -8,7 +8,7 @@ import { STOCK_PIER_MODE } from '@/city/lib/earn/stock-pier-gate';
 import { DOLLAR_OPEN } from '@/city/lib/earn/dollar-gate';
 import type { Words } from '@/city/lib/earn/words';
 import { RiskDots } from './bits';
-import { useShelfContext } from './context';
+import { useShelfContext, useShelfReading } from './context';
 import s from './earn.module.css';
 
 /**
@@ -32,6 +32,7 @@ export function live(product: ProductId): boolean {
  */
 export function Shelf({ words }: { words: Words }) {
   const context = useShelfContext();
+  const reading = useShelfReading();
   return (
     <section className={s.shelf} aria-label={words.tabs.shelf}>
       {PRODUCTS.map((id) => {
@@ -48,17 +49,22 @@ export function Shelf({ words }: { words: Words }) {
               <h3 className={`${s.display} ${s.cardName}`}>{w.name}</h3>
               <RiskDots dots={RISK[id]} words={words} />
             </div>
-            <div className={s.cardBig}>
+            <div className={s.cardBig} aria-busy={!big && reading[id] ? true : undefined}>
               {big ? (
                 <>
                   <b className={s.display}>{big.value}</b>
                   <span>{big.unit ? `${big.unit} · ${w.context}` : w.context}</span>
                 </>
+              ) : reading[id] ? (
+                <>
+                  <i className={s.boneBig} />
+                  <i className={s.boneSmall} />
+                </>
               ) : (
                 <span className={s.cardLine}>{w.line}</span>
               )}
             </div>
-            {big ? <p className={s.cardLine}>{w.line}</p> : null}
+            {big || reading[id] ? <p className={s.cardLine}>{w.line}</p> : null}
             <button type="button" className={`${s.display} ${acts ? s.action : s.secondary} ${s.cardAction}`} onClick={open}>
               {acts ? w.action : words.open}
             </button>

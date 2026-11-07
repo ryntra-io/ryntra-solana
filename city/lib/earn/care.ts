@@ -133,10 +133,12 @@ type Store = {
   phase: CarePhase;
   notice: CareNotice;
   cares: readonly CareRow[] | null;
+  /** The last status read did not answer: `cares` is what was read before it (or none), not a fresh «none» (CITY-209). */
+  caresFailed: boolean;
   setOn: (on: boolean) => void;
   setStop: (stop: CareStop) => void;
   reset: () => void;
-  give: (connection: Connection, input: Readonly<{ pool: string; lamports: bigint; width: number }>) => Promise<void>;
+  give: (connection: Connection, input: Readonly<{ pool: string; lamports: bigint; width: number; shape?: string }>) => Promise<void>;
   load: (owner: string) => Promise<void>;
   takeBack: (connection: Connection, key: string) => Promise<void>;
 };
@@ -165,13 +167,14 @@ export const useCare = create<Store>((set, get) => ({
   phase: 'idle',
   notice: null,
   cares: null,
+  caresFailed: false,
   setOn: (on) => set({ on, notice: null }),
   setStop: (stop) => set({ stop, notice: null }),
   reset: () => set({ phase: 'idle', notice: null }),
   async give(connection, input) {
     if (get().phase !== 'idle') return;
     set({ phase: 'building', notice: null });
-    const review = await post<{ key: string; transactions: string[] }>({ action: 'review', owner: connection.address, pool: input.pool, lamports: input.lamports.toString(), width: input.width, stopPct: get().stop });
+    const review = await post<{ key: string; transactions: string[] }>({ action: 'review', owner: connection.address, pool: input.pool, lamports: input.lamports.toString(), ...(input.shape ? { shape: input.shape } : {}), width: input.width, stopPct: get().stop });
     if (!review) return set({ phase: 'idle', notice: 'failed' });
     set({ phase: 'wallet' });
     const signed = await signAll(connection, review.transactions);
@@ -184,7 +187,7 @@ export const useCare = create<Store>((set, get) => ({
   },
   async load(owner) {
     const status = await post<{ cares: CareRow[] }>({ action: 'status', owner });
-    set({ cares: status ? status.cares : [] });
+    set(status ? { cares: status.cares, caresFailed: false } : { cares: get().cares ?? [], caresFailed: true });
   },
   async takeBack(connection, key) {
     const built = await post<{ transactions: string[] }>({ action: 'stop', owner: connection.address, key });

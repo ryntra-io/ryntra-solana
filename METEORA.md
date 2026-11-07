@@ -115,8 +115,9 @@ around our signer, with a stranger's key, or after the stop was refused by the c
 
 ## Liquidity shapes and DLMM Pro
 
-The Studio engine accepts Spot, Curve and Bid-Ask (`LIQUIDITY_SHAPES` in `lib/liquidity/studio/contract.ts`). The city and
-the agent use Spot today. Meteora's DLMM Pro and its Wave strategy have no public program or SDK yet; Ryntra adds them
+The Studio engine accepts Spot, Curve and Bid-Ask (`LIQUIDITY_SHAPES` in `lib/liquidity/studio/contract.ts`). In the Piers a
+person picks a goal, not a shape: Even, Near price or Catch moves. The Zap and the agent's care build it, and the agent
+rebuilds a range in the same shape. Meteora's DLMM Pro and its Wave strategy have no public program or SDK yet; Ryntra adds them
 when they do, and does not imitate a shape that is not published.
 
 ## Agents

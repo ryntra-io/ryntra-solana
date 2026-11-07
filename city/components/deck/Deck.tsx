@@ -28,6 +28,7 @@ import { useWords } from '@/city/lib/i18n/dict';
 import { isNamed } from '@/city/lib/market/types';
 import { MONEY_OPEN } from '@/city/lib/money/flag';
 import { openMoney, useMoney } from '@/city/lib/money/open';
+import { RING_DUELS_OPEN, toggleDuels, useDuels } from '@/city/lib/ring/duels';
 import { RING_OPEN } from '@/city/lib/ring/flag';
 import { RXN_OPEN, RXN_URL } from '@/city/lib/rxn/flag';
 import { SPOT_OPEN, TRADE_OPEN } from '@/city/lib/trade/gates';
@@ -193,6 +194,7 @@ export function Deck() {
   const earnWindow = useEarn((st) => st.open);
   const earning = EARN_OPEN ? earnWindow : harboring;
   const vaulting = useVault((st) => st.open);
+  const dueling = useDuels((st) => st.open);
   const guarding = useGuard((st) => st.open);
 
   const on: Switches = {
@@ -210,7 +212,8 @@ export function Deck() {
     bots: AGENTS_OPEN,
     // The garage agent (CITY-29): a character without money — reports, heads-ups and advice; behind its own switch.
     garage: GARAGE_OPEN,
-    ring: false,
+    // The Ring's duels (CITY-51): behind their own switch on top of the Ring's, closed by default.
+    ring: RING_DUELS_OPEN,
     hack: false,
     vault: VAULT_OPEN,
   };
@@ -219,7 +222,7 @@ export function Deck() {
     spot: trading || exchanging || tray === 'spot',
     earn: earning,
     agents: botsWindow || scouting || tray === 'agents' || garageWindow,
-    arena: vaulting || tray === 'arena',
+    arena: vaulting || dueling || tray === 'arena',
     guard: guarding,
     money: moneyOpen,
   };
@@ -309,6 +312,8 @@ export function Deck() {
         return useBotsWindow.getState().open ? closeBots() : openBots();
       case 'garage':
         return toggleGarage();
+      case 'ring':
+        return toggleDuels();
       case 'vault':
         return openVault();
     }

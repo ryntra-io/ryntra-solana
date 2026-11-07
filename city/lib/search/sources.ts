@@ -8,7 +8,7 @@ import { spotIcon, type CatalogRow, type IndexCoin } from './rank.ts';
 /**
  * What the search and a coin's link read from the engine — read-only routes, the same every Ryntra client calls:
  * a Ryntra launch (`GET /api/v1/launch/{mint}`), one market of Jupiter's (`GET /api/spot/market?mint=`), the index of
- * the coins Markets lists (`GET /api/search`) and Jupiter's catalogue (`POST /api/solana/tokens/search`). An answer
+ * the coins Markets lists (`GET /api/search`) and Jupiter's catalogue (`GET /api/solana/tokens/search`). An answer
  * that is not the engine's reads as nothing: a coin is never named from a guess.
  */
 
@@ -108,10 +108,9 @@ export async function searchCatalog(query: string, options: ReadOptions = {}): P
   const trimmed = query.trim();
   if (!trimmed || trimmed.length > 64) return [];
   return parseCatalog(
-    await json(options.fetch ?? browserFetch, '/api/solana/tokens/search', {
-      method: 'POST',
-      headers: { 'content-type': 'application/json', accept: 'application/json' },
-      body: JSON.stringify({ query: trimmed, limit: 8 }),
+    /* GET, so the edge keeps the answer: the same words typed anywhere are one read (CITY-208). */
+    await json(options.fetch ?? browserFetch, `/api/solana/tokens/search?${new URLSearchParams({ query: trimmed, limit: '8' })}`, {
+      headers: { accept: 'application/json' },
       signal: options.signal,
     }),
   );

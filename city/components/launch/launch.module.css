@@ -1535,3 +1535,291 @@
     transform: translateX(40px);
   }
 }
+
+/* ---------- The launch's two doors (CITY-212) ---------- */
+
+/* A door is a quiet row like the shield: its name, what holds now, and a plus to open it. */
+.door {
+  margin-top: 8px;
+}
+
+.doorPlus {
+  display: grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  color: var(--amber);
+  background: rgba(255, 178, 63, 0.12);
+  box-shadow: inset 0 0 0 1px rgba(255, 178, 63, 0.35);
+}
+
+.doorPlus svg {
+  width: 14px;
+  height: 14px;
+}
+
+/* «Share earnings»: one bar of who gets what, the wallets under it while they are typed, their chips once done. */
+.split {
+  margin-top: 8px;
+  padding: 12px 14px 12px;
+  background: rgba(238, 241, 255, 0.04);
+  clip-path: polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px);
+}
+
+.splitHead {
+  display: flex;
+  align-items: center;
+  min-height: 28px;
+}
+
+.splitBarWrap {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 8px;
+}
+
+.splitBar {
+  display: flex;
+  flex: 1;
+  gap: 2px;
+  height: 8px;
+  overflow: hidden;
+  border-radius: 4px;
+}
+
+.splitBar span {
+  flex-basis: 0;
+  min-width: 3px;
+  transition: flex-grow 220ms ease-out;
+}
+
+.splitBar span:first-child {
+  box-shadow: 0 0 12px rgba(255, 178, 63, 0.55);
+}
+
+.splitKeep {
+  font-size: var(--type-small);
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  color: var(--warm);
+  white-space: nowrap;
+}
+
+.splitRows {
+  display: grid;
+  gap: 6px;
+  margin-top: 10px;
+}
+
+.splitRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  height: 44px;
+  padding: 0 4px 0 12px;
+  background: rgba(238, 241, 255, 0.07);
+  clip-path: polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px);
+}
+
+.splitRow:focus-within {
+  background: rgba(238, 241, 255, 0.11);
+  box-shadow: inset 0 0 0 2px rgba(255, 178, 63, 0.55);
+}
+
+.splitTone {
+  flex: none;
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+}
+
+.splitAddress {
+  flex: 1;
+  width: 0;
+  min-width: 0;
+  height: 100%;
+  padding: 0;
+  border: 0;
+  outline: 0;
+  background: none;
+  font: inherit;
+  /* The sheet's own field size: a phone does not zoom into it. */
+  font-size: var(--type-lead);
+  font-weight: 700;
+  color: var(--ice);
+  text-overflow: ellipsis;
+}
+
+.splitAddress::placeholder,
+.splitPercent input::placeholder {
+  color: rgba(238, 241, 255, 0.32);
+}
+
+.splitPercent {
+  display: flex;
+  align-items: center;
+  flex: none;
+  height: 32px;
+  padding: 0 8px;
+  background: rgba(238, 241, 255, 0.07);
+  border-radius: 6px;
+}
+
+.splitPercent input {
+  width: 3ch;
+  padding: 0;
+  border: 0;
+  outline: 0;
+  background: none;
+  text-align: right;
+  font: inherit;
+  font-size: var(--type-lead);
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  color: var(--ice);
+}
+
+.splitPercent i {
+  margin-left: 2px;
+  font-style: normal;
+  font-weight: 800;
+  color: var(--text-dim);
+}
+
+.splitRemove {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  border: 0;
+  color: var(--text-dim);
+  background: none;
+  cursor: pointer;
+}
+
+.splitRemove svg {
+  width: 16px;
+  height: 16px;
+}
+
+.splitWays {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-top: 6px;
+}
+
+.splitWays .link:first-child {
+  margin-left: 0;
+  color: var(--amber);
+}
+
+.splitDone {
+  min-height: 36px;
+}
+
+.splitChips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 10px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.splitChips li {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 10px;
+  font-size: var(--type-small);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: var(--text-dim);
+  background: rgba(238, 241, 255, 0.06);
+  border-radius: 999px;
+}
+
+.splitChips b {
+  color: var(--ice);
+}
+
+/* «Your people first»: the switch, and the amounts the creator's people may bring once it is on. */
+.early {
+  margin-top: 8px;
+}
+
+.early > .shield {
+  margin-top: 0;
+}
+
+.earlyCaps {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 14px 12px;
+  background: rgba(20, 241, 149, 0.05);
+}
+
+.earlyCaps > span {
+  margin-right: auto;
+  font-size: var(--type-micro);
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+}
+
+.earlyCap {
+  min-width: 56px;
+  height: 36px;
+  padding: 0 10px;
+  border: 0;
+  border-radius: 18px;
+  font: inherit;
+  font-size: var(--type-small);
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  color: var(--ice);
+  background: rgba(238, 241, 255, 0.07);
+  cursor: pointer;
+}
+
+.earlyCapOn {
+  color: var(--ink);
+  background: var(--mint);
+  box-shadow: 0 0 14px rgba(20, 241, 149, 0.45);
+}
+
+/* The early launch is set: its two moments and one way on. */
+.opened {
+  display: grid;
+  gap: 6px;
+  margin-top: 16px;
+  padding: 14px 14px 0;
+  background: rgba(20, 241, 149, 0.06);
+  box-shadow: inset 2px 0 0 var(--mint);
+}
+
+.openedTitle {
+  font-size: var(--type-title-l);
+  color: var(--mint);
+}
+
+.openedLine {
+  font-size: var(--type-small);
+  line-height: 1.45;
+  font-variant-numeric: tabular-nums;
+  color: var(--ice);
+}
+
+.opened .action {
+  margin: 8px -14px 0;
+  width: calc(100% + 28px);
+}

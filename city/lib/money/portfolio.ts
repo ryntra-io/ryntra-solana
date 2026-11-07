@@ -67,6 +67,8 @@ export type PortfolioView = Readonly<{
   unread: readonly PlaceKind[];
   /** Places still being read: the total may grow by them. */
   reading: readonly PlaceKind[];
+  /** Every place that holds money answered: only then is the total the whole of it (CITY-209). */
+  complete: boolean;
   /** One segment per place with a value, its share of the total, in the order of `PLACE_ORDER`. */
   bar: readonly Readonly<{ kind: PlaceKind; usd: number; share: number }>[];
 }>;
@@ -132,6 +134,8 @@ export type PortfolioWords = Readonly<{
   outOfRange: string;
   locked: string;
   caring: string;
+  /** A cared pier the engine gave no name: never its address. */
+  carePier: string;
   working: string;
   stopped: string;
   test: string;
@@ -161,6 +165,15 @@ function priceOf(assets: readonly MoneyAsset[], mint: string | null): number | n
 function rangeText(lower: number | null, upper: number | null): string {
   if (lower === null || upper === null) return '';
   return `${shortUnits(lower)} – ${shortUnits(upper)}`;
+}
+
+/** Two reads of one place: failed if either failed, still reading if either reads, else as read. */
+function both(a: ReadState, b: ReadState): ReadState {
+  if (a === 'off') return b;
+  if (b === 'off') return a;
+  if (a === 'failed' || b === 'failed') return 'failed';
+  if (a === 'loading' || b === 'loading') return 'loading';
+  return 'ready';
 }
 
 function place(kind: PlaceKind, state: ReadState, rows: readonly Row[]): Place {
@@ -229,7 +242,8 @@ export function portfolioView(input: PortfolioInput): PortfolioView {
       action: { kind: 'trade', mint: asset.mint as string },
       second: null,
     }));
-  const savingsState: ReadState = input.lend.state === 'off' ? (input.walletState === 'ready' ? 'ready' : input.walletState) : input.lend.state;
+  /* Savings stand on two reads — Lend and the wallet's LSTs: the place is whole only when both answered (CITY-209). */
+  const savingsState: ReadState = input.lend.state === 'off' ? input.walletState : both(input.lend.state, input.walletState);
 
   /* Pools: the person's own positions, then the ones an agent looks after from its vault. */
   const pierRows: Row[] = input.piers.rows.map((row) => ({
@@ -247,7 +261,7 @@ export function portfolioView(input: PortfolioInput): PortfolioView {
   const careRows: Row[] = input.care.rows.map((row) => ({
     id: `care:${row.key}`,
     mint: null,
-    title: row.name ?? `${row.pool.slice(0, 4)}…${row.pool.slice(-4)}`,
+    title: row.name ?? words.carePier,
     line: `${words.caring} · ${row.inRange ? words.inRange : words.outOfRange}`,
     usd: typeof row.usd === 'number' && Number.isFinite(row.usd) ? row.usd : null,
     gainUsd: typeof row.unclaimedUsd === 'number' && row.unclaimedUsd > 0 ? row.unclaimedUsd : null,
@@ -256,8 +270,8 @@ export function portfolioView(input: PortfolioInput): PortfolioView {
     action: { kind: 'care', key: row.key },
     second: null,
   }));
-  /* The person's own positions decide the place's state; the cared ones only add rows. */
-  const poolsState: ReadState = input.piers.state === 'off' ? input.care.state : input.piers.state;
+  /* Two reads: the person's own positions and the ones an agent looks after; either unread leaves the place open. */
+  const poolsState: ReadState = both(input.piers.state, input.care.state);
 
   /* Agents: the budget vault. Its SOL counts only on mainnet. */
   const agent = input.agent.row;
@@ -329,5 +343,7 @@ export function portfolioView(input: PortfolioInput): PortfolioView {
   const bar = totalUsd !== null && totalUsd > 0
     ? valued.filter((p) => (p.usd as number) > 0).map((p) => ({ kind: p.kind, usd: p.usd as number, share: (p.usd as number) / totalUsd }))
     : [];
-  return { places, totalUsd, dayUsd, dayPct, unread, reading, bar };
+  /* A place still reading with stale rows on screen keeps the total open too: it may move once it answers. */
+  const open = places.some((p) => p.state === 'failed' || p.state === 'loading');
+  return { places, totalUsd, dayUsd, dayPct, unread, reading, complete: !open, bar };
 }

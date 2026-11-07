@@ -1,5 +1,6 @@
 import { SOLANA_MAINNET_USDC_MINT } from '../../../lib/solana/send-kinds.ts';
 import type { LiquidityReview, ZapReview } from '../../../lib/liquidity/studio/actions.ts';
+import type { LiquidityShape } from '../../../lib/liquidity/studio/contract.ts';
 import { spendable, toUnits } from '../districts/harbor/deposit.ts';
 import type { HarborPool, HarborToken } from '../districts/harbor/pools.ts';
 import type { Holdings } from '../trade/wallet.ts';
@@ -22,14 +23,28 @@ export const PIER_STYLES = ['calm', 'balanced', 'dense'] as const;
 export type PierStyle = (typeof PIER_STYLES)[number];
 
 /**
- * Bins on each side of the price for each style. Calm is the widest one position holds in the engine (69 bins); the
- * spread is even (`spot`) in all three, so a style is only how wide — the one thing that decides how soon a move
- * leaves the range — and the engine's own arithmetic (`simulateBins`) pictures it exactly.
+ * Bins on each side of the price for each style. Calm is the widest one position holds in the engine (69 bins); a
+ * style is only how wide — the one thing that decides how soon a move leaves the range. How the money spreads over
+ * those bins is the goal's.
  */
 export const STYLE_HALF: Readonly<Record<PierStyle, number>> = { calm: 34, balanced: 16, dense: 5 };
 /** Risk dots per style: the narrower, the sooner it stops earning and the more a move costs against holding. */
 export const STYLE_RISK: Readonly<Record<PierStyle, 1 | 2 | 3>> = { calm: 1, balanced: 2, dense: 3 };
 export const DEFAULT_STYLE: PierStyle = 'balanced';
+
+/**
+ * What the money is for (CITY-210): the person says the goal, the engine spreads the money over the style's bins in the
+ * matching shape. Even — the same in every bin; Near price — more by the price, for a pair that moves little; Catch
+ * moves — more at the edges, for a pair that swings.
+ */
+export const PIER_GOALS = ['even', 'near', 'edges'] as const;
+export type PierGoal = (typeof PIER_GOALS)[number];
+export const GOAL_SHAPE: Readonly<Record<PierGoal, LiquidityShape>> = { even: 'spot', near: 'curve', edges: 'bid_ask' };
+
+/** Until the person picks: a staked SOL pair moves little, so the money stands near the price; SOL against dollars, even. */
+export function defaultGoal(pair: PierPair): PierGoal {
+  return pair === 'lst' ? 'near' : 'even';
+}
 
 export function isPierStyle(value: unknown): value is PierStyle {
   return typeof value === 'string' && (PIER_STYLES as readonly string[]).includes(value);
@@ -189,7 +204,7 @@ export function zapMax(holdings: Holdings | null, reserve: bigint = PIER_RESERVE
 export type PierZapBody = Readonly<{
   action: 'zap_in';
   venue: 'meteora-dlmm';
-  request: Readonly<{ pool: string; owner: string; amountIn: string; half: number; slippageBps: number }>;
+  request: Readonly<{ pool: string; owner: string; amountIn: string; half: number; shape?: LiquidityShape; slippageBps: number }>;
 }>;
 
 export type PierRestBody = Readonly<{
@@ -199,8 +214,9 @@ export type PierRestBody = Readonly<{
 }>;
 
 /** A Zap of this much SOL into a new position of the style around the price: the engine counts the bins from the active bin. */
-export function pierZapBody(pier: Pier, owner: string, lamports: bigint, style: PierStyle): PierZapBody {
-  return { action: 'zap_in', venue: 'meteora-dlmm', request: { pool: pier.pool.address, owner, amountIn: lamports.toString(), half: STYLE_HALF[style], slippageBps: PIER_SLIPPAGE_BPS } };
+export function pierZapBody(pier: Pier, owner: string, lamports: bigint, style: PierStyle, goal: PierGoal = 'even'): PierZapBody {
+  const shape = GOAL_SHAPE[goal];
+  return { action: 'zap_in', venue: 'meteora-dlmm', request: { pool: pier.pool.address, owner, amountIn: lamports.toString(), half: STYLE_HALF[style], ...(shape === 'spot' ? {} : { shape }), slippageBps: PIER_SLIPPAGE_BPS } };
 }
 
 /** «Take the rest» of a Zap that landed in part: what the wallet held of the other coin before stays untouched. */

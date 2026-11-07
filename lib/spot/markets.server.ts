@@ -23,8 +23,10 @@
 
 import { after } from "next/server.js";
 
-import { jupiterBackgroundAllowed, noteJupiterResponse } from "../solana/jupiter-budget.ts";
+import { jupiterBackgroundAllowed, jupiterRetryWaitMs, noteJupiterResponse, JUPITER_ORDER_RETRY_WAIT_MAX_MS } from "../solana/jupiter-budget.ts";
 import { resolveJupiterCatalogEndpoint, type JupiterTier } from "../solana/quotes.ts";
+import { sharedRead } from "../stocks/shared-read.ts";
+import { createSharedReads, pauseAfterRate, rateFailureOf, ratePauseLeftMs, resetRatePauses } from "./shared-reads.ts";
 import { isUnsupportedMarket, normalizeSpotMarket, rankMarkets, rankSearch, type SpotMarket, type SpotMarketListRow, type SpotView } from "./markets.ts";
 import { coinScreenerRow, rankScreenerCoins, type ScreenerRow } from "../markets/screener.ts";
 import { tokenFactsOf, type TokenFacts } from "./token-page.ts";
@@ -68,6 +70,8 @@ export type SpotSourceFailure = Readonly<{
   ok: false;
   code: "RATE_LIMITED" | "REFUSED" | "UNREACHABLE" | "MALFORMED";
   reason: string;
+  /** After a refusal for rate: how long reads of Jupiter pause in this instance (CITY-208). */
+  retryAfterMs?: number | null;
 }>;
 
 type Cached<T> = { value: T; readAt: number };
@@ -77,8 +81,8 @@ function baseOf(tier: JupiterTier): string {
 }
 
 /* A keyless catalogue read that is refused as too frequent is asked once
-   more after the provider's own pause, with a little jitter so four reads
-   refused together do not return together. Measured on production on
+   more after the provider's own pause, with a little jitter — since CITY-208
+   only by the first read refused, and only when that pause is short. Measured on production on
    2026-09-14: a cold instance answering the page's first list, its second
    list and its market detail at once — nine catalogue calls inside one
    second — had all of them refused, and the person saw an empty market
@@ -146,6 +150,9 @@ async function getRows(
 /** One Tokens V2 list as Jupiter answered it — the rows not yet read into any shape. */
 async function getRawRows(path: string, ceiling: number, timeoutMs: number): Promise<{ ok: true; raw: readonly unknown[] } | SpotSourceFailure> {
   const endpoint = resolveJupiterCatalogEndpoint();
+  /* CITY-208: after a refusal for rate every catalogue read of this instance pauses for the provider's own wait — asking a spent window only keeps it spent. */
+  const paused = ratePauseLeftMs("jupiter");
+  if (paused > 0) return rateFailureOf("jupiter", paused);
   let response: Response;
   for (let attempt = 0; ; attempt += 1) {
     try {
@@ -158,10 +165,15 @@ async function getRawRows(path: string, ceiling: number, timeoutMs: number): Pro
     }
     noteJupiterResponse(response.headers);
     if (response.status !== 429) break;
-    const pause = retryAfterMs(response);
     await response.body?.cancel();
-    if (attempt > 0) return { ok: false, code: "RATE_LIMITED", reason: "Jupiter rate-limited the token catalogue." };
-    await sleep(pause);
+    /* CITY-208: every read of this instance waits out the provider's pause. Only the first read refused asks again, once,
+       and only when the pause is short; a read refused while another already paused — the burst that spent the window —
+       answers at once with the wait, and its caller serves what it holds. */
+    const alreadyPaused = ratePauseLeftMs("jupiter") > 0;
+    const until = pauseAfterRate("jupiter", jupiterRetryWaitMs(response.headers, Date.now(), JUPITER_ORDER_RETRY_WAIT_MAX_MS) ?? retryAfterMs(response));
+    const left = Math.max(0, until - Date.now());
+    if (attempt > 0 || alreadyPaused || left > RETRY_AFTER_MAX_MS) return { ok: false, code: "RATE_LIMITED", reason: "Jupiter rate-limited the token catalogue.", retryAfterMs: left };
+    await sleep(left + Math.floor(Math.random() * RETRY_JITTER_MS));
   }
   if (!response.ok) {
     await response.body?.cancel();
@@ -223,7 +235,7 @@ export async function readJupiterList(path: string, ttlMs: number, graceMs = STA
     return run;
   };
   if (hit && now - hit.readAt < graceMs) {
-    if (jupiterBackgroundAllowed(now)) void refresh();
+    if (jupiterBackgroundAllowed(now) && ratePauseLeftMs("jupiter", now) === 0) void refresh();
     return { ok: true, raw: hit.value, readAt: hit.readAt, stale: true };
   }
   const result = await refresh();
@@ -309,7 +321,7 @@ async function cachedRows(
        nearly spent, and for a while after a failed one, and the last good
        read is served meanwhile, so a person's own quote is not the request
        the window refuses. */
-    const coolingDown = hit.failedAt !== null && now - hit.failedAt < REFRESH_COOLDOWN_MS;
+    const coolingDown = (hit.failedAt !== null && now - hit.failedAt < REFRESH_COOLDOWN_MS) || ratePauseLeftMs("jupiter", now) > 0;
     if (jupiterBackgroundAllowed(now) && !coolingDown) {
       const pending = refresh();
       /* A read already past five minutes would make the answer stale: it is
@@ -516,18 +528,70 @@ export async function listScreenerCoins(limit: Readonly<{ meme: number; crypto: 
   };
 }
 
+/* ---------------------------------------------------- the shared reads (CITY-208) */
+
+/* A search answer is the same for everyone who typed the same words: half a minute in memory, a minute in the platform's
+   data cache (every instance), and up to ten minutes held, stated stale, when Jupiter refuses. */
+const SEARCH_TTL_MS = 30_000;
+const SEARCH_SHARED_SECONDS = 60;
+const SEARCH_HELD_MS = 10 * 60_000;
+/* Mints by the hundred (a watchlist, a wallet, the landing's tape): as fresh as a detail. */
+const BY_MINT_TTL_MS = 15_000;
+const BY_MINT_HELD_MS = 15 * 60_000;
+/* A detail read by another instance is taken from the data cache while it is this young; older, it is read again. */
+const DETAIL_SHARED_SECONDS = 15;
+const DETAIL_SHARED_MAX_AGE_MS = 30_000;
+
+type Rows = Readonly<{ rows: SpotMarket[] }>;
+type Detail = Readonly<{ market: SpotMarket | null; facts: TokenFacts | null }>;
+
+const searchReads = createSharedReads<Rows, SpotSourceFailure>({ name: "catalogue search", provider: "jupiter", ttlMs: SEARCH_TTL_MS, heldMs: SEARCH_HELD_MS, maxKeys: 300 });
+const byMintReads = createSharedReads<Rows, SpotSourceFailure>({ name: "catalogue by mint", provider: "jupiter", ttlMs: BY_MINT_TTL_MS, heldMs: BY_MINT_HELD_MS, maxKeys: 200 });
+const factsByMintReads = createSharedReads<Rows, SpotSourceFailure>({ name: "catalogue facts by mint", provider: "jupiter", ttlMs: BY_MINT_TTL_MS, heldMs: 0, maxKeys: 200 });
+const detailReads = createSharedReads<Detail, SpotSourceFailure>({ name: "market detail", provider: "jupiter", ttlMs: DETAIL_TTL_MS, heldMs: STALE_GRACE_MS, maxKeys: 2_000 });
+
+/**
+ * A read every instance shares through the platform's data cache, dated by when it was read. Only an answer that is ok
+ * is kept there; outside a Next request (tests, scripts) it is the read itself. A copy older than `maxAgeMs` — the cache
+ * hands back its old copy while it revalidates — is not taken for a new one: the read is made here.
+ */
+async function sharedAcrossInstances<T>(key: readonly string[], seconds: number, maxAgeMs: number, read: () => Promise<{ ok: true; value: T } | SpotSourceFailure>): Promise<{ ok: true; value: T; readAt: number } | SpotSourceFailure> {
+  const dated = async (): Promise<{ ok: true; value: T; readAt: number } | SpotSourceFailure> => {
+    const readAt = Date.now();
+    const result = await read();
+    return result.ok ? { ok: true, value: result.value, readAt } : result;
+  };
+  let answer: { ok: true; value: T; readAt: number } | SpotSourceFailure;
+  try {
+    answer = await sharedRead(["spot", ...key], seconds, dated, (value) => value.ok);
+  } catch {
+    /* The data cache itself failed: the read is made here. */
+    return dated();
+  }
+  if (answer.ok && Date.now() - answer.readAt > maxAgeMs) return dated();
+  return answer;
+}
+
+function rowsOf(read: Promise<{ ok: true; rows: SpotMarket[] } | SpotSourceFailure>): Promise<{ ok: true; value: Rows } | SpotSourceFailure> {
+  return read.then((result) => (result.ok ? { ok: true as const, value: { rows: result.rows } } : result));
+}
+
 export async function searchSpotMarkets(query: string, limit: number): Promise<SpotMarketsRead | SpotSourceFailure> {
   const trimmed = query.trim();
   if (trimmed.length === 0 || trimmed.length > 64) return { ok: false, code: "MALFORMED", reason: "A search needs one to sixty-four characters." };
-  const read = await getRows(`/search?query=${encodeURIComponent(trimmed)}`, LIST_CEILING_BYTES, 8_000);
+  const read = await searchReads.read(trimmed, () =>
+    sharedAcrossInstances(["search", trimmed], SEARCH_SHARED_SECONDS, SEARCH_TTL_MS * 2, () => rowsOf(getRows(`/search?query=${encodeURIComponent(trimmed)}`, LIST_CEILING_BYTES, 8_000))),
+  );
   if (!read.ok) return read;
   const endpoint = resolveJupiterCatalogEndpoint();
+  const readAt = new Date(read.readAt).toISOString();
   return {
     ok: true,
-    rows: rankSearch(read.rows, trimmed, limit),
-    observedAt: new Date().toISOString(),
-    stale: false,
-    oldestReadAt: new Date().toISOString(),
+    rows: rankSearch(read.value.rows, trimmed, limit),
+    observedAt: readAt,
+    stale: read.stale,
+    ...(read.stale ? { lastGoodAt: readAt } : {}),
+    oldestReadAt: readAt,
     partial: false,
     source: { label: `Jupiter Tokens API, ${endpoint.tier} tier`, tier: endpoint.tier },
   };
@@ -538,45 +602,69 @@ export async function searchSpotMarkets(query: string, limit: number): Promise<S
  * holdings, both of which are a list of addresses rather than a query. Order
  * of the input is kept; a mint the provider does not know is absent, which the
  * caller reports as *not in the catalogue* rather than inventing a row.
+ *
+ * The same set of mints asked at once is one read, and is not asked again for
+ * fifteen seconds. `held: true` lets a caller that shows the answer as it is —
+ * the market route — take the last good read, stated `stale` with its time,
+ * when Jupiter refuses; a caller that keeps its own memory (the wallet's
+ * holdings) leaves it off and never mistakes an old read for a new one.
  */
-export async function readSpotMarketsByMint(mints: readonly string[], timeoutMs = 8_000): Promise<{ ok: true; byMint: ReadonlyMap<string, SpotMarket>; observedAt: string } | SpotSourceFailure> {
+export async function readSpotMarketsByMint(
+  mints: readonly string[],
+  timeoutMs = 8_000,
+  options: Readonly<{ held?: boolean }> = {},
+): Promise<{ ok: true; byMint: ReadonlyMap<string, SpotMarket>; observedAt: string; stale: boolean } | SpotSourceFailure> {
   const unique = [...new Set(mints)].slice(0, 100);
-  if (unique.length === 0) return { ok: true, byMint: new Map(), observedAt: new Date().toISOString() };
-  const read = await getRows(`/search?query=${encodeURIComponent(unique.join(","))}`, LIST_CEILING_BYTES, timeoutMs);
+  if (unique.length === 0) return { ok: true, byMint: new Map(), observedAt: new Date().toISOString(), stale: false };
+  const key = [...unique].sort().join(",");
+  const read = await byMintReads.read(key, () => rowsOf(getRows(`/search?query=${encodeURIComponent(unique.join(","))}`, LIST_CEILING_BYTES, timeoutMs)), { held: options.held === true });
   if (!read.ok) return read;
   const byMint = new Map<string, SpotMarket>();
-  for (const market of read.rows) if (unique.includes(market.mint) && !byMint.has(market.mint)) byMint.set(market.mint, market);
-  return { ok: true, byMint, observedAt: new Date().toISOString() };
+  for (const market of read.value.rows) if (unique.includes(market.mint) && !byMint.has(market.mint)) byMint.set(market.mint, market);
+  return { ok: true, byMint, observedAt: new Date(read.readAt).toISOString(), stale: read.stale };
 }
 
-const details = new Map<string, { value: SpotMarket; readAt: number }>();
-/* The token page's facts of the rows a detail read answered — the same read, kept beside the market. */
+/* The token page's facts of the rows a detail or facts read answered — the same read, kept beside the market. */
 const tokenFacts = new Map<string, { value: TokenFacts; readAt: number }>();
+
+/** One market and its token facts, as Jupiter's search by its mint answers — the shape every instance shares. */
+async function readDetailNow(mint: string): Promise<{ ok: true; value: Detail } | SpotSourceFailure> {
+  const read = await getRows(`/search?query=${encodeURIComponent(mint)}`, LIST_CEILING_BYTES, 8_000, true);
+  if (!read.ok) return read;
+  const market = read.rows.find((row) => row.mint === mint) ?? null;
+  return { ok: true, value: { market, facts: market ? (tokenFacts.get(mint)?.value ?? null) : null } };
+}
 
 /**
  * One market, fresh to fifteen seconds. `/search` by mint is what the provider
  * caches shortest (ten seconds), so this is as live as its price gets without
  * a stream; the header polls it.
+ *
+ * CITY-208: a coin's window asks for the same mint from several reads at once
+ * (the header, the chart's price check, the overview, «Ризик»); they are one
+ * read, shared with every other instance through the data cache, and after a
+ * refusal for rate the last good read is answered, stated stale, with its time.
  */
 export async function readSpotMarket(mint: string): Promise<{ ok: true; market: SpotMarket; observedAt: string; stale: boolean } | { ok: true; market: null; observedAt: string; stale: false } | SpotSourceFailure> {
-  const hit = details.get(mint);
+  const hit = detailReads.peek(mint);
   const now = Date.now();
-  if (hit && now - hit.readAt < DETAIL_TTL_MS) return { ok: true, market: hit.value, observedAt: new Date(hit.readAt).toISOString(), stale: false };
   /* The header polls every fifteen seconds; while the provider's window is
      nearly spent, a two-minute-old detail is served and named stale rather
      than spending what a person's Review may need. */
-  if (hit && now - hit.readAt < DETAIL_LOW_BUDGET_MS && !jupiterBackgroundAllowed(now)) {
-    return { ok: true, market: hit.value, observedAt: new Date(hit.readAt).toISOString(), stale: true };
+  if (hit && hit.value.market && now - hit.readAt >= DETAIL_TTL_MS && now - hit.readAt < DETAIL_LOW_BUDGET_MS && !jupiterBackgroundAllowed(now)) {
+    return { ok: true, market: hit.value.market, observedAt: new Date(hit.readAt).toISOString(), stale: true };
   }
-  const read = await getRows(`/search?query=${encodeURIComponent(mint)}`, LIST_CEILING_BYTES, 8_000, true);
-  if (!read.ok) {
-    if (hit && now - hit.readAt < STALE_GRACE_MS) return { ok: true, market: hit.value, observedAt: new Date(hit.readAt).toISOString(), stale: true };
-    return read;
-  }
-  const market = read.rows.find((row) => row.mint === mint) ?? null;
-  if (!market) return { ok: true, market: null, observedAt: new Date().toISOString(), stale: false };
-  details.set(mint, { value: market, readAt: Date.now() });
-  return { ok: true, market, observedAt: new Date().toISOString(), stale: false };
+  const read = await detailReads.read(mint, async () => {
+    const answer = await sharedAcrossInstances(["detail", mint], DETAIL_SHARED_SECONDS, DETAIL_SHARED_MAX_AGE_MS, () => readDetailNow(mint));
+    /* The facts travel with the market: an instance that did not make the read keeps them too. */
+    if (answer.ok && answer.value.facts) tokenFacts.set(mint, { value: answer.value.facts, readAt: answer.readAt });
+    return answer;
+  });
+  if (!read.ok) return read;
+  const observedAt = new Date(read.readAt).toISOString();
+  /* «Not listed» is an answer of a fresh read only: a held copy of it is not repeated as fact. */
+  if (!read.value.market) return read.stale ? { ok: false, code: "UNREACHABLE", reason: "Jupiter did not answer now; the token was not listed at its last read." } : { ok: true, market: null, observedAt, stale: false };
+  return { ok: true, market: read.value.market, observedAt, stale: read.stale };
 }
 
 /**
@@ -596,8 +684,8 @@ export function cachedSpotMarkets(mints: readonly string[]): ReadonlyMap<string,
     if (!held || held.readAt < readAt) out.set(market.mint, { market, readAt });
   };
   for (const mint of wanted) {
-    const detail = details.get(mint);
-    if (detail) keep(detail.value, detail.readAt);
+    const detail = detailReads.peek(mint);
+    if (detail?.value.market) keep(detail.value.market, detail.readAt);
   }
   for (const cached of caches.values()) for (const market of cached.value) keep(market, cached.readAt);
   return out;
@@ -611,8 +699,8 @@ export function cachedSpotMarkets(mints: readonly string[]): ReadonlyMap<string,
  * searches against a 0.5-request-per-second keyless budget.
  */
 export async function lookupSpotIcon(mint: string): Promise<string | null> {
-  const detail = details.get(mint);
-  if (detail) return detail.value.icon;
+  const detail = detailReads.peek(mint);
+  if (detail?.value.market) return detail.value.market.icon;
   for (const cached of caches.values()) {
     const found = cached.value.find((market) => market.mint === mint);
     if (found) return found.icon;
@@ -630,27 +718,29 @@ export async function readSpotTokenFacts(mint: string): Promise<{ ok: true; mark
   const read = await readSpotMarket(mint);
   if (!read.ok) return read;
   if (!read.market) return { ok: true, market: null, facts: null, observedAt: read.observedAt, stale: false };
-  return { ok: true, market: read.market, facts: tokenFacts.get(mint)?.value ?? null, observedAt: read.observedAt, stale: read.stale };
+  return { ok: true, market: read.market, facts: tokenFacts.get(mint)?.value ?? detailReads.peek(mint)?.value.facts ?? null, observedAt: read.observedAt, stale: read.stale };
 }
 
 /**
  * Up to a hundred mints with the token page's facts of each (creator, creation) — one search, as
- * `readSpotMarketsByMint`; «Стеження за гаманцями» (SOL-R4) labels a wallet's trades by them.
+ * `readSpotMarketsByMint`; «Стеження за гаманцями» (SOL-R4) labels a wallet's trades by them. The same set asked at
+ * once is one read; never a held copy.
  */
 export async function readSpotFactsByMint(mints: readonly string[], timeoutMs = 8_000): Promise<{ ok: true; byMint: ReadonlyMap<string, SpotMarket>; facts: ReadonlyMap<string, TokenFacts>; observedAt: string } | SpotSourceFailure> {
   const unique = [...new Set(mints)].slice(0, 100);
   if (unique.length === 0) return { ok: true, byMint: new Map(), facts: new Map(), observedAt: new Date().toISOString() };
-  const read = await getRows(`/search?query=${encodeURIComponent(unique.join(","))}`, LIST_CEILING_BYTES, timeoutMs, true);
+  const key = [...unique].sort().join(",");
+  const read = await factsByMintReads.read(key, () => rowsOf(getRows(`/search?query=${encodeURIComponent(unique.join(","))}`, LIST_CEILING_BYTES, timeoutMs, true)), { held: false });
   if (!read.ok) return read;
   const byMint = new Map<string, SpotMarket>();
   const facts = new Map<string, TokenFacts>();
-  for (const market of read.rows) {
+  for (const market of read.value.rows) {
     if (!unique.includes(market.mint) || byMint.has(market.mint)) continue;
     byMint.set(market.mint, market);
     const kept = tokenFacts.get(market.mint)?.value;
     if (kept) facts.set(market.mint, kept);
   }
-  return { ok: true, byMint, facts, observedAt: new Date().toISOString() };
+  return { ok: true, byMint, facts, observedAt: new Date(read.readAt).toISOString() };
 }
 
 /** Test seam: forget every cached read. */
@@ -658,8 +748,12 @@ export function resetSpotMarketCaches(): void {
   caches.clear();
   inflight.clear();
   inflightStartedAt.clear();
-  details.clear();
   tokenFacts.clear();
   rawCaches.clear();
   rawInflight.clear();
+  searchReads.reset();
+  byMintReads.reset();
+  factsByMintReads.reset();
+  detailReads.reset();
+  resetRatePauses();
 }

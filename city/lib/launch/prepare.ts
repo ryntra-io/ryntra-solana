@@ -1,7 +1,9 @@
 import type { LaunchBuildRequest, LaunchBuildResponse, LaunchMetadataResponse, LaunchPresetView } from '../../../lib/api/v1/contract.ts';
+import type { FeeShare } from '../../../lib/core/launch/fee-shares.ts';
 import { MAX_SIGNABLE_WINDOW_MS, MIN_WALLET_WINDOW_MS } from '../../../lib/solana/blockhash-life.ts';
 import type { Answer, LaunchEngine, Network } from './engine.ts';
 import { cityLaunchOpen } from './gate.ts';
+import { sameShares } from './share.ts';
 
 /**
  * The launch made ready before the press (CITY-143, `docs/research/ryntra-launch-2026-10-29/SPEC.md` «Створення»):
@@ -44,13 +46,16 @@ export function fieldsKey(fields: PrepFields): string {
   return `${fields.name}\u0000${fields.symbol}\u0000${fingerprint(fields.picture.base64)}`;
 }
 
-/** What the city's launch asks the engine to build: the launch alone — no first purchase, no lock. */
-export function launchRequest(creator: string, preset: LaunchPresetView['id'], metadataUri: string): LaunchBuildRequest {
-  return { creator, preset, metadataUri, firstBuyRaw: '0', lock: null };
+/**
+ * What the city's launch asks the engine to build: the launch — no first purchase, no lock —, and, when the review
+ * showed it, the creator's fees shared (CITY-212: the creator first, keeping the rest; `share.ts`).
+ */
+export function launchRequest(creator: string, preset: LaunchPresetView['id'], metadataUri: string, shares: readonly FeeShare[] | null = null): LaunchBuildRequest {
+  return { creator, preset, metadataUri, firstBuyRaw: '0', lock: null, ...(shares?.length ? { feeShares: [...shares] } : {}) };
 }
 
 function sameRequest(a: LaunchBuildRequest, b: LaunchBuildRequest): boolean {
-  return a.creator === b.creator && a.preset === b.preset && a.metadataUri === b.metadataUri && a.firstBuyRaw === b.firstBuyRaw && a.lock === b.lock && !a.feeShares?.length && !b.feeShares?.length;
+  return a.creator === b.creator && a.preset === b.preset && a.metadataUri === b.metadataUri && a.firstBuyRaw === b.firstBuyRaw && a.lock === b.lock && sameShares(a.feeShares, b.feeShares);
 }
 
 /** A build made ahead of the press: what was asked, the engine's answer, and when it arrived on this device. */
@@ -69,9 +74,19 @@ export function freshPrebuilt(prebuilt: Prebuilt | null, request: LaunchBuildReq
   return { ...prebuilt.built, signableMs: left };
 }
 
-/** Bytes the review showed nothing of — another network, a lock, a sharing of fees — are never this launch. */
+/**
+ * Bytes the review showed nothing of — another network, a lock, a sharing of fees nobody asked for, or no sharing where
+ * the review showed one — are never this launch. Whether the sharing's own bytes are the shares shown is read by
+ * `split-check.ts` before the wallet opens.
+ */
+export function asReviewed(built: LaunchBuildResponse, network: Network, shared: boolean): boolean {
+  if (built.network !== network || built.lockUnsignedWireBase64 !== null) return false;
+  return shared ? Boolean(built.splitUnsignedWireBase64) && Boolean(built.feeVault) : !built.splitUnsignedWireBase64;
+}
+
+/** The launch alone: no lock and no sharing. */
 export function onlyTheLaunch(built: LaunchBuildResponse, network: Network): boolean {
-  return built.network === network && built.lockUnsignedWireBase64 === null && !built.splitUnsignedWireBase64;
+  return asReviewed(built, network, false);
 }
 
 export type PrepState = Readonly<{
@@ -85,7 +100,7 @@ export type Prep = Readonly<{
   /** Hands the fields to the store, or returns the answer on its way for the same fields; null — the background is spent. */
   store: (fields: PrepFields, options?: Readonly<{ background?: boolean }>) => Promise<Answer<LaunchMetadataResponse>> | null;
   /** Builds the launch once for its simulated cost, where the city may launch and the fields are stored. */
-  simulate: (args: Readonly<{ fields: PrepFields; creator: string; preset: LaunchPresetView; network: Network; ownerWord?: boolean; switchOpen?: boolean }>) => Promise<void>;
+  simulate: (args: Readonly<{ fields: PrepFields; creator: string; preset: LaunchPresetView; network: Network; ownerWord?: boolean; switchOpen?: boolean; shares?: readonly FeeShare[] | null }>) => Promise<void>;
   /** The prebuilt bytes of exactly this launch, handed over once. */
   take: (request: LaunchBuildRequest, network: Network) => Prebuilt | null;
   /** After a launch: nothing kept for the next but the cost. */
@@ -128,18 +143,18 @@ export function createPrep(args: Readonly<{ engine: () => LaunchEngine; now?: ()
     return promise;
   };
 
-  const simulate: Prep['simulate'] = async ({ fields, creator, preset, network, ownerWord, switchOpen }) => {
+  const simulate: Prep['simulate'] = async ({ fields, creator, preset, network, ownerWord, switchOpen, shares = null }) => {
     if (!cityLaunchOpen(network, ownerWord, switchOpen)) return;
     const entry = stored;
     if (!entry || entry.key !== fieldsKey(fields) || !entry.answer?.ok) return;
-    const request = launchRequest(creator, preset.id, entry.answer.data.metadataUri);
-    const key = `${network}|${request.creator}|${request.preset}|${request.metadataUri}`;
+    const request = launchRequest(creator, preset.id, entry.answer.data.metadataUri, shares);
+    const key = `${network}|${request.creator}|${request.preset}|${request.metadataUri}|${(request.feeShares ?? []).map((share) => `${share.address}:${share.bps}`).join(',')}`;
     if (simulated.has(key) || building === key) return;
     building = key;
     const answer = await args.engine().build(request);
     if (building === key) building = null;
     /* A refusal is said by the launch itself at the press; the cost line keeps what it knew. */
-    if (!answer.ok || !onlyTheLaunch(answer.data, network)) return;
+    if (!answer.ok || !asReviewed(answer.data, network, Boolean(request.feeShares?.length))) return;
     simulated.add(key);
     prebuilt = { request, network, built: answer.data, receivedAt: now() };
     cost = answer.data.creatorCostLamports;

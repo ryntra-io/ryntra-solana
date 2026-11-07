@@ -42,7 +42,7 @@ import {
   type TokenTrade,
 } from "./token-page.ts";
 
-export type TokenPageFailure = Readonly<{ ok: false; code: "NOT_LISTED" | "NO_POOL" | "UNREACHABLE" | "RATE_LIMITED" | "REFUSED" | "MALFORMED" | "NOT_READ"; reason: string }>;
+export type TokenPageFailure = Readonly<{ ok: false; code: "NOT_LISTED" | "NO_POOL" | "UNREACHABLE" | "RATE_LIMITED" | "REFUSED" | "MALFORMED" | "NOT_READ"; reason: string; retryAfterMs?: number | null }>;
 
 type Cached<T> = { value: T; readAt: number };
 /** The most mints a cache keeps: the oldest read leaves first. */
@@ -75,8 +75,8 @@ function once<T>(key: string, read: () => Promise<T>): Promise<T> {
 
 const STALE_GRACE_MS = 10 * 60_000;
 
-function geckoFailure(code: string, reason: string): TokenPageFailure {
-  return { ok: false, code: code === "RATE_LIMITED" ? "RATE_LIMITED" : code === "REFUSED" ? "REFUSED" : code === "MALFORMED" ? "MALFORMED" : "UNREACHABLE", reason };
+function geckoFailure(code: string, reason: string, retryAfterMs?: number | null): TokenPageFailure {
+  return { ok: false, code: code === "RATE_LIMITED" ? "RATE_LIMITED" : code === "REFUSED" ? "REFUSED" : code === "MALFORMED" ? "MALFORMED" : "UNREACHABLE", reason, retryAfterMs };
 }
 
 /* --------------------------------------------------------------- facts */
@@ -85,7 +85,7 @@ export type TokenFactsRead = Readonly<{ ok: true; market: SpotMarket; facts: Tok
 
 async function readFacts(mint: string): Promise<TokenFactsRead | TokenPageFailure> {
   const read = await readSpotTokenFacts(mint);
-  if (!read.ok) return { ok: false, code: read.code === "RATE_LIMITED" ? "RATE_LIMITED" : "UNREACHABLE", reason: read.reason };
+  if (!read.ok) return { ok: false, code: read.code === "RATE_LIMITED" ? "RATE_LIMITED" : "UNREACHABLE", reason: read.reason, retryAfterMs: read.retryAfterMs };
   if (!read.market) return { ok: false, code: "NOT_LISTED", reason: "Jupiter does not list this token." };
   return { ok: true, market: read.market, facts: read.facts, observedAt: read.observedAt, stale: read.stale };
 }
@@ -96,7 +96,7 @@ export type TokenPoolsRead = Readonly<{ ok: true; pools: readonly TokenPool[]; o
 
 export async function readTokenPools(mint: string): Promise<TokenPoolsRead | TokenPageFailure> {
   const read = await readTokenPoolsBody(mint, "page");
-  if (!read.ok) return geckoFailure(read.code, read.reason);
+  if (!read.ok) return geckoFailure(read.code, read.reason, read.retryAfterMs);
   return { ok: true, pools: poolsOf(read.body, mint), observedAt: read.observedAt };
 }
 
@@ -129,7 +129,7 @@ export function readTokenTrades(mint: string): Promise<TokenTradesRead | TokenPa
     const pool = tradesPoolOf(pools.pools);
     if (!pool) return { ok: false, code: "NO_POOL", reason: "No pool of this token traded in the last day." } as const;
     const read = await getJson(`${GECKO_SOLANA_BASE}/pools/${encodeURIComponent(pool.address)}/trades?token=${encodeURIComponent(mint)}`, "page");
-    if (!read.ok) return kept ? withTopHolders({ ...kept.value, stale: true }, mint) : geckoFailure(read.code, read.reason);
+    if (!read.ok) return kept ? withTopHolders({ ...kept.value, stale: true }, mint) : geckoFailure(read.code, read.reason, read.retryAfterMs);
     const market = facts.ok ? facts.market : null;
     const stock = market?.category === "stock";
     const capSupply = stock ? null : capSupplyOf(market, facts.ok ? facts.facts : null);

@@ -1,7 +1,27 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 
-import { candlesOf, candlesUrl, DEFAULT_TIMEFRAME, fetchCandles, loading, readCandles, refreshMs, RETRY_MS, settle, TIMEFRAMES, timeframeFrom, whyNoChart } from "./candles.ts";
+import {
+  candlesOf,
+  candlesUrl,
+  DEFAULT_TIMEFRAME,
+  fetchCandles,
+  loading,
+  nextReadMs,
+  QUIET_MISSES,
+  readCandles,
+  refreshMs,
+  RETRY_AFTER_MAX_MS,
+  RETRY_MAX_MS,
+  RETRY_MS,
+  retryAfterOf,
+  retryDelayMs,
+  saysUnavailable,
+  settle,
+  TIMEFRAMES,
+  timeframeFrom,
+  whyNoChart,
+} from "./candles.ts";
 
 // The tower chart's candles: what `/api/spot/candles` answers, checked before the core chart draws a bar of it.
 // No network: the engine's answers are written out here.
@@ -107,7 +127,7 @@ test("a read never throws: a network down is offline, a page that is not JSON fa
 test("the window keeps the last good bars through a blink, drops them for a market without a chart, and never shows another market's", () => {
   const ready = readCandles("15m", 200, answer({ candles: [bar(1, 1, 1, 1, 1)] }), NOW);
   let state = loading(JUP, "15m", null);
-  assert.deepEqual(state, { mint: JUP, timeframe: "15m", status: "loading", last: null, code: null });
+  assert.deepEqual(state, { mint: JUP, timeframe: "15m", status: "loading", last: null, code: null, misses: 0 });
   state = settle(state, ready);
   assert.equal(state.status, "ready");
   assert.equal(state.last, ready);
@@ -126,4 +146,69 @@ test("the window keeps the last good bars through a blink, drops them for a mark
   assert.deepEqual([none.status, none.last, none.code], ["none", null, "THIN"]);
   // Nothing read yet and the source is down: nothing to show, and nothing invented.
   assert.equal(settle(loading(JUP, "15m", null), { status: "unavailable", reason: "offline" }).last, null);
+});
+
+// CITY-215: the first chart on a phone met a 429 and said «Chart unavailable» for ~20 s. Now a failed read is tried
+// again in silence, never before the engine's Retry-After, and the line shows only after a few failed tries in a row.
+
+test("a refused read is tried again quietly: sooner first, then less often, never before Retry-After", () => {
+  assert.deepEqual([1, 2, 3, 4, 5, 6, 20].map((misses) => retryDelayMs(misses)), [2_000, 4_000, 8_000, 16_000, 30_000, 30_000, 30_000]);
+  assert.equal(RETRY_MS, 2_000);
+  assert.equal(RETRY_MAX_MS, 30_000);
+  // The engine asked for a pause: it is waited out; a longer one than the backoff wins, a shorter one does not.
+  assert.equal(retryDelayMs(1, 12_000), 12_000);
+  assert.equal(retryDelayMs(4, 3_000), 16_000);
+  // A pause beyond reason is not waited whole: the chart asks again by the minute.
+  assert.equal(retryDelayMs(1, 3_600_000), RETRY_AFTER_MAX_MS);
+  assert.equal(retryDelayMs(1, Number.NaN), 2_000);
+  assert.equal(retryDelayMs(1, -5), 2_000);
+  // After an answer, the interval's own cadence; after a failure, the quiet retry.
+  assert.equal(nextReadMs({ status: "none", code: "THIN" }, 0, "1m"), refreshMs("1m"));
+  assert.equal(nextReadMs({ status: "unavailable", reason: "busy", retryAfterMs: 9_000 }, 1, "1d"), 9_000);
+  assert.equal(nextReadMs({ status: "unavailable", reason: "offline" }, 2, "1d"), 4_000);
+  assert.ok(retryDelayMs(1) < refreshMs("1m"), "a failed read is tried again before the next regular one");
+});
+
+test("Retry-After is read in both of HTTP's forms", () => {
+  assert.equal(retryAfterOf("7", NOW), 7_000);
+  assert.equal(retryAfterOf(" 0 ", NOW), 0);
+  assert.equal(retryAfterOf(new Date(NOW + 15_000).toUTCString(), NOW), 15_000);
+  assert.equal(retryAfterOf(new Date(NOW - 15_000).toUTCString(), NOW), 0);
+  assert.equal(retryAfterOf(null, NOW), null);
+  assert.equal(retryAfterOf("", NOW), null);
+  assert.equal(retryAfterOf("soon", NOW), null);
+});
+
+test("a 429 carries the engine's Retry-After to the next try; an answer without one carries nothing", async () => {
+  const headers = (map) => ({ get: (name) => map[name.toLowerCase()] ?? null });
+  const deps = (status, map) => ({ fetch: async () => ({ status, json: async () => ({ error: { code: "RATE_LIMITED" } }), headers: headers(map) }), now: () => NOW });
+  assert.deepEqual(await fetchCandles(JUP, "15m", deps(429, { "retry-after": "20" })), { status: "unavailable", reason: "busy", retryAfterMs: 20_000 });
+  assert.deepEqual(await fetchCandles(JUP, "15m", deps(503, { "retry-after": "3" })), { status: "unavailable", reason: "failed", retryAfterMs: 3_000 });
+  assert.deepEqual(await fetchCandles(JUP, "15m", deps(429, {})), { status: "unavailable", reason: "busy" });
+  // A 404 is a market without a chart whatever the headers say.
+  assert.deepEqual(await fetchCandles(JUP, "15m", deps(404, { "retry-after": "5" })), { status: "none", code: null });
+});
+
+test("«Chart unavailable» only after a few failed reads in a row with no bars; one good read starts the count again", () => {
+  const busy = { status: "unavailable", reason: "busy" };
+  let state = loading(JUP, "15m", null);
+  for (let i = 1; i < QUIET_MISSES; i += 1) {
+    state = settle(state, busy);
+    assert.equal(state.misses, i);
+    assert.equal(saysUnavailable(state), false, `try ${i} failed: the frame still only waits`);
+    // The next try starts on the same market and interval: the count is kept.
+    state = loading(JUP, "15m", state);
+    assert.equal(state.misses, i);
+  }
+  state = settle(state, busy);
+  assert.equal(saysUnavailable(state), true, "several tries failed: now it says so");
+  // The bars come: the count starts again, and a later blink keeps them on screen without a word.
+  state = settle(state, readCandles("15m", 200, answer({ candles: [bar(1, 1, 1, 1, 1)] }), NOW));
+  assert.equal(state.misses, 0);
+  state = settle(state, busy);
+  assert.equal(saysUnavailable(state), false);
+  // Another market or interval counts from nothing.
+  assert.equal(loading(JUP, "1h", state).misses, 0);
+  // A market without a chart is no failure.
+  assert.equal(settle(state, { status: "none", code: "THIN" }).misses, 0);
 });

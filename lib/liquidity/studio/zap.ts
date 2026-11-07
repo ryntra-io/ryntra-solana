@@ -37,7 +37,7 @@ import {
 } from "@solana/web3.js";
 import BN from "bn.js";
 
-import { LiquidityRefusal, type LiquidityNotice, type LiquidityToken, type PositionRange, type RentCost, type UnsignedLiquidityTx } from "./contract.ts";
+import { LIQUIDITY_SHAPES, LiquidityRefusal, SHAPE_TO_STRATEGY, type LiquidityNotice, type LiquidityShape, type LiquidityToken, type PositionRange, type RentCost, type UnsignedLiquidityTx } from "./contract.ts";
 import { DLMM_PROGRAM, type DlmmSdk } from "./dlmm.ts";
 import { amountOf, assertBps, parseUnits } from "./math.ts";
 import { JUPITER_PROGRAM, ledgerOf, ownAccountOf, ZAP_PROGRAM, type ZapCheckContext } from "./zap-check.ts";
@@ -72,8 +72,10 @@ export type ZapInRequest = Readonly<{
   owner: string;
   /** Lamports of SOL the wallet puts in. */
   amountIn: string;
-  /** Bins each side of the active bin; the spread is even (`spot`). */
+  /** Bins each side of the active bin. */
   half: number;
+  /** How the money spreads over those bins; even (`spot`) when not said. */
+  shape?: LiquidityShape;
   /** How far the price may move before the deposit is refused, basis points. */
   slippageBps: number;
 }>;
@@ -311,6 +313,9 @@ export function createZapVenue(deps: ZapVenueDeps): ZapVenue {
       if (amountIn < ZAP_MIN_LAMPORTS) throw new LiquidityRefusal("AMOUNT_ZERO", "Too little SOL for a Zap.");
       if (!Number.isInteger(request.half) || request.half < 0 || request.half > ZAP_MAX_HALF) throw new LiquidityRefusal("RANGE_TOO_WIDE", "A Zap opens at most 69 bins.");
       assertBps(request.slippageBps, "slippageBps", 1, 1_000);
+      const shape = request.shape ?? "spot";
+      if (!LIQUIDITY_SHAPES.includes(shape)) throw new LiquidityRefusal("BAD_REQUEST", "The shape is not one the engine builds.");
+      const strategy = SHAPE_TO_STRATEGY[shape];
       if (fee && (!Number.isInteger(fee.bps) || fee.bps < 1 || fee.bps > 100 || fee.mint !== SOL)) throw new LiquidityRefusal("BAD_REQUEST", "Ryntra's fee on a Zap is a rate of the table, in SOL.");
       const zap = zapFor();
       const dlmm = await open(poolKey);
@@ -332,7 +337,7 @@ export function createZapVenue(deps: ZapVenueDeps): ZapVenue {
           swapSlippageBps: ZAP_SWAP_SLIPPAGE_BPS,
           minDeltaId: -request.half,
           maxDeltaId: request.half,
-          strategy: 0,
+          strategy,
           jupiterQuoteOptions: queryOptions,
           config: { jupiterApiUrl: deps.jupiter!.apiUrl, jupiterApiKey: deps.jupiter!.apiKey },
         })
@@ -367,7 +372,7 @@ export function createZapVenue(deps: ZapVenueDeps): ZapVenue {
           maxActiveBinSlippage: Math.max(1, Math.ceil(request.slippageBps / binStep)),
           minDeltaId: -request.half,
           maxDeltaId: request.half,
-          strategy: 0,
+          strategy,
           favorXInActiveId: false,
           swapSlippageBps: ZAP_SWAP_SLIPPAGE_BPS,
           maxTransferAmountExtendPercentage: 2,

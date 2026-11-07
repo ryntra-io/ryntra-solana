@@ -6,6 +6,7 @@ import { useAgent } from '@/city/lib/agent/store';
 import { useAssistant } from '@/city/lib/assistant/store';
 import { howStore } from '@/city/lib/art/how';
 import { closePanel, useBackPanels } from '@/city/lib/back/panels';
+import { frameLayers, frameWindow } from '@/city/lib/back/frames';
 import { browserBackStack } from '@/city/lib/back/stack';
 import { useBeacons } from '@/city/lib/beacon/store';
 import { useTowerChart } from '@/city/lib/chart/store';
@@ -109,12 +110,17 @@ function read(): string[] {
   return [
     ...EXTRA_BELOW.filter((l) => l.open()).map((l) => l.id),
     ...openWindows(windowSources()),
+    // The windows of the frame no name above speaks for (CITY-213): Earn, Bots, the agent's card, Guard, Learn and whatever comes next.
+    ...frameLayers(useWindows.getState().layout.windows.map((w) => w.id)),
     ...EXTRA_ABOVE.filter((l) => l.open()).map((l) => l.id),
     ...useBackPanels.getState().open.map((id) => PANEL + id),
   ];
 }
 
 function close(id: string) {
+  // As the frame's own «Close»: a held window stays, and its owner hears of the rest.
+  const framed = frameWindow(id);
+  if (framed) return useWindows.getState().dismiss(framed);
   // A window its frame holds (real money on its way, a signature in the wallet) is not closed by «Back», as its own
   // «Close» waits: some stores' own close does not ask (Predict's `hide`), the frame does.
   if (useWindows.getState().specs[id]?.held) return;

@@ -131,7 +131,7 @@ test("the app's parser takes the six requests as the contract writes them and re
     { id: "a", type: "wallet.signTransactions", transactions: [] },
     { id: "a", type: "wallet.signTransactions", transactions: Array(MAX_TRANSACTIONS + 1).fill(tx) },
     { id: "a", type: "wallet.signTransactions", transactions: ["not base64!"] },
-    { id: "a", type: "wallet.signTransactions", transactions: [b64(new Uint8Array(1300))] },
+    { id: "a", type: "wallet.signTransactions", transactions: [b64(new Uint8Array(4200))] },
     { id: "a", type: "wallet.signMessage", message: "" },
     { id: "a", type: "share.file", name: "clip.gif", mime: "image/gif", data: b64([1]) },
     { id: "a", type: "share.file", name: "../clip.mp4", mime: "video/mp4", data: b64([1]) },
@@ -209,6 +209,41 @@ test("signTransactions gives back each transaction signed, in order, and nothing
   const out = Buffer.from(answer.result.signed[0], "base64");
   assert.deepEqual(out.subarray(65), Buffer.from(one.message), "the message is the one given");
   assert.equal(await verifyAsync(out.subarray(1, 65), one.message, publicKey), true);
+});
+
+test("more than the app's four go in two windows, in order; a no in the second gives back nothing signed (CITY-213)", async () => {
+  const { app, bridge, publicKey } = await paired();
+  await bridge.request("wallet.connect", {});
+  const address = bridge.wallet().address;
+  const signer = externalSigner(bridge);
+  const wires = Array.from({ length: 6 }, () => b64(unsignedTransaction(publicKey).wire));
+  const asked = [];
+  const stop = bridge.subscribe(() => {});
+  const request = bridge.request;
+  const counting = { ...bridge, request: (type, fields) => (asked.push(fields.transactions?.length), request(type, fields)) };
+  const both = await externalSigner(counting).signTransactions({ address, unsignedWireBase64: wires });
+  stop();
+  assert.equal(both.ok, true);
+  assert.deepEqual(asked, [4, 2]);
+  assert.equal(both.signedWireBase64.length, 6);
+  for (const [index, signed] of both.signedWireBase64.entries()) {
+    assert.deepEqual(Buffer.from(signed, "base64").subarray(65), Buffer.from(wires[index], "base64").subarray(65), "each comes back in its place");
+  }
+  const four = await signer.signTransactions({ address, unsignedWireBase64: wires.slice(0, 4) });
+  assert.equal(four.signedWireBase64.length, 4);
+  let calls = 0;
+  const secondNo = { ...bridge, request: (type, fields) => (++calls === 2 ? app.once("wallet.signTransactions", "decline") : null, request(type, fields)) };
+  const refused = await externalSigner(secondNo).signTransactions({ address, unsignedWireBase64: wires });
+  assert.equal(refused.ok, false);
+  assert.equal(refused.signedWireBase64, undefined, "the first window's signatures do not leave the signer");
+});
+
+test("a transaction as large as the app reads passes the page's parser; a larger one does not", async () => {
+  const { bridge } = await paired();
+  await bridge.request("wallet.connect", {});
+  const big = (bytes) => b64(new Uint8Array(bytes).fill(1));
+  assert.notEqual((await bridge.request("wallet.signTransactions", { transactions: [big(4096)] })).code, "invalid");
+  assert.equal((await bridge.request("wallet.signTransactions", { transactions: [big(4099)] })).code, "invalid");
 });
 
 test("a no in the wallet is an answer, `declined`; a failure, unsupported and busy come back as they are", async () => {

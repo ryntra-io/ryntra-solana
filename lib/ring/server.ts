@@ -23,7 +23,7 @@ import { stubCatalogFetch } from "./stub-catalog.ts";
  * kept with no key and nothing is called.
  */
 
-async function account(): Promise<AccountRead> {
+export async function account(): Promise<AccountRead> {
   const read = await readSession();
   if (read.status === "unavailable") return { status: "unavailable" };
   if (read.status === "ok" && read.session.accountId) return { status: "ok", accountId: read.session.accountId };
@@ -48,9 +48,14 @@ let store: RingStore | null = null;
 let engine: RingEngine | null = null;
 let api: RingApi | null = null;
 
-export function ringApi(): RingApi {
+/** The Ring's one store on this server instance: the agents' database, or memory on a developer's machine. */
+export function ringStore(): RingStore {
   store ??= storeKind(process.env) === "database" ? createSupabaseRingStore((fn, args) => rpcResult("ring", fn, args)) : createMemoryRingStore();
-  const kept = store;
+  return store;
+}
+
+export function ringApi(): RingApi {
+  const kept = ringStore();
   api ??= createRingApi({
     engine: () => {
       engine ??= createRingEngine({ store: kept, models: brains(), keys: keys(), garage: (input) => garageOf(worldStore(), input) });

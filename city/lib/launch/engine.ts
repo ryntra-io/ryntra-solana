@@ -6,6 +6,10 @@ import type {
   LaunchClaimSubmitRequest,
   LaunchClaimSubmitResponse,
   LaunchCrewsResponse,
+  LaunchEarlyAccessBuildRequest,
+  LaunchEarlyAccessBuildResponse,
+  LaunchEarlyAccessSubmitRequest,
+  LaunchEarlyAccessSubmitResponse,
   LaunchFlowResponse,
   LaunchMarketResponse,
   LaunchMarketsResponse,
@@ -56,6 +60,9 @@ export interface LaunchEngine {
   claimReview(token: string, wallet: string): Promise<Answer<LaunchClaimReviewResponse>>;
   claimBuild(token: string, wallet: string): Promise<Answer<LaunchClaimBuildResponse>>;
   claimSubmit(token: string, body: LaunchClaimSubmitRequest): Promise<Answer<LaunchClaimSubmitResponse>>;
+  /* CITY-212: early access — the creation's three transactions and their send (contract 1.56.0, SOL-L5). */
+  earlyBuild(body: LaunchEarlyAccessBuildRequest): Promise<Answer<LaunchEarlyAccessBuildResponse>>;
+  earlySubmit(body: LaunchEarlyAccessSubmitRequest): Promise<Answer<LaunchEarlyAccessSubmitResponse>>;
 }
 
 /**
@@ -108,5 +115,7 @@ export function httpEngine(fetcher: typeof fetch = (input, init) => fetch(input,
     claimReview: (token, wallet) => (BASE58.test(token) && BASE58.test(wallet) ? call(`/api/v1/launch/${token}/claim/review?wallet=${wallet}`) : refused()),
     claimBuild: (token, wallet) => (BASE58.test(token) && BASE58.test(wallet) ? post(`/api/v1/launch/${token}/claim/build`, { wallet }) : refused()),
     claimSubmit: (token, body) => (BASE58.test(token) ? post(`/api/v1/launch/${token}/claim/submit`, body) : refused()),
+    earlyBuild: (body) => post('/api/v1/launch/early-access/build', body),
+    earlySubmit: (body) => post('/api/v1/launch/early-access/submit', body),
   };
 }

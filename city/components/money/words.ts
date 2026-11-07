@@ -38,7 +38,6 @@ export const MONEY = words(
     activity: 'Activity',
     portfolio: 'Portfolio',
 
-    balancesUnavailableNow: 'Your balances are unavailable right now.',
     readingWallet: 'Reading your wallet',
     total: 'Total',
     notVerified: 'Not verified',
@@ -185,7 +184,6 @@ export const MONEY = words(
     activity: 'Історія',
     portfolio: 'Портфель',
 
-    balancesUnavailableNow: 'Баланси зараз недоступні.',
     readingWallet: 'Читаємо гаманець',
     total: 'Разом',
     notVerified: 'Не перевірено',
@@ -302,6 +300,7 @@ export const MONEY = words(
 export const PORTFOLIO = words(
   {
     total: 'Total',
+    totalSoFar: 'Total so far',
     today: 'today',
     wallet: 'Wallet',
     savings: 'Savings',
@@ -334,6 +333,7 @@ export const PORTFOLIO = words(
   },
   {
     total: 'Разом',
+    totalSoFar: 'Разом поки що',
     today: 'за день',
     wallet: 'Гаманець',
     savings: 'Скарбнички',
@@ -373,6 +373,7 @@ export const PORTFOLIO_ROWS = words(
     outOfRange: 'Out of range',
     locked: 'Part locked',
     caring: 'Your agent looks after it',
+    carePier: 'Your pier',
     working: 'Working',
     stopped: 'Stopped',
     test: 'devnet',
@@ -387,6 +388,7 @@ export const PORTFOLIO_ROWS = words(
     outOfRange: 'Поза діапазоном',
     locked: 'Частина замкнена',
     caring: 'Доглядає твій агент',
+    carePier: 'Твій причал',
     working: 'Працює',
     stopped: 'Зупинено',
     test: 'devnet',

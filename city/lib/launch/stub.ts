@@ -12,6 +12,7 @@ import type {
   LaunchTradeQuoteResponse,
 } from '../../../lib/api/v1/contract.ts';
 import { CLAIM_POCKETS } from '../../../lib/core/launch/claim-review.ts';
+import { DEVNET_EARLY_ACCESS_BOUNDS, earlyAccessProblems, earlyAccessSchedule, presaleBpsOf } from '../../../lib/core/launch/early-access.ts';
 import { checkLaunchForm } from '../../../lib/launch/form.ts';
 import type { Answer, LaunchEngine } from './engine.ts';
 import type { CityWallet, Connection } from './wallet.ts';
@@ -80,6 +81,26 @@ export const STUB_PRESETS_ANSWER: LaunchPresetsResponse = {
     { id: '6m-12m', cliffDays: 180, vestDays: 365 },
   ],
   limits: { nameMax: 32, symbolMax: 10, descriptionMax: 280, imageMaxBytes: 262144, imageTypes: ['image/png', 'image/jpeg', 'image/webp', 'image/gif'], launchesPerDay: 3 },
+  /* CITY-212: the stand serves early access with the devnet stand's own bounds (`DEVNET_EARLY_ACCESS_BOUNDS`). */
+  formats: {
+    advanced: null,
+    earlyAccess: {
+      bounds: {
+        modes: ['FCFS', 'PRO_RATA'],
+        minCapRaw: '1000000',
+        maxCapRaw: '100000000000',
+        minIndividualCapRaw: '100000',
+        minDepositMinutes: 20,
+        maxDepositHours: 168,
+        maxStartDelayHours: 168,
+        minVestingHours: 0,
+        maxVestingHours: 720,
+        minStartMarketCapUsd: 1000,
+        maxStartMarketCapUsd: 10000000,
+        maxPresaleBps: 5000,
+      },
+    },
+  },
 };
 
 /* ---------------------------------------------------------------- made-up addresses */
@@ -469,10 +490,12 @@ export type StubEngine = LaunchEngine & Readonly<{ calls: string[] }>;
 export function stubEngine(options: StubOptions = {}): StubEngine {
   const now = options.now ?? Date.now;
   /* Sending takes as long as Solana takes to confirm, a few seconds; every other answer is quick. */
-  const wait = (route: keyof LaunchEngine) => new Promise<void>((resolve) => setTimeout(resolve, (options.delayMs ?? 0) * (route === 'submit' || route === 'tradeSubmit' || route === 'claimSubmit' ? 5 : 1)));
+  const wait = (route: keyof LaunchEngine) => new Promise<void>((resolve) => setTimeout(resolve, (options.delayMs ?? 0) * (route === 'submit' || route === 'tradeSubmit' || route === 'claimSubmit' || route === 'earlySubmit' ? 5 : 1)));
   const refuse = { ...(options.refuse ?? {}) };
   const calls: string[] = [];
-  const builds = new Map<string, { request: LaunchBuildRequest; token: string; wire: string; name: string; symbol: string; used: boolean }>();
+  const builds = new Map<string, { request: LaunchBuildRequest; token: string; wire: string; name: string; symbol: string; used: boolean; feeVault: string | null }>();
+  /* CITY-212: early-access creations built on the stand. */
+  const earlies = new Map<string, { creator: string; mint: string; pool: string; vault: string; wires: readonly string[]; name: string; symbol: string; used: boolean }>();
   /* Trades and claims built on the stand: their bytes, who may send them, what they move. */
   const deals = new Map<string, { token: string; wallet: string; wires: string[]; side: 'buy' | 'sell' | 'claim'; inRaw: string; outRaw: string; used: boolean }>();
   /* What the stub wallet holds of each coin, raw, and what the stand's creators have claimed. */
@@ -508,15 +531,19 @@ export function stubEngine(options: StubOptions = {}): StubEngine {
         metadata.set(sha, { name: check.clean.name, symbol: check.clean.symbol });
         return { ok: true, data: { metadataUri: `https://stand.example.org/api/launch/metadata/${sha}`, imageUrl: `https://stand.example.org/api/launch/image/${hex(`image:${sha}`, 64)}`, name: check.clean.name, symbol: check.clean.symbol } };
       }),
-    build: (body) =>
-      answer('build', () => {
+    build: async (body) => {
+      /* A shared launch's bytes are laid out as the engine's, so the sheet's read of them runs here too (CITY-212). */
+      const splitter = body.feeShares?.length ? await import('./split-stub.ts') : null;
+      return answer('build', () => {
         const words = metadata.get(body.metadataUri.split('/').pop() ?? '');
         if (!words) return { ok: false, code: 'LAUNCH_NOT_FOUND', message: 'No metadata by that address.' };
         if (!STUB_PRESETS.some((entry) => entry.id === body.preset)) return { ok: false, code: 'VALIDATION_ERROR', message: 'preset: not on this network' };
         const buildId = hex(`build:${builds.size}:${now()}`, 32);
         const token = stubAddress(`mint:${buildId}`);
-        const wire = toBase64(seededBytes(`wire:${buildId}`, 96));
-        builds.set(buildId, { request: body, token, wire, name: words.name, symbol: words.symbol, used: false });
+        const feeVault = splitter ? stubAddress(`vault:${buildId}`) : null;
+        const wires = splitter && feeVault ? splitter.stubSplitWires({ creator: body.creator, token, feeVault, blockhash: stubAddress(`blockhash:${buildId}`), shares: body.feeShares ?? [], filler: (seed) => stubAddress(`${seed}:${buildId}`) }) : null;
+        const wire = wires?.creation ?? toBase64(seededBytes(`wire:${buildId}`, 96));
+        builds.set(buildId, { request: body, token, wire, name: words.name, symbol: words.symbol, used: false, feeVault });
         return {
           ok: true,
           data: {
@@ -527,14 +554,15 @@ export function stubEngine(options: StubOptions = {}): StubEngine {
             token,
             firstBuyOutRaw: '0',
             payerCoveredLamports: '7350240',
-            creatorCostLamports: '9874320',
+            creatorCostLamports: wires ? '13064320' : '9874320',
             expiresAt: iso(now() + 60_000),
             signableMs: 25_000,
-            splitUnsignedWireBase64: null,
-            feeVault: null,
+            splitUnsignedWireBase64: wires?.split ?? null,
+            feeVault,
           },
         };
-      }),
+      });
+    },
     submit: (body) =>
       answer('submit', () => {
         const build = builds.get(body.buildId);
@@ -542,10 +570,13 @@ export function stubEngine(options: StubOptions = {}): StubEngine {
         if (build.used) return { ok: false, code: 'LAUNCH_BUILD_USED', message: 'This build was already submitted.' };
         if (body.creator !== build.request.creator) return { ok: false, code: 'WALLET_MISMATCH', message: 'Another wallet.' };
         if (!body.signedWireBase64.startsWith(build.wire.slice(0, 16))) return { ok: false, code: 'LAUNCH_SIGNED_OTHER_BYTES', message: 'The signed bytes are not the built ones.' };
+        if (build.feeVault && !body.signedSplitWireBase64) return { ok: false, code: 'LAUNCH_SIGNATURE_MISSING', message: 'The sharing of the creator\'s fees was not signed.' };
         build.used = true;
         const at = now();
         made.unshift({ token: build.token, name: build.name, symbol: build.symbol, launchedAt: at, creator: body.creator, progressBps: (t) => Math.min(9_900, Math.floor((t - at) / MINUTE) * 300), migrated: false, holders: 1, checks: ['young', 'young', 'young'], liquidityUsd: null });
-        return { ok: true, data: { token: build.token, signature: stubSignature(body.buildId), state: 'LAUNCHED', lock: null, feeSharing: null, tokenPath: `/app/launch/${build.token}` } };
+        const shares = build.request.feeShares ?? [];
+        const feeSharing = build.feeVault ? { vault: build.feeVault, shares, signature: stubSignature(`split:${body.buildId}`), state: 'SHARED' as const, reason: null } : null;
+        return { ok: true, data: { token: build.token, signature: stubSignature(body.buildId), state: 'LAUNCHED', lock: null, feeSharing, tokenPath: `/app/launch/${build.token}` } };
       }),
     markets: () => answer('markets', (): Answer<LaunchMarketsResponse> => ({ ok: true, data: { network: 'solana:devnet', markets: all().map((launch) => rowOf(launch, now())), complete: true, observedAt: iso(now()) } })),
     survival: () => answer('survival', () => ({ ok: true, data: survivalOf(all(), now()) })),
@@ -629,6 +660,46 @@ export function stubEngine(options: StubOptions = {}): StubEngine {
             failed: [],
           },
         };
+      }),
+    earlyBuild: async (body) => {
+      const splitter = await import('./split-stub.ts');
+      return answer('earlyBuild', () => {
+        const words = metadata.get(body.metadataUri.split('/').pop() ?? '');
+        if (!words) return { ok: false, code: 'LAUNCH_NOT_FOUND', message: 'No metadata by that address.' };
+        const problems = earlyAccessProblems(body.rules, DEVNET_EARLY_ACCESS_BOUNDS, Math.floor(now() / 1000));
+        if (problems.length) return { ok: false, code: 'VALIDATION_ERROR', message: problems.join('; ') };
+        const buildId = hex(`early:${earlies.size}:${now()}`, 32);
+        const [mint, pool, vault] = ['mint', 'pool', 'vault'].map((part) => stubAddress(`early-${part}:${buildId}`)) as [string, string, string];
+        const wires = splitter.stubEarlyWires({ creator: body.creator, mint, pool, vault, blockhash: stubAddress(`blockhash:${buildId}`) });
+        earlies.set(buildId, { creator: body.creator, mint, pool, vault, wires, name: words.name, symbol: words.symbol, used: false });
+        return {
+          ok: true,
+          data: {
+            buildId,
+            network: 'solana:devnet',
+            unsignedWireBase64: [...wires],
+            mint,
+            pool,
+            vault,
+            schedule: earlyAccessSchedule(body.rules),
+            lines: { en: [], uk: [] },
+            presaleBps: presaleBpsOf(body.rules),
+            expiresAt: iso(now() + 60_000),
+            signableMs: 25_000,
+          },
+        };
+      });
+    },
+    earlySubmit: (body) =>
+      answer('earlySubmit', () => {
+        const early = earlies.get(body.buildId);
+        if (!early) return { ok: false, code: 'LAUNCH_NOT_FOUND', message: 'No build by that id.' };
+        if (early.used) return { ok: false, code: 'LAUNCH_BUILD_USED', message: 'This build was already submitted.' };
+        if (body.creator !== early.creator) return { ok: false, code: 'WALLET_MISMATCH', message: 'Another wallet.' };
+        if (body.signedWireBase64.some((wire, i) => !wire.startsWith(early.wires[i]!.slice(0, 16)))) return { ok: false, code: 'LAUNCH_SIGNED_OTHER_BYTES', message: 'The signed bytes are not the built ones.' };
+        early.used = true;
+        const step = (part: string) => ({ signature: stubSignature(`${part}:${body.buildId}`), state: 'CONFIRMED' as const, reason: null });
+        return { ok: true, data: { mint: early.mint, pool: early.pool, vault: early.vault, state: 'OPEN', steps: { MINT: step('mint'), POOL: step('pool'), VAULT: step('vault') }, tokenPath: `/app/launch/${early.mint}` } };
       }),
   };
 

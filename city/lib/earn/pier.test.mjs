@@ -161,3 +161,17 @@ test("a range keeps the places that tell its two prices apart", () => {
   assert.deepEqual(rangePrices(1.26025, 1.26035), { low: "1.26025", high: "1.26035" });
   assert.equal(unitsShort(1_586_923_748n, 9), "1.587");
 });
+
+test("a goal is a shape the engine builds, and even stays the body it always was (CITY-210)", async () => {
+  const { GOAL_SHAPE, PIER_GOALS, defaultGoal, pierZapBody } = await import("./pier.ts");
+  const { LIQUIDITY_SHAPES } = await import("../../../lib/liquidity/studio/contract.ts");
+  for (const goal of PIER_GOALS) assert.ok(LIQUIDITY_SHAPES.includes(GOAL_SHAPE[goal]));
+  assert.equal(new Set(PIER_GOALS.map((goal) => GOAL_SHAPE[goal])).size, PIER_GOALS.length);
+  assert.equal(defaultGoal("lst"), "near");
+  assert.equal(defaultGoal("usdc"), "even");
+  const pier = { pool: { address: "pool" } };
+  assert.equal("shape" in pierZapBody(pier, "owner", 1n, "balanced").request, false);
+  assert.equal("shape" in pierZapBody(pier, "owner", 1n, "balanced", "even").request, false);
+  assert.equal(pierZapBody(pier, "owner", 1n, "balanced", "near").request.shape, "curve");
+  assert.equal(pierZapBody(pier, "owner", 1n, "balanced", "edges").request.shape, "bid_ask");
+});

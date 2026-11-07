@@ -27,6 +27,7 @@ import {
   type BuiltLiquidity,
   type ClaimFeesRequest,
   type LiquidityPreview,
+  type LiquidityShape,
   type LiquidityVenueAdapter,
   type LiquidityVenueId,
   type RemoveLiquidityRequest,
@@ -405,7 +406,9 @@ export function parseZapInput(body: unknown): ZapReviewInput | null {
   if (!isKey(r.owner) || !isKey(r.pool)) return null;
   if (action === "zap_in") {
     if (!isUnits(r.amountIn) || !isBps(r.half, 0, ZAP_MAX_HALF) || !isBps(r.slippageBps, 1, 1_000)) return null;
-    return { action, venue, request: { pool: r.pool, owner: r.owner, amountIn: r.amountIn, half: r.half, slippageBps: r.slippageBps } };
+    if (r.shape !== undefined && !(typeof r.shape === "string" && (LIQUIDITY_SHAPES as readonly string[]).includes(r.shape))) return null;
+    const shape = r.shape as LiquidityShape | undefined;
+    return { action, venue, request: { pool: r.pool, owner: r.owner, amountIn: r.amountIn, half: r.half, slippageBps: r.slippageBps, ...(shape ? { shape } : {}) } };
   }
   if (action === "zap_rest") {
     if (!isUnits(r.otherBefore)) return null;

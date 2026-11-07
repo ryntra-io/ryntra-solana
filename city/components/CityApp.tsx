@@ -29,6 +29,7 @@ import { EarnLayer } from './earn/EarnLayer';
 import { GuardLayer } from './guard/GuardLayer';
 import { MoneyLayer } from './money/MoneyLayer';
 import { BotsLayer } from './bots/BotsLayer';
+import { DuelsLayer } from './ring/duel/DuelsLayer';
 import { ScoutsLayer } from './scouts/ScoutsLayer';
 import { PartnersLayer } from './partners/PartnersLayer';
 import { SettingsLayer } from './settings/SettingsLayer';
@@ -235,6 +236,7 @@ export function CityApp({ initial }: { initial: CitySnapshot }) {
       <MoneyLayer />
       <BotsLayer />
       <GarageLayer />
+      <DuelsLayer />
       <EarnLayer />
       <GuardLayer />
       <ScoutsLayer />

@@ -10,6 +10,7 @@ import type { Holdings } from '../trade/wallet.ts';
 import { useEarn } from './open.ts';
 import {
   DEFAULT_STYLE,
+  defaultGoal,
   pierCosts,
   pierMinimum,
   pierOf,
@@ -24,6 +25,7 @@ import {
   type PierCosts,
   type PierRestBody,
   type PierSplit,
+  type PierGoal,
   type PierStyle,
   type PierZapBody,
 } from './pier.ts';
@@ -98,7 +100,7 @@ const CEILING_MARGIN = 0.98;
  * What the card stands on for a typed amount of SOL: whether the wallet holds it with the SOL kept aside, the live
  * minimum (from the Review's costs once there is one) and the ceiling this wallet has now. The wallet needs no other coin.
  */
-export function pierChoice(pier: Pier, style: PierStyle, typed: string, holdings: Holdings | null, owner: string | null, ceilingUsd: number | null, costs: PierCosts | null): PierChoice {
+export function pierChoice(pier: Pier, style: PierStyle, typed: string, holdings: Holdings | null, owner: string | null, ceilingUsd: number | null, costs: PierCosts | null, goal: PierGoal = 'even'): PierChoice {
   const lamports = lamportsFromText(typed);
   const price = solUsd(pier);
   const ceiling = ceilingUsd !== null && price !== null ? BigInt(Math.floor((ceilingUsd * CEILING_MARGIN * 1e9) / price)) : null;
@@ -115,8 +117,13 @@ export function pierChoice(pier: Pier, style: PierStyle, typed: string, holdings
   else if (lamports < minimum) problem = 'min';
   else if (ceiling !== null && lamports > ceiling) problem = 'ceiling';
   else if (!fits) problem = 'sol';
-  const key = owner && lamports && !problem ? `zap:${owner}:${pier.pool.address}:${style}:${lamports}` : null;
+  const key = owner && lamports && !problem ? `zap:${owner}:${pier.pool.address}:${style}${goal === 'even' ? '' : `:${goal}`}:${lamports}` : null;
   return { lamports, split, fits, minimum, ceiling, max, problem, key };
+}
+
+/** The goal in force on a pier: the person's, else the pier's own default. */
+export function pierGoal(pier: Pier, picked: PierGoal | null): PierGoal {
+  return picked ?? defaultGoal(pier.pair);
 }
 
 export function targetKey(owner: string, target: Exclude<PierTarget, { kind: 'add' }>): string {
@@ -177,6 +184,8 @@ export type PierCopy = Readonly<{ strategy: string; style: PierStyle }>;
 type Store = {
   pool: HarborPool | null;
   style: PierStyle;
+  /** What the person picked; null — the pier's own default (`pierGoal`). */
+  goal: PierGoal | null;
   copy: PierCopy | null;
   typed: string;
   boat: PositionView | null;
@@ -199,6 +208,7 @@ type Store = {
   /** Back to the list: never while a signature is out. */
   back: () => void;
   setStyle: (style: PierStyle) => void;
+  setGoal: (goal: PierGoal) => void;
   setTyped: (text: string) => void;
   loadStates: (owner: string) => Promise<void>;
   loadCandles: (mint: string) => Promise<void>;
@@ -233,14 +243,16 @@ export const usePier = create<Store>((set, get) => {
     const states = st.states?.owner === owner ? st.states.value : null;
     if (!states || states.add !== 'on') return null;
     const costs = st.costs?.pool === pier.pool.address ? st.costs.value : null;
-    const choice = pierChoice(pier, st.style, st.typed, holdings, owner, states.ceilingUsd, costs);
+    const goal = pierGoal(pier, st.goal);
+    const choice = pierChoice(pier, st.style, st.typed, holdings, owner, states.ceilingUsd, costs, goal);
     if (!choice.key || !choice.split) return null;
-    return { key: choice.key, body: pierZapBody(pier, owner, choice.lamports!, st.style) };
+    return { key: choice.key, body: pierZapBody(pier, owner, choice.lamports!, st.style, goal) };
   };
 
   return {
     pool: null,
     style: DEFAULT_STYLE,
+    goal: null,
     copy: null,
     typed: START_TEXT,
     boat: null,
@@ -268,7 +280,7 @@ export const usePier = create<Store>((set, get) => {
     openCopy: (pool, copy) => {
       if (PIER_BUSY.has(get().phase) || !pierOf(pool)) return;
       ticket += 1;
-      set({ pool, copy, style: copy.style, boat: null, target: { kind: 'add' }, reviewed: null, phase: 'idle', outcome: null, notice: null, rest: null, ...(get().costs?.pool === pool.address ? {} : { costs: null }) });
+      set({ pool, copy, style: copy.style, goal: 'even', boat: null, target: { kind: 'add' }, reviewed: null, phase: 'idle', outcome: null, notice: null, rest: null, ...(get().costs?.pool === pool.address ? {} : { costs: null }) });
     },
     openBoat: (position) => {
       if (PIER_BUSY.has(get().phase)) return;
@@ -286,6 +298,12 @@ export const usePier = create<Store>((set, get) => {
       if (PIER_BUSY.has(get().phase) || get().copy) return;
       ticket += 1;
       set({ style, reviewed: null, phase: 'idle', notice: null });
+    },
+    setGoal: (goal) => {
+      // A copy is its recipe: a strategy's position was spread evenly.
+      if (PIER_BUSY.has(get().phase) || get().copy) return;
+      ticket += 1;
+      set({ goal, reviewed: null, phase: 'idle', notice: null });
     },
     setTyped: (text) => {
       if (PIER_BUSY.has(get().phase)) return;

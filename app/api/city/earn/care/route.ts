@@ -1,3 +1,4 @@
+import type { LiquidityShape } from '@/lib/liquidity/studio/contract';
 import { careGate, careStatus, relayStop, reviewCare, stopCare, submitCare } from '@/lib/care/service.server';
 import { liquidityFailure, liquidityHeaders, openLiquidityDoor } from '@/lib/liquidity/studio/http.server';
 
@@ -20,7 +21,7 @@ export async function POST(request: Request) {
   if (door.mismatch(owner)) return liquidityFailure(403, 'WALLET_MISMATCH', "The session's wallet is not this action's wallet.", door.rate);
   const answer =
     body.action === 'review'
-      ? await reviewCare({ owner, pool: String(body.pool ?? ''), lamports: String(body.lamports ?? ''), fees: body.fees === 'wallet' ? 'wallet' : 'reinvest', width: typeof body.width === 'number' ? body.width : undefined, stopPct: typeof body.stopPct === 'number' ? body.stopPct : 0 })
+      ? await reviewCare({ owner, pool: String(body.pool ?? ''), lamports: String(body.lamports ?? ''), fees: body.fees === 'wallet' ? 'wallet' : 'reinvest', width: typeof body.width === 'number' ? body.width : undefined, shape: typeof body.shape === 'string' ? (body.shape as LiquidityShape) : undefined, stopPct: typeof body.stopPct === 'number' ? body.stopPct : 0 })
       : body.action === 'submit'
         ? await submitCare({ owner, key: String(body.key ?? ''), signed: Array.isArray(body.signed) ? body.signed.map(String) : [] })
         : body.action === 'stop'

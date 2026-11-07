@@ -1,6 +1,6 @@
 import { langNow } from '../i18n/lang.ts';
 import type { EarnTab, ProductId } from './flag.ts';
-import type { PierStyle } from './pier.ts';
+import type { PierGoal, PierStyle } from './pier.ts';
 import type { ClosePlan, StepKind } from './stock-pier-hours.ts';
 
 /**
@@ -117,6 +117,8 @@ export type Words = Readonly<{
     tradeFee: string;
     styles: Readonly<Record<PierStyle, string>>;
     style: string;
+    goals: Readonly<Record<PierGoal, string>>;
+    goal: string;
     amount: string;
     max: string;
     goesIn: string;
@@ -358,6 +360,8 @@ const EN: Words = {
     tradeFee: 'Trade fee',
     styles: { calm: 'Calm', balanced: 'Balanced', dense: 'Dense' },
     style: 'Style',
+    goals: { even: 'Even', near: 'Near price', edges: 'Catch moves' },
+    goal: 'Goal',
     amount: 'You put in',
     max: 'Max',
     goesIn: 'Goes in',
@@ -691,6 +695,8 @@ const UK: Words = {
     depth: 'Глибина',
     tradeFee: 'Комісія обміну',
     styles: { calm: 'Спокійно', balanced: 'Збалансовано', dense: 'Щільно' },
+    goals: { even: 'Рівно', near: 'Біля ціни', edges: 'Ловити рухи' },
+    goal: 'Мета',
     style: 'Стиль',
     amount: 'Ви вкладаєте',
     max: 'Макс',

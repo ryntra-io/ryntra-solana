@@ -304,6 +304,15 @@
   min-height: 0;
 }
 
+/* CITY-215: the core's engine keeps every touch on its canvas (an inline `touch-action: none`). On a phone the chart
+   stands inside the window's sheet, so the browser may pan up and down over it: a finger that goes up or down scrolls
+   the window, and `useScrollThrough` keeps that gesture away from the engine; across and a pinch stay the chart's. With
+   the drawing tools open every touch is the chart's again. */
+.chart:not(:has(:global(.ryntra-draw[data-open]))) .core :global(.ryntra-chart__canvas) > div {
+  touch-action: pan-y !important;
+  overscroll-behavior: auto !important;
+}
+
 /* The candles give way first in a short window: the facts and Buy under them always stay in view. The pane is the
    city's: a thin violet line and a cut corner, not the core's rounded box. */
 .chart .core :global(.ryntra-chart__stage) {
