@@ -44,12 +44,16 @@ const fakeEngine = (wallet) => async (route, input) => {
 };
 
 let callerSeq = 0;
+/* The wallet's window is a calendar minute: a test that spends a whole minute's calls holds the clock still, so the
+   edge of a minute cannot fall between its calls and give the wallet a fresh sixty. */
+let heldNowMs = null;
 function route(url, init = {}) {
   const headers = new Headers(init.headers ?? {});
   headers.set("x-forwarded-for", `10.9.${Math.floor(callerSeq / 250)}.${callerSeq % 250}`);
   const request = new Request(url, { ...init, headers });
   const path = new URL(url).pathname;
-  if (path === "/mcp") return serveConnectorMcp(request, { store: getGuardRuntime().store, readFor: fakeEngine });
+  const nowMs = heldNowMs === null ? undefined : () => heldNowMs;
+  if (path === "/mcp") return serveConnectorMcp(request, { store: getGuardRuntime().store, readFor: fakeEngine, nowMs });
   if (path === "/mcp/read") return serveConnectorMcp(request, { profile: CONNECTOR_PROFILES.catalog, store: getGuardRuntime().store, readFor: fakeEngine });
   if (path === "/.well-known/oauth-protected-resource/mcp/read") return catalogPrmRoute(request);
   if (path === "/.well-known/oauth-authorization-server") return asMetadataRoute(request);
@@ -178,12 +182,17 @@ test("a revoked connection is refused on its next call, with the challenge again
 test("the wallet's window counts tool calls, not protocol messages, and a refusal leaves a receipt", async () => {
   const { wallet, access_token } = await connect();
   const client = await mcpClient(access_token);
-  for (let i = 0; i < 5; i += 1) await client.listTools();
-  let last;
-  for (let i = 0; i < 61; i += 1) last = await client.callTool({ name: "list_market_events", arguments: { limit: 1 } });
-  assert.equal(last.isError, true);
-  assert.equal(last.structuredContent.error.code, "RATE_LIMITED");
-  assert.ok(last.structuredContent.error.retryAfterSeconds >= 1);
+  heldNowMs = Date.now();
+  try {
+    for (let i = 0; i < 5; i += 1) await client.listTools();
+    let last;
+    for (let i = 0; i < 61; i += 1) last = await client.callTool({ name: "list_market_events", arguments: { limit: 1 } });
+    assert.equal(last.isError, true);
+    assert.equal(last.structuredContent.error.code, "RATE_LIMITED");
+    assert.ok(last.structuredContent.error.retryAfterSeconds >= 1);
+  } finally {
+    heldNowMs = null;
+  }
   const receipts = await readConnectorReceipts(getGuardRuntime().store, wallet.address);
   assert.equal(receipts.filter((receipt) => receipt.outcome === "ACCEPTED").length, 60, "sixty answered; tools/list cost nothing");
   assert.equal(receipts.filter((receipt) => receipt.reasonCode === "RATE_LIMITED").length, 1);

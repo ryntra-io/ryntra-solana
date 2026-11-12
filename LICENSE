@@ -1,12 +1,46 @@
-Copyright 2026 Dmytro Plavutskyi / Ryntra. All rights reserved.
+Ryntra Source-Available Licence
 
-The source code in this repository is published so that anyone can read it and
-evaluate how Ryntra is built.
+Copyright (c) 2026 Dmytro Plavutskyi / Ryntra. All rights reserved.
 
-No licence is granted to use, copy, modify, merge, publish, distribute,
-sublicense or sell any part of it, or to run or build a product or service on
-it, except to read and evaluate it. Forking on GitHub to read it there is fine;
-nothing else is granted.
+1. What you may do
 
-The open-source components of Ryntra are published separately, under their
-own licences, at https://github.com/ryntra-io/ryntra-solana-evidence.
+   The source code in this repository is published so that anyone can read it
+   and evaluate how Ryntra is built. You may view it, clone it, fork it on
+   GitHub, and build and run it on your own computer for the sole purpose of
+   reading, reviewing and evaluating it.
+
+2. What is not granted
+
+   No other right is granted. Without prior written permission from Ryntra, you
+   may not use any part of this code in production or to provide a product or
+   service; copy it into another project; modify, merge, publish, distribute,
+   sublicense or sell it; or remove or change this notice.
+
+3. Names and marks
+
+   "Ryntra", the Ryntra mark, Ryntra City and its artwork and 3D models are
+   brand assets of Ryntra. This licence grants no right to use them.
+
+4. Third-party components
+
+   Third-party software that this repository uses, including the packages it
+   lists as dependencies, remains under its own licence. The open-source
+   components of Ryntra are published separately under the Apache License 2.0
+   at https://github.com/ryntra-io/ryntra-solana-evidence.
+
+5. No warranty, no liability
+
+   THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+   IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+   FITNESS FOR A PARTICULAR PURPOSE AND NON-INFRINGEMENT. IN NO EVENT SHALL THE
+   AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+   LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+   FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OF IT.
+
+   Software that signs blockchain transactions can lose real funds when it is
+   changed or misused. Nothing in this repository is financial advice.
+
+6. Contact
+
+   For a licence beyond reading and evaluating, or any question about these
+   terms: hello@ryntra.io
