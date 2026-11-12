@@ -60,8 +60,8 @@
     "@types/pg": "^8.20.4",
     "@types/three": "0.186.0",
     "@vercel/analytics": "^2.0.1",
-    "bn.js": "5.2.2",
-    "csv-parse": "^7.0.1",
+    "bn.js": "5.2.3",
+    "csv-parse": "^7.0.2",
     "dockview": "8.3.1",
     "dockview-core": "8.3.1",
     "dockview-react": "8.3.1",
@@ -104,6 +104,12 @@
     "@solana/wallet-adapter-base": "0.9.27",
     "@solana/web3.js": "$@solana/web3.js",
     "node-fetch@<2.6.7": "2.7.0",
-    "follow-redirects": "^1.16.1"
+    "follow-redirects": "^1.16.1",
+    "bn.js@<5.2.3": "5.2.3",
+    "jayson": "5.0.0",
+    "toml": "5.0.1",
+    "@typescript-eslint/typescript-estree": {
+      "minimatch": "^11.0.1"
+    }
   }
 }

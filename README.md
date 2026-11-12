@@ -166,7 +166,7 @@ The code as it stood before the hackathon is tagged `pre-hackathon-baseline-2026
 
 | New | Changed | Unchanged | Lines |
 |:---:|:---:|:---:|:---:|
-| 5,353 | 898 | 826 | +1,120,470 / −28,079 |
+| 5,353 | 899 | 825 | +1,120,426 / −28,064 |
 
 [BOUNDARY.md](BOUNDARY.md) lists every new and every changed file.
 

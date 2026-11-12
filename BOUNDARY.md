@@ -10,9 +10,9 @@ moved counts as new. Generated at every update from the development history.
 | Since the tag | Files |
 |---|---|
 | New | 5,353 |
-| Changed | 898 |
-| Unchanged | 826 |
-| Lines added / removed | +1,120,470 / −28,079 |
+| Changed | 899 |
+| Unchanged | 825 |
+| Lines added / removed | +1,120,426 / −28,064 |
 
 ## New since the tag
 
@@ -6243,6 +6243,7 @@ moved counts as new. Generated at every update from the development history.
 - `next.config.ts`
 - `package-lock.json`
 - `package.json`
+- `packages/agent-control-mcp/package.json`
 - `packages/solana-evidence-mcp/package.json`
 - `packages/solana-evidence-sdk/boundaries.test.mjs`
 - `packages/solana-evidence-sdk/public-files.json`

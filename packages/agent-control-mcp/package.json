@@ -39,11 +39,11 @@
   "types": "./src/server.ts",
   "sideEffects": false,
   "dependencies": {
-    "@modelcontextprotocol/server": "2.0.0",
+    "@modelcontextprotocol/server": "2.3.1",
     "@ryntra/action-evidence-sdk": "file:../agent-control-sdk",
     "zod": "4.4.3"
   },
   "devDependencies": {
-    "@modelcontextprotocol/client": "2.0.0"
+    "@modelcontextprotocol/client": "2.3.1"
   }
 }
