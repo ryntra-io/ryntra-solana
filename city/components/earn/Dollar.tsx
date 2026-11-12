@@ -2,7 +2,8 @@
 
 import { useEffect, useMemo } from 'react';
 import { RISK } from '@/city/lib/earn/flag';
-import { DOLLAR_ASSETS, DOLLAR_MINT, dollarText, fieldText, rateText, yearAt } from '@/city/lib/earn/dollar';
+import { DOLLAR_ASSETS, DOLLAR_MINT, dollarText as dollarRaw, fieldText, rateText as rateRaw, yearAt, type DollarAsset } from '@/city/lib/earn/dollar';
+import { digits } from '@/city/lib/i18n/dict';
 import { DOLLAR_BUSY, dollarChoice, setDollarRefusals, useDollar } from '@/city/lib/earn/dollar-store';
 import { useEarn } from '@/city/lib/earn/open';
 import type { Words } from '@/city/lib/earn/words';
@@ -10,6 +11,10 @@ import { useWallet } from '@/city/lib/trade/wallet';
 import { explorerTxUrl } from '@/lib/solana/explorer';
 import { BackGlyph, Coin, Line, Notify, RiskDots, Wallets } from './bits';
 import s from './earn.module.css';
+
+/** The card's figures in the language on screen (CITY-243). */
+const dollarText = (raw: bigint, asset: DollarAsset) => digits(dollarRaw(raw, asset));
+const rateText = (rate: number) => digits(rateRaw(rate));
 
 /**
  * The Dollar Saver (CITY-192): pick USDC or SOL, «Put in» or «Take back», type the amount, read the one line — the

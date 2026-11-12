@@ -2,9 +2,11 @@
 
 import { useEffect, useState } from 'react';
 import { useCity } from '@/city/lib/city/store';
-import type { HallBoardId, HallRow, HallView } from '@/city/lib/launch/hall';
+import { launchOpenHere, useLaunch } from '@/city/lib/launch/district';
+import { hallSettled, type HallBoardId, type HallRow, type HallView } from '@/city/lib/launch/hall';
 import { hallShown, startHall, useHall } from '@/city/lib/launch/hall-store';
-import { BOARD_KINDS, BOARD_TABS, emptyShort, emptyText, figureText, periodText, readText, shownBoards, tallyText } from '@/city/lib/launch/hall-words';
+import { actOnBoard } from '@/city/lib/launch/hall-tap';
+import { BOARD_TABS, boardKind, emptyShort, emptyText, figureText, launchYours, periodText, readText, shownBoards, spanText, tallyText } from '@/city/lib/launch/hall-words';
 import { useWords } from '@/city/lib/i18n/dict';
 import { useRun } from '@/city/lib/run/store';
 import { CloseGlyph, InfoGlyph } from '../hud/glyphs';
@@ -12,10 +14,11 @@ import s from './hall.module.css';
 import { LAUNCH } from './words';
 
 /**
- * The Hall of Fame's panel over the city: the week's boards as one compact table — who, coin, the number and an ↗ to
- * what it rests on. One amber action: fly to the lead coin's tower when it stands in the city, else open what the lead
- * number rests on. What each number is, its period, the week's tally and when the engine read it sit behind one quiet
- * «i». A board without a public source is not shown.
+ * The Hall of Fame's panel over the city: the boards as one compact table — who, coin, the number and an ↗ to what it
+ * rests on — each over its week, or the span a quiet week reached back over, said beside the title. One amber action:
+ * fly to the lead coin's tower when it stands in the city, else open what the lead number rests on; on a board nobody
+ * is on even over all time, «Launch yours» (CITY-230). What each number is, its period, the span's tally and when the
+ * engine read it sit behind one quiet «i». A board without a public source is not shown.
  */
 export function HallLayer() {
   useEffect(() => startHall(), []);
@@ -53,6 +56,7 @@ function HallPanel({ view }: { view: HallView }) {
           <span className={s.display}>{w.hallOfFame}</span>
           {view.network === 'solana:devnet' && <span className={s.tag}>{w.devnet}</span>}
           {stub && <span className={`${s.tag} ${s.tagStub}`}>{w.stub}</span>}
+          {lead && <span className={`${s.tag} ${s.tagSpan}`}>{spanText(shown.span)}</span>}
         </div>
         <button className={`${s.info} ${more ? s.infoOn : ''}`} aria-label={w.details} aria-expanded={more} aria-controls="city-hall-more" onClick={() => setMore((v) => !v)}>
           <InfoGlyph />
@@ -74,14 +78,14 @@ function HallPanel({ view }: { view: HallView }) {
       {more && (
         <div id="city-hall-more" className={s.more}>
           {!shown.rows.length && <p>{emptyText(view, board)}</p>}
-          <p>{BOARD_KINDS[board]}</p>
+          <p>{boardKind(board, shown.span)}</p>
           <p>
-            {periodText(view.window)} · {tallyText(view.trades)}
+            {periodText(shown.period)} · {tallyText(view.tallies[shown.span], shown.span)}
             {view.markets.read < view.markets.listed && w.launchesRead(view.markets.read, view.markets.listed)} · {readText(view.readAt ?? view.computedAt, Date.now())}
           </p>
         </div>
       )}
-      {lead && <LeadAction row={lead} />}
+      {lead ? <LeadAction row={lead} /> : <LaunchYours board={board} />}
     </div>
   );
 }
@@ -128,6 +132,19 @@ function Table({ rows, board, more }: { rows: readonly HallRow[]; board: HallBoa
         })}
       </tbody>
     </table>
+  );
+}
+
+/** An empty board's one amber action: the launch sheet, where a launch opens here; else nothing more than the line above. */
+function LaunchYours({ board }: { board: HallBoardId }) {
+  const launchable = useLaunch(launchOpenHere);
+  // A board left empty by a read cut short is not «nobody»: no launch offered as if it were.
+  const settled = useHall((st) => (st.view ? hallSettled(st.view.boards[board]) : false));
+  if (!launchable || !settled) return null;
+  return (
+    <button className={s.action} onClick={() => actOnBoard(board)}>
+      {launchYours()}
+    </button>
   );
 }
 

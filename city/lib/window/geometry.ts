@@ -42,6 +42,13 @@ export const DEFAULT_SIZE = { width: 560, height: 440 } as const;
 export const INSET = { top: 72, right: 16, bottom: 104, left: 16 } as const;
 /** A popped-out window steps this far from where it stood, so it no longer sticks to anything. */
 export const STEP = 32;
+/**
+ * From this screen width the folded windows' chips stand beside the Deck, on its row, under the workspace (CITY-242,
+ * `Tray`). A narrower desk has no room there: the chips stand over the diamond, at the workspace's foot.
+ */
+export const CHIPS_BESIDE_FROM = 1100;
+/** The chips' band at the workspace's foot on a narrower desk: a window the system places leaves it clear. */
+export const CHIP_ROOM = 62;
 
 const clamp = (value: number, low: number, high: number) => Math.min(Math.max(value, low), high);
 const right = (r: Rect) => r.x + r.width;
@@ -471,10 +478,26 @@ export function popOutRect(rect: Rect, others: readonly Rect[], area: Rect, min:
   return fitRect({ x: area.x + (area.width - width) / 2, y: area.y + (area.height - height) / 2, width, height }, area, min);
 }
 
-/** Where a new window first opens: its size, near the middle, each next one a step down and right of the last. */
+/**
+ * The tallest a window the system places stands on this workspace (CITY-242): all of it, between the top bar and the
+ * Deck, where the chips of folded windows stand beside the Deck; on a narrower desk all but the chips' band at its foot.
+ */
+export function tallestIn(area: Rect): number {
+  return screenOf(area) >= CHIPS_BESIDE_FROM ? area.height : Math.max(0, area.height - CHIP_ROOM);
+}
+
+/**
+ * Where a new window first opens: its size, near the middle, each next one a step down and right of the last. A window
+ * may take the workspace's whole height — between the top bar and the Deck — when it asks for it (CITY-242: on a desk
+ * 900 px tall the spot window stood 109 px shorter than the room it had, and its form scrolled inside); its width keeps
+ * the city in view on both sides.
+ */
 export function openRect(size: Size, min: Size, area: Rect, index: number): Rect {
   const width = clamp(size.width, Math.min(min.width, area.width), Math.round(area.width * 0.8));
-  const height = clamp(size.height, Math.min(min.height, area.height), Math.round(area.height * 0.85));
+  const room = tallestIn(area);
+  const height = clamp(size.height, Math.min(min.height, area.height), room);
   const step = (index % 6) * STEP;
-  return fitRect({ x: Math.round(area.x + (area.width - width) / 2 + step), y: Math.round(area.y + (area.height - height) / 2 + step), width, height }, area, min);
+  // In the middle of the room it may take, never down into the chips' band.
+  const y = Math.min(Math.round(area.y + (room - height) / 2 + step), area.y + Math.max(0, room - height));
+  return fitRect({ x: Math.round(area.x + (area.width - width) / 2 + step), y, width, height }, area, min);
 }

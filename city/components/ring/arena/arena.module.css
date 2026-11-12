@@ -1,0 +1,660 @@
+/* The Arena's Ring window (CITY-217): its three tabs, the fight's mode, the latest fights, the agent's card and the
+   board. Dark glass, fine violet edges, the visor's amber for what is yours, one amber action per tab — the same tokens
+   as the fight (city/styles/city.module.css, CITY-11) and the window's own width (@container window). */
+
+/* ---------- Tabs ---------- */
+
+.tabs {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(0, 1fr));
+  flex: none;
+  border-bottom: 1px solid rgba(153, 69, 255, 0.22);
+}
+
+.tab {
+  position: relative;
+  min-height: 48px;
+  border: 0;
+  background: none;
+  color: var(--text-dim);
+  font-family: var(--font-display, system-ui), system-ui, sans-serif;
+  font-size: var(--type-body);
+  font-stretch: 125%;
+  font-variation-settings: 'wdth' 125;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: color 0.18s ease;
+}
+
+.tab:hover {
+  color: var(--ice);
+}
+
+.tab::after {
+  content: '';
+  position: absolute;
+  left: 22%;
+  right: 22%;
+  bottom: -1px;
+  height: 2px;
+  background: var(--warm);
+  box-shadow: 0 0 14px rgba(255, 178, 63, 0.6);
+  transform: scaleX(0);
+  transition: transform 0.24s cubic-bezier(0.2, 0.9, 0.3, 1);
+}
+
+.tabOn {
+  color: var(--ice);
+}
+
+.tabOn::after {
+  transform: scaleX(1);
+}
+
+.pills {
+  display: flex;
+  gap: 4px;
+  min-width: 0;
+}
+
+/* ---------- Practice · Rated ---------- */
+
+.mode {
+  display: flex;
+  margin-left: auto;
+  padding: 3px;
+  border: 1px solid rgba(255, 178, 63, 0.3);
+  background: rgba(6, 5, 12, 0.5);
+}
+
+.modeOption {
+  min-height: 34px;
+  padding: 0 12px;
+  border: 0;
+  background: none;
+  color: var(--text-dim);
+  font: inherit;
+  font-size: var(--type-caption);
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: background 0.18s ease, color 0.18s ease;
+}
+
+.modeOption:disabled {
+  cursor: default;
+}
+
+.modeOn {
+  background: linear-gradient(180deg, rgba(255, 178, 63, 0.3), rgba(255, 178, 63, 0.14));
+  color: var(--warm);
+}
+
+.delta {
+  padding: 4px 10px;
+  border: 1px solid rgba(238, 241, 255, 0.18);
+  color: var(--ice);
+  font-size: var(--type-small);
+  font-weight: 800;
+  white-space: nowrap;
+  animation: pop 0.5s cubic-bezier(0.2, 0.9, 0.3, 1.4) both;
+}
+
+.deltaUp {
+  border-color: rgba(64, 222, 160, 0.5);
+  color: var(--mint);
+  box-shadow: 0 0 18px rgba(64, 222, 160, 0.25);
+}
+
+.deltaDown {
+  border-color: rgba(255, 92, 92, 0.45);
+  color: var(--flare);
+}
+
+@keyframes pop {
+  from {
+    opacity: 0;
+    transform: scale(0.8);
+  }
+}
+
+/* ---------- The latest fights ---------- */
+
+.latest {
+  padding-top: 12px;
+}
+
+.latestTitle {
+  margin: 0 0 8px;
+  color: var(--text-dim);
+  font-size: var(--type-caption);
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.latestList {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.latestRow {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  min-height: 52px;
+  padding: 6px 12px;
+  border: 1px solid rgba(153, 69, 255, 0.2);
+  background: rgba(6, 5, 12, 0.45);
+  color: var(--ice);
+  font: inherit;
+  font-size: var(--type-small);
+  font-weight: 700;
+  cursor: pointer;
+  transition: border-color 0.18s ease, background 0.18s ease;
+}
+
+.latestRow:hover {
+  border-color: rgba(153, 69, 255, 0.5);
+  background: rgba(153, 69, 255, 0.08);
+}
+
+.latestSeat {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  overflow: hidden;
+  color: var(--text-dim);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.latestRight {
+  justify-content: flex-end;
+}
+
+.latestRight svg {
+  transform: scaleX(-1);
+}
+
+.latestWon {
+  color: var(--warm);
+}
+
+.latestMid {
+  color: var(--text-dim);
+  font-size: var(--type-micro);
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.liveDot {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--flare);
+  font-style: normal;
+}
+
+.liveDot::before {
+  content: '';
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: currentColor;
+  animation: blink 1.2s ease-in-out infinite;
+}
+
+@keyframes blink {
+  50% {
+    opacity: 0.3;
+  }
+}
+
+.note {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  min-height: 160px;
+  color: var(--text-dim);
+  font-size: var(--type-small);
+  text-align: center;
+}
+
+.retry {
+  min-height: 40px;
+  padding: 0 16px;
+  border: 1px solid rgba(153, 69, 255, 0.45);
+  background: rgba(153, 69, 255, 0.08);
+  color: var(--ice);
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+/* ---------- The agent ---------- */
+
+.pane {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 14px;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 16px;
+  scrollbar-width: thin;
+}
+
+.pane[aria-busy='true'] {
+  background: linear-gradient(100deg, transparent 30%, rgba(238, 241, 255, 0.04) 50%, transparent 70%) 0 0 / 220% 100%;
+  animation: sweep 1.4s ease-in-out infinite;
+}
+
+@keyframes sweep {
+  to {
+    background-position: -120% 0;
+  }
+}
+
+.hero {
+  position: relative;
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  min-height: 0;
+  padding: 24px 16px;
+  text-align: center;
+}
+
+.heroGlow {
+  position: absolute;
+  top: 18%;
+  left: 50%;
+  width: 280px;
+  height: 280px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(255, 178, 63, 0.16), rgba(153, 69, 255, 0.1) 45%, transparent 70%);
+  transform: translateX(-50%);
+  pointer-events: none;
+}
+
+.heroTitle {
+  position: relative;
+  margin: 0;
+  color: var(--ice);
+  font-family: var(--font-display, system-ui), system-ui, sans-serif;
+  font-size: var(--type-title);
+  font-stretch: 125%;
+  font-variation-settings: 'wdth' 125;
+  font-weight: 900;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+}
+
+.heroLine {
+  margin: 0;
+  color: var(--text-dim);
+  font-size: var(--type-small);
+}
+
+.heroAction {
+  flex: none;
+  width: min(360px, 100%);
+}
+
+.podiumArt {
+  position: relative;
+  display: flex;
+  align-items: flex-end;
+  gap: 4px;
+}
+
+.card {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  align-items: center;
+  gap: 18px;
+}
+
+.cardBody {
+  position: relative;
+  display: flex;
+  justify-content: center;
+}
+
+.cardBody > div {
+  top: 4%;
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+.cardWords {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+}
+
+.cardName {
+  margin: 0;
+  overflow: hidden;
+  font-family: var(--font-display, system-ui), system-ui, sans-serif;
+  font-size: var(--type-title);
+  font-stretch: 125%;
+  font-variation-settings: 'wdth' 125;
+  font-weight: 900;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* A brain's name is never cut mid-word: a long one takes a second line (CITY-236). */
+.cardBrain {
+  color: var(--ice);
+  font-size: var(--type-body);
+  font-weight: 700;
+  overflow-wrap: anywhere;
+}
+
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.chip {
+  padding: 4px 10px;
+  background: rgba(153, 69, 255, 0.22);
+  color: var(--ice);
+  font-size: var(--type-caption);
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.chipQuiet {
+  padding: 4px 10px;
+  border: 1px solid rgba(238, 241, 255, 0.14);
+  color: var(--text-dim);
+  font-size: var(--type-caption);
+  font-weight: 700;
+}
+
+.ratings {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  margin: 0;
+}
+
+.ratingCell {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 12px 14px;
+  border: 1px solid rgba(153, 69, 255, 0.24);
+  background: rgba(6, 5, 12, 0.5);
+}
+
+.ratingCell dt {
+  color: var(--text-dim);
+  font-size: var(--type-caption);
+  font-weight: 700;
+}
+
+.ratingCell dd {
+  margin: 0;
+}
+
+.ratingNumber {
+  color: var(--warm);
+  font-family: var(--font-display, system-ui), system-ui, sans-serif;
+  font-size: var(--type-headline);
+  font-stretch: 125%;
+  font-variation-settings: 'wdth' 125;
+  font-weight: 900;
+  line-height: 1.1;
+}
+
+.ratingGames {
+  color: var(--text-dim);
+  font-size: var(--type-small);
+}
+
+.ratingOff {
+  opacity: 0.5;
+}
+
+.cardActions {
+  display: flex;
+  gap: 8px;
+  margin-top: auto;
+}
+
+.cardActions > :last-child {
+  flex: 1;
+}
+
+.danger {
+  border-color: rgba(255, 92, 92, 0.5);
+  color: var(--flare);
+}
+
+.off {
+  align-self: center;
+  min-height: 36px;
+  padding: 0 12px;
+  border: 0;
+  background: none;
+  color: var(--text-dim);
+  font: inherit;
+  font-size: var(--type-caption);
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+
+.off:hover {
+  color: var(--ice);
+}
+
+/* ---------- The board ---------- */
+
+.boardFeed {
+  display: flex;
+  flex-direction: column;
+  margin-top: 12px;
+}
+
+.board {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin: 12px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.row {
+  display: grid;
+  grid-template-columns: 34px 40px 1fr auto;
+  align-items: center;
+  gap: 12px;
+  min-height: 60px;
+  padding: 6px 14px 6px 10px;
+  border: 1px solid rgba(153, 69, 255, 0.18);
+  background: rgba(6, 5, 12, 0.45);
+  animation: rise 0.36s cubic-bezier(0.2, 0.9, 0.3, 1) both;
+}
+
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+}
+
+.rowMine {
+  border-color: rgba(255, 178, 63, 0.55);
+  background: linear-gradient(90deg, rgba(255, 178, 63, 0.12), rgba(6, 5, 12, 0.45) 60%);
+}
+
+.rank {
+  color: var(--text-dim);
+  font-family: var(--font-display, system-ui), system-ui, sans-serif;
+  font-size: var(--type-lead);
+  font-stretch: 125%;
+  font-variation-settings: 'wdth' 125;
+  font-weight: 900;
+  text-align: center;
+}
+
+.podium1 .rank {
+  color: var(--warm);
+  text-shadow: 0 0 16px rgba(255, 178, 63, 0.5);
+}
+
+.podium2 .rank {
+  color: var(--ice);
+}
+
+.podium3 .rank {
+  color: #e0a37a;
+}
+
+.rowBody {
+  display: flex;
+  justify-content: center;
+}
+
+.rowWords {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.rowWords b {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  overflow: hidden;
+  font-size: var(--type-body);
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+.rowWords b i {
+  font-style: normal;
+}
+
+.rowWords span {
+  color: var(--text-dim);
+  font-size: var(--type-caption);
+  line-height: 1.3;
+  overflow-wrap: anywhere;
+}
+
+.rowScore {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 2px;
+}
+
+.rowScore b {
+  color: var(--ice);
+  font-family: var(--font-display, system-ui), system-ui, sans-serif;
+  font-size: var(--type-lead);
+  font-stretch: 125%;
+  font-variation-settings: 'wdth' 125;
+  font-weight: 900;
+}
+
+.rowScore span {
+  color: var(--text-dim);
+  font-size: var(--type-caption);
+}
+
+.provisional {
+  opacity: 0.7;
+}
+
+/* ---------- Narrow: the phone's sheet ---------- */
+
+@container window (max-width: 560px) {
+  .tab {
+    min-height: 44px;
+    font-size: var(--type-small);
+  }
+
+  /* The mode takes its own row under the formats: two halves, each a full thumb's width. */
+  .mode {
+    order: 3;
+    width: 100%;
+    margin-left: 0;
+    padding: 2px;
+  }
+
+  .modeOption {
+    flex: 1;
+    min-height: 36px;
+    padding: 0 8px;
+  }
+
+  .pane {
+    padding: 12px;
+  }
+
+  .card {
+    gap: 12px;
+  }
+
+  .card svg {
+    width: 84px;
+    height: 112px;
+  }
+
+  .row {
+    grid-template-columns: 26px 32px 1fr auto;
+    gap: 8px;
+    padding: 6px 10px 6px 6px;
+  }
+
+  .row svg {
+    width: 24px;
+    height: 32px;
+  }
+
+  .latestRow {
+    gap: 6px;
+    padding: 6px 8px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .row,
+  .delta,
+  .liveDot::before,
+  .pane[aria-busy='true'] {
+    animation: none;
+  }
+}

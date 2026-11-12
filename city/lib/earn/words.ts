@@ -11,7 +11,11 @@ import type { ClosePlan, StepKind } from './stock-pier-hours.ts';
 
 export type Lang = 'en' | 'uk';
 
+/** `context` names the card's one big number — what it is (CITY-243: «5.03%» alone was a riddle) — before its unit. */
 type ProductWords = Readonly<{ name: string; line: string; action: string; context: string }>;
+
+/** One word of Earn and its one-line hint behind the window's «i» (CITY-243). */
+export type Term = Readonly<{ word: string; hint: string }>;
 
 /** The Dollar Saver's card (CITY-192). */
 export type DollarWords = Readonly<{
@@ -57,6 +61,10 @@ export type Words = Readonly<{
   products: Readonly<Record<ProductId, ProductWords>>;
   perYear: string;
   riskLabel: (dots: number) => string;
+  /** The word beside a card's risk dots, so three dots read as what they are. */
+  risk: string;
+  /** Earn's own words — Shelf, Pier, Boats, Saver, Captain — each in one line, behind one quiet «i». */
+  terms: Readonly<{ open: string; close: string; list: readonly Term[] }>;
   notify: string;
   notifyOn: string;
   notifyDetails: string;
@@ -156,6 +164,9 @@ export type Words = Readonly<{
     toPiers: string;
     explorer: string;
     take: string;
+    /** One line before the signature when the network's fee comes close to the fees taken (CITY-243). */
+    feeNear: string;
+    feeOver: string;
     leave: string;
     youTake: string;
     youGetBack: string;
@@ -281,18 +292,30 @@ const EN: Words = {
   earned: 'Earned',
   vsHold: 'Vs holding',
   inSol: 'SOL',
-  notMeasured: 'Not measured',
+  notMeasured: 'Entry unknown',
   products: {
-    saver: { name: 'SOL Saver', line: 'SOL → staked SOL, one signature', action: 'Start', context: 'Last epoch, a year' },
-    pier: { name: 'SOL Pier', line: 'Fees in SOL from a SOL pool', action: 'Add liquidity', context: 'Top pier, fees 24H' },
-    dollar: { name: 'Dollar Saver', line: 'Lend USDC or SOL at a floating rate', action: 'Put to work', context: 'USDC lending now' },
-    sell: { name: 'Sell Higher', line: 'Your price, set and left', action: 'Open', context: 'SOL now' },
-    stockpier: { name: 'Stock Pier', line: 'Your own pool of a stock, fees in SOL', action: 'Build a pier', context: '7D volume' },
-    stocks: { name: 'Dollars for Stocks', line: 'Borrow USDC against your stocks', action: 'Open', context: 'Stock price now' },
-    captain: { name: 'Like the Captain', line: 'Copy a strategy with a proven record', action: 'Copy', context: 'Best record · vs holding' },
+    saver: { name: 'SOL Saver', line: 'SOL → staked SOL, one signature', action: 'Start', context: 'Yield a year' },
+    pier: { name: 'SOL Pier', line: 'Fees in SOL from a SOL pool', action: 'Add liquidity', context: 'Fees 24H' },
+    dollar: { name: 'Dollar Saver', line: 'Lend USDC or SOL at a floating rate', action: 'Put to work', context: 'Lending rate' },
+    sell: { name: 'Sell Higher', line: 'Your price, set and left', action: 'Open', context: 'Price now' },
+    stockpier: { name: 'Stock Pier', line: 'Your own pool of a stock, fees in SOL', action: 'Build a pier', context: 'Volume 7D' },
+    stocks: { name: 'Dollars for Stocks', line: 'Borrow USDC against your stocks', action: 'Open', context: 'Price now' },
+    captain: { name: 'Like the Captain', line: 'Copy a strategy with a proven record', action: 'Copy', context: 'Best vs holding' },
   },
   perYear: 'a year',
   riskLabel: (dots) => `Risk ${dots} of 3`,
+  risk: 'Risk',
+  terms: {
+    open: 'What the words mean',
+    close: 'Hide',
+    list: [
+      { word: 'Shelf', hint: 'Every way to earn, one card each.' },
+      { word: 'Pier', hint: 'A pool: your coins meet trades, the fees come to you.' },
+      { word: 'Boats', hint: 'Your positions moored at the piers.' },
+      { word: 'Saver', hint: 'A coin put to work at a floating rate.' },
+      { word: 'Captain', hint: 'A strategy with a record you can copy.' },
+    ],
+  },
   notify: 'Tell me when it opens',
   notifyOn: 'We’ll tell you here',
   notifyDetails: 'Kept on this device: the city tells you here when it opens. Phone and Telegram alerts come with Ryntra’s alerts.',
@@ -398,6 +421,8 @@ const EN: Words = {
     toPiers: 'Piers',
     explorer: 'Explorer',
     take: 'Take fees',
+    feeNear: 'The network fee is close to the sum',
+    feeOver: 'The network fee is more than the sum',
     leave: 'Leave',
     youTake: 'You take',
     youGetBack: 'You get back',
@@ -617,18 +642,30 @@ const UK: Words = {
   earned: 'Зароблено',
   vsHold: 'Проти тримання',
   inSol: 'SOL',
-  notMeasured: 'Не виміряно',
+  notMeasured: 'Вхід невідомий',
   products: {
-    saver: { name: 'SOL-скарбничка', line: 'SOL → застейканий SOL одним підписом', action: 'Почати', context: 'Остання епоха, на рік' },
-    pier: { name: 'SOL-причал', line: 'Комісії в SOL з пулу SOL', action: 'Додати ліквідність', context: 'Найкращий причал, комісії 24 год' },
-    dollar: { name: 'Доларова скарбничка', line: 'Позичити USDC чи SOL під змінний відсоток', action: 'Покласти працювати', context: 'Позика USDC зараз' },
-    sell: { name: 'Продам дорожче', line: 'Своя ціна — поставив і забув', action: 'Відкрити', context: 'SOL зараз' },
-    stockpier: { name: 'Причал акцій', line: 'Свій пул акції, комісії в SOL', action: 'Збудувати причал', context: 'Обсяг 7 дн' },
-    stocks: { name: 'Долари під акції', line: 'Взяти USDC під свої акції', action: 'Відкрити', context: 'Ціна акції зараз' },
-    captain: { name: 'Як у капітана', line: 'Скопіювати стратегію з доведеним результатом', action: 'Копіювати', context: 'Найкращий результат · проти тримання' },
+    saver: { name: 'SOL-скарбничка', line: 'SOL → застейканий SOL одним підписом', action: 'Почати', context: 'Дохідність на рік' },
+    pier: { name: 'SOL-причал', line: 'Комісії в SOL з пулу SOL', action: 'Додати ліквідність', context: 'Комісії за 24 год' },
+    dollar: { name: 'Доларова скарбничка', line: 'Позичити USDC чи SOL під змінний відсоток', action: 'Покласти працювати', context: 'Ставка позики' },
+    sell: { name: 'Продам дорожче', line: 'Своя ціна — поставив і забув', action: 'Відкрити', context: 'Ціна зараз' },
+    stockpier: { name: 'Причал акцій', line: 'Свій пул акції, комісії в SOL', action: 'Збудувати причал', context: 'Обсяг за 7 дн' },
+    stocks: { name: 'Долари під акції', line: 'Взяти USDC під свої акції', action: 'Відкрити', context: 'Ціна зараз' },
+    captain: { name: 'Як у капітана', line: 'Скопіювати стратегію з доведеним результатом', action: 'Копіювати', context: 'Найкраще проти тримання' },
   },
   perYear: 'на рік',
   riskLabel: (dots) => `Ризик ${dots} з 3`,
+  risk: 'Ризик',
+  terms: {
+    open: 'Що означають слова',
+    close: 'Сховати',
+    list: [
+      { word: 'Полиця', hint: 'Усі способи заробити, по картці на кожен.' },
+      { word: 'Причал', hint: 'Пул: твої монети працюють в обмінах, комісії — тобі.' },
+      { word: 'Човни', hint: 'Твої позиції на причалах.' },
+      { word: 'Скарбничка', hint: 'Монета працює під змінний відсоток.' },
+      { word: 'Капітан', hint: 'Стратегія з доведеним результатом, яку можна скопіювати.' },
+    ],
+  },
   notify: 'Повідомити, коли відкриється',
   notifyOn: 'Повідомимо тут',
   notifyDetails: 'Зберігається на цьому пристрої: місто скаже тут, щойно відкриється. Сповіщення на телефон і в Telegram — разом зі сповіщеннями Ryntra.',
@@ -734,6 +771,8 @@ const UK: Words = {
     toPiers: 'Причали',
     explorer: 'Оглядач',
     take: 'Забрати комісії',
+    feeNear: 'Комісія мережі майже як сума',
+    feeOver: 'Комісія мережі більша за суму',
     leave: 'Вийти',
     youTake: 'Ви забираєте',
     youGetBack: 'Повернеться',

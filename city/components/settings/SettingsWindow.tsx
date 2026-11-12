@@ -30,16 +30,26 @@ export default function SettingsWindow({ onSound }: { onSound: (on: boolean) => 
   const w = useWords(SETTINGS);
   const section = useSettingsView((st) => st.section);
   const body = useRef<HTMLDivElement>(null);
+  const rail = useRef<HTMLElement>(null);
   useEffect(() => {
     hydrateTrade();
   }, []);
   // Another section starts at its top. A block, never the call's answer: a newer browser's scrollTo returns a promise.
   useEffect(() => {
     if (body.current) body.current.scrollTop = 0;
+    // CITY-237: on a phone the sections are one row that scrolls sideways — the open section's tab comes to the row's
+    // middle. «Notifications», opened from the menu or the bell's gear, stood cut by the sheet's edge («Сповіще»). The
+    // row alone is moved: `scrollIntoView` would move every clipped ancestor too, the city's page among them.
+    const row = rail.current;
+    const tab = row?.querySelector<HTMLElement>('[aria-current="page"]');
+    if (row && tab && row.scrollWidth > row.clientWidth) {
+      const at = tab.getBoundingClientRect();
+      row.scrollLeft += at.left - row.getBoundingClientRect().left - (row.clientWidth - at.width) / 2;
+    }
   }, [section]);
   return (
     <div className={s.root} data-city-settings="">
-      <nav className={s.rail} aria-label={w.sections}>
+      <nav className={s.rail} aria-label={w.sections} ref={rail}>
         {SECTIONS.map((id) => {
           const Icon = ICON[id];
           return (

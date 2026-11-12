@@ -34,7 +34,7 @@ type ModelGateway = {
 };
 
 type ModelCall = {
-  subject: { kind: "vault-guard" | "ring-agent"; id: string };     // id: 1–64 знаки A–Z a–z 0–9 . _ : -
+  subject: { kind: "vault-guard" | "ring-agent" | "hack-agent"; id: string }; // id: 1–64 знаки A–Z a–z 0–9 . _ : -
   model: { id: string; providers: string[] };                       // PinnedModel
   messages: ModelMessage[];                                         // system | user | assistant (+toolCalls) | tool
   budget: { maxTokens: number; reasoningTokens: number; timeoutMs: number };
@@ -88,6 +88,12 @@ if (!result.ok) { /* result.error.kind — див. таблицю нижче */ 
 Той самий виклик з `subject: { kind: "ring-agent", id: agent.id }`, моделлю агента, його ключем і бюджетом формату;
 для Коду — `tools`, для ходу за схемою — `responseFormat` (тоді в результаті `json`). Хід думок (`reasoning`) Ринг
 показує лише після фіксації обох ходів.
+
+### Агент «Зламу» (CITY-238)
+
+Той самий агент Арени зі своїм ключем працює над копією замовлення: `subject: { kind: "hack-agent", id: agent.id }`,
+`tools` — чотири інструменти виконавця (`city/lib/arena/hack/runner/prompt.ts`), `reasoningTokens: 0`. У журналі
+виклики «Зламу» стоять окремо від Рингу; ключ агента той самий. Перелік суб'єктів — один, у `subject.ts`.
 
 ### Заглушка (для паралельної роботи)
 

@@ -1,13 +1,14 @@
 import { bandOfPlan, binOfPrice, chunkRungs, planLeg, type LadderPool } from '../../../lib/bots/ladder/plan.ts';
 import type { LadderOrderRead, PlacedLeg } from '../../../lib/bots/ladder/orders.ts';
-import { DEVNET_USDC, WRAPPED_SOL } from '../../../lib/bots/ladder/network.ts';
+import { DEVNET_USDC, MAINNET_USDC, WRAPPED_SOL, type LadderNetwork } from '../../../lib/bots/ladder/network.ts';
 import { defaultDraft, type BotDraft } from './draft.ts';
 import type { LadderPoolInfo, LadderStatus, LiveLadder } from './ladder.ts';
 
 /**
- * The review stand of the ladder on devnet (CITY-135) — fixtures for `ladder-shots.mjs` only: a devnet SOL/USDC pool at
- * the city's SOL price, a review wallet's public address, and three ladders it placed — one working, one whose bundle
- * half-landed, one filled. Public facts only: addresses and steps, never a key.
+ * The review stand of the ladder (CITY-135; mainnet CITY-219) — fixtures for `ladder-shots.mjs` only: a SOL/USDC pool
+ * at the city's SOL price on the network asked for, a review wallet's public address, and three ladders it placed —
+ * one working, one whose bundle half-landed, one filled. On mainnet the stand carries the chain's terms and the cap
+ * as the engine answers them. Public facts only: addresses and steps, never a key.
  */
 
 export const REVIEW_WALLET = 'Rev1ewWa11etPub1icAddress1111111111111111111';
@@ -15,8 +16,12 @@ export const REVIEW_POOL = 'DevPoo1SoLUSDCRev1ew11111111111111111111111';
 
 const order = (n: number) => `Order${String(n).padStart(3, '0')}Rev1ew1111111111111111111111111111`.slice(0, 44);
 
-export function poolAt(price: number): LadderPoolInfo {
-  const facts: LadderPool = { pool: REVIEW_POOL, binStep: 10, activeId: 0, baseIsX: true, baseMint: WRAPPED_SOL, quoteMint: DEVNET_USDC, baseDecimals: 9, quoteDecimals: 6 };
+/** Mainnet's terms as the engine reads them on the fork: rent per byte, priority per transaction; and the start cap. */
+export const MAINNET_TERMS = { rentPerByte: 6_960, priorityLamportsPerTx: 20_000 } as const;
+export const MAINNET_CAP = 100;
+
+export function poolAt(price: number, network: LadderNetwork = 'devnet'): LadderPoolInfo {
+  const facts: LadderPool = { pool: REVIEW_POOL, binStep: 10, activeId: 0, baseIsX: true, baseMint: WRAPPED_SOL, quoteMint: network === 'mainnet' ? MAINNET_USDC : DEVNET_USDC, baseDecimals: 9, quoteDecimals: 6 };
   const activeId = binOfPrice(price, false, facts);
   const index = Math.floor(activeId / 70);
   return {
@@ -28,8 +33,9 @@ export function poolAt(price: number): LadderPoolInfo {
   };
 }
 
-export function statusAt(price: number, at: number): LadderStatus {
-  return { open: true, network: 'devnet', venue: { venue: 'dlmm', available: true }, pool: poolAt(price), at };
+export function statusAt(price: number, at: number, network: LadderNetwork = 'devnet'): LadderStatus {
+  if (network === 'devnet') return { open: true, network, venue: { venue: 'dlmm', available: true }, pool: poolAt(price), at };
+  return { open: true, network, venue: { venue: 'dlmm', available: true }, pool: poolAt(price, network), terms: MAINNET_TERMS, maxUsd: MAINNET_CAP, at };
 }
 
 function placed(draft: BotDraft, leg: Parameters<typeof planLeg>[0], price: number, first: number, failFrom: number | null) {
@@ -45,8 +51,8 @@ function placed(draft: BotDraft, leg: Parameters<typeof planLeg>[0], price: numb
   return { draft, plan, legs };
 }
 
-/** Three placed ladders and what devnet reads of them now, at `price`. */
-export function laddersDemo(price: number, now: number): Readonly<{ ladders: LiveLadder[]; reads: LadderOrderRead[]; poolPrice: number }> {
+/** Three placed ladders and what the network reads of them now, at `price`. */
+export function laddersDemo(price: number, now: number, network: LadderNetwork = 'devnet'): Readonly<{ ladders: LiveLadder[]; reads: LadderOrderRead[]; poolPrice: number }> {
   const pair = { mint: WRAPPED_SOL, symbol: 'SOL' };
   const buyDraft = defaultDraft('buyLadder', pair, price, null, 250);
   const working = placed(buyDraft, { side: 'buy', steps: 5, firstPct: 2, lastPct: 12, shape: 'even', amountRaw: '250000000' }, price * 1.03, 1, null);
@@ -56,7 +62,7 @@ export function laddersDemo(price: number, now: number): Readonly<{ ladders: Liv
   const filled = placed(exitDraft, { side: 'exit', steps: 4, firstPct: 3, lastPct: 15, shape: 'even', amountRaw: String(Math.round((300 / (price * 0.85)) * 1e9)) }, price * 0.85, 20, null);
   const ladder = (id: string, x: ReturnType<typeof placed>, hoursAgo: number): LiveLadder => ({
     id,
-    network: 'devnet',
+    network,
     owner: REVIEW_WALLET,
     pool: REVIEW_POOL,
     baseIsX: true,

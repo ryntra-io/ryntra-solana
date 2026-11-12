@@ -3,11 +3,13 @@ import { ringApi } from "@/lib/ring/server";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
+// A duel plays after the answer (`after`), inside the function's life: 20 moves of 12 s at most (`SERVER_MOVE_MS`).
+export const maxDuration = 300;
 
 /*
- * The Ring's routes in one handler (CITY-50) — GET /models, /model, /garage; POST /create, /change, /off — and its
- * duels (CITY-51) — GET /duel, /duels; POST /fight, closed until their own switch `NEXT_PUBLIC_RYNTRA_CITY_RING_DUELS`
- * opens. Instances do not share memory, so a deployment keeps the agents, their keys and the request keys in the database
+ * The Ring's routes in one handler (CITY-50) — GET /models, /model, /garage; POST /create, /change, /off — the Arena's
+ * (CITY-217) — GET /mine, /board — and its duels (CITY-51) — GET /duel, /duels; POST /fight, closed until their own
+ * switch `NEXT_PUBLIC_RYNTRA_CITY_RING_DUELS` opens. Instances do not share memory, so a deployment keeps the agents, their keys and the request keys in the database
  * (`lib/ring/supabase-store.ts`); the Ring does not open in production on one instance's memory (`lib/ring/ready.ts`).
  * Closed (404) until `NEXT_PUBLIC_RYNTRA_CITY_RING` says `open`.
  */
@@ -20,6 +22,8 @@ export async function GET(req: Request, { params }: Context) {
   if (action === "models") return ringApi().models(req);
   if (action === "model") return ringApi().model(req);
   if (action === "garage") return ringApi().garage(req);
+  if (action === "mine") return ringApi().mine(req);
+  if (action === "board") return ringApi().board(req);
   if (action === "duel") return duelApi().duel(req);
   if (action === "duels") return duelApi().duels(req);
   return notFound();

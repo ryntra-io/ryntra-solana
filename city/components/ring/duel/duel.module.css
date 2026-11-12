@@ -42,8 +42,9 @@
 
 .formats {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
-  gap: 4px;
+  gap: 8px 4px;
   padding: 12px 16px 0;
   flex: none;
 }
@@ -384,9 +385,10 @@
 
 .outcome {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   justify-content: center;
-  gap: 12px;
+  gap: 6px 12px;
 }
 
 .result {
@@ -396,6 +398,7 @@
   margin: 0;
   color: var(--text-dim);
   font-size: var(--type-small);
+  white-space: nowrap;
 }
 
 .result b {

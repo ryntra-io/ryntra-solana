@@ -3,7 +3,7 @@ import "../../../lib/world/testing/hooks.mjs";
 import assert from "node:assert/strict";
 import test from "node:test";
 
-const { createRingStore, canSave, classCounts, garageKey, visibleModels } = await import("./store.ts");
+const { createRingStore, canSave, classCounts, garageKey, ownBrainRow, visibleModels } = await import("./store.ts");
 const { RingClientError, createHttpRing } = await import("./client.ts");
 const { ringOpen } = await import("./flag.ts");
 const { BODIES, GROUND } = await import("./body.ts");
@@ -198,6 +198,45 @@ test("the brain picker: one class at a time, cheapest first as the server sent t
   assert.deepEqual(visibleModels(MODELS, "light", "anthropic 5.5").shown.map((m) => m.id), ["a/haiku"]);
   assert.deepEqual(visibleModels(MODELS, "middle", "A/SON").shown.map((m) => m.id), ["a/sonnet"]);
   assert.deepEqual(visibleModels(MODELS, "light", "", 1), { shown: [MODELS[0]], more: 1 });
+});
+
+/* CITY-240: a person who opens «Brain» to change an agent did not see what it thinks with now — when the list no
+   longer offered that brain, when the catalog kept it in another class than the agent is pinned in, or when it stood
+   past the first rows; on a phone the line that names the pick is put away on this step. */
+test("changing an agent: its own brain is the first row, whatever the tab shows and whether the list still offers it", () => {
+  const own = (brain, search = "") => ownBrainRow({ agent: agentOf({ brain }), search });
+  const sonnet = agentOf().brain;
+  assert.deepEqual(own(sonnet), { id: "a/sonnet", name: "Anthropic Sonnet 5.5", weight: "middle", matchMicroUsd: 168_000 });
+  // It has its own row: the list under it never says it twice, on any tab.
+  assert.deepEqual(visibleModels(MODELS, "middle", "", 40, "a/sonnet"), { shown: [], more: 0 });
+  assert.deepEqual(visibleModels(MODELS, "light", "", 40, "a/sonnet").shown.map((m) => m.id), ["a/haiku", "b/luna"]);
+  // A brain the list no longer offers (it draws, or its catalog entry is gone): the agent's own record names it.
+  const gone = { id: "g/banana", name: "Google: Nano Banana (Gemini 2.5 Flash Image)", provider: "google", providerName: "Google", weight: "light", matchMicroUsd: 9_400 };
+  assert.equal(MODELS.some((m) => m.id === gone.id), false);
+  assert.deepEqual(own(gone), { id: "g/banana", name: gone.name, weight: "light", matchMicroUsd: 9_400 });
+  // A brain the catalog now keeps in another class: the row says the class and the price the agent is pinned at.
+  const moved = { ...sonnet, weight: "light", matchMicroUsd: 39_000 };
+  assert.deepEqual(own(moved), { id: "a/sonnet", name: "Anthropic Sonnet 5.5", weight: "light", matchMicroUsd: 39_000 });
+  // A search is a search: the row stays while the words name it, by name or by id, and goes with the rest otherwise.
+  assert.equal(own(sonnet, "sonnet")?.id, "a/sonnet");
+  assert.equal(own(sonnet, "A/SON")?.id, "a/sonnet");
+  assert.equal(own(sonnet, "luna"), null);
+  // A new agent has no brain of its own yet.
+  assert.equal(ownBrainRow({ agent: null, search: "" }), null);
+  assert.equal(ownBrainRow(null), null);
+});
+
+test("the making screen puts that row first and keeps the list to whole rows", async () => {
+  const { readFileSync } = await import("node:fs");
+  const read = (file) => readFileSync(new URL(file, import.meta.url), "utf8").replace(/\r\n/g, "\n");
+  const editor = read("../../components/ring/RingEditor.tsx");
+  assert.match(editor, /const own = ownBrainRow\(editor\);\s+const \{ shown, more \} = visibleModels\(models\.list, editor\.weight, editor\.search, 40, own\?\.id \?\? null\);/u);
+  const row = editor.indexOf("{own && <ModelRow model={own} picked={editor.model === own.id}");
+  assert.ok(row > 0 && row < editor.indexOf("shown.map((m) => <ModelRow"), "above the catalog's rows, and while they load");
+  // Its class is said only where the tab shows another.
+  assert.match(editor, /away=\{own\.weight === editor\.weight \? '' : WEIGHT_NAMES\[own\.weight\]\}/u);
+  // A tap on it is a pick like any other: the same brain again needs no quote to be saved (`canSave`).
+  assert.match(editor, /onClick=\{\(\) => void ringStore\.getState\(\)\.pickModel\(model\.id\)\}/u);
 });
 
 test("figures as the city writes them", () => {

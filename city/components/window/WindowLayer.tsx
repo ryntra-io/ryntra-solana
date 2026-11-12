@@ -10,7 +10,6 @@ import { HEAD, type Guide } from '@/city/lib/window/geometry';
 import { useWords } from '@/city/lib/i18n/dict';
 import { useWallet } from '@/city/lib/trade/wallet';
 import { GridGlyph } from './glyphs';
-import { Layouts } from './Layouts';
 import { OutHosts, OutTray } from './OutWindow';
 import { Tray } from './Tray';
 import { WINDOW } from './words';
@@ -79,7 +78,6 @@ export function WindowLayer() {
       <CityDim />
       {count > 0 && (desk ? <Desk /> : <WindowSheet />)}
       <Tray />
-      <Layouts />
       <OutHosts />
       <OutTray />
     </>

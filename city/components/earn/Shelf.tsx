@@ -49,11 +49,13 @@ export function Shelf({ words }: { words: Words }) {
               <h3 className={`${s.display} ${s.cardName}`}>{w.name}</h3>
               <RiskDots dots={RISK[id]} words={words} />
             </div>
-            <div className={s.cardBig} aria-busy={!big && reading[id] ? true : undefined}>
+            {/* The big number says what it is, under it, before its unit (CITY-243); a source that did not answer leaves
+                an honest dash with the same words, never an empty band (the Dollar Saver and «Like the Captain»). */}
+            <div className={s.cardBig} aria-busy={!big && reading[id] ? true : undefined} data-earn-big={big ? '' : reading[id] ? 'reading' : 'none'}>
               {big ? (
                 <>
                   <b className={s.display}>{big.value}</b>
-                  <span>{big.unit ? `${big.unit} · ${w.context}` : w.context}</span>
+                  <span>{big.unit ? `${w.context} · ${big.unit}` : w.context}</span>
                 </>
               ) : reading[id] ? (
                 <>
@@ -61,10 +63,13 @@ export function Shelf({ words }: { words: Words }) {
                   <i className={s.boneSmall} />
                 </>
               ) : (
-                <span className={s.cardLine}>{w.line}</span>
+                <>
+                  <b className={`${s.display} ${s.cardNone}`}>—</b>
+                  <span>{w.context}</span>
+                </>
               )}
             </div>
-            {big || reading[id] ? <p className={s.cardLine}>{w.line}</p> : null}
+            <p className={s.cardLine}>{w.line}</p>
             <button type="button" className={`${s.display} ${acts ? s.action : s.secondary} ${s.cardAction}`} onClick={open}>
               {acts ? w.action : words.open}
             </button>

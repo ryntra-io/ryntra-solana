@@ -2,9 +2,11 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import * as THREE from 'three';
-import type { HallBoardId, HallView } from '@/city/lib/launch/hall';
 import { hallShown, useHall } from '@/city/lib/launch/hall-store';
-import { BOARD_NAMES, BOARD_WORDS, emptyShort, figureText, shownBoards } from '@/city/lib/launch/hall-words';
+import type { HallBoardId, HallView } from '@/city/lib/launch/hall';
+import { hallSignsPlan, MAST_Z, SIGN } from '@/city/lib/launch/hall-signs';
+import { placeSign } from '@/city/lib/launch/hall-tap';
+import { BOARD_NAMES, BOARD_WORDS, figureText, spanText } from '@/city/lib/launch/hall-words';
 import { wordsNow } from '@/city/lib/i18n/dict';
 import { useLang } from '@/city/lib/i18n/lang';
 import { cityFonts } from '@/city/lib/moments/draw';
@@ -12,24 +14,16 @@ import { PALETTE } from '@/city/lib/palette';
 import { LAUNCH } from './words';
 
 /**
- * The Hall of Fame in the city: two billboard towers on the plaza, one each side of the Sol Spire and clear of it,
- * each carrying two signs that face the establishing shot. Billboards are neutral structures — never hung on a coin's
- * tower, where they would read as a word about that coin. Each sign shows its board's name, the lead number, its coin
- * and one word for what the number is — nothing small; the table and the details are the panel's (`HallLayer`). A
- * board without a public source has no sign.
+ * The Hall of Fame in the city: two billboard masts on the plaza, one each side of the Sol Spire and clear of it, their
+ * signs facing the establishing shot. Billboards are neutral structures — never hung on a coin's tower, where they
+ * would read as a word about that coin. A sign stands only on a board with a leader (CITY-241, `hall-signs.ts`): its
+ * board's name, the span its rows are of («This week», «This month», «All time» — a quiet week reaches back, CITY-230),
+ * the leader's number, its coin and one word for what the number is — nothing small; the table, the details and an
+ * empty board's «Launch yours» are the panel's (`HallLayer`). A mast stands only under a sign, as tall as its top
+ * sign. A tap on a sign opens the panel on that board (`hall-tap.ts`).
  */
 
-const SIGN = { w: 12.8, h: 8 } as const;
-const MAST = { w: 0.6, top: 70 } as const;
-/** The two towers stand at the plaza's front edge, x ±13, so the signs clear the spire and rise over the core. */
-const TOWERS = [-13, 13] as const;
-const TOWER_Z = 5.5;
-const SIGNS: ReadonlyArray<Readonly<{ board: HallBoardId; x: number; y: number }>> = [
-  { board: 'catch', x: TOWERS[0], y: 65 },
-  { board: 'hunters', x: TOWERS[1], y: 65 },
-  { board: 'creators', x: TOWERS[0], y: 56 },
-  { board: 'scouts', x: TOWERS[1], y: 56 },
-];
+const MAST_W = 0.6;
 /** Drawn below the bloom's threshold, so the words stay sharp; the edge light alone glows. */
 const INK_LEVEL = 0.6;
 const TEX = { w: 1024, h: 640 } as const;
@@ -44,7 +38,8 @@ export function HallSigns() {
 function Signs({ view, stub }: { view: HallView; stub: boolean }) {
   const parts = useMemo(
     () => ({
-      mast: new THREE.BoxGeometry(MAST.w, MAST.top, MAST.w),
+      // One unit tall from the ground: each mast is scaled to its own top sign.
+      mast: new THREE.BoxGeometry(MAST_W, 1, MAST_W).translate(0, 0.5, 0),
       sign: new THREE.PlaneGeometry(SIGN.w, SIGN.h),
       back: new THREE.BoxGeometry(SIGN.w + 0.3, SIGN.h + 0.3, 0.22),
       light: new THREE.BoxGeometry(SIGN.w + 0.3, 0.12, 0.12),
@@ -61,18 +56,20 @@ function Signs({ view, stub }: { view: HallView; stub: boolean }) {
     },
     [parts],
   );
-  const shown = shownBoards(view);
+  const plan = hallSignsPlan(view);
+  if (!plan.signs.length) return null;
   return (
     <group>
-      {TOWERS.map((x) => (
-        <group key={x} position={[x, 0, TOWER_Z]}>
-          <mesh geometry={parts.mast} material={parts.dark} position={[0, MAST.top / 2, -0.5]} />
-          <mesh geometry={parts.cap} material={parts.tip} position={[0, MAST.top + 0.25, -0.5]} />
+      {plan.masts.map((mast) => (
+        <group key={mast.x} position={[mast.x, 0, MAST_Z]}>
+          <mesh geometry={parts.mast} material={parts.dark} position={[0, 0, -0.5]} scale={[1, mast.top, 1]} />
+          <mesh geometry={parts.cap} material={parts.tip} position={[0, mast.top + 0.25, -0.5]} />
         </group>
       ))}
-      {SIGNS.filter((sign) => shown.includes(sign.board)).map((sign) => (
-        <group key={sign.board} position={[sign.x, sign.y, TOWER_Z]} rotation-y={-Math.sign(sign.x) * 0.08}>
-          <mesh geometry={parts.back} material={parts.dark} position={[0, 0, -0.14]} />
+      {plan.signs.map((sign) => (
+        <group key={sign.board} position={[sign.x, sign.y, MAST_Z]} rotation-y={-Math.sign(sign.x) * 0.08}>
+          {/* The back plate is where a tap meets the sign. */}
+          <mesh geometry={parts.back} material={parts.dark} position={[0, 0, -0.14]} ref={(mesh) => placeSign(sign.board, mesh)} />
           <mesh geometry={parts.light} material={parts.edge} position={[0, -SIGN.h / 2 - 0.12, 0.02]} />
           <Face view={view} board={sign.board} stub={stub} geometry={parts.sign} />
         </group>
@@ -129,20 +126,29 @@ function fit(ctx: CanvasRenderingContext2D, text: string, x: number, y: number, 
   ctx.fillText(text, x, y);
 }
 
-/** One sign: its board's name, the lead number, its coin and one word for what the number is — or «None this week». */
+/** The sign's outline: a plate with two chamfered corners, the HUD's cut. */
+function plate(ctx: CanvasRenderingContext2D, x: number, y: number, w: number, h: number, cut: number) {
+  ctx.beginPath();
+  ctx.moveTo(x + cut, y);
+  ctx.lineTo(x + w, y);
+  ctx.lineTo(x + w, y + h - cut);
+  ctx.lineTo(x + w - cut, y + h);
+  ctx.lineTo(x, y + h);
+  ctx.lineTo(x, y + cut);
+  ctx.closePath();
+}
+
+/**
+ * One sign: its board's name, the span its rows are of, the leader's number, its coin and one word for what the number
+ * is. Drawn only for a board with a leader (`hallSignsPlan`): never an empty sign, never a figure that is not the
+ * engine's.
+ */
 function drawSign(ctx: CanvasRenderingContext2D, fonts: Fonts, view: HallView, board: HallBoardId, stub: boolean) {
   const { w, h } = TEX;
   const cut = 44;
   const pad = 56;
   ctx.save();
-  ctx.beginPath();
-  ctx.moveTo(cut, 0);
-  ctx.lineTo(w, 0);
-  ctx.lineTo(w, h - cut);
-  ctx.lineTo(w - cut, h);
-  ctx.lineTo(0, h);
-  ctx.lineTo(0, cut);
-  ctx.closePath();
+  plate(ctx, 0, 0, w, h, cut);
   const ground = ctx.createLinearGradient(0, 0, w, h);
   ground.addColorStop(0, '#191230');
   ground.addColorStop(1, PALETTE.inkDeep);
@@ -165,16 +171,17 @@ function drawSign(ctx: CanvasRenderingContext2D, fonts: Fonts, view: HallView, b
     ctx.textAlign = 'left';
   }
 
-  const lead = view.boards[board].rows[0];
-  if (!lead) {
-    /* The honest empty sign: never a figure. */
-    ctx.fillStyle = PALETTE.ice;
-    fit(ctx, emptyShort().toUpperCase(), pad, 360, w - pad * 2, 900, 120, fonts.display, true);
-    return;
-  }
+  const shown = view.boards[board];
+  const lead = shown.rows[0];
+  if (!lead) return;
+
+  /* The span the rows are of: the week, or how far a quiet week reached back. */
+  ctx.fillStyle = PALETTE.amber;
+  font(ctx, 800, 36, fonts.ui, false, 5);
+  ctx.fillText(spanText(shown.span).toUpperCase(), pad, 154);
 
   ctx.fillStyle = PALETTE.mint;
-  fit(ctx, figureText(lead.figure).value, pad, 370, w - pad * 2, 900, 220, fonts.display, true);
+  fit(ctx, figureText(lead.figure).value, pad, 390, w - pad * 2, 900, 220, fonts.display, true);
   ctx.fillStyle = PALETTE.ice;
   fit(ctx, `$${lead.coin.symbol} · ${BOARD_WORDS[board]}`, pad, h - 92, w - pad * 2, 700, 64, fonts.ui, false);
 }

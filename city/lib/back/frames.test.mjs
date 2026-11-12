@@ -21,6 +21,8 @@ test("a window no named layer speaks for stands on Back by itself", () => {
 
 test("a window a named layer closes does not stand on Back twice", () => {
   assert.deepEqual(frameLayers(["predict", "money", "chart", "exchange", "swap", "spot", "scouts", "partners", "partners-landing", "berth", "garage", "guides", "settings", "page-privacy"]), []);
+  // CITY-242: the launch sheet is a window of the frame; its named layer («launch») closes it as Escape does.
+  assert.deepEqual(frameLayers(["launch"]), []);
 });
 
 test("a window that comes tomorrow is on Back without anyone adding it", () => {

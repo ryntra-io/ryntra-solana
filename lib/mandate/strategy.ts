@@ -72,8 +72,10 @@ export type AgentTrade = Readonly<{
  * launch is past its first hours. None of them sells anything: the agent stops buying and holds.
  * CITY-204: `market` and `balance` — the money autopilot's care (`lib/pilot/care.ts`): SOL fell sharply, or the trade's
  * part outgrew its share. Only that care lifts them; the tick never does.
+ * CITY-70: `mismatch` — the vault holds less than the agent's book can explain (`./mission.ts` `reconcile`): it spends
+ * nothing more; nothing lifts it, her withdraw takes what is there.
  */
-export type PauseReason = "failing" | "loss" | "losses" | "short" | "unread" | "take" | "stop" | "late" | "market" | "balance";
+export type PauseReason = "failing" | "loss" | "losses" | "short" | "unread" | "take" | "stop" | "late" | "market" | "balance" | "mismatch";
 
 export type StrategyInput = Readonly<{
   strategy: StrategyId;
@@ -109,6 +111,8 @@ export function decide(input: StrategyInput): Decision {
   if (input.budgetLeft !== null && input.budgetLeft < perTrade) return { action: "end", reason: "spent" };
   let failures = 0;
   for (const trade of [...input.trades].reverse()) {
+    /* CITY-70: a trade whose fate is unknown is no failure — it is read again by its signature before anything is bought. */
+    if (trade.unsettledRaw !== undefined) continue;
     if (trade.status === "ok" || trade.allowance) break;
     failures += 1;
   }

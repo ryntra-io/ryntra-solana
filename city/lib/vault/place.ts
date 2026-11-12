@@ -76,3 +76,38 @@ export function flightAt(from: View, to: View, t: number): View {
   eye.y += Math.sin(Math.PI * k) * 10;
   return { eye, target: mix(from.target, to.target, k) };
 }
+
+/** The screen the Vault's sign stands on: its size, and the Deck's box at its foot when there is one. */
+export type SignScreen = Readonly<{
+  width: number;
+  height: number;
+  deck: Readonly<{ left: number; right: number; top: number }> | null;
+  /** The sign waits at the screen's edge while its tower is outside the frame (the city keeps it so on every screen). */
+  edge: boolean;
+}>;
+
+/** Half the sign's size, with air: where its centre may stand from an edge. */
+export const SIGN_HALF = { x: 62, y: 30 } as const;
+/** The top bar and the Lens's strip under it: the sign stands below them. */
+const SIGN_TOP = 128;
+
+/**
+ * Where the Vault's sign stands on the screen (CITY-243): where its tower is, but never under the Deck — on a phone a
+ * drag of the city brought the Vault right in front of the camera and its sign read through the Deck — and never off the
+ * screen: on a phone the Vault stands outside the first frame (the Sol Spire and the Eclipse keep the middle), on a desk
+ * the idle sway carries it past the edge, so its sign waits at the edge on the Vault's side, an arrow on it (`side`), and
+ * one tap still opens the room.
+ */
+export function signOnScreen(at: Readonly<{ x: number; y: number }>, screen: SignScreen): Readonly<{ x: number; y: number; side: -1 | 0 | 1 }> {
+  let { x, y } = at;
+  let side: -1 | 0 | 1 = 0;
+  if (screen.edge) {
+    if (x < SIGN_HALF.x) side = -1;
+    else if (x > screen.width - SIGN_HALF.x) side = 1;
+    x = Math.min(Math.max(x, SIGN_HALF.x), screen.width - SIGN_HALF.x);
+    y = Math.min(Math.max(y, SIGN_TOP), screen.height - SIGN_HALF.y);
+  }
+  const deck = screen.deck;
+  if (deck && x > deck.left - SIGN_HALF.x && x < deck.right + SIGN_HALF.x) y = Math.min(y, deck.top - SIGN_HALF.y);
+  return { x, y, side };
+}

@@ -5,8 +5,15 @@ import type { ModelCall, ModelGateway, ModelReply } from "./model";
  * only what a model would read — the rules and the one fenced message — and plays each practice guard by a short
  * script, so the vaults can be played end to end on a stand: Pip gives the phrase to a polite visitor or recites his
  * orders, Brass lets it slip inside a story, Onyx answers in pig latin, and the daily guard in a shifted alphabet. A
- * real model replaces it in `server.ts`; nothing else changes.
+ * deployment speaks to the real model instead (`guard-model.ts`, chosen in `server.ts`); nothing else changes.
+ *
+ * It spends no money, but it books what a real reply about costs (`STUB_REPLY_MICRO_USD`), so the day's ceiling plays
+ * out on a stand just as it does on a deployment.
  */
+
+/** About what one guard's reply costs on the pinned light model, set aside and booked as if it were spent. */
+export const STUB_REPLY_MICRO_USD = 1_000;
+export const STUB_WORST_MICRO_USD = 2_500;
 
 const PHRASE = /The vault's phrase is: "([^"]+)"/;
 const FENCE = /^<visitor ([^>\n]+)>\n([\s\S]*)\n<\/visitor \1>$/;
@@ -53,11 +60,14 @@ function script(keyRef: string, text: string, words: string[]): string {
 }
 
 export const stubGateway: ModelGateway = {
+  async worstCase() {
+    return STUB_WORST_MICRO_USD;
+  },
   async call(input: ModelCall): Promise<ModelReply> {
     const started = Date.now();
     const words = (PHRASE.exec(input.system)?.[1] ?? "").split(" ").filter(Boolean);
     const fenced = FENCE.exec(input.messages[input.messages.length - 1]?.content ?? "");
     const text = script(input.keyRef, fenced?.[2] ?? "", words);
-    return { text, model: "stub/scripted-guard", costMicroUsd: 0, tokens: { input: 0, output: 0 }, ms: Date.now() - started };
+    return { text, model: "stub/scripted-guard", costMicroUsd: STUB_REPLY_MICRO_USD, tokens: { input: 0, output: 0 }, ms: Date.now() - started };
   },
 };

@@ -1,4 +1,4 @@
-import { carryFree, carryRect, docked, type Bay, type Rect } from './geometry.ts';
+import { carryFree, carryRect, DEFAULT_SIZE, docked, fitRect, MIN, STEP, stuck, type Bay, type Rect, type Size } from './geometry.ts';
 import type { Layout, Recall } from './layout.ts';
 
 /**
@@ -78,12 +78,57 @@ export function remember(memory: Memory | null, layout: Layout): Memory {
 }
 
 /**
- * The place this device remembers for a window, carried onto the given workspace: its bay, stuck with the others it
- * stuck to, or floating at its own size.
+ * Before CITY-242 the frame first put a window at most 85 % of the workspace's height, and Spot, Earn and «My tower»
+ * asked for other sizes than they ask now (these, with their least). A place remembered exactly where and how large
+ * the system first put it was never set by the person — remembered all the same, as every place is — and would keep
+ * the old smaller window on every device that ever opened it; it is not recalled, so the window opens at its first
+ * place of today. A place the person moved, stretched, stuck to another, put in a bay or on the whole screen stays theirs.
  */
-export function recall(memory: Memory | null, id: string, area: Rect): Recall | null {
+const OLD_FIRST: Readonly<Record<string, Readonly<{ size: Size; min: Size }>>> = {
+  spot: { size: { width: 980, height: 640 }, min: { width: 380, height: 480 } },
+  earn: { size: { width: 680, height: 740 }, min: { width: 380, height: 480 } },
+  berth: { size: { width: 760, height: 640 }, min: { width: 380, height: 520 } },
+};
+
+const clampTo = (value: number, low: number, high: number) => Math.min(Math.max(value, low), high);
+
+/** Where the system first put a window before CITY-242, the n-th new window of a visit: the frame's old rule, kept as it was. */
+function oldFirstRect(size: Size, min: Size, area: Rect, index: number): Rect {
+  const width = clampTo(size.width, Math.min(min.width, area.width), Math.round(area.width * 0.8));
+  const height = clampTo(size.height, Math.min(min.height, area.height), Math.round(area.height * 0.85));
+  const step = index * STEP;
+  return fitRect({ x: Math.round(area.x + (area.width - width) / 2 + step), y: Math.round(area.y + (area.height - height) / 2 + step), width, height }, area, min);
+}
+
+/** What a window asks the frame for: its first size and its least (`WindowSpec`). */
+export type Asked = Readonly<{ size?: Size; min?: Partial<Size> }>;
+
+/**
+ * A remembered place that is only one of the system's old first places, never the person's own: where the old rule put
+ * the window at the size it asked for then (`OLD_FIRST`, or what it asks for now).
+ */
+export function oldFirstPlace(id: string, place: Readonly<{ rect: Rect; full: boolean; bay?: Bay }>, area: Rect, asked: Asked | null = null, others: readonly Rect[] = []): boolean {
+  // Only a window the old rule placed differently from today's: its size changed (`OLD_FIRST`), or it asks for more
+  // height than the old rule's 85 % of this workspace gave it. Any other window's first place is the same now — it is
+  // kept, so a chip still opens its window where it stood.
+  const asks = asked ? { size: asked.size ?? DEFAULT_SIZE, min: { width: Math.max(1, asked.min?.width ?? MIN.width), height: Math.max(1, asked.min?.height ?? MIN.height) } } : null;
+  const old = OLD_FIRST[id] ?? (asks && asks.size.height > Math.round(area.height * 0.85) ? asks : null);
+  if (!old || place.full || place.bay) return false;
+  // Stuck to another window by the person: theirs.
+  if (others.some((other) => stuck(place.rect, other))) return false;
+  const same = (a: Rect, b: Rect) => a.x === b.x && a.y === b.y && a.width === b.width && a.height === b.height;
+  return [0, 1, 2, 3, 4, 5].some((index) => same(oldFirstRect(old.size, old.min, area, index), place.rect));
+}
+
+/**
+ * The place this device remembers for a window, carried onto the given workspace: its bay, stuck with the others it
+ * stuck to, or floating at its own size. One of the system's old first places is not the person's: none (CITY-242).
+ */
+export function recall(memory: Memory | null, id: string, area: Rect, asked: Asked | null = null): Recall | null {
   const place = memory?.places[id];
   if (!memory || !place) return null;
+  const neighbours = Object.entries(memory.places).filter(([other]) => other !== id && !memory.places[other]!.bay).map(([, p]) => p.rect);
+  if (oldFirstPlace(id, place, memory.area, asked, neighbours)) return null;
   if (place.bay) return { rect: carryRect(place.rect, memory.area, area), full: place.full, bay: place.bay };
   const others = Object.entries(memory.places).filter(([other]) => other !== id && !memory.places[other]!.bay).map(([, p]) => p.rect);
   const stuckThere = docked(place.rect, others, memory.area);

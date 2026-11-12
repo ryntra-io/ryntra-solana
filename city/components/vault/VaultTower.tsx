@@ -1,33 +1,40 @@
 'use client';
 
 import { useFrame, useThree } from '@react-three/fiber';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState, type RefObject } from 'react';
 import * as THREE from 'three';
+import { playTick } from '@/city/lib/audio/engine';
 import { SHARED } from '@/city/lib/city/shared';
 import { useCity } from '@/city/lib/city/store';
+import { useWords } from '@/city/lib/i18n/dict';
+import { useMoments } from '@/city/lib/moments/stage';
 import { PALETTE } from '@/city/lib/palette';
-import { layerNow } from '@/city/lib/game/layer';
-import { quarterStore } from '@/city/lib/quarter/store';
+import { useQuarter } from '@/city/lib/quarter/store';
 import { useRun } from '@/city/lib/run/store';
 import { VAULT_OPEN } from '@/city/lib/vault/flag';
-import { FACING, GUARD_LOCAL, ISLET_RADIUS, PLINTH_TOP, TOWER, VAULT_SPOT, flightAt, flightMs, roomView, type Point, type View } from '@/city/lib/vault/place';
+import { FACING, GUARD_LOCAL, ISLET_RADIUS, PLINTH_TOP, TOWER, VAULT_SPOT, flightAt, flightMs, roomView, signOnScreen, type Point, type SignScreen, type View } from '@/city/lib/vault/place';
 import { guardianOf, useVault, vaultStore } from '@/city/lib/vault/store';
+import { enterVault } from '@/city/lib/vault/enter';
+import { placeVault, VAULT_TOP } from '@/city/lib/vault/tap';
+import { VaultGlyph } from './glyphs';
+import { SceneHtml } from '../city/SceneHtml';
 import { Guardian } from './Guardian';
 import { createArmourMaterial, createCoreMaterial, glow } from './materials';
+import v from './vault.module.css';
+import { VAULT } from './words';
 
 /** The armoured base the door is cut into, and where the glass of the core starts above it. */
 const BASE_H = 4.2;
 /** The door: a ring of stored sun around a steel disc, its centre this high. */
 const DOOR = { radius: 1.55, y: PLINTH_TOP + 1.85 } as const;
 const PILLARS = 8;
-/** The top of what a tap can hit: the tower, its cap and its lamp. */
-const TOWER_TOP = PLINTH_TOP + TOWER.height + 4;
 
 /**
  * The Vault in the city, once its flag is open: an armoured octagonal tower on its own islet, a core of stored sun
- * showing between the plates, the door turned to the city and the guard beside it. A tap on it opens the room; the
- * camera flies to the door and gives the city its view back when the room closes. Each attempt sends a pulse of light
- * from the vault across the city; a crack throws a beam into the sky.
+ * showing between the plates, the door turned to the city and the guard beside it, its name over it. A tap on the
+ * tower or its name opens the room — the same room as «Arena → Vault» (CITY-241); the camera flies to the door and
+ * gives the city its view back when the room closes. Each attempt sends a pulse of light from the vault across the
+ * city; a crack throws a beam into the sky.
  */
 export function VaultTower() {
   if (!VAULT_OPEN) return null;
@@ -44,6 +51,13 @@ function Vault() {
     return () => clearTimeout(timer);
   }, [phase]);
   const guard = guardianOf(phase, Date.now());
+  // The city's tap meets the tower while it stands in the city's view (`city/lib/vault/tap.ts`, asked by `CameraRig`):
+  // never while a quarter is built.
+  const away = useQuarter((st) => st.mode !== 'city');
+  useEffect(() => {
+    placeVault(!away);
+    return () => placeVault(false);
+  }, [away]);
 
   return (
     <group position={[VAULT_SPOT.x, 0, VAULT_SPOT.z]} rotation-y={FACING}>
@@ -51,9 +65,103 @@ function Vault() {
       <group position={[GUARD_LOCAL.side, PLINTH_TOP, GUARD_LOCAL.ahead]}>
         <Guardian state={guard} />
       </group>
-      <VaultTap />
+      <VaultSign />
       <VaultCamera />
     </group>
+  );
+}
+
+const HIDDEN = { visibility: 'hidden' } as const;
+
+/**
+ * The box at the screen's foot the sign keeps over: the Deck and, while it stands, the first action's banner just over
+ * it (on a phone the sign at the edge went under the banner, and a tap on it reached the banner). Read once a change,
+ * not every frame.
+ */
+function useDeckBox(): RefObject<SignScreen['deck']> {
+  const box = useRef<SignScreen['deck']>(null);
+  useEffect(() => {
+    let observer: ResizeObserver | null = null;
+    let watched: Element | null = null;
+    const read = () => {
+      const deck = document.querySelector('[data-city-deck]');
+      if (deck !== watched) {
+        observer?.disconnect();
+        watched = deck;
+        if (deck && typeof ResizeObserver !== 'undefined') {
+          observer = new ResizeObserver(read);
+          observer.observe(deck);
+        }
+      }
+      const r = deck?.getBoundingClientRect();
+      const h = document.querySelector('[data-city-hint]')?.getBoundingClientRect();
+      const boxes = [r && r.width > 0 && r.height > 0 && deck?.getAttribute('aria-hidden') !== 'true' ? r : null, h && h.width > 0 && h.height > 0 ? h : null].filter((b) => b !== null && b !== undefined);
+      box.current = boxes.length ? { left: Math.min(...boxes.map((b) => b.left)), right: Math.max(...boxes.map((b) => b.right)), top: Math.min(...boxes.map((b) => b.top)) } : null;
+    };
+    read();
+    // The Deck comes with the HUD after the scene: looked for again a few times, and on every resize.
+    const timers = [600, 2_000, 6_000].map((ms) => window.setTimeout(read, ms));
+    // A Deck that came late or was drawn again, a banner that came or went: found within a second.
+    const again = window.setInterval(read, 1_000);
+    window.addEventListener('resize', read);
+    return () => {
+      timers.forEach((t) => window.clearTimeout(t));
+      window.clearInterval(again);
+      window.removeEventListener('resize', read);
+      observer?.disconnect();
+    };
+  }, []);
+  return box;
+}
+
+/**
+ * The vault's name over its tower: one tap opens the room. It steps aside inside the room, during a run or a filming,
+ * and while a quarter is built; kept mounted and hidden then, so its own root is never torn down mid-render.
+ */
+function VaultSign() {
+  const w = useWords(VAULT);
+  const inside = useVault((st) => st.open);
+  const running = useRun((st) => st.phase !== 'off');
+  const filming = useMoments((st) => st.filming !== null);
+  const away = useQuarter((st) => st.mode !== 'city');
+  const quiet = inside || running || filming || away;
+  // Where the sign stands (CITY-243): over its tower, never under the Deck, and at the screen's edge on the Vault's side
+  // while the tower is outside the frame — an arrow on it says which way.
+  const deck = useDeckBox();
+  const sign = useRef<HTMLButtonElement>(null);
+  const place = useMemo(() => {
+    const at = new THREE.Vector3();
+    return (el: THREE.Object3D, camera: THREE.Camera, size: { width: number; height: number }) => {
+      at.setFromMatrixPosition(el.matrixWorld).project(camera);
+      // Every screen keeps it: a phone's first frame has the Vault outside it, a desk's idle sway carries it past the edge.
+      const screen = { width: size.width, height: size.height, deck: deck.current, edge: true };
+      const spot = signOnScreen({ x: ((at.x + 1) / 2) * size.width, y: ((1 - at.y) / 2) * size.height }, screen);
+      const side = String(spot.side);
+      if (sign.current && sign.current.dataset.side !== side) sign.current.dataset.side = side;
+      return [spot.x, spot.y];
+    };
+  }, [deck]);
+  return (
+    <SceneHtml position={[0, VAULT_TOP + 1.2, 0]} center zIndexRange={[3, 0]} style={quiet ? HIDDEN : undefined} calculatePosition={place}>
+      <button
+        ref={sign}
+        type="button"
+        className={v.sign}
+        aria-label={w.vault}
+        data-vault-sign=""
+        tabIndex={quiet ? -1 : undefined}
+        onClick={() => {
+          if (useCity.getState().sound) playTick();
+          enterVault();
+        }}
+      >
+        <span className={v.signPlate}>
+          <VaultGlyph />
+          {w.vault}
+          <span className={v.signArrow} aria-hidden="true" />
+        </span>
+      </button>
+    </SceneHtml>
   );
 }
 
@@ -151,51 +259,6 @@ function Tower() {
       <mesh ref={beam} geometry={parts.beamGeo} material={parts.beam} position={[0, PLINTH_TOP + TOWER.height, 0]} visible={false} />
     </group>
   );
-}
-
-/**
- * A tap on the vault opens its room. The vault listens before the city's own tap (it is mounted first), and a tap it
- * takes is not passed on, so no tower behind it gets picked.
- */
-function VaultTap() {
-  const gl = useThree((s) => s.gl);
-  const camera = useThree((s) => s.camera);
-  useEffect(() => {
-    const el = gl.domElement;
-    const raycaster = new THREE.Raycaster();
-    const ndc = new THREE.Vector2();
-    const box = new THREE.Box3();
-    const hit = new THREE.Vector3();
-    let down: { x: number; y: number; t: number } | null = null;
-    const onDown = (e: PointerEvent) => {
-      down = { x: e.clientX, y: e.clientY, t: performance.now() };
-    };
-    const onUp = (e: PointerEvent) => {
-      const d = down;
-      down = null;
-      // The vault is a door of the Play layer (CITY-81): in City it is scenery, and the tap goes on to the city.
-      if (!d || useRun.getState().phase !== 'off' || quarterStore.getState().mode !== 'city' || layerNow() !== 'play') return;
-      if (Math.hypot(e.clientX - d.x, e.clientY - d.y) > 8 || performance.now() - d.t > 350) return;
-      const rect = el.getBoundingClientRect();
-      ndc.set(((e.clientX - rect.left) / rect.width) * 2 - 1, -((e.clientY - rect.top) / rect.height) * 2 + 1);
-      raycaster.setFromCamera(ndc, camera);
-      const r = ISLET_RADIUS;
-      box.set(new THREE.Vector3(VAULT_SPOT.x - r, 0, VAULT_SPOT.z - r), new THREE.Vector3(VAULT_SPOT.x + r, TOWER_TOP, VAULT_SPOT.z + r));
-      if (!raycaster.ray.intersectBox(box, hit)) return;
-      e.stopImmediatePropagation();
-      // Already inside: a tap on the vault keeps the room as it is.
-      if (vaultStore.getState().open) return;
-      useCity.getState().select(null);
-      void vaultStore.getState().enter();
-    };
-    el.addEventListener('pointerdown', onDown);
-    el.addEventListener('pointerup', onUp);
-    return () => {
-      el.removeEventListener('pointerdown', onDown);
-      el.removeEventListener('pointerup', onUp);
-    };
-  }, [gl, camera]);
-  return null;
 }
 
 /** The part of the city's camera controls the room borrows. */

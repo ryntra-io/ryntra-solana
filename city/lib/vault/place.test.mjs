@@ -37,3 +37,23 @@ test("the flight to the door starts and ends where it should and never jumps", (
   const ms = flightMs(from, to);
   assert.ok(ms >= 1200 && ms <= 2400, `${ms} ms`);
 });
+
+test("the sign never stands under the Deck, and on an upright phone never off the screen (CITY-243)", async () => {
+  const { signOnScreen, SIGN_HALF } = await import("./place.ts");
+  const phone = { width: 390, height: 844, deck: { left: 16, right: 374, top: 755 }, edge: true };
+  // The eye pass of 11.11: the first frame put the sign at x 838, a drag at 45 × 797 — under the Deck.
+  const first = signOnScreen({ x: 838, y: 677 }, phone);
+  assert.deepEqual(first, { x: 390 - SIGN_HALF.x, y: 677, side: 1 });
+  const dragged = signOnScreen({ x: 45, y: 797 }, phone);
+  assert.equal(dragged.side, -1);
+  assert.equal(dragged.x, SIGN_HALF.x);
+  assert.ok(dragged.y <= 755 - SIGN_HALF.y, `${dragged.y} stands over the Deck`);
+  assert.deepEqual(signOnScreen({ x: 200, y: 430 }, phone), { x: 200, y: 430, side: 0 });
+  // A desk: the sign stays where its tower is, off the screen too; only over the Deck's own span is it lifted.
+  const desk = { width: 1440, height: 900, deck: { left: 390, right: 1050, top: 808 }, edge: false };
+  assert.deepEqual(signOnScreen({ x: 1320, y: 611 }, desk), { x: 1320, y: 611, side: 0 });
+  assert.deepEqual(signOnScreen({ x: 1600, y: 611 }, desk), { x: 1600, y: 611, side: 0 });
+  assert.equal(signOnScreen({ x: 700, y: 860 }, desk).y, 808 - SIGN_HALF.y);
+  assert.equal(signOnScreen({ x: 1300, y: 860 }, desk).y, 860);
+  assert.deepEqual(signOnScreen({ x: 200, y: 900 }, { ...phone, deck: null }), { x: 200, y: 844 - SIGN_HALF.y, side: 0 });
+});

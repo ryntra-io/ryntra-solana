@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useId, useState } from 'react';
+import type { BudgetPresetId } from '@/lib/mandate/presets';
 import { MANDATE_CHAIN, MANDATE_NET, MANDATE_PRESETS, useMandate, presetLimits } from '@/city/lib/bots/mandate';
 import { agentCoins, bookNow } from '@/city/lib/command/doors';
 import { agentFeeFigures } from '@/city/lib/bots/agent-fee';
@@ -18,9 +19,12 @@ import { launchProposal, readAgentView, readPaper, signTrade, startPaper, stopTr
 import { AGENT_REPORT, AGENT_REPORT_OPEN, holdFigure, hourText, resultRaw, solFigure, toneOf, worthTelling } from '@/city/lib/autopilot/report';
 import { useAgentReport } from '@/city/lib/autopilot/report-client';
 import { AUTOPILOT } from '@/city/lib/autopilot/words';
+import { openOrderOf, tapCancelOrders, tapFreeze, useControls, type ControlNote } from '@/city/lib/autopilot/controls';
+import { booksLine, canWithdraw, missionFace, tradeWord } from '@/city/lib/autopilot/mission';
 import { startWallets, useWallet } from '@/city/lib/trade/wallet';
 import { useShareCard } from '../launch/useShareCard';
-import { WalletLine, WalletPicker } from '../trade/WalletParts';
+import { WalletLine } from '../trade/WalletParts';
+import { AddSol, CardWalletPicker, useFundsShort } from '../crew/CardWallet';
 import { AgentGlyph, ChevronGlyph } from '../instruct/glyphs';
 import i from '../instruct/instruct.module.css';
 import s from './autopilot.module.css';
@@ -62,7 +66,7 @@ export function useAgentView(): Readonly<{ record: ReturnType<typeof useMandate.
 /** Where the engine sells what the agent bought: devnet, by the person's one tap (CITY-187); mainnet's is CITY-195. */
 const SELLS = MANDATE_NET === 'devnet';
 
-function Details({ lines, said, tested }: { lines: readonly string[]; said: string | null; tested?: string | null }) {
+function Details({ lines, said, tested, trades }: { lines: readonly string[]; said: string | null; tested?: string | null; trades?: readonly Readonly<{ key: string; word: string; amount: string; tone: string }>[] }) {
   const w = useWords(AUTOPILOT);
   const [open, setOpen] = useState(false);
   const id = useId();
@@ -87,6 +91,19 @@ function Details({ lines, said, tested }: { lines: readonly string[]; said: stri
               <li key={line}>{line}</li>
             ))}
           </ul>
+          {trades?.length ? (
+            <div className={s.trades} data-agent-trades="">
+              <dt>{w.lastTrades}</dt>
+              <ul>
+                {trades.map((trade) => (
+                  <li key={trade.key} data-trade={trade.tone}>
+                    <span>{trade.word}</span>
+                    <b>{trade.amount}</b>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ) : null}
           {tested ? (
             <p className={s.tested} data-autopilot-tested="">
               {tested}
@@ -100,17 +117,35 @@ function Details({ lines, said, tested }: { lines: readonly string[]; said: stri
   );
 }
 
-/** Connect, then the one button. */
-function SignButton({ label, busy, disabled, onPress }: { label: string; busy: boolean; disabled: boolean; onPress: (who: { wallet: string; owner: string }) => void }) {
+/**
+ * Connect, then the one button. CITY-222: the one wallet this browser has connects on the tap, without a list; with
+ * none, the way out to get one comes back to this card; a wallet that cannot hold the budget is offered «Add SOL».
+ */
+function SignButton({ label, busy, disabled, onPress, said, preset }: { label: string; busy: boolean; disabled: boolean; onPress: (who: { wallet: string; owner: string }) => void; said: string; preset: BudgetPresetId | null }) {
   const w = useWords(AUTOPILOT);
   const connection = useWallet((st) => st.connection);
+  const connecting = useWallet((st) => st.connecting);
   const [picking, setPicking] = useState(false);
-  if (!connection && picking) return <WalletPicker onBack={() => setPicking(false)} />;
+  const funds = useFundsShort(preset);
+  if (!connection && picking) return <CardWalletPicker said={said} onBack={() => setPicking(false)} />;
   if (!connection) {
+    const connect = () => {
+      const { wallets, connect: open } = useWallet.getState();
+      if (wallets.length === 1) void open(wallets[0]!.name);
+      else setPicking(true);
+    };
     return (
-      <button type="button" className={i.action} onClick={() => setPicking(true)}>
+      <button type="button" className={`${i.action} ${connecting ? i.waiting : ''}`} disabled={connecting !== null} onClick={connect} data-agent-connect="">
         {w.connect}
       </button>
+    );
+  }
+  if (funds.short && funds.about && !busy) {
+    return (
+      <>
+        <AddSol about={funds.about} className={i.action} lineClass={i.notice} />
+        <WalletLine />
+      </>
     );
   }
   return (
@@ -121,6 +156,11 @@ function SignButton({ label, busy, disabled, onPress }: { label: string; busy: b
       <WalletLine />
     </>
   );
+}
+
+/** CITY-70: what a control did, in one line. */
+function controlText(w: W, note: ControlNote): string {
+  return { frozen: w.noteFrozen, resumed: w.noteResumed, cancelled: w.noteCancelled, nothing: w.noteNothingOpen, walletNo: w.noteWalletNo, refused: w.noteRefused, unreachable: w.noteUnreachable }[note];
 }
 
 function noteText(w: W, kind: 'on' | 'stopped' | 'walletNo' | 'refused' | 'unreachable'): string {
@@ -204,7 +244,7 @@ function TradeStart({ said }: { said: string }) {
       <div className={i.dock}>
         {rhythm ? <p className={i.fee}>{w.limits(sol(rhythm.perTrade, lang), sol(rhythm.perDay, lang), rhythm.days)}</p> : null}
         <p className={i.fee} data-autopilot-fee="">{w.fee(fee.low, fee.high)}</p>
-        <SignButton label={w.sign} busy={busy} disabled={!preset || (needsCoin && !coin)} onPress={(who) => void signTrade(who)} />
+        <SignButton label={w.sign} busy={busy} disabled={!preset || (needsCoin && !coin)} onPress={(who) => void signTrade(who)} said={said} preset={preset} />
         {tested && coin && preset ? (
           <button type="button" className={s.quiet} onClick={() => startPaper()} data-autopilot-practice="">
             {w.practice}
@@ -276,7 +316,7 @@ function PaperFace({ said }: { said: string }) {
         )}
       </div>
       <div className={i.dock}>
-        <SignButton label={w.goLive} busy={busy} disabled={!preset} onPress={goLive} />
+        <SignButton label={w.goLive} busy={busy} disabled={!preset} onPress={goLive} said={said} preset={preset} />
         <button type="button" className={s.quiet} onClick={() => useAutopilot.getState().setPaper(null)} data-autopilot-end-practice="">
           {w.endPractice}
         </button>
@@ -296,6 +336,8 @@ export function TradeWorking({ said }: { said: string | null }) {
   const status = useMandate((st) => (record ? st.status[record.policy] : undefined));
   const connection = useWallet((st) => st.connection);
   const { share, making, saved, label } = useShareCard();
+  const controlBusy = useControls((st) => st.busy);
+  const controlNote = useControls((st) => st.note);
   if (!record) return null;
   const result = view?.result ?? null;
   /* CITY-197: the result after every fee, when the book counted them; plain holding beside it. */
@@ -305,8 +347,21 @@ export function TradeWorking({ said }: { said: string | null }) {
   const tone = earned === null ? undefined : BigInt(earned) > 0n ? 'up' : BigInt(earned) < 0n ? 'down' : undefined;
   const earnedText = earned !== null ? solFigure(earned, lang) : null;
   const left = status?.budgetLamports ? sol(Number(status.budgetLamports) / 1e9, lang) : null;
+  /* CITY-70: what it is doing now; the next buy from the engine's own rhythm when it told it. */
+  const face = missionFace(view, w);
+  const frozen = view?.frozen === true;
   const lastAt = view?.last.find((trade) => trade.ok)?.at ?? null;
-  const nextHours = view && lastAt !== null ? Math.max(0, (lastAt + view.everyMs - Date.now()) / 3_600_000) : null;
+  const nextAt = face?.nextAt ?? (view && lastAt !== null ? lastAt + view.everyMs : null);
+  const nextHours = nextAt !== null ? Math.max(0, (nextAt - Date.now()) / 3_600_000) : null;
+  const order = openOrderOf(view);
+  const who = connection ? { wallet: connection.wallet, owner: connection.address } : null;
+  const money = booksLine(view?.books, w, (raw) => digits(solOf(raw, lang)!, lang));
+  /* Each of its last trades by what it is: an unknown one is «Confirming», with the amount it may have spent. */
+  const trades = (view?.last ?? []).map((trade, index) => {
+    const tone = trade.state ?? (trade.ok ? 'ok' : 'failed');
+    const amount = tone === 'ok' && trade.spentRaw !== '0' ? `${digits(solOf(trade.spentRaw, lang)!, lang)} SOL` : '';
+    return { key: `${trade.at}-${index}`, word: tradeWord(trade.state, trade.ok, w), amount, tone };
+  });
   const card = view && result ? agentCard({ coin: { token: view.receiveMint, symbol: symbolOf(view), logo: false }, trades: result.trades, spentRaw: result.spentRaw, worthRaw: net ? (net.netRaw === null ? null : (BigInt(result.spentRaw) + BigInt(net.netRaw)).toString()) : result.worthRaw, tag: cardTag(MANDATE_CHAIN, false) }) : null;
   const plan = planOfText(view?.plan);
   const line = planLine(plan, w, lang);
@@ -321,14 +376,26 @@ export function TradeWorking({ said }: { said: string | null }) {
           <AgentGlyph />
         </span>
         <div className={i.heroText}>
-          {active ? <span className={s.live}>{w.working}</span> : <span className={i.kicker}>{w.kicker}</span>}
+          {face ? (
+            <span className={face.tone === 'live' && active ? s.live : s.state} data-mission={face.tone}>
+              {face.text}
+            </span>
+          ) : active ? (
+            <span className={s.live}>{w.working}</span>
+          ) : (
+            <span className={i.kicker}>{w.kicker}</span>
+          )}
           <h2 className={i.headline} data-autopilot-budget="">{budget.headline}</h2>
           {view && budget.size ? <p className={i.sub} data-autopilot-size="">{budget.size}</p> : null}
           {line ? <p className={s.plan}>{line}</p> : null}
-          {result && result.trades > 0 ? (
+          {face?.line ? (
+            <p className={i.sub} data-mission-line="">
+              {face.line}
+            </p>
+          ) : result && result.trades > 0 ? (
             <p className={i.sub}>
               {w.tradesDone(result.trades)}
-              {active && nextHours !== null ? ` · ${digits(w.next((Math.round(nextHours * 10) / 10).toString()), lang)}` : ''}
+              {active && !frozen && nextHours !== null ? ` · ${digits(w.next((Math.round(nextHours * 10) / 10).toString()), lang)}` : ''}
             </p>
           ) : left ? (
             <p className={i.sub}>{digits(left, lang)} SOL</p>
@@ -355,19 +422,31 @@ export function TradeWorking({ said }: { said: string | null }) {
         )}
       </div>
       {AGENT_REPORT_OPEN ? <AgentToday view={view} /> : null}
-      {ended && result && result.trades > 0 ? <p className={i.notice}>{ended}</p> : null}
+      {ended && result && result.trades > 0 && !face?.line ? <p className={i.notice}>{ended}</p> : null}
       {saved ? <p className={i.notice}>{w.saved}</p> : null}
+      {controlNote ? (
+        <p className={controlNote === 'refused' || controlNote === 'unreachable' ? i.problem : i.notice} data-control-note={controlNote}>
+          {controlText(w, controlNote)}
+        </p>
+      ) : null}
       <div className={i.dock}>
-        <div className={s.pair}>
-          <button type="button" className={s.second} disabled={!card || making !== null} onClick={() => card && void share('agent', card, `https://${BRAND.domain}`)} data-autopilot-share="">
-            {label}
+        <button type="button" className={s.second} disabled={!card || making !== null} onClick={() => card && void share('agent', card, `https://${BRAND.domain}`)} data-autopilot-share="">
+          {label}
+        </button>
+        {/* CITY-70: three controls, each its own and one tap; only «Cancel orders» and «Withdraw» ask the wallet to sign. */}
+        <div className={s.controls} role="group" aria-label={w.controls}>
+          <button type="button" className={s.control} aria-pressed={frozen} disabled={!who || !live || controlBusy !== null || busy} aria-busy={controlBusy === 'freeze'} onClick={() => who && void tapFreeze(who, record, !frozen)} data-control="freeze">
+            {frozen ? w.resume : w.freeze}
           </button>
-          <button type="button" className={s.second} disabled={!live || busy || !connection} aria-busy={busy} onClick={() => connection && void stopTrade({ wallet: connection.wallet, owner: connection.address }, record)} data-autopilot-stop="">
-            {busy ? w.stopping : w.stop}
+          <button type="button" className={s.control} disabled={!who || !order || controlBusy !== null || busy} aria-busy={controlBusy === 'cancel'} onClick={() => who && order && void tapCancelOrders(who, record, order)} data-control="cancel">
+            {controlBusy === 'cancel' ? w.stopping : w.cancelOrders}
+          </button>
+          <button type="button" className={s.control} data-tone="out" disabled={!who || !canWithdraw(live, view?.books) || busy || controlBusy !== null} aria-busy={busy} onClick={() => who && void stopTrade(who, record)} data-control="withdraw" data-autopilot-stop="">
+            {busy ? w.stopping : w.withdraw}
           </button>
         </div>
       </div>
-      <Details said={said} lines={[...planRules(plan, w, lang, null, SELLS), w.factNet, w.factHold, w.fact1, w.fact2, w.fact3]} />
+      <Details said={said} trades={trades} lines={[...(money ? [money] : []), ...planRules(plan, w, lang, null, SELLS), w.factControls, w.factNet, w.factHold, w.fact1, w.fact2, w.fact3]} />
     </>
   );
 }
@@ -377,6 +456,7 @@ function pausedText(w: W, why: string | null, plan: ReturnType<typeof planOfText
   if (why === 'take' && plan?.exit?.takeBps) return w.pausedTake(pctText(plan.exit.takeBps, lang));
   if (why === 'stop' && plan?.exit?.stopBps) return w.pausedStop(pctText(plan.exit.stopBps, lang));
   if (why === 'late') return w.pausedLate;
+  if (why === 'mismatch') return w.pausedMismatch;
   return w.paused;
 }
 

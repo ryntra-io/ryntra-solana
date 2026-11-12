@@ -4,7 +4,7 @@ import { hallOpen, readHallView, type HallBoardId, type HallView } from './hall.
 /**
  * The Hall of Fame in the browser: the week's boards as `/api/city/hall` answers them, read again every few minutes
  * while the page is seen, and the panel that shows them as a table. Closed for people until the deployment's switch
- * says `open`; a development build can stand it in with `?hall=stub` (or `?hall=empty`), every screen saying so.
+ * says `open`; a development build can stand it in with `?hall=stub` (or `month`, `all`, `empty`), every screen saying so.
  */
 
 export const HALL_SWITCH = hallOpen(process.env.NEXT_PUBLIC_RYNTRA_CITY_HALL);
@@ -39,15 +39,19 @@ export const useHall = create<HallState>((set) => ({
   close: () => set({ panel: false }),
 }));
 
+/* Development only, as `window.__city`: the shots open the panel on a board without a tap (`hall-230-shots.mjs`). */
+if (typeof window !== 'undefined' && process.env.NODE_ENV !== 'production') Object.assign(window, { __hall: useHall });
+
 /** Whether the Hall stands in the city now: open here (or stood in), and read. */
 export const hallShown = (state: Pick<HallState, 'status' | 'view'>) => state.status === 'live' && state.view !== null;
 
 /* The development stand-in, never in a production bundle. */
 const loadStub = process.env.NODE_ENV === 'production' ? null : () => import('./hall-stub.ts');
-const stubAsked = (): 'stub' | 'empty' | null => {
+const STUB_ASKED = ['stub', 'month', 'all', 'empty'] as const;
+const stubAsked = (): (typeof STUB_ASKED)[number] | null => {
   if (typeof window === 'undefined') return null;
   const asked = new URLSearchParams(window.location.search).get('hall');
-  return asked === 'stub' || asked === 'empty' ? asked : null;
+  return STUB_ASKED.find((kind) => kind === asked) ?? null;
 };
 
 /** One read of the Hall: its answer, `closed` when the deployment keeps it shut, or null when nothing whole came. */
@@ -78,7 +82,7 @@ export function startHall(): () => void {
   const asked = stubAsked();
   if (loadStub && asked) {
     void loadStub().then((stub) => {
-      if (!stopped) useHall.setState({ status: 'live', stub: true, view: stub.stubHall(Date.now(), asked === 'empty') });
+      if (!stopped) useHall.setState({ status: 'live', stub: true, view: stub.stubHall(Date.now(), asked) });
     });
     return () => {
       stopped = true;

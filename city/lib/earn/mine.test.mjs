@@ -72,6 +72,8 @@ test("a pier's fees and its SOL-2b result against holding come to SOL at today's
   assert.equal(row.status, "in-range");
   assert.equal(row.feesLamports, 30_000_000n);
   assert.equal(row.vsHoldLamports, -70_000_000n);
+  // CITY-243: its range goes with it — two positions of one pair are told apart by it in «Mine».
+  assert.deepEqual([row.lower, row.upper], [view().lower, view().upper]);
   const out = pierRow(view({ rangeState: "above" }), null, 200);
   assert.equal(out.status, "out-of-range");
   assert.equal(out.vsHoldLamports, null, "no entry, no result");

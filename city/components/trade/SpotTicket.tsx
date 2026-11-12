@@ -1,10 +1,13 @@
 'use client';
 
-import { useEffect, useRef, useState, type ReactNode } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState, type ReactNode } from 'react';
 import { crossesMarket, distanceFromMarketPercent, limitAmounts, TRIGGER_V1_MIN_ORDER_USD, typedPrice } from '@/lib/solana/limits/model';
 import { explorerTxUrl } from '@/lib/solana/explorer';
 import { dateText, digits, useWords } from '@/city/lib/i18n/dict';
 import { fieldText, fieldValue, plainFigure } from '@/city/lib/i18n/figures';
+import { MONEY_OPEN } from '@/city/lib/money/flag';
+import { openMoney } from '@/city/lib/money/open';
+import { dockNudge } from '@/city/lib/trade/dock-edge';
 import { decimalsOf } from '@/city/lib/trade/figures';
 import { formatBps, formatUnits, ticker } from '@/city/lib/trade/format';
 import type { LimitIntent, LimitReview } from '@/city/lib/trade/limits';
@@ -14,9 +17,10 @@ import { engineAmount, enginePrice, pairKey, reviewKey, SPOT_BUSY, useSpot } fro
 import { expiryWords, STOP_EXPIRIES, type StopCoin } from '@/city/lib/trade/stops';
 import { useTrade, type Choice, type TowerRef } from '@/city/lib/trade/store';
 import { unitOf } from '@/city/lib/trade/tiles';
+import { offersTopUp, problemLine } from '@/city/lib/trade/top-up';
 import { useWallet } from '@/city/lib/trade/wallet';
 import { DockGet } from './DockGet';
-import { useWalletName, WalletLine, WalletPicker } from './WalletParts';
+import { useHoldingsWatch, useWalletName, WalletLine, WalletPicker } from './WalletParts';
 import { riskWords, SPOT, TRADE } from './words';
 import s from './trade.module.css';
 
@@ -41,6 +45,9 @@ export function SpotTicket({ tower, choice, mode, getChips }: { tower: TowerRef;
   return <SpotFields tower={tower} choice={choice} mode={mode} getChips={getChips} />;
 }
 
+/** How long, after the ticket opens on Limit or Stop, its dock's edge is watched for a row it cuts (CITY-242). */
+const DOCK_SETTLE_MS = 1_500;
+
 function SpotFields({ tower, choice, mode, getChips }: { tower: TowerRef; choice: Choice; mode: 'limit' | 'stop'; getChips: ReactNode }) {
   const w = useWords(SPOT);
   const t = useWords(TRADE);
@@ -58,11 +65,48 @@ function SpotFields({ tower, choice, mode, getChips }: { tower: TowerRef; choice
   const [picking, setPicking] = useState(false);
   const [details, setDetails] = useState(false);
   const getRef = useRef<HTMLDivElement>(null);
+  // The ticket as it opens on Limit or Stop: the pinned dock's edge cuts no row in half (CITY-242, Д3 — on a phone Stop's
+  // two lines of terms cut «You pay … · You have 0 SOL»). The card moves a few pixels in its own scroller, nothing else.
+  // The ticket's column is the «You get» row's own; the dock stands in it.
+  useLayoutEffect(() => {
+    const column = getRef.current?.parentElement;
+    const dock = column ? Array.from(column.children).find((el) => el.classList.contains(s.dock!)) : null;
+    if (!dock || !column) return;
+    const span = (el: Element) => {
+      const b = el.getBoundingClientRect();
+      return { top: b.top, bottom: b.bottom };
+    };
+    const check = () => {
+      let scroller: HTMLElement | null = column;
+      while (scroller && !(scroller.scrollHeight > scroller.clientHeight + 1 && /auto|scroll/.test(getComputedStyle(scroller).overflowY))) scroller = scroller.parentElement;
+      if (!scroller) return;
+      const rows = Array.from(column.children)
+        .filter((el) => el !== dock)
+        .map(span);
+      const tabs = column.querySelector('[role="tablist"]');
+      const nudge = dockNudge(rows, dock.getBoundingClientRect().top, span(scroller), tabs ? span(tabs) : null);
+      if (nudge) scroller.scrollTop += nudge;
+    };
+    check();
+    // The dock grows as the ticket settles — the price arrives, the terms take their second line: the edge is looked at
+    // again while it opens, never later, when a growing dock follows the person's own scroll.
+    const watch = typeof ResizeObserver === 'undefined' ? null : new ResizeObserver(() => check());
+    watch?.observe(dock);
+    const settle = setTimeout(() => watch?.disconnect(), DOCK_SETTLE_MS);
+    return () => {
+      watch?.disconnect();
+      clearTimeout(settle);
+    };
+  }, [mode]);
 
   const base = tower.mint;
   const quoteMint = choice.pay.mint;
   const key = pairKey(side, base, quoteMint);
   const idle = phase === 'idle';
+  // A connected wallet with nothing to buy with (CITY-239): the one action is the way to get some, as on the market
+  // ticket; its balance is read again while the ticket offers it. How an order is built is not touched.
+  const topUp = offersTopUp({ connected: Boolean(connection), side, max: choice.sizing.max, moneyOpen: MONEY_OPEN });
+  useHoldingsWatch(topUp);
 
   // The pair's price: read when the ticket opens on a pair, and again while it stays open.
   useEffect(() => {
@@ -106,9 +150,10 @@ function SpotFields({ tower, choice, mode, getChips }: { tower: TowerRef; choice
   const getUnit = side === 'buy' ? coin : unit;
   const getFigure = getRaw && getDecimals !== null && !choice.problem ? `${mode === 'stop' ? '≈ ' : ''}${digits(formatUnits(getRaw, getDecimals, 'down'))}` : null;
 
+  // Beside «Add…» neither the balance's sentence nor a remark on a price that cannot be used yet is said.
   const problem =
-    choice.problem?.text ??
-    (crosses ? (side === 'buy' ? w.atOrAbove : w.atOrBelow) : wrongSide ? (side === 'sell' ? w.setBelow : w.setAbove) : null);
+    problemLine(choice.problem, topUp) ??
+    (topUp ? null : crosses ? (side === 'buy' ? w.atOrAbove : w.atOrBelow) : wrongSide ? (side === 'sell' ? w.setBelow : w.setAbove) : null);
 
   const priceLabel = mode === 'limit' ? (side === 'buy' ? w.buyAt : w.sellAt) : side === 'sell' ? w.sellIfFalls : w.buyIfRises;
 
@@ -243,6 +288,8 @@ function SpotFields({ tower, choice, mode, getChips }: { tower: TowerRef; choice
             ready={mode === 'limit' ? Boolean(intent) && !problem : Boolean(pair && choice.amountRaw && typedPriceOk && priced) && !problem}
             reviewed={Boolean(shown)}
             needsPrice={!typedPriceOk}
+            topUp={topUp}
+            unit={choice.spendUnit}
             onPress={() => void tap()}
           />
         </div>
@@ -389,6 +436,8 @@ function SpotAction({
   ready,
   reviewed,
   needsPrice,
+  topUp,
+  unit,
   onPress,
 }: {
   mode: 'limit' | 'stop';
@@ -397,6 +446,10 @@ function SpotAction({
   ready: boolean;
   reviewed: boolean;
   needsPrice: boolean;
+  /** An empty wallet: the button is «Add SOL» — Money's top-up — where a dead «Set a price» stood (CITY-239). */
+  topUp: boolean;
+  /** What the order spends: the coin the top-up names. */
+  unit: string;
   onPress: () => void;
 }) {
   const w = useWords(SPOT);
@@ -413,6 +466,11 @@ function SpotAction({
   else if (phase === 'sending') [label, disabled, waiting] = [w.placing, true, true];
   else if (connecting) [label, disabled, waiting] = [t.connecting, true, true];
   else if (!connection) [label, disabled] = [t.connectWallet, false];
+  else if (topUp) return (
+    <button className={`${s.display} ${s.action}`} onClick={() => openMoney('topup')} data-trade-topup="">
+      {t.addOf(unit)}
+    </button>
+  );
   // The one thing missing, said on the button itself.
   else if (needsPrice) [label, disabled] = [mode === 'stop' ? w.setStopPrice : w.setPrice, true];
   return (

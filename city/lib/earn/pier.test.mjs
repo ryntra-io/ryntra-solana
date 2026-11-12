@@ -18,6 +18,7 @@ import {
   pierRange,
   pierSplit,
   solPiers,
+  rangeMark,
   rangePrices,
   solShort,
   unitsShort,
@@ -160,6 +161,13 @@ test("a range keeps the places that tell its two prices apart", () => {
   assert.deepEqual(rangePrices(181.234, 186.91), { low: "181.23", high: "186.91" });
   assert.deepEqual(rangePrices(1.26025, 1.26035), { low: "1.26025", high: "1.26035" });
   assert.equal(unitsShort(1_586_923_748n, 9), "1.587");
+});
+
+test("a range is one mark, written out, for two positions of one pair (CITY-243)", () => {
+  assert.equal(rangeMark(1.25829, 1.26232), "1.2583 – 1.2623");
+  assert.equal(rangeMark(3.7e-7, 4.1e-7), "0.00000037 – 0.00000041");
+  assert.equal(rangeMark(null, 2), null);
+  assert.equal(rangeMark(2, 2), null);
 });
 
 test("a goal is a shape the engine builds, and even stays the body it always was (CITY-210)", async () => {

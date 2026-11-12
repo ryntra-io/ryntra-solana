@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect } from 'react';
+import { subscribeWalletFact, walletFact } from '@/lib/account/wallet-proof-store.client';
 import { useCity } from '@/city/lib/city/store';
 import { quarterStore } from '@/city/lib/quarter/store';
 import { useRun } from '@/city/lib/run/store';
@@ -13,7 +14,8 @@ const FEED_MS = 6_000;
 
 /**
  * The Vault's room over the city, once its flag is open. It closes with Escape, and gives way when the city takes the
- * screen for something else: a tower picked, a run, my quarter. While it is open the feed stays live.
+ * screen for something else: a tower picked, a run, my quarter. While it is open the feed stays live, and a sign-in or
+ * a sign-out reads the vaults again under the person now in the chair (a guest's cracks go with them to the wallet).
  */
 export function VaultLayer() {
   if (!VAULT_OPEN) return null;
@@ -38,10 +40,22 @@ function Layer() {
       if (st.mode !== 'city') leave();
     });
     const feed = setInterval(() => void vaultStore.getState().readFeed(), FEED_MS);
+    const who = () => {
+      const fact = walletFact();
+      return fact.status === 'known' ? `${fact.signedIn}:${fact.walletAddress ?? ''}` : null;
+    };
+    let seen = who();
+    const offAccount = subscribeWalletFact(() => {
+      const now = who();
+      if (now === null || now === seen) return;
+      seen = now;
+      void vaultStore.getState().refresh();
+    });
     return () => {
       window.removeEventListener('keydown', onKey);
       offCity();
       offQuarter();
+      offAccount();
       clearInterval(feed);
     };
   }, [open]);

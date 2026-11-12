@@ -15,6 +15,7 @@ test("Play's switch and dock stand only where its flag says `open` (decision 86:
   assert.match(hud, /const playDock = play && PLAY_OPEN;/);
   assert.match(hud, /\{playDock && <GameDock/);
   // Launch Night's stage (CITY-146) takes the bottom of the screen only while its show plays.
-  assert.match(hud, /\{!playDock && !launch\.showing && !nightPlaying && \(/);
+  // Launch is a window of the frame (CITY-242): only an early launch's window keeps the bottom from the Deck.
+  assert.match(hud, /\{!playDock && !entry && !nightPlaying && \(/);
   assert.match(hud, /if \(!PLAY_OPEN\) useLayer\.getState\(\)\.set\('city'\);/);
 });

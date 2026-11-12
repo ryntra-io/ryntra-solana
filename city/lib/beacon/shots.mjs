@@ -56,7 +56,7 @@ for (const size of SIZES) {
   const shot = (page, state) => page.screenshot({ path: path.join(out, `beacon-${state}-${size.name}.jpg`), type: "jpeg", quality: 82 });
   {
     const { page, context, errors } = await open(size);
-    const button = page.getByRole("button", { name: "Beacon", exact: true });
+    const button = page.getByRole("button", { name: "Alert me", exact: true });
     await button.waitFor({ timeout: 30_000 });
     await shot(page, "card");
     await button.click();
@@ -76,7 +76,7 @@ for (const size of SIZES) {
   }
   {
     const { page, context, errors } = await open(size, { lit: true });
-    await page.getByRole("button", { name: "Beacon", exact: true }).waitFor({ timeout: 30_000 });
+    await page.getByRole("button", { name: "Alert me", exact: true }).waitFor({ timeout: 30_000 });
     await shot(page, "lit");
     report.push(`${size.name} lit: overflow=${await overflowOf(page)}px errors=${errors.length}`);
     await context.close();

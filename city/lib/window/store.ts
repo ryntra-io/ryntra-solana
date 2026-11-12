@@ -241,7 +241,8 @@ export const useWindows = create<State>((set, get) => {
     clearTimeout(glideTimer);
     glideTimer = setTimeout(() => set({ glide: false }), GLIDE_MS);
   };
-  const placeFor = (id: string, layout: Layout): Recall | null => {
+  const placeFor = (spec: WindowSpec, layout: Layout): Recall | null => {
+    const id = spec.id;
     const planned = get().plan[id];
     if (planned) {
       const plan = { ...get().plan };
@@ -249,7 +250,7 @@ export const useWindows = create<State>((set, get) => {
       set({ plan });
       if (planned.until > Date.now()) return planned.recall;
     }
-    const remembered = recall(memoryNow(), id, layout.area);
+    const remembered = recall(memoryNow(), id, layout.area, spec);
     // A remembered bay whose frame waits on a signature: the window stands elsewhere rather than hide it as a tab. A bay
     // this screen lacks is the one it has.
     const bay = remembered?.bay ? (baysOf(layout.area).includes(remembered.bay) ? remembered.bay : 'right') : null;
@@ -286,7 +287,7 @@ export const useWindows = create<State>((set, get) => {
     open: (spec) => {
       const now = get();
       const fresh = !placed(now.layout, spec.id);
-      const layout = openIn(now.layout, spec, fresh ? placeFor(spec.id, now.layout) : null);
+      const layout = openIn(now.layout, spec, fresh ? placeFor(spec, now.layout) : null);
       // Open again, however it was asked for: its chip leaves the tray.
       set({ specs: { ...now.specs, [spec.id]: spec }, chips: now.chips.filter((c) => c.id !== spec.id) });
       commit(layout);
@@ -369,7 +370,7 @@ export const useWindows = create<State>((set, get) => {
       set({ out });
       keepOut(id, false, size ?? now.out[id].size);
       const spec = now.specs[id];
-      if (spec) commit(openIn(get().layout, spec, recall(memoryNow(), id, get().layout.area)));
+      if (spec) commit(openIn(get().layout, spec, recall(memoryNow(), id, get().layout.area, spec)));
     },
     fold: (id, params = {}) => {
       const now = get();

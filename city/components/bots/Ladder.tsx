@@ -5,22 +5,50 @@ import { WRAPPED_SOL } from '@/lib/bots/ladder/network';
 import type { LadderCosts } from '@/lib/bots/ladder/costs';
 import { ladderOf, type BotDraft } from '@/city/lib/bots/draft';
 import { composeLadder, LADDER_NET, useLadder, viewOf, type LadderPoolInfo, type LiveLadder } from '@/city/lib/bots/ladder';
-import { finish, finishPlan, placeDraft, readLive, takeBack, type Who } from '@/city/lib/bots/ladder-actions';
+import { saysNo } from '@/city/lib/bots/note-hold';
+import { finish, finishPlan, placeDraft, readLive, takeBack, viewElsewhere, type Who } from '@/city/lib/bots/ladder-actions';
 import { useBots } from '@/city/lib/bots/store';
-import { lamportsSol, pct, type Lang } from '@/city/lib/bots/format';
+import { amount, lamportsSol, pct, price, usd, type Lang } from '@/city/lib/bots/format';
+import { ladderWords, type LadderWords } from '@/city/lib/bots/ladder-words';
 import type { Words } from '@/city/lib/bots/words';
 import { useWallet } from '@/city/lib/trade/wallet';
 import { KindGlyph } from './glyphs';
+import { NoteLine } from './NoteLine';
 import { useCoinByMint, useWords } from './hooks';
 import s from './bots.module.css';
+import l from './ladder.module.css';
 
 /**
- * The ladder on devnet in the bots window (B5, CITY-135): the one line of costs and «Place on devnet» under a ladder's
- * settings, and the placed ladders at the top of «My bots». Shown only while the deployment's switch says `devnet`
- * (`LADDER_NET`) and the engine has a devnet pool of the coin; otherwise the window stays practice, as before.
+ * The ladder in the bots window (B5, CITY-135; mainnet CITY-219): under a ladder's settings the sum, what every step
+ * gives and each step's price, the one line of costs and «Place»; the placed ladders at the top of «My bots». Shown
+ * only on the network the deployment names (`LADDER_NET`) while the engine has a pool of the coin there; otherwise
+ * the window stays practice, as before.
  */
 
-/** The coin's devnet pool, read once a minute while a ladder is open; null — none, or the switch is closed. */
+/** The ladder's words on the window's network. */
+function useLadderWords(): Readonly<{ w: Words; lw: LadderWords; lang: Lang }> {
+  const { w, lang } = useWords();
+  return { w, lang, lw: ladderWords(lang, LADDER_NET ?? 'devnet', w) };
+}
+
+/** The network's chip on the ladder's sheet: «Devnet» on devnet; «Real SOL» on mainnet, where the money is real (CITY-233). */
+export function LadderNetChip() {
+  const { lw } = useLadderWords();
+  const network = LADDER_NET ?? 'devnet';
+  return (
+    <i className={network === 'mainnet' ? l.realChip : s.devnet} data-net={network}>
+      {lw.chip ?? lw.net}
+    </i>
+  );
+}
+
+/** The order accounts this browser's ladders hold: «My bots» shows them once, as ladders, not again as chain orders. */
+export function useLadderOrderKeys(): ReadonlySet<string> {
+  const ladders = useLadder((st) => st.ladders);
+  return useMemo(() => new Set(ladders.flatMap((ladder) => ladder.legs.map((leg) => leg.limitOrder))), [ladders]);
+}
+
+/** The coin's pool on the window's network, read once a minute while a ladder is open; null — none, or closed. */
 export function useLadderPool(mint: string | null): LadderPoolInfo | null {
   const status = useLadder((st) => (mint ? st.status[mint] : undefined));
   useEffect(() => {
@@ -41,35 +69,77 @@ function useSolUsd(): number | null {
   return coinBy(WRAPPED_SOL)?.price ?? null;
 }
 
-/** The one line before the signature: rent back, network, no minimum, the SOL kept in the wallet; the pool's kept rent only when there is one. */
-export function LiveCostLine({ costs, w, lang }: Readonly<{ costs: LadderCosts; w: Words; lang: Lang }>) {
+/**
+ * The one line before the signature: the network first — real SOL or test SOL (CITY-233) — then the fee, the network's
+ * fees, rent back, the SOL kept in the wallet; the pool's kept rent only when there is one.
+ */
+export function LiveCostLine({ costs, lw, lang }: Readonly<{ costs: LadderCosts; lw: LadderWords; lang: Lang }>) {
   return (
     <p className={s.cost} data-live="">
-      <span>{w.liveCost(lamportsSol(costs.networkLamports, lang), lamportsSol(costs.rentBackLamports, lang), costs.rentKeptLamports > 0 ? lamportsSol(costs.rentKeptLamports, lang) : null, lamportsSol(costs.reserveLamports, lang))}</span>
+      <span>
+        <b className={l.net} data-net={LADDER_NET ?? 'devnet'}>
+          {lw.net}
+        </b>
+        {' · '}
+        {lw.cost(lamportsSol(costs.networkLamports, lang), lamportsSol(costs.rentBackLamports, lang), costs.rentKeptLamports > 0 ? lamportsSol(costs.rentKeptLamports, lang) : null, lamportsSol(costs.reserveLamports, lang))}
+      </span>
     </p>
   );
 }
 
-/** The ladder's start on devnet: the cost line, what is wrong if anything, «Place on devnet», practice beside it. */
+/** Before the signature: the sum, what every step gives if all fill, and each step's own price. */
+export function LadderSummary({ composed, symbol, side, lw, lang }: Readonly<{ composed: NonNullable<ReturnType<typeof composeLadder>>; symbol: string; side: 'buy' | 'exit'; lw: LadderWords; lang: Lang }>) {
+  if (!composed.prices.length) return null;
+  const gets = side === 'buy' ? `≈ ${amount(composed.receives, lang)} ${symbol}` : `≈ ${usd(composed.receives, lang)}`;
+  return (
+    <section className={l.summary} aria-label={lw.stepsLabel(composed.prices.length)} data-ladder-summary="">
+      <div className={l.figures}>
+        <div className={l.figure}>
+          <span>{lw.putIn}</span>
+          <b>{usd(composed.amountUsd, lang)}</b>
+        </div>
+        <i className={l.arrow} aria-hidden="true" />
+        <div className={l.figure}>
+          <span>{lw.getsAll}</span>
+          <b translate="no">{gets}</b>
+        </div>
+      </div>
+      <ol className={l.steps} aria-label={lw.stepsLabel(composed.prices.length)}>
+        {composed.prices.map((value, index) => (
+          <li key={`${index}-${value}`}>{price(value, lang)}</li>
+        ))}
+      </ol>
+    </section>
+  );
+}
+
+/** The ladder's start: the sum and the steps, the cost line, what is wrong if anything, «Place», practice beside it. */
 export function LadderStart({ draft, pool, paperIssue, canPractice, onSave, saveLabel }: Readonly<{ draft: BotDraft; pool: LadderPoolInfo; paperIssue: string | null; canPractice: boolean; onSave: () => void; saveLabel: string }>) {
-  const { w, lang } = useWords();
+  const { w, lw, lang } = useLadderWords();
   const who = useWho();
   const solUsd = useSolUsd();
   const busy = useLadder((st) => st.busy);
   const note = useLadder((st) => st.note);
   const shown = useLadder((st) => st.shownCosts);
+  /* A ladder of this wallet's from another device stands in this pool: «View» in place of a second one (CITY-233). */
+  const elsewhere = useLadder((st) => (st.elsewhere?.pool === pool.facts.pool ? st.elsewhere : null));
   const [picking, setPicking] = useState(false);
   const composed = useMemo(() => composeLadder(draft, pool, solUsd), [draft, pool, solUsd]);
-  // A changed draft is a new line: the server's earlier reading no longer stands for it.
+  // A changed draft is a new line: the server's earlier reading no longer stands for it — nor does a «no» said to the
+  // ladder as it was (it stays half a minute now, CITY-237, and must not sit under different settings).
   useEffect(() => {
-    useLadder.getState().setShownCosts(null);
+    const st = useLadder.getState();
+    st.setShownCosts(null);
+    if (st.note && !st.note.bot && saysNo(st.note.kind)) st.say(null);
   }, [draft]);
   useEffect(() => {
     if (who) setPicking(false);
   }, [who]);
   if (!composed) return null;
   const costs = shown ?? composed.costs;
-  const issue = paperIssue ?? (composed.issues.length ? w.ladderIssue[composed.issues[0]!] : null);
+  const cap = typeof pool.maxUsd === 'number' ? pool.maxUsd : null;
+  const issue = paperIssue ?? (composed.issues.length ? w.ladderIssue[composed.issues[0]!] : composed.overCap && cap !== null ? lw.overCap(usd(cap, lang)) : null);
+  const side = ladderOf(draft)?.side ?? 'buy';
   const tap = () => {
     if (!who) {
       const { wallets, connect } = useWallet.getState();
@@ -81,13 +151,34 @@ export function LadderStart({ draft, pool, paperIssue, canPractice, onSave, save
   };
   return (
     <>
-      {costs ? <LiveCostLine costs={costs} w={w} lang={lang} /> : null}
+      <LadderSummary composed={composed} symbol={draft.pair.symbol} side={side} lw={lw} lang={lang} />
+      {costs ? <LiveCostLine costs={costs} lw={lw} lang={lang} /> : null}
       {composed.verdict && !composed.verdict.advised && Number.isFinite(composed.verdict.sharePct) ? <p className={s.risk}>{w.notAdvised(pct(composed.verdict.sharePct, lang))}</p> : null}
-      {issue ? <p className={s.issue}>{issue}</p> : null}
+      {elsewhere ? (
+        <p className={s.liveNote} data-kind="elsewhere" role="status">
+          {lw.note.elsewhere}
+        </p>
+      ) : issue ? (
+        <p className={s.issue}>{issue}</p>
+      ) : null}
       {picking && !who ? <WalletList /> : null}
-      <button type="button" className={s.primary} disabled={Boolean(issue) || busy !== null} onClick={tap} data-ladder-place="">
-        {busy?.kind === 'place' ? w.placing : who ? w.place : w.connect}
-      </button>
+      {elsewhere ? (
+        <button type="button" className={s.primary} disabled={busy !== null} onClick={viewElsewhere} data-ladder-view="">
+          {lw.view}
+        </button>
+      ) : (
+        <button type="button" className={s.primary} disabled={Boolean(issue) || busy !== null} onClick={tap} data-ladder-place="">
+          {busy?.kind === 'place' ? w.placing : who ? lw.place : w.connect}
+        </button>
+      )}
+      {/* The action's answer stands right under it and comes into view when said (CITY-237): under the two quiet
+          buttons it landed below the edge of a phone's half-screen window. «A ladder here already» stands above its
+          «View» while it holds; not said twice here. */}
+      {note && !note.bot && note.kind !== 'elsewhere' ? (
+        <NoteLine kind={note.kind} at={note.at}>
+          {lw.note[note.kind]}
+        </NoteLine>
+      ) : null}
       <div className={s.twoUp}>
         <button type="button" className={s.quiet} disabled={!canPractice || busy !== null} onClick={() => useBots.getState().startPaper()}>
           {w.practiceFirst}
@@ -96,11 +187,6 @@ export function LadderStart({ draft, pool, paperIssue, canPractice, onSave, save
           {saveLabel}
         </button>
       </div>
-      {note ? (
-        <p className={s.liveNote} data-kind={note.kind} role="status">
-          {w.ladderNote[note.kind]}
-        </p>
-      ) : null}
     </>
   );
 }
@@ -128,9 +214,9 @@ export const placesLive = (draft: BotDraft): boolean => LADDER_NET !== null && l
 
 /* ------------------------------------------------------------ «My bots» */
 
-/** The connected wallet's ladders on devnet, read back every half minute while «My bots» is open. */
+/** The connected wallet's ladders on the window's network, read back every half minute while «My bots» is open. */
 export function LiveLadders() {
-  const { w } = useWords();
+  const { lw } = useLadderWords();
   const who = useWho();
   const ladders = useLadder((st) => st.ladders);
   useEffect(() => {
@@ -149,8 +235,8 @@ export function LiveLadders() {
   }, [owner, open]);
   if (!LADDER_NET || !who || !mine.length) return null;
   return (
-    <section className={s.section} aria-label={w.liveTitle} data-ladders="">
-      <h3 className={s.kicker}>{w.liveTitle}</h3>
+    <section className={s.section} aria-label={lw.liveTitle} data-ladders="">
+      <h3 className={s.kicker}>{lw.liveTitle}</h3>
       <ul className={s.list}>
         {mine.map((ladder) => (
           <LiveRow key={ladder.id} ladder={ladder} who={who} />
@@ -162,14 +248,15 @@ export function LiveLadders() {
 }
 
 function LiveNote() {
-  const { w } = useWords();
+  const { lw } = useLadderWords();
   const note = useLadder((st) => st.note);
   const page = useBots((st) => st.page);
-  if (!note || page.kind === 'detail') return null;
+  /* A chain bot's answer is said under that bot (`Hangar.tsx`). */
+  if (!note || note.bot || page.kind === 'detail') return null;
   return (
-    <p className={s.liveNote} data-kind={note.kind} role="status">
-      {w.ladderNote[note.kind]}
-    </p>
+    <NoteLine kind={note.kind} at={note.at}>
+      {lw.note[note.kind]}
+    </NoteLine>
   );
 }
 
@@ -177,7 +264,7 @@ function LiveNote() {
 const TONE = { placing: 'paused', failed: 'orphaned', incomplete: 'incomplete', working: 'running', filled: 'stopped', due: 'incomplete', closed: 'stopped' } as const;
 
 function LiveRow({ ladder, who }: Readonly<{ ladder: LiveLadder; who: Who }>) {
-  const { w, lang } = useWords();
+  const { w, lw, lang } = useLadderWords();
   const reads = useLadder((st) => st.reads);
   const prices = useLadder((st) => st.prices);
   const busy = useLadder((st) => st.busy);
@@ -211,12 +298,12 @@ function LiveRow({ ladder, who }: Readonly<{ ladder: LiveLadder; who: Who }>) {
           <i className={s.status} data-status={TONE[view.state]}>
             {w.liveState[view.state]}
           </i>
-          <i className={s.devnet}>{w.devnet}</i>
+          {lw.chip ? <i className={s.devnet}>{lw.chip}</i> : null}
         </span>
       </div>
       {view.state !== 'closed' && view.state !== 'failed' && view.state !== 'placing' ? (
         <div className={s.controls}>
-          {finishing ? <LiveCostLine costs={finishing.costs} w={w} lang={lang} /> : null}
+          {finishing ? <LiveCostLine costs={finishing.costs} lw={lw} lang={lang} /> : null}
           <div className={s.controlRow}>
             {view.proposal ? (
               <button type="button" className={s.strong} disabled={busy !== null} onClick={act}>

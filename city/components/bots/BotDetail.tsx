@@ -29,7 +29,7 @@ import type { Words } from '@/city/lib/bots/words';
 import { BotChart } from './BotChart';
 import { BackGlyph, ChainGlyph, KindGlyph } from './glyphs';
 import { useCoinByMint, useWords } from './hooks';
-import { LadderStart, placesLive, useLadderPool } from './Ladder';
+import { LadderNetChip, LadderStart, placesLive, useLadderPool } from './Ladder';
 import s from './bots.module.css';
 
 const NO_BARS: readonly Bar[] = [];
@@ -81,7 +81,7 @@ function DetailBody({
   run: Run | null;
 }>) {
   const { w, lang } = useWords();
-  // A ladder on a coin the engine has a devnet pool for is placed live (CITY-135); anything else stays practice.
+  // A ladder on a coin the engine has a pool for on the window's network is placed live (CITY-135, CITY-219); anything else stays practice.
   const pool = useLadderPool(placesLive(draft) ? draft.pair.mint : null);
   const save = () => void (own ? useBots.getState().saveVersion() : useBots.getState().saveAsStrategy(`${w.kind[draft.kind]} · ${draft.pair.symbol}`));
 
@@ -105,7 +105,7 @@ function DetailBody({
             {w.standalone}
           </i>
         ) : null}
-        {pool ? <i className={s.devnet}>{w.devnet}</i> : null}
+        {pool ? <LadderNetChip /> : null}
       </header>
 
       <div className={s.detailGrid}>
@@ -145,20 +145,22 @@ function DetailBody({
         <div className={s.detailSide}>
           <section className={s.panel} aria-label={w.settings}>
             <Fields draft={draft} set={set} current={current} w={w} lang={lang} />
+            {/* What happens when the price leaves the range: the last of the settings, in their own card (CITY-243). On
+                its own card under them, a desk 900 px tall put it under the pinned start — its title alone in sight. */}
+            {KIND_FACTS[draft.kind].ranged ? (
+              <section className={s.exitField} aria-label={w.exitTitle}>
+                <h4 className={s.fieldLabel}>{w.exitTitle}</h4>
+                <div className={s.segment} role="radiogroup" aria-label={w.exitTitle}>
+                  {EXIT_POLICIES.map((p) => (
+                    <button key={p} type="button" role="radio" aria-checked={draft.exit === p} className={draft.exit === p ? s.segOn : undefined} onClick={() => set({ exit: p })}>
+                      {w.exit[p]}
+                    </button>
+                  ))}
+                </div>
+                <p className={s.hint}>{w.exitWhat[draft.exit]}</p>
+              </section>
+            ) : null}
           </section>
-          {KIND_FACTS[draft.kind].ranged ? (
-            <section className={s.panel} aria-label={w.exitTitle}>
-              <h4 className={s.panelTitle}>{w.exitTitle}</h4>
-              <div className={s.segment} role="radiogroup" aria-label={w.exitTitle}>
-                {EXIT_POLICIES.map((p) => (
-                  <button key={p} type="button" role="radio" aria-checked={draft.exit === p} className={draft.exit === p ? s.segOn : undefined} onClick={() => set({ exit: p })}>
-                    {w.exit[p]}
-                  </button>
-                ))}
-              </div>
-              <p className={s.hint}>{w.exitWhat[draft.exit]}</p>
-            </section>
-          ) : null}
           <div className={s.startBlock}>
             {pool ? (
               <>

@@ -387,7 +387,7 @@
 }
 
 /* The lens as a strip under the top bar (a desk too narrow for it in the bar, a long language): the card steps down by
-   the strip's height, as the first-visit hint and the feed do (lens.module.css), instead of lying over the chips. */
+   the strip's height, as the feed does (lens.module.css), instead of lying over the chips. */
 @media (min-width: 641px) {
   :global(body):has([data-lens-place='below']) .away {
     margin-top: var(--lens-strip, 58px);
@@ -706,4 +706,126 @@
 .tested span {
   font-weight: 500;
   opacity: 0.6;
+}
+
+/* CITY-70 — the mission at the top: one state, toned; then three controls, each its own, each one tap. */
+.state {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: var(--type-micro);
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--ice);
+  opacity: 0.8;
+}
+
+.state::before {
+  content: '';
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: currentColor;
+}
+
+.state[data-mission='confirming'] {
+  color: var(--amber);
+  opacity: 1;
+}
+
+.state[data-mission='confirming']::before {
+  box-shadow: 0 0 10px var(--amber);
+  animation: pulse 1.2s ease-in-out infinite;
+}
+
+.state[data-mission='frozen'] {
+  color: #9fd8ff;
+  opacity: 1;
+}
+
+.state[data-mission='paused'] {
+  color: var(--amber);
+  opacity: 1;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .state[data-mission='confirming']::before {
+    animation: none;
+  }
+}
+
+.controls {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.control {
+  min-height: 48px;
+  padding: 6px 8px;
+  border: 0;
+  font: inherit;
+  font-size: var(--type-small);
+  font-weight: 700;
+  line-height: 1.2;
+  color: var(--ice);
+  background: rgba(255, 255, 255, 0.035);
+  box-shadow: inset 0 0 0 1px rgba(238, 241, 255, 0.14);
+  clip-path: polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px);
+  cursor: pointer;
+  transition: background 160ms ease, box-shadow 160ms ease;
+}
+
+.control:hover:not(:disabled),
+.control:focus-visible {
+  background: rgba(255, 255, 255, 0.07);
+}
+
+.control[aria-pressed='true'] {
+  color: #9fd8ff;
+  background: rgba(159, 216, 255, 0.1);
+  box-shadow: inset 0 0 0 1.5px rgba(159, 216, 255, 0.55);
+}
+
+.control[data-tone='out'] {
+  color: var(--warm);
+  box-shadow: inset 0 0 0 1px rgba(255, 104, 28, 0.42);
+}
+
+.control:disabled {
+  opacity: 0.42;
+  cursor: default;
+}
+
+/* Its last trades, behind «Details»: what each one is — an unknown one «Confirming», never failed. */
+.trades {
+  display: grid;
+  gap: 6px;
+}
+
+.trades ul {
+  display: grid;
+  gap: 4px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.trades li {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  font-size: var(--type-small);
+  font-variant-numeric: tabular-nums;
+  color: var(--ice);
+}
+
+.trades li[data-trade='unknown'] span {
+  color: var(--amber);
+}
+
+.trades li[data-trade='failed'] span,
+.trades li[data-trade='refused'] span {
+  opacity: 0.7;
 }

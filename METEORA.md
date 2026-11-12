@@ -24,9 +24,9 @@ flowchart LR
 
 | A person launches in the city | The coin's tower on its curve |
 |---|---|
-| ![The launch sheet in Ryntra City](public/reviewers/launch-sheet.jpg) | ![A coin's window: curve progress to the DEX, buy and sell — on the devnet stand](public/reviewers/coin-on-curve.jpg) |
+| ![The launch sheet in Ryntra City](public/showcase/launch.jpg) | ![A coin's window: curve progress to the DEX, buy and sell — on the devnet stand](public/showcase/coin-on-curve.jpg) |
 | **The Piers in Earn: Meteora pools, the person's own position** | **The city: every coin a tower** |
-| ![Meteora DLMM pools in the Earn window](public/reviewers/earn-piers.jpg) | ![Ryntra City](public/reviewers/city.jpg) |
+| ![Meteora DLMM pools in the Earn window](public/showcase/earn-piers.jpg) | ![Ryntra City](public/showcase/city.jpg) |
 
 Pictures from the live site, except the coin's window, which is the devnet stand where a curve is shown filling.
 

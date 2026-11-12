@@ -416,3 +416,89 @@ test("disposed: the stack hears nothing and writes nothing", () => {
   p.flush();
   assert.equal(p.length, 1);
 });
+
+// CITY-236: a step inside a window (a bot's page, the launch's review, the Ring's new agent) is a layer of its own over
+// the window. Its close returns one step; while a step is left the layer stays, so «Back» walks the steps and only then
+// reaches the window.
+
+test("a step inside a window: Back returns the steps one by one, then closes the window, then leaves", () => {
+  const p = page();
+  let windowOpen = false;
+  let step = 0; // 0 — the window's first screen; the layer stands while a step is left to return
+  let stack = null;
+  const layers = {
+    read: () => [...(windowOpen ? ["window"] : []), ...(windowOpen && step > 0 ? ["step"] : [])],
+    close: (id) => {
+      if (id === "step") step -= 1;
+      else windowOpen = false;
+      stack.changed();
+    },
+  };
+  stack = createBackStack(p.env, layers);
+  p.flush();
+  windowOpen = true;
+  stack.changed();
+  p.flush();
+  step = 2;
+  stack.changed();
+  p.flush();
+  assert.deepEqual(stack.layers(), ["window", "step"]);
+  assert.equal(p.index, 2, "one entry for the window, one for its steps");
+  const length = p.length;
+
+  p.back();
+  assert.equal(step, 1, "one step back");
+  assert.equal(windowOpen, true, "the window stays");
+  assert.equal(p.index, 2, "the step's entry stands again: the next Back is not the window's");
+  assert.equal(p.length, length, "the history does not grow");
+
+  p.back();
+  assert.equal(step, 0);
+  assert.equal(windowOpen, true, "the window's first screen");
+  assert.deepEqual(stack.layers(), ["window"]);
+  assert.equal(p.index, 1);
+
+  p.back();
+  assert.equal(windowOpen, false);
+  assert.equal(p.left, false);
+  p.back();
+  assert.equal(p.left, true, "on the clean city Back leaves");
+});
+
+test("a panel that lets go a task later (a component's effect): one Back closes it, the next is the window's", () => {
+  const p = page();
+  const open = new Set();
+  let stack = null;
+  const layers = {
+    read: () => ["window", "panel"].filter((id) => open.has(id)),
+    close: (id) => {
+      // The window's store closes at once; the panel's own «open» is let go only after the component renders again.
+      if (id === "panel") p.env.later(() => (open.delete("panel"), stack.changed()), 0);
+      else {
+        open.delete(id);
+        stack.changed();
+      }
+    },
+  };
+  stack = createBackStack(p.env, layers);
+  p.flush();
+  open.add("window");
+  stack.changed();
+  p.flush();
+  open.add("panel");
+  stack.changed();
+  p.flush();
+  assert.equal(p.index, 2);
+
+  p.back();
+  assert.deepEqual([...open], ["window"], "the panel is closed, the window stays");
+  assert.deepEqual(stack.layers(), ["window"]);
+  assert.equal(p.index, 1, "the panel's entry is given back: no dead press is left behind");
+  assert.equal(p.left, false);
+
+  p.back();
+  assert.equal(open.size, 0, "the next Back closes the window");
+  assert.equal(p.left, false);
+  p.back();
+  assert.equal(p.left, true);
+});

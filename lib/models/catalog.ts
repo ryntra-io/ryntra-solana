@@ -81,6 +81,13 @@ export type CatalogModel = Readonly<{
   reasoningEfforts: readonly string[];
   /** False for an alias, a router (`isAliasId`, `alias_target`) or anything priced below zero: listed, but never callable by the gateway. */
   pinnable: boolean;
+  /**
+   * What the model answers with, as OpenRouter lists it (`architecture.output_modalities`, lower-cased): `["text"]` for
+   * a model that talks, `["image", "text"]` for one that draws. `null` when the entry does not say — unknown, never
+   * «text». Only those who choose what to offer read it (the Ring's list of brains, CITY-239); the gateway calls a
+   * model whatever this says.
+   */
+  outputModalities: readonly string[] | null;
 }>;
 
 /** One endpoint serving a model: one provider (or its region, variant or service tier) with its own prices and parameters. */
@@ -211,10 +218,12 @@ export function parseCatalogModel(raw: unknown): CatalogModel | null {
     supported_parameters?: unknown;
     reasoning?: { mandatory?: unknown; supported_efforts?: unknown } | null;
     alias_target?: unknown;
+    architecture?: { output_modalities?: unknown } | null;
   };
   if (typeof entry.id !== "string" || entry.id.length === 0 || entry.id.length > 160) return null;
   const parameters = parameterSet(entry.supported_parameters);
   const reasoning = entry.reasoning && typeof entry.reasoning === "object" ? entry.reasoning : {};
+  const outputs = entry.architecture && typeof entry.architecture === "object" ? entry.architecture.output_modalities : undefined;
   return {
     id: entry.id,
     canonicalSlug: typeof entry.canonical_slug === "string" && entry.canonical_slug.length > 0 ? entry.canonical_slug : null,
@@ -228,6 +237,7 @@ export function parseCatalogModel(raw: unknown): CatalogModel | null {
     reasoningMandatory: reasoning.mandatory === true,
     reasoningEfforts: Array.isArray(reasoning.supported_efforts) ? reasoning.supported_efforts.filter((item): item is string => typeof item === "string" && item.length <= 16).slice(0, 16) : [],
     pinnable: !isAliasId(entry.id) && !pricedBelowZero(entry.pricing) && (entry.alias_target === undefined || entry.alias_target === null),
+    outputModalities: Array.isArray(outputs) ? outputs.filter((item): item is string => typeof item === "string" && item.length > 0 && item.length <= 24).slice(0, 8).map((item) => item.toLowerCase()) : null,
   };
 }
 

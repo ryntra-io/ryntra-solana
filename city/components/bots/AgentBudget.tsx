@@ -5,10 +5,13 @@ import { syncAgents } from '@/city/lib/bots/agents';
 import { MANDATE_NET, MANDATE_PRESETS, presetLimits, useMandate } from '@/city/lib/bots/mandate';
 import { agentCoins, bookNow } from '@/city/lib/command/doors';
 import { agentFeeFigures } from '@/city/lib/bots/agent-fee';
+import { NOTE_YES_MS, noteLeftMs, saysNo } from '@/city/lib/bots/note-hold';
 import { sol } from '@/city/lib/bots/format';
 import { useWallet } from '@/city/lib/trade/wallet';
 import { CheckGlyph, ChevronGlyph, SparkGlyph } from './glyphs';
-import { WalletList } from './Ladder';
+import { funnelSay } from '@/city/lib/crew/funnel-watch';
+import { AddSol, CardWalletPicker, useFundsShort } from '../crew/CardWallet';
+import { NoteLine } from './NoteLine';
 import { useWords } from './hooks';
 import s from './bots.module.css';
 
@@ -32,6 +35,7 @@ export function AgentBudget() {
   const [open, setOpen] = useState(false);
   const [picking, setPicking] = useState(false);
   const detailsId = useId();
+  const funds = useFundsShort(preset);
 
   useEffect(() => {
     useMandate.getState().hydrate();
@@ -61,11 +65,25 @@ export function AgentBudget() {
 
   useEffect(() => {
     if (!note) return;
+    // A «no» stays long enough to be read (CITY-237), counted from when it was said: a card opened again later does
+    // not bring an old line back.
     const timer = setTimeout(() => {
       if (useMandate.getState().note === note) useMandate.getState().say(null);
-    }, 8_000);
+    }, noteLeftMs(note, Date.now()) ?? NOTE_YES_MS);
     return () => clearTimeout(timer);
   }, [note]);
+
+  // A «no» was said to the budget and the coin as they stood: another choice takes it away (as a changed ladder does).
+  useEffect(() => {
+    const said = useMandate.getState().note;
+    if (said && saysNo(said.kind)) useMandate.getState().say(null);
+  }, [preset, coin]);
+
+  // CITY-222: the Trader's card in view, not yet at work — the agent's card on the first action's way.
+  const shown = Boolean(MANDATE_NET) && !(record && status?.active);
+  useEffect(() => {
+    if (shown) funnelSay('agent_card');
+  }, [shown]);
 
   if (!MANDATE_NET) return null;
   const working = Boolean(record && status?.active);
@@ -142,12 +160,25 @@ export function AgentBudget() {
           <p className={s.cost} data-mandate-fee="">
             <span>{m.fee(fee.low, fee.high)}</span>
           </p>
-          {picking && !connection ? <WalletList /> : null}
-          <button type="button" className={s.primary} onClick={() => void sign()} disabled={busy !== null || (needsCoin && !picked && Boolean(connection))} aria-busy={busy === 'enable'} data-mandate-sign="">
-            {busy === 'enable' ? m.signing : connection ? m.sign : m.connect}
-          </button>
+          {/* CITY-222: no wallet here — the way out to get one comes back to this agent's card; too little SOL — «Add SOL». */}
+          {picking && !connection ? (
+            <CardWalletPicker said="" onBack={() => setPicking(false)} />
+          ) : connection && funds.short && funds.about && busy === null ? (
+            <AddSol about={funds.about} className={s.primary} lineClass={s.cost} />
+          ) : (
+            <button type="button" className={s.primary} onClick={() => void sign()} disabled={busy !== null || (needsCoin && !picked && Boolean(connection))} aria-busy={busy === 'enable'} data-mandate-sign="">
+              {busy === 'enable' ? m.signing : connection ? m.sign : m.connect}
+            </button>
+          )}
         </>
       )}
+
+      {/* The action's answer right under it, brought into view when said (CITY-237) — it stood under «Details». */}
+      {note ? (
+        <NoteLine kind={note.kind === 'on' || note.kind === 'stopped' ? 'placed' : note.kind} at={note.at}>
+          {m.note[note.kind]}
+        </NoteLine>
+      ) : null}
 
       <button type="button" className={s.more} aria-expanded={open} aria-controls={detailsId} onClick={() => setOpen((v) => !v)} data-open={open ? '' : undefined}>
         {m.details}
@@ -164,11 +195,6 @@ export function AgentBudget() {
         </ul>
       ) : null}
 
-      {note ? (
-        <p className={s.liveNote} data-kind={note.kind === 'on' || note.kind === 'stopped' ? 'placed' : note.kind} role="status">
-          {m.note[note.kind]}
-        </p>
-      ) : null}
     </section>
   );
 }

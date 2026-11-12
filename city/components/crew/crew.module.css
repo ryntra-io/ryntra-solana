@@ -303,3 +303,164 @@
     transition: none;
   }
 }
+
+/* ---------- The city's first screen, one action (CITY-222): «Say it. Your agent does the rest.» ---------- */
+
+.first {
+  padding: 4px;
+  gap: 2px;
+}
+
+.firstGo {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 44px;
+  padding: 0 10px 0 8px;
+  border: 0;
+  background: none;
+  color: var(--ice);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.firstGo:focus-visible {
+  outline: 2px solid var(--amber);
+  outline-offset: -2px;
+}
+
+.firstSpark {
+  display: inline-grid;
+  place-items: center;
+  flex: none;
+  width: 32px;
+  height: 32px;
+  color: var(--amber);
+  background: rgba(255, 178, 63, 0.12);
+  clip-path: polygon(7px 0, 100% 0, 100% calc(100% - 7px), calc(100% - 7px) 100%, 0 100%, 0 7px);
+}
+
+.firstSpark svg {
+  width: 18px;
+  height: 18px;
+}
+
+.firstText {
+  font-size: var(--type-body);
+  line-height: 1.25;
+}
+
+.firstText b {
+  font-weight: 800;
+}
+
+.firstText em {
+  font-style: normal;
+  font-weight: 800;
+  color: var(--amber);
+}
+
+.firstArrow {
+  flex: none;
+  width: 18px;
+  height: 18px;
+  color: var(--amber);
+  transition: transform 160ms ease-out;
+}
+
+.firstGo:hover .firstArrow {
+  transform: translateX(2px);
+}
+
+/* ---------- The first sentences (CITY-222): one tap says it, the agent's card opens ---------- */
+
+.says {
+  display: grid;
+  gap: 6px;
+  margin: 10px 0 12px;
+}
+
+.say {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  min-height: 48px;
+  padding: 0 12px 0 10px;
+  border: 1px solid rgba(255, 178, 63, 0.28);
+  background: linear-gradient(160deg, rgba(58, 34, 12, 0.42), rgba(20, 16, 36, 0.82));
+  color: var(--ice);
+  font: inherit;
+  font-size: var(--type-body);
+  font-weight: 700;
+  text-align: left;
+  cursor: pointer;
+  clip-path: polygon(9px 0, 100% 0, 100% calc(100% - 9px), calc(100% - 9px) 100%, 0 100%, 0 9px);
+  transition: border-color 160ms ease-out, background-color 160ms ease-out;
+}
+
+.say:hover,
+.say:focus-visible {
+  border-color: rgba(255, 178, 63, 0.7);
+  outline: none;
+}
+
+.say > svg {
+  width: 18px;
+  height: 18px;
+  color: var(--amber);
+}
+
+.sayText {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.sayGo {
+  width: 16px;
+  height: 16px;
+  color: var(--amber);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .firstArrow,
+  .say {
+    transition: none;
+  }
+}
+
+.crew .says {
+  margin: 10px 0 0;
+}
+
+/* After the signature, the same place: «Your agent · Working», a tap to its card. */
+.workingDot {
+  flex: none;
+  width: 9px;
+  height: 9px;
+  margin: 0 4px 0 8px;
+  border-radius: 50%;
+  background: var(--mint, #14f195);
+  box-shadow: 0 0 10px var(--mint, #14f195);
+  animation: crewPulse 1.8s ease-in-out infinite;
+}
+
+.firstText em.workingWord {
+  color: var(--mint, #14f195);
+}
+
+@keyframes crewPulse {
+  50% {
+    opacity: 0.45;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .workingDot {
+    animation: none;
+  }
+}

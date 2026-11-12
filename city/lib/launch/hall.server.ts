@@ -1,18 +1,20 @@
 import { judgeCityTradeOnServer } from '../../../lib/city-economy/clusters.server.ts';
-import type { TradeJudgement } from '../../../lib/city-economy/honest-count.ts';
+import type { CityTrade, TradeJudgement } from '../../../lib/city-economy/honest-count.ts';
 import { windowTotal } from '../../../lib/core/launch/creator-stats.ts';
 import { boardExclusions } from '../../../lib/growth/league-store.ts';
-import { readLaunchStats } from '../../../lib/launch/creator-stats.server.ts';
+import { readLaunchEarnedAll, readLaunchStats } from '../../../lib/launch/creator-stats.server.ts';
 import { readLaunchMarket } from '../../../lib/launch/market.server.ts';
 import { readLaunchMarkets } from '../../../lib/launch/markets.server.ts';
 import { launchHealthDeps } from '../../../lib/launch/runtime.server.ts';
 import { deadline, inTurn, KeptWork, type GuardAnswer, type WorkAnswer } from './hall-guard.ts';
-import { hallCandidates, hallTrades, hallView, type HallMarketRead, type HallView } from './hall.ts';
+import { hallCandidates, hallReachesBack, hallTrades, hallView, type HallMarketRead, type HallView } from './hall.ts';
 
 /**
  * The Hall of Fame on the server: the same reads the engine's `/api/v1/launch/markets`, `…/{mint}/market` and
- * `…/{mint}/stats` answer with — the engine's own functions, unchanged and read-only — and every trade of the week put
- * to the honest count with the Growth line's real cluster check (`lib/city-economy/clusters.server.ts`).
+ * `…/{mint}/stats` answer with — the engine's own functions, read-only — the creator role's all-time earnings on the
+ * chain's counters from the same kept read (`readLaunchEarnedAll`), and every trade of the week put to the honest count
+ * with the Growth line's real cluster check (`lib/city-economy/clusters.server.ts`). Only when a board's week counts
+ * nobody are the older trades read put to it too, the newest first, inside the same budget (CITY-230).
  *
  * One Hall is worked out at a time and kept for a few minutes for every visitor: the week does not change by the
  * second, and the cluster check reads the chain. The whole work keeps one budget (`HALL_WORK_MS`), so it never runs
@@ -63,29 +65,45 @@ async function workOut(): Promise<WorkAnswer<HallView, HallCode>> {
   const reads = await inTurn(chosen, READS_AT_ONCE, async (row): Promise<HallMarketRead> => {
     if (Date.now() >= readsUntil || budget.over()) {
       cut += 1;
-      return { row, market: null, stats: null, weekFee: null };
+      return { row, market: null, stats: null, weekFee: null, allFee: null };
     }
     const market = await budget.within(readLaunchMarket(deps, row.token).catch(() => null), READ_MS);
     const stats = market ? await budget.within(readLaunchStats(deps, row.token).catch(() => null), READ_MS) : null;
+    /* The same kept read of the creator fees the stats just made: no second read of the chain. */
+    const allFee = stats ? await budget.within(readLaunchEarnedAll(deps, row.token).catch(() => null), READ_MS) : null;
     if (!market || !stats) cut += 1;
-    return { row, market, stats, weekFee: stats ? windowTotal(stats.revenue.week) : null };
+    return { row, market, stats, weekFee: stats ? windowTotal(stats.revenue.week) : null, allFee };
   });
 
-  const trades = hallTrades(reads, now, exclude).slice(0, HALL_TRADES_MAX);
-  const checksUntil = Date.now() + HALL_CHECKS_MS;
-  const judged = await inTurn(trades, CHECKS_AT_ONCE, async (trade) => {
-    if (Date.now() >= checksUntil || budget.over()) {
-      cut += 1;
-      return null;
-    }
-    const judgement = await budget.within(judgeCityTradeOnServer(trade).catch(() => null), CHECK_MS);
-    if (!judgement) cut += 1;
-    return judgement;
-  });
+  /* The week's trades first; the older ones only when a board's week counts nobody — never past the same budget. */
   const judgements = new Map<string, TradeJudgement>();
-  for (const judgement of judged) if (judgement) judgements.set(judgement.tx, judgement);
+  const checksUntil = Date.now() + HALL_CHECKS_MS;
+  const judge = async (trades: readonly CityTrade[]) => {
+    const judged = await inTurn(trades, CHECKS_AT_ONCE, async (trade) => {
+      if (Date.now() >= checksUntil || budget.over()) {
+        cut += 1;
+        return null;
+      }
+      const judgement = await budget.within(judgeCityTradeOnServer(trade).catch(() => null), CHECK_MS);
+      if (!judgement) cut += 1;
+      return judgement;
+    });
+    for (const judgement of judged) if (judgement) judgements.set(judgement.tx, judgement);
+  };
+  const week = hallTrades(reads, now, exclude).slice(0, HALL_TRADES_MAX);
+  await judge(week);
+  let view = hallView({ network: list.network, reads, judgements, exclude, listed, now });
+  if (hallReachesBack(view)) {
+    const asked = new Set(week.map((trade) => trade.tx));
+    const older = hallTrades(reads, now, exclude, 'all').filter((trade) => !asked.has(trade.tx));
+    const room = HALL_TRADES_MAX - week.length;
+    if (room > 0 && older.length) {
+      await judge(older.slice(0, room));
+      view = hallView({ network: list.network, reads, judgements, exclude, listed, now });
+    }
+  }
 
-  return { ok: true, partial: cut > 0, view: hallView({ network: list.network, reads, judgements, exclude, listed, now }) };
+  return { ok: true, partial: cut > 0, view };
 }
 
 /** One Hall worked out at a time on this instance, kept a few minutes, and a pause after the engine failed. */

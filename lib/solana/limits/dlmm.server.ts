@@ -208,7 +208,12 @@ export async function buildDlmmPlace(
 
 /* ------------------------------------------------------- cancel and claim */
 
-/** Cancel every open bin and close the account: the deposit, what converted and the rent come back in one signature. */
+/**
+ * Cancel every open bin and close the account: the deposit, what converted and the rent come back in one signature.
+ * One close, never two (CITY-231): the SDK's `cancelLimitOrder` (1.9.14) already ends with `close_limit_order_if_empty`,
+ * and a second close after it finds the account gone and fails the whole transaction. An order with no open bin left
+ * is only closed.
+ */
 export async function buildDlmmCancel(
   args: Readonly<{ owner: string; limitOrder: string }>,
   deps: Readonly<{ connection?: Connection }> = {},
@@ -225,13 +230,10 @@ export async function buildDlmmCancel(
     const dlmm = await DLMM.create(connection, pool);
     const order = await dlmm.getLimitOrder(orderKey);
     const binIds = order.limitOrderData.limitOrderBinData.filter((bin) => !bin.empty).map((bin) => bin.binId);
-    const transaction = new Transaction();
-    if (binIds.length > 0) {
-      const cancel = await dlmm.cancelLimitOrder({ limitOrderPubkey: orderKey, owner, rentReceiver: owner, binIds });
-      transaction.add(...cancel.instructions);
-    }
-    const close = await dlmm.closeLimitOrderIfEmpty({ limitOrder: orderKey, owner, rentReceiver: owner });
-    transaction.add(...close.instructions);
+    const built = binIds.length > 0
+      ? await dlmm.cancelLimitOrder({ limitOrderPubkey: orderKey, owner, rentReceiver: owner, binIds })
+      : await dlmm.closeLimitOrderIfEmpty({ limitOrder: orderKey, owner, rentReceiver: owner });
+    const transaction = new Transaction().add(...built.instructions);
     const { blockhash, lastValidBlockHeight } = await connection.getLatestBlockhash("confirmed");
     transaction.recentBlockhash = blockhash;
     transaction.lastValidBlockHeight = lastValidBlockHeight;
@@ -262,6 +264,7 @@ export type DlmmOrderRow = Readonly<{
   binIds: readonly number[];
   /** Y per X at the order's first bin. */
   poolPrice: number;
+  /** The amounts below are base units (lamports, micro-USDC), as every reader of these rows counts them. */
   depositX: string;
   depositY: string;
   unfilledX: string;
@@ -273,6 +276,23 @@ export type DlmmOrderRow = Readonly<{
   /** NotFilled · PartialFilled · Fulfilled. */
   status: "OPEN" | "PARTIAL" | "FILLED";
 }>;
+
+/**
+ * A token amount in base units from the SDK's reading of an order. The SDK (1.9.14, `parseInfo`) answers every amount
+ * of a limit order in whole tokens — «0.288514314» SOL, «29.7» USDC, «1e-9» for one lamport (Decimal's own notation) —
+ * while the rows here, the Hangar and the reconciler count base units (CITY-231: a part-filled order made `BigInt`
+ * throw and «My bots» / «My orders» lose the order). Exact: decimal digits shifted, never a float.
+ *
+ * A form it does not recognise is null, never «0» (CITY-233): a zero would show an order holding money as empty.
+ */
+export function rawOfUi(ui: string, decimals: number): string | null {
+  const match = /^(\d*)(?:\.(\d*))?(?:e([+-]?\d+))?$/i.exec(ui.trim());
+  if (!match || (!match[1] && !match[2])) return null;
+  const digits = `${match[1] ?? ""}${match[2] ?? ""}`;
+  const point = (match[1] ?? "").length + Number(match[3] ?? 0) + decimals;
+  const whole = point <= 0 ? "0" : point >= digits.length ? digits + "0".repeat(point - digits.length) : digits.slice(0, point);
+  return BigInt(whole || "0").toString();
+}
 
 const LIMIT_ORDER_ACCOUNT = "89b7d45b731d8de3";
 const SOLANA_PUBLIC_ENDPOINT = "https://api.mainnet-beta.solana.com";
@@ -326,6 +346,23 @@ export async function listDlmmOrders(
           const status = statuses.length > 0 && statuses.every((value) => value === LimitOrderStatus.Fulfilled)
             ? "FILLED"
             : statuses.some((value) => value === LimitOrderStatus.Fulfilled || value === LimitOrderStatus.PartialFilled) ? "PARTIAL" : "OPEN";
+          const data = order.limitOrderData;
+          const x = (ui: string) => rawOfUi(String(ui), info.tokenX.mint.decimals);
+          const y = (ui: string) => rawOfUi(String(ui), info.tokenY.mint.decimals);
+          const amounts = {
+            depositX: x(data.totalDepositAmountX),
+            depositY: y(data.totalDepositAmountY),
+            unfilledX: x(data.totalUnfilledAmountX),
+            unfilledY: y(data.totalUnfilledAmountY),
+            swappedX: x(data.totalSwappedAmountX),
+            swappedY: y(data.totalSwappedAmountY),
+            feeX: x(data.totalFeeAmountX),
+            feeY: y(data.totalFeeAmountY),
+          };
+          /* An amount in a form not recognised: the wallet's orders are not read this time — never shown as empty (CITY-233). */
+          const unread = Object.entries(amounts).find(([, raw]) => raw === null);
+          if (unread) return { ok: false, code: "UNREADABLE_AMOUNT", reason: `An amount of order ${key} is not readable (${unread[0]}).` };
+          const raw = amounts as Readonly<Record<keyof typeof amounts, string>>;
           seen.set(key, {
             limitOrder: key,
             pool,
@@ -336,14 +373,7 @@ export async function listDlmmOrders(
             isAskSide: first?.isAskSide ?? false,
             binIds: bins.map((bin) => bin.binId),
             poolPrice: first ? DLMM_PRICE(first.binId, info.lbPair.binStep) * 10 ** (info.tokenX.mint.decimals - info.tokenY.mint.decimals) : Number.NaN,
-            depositX: order.limitOrderData.totalDepositAmountX,
-            depositY: order.limitOrderData.totalDepositAmountY,
-            unfilledX: order.limitOrderData.totalUnfilledAmountX,
-            unfilledY: order.limitOrderData.totalUnfilledAmountY,
-            swappedX: order.limitOrderData.totalSwappedAmountX,
-            swappedY: order.limitOrderData.totalSwappedAmountY,
-            feeX: order.limitOrderData.totalFeeAmountX,
-            feeY: order.limitOrderData.totalFeeAmountY,
+            ...raw,
             status,
           });
         }

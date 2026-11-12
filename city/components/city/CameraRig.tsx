@@ -12,7 +12,10 @@ import { useAssistant } from '@/city/lib/assistant/store';
 import { ghostGuard } from '@/city/lib/city/ghost';
 import { useCity } from '@/city/lib/city/store';
 import { useGameMap } from '@/city/lib/game/map';
+import { actOnBoard, signUnder } from '@/city/lib/launch/hall-tap';
 import { useRun } from '@/city/lib/run/store';
+import { enterVault } from '@/city/lib/vault/enter';
+import { vaultUnder } from '@/city/lib/vault/tap';
 
 type Preset = { pos: [number, number, number]; target: [number, number, number]; fov: number };
 
@@ -180,6 +183,21 @@ export function CameraRig({ world }: { world: RefObject<THREE.Group | null> }) {
       raycaster.setFromCamera(ndc, camera);
       const state = useCity.getState();
       const hit = pickTower(raycaster.ray, state.layout.towers);
+      const towerAt = hit ? Math.hypot(hit.x - raycaster.ray.origin.x, hit.z - raycaster.ray.origin.z) : Infinity;
+      const sign = signUnder(raycaster.ray);
+      // The Vault's tower standing nearer than the tower behind it — and than any sign — opens its room (CITY-241).
+      const vault = vaultUnder(raycaster.ray);
+      if (vault && vault.distance < towerAt && (!sign || vault.distance < sign.distance)) {
+        ghost.arm(e.pointerType);
+        enterVault();
+        return;
+      }
+      // A Hall of Fame sign standing nearer than the tower behind it takes the tap: its board's one action (CITY-230).
+      if (sign && sign.distance < towerAt) {
+        ghost.arm(e.pointerType);
+        actOnBoard(sign.board);
+        return;
+      }
       if (hit) ghost.arm(e.pointerType);
       state.select(hit ? hit.tower.id : null);
     };

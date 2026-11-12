@@ -9,9 +9,15 @@ import test from "node:test";
 
 const read = (path) => readFileSync(new URL(path, import.meta.url), "utf8");
 
-test("both windows ask the frame to stand as tall as their tab", () => {
+test("Money asks the frame to stand as tall as its tab; Earn keeps one height for every tab (CITY-242)", () => {
   assert.match(read("./MoneyLayer.tsx"), /id: 'money',[\s\S]*?\bfit: true,/u);
-  assert.match(read("../earn/EarnLayer.tsx"), /id: 'earn',[\s\S]*?\bfit: true,/u);
+  // The eye pass of 10.11: Earn's window jumped 615 → 383 → 460 px as its tabs changed. Its first size follows the
+  // screen instead (`firstSize`), wide enough for the Shelf's three columns.
+  const earn = read("../earn/EarnLayer.tsx");
+  const spec = earn.slice(earn.indexOf("id: 'earn',"), earn.indexOf("onClose: closeEarn"));
+  assert.doesNotMatch(spec, /\bfit: true\b/u);
+  assert.match(spec, /size: earnSize,/u);
+  assert.match(earn, /firstSize\(viewport, EARN_WIDTHS, EARN_HEIGHT\)/u);
 });
 
 test("the frame and the sheet say when they fit, so the contents can stand in the flow", () => {
@@ -54,5 +60,8 @@ test("«Earn»: the code is warm after the city's first frame, the reads start w
 test("«Earn»'s Shelf holds each big number's place while it is read", () => {
   const shelf = read("../earn/Shelf.tsx");
   assert.match(shelf, /reading\[id\] \?/u);
-  assert.match(shelf, /\{big \|\| reading\[id\] \? <p className=\{s\.cardLine\}>/u);
+  // CITY-243: a source that did not answer leaves an honest dash with the number's words in the same place, and the
+  // card's line stands under every card — never the line in the number's place over an empty band.
+  assert.match(shelf, /\$\{s\.cardNone\}`\}>—<\/b>/u);
+  assert.match(shelf, /<\/div>\n\s*<p className=\{s\.cardLine\}>\{w\.line\}<\/p>/u);
 });

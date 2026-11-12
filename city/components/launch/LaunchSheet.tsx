@@ -4,6 +4,7 @@ import { useEffect, useId, useMemo, useRef, useState, type ChangeEvent } from 'r
 import { checkLaunchForm, type FieldProblem } from '@/lib/launch/form';
 import { shrinkPicture } from '@/lib/launch/picture.client';
 import type { LaunchPresetView } from '@/lib/api/v1/contract';
+import { isPhoneUserAgent, PHANTOM_DOWNLOAD_URL, phantomBrowseUrl } from '@/lib/solana/open-in-wallet';
 import { openBerth } from '@/city/lib/launch/berth-store';
 import { landed, launchEngine, launchPrep, launchWallet, useLaunch } from '@/city/lib/launch/district';
 import { failureWords, pictureRefused, readRefusal, runLaunch, type LaunchFailure, type Phase } from '@/city/lib/launch/flow';
@@ -20,9 +21,7 @@ import { costLine, launchFacts, reviewRows, shieldLine } from '@/city/lib/launch
 import type { WalletOption } from '@/city/lib/launch/wallet';
 import { useLang } from '@/city/lib/i18n/lang';
 import { useWords, type Same } from '@/city/lib/i18n/dict';
-import { useKeyboardInset } from '@/city/lib/keyboard';
 import { BerthGlyph } from '../berth/glyphs';
-import { CloseGlyph } from '../hud/glyphs';
 import { tickerAfterName } from '@/city/lib/launch/ticker';
 import { LaunchPreview } from './LaunchPreview';
 import { EarlyDoor, EarlyFacts, OpenedCard, ShareDoor } from './LaunchDoors';
@@ -51,6 +50,9 @@ const PICTURES = 'image/png,image/jpeg,image/webp,image/gif';
  * engine's own (`checkLaunchForm`), so the sheet says at once what the engine would refuse; the picture goes to the
  * engine's store while the creator types, and the engine simulates the launch before the press (`prepare.ts`). The
  * sheet decides nothing for the creator and holds no key.
+ *
+ * Since CITY-242 the sheet is the contents of a window of the city's one frame (`LaunchLayer`), as every other place of
+ * the Deck: the frame brings the title, «Close», the moving and the phone's sheet, and the Deck stays where it is.
  */
 export function LaunchSheet() {
   const step = useLaunch((st) => st.step);
@@ -58,12 +60,11 @@ export function LaunchSheet() {
   const network = useLaunch((st) => st.network);
   const stub = useLaunch((st) => st.stub);
   const close = useLaunch((st) => st.closeSheet);
-  const inset = useKeyboardInset();
   const w = useWords(LAUNCH);
   if (!preset || !network) return null;
   return (
-    <div className={`${s.sheet} ${s.panel}`} style={{ ['--kb' as string]: `${inset}px` }} role="dialog" aria-label={step === 'form' ? w.raise : w.review} data-launch-sheet="">
-      {step === 'form' ? <FormStep onClose={close} /> : <ReviewStep onClose={close} />}
+    <div className={s.framed} aria-label={step === 'form' ? w.raise : w.review} data-launch-sheet="">
+      {step === 'form' ? <FormStep /> : <ReviewStep onClose={close} />}
       {(network === 'solana:devnet' || stub) && (
         <div className={s.netLine}>
           {stub ? w.stubLine : w.devnetLine}
@@ -75,7 +76,7 @@ export function LaunchSheet() {
 
 /* ---------------------------------------------------------------- the three fields */
 
-function FormStep({ onClose }: { onClose: () => void }) {
+function FormStep() {
   const draft = useLaunch((st) => st.draft);
   const setDraft = useLaunch((st) => st.setDraft);
   const setStep = useLaunch((st) => st.setStep);
@@ -123,17 +124,14 @@ function FormStep({ onClose }: { onClose: () => void }) {
 
   return (
     <>
-      <div className={s.head}>
-        <h2 className={`${s.display} ${s.title} ${s.titleWrap}`}>{w.raise}</h2>
-        {/* The creator's berth (CITY-141): what their launches earned and «Забрати», one quiet tap from the sheet. */}
+      {/* The window's head carries the title and «Close»: the cost line comes first, the creator's berth beside it
+          (CITY-141: what their launches earned and «Забрати», one quiet tap from the sheet). */}
+      <div className={s.costHead}>
+        <CostLine preset={preset} />
         <button className={`${s.close} ${s.berth}`} aria-label={w.myBerth} data-hint={w.myBerth} data-launch-berth="" onClick={() => openBerth()}>
           <BerthGlyph />
         </button>
-        <button className={s.close} aria-label={w.close} onClick={onClose}>
-          <CloseGlyph />
-        </button>
       </div>
-      <CostLine preset={preset} />
       <LaunchPreview
         inputId={ids.picture}
         picture={draft.picture?.url ?? null}
@@ -256,6 +254,7 @@ function ReviewStep({ onClose }: { onClose: () => void }) {
   const setEarly = useLaunch((st) => st.setEarly);
   const earlyBounds = useLaunch((st) => st.earlyBounds);
   const earlySwitch = useLaunch((st) => st.earlySwitch);
+  const shareSwitch = useLaunch((st) => st.shareSwitch);
   const w = useWords(LAUNCH);
   const lang = useLang();
   const setConnection = useLaunch((st) => st.setConnection);
@@ -275,7 +274,7 @@ function ReviewStep({ onClose }: { onClose: () => void }) {
   const earlyDoor = earlyDoorOpen(network, earlyBounds, earlySwitch);
   const earlyOn = earlyDoor && early !== null && earlyBounds !== null;
   const earlyPreview = useMemo(() => (earlyOn ? earlyRules(early, earlyBounds, Math.floor(Date.now() / 1000)) : null), [earlyOn, early, earlyBounds]);
-  const shareDoor = shareOpen(network) && !earlyOn;
+  const shareDoor = shareOpen(network, undefined, shareSwitch) && !earlyOn;
   const shared = shareDoor ? shareRows : NO_SHARES;
   const splitProblem = shareProblem(shared, connection?.address ?? null);
   const splitReady = shared.length > 0 && splitProblem === null;
@@ -375,6 +374,7 @@ function ReviewStep({ onClose }: { onClose: () => void }) {
         stored: prep.store(fields),
         takePrebuilt: prep.take,
         others: shared.length ? othersOf(shared) : undefined,
+        shareSwitch,
       });
       if (result.step === 'done') {
         landed(result.liftoff, preset);
@@ -402,9 +402,6 @@ function ReviewStep({ onClose }: { onClose: () => void }) {
             {earlyOn ? check.clean.name : `${check.clean.name} · ${preset.name[lang] ?? preset.name.en}`}
           </div>
         </div>
-        <button className={s.close} aria-label={w.close} onClick={onClose}>
-          <CloseGlyph />
-        </button>
       </div>
       {/* Early access is its own creation: the curve's simulated cost is not its cost, so the line says the network's fee alone. */}
       <CostLine preset={preset} simulated={!earlyOn} />
@@ -499,7 +496,7 @@ function ReviewStep({ onClose }: { onClose: () => void }) {
           {w.launchSymbol(symbol)}
         </button>
       ) : options ? (
-        <WalletList options={options} connecting={connecting} onPick={pick} />
+        <WalletList options={options} connecting={connecting} onPick={pick} back={`${window.location.origin}/?open=launch`} />
       ) : (
         <button className={`${s.display} ${s.action} ${s.actionBig}`} onClick={connect}>
           {w.connect}
@@ -557,13 +554,27 @@ function HaloRow({ preset }: { preset: LaunchPresetView }) {
   );
 }
 
-function WalletList({ options, connecting, onPick }: { options: readonly WalletOption[]; connecting: string | null; onPick: (name: string) => void }) {
+export function WalletList({ options, connecting, onPick, back }: { options: readonly WalletOption[]; connecting: string | null; onPick: (name: string) => void; back?: string }) {
   const w = useWords(LAUNCH);
+  // A browser with no wallet gets one way on, never a sentence and a dead end (CITY-236, as the top bar's wallet since
+  // CITY-221): a phone opens this very place inside Phantom's browser — `back`, the launch sheet or the early window —
+  // and a computer gets the wallet.
+  const [phone, setPhone] = useState(false);
+  useEffect(() => setPhone(isPhoneUserAgent(navigator.userAgent)), []);
   if (!options.length) {
     return (
-      <div className={s.noWallet}>
-        {w.noWallet}
-      </div>
+      <>
+        <div className={s.noWallet}>{w.noWallet}</div>
+        <a
+          className={`${s.display} ${s.action} ${s.actionBig}`}
+          href={phone ? phantomBrowseUrl(back ?? window.location.href, window.location.origin) : PHANTOM_DOWNLOAD_URL}
+          target={phone ? undefined : '_blank'}
+          rel="noreferrer"
+          data-wallet-get={phone ? 'open' : 'install'}
+        >
+          {phone ? w.openInPhantom : w.getPhantom}
+        </a>
+      </>
     );
   }
   return (

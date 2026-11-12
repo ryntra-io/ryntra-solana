@@ -43,3 +43,16 @@ export function keyMode(env: Env): "live" | "quiet" {
 export function catalogKind(env: Env): "live" | "stub" {
   return env.NODE_ENV !== "production" && env.RYNTRA_RING_MODELS === "stub" ? "stub" : "live";
 }
+
+/** The cookie a stand pass plays as (`standAccount`). */
+export const STAND_COOKIE = "ryntra-ring-stand";
+
+/**
+ * A developer's stand only (CITY-217): the account a stand pass plays as, named by the `ryntra-ring-stand` cookie
+ * (`stand-<letters>`), when `RYNTRA_RING_STAND=1` — so the whole way, two owners and a rated duel included, is walked
+ * without a wallet's session. Never in production: there it is always `null` and the session decides, as everywhere.
+ */
+export function standAccount(env: Env, cookie: string | undefined): string | null {
+  if (env.NODE_ENV === "production" || env.RYNTRA_RING_STAND?.trim() !== "1") return null;
+  return cookie && /^stand-[a-z0-9-]{1,32}$/.test(cookie) ? cookie : null;
+}

@@ -84,6 +84,7 @@ export function useWindowOpen(): boolean {
   const guides = useGuides((st) => st.open);
   const moments = useMoments((st) => st.sheet);
   const launch = useLaunch((st) => st.sheet);
+  const entry = useLaunch((st) => st.entry);
   const build = useFree((st) => st.on);
   const pages = usePages((st) => st.open);
   const menu = useHudPanels((st) => st.menu);
@@ -110,7 +111,7 @@ export function useWindowOpen(): boolean {
     how: { open: how },
     guides: { open: guides },
     moments: { sheet: moments },
-    launch: { sheet: launch },
+    launch: { sheet: launch, entry },
     build: { on: build },
     pages: { open: pages },
     hud: { menu, settings },

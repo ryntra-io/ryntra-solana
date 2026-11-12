@@ -21,13 +21,19 @@ export type LadderOrderRead = Readonly<{
   partial: number;
 }>;
 
-/** One transaction of a placed ladder: its order account, how the relay saw it land, the steps it holds. */
+/**
+ * One transaction of a placed ladder: its order account, how it stands — `sent` from the moment it is signed, before
+ * the relay is even asked (CITY-231), then `confirmed` or `failed` by the chain's own word — its signature, read from
+ * the signed bytes, and the steps it holds.
+ */
 export type PlacedLeg = Readonly<{
   limitOrder: string;
   side: LadderSide;
   state: "confirmed" | "sent" | "failed";
   signature: string | null;
   rungs: readonly Rung[];
+  /** When this leg was handed on to be sent; a leg the chain still does not show long after never landed. */
+  sentAt?: number;
 }>;
 
 export type LiveState = "placing" | "failed" | "incomplete" | "working" | "filled" | "due" | "closed";

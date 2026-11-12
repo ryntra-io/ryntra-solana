@@ -26,6 +26,7 @@ import { hireFit, readHire, type Role } from '@/city/lib/crew/read';
 import { crewGatesNow } from '@/city/lib/crew/hire';
 import { CREW_WORDS } from '@/city/lib/crew/words';
 import { CrewGlyph, RoleGlyph } from '../crew/glyphs';
+import { Says } from '../crew/Says';
 import { INSTRUCT } from '@/city/lib/instruct/words';
 import { useKeyboardInset } from '@/city/lib/keyboard';
 import { launchOpenHere, useLaunch } from '@/city/lib/launch/district';
@@ -212,6 +213,12 @@ function Palette() {
           </ul>
         ) : (
           !text.trim() && (
+            <>
+            {/* The first sentences to the agent (CITY-222): one tap says it, the agent's card opens. */}
+            <Says onSay={(say) => {
+              const command = fit({ kind: 'autopilot', ask: say.ask }, gates);
+              if (command) choose(command);
+            }} />
             <div className={s.picks}>
               {picks.map((pick) => (
                 <button key={pick.key} type="button" className={`${s.pick} ${pick.ask ? s.pickAsk : ''}`} onClick={() => choose(pick.command)}>
@@ -220,6 +227,7 @@ function Palette() {
                 </button>
               ))}
             </div>
+            </>
           )
         )}
       </section>

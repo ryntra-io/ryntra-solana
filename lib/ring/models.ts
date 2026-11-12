@@ -7,9 +7,13 @@
  * - `quote(id)` — the model as an agent would get it: its endpoints read, the cheapest one that is not a deferred
  *   service tier chosen, `preflight` run on exactly that provider, and the class, cost and playable formats taken from
  *   that provider's own price and abilities. What `create` and `change` keep is the quote, never the list's figure.
+ *
+ * The list offers only what can be a brain (CITY-239, `offeredAsBrain`): a model that answers with text alone and at
+ * once. That is a rule of the list to pick from and of nothing else — `quote`, the gateway, the classes and the prices
+ * are as they were, so an agent made earlier with a model the list no longer offers keeps its brain, plays and shows.
  */
 
-import type { CatalogEndpoint, ModelCatalog } from "../models/catalog.ts";
+import type { CatalogEndpoint, CatalogModel, ModelCatalog } from "../models/catalog.ts";
 import type { ModelGatewayError } from "../models/errors.ts";
 import type { ModelGateway } from "../models/types.ts";
 import { formatsOf } from "./agent.ts";
@@ -43,13 +47,27 @@ export function chooseEndpoint(endpoints: readonly CatalogEndpoint[]): CatalogEn
   return best?.endpoint ?? null;
 }
 
+/**
+ * Whether the list offers a catalog model as a brain (CITY-239). An agent of the Ring talks, so its brain is a model
+ * whose answer is text and nothing else: OpenRouter's catalog also lists models that draw, speak, sing or film (their
+ * `output_modalities` name a picture, a sound or a clip beside the text), and those could be picked. A `:batch` twin is
+ * the same model answered through OpenRouter's queue hours later, never inside a match. An entry that does not say
+ * what it answers with stays: unknown is not refused — and an empty list says as little as a missing one (CITY-240:
+ * the catalog naming the field and leaving it empty took a talking model out of the list).
+ */
+export function offeredAsBrain(model: Pick<CatalogModel, "id" | "outputModalities">): boolean {
+  if (/:batch$/i.test(model.id)) return false;
+  const outputs = model.outputModalities;
+  return outputs === null || outputs.length === 0 || (outputs.length === 1 && outputs[0] === "text");
+}
+
 export function createRingModels(deps: { catalog: ModelCatalog; gateway: ModelGateway }): RingModels {
   return {
     async list() {
       const snapshot = await deps.catalog.list();
       const models: ModelOption[] = [];
       for (const model of snapshot.models) {
-        if (!model.pinnable) continue;
+        if (!model.pinnable || !offeredAsBrain(model)) continue;
         const input = model.prices.inputPerMillionUsd;
         const output = model.prices.outputPerMillionUsd;
         const cost = matchCostMicroUsd(model);

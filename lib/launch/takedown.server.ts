@@ -11,6 +11,7 @@
  */
 
 import type { GuardStore } from "../guard/store.ts";
+import { readEarlyAccessRecord } from "./early-access.server.ts";
 import { takedownKey, type Takedown } from "./metadata.server.ts";
 import { launchKey } from "./record-key.ts";
 
@@ -24,7 +25,10 @@ export type TakedownResult =
 
 /** The addresses a token's own record names: its metadata, and the picture that metadata names, both of Ryntra's. */
 async function addressesOf(deps: Readonly<{ store: GuardStore; cluster: string; origin: string }>, token: string): Promise<Readonly<{ metadata: string; image: string | null }> | "NOT_FOUND" | "NOT_OURS"> {
-  const record = await deps.store.collection<LaunchRow>("launches").get(launchKey(deps.cluster, token));
+  /* A launch with early access keeps its record apart (`launchEarlyAccess`): the same token, the same metadata — found there too (review 9.11). */
+  const record: LaunchRow | null =
+    (await deps.store.collection<LaunchRow>("launches").get(launchKey(deps.cluster, token))) ??
+    (await readEarlyAccessRecord(deps.store, deps.cluster, token).then((early) => (early ? { token: early.mint, metadataUri: early.metadataUri } : null)));
   if (!record) return "NOT_FOUND";
   const metadata = new RegExp(`^${escape(deps.origin)}/api/launch/metadata/${SHA}$`).exec(record.metadataUri)?.[1];
   if (!metadata) return "NOT_OURS";

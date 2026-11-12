@@ -8,8 +8,8 @@ import '@ryntra/core/ui.css';
 import '@ryntra/core/chart.css';
 
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { RyntraChart } from '@ryntra/core/chart';
-import { detailsOf, headPrice, saysUnavailable, TIMEFRAMES, whyNoChart, type ChartData, type Timeframe } from '@/city/lib/chart/candles';
+import { chartWords, RyntraChart } from '@ryntra/core/chart';
+import { delayLine, detailsOf, headPrice, saysUnavailable, TIMEFRAMES, whyNoChart, type ChartData, type Timeframe } from '@/city/lib/chart/candles';
 import { entryLayer, entryMove } from '@/city/lib/chart/entry';
 import { riskFacts } from '@/city/lib/chart/facts';
 import { marketOf, PRICE_BASIS, resolutionOf, tickFor, timeframeOf, TowerFeed, type Feed } from '@/city/lib/chart/feed';
@@ -22,7 +22,7 @@ import { useScrollThrough } from '@/city/lib/chart/use-gesture';
 import { isStale } from '@/city/lib/city/events';
 import { useCity } from '@/city/lib/city/store';
 import { digits, useWords, type TextKey } from '@/city/lib/i18n/dict';
-import { useLang } from '@/city/lib/i18n/lang';
+import { useLang, type Lang } from '@/city/lib/i18n/lang';
 import type { Tower } from '@/city/lib/market/types';
 import { formatPct } from '@/city/lib/trade/mine';
 // The tower card's own switch (`NEXT_PUBLIC_RYNTRA_CITY_TRADE`): `closed` puts Buy back to «soon» without a code change.
@@ -225,9 +225,12 @@ export function TradeChart({ tower }: { tower: Tower }) {
   const pane = useRef<HTMLDivElement | null>(null);
   const heal = useHeal(pane, data);
   useScrollThrough(pane);
+  useNoEmptyVolume(pane, lang);
+  // The core chart's «Delayed» badge says how long (CITY-243); the window's sheet writes it in (chart.module.css).
+  const delay = { ['--chart-delay' as string]: JSON.stringify(delayLine(timeframe)) };
   // Our chart whole (30.10): its own intervals, styles, scales, indicators and drawings over the candles.
   return (
-    <div className={`${c.inTrade} ${c.tooled}`} data-trade-chart="">
+    <div className={`${c.inTrade} ${c.tooled}`} style={delay} data-trade-chart="">
       <div className={c.chart} ref={pane}>
         <ChartBody tower={tower} data={data} feed={feed} timeframe={timeframe} onTimeframe={setTimeframe} drawn={drawn} livePrice={livePrice} heal={heal} tools />
       </div>
@@ -348,6 +351,29 @@ function useHover(channel: ReturnType<typeof crosshairChannel>): number | null {
  * after it gave up, or one it gave up beside — start it again by itself, so the person never has to: once for each
  * read, so a chart that keeps failing on the same bars waits for the next read instead of trying in a loop.
  */
+/**
+ * The core chart's line under the crosshair names the volume even on a bar that has none — «Vol no volume», on the
+ * forming bar every time (CITY-243). Such a figure is marked and steps aside (chart.module.css); a bar with volume
+ * shows it as before. Only the window's own pane is watched, and only its words.
+ */
+function useNoEmptyVolume(pane: Readonly<{ current: HTMLElement | null }>, lang: Lang): void {
+  useEffect(() => {
+    const root = pane.current;
+    if (!root) return;
+    const none = chartWords(lang).noVolume;
+    const mark = () => {
+      for (const figure of root.querySelectorAll('.ryntra-chart__ohlc-row .ryntra-chart__figure')) {
+        const value = figure.querySelector('.ryntra-chart__value')?.textContent?.trim() ?? '';
+        figure.toggleAttribute('data-city-empty', value === none);
+      }
+    };
+    mark();
+    const watch = new MutationObserver(mark);
+    watch.observe(root, { subtree: true, childList: true, characterData: true });
+    return () => watch.disconnect();
+  }, [pane, lang]);
+}
+
 function useHeal(pane: Readonly<{ current: HTMLElement | null }>, data: ChartData): number {
   const [heal, setHeal] = useState(0);
   const healedFor = useRef<number | null>(null);

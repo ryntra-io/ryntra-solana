@@ -17,7 +17,8 @@ export type { PinnedModel } from "./pin.ts";
 
 /** Who a call is for — written in the journal and in a key's name; never a wallet, never words. */
 export type ModelSubject = Readonly<{
-  kind: "vault-guard" | "ring-agent";
+  /** A Vault's guard, a Ring's agent in a duel, an Arena agent on a Hack order's copy (`subject.ts`). */
+  kind: "vault-guard" | "ring-agent" | "hack-agent";
   /** The guard's or the agent's own id: 1–64 of `A–Z a–z 0–9 . _ : -`. */
   id: string;
 }>;

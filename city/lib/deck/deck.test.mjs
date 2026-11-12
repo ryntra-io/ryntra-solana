@@ -1,7 +1,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 
-import { CENTER, CHROME_KEY, LEFT, PLACES, RIGHT, SHOWN, TRAYS, doorOpen, doorsOf, futuresWay, isTray, placeOpen, readChrome, writeChrome } from "./items.ts";
+import { CENTER, CHROME_KEY, LEFT, PLACES, RIGHT, SHOWN, TRAYS, doorOpen, doorsHint, doorsOf, futuresWay, isTray, placeOpen, readChrome, writeChrome } from "./items.ts";
 import { DECK } from "../../components/deck/words.ts";
 
 const ALL_SHUT = { launch: false, earn: false, guard: false, money: false, trade: false, spot: false, futures: null, hangar: false, bots: false, garage: false, ring: false, hack: false, vault: false };
@@ -97,4 +97,20 @@ test("the top bar and the Deck: hidden by their arrows, kept on this device, bro
   assert.deepEqual(readChrome('{"top":false,"bottom":false}'), { top: false, bottom: false });
   assert.equal(writeChrome(SHOWN), null);
   assert.deepEqual(readChrome(writeChrome({ top: false, bottom: true })), { top: false, bottom: true });
+});
+
+test("the Arena's hint names its open doors only, in the language on screen (CITY-236)", () => {
+  const names = (lang, doors) => doors.map((door) => DECK[lang][door]);
+  assert.equal(doorsHint(names("en", ["ring", "vault"]), DECK.en.and), "Ring and Vault", "the Hack is not named behind a closed door");
+  assert.equal(doorsHint(names("en", ["ring", "hack", "vault"]), DECK.en.and), DECK.en.hintArena, "all three, as the words had it");
+  assert.equal(doorsHint(names("uk", ["ring", "vault"]), DECK.uk.and), "Ринг і Сейф");
+  assert.equal(doorsHint(names("uk", ["ring", "hack", "vault"]), DECK.uk.and), DECK.uk.hintArena);
+  assert.equal(doorsHint(names("en", ["vault"]), DECK.en.and), "Vault");
+  assert.equal(doorsHint([], DECK.en.and), null, "a shut Arena keeps its words");
+});
+
+test("the Ring and the Vault promise no money while they are played without it (CITY-217, CITY-218)", () => {
+  for (const lang of ["en", "uk"]) {
+    for (const key of ["hintRing", "hintVault"]) assert.doesNotMatch(DECK[lang][key], /budget|pool|бюджет|пул/i, `${lang} ${key}`);
+  }
 });

@@ -4,8 +4,11 @@ import { useRef, type KeyboardEvent, type PointerEvent as ReactPointerEvent } fr
 import { digits, useWords } from '@/city/lib/i18n/dict';
 import { fieldText, fieldValue } from '@/city/lib/i18n/figures';
 import { formatUnits } from '@/city/lib/trade/format';
+import { MONEY_OPEN } from '@/city/lib/money/flag';
 import { keyShare, pointerShare } from '@/city/lib/trade/size';
-import type { Choice } from '@/city/lib/trade/store';
+import { useTrade, type Choice } from '@/city/lib/trade/store';
+import { offersTopUp, problemLine } from '@/city/lib/trade/top-up';
+import { useWallet } from '@/city/lib/trade/wallet';
 import s from './trade.module.css';
 import { TRADE } from './words';
 
@@ -31,9 +34,13 @@ export function AmountPart({
   const { sizing } = choice;
   const resting = !typable || sizing.share === null;
   const amount = choice.amountRaw && choice.spendDecimals !== null ? formatUnits(choice.amountRaw, choice.spendDecimals, 'down') : '0';
+  // An empty wallet is offered «Add SOL» (CITY-239): the field is not marked wrong for a balance the button answers.
+  const side = useTrade((st) => st.side);
+  const connected = useWallet((st) => Boolean(st.connection));
+  const wrong = problemLine(choice.problem, offersTopUp({ connected, side, max: sizing.max, moneyOpen: MONEY_OPEN })) !== null;
   return (
     <div className={s.size}>
-      <label className={`${s.amount} ${choice.problem ? s.amountWrong : ''}`}>
+      <label className={`${s.amount} ${wrong ? s.amountWrong : ''}`}>
         <input
           className={`${s.display} ${s.amountInput}`}
           inputMode="decimal"
@@ -41,7 +48,7 @@ export function AmountPart({
           spellCheck={false}
           placeholder="0"
           aria-label={w.amountIn(choice.spendUnit)}
-          aria-invalid={Boolean(choice.problem)}
+          aria-invalid={wrong}
           value={fieldText(typed)}
           onChange={(event) => onType(fieldValue(event.target.value))}
           disabled={!typable}

@@ -288,7 +288,7 @@ export const cityDoors: Doors = {
     const subject = tower && aboutSubject(question, tower.symbol) ? tower : null;
     const assistant = useAssistant.getState();
     assistant.show(subject);
-    void assistant.ask(question, useCity.getState().snapshot.towers);
+    void assistant.ask(question, () => useCity.getState().snapshot.towers);
   },
 };
 

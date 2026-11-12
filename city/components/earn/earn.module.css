@@ -127,16 +127,64 @@
 
 /* ---------- Tabs ---------- */
 
-.tabs {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 4px;
+/* The tabs and Earn's words beside them (CITY-243): one quiet «i» at the row's end opens a hint for each word. */
+.tabsRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
   flex: none;
   margin-top: 12px;
 }
 
-.framed > .tabs:first-child {
+.framed > .tabsRow:first-child {
   margin-top: 0;
+}
+
+.tabs {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 4px;
+  flex: 1;
+  min-width: 0;
+}
+
+/* The «i» stands in a finger's reach: its circle is drawn at 30 px, the target around it is 44. */
+.termsInfo {
+  position: relative;
+}
+
+.termsInfo::after {
+  content: '';
+  position: absolute;
+  inset: -7px;
+}
+
+.terms {
+  display: grid;
+  gap: 6px;
+  flex: none;
+  margin: 10px 0 0;
+  padding: 12px 14px;
+  background: rgba(238, 241, 255, 0.04);
+  box-shadow: inset 2px 0 0 var(--violet);
+  font-size: var(--type-small);
+  line-height: 1.4;
+}
+
+.terms div {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0 8px;
+}
+
+.terms dt {
+  font-weight: 800;
+  color: var(--ice);
+}
+
+.terms dd {
+  margin: 0;
+  color: var(--text-dim);
 }
 
 .tab {
@@ -223,6 +271,17 @@
   }
 }
 
+/* A desk 900 px tall (CITY-242): the window is as tall as the workspace, and the Shelf's three rows stood 15 px taller
+   than it — the last card's action under the edge. The lines inside each card stand a little closer, so every card of
+   the Shelf is whole without a scroll; nothing a pointer presses gets smaller. A desk's three columns only. */
+@media (max-height: 940px) and (pointer: fine) {
+  @container window (min-width: 980px) {
+    .shelf .card {
+      gap: 7px;
+    }
+  }
+}
+
 .card {
   position: relative;
   display: flex;
@@ -257,7 +316,7 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 10px;
+  gap: 8px;
   pointer-events: none;
 }
 
@@ -338,8 +397,24 @@
 
 .risk {
   display: inline-flex;
+  align-items: center;
   gap: 4px;
   flex: none;
+}
+
+/* The dots' own word (CITY-243): three dots alone read as a menu or a loader, never as a risk. */
+.riskWord {
+  margin-right: 2px;
+  font-size: var(--type-micro);
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+}
+
+/* A card whose source did not answer: an honest dash at the number's own size, quieter than a figure. */
+.cardBig b.cardNone {
+  color: var(--text-dim);
 }
 
 .risk i {
@@ -989,6 +1064,20 @@
   color: var(--text-dim);
   overflow: hidden;
   text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* What tells two rows of one name apart (CITY-243): a pier's fee, a position's range — the name's own size, quieter. */
+.names b .nameMark,
+.boatTile .nameMark {
+  font-size: inherit;
+  font-weight: 700;
+  color: var(--text-dim);
+  font-variant-numeric: tabular-nums;
+}
+
+.boatTile .nameMark {
+  font-size: var(--type-caption);
   white-space: nowrap;
 }
 

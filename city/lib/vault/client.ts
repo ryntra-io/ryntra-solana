@@ -1,4 +1,4 @@
-import type { AttemptResponse, FeedResponse, VaultErrorCode, VaultId, VaultState } from '../../../lib/vault/contract.ts';
+import type { AttemptResponse, FeedResponse, Guards, VaultErrorCode, VaultId, VaultState } from '../../../lib/vault/contract.ts';
 import { randomId } from '../quarter/ids.ts';
 
 /**
@@ -18,18 +18,24 @@ export class VaultClientError extends Error {
   readonly code: VaultClientCode;
   readonly retryAfterS: number | null;
   readonly window: 'minute' | 'day' | null;
+  /** While the guards rest: until when, and whether a wallet would find them awake. */
+  readonly guards: Guards | null;
 
-  constructor(status: number, code: VaultClientCode, message: string, retryAfterS: number | null = null, window: 'minute' | 'day' | null = null) {
+  constructor(status: number, code: VaultClientCode, message: string, retryAfterS: number | null = null, window: 'minute' | 'day' | null = null, guards: Guards | null = null) {
     super(message);
     this.name = 'VaultClientError';
     this.status = status;
     this.code = code;
     this.retryAfterS = retryAfterS;
     this.window = window;
+    this.guards = guards;
   }
 }
 
-type Refusal = { error?: { code?: unknown; message?: unknown; retryAfterS?: unknown; window?: unknown } };
+type Refusal = { error?: { code?: unknown; message?: unknown; retryAfterS?: unknown; window?: unknown; guards?: unknown } };
+
+const isGuards = (value: unknown): value is Guards =>
+  !!value && typeof (value as Guards).awake === 'boolean' && typeof (value as Guards).walletsAwake === 'boolean' && ((value as Guards).wakesAt === null || typeof (value as Guards).wakesAt === 'string');
 
 export function createHttpVault({ base = '/api/vault', fetch: get = (...args: Parameters<typeof fetch>) => fetch(...args) }: { base?: string; fetch?: typeof fetch } = {}): VaultClient {
   async function call<T>(path: string, init: RequestInit, valid: (body: unknown) => boolean): Promise<T> {
@@ -48,6 +54,7 @@ export function createHttpVault({ base = '/api/vault', fetch: get = (...args: Pa
         typeof e?.message === 'string' ? e.message : 'The vault could not be reached.',
         typeof e?.retryAfterS === 'number' ? e.retryAfterS : null,
         e?.window === 'minute' || e?.window === 'day' ? e.window : null,
+        isGuards(e?.guards) ? e.guards : null,
       );
     }
     if (!valid(body)) throw new VaultClientError(502, 'BAD_ANSWER', 'The vault answered in a way the city does not read.');

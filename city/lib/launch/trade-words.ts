@@ -36,7 +36,12 @@ export function unitsText(value: number, round: 'down' | 'up', lang: Lang): stri
   else if (value >= 1e4) text = scaled(value, 1e3, 'K');
   else if (value >= 1) text = cut(value, 2).toFixed(2);
   else if (value === 0) text = '0';
-  else text = String(cut(value, Math.min(8, Math.max(2, 1 - Math.floor(Math.log10(value))))));
+  else {
+    // Written out in full (CITY-243): `String` writes anything under a millionth as «3.7e-7», which read «$3,7E-7» in
+    // «My tower». Two figures after the leading zeros, down to twelve places.
+    const places = Math.min(12, Math.max(2, 1 - Math.floor(Math.log10(value))));
+    text = cut(value, places).toFixed(places).replace(/\.?0+$/, '');
+  }
   return decimal(text, lang);
 }
 

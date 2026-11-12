@@ -18,6 +18,7 @@
 
 import { MODELS_ENV, missingKey, readKey, type ModelsEnv } from "./env.ts";
 import { ModelGatewayError, classifyHttpFailure, classifyThrown } from "./errors.ts";
+import { badSubject, readSubject } from "./subject.ts";
 import type { ModelSubject } from "./types.ts";
 
 export const KEYS_URL = "https://openrouter.ai/api/v1/keys";
@@ -68,7 +69,6 @@ export type KeyManagerDeps = Readonly<{
   url?: string;
 }>;
 
-const SUBJECT_ID = /^[A-Za-z0-9._:-]{1,64}$/;
 const KEY_HASH = /^[A-Za-z0-9_-]{8,128}$/;
 
 /** The key's name in OpenRouter's list: who it is for, nothing more. */
@@ -134,10 +134,8 @@ export function createKeyManager(deps: KeyManagerDeps = {}): ModelKeyManager {
 
   return {
     async create(input) {
-      const subject = input?.subject as { kind?: unknown; id?: unknown } | undefined;
-      if (!subject || (subject.kind !== "vault-guard" && subject.kind !== "ring-agent") || typeof subject.id !== "string" || !SUBJECT_ID.test(subject.id)) {
-        throw new ModelGatewayError("invalid_request", "subject is { kind: \"vault-guard\" | \"ring-agent\", id } with an id of 1–64 safe characters.");
-      }
+      const subject = readSubject(input?.subject);
+      if (!subject) throw badSubject();
       const limit = input.limitUsd;
       if (typeof limit !== "number" || !Number.isFinite(limit) || limit <= 0 || limit > KEY_LIMIT_MAX_USD) {
         throw new ModelGatewayError("invalid_request", `limitUsd is above 0 and at most ${KEY_LIMIT_MAX_USD}.`);

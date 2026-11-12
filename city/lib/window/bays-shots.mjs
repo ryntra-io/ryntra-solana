@@ -48,7 +48,9 @@ const state = (page) => page.evaluate(() => [...document.querySelectorAll("[data
 if (only === "all" || only === "desk") {
   const desk = { name: "desk", width: 1440, height: 900, mobile: false };
   const { ctx, page } = await open(desk);
-  await tap(page, "[data-window-desks] button[aria-expanded]");
+  // The layouts live in the top bar's menu (CITY-241).
+  await tap(page, "[data-city-menu] > button");
+  await tap(page, "[data-city-menu-layouts]");
   await page.waitForTimeout(800);
   await shot(page, "desk-1440-layouts");
   await tap(page, '[data-desk="trader"]');

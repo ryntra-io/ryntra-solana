@@ -4,6 +4,7 @@ import { useMemo, useState } from 'react';
 import type { EarlyAccessRules } from '@/lib/core/launch/early-access';
 import { useLaunch } from '@/city/lib/launch/district';
 import { earlyCaps, earlyTimes } from '@/city/lib/launch/early';
+import { earlyLink } from '@/city/lib/launch/entry';
 import type { Opened } from '@/city/lib/launch/flow';
 import { pct, shortAddress, usd } from '@/city/lib/launch/format';
 import { SHARE_MAX_OTHERS, keptPercent, nextRow, shareProblem, type ShareProblem, type ShareRow } from '@/city/lib/launch/share';
@@ -66,7 +67,7 @@ export function ShareDoor({ disabled, creator }: { disabled: boolean; creator: s
     return (
       <button
         type="button"
-        className={`${s.shield} ${s.door}`}
+        className={`${s.shield} ${s.shareRow}`}
         disabled={disabled}
         data-launch-share=""
         onClick={() => {
@@ -253,18 +254,42 @@ export function EarlyFacts({ rules }: { rules: EarlyAccessRules }) {
   );
 }
 
-/** The early launch is set: when the creator's people get in, when everyone does, and one way on. */
+/**
+ * The early launch is set: when the creator's people get in, when everyone does, and one way on — the link that calls
+ * them, copied (CITY-220). «Open» shows the creator the window their people see.
+ */
 export function OpenedCard({ opened, onClose }: { opened: Opened; onClose: () => void }) {
   const w = useWords(LAUNCH);
   useLang();
+  const [copied, setCopied] = useState(false);
+  const invite = async () => {
+    try {
+      await navigator.clipboard.writeText(earlyLink(window.location.origin, opened.mint));
+      setCopied(true);
+    } catch {
+      /* The clipboard is not offered here: «Open» still shows the window, and its address is the link. */
+    }
+  };
   return (
     <div className={s.opened} role="status" data-launch-opened="">
       <b className={`${s.display} ${s.openedTitle}`}>{w.openedTitle(opened.symbol)}</b>
       <span className={s.openedLine}>{w.openedLine(clock(opened.opensAt), clock(opened.publicAt))}</span>
       {opened.state === 'PENDING' && <span className={s.openedLine}>{w.openedPending}</span>}
-      <button className={`${s.display} ${s.action} ${s.actionBig}`} onClick={onClose}>
-        {w.close}
+      <button className={`${s.display} ${s.action} ${s.actionBig}`} onClick={() => void invite()} data-launch-invite="">
+        {copied ? w.openedCopied : w.openedInvite}
       </button>
+      <div className={s.openedWays}>
+        <button
+          type="button"
+          className={s.link}
+          onClick={() => {
+            onClose();
+            useLaunch.getState().openEntry(opened.mint);
+          }}
+        >
+          {w.openedOpen}
+        </button>
+      </div>
     </div>
   );
 }

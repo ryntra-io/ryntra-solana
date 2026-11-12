@@ -16,7 +16,11 @@ import { ladderCosts } from "../../../lib/bots/ladder/costs.ts";
 import { DLMM_DISCRIMINATOR } from "../../../lib/solana/limits/dlmm-tx.ts";
 import { DLMM_PROGRAM } from "../../../lib/solana/limits/model.ts";
 import { defaultDraft, draftIssues, ladderOf, levelsOf, smartParts } from "./draft.ts";
-import { composeLadder, createLadderStore, isLiveLadder, LADDER_NET, LIVE_KEY } from "./ladder.ts";
+import { composeLadder, createLadderStore, fetchLadderStatus, isLiveLadder, LADDER_NET, LIVE_KEY, liveKey } from "./ladder.ts";
+import { ladderWords } from "./ladder-words.ts";
+import { WORDS } from "./words.ts";
+import { routeSigner, MAINNET_ONLY } from "../app-bridge/route.ts";
+import { SystemProgram } from "@solana/web3.js";
 import { addOrderSignature, cancelLadderOrders, checkCancel, checkUnsigned, placeLadder } from "./ladder-sign.ts";
 import { simulate, tradesOf } from "./sim.ts";
 
@@ -111,7 +115,21 @@ async function review(leg, orderKeys, tamper = {}) {
     transactions.push({ side: "buy", wireBase64: unsigned(tx), limitOrder: orderKeys[i], rungs, depositLamports: null });
   }
   const costs = ladderCosts([plan], { existingArrays: new Set(pool.existingArrays), bitmapExtension: true });
-  return { network: "devnet", pool: facts, activePrice: 150, plans: [plan], transactions, costs: tamper.costs ? { ...costs, rentKeptLamports: costs.rentKeptLamports + 71_437_440 } : costs, canDo: [] };
+  if (tamper.transfer) {
+    const tx = Transaction.from(Buffer.from(transactions[0].wireBase64, "base64"));
+    tx.add(SystemProgram.transfer({ fromPubkey: owner.publicKey, toPubkey: Keypair.generate().publicKey, lamports: 1_000_000 }));
+    transactions[0] = { ...transactions[0], wireBase64: unsigned(tx) };
+  }
+  return {
+    network: tamper.network ?? "devnet",
+    pool: facts,
+    activePrice: 150,
+    plans: [plan],
+    transactions,
+    costs: tamper.costs ? { ...costs, rentKeptLamports: costs.rentKeptLamports + 71_437_440 } : costs,
+    canDo: [],
+    ...(tamper.cap ? { amountUsd: 200, maxUsd: 100 } : {}),
+  };
 }
 
 const LEG = { side: "buy", steps: 8, firstPct: 1, lastPct: 30, shape: "even", amountRaw: "200000000" };
@@ -123,10 +141,10 @@ function engine(tamper = {}) {
   const fetch = async (url, init) => {
     const body = JSON.parse(init.body);
     bodies.push(init.body);
-    if (url.endsWith("/review")) return Response.json(await review(body.legs[0], body.orderKeys, tamper));
+    if (url.endsWith("/review")) return Response.json(await review(body.legs[0], body.orderKeys, { network: body.network, ...tamper }));
     if (url.endsWith("/submit")) {
       submitted.push(body);
-      return Response.json({ network: "devnet", legs: body.items.map((item, i) => ({ limitOrder: item.limitOrder, signature: `sig${i}`, state: "confirmed", reason: null })) });
+      return Response.json({ network: body.network, legs: body.items.map((item, i) => ({ limitOrder: item.limitOrder, signature: `sig${i}`, state: "confirmed", reason: null })) });
     }
     return Response.json({ error: { code: "NOT_FOUND" } }, { status: 404 });
   };
@@ -293,4 +311,127 @@ test("in the browser the only signing call is the order account's own key, made 
     const text = strip(readFileSync(new URL(file, import.meta.url), "utf8"));
     assert.doesNotMatch(text, /\.sign\s*\(|Keypair|secretKey|signTransaction/, `${file} signs nothing`);
   }
+});
+
+/* ---------------------------------------------------------------- mainnet (CITY-219) */
+
+test("mainnet: one tap, the wallet asked once on solana:mainnet; every request names mainnet", async () => {
+  const server = engine();
+  const person = wallet();
+  const result = await placeLadder({ wallet: "Phantom", owner: OWNER, pool: POOL, legs: [LEG], shown: await shownFor(), network: "mainnet" }, { fetch: server.fetch, sign: person.sign });
+  assert.equal(result.kind, "placed");
+  assert.equal(person.calls.length, 1);
+  assert.equal(person.calls[0].chain, "solana:mainnet");
+  for (const body of server.bodies) assert.equal(JSON.parse(body).network, "mainnet");
+  assert.equal(server.submitted[0].network, "mainnet");
+});
+
+test("mainnet: a review for another network, over the cap, or slipping a transfer — refused before the wallet", async () => {
+  for (const tamper of [{ network: "devnet" }, { cap: true }, { transfer: true }]) {
+    const server = engine(tamper);
+    const person = wallet();
+    const result = await placeLadder({ wallet: "Phantom", owner: OWNER, pool: POOL, legs: [LEG], shown: await shownFor(), network: "mainnet" }, { fetch: server.fetch, sign: person.sign });
+    assert.equal(result.kind, "refused", JSON.stringify(tamper));
+    assert.equal(person.calls.length, 0, `the wallet never saw ${JSON.stringify(tamper)}`);
+    assert.equal(server.submitted.length, 0);
+  }
+  /* The same holds on devnet: CITY-135 let a System transfer reach the wallet's prompt. */
+  const server = engine({ transfer: true });
+  const person = wallet();
+  assert.equal((await placeLadder({ wallet: "Phantom", owner: OWNER, pool: POOL, legs: [LEG], shown: await shownFor() }, { fetch: server.fetch, sign: person.sign })).kind, "refused");
+  assert.equal(person.calls.length, 0);
+});
+
+test("mainnet: a wallet that adds a transfer before signing — the browser stops, nothing is sent", async () => {
+  const server = engine();
+  const sneaky = {
+    calls: 0,
+    sign: async (args) => {
+      sneaky.calls += 1;
+      return {
+        ok: true,
+        signedWireBase64: args.unsignedWireBase64.map((wire) => {
+          const tx = Transaction.from(Buffer.from(wire, "base64"));
+          tx.add(SystemProgram.transfer({ fromPubkey: owner.publicKey, toPubkey: Keypair.generate().publicKey, lamports: 5_000_000 }));
+          const exact = VersionedTransaction.deserialize(tx.serialize({ requireAllSignatures: false, verifySignatures: false }));
+          exact.sign([owner]);
+          return Buffer.from(exact.serialize()).toString("base64");
+        }),
+      };
+    },
+  };
+  const result = await placeLadder({ wallet: "Phantom", owner: OWNER, pool: POOL, legs: [LEG], shown: await shownFor(), network: "mainnet" }, { fetch: server.fetch, sign: sneaky.sign });
+  assert.deepEqual([result.kind, result.reason], ["refused", "The wallet changed the transaction."]);
+  assert.equal(server.submitted.length, 0);
+});
+
+test("mainnet: the line is composed on the chain's terms, and over the cap the window says so", () => {
+  const terms = { rentPerByte: 5_080, priorityLamportsPerTx: 20_000 };
+  const draft = defaultDraft("buyLadder", pair, 150, null, 100);
+  const at = composeLadder(draft, { ...pool, terms, maxUsd: 100 }, 150);
+  assert.equal(at.overCap, false, "$100 under a $100 cap");
+  assert.equal(at.costs.networkLamports, at.costs.transactions * (10_000 + 20_000));
+  assert.equal(at.prices.length, 5);
+  assert.ok(at.prices.every((value, i) => i === 0 || value < at.prices[i - 1]), "a buy's steps go down from the price");
+  assert.ok(at.receives > 100 / 150);
+  const over = composeLadder(defaultDraft("buyLadder", pair, 150, null, 250), { ...pool, terms, maxUsd: 100 }, 150);
+  assert.equal(over.overCap, true);
+  const devnet = composeLadder(defaultDraft("buyLadder", pair, 150, null, 250), pool, 150);
+  assert.equal(devnet.overCap, false, "no cap without one");
+});
+
+test("mainnet: the status answer for another network is no answer; the pool carries the terms and the cap", async () => {
+  const asked = [];
+  const answer = (network) => async (url) => {
+    asked.push(url);
+    return Response.json({ open: true, network, venue: { venue: "dlmm", available: true }, pool, terms: { rentPerByte: 5_080, priorityLamportsPerTx: 20_000 }, maxUsd: 100, at: 1 });
+  };
+  const status = await fetchLadderStatus(SOL, "mainnet", answer("mainnet"));
+  assert.match(asked[0], /network=mainnet/);
+  assert.equal(status.pool.maxUsd, 100);
+  assert.deepEqual(status.pool.terms, { rentPerByte: 5_080, priorityLamportsPerTx: 20_000 });
+  assert.equal(await fetchLadderStatus(SOL, "mainnet", answer("devnet")), null);
+});
+
+test("each network's ladders are kept apart in this browser", () => {
+  const kept = new Map();
+  const storage = () => ({ getItem: (key) => kept.get(key) ?? null, setItem: (key, value) => kept.set(key, value) });
+  const draft = defaultDraft("buyLadder", pair, 150, null);
+  const ladder = { id: "m", network: "mainnet", owner: OWNER, pool: POOL, baseIsX: true, draft, band: null, legs: [], placedAt: 1, closedAt: null };
+  assert.notEqual(liveKey("mainnet"), liveKey("devnet"));
+  kept.set(liveKey("mainnet"), JSON.stringify([ladder, { ...ladder, id: "d", network: "devnet" }]));
+  const store = createLadderStore({ storage, network: "mainnet" });
+  store.getState().hydrate();
+  assert.deepEqual(store.getState().ladders.map((l) => l.id), ["m"]);
+  store.getState().add({ ...ladder, id: "m2" });
+  assert.equal(kept.get(liveKey("devnet")), undefined, "a mainnet ladder never lands in devnet's list");
+});
+
+test("the Ryntra app's wallet signs a mainnet ladder and still refuses a devnet one", async () => {
+  const seen = [];
+  const app = { signTransactions: async (args) => (seen.push(args), { ok: true, signedWireBase64: args.unsignedWireBase64 }), signTransaction: async () => ({ ok: false, reason: "-" }), signIn: async () => ({ ok: false }) };
+  const browser = { signTransactions: async () => ({ ok: false, reason: "browser" }), signTransaction: async () => ({ ok: false, reason: "browser" }), signInWithWallet: async () => ({ ok: false }) };
+  const signer = routeSigner({ app: () => app, browser });
+  assert.equal((await signer.signTransactions({ wallet: "app", address: OWNER, unsignedWireBase64: ["AQ=="], chain: "solana:mainnet" })).ok, true);
+  assert.equal(seen.length, 1);
+  assert.deepEqual(await signer.signTransactions({ wallet: "app", address: OWNER, unsignedWireBase64: ["AQ=="], chain: "solana:devnet" }), { ok: false, reason: MAINNET_ONLY });
+});
+
+test("the window's words: on mainnet no chip, «Place ladder», the fee said as it is; devnet keeps CITY-135's", () => {
+  for (const lang of ["en", "uk"]) {
+    const main = ladderWords(lang, "mainnet", WORDS[lang]);
+    const dev = ladderWords(lang, "devnet", WORDS[lang]);
+    assert.equal(main.chip, null);
+    assert.equal(dev.chip, WORDS[lang].devnet);
+    assert.equal(dev.place, WORDS[lang].place);
+    assert.notEqual(main.place, dev.place);
+    assert.doesNotMatch(main.place + main.note.placed + main.liveTitle, /devnet/i);
+    assert.match(main.cost("0.00003", "0.0019", null, "0.01"), /Ryntra/);
+    assert.match(main.overCap("$100"), /\$100/);
+    for (const kind of ["placed", "cancelled", "partly", "costsChanged", "walletNo", "refused", "unreachable", "overCap"]) assert.ok(main.note[kind] && dev.note[kind], `${lang} ${kind}`);
+  }
+  assert.equal(ladderWords("uk", "mainnet", WORDS.uk).stepsLabel(1), "1 сходинка");
+  assert.equal(ladderWords("uk", "mainnet", WORDS.uk).stepsLabel(3), "3 сходинки");
+  assert.equal(ladderWords("uk", "mainnet", WORDS.uk).stepsLabel(5), "5 сходинок");
+  assert.equal(ladderWords("uk", "mainnet", WORDS.uk).stepsLabel(12), "12 сходинок");
 });

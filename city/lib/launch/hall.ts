@@ -28,6 +28,16 @@ import type { Network } from './engine.ts';
  *   wallets, and anyone who chose to be hidden).
  * The share of the week's trades left out this way is published with the boards.
  *
+ * ## A quiet week reaches back (CITY-230)
+ *
+ * A board whose week counts nobody reaches back over the last 30 days, then over all time — the first span that counts
+ * someone — and says which one on its sign: «this week», «this month», «all time». The same rules hold over every span:
+ * the same honest count, the same types, a period and a proof for every number. The creators' board has no 30 days —
+ * the engine counts a creator's fee over its day and its week, and over all time on the chain's own counters (the
+ * cabinet's figure) — so it reaches from the week straight to all time, and only for a launch whose every trade was
+ * read and counted. A board that counts nobody even over all time stays empty: the city shows it as one action, launch
+ * your own, never a made-up row.
+ *
  * ## Scouts
  *
  * A scout brings people and earns a share of their fees. The engine keeps those shares in the rewards ledger, whose
@@ -37,10 +47,16 @@ import type { Network } from './engine.ts';
  * Pure: the engine's answers, the honest count's judgements, the wallets left out and the clock are the caller's.
  */
 
-export const HALL_VERSION = 'city-hall-1.0.0';
+export const HALL_VERSION = 'city-hall-1.1.0';
 
 /** The week of the Hall: the last seven days up to the read, as the engine counts its own week. */
 export const HALL_WINDOW_MS = 7 * 24 * 60 * 60_000;
+/** The month a quiet week reaches back over: the last 30 days up to the read. */
+export const HALL_MONTH_MS = 30 * 24 * 60 * 60_000;
+
+/** The spans a board reaches back over, in order: the week, the last 30 days, all time — the first that counts someone. */
+export const HALL_SPANS = ['week', 'month', 'all'] as const;
+export type HallSpan = (typeof HALL_SPANS)[number];
 /** Rows a board shows. */
 export const HALL_ROWS = 5;
 /** Markets read whole for one Hall at most — the engine's own order: traded in the last day first, then the newest. */
@@ -85,10 +101,14 @@ export const LEFT_REASONS = ['cluster', 'unchecked', 'unread', 'no_dollar'] as c
 export type LeftReason = (typeof LEFT_REASONS)[number];
 
 export type HallBoard = Readonly<{
-  /** `live` — rows counted; `empty` — nothing counted this week; `no_source` — the engine publishes nothing to count. */
+  /** `live` — rows counted; `empty` — nothing counted even over all time; `no_source` — the engine publishes nothing to count. */
   state: 'live' | 'empty' | 'no_source';
+  /** The span the rows are of: the week, else the last 30 days, else all time. An empty board is empty over all time. */
+  span: HallSpan;
+  /** The span's period: its start (all time — the oldest launch read) to the read. */
+  period: HallPeriod;
   rows: readonly HallRow[];
-  /** Weeks read and left off, by why. */
+  /** Creators' spans read and left off, by why — over the board's span. */
   left: Readonly<Record<LeftReason, number>>;
 }>;
 
@@ -117,7 +137,10 @@ export type HallView = Readonly<{
   computedAt: string;
   /** Ryntra's launches of people that could have traded this week, and how many of them were read. */
   markets: Readonly<{ listed: number; read: number }>;
+  /** The week's tally — the same as `tallies.week`. */
   trades: HallTally;
+  /** The tally over each span a board may reach back over. */
+  tallies: Readonly<Record<HallSpan, HallTally>>;
   boards: Readonly<Record<HallBoardId, HallBoard>>;
   rules: string;
 }>;
@@ -129,6 +152,11 @@ export type HallMarketRead = Readonly<{
   stats: LaunchStatsResponse | null;
   /** The engine's own total of `stats.revenue.week` (`windowTotal`); null when stats were not read. */
   weekFee: Readonly<{ raw: string | null; atLeast: boolean }> | null;
+  /**
+   * What the creator's role earned over all time, raw in the pair currency, on the chain's own counters — the cabinet's
+   * figure (`creatorEarnings(…).role.earnedRaw`) — and when it was read; null or absent when it was not read.
+   */
+  allFee?: Readonly<{ raw: string; at: string }> | null;
 }>;
 
 /* ------------------------------------------------------------------------------------------------
@@ -139,6 +167,18 @@ export type HallMarketRead = Readonly<{
 export function hallWindow(now: number): HallPeriod {
   return { from: new Date(now - HALL_WINDOW_MS).toISOString(), to: new Date(now).toISOString() };
 }
+
+/** A span's period up to `now`: the week, the last 30 days, or all time — from the oldest launch read (or the month's start). */
+export function spanPeriod(span: HallSpan, now: number, reads: readonly Pick<HallMarketRead, 'row'>[] = []): HallPeriod {
+  if (span === 'week') return hallWindow(now);
+  const month = { from: new Date(now - HALL_MONTH_MS).toISOString(), to: new Date(now).toISOString() };
+  if (span === 'month') return month;
+  const oldest = reads.map((read) => Date.parse(read.row.launchedAt)).filter((at) => Number.isFinite(at) && at < Date.parse(month.from));
+  return oldest.length ? { from: new Date(Math.min(...oldest)).toISOString(), to: month.to } : month;
+}
+
+/** All time as the reads see it: every trade up to the read, however old. */
+const ALL_TIME: HallPeriod = { from: new Date(0).toISOString(), to: new Date(8.64e15).toISOString() };
 
 /**
  * The markets worth reading for the week: people's launches (never Ryntra's own), launched before the week ended, in
@@ -197,10 +237,11 @@ function statsWeek(stats: LaunchStatsResponse): HallPeriod {
 }
 
 /**
- * Every trade the week's Hall asks the honest count about, each once: the Hall's week, and the engine's own week of a
- * creator's figures where its read is a little older.
+ * Every trade the Hall asks the honest count about, each once: the Hall's week, and the engine's own week of a
+ * creator's figures where its read is a little older — and, for a span reaching further back, every older trade read
+ * after them, the newest first, so the week is always asked about first.
  */
-export function hallTrades(reads: readonly HallMarketRead[], now: number, exclude: ReadonlySet<string>): readonly CityTrade[] {
+export function hallTrades(reads: readonly HallMarketRead[], now: number, exclude: ReadonlySet<string>, span: HallSpan = 'week'): readonly CityTrade[] {
   const window = hallWindow(now);
   const seen = new Map<string, CityTrade>();
   for (const { market, stats } of reads) {
@@ -208,7 +249,22 @@ export function hallTrades(reads: readonly HallMarketRead[], now: number, exclud
     const from = stats && statsWeek(stats).from < window.from ? statsWeek(stats).from : window.from;
     for (const row of weekRows(market, { from, to: window.to }, exclude)) if (!seen.has(row.signature)) seen.set(row.signature, cityTradeOf(row, market));
   }
-  return [...seen.values()];
+  const week = [...seen.values()];
+  if (span === 'week') return week;
+  /* All time also reaches every trade read past the read's own clock, as the creators' all-time figure rests on them all. */
+  const period = span === 'month' ? spanPeriod('month', now) : ALL_TIME;
+  const older: CityTrade[] = [];
+  for (const { market } of reads) {
+    if (!market) continue;
+    for (const row of weekRows(market, period, exclude)) {
+      if (seen.has(row.signature)) continue;
+      const trade = cityTradeOf(row, market);
+      seen.set(row.signature, trade);
+      older.push(trade);
+    }
+  }
+  older.sort((a, b) => byText(b.at, a.at) || byText(a.tx, b.tx));
+  return [...week, ...older];
 }
 
 /* ------------------------------------------------------------------------------------------------
@@ -233,7 +289,8 @@ export function catchTenths(capNow: number, capThen: number): number | null {
 
 const counted = (judgement: TradeJudgement | undefined) => judgement?.counts.billboards.counted === true;
 
-type Catch = Readonly<{ wallet: string; at: string; row: HallRow }>;
+/** `whole` — the coin's every trade was read, so its catches may stand on an all-time board. */
+type Catch = Readonly<{ wallet: string; at: string; whole: boolean; row: HallRow }>;
 
 /** A creator's ticker and name on a billboard: somebody else's text (CITY-73). A held ticker stands on no billboard. */
 function coinOf(token: string, row: Pick<LaunchMarketRow, 'symbol' | 'name'>): HallRow['coin'] | null {
@@ -243,13 +300,55 @@ function coinOf(token: string, row: Pick<LaunchMarketRow, 'symbol' | 'name'>): H
 const byText = (a: string, b: string) => (a < b ? -1 : a > b ? 1 : 0);
 const EMPTY_LEFT: Readonly<Record<LeftReason, number>> = Object.freeze({ cluster: 0, unchecked: 0, unread: 0, no_dollar: 0 });
 
-function board(rows: readonly HallRow[], left: Readonly<Record<LeftReason, number>> = EMPTY_LEFT): HallBoard {
-  return { state: rows.length ? 'live' : 'empty', rows: rows.slice(0, HALL_ROWS).map((row, index) => ({ ...row, place: index + 1 })), left };
+function board(rows: readonly HallRow[], span: HallSpan, period: HallPeriod, left: Readonly<Record<LeftReason, number>> = EMPTY_LEFT): HallBoard {
+  return { state: rows.length ? 'live' : 'empty', span, period, rows: rows.slice(0, HALL_ROWS).map((row, index) => ({ ...row, place: index + 1 })), left };
+}
+
+/** The first span whose rows count someone, or an empty board over all time. */
+function firstFilled(spans: ReadonlyArray<Readonly<{ span: HallSpan; period: HallPeriod; rows: readonly HallRow[]; left?: Readonly<Record<LeftReason, number>> }>>): HallBoard {
+  const filled = spans.find((entry) => entry.rows.length > 0) ?? spans[spans.length - 1]!;
+  return board(filled.rows, filled.span, filled.period, filled.left);
+}
+
+/** Whether a board of this Hall reaches back past its week, or stands empty — the honest count is then asked about older trades too. */
+export function hallReachesBack(view: Pick<HallView, 'boards'>): boolean {
+  return HALL_BOARDS.some((id) => view.boards[id].state !== 'no_source' && (view.boards[id].state === 'empty' || view.boards[id].span !== 'week'));
 }
 
 /**
- * The Hall of one week: every trade of the week judged once, the counted buys ranked by how far the coin went since,
- * the creators whose whole week counts ranked by the engine's own fee, and the share left out.
+ * What a tap on a board's sign — or its panel's one action — does: a board nobody is on even over all time opens a
+ * launch where the city can open one here; any other board opens the Hall's panel on that board.
+ */
+export function hallAction(board: Pick<HallBoard, 'rows' | 'left'>, launchable: boolean): 'launch' | 'panel' {
+  return board.rows.length === 0 && launchable && hallSettled(board) ? 'launch' : 'panel';
+}
+
+/**
+ * Whether an empty board is certainly empty: every trade it would count was read and checked. A board left empty by a
+ * read cut short says it plainly and does not offer «Launch yours» as if nobody were there.
+ */
+export function hallSettled(board: Pick<HallBoard, 'left'>): boolean {
+  return board.left.unchecked === 0 && board.left.unread === 0;
+}
+
+type Creator = Readonly<{ micros: bigint; at: string; row: HallRow }>;
+
+/** Creators one row each, their best coin: the most first; a tie goes to the earlier launch, then the plain order of addresses. */
+function rankCreators(best: ReadonlyMap<string, Creator>): HallRow[] {
+  return [...best.entries()]
+    .sort(([wa, a], [wb, b]) => (b.micros > a.micros ? 1 : b.micros < a.micros ? -1 : 0) || byText(a.at, b.at) || byText(wa, wb))
+    .map(([, value]) => value.row);
+}
+
+function keepBest(best: Map<string, Creator>, creator: string, entry: Creator): void {
+  const held = best.get(creator);
+  if (!held || entry.micros > held.micros || (entry.micros === held.micros && entry.at < held.at)) best.set(creator, entry);
+}
+
+/**
+ * The Hall: every trade read judged once, the counted buys ranked by how far the coin went since, the creators whose
+ * whole span counts ranked by the engine's own fee, and the share left out — each board over its week, or reaching back
+ * over the last 30 days and all time when the week counts nobody.
  */
 export function hallView(
   args: Readonly<{
@@ -267,10 +366,11 @@ export function hallView(
   const { network, judgements, exclude, now } = args;
   const window = hallWindow(now);
   const reads = args.reads.filter((read) => !read.row.technicalValidation);
+  const periods: Readonly<Record<HallSpan, HallPeriod>> = { week: window, month: spanPeriod('month', now), all: spanPeriod('all', now, reads) };
   const readTimes: string[] = [];
 
-  /* The week's trades, each once, as judged. */
-  const tally = { trades: 0, counted: 0, inside: 0, unchecked: 0 };
+  /* Every trade read up to the read, each once, as judged — tallied by the spans it falls in. */
+  const tallies = { week: { trades: 0, counted: 0, inside: 0, unchecked: 0 }, month: { trades: 0, counted: 0, inside: 0, unchecked: 0 }, all: { trades: 0, counted: 0, inside: 0, unchecked: 0 } };
   const judgedOnce = new Set<string>();
   const catches: Catch[] = [];
 
@@ -278,14 +378,18 @@ export function hallView(
     if (!market) continue;
     readTimes.push(market.observedAt);
     const capNow = market.marketCap.pair;
-    for (const trade of weekRows(market, window, exclude)) {
+    for (const trade of weekRows(market, { from: ALL_TIME.from, to: window.to }, exclude)) {
       const judgement = judgements.get(trade.signature);
       if (!judgedOnce.has(trade.signature)) {
         judgedOnce.add(trade.signature);
-        tally.trades += 1;
-        if (counted(judgement)) tally.counted += 1;
-        if (judgement?.cluster === 'inside') tally.inside += 1;
-        else if (!judgement || judgement.cluster === 'unknown') tally.unchecked += 1;
+        for (const span of HALL_SPANS) {
+          if (span !== 'all' && !within(trade.at, periods[span])) continue;
+          const tally = tallies[span];
+          tally.trades += 1;
+          if (counted(judgement)) tally.counted += 1;
+          if (judgement?.cluster === 'inside') tally.inside += 1;
+          else if (!judgement || judgement.cluster === 'unknown') tally.unchecked += 1;
+        }
       }
       if (trade.side !== 'buy' || !counted(judgement)) continue;
       const tenths = catchTenths(capNow, trade.marketCapPair);
@@ -295,6 +399,7 @@ export function hallView(
       catches.push({
         wallet: trade.trader,
         at: trade.at,
+        whole: market.trades.complete,
         row: {
           place: 0,
           name: maskWallet(trade.trader),
@@ -312,19 +417,63 @@ export function hallView(
   /* The biggest catches first; a tie goes to the earlier buy, then the plain order of addresses. */
   const tenthsOf = (c: Catch) => (c.row.figure.kind === 'multiple' ? c.row.figure.tenths : 0);
   catches.sort((a, b) => tenthsOf(b) - tenthsOf(a) || byText(a.at, b.at) || byText(a.wallet, b.wallet) || byText(a.row.proof.id, b.row.proof.id));
-  const hunters: HallRow[] = [];
-  const hunted = new Set<string>();
-  for (const c of catches) {
-    if (hunted.has(c.wallet)) continue;
-    hunted.add(c.wallet);
-    hunters.push(c.row);
-  }
+  /* «All time» is said only of coins whose every trade was read: a page of the latest trades is not all time. */
+  const catchesOf = (span: HallSpan) => (span === 'all' ? catches.filter((c) => c.whole) : catches.filter((c) => within(c.at, periods[span])));
+  /* What all time could not count — trades not yet checked, coins not read whole: an empty board then is not «nobody». */
+  const leftCatchAll = { cluster: 0, unchecked: tallies.all.unchecked, unread: reads.filter((read) => read.market && !read.market.trades.complete).length, no_dollar: 0 };
+  const huntersOf = (list: readonly Catch[]) => {
+    const hunters: HallRow[] = [];
+    const hunted = new Set<string>();
+    for (const c of list) {
+      if (hunted.has(c.wallet)) continue;
+      hunted.add(c.wallet);
+      hunters.push(c.row);
+    }
+    return hunters;
+  };
+  const catchSpans = HALL_SPANS.map((span) => ({ span, period: periods[span], list: catchesOf(span) }));
 
-  /* Creators: one row each, their best coin, and only a week that counts whole. */
+  /* Creators over the week: one row each, their best coin, and only a week that counts whole. */
   const left = { cluster: 0, unchecked: 0, unread: 0, no_dollar: 0 };
-  const best = new Map<string, { micros: bigint; at: string; row: HallRow }>();
-  for (const { row, market, stats, weekFee } of reads) {
+  const best = new Map<string, Creator>();
+  /* Creators over all time, read only for a launch whose every trade was read and counted. */
+  const leftAll = { cluster: 0, unchecked: 0, unread: 0, no_dollar: 0 };
+  const bestAll = new Map<string, Creator>();
+  for (const { row, market, stats, weekFee, allFee } of reads) {
     if (!market || exclude.has(market.creator.address)) continue;
+    const coin = coinOf(market.token, row);
+    const account = stats ? (stats.links.pool ?? stats.links.curve) : null;
+
+    /* The whole history: every trade of the token read, each judged between two people. */
+    if (!stats || !allFee || !account) leftAll.unread += 1;
+    else {
+      const judged = weekRows(market, ALL_TIME, exclude).map((trade) => judgements.get(trade.signature));
+      if (judged.some((judgement) => judgement?.cluster === 'inside')) leftAll.cluster += 1;
+      else if (judged.some((judgement) => !judgement || judgement.cluster === 'unknown')) leftAll.unchecked += 1;
+      else if (!market.trades.complete) leftAll.unread += 1;
+      else if (!market.pair.dollar || !stats.pair.dollar) leftAll.no_dollar += 1;
+      else {
+        const micros = rawToMicros(allFee.raw, stats.pair.decimals);
+        if (micros > 0n && coin) {
+          keepBest(bestAll, stats.creator, {
+            micros,
+            at: row.launchedAt,
+            row: {
+              place: 0,
+              name: maskWallet(stats.creator),
+              coin,
+              figure: { kind: 'fee', of: 'creator', raw: allFee.raw, atLeast: false, pair: { symbol: stats.pair.symbol, decimals: stats.pair.decimals, dollar: stats.pair.dollar } },
+              period: { from: row.launchedAt, to: allFee.at },
+              proof: { kind: 'account', id: account, url: explorerUrl(network, 'account', account) },
+              readAt: allFee.at,
+              labels: [],
+            },
+          });
+        }
+      }
+    }
+
+    /* The engine's week. */
     if (!stats || !weekFee) {
       left.unread += 1;
       continue;
@@ -350,28 +499,29 @@ export function hallView(
       continue;
     }
     const micros = rawToMicros(weekFee.raw, stats.pair.decimals);
-    if (micros <= 0n) continue;
-    const coin = coinOf(stats.token, row);
-    if (!coin) continue;
-    const account = stats.links.pool ?? stats.links.curve;
-    const shown: HallRow = {
-      place: 0,
-      name: maskWallet(stats.creator),
-      coin,
-      figure: { kind: 'fee', of: 'creator', raw: weekFee.raw, atLeast: weekFee.atLeast, pair: { symbol: stats.pair.symbol, decimals: stats.pair.decimals, dollar: stats.pair.dollar } },
-      period: week,
-      proof: { kind: 'account', id: account, url: explorerUrl(network, 'account', account) },
-      readAt: stats.observedAt,
-      labels: [],
-    };
-    const held = best.get(stats.creator);
-    if (!held || micros > held.micros || (micros === held.micros && row.launchedAt < held.at)) best.set(stats.creator, { micros, at: row.launchedAt, row: shown });
+    if (micros <= 0n || !coin || !account) continue;
+    keepBest(best, stats.creator, {
+      micros,
+      at: row.launchedAt,
+      row: {
+        place: 0,
+        name: maskWallet(stats.creator),
+        coin,
+        figure: { kind: 'fee', of: 'creator', raw: weekFee.raw, atLeast: weekFee.atLeast, pair: { symbol: stats.pair.symbol, decimals: stats.pair.decimals, dollar: stats.pair.dollar } },
+        period: week,
+        proof: { kind: 'account', id: account, url: explorerUrl(network, 'account', account) },
+        readAt: stats.observedAt,
+        labels: [],
+      },
+    });
   }
-  const creators = [...best.entries()]
-    .sort(([wa, a], [wb, b]) => (b.micros > a.micros ? 1 : b.micros < a.micros ? -1 : 0) || byText(a.at, b.at) || byText(wa, wb))
-    .map(([, value]) => value.row);
 
-  const checked = tally.trades - tally.unchecked;
+  const tally = (span: HallSpan): HallTally => {
+    const t = tallies[span];
+    const checked = t.trades - t.unchecked;
+    return { ...t, insideBps: checked ? Math.floor((t.inside * 10_000) / checked) : null, uncheckedBps: t.trades ? Math.floor((t.unchecked * 10_000) / t.trades) : null };
+  };
+  const counts = { week: tally('week'), month: tally('month'), all: tally('all') };
   return {
     v: 1,
     network,
@@ -379,16 +529,16 @@ export function hallView(
     readAt: readTimes.length ? readTimes.reduce((oldest, at) => (at < oldest ? at : oldest)) : null,
     computedAt: new Date(now).toISOString(),
     markets: { listed: args.listed, read: reads.filter((read) => read.market !== null).length },
-    trades: {
-      ...tally,
-      insideBps: checked ? Math.floor((tally.inside * 10_000) / checked) : null,
-      uncheckedBps: tally.trades ? Math.floor((tally.unchecked * 10_000) / tally.trades) : null,
-    },
+    trades: counts.week,
+    tallies: counts,
     boards: {
-      catch: board(catches.map((c) => c.row)),
-      hunters: board(hunters),
-      creators: board(creators, left),
-      scouts: { state: 'no_source', rows: [], left: EMPTY_LEFT },
+      catch: firstFilled(catchSpans.map(({ span, period, list }) => ({ span, period, rows: list.map((c) => c.row), ...(span === 'all' ? { left: leftCatchAll } : {}) }))),
+      hunters: firstFilled(catchSpans.map(({ span, period, list }) => ({ span, period, rows: huntersOf(list), ...(span === 'all' ? { left: leftCatchAll } : {}) }))),
+      creators: firstFilled([
+        { span: 'week', period: window, rows: rankCreators(best), left },
+        { span: 'all', period: periods.all, rows: rankCreators(bestAll), left: leftAll },
+      ]),
+      scouts: { state: 'no_source', span: 'week', period: window, rows: [], left: EMPTY_LEFT },
     },
     rules: HALL_VERSION,
   };
@@ -439,44 +589,68 @@ function readRow(value: unknown): HallRow | null {
   };
 }
 
+const readPeriod = (value: unknown): HallPeriod | null => (isObject(value) && isTime(value.from) && isTime(value.to) ? { from: value.from, to: value.to } : null);
+const isSpan = (value: unknown): value is HallSpan => (HALL_SPANS as readonly unknown[]).includes(value);
+
+function readTally(value: unknown): HallTally | null {
+  if (!isObject(value) || ![value.trades, value.counted, value.inside, value.unchecked].every(isCount)) return null;
+  if (!(value.insideBps === null || isCount(value.insideBps)) || !(value.uncheckedBps === null || isCount(value.uncheckedBps))) return null;
+  return {
+    trades: value.trades as number,
+    counted: value.counted as number,
+    inside: value.inside as number,
+    unchecked: value.unchecked as number,
+    insideBps: value.insideBps as number | null,
+    uncheckedBps: value.uncheckedBps as number | null,
+  };
+}
+
 /**
  * The Hall as the browser reads it from `/api/city/hall`: every row whole — a type, a period, a proof on Solscan and a
- * read time — or the answer is not the Hall at all. A row that misses one of them is never drawn.
+ * read time — or the answer is not the Hall at all. A row that misses one of them is never drawn. A board without a
+ * span is the week's (an answer from before CITY-230); a span the Hall does not know refuses the answer.
  */
 export function readHallView(body: unknown): HallView | null {
   if (!isObject(body) || body.v !== 1 || (body.network !== 'solana:devnet' && body.network !== 'solana:mainnet')) return null;
-  const { window, markets, trades, boards } = body;
-  if (!isObject(window) || !isTime(window.from) || !isTime(window.to) || !isTime(body.computedAt) || !(body.readAt === null || isTime(body.readAt))) return null;
+  const { markets, boards } = body;
+  const window = readPeriod(body.window);
+  if (!window || !isTime(body.computedAt) || !(body.readAt === null || isTime(body.readAt))) return null;
   if (!isObject(markets) || !isCount(markets.listed) || !isCount(markets.read)) return null;
-  if (!isObject(trades) || ![trades.trades, trades.counted, trades.inside, trades.unchecked].every(isCount)) return null;
-  if (!(trades.insideBps === null || isCount(trades.insideBps)) || !(trades.uncheckedBps === null || isCount(trades.uncheckedBps))) return null;
+  const trades = readTally(body.trades);
+  if (!trades) return null;
+  let tallies: Record<HallSpan, HallTally> = { week: trades, month: trades, all: trades };
+  if (body.tallies !== undefined) {
+    if (!isObject(body.tallies)) return null;
+    const given = body.tallies;
+    const read = HALL_SPANS.map((span) => readTally(given[span]));
+    if (read.some((tally) => tally === null)) return null;
+    tallies = { week: read[0]!, month: read[1]!, all: read[2]! };
+  }
   if (!isObject(boards)) return null;
   const read: Partial<Record<HallBoardId, HallBoard>> = {};
   for (const id of HALL_BOARDS) {
     const entry = boards[id];
     if (!isObject(entry) || (entry.state !== 'live' && entry.state !== 'empty' && entry.state !== 'no_source') || !Array.isArray(entry.rows) || !isObject(entry.left)) return null;
+    if (entry.span !== undefined && !isSpan(entry.span)) return null;
+    const span: HallSpan = entry.span === undefined ? 'week' : entry.span;
+    const period = entry.period === undefined ? window : readPeriod(entry.period);
+    if (!period) return null;
     const rows = entry.rows.map(readRow);
     if (rows.some((row) => row === null)) return null;
     const given = entry.left;
     const left = Object.fromEntries(LEFT_REASONS.map((reason) => [reason, isCount(given[reason]) ? given[reason] : 0])) as Record<LeftReason, number>;
     /* No source draws no rows; otherwise the rows decide whether the board is live. */
-    read[id] = entry.state === 'no_source' ? { state: 'no_source', rows: [], left } : { state: rows.length ? 'live' : 'empty', rows: rows as HallRow[], left };
+    read[id] = entry.state === 'no_source' ? { state: 'no_source', span, period, rows: [], left } : { state: rows.length ? 'live' : 'empty', span, period, rows: rows as HallRow[], left };
   }
   return {
     v: 1,
     network: body.network,
-    window: { from: window.from, to: window.to },
+    window,
     readAt: body.readAt as string | null,
     computedAt: body.computedAt as string,
     markets: { listed: markets.listed, read: markets.read },
-    trades: {
-      trades: trades.trades as number,
-      counted: trades.counted as number,
-      inside: trades.inside as number,
-      unchecked: trades.unchecked as number,
-      insideBps: trades.insideBps as number | null,
-      uncheckedBps: trades.uncheckedBps as number | null,
-    },
+    trades,
+    tallies,
     boards: read as Record<HallBoardId, HallBoard>,
     rules: isText(body.rules) ? body.rules : HALL_VERSION,
   };

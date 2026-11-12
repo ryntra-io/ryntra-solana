@@ -44,8 +44,8 @@ import { launchPreset, type LaunchPresetId } from "../core/venues/meteora-dbc/pr
 import { creatorLockSchedule, type CreatorLockId } from "../core/launch/creator-lock.ts";
 import { advancedPresetOf, type AdvancedTerms } from "../core/launch/advanced.ts";
 import type { CurveRuleSet } from "../core/launch/curve-rules.ts";
-import { feeShareProblems, type FeeShare } from "../core/launch/fee-shares.ts";
-import { crewOpenOn, isCrewPreset } from "../core/launch/crew.ts";
+import { feeShareProblems, typedSharesOpenOn, type FeeShare } from "../core/launch/fee-shares.ts";
+import { isCrewPreset } from "../core/launch/crew.ts";
 import { quoteAssetRefusalWords } from "../core/launch/quote-asset.ts";
 import { crewSharesFor, holdCrew, releaseCrew } from "./crew.server.ts";
 import type { GuardStore } from "../guard/store.ts";
@@ -337,8 +337,9 @@ export async function prepareLaunch(deps: LaunchDeps, input: PrepareInput, conte
   if (shares.length > 0) {
     if (input.crew !== undefined) return fail("SHARES_INVALID", "A crew's launch takes its rows from the crew, not the request.");
     /* CITY-212: the city's launch shares the creator's fees between wallets the creator types, on Classic and Protected
-       too. */
-    if (preset.id !== "community" && !(isCrewPreset(preset.id) && crewOpenOn(deps.network.cluster))) return fail("SHARES_INVALID", "Only «Спільнота» and a crew share the creator's fees.");
+       too — the same vault and handover a crew writes. Open on the devnet stand; on mainnet only by the operator's own word
+       on typed shares (CITY-220: `TYPED_SHARES_OWNER_WORD`, `../core/launch/fee-shares.ts`), apart from the crews'. */
+    if (preset.id !== "community" && !(isCrewPreset(preset.id) && typedSharesOpenOn(deps.network.cluster))) return fail("SHARES_INVALID", "Only «Спільнота» and a crew share the creator's fees.");
   }
   /* MC-2: a crew's rows — the creator and every member who said yes — from the crew's own record. */
   if (input.crew !== undefined) {

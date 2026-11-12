@@ -1,10 +1,13 @@
 import type {
   AgentResponse,
   Archetype,
+  BoardResponse,
   GarageResponse,
+  MineResponse,
   ModelsResponse,
   QuoteResponse,
   RingErrorCode,
+  RingFormat,
 } from '../../../lib/ring/contract.ts';
 import type { AgentView } from '../../../lib/ring/contract.ts';
 import { randomId } from '../quarter/ids.ts';
@@ -19,6 +22,10 @@ export interface RingClient {
   models(): Promise<ModelsResponse>;
   quote(id: string): Promise<QuoteResponse>;
   garage(quarterId: string, slot: number): Promise<GarageResponse>;
+  /** The asker's agents and their garage in the Arena (CITY-217). */
+  mine(): Promise<MineResponse>;
+  /** A format's board, best first (CITY-217). */
+  board(format: RingFormat): Promise<BoardResponse>;
   create(quarterId: string, slot: number, draft: Draft, key?: string): Promise<AgentResponse>;
   change(agent: string, version: number, draft: Draft, key?: string): Promise<AgentResponse>;
   off(agent: string, version: number, key?: string): Promise<AgentResponse>;
@@ -73,6 +80,8 @@ export function createHttpRing({ base = '/api/ring', fetch: get = (...args: Para
     quote: (id) => call<QuoteResponse>(`/model?id=${encodeURIComponent(id)}`, {}, (b) => !!b && typeof (b as QuoteResponse).quote?.provider === 'string'),
     garage: (quarterId, slot) =>
       call<GarageResponse>(`/garage?quarter=${encodeURIComponent(quarterId)}&slot=${slot}`, {}, (b) => !!b && 'agent' in (b as object) && ((b as GarageResponse).agent === null || isAgent((b as GarageResponse).agent))),
+    mine: () => call<MineResponse>('/mine', {}, (b) => !!b && typeof (b as MineResponse).signedIn === 'boolean' && Array.isArray((b as MineResponse).agents) && (b as MineResponse).agents.every(isAgent)),
+    board: (format) => call<BoardResponse>(`/board?format=${encodeURIComponent(format)}`, {}, (b) => !!b && Array.isArray((b as BoardResponse).rows)),
     create: (quarterId, slot, draft, key = randomId()) => write('/create', { quarter: quarterId, slot, ...draft }, key),
     change: (agent, version, draft, key = randomId()) => write('/change', { agent, version, ...draft }, key),
     off: (agent, version, key = randomId()) => write('/off', { agent, version }, key),

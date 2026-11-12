@@ -1,11 +1,14 @@
 'use client';
 
-import { useEffect, useRef, useState, type ReactNode } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState, type ReactNode } from 'react';
+import { createPortal } from 'react-dom';
 import { AGENTS_OPEN } from '@/city/lib/agent/flag';
 import { GARAGE_OPEN } from '@/city/lib/agent/garage/flag';
 import { toggleGarage } from '@/city/lib/agent/garage/show';
 import { useGarage } from '@/city/lib/agent/garage/store';
 import { useAgent } from '@/city/lib/agent/store';
+import { HACK_OPEN } from '@/city/lib/arena/hack/view/flag';
+import { toggleHack, useHack } from '@/city/lib/arena/hack/view/live';
 import { openExternal } from '@/city/lib/app-bridge/page';
 import { playTick } from '@/city/lib/audio/engine';
 import { useBackPanel } from '@/city/lib/back/panels';
@@ -13,7 +16,8 @@ import { closeBots, openBots, useBotsWindow } from '@/city/lib/bots/open';
 import { useCity } from '@/city/lib/city/store';
 import { openTradeCard } from '@/city/lib/coin/open';
 import { useChrome } from '@/city/lib/deck/chrome';
-import { CENTER, LEFT, RIGHT, doorOpen, doorsOf, futuresWay, isTray, placeOpen, type Door, type Place, type Switches, type Tray } from '@/city/lib/deck/items';
+import { CENTER, LEFT, RIGHT, doorOpen, doorsHint, doorsOf, futuresWay, isTray, placeOpen, type Door, type Place, type Switches, type Tray } from '@/city/lib/deck/items';
+import { trayCentre } from '@/city/lib/deck/tray';
 import { HARBOR_OPEN } from '@/city/lib/districts/harbor/flag';
 import { useHarbor } from '@/city/lib/districts/harbor/store';
 import { EARN_OPEN } from '@/city/lib/earn/flag';
@@ -21,14 +25,13 @@ import { closeEarn, openEarn, useEarn } from '@/city/lib/earn/open';
 import { EXCHANGE_EXIT, EXCHANGE_MODE, EXCHANGE_SHOWN } from '@/city/lib/exchange/flag';
 import { marketForTower } from '@/city/lib/exchange/markets';
 import { DEFAULT_SYMBOL, useExchange } from '@/city/lib/exchange/store';
-import { useLayer } from '@/city/lib/game/layer';
 import { GUARD_OPEN } from '@/city/lib/guard/flag';
 import { useGuard } from '@/city/lib/guard/store';
 import { useWords } from '@/city/lib/i18n/dict';
 import { isNamed } from '@/city/lib/market/types';
 import { MONEY_OPEN } from '@/city/lib/money/flag';
 import { openMoney, useMoney } from '@/city/lib/money/open';
-import { RING_DUELS_OPEN, toggleDuels, useDuels } from '@/city/lib/ring/duels';
+import { toggleArena, useArena } from '@/city/lib/ring/arena';
 import { RING_OPEN } from '@/city/lib/ring/flag';
 import { RXN_OPEN, RXN_URL } from '@/city/lib/rxn/flag';
 import { SPOT_OPEN, TRADE_OPEN } from '@/city/lib/trade/gates';
@@ -37,7 +40,7 @@ import { SOL } from '@/city/lib/trade/tiles';
 import { VAULT_OPEN } from '@/city/lib/vault/flag';
 import { useVault, vaultStore } from '@/city/lib/vault/store';
 import { RingGlyph } from '../game/glyphs';
-import { goRing, installPlay } from '../game/play';
+import { installPlay } from '../game/play';
 import { LaunchGlyph } from '../hud/glyphs';
 import { useLaunchDistrict } from '../launch/LaunchSlot';
 import { VaultGlyph } from '../vault/glyphs';
@@ -121,6 +124,8 @@ const DOOR_HINT = {
 
 /** How long «Soon» stands over a place tapped before it opens. */
 const SOON_MS = 1600;
+/** The air between the Deck's top edge and its open tray. */
+const TRAY_LIFT = 26;
 
 function tick(): void {
   if (useCity.getState().sound) playTick();
@@ -161,11 +166,8 @@ function openVault(): void {
   void vaultStore.getState().enter();
 }
 
-/** The hangar: into your quarter, on the garage where your agent lives — the claim first when there is no quarter yet. */
-function openHangar(): void {
-  useLayer.getState().set('play');
-  goRing();
-}
+/** The hangar: your agent on the Arena's «Agent» tab, made right there when there is none yet (CITY-217). */
+const openHangar = () => toggleArena('agent');
 
 /**
  * The Deck, the city's menu: Launch · Spot · Earn, the Agents diamond, Arena · Guard · Money
@@ -183,6 +185,14 @@ export function Deck() {
   const [tray, setTray] = useState<Tray | null>(null);
   const [soon, setSoon] = useState<Place | null>(null);
   const ref = useRef<HTMLElement>(null);
+  const trayRef = useRef<HTMLDivElement>(null);
+  // The open tray's place on the screen (CITY-242): its middle over the place pressed, its foot where it always stood
+  // over the Deck. Null until it is measured.
+  const [trayAt, setTrayAt] = useState<Readonly<{ x: number; bottom: number }> | null>(null);
+  // The tray stands in a layer of its own over the city's windows (CITY-242), as the wallet's and the events' panels
+  // do: a window as tall as the workspace stood over it. Drawn into the city's own root, where its tokens are.
+  const [root, setRoot] = useState<HTMLElement | null>(null);
+  useLayoutEffect(() => setRoot(ref.current?.closest('main') ?? document.body), []);
 
   const trading = useTrade((st) => st.open);
   const exchanging = useExchange((st) => st.open);
@@ -194,7 +204,8 @@ export function Deck() {
   const earnWindow = useEarn((st) => st.open);
   const earning = EARN_OPEN ? earnWindow : harboring;
   const vaulting = useVault((st) => st.open);
-  const dueling = useDuels((st) => st.open);
+  const dueling = useArena((st) => st.open);
+  const hacking = useHack((st) => st.open);
   const guarding = useGuard((st) => st.open);
 
   const on: Switches = {
@@ -212,9 +223,10 @@ export function Deck() {
     bots: AGENTS_OPEN,
     // The garage agent (CITY-29): a character without money — reports, heads-ups and advice; behind its own switch.
     garage: GARAGE_OPEN,
-    // The Ring's duels (CITY-51): behind their own switch on top of the Ring's, closed by default.
-    ring: RING_DUELS_OPEN,
-    hack: false,
+    // The Ring (CITY-217): the Arena's window — the fight where the duels' own switch is open too, the agent, the board.
+    ring: RING_OPEN,
+    // Hack (CITY-227): the Arena's third door, behind its own switch until it is opened.
+    hack: HACK_OPEN,
     vault: VAULT_OPEN,
   };
   const lit: Readonly<Record<Place, boolean>> = {
@@ -222,7 +234,7 @@ export function Deck() {
     spot: trading || exchanging || tray === 'spot',
     earn: earning,
     agents: botsWindow || scouting || tray === 'agents' || garageWindow,
-    arena: vaulting || dueling || tray === 'arena',
+    arena: vaulting || dueling || hacking || tray === 'arena',
     guard: guarding,
     money: moneyOpen,
   };
@@ -243,10 +255,13 @@ export function Deck() {
     const onKey = (event: KeyboardEvent) => {
       if (event.key !== 'Escape') return;
       event.preventDefault();
+      // The keyboard goes back to the place that opened the tray: the tray stands apart from the Deck in the page.
+      if (trayRef.current?.contains(document.activeElement)) ref.current?.querySelector<HTMLElement>(`[data-deck-place='${tray}']`)?.focus({ preventScroll: true });
       setTray(null);
     };
     const onDown = (event: PointerEvent) => {
-      if (!ref.current?.contains(event.target as Node)) setTray(null);
+      const target = event.target as Node;
+      if (!ref.current?.contains(target) && !trayRef.current?.contains(target)) setTray(null);
     };
     window.addEventListener('keydown', onKey, true);
     window.addEventListener('pointerdown', onDown, true);
@@ -258,6 +273,27 @@ export function Deck() {
   useEffect(() => {
     if (!shown) setTray(null);
   }, [shown]);
+  // The tray stands over the place that opened it, kept whole on the screen; measured before it is painted, and again
+  // when the screen changes.
+  useLayoutEffect(() => {
+    if (!tray) return setTrayAt(null);
+    const place = () => {
+      const deck = ref.current;
+      const box = trayRef.current;
+      const item = deck?.querySelector<HTMLElement>(`[data-deck-place='${tray}']`);
+      if (!deck || !box || !item) return;
+      const at = deck.getBoundingClientRect();
+      const pressed = item.getBoundingClientRect();
+      const x = at.left + trayCentre(at.left, pressed.left + pressed.width / 2, box.offsetWidth, window.innerWidth, Math.min(at.left, 16));
+      setTrayAt({ x, bottom: Math.round(window.innerHeight - at.top + TRAY_LIFT) });
+    };
+    place();
+    // Opened from the keyboard (the place still has the focus), the keyboard goes on into the tray's first door.
+    const pressed = ref.current?.querySelector<HTMLElement>(`[data-deck-place='${tray}']`);
+    if (pressed && document.activeElement === pressed) trayRef.current?.querySelector<HTMLElement>('button')?.focus({ preventScroll: true });
+    window.addEventListener('resize', place);
+    return () => window.removeEventListener('resize', place);
+  }, [tray]);
   // Spot's tray: the Phoenix markets, so Futures lands on the coin's own perpetual (kept for a minute by the store), and
   // while closing out the wallet's account again.
   const toPhoenix = on.futures === 'exchange';
@@ -313,7 +349,9 @@ export function Deck() {
       case 'garage':
         return toggleGarage();
       case 'ring':
-        return toggleDuels();
+        return toggleArena('fight');
+      case 'hack':
+        return toggleHack();
       case 'vault':
         return openVault();
     }
@@ -332,7 +370,7 @@ export function Deck() {
         aria-label={open ? label : w.opensSoon(label)}
         aria-pressed={!isTray(place) && open ? lit[place] : undefined}
         aria-expanded={isTray(place) && open && doorsOf(place, on).length > 1 ? tray === place : undefined}
-        data-hint={w[PLACE_HINT[place]]}
+        data-hint={place === 'arena' ? (doorsHint(doorsOf('arena', on).map((door) => w[DOOR_WORD[door]]), w.and) ?? w.hintArena) : w[PLACE_HINT[place]]}
         data-deck-place={place}
         onClick={() => go(place)}
       >
@@ -393,12 +431,25 @@ export function Deck() {
         {LEFT.map(item)}
         {item(CENTER)}
         {RIGHT.map(item)}
-        {tray && (
-          <div key={`tray-${tray}`} className={s.tray} style={{ ['--doors' as string]: doors.length }} role="group" aria-label={w[tray]} data-deck-tray={tray}>
-            {doors.map(door)}
-          </div>
-        )}
       </nav>
+      {tray &&
+        root &&
+        createPortal(
+          <div className={s.trayLayer}>
+            <div
+              key={`tray-${tray}`}
+              ref={trayRef}
+              className={s.tray}
+              style={{ ['--doors' as string]: doors.length, ...(trayAt === null ? { visibility: 'hidden' } : { left: trayAt.x, bottom: trayAt.bottom }) }}
+              role="group"
+              aria-label={w[tray]}
+              data-deck-tray={tray}
+            >
+              {doors.map(door)}
+            </div>
+          </div>,
+          root,
+        )}
       {!shown && (
         <button type="button" className={`${s.handle} ${s.restore}`} aria-label={w.showMenu} onClick={() => toggle('bottom')} data-deck-restore="">
           <ChevronGlyph />

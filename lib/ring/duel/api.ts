@@ -4,15 +4,17 @@ import { privateNoStoreHeaders } from "../../http-control";
 import { mutationOriginAllowed } from "../../security";
 import type { AccountRead } from "../api.ts";
 import type { RingStore } from "../store.ts";
-import { isDuelFormat } from "./harness.ts";
+import { DUEL_FORMATS, isDuelFormat, type DuelFormat } from "./harness.ts";
 import type { DuelErrorCode, DuelService, StartRequest } from "./service.ts";
 
 /**
  * The duels' routes (CITY-51), on plain `Request` and `Response` like the rest of `/api/ring`:
  *
  *   GET  /api/ring/duel?id=                         → { duel: DuelView }
- *   GET  /api/ring/duels                            → { duels: DuelView[] }   the latest, newest first
+ *   GET  /api/ring/duels                            → { duels: DuelView[], formats }   the latest, newest first, and
+ *                                                     the formats this server can play now (CITY-217)
  *   POST /api/ring/fight  { format, agent, opponent } + Idempotency-Key → 202 { duel: DuelView }
+ *                         opponent `rival`: the server draws another owner's agent of your class (CITY-217)
  *
  * Closed (404) until both switches say `open`: the Ring's (`NEXT_PUBLIC_RYNTRA_CITY_RING`) and the duels' own
  * (`NEXT_PUBLIC_RYNTRA_CITY_RING_DUELS`). A start needs the account signed in with a wallet, comes from this site only
@@ -24,6 +26,8 @@ export type DuelApiDeps = {
   open: () => boolean;
   account: (req: Request) => Promise<AccountRead>;
   store: Pick<RingStore, "answer" | "keepAnswer">;
+  /** The formats this server can play now: Market Replay only with the market-data gateway. All, by default. */
+  formats?: () => readonly DuelFormat[];
   now?: () => number;
 };
 
@@ -44,13 +48,23 @@ const STATUS_OF: Record<DuelErrorCode, number> = {
   FORMAT: 422,
   OFF: 409,
   NO_KEY: 409,
+  NO_RIVAL: 409,
   MARKET_UNAVAILABLE: 503,
   RATE_LIMITED: 429,
+  DAILY_CAP: 429,
+  KEY_REUSED: 422,
 };
 
+const REUSED = "This Idempotency-Key was used for another request.";
 const failure = (status: number, code: string, message: string): Answer => ({ status, body: { error: { code, message } } });
 const closed = failure(404, "CLOSED", "Duels are not open yet.");
 const unavailable = failure(503, "UNAVAILABLE", "Duels could not be reached. Nothing was started.");
+
+/**
+ * The duel's id for one account's request key: a retried start finds the duel the first try made, even when its answer
+ * was never kept (review 8.11). The pattern is the store's (`^duel-[A-Za-z0-9-]{8,64}$`).
+ */
+export const duelIdOf = (kept: string): string => `duel-k-${createHash("sha256").update(`duel\n${kept}`).digest("hex").slice(0, 32)}`;
 
 const respond = (answer: Answer): Response =>
   new Response(JSON.stringify(answer.body), { status: answer.status, headers: { ...JSON_TYPE, ...privateNoStoreHeaders() } });
@@ -75,7 +89,7 @@ export function createDuelApi(deps: DuelApiDeps) {
   async function duels(_req: Request): Promise<Response> {
     if (!deps.open()) return respond(closed);
     try {
-      return respond({ status: 200, body: { duels: await deps.service().recent(12) } });
+      return respond({ status: 200, body: { duels: await deps.service().recent(12), formats: deps.formats?.() ?? DUEL_FORMATS } });
     } catch {
       return respond(unavailable);
     }
@@ -105,10 +119,13 @@ export function createDuelApi(deps: DuelApiDeps) {
     const hash = createHash("sha256").update(`fight\n${text}`).digest("hex");
     try {
       const stored = (await deps.store.answer(kept, now())) as (Answer & { hash: string }) | null;
-      if (stored) return respond(stored.hash === hash ? { status: stored.status, body: stored.body } : failure(422, "IDEMPOTENCY_KEY_REUSED", "This Idempotency-Key was used for another request."));
-      const started = await deps.service().start(account.accountId, request);
+      if (stored) return respond(stored.hash === hash ? { status: stored.status, body: stored.body } : failure(422, "IDEMPOTENCY_KEY_REUSED", REUSED));
+      const started = await deps.service().start(account.accountId, request, { id: duelIdOf(kept) });
+      if (!started.ok && started.code === "KEY_REUSED") return respond(failure(422, "IDEMPOTENCY_KEY_REUSED", REUSED));
       const answer = started.ok ? { status: 202, body: { duel: started.value } } : failure(STATUS_OF[started.code], started.code, started.message);
-      if (answer.status < 500) await deps.store.keepAnswer(kept, { ...answer, hash }, now());
+      // A started duel is answered as started even when its answer could not be kept: a retry with the key finds the
+      // same duel by its id (`duelIdOf`), never starts a second one.
+      if (answer.status < 500) await deps.store.keepAnswer(kept, { ...answer, hash }, now()).catch(() => console.error("[ring] fight answer not kept"));
       return respond(answer);
     } catch {
       return respond(unavailable);

@@ -4,6 +4,8 @@ import { words } from '../i18n/dict.ts';
 export const BEACON = words(
   {
     beacon: 'Beacon',
+    /* The tower card's button says what a beacon does (CITY-243: «Beacon» alone was a riddle). */
+    beaconAction: 'Alert me',
     beaconOn: (symbol: string) => `Beacon on ${symbol}`,
     close: 'Close',
     newBeacon: 'New beacon',
@@ -46,6 +48,7 @@ export const BEACON = words(
   },
   {
     beacon: 'Маяк',
+    beaconAction: 'Сповістити',
     beaconOn: (symbol: string) => `Маяк на ${symbol}`,
     close: 'Закрити',
     newBeacon: 'Новий маяк',

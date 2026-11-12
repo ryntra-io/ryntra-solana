@@ -215,6 +215,8 @@ const EN = {
   looseEnds: (n: number) => `Unfinished orders · ${n}`,
   chainNone: 'No bots from this wallet yet',
   chainError: 'Your wallet’s bots could not be read',
+  /** «Cancel» on a DLMM order or ladder read from the chain: everything it holds back to the wallet (CITY-231). */
+  chainCancel: 'Cancel',
   // The strategies.
   bucket: { week: 'This week', month: 'Under a month', quarter: '1–3 months', older: 'Over 3 months' } satisfies Record<AgeBucket, string>,
   yours: 'Yours',
@@ -234,7 +236,8 @@ const EN = {
   noStrategies: 'No strategies yet',
   // The history.
   csv: 'Download CSV',
-  noReceipts: 'No receipts yet',
+  // CITY-237: a tab of trades, not of receipts (decision 91: a receipt is never a heading), and never a dead end.
+  noReceipts: 'No trades yet',
   side: { buy: 'Bought', sell: 'Sold' },
   ryntra: {
     name: 'Ryntra',
@@ -312,6 +315,7 @@ const EN = {
     walletNo: 'Nothing was signed',
     refused: 'Stopped before your wallet — nothing was sent',
     unreachable: 'Devnet didn’t answer — try again',
+    checking: 'Sent — checking the chain',
   },
   liveTitle: 'On devnet',
   liveState: { placing: 'Placing', failed: 'Didn’t land', incomplete: 'Not finished', working: 'Working', filled: 'Filled', due: 'Needs you', closed: 'Closed' } satisfies Record<LiveState, string>,
@@ -508,6 +512,7 @@ const UK: Words = {
   looseEnds: (n) => `Незавершені ордери · ${n}`,
   chainNone: 'З цього гаманця ботів ще немає',
   chainError: 'Не вдалося прочитати ботів гаманця',
+  chainCancel: 'Скасувати',
   bucket: { week: 'Цього тижня', month: 'До місяця', quarter: '1–3 місяці', older: 'Понад 3 місяці' },
   yours: 'Твоя',
   by: (author) => `від ${author}`,
@@ -525,7 +530,7 @@ const UK: Words = {
   closeStrategy: 'Закрити',
   noStrategies: 'Стратегій ще немає',
   csv: 'Завантажити CSV',
-  noReceipts: 'Квитанцій ще немає',
+  noReceipts: 'Угод ще немає',
   side: { buy: 'Куплено', sell: 'Продано' },
   ryntra: {
     name: 'Ryntra',
@@ -601,6 +606,7 @@ const UK: Words = {
     walletNo: 'Нічого не підписано',
     refused: 'Зупинено до гаманця — нічого не надіслано',
     unreachable: 'Devnet не відповів — спробуй ще',
+    checking: 'Надіслано — перевіряємо мережу',
   },
   liveTitle: 'У devnet',
   liveState: { placing: 'Ставиться', failed: 'Не стала', incomplete: 'Не завершено', working: 'Працює', filled: 'Виконано', due: 'Потрібен ти', closed: 'Закрито' },

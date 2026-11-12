@@ -62,6 +62,7 @@ const HAS_DASH = new RegExp(`[${DASHES}]`, "u");
 /** Folds lookalike forms, drops control characters and keeps at most one blank line. */
 export function tidy(text: string): string {
   return text
+    .replace(/[�-�](?![�-�])|(?<![�-�])[�-�]/g, "")
     .normalize("NFKC")
     .replace(/\r\n?/g, "\n")
     .replace(/[^\P{Cc}\n]/gu, "")

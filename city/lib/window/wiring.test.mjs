@@ -132,7 +132,7 @@ test("behind both bays (or one window on the whole screen) the city is drawn lea
   assert.match(read("city/components/hud/hud.module.css"), /\.layer \{[^}]*z-index: 10;/);
   const layer = read("city/components/window/WindowLayer.tsx");
   assert.match(layer, /bothBaysIn\(settledLayout\(st\)\)/);
-  for (const part of ["<CityDim />", "<Tray />", "<Layouts />", "<Landing />"]) assert.ok(layer.includes(part), part);
+  for (const part of ["<CityDim />", "<Tray />", "<Landing />"]) assert.ok(layer.includes(part), part);
 });
 
 test("minimise waits on a signature, on the computer and on the phone, and folds only a window the city can open again", () => {
@@ -184,10 +184,31 @@ test("a folded trade card comes back on its own coin, through the Launch engine 
   assert.match(read("city/components/window/WindowLayer.tsx"), /togetherIn\(st\.layout\) \|\| gridRoomIn\(st\.layout\) === null/);
 });
 
-test("what the window layer draws on the first paint is the same on the server and on a phone: the layouts wait for the page", () => {
+test("the layouts live in the top bar's menu on a computer, never in a corner of the city or over a window on the whole screen (CITY-241)", () => {
+  // Nothing of them stands on the window layer, whose pieces lie over the frames.
+  const layer = read("city/components/window/WindowLayer.tsx");
+  assert.doesNotMatch(layer, /Layouts/);
+  assert.doesNotMatch(read("city/components/window/window.module.css"), /\.desks \{|\.desksButton|\.desksPanel/);
+  // One row of the menu, on a computer only, that unfolds the layouts in place and folds the menu once one is used.
+  const menu = read("city/components/hud/Menu.tsx");
+  assert.match(menu, /<LayoutsRow onClose=\{onClose\} \/>/);
+  assert.match(menu, /const desk = useWindows\(\(st\) => st\.desk\);[\s\S]*if \(!desk\) return null;/);
+  assert.match(menu, /\{open && <LayoutsPicker id=\{id\} onDone=\{onClose\} \/>\}/);
   const layouts = read("city/components/window/Layouts.tsx");
-  assert.match(layouts, /useEffect\(\(\) => setMounted\(true\), \[\]\);/);
-  assert.match(layouts, /if \(!desk \|\| !mounted\) return null;/);
+  assert.match(layouts, /export function LayoutsPicker\(/);
+  assert.match(layouts, /const pick = \(key: DeskKey\) => \{\n    onDone\(\);\n    apply\(key\);/);
+  // The menu's panel stands in a layer of its own over the windows (z 13, as the wallet's), so the layouts are reachable
+  // while windows stand in both bays; the top bar's layer stays under them (z 10).
+  assert.match(menu, /<MenuOver button=\{button\} panel=\{panel\}>/);
+  assert.match(menu, /return createPortal\(\n    <div className=\{s\.menuLayer\}/);
+  const css = read("city/components/hud/hud.module.css");
+  assert.match(css, /\.menuLayer \{\n  position: fixed;\n  inset: 0;\n  z-index: 13;\n  pointer-events: none;/);
+  assert.match(css, /\.menu \{\n  position: fixed;\n  right: var\(--menu-right, var\(--gutter\)\);\n  top: var\(--menu-top,/);
+  // A tap in the panel is no tap outside the menu.
+  assert.match(menu, /if \(wrap\.current\?\.contains\(target\) \|\| panel\.current\?\.contains\(target\)\) return;/);
+});
+
+test("what the window layer draws on the first paint is the same on the server and on a phone", () => {
   // The tray has nothing before a window folds; the shade starts off.
   assert.match(read("city/components/window/Tray.tsx"), /if \(!chips\.length \|\| away \|\| doors\) return null;/);
 });

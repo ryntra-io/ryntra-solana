@@ -96,6 +96,9 @@ export type PierRow = Readonly<{
   feesLamports: bigint | null;
   /** SOL-2b's net against holding the same tokens, lamports at today's SOL price; null without an entry or prices. */
   vsHoldLamports: bigint | null;
+  /** The position's price bounds, Y per X (null on the plain curve): what tells two positions of one pair apart (CITY-243). */
+  lower: number | null;
+  upper: number | null;
 }>;
 
 function toLamports(usd: number | null, solUsd: number | null): bigint | null {
@@ -113,6 +116,8 @@ export function pierRow(view: PositionView, entry: PositionEntry | null, solUsd:
     status: view.rangeState === 'in_range' ? 'in-range' : 'out-of-range',
     feesLamports: toLamports(fees, solUsd),
     vsHoldLamports: result ? toLamports(result.net, solUsd) : null,
+    lower: view.lower,
+    upper: view.upper,
   };
 }
 

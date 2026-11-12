@@ -20,6 +20,7 @@ import { useFeedPanel } from '@/city/lib/feed/panel';
 import { useLayer } from '@/city/lib/game/layer';
 import { useGameMap } from '@/city/lib/game/map';
 import { useLaunch } from '@/city/lib/launch/district';
+import { reviewStepOpen } from '@/city/lib/launch/review-step';
 import { useBerth } from '@/city/lib/launch/berth-store';
 import { useHall } from '@/city/lib/launch/hall-store';
 import { useMoments } from '@/city/lib/moments/stage';
@@ -60,9 +61,13 @@ const CLOSE: Readonly<Record<WindowName, () => void>> = {
   how: () => howStore.getState().hide(),
   guides: () => useGuides.getState().hide(),
   moments: () => useMoments.setState({ sheet: null }),
+  // The sheet, unless a launch is under way; or an early launch's window for its people (CITY-236), unless a step of
+  // its own is in the wallet or on its way.
   launch: () => {
     const sheet = useLaunch.getState();
-    if (sheet.sheet && closable(sheet.phase)) sheet.closeSheet();
+    if (sheet.sheet) {
+      if (closable(sheet.phase)) sheet.closeSheet();
+    } else if (sheet.entry && !sheet.entryBusy) sheet.closeEntry();
   },
   build: () => freeStore.getState().close(),
   // The city's pages: «Back» closes the one opened last, as Escape does.
@@ -89,8 +94,10 @@ const EXTRA_BELOW: readonly Layer[] = [
   { id: 'away', open: () => awayStore.getState().status === 'playing', close: () => awayStore.getState().finish() },
 ];
 /**
- * Over the windows: a page inside one (a market of Predict: Back returns to the list, not out of Predict), a window on
- * the whole screen, the Map of Play and the events under the bell (CITY-150).
+ * Over the windows: a page inside one (a market of Predict: Back returns to the list, not out of Predict; the launch's
+ * review: Back returns to its fields, as its own arrow does — CITY-236), a window on the whole screen, the Map of Play
+ * and the events under the bell (CITY-150). The steps of the windows that load later — a bot's page, the Ring's new
+ * agent — stand as panels of their own (`useBackPanel`, `city/lib/back/panels.ts`).
  */
 const EXTRA_ABOVE: readonly Layer[] = [
   {
@@ -98,6 +105,7 @@ const EXTRA_ABOVE: readonly Layer[] = [
     open: () => usePredict.getState().open && usePredict.getState().page.kind !== 'markets',
     close: () => usePredict.getState().back(),
   },
+  { id: 'launch-review', open: () => reviewStepOpen(useLaunch.getState()), close: () => useLaunch.getState().setStep('form') },
   { id: 'full', open: () => useWindows.getState().layout.full !== null, close: () => useWindows.getState().exitFull() },
   { id: 'map', open: () => useGameMap.getState().open, close: () => useGameMap.getState().close() },
   { id: 'feed', open: () => useFeedPanel.getState().open, close: () => useFeedPanel.getState().close() },

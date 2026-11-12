@@ -45,6 +45,8 @@ export type OwnerMandate = Readonly<{
   trades: number;
   /** The money autopilot's trade part stands on this mandate. */
   pilot: boolean;
+  /** CITY-70: her «Freeze» is on — the agent starts nothing new. */
+  frozen: boolean;
   createdAt: number;
   updatedAt: number;
 }>;
@@ -72,7 +74,7 @@ export type OwnerAgents = Readonly<{ owner: string; networks: Readonly<Record<Ma
 export const atWork = (status: BookStatus): boolean => status === "working" || status === "paused";
 
 /** One mandate of the book as the wallet's answer shows it, with what the chain says now. */
-export function ownerMandate(entry: BookEntry, chain: ChainNow, pilotPolicy: string | null): OwnerMandate {
+export function ownerMandate(entry: BookEntry, chain: ChainNow, pilotPolicy: string | null, frozen = false): OwnerMandate {
   const result = resultOf(entry.trades, null);
   return {
     record: entry.record,
@@ -91,6 +93,7 @@ export function ownerMandate(entry: BookEntry, chain: ChainNow, pilotPolicy: str
     boughtRaw: result.boughtRaw,
     trades: result.trades,
     pilot: pilotPolicy !== null && pilotPolicy === entry.record.policy,
+    frozen,
     createdAt: entry.createdAt,
     updatedAt: entry.updatedAt,
   };

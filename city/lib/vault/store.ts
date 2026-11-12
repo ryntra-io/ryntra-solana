@@ -9,7 +9,9 @@ import { httpVault, VaultClientError, type VaultClient } from './client.ts';
  * The Vault's room, from the door to a crack. Entering reads the vaults as this person sees them and the live feed,
  * and picks the first vault still to crack; an attempt goes out with its own key (a retry of the same text sends the
  * same key, so it is counted once); the answer, the feed and the person's limits all come back in one reply. When a
- * limit is used up the room waits until it resets, then reads the vaults again, so the Try button comes back by itself.
+ * limit is used up, or the guards rest (the day's ceiling on their model), the room waits until then and reads the
+ * vaults again, so the Try button and the guard come back by itself. A vault not open on this deployment reads as
+ * closed, never as a connection that failed; signing in or out reads the vaults again under the new person.
  */
 
 /** The guard's state, as the characters line names it (CITY-57): ready · thinking · acting · done. */
@@ -21,11 +23,14 @@ export type Phase =
   | { step: 'answered'; result: AttemptResponse; at: number }
   | { step: 'refused'; code: string; line: string; retryAfterS: number | null; window?: 'minute' | 'day' | null; text: string; key: string };
 
+/** Where reading the vaults stands: not yet, on its way, read, unreachable, or not open on this deployment. */
+export type ReadStatus = 'unread' | 'reading' | 'read' | 'offline' | 'closed';
+
 export type VaultRoomState = {
   open: boolean;
   vault: VaultId;
   state: VaultState | null;
-  status: 'unread' | 'reading' | 'read' | 'offline';
+  status: ReadStatus;
   feed: Partial<Record<VaultId, PublicEntry[]>>;
   draft: string;
   phase: Phase;
@@ -40,6 +45,8 @@ export type VaultRoomState = {
   setDraft: (text: string) => void;
   send: () => Promise<void>;
   readFeed: () => Promise<void>;
+  /** Reads the vaults and the feed again — after a sign-in or a sign-out — while the room is open. */
+  refresh: () => Promise<void>;
 };
 
 /** The room's clock for waiting out a limit; tests pass their own. */
@@ -75,6 +82,14 @@ export function firstToCrack(state: VaultState): VaultId {
   return state.vaults.find((v) => v.open && !v.cracked)?.id ?? 'daily';
 }
 
+/** Whether the guards rest for this person now, and until when (ms since 1970); null while they answer. */
+export function restingUntil(state: VaultState | null): number | null {
+  const guards = state?.guards;
+  if (!guards || guards.awake) return null;
+  const at = guards.wakesAt ? Date.parse(guards.wakesAt) : NaN;
+  return Number.isFinite(at) ? at : null;
+}
+
 /** The limit a state has used up, and how many seconds until it resets; null while tries are left. */
 export function usedUp(state: VaultState | null): { window: 'minute' | 'day'; resetS: number } | null {
   const limits = state?.me.limits;
@@ -105,17 +120,18 @@ export function createVaultStore({ client = () => httpVault, now = () => Date.no
       }, ms);
     }
 
-    /** Takes in the vaults as the server sees them and, if a limit is used up, waits for it to reset. */
+    /**
+     * Takes in the vaults as the server sees them and, if a limit is used up or the guards rest, waits for the first of
+     * them to pass.
+     */
     function apply(state: VaultState) {
       const out = usedUp(state);
+      const rest = restingUntil(state);
       set({ state, limited: !!out });
-      if (out && get().open) {
-        until = now() + out.resetS * 1000;
-        wakeIn(out.resetS * 1000 + RESET_MARGIN_MS);
-      } else {
-        until = 0;
-        stopWaiting();
-      }
+      until = out ? now() + out.resetS * 1000 : 0;
+      const waits = [out ? out.resetS * 1000 : null, rest !== null ? rest - now() : null].filter((ms): ms is number => ms !== null && ms > 0);
+      if (waits.length && get().open) wakeIn(Math.min(...waits) + RESET_MARGIN_MS);
+      else stopWaiting();
     }
 
     async function read() {
@@ -125,9 +141,11 @@ export function createVaultStore({ client = () => httpVault, now = () => Date.no
         apply(state);
         set({ status: 'read' });
         return state;
-      } catch {
-        set({ status: get().state ? 'read' : 'offline' });
-        if (get().open && get().limited) wakeIn(RETRY_READ_MS);
+      } catch (error) {
+        // A vault this deployment has not opened says so; anything else is a connection that may come back.
+        const closed = error instanceof VaultClientError && error.code === 'CLOSED';
+        set({ status: closed ? 'closed' : get().state ? 'read' : 'offline' });
+        if (get().open && !closed && (get().limited || restingUntil(get().state) !== null || !get().state)) wakeIn(RETRY_READ_MS);
         return null;
       }
     }
@@ -197,8 +215,19 @@ export function createVaultStore({ client = () => httpVault, now = () => Date.no
         } catch (error) {
           const e = error instanceof VaultClientError ? error : new VaultClientError(0, 'OFFLINE', 'No connection. Nothing was counted.');
           set({ phase: { step: 'refused', code: e.code, line: e.message, retryAfterS: e.retryAfterS, window: e.window, text, key } });
-          if (e.code === 'RATE_LIMITED' || e.code === 'LOCKED') void read();
+          if (e.code === 'RATE_LIMITED' || e.code === 'LOCKED' || e.code === 'RESTING') void read();
+          if (e.code === 'CLOSED') set({ status: 'closed' });
         }
+      },
+
+      async refresh() {
+        if (!get().open) return;
+        if (get().phase.step !== 'sending') set({ phase: { step: 'idle' } });
+        const state = await read();
+        if (!get().open) return;
+        // The vault on screen may not be open to the person now signed in: then the first one still to crack.
+        if (state && !state.vaults.find((v) => v.id === get().vault)?.open) set({ vault: firstToCrack(state) });
+        await get().readFeed();
       },
 
       async readFeed() {

@@ -607,6 +607,42 @@
   clip-path: polygon(7px 0, 100% 0, 100% calc(100% - 7px), calc(100% - 7px) 100%, 0 100%, 0 7px);
 }
 
+/* The sign over my quarter is a door (CITY-241): the button is the whole target, at least 44 px; the plate is drawn. */
+.markGo {
+  display: grid;
+  place-items: center;
+  min-width: 44px;
+  min-height: 44px;
+  padding: 6px;
+  border: 0;
+  background: none;
+  pointer-events: auto;
+  cursor: pointer;
+  font: inherit;
+  color: inherit;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.markGo .mark {
+  transition:
+    background 140ms ease-out,
+    box-shadow 140ms ease-out;
+}
+
+.markGo:hover .mark,
+.markGo:focus-visible .mark {
+  background: rgba(36, 24, 52, 0.94);
+  box-shadow: inset 0 0 0 1.5px var(--amber), 0 0 22px rgba(255, 178, 63, 0.32);
+}
+
+.markGo:focus-visible {
+  outline: none;
+}
+
+.markGo:active .mark {
+  transform: scale(0.97);
+}
+
 .markTitle {
   max-width: 200px;
   overflow: hidden;

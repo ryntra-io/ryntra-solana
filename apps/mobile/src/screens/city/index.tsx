@@ -6,7 +6,15 @@ import { WebView, type WebViewMessageEvent } from 'react-native-webview'
 
 import { userAgentNameOf } from '@/features/city/bridge'
 import { CITY_GROUND } from '@/features/city/city-look'
-import { cityCoverOf, cityUrlOf, loadDecisionOf, pageSpeaks } from '@/features/city/city-page'
+import {
+  cityCoverOf,
+  cityUrlOf,
+  loadDecisionOf,
+  PAGE_BACK_SCRIPT,
+  PAGE_GO_BACK,
+  pageBackOf,
+  pageSpeaks,
+} from '@/features/city/city-page'
 import { CITY_COPY } from '@/features/city/copy'
 import { useCityHost } from '@/features/city/use-city-host'
 import { CLIENT_IDENTITY } from '@/lib/client-identity'
@@ -30,8 +38,8 @@ const QUIET_RETRIES_AFTER_NETWORK: readonly number[] = [2000, 4000, 8000, 15000,
  *
  * The page stands inside the system bars on the city's night. While it cannot show, the launch screen's own night and mark cover it
  * (`./cover`): opening, no connection, or a page that did not open вЂ” with one way to try again. Android's Back walks
- * the page's own history first; at its start, Back leaves the app. `at` is the site's path a link named (`/c/<mint>`):
- * the city opens there, and a later link moves it there.
+ * the page's own history first; at its start, Back leaves the app. `at` is the site's address a link named (`/c/<mint>`,
+ * `/?open=agent`, `/?early=<mint>`): the city opens there, and a later link moves it there.
  */
 export function CityScreen({ at, onAtSeen }: { at: string | null; onAtSeen: () => void }) {
   const words = useCopy(CITY_COPY)
@@ -44,6 +52,8 @@ export function CityScreen({ at, onAtSeen }: { at: string | null; onAtSeen: () =
   const [loadedFor, setLoadedFor] = useState<number | null>(null)
   const [failedFor, setFailedFor] = useState<number | null>(null)
   const [canGoBack, setCanGoBack] = useState(false)
+  /** The page's own word on a step back (`PAGE_BACK_SCRIPT`): null until it speaks, or where it cannot. */
+  const pageBack = useRef<boolean | null>(null)
   const instance = target.instance
   const loaded = loadedFor === instance
   const failed = failedFor === instance
@@ -70,6 +80,7 @@ export function CityScreen({ at, onAtSeen }: { at: string | null; onAtSeen: () =
     (url: string) => {
       host.detach()
       setCanGoBack(false)
+      pageBack.current = null
       setTarget((current) => ({ url, instance: current.instance + 1 }))
     },
     [host],
@@ -112,11 +123,17 @@ export function CityScreen({ at, onAtSeen }: { at: string | null; onAtSeen: () =
     wasOffline.current = offline
   }, [offline, showing, openAt, target.url])
 
-  // Back walks the page's history; at its start, Back does what it always does вЂ” it leaves the app.
+  // Back walks the page's history; at its start, Back does what it always does — it leaves the app. The page's own
+  // word comes first: the WebView does not count a step a link's window added before the person touched the page.
   const backRef = useRef<() => boolean>(() => false)
   useEffect(() => {
     backRef.current = () => {
-      if (!canGoBack || !loaded) return false
+      if (!loaded) return false
+      if (pageBack.current === true) {
+        view.current?.injectJavaScript(PAGE_GO_BACK)
+        return true
+      }
+      if (!canGoBack) return false
       view.current?.goBack()
       return true
     }
@@ -129,6 +146,11 @@ export function CityScreen({ at, onAtSeen }: { at: string | null; onAtSeen: () =
   const onMessage = (event: WebViewMessageEvent) => {
     // Only the city's own site speaks over the bridge: a frame or a page from anywhere else is not read.
     if (!pageSpeaks(event.nativeEvent.url)) return
+    const back = pageBackOf(event.nativeEvent.data)
+    if (back !== null) {
+      pageBack.current = back
+      return
+    }
     void host.receive(event.nativeEvent.data)
   }
 
@@ -189,6 +211,7 @@ export function CityScreen({ at, onAtSeen }: { at: string | null; onAtSeen: () =
           onRenderProcessGone={fail}
           onNavigationStateChange={(state) => setCanGoBack(state.canGoBack)}
           onMessage={onMessage}
+          injectedJavaScript={PAGE_BACK_SCRIPT}
           javaScriptEnabled
           domStorageEnabled
           allowFileAccess={false}

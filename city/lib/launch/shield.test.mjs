@@ -16,7 +16,7 @@ const USDC = { mint: "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v", decimals: 6
 test("the shield stays closed until the deployment opens it, and mainnet waits for a release decision", () => {
   /* Nothing in the code opens it: the switch is the deployment's variable, the mainnet default the operator's one line. */
   assert.equal(CITY_SHIELD_SWITCH, process.env.NEXT_PUBLIC_RYNTRA_CITY_SHIELD === "open");
-  assert.equal(CITY_SHIELD_MAINNET, false);
+  assert.equal(CITY_SHIELD_MAINNET, true, "the opening word of 9.11, after the fork and devnet passes (CITY-234)");
   assert.equal(cityShieldOpen("solana:devnet", false, false), false);
   assert.equal(cityShieldOpen("solana:mainnet", true, false), false);
   assert.equal(cityShieldOpen("solana:devnet", false, true), true);

@@ -1,6 +1,5 @@
 'use client';
 
-import { Html } from '@react-three/drei';
 import { useFrame, useThree } from '@react-three/fiber';
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import * as THREE from 'three';
@@ -14,6 +13,8 @@ import { SLOTS, lotAt, lotNumber, lotOf, slotCentre, streetLamps, streetName, st
 import { useQuarter } from '@/city/lib/quarter/store';
 import type { QuarterSketch } from '@/city/lib/quarter/types';
 import { useRun } from '@/city/lib/run/store';
+import { SceneHtml } from '../city/SceneHtml';
+import { goQuarter } from '../game/play';
 import { AFAR, TERRACE_TOP } from './afar';
 import { createBeaconMaterial, createHaloMaterial, createLampMaterial } from './materials';
 import { BUILDING_SCALE, seedOf } from './QuarterBuilding';
@@ -139,7 +140,8 @@ const BEACON = { height: 30, bottom: 1.1, top: 2.6 };
 
 /**
  * My quarter from the city's view: a soft column of amber light over the lot and a sign with its place — the
- * owner's short name when they gave one, else «Your quarter». Both step aside while the quarter is built.
+ * owner's short name when they gave one, else «Your quarter». A tap on the sign flies into the quarter, as «My quarter»
+ * does (CITY-241). Both step aside while the quarter is built.
  */
 export function MyMark({ lot }: { lot: Lot }) {
   const me = useQuarter((s) => s.me);
@@ -164,12 +166,14 @@ export function MyMark({ lot }: { lot: Lot }) {
     <>
       <mesh geometry={geometry} material={material} position={[lot.x, TERRACE_TOP, lot.z]} renderOrder={3} frustumCulled={false} />
       {/* Kept mounted and hidden when quiet: a sign's own root is never torn down in the middle of a render. */}
-      <Html position={[lot.x, TERRACE_TOP + 11, lot.z]} center zIndexRange={[3, 0]} pointerEvents="none" className={q.tagWrap} style={quiet ? HIDDEN : undefined}>
-        <div className={q.mark}>
-          <span className={q.markTitle}>{name || w.yourQuarter}</span>
-          <span className={q.markLine}>{place}</span>
-        </div>
-      </Html>
+      <SceneHtml position={[lot.x, TERRACE_TOP + 11, lot.z]} center zIndexRange={[3, 0]} className={q.tagWrap} style={quiet ? HIDDEN : undefined}>
+        <button type="button" className={q.markGo} onClick={goQuarter} tabIndex={quiet ? -1 : undefined} data-quarter-mark="">
+          <span className={q.mark}>
+            <span className={q.markTitle}>{name || w.yourQuarter}</span>
+            <span className={q.markLine}>{place}</span>
+          </span>
+        </button>
+      </SceneHtml>
     </>
   );
 }
@@ -238,13 +242,13 @@ export function NeighbourHover({ quarters, streets, mine }: { quarters: readonly
   if (!shown) return null;
   const lot = lotOf(shown.cell);
   return (
-    <Html position={[lot.x, TERRACE_TOP + 6, lot.z]} center zIndexRange={[2, 0]} pointerEvents="none" className={q.tagWrap} style={!hover.on || quiet ? HIDDEN : undefined}>
+    <SceneHtml position={[lot.x, TERRACE_TOP + 6, lot.z]} center zIndexRange={[2, 0]} className={q.tagWrap} style={!hover.on || quiet ? HIDDEN : undefined}>
       <div className={`${q.tag} ${q.tagNeighbour}`}>
         <span className={q.tagLine}>
           {w.address(streetName(shown.street || streetOf(shown.cell.z)), lotNumber(shown.cell))}
           <i>{w.levelTag(shown.level)}</i>
         </span>
       </div>
-    </Html>
+    </SceneHtml>
   );
 }

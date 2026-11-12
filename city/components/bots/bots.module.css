@@ -881,6 +881,76 @@ button.card:hover {
   text-transform: uppercase;
 }
 
+/* «If the price leaves the range» — the last field of the settings' own card (CITY-243). */
+.exitField {
+  display: grid;
+  gap: 7px;
+  margin-top: 14px;
+  /* The site's own pages pad every <section> (app/globals.css); a window's do not. */
+  padding: 0;
+}
+
+.exitField .fieldLabel {
+  margin: 0;
+}
+
+.exitField .hint {
+  margin-top: 1px;
+}
+
+/* A desk 900 px tall, the page in two columns (CITY-243): the settings and the start pinned under them stand whole —
+   «If the price leaves the range» was under the pinned start, its title alone in sight. The rows stand closer and a
+   mouse's controls are a little lower; nothing a finger presses changes (`pointer: fine`). */
+@media (max-height: 940px) and (pointer: fine) {
+  @container window (min-width: 901px) {
+    .detailSide .panel {
+      padding: 12px 14px;
+    }
+
+    .detailSide .fields {
+      gap: 8px;
+    }
+
+    .detailSide .field,
+    .detailSide .exitField {
+      gap: 5px;
+    }
+
+    .detailSide .exitField {
+      margin-top: 8px;
+    }
+
+    .detailSide .stepper {
+      height: 40px;
+    }
+
+    /* Each choice on one line: «Продати все» broke in two and made the row twice as tall. */
+    .detailSide .segment button {
+      min-height: 38px;
+      padding: 0 3px;
+      font-size: var(--type-caption);
+      white-space: nowrap;
+    }
+
+    .detailSide .startBlock {
+      gap: 6px;
+      padding-top: 8px;
+    }
+
+    .detailSide .startBlock::before {
+      height: 16px;
+    }
+
+    .detailSide .primary {
+      min-height: 46px;
+    }
+
+    .detailSide .quiet {
+      min-height: 38px;
+    }
+  }
+}
+
 .pairFields {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -1938,10 +2008,12 @@ button.card:hover {
   color: var(--warm);
 }
 
+/* A «no» is read, not skimmed (CITY-237): it was small grey text under the fold. «Nothing was signed» is the person's
+   own choice and keeps the line's calm colour; a stop before the wallet and a silent network are in the warm one. */
 .liveNote[data-kind='refused'],
-.liveNote[data-kind='walletNo'],
-.liveNote[data-kind='unreachable'] {
-  color: var(--text-dim);
+.liveNote[data-kind='unreachable'],
+.liveNote[data-kind='overCap'] {
+  color: var(--warm);
 }
 
 /* ---------- The agent with a budget (CITY-174) ---------- */

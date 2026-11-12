@@ -36,6 +36,30 @@
   background: linear-gradient(160deg, rgba(20, 16, 36, 0.92), rgba(8, 7, 15, 0.95));
 }
 
+/* «Raise your tower» in the city's one window frame (CITY-242), as every other place of the Deck: the frame brings the
+   glass, the title and «Close», on a desk and in a phone's sheet; the sheet brings only what is inside. */
+.framed {
+  padding: 14px 18px 18px;
+}
+
+/* While its code arrives the window keeps the height the form takes, so nothing jumps when it comes. */
+.framedLoading {
+  height: 520px;
+}
+
+/* The cost line first, the creator's berth beside it: the window's head already says what this is. */
+.costHead {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.costHead .cost {
+  flex: 1;
+  min-width: 0;
+  margin-top: 0;
+}
+
 .head {
   display: flex;
   align-items: center;
@@ -338,11 +362,9 @@
   position: absolute;
   top: 10px;
   left: 12px;
-  display: inline-flex;
-  align-items: center;
-  gap: 7px;
-  height: 24px;
-  padding: 0 10px;
+  display: inline-grid;
+  gap: 3px;
+  padding: 5px 10px 6px;
   font-size: var(--type-micro);
   font-weight: 800;
   letter-spacing: 0.08em;
@@ -353,6 +375,21 @@
   box-shadow: inset 0 0 0 1px rgba(238, 241, 255, 0.12);
   backdrop-filter: blur(8px);
   pointer-events: none;
+}
+
+.clockLine {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+}
+
+/* Under the clock, in plain words: the launch goes whenever its creator signs (CITY-243). */
+.clockAny {
+  font-size: var(--type-caption);
+  font-weight: 700;
+  letter-spacing: 0.01em;
+  text-transform: none;
+  color: var(--ice);
 }
 
 .clock i {
@@ -386,7 +423,8 @@
   position: absolute;
   left: 12px;
   right: 12px;
-  top: 52px;
+  /* Under the clock's two lines (CITY-243), never over them. */
+  top: 64px;
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 10px;
@@ -1539,7 +1577,7 @@
 /* ---------- The launch's two doors (CITY-212) ---------- */
 
 /* A door is a quiet row like the shield: its name, what holds now, and a plus to open it. */
-.door {
+.shareRow {
   margin-top: 8px;
 }
 
@@ -1822,4 +1860,104 @@
 .opened .action {
   margin: 8px -14px 0;
   width: calc(100% + 28px);
+}
+
+/* ---------- CITY-220: the people's early-access window — one number, one action at each moment ---------- */
+
+.entryHero {
+  display: grid;
+  gap: 6px;
+  margin-top: 14px;
+  padding: 16px 16px 15px;
+  background: linear-gradient(180deg, rgba(255, 178, 63, 0.09), rgba(255, 178, 63, 0.02));
+  clip-path: polygon(10px 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%, 0 10px);
+}
+
+.entryHero[data-tone='mint'] {
+  background: linear-gradient(180deg, rgba(20, 241, 149, 0.1), rgba(20, 241, 149, 0.02));
+}
+
+.entryHero > span {
+  font-size: var(--type-micro);
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+}
+
+.entryHero > b {
+  font-size: var(--type-headline);
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+  color: var(--warm);
+}
+
+.entryHero[data-tone='mint'] > b {
+  color: var(--mint);
+}
+
+.entryHero > b small {
+  font-size: var(--type-small);
+  font-weight: 700;
+  color: var(--text-dim);
+}
+
+.entryLoading {
+  height: 92px;
+  animation: entryPulse 1.4s ease-in-out infinite;
+}
+
+@keyframes entryPulse {
+  50% {
+    opacity: 0.55;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .entryLoading {
+    animation: none;
+  }
+}
+
+.entryBar {
+  height: 6px;
+  margin-top: 6px;
+  overflow: hidden;
+  border-radius: 3px;
+  background: rgba(238, 241, 255, 0.08);
+}
+
+.entryBar i {
+  display: block;
+  height: 100%;
+  background: var(--amber);
+  box-shadow: 0 0 12px rgba(255, 178, 63, 0.55);
+  transform-origin: left center;
+  transition: transform 320ms ease-out;
+}
+
+.entryAmount {
+  display: grid;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.entryNote {
+  margin-top: 16px;
+  padding: 14px;
+  font-size: var(--type-small);
+  line-height: 1.45;
+  color: var(--ice);
+  background: rgba(238, 241, 255, 0.05);
+}
+
+.entryBack {
+  display: block;
+  margin: 12px auto 0;
+}
+
+.openedWays {
+  display: flex;
+  justify-content: center;
+  padding: 10px 0 12px;
 }

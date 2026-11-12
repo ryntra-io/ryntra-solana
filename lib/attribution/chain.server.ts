@@ -23,6 +23,15 @@
  * (`historyIsComplete`). A reader that cannot prove completeness says so on
  * the page instead of publishing a smaller number as the whole.
  *
+ * ## The scan first (CITY-245)
+ *
+ * Where the primary node is Helius on mainnet, each fee account's signatures are found through its Parsed Events Scan:
+ * one request per account, filtered to the transactions that moved the account's own mint through it, back to the
+ * account's start. Every transaction is still read and attributed here, and the balance check still decides whether
+ * the whole was seen. A scan that fails or does not finish in half the history's time leaves the history to the union
+ * over the endpoints; a read from it that the balances do not confirm is read again from the union at once, and the rest
+ * of the process pages the endpoints.
+ *
  * ## What is remembered
  *
  * A finalized transaction never changes, so its trimmed form is kept per
@@ -39,6 +48,7 @@
 
 import { unstable_cache } from "next/cache.js";
 
+import { addressHistoryOf, scanEndpointOf, type AddressHistory } from "../core/history/address-history.ts";
 import { readBoundedRpcResponse, resolveEndpoints, type SolanaEndpoint } from "../solana/rpc.ts";
 import { readJupiterPartnerShareBps } from "../swap/fee-balances.server.ts";
 import { createSolanaRpcHandle } from "../solana/rpc.ts";
@@ -98,6 +108,8 @@ const PARTNER_SHARE_WAIT_MS = 4_000;
 const READ_SHAPE = "read-2";
 export const ATTRIBUTION_SHARED_REVALIDATE_S = 600;
 const SIGNATURE_PAGE = 1000;
+/** The most signatures one fee account's scan gives: past it the account is paged from the endpoints. */
+const SCAN_ACCOUNT_LIMIT = 50_000;
 const TOKEN_PROGRAMS = ["TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA", "TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb"] as const;
 const REQUEST_TIMEOUT_MS = 10_000;
 const MAX_RESPONSE_BYTES = 4 * 1024 * 1024;
@@ -306,6 +318,43 @@ export async function readReferralTokenAccounts(
 
 type SignatureInfo = Readonly<{ signature: string; slot: number; blockTime: number | null; err: unknown }>;
 
+/** The scan a read asks first: the primary node's, where it is Helius on mainnet. */
+export type HistoryScan = Readonly<{ history: AddressHistory; mints: ReadonlyMap<string, string>; until?: number }>;
+
+/*
+ * Set once a read whose history came from the scan did not sum to the balances: the rest of the process pages the
+ * endpoints, so a scan that misses a movement never keeps the figures partial.
+ */
+let scanMissed = false;
+
+/** The scan of the first endpoint that has one, or null. */
+export function attributionScan(endpoints: readonly Endpoint[], accounts: readonly ReferralTokenAccount[], until?: number): HistoryScan | null {
+  if (scanMissed) return null;
+  const node = endpoints.find((endpoint) => scanEndpointOf(endpoint.url) !== null);
+  const history = node ? addressHistoryOf(node.url) : null;
+  return history ? { history, mints: new Map(accounts.map((account) => [account.address, account.mint])), ...(until === undefined ? {} : { until }) } : null;
+}
+
+/**
+ * Every signature of the addresses from the scan, or null when it did not give each one whole. `status: "any"`: the
+ * failed transactions too, as a page of signatures lists them.
+ */
+async function scannedHistory(addresses: readonly string[], scan: HistoryScan, used: Set<string>): Promise<Map<string, SignatureInfo> | null> {
+  if (!addresses.every((address) => scan.mints.has(address))) return null;
+  const seen = new Map<string, SignatureInfo>();
+  try {
+    for (const address of addresses) {
+      const listed = await scan.history.signatures({ address, match: { mints: [{ mint: scan.mints.get(address)!, scope: "address" }] }, limit: SCAN_ACCOUNT_LIMIT, status: "any", ...(scan.until === undefined ? {} : { until: scan.until }) });
+      if (!listed.whole) return null;
+      for (const entry of listed.entries) if (!seen.has(entry.signature)) seen.set(entry.signature, entry);
+    }
+  } catch {
+    return null;
+  }
+  used.add(scan.history.host);
+  return seen;
+}
+
 /**
  * Every signature that touched the addresses, as the union over the endpoints.
  *
@@ -317,7 +366,15 @@ export async function readSignatureHistory(
   addresses: readonly string[],
   endpoints: readonly Endpoint[],
   used: Set<string>,
+  scan: HistoryScan | null = null,
 ): Promise<Map<string, SignatureInfo>> {
+  if (scan) {
+    const scanned = await scannedHistory(addresses, scan, used);
+    if (scanned) {
+      fromScan.add(scanned);
+      return scanned;
+    }
+  }
   const seen = new Map<string, SignatureInfo>();
   let answered = 0;
   for (const endpoint of endpoints) {
@@ -361,8 +418,12 @@ type RpcTransaction = Readonly<{
 /** Finalized transactions never change: once trimmed, kept for the life of the process. */
 const transactionMemory = new Map<string, AttributionTransactionInput>();
 
+/** The histories the scan gave, so a read can tell whether its balances confirmed one. */
+const fromScan = new WeakSet<Map<string, SignatureInfo>>();
+
 export function resetAttributionMemory(): void {
   transactionMemory.clear();
+  scanMissed = false;
 }
 
 /** The signers' lamports, before and after: what a fee in SOL is sized against. */
@@ -482,8 +543,8 @@ export function readAttributionFromChain(deps: ReadDeps = {}): Promise<Attributi
   return inflight;
 }
 
-async function readAttributionOnce(deps: ReadDeps = {}): Promise<AttributionRead> {
-  const started = Date.now();
+async function readAttributionOnce(deps: ReadDeps = {}, startedAt: number = Date.now()): Promise<AttributionRead> {
+  const started = startedAt;
   const env = deps.env ?? process.env;
   const referralAccount = deps.referralAccount === undefined ? resolveServiceFeeConfig(env).jupiterReferralAccount : deps.referralAccount;
   const owners = feeIdentitiesToRead(referralAccount, deps.feeWallets ?? solanaFeeOwners());
@@ -504,7 +565,7 @@ async function readAttributionOnce(deps: ReadDeps = {}): Promise<AttributionRead
       /* Anyone can open token accounts a published wallet owns: a fee wallet is read by its canonical fee accounts only. */
       found.push(...(owner.kind === "FEE_WALLET" ? await readFeeWalletAccounts(owner.address, endpoints, used) : await readReferralTokenAccounts(owner.address, endpoints, used)));
     }
-    return { found, signatures: await readSignatureHistory(found.map((account) => account.address), endpoints, used) };
+    return { found, signatures: await readSignatureHistory(found.map((account) => account.address), endpoints, used, attributionScan(endpoints, found, started + (deps.historyDeadlineMs ?? HISTORY_DEADLINE_MS) / 2)) };
   };
   try {
     const outOfTime = Symbol("out of time");
@@ -595,6 +656,12 @@ async function readAttributionOnce(deps: ReadDeps = {}): Promise<AttributionRead
     return (grossRaw - viaReferral + (viaReferral > 0n && shareBps !== null ? ryntraShareRaw(viaReferral, shareBps) : 0n)).toString();
   };
   const completeness = historyIsComplete(verdicts, accounts.map((account) => ({ owner: account.owner, mint: account.mint, amountRaw: account.amountRaw })));
+  /* Every transaction the scan named was read, and still the balances disagree: the scan missed a movement. */
+  if (fromScan.has(history) && !truncated && missing === 0 && completeness.mismatches.length > 0) {
+    /* Read again from the endpoints' union, in the same read's time: a figure the scan left partial is never published. */
+    scanMissed = true;
+    return readAttributionOnce(deps, started);
+  }
   return {
     ok: true,
     ruleVersion: ATTRIBUTION_RULE_VERSION,

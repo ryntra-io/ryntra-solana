@@ -2,8 +2,9 @@ import { words } from '../i18n/dict.ts';
 
 /**
  * «How the city works» (CITY-64) in both languages (CITY-79): each district's name, what it is and what you do there,
- * the rules behind their own control, and the window's own words. Present tense and plain, no line speaks of profit
- * (the brandbook's voice, `docs/city/brand/BRANDBOOK.md` §4); `./districts.ts` reads the shapes out of it.
+ * the rules behind their own control, and the window's own words. The agent is the city's face: the lead and the Agents' plate say what it does for a person, with safety in one line (CITY-236).
+ * Present tense and plain, no line speaks of profit (the brandbook's voice, `docs/city/brand/BRANDBOOK.md` §4);
+ * `./districts.ts` reads the shapes out of it.
  */
 export const HOW = words(
   {
@@ -15,7 +16,7 @@ export const HOW = words(
     rulesTitle: 'The rules of the city',
     readsHead: 'How it reads the market',
     neverHead: 'What it never does',
-    lead: 'The Solana market as a living night city. Every action with your coins is yours to sign.',
+    lead: 'The Solana market as a living night city. Say what you want, and your agent does the rest.',
     marketName: 'Market',
     marketWhat: 'Every Solana coin is a tower, as tall as its market cap and the liquidity behind it allow.',
     marketDoing: 'Tap a tower to see it, and buy from your own wallet with one signature.',
@@ -26,14 +27,14 @@ export const HOW = words(
     harborWhat: 'The pools of Solana, moored in one place.',
     harborDoing: 'Add to a pool from your own wallet for a share of its trading fees while the price stays in your range.',
     agentsName: 'Agents',
-    agentsWhat: 'A scout that watches the market by a rule you give it.',
-    agentsDoing: 'It brings you the towers that fit. You sign every buy.',
+    agentsWhat: 'Your own AI agent: say what you want in one sentence.',
+    agentsDoing: 'It buys and sells for you within the budget you sign once. Stop it any time, and the keys stay yours.',
     vaultName: 'Vault',
     vaultWhat: 'A vault kept by an AI guard.',
     vaultDoing: 'Talk the guard out of the phrase that opens the door.',
     ringName: 'Ring',
     ringWhat: 'The rooftop arena where AI agents meet in weight classes.',
-    ringDoing: 'Watch every bout and every move in the open.',
+    ringDoing: 'Make your agent: a body, a brain and a script. Send it to fight for its rating.',
     homeName: 'Home',
     homeWhat: 'A quarter of the city of your own, kept under your wallet.',
     homeDoing: 'Claim a spot for free and build your home, storey by storey.',
@@ -42,7 +43,7 @@ export const HOW = words(
     rule3: 'Only coins Jupiter verifies carry a name and a logo. New pools stand in the docks unnamed and marked unverified.',
     rule4: 'A moment needs real liquidity, and every figure names its window: +18.4% · 24H.',
     runRule: 'Runs are counted anonymously on this device: no name, no wallet.',
-    never1: 'Hold your keys or sign for you: every action with your coins is your signature in your own wallet.',
+    never1: 'Hold your keys: they stay in your wallet. Your agent spends only within the budget you signed, and you can stop it any time.',
     never2: 'Show a number it made up: every amount has its source, its window and its transaction.',
     never3: 'Pay for visits, likes or posts.',
     source: 'Market data: Jupiter · not financial advice',
@@ -56,7 +57,7 @@ export const HOW = words(
     rulesTitle: 'Правила міста',
     readsHead: 'Як воно читає ринок',
     neverHead: 'Чого воно ніколи не робить',
-    lead: 'Ринок Solana як живе нічне місто. Кожну дію зі своїми монетами підписуєш ти.',
+    lead: 'Ринок Solana як живе нічне місто. Скажи, що хочеш, — решту зробить твій агент.',
     marketName: 'Ринок',
     marketWhat: 'Кожна монета Solana — вежа: така висока, як дозволяють її капіталізація й ліквідність за нею.',
     marketDoing: 'Торкнись вежі, щоб її побачити, і купи зі свого гаманця одним підписом.',
@@ -67,14 +68,14 @@ export const HOW = words(
     harborWhat: 'Пули Solana, пришвартовані в одному місці.',
     harborDoing: 'Додай у пул зі свого гаманця й отримуй частку його торгових комісій, поки ціна в твоєму діапазоні.',
     agentsName: 'Агенти',
-    agentsWhat: 'Розвідник, що стежить за ринком за твоїм правилом.',
-    agentsDoing: 'Він приносить вежі, що підходять. Кожну покупку підписуєш ти.',
+    agentsWhat: 'Твій власний AI-агент: скажи одним реченням, що хочеш.',
+    agentsDoing: 'Він купує й продає за тебе в межах бюджету, який ти підписуєш один раз. Зупиниш будь-коли, а ключі лишаються в тебе.',
     vaultName: 'Сейф',
     vaultWhat: 'Сейф, який стереже AI-охоронець.',
     vaultDoing: 'Вмов охоронця назвати фразу, що відчиняє двері.',
     ringName: 'Ринг',
     ringWhat: 'Арена на даху, де AI-агенти сходяться у вагових категоріях.',
-    ringDoing: 'Дивись кожен бій і кожен хід відкрито.',
+    ringDoing: 'Збери свого агента: тіло, мозок і сценарій. Відправ його битися за рейтинг.',
     homeName: 'Дім',
     homeWhat: 'Власний квартал міста, закріплений за твоїм гаманцем.',
     homeDoing: 'Займи ділянку безкоштовно й будуй свій дім поверх за поверхом.',
@@ -83,7 +84,7 @@ export const HOW = words(
     rule3: 'Назву й логотип мають лише монети, перевірені Jupiter. Нові пули стоять у доках без назви й з позначкою «не перевірено».',
     rule4: 'Моменту потрібна справжня ліквідність, і кожне число називає своє вікно: +18,4% · 24 год.',
     runRule: 'Забіги рахуються анонімно на цьому пристрої: без імені, без гаманця.',
-    never1: 'Не тримає твоїх ключів і не підписує за тебе: кожна дія з твоїми монетами — твій підпис у твоєму гаманці.',
+    never1: 'Не тримає твоїх ключів: вони у твоєму гаманці. Агент витрачає лише в межах бюджету, який ти підписав, і ти зупиняєш його будь-коли.',
     never2: 'Не показує вигаданих чисел: кожна сума має джерело, вікно й транзакцію.',
     never3: 'Не платить за відвідини, лайки чи пости.',
     source: 'Дані ринку: Jupiter · не фінансова порада',

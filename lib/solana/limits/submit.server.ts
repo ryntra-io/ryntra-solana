@@ -18,7 +18,7 @@ import { PublicKey, type Connection } from "@solana/web3.js";
 
 import type { GuardStore } from "../../guard/store.ts";
 import { limitsConnection } from "./chain.server.ts";
-import { cosignDlmmPlace, inspectDlmmTransaction, signedByAll } from "./dlmm.server.ts";
+import { cosignDlmmPlace, inspectDlmmTransaction, rawOfUi, signedByAll } from "./dlmm.server.ts";
 import { DOLLAR_MINTS } from "../../core/fee-policy.ts";
 import { effectiveTriggerPrice, impliedPrice, scaledDecimal, TRIGGER_V1_JUPITER_FEE_BPS, type LimitSide, type LimitVenue } from "./model.ts";
 import { mintDecimals } from "./review.server.ts";
@@ -179,8 +179,17 @@ export async function submitLimit(
         const order = await dlmm.getLimitOrder(new PublicKey(request.order));
         const ask = order.limitOrderData.limitOrderBinData.some((bin) => bin.isAskSide);
         const data = order.limitOrderData;
-        const inputRaw = ask ? (BigInt(data.totalDepositAmountX) - BigInt(data.totalUnfilledAmountX)).toString() : (BigInt(data.totalDepositAmountY) - BigInt(data.totalUnfilledAmountY)).toString();
-        const outputRaw = ask ? data.totalSwappedAmountY : data.totalSwappedAmountX;
+        /* The SDK says these amounts in whole coins (as `listDlmmOrders` reads them): base units by each coin's decimals. */
+        /* An amount not readable writes no claim rather than a wrong one (CITY-233). */
+        const units = (ui: string, decimals: number) => {
+          const raw = rawOfUi(String(ui), decimals);
+          if (raw === null) throw new Error("UNREADABLE_AMOUNT");
+          return BigInt(raw);
+        };
+        const x = (ui: string) => units(ui, dlmm.tokenX.mint.decimals);
+        const y = (ui: string) => units(ui, dlmm.tokenY.mint.decimals);
+        const inputRaw = ask ? (x(data.totalDepositAmountX) - x(data.totalUnfilledAmountX)).toString() : (y(data.totalDepositAmountY) - y(data.totalUnfilledAmountY)).toString();
+        const outputRaw = (ask ? y(data.totalSwappedAmountY) : x(data.totalSwappedAmountX)).toString();
         return BigInt(outputRaw) > 0n ? { inputRaw, outputRaw } : null;
       })().catch(() => null);
     }

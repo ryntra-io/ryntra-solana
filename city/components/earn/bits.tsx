@@ -6,15 +6,17 @@ import { monogram } from '@/city/lib/chart/icon';
 import { isPhoneUserAgent, phantomBrowseUrl, PHANTOM_DOWNLOAD_URL } from '@/lib/solana/open-in-wallet';
 import { useWallet } from '@/city/lib/trade/wallet';
 import { solText } from '@/city/lib/earn/lst';
+import { digits } from '@/city/lib/i18n/dict';
 import type { ProductId } from '@/city/lib/earn/flag';
 import { useEarnData } from '@/city/lib/earn/store';
 import type { Words } from '@/city/lib/earn/words';
 import s from './earn.module.css';
 
-/** Risk as 1 to 3 dots, filled amber for each step; the words for a screen reader. */
+/** Risk as 1 to 3 dots, filled amber for each step, with its word beside them (CITY-243: three dots alone were a riddle). */
 export function RiskDots({ dots, words }: { dots: 1 | 2 | 3; words: Words }) {
   return (
     <span className={s.risk} role="img" aria-label={words.riskLabel(dots)} title={words.riskLabel(dots)}>
+      <span className={s.riskWord}>{words.risk}</span>
       {[1, 2, 3].map((n) => (
         <i key={n} className={n <= dots ? s.riskOn : undefined} />
       ))}
@@ -27,7 +29,7 @@ export function SolFigure({ lamports, empty = '—', className = '', unit = true
   const tone = lamports === null || lamports === 0n ? '' : lamports > 0n ? s.gain : s.loss;
   return (
     <b className={`${s.figure} ${tone} ${className}`}>
-      {lamports === null ? empty : solText(lamports, true)}
+      {lamports === null ? empty : digits(solText(lamports, true))}
       {lamports === null || !unit ? null : <small> SOL</small>}
     </b>
   );

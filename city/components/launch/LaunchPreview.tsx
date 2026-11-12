@@ -3,7 +3,7 @@
 import { useEffect, useState, type ReactNode } from 'react';
 import { districtFrame, srcSet } from '@/city/lib/art/frames';
 import { useLang } from '@/city/lib/i18n/lang';
-import { launchWindowNow, windowLine } from '@/city/lib/launch/launch-window';
+import { launchWindowNow, windowAnyTime, windowLine } from '@/city/lib/launch/launch-window';
 import s from './launch.module.css';
 
 /** Our own docks, filmed from the live city (CITY-64): where the tower will rise. */
@@ -122,8 +122,12 @@ function WindowClock() {
   const open = launchWindowNow(now).open;
   return (
     <span className={`${s.clock} ${open ? s.clockOpen : ''}`} data-launch-clock="">
-      <i aria-hidden="true" />
-      {windowLine(now)}
+      <span className={s.clockLine}>
+        <i aria-hidden="true" />
+        {windowLine(now)}
+      </span>
+      {/* The clock is a show, never a gate (CITY-243): said under it, so «in 15:14» is not read as «wait 15:14». */}
+      <span className={s.clockAny}>{windowAnyTime()}</span>
     </span>
   );
 }

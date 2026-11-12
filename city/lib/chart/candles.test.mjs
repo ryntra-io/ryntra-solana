@@ -5,6 +5,7 @@ import {
   candlesOf,
   candlesUrl,
   DEFAULT_TIMEFRAME,
+  delayLine,
   fetchCandles,
   loading,
   nextReadMs,
@@ -22,6 +23,7 @@ import {
   timeframeFrom,
   whyNoChart,
 } from "./candles.ts";
+import { useLangStore } from "../i18n/lang.ts";
 
 // The tower chart's candles: what `/api/spot/candles` answers, checked before the core chart draws a bar of it.
 // No network: the engine's answers are written out here.
@@ -211,4 +213,18 @@ test("«Chart unavailable» only after a few failed reads in a row with no bars;
   assert.equal(loading(JUP, "1h", state).misses, 0);
   // A market without a chart is no failure.
   assert.equal(settle(state, { status: "none", code: "THIN" }).misses, 0);
+});
+
+test("«Delayed» says how long, in the language on screen (CITY-243)", () => {
+  try {
+    useLangStore.setState({ lang: "en" });
+    assert.equal(delayLine("1m"), "Delay ≤ 20 s");
+    assert.equal(delayLine("15m"), "Delay ≤ 1 min");
+    assert.equal(delayLine("1d"), "Delay ≤ 10 min");
+    useLangStore.setState({ lang: "uk" });
+    assert.equal(delayLine("5m"), "Затримка ≤ 45 с");
+    assert.equal(delayLine("4h"), "Затримка ≤ 5 хв");
+  } finally {
+    useLangStore.setState({ lang: "en" });
+  }
 });

@@ -5,6 +5,7 @@ import type { Answer, LaunchEngine, Network } from './engine.ts';
 import { wordsNow } from '../i18n/dict.ts';
 import { cityLaunchOpen } from './gate.ts';
 import { FIELDS_REFUSED, asReviewed, freshPrebuilt, launchRequest, type Prebuilt } from './prepare.ts';
+import { shareOpen } from './share.ts';
 import { BUILD_AGED, BUILD_UNEXPECTED, CITY_CLOSED, WALLET_REFUSED, type LaunchFailure } from './refusal.ts';
 import { REFUSAL_WORDS } from './words.ts';
 
@@ -60,6 +61,9 @@ export type Phase =
   | Readonly<{ step: 'opened'; opened: Opened }>
   | Readonly<{ step: 'failed'; failure: LaunchFailure }>;
 
+/** The reader of a creation's bytes (`create-check.ts`'s `checkCreation`). */
+export type CreationChecker = (args: Readonly<{ wire: string; network: Network; preset: string; creator: string; token: string; payerCoveredLamports: string; coin: Readonly<{ name: string; symbol: string; uri: string }> }>) => Readonly<{ ok: true }> | Readonly<{ ok: false; reason: string }>;
+
 /** The reader of a sharing's bytes (`split-check.ts`'s `checkSplit`). */
 export type SplitChecker = (args: Readonly<{ creationWire: string; splitWire: string; creator: string; token: string; feeVault: string | null | undefined; shares: readonly FeeShare[] }>) => Readonly<{ ok: true }> | Readonly<{ ok: false; reason: string }>;
 
@@ -87,6 +91,11 @@ export async function runLaunch(args: Readonly<{
   others?: readonly FeeShare[];
   /** The reader of the sharing's bytes; loaded on the press when a launch shares (`split-check.ts`). */
   checkSplit?: SplitChecker;
+  /** CITY-220: the reader of the creation's bytes; loaded on the press (`create-check.ts`). */
+  checkCreation?: CreationChecker;
+  /** The city's own otherwise. */
+  shareSwitch?: boolean;
+  shareWord?: boolean;
 }>): Promise<Phase> {
   const { engine, signer, fields, preset, network, onPhase } = args;
   const now = args.now ?? Date.now;
@@ -96,6 +105,8 @@ export async function runLaunch(args: Readonly<{
     return phase;
   };
   if (!cityLaunchOpen(network, args.ownerWord, args.switchOpen)) return fail(CITY_CLOSED);
+  /* A split asked where its door is shut is not sent to be built (CITY-220): the switch, the network. */
+  if (args.others?.length && !shareOpen(network, args.shareWord, args.shareSwitch)) return fail(CITY_CLOSED);
 
   onPhase({ step: 'upload' });
   /* The sheet's answer for these fields, when it is theirs: a refusal of the fields stands; any other is asked again. */
@@ -110,6 +121,7 @@ export async function runLaunch(args: Readonly<{
   const shares = args.others?.length ? withCreatorShare(signer.address, args.others) : null;
   if (shares && feeShareProblems(signer.address, shares).length) return fail('LAUNCH_SHARES_INVALID');
   const check = shares ? (args.checkSplit ?? (await import('./split-check.ts')).checkSplit) : null;
+  const created = args.checkCreation ?? (await import('./create-check.ts')).checkCreation;
   const request = launchRequest(signer.address, preset.id, stored.data.metadataUri, shares);
   let ready = args.takePrebuilt?.(request, network) ?? null;
   let again = false;
@@ -125,6 +137,11 @@ export async function runLaunch(args: Readonly<{
          of fees are not this launch, and are never put before the wallet. */
       if (built.data.network !== network) return { ok: false, code: BUILD_UNEXPECTED, message: 'The engine built for another network.' };
       if (!asReviewed(built.data, network, shares !== null)) return { ok: false, code: BUILD_UNEXPECTED, message: shares ? 'The engine did not build the sharing the review showed.' : 'The engine built more than the launch.' };
+      /* CITY-220: the creation itself — this coin, this creator, the preset's own curve, nothing bought; the name, ticker
+         and metadata the review showed (review 8.11). */
+      const coin = { name: stored.data.name, symbol: stored.data.symbol, uri: stored.data.metadataUri };
+      const creation = created({ wire: built.data.unsignedWireBase64, network, preset: preset.id, creator: signer.address, token: built.data.token, payerCoveredLamports: built.data.payerCoveredLamports, coin });
+      if (!creation.ok) return { ok: false, code: BUILD_UNEXPECTED, message: creation.reason };
       if (shares && check) {
         const read = check({ creationWire: built.data.unsignedWireBase64, splitWire: built.data.splitUnsignedWireBase64 ?? '', creator: signer.address, token: built.data.token, feeVault: built.data.feeVault, shares });
         if (!read.ok) return { ok: false, code: BUILD_UNEXPECTED, message: read.reason };

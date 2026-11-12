@@ -49,7 +49,9 @@ export function BerthLayer() {
       title,
       icon: <BerthGlyph />,
       render: renderBerth,
-      size: { width: 760, height: 640 },
+      // CITY-242: as tall as what is inside, up to its place — no empty glass under the cards on a large desk.
+      fit: true,
+      size: { width: 760, height: 900 },
       min: { width: 380, height: 520 },
       held: busy,
       onClose: closeBerth,

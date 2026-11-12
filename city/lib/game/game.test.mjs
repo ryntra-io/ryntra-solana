@@ -134,7 +134,36 @@ test("the Predictions billboard carries live figures: it reads the trending list
   assert.doesNotMatch(board, /fetch\(|placeOrder|buy\(|setAmount/, "a read through the store only — never a bet");
 });
 
-test("the Vault's door in the scene opens only in Play", () => {
+test("the Vault's tower and its name open the room from the city, as «Arena → Vault» does (CITY-241)", () => {
   const vault = read("../../components/vault/VaultTower.tsx");
-  assert.match(vault, /layerNow\(\) !== 'play'\) return;/);
+  const tap = read("../vault/tap.ts");
+  const enter = read("../vault/enter.ts");
+  // No longer scenery outside Play, and no listener of its own: the city's one tap asks the vault as it asks the Hall's
+  // signs, so a coin's tower standing nearer keeps its tap, and the city's guards (drawn, run, ghost tap) hold for it.
+  assert.doesNotMatch(vault + tap, /layerNow\(\)|stopImmediatePropagation|addEventListener\('pointerup'/);
+  // Never while a quarter is built.
+  assert.match(vault, /const away = useQuarter\(\(st\) => st\.mode !== 'city'\);\n  useEffect\(\(\) => \{\n    placeVault\(!away\);\n    return \(\) => placeVault\(false\);/);
+  assert.match(tap, /if \(!standing\) return null;\n  let best: number \| null = null;\n  for \(const box of boxes\) \{/);
+  // The tower's own body and a finger's slack, never the whole islet.
+  assert.match(tap, /const REACH = TOWER\.radius \+ 0\.6;/);
+  assert.doesNotMatch(tap, /ISLET_RADIUS/);
+  const rig = read("../../components/city/CameraRig.tsx");
+  assert.match(rig, /if \(!tap \|\| !cityDrawn\(\) \|\| useRun\.getState\(\)\.phase !== 'off'\) return;/);
+  assert.match(rig, /if \(vault && vault\.distance < towerAt && \(!sign \|\| vault\.distance < sign\.distance\)\) \{\n        ghost\.arm\(e\.pointerType\);\n        enterVault\(\);\n        return;/);
+  // The tower and its sign go through one door into the same room as the Deck's «Arena → Vault».
+  assert.match(enter, /export function enterVault\(\): void \{\n  if \(vaultStore\.getState\(\)\.open\) return;\n  useCity\.getState\(\)\.select\(null\);\n  void vaultStore\.getState\(\)\.enter\(\);/);
+  assert.match(vault, /<VaultSign \/>/);
+  assert.match(vault, /data-vault-sign=""/);
+  // The name stands from the scene's first frame: in an `Html` whose target never moves and that is drawn afresh after
+  // a suspension — drei's own lost its root and stayed empty. «Your quarter» stands the same way.
+  assert.match(vault, /<SceneHtml position=\{\[0, VAULT_TOP \+ 1\.2, 0\]\}/);
+  const terrace = read("../../components/quarter/Terrace.tsx");
+  assert.match(terrace, /<SceneHtml position=\{\[lot\.x, TERRACE_TOP \+ 11, lot\.z\]\}[^>]*>\n        <button type="button" className=\{q\.markGo\} onClick=\{goQuarter\}/);
+  assert.doesNotMatch(terrace, /<Html\b/);
+  const html = read("../../components/city/SceneHtml.tsx");
+  assert.match(html, /const portal = useMemo\(\(\) => \(\{ current: gl\.domElement\.parentElement \}\), \[gl\]\);/);
+  assert.match(html, /if \(runs\.current > 1\) setGeneration\(\(n\) => n \+ 1\);/);
+  assert.match(html, /<Html key=\{generation\} portal=\{portal as \{ current: HTMLElement \}\} \{\.\.\.props\} \/>/);
+  assert.match(vault, /enterVault\(\);\n        \}\}/);
+  assert.match(read("../../components/deck/Deck.tsx"), /useCity\.getState\(\)\.select\(null\);\n  void vaultStore\.getState\(\)\.enter\(\);/);
 });

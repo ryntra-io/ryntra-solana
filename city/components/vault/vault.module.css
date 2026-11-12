@@ -7,7 +7,8 @@
   z-index: 12;
   right: var(--gutter);
   top: calc(max(12px, env(safe-area-inset-top)) + 64px);
-  bottom: max(14px, env(safe-area-inset-bottom));
+  /* Above the Deck, as every window of the city stands (`INSET.bottom` in city/lib/window/geometry.ts). */
+  bottom: calc(max(14px, env(safe-area-inset-bottom)) + 90px);
   /* As wide as the card slot it stands over, so no card edge shows beside it. */
   width: min(420px, calc(100% - 2 * var(--gutter)));
   display: flex;
@@ -35,6 +36,8 @@
     left: var(--gutter);
     right: var(--gutter);
     top: auto;
+    /* A phone's sheet covers the Deck, as the city's other sheets do. */
+    bottom: max(14px, env(safe-area-inset-bottom));
     width: auto;
     height: min(60%, 560px);
     padding: 14px 16px 12px;
@@ -208,6 +211,27 @@
   color: var(--warm);
   background: rgba(255, 178, 63, 0.08);
   box-shadow: inset 2px 0 0 var(--amber);
+}
+
+/* The one way on from a line that stops a person: a quiet amber action, big enough for a thumb. */
+.saidAct {
+  display: block;
+  min-height: 40px;
+  margin: 8px 0 -4px;
+  padding: 0;
+  border: 0;
+  background: none;
+  font: inherit;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--amber);
+  cursor: pointer;
+}
+
+.saidAct:focus-visible {
+  outline: 2px solid var(--amber);
+  outline-offset: 2px;
 }
 
 .quote {
@@ -407,6 +431,83 @@
   :global(nav):has(> .dockVault) > button > span:last-child {
     letter-spacing: 0.02em;
   }
+}
+
+/* The vault's name over its tower in the city (CITY-241): the plate of the city's signs, one tap into the room. The
+   button is the whole target (44 px); the chamfered plate inside it is what is drawn. */
+.sign {
+  display: grid;
+  place-items: center;
+  min-width: 44px;
+  min-height: 44px;
+  padding: 6px;
+  border: 0;
+  background: none;
+  pointer-events: auto;
+  cursor: pointer;
+  font-family: var(--font-ui, system-ui), system-ui, sans-serif;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.signPlate {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 7px 12px 7px 10px;
+  white-space: nowrap;
+  font-size: var(--type-caption);
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--ice);
+  background: rgba(14, 10, 24, 0.86);
+  box-shadow: inset 0 0 0 1px rgba(255, 178, 63, 0.7), 0 0 18px rgba(255, 178, 63, 0.18);
+  clip-path: polygon(7px 0, 100% 0, 100% calc(100% - 7px), calc(100% - 7px) 100%, 0 100%, 0 7px);
+  transition:
+    background 140ms ease-out,
+    box-shadow 140ms ease-out;
+}
+
+.signPlate svg {
+  width: 15px;
+  height: 15px;
+  color: var(--amber);
+}
+
+.sign:hover .signPlate,
+.sign:focus-visible .signPlate {
+  background: rgba(36, 24, 52, 0.94);
+  box-shadow: inset 0 0 0 1.5px var(--amber), 0 0 22px rgba(255, 178, 63, 0.32);
+}
+
+.sign:focus-visible {
+  outline: none;
+}
+
+.sign:active .signPlate {
+  transform: scale(0.97);
+}
+
+/* The sign waiting at a phone's edge while its tower is outside the frame (CITY-243): an arrow toward the Vault's side. */
+.signArrow {
+  display: none;
+  width: 7px;
+  height: 7px;
+  margin-left: 1px;
+  border-top: 2px solid var(--amber);
+  border-right: 2px solid var(--amber);
+  transform: rotate(45deg);
+}
+
+.sign[data-side='1'] .signArrow,
+.sign[data-side='-1'] .signArrow {
+  display: block;
+}
+
+.sign[data-side='-1'] .signArrow {
+  order: -1;
+  margin: 0 1px 0 0;
+  transform: rotate(-135deg);
 }
 
 @media (prefers-reduced-motion: reduce) {

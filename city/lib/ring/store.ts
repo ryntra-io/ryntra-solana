@@ -108,11 +108,35 @@ function lineOf(error: unknown): string {
   return said && langNow() !== 'en' ? w[said] : error.message;
 }
 
-/** The models a tab shows: one class, matching the search by name or id, cheapest first, at most `limit`. */
-export function visibleModels(list: readonly ModelOption[], weight: Weight, search: string, limit = 40): { shown: ModelOption[]; more: number } {
-  const words = search.trim().toLowerCase().split(/\s+/).filter(Boolean);
-  const all = list.filter((m) => m.weight === weight && words.every((w) => m.name.toLowerCase().includes(w) || m.id.toLowerCase().includes(w)));
+const searchWords = (search: string) => search.trim().toLowerCase().split(/\s+/).filter(Boolean);
+const matches = (m: Readonly<{ id: string; name: string }>, words: readonly string[]) => words.every((w) => m.name.toLowerCase().includes(w) || m.id.toLowerCase().includes(w));
+
+/**
+ * The models a tab shows: one class, matching the search by name or id, cheapest first, at most `limit`. `without` — a
+ * brain that already has a row of its own above the list (`ownBrainRow`), never listed twice.
+ */
+export function visibleModels(list: readonly ModelOption[], weight: Weight, search: string, limit = 40, without: string | null = null): { shown: ModelOption[]; more: number } {
+  const words = searchWords(search);
+  const all = list.filter((m) => m.weight === weight && m.id !== without && matches(m, words));
   return { shown: all.slice(0, limit), more: Math.max(0, all.length - limit) };
+}
+
+/** What a row of the brain picker says of a brain. */
+export type BrainRow = Pick<ModelOption, 'id' | 'name' | 'weight' | 'matchMicroUsd'>;
+
+/**
+ * The agent's own brain as the first row of the list while the agent is being changed (CITY-240). A person who opens
+ * «Brain» to change it must see what the agent thinks with now: the list held that brain only while the catalog still
+ * offered it, in the class the tab shows, among the first rows — and on a phone the line that names the pick is put
+ * away on this step. So the brain stands first, whatever class the tab shows and whether or not the list still offers
+ * it, with the class and the price the agent is pinned at (the agent's own record, as the summary says them). A search
+ * that does not name it puts it away with the rest. Null while a new agent is made.
+ */
+export function ownBrainRow(editor: Pick<Editor, 'agent' | 'search'> | null): BrainRow | null {
+  const brain = editor?.agent?.brain;
+  if (!editor || !brain) return null;
+  const row: BrainRow = { id: brain.id, name: brain.name, weight: brain.weight, matchMicroUsd: brain.matchMicroUsd };
+  return matches(row, searchWords(editor.search)) ? row : null;
 }
 
 /** How many models each class has. */

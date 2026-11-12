@@ -4,9 +4,14 @@
 Агент = **тіло** (архетип) + **мозок** (модель OpenRouter, закріплена на одному провайдері) + **сценарій** до 2 000
 знаків; живе в гаражі кварталу, один агент на слот гаража. Поєдинки — CITY-51, `duel/README.md`; гроші — CITY-52.
 
-Теки лінії: `lib/ring/**`, `app/api/ring/**`, `city/lib/ring/**`, `city/components/ring/**`, міграція
-`supabase/migrations/20261027230000_ring_v1.sql` (лише файл, у базу не застосовано — словом власника). Двигун §11.8,
-шлюз `lib/models/**` і світ `lib/world/**` лише читаються.
+Теки лінії: `lib/ring/**`, `app/api/ring/**`, `city/lib/ring/**`, `city/components/ring/**`, міграції
+`supabase/migrations/20261027230000_ring_v1.sql` і `20261108120100_ring_v2_arena.sql` (CITY-217; лише файли, у базу не
+застосовано — словом власника). Двигун §11.8, шлюз `lib/models/**` і світ `lib/world/**` лише читаються.
+
+**Арена (CITY-217).** Двері «Ринг» Арени й «Ангар» трею «Агенти» відкривають одне вікно з трьома вкладками — «Бій»,
+«Агент», «Рейтинг» (`city/components/ring/duel/DuelsWindow.tsx`, `city/components/ring/arena/**`,
+`city/lib/ring/arena.ts`). Перший агент живе в **гаражі Арени** — один на акаунт (`garage.ts`, `bayOf`), тож агента
+створюють без кварталу й без 3-го рівня, якого вимагає гараж кварталу. Звіт — `docs/research/city-217-arena/REPORT.md`.
 
 ## Файли
 
@@ -19,11 +24,12 @@
 | `models.ts` | каталог для вибору мозку (ціна до вибору) і `quote` — закріплення на один провайдер |
 | `keys.ts`, `seal.ts` | свій ключ OpenRouter з лімітом на агента, запечатаний на сервері; тихий режим без ключа |
 | `engine.ts` | рушій агентів: створити, змінити, вимкнути; ліміти на добу |
-| `garage.ts` | слово світу: слот — гараж кварталу цього акаунта |
+| `garage.ts` | слово світу: слот — гараж кварталу цього акаунта; гараж Арени (`bayOf`) — завжди свій |
 | `store.ts`, `supabase-store.ts` | сховище: пам'ять (тести, розробка) і база через `public.ring_*` |
 | `ready.ts` | вимикач, вид сховища, режим ключів, каталог-заглушка лише поза продом |
 | `api.ts`, `server.ts` | маршрути на звичайних `Request`/`Response` і їх збирання на сервері |
 | `stub-catalog.ts` | каталог-заглушка для машини без мережі (`RYNTRA_RING_MODELS=stub`), ціни — фікстури |
+| `testing/stand.mjs` | стенд: тимчасова база Postgres з двома міграціями і двері PostgREST перед нею для `next dev` |
 
 ## Маршрути
 
@@ -35,6 +41,8 @@
 | `POST /api/ring/create` | акаунт з гаманцем | `{ quarter, slot, archetype, model, scenario }` → 201 |
 | `POST /api/ring/change` | власник | `{ agent, version, archetype, model, scenario }` — на версії, яку бачив |
 | `POST /api/ring/off` | власник | `{ agent, version }` — слот вільний, ключ вимкнено |
+| `GET /api/ring/mine` | будь-хто | свої агенти (з ключем і сценарієм) і гараж Арени; без входу — `signedIn: false` |
+| `GET /api/ring/board?format=` | будь-хто | рейтинг формату: увімкнені агенти з рейтинговою грою, найкращі першими, свої позначено |
 
 - Усе — 404, доки `NEXT_PUBLIC_RYNTRA_CITY_RING` не `open`; у проді — лише на базі (`ringReady`).
 - Записи: лише з цього сайту, з `Idempotency-Key` (повтор — та сама відповідь, інше тіло під тим самим ключем — 422).
@@ -57,7 +65,8 @@
 
 - Свій ключ OpenRouter на агента: `ryntra:ring-agent:<id>`, ліміт за класом на місяць — легка $1, середня $5, важка $20.
 - Секрет ключа одразу запечатується (AES-256-GCM, `RYNTRA_RING_SEAL_SECRET`, асоційовані дані — id агента) і лягає в
-  `private.ring_keys`; жодна функція бази його не повертає. Відкривати (`createSealer(...).open`) буде CITY-51.
+  `private.ring_keys`. Лише `ring_key_sealed` (v2) віддає серверу живий ключ увімкненого агента — **запечатаним**;
+  відкриває його сервер на один матч (`duel/server.ts`).
 - Мозок іншого класу — новий ключ, старий вимикається; вимкнення агента вимикає ключ.
 - **Тихий режим**: без `OPENROUTER_MANAGEMENT_KEY` або `RYNTRA_RING_SEAL_SECRET` ключ не створюється, агент — `key: quiet`,
   нічого не викликається. Перша зміна агента після появи обох змінних робить йому ключ.
@@ -68,7 +77,8 @@
 
 Elo окремо на кожен формат і кожен мозок (модель + провайдер): новий мозок починає з 1200, старі рядки лишаються.
 Поруч — інформація Фішера ігор, з неї 95 % інтервал: ±686 до першої гри, ≈ ±68 після сотні рівних. Перші 10 ігор —
-K = 48 і «попередній», далі K = 32. CITY-51 пише рядки `private.ring_ratings` через `applyResult` з `rating.ts`.
+K = 48 і «попередній», далі K = 32. Поєдинок двох агентів різних власників пише обидва рядки через `RingStore.rate` —
+лише на тій кількості ігор, яку сервер прочитав (`ring_rate`): два поєдинки одночасно не гублять гри.
 
 ## Тіло (для CITY-57)
 
@@ -78,6 +88,21 @@ CITY-57 підміняє малюнок справжнім персонажем,
 
 ## Тести
 
-`node --test lib/ring/*.test.mjs city/lib/ring/*.test.mjs`. Сховище на справжній базі — з
+`node --test lib/ring/*.test.mjs lib/ring/duel/*.test.mjs city/lib/ring/*.test.mjs`. Сховища на справжній базі — з
 `RING_TEST_DATABASE_URL=<local Postgres URL>` на локальному сервері (тест створює й видаляє свою базу).
-Знімки — `NEXT_PUBLIC_RYNTRA_CITY_RING=open npm run dev`, потім `node city/components/ring/ring-shots.mjs`.
+
+## Стенд (CITY-217)
+
+Увесь шлях людини на машині розробника, на справжніх міграціях, без гаманця й без OpenRouter:
+
+```bash
+RING_TEST_DATABASE_URL=postgres://postgres@127.0.0.1:5432/postgres node lib/ring/testing/stand.mjs 54330
+SUPABASE_URL=http://127.0.0.1:54330 SUPABASE_ANON_KEY=stand BETA_APP_SECRET=world-test-secret \
+  RYNTRA_RING_STORE=database RYNTRA_RING_MODELS=stub RYNTRA_RING_STAND=1 \
+  NEXT_PUBLIC_RYNTRA_CITY_RING=open NEXT_PUBLIC_RYNTRA_CITY_RING_DUELS=open npx next dev -p 3217
+node city/components/ring/arena/arena-shots.mjs docs/shots/city-217 http://localhost:3217
+```
+
+- `RYNTRA_RING_MODELS=stub` — каталог-фікстура й мозок стенду (`duel/stub-brain.ts`) замість OpenRouter.
+- `RYNTRA_RING_STAND=1` — акаунт із куки `ryntra-ring-stand=stand-<ім'я>` замість сесії гаманця.
+- Обидва — лише поза продом: у проді `catalogKind` і `standAccount` їх не читають.

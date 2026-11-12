@@ -293,6 +293,11 @@ test("the day's guest answers spent, a rise or a fall is the city's own read, no
   assert.equal(cityAnswers([], "rising", { used: 2, allowance: 5 }), false, "questions left: Ryntra's words stand");
   assert.equal(cityAnswers([WIF], "rising", { used: 5, allowance: 5 }), false, "a turn that named towers stands");
   assert.equal(cityAnswers([], "other", { used: 5, allowance: 5 }), false);
+  // CITY-221: «що зараз росте?» came back as help with no source — «I have no market data in this answer» over an empty city.
+  assert.equal(cityAnswers([], "rising", { used: 2, allowance: 5 }, false), true, "a turn that read no market: the city answers");
+  assert.equal(cityAnswers([], "falling", null, false), true);
+  assert.equal(cityAnswers([WIF], "rising", { used: 2, allowance: 5 }, false), false, "a turn that named towers stands");
+  assert.equal(cityAnswers([], "other", { used: 2, allowance: 5 }, false), false, "anything but a rise or a fall stays Ryntra's");
   const st = useAssistant.getState();
   st.show(null);
   const spent = turn({ answer: { ...turn().answer, observation: [sentence("Free guest questions are over for today.")] } });
@@ -302,4 +307,41 @@ test("the day's guest answers spent, a rise or a fall is the city's own read, no
   assert.deepEqual(now.shown.map((t) => t.symbol), ["WIF", "BONK", "POPCAT"]);
   assert.deepEqual(now.day, { used: 5, allowance: 5 }, "the count stays behind «Details»");
   st.hide();
+});
+
+test("a rise asked in Ukrainian that Ryntra reads as help, with no source, is answered by the city's own towers (CITY-221)", async () => {
+  const st = useAssistant.getState();
+  st.show(null);
+  // ryntra.io, 8.11: «що зараз росте?» → class «help», no citation: «Я не маю ринкових даних у цій відповіді…».
+  const help = turn({ class: "help", answer: { ...turn().answer, observation: [{ text: "Я не маю ринкових даних у цій відповіді.", cites: [] }] }, citations: [] });
+  await st.ask("що зараз росте?", CITY, async () => ({ ok: true, turn: help, day: { used: 2, allowance: 5 } }));
+  let now = useAssistant.getState();
+  assert.equal(now.voice, "city");
+  assert.deepEqual(now.shown.map((t) => t.symbol), ["WIF", "BONK", "POPCAT"]);
+  // The same words with a market read behind them stand as Ryntra's.
+  const read = turn({ answer: { ...turn().answer, observation: [sentence("Nothing is rising hard right now.")] }, citations: [{ id: "c1", label: "Jupiter", url: null, at: null }] });
+  await st.ask("що зараз росте?", CITY, async () => ({ ok: true, turn: read, day: { used: 3, allowance: 5 } }));
+  now = useAssistant.getState();
+  assert.equal(now.voice, "ryntra");
+  assert.deepEqual(now.shown, []);
+  st.hide();
+});
+
+test("the city answers from the towers that stand when the answer comes, not the ones the question was asked over (CITY-221)", async () => {
+  const st = useAssistant.getState();
+  st.show(null);
+  // Asked over a cold start's city (the bundle: JUP rising); the live read came while Ryntra thought (WIF, BONK, POPCAT).
+  let city = [tower("JUP", 30, { id: "JUPyiwrYJFskUPiHa7hkeR8VUtAeFoSYbKedZNsDvCN" })];
+  await st.ask("що зараз росте?", () => city, async () => {
+    city = CITY;
+    return { ok: false, busy: false };
+  });
+  assert.deepEqual(useAssistant.getState().shown.map((t) => t.symbol), ["WIF", "BONK", "POPCAT"]);
+  // A list of towers, as the callers passed before, still works.
+  await st.ask("що зараз росте?", CITY, async () => ({ ok: false, busy: false }));
+  assert.deepEqual(useAssistant.getState().shown.map((t) => t.symbol), ["WIF", "BONK", "POPCAT"]);
+  st.hide();
+  for (const file of ["../../components/assistant/AssistantLayer.tsx", "../command/doors.ts"]) {
+    assert.match(readFileSync(new URL(file, import.meta.url), "utf8"), /\.ask\((q|question), \(\) => useCity\.getState\(\)\.snapshot\.towers\)/u, `${file} reads the city when the answer comes`);
+  }
 });

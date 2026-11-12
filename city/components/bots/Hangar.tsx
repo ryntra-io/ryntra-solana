@@ -8,18 +8,22 @@ import { useBotsWindow } from '@/city/lib/bots/open';
 import { useBots } from '@/city/lib/bots/store';
 import { ago, amount, price, signedUsd } from '@/city/lib/bots/format';
 import { Spark } from './BotChart';
-import { LiveLadders } from './Ladder';
+import { LiveLadders, useLadderOrderKeys } from './Ladder';
 import { LADDER_NET, useLadder } from '@/city/lib/bots/ladder';
+import { CHAIN_NETWORK, cancelChainBot, chainCancellable } from '@/city/lib/bots/ladder-actions';
+import { ladderWords } from '@/city/lib/bots/ladder-words';
 import { useWallet } from '@/city/lib/trade/wallet';
 import { ChainGlyph, KindGlyph } from './glyphs';
+import { NoteLine } from './NoteLine';
 import { RyntraReport, RyntraWhy } from './Ryntra';
 import { useBotRows, useNow, useWords, type BotRow } from './hooks';
 import s from './bots.module.css';
 
 /**
- * «My bots»: the bots the connected wallet really runs, read from the engine's Hangar (read-only: closing one is the
- * person's own signature where it was placed), then the practice bots, the ones that need you first; a tap on a
- * practice bot opens its controls.
+ * «My bots»: the bots the connected wallet really runs, read from the engine's Hangar, then the practice bots, the
+ * ones that need you first; a tap on a practice bot opens its controls. A DLMM order or ladder read from the chain
+ * carries «Cancel» (CITY-231): one prompt in the person's own wallet takes back everything it holds — from any device,
+ * the app included, with nothing kept in this browser.
  */
 export function Hangar() {
   const rows = sortBots(useBotRows());
@@ -68,6 +72,7 @@ const CHAIN_TONE: Readonly<Record<HangarBot['status'], BotStatus>> = {
 function ChainBots() {
   const chain = useBots((st) => st.chain);
   const { w } = useWords();
+  const ladderOrders = useLadderOrderKeys();
   if (chain.status === 'idle') return null;
   if (chain.status === 'loading') {
     return (
@@ -85,7 +90,8 @@ function ChainBots() {
       </section>
     );
   }
-  const bots = sortChain(chain.answer.bots);
+  /* A ladder this browser placed shows once, as the ladder with its own controls, not again as orders on the chain. */
+  const bots = sortChain(chain.answer.bots).filter((bot) => !(bot.refs.orders?.length && bot.refs.orders.every((order) => ladderOrders.has(order))));
   const loose = chain.answer.issues.length;
   if (!bots.length && !loose) return null;
   return (
@@ -109,6 +115,18 @@ function ChainItem({ bot, wallet }: Readonly<{ bot: HangarBot; wallet: string }>
   const { w, lang } = useWords();
   const now = useNow();
   const fillAt = bot.lastFill ? Date.parse(bot.lastFill.at) : NaN;
+  const connection = useWallet((st) => st.connection);
+  const busy = useLadder((st) => st.busy);
+  const note = useLadder((st) => (st.note?.bot === bot.id ? st.note : null));
+  /* Part of it already taken back (more than one prompt's orders, CITY-233): the action is «Cancel the rest». */
+  const rest = useLadder((st) => Boolean(st.rest[bot.id]));
+  const lw = ladderWords(lang, CHAIN_NETWORK, w);
+  /* «Cancel» only for the wallet this read is of: the prompt is that wallet's own. */
+  const who = connection && connection.address === wallet ? { wallet: connection.wallet, owner: connection.address } : null;
+  const cancellable = who !== null && chainCancellable(bot);
+  const mine = busy?.kind === 'cancel' && busy.id === bot.id;
+  /* Filled and waiting for the person: the same transaction takes the coins back — said as «Take back», the one action. */
+  const filled = bot.status === 'filled' || bot.detail === 'claim_waiting';
   return (
     <li className={s.bot} data-status={CHAIN_TONE[bot.status]} data-chain="">
       <div className={s.botRow}>
@@ -153,6 +171,22 @@ function ChainItem({ bot, wallet }: Readonly<{ bot: HangarBot; wallet: string }>
           ) : null}
         </span>
       </div>
+      {cancellable || note ? (
+        <div className={s.controls}>
+          {cancellable ? (
+            <div className={s.controlRow}>
+              <button type="button" className={filled ? s.strong : s.control} disabled={busy !== null} onClick={() => who && void cancelChainBot(bot, who)} data-chain-cancel={bot.id}>
+                {mine ? w.placing : rest ? lw.cancelRest : filled ? w.proposal.takeBack : w.chainCancel}
+              </button>
+            </div>
+          ) : null}
+          {note ? (
+            <NoteLine kind={note.kind} at={note.at}>
+              {lw.note[note.kind]}
+            </NoteLine>
+          ) : null}
+        </div>
+      ) : null}
       <RyntraWhy wallet={wallet} bot={bot} />
     </li>
   );

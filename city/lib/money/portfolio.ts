@@ -1,5 +1,6 @@
 import { scaleRawAmount } from '../../../lib/solana/amounts.ts';
 import { LST_BY_MINT } from '../earn/lst.ts';
+import { plainFigure } from '../i18n/figures.ts';
 import { NATIVE_ID, valueOf, type MoneyAsset } from './assets.ts';
 
 /**
@@ -154,7 +155,8 @@ export function shortUnits(value: number): string {
   if (value === 0) return '0';
   if (value >= 1_000) return Math.round(value).toLocaleString('en-US');
   if (value >= 1) return Number(value.toFixed(2)).toLocaleString('en-US');
-  return Number(value.toPrecision(2)).toString();
+  // Never in scientific form (CITY-243): under a millionth `toString` writes «1.2e-7».
+  return plainFigure(value, { significant: 2 });
 }
 
 function priceOf(assets: readonly MoneyAsset[], mint: string | null): number | null {

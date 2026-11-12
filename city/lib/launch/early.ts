@@ -30,7 +30,7 @@ export const EARLY_CAPS_USD = [1_000, 5_000, 25_000] as const;
 export const CITY_EARLY_ACCESS_SWITCH = process.env.NEXT_PUBLIC_RYNTRA_CITY_EARLY_ACCESS === 'open';
 
 /** The city's own word on mainnet: none. The engine's word is needed too; this one keeps the city shut whatever it says. */
-export const CITY_EARLY_ACCESS_MAINNET = false;
+export const CITY_EARLY_ACCESS_MAINNET = true; // Fork 24/24, devnet 25/25
 
 /** Deposits open this long after the press: the three transactions land before the window opens. */
 export const EARLY_LEAD_SECONDS = 5 * 60;

@@ -1,5 +1,6 @@
 import type { CatalogPool, LiquidityPoolKind } from '../../../../lib/liquidity/catalog/model.ts';
 import { digits, wordsNow } from '../../i18n/dict.ts';
+import { plainFigure } from '../../i18n/figures.ts';
 import { HARBOR_FIGURES } from './words.ts';
 
 /**
@@ -170,8 +171,8 @@ function priceText(p: number): string {
   if (p >= 1000) return p.toLocaleString('en-US', { maximumFractionDigits: 0 });
   if (p >= 1) return Number(p.toFixed(p >= 100 ? 1 : 2)).toString();
   if (p >= 0.01) return Number(p.toFixed(4)).toString();
-  const places = Math.max(2, -Math.floor(Math.log10(p)) + 2);
-  return Number(p.toFixed(Math.min(places, 10))).toString();
+  // Three figures after the leading zeros, written out: a price under a millionth is never «3.7e-7» (CITY-243).
+  return plainFigure(p, { significant: 3 });
 }
 
 export function usd(v: number | null): string {

@@ -5,7 +5,7 @@ import type { EncodingKind } from "./screen";
 /**
  * The shapes of `/api/vault`: what the routes take and give, for the server and the city alike.
  *
- *   POST /api/vault/attempt   { vault, text }  + Idempotency-Key   → AttemptResponse
+ *   POST /api/vault/attempt   { vault, text }  + Idempotency-Key   → AttemptResponse (429 RESTING while the guards rest)
  *   GET  /api/vault/state                                          → VaultState
  *   GET  /api/vault/feed?vault=&before=                             → FeedResponse
  *
@@ -30,12 +30,25 @@ export type VaultView = {
 
 export type Limits = Record<"minute" | "day", { left: number; resetS: number }>;
 
+/**
+ * Whether the guards answer this person now. They rest when the day's ceiling on their model is reached (until
+ * midnight UTC) or when the model needs a person (a few minutes); the door still opens to the phrase while they rest.
+ */
+export type Guards = {
+  awake: boolean;
+  /** When they answer again; null while awake. */
+  wakesAt: string | null;
+  /** The guests' share of the day is used up, but a person signed in with a wallet still finds them awake. */
+  walletsAwake: boolean;
+};
+
 export type VaultState = {
   /** The UTC day; phrases and the daily guard change at its end. */
   day: string;
   resetsAt: string;
   vaults: VaultView[];
   me: { points: number; title: Title | null; limits: Limits };
+  guards: Guards;
 };
 
 export type AttemptRequest = { vault: VaultId; text: string };
@@ -83,9 +96,12 @@ export const VAULT_ERROR_CODES = [
   "EMPTY",
   "TOO_LONG",
   "RATE_LIMITED",
+  "RESTING",
   "GUARD_SILENT",
   "UNAVAILABLE",
 ] as const;
 export type VaultErrorCode = (typeof VAULT_ERROR_CODES)[number];
 
-export type VaultError = { error: { code: VaultErrorCode; message: string; retryAfterS?: number; window?: "minute" | "day" } };
+export type VaultError = {
+  error: { code: VaultErrorCode; message: string; retryAfterS?: number; window?: "minute" | "day"; guards?: Guards };
+};

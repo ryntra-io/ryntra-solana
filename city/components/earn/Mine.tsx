@@ -1,13 +1,16 @@
 'use client';
 
+import { apart } from '@/city/lib/apart';
 import { solText } from '@/city/lib/earn/lst';
+import { rangeMark } from '@/city/lib/earn/pier';
+import { digits } from '@/city/lib/i18n/dict';
 import { useEarn } from '@/city/lib/earn/open';
 import { useMoneyStore } from '@/city/lib/money/store';
 import type { Words } from '@/city/lib/earn/words';
 import { DOLLAR_MINT, dollarText } from '@/city/lib/earn/dollar';
 import { CityFrame, Coin, Line, SolFigure, Wallets } from './bits';
 import { CaredPiers, careOpen } from './CareSwitch';
-import { useEffect } from 'react';
+import { useEffect, useMemo } from 'react';
 import { useCare } from '@/city/lib/earn/care';
 import type { MineFigures } from './useMine';
 import s from './earn.module.css';
@@ -15,7 +18,7 @@ import s from './earn.module.css';
 function units(value: number): string {
   if (!(Math.abs(value) > 0)) return '0';
   const abs = Math.abs(value);
-  return value.toLocaleString('en-US', { maximumFractionDigits: abs >= 100 ? 2 : abs >= 1 ? 4 : 6 });
+  return digits(value.toLocaleString('en-US', { maximumFractionDigits: abs >= 100 ? 2 : abs >= 1 ? 4 : 6 }));
 }
 
 /**
@@ -31,6 +34,8 @@ export function Mine({ words, owner, mine }: { words: Words; owner: string | nul
   useEffect(() => {
     if (owner && careOpen()) void useCare.getState().load(owner);
   }, [owner]);
+  // Two positions of one pair read the same (CITY-243: three «STAIR-USDC»): each is told apart by its range.
+  const pierMarks = useMemo(() => apart(mine.piers.map((row) => ({ name: row.pair, marks: [rangeMark(row.lower, row.upper)] }))), [mine.piers]);
   if (!owner) {
     return (
       <section className={s.emptyState} aria-label={words.tabs.mine}>
@@ -81,12 +86,12 @@ export function Mine({ words, owner, mine }: { words: Words; owner: string | nul
                 <Coin mint={DOLLAR_MINT[row.asset]} symbol={row.asset} />
                 <span className={s.names}>
                   <b>{row.asset}</b>
-                  <span>{row.worthRaw !== null ? `${dollarText(row.worthRaw, row.asset)} ${row.asset}` : words.notMeasured}</span>
+                  <span>{row.worthRaw !== null ? `${digits(dollarText(row.worthRaw, row.asset))} ${row.asset}` : '—'}</span>
                 </span>
                 <span className={s.figures}>
                   {row.earnedRaw !== null ? (
                     <b className={`${s.figure} ${row.earnedRaw > 0n ? s.gain : ''} ${s.rowFigure}`}>
-                      +{dollarText(row.earnedRaw, row.asset)}
+                      +{digits(dollarText(row.earnedRaw, row.asset))}
                       <small> {row.asset}</small>
                     </b>
                   ) : (
@@ -108,7 +113,7 @@ export function Mine({ words, owner, mine }: { words: Words; owner: string | nul
                 <Coin mint={row.mint} />
                 <span className={s.names}>
                   <b>{row.symbol}</b>
-                  <span>{row.lamports !== null ? `≈ ${solText(row.lamports)} SOL` : `${solText(row.raw)} ${row.symbol}`}</span>
+                  <span>{row.lamports !== null ? `≈ ${digits(solText(row.lamports))} SOL` : `${digits(solText(row.raw))} ${row.symbol}`}</span>
                 </span>
                 <span className={s.figures}>
                   <SolFigure lamports={row.tracked ? row.tracked.worth - row.tracked.paid : null} className={`${s.rowFigure} ${row.tracked ? '' : s.dim}`} />
@@ -124,11 +129,14 @@ export function Mine({ words, owner, mine }: { words: Words; owner: string | nul
         <>
           <h4 className={s.label}>{w.piers}</h4>
           <ul className={s.rows}>
-            {mine.piers.map((row) => (
+            {mine.piers.map((row, at) => (
               <li key={row.address} className={s.row}>
                 <span className={`${s.status} ${row.status === 'in-range' ? s.statusOn : ''}`} aria-hidden="true" />
                 <span className={s.names}>
-                  <b>{row.pair}</b>
+                  <b>
+                    {row.pair}
+                    {pierMarks[at] ? <span className={s.nameMark}> · {digits(pierMarks[at]!)}</span> : null}
+                  </b>
                   <span>{row.status === 'in-range' ? w.inRange : row.status === 'filled' ? w.filled : w.outOfRange}</span>
                 </span>
                 <span className={s.figures}>

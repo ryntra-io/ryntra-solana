@@ -4,12 +4,14 @@ import { useEffect, useState } from 'react';
 import { useBackPanels } from '@/city/lib/back/panels';
 import { useChrome } from '@/city/lib/deck/chrome';
 import { useWords } from '@/city/lib/i18n/dict';
+import { CHIPS_BESIDE_FROM } from '@/city/lib/window/geometry';
 import { framesIn, top, type Layout } from '@/city/lib/window/layout';
 import { useWindows, type Chip as ChipSpec } from '@/city/lib/window/store';
 import { ChipTitle, FIGURES } from './figures';
 import { unfoldChip } from './openers';
 import { WINDOW } from './words';
 import s from './window.module.css';
+
 
 /** Room for the chips, as `left right` in px: on a computer the city between the bays that hold a frame; else none. */
 function stripOf(layout: Layout, desk: boolean): string {
@@ -36,6 +38,10 @@ export function Tray() {
   const strip = useWindows((st) => stripOf(st.layout, st.desk));
   const doors = useBackPanels((st) => st.open.includes('tray'));
   const deck = useChrome((st) => st.bottom);
+  // From 1100 px the chips stand beside the Deck, right of it, on its row (CITY-242): a window as tall as the workspace
+  // reaches the Deck, and chips over the diamond lay on its foot. Narrower, they stand over the diamond, and the windows
+  // the system places leave their band clear (`tallestIn`).
+  const beside = useWindows((st) => st.desk && st.viewport.width >= CHIPS_BESIDE_FROM) && deck;
   // The chips look at their figures again every half minute: an old one gives way to the title in time.
   const [, setTick] = useState(0);
   const any = chips.length > 0;
@@ -46,9 +52,9 @@ export function Tray() {
   }, [any]);
   if (!chips.length || away || doors) return null;
   const [x0, x1] = strip ? strip.split(' ').map(Number) : [];
-  const style = x0 !== undefined && x1 !== undefined ? { left: (x0 + x1) / 2, maxWidth: Math.max(0, x1 - x0) } : undefined;
+  const style = !beside && x0 !== undefined && x1 !== undefined ? { left: (x0 + x1) / 2, maxWidth: Math.max(0, x1 - x0) } : undefined;
   return (
-    <div className={`${s.fold} ${sheet ? s.foldOverSheet : deck ? '' : s.foldLow}`} style={style} role="group" aria-label={w.tray} data-window-tray="">
+    <div className={`${s.fold} ${sheet ? s.foldOverSheet : beside ? s.foldBeside : deck ? '' : s.foldLow}`} style={style} role="group" aria-label={w.tray} data-window-tray="" data-window-tray-beside={beside ? '' : undefined}>
       {chips.map((chip) => (
         <Chip key={chip.id} chip={chip} />
       ))}

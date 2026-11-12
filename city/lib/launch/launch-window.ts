@@ -28,6 +28,11 @@ export function clockText(ms: number): string {
   return hours > 0 ? `${hours}:${String(minutes).padStart(2, '0')}:${seconds}` : `${minutes}:${seconds}`;
 }
 
+/** What the clock is, under it (CITY-243): a launch goes out at any time, the window or not. */
+export function windowAnyTime(): string {
+  return wordsNow(TERMS_WORDS).windowAnyTime;
+}
+
 /** The clock in the language on screen: «Launch window in 12:04», «Evening window open · 6:12». */
 export function windowLine(now: number): string {
   const w = wordsNow(TERMS_WORDS);

@@ -1,5 +1,5 @@
 import { agentName, type AgentDraft } from "./agent.ts";
-import { FORMATS, type AgentView, type Brain, type GarageResponse, type ModelOption, type RingErrorCode } from "./contract.ts";
+import { FORMATS, type AgentView, type BoardResponse, type Brain, type GarageResponse, type MineResponse, type ModelOption, type RingErrorCode, type RingFormat } from "./contract.ts";
 import { KeyFailed, type MadeKey, type RingKeys } from "./keys.ts";
 import type { RingModels } from "./models.ts";
 import { emptyRating, ratingView } from "./rating.ts";
@@ -28,6 +28,8 @@ export type RingEngineDeps = {
   models: RingModels;
   keys: RingKeys;
   garage: (input: { accountId: string; quarterId: string; slot: number }) => Promise<GarageCheck>;
+  /** The account's own garage in the Arena (CITY-217, `garage.ts`); absent, the Arena offers none. */
+  bay?: (accountId: string) => { quarterId: string; slot: number };
   now?: () => number;
   newId?: () => string;
 };
@@ -38,6 +40,9 @@ export type Outcome<T> = { ok: true; value: T } | Failure;
 const fail = (code: RingErrorCode, message: string, current?: AgentView): Failure => ({ ok: false, code, message, ...(current ? { current } : {}) });
 
 const ownerOf = (accountId: string) => `a:${accountId}`;
+
+/** How many lines a board shows. */
+export const BOARD_SIZE = 50;
 
 export function createRingEngine(deps: RingEngineDeps) {
   const now = deps.now ?? Date.now;
@@ -137,6 +142,33 @@ export function createRingEngine(deps: RingEngineDeps) {
     },
 
     quote: (id: string) => deps.models.quote(id),
+
+    /** The asker's agents as their owner sees them, and their garage in the Arena (CITY-217). */
+    async mine(accountId: string | null): Promise<MineResponse> {
+      if (!accountId) return { signedIn: false, agents: [], bay: null };
+      const records = await deps.store.mine(ownerOf(accountId));
+      const bay = deps.bay?.(accountId) ?? null;
+      return { signedIn: true, agents: await Promise.all(records.map((record) => view(record, true))), bay: bay ? { quarter: bay.quarterId, slot: bay.slot } : null };
+    },
+
+    /** A format's board, best first; the asker's own agents marked. */
+    async board(format: RingFormat, accountId: string | null): Promise<BoardResponse> {
+      const rows = await deps.store.board(format, BOARD_SIZE);
+      const owner = accountId ? ownerOf(accountId) : null;
+      return {
+        format,
+        rows: rows.map(({ agent, rating }, i) => ({
+          rank: i + 1,
+          id: agent.id,
+          name: agentName(agent.archetype, agent.id),
+          archetype: agent.archetype,
+          weight: agent.brain.weight,
+          brain: agent.brain.name,
+          rating: ratingView(rating),
+          mine: owner !== null && agent.owner === owner,
+        })),
+      };
+    },
 
     /** The active agent in a garage slot, as the asker may see it. */
     async garage(quarterId: string, slot: number, accountId: string | null): Promise<GarageResponse> {

@@ -1,10 +1,11 @@
 'use client';
 
 import { useEffect, useRef, type FormEvent, type KeyboardEvent } from 'react';
-import type { AttemptResponse, PublicEntry, Title, VaultView } from '@/lib/vault/contract';
+import type { AttemptResponse, Guards, PublicEntry, Title, VaultView } from '@/lib/vault/contract';
 import { MAX_ATTEMPT_CHARS, charCount } from '@/lib/vault/size';
 import { useVault, vaultStore, type Phase } from '@/city/lib/vault/store';
-import { useWords, type TextKey } from '@/city/lib/i18n/dict';
+import { cityAccount } from '@/city/lib/quarter/account-live';
+import { dateText, useWords, type TextKey } from '@/city/lib/i18n/dict';
 import { CloseGlyph } from '../hud/glyphs';
 import hud from '../hud/hud.module.css';
 import { CheckGlyph, LockGlyph } from './glyphs';
@@ -36,9 +37,13 @@ const REFUSAL: Readonly<Record<string, VaultText>> = {
   TOO_LONG: 'tooLong',
   GUARD_SILENT: 'guardSilent',
   BAD_ANSWER: 'badAnswer',
+  RESTING: 'resting',
 };
 
 type VaultWords = (typeof VAULT)['en'];
+
+/** A moment as the clock on this screen shows it: «03:00». */
+const clock = (iso: string | null) => (iso ? dateText(new Date(iso), { hour: '2-digit', minute: '2-digit' }) : '');
 
 function refusalLine(phase: Extract<Phase, { step: 'refused' }>, w: VaultWords): string {
   if (phase.code === 'RATE_LIMITED' && phase.window) return phase.window === 'minute' ? w.limitMinute : w.limitDay;
@@ -66,6 +71,9 @@ export function VaultRoom() {
   const cracked = phase.step === 'answered' && phase.result.outcome === 'cracked';
   const next = cracked ? state?.vaults.find((v) => v.open && !v.cracked) : null;
   const sending = phase.step === 'sending';
+  // The guards rest (the day's ceiling on their model): the field stays, since the phrase still opens the door.
+  const guards = state?.guards ?? null;
+  const resting = !!guards && !guards.awake;
 
   // The field is ready for the first word as soon as the room is.
   useEffect(() => {
@@ -133,16 +141,16 @@ export function VaultRoom() {
       {current ? (
         <div className={s.guard}>
           <div className={`${hud.display} ${s.guardName}`}>{current.guard.name}</div>
-          <div className={s.guardLine}>{current.guard.line}</div>
+          <div className={s.guardLine}>{w.guardLine(current.guard.name, current.guard.line)}</div>
           <Phrase words={current.words} pressure={phase.step === 'answered' && phase.result.entry.vault === vault ? phase.result.pressure : 0} cracked={cracked} />
         </div>
       ) : (
         <div className={s.guard}>
-          <div className={s.guardLine}>{status === 'offline' ? w.offline : w.opening}</div>
+          <div className={s.guardLine}>{status === 'closed' ? w.closed : status === 'offline' ? w.offline : w.opening}</div>
         </div>
       )}
 
-      <Said phase={phase} w={w} />
+      <Said phase={phase} w={w} guards={guards} done={current?.cracked ? current.kind : null} resetsAt={state?.resetsAt ?? null} />
 
       <form className={s.ask} onSubmit={submit}>
         {!cracked && (
@@ -156,7 +164,7 @@ export function VaultRoom() {
               className={s.field}
               rows={2}
               value={draft}
-              placeholder={w.placeholder}
+              placeholder={resting ? w.placeholderRest : w.placeholder}
               onChange={(e) => vaultStore.getState().setDraft(e.target.value)}
               onKeyDown={onKey}
               disabled={!current}
@@ -200,10 +208,39 @@ function Phrase({ words, pressure, cracked }: { words: number; pressure: number;
   );
 }
 
+/**
+ * The guards rest: until when, and — for a guest while people signed in with a wallet still find them awake — the one
+ * way to keep talking.
+ */
+function Rest({ guards, w }: { guards: Guards; w: VaultWords }) {
+  const at = clock(guards.wakesAt);
+  if (guards.walletsAwake) {
+    return (
+      <div className={`${s.said} ${s.saidRefused}`} role="status">
+        {w.restGuest(at)}
+        <button type="button" className={s.saidAct} onClick={() => void cityAccount.getState().begin(null, 'top')}>
+          {w.signIn}
+        </button>
+      </div>
+    );
+  }
+  return (
+    <p className={`${s.said} ${s.saidRefused}`} role="status">
+      {w.rest(at)}
+    </p>
+  );
+}
+
 /** What the guard said to you, or why nothing was said. */
-function Said({ phase, w }: { phase: Phase; w: VaultWords }) {
-  if (phase.step === 'idle') return <p className={`${s.said} ${s.saidIdle}`}>{w.idle}</p>;
+function Said({ phase, w, guards, done, resetsAt }: { phase: Phase; w: VaultWords; guards: Guards | null; done: VaultView['kind'] | null; resetsAt: string | null }) {
+  const resting = !!guards && !guards.awake;
+  if (phase.step === 'idle') {
+    if (resting) return <Rest guards={guards} w={w} />;
+    if (done) return <p className={`${s.said} ${s.saidIdle}`}>{done === 'daily' ? w.doneDaily(clock(resetsAt)) : w.donePractice}</p>;
+    return <p className={`${s.said} ${s.saidIdle}`}>{w.idle}</p>;
+  }
   if (phase.step === 'sending') return <p className={`${s.said} ${s.saidIdle}`} aria-live="polite">{w.sending}</p>;
+  if (phase.step === 'refused' && phase.code === 'RESTING' && resting) return <Rest guards={guards} w={w} />;
   if (phase.step === 'refused') {
     return (
       <p className={`${s.said} ${s.saidRefused}`} role="status">
@@ -255,7 +292,7 @@ function Feed({ entries, w }: { entries: readonly PublicEntry[]; w: VaultWords }
           {entries.slice(0, 12).map((e) => (
             <li key={e.id} className={s.entry}>
               <div className={s.entryHead}>
-                <span className={s.who}>{e.who}</span>
+                <span className={s.who}>{w.who(e.who)}</span>
                 <span className={`${s.tag} ${s[`tag_${e.outcome}`] ?? ''}`}>{w[OUTCOME[e.outcome]]}</span>
               </div>
               {e.reply && <p className={s.entryReply}>{e.reply}</p>}

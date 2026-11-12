@@ -21,13 +21,18 @@ import {
 } from './bridge.ts'
 import { codeOfWalletError, createCityHost, signatureOf, WALLET_WAIT_MS } from './city-host.ts'
 import {
+  CITY_LINK_KEYS,
   CITY_PATH,
   cityCoverOf,
   cityPathOf,
+  cityQueryOf,
   cityRouteOf,
   cityRouteOfLink,
   cityUrlOf,
   loadDecisionOf,
+  PAGE_BACK_SCRIPT,
+  PAGE_GO_BACK,
+  pageBackOf,
   pageSpeaks,
 } from './city-page.ts'
 
@@ -574,7 +579,7 @@ test('a signature is the 64 bytes or the signed payload’s tail — nothing els
 test('the city opens on its own site; a coin’s link opens its tower', () => {
   assert.equal(cityPathOf('/'), '/')
   assert.equal(cityPathOf(''), '/')
-  assert.equal(cityPathOf('/?ref=x'), '/')
+  assert.equal(cityPathOf('/?from=x'), '/')
   assert.equal(cityPathOf(`/c/${MINT}`), `/c/${MINT}`)
   assert.equal(cityPathOf(`/c/${MINT}/`), `/c/${MINT}`)
   assert.equal(cityPathOf(`/c/${MINT}?from=x`), `/c/${MINT}`)
@@ -596,7 +601,7 @@ test('every link opens the city: a coin’s tower on its tower, anything else th
   assert.equal(cityRouteOfLink('https://ryntra.io/'), '/')
   assert.equal(cityRouteOfLink('https://ryntra.io'), '/')
   assert.equal(cityRouteOfLink(`https://ryntra.io/c/${MINT}`), tower)
-  assert.equal(cityRouteOfLink(`https://www.ryntra.io/c/${MINT}?ref=x#top`), tower)
+  assert.equal(cityRouteOfLink(`https://www.ryntra.io/c/${MINT}?from=x#top`), tower)
   assert.equal(cityRouteOfLink(`ryntra://c/${MINT}`), tower)
   assert.equal(cityRouteOfLink(`ryntra-dev:///c/${MINT}`), tower)
   assert.equal(cityRouteOfLink(`/c/${MINT}`), tower)
@@ -615,6 +620,163 @@ test('every link opens the city: a coin’s tower on its tower, anything else th
     '',
   ])
     assert.equal(cityRouteOfLink(link), '/', link)
+})
+
+test('a link keeps what it asks of the city: the window, the early-access coin, the invite, the code (CITY-235)', () => {
+  const route = (path) => `/?at=${encodeURIComponent(path)}`
+  // The agent's card a wallet's browser and the agent's report come back to; Money's tab; Earn's; the Hall.
+  assert.equal(cityRouteOfLink('https://ryntra.io/?open=agent'), route('/?open=agent'))
+  assert.equal(cityUrlOf(decodeURIComponent(route('/?open=agent').slice('/?at='.length))), 'https://ryntra.io/?open=agent')
+  assert.equal(cityUrlOf('/?open=agent'), 'https://ryntra.io/?open=agent')
+  assert.equal(cityUrlOf('/?open=money&tab=bridge'), 'https://ryntra.io/?open=money&tab=bridge')
+  assert.equal(cityUrlOf('/?open=earn&tab=mine'), 'https://ryntra.io/?open=earn&tab=mine')
+  assert.equal(cityUrlOf('/?open=oracle&market=KXBTC-26NOV09'), 'https://ryntra.io/?open=oracle&market=KXBTC-26NOV09')
+  assert.equal(cityRouteOfLink('https://ryntra.io?open=hall'), route('/?open=hall'))
+  // A creator's link for their people (`earlyLink`), a crew's invite, a friend's code with its sub-ID, a campaign.
+  assert.equal(cityRouteOfLink(`https://ryntra.io/?early=${MINT}`), route(`/?early=${MINT}`))
+  assert.equal(cityUrlOf(`/?early=${MINT}`), `https://ryntra.io/?early=${MINT}`)
+  assert.equal(cityUrlOf('/?crew=ABCD-2345'), 'https://ryntra.io/?crew=ABCD-2345')
+  assert.equal(cityUrlOf('/?ref=AB12CD34EF56&s=x-thread'), 'https://ryntra.io/?ref=AB12CD34EF56&s=x-thread')
+  assert.equal(cityUrlOf('/?utm_source=x&utm_campaign=launch+night'), 'https://ryntra.io/?utm_source=x&utm_campaign=launch%20night')
+  assert.equal(cityUrlOf('/?coin=BONK&lang=uk'), 'https://ryntra.io/?coin=BONK&lang=uk')
+  // On a coin's tower too, and through the app's own scheme.
+  assert.equal(cityRouteOfLink(`https://ryntra.io/c/${MINT}?ref=AB12CD34EF56`), route(`/c/${MINT}?ref=AB12CD34EF56`))
+  assert.equal(cityRouteOfLink('ryntra://?open=money&tab=topup'), route('/?open=money&tab=topup'))
+  // A stand's or a developer's switch never reaches the page from outside; nor junk, a repeat or a long value.
+  assert.equal(cityUrlOf('/?bridge=mock'), 'https://ryntra.io/')
+  assert.equal(cityUrlOf('/?open=agent&bridge=mock&launch=stub&quality=low&entry=1'), 'https://ryntra.io/?open=agent')
+  assert.equal(cityUrlOf('/?open=agent&open=money'), 'https://ryntra.io/?open=agent')
+  assert.equal(cityUrlOf(`/?ref=${'A'.repeat(129)}`), 'https://ryntra.io/')
+  assert.equal(cityUrlOf('/?ref=a%0Ab'), 'https://ryntra.io/')
+  assert.equal(cityUrlOf('/?ref=%E0%A4%A'), 'https://ryntra.io/')
+  assert.equal(cityUrlOf('/?open=&tab'), 'https://ryntra.io/')
+  assert.equal(cityUrlOf('/?open=agent#top'), 'https://ryntra.io/?open=agent')
+  // A value is the page's to read, encoded: it never becomes another address.
+  assert.equal(cityUrlOf('/?open=%26bridge%3Dmock'), 'https://ryntra.io/?open=%26bridge%3Dmock')
+  assert.equal(cityUrlOf('/?open=//evil.example'), 'https://ryntra.io/?open=%2F%2Fevil.example')
+  assert.ok(cityUrlOf('/?open=agent').startsWith('https://ryntra.io/?'))
+  // Another site's link with the same words is still the city itself.
+  assert.equal(cityRouteOfLink('https://evil.example/?open=agent'), '/')
+  assert.equal(cityRouteOfLink('https://ryntra.io.evil.example/?open=agent'), '/')
+})
+
+test('a reached stop’s note opens that very stop; a lesson’s «Try» opens its function (CITY-235)', () => {
+  const route = (path) => `/?at=${encodeURIComponent(path)}`
+  const at = (link) => decodeURIComponent(cityRouteOfLink(link).slice('/?at='.length))
+  // The engine's id of a stop (`stp_` and twenty hex digits), on the coin's tower — the note's own address (`stopHref`).
+  const STOP = 'stp_0123456789abcdef0123'
+  const note = `/c/${MINT}?stop=${STOP}`
+  assert.ok(CITY_LINK_KEYS.includes('stop'))
+  assert.equal(cityQueryOf(`stop=${STOP}`), `stop=${STOP}`)
+  assert.equal(cityPathOf(note), note)
+  assert.equal(cityRouteOfLink(`https://ryntra.io${note}`), route(note))
+  assert.equal(cityRouteOfLink(`ryntra://c/${MINT}?stop=${STOP}`), route(note))
+  assert.equal(cityUrlOf(at(`https://ryntra.io${note}`)), `https://ryntra.io${note}`)
+  // «Try» from «How it works» (`tryHref`): every function a lesson can teach, as the page writes it.
+  assert.ok(CITY_LINK_KEYS.includes('try'))
+  for (const id of ['agents', 'launch', 'trade', 'city', 'search', 'chart', 'assistant', 'quarter', 'spot', 'beacons', 'money']) {
+    assert.equal(cityRouteOfLink(`https://ryntra.io/?try=${id}`), route(`/?try=${id}`), id)
+    assert.equal(cityUrlOf(at(`https://ryntra.io/?try=${id}`)), `https://ryntra.io/?try=${id}`, id)
+  }
+  assert.equal(cityUrlOf(at('https://ryntra.io?try=launch')), 'https://ryntra.io/?try=launch')
+  // What the app does not know is still dropped beside them: a stand's switch, a paused door's words, junk.
+  assert.equal(
+    cityUrlOf(`/c/${MINT}?bridge=mock&stop=${STOP}&quality=low&form=1&beat=2&x=y`),
+    `https://ryntra.io/c/${MINT}?stop=${STOP}`,
+  )
+  assert.equal(cityUrlOf('/?launch=stub&try=launch&entry=1&form=1&beat=2'), 'https://ryntra.io/?try=launch')
+  assert.equal(cityUrlOf(`/?stop=${STOP}&stop=stp_ffffffffffffffffffff`), `https://ryntra.io/?stop=${STOP}`)
+  assert.equal(cityUrlOf(`/?try=${'a'.repeat(129)}`), 'https://ryntra.io/')
+  assert.equal(cityUrlOf('/?stop=stp_%00'), 'https://ryntra.io/')
+  // The host and the path are never the value's to choose: it stays one encoded word of the city's own address.
+  for (const value of ['//evil.example', 'https://evil.example/', '@evil.example', '/../../app/home', '%2F%2Fevil.example', 'a%26open%3Dagent', 'a?b', 'a%23b']) {
+    for (const [start, key] of [
+      [`https://ryntra.io/c/${MINT}?`, 'stop'],
+      ['https://ryntra.io/?', 'try'],
+    ]) {
+      const link = `${start}${key}=${value}`
+      const url = cityUrlOf(at(link))
+      assert.ok(url.startsWith(`${start}${key}=`), `${link} → ${url}`)
+      assert.match(url.slice(start.length), /^(?:stop|try)=[^&/@#?=]+$/, `${link} → ${url}`)
+      assert.equal(loadDecisionOf({ url, isTopFrame: true }), 'load', link)
+    }
+  }
+  assert.equal(cityRouteOfLink(`https://evil.example/c/${MINT}?stop=${STOP}`), '/')
+  assert.equal(cityRouteOfLink('https://ryntra.io.evil.example/?try=launch'), '/')
+  assert.equal(cityRouteOfLink(`https://ryntra.io/app/home?stop=${STOP}`), '/')
+  assert.equal(cityRouteOfLink(`https://ryntra.io/c/not-a-mint?stop=${STOP}`), '/')
+})
+
+test('half of a surrogate pair in a value is dropped, never thrown (CITY-235)', () => {
+  const HIGH = String.fromCharCode(0xd83d)
+  const LOW = String.fromCharCode(0xde00)
+  for (const lone of [HIGH, LOW, `a${HIGH}`, `${LOW}a`, `${LOW}${HIGH}`]) {
+    assert.doesNotThrow(() => cityQueryOf(`ref=${lone}`), lone)
+    assert.equal(cityQueryOf(`ref=${lone}`), '')
+    assert.equal(cityQueryOf(`open=agent&ref=${lone}&try=launch`), 'open=agent&try=launch')
+    assert.equal(cityUrlOf(`/?stop=${lone}`), 'https://ryntra.io/')
+    assert.equal(cityRouteOfLink(`https://ryntra.io/?open=agent&ref=${lone}`), `/?at=${encodeURIComponent('/?open=agent')}`)
+    // A value the address cannot carry does not use the key up: the next one that can is kept.
+    assert.equal(cityQueryOf(`ref=${lone}&ref=AB12CD34EF56`), 'ref=AB12CD34EF56')
+  }
+  // A whole pair is a letter like any other.
+  assert.equal(cityQueryOf(`ref=${HIGH}${LOW}`), `ref=${encodeURIComponent(`${HIGH}${LOW}`)}`)
+  assert.equal(cityQueryOf('ref=%F0%9F%98%80'), 'ref=%F0%9F%98%80')
+})
+
+test('a cold link: the route drops the link’s word only once the navigator is ready, one wait at a time (CITY-235)', () => {
+  const route = readFileSync(new URL('../../app/index.tsx', import.meta.url), 'utf8')
+  // Navigating before the root layout mounts closed the app on a cold link: the word is dropped behind `isReady()`.
+  assert.match(route, /const navigation = useNavigationContainerRef\(\)/)
+  assert.match(route, /if \(navigation\.isReady\(\)\) \{\s*router\.setParams\(\{ at: '' \}\)\s*return\s*\}/)
+  assert.equal(route.match(/router\.setParams\(/g)?.length, 1)
+  assert.doesNotMatch(route, /router\.(?:replace|push|navigate)\(/)
+  // Not ready yet: looked at again, a bounded number of times; `isReady()` that throws is «not ready».
+  assert.match(route, /if \(left > 0\) timer\.current = setTimeout\(\(\) => drop\(left - 1\), READY_WAIT_MS\)/)
+  assert.match(route, /drop\(READY_TRIES\)/)
+  assert.match(route, /try \{\s*if \(navigation\.isReady\(\)\)[\s\S]*?\} catch \{/)
+  // A second link while the first still waits takes its place — one timer; none is left behind the route.
+  assert.match(route, /const onAtSeen = useCallback\(\(\) => \{\s*if \(timer\.current\) clearTimeout\(timer\.current\)/)
+  assert.match(route, /useEffect\(\s*\(\) => \(\) => \{\s*if \(timer\.current\) clearTimeout\(timer\.current\)\s*\},\s*\[\],\s*\)/)
+  // The city opens on the link from the first frame: the word reaches the screen as it came.
+  assert.match(route, /<CityScreen at=\{at \|\| null\} onAtSeen=\{onAtSeen\} \/>/)
+})
+
+test('Back: the page says whether it has a step back; only its exact word is read (CITY-235)', () => {
+  assert.equal(pageBackOf('{"ryntraAppBack":true}'), true)
+  assert.equal(pageBackOf('{"ryntraAppBack":false}'), false)
+  for (const data of [
+    '{"ryntraAppBack":"true"}',
+    '{"ryntraAppBack":1}',
+    '{"ryntraAppBack":true,"x":1}',
+    '{"v":1,"type":"page.ready"}',
+    req({ id: 'a', type: 'wallet.connect' }),
+    `{"ryntraAppBack":true}${' '.repeat(60)}`,
+    '{"ryntraAppBack":tru',
+    '',
+    null,
+    42,
+  ])
+    assert.equal(pageBackOf(data), null, String(data))
+  // The lines run in the page: the standard Navigation API, one message shape, silent where the API is missing.
+  assert.match(PAGE_BACK_SCRIPT, /window\.navigation/)
+  assert.match(PAGE_BACK_SCRIPT, /addEventListener\('currententrychange', say\)/)
+  assert.match(PAGE_BACK_SCRIPT, /postMessage\(JSON\.stringify\(\{ ryntraAppBack: back \}\)\)/)
+  assert.match(PAGE_BACK_SCRIPT, /\ntrue;$/)
+  assert.equal(PAGE_GO_BACK, 'history.back(); true;')
+  // Run against a page that has the API and one without: what it posts is what the app reads.
+  const posted = []
+  const listeners = {}
+  const nav = { canGoBack: false, addEventListener: (name, fn) => (listeners[name] = fn) }
+  const win = { navigation: nav, ReactNativeWebView: { postMessage: (m) => posted.push(m) }, addEventListener: () => {} }
+  new Function('window', PAGE_BACK_SCRIPT)(win)
+  nav.canGoBack = true
+  listeners.currententrychange()
+  listeners.currententrychange()
+  new Function('window', PAGE_BACK_SCRIPT)(win)
+  assert.deepEqual(posted.map(pageBackOf), [false, true])
+  const bare = { ReactNativeWebView: { postMessage: () => assert.fail('no API, no word') }, addEventListener: () => {} }
+  new Function('window', PAGE_BACK_SCRIPT)(bare)
 })
 
 test('App Links: the app claims ryntra.io/ and ryntra.io/c/ only, verified', () => {
@@ -667,6 +829,10 @@ test('the screen holds the rules: the user agent, Back through the page’s hist
   assert.match(screen, /useSafeAreaInsets\(\)/)
   assert.match(screen, /hardwareBackPress/)
   assert.match(screen, /view\.current\?\.goBack\(\)/)
+  // The page's own step back first: a link's window stands on an entry the WebView's canGoBack skips (CITY-235).
+  assert.match(screen, /injectedJavaScript=\{PAGE_BACK_SCRIPT\}/)
+  assert.match(screen, /view\.current\?\.injectJavaScript\(PAGE_GO_BACK\)/)
+  assert.match(screen, /const back = pageBackOf\(event\.nativeEvent\.data\)/)
   assert.match(screen, /if \(!pageSpeaks\(event\.nativeEvent\.url\)\) return/)
   assert.match(screen, /onShouldStartLoadWithRequest=/)
   assert.match(screen, /setSupportMultipleWindows=\{false\}/)

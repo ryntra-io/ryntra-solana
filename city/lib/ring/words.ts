@@ -37,7 +37,7 @@ export const RING = words(
     code: 'Код',
     marketReplay: 'Повтор ринку',
     free: 'Безкоштовно',
-    freeMatch: 'Матч безкоштовно',
+    freeMatch: 'Безкоштовно',
     aMatch: (price: string) => `${price} за матч`,
     under: (price: string) => `до ${price}`,
     noGames: 'Ще без ігор',

@@ -5,6 +5,7 @@ import { playTick } from '@/city/lib/audio/engine';
 import { useCity } from '@/city/lib/city/store';
 import { useHudPanels } from '@/city/lib/city/windows';
 import { useWords } from '@/city/lib/i18n/dict';
+import { underWindow } from '@/city/lib/lens/cover';
 import { LENSES, type LensId } from '@/city/lib/lens/lens';
 import { startNewLaunches, useNewLaunches } from '@/city/lib/lens/new-store';
 import { useLens } from '@/city/lib/lens/store';
@@ -14,6 +15,8 @@ import { useMine } from '@/city/lib/trade/mine-store';
 import { useSpot } from '@/city/lib/trade/spot-store';
 import { stopView } from '@/city/lib/trade/stops';
 import { useWallet } from '@/city/lib/trade/wallet';
+import { framesIn } from '@/city/lib/window/layout';
+import { useWindows } from '@/city/lib/window/store';
 import { LENS, NEW_WORDS } from '@/city/lib/lens/words';
 import { ListGlyph, RingsGlyph } from './glyphs';
 import { NewList } from './NewList';
@@ -49,6 +52,8 @@ export function LensBar() {
   const place = usePlace(nav, row);
   // The phone's strip steps away under the open menu, so its chips never read through the menu's rows (CITY-188).
   const menuOpen = useHudPanels((st) => st.menu);
+  // The strip under a window that covers most of it steps aside, never a sliver over the window's edge (CITY-243).
+  const covered = useUnderWindow(row, place === null);
   // A strip wider than the screen fades at its edge (CITY-188).
   const [overflows, setOverflows] = useState(false);
   useEffect(() => {
@@ -110,7 +115,7 @@ export function LensBar() {
   return (
     <nav
       ref={nav}
-      className={`${s.lens} ${place === null ? s.below : s.inline} ${place === null && overflows ? s.overflows : ''} ${place === null && menuOpen ? s.away : ''}`}
+      className={`${s.lens} ${place === null ? s.below : s.inline} ${place === null && overflows ? s.overflows : ''} ${place === null && menuOpen ? s.away : ''} ${covered ? s.covered : ''}`}
       style={place === null ? undefined : ({ '--lens-x': `${place}px` } as CSSProperties)}
       aria-label={w.label}
       data-city-lens=""
@@ -157,6 +162,31 @@ export function LensBar() {
       <NewList />
     </nav>
   );
+}
+
+/**
+ * Whether the strip under the bar stands under a window of the desk (CITY-243): a window as wide as Spot or Earn opens
+ * 5 px under the strip's top and covered all of it but a sliver over its own edge. Measured on the strip's capsule
+ * against the windows' places; a window on the whole screen covers it too. Never on a phone: its windows are sheets.
+ */
+function useUnderWindow(row: RefObject<HTMLElement | null>, below: boolean): boolean {
+  const layout = useWindows((st) => st.layout);
+  const desk = useWindows((st) => st.desk);
+  const [covered, setCovered] = useState(false);
+  useLayoutEffect(() => {
+    const el = row.current;
+    if (!el || !below || !desk || (!layout.windows.length && !layout.full)) return setCovered(false);
+    const measure = () => {
+      const b = el.getBoundingClientRect();
+      const box = { x: b.left, y: b.top, width: b.width, height: b.height };
+      const over = layout.full ? [{ x: 0, y: 0, width: window.innerWidth, height: window.innerHeight }] : framesIn(layout).map((w) => w.rect);
+      setCovered(underWindow(box, over));
+    };
+    measure();
+    window.addEventListener('resize', measure);
+    return () => window.removeEventListener('resize', measure);
+  }, [row, below, desk, layout]);
+  return covered;
 }
 
 /** Room the row keeps from its neighbours in the bar. */

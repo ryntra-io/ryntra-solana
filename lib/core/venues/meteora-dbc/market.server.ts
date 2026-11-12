@@ -16,6 +16,10 @@
  *   the largest accounts, where the node answers them — a wallet that received
  *   the token without trading it is found that way.
  *
+ * The signature lists come from Helius's Parsed Events Scan where the history node is Helius on mainnet (CITY-245):
+ * one request filtered to the token's transactions, newest first, back to the account's start. Elsewhere, or when the
+ * scan fails, they are paged from the node as before. Either way the transactions are read and decoded here.
+ *
  * One read of a history has a time budget, the node's own waits on a refusal
  * included: what a public node refused is asked again one at a time while it
  * lasts, and what is still unread then leaves the history called partial rather
@@ -39,6 +43,7 @@ import BN from "bn.js";
 import { cpAmmOf, dbcClientOf } from "../meteora-clients.server.ts";
 import { SNIPER_SECONDS, accountPageReached, listsWhole, partnerPartRaw, priceFromSqrtX64, tradeOf, type LaunchTrade, type SwapSeen } from "./market.ts";
 import { getTransactionAnyVersion } from "../../../solana/v1-tx.ts";
+import type { AddressHistory } from "../../history/address-history.ts";
 
 const DBC_PROGRAM = "dbcij3LWUppWqq96dh6gJWwBifmcGfLSB5D4DuSMaqN";
 const DAMM_V2_PROGRAM = "cpamdpZCGKUy5JxQXB4dcpGPiikHawvSWAd6mEn1sGG";
@@ -49,6 +54,9 @@ const SWAP_ACCOUNTS = {
   [DBC_PROGRAM]: { input: 3, output: 4, payer: 9 },
   [DAMM_V2_PROGRAM]: { input: 2, output: 3, payer: 8 },
 } as const;
+
+/** A signature as an account's list gives it — the node's page or the scan's (CITY-245). */
+type Listed = Readonly<{ signature: string; slot: number; err: unknown; memo: string | null; blockTime?: number | null }>;
 
 /** How many of the newest signatures of each of the curve and the pool are read; beyond it the history is said to be partial. */
 export const TRADE_HISTORY_LIMIT = 300;
@@ -331,11 +339,12 @@ function sideConnection(url: string): Connection {
  * signature lists reach back to a token's creation — a public node keeps a day or two of them, and a list cut short by the
  * node reads as whole to anyone who trusts its length. `archive`: the endpoint asked for a transaction the main one no
  * longer keeps. `referralOwner`: the address Ryntra's referral token accounts belong to — what a transaction moved into its
- * account in the pair currency is Meteora's referral paid to Ryntra, and is Ryntra's part of the trade's fee.
+ * account in the pair currency is Meteora's referral paid to Ryntra, and is Ryntra's part of the trade's fee. `scan`:
+ * the history node's Parsed Events Scan (CITY-245) — where given, an account's signatures are found through it first.
  */
 export function createLaunchMarketReader(
   connection: Connection,
-  options: Readonly<{ feeWallet?: string | null; referralOwner?: string | null; indexed?: string | null; index?: DecodedIndex | null; history?: string | null; archive?: string | null }> = {},
+  options: Readonly<{ feeWallet?: string | null; referralOwner?: string | null; indexed?: string | null; index?: DecodedIndex | null; history?: string | null; archive?: string | null; scan?: AddressHistory | null }> = {},
 ): LaunchMarketReader {
   const lenient = sideConnection(options.indexed ?? connection.rpcEndpoint);
   /*
@@ -356,6 +365,7 @@ export function createLaunchMarketReader(
   const feeWallet = options.feeWallet ?? null;
   const referralOwner = options.referralOwner ?? null;
   const index = options.index ?? null;
+  const scan = options.scan ?? null;
   const client = dbcClientOf(connection);
   const lenientClient = dbcClientOf(lenient);
   const cpAmm = cpAmmOf(connection);
@@ -688,12 +698,32 @@ export function createLaunchMarketReader(
   }
 
   /** An account's signatures from the endpoint with the whole history, or the main one when that does not answer. */
-  async function signaturesOf(address: PublicKey, options: Readonly<{ before?: string; limit: number }>) {
-    return (await listedFrom(address, options)).entries;
+  async function signaturesOf(token: string, address: PublicKey, options: Readonly<{ before?: string; limit: number }>, until?: number): Promise<readonly Listed[]> {
+    return (await listedFrom(token, address, options, until)).entries;
   }
 
-  /** The same, and whether the endpoint with the whole history gave it — a short list from any other proves nothing. */
-  async function listedFrom(address: PublicKey, options: Readonly<{ before?: string; limit: number }>) {
+  /**
+   * The same, and whether the endpoint with the whole history gave it — a short list from any other proves nothing.
+   * The scan first (CITY-245): the account's successful transactions in which the curve's or the pool's program ran —
+   * every swap however it was routed, the creation, the migration, the pool's liquidity and its positions' splits —
+   * newest first; a short list from it is the account's start, or of the window from `since` (unix seconds). It has
+   * until `until` (ms) to be whole; past it the node is paged as before.
+   */
+  async function listedFrom(token: string, address: PublicKey, options: Readonly<{ before?: string; limit: number; since?: number | null; tokenMoved?: boolean }>, until?: number): Promise<Readonly<{ entries: readonly Listed[]; deep: boolean }>> {
+    if (scan) {
+      const scanned = await scan
+        .signatures({
+          address: address.toBase58(),
+          /* A wallet's account: its trades of this token only — the same account's trades of other launches stay out. */
+          match: { programs: [{ programId: DBC_PROGRAM, scope: "transaction" }, { programId: DAMM_V2_PROGRAM, scope: "transaction" }], ...(options.tokenMoved ? { mints: [{ mint: token, scope: "transaction" as const }] } : {}) },
+          before: options.before,
+          limit: options.limit,
+          ...(typeof options.since === "number" ? { time: { gte: options.since } } : {}),
+          ...(until === undefined ? {} : { until }),
+        })
+        .catch(() => null);
+      if (scanned) return { entries: scanned.entries, deep: true };
+    }
     if (listing !== connection) {
       const entries = await listing.getSignaturesForAddress(address, options, "confirmed").catch(() => null);
       if (entries) return { entries, deep: true };
@@ -703,10 +733,12 @@ export function createLaunchMarketReader(
 
   async function trades({ token, state: market, creationSignature, limit = TRADE_HISTORY_LIMIT, budgetMs = HISTORY_BUDGET_MS }: Parameters<LaunchMarketReader["trades"]>[0]): Promise<TradeHistory> {
     const until = Date.now() + budgetMs;
+    /* The scan has half the budget to list; the rest is the transactions' (CITY-245). */
+    const listUntil = Date.now() + budgetMs / 2;
     /* The curve's list and the pool's are two independent reads: asked at once (SOL-P1). */
     const [curveSignatures, poolSignatures] = await Promise.all([
-      signaturesOf(new PublicKey(market.curve.pool), { limit }),
-      market.graduated ? signaturesOf(new PublicKey(market.graduated.pool), { limit }) : Promise.resolve([]),
+      signaturesOf(token, new PublicKey(market.curve.pool), { limit }, listUntil),
+      market.graduated ? signaturesOf(token, new PublicKey(market.graduated.pool), { limit }, listUntil) : Promise.resolve([]),
     ]);
     const all = [...new Map([...curveSignatures, ...poolSignatures].filter((entry) => entry.err === null).map((entry) => [entry.signature, entry])).values()];
     if (!all.some((entry) => entry.signature === creationSignature)) all.push({ signature: creationSignature, slot: 0, err: null, memo: null, blockTime: null });
@@ -754,7 +786,7 @@ export function createLaunchMarketReader(
     const signatures: string[] = [];
     let complete = true;
     /* Each account's list is its own read: asked at once (SOL-P1), then taken in the accounts' order. */
-    const lists = await Promise.all(accounts.map((account) => listedFrom(new PublicKey(account), { limit: ACCOUNT_SIGNATURES }).catch(() => null)));
+    const lists = await Promise.all(accounts.map((account) => listedFrom(token, new PublicKey(account), { limit: ACCOUNT_SIGNATURES, since, tokenMoved: true }, Date.now() + budgetMs / 2).catch(() => null)));
     for (const listed of lists) {
       if (!listed) {
         complete = false;
@@ -789,7 +821,7 @@ export function createLaunchMarketReader(
           complete = false;
           break;
         }
-        const listed = await listedFrom(new PublicKey(pool), { before, limit: 1_000 }).catch(() => null);
+        const listed = await listedFrom(token, new PublicKey(pool), { before, limit: 1_000 }, until).catch(() => null);
         if (!listed) {
           complete = false;
           break;
@@ -836,7 +868,7 @@ export function createLaunchMarketReader(
     let before: string | undefined;
     let reached = false;
     for (let page = 0; page < OPENING_PAGES && !reached; page += 1) {
-      const batch = await signaturesOf(pool, { before, limit: 1_000 });
+      const batch = await signaturesOf(token, pool, { before, limit: 1_000 }, until);
       for (const entry of batch) {
         if (entry.signature === creationSignature) reached = true;
         if (entry.err !== null) continue;

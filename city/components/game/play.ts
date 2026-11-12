@@ -72,11 +72,12 @@ function leaveGame(): void {
 }
 
 /**
- * Escape in Play, after the city's own panels had theirs (city/components/hud/Hud.tsx): the Map, then the Hall's boards
- * close; a window that closes itself is left to it; with nothing left open, back to City. True when it took the press.
+ * Escape, after the city's own panels had theirs (city/components/hud/Hud.tsx): the Map, then the Hall's boards close —
+ * in the City layer too, where a link (`/?open=hall`) and the boards over the towers open the Hall (CITY-236: Escape did
+ * nothing there). In Play, a window that closes itself is left to it; with nothing left open, back to City. True when it
+ * took the press.
  */
 export function playEscape(): boolean {
-  if (layerNow() !== 'play') return false;
   const map = useGameMap.getState();
   if (map.open) {
     map.close();
@@ -87,6 +88,7 @@ export function playEscape(): boolean {
     hall.close();
     return true;
   }
+  if (layerNow() !== 'play') return false;
   if (windowOpenNow()) return false;
   useLayer.getState().set('city');
   return true;

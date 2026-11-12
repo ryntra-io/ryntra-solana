@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { EARN_TABS } from '@/city/lib/earn/flag';
 import { useEarn } from '@/city/lib/earn/open';
 import { useEarnData } from '@/city/lib/earn/store';
@@ -45,6 +45,8 @@ export default function EarnWindow() {
   const mine = useMine(owner);
   // A pier or a boat open on the Piers stands alone, like a product of the Shelf: its own figures, no headline above.
   const docked = usePier((st) => (st.pool !== null && st.copy === null) || st.boat !== null);
+  // Earn's own words — Shelf, Pier, Boats, Saver, Captain — behind one quiet «i» beside the tabs (CITY-243).
+  const [terms, setTerms] = useState(false);
 
   // The window's reads: the feeds for everybody, the wallet's own for its owner.
   useEffect(() => {
@@ -102,22 +104,46 @@ export default function EarnWindow() {
           {head.unmeasured > 0 ? <p className={s.fine}>{words.mine.unmeasured}: {head.unmeasured}</p> : null}
         </Line>
       ) : null}
-      <nav className={s.tabs} role="tablist" aria-label={words.title}>
-        {EARN_TABS.map((id) => (
-          <button
-            key={id}
-            type="button"
-            role="tab"
-            aria-selected={tab === id}
-            className={`${s.tab} ${tab === id ? s.tabOn : ''}`}
-            onClick={() => useEarn.getState().setTab(id)}
-            disabled={busy && tab !== id}
-          >
-            <TabGlyph tab={id} />
-            <span>{words.tabs[id]}</span>
-          </button>
-        ))}
-      </nav>
+      <div className={s.tabsRow}>
+        <nav className={s.tabs} role="tablist" aria-label={words.title}>
+          {EARN_TABS.map((id) => (
+            <button
+              key={id}
+              type="button"
+              role="tab"
+              aria-selected={tab === id}
+              className={`${s.tab} ${tab === id ? s.tabOn : ''}`}
+              onClick={() => useEarn.getState().setTab(id)}
+              disabled={busy && tab !== id}
+            >
+              <TabGlyph tab={id} />
+              <span>{words.tabs[id]}</span>
+            </button>
+          ))}
+        </nav>
+        <button
+          type="button"
+          className={`${s.info} ${s.termsInfo} ${terms ? s.infoOn : ''}`}
+          aria-label={terms ? words.terms.close : words.terms.open}
+          title={terms ? words.terms.close : words.terms.open}
+          aria-expanded={terms}
+          aria-controls="earn-terms"
+          onClick={() => setTerms((open) => !open)}
+          data-earn-terms=""
+        >
+          i
+        </button>
+      </div>
+      {terms ? (
+        <dl id="earn-terms" className={s.terms}>
+          {words.terms.list.map((term) => (
+            <div key={term.word}>
+              <dt>{term.word}</dt>
+              <dd>{term.hint}</dd>
+            </div>
+          ))}
+        </dl>
+      ) : null}
       <div className={s.body} key={`${tab}:${product ?? ''}`}>
         {tab === 'shelf' ? (
           product === 'saver' ? (

@@ -111,3 +111,63 @@ export function canDoFromOrders(orders: readonly PlacedOrder[], baseIsX: boolean
     source: "transaction",
   };
 }
+
+/* ------------------------------------------------------------ the account */
+
+/** `LimitOrder`'s discriminator (lb_clmm 0.12.0). */
+export const LIMIT_ORDER_DISCRIMINATOR = "89b7d45b731d8de3";
+/** 8 discriminator · lb_pair 32 · owner 32 · bin_count u16 · 14 padding · 32 reserved; then 32 bytes per bin. */
+const ORDER_HEAD_BYTES = 8 + 112;
+const ORDER_BIN_BYTES = 32;
+
+export type OrderAccountBin = Readonly<{
+  id: number;
+  /** What the bin still holds of the input. */
+  amount: bigint;
+  /** Non-zero once the pool has converted into the bin: the bin then has something to take back even at amount 0. */
+  age: number;
+  isAsk: boolean;
+}>;
+
+/** A bin with nothing left in it, as the SDK reads it (`isEmpty`): never converted and no amount. */
+export const binIsEmpty = (bin: OrderAccountBin): boolean => bin.age === 0 && bin.amount === 0n;
+
+export type OrderAccount = Readonly<{ pool: string; owner: string; bins: readonly OrderAccountBin[] }>;
+
+const BASE58_ALPHABET = "123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz";
+
+/** A 32-byte key as its base58 address, without web3.js. */
+export function addressOf(bytes: Uint8Array): string {
+  let value = 0n;
+  for (const byte of bytes) value = (value << 8n) + BigInt(byte);
+  let out = "";
+  while (value > 0n) {
+    out = BASE58_ALPHABET[Number(value % 58n)] + out;
+    value /= 58n;
+  }
+  for (const byte of bytes) {
+    if (byte !== 0) break;
+    out = `1${out}`;
+  }
+  return out;
+}
+
+/**
+ * A limit order account as the program keeps it: its pool, its owner and each bin's amount and side — `LimitOrder`
+ * followed by `bin_count` × `LimitOrderBinData` { amount u64 · age u32 · 4 padding · bin_id i32 · is_ask u8 · 11 padding }.
+ * Null when the bytes are not one.
+ */
+export function decodeLimitOrderAccount(data: Uint8Array): OrderAccount | null {
+  if (data.length < ORDER_HEAD_BYTES || hex(data.subarray(0, 8)) !== LIMIT_ORDER_DISCRIMINATOR) return null;
+  const view = new DataView(data.buffer, data.byteOffset, data.byteLength);
+  const count = view.getUint16(72, true);
+  if (data.length < ORDER_HEAD_BYTES + count * ORDER_BIN_BYTES) return null;
+  const bins: OrderAccountBin[] = [];
+  for (let i = 0; i < count; i += 1) {
+    const at = ORDER_HEAD_BYTES + i * ORDER_BIN_BYTES;
+    const flag = data[at + 20];
+    if (flag !== 0 && flag !== 1) return null;
+    bins.push({ amount: view.getBigUint64(at, true), age: view.getUint32(at + 8, true), id: view.getInt32(at + 16, true), isAsk: flag === 1 });
+  }
+  return { pool: addressOf(data.subarray(8, 40)), owner: addressOf(data.subarray(40, 72)), bins };
+}

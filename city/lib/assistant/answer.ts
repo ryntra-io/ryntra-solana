@@ -146,11 +146,14 @@ export function pickTowers(turn: AgentTurn | null, towers: readonly Tower[], int
 }
 
 /**
- * Ryntra's day of guest answers is spent and its turn named no tower (CITY-200: «what is rising?» read «come back
- * tomorrow» over an empty city): a rise or a fall is the city's own read, so the city answers it from its towers.
+ * A rise or a fall is the city's own read, so the city answers it from its towers when Ryntra's turn named no tower and
+ * either Ryntra's day of guest answers is spent (CITY-200: «what is rising?» read «come back tomorrow» over an empty
+ * city) or the turn read no market at all — no source behind it (CITY-221: «що зараз росте?» read «I have no market
+ * data in this answer», and the city showed nothing).
  */
-export function cityAnswers(shown: readonly Tower[], intent: Intent, day: Readonly<{ used: number; allowance: number }> | null): boolean {
+export function cityAnswers(shown: readonly Tower[], intent: Intent, day: Readonly<{ used: number; allowance: number }> | null, read = true): boolean {
   if (shown.length || (intent !== 'rising' && intent !== 'falling')) return false;
+  if (!read) return true;
   return Boolean(day && day.allowance > 0 && day.used >= day.allowance);
 }
 

@@ -6,10 +6,10 @@ import { rpcResult } from "../supabase-rpc";
 import { worldStore } from "../world/server";
 import { createRingApi, type AccountRead, type RingApi } from "./api.ts";
 import { createRingEngine, type RingEngine } from "./engine.ts";
-import { garageOf } from "./garage.ts";
+import { bayOf, garageOf } from "./garage.ts";
 import { createRingKeys, quietKeys, type RingKeys } from "./keys.ts";
 import { createRingModels, type RingModels } from "./models.ts";
-import { SEAL_SECRET_ENV, catalogKind, keyMode, ringReady, storeKind } from "./ready.ts";
+import { SEAL_SECRET_ENV, STAND_COOKIE, catalogKind, keyMode, ringReady, standAccount, storeKind } from "./ready.ts";
 import { createSealer } from "./seal.ts";
 import { createMemoryRingStore, type RingStore } from "./store.ts";
 import { createSupabaseRingStore } from "./supabase-store.ts";
@@ -24,6 +24,12 @@ import { stubCatalogFetch } from "./stub-catalog.ts";
  */
 
 export async function account(): Promise<AccountRead> {
+  // A developer's stand plays as the account its cookie names (`standAccount`); never in production.
+  if (process.env.NODE_ENV !== "production" && process.env.RYNTRA_RING_STAND?.trim() === "1") {
+    const { cookies } = await import("next/headers");
+    const id = standAccount(process.env, (await cookies()).get(STAND_COOKIE)?.value);
+    return id ? { status: "ok", accountId: id } : { status: "absent" };
+  }
   const read = await readSession();
   if (read.status === "unavailable") return { status: "unavailable" };
   if (read.status === "ok" && read.session.accountId) return { status: "ok", accountId: read.session.accountId };
@@ -58,7 +64,7 @@ export function ringApi(): RingApi {
   const kept = ringStore();
   api ??= createRingApi({
     engine: () => {
-      engine ??= createRingEngine({ store: kept, models: brains(), keys: keys(), garage: (input) => garageOf(worldStore(), input) });
+      engine ??= createRingEngine({ store: kept, models: brains(), keys: keys(), garage: (input) => garageOf(worldStore(), input), bay: bayOf });
       return engine;
     },
     // The switch is read as the city reads it (inlined at build); production opens on the database only.

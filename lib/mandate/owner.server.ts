@@ -11,6 +11,7 @@ import type { GuardStore } from "../guard/store.ts";
 import { readPilot } from "../pilot/book.server.ts";
 import { CARE_BOOK, careGate, type CareEntry } from "../care/service.server.ts";
 import { readBook, type BookEntry } from "./book.server.ts";
+import { frozenOn } from "./freeze.server.ts";
 import { AGENT_NETWORKS, ownedEntries, ownerMandate, tokenAmountOf, UNREAD, type ChainNow, type NetworkAgents, type OwnerAgents, type OwnerCare } from "./owner.ts";
 import { mandateConnection, mandateGate, onNetwork, type MandateNetwork } from "./service.server.ts";
 
@@ -71,7 +72,7 @@ async function networkAgents(owner: string, network: MandateNetwork, deps: Requi
     care: care.open && care.network === network,
   };
   try {
-    const [book, plan, cares] = await Promise.all([readBook(deps.store, network), readPilot(deps.store, network, owner), caresOf(deps.store, network, owner)]);
+    const [book, plan, cares, frozen] = await Promise.all([readBook(deps.store, network), readPilot(deps.store, network, owner), caresOf(deps.store, network, owner), frozenOn(deps.store, network).catch(() => new Set<string>())]);
     const entries = ownedEntries(book, owner);
     const connection = deps.connection ? deps.connection(network) : mandateConnection(network);
     const chain = await chainNow(entries, network, connection, deps.chainMs);
@@ -80,7 +81,7 @@ async function networkAgents(owner: string, network: MandateNetwork, deps: Requi
       network,
       open,
       read: true,
-      mandates: entries.map((entry, index) => ownerMandate(entry, chain[index] ?? UNREAD, pilotPolicy)),
+      mandates: entries.map((entry, index) => ownerMandate(entry, chain[index] ?? UNREAD, pilotPolicy, frozen.has(entry.record.policy))),
       pilot: plan ? { status: plan.status, policy: plan.policy, createdAt: plan.createdAt } : null,
       cares,
     };

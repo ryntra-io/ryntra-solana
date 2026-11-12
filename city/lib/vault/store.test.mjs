@@ -204,3 +204,129 @@ test("an attempt that uses up the minute starts the wait; leaving the room stops
   store.getState().leave();
   assert.equal(clock.waits.at(-1).cleared, true);
 });
+
+/* ------------------------------------------------------------------ CITY-218: resting guards, a closed vault, sign-in */
+
+function timed(stateOf) {
+  const pending = [];
+  let t = Date.parse("2026-10-27T23:59:00Z");
+  let reads = 0;
+  const store = createVaultStore({
+    client: () => ({
+      async state() {
+        reads += 1;
+        return stateOf(reads);
+      },
+      async feed(vault) {
+        return { vault, entries: [], next: null };
+      },
+      async attempt() {
+        throw new VaultClientError(429, "RESTING", "The guards are resting.", 60, null, { awake: false, wakesAt: "2026-10-28T00:00:00.000Z", walletsAwake: false });
+      },
+    }),
+    now: () => t,
+    timers: { set: (run, ms) => (pending.push({ run, ms }), pending.length), clear: () => {} },
+  });
+  return { store, pending, reads: () => reads, tick: (ms) => (t += ms) };
+}
+
+const asleep = { awake: false, wakesAt: "2026-10-28T00:00:00.000Z", walletsAwake: true };
+const awake = { awake: true, wakesAt: null, walletsAwake: true };
+
+test("while the guards rest the room waits for them and reads the vaults again when they wake", async () => {
+  const { store, pending, reads } = timed((n) => STATE({ guards: n === 1 ? asleep : awake }));
+  await store.getState().enter();
+  assert.equal(store.getState().state.guards.awake, false);
+  assert.equal(store.getState().limited, false, "the Try button stays: the phrase still opens the door");
+  assert.equal(pending.length, 1);
+  assert.ok(pending[0].ms >= 60_000 && pending[0].ms < 61_000, "it waits until they wake");
+  pending[0].run();
+  await new Promise((r) => setTimeout(r, 0));
+  assert.equal(reads(), 2);
+  assert.equal(store.getState().state.guards.awake, true);
+});
+
+test("a RESTING refusal says so and reads the vaults again", async () => {
+  const { store, reads } = timed(() => STATE({ guards: awake }));
+  await store.getState().enter();
+  store.getState().setDraft("hello there");
+  await store.getState().send();
+  assert.equal(store.getState().phase.step, "refused");
+  assert.equal(store.getState().phase.code, "RESTING");
+  await new Promise((r) => setTimeout(r, 0));
+  assert.equal(reads(), 2, "the state is read again so the room shows until when");
+});
+
+test("a vault this deployment has not opened reads as closed, not as a lost connection, and is not retried", async () => {
+  const pending = [];
+  const store = createVaultStore({
+    client: () => ({
+      async state() {
+        throw new VaultClientError(404, "CLOSED", "The vault is not open yet.");
+      },
+      async feed() {
+        throw new VaultClientError(404, "CLOSED", "The vault is not open yet.");
+      },
+      async attempt() {
+        throw new Error("never");
+      },
+    }),
+    timers: { set: (run, ms) => (pending.push({ run, ms }), pending.length), clear: () => {} },
+  });
+  await store.getState().enter();
+  assert.equal(store.getState().status, "closed");
+  assert.equal(pending.length, 0);
+});
+
+test("a vault that could not be reached is read again by itself", async () => {
+  const pending = [];
+  let fail = true;
+  const store = createVaultStore({
+    client: () => ({
+      async state() {
+        if (fail) throw new VaultClientError(0, "OFFLINE", "No connection.");
+        return STATE();
+      },
+      async feed(vault) {
+        return { vault, entries: [], next: null };
+      },
+      async attempt() {
+        throw new Error("never");
+      },
+    }),
+    timers: { set: (run, ms) => (pending.push({ run, ms }), pending.length), clear: () => {} },
+  });
+  await store.getState().enter();
+  assert.equal(store.getState().status, "offline");
+  assert.equal(pending.length, 1);
+  fail = false;
+  pending[0].run();
+  await new Promise((r) => setTimeout(r, 0));
+  assert.equal(store.getState().status, "read");
+});
+
+test("after a sign-in the room reads again and moves off a vault the new person cannot open", async () => {
+  let signedIn = false;
+  const guestState = STATE({ vaults: [view("practice-1", true, true), view("practice-2", true), view("practice-3", false), view("daily", true)] });
+  const walletState = STATE({ vaults: [view("practice-1", true), view("practice-2", false), view("practice-3", false), view("daily", true)] });
+  const store = createVaultStore({
+    client: () => ({
+      async state() {
+        return signedIn ? walletState : guestState;
+      },
+      async feed(vault) {
+        return { vault, entries: [], next: null };
+      },
+      async attempt() {
+        throw new Error("never");
+      },
+    }),
+    timers: { set: () => 0, clear: () => {} },
+  });
+  await store.getState().enter();
+  assert.equal(store.getState().vault, "practice-2");
+  signedIn = true;
+  await store.getState().refresh();
+  assert.equal(store.getState().vault, "practice-1");
+  assert.equal(store.getState().phase.step, "idle");
+});

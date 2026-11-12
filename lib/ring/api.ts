@@ -3,7 +3,7 @@ import { createHash } from "node:crypto";
 import { privateNoStoreHeaders } from "../http-control";
 import { mutationOriginAllowed } from "../security";
 import { isModelId, isQuarterId, parseChange, parseCreate, parseOff, type Parsed } from "./agent.ts";
-import type { RingErrorCode } from "./contract.ts";
+import { isFormat, type RingErrorCode } from "./contract.ts";
 import { errorLine, type Outcome, type RingEngine } from "./engine.ts";
 import type { RingStore } from "./store.ts";
 
@@ -129,6 +129,37 @@ export function createRingApi(deps: RingApiDeps) {
     }
   }
 
+  /** The asker's account, or null when nobody is signed in; `undefined` when the session could not be read. */
+  async function asker(req: Request): Promise<string | null | undefined> {
+    const account = await deps.account(req).catch((): AccountRead => ({ status: "unavailable" }));
+    return account.status === "ok" ? account.accountId : account.status === "absent" ? null : undefined;
+  }
+
+  /** GET /api/ring/mine — the asker's agents and their garage in the Arena (CITY-217). */
+  async function mine(req: Request): Promise<Response> {
+    if (!deps.open()) return respond(STATUS.closed);
+    try {
+      const accountId = await asker(req);
+      if (accountId === undefined) return respond(STATUS.unavailable);
+      return respond({ status: 200, body: await deps.engine().mine(accountId) });
+    } catch (error) {
+      return unavailable(error);
+    }
+  }
+
+  /** GET /api/ring/board?format= — a format's board, best first (CITY-217). */
+  async function board(req: Request): Promise<Response> {
+    if (!deps.open()) return respond(STATUS.closed);
+    const format = new URL(req.url).searchParams.get("format");
+    if (!isFormat(format)) return respond(failure(400, "BAD_REQUEST", "`format` is one of the Ring's formats."));
+    try {
+      const accountId = await asker(req);
+      return respond({ status: 200, body: await deps.engine().board(format, accountId ?? null) });
+    } catch (error) {
+      return unavailable(error);
+    }
+  }
+
   /**
    * The parts every write shares, in order: open, same site, the key, the body, the account, the stored answer of the
    * key (the same key with another body is refused); then `run`. A 5xx is never kept, so a retry runs again.
@@ -184,7 +215,7 @@ export function createRingApi(deps: RingApiDeps) {
   /** POST /api/ring/off — switch the agent off; its key goes off with it and the garage is free again. */
   const off = (req: Request) => write(req, "off", parseOff, async (accountId, value) => answerOf(await deps.engine().off(accountId, value)));
 
-  return { models, model, garage, create, change, off };
+  return { models, model, garage, mine, board, create, change, off };
 }
 
 export type RingApi = ReturnType<typeof createRingApi>;

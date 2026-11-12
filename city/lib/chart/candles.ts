@@ -222,6 +222,17 @@ export function ageText(ms: number): string {
 }
 
 /**
+ * The spot chart's «Delayed», with how long (CITY-243: a bare «Delayed» was a riddle): the bars are as old as the
+ * engine's cache of their interval at most — 20 s for a minute's bars, 10 min for a day's. The last bar still closes
+ * at the live price.
+ */
+export function delayLine(timeframe: Timeframe): string {
+  const w = wordsNow(CHART_READ);
+  const s = Math.round(TIMEFRAME_TTL_MS[timeframe] / 1000);
+  return s < 60 ? w.delayedSeconds(s) : w.delayedMinutes(Math.round(s / 60));
+}
+
+/**
  * The chart's «Details»: where the bars come from and how old they are — the source, the pool, the age and, when the
  * engine answered with a held copy, «Delayed». Nothing while there are no bars.
  */

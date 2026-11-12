@@ -12,22 +12,37 @@ import s from './trade.module.css';
  * `target` is the ticket's figure. The line is the same figure again, so it is hidden from screen readers: they read
  * the figure itself.
  */
-export function DockGet({ target, label, children }: { target: RefObject<HTMLElement | null>; label: string; children: ReactNode }) {
+export function DockGet({
+  target,
+  named,
+  label,
+  children,
+}: {
+  target: RefObject<HTMLElement | null>;
+  /** The ticket's own row that names the figure, when it stands apart from it: while it is in sight, the line drops its
+   *  label and reads as that row's value — never «You get about» twice, one above the other (CITY-221). */
+  named?: RefObject<HTMLElement | null>;
+  label: string;
+  children: ReactNode;
+}) {
   const line = useRef<HTMLDivElement>(null);
-  const hidden = useHidden(target, line);
+  const { hidden, bare } = useHidden(target, line, named);
   return (
-    <div ref={line} className={`${s.dockGet} ${hidden ? s.dockGetOn : ''}`} aria-hidden="true">
-      <div className={s.dockGetInner}>
-        <span className={s.label}>{label}</span>
+    <div ref={line} className={`${s.dockGet} ${hidden ? s.dockGetOn : ''}`} aria-hidden="true" data-dock-get={hidden ? (bare ? 'bare' : 'named') : undefined}>
+      <div className={`${s.dockGetInner} ${bare ? s.dockGetBare : ''}`}>
+        {!bare && <span className={s.label}>{label}</span>}
         <span className={s.getInline}>{children}</span>
       </div>
     </div>
   );
 }
 
-/** Whether `target` is out of sight in the card: above its scrolled top, or below the top of the dock that holds `line`. */
-function useHidden(target: RefObject<HTMLElement | null>, line: RefObject<HTMLElement | null>): boolean {
-  const [hidden, setHidden] = useState(false);
+/**
+ * Whether `target` is out of sight in the card: above its scrolled top, or below the top of the dock that holds `line`;
+ * and whether the row that names it (`named`) is still in sight above the dock.
+ */
+function useHidden(target: RefObject<HTMLElement | null>, line: RefObject<HTMLElement | null>, named?: RefObject<HTMLElement | null>): { hidden: boolean; bare: boolean } {
+  const [state, setState] = useState({ hidden: false, bare: false });
   useEffect(() => {
     const dock = line.current?.parentElement;
     const figure = target.current;
@@ -40,7 +55,11 @@ function useHidden(target: RefObject<HTMLElement | null>, line: RefObject<HTMLEl
       const at = figure.getBoundingClientRect();
       const floor = Math.min(seen.bottom, dock.getBoundingClientRect().top);
       // Two pixels of slack either way: on a desk the figure ends where the dock begins, and rounding never flips the line.
-      setHidden(at.top < seen.top - 2 || at.bottom > floor + 2);
+      const hidden = at.top < seen.top - 2 || at.bottom > floor + 2;
+      // The row reads while its middle is above the dock: the dock's faded top edge may cover its last pixels.
+      const row = named?.current?.getBoundingClientRect();
+      const bare = hidden && !!row && row.top >= seen.top - 2 && (row.top + row.bottom) / 2 < floor;
+      setState((was) => (was.hidden === hidden && was.bare === bare ? was : { hidden, bare }));
     };
     const schedule = () => {
       if (!frame) frame = requestAnimationFrame(measure);
@@ -65,8 +84,8 @@ function useHidden(target: RefObject<HTMLElement | null>, line: RefObject<HTMLEl
       document.removeEventListener('transitionend', schedule);
       document.removeEventListener('animationend', schedule);
     };
-  }, [target, line]);
-  return hidden;
+  }, [target, line, named]);
+  return state;
 }
 
 /** The card that scrolls: the nearest box above `el` that scrolls its own content. */

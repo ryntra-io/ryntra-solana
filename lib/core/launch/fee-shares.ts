@@ -75,3 +75,16 @@ export function partOf(amountRaw: bigint, share: number, totalShare: number): bi
   if (totalShare <= 0 || share <= 0) return 0n;
   return (amountRaw * BigInt(share)) / BigInt(totalShare);
 }
+
+/**
+ * The city's «Share earnings» — the creator types the other
+ * wallets and their parts on Classic or Protected, and the launch writes the same vault «Спільнота» and a crew write.
+ * False: closed on mainnet, open on the devnet stand. The engine (`../../launch/flow.server.ts`) and the city's door
+ * (`city/lib/launch/share.ts`) read this one value. Flipped here alone.
+ */
+export const TYPED_SHARES_OWNER_WORD = true; // Fork 24/24, devnet 25/25
+
+/** Whether typed shares may be built on Classic and Protected on a network: the devnet stand. */
+export function typedSharesOpenOn(cluster: "mainnet" | "devnet", ownerWord: boolean = TYPED_SHARES_OWNER_WORD): boolean {
+  return cluster === "devnet" || ownerWord === true;
+}

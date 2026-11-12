@@ -18,7 +18,8 @@ export const PILOT = words(
     on_save: 'Jupiter Lend',
     on_pool: 'Meteora pier',
     on_reserve: 'Stays with you',
-    total: (usd: string) => `${usd} at work`,
+    // CITY-237: the proposal's sum — nothing is at work before the signature (an empty wallet read «$17 at work»).
+    total: (usd: string) => `${usd} to put to work`,
     // The one honest line before a signature.
     risk: 'Can end in minus · stop anytime · keys stay yours',
     /** How a person pays: only a trade the agent made, the engine's table — no subscription, no credits. */
@@ -26,6 +27,7 @@ export const PILOT = words(
     noCredits: 'No subscription and no credits for the agent: it asks no AI at a trade',
     feeRates: (major: string, stock: string, trending: string, meme: string) => `Fee a trade as in your own swaps: majors ${major}%, xStocks ${stock}%, trending ${trending}%, new coins ${meme}%`,
     short: (asset: string) => `Not enough ${asset} in your wallet for this plan`,
+    add: (asset: string) => `Add ${asset}`,
     paper: 'Practice first',
     paperOn: 'On paper',
     paperLine: (days: number) => `On history and today's rates · ${days} days`,
@@ -84,12 +86,13 @@ export const PILOT = words(
     on_save: 'Jupiter Lend',
     on_pool: 'Причал Meteora',
     on_reserve: 'Лишається в тебе',
-    total: (usd: string) => `${usd} у роботі`,
+    total: (usd: string) => `${usd} піде в роботу`,
     risk: 'Може бути в мінусі · стоп будь-коли · ключі в тебе',
     pay: (low, high) => `Платиш лише коли агент торгує · ${low}–${high}% з угоди`,
     noCredits: 'Ні підписки, ні кредитів за агента: на угоді він не питає ШІ',
     feeRates: (major, stock, trending, meme) => `Комісія з угоди — як у твоїх обмінах: основні ${major}%, xStocks ${stock}%, у тренді ${trending}%, нові монети ${meme}%`,
     short: (asset) => `У гаманці замало ${asset} для цього плану`,
+    add: (asset) => `Поповнити ${asset}`,
     paper: 'Спершу на папері',
     paperOn: 'На папері',
     paperLine: (days: number) => `На історії й сьогоднішніх ставках · ${days} дн.`,

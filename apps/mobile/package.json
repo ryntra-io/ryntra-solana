@@ -1,6 +1,6 @@
 {
   "name": "ryntra-mobile",
-  "version": "1.20.0",
+  "version": "1.21.0",
   "private": true,
   "description": "Ryntra for Android — the native client of the Solana trading and strategy platform.",
   "main": "./index.js",

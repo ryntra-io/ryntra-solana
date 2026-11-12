@@ -1,10 +1,14 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useLayoutEffect, useRef } from 'react';
+import { useBackPanel } from '@/city/lib/back/panels';
 import { BOT_TABS, useBotsWindow } from '@/city/lib/bots/open';
 import { useBots } from '@/city/lib/bots/store';
 import { LADDER_NET, useLadder } from '@/city/lib/bots/ladder';
 import { MANDATE_NET } from '@/city/lib/bots/mandate';
+import { noteLeftMs } from '@/city/lib/bots/note-hold';
+import { useFeedPanel } from '@/city/lib/feed/panel';
+import { topPanelTakesEscape } from '@/city/lib/hud/top-panels';
 import { startWallets, useWallet } from '@/city/lib/trade/wallet';
 import { Hangar } from './Hangar';
 import { History } from './History';
@@ -53,11 +57,13 @@ export default function BotsWindow() {
     return () => clearInterval(timer);
   }, [wallet]);
 
-  // Escape steps back from a bot's page or the newcomer's taps before it closes the window.
+  // Escape steps back from a bot's page or the newcomer's taps before it closes the window. A panel of the top bar
+  // open over the window — the events', the wallet's — closes first, alone: the page stays (CITY-240).
   useEffect(() => {
     const key = (event: KeyboardEvent) => {
       if (event.key !== 'Escape' || event.defaultPrevented) return;
       if (useBotsWindow.getState().tab !== 'launch' || useBots.getState().page.kind === 'home') return;
+      if (topPanelTakesEscape(useFeedPanel.getState().open, document)) return;
       event.preventDefault();
       useBots.getState().back();
     };
@@ -65,15 +71,56 @@ export default function BotsWindow() {
     return () => window.removeEventListener('keydown', key, true);
   }, []);
 
-  // The ladder's line under its action goes after a while; «costs changed» stays until the next tap answers it.
+  // «Back» of a phone and of a browser steps back the same way (CITY-236): from a bot's page — the ladder's — to the
+  // list, from the newcomer's second tap to the first; the window itself closes only from the list.
+  const paged = useBots((st) => st.page.kind !== 'home');
+  useBackPanel('bots-page', tab === 'launch' && paged, () => useBots.getState().back());
+
+  // The ladder's line under its action goes after a while — a «no» stays long enough to be read (CITY-237,
+  // `note-hold.ts`); «costs changed» stays until the next tap answers it. The time runs from when the line was said: a
+  // window opened again later does not bring an old line back.
   const ladderNote = useLadder((st) => st.note);
   useEffect(() => {
-    if (!ladderNote || ladderNote.kind === 'costsChanged') return;
+    const left = ladderNote ? noteLeftMs(ladderNote, Date.now()) : null;
+    if (!ladderNote || left === null) return;
     const timer = setTimeout(() => {
       if (useLadder.getState().note === ladderNote) useLadder.getState().say(null);
-    }, 8_000);
+    }, left);
     return () => clearTimeout(timer);
   }, [ladderNote]);
+
+  // A bot's page, a step of the newcomer's taps or another tab opens at its top, wherever the list was scrolled to
+  // (CITY-242: «GRID SOL/USDC» opened out of sight under the tabs); back on the list, the list is where it was left.
+  const body = useRef<HTMLDivElement>(null);
+  const listAt = useRef(0);
+  const view = useBots((st) => (st.page.kind === 'flow' ? `flow:${st.page.goal}:${st.page.step}` : st.page.kind));
+  const shownView = useRef(`${tab}:${view}`);
+  useLayoutEffect(() => {
+    const box = body.current;
+    const now = `${tab}:${view}`;
+    if (!box || now === shownView.current) return;
+    const was = shownView.current;
+    shownView.current = now;
+    const back = now === 'launch:home' && was.startsWith('launch:');
+    const want = back ? listAt.current : 0;
+    box.scrollTop = want;
+    if (!back) return;
+    // The list draws some of its parts a moment later (a phone's sheet), and until then the place is cut short: it is
+    // set again once they stand — from the place kept, not the shortened one the browser just reported.
+    const again = () => {
+      if (shownView.current === 'launch:home') box.scrollTop = want;
+    };
+    const frame = requestAnimationFrame(again);
+    const timer = setTimeout(again, 160);
+    return () => {
+      cancelAnimationFrame(frame);
+      clearTimeout(timer);
+    };
+  }, [tab, view]);
+  // Where the list stands, kept as it scrolls: by the time the page has changed, the list's own place is gone.
+  const keepListAt = () => {
+    if (shownView.current === 'launch:home' && body.current) listAt.current = body.current.scrollTop;
+  };
 
   useEffect(() => {
     if (!notice) return;
@@ -92,9 +139,10 @@ export default function BotsWindow() {
             </button>
           ))}
         </nav>
-        <span className={s.practice}>{MANDATE_NET === 'mainnet' ? w.mainnet : LADDER_NET || MANDATE_NET ? w.devnet : w.practice}</span>
+        {/* Mainnet is the city everywhere: no network word on the first screen (CITY-221); test money still says so. */}
+        {MANDATE_NET !== 'mainnet' && LADDER_NET !== 'mainnet' && <span className={s.practice}>{LADDER_NET || MANDATE_NET ? w.devnet : w.practice}</span>}
       </header>
-      <div className={s.body} data-tab={tab}>
+      <div ref={body} className={s.body} data-tab={tab} onScroll={keepListAt}>
         {tab === 'launch' ? <Hub coin={coin} /> : tab === 'hangar' ? <Hangar /> : tab === 'strategies' ? <Strategies /> : <History />}
       </div>
       {notice ? (

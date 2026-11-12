@@ -1,0 +1,113 @@
+/* The ladder before the signature (CITY-219): the sum, what every step gives, each step's price. In the window's
+   language — dark glass, thin rims, tabular digits; the window's one amber action stays below it. */
+
+.summary {
+  display: grid;
+  gap: 10px;
+  padding: 12px 14px;
+  border: 1px solid rgba(238, 241, 255, 0.1);
+  background: linear-gradient(180deg, rgba(153, 69, 255, 0.07), rgba(255, 255, 255, 0.02));
+}
+
+.figures {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+  align-items: end;
+  gap: 10px;
+}
+
+.figure {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+.figure span {
+  color: var(--text-dim);
+  font-size: var(--type-caption);
+  font-weight: 700;
+}
+
+.figure b {
+  color: var(--ice);
+  font-size: var(--type-lead);
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.figure:last-child {
+  text-align: right;
+}
+
+.figure:last-child b {
+  color: #8ff5c8;
+}
+
+.arrow {
+  width: 18px;
+  height: 1px;
+  margin-bottom: 11px;
+  background: rgba(238, 241, 255, 0.35);
+  position: relative;
+}
+
+.arrow::after {
+  content: '';
+  position: absolute;
+  right: 0;
+  top: -3px;
+  width: 6px;
+  height: 6px;
+  border-top: 1px solid rgba(238, 241, 255, 0.35);
+  border-right: 1px solid rgba(238, 241, 255, 0.35);
+  transform: rotate(45deg);
+}
+
+.steps {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.steps li {
+  padding: 3px 8px;
+  border: 1px solid rgba(255, 104, 28, 0.35);
+  border-radius: 999px;
+  color: var(--ice);
+  font-size: var(--type-caption);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+/* The network in one word before the signature (CITY-233): real SOL in the brand's amber, test SOL quiet. */
+.net {
+  font-weight: 700;
+  color: var(--ice);
+}
+
+.net[data-net='mainnet'] {
+  color: #ff8a4c;
+}
+
+.realChip {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 8px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 104, 28, 0.45);
+  background: rgba(255, 104, 28, 0.08);
+  color: #ff8a4c;
+  font-style: normal;
+  font-size: var(--type-micro);
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}

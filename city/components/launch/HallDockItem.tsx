@@ -4,6 +4,7 @@ import { playTick } from '@/city/lib/audio/engine';
 import { useCity } from '@/city/lib/city/store';
 import { useWords } from '@/city/lib/i18n/dict';
 import { hallShown, useHall } from '@/city/lib/launch/hall-store';
+import { HALL_WORDS } from '@/city/lib/launch/words';
 import s from '../hud/hud.module.css';
 import h from './hall.module.css';
 import { LAUNCH } from './words';
@@ -24,13 +25,14 @@ export function HallDockItem() {
   const shown = useHall(hallShown);
   const open = useHall((st) => st.panel);
   const w = useWords(LAUNCH);
+  const hint = useWords(HALL_WORDS).dockHint;
   if (!shown) return null;
   return (
     <button
       className={[s.dockItem, h.dockHall, open && s.dockOn].filter(Boolean).join(' ')}
       aria-label={w.hallOfFame}
       aria-pressed={open}
-      data-hint={w.hallHint}
+      data-hint={hint}
       onClick={() => {
         if (useCity.getState().sound) playTick();
         const hall = useHall.getState();

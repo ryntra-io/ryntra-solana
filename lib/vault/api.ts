@@ -3,7 +3,7 @@ import { mutationOriginAllowed } from "../security";
 import type { VaultErrorCode } from "./contract";
 import { errorLine, type VaultEngine } from "./engine";
 import type { VaultStore } from "./store";
-import { guestCookieHeader, guestOf, newGuest, readCookie, whoKey, VAULT_GUEST_COOKIE, type Who } from "./identity";
+import { forgetGuestHeader, guestCookieHeader, guestOf, newGuest, readCookie, whoKey, VAULT_GUEST_COOKIE, type Who } from "./identity";
 import { isVaultId } from "./levels";
 import type { WorldSink } from "./world";
 
@@ -14,7 +14,9 @@ import type { WorldSink } from "./world";
  * All three are closed (404) until the deployment's switch says `open` (`NEXT_PUBLIC_RYNTRA_CITY_VAULT`), so no model
  * is ever called for a vault people cannot see. An attempt comes from this site only, carries an `Idempotency-Key`
  * (a retried attempt gets the same answer and is counted once, with or without the guest cookie the first answer
- * made), and makes a guest for a person who has none. A store that cannot be reached is a 503, never a 500.
+ * made), and makes a guest for a person who has none. A guest who signs in with a wallet brings what they cracked: the
+ * first request that carries both hands the guest's progress to the account and drops the guest's cookie. A store that
+ * cannot be reached is a 503, never a 500.
  */
 
 export type WalletRead = { status: "ok"; accountId: string } | { status: "absent" } | { status: "unavailable" };
@@ -52,14 +54,18 @@ const STATUS: Record<string, Answer> = {
   GUARD_SILENT: failure(503, "GUARD_SILENT", "The guard didn't answer. This try didn't count."),
 };
 
-function respond(answer: Answer, requestUrl: string, cookie?: string | null): Response {
+/** The guest cookie to set, or `false` to drop it (its progress went to the wallet's account). */
+type CookieChange = string | false | null | undefined;
+
+function respond(answer: Answer, requestUrl: string, cookie?: CookieChange): Response {
   const headers = new Headers({ ...JSON_TYPE, ...privateNoStoreHeaders(), ...(answer.headers ?? {}) });
   if (cookie) headers.append("set-cookie", guestCookieHeader(cookie, requestUrl));
+  else if (cookie === false) headers.append("set-cookie", forgetGuestHeader(requestUrl));
   return new Response(JSON.stringify(answer.body), { status: answer.status, headers });
 }
 
 /** A replayed answer: the same status and body, marked as a replay, with the guest cookie it made if any. */
-function replay(stored: Kept, requestUrl: string, cookie: string | null): Response {
+function replay(stored: Kept, requestUrl: string, cookie: CookieChange): Response {
   const answer: Answer = { status: stored.status, body: stored.body, headers: { ...stored.headers, "idempotent-replayed": "true" } };
   return respond(answer, requestUrl, cookie);
 }
@@ -73,12 +79,26 @@ function unavailable(error: unknown, requestUrl: string): Response {
 export function createVaultApi(deps: VaultApiDeps) {
   const now = deps.now ?? Date.now;
 
-  /** Who is asking: the signed-in account, else the guest the cookie names; null for a first visit. */
-  async function identify(req: Request, secret: string): Promise<Who | null> {
+  /**
+   * Who is asking: the signed-in account, else the guest the cookie names; null for a first visit. A guest cookie
+   * beside a signed-in account is handed over to it once, and then dropped (`forget`).
+   */
+  async function identify(req: Request, secret: string, engine: VaultEngine): Promise<{ who: Who | null; forget: boolean }> {
     const account = await deps.wallet(req).catch((): WalletRead => ({ status: "unavailable" }));
-    if (account.status === "ok") return { kind: "wallet", id: account.accountId };
     const guest = guestOf(readCookie(req.headers.get("cookie"), VAULT_GUEST_COOKIE), secret);
-    return guest ? { kind: "guest", id: guest } : null;
+    if (account.status === "ok") {
+      const wallet: Who = { kind: "wallet", id: account.accountId };
+      if (!guest) return { who: wallet, forget: false };
+      try {
+        await engine.adopt({ kind: "guest", id: guest }, wallet);
+        return { who: wallet, forget: true };
+      } catch (error) {
+        // The guest keeps their progress and their cookie; the next request tries again.
+        console.error("[vault] guest not handed over", errorLine(error));
+        return { who: wallet, forget: false };
+      }
+    }
+    return { who: guest ? { kind: "guest", id: guest } : null, forget: false };
   }
 
   /** POST /api/vault/attempt — one message to a guard, or the phrase. */
@@ -108,8 +128,9 @@ export function createVaultApi(deps: VaultApiDeps) {
     if (typeof body.text !== "string") return respond(failure(400, "BAD_REQUEST", "The attempt is text."), req.url);
 
     try {
-      let who = await identify(req, secret);
-      let cookie: string | null = null;
+      const known = await identify(req, secret, engine);
+      let who = known.who;
+      let cookie: CookieChange = known.forget ? false : null;
       // A first visit's attempt is also kept under its key alone, with the guest it made: a retry that lost the
       // cookie gets the same answer and the same guest, and is counted once.
       const first = who ? null : `new:${key}`;
@@ -134,11 +155,14 @@ export function createVaultApi(deps: VaultApiDeps) {
       } else if (result.code === "RATE_LIMITED") {
         const message = result.window === "minute" ? "Three tries a minute. Catch your breath." : "That's today's 25 tries. The vaults reset at midnight UTC.";
         answer = { ...failure(429, "RATE_LIMITED", message, { window: result.window, retryAfterS: result.retryAfterS }), headers: { "Retry-After": String(result.retryAfterS) } };
+      } else if (result.code === "RESTING") {
+        const message = "The guards are resting. The door still opens to the phrase.";
+        answer = { ...failure(429, "RESTING", message, { retryAfterS: result.retryAfterS, guards: result.guards }), headers: { "Retry-After": String(result.retryAfterS) } };
       } else {
         answer = STATUS[result.code]!;
       }
-      // A guard that did not answer is not kept: the same key may try again.
-      if (answer.status < 500) {
+      // A guard that did not answer, or rests, is not kept: the same key may try again.
+      if (answer.status < 500 && !(result.ok === false && result.code === "RESTING")) {
         await deps.store.keepAnswer(kept, answer, now());
         if (first && cookie) await deps.store.keepAnswer(first, { ...answer, cookie } satisfies Kept, now());
       }
@@ -155,7 +179,8 @@ export function createVaultApi(deps: VaultApiDeps) {
     const secret = deps.secret();
     if (!engine || !secret) return respond(STATUS.unavailable!, req.url);
     try {
-      return respond({ status: 200, body: await engine.state(await identify(req, secret)) }, req.url);
+      const known = await identify(req, secret, engine);
+      return respond({ status: 200, body: await engine.state(known.who) }, req.url, known.forget ? false : null);
     } catch (error) {
       return unavailable(error, req.url);
     }

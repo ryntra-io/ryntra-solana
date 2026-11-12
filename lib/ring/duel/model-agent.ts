@@ -38,6 +38,7 @@ export type ModelAgentInput = {
 export function modelAgent(input: ModelAgentInput): DuelAgent {
   const { gateway, agent } = input;
   return {
+    timeoutMicroUsd: input.moveMicroUsd,
     async act(view: SeatView, signal: AbortSignal): Promise<AgentReply> {
       const crack = view.format === "duo-crack";
       const result = await gateway.call({
@@ -49,7 +50,9 @@ export function modelAgent(input: ModelAgentInput): DuelAgent {
         apiKey: input.apiKey,
         signal,
       });
-      const cost = result.costMicroUsd ?? (result.ok || result.usage ? input.moveMicroUsd : 0);
+      // A call cut by its time was already sent: OpenRouter may bill the whole move, so it counts at the full price.
+      const billed = result.ok || result.usage != null || result.error.kind === "timeout";
+      const cost = result.costMicroUsd ?? (billed ? input.moveMicroUsd : 0);
       if (!result.ok) {
         const fault = FAULT_OF[result.error.kind];
         if (result.error.kind === "timeout") return { kind: "fault", fault: "timeout", costMicroUsd: cost };

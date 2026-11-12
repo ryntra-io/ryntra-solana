@@ -1,13 +1,14 @@
 import { isArchetype, isFormat, isWeight, type Brain } from "./contract.ts";
 import type { MadeKey } from "./keys.ts";
 import type { RatingRecord } from "./rating.ts";
-import { RingStoreUnavailable, type AgentNext, type AgentRecord, type Changed, type KeyState, type RingStore } from "./store.ts";
+import { RingStoreUnavailable, type AgentNext, type AgentRecord, type Changed, type KeyState, type Ranked, type RingStore } from "./store.ts";
 
 /**
  * The Ring in the database: one call to one `public.ring_*` function per question, each gated by the app secret and
- * each one transaction (`supabase/migrations/20261027230000_ring_v1.sql`). Every server instance reads and writes the
- * same rows, so a garage slot holds one active agent however many creates arrive at once, and a change or a
- * switch-off happens at the version its owner saw, under the row's lock. The transport is the server's usual one
+ * each one transaction (`supabase/migrations/20261027230000_ring_v1.sql`, and for the Arena — «my agent», rivals, the
+ * board, rating writes and a sealed key read back for a match — `20261108120100_ring_v2_arena.sql`). Every server
+ * instance reads and writes the same rows, so a garage slot holds one active agent however many creates arrive at once,
+ * and a change or a switch-off happens at the version its owner saw, under the row's lock. The transport is the server's usual one
  * (`rpcResult`, which adds the secret); a test passes its own.
  */
 
@@ -62,6 +63,17 @@ function ratingOf(value: unknown): RatingRecord | null {
   if (typeof rating !== "number" || !Number.isFinite(rating) || ![games, wins, draws, losses, info].every(isCount)) return null;
   return { format: value.format, rating, games: games as number, wins: wins as number, draws: draws as number, losses: losses as number, info: info as number };
 }
+
+/** An agent with its rating in one format, as `ring_rivals` and `ring_board` give it. */
+function rankedOf(value: unknown, fn: string): Ranked {
+  if (!isRecord(value)) throw new RingStoreUnavailable(`${fn}: unreadable row`);
+  return { agent: agentOf(value.agent, fn), rating: value.rating === null || value.rating === undefined ? null : ratingOf(value.rating) };
+}
+
+const rowsOf = (data: Answer, fn: string): unknown[] => {
+  if (!Array.isArray(data.rows)) throw new RingStoreUnavailable(`${fn}: unreadable`);
+  return data.rows;
+};
 
 const brainArgs = (next: AgentNext) => ({
   p_archetype: next.archetype,
@@ -160,6 +172,48 @@ export function createSupabaseRingStore(rpc: RingRpc): RingStore {
 
     async keepAnswer(key, body, now) {
       await call("ring_keep_answer", { p_key: key, p_body: body, p_now: iso(now) });
+    },
+
+    async mine(owner) {
+      const data = await call("ring_mine", { p_owner: owner });
+      return rowsOf(data, "ring_mine").map((row) => agentOf(row, "ring_mine"));
+    },
+
+    async rivals(input) {
+      const data = await call("ring_rivals", { p_owner: input.owner, p_weight: input.weight, p_format: input.format, p_near: input.near, p_limit: input.limit });
+      return rowsOf(data, "ring_rivals").map((row) => rankedOf(row, "ring_rivals"));
+    },
+
+    async board(format, limit) {
+      const data = await call("ring_board", { p_format: format, p_limit: limit });
+      return rowsOf(data, "ring_board")
+        .map((row) => rankedOf(row, "ring_board"))
+        .filter((row): row is Ranked & { rating: RatingRecord } => row.rating !== null);
+    },
+
+    async rate(input, now) {
+      const { row } = input;
+      const data = await call("ring_rate", {
+        p_agent: input.agentId,
+        p_format: row.format,
+        p_model: input.brain.id,
+        p_provider: input.brain.provider,
+        p_before: input.before,
+        p_rating: row.rating,
+        p_games: row.games,
+        p_wins: row.wins,
+        p_draws: row.draws,
+        p_losses: row.losses,
+        p_info: row.info,
+        p_now: iso(now),
+      });
+      if (typeof data.written !== "boolean") throw new RingStoreUnavailable("ring_rate: unreadable");
+      return data.written;
+    },
+
+    async sealedKey(agentId, hash) {
+      const data = await call("ring_key_sealed", { p_agent: agentId, p_hash: hash });
+      return typeof data.sealed === "string" ? data.sealed : null;
     },
   };
 }

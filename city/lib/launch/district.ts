@@ -10,7 +10,8 @@ import type { Liftoff, Phase } from './flow.ts';
 import { cityLaunchOpen, cityPreset, cityPresets, type CityPresetId } from './gate.ts';
 import { createPrep, type Prep, type PrepState } from './prepare.ts';
 import { CITY_EARLY_ACCESS_SWITCH, type EarlyBounds, type EarlyChoice } from './early.ts';
-import type { ShareRow } from './share.ts';
+import { earlyFrom, httpEntryEngine, type EntryEngine } from './entry.ts';
+import { CITY_SHARE_SWITCH, type ShareRow } from './share.ts';
 import { cityStartPreset } from './shield.ts';
 import { launchesKey, MINE_KEEP_MS, shownLaunches, withLaunches, type LaunchTower } from './towers.ts';
 import { httpTradeEngine, type LaunchTradeEngine } from './trade.ts';
@@ -42,6 +43,11 @@ type DistrictState = {
   /** Launched from this browser, until the engine's list carries them. */
   mine: readonly LaunchTower[];
   sheet: boolean;
+  /**
+   * Counts every ask to open the sheet (CITY-242): the sheet is a window of the frame, and an ask while it stands
+   * behind another window — an agent's «Launch», a sentence, «Launch another» from the berth — brings it to the front.
+   */
+  opened: number;
   step: SheetStep;
   draft: Draft;
   phase: Phase | null;
@@ -56,7 +62,18 @@ type DistrictState = {
   earlyBounds: EarlyBounds | null;
   /** The city's switch for early access: the deployment's, or the stand's `&early=open` for the shots. */
   earlySwitch: boolean;
+  /** CITY-220: the city's switch for «Share earnings»: the deployment's; open on the stand unless `&share=closed`. */
+  shareSwitch: boolean;
   early: EarlyChoice | null;
+  /** CITY-220: the early launch whose window is open for its people — from the creator's link (`?early=`) — or null. */
+  entry: string | null;
+  /**
+   * CITY-236: the early window has a step out in the wallet or on its way (the deposit, the buy for everyone, the
+   * tokens, the rest back). «Back» and Escape wait then, as they do under the sheet's signature.
+   */
+  entryBusy: boolean;
+  openEntry: (mint: string) => void;
+  closeEntry: () => void;
   setShares: (shares: readonly ShareRow[]) => void;
   setEarly: (early: EarlyChoice | null) => void;
   setDraft: (draft: Partial<Draft>) => void;
@@ -79,6 +96,7 @@ export const useLaunch = create<DistrictState>((set) => ({
   feed: [],
   mine: [],
   sheet: false,
+  opened: 0,
   step: 'form',
   draft: EMPTY,
   phase: null,
@@ -88,7 +106,23 @@ export const useLaunch = create<DistrictState>((set) => ({
   shares: [],
   earlyBounds: null,
   earlySwitch: CITY_EARLY_ACCESS_SWITCH,
+  shareSwitch: CITY_SHARE_SWITCH,
   early: null,
+  entry: null,
+  entryBusy: false,
+  openEntry: (mint) => {
+    useCity.getState().select(null);
+    set({ entry: mint, sheet: false, entryBusy: false });
+  },
+  closeEntry: () => {
+    /* Closed is closed: a reload does not open it again from the link it came by. */
+    if (typeof window !== 'undefined' && new URLSearchParams(window.location.search).has('early')) {
+      const url = new URL(window.location.href);
+      url.searchParams.delete('early');
+      window.history.replaceState(window.history.state, '', url);
+    }
+    set({ entry: null, entryBusy: false });
+  },
   setShares: (shares) => set({ shares }),
   setEarly: (early) => set({ early }),
   setDraft: (draft) => set((state) => ({ draft: { ...state.draft, ...draft } })),
@@ -99,7 +133,7 @@ export const useLaunch = create<DistrictState>((set) => ({
   choosePreset: (id) => set((state) => ({ preset: cityPresets({ presets: state.presets })[id] ?? state.preset })),
   openSheet: () => {
     useCity.getState().select(null);
-    set((state) => ({ sheet: true, ...(state.phase?.step === 'done' || state.phase?.step === 'opened' ? { phase: null, step: 'form' as const, draft: EMPTY, shares: [], early: null } : {}) }));
+    set((state) => ({ sheet: true, opened: state.opened + 1, entry: null, ...(state.phase?.step === 'done' || state.phase?.step === 'opened' ? { phase: null, step: 'form' as const, draft: EMPTY, shares: [], early: null } : {}) }));
   },
   closeSheet: () => set((state) => ({ sheet: false, ...(state.phase?.step === 'failed' ? { phase: null } : {}) })),
 }));
@@ -183,6 +217,27 @@ export function launchTradeEngine(): Promise<LaunchTradeEngine> {
   return made;
 }
 
+let entryEngine: Promise<EntryEngine> | null = null;
+const loadEntryStub = process.env.NODE_ENV === 'production' ? null : () => import('./entry-stub.ts');
+
+/**
+ * The engine's early-access routes for the people's window (CITY-220): over HTTP, or the stand-in's beside the stub
+ * engine (`&entry=join` and the other phases of `entry-stub.ts`).
+ */
+export function launchEntryEngine(): Promise<EntryEngine> {
+  if (entryEngine) return entryEngine;
+  const phase = typeof window === 'undefined' ? null : new URLSearchParams(window.location.search).get('entry');
+  const made =
+    useLaunch.getState().stub && loadEntryStub
+      ? loadEntryStub().then((stub) => stub.stubEntryEngine({ phase: (['soon', 'join', 'fill', 'wait', 'claim', 'refund', 'done'] as const).find((known) => known === phase) ?? 'join', delayMs: 450 * stubPace() }))
+      : Promise.resolve(httpEntryEngine());
+  entryEngine = made;
+  made.catch(() => {
+    if (entryEngine === made) entryEngine = null;
+  });
+  return made;
+}
+
 let prep: Prep | null = null;
 
 /**
@@ -219,10 +274,16 @@ async function boot() {
     const stub = await loadStub();
     engine = stub.stubEngine({ delayMs: 650 * stubPace(), refuse: stubRefusals() });
     /* The stand opens early access only when asked (`&early=open`): shut by default there too. */
-    useLaunch.setState({ stub: true, earlySwitch: CITY_EARLY_ACCESS_SWITCH || new URLSearchParams(window.location.search).get('early') === 'open' });
+    const asked = new URLSearchParams(window.location.search);
+    useLaunch.setState({ stub: true, earlySwitch: CITY_EARLY_ACCESS_SWITCH || asked.get('early') === 'open', shareSwitch: asked.get('share') !== 'closed' });
     /* The stand-in's trade routes load with it, not on the first tap. */
     void launchTradeEngine().catch(() => undefined);
   }
+  /* The creator's link to an early launch opens its people's window (CITY-220); the stand opens its own with `&entry=`. */
+  const asked = new URLSearchParams(window.location.search);
+  const early = earlyFrom(window.location.search);
+  if (early) useLaunch.getState().openEntry(early);
+  else if (useLaunch.getState().stub && asked.get('entry') && loadEntryStub) useLaunch.getState().openEntry((await loadEntryStub()).ENTRY_STUB_MINT);
   const source = launchEngine();
   useLaunch.subscribe((state, before) => {
     if (state.feed !== before.feed || state.mine !== before.mine) mergeIntoCity();
@@ -230,7 +291,7 @@ async function boot() {
   useCity.subscribe((state, before) => {
     if (state.snapshot !== before.snapshot) mergeIntoCity();
     /* A tower picked in the city closes the sheet; what was typed stays for the next time it opens. */
-    if (state.selectedId && state.selectedId !== before.selectedId && useLaunch.getState().sheet) useLaunch.setState({ sheet: false });
+    if (state.selectedId && state.selectedId !== before.selectedId && (useLaunch.getState().sheet || useLaunch.getState().entry)) useLaunch.setState({ sheet: false, entry: null });
   });
   setInterval(playNext, 500);
   /* The launches are read only where the engine serves Launch. */
@@ -316,7 +377,7 @@ function playNext() {
   if (!waiting.length) return;
   const city = useCity.getState();
   /* The line holds while a card or the sheet is open, and while a run plays. */
-  if (!city.entered || city.selectedId || useLaunch.getState().sheet || useRun.getState().phase !== 'off') return;
+  if (!city.entered || city.selectedId || useLaunch.getState().sheet || useLaunch.getState().entry || useRun.getState().phase !== 'off') return;
   if (Date.now() - (city.feed[0]?.at ?? 0) < GAP_MS) return;
   const next = waiting.shift()!;
   if (city.layout.towers.some((placed) => placed.tower.id === next.draft.towerId)) city.play(next.draft);

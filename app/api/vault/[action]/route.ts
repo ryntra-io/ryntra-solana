@@ -2,6 +2,7 @@ import { vaultApi } from "@/lib/vault/server";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
+export const maxDuration = 30;
 
 /*
  * The Vault's three routes in one handler — POST /attempt, GET /state, GET /feed. Instances do not share memory, so a

@@ -1,6 +1,6 @@
 import { randomBytes } from "node:crypto";
 
-import type { AttemptResponse, FeedResponse, Limits, PublicEntry, VaultState, VaultView } from "./contract";
+import type { AttemptResponse, FeedResponse, Guards, Limits, PublicEntry, VaultState, VaultView } from "./contract";
 import { exposure, named, publicCopy } from "./detect";
 import { feedTag, networkOf, whoKey, type Who } from "./identity";
 import { guardOf, TITLE, VAULT_IDS, VAULTS, type VaultId } from "./levels";
@@ -8,7 +8,7 @@ import { ModelFailure, type ModelGateway } from "./model";
 import { isPhrase, phraseOf } from "./phrase";
 import { GUARD_TIMEOUT_MS, MAX_REPLY_CHARS, guardCall } from "./rules";
 import { screen, tidy, type EncodingKind } from "./screen";
-import { crackedOn, dayStart, type FeedEntry, type Progress, type VaultStore, type Window } from "./store";
+import { crackedOn, dayStart, fits, type Caps, type FeedEntry, type Pool, type Progress, type VaultStore, type Window } from "./store";
 import type { VaultWorldEvent } from "./world";
 
 /**
@@ -22,6 +22,10 @@ import type { VaultWorldEvent } from "./world";
  *   4. The phrase itself, typed, cracks the vault; the guard is not asked.
  *   5. Anything else is a new conversation with the guard — its rules and this one message, no tools. A guard that
  *      does not answer in time costs the person nothing: the attempt is given back.
+ *      Before the call its worst case is set aside against the day's dollar ceiling (guests together may use 70 % of
+ *      it, so a person signed in with a wallet always finds a guard awake); after it, the real cost is booked. When the
+ *      day's ceiling is reached the guards rest until midnight UTC — the door still opens to the phrase, the attempt
+ *      is given back — and after a failure that will not pass by itself (no key, no credits) they rest ten minutes.
  *   6. The detector reads the reply: the person sees it as it is (from level 3 masked), the feed sees it masked, and
  *      the attempt itself joins the feed ten minutes later, masked. Masked means every word of the dictionary, not only
  *      the phrase's, so nothing public tells the phrase's words from the rest; and the pressure counts only the
@@ -42,12 +46,21 @@ export const ATTEMPT_DELAY_MS = 10 * 60_000;
 export const FEED_PAGE = 20;
 /** The daily vault's days kept on a person's progress. */
 const DAILY_DAYS_KEPT = 31;
+/** What guests together may use of the day's ceiling; the rest is kept for people signed in with a wallet. */
+export const GUEST_SHARE = 0.7;
+/** How long the guards rest after a failure that will not pass by itself (no key, no credits, no model). */
+export const REST_MS = 10 * 60_000;
+/** What one call is taken to cost before any was priced, to say whether the guards are awake. */
+export const NOMINAL_CALL_MICRO_USD = 2_500;
+const DAY_MS = 86_400_000;
 
 export type AttemptInput = { who: Who; address: string; vault: VaultId; text: string };
 
 export type AttemptRefusal =
   | { ok: false; code: "LOCKED" | "EMPTY" | "TOO_LONG" | "GUARD_SILENT" }
-  | { ok: false; code: "RATE_LIMITED"; window: Window["name"]; retryAfterS: number };
+  | { ok: false; code: "RATE_LIMITED"; window: Window["name"]; retryAfterS: number }
+  /** The guards rest: the day's ceiling is reached, or the model needs a person. Nothing was counted. */
+  | { ok: false; code: "RESTING"; guards: Guards; retryAfterS: number };
 
 export type AttemptResult = { ok: true; response: AttemptResponse; event: VaultWorldEvent | null } | AttemptRefusal;
 
@@ -56,12 +69,23 @@ export type EngineDeps = {
   store: VaultStore;
   /** The server's signing secret: phrases and feed tags are made from it. */
   secret: string;
+  /**
+   * The day's ceiling on what the guards' model may spend, in millionths of a dollar. None only where the model costs
+   * nothing to anyone (tests); a deployment does not open without one (`ready.ts`).
+   */
+  ceilingMicroUsd?: number | null;
   now?: () => number;
   /** Random ids: feed entries, fence marks, trace ids. */
   newId?: () => string;
 };
 
 export const dayOf = (now: number) => new Date(now).toISOString().slice(0, 10);
+
+/** Whose share of the day's ceiling a person's calls come from. */
+export const poolOf = (who: Who | null): Pool => (who?.kind === "wallet" ? "wallet" : "guest");
+
+/** The day's ceiling, shared: everything, and the guests' part of it. */
+export const capsOf = (ceiling: number): Caps => ({ total: ceiling, guest: Math.floor(ceiling * GUEST_SHARE) });
 
 const openTo = (progress: Progress, vault: VaultId) => {
   const after = VAULTS[vault].after;
@@ -87,6 +111,25 @@ export function createVaultEngine(deps: EngineDeps) {
   const newId = deps.newId ?? (() => randomBytes(9).toString("base64url"));
 
   const phrase = (vault: VaultId, day: string) => phraseOf(deps.secret, vault, day, VAULTS[vault].words);
+  const ceiling = deps.ceilingMicroUsd ?? null;
+  /** Until when the guards rest after a lasting failure (this instance's own knowledge; ms). */
+  let restUntil = 0;
+  /** The last worst case priced: what the next call is taken to cost. */
+  let lastWorst = NOMINAL_CALL_MICRO_USD;
+
+  const awake: Guards = { awake: true, wakesAt: null, walletsAwake: true };
+
+  /** Whether the guards answer this person now, and if not, until when they rest. */
+  async function guards(who: Who | null, at: number): Promise<Guards> {
+    if (restUntil > at) return { awake: false, wakesAt: new Date(restUntil).toISOString(), walletsAwake: false };
+    if (ceiling === null) return awake;
+    const spent = await deps.store.spent(dayOf(at));
+    const caps = capsOf(ceiling);
+    if (fits(spent, poolOf(who), lastWorst, caps)) return awake;
+    return { awake: false, wakesAt: new Date(dayStart(at) + DAY_MS).toISOString(), walletsAwake: fits(spent, "wallet", lastWorst, caps) };
+  }
+
+  const secondsTo = (iso: string | null, at: number) => (iso ? Math.max(1, Math.ceil((Date.parse(iso) - at) / 1000)) : 60);
 
   async function limits(who: Who | null, at: number): Promise<Limits> {
     if (!who) return { minute: { left: PERSON_LIMITS[0]!.limit, resetS: 0 }, day: { left: PERSON_LIMITS[1]!.limit, resetS: 0 } };
@@ -108,9 +151,10 @@ export function createVaultEngine(deps: EngineDeps) {
     const progress = who ? await deps.store.progress(whoKey(who)) : { cracked: {}, dailyDays: [], points: 0, title: null };
     return {
       day,
-      resetsAt: new Date(dayStart(at) + 86_400_000).toISOString(),
+      resetsAt: new Date(dayStart(at) + DAY_MS).toISOString(),
       vaults: views(progress, day),
       me: { points: progress.points, title: progress.title, limits: await limits(who, at) },
+      guards: await guards(who, at),
     };
   }
 
@@ -159,15 +203,61 @@ export function createVaultEngine(deps: EngineDeps) {
         };
       }
     } else {
-      const traceId = newId();
-      let said: string;
-      try {
-        const call = guardCall({ vault: input.vault, guard: guardOf(input.vault, day), strictness: def.strictness, words, text, mark: newId(), traceId });
-        said = (await withTimeout(deps.model.call(call), GUARD_TIMEOUT_MS + 1_000)).text;
-      } catch (error) {
-        if (!(error instanceof ModelFailure)) console.error("[vault] guard call failed", errorLine(error));
+      const giveBack = async () => {
         await deps.store.giveBack(key, person.ticket);
         await deps.store.giveBack(network, address.ticket);
+      };
+      const resting = async (): Promise<AttemptRefusal> => {
+        await giveBack();
+        const now = await guards(input.who, at);
+        return { ok: false, code: "RESTING", guards: now, retryAfterS: secondsTo(now.wakesAt, at) };
+      };
+      if (restUntil > at) return resting();
+
+      const pool = poolOf(input.who);
+      const call = guardCall({ vault: input.vault, guard: guardOf(input.vault, day), strictness: def.strictness, words, text, mark: newId(), traceId: newId() });
+      // What is set aside for this call against the day's ceiling, and booked once it is known.
+      let reserved = 0;
+      // Awaited, so a serverless instance never freezes before the day's book is right; a failure here keeps the worst
+      // case set aside, never less, and does not fail the attempt.
+      const book = async (cost: number) => {
+        if (ceiling === null || cost === reserved) return;
+        const settled = await deps.store.settle(day, pool, cost - reserved, capsOf(ceiling)).catch((error: unknown) => {
+          console.error("[vault] spend not booked", errorLine(error));
+          return null;
+        });
+        // The day stays at its ceiling: what a call cost past it is said here, and the guards rest until midnight.
+        if (settled && settled.over > 0) console.error("[vault] a call cost past the day's ceiling", `${settled.over} micro-USD not booked`, pool);
+      };
+      let said: string;
+      try {
+        if (ceiling !== null && deps.model.worstCase) {
+          reserved = Math.max(0, Math.ceil(await deps.model.worstCase(call)));
+          lastWorst = Math.max(reserved, 1);
+          const room = await deps.store.reserve(day, pool, reserved, capsOf(ceiling));
+          if (!room.ok) {
+            reserved = 0;
+            return resting();
+          }
+        }
+        const answer = await withTimeout(deps.model.call(call), GUARD_TIMEOUT_MS + 1_000);
+        await book(answer.costMicroUsd ?? reserved);
+        said = answer.text;
+      } catch (error) {
+        if (error instanceof ModelFailure) {
+          // A known cost is booked; a timeout may still be billed, so its worst case stays; a call refused before it
+          // reached the model cost nothing.
+          await book(error.costMicroUsd ?? (error.reason === "timeout" ? reserved : 0));
+          if (error.lasting) {
+            console.error("[vault] the guards rest", errorLine(error));
+            restUntil = at + REST_MS;
+            return resting();
+          }
+        } else {
+          await book(reserved);
+          console.error("[vault] guard call failed", errorLine(error));
+        }
+        await giveBack();
         return { ok: false, code: "GUARD_SILENT" };
       }
       reply = cut(said);
@@ -201,7 +291,13 @@ export function createVaultEngine(deps: EngineDeps) {
         encoding,
         award: earned ? { points: earned.points, title: earned.event.title } : null,
         entry: publicEntry(entry, at),
-        state: { day, resetsAt: new Date(dayStart(at) + 86_400_000).toISOString(), vaults: views(progress, day), me: { points: progress.points, title: progress.title, limits: await limits(input.who, at) } },
+        state: {
+          day,
+          resetsAt: new Date(dayStart(at) + DAY_MS).toISOString(),
+          vaults: views(progress, day),
+          me: { points: progress.points, title: progress.title, limits: await limits(input.who, at) },
+          guards: await guards(input.who, at),
+        },
       },
     };
   }
@@ -214,7 +310,26 @@ export function createVaultEngine(deps: EngineDeps) {
     return { vault, entries: page, next: entries.length > FEED_PAGE ? page[page.length - 1]!.id : null };
   }
 
-  return { attempt, state, feed, phrase };
+  /**
+   * A guest who signs in with a wallet keeps what they cracked: the guest's progress leaves the books once and each of
+   * its cracks is recorded on the wallet's account, paying only what the account has not cracked yet (today's daily
+   * vault, every practice level ever). True when there was something to hand over.
+   */
+  async function adopt(guest: Who, wallet: Who): Promise<boolean> {
+    if (guest.kind !== "guest" || wallet.kind !== "wallet") return false;
+    // The wallet's cracks first — each is recorded once, however often this runs — then the guest's row leaves the
+    // books: a failure between the two steps loses nothing, and a second sign-in finds nothing more to hand over.
+    const held = await deps.store.progress(whoKey(guest));
+    const at = now();
+    for (const id of VAULT_IDS) {
+      const day = held.cracked[id];
+      if (!day || (id === "daily" && day !== dayOf(at))) continue;
+      await deps.store.crack(whoKey(wallet), { vault: id, day, points: VAULTS[id].points, title: id === "practice-3" ? TITLE : null, keepDays: DAILY_DAYS_KEPT }, at);
+    }
+    return (await deps.store.release(whoKey(guest))) !== null;
+  }
+
+  return { attempt, state, feed, phrase, adopt };
 }
 
 /**

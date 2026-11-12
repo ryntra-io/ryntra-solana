@@ -9,8 +9,11 @@ import type { Tower } from '@/city/lib/market/types';
 import { colourOf } from '@/city/lib/trade/colour';
 import { decimalsOf, figuresOf, friendDiscountOf, type Figures } from '@/city/lib/trade/figures';
 import { formatUnits, ticker } from '@/city/lib/trade/format';
+import { MONEY_OPEN } from '@/city/lib/money/flag';
+import { openMoney } from '@/city/lib/money/open';
 import { SPOT_OPEN, TRADE_OPEN } from '@/city/lib/trade/gates';
 import { SPOT_IDLE, useSpot } from '@/city/lib/trade/spot-store';
+import { offersTopUp, problemLine } from '@/city/lib/trade/top-up';
 import { balanceOf, choiceOf, payKey, reviewNotes, useTrade, type Choice, type Mode, type Review, type TowerRef } from '@/city/lib/trade/store';
 import { sellLine, sellWords, towerRank, type SellLine } from '@/city/lib/trade/tower-window';
 import { isBase, unitOf, type PayAsset, type Side } from '@/city/lib/trade/tiles';
@@ -30,7 +33,7 @@ import { CoinFacts, CoinPrice, ShareTower } from './CoinFacts';
 import { CoinPicker, type PickerKind } from './CoinPicker';
 import { SpotTicket } from './SpotTicket';
 import { DockGet } from './DockGet';
-import { useWalletName, WalletLine, WalletPicker } from './WalletParts';
+import { useHoldingsWatch, useWalletName, WalletLine, WalletPicker } from './WalletParts';
 import { riskWords, TRADE, type TextKeyOfTrade } from './words';
 import s from './trade.module.css';
 
@@ -319,6 +322,8 @@ function MarketPart({ tower, choice, getChips }: { tower: TowerRef; choice: Choi
   const [picking, setPicking] = useState(false);
   const [details, setDetails] = useState(false);
   const getRef = useRef<HTMLDivElement>(null);
+  // The row that names it: while it shows above the dock, the dock's line carries only the figure (CITY-221).
+  const getRowRef = useRef<HTMLDivElement>(null);
 
   const shown = review && review.key === choice.key ? review : null;
   const priced = quote.status === 'ready' && quote.key === choice.key ? quote.body : null;
@@ -345,9 +350,13 @@ function MarketPart({ tower, choice, getChips }: { tower: TowerRef; choice: Choi
     else setPicking(true);
   };
 
+  // An empty wallet: the action is «Add SOL», and the balance's own sentence is not said beside it (CITY-239).
+  const topUp = offersTopUp({ connected: Boolean(connection), side, max: choice.sizing.max, moneyOpen: MONEY_OPEN });
+  const problem = problemLine(choice.problem, topUp);
+
   return (
     <>
-      <div className={s.row}>
+      <div ref={getRowRef} className={s.row}>
         <span className={s.labelGroup}>
           <span className={s.label}>{figures && !shown ? w.youGetAbout : w.youGet}</span>
           {getChips}
@@ -373,18 +382,18 @@ function MarketPart({ tower, choice, getChips }: { tower: TowerRef; choice: Choi
       {picking && !connection ? (
         <>
           {figures && <Terms figures={figures} off={off} exact={Boolean(shown)} getSymbol={getSymbol} open={details} onInfo={() => setDetails((v) => !v)} />}
-          <Notes review={shown} problem={choice.problem?.text ?? null} quoteError={quote.status === 'error' && quote.key === choice.key ? quote.refusal.message : null} notice={notice} />
+          <Notes review={shown} problem={problem} quoteError={quote.status === 'error' && quote.key === choice.key ? quote.refusal.message : null} notice={notice} />
           <WalletPicker onBack={() => setPicking(false)} />
         </>
       ) : (
         <div className={s.dock}>
           {figures && !choice.problem && (
-            <DockGet target={getRef} label={shown ? w.youGet : w.youGetAbout}>
+            <DockGet target={getRef} named={getRowRef} label={shown ? w.youGet : w.youGetAbout}>
               <b className={s.display}>{digits(figures.get)}</b> {getSymbol}
             </DockGet>
           )}
           {figures && <Terms figures={figures} off={off} exact={Boolean(shown)} getSymbol={getSymbol} open={details} onInfo={() => setDetails((v) => !v)} />}
-          <Notes review={shown} problem={choice.problem?.text ?? null} quoteError={quote.status === 'error' && quote.key === choice.key ? quote.refusal.message : null} notice={notice} />
+          <Notes review={shown} problem={problem} quoteError={quote.status === 'error' && quote.key === choice.key ? quote.refusal.message : null} notice={notice} />
           <Action choice={choice} side={side} tower={tower} exact={Boolean(shown)} priced={Boolean(priced)} quoteFailed={quote.status === 'error' && quote.key === choice.key && quote.refusal.retryable} onPress={tap} onRetry={() => void refreshQuote()} />
         </div>
       )}
@@ -469,8 +478,8 @@ function Terms({ figures, off, exact, getSymbol, open, onInfo }: { figures: Figu
         ) : (
           w.noRyntraFee
         )}
-        {' · '}
-        {figures.route}
+        {/* The venues («Raydium CLMM + 2 more») wait behind «i» with the rest of the breakdown: the line before the press
+            is the fee, the least you get and the impact (CITY-221). */}
         {exact && (
           <>
             {' · '}
@@ -576,6 +585,9 @@ function Action({
   const connection = useWallet((st) => st.connection);
   const connecting = useWallet((st) => st.connecting);
   const verb = side === 'buy' ? w.buyOf(ticker(tower.symbol)) : w.sellOf(ticker(tower.symbol));
+  // A connected wallet with nothing to buy with: its balance is read again while the ticket offers the top-up.
+  const empty = offersTopUp({ connected: Boolean(connection), side, max: choice.sizing.max, moneyOpen: MONEY_OPEN });
+  useHoldingsWatch(empty);
   let label = verb;
   let disabled = false;
   let waiting = false;
@@ -584,6 +596,13 @@ function Action({
   else if (phase === 'sending') [label, disabled, waiting] = [w.sending, true, true];
   else if (phase === 'checking') [label, disabled, waiting] = [w.readingNetwork, true, true];
   else if (connecting) [label, disabled, waiting] = [w.connecting, true, true];
+  // A connected wallet with nothing to buy with (CITY-237): «Not enough SOL» stood there as a dead button — the one
+  // action is now the way to get some, Money's top-up. Money shut on this deployment: the old words, as before.
+  else if (empty) return (
+    <button className={`${s.display} ${s.action}`} onClick={() => openMoney('topup')} data-trade-topup="">
+      {w.addOf(choice.spendUnit)}
+    </button>
+  );
   else if (choice.problem?.kind === 'balance') [label, disabled] = [w.notEnough(choice.spendUnit), true];
   else if (choice.problem) [label, disabled] = [verb, true];
   else if (!connection) label = w.connectWallet;

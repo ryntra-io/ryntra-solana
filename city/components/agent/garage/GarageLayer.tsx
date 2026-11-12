@@ -99,6 +99,8 @@ function Layer() {
       title: name,
       icon: <AgentGlyph />,
       render: () => <GarageWindow mine={mine} live={live} reminders={list} />,
+      // No towers yet: as tall as its contents (CITY-221); with towers, the report and heads-ups fill the pane.
+      fit: mine.length === 0,
       size: { width: 420, height: 640 },
       min: { width: 340, height: 420 },
       onClose: closeGarage,

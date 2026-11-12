@@ -1,6 +1,10 @@
 import { words } from '../../../lib/i18n/dict.ts';
+import type { EntryWord } from '../../../lib/ring/arena.ts';
 
-/** The words of the Ring's duels (CITY-51): the window, its two formats, the result and «Details». */
+/**
+ * The words of the Ring's window (CITY-51, CITY-217): its three tabs — the fight in two formats with its result and
+ * «Details», the agent, the board.
+ */
 export const DUEL_UI = words(
   {
     title: 'Ring',
@@ -49,6 +53,32 @@ export const DUEL_UI = words(
     buy: (pct: string) => `Buy ${pct}`,
     sell: (pct: string) => `Sell ${pct}`,
     hold: 'Hold',
+    tabFight: 'Fight',
+    tabAgent: 'Agent',
+    tabBoard: 'Rating',
+    rated: 'Rated',
+    rival: 'Rival',
+    connect: 'Connect wallet',
+    connecting: 'Connecting…',
+    signInNow: 'Sign in',
+    checkWallet: 'Check your wallet',
+    noRival: 'No rival in your class is free. Practice meanwhile.',
+    dailyCap: 'The Ring is full for today. Back tomorrow.',
+    format: 'Your agent’s brain can’t play this one.',
+    latest: 'Latest fights',
+    watch: (a: string, b: string) => `Watch ${a} against ${b}`,
+    liveNow: 'Live',
+    newFight: 'New fight',
+    yourAgent: 'Your agent',
+    makeYours: 'Make your agent',
+    toFight: 'To the fight',
+    boardEmpty: 'No rated fights yet',
+    fightForRating: 'Fight for rating',
+    record: (w: number, d: number, l: number) => `${w}–${d}–${l}`,
+    rating: (n: string) => `Rating ${n}`,
+    newcomer: 'New',
+    readFailed: 'Could not load. Try again.',
+    tryAgain: 'Try again',
   },
   {
     title: 'Ринг',
@@ -97,5 +127,34 @@ export const DUEL_UI = words(
     buy: (pct: string) => `Купити ${pct}`,
     sell: (pct: string) => `Продати ${pct}`,
     hold: 'Тримати',
+    tabFight: 'Бій',
+    tabAgent: 'Агент',
+    tabBoard: 'Рейтинг',
+    rated: 'На рейтинг',
+    rival: 'Суперник',
+    connect: 'Підключити гаманець',
+    connecting: 'Підключаємо…',
+    signInNow: 'Увійти',
+    checkWallet: 'Перевір гаманець',
+    noRival: 'Вільного суперника твого класу немає. Потренуйся поки що.',
+    dailyCap: 'На сьогодні Ринг заповнений. Повертайся завтра.',
+    format: 'Мозок твого агента тут не грає.',
+    latest: 'Останні бої',
+    watch: (a: string, b: string) => `Дивитися: ${a} проти ${b}`,
+    liveNow: 'Наживо',
+    newFight: 'Новий бій',
+    yourAgent: 'Твій агент',
+    makeYours: 'Створити свого агента',
+    toFight: 'До бою',
+    boardEmpty: 'Ще немає боїв на рейтинг',
+    fightForRating: 'Битися на рейтинг',
+    record: (w: number, d: number, l: number) => `${w}–${d}–${l}`,
+    rating: (n: string) => `Рейтинг ${n}`,
+    newcomer: 'Новачок',
+    readFailed: 'Не вдалося завантажити. Спробуй ще раз.',
+    tryAgain: 'Ще раз',
   },
 );
+
+/** The words of the one button for a person who is not signed in: a connected wallet is asked to sign in, not to connect. */
+export const ENTRY_WORDS: Readonly<Record<EntryWord, 'connect' | 'connecting' | 'signInNow' | 'checkWallet'>> = { connect: 'connect', connecting: 'connecting', signIn: 'signInNow', checkWallet: 'checkWallet' };

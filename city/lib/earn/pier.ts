@@ -313,6 +313,17 @@ export function rangePrices(low: number, high: number): Readonly<{ low: string; 
   while (places < 10 && low.toFixed(places) === high.toFixed(places)) places += 1;
   // Once places had to be added to tell them apart, one more says where each edge really sits.
   if (places > start) places = Math.min(10, places + 1);
-  const text = (v: number) => (v >= 1000 ? v.toLocaleString('en-US', { maximumFractionDigits: 0 }) : Number(v.toFixed(places)).toString());
+  // Written out to its places, trailing zeros dropped — never «3.7e-7» for a coin priced under a millionth (CITY-243).
+  const text = (v: number) => (v >= 1000 ? v.toLocaleString('en-US', { maximumFractionDigits: 0 }) : v.toFixed(places).replace(/\.?0+$/, ''));
   return { low: text(low), high: text(high) };
+}
+
+/**
+ * A position's range as one mark, «1.2583 – 1.2623», the English way (`digits` makes it the screen's): what tells two
+ * positions of one pair apart in a list (CITY-243). Null on the plain curve or a range that is not one.
+ */
+export function rangeMark(lower: number | null, upper: number | null): string | null {
+  if (lower === null || upper === null || !(lower > 0) || !(upper > lower)) return null;
+  const { low, high } = rangePrices(lower, upper);
+  return `${low} – ${high}`;
 }

@@ -2,7 +2,8 @@
 
 import { useEffect, useMemo } from 'react';
 import { RISK } from '@/city/lib/earn/flag';
-import { lamportsOf, LSTS, lstOf, percentText, solText } from '@/city/lib/earn/lst';
+import { lamportsOf, LSTS, lstOf, percentText as percentRaw, solText as solRaw } from '@/city/lib/earn/lst';
+import { digits } from '@/city/lib/i18n/dict';
 import { useEarn } from '@/city/lib/earn/open';
 import { entryCostPct, exitSpreadPct, lamportsFromText, saverLine, yearAtRate } from '@/city/lib/earn/saver';
 import { saverChoice, SAVER_BUSY, useSaver } from '@/city/lib/earn/saver-store';
@@ -17,6 +18,9 @@ import s from './earn.module.css';
 /** With a wallet, the exact order follows the price after this pause, once per amount. */
 const AUTO_ORDER_MS = 450;
 
+/** The Saver's figures in the language on screen (CITY-243): never «5.06%» beside «0,5 SOL». */
+const solText = (lamports: bigint | null, signed = false) => digits(solRaw(lamports, signed));
+const percentText = (value: number | null) => digits(percentRaw(value));
 const pct = (value: number | null) => (value === null ? '—' : percentText(value));
 
 /**

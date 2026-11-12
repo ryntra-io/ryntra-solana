@@ -3,14 +3,14 @@
     "name": "Ryntra",
     "slug": "ryntra",
     "scheme": "ryntra",
-    "version": "1.20.0",
+    "version": "1.21.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
     "userInterfaceStyle": "automatic",
     "backgroundColor": "#0B0A14",
     "android": {
       "package": "io.ryntra.app",
-      "versionCode": 26,
+      "versionCode": 27,
       "blockedPermissions": [
         "android.permission.SYSTEM_ALERT_WINDOW",
         "android.permission.READ_EXTERNAL_STORAGE",

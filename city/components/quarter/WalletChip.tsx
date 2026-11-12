@@ -1,14 +1,16 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState, type ReactNode, type RefObject } from 'react';
+import { createPortal } from 'react-dom';
 import { useBackPanel } from '@/city/lib/back/panels';
 import { useWords } from '@/city/lib/i18n/dict';
 import { cityAccount, useCityAccount, useReadiness } from '@/city/lib/quarter/account-live';
+import { menuPlace, TABBABLE, tabTo, type MenuPlace } from '@/city/lib/quarter/wallet-menu';
 import { colourOf } from '@/city/lib/trade/colour';
 import { shortAddress } from '@/city/lib/trade/format';
 import { useWallet } from '@/city/lib/trade/wallet';
 import { openSettings } from '@/city/lib/settings/view';
-import { PHANTOM_DOWNLOAD_URL } from '@/lib/solana/open-in-wallet';
+import { isPhoneUserAgent, PHANTOM_DOWNLOAD_URL, phantomBrowseUrl } from '@/lib/solana/open-in-wallet';
 import s from '../hud/hud.module.css';
 import q from './quarter.module.css';
 import w from './wallet.module.css';
@@ -27,9 +29,13 @@ export function WalletChip() {
   const error = useCityAccount((st) => (st.from === 'top' ? st.error : null));
   const [open, setOpen] = useState(false);
   const wrap = useRef<HTMLDivElement>(null);
+  // The panel stands in a layer of its own, outside the chip's box (CITY-239): a tap inside it is not a tap «outside».
+  const panel = useRef<HTMLDivElement>(null);
   const t = useWords(QUARTER);
 
-  // A tap outside or Escape closes the menu; a list of wallets left open closes with it.
+  // A tap outside or Escape closes the menu; a list of wallets left open closes with it. Escape is heard on its way
+  // down and marked as taken (CITY-240): the panel stands over a window — the Ring, the Vault — and that window's own
+  // Escape, which reads the mark, waits for the next press. The panel itself closes on any Escape, as it always has.
   const showing = open || step === 'pick' || Boolean(error);
   const close = () => {
     setOpen(false);
@@ -42,14 +48,21 @@ export function WalletChip() {
   useEffect(() => {
     if (!showing) return;
     const outside = (event: PointerEvent) => {
-      if (wrap.current && !wrap.current.contains(event.target as Node)) close();
+      const target = event.target as Node;
+      if (wrap.current?.contains(target) || panel.current?.contains(target)) return;
+      close();
     };
-    const key = (event: KeyboardEvent) => event.key === 'Escape' && close();
+    const key = (event: KeyboardEvent) => {
+      if (event.key !== 'Escape') return;
+      event.preventDefault();
+      event.stopImmediatePropagation();
+      close();
+    };
     window.addEventListener('pointerdown', outside);
-    window.addEventListener('keydown', key);
+    window.addEventListener('keydown', key, true);
     return () => {
       window.removeEventListener('pointerdown', outside);
-      window.removeEventListener('keydown', key);
+      window.removeEventListener('keydown', key, true);
     };
   }, [showing]);
   // Once signed in from here, the menu has done its job.
@@ -78,10 +91,12 @@ export function WalletChip() {
           </span>
         </button>
         {(step === 'pick' || error) && (
-          <div className={`${s.panel} ${w.menu}`} role="dialog" aria-label={t.connect}>
-            {step === 'pick' ? <WalletList /> : null}
-            {error ? <div className={`${w.note} ${w.error}`}>{error}</div> : null}
-          </div>
+          <Over chip={wrap} panel={panel}>
+            <div ref={panel} className={`${s.panel} ${w.menu}`} role="dialog" aria-label={t.connect} data-wallet-menu="">
+              {step === 'pick' ? <WalletList /> : null}
+              {error ? <div className={`${w.note} ${w.error}`}>{error}</div> : null}
+            </div>
+          </Over>
         )}
       </div>
     );
@@ -101,7 +116,8 @@ export function WalletChip() {
         <span className={`${w.address} ${w.long}`}>{step === 'signing' ? t.checkWallet : shortAddress(connection.address)}</span>
       </button>
       {showing && (
-        <div className={`${s.panel} ${w.menu}`} role="dialog" aria-label={t.wallet}>
+        <Over chip={wrap} panel={panel}>
+        <div ref={panel} className={`${s.panel} ${w.menu}`} role="dialog" aria-label={t.wallet} data-wallet-menu="">
           <div className={w.head}>
             <span className={w.address}>{shortAddress(connection.address)}</span> · {connection.wallet}
           </div>
@@ -139,8 +155,75 @@ export function WalletChip() {
             </button>
           </div>
         </div>
+        </Over>
       )}
     </div>
+  );
+}
+
+/**
+ * The wallet's panel in a layer of its own over the city's windows (CITY-239). The panel answers a tap inside a window
+ * («Connect wallet» in the Ring, «Sign in» in the Vault), so it stands over that window; the top bar it belongs to stays
+ * under the windows with everything else of the home — the city's event slab, the home's cards, the Deck. Drawn into the
+ * city's own root, where its tokens are, and placed under its chip by the chip's place on the screen.
+ */
+function Over({ chip, panel, children }: { chip: RefObject<HTMLDivElement | null>; panel: RefObject<HTMLDivElement | null>; children: ReactNode }) {
+  const [root, setRoot] = useState<HTMLElement | null>(null);
+  const [place, setPlace] = useState<MenuPlace | null>(null);
+  useLayoutEffect(() => {
+    const at = chip.current;
+    if (!at) return;
+    setRoot(at.closest('main') ?? document.body);
+    const measure = () => {
+      const next = menuPlace(at.getBoundingClientRect(), window.innerWidth);
+      setPlace((was) => (was && was.top === next.top && was.right === next.right ? was : next));
+    };
+    measure();
+    window.addEventListener('resize', measure);
+    return () => window.removeEventListener('resize', measure);
+  }, [chip]);
+  // The panel no longer follows its chip in the page, so the keyboard is handed over: opened from the chip, the focus
+  // goes into the panel; closed with the focus still inside, it goes back to the chip.
+  const shown = Boolean(root && place);
+  useLayoutEffect(() => {
+    if (!shown) return;
+    const button = chip.current?.querySelector('button') ?? null;
+    const box = panel.current;
+    if (button && button === document.activeElement) box?.querySelector<HTMLElement>('button, a[href]')?.focus({ preventScroll: true });
+    return () => {
+      if (box?.contains(document.activeElement)) button?.focus({ preventScroll: true });
+    };
+  }, [shown, chip, panel]);
+  // The keyboard's order through the panel, kept by hand since the panel left its chip's place in the page (CITY-240):
+  // chip → the panel's controls → what follows the chip in the top bar, and back the same way (`tabTo`). No trap.
+  useEffect(() => {
+    if (!shown) return;
+    const stops = (within: ParentNode) => Array.from(within.querySelectorAll<HTMLElement>(TABBABLE)).filter((el) => el.tabIndex >= 0 && el.getClientRects().length > 0 && !el.closest('[inert]'));
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key !== 'Tab' || event.altKey || event.ctrlKey || event.metaKey || event.defaultPrevented) return;
+      const box = panel.current;
+      const button = chip.current?.querySelector('button') ?? null;
+      if (!box || !button) return;
+      const inside = stops(box);
+      const outside = stops(document).filter((el) => !box.contains(el));
+      const next = outside.indexOf(button) >= 0 ? (outside[outside.indexOf(button) + 1] ?? null) : null;
+      const now = document.activeElement as HTMLElement | null;
+      const at = now === button ? 'chip' : now && inside.includes(now) ? inside.indexOf(now) : now !== null && now === next ? 'after' : null;
+      const to = tabTo(at, inside.length, event.shiftKey);
+      const target = to === 'chip' ? button : to === 'first' ? inside[0] : to === 'last' ? inside[inside.length - 1] : to === 'after' ? next : null;
+      if (!target) return;
+      event.preventDefault();
+      target.focus();
+    };
+    document.addEventListener('keydown', onKey);
+    return () => document.removeEventListener('keydown', onKey);
+  }, [shown, chip, panel]);
+  if (!root || !place) return null;
+  return createPortal(
+    <div className={w.over} style={{ ['--wallet-top' as string]: `${place.top}px`, ['--wallet-right' as string]: `${place.right}px` }}>
+      {children}
+    </div>,
+    root,
   );
 }
 
@@ -148,15 +231,26 @@ export function WalletChip() {
 function WalletList() {
   const wallets = useWallet((st) => st.wallets);
   const t = useWords(QUARTER);
+  // A phone's browser has no wallet of its own: Ryntra opens inside Phantom's, as Money and Earn do (CITY-221); a
+  // computer gets the wallet. One button under the finger, not a link inside a line.
+  const [phone, setPhone] = useState(false);
+  useEffect(() => setPhone(isPhoneUserAgent(navigator.userAgent)), []);
   if (!wallets.length) {
     return (
-      <div className={w.note}>
-        {t.noWallet}{' '}
-        <a href={PHANTOM_DOWNLOAD_URL} target="_blank" rel="noreferrer">
-          {t.getPhantom}
-        </a>
-        {t.comeBack}
-      </div>
+      <>
+        <div className={w.note}>{t.noWallet}</div>
+        <div className={w.row}>
+          <a
+            className={`${s.display} ${w.act} ${w.actLink}`}
+            href={phone ? phantomBrowseUrl(window.location.href, window.location.origin) : PHANTOM_DOWNLOAD_URL}
+            target={phone ? undefined : '_blank'}
+            rel="noreferrer"
+            data-wallet-get={phone ? 'open' : 'install'}
+          >
+            {phone ? t.openInPhantom : t.getPhantom}
+          </a>
+        </div>
+      </>
     );
   }
   return (

@@ -75,7 +75,7 @@ import { compareWalletTransaction } from "../solana/wallet-modification.ts";
 import { LAUNCHES_PER_CREATOR_PER_DAY, type LaunchCluster, type LaunchNetwork, type LaunchPair } from "./config.server.ts";
 import { accountOnChain, budgetLeft, sendOnce, type Sent } from "./flow.server.ts";
 import { checkLaunchForm } from "./form.ts";
-import { metadataOfUri } from "./metadata.server.ts";
+import { isTakenDown, metadataOfUri } from "./metadata.server.ts";
 import { quotePaused } from "./quote-watch.server.ts";
 
 /* ------------------------------------------------------------- gating */
@@ -84,7 +84,7 @@ import { quotePaused } from "./quote-watch.server.ts";
  * False: closed, whatever the bounds configured — the format
  * opens on mainnet alone, flipped here then.
  */
-export const EARLY_ACCESS_OWNER_WORD = false;
+export const EARLY_ACCESS_OWNER_WORD = true; // Fork 24/24, devnet 25/25; bounds — RYNTRA_LAUNCH_EARLY_ACCESS_BOUNDS, CITY-220 report §6
 
 export const EARLY_ACCESS_BOUNDS_ENV = "RYNTRA_LAUNCH_EARLY_ACCESS_BOUNDS";
 
@@ -521,6 +521,18 @@ export async function submitEarlyAccess(
 
 export type PreparedDeposit = Readonly<{ ok: true; buildId: string; unsignedWireBase64: string; escrow: string; opensEscrow: boolean; amountRaw: string; expiresAt: string; signableMs: number }>;
 
+/**
+ * Whether Ryntra took this launch down (MC-1, `takedown.server.ts`): its token, or the details its metadata names. A
+ * launch taken down is not shown to newcomers and takes no deposit (review 8.11) — `prepareEarlyAccess` refuses its
+ * details at creation already. A person's way back to their own tokens and USDC stays open: the actions never ask this.
+ */
+export async function earlyAccessTakenDown(store: GuardStore, origin: string, record: Pick<EarlyAccessRecord, "mint" | "metadataUri">): Promise<boolean> {
+  if (await isTakenDown(store, "mint", record.mint)) return true;
+  return (await metadataOfUri(store, record.metadataUri, origin))?.takenDown === true;
+}
+
+const TAKEN_DOWN = "Ryntra took this launch's details down: it takes no deposit here.";
+
 async function openRecord(deps: Pick<EarlyAccessDeps, "store" | "network">, mint: string): Promise<EarlyAccessRecord | EarlyAccessFailure> {
   const record = await readEarlyAccessRecord(deps.store, deps.network.cluster, mint);
   if (!record) return fail("LAUNCH_NOT_FOUND", "No early-access launch of this token here.");
@@ -531,6 +543,7 @@ export async function prepareEarlyAccessDeposit(deps: EarlyAccessDeps, mint: str
   if (!earlyAccessOpenFor(deps.network, deps.env, deps.ownerWord)) return fail("LAUNCH_PAUSED", "Early access is not open here; nothing was built.");
   const stored = await openRecord(deps, mint);
   if ("ok" in stored) return stored;
+  if (await earlyAccessTakenDown(deps.store, deps.origin, stored)) return fail("VALIDATION_ERROR", `${TAKEN_DOWN} Nothing was built.`);
   const phase = earlyAccessPhase(stored.schedule, seconds(deps));
   if (phase !== "DEPOSITS") return fail("VALIDATION_ERROR", phase === "UPCOMING" ? "Deposits are not open yet." : "Deposits are closed.");
   /* Money goes into a vault only once the whole launch is on chain as built: every step landed, the vault holds the
@@ -605,6 +618,11 @@ async function sendWalletBuild(
     return fail("LAUNCH_SIGNED_OTHER_BYTES", "The wallet returned bytes that are not a transaction.");
   }
   if (!tx.verifySignatures(true)) return fail("LAUNCH_SIGNED_OTHER_BYTES", "A signature is missing or does not match the transaction.");
+  /* A deposit built before a takedown is not sent after it; an action — a way back to one's own money — always is. */
+  if (kind === "DEPOSIT") {
+    const record = await readEarlyAccessRecord(deps.store, build.cluster, build.mint);
+    if (!record || (await earlyAccessTakenDown(deps.store, deps.origin, record))) return fail("VALIDATION_ERROR", `${TAKEN_DOWN} Nothing was sent.`);
+  }
   const sends = collection<EarlyAccessSend>(deps.store, EARLY_ACCESS_COLLECTIONS.sends);
   if (!(await sends.insertIfAbsent(buildKey(build.cluster, build.id), { cluster: build.cluster, id: build.id, at: deps.now().toISOString() }))) return fail("LAUNCH_BUILD_USED", `This ${what} was already sent.`);
   const sent = await sendOnce(deps.connection, tx, Number(build.validUntil), deps.now, { ...DEPOSIT_BUDGET, deadline }, { second: deps.second });
@@ -780,9 +798,22 @@ async function settle(deps: Pick<EarlyAccessDeps, "connection" | "store">, recor
   return settled;
 }
 
+/**
+ * The launch as its window shows it. One Ryntra took down (review 8.11) is shown only to a wallet with its own money in
+ * the vault — and with no room to bring more (`roomRaw` "0"), so the window offers only the way back; to anyone else it
+ * is not here (null).
+ */
 export async function earlyAccessView(deps: Pick<EarlyAccessDeps, "network" | "connection" | "store" | "now">, mint: string, wallet?: string | null): Promise<EarlyAccessView | null> {
   const stored = await readEarlyAccessRecord(deps.store, deps.network.cluster, mint);
   if (!stored) return null;
+  const view = await viewOf(deps, stored, wallet);
+  if (!(await earlyAccessTakenDown(deps.store, deps.network.origin, stored))) return view;
+  const mine = view.mine;
+  const own = mine !== null && (BigInt(mine.depositedRaw) > 0n || BigInt(mine.claimableRaw) > 0n || BigInt(mine.remainingQuoteRaw) > 0n);
+  return own ? { ...view, mine: { ...mine, roomRaw: "0" } } : null;
+}
+
+async function viewOf(deps: Pick<EarlyAccessDeps, "network" | "connection" | "store" | "now">, stored: EarlyAccessRecord, wallet?: string | null): Promise<EarlyAccessView> {
   const record = await settle(deps, stored).catch(() => stored);
   let read: EarlyAccessView["read"] = "FAILED";
   let vaultRead: Awaited<ReturnType<typeof readEarlyAccessVault>> = null;

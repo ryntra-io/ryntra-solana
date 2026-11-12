@@ -10,7 +10,7 @@
 export const FRAME = 'frame:';
 
 /** The frame's windows a named layer closes (`useBackLayers.ts`): the frame must not stand on «Back» twice for them. */
-const NAMED: ReadonlySet<string> = new Set(['predict', 'money', 'chart', 'exchange', 'swap', 'spot', 'scouts', 'partners', 'partners-landing', 'berth', 'garage', 'guides', 'settings']);
+const NAMED: ReadonlySet<string> = new Set(['predict', 'money', 'chart', 'exchange', 'swap', 'spot', 'scouts', 'partners', 'partners-landing', 'berth', 'garage', 'guides', 'settings', 'launch']);
 
 const named = (id: string) => NAMED.has(id) || id.startsWith('page-');
 

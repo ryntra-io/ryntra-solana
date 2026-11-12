@@ -10,6 +10,7 @@ import { NAME_MAX, TOPIC_ORDER, type Topic } from '@/city/lib/agent/garage/setti
 import { flyTo } from '@/city/lib/agent/garage/show';
 import { useGarage, type AdviceState } from '@/city/lib/agent/garage/store';
 import { useCity } from '@/city/lib/city/store';
+import { openCommand } from '@/city/lib/command/store';
 import { locale, useWords } from '@/city/lib/i18n/dict';
 import { useLang } from '@/city/lib/i18n/lang';
 import type { Tower } from '@/city/lib/market/types';
@@ -50,7 +51,12 @@ const TOPIC_WORD = { moves: 'moves', liquidity: 'liquidity', beacons: 'beacons',
 export function GarageWindow({ mine, live, reminders }: { mine: readonly MyTower[]; live: boolean; reminders: readonly Reminder[] }) {
   const view = useGarage((st) => st.view);
   const on = useGarage((st) => st.settings.on);
-  return <div className={s.framed}>{view === 'settings' ? <Settings /> : on ? <Home mine={mine} live={live} reminders={reminders} /> : <Off />}</div>;
+  // With no towers the window stands as tall as its words and its one button (`fit`, CITY-221), not as an empty pane.
+  return (
+    <div className={`${s.framed} ${mine.length ? '' : s.flow}`}>
+      {view === 'settings' ? <Settings /> : on ? <Home mine={mine} live={live} reminders={reminders} /> : <Off />}
+    </div>
+  );
 }
 
 /** Fly to towers: the city shows them beside the window; where the window covers the city it steps aside first. */
@@ -289,7 +295,25 @@ function AdviceBlock({ advice, name }: { advice: AdviceState; name: string }) {
 function Action({ mine, advice, name }: { mine: readonly MyTower[]; advice: AdviceState; name: string }) {
   const w = useWords(GARAGE);
   const left = useGarage((st) => st.answersLeft());
-  if (!mine.length) return null;
+  // No towers yet: the one way on is to get one — Ryntra's line takes «buy SOL» or «launch a token» (CITY-221: the
+  // window used to end on its empty words with nothing to press).
+  if (!mine.length) {
+    return (
+      <div className={s.cta}>
+        <button
+          type="button"
+          className={s.action}
+          onClick={() => {
+            tick();
+            openCommand();
+          }}
+          data-garage-action="start"
+        >
+          {w.emptyAction}
+        </button>
+      </div>
+    );
+  }
   const ask = () => {
     tick();
     void useGarage.getState().ask(mine);

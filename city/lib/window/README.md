@@ -21,7 +21,7 @@ closeWindow('swap');
 | `icon` | A 24 px glyph (`stroke="currentColor"`), drawn in the frame's orange. |
 | `render` | What is inside. Called when the window opens or its `render` changes, never while the frame moves. |
 | `min` | The least the window shrinks to by hand; 280 × 180 when not given. |
-| `size` | Its size the first time it opens on this device; 560 × 440 when not given. |
+| `size` | Its size the first time it opens on this device; 560 × 440 when not given. It may be as tall as the workspace between the top bar and the Deck. A window whose contents want more room on a larger desk asks for `firstSize(viewport, widths, height)` (`sizes.ts`, CITY-242): as tall as its contents, as wide as the city's 40 % allows. |
 | `held` | While true, «Close» in the frame waits (a signature in the wallet, a transaction on its way). Open again with `held: false` to let go. |
 | `onClose` | Called after the person closes the window from its frame. Not called on `closeWindow`. |
 | `detach` | The window can go onto another screen (CITY-75): what its own page needs to show the same thing — `{ tower }` for the chart, `{ symbol }` for the Exchange. Without it the frame has no «Open in a new window». A layout of the person's keeps it too (CITY-84), so the window opens on the same thing again. |
@@ -62,7 +62,9 @@ both.
 - **Phone**: the front window is a bottom sheet that can take the whole screen; tabs under its head switch between open
   windows, each keeping what was typed in it. Nothing floats or sticks.
 - **Memory**: every window's last place is remembered on the device (`localStorage`, key `ryntra.city.windows.v2`), open
-  or closed, so the swap opens again where it stood and four windows stuck together come back stuck. A smaller screen
+  or closed, so the swap opens again where it stood and four windows stuck together come back stuck. A place exactly where the
+  frame's old rule first put the window (before CITY-242: at most 85 % of the workspace's height, Spot, Earn and «My
+  tower» at their old sizes) is not the person's and is not recalled; anything the person did to the window is. A smaller screen
   carries the layout onto it with the seams kept; storage that is missing or refuses means the first places again.
 
 ## Bays, tabs, the tray and layouts (CITY-84)
@@ -89,8 +91,10 @@ Helm §4 (`docs/research/ryntra-city-helm-2026-10-29/SPEC.md`): the windows stan
   through the Launch engine. What was typed in it is not kept. A chip whose figure is old (the Exchange and Money read
   only while open) or another wallet's shows the title. The tray keeps to the city
   between the bays, stands over the sheet on a phone, and steps aside on the whole screen and while the Deck's doors
-  are open.
-- **Layouts.** One quiet glyph low on the left (computer only). Ryntra's four — «Trader» (the trade card with its chart,
+  are open. From 1100 px wide it stands on the Deck's own row, left of it (CITY-242): a window as tall as the workspace
+  reaches the Deck, and chips over the diamond would lie on its foot.
+- **Layouts.** A row of the top bar's menu that unfolds in place (computer only; CITY-241 took them out of the city's
+  corner, where they lay on a window on the whole screen). Ryntra's four — «Trader» (the trade card with its chart,
   the wallet beside it), «Futures» (the Exchange beside the chart), «Predictions» (beside the futures where they are
   open), «Money» — each offered only where the windows it cannot do without are open here (`presetReady`). And the
   person's four: an empty place keeps the windows as they stand; a kept one puts them back; the one in use in this visit
@@ -162,5 +166,5 @@ Predictions (CITY-67) get it with one field once they stand in the frame.
 | `bays-shots.mjs` | The bays, the tray, the tabs and the layouts for review (`docs/shots/city-84/`), desk 1440 and phone 390, against a running build. |
 
 The frames are `city/components/window/` (`WindowLayer` is mounted once in `CityApp`, between the HUD and the trade card):
-`WindowFrame`, `WindowSheet`, `Tray`, `Layouts`, `figures.tsx`, `openers.ts`. Review shots of CITY-84 —
+`WindowFrame`, `WindowSheet`, `Tray`, `Layouts` (drawn in the menu, `hud/Menu.tsx`), `figures.tsx`, `openers.ts`. Review shots of CITY-84 —
 `docs/shots/city-84/`.

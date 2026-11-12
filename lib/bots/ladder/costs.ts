@@ -11,6 +11,12 @@
  * The server's simulation confirms the same figures before the wallet sees the
  * transactions (`build.server.ts`).
  *
+ * The chain's own terms come in from the chain (CITY-219): its rent per byte —
+ * read, never assumed, since mainnet's rent is not devnet's forever — and, on
+ * mainnet, the priority each transaction pays so it lands when the network is
+ * busy. The window gets both from the engine's status, so its line and the
+ * server's are the same line.
+ *
  * Pure: no network, no clock.
  */
 
@@ -24,8 +30,12 @@ export const SIGNATURES_PER_TX = 2;
 /** Rent-exempt lamports per byte, the account's 128-byte header included: 3 480 × 2 years. */
 export const RENT_LAMPORTS_PER_BYTE = 6_960;
 const ACCOUNT_HEADER_BYTES = 128;
-/** A limit order account: 112 bytes and 32 per bin (lb_clmm 0.12.0, `LIMIT_ORDER_MIN_SIZE`, `LIMIT_ORDER_BIN_DATA_SIZE`). */
-export const LIMIT_ORDER_BASE_BYTES = 112;
+/**
+ * A limit order account: its 8-byte discriminator, 112 bytes and 32 per bin (lb_clmm 0.12.0, `LIMIT_ORDER_MIN_SIZE`
+ * counts after the discriminator, `LIMIT_ORDER_BIN_DATA_SIZE`). The discriminator was left out until CITY-219's fork
+ * read the account the program opens: 152 bytes for one bin.
+ */
+export const LIMIT_ORDER_BASE_BYTES = 8 + 112;
 export const LIMIT_ORDER_BIN_BYTES = 32;
 /** A new bin array's rent, kept by the pool (`BIN_ARRAY_FEE`, 0.07143744 SOL). */
 export const BIN_ARRAY_RENT_LAMPORTS = 71_437_440;
@@ -38,7 +48,23 @@ export const COST_SHARE_LIMIT_PCT = 3;
 /** Jupiter Trigger V1's minimum per order, dollars — the fallback's protocol minimum. A DLMM limit order has none. */
 export const TRIGGER_MIN_ORDER_USD = 5;
 
-export const orderAccountRent = (bins: number): number => (LIMIT_ORDER_BASE_BYTES + LIMIT_ORDER_BIN_BYTES * bins + ACCOUNT_HEADER_BYTES) * RENT_LAMPORTS_PER_BYTE;
+/** A bin array's data (`BinArray`, 70 bins) and the bitmap extension's, bytes. */
+export const BIN_ARRAY_BYTES = 10_136;
+export const BITMAP_EXTENSION_BYTES = 1_568;
+/** Mainnet's priority per compute unit for a ladder's transaction, micro-lamports: a limit order is not in a hurry. */
+export const LADDER_MAINNET_CU_PRICE = 50_000;
+
+/** What a transaction pays for priority at a unit limit and price, lamports — what the runtime charges, rounded up. */
+export const priorityLamports = (units: number, microLamports: number): number => Math.ceil((units * microLamports) / 1_000_000);
+
+/** The chain's terms a cost line stands on: rent per byte (the account header included) and priority per transaction. */
+export type ChainTerms = Readonly<{ rentPerByte: number; priorityLamportsPerTx: number }>;
+export const DEFAULT_TERMS: ChainTerms = { rentPerByte: RENT_LAMPORTS_PER_BYTE, priorityLamportsPerTx: 0 };
+
+export const orderAccountRent = (bins: number, rentPerByte: number = RENT_LAMPORTS_PER_BYTE): number =>
+  (LIMIT_ORDER_BASE_BYTES + LIMIT_ORDER_BIN_BYTES * bins + ACCOUNT_HEADER_BYTES) * rentPerByte;
+export const binArrayRent = (rentPerByte: number = RENT_LAMPORTS_PER_BYTE): number => (BIN_ARRAY_BYTES + ACCOUNT_HEADER_BYTES) * rentPerByte;
+export const bitmapExtensionRent = (rentPerByte: number = RENT_LAMPORTS_PER_BYTE): number => (BITMAP_EXTENSION_BYTES + ACCOUNT_HEADER_BYTES) * rentPerByte;
 
 export type LadderCosts = Readonly<{
   transactions: number;
@@ -61,6 +87,7 @@ export type LadderCosts = Readonly<{
 export function ladderCosts(
   plans: readonly LegPlan[],
   pool: Readonly<{ existingArrays: ReadonlySet<number>; bitmapExtension: boolean }>,
+  terms: ChainTerms = DEFAULT_TERMS,
 ): LadderCosts {
   let transactions = 0;
   let rentBack = 0;
@@ -69,7 +96,7 @@ export function ladderCosts(
   for (const plan of plans) {
     for (const chunk of chunkRungs(plan.rungs)) {
       transactions += 1;
-      rentBack += orderAccountRent(chunk.length);
+      rentBack += orderAccountRent(chunk.length, terms.rentPerByte);
     }
     for (const index of arraysOf(plan.rungs)) {
       if (!pool.existingArrays.has(index)) opened.add(index);
@@ -78,9 +105,9 @@ export function ladderCosts(
   }
   return {
     transactions,
-    networkLamports: transactions * SIGNATURES_PER_TX * SIGNATURE_LAMPORTS,
+    networkLamports: transactions * (SIGNATURES_PER_TX * SIGNATURE_LAMPORTS + terms.priorityLamportsPerTx),
     rentBackLamports: rentBack,
-    rentKeptLamports: opened.size * BIN_ARRAY_RENT_LAMPORTS + (extension ? BITMAP_EXTENSION_RENT_LAMPORTS : 0),
+    rentKeptLamports: opened.size * binArrayRent(terms.rentPerByte) + (extension ? bitmapExtensionRent(terms.rentPerByte) : 0),
     newArrays: opened.size,
     minimumUsd: 0,
     reserveLamports: SOL_RESERVE_LAMPORTS,

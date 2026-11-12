@@ -7,12 +7,14 @@ import { digits, useWords } from '@/city/lib/i18n/dict';
 import { useLang } from '@/city/lib/i18n/lang';
 import { solText } from '@/city/lib/autopilot/plan';
 import { PILOT } from '@/city/lib/pilot/words';
+import { MONEY_OPEN } from '@/city/lib/money/flag';
+import { openMoney } from '@/city/lib/money/open';
 import { walletShort } from '@/city/lib/pilot/wallet-check';
 import { agentFeeFigures } from '@/city/lib/bots/agent-fee';
 import { goLive, PILOT_NET, readPilot, startPaper, stopPilot, usePilot } from '@/city/lib/pilot/store';
 import { startWallets, useWallet } from '@/city/lib/trade/wallet';
 import { legsOf, legsUsd, PILOT_PARTS, type PilotPart, type PilotPlanData } from '@/lib/pilot/plan';
-import { WalletLine, WalletPicker } from '../trade/WalletParts';
+import { useHoldingsWatch, WalletLine, WalletPicker } from '../trade/WalletParts';
 import { AgentGlyph, ChevronGlyph } from '../instruct/glyphs';
 import i from '../instruct/instruct.module.css';
 import a from '../autopilot/autopilot.module.css';
@@ -147,6 +149,8 @@ function Propose() {
   const paper = usePilot((st) => st.paper);
   const note = usePilot((st) => st.note);
   const holdings = useWallet((st) => st.holdings);
+  // While the card says «not enough», the balance is read again: a top-up opens «Go live» without a reload.
+  useHoldingsWatch(Boolean(ask && split && walletShort(split.legs, PILOT_NET, holdings)));
   if (!ask) return null;
   if (!split || !plan) return <p className={i.notice}>{w.notePrice}</p>;
   const total = solUsd !== null ? PILOT_PARTS.reduce((sum, part) => sum + legsUsd(split.legs, solUsd)[part], 0) : null;
@@ -156,6 +160,11 @@ function Propose() {
   if (split.dropped.length) extra.push(w.dropped(split.dropped.map((part) => PART_NAME(w, part)).join(', ')));
   const onPaper = phase === 'paper' || phase === 'signing';
   const short = walletShort(split.legs, PILOT_NET, holdings);
+  // The proposal's sums are the plan's, not the wallet's: the budget the sentence named, or the card's own, at SOL's
+  // price now. A wallet that cannot fund the plan read «$20 to put to work» beside «Not enough SOL» (CITY-240) — money
+  // it does not hold, down to «Wallet 25% · $5». There the card keeps the plan's shares and says no sum: the line that
+  // is true, and its one way on, «Add SOL». The plan and its figures are as they were; they are back once it is funded.
+  const sums = !short;
   const fee = agentFeeFigures(lang);
   return (
     <>
@@ -166,11 +175,11 @@ function Propose() {
         <div className={i.heroText}>
           <span className={i.kicker}>{w.kicker}</span>
           <h2 className={i.headline}>{w.headline}</h2>
-          {total !== null ? <p className={i.sub}>{w.total(usdText(total, lang))}</p> : null}
+          {total !== null && sums ? <p className={i.sub}>{w.total(usdText(total, lang))}</p> : null}
           {split.preset && coin ? <p className={a.plan}>{w.on_trade(coin.symbol)}</p> : null}
         </div>
       </div>
-      <Split shares={split.shares} plan={plan} solUsd={solUsd} />
+      <Split shares={split.shares} plan={plan} solUsd={sums ? solUsd : null} />
       {onPaper ? (
         <div className={a.figure} data-pilot-paper="">
           <span className={a.figureLabel}>{w.paperOn}</span>
@@ -190,6 +199,13 @@ function Propose() {
       ) : null}
       {split.preset && PILOT_NET === 'mainnet' && !coin ? <p className={i.notice}>{w.pickCoin}</p> : null}
       {short ? <p className={i.problem} data-pilot-short={short}>{w.short(short)}</p> : null}
+      {/* CITY-237: «not enough» had no way on but practice — one quiet tap to Money's top-up, as on the agent's card.
+          CITY-239: a button with a frame, not words that read as one more caption under the line. */}
+      {short && MONEY_OPEN ? (
+        <button type="button" className={s.add} onClick={() => openMoney('topup')} data-pilot-topup="">
+          {w.add(short)}
+        </button>
+      ) : null}
       {note ? <p className={note.kind === 'walletNo' ? i.notice : i.problem}>{noteText(w, note.kind)}</p> : null}
       <div className={i.dock}>
         {split.preset ? (

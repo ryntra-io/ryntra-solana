@@ -41,7 +41,12 @@ export type AgentView = Readonly<{
   symbol?: string | null;
   everyMs: number;
   result: Readonly<{ trades: number; spentRaw: string; boughtRaw: string; worthRaw: string | null; earnedRaw: string | null; multiple: number | null }>;
-  last: readonly Readonly<{ at: number; ok: boolean; signature: string | null; spentRaw: string; receivedRaw: string | null }>[];
+  /** CITY-70: `state` — `unknown` is a trade being confirmed, never a failure; absent on an engine of before. */
+  last: readonly Readonly<{ at: number; ok: boolean; state?: TradeState; signature: string | null; spentRaw: string; receivedRaw: string | null }>[];
+  /** CITY-70: what the agent is doing now, her «Freeze», and the money — budget = spent + left. */
+  mission?: Mission;
+  frozen?: boolean;
+  books?: Books;
   updatedAt: number;
   /** CITY-187: what the agent still holds for her of its coin, and her last sale through it. */
   heldRaw?: string;
@@ -66,6 +71,27 @@ const isNet = (value: unknown): value is AgentNet => {
   return typeof v.trades === 'number' && typeof v.spentRaw === 'string' && rawOrNull(v.netRaw) && rawOrNull(v.holdRaw) && rawOrNull(v.feesRaw);
 };
 
+/** CITY-70: the engine's mission and books (`lib/mandate/mission.ts`), as the card reads them. */
+export type TradeState = 'ok' | 'failed' | 'refused' | 'unknown' | 'held';
+export type Mission = Readonly<{ state: 'working' | 'confirming' | 'waiting' | 'frozen' | 'paused' | 'done' | 'stopped'; reason: string | null; nextAt: number | null }>;
+export type Books = Readonly<{ state: 'exact' | 'settling' | 'more' | 'off' | 'unread' | 'closed'; budgetRaw: string; spentRaw: string; leftRaw: string | null; pendingRaw: string; gapRaw: string }>;
+
+const MISSIONS = new Set(['working', 'confirming', 'waiting', 'frozen', 'paused', 'done', 'stopped']);
+const BOOKS = new Set(['exact', 'settling', 'more', 'off', 'unread', 'closed']);
+const RAW = /^\d{1,30}$/u;
+
+export const isMission = (value: unknown): value is Mission => {
+  if (typeof value !== 'object' || value === null) return false;
+  const v = value as Record<string, unknown>;
+  return typeof v.state === 'string' && MISSIONS.has(v.state) && (v.reason === null || typeof v.reason === 'string') && (v.nextAt === null || typeof v.nextAt === 'number');
+};
+
+export const isBooks = (value: unknown): value is Books => {
+  if (typeof value !== 'object' || value === null) return false;
+  const v = value as Record<string, unknown>;
+  return typeof v.state === 'string' && BOOKS.has(v.state) && [v.budgetRaw, v.spentRaw, v.pendingRaw, v.gapRaw].every((raw) => typeof raw === 'string' && RAW.test(raw)) && (v.leftRaw === null || (typeof v.leftRaw === 'string' && RAW.test(v.leftRaw)));
+};
+
 export const isAgentView = (value: unknown): value is AgentView => {
   if (typeof value !== 'object' || value === null) return false;
   const v = value as Record<string, unknown>;
@@ -83,8 +109,8 @@ export async function readAgentView(record: MandateRecord, fetcher: Fetcher = (u
     const value: unknown = await response.json();
     if (!isAgentView(value)) return null;
     /* A span the book did not answer whole is left out, never shown half. */
-    const { day, away, net, ...rest } = value;
-    return { ...rest, ...(isDay(day) ? { day } : {}), ...(isDay(away) ? { away } : {}), ...(isNet(net) ? { net } : {}) };
+    const { day, away, net, mission, books, frozen, ...rest } = value;
+    return { ...rest, ...(isDay(day) ? { day } : {}), ...(isDay(away) ? { away } : {}), ...(isNet(net) ? { net } : {}), ...(isMission(mission) ? { mission } : {}), ...(isBooks(books) ? { books } : {}), ...(typeof frozen === 'boolean' ? { frozen } : {}) };
   } catch {
     return null;
   }

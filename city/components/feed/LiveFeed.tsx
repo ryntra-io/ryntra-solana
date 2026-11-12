@@ -1,6 +1,7 @@
 'use client';
 
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { useCity } from '@/city/lib/city/store';
 import { openEvent, reachable, startFeed } from '@/city/lib/feed/driver';
 import { visibleEvents, type FeedEvent } from '@/city/lib/feed/feed';
@@ -60,6 +61,15 @@ export function LiveFeed({ hidden = false, panel = false }: { hidden?: boolean; 
   const list = useMemo(() => visibleEvents(events, shown, panel ? LISTED : SHOWN), [events, shown, panel]);
   const clips = useMoments((st) => st.moments.length + (st.run ? 1 : 0));
 
+  // The bell's panel stands in a layer of its own over the city's windows (CITY-242), as the wallet's panel does: opened
+  // over the Ring, the bots or a phone's sheet, it was drawn under them. Drawn into the city's own root, where its tokens
+  // are; the place it was asked for keeps an empty mark to find that root by.
+  const anchor = useRef<HTMLSpanElement>(null);
+  const [root, setRoot] = useState<HTMLElement | null>(null);
+  useLayoutEffect(() => {
+    if (panel) setRoot(anchor.current?.closest('main') ?? document.body);
+  }, [panel]);
+
   // The first events fill the feed quietly; the ones after them glow once as they arrive, if the flashing is on.
   const firstBatch = useRef<number | null>(null);
   if (firstBatch.current === null && events.length) firstBatch.current = events[0]!.id;
@@ -80,12 +90,14 @@ export function LiveFeed({ hidden = false, panel = false }: { hidden?: boolean; 
     observer?.observe(el);
     for (const li of Array.from(el.children)) observer?.observe(li);
     return () => observer?.disconnect();
-    // Again when the events change or a panel opens; between those the observer follows every size.
-  }, [list, gear, open, details]);
+    // Again when the events change or a panel opens, or the bell's panel finds its layer; between those the observer
+    // follows every size.
+  }, [list, gear, open, details, root]);
 
-  // Escape closes the gear's panel, then the phone's open list, and nothing under them. The listener is the city's first
-  // (it is set when the page opens), so it decides before the cards and sheets below it — but a modal window open over
-  // the city, or the focus held by something else (the search, a sheet), owns its Escape, and the feed stays as it is.
+  // Escape closes the gear's panel, then the phone's open list, and nothing under them: the windows' own listeners
+  // hear the press after this one and read it as taken, and the HUD's stands down for the bell's panel by the same rule
+  // (`feedTakesEscape`). A modal window open over the city, or the focus held by something else (the search, a sheet),
+  // owns its Escape, and the feed stays as it is.
   const panels = useRef({ gear, open, panel });
   panels.current = { gear, open, panel };
   const moreRef = useRef<HTMLButtonElement>(null);
@@ -94,8 +106,10 @@ export function LiveFeed({ hidden = false, panel = false }: { hidden?: boolean; 
     const onKey = (event: KeyboardEvent) => {
       if (event.key !== 'Escape' || event.defaultPrevented) return;
       if (document.querySelector('[aria-modal="true"]')) return;
+      // The bell is the panel's own control: the click that opened the panel left the focus on it, and Escape then did
+      // nothing (CITY-239).
       const focus = document.activeElement;
-      if (focus && focus !== document.body && !feedRef.current?.contains(focus)) return;
+      if (focus && focus !== document.body && !feedRef.current?.contains(focus) && !focus.closest('[data-feed-bell]')) return;
       // The open list counts only where it shows: on a phone held upright, where the chevron stands; under the bell always.
       const list = panels.current.panel || (panels.current.open && !!moreRef.current?.offsetParent);
       if (!panels.current.gear && !list) return;
@@ -131,7 +145,7 @@ export function LiveFeed({ hidden = false, panel = false }: { hidden?: boolean; 
     if (panel) useFeedPanel.getState().close();
   };
 
-  return (
+  const section = (
     <section
       ref={feedRef}
       className={`${s.feed} ${panel ? s.panel : ''}`}
@@ -208,6 +222,13 @@ export function LiveFeed({ hidden = false, panel = false }: { hidden?: boolean; 
         </button>
       )}
     </section>
+  );
+  if (!panel) return section;
+  return (
+    <>
+      <span ref={anchor} hidden />
+      {root && createPortal(<div className={s.over}>{section}</div>, root)}
+    </>
   );
 }
 

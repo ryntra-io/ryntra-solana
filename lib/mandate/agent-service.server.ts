@@ -26,7 +26,9 @@ import { envKey } from "../launch/signer/env.server.ts";
 import { KMS_KEY_VERSION, kmsEndpoint, kmsKeySigner, kmsPublicAddress, kmsTokenSource, type Fetch, type KmsAccess } from "../launch/signer/gcp-kms.server.ts";
 import type { KeySigner } from "../launch/signer/signer.server.ts";
 import { resolveJupiterSwapEndpoint } from "../solana/quotes.ts";
-import { planOfEntry, readEntry, registerMandate, type BookEntry, type BookStatus, type OpenGate, type RegisterResult } from "./book.server.ts";
+import { planOfEntry, readEntry, registerMandate, TRADES_KEPT, type BookEntry, type BookStatus, type OpenGate, type RegisterResult } from "./book.server.ts";
+import { isFrozen } from "./freeze.server.ts";
+import { missionOf, reconcile, tradeState, type Books, type Mission, type TradeState } from "./mission.ts";
 import { earlyRefusal, launchFactsFrom, planText, STEADY, type LaunchFacts, type StrategyPlan } from "./plans.ts";
 import { dlmmBuy, dlmmWorth } from "./dlmm.server.ts";
 import { agentFeeAccount, agentFeeRaw, feeAccountRefusal, feeTransferInstruction, pairFeeBps, uncataloguedFacts, type FeeSides } from "./fee.ts";
@@ -223,7 +225,12 @@ export type AgentView = Readonly<{
   result: AgentResult;
   /** CITY-197: the whole mandate after every fee, and plain holding beside it (`./net.ts`). */
   net?: AgentNet;
-  last: readonly Readonly<{ at: number; ok: boolean; signature: string | null; spentRaw: string; receivedRaw: string | null }>[];
+  /** CITY-70: `state` — done, failed, refused, held for the day's budget, or unknown: sent and being confirmed, never «failed». */
+  last: readonly Readonly<{ at: number; ok: boolean; state: TradeState; signature: string | null; spentRaw: string; receivedRaw: string | null }>[];
+  /** CITY-70: what it is doing now; whether her «Freeze» is on; the money — budget = spent + left, from the chain and the book. */
+  mission?: Mission;
+  frozen?: boolean;
+  books?: Books;
   /** When the agent last did anything, ms. */
   updatedAt: number;
   /** CITY-194: its last day, from its own trades, priced now. */
@@ -241,7 +248,21 @@ export type ViewCosts = Readonly<{ exitBps: number | null }>;
 /** The SOL she put in for the agent's network fees with this mandate's budget (`./presets.ts`). */
 export const networkOf = (entry: Pick<BookEntry, "preset">): string => (BUDGET_PRESETS[entry.preset]?.agentFee ?? 0n).toString();
 
-export function viewOf(entry: BookEntry, worthRaw: bigint | null, symbol: string | null = null, sales: SalesView | null = null, spans: ViewSpans | null = null, costs: ViewCosts | null = null): AgentView {
+/** CITY-70: what the chain and her switch say now — the vault's budget left, the policy, her «Freeze»; null fields — not read. */
+export type ViewNow = Readonly<{ frozen: boolean | null; leftRaw: bigint | null; live: boolean | null }>;
+
+/** The mission, her switch and the money, as the view tells them (`./mission.ts`). */
+export function missionView(entry: BookEntry, chain: ViewNow, now: number): Readonly<{ mission: Mission; frozen: boolean; books: Books }> {
+  const closed = entry.status === "stopped" || chain.live === false;
+  return {
+    mission: missionOf({ status: entry.status, pausedBy: entry.pausedBy ?? null, frozen: chain.frozen === true, live: chain.live, trades: entry.trades, perTrade: BigInt(entry.record.perTrade), perDay: BigInt(entry.record.perDay), expiresAt: BigInt(entry.record.expiresAt), pace: planOfEntry(entry).pace ?? null, budgetLeft: chain.leftRaw, now }),
+    /* A switch not read is shown as it last was — off; the agent itself never buys on a switch it could not read. */
+    frozen: chain.frozen === true,
+    books: reconcile({ budgetRaw: BUDGET_PRESETS[entry.preset]?.budget ?? 0n, leftRaw: chain.leftRaw, trades: entry.trades, full: entry.trades.length >= TRADES_KEPT, closed }),
+  };
+}
+
+export function viewOf(entry: BookEntry, worthRaw: bigint | null, symbol: string | null = null, sales: SalesView | null = null, spans: ViewSpans | null = null, costs: ViewCosts | null = null, chain: ViewNow | null = null): AgentView {
   const result = resultOf(entry.trades, worthRaw);
   /* The span's coins are priced as a share of what the worth was read for: what it holds for her, or all it bought. */
   const holding = { heldRaw: sales?.heldRaw ?? result.boughtRaw, worthRaw: worthRaw === null ? null : worthRaw.toString() };
@@ -266,7 +287,8 @@ export function viewOf(entry: BookEntry, worthRaw: bigint | null, symbol: string
     everyMs: steadyRhythm(BigInt(entry.record.perTrade), BigInt(entry.record.perDay), planOfEntry(entry).pace ?? null).everyMs,
     result: earned === null ? result : { ...result, earnedRaw: earned.toString(), multiple: spent === 0n ? null : Number(((earned + spent) * 1_000_000n) / spent) / 1_000_000 },
     net,
-    last: entry.trades.slice(-5).reverse().map((trade) => ({ at: trade.at, ok: trade.status === "ok", signature: trade.signature, spentRaw: trade.spentRaw, receivedRaw: trade.receivedRaw })),
+    last: entry.trades.slice(-5).reverse().map((trade) => ({ at: trade.at, ok: trade.status === "ok", state: tradeState(trade), signature: trade.signature, spentRaw: trade.spentRaw, receivedRaw: trade.receivedRaw })),
+    ...(chain ? missionView(entry, chain, spans?.now ?? Date.now()) : {}),
     updatedAt: entry.updatedAt,
     ...(spans ? { day: honest(dayOf(entry.trades, { since: spans.now - DAY_MS, until: spans.now }, holding)) } : {}),
     ...(away ? { away } : {}),
@@ -290,8 +312,22 @@ export async function agentResult(
   const sales = salesView(boughtOf(entry.trades), await readSales(store, input.policy, gate.network), wallet);
   /* What it still holds for her is worth the venue's price; what her sales brought is SOL already in her wallet. */
   const read = gate.network === "mainnet" ? (amount: bigint) => jupiterWorth({ coin, budgetMint: NATIVE_MINT, amount }, resolveJupiterSwapEndpoint()) : (amount: bigint) => dlmmWorth(connection, { pool: gate.pool, budgetMint: NATIVE_MINT, amount });
-  const [worth, exitBps] = await Promise.all([(deps.worth ?? read)(BigInt(sales.heldRaw)).catch(() => null), (deps.exitBps ?? ((mint: PublicKey) => exitFeeBps(mint, gate.network)))(coin).catch(() => null)]);
-  return viewOf(entry, worth, deps.symbol ?? null, sales, { now: (deps.now ?? Date.now)(), since: input.since ?? null }, { exitBps });
+  /* CITY-70: the vault's budget left and the policy, read from the chain; her switch from the book — none of them guessed. */
+  const [worth, exitBps, leftRaw, policyInfo, frozen] = await Promise.all([
+    (deps.worth ?? read)(BigInt(sales.heldRaw)).catch(() => null),
+    (deps.exitBps ?? ((mint: PublicKey) => exitFeeBps(mint, gate.network)))(coin).catch(() => null),
+    Promise.resolve().then(() => connection.getTokenAccountBalance(new PublicKey(entry.record.budget), "confirmed")).then(
+      (balance) => BigInt(balance.value.amount),
+      /* An account the chain does not have holds nothing; any other error is not a read. */
+      (error: unknown) => (/could not find account|Invalid param: could not find/iu.test(String((error as Error)?.message ?? error)) ? 0n : null),
+    ),
+    Promise.resolve().then(() => connection.getAccountInfo(new PublicKey(entry.record.policy), "confirmed")).then(
+      (info) => info !== null,
+      () => null,
+    ),
+    isFrozen(store, gate.network, input.policy).catch(() => null),
+  ]);
+  return viewOf(entry, worth, deps.symbol ?? null, sales, { now: (deps.now ?? Date.now)(), since: input.since ?? null }, { exitBps }, { frozen, leftRaw, live: policyInfo });
 }
 
 /**

@@ -35,6 +35,17 @@
   pointer-events: none;
 }
 
+/* Under a window that covers most of it (CITY-243): the strip steps aside, so no sliver of it stands over the window's
+   top edge. It comes back as the window goes. */
+.covered {
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transition:
+    opacity 0.18s ease,
+    visibility 0s linear 0.18s;
+}
+
 .overflows {
   padding-right: 36px;
   mask-image: linear-gradient(to right, #000 calc(100% - 36px), transparent);
@@ -130,9 +141,8 @@
 }
 
 /* The strip takes the row under the top bar; what stood there steps down by the strip's height, the way those pieces
-   already step aside for each other: the first-visit hint, the wallet's «Mine» pill (trade/mine.module.css), the live
-   feed (feed/feed.module.css) and, on a narrow phone, the moments' button. */
-:global(body):has(.below) :global([data-city-hint]),
+   already step aside for each other: the wallet's «Mine» pill (trade/mine.module.css), the live feed
+   (feed/feed.module.css) and, on a narrow phone, the moments' button. */
 :global(body):has(.below) :global([data-city-feed]),
 :global(body):has(.below) :global(div:has(> [aria-controls='city-mine'])),
 :global(body):has(.below) :global([data-city-top] [data-city-moments]) {

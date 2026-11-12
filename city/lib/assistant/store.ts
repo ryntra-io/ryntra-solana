@@ -34,7 +34,8 @@ type AssistantState = {
 
   show: (subject: Tower | null) => void;
   hide: () => void;
-  ask: (question: string, towers: readonly Tower[], ask?: typeof askGuest) => Promise<void>;
+  /** `towers`: the city's towers, or how to read them — read when the answer comes, so it stands on the newest city. */
+  ask: (question: string, towers: readonly Tower[] | (() => readonly Tower[]), ask?: typeof askGuest) => Promise<void>;
 };
 
 const QUIET = { phase: 'idle' as const, question: null, intent: 'other' as const, line: null, voice: 'ryntra' as const, busy: false, details: null, shown: [] as Tower[], day: null };
@@ -71,11 +72,14 @@ export const useAssistant = create<AssistantState>((set, get) => ({
     // A newer question, or the panel closed: this answer is no one's now.
     if (id !== asked) return;
     inFlight = null;
+    // The city as it stands now: a live read that came while Ryntra thought replaces the one the question was asked over
+    // (CITY-221: a cold start's city — the bundle, or the build's — answered «what is rising» with an old day's movers).
+    const city = typeof towers === 'function' ? towers() : towers;
     if (answer.ok) {
-      const shown = pickTowers(answer.turn, towers, intent, subject);
-      if (cityAnswers(shown, intent, answer.day)) {
-        // The day's answers are spent: a rise or a fall is still the city's own read, with the count behind «Details».
-        const own = pickTowers(null, towers, intent, subject);
+      const shown = pickTowers(answer.turn, city, intent, subject);
+      if (cityAnswers(shown, intent, answer.day, answer.turn.citations.length > 0)) {
+        // The day's answers are spent, or the turn read no market: a rise or a fall is still the city's own read.
+        const own = pickTowers(null, city, intent, subject);
         set({ phase: 'answered', voice: 'city', busy: false, line: cityLine(intent, own), details: null, shown: own, focusAt: Date.now(), day: answer.day });
         return;
       }
@@ -83,7 +87,7 @@ export const useAssistant = create<AssistantState>((set, get) => ({
       return;
     }
     // Ryntra is away: the city still shows what its own read says, and says only that.
-    const shown = pickTowers(null, towers, intent, subject);
+    const shown = pickTowers(null, city, intent, subject);
     set({ phase: 'answered', voice: 'city', busy: answer.busy, line: cityLine(intent, shown), details: null, shown, focusAt: Date.now(), day: null });
   },
 }));

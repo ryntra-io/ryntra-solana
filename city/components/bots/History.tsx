@@ -3,6 +3,7 @@
 import { useMemo } from 'react';
 import { receiptsCsv, receiptsOf } from '@/city/lib/bots/receipts';
 import { amount, price, usd, when } from '@/city/lib/bots/format';
+import { useBotsWindow } from '@/city/lib/bots/open';
 import { Empty } from './Hangar';
 import { DownloadGlyph } from './glyphs';
 import { useBotRows, useWords } from './hooks';
@@ -13,7 +14,8 @@ export function History() {
   const rows = useBotRows();
   const receipts = useMemo(() => receiptsOf(rows), [rows]);
   const { w, lang } = useWords();
-  if (!receipts.length) return <Empty title={w.noReceipts} />;
+  // CITY-237: an empty «History» was a picture and a line — no way on. The same one action as «My bots» and «Strategies».
+  if (!receipts.length) return <Empty title={w.noReceipts} action={w.startOne} onAction={() => useBotsWindow.getState().setTab('launch')} />;
   const download = () => {
     const url = URL.createObjectURL(new Blob([receiptsCsv(receipts)], { type: 'text/csv;charset=utf-8' }));
     const a = document.createElement('a');

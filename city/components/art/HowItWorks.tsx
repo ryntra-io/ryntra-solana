@@ -10,6 +10,8 @@ import { howStore, useHow } from '@/city/lib/art/how';
 import { readViewer } from '@/city/lib/art/viewer';
 import { HARBOR_OPEN } from '@/city/lib/districts/harbor/flag';
 import { launchOpenHere, useLaunch } from '@/city/lib/launch/district';
+import { AUTOPILOT_NET } from '@/city/lib/autopilot/flag';
+import { RING_DUELS_OPEN, RING_OPEN } from '@/city/lib/ring/flag';
 import { RUN_OPEN } from '@/city/lib/run/flag';
 import { VAULT_OPEN } from '@/city/lib/vault/flag';
 import { CloseGlyph, LockGlyph } from '../hud/glyphs';
@@ -34,7 +36,16 @@ export function HowItWorks() {
 
 function HowWindow() {
   const launchOpen = useLaunch(launchOpenHere);
-  const opened: Record<DistrictId, boolean> = { market: true, launch: launchOpen, harbor: HARBOR_OPEN, agents: AGENTS_OPEN, vault: VAULT_OPEN, ring: false, home: true };
+  // «Open» is what the plate's words say: the agent with a budget, the Ring with its rated fights (CITY-236).
+  const opened: Record<DistrictId, boolean> = {
+    market: true,
+    launch: launchOpen,
+    harbor: HARBOR_OPEN,
+    agents: AGENTS_OPEN && AUTOPILOT_NET !== null,
+    vault: VAULT_OPEN,
+    ring: RING_OPEN && RING_DUELS_OPEN,
+    home: true,
+  };
   const [films] = useState(() => playsFilm(readViewer()));
   const [rules, setRules] = useState(false);
   const w = useWords(HOW);

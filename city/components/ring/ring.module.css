@@ -111,14 +111,13 @@
   flex: 1;
 }
 
+/* A brain's name is never cut mid-word: a long one takes a second line (CITY-236). */
 .brain {
   margin-top: 3px;
   font-size: var(--type-base);
   font-weight: 700;
   color: var(--ice);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  overflow-wrap: anywhere;
 }
 
 .brain span {
@@ -289,6 +288,29 @@
   }
 }
 
+/* Inside the Arena's window (CITY-217): the same screen, laid in the «Agent» tab instead of over the city. */
+.editor.editorInline {
+  position: relative;
+  z-index: auto;
+  inset: auto;
+  width: auto;
+  flex: 1;
+  min-height: 0;
+  margin: 0;
+  animation-name: sheetIn;
+}
+
+/* In the window the body's stage keeps its height; the pane scrolls instead of cutting the body. */
+.editorInline .stage,
+.editorInline .bodies {
+  flex-shrink: 0;
+}
+
+.editorInline .stage svg {
+  width: 99px;
+  height: 132px;
+}
+
 .head {
   display: flex;
   align-items: center;
@@ -363,6 +385,84 @@
   color: var(--amber);
 }
 
+/* A phone: «3 СЦЕНАРІЙ» filled its third of the row from edge to edge (CITY-236). Tighter letters keep air on both
+   sides in either language. */
+@media (max-width: 480px) {
+  .step {
+    gap: 5px;
+    padding: 0 6px;
+    letter-spacing: 0.03em;
+  }
+  /* How many brains a class holds stood over the class's name («СЕРЕДНЯ» under «138»): a phone shows the name and its
+     prices, the list below says the rest. */
+  .classTab i {
+    display: none;
+  }
+  .classes .classTab b {
+    letter-spacing: 0.06em;
+  }
+  /* In the Arena's window the brains are one list with the classes and the search: one scroll under the finger, not a
+     strip of one row inside another. */
+  .editorInline .models {
+    flex: none;
+    min-height: 0;
+    margin-top: 4px;
+    container-type: normal;
+  }
+  .editorInline .modelList {
+    /* A row of the list is a finger's 44 px at the least (CITY-242: it was 40). */
+    --row: 44px;
+    --gap: 4px;
+    height: auto;
+    overflow: visible;
+  }
+  /* On the half sheet the list of brains showed one row (CITY-239): the screen's own rows took the rest. While a brain
+     is being picked, the line that says what is being made steps aside — the list itself shows the pick, and the line
+     is back on the next step with its «i» — and the rows above the list stand closer. Three rows of the list are in
+     sight before the first scroll, and a name of two lines stands whole.
+     What a finger presses keeps its 44 px (CITY-240: «Close», the search and the class tabs had gone down to 40): the
+     room for them comes from the air between the rows, not from the rows of the list. */
+  .editorInline:has(.classes) .summary {
+    display: none;
+  }
+  .editor.editorInline {
+    padding-top: 10px;
+    padding-bottom: 8px;
+  }
+  .editorInline .head {
+    min-height: 44px;
+  }
+  .editorInline .close {
+    height: 44px;
+  }
+  .editorInline .steps {
+    margin-top: 4px;
+  }
+  /* The three steps' tabs are pressed by a finger too (CITY-242: 38 px). */
+  .editorInline .step {
+    height: 44px;
+  }
+  .editorInline .pane {
+    margin-top: 6px;
+  }
+  .editorInline .classTab {
+    min-height: 44px;
+    padding: 6px 10px;
+  }
+  .editorInline .search {
+    height: 44px;
+    margin-top: 4px;
+  }
+  .editorInline .go {
+    height: 52px;
+    margin-top: 6px;
+  }
+  /* The script's field gives its room to the counter under it sooner on a phone. */
+  .editorInline .script {
+    min-height: 72px;
+  }
+}
+
 .pane {
   flex: 1;
   min-height: 0;
@@ -371,6 +471,38 @@
   margin-top: 12px;
   overflow-y: auto;
   overscroll-behavior: contain;
+}
+
+/* A desk 900 px tall (CITY-240): the Arena's window is 615 px there, and the list of brains had room for two rows and
+   a half. The screen's own rows stand a little closer — by more than the third row needs — and nothing under a pointer
+   gets smaller. A desk's window only: a phone's sheet has its own rules above. */
+@media (max-height: 940px) and (min-width: 761px) {
+  .editor.editorInline {
+    padding-top: 10px;
+    padding-bottom: 10px;
+  }
+  .editorInline .steps {
+    margin-top: 6px;
+  }
+  .editorInline .pane {
+    margin-top: 8px;
+  }
+  .editorInline .summary {
+    margin-top: 8px;
+  }
+  .editorInline .go {
+    margin-top: 8px;
+  }
+  /* The «Body» step (CITY-242): the window is now as tall as the workspace and the six bodies' second row stood a few
+     pixels under the pane's edge. The air around the picked body's stage and above the tiles gives them room: both
+     rows whole before any scroll, nothing drawn smaller. */
+  .editorInline .stage {
+    padding-top: 0;
+    padding-bottom: 0;
+  }
+  .editorInline .bodies {
+    margin-top: 6px;
+  }
 }
 
 /* The body step: the picked body on its stage, the six below. */
@@ -428,7 +560,10 @@
 }
 
 /* The brain step: a class, a search, the models with their price. */
+/* The classes and the search keep their height: in a short window the pane scrolls, it does not squeeze them
+   (CITY-236: on a phone the search field stood half its height). */
 .classes {
+  flex: none;
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 6px;
@@ -476,6 +611,7 @@
 }
 
 .search {
+  flex: none;
   height: 42px;
   margin-top: 8px;
   padding: 0 12px;
@@ -492,13 +628,29 @@
   box-shadow: inset 0 0 0 2px rgba(153, 69, 255, 0.6);
 }
 
+/* The list's room: what the pane has left, never less than three rows. The list inside it is cut to whole rows
+   (CITY-240): on a desk 900 px tall it showed two rows and half of a third. Its height is the room rounded down to a
+   row and its gap, so the edge never halves a row before the first scroll; a browser without `round()` keeps the whole
+   room, as before. A row of two lines, or the picked one with what it can play, is taller — the list scrolls. */
 .models {
   flex: 1;
-  min-height: 120px;
+  min-height: 132px;
+  margin-top: 8px;
+  container-type: size;
+}
+
+.modelList {
+  --row: 40px;
+  --gap: 6px;
   display: grid;
   align-content: start;
-  gap: 6px;
-  margin-top: 8px;
+  /* Each row as tall as what it holds: with a least height of its own (`.model`) a row of a list of a set height
+     stayed at that least, and the picked row's line — what the brain can play, why it was refused — and a name's
+     second line were drawn outside the row and cut away. */
+  grid-auto-rows: max-content;
+  gap: var(--gap);
+  height: 100%;
+  height: calc(round(down, 100cqh + var(--gap), var(--row) + var(--gap)) - var(--gap));
   overflow-y: auto;
   overscroll-behavior: contain;
 }
@@ -506,6 +658,8 @@
 .model {
   display: grid;
   gap: 2px;
+  /* A row of one line is the list's step, whatever face draws it. */
+  min-height: var(--row, 40px);
   padding: 9px 12px 10px;
   border: 0;
   text-align: left;
@@ -532,9 +686,14 @@
   min-width: 0;
   font-size: var(--type-base);
   font-weight: 800;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  overflow-wrap: anywhere;
+}
+
+/* The catalog's mark beside a name that stands in the list twice: quiet, never the name itself. */
+.modelMark {
+  font-style: normal;
+  font-weight: 500;
+  color: var(--text-dim);
 }
 
 .modelPrice {
@@ -625,10 +784,11 @@
   color: var(--amber);
 }
 
-/* The script step. */
+/* The script step. The field takes the room the pane has and gives it back when the summary under it grows (its «i»
+   opened): the counter under the field stays whole (CITY-239 — at 200 px the field pushed half of it out of the pane). */
 .script {
-  flex: 1;
-  min-height: 200px;
+  flex: 1 1 0;
+  min-height: 96px;
   padding: 12px;
   border: 0;
   resize: none;
@@ -651,6 +811,7 @@
 }
 
 .count {
+  flex: none;
   margin-top: 6px;
   text-align: right;
   font-size: var(--type-caption);
@@ -685,11 +846,48 @@
   text-transform: uppercase;
 }
 
+/* The brain, its class and its price: whole, on a second line when a phone has no room for one (CITY-236). */
 .summaryWords span {
   color: var(--text-dim);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  line-height: 1.35;
+  overflow-wrap: anywhere;
+}
+
+/* Behind «i»: the brain as its catalog names it, and the provider it is pinned to. */
+.summaryWords .summaryAbout {
+  margin-top: 4px;
+  font-size: var(--type-caption);
+  color: rgba(238, 241, 255, 0.5);
+}
+
+.about {
+  position: relative;
+  width: 26px;
+  height: 26px;
+  flex: none;
+  display: grid;
+  place-items: center;
+  margin-left: auto;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  font: italic 700 13px/1 Georgia, serif;
+  color: var(--text-dim);
+  background: rgba(238, 241, 255, 0.06);
+  box-shadow: inset 0 0 0 1px rgba(238, 241, 255, 0.14);
+  cursor: pointer;
+}
+
+/* A finger's target, larger than the mark. */
+.about::after {
+  content: '';
+  position: absolute;
+  inset: -9px;
+}
+
+.aboutOn {
+  color: var(--ink);
+  background: var(--amber);
 }
 
 .error {

@@ -1,5 +1,5 @@
 import { digits, wordsNow } from '../i18n/dict.ts';
-import type { HallBoardId, HallFigure, HallPeriod, HallTally, HallView } from './hall.ts';
+import type { HallBoardId, HallFigure, HallPeriod, HallSpan, HallTally, HallView } from './hall.ts';
 import { HALL_BOARDS, rawToMicros } from './hall.ts';
 import { HALL_WORDS } from './words.ts';
 
@@ -29,12 +29,30 @@ export function shownBoards(view: Pick<HallView, 'boards'>): HallBoardId[] {
 /** One word for what a billboard's number is. */
 export const BOARD_WORDS = byBoard({ catch: 'wordMultiple', hunters: 'wordMultiple', creators: 'wordFee', scouts: 'wordFee' });
 
-/** An empty board, said short; the reason is behind the panel's «i» (`emptyText`). English; `emptyShort()` is the language on screen. */
+/**
+ * A board nobody is on even over all time, said short where its one action cannot open here; the reason is behind the
+ * panel's «i» (`emptyText`). English; `emptyShort()` is the language on screen.
+ */
 export const EMPTY_SHORT = HALL_WORDS.en.emptyShort;
 export const emptyShort = (): string => wordsNow(HALL_WORDS).emptyShort;
 
-/** What a board's number is, in one line — behind the panel's «i». */
-export const BOARD_KINDS = byBoard({ catch: 'kindCatch', hunters: 'kindHunters', creators: 'kindCreators', scouts: 'kindScouts' });
+/** An empty board's one action: launch your own coin from the city. */
+export const launchYours = (): string => wordsNow(HALL_WORDS).launchYours;
+
+/** The span a board's rows are of, as its sign says it: «This week», «This month», «All time». */
+export function spanText(span: HallSpan): string {
+  const w = wordsNow(HALL_WORDS);
+  return span === 'week' ? w.spanWeek : span === 'month' ? w.spanMonth : w.spanAll;
+}
+
+const KINDS = byBoard({ catch: 'kindCatch', hunters: 'kindHunters', creators: 'kindCreators', scouts: 'kindScouts' });
+
+/** What a board's number is, in one line — behind the panel's «i». The creators' all time is the chain's counters, not seven days. */
+export function boardKind(board: HallBoardId, span: HallSpan = 'week'): string {
+  return board === 'creators' && span === 'all' ? wordsNow(HALL_WORDS).kindCreatorsAll : KINDS[board];
+}
+/** What each board's number is over its week. */
+export const BOARD_KINDS = KINDS;
 
 /** A multiple from tenths: 34 → ×3.4, 1250 → ×125. */
 export function multipleText(tenths: number): string {
@@ -85,18 +103,18 @@ function share(bps: number): string {
   return digits(`${Math.floor(bps / 100)}.${Math.floor((bps % 100) / 10)}%`);
 }
 
-/** The week's trades and what was left out — the line the Hall always carries. */
-export function tallyText(tally: HallTally): string {
+/** A span's trades and what was left out — the line the Hall always carries. */
+export function tallyText(tally: HallTally, span: HallSpan = 'week'): string {
   const w = wordsNow(HALL_WORDS);
-  if (!tally.trades) return w.noTrades;
+  if (!tally.trades) return span === 'week' ? w.noTrades : span === 'month' ? w.noTradesMonth : w.noTradesAll;
   const parts = [w.trades(tally.trades)];
   if (tally.insideBps !== null) parts.push(w.inside(share(tally.insideBps)));
   if (tally.uncheckedBps) parts.push(w.unchecked(share(tally.uncheckedBps)));
   return parts.join(' · ');
 }
 
-/** Why a board is empty — behind the panel's «i»: what was read and why nothing stands, never a made-up figure. */
-export function emptyText(view: Pick<HallView, 'boards' | 'trades' | 'markets'>, board: HallBoardId): string {
+/** Why a board is empty even over all time — behind the panel's «i»: what was read and why nothing stands, never a made-up figure. */
+export function emptyText(view: Pick<HallView, 'boards' | 'trades' | 'markets'> & Partial<Pick<HallView, 'tallies'>>, board: HallBoardId): string {
   const w = wordsNow(HALL_WORDS);
   if (view.boards[board].state === 'no_source') return w.noSource;
   if (!view.markets.read) return w.noLaunch;
@@ -104,5 +122,5 @@ export function emptyText(view: Pick<HallView, 'boards' | 'trades' | 'markets'>,
     const left = Object.values(view.boards.creators.left).reduce((total, n) => total + n, 0);
     return left ? w.creatorWeeksLeft(left) : w.noCreatorFee;
   }
-  return view.trades.counted ? w.noCoinUp : w.noTradeCounted;
+  return (view.tallies?.all ?? view.trades).counted ? w.noCoinUp : w.noTradeCounted;
 }

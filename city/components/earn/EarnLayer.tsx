@@ -10,12 +10,19 @@ import { useLang } from '@/city/lib/i18n/lang';
 import { useFilming } from '@/city/lib/moments/MomentsLayer';
 import { useRun } from '@/city/lib/run/store';
 import { startWallets } from '@/city/lib/trade/wallet';
+import { firstSize } from '@/city/lib/window/sizes';
+import { useWindows } from '@/city/lib/window/store';
 import { useCityWindow } from '../window/useCityWindow';
 import { EarnGlyph } from './bits';
 import s from './earn.module.css';
 
 // The window's contents never ride with the city's first frame. Since CITY-209 they are fetched once the city is drawn
 // and the page is idle, so the first tap on «Earn» does not wait for them (2.8–5.5 s on the first open before).
+/** Earn's first width: two columns of the Shelf at the least, three at the most (`earn.module.css`, 980 px). */
+const EARN_WIDTHS = { least: 680, most: 1012 } as const;
+/** Earn's first height: the Shelf's three rows whole, with the wallet's earnings line over the tabs. */
+const EARN_HEIGHT = 820;
+
 const loadEarnWindow = () => import('./EarnWindow');
 const EarnWindow = dynamic(loadEarnWindow, { ssr: false, loading: () => <div className={s.pending} aria-busy="true" /> });
 
@@ -99,6 +106,8 @@ function OpenEarn() {
   }, []);
 
   const shown = open && (!(running || filming) || busy);
+  const viewport = useWindows((st) => st.viewport);
+  const earnSize = useMemo(() => firstSize(viewport, EARN_WIDTHS, EARN_HEIGHT), [viewport]);
   useEffect(() => {
     if (!shown) return;
     const key = (event: KeyboardEvent) => {
@@ -115,14 +124,14 @@ function OpenEarn() {
       title: earnWords(lang).title,
       icon: <EarnGlyph />,
       render: renderEarn,
-      // CITY-209: as tall as the tab, up to its place — «Mine» with one line leaves no empty glass under it.
-      fit: true,
-      size: { width: 680, height: 740 },
+      // CITY-242: one height for every tab — the window no longer jumps as the tabs change (CITY-209 made it as tall as
+      // the tab) — and wide enough for the Shelf's three columns, so a large desk shows every card of it.
+      size: earnSize,
       min: { width: 380, height: 480 },
       held: busy,
       onClose: closeEarn,
     }),
-    [busy, lang],
+    [busy, lang, earnSize],
   );
   useCityWindow(shown, spec);
   return null;

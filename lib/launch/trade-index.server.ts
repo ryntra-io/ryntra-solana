@@ -15,6 +15,7 @@
 import type { Connection } from "@solana/web3.js";
 
 import { createLaunchMarketReader, type Decoded, type DecodedIndex, type LaunchMarketReader } from "../core/venues/meteora-dbc/market.server.ts";
+import { addressHistoryOf } from "../core/history/address-history.ts";
 import type { GuardStore } from "../guard/store.ts";
 import { launchArchiveEndpoint, launchHistoryEndpoint, launchIndexedEndpoint, type LaunchNetwork } from "./config.server.ts";
 
@@ -42,7 +43,8 @@ export function launchDecodedIndex(store: GuardStore, cluster: string, feeWallet
 
 /**
  * The market reader of a Launch read: this network's fee wallet and referral owner, its endpoints for indexed reads, for
- * whole signature lists and for older transactions, and the shared index.
+ * whole signature lists and for older transactions, and the shared index. Where the history endpoint is Helius on
+ * mainnet, its Parsed Events Scan finds the signatures first (CITY-245); elsewhere there is none and the node is paged.
  */
 export function launchMarketReader(deps: Readonly<{ network: LaunchNetwork; connection: Connection; store: GuardStore }>): LaunchMarketReader {
   return createLaunchMarketReader(deps.connection, {
@@ -52,5 +54,6 @@ export function launchMarketReader(deps: Readonly<{ network: LaunchNetwork; conn
     index: launchDecodedIndex(deps.store, deps.network.cluster, deps.network.feeWallet),
     history: launchHistoryEndpoint(deps.network),
     archive: launchArchiveEndpoint(deps.network),
+    scan: deps.network.cluster === "mainnet" ? addressHistoryOf(launchHistoryEndpoint(deps.network)) : null,
   });
 }

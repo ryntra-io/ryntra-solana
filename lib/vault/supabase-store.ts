@@ -1,10 +1,10 @@
 import type { Title, VaultId } from "./levels";
-import { VaultStoreUnavailable, type Crack, type Cracked, type FeedEntry, type Progress, type Take, type VaultStore, type Window } from "./store";
+import { VaultStoreUnavailable, type Crack, type Cracked, type FeedEntry, type Pool, type Progress, type Spent, type Take, type VaultStore, type Window } from "./store";
 
 /**
  * The vault in the database: one call to one `public.vault_*` function per question, each gated by the app secret and
- * each one transaction (`supabase/migrations/20261027200000_vault_v1.sql`). Every server instance reads and writes the
- * same rows, so the limits hold across instances, a crack is recorded once however many arrive at once, and the feed
+ * each one transaction (`supabase/migrations/20261027200000_vault_v1.sql`; the day's spending and a guest's hand-over in
+ * `20261108120000_vault_v2_spend.sql`). Every server instance reads and writes the same rows, so the limits hold across instances, a crack is recorded once however many arrive at once, and the feed
  * is one feed. The transport is the server's usual one (`rpcResult`, which adds the secret); a test passes its own.
  */
 
@@ -26,6 +26,13 @@ function progressOf(value: unknown, fn: string): Progress {
     title: value.title === "breaker" ? (value.title as Title) : null,
   };
 }
+
+function spentOf(value: unknown, fn: string): Spent {
+  if (!isRecord(value) || !isCount(value.guest) || !isCount(value.wallet)) throw new VaultStoreUnavailable(`${fn}: no spending`);
+  return { guest: value.guest, wallet: value.wallet };
+}
+
+const microArg = (n: number) => Math.round(n);
 
 const windowsArg = (windows: readonly Window[]) => windows.map((w) => ({ name: w.name, ms: w.ms, limit: w.limit }));
 
@@ -112,6 +119,29 @@ export function createSupabaseVaultStore(rpc: VaultRpc): VaultStore {
 
     async keepAnswer(key, body, now) {
       await call("vault_keep_answer", { p_key: key, p_body: body, p_now: iso(now) });
+    },
+
+    async reserve(day, pool: Pool, microUsd, caps) {
+      const data = await call("vault_spend_reserve", { p_day: day, p_pool: pool, p_micro: microArg(microUsd), p_total: microArg(caps.total), p_guest: microArg(caps.guest) });
+      if (typeof data.allowed !== "boolean") throw new VaultStoreUnavailable("vault_spend_reserve: unreadable");
+      return { ok: data.allowed, spent: spentOf(data.spent, "vault_spend_reserve") };
+    },
+
+    async settle(day, pool: Pool, delta, caps) {
+      if (delta === 0) return { over: 0 };
+      const data = await call("vault_spend_settle", { p_day: day, p_pool: pool, p_delta: microArg(delta), p_total: microArg(caps.total), p_guest: microArg(caps.guest) });
+      if (typeof data.over !== "number" || !Number.isSafeInteger(data.over) || data.over < 0) throw new VaultStoreUnavailable("vault_spend_settle: unreadable");
+      return { over: data.over };
+    },
+
+    async spent(day) {
+      const data = await call("vault_spend_read", { p_day: day });
+      return spentOf(data.spent, "vault_spend_read");
+    },
+
+    async release(who) {
+      const data = await call("vault_release", { p_who: who });
+      return data.progress === null || data.progress === undefined ? null : progressOf(data.progress, "vault_release");
     },
   };
 }

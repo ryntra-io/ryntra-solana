@@ -3,7 +3,8 @@
 import { useEffect, useMemo } from 'react';
 import type { PositionView } from '@/lib/liquidity/catalog/positions';
 import { formatPrice } from '@/city/lib/districts/harbor/pools';
-import { depthSol, feesSol24h, pierOf, solPiers, solShort, solUsd } from '@/city/lib/earn/pier';
+import { apart } from '@/city/lib/apart';
+import { depthSol, feesSol24h, pierOf, rangeMark, solPiers, solShort, solUsd, type Pier } from '@/city/lib/earn/pier';
 import { PIER_MODE } from '@/city/lib/earn/pier-gate';
 import { usePier } from '@/city/lib/earn/pier-store';
 import { useEarnData } from '@/city/lib/earn/store';
@@ -51,6 +52,10 @@ export function Piers({ words, owner, piers: rows }: { words: Words; owner: stri
 
   const piers = useMemo(() => (list.status === 'ready' ? solPiers(list.value.pools) : []), [list]);
   const views: readonly PositionView[] = positions && positions.owner === owner && positions.value.status === 'ready' ? positions.value.value : [];
+  // Namesakes told apart (CITY-243): piers of one pair by their fee, boats of one pair by their range.
+  // Written in the language on screen, so read again with each render: a few rows, no cost.
+  const pierMarks = apart(piers.map((pier) => ({ name: pierName(pier), marks: [feeText(pier), depthText(pier)] })));
+  const boatMarks = apart(views.map((view) => ({ name: view.name, marks: [rangeOf(view)] })));
 
   if (pool && pierOf(pool) && !copying) return <PierCard words={words} pier={pierOf(pool)!} />;
   if (boat) return <BoatCard words={words} view={boat} row={rows.find((r) => r.address === boat.address) ?? null} />;
@@ -81,14 +86,16 @@ export function Piers({ words, owner, piers: rows }: { words: Words; owner: stri
         <div className={s.dock}>
           <span className={s.kicker}>{w.boats}</span>
           <ul className={s.boats}>
-            {views.map((view) => {
+            {views.map((view, at) => {
               const row = rows.find((r) => r.address === view.address) ?? null;
               const lit = view.rangeState === 'in_range';
+              const name = boatMarks[at] ? `${view.name} · ${boatMarks[at]}` : view.name;
               return (
                 <li key={view.address}>
-                  <button type="button" className={`${s.boatTile} ${lit ? s.boatLit : ''}`} onClick={() => usePier.getState().openBoat(view)} aria-label={`${view.name} · ${lit ? w.inRange : w.outOfRange}`}>
+                  <button type="button" className={`${s.boatTile} ${lit ? s.boatLit : ''}`} onClick={() => usePier.getState().openBoat(view)} aria-label={`${name} · ${lit ? w.inRange : w.outOfRange}`}>
                     <Boat lit={lit} size={72} />
                     <b>{view.name}</b>
+                    {boatMarks[at] ? <small className={s.nameMark}>{boatMarks[at]}</small> : null}
                     {row?.feesLamports != null && row.feesLamports > 0n ? <span className={s.gain}>+{digits(solShort(row.feesLamports))} SOL</span> : <span>{lit ? w.inRange : w.outOfRange}</span>}
                   </button>
                 </li>
@@ -101,9 +108,10 @@ export function Piers({ words, owner, piers: rows }: { words: Words; owner: stri
       <span className={s.kicker}>{w.piers}</span>
       {!piers.length ? <p className={s.empty}>{words.piers.empty}</p> : null}
       <ul className={s.rows}>
-        {piers.map((pier) => {
+        {piers.map((pier, at) => {
           const fees = feesSol24h(pier);
-          const depth = depthSol(pier);
+          const fee = feeText(pier);
+          const mark = pierMarks[at];
           return (
             <li key={pier.pool.address}>
               <button type="button" className={`${s.pierRow} ${s.pierHit}`} onClick={() => usePier.getState().openPier(pier.pool)}>
@@ -112,10 +120,18 @@ export function Piers({ words, owner, piers: rows }: { words: Words; owner: stri
                   <Coin mint={pier.sol.mint} size={28} symbol="SOL" />
                 </span>
                 <span className={s.names}>
-                  <b>{pier.lst ? `${pier.lst.symbol} · SOL` : `SOL · ${pier.other.symbol}`}</b>
+                  <b>
+                    {pierName(pier)}
+                    {mark ? (
+                      <span className={s.nameMark} title={mark === fee ? `${w.tradeFee} ${fee}` : undefined}>
+                        {' · '}
+                        {mark}
+                      </span>
+                    ) : null}
+                  </b>
                   <span>
-                    {w.depth} {depth !== null ? `${digits(compact(depth))} SOL` : '—'}
-                    {pier.pool.feePct !== null ? ` · ${w.tradeFee} ${digits(`${Number(pier.pool.feePct.toFixed(3))}%`)}` : ''}
+                    {w.depth} {depthText(pier) ?? '—'}
+                    {fee !== null && mark !== fee ? ` · ${w.tradeFee} ${fee}` : ''}
                   </span>
                 </span>
                 <span className={s.figures}>
@@ -134,6 +150,28 @@ export function Piers({ words, owner, piers: rows }: { words: Words; owner: stri
       {PIER_MODE === 'open' ? null : <Notify product="pier" words={words} />}
     </section>
   );
+}
+
+/** A pier's pair as the list names it: an LST against SOL, or SOL against its other coin. */
+function pierName(pier: Pier): string {
+  return pier.lst ? `${pier.lst.symbol} · SOL` : `SOL · ${pier.other.symbol}`;
+}
+
+/** A pier's trade fee, in the language on screen: 0,04%. */
+function feeText(pier: Pier): string | null {
+  return pier.pool.feePct !== null ? digits(`${Number(pier.pool.feePct.toFixed(3))}%`) : null;
+}
+
+/** A pier's depth in SOL, in the language on screen. */
+function depthText(pier: Pier): string | null {
+  const depth = depthSol(pier);
+  return depth !== null ? `${digits(compact(depth))} SOL` : null;
+}
+
+/** A boat's range, in the language on screen. */
+function rangeOf(view: PositionView): string | null {
+  const mark = rangeMark(view.lower, view.upper);
+  return mark ? digits(mark) : null;
 }
 
 /** A depth in SOL, short: 23.9K, 1.2M. */

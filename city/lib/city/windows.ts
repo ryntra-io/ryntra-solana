@@ -55,7 +55,8 @@ export type WindowSources = Readonly<{
   /** «How it works»: the lessons (CITY-43). */
   guides?: Readonly<{ open: boolean }>;
   moments?: Readonly<{ sheet: unknown }>;
-  launch?: Readonly<{ sheet: boolean }>;
+  /** The launch sheet, or an early launch's window for its people (CITY-220): the same slot, one at a time. */
+  launch?: Readonly<{ sheet: boolean; entry?: string | null }>;
   build?: Readonly<{ on: boolean }>;
   /** The city's pages open as windows: Docs, Developers, Help, About, the Terms, the Privacy Policy (CITY-157). */
   pages?: Readonly<{ open: readonly string[] }>;
@@ -85,7 +86,7 @@ const IS_OPEN: Readonly<Record<WindowName, (src: WindowSources) => boolean>> = {
   how: (s) => !!s.how?.open,
   guides: (s) => !!s.guides?.open,
   moments: (s) => s.moments?.sheet != null && s.moments.sheet !== false,
-  launch: (s) => !!s.launch?.sheet,
+  launch: (s) => !!s.launch?.sheet || s.launch?.entry != null,
   build: (s) => !!s.build?.on,
   pages: (s) => (s.pages?.open.length ?? 0) > 0,
   menu: (s) => !!s.hud?.menu,

@@ -192,7 +192,7 @@ function Panel() {
     setMore(false);
     setText('');
     input.current?.blur();
-    void useAssistant.getState().ask(q, useCity.getState().snapshot.towers);
+    void useAssistant.getState().ask(q, () => useCity.getState().snapshot.towers);
   };
   const submit = (e: FormEvent) => {
     e.preventDefault();

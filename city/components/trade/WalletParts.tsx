@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { useWords } from '@/city/lib/i18n/dict';
 import { colourOf } from '@/city/lib/trade/colour';
 import { shortAddress } from '@/city/lib/trade/format';
+import { createHoldingsWatch } from '@/city/lib/trade/holdings-watch';
 import { BUSY, useTrade } from '@/city/lib/trade/store';
 import { APP_WALLET, useWallet } from '@/city/lib/trade/wallet';
 import {
@@ -29,7 +30,11 @@ export function useWalletName(): (name: string) => string {
 }
 
 /** Phantom, Solflare, Backpack — whatever this browser has, found the Wallet Standard way. */
-export function WalletPicker({ onBack }: { onBack: () => void }) {
+/**
+ * `back` — the address a phone's wallet app opens to come back to (CITY-222: the agent's card, `/?open=agent`), this page
+ * when not given; `onLeave` — told which way the person left for a wallet, before the browser follows the link.
+ */
+export function WalletPicker({ onBack, back, onLeave }: { onBack: () => void; back?: string; onLeave?: (to: 'phantom' | 'solflare' | 'install') => void }) {
   const w = useWords(PICK);
   const nameOf = useWalletName();
   const wallets = useWallet((st) => st.wallets);
@@ -39,34 +44,36 @@ export function WalletPicker({ onBack }: { onBack: () => void }) {
   const [phone, setPhone] = useState(false);
   useEffect(() => setPhone(isPhoneUserAgent(navigator.userAgent)), []);
   if (!wallets.length) {
-    const here = typeof window === 'undefined' ? '' : window.location.href;
+    const here = back ?? (typeof window === 'undefined' ? '' : window.location.href);
     const origin = typeof window === 'undefined' ? '' : window.location.origin;
     return (
       <>
         <div className={s.walletHint}>
           {phone ? w.openInWalletApp : w.noWallet}
         </div>
-        <div className={s.pair}>
-          <a className={`${s.display} ${s.action}`} href={phone ? phantomBrowseUrl(here, origin) : PHANTOM_DOWNLOAD_URL} target={phone ? undefined : '_blank'} rel="noreferrer" style={{ display: 'grid', placeItems: 'center', textDecoration: 'none' }}>
-            {phone ? w.openInPhantom : w.getPhantom}
-          </a>
-          <button className={s.quiet} onClick={onBack}>
+        {/* CITY-237: the one action takes the card's width — «Open in Phantom» and «Back» side by side did not fit a
+            phone's card, and «Back» was cut by its edge. «Back» stands in the quiet line under it, beside the other wallets. */}
+        <a className={`${s.display} ${s.action}`} href={phone ? phantomBrowseUrl(here, origin) : PHANTOM_DOWNLOAD_URL} target={phone ? undefined : '_blank'} rel="noreferrer" style={{ display: 'grid', placeItems: 'center', textDecoration: 'none' }} onClick={() => onLeave?.(phone ? 'phantom' : 'install')} data-wallet-go="">
+          {phone ? w.openInPhantom : w.getPhantom}
+        </a>
+        <div className={s.walletWays}>
+          <span className={s.walletHint}>
+            {w.or}{' '}
+            <a href={phone ? solflareBrowseUrl(here, origin) : SOLFLARE_DOWNLOAD_URL} target={phone ? undefined : '_blank'} rel="noreferrer" onClick={() => onLeave?.(phone ? 'solflare' : 'install')}>
+              Solflare
+            </a>
+            {phone ? null : (
+              <>
+                {' · '}
+                <a href={BACKPACK_DOWNLOAD_URL} target="_blank" rel="noreferrer" onClick={() => onLeave?.('install')}>
+                  Backpack
+                </a>
+              </>
+            )}
+          </span>
+          <button className={s.walletBack} onClick={onBack} data-wallet-back="">
             {w.back}
           </button>
-        </div>
-        <div className={s.walletHint}>
-          {w.or}{' '}
-          <a href={phone ? solflareBrowseUrl(here, origin) : SOLFLARE_DOWNLOAD_URL} target={phone ? undefined : '_blank'} rel="noreferrer">
-            Solflare
-          </a>
-          {phone ? null : (
-            <>
-              {' · '}
-              <a href={BACKPACK_DOWNLOAD_URL} target="_blank" rel="noreferrer">
-                Backpack
-              </a>
-            </>
-          )}
         </div>
       </>
     );
@@ -88,6 +95,35 @@ export function WalletPicker({ onBack }: { onBack: () => void }) {
       </button>
     </>
   );
+}
+
+/* One watch for every card that asks for funds: a hidden tab reads nothing, two cards share one timer, a return to
+   the page is one read (`holdings-watch.ts`). */
+const watchHoldings = createHoldingsWatch({
+  read: () => useWallet.getState().refreshHoldings(),
+  visible: () => document.visibilityState === 'visible',
+  now: () => Date.now(),
+  every: (run, ms) => {
+    const timer = window.setInterval(run, ms);
+    return () => window.clearInterval(timer);
+  },
+  onReturn: (run) => {
+    window.addEventListener('focus', run);
+    document.addEventListener('visibilitychange', run);
+    return () => {
+      window.removeEventListener('focus', run);
+      document.removeEventListener('visibilitychange', run);
+    };
+  },
+});
+
+/**
+ * While a card asks for funds, the wallet's balance is read again — on return to the page and every 15 s while the page
+ * is in view — so a top-up turns «Add SOL» back into the card's own action without a reload (CITY-222: the agent's
+ * card; CITY-237: the tower's ticket and the money autopilot, whose «Add SOL» would otherwise stay after the SOL arrived).
+ */
+export function useHoldingsWatch(on: boolean): void {
+  useEffect(() => (on ? watchHoldings() : undefined), [on]);
 }
 
 /** Who is trading: your colour, your address, and the way out. */

@@ -17,6 +17,7 @@
  */
 
 import type { LaunchCreatorProfileResponse, LaunchStatsResponse } from "../api/v1/contract.ts";
+import { creatorEarnings } from "../core/launch/creator-earnings.ts";
 import { creatorLockSchedule } from "../core/launch/creator-lock.ts";
 import {
   creatorSales,
@@ -154,6 +155,20 @@ export async function readLaunchStats(deps: MarketDeps, token: string): Promise<
         : null,
     observedAt: deps.now().toISOString(),
   };
+}
+
+/**
+ * What a launch's creator role earned over all time, raw in the pair currency, on the chain's own counters — the
+ * cabinet's figure (`creatorEarnings(…).role.earnedRaw`) — from the same kept read of the creator fees `readLaunchStats`
+ * makes, so asked right after it the chain is not read again. Null when the launch or its fees could not be read: never
+ * a zero. Read-only; the Hall of Fame's all-time creators (CITY-230).
+ */
+export async function readLaunchEarnedAll(deps: MarketDeps, token: string): Promise<Readonly<{ raw: string; at: string }> | null> {
+  const record = await readLaunchRecord(deps, deps.network.cluster, token);
+  if (!record || record.state === "PENDING") return null;
+  const fees = await feesOf(deps, record);
+  if (!fees) return null;
+  return { raw: creatorEarnings(fees.read, record.creator).role.earnedRaw, at: deps.now().toISOString() };
 }
 
 /** The launches a wallet made through Ryntra on this network — its own, not those it shares in —, the newest first. */

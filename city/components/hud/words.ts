@@ -30,8 +30,6 @@ export const HUD = words(
     lockedAgents: 'Agents',
     lockedAgentsLine: 'Give an agent a rule. It hunts, you sign every buy.',
     opensSoon: 'Opens soon',
-    firstHint: 'Tap any tower to see it. Buy in one tap.',
-    gotIt: 'Got it',
     hotNow: 'Hot now',
     h1: '1H',
     h24: '24H',
@@ -71,6 +69,8 @@ export const HUD = words(
     cutFlare: 'SOLAR FLARE',
     cutNewTower: 'NEW TOWER',
     cutWindow: (n: string, unit: string) => `${n}${unit}`,
+    // Read by a screen reader while the scene builds; nothing is written on the screen (CITY-241).
+    cityLoading: 'The city is loading',
   },
   {
     home: 'Ryntra — головна',
@@ -100,8 +100,6 @@ export const HUD = words(
     lockedAgents: 'Агенти',
     lockedAgentsLine: 'Дай агентові правило. Він шукає, кожну покупку підписуєш ти.',
     opensSoon: 'Відкриється скоро',
-    firstHint: 'Торкнись будь-якої вежі, щоб її побачити. Купівля — одним дотиком.',
-    gotIt: 'Зрозуміло',
     hotNow: 'Гаряче зараз',
     h1: '1 год',
     h24: '24 год',
@@ -141,6 +139,7 @@ export const HUD = words(
     cutFlare: 'СПАЛАХ',
     cutNewTower: 'НОВА ВЕЖА',
     cutWindow: (n: string, unit: string) => `${n} ${unit === 'M' ? 'ХВ' : unit === 'H' ? 'ГОД' : unit === 'D' ? 'ДН' : unit}`,
+    cityLoading: 'Місто завантажується',
   },
 );
 

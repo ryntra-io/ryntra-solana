@@ -35,6 +35,7 @@ export function chooseVenue(
 ): VenueChoice {
   if (args.pool && args.takesLimitOrders) return { venue: "dlmm", available: true };
   if (args.stepUsd.some((usd) => !(usd >= TRIGGER_MIN_ORDER_USD))) return { venue: "trigger", available: false, reason: "BELOW_MINIMUM" };
+  /* On devnet Trigger V1 does not exist; on mainnet it is not this composer's venue yet: the fallback is planned, not built. */
   if (args.network === "devnet") return { venue: "trigger", available: false, reason: "MAINNET_ONLY" };
   return { venue: null, available: false, reason: "NO_POOL" };
 }

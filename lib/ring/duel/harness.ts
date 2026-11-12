@@ -52,7 +52,17 @@ export type AgentReply =
   | { kind: "fault"; fault: Fault; costMicroUsd: number }
   | { kind: "void"; reason: string; costMicroUsd: number };
 
-export type DuelAgent = { act(view: SeatView, signal: AbortSignal): Promise<AgentReply> };
+export type DuelAgent = {
+  act(view: SeatView, signal: AbortSignal): Promise<AgentReply>;
+  /**
+   * What a move cut at the move's time costs, micro-dollars: the call already went out and its model may bill it all
+   * the same (review 8.11), so the harness counts it at the full price. Absent, 0 — a house agent.
+   */
+  timeoutMicroUsd?: number;
+};
+
+/** A timed-out move's cost: the agent's own price of a move, or nothing when it names none sound. */
+const timeoutCost = (agent: DuelAgent): number => (Number.isSafeInteger(agent.timeoutMicroUsd) && agent.timeoutMicroUsd! > 0 ? agent.timeoutMicroUsd! : 0);
 
 type Read<M> = { ok: true; move: M } | { ok: false; fault: Fault };
 
@@ -134,7 +144,7 @@ async function ask(agent: DuelAgent, view: SeatView, moveMs: number, outer?: Abo
     const late = new Promise<AgentReply>((resolve) => {
       timer = setTimeout(() => {
         stop.abort();
-        resolve({ kind: "fault", fault: "timeout", costMicroUsd: 0 });
+        resolve({ kind: "fault", fault: "timeout", costMicroUsd: timeoutCost(agent) });
       }, moveMs);
     });
     const reply = agent.act(view, stop.signal).then(

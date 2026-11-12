@@ -21,18 +21,6 @@
   pointer-events: auto;
 }
 
-/* On a narrow screen the city's first-visit hint spans the row under the top bar: «Mine» waits under it until the
-   hint is learned, rather than covering its words and its close button. */
-@media (max-width: 680px) {
-  :global(body:has([data-city-hint])) .wrap {
-    top: calc(max(12px, env(safe-area-inset-top)) + 114px);
-  }
-
-  :global(body:has([data-city-hint])) .panel {
-    max-height: min(560px, calc(100dvh - 282px));
-  }
-}
-
 .display {
   font-family: var(--font-display, system-ui), system-ui, sans-serif;
   font-stretch: 125%;

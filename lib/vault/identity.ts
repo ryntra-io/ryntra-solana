@@ -55,6 +55,13 @@ export function guestCookieHeader(value: string, requestUrl: string): string {
   return parts.join("; ");
 }
 
+/** The `Set-Cookie` line that drops the guest key: its progress now lives on the wallet's account. */
+export function forgetGuestHeader(requestUrl: string): string {
+  const parts = [`${VAULT_GUEST_COOKIE}=`, "Path=/", "Max-Age=0", "HttpOnly", "SameSite=Lax"];
+  if (new URL(requestUrl).protocol === "https:") parts.push("Secure");
+  return parts.join("; ");
+}
+
 /**
  * The network an address limit counts: an IPv4 address as it is, an IPv6 address by its /64 — one household or one
  * phone gets a whole /64, so counting single IPv6 addresses would give one person billions of fresh limits. An IPv4

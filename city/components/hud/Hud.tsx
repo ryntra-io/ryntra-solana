@@ -1,11 +1,13 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { BRAND } from '@/city/lib/brand';
 import { isStale } from '@/city/lib/city/events';
 import { useCity, useCityEvents, type CityEvent } from '@/city/lib/city/store';
+import { useBackPanels } from '@/city/lib/back/panels';
 import { useChrome } from '@/city/lib/deck/chrome';
-import { useFeedPanel } from '@/city/lib/feed/panel';
+import { useWindows } from '@/city/lib/window/store';
+import { feedTakesEscape, useFeedPanel } from '@/city/lib/feed/panel';
 import { useHarbor } from '@/city/lib/districts/harbor/store';
 import { useHudPanels } from '@/city/lib/city/windows';
 import { useHall } from '@/city/lib/launch/hall-store';
@@ -14,6 +16,8 @@ import { useFilming } from '@/city/lib/moments/MomentsLayer';
 import { cancelFilming, useMoments } from '@/city/lib/moments/stage';
 import { usePages } from '@/city/lib/pages/store';
 import { useLaunch } from '@/city/lib/launch/district';
+import { top } from '@/city/lib/window/layout';
+import { reviewStepOpen, sheetClosable } from '@/city/lib/launch/review-step';
 import { BUSY, useTrade } from '@/city/lib/trade/store';
 import { RUN_OPEN } from '@/city/lib/run/flag';
 import { useRun } from '@/city/lib/run/store';
@@ -25,6 +29,7 @@ import { quarterStore } from '@/city/lib/quarter/store';
 import { howStore } from '@/city/lib/art/how';
 import { useGuides } from '@/city/lib/how/store';
 import { AgentCard, useAgentCard } from '../agent/AgentCard';
+import { FirstAction } from '../crew/FirstAction';
 import { chartOpen, useChartOpen } from '../chart/ChartAction';
 import { EventsBell } from '../feed/EventsBell';
 import { LiveFeed } from '../feed/LiveFeed';
@@ -64,9 +69,6 @@ const DISTRICT: Record<District, HudText> = {
 
 const ACCENT: Record<CityEvent['kind'], string> = { pump: 'var(--mint)', flare: 'var(--flare)', launch: 'var(--mint)' };
 
-/** The first-visit hint is shown once per browser: gone after its close or the first tower tapped. */
-const HINT_KEY = 'ryntra.city.firstHint';
-
 type Play = (from: 'home' | 'city') => void;
 
 /**
@@ -78,6 +80,7 @@ type Play = (from: 'home' | 'city') => void;
 export function Hud({ onPlay, onSound }: { onPlay: Play; onSound: (on: boolean) => void }) {
   const running = useRun((st) => st.phase !== 'off');
   const topShown = useChrome((st) => st.top);
+  const deckShown = useChrome((st) => st.bottom);
   // The events live under the top bar's bell: nothing of them on the city until it is open.
   const feedOpen = useFeedPanel((st) => st.open);
   const filming = useFilming();
@@ -105,10 +108,18 @@ export function Hud({ onPlay, onSound }: { onPlay: Play; onSound: (on: boolean) 
   const agentAway = useAgentReport((st) => st.away !== null);
   // The Launch district owns the card slot while its sheet is open or a launch's tower is picked.
   const launch = useLaunchDistrict();
+  // An early launch's window for its people (CITY-220) is the one panel of the district that still keeps the bottom.
+  const entry = useLaunch((st) => st.entry !== null);
   // The tower's window owns the bottom of the screen while it is open (CITY-78): nothing of the home stands under it.
   // The tower's chart takes its place the same way (CITY-5a).
   const trading = useTrade((st) => st.open);
   const charting = useChartOpen();
+  // The first hint stands over the Deck (CITY-241): it waits while the Deck's doors open there, while folded windows
+  // stand in their tray in the same place, and while a card or the Hall's sheet stands in the bottom of the screen.
+  const doors = useBackPanels((st) => st.open.includes('tray'));
+  const folded = useWindows((st) => st.chips.length > 0);
+  const homeCard = !(menu || settings || hall) && (agentCard || challenge !== null || play || nightCard);
+  const hintAway = !!hall || homeCard || doors || folded;
   // A tower picked from the city closes the menu, so two cards never stack on a phone.
   useEffect(() => {
     if (selectedId || launch.showing) closeMenu();
@@ -125,15 +136,40 @@ export function Hud({ onPlay, onSound }: { onPlay: Play; onSound: (on: boolean) 
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => {
       if (event.key !== 'Escape' || event.defaultPrevented) return;
-      if (useTrade.getState().open || useHarbor.getState().open || useMoments.getState().sheet || howStore.getState().open || useGuides.getState().open || chartOpen()) return;
+      // The Deck's open tray stands over everything (CITY-242) and closes itself with this press, alone.
+      if (document.querySelector('[data-deck-tray]')) return;
+      // The launch sheet is a window of the frame (CITY-242). In front, it is what this press is for — the windows behind
+      // it (a trade card, Earn, Money) wait their turn, also while a launch is under way and nothing closes.
+      const sheet = useLaunch.getState();
+      const layout = useWindows.getState().layout;
+      const framed = sheet.sheet && layout.windows.some((win) => win.id === 'launch');
+      const launchFront = framed && top(layout)?.id === 'launch';
+      // What stands over every window — «How the city works», a clip's sheet, the Harbor — closes itself first; a window
+      // of the frame behind the Launch window (the trade card, the chart, the lessons) waits.
+      if (useHarbor.getState().open || useMoments.getState().sheet || howStore.getState().open) return;
+      if (!launchFront && (useTrade.getState().open || useGuides.getState().open || chartOpen())) return;
+      // The events' panel under the bell closes itself with this press, and nothing under it goes with it (CITY-239).
+      if (feedTakesEscape(useFeedPanel.getState().open, document)) return;
       // A window on the whole screen takes this Escape back from the whole screen itself (city/components/window).
       if (document.querySelector('[data-window-full]')) return;
       if (document.querySelector('[data-city-top] [aria-expanded="true"]:not([data-city-menu] *)')) return;
       // A beacon's editor closes itself first; the tower card under it stays (city/components/beacon).
       if (document.querySelector('[data-beacon-sheet]')) return;
       if (menu || settings) return closeMenu();
-      const sheet = useLaunch.getState();
+      // The launch window in front: the review steps back to its fields first, as a bot's page does, then the sheet
+      // closes unless a launch is under way; the press is taken either way, one press one layer. Behind another window
+      // (its berth over it) the sheet waits: that window closes itself first.
+      if (launchFront) {
+        event.preventDefault();
+        if (reviewStepOpen(sheet)) return sheet.setStep('form');
+        if (closable(sheet.phase)) sheet.closeSheet();
+        return;
+      }
+      if (framed) return;
+      // The sheet out of the frame for a while (a run, a clip being filmed): as before the frame.
+      if (reviewStepOpen(sheet)) return sheet.setStep('form');
       if (sheet.sheet && closable(sheet.phase)) return sheet.closeSheet();
+      if (sheet.entry) return sheet.entryBusy ? undefined : sheet.closeEntry();
       if (useCity.getState().selectedId) return useCity.getState().select(null);
       if (useAgent.getState().panel !== 'none') return useAgent.getState().closePanel();
       // Last, the Play layer: its Map and Hall, then back to City (CITY-81).
@@ -158,14 +194,17 @@ export function Hud({ onPlay, onSound }: { onPlay: Play; onSound: (on: boolean) 
   }
   return (
     // `data-window`: the pieces styled elsewhere (the moments' button on a narrow phone) give way by CSS as well.
-    <div className={s.layer} data-window={windowOpen ? '' : undefined} data-top-hidden={topShown ? undefined : ''}>
+    <div className={s.layer} data-window={windowOpen ? '' : undefined} data-top-hidden={topShown ? undefined : ''} data-deck-hidden={deckShown ? undefined : ''}>
       {/* First, so the top bar's menus and the cut-in stand over it (CITY-66). */}
-      {feedOpen && <LiveFeed panel hidden={windowOpen} />}
+      {/* The bell's panel: opened over a window it stands over it, in a layer of its own (CITY-242). */}
+      {feedOpen && <LiveFeed panel />}
       <TopBar onSound={onSound} onHome={home} windowOpen={windowOpen} />
       <TopHandle />
       <CutIn hidden={windowOpen} />
       <HoverLabel />
-      <FirstHint hidden={windowOpen || trading || !!selectedId || launch.showing || nightPlaying || agentAway} />
+      {/* The first screen's one action (CITY-222): «Say it. Your agent does the rest.» — over the Deck's Agents, clear
+          of the sky and the coin over the central tower (CITY-241). */}
+      <FirstAction hidden={windowOpen || trading || !!selectedId || launch.showing || nightPlaying || agentAway || hintAway} />
       {trading || charting ? null : launch.showing ? (
         <LaunchSlot />
       ) : selectedId ? (
@@ -187,16 +226,21 @@ export function Hud({ onPlay, onSound }: { onPlay: Play; onSound: (on: boolean) 
         </>
       )}
       {/* The menu stays under every window of the frame and under a picked tower (30.10): Spot stands as the Exchange
-          does. A launch's sheet and Play's own dock, where its switch is open, keep the bottom for themselves. */}
-      {!playDock && !launch.showing && !nightPlaying && (
+          does, and so does Launch, a window of the frame since CITY-242. An early launch's window and Play's own dock,
+          where its switch is open, keep the bottom for themselves. */}
+      {!playDock && !entry && !nightPlaying && (
         <Deck />
       )}
     </div>
   );
 }
 
-/** The launch sheet closes unless a launch is under way (between the upload and the send). */
-export const closable = (phase: ReturnType<typeof useLaunch.getState>['phase']) => !phase || phase.step === 'done' || phase.step === 'failed';
+/**
+ * The launch sheet closes unless a launch is under way (between the upload and the send). An early launch that is set
+ * (`opened`) is not under way: its card closes as the sheet's own «Close» closes it (CITY-236: «Back» and Escape did
+ * nothing on it).
+ */
+export const closable = (phase: ReturnType<typeof useLaunch.getState>['phase']) => sheetClosable(phase);
 
 /**
  * Home, from anywhere: every panel of the city shut (a trade or a Harbor deposit under a signature keeps its card),
@@ -271,53 +315,6 @@ function TopBar({ onSound, onHome, windowOpen }: { onSound: (on: boolean) => voi
       <WalletChip />
       <EventsBell hidden={windowOpen} />
       <CityMenu onSound={onSound} />
-    </div>
-  );
-}
-
-/** Once per browser, the one thing to know: a tower opens with a tap. */
-function FirstHint({ hidden }: { hidden: boolean }) {
-  const w = useWords(HUD);
-  const [show, setShow] = useState(false);
-  const tapped = useRef(0);
-  const done = useCallback(() => {
-    setShow(false);
-    try {
-      localStorage.setItem(HINT_KEY, '1');
-    } catch {
-      // Storage refused (a private window): the hint simply goes for this visit.
-    }
-  }, []);
-  useEffect(() => {
-    let seen = false;
-    try {
-      seen = localStorage.getItem(HINT_KEY) === '1';
-    } catch {
-      seen = false;
-    }
-    if (seen) return;
-    const timer = setTimeout(() => setShow(true), 1800);
-    // A tower tapped on the canvas is the hint learned; one opened by a link or the dock is not.
-    const onUp = (event: PointerEvent) => {
-      if (event.target instanceof HTMLCanvasElement) tapped.current = performance.now();
-    };
-    window.addEventListener('pointerup', onUp, true);
-    const unsubscribe = useCity.subscribe((st, before) => {
-      if (st.selectedId && st.selectedId !== before.selectedId && performance.now() - tapped.current < 500) done();
-    });
-    return () => {
-      clearTimeout(timer);
-      window.removeEventListener('pointerup', onUp, true);
-      unsubscribe();
-    };
-  }, [done]);
-  if (!show || hidden) return null;
-  return (
-    <div className={`${s.panel} ${s.firstHint}`} role="status" data-city-hint="">
-      <span>{w.firstHint}</span>
-      <button className={s.firstHintClose} aria-label={w.gotIt} onClick={done}>
-        <CloseGlyph />
-      </button>
     </div>
   );
 }

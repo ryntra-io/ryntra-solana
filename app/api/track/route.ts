@@ -5,6 +5,7 @@ import { reportError } from "@/lib/monitor";
 import { mutationOriginAllowed } from "@/lib/security";
 import { PERPS_EVENT_NAMES, perpsTrackRow } from "@/lib/phoenix/telemetry";
 import { SEEKER_CONNECT_EVENT_NAMES, seekerTrackRow } from "@/lib/solana/seeker-connect";
+import { FUNNEL_EVENT_NAMES, funnelTrackRow } from "@/city/lib/crew/funnel";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -12,10 +13,12 @@ export const dynamic = "force-dynamic";
 /* Anonymous site clicks only. `workspace_cta_click` is fired by the site chrome
    and was once refused here, so the admin never saw it. Seeker Connect's count
    (SKR-1) is three more names: worked, cancelled, did not connect. Perps' moments
-   (PERP-4, spec §18) are nine more, each with a market's symbol and one word. */
+   (PERP-4, spec §18) are nine more, each with a market's symbol and one word. The agent's first action (CITY-222) is
+   nine more: the moments from the city's first screen to the budget signed, each with the device and at most one word. */
 const SEEKER_EVENTS: ReadonlySet<string> = new Set(SEEKER_CONNECT_EVENT_NAMES);
 const PERPS_EVENTS: ReadonlySet<string> = new Set(PERPS_EVENT_NAMES);
-const ALLOWED_EVENTS = new Set(["telegram_cta_click", "workspace_cta_click", "arcus_link_click", ...SEEKER_EVENTS, ...PERPS_EVENTS]);
+const FUNNEL_EVENTS: ReadonlySet<string> = new Set(FUNNEL_EVENT_NAMES);
+const ALLOWED_EVENTS = new Set(["telegram_cta_click", "workspace_cta_click", "arcus_link_click", ...SEEKER_EVENTS, ...PERPS_EVENTS, ...FUNNEL_EVENTS]);
 const limiter = new FixedWindowLimiter({ limit: 60, windowMs: 60_000, maxKeys: 5_000 });
 const TRACK_ERROR_REPORT_WINDOW_MS = 60_000;
 let lastInsertErrorAt = 0;
@@ -68,8 +71,10 @@ export async function POST(req: NextRequest) {
   const seeker = SEEKER_EVENTS.has(name) ? seekerTrackRow(body as Record<string, unknown>) : null;
   /* A Perps moment says which market and which kind — never a wallet, an amount or a price (`perpsTrackRow`). */
   const perps = PERPS_EVENTS.has(name) ? perpsTrackRow(body as Record<string, unknown>) : null;
+  /* A funnel moment says which, the language and the device — never a wallet, an amount or a page (`funnelTrackRow`). */
+  const funnel = FUNNEL_EVENTS.has(name) ? funnelTrackRow(body as Record<string, unknown>) : null;
   const stored = await insertEvent(
-    seeker ?? perps ?? {
+    seeker ?? perps ?? funnel ?? {
       name,
       placement: str(placement, 32),
       locale: str(locale, 12),

@@ -1,0 +1,125 @@
+{
+  "format": "ryntra-hack-scenario/1",
+  "note": "CITY-224 stand: a made-up program on the toy engine; one finding that reproduces and one that does not.",
+  "target": {
+    "kind": "fork",
+    "program": "NVcjry6DLTahpw4BJRYfnu29GPWdksz7EMUbiqx5CKSZ",
+    "slot": 250000000
+  },
+  "pin": {
+    "format": "ryntra-hack-pin/1",
+    "target": {
+      "kind": "fork",
+      "program": "NVcjry6DLTahpw4BJRYfnu29GPWdksz7EMUbiqx5CKSZ",
+      "slot": 250000000
+    },
+    "clock": {
+      "slot": 250000000,
+      "unixTimestamp": 1794139200
+    },
+    "programs": [
+      {
+        "address": "NVcjry6DLTahpw4BJRYfnu29GPWdksz7EMUbiqx5CKSZ",
+        "hash": "06d40700b233ae874aacc40182a9176b578aadd42459669c6818743d8765eef1"
+      }
+    ],
+    "stateHash": "605e6b2eec4244adfc5c2ed3535b7f02b117498671a3985a570920f5145c364c",
+    "engine": {
+      "id": "toy",
+      "version": "1"
+    }
+  },
+  "check": {
+    "invariant": "conserved",
+    "version": "1",
+    "vault": "ahpw4BJRYfnu29GPWdksz7EMUbiqx5CKSZgov3AHQXem"
+  },
+  "actors": [
+    "v3AHQXemt18FNVcjry6DLTahpw4BJRYfnu29GPWdksz7"
+  ],
+  "snapshot": {
+    "format": "ryntra-hack-snapshot/1",
+    "source": {
+      "kind": "recorded",
+      "label": "CITY-224 stand: the made-up tally program",
+      "recordedAt": "2026-11-08T12:00:00.000Z"
+    },
+    "slot": 250000000,
+    "unixTimestamp": 1794139200,
+    "programs": [
+      {
+        "address": "NVcjry6DLTahpw4BJRYfnu29GPWdksz7EMUbiqx5CKSZ",
+        "bytes": "dG95OnRhbGx5LzE="
+      }
+    ],
+    "accounts": [
+      {
+        "address": "ahpw4BJRYfnu29GPWdksz7EMUbiqx5CKSZgov3AHQXem",
+        "owner": "NVcjry6DLTahpw4BJRYfnu29GPWdksz7EMUbiqx5CKSZ",
+        "lamports": "1000000000",
+        "data": "eyJhY2NvdW50cyI6WyI3RU1VYmlxeDVDS1NaZ292M0FIUVhlbXQxOEZOVmNqcnk2RExUYWhwdzRCSiJdLCJzdXBwbHkiOjEwMDAwMDAsInQiOiJ2YXVsdCJ9",
+        "executable": false
+      },
+      {
+        "address": "7EMUbiqx5CKSZgov3AHQXemt18FNVcjry6DLTahpw4BJ",
+        "owner": "NVcjry6DLTahpw4BJRYfnu29GPWdksz7EMUbiqx5CKSZ",
+        "lamports": "1000000",
+        "data": "eyJhbW91bnQiOjEwMDAwMDAsIm93bmVyIjoibXQxOEZOVmNqcnk2RExUYWhwdzRCSlJZZm51MjlHUFdka3N6N0VNVWJpcXgiLCJ0IjoiYmFsIiwidmF1bHQiOiJhaHB3NEJKUllmbnUyOUdQV2Rrc3o3RU1VYmlxeDVDS1NaZ292M0FIUVhlbSJ9",
+        "executable": false
+      }
+    ]
+  },
+  "attempts": [
+    {
+      "name": "reproduces",
+      "runId": "stand-reproduces",
+      "finding": "split credits every instalment in full",
+      "inputs": [
+        {
+          "tx": "eyJpeCI6W3siYXJncyI6eyJhY2NvdW50IjoiVGFocHc0QkpSWWZudTI5R1BXZGtzejdFTVViaXF4NUNLU1pnb3YzQUhRWGUiLCJ2YXVsdCI6ImFocHc0QkpSWWZudTI5R1BXZGtzejdFTVViaXF4NUNLU1pnb3YzQUhRWGVtIn0sIm9wIjoib3BlbiIsInByb2dyYW0iOiJOVmNqcnk2RExUYWhwdzRCSlJZZm51MjlHUFdka3N6N0VNVWJpcXg1Q0tTWiJ9LHsiYXJncyI6eyJhY2NvdW50IjoiejdFTVViaXF4NUNLU1pnb3YzQUhRWGVtdDE4Rk5WY2pyeTZETFRhaHB3NEIiLCJ2YXVsdCI6ImFocHc0QkpSWWZudTI5R1BXZGtzejdFTVViaXF4NUNLU1pnb3YzQUhRWGVtIn0sIm9wIjoib3BlbiIsInByb2dyYW0iOiJOVmNqcnk2RExUYWhwdzRCSlJZZm51MjlHUFdka3N6N0VNVWJpcXg1Q0tTWiJ9XSwicGF5ZXIiOiJ2M0FIUVhlbXQxOEZOVmNqcnk2RExUYWhwdzRCSlJZZm51MjlHUFdka3N6NyJ9"
+        },
+        {
+          "tx": "eyJpeCI6W3siYXJncyI6eyJhY2NvdW50IjoiVGFocHc0QkpSWWZudTI5R1BXZGtzejdFTVViaXF4NUNLU1pnb3YzQUhRWGUiLCJhbW91bnQiOjEwMDB9LCJvcCI6ImRlcG9zaXQiLCJwcm9ncmFtIjoiTlZjanJ5NkRMVGFocHc0QkpSWWZudTI5R1BXZGtzejdFTVViaXF4NUNLU1oifV0sInBheWVyIjoidjNBSFFYZW10MThGTlZjanJ5NkRMVGFocHc0QkpSWWZudTI5R1BXZGtzejcifQ=="
+        },
+        {
+          "tx": "eyJpeCI6W3siYXJncyI6eyJhbW91bnQiOjEwMDAsImZyb20iOiJUYWhwdzRCSlJZZm51MjlHUFdka3N6N0VNVWJpcXg1Q0tTWmdvdjNBSFFYZSIsInBhcnRzIjozLCJ0byI6Ino3RU1VYmlxeDVDS1NaZ292M0FIUVhlbXQxOEZOVmNqcnk2RExUYWhwdzRCIn0sIm9wIjoic3BsaXQiLCJwcm9ncmFtIjoiTlZjanJ5NkRMVGFocHc0QkpSWWZudTI5R1BXZGtzejdFTVViaXF4NUNLU1oifV0sInBheWVyIjoidjNBSFFYZW10MThGTlZjanJ5NkRMVGFocHc0QkpSWWZudTI5R1BXZGtzejcifQ=="
+        }
+      ],
+      "expect": {
+        "reproduced": true,
+        "logHash": "42427c9633272e07aee7d67f3d0cce70f3ffba80dc7347286b8003b6128a8b21",
+        "steps": 3,
+        "cu": 5600,
+        "verdict": "PASS",
+        "reason": "WON"
+      }
+    },
+    {
+      "name": "does-not-reproduce",
+      "runId": "stand-not-reproduced",
+      "finding": "the protocol's balance moves without its key",
+      "inputs": [
+        {
+          "tx": "eyJpeCI6W3siYXJncyI6eyJhY2NvdW50IjoiVGFocHc0QkpSWWZudTI5R1BXZGtzejdFTVViaXF4NUNLU1pnb3YzQUhRWGUiLCJ2YXVsdCI6ImFocHc0QkpSWWZudTI5R1BXZGtzejdFTVViaXF4NUNLU1pnb3YzQUhRWGVtIn0sIm9wIjoib3BlbiIsInByb2dyYW0iOiJOVmNqcnk2RExUYWhwdzRCSlJZZm51MjlHUFdka3N6N0VNVWJpcXg1Q0tTWiJ9LHsiYXJncyI6eyJhY2NvdW50IjoiejdFTVViaXF4NUNLU1pnb3YzQUhRWGVtdDE4Rk5WY2pyeTZETFRhaHB3NEIiLCJ2YXVsdCI6ImFocHc0QkpSWWZudTI5R1BXZGtzejdFTVViaXF4NUNLU1pnb3YzQUhRWGVtIn0sIm9wIjoib3BlbiIsInByb2dyYW0iOiJOVmNqcnk2RExUYWhwdzRCSlJZZm51MjlHUFdka3N6N0VNVWJpcXg1Q0tTWiJ9XSwicGF5ZXIiOiJ2M0FIUVhlbXQxOEZOVmNqcnk2RExUYWhwdzRCSlJZZm51MjlHUFdka3N6NyJ9"
+        },
+        {
+          "tx": "eyJpeCI6W3siYXJncyI6eyJhY2NvdW50IjoiVGFocHc0QkpSWWZudTI5R1BXZGtzejdFTVViaXF4NUNLU1pnb3YzQUhRWGUiLCJhbW91bnQiOjEwMDB9LCJvcCI6ImRlcG9zaXQiLCJwcm9ncmFtIjoiTlZjanJ5NkRMVGFocHc0QkpSWWZudTI5R1BXZGtzejdFTVViaXF4NUNLU1oifV0sInBheWVyIjoidjNBSFFYZW10MThGTlZjanJ5NkRMVGFocHc0QkpSWWZudTI5R1BXZGtzejcifQ=="
+        },
+        {
+          "tx": "eyJpeCI6W3siYXJncyI6eyJhbW91bnQiOjUwMDAwMCwiZnJvbSI6IjdFTVViaXF4NUNLU1pnb3YzQUhRWGVtdDE4Rk5WY2pyeTZETFRhaHB3NEJKIiwidG8iOiJ6N0VNVWJpcXg1Q0tTWmdvdjNBSFFYZW10MThGTlZjanJ5NkRMVGFocHc0QiJ9LCJvcCI6Im1vdmUiLCJwcm9ncmFtIjoiTlZjanJ5NkRMVGFocHc0QkpSWWZudTI5R1BXZGtzejdFTVViaXF4NUNLU1oifV0sInBheWVyIjoidjNBSFFYZW10MThGTlZjanJ5NkRMVGFocHc0QkpSWWZudTI5R1BXZGtzejcifQ=="
+        },
+        {
+          "tx": "eyJpeCI6W3siYXJncyI6eyJhbW91bnQiOjEwMDAsImZyb20iOiJUYWhwdzRCSlJZZm51MjlHUFdka3N6N0VNVWJpcXg1Q0tTWmdvdjNBSFFYZSIsInRvIjoiejdFTVViaXF4NUNLU1pnb3YzQUhRWGVtdDE4Rk5WY2pyeTZETFRhaHB3NEIifSwib3AiOiJtb3ZlIiwicHJvZ3JhbSI6Ik5WY2pyeTZETFRhaHB3NEJKUllmbnUyOUdQV2Rrc3o3RU1VYmlxeDVDS1NaIn1dLCJwYXllciI6InYzQUhRWGVtdDE4Rk5WY2pyeTZETFRhaHB3NEJKUllmbnUyOUdQV2Rrc3o3In0="
+        }
+      ],
+      "expect": {
+        "reproduced": false,
+        "logHash": "520464bb6d3e30f69ccdc7cd21f32fb956557d7709d0974be71ece29f494e284",
+        "steps": 4,
+        "cu": 6000,
+        "verdict": "FAIL",
+        "reason": "NOT_WON"
+      }
+    }
+  ]
+}

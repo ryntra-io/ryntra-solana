@@ -1,4 +1,4 @@
-import type { Archetype, Brain, RingFormat } from "./contract.ts";
+import type { Archetype, Brain, RingFormat, Weight } from "./contract.ts";
 import type { MadeKey } from "./keys.ts";
 import { type RatingRecord } from "./rating.ts";
 
@@ -36,6 +36,12 @@ export type Refused = { ok: false; error: "not_found" | "not_owner" | "off" | "v
 
 export type Changed = { ok: true; agent: AgentRecord; retired: string | null } | Refused;
 
+/** An agent with its rating row in one format on its current brain; `null` before its first rated game there. */
+export type Ranked = { agent: AgentRecord; rating: RatingRecord | null };
+
+/** A rating row to write after a rated duel, only if the row still has `before` games (compare-and-set). */
+export type RateInput = { agentId: string; brain: Pick<Brain, "id" | "provider">; row: RatingRecord; before: number };
+
 export interface RingStore {
   /** True for a store every server instance shares (the database); false for one instance's memory. */
   readonly durable: boolean;
@@ -59,6 +65,19 @@ export interface RingStore {
   /** A stored answer to a request key, so a retried write is never done twice. */
   answer(key: string, now: number): Promise<unknown | null>;
   keepAnswer(key: string, body: unknown, now: number): Promise<void>;
+  /** The owner's active agents, oldest first (CITY-217: the Arena reads «my agent» without a garage visit). */
+  mine(owner: string): Promise<AgentRecord[]>;
+  /**
+   * Active agents of other owners in one class whose brain can play the format, closest to a rating first — the
+   * rivals a rated duel is drawn from (CITY-217).
+   */
+  rivals(input: { owner: string; weight: Weight; format: RingFormat; near: number; limit: number }): Promise<Ranked[]>;
+  /** The board of a format: active agents with at least one rated game on their current brain, best first. */
+  board(format: RingFormat, limit: number): Promise<(Ranked & { rating: RatingRecord })[]>;
+  /** Writes a rating row if it still has `before` games; false when another duel moved it first (read again, retry). */
+  rate(input: RateInput, now: number): Promise<boolean>;
+  /** The sealed secret of the agent's live key, for the server to open for one match; `null` when it has none. */
+  sealedKey(agentId: string, hash: string): Promise<string | null>;
 }
 
 /** The store could not be reached or answered in a way the Ring does not read: nothing it was asked is known. */
@@ -179,7 +198,38 @@ export function createMemoryRingStore() {
       while (answers.size >= KEEP) answers.delete(answers.keys().next().value as string);
       answers.set(key, { body: copy(body), until: now + ANSWER_MS });
     },
-    /** Tests only: a rating row as the matches (CITY-51) will write it. */
+    async mine(owner: string) {
+      return [...agents.values()].filter((a) => a.owner === owner && a.status === "active").map(copy);
+    },
+    async rivals(input: { owner: string; weight: Weight; format: RingFormat; near: number; limit: number }) {
+      const ranked = [...agents.values()]
+        .filter((a) => a.status === "active" && a.owner !== input.owner && a.brain.weight === input.weight && a.formats.includes(input.format))
+        .map((a) => ({ agent: copy(a), rating: ratings.has(ratingKey(a.id, input.format, a.brain)) ? copy(ratings.get(ratingKey(a.id, input.format, a.brain))!) : null }));
+      const gap = (r: Ranked) => Math.abs((r.rating?.rating ?? 1_200) - input.near);
+      return ranked.sort((a, b) => gap(a) - gap(b) || a.agent.createdAt.localeCompare(b.agent.createdAt)).slice(0, input.limit);
+    },
+    async board(format: RingFormat, limit: number) {
+      return [...agents.values()]
+        .filter((a) => a.status === "active")
+        .flatMap((a) => {
+          const row = ratings.get(ratingKey(a.id, format, a.brain));
+          return row && row.games > 0 ? [{ agent: copy(a), rating: copy(row) }] : [];
+        })
+        .sort((a, b) => b.rating.rating - a.rating.rating || b.rating.games - a.rating.games)
+        .slice(0, limit);
+    },
+    async rate(input: RateInput, _now: number) {
+      const key = ratingKey(input.agentId, input.row.format, input.brain);
+      // Check and write in one turn of the event loop, as the database does under the row's lock.
+      if ((ratings.get(key)?.games ?? 0) !== input.before) return false;
+      ratings.set(key, copy(input.row));
+      return true;
+    },
+    async sealedKey(agentId: string, hash: string) {
+      const row = keys.get(hash);
+      return row && row.agentId === agentId && row.retiredAt === null ? row.sealed : null;
+    },
+    /** Tests only: a rating row put in place, as a past duel would have left it. */
     seedRating(agentId: string, brain: Pick<Brain, "id" | "provider">, row: RatingRecord) {
       ratings.set(ratingKey(agentId, row.format, brain), copy(row));
     },

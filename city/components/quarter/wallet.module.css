@@ -43,11 +43,29 @@
   font-variant-numeric: tabular-nums;
 }
 
+/* The wallet's panel stands in a layer of its own, over the city's windows (CITY-239). It answers a tap inside a window
+   — «Connect wallet» in the Ring, «Sign in» in the Vault — so it is never under that window (CITY-236). Only the panel:
+   the top bar it belongs to stays under the windows (hud.module.css), and with it the city's event slab, the home's
+   cards and the Deck, which the rule of CITY-236 lifted over the window too. At every width: a phone's window on the
+   whole screen hid the list of wallets the same way. The layer itself takes no tap. */
+.over {
+  position: fixed;
+  inset: 0;
+  z-index: 13;
+  pointer-events: none;
+  font-family: var(--font-ui, system-ui), system-ui, sans-serif;
+  color: var(--ice);
+}
+
+.over > * {
+  pointer-events: auto;
+}
+
+/* Under its chip, by the chip's own place on the screen (city/lib/quarter/wallet-menu.ts). */
 .menu {
-  position: absolute;
-  top: calc(100% + 8px);
-  right: 0;
-  z-index: 2;
+  position: fixed;
+  top: var(--wallet-top, calc(max(12px, env(safe-area-inset-top)) + 52px));
+  right: var(--wallet-right, var(--gutter, 16px));
   width: min(300px, calc(100vw - 2 * var(--gutter, 16px)));
   padding: 14px 16px 16px;
   --cut: 14px;
@@ -55,7 +73,7 @@
 
 /* Solid, not the bar's glass: nothing of the city or a hint under it reads through the wallet (CITY-150). Above the
    HUD's panel rule whichever stylesheet loads first. */
-.wrap > .menu {
+.over > .menu {
   background: linear-gradient(160deg, #161226, #09080f);
 }
 
@@ -128,6 +146,13 @@
   opacity: 0.6;
 }
 
+/* The way to a wallet when this browser has none (CITY-221): the same button, as a link. */
+.actLink {
+  display: grid;
+  place-items: center;
+  text-decoration: none;
+}
+
 .row > :only-child {
   flex: 1;
 }
@@ -151,7 +176,6 @@
   }
   /* The chip sits mid-bar on a phone: the menu stands on the screen's own right gutter, never past its left edge. */
   .menu {
-    position: fixed;
     top: calc(max(12px, env(safe-area-inset-top)) + 56px);
     right: var(--gutter, 16px);
   }

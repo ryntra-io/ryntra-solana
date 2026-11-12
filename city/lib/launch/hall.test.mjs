@@ -177,7 +177,7 @@ test('the week is the last seven days: an older buy is no catch of this week and
 
 test('trades inside one wallet cluster count for nothing, and their share is published', () => {
   const rows = [trade(1), trade(2, { trader: HUNTER_B, payer: HUNTER_B }), trade(3, { trader: HUNTER_C, payer: HUNTER_C }), trade(4, { trader: HUNTER_C, payer: HUNTER_C, side: 'sell' })];
-  const reads = [{ row: row(), market: market(rows), stats: stats(), weekFee: { raw: '5000000', atLeast: false } }];
+  const reads = [{ row: row(), market: market(rows), stats: stats(), weekFee: { raw: '5000000', atLeast: false }, allFee: { raw: '9000000', at: iso(NOW - 30_000) } }];
   const judgements = new Map([
     [sig(1), judgement(sig(1), 'inside')],
     [sig(2), judgement(sig(2), 'unknown')],
@@ -188,11 +188,12 @@ test('trades inside one wallet cluster count for nothing, and their share is pub
   assert.deepEqual(hall.boards.catch.rows.map((r) => r.proof.id), [sig(3)], 'only the buy between two people is a catch');
   assert.deepEqual(hall.trades, { trades: 4, counted: 2, inside: 1, unchecked: 1, insideBps: 3333, uncheckedBps: 2500 });
   assert.deepEqual(hall.boards.creators.rows, [], 'a week with a trade inside is not shown at all');
+  assert.equal(hall.boards.creators.span, 'all', 'nor over all time: the inside trade is in the whole history too');
   assert.equal(hall.boards.creators.left.cluster, 1);
 });
 
 test('not known is not counted: a creator\'s week with one unchecked trade is left off, said as unchecked', () => {
-  const reads = [{ row: row(), market: market([trade(1), trade(2, { trader: HUNTER_B, payer: HUNTER_B })]), stats: stats(), weekFee: { raw: '5000000', atLeast: false } }];
+  const reads = [{ row: row(), market: market([trade(1), trade(2, { trader: HUNTER_B, payer: HUNTER_B })]), stats: stats(), weekFee: { raw: '5000000', atLeast: false }, allFee: { raw: '9000000', at: iso(NOW - 30_000) } }];
   const judgements = judgeAll(reads);
   judgements.delete(sig(2));
   const hall = view(reads, judgements);
@@ -205,8 +206,8 @@ test('a week not read whole is not a creator\'s week; a pair without dollars is 
   const partial = market([trade(1, { at: iso(NOW - DAY) })], { trades: { rows: [trade(1, { at: iso(NOW - DAY) })], complete: false, read: 100 } });
   const community = market([trade(2)], { pair: COMMUNITY, token: MINT_2 });
   const reads = [
-    { row: row(), market: partial, stats: stats(), weekFee: { raw: '5000000', atLeast: false } },
-    { row: row({ token: MINT_2, creator: CREATOR_2 }), market: community, stats: stats({ token: MINT_2, creator: CREATOR_2, pair: COMMUNITY }), weekFee: { raw: '5000000', atLeast: false } },
+    { row: row(), market: partial, stats: stats(), weekFee: { raw: '5000000', atLeast: false }, allFee: { raw: '9000000', at: iso(NOW) } },
+    { row: row({ token: MINT_2, creator: CREATOR_2 }), market: community, stats: stats({ token: MINT_2, creator: CREATOR_2, pair: COMMUNITY }), weekFee: { raw: '5000000', atLeast: false }, allFee: { raw: '9000000', at: iso(NOW) } },
     { row: row({ token: MINT_2 }), market: market([], { token: MINT_2 }), stats: stats({ token: MINT_2 }), weekFee: { raw: null, atLeast: false } },
   ];
   const hall = view(reads);
@@ -214,10 +215,11 @@ test('a week not read whole is not a creator\'s week; a pair without dollars is 
   assert.deepEqual(hall.boards.creators.left, { cluster: 0, unchecked: 0, unread: 2, no_dollar: 1 });
 });
 
-test('the empty week is an honest empty Hall: no rows, no made-up figure, scouts without a source', () => {
+test('the empty Hall is an honest empty Hall: no rows over any span, no made-up figure, scouts without a source', () => {
   const hall = view([]);
   for (const id of ['catch', 'hunters', 'creators']) {
     assert.equal(hall.boards[id].state, 'empty');
+    assert.equal(hall.boards[id].span, 'all', 'an empty board is empty over all time');
     assert.deepEqual(hall.boards[id].rows, []);
   }
   assert.equal(hall.boards.scouts.state, 'no_source');
@@ -352,7 +354,7 @@ test('the Hall says its numbers rounded down, each with its word', async () => {
   assert.equal(tallyText({ trades: 4, counted: 2, inside: 1, unchecked: 1, insideBps: 3333, uncheckedBps: 2500 }), '4 trades · 33.3% inside one wallet cluster · 25.0% not checked yet');
   assert.equal(tallyText({ trades: 0, counted: 0, inside: 0, unchecked: 0, insideBps: null, uncheckedBps: null }), 'No trades on Ryntra launches read this week');
   const empty = view([]);
-  assert.equal(emptyText(empty, 'catch'), 'No Ryntra launch traded this week');
+  assert.equal(emptyText(empty, 'catch'), 'No Ryntra launch traded yet');
   assert.equal(emptyText(empty, 'scouts'), 'No public record of scout fees per trade yet');
   for (const text of [emptyText(empty, 'catch'), emptyText(empty, 'creators'), tallyText(empty.trades)]) assert.doesNotMatch(text, /\$|×\d/, 'an empty week says no figure');
 });
@@ -361,7 +363,7 @@ test('the Hall shows only boards with a public source, and an empty board says i
   const { BOARD_WORDS, EMPTY_SHORT, shownBoards } = await import('./hall-words.ts');
   const empty = view([]);
   assert.deepEqual(shownBoards(empty), ['catch', 'hunters', 'creators'], 'scouts has no source: no tab, no billboard');
-  assert.equal(EMPTY_SHORT, 'None this week');
+  assert.equal(EMPTY_SHORT, 'First place is open');
   for (const word of Object.values(BOARD_WORDS)) assert.match(word, /^[a-z]+$/, 'a billboard carries one word for its number');
 });
 

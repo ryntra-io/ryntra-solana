@@ -75,3 +75,29 @@ export function usdOf(lamports: string | null, solUsd: number | null): number | 
   const cents = (BigInt(lamports) * micros) / 10_000_000_000_000n;
   return Number(cents) / 100;
 }
+
+/**
+ * CITY-245 — the day checked against the chain: how many of the agent's trades the chain shows (the budget's account,
+ * moving the coin bought) that the book does not hold under any status. Null — the chain was not read.
+ */
+export function unbookedTrades(chain: readonly string[] | null, trades: readonly AgentTrade[]): number | null {
+  if (chain === null) return null;
+  const booked = new Set(trades.map((trade) => trade.signature).filter((signature): signature is string => signature !== null));
+  return chain.filter((signature) => !booked.has(signature)).length;
+}
+
+/**
+ * A day whose trades the chain shows beyond the book says no result: its worth, its earnings and its figures after the
+ * fees are not read, so a report never tells a result over a part of the agent's trades. Its count and its spend stay
+ * the book's own. Unchecked (null) or confirmed (0), the day is as the book says.
+ */
+export function checkedDay(day: AgentDay, unbooked: number | null): AgentDay {
+  if (unbooked === null || unbooked === 0) return day;
+  return {
+    ...day,
+    worthRaw: null,
+    earnedRaw: null,
+    ...(day.netRaw !== undefined ? { netRaw: null } : {}),
+    ...(day.holdRaw !== undefined ? { holdRaw: null } : {}),
+  };
+}

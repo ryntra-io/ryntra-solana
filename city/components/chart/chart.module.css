@@ -684,6 +684,31 @@
   display: block;
 }
 
+/* A bar without volume does not name it (CITY-243: «Vol no volume» on every forming bar); a bar with volume shows it. */
+.tooled .chart .core :global(.ryntra-chart__figure[data-city-empty]) {
+  display: none;
+}
+
+/* «Delayed» says how long (CITY-243): the window gives the words (`--chart-delay`, the engine's cache of the interval),
+   the badge keeps its dot and its tone. Only the delayed badge: «Stale» keeps the core's own word. */
+.tooled .chart .core :global(.ryntra-chart__state--info) {
+  font-size: 0;
+}
+
+.tooled .chart .core :global(.ryntra-chart__state--info)::after {
+  content: var(--chart-delay, '');
+  font-size: var(--ryntra-type-caption-size, 12px);
+}
+
+/* One control for the chart's period (CITY-242). Where the chart is wide enough for the core's row of quick intervals
+   (its own 640 px, as in a large spot window), the row alone — the core put the list of every interval beside it, the
+   same six periods twice; the list only where the chart is narrower and the row steps aside. */
+@container (min-width: 641px) {
+  .tooled .chart .core :global(.ryntra-chart__select--frames) {
+    display: none;
+  }
+}
+
 /* A phone: the chart's tools take their rows, so the candles keep a height of their own under them. */
 @media (max-width: 560px) {
   .tooled.inTrade {

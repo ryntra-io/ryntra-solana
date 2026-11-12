@@ -532,8 +532,9 @@ export function stubEngine(options: StubOptions = {}): StubEngine {
         return { ok: true, data: { metadataUri: `https://stand.example.org/api/launch/metadata/${sha}`, imageUrl: `https://stand.example.org/api/launch/image/${hex(`image:${sha}`, 64)}`, name: check.clean.name, symbol: check.clean.symbol } };
       }),
     build: async (body) => {
-      /* A shared launch's bytes are laid out as the engine's, so the sheet's read of them runs here too (CITY-212). */
-      const splitter = body.feeShares?.length ? await import('./split-stub.ts') : null;
+      /* A launch's bytes are laid out as the engine's, so the sheet's read of them runs here too (CITY-212, CITY-220). */
+      const layout = await import('./split-stub.ts');
+      const splitter = body.feeShares?.length ? layout : null;
       return answer('build', () => {
         const words = metadata.get(body.metadataUri.split('/').pop() ?? '');
         if (!words) return { ok: false, code: 'LAUNCH_NOT_FOUND', message: 'No metadata by that address.' };
@@ -541,8 +542,9 @@ export function stubEngine(options: StubOptions = {}): StubEngine {
         const buildId = hex(`build:${builds.size}:${now()}`, 32);
         const token = stubAddress(`mint:${buildId}`);
         const feeVault = splitter ? stubAddress(`vault:${buildId}`) : null;
-        const wires = splitter && feeVault ? splitter.stubSplitWires({ creator: body.creator, token, feeVault, blockhash: stubAddress(`blockhash:${buildId}`), shares: body.feeShares ?? [], filler: (seed) => stubAddress(`${seed}:${buildId}`) }) : null;
-        const wire = wires?.creation ?? toBase64(seededBytes(`wire:${buildId}`, 96));
+        const coin = { name: words.name, symbol: words.symbol, uri: body.metadataUri };
+        const wires = splitter && feeVault ? splitter.stubSplitWires({ creator: body.creator, token, feeVault, blockhash: stubAddress(`blockhash:${buildId}`), shares: body.feeShares ?? [], filler: (seed) => stubAddress(`${seed}:${buildId}`), coin }) : null;
+        const wire = wires?.creation ?? layout.stubCreationWire({ creator: body.creator, token, blockhash: stubAddress(`blockhash:${buildId}`), filler: (seed) => stubAddress(`${seed}:${buildId}`), coin });
         builds.set(buildId, { request: body, token, wire, name: words.name, symbol: words.symbol, used: false, feeVault });
         return {
           ok: true,
@@ -553,7 +555,7 @@ export function stubEngine(options: StubOptions = {}): StubEngine {
             lockUnsignedWireBase64: null,
             token,
             firstBuyOutRaw: '0',
-            payerCoveredLamports: '7350240',
+            payerCoveredLamports: String(layout.STUB_PAYER_COVERED),
             creatorCostLamports: wires ? '13064320' : '9874320',
             expiresAt: iso(now() + 60_000),
             signableMs: 25_000,

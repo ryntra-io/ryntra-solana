@@ -10,6 +10,14 @@
   padding: 10px 16px 14px;
 }
 
+/* No towers yet (CITY-221): in the flow, so the frame that fits its contents stands as tall as the portrait, the empty
+   words and the one button; longer settings scroll in the window's own body. */
+.flow {
+  position: relative;
+  inset: auto;
+  min-height: 100%;
+}
+
 .display {
   font-family: var(--font-display, system-ui), system-ui, sans-serif;
   font-stretch: 125%;

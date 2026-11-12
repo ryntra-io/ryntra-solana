@@ -18,9 +18,9 @@ function BeaconButton({ tower }: { tower: Tower }) {
   const open = useBeacons((st) => st.open);
   const w = useWords(BEACON);
   return (
-    <button className={`${s.action} ${glow === 'lit' ? s.actionLit : glow === 'set' ? s.actionSet : ''}`} onClick={() => open(tower.id)} aria-label={w.beacon}>
+    <button className={`${s.action} ${glow === 'lit' ? s.actionLit : glow === 'set' ? s.actionSet : ''}`} onClick={() => open(tower.id)} aria-label={w.beaconAction}>
       <BeaconGlyph />
-      <span className={s.actionWord}>{w.beacon}</span>
+      <span className={s.actionWord}>{w.beaconAction}</span>
     </button>
   );
 }

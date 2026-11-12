@@ -1,8 +1,11 @@
+import { modelGateway } from "../models/gateway.server.ts";
 import { readSession } from "../session";
 import { rpcResult } from "../supabase-rpc";
 import { createVaultApi, type VaultApiDeps, type WalletRead } from "./api";
 import { createVaultEngine, type VaultEngine } from "./engine";
-import { storeKind, vaultReady } from "./ready";
+import { guardModel, readGuardPin } from "./guard-model";
+import type { ModelGateway } from "./model";
+import { VAULT_ENV, guardSetup, storeKind, vaultReady } from "./ready";
 import { createMemoryVaultStore, type VaultStore } from "./store";
 import { stubGateway } from "./stub";
 import { createSupabaseVaultStore } from "./supabase-store";
@@ -11,12 +14,31 @@ import { logWorldSink } from "./world";
 /**
  * The vault as the deployed server runs it: the account session the rest of Ryntra uses (read, never changed), the
  * server's signing secret, the database through the secret-gated `public.vault_*` functions (`ready.ts` says when),
- * and the model.
+ * the model gateway of CITY-45 with the vault's key (`guard-model.ts`) and the day's dollar ceiling on it. A
+ * developer's machine and a stand play the scripted guards (`stub.ts`) unless they have a key.
  *
- * The model is the stub until the gateway of CITY-45 is in master; then this one line becomes the gateway's guard
- * client (`lib/models`), and nothing else in the vault changes.
+ * Production opens to people only when everything is there — the switch, the database, the key and the ceiling — and
+ * otherwise stays closed, naming what is missing once in the log.
  */
-const MODEL = stubGateway;
+const setup = guardSetup(process.env);
+
+function model(): ModelGateway {
+  if (setup.model === "stub") return stubGateway;
+  return guardModel({ gateway: modelGateway(), pin: readGuardPin(process.env[VAULT_ENV.pin]), apiKey: setup.apiKey });
+}
+
+let told = false;
+function complete(): boolean {
+  const missing = [...setup.missing];
+  if (process.env.NODE_ENV === "production") {
+    if (storeKind(process.env) !== "database") missing.push("SUPABASE_URL", "SUPABASE_ANON_KEY", "BETA_APP_SECRET");
+    if (!process.env.BETA_TOKEN_SECRET) missing.push("BETA_TOKEN_SECRET");
+  }
+  if (!missing.length) return true;
+  if (!told) console.error(`[vault] closed: ${missing.join(", ")} not set on this deployment`);
+  told = true;
+  return false;
+}
 
 /** Development keeps working without the deployment's secret; a deployment without one makes no guests. */
 function secret(): string | null {
@@ -41,12 +63,12 @@ export function vaultApi(): ReturnType<typeof createVaultApi> {
     engine: () => {
       const key = secret();
       if (!key) return null;
-      engine ??= createVaultEngine({ model: MODEL, store: kept, secret: key });
+      engine ??= createVaultEngine({ model: model(), store: kept, secret: key, ceilingMicroUsd: setup.ceilingMicroUsd });
       return engine;
     },
     secret,
     // The switch is read as the city reads it (inlined at build); production opens on the database only.
-    open: () => vaultReady(kept, process.env.NEXT_PUBLIC_RYNTRA_CITY_VAULT, process.env.NODE_ENV),
+    open: () => process.env.NEXT_PUBLIC_RYNTRA_CITY_VAULT?.trim() === "open" && complete() && vaultReady(kept, process.env.NEXT_PUBLIC_RYNTRA_CITY_VAULT, process.env.NODE_ENV),
     wallet,
     store: kept,
     world: logWorldSink,

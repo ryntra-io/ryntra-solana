@@ -52,23 +52,27 @@ export default function MoneyWindow() {
           </span>
         </div>
       ) : null}
-      <nav className={s.tabs} role="tablist" aria-label={w.money}>
-        {MONEY_TABS.map((id) => (
-          <button
-            key={id}
-            type="button"
-            role="tab"
-            aria-selected={tab === id}
-            className={`${s.tab} ${tab === id ? s.tabOn : ''}`}
-            onClick={() => useMoney.getState().setTab(id)}
-            disabled={busy && tab !== id}
-          >
-            <TabGlyph tab={id} />
-            <span>{tabs[id]}</span>
-            {tabLive(id) ? null : <i className={s.soonDot} aria-label={w.opensSoon} />}
-          </button>
-        ))}
-      </nav>
+      {/* Without a wallet every tab is the same «Connect wallet» (CITY-221): the window shows that one action alone, and
+          the tabs come with the wallet. */}
+      {owner ? (
+        <nav className={s.tabs} role="tablist" aria-label={w.money}>
+          {MONEY_TABS.map((id) => (
+            <button
+              key={id}
+              type="button"
+              role="tab"
+              aria-selected={tab === id}
+              className={`${s.tab} ${tab === id ? s.tabOn : ''}`}
+              onClick={() => useMoney.getState().setTab(id)}
+              disabled={busy && tab !== id}
+            >
+              <TabGlyph tab={id} />
+              <span>{tabs[id]}</span>
+              {tabLive(id) ? null : <i className={s.soonDot} aria-label={w.opensSoon} />}
+            </button>
+          ))}
+        </nav>
+      ) : null}
       <div className={s.body}>
         {!owner ? (
           <Connect />

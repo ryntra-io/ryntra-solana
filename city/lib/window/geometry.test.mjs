@@ -280,3 +280,13 @@ test("new windows open near the middle, each a step from the last, whole in the 
   const small = openRect({ width: 10, height: 10 }, { width: 360, height: 300 }, AREA, 0);
   assert.deepEqual([small.width, small.height], [360, 300]);
 });
+
+test("a window that asks for more height than the workspace has takes all of it, between the top bar and the Deck (CITY-242)", () => {
+  const tall = openRect({ width: 1000, height: 900 }, MIN, AREA, 0);
+  assert.equal(tall.height, AREA.height);
+  assert.equal(tall.y, AREA.y);
+  assert.ok(inside(tall, AREA));
+  // A smaller one keeps its own height, in the middle.
+  const own = openRect({ width: 560, height: 440 }, MIN, AREA, 0);
+  assert.equal(own.height, 440);
+});

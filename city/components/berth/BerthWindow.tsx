@@ -2,10 +2,11 @@
 
 import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import type { LaunchCabinetRow, LaunchClaimReviewResponse, LaunchCreatorCabinetResponse } from '@/lib/api/v1/contract';
+import { apart } from '@/city/lib/apart';
 import { districtFrame } from '@/city/lib/art/frames';
 import { useCity } from '@/city/lib/city/store';
 import { useGameMap } from '@/city/lib/game/map';
-import { digits, num, useWords } from '@/city/lib/i18n/dict';
+import { dateText, digits, num, useWords } from '@/city/lib/i18n/dict';
 import { useLang, type Lang } from '@/city/lib/i18n/lang';
 import { cardsOf, claimReady, dayCount, pickLaunch, pocketsShown, proofUrl, streamsOf, totalsOf, unitsOf, withJustLanded, type BerthCard, type DayCount, type Stream, type TowerFigures } from '@/city/lib/launch/berth';
 import { runClaim, type ClaimPhase } from '@/city/lib/launch/berth-flow';
@@ -16,6 +17,8 @@ import { sol } from '@/city/lib/launch/format';
 import { sameOriginImage } from '@/city/lib/launch/towers';
 import { cityLaunchOpen } from '@/city/lib/launch/gate';
 import { cardTag, creatorCard } from '@/city/lib/launch/cards';
+import { feeNear, pairLamports } from '@/city/lib/fee-near';
+import { solPrice } from '@/city/lib/scouts/view';
 import { coinLink } from '@/city/lib/share/coin-link';
 import { pctText } from '@/city/lib/launch/trade-words';
 import type { WalletOption } from '@/city/lib/launch/wallet';
@@ -353,13 +356,28 @@ function Figures({ figures, tower, pair, lang }: { figures: TowerFigures | null;
 /** The wallet's launches, when there is more than one: a tap shows another. */
 function Strip({ rows, token }: { rows: readonly LaunchCabinetRow[]; token: string }) {
   const w = useWords(BERTH);
+  const lang = useLang();
   const busy = useBerth((st) => st.busy);
+  // Two launches of one ticker read the same (CITY-243: two «$THUMB» tabs): each says its day, and its hour if need be.
+  const marks = useMemo(
+    () =>
+      apart(
+        rows.map((row) => {
+          const at = Date.parse(row.launchedAt);
+          return { name: row.symbol, marks: Number.isFinite(at) ? [dateText(at, { day: 'numeric', month: 'short' }, lang), cardDateText(at, lang)] : [] };
+        }),
+      ),
+    [rows, lang],
+  );
   return (
     <div className={s.strip} role="tablist" aria-label={w.launches}>
-      {rows.map((row) => (
+      {rows.map((row, at) => (
         <button key={row.token} type="button" role="tab" aria-selected={row.token === token} className={`${s.chip} ${row.token === token ? s.chipOn : ''}`} disabled={busy} onClick={() => useBerth.getState().pick(row.token)}>
           <Face row={row} picture={null} />
-          <span>${row.symbol}</span>
+          <span>
+            ${row.symbol}
+            {marks[at] ? <small className={s.chipMark}> · {marks[at]}</small> : null}
+          </span>
           {row.claimable && <i className={s.chipDot} aria-hidden="true" />}
         </button>
       ))}
@@ -373,20 +391,28 @@ function DayRing({ count, lang }: { count: DayCount; lang: Lang }) {
   const R = 42;
   const C = 2 * Math.PI * R;
   const label = [w.dayRing(count.days, count.next), ...count.checks.filter((check) => check.state === 'alive').map((check) => w.checkPassed(check.days))].join(' · ');
+  const passed = count.checks.filter((check) => check.state === 'alive').length;
   return (
-    <div className={s.ring} role="img" aria-label={label}>
-      <svg viewBox="0 0 100 100" aria-hidden="true">
-        <circle className={s.ringTrack} cx="50" cy="50" r={R} />
-        <circle className={s.ringFill} cx="50" cy="50" r={R} strokeDasharray={`${C * count.fill} ${C}`} />
-        {count.checks.map((check) => {
-          const angle = check.at * 2 * Math.PI - Math.PI / 2;
-          return <circle key={check.days} className={`${s.tick} ${TICK[check.state]}`} cx={50 + R * Math.cos(angle)} cy={50 + R * Math.sin(angle)} r="5" />;
-        })}
-      </svg>
-      <span className={s.ringFigure}>
-        <b className={s.display}>{digits(String(count.days || count.hours || count.minutes), lang)}</b>
-        <span>{count.days ? w.days(count.days) : count.hours ? w.hours : w.minutes}</span>
+    <div className={s.ringWrap}>
+      {/* What the ring counts, said beside it (CITY-243): it was only in the screen reader's words. */}
+      <span className={s.ringWords} aria-hidden="true">
+        <b className={s.display}>{w.ringSince}</b>
+        <span>{count.next ? w.ringNext(count.next) : w.ringPassed(passed)}</span>
       </span>
+      <div className={s.ring} role="img" aria-label={label}>
+        <svg viewBox="0 0 100 100" aria-hidden="true">
+          <circle className={s.ringTrack} cx="50" cy="50" r={R} />
+          <circle className={s.ringFill} cx="50" cy="50" r={R} strokeDasharray={`${C * count.fill} ${C}`} />
+          {count.checks.map((check) => {
+            const angle = check.at * 2 * Math.PI - Math.PI / 2;
+            return <circle key={check.days} className={`${s.tick} ${TICK[check.state]}`} cx={50 + R * Math.cos(angle)} cy={50 + R * Math.sin(angle)} r="5" />;
+          })}
+        </svg>
+        <span className={s.ringFigure}>
+          <b className={s.display}>{digits(String(count.days || count.hours || count.minutes), lang)}</b>
+          <span>{count.days ? w.days(count.days) : count.hours ? w.hours : w.minutes}</span>
+        </span>
+      </div>
     </div>
   );
 }
@@ -569,6 +595,9 @@ function ClaimDock({ row, review, wallet, network, open, unlisted, details, onDe
   useEffect(() => () => useBerth.getState().setBusy(false), []);
 
   const ready = claimReady(row, review);
+  // The network's fee against the sum, both in SOL (CITY-243): a show only — the claim is the engine's as built.
+  const solUsd = useCity((st) => solPrice(st.layout.towers.map((placed) => placed.tower)));
+  const near = ready.can ? feeNear(pairLamports(ready.expectedRaw, row.pair, solUsd), ready.networkLamports) : null;
   const claim = async () => {
     if (busy.current || !connection || connection.address !== wallet || !ready.can) return;
     busy.current = true;
@@ -635,6 +664,11 @@ function ClaimDock({ row, review, wallet, network, open, unlisted, details, onDe
           i
         </button>
       </div>
+      {near && !working ? (
+        <p className={s.feeNear} data-berth-fee-near={near}>
+          {near === 'over' ? w.feeOver : w.feeNear}
+        </p>
+      ) : null}
       {phase?.step === 'failed' && (
         <div className={s.problem} role="alert">
           {claimFailureText(phase.failure, connection?.wallet ?? null, lang)}

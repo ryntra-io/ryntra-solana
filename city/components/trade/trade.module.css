@@ -228,6 +228,15 @@
   }
 }
 
+/* The ticket beside the chart is at most 380 px wide on every desk (CITY-242): a quarter of it holds 70 px of a label,
+   and «Капіталізація», «Ліквідність» are single words of 75–90 px — no line to break them on, so they were cut. The
+   cells stand two by two there too, as on a phone. */
+@container window (min-width: 760px) {
+  :global(html:lang(uk)) .spotTicket .facts {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
 /* Verified and the issuer's powers as tags; Details quiet at the end of the row. */
 .tagRow {
   display: flex;
@@ -884,6 +893,11 @@
   padding-bottom: 6px;
 }
 
+/* Its row's label still in sight above the dock (CITY-221): the figure alone, under that row's own chips, right. */
+.dockGetBare {
+  justify-content: flex-end;
+}
+
 .dockGet .label {
   flex-shrink: 0;
 }
@@ -1029,6 +1043,42 @@
 }
 
 .walletHint a {
+  color: var(--ice);
+}
+
+/* The quiet line under «Open in Phantom» (CITY-237): the other wallets on the left, «Back» on the right — both inside
+   the card on a 390 px phone, where the old row beside the action pushed «Back» over the card's edge. */
+.walletWays {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-width: 0;
+  margin-top: 6px;
+}
+
+.walletWays .walletHint {
+  margin-top: 0;
+  min-width: 0;
+}
+
+.walletBack {
+  flex: none;
+  min-height: 44px;
+  margin-right: -12px;
+  padding: 0 12px;
+  border: 0;
+  background: none;
+  font-size: 13px;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+  white-space: nowrap;
+}
+
+.walletBack:hover,
+.walletBack:focus-visible {
   color: var(--ice);
 }
 
@@ -1594,7 +1644,112 @@
     padding-right: 2px;
   }
 
+  /* The ticket's foot while more of it waits under the window's edge (CITY-243, a MINOR of CITY-242): on a desk 900 px
+     tall the tops of the next row of facts stood cut by the edge. A short fade of the card's own ground stands there
+     instead, while the column can still scroll down; at its end, or in a column that fits, it is not there. Under the
+     pinned dock (z-index 1), never over it. Where a browser has no scroll timeline, the column ends as it did. */
+  @supports (animation-timeline: scroll()) {
+    .spotTicket::after {
+      content: '';
+      position: sticky;
+      bottom: 0;
+      display: block;
+      height: 22px;
+      margin-top: -22px;
+      pointer-events: none;
+      opacity: 0;
+      background: linear-gradient(to bottom, rgba(10, 8, 19, 0), #0a0813 70%);
+      animation: ticketFoot linear both;
+      animation-timeline: scroll(nearest block);
+    }
+  }
+
   .sheet.framed:has(.spotGrid) {
     overflow: hidden;
+  }
+}
+
+/* The ticket's foot fades out as the column reaches its end (CITY-243). */
+@keyframes ticketFoot {
+  0%,
+  94% {
+    opacity: 1;
+  }
+
+  100% {
+    opacity: 0;
+  }
+}
+
+/* A desk 900 px tall (CITY-239): the window is 25 px shorter than the ticket was drawn for, so the «You get about»
+   figure went under the pinned dock, the dock took it in with its label, grew by that line and covered half of the
+   row that names it — the same words twice, one cut in half. The ticket's own rows stand a little closer there, and
+   the figure stands whole above the dock again. Only the ticket beside the chart, only on a short screen with a
+   pointer: nothing of a phone's sheet, of a taller desk or of what a finger presses on a tablet moves.
+
+   Limit and Stop (CITY-240) have a price row and its field more than Market, and Stop's dock holds two lines of terms:
+   there the dock's edge cut the price field in half before any scroll — with a price typed, the dock took in the «you
+   get» line and covered the field whole — and Limit's «You get» stood under the dock. The rows and the dock stand
+   closer still, and where the ticket has a price field the fine slider gives way to the four shares above it, which
+   do its job. A Limit ticket is whole in the window; a Stop ticket shows everything down to its price field whole,
+   also while the dock carries the «you get» line; what is left of Stop («You get», «Watch for») is one scroll of the
+   ticket's own column, under the pinned action. */
+@media (max-height: 940px) and (pointer: fine) {
+  @container window (min-width: 760px) {
+    .spotTicket .modes {
+      margin-top: 4px;
+    }
+
+    .spotTicket .sides {
+      margin-top: 8px;
+    }
+
+    .spotTicket .row {
+      margin-top: 8px;
+    }
+
+    .spotTicket .size {
+      gap: 8px;
+    }
+
+    .spotTicket .amount {
+      height: 56px;
+    }
+
+    .spotTicket .share {
+      height: 40px;
+    }
+
+    .spotTicket .slider {
+      height: 32px;
+    }
+
+    .spotTicket:has(.priceField) .slider {
+      display: none;
+    }
+
+    .spotTicket .get {
+      margin-top: 2px;
+    }
+
+    .spotTicket .priceField {
+      height: 48px;
+      margin-top: 6px;
+    }
+
+    .spotTicket .dock {
+      padding-top: 10px;
+    }
+
+    /* Stop's last row, «Watch for», starts under the dock's edge rather than across it: the row is whole after one
+       scroll, never half of it before. */
+    .spotTicket .row:has(.expiries) {
+      margin-top: 24px;
+    }
+
+    .spotTicket .action {
+      height: 54px;
+      margin-top: 10px;
+    }
   }
 }

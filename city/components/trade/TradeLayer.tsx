@@ -14,6 +14,8 @@ import { BUSY, renewAt, useTrade } from '@/city/lib/trade/store';
 import { escapeTarget, windowTower } from '@/city/lib/trade/tower-window';
 import { startWallets, useWallet } from '@/city/lib/trade/wallet';
 import { useWords } from '@/city/lib/i18n/dict';
+import { firstSize } from '@/city/lib/window/sizes';
+import { useWindows } from '@/city/lib/window/store';
 import { SpotGlyph, SwapGlyph } from '../deck/glyphs';
 import { useCityWindow } from '../window/useCityWindow';
 import { MinePanel } from './MinePanel';
@@ -29,6 +31,10 @@ const QUOTE_REFRESH_MS = 20_000;
 const AUTO_ORDER_MS = 450;
 /** The stops of this device are asked about this often while the page is in front. */
 const STOP_WATCH_MS = 20_000;
+/** Spot's first width: the chart beside the ticket at the least, a larger chart on a large desk at the most. */
+const SPOT_WIDTHS = { least: 980, most: 1320 } as const;
+/** Spot's first height: the ticket, its wallet line and the coin's figures whole, on a desk tall enough for it. */
+const SPOT_HEIGHT = 900;
 
 /**
  * Trading in the city: the wallet comes back by itself if this site was granted it, a signature left open before a
@@ -195,13 +201,17 @@ export function TradeLayer() {
   const view = useTrade((st) => (st.view === 'swap' && !st.launch ? 'swap' : 'spot'));
   const shown = open && !((running || aside) && !BUSY.has(phase) && !held);
   const hold = BUSY.has(phase) || held;
+  // Spot's first size follows the screen (CITY-242): the ticket and the wallet's line whole beside the chart, a larger
+  // window on a larger desk. A place the person gave it is kept by the frame.
+  const viewport = useWindows((st) => st.viewport);
+  const spotSize = useMemo(() => firstSize(viewport, SPOT_WIDTHS, SPOT_HEIGHT), [viewport]);
   const swapSpec = useMemo(
     () => ({ id: 'swap', title: w.swapTitle, icon: <SwapGlyph />, render: renderTrade, size: { width: 440, height: 620 }, min: { width: 360, height: 460 }, held: hold, onClose: closeTrade }),
     [w.swapTitle, hold],
   );
   const spotSpec = useMemo(
-    () => ({ id: 'spot', title: w.spotTitle, icon: <SpotGlyph />, render: renderTrade, size: { width: 980, height: 640 }, min: { width: 380, height: 480 }, held: hold, onClose: closeTrade }),
-    [w.spotTitle, hold],
+    () => ({ id: 'spot', title: w.spotTitle, icon: <SpotGlyph />, render: renderTrade, size: spotSize, min: { width: 380, height: 480 }, held: hold, onClose: closeTrade }),
+    [w.spotTitle, hold, spotSize],
   );
   useCityWindow(shown && view === 'swap', swapSpec);
   useCityWindow(shown && view === 'spot', spotSpec);

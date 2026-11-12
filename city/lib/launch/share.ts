@@ -1,5 +1,4 @@
-import { CREW_OWNER_WORD } from '../../../lib/core/launch/crew.ts';
-import { FEE_SHARE_MAX_RECIPIENTS, FEE_SHARE_MIN_BPS, FEE_SHARE_TOTAL_BPS, feeShareProblems, withCreatorShare, type FeeShare } from '../../../lib/core/launch/fee-shares.ts';
+import { FEE_SHARE_MAX_RECIPIENTS, FEE_SHARE_MIN_BPS, FEE_SHARE_TOTAL_BPS, TYPED_SHARES_OWNER_WORD, feeShareProblems, withCreatorShare, type FeeShare } from '../../../lib/core/launch/fee-shares.ts';
 import type { Network } from './engine.ts';
 
 /**
@@ -8,7 +7,11 @@ import type { Network } from './engine.ts';
  * handover (`lib/core/venues/meteora-dbc/fee-sharing.server.ts`). The city only says who gets what: it types the other
  * wallets and their parts, the creator keeps the rest, and the rule is the engine's (`feeShareProblems`).
  *
- * Open where the engine shares typed wallets on Classic and Protected: the devnet stand, and mainnet only — the same value the crews read (`CREW_OWNER_WORD`), so the door and the engine never disagree.
+ * A door behind two locks (CITY-220), both shut by default:
+ * - the city's switch, `NEXT_PUBLIC_RYNTRA_CITY_SHARE=open` — closed unless a deployment opens it, so the door can be
+ *   shut again without a code change;
+ * - the network: the devnet stand, and mainnet only on typed shares — the very value the engine
+ *   reads (`TYPED_SHARES_OWNER_WORD`), so the door and the engine never disagree. The crews' word is another one.
  *
  * Pure and client-safe.
  */
@@ -25,8 +28,12 @@ export const SHARE_START_PERCENT = 10;
 
 const BASE58 = /^[1-9A-HJ-NP-Za-km-z]{32,44}$/;
 
-/** Whether the door shows on this network: the devnet stand, mainnet only. */
-export function shareOpen(network: Network | null, ownerWord: boolean = CREW_OWNER_WORD): boolean {
+/** The city's switch for people: closed unless the deployment opens it. */
+export const CITY_SHARE_SWITCH = process.env.NEXT_PUBLIC_RYNTRA_CITY_SHARE === 'open';
+
+/** Whether the door shows on this network: the switch is open, and the network is the stand. */
+export function shareOpen(network: Network | null, ownerWord: boolean = TYPED_SHARES_OWNER_WORD, switchOpen: boolean = CITY_SHARE_SWITCH): boolean {
+  if (!switchOpen) return false;
   return network === 'solana:devnet' || (network === 'solana:mainnet' && ownerWord === true);
 }
 

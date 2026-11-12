@@ -2,6 +2,7 @@
 
 import { useMemo } from 'react';
 import type { PositionView } from '@/lib/liquidity/catalog/positions';
+import type { LiquidityReview } from '@/lib/liquidity/studio/actions';
 import { reviewFigures } from '@/city/lib/districts/harbor/review';
 import type { PierRow } from '@/city/lib/earn/mine';
 import { solPiers, solShort, solUsd } from '@/city/lib/earn/pier';
@@ -9,6 +10,7 @@ import { PIER_BUSY, poolReviewOf, targetKey, usePier } from '@/city/lib/earn/pie
 import { SOL_MINT } from '@/city/lib/earn/lst';
 import { useEarnData } from '@/city/lib/earn/store';
 import type { Words } from '@/city/lib/earn/words';
+import { feeNear, usdLamports } from '@/city/lib/fee-near';
 import { digits } from '@/city/lib/i18n/dict';
 import { useWallet } from '@/city/lib/trade/wallet';
 import { BackGlyph, Line, SolFigure } from './bits';
@@ -47,6 +49,22 @@ export function Boat({ lit, size = 56 }: { lit: boolean; size?: number }) {
   );
 }
 
+/** What a claim's Review takes, in dollars at the position's own prices; unknown where a taken side has no price. */
+function claimedUsd(review: LiquidityReview, view: PositionView): number | null {
+  const preview = review.preview;
+  if (preview.action !== 'claim') return null;
+  let total = 0;
+  for (const [amount, side] of [
+    [preview.claimed.x, view.x],
+    [preview.claimed.y, view.y],
+  ] as const) {
+    if (amount.units === '0') continue;
+    if (side.priceUsd === null) return null;
+    total += (Number(amount.units) / 10 ** amount.decimals) * side.priceUsd;
+  }
+  return total;
+}
+
 /** A boat's own card: what it holds and earned in SOL, against holding, and the two things to do with it. */
 export function BoatCard({ words, view, row }: { words: Words; view: PositionView; row: PierRow | null }) {
   const w = words.pier;
@@ -77,6 +95,8 @@ export function BoatCard({ words, view, row }: { words: Words; view: PositionVie
   const shown = acting && connection && reviewed?.key === targetKey(connection.address, acting) ? reviewed : null;
   const poolReview = poolReviewOf(shown);
   const figures = poolReview && acting ? reviewFigures(poolReview, { x: view.x.symbol, y: view.y.symbol }, null) : null;
+  // «Take fees» when the network's fee comes close to them (CITY-243): a show only, the Review stays the engine's.
+  const near = poolReview && acting?.kind === 'claim' ? feeNear(usdLamports(claimedUsd(poolReview, view), price), poolReview.networkFeeLamports) : null;
   const choose = (kind: 'claim' | 'exit') => {
     if (!connection || busy) return;
     void usePier.getState().prepare(connection, { kind, position: view }, holdings);
@@ -137,6 +157,7 @@ export function BoatCard({ words, view, row }: { words: Words; view: PositionVie
           <span>
             {w.network} {figures.networkSol} SOL{figures.rentReturnedSol ? ` · ${w.rent} +${figures.rentReturnedSol} SOL` : ''} · {acting.kind === 'exit' ? w.closes : w.stays}
           </span>
+          {near ? <span className={s.noteWarn}>{near === 'over' ? w.feeOver : w.feeNear}</span> : null}
         </div>
       ) : acting && phase === 'reviewing' ? (
         <div className={s.bones} aria-busy="true">

@@ -13,10 +13,13 @@ openBots('launch'); // or 'hangar', 'strategies', 'history'; without a tab — w
 The old addresses of the bots, the strategies and the agents (`/app/bots`, `/app/strategies`, `/agents` … → `/?open=agents`,
 CITY-13) open it too, behind the same switch as the door (`NEXT_PUBLIC_RYNTRA_CITY_AGENTS=open`).
 
-**Practice, and ladders on devnet.** The practice bots sign nothing; «Cancel orders» and «Withdraw all» stand in them
+**Practice, and live ladders.** The practice bots sign nothing; «Cancel orders» and «Withdraw all» stand in them
 switched off with one honest line. The one live path is the ladder composer (CITY-135, below): a buy or an exit ladder,
-or Smart DCA's ladder leg, placed as DLMM limit orders **on devnet only**, signed once in the person's own wallet —
-shown only while `NEXT_PUBLIC_RYNTRA_CITY_LADDER=devnet`. Mainnet opens after the devnet pass.
+or Smart DCA's ladder leg, placed as DLMM limit orders, signed once in the person's own wallet — on the network
+`NEXT_PUBLIC_RYNTRA_CITY_LADDER` names (`devnet`, or `mainnet` behind its own server switch, CITY-219); practice only
+otherwise. A ladder is kept in this browser the moment it is signed, before the relay is asked, and the chain's reading
+says which legs landed (CITY-231). Taking back never depends on this browser: on a mainnet window every DLMM order or
+ladder the Hangar reads from the chain carries «Cancel» — from the app, another device, a cleared browser.
 
 **Reconciled with the Deck.** «Hangar» on the Deck is the agent's home in the quarter (CITY-50); the bots' own place in
 the window says «My bots», so the tray never shows two different «Hangars». The scout — the city's own read-only agent —

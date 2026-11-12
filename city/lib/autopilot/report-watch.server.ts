@@ -3,7 +3,10 @@ import 'server-only';
 import { onlyRows } from '@/lib/assistant/watch/runtime.server';
 import type { GuardStore } from '@/lib/guard/store';
 import { AGENT_SYMBOL_ENV, agentResult } from '@/lib/mandate/agent-service.server';
+import { chainTradeSignatures } from '@/lib/mandate/report-chain.server';
+import { checkedDay, unbookedTrades } from '@/lib/mandate/report';
 import { mandateGate } from '@/lib/mandate/service.server';
+import { readBook, type BookEntry } from '@/lib/mandate/book.server';
 import { deliverOutbox } from '@/lib/monitoring/service.server';
 import { fetchTokenCatalog } from '@/lib/solana/catalog';
 import { readPilot } from '@/lib/pilot/book.server';
@@ -16,6 +19,8 @@ import { runReportPass, type ReportPass, type ReportRead } from './report-watch'
  * venue's price through `agentResult` — the very read the city's card shows — the coin's ticker and SOL's dollar price
  * from Jupiter's catalogue, and the note goes through the monitoring delivery (Telegram, the phone's push, the
  * browser's push, quiet hours, retries). Shut unless `RYNTRA_AGENT_REPORT=on` and the mandate's gate stands open.
+ * CITY-245: on mainnet the day is checked against the chain — a trade the chain shows that the book does not hold
+ * leaves the day's result unsaid (`checkedDay`); the count and the spend stay the book's.
  */
 
 type Env = Readonly<Record<string, string | undefined>>;
@@ -30,9 +35,15 @@ export async function runAgentReport(env: Env, guard: Readonly<{ store: GuardSto
   if (!gate.open) return { ran: false, why: 'no-agent' };
   if (!guard.writes.allowed) return { ran: false, why: 'read-only' };
   const named = env[AGENT_SYMBOL_ENV]?.trim() ?? null;
+  /* CITY-245: the trades the book holds for her under any of her mandates — one budget account serves them all. */
+  let book: Promise<readonly BookEntry[]> | null = null;
+  const hers = async (owner: string) => (await (book ??= readBook(guard.store, gate.network))).filter((entry) => entry.record.owner === owner).flatMap((entry) => entry.trades);
   const read = async (entry: Parameters<Parameters<typeof runReportPass>[0]['read']>[0], since: number, until: number): Promise<ReportRead> => {
     const view = await agentResult({ policy: entry.record.policy, owner: entry.record.owner, since }, gate, { store: guard.store, symbol: named, now: () => until });
     if (!view?.away) return null;
+    const chain = gate.network === 'mainnet' ? await chainTradeSignatures({ budget: entry.record.budget, coin: entry.receiveMint, since, until }) : null;
+    const unbooked = chain === null ? null : unbookedTrades(chain, await hers(entry.record.owner).catch(() => entry.trades));
+    const day = checkedDay(view.away, unbooked);
     /* The names that say it: the coin's ticker and SOL in dollars; unread, the report says it without them. */
     const catalog = await fetchTokenCatalog([WRAPPED_SOL_MINT, entry.receiveMint], 5_000).catch(() => null);
     const sol = catalog?.ok ? Number(catalog.byMint[WRAPPED_SOL_MINT]?.usdPrice ?? NaN) : NaN;
@@ -40,7 +51,7 @@ export async function runAgentReport(env: Env, guard: Readonly<{ store: GuardSto
     /* CITY-204: her money autopilot's week, when this mandate is its trade. */
     const pilot = await readPilot(guard.store, gate.network, entry.record.owner).catch(() => null);
     const ours = pilot && pilot.status === 'working' && pilot.policy === entry.record.policy ? { weekUsd: pilot.care?.weekUsd ?? null, held: pilot.held?.why ?? null } : null;
-    return { day: view.away, symbol: ticker && SYMBOL.test(ticker) ? ticker : null, solUsd: Number.isFinite(sol) && sol > 0 ? sol : null, total: view.net ? { netRaw: view.net.netRaw } : null, pilot: ours };
+    return { day, symbol: ticker && SYMBOL.test(ticker) ? ticker : null, solUsd: Number.isFinite(sol) && sol > 0 ? sol : null, total: view.net ? { netRaw: unbooked ? null : view.net.netRaw } : null, pilot: ours };
   };
   const pass = await runReportPass({
     store: guard.store,

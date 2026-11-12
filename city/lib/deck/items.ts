@@ -84,6 +84,16 @@ export function doorsOf(tray: Tray, on: Switches): Door[] {
   return TRAYS[tray].filter((door) => doorOpen(door, on));
 }
 
+/**
+ * The Arena's hint under the cursor: the names of its open doors only — «Ring and Vault», and «Ring, Hack and Vault»
+ * once the Hack opens (CITY-236: the hint named the Hack behind a closed door). Null when no door is open.
+ */
+export function doorsHint(names: readonly string[], and: string): string | null {
+  if (!names.length) return null;
+  if (names.length === 1) return names[0]!;
+  return `${names.slice(0, -1).join(', ')} ${and} ${names.at(-1)}`;
+}
+
 /** A place is open when its switch is, or — for a tray — when any of its doors is; a shut tray is a shut place. */
 export function placeOpen(place: Place, on: Switches): boolean {
   return isTray(place) ? TRAYS[place].some((door) => doorOpen(door, on)) : on[place];

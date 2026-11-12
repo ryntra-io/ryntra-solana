@@ -5,6 +5,7 @@ import { useEffect } from 'react';
 import * as THREE from 'three';
 import { pickTower } from '@/city/lib/city/pick';
 import { useCity } from '@/city/lib/city/store';
+import { signUnder } from '@/city/lib/launch/hall-tap';
 import { useMoments } from '@/city/lib/moments/stage';
 import { lotOf, PLOT, slotCentre, type Lot } from '@/city/lib/quarter/plot';
 import { quarterStore } from '@/city/lib/quarter/store';
@@ -73,6 +74,13 @@ export function HoverPick() {
       raycaster.setFromCamera(ndc, camera);
       const ray = raycaster.ray;
       const placed = pickTower(ray, useCity.getState().layout.towers);
+      // A Hall of Fame sign nearer than the tower behind it: a tap there is its board's action, so the cursor says so.
+      const sign = signUnder(ray);
+      if (sign && (!placed || sign.distance < Math.hypot(placed.x - ray.origin.x, placed.z - ray.origin.z))) {
+        setHover(null);
+        el.style.cursor = 'pointer';
+        return;
+      }
       let target: HoverTarget = placed ? { kind: 'tower', id: placed.tower.id } : null;
       // A building of my quarter wins when it stands nearer than the tower behind it.
       const l = lotNow();

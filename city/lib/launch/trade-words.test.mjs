@@ -41,6 +41,12 @@ test("figures: never more than they are", () => {
   assert.equal(unitsText(3.509, "down", "uk"), "3,50");
   assert.equal(unitsText(0.004219, "down", "en"), "0.0042");
   assert.equal(unitsText(0, "down", "en"), "0");
+  // CITY-243: «$3,7E-7» in «My tower» — a price under a millionth is written out, never in scientific form.
+  assert.equal(unitsText(3.7e-7, "down", "en"), "0.00000037");
+  assert.equal(unitsText(3.7e-7, "down", "uk"), "0,00000037");
+  assert.equal(unitsText(5.04e-9, "down", "en"), "0.000000005");
+  assert.equal(unitsText(0.5, "down", "en"), "0.5");
+  for (const value of [9.99e-7, 1.234e-8, 4.2e-11, 0.000123]) assert.doesNotMatch(unitsText(value, "down", "uk"), /e/i);
   assert.equal(pctText(50, "en"), "0.5%");
   assert.equal(pctText(5000, "uk"), "50 %");
   assert.equal(dollarsText(34_500, "en"), "$34.5K");

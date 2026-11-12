@@ -24,6 +24,7 @@ import { HoverPick } from '../hud/HoverPick';
 import { Selected } from './Selected';
 import { BeaconTowers } from '../beacon/BeaconTowers';
 import { AgentTowerTag } from '../autopilot/AgentTowerTag';
+import { AgentWalker } from '../autopilot/AgentWalker';
 import { LensCamera, LensRings } from '../lens/LensScene';
 import { PALETTE } from '@/city/lib/palette';
 import { CameraRig } from './CameraRig';
@@ -70,6 +71,7 @@ export function CityScene() {
         <NetworkStreets />
         <BeaconTowers />
         <AgentTowerTag />
+        <AgentWalker />
         <HarborTowers />
         <ScoutDrone />
         <BotDrones />

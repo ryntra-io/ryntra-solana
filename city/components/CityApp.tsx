@@ -11,11 +11,13 @@ import { mayAssemble, type Activation } from '@/city/lib/audio/gate';
 import { cityDrawn } from '@/city/lib/city/drawn';
 import { ambient, diff, isStale, showcase, type EventDraft } from '@/city/lib/city/events';
 import { useCity, useCityEvents } from '@/city/lib/city/store';
+import { freshCity, newerCity, nextReadIn, readOnReturn } from '@/city/lib/market/reread';
 import type { CitySnapshot } from '@/city/lib/market/types';
 import { RUN_OPEN } from '@/city/lib/run/flag';
 import { useRun } from '@/city/lib/run/store';
 import { track } from '@/city/lib/run/track';
 import { Art } from './art/Art';
+import { CityLoading } from './city/CityLoading';
 import { GarageLayer } from './agent/garage/GarageLayer';
 import { BerthLayer } from './berth/BerthLayer';
 import { AssistantLayer } from './assistant/AssistantLayer';
@@ -30,6 +32,7 @@ import { GuardLayer } from './guard/GuardLayer';
 import { MoneyLayer } from './money/MoneyLayer';
 import { BotsLayer } from './bots/BotsLayer';
 import { DuelsLayer } from './ring/duel/DuelsLayer';
+import { HackLayer } from './arena/hack/HackLayer';
 import { ScoutsLayer } from './scouts/ScoutsLayer';
 import { PartnersLayer } from './partners/PartnersLayer';
 import { SettingsLayer } from './settings/SettingsLayer';
@@ -48,6 +51,7 @@ import { VaultLayer } from './vault/VaultLayer';
 import { BeaconLayer } from './beacon/BeaconLayer';
 import { HallLayer } from './launch/HallLayer';
 import { LaunchedLayer } from './launch/LaunchedLayer';
+import { LaunchLayer } from './launch/LaunchSlot';
 import { NightLayer } from './launch/NightLayer';
 import { OpenFromAddress } from './open/OpenFromAddress';
 
@@ -55,7 +59,6 @@ const CityCanvas = dynamic(() => import('./city/CityCanvas').then((m) => m.CityC
 // The concept screens of the steps still to build: development builds only, never in the production bundle.
 const LookLayer = process.env.NODE_ENV === 'production' ? null : dynamic(() => import('./look/Look').then((m) => m.Look), { ssr: false });
 
-const REFRESH_MS = 60_000;
 const AMBIENT_MS = 26_000;
 /** One moment owns the frame: the next waits at least this long. */
 const MOMENT_GAP_MS = 6_500;
@@ -134,16 +137,25 @@ export function CityApp({ initial }: { initial: CitySnapshot }) {
     return () => clearInterval(wait);
   }, []);
 
-  // Live reads.
+  // Live reads: a fresh city every minute; one that is not live and fresh again within seconds, and at once when the tab
+  // comes back — the top bar never sits on «Delayed» for minutes (CITY-221, `city/lib/market/reread.ts`).
   useEffect(() => {
     let alive = true;
+    let reading = false;
+    let tries = 0;
+    let timer: ReturnType<typeof setTimeout> | undefined;
     const read = async () => {
+      if (reading) return;
+      reading = true;
+      clearTimeout(timer);
       try {
         const res = await fetch('/api/city', { cache: 'no-store' });
         if (!res.ok) return;
         const next = (await res.json()) as CitySnapshot;
         if (!alive || !Array.isArray(next.towers) || !next.towers.length) return;
         const before = latest.current;
+        // An edge still holding an older city (the build's) never takes back the newer one on screen.
+        if (!newerCity(before, next)) return;
         latest.current = next;
         // Prices keep moving during a run, but the run's city stays frozen until it ends.
         if (useRun.getState().phase !== 'off') return;
@@ -157,13 +169,34 @@ export function CityApp({ initial }: { initial: CitySnapshot }) {
         if (useCity.getState().entered && before.source === 'live') for (const e of diff(before.towers, next.towers)) play(e);
       } catch {
         // The city keeps the last read; the top bar says SNAPSHOT when it is not live.
+      } finally {
+        reading = false;
+        if (alive) {
+          // A hidden tab waits: coming back to it reads at once (`readOnReturn`), so no visitor's background tab keeps asking.
+          if (!document.hidden) timer = setTimeout(read, nextReadIn(latest.current, Date.now(), tries));
+          tries = freshCity(latest.current, Date.now()) ? 0 : tries + 1;
+        }
+      }
+    };
+    const back = () => {
+      if (document.visibilityState !== 'visible') return;
+      if (readOnReturn(latest.current, Date.now())) void read();
+      // A fresh city on return: the timer a hidden tab skipped is set again, so reading never stops.
+      else if (!reading) {
+        clearTimeout(timer);
+        timer = setTimeout(read, nextReadIn(latest.current, Date.now(), tries));
       }
     };
     void read();
-    const timer = setInterval(read, REFRESH_MS);
+    document.addEventListener('visibilitychange', back);
+    window.addEventListener('online', back);
+    window.addEventListener('pageshow', back);
     return () => {
       alive = false;
-      clearInterval(timer);
+      clearTimeout(timer);
+      document.removeEventListener('visibilitychange', back);
+      window.removeEventListener('online', back);
+      window.removeEventListener('pageshow', back);
     };
   }, [play, setSnapshot]);
 
@@ -215,6 +248,8 @@ export function CityApp({ initial }: { initial: CitySnapshot }) {
 
   return (
     <>
+      {/* Under the canvas, from the first paint: the city's dusk and mark while the scene builds (CITY-241). */}
+      <CityLoading />
       <CityCanvas />
       <Art />
       <MomentsLayer />
@@ -228,6 +263,7 @@ export function CityApp({ initial }: { initial: CitySnapshot }) {
       <VaultLayer />
       <HallLayer />
       <NightLayer />
+      <LaunchLayer />
       <BerthLayer />
       <LaunchedLayer />
       <InstructLayer />
@@ -237,6 +273,7 @@ export function CityApp({ initial }: { initial: CitySnapshot }) {
       <BotsLayer />
       <GarageLayer />
       <DuelsLayer />
+      <HackLayer />
       <EarnLayer />
       <GuardLayer />
       <ScoutsLayer />

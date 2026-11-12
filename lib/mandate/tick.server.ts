@@ -22,7 +22,10 @@ import { PublicKey, type AddressLookupTableAccount, type Connection, type Transa
 
 import type { GuardStore } from "../guard/store.ts";
 import type { KeySigner } from "../launch/signer/signer.server.ts";
-import { bookOf, claimKey, mandateOf, planOfEntry, readBook, readEntry, withTrade, writeEntry, type BookEntry, type BookStatus, type OpenGate } from "./book.server.ts";
+import { bookOf, claimKey, mandateOf, planOfEntry, readBook, readEntry, TRADES_KEPT, withTrade, writeEntry, type BookEntry, type BookStatus, type OpenGate } from "./book.server.ts";
+import { frozenOn, isFrozen } from "./freeze.server.ts";
+import { reconcile } from "./mission.ts";
+import { BUDGET_PRESETS } from "./presets.ts";
 import { DIP_WINDOW_MS, exitOf, ruleOf, type Mark } from "./plans.ts";
 import { policyCarriesFee, type FeeSides } from "./fee.ts";
 import { feeMintOf } from "./terms.ts";
@@ -89,7 +92,7 @@ export type TickDeps = Readonly<{
   trade?: typeof agentTrade;
 }>;
 
-export type PassLine = Readonly<{ policy: string; did: "bought" | "failed" | "refused" | "waited" | "unread" | BookStatus }>;
+export type PassLine = Readonly<{ policy: string; did: "bought" | "failed" | "refused" | "waited" | "unread" | "frozen" | BookStatus }>;
 
 /** What a trade's outcome is in the book. */
 export function tradeOf(outcome: TradeOutcome, amount: bigint, received: bigint | null, at: number, minOut: bigint | null = null): AgentTrade {
@@ -203,11 +206,19 @@ export async function runAgentPass(deps: TickDeps): Promise<readonly PassLine[]>
   let traded = 0;
   const started = now();
   const book = await readBook(deps.store, deps.gate.network);
+  /* CITY-70: her «Freeze» switches, read once; a list not read is no switch off — nothing new is bought this pass. */
+  const frozen = await frozenOn(deps.store, deps.gate.network).catch(() => null);
   for (const entry of book) {
     if (lines.length > 0 && now() - started >= PASS_STARTS_WITHIN_MS) break;
     /* No longer trading, yet a trade it made may still have to be counted. */
     if (!atWork(entry)) {
       await withSettled(entry, deps).catch(() => entry);
+      continue;
+    }
+    /* Frozen: what is on its way is still read back by its signature; nothing new starts. */
+    if (!frozen || frozen.has(entry.record.policy)) {
+      await withSettled(entry, deps).catch(() => entry);
+      lines.push({ policy: entry.record.policy, did: frozen ? "frozen" : "unread" });
       continue;
     }
     if (traded >= TRADES_PER_PASS) break;
@@ -308,6 +319,12 @@ async function workFor(given: BookEntry, deps: TickDeps, now: () => number, trad
     else if (working !== entry) await writeEntry(deps.store, working);
     return "waited";
   }
+  /*
+   * CITY-70: the money adds up before every spend — the budget she moved in is what the done trades spent plus what the
+   * vault holds on chain. A vault holding less than the book can explain is money moved outside the book: nothing more.
+   */
+  const books = reconcile({ budgetRaw: BUDGET_PRESETS[entry.preset]?.budget ?? 0n, leftRaw: left, trades: entry.trades, full: entry.trades.length >= TRADES_KEPT });
+  if (books.state === "off") return settle(deps.store, working, "paused", at, "mismatch");
   const held = done.flatMap((row) => (row.level === undefined ? [] : [row.level]));
   const rule = ruleOf({ plan, now: at, marks: freshMarks(working.marks, at), anchor: working.anchor ?? null, held, position: { spent, worth: (await quote()) ?? null }, bornAt: working.bornAt ?? null });
   if (rule.do === "exit") return settle(deps.store, working, "paused", at, rule.why);
@@ -323,6 +340,8 @@ async function workFor(given: BookEntry, deps: TickDeps, now: () => number, trad
   const seeing: BookEntry = { ...reading, status: "working" };
   if (working !== entry || entry.unreadSince !== undefined || entry.status !== "working") await writeEntry(deps.store, seeing);
 
+  /* CITY-70: her switch read again just before the spend — a freeze turned on while this pass ran stops this buy. */
+  if (await isFrozen(deps.store, entry.cluster, entry.record.policy).catch(() => true)) return "frozen";
   /* One claim per slot of the rhythm: a second instance on the same pass finds it taken and waits. */
   const { everyMs } = steadyRhythm(mandate.terms.perTrade, mandate.terms.perDay, plan.pace ?? null);
   const slot = Math.floor(at / everyMs);

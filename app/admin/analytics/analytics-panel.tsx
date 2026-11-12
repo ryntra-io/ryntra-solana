@@ -40,6 +40,15 @@ const SITE_EVENT_LABEL: Record<string, string> = {
   seeker_connect_ok: "Seeker: підключено",
   seeker_connect_cancelled: "Seeker: скасовано",
   seeker_connect_failed: "Seeker: не з'єдналось",
+  agent_home: "Агент 1 · перший екран",
+  agent_hint: "Агент 2 · «Скажи» натиснуто",
+  agent_line: "Агент 3 · рядок відкрито",
+  agent_card: "Агент 4 · картка агента",
+  agent_wallet: "Агент 5 · гаманець підключено",
+  agent_sign: "Агент 6 · «Підписати» натиснуто",
+  agent_signed: "Агент 7 · бюджет підписано",
+  agent_sign_no: "Агент · підпис не відбувся",
+  agent_wallet_app: "Агент · пішов у застосунок гаманця",
 };
 
 function TrafficSources() {

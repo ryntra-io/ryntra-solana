@@ -25,7 +25,7 @@ export const CITY_SHIELD = Object.freeze({
  * False: the shield opens on the devnet stand only; on mainnet
  * the city keeps its current default. Flipped here, after the devnet pass.
  */
-export const CITY_SHIELD_MAINNET = false;
+export const CITY_SHIELD_MAINNET = true; // Fork 24/24, devnet 25/25
 
 /**
  * The deployment's switch: the shield opens only where `NEXT_PUBLIC_RYNTRA_CITY_SHIELD=open`. Anything else keeps the

@@ -5,6 +5,7 @@ import { MANDATE_NET, useMandate } from '@/city/lib/bots/mandate';
 import { useWords } from '@/city/lib/i18n/dict';
 import { useLang } from '@/city/lib/i18n/lang';
 import { AUTOPILOT_NET } from '@/city/lib/autopilot/flag';
+import { missionFace } from '@/city/lib/autopilot/mission';
 import { solFigure } from '@/city/lib/autopilot/report';
 import { readAgentView, useAutopilot } from '@/city/lib/autopilot/store';
 import { AUTOPILOT } from '@/city/lib/autopilot/words';
@@ -39,7 +40,9 @@ export function AgentMine({ onOpen }: { onOpen?: () => void }) {
   const netRaw = view.net ? view.net.netRaw : view.result.earnedRaw;
   const earned = netRaw === null ? null : BigInt(netRaw);
   const figure = netRaw === null || view.result.trades === 0 ? null : solFigure(netRaw, lang);
-  const state = view.status === 'working' ? w.working : view.status === 'paused' ? w.paused : view.status === 'stopped' ? w.noteStopped : w.ended;
+  /* CITY-70: the mission as the engine tells it — frozen, confirming a trade — else the book's state as before. */
+  const face = view.mission ? missionFace(view, w) : null;
+  const state = face ? face.text : view.status === 'working' ? w.working : view.status === 'paused' ? w.paused : view.status === 'stopped' ? w.noteStopped : w.ended;
   return (
     <button
       type="button"

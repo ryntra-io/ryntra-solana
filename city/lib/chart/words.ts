@@ -8,6 +8,9 @@ export const CHART_READ = words(
     hours: (n: number) => `${n}h`,
     ago: (when: string) => `${when} ago`,
     delayed: 'Delayed',
+    /* The chart's «Delayed» said with how long (CITY-243): the engine holds a read of each interval this long at most. */
+    delayedSeconds: (n: number) => `Delay ≤ ${n} s`,
+    delayedMinutes: (n: number) => `Delay ≤ ${n} min`,
     NO_POOL: 'No pool prices this coin yet.',
     NO_MAJOR_QUOTE: 'It only trades against coins without a trusted dollar price.',
     THIN: 'No pool holds enough liquidity to chart it.',
@@ -22,6 +25,8 @@ export const CHART_READ = words(
     hours: (n: number) => `${n} год`,
     ago: (when: string) => `${when} тому`,
     delayed: 'Затримка',
+    delayedSeconds: (n: number) => `Затримка ≤ ${n} с`,
+    delayedMinutes: (n: number) => `Затримка ≤ ${n} хв`,
     NO_POOL: 'Поки жоден пул не дає ціни цієї монети.',
     NO_MAJOR_QUOTE: 'Вона торгується лише до монет без надійної ціни в доларах.',
     THIN: 'У жодному пулі немає досить ліквідності для графіка.',

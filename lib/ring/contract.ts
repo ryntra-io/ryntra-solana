@@ -7,6 +7,8 @@
  *   POST /api/ring/create  CreateRequest  + Idempotency-Key → AgentResponse (201)
  *   POST /api/ring/change  ChangeRequest  + Idempotency-Key → AgentResponse
  *   POST /api/ring/off     OffRequest     + Idempotency-Key → AgentResponse
+ *   GET  /api/ring/mine                                     → MineResponse   (CITY-217: the Arena's «my agent»)
+ *   GET  /api/ring/board?format=                            → BoardResponse  (CITY-217: the board of a format)
  *
  * Errors are `{ error: { code, message } }`, as in `/api/v1`. An agent is a body (an archetype), a brain (one model
  * of OpenRouter's catalog pinned to one provider) and a script of up to 2 000 characters; it lives in a garage of its
@@ -129,6 +131,27 @@ export type GarageResponse = {
 };
 
 export type AgentResponse = { agent: AgentView };
+
+/**
+ * The asker's agents, as their owner sees them, and the Arena's garage where a first one is made (CITY-217): one bay
+ * per account, so nobody needs a quarter before the Ring. Not signed in: no agents, no bay.
+ */
+export type MineResponse = { signedIn: boolean; agents: AgentView[]; bay: { quarter: string; slot: number } | null };
+
+/** One line of a format's board: what anyone may see of an agent, its rating there, whether it is the asker's. */
+export type BoardRow = {
+  rank: number;
+  id: string;
+  name: string;
+  archetype: Archetype;
+  weight: Weight;
+  /** The brain's name, as the catalog lists it. */
+  brain: string;
+  rating: RatingView;
+  mine: boolean;
+};
+
+export type BoardResponse = { format: RingFormat; rows: BoardRow[] };
 
 export type CreateRequest = { quarter: string; slot: number; archetype: Archetype; model: string; scenario: string };
 

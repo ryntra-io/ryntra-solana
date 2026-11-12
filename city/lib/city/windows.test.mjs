@@ -96,3 +96,11 @@ test("every open window is named, in the order they are asked — the layers «B
   assert.deepEqual(openWindows(CLOSED), []);
   assert.deepEqual(openWindows({ ...CLOSED, hud: { menu: true, settings: false }, chart: { mint: "M" }, trade: { open: true } }), ["trade", "chart", "menu"]);
 });
+
+test("an early launch's window for its people is the launch's window too: the home gives way, «Back» closes it (CITY-236)", () => {
+  const early = { ...CLOSED, launch: { sheet: false, entry: "DezXAZ8z7PnrnRJjz3wXBoRgixCa6xjnB7YaB1pPB263" } };
+  assert.equal(openWindow(early), "launch");
+  assert.deepEqual(openWindows(early), ["launch"]);
+  assert.equal(windowOpen({ ...CLOSED, launch: { sheet: false, entry: null } }), false);
+  assert.equal(windowOpen({ ...CLOSED, launch: { sheet: false } }), false, "a source without the entry reads as before");
+});

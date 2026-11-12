@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "type": "module",
-  "description": "Ryntra on Solana — the product's source: the web app, the Android app and the Evidence Kernel. Private; shared read-only with reviewers.",
+  "description": "Ryntra — your AI agent on Solana: it launches coins and trades for you, and the whole market is a living 3D city. The web app, the city and the Android app.",
   "engines": {
     "node": ">=22 <25"
   },

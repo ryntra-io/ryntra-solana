@@ -518,14 +518,6 @@ button.card:active {
   }
 }
 
-/* A narrower desk: the first-visit hint stands under the top bar's middle, so the column starts under it while it shows. */
-@media (min-aspect-ratio: 1/1) and (max-width: 1100px) {
-  :global(body:has([data-city-hint])) section.feed {
-    top: calc(max(12px, env(safe-area-inset-top)) + 112px);
-    max-height: calc(100dvh - max(12px, env(safe-area-inset-top)) - 112px - 128px);
-  }
-}
-
 /* ---------- Phone held upright: a strip with the newest event; the chevron opens the list ---------- */
 
 @media not all and (min-aspect-ratio: 1/1) {
@@ -646,18 +638,10 @@ button.card:active {
     background: linear-gradient(180deg, rgba(6, 5, 12, 0.85), rgba(6, 5, 12, 0));
   }
 
-  /* What stands under the top bar on a phone — the first-visit hint, the wallet's «Mine» pill (trade/mine.module.css),
-     or both — the strip steps below, and the open list ends above the dock all the same. */
-  :global(body:has([data-city-hint])) .feed {
-    --below: 112px;
-  }
-
+  /* What stands under the top bar on a phone — the wallet's «Mine» pill (trade/mine.module.css) — the strip steps
+     below, and the open list ends above the dock all the same. The first-visit hint stands over the Deck (CITY-241). */
   :global(body:has([aria-controls='city-mine'])) .feed {
     --below: 96px;
-  }
-
-  :global(body:has([data-city-hint]):has([aria-controls='city-mine'])) .feed {
-    --below: 158px;
   }
 
   .feed {
@@ -721,6 +705,22 @@ button.card:active {
 }
 
 /* The panel: dark glass under the bell, as tall as the events, scrolling when the screen is short. */
+/* The bell's panel stands in a layer of its own, over the city's windows (CITY-242), as the wallet's panel does
+   (quarter/wallet.module.css): pressed over the Ring, the bots or a phone's sheet, it was drawn under them, its title
+   and all but one line hidden. Only the panel: the top bar and its bell stay under the windows. The layer takes no tap. */
+.over {
+  position: fixed;
+  inset: 0;
+  z-index: 13;
+  pointer-events: none;
+  font-family: var(--font-ui, system-ui), system-ui, sans-serif;
+  color: var(--ice);
+}
+
+.over > * {
+  pointer-events: auto;
+}
+
 section.feed.panel {
   top: calc(max(12px, env(safe-area-inset-top)) + 62px);
   left: auto;
@@ -775,7 +775,18 @@ section.feed.panel > .head {
   color: var(--ice);
 }
 
+/* Ukrainian (CITY-240): the wide face has no Cyrillic, so «ПОДІЇ» is set in the interface face — a narrower cut, and
+   five letters that look the same small and capital. At the English heading's size it read as small letters beside
+   «EVENTS». A size up and more air between the letters: the heading reads as the capitals it is. */
+.panelTitle:lang(uk) {
+  font-size: 15px;
+  letter-spacing: 0.2em;
+}
+
+/* The panel scrolls as a whole: its list keeps its own height (CITY-237). Left to shrink, as the strip's list does,
+   it let its last events hang out of its box, and «Clips of this visit» was drawn over them. */
 .panel .list {
+  flex: none;
   overflow: visible;
   mask-image: none;
 }
@@ -786,6 +797,7 @@ section.feed.panel > .head {
 
 /* This visit's clips: one quiet row at the foot of the events. */
 .clips {
+  flex: none;
   display: flex;
   align-items: center;
   justify-content: space-between;

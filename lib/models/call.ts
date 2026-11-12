@@ -28,6 +28,7 @@ import { MODELS_ENV, keyShaped, missingKey, readKey, type ModelsEnv } from "./en
 import { ModelGatewayError, classifyHttpFailure, classifyThrown, readErrorBody } from "./errors.ts";
 import { consoleJournal } from "./journal.ts";
 import { MAX_PROVIDERS, checkPin, providerMatches, slugReaches, type PinnedModel } from "./pin.ts";
+import { badSubject, readSubject } from "./subject.ts";
 import type {
   AnsweredBy,
   ModelBudget,
@@ -70,7 +71,6 @@ export type GatewayDeps = Readonly<{
   url?: string;
 }>;
 
-const SUBJECT_ID = /^[A-Za-z0-9._:-]{1,64}$/;
 const TOOL_NAME = /^[A-Za-z0-9_-]{1,64}$/;
 
 const whole = (value: unknown): value is number => typeof value === "number" && Number.isSafeInteger(value);
@@ -85,10 +85,7 @@ function checkBudget(budget: unknown): ModelGatewayError | null {
 }
 
 function checkRequest(request: ModelCall): ModelGatewayError | null {
-  const subject = request.subject as { kind?: unknown; id?: unknown } | undefined;
-  if (!subject || (subject.kind !== "vault-guard" && subject.kind !== "ring-agent") || typeof subject.id !== "string" || !SUBJECT_ID.test(subject.id)) {
-    return new ModelGatewayError("invalid_request", "subject is { kind: \"vault-guard\" | \"ring-agent\", id } with an id of 1–64 safe characters.");
-  }
+  if (!readSubject(request.subject)) return badSubject();
   const pin = checkPin(request.model);
   if (pin) return pin;
   if ("models" in (request as object)) return new ModelGatewayError("invalid_request", "A list of fallback models is never sent: one pinned model per call.");
@@ -280,13 +277,12 @@ export function createModelGateway(deps: GatewayDeps = {}): ModelGateway {
 
   async function record(request: ModelCall, result: ModelResult, ownKey: boolean, startedAt: number): Promise<void> {
     /* A request refused for its shape is still recorded, with what of it can be told. */
-    const subject = request.subject;
     const budget = request.budget;
     const entry: ModelCallRecord = {
       schema: "ryntra.model-call",
       version: 1,
       at: new Date(startedAt).toISOString(),
-      subject: subject && (subject.kind === "vault-guard" || subject.kind === "ring-agent") && typeof subject.id === "string" && SUBJECT_ID.test(subject.id) ? { kind: subject.kind, id: subject.id } : null,
+      subject: readSubject(request.subject),
       requested: { model: String(request.model?.id ?? "").slice(0, 160), providers: Array.isArray(request.model?.providers) ? request.model.providers.slice(0, MAX_PROVIDERS).map((p) => String(p).slice(0, 64)) : [] },
       answered: result.answered,
       generationId: result.generationId,

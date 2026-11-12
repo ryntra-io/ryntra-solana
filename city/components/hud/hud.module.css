@@ -15,6 +15,10 @@
   pointer-events: auto;
 }
 
+/* The HUD stays under the city's windows whatever is open in it (CITY-239). The wallet's panel, which answers a tap
+   inside a window and must stand over it (CITY-236), has a layer of its own (quarter/wallet.module.css): lifting this
+   whole layer for it laid the event slab and the home's cards on the window too. */
+
 .display {
   font-family: var(--font-display, system-ui), system-ui, sans-serif;
   font-stretch: 125%;
@@ -164,11 +168,27 @@
   display: contents;
 }
 
+/* The menu's panel stands in a layer of its own over the city's windows (CITY-241, `MenuOver` in Menu.tsx), as the
+   wallet's does (quarter/wallet.module.css): the layouts in it are wanted most while windows stand in both bays. The
+   layer itself takes no tap; the panel stands under its button, by the button's own place on the screen. */
+.menuLayer {
+  position: fixed;
+  inset: 0;
+  z-index: 13;
+  pointer-events: none;
+  font-family: var(--font-ui, system-ui), system-ui, sans-serif;
+  color: var(--ice);
+}
+
+.menuLayer > * {
+  pointer-events: auto;
+}
+
 .menu {
-  position: absolute;
-  right: 0;
-  top: 54px;
-  width: min(360px, 100%);
+  position: fixed;
+  right: var(--menu-right, var(--gutter));
+  top: var(--menu-top, calc(max(12px, env(safe-area-inset-top)) + 64px));
+  width: min(360px, calc(100vw - 2 * var(--gutter)));
   max-height: calc(100dvh - 160px);
   overflow-y: auto;
   padding: 8px;
@@ -210,6 +230,12 @@
   border-right: 2px solid var(--text-dim);
   border-bottom: 2px solid var(--text-dim);
   transform: translateX(-2px) rotate(-45deg);
+  transition: transform 160ms ease-out;
+}
+
+/* A row that unfolds in place (the layouts, CITY-241): its chevron turns down while open. */
+.menuChevronDown {
+  transform: translate(-2px, -2px) rotate(45deg);
 }
 
 .menuSound {
@@ -437,9 +463,12 @@
 
 /* ---------- The first-visit hint ---------- */
 
+/* The first screen's one action stands over the Deck, by its Agents (CITY-241): the sky and the coin over the central
+   tower stay clear, and it is where the thumb is. High enough that the Deck's own hints pass under it. */
 .firstHint {
+  --deck-h: 78px;
   position: absolute;
-  top: calc(max(12px, env(safe-area-inset-top)) + 58px);
+  bottom: calc(max(14px, env(safe-area-inset-bottom)) + var(--deck-h) + 50px);
   left: var(--gutter);
   right: var(--gutter);
   width: fit-content;
@@ -472,6 +501,19 @@
 .firstHintClose svg {
   width: 16px;
   height: 16px;
+}
+
+/* A phone's Deck is lower (deck.module.css). */
+@media (max-width: 560px) {
+  .firstHint {
+    --deck-h: 70px;
+  }
+}
+
+/* The Deck hidden by its arrow: the hint comes down to the bottom edge, over the arrow that brings the Deck back, as
+   the tray of folded windows does (window.module.css `.foldLow`). */
+.layer[data-deck-hidden] .firstHint {
+  bottom: max(34px, calc(env(safe-area-inset-bottom) + 20px));
 }
 
 /* ---------- The one card above the dock: the hot tower, a challenge, a district that opens soon ---------- */
@@ -1250,10 +1292,11 @@
 }
 
 /* The same for the live event feed's open list on a phone held upright, which owns the frame like a tower card
-   (CITY-66, city/components/feed). */
+   (CITY-66, city/components/feed). The bell's panel stands in a layer of its own over the windows (CITY-242), so the
+   page is asked, not the HUD's layer. */
 @media not all and (min-aspect-ratio: 1/1) {
-  .layer:has([data-city-feed][data-open]) .slot,
-  .layer:has([data-city-feed][data-open]) .cutin {
+  :global(body:has([data-city-feed][data-open])) .slot,
+  :global(body:has([data-city-feed][data-open])) .cutin {
     visibility: hidden;
   }
 }
@@ -1288,16 +1331,8 @@
     top: calc(max(12px, env(safe-area-inset-top)) + var(--cut-below, 122px));
   }
 
-  .layer:has([data-city-hint]) .cutin {
-    --cut-below: 176px;
-  }
-
   :global(body:has([aria-controls='city-mine'])) .cutin {
     --cut-below: 158px;
-  }
-
-  :global(body:has([aria-controls='city-mine'])) .layer:has([data-city-hint]) .cutin {
-    --cut-below: 220px;
   }
 }
 

@@ -4,7 +4,8 @@ import dynamic from 'next/dynamic';
 import { useEffect, useMemo } from 'react';
 import { useLang } from '@/city/lib/i18n/lang';
 import { useFilming } from '@/city/lib/moments/MomentsLayer';
-import { RING_DUELS_OPEN, useDuels } from '@/city/lib/ring/duels';
+import { arenaStore, useArena } from '@/city/lib/ring/arena';
+import { RING_OPEN } from '@/city/lib/ring/flag';
 import { useRun } from '@/city/lib/run/store';
 import { RingGlyph } from '../../game/glyphs';
 import { useCityWindow } from '../../window/useCityWindow';
@@ -15,18 +16,19 @@ import s from './duel.module.css';
 const DuelsWindow = dynamic(() => import('./DuelsWindow'), { ssr: false, loading: () => <div className={s.pendingWindow} aria-busy="true" /> });
 
 const renderDuels = () => <DuelsWindow />;
-const closeDuels = () => useDuels.getState().close();
+const closeDuels = () => arenaStore.getState().close();
 
 /**
- * The Ring's duels (CITY-51) in the city's one window frame (CITY-65), opened by the Arena's «Ring» door. Only where
- * both switches are open (`RING_DUELS_OPEN`); otherwise nothing mounts and the door is not shown.
+ * The Arena's Ring window (CITY-51, CITY-217) in the city's one window frame (CITY-65), opened by the Arena's «Ring»
+ * door and the Agents' «Hangar». Only where the Ring's switch is open (`RING_OPEN`); its «Fight» tab only where the
+ * duels' own is too. Otherwise nothing mounts and the doors are not shown.
  */
 export function DuelsLayer() {
-  return RING_DUELS_OPEN ? <Duels /> : null;
+  return RING_OPEN ? <Duels /> : null;
 }
 
 function Duels() {
-  const open = useDuels((st) => st.open);
+  const open = useArena((st) => st.open);
   const lang = useLang();
   const running = useRun((st) => st.phase !== 'off');
   const filming = useFilming();
@@ -36,7 +38,7 @@ function Duels() {
     if (!shown) return;
     const key = (event: KeyboardEvent) => {
       if (event.key !== 'Escape' || event.defaultPrevented) return;
-      useDuels.getState().close();
+      arenaStore.getState().close();
     };
     window.addEventListener('keydown', key);
     return () => window.removeEventListener('keydown', key);

@@ -4,7 +4,7 @@ import { words } from '../../lib/i18n/dict.ts';
 export const COMMAND = words(
   {
     ryntra: 'Ryntra',
-    placeholder: 'Say it: buy SOL for 50',
+    placeholder: 'Say it to your agent',
     field: 'Say what to open',
     rows: 'What opens',
     close: 'Close',
@@ -35,7 +35,7 @@ export const COMMAND = words(
   },
   {
     ryntra: 'Ryntra',
-    placeholder: 'Скажи: купи SOL на 50',
+    placeholder: 'Скажи своєму агентові',
     field: 'Скажи, що відкрити',
     rows: 'Що відкриється',
     close: 'Закрити',

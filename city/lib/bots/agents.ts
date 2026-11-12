@@ -16,6 +16,8 @@ export type EngineMandate = Readonly<{
   active: boolean;
   trades: number;
   pilot: boolean;
+  /** CITY-70: her «Freeze» is on — the agent starts nothing new. */
+  frozen: boolean;
   createdAt: number;
 }>;
 
@@ -44,6 +46,7 @@ const mandateOf = (value: unknown, owner: string): EngineMandate | null => {
     active: v.active === true,
     trades: typeof v.trades === 'number' && Number.isFinite(v.trades) ? v.trades : 0,
     pilot: v.pilot === true,
+    frozen: v.frozen === true,
     createdAt: typeof v.createdAt === 'number' ? v.createdAt : 0,
   };
 };

@@ -8,6 +8,7 @@ import { DYNAMIC_BONDING_CURVE_PROGRAM_ID } from "@meteora-ag/dynamic-bonding-cu
 
 import { LaunchBuildRequestSchema, LaunchEarlyAccessBuildRequestSchema, LaunchSubmitRequestSchema } from "../../../lib/api/v1/contract.ts";
 import { DEVNET_EARLY_ACCESS_BOUNDS, earlyAccessSchedule } from "../../../lib/core/launch/early-access.ts";
+import { TYPED_SHARES_OWNER_WORD, typedSharesOpenOn } from "../../../lib/core/launch/fee-shares.ts";
 import { feeSharingSplitInstructions, feeSharingVaultOf } from "../../../lib/core/venues/meteora-dbc/fee-sharing.server.ts";
 import { CITY_EARLY_ACCESS_MAINNET, CITY_EARLY_ACCESS_SWITCH, EARLY_CAPS_USD, earlyCaps, earlyDoorOpen, earlyRules } from "./early.ts";
 import { checkEarly } from "./early-check.ts";
@@ -15,7 +16,7 @@ import { runEarlyAccess } from "./early-flow.ts";
 import { BUILD_UNEXPECTED, CITY_CLOSED, WALLET_REFUSED, readRefusal, runLaunch } from "./flow.ts";
 import { asReviewed, createPrep, freshPrebuilt, launchRequest } from "./prepare.ts";
 import { EARLY_PARTIAL } from "./refusal.ts";
-import { SHARE_MAX_OTHERS, keptPercent, nextRow, othersOf, sameShares, shareOpen, shareProblem, sharesOf } from "./share.ts";
+import { CITY_SHARE_SWITCH, SHARE_MAX_OTHERS, keptPercent, nextRow, othersOf, sameShares, shareOpen, shareProblem, sharesOf } from "./share.ts";
 import { BONDING_CURVE_PROGRAM, FEE_SHARING_PROGRAM, checkSplit } from "./split-check.ts";
 import { STUB_CREATOR, STUB_PRESETS, STUB_WALLET, stubAddress, stubEngine, stubWallet } from "./stub.ts";
 
@@ -29,13 +30,31 @@ const wire = (tx) => tx.serialize({ requireAllSignatures: false, verifySignature
 
 /* ---------------------------------------------------------------- «Share earnings»: the rules */
 
-test("the share door opens where the engine shares typed wallets: the stand, mainnet only by the crews' own switch", () => {
-  assert.equal(shareOpen("solana:devnet"), true);
-  assert.equal(shareOpen("solana:mainnet"), false, "closed on mainnet by default");
-  assert.equal(shareOpen("solana:mainnet", true), true);
-  assert.equal(shareOpen(null), false);
-  assert.match(read("lib/core/launch/crew.ts"), /export const CREW_OWNER_WORD = false;/, "mainnet stays shut");
-  assert.match(read("city/lib/launch/share.ts"), /ownerWord: boolean = CREW_OWNER_WORD/, "the door reads the engine's own word");
+test("the share door opens behind its switch where the engine shares typed wallets: the stand, mainnet only on typed shares", () => {
+  assert.equal(CITY_SHARE_SWITCH, false, "the city's switch is closed unless a deployment opens it");
+  assert.equal(shareOpen("solana:devnet"), false, "closed by default");
+  assert.equal(shareOpen("solana:devnet", undefined, true), true);
+  assert.equal(shareOpen("solana:mainnet", undefined, true), true, "open on mainnet by the opening word of 9.11");
+  assert.equal(shareOpen("solana:mainnet", false, true), false, "without the word, shut on mainnet");
+  assert.equal(shareOpen("solana:mainnet", true, true), true);
+  assert.equal(shareOpen("solana:mainnet", true, false), false, "the switch shuts it on mainnet too");
+  assert.equal(shareOpen(null, true, true), false);
+  assert.equal(TYPED_SHARES_OWNER_WORD, true, "the opening word of 9.11, after the fork and devnet passes (CITY-234)");
+  assert.match(read("city/lib/launch/share.ts"), /ownerWord: boolean = TYPED_SHARES_OWNER_WORD/, "the door reads the engine's own word");
+  assert.doesNotMatch(read("city/lib/launch/share.ts"), /CREW_OWNER_WORD/, "the crews' word is not the door's");
+});
+
+test("a split asked where its door is shut is refused before anything is stored", async () => {
+  for (const [why, overrides] of [
+    ["the switch closed", { shareSwitch: false }],
+    ["mainnet without the opening word", { network: "solana:mainnet", ownerWord: true, shareWord: false }],
+  ]) {
+    const { result, engine } = await sharedLaunch(overrides);
+    assert.equal(result.failure.code, CITY_CLOSED, why);
+    assert.deepEqual(engine.calls ?? [], [], `${why}: nothing stored or built`);
+  }
+  const open = await sharedLaunch({ network: "solana:mainnet", ownerWord: true, shareWord: true });
+  assert.notEqual(open.result.failure?.code, CITY_CLOSED, "the opening word and the switch open it on mainnet");
 });
 
 test("the creator keeps what the others do not take; the split is the engine's own rule", () => {
@@ -131,7 +150,7 @@ const signerOf = (options) => stubWallet(options).signer({ wallet: STUB_WALLET, 
 async function sharedLaunch(overrides = {}) {
   const phases = [];
   const engine = overrides.engine ?? stubEngine();
-  const result = await runLaunch({ engine, signer: overrides.signer ?? signerOf(), fields: FIELDS, preset: PROTECTED, network: "solana:devnet", onPhase: (phase) => phases.push(phase), switchOpen: true, others: [{ address: A, bps: 2_000 }, { address: B, bps: 1_000 }], ...overrides });
+  const result = await runLaunch({ engine, signer: overrides.signer ?? signerOf(), fields: FIELDS, preset: PROTECTED, network: "solana:devnet", onPhase: (phase) => phases.push(phase), switchOpen: true, shareSwitch: true, others: [{ address: A, bps: 2_000 }, { address: B, bps: 1_000 }], ...overrides });
   return { result, phases, steps: phases.map((phase) => phase.step), engine };
 }
 
@@ -214,9 +233,14 @@ test("the sheet's prebuilt bytes are handed over only for exactly the same split
   assert.equal(asReviewed(handed.built, "solana:devnet", false), false);
 });
 
-test("the engine shares typed wallets on Classic and Protected only where crews are open", () => {
+test("the engine shares typed wallets on Classic and Protected only by its own word, apart from the crews'", () => {
   const flow = read("lib/launch/flow.server.ts");
-  assert.match(flow, /if \(preset\.id !== "community" && !\(isCrewPreset\(preset\.id\) && crewOpenOn\(deps\.network\.cluster\)\)\) return fail\("SHARES_INVALID"/);
+  assert.match(flow, /if \(preset\.id !== "community" && !\(isCrewPreset\(preset\.id\) && typedSharesOpenOn\(deps\.network\.cluster\)\)\) return fail\("SHARES_INVALID"/);
+  assert.doesNotMatch(flow, /crewOpenOn/, "opening crews on mainnet does not open typed shares, nor the other way");
+  assert.equal(typedSharesOpenOn("devnet"), true);
+  assert.equal(typedSharesOpenOn("mainnet"), true, "the opening word of 9.11");
+  assert.equal(typedSharesOpenOn("mainnet", false), false);
+  assert.equal(typedSharesOpenOn("mainnet", true), true);
   /* The vault, its shares and the handover are the engine's, untouched. */
   assert.match(read("lib/core/venues/meteora-dbc/launch.server.ts"), /const sharer = preset\.id === "community" \|\| \(options\.crew === true && \(preset\.id === "classic" \|\| preset\.id === "protected"\)\);/);
 });
@@ -227,12 +251,14 @@ const NOW = Math.floor(Date.parse("2026-11-06T12:00:00Z") / 1000);
 
 test("the early door stays shut by default, and on mainnet whatever the engine says", () => {
   assert.equal(CITY_EARLY_ACCESS_SWITCH, false, "the city's switch is closed unless a deployment opens it");
-  assert.equal(CITY_EARLY_ACCESS_MAINNET, false);
+  assert.equal(CITY_EARLY_ACCESS_MAINNET, true, "the opening word of 9.11, after the fork and devnet passes (CITY-234)");
   assert.equal(earlyDoorOpen("solana:devnet", DEVNET_EARLY_ACCESS_BOUNDS), false, "closed by default");
   assert.equal(earlyDoorOpen("solana:devnet", DEVNET_EARLY_ACCESS_BOUNDS, true), true);
   assert.equal(earlyDoorOpen("solana:devnet", null, true), false, "the engine names no bounds");
-  assert.equal(earlyDoorOpen("solana:mainnet", DEVNET_EARLY_ACCESS_BOUNDS, true), false, "mainnet stays shut");
-  assert.match(read("lib/launch/early-access.server.ts"), /export const EARLY_ACCESS_OWNER_WORD = false;/, "the engine's word on mainnet is not given");
+  assert.equal(earlyDoorOpen("solana:mainnet", DEVNET_EARLY_ACCESS_BOUNDS, true), true, "open on mainnet by the word, behind its switch and the bounds");
+  assert.equal(earlyDoorOpen("solana:mainnet", DEVNET_EARLY_ACCESS_BOUNDS, true, false), false, "without the word, shut on mainnet");
+  assert.equal(earlyDoorOpen("solana:mainnet", DEVNET_EARLY_ACCESS_BOUNDS, false), false, "the switch shuts it on mainnet too");
+  assert.match(read("lib/launch/early-access.server.ts"), /export const EARLY_ACCESS_OWNER_WORD = true;/, "the engine's word on mainnet — given 9.11; the bounds still come from the deployment");
 });
 
 test("the goal becomes rules inside the engine's bounds: Pro Rata, opening in five minutes, an hour for the creator's people", () => {
@@ -285,7 +311,7 @@ test("an early launch: stored, built, read back, three transactions in one promp
 });
 
 test("the early door's flow refuses where it is shut, before anything is stored", async () => {
-  for (const shut of [{ earlySwitch: false }, { bounds: null }, { network: "solana:mainnet", ownerWord: true }]) {
+  for (const shut of [{ earlySwitch: false }, { bounds: null }, { network: "solana:mainnet", ownerWord: true, earlySwitch: false }]) {
     const { result, engine } = await earlyLaunch(shut);
     assert.equal(result.failure.code, CITY_CLOSED, JSON.stringify(shut));
     assert.deepEqual(engine.calls, []);

@@ -6,7 +6,7 @@ import { FORMATS, type AgentView } from '@/lib/ring/contract';
 import type { Building } from '@/city/lib/quarter/types';
 import { BODIES } from '@/city/lib/ring/body';
 import { RING_OPEN } from '@/city/lib/ring/flag';
-import { FORMAT_NAMES, WEIGHT_NAMES, gamesLine, perMatch, ratingLine, usd } from '@/city/lib/ring/format';
+import { FORMAT_NAMES, WEIGHT_NAMES, agentLabel, brainLabel, gamesLine, perMatch, ratingLine, usd } from '@/city/lib/ring/format';
 import { garageKey, ringStore, useRing } from '@/city/lib/ring/store';
 import s from '../hud/hud.module.css';
 import q from '../quarter/quarter.module.css';
@@ -100,11 +100,8 @@ function AgentCard({ agent, mine }: { agent: AgentView; mine: boolean }) {
       <div className={r.card}>
         <AgentBody archetype={agent.archetype} size={112} />
         <div className={r.cardWords}>
-          <div className={q.title}>{agent.name}</div>
-          <div className={r.brain}>
-            {agent.brain.name}
-            {agent.brain.providerName && <span> · {agent.brain.providerName}</span>}
-          </div>
+          <div className={q.title}>{agentLabel(agent.archetype)}</div>
+          <div className={r.brain}>{brainLabel(agent.brain.name)}</div>
           <div className={r.chips}>
             <span className={r.chip}>{WEIGHT_NAMES[agent.brain.weight]}</span>
             <span className={r.price}>{perMatch(agent.brain.matchMicroUsd)}</span>

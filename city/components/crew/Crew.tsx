@@ -4,6 +4,7 @@ import { useEffect, useId, useState } from 'react';
 import { agentFeeFigures } from '@/city/lib/bots/agent-fee';
 import { syncAgents, useAgents } from '@/city/lib/bots/agents';
 import { MANDATE_NET, useMandate } from '@/city/lib/bots/mandate';
+import { closeBots } from '@/city/lib/bots/open';
 import { CARE_MODE } from '@/city/lib/earn/care';
 import { cityDoors } from '@/city/lib/command/doors';
 import { crewGatesNow, useCrew } from '@/city/lib/crew/hire';
@@ -14,6 +15,7 @@ import { useWords } from '@/city/lib/i18n/dict';
 import { readPilot, usePilot } from '@/city/lib/pilot/store';
 import { useWallet } from '@/city/lib/trade/wallet';
 import { RoleGlyph } from './glyphs';
+import { Says } from './Says';
 import s from './crew.module.css';
 
 type State = 'hire' | 'working' | 'soon';
@@ -101,6 +103,15 @@ export function Crew() {
           );
         })}
       </div>
+      {/* CITY-222: or say it — the agent's card opens with the budget and «Sign». */}
+      {traderOn ? null : (
+        <Says
+          onSay={(say) => {
+            closeBots();
+            cityDoors.openAutopilot(say.ask);
+          }}
+        />
+      )}
       <button type="button" className={s.more} aria-expanded={open} aria-controls={howId} onClick={() => setOpen((v) => !v)}>
         {w.details}
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinejoin="round" aria-hidden="true">
