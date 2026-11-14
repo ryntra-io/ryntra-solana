@@ -2,6 +2,7 @@ import { announceAccountChange, postWalletProof, settleWalletChange, walletAuthG
 import { actActionFor, proofCanAct, revalidateWalletFact, setWalletFact, walletFact } from '../../../lib/account/wallet-proof-store.client.ts';
 import { bytesToBase64, type SignInInput } from '../../../lib/solana/wallet-signin.client.ts';
 import { citySigner } from '../app-bridge/route.ts';
+import { funnelSay } from '../crew/funnel-say.ts';
 import { wordsNow } from '../i18n/dict.ts';
 import { LINE } from './words.ts';
 
@@ -55,7 +56,11 @@ export async function proveWallet(
         ? { signedIn: true, walletAddress: signed.address, provenAddress: signed.address, provenVia: 'signin', expiresAt: data.expiresAt ?? null }
         : { signedIn: before.signedIn, walletAddress: before.walletAddress, provenAddress: signed.address, provenVia: 'proof', expiresAt: data.expiresAt ?? null },
     );
-    if (action === 'signin') announceAccountChange();
+    if (action === 'signin') {
+      announceAccountChange();
+      // CITY-246: the wallet's sign-in, counted once a visit — never whose.
+      funnelSay('agent_signin');
+    }
     return { ok: true };
   } catch {
     return { ok: false, state: 'failed', message: wordsNow(LINE).notCompleted };

@@ -113,7 +113,7 @@ export function lifecycleEventFor(mint: string, events: ReadonlyMap<string, Life
  * the watch writes it («SPACEX», in any case) or the mint — or null. Every
  * link to a token with an event (the path strip, a holding's swap, a
  * reminder) names it so, and the page answers it even when no catalogue lists
- * the token any more (UX-503).
+ * the token any more.
  */
 export function lifecycleEventForTicker(ticker: string, events: readonly LifecycleEvent[] = LIFECYCLE_EVENTS): LifecycleEvent | null {
   const wanted = ticker.trim().toLowerCase();

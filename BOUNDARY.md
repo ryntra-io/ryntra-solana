@@ -9,10 +9,10 @@ moved counts as new. Generated at every update from the development history.
 
 | Since the tag | Files |
 |---|---|
-| New | 5,353 |
+| New | 5,359 |
 | Changed | 899 |
 | Unchanged | 825 |
-| Lines added / removed | +1,120,426 / −28,064 |
+| Lines added / removed | +1,121,053 / −28,064 |
 
 ## New since the tag
 
@@ -69,6 +69,7 @@ moved counts as new. Generated at every update from the development history.
 - `app/admin/finance/finance-words.ts`
 - `app/admin/finance/finance.module.css`
 - `app/admin/finance/page.tsx`
+- `app/admin/funnel/page.tsx`
 - `app/admin/growth/demand-week.tsx`
 - `app/admin/growth/growth-panel.tsx`
 - `app/admin/growth/growth.module.css`
@@ -2677,6 +2678,7 @@ moved counts as new. Generated at every update from the development history.
 - `city/lib/crew/first-action.test.mjs`
 - `city/lib/crew/first-place.test.mjs`
 - `city/lib/crew/funds.ts`
+- `city/lib/crew/funnel-say.ts`
 - `city/lib/crew/funnel-watch.ts`
 - `city/lib/crew/funnel.ts`
 - `city/lib/crew/hire.ts`
@@ -3479,6 +3481,8 @@ moved counts as new. Generated at every update from the development history.
 - `lib/admin/finance.server.ts`
 - `lib/admin/finance.test.mjs`
 - `lib/admin/finance.ts`
+- `lib/admin/funnel.test.mjs`
+- `lib/admin/funnel.ts`
 - `lib/admin/honest-pnl.server.ts`
 - `lib/admin/honest-pnl.ts`
 - `lib/admin/money-signals.server.ts`
@@ -4246,6 +4250,7 @@ moved counts as new. Generated at every update from the development history.
 - `lib/mandate/autopilot.test.mjs`
 - `lib/mandate/backtest.ts`
 - `lib/mandate/book.server.ts`
+- `lib/mandate/clock.test.mjs`
 - `lib/mandate/dca.ts`
 - `lib/mandate/dlmm.server.ts`
 - `lib/mandate/fee-rates.ts`
@@ -5362,6 +5367,7 @@ moved counts as new. Generated at every update from the development history.
 - `supabase/migrations/20261108120100_ring_v2_arena.sql`
 - `supabase/migrations/20261108180000_hack_v1.sql`
 - `supabase/migrations/20261110120000_hack_v2_runs.sql`
+- `supabase/migrations/20261112180000_admin_agent_funnel.sql`
 - `supabase/prepared/20261025_exe_2_action_ledger_v1.sql`
 - `supabase/prepared/20261025_exe_2_action_ledger_v1_rollback.sql`
 - `supabase/prepared/20261029_spot_stops_v1_rollback.sql`

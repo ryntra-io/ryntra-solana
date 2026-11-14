@@ -20,6 +20,9 @@ flowchart LR
   B -.->|"curve fees"| E["Claims<br/>creator: one signature<br/>Ryntra: Squads multisig"]
   C -.->|"locked-LP fees"| E
   F["Earn · Piers<br/>Meteora DLMM / DAMM v2"] --- G["Person's own position<br/>in their wallet"]
+  %% An empty column: GitHub draws its pan and zoom buttons over a diagram's bottom right corner.
+  E ~~~ Z["#8195;#8195;#8195;#8195;"]
+  style Z fill:none,stroke:none
 ```
 
 | A person launches in the city | The coin's tower on its curve |
@@ -99,6 +102,9 @@ flowchart LR
   E["Agent key in KMS<br/>cron every 10 minutes"] -->|"one action per tick"| D
   D -->|"tend: money stays in the vault and the pool"| F["Meteora DLMM / DAMM v2"]
   D -->|"exit: only to the person's accounts"| G["Person's wallet"]
+  %% An empty column: GitHub draws its pan and zoom buttons over a diagram's bottom right corner.
+  G ~~~ Z["#8195;#8195;#8195;#8195;"]
+  style Z fill:none,stroke:none
 ```
 
 | What | How | Files |
@@ -113,12 +119,28 @@ Every path ran twice on devnet with different amounts, then on a mainnet fork, a
 price jumping mid-rebalance, an empty pool, a spent policy, a dead RPC, two ticks at once. Sending with the agent's raw key
 around our signer, with a stranger's key, or after the stop was refused by the chain itself.
 
-## Liquidity shapes and DLMM Pro
+## Liquidity shapes
 
 The Studio engine accepts Spot, Curve and Bid-Ask (`LIQUIDITY_SHAPES` in `lib/liquidity/studio/contract.ts`). In the Piers a
 person picks a goal, not a shape: Even, Near price or Catch moves. The Zap and the agent's care build it, and the agent
-rebuilds a range in the same shape. Meteora's DLMM Pro and its Wave strategy have no public program or SDK yet; Ryntra adds them
-when they do, and does not imitate a shape that is not published.
+rebuilds a range in the same shape.
+
+## DLMM Pro
+
+In progress. Meteora opened the DLMM Pro beta on 12 November 2026 — program `dPro1D5wiqnGMH8vMDG23jh35btTHoWdyqXjqkqxe8n`,
+SDK `@meteora-ag/dlmm-pro-sdk`. It is a program of its own, not a new DLMM shape, so Ryntra is adding it as a venue of
+its own beside DBC, DAMM v2 and DLMM. Nothing in this section is live yet. When it is, the section is rewritten file by
+file, like the rest of this page.
+
+| Being built | What it stands on in DLMM Pro |
+|---|---|
+| A launch with no curve and no migration: the coin trades in its final pool from the first second | A launch pool; a market-cap fee schedule that starts high and falls as the price rises; trading that opens at a set time; the launch liquidity locked for ever |
+| Limit orders from one sentence to the agent | Order ladders of up to 25 prices that fill at the tick price and earn a share of the fee |
+| One position the agent looks after | A multi-range position NFT; a delegate claims and withdraws only to the owner's own accounts — the program enforces it |
+| Swaps | Quoted with the SDK's own math, built unsigned and signed in the person's wallet, like every other venue here |
+
+Wave, the fourth liquidity preset Meteora announced for DLMM Pro, is not in the SDK yet (0.1.2 has Spot, Curve, BidAsk and
+Custom). Ryntra adds it when it is published and does not imitate a shape that is not.
 
 ## Agents
 
@@ -133,18 +155,27 @@ when they do, and does not imitate a shape that is not published.
 
 ## How to check it
 
-Node 22.18 or later. Counts measured on 6 November 2026.
+Node 22.18 or later. Counts measured on 14 November 2026.
 
 ```bash
 npm ci
-node --test lib/core/venues/meteora-dbc/*.test.mjs        # 63 pass: presets, receipt, market, exit positions, SDK comparison
-node --test lib/liquidity/*.test.mjs lib/liquidity/catalog/*.test.mjs lib/liquidity/studio/*.test.mjs   # 107 pass, Zap and limit orders included
-node --test lib/core/launch/*.test.mjs                    # 298 pass: launch rules, ladder, budget, early access, transfer fee
-node --test lib/launch/*.test.mjs                         # 307 tests; 3 skip here (they read API examples kept outside)
-node --test lib/solana/treasury/launch-claims.test.mjs    # 11 pass: Squads proposal lines are Meteora claims only
-node --test city/lib/launch/*.test.mjs city/lib/districts/harbor/*.test.mjs   # 287 pass
-node --test lib/care/*.test.mjs                           # 12 pass: the agent's decisions, policies and failures
-node --test lib/agent-control/external/router.test.mjs    # 16 pass
+
+# 61 pass: presets, receipt, market, exit positions, SDK comparison
+node --test lib/core/venues/meteora-dbc/*.test.mjs
+# 109 pass, Zap and limit orders included
+node --test lib/liquidity/*.test.mjs lib/liquidity/catalog/*.test.mjs lib/liquidity/studio/*.test.mjs
+# 264 pass: launch rules, ladder, budget, early access, transfer fee
+node --test lib/core/launch/*.test.mjs
+# 296 tests; 3 skip here (they read API examples kept outside)
+node --test lib/launch/*.test.mjs
+# 11 pass: Squads proposal lines are Meteora claims only
+node --test lib/solana/treasury/launch-claims.test.mjs
+# 355 tests; 1 skips here (it reads a document kept outside)
+node --test city/lib/launch/*.test.mjs city/lib/districts/harbor/*.test.mjs
+# 12 pass: the agent's decisions, policies and failures
+node --test lib/care/*.test.mjs
+# 16 pass
+node --test lib/agent-control/external/router.test.mjs
 ```
 
 - **SDK comparison kit** (`sdk-compare-kit.mjs`, `sdk-compare.test.mjs`): DBC SDK 1.5.13 and 2.0.0 run side by side
@@ -183,3 +214,4 @@ node --test lib/agent-control/external/router.test.mjs    # 16 pass
 - The care agent runs behind its own switches (`RYNTRA_AGENT_CARE`, `NEXT_PUBLIC_RYNTRA_AGENT_CARE`); the cron is `/api/cron/agent-care`.
   Its paths are proven on devnet and a mainnet fork; no person has yet handed it a position on mainnet.
 - DBC SDK 1.5.13 is the default; `RYNTRA_DBC_SDK=2` moves every client call to 2.0.0, and removing it rolls back.
+- DLMM Pro is in progress: none of it is open to people yet (see [DLMM Pro](#dlmm-pro)).

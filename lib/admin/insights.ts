@@ -52,7 +52,8 @@ export type InsightsModel = {
 
 /**
  * Events `/api/track` accepts: site clicks, Seeker Connect's count (SKR-1) and the agent's first action in the city
- * (CITY-222: each moment once a visit, from the first screen to the budget signed). All anonymous; none is a person.
+ * (CITY-222: each moment once a visit, from the first screen to the budget signed; CITY-246: the city drawn, a sentence
+ * said, any wallet, the sign-in, a trade signed and landed). All anonymous; none is a person.
  */
 export const FIRST_PARTY_EVENT_CATALOG = [
   "telegram_cta_click",
@@ -62,14 +63,21 @@ export const FIRST_PARTY_EVENT_CATALOG = [
   "seeker_connect_cancelled",
   "seeker_connect_failed",
   "agent_home",
+  "agent_drawn",
   "agent_hint",
   "agent_line",
+  "agent_said",
   "agent_card",
   "agent_wallet",
   "agent_sign",
   "agent_signed",
+  "agent_connect",
+  "agent_signin",
+  "agent_trade",
+  "agent_traded",
   "agent_sign_no",
   "agent_wallet_app",
+  "agent_trade_no",
 ] as const;
 
 export function googleConfigured(env: {

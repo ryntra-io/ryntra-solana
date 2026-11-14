@@ -7,16 +7,25 @@
  * WebView on Seeker) and, for two moments, one fixed word more (why a signature did not happen; which wallet app the
  * page was sent to). It rides on `/api/track` into the `events` table the admin already reads — no new table, no
  * migration. Pure: the page (`funnel-watch.ts`) and the route read the same names and the same shapes.
+ *
+ * CITY-246 widened it to the whole way to money: the city drawn (a visit that leaves while it loads is told apart from one
+ * that saw the city), a sentence said, any wallet connected, the wallet's sign-in, and a trade's own signature and its
+ * landing. A visit driven by a browser robot (`navigator.webdriver` — our own walks and shots) says `bot` in place of its
+ * word, so the admin's count is people's.
  */
 
-/** The moments, in the order of the path. */
+/** The moments, in the order of the agent's path. */
 export const FUNNEL_STEPS = [
   /** The city's first screen, with the one action it offers. */
   'agent_home',
+  /** The city's first frame drawn: the visit saw the city, not only its loading. */
+  'agent_drawn',
   /** The first screen's action tapped: «Say it. Your agent does the rest.» */
   'agent_hint',
   /** The line where a sentence is said (⌘K, «Ask Ryntra», the hint) opened. */
   'agent_line',
+  /** A sentence said: a ready one picked or one typed, and run. */
+  'agent_said',
   /** The agent's card shown: the budget, the limits, «Sign» — from a sentence or from Agents → Hire. */
   'agent_card',
   /** A wallet connected with the card on the way. */
@@ -27,17 +36,23 @@ export const FUNNEL_STEPS = [
   'agent_signed',
 ] as const;
 
-/** Off the path: the signature that did not happen, and the phone sent to a wallet app to open the page there. */
-export const FUNNEL_SIDE = ['agent_sign_no', 'agent_wallet_app'] as const;
+/** The visit's way to money beside the card: any wallet connected, the wallet's sign-in, a trade signed, a trade landed. */
+export const FUNNEL_WIDE = ['agent_connect', 'agent_signin', 'agent_trade', 'agent_traded'] as const;
 
-export const FUNNEL_EVENT_NAMES = [...FUNNEL_STEPS, ...FUNNEL_SIDE] as const;
+/** Off the path: a signature that did not happen (the budget's, a trade's), and the phone sent to a wallet app. */
+export const FUNNEL_SIDE = ['agent_sign_no', 'agent_wallet_app', 'agent_trade_no'] as const;
+
+export const FUNNEL_EVENT_NAMES = [...FUNNEL_STEPS, ...FUNNEL_WIDE, ...FUNNEL_SIDE] as const;
 export type FunnelName = (typeof FUNNEL_EVENT_NAMES)[number];
 
 export const FUNNEL_DEVICES = ['desk', 'phone', 'app'] as const;
 export type FunnelDevice = (typeof FUNNEL_DEVICES)[number];
 
-/** The one word a side moment may carry: why nothing was signed; which wallet app, or the install page. */
-export const FUNNEL_WORDS = ['walletno', 'refused', 'unreachable', 'phantom', 'solflare', 'install'] as const;
+/**
+ * The one word a moment may carry: why nothing was signed; which wallet app, or the install page; `bot` for a visit a
+ * browser robot drives (it replaces any other word, so robots' rows are one shape the admin leaves out).
+ */
+export const FUNNEL_WORDS = ['walletno', 'refused', 'unreachable', 'failed', 'phantom', 'solflare', 'install', 'bot'] as const;
 export type FunnelWord = (typeof FUNNEL_WORDS)[number];
 
 /** The placement every funnel row carries, so the admin reads them apart from the rest of the site's. */
@@ -50,6 +65,11 @@ const DEVICES: ReadonlySet<string> = new Set(FUNNEL_DEVICES);
 const WORDS: ReadonlySet<string> = new Set(FUNNEL_WORDS);
 
 export const isFunnelEvent = (name: unknown): name is FunnelName => typeof name === 'string' && NAMES.has(name);
+
+/** The word a moment carries: `bot` for a robot's visit, whatever the moment's own word was. */
+export function funnelWord(word: FunnelWord | null, robot: boolean): FunnelWord | null {
+  return robot ? 'bot' : word;
+}
 
 /** The device as one word, from what the page can see: the Ryntra app's WebView, a touch screen, or a desk. */
 export function funnelDevice(inApp: boolean, coarse: boolean): FunnelDevice {

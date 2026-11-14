@@ -7,6 +7,7 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import test from "node:test";
 
+import { needsDevelopmentRepository } from "../../../lib/development-repository.mjs";
 import { shareOpen } from "./share.ts";
 
 const read = (path) => readFileSync(new URL(`../../../${path}`, import.meta.url), "utf8");
@@ -18,7 +19,7 @@ const switchOf = (path) => {
   return found[0];
 };
 
-test("the devnet pass names the switches the stand's doors read: «Share earnings» and early access", () => {
+test("the devnet pass names the switches the stand's doors read: «Share earnings» and early access", { skip: needsDevelopmentRepository("the launch doors' devnet pass under docs/research/") }, () => {
   const report = read("docs/research/city-220-launch-doors/REPORT.md");
   const steps = report.slice(report.indexOf("## 6."), report.indexOf("## 7."));
   const pass = steps.slice(steps.indexOf("2. **"), steps.indexOf("3. **"));

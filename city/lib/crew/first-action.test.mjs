@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import test from "node:test";
 
-import { FUNNEL_EVENT_NAMES, FUNNEL_STEPS, funnelDevice, funnelEvent, funnelTrackRow, isFunnelEvent, onceStore } from "./funnel.ts";
+import { FUNNEL_EVENT_NAMES, FUNNEL_SIDE, FUNNEL_STEPS, FUNNEL_WIDE, funnelDevice, funnelEvent, funnelTrackRow, funnelWord, isFunnelEvent, onceStore } from "./funnel.ts";
 import { firstSentences, sayCoin } from "./say.ts";
 import { bookOf } from "../command/parse.ts";
 import { readAsk } from "../autopilot/read.ts";
@@ -16,20 +16,51 @@ import { readAsk } from "../autopilot/read.ts";
 const SNAPSHOT = JSON.parse(readFileSync(new URL("../market/snapshot.json", import.meta.url), "utf8"));
 const BOOK = bookOf(SNAPSHOT.towers);
 
-test("the funnel is seven moments on the path and two beside it, every name fixed", () => {
-  assert.deepEqual([...FUNNEL_STEPS], ["agent_home", "agent_hint", "agent_line", "agent_card", "agent_wallet", "agent_sign", "agent_signed"]);
+test("the funnel is nine moments on the agent's path, four on the way to money, three beside it, every name fixed", () => {
+  assert.deepEqual([...FUNNEL_STEPS], ["agent_home", "agent_drawn", "agent_hint", "agent_line", "agent_said", "agent_card", "agent_wallet", "agent_sign", "agent_signed"]);
+  assert.deepEqual([...FUNNEL_WIDE], ["agent_connect", "agent_signin", "agent_trade", "agent_traded"]);
+  assert.deepEqual([...FUNNEL_SIDE], ["agent_sign_no", "agent_wallet_app", "agent_trade_no"]);
   assert.equal(new Set(FUNNEL_EVENT_NAMES).size, FUNNEL_EVENT_NAMES.length);
   for (const name of FUNNEL_EVENT_NAMES) assert.match(name, /^agent_[a-z_]{3,16}$/);
   assert.equal(isFunnelEvent("agent_signed"), true);
+  assert.equal(isFunnelEvent("agent_traded"), true);
   assert.equal(isFunnelEvent("agent_wallet:7xKX"), false);
 });
 
 test("a moment as the page sends it: the device and one fixed word, never more", () => {
   assert.deepEqual(funnelEvent("agent_home", "phone", "uk"), { name: "agent_home", placement: "agent", locale: "uk", path: "/", ref: "phone" });
   assert.deepEqual(funnelEvent("agent_sign_no", "desk", "en", "walletno"), { name: "agent_sign_no", placement: "agent", locale: "en", path: "/", ref: "desk:walletno" });
+  assert.deepEqual(funnelEvent("agent_trade_no", "app", "en", "failed"), { name: "agent_trade_no", placement: "agent", locale: "en", path: "/", ref: "app:failed" });
   assert.equal(funnelDevice(true, true), "app");
   assert.equal(funnelDevice(false, true), "phone");
   assert.equal(funnelDevice(false, false), "desk");
+});
+
+test("CITY-246: a robot's visit says `bot` in place of any word, and the route keeps it", () => {
+  assert.equal(funnelWord(null, false), null);
+  assert.equal(funnelWord("refused", false), "refused");
+  assert.equal(funnelWord(null, true), "bot");
+  assert.equal(funnelWord("refused", true), "bot");
+  assert.equal(funnelTrackRow(funnelEvent("agent_home", "desk", "en", funnelWord(null, true))).ref, "desk:bot");
+  assert.equal(funnelTrackRow({ name: "agent_home", locale: "en", ref: "desk:robot" }).ref, "desk", "an unknown word is dropped, the device kept");
+});
+
+test("CITY-246: the city's first frame is heard once, by a listener that came before it or after", async () => {
+  const { cityDrawn, markDrawn, onDrawn } = await import("../city/drawn.ts");
+  assert.equal(cityDrawn(), false);
+  let early = 0;
+  let gone = 0;
+  onDrawn(() => early++);
+  const undo = onDrawn(() => gone++);
+  undo();
+  markDrawn();
+  markDrawn();
+  assert.equal(cityDrawn(), true);
+  assert.equal(early, 1, "once, however many frames follow");
+  assert.equal(gone, 0, "an undone listener hears nothing");
+  let late = 0;
+  onDrawn(() => late++);
+  assert.equal(late, 1, "a listener after the frame hears it at once");
 });
 
 test("the row stored is held to its shape: an address, an amount or a path sent along is dropped", () => {
@@ -98,13 +129,27 @@ test("the track route takes the funnel through its own row; the page sends nothi
   const route = readFileSync(new URL("../../../app/api/track/route.ts", import.meta.url), "utf8");
   assert.match(route, /FUNNEL_EVENT_NAMES/);
   assert.match(route, /funnelTrackRow\(/);
+  const say = readFileSync(new URL("./funnel-say.ts", import.meta.url), "utf8");
+  assert.match(say, /sendEvent\(funnelEvent\(/);
+  assert.equal((say.match(/sendEvent\(/g) ?? []).length, 1, "one way out");
+  assert.match(say, /navigator\.webdriver === true/, "a robot's visit is marked");
   const watch = readFileSync(new URL("./funnel-watch.ts", import.meta.url), "utf8");
-  assert.match(watch, /sendEvent\(funnelEvent\(/);
-  assert.equal((watch.match(/sendEvent\(/g) ?? []).length, 1, "one way out");
-  // The watcher reads whether a wallet is connected and a card is open — never sends an address or an amount.
-  for (const call of watch.matchAll(/funnelSay\(([^)]*)\)/g)) assert.doesNotMatch(call[1], /owner|address|connection|lamports|amount|record/, call[0]);
+  assert.doesNotMatch(watch, /sendEvent\(/, "the watcher sends through `funnelSay` only");
+  // The watcher and the callers read whether a wallet is connected and a card is open — never send an address or an amount.
+  const callers = [
+    watch,
+    readFileSync(new URL("../trade/proof.ts", import.meta.url), "utf8"),
+    readFileSync(new URL("../../components/command/CommandLayer.tsx", import.meta.url), "utf8"),
+  ];
+  for (const source of callers) {
+    // Only fixed names and words in quotes; no value read from the page goes along.
+    for (const call of source.matchAll(/funnelSay\(([^)]*)\)/g)) assert.doesNotMatch(call[1].replace(/'[a-z_]+'/g, ""), /owner|address|connection|lamports|amount|record|text|said|signed/, call[0]);
+  }
   const { FIRST_PARTY_EVENT_CATALOG } = await import("../../../lib/admin/insights.ts");
   for (const name of FUNNEL_EVENT_NAMES) assert.ok(FIRST_PARTY_EVENT_CATALOG.includes(name), `the admin reads ${name}`);
+  const { FUNNEL_LABEL, FUNNEL_ORDER } = await import("../../../lib/admin/funnel.ts");
+  assert.deepEqual([...FUNNEL_ORDER].sort(), [...FUNNEL_EVENT_NAMES].sort(), "the admin's table has every moment, once");
+  for (const name of FUNNEL_EVENT_NAMES) assert.ok(FUNNEL_LABEL[name], `a label for ${name}`);
 });
 
 test("a card left for a wallet waits two hours in this browser, then the city opens it again", async () => {

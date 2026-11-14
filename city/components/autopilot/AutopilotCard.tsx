@@ -24,7 +24,7 @@ import { booksLine, canWithdraw, missionFace, tradeWord } from '@/city/lib/autop
 import { startWallets, useWallet } from '@/city/lib/trade/wallet';
 import { useShareCard } from '../launch/useShareCard';
 import { WalletLine } from '../trade/WalletParts';
-import { AddSol, CardWalletPicker, useFundsShort } from '../crew/CardWallet';
+import { AddSol, BuyNow, CardWalletPicker, useFundsShort } from '../crew/CardWallet';
 import { AgentGlyph, ChevronGlyph } from '../instruct/glyphs';
 import i from '../instruct/instruct.module.css';
 import s from './autopilot.module.css';
@@ -144,6 +144,7 @@ function SignButton({ label, busy, disabled, onPress, said, preset }: { label: s
     return (
       <>
         <AddSol about={funds.about} className={i.action} lineClass={i.notice} />
+        {preset ? <BuyNow preset={preset} className={s.quiet} /> : null}
         <WalletLine />
       </>
     );

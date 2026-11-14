@@ -13,7 +13,8 @@ export type AdminNavId =
   | "academy"
   | "growthPanel"
   | "growth"
-  | "pnl";
+  | "pnl"
+  | "funnel";
 
 export type AdminNavItem = {
   id: AdminNavId;
@@ -31,6 +32,7 @@ export const ADMIN_NAV: readonly AdminNavItem[] = [
   { id: "analytics", label: "Аналітика", href: "/admin/analytics", group: "insights" },
   { id: "finance", label: "Фінансова панель", href: "/admin/finance", group: "insights" },
   { id: "pnl", label: "Чесний PnL", href: "/admin/pnl", group: "insights" },
+  { id: "funnel", label: "Воронка", href: "/admin/funnel", group: "insights" },
   { id: "seo", label: "SEO і ріст", href: "/admin/seo", group: "insights" },
   { id: "growthPanel", label: "Панель росту", href: "/admin/growth", group: "insights" },
   { id: "growth", label: "Перевірка Росту", href: "/admin/growth/review", group: "insights" },

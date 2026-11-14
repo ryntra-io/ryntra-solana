@@ -22,6 +22,7 @@ import { useDollar } from '@/city/lib/earn/dollar-store';
 import { earnWords } from '@/city/lib/earn/words';
 import { AUTOPILOT } from '@/city/lib/autopilot/words';
 import { readInstruction } from '@/city/lib/instruct/read';
+import { funnelSay } from '@/city/lib/crew/funnel-say';
 import { hireFit, readHire, type Role } from '@/city/lib/crew/read';
 import { crewGatesNow } from '@/city/lib/crew/hire';
 import { CREW_WORDS } from '@/city/lib/crew/words';
@@ -119,6 +120,8 @@ function Palette() {
   const choose = (command: Command) => {
     tick();
     picked = true;
+    // CITY-246: a sentence said — the funnel counts that one was, never what it said.
+    funnelSay('agent_said');
     closeCommand();
     run(command, cityDoors);
   };

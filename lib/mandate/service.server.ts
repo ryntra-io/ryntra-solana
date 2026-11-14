@@ -126,6 +126,20 @@ export const recordOf = (mandate: Mandate): MandateRecord => ({
 
 export type ReviewResult = Readonly<{ ok: true; record: MandateRecord; transactions: readonly string[]; fundLamports: string }> | Readonly<{ ok: false; code: string; reason: string }>;
 
+/**
+ * The chain's clock, in seconds, at its newest confirmed slot — or null when the node cannot say. A node often has no
+ * block for the very newest slot yet («Block not available for slot», -32004) and throws rather than answering null;
+ * that is the same «cannot say» as a null, and the caller's wall-clock fallback stands for both (CITY-246: a budget's
+ * review was refused on this throw).
+ */
+export async function chainSeconds(connection: Pick<Connection, "getSlot" | "getBlockTime">): Promise<number | null> {
+  try {
+    return await connection.getBlockTime(await connection.getSlot("confirmed"));
+  } catch {
+    return null;
+  }
+}
+
 /** The token the pool sells for SOL — what the agent buys for her; the DLMM SDK reads the pool (loaded on use). */
 export async function poolOtherToken(connection: Connection, pool: PublicKey): Promise<PublicKey> {
   const DLMM = (await import("@meteora-ag/dlmm")).default;
@@ -158,7 +172,7 @@ export async function reviewEnable(
   }
   if (!presetOpenOn(gate.network, input.preset)) return { ok: false, code: "VALIDATION_ERROR", reason: `The budget is not one ${gate.network} offers.` };
   const preset = budgetPreset(input.preset);
-  const now = BigInt((await connection.getBlockTime(await connection.getSlot("confirmed"))) ?? Math.floor(Date.now() / 1000));
+  const now = BigInt((await chainSeconds(connection)) ?? Math.floor(Date.now() / 1000));
   let account: Parameters<typeof planEnable>[0]["account"];
   const known = addressOf(input.smartAccount ?? undefined);
   const settingsInfo = known ? await connection.getAccountInfo(known) : null;

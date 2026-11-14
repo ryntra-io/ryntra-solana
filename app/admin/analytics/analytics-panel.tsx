@@ -41,14 +41,21 @@ const SITE_EVENT_LABEL: Record<string, string> = {
   seeker_connect_cancelled: "Seeker: скасовано",
   seeker_connect_failed: "Seeker: не з'єдналось",
   agent_home: "Агент 1 · перший екран",
+  agent_drawn: "Агент 1а · місто намалювалось",
   agent_hint: "Агент 2 · «Скажи» натиснуто",
   agent_line: "Агент 3 · рядок відкрито",
+  agent_said: "Агент 3а · речення сказано",
   agent_card: "Агент 4 · картка агента",
   agent_wallet: "Агент 5 · гаманець підключено",
   agent_sign: "Агент 6 · «Підписати» натиснуто",
   agent_signed: "Агент 7 · бюджет підписано",
+  agent_connect: "Місто · гаманець підключено",
+  agent_signin: "Місто · вхід гаманцем",
+  agent_trade: "Місто · угода на підписі",
+  agent_traded: "Місто · угода підтверджена",
   agent_sign_no: "Агент · підпис не відбувся",
   agent_wallet_app: "Агент · пішов у застосунок гаманця",
+  agent_trade_no: "Місто · угода не відбулась",
 };
 
 function TrafficSources() {

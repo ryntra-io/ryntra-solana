@@ -52,6 +52,7 @@ export const CREW_WORDS = words(
     sayKicker: 'Say it to your agent',
     addSol: 'Add SOL',
     needSol: (need: string) => `Your agent needs about ${need} SOL in your wallet`,
+    buyNow: (symbol: string) => `Buy ${symbol} now`,
   },
   {
     kicker: 'Твої агенти',
@@ -100,5 +101,6 @@ export const CREW_WORDS = words(
     sayKicker: 'Скажи своєму агентові',
     addSol: 'Поповнити SOL',
     needSol: (need: string) => `Агентові потрібно близько ${need} SOL у гаманці`,
+    buyNow: (symbol: string) => `Купити ${symbol} зараз`,
   },
 );

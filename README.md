@@ -55,6 +55,9 @@ and reports back every day. Every coin on Solana is a tower in the city, and you
   </tr>
 </table>
 
+**Next: Meteora DLMM Pro.** Launches with no curve and no migration, limit orders that earn a share of the fee, and
+positions an agent looks after — in progress; see [Ryntra on Meteora](METEORA.md#dlmm-pro).
+
 **Partners** bring people to the city and earn a share of Ryntra's fee, paid weekly in USDC.
 
 Keys stay with you: every transaction is shown and signed in your own wallet, the agent's limits live on-chain, and one
@@ -98,15 +101,15 @@ signed for it, from a key it never sees, and only toward your own wallet.
 | [`supabase/`](supabase) | The database schema, migration by migration |
 | [`public/`](public) | Static assets, the city's models and these pictures |
 
-7,077 files, each test beside the code it tests. Every update of this repository is one commit named for what
-shipped; the latest is from 2026-11-12.
+7,083 files, each test beside the code it tests. Every update of this repository is one commit named for what
+shipped; the latest is from 2026-11-14.
 
 **Built with** Next.js 15 · React 19 · TypeScript · Three.js and React Three Fiber · Solana Kit and web3.js · Jupiter ·
 Meteora DBC, DAMM v2 and DLMM · Squads · Supabase · Expo and React Native · Vercel.
 
 ## Run it
 
-Node >=22 <25, 22.18 or later.
+Node 22.18 or later (`package.json` asks for `>=22 <25`).
 
 ```bash
 npm ci
@@ -136,7 +139,7 @@ themselves as skipped.
 <details>
 <summary><b>The Android app</b></summary>
 
-Node >=22 <25, JDK 17 and the Android SDK (platform 36, build-tools 36.0.0, NDK 27.1), with `JAVA_HOME` and
+The same Node, JDK 17 and the Android SDK (platform 36, build-tools 36.0.0, NDK 27.1), with `JAVA_HOME` and
 `ANDROID_HOME` set.
 
 ```bash
@@ -162,11 +165,11 @@ It lands in `apps/mobile/dist/`; sign it with your own key (`apksigner sign --ks
 ## Built during the hackathon
 
 The code as it stood before the hackathon is tagged `pre-hackathon-baseline-2026-09-11` in the development repository (commit `7fc5776f`,
-2026-09-11). Since then, for the 7,077 files here:
+2026-09-11). Since then, for the 7,083 files here:
 
 | New | Changed | Unchanged | Lines |
 |:---:|:---:|:---:|:---:|
-| 5,353 | 899 | 825 | +1,120,426 / −28,064 |
+| 5,359 | 899 | 825 | +1,121,053 / −28,064 |
 
 [BOUNDARY.md](BOUNDARY.md) lists every new and every changed file.
 

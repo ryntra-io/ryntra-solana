@@ -220,6 +220,13 @@ for (const size of SIZES) {
           if (await listed.count()) await tap(listed);
           await page.locator("[data-agent-topup]").waitFor({ timeout: 30_000 }).catch(() => step("no Add SOL"));
           await shot("card-add-sol");
+          // CITY-246: short of the budget, the wallet's SOL still buys the coin now — its trade window, the size written in.
+          const buyNow = page.locator("[data-autopilot] [data-agent-buy-now]");
+          if (await buyNow.count()) {
+            await tap(buyNow);
+            await page.waitForTimeout(2_500);
+            await shot("buy-now");
+          } else step("no Buy now");
         }
         if (pass === "wallet") {
           // One wallet in the browser connects on the tap; a list only when there are more.

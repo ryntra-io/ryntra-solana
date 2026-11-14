@@ -26,6 +26,7 @@ import type { Tower } from '@/city/lib/market/types';
 import { useQuarter } from '@/city/lib/quarter/store';
 import { useRun } from '@/city/lib/run/store';
 import { useWindows } from '@/city/lib/window/store';
+import { funnelSay } from '@/city/lib/crew/funnel-say';
 import { TokenIcon } from '../hud/bits';
 import hud from '../hud/hud.module.css';
 import s from './assistant.module.css';
@@ -146,6 +147,8 @@ function Panel() {
 
   const send = (q: string) => {
     if (!q.trim()) return;
+    // CITY-246: a sentence said to Ryntra — the funnel counts that one was, never what it said.
+    funnelSay('agent_said');
     // «Trade 1 SOL a day», «launch me a token» said to Ryntra is the agent on its word (CITY-175): the card opens.
     const gates = gatesNow();
     // «Поклади 0,2 SOL і 5 USDC працювати» said to Ryntra opens the money autopilot's card (CITY-204), as from the line.
