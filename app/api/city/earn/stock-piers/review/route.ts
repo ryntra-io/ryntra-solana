@@ -11,7 +11,7 @@ export const dynamic = 'force-dynamic';
 export const maxDuration = 30;
 
 /**
- * The Review of a Stock Pier action from the city (CITY-98). `build` — make the pair's pier with the first liquidity in
+ * The Review of a Stock Pier action from the city. `build` — make the pair's pier with the first liquidity in
  * one signature, or moor beside it where it stands: the Stock Pier's door (switch, verified pair, dividend guard, live
  * price, ceiling) and then the engine's own Review with the Stock Pier's venue. Taking fees (`claim`) and leaving
  * (`remove`) on a DAMM v2 position: wherever the product is not closed to the wallet — the stop never holds money in —

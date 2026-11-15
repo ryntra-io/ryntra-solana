@@ -1,5 +1,5 @@
 /**
- * The launch sheet's review as a step back to the fields (CITY-236). «Back» of a phone or a browser and Escape on a
+ * The launch sheet's review as a step back to the fields. «Back» of a phone or a browser and Escape on a
  * desk answer the same way the sheet's own arrow does: from the review to the three fields — the name, the ticker and
  * the picture stay — and only from the fields out of the sheet.
  *
@@ -17,8 +17,8 @@ export type SheetNow = Readonly<{
 
 /**
  * Whether the launch sheet may close now: unless a launch is under way (between the upload and the send). An early
- * launch that is set (`opened`) is not under way (CITY-236). Here, not in the HUD, so the sheet's own window
- * (`LaunchLayer`, CITY-242) asks it without importing the HUD that imports it.
+ * launch that is set (`opened`) is not under way. Here, not in the HUD, so the sheet's own window
+ * (`LaunchLayer`) asks it without importing the HUD that imports it.
  */
 export function sheetClosable(phase: SheetNow['phase']): boolean {
   return !phase || phase.step === 'done' || phase.step === 'failed' || phase.step === 'opened';

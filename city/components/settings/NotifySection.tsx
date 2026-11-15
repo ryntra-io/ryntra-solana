@@ -63,7 +63,7 @@ export function NotifySection() {
 
   return (
     <section className={s.section} aria-labelledby="settings-notifications">
-      {/* Earn's notes may come late from the server (CITY-100): said here, behind the «i», never on the screen. */}
+      {/* Earn's notes may come late from the server: said here, behind the «i», never on the screen. */}
       <Head id="settings-notifications" title={w.notifications} info={EARN_OPEN ? [w.notifyInfo, w.notifyInfoEarn] : w.notifyInfo} />
       <Group>
         <Row label={w.muteAll}>

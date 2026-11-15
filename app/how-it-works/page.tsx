@@ -11,7 +11,7 @@ import city from "@/city/styles/city.module.css";
 
 import { buildMissionControlMetadata } from "../seo";
 
-/* `/how-it-works` — «How it works» of Ryntra City as a page of its own (CITY-43): a lesson film, one line and «Try»
+/* `/how-it-works` — «How it works» of Ryntra City as a page of its own: a lesson film, one line and «Try»
    for every function live on this deployment whose lesson is here, the same lessons the city's menu (☰) opens as a
    window. «Try» leads into the city, which opens that function's window. No lesson yet — no page: the address leads
    into the city, never to an empty page. The lessons are files of this build (`city/lib/how/films.json`), so the page

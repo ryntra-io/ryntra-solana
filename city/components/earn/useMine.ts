@@ -21,7 +21,7 @@ export type MineFigures = Readonly<{
   lsts: readonly LstHolding[];
   piers: readonly PierRow[];
   stocks: readonly StockRow[];
-  /** The Dollar Saver's positions at Jupiter Lend (CITY-192), in their own coins: never added to the SOL headline. */
+  /** The Dollar Saver's positions at Jupiter Lend, in their own coins: never added to the SOL headline. */
   dollars: readonly DollarPosition[];
   head: Headline;
   /** Nothing earning and nothing to measure: the empty state. */

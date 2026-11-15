@@ -9,7 +9,7 @@ import { buyersOf, flowCandidates, lighthouseOf, type BuyerCount, type Lighthous
 import { useLens } from './store.ts';
 
 /**
- * «New» over the whole of Solana, live (CITY-142): the engine's three Pulse feeds read every minute — every half
+ * «New» over the whole of Solana, live: the engine's three Pulse feeds read every minute — every half
  * minute while «New» is picked — the network's launches laid into the Docks beside the city's own towers, and the
  * beacon counted from the engine's flow of each candidate while «New» is looked at. Read only: no wallet, no key, no
  * signature; nothing here moves anything. A feed that does not answer keeps its ring as it was; a city that reads
@@ -38,7 +38,7 @@ type NewState = {
   at: number;
   counts: ReadonlyMap<string, BuyerCount>;
   lighthouse: Lighthouse | null;
-  /** The list instead of the rings (the toggle by «New»): the city's window «New launches on Solana» (CITY-191). */
+  /** The list instead of the rings (the toggle by «New»): the city's window «New launches on Solana». */
   list: boolean;
   /** The window's order for every ring, and the one launchpad it is cut to (null: every launchpad). */
   sort: LaunchSort;

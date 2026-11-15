@@ -141,7 +141,7 @@ const BEACON = { height: 30, bottom: 1.1, top: 2.6 };
 /**
  * My quarter from the city's view: a soft column of amber light over the lot and a sign with its place — the
  * owner's short name when they gave one, else «Your quarter». A tap on the sign flies into the quarter, as «My quarter»
- * does (CITY-241). Both step aside while the quarter is built.
+ * does. Both step aside while the quarter is built.
  */
 export function MyMark({ lot }: { lot: Lot }) {
   const me = useQuarter((s) => s.me);

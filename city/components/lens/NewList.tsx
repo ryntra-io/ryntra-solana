@@ -22,7 +22,7 @@ const renderList = () => <NewLaunchesWindow />;
 const closeList = () => useNewLaunches.getState().setList(false);
 
 /**
- * «New» as a list (CITY-142) in the city's one window frame since CITY-191: «New launches on Solana» stretches by every
+ * «New» as a list in the city's one window frame: «New launches on Solana» stretches by every
  * edge and corner, takes the whole screen, docks, folds into the tray and closes like every other window; on a phone
  * it is the bottom sheet. Opened by the toggle beside the «New» chip. It belongs to «New»: another chip, a run, the
  * trade card opening or a tower picked in the city puts it away; Escape and «Back» close it.

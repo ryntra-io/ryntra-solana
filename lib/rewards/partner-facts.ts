@@ -31,10 +31,10 @@ import { PAYOUTS_FIRST_WEEK, SHARED_PRODUCTS } from "../partner-payouts/week.ts"
  *
  * ## Who pays a partner
  *
- * A partner's share is paid by the weekly payouts (CITY-128, `lib/partner-payouts/week.ts`), which count it from
+ * A partner's share is paid by the weekly payouts (`lib/partner-payouts/week.ts`), which count it from
  * `PARTNER_TERMS` itself — the programme is what is paid there, never a copy. `payouts` says whether they run on this
  * deployment (`RYNTRA_PARTNER_PAYOUTS=on` and its treasury), from which week, on which products, and whether the
- * friend's discount is taken off trades (CITY-182).
+ * friend's discount is taken off trades.
  *
  * ## The reconciliation
  *
@@ -113,7 +113,7 @@ export type PartnerFacts = Readonly<{
   engine: EngineCounts;
   /** Where the engine does not count the programme yet; `matches` only when there is no gap. */
   reconciliation: Readonly<{ matches: boolean; gaps: readonly PartnerTermGap[] }>;
-  /** The weekly partner payouts of decision 93 (CITY-128). */
+  /** The weekly partner payouts of decision 93. */
   payouts: Readonly<{
     paidAs: PaidAsStatus;
     /** The first week counted, `YYYY-MM-DD` (its Monday, UTC). */

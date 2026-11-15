@@ -1,4 +1,4 @@
-// The Play layer's screens for review (CITY-81): the city's first screen without the game, Play with its dock, the
+// The Play layer's screens for review: the city's first screen without the game, Play with its dock, the
 // Map and a district flown to, then Escape back to City — at 1440×900 and 390×844 → <out>/<state>-<size>.jpg
 //   NEXT_PUBLIC_RYNTRA_CITY_{ORACLE,HARBOR,AGENTS,EXCHANGE,LAUNCH,VAULT,RUN,RING,HALL}=open npm run dev -- -p 3137,
 //   then: node city/lib/game/shots.mjs [out] [baseUrl]
@@ -24,7 +24,7 @@ const report = [];
 
 for (const size of SIZES) {
   const context = await browser.newContext({ viewport: { width: size.width, height: size.height }, deviceScaleFactor: size.mobile ? 2 : 1, isMobile: size.mobile, hasTouch: size.mobile });
-  // A device that kept «Arrivals» on before CITY-81, and has learned the first-visit hint.
+  // A device that kept «Arrivals» on, and has learned the first-visit hint.
   await context.addInitScript(() => {
     try {
       if (!localStorage.getItem("ryntra.city.feed")) localStorage.setItem("ryntra.city.feed", JSON.stringify({ arrivals: true }));

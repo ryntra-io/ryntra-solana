@@ -1,7 +1,7 @@
 import { rawFromText, textFromRaw, usdOf } from '../../../lib/earn/model.ts';
 
 /**
- * The Dollar Saver (CITY-192, E5 of `docs/research/ryntra-earn-2026-10-29/SPEC.md`): USDC or SOL lent at Jupiter Lend's
+ * The Dollar Saver (E5 of `docs/research/ryntra-earn-2026-10-29/SPEC.md`): USDC or SOL lent at Jupiter Lend's
  * floating rate, put in and taken back in one signature each. Every figure here is the engine's (`/api/solana/earn`,
  * SOL-3's `lib/earn`): the market's rate, its minimum and what it can pay out now, the wallet's position read from
  * the chain. This file only reads that answer into the card's words and checks an amount against it — the server

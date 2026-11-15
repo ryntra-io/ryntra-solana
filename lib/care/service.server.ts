@@ -1,5 +1,5 @@
 /**
- * CITY-203 — the agent looks after a person's Meteora pier, behind the city's window: the person says «look after it»
+ * The agent looks after a person's Meteora pier, behind the city's window: the person says «look after it»
  * once, signs once, and walks away; the agent claims, reinvests, keeps the range around the price and leaves at the
  * person's stop, inside the two policies the person signed (`./terms.ts`).
  *
@@ -108,7 +108,7 @@ export type CareEntry = Readonly<{
   stopMessages?: readonly string[];
   /** The range's width in bins the agent keeps around the price. */
   width: number;
-  /** How the money spreads over those bins; a care written before CITY-210 is even (`spot`). */
+  /** How the money spreads over those bins. */
   shape?: LiquidityShape;
   position: string | null;
   outOfRangeSince: number | null;
@@ -400,7 +400,7 @@ export async function careMinute(
   let skipped = 0;
   for (const row of rows) {
     const now = deps.now?.() ?? Date.now();
-    /* Another pass holds this care's tick: it acts, this one does not (CITY-203 failure pass: two ticks at once). */
+    /* Another pass holds this care's tick: it acts, this one does not. */
     if (!(await claimTick(store, row.key, now).catch(() => false))) {
       skipped += 1;
       continue;
@@ -430,9 +430,9 @@ export type CareView = Readonly<{
   day: ReturnType<typeof careDay>;
   stopBelow: number | null;
   fees: FeeMode;
-  /** CITY-207: the position at the venue's prices, USD — Earn's own source; null — not priced (devnet, no record). */
+  /** The position at the venue's prices, USD — Earn's own source; null — not priced (devnet, no record). */
   valueUsd: number | null;
-  /** CITY-207: its fees not yet taken, USD; null — not priced. */
+  /** Its fees not yet taken, USD; null — not priced. */
   unclaimedUsd: number | null;
 }>;
 

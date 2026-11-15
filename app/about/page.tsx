@@ -4,7 +4,7 @@ import { CityDocument } from "@/city/components/pages/CityDocument";
 import { PALETTE } from "@/city/lib/palette";
 import { buildCityPageMetadata } from "@/app/seo";
 
-/* `/about` — About as a page of the city (CITY-157): Ryntra in one line, what it stands on, how to reach it. */
+/* `/about` — About as a page of the city: Ryntra in one line, what it stands on, how to reach it. */
 
 export const metadata: Metadata = buildCityPageMetadata("about", "/about");
 

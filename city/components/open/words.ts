@@ -1,7 +1,7 @@
 import { words } from '../../lib/i18n/dict.ts';
 
 /**
- * The city's 404 and 500 (CITY-159), in both languages (CITY-79): what happened, in one line, and the one way back.
+ * The city's 404 and 500, in both languages: what happened, in one line, and the one way back.
  * The tab's title says the same as the page.
  */
 export const LOST = words(

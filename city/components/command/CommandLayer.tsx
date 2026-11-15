@@ -47,7 +47,7 @@ installCommandKeys();
 type Words = (typeof COMMAND)['en'];
 
 /**
- * The city's command line (CITY-85; helm SPEC §1, §8–9): one field — «buy SOL for 50», «стоп на JUP», «my portfolio» —
+ * The city's command line: one field — «buy SOL for 50», «стоп на JUP», «my portfolio» —
  * and under it what will open, filled in. A pick opens that window with its fields written; the person reads them and
  * confirms in the window, then signs in their own wallet. Nothing here signs, sends or builds an order, and anything
  * that is not a window to open is a question for Ryntra, who only advises. ⌘K or Ctrl+K on a computer; on a phone the
@@ -88,19 +88,19 @@ function Palette() {
   // What is on screen as the line opens: «buy 50» means that coin, whatever the camera does meanwhile.
   const [context] = useState(contextNow);
   const gates = useMemo(() => ({ ...gatesNow(), launch: launchReady }), [launchReady]);
-  // The agent's instruction first (CITY-176): «buy $20 of SOL every week» is the agent's card; the window the line would
+  // The agent's instruction first: «buy $20 of SOL every week» is the agent's card; the window the line would
   // open for the same words, if any, stays under it.
-  // The agent on its word (CITY-175) stands before both: «trade 1 SOL a day», «launch me a token».
+  // The agent on its word stands before both: «trade 1 SOL a day», «launch me a token».
   const rows = useMemo(() => {
     const listed = suggest(text, book, context, gates);
-    // The Dollar Saver on its word (CITY-192): «put my USDC to work» is its card, before anything else the words could open.
-    // The money autopilot on its word (CITY-204): money given and spread over places — one plan — before either.
+    // The Dollar Saver on its word: «put my USDC to work» is its card, before anything else the words could open.
+    // The money autopilot on its word: money given and spread over places — one plan — before either.
     const pilot = gates.pilot ? readPilotAsk(text, book) : null;
     const saver = !pilot && gates.dollar ? readDollarAsk(text) : null;
     const ask = !pilot && !saver && (gates.agentTrade || gates.agentLaunch) ? readAsk(text, book) : null;
     const agent = pilot ? fit({ kind: 'pilot', ask: pilot }, gates) : saver ? fit({ kind: 'dollar', ask: saver }, gates) : ask ? fit({ kind: 'autopilot', ask }, gates) : null;
     const instruction = !agent && gates.instruct ? readInstruction(text, book, context) : null;
-    // A job for an agent (CITY-205): «trade for me», «доглядай мій пул» — the agent's card, never a question for Ryntra.
+    // A job for an agent: «trade for me», «доглядай мій пул» — the agent's card, never a question for Ryntra.
     const job = !agent && !instruction ? readHire(text) : null;
     const command = agent ?? (instruction ? fit({ kind: 'instruct', instruction }, gates) : null) ?? (job ? ({ kind: 'hire', ask: hireFit(job, crewGatesNow()) } as const) : null);
     return command ? [{ key: keyOf(command), command }, ...listed.filter((row) => row.key !== keyOf(command))].slice(0, ROWS_MAX) : listed;
@@ -120,7 +120,7 @@ function Palette() {
   const choose = (command: Command) => {
     tick();
     picked = true;
-    // CITY-246: a sentence said — the funnel counts that one was, never what it said.
+    // A sentence said — the funnel counts that one was, never what it said.
     funnelSay('agent_said');
     closeCommand();
     run(command, cityDoors);
@@ -217,7 +217,7 @@ function Palette() {
         ) : (
           !text.trim() && (
             <>
-            {/* The first sentences to the agent (CITY-222): one tap says it, the agent's card opens. */}
+            {/* The first sentences to the agent: one tap says it, the agent's card opens. */}
             <Says onSay={(say) => {
               const command = fit({ kind: 'autopilot', ask: say.ask }, gates);
               if (command) choose(command);
@@ -247,7 +247,7 @@ function RowFace({ command, w }: { command: Command; w: Words }) {
       <span className={s.icon}>{face.icon}</span>
       <span className={s.label}>{face.label}</span>
       {face.fill && <span className={command.kind === 'ask' ? s.quote : s.fill}>{face.fill}</span>}
-      {/* «Consultant» and «Agent» stay on a phone too: which of the two helps is the one thing a row must say (CITY-205). */}
+      {/* «Consultant» and «Agent» stay on a phone too: which of the two helps is the one thing a row must say. */}
       {face.where && <span className={s.where} data-role-mark={command.kind === 'ask' || command.kind === 'hire' ? '' : undefined}>{face.where}</span>}
     </>
   );
@@ -302,7 +302,7 @@ function faceOf(command: Command, w: Words, agent: (typeof INSTRUCT)['en']): { i
       return { icon: <LearnGlyph />, label: lw.title, fill: null, where: lw.kicker };
     }
     case 'ask':
-      // The consultant: it reads the market and advises — one word says so (CITY-205).
+      // The consultant: it reads the market and advises — one word says so.
       return { icon: <SparkGlyph />, label: w.askRyntra, fill: `«${command.question}»`, where: wordsNow(CREW_WORDS).consultant };
     case 'hire': {
       const c = wordsNow(CREW_WORDS);

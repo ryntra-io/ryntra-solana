@@ -40,7 +40,7 @@ import s from './studio.module.css';
  *   &t=1.2                                      hold the clip at this second (frames for review)
  *   &bare · &stats · &silhouette · &clean (no chrome) · &quiet (no caption) · &face (the play's face on a standing body)
  *   &dpr=1.75 · &turn=30 (camera, degrees round the front) · &dist=4 · &lift=0.6
- *   &quality=high|mid|low                       a rung of the city's ladder (CITY-6a): detail and contact shadow follow
+ *   &quality=high|mid|low                       a rung of the city's ladder: detail and contact shadow follow
  *
  * `window.__guardian` lets the capture script (`shots.mjs`) set any of these without reloading.
  */

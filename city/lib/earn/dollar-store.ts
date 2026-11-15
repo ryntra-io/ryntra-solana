@@ -20,7 +20,7 @@ import type { DollarAsk } from './dollar-read.ts';
 import { useEarn } from './open.ts';
 
 /**
- * The Dollar Saver's card (CITY-192): one coin, one side, one amount, one tap — the server builds the deposit or the
+ * The Dollar Saver's card: one coin, one side, one amount, one tap — the server builds the deposit or the
  * withdrawal at Jupiter Lend and seals it (`/api/solana/earn/review`), the person's wallet signs it, and the server
  * checks the market again and sends those exact bytes once (`/api/solana/earn/submit`). Nothing here builds or holds
  * a transaction of its own and no key is ever near it: the engine is SOL-3's `lib/earn`, the signature the city's one

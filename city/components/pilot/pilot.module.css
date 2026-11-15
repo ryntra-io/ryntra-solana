@@ -1,4 +1,4 @@
-/* CITY-204 — the money autopilot's card: the parts as one bar, a legend of four, the week's figure. The rest of the card is
+/* The money autopilot's card: the parts as one bar, a legend of four, the week's figure. The rest of the card is
    the instruct and autopilot modules' (glass, hero, dock, details), so it reads as the agent's own window. */
 
 .bar {
@@ -178,7 +178,7 @@
   }
 }
 
-/* «Add SOL» under «not enough» (CITY-239): a quiet button in the city's own frame — the violet edge and the cut corner
+/* «Add SOL» under «not enough»: a quiet button in the city's own frame — the violet edge and the cut corner
    of its secondary actions — the whole width under the finger. It read as one more caption before: plain words. The
    amber stays with the card's one main action below. */
 .add {

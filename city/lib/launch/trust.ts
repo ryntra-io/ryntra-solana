@@ -7,7 +7,7 @@ import { TRUST_WORDS } from './words.ts';
  * How a launch's tower says its flow (L3): a few pills and one strip of the creator, each a fact of the chain in a few
  * words, never a verdict — no «safe», no «scam». A fact the engine did not read is not said; a count that is a floor
  * says so with «≥». Every share is rounded down, so a figure never reads as more than it is. The method is behind the
- * tower's «i» (`flowMethod`). The words are the city's language (CITY-79, `TRUST_WORDS`).
+ * tower's «i» (`flowMethod`). The words are the city's language (`TRUST_WORDS`).
  */
 
 /** `watch` — worth a look before a trade; `fact` — context. */

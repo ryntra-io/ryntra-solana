@@ -20,7 +20,7 @@ test("a figure the engine did not send is a dash, never a zero", () => {
   assert.equal(micro("25000000"), "$25.00");
 });
 
-test("a price from a dollar up is in cents: «$97.350» read as thousands beside the Spot's «$97.48» (CITY-150)", () => {
+test("a price from a dollar up is in cents: «$97.350» read as thousands beside the Spot's «$97.48»", () => {
   assert.equal(price(97.35), "$97.35");
   assert.equal(price(1.2345), "$1.23");
   assert.equal(price(150.5), "$150.50");
@@ -28,7 +28,7 @@ test("a price from a dollar up is in cents: «$97.350» read as thousands beside
   assert.equal(price(0.000123456), "$0.0001235");
 });
 
-test("an amount is never written with an exponent (CITY-150: «1,2e-7 BTC»)", () => {
+test("an amount is never written with an exponent", () => {
   assert.equal(units(1.2e-7, "BTC"), "0.00000012 BTC");
   assert.equal(units(0.099796891, "SOL"), "0.0998 SOL");
   assert.equal(units(12.5, "SOL"), "12.5 SOL");

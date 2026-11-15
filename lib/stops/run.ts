@@ -1,5 +1,5 @@
 /**
- * The stops' cron pass (CITY-149): every watched stop asked about with the swap engine's quote for its exact amount,
+ * The stops' cron pass: every watched stop asked about with the swap engine's quote for its exact amount,
  * judged the city's way (`stopReached`: the quote's `outAmountRaw` against the stop's `limitAmounts` line), «reached»
  * written once, and the person told — a note in the inbox (`lib/monitoring`), Telegram if the wallet's account has a
  * chat, the phone's push and the browser's push as the person's settings say. Stops past their time expire.

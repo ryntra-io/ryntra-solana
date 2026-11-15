@@ -18,7 +18,7 @@ import { useRun } from '@/city/lib/run/store';
 import { useLensSet } from './useLensSet';
 
 /**
- * «New» on the ground (CITY-86): three rings of violet light round the island — the fresh launches at the edge, the ones
+ * «New» on the ground: three rings of violet light round the island — the fresh launches at the edge, the ones
  * near graduation a step in, the graduated where the skyline begins — with a slow light drifting inward along them, the
  * way a launch travels. Brighter where a stage has towers today. Still, without the drift, when motion is off.
  */
@@ -117,7 +117,7 @@ const SWEEP = 22;
 const TURN_S = 9;
 
 /**
- * «Маяк» in the city (CITY-142): over the one coin the most different wallets bought, a shaft of the stored sun's light
+ * «Маяк» in the city: over the one coin the most different wallets bought, a shaft of the stored sun's light
  * and a slow beam sweeping round from its crown, while «New» is looked at. Three small draws, shared by nothing else. Without
  * motion the beam stands still and the shaft is all there is to see.
  */

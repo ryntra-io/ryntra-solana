@@ -12,10 +12,10 @@ import { formatDateTime } from "../../format";
 import { adminPost } from "../../reverify";
 
 /**
- * The partners' weekly payout (CITY-128), for the operator: each closed week's statement — partners paid, the USDC it
+ * The partners' weekly payout, for the operator: each closed week's statement — partners paid, the USDC it
  * pays, what is carried — and the one Squads proposal that pays it, signed here in the operator's own wallet. The server
  * prepares the week and builds the bytes; the wallet signs; the treasury's submit sends. Then the members vote and the
- * Owner executes, each in the wallet.
+ * operator executes, each in the wallet.
  */
 
 type Line = Readonly<{ partner: string; people: number; accruedMicros: string; carriedInMicros: string; payMicros: string; carriedOutMicros: string; held: string | null }>;
@@ -50,7 +50,7 @@ function provider(): Provider | null {
 
 /**
  * The wallet signs the built bytes; the payout's own route sends them by the treasury's submit, on the payout's network
- * — the treasury page's routes stay off with its switch (CITY-128b). Returns the error to show, or null.
+ * — the treasury page's routes stay off with its switch. Returns the error to show, or null.
  */
 async function signAndSend(build: Build, wallet: string, signer: Provider): Promise<string | null> {
   const unsigned = build.unsignedWireBase64.map((wire) => VersionedTransaction.deserialize(Uint8Array.from(atob(wire), (c) => c.charCodeAt(0))));

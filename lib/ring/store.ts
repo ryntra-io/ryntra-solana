@@ -3,7 +3,7 @@ import type { MadeKey } from "./keys.ts";
 import { type RatingRecord } from "./rating.ts";
 
 /**
- * What the Ring keeps (CITY-50): agents, their keys (sealed), their ratings and the answers to request keys. The
+ * What the Ring keeps: agents, their keys (sealed), their ratings and the answers to request keys. The
  * interface is the Ring's; a deployment keeps it in the database (`supabase-store.ts`,
  * `supabase/migrations/*_ring_v1.sql`) so every server instance sees one agent per garage slot. This file also has
  * the memory store — tests and a developer's machine only: it lives as long as one warm instance, so the server never
@@ -65,11 +65,11 @@ export interface RingStore {
   /** A stored answer to a request key, so a retried write is never done twice. */
   answer(key: string, now: number): Promise<unknown | null>;
   keepAnswer(key: string, body: unknown, now: number): Promise<void>;
-  /** The owner's active agents, oldest first (CITY-217: the Arena reads «my agent» without a garage visit). */
+  /** The owner's active agents, oldest first (the Arena reads «my agent» without a garage visit). */
   mine(owner: string): Promise<AgentRecord[]>;
   /**
    * Active agents of other owners in one class whose brain can play the format, closest to a rating first — the
-   * rivals a rated duel is drawn from (CITY-217).
+   * rivals a rated duel is drawn from.
    */
   rivals(input: { owner: string; weight: Weight; format: RingFormat; near: number; limit: number }): Promise<Ranked[]>;
   /** The board of a format: active agents with at least one rated game on their current brain, best first. */

@@ -4,8 +4,8 @@ import { OPEN_KEY, OPEN_WINDOWS, type OpenWindow } from './old-addresses.ts';
 
 /**
  * Windows only the city's own links name — never an old address: Earn, which a note's button opens from Telegram or the
- * phone (CITY-100, `/?open=earn&tab=mine`); «Launched on Ryntra», whose own address is `/launches` (CITY-185); the
- * person's agent, which its daily report's button opens (CITY-194, `/?open=agent`).
+ * phone (`/?open=earn&tab=mine`); «Launched on Ryntra», whose own address is `/launches`; the
+ * person's agent, which its daily report's button opens (`/?open=agent`).
  */
 export const OWN_WINDOWS = ['earn', 'launches', 'agent'] as const;
 export type AskWindow = OpenWindow | (typeof OWN_WINDOWS)[number];

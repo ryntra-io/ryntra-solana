@@ -1,5 +1,5 @@
 /**
- * CITY-198 — a SOL pier from one coin in one approval: Meteora's Zap program (`zapvX9M3…Miz`, `@meteora-ag/zap-sdk`
+ * A SOL pier from one coin in one approval: Meteora's Zap program (`zapvX9M3…Miz`, `@meteora-ag/zap-sdk`
  * 2.0.0) swaps the part of the SOL the pier's other coin needs and opens the DLMM position with both, in the order the
  * SDK writes — the wallet's token accounts and wrapped SOL, the swap, the Zap's ledger, the deposit, the ledger closed
  * and the SOL unwrapped. It is several transactions when it does not fit one; the wallet signs them together.

@@ -8,7 +8,7 @@ import { errorLine, type Outcome, type RingEngine } from "./engine.ts";
 import type { RingStore } from "./store.ts";
 
 /**
- * The routes of `/api/ring` (CITY-50), written against plain `Request` and `Response` so every rule is tested without
+ * The routes of `/api/ring`, written against plain `Request` and `Response` so every rule is tested without
  * a server; `server.ts` gives them the real session, store, catalog and keys, and `app/api/ring/**` only hands the
  * request over.
  *
@@ -135,7 +135,7 @@ export function createRingApi(deps: RingApiDeps) {
     return account.status === "ok" ? account.accountId : account.status === "absent" ? null : undefined;
   }
 
-  /** GET /api/ring/mine — the asker's agents and their garage in the Arena (CITY-217). */
+  /** GET /api/ring/mine — the asker's agents and their garage in the Arena. */
   async function mine(req: Request): Promise<Response> {
     if (!deps.open()) return respond(STATUS.closed);
     try {
@@ -147,7 +147,7 @@ export function createRingApi(deps: RingApiDeps) {
     }
   }
 
-  /** GET /api/ring/board?format= — a format's board, best first (CITY-217). */
+  /** GET /api/ring/board?format= — a format's board, best first. */
   async function board(req: Request): Promise<Response> {
     if (!deps.open()) return respond(STATUS.closed);
     const format = new URL(req.url).searchParams.get("format");

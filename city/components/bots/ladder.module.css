@@ -1,4 +1,4 @@
-/* The ladder before the signature (CITY-219): the sum, what every step gives, each step's price. In the window's
+/* The ladder before the signature: the sum, what every step gives, each step's price. In the window's
    language — dark glass, thin rims, tabular digits; the window's one amber action stays below it. */
 
 .summary {
@@ -86,7 +86,7 @@
   white-space: nowrap;
 }
 
-/* The network in one word before the signature (CITY-233): real SOL in the brand's amber, test SOL quiet. */
+/* The network in one word before the signature: real SOL in the brand's amber, test SOL quiet. */
 .net {
   font-weight: 700;
   color: var(--ice);

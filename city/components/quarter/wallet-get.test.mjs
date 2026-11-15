@@ -4,7 +4,7 @@ import { readFileSync } from "node:fs";
 
 const read = (rel) => readFileSync(new URL(rel, import.meta.url), "utf8");
 
-/* CITY-221: on a phone's browser the top bar's «Connect wallet» said «Get Phantom» — the app store — while Money, Earn
+/* On a phone's browser the top bar's «Connect wallet» said «Get Phantom» — the app store — while Money, Earn
    and the AI chats open Ryntra inside Phantom's own browser. One button, the same way everywhere. */
 test("no wallet in this browser: a phone opens Ryntra in Phantom, a computer gets Phantom — one button", () => {
   const chip = read("./WalletChip.tsx");

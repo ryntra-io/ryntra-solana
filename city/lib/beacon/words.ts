@@ -1,10 +1,10 @@
 import { words } from '../i18n/dict.ts';
 
-/** The words of a beacon: its editor over a tower and its rule in one line (CITY-79). */
+/** The words of a beacon: its editor over a tower and its rule in one line. */
 export const BEACON = words(
   {
     beacon: 'Beacon',
-    /* The tower card's button says what a beacon does (CITY-243: «Beacon» alone was a riddle). */
+    /* The tower card's button says what a beacon does («Beacon» alone was a riddle). */
     beaconAction: 'Alert me',
     beaconOn: (symbol: string) => `Beacon on ${symbol}`,
     close: 'Close',

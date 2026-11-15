@@ -4,7 +4,7 @@ import test from "node:test";
 
 import { FILMS, length, ownPath, readFilm, readFilms } from "./films.ts";
 
-/* CITY-43: the lessons come from our own domain only, from the place the video factory fills — the MP4 and its cover,
+/* The lessons come from our own domain only, from the place the video factory fills — the MP4 and its cover,
    captions beside them. An entry that is not ours whole is dropped, never half-played. */
 
 const PUBLIC = new URL("../../../public/", import.meta.url);

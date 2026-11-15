@@ -257,7 +257,7 @@ export function firstDraft(tower: Pick<TowerRead, "price">): Draft {
     holdSeconds: 0,
     cooldownSeconds: BEACON_COOLDOWN,
     repeat: true,
-    /* Telegram is the person's own choice: off until they turn it on (CITY-72). */
+    /* Telegram is the person's own choice: off until they turn it on. */
     notify: false,
   };
 }

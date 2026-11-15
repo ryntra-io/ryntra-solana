@@ -33,7 +33,7 @@ import { limitWords } from './limit-words.ts';
 import { useEarn } from './open.ts';
 
 /**
- * Sell Higher's state in the Earn window (CITY-97): the market, the side, your price and amount, what the city and the
+ * Sell Higher's state in the Earn window: the market, the side, your price and amount, what the city and the
  * engine let this wallet do, the wallet's orders, the engine's Review of exactly what is on screen, and where an action
  * is. As with the Piers, a Review is built while the card is read, so every figure the person signs is on the card
  * before the one amber tap; one too old to sign is built again and shown first. While the wallet signs or bytes are on
@@ -59,7 +59,7 @@ export const MIN_ORDER_USD = 1;
 export const COST_SHARE = 20;
 /** A little under the ceiling, so the venue's own prices at the Review never land just above it. */
 const CEILING_MARGIN = 0.98;
-/** The unit the amount is typed in: the coin that goes in, or dollars (CITY-190). */
+/** The unit the amount is typed in: the coin that goes in, or dollars. */
 export type AmountUnit = 'coin' | 'usd';
 
 /** How far from now the price field starts. */

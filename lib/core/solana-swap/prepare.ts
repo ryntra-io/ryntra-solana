@@ -224,7 +224,7 @@ async function askVenue(context: SwapPrepareContext): Promise<VenueAsk> {
     const { input, planRecord } = context;
     const planSlippageBps = planRecord ? projectTradingPlan(planRecord, Date.now()).current.rules.execution.maxSlippageBps : undefined;
     const config = resolveServiceFeeConfig();
-    /* The taker's discount as a partner's friend (CITY-182) is read beside the referral: the order is built at that rate, so the Review states it before the wallet opens. */
+    /* The taker's discount as a partner's friend is read beside the referral: the order is built at that rate, so the Review states it before the wallet opens. */
     const [verified, feeDiscountBps] = await Promise.all([verifiedJupiterReferral(config), readRefereeDiscountBps(storeOf(context), input.taker)]);
     const referral = verified.referral;
     /* Fee policy v2 picks the lane and the fee per flow, for the web and the phone alike. */

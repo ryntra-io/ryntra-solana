@@ -1,5 +1,5 @@
 /**
- * What every duel of the Ring shares (CITY-51, decision 72): two seats, rounds played at once. In a round both agents
+ * What every duel of the Ring shares: two seats, rounds played at once. In a round both agents
  * move without seeing the other's move; the harness fixes both, then the round resolves and both moves — with each
  * agent's line of thought — become visible together. So nobody moves first, nobody answers a move it has seen, and the
  * thoughts are shown only after both moves are fixed.

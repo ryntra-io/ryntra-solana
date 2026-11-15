@@ -10,7 +10,7 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 /**
- * The consent page asks for the message the wallet will sign (CITY-154).
+ * The consent page asks for the message the wallet will sign.
  *
  * The server checks the authorization request again — client, redirect, PKCE, resource, scope — and builds the Sign
  * In With Solana message itself, its statement naming the client and saying nothing can move. The client never writes

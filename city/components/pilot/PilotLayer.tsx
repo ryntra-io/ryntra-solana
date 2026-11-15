@@ -20,7 +20,7 @@ const renderCard = () => <PilotCard />;
 const closeCard = () => usePilot.getState().close();
 
 /**
- * The money autopilot in the city's one window frame (CITY-204): «work with my 2 SOL and 100 USDC: some into savings,
+ * The money autopilot in the city's one window frame: «work with my 2 SOL and 100 USDC: some into savings,
  * trade BONK with some, some into pools» from the command line opens it. A run owns the whole screen and a clip being
  * filmed keeps the frame clean, unless the wallet is mid-way, which the frame holds. Shut unless
  * `NEXT_PUBLIC_RYNTRA_CITY_PILOT=open` over the agent's and the mandate's switches.

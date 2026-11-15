@@ -1,4 +1,4 @@
-// CITY-222 — the first action of a newcomer, walked as a newcomer walks it: the first screen → one sentence to the agent
+// The first action of a newcomer, walked as a newcomer walks it: the first screen → one sentence to the agent
 // (the hint, «Ask Ryntra» / ⌘K, Agents → Hire) → the agent's card → the wallet → «Sign» → the agent at work. Desk 1440×900
 // and phone 390×844, English and Ukrainian, three times — a guest (no wallet in the browser: where the way out to a wallet
 // leads and whether it comes back to the card), a wallet (a Wallet-Standard stub that connects and refuses to sign) and a
@@ -220,7 +220,7 @@ for (const size of SIZES) {
           if (await listed.count()) await tap(listed);
           await page.locator("[data-agent-topup]").waitFor({ timeout: 30_000 }).catch(() => step("no Add SOL"));
           await shot("card-add-sol");
-          // CITY-246: short of the budget, the wallet's SOL still buys the coin now — its trade window, the size written in.
+          // Short of the budget, the wallet's SOL still buys the coin now — its trade window, the size written in.
           const buyNow = page.locator("[data-autopilot] [data-agent-buy-now]");
           if (await buyNow.count()) {
             await tap(buyNow);

@@ -65,11 +65,11 @@ export async function resolveInboxLink(store: GuardStore, owner: string, id: str
   const inbox = await inboxOf(store).get(inboxKeyOf(owner, id));
   if (inbox && inbox.owner === owner) {
     await markInboxRead(store, owner, id);
-    /* A reached stop (CITY-149): the city on the stop's coin, its sale opening for the wallet to sign. */
+    /* A reached stop: the city on the stop's coin, its sale opening for the wallet to sign. */
     if (isStopNote(inbox)) return inbox.href;
-    /* An Earn note of the city (CITY-100): the city with Earn open on «Mine». */
+    /* An Earn note of the city: the city with Earn open on «Mine». */
     if (isEarnNote(inbox)) return inbox.href;
-    /* The agent's daily report (CITY-194): the city with the person's agent open. */
+    /* The agent's daily report: the city with the person's agent open. */
     if (isAgentReportNote(inbox)) return inbox.href;
     /* The month's budget spent (1.13.0): Home, the budget's sheet open — its one action, «Змінити бюджет». */
     if (inbox.subject?.kind === "autoinvest-budget") return `${BUDGET_HREF}&from=monitoring`;

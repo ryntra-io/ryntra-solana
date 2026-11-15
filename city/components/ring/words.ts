@@ -1,6 +1,6 @@
 import { words } from '../../lib/i18n/dict.ts';
 
-/** The words of the Ring's screens: a garage's sheet and the screen that makes or changes an agent (CITY-79). */
+/** The words of the Ring's screens: a garage's sheet and the screen that makes or changes an agent. */
 export const RING_UI = words(
   {
     garage: 'Garage',

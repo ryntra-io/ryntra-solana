@@ -8,7 +8,7 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 /**
- * `POST /api/v1/intents/{id}/signed` (1.90.0, CITY-161) — the claiming wallet's signed bytes, handed over by the city
+ * `POST /api/v1/intents/{id}/signed` — the claiming wallet's signed bytes, handed over by the city
  * before the swap engine may send them. The server checks that this wallet pays for them and signed them, keeps only the
  * signature as the claim's mark and sends nothing; from then on the claim is never let go, and the same wallet pressing
  * again is told to read that signature back. Only the city at Ryntra's own origin takes this step.

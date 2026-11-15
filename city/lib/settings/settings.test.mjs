@@ -5,7 +5,7 @@ import { BOLT_START, boltLamports, cleanBolt, cleanSells, defaultTrade, hydrateT
 import { sizingOf, slideAmount, startAmount } from "../trade/size.ts";
 import { SOL, USDC } from "../trade/tiles.ts";
 
-/* CITY-87: the trading choices of the settings window — the ⚡ amount and the sale chips — kept on this device and read
+/* The trading choices of the settings window — the ⚡ amount and the sale chips — kept on this device and read
    by the trade window's own figures. */
 
 const memoryStorage = (initial = {}) => {

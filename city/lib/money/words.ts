@@ -1,6 +1,6 @@
 import { pl, words } from '../i18n/dict.ts';
 
-/** The Money window's tab names, by tab (CITY-79). */
+/** The Money window's tab names, by tab. */
 export const TAB_WORDS = words(
   {
     topup: 'Top up',

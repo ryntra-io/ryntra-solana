@@ -20,8 +20,8 @@ import { GARAGE } from './words';
 import s from './garage.module.css';
 
 /**
- * The agent in the garage of your quarter (CITY-29), mounted with the city's other layers: its window in the city's one
- * frame (CITY-65) — in a bay beside the city on a computer (CITY-84), the bottom sheet on a phone — and, while it shows
+ * The agent in the garage of your quarter, mounted with the city's other layers: its window in the city's one
+ * frame — in a bay beside the city on a computer, the bottom sheet on a phone — and, while it shows
  * towers with the window stepped aside, a small chip back to it. The Deck's «Agents» tray opens it with its «Garage»
  * door, and so does a tap on the garage of your quarter (`GarageOpener`, in place of the garage's sheet). It only reads:
  * your towers, the beacons, the scout — and asks Ryntra for advice within its day's budget.
@@ -99,7 +99,7 @@ function Layer() {
       title: name,
       icon: <AgentGlyph />,
       render: () => <GarageWindow mine={mine} live={live} reminders={list} />,
-      // No towers yet: as tall as its contents (CITY-221); with towers, the report and heads-ups fill the pane.
+      // No towers yet: as tall as its contents; with towers, the report and heads-ups fill the pane.
       fit: mine.length === 0,
       size: { width: 420, height: 640 },
       min: { width: 340, height: 420 },

@@ -13,7 +13,7 @@ const PROTECTED_PATHS = ["/api/", "/admin"];
 /*
  * Where crawlers may go: the city at `/`, the public pages and the
  * documentation. The old interface (`/app/…`, `/uk/app/…`, `/solana/…`,
- * Mission Control) answers nothing but a 308 into the city since CITY-13,
+ * Mission Control) answers nothing but a 308 into the city,
  * with `X-Robots-Tag: noindex` on the way: it is left crawlable on purpose, so
  * a crawler that still holds one of its addresses sees where it went and drops
  * it — a disallowed address keeps its place in an index with no page under it.

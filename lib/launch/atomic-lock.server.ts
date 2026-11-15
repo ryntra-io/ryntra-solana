@@ -116,7 +116,7 @@ export class V1Creation {
     for (const key of keys) this.#bytes = withV1Signature(this.#bytes, key.publicKey.toBase58(), ed25519Sign(readV1(this.#bytes).messageBytes, key));
   }
 
-  /** The one message every signature covers — what a signer that holds no key here (the pool payer, CITY-162) signs. */
+  /** The one message every signature covers — what a signer that holds no key here (the pool payer) signs. */
   messageBytes(): Uint8Array {
     return Uint8Array.from(readV1(this.#bytes).messageBytes);
   }

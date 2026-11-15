@@ -8,7 +8,7 @@ export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
 /**
- * What one wallet may do with limit orders from the city now (CITY-97): the product's own switch — closed, canary or
+ * What one wallet may do with limit orders from the city now: the product's own switch — closed, canary or
  * open, its ceiling and its stop — joined with the engine's gate, which this route only reads. To a wallet the canary
  * does not name, the answer is the same as when closed.
  */

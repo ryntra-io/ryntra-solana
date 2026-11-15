@@ -1,6 +1,6 @@
 import { digits, pl, words } from '../i18n/dict.ts';
 
-/** The words of the moments in the city: the filming bar, the list, the share sheet and the words a person sends (CITY-79). */
+/** The words of the moments in the city: the filming bar, the list, the share sheet and the words a person sends. */
 export const MOMENTS = words(
   {
     filming: (what: string) => `Filming · ${what}`,

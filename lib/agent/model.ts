@@ -393,8 +393,8 @@ export function modelInput(packet: AnswerPacket): Record<string, unknown> {
 export type ModelEnv = Readonly<Record<string, string | undefined>>;
 
 /**
- * The assistant's model over one Responses-shaped client. OpenAI's own client by default; CITY-205 hands in Anthropic's
- * or OpenRouter's through the same shape (`./providers.ts`) with `provider` naming whose models the tasks call.
+ * The assistant's model over one Responses-shaped client. OpenAI's own client by default; Anthropic's or OpenRouter's
+ * is handed in through the same shape (`./providers.ts`) with `provider` naming whose models the tasks call.
  */
 export function createOpenAiAgentModel(input: Readonly<{ env?: ModelEnv; client?: ResponsesParseClient; timeoutMs?: number; provider?: AssistantProvider }> = {}): AgentModel | null {
   const env = input.env ?? process.env;

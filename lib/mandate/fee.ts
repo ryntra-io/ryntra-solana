@@ -1,5 +1,5 @@
 /**
- * CITY-183 — Ryntra's fee on the agent's trades.
+ * Ryntra's fee on the agent's trades.
  *
  * Nothing new is priced here. The rate is fee policy v2's (`../core/fee-policy.ts`), the very table a person's own swap
  * pays by, read off the pair; the fee lands where a person's lands — the fee wallet the registry names
@@ -85,7 +85,7 @@ export const FEE_TRANSFER_TAG = TRANSFER_CHECKED;
 
 /**
  * Whether a policy account was written with Ryntra's fee rule: its constraints name the fee account. A mandate the person
- * signed before CITY-183 has none, and the agent no longer trades for it.
+ * signed before the fee rule has none, and the agent no longer trades for it.
  */
 export function policyCarriesFee(policyData: Uint8Array, budgetMint: PublicKey): boolean {
   const account = agentFeeAccount(budgetMint).toBytes();

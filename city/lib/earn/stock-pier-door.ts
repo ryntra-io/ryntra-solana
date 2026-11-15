@@ -5,7 +5,7 @@ import { QUOTE, STOCK_PIER_SLIPPAGE_BPS, STOCK_PIER_VENUE, depositUsdOf, parseSt
 import type { StockBuildPlan } from './stock-pier-venue.ts';
 
 /**
- * The Stock Pier's door (CITY-98) in front of the engine's Review: whether this wallet may put new money in (the
+ * The Stock Pier's door in front of the engine's Review: whether this wallet may put new money in (the
  * product's switch, canary and stop), whether the stock is one the server verified (and still offers now), whether a
  * corporate step of its multiplier holds new liquidity, the live price the pool is made at, and the ceiling at those
  * prices. Past it, the engine's own Review builds, checks, simulates and seals — with the Stock Pier's venue for the

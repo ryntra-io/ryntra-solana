@@ -1,5 +1,5 @@
 /**
- * A ticker that passes for a known coin's. Two cases (CITY-73):
+ * A ticker that passes for a known coin's. Two cases:
  *   - `lookalike` — the ticker reads as a known one once look-alike letters and digits are folded («S0L», «UЅDC»
  *     with a Cyrillic «Ѕ», «JUР» with a Cyrillic «Р»), but is not written the same;
  *   - `impersonation` — the known ticker exactly, on another mint.

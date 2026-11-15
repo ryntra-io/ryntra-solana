@@ -1,5 +1,5 @@
 /**
- * CITY-204 — the money autopilots: one per wallet and network, kept in the Guard store's `moneyPilots` (a value in the
+ * The money autopilots: one per wallet and network, kept in the Guard store's `moneyPilots` (a value in the
  * same column; no DDL), keyed `p:<cluster>:<owner>`. Public data only: addresses, numbers, signatures, her own words.
  *
  * A plan joins the book only when what it stands on is real: its trade part is a mandate of the agent's book for this

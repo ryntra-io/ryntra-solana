@@ -1,4 +1,4 @@
-// The skyline's plans keep the market's rules (CITY-56): every tower ends exactly at its height, stays inside its width
+// The skyline's plans keep the market's rules: every tower ends exactly at its height, stays inside its width
 // and is the same building on every device.
 //   node --test city/components/city/skyline/plan.test.mjs
 import { test } from "node:test";

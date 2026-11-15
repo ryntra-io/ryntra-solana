@@ -1,5 +1,5 @@
 /**
- * Hack's runs in one instance's memory (CITY-238): a developer's machine, the stand and the tests. Rule for rule the
+ * Hack's runs in one instance's memory: a developer's machine, the stand and the tests. Rule for rule the
  * database's own steps (`supabase/migrations/20261110120000_hack_v2_runs.sql`); each method's body runs without an
  * `await` between its check and its write, so in one process a step is as atomic as under the database's lock. Not
  * `durable`: production runs no agent on it (`../store/ready.ts`).

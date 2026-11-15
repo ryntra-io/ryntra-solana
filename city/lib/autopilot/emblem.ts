@@ -2,7 +2,7 @@ import { shrinkPicture, type Picture } from '../../../lib/launch/picture.client.
 import { emblemHue } from './plan.ts';
 
 /**
- * The coin's picture the agent makes for a launch (CITY-175): a minted coin in the city's light — a glowing body in the
+ * The coin's picture the agent makes for a launch: a minted coin in the city's light — a glowing body in the
  * seed's colour, a bright rim, an engraved ring, the ticker struck in the middle and a glint across it — drawn here in
  * the browser, 512 px square, then shrunk the one way every launch picture is (`shrinkPicture`). It is the person's
  * coin's own face, not a picture of the product; one tap in the launch sheet swaps it for her own.

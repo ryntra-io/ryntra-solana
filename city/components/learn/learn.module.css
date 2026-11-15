@@ -1,6 +1,6 @@
-/* «Learn» (CITY-202): the guide in a window of the city (the frame of CITY-65: a window on a computer, the bottom sheet
+/* «Learn»: the guide in a window of the city (the frame: a window on a computer, the bottom sheet
    on a phone). The chapters on the left, the chapter on the right; dark glass with cut corners, one amber action, the
-   city's own faces and type steps. Tokens from city/styles/city.module.css (CITY-11); the shapes are «How it works»'s
+   city's own faces and type steps. Tokens from city/styles/city.module.css; the shapes are «How it works»'s
    (city/components/how/guides.module.css). */
 
 .display {
@@ -12,7 +12,7 @@
   text-transform: uppercase;
 }
 
-/* A language other than English: the words wait for the frame the boot script hides them in (CITY-79). */
+/* A language other than English: the words wait for the frame the boot script hides them in. */
 :global(html.city-lang-wait) .body {
   visibility: hidden;
 }

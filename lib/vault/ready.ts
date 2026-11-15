@@ -36,7 +36,7 @@ export const VAULT_ENV = {
   ceiling: "RYNTRA_VAULT_DAILY_USD",
   /** The vault's own OpenRouter key; best made with a daily limit of the same dollars in OpenRouter. */
   key: "RYNTRA_VAULT_OPENROUTER_KEY",
-  /** The shared key of the model gateway (CITY-45), used when the vault has no key of its own. */
+  /** The shared key of the model gateway, used when the vault has no key of its own. */
   sharedKey: "OPENROUTER_API_KEY",
   /** `stub` plays the scripted guards on a developer's machine or a stand; never in production. */
   guard: "RYNTRA_VAULT_GUARD",

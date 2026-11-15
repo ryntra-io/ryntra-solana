@@ -1,6 +1,6 @@
 // Run from repo root: node --test city/lib/arena/hack/ranges/ranges.test.mjs
 /*
- * CITY-238: an order's checks as data, the ranges they are kept in, the deployment's own training ranges and the known
+ * An order's checks as data, the ranges they are kept in, the deployment's own training ranges and the known
  * moves on them. No engine is needed here: a check is run against accounts as an engine would hand them over. The same
  * ranges on LiteSVM, on a machine with no network, are `../machine/check.mjs` and the stand.
  */

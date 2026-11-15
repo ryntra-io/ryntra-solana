@@ -1,6 +1,5 @@
 /**
- * Each agent's and each guard's own OpenRouter key with a dollar limit
- * (CITY-45, decision 72) — OpenRouter's management API (`/api/v1/keys`),
+ * Each agent's and each guard's own OpenRouter key with a dollar limit — OpenRouter's management API (`/api/v1/keys`),
  * called with `OPENROUTER_MANAGEMENT_KEY`. A spent limit stops that one
  * subject (403 «Key limit exceeded» → `budget_exhausted`), never the others.
  *

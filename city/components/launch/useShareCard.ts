@@ -13,7 +13,7 @@ import { postCard, touchScreen, type PostOutcome } from '@/city/lib/share/post';
 const SAVED_MS = 6_000;
 
 /**
- * One tap from a launch's card to a post (L8 · CITY-145): the card is drawn from the frame and the engine's figures at
+ * One tap from a launch's card to a post: the card is drawn from the frame and the engine's figures at
  * the tap, then goes to the app's or the phone's share sheet, or — on a computer — is saved while X opens with the
  * words and the link. `making` names the card being made, so only its button waits; `saved` asks for the one line.
  */

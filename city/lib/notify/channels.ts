@@ -1,5 +1,5 @@
 /**
- * The centre's line to the engine's notification channels (CITY-87): the same routes the Ryntra app calls, on the same
+ * The centre's line to the engine's notification channels: the same routes the Ryntra app calls, on the same
  * origin, under the wallet's proof (contract 1.11.0), unchanged.
  *
  * - `/api/v1/notifications/telegram` — whether a Telegram chat is connected (its handle, never its id), the bot's

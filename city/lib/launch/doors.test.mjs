@@ -30,7 +30,7 @@ const wire = (tx) => tx.serialize({ requireAllSignatures: false, verifySignature
 
 /* ---------------------------------------------------------------- «Share earnings»: the rules */
 
-test("the share door opens behind its switch where the engine shares typed wallets: the stand, mainnet only on typed shares", () => {
+test("the share door opens behind its switch where the engine shares typed wallets: the stand, and mainnet only where the engine opens typed shares", () => {
   assert.equal(CITY_SHARE_SWITCH, false, "the city's switch is closed unless a deployment opens it");
   assert.equal(shareOpen("solana:devnet"), false, "closed by default");
   assert.equal(shareOpen("solana:devnet", undefined, true), true);
@@ -39,7 +39,7 @@ test("the share door opens behind its switch where the engine shares typed walle
   assert.equal(shareOpen("solana:mainnet", true, true), true);
   assert.equal(shareOpen("solana:mainnet", true, false), false, "the switch shuts it on mainnet too");
   assert.equal(shareOpen(null, true, true), false);
-  assert.equal(TYPED_SHARES_OWNER_WORD, true, "the opening word of 9.11, after the fork and devnet passes (CITY-234)");
+  assert.equal(TYPED_SHARES_OWNER_WORD, true, "the opening word of 9.11, after the fork and devnet passes");
   assert.match(read("city/lib/launch/share.ts"), /ownerWord: boolean = TYPED_SHARES_OWNER_WORD/, "the door reads the engine's own word");
   assert.doesNotMatch(read("city/lib/launch/share.ts"), /CREW_OWNER_WORD/, "the crews' word is not the door's");
 });
@@ -251,7 +251,7 @@ const NOW = Math.floor(Date.parse("2026-11-06T12:00:00Z") / 1000);
 
 test("the early door stays shut by default, and on mainnet whatever the engine says", () => {
   assert.equal(CITY_EARLY_ACCESS_SWITCH, false, "the city's switch is closed unless a deployment opens it");
-  assert.equal(CITY_EARLY_ACCESS_MAINNET, true, "the opening word of 9.11, after the fork and devnet passes (CITY-234)");
+  assert.equal(CITY_EARLY_ACCESS_MAINNET, true, "the opening word of 9.11, after the fork and devnet passes");
   assert.equal(earlyDoorOpen("solana:devnet", DEVNET_EARLY_ACCESS_BOUNDS), false, "closed by default");
   assert.equal(earlyDoorOpen("solana:devnet", DEVNET_EARLY_ACCESS_BOUNDS, true), true);
   assert.equal(earlyDoorOpen("solana:devnet", null, true), false, "the engine names no bounds");

@@ -1,10 +1,10 @@
 /**
- * CITY-174 — the mandate's rules, read the way the program reads them, before a trade is signed.
+ * The mandate's rules, read the way the program reads them, before a trade is signed.
  *
  * The chain is the authority: whatever this file says, the smart account program checks the same constraints again and
  * refuses what breaks them. This copy exists so that the agent never signs, and never pays the fee for, a trade the
  * chain would refuse — and so that the agent's signer refuses a message outside the mandate on its own (defence in
- * depth, CITY-162's rule: the bytes are read again, whatever the caller says they do). The day's cap is the one rule
+ * depth, the rule: the bytes are read again, whatever the caller says they do). The day's cap is the one rule
  * left to the chain alone: it needs the policy's usage.
  */
 

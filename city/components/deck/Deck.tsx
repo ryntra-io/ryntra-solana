@@ -166,7 +166,7 @@ function openVault(): void {
   void vaultStore.getState().enter();
 }
 
-/** The hangar: your agent on the Arena's «Agent» tab, made right there when there is none yet (CITY-217). */
+/** The hangar: your agent on the Arena's «Agent» tab, made right there when there is none yet. */
 const openHangar = () => toggleArena('agent');
 
 /**
@@ -174,8 +174,7 @@ const openHangar = () => toggleArena('agent');
  * — every place on its spot, the ones not open yet with «Soon». Spot, Agents and the Arena open a tray of their doors;
  * Futures in Spot's tray leads to RXN once it is live, or to Phoenix while the wallet still holds something there. An
  * arrow on its edge hides it; another brings it back. Nothing here signs or moves money: each place opens its own window
- * — Agents' «Bots» the bots window (CITY-134), where the scout is one of the bots, and «Garage» the garage agent's window
- * (CITY-29).
+ * — Agents' «Bots» the bots window, where the scout is one of the bots, and «Garage» the garage agent's window.
  */
 export function Deck() {
   const w = useWords(DECK);
@@ -186,10 +185,10 @@ export function Deck() {
   const [soon, setSoon] = useState<Place | null>(null);
   const ref = useRef<HTMLElement>(null);
   const trayRef = useRef<HTMLDivElement>(null);
-  // The open tray's place on the screen (CITY-242): its middle over the place pressed, its foot where it always stood
+  // The open tray's place on the screen: its middle over the place pressed, its foot where it always stood
   // over the Deck. Null until it is measured.
   const [trayAt, setTrayAt] = useState<Readonly<{ x: number; bottom: number }> | null>(null);
-  // The tray stands in a layer of its own over the city's windows (CITY-242), as the wallet's and the events' panels
+  // The tray stands in a layer of its own over the city's windows, as the wallet's and the events' panels
   // do: a window as tall as the workspace stood over it. Drawn into the city's own root, where its tokens are.
   const [root, setRoot] = useState<HTMLElement | null>(null);
   useLayoutEffect(() => setRoot(ref.current?.closest('main') ?? document.body), []);
@@ -210,9 +209,9 @@ export function Deck() {
 
   const on: Switches = {
     launch: launch.open,
-    // Earn's own window (CITY-92) where its switch is open; until then the Harbor stands in for it.
+    // Earn's own window where its switch is open; until then the Harbor stands in for it.
     earn: EARN_OPEN || HARBOR_OPEN,
-    // «Охорона» (CITY-152): the pre-sign check's window, behind its own switch until the operator opens it.
+    // «Охорона»: the pre-sign check's window, behind its own switch until the operator opens it.
     guard: GUARD_OPEN,
     money: MONEY_OPEN,
     trade: TRADE_OPEN,
@@ -221,11 +220,11 @@ export function Deck() {
     futures: futuresWay(EXCHANGE_MODE, RXN_OPEN, false),
     hangar: RING_OPEN,
     bots: AGENTS_OPEN,
-    // The garage agent (CITY-29): a character without money — reports, heads-ups and advice; behind its own switch.
+    // The garage agent: a character without money — reports, heads-ups and advice; behind its own switch.
     garage: GARAGE_OPEN,
-    // The Ring (CITY-217): the Arena's window — the fight where the duels' own switch is open too, the agent, the board.
+    // The Ring: the Arena's window — the fight where the duels' own switch is open too, the agent, the board.
     ring: RING_OPEN,
-    // Hack (CITY-227): the Arena's third door, behind its own switch until it is opened.
+    // Hack: the Arena's third door, behind its own switch until it is opened.
     hack: HACK_OPEN,
     vault: VAULT_OPEN,
   };
@@ -374,7 +373,7 @@ export function Deck() {
         data-deck-place={place}
         onClick={() => go(place)}
       >
-        {/* A place not open yet is dimmed, no tag: a tap says «opens soon» (CITY-188). */}
+        {/* A place not open yet is dimmed, no tag: a tap says «opens soon». */}
         {soon === place && <span className={s.bubble}>{w.opensSoon(label)}</span>}
         {center ? (
           <span className={s.diamondBox}>

@@ -16,8 +16,8 @@ import { LAUNCH } from './words';
 /**
  * The Hall of Fame in the city: two billboard masts on the plaza, one each side of the Sol Spire and clear of it, their
  * signs facing the establishing shot. Billboards are neutral structures — never hung on a coin's tower, where they
- * would read as a word about that coin. A sign stands only on a board with a leader (CITY-241, `hall-signs.ts`): its
- * board's name, the span its rows are of («This week», «This month», «All time» — a quiet week reaches back, CITY-230),
+ * would read as a word about that coin. A sign stands only on a board with a leader (`hall-signs.ts`): its
+ * board's name, the span its rows are of («This week», «This month», «All time» — a quiet week reaches back),
  * the leader's number, its coin and one word for what the number is — nothing small; the table, the details and an
  * empty board's «Launch yours» are the panel's (`HallLayer`). A mast stands only under a sign, as tall as its top
  * sign. A tap on a sign opens the panel on that board (`hall-tap.ts`).

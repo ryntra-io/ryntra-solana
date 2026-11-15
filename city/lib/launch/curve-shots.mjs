@@ -1,6 +1,6 @@
-// CITY-139 for review: a launch tower's window (Buy and Sell are CITY-138's, `trade-shots.mjs`), «Report», a coin Ryntra
+// For review: a launch tower's window, «Report», a coin Ryntra
 // took down, the review's «Bot shield» and a picture the image check refused — at 1440×860 and 390×844
-// → <out>/curve-<state>-<size>.png. The creator's claim is «Мій причал» (CITY-141).
+// → <out>/curve-<state>-<size>.png. The creator's claim is «Мій причал».
 //   node city/lib/launch/curve-shots.mjs [out] [baseUrl]      (npm run dev running; PRESS_CHROME may point at a Chromium)
 // Everything runs on the development stand-in (`?launch=stub`): devnet-shaped answers, a stub wallet, nothing sent.
 import { chromium } from "playwright";

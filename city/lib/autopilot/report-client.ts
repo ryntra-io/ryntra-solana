@@ -5,7 +5,7 @@ import { clockOf, REPORT_HOUR, worthTelling, type Lang } from './report.ts';
 import { readAgentView, useAutopilot } from './store.ts';
 
 /**
- * The agent's day in the page (CITY-194): when this browser last saw the agent (kept per mandate on this device), the
+ * The agent's day in the page: when this browser last saw the agent (kept per mandate on this device), the
  * card «While you were away: 3 trades, +0.012 SOL» on the person's return — once, when the agent traded since — and
  * her daily report's one switch, kept on Ryntra's server under her wallet's own proof. Nothing here counts money: the
  * figures are the agent's book's (`/api/bots/mandate/agent?since=`).

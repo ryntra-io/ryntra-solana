@@ -1,7 +1,7 @@
 import { pl, words } from '../../../lib/i18n/dict.ts';
 
 /**
- * The words of Hack's window (CITY-227), beside the door's own (`city/lib/arena/hack/words.ts`, CITY-223): the tabs, an
+ * The words of Hack's window, beside the door's own (`city/lib/arena/hack/words.ts`): the tabs, an
  * order's card, the run step by step, a finding's card, the board, the empty states and every refusal with its way on.
  * Short on the first screen; the figures and the technical words («fork», a slot, a journal) only behind «i».
  */

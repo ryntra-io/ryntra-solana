@@ -4,7 +4,7 @@ import { earlyAccessSchedule, presaleBpsOf, type EarlyAccessRules } from '../../
 import type { Network } from './engine.ts';
 
 /**
- * An early-access creation, read before the wallet sees it (CITY-212): the network the sheet is on, three transactions
+ * An early-access creation, read before the wallet sees it: the network the sheet is on, three transactions
  * in their order — the mint, the pool, the vault —, each paid for by the creator and signed by nobody the city does not
  * know, and the schedule and the vault's share exactly the ones the rules the sheet sent make. The engine reads every
  * instruction back before it answers (`earlyAccessCreationProblems`); this is the city's own look, so bytes for another

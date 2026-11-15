@@ -2,7 +2,7 @@ import type { Building, Id, PublicBuilding, Quarter } from "./contract";
 import { QUARTER_SLOTS, openSlots } from "./catalog";
 
 /**
- * Free building on a quarter (CITY-55, decision 72): small pieces on a grid, as in Townscaper — put one down, turn
+ * Free building on a quarter: small pieces on a grid, as in Townscaper — put one down, turn
  * it, take it off; the city fits each piece to its neighbours when it draws them. A layout is cosmetic and nothing
  * else: it never pays points, never moves a task of the day and never touches money (`docs/city/FREE-BUILD.md`).
  *
@@ -94,23 +94,22 @@ export const MAX_SIGN_TEXT = 12;
 /* ----------------------------------------------------------------- signs -- */
 
 const INVISIBLE = /[\p{Cc}\p{Cf}\p{Zl}\p{Zp}\p{Co}\p{Cn}]/u;
-/** Until CITY-73 cleans foreign text, a sign holds only plain letters, digits and a few marks. */
+/** A sign holds only plain letters, digits and a few marks. */
 const PLAIN = /^[\p{Script=Latin}\p{Script=Cyrillic}0-9 .,!?&'-]+$/u;
 
 /**
- * The one place a sign's words are let in. CITY-73 («чужий текст у місті безпечний») replaces the body of this
- * function with its cleaner when it is merged; until then a sign takes at most 12 plain characters and nothing else,
- * and nobody but its owner sees them (`publicLayout`).
+ * The one place a sign's words are let in. A sign takes at most 12 plain characters and nothing else, and nobody but
+ * its owner sees them (`publicLayout`) — until the cleaner of foreign text replaces the body of this function.
  */
 export function signText(raw: unknown): { ok: true; text: string } | { ok: false } {
   if (typeof raw !== "string") return { ok: false };
   const text = raw.normalize("NFC").replace(/\s+/g, " ").trim();
-  // CITY-73: call the city's text cleaner here once it is merged.
+  // Call the city's text cleaner here once it is merged.
   if (text.length === 0 || [...text].length > MAX_SIGN_TEXT || INVISIBLE.test(text) || !PLAIN.test(text)) return { ok: false };
   return { ok: true, text };
 }
 
-/** Whether people other than the owner may read a sign's words. False until CITY-73's cleaner stands in `signText`. */
+/** Whether people other than the owner may read a sign's words. False until the cleaner stands in `signText`. */
 export const SIGN_TEXT_PUBLIC = false;
 
 /* ---------------------------------------------------------------- checks -- */
@@ -260,7 +259,7 @@ export function fitToQuarter(pieces: readonly Piece[], level: number, buildings:
 }
 
 /**
- * The deployment's switch for free building (CITY-55): `NEXT_PUBLIC_RYNTRA_CITY_FREE_BUILD=open`, closed when not set.
+ * The deployment's switch for free building: `NEXT_PUBLIC_RYNTRA_CITY_FREE_BUILD=open`, closed when not set.
  * Closed, the quarter shows no «Free build», reads no layout, and `/api/world/layout` answers 404. Open it only after
  * the owner applied the migration `20261028150000_quarter_layout.sql`.
  */

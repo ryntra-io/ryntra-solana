@@ -1,8 +1,10 @@
-// The X calendar (CITY-41): 3–5 posts a day, never the same format twice in a row, words that keep the brand's voice.
+// The X calendar: 3–5 posts a day, never the same format twice in a row, words that keep the brand's voice.
 //   node --test "city/lib/x/*.test.mjs"
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import test from 'node:test';
+
+import { inDevelopmentRepository, needsDevelopmentRepository } from '../../../lib/development-repository.mjs';
 
 import {
   DAYS,
@@ -77,7 +79,7 @@ test('every format in the week is defined, every defined format is used, rituals
   assert.deepEqual([...used].sort(), Object.keys(FORMATS).sort());
   for (const [id, f] of Object.entries(FORMATS)) {
     assert.equal(f.id, id);
-    assert.match(f.template, /^x\.[a-z-]+\.[a-z0-9-]+$/, `${id}: template id is a string for the CITY-38 factory`);
+    assert.match(f.template, /^x\.[a-z-]+\.[a-z0-9-]+$/, `${id}: template id is a string for the studio's factory`);
     assert.ok(f.texts.length > 0);
     if (f.pick.fallback) assert.ok(FORMATS[f.pick.fallback], `${id} falls back to a defined format`);
   }
@@ -112,11 +114,12 @@ test('every template text keeps the voice once filled, and names the market data
 
 // The brandbook's list, read from the brandbook itself (its voice section), so a word added there is a word NEVER must
 // catch; the product's forbidden words for posts come on top. Read as text: a city test imports nothing from scripts/.
-const BRANDBOOK = readFileSync(new URL('../../../docs/city/brand/BRANDBOOK.md', import.meta.url), 'utf8');
+// The brandbook is a document of the development repository: where the code stands without it, this one test is skipped.
+const BRANDBOOK = inDevelopmentRepository ? readFileSync(new URL('../../../docs/city/brand/BRANDBOOK.md', import.meta.url), 'utf8') : '';
 const BANNED = [...(BRANDBOOK.split('\n').find((l) => l.startsWith('Слова, яких місто не каже:')) ?? '').matchAll(/«([^»]+)»/g)].map((m) => m[1]);
 const FORBIDDEN = ['unruggable', 'floor price', 'guaranteed', 'passive income', '100x', 'degen', 'ryntra arc'];
 
-test('the city\'s never-words include every word the brandbook bans and every forbidden word of a post', () => {
+test('the city\'s never-words include every word the brandbook bans and every forbidden word of a post', { skip: needsDevelopmentRepository('the brandbook under docs/city/brand/') }, () => {
   assert.ok(BANNED.length >= 10, `the brandbook's list was read (${BANNED.length} words)`);
   for (const w of [...BANNED, ...FORBIDDEN]) assert.deepEqual(neverIn(`say ${w} here`), [w], `NEVER misses "${w}"`);
   assert.ok(NEVER.global, 'neverIn finds every word, not the first');

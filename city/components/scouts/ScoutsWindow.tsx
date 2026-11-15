@@ -290,7 +290,7 @@ function Rules({ view, sol }: { view: ScoutsView; sol: number | null }) {
       <dt>{w.paidIn}</dt>
       <dd>{w.paidInSoon}</dd>
       <dd className={s.rulesFoot}>{w.rulesFoot}</dd>
-      {/* The partner programme (CITY-126): the whole offer and «Мій район», one tap away. */}
+      {/* The partner programme: the whole offer and «Мій район», one tap away. */}
       <dd className={s.rulesFoot}>
         <button
           type="button"

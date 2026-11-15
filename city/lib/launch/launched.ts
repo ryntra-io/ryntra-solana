@@ -1,7 +1,7 @@
 import type { LaunchTower } from './towers.ts';
 
 /**
- * «Launched on Ryntra» (CITY-185): every coin launched on Ryntra's launchpad, as one list a link can open
+ * «Launched on Ryntra»: every coin launched on Ryntra's launchpad, as one list a link can open
  * (`ryntra.io/launches`). The launches are the district's own feed — the engine's `GET /api/v1/launch/markets` and the
  * markets it reads behind it — with this browser's just-launched coin ahead of the engine's list; nothing here is read
  * twice and nothing is guessed: a figure the engine has not read is left off the card, never shown as a zero.
@@ -49,7 +49,7 @@ export function cardOf(launch: LaunchTower): LaunchedCard {
 /**
  * The list: people's launches, this browser's own first, then the biggest market cap, then the newest; a launch whose
  * market cap is not read yet after the read ones. Ryntra's technical launches apart, newest first. A launch the city
- * cannot name (its ticker held, CITY-73) is not listed.
+ * cannot name (its ticker held) is not listed.
  */
 export function launchedList(launches: readonly LaunchTower[]): LaunchedList {
   const named = launches.filter((launch) => launch.symbol !== '');

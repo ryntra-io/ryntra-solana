@@ -4,7 +4,7 @@ import type { ExchangeMode } from '../exchange/flag.ts';
  * The city's menu, the Deck: seven places on fixed
  * spots — Launch · Exchange · Earn on the left, Agents the diamond in the middle, Arena · Guard · Money on the right. A
  * place whose switch is closed stays on its spot with «Soon»; nothing moves when it opens. Exchange, Agents and the Arena
- * open a tray of their open doors — a door not open yet is not shown (CITY-188: no row of «Soon»), a tray with one open
+ * open a tray of their open doors — a door not open yet is not shown (no row of «Soon»), a tray with one open
  * door opens it straight away, and a tray with none is a shut place. The Exchange's place keeps its id `spot` (addresses,
  * tests, the phone's shots).
  */
@@ -20,10 +20,10 @@ export type Door = 'swap' | 'spot' | 'futures' | 'hangar' | 'bots' | 'garage' | 
 
 /** The places that open a tray, and their doors in order. */
 export const TRAYS = {
-  // «Обмін»: Swap · Spot — the bridge is Money's Send to another network now (CITY-155);
+  // «Обмін»: Swap · Spot — the bridge is Money's Send to another network now;
   // Futures only as the door out to RXN, once it is live.
   spot: ['swap', 'spot', 'futures'],
-  // The agents at work: the Ring's agent in its hangar (CITY-50), the bots (CITY-134), the garage agent (CITY-29).
+  // The agents at work: the Ring's agent in its hangar, the bots, the garage agent.
   agents: ['hangar', 'bots', 'garage'],
   arena: ['ring', 'hack', 'vault'],
 } as const satisfies Partial<Record<Place, readonly Door[]>>;
@@ -59,7 +59,7 @@ export type Switches = Readonly<{
   futures: FuturesWay;
   hangar: boolean;
   bots: boolean;
-  /** The garage agent's window (CITY-29). */
+  /** The garage agent's window. */
   garage: boolean;
   ring: boolean;
   hack: boolean;
@@ -86,7 +86,7 @@ export function doorsOf(tray: Tray, on: Switches): Door[] {
 
 /**
  * The Arena's hint under the cursor: the names of its open doors only — «Ring and Vault», and «Ring, Hack and Vault»
- * once the Hack opens (CITY-236: the hint named the Hack behind a closed door). Null when no door is open.
+ * once the Hack opens (the hint named the Hack behind a closed door). Null when no door is open.
  */
 export function doorsHint(names: readonly string[], and: string): string | null {
   if (!names.length) return null;

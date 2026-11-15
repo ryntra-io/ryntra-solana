@@ -12,7 +12,7 @@ export const dynamic = "force-dynamic";
 export const maxDuration = 60;
 
 /**
- * `/api/admin/partner-payouts` (CITY-128) — the operator's weekly payout to partners, on the payout's own network
+ * `/api/admin/partner-payouts` — the operator's weekly payout to partners, on the payout's own network
  * (`RYNTRA_PARTNER_PAYOUTS_NETWORK`): the treasury page's public switch stays off, and its old page stays closed.
  *
  * - `GET` — every week's statement, newest first: what each partner earned, what the week pays, what is carried.
@@ -20,7 +20,7 @@ export const maxDuration = 60;
  *   week's one Squads proposal (the treasury's payout batch, SOL-4), a vote «for» it, or its execution — only on the
  *   payout's multisig, only at the week's own proposal.
  * - `POST { act: "submit", buildId, wallet, signedWireBase64 }` — what the wallet signed, sent by the treasury's submit.
- * The server signs nothing: the wallet's own signature is the operator's act, so the operator's session is enough.
+ * The server signs nothing: the wallet's own signature is the act, so an operator's session is enough.
  */
 const json = (body: Record<string, unknown>, status = 200) => NextResponse.json(body, { status, headers: privateNoStoreHeaders() });
 

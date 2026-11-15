@@ -12,10 +12,10 @@ export const dynamic = "force-dynamic";
 export const maxDuration = 30;
 
 /**
- * CITY-187 — sell what the agent bought: `POST` the person's wallet, her agent's mandate and a share (25, 50, 100 %); the
+ * Sell what the agent bought: `POST` the person's wallet, her agent's mandate and a share (25, 50, 100 %); the
  * answer is the figures — the coin sold, Ryntra's fee, the venue's quote and her floor — and her one unsigned transaction:
  * the coin into her vault under a sale's mandate, her sold sales' mandates removed. On devnet through the gate's pool, on
- * mainnet through Jupiter (CITY-195). This route never signs: it has no key.
+ * mainnet through Jupiter. This route never signs: it has no key.
  */
 
 const Base58 = z.string().regex(/^[1-9A-HJ-NP-Za-km-z]{32,44}$/);

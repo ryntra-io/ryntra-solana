@@ -3,7 +3,7 @@ import { wordsNow } from '../i18n/dict.ts';
 import { TERMS_WORDS } from './words.ts';
 
 /**
- * The launch windows' clock on the launch sheet (CITY-143, `docs/research/ryntra-launch-2026-10-29/SPEC.md` §10): the
+ * The launch windows' clock on the launch sheet (`docs/research/ryntra-launch-2026-10-29/SPEC.md` §10): the
  * engine's published schedule (`lib/core/launch/windows.ts`, the same as `GET /api/v1/launch/windows`) read on the
  * device's clock. Only a show: a launch goes out whenever its creator signs, and the clock promises no fairer start —
  * the equal start is each curve's own fee for bots.
@@ -28,7 +28,7 @@ export function clockText(ms: number): string {
   return hours > 0 ? `${hours}:${String(minutes).padStart(2, '0')}:${seconds}` : `${minutes}:${seconds}`;
 }
 
-/** What the clock is, under it (CITY-243): a launch goes out at any time, the window or not. */
+/** What the clock is, under it: a launch goes out at any time, the window or not. */
 export function windowAnyTime(): string {
   return wordsNow(TERMS_WORDS).windowAnyTime;
 }

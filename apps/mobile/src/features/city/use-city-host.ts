@@ -40,7 +40,7 @@ const NO_WALLET: HostWallet = {
 }
 
 /**
- * The city's bridge under the app (CITY-6c): `createCityHost` on the app's own wallet (`useWallet`, Mobile Wallet
+ * The city's bridge under the app: `createCityHost` on the app's own wallet (`useWallet`, Mobile Wallet
  * Adapter), Android's share sheet and the system's browser. `post` is the WebView's `postMessage`, stable for the
  * screen's life. The host lives as long as the screen and is handed the wallet of each render, never one a render
  * closed over; the page hears `wallet.changed` whenever the app's wallet changes, wherever the change was made.

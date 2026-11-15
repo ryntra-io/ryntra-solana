@@ -17,7 +17,7 @@ import { LAUNCH } from './words';
  * The Hall of Fame's panel over the city: the boards as one compact table — who, coin, the number and an ↗ to what it
  * rests on — each over its week, or the span a quiet week reached back over, said beside the title. One amber action:
  * fly to the lead coin's tower when it stands in the city, else open what the lead number rests on; on a board nobody
- * is on even over all time, «Launch yours» (CITY-230). What each number is, its period, the span's tally and when the
+ * is on even over all time, «Launch yours». What each number is, its period, the span's tally and when the
  * engine read it sit behind one quiet «i». A board without a public source is not shown.
  */
 export function HallLayer() {

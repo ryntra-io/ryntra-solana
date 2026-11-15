@@ -4,7 +4,7 @@ import test from "node:test";
 
 import { feeNear, pairLamports, usdLamports } from "./fee-near.ts";
 
-// CITY-243: «Claim» warns in one line when the network's fee comes close to the sum; the sum and the claim stay as built.
+// «Claim» warns in one line when the network's fee comes close to the sum; the sum and the claim stay as built.
 
 test("a fee far under the sum says nothing; from half of it, close; from all of it, over", () => {
   assert.equal(feeNear(1_000_000, 10_000), null);

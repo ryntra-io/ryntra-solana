@@ -1,7 +1,7 @@
--- Ryntra City: the X publisher's ledger (task CITY-39).
+-- Ryntra City: the X publisher's ledger.
 --
--- PREPARED 2026-10-27 as a file only. Not applied to any Supabase project:
--- It needs the drafts queue of CITY-3 first
+-- PREPARED 2026-10-27 as a file only. Not applied to any Supabase project.
+-- It needs the drafts queue first
 -- (`20261027150000_city_moments_drafts_v1.sql`). Checked on a throwaway local
 -- PostgreSQL 16 with the Supabase roles and a hostile default-grant posture
 -- (see `city/lib/x/sql.test.mjs`).

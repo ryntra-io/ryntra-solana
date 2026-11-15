@@ -1,5 +1,5 @@
 /**
- * CITY-175 — the agent at work: one pass over its book, on the gate's network. For each mandate it works for, it reads what stands on
+ * The agent at work: one pass over its book, on the gate's network. For each mandate it works for, it reads what stands on
  * chain, asks the strategy (`./strategy.ts`) and, when a buy is due, makes it end to end — the venue's instruction for
  * the vault, inside the person's policy, judged and signed by the agent's own signer (`./signer.server.ts`), sent through
  * our RPC and read back (`./run.server.ts`). What happened goes into the book, the coins bought land in the person's
@@ -10,12 +10,12 @@
  * its own: a refusal is the chain's answer, written down, and the next slot is the next try. Just before each buy it
  * asks `autostop` (`./strategy.ts`) with the chain's figures: whether what it bought is losing, and whether it can see.
  *
- * The book never loses a trade (CITY-179). A trade is written down with its signature before it is sent, so a function
+ * The book never loses a trade. A trade is written down with its signature before it is sent, so a function
  * killed right after sending leaves a row the next pass reads; until the chain has answered, no new buy. A row is called
  * «did not land» only when the RPC answered it has none and the blockhash is past its end; a read that failed is no answer.
  *
  * The key is the agent's alone, handed in as a `KeySigner` (the switch of `./agent-service.server.ts`: the deployment's
- * on devnet, or in KMS — CITY-179); this file reads no environment and holds no key.
+ * on devnet, or in KMS); this file reads no environment and holds no key.
  */
 
 import { PublicKey, type AddressLookupTableAccount, type Connection, type TransactionInstruction } from "@solana/web3.js";
@@ -38,7 +38,7 @@ import { storeScreen, type AgentScreen } from "./ryntra-coins.server.ts";
 import { readPolicyHead, refusalOf } from "./ssa.ts";
 import { AUTOSTOP, autostop, decide, steadyRhythm, type AgentTrade, type PauseReason } from "./strategy.ts";
 
-/** A dip's or a grid's price is read at most this often (CITY-193): the day's high from about 144 marks. */
+/** A dip's or a grid's price is read at most this often: the day's high from about 144 marks. */
 export const MARK_EVERY_MS = 10 * 60_000;
 /** The marks a mandate keeps: the last day's, at most this many. */
 export const MARKS_KEPT = 160;
@@ -64,7 +64,7 @@ export type VenueBuy = Readonly<{
   /** The fee as its own instruction, where the venue does not carry it (devnet). */
   fee?: TransactionInstruction;
   lookupTables?: readonly AddressLookupTableAccount[];
-  /** The coin bought as the venue read it, and the chain's epoch when it withholds a transfer fee: its rate is the epoch's (CITY-184). */
+  /** The coin bought as the venue read it, and the chain's epoch when it withholds a transfer fee: its rate is the epoch's. */
   coin?: Coin;
   epoch?: bigint;
 }>;
@@ -85,7 +85,7 @@ export type TickDeps = Readonly<{
   key: KeySigner;
   journal: AgentJournal;
   venue: Venue;
-  /** CITY-196: what the agent never buys and whom it never trades with; the store's own registry when not handed in. */
+  /** What the agent never buys and whom it never trades with; the store's own registry when not handed in. */
   screen?: AgentScreen;
   now?: () => number;
   /** The one trade, end to end — `./run.server.ts` `agentTrade`; the tests hand in their own chain. */
@@ -151,7 +151,7 @@ export async function settled(trades: readonly AgentTrade[], connection: Pick<Co
 }
 
 /**
- * Her account of the coin under its own program: a coin of Token-2022 lives in her Token-2022 account (CITY-184). A mint
+ * Her account of the coin under its own program: a coin of Token-2022 lives in her Token-2022 account. A mint
  * not read is no guess at Token's account — what reached her would be read off the wrong one; the pass leaves it unknown.
  */
 async function receiverOf(deps: TickDeps, owner: PublicKey, coin: PublicKey): Promise<PublicKey> {
@@ -167,7 +167,7 @@ async function coinOf(deps: TickDeps, owner: PublicKey, coin: PublicKey): Promis
 }
 
 /**
- * CITY-193: the price now for a dip or a grid — what one whole coin fetches at the venue, the very quote the autostop
+ * The price now for a dip or a grid — what one whole coin fetches at the venue, the very quote the autostop
  * reads — added to the marks at most every `MARK_EVERY_MS`, the last day's kept. A quote not read adds nothing.
  */
 export async function withMark(marks: readonly Mark[], at: number, quote: () => Promise<bigint>): Promise<readonly Mark[]> {
@@ -206,7 +206,7 @@ export async function runAgentPass(deps: TickDeps): Promise<readonly PassLine[]>
   let traded = 0;
   const started = now();
   const book = await readBook(deps.store, deps.gate.network);
-  /* CITY-70: her «Freeze» switches, read once; a list not read is no switch off — nothing new is bought this pass. */
+  /* Her «Freeze» switches, read once; a list not read is no switch off — nothing new is bought this pass. */
   const frozen = await frozenOn(deps.store, deps.gate.network).catch(() => null);
   for (const entry of book) {
     if (lines.length > 0 && now() - started >= PASS_STARTS_WITHIN_MS) break;
@@ -269,9 +269,9 @@ async function workFor(given: BookEntry, deps: TickDeps, now: () => number, trad
   /* Taken back by the person: from her one signature on, the agent leaves this mandate alone. */
   const policy = await deps.connection.getAccountInfo(mandate.policy, "confirmed");
   if (!policy) return settle(deps.store, given, "stopped", at);
-  /* Signed before Ryntra's fee rule (CITY-183): every agent trade pays the fee, so the agent no longer trades for it. */
+  /* Signed before Ryntra's fee rule: every agent trade pays the fee, so the agent no longer trades for it. */
   if (!policyCarriesFee(policy.data, feeMintOf(mandate.terms))) return settle(deps.store, given, "ended", at);
-  /* Signed for another agent's key (CITY-186: the agent moved to KMS): no trade of this one could pass it. The person's stop needs no agent. */
+  /* Signed for another agent's key (the agent moved to KMS): no trade of this one could pass it. The person's stop needs no agent. */
   if (!namesAgent(policy.data, mandate.terms.agent)) return settle(deps.store, given, "ended", at);
   const coin = new PublicKey(given.receiveMint);
   const { receiver, decimals } = await coinOf(deps, mandate.terms.human, coin);
@@ -280,9 +280,9 @@ async function workFor(given: BookEntry, deps: TickDeps, now: () => number, trad
     (balance) => BigInt(balance.value.amount),
     () => null,
   );
-  /* CITY-193 — the person's strategy: its prices, its exit, its launch's age. It holds a buy back; it never adds one. */
+  /* The person's strategy: its prices, its exit, its launch's age. It holds a buy back; it never adds one. */
   const plan = planOfEntry(entry);
-  /* CITY-197: its pace slows the rhythm; it never quickens it. */
+  /* Its pace slows the rhythm; it never quickens it. */
   const decision = decide({ strategy: entry.strategy, perTrade: mandate.terms.perTrade, perDay: mandate.terms.perDay, expiresAt: mandate.terms.expiresAt, trades: entry.trades, budgetLeft: left, now: at, pace: plan.pace ?? null });
   if (decision.action === "end") return settle(deps.store, entry, decision.reason === "ended" ? "ended" : decision.reason === "spent" ? "spent" : "paused", at, decision.reason === "failing" ? "failing" : undefined);
 
@@ -320,7 +320,7 @@ async function workFor(given: BookEntry, deps: TickDeps, now: () => number, trad
     return "waited";
   }
   /*
-   * CITY-70: the money adds up before every spend — the budget she moved in is what the done trades spent plus what the
+   * The money adds up before every spend — the budget she moved in is what the done trades spent plus what the
    * vault holds on chain. A vault holding less than the book can explain is money moved outside the book: nothing more.
    */
   const books = reconcile({ budgetRaw: BUDGET_PRESETS[entry.preset]?.budget ?? 0n, leftRaw: left, trades: entry.trades, full: entry.trades.length >= TRADES_KEPT });
@@ -340,7 +340,7 @@ async function workFor(given: BookEntry, deps: TickDeps, now: () => number, trad
   const seeing: BookEntry = { ...reading, status: "working" };
   if (working !== entry || entry.unreadSince !== undefined || entry.status !== "working") await writeEntry(deps.store, seeing);
 
-  /* CITY-70: her switch read again just before the spend — a freeze turned on while this pass ran stops this buy. */
+  /* Her switch read again just before the spend — a freeze turned on while this pass ran stops this buy. */
   if (await isFrozen(deps.store, entry.cluster, entry.record.policy).catch(() => true)) return "frozen";
   /* One claim per slot of the rhythm: a second instance on the same pass finds it taken and waits. */
   const { everyMs } = steadyRhythm(mandate.terms.perTrade, mandate.terms.perDay, plan.pace ?? null);

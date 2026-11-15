@@ -1,6 +1,6 @@
 // Run from repo root: node --test city/lib/arena/hack/store/sql.test.mjs
 /*
- * CITY-226: Hack's migration, read as text — one transaction, not applied by this repository, a number no other
+ * Hack's migration, read as text — one transaction, not applied by this repository, a number no other
  * migration has; every table private with row level security forced, no policy and no grant; every server function
  * secret-gated with an empty search path and granted to anon alone; the lists in the tables are the library's lists;
  * the atomic rules take the order's lock before they read. And the wiring: every function the database store calls
@@ -11,6 +11,8 @@ import { hack, makeOrder, makeGrant, makeFinding, AT } from "../fixtures.mjs";
 import assert from "node:assert/strict";
 import { readFileSync, readdirSync } from "node:fs";
 import { test } from "node:test";
+
+import { inDevelopmentRepository } from "../../../../../lib/development-repository.mjs";
 
 const { createSupabaseHackDb } = await import("./supabase.ts");
 const { HACK_ROLES } = await import("./contract.ts");
@@ -40,14 +42,15 @@ const PUBLIC = [
 
 test("one migration file, one transaction, not applied anywhere by this repository; its number is its own", () => {
   const all = readdirSync(migrations).filter((f) => f.endsWith(".sql"));
-  // The runs (CITY-238) are a file of their own, after this one (`../runs/sql.test.mjs`).
+  // The runs are a file of their own, after this one (`../runs/sql.test.mjs`).
   assert.deepEqual(all.filter((f) => /_hack_/.test(f)).sort(), [FILE, "20261110120000_hack_v2_runs.sql"]);
   const stamp = FILE.split("_")[0];
   assert.deepEqual(all.filter((f) => f.startsWith(`${stamp}_`)), [FILE], "no other migration has this number");
   assert.match(sql, /^begin;$/m);
   assert.match(sql, /^commit;$/m);
   assert.match(sql, /Not applied to any Supabase project/);
-  assert.match(sql, /through MCP Supabase/);
+  /* How production migrations are applied is a note of the development repository; a copy of the code may leave it out of the file's comment. */
+  if (inDevelopmentRepository) assert.match(sql, /through MCP Supabase/);
   assert.doesNotMatch(code, /^\s*(drop|truncate|alter table public\.)/im);
   assert.doesNotMatch(code, /\bdelete from private\.hack_(orders|takes|findings)\b/, "orders, takes and findings are never deleted");
   assert.doesNotMatch(code, /\bupdate private\.hack_findings x\s+set[^;]*\brecord\s*=/, "a finding's evidence is never rewritten");

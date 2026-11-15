@@ -1,7 +1,7 @@
 import { words } from '../../lib/i18n/dict.ts';
 
 /**
- * The words of «Ryntra Partners» (CITY-126, CITY-127): the partner page, its calculator, the three roles, «Мій район»
+ * The words of «Ryntra Partners»: the partner page, its calculator, the three roles, «Мій район»
  * and the friend's greeting. Short on purpose: a name, a figure, an action; the rest sits behind «i».
  *
  * No number is written here. The terms are decision 93's and arrive from `city/lib/partners/terms.ts` as the arguments of

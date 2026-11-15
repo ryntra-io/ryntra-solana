@@ -1,4 +1,4 @@
-// Shared fixtures for the Hack step runner's tests (CITY-225). Not a test file (no `.test.mjs`), so the runner never
+// Shared fixtures for the Hack step runner's tests. Not a test file (no `.test.mjs`), so the runner never
 // executes it. It reuses the sandbox's fixtures (the made-up world, the stamp key) and adds a session, backends and a
 // scripted model gateway so the loop is walked with no network and no key.
 import { fileURLToPath } from "node:url";

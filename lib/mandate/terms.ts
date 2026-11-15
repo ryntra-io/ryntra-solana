@@ -1,27 +1,27 @@
 /**
- * CITY-174 — the mandate's terms and the policy they become (decision 95, the template of CITY-136's report §8).
+ * The mandate's terms and the policy they become.
  *
  * A person says, once: this budget, this much a trade, this much a day, until then. The terms become one
  * ProgramInteraction policy on her smart account, held by the program itself:
  * - only Jupiter's `route_v2` and `shared_accounts_route_v2` (on devnet, where Jupiter is not deployed, one Meteora DLMM
- *   pool's `swap2` stands in — the same rules, CITY-136 §7);
+ *   pool's `swap2` stands in — the same rules);
  * - the vault signs, and it spends only from the budget's token account;
  * - the output lands only on a token account the person owns;
  * - the input is at most the trade cap, slippage at most 1 %, the budget's mint at most the day's cap, until the end;
- * - Ryntra's fee (CITY-183, `./fee.ts`) lands only in Ryntra's fee account, at most the table's highest rate: in Jupiter's
+ * - Ryntra's fee (`./fee.ts`) lands only in Ryntra's fee account, at most the table's highest rate: in Jupiter's
  *   fee slot, or — on devnet — a transfer from the budget to that account and nowhere else.
  *
  * A regular buy of a fixed size (decision 95 (b)) pins more: the input is exactly the size, the output mint is pinned,
  * and the quote may not fall under the person's floor — the highest price she pays, held on chain.
  *
- * CITY-184 — coins of Token-2022 (every coin of Ryntra's launchpad): the person's and the vault's accounts are token
+ * Coins of Token-2022 (every coin of Ryntra's launchpad): the person's and the vault's accounts are token
  * accounts of either token program, read by their owner field; a regular buy pins her account of its coin by address,
  * under the coin's own program. Which Token-2022 coins the agent trades at all is the signer's list (`./token-2022.ts`).
  * A person may also hand the agent a coin to sell (`budgetCoin`): a regular sale through Jupiter, exactly its size each
  * time for at least her floor in SOL or USDC, to her wallet. The floor — the lowest price she takes, held on chain — is
  * what bounds a sale; Ryntra's fee is then taken in what she receives, into the same fee accounts as every buy.
  *
- * CITY-187 — a sale from the tower's window runs on devnet too: through the gate's DLMM pool, for a coin of Token. There,
+ * A sale from the tower's window runs on devnet too: through the gate's DLMM pool, for a coin of Token. There,
  * as in every devnet trade, Ryntra's fee is the transfer just before the pool's swap, from the budget — the coin sold — into
  * Ryntra's account of that coin, the table's share of the same size; through Jupiter it stays in what she receives.
  *
@@ -44,10 +44,10 @@ export const SHARED_ACCOUNTS_ROUTE_V2 = Uint8Array.of(209, 152, 83, 147, 124, 25
 export const DLMM_SWAP2 = Uint8Array.of(65, 75, 63, 76, 235, 91, 91, 136);
 
 /**
- * Where each instruction keeps what the policy pins (read off Jupiter's IDL and live `/swap/v2/build` routes, CITY-136
- * §4; DLMM — its IDL, EXE-0 §3.1). `receiver` is the account the output finally lands on. `platformFee` and
+ * Where each instruction keeps what the policy pins (read off Jupiter's IDL and live `/swap/v2/build` routes;
+ * DLMM — its IDL, EXE-0 §3.1). `receiver` is the account the output finally lands on. `platformFee` and
  * `positiveSlippage` are the route's u16 rates; `feeAccount` — where the platform fee goes, the first account after the
- * instruction's own (Jupiter's on-chain IDL and live `/build` routes with `platformFeeBps`, CITY-183).
+ * instruction's own (Jupiter's on-chain IDL and live `/build` routes with `platformFeeBps`).
  */
 export const LAYOUT = Object.freeze({
   routeV2: { authority: 0, source: 1, own: 2, receiver: 7, inAmount: 8, quotedOut: 16, slippage: 24, platformFee: 26, positiveSlippage: 28, feeAccount: 10 },
@@ -85,12 +85,12 @@ export type Venue = Readonly<{ kind: "jupiter" }> | Readonly<{ kind: "dlmm"; poo
 
 /**
  * A regular buy of a fixed size: exactly `amountIn` of the budget for at least `minOut` of `outputMint`, each time.
- * `outputProgram` — the coin's token program (CITY-184); absent — Token's.
+ * `outputProgram` — the coin's token program; absent — Token's.
  */
 export type FixedBuy = Readonly<{ amountIn: bigint; outputMint: PublicKey; minOut: bigint; outputProgram?: PublicKey | undefined }>;
 
 /**
- * A budget that is a coin to sell rather than SOL or USDC (CITY-184): its token program and decimals, read from its mint;
+ * A budget that is a coin to sell rather than SOL or USDC: its token program and decimals, read from its mint;
  * `transferFee` — the coin withholds a fee on transfers (`./token-2022.ts`).
  */
 export type BudgetCoin = Readonly<{ program: PublicKey; decimals: number; transferFee?: boolean | undefined }>;
@@ -110,7 +110,7 @@ export type MandateTerms = Readonly<{
   fixedBuy?: FixedBuy | undefined;
   /** The person raised the caps herself; absent — the starter caps hold. */
   raised?: boolean | undefined;
-  /** The budget is a coin she sells (CITY-184); absent — SOL or USDC she spends. */
+  /** The budget is a coin she sells; absent — SOL or USDC she spends. */
   budgetCoin?: BudgetCoin | undefined;
 }>;
 
@@ -120,7 +120,7 @@ export const budgetProgramOf = (terms: Pick<MandateTerms, "budgetCoin">): Public
 /**
  * The mint Ryntra's fee is taken in: the budget's, when it is SOL or USDC; on a sale of a coin through Jupiter, what she
  * receives — SOL or USDC again, so the fee lands in the same accounts as every buy's. On devnet's pool the fee is a transfer
- * from the budget (CITY-187), so it is the coin's.
+ * from the budget, so it is the coin's.
  */
 export const feeMintOf = (terms: Pick<MandateTerms, "budgetMint" | "budgetCoin" | "fixedBuy" | "venue">): PublicKey =>
   terms.budgetCoin && terms.fixedBuy && terms.venue.kind === "jupiter" ? terms.fixedBuy.outputMint : terms.budgetMint;
@@ -179,7 +179,7 @@ const u16 = (offset: number, value: number, operator: DataConstraint["operator"]
 const u8 = (offset: number, value: number, operator: DataConstraint["operator"]): DataConstraint => ({ offset, value: { kind: "u8", value }, operator });
 
 /**
- * A token account whose owner field is the given one. The program is left open (CITY-184): Token and Token-2022 write the
+ * A token account whose owner field is the given one. The program is left open: Token and Token-2022 write the
  * owner at the same place, and only a token program moves a coin into an account — an account of any other program with
  * the right bytes cannot receive one, and the trade fails.
  */
@@ -189,8 +189,7 @@ function tokenAccountOf(index: number, owner: PublicKey): AccountConstraint {
 
 /**
  * Where the output may land. A regular buy names its mint, so the account is the person's own of that mint under its
- * program, pinned by address — the same rule as her account's data, in a third of the bytes the fee rule needs
- * (CITY-183); any other buy, a token account she owns.
+ * program, pinned by address — the same rule as her account's data, in a third of the bytes the fee rule needs; any other buy, a token account she owns.
  */
 function receiverRule(index: number, terms: MandateTerms): AccountConstraint {
   const fixed = terms.fixedBuy;

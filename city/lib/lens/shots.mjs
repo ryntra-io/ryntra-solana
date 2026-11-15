@@ -1,4 +1,4 @@
-// The Lens (CITY-86) for review, from the live city: every chip at 1440×900 and 390×844 → <out>/lens-<chip>-<size>.png
+// The Lens for review, from the live city: every chip at 1440×900 and 390×844 → <out>/lens-<chip>-<size>.png
 //   npm run dev      then      node city/lib/lens/shots.mjs [out] [baseUrl]
 // The PR's frames, made so and saved as JPEG, are city/lib/lens/shots/.
 // No keys and no signatures: a stub wallet registers through the Wallet Standard events and comes back silently, and

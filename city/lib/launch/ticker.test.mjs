@@ -5,7 +5,7 @@ import { readFileSync } from "node:fs";
 import { checkLaunchForm } from "../../../lib/launch/form.ts";
 import { tickerAfterName, tickerFromName } from "./ticker.ts";
 
-/* CITY-200: on ryntra.io the sheet kept «$KITE» (its placeholder) over a coin named «QA Moon» and refused «Give it a ticker.» */
+/* On ryntra.io the sheet kept «$KITE» (its placeholder) over a coin named «QA Moon» and refused «Give it a ticker.» */
 test("a name typed offers its ticker, one the engine's rules take", () => {
   assert.equal(tickerFromName("QA Moon"), "QAMOON");
   assert.equal(tickerFromName("Golden Orca 2"), "GOLDENORCA");

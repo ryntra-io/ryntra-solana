@@ -1,9 +1,9 @@
 /**
- * The scene's budget by frame rate (CITY-6a): one ladder of rungs from the richest picture to the cheapest. Each rung
+ * The scene's budget by frame rate: one ladder of rungs from the richest picture to the cheapest. Each rung
  * is a quality tier and a pixel ratio; a device starts on the rung its hints allow, and the measured frame rate moves
  * it one rung at a time (two when the frame rate collapses). The tier sets what the scene spends: bloom, particles,
  * traffic and the cheap-but-not-free full-screen touches (grain, colour fringe, shockwave). The city has no shadow
- * maps: its light is emissive, so there are none to cut. It also sets what the Blender skyline spends (CITY-56):
+ * maps: its light is emissive, so there are none to cut. It also sets what the Blender skyline spends:
  * levels of detail, the reflection cube, the rooms behind the windows and the life on the streets. In the graphics
  * pass's words the tiers are High (high), Balanced (mid) and Lite (low).
  */
@@ -17,7 +17,7 @@ export type Budget = {
   bloomIntensity: number;
   /** Grain, colour fringe and the impact shockwave: off on the cheapest tier. */
   touches: boolean;
-  /** SMAA on the composed frame: thin fins, masts and rails without stair steps (CITY-56). */
+  /** SMAA on the composed frame: thin fins, masts and rails without stair steps. */
   smaa: boolean;
   embers: number;
   drones: number;

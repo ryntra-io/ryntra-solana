@@ -1,8 +1,8 @@
 import { cleanText, type TextKind, type TextReason } from "./clean.ts";
 
 /**
- * Somebody else's text on its way to a model — the assistant (CITY-10, `lib/agent`), a guard of the Vault or an agent
- * of the Ring through the model gateway (CITY-45, `lib/models`). The model is told the block is untrusted data; this
+ * Somebody else's text on its way to a model — the assistant (`lib/agent`), a guard of the Vault or an agent
+ * of the Ring through the model gateway (`lib/models`). The model is told the block is untrusted data; this
  * makes sure the block carries no hidden characters, no direction overrides, no disguised words, and that a field that
  * reads as an order is not handed on at all — the model sees that something was withheld and why, never the order.
  *

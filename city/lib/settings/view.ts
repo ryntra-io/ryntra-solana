@@ -2,7 +2,7 @@ import { create } from 'zustand';
 import { useHudPanels } from '../city/windows.ts';
 
 /**
- * The settings window (CITY-87): one window of the city's frame, opened from the avatar (the wallet in the top bar), the
+ * The settings window: one window of the city's frame, opened from the avatar (the wallet in the top bar), the
  * menu's «Settings» or `?open=settings`. Whether it is open is the HUD's own `settings` (`../city/windows.ts`), so «a
  * window is open», Escape and «Back» already know it; this keeps which section it shows.
  */

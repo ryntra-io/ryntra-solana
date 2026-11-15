@@ -1,7 +1,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 
-// The API the windows of CITY-62, 5a, 5d and 63 plug into, over a browser stand-in: a screen and a storage.
+// The API the city's windows plug into, over a browser stand-in: a screen and a storage.
 const items = new Map();
 globalThis.window = {
   innerWidth: 1440,
@@ -133,7 +133,7 @@ test("updateWindow changes an open window's title and hold where it stands, and 
   assert.equal(useWindows.getState().specs.money, undefined);
 });
 
-// ---------- CITY-84: the bays, the tray and the layouts through the store ----------
+// ---------- The bays, the tray and the layouts through the store ----------
 
 const { DESKS_KEY } = await import("./desks.ts");
 const WALLET = "7xKXtg2CW87d97TXJSDpbD5jBkheTqA83TZRuJosgAsU";

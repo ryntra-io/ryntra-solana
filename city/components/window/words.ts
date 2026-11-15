@@ -1,8 +1,8 @@
 import { words } from '../../lib/i18n/dict.ts';
 
 /**
- * The window frame's own controls (CITY-65), in both languages (CITY-79). The title is the window owner's. Since CITY-84:
- * the tray, the tabs and the layouts — the four presets' names are the only words a layout shows.
+ * The window frame's own controls, in both languages. The title is the window owner's.
+ * The tray, the tabs and the layouts — the four presets' names are the only words a layout shows.
  */
 export const WINDOW = words(
   {

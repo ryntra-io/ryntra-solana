@@ -7,7 +7,7 @@ import s from './earn.module.css';
 
 const fallText = (pct: number) => (pct > 0.005 ? `−${pct.toFixed(pct >= 10 ? 1 : 2)}%` : '0%');
 
-/** The record above a copy's card (CITY-99): what the strategy did against holding, its fall, its copies, how long. */
+/** The record above a copy's card: what the strategy did against holding, its fall, its copies, how long. */
 export function CopyRecord({ words, strategy }: { words: Words; strategy: ProvenStrategy }) {
   const w = words.captain;
   const tone = strategy.resultPct > 0.005 ? s.gain : strategy.resultPct < -0.005 ? s.loss : undefined;

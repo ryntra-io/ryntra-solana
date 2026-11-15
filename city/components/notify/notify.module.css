@@ -1,6 +1,6 @@
-/* The centre's banners (CITY-87): dark glass with a thin edge, one bar of colour by what it is about — violet for the
+/* The centre's banners: dark glass with a thin edge, one bar of colour by what it is about — violet for the
    market, amber for yours, flare for Guard's liquidation risk. Where the person put them: a corner, or the top's middle.
-   Tokens and type from city/styles/city.module.css (CITY-11). */
+   Tokens and type from city/styles/city.module.css. */
 
 .banners {
   --top: calc(max(12px, env(safe-area-inset-top)) + 70px);
@@ -70,7 +70,7 @@
   --bar: var(--amber);
 }
 
-/* Earn's notes (CITY-100): the mint of the city's gains. */
+/* Earn's notes: the mint of the city's gains. */
 .banner[data-group='earn'] {
   --bar: var(--mint);
 }
@@ -161,7 +161,7 @@
   }
 }
 
-/* The flashing off (CITY-66): a banner fades in and stays still. */
+/* The flashing off: a banner fades in and stays still. */
 :global(html[data-city-flash='off']) .banner {
   animation: bannerFade 160ms linear both;
 }

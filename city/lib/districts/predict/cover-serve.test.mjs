@@ -4,7 +4,7 @@ import assert from "node:assert/strict";
 import { forgetCovers, keptCovers, serveCover } from "./cover-serve.ts";
 
 /*
- * Found 29.10 (CITY-77): «Відкривається, немає картинок». Every cover came from `assets.agg.market`, which the city's
+ * Found 29.10: «Відкривається, немає картинок». Every cover came from `assets.agg.market`, which the city's
  * policy does not allow, so the browser refused each one. The city serves AGG's covers from its own origin — those
  * and nothing else.
  */

@@ -9,7 +9,7 @@ import styles from "../admin.module.css";
 import own from "./growth.module.css";
 
 /**
- * CITY-197 — the owner's week of demand: the one metric (external net revenue) and the four figures behind it, for a
+ * The owner's week of demand: the one metric (external net revenue) and the four figures behind it, for a
  * closed week. Every figure is the server's (`lib/growth/demand-week.ts`); one that did not read says «не прочитано».
  */
 

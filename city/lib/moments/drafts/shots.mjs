@@ -1,4 +1,4 @@
-// The desk for X for review (CITY-3): four drafts made from events (a Ryntra launch, its move into the skyline, a big x,
+// The desk for X for review: four drafts made from events (a Ryntra launch, its move into the skyline, a big x,
 // an agent's find), each filmed by the city, one approved, the switch off; at 1440×860 and 390×844, each draft alone,
 // and each draft's clip or card → <out>/
 //   RYNTRA_MOMENTS_STORE=memory RYNTRA_MOMENTS_SECRET=<key> npm run dev

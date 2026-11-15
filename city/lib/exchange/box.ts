@@ -14,7 +14,7 @@ export const MIN_W = 720;
 export const MIN_H = 480;
 export const MAX_W = 1120;
 
-/** The live feed's control row under the top bar (CITY-66), which the window's first place leaves free. */
+/** The live feed's control row under the top bar, which the window's first place leaves free. */
 export const FEED_ROW = 48;
 
 /** The first place: on the left, where the city's cards are not (the tower card and the hot card stand on the right). */

@@ -1,11 +1,11 @@
 /**
- * CITY-128 — the partners' weekly payout on its network: the switch, the reads the statements are counted from, the
+ * The partners' weekly payout on its network: the switch, the reads the statements are counted from, the
  * proposal's bytes and the chain's word on it. Server-only.
  *
  * - **The switch.** `RYNTRA_PARTNER_PAYOUTS=on` — the weekly pass prepares and settles; anything else, it does nothing.
  *   The treasury that pays is `RYNTRA_PARTNER_PAYOUTS_MULTISIG` (a Squads v4 multisig whose vault 0 holds USDC) on the
  *   payout's own network, `RYNTRA_PARTNER_PAYOUTS_NETWORK` (`mainnet` | `devnet`, server-only) — never the treasury
- *   page's public switch, which would open the old page (CITY-128b); the page's network only where none is named.
+ *   page's public switch, which would open the old page; the page's network only where none is named.
  * - **The proposal.** The treasury's own payout batch (`buildTreasury`, kind `payouts`, SOL-4): one USDC transfer per
  *   partner from vault 0, a partner's USDC account opened by the vault where there is none, the operator's wallet the fee
  *   payer and the proposer, and also a vote «for» when it votes. The operator signs in the wallet; the payout's admin route
@@ -53,7 +53,7 @@ export function payoutsMultisig(env: Env = process.env): string | null {
 
 /**
  * The engine's reads for a statement: the operations ledger, the Rewards record, the sanctions source
- * and the referral guard (CITY-125) — the same cluster check the city asks, on the protection's own key; without the
+ * and the referral guard — the same cluster check the city asks, on the protection's own key; without the
  * key every pair waits and nobody is paid.
  */
 export function prepareDeps(cluster: PayoutCluster, deps: Partial<PrepareDeps> = {}, env: Env = process.env): PrepareDeps {

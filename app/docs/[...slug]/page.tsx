@@ -8,7 +8,7 @@ import { DOC_NAMES } from "@/city/lib/docs/sections";
 import { PALETTE } from "@/city/lib/palette";
 import { SITE, SITE_NAME, TWITTER } from "@/app/seo";
 
-/* A section of the documentation at its own address (CITY-180): `/docs/start`, `/docs/fees`. Every section is built with the
+/* A section of the documentation at its own address: `/docs/start`, `/docs/fees`. Every section is built with the
    site, so a release that opens a door opens its section. The old handbook's
    addresses never reach this file: they lead to a section first (`city/lib/docs/old-chapters.ts`, `next.config.ts`). */
 

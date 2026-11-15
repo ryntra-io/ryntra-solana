@@ -7,7 +7,7 @@ import { cacheFrom, forgetAgents, leadOf, parseAgents, readAgents, syncAgents, u
 import { useMandate } from './mandate.ts';
 import { portfolioView } from '../money/portfolio.ts';
 
-/* CITY-207 — the city reads the wallet's agents from the engine; the browser's note is a cache of them. */
+/* The city reads the wallet's agents from the engine; the browser's note is a cache of them. */
 
 const key = () => Keypair.generate().publicKey.toBase58();
 const OWNER = key();

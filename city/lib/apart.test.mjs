@@ -4,7 +4,7 @@ import test from "node:test";
 
 import { apart } from "./apart.ts";
 
-// CITY-243: the pass of 10.11 — three «SOL · USDC» on the Piers, three «STAIR-USDC» in «Mine», two «$THUMB» tabs.
+// The pass of 10.11 — three «SOL · USDC» on the Piers, three «STAIR-USDC» in «Mine», two «$THUMB» tabs.
 
 test("a name that is its own takes no mark", () => {
   assert.deepEqual(apart([{ name: "SOL · USDC", marks: ["0.04%"] }, { name: "JupSOL · SOL", marks: ["0.01%"] }]), [null, null]);

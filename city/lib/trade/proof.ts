@@ -58,7 +58,7 @@ export async function proveWallet(
     );
     if (action === 'signin') {
       announceAccountChange();
-      // CITY-246: the wallet's sign-in, counted once a visit — never whose.
+      // The wallet's sign-in, counted once a visit — never whose.
       funnelSay('agent_signin');
     }
     return { ok: true };

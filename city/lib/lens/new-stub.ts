@@ -2,7 +2,7 @@ import { stubAddress } from '../launch/stub.ts';
 import type { PulseFetcher } from './new-store.ts';
 
 /**
- * The development stand-in for the engine's Pulse (CITY-142), never in a production bundle: `?launch=stub` in a
+ * The development stand-in for the engine's Pulse, never in a production bundle: `?launch=stub` in a
  * development build. A made-up market of new launches across the network's launchpads, beside the Launch stub's own
  * coins (the same mints, so its towers and its flows answer for them), so «New», its list and the beacon can be seen
  * without the network. No logos: a made-up coin has none, and a real coin's logo is never put on one.

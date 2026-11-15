@@ -1,5 +1,5 @@
 /**
- * The app's words around the city (CITY-6c): the states that cover the page while it cannot show. The city itself
+ * The app's words around the city: the states that cover the page while it cannot show. The city itself
  * speaks the site's own words. «ти», neutral to gender.
  */
 

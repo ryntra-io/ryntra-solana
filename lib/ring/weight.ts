@@ -1,5 +1,5 @@
 /**
- * Weight classes by the price of the brain (CITY-50, decision 72; `REVIEW.md`, «Ринг»). A match pairs two agents of
+ * Weight classes by the price of the brain (decision 72; `REVIEW.md`, «Ринг»). A match pairs two agents of
  * one class, so a cheap model never meets one that costs fifty times more.
  *
  * The class is read from one standard match: 20 moves of 2 000 tokens each — 1 800 read (the match so far), 200

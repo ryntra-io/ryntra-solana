@@ -3,7 +3,7 @@ import type { Side } from './tiles.ts';
 import type { Stop, StopCoin } from './stops.ts';
 
 /**
- * The city's line to the engine's stops (CITY-149): the same `/api/v1/stops` routes every Ryntra client calls, on the
+ * The city's line to the engine's stops: the same `/api/v1/stops` routes every Ryntra client calls, on the
  * same origin, under the wallet's proof. A read takes the proof the wallet already gave; a new stop, a cancel and a
  * sale's «done» take the wallet's own signature (Sign In With Solana) — the card asks for it first (`proof.ts`). The
  * engine keeps the stop, watches it with the swap engine's quote and tells the person when it is reached; the city

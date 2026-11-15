@@ -1,4 +1,4 @@
-// Ryntra City, the Ring's duels (CITY-51): the Arena's «Ring» window over the live city — a Duo Crack while it is live,
+// Ryntra City, the Ring's duels: the Arena's «Ring» window over the live city — a Duo Crack while it is live,
 // the same duel over with «Details», and Market Replay when there is no market history to replay — at 1440×900 and
 // 390×844, in English and Ukrainian → <out>/<lang>-<size>-<state>.jpg
 //   NEXT_PUBLIC_RYNTRA_CITY_RING=open NEXT_PUBLIC_RYNTRA_CITY_RING_DUELS=open npm run dev

@@ -16,7 +16,7 @@ import { useTrade } from '@/city/lib/trade/store';
 import { goQuarter } from '../game/play';
 
 /**
- * «Try» on a lesson of «How it works» (CITY-43): the lessons step away and that function's own window opens in the
+ * «Try» on a lesson of «How it works»: the lessons step away and that function's own window opens in the
  * city, exactly as its own door opens it — the tower card, its Buy, Chart and Beacon on the tower the home offers now,
  * the Agents' bots window, the Launch sheet, the top bar's search and Ask Ryntra, Money's Send, your quarter.
  */

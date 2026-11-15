@@ -1,5 +1,5 @@
 /**
- * An order's checks, as the store keeps them (CITY-238; `../sandbox/game.ts` — «the order brings its own checks»).
+ * An order's checks, as the store keeps them (`../sandbox/game.ts` — «the order brings its own checks»).
  *
  * A check is a named property of the protocol that must keep holding in the copy. The sandbox takes it as code that
  * only reads the copy (`Invariant`); a store cannot keep code, and code a protocol hands in would run on the machine

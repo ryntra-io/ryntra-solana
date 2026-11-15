@@ -1,5 +1,5 @@
 /**
- * The known moves on Ryntra's training ranges (CITY-238) — for the machine's own check (`../machine/check.mjs`) and for
+ * The known moves on Ryntra's training ranges — for the machine's own check (`../machine/check.mjs`) and for
  * the brain without a model that walks a developer's stand (`../runner/stub-brain.ts`, never production). Each is what
  * an agent would name to the harness: the account to look at first, the instructions to try, and the finding to file
  * if the fault reproduces. The harness assembles and signs them with the run's own payer (`../runner/assemble.ts`).
@@ -11,7 +11,8 @@
  *                   program refuses (the owner does not match) and the check holds. Nothing reproduces — the honest
  *                   range, where an agent learns that «no» is an answer too.
  *   council-review — the same burn as on open-multisig, but the protocol's check («the council's threshold is two»)
- *                   is one its own recorded copy already does not meet.
+ *                   is one its own recorded copy already does not meet. The judge cannot decide such a run by replay,
+ *                   so the agent files it for the protocol owner's word (`undecided`).
  *
  * Pure: no store, no clock, no network.
  */

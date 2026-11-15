@@ -11,7 +11,7 @@ export const dynamic = "force-dynamic";
 export const maxDuration = 60;
 
 /**
- * `https://ryntra.io/mcp/read` — the connector a directory lists (CITY-170): the same server as `/mcp` with the
+ * `https://ryntra.io/mcp/read` — the connector a directory lists: the same server as `/mcp` with the
  * catalog's profile — the Solana market and the check before signing, reads only, no tool that prepares anything to
  * sign and no link to sign (`lib/connector/profiles.ts`). The same consent (`/connect`) and the same wallet's quota;
  * its own resource, so its tokens open this address only.

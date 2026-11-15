@@ -198,7 +198,7 @@
 
 /* ---------- The trays: Swap · Spot · Futures, Hangar · Bots, Ring · Hack · Vault ---------- */
 
-/* The open tray stands in a layer of its own over the city's windows (CITY-242): a window as tall as the workspace
+/* The open tray stands in a layer of its own over the city's windows: a window as tall as the workspace
    stood over it. Placed by the Deck over the place pressed (`trayCentre`); the layer itself takes no tap. */
 .trayLayer {
   position: fixed;
@@ -402,7 +402,7 @@
   .center::after {
     bottom: calc(100% + 44px);
   }
-  /* The first screen's one action — or the agent at work — stands over the Agents (CITY-241, hud.module.css): their
+  /* The first screen's one action — or the agent at work — stands over the Agents (hud.module.css): their
      hint would lie on it. */
   :global(body:has([data-city-hint])) .center::after {
     display: none;
@@ -417,7 +417,7 @@
   .door:has(.bubble)::after {
     display: none;
   }
-  /* A window open over the city covers a hint's end: the place is already open, the hint stays away (CITY-188). */
+  /* A window open over the city covers a hint's end: the place is already open, the hint stays away. */
   :global(main:has([data-window]:not([data-window='']))) .item::after {
     display: none;
   }
@@ -471,7 +471,7 @@
   .door {
     height: 78px;
   }
-  /* A door has its whole cell for its name: it does not shrink with the seven places' names (CITY-236: «Ring» and
+  /* A door has its whole cell for its name: it does not shrink with the seven places' names («Ring» and
      «Vault» stood at 8.5px). */
   .door .label {
     font-size: 11px;

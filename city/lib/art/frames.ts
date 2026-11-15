@@ -1,5 +1,5 @@
 /**
- * The city's still frames (CITY-64). The district cards and «How the city works» show frames filmed from our own live
+ * The city's still frames. The district cards and «How the city works» show frames filmed from our own live
  * 3D city. The files are
  * `public/city/art/`; this module says which file a screen gets, so the page's `<picture>`, its preloads and the
  * tests read one table. No React and no three.js here: the tests run it in Node.
@@ -93,7 +93,7 @@ export function introMotion(viewer: Viewer, wide: boolean): IntroMotion {
 
 /**
  * Whether the live city is on the screen: the scene's first composed frame (`city/lib/city/drawn.ts`), or a scene
- * that says so itself on `window.__skyline` (the graphics line's scene, CITY-56).
+ * that says so itself on `window.__skyline` (the graphics line's scene).
  */
 export function skylineReady(drawn: boolean, skyline: unknown): boolean {
   return drawn || (typeof skyline === 'object' && skyline !== null && (skyline as { ready?: unknown }).ready === true);
@@ -127,7 +127,7 @@ export const DISTRICT_FILMS: Readonly<Partial<Record<DistrictId, Film>>> = {};
 export const CARD_DISTRICTS: readonly DistrictId[] = ['market', 'home', 'launch', 'harbor', 'agents'];
 
 /**
- * The frame behind every share card of the city (CITY-158): our own live 3D city at night, 1200 × 630 — the shape Open
+ * The frame behind every share card of the city: our own live 3D city at night, 1200 × 630 — the shape Open
  * Graph and X draw a large card at — with no HUD and no words, filmed through `window.__cityView` by
  * `scripts/city/card.mjs`. The card (`city/lib/share/card.server.tsx`) lays the mark and the line over it. The generated
  * still that stood here until 31.10 showed a city that is not ours.

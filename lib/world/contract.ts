@@ -204,7 +204,7 @@ export type VisitResponse = { visit: Visit | null; counted: boolean; reason: "co
 /* ----------------------------------------------------------------- crews -- */
 
 /**
- * A crew is a street (CITY-20): its members' quarters stand in one row of one street of Arrivals, and they build its
+ * A crew is a street: its members' quarters stand in one row of one street of Arrivals, and they build its
  * headquarters together, with modules and points — never money. The rules are `lib/world/crew.ts`.
  */
 
@@ -231,7 +231,7 @@ export type CrewStreet = {
 export type CrewMember = { quarterId: Id; name: string | null; lot: number; level: number; verified: boolean; joinedAt: string };
 
 /**
- * The war of districts (CITY-21) counts a street by what its people do and how many of them are real: actions of the
+ * The war of districts counts a street by what its people do and how many of them are real: actions of the
  * week (builds, visits, gifts — at most a few a person a day) and verified members. Nothing bought counts.
  */
 export type CrewScore = { week: Day; actions: number; verified: number; total: number };

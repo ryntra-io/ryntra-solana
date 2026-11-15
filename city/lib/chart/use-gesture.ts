@@ -2,7 +2,7 @@ import { useEffect } from 'react';
 import { chartOwns, wayOf, type Touch, type Way } from './gesture.ts';
 
 /**
- * The tower chart gives an up-or-down finger to the window it stands in (CITY-215; who takes what — `gesture.ts`).
+ * The tower chart gives an up-or-down finger to the window it stands in (who takes what — `gesture.ts`).
  *
  * The core chart's engine keeps every touch on its canvas to itself: `touch-action: none` and a drag claimed as soon as
  * a finger moves. The city's stylesheet lets the browser pan up and down over the canvas (`chart.module.css`), and this

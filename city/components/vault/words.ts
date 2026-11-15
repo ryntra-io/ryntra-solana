@@ -14,7 +14,7 @@ const GUARD_LINES_UK: Readonly<Record<string, string>> = {
   Wren: 'Маленький, швидкий, і його важко надурити.',
 };
 
-/** The words of the Vault: the dock, the room, the guard's answers and the live feed (CITY-79). */
+/** The words of the Vault: the dock, the room, the guard's answers and the live feed. */
 export const VAULT = words(
   {
     vault: 'Vault',

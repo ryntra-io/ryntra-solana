@@ -38,7 +38,7 @@ export const PHOENIX_URL = 'https://phoenix.trade';
 
 type StepWords = Readonly<{ title: string; line: string; action: string; detail: string }>;
 
-/** What the step says, in the language given (CITY-79). */
+/** What the step says, in the language given. */
 function stepWords(w: (typeof ONBOARDING)['en']): Readonly<Record<Onboarding['step'], StepWords>> {
   return {
     connect: { title: w.connectTitle, line: '', action: '', detail: '' },

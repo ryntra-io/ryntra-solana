@@ -1,5 +1,5 @@
 /**
- * What a pinned model is (CITY-45, decision 72): one OpenRouter model id from
+ * What a pinned model is: one OpenRouter model id from
  * the catalog and the providers it may run on — never an alias that moves
  * («latest», `~vendor/…`), never a router that picks for us (`openrouter/auto`),
  * never a routing shortcut that changes the provider (`:nitro`, `:floor`), and

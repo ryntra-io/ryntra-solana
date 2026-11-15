@@ -10,7 +10,8 @@
  * **A retired name redirects to the page that took its work over,** not to the
  * product root.
  *
- * `/app/bridge` was one of those rows and is not any more. The
+ * `/app/bridge` was one of those rows and is not any more.
+ * The
  * rule this row used to illustrate is unchanged — it simply has one fewer
  * example, which is what a retired name coming back looks like.
  *

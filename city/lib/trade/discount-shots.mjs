@@ -1,4 +1,4 @@
-// The trade card with the friend's discount and without it (CITY-182), at 390×844 and 1440×860
+// The trade card with the friend's discount and without it, at 390×844 and 1440×860
 //   → <out>/trade-<plain|friend>-<order|details>-<size>.png (the PR keeps them as .jpg)
 //   NEXT_PUBLIC_RYNTRA_REFEREE_DISCOUNT=on in the dev server's environment; node city/lib/trade/discount-shots.mjs [out] [baseUrl]
 // The same purchase twice: the card's quote at the meme rate of 1 %, then the order the wallet would sign at 1 % for a

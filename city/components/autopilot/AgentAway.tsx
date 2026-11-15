@@ -14,7 +14,7 @@ import { AgentGlyph } from '../instruct/glyphs';
 import s from './autopilot.module.css';
 
 /**
- * «While you were away: 3 trades, +0.012 SOL» (CITY-194): the one card the person meets on her return when her agent
+ * «While you were away: 3 trades, +0.012 SOL»: the one card the person meets on her return when her agent
  * traded since she last looked. A tap opens the agent; «Share» makes the card for X from the same real figures; × lets
  * it go. Loaded only when there is something to tell: the city's first frame carries none of it.
  */
@@ -28,7 +28,7 @@ export default function AgentAway() {
   const { share, making, saved, savedLine, label } = useShareCard();
   if (!away || !record || away.policy !== record.policy) return null;
   const day = away.day;
-  /* CITY-197: after every fee, when the book counted them; the card shares the same figure. */
+  /* After every fee, when the book counted them; the card shares the same figure. */
   const raw = resultRaw(day);
   const card = view ? agentCard({ coin: { token: view.receiveMint, symbol: agentSymbol(view), logo: false }, trades: day.trades, spentRaw: day.spentRaw, worthRaw: shareWorth(day), tag: cardTag(MANDATE_CHAIN, false), span: 'away' }) : null;
   const open = () => {

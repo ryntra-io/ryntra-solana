@@ -9,7 +9,7 @@ import { cardFace, type CardFace, type CardFrame } from './card-words.ts';
 import type { ShareCard } from './cards.ts';
 
 /**
- * A launch's share card, drawn (L8 · CITY-145): 4:5 at 1080×1350, the moment card's grid (`city/lib/trade/moment.ts`,
+ * A launch's share card, drawn: 4:5 at 1080×1350, the moment card's grid (`city/lib/trade/moment.ts`,
  * the brandbook's «Картка моменту») — the mark and RYNTRA on top, the coin's own logo from the engine, the kicker, the
  * one big figure, the amber line, the quiet line and the city's line at the foot — over a frame of our own city: the
  * docks a coin is born in, the skyline it joins, or the live scene at the tap with the trader's tower in it. Nothing
@@ -24,7 +24,7 @@ const FRAME_WAIT_MS = 600;
 /** How long a still or a logo may take to arrive before the card goes without it. */
 const IMAGE_WAIT_MS = 2_500;
 
-/** The frames of our own city a card stands on (CITY-64): the docks where a tower is born, the skyline it joins. */
+/** The frames of our own city a card stands on: the docks where a tower is born, the skyline it joins. */
 const STILLS: Readonly<Record<Exclude<CardFrame, 'live'>, string>> = {
   docks: districtFrame('launch').files.at(-1)!.src,
   skyline: districtFrame('market').files.at(-1)!.src,

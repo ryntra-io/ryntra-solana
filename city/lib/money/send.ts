@@ -80,7 +80,7 @@ export type SendDeps = Readonly<{
   onPhase?: (phase: SendPhase) => void;
   /**
    * Called once the signed bytes matched the Review and just before they go to the engine; a refusal stops the transfer
-   * there and nothing is sent (a prepared action's mark, CITY-161). Absent: nothing changes.
+   * there and nothing is sent (a prepared action's mark). Absent: nothing changes.
    */
   beforeSend?: (signed: Readonly<{ signedWireBase64: string; signature: string }>) => Promise<Readonly<{ ok: true }> | Readonly<{ ok: false; message: string }>>;
 }>;

@@ -25,7 +25,7 @@ function reveal(node: HTMLElement): void {
 
 /**
  * The line an action answers with — «Ladder placed», «Nothing was signed», «Stopped before your wallet — nothing was
- * sent» (CITY-237). It stands right under its action and, said, comes into view by itself: on a phone's half-screen
+ * sent». It stands right under its action and, said, comes into view by itself: on a phone's half-screen
  * window the answer used to land below the window's edge, read only after a scroll. `at` is when it was said — the same
  * answer said again comes into view again.
  */

@@ -23,7 +23,7 @@ export type CharacterBudget = Readonly<{
 }>;
 
 /**
- * What a character spends on each tier of the city's quality ladder (CITY-6a, `city/lib/city/quality.ts`): high as
+ * What a character spends on each tier of the city's quality ladder (`city/lib/city/quality.ts`): high as
  * built; mid keeps the hero for a figure that fills the screen and goes crowd a little sooner; low never draws the hero
  * (58k triangles) and drops to the crowd and the picture sooner. The frame-rate monitor moves the tier; characters follow.
  */

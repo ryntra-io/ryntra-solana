@@ -1,22 +1,23 @@
 /**
- * CITY-174 — the agent's signer: the one key a person's policy names, and the bounds it signs within.
+ * The agent's signer: the one key a person's policy names, and the bounds it signs within.
  *
- * The key sits under the same interface as Ryntra Launch's keys (CITY-162, `../launch/signer/signer.server.ts`): a
- * `KeySigner` signs bytes and never hands its key out. On devnet the key is the session's own (`env` — `envKey`); in
- * KMS it is the next step (D4, CITY-137: `kmsKeySigner` plugs in unchanged). Over the key, every time:
+ * The key sits under the same interface as Ryntra Launch's keys (`../launch/signer/signer.server.ts`): a
+ * `KeySigner` signs bytes and never hands its key out. On devnet the key may be the deployment's own (`env` —
+ * `envKey`); on mainnet it is in Google Cloud KMS and nowhere else (`kmsKeySigner`, which
+ * `./agent-service.server.ts` chooses). Over the key, every time:
  * 1. the bounds — the message is read from its own bytes: the agent pays and is the only signer; besides the compute
  *    budget (at most 1.4 M units, a 256 KB heap, a capped price) and token accounts it opens for the vault or the
  *    person, there is exactly one execution of the mandate's own policy with one inner instruction that meets the
  *    policy's rules (`./judge.ts`) and whose minimum is no less than what the person was promised, and after it the one
  *    rule that her account really received that minimum (`./result.ts`). The trade pays Ryntra's fee at exactly the
- *    table's rate for its pair, into Ryntra's fee account and no other (`./fee.ts`, CITY-183): inside Jupiter's route, or
+ *    table's rate for its pair, into Ryntra's fee account and no other (`./fee.ts`): inside Jupiter's route, or
  *    on devnet as the one transfer before the pool's swap, the two together within the trade cap. A coin of Token-2022
- *    on either side is one whose every feature is on the agent's list (`./token-2022.ts`, CITY-184), and the rule on what
+ *    on either side is one whose every feature is on the agent's list (`./token-2022.ts`), and the rule on what
  *    reached the person counts the coin's transfer fee off the minimum. Anything else is refused with its reason, and
  *    the key is never asked;
  * 2. the check — the signature verifies against the agent's address before it is given back;
  * 3. the journal — what was signed, under which policy, its hash and signature: public data only. No row, no signature.
- * Before the key, too (CITY-196, `./ryntra-coins.server.ts`): the coin bought is no coin of Ryntra's launchpad and none of
+ * Before the key, too (`./ryntra-coins.server.ts`): the coin bought is no coin of Ryntra's launchpad and none of
  * the person's own, and no other key of Ryntra's — no other agent's vault — stands in the trade. The registry not read
  * is a refusal.
  *
@@ -225,7 +226,7 @@ export function tradeRefusal(message: Uint8Array, mandate: Mandate, policy: Prog
       const bought = receiving?.data;
       if (!receiving || !bought || bought.length < 32) return "the person's receiving account could not be read";
       const boughtMint = new PublicKey(bought.subarray(0, 32));
-      /* CITY-184: a coin of Token-2022 on either side only when every feature of its mint is on the agent's list. */
+      /* A coin of Token-2022 on either side only when every feature of its mint is on the agent's list. */
       const output = sideCoin(boughtMint, receiving.owner, facts, request.epoch);
       if ("refusal" in output) return output.refusal;
       if (mandate.terms.budgetCoin) {
@@ -270,7 +271,7 @@ export function tradeSides(message: Uint8Array, request: AgentSignRequest): Read
   }
 }
 
-/** CITY-196: why the trade buys a coin, or meets a key, Ryntra's agent never deals with; null when it does not. Throws when the screen is not read. */
+/** Why the trade buys a coin, or meets a key, Ryntra's agent never deals with; null when it does not. Throws when the screen is not read. */
 export async function screenRefusal(message: Uint8Array, mandate: Mandate, request: AgentSignRequest, screen: AgentScreen): Promise<string | null> {
   const sides = tradeSides(message, request);
   if (!sides) return "the coin bought could not be read";

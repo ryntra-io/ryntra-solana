@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 
 /**
- * CITY-81, the «Play» layer: the city's first screen is money only — Launch,
+ * The «Play» layer: the city's first screen is money only — Launch,
  * Harbor, Agents, Predict, Exchange. Your quarter, the Ring, the Vault, the Hall, the Run and the Map are one more layer
  * over the same city, opened by the «City / Play» switch beside the brand and never on the way to money. Every visit
  * starts in City. Escape and a phone's Back return from Play to City (city/components/game, city/components/hud/useBackLayers.ts).
@@ -9,7 +9,7 @@ import { create } from 'zustand';
 
 export type Layer = 'city' | 'play';
 
-/** The words of the layer's own controls: the city's dictionary (`./words.ts`, CITY-79). */
+/** The words of the layer's own controls: the city's dictionary (`./words.ts`). */
 export { GAME as GAME_WORDS } from './words.ts';
 
 /** The game's dock, in its order. */
@@ -31,7 +31,7 @@ export function shownItems<T extends string>(order: readonly T[], open: Readonly
 type LayerState = {
   layer: Layer;
   /** Into Play or back to City. A phone's Back returns from Play as it closes a window: Play is the bottom layer of the
-   * city's «Back» (city/components/hud/useBackLayers.ts), so a window or the Map opened in Play closes first (CITY-150). */
+   * city's «Back» (city/components/hud/useBackLayers.ts), so a window or the Map opened in Play closes first. */
   set: (layer: Layer) => void;
 };
 

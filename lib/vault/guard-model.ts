@@ -5,7 +5,7 @@ import { GUARD_MODEL } from "./levels";
 import { ModelFailure, type ModelCall, type ModelFailureReason, type ModelGateway, type ModelReply } from "./model";
 
 /**
- * The guards on the model gateway of CITY-45 (`lib/models`): every attempt is one call with the model pinned, the
+ * The guards on the model gateway (`lib/models`): every attempt is one call with the model pinned, the
  * guard's rules as the system message and the visitor's one fenced message, a budget of tokens and time, thinking off
  * and no tools — the gateway's request carries no `tools` at all. Before the call the vault learns the most it can
  * cost, from the pinned providers' own prices, and sets that aside against the day's ceiling (`engine.ts`).

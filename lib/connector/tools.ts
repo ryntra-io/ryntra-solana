@@ -3,7 +3,7 @@ import { z } from "zod";
 import type { ConnectorScope } from "./metadata.ts";
 
 /**
- * The connector's tools (CITY-154, phase 1): reads of Ryntra's own public engine routes, nothing else.
+ * The connector's tools: reads of Ryntra's own public engine routes, nothing else.
  *
  * Every tool is a thin, named wrapper over one route that already answers people on ryntra.io — the city's towers,
  * the market list, a token's facts, tokenized stocks, Ryntra Launch markets with Market Health and Proof-of-Launch,
@@ -41,7 +41,7 @@ export const ENGINE_ROUTES = {
   "money.recipient": "/api/v1/money/recipient",
   "research.evidence": "/api/v1/research/evidence",
   "research.addressEvidence": "/api/v1/research/address-evidence",
-  /* The pre-sign check (CITY-152): a POST only because a transaction does not fit a query. It simulates and reads; it
+  /* The pre-sign check: a POST only because a transaction does not fit a query. It simulates and reads; it
      holds no key, signs, sends and stores nothing. */
   "ward.check": "/api/v1/ward/check",
 } as const;
@@ -162,7 +162,7 @@ function cityTowers(body: unknown): Readonly<{ towers: TowerRow[]; observedAt: s
 }
 
 /** One tower as a tool answers it: `mint` for `id`, no icon, and a figure the source did not measure null — never the
- * zero the scene draws with (CITY-73). */
+ * zero the scene draws with. */
 function towerRow(tower: TowerRow): Record<string, unknown> {
   const { unread, icon: _icon, ...rest } = tower;
   const row: Record<string, unknown> = { mint: tower.id, ...rest };

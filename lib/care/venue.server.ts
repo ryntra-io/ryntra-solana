@@ -1,5 +1,5 @@
 /**
- * CITY-203 — the agent's actions on a position it looks after, built from Meteora's own SDKs (`@meteora-ag/dlmm`,
+ * The agent's actions on a position it looks after, built from Meteora's own SDKs (`@meteora-ag/dlmm`,
  * `@meteora-ag/cp-amm-sdk`) for the care vault.
  *
  * The SDKs build for an owner that is also the payer; here the owner is the vault and the payer the agent. So every
@@ -150,8 +150,7 @@ export async function dlmmRebalance(
   const withdrawBps = new BN(options.withdraw ? 10_000 : 0);
   /*
    * The SDK deposits exactly the amounts it is handed: what comes out of the position — its liquidity and its fees,
-   * claimed in the same instruction — has to be handed back in, with the vault's idle coins (CITY-203 devnet, 5.11:
-   * a rebalance handed only the idle coins left the money in the vault).
+   * claimed in the same instruction — has to be handed back in, with the vault's idle coins.
    */
   const whole = (value: unknown) => BigInt(String(value ?? "0").split(".")[0] || "0");
   const back = options.withdraw ? { x: whole(read.positionData.totalXAmount) + whole(read.positionData.feeX), y: whole(read.positionData.totalYAmount) + whole(read.positionData.feeY) } : { x: 0n, y: 0n };

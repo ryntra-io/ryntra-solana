@@ -77,7 +77,7 @@ export function Towers({ towers }: { towers: PlacedTower[] }) {
     return { geometry, material: share(createTowerMaterial()) };
   }, [towers, count]);
 
-  // The same towers for the Blender skyline (CITY-56): what each one is and what a moment does to it, on the GPU.
+  // The same towers for the Blender skyline: what each one is and what a moment does to it, on the GPU.
   const state = useMemo(() => {
     const st = new TowerState(count);
     towers.forEach((t, i) => {
@@ -89,7 +89,7 @@ export function Towers({ towers }: { towers: PlacedTower[] }) {
   useEffect(() => () => state.dispose(), [state]);
   const skylineReady = useSkyline((st) => st.ready);
 
-  // Crowns: the 24h move as a light on each roof, coloured mint, red or amber (CITY-56: an aviation light, a bright point
+  // Crowns: the 24h move as a light on each roof, coloured mint, red or amber (an aviation light, a bright point
   // in a faint halo that breathes slowly, instead of a big glowing ball). A camera-facing quad sized in pixels, not in
   // world units: a few pixels at the skyline's distances, a little more when the eye is at the mast, the same on any
   // window. The colour is the move's hue at a capped brightness, so it never washes out to white and the bloom gives
@@ -184,7 +184,7 @@ export function Towers({ towers }: { towers: PlacedTower[] }) {
     geometry.setAttribute('aScale', new THREE.InstancedBufferAttribute(scale, 1));
     geometry.setAttribute('aSlot', new THREE.InstancedBufferAttribute(uv, 2));
     geometry.setAttribute('aRing', new THREE.InstancedBufferAttribute(ring, 3));
-    // The Lens (CITY-86): x the tower's level (a sunk tower's sign goes), y how far its roof moved.
+    // The Lens: x the tower's level (a sunk tower's sign goes), y how far its roof moved.
     geometry.setAttribute('aLens', new THREE.InstancedBufferAttribute(lens, 2));
     const material = new THREE.ShaderMaterial({
       uniforms: { uAtlas: { value: null as THREE.Texture | null }, uSlot: { value: 1 / SLOTS_PER_ROW }, uTime: SHARED.uTime },
@@ -253,7 +253,7 @@ export function Towers({ towers }: { towers: PlacedTower[] }) {
   }, [selectedId, signs, signed, indexOf, towers]);
 
   // Halo rings around the tallest spires, echoing the Eclipse: a thin band of light whose glow falls off softly above
-  // and below (CITY-56), not a thick tube.
+  // and below, not a thick tube.
   const halos = useMemo(() => towers.filter((t) => t.kind === 0 && t.height > 36), [towers]);
   const halo = useMemo(() => {
     const geometry = new THREE.CylinderGeometry(1, 1, 1, 128, 1, true);
@@ -397,7 +397,7 @@ export function Towers({ towers }: { towers: PlacedTower[] }) {
     }
   });
 
-  // The Lens (CITY-86): the towers of the picked chip rise in violet light, the rest sink into the haze — the bodies and
+  // The Lens: the towers of the picked chip rise in violet light, the rest sink into the haze — the bodies and
   // modules in their shaders, the crowns, signs and halos here.
   const lens = useTowerLens(towers, (levels, move) => {
     const bodyLens = body.geometry.getAttribute('aLens') as THREE.InstancedBufferAttribute;

@@ -6,7 +6,7 @@ import type { FeedKind } from './settings.ts';
 import { remember, sparkPoints, type Point, type Window } from './spark.ts';
 
 /**
- * The home's live event feed (CITY-66): what rose, what fell, where the money traded, who launched a new coin, which
+ * The home's live event feed: what rose, what fell, where the money traded, who launched a new coin, which
  * new pool opened — each event with its time and its source, built only from what the engine read. The city's market
  * read (`/api/city`, Jupiter, every minute) gives the movers, the volume and the new pools; the Launch district's read
  * (`/api/v1/launch/markets`) gives the coins launched on Ryntra; the Harbor's read (`/api/city/harbor`, Meteora) gives
@@ -27,7 +27,7 @@ export const FEED = {
   fall: { '1h': -2, '24h': -5 },
   /** 24-hour volume a coin or a pool needs to be named under «Volume». */
   minVolume: 250_000,
-  /** Liquidity a new pool needs to be news (CITY-200: «New pool · Unverified · $0 liquidity» stood in the feed). */
+  /** Liquidity a new pool needs to be news («New pool · Unverified · $0 liquidity» stood in the feed). */
   minPoolLiquidity: 1_000,
   /** How many of each kind's best are in turn. */
   candidates: 4,

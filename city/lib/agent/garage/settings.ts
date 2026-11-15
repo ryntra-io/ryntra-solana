@@ -1,8 +1,8 @@
 import { cleanResidentName } from '../../../../lib/world/text-safety/clean.ts';
 
 /**
- * The garage agent's settings (CITY-29): its name, what it reports on, and whether it is on. Everything is a fixed
- * choice except the name, and the name passes the city's cleaning of typed text (CITY-73) before it is kept or shown.
+ * The garage agent's settings: its name, what it reports on, and whether it is on. Everything is a fixed
+ * choice except the name, and the name passes the city's cleaning of typed text before it is kept or shown.
  * There is no amount, budget or wallet anywhere in it: the garage agent has no money.
  */
 

@@ -1,7 +1,7 @@
 import { words } from '../i18n/dict.ts';
 
 /**
- * The words of the payer's page (CITY-156): `/pay/<id>`, the window a person opens from a payment link. New words, said
+ * The words of the payer's page: `/pay/<id>`, the window a person opens from a payment link. New words, said
  * the city's way — short, in the present tense, what the person sees and what happens after the tap. Nothing here is
  * taken from the old page's copy.
  */

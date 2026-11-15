@@ -95,7 +95,7 @@ export function CityApp({ initial }: { initial: CitySnapshot }) {
     return () => clearInterval(timer);
   }, []);
 
-  // The person's language before the first paint after hydration: the words repaint in it in the same frame (CITY-79).
+  // The person's language before the first paint after hydration: the words repaint in it in the same frame.
   useLayoutEffect(() => void hydrateLang(), []);
 
   useEffect(() => {
@@ -116,7 +116,7 @@ export function CityApp({ initial }: { initial: CitySnapshot }) {
 
   // Inside the Ryntra app the page never asks to be installed (docs/city/APP-BRIDGE.md).
   useEffect(() => quietInstall(), []);
-  // «Back» closes the top window, sheet or panel; on the city's own view it leaves (CITY-6e).
+  // «Back» closes the top window, sheet or panel; on the city's own view it leaves.
   useBackLayers();
 
   useEffect(() => {
@@ -124,8 +124,8 @@ export function CityApp({ initial }: { initial: CitySnapshot }) {
     // A touch screen or not: the report sets phone players apart from desktop ones.
     track({ ev: 'home', challenge: !!useRun.getState().challenge, touch: !!window.matchMedia?.('(pointer: coarse)').matches });
     // Assemble the score while the title screen is idle; the PLAY tap then only switches the sound on. It waits for the
-    // city's first frame: on a phone the score's assembly would otherwise hold that frame back (CITY-6a). And it waits
-    // for the person's first gesture: a context made before it stays suspended and warns for every node (CITY-200).
+    // city's first frame: on a phone the score's assembly would otherwise hold that frame back. And it waits
+    // for the person's first gesture: a context made before it stays suspended and warns for every node.
     const idle = (window as Window & { requestIdleCallback?: (cb: () => void, o?: { timeout: number }) => number }).requestIdleCallback;
     const go = () => void prepareAudio().catch(() => {});
     const wait = setInterval(() => {
@@ -138,7 +138,7 @@ export function CityApp({ initial }: { initial: CitySnapshot }) {
   }, []);
 
   // Live reads: a fresh city every minute; one that is not live and fresh again within seconds, and at once when the tab
-  // comes back — the top bar never sits on «Delayed» for minutes (CITY-221, `city/lib/market/reread.ts`).
+  // comes back — the top bar never sits on «Delayed» for minutes (`city/lib/market/reread.ts`).
   useEffect(() => {
     let alive = true;
     let reading = false;
@@ -248,7 +248,7 @@ export function CityApp({ initial }: { initial: CitySnapshot }) {
 
   return (
     <>
-      {/* Under the canvas, from the first paint: the city's dusk and mark while the scene builds (CITY-241). */}
+      {/* Under the canvas, from the first paint: the city's dusk and mark while the scene builds. */}
       <CityLoading />
       <CityCanvas />
       <Art />

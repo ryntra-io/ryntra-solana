@@ -1,5 +1,5 @@
 /**
- * The model catalog and its prices (CITY-45, decision 72) — OpenRouter's
+ * The model catalog and its prices — OpenRouter's
  * public reads, without a key, kept for a while:
  *
  * - `GET /api/v1/models` — every model, model-wide: its id, dated slug,
@@ -84,7 +84,7 @@ export type CatalogModel = Readonly<{
   /**
    * What the model answers with, as OpenRouter lists it (`architecture.output_modalities`, lower-cased): `["text"]` for
    * a model that talks, `["image", "text"]` for one that draws. `null` when the entry does not say — unknown, never
-   * «text». Only those who choose what to offer read it (the Ring's list of brains, CITY-239); the gateway calls a
+   * «text». Only those who choose what to offer read it (the Ring's list of brains); the gateway calls a
    * model whatever this says.
    */
   outputModalities: readonly string[] | null;

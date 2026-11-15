@@ -3,7 +3,7 @@ import test from "node:test";
 
 import { closePanel, holdPanel, useBackPanels } from "./panels.ts";
 
-// CITY-150: a panel that keeps its own «open» stands on «Back» while it is open, in the order panels opened.
+// A panel that keeps its own «open» stands on «Back» while it is open, in the order panels opened.
 
 test("a held panel is listed until released, and Back closes it with its own close", () => {
   let closed = 0;

@@ -120,7 +120,7 @@ test("receipts list every fill newest first and the CSV is plain, safe and compl
 });
 
 test("one assistant in the city: the window keeps no second one of its own", () => {
-  // The bots' assistant tools are the assistant line's (CITY-133); the window has no ask box, no answer and no draft-in.
+  // The bots' assistant tools are the assistant line's; the window has no ask box, no answer and no draft-in.
   const window = readFileSync(new URL("../../components/bots/BotsWindow.tsx", import.meta.url), "utf8");
   assert.doesNotMatch(window, /Assistant|AskButton/);
   const store = readFileSync(new URL("./store.ts", import.meta.url), "utf8");
@@ -139,7 +139,7 @@ test("every bot and goal has its words in both languages, and time DCA is never 
   assert.equal(WORDS.uk.goal.swings, "Заробляти на коливаннях");
   assert.equal(WORDS.uk.tag.recurring, "Нагадування · 1 дотик");
   assert.equal(WORDS.uk.tag.priceAlert, "Не захищає, доки ти не підтвердиш");
-  // «Hangar» on the Deck is the agent's home (CITY-50): the bots' own place says «My bots», never a second «Hangar».
+  // «Hangar» on the Deck is the agent's home: the bots' own place says «My bots», never a second «Hangar».
   assert.equal(WORDS.en.tabs.hangar, "My bots");
   assert.equal(WORDS.uk.tabs.hangar, "Мої боти");
   for (const lang of ["en", "uk"]) assert.doesNotMatch(JSON.stringify(WORDS[lang].tabs), /Hangar|Ангар/);

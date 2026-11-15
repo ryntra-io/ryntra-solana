@@ -2,12 +2,12 @@ import { carryFree, carryRect, DEFAULT_SIZE, docked, fitRect, MIN, STEP, stuck, 
 import type { Layout, Recall } from './layout.ts';
 
 /**
- * The windows' places, remembered on this device (CITY-65): every window that has stood on the screen keeps its last
+ * The windows' places, remembered on this device: every window that has stood on the screen keeps its last
  * place, open or closed, so the swap opens again where the person put it and four windows stuck together come back
  * stuck. A place is remembered with the workspace it was on and carried onto a different one. Storage that is
  * missing, full or refuses just means the first places again.
  *
- * Since CITY-84 a place may be a bay (`bay`): the window opens in it again, as a tab of the frame standing there. The
+ * A place may be a bay (`bay`): the window opens in it again, as a tab of the frame standing there. The
  * key moved to v2 with the bays, so every window first opens in a bay once; to v3 when a new window opened in the
  * middle instead, so every remembered bay is forgotten once.
  */
@@ -78,7 +78,7 @@ export function remember(memory: Memory | null, layout: Layout): Memory {
 }
 
 /**
- * Before CITY-242 the frame first put a window at most 85 % of the workspace's height, and Spot, Earn and «My tower»
+ * The frame once put a window at most 85 % of the workspace's height, and Spot, Earn and «My tower»
  * asked for other sizes than they ask now (these, with their least). A place remembered exactly where and how large
  * the system first put it was never set by the person — remembered all the same, as every place is — and would keep
  * the old smaller window on every device that ever opened it; it is not recalled, so the window opens at its first
@@ -92,7 +92,7 @@ const OLD_FIRST: Readonly<Record<string, Readonly<{ size: Size; min: Size }>>> =
 
 const clampTo = (value: number, low: number, high: number) => Math.min(Math.max(value, low), high);
 
-/** Where the system first put a window before CITY-242, the n-th new window of a visit: the frame's old rule, kept as it was. */
+/** Where the system first put a window under the frame's old rule, the n-th new window of a visit: that rule, kept as it was. */
 function oldFirstRect(size: Size, min: Size, area: Rect, index: number): Rect {
   const width = clampTo(size.width, Math.min(min.width, area.width), Math.round(area.width * 0.8));
   const height = clampTo(size.height, Math.min(min.height, area.height), Math.round(area.height * 0.85));
@@ -122,7 +122,7 @@ export function oldFirstPlace(id: string, place: Readonly<{ rect: Rect; full: bo
 
 /**
  * The place this device remembers for a window, carried onto the given workspace: its bay, stuck with the others it
- * stuck to, or floating at its own size. One of the system's old first places is not the person's: none (CITY-242).
+ * stuck to, or floating at its own size. One of the system's old first places is not the person's: none.
  */
 export function recall(memory: Memory | null, id: string, area: Rect, asked: Asked | null = null): Recall | null {
   const place = memory?.places[id];

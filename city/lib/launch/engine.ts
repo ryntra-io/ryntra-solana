@@ -60,7 +60,7 @@ export interface LaunchEngine {
   claimReview(token: string, wallet: string): Promise<Answer<LaunchClaimReviewResponse>>;
   claimBuild(token: string, wallet: string): Promise<Answer<LaunchClaimBuildResponse>>;
   claimSubmit(token: string, body: LaunchClaimSubmitRequest): Promise<Answer<LaunchClaimSubmitResponse>>;
-  /* CITY-212: early access — the creation's three transactions and their send (contract 1.56.0, SOL-L5). */
+  /* Early access — the creation's three transactions and their send (contract 1.56.0, SOL-L5). */
   earlyBuild(body: LaunchEarlyAccessBuildRequest): Promise<Answer<LaunchEarlyAccessBuildResponse>>;
   earlySubmit(body: LaunchEarlyAccessSubmitRequest): Promise<Answer<LaunchEarlyAccessSubmitResponse>>;
 }

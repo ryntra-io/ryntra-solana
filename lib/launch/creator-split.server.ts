@@ -21,7 +21,7 @@
  *
  * Every transaction is the creator's alone to sign and pay; the bytes are checked before they leave — the programs they
  * call, who pays, that the transfers pay the plan and no wallet of Ryntra's. Ryntra holds no money of the creator's,
- * signs nothing of theirs and takes 0. On mainnet all of it stays closed.
+ * signs nothing of theirs and takes 0. On mainnet all of it stays closed (`CREATOR_SPLIT_OWNER_WORD`).
  *
  * Server-only. The collections it writes (`launchCreatorSplits`, `launchCreatorSplitBuilds`, `launchCreatorSplitSends`)
  * are in the store's list.

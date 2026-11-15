@@ -5,8 +5,8 @@ import { test } from "node:test";
 
 const read = (file) => readFileSync(new URL(file, import.meta.url), "utf8").replace(/\r\n/g, "\n");
 
-/* CITY-237: the money autopilot's card said «Not enough SOL in your wallet for this plan» and left only practice. The
-   line now has its way on — Money's top-up — as the agent's card has had since CITY-222. */
+/* The money autopilot's card said «Not enough SOL in your wallet for this plan» and left only practice. The
+   line now has its way on — Money's top-up — as the agent's card has had. */
 test("«not enough» on the money autopilot's card has a way to add funds", () => {
   const card = read("./PilotCard.tsx");
   const line = card.indexOf("data-pilot-short={short}");
@@ -14,7 +14,7 @@ test("«not enough» on the money autopilot's card has a way to add funds", () =
   const dock = card.indexOf("<div className={i.dock}>");
   assert.ok(line > 0 && add > line && dock > add, "the line, its way on, then the dock");
   assert.match(card.slice(add, dock), /onClick=\{\(\) => openMoney\('topup'\)\} data-pilot-topup="">\s*\{w\.add\(short\)\}/u);
-  // CITY-239: a button with a frame of its own, under the finger — not the plain words of the card's «quiet» lines.
+  // A button with a frame of its own, under the finger — not the plain words of the card's «quiet» lines.
   assert.match(card.slice(add, dock), /<button type="button" className=\{s\.add\} onClick/u);
   const framed = /\n\.add \{([^}]*)\}/u.exec(read("./pilot.module.css"))?.[1] ?? "";
   assert.match(framed, /box-shadow: inset 0 0 0 1\.5px rgba\(153, 69, 255, 0\.6\);/u, "the frame");
@@ -29,7 +29,7 @@ test("«not enough» on the money autopilot's card has a way to add funds", () =
   assert.doesNotMatch(words, /total: [^\n]*(at work|у роботі)/u);
 });
 
-/* CITY-240: the card of a wallet that cannot fund the plan read «$16.93 to put to work» beside «Not enough SOL in your
+/* The card of a wallet that cannot fund the plan read «$16.93 to put to work» beside «Not enough SOL in your
    wallet for this plan». The sum is the plan's — the budget of the sentence, or the card's own, at SOL's price now —
    never the wallet's: an empty wallet read money it does not hold, down to «Wallet 25% · $5». */
 test("a wallet that cannot fund the plan reads no sum: the line that is true and its one way on", () => {

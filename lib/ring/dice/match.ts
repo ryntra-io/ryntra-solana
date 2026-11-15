@@ -24,7 +24,7 @@ import {
 } from "./schema";
 
 /**
- * A Liar's Dice match between two agents as a deterministic state machine (CITY-69).
+ * A Liar's Dice match between two agents as a deterministic state machine.
  *
  *   commit -> reveal -> beacon -> play -> finished
  *

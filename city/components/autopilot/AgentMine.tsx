@@ -14,7 +14,7 @@ import { AgentGlyph } from '../instruct/glyphs';
 import s from './autopilot.module.css';
 
 /**
- * «My agent» at the top of «Mine» (CITY-175): what the agent earned for this wallet, in one row; a tap opens the agent's
+ * «My agent» at the top of «Mine»: what the agent earned for this wallet, in one row; a tap opens the agent's
  * card with its trades, «Share» and «Stop». Only where the agent's switch and the mandate's are open, and only for a
  * wallet whose agent this browser turned on.
  */
@@ -36,11 +36,11 @@ export function AgentMine({ onOpen }: { onOpen?: () => void }) {
     };
   }, [record]);
   if (!AUTOPILOT_NET || !MANDATE_NET || !record || !view) return null;
-  /* CITY-197: after every fee, when the book counted them. */
+  /* After every fee, when the book counted them. */
   const netRaw = view.net ? view.net.netRaw : view.result.earnedRaw;
   const earned = netRaw === null ? null : BigInt(netRaw);
   const figure = netRaw === null || view.result.trades === 0 ? null : solFigure(netRaw, lang);
-  /* CITY-70: the mission as the engine tells it — frozen, confirming a trade — else the book's state as before. */
+  /* The mission as the engine tells it — frozen, confirming a trade — else the book's state as before. */
   const face = view.mission ? missionFace(view, w) : null;
   const state = face ? face.text : view.status === 'working' ? w.working : view.status === 'paused' ? w.paused : view.status === 'stopped' ? w.noteStopped : w.ended;
   return (

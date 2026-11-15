@@ -4,7 +4,7 @@ import { readFileSync } from "node:fs";
 
 import { signedMove } from "./signed.ts";
 
-/* CITY-200: SOL's hover card on ryntra.io read «−0.0% 1H», in red. */
+/* SOL's hover card on ryntra.io read «−0.0% 1H», in red. */
 test("a move that rounds to nothing is «0.0%», neither red nor signed", () => {
   assert.deepEqual(signedMove(-0.04), { text: "0.0%", flat: true, up: true });
   assert.deepEqual(signedMove(0.04), { text: "0.0%", flat: true, up: true });

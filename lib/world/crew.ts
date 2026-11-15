@@ -6,7 +6,7 @@ import {
 import { cleanCrewName } from "./text-safety/clean";
 
 /**
- * A crew is a street (CITY-20, decision 71): people make one, or join by a link or a code, and their quarters move into
+ * A crew is a street: people make one, or join by a link or a code, and their quarters move into
  * one row of one street of Arrivals that the crew holds. Across the street they build the crew's headquarters together,
  * with modules and points. Nothing here is money: no gift is a transaction, no figure is a price.
  *
@@ -64,7 +64,7 @@ export const NAME_MAX = 24;
 const NAME_MIN = 2;
 
 /**
- * The street's name as the city may show it: somebody else's text, cleaned by CITY-73 (`cleanCrewName`) — nothing
+ * The street's name as the city may show it: somebody else's text, cleaned (`cleanCrewName`) — nothing
  * invisible, no disguised word, no order to a model — then at least two letters and at most 24.
  */
 export function crewName(raw: unknown): { ok: true; name: string } | { ok: false } {
@@ -213,7 +213,7 @@ export function planGift(input: {
 
 /* ------------------------------------------------------------- the score -- */
 
-/** The war's count (CITY-21): a person's actions count up to three a day; a verified member counts five. */
+/** The war's count: a person's actions count up to three a day; a verified member counts five. */
 export const SCORE = { actionsPerDay: 3, verified: 5 } as const;
 
 /** The kinds of action a street's score counts: what a person did in the world, never what they bought. */

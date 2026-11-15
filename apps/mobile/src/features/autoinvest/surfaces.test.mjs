@@ -31,7 +31,7 @@ const TRADE = code('screens/trade/index.tsx')
 const NOTICE = code('screens/autoinvest/rule-reminder-notice.tsx')
 
 test('«Автоінвест» lives in «Боти», not on Home — Home is the prototype’s Обране · Мої ринки · Останнє', () => {
-  // The operator’s word of 2026-10-17: Home as the prototype draws it; the rules are a tap away in «Ще → Боти».
+  // Home as the prototype draws it; the rules are a tap away in «Ще → Боти».
   assert.match(HOME, /const available = availableBlocks\(state !== 'guest'\)/)
   assert.doesNotMatch(HOME, /<RulesBlock/)
   // A wallet not signed in reads no line — only a quiet way in; its rules are read behind its session.

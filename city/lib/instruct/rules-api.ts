@@ -1,7 +1,7 @@
 import type { Schedule } from './plan.ts';
 
 /**
- * The city's line to the engine's regular purchases (CITY-176): the same `/api/v1/rules` routes every Ryntra client
+ * The city's line to the engine's regular purchases: the same `/api/v1/rules` routes every Ryntra client
  * calls, on the same origin, under the wallet's proof. A rule only schedules a reminder; every purchase under it is the
  * wallet's own signature on a fresh order. Writing or removing a rule takes the wallet's proof (one signed message, no
  * money) — the card asks for it first (`../trade/proof.ts`). Nothing here signs a transaction.

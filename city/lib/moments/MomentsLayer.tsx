@@ -96,7 +96,7 @@ function useChallengeLink() {
 export function MomentsLayer() {
   useChallengeLink();
   useEffect(() => watchRuns(), []);
-  // Development only: the studio for X (CITY-38, `city/lib/x/film.mjs`) films its posts through this hook.
+  // Development only: the studio for X (`city/lib/x/film.mjs`) films its posts through this hook.
   useEffect(() => {
     if (process.env.NODE_ENV !== 'production') void import('../x/studio');
   }, []);

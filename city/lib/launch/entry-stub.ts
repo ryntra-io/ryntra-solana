@@ -8,7 +8,7 @@ import type { Answer } from './engine.ts';
 import { stubAddress, stubSignature } from './stub.ts';
 
 /**
- * The development stand-in for the people's early-access window (CITY-220) — never in a production bundle
+ * The development stand-in for the people's early-access window — never in a production bundle
  * (`district.ts` loads it beside the stub engine). One made-up launch at the moment the address asks for
  * (`&phase=soon|join|fill|wait|claim|refund|done`), its vault answering deposits and steps with bytes laid out as the
  * engine's, so the window's read of them (`entry-check.ts`) runs on the stand as on a network. Nothing here is sent.

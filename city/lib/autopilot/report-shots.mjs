@@ -1,4 +1,4 @@
-// The agent's day (CITY-194) for review: the return card «While you were away», the quiet line over the agent's tower,
+// The agent's day for review: the return card «While you were away», the quiet line over the agent's tower,
 // the agent's card with «Today» and the daily report's switch, the switch off — on a desk (1440×900) and a phone
 // (390×844), in English and Ukrainian → <out>/<lang>-<size>-<n>-<step>.jpg
 //   NEXT_PUBLIC_RYNTRA_CITY_AUTOPILOT=mainnet NEXT_PUBLIC_RYNTRA_CITY_MANDATE=mainnet NEXT_PUBLIC_RYNTRA_CITY_AGENT_REPORT=open NEXT_PUBLIC_RYNTRA_CITY_TRADE=open npm run dev -- -p 3194

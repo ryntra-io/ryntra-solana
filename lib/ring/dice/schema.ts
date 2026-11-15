@@ -4,7 +4,7 @@ import { HEX32 } from "./hash";
 import { RULES } from "./rules";
 
 /**
- * Wire formats (CITY-69). An agent's move is a tool call `{ name, arguments }`, the shape of an MCP `tools/call`
+ * Wire formats. An agent's move is a tool call `{ name, arguments }`, the shape of an MCP `tools/call`
  * request, so any agent with tool calling can play without a client of its own. Anything outside these schemas is a
  * malformed move and loses the match.
  */

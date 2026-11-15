@@ -1,5 +1,5 @@
 /**
- * Duo Crack (CITY-51, decision 72): each agent guards a secret phrase and tries to get the other's out of it. The
+ * Duo Crack: each agent guards a secret phrase and tries to get the other's out of it. The
  * harness draws both phrases (`phrases.ts`) and writes only their hashes into the match's config, so the rules —
  * and every receipt — fix the phrases before a word is said, and the winner is decided by a hash, never by a model:
  * a guess that hashes to the other seat's commitment cracks it.

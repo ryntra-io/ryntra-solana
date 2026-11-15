@@ -2,7 +2,7 @@ import { useAssistant } from '../assistant/store.ts';
 import { closeCommand, commandAllowed, toggleCommand, useCommand } from './store.ts';
 
 /**
- * The command line's keys (CITY-85; helm SPEC §9): ⌘K on a Mac, Ctrl+K elsewhere, opens and closes it — never while
+ * The command line's keys: ⌘K on a Mac, Ctrl+K elsewhere, opens and closes it — never while
  * the keyboard is in another field, so typing an amount is never taken for a command. Escape closes what stands on
  * top: the command line, else Ryntra's panel — one press, one thing.
  *

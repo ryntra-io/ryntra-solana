@@ -1,4 +1,4 @@
-// The agent on its word (CITY-175) for review: phrase → card → the agent at work → «Mine» → a launch the agent prepared
+// The agent on its word for review: phrase → card → the agent at work → «Mine» → a launch the agent prepared
 // → the launch sheet's review, on a desk (1440×900) and a phone (375×812), in English and Ukrainian →
 // <out>/<lang>-<size>-<n>-<step>.jpg
 //   NEXT_PUBLIC_RYNTRA_CITY_AUTOPILOT=devnet NEXT_PUBLIC_RYNTRA_CITY_MANDATE=devnet NEXT_PUBLIC_RYNTRA_CITY_TRADE=open npm run dev -- -p 3175
@@ -29,7 +29,7 @@ const SAY = {
   uk: { trade: "торгуй на 1 SOL на день", launch: "запусти мені токен" },
 };
 
-/* A mandate as the window keeps it after the one signature: public addresses from CITY-174's devnet pass, the large budget. */
+/* A mandate as the window keeps it after the one signature: public addresses from the devnet pass, the large budget. */
 const RECORD = {
   owner: WALLET,
   settings: "4GYqmkrEEs1x2SXaFMAh299dskoD5VWLDe4dVVbusQj2",

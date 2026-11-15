@@ -1,4 +1,4 @@
-// The launch's three doors brought to mainnet (CITY-220) for review, at 1440×900 and 390×844, EN and UK →
+// The launch's three doors brought to mainnet for review, at 1440×900 and 390×844, EN and UK →
 // <out>/<state>-<size>-<locale>.jpg
 //   node city/lib/launch/doors-220-shots.mjs [out] [baseUrl]
 // with `NEXT_PUBLIC_RYNTRA_CITY_SHIELD=open npm run dev` running (PRESS_CHROME may point at a Chromium).

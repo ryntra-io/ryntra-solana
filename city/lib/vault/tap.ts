@@ -2,7 +2,7 @@ import * as THREE from 'three';
 import { GUARD_SPOT, PLINTH_TOP, TOWER, VAULT_SPOT } from './place.ts';
 
 /**
- * A tap on the Vault in the city (CITY-241): from the city as from Play, the tower opens the same room as «Arena →
+ * A tap on the Vault in the city: from the city as from Play, the tower opens the same room as «Arena →
  * Vault» (`enter.ts`). The city's own tap (`CameraRig`) asks here, as it asks the Hall's signs, whether the ray meets
  * the tower nearer than the tower it would pick — so a coin's tower standing in front of the Vault keeps its tap. The
  * tower is met as its own body and a finger's slack around it — and the guard beside its door, seen from the first

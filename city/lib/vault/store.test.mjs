@@ -205,7 +205,7 @@ test("an attempt that uses up the minute starts the wait; leaving the room stops
   assert.equal(clock.waits.at(-1).cleared, true);
 });
 
-/* ------------------------------------------------------------------ CITY-218: resting guards, a closed vault, sign-in */
+/* ------------------------------------------------------------------ Resting guards, a closed vault, sign-in */
 
 function timed(stateOf) {
   const pending = [];

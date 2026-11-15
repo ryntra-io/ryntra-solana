@@ -1,5 +1,5 @@
 /**
- * The old handbook's addresses and where each one leads now (CITY-180). The old chapters stood in the old interface, which nobody
+ * The old handbook's addresses and where each one leads now. The old chapters stood in the old interface, which nobody
  * is to see (decision 75); their words are not used. A link somebody kept still lands on the section of the documentation that
  * covers the same ground, for good and in one hop. A chapter about what is not in the city leads to the hub.
  *

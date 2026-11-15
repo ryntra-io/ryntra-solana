@@ -11,7 +11,7 @@
  * The server's simulation confirms the same figures before the wallet sees the
  * transactions (`build.server.ts`).
  *
- * The chain's own terms come in from the chain (CITY-219): its rent per byte —
+ * The chain's own terms come in from the chain: its rent per byte —
  * read, never assumed, since mainnet's rent is not devnet's forever — and, on
  * mainnet, the priority each transaction pays so it lands when the network is
  * busy. The window gets both from the engine's status, so its line and the
@@ -32,7 +32,7 @@ export const RENT_LAMPORTS_PER_BYTE = 6_960;
 const ACCOUNT_HEADER_BYTES = 128;
 /**
  * A limit order account: its 8-byte discriminator, 112 bytes and 32 per bin (lb_clmm 0.12.0, `LIMIT_ORDER_MIN_SIZE`
- * counts after the discriminator, `LIMIT_ORDER_BIN_DATA_SIZE`). The discriminator was left out until CITY-219's fork
+ * counts after the discriminator, `LIMIT_ORDER_BIN_DATA_SIZE`). The discriminator was left out until the fork
  * read the account the program opens: 152 bytes for one bin.
  */
 export const LIMIT_ORDER_BASE_BYTES = 8 + 112;

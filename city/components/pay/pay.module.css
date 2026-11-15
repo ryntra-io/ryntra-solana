@@ -1,7 +1,7 @@
-/* The payer's page (CITY-156): one window of the city over a still of the live city — the window frame's own glass,
+/* The payer's page: one window of the city over a still of the live city — the window frame's own glass,
    edge and corner brackets (city/components/window/window.module.css), the Money window's action, notes and fee line
    (city/components/money/money.module.css). One amber action on the screen; mint only for money that arrived; flare
-   only when something is wrong. Tokens and the type scale from city/styles/city.module.css (the brandbook, CITY-11). */
+   only when something is wrong. Tokens and the type scale from city/styles/city.module.css. */
 
 .page {
   --accent: #ff681c;

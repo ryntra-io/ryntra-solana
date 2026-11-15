@@ -49,7 +49,7 @@ export class MemoryWorldStore implements WorldStore {
   private readonly consents = new Map<string, { telegram: boolean; push: boolean; updatedAt: number }>();
   private arrivals = 0;
   private seq = 0;
-  /** Streets of Arrivals a crew holds (CITY-20), as rows: a newcomer's claim never lands on one. */
+  /** Streets of Arrivals a crew holds, as rows: a newcomer's claim never lands on one. */
   private readonly crewRows = new Set<number>();
 
   /** Accounts that exist, as `public.beta_users` would say. */

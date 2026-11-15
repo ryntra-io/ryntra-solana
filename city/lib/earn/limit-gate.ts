@@ -1,5 +1,5 @@
 /**
- * Who may place a limit order from the city (CITY-97, Sell Higher · Buy Lower · the Wheel): the product's own switch,
+ * Who may place a limit order from the city (Sell Higher · Buy Lower · the Wheel): the product's own switch,
  * on top of the engine's gate (`lib/liquidity/studio/gate.ts`, read alongside, never changed). The spec gives every
  * product of Earn its own switch, ceiling and stop. Three states, from `NEXT_PUBLIC_RYNTRA_CITY_EARN_LIMITS`:
  *

@@ -10,7 +10,7 @@ export const dynamic = "force-dynamic";
 export const maxDuration = 60;
 
 /**
- * `https://ryntra.io/mcp` — Ryntra's Solana connector for AI chats (CITY-154, phase 1). Streamable HTTP, OAuth 2.1
+ * `https://ryntra.io/mcp` — Ryntra's Solana connector for AI chats. Streamable HTTP, OAuth 2.1
  * with the person's wallet as the consent (`/connect`), read-only tools over the engine's public routes. The whole
  * argument lives in `lib/connector/endpoint.ts`; this file only wires the store and the engine.
  */

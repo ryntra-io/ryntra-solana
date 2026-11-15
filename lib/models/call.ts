@@ -1,5 +1,5 @@
 /**
- * The model gateway's call (CITY-45, decision 72): one OpenRouter chat
+ * The model gateway's call: one OpenRouter chat
  * completion with a pinned model and its budget.
  *
  * - Pinned: `model` is one exact id, `provider.only` its providers,

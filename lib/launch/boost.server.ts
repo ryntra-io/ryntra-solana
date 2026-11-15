@@ -89,7 +89,7 @@ export const BOOST_BOUNDS_ENV = "RYNTRA_LAUNCH_BOOST_BOUNDS";
 
 /**
  * The bounds campaigns stay inside here; null — Launch Boost is not open. The devnet stand has its own; mainnet only the
- * Owner's, through `RYNTRA_LAUNCH_BOOST_BOUNDS`, and only on the deployment that writes launches there (its store is the
+ * operator's, through `RYNTRA_LAUNCH_BOOST_BOUNDS`, and only on the deployment that writes launches there (its store is the
  * one the token page reads).
  */
 export function boostBounds(network: LaunchNetwork, env: Env = process.env): BoostBounds | null {

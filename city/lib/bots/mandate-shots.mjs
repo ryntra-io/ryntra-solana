@@ -1,4 +1,4 @@
-// The agent with a budget in the bots window (CITY-174), at 1440×900 and 375×812 → <out>/mandate-<state>-<lang>-<size>.jpg
+// The agent with a budget in the bots window, at 1440×900 and 375×812 → <out>/mandate-<state>-<lang>-<size>.jpg
 //   NEXT_PUBLIC_RYNTRA_CITY_AGENTS=open NEXT_PUBLIC_RYNTRA_CITY_MANDATE=devnet npm run dev -- -p 3137
 //   node city/lib/bots/mandate-shots.mjs [out] [baseUrl]          LANGS=uk,en  SIZES=1440,375  STATES=start,details,working
 // The window is opened as a person opens it: the Deck's «Agents», then «Bots». Every figure is a fixture: the city's

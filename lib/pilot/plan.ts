@@ -1,12 +1,12 @@
 /**
- * CITY-204 — the money autopilot's plan: one sentence, one plan for the whole budget. «Work with my 2 SOL and 100 USDC:
+ * The money autopilot's plan: one sentence, one plan for the whole budget. «Work with my 2 SOL and 100 USDC:
  * some into savings, trade BONK with some, some into pools» becomes four parts:
  *
- * - `trade` — SOL the agent trades by itself, the mandate of CITY-174/186 with a strategy of CITY-193. Its size is one
+ * - `trade` — SOL the agent trades by itself, the mandate with a strategy. Its size is one
  *   of the city's budgets open on the network: a larger share is
  *   capped and the rest stays in the person's wallet. The signed policy holds the caps; nothing here raises them.
- * - `save` — the dollar savings of CITY-192: USDC (first) and SOL into Jupiter Lend, a position of her own wallet.
- * - `pool` — SOL into a SOL pier of CITY-198 (Meteora Zap), a position of her own wallet.
+ * - `save` — the dollar savings: USDC (first) and SOL into Jupiter Lend, a position of her own wallet.
+ * - `pool` — SOL into a SOL pier (Meteora Zap), a position of her own wallet.
  * - `reserve` — what stays in her wallet: at least the network's fees, and whatever a part could not take.
  *
  * Pure: no network, no wallet, no store. The city reads the sentence (`city/lib/pilot/read.ts`); the split, the shares

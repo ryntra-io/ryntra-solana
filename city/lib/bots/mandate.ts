@@ -2,12 +2,13 @@ import { create } from 'zustand';
 import { BUDGET_PRESETS, PRESETS_ON, type BudgetPresetId } from '../../../lib/mandate/presets.ts';
 
 /**
- * The agent with a budget in the bots window (CITY-174): one tap picks the budget, the limits stand in one line, and
+ * The agent with a budget in the bots window: one tap picks the budget, the limits stand in one line, and
  * the person's wallet signs once — her smart account, the budget in its vault and the agent's policy, held on chain.
  * «Stop» is one more signature, and the rest comes back to her wallet.
  *
  * The window shows this only when the deployment says `NEXT_PUBLIC_RYNTRA_CITY_MANDATE=devnet` or `=mainnet`; the
- * engine's routes answer 404 while their own switch (`RYNTRA_AGENT_MANDATE`) is closed. Mainnet opened to everyone of 4.11.2026 (CITY-186) with one budget, 0.1 SOL a day; there the person names the coin the agent buys.
+ * engine's routes answer 404 while their own switch (`RYNTRA_AGENT_MANDATE`) is closed. Mainnet opened to everyone
+ * with one budget, 0.1 SOL a day; there the person names the coin the agent buys.
  *
  * The mandate is kept in this browser — its public addresses and numbers, never a key, apart for each network — and
  * read back from the chain while the window is open. The signing is `mandate-sign.ts` and its checks `mandate-check.ts`, loaded on the tap: the

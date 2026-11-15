@@ -1,7 +1,7 @@
 /**
- * What Hack keeps on the server (CITY-226), as one interface two stores fill: memory on a developer's machine and in
+ * What Hack keeps on the server, as one interface two stores fill: memory on a developer's machine and in
  * tests (`memory.ts`), the database wherever a deployment runs (`supabase.ts`, over
- * `supabase/migrations/20261108180000_hack_v1.sql`). It is the library's `HackStore` (CITY-223, `../registry.ts`) and
+ * `supabase/migrations/20261108180000_hack_v1.sql`). It is the library's `HackStore` (`../registry.ts`) and
  * the atomic steps the routes need on top of it — each one decided under one lock, so two server instances never both
  * pass a rule only one of them fits:
  *
@@ -9,7 +9,8 @@
  *   • an agent takes an order once; the protocol's owner never attacks its own order; one owner plays one side;
  *   • a finding is filed once — the same id never overwrites the first one's evidence or verdict — and needs its
  *     agent's take; «who first» by the duplicate key: one confirmed finding to a vulnerability, the later a duplicate;
- *   • an owner's move (pause, resume, close, settle) is the protocol owner's alone; the deadline the system's.
+ *   • an owner's move (pause, resume, close, settle) is the protocol owner's alone; the deadline the system's;
+ *   • the word on a finding under review is the protocol owner's alone.
  *
  * No money here: `payable` is only «the rules would allow a reward».
  */
@@ -19,7 +20,7 @@ import type { Assessment, HackReason } from "../rules.ts";
 import { dedupeKey, type Finding, type Severity } from "../finding.ts";
 import { ORDER_TRANSITIONS, type Order, type OrderMove } from "../order.ts";
 
-/** The two sides of an order: the attacker breaks the copy and files findings; the defender patches (CITY-225). */
+/** The two sides of an order: the attacker breaks the copy and files findings; the defender patches. */
 export const HACK_ROLES = ["attacker", "defender"] as const;
 export type HackRole = (typeof HACK_ROLES)[number];
 export const isHackRole = (value: unknown): value is HackRole => typeof value === "string" && (HACK_ROLES as readonly string[]).includes(value);
@@ -90,7 +91,7 @@ export interface HackDb extends HackStore {
   takes(orderId: string): Promise<Take[]>;
   /** A finding with the rules' verdict, filed once; `needTake` asks for the agent's attacker take on the order. */
   file(input: { finding: Finding; verdict: FileVerdict }, options: { needTake: boolean; limit: DayLimit }, now: number): Promise<Filed>;
-  /** `payable` — what a confirmation would allow, if first. */
+  /** The protocol owner's word on a finding under review; `payable` — what a confirmation would allow, if first. */
   resolve(input: { id: string; by: string; verdict: Verdict; payable: boolean }, now: number): Promise<Resolved>;
   filed(id: string): Promise<FiledFinding | null>;
   filedForOrder(orderId: string): Promise<FiledFinding[]>;
@@ -123,7 +124,7 @@ export const HACK_LIMITS = {
   findingsPerHunterDay: 30,
   /** Writes from one network an hour (IPv4 address, IPv6 /64). */
   writesPerHour: 120,
-  /** Writes from one wallet an hour, over every route. */
+  /** Writes from one wallet an hour, over every route — moves and the protocol owner's word included. */
   walletWritesPerHour: 240,
   /** The longest window an order may run. */
   maxWindowMs: 90 * 24 * 3_600_000,

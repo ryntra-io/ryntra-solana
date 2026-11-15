@@ -57,13 +57,13 @@ export type TelegramKeyboard = readonly (readonly Readonly<{ text: string; url?:
  * the note falls back to the note itself.
  */
 async function reminderMessage(store: GuardStore, inbox: InboxRecord): Promise<Readonly<{ href: string; text: string; button: string }> | null> {
-  /* A reached stop (CITY-149): «Стоп SOL досягнуто — продати?», and the button to the city on the stop's sale (`lib/stops/notes.ts`). */
+  /* A reached stop: «Стоп SOL досягнуто — продати?», and the button to the city on the stop's sale (`lib/stops/notes.ts`). */
   if (isStopNote(inbox)) {
     const href = `${APP}${inbox.href}`;
     const words = inbox.text?.[inbox.locale] ?? { title: inbox.title, reason: inbox.reason };
     return { href, text: stopTelegramText(words), button: inbox.cta };
   }
-  /* An Earn note of the city (CITY-100), or the agent's daily report (CITY-194): its line and its reason, and the button to its window in the city. */
+  /* An Earn note of the city, or the agent's daily report: its line and its reason, and the button to its window in the city. */
   if (isEarnNote(inbox) || isAgentReportNote(inbox)) {
     const href = `${APP}${inbox.href}`;
     const words = inbox.text?.[inbox.locale] ?? { title: inbox.title, reason: inbox.reason };
@@ -174,7 +174,7 @@ export async function deliverOutbox(store: GuardStore, nowMs: number, deps: Read
               : telegramText({ label: null, reason: null, href, paper: false }, said);
           const button = reminder?.button ?? (inbox?.cta || words(said).reviewPlan);
           const link = { text: button, url: href };
-          /* CITY-194: the agent's daily report carries its own «Turn off daily report» under the link. */
+          /* The agent's daily report carries its own «Turn off daily report» under the link. */
           const keyboard = inbox && isAgentReportNote(inbox) ? reportKeyboard(inbox, link) : inbox && telegram.buttons ? telegram.buttons(inbox, link) : [[link]];
           const sent = await telegram.send(chatId, text, keyboard);
           if (!sent) throw new Error("not delivered");
@@ -216,7 +216,7 @@ export async function deliverOutbox(store: GuardStore, nowMs: number, deps: Read
       continue;
     }
     const inbox = (await listInbox(store, row.owner)).find((item) => item.id === row.inboxId);
-    /* A reached stop (CITY-149) and an Earn note (CITY-100) open their own city address and say their one line. */
+    /* A reached stop and an Earn note open their own city address and say their one line. */
     const stop = inbox !== undefined && (isStopNote(inbox) || isEarnNote(inbox) || isAgentReportNote(inbox));
     const href = inbox ? `${APP}${stop ? inbox.href : inbox.subject?.kind === "assistant-brief" ? briefHref(inbox.subject.id) : inbox.subject?.kind === "token-watch" ? tokenWatchHref(inbox.subject.id) : inbox.subject?.kind === "assistant-task" ? assistantTaskHref(inbox.subject.id) : inbox.subject?.kind === "wallet-watch" ? walletWatchHref(inbox.subject.id) : inbox.href}` : `${APP}/app/alerts`;
     const title = "Ryntra";

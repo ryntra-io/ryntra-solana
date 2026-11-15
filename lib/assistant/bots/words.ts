@@ -1,5 +1,5 @@
 /**
- * Ryntra's words in the bots hub (CITY-133, B3), English and Ukrainian.
+ * Ryntra's words in the bots hub, English and Ukrainian.
  * Short on purpose: one line on the screen, two at most; every figure is the
  * engine's, said beside what it stands on. Advice, never «buy» or «sell»:
  * a past result is a past result, and a bot is a draft until the person

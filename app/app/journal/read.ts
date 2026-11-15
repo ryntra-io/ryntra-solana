@@ -88,9 +88,7 @@ export async function loadJournal(input: Readonly<{
  * **Paper only, and that is a design decision rather than an omission.** Each
  * paper trade is exactly one position, so the cohorts are clean. Real closes
  * arrive as individual fills — one position can close in several — and mixing a
- * simulated win rate with a real one would read as real performance. Live joins
- * this comparison the day fills are reconciled to positions, which is not this
- * packet.
+ * simulated win rate with a real one would read as real performance.
  */
 function adherenceTrades(projection: DecisionsProjection): AdherenceTrade[] {
   return projection.cases

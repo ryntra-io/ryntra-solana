@@ -1,4 +1,4 @@
-// Ryntra City, crews are streets (CITY-20): the crew's street from the city, my crew's sheet in build mode, a new
+// Ryntra City, crews are streets: the crew's street from the city, my crew's sheet in build mode, a new
 // crew, and an invite that came by a link, at 1440×860 and 375×812, in English and Ukrainian
 // → <out>/<lang>-<state>-<size>.jpg
 //   NEXT_PUBLIC_RYNTRA_CITY_CREWS=open npm run dev, then node city/components/quarter/crew-shots.mjs [out] [baseUrl]

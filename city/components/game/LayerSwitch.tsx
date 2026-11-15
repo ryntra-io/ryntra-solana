@@ -14,7 +14,7 @@ import g from './game.module.css';
 const LAYERS: readonly Layer[] = ['city', 'play'];
 
 /**
- * The brand and, beside it, «City / Play» (CITY-81): two segments in one glass pill, the layer on now lit in amber.
+ * The brand and, beside it, «City / Play»: two segments in one glass pill, the layer on now lit in amber.
  * City is money; Play is the game over the same city — only where Play's switch is open (`city/lib/game/flag.ts`). A
  * phone has no room for both the logo and the words: there the City segment carries the mark and is the way home, as
  * the logo is, and Play carries its glyph.

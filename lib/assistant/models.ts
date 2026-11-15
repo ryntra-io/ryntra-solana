@@ -63,7 +63,7 @@ export const MODEL_CLASS_DEFAULT: Readonly<Record<Exclude<ModelClass, "L0">, str
 };
 
 /**
- * CITY-205: the provider the assistant's words come from. OpenAI stays the default; `RYNTRA_ASSISTANT_PROVIDER` names
+ * The provider the assistant's words come from. OpenAI stays the default; `RYNTRA_ASSISTANT_PROVIDER` names
  * `anthropic` (Anthropic's own API) or `openrouter` (any model through OpenRouter) — and is taken only when that
  * provider's key and both its model variables are on the deployment, so a name without them keeps answering on OpenAI.
  * Another provider's models are never written in the code: the deployment names them (and their prices), so the operator

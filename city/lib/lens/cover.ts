@@ -1,5 +1,5 @@
 /**
- * Whether the Lens's strip stands under a window (CITY-243, a MINOR of CITY-242): the strip hangs 10 px under the top bar,
+ * Whether the Lens's strip stands under a window: the strip hangs 10 px under the top bar,
  * the windows' first places start 15 px under it — a window as wide as Spot or Earn covered the strip all but its top
  * 4 px, a sliver of violet over the window's edge. Under a window that covers most of it the strip steps aside; a
  * window that only touches it (Launch, under the strip) leaves it standing. Pure: the bar and the tests read it alike.

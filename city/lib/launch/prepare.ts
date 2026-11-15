@@ -6,7 +6,7 @@ import { cityLaunchOpen } from './gate.ts';
 import { sameShares } from './share.ts';
 
 /**
- * The launch made ready before the press (CITY-143, `docs/research/ryntra-launch-2026-10-29/SPEC.md` «Створення»):
+ * The launch made ready before the press (`docs/research/ryntra-launch-2026-10-29/SPEC.md` «Створення»):
  * the picture and the words go to the engine's store in the background while the creator types, and once a wallet is
  * there the engine builds the launch once, so the sheet's cost line says what Solana simulated before anything is
  * signed. Nothing here signs or sends: the same `/api/v1/launch` routes every client calls, only earlier.
@@ -48,7 +48,7 @@ export function fieldsKey(fields: PrepFields): string {
 
 /**
  * What the city's launch asks the engine to build: the launch — no first purchase, no lock —, and, when the review
- * showed it, the creator's fees shared (CITY-212: the creator first, keeping the rest; `share.ts`).
+ * showed it, the creator's fees shared (the creator first, keeping the rest; `share.ts`).
  */
 export function launchRequest(creator: string, preset: LaunchPresetView['id'], metadataUri: string, shares: readonly FeeShare[] | null = null): LaunchBuildRequest {
   return { creator, preset, metadataUri, firstBuyRaw: '0', lock: null, ...(shares?.length ? { feeShares: [...shares] } : {}) };

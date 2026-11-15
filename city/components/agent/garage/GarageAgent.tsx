@@ -16,8 +16,8 @@ const AHEAD = PLOT / 2 - 0.18;
 const SIDE = 0.42;
 
 /**
- * The agent of the garage (CITY-29) on your lot, while you are in your quarter: the characters line's robot (CITY-57,
- * `public/city/characters/guardian/`) at the front of the first garage, facing the street. Its body shows only what
+ * The agent of the garage on your lot, while you are in your quarter: the characters line's robot
+ * (`public/city/characters/guardian/`) at the front of the first garage, facing the street. Its body shows only what
  * really happens — it greets when its window opens, thinks while Ryntra is asked, acts while it shows towers, nods
  * when an answer came; otherwise it stands ready. Off duty, it is not there. Seen from afar in the city's view it is
  * not drawn at all: there it would be a speck.

@@ -218,7 +218,7 @@ const BEARER_REQUIREMENT: A2aSecurityRequirement = Object.freeze({
 });
 
 /**
- * The Solana connector's scheme (CITY-154, 1.1.0): OAuth 2.1 with PKCE, the consent at `/connect` approved by the
+ * The Solana connector's scheme: OAuth 2.1 with PKCE, the consent at `/connect` approved by the
  * person's wallet. Its skills are the read-only tools of the MCP endpoint `/mcp`.
  */
 export const CONNECTOR_OAUTH_SCHEME = "ryntraWalletOAuth" as const;
@@ -281,7 +281,7 @@ function toolSkills(): readonly A2aAgentSkill[] {
   return Object.freeze([...reads, ...proposals]);
 }
 
-/** The Solana connector's read-only tools, served over MCP at `/mcp` (CITY-154). */
+/** The Solana connector's read-only tools, served over MCP at `/mcp`. */
 function connectorSkills(origin: string): readonly A2aAgentSkill[] {
   return Object.freeze(
     CONNECTOR_TOOLS.map(

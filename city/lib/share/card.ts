@@ -2,7 +2,7 @@ import { SHARE_SCENE } from '../art/frames.ts';
 import { CARD_WORDS } from './words.ts';
 
 /**
- * The city's share card (CITY-158): what X, Telegram and the rest show for a link to ryntra.io — a frame of our own live
+ * The city's share card: what X, Telegram and the rest show for a link to ryntra.io — a frame of our own live
  * 3D city (`SHARE_SCENE`), the mark, RYNTRA and the city's line. Every public address that is not a coin shows it
  * (`card.server.tsx`), in its language; a coin draws its own (`city/lib/coin/og.server.tsx`).
  * No React and no next/og here: the site's metadata and the tests read it in Node.

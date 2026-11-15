@@ -1,5 +1,5 @@
 /**
- * The wallet's own proof that it signed (CITY-161): the signed transaction bytes the city is about to hand to the swap
+ * The wallet's own proof that it signed: the signed transaction bytes the city is about to hand to the swap
  * engine. Read here only far enough to answer two questions — who pays for this transaction (the first account of the
  * message, which is the first signer) and whether the first signature is that account's ed25519 signature over these
  * exact message bytes. Nothing is sent, kept or simulated: the intent keeps only the signature, as the mark that bytes

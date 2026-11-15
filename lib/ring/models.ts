@@ -1,5 +1,5 @@
 /**
- * Brains for the Ring (CITY-50, decision 72): OpenRouter's live catalog through the gateway of CITY-45, priced before
+ * Brains for the Ring: OpenRouter's live catalog through the gateway, priced before
  * anyone picks, sorted into weight classes, and a pick pinned to exactly one provider with no fallbacks.
  *
  * - `list()` — every model the gateway can pin and price, with its class and what a standard match costs at the
@@ -8,7 +8,7 @@
  *   service tier chosen, `preflight` run on exactly that provider, and the class, cost and playable formats taken from
  *   that provider's own price and abilities. What `create` and `change` keep is the quote, never the list's figure.
  *
- * The list offers only what can be a brain (CITY-239, `offeredAsBrain`): a model that answers with text alone and at
+ * The list offers only what can be a brain (`offeredAsBrain`): a model that answers with text alone and at
  * once. That is a rule of the list to pick from and of nothing else — `quote`, the gateway, the classes and the prices
  * are as they were, so an agent made earlier with a model the list no longer offers keeps its brain, plays and shows.
  */
@@ -48,12 +48,12 @@ export function chooseEndpoint(endpoints: readonly CatalogEndpoint[]): CatalogEn
 }
 
 /**
- * Whether the list offers a catalog model as a brain (CITY-239). An agent of the Ring talks, so its brain is a model
+ * Whether the list offers a catalog model as a brain. An agent of the Ring talks, so its brain is a model
  * whose answer is text and nothing else: OpenRouter's catalog also lists models that draw, speak, sing or film (their
  * `output_modalities` name a picture, a sound or a clip beside the text), and those could be picked. A `:batch` twin is
  * the same model answered through OpenRouter's queue hours later, never inside a match. An entry that does not say
- * what it answers with stays: unknown is not refused — and an empty list says as little as a missing one (CITY-240:
- * the catalog naming the field and leaving it empty took a talking model out of the list).
+ * what it answers with stays: unknown is not refused — and an empty list says as little as a missing one
+ * (the catalog naming the field and leaving it empty took a talking model out of the list).
  */
 export function offeredAsBrain(model: Pick<CatalogModel, "id" | "outputModalities">): boolean {
   if (/:batch$/i.test(model.id)) return false;

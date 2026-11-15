@@ -220,7 +220,8 @@ export async function getSession(): Promise<Session | null> {
  * Proof always rests on a signature by that address over a message this
  * server built and verified. Three carriers exist: the `rw` proof (`prove`,
  * for the API; short), the customer session a wallet sign-in opens (`rt`,
- * method `solana_siws`), which names the address it signed with, and — of 20.10 (decision 62, SOL-W3) — an account session opened
+ * method `solana_siws`), which names the address it signed with, and
+ * an account session opened
  * by another door (email, Google, Telegram), which proves the Solana wallets
  * its account linked by that wallet's signature (`action=link`), read live from
  * the session's row (`sessionWalletProof`). So one signature is the proof for

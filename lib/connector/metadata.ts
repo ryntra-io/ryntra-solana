@@ -1,5 +1,5 @@
 /**
- * Ryntra's Solana connector for AI chats (CITY-154, phase 1): its addresses, its one scope and the two discovery
+ * Ryntra's Solana connector for AI chats: its addresses, its one scope and the two discovery
  * documents a client reads before it ever authenticates.
  *
  * A person pastes `https://ryntra.io/mcp` into an AI chat (claude.ai, ChatGPT) or any MCP client. The first call answers `401` with a
@@ -17,7 +17,7 @@
 /** The MCP endpoint a person pastes into a chat: the full connector (the custom connector). */
 export const CONNECTOR_MCP_PATH = "/mcp";
 /**
- * The catalog's endpoint (CITY-170): the same server with only its read-only profile — no tool that prepares anything
+ * The catalog's endpoint: the same server with only its read-only profile — no tool that prepares anything
  * to sign and no link to sign — the address a connector directory lists. Its own resource, so a token minted for one
  * endpoint is refused at the other.
  */
@@ -25,7 +25,7 @@ export const CONNECTOR_CATALOG_MCP_PATH = "/mcp/read";
 /** Every MCP endpoint this server issues tokens for. */
 export const CONNECTOR_MCP_PATHS = [CONNECTOR_MCP_PATH, CONNECTOR_CATALOG_MCP_PATH] as const;
 export type ConnectorMcpPath = (typeof CONNECTOR_MCP_PATHS)[number];
-/** The connector's documentation, a page of the city (CITY-170). */
+/** The connector's documentation, a page of the city. */
 export const CONNECTOR_DOCS_PATH = "/connector";
 /** The consent page — the authorization endpoint. A browser opens it and a person decides there. */
 export const CONNECT_PAGE_PATH = "/connect";

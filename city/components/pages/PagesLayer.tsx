@@ -28,7 +28,7 @@ const SIZE: Readonly<Record<PageId, { width: number; height: number }>> = {
 };
 
 /**
- * The city's pages as windows in the one frame (CITY-157, CITY-65): Docs, Developers, AI chats (CITY-170), Help,
+ * The city's pages as windows in the one frame: Docs, Developers, AI chats, Help,
  * About, the Terms and the Privacy Policy, opened from the menu (☰) and from one another, over the live city — never a tab of the old site.
  * On a phone each one is the bottom sheet. Escape closes the front one, as the city's other windows do.
  */

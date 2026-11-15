@@ -6,7 +6,7 @@ import type { Signer } from './flow.ts';
 import { BUILD_AGED, BUILD_UNEXPECTED, CITY_CLOSED, WALLET_REFUSED } from './refusal.ts';
 
 /**
- * One step of early access from the people's window (CITY-220), start to end: the engine builds it for this wallet
+ * One step of early access from the people's window, start to end: the engine builds it for this wallet
  * alone, the city reads it back (`entry-check.ts`), the wallet signs it in one prompt, the engine sends it. A coming-in
  * goes only through an open door (`entryStep` says so); a way back to one's own tokens and USDC never waits for one.
  * Nothing here signs, counts or sends by itself.

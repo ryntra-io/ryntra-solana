@@ -1,11 +1,10 @@
 /**
- * CITY-174 — Squads Smart Account (SSA), the primitive of the agent's budget (decision 95, D3).
+ * Squads Smart Account (SSA), the primitive of the agent's budget (decision 95, D3).
  *
  * The person's smart account holds the budget in its vault; a ProgramInteraction policy on it names the one key that may
  * spend from it (the agent's) and the bounds the program itself holds: which program and instruction, which accounts,
  * which bytes, how much a day and until when. This file is only the program's interface — addresses, the instructions
- * the mandate needs, encoded by hand from the program's IDL (`main` `0e51082`, as CITY-136 used it on devnet and on the
- * mainnet fork), and the few account fields the engine reads. It signs nothing and sends nothing.
+ * the mandate needs, encoded by hand from the program's IDL, and the few account fields the engine reads. It signs nothing and sends nothing.
  *
  * Instructions: `createSmartAccount`, `executeSettingsTransactionSync` (`PolicyCreate`, `PolicyRemove`) and
  * `executeTransactionSyncV2` (through a policy, or as the settings signer). Golden bytes from the IDL's own Borsh coder
@@ -467,7 +466,7 @@ export function readPolicyHead(data: Uint8Array): PolicyHead {
 
 /** The names the mandate's refusals come back with, from the program's own log line; by name — builds number them differently. */
 export const REFUSAL = Object.freeze({
-  /* The devnet build names an account-data rule's breach so too (CITY-136: 6064 for the receiver and for the amount). */
+  /* The devnet build names an account-data rule's breach so too (6064 for the receiver and for the amount). */
   ProgramInteractionInvalidNumericValue: "a value is outside the mandate (amount, price or receiving account)",
   ProgramInteractionAccountConstraintViolated: "an account is outside the mandate",
   ProgramInteractionProgramIdMismatch: "the program is outside the mandate",

@@ -1,6 +1,6 @@
 // Run from repo root: node --test city/lib/arena/hack/store/verify.test.mjs
 /*
- * CITY-226: the server's check of the protocol owner's permission — a real Ed25519 wallet key made for the test signs
+ * The server's check of the protocol owner's permission — a real Ed25519 wallet key made for the test signs
  * the grant's canonical text as a wallet's `signMessage` does; the check takes the signature in base58 or base64, and
  * refuses another signer, another body, a cut signature and anything it cannot read. Then the whole library check
  * (`checkGrant`) on top of it.

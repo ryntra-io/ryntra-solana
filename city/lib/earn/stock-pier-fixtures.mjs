@@ -1,4 +1,4 @@
-// Stock Pier fixtures (CITY-98) for the tests and the review screens. Written by hand, not recorded: the mints are the
+// Stock Pier fixtures for the tests and the review screens. Written by hand, not recorded: the mints are the
 // city's own avenue towers, the figures are shaped like the server's list. Nothing here is a live price.
 
 export const TSLAX = "XsDoVfqeBukxuZHWhdvWHBhgEHjGNst4MLodqsJHzoB";

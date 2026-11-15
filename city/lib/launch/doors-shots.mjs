@@ -1,4 +1,4 @@
-// The launch's two doors (CITY-212) for review: «Share earnings» — the quiet row, the split being typed, a mistake said
+// The launch's two doors for review: «Share earnings» — the quiet row, the split being typed, a mistake said
 // at once, the split shown before the signature, «i», the wallet's prompt for two transactions; «Your people first» —
 // the switch on with its amounts and its two moments, the wallet's prompt for three, and the launch set — at 1440×860
 // and 375×812 → <out>/doors-<state>-<size>-<locale>.jpg

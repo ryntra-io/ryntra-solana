@@ -147,7 +147,7 @@ export async function stoppedReferralLevels(
 export const PAYOUT_CHECK_LIMITS = { checks: 20, budgetMs: 25_000, recheckMs: 24 * 3_600_000 } as const;
 
 /**
- * The weekly partner payouts' read of the guard (CITY-125 on CITY-128): each pair `partner:person` and what it does to
+ * The weekly partner payouts' read of the guard: each pair `partner:person` and what it does to
  * the share now. Pairs never checked, still pending, or clear but not looked at for a day are checked first, as many as
  * the pass has room for; the rest are read as they stand. A pair whose row or whose partner's case cannot be read
  * waits — never paid on a guess.

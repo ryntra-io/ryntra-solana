@@ -1,6 +1,6 @@
 import { words } from '../../lib/i18n/dict.ts';
 
-/** The words of the city's search in the top bar (CITY-79). */
+/** The words of the city's search in the top bar. */
 export const SEARCH = words(
   {
     searchCoins: 'Search coins',

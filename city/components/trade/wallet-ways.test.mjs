@@ -5,7 +5,7 @@ import { test } from "node:test";
 
 const read = (file) => readFileSync(new URL(file, import.meta.url), "utf8").replace(/\r\n/g, "\n");
 
-/* CITY-237 (CITY-235's phone pass, ask 4): in a phone's own browser the agent's card offers «Open in Phantom» with
+/* In a phone's own browser the agent's card offers «Open in Phantom» with
    «Back» beside it. The two did not fit a 390 px card: «Back» ended 19–43 px past its edge, cut, and pushed the card's
    lines wider than the card. The action now takes the card's width; «Back» is in the quiet line under it. */
 test("«Open in Phantom» takes the card's width; «Back» stands in the quiet line under it", () => {
@@ -30,12 +30,12 @@ test("«Open in Phantom» takes the card's width; «Back» stands in the quiet l
   assert.match(rule(".walletBack"), /white-space: nowrap;/u);
 });
 
-/* CITY-237: a connected wallet with nothing to buy with read «Not enough SOL» on a dead button — the tower's one action
+/* A connected wallet with nothing to buy with read «Not enough SOL» on a dead button — the tower's one action
    led nowhere. It is the way to get some now: Money's top-up. */
 test("an empty wallet's one action on a tower is «Add SOL», not a dead «Not enough SOL»", () => {
   const sheet = read("./TradeSheet.tsx");
   // A balance read as zero — `'0'`; an unread balance is `null` and stays the old words. The rule itself is one for the
-  // market ticket, the limit and the stop since CITY-239 (`city/lib/trade/top-up.ts`, tested there).
+  // market ticket, the limit and the stop (`city/lib/trade/top-up.ts`, tested there).
   assert.match(sheet, /const empty = offersTopUp\(\{ connected: Boolean\(connection\), side, max: choice\.sizing\.max, moneyOpen: MONEY_OPEN \}\);/u);
   assert.match(read("../../lib/trade/top-up.ts"), /return input\.connected && input\.side === 'buy' && input\.max === '0' && input\.moneyOpen;/u);
   const add = sheet.indexOf("else if (empty) return (");

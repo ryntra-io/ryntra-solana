@@ -24,7 +24,7 @@ export type EarnEngine = Readonly<{
   stocks: (mints: readonly string[]) => Promise<Read<readonly ScaledConfig[]>>;
   lend: () => Promise<Read<LendRates>>;
   positions: (owner: string) => Promise<Read<PositionsAnswer>>;
-  /** «Like the Captain»: the strategies with a proven record (CITY-99). */
+  /** «Like the Captain»: the strategies with a proven record. */
   captain: () => Promise<Read<CaptainAnswer>>;
 }>;
 

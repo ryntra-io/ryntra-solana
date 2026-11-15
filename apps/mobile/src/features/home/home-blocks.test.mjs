@@ -41,7 +41,7 @@ test('a stored layout is read leniently: unknown names dropped, repeats once, a 
 })
 
 test('a layout stored with C2’s recurring buys and companies keeps its own choices; those two leave Home', () => {
-  // The recurring buys live in «Боти», the popular companies in «Що купити» (the operator’s word of 2026-10-17).
+  // The recurring buys live in «Боти», the popular companies in «Що купити».
   assert.deepEqual(parseLayout('popular,!autoinvest'), DEFAULT_LAYOUT)
   assert.deepEqual(parseLayout('recent,!popular,favourites,autoinvest'), [
     { id: 'recent', on: true },

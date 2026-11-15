@@ -44,14 +44,14 @@ const NO_SHARES: readonly ShareRow[] = [];
 const PICTURES = 'image/png,image/jpeg,image/webp,image/gif';
 
 /**
- * «Raise your tower» (CITY-143, `docs/research/ryntra-launch-2026-10-29/SPEC.md` «Створення»): the cost line first; a
+ * «Raise your tower» (`docs/research/ryntra-launch-2026-10-29/SPEC.md` «Створення»): the cost line first; a
  * picture, a name and a ticker over a live preview of the tower; then the rules — the bot shield, two facts and one line
  * of who gets what, the rest behind «i»; then one signature in the creator's wallet. The rules of the fields are the
  * engine's own (`checkLaunchForm`), so the sheet says at once what the engine would refuse; the picture goes to the
  * engine's store while the creator types, and the engine simulates the launch before the press (`prepare.ts`). The
  * sheet decides nothing for the creator and holds no key.
  *
- * Since CITY-242 the sheet is the contents of a window of the city's one frame (`LaunchLayer`), as every other place of
+ * The sheet is the contents of a window of the city's one frame (`LaunchLayer`), as every other place of
  * the Deck: the frame brings the title, «Close», the moving and the phone's sheet, and the Deck stays where it is.
  */
 export function LaunchSheet() {
@@ -88,7 +88,7 @@ function FormStep() {
   const ids = { name: useId(), symbol: useId(), picture: useId() };
   const nameRef = useRef<HTMLInputElement>(null);
   const fileRef = useRef<HTMLInputElement>(null);
-  /* A finger gets two doors to the picture, the camera first (CITY-168); a mouse keeps the one file picker. */
+  /* A finger gets two doors to the picture, the camera first; a mouse keeps the one file picker. */
   const [touch] = useState(() => window.matchMedia?.('(pointer: coarse)').matches === true);
   useEffect(() => {
     /* A desk types at once; a phone opens its keyboard only on a tap. */
@@ -125,7 +125,7 @@ function FormStep() {
   return (
     <>
       {/* The window's head carries the title and «Close»: the cost line comes first, the creator's berth beside it
-          (CITY-141: what their launches earned and «Забрати», one quiet tap from the sheet). */}
+          (what their launches earned and «Забрати», one quiet tap from the sheet). */}
       <div className={s.costHead}>
         <CostLine preset={preset} />
         <button className={`${s.close} ${s.berth}`} aria-label={w.myBerth} data-hint={w.myBerth} data-launch-berth="" onClick={() => openBerth()}>
@@ -268,9 +268,9 @@ function ReviewStep({ onClose }: { onClose: () => void }) {
   const working = phase !== null && phase.step !== 'failed' && phase.step !== 'done';
   const { fields, key } = usePrepared(check.clean.name, symbol);
   const storedOk = useLaunch((st) => key !== null && st.stored?.key === key && st.stored.answer?.ok === true);
-  /* The shield (CITY-169): the launch goes on it only where it is open and the engine serves it number for number. */
+  /* The shield: the launch goes on it only where it is open and the engine serves it number for number. */
   const halo = cityShieldOpen(network) && shieldServed(preset);
-  /* CITY-212: the two doors. Early access is its own launch — a pool, not a curve —, so with it on the curve's rows give way. */
+  /* The two doors. Early access is its own launch — a pool, not a curve —, so with it on the curve's rows give way. */
   const earlyDoor = earlyDoorOpen(network, earlyBounds, earlySwitch);
   const earlyOn = earlyDoor && early !== null && earlyBounds !== null;
   const earlyPreview = useMemo(() => (earlyOn ? earlyRules(early, earlyBounds, Math.floor(Date.now() / 1000)) : null), [earlyOn, early, earlyBounds]);
@@ -539,7 +539,7 @@ function ShieldSwitch({ disabled }: { disabled: boolean }) {
 }
 
 /**
- * The shielded launch (CITY-169): no switch to think about — the halo is on, with what bots pay at the start beside it.
+ * The shielded launch: no switch to think about — the halo is on, with what bots pay at the start beside it.
  * What keeps the halo is behind «i» (`reviewRows`).
  */
 function HaloRow({ preset }: { preset: LaunchPresetView }) {
@@ -556,8 +556,7 @@ function HaloRow({ preset }: { preset: LaunchPresetView }) {
 
 export function WalletList({ options, connecting, onPick, back }: { options: readonly WalletOption[]; connecting: string | null; onPick: (name: string) => void; back?: string }) {
   const w = useWords(LAUNCH);
-  // A browser with no wallet gets one way on, never a sentence and a dead end (CITY-236, as the top bar's wallet since
-  // CITY-221): a phone opens this very place inside Phantom's browser — `back`, the launch sheet or the early window —
+  // A browser with no wallet gets one way on, never a sentence and a dead end: a phone opens this very place inside Phantom's browser — `back`, the launch sheet or the early window —
   // and a computer gets the wallet.
   const [phone, setPhone] = useState(false);
   useEffect(() => setPhone(isPhoneUserAgent(navigator.userAgent)), []);
@@ -616,7 +615,7 @@ function Progress({ phase, wallet, ...ways }: { phase: Exclude<Phase, { step: 'd
 }
 
 /**
- * A stopped launch (CITY-181): one sentence of what happened, one of whether money moved — said every time — and one
+ * A stopped launch: one sentence of what happened, one of whether money moved — said every time — and one
  * action. The contract's code and the engine's words are for support, behind a quiet «Details».
  */
 function Refused({ failure, wallet, ways }: { failure: LaunchFailure; wallet: string | null; ways: Ways }) {

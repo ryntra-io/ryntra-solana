@@ -1,6 +1,6 @@
--- CITY-246 — the agent's funnel by day, for the admin's «Воронка» page.
+-- The agent's funnel by day, for the admin's «Воронка» page.
 --
--- Read only. The city's moments already land in `public.events` (CITY-222, `/api/track`, placement `agent`); anon may
+-- Read only. The city's moments already land in `public.events` (`/api/track`, placement `agent`); anon may
 -- only insert there, so the admin reads them through this one function, behind the beta secret
 -- (`private.beta_check_secret`), like every admin read. It counts rows by day (UTC), moment and device and returns
 -- nothing else: no ref beyond its device word, no path, no locale. Robots' visits (ref `<device>:bot` — our own walks

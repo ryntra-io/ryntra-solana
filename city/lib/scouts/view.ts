@@ -5,7 +5,7 @@ import type { Tower } from '../market/types.ts';
 import { SCOUTS_LINE } from './words.ts';
 
 /**
- * «Scouts» (CITY-8): what the Growth engine says about the people you brought, as the city shows it. Everything comes
+ * «Scouts»: what the Growth engine says about the people you brought, as the city shows it. Everything comes
  * from `/api/rewards` — the same read, the same rules and the same figures as the rest of Ryntra; the city never counts
  * a reward itself. Rewards are counted in dollars and paid in SOL (decision 73), so every figure reads «$ ≈ SOL» at the
  * city's own SOL price. No React and no three.js here: the tests run it in Node.

@@ -51,7 +51,7 @@ export function CoinPrice({ tower, chart = true }: { tower: Tower; chart?: boole
 }
 
 /**
- * The tower's key figures in the trade window (CITY-78): market cap, liquidity, traders this hour and its rank, then
+ * The tower's key figures in the trade window: market cap, liquidity, traders this hour and its rank, then
  * whether Jupiter verified it and what its issuer can still do. Everything else waits behind «Details». The issuer's
  * powers come from the passport on the engine's price for this coin; until a price brings one, they are not shown.
  */

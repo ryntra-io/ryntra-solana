@@ -1,5 +1,5 @@
 /**
- * A machine as a Vercel Sandbox (CITY-238): a Firecracker microVM of the deployment's own account, started from the
+ * A machine as a Vercel Sandbox: a Firecracker microVM of the deployment's own account, started from the
  * image's snapshot (`../image.mjs`) with a network policy that denies everything from its first moment. The wall is the
  * machine's own firewall, outside the guest: nothing the run's process does can take it down, and the entry still
  * checks it is there before it plays (`../entry.mjs`).

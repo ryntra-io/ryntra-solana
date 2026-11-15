@@ -1,5 +1,4 @@
-// A launch tower's flow for review (L3): the pills, the creator's strip and the method behind «i» in the tower's window
-// (CITY-78), in English through the city's own link (`?lang=en`), on the development
+// A launch tower's flow for review (L3): the pills, the creator's strip and the method behind «i» in the tower's window, in English through the city's own link (`?lang=en`), on the development
 // stand-in (`?launch=stub`), at 1440×860 and 390×844 → <out>/trust-<symbol>[-method]-<size>.png
 //   node city/lib/launch/trust-shots.mjs [out] [baseUrl]      (npm run dev running; PRESS_CHROME may point at a Chromium)
 // Made-up devnet-shaped answers only; nothing is sent anywhere.

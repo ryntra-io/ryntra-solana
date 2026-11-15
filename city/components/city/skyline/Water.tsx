@@ -8,7 +8,7 @@ import { GLSL_SHARED, share } from '@/city/lib/city/shared';
 import { GLSL_LIGHT, shareLight } from './light';
 
 /**
- * The water round the island (CITY-56): a ring from the shore to the haze. Ripples in three wave trains and a fine
+ * The water round the island: a ring from the shore to the haze. Ripples in three wave trains and a fine
  * chop bend the normal; the surface mirrors the city through the captured cube (the skyline's lit windows, the moon,
  * the clouds), Fresnel decides how much, the moon lays a path of glints, and the shore glows with the city's light.
  * Ripples fade with distance so far water never shimmers. The island's own ground stops at the shore.

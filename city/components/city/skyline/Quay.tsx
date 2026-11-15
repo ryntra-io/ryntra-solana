@@ -15,7 +15,7 @@ const LAMP_STEP = 6;
 const ROAD_GAP = 2.4;
 
 /**
- * The island's embankment (CITY-56): a stone quay wall rising from the water to a coping, a railing along its edge
+ * The island's embankment: a stone quay wall rising from the water to a coping, a railing along its edge
  * and lights along the promenade — instead of the blocks simply ending above the water. The wall and coping are
  * drawn as one-instance meshes so the skyline's material (instanced) shades them as stone; the railing and the
  * lights are the kit's `quay.rail` and `prop.lamp`.

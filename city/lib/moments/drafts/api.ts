@@ -179,7 +179,7 @@ export function createMomentsApi(deps: MomentsDeps): MomentsApi {
       if (!read.ok) return json({ error: 'bad_event', field: read.error }, 400);
       const moment = momentForPost(read.event);
       if (!moment) return json({ error: 'not_a_post' }, 422);
-      // A studio post's words come from its facts alone (CITY-38): no handle, no tag, within 280.
+      // A studio post's words come from its facts alone: no handle, no tag, within 280.
       const studio = read.event.kind === 'studio' ? read.event.facts : null;
       const link = studio ? studioLink(studio) : postLink(moment);
       const words = studio ? studioText(studio, link) : postText(moment, link);

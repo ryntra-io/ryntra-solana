@@ -4,7 +4,7 @@ import test from "node:test";
 import { advance, emptyFeed } from "./feed.ts";
 import { HISTORY_MAX, HOUR, remember, sparkPath, sparkPoints } from "./spark.ts";
 
-/* CITY-66: the mover's small line — only real reads, joined straight. */
+/* The mover's small line — only real reads, joined straight. */
 
 const NOW = Date.parse("2026-10-28T12:00:00Z");
 const MIN = 60_000;

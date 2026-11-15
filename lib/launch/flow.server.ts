@@ -79,7 +79,7 @@ export type LaunchDeps = Readonly<{
   network: LaunchNetwork;
   connection: Connection;
   store: GuardStore;
-  /** Ryntra's pool payer: a signer that signs a launch's creation and nothing else; its key in the environment or in KMS (CITY-162). */
+  /** Ryntra's pool payer: a signer that signs a launch's creation and nothing else; its key in the environment or in KMS. */
   poolPayer: LaunchSigner;
   /**
    * Whether a wallet is one of Ryntra's own — the demo market, Ryntra's technical validation, takes a launch from no one
@@ -336,9 +336,8 @@ export async function prepareLaunch(deps: LaunchDeps, input: PrepareInput, conte
   let shares = input.feeShares ?? [];
   if (shares.length > 0) {
     if (input.crew !== undefined) return fail("SHARES_INVALID", "A crew's launch takes its rows from the crew, not the request.");
-    /* CITY-212: the city's launch shares the creator's fees between wallets the creator types, on Classic and Protected
-       too — the same vault and handover a crew writes. Open on the devnet stand; on mainnet only by the operator's own word
-       on typed shares (CITY-220: `TYPED_SHARES_OWNER_WORD`, `../core/launch/fee-shares.ts`), apart from the crews'. */
+    /* The city's launch shares the creator's fees between wallets the creator types, on Classic and Protected
+       too — the same vault and handover a crew writes. Open on the devnet stand. */
     if (preset.id !== "community" && !(isCrewPreset(preset.id) && typedSharesOpenOn(deps.network.cluster))) return fail("SHARES_INVALID", "Only «Спільнота» and a crew share the creator's fees.");
   }
   /* MC-2: a crew's rows — the creator and every member who said yes — from the crew's own record. */
@@ -995,7 +994,7 @@ export async function submitLaunch(
     return fail("BUILD_USED", "A launch was already sent on this config; make another.");
   }
 
-  /* The pool payer signs last, through its signer (CITY-162): these bytes as built, or nothing — a refusal, or a key that
+  /* The pool payer signs last, through its signer: these bytes as built, or nothing — a refusal, or a key that
      did not answer, sends nothing, and what was held for this send is let go as after a refusal before the chain. */
   const unsigned = await payerSigns(deps.poolPayer, creation).then(
     () => false,

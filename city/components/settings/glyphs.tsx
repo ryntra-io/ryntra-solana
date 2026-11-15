@@ -1,4 +1,4 @@
-/* The settings window's glyphs (CITY-87): 24 px, drawn in the current colour, the city's square line ends. */
+/* The settings window's glyphs: 24 px, drawn in the current colour, the city's square line ends. */
 
 const line = { fill: 'none', stroke: 'currentColor', strokeWidth: 1.9, strokeLinecap: 'square', strokeLinejoin: 'miter' } as const;
 

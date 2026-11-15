@@ -53,7 +53,7 @@ export function worldApi(): WorldApi {
   return api;
 }
 
-/** The free layout of a quarter (CITY-55): its own table, the same store, session and guest key as the world. */
+/** The free layout of a quarter: its own table, the same store, session and guest key as the world. */
 export function layoutApi(): LayoutApi {
   layouts ??= createLayoutApi({
     world: worldStore(),
@@ -64,7 +64,7 @@ export function layoutApi(): LayoutApi {
   return layouts;
 }
 
-/** Crews (CITY-20): their own tables, the same store, session and guest key as the world. */
+/** Crews: their own tables, the same store, session and guest key as the world. */
 export function crewApi(): CrewApi {
   crews ??= createCrewApi({
     world: worldStore(),

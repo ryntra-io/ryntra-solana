@@ -11,14 +11,14 @@ import g from './guides.module.css';
 import { GUIDE_WORDS } from './words';
 
 /**
- * «How it works» (CITY-43): the lessons, the same in the window over the city (`GuidesLayer`) and on the page
+ * «How it works»: the lessons, the same in the window over the city (`GuidesLayer`) and on the page
  * `/how-it-works` (`GuidesPage`). Each lesson is its film, its name, one line and one amber «Try»; its steps wait behind
  * a quiet «Details». In the city «Try» opens the function's window at once; on the page it leads into the city, which
  * opens it there. Only lessons with a film reach here — the caller never passes an empty one.
  */
 export type Where = 'window' | 'page';
 
-/** The still at the head: the island from above at night, filmed from our own live 3D city (CITY-64). */
+/** The still at the head: the island from above at night, filmed from our own live 3D city. */
 const HERO = { small: '/city/art/district-market-800.webp', large: '/city/art/district-market-1600.webp' };
 
 export function Guides({ where, items, onTry }: { where: Where; items: readonly Lesson[]; onTry?: (id: GuideId) => void }) {

@@ -1,5 +1,5 @@
 /**
- * CITY-184 — the coins of the Token-2022 program the agent trades, and those it does not.
+ * The coins of the Token-2022 program the agent trades, and those it does not.
  *
  * Every coin of Ryntra's launchpad is a Token-2022 mint (read from mainnet 02.11.2026: metadata pointer and metadata, no
  * mint or freeze authority), and so are pump.fun's new coins. Token-2022 lets an issuer bolt features onto a mint, and
@@ -218,7 +218,7 @@ export function withheldOn(amount: bigint, fee: CoinTransferFee | null, epoch: b
  *
  * Between a venue's minimum and her account the coin crosses one transfer: Jupiter holds its minimum on the vault's own
  * account — the pool's transfer into it already counted — and then hands the coin on to hers; DLMM pays it to her
- * straight. Measured on the mainnet fork (CITY-184 report §3): a rule asking the minimum less one fee passes, the
+ * straight. Measured on the mainnet fork: a rule asking the minimum less one fee passes, the
  * minimum itself never.
  */
 export function afterTransferFee(amount: bigint, coin: Pick<Coin, "transferFee">, epoch: bigint, transfers = 1): bigint {

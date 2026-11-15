@@ -11,7 +11,7 @@ import { RING_LINES } from './words.ts';
 type RingLine = keyof (typeof RING_LINES)['en'];
 
 /**
- * The Ring in the city (CITY-50): a garage's agent as the sheet shows it, and the screen that makes or changes one —
+ * The Ring in the city: a garage's agent as the sheet shows it, and the screen that makes or changes one —
  * body, brain, script. The brain picker reads OpenRouter's catalog through `/api/ring/models` once, with every price
  * shown before a pick; a pick is quoted (`/api/ring/model`) so the class, price and formats are the pinned provider's
  * own before anything is saved. Every save carries its own key: a retry of the same draft is done once.
@@ -125,7 +125,7 @@ export function visibleModels(list: readonly ModelOption[], weight: Weight, sear
 export type BrainRow = Pick<ModelOption, 'id' | 'name' | 'weight' | 'matchMicroUsd'>;
 
 /**
- * The agent's own brain as the first row of the list while the agent is being changed (CITY-240). A person who opens
+ * The agent's own brain as the first row of the list while the agent is being changed. A person who opens
  * «Brain» to change it must see what the agent thinks with now: the list held that brain only while the catalog still
  * offered it, in the class the tab shows, among the first rows — and on a phone the line that names the pick is put
  * away on this step. So the brain stands first, whatever class the tab shows and whether or not the list still offers

@@ -1,5 +1,5 @@
 /**
- * CITY-174 — what the mandate's routes share: the devnet switch (closed answers 404 — the routes do not exist for the
+ * What the mandate's routes share: the devnet switch (closed answers 404 — the routes do not exist for the
  * deployment), a rate limit, a bounded JSON body and one shape of failure. Private, never cached.
  */
 

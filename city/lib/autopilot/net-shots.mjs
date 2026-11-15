@@ -1,4 +1,4 @@
-// CITY-197 for review — the agent's honest result and the owner's week of demand, on a desk (1440×900) and a phone
+// For review — the agent's honest result and the owner's week of demand, on a desk (1440×900) and a phone
 // (390×844), in English and Ukrainian → <out>/<lang>-<size>-<n>-<step>.jpg
 //   NEXT_PUBLIC_RYNTRA_CITY_AUTOPILOT=mainnet NEXT_PUBLIC_RYNTRA_CITY_MANDATE=mainnet NEXT_PUBLIC_RYNTRA_CITY_AGENT_REPORT=open NEXT_PUBLIC_RYNTRA_CITY_TRADE=open npm run dev -- -p 3197
 //   node city/lib/autopilot/net-shots.mjs [out] [baseUrl] [adminPath]          LANGS=en,uk  SIZES=desk,phone  PRESS_CHROME=<chromium>

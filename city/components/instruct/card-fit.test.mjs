@@ -1,4 +1,4 @@
-// CITY-201: the agent's card is one tight column. The window it stands in is taller than the card — a bay on a desk, the
+// The agent's card is one tight column. The window it stands in is taller than the card — a bay on a desk, the
 // sheet on a phone — so nothing in the card may be pushed to the window's foot: that left a dark hole of 160–355 px
 // between the plan and «Connect wallet». The walk that measures it on the rendered page: city/lib/autopilot/qa-walk-shots.mjs.
 import assert from "node:assert/strict";

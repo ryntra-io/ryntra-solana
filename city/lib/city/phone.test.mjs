@@ -5,7 +5,7 @@ import { isRyntraApp, quietInstall } from "../app-mode.ts";
 import { Press, TAP, twist } from "./gesture.ts";
 import { BUDGET, dprAt, LADDER, meanFps, move, rangeFor, ROCKING_TURNS, startMoves, stepDown, stepUp } from "./quality.ts";
 
-/* CITY-6a: the city on a phone — the quality ladder, the touch gestures and the app's mark. */
+/* The city on a phone — the quality ladder, the touch gestures and the app's mark. */
 
 const at = (rung) => LADDER[rung];
 

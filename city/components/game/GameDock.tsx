@@ -22,7 +22,7 @@ const tick = () => {
 };
 
 /**
- * The dock in Play (CITY-81): My quarter, the Ring, the Vault, the Hall, the Run and the Map — each only once its switch
+ * The dock in Play: My quarter, the Ring, the Vault, the Hall, the Run and the Map — each only once its switch
  * is open; a closed one is not drawn at all. The Vault and the Hall bring their own items, which stand only when open.
  */
 export function GameDock({ onRun }: { onRun: () => void }) {

@@ -12,7 +12,7 @@ import { FRESH_MS } from './fresh';
 import s from './window.module.css';
 
 /**
- * The live figure on a folded window's chip in the tray (CITY-84), for what the window showed (`params`): the tower's
+ * The live figure on a folded window's chip in the tray, for what the window showed (`params`): the tower's
  * price on the chart's and the trade card's chip — the city's own read, every minute — the market's mark on the
  * Exchange's, the wallet's worth on Money's, each from the store that already holds it; nothing is fetched for a chip.
  * Green or red by the day's move, no words. A window may bring its own (`WindowSpec.figure`); one with neither shows

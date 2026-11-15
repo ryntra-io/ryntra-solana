@@ -36,7 +36,7 @@ test("the window's first frame is its place: the kept one fitted to the screen, 
 });
 
 test("the pane that stands while the code arrives is inside the window's own frame: no jump between them", () => {
-  // Since CITY-65 the city's one window frame places the chart: the frame stands at once, and the pane fills its body
+  // The city's one window frame places the chart: the frame stands at once, and the pane fills its body
   // until the chart arrives, so the window never moves or resizes when its code comes.
   const css = read("city/components/chart/chart.module.css");
   const pane = css.match(/\n\.pending\s*\{([^}]*)\}/);
@@ -64,7 +64,7 @@ test("the pane that stands while the code arrives is inside the window's own fra
 
 test("Buy on the chart opens the city's trade card, behind the switch the tower card's Buy has", () => {
   const window = read("city/components/chart/ChartWindow.tsx");
-  // The tower's own window is the trade card since CITY-78: its ticket and the chart's Buy read one switch.
+  // The tower's own window is the trade card: its ticket and the chart's Buy read one switch.
   const action = read("city/components/trade/TradeSheet.tsx");
   // One switch for both Buys: `NEXT_PUBLIC_RYNTRA_CITY_TRADE` through `city/lib/trade/gates.ts`, never a copy.
   const gate = /import \{ (?:SPOT_OPEN, )?TRADE_OPEN \} from '@\/city\/lib\/trade\/gates';/;

@@ -8,7 +8,7 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 /**
- * `POST /api/v1/intents/{id}/claim` (1.90.0, CITY-161) — the wallet that presses «Confirm» takes the intent for a short
+ * `POST /api/v1/intents/{id}/claim` — the wallet that presses «Confirm» takes the intent for a short
  * lease, naming the digest the sheet showed. The same wallet pressing again keeps its lease; another wallet waits
  * (`INTENT_BUSY`); an intent bound to another wallet refuses it (`INTENT_WRONG_WALLET`). Only the city at Ryntra's own
  * origin takes this step.

@@ -9,8 +9,8 @@ import { PALETTE } from '@/city/lib/palette';
 import { Beacons } from '../assistant/Beacons';
 
 /**
- * The tower you picked, or your own one framed above «Моя вежа» (CITY-168): warm rings climb it and a light stands on its
- * roof, so a flight always ends on it. Beside it, the towers Ryntra's answer is about (CITY-10).
+ * The tower you picked, or your own one framed above «Моя вежа»: warm rings climb it and a light stands on its
+ * roof, so a flight always ends on it. Beside it, the towers Ryntra's answer is about.
  */
 export function Selected() {
   const selectedId = useCity((st) => st.selectedId);

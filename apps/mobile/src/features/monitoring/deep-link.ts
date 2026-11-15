@@ -135,7 +135,7 @@ export function mapDeepLink(url: string, options: MapOptions = {}): MappedLink {
   const name = pathname(path)
   const params = query(path)
 
-  // The city's own links (CITY-6c): a coin's tower, `/c/<mint>`, opens «Місто» on it. The site's `/` is the app's
+  // The city's own links: a coin's tower, `/c/<mint>`, opens «Місто» on it. The site's `/` is the app's
   // own `/`, «Місто», already.
   const city = name.startsWith('/c/') ? cityPathOf(name) : null
   if (city !== null) return { path: cityRouteOf(city), kind: 'native' }

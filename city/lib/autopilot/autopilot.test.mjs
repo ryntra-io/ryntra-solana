@@ -10,7 +10,7 @@ import { autopilotNetwork } from "./flag.ts";
 import { lamports, presetFor, proposal, rhythmOf, tickerFrom } from "./plan.ts";
 import { readAsk } from "./read.ts";
 
-/* CITY-175: the agent on its word — «trade 1 SOL a day», «launch me a token» — read, proposed and opened. */
+/* The agent on its word — «trade 1 SOL a day», «launch me a token» — read, proposed and opened. */
 
 const JUP_MINT = "JUPyiwrYJFskUPiHa7hkeR8VUtAeFoSYbKedZNsDvCN";
 const BOOK = bookOf([{ id: JUP_MINT, symbol: "JUP", name: "Jupiter", icon: null, mcap: 1e9, liquidity: 1e6, verified: true }]);

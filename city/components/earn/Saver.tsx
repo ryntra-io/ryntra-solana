@@ -18,7 +18,7 @@ import s from './earn.module.css';
 /** With a wallet, the exact order follows the price after this pause, once per amount. */
 const AUTO_ORDER_MS = 450;
 
-/** The Saver's figures in the language on screen (CITY-243): never «5.06%» beside «0,5 SOL». */
+/** The Saver's figures in the language on screen: never «5.06%» beside «0,5 SOL». */
 const solText = (lamports: bigint | null, signed = false) => digits(solRaw(lamports, signed));
 const percentText = (value: number | null) => digits(percentRaw(value));
 const pct = (value: number | null) => (value === null ? '—' : percentText(value));

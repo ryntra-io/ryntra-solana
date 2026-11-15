@@ -33,7 +33,7 @@ export const useMoney = create<MoneyWindow>((set, get) => ({
   busy: false,
   show: (tab) => {
     if (!tab || !isMoneyAsk(tab)) return set({ open: true });
-    // «bridge» is Send's way to another network now (CITY-155).
+    // «bridge» is Send's way to another network now.
     if (tab === 'bridge') return set({ open: true, tab: 'send', way: 'network' });
     set({ open: true, tab });
   },

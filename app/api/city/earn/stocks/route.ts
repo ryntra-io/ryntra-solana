@@ -8,7 +8,7 @@ export const dynamic = 'force-dynamic';
 export const maxDuration = 15;
 
 /**
- * «Mine»'s dividend line (CITY-95): for the mints asked, the Scaled UI Amount multiplier as the chain states it — now,
+ * «Mine»'s dividend line: for the mints asked, the Scaled UI Amount multiplier as the chain states it — now,
  * and the one step of history the extension keeps. Read-only, behind a read's rate limit, closed while Earn is.
  */
 export async function GET(request: Request) {

@@ -17,7 +17,7 @@ import {
 
 /**
  * A fake Ryntra app: the other end of the bridge for the tests and for the stand (`?bridge=mock`, development only).
- * It reads every request with the app's own parser, as CITY-6c must, and answers as the contract says. Its wallet is a
+ * It reads every request with the app's own parser, and answers as the contract says. Its wallet is a
  * throwaway key made for the page load: it signs for real (Ed25519), so the engine and the sign-in see true
  * signatures, and it owns nothing. Never in a production bundle.
  */

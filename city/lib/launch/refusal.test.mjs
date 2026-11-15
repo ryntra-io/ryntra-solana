@@ -22,7 +22,7 @@ const each = (fn) => {
   useLangStore.setState({ lang: "en" });
 };
 
-/** The task's list (CITY-181): each refusal, its kind, its one action and whether money moved. */
+/** The task's list: each refusal, its kind, its one action and whether money moved. */
 const CASES = [
   ["the person declined in the wallet", before(WALLET_REFUSED, "User rejected the request."), "declined", "retry", "nothingSent"],
   ["the wallet closed without a word", before(WALLET_REFUSED, ""), "declined", "retry", "nothingSent"],

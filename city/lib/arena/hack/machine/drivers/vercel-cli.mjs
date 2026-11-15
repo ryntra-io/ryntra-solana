@@ -1,4 +1,4 @@
-// CITY-238 · Vercel's API through the `vercel` CLI — a developer's stand and the image builder only, never the server.
+// Vercel's API through the `vercel` CLI — a developer's stand and the image builder only, never the server.
 // The CLI holds the developer's own sign-in, so no token is read, kept or passed by anything here: each call is
 // `vercel api <path> -X <method> …` and the answer is what the CLI prints. The server's own transport is `fetch` with
 // the deployment's token (`vercel.ts`, `vercelTransport`).

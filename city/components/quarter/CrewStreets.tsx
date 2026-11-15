@@ -37,7 +37,7 @@ export function hqLook(level: number, given: readonly string[]): { level: 1 | 2 
 }
 
 /**
- * Every crew's street on the newcomers' terrace (CITY-20): both kerbs of the street lit in the crew's colour, its
+ * Every crew's street on the newcomers' terrace: both kerbs of the street lit in the crew's colour, its
  * headquarters standing across from the first member on a lot of its own, with a soft pool of the same light under
  * it, and the street's name over it. `CrewBuildings` goes into the terrace's KitWorld; `CrewStreets` — the lines, the
  * pools (two instanced draws for every street at once) and the signs — stands beside it, as the quarter's own mark does,

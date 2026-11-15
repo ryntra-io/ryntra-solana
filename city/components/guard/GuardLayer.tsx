@@ -19,7 +19,7 @@ const renderGuard = () => <GuardWindow />;
 const closeGuard = () => useGuard.getState().close();
 
 /**
- * «Охорона» in the city (CITY-152), in the city's one window frame (CITY-65): the Deck's Guard place opens it while
+ * «Охорона» in the city, in the city's one window frame: the Deck's Guard place opens it while
  * the deployment's switch is open. A run owns the whole screen and a clip being filmed keeps the frame clean.
  */
 export function GuardLayer() {

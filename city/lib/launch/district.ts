@@ -33,8 +33,8 @@ type DistrictState = {
   /** The preset the next launch goes on: the city's default, or the other one the review's switch chose. */
   preset: LaunchPresetView | null;
   /**
-   * Every preset the engine serves: a launch's rates in «Мій причал» are its own preset's (CITY-141), and the review's
-   * Bot shield offers the city's other one (CITY-139, `cityPresets`).
+   * Every preset the engine serves: a launch's rates in «Мій причал» are its own preset's, and the review's
+   * Bot shield offers the city's other one (`cityPresets`).
    */
   presets: readonly LaunchPresetView[];
   /** Running on the development stand-in: every screen says so. */
@@ -44,7 +44,7 @@ type DistrictState = {
   mine: readonly LaunchTower[];
   sheet: boolean;
   /**
-   * Counts every ask to open the sheet (CITY-242): the sheet is a window of the frame, and an ask while it stands
+   * Counts every ask to open the sheet: the sheet is a window of the frame, and an ask while it stands
    * behind another window — an agent's «Launch», a sentence, «Launch another» from the berth — brings it to the front.
    */
   opened: number;
@@ -52,23 +52,23 @@ type DistrictState = {
   draft: Draft;
   phase: Phase | null;
   connection: Connection | null;
-  /** The engine's simulated cost of a launch from this sheet, lamports — the cost line's «≈» (CITY-143). */
+  /** The engine's simulated cost of a launch from this sheet, lamports — the cost line's «≈». */
   costLamports: string | null;
   /** The fields last handed to the engine's store in the background and its answer (`prepare.ts`). */
   stored: PrepState['stored'];
-  /** CITY-212: the other wallets sharing the creator's fees, as the review shows them; empty — the creator keeps all. */
+  /** The other wallets sharing the creator's fees, as the review shows them; empty — the creator keeps all. */
   shares: readonly ShareRow[];
-  /** CITY-212: early access — the engine's bounds where it serves the format here (null elsewhere), and the creator's choice. */
+  /** Early access — the engine's bounds where it serves the format here (null elsewhere), and the creator's choice. */
   earlyBounds: EarlyBounds | null;
   /** The city's switch for early access: the deployment's, or the stand's `&early=open` for the shots. */
   earlySwitch: boolean;
-  /** CITY-220: the city's switch for «Share earnings»: the deployment's; open on the stand unless `&share=closed`. */
+  /** The city's switch for «Share earnings»: the deployment's; open on the stand unless `&share=closed`. */
   shareSwitch: boolean;
   early: EarlyChoice | null;
-  /** CITY-220: the early launch whose window is open for its people — from the creator's link (`?early=`) — or null. */
+  /** The early launch whose window is open for its people — from the creator's link (`?early=`) — or null. */
   entry: string | null;
   /**
-   * CITY-236: the early window has a step out in the wallet or on its way (the deposit, the buy for everyone, the
+   * The early window has a step out in the wallet or on its way (the deposit, the buy for everyone, the
    * tokens, the rest back). «Back» and Escape wait then, as they do under the sheet's signature.
    */
   entryBusy: boolean;
@@ -172,7 +172,7 @@ const stubAsked = () => typeof window !== 'undefined' && new URLSearchParams(win
 const stubPace = () => Math.min(10, Math.max(1, Number(new URLSearchParams(window.location.search).get('pace')) || 1));
 
 /* `&refuse=picture` makes the stand-in refuse the first picture as the engine's image check does, for the eyes. */
-/* The stand's refusals for the shots (`sheet-shots.mjs`, CITY-181), in the engine's own words: `?refuse=picture`, `payer`,
+/* The stand's refusals for the shots (`sheet-shots.mjs`), in the engine's own words: `?refuse=picture`, `payer`,
    `sol`, `answer`; `sign` makes the stand's wallet decline. */
 const STUB_REFUSALS = {
   picture: { metadata: { ok: false as const, code: 'LAUNCH_IMAGE_REFUSED', message: 'The picture reads as violence/graphic; choose another.' } },
@@ -221,7 +221,7 @@ let entryEngine: Promise<EntryEngine> | null = null;
 const loadEntryStub = process.env.NODE_ENV === 'production' ? null : () => import('./entry-stub.ts');
 
 /**
- * The engine's early-access routes for the people's window (CITY-220): over HTTP, or the stand-in's beside the stub
+ * The engine's early-access routes for the people's window: over HTTP, or the stand-in's beside the stub
  * engine (`&entry=join` and the other phases of `entry-stub.ts`).
  */
 export function launchEntryEngine(): Promise<EntryEngine> {
@@ -241,7 +241,7 @@ export function launchEntryEngine(): Promise<EntryEngine> {
 let prep: Prep | null = null;
 
 /**
- * The launch made ready while the creator types (CITY-143): the fields stored in the background, the launch built once
+ * The launch made ready while the creator types: the fields stored in the background, the launch built once
  * for its cost. Through the district's engine, so the development stand-in answers on the stand.
  */
 export function launchPrep(): Prep {
@@ -279,7 +279,7 @@ async function boot() {
     /* The stand-in's trade routes load with it, not on the first tap. */
     void launchTradeEngine().catch(() => undefined);
   }
-  /* The creator's link to an early launch opens its people's window (CITY-220); the stand opens its own with `&entry=`. */
+  /* The creator's link to an early launch opens its people's window; the stand opens its own with `&entry=`. */
   const asked = new URLSearchParams(window.location.search);
   const early = earlyFrom(window.location.search);
   if (early) useLaunch.getState().openEntry(early);
@@ -410,7 +410,7 @@ function remember(token: string) {
 /**
  * The creator's coin is on chain: its tower rises in the docks at once and plays its liftoff, and the feed reads its
  * market from now on. The engine's list takes over the tower once it carries the coin. «Моя вежа» opens on it from the
- * sheet (CITY-168), and frames the tower itself.
+ * sheet, and frames the tower itself.
  */
 export function landed(liftoff: Liftoff, preset: LaunchPresetView) {
   const tower: LaunchTower = {

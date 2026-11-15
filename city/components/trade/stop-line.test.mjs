@@ -4,7 +4,7 @@ import { readFileSync } from "node:fs";
 
 import { SPOT } from "./words.ts";
 
-// CITY-149 — the stop's one line on the ticket: with stops in the engine, «Стежимо, поки Ryntra відкрита» gives way to
+// The stop's one line on the ticket: with stops in the engine, «Стежимо, поки Ryntra відкрита» gives way to
 // «Нагадаємо, коли ціна дійде, — продаж підписуєш ти», from the dictionary in both languages; shut, the old line stays.
 
 test("the ticket's line says the engine reminds and the person signs, in both languages", () => {

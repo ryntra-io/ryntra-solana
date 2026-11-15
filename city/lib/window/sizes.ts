@@ -1,7 +1,7 @@
 import { areaOf, CITY_SHARE, tallestIn, type Size, type Viewport } from './geometry.ts';
 
 /**
- * A window's first size on this screen (CITY-242, «typical sizes for a large desk»): as tall as its contents ask, up to
+ * A window's first size on this screen: as tall as its contents ask, up to
  * the workspace between the top bar and the Deck; as wide as it asks — between its narrowest and its widest — as far as
  * the city keeps its share of the screen at that height (helm §4: the windows the system places cover at most 60 %).
  *

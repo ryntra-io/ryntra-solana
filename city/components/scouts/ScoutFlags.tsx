@@ -13,7 +13,7 @@ import { useWallet } from '@/city/lib/trade/wallet';
 const ORANGE = '#ff681c';
 
 /**
- * A scout's flag (CITY-8): a thin pole and an orange pennant on the roof of every tower the people you brought trade,
+ * A scout's flag: a thin pole and an orange pennant on the roof of every tower the people you brought trade,
  * as the Growth engine names them on your history (`flaggedMints`). Quiet on purpose — no figure, no label, a slow
  * flutter — it only says «your friends are here». Read from the engine for the connected wallet; a wallet that has not
  * signed in to Ryntra has no flags.

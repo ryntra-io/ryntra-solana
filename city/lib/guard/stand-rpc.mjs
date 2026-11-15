@@ -1,4 +1,4 @@
-// The Guard window's stand chain (CITY-152): a JSON-RPC server that answers the four reads the pre-sign check makes —
+// The Guard window's stand chain: a JSON-RPC server that answers the four reads the pre-sign check makes —
 // getMultipleAccounts, simulateTransaction, getSignaturesForAddress, getEpochInfo — from `stand.mjs`.
 //   node city/lib/guard/stand-rpc.mjs [port]          (default 8899)
 //   RYNTRA_SOLANA_RPC_MAINNET=http://127.0.0.1:8899 RYNTRA_SOLANA_RPC_MAINNET_FALLBACK=http://127.0.0.1:8899 \

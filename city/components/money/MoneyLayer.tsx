@@ -19,7 +19,7 @@ const renderMoney = () => <MoneyWindow />;
 const closeMoney = () => useMoney.getState().close();
 
 /**
- * Money in the city (CITY-63), in the city's one window frame (CITY-65). Any window opens it with `openMoney(tab)` from
+ * Money in the city, in the city's one window frame. Any window opens it with `openMoney(tab)` from
  * `city/lib/money/open`. A run owns the whole screen, and a clip being filmed keeps the frame clean — unless money is
  * mid-way, which always stays in view, and which the frame holds open.
  */
@@ -54,7 +54,7 @@ export function MoneyLayer() {
       title,
       icon: <TabGlyph tab="portfolio" />,
       render: renderMoney,
-      // CITY-209: as tall as the tab, up to its place — a short tab leaves no empty glass under it.
+      // As tall as the tab, up to its place — a short tab leaves no empty glass under it.
       fit: true,
       size: { width: 520, height: 720 },
       min: { width: 400, height: 460 },

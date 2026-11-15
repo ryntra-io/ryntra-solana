@@ -5,7 +5,7 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 /**
- * RFC 9728 protected-resource metadata for the connector's MCP endpoint `/mcp` (CITY-154). The path mirrors the
+ * RFC 9728 protected-resource metadata for the connector's MCP endpoint `/mcp`. The path mirrors the
  * resource path, as the RFC asks and as the `WWW-Authenticate` challenge points. Public: a client cannot authenticate
  * until it has read this.
  */

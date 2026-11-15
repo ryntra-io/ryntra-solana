@@ -155,7 +155,7 @@ async function takenDownTokens(deps: Pick<HealthDeps, "store">): Promise<Readonl
 }
 
 /**
- * CITY-139 — the rows as the takedowns stand now: a token held down says so (`hidden`) and points at no picture; one put
+ * The rows as the takedowns stand now: a token held down says so (`hidden`) and points at no picture; one put
  * back says nothing. Not read (`null`): the rows stay as they were read, a takedown already in them kept.
  */
 export function withTakedowns(rows: readonly LaunchMarketRow[], down: ReadonlySet<string> | null): LaunchMarketRow[] {

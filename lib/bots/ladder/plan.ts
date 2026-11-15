@@ -1,5 +1,5 @@
 /**
- * The ladder composer (B5, CITY-135) — the pure part: a buy or an exit ladder
+ * The ladder composer — the pure part: a buy or an exit ladder
  * as Meteora DLMM limit-order bins.
  *
  * A **buy ladder** spends the quote (a dollar) in steps under the price; an

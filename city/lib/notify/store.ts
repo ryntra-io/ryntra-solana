@@ -21,12 +21,12 @@ import {
 } from './prefs.ts';
 
 /**
- * The notification centre's state for the page (CITY-87): the person's choices (kept on this device), the banners
+ * The notification centre's state for the page: the person's choices (kept on this device), the banners
  * standing in the city now, and when each kind last spoke. `notify(note)` is the one way the city tells something: it
  * asks the gate (`./gate.ts`), stands a banner, shows a notification on the computer, or does nothing.
  *
- * Whether a market kind shows at all and whether the city flashes at all stay the live feed's switches (CITY-66,
- * `../feed/store.ts`): this store flips them, so the feed, the bell, the scene and the old keys stay one truth.
+ * Whether a market kind shows at all and whether the city flashes at all stay the live feed's switches
+ * (`../feed/store.ts`): this store flips them, so the feed, the bell, the scene and the old keys stay one truth.
  */
 
 export type Banner = Readonly<{
@@ -128,7 +128,7 @@ export const useNotify = create<NotifyStore>((set, get) => {
     setCorner: (corner) => keep({ ...get().prefs, corner }),
     setFeedSide: (feed) => keep({ ...get().prefs, feed }),
     setFlash: (flash) => {
-      // Off is the feed's flashing switch (CITY-66): the scene, the banners and the call-outs all ask it.
+      // Off is the feed's flashing switch: the scene, the banners and the call-outs all ask it.
       if (flash !== 'off') keep({ ...get().prefs, flash });
       const feed = useFeed.getState();
       const on = flash !== 'off';

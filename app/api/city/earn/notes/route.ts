@@ -11,7 +11,7 @@ const LIMITER = new FixedWindowLimiter({ limit: 10, windowMs: 60_000, maxKeys: 5
 const WALLET = /^[1-9A-HJ-NP-Za-km-z]{32,44}$/;
 
 /**
- * Earn's notes with Ryntra closed (CITY-100): the city asks Ryntra's server to watch the wallet it proved, so the phone
+ * Earn's notes with Ryntra closed: the city asks Ryntra's server to watch the wallet it proved, so the phone
  * and a connected Telegram hear of a position out of range, the exchange's weekend and a dividend date
  * (`city/lib/earn/notes-watch.ts`). Only the proven wallet itself, never another address; the request names the wallet
  * the page holds, and a proof of another wallet changes nothing. Writes one row of the watch; signs, sends and trades

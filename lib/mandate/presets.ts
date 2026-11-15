@@ -1,5 +1,5 @@
 /**
- * CITY-174 — the budgets the city's window offers: one tap picks the day's budget, and the trade cap and the length
+ * The budgets the city's window offers: one tap picks the day's budget, and the trade cap and the length
  * follow from it, inside the starter caps a new agent holds (`./terms.ts`). Pure — the window and the server share it.
  */
 
@@ -30,7 +30,7 @@ export const budgetPreset = (id: BudgetPresetId): BudgetPreset => BUDGET_PRESETS
 export const isBudgetPreset = (value: unknown): value is BudgetPresetId => typeof value === "string" && (BUDGET_PRESET_IDS as readonly string[]).includes(value);
 
 /**
- * The budgets each network offers. Mainnet opened to everyone of 4.11.2026 with one budget only —
+ * The budgets each network offers. Mainnet opened to everyone with one budget only —
  * 0.1 SOL a day (`small`) — while Squads' policy layer waits on its audit.
  */
 export const PRESETS_ON: Readonly<Record<"devnet" | "mainnet", readonly BudgetPresetId[]>> = Object.freeze({ devnet: BUDGET_PRESET_IDS, mainnet: ["small"] });

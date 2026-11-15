@@ -20,7 +20,7 @@ const REPLAN_S = 0.5;
 const BRAND = new THREE.Color('#FF681C');
 
 /**
- * CITY-70 — the person's agent in the city's sky: it walks from her quarter to the towers of the coins it trades for her
+ * The person's agent in the city's sky: it walks from her quarter to the towers of the coins it trades for her
  * and back, hangs over a tower with a beam while a trade is made or confirmed, and stays home, its light cold, while she
  * has it frozen (`city/lib/autopilot/walk.ts`). Light: a few meshes, one shared glow, no shadows, no new assets; with
  * «reduce motion» it stands still at its stop. Nothing shows without an agent at work.

@@ -58,7 +58,7 @@ export function launchDeps(): LaunchDeps | null {
   if (!network || !launchOpen() || !launchWritesHere(network)) return null;
   const store = getGuardRuntime().store;
   if (network.cluster === "mainnet" && !storeSupportsConcurrentInstances(store)) return null;
-  /* Every signature of the pool payer's is written to the journal in this store first (CITY-162). */
+  /* Every signature of the pool payer's is written to the journal in this store first. */
   const poolPayer = launchPoolPayer(process.env, network, { journal: storeJournal(() => store) });
   if (!poolPayer) return null;
   /* On mainnet the demo market takes only Ryntra's own wallets; the devnet stand is Ryntra's own throughout. */
@@ -380,7 +380,7 @@ function boostOffered(network: LaunchNetwork): NonNullable<NonNullable<LaunchPre
   return bounds ? { bounds: { ...bounds, currencies: [...bounds.currencies], routes: [...bounds.routes], maxBudgetRaw: { ...bounds.maxBudgetRaw } } } : null;
 }
 
-/** Early access's bounds where it may be built here: the stand; mainnet only with the operator's bounds and word. */
+/** Early access's bounds where it may be built here: the stand; mainnet only inside the bounds configured for it. */
 function earlyAccessOffered(network: LaunchNetwork): NonNullable<NonNullable<LaunchPresetsResponse["formats"]>["earlyAccess"]> | null {
   const bounds = earlyAccessBoundsFor(network);
   return bounds ? { bounds: { ...bounds, modes: [...bounds.modes] } } : null;

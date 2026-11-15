@@ -11,7 +11,7 @@ import s from "@/city/styles/city.module.css";
 
 import { SITE, SITE_NAME, TWITTER } from "../seo";
 
-/* `/launches` and `/uk/launches` — every coin launched on Ryntra's launchpad (CITY-185): the city, opened on its window
+/* `/launches` and `/uk/launches` — every coin launched on Ryntra's launchpad: the city, opened on its window
    «Launched on Ryntra» (`city/components/launch/LaunchedLayer.tsx`). One address to hand anyone who asks where the
    launches are. Its card is the city's own frame of the live city with the page's line (`opengraph-image.tsx`). */
 

@@ -2,9 +2,9 @@ import { create } from 'zustand';
 import type { PageId } from './pages.ts';
 
 /**
- * Which of the city's pages stand open as windows (CITY-157), and the anchor one of them was opened on
+ * Which of the city's pages stand open as windows, and the anchor one of them was opened on
  * (`#android` of the Privacy Policy, `#launch` of the Terms). A page opened again comes to the front with its new
- * anchor; the frame (CITY-65) keeps where each one stood.
+ * anchor; the frame keeps where each one stood.
  */
 type Pages = {
   open: readonly PageId[];

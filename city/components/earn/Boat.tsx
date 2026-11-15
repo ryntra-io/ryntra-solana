@@ -95,7 +95,7 @@ export function BoatCard({ words, view, row }: { words: Words; view: PositionVie
   const shown = acting && connection && reviewed?.key === targetKey(connection.address, acting) ? reviewed : null;
   const poolReview = poolReviewOf(shown);
   const figures = poolReview && acting ? reviewFigures(poolReview, { x: view.x.symbol, y: view.y.symbol }, null) : null;
-  // «Take fees» when the network's fee comes close to them (CITY-243): a show only, the Review stays the engine's.
+  // «Take fees» when the network's fee comes close to them: a show only, the Review stays the engine's.
   const near = poolReview && acting?.kind === 'claim' ? feeNear(usdLamports(claimedUsd(poolReview, view), price), poolReview.networkFeeLamports) : null;
   const choose = (kind: 'claim' | 'exit') => {
     if (!connection || busy) return;

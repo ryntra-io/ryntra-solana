@@ -4,7 +4,7 @@ import { readFileSync } from "node:fs";
 
 import { ghostGuard } from "./ghost.ts";
 
-/* CITY-200: on a 390 px phone one tap on SOL's tower opened Spot and, with the same tap's click, «Ask Ryntra» in its head. */
+/* On a 390 px phone one tap on SOL's tower opened Spot and, with the same tap's click, «Ask Ryntra» in its head. */
 const touchEnd = () => {
   const e = { cancelable: true, prevented: false, preventDefault() { this.prevented = true; } };
   return e;

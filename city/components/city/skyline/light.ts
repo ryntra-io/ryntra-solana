@@ -5,7 +5,7 @@ import { PALETTE } from '@/city/lib/palette';
 export const MOON_DIR = new THREE.Vector3(-0.396, 0.225, -0.89).normalize();
 
 /**
- * The night's light, shared by every skyline material by reference (CITY-56): the moon, the afterglow in the north,
+ * The night's light, shared by every skyline material by reference: the moon, the afterglow in the north,
  * the street's amber from below, and the city's reflection — a cube captured once from inside the skyline
  * (`Reflections.tsx`), sampled through a sphere around the island so a facade sees its neighbours where they stand.
  * Before the cube exists (and on the Lite tier) glass reflects an analytic sky of the same colours.

@@ -4,7 +4,7 @@ import { PALETTE } from "@/city/lib/palette";
 
 import { LaunchesPage, launchesMetadata } from "./launches-page";
 
-/* `/launches` — every coin launched on Ryntra (CITY-185): the city, opened on «Launched on Ryntra». */
+/* `/launches` — every coin launched on Ryntra: the city, opened on «Launched on Ryntra». */
 
 export const metadata: Metadata = launchesMetadata("en");
 

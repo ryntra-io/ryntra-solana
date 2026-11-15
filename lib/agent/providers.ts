@@ -1,5 +1,5 @@
 /**
- * CITY-205 — the assistant's provider layer. Ryntra's consultant reads the market and writes words; it never decides
+ * The assistant's provider layer. Ryntra's consultant reads the market and writes words; it never decides
  * money (the engine's rules do). Which model writes those words is a switch of the deployment:
  *
  *   RYNTRA_ASSISTANT_PROVIDER=openai      (default)  OPENAI_API_KEY      OPENAI_ASSISTANT_MODEL_L1 / _L2

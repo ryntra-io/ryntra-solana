@@ -7,7 +7,7 @@ export const dynamic = "force-dynamic";
 export const maxDuration = 20;
 
 /**
- * The ladder composer (CITY-135; mainnet CITY-219): is it open on a network, and where would a ladder of this coin
+ * The ladder composer: is it open on a network, and where would a ladder of this coin
  * sit — `GET ?mint=<base mint>&network=devnet|mainnet` (devnet when none is named). With the network's switch closed
  * the route does not exist for it (404). Answers the coin's pool on that network — devnet's listed pool, mainnet's
  * deepest USDC pool that takes limit orders — with what the window needs to show the exact cost line before the

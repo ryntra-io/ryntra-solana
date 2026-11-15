@@ -25,7 +25,7 @@ const LISTED = 8;
 const SPARK = { w: 64, h: 24 } as const;
 
 /**
- * The live event feed on the home (CITY-66, mock M1): on a desk a column on the left under the top bar, on a phone a
+ * The live event feed on the home: on a desk a column on the left under the top bar, on a phone a
  * strip with the newest event that opens into the list. A tap on an event flies to its tower and opens its card, or
  * opens its pool in the Harbor. «Show on home» lives in the menu's «Settings»; the phone's opened list keeps a gear to
  * the same switches. While any window is open (`hidden`, city/lib/city/windows.ts) the feed and its controls step aside,
@@ -36,9 +36,9 @@ export function LiveFeed({ hidden = false, panel = false }: { hidden?: boolean; 
   const ready = useFeed((st) => st.ready);
   const settings = useFeed((st) => st.settings);
   const events = useFeed((st) => st.memory.events);
-  // No market read yet: the panel shows where the events will stand, never «quiet» before it has looked (CITY-150).
+  // No market read yet: the panel shows where the events will stand, never «quiet» before it has looked.
   const waiting = useFeed((st) => st.memory.readAt === null);
-  // The side the panel opens on, from Settings (CITY-87).
+  // The side the panel opens on, from Settings.
   const side = useNotify((st) => st.prefs.feed);
   // The city's layout changes with every read: what a tap can reach is asked again then.
   useCity((st) => st.layout);
@@ -61,7 +61,7 @@ export function LiveFeed({ hidden = false, panel = false }: { hidden?: boolean; 
   const list = useMemo(() => visibleEvents(events, shown, panel ? LISTED : SHOWN), [events, shown, panel]);
   const clips = useMoments((st) => st.moments.length + (st.run ? 1 : 0));
 
-  // The bell's panel stands in a layer of its own over the city's windows (CITY-242), as the wallet's panel does: opened
+  // The bell's panel stands in a layer of its own over the city's windows, as the wallet's panel does: opened
   // over the Ring, the bots or a phone's sheet, it was drawn under them. Drawn into the city's own root, where its tokens
   // are; the place it was asked for keeps an empty mark to find that root by.
   const anchor = useRef<HTMLSpanElement>(null);
@@ -107,7 +107,7 @@ export function LiveFeed({ hidden = false, panel = false }: { hidden?: boolean; 
       if (event.key !== 'Escape' || event.defaultPrevented) return;
       if (document.querySelector('[aria-modal="true"]')) return;
       // The bell is the panel's own control: the click that opened the panel left the focus on it, and Escape then did
-      // nothing (CITY-239).
+      // nothing.
       const focus = document.activeElement;
       if (focus && focus !== document.body && !feedRef.current?.contains(focus) && !focus.closest('[data-feed-bell]')) return;
       // The open list counts only where it shows: on a phone held upright, where the chevron stands; under the bell always.
@@ -308,7 +308,7 @@ function FeedSettingsPanel({ onClose }: { onClose: () => void }) {
           <CloseGlyph />
         </button>
       </div>
-      {/* The «Hot now» card no longer stands on the home, and «Arrivals» only in Play (CITY-87): their switches go with them. */}
+      {/* The «Hot now» card no longer stands on the home, and «Arrivals» only in Play: their switches go with them. */}
       {SWITCHES.filter(({ id }) => id !== 'hot' && (id !== 'arrivals' || PLAY_OPEN)).map(({ id }) => (
         <div className={s.row} key={id}>
           <span id={`city-feed-${id}`}>{names[id]}</span>

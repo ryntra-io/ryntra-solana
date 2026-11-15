@@ -88,7 +88,7 @@ async function openAsk(ask: OpenAsk): Promise<void> {
       if (HARBOR_OPEN) useHarbor.getState().show();
       return;
     case 'agents':
-      // The old bots, strategies and agents pages: the Agents section's bots window (CITY-134), where the scout is too.
+      // The old bots, strategies and agents pages: the Agents section's bots window, where the scout is too.
       if (AGENTS_OPEN) openBots();
       return;
     case 'assistant':
@@ -98,22 +98,22 @@ async function openAsk(ask: OpenAsk): Promise<void> {
       useHudPanels.getState().openSettings();
       return;
     case 'earn':
-      // A note of Earn's opens it from Telegram or the phone (CITY-100); closed in this deployment, the home stays.
+      // A note of Earn's opens it from Telegram or the phone; closed in this deployment, the home stays.
       if (EARN_OPEN) openEarn(ask.earnTab);
       return;
     case 'launches':
-      // Every coin launched on Ryntra (CITY-185): its own page is `/launches`.
+      // Every coin launched on Ryntra: its own page is `/launches`.
       openLaunched();
       return;
     case 'agent':
-      // The agent's daily report opens the person's agent from Telegram or the phone (CITY-194).
+      // The agent's daily report opens the person's agent from Telegram or the phone.
       if (AUTOPILOT_NET) useAutopilot.getState().showAgent();
       return;
   }
 }
 
 /**
- * An old address of the cabinet opens its place in the city (CITY-13): `/?open=<window>` names the window, and once
+ * An old address of the cabinet opens its place in the city: `/?open=<window>` names the window, and once
  * the home is up it opens, then the ask leaves the address so a reload is the plain city. Mounted once, in the city.
  */
 export function OpenFromAddress() {

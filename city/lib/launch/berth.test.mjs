@@ -33,7 +33,7 @@ import { amountText, claimFailureText, moneyText, moveText, priceText, shareText
 import { API_HEADERS } from "./engine.ts";
 import { STUB_CREATOR, STUB_PRESETS, STUB_WALLET, stubAddress, stubEngine, stubWallet } from "./stub.ts";
 
-/* «Мій причал» (L4 · CITY-141): the creator's three streams by $1,000 from the engine's own terms and counters, the day
+/* «Мій причал»: the creator's three streams by $1,000 from the engine's own terms and counters, the day
    counter, the two cards, and «Забрати» through the engine's existing claim — nothing new on the server, no money path
    of the city's own. */
 
@@ -293,7 +293,7 @@ test("the words: money rounded down to the cent, a dollar pair as dollars, Ukrai
   assert.equal(claimFailureText({ code: "SOMETHING", stage: "send", message: "" }, null, "en"), "No answer came back. If the claim landed, it shows in your wallet.");
 });
 
-/* «Моя вежа» (CITY-168): the coin's figures are the engine's market as it reads them; a launch not listed yet is named as it
+/* «Моя вежа»: the coin's figures are the engine's market as it reads them; a launch not listed yet is named as it
    landed, its earnings unread; the camera is one tap on a phone. */
 
 test("the tower's figures are the market's own, and a move to the pool ends the way there", () => {

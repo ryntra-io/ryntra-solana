@@ -1,5 +1,5 @@
 /**
- * «Охорона» in the city (CITY-152, phase 1): the Deck's Guard place opens one window — paste a transaction or a link,
+ * «Охорона» in the city: the Deck's Guard place opens one window — paste a transaction or a link,
  * read one line, open the reasons if you want them. It stands on the engine's pre-sign check
  * (`POST /api/v1/ward/check`, working name «ward»), which only reads: it holds no key, signs nothing and keeps nothing.
  *

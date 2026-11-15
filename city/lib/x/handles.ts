@@ -1,5 +1,5 @@
 /**
- * The X handles Ryntra may tag (CITY-41). A handle goes into a post only when a person checked it on its live profile
+ * The X handles Ryntra may tag. A handle goes into a post only when a person checked it on its live profile
  * not long before, the partner really takes part in what the post shows, and a person approved that post. Everything
  * else is a candidate: written down so nobody has to guess it again, never inserted.
  *

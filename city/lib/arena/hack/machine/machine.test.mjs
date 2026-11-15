@@ -1,6 +1,6 @@
 // Run from repo root: node --test city/lib/arena/hack/machine/machine.test.mjs
 //
-// The machine with no network (CITY-238): the entry a machine runs, the backend that sends it jobs, the two drivers.
+// The machine with no network: the entry a machine runs, the backend that sends it jobs, the two drivers.
 // The entry is run for real, as a process, over the made-up engine (no LiteSVM on this computer needed); Vercel's API
 // is a fake that keeps the files it is sent. The same entry on LiteSVM in a real network namespace is the stand
 // (`docs/research/city-238-hack-open/stand.mjs`).

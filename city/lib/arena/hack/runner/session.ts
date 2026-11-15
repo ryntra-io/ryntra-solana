@@ -1,5 +1,5 @@
 /**
- * The attacker/defender step runner's tools (CITY-225, spec `docs/research/city-hack-2026-11-08/SPEC.md`). An agent
+ * The attacker/defender step runner's tools (spec `docs/research/city-hack-2026-11-08/SPEC.md`). An agent
  * works a Hack order's copy through four tools, no more — the shape of the Ring's `CodeSandbox` (`lib/ring/duel/code.ts`)
  * for a contract:
  *
@@ -7,16 +7,15 @@
  *                          state to plan. Reading any account is allowed; the scope only decides where a finding counts.
  *   assemble(input)      — check a `{ tx }` or `{ warp }` the agent describes against the copy's bounds before it
  *                          spends a run on it; or, from `{ instructions }`, put a transaction together and sign it with
- *                          the agent's own payer of the copy (`assemble.ts`, CITY-238). No run, no network.
+ *                          the agent's own payer of the copy (`assemble.ts`). No run, no network.
  *   tryRun(inputs)       — `run` without `prove` (the sandbox's `runOpen`): play the inputs on a fresh copy and read
  *                          what happened step by step, and whether the fault reproduced. The agent's feedback loop.
  *   submit(inputs, meta) — `run` + `prove` (the sandbox's `runHidden`): the counted attempt. The harness writes the
- *                          log, the judge seals it, and the finding carries the judge's `logHash` (CITY-223).
+ *                          log, the judge seals it, and the finding carries the judge's `logHash`.
  *
  * The sandbox runs behind a `SandboxBackend` (`backend.ts`): in the worker, off the routes process, with no network.
  * The session never signs, never reads a key, never moves money. A finding it builds is a claim with a proof; whether
- * it counts is the rules over the judge (`../rules.ts`), with the owner's grant and the prior findings a store holds
- * (CITY-226) — not decided here.
+ * it counts is the rules over the judge (`../rules.ts`), with the owner's grant and the prior findings a store holds — not decided here.
  */
 
 import { sha256Hex } from "../../../../../lib/ring/judge/index.ts";

@@ -11,7 +11,7 @@ export const dynamic = 'force-dynamic';
 export const maxDuration = 30;
 
 /**
- * The Review of a limit order from the city (CITY-97): the product's own door in front of the engine's. A new order —
+ * The Review of a limit order from the city: the product's own door in front of the engine's. A new order —
  * placed, or rolled from a filled one (the Wheel) — passes only where the product admits this wallet (closed · canary
  * · open, and the stop), only on a market whose every mint and pool passed the checks, only within the ceiling at the
  * venue's own prices, and never on the eve of a corporate action where the step alone could fill it. A cancel passes

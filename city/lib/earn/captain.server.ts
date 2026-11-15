@@ -8,7 +8,7 @@ import { captainReady, captainStoreKind, createMemoryCaptainStore, type CaptainS
 import { createSupabaseCaptainStore } from './captain-db.ts';
 
 /**
- * «Like the Captain» as the deployed server runs it (CITY-99): the ledger in the database through the secret-gated
+ * «Like the Captain» as the deployed server runs it: the ledger in the database through the secret-gated
  * `public.city_captain_*` functions (memory on a developer's machine), and the engine's own read-only reads — the
  * wallet's DLMM positions from the program's accounts and the venue's record of each pool. It builds, signs and sends
  * nothing.

@@ -2,7 +2,7 @@ import { sourceTime } from '../moments/moment.ts';
 import { pct, readTime, usd, type BillboardFacts, type Facts, type HourFacts, type JustInFacts, type LaunchFacts } from './facts.ts';
 
 /**
- * The studio's storyboards (CITY-38): what each post shows, second by second. A clip is directed in the live city —
+ * The studio's storyboards: what each post shows, second by second. A clip is directed in the live city —
  * the camera, the city's own effects — and drawn over with the hook, the captions and the end card. The rules X rewards
  * and the brand asks for, held by `checkStoryboard`: the figure is on screen in the first half second, captions carry
  * the story with the sound off, the mark stays top left, the clip ends under 60 s so X loops it.

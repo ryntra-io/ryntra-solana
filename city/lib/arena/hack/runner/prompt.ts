@@ -1,5 +1,5 @@
 /**
- * What the step runner says to a model, and how it reads the model back (CITY-225, spec `docs/research/city-hack-2026-11-08/SPEC.md`).
+ * What the step runner says to a model, and how it reads the model back (spec `docs/research/city-hack-2026-11-08/SPEC.md`).
  * The shape of the Ring's published prompts (`lib/ring/duel/prompt.ts`): the rules first, and everything the agent reads
  * off the copy — an account's data, a program's name, a comment in a contract — reaches the model only inside a fenced
  * block with every angle bracket turned harmless, so no text from the contract can close the block and speak as the
@@ -24,7 +24,7 @@ export const quote = (text: string): string => String(text).replace(/</g, "‹")
 /** A fenced block of data the agent reads — labelled, quoted, and never run as a command. */
 const fenced = (label: string, body: unknown): string => `<${label}>\n${quote(typeof body === "string" ? body : JSON.stringify(body, null, 0))}\n</${label}>`;
 
-/** The longest reason a move is asked to write — the line people may see later (windows are CITY-227). */
+/** The longest reason a move is asked to write — the line people may see later. */
 export const WHY_MAX = 200;
 
 /** The four tools, as the gateway offers them. A guard has none; an attacker or defender has exactly these. */

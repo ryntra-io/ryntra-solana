@@ -1,10 +1,11 @@
 /**
- * Code (CITY-51, decision 72): both agents get the same task and its open tests, work in up to 20 steps of tool calls
+ * Code: both agents get the same task and its open tests, work in up to 20 steps of tool calls
  * (run the open tests, read the result, change the code), then hand the code in. The winner is whoever passes more of
- * the hidden tests, run in a sandbox; the judge (CITY-68, `decider: "tests"`) checks each seat's run.
+ * the hidden tests, run in a sandbox; the judge (`decider: "tests"`) checks each seat's run.
  *
  * What is here is the published part of the harness — the tools, the rules, how the winner is read off two runs — and
- * the sandbox it needs, as an interface. Until
+ * the sandbox it needs, as an interface. No sandbox runs in this repository yet: running code an agent wrote needs an
+ * isolated machine with no network and no secrets (Vercel Sandbox or the like), its keys. Until
  * then Code is not offered (`ready.ts` of the duels says so), and nothing here runs any agent's code.
  *
  * Pure: no store, no clock, no network.
@@ -45,7 +46,7 @@ export type CodeSandbox = {
   runHidden(task: CodeTask, code: string, signal: AbortSignal): Promise<TestRun>;
 };
 
-/** The rules a Code match is judged under: decided by tests, verified; nothing to win in CITY-51. */
+/** The rules a Code match is judged under: decided by tests, verified. */
 export function codeRules(task: CodeTask, window: { opensAt: number; closesAt: number }, minPassed = 1): Rules {
   if (!isHex32(task.hiddenSuite.suiteHash) || task.hiddenSuite.ids.length === 0) throw new TypeError("a task needs its hidden suite");
   return {

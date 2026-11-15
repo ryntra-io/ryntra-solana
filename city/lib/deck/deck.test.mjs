@@ -67,9 +67,9 @@ test("Futures: Phoenix first while the wallet holds something there, then RXN on
   assert.deepEqual(doorsOf("spot", { ...ALL_SHUT, trade: true, spot: true }), ["swap", "spot"]);
   assert.deepEqual(doorsOf("spot", { ...ALL_SHUT, trade: true }), ["swap"]);
   assert.deepEqual(doorsOf("spot", { ...ALL_SHUT, trade: true, spot: true, futures: "rxn" }), ["swap", "spot", "futures"]);
-  // «Обмін» (30.10): Swap · Spot — the bridge is Money's Send to another network (CITY-155); futures are off.
+  // «Обмін» (30.10): Swap · Spot — the bridge is Money's Send to another network; futures are off.
   assert.equal(futuresWay("exit", false, false), null);
-  // CITY-188: a door not open yet is not shown — no row of «Soon»; a tray with none open is a shut place.
+  // A door not open yet is not shown — no row of «Soon»; a tray with none open is a shut place.
   assert.deepEqual(doorsOf("arena", ALL_SHUT), []);
   assert.deepEqual(doorsOf("agents", { ...ALL_SHUT, bots: true }), ["bots"]);
   assert.deepEqual(doorsOf("spot", { ...ALL_SHUT, futures: "rxn" }), ["futures"]);
@@ -99,7 +99,7 @@ test("the top bar and the Deck: hidden by their arrows, kept on this device, bro
   assert.deepEqual(readChrome(writeChrome({ top: false, bottom: true })), { top: false, bottom: true });
 });
 
-test("the Arena's hint names its open doors only, in the language on screen (CITY-236)", () => {
+test("the Arena's hint names its open doors only, in the language on screen", () => {
   const names = (lang, doors) => doors.map((door) => DECK[lang][door]);
   assert.equal(doorsHint(names("en", ["ring", "vault"]), DECK.en.and), "Ring and Vault", "the Hack is not named behind a closed door");
   assert.equal(doorsHint(names("en", ["ring", "hack", "vault"]), DECK.en.and), DECK.en.hintArena, "all three, as the words had it");
@@ -109,7 +109,7 @@ test("the Arena's hint names its open doors only, in the language on screen (CIT
   assert.equal(doorsHint([], DECK.en.and), null, "a shut Arena keeps its words");
 });
 
-test("the Ring and the Vault promise no money while they are played without it (CITY-217, CITY-218)", () => {
+test("the Ring and the Vault promise no money while they are played without it", () => {
   for (const lang of ["en", "uk"]) {
     for (const key of ["hintRing", "hintVault"]) assert.doesNotMatch(DECK[lang][key], /budget|pool|бюджет|пул/i, `${lang} ${key}`);
   }

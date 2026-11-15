@@ -4,7 +4,7 @@ import { isDuelFormat } from "./harness.ts";
 import type { DuelRecord, DuelStore, OpenLimits, Opened } from "./service.ts";
 
 /**
- * The duels in the database (CITY-217): one call to one `public.ring_duel_*` function per question, each gated by the
+ * The duels in the database: one call to one `public.ring_duel_*` function per question, each gated by the
  * app secret and each one transaction (`supabase/migrations/20261108120100_ring_v2_arena.sql`). Every server instance
  * reads the same duels, so a duel started on one instance is watched from another, and the day's limits — starts per
  * account, duels per agent, the models' spend under the ceiling — are checked and written under one lock.

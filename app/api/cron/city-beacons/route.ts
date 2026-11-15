@@ -10,7 +10,7 @@ export const dynamic = "force-dynamic";
 export const maxDuration = 60;
 
 /**
- * The city's beacons (CITY-72), every two minutes: one market read of the city for all, every account's beacons
+ * The city's beacons, every two minutes: one market read of the city for all, every account's beacons
  * checked by the engine, and a Telegram message for each one that lit where the person connected a chat. Internal —
  * the cron's bearer only. Signs, sends money and trades nothing.
  */

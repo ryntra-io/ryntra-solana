@@ -4,7 +4,7 @@ import { useEffect, useRef, useState, type ReactNode, type RefObject } from 'rea
 import s from './trade.module.css';
 
 /**
- * What you get, beside the one action (CITY-189). On a phone the tower's window is half the screen: the pinned dock
+ * What you get, beside the one action. On a phone the tower's window is half the screen: the pinned dock
  * stands over the ticket's own «You get» figure until the card is scrolled to its end. While that figure is out of
  * sight — under the dock or scrolled away — the dock carries it in one quiet line above the terms; once the figure is
  * in view, the line folds away and the dock is as it was. A card that fits, as on a desk, never shows it.
@@ -20,7 +20,7 @@ export function DockGet({
 }: {
   target: RefObject<HTMLElement | null>;
   /** The ticket's own row that names the figure, when it stands apart from it: while it is in sight, the line drops its
-   *  label and reads as that row's value — never «You get about» twice, one above the other (CITY-221). */
+   *  label and reads as that row's value — never «You get about» twice, one above the other. */
   named?: RefObject<HTMLElement | null>;
   label: string;
   children: ReactNode;

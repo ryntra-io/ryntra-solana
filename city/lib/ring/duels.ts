@@ -5,12 +5,12 @@ import { randomId } from '../quarter/ids.ts';
 import { duelsOpen, RING_DUELS_OPEN } from './flag.ts';
 
 /**
- * The Ring's duels in the city (CITY-51): the Fight tab of the Arena's window (`arena.ts`, CITY-217) — pick a format,
+ * The Ring's duels in the city: the Fight tab of the Arena's window (`arena.ts`) — pick a format,
  * start a duel, watch it round by round, replay it. Behind its own switch (`NEXT_PUBLIC_RYNTRA_CITY_RING_DUELS`), on
  * top of the Ring's; both closed by default, so `/api/ring/fight` answers 404.
  *
  * Who plays: your agent against a house sparring partner (practice — nothing rated), or against a rival the server
- * draws from other owners of your class (rated, CITY-217); without an agent, two house partners (an exhibition).
+ * draws from other owners of your class; without an agent, two house partners (an exhibition).
  * Before the first fight the window shows the latest duels anyone may watch. No money anywhere: no entry, no stake, no
  * prize.
  */

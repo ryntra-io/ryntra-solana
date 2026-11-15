@@ -1,4 +1,4 @@
-// The studio's clock (CITY-38): the page lives on virtual time, so a city drawn in software at one frame a second
+// The studio's clock: the page lives on virtual time, so a city drawn in software at one frame a second
 // still films at 60 frames a second, every frame on its exact beat. Installed before any page script (Playwright's
 // `addInitScript`); `performance.now`, `Date.now`, `requestAnimationFrame` and the page's timers all read it.
 //   * auto — every real frame moves the clock one 60th of a second on: the page loads, the city settles, and its own

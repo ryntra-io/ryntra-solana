@@ -2,7 +2,7 @@ import { cleanNumber, COMMAND_MAX, LINE_WORDS, tokens, type Token } from '../com
 import type { DollarAsset, DollarSide } from './dollar.ts';
 
 /**
- * The Dollar Saver on its word (CITY-192): one sentence — «поклади мої USDC працювати», «put my USDC to work»,
+ * The Dollar Saver on its word: one sentence — «поклади мої USDC працювати», «put my USDC to work»,
  * «поклади 50 USDC під відсоток», «lend 2 SOL», «забери мої USDC зі скарбнички» — read into the card to open: the
  * coin, the side and the amount when it was said. English and Ukrainian, with the Russian a Ukrainian phone often
  * types. Pure: no store, no wallet, no network.

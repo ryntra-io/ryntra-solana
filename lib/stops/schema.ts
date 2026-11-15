@@ -1,5 +1,5 @@
 /**
- * The bodies the stop routes take (CITY-149). Strict: a field the engine does not know is refused, never ignored.
+ * The bodies the stop routes take. Strict: a field the engine does not know is refused, never ignored.
  * The engine works out the stop's line itself (`stopThreshold`); a client never sends one.
  */
 

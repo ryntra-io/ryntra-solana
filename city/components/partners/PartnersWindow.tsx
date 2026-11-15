@@ -34,12 +34,12 @@ const ART: Readonly<Record<PartnersTab, string>> = {
   guild: 'district-agents',
 };
 
-/** The partner page at its own address: the whole programme, in the language on screen (CITY-177). */
+/** The partner page at its own address: the whole programme, in the language on screen. */
 const DECK = '/partners';
 
 /**
- * «Ryntra Partners» (CITY-126) inside the city's window frame: the two-sided offer first — the partner's share and the
- * friend's discount, decision 93 — then «Copy my link» at once (CITY-177), the three roles, and «Мій район» one tap
+ * «Ryntra Partners» inside the city's window frame: the two-sided offer first — the partner's share and the
+ * friend's discount, decision 93 — then «Copy my link» at once, the three roles, and «Мій район» one tap
  * away. The terms behind «i» are `termsRows` of `city/lib/partners/terms.ts`: one source, the same words as `/partners`.
  */
 export default function PartnersWindow() {

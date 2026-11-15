@@ -14,7 +14,7 @@ import s from './docs.module.css';
 import { DOCS_UI } from './words';
 
 /**
- * The documentation's own pages (CITY-180): the hub — a short opening and everything by group — and a section at its own address,
+ * The documentation's own pages: the hub — a short opening and everything by group — and a section at its own address,
  * with the way to the next one at its foot. A place for reading: real text, but every step, figure and risk in its own block.
  */
 export function DocsView({ frame, section }: { frame: DocsFrame; section: Localized<DocSection> | null }) {

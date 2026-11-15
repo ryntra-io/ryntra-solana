@@ -19,7 +19,7 @@ export const CARD_WORDS: Words<CardLine> = {
   },
 };
 
-/** The card of «Launched on Ryntra» (CITY-185, `/launches`): the same frame of the live city, its own line. */
+/** The card of «Launched on Ryntra» (`/launches`): the same frame of the live city, its own line. */
 export const LAUNCHES_CARD_WORDS: Words<CardLine> = {
   en: {
     lead: 'Launched on Ryntra.',

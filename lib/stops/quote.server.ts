@@ -1,5 +1,5 @@
 /**
- * The swap engine's quote for a stop's exact amount, on the server (CITY-149) — the same answer the city's quote reads
+ * The swap engine's quote for a stop's exact amount, on the server — the same answer the city's quote reads
  * (`/api/solana/swap/quote`): fee policy v2's lane choice (`chooseQuote`) on mainnet, its `outAmountRaw`. A token
  * Ryntra no longer supports is quoted on neither side, as the route refuses it. Reads only: no transaction is built.
  */

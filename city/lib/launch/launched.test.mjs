@@ -3,7 +3,7 @@ import test from "node:test";
 
 import { cardOf, curvePercent, launchedList } from "./launched.ts";
 
-// «Launched on Ryntra» (CITY-185): every launch of the launchpad from the district's own feed, people's first and
+// «Launched on Ryntra»: every launch of the launchpad from the district's own feed, people's first and
 // Ryntra's technical launches apart; a figure the engine did not read stays off the card.
 
 let n = 0;

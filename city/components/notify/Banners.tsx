@@ -36,7 +36,7 @@ function openBanner(banner: Banner): boolean {
 }
 
 /**
- * The centre's banners (CITY-87): where the person put them — a corner, or the top's middle — at most three, the newest
+ * The centre's banners: where the person put them — a corner, or the top's middle — at most three, the newest
  * nearest the edge. A tap opens what it is about; × closes it. Nothing about money is decided here: a banner only says.
  */
 export function Banners() {

@@ -18,7 +18,7 @@ import { PALETTE } from '@/city/lib/palette';
  *  aGlow     event glow (linear rgb, intensity in w)
  *  aActivity 0–1, how many windows are lit
  *  aBuild    0–1, how much of the tower stands (launches grow, flares knock the top off)
- *  aLens     the Lens's level (CITY-86): 1 looked at, −1 sunk into the haze, 0 untouched
+ *  aLens     the Lens's level: 1 looked at, −1 sunk into the haze, 0 untouched
  */
 export function createTowerMaterial() {
   return shareLens(new THREE.ShaderMaterial({

@@ -29,7 +29,7 @@ const DOT: Readonly<Record<District, string>> = {
 };
 
 /**
- * The Map (CITY-81): the live city from above — each tower a point where it stands, its size by its height — and the
+ * The Map: the live city from above — each tower a point where it stands, its size by its height — and the
  * districts named on it. A district's name flies the camera over it; a mover below flies to that tower. The camera
  * only: no card opens, nothing is bought.
  */

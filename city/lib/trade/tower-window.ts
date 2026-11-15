@@ -13,7 +13,7 @@ type Placed = Readonly<{ tower: Pick<Tower, 'id' | 'verified'>; height: number }
 
 /**
  * The tower a picked id opens the window for: a named tower of the city, or a launch's tower — never verified by
- * Jupiter, traded on its own curve or pool through the Launch engine (CITY-138). A pool without a name has nothing to
+ * Jupiter, traded on its own curve or pool through the Launch engine. A pool without a name has nothing to
  * buy here and keeps its own small card.
  */
 export function windowTower<T extends Placed>(towers: readonly T[], selectedId: string | null, launchTower: boolean): T | null {

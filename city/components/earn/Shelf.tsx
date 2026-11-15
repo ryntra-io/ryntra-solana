@@ -13,7 +13,7 @@ import s from './earn.module.css';
 
 /**
  * The products that act now: the SOL Saver always, the SOL Pier where the Harbor's own switch is open, Sell Higher and
- * the Stock Pier and the Dollar Saver (CITY-192, `NEXT_PUBLIC_RYNTRA_CITY_EARN_DOLLAR`) where each one's own switch is open (under a canary each looks as it does closed — the canary is not
+ * the Stock Pier and the Dollar Saver (`NEXT_PUBLIC_RYNTRA_CITY_EARN_DOLLAR`) where each one's own switch is open (under a canary each looks as it does closed — the canary is not
  * announced).
  */
 export function live(product: ProductId): boolean {
@@ -49,7 +49,7 @@ export function Shelf({ words }: { words: Words }) {
               <h3 className={`${s.display} ${s.cardName}`}>{w.name}</h3>
               <RiskDots dots={RISK[id]} words={words} />
             </div>
-            {/* The big number says what it is, under it, before its unit (CITY-243); a source that did not answer leaves
+            {/* The big number says what it is, under it, before its unit; a source that did not answer leaves
                 an honest dash with the same words, never an empty band (the Dollar Saver and «Like the Captain»). */}
             <div className={s.cardBig} aria-busy={!big && reading[id] ? true : undefined} data-earn-big={big ? '' : reading[id] ? 'reading' : 'none'}>
               {big ? (

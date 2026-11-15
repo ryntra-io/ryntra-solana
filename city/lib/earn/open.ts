@@ -3,7 +3,7 @@ import { isEarnTab, isProduct, type EarnTab, type ProductId } from './flag.ts';
 
 /**
  * Whether the Earn window is open, on which tab, and which product of the Shelf stands open inside it — the one light
- * piece of Earn in the city, so the menu, the Harbor and the Helm's «Earn» verb (CITY-89) open it without pulling its
+ * piece of Earn in the city, so the menu, the Harbor and the Helm's «Earn» verb open it without pulling its
  * contents in: `openEarn('mine')`. While a signature is out the window stays on that product and does not close.
  */
 
@@ -42,7 +42,7 @@ export const useEarn = create<EarnWindow>((set, get) => ({
 /**
  * Open the Earn window on a tab — `shelf`, `piers` or `mine` — and, on the Shelf, optionally on one product. Without a
  * tab it opens where it was last. While a signature is out it opens on that signature. The one door for every entry:
- * the menu row, the Harbor, and the Helm's verb (CITY-89).
+ * the menu row, the Harbor, and the Helm's verb.
  */
 export function openEarn(tab?: EarnTab, product?: ProductId): void {
   useEarn.getState().show(tab, product);

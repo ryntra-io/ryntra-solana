@@ -5,7 +5,7 @@ import type { AgentCard, CardTag, CreatorCard, RoundTrip, ShareCard } from './ca
 import { SHARE_CARD } from './words.ts';
 
 /**
- * What a share card says, line by line, in the language on screen (L8 · CITY-145) — the layout the drawing
+ * What a share card says, line by line, in the language on screen — the layout the drawing
  * (`card-draw.ts`) puts on the frame: the kicker, the one big figure, the amber line under it and one quiet line. Every
  * figure is the card's own (`cards.ts`), said as the berth says money: rounded down, never up. Pure, so the tests read it.
  */

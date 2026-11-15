@@ -9,7 +9,7 @@ import { bookOf } from "../command/parse.ts";
 import { readAsk } from "../autopilot/read.ts";
 
 /**
- * CITY-222: the first action of a newcomer — the first screen → one sentence → the agent's card → the wallet → «Sign».
+ * The first action of a newcomer — the first screen → one sentence → the agent's card → the wallet → «Sign».
  * The funnel counts where people stop without saying who they are; the first sentences are ones the agent takes.
  */
 
@@ -36,7 +36,7 @@ test("a moment as the page sends it: the device and one fixed word, never more",
   assert.equal(funnelDevice(false, false), "desk");
 });
 
-test("CITY-246: a robot's visit says `bot` in place of any word, and the route keeps it", () => {
+test("a robot's visit says `bot` in place of any word, and the route keeps it", () => {
   assert.equal(funnelWord(null, false), null);
   assert.equal(funnelWord("refused", false), "refused");
   assert.equal(funnelWord(null, true), "bot");
@@ -45,7 +45,7 @@ test("CITY-246: a robot's visit says `bot` in place of any word, and the route k
   assert.equal(funnelTrackRow({ name: "agent_home", locale: "en", ref: "desk:robot" }).ref, "desk", "an unknown word is dropped, the device kept");
 });
 
-test("CITY-246: the city's first frame is heard once, by a listener that came before it or after", async () => {
+test("the city's first frame is heard once, by a listener that came before it or after", async () => {
   const { cityDrawn, markDrawn, onDrawn } = await import("../city/drawn.ts");
   assert.equal(cityDrawn(), false);
   let early = 0;

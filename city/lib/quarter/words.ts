@@ -1,7 +1,7 @@
 import { dateText, pl, words } from '../i18n/dict.ts';
 
 /* The quarter's words outside the screens: the buildings a plot offers, why one cannot go down, the street, the engine
-   objects a building shows, «While you were away» and the sign-in's one-line answers (CITY-79). Tables keyed by id are
+   objects a building shows, «While you were away» and the sign-in's one-line answers. Tables keyed by id are
    functions of the id, so a caller keeps its own shape and reads the language of the moment. */
 
 type Pair = readonly [name: string, line: string];
@@ -418,7 +418,7 @@ export const ACCOUNT_WORDS = words(
   },
 );
 
-/* The crew's one-line answers to a step that did not go (CITY-20), by the refusal's reason or code. */
+/* The crew's one-line answers to a step that did not go, by the refusal's reason or code. */
 export const CREW_WORDS = words(
   {
     name: 'Pick another name.',

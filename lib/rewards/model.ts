@@ -99,9 +99,7 @@ const DECIMAL_PRICE = /^(?:0|[1-9][0-9]*)(?:\.([0-9]{1,18}))?$/;
  *
  * `UNVALUED` — no price this product trusts was available. The share of the fee
  * asset is still recorded exactly; the dollar figure is absent, and an absent
- * figure is `Pending` rather than a guess. This is the whole of the owner's
- * instruction that a reward without a reliable valuation stays Pending rather
- * than being invented.
+ * figure is `Pending` rather than a guess.
  */
 export const REWARD_VALUATION_BASES = ["STABLECOIN_PAR", "PROVIDER_STATED_USD", "PRICED_AT_SETTLEMENT", "UNVALUED"] as const;
 

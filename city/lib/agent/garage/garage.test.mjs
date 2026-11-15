@@ -422,7 +422,7 @@ test("the Deck's «Agents» tray: «Garage» beside the Hangar and the Bots, beh
   assert.equal(doorOpen("garage", shut), false, "a shut switch says «Soon»");
   assert.equal(doorOpen("garage", { ...shut, garage: true }), true);
   assert.equal(placeOpen("agents", { ...shut, garage: true }), true);
-  // CITY-188: the tray shows its open doors only — «Garage» stands once its switch is open, beside the Bots.
+  // The tray shows its open doors only — «Garage» stands once its switch is open, beside the Bots.
   assert.deepEqual(doorsOf("agents", shut), [], "no row of «Soon»");
   assert.deepEqual(doorsOf("agents", { ...shut, garage: true }), ["garage"]);
   assert.deepEqual(doorsOf("agents", { ...shut, bots: true, garage: true }), ["bots", "garage"], "as on Production: the Bots and the Garage");
@@ -430,7 +430,7 @@ test("the Deck's «Agents» tray: «Garage» beside the Hangar and the Bots, beh
   assert.match(deck, /garage: GARAGE_OPEN,/);
   assert.match(deck, /case 'garage':\n\s*return toggleGarage\(\);/, "the door opens the window, a second tap closes it");
   assert.match(deck, /agents: botsWindow \|\| scouting \|\| tray === 'agents' \|\| garageWindow,/, "the diamond lights while the agent's window is open");
-  // Folded into the frame's tray or kept in a layout (CITY-84), it opens again through its own door.
+  // Folded into the frame's tray or kept in a layout, it opens again through its own door.
   const openers = readFileSync(new URL("../../../components/window/openers.ts", import.meta.url), "utf8");
   assert.match(openers, /\n  garage: \{ can: \(\) => GARAGE_OPEN, open: \(\) => openGarage\(\) \},/);
   assert.match(readFileSync(new URL("./show.ts", import.meta.url), "utf8"), /export const GARAGE_WINDOW = 'garage';/, "the opener's key is the frame's id");

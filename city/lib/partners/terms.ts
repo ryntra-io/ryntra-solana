@@ -1,5 +1,5 @@
 /**
- * The partner programme's terms — the one place the partner page `/partners` (CITY-177), «What we're building» and the city's
+ * The partner programme's terms — the one place the partner page `/partners`, «What we're building» and the city's
  * «Partners» window read them from.
  *
  * He chose option B of `docs/positioning/PARTNER-PROGRAMME-OPTIONS.md`
@@ -12,7 +12,7 @@
  * more than Ryntra received; the share is visible on the signing line and in a public table. Payouts start when the
  * revenue ledger (PRT-2) runs; until then the page says so.
  *
- * The friend's discount is taken off trades only where the deployment's switch is on (`./discount.ts`, CITY-182); off,
+ * The friend's discount is taken off trades only where the deployment's switch is on (`./discount.ts`); off,
  * the rows say it is coming, and on they say where it reaches.
  */
 

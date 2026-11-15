@@ -2,7 +2,7 @@ import { readAsk, type AgentAsk } from '../autopilot/read.ts';
 import { agentCoins, type Book, type Coin } from '../command/parse.ts';
 
 /**
- * The first sentences (CITY-222): what a newcomer can say to the agent without thinking of words — one tap, and the
+ * The first sentences: what a newcomer can say to the agent without thinking of words — one tap, and the
  * agent's card opens with the budget and «Sign». The same few sentences stand wherever a sentence is said: the line
  * (⌘K, «Ask Ryntra», the first screen's action) and «Your agents» in the bots window.
  *
@@ -34,7 +34,7 @@ const TEXT: Readonly<Record<'en' | 'uk', Readonly<Record<SayKey, (coin: string |
     launch: () => 'Launch me a token',
   },
   uk: {
-    // The operator's own sentence (CITY-186, checked on ryntra.io): short enough for a phone's row.
+    // The operator's own sentence (checked on ryntra.io): short enough for a phone's row.
     trade: (coin) => (coin ? `Торгуй ${coin} на 0,1 SOL на день` : 'Торгуй за мене на 0,1 SOL на день'),
     dip: (coin) => (coin ? `Купуй ${coin} на просіданнях за мене` : 'Купуй на просіданнях за мене'),
     launch: () => 'Запусти мені токен',

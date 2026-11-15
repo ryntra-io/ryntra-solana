@@ -14,7 +14,7 @@ const SOL_MINT = 'So11111111111111111111111111111111111111112';
 /**
  * A coin's logo: the tower's through Ryntra's icon route, as the trade card draws it; a coin that is no tower (USDC, a
  * meme bought at a launch) the picture the engine's catalogue names, through the engine's icon route. Without either,
- * the coin's own letters on its disc — never an empty circle (CITY-150).
+ * the coin's own letters on its disc — never an empty circle.
  */
 export function CoinIcon({ mint, size = 32, icon = null, symbol = null }: { mint: string | null; size?: number; icon?: string | null; symbol?: string | null }) {
   const id = mint ?? SOL_MINT;

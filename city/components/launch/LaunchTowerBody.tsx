@@ -26,11 +26,11 @@ const CHECK_DAYS = [7, 30, 90] as const;
 const LIFTOFF_MS = 5 * 60_000;
 
 /**
- * A launch's tower in the tower's one window (CITY-78, CITY-138): under the window's own head, where the coin is on its
+ * A launch's tower in the tower's one window: under the window's own head, where the coin is on its
  * way and how long it has flown, the checks of days 7, 30 and 90, then Buy and Sell on its curve or in its pool. Every
  * figure is the engine's; a figure it did not read is not shown. Sharing is the window's own, in its head.
  *
- * After its graduation the line on top says where the tower stands (L7, CITY-144): in the skyline, or still in the
+ * After its graduation the line on top says where the tower stands: in the skyline, or still in the
  * Docks as a «Fast exit» or «Graduated with N buyers». The checks are the crown's rings, lit only by a trade outside the
  * creator's wallets; the rule and «not advice» are behind the «i» beside them.
  */
@@ -58,7 +58,7 @@ export function LaunchTowerBody({ token, onBusy }: { token: string; onBusy?: (bu
   const liftoff = launch.mine && now - (Date.parse(launch.launchedAt ?? '') || 0) < LIFTOFF_MS;
   const since = sinceLaunch(launch.launchedAt, now);
   const accent = launch.phase === 'lost' || launch.hidden ? 'var(--text-dim)' : below ? 'var(--warm)' : launch.migrated ? 'var(--amber)' : 'var(--mint)';
-  /* The shield's halo (CITY-169), on the window's own read of the creator's wallet once it is in. */
+  /* The shield's halo, on the window's own read of the creator's wallet once it is in. */
   const halo = towerHalo({ ...launch, flow: read });
   const report = reporting === launch.token;
   const about = aboutOf === launch.token;
@@ -85,7 +85,7 @@ export function LaunchTowerBody({ token, onBusy }: { token: string; onBusy?: (bu
       ) : (
         <>
           <div className={s.tags}>
-            {/* The creator's own tower opens «Моя вежа» on it (CITY-141, CITY-168). */}
+            {/* The creator's own tower opens «Моя вежа» on it. */}
             {(launch.mine || (wallet !== null && launch.creator === wallet)) && (
               <button type="button" className={`${s.tag} ${s.tagBerth}`} data-launch-berth="" onClick={() => openBerth(launch.token)}>
                 <BerthGlyph />
@@ -104,7 +104,7 @@ export function LaunchTowerBody({ token, onBusy }: { token: string; onBusy?: (bu
             {stub && <span className={`${s.tag} ${s.tagNet}`}>{w.stub}</span>}
             <span className={`${s.tag} ${s.tagWarn}`}>{w.notVerified}</span>
           </div>
-          {/* Who bought it and how (L3, CITY-140): facts of the chain above the trade, never a verdict. */}
+          {/* Who bought it and how: facts of the chain above the trade, never a verdict. */}
           {/* «Graduated with N buyers» is said on top: the flow's own pill of it would say it twice. */}
           <LaunchTrust flow={flow} settled={settled} omit={omitGraduationPill(silhouette, flow?.graduation.singleTrade ?? false) ? ['graduation'] : undefined} />
           <div className={s.checks} aria-label={w.checks}>

@@ -200,7 +200,7 @@ export function MinePanel() {
                   ))}
                 </ul>
               )}
-              {/* Where the figures come from, and what is left out of them, behind one quiet «i» (CITY-150). */}
+              {/* Where the figures come from, and what is left out of them, behind one quiet «i». */}
               <button className={`${s.about} ${about ? s.aboutOn : ''}`} aria-expanded={about} aria-label={w.aboutFigures} onClick={() => setAbout((v) => !v)}>
                 i
               </button>
@@ -292,7 +292,7 @@ function Row({ row, onFly, onSell }: { row: MineRow; onFly: () => void; onSell: 
 
 /** The coin's logo through Ryntra's icon route, as the trade card draws it; an unnamed coin gets a blank disc. */
 function Icon({ mint, shown }: { mint: string; shown: boolean }) {
-  // The tower's logo first; a coin that is no tower (USDC) through the engine's catalogue (CITY-150: no empty circles).
+  // The tower's logo first; a coin that is no tower (USDC) through the engine's catalogue (no empty circles).
   const sources = [`/api/icon/${mint}`, `/api/spot/icon?mint=${encodeURIComponent(mint)}`];
   const [tried, setTried] = useState(0);
   if (!shown || tried >= sources.length) return <span className={s.icon} aria-hidden="true" />;

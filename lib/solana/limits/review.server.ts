@@ -149,7 +149,7 @@ export async function reviewLimitOrder(
   const startedAtMs = Date.now();
 
   if (request.venue === "trigger") {
-    /* A partner's friend pays the discounted rate (CITY-182); the store is asked only while the switch is on. */
+    /* A partner's friend pays the discounted rate; the store is asked only while the switch is on. */
     const feeDiscountBps = await (deps.feeDiscount ?? ((owner: string) => (refereeDiscountInForce() ? readRefereeDiscountBps(getGuardRuntime().store, owner) : Promise.resolve(0))))(request.owner);
     const context = await triggerFeeContext(amounts, { connection, feeDiscountBps });
     const built = await buildTriggerOrder({ owner: request.owner, amounts, plan: context.plan }, { connection });

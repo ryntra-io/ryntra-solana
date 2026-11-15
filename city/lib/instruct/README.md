@@ -1,4 +1,4 @@
-# The agent from one sentence (CITY-176)
+# The agent from one sentence
 
 «Say it. Your agent does the rest.» — the step of the agent that needs no new mechanism: from one sentence the agent
 sets a regular purchase, a limit or a stop, and the person signs once in their own wallet. Ryntra holds nothing and
@@ -37,15 +37,15 @@ the money is, and how it runs.
 | Instruction | Engine | The person signs | Fee |
 | --- | --- | --- | --- |
 | regular purchase | the rules engine, `POST /api/v1/rules` (`lib/autoinvest/**`, «Регулярна купівля для всього») — a reminder on the schedule | once to set it: the wallet's proof (a message, no money); each purchase in their wallet | the swap path's fee on each purchase |
-| limit | the spot limits engine, `/api/solana/limits/*` (CITY-62): a Jupiter Trigger V1 order, the coins in a program account of that order alone | once: the order, after the engine's Review is on the card | the limits engine's fee policy (Review) |
-| stop | the stops engine, `/api/v1/stops` (CITY-149): watched with the swap quote; the person is told when it is reached | once to set it: the wallet's proof; the sale in their wallet | the swap path's fee on the sale |
+| limit | the spot limits engine, `/api/solana/limits/*`: a Jupiter Trigger V1 order, the coins in a program account of that order alone | once: the order, after the engine's Review is on the card | the limits engine's fee policy (Review) |
+| stop | the stops engine, `/api/v1/stops`: watched with the swap quote; the person is told when it is reached | once to set it: the wallet's proof; the sale in their wallet | the swap path's fee on the sale |
 
 **Why not Jupiter's own recurring orders.** Recurring V1 is no longer maintained, and DCA now lives in Trigger V2, which
 keeps the coins in Jupiter's custodial vault (one per wallet) and pays no integrator fee (Jupiter's docs, read 29.10;
 `docs/research/ryntra-bots-2026-10-29/sources/r-onchain.md`). Neither keeps the money in the person's hands, and the
 second would take no Ryntra fee — so the regular purchase runs on Ryntra's rules engine, the same way the stops do: a
 reminder, and the person's own signature on each purchase. A purchase that runs by itself within a budget is the
-agent's wallet (CITY-174, CITY-175).
+agent's wallet.
 
 The stops and limits need their own switches too: a stop sets nothing while `NEXT_PUBLIC_RYNTRA_CITY_STOPS` is shut
 (the card says stops are coming); limits ride on `NEXT_PUBLIC_RYNTRA_CITY_SPOT`'s engine. Jupiter Trigger and the

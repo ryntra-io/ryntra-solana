@@ -1,5 +1,5 @@
 /**
- * «On the computer» (CITY-87): the browser's own notification, shown by the open page while the city is open in a tab —
+ * «On the computer»: the browser's own notification, shown by the open page while the city is open in a tab —
  * in front or behind. Only on a computer: a phone's browser shows a page's notifications through a service worker,
  * and inside the Ryntra app the engine pushes to the phone itself. The browser asks the person once; a «no» there is
  * the browser's and stays so until the person changes it in the browser.

@@ -110,7 +110,7 @@ export type QuoteMultiplier = Readonly<{ current: number; pending: number | null
 
 /**
  * One checked pair currency, as the operator names it — every field read on chain at the time of the check, so a later read
- * that differs is a difference this code can see. `note` is the operator's own word to the operator and never leaves the
+ * that differs is a difference this code can see. `note` is a free remark kept beside the record and never leaves the
  * server.
  */
 export type QuoteAssetRecord = Readonly<{
@@ -133,7 +133,7 @@ export type QuoteAssetRecord = Readonly<{
   badge: boolean;
   /** How old this pair's price may be when a launch is built, in seconds. */
   priceMaxAgeSeconds: number;
-  /** The operator's note — for the operator; never part of a public answer. */
+  /** A free remark kept beside the record; never part of a public answer. */
   note: string | null;
 }>;
 

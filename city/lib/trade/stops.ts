@@ -6,7 +6,8 @@ import { STOPS } from './words.ts';
 
 /**
  * A stop in the city: «sell when the price falls to», «buy when the price rises to». The engine's limits lane has no
- * stop that rests at a venue so a stop here is the engine's watched kind: an intent, never an order. Since CITY-149 the
+ * stop that rests at a venue
+ * so a stop here is the engine's watched kind: an intent, never an order. The
  * engine keeps it under the wallet's account (`lib/stops`, `stops-api.ts`), watches it with the swap engine's quote
  * around the clock and tells the person when it is reached; while Ryntra is open the city asks the same quote too.
  * Reached, the city opens the sale's exact order — the person's wallet signs it, or nothing is sold. A stop set before

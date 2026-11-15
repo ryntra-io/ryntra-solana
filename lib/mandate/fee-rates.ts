@@ -1,5 +1,5 @@
 /**
- * CITY-183 — the rates of Ryntra's fee on the agent's trades: fee policy v2's (`../core/fee-policy.ts`), the very table a
+ * The rates of Ryntra's fee on the agent's trades: fee policy v2's (`../core/fee-policy.ts`), the very table a
  * person's own swap pays by — the router's flows that carry a fee. Pure and client-safe, so the agent's window says the
  * same numbers the engine charges (`./fee.ts` holds where the fee lands and how it travels).
  */

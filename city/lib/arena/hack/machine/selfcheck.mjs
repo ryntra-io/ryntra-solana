@@ -1,9 +1,9 @@
-// CITY-238 · the image checks itself before it becomes a snapshot (`image.mjs`), and a stand before it trusts a
+// The image checks itself before it becomes a snapshot (`image.mjs`), and a stand before it trusts a
 // machine: node is new enough, the engine loads and is the version the ranges are pinned to, and every range the image
 // carries loads into the engine and hashes to its own pin. Exit 0 and one line per range, or exit 1 and why.
 //
 // Whether a range's checks hold in its recorded copy is said, not required: a range may carry a check its own copy
-// does not meet.
+// does not meet (`council-review` — the run then waits for the protocol owner's word).
 //
 //   node selfcheck.mjs
 const [major, minor] = process.versions.node.split(".").map(Number);

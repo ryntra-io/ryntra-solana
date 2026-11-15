@@ -11,7 +11,7 @@ import { CITY_DEFAULT_PRESET, type CityPresetId } from '../launch/gate.ts';
 import { PARTNER_TERMS, type PartnerTerms } from '../partners/terms.ts';
 
 /**
- * Every figure the documentation prints, read from the module the product charges, splits or limits by (CITY-180). The
+ * Every figure the documentation prints, read from the module the product charges, splits or limits by. The
  * sections hold no number of their own — `docs.test.mjs` refuses a percent or a dollar figure typed into their source — so a
  * fee that changes in its table reads differently here on the next release, and a test keeps the two equal. This file only
  * adds the arithmetic from basis points to what a reader sees.

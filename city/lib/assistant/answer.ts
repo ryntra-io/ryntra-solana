@@ -5,7 +5,7 @@ import { questionSymbol } from './clean.ts';
 import { ASSISTANT_TEXT } from './words.ts';
 
 /**
- * Ryntra in the city (CITY-10): a question goes to the assistant's engine, and the answer comes back as towers — the
+ * Ryntra in the city: a question goes to the assistant's engine, and the answer comes back as towers — the
  * camera flies to them and they light up — with a short line of words. Everything here is pure: which towers an answer
  * is about, the line a person reads, what waits behind «Details», and the city's own read when the engine is away.
  * Advice only: nothing here prepares, signs or sends anything.
@@ -120,7 +120,7 @@ export function towersOf(turn: AgentTurn, towers: readonly Tower[], limit = TOWE
       const dollar = t.symbol.length < 3 ? '\\$' : '\\$?';
       const match = new RegExp(`(^|[^\\p{L}\\p{N}$])${dollar}${escape(t.symbol)}(?![\\p{L}\\p{N}])`, 'u').exec(text);
       if (!match) continue;
-      // A ticker is not a coin: «AMD −73 %» in a day's movers is another AMD than the stock tower that moved −4 % (CITY-200).
+      // A ticker is not a coin: «AMD −73 %» in a day's movers is another AMD than the stock tower that moved −4 %.
       if (day && !sameMove(statedMove(text.slice(match.index + match[0].length)), t.change24h)) continue;
       found.push({ at: line * 10_000 + match.index, tower: t });
     }
@@ -147,8 +147,8 @@ export function pickTowers(turn: AgentTurn | null, towers: readonly Tower[], int
 
 /**
  * A rise or a fall is the city's own read, so the city answers it from its towers when Ryntra's turn named no tower and
- * either Ryntra's day of guest answers is spent (CITY-200: «what is rising?» read «come back tomorrow» over an empty
- * city) or the turn read no market at all — no source behind it (CITY-221: «що зараз росте?» read «I have no market
+ * either Ryntra's day of guest answers is spent («what is rising?» read «come back tomorrow» over an empty
+ * city) or the turn read no market at all — no source behind it («що зараз росте?» read «I have no market
  * data in this answer», and the city showed nothing).
  */
 export function cityAnswers(shown: readonly Tower[], intent: Intent, day: Readonly<{ used: number; allowance: number }> | null, read = true): boolean {

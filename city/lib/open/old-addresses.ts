@@ -1,6 +1,6 @@
 /**
- * The old interface's addresses, and the place of the city each one opens (CITY-13, decision 75); and the short
- * addresses a person types by hand, each in one hop to its district or window (CITY-159).
+ * The old interface's addresses, and the place of the city each one opens; and the short
+ * addresses a person types by hand, each in one hop to its district or window.
  *
  * The old cabinet (`app/app/**`, `app/solana/workspace/**`), its aliases and Mission Control are closed: nobody sees
  * them. Every address they answered at leads, for good (308; a few for now, `TEMPORARY`), to the district or window of the city that does the same
@@ -17,7 +17,7 @@
 
 /**
  * The places of the city an old address can open; `page` is a document of the site at its own address (the help, the
- * legal texts, About, the documentation), which the city's document windows take over where it stands (CITY-157).
+ * legal texts, About, the documentation), which the city's document windows take over where it stands.
  */
 export const CITY_PLACES = ['home', 'coin', 'trade', 'exchange', 'oracle', 'money', 'mine', 'launch', 'hall', 'harbor', 'agents', 'assistant', 'settings', 'page'] as const;
 export type CityPlace = (typeof CITY_PLACES)[number];
@@ -46,7 +46,7 @@ export type OldAddress = Readonly<{
  * The old addresses that lead into the city for now, not for good (307): a browser caches a 308 forever, so an address
  * another product or a later step may take back is never answered with one. `/agents` and `/agent-control` were another
  * product's, not this one (decision 69), temporary in the cabinet's own table too; `/live` was
- * Launch Night's, which the city's Launch brings back (CITY-146); the site's shortcuts to another product's pages
+ * Launch Night's, which the city's Launch brings back; the site's shortcuts to another product's pages
  * (decision 69) are that product's to take back.
  */
 const TEMPORARY = /^\/(?:agents(?:\/|$)|agent-control$|live$|verify(?:\/|$)|guard$|proof$)/;
@@ -94,7 +94,7 @@ const CABINET: readonly Row[] = [
   ['/app/perps/:path*', open('exchange'), 'exchange'],
   ['/app/futures/:path*', open('exchange'), 'exchange'],
 
-  /* Predictions are the Oracle (CITY-67): its positions, a market's own page, the board. */
+  /* Predictions are the Oracle: its positions, a market's own page, the board. */
   ['/app/predictions/portfolio', open('oracle', '&page=positions'), 'oracle'],
   ['/app/predictions/:eventId', open('oracle', '&market=:eventId'), 'oracle'],
   ['/app/predictions', open('oracle'), 'oracle'],
@@ -210,13 +210,13 @@ function rows(): OldAddress[] {
 export const OLD_ADDRESSES: readonly OldAddress[] = rows();
 
 /**
- * The short addresses a person types by hand or a post names (CITY-159): each opens its district or window in one
+ * The short addresses a person types by hand or a post names: each opens its district or window in one
  * hop. None of them ever had a page; each answered with the framework's bare 404. They lead into the city for now
  * (307), never for good: an address this short may yet be wanted for a page of its own, and a browser keeps a 308
  * forever.
  *
  * The documents lead to the address the site keeps for them — the legal texts at `/legal/…` (a store listing and the
- * law name those), the help at `/support` — the city's document pages since CITY-157, as `/about` is.
+ * law name those), the help at `/support` — the city's document pages, as `/about` is.
  * The old About at `/company` stays a page until the city leads it somewhere. What the city has no place for (`/blog`, `/press`, `/brand`) is not led anywhere: it is the
  * city's own 404, with its one way back (`city/components/open/Lost.tsx`).
  */
@@ -244,7 +244,7 @@ const SHORT: readonly Row[] = [
   ...['/earn', '/pools', '/harbor', '/yield'].map((source): Row => [source, open('harbor'), 'harbor']),
   ['/bots', open('agents'), 'agents'],
   ['/assistant', open('assistant'), 'assistant'],
-  /* `/connect` is the AI-chat connector's consent page since CITY-154: no short address takes it. */
+  /* `/connect` is the AI-chat connector's consent page: no short address takes it. */
   ...['/settings', '/login', '/signin', '/account'].map((source): Row => [source, open('settings'), 'settings']),
 
   /* `/status` led to the old documentation; the city is what is live. */
@@ -259,7 +259,7 @@ const SHORT: readonly Row[] = [
 /** Every short address, in the order it is matched after the old ones; each for now (307). */
 export const SHORT_ADDRESSES: readonly OldAddress[] = SHORT.map(([source, destination, place]) => ({ source, destination, place, permanent: false }));
 
-/** Where a short address may lead that is not the city's own page yet: the site's documents, which CITY-157 takes over. */
+/** Where a short address may lead that is not the city's own page yet: the site's documents. */
 export const DOCUMENT_PREFIXES = ['/docs', '/developers', '/legal', '/support', '/about', '/company'] as const;
 
 type HostCondition = Readonly<{ type: 'host'; value: string }>;

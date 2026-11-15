@@ -1,6 +1,6 @@
 /**
- * The free vaults of practice (CITY-47, decision 72): three levels without a wallet, each with its own guard and a
- * harder one each time, and a daily vault with a new guard every day. The paid vaults (CITY-48) come later on the
+ * The free vaults of practice: three levels without a wallet, each with its own guard and a
+ * harder one each time, and a daily vault with a new guard every day. The paid vaults come later on the
  * prize-pool program; nothing here touches money.
  *
  * How the levels get harder: a longer phrase, stricter rules, and from level 3 a second line of defence — a reply that
@@ -15,7 +15,7 @@ export const isVaultId = (value: unknown): value is VaultId => typeof value === 
 
 /**
  * The model every practice guard speaks with: a light one (≈ $0.0003 a reply, REVIEW «Гроші й випуск»). Pinned by its
- * exact id; the gateway of CITY-45 checks it against the live catalog and never swaps it for another.
+ * exact id; the gateway checks it against the live catalog and never swaps it for another.
  */
 export const GUARD_MODEL = "anthropic/claude-haiku-5.5";
 
@@ -79,7 +79,7 @@ export function guardOf(id: VaultId, day: string): Guard {
   return DAILY_GUARDS[(((Number.isFinite(n) ? n : 0) % DAILY_GUARDS.length) + DAILY_GUARDS.length) % DAILY_GUARDS.length]!;
 }
 
-/** The key each guard pays with (CITY-45: a key with its own dollar limit for every guard). */
+/** The key each guard pays with (a key with its own dollar limit for every guard). */
 export const guardKeyRef = (id: VaultId) => `vault:${id}`;
 
 /** The title for cracking every practice level, «Зломщик» in the registry. */

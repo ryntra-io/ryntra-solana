@@ -1,5 +1,5 @@
 /**
- * A tiny engine for the sandbox's own tests and the recorded scenario (CITY-224) — not a program VM. It keeps the
+ * A tiny engine for the sandbox's own tests and the recorded scenario — not a program VM. It keeps the
  * promises of `ForkEngine` (synchronous, deterministic, a copy only, the payer's key checked, a compute budget) with a
  * made-up program, so the rules of the sandbox are tested anywhere, with no binary. The real copy is LiteSVM with
  * mainnet's program bytes (`docs/research/city-224-hack-sandbox/harness/litesvm.mjs`).

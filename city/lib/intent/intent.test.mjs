@@ -1,6 +1,6 @@
 // Run from repo root: node --test city/lib/intent/intent.test.mjs
 //
-// The confirm sheet of a prepared action (CITY-161) with the engine's own recorded answers: the swap through the swap
+// The confirm sheet of a prepared action with the engine's own recorded answers: the swap through the swap
 // routes' golden transcripts (signed with their test-only key), the transfer through the Money window's fixtures. No
 // network, no wallet, no keys. What these prove: the sheet shows only what the contract gives, the press claims before
 // anything is built, what the engine built must be exactly what was prepared or the wallet never opens, a «no» lets

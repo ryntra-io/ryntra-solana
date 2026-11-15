@@ -39,7 +39,7 @@ export type Moment = {
   fx: FxKind;
   accent: Accent;
   run: { time: number; form: RunForm; day: string; newBest: boolean; course: string } | null;
-  /** A post of the studio for X (CITY-38, `../x/`): its facts, from which the server writes the words. */
+  /** A post of the studio for X (`../x/`): its facts, from which the server writes the words. */
   studio?: Facts;
 };
 

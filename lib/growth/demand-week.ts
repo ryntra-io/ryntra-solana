@@ -1,5 +1,5 @@
 /**
- * CITY-197 — the owner's week of demand: five figures that say whether people came and stayed, so the next build is
+ * The owner's week of demand: five figures that say whether people came and stayed, so the next build is
  * chosen by what they did (`docs/research/launchpad-market-2026-11-04/REPORT.md` §0 п. 5, §7 пп. 1 і 5).
  *
  * 1. Launches by people — coins launched on mainnet in the week by a wallet that is not Ryntra's own.

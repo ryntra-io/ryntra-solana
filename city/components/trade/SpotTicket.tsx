@@ -33,7 +33,7 @@ const MARKET_REFRESH_MS = 20_000;
  * A limit order is the engine's: it waits at Jupiter at its price and fills there or not at all, the coins in a
  * program account of this order alone; its Review — what leaves, what comes back, Ryntra's fee and the venue's, the
  * network fee and the refundable deposit — is built by the engine before the wallet opens. A stop is kept by the engine
- * under the wallet (CITY-149): reached, the person is reminded and the card opens the sale at the market price for the
+ * under the wallet: reached, the person is reminded and the card opens the sale at the market price for the
  * wallet to sign; while that switch is shut it is watched on this device while Ryntra is open. Every
  * figure is the engine's: the price from its market read, the amounts from its Review or its own arithmetic.
  */
@@ -45,7 +45,7 @@ export function SpotTicket({ tower, choice, mode, getChips }: { tower: TowerRef;
   return <SpotFields tower={tower} choice={choice} mode={mode} getChips={getChips} />;
 }
 
-/** How long, after the ticket opens on Limit or Stop, its dock's edge is watched for a row it cuts (CITY-242). */
+/** How long, after the ticket opens on Limit or Stop, its dock's edge is watched for a row it cuts. */
 const DOCK_SETTLE_MS = 1_500;
 
 function SpotFields({ tower, choice, mode, getChips }: { tower: TowerRef; choice: Choice; mode: 'limit' | 'stop'; getChips: ReactNode }) {
@@ -65,7 +65,7 @@ function SpotFields({ tower, choice, mode, getChips }: { tower: TowerRef; choice
   const [picking, setPicking] = useState(false);
   const [details, setDetails] = useState(false);
   const getRef = useRef<HTMLDivElement>(null);
-  // The ticket as it opens on Limit or Stop: the pinned dock's edge cuts no row in half (CITY-242, Д3 — on a phone Stop's
+  // The ticket as it opens on Limit or Stop: the pinned dock's edge cuts no row in half (Д3 — on a phone Stop's
   // two lines of terms cut «You pay … · You have 0 SOL»). The card moves a few pixels in its own scroller, nothing else.
   // The ticket's column is the «You get» row's own; the dock stands in it.
   useLayoutEffect(() => {
@@ -103,7 +103,7 @@ function SpotFields({ tower, choice, mode, getChips }: { tower: TowerRef; choice
   const quoteMint = choice.pay.mint;
   const key = pairKey(side, base, quoteMint);
   const idle = phase === 'idle';
-  // A connected wallet with nothing to buy with (CITY-239): the one action is the way to get some, as on the market
+  // A connected wallet with nothing to buy with: the one action is the way to get some, as on the market
   // ticket; its balance is read again while the ticket offers it. How an order is built is not touched.
   const topUp = offersTopUp({ connected: Boolean(connection), side, max: choice.sizing.max, moneyOpen: MONEY_OPEN });
   useHoldingsWatch(topUp);
@@ -176,7 +176,7 @@ function SpotFields({ tower, choice, mode, getChips }: { tower: TowerRef; choice
     else await useSpot.getState().reviewOrder(intent);
   };
 
-  // The minimum is in dollars; paid in another coin (SOL), what it is in that coin too (CITY-150).
+  // The minimum is in dollars; paid in another coin (SOL), what it is in that coin too.
   const quoteUsd = market?.key === key && market.status === 'ready' ? market.quoteUsd : null;
   const minInPay = quoteUsd && quoteUsd > 0 && !/^USD[CT]?$/i.test(unit) ? `${digits(plainFigure(TRIGGER_V1_MIN_ORDER_USD / quoteUsd, { significant: 3 }))} ${unit}` : null;
 
@@ -446,7 +446,7 @@ function SpotAction({
   ready: boolean;
   reviewed: boolean;
   needsPrice: boolean;
-  /** An empty wallet: the button is «Add SOL» — Money's top-up — where a dead «Set a price» stood (CITY-239). */
+  /** An empty wallet: the button is «Add SOL» — Money's top-up — where a dead «Set a price» stood. */
   topUp: boolean;
   /** What the order spends: the coin the top-up names. */
   unit: string;

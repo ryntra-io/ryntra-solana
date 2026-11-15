@@ -1,10 +1,10 @@
 /**
- * The pin of a Hack run (CITY-224, spec `docs/research/city-hack-2026-11-08/SPEC.md` «How the sandbox works»): the exact
+ * The pin of a Hack run (spec `docs/research/city-hack-2026-11-08/SPEC.md` «How the sandbox works»): the exact
  * copy a run starts from, written down as hashes, so the same pin and the same inputs give the same log on every
  * machine.
  *
  *   Snapshot — the recorded state itself: the clock, the programs' bytes and every account (owner, lamports, data,
- *              executable). Recorded once (a tape of mainnet answers, as CITY-198/219 do); never fetched during a run.
+ *              executable). Recorded once; never fetched during a run.
  *   ForkPin  — what goes into the rules, the log and the receipt: the target (a mainnet fork at a slot), the clock, a
  *              hash of each program's bytes, one hash of all the accounts (`stateHash`), and the engine that runs the
  *              copy (its id and version: built-in programs and the runtime come with it).

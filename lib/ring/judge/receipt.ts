@@ -1,5 +1,5 @@
 /**
- * The receipt of a match (CITY-68): what was played, under which rules, by which judge, on which log — and the verdict
+ * The receipt of a match: what was played, under which rules, by which judge, on which log — and the verdict
  * with its reason, the replayed result and the time. Anyone holding the rules, the log and the game checks a receipt
  * without trusting Ryntra: the hashes either match or they do not, and a replay verdict is played again.
  *

@@ -11,7 +11,7 @@ import { WINDOW } from './words';
 import s from './window.module.css';
 
 /**
- * A window of the city on another screen (CITY-75): the same head as in the city — the glyph, the title — with one
+ * A window of the city on another screen: the same head as in the city — the glyph, the title — with one
  * quiet button that brings it back, and the window's own contents filling the rest. In Picture-in-Picture a signature
  * asked from inside says, in one line, where the wallet asks: the wallet's own window opens over the city.
  */

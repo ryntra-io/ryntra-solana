@@ -1,5 +1,5 @@
 /**
- * The bot's brakes (CITY-166): how often it may answer one person, one group and everyone, what it does not answer
+ * The bot's brakes: how often it may answer one person, one group and everyone, what it does not answer
  * twice, and what it remembers of a chat to catch a look-alike address. The bot must never become the spam it warns
  * about: one message in, at most one line out, and past a limit it says so once and then keeps quiet.
  *

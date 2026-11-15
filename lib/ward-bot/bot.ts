@@ -1,5 +1,5 @@
 /**
- * The pre-sign check as a Telegram bot for groups (CITY-166; decision 88: «Agents propose. Ryntra checks. You sign.»).
+ * The pre-sign check as a Telegram bot for groups.
  *
  * Someone in a group pastes an address, a CA, a link or a transaction; the bot answers that message with one line —
  * the engine's verdict (`lib/ward/check.ts`, the same check as `POST /api/v1/ward/check`). In a private chat it does

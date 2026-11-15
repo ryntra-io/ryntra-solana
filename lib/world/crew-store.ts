@@ -8,7 +8,7 @@ import { WorldStoreUnavailable } from "./store";
 import type { WorldRpc } from "./supabase-store";
 
 /**
- * Where crews are kept (CITY-20). Two stores answer the same way, like the world's own: the database through the
+ * Where crews are kept. Two stores answer the same way, like the world's own: the database through the
  * server's secret-gated functions (`supabase/migrations/20261031090000_world_crews.sql`), and memory for tests and
  * local work. A member is a quarter, not a resident, so a guest's crew follows their quarter into an account.
  *

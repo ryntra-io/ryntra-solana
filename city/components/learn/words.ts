@@ -1,7 +1,7 @@
 import { words } from '../../lib/i18n/dict.ts';
 
 /**
- * The words of «Learn» (CITY-202): the window's own few — the chapters themselves are the guide's
+ * The words of «Learn»: the window's own few — the chapters themselves are the guide's
  * (`docs/learn/{en,uk}/`, read through `city/lib/learn/guide.generated.ts`).
  */
 export const LEARN_WORDS = words(

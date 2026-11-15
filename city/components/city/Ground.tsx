@@ -11,7 +11,7 @@ import { useSkyline } from './skyline/store';
 import { Water } from './skyline/Water';
 
 /**
- * The island, the water round it (CITY-56: its own surface, mirroring the city) and, once the skyline kit is on the
+ * The island, the water round it (its own surface, mirroring the city) and, once the skyline kit is on the
  * screen, the embankment and the life on its streets: cars, street lights and people.
  */
 export function Ground() {

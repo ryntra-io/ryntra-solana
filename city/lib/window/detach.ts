@@ -1,7 +1,7 @@
 import type { Size } from './geometry.ts';
 
 /**
- * A window of the city on another screen (CITY-75: «a chart onto the second monitor»): the
+ * A window of the city on another screen: the
  * chart, the Exchange — every window whose spec says how to open it again — leaves the city for a window of the
  * browser of its own and comes back with one tap or when that window is closed.
  *

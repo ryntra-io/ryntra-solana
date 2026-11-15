@@ -1,5 +1,5 @@
 /**
- * The ranges that ship with the deployment (CITY-238): Ryntra's own training ranges, as `record.mjs` wrote them. The
+ * The ranges that ship with the deployment: Ryntra's own training ranges, as `record.mjs` wrote them. The
  * server reads them to build an agent's session; the machine's image carries the same file, so both sides hold the
  * same pins — and a deployment whose ranges differ from its machine's simply gets its runs refused.
  */

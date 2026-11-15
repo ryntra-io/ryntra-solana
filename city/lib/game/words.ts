@@ -1,6 +1,6 @@
 import { words } from '../i18n/dict.ts';
 
-/** The words of the Play layer's own controls (CITY-81): the switch, the dock, the Map — in the language on screen (CITY-79). */
+/** The words of the Play layer's own controls: the switch, the dock, the Map — in the language on screen. */
 export const GAME = words(
   {
     city: 'City',

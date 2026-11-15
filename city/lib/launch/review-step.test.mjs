@@ -3,7 +3,7 @@ import test from "node:test";
 
 import { reviewStepOpen } from "./review-step.ts";
 
-// CITY-236: «Back» and Escape from the launch's review return to its fields, as the sheet's own arrow does — never out
+// «Back» and Escape from the launch's review return to its fields, as the sheet's own arrow does — never out
 // of the whole sheet, and never while a launch is under way.
 
 test("the review is a step back while nothing is under way", () => {
@@ -25,7 +25,7 @@ test("a closed sheet has no step, whatever it remembers", () => {
   assert.equal(reviewStepOpen({ sheet: false, step: "review", phase: null }), false);
 });
 
-test("the sheet closes unless a launch is under way; an early launch that is set is not under way (CITY-242: one rule, in one place)", async () => {
+test("the sheet closes unless a launch is under way; an early launch that is set is not under way (one rule, in one place)", async () => {
   const { sheetClosable } = await import("./review-step.ts");
   assert.equal(sheetClosable(null), true);
   for (const step of ["done", "failed", "opened"]) assert.equal(sheetClosable({ step }), true, step);

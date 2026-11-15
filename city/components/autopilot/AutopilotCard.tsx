@@ -63,7 +63,10 @@ export function useAgentView(): Readonly<{ record: ReturnType<typeof useMandate.
   return { record, view, live, active };
 }
 
-/** Where the engine sells what the agent bought: devnet, by the person's one tap (CITY-187); mainnet's is CITY-195. */
+/**
+ * Which exit line the card says (`ruleExit`): on devnet «sell in one tap»; on mainnet «selling by the agent
+ * is coming» — there the person's one tap is in the tower's window (`AgentSell`).
+ */
 const SELLS = MANDATE_NET === 'devnet';
 
 function Details({ lines, said, tested, trades }: { lines: readonly string[]; said: string | null; tested?: string | null; trades?: readonly Readonly<{ key: string; word: string; amount: string; tone: string }>[] }) {
@@ -118,7 +121,7 @@ function Details({ lines, said, tested, trades }: { lines: readonly string[]; sa
 }
 
 /**
- * Connect, then the one button. CITY-222: the one wallet this browser has connects on the tap, without a list; with
+ * Connect, then the one button. The one wallet this browser has connects on the tap, without a list; with
  * none, the way out to get one comes back to this card; a wallet that cannot hold the budget is offered «Add SOL».
  */
 function SignButton({ label, busy, disabled, onPress, said, preset }: { label: string; busy: boolean; disabled: boolean; onPress: (who: { wallet: string; owner: string }) => void; said: string; preset: BudgetPresetId | null }) {
@@ -159,7 +162,7 @@ function SignButton({ label, busy, disabled, onPress, said, preset }: { label: s
   );
 }
 
-/** CITY-70: what a control did, in one line. */
+/** What a control did, in one line. */
 function controlText(w: W, note: ControlNote): string {
   return { frozen: w.noteFrozen, resumed: w.noteResumed, cancelled: w.noteCancelled, nothing: w.noteNothingOpen, walletNo: w.noteWalletNo, refused: w.noteRefused, unreachable: w.noteUnreachable }[note];
 }
@@ -177,7 +180,7 @@ function TradeStart({ said }: { said: string }) {
   const capped = useAutopilot((st) => st.capped);
   const busy = useMandate((st) => st.busy === 'enable');
   const note = useMandate((st) => st.note);
-  // CITY-197: the rhythm at the plan's calm pace — the buys it will really make.
+  // The rhythm at the plan's calm pace — the buys it will really make.
   const asked = useAutopilot((st) => st.plan);
   const pace = calmPlan(asked ?? STEADY).pace ?? null;
   const rhythm = preset ? rhythmOf(preset, pace) : null;
@@ -186,7 +189,7 @@ function TradeStart({ said }: { said: string }) {
   // Mainnet: the agent buys a coin the person named — in her words, the tower on screen, or one tap here.
   const coin = useMandate((st) => st.coin);
   const needsCoin = MANDATE_NET === 'mainnet';
-  // CITY-193: the strategy said, in one line; an early plan's launch is the agent's own pick.
+  // The strategy said, in one line; an early plan's launch is the agent's own pick.
   const plan = useAutopilot((st) => st.plan);
   const launch = useAutopilot((st) => st.launch);
   const tested = useAutopilot((st) => st.tested);
@@ -341,14 +344,14 @@ export function TradeWorking({ said }: { said: string | null }) {
   const controlNote = useControls((st) => st.note);
   if (!record) return null;
   const result = view?.result ?? null;
-  /* CITY-197: the result after every fee, when the book counted them; plain holding beside it. */
+  /* The result after every fee, when the book counted them; plain holding beside it. */
   const net = view?.net ?? null;
   const earned = net ? net.netRaw : (result?.earnedRaw ?? null);
   const hold = net?.holdRaw ?? null;
   const tone = earned === null ? undefined : BigInt(earned) > 0n ? 'up' : BigInt(earned) < 0n ? 'down' : undefined;
   const earnedText = earned !== null ? solFigure(earned, lang) : null;
   const left = status?.budgetLamports ? sol(Number(status.budgetLamports) / 1e9, lang) : null;
-  /* CITY-70: what it is doing now; the next buy from the engine's own rhythm when it told it. */
+  /* What it is doing now; the next buy from the engine's own rhythm when it told it. */
   const face = missionFace(view, w);
   const frozen = view?.frozen === true;
   const lastAt = view?.last.find((trade) => trade.ok)?.at ?? null;
@@ -367,7 +370,7 @@ export function TradeWorking({ said }: { said: string | null }) {
   const plan = planOfText(view?.plan);
   const line = planLine(plan, w, lang);
   const paused = pausedText(w, view?.pausedBy ?? null, plan, lang);
-  /* CITY-216: the signed day's budget in the headline, one trade's size under it — never one trade as the day. */
+  /* The signed day's budget in the headline, one trade's size under it — never one trade as the day. */
   const budget = budgetLines({ buys: steadyRhythm(BigInt(record.perTrade), BigInt(record.perDay), plan?.pace ?? null).buys, perTrade: Number(record.perTrade) / 1e9, perDay: Number(record.perDay) / 1e9 }, plan, w, lang);
   const ended = view && view.status !== 'working' ? (view.status === 'stopped' ? w.noteStopped : view.status === 'paused' ? paused : w.ended) : status && !status.active ? w.noteStopped : null;
   return (
@@ -434,7 +437,7 @@ export function TradeWorking({ said }: { said: string | null }) {
         <button type="button" className={s.second} disabled={!card || making !== null} onClick={() => card && void share('agent', card, `https://${BRAND.domain}`)} data-autopilot-share="">
           {label}
         </button>
-        {/* CITY-70: three controls, each its own and one tap; only «Cancel orders» and «Withdraw» ask the wallet to sign. */}
+        {/* Three controls, each its own and one tap; only «Cancel orders» and «Withdraw» ask the wallet to sign. */}
         <div className={s.controls} role="group" aria-label={w.controls}>
           <button type="button" className={s.control} aria-pressed={frozen} disabled={!who || !live || controlBusy !== null || busy} aria-busy={controlBusy === 'freeze'} onClick={() => who && void tapFreeze(who, record, !frozen)} data-control="freeze">
             {frozen ? w.resume : w.freeze}
@@ -462,7 +465,7 @@ function pausedText(w: W, why: string | null, plan: ReturnType<typeof planOfText
 }
 
 /**
- * The agent's day in its card (CITY-194): «Today: 3 trades, +0.012 SOL» from its book, and the daily report's one
+ * The agent's day in its card: «Today: 3 trades, +0.012 SOL» from its book, and the daily report's one
  * switch — Telegram and the phone hear it at the person's hour; one tap turns it off.
  */
 function AgentToday({ view }: { view: AgentView | null }) {
@@ -552,7 +555,7 @@ function LaunchFace({ said }: { said: string }) {
 }
 
 /**
- * The agent's card on its word (CITY-175): «trade 1 SOL a day» — the budget, the rhythm and the limits in one line, one
+ * The agent's card on its word: «trade 1 SOL a day» — the budget, the rhythm and the limits in one line, one
  * signature, then the agent at work with what it earned, «Share» and «Stop»; «launch me a token» — the coin it prepared
  * and one press into the launch sheet's review.
  */

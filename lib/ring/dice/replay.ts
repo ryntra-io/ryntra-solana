@@ -5,7 +5,7 @@ import { DiceError, DiceMatch, isInput, type LogEntry, type MatchLog, type Match
 import { MatchLogSchema } from "./schema";
 
 /**
- * Replay and verification of a match log (CITY-69). Only the inputs (moves, beacon rounds, ticks) are taken as given:
+ * Replay and verification of a match log. Only the inputs (moves, beacon rounds, ticks) are taken as given:
  * every roll, showdown and the result are derived again and compared with what the log and the claim say. Anyone can
  * run it on a finished log, and no derived entry or claim is taken on the host's word.
  *

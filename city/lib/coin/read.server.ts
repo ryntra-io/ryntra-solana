@@ -61,7 +61,7 @@ export const readCoinCard = cache(async (mint: string): Promise<CoinCard | null>
   const [launch, market] = await Promise.all([launchOf(mint), marketOf(mint)]);
   const launchImage = launch?.image ? (sameOriginImage(launch.image)?.split('/').pop() ?? null) : null;
   const remoteIcon = market?.icon && market.icon.startsWith('https://') ? market.icon : tower?.verified && tower.icon?.startsWith('https://') ? tower.icon : null;
-  /* The coin's own words are somebody else's text (CITY-73): a held ticker names no card; a held name gives way to it. */
+  /* The coin's own words are somebody else's text: a held ticker names no card; a held name gives way to it. */
   const raw = launch?.symbol ?? market?.symbol ?? (tower?.verified ? tower.symbol : null);
   const symbol = shownText(raw?.replace(/^\$+/, ''), 'symbol', 32);
   if (!symbol) return null;

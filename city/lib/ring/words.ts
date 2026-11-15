@@ -1,6 +1,6 @@
 import { pl, words } from '../i18n/dict.ts';
 
-/** The Ring's figures and names as the city writes them: classes, formats, prices, games, the six bodies (CITY-79). */
+/** The Ring's figures and names as the city writes them: classes, formats, prices, games, the six bodies. */
 export const RING = words(
   {
     light: 'Light',

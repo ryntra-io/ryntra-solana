@@ -1,7 +1,7 @@
 // Run from repo root: node --test city/lib/arena/hack/sandbox/stand.test.mjs
 // The stand of reproduction: the recorded scenario (`fixtures/scenario.json`) played again on this machine — each
-// attempt must give the log hash it was recorded with — and carried through the judge (CITY-68) and the rules over
-// it (CITY-223) to what the finding becomes.
+// attempt must give the log hash it was recorded with — and carried through the judge and the rules over
+// it to what the finding becomes.
 import assert from "node:assert/strict";
 import test from "node:test";
 import { sb, toy, judgeLib, hack, readScenario, recorded, proveContext, orderFor, findingFor, verify, OWNER_A, AT } from "./fixtures.mjs";

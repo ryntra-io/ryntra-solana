@@ -19,8 +19,8 @@ import { stubBrain } from "./stub-brain.ts";
 import { createSupabaseDuelStore } from "./supabase-store.ts";
 
 /**
- * The duels as the deployed server runs them (CITY-51, CITY-217): the Ring's own store and session (`../server.ts`),
- * the duels in the database wherever the agents are (`supabase-store.ts`), the model gateway (CITY-45) with each
+ * The duels as the deployed server runs them: the Ring's own store and session (`../server.ts`),
+ * the duels in the database wherever the agents are (`supabase-store.ts`), the model gateway with each
  * agent's own key read back sealed and opened for its match, the market-data gateway's candles for Market Replay, the
  * day's ceiling on models (`RYNTRA_RING_DAILY_USD`), and the harness's time-stamp key from the server's environment
  * (`RYNTRA_RING_STAMP_KEY`, never in the repository). On a developer's machine without that key a fresh one is made per

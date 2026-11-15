@@ -2,7 +2,7 @@ import { wordsNow, type Same } from '../i18n/dict.ts';
 import { REFUSAL_WORDS } from './words.ts';
 
 /**
- * Every way a launch from the city can stop, in a person's words (CITY-181): what happened in one sentence, whether any
+ * Every way a launch from the city can stop, in a person's words: what happened in one sentence, whether any
  * money moved, and one way on. The engine answers in its contract's codes (`lib/api/v1/contract.ts`) and its own
  * English; the city never shows that English — it reads the code, and where one code covers several causes
  * (`LAUNCH_SUBMIT_FAILED`, `UNAVAILABLE`, a wallet's refusal) it reads the cause from the text here, in `causeOf`, and
@@ -17,7 +17,7 @@ export const CITY_CLOSED = 'CITY_LAUNCH_CLOSED';
 export const BUILD_UNEXPECTED = 'CITY_BUILD_UNEXPECTED';
 export const WALLET_REFUSED = 'WALLET_REFUSED';
 export const BUILD_AGED = 'LAUNCH_BUILD_EXPIRED';
-/** CITY-212: an early-access creation landed only in part. */
+/** An early-access creation landed only in part. */
 export const EARLY_PARTIAL = 'CITY_EARLY_PARTIAL';
 
 export type RefusalKind =

@@ -3,7 +3,7 @@ import type { District } from '../market/types.ts';
 import { LENS } from './words.ts';
 
 /**
- * The Lens (CITY-86): one row of chips over the city that picks a kind of tower — All, Crypto, Memes, Stocks, New, Mine.
+ * The Lens: one row of chips over the city that picks a kind of tower — All, Crypto, Memes, Stocks, New, Mine.
  * The towers of the kind rise a little in violet light, the rest sink into the ink haze, the camera frames the set. Pure:
  * the towers and what the city knows in, the matching towers out. Every tower is one of the city's own; the Lens never
  * adds a figure, it only says which towers to look at.
@@ -12,7 +12,7 @@ import { LENS } from './words.ts';
 export const LENSES = ['all', 'crypto', 'memes', 'stocks', 'new', 'mine'] as const;
 export type LensId = (typeof LENSES)[number];
 
-/** The chips' words: the city's dictionary (`./words.ts`, CITY-79), English and Ukrainian. */
+/** The chips' words: the city's dictionary (`./words.ts`), English and Ukrainian. */
 export const LENS_WORDS = LENS satisfies Record<string, Record<LensId | 'label', string>>;
 
 /** The districts each kind stands in. Stocks add the engine's listed companies; New and Mine are read from the towers. */
@@ -40,7 +40,7 @@ export type LensContext = Readonly<{
   /** Ryntra's launches by mint: how far along the curve (0…100, null unread) and whether it moved to its pool. */
   launches: ReadonlyMap<string, Readonly<{ progress: number | null; migrated: boolean }>>;
   /**
-   * Every new launch of the network by mint and the ring it stands on (CITY-142): the engine's Pulse, whichever
+   * Every new launch of the network by mint and the ring it stands on: the engine's Pulse, whichever
    * launchpad it was born on. Read first; a tower it does not name is placed by the city's own reads.
    */
   stages?: ReadonlyMap<string, NewStage>;
@@ -55,7 +55,7 @@ export function newStage(t: PlacedTower, ctx: LensContext): NewStage | null {
   if (ring) return ring;
   const launch = ctx.launches.get(t.tower.id);
   if (t.tower.district === 'docks') {
-    /* A graduation below the city's rule keeps its tower in the Docks (CITY-144): graduated, never «near». */
+    /* A graduation below the city's rule keeps its tower in the Docks: graduated, never «near». */
     if (launch?.migrated) return 'graduated';
     const progress = launch?.progress ?? null;
     return progress !== null && progress >= NEAR_GRADUATION ? 'near' : 'fresh';

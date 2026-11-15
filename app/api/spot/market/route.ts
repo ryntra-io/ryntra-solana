@@ -32,7 +32,7 @@ export async function GET(request: Request) {
   }
   return Response.json(
     { market: read.market, observedAt: read.observedAt, stale: read.stale },
-    /* A held copy (CITY-208) is kept at the edge only briefly: the next visitor gets the fresh read as soon as there is one. */
+    /* A held copy is kept at the edge only briefly: the next visitor gets the fresh read as soon as there is one. */
     { headers: { ...(read.stale ? publicCacheHeaders(3, 15) : publicCacheHeaders(10, 40)), ...rateLimitHeaders(rate) } },
   );
 }

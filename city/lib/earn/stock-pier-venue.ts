@@ -39,7 +39,7 @@ import { amountOf, parseUnits } from '../../../lib/liquidity/studio/math.ts';
 import { STOCK_PIER_BASE_FEE_BPS } from './stock-pier.ts';
 
 /**
- * The Stock Pier's build (CITY-98): a venue adapter that stands in front of the engine's own DAMM v2 adapter and
+ * The Stock Pier's build: a venue adapter that stands in front of the engine's own DAMM v2 adapter and
  * knows one more thing — how to make the pair's pier when it is not there yet. Everything else it hands to the
  * engine's adapter unchanged: mooring beside a standing pier, taking fees, leaving.
  *

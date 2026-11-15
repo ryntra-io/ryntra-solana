@@ -1,5 +1,5 @@
 /**
- * Hack's store in the database (CITY-226): one call to one `public.hack_*` function per step, each gated by the app
+ * Hack's store in the database: one call to one `public.hack_*` function per step, each gated by the app
  * secret and each one transaction under its lock (`supabase/migrations/20261108180000_hack_v1.sql`). Every server
  * instance reads the same orders, takes and findings, so «a finding is filed once», «who first» and «the owner's move
  * is the owner's» hold however many instances answer at once.

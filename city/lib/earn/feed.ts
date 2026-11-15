@@ -2,7 +2,7 @@ import { epochApyPercent, LSTS, rateOf, type LstId, type SolRate } from './lst.t
 import type { StakePool } from './stake-pool.ts';
 
 /**
- * The SOL Saver's yield feed (CITY-94), read-only: for each LST its worth in SOL and the last epoch's yield as a year's
+ * The SOL Saver's yield feed, read-only: for each LST its worth in SOL and the last epoch's yield as a year's
  * rate, each with where it came from and when. The server builds it (`feed.server.ts`, `GET /api/city/earn`); the
  * window only shows it. A figure that was not read is null and the window hides it — no rate is ever made up.
  */

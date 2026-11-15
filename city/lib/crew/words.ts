@@ -1,7 +1,7 @@
 import { words } from '../i18n/dict.ts';
 
 /**
- * The words of the two kinds of help (CITY-205): Ryntra the consultant, asked from the top bar, and the agents a person
+ * The words of the two kinds of help: Ryntra the consultant, asked from the top bar, and the agents a person
  * hires in «Bots». One word each on the first screen; the rest behind «How agents work».
  */
 export const CREW_WORDS = words(

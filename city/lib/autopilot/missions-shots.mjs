@@ -1,11 +1,11 @@
-// CITY-70 for review — the agent's mission card and its three controls on a desk (1440×900) and a phone (390×844), in
+// For review — the agent's mission card and its three controls on a desk (1440×900) and a phone (390×844), in
 // English and Ukrainian, and the agent walking to the tower it trades → <out>/<lang>-<size>-<n>-<step>.jpg
 //   node <stand> (next dev with NEXT_PUBLIC_RYNTRA_CITY_AUTOPILOT=mainnet NEXT_PUBLIC_RYNTRA_CITY_MANDATE=mainnet
 //   NEXT_PUBLIC_RYNTRA_CITY_AGENT_REPORT=open NEXT_PUBLIC_RYNTRA_CITY_TRADE=open, port 3070)
 //   node city/lib/autopilot/missions-shots.mjs [out] [baseUrl]          LANGS=en,uk  SIZES=desk,phone  PRESS_CHROME=<chromium>
 //
 // Every figure is a fixture: the city's read is the bundled snapshot; the agent's book answers as the engine does
-// (`lib/mandate/agent-service.server.ts` `AgentView`, CITY-70's mission, books and trade states). The wallet is a public
+// (`lib/mandate/agent-service.server.ts` `AgentView`, the mission, books and trade states). The wallet is a public
 // address seated in the store: nothing signs; «Freeze» answers as the engine's switch does.
 import { chromium } from "playwright";
 import { mkdirSync, readFileSync, writeFileSync } from "node:fs";

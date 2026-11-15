@@ -150,7 +150,7 @@ test("the window keeps the last good bars through a blink, drops them for a mark
   assert.equal(settle(loading(JUP, "15m", null), { status: "unavailable", reason: "offline" }).last, null);
 });
 
-// CITY-215: the first chart on a phone met a 429 and said «Chart unavailable» for ~20 s. Now a failed read is tried
+// The first chart on a phone met a 429 and said «Chart unavailable» for ~20 s. Now a failed read is tried
 // again in silence, never before the engine's Retry-After, and the line shows only after a few failed tries in a row.
 
 test("a refused read is tried again quietly: sooner first, then less often, never before Retry-After", () => {
@@ -215,7 +215,7 @@ test("«Chart unavailable» only after a few failed reads in a row with no bars;
   assert.equal(settle(state, { status: "none", code: "THIN" }).misses, 0);
 });
 
-test("«Delayed» says how long, in the language on screen (CITY-243)", () => {
+test("«Delayed» says how long, in the language on screen", () => {
   try {
     useLangStore.setState({ lang: "en" });
     assert.equal(delayLine("1m"), "Delay ≤ 20 s");

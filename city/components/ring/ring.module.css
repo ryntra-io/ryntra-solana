@@ -1,4 +1,4 @@
-/* The Ring in the city (CITY-50): an agent's garage and the screen that makes one. The HUD's dark glass and chamfered
+/* The Ring in the city: an agent's garage and the screen that makes one. The HUD's dark glass and chamfered
    corners, the visor's amber as the only light on a body, one amber action a screen, violet only as an edge. On a desk
    the screen stands at the right, the quarter in view at the left; on a phone it is a sheet over the lower part.
    Tokens from city/styles/city.module.css. */
@@ -111,7 +111,7 @@
   flex: 1;
 }
 
-/* A brain's name is never cut mid-word: a long one takes a second line (CITY-236). */
+/* A brain's name is never cut mid-word: a long one takes a second line. */
 .brain {
   margin-top: 3px;
   font-size: var(--type-base);
@@ -288,7 +288,7 @@
   }
 }
 
-/* Inside the Arena's window (CITY-217): the same screen, laid in the «Agent» tab instead of over the city. */
+/* Inside the Arena's window: the same screen, laid in the «Agent» tab instead of over the city. */
 .editor.editorInline {
   position: relative;
   z-index: auto;
@@ -385,7 +385,7 @@
   color: var(--amber);
 }
 
-/* A phone: «3 СЦЕНАРІЙ» filled its third of the row from edge to edge (CITY-236). Tighter letters keep air on both
+/* A phone: «3 СЦЕНАРІЙ» filled its third of the row from edge to edge. Tighter letters keep air on both
    sides in either language. */
 @media (max-width: 480px) {
   .step {
@@ -410,17 +410,17 @@
     container-type: normal;
   }
   .editorInline .modelList {
-    /* A row of the list is a finger's 44 px at the least (CITY-242: it was 40). */
+    /* A row of the list is a finger's 44 px at the least (it was 40). */
     --row: 44px;
     --gap: 4px;
     height: auto;
     overflow: visible;
   }
-  /* On the half sheet the list of brains showed one row (CITY-239): the screen's own rows took the rest. While a brain
+  /* On the half sheet the list of brains showed one row: the screen's own rows took the rest. While a brain
      is being picked, the line that says what is being made steps aside — the list itself shows the pick, and the line
      is back on the next step with its «i» — and the rows above the list stand closer. Three rows of the list are in
      sight before the first scroll, and a name of two lines stands whole.
-     What a finger presses keeps its 44 px (CITY-240: «Close», the search and the class tabs had gone down to 40): the
+     What a finger presses keeps its 44 px («Close», the search and the class tabs had gone down to 40): the
      room for them comes from the air between the rows, not from the rows of the list. */
   .editorInline:has(.classes) .summary {
     display: none;
@@ -438,7 +438,7 @@
   .editorInline .steps {
     margin-top: 4px;
   }
-  /* The three steps' tabs are pressed by a finger too (CITY-242: 38 px). */
+  /* The three steps' tabs are pressed by a finger too. */
   .editorInline .step {
     height: 44px;
   }
@@ -473,7 +473,7 @@
   overscroll-behavior: contain;
 }
 
-/* A desk 900 px tall (CITY-240): the Arena's window is 615 px there, and the list of brains had room for two rows and
+/* A desk 900 px tall: the Arena's window is 615 px there, and the list of brains had room for two rows and
    a half. The screen's own rows stand a little closer — by more than the third row needs — and nothing under a pointer
    gets smaller. A desk's window only: a phone's sheet has its own rules above. */
 @media (max-height: 940px) and (min-width: 761px) {
@@ -493,7 +493,7 @@
   .editorInline .go {
     margin-top: 8px;
   }
-  /* The «Body» step (CITY-242): the window is now as tall as the workspace and the six bodies' second row stood a few
+  /* The «Body» step: the window is now as tall as the workspace and the six bodies' second row stood a few
      pixels under the pane's edge. The air around the picked body's stage and above the tiles gives them room: both
      rows whole before any scroll, nothing drawn smaller. */
   .editorInline .stage {
@@ -561,7 +561,7 @@
 
 /* The brain step: a class, a search, the models with their price. */
 /* The classes and the search keep their height: in a short window the pane scrolls, it does not squeeze them
-   (CITY-236: on a phone the search field stood half its height). */
+   (on a phone the search field stood half its height). */
 .classes {
   flex: none;
   display: grid;
@@ -628,8 +628,7 @@
   box-shadow: inset 0 0 0 2px rgba(153, 69, 255, 0.6);
 }
 
-/* The list's room: what the pane has left, never less than three rows. The list inside it is cut to whole rows
-   (CITY-240): on a desk 900 px tall it showed two rows and half of a third. Its height is the room rounded down to a
+/* The list's room: what the pane has left, never less than three rows. The list inside it is cut to whole rows: on a desk 900 px tall it showed two rows and half of a third. Its height is the room rounded down to a
    row and its gap, so the edge never halves a row before the first scroll; a browser without `round()` keeps the whole
    room, as before. A row of two lines, or the picked one with what it can play, is taller — the list scrolls. */
 .models {
@@ -785,7 +784,7 @@
 }
 
 /* The script step. The field takes the room the pane has and gives it back when the summary under it grows (its «i»
-   opened): the counter under the field stays whole (CITY-239 — at 200 px the field pushed half of it out of the pane). */
+   opened): the counter under the field stays whole (at 200 px the field pushed half of it out of the pane). */
 .script {
   flex: 1 1 0;
   min-height: 96px;
@@ -846,7 +845,7 @@
   text-transform: uppercase;
 }
 
-/* The brain, its class and its price: whole, on a second line when a phone has no room for one (CITY-236). */
+/* The brain, its class and its price: whole, on a second line when a phone has no room for one. */
 .summaryWords span {
   color: var(--text-dim);
   line-height: 1.35;

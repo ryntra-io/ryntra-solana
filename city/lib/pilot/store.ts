@@ -9,7 +9,7 @@ import type { Who } from '../bots/mandate-sign.ts';
 import type { PilotAsk } from './read.ts';
 
 /**
- * The money autopilot's card (CITY-204): the sentence read into one plan for the whole budget, its parts as one bar,
+ * The money autopilot's card: the sentence read into one plan for the whole budget, its parts as one bar,
  * «Practice first» — the trade's rules on the coin's history and the savings at today's rate — and «Go live · sign once»
  * (`./sign.ts`, loaded on the tap). After that, what the agent did with it, read from the autopilot's book while the card
  * shows it (`/api/bots/pilot`): what it earned this week, the shares now, its last holds. «Stop» is the mandate's own stop
@@ -83,7 +83,7 @@ export const usePilot = create<PilotState>((set, get) => ({
   },
 }));
 
-/** The trade's strategy: the one said, at the city's calm pace (CITY-197), or the steady one. */
+/** The trade's strategy: the one said, at the city's calm pace, or the steady one. */
 export const tradePlanOf = (ask: PilotAsk | null): StrategyPlan => calmPlan(ask?.plan ?? { id: 'steady', exit: null });
 
 /** The savings' rates now, per cent a year, from the engine's Earn read; null — not read. */

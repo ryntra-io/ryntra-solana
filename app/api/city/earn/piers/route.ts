@@ -10,7 +10,7 @@ export const dynamic = 'force-dynamic';
 export const maxDuration = 15;
 
 /**
- * The Piers tab (CITY-92, CITY-93): the SOL piers — Meteora DLMM pools of SOL against USDC or an LST of the SOL Saver —
+ * The Piers tab: the SOL piers — Meteora DLMM pools of SOL against USDC or an LST of the SOL Saver —
  * from the engine's catalogue, cut to the verified, deep ones. The top of the catalogue carries SOL–USDC; each LST is
  * looked up by its mint too (each look-up is the catalogue's own, kept two minutes and within its search budget).
  * Read-only, so Earn can show it while the Harbor's own switch — which moves money — is still closed.

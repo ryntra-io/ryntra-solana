@@ -1,5 +1,5 @@
 /**
- * «Back» over the city (CITY-6e): every layer the person opens — a window, a sheet, a panel, the tower's card, a window
+ * «Back» over the city: every layer the person opens — a window, a sheet, a panel, the tower's card, a window
  * on the whole screen — stands on its own entry of the page's history, so the system «Back» of an Android phone (the
  * Ryntra app's WebView goes back while it can) and a browser's «Back» close the top layer instead of leaving. On the
  * city's own view, with nothing open, there is no entry of ours left: «Back» leaves, as it always did.

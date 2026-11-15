@@ -47,5 +47,5 @@ export async function onNetwork(connection: Pick<Connection, "getGenesisHash">, 
   }
 }
 
-/** Devnet's own check, as CITY-135 named it. */
+/** Devnet's own check. */
 export const onDevnet = (connection: Pick<Connection, "getGenesisHash">): Promise<boolean> => onNetwork(connection, "devnet");

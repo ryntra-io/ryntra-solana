@@ -8,7 +8,8 @@
  * ## Why the flag, and why a decision rather than a default
  *
  * Neither provider pays an integrator a share of supply interest today, which is why Earn carries no Ryntra
- * fee at all ({@link EARN_FEE_BPS}). Turning Kamino on
+ * fee at all ({@link EARN_FEE_BPS}).
+ * Turning Kamino on
  * is therefore a decision with a price attached, and a flag is where a decision with a price belongs.
  *
  * ## What is here and what the switch still needs

@@ -7,7 +7,7 @@ import type { CaptainStore, ReportState } from './captain-store.ts';
 import { isPierStyle, pierOf, type PierStyle } from './pier.ts';
 
 /**
- * «Like the Captain»'s ledger at work (CITY-99): the city's report of a copy, the daily pass that holds every copy to
+ * «Like the Captain»'s ledger at work: the city's report of a copy, the daily pass that holds every copy to
  * the chain, and the record the window reads. The reads are passed in — on the server the engine's own and read-only
  * (`captain.server.ts`): the wallet's DLMM positions from the program's accounts and the venue's record of the pool with
  * its prices, seen through SOL-2b's view (`positionView`). Nothing here builds, signs or sends.

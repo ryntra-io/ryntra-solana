@@ -1,4 +1,4 @@
-// CITY-193 for review: the agent's strategies on its card — a dip said in a sentence, its rules and its run on history
+// For review: the agent's strategies on its card — a dip said in a sentence, its rules and its run on history
 // behind «Details», the practice without money, a grid at work, the person's take reached, an early launch the agent
 // picked — on a desk (1440×900) and a phone (390×844), in English and Ukrainian → <out>/<lang>-<size>-<n>-<step>.jpg
 //   NEXT_PUBLIC_RYNTRA_CITY_AUTOPILOT=mainnet NEXT_PUBLIC_RYNTRA_CITY_MANDATE=mainnet NEXT_PUBLIC_RYNTRA_CITY_TRADE=open npm run dev -- -p 3193

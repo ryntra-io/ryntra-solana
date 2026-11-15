@@ -8,7 +8,7 @@ import { pagePath, SITE_DOC_PATHS } from '../pages/pages.ts';
 import { sectionSoon, type DocsStatus } from './status.ts';
 
 /**
- * The documentation put together (CITY-180): each section's words with this build's facts and status. Pure: the server calls
+ * The documentation put together: each section's words with this build's facts and status. Pure: the server calls
  * it once at build time, and the tests call it with any facts and status they want to hold it to.
  */
 

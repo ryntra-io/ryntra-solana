@@ -1,7 +1,7 @@
 import { langNow, type Lang } from './lang.ts';
 
 /**
- * Figures for the eye without the machine's habits (CITY-150, the operator's pass on the Seeker of 29.10: «1,2e-7 BTC»,
+ * Figures for the eye without the machine's habits (the operator's pass on the Seeker of 29.10: «1,2e-7 BTC»,
  * «0,099796891 SOL»): never an exponent, and no more places than the figure needs — at most `places` after the point
  * from one up, and `significant` figures after the leading zeros below one. Written the English way (a point); the
  * language on screen comes after, through `digits`.
@@ -30,7 +30,7 @@ export function shortFigures(text: string, shape?: FigureShape): string {
 }
 
 /**
- * A number field in the language on screen (CITY-150: «0.1» in a field beside «0,1» on the screen). The field shows a
+ * A number field in the language on screen («0.1» in a field beside «0,1» on the screen). The field shows a
  * comma where Ukrainian writes one, and what the person types — a comma or a point — goes back as a point, the one way
  * the city's parsers and the engine read. English keeps its point, and its comma stays a thousands mark.
  */

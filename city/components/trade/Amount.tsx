@@ -34,7 +34,7 @@ export function AmountPart({
   const { sizing } = choice;
   const resting = !typable || sizing.share === null;
   const amount = choice.amountRaw && choice.spendDecimals !== null ? formatUnits(choice.amountRaw, choice.spendDecimals, 'down') : '0';
-  // An empty wallet is offered «Add SOL» (CITY-239): the field is not marked wrong for a balance the button answers.
+  // An empty wallet is offered «Add SOL»: the field is not marked wrong for a balance the button answers.
   const side = useTrade((st) => st.side);
   const connected = useWallet((st) => Boolean(st.connection));
   const wrong = problemLine(choice.problem, offersTopUp({ connected, side, max: sizing.max, moneyOpen: MONEY_OPEN })) !== null;

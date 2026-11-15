@@ -394,7 +394,7 @@ export function createRyntraApiClient(options: RyntraApiClientOptions) {
       /* 1.23.0 — «Ризик портфеля»: one word for the wallet as a whole, with every rule broken or what could not be read, decided by the server. */
       risk: () => call<PortfolioRiskResponse>("GET", "/api/v1/positions/risk", undefined, true),
     },
-    /* 1.90.0 — prepared actions (CITY-161): an agent, a chat or a partner prepares a swap; the person opens `intent.links.url` and signs in their own wallet. Making and reading need no bearer; the creator's key (shown once) reads the receipt and withdraws the intent. The claim, release and receipt are the city's own steps on Ryntra's origin. */
+    /* 1.90.0 — prepared actions: an agent, a chat or a partner prepares a swap; the person opens `intent.links.url` and signs in their own wallet. Making and reading need no bearer; the creator's key (shown once) reads the receipt and withdraws the intent. The claim, release and receipt are the city's own steps on Ryntra's origin. */
     intents: {
       create: (request: IntentCreateRequest) => call<IntentCreatedResponse>("POST", "/api/v1/intents", request),
       get: (id: string, creatorKey?: string) =>
@@ -421,7 +421,7 @@ export function createRyntraApiClient(options: RyntraApiClientOptions) {
       recipient: (request: RecipientCheckQuery) => call<RecipientCheckResponse>("GET", `/api/v1/money/recipient${query({ to: request.to, mint: request.mint, from: request.from })}`),
       returned: (request: SendReturnedRequest) => call<SendReturnedResponse>("POST", "/api/v1/money/send/returned", request),
     },
-    /* 1.88.0 — the pre-sign check (CITY-152): public, no session; it signs, sends and keeps nothing. */
+    /* 1.88.0 — the pre-sign check: public, no session; it signs, sends and keeps nothing. */
     ward: {
       check: (request: WardCheckRequest) => call<WardCheckResponse>("POST", "/api/v1/ward/check", request),
     },

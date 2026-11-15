@@ -13,9 +13,9 @@ import {
 } from './hall.ts';
 
 /*
- * CITY-230: a board whose week counts nobody reaches back over the last 30 days, then all time, and says which; a board
+ * A board whose week counts nobody reaches back over the last 30 days, then all time, and says which; a board
  * nobody is on even over all time is one action — launch your own. The honest count, the types, the periods and the
- * proofs of CITY-9 hold over every span: a trade inside one wallet cluster, a trade nobody checked and a trade the
+ * proofs hold over every span: a trade inside one wallet cluster, a trade nobody checked and a trade the
  * engine never read stand on no board, however far back a board reaches.
  */
 
@@ -222,7 +222,7 @@ test('a made-up trade never reaches a board: only the engine\'s reads, judged, b
   /* A creator whose history was not read whole is not an all-time creator. */
   const partial = [read([trade(1, 12)], { over: { market: { trades: { rows: [trade(1, 12)], complete: false, read: 100 } } } })];
   assert.deepEqual([view(partial).boards.creators.state, view(partial).boards.creators.left.unread], ['empty', 1]);
-  /* A held ticker stands on no board of any span (CITY-73). */
+  /* A held ticker stands on no board of any span. */
   const held = [read([trade(1, 40, { marketCapPair: 2_000 })], { over: { row: { symbol: '‮NEMUL' } } })];
   assert.deepEqual(spans(view(held)), { catch: ['empty', 'all'], hunters: ['empty', 'all'], creators: ['empty', 'all'] });
 });
@@ -252,7 +252,6 @@ test('the browser reads the span and the period of every board, and refuses a sp
   const badTally = structuredClone(hall);
   badTally.tallies.month.trades = -1;
   assert.equal(readHallView(badTally), null);
-  /* An answer from before CITY-230 — no span, no period, no tallies — reads as the week it was. */
   const before = structuredClone(hall);
   delete before.tallies;
   for (const board of Object.values(before.boards)) {

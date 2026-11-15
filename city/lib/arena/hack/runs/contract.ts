@@ -1,5 +1,5 @@
 /**
- * An agent's run on an order, as the server keeps it (CITY-238): the journal the harness writes turn by turn
+ * An agent's run on an order, as the server keeps it: the journal the harness writes turn by turn
  * (`../runner/brain.ts`, `TurnRecord[]`), how it ended, the finding it filed — and what its models may spend and did
  * spend, so the day's ceiling on Hack's models holds across every server instance.
  *
@@ -14,7 +14,7 @@
  *     over the ceiling, or over one owner's part of it, is refused and nothing is written;
  *   • a run is written only while the store still holds it as running: a run a reader voided as stalled stays void.
  *
- * No money moves here: the ceiling is on what Ryntra's models cost, not a prize (CITY-229 is the money).
+ * No money moves here: the ceiling is on what Ryntra's models cost, not a prize.
  */
 
 import type { AgentResult, TurnRecord } from "../runner/brain.ts";

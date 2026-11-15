@@ -7,9 +7,9 @@ import type { Holdings } from '../trade/wallet.ts';
 import { LST_BY_MINT, SOL_MINT, type Lst } from './lst.ts';
 
 /**
- * The SOL Pier (CITY-93, `docs/research/ryntra-earn-2026-10-29/SPEC.md` E2): the Harbor inside the Earn window. A pier
+ * The SOL Pier (`docs/research/ryntra-earn-2026-10-29/SPEC.md` E2): the Harbor inside the Earn window. A pier
  * is a Meteora DLMM pool of SOL against an LST or against USDC; the person types an amount in SOL, picks one of three
- * styles, and the engine's Liquidity Studio builds the position around the price. Since CITY-198 the SOL alone is
+ * styles, and the engine's Liquidity Studio builds the position around the price. The SOL alone is
  * enough: the engine's Zap (Meteora's Zap program) swaps the part the other coin needs and opens the position, in one
  * approval of the wallet. Every result is said in SOL; what a pool paid is the day gone, never a promise.
  *
@@ -33,7 +33,7 @@ export const STYLE_RISK: Readonly<Record<PierStyle, 1 | 2 | 3>> = { calm: 1, bal
 export const DEFAULT_STYLE: PierStyle = 'balanced';
 
 /**
- * What the money is for (CITY-210): the person says the goal, the engine spreads the money over the style's bins in the
+ * What the money is for: the person says the goal, the engine spreads the money over the style's bins in the
  * matching shape. Even — the same in every bin; Near price — more by the price, for a pair that moves little; Catch
  * moves — more at the edges, for a pair that swings.
  */
@@ -186,7 +186,7 @@ export function pierMinimum(costs: PierCosts | null): bigint {
 }
 
 /**
- * CITY-198 — the wallet needs SOL only: what goes in, and the SOL kept aside for rent and the network. A wallet not read
+ * The wallet needs SOL only: what goes in, and the SOL kept aside for rent and the network. A wallet not read
  * yet fits (the engine has the last word).
  */
 export function zapFit(lamports: bigint | null, holdings: Holdings | null, reserve: bigint = PIER_RESERVE_LAMPORTS): boolean {
@@ -313,14 +313,14 @@ export function rangePrices(low: number, high: number): Readonly<{ low: string; 
   while (places < 10 && low.toFixed(places) === high.toFixed(places)) places += 1;
   // Once places had to be added to tell them apart, one more says where each edge really sits.
   if (places > start) places = Math.min(10, places + 1);
-  // Written out to its places, trailing zeros dropped — never «3.7e-7» for a coin priced under a millionth (CITY-243).
+  // Written out to its places, trailing zeros dropped — never «3.7e-7» for a coin priced under a millionth.
   const text = (v: number) => (v >= 1000 ? v.toLocaleString('en-US', { maximumFractionDigits: 0 }) : v.toFixed(places).replace(/\.?0+$/, ''));
   return { low: text(low), high: text(high) };
 }
 
 /**
  * A position's range as one mark, «1.2583 – 1.2623», the English way (`digits` makes it the screen's): what tells two
- * positions of one pair apart in a list (CITY-243). Null on the plain curve or a range that is not one.
+ * positions of one pair apart in a list. Null on the plain curve or a range that is not one.
  */
 export function rangeMark(lower: number | null, upper: number | null): string | null {
   if (lower === null || upper === null || !(lower > 0) || !(upper > lower)) return null;

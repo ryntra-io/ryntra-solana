@@ -18,7 +18,7 @@ import {
   weekendTell,
 } from "./notes.ts";
 
-/* CITY-100 (spec E9): Earn's four notes — out of range, the exchange's weekend, dividend dates, loan health — judged one
+/* Earn's four notes — out of range, the exchange's weekend, dividend dates, loan health — judged one
    way for the city, the server and the engine's delivery. */
 
 const MINT = "XsDoVfqeBukxuZHWhdvWHBhgEHjGNst4MLodqsJHzoB";

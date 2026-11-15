@@ -3,7 +3,7 @@ import test from "node:test";
 
 import { BACK_KEY, createBackStack, TRAVEL_MS } from "./stack.ts";
 
-// CITY-6e: «Back» over the city. The system «Back» of the Ryntra app on Android goes back in the WebView while it can
+// «Back» over the city. The system «Back» of the Ryntra app on Android goes back in the WebView while it can
 // and leaves the app when it cannot (apps/mobile, screens/city); a browser's «Back» is the same walk. Here a history of
 // our own stands in for the page's — entries, forward entries kept, traversals and `popstate` after the current task,
 // Next.js's own mark on every entry — and a city of layers stands in for the windows' stores.
@@ -417,7 +417,7 @@ test("disposed: the stack hears nothing and writes nothing", () => {
   assert.equal(p.length, 1);
 });
 
-// CITY-236: a step inside a window (a bot's page, the launch's review, the Ring's new agent) is a layer of its own over
+// A step inside a window (a bot's page, the launch's review, the Ring's new agent) is a layer of its own over
 // the window. Its close returns one step; while a step is left the layer stays, so «Back» walks the steps and only then
 // reaches the window.
 

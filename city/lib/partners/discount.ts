@@ -1,5 +1,5 @@
 /**
- * The friend's discount on Ryntra's fee (CITY-182): whether it is taken off trades on this deployment, and where.
+ * The friend's discount on Ryntra's fee: whether it is taken off trades on this deployment, and where.
  *
  * One switch for the engine and the pages: `NEXT_PUBLIC_RYNTRA_REFEREE_DISCOUNT=on` takes the discount off the fee of
  * every trade the engine builds for a person a partner brought, and lets `/partners` and the city's «Partners» window say

@@ -4,7 +4,7 @@ import { CITY_CARD_SIZE, cityCardVersion } from '../share/card.ts';
 import { PAY } from './words.ts';
 
 /**
- * The tab and the link preview of the payer's page (CITY-156), and of a link that does not exist. The server writes
+ * The tab and the link preview of the payer's page, and of a link that does not exist. The server writes
  * English (the city's first language); a payment link is never offered to the index; the preview is the city's own
  * card (`/opengraph-image`, the one `/` shares) — never the old face's picture or line, which the site's root would otherwise
  * lend it.

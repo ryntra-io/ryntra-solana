@@ -1,4 +1,4 @@
-/* Somebody else's text and unmeasured figures on the city's towers (CITY-73), through every door they come in by. */
+/* Somebody else's text and unmeasured figures on the city's towers, through every door they come in by. */
 import assert from "node:assert/strict";
 import { test } from "node:test";
 

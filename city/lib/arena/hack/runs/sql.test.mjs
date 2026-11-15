@@ -1,6 +1,6 @@
 // Run from repo root: node --test city/lib/arena/hack/runs/sql.test.mjs
 /*
- * CITY-238: the runs' migration, read as text — one transaction, not applied by this repository, a number no other
+ * The runs' migration, read as text — one transaction, not applied by this repository, a number no other
  * migration has, standing on `hack_v1`; the table private with row level security forced, no policy and no grant;
  * every server function secret-gated with an empty search path and granted to anon alone; a start takes the order's
  * lock and the day's lock before it writes; the lists are the library's. And the wiring: every function the database
@@ -11,6 +11,8 @@ import "../../../../../lib/world/testing/hooks.mjs";
 import assert from "node:assert/strict";
 import { readFileSync, readdirSync } from "node:fs";
 import { test } from "node:test";
+
+import { inDevelopmentRepository } from "../../../../../lib/development-repository.mjs";
 
 const { createSupabaseRunStore } = await import("./supabase.ts");
 const { RUN_ATTEMPTS, OWNER_SHARE_OF_CAP } = await import("./contract.ts");
@@ -34,7 +36,8 @@ test("one file, one transaction, after hack_v1, not applied anywhere by this rep
   assert.match(sql, /^begin;$/m);
   assert.match(sql, /^commit;$/m);
   assert.match(sql, /Not applied to any Supabase project/);
-  assert.match(sql, /through MCP Supabase/);
+  /* How production migrations are applied is a note of the development repository; a copy of the code may leave it out of the file's comment. */
+  if (inDevelopmentRepository) assert.match(sql, /through MCP Supabase/);
   assert.doesNotMatch(code, /^\s*(drop|truncate|alter table public\.)/im);
   assert.doesNotMatch(code, /\bdelete from private\.hack_runs\b/, "a run is never deleted: every attempt's spend counts");
 });

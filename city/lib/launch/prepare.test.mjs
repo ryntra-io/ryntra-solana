@@ -6,7 +6,7 @@ import { runLaunch } from "./flow.ts";
 import { BACKGROUND_STORES, FIELDS_REFUSED, PREBUILT_SLACK_MS, createPrep, fieldsKey, freshPrebuilt, launchRequest } from "./prepare.ts";
 import { STUB_CREATOR, STUB_PRESETS, STUB_WALLET, stubEngine, stubWallet } from "./stub.ts";
 
-/* CITY-143: the launch sheet stores the picture while the creator types and has the engine simulate the launch before
+/* The launch sheet stores the picture while the creator types and has the engine simulate the launch before
    the press — the same routes, earlier — and the flow takes what was made ahead only while it is this very launch. */
 
 const PROTECTED = STUB_PRESETS.find((preset) => preset.id === "protected");

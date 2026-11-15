@@ -1,4 +1,4 @@
-// CITY-209: «Earn» and «Money» stand as tall as their tab, up to their place — a short tab (one line of «Mine», the
+// «Earn» and «Money» stand as tall as their tab, up to their place — a short tab (one line of «Mine», the
 // wallet's «Connect») left 180–680 px of empty glass under it. The contents keep their own scroller under fixed tabs, so
 // in a `fit` frame they stand in the flow and shrink to its ceiling; on the whole screen they fill it as before.
 // The first open of «Earn» no longer waits for its code and then for its reads: the code is warm after the city's first
@@ -9,7 +9,7 @@ import test from "node:test";
 
 const read = (path) => readFileSync(new URL(path, import.meta.url), "utf8");
 
-test("Money asks the frame to stand as tall as its tab; Earn keeps one height for every tab (CITY-242)", () => {
+test("Money asks the frame to stand as tall as its tab; Earn keeps one height for every tab", () => {
   assert.match(read("./MoneyLayer.tsx"), /id: 'money',[\s\S]*?\bfit: true,/u);
   // The eye pass of 10.11: Earn's window jumped 615 → 383 → 460 px as its tabs changed. Its first size follows the
   // screen instead (`firstSize`), wide enough for the Shelf's three columns.
@@ -60,7 +60,7 @@ test("«Earn»: the code is warm after the city's first frame, the reads start w
 test("«Earn»'s Shelf holds each big number's place while it is read", () => {
   const shelf = read("../earn/Shelf.tsx");
   assert.match(shelf, /reading\[id\] \?/u);
-  // CITY-243: a source that did not answer leaves an honest dash with the number's words in the same place, and the
+  // A source that did not answer leaves an honest dash with the number's words in the same place, and the
   // card's line stands under every card — never the line in the number's place over an empty band.
   assert.match(shelf, /\$\{s\.cardNone\}`\}>—<\/b>/u);
   assert.match(shelf, /<\/div>\n\s*<p className=\{s\.cardLine\}>\{w\.line\}<\/p>/u);

@@ -1,8 +1,8 @@
 /**
- * Stops on spot (CITY-149) — the pure part, shared by the engine and the city.
+ * Stops on spot — the pure part, shared by the engine and the city.
  *
  * A stop is the engine's watched kind: «sell when the price falls to», «buy when the price rises to».
- * the person is told, and their wallet signs the sale, or nothing is sold. Nothing here holds a key, and nothing moves
+ * The person is told, and their wallet signs the sale, or nothing is sold. Nothing here holds a key, and nothing moves
  * by itself.
  *
  * The line is `limitAmounts` of the limits engine — what the amount delivers at that price, in the output's raw units —

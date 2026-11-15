@@ -83,7 +83,7 @@ export function HelpSheet({
 }
 
 /**
- * «?» : a screen carries no line that
+ * «?»: a screen carries no line that
  * explains it; what a person may need to know sits one tap deep, in a sheet
  * behind this mark.
  */

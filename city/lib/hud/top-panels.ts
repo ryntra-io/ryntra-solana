@@ -1,8 +1,8 @@
 import { feedTakesEscape } from '../feed/panel.ts';
 
 /**
- * The panels that drop from the top bar and stand over a window: the wallet's (in a layer of its own, CITY-239) and the
- * events' under the bell. Each closes on Escape by its own listener — and that press is theirs alone (CITY-240): a
+ * The panels that drop from the top bar and stand over a window: the wallet's (in a layer of its own) and the
+ * events' under the bell. Each closes on Escape by its own listener — and that press is theirs alone: a
  * window under the panel, or a screen inside that window, stays as it is until the next press, as «Back» already
  * leaves it.
  *

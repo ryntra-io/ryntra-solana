@@ -25,7 +25,7 @@ import { LINE } from './words.ts';
  * back silently, any other connects only from a tap. Only the wallet's name is remembered — the same hint the rest of
  * Ryntra keeps, so connecting in one place connects everywhere.
  *
- * In the Ryntra app (CITY-6b, `docs/city/APP-BRIDGE.md`) the one wallet is the app's: the list holds it alone, a tap
+ * In the Ryntra app (`docs/city/APP-BRIDGE.md`) the one wallet is the app's: the list holds it alone, a tap
  * connects it through the bridge, and the app says when it changes. The browser's wallets are not looked for there.
  */
 

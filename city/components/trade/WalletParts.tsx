@@ -31,7 +31,7 @@ export function useWalletName(): (name: string) => string {
 
 /** Phantom, Solflare, Backpack — whatever this browser has, found the Wallet Standard way. */
 /**
- * `back` — the address a phone's wallet app opens to come back to (CITY-222: the agent's card, `/?open=agent`), this page
+ * `back` — the address a phone's wallet app opens to come back to (the agent's card, `/?open=agent`), this page
  * when not given; `onLeave` — told which way the person left for a wallet, before the browser follows the link.
  */
 export function WalletPicker({ onBack, back, onLeave }: { onBack: () => void; back?: string; onLeave?: (to: 'phantom' | 'solflare' | 'install') => void }) {
@@ -51,7 +51,7 @@ export function WalletPicker({ onBack, back, onLeave }: { onBack: () => void; ba
         <div className={s.walletHint}>
           {phone ? w.openInWalletApp : w.noWallet}
         </div>
-        {/* CITY-237: the one action takes the card's width — «Open in Phantom» and «Back» side by side did not fit a
+        {/* The one action takes the card's width — «Open in Phantom» and «Back» side by side did not fit a
             phone's card, and «Back» was cut by its edge. «Back» stands in the quiet line under it, beside the other wallets. */}
         <a className={`${s.display} ${s.action}`} href={phone ? phantomBrowseUrl(here, origin) : PHANTOM_DOWNLOAD_URL} target={phone ? undefined : '_blank'} rel="noreferrer" style={{ display: 'grid', placeItems: 'center', textDecoration: 'none' }} onClick={() => onLeave?.(phone ? 'phantom' : 'install')} data-wallet-go="">
           {phone ? w.openInPhantom : w.getPhantom}
@@ -119,8 +119,8 @@ const watchHoldings = createHoldingsWatch({
 
 /**
  * While a card asks for funds, the wallet's balance is read again — on return to the page and every 15 s while the page
- * is in view — so a top-up turns «Add SOL» back into the card's own action without a reload (CITY-222: the agent's
- * card; CITY-237: the tower's ticket and the money autopilot, whose «Add SOL» would otherwise stay after the SOL arrived).
+ * is in view — so a top-up turns «Add SOL» back into the card's own action without a reload (the agent's
+ * card; the tower's ticket and the money autopilot, whose «Add SOL» would otherwise stay after the SOL arrived).
  */
 export function useHoldingsWatch(on: boolean): void {
   useEffect(() => (on ? watchHoldings() : undefined), [on]);

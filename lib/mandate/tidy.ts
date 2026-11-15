@@ -1,6 +1,6 @@
 /**
- * CITY-195 — tidying up after the agent's sales and at her stop, inside a transaction the person signs anyway: never a
- * signature of its own (CITY-187 report §5, rows 2 and 3).
+ * Tidying up after the agent's sales and at her stop, inside a transaction the person signs anyway: never a
+ * signature of its own.
  *
  * - **Sold sales' mandates removed.** A sale's mandate stands on chain until its day ends, and its rent (≈ 0.008 SOL)
  *   sits in it. Only she can remove it; her next signature does, and the rent comes back to her wallet.
@@ -20,7 +20,7 @@ import { ownerExecuteInstruction, settingsSyncInstruction } from "./ssa.ts";
 
 /**
  * A vault's empty token account, under its coin's program. `withheld` — the coin's mint, when the coin withholds a fee on
- * transfers (CITY-184): what the account withheld is swept to the mint first, or the program would not close it.
+ * transfers: what the account withheld is swept to the mint first, or the program would not close it.
  */
 export type EmptyAccount = Readonly<{
   account: PublicKey;

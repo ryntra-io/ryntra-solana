@@ -40,7 +40,7 @@ export async function readHeld(owner: string, mints: readonly string[], handle?:
   return { held, host: rpc.host(), readAt: new Date().toISOString() };
 }
 
-/** The wallet's native SOL, lamports; null when the chain did not answer (CITY-192: a SOL deposit wraps it). */
+/** The wallet's native SOL, lamports; null when the chain did not answer (a SOL deposit wraps it). */
 export async function readNative(owner: string, handle?: SolanaRpcHandle): Promise<bigint | null> {
   const rpc = handle ?? createSolanaRpcHandle({ network: "mainnet", timeoutMs: 5_000, retries: 0 });
   try {

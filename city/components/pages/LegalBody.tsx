@@ -15,7 +15,7 @@ import s from './pages.module.css';
 import { LEGAL } from './words';
 
 /**
- * The Terms of Use and the Privacy Policy in the city (CITY-157): the published words, exactly (`lib/legal/texts/*`),
+ * The Terms of Use and the Privacy Policy in the city: the published words, exactly (`lib/legal/texts/*`),
  * in the city's look. The title, the date and the opening stand in view; each numbered section opens on a tap, and
  * «Open all» opens every one. The whole text is in the page either way, so a search engine, a store's reviewer and the
  * browser's «Find» read all of it. An address with an anchor (`/legal/privacy#android`, the store's link) opens that

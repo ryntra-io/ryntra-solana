@@ -1,4 +1,4 @@
-// The city's pages for review (CITY-157): the menu (☰), each page as a window over the city and as a page of its own at
+// The city's pages for review: the menu (☰), each page as a window over the city and as a page of its own at
 // its address, on a desk (1440×900) and a phone (390×844), English and Ukrainian → <out>/<name>.jpg
 //   npm run dev      then      node city/lib/pages/shots.mjs [out] [baseUrl]
 // Help's form is sent against a stubbed inbox (`/api/feedback` answers with a fixture reference): nothing reaches the

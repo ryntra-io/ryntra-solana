@@ -1,7 +1,7 @@
 /**
- * The engine a Hack run drives (CITY-224): one copy of the chain, in memory, loaded from a recorded snapshot. The
+ * The engine a Hack run drives: one copy of the chain, in memory, loaded from a recorded snapshot. The
  * sandbox owns the run — the pin, the limits, the log, the wall against the network — and the engine only executes.
- * In production and on the stand it is LiteSVM with mainnet's program bytes (the fork bench of CITY-70/204/219; the
+ * In production and on the stand it is LiteSVM with mainnet's program bytes (the fork bench; the
  * adapter is `docs/research/city-224-hack-sandbox/harness/litesvm.mjs`); the library's own tests use a tiny engine
  * (`toy.ts`) so they run anywhere, with no binary.
  *

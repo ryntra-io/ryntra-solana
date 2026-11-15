@@ -30,7 +30,7 @@ import { askSince, AWAY_MIN_MS, keepSeen, readSeen, readSwitch } from "./report-
 import { pressReport } from "./report-telegram.ts";
 import { entryFor, keepReport, readReport, reportKey, reportsOf, runReportPass } from "./report-watch.ts";
 
-/* CITY-194: the agent's day — «3 trades, +0.012 SOL» — from its own book, in the city, in Telegram and on the phone. */
+/* The agent's day — «3 trades, +0.012 SOL» — from its own book, in the city, in Telegram and on the phone. */
 
 const OWNER = "7xKXtg2CW87d97TXJSDpbD5jBkheTqA83TZRuJosgAsU";
 const OTHER = "9WzDXwBbmkg8ZTbNMqUxvQRAyrZzDsGYdLVL9zYtAWWM";

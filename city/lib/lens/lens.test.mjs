@@ -1,4 +1,4 @@
-// The Lens (CITY-86): which towers each chip looks at, the three rings of «New», the kept chip, the engine's listed
+// The Lens: which towers each chip looks at, the three rings of «New», the kept chip, the engine's listed
 // companies and the frame the camera takes.
 //   node --test city/lib/lens/lens.test.mjs
 import { test } from "node:test";
@@ -66,7 +66,7 @@ test("«New» has three stages: fresh in the docks, near graduation, graduated i
   assert.ok(rings.fresh.radius > rings.near.radius && rings.near.radius > rings.graduated.radius, "outside in");
 });
 
-test("a graduation kept in the docks by the city's rule (CITY-144) is graduated, never «near»", () => {
+test("a graduation kept in the docks by the city's rule is graduated, never «near»", () => {
   const fastExit = placed("FAST", "docks");
   const graduated = { ...ctx, launches: new Map([...ctx.launches, ["FAST", { progress: 100, migrated: true }]]) };
   assert.equal(newStage(fastExit, graduated), "graduated");

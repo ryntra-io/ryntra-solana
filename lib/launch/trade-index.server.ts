@@ -44,7 +44,7 @@ export function launchDecodedIndex(store: GuardStore, cluster: string, feeWallet
 /**
  * The market reader of a Launch read: this network's fee wallet and referral owner, its endpoints for indexed reads, for
  * whole signature lists and for older transactions, and the shared index. Where the history endpoint is Helius on
- * mainnet, its Parsed Events Scan finds the signatures first (CITY-245); elsewhere there is none and the node is paged.
+ * mainnet, its Parsed Events Scan finds the signatures first; elsewhere there is none and the node is paged.
  */
 export function launchMarketReader(deps: Readonly<{ network: LaunchNetwork; connection: Connection; store: GuardStore }>): LaunchMarketReader {
   return createLaunchMarketReader(deps.connection, {

@@ -3,7 +3,7 @@ import { scoutsOf, type ScoutsView } from '../scouts/view.ts';
 import { proveWallet, type ProofOutcome } from '../trade/proof.ts';
 
 /**
- * The portfolio's «Rewards» block (CITY-206): points, level and rank, what friends brought, cashback, and the
+ * The portfolio's «Rewards» block: points, level and rank, what friends brought, cashback, and the
  * assistant's credits — read from the Growth line's own engine (`/api/rewards`) and the credits engine
  * (`/api/v1/assistant/credits`), never written here. Both answer only for a wallet that proved itself to Ryntra: how
  * much somebody earned is not public. So the block never opens the wallet by itself — it reads when the proof is

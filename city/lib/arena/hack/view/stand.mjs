@@ -1,5 +1,5 @@
-// Hack's windows on a stand (CITY-227): the real routes of CITY-226 over the memory store, a seeded world of orders,
-// takes and findings, and the real step runner's journal (CITY-225, the stub brain on the made-up copy — no network,
+// Hack's windows on a stand: the real routes over the memory store, a seeded world of orders,
+// takes and findings, and the real step runner's journal (the stub brain on the made-up copy — no network,
 // no key) served as the run's own route, which no server serves yet. Not a test file: the view's tests and the
 // windows' shots (`city/components/arena/hack/hack-shots.mjs`) import it.
 //
@@ -8,7 +8,7 @@
 //   await stand.fetch("/api/arena/hack/orders");    // a Response, as the browser would get it
 //
 // Every answer but the run's is the real service's, on the library's real rules; the only fakes are the signature
-// check (the library fixtures' `"good"`) and the sandbox's verdict per finding (`prove`), as in CITY-226's own tests.
+// check (the library fixtures' `"good"`) and the sandbox's verdict per finding (`prove`).
 import { addr, makeGrant, makeOrder, makeProof, verify, hashOf, PROTOCOL, OWNER_A, OWNER_B, PROGRAM, PROGRAM2, AT } from "../fixtures.mjs";
 
 const { createHackApi } = await import("../store/api.ts");

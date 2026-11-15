@@ -5,7 +5,7 @@ import { useThree } from '@react-three/fiber';
 import { useLayoutEffect, useMemo, useRef, useState, type ComponentProps } from 'react';
 
 /**
- * drei's `Html` for a sign that stands in the scene from its first frame (CITY-241). `Html` builds its own React root
+ * drei's `Html` for a sign that stands in the scene from its first frame. `Html` builds its own React root
  * on its own element, appended to the canvas's event target, and tears that root down synchronously whenever the target
  * changes or the scene's layout effects are taken down — and the root it then builds again on the same element is
  * cleared a moment later, leaving the sign empty. Both happen to a sign mounted with the scene: the canvas connects its

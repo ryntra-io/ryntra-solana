@@ -1,7 +1,7 @@
 import { words } from '../i18n/dict.ts';
 
 /**
- * The words Ryntra's city library writes for the screen (CITY-79): the ready questions and the city's own line while
+ * The words Ryntra's city library writes for the screen: the ready questions and the city's own line while
  * Ryntra is away. The questions go to the assistant as written, so it answers in the same language.
  */
 export const ASSISTANT_TEXT = words(

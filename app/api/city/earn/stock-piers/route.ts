@@ -6,7 +6,7 @@ export const dynamic = 'force-dynamic';
 export const maxDuration = 30;
 
 /**
- * The Stock Pier's verified pairs (CITY-98): stocks of the city's avenue that the issuer's catalogue and Jupiter name,
+ * The Stock Pier's verified pairs: stocks of the city's avenue that the issuer's catalogue and Jupiter name,
  * that the venue takes as they are (or whose badge stands), that are not paused or halted, and whose market traded in
  * the last seven days — each with its price, multiplier, the exchange's hours, a corporate step in sight, and its pier
  * on SOL and on USDC, standing or not. Read-only, so Earn can show it while the product's own switch is closed.

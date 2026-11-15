@@ -1,4 +1,4 @@
-/* The city's 404 and 500 (CITY-159): the island under the eclipse, filmed from the live city, behind one line and one
+/* The city's 404 and 500: the island under the eclipse, filmed from the live city, behind one line and one
    amber action. Tokens from city/styles/city.module.css; the brandbook is docs/city/brand/BRANDBOOK.md. */
 
 .page {
@@ -81,7 +81,7 @@
   }
 }
 
-/* The words wait for the person's language for one frame, as the city's do (CITY-79). */
+/* The words wait for the person's language for one frame, as the city's do. */
 :global(html.city-lang-wait) .card {
   visibility: hidden;
 }

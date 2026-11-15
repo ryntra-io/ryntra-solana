@@ -11,7 +11,7 @@ import { STUB_CREATOR, STUB_WALLET, stubAddress, stubEngine, stubWallet } from "
 import { runLaunchTrade } from "./trade-flow.ts";
 import { stubTradeEngine } from "./trade-stub.ts";
 
-/* The launch's share cards (L8 · CITY-145): «Народилась» and «Вийшла» for the creator, the trader's round trip — every
+/* The launch's share cards: «Народилась» and «Вийшла» for the creator, the trader's round trip — every
    figure on a card is the engine's, a figure not read is left off, and a round trip that does not add up is no card. */
 
 const MINUTE = 60_000;

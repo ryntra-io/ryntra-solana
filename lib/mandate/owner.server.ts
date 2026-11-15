@@ -1,5 +1,5 @@
 /**
- * CITY-207 — the reads behind «a wallet's agents» (`./owner.ts`): the agent's book, the autopilots' and the cares' books
+ * The reads behind «a wallet's agents» (`./owner.ts`): the agent's book, the autopilots' and the cares' books
  * in the Guard store, each network apart, and — for the mandates — one batched read of the chain per network: whether
  * the policy still stands and the budget's SOL in the vault. Read only: builds nothing, signs nothing, moves nothing.
  */

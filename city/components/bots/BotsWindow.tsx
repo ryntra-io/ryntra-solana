@@ -58,7 +58,7 @@ export default function BotsWindow() {
   }, [wallet]);
 
   // Escape steps back from a bot's page or the newcomer's taps before it closes the window. A panel of the top bar
-  // open over the window — the events', the wallet's — closes first, alone: the page stays (CITY-240).
+  // open over the window — the events', the wallet's — closes first, alone: the page stays.
   useEffect(() => {
     const key = (event: KeyboardEvent) => {
       if (event.key !== 'Escape' || event.defaultPrevented) return;
@@ -71,13 +71,13 @@ export default function BotsWindow() {
     return () => window.removeEventListener('keydown', key, true);
   }, []);
 
-  // «Back» of a phone and of a browser steps back the same way (CITY-236): from a bot's page — the ladder's — to the
+  // «Back» of a phone and of a browser steps back the same way: from a bot's page — the ladder's — to the
   // list, from the newcomer's second tap to the first; the window itself closes only from the list.
   const paged = useBots((st) => st.page.kind !== 'home');
   useBackPanel('bots-page', tab === 'launch' && paged, () => useBots.getState().back());
 
-  // The ladder's line under its action goes after a while — a «no» stays long enough to be read (CITY-237,
-  // `note-hold.ts`); «costs changed» stays until the next tap answers it. The time runs from when the line was said: a
+  // The ladder's line under its action goes after a while — a «no» stays long enough to be read
+  // (`note-hold.ts`); «costs changed» stays until the next tap answers it. The time runs from when the line was said: a
   // window opened again later does not bring an old line back.
   const ladderNote = useLadder((st) => st.note);
   useEffect(() => {
@@ -90,7 +90,7 @@ export default function BotsWindow() {
   }, [ladderNote]);
 
   // A bot's page, a step of the newcomer's taps or another tab opens at its top, wherever the list was scrolled to
-  // (CITY-242: «GRID SOL/USDC» opened out of sight under the tabs); back on the list, the list is where it was left.
+  // («GRID SOL/USDC» opened out of sight under the tabs); back on the list, the list is where it was left.
   const body = useRef<HTMLDivElement>(null);
   const listAt = useRef(0);
   const view = useBots((st) => (st.page.kind === 'flow' ? `flow:${st.page.goal}:${st.page.step}` : st.page.kind));
@@ -139,7 +139,7 @@ export default function BotsWindow() {
             </button>
           ))}
         </nav>
-        {/* Mainnet is the city everywhere: no network word on the first screen (CITY-221); test money still says so. */}
+        {/* Mainnet is the city everywhere: no network word on the first screen; test money still says so. */}
         {MANDATE_NET !== 'mainnet' && LADDER_NET !== 'mainnet' && <span className={s.practice}>{LADDER_NET || MANDATE_NET ? w.devnet : w.practice}</span>}
       </header>
       <div ref={body} className={s.body} data-tab={tab} onScroll={keepListAt}>

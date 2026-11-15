@@ -1,7 +1,7 @@
 import { pl, words } from '../../../lib/i18n/dict.ts';
 
 /**
- * Every word of the garage agent (CITY-29), in English and Ukrainian (CITY-79). The agent is Ryntra's face (decision 91):
+ * Every word of the garage agent, in English and Ukrainian. The agent is Ryntra's face (decision 91):
  * it speaks short and with drive — the number, the tower, the next step; the rest behind «Details». It promises no
  * profit, and what is still being built says «coming».
  */

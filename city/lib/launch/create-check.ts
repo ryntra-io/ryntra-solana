@@ -3,7 +3,7 @@ import { ATTRIBUTION_REGISTRY } from '../../../lib/attribution/registry.ts';
 import type { Network } from './engine.ts';
 
 /**
- * A launch's creation, read before the wallet sees it (CITY-220). The review showed one launch: this coin, on this
+ * A launch's creation, read before the wallet sees it. The review showed one launch: this coin, on this
  * preset, by this creator, buying nothing. The engine builds the bytes and checks them itself (`honestLaunchProblems`,
  * `signedAsBuilt`); this is the city's own look, so bytes for another curve never reach the creator's wallet:
  *

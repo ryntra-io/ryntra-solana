@@ -8,7 +8,7 @@ export const dynamic = "force-dynamic";
 export const maxDuration = 45;
 
 /**
- * CITY-174 — forward the person's signed mandate transactions to devnet, in order. Each is read before any is sent:
+ * Forward the person's signed mandate transactions to devnet, in order. Each is read before any is sent:
  * she pays, she alone signed, really, and only the smart account, token and system programs are called.
  * This route never signs: it has no key.
  */

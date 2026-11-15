@@ -5,7 +5,7 @@ import type { StopCreate } from "./schema.ts";
 import { StopsStoreUnavailable, type StopsStore } from "./store.ts";
 
 /**
- * What the stop routes do (CITY-149), after the route has proved the wallet: plain inputs, a plain answer, so every
+ * What the stop routes do, after the route has proved the wallet: plain inputs, a plain answer, so every
  * rule is tested without a server. The routes (`app/api/v1/stops/**`) prove the wallet first — a read takes the
  * wallet's proof, a change takes its own signature (Sign In With Solana) — and only hand the proven address here.
  *

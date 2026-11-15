@@ -8,7 +8,7 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 /**
- * `POST /api/v1/intents` (1.90.0, CITY-161) — an agent, a chat or a partner prepares a swap for a person to sign: the
+ * `POST /api/v1/intents` — an agent, a chat or a partner prepares a swap for a person to sign: the
  * coin, the raw amount, the side, a deadline, who prepared it and, if known, the wallet it is for. No wallet and no key:
  * the intent is a request, never an authority. The answer is the intent with Ryntra's own https link and a QR of it,
  * and the creator's key, shown once. The person opens the link in the city, sees the engine's live quote, and signs in

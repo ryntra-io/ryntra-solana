@@ -23,7 +23,7 @@ const closePartners = () => usePartners.getState().close();
 const closeLanding = () => usePartners.getState().enter();
 
 /**
- * «Ryntra Partners» (CITY-126, CITY-127) in the city's one window frame: the partner page and «Мій район», opened from
+ * «Ryntra Partners» in the city's one window frame: the partner page and «Мій район», opened from
  * the menu and from «Scouts»; and the friend's landing, which greets a browser that carries an invitation. A connected
  * wallet that carries one is read by the engine on its proven read, which binds it — never a signature asked for here.
  */

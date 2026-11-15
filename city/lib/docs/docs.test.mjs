@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { existsSync, readdirSync, readFileSync } from "node:fs";
 import test from "node:test";
 
+import { inDevelopmentRepository } from "../../../lib/development-repository.mjs";
 import { FEE_POLICY_V2 } from "../../../lib/core/fee-policy.ts";
 import { presetTerms } from "../../../lib/core/launch/preset-terms.ts";
 import { RULE_MINIMUM_USD } from "../../../lib/autoinvest/limits.ts";
@@ -19,12 +20,17 @@ import { DOC_GROUP, DOC_GROUPS, DOC_NAMES, GROUP_WORDS, NAV_LAYOUT, PAGE_NAMES, 
 import { CITY_DOORS, budgetOpen } from "./doors.ts";
 import { docsStatus, sectionSoon } from "./status.ts";
 
-/* CITY-180: the documentation at `ryntra.io/docs`. Every section stands in both languages with the same shape; every figure is the
+/* The documentation at `ryntra.io/docs`. Every section stands in both languages with the same shape; every figure is the
    product's own; what this build keeps shut stands as «Soon» and opens by itself; the old handbook is out of sight. */
 
 const REPO = new URL("../../../", import.meta.url);
 const read = (path) => readFileSync(new URL(path, REPO), "utf8");
 const exists = (path) => existsSync(new URL(path, REPO));
+/* A page of the site answers when its file is here. The roadmap and «What we're building» read the development
+   repository's own records, so a copy of the code that stands without them carries neither file; there the two
+   addresses are taken on their word. */
+const KEPT_WITH_THE_RECORDS = new Set(["/roadmap", "/build"]);
+const pageAnswers = (address) => exists(`app${address}/page.tsx`) || (!inDevelopmentRepository && KEPT_WITH_THE_RECORDS.has(address));
 const LANGS = ["en", "uk"];
 
 const SHUT = { trade: false, spot: false, stops: false, earn: false, earnWindow: false, guard: false, money: false, bots: false, launch: false };
@@ -189,7 +195,7 @@ test("every link in a section leads to a section's anchor or a page that answers
       const [path, hash] = where.split("#");
       if (path.startsWith("/")) {
         const clean = path.split("?")[0];
-        assert.ok(clean === "/" || exists(`app${clean}/page.tsx`) || clean === "/legal/terms", `${section.id}: ${where}`);
+        assert.ok(clean === "/" || pageAnswers(clean) || clean === "/legal/terms", `${section.id}: ${where}`);
         continue;
       }
       assert.ok(isDocId(path), `${section.id}: ${where} is no section`);
@@ -259,7 +265,7 @@ test("every address of the old handbook leads to a page that answers, in one hop
     const target = row.destination.split("?")[0];
     assert.ok(!OLD_CHAPTERS[target], `${row.source} leads to another old chapter`);
     const section = target.match(/^\/docs\/([a-z]+)$/)?.[1];
-    assert.ok(target === "/docs" || target === "/docs/:section" || isDocId(section) || exists(`app${target}/page.tsx`), `${row.source} → ${row.destination}`);
+    assert.ok(target === "/docs" || target === "/docs/:section" || isDocId(section) || pageAnswers(target), `${row.source} → ${row.destination}`);
   }
   for (const source of Object.keys(OLD_CHAPTERS)) {
     assert.ok(sources.has(`/uk${source}`), `${source} has its Ukrainian address`);

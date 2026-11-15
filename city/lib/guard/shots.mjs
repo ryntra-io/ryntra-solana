@@ -1,4 +1,4 @@
-// The Guard window's screens for review (CITY-152), at 1440×860 and 390×844 → <out>/guard-<state>-<lang>-<size>.png (kept in the repository as JPEG)
+// The Guard window's screens for review, at 1440×860 and 390×844 → <out>/guard-<state>-<lang>-<size>.png (kept in the repository as JPEG)
 //   node city/lib/guard/stand-rpc.mjs &
 //   RYNTRA_SOLANA_RPC_MAINNET=http://127.0.0.1:8899 RYNTRA_SOLANA_RPC_MAINNET_FALLBACK=http://127.0.0.1:8899 \
 //     NEXT_PUBLIC_RYNTRA_CITY_GUARD=open npm run dev

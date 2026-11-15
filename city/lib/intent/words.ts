@@ -1,6 +1,6 @@
 import { words } from '../i18n/dict.ts';
 
-/** The confirm sheet of a prepared action (CITY-161): its head, figures, action and endings. */
+/** The confirm sheet of a prepared action: its head, figures, action and endings. */
 export const INTENT = words(
   {
     title: 'Confirm',

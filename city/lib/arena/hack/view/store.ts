@@ -4,12 +4,12 @@ import type { FindingView, HackRole, MyAgent, OrderDetail, OrderView, RunFeed } 
 import { HackClientError, httpHack, type HackClient, type OwnerMove, type Verdict } from './client.ts';
 
 /**
- * Hack's window (CITY-227): one window of the Arena's third door, a few screens deep — the orders, an order's card, an
+ * Hack's window: one window of the Arena's third door, a few screens deep — the orders, an order's card, an
  * agent's run live, a finding's card, the board. Each screen has one main action: take an order, send an agent, stop
  * the order (its owner), confirm a finding (its owner). Nothing here moves money: the reward is a description until the
- * money of CITY-229 opens; the target is always a copy.
+ * money opens; the target is always a copy.
  *
- * The person's agent is the Ring's (CITY-50) — read through the Arena's own store, made in the Arena's garage when
+ * The person's agent is the Ring's — read through the Arena's own store, made in the Arena's garage when
  * there is none. The run's journal is read where a server serves it; until then the run screen follows the order's own
  * record (`model.ts`, `eventsOf`).
  */
@@ -88,6 +88,7 @@ export type HackState = {
   makeAgent: () => void;
   /** «Send an agent»: the person's agent onto the open order, on the side chosen; then its run on screen. */
   sendAgent: () => Promise<void>;
+  /** The protocol owner's word on a finding under review. */
   resolve: (verdict: Verdict) => Promise<void>;
   /** The protocol owner's stop and start of its order. */
   moveOrder: (move: OwnerMove) => Promise<void>;

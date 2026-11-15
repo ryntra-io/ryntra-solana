@@ -12,7 +12,7 @@ type Locale = "en" | "uk";
 const pick = (locale: Locale, en: string, uk: string): string => (locale === "uk" ? uk : en);
 
 export function suggestionsFor(context: AgentContext | null, locale: Locale): AgentSuggestion[] {
-  /* The ticker came with the request: anyone's text (CITY-73), so a held one reads as «this asset». */
+  /* The ticker came with the request: anyone's text, so a held one reads as «this asset». */
   const symbol = context?.kind === "asset" ? (shownText(context.symbol, "symbol", 32) ?? pick(locale, "this asset", "цей актив")) : null;
   switch (context?.kind) {
     case "asset":

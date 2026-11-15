@@ -9,7 +9,7 @@ import ts from "typescript";
 import { LANG_BOOT_SCRIPT, LANGS, langOf, pickLang } from "./langs.ts";
 import { digits, num, pl } from "./dict.ts";
 
-/* CITY-79: the city speaks English and Ukrainian. Every dictionary has both halves with the same keys, and no screen
+/* The city speaks English and Ukrainian. Every dictionary has both halves with the same keys, and no screen
    of the city writes its words straight into the markup. */
 
 const ROOT = fileURLToPath(new URL("../..", import.meta.url));

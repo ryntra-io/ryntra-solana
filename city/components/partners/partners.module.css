@@ -1,6 +1,5 @@
-/* «Ryntra Partners» (CITY-126, CITY-127): a still of our own city at the head with the two-sided offer on it, three
-   role tabs, the calculator and its bars, «Мій район». The glass, the head and the moving are the city's window frame
-   (CITY-65). Tokens from city/styles/city.module.css (CITY-11); the vocabulary is the scouts window's. */
+/* «Ryntra Partners»: a still of our own city at the head with the two-sided offer on it, three
+   role tabs, the calculator and its bars, «Мій район». The glass, the head and the moving are the city's window frame. Tokens from city/styles/city.module.css; the vocabulary is the scouts window's. */
 
 .display {
   font-family: var(--font-display, system-ui), system-ui, sans-serif;
@@ -1508,7 +1507,7 @@
   transform: rotate(-135deg) translate(-2px, -1px);
 }
 
-/* ---------- «Copy my link» (CITY-177): the page's and the window's one amber action ---------- */
+/* ---------- «Copy my link»: the page's and the window's one amber action ---------- */
 
 .copy {
   display: grid;

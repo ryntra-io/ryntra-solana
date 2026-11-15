@@ -15,7 +15,7 @@ const CURVE = { min: 1_000, max: 1_000_000 } as const;
 const POOL = { min: 1_000, max: 5_000_000 } as const;
 
 /**
- * The creator's tab (CITY-126): what a creator's own coin pays them, from the launch preset's terms — the share of the
+ * The creator's tab: what a creator's own coin pays them, from the launch preset's terms — the share of the
  * curve's volume and an example of the graduated pool. The share of a partner who brings a creator is the operator's to
  * decide (D-P1), so no figure stands for it: the card says «Coming». The arithmetic sits behind «i».
  */

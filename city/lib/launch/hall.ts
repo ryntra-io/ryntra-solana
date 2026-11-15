@@ -28,7 +28,7 @@ import type { Network } from './engine.ts';
  *   wallets, and anyone who chose to be hidden).
  * The share of the week's trades left out this way is published with the boards.
  *
- * ## A quiet week reaches back (CITY-230)
+ * ## A quiet week reaches back
  *
  * A board whose week counts nobody reaches back over the last 30 days, then over all time — the first span that counts
  * someone — and says which one on its sign: «this week», «this month», «all time». The same rules hold over every span:
@@ -292,7 +292,7 @@ const counted = (judgement: TradeJudgement | undefined) => judgement?.counts.bil
 /** `whole` — the coin's every trade was read, so its catches may stand on an all-time board. */
 type Catch = Readonly<{ wallet: string; at: string; whole: boolean; row: HallRow }>;
 
-/** A creator's ticker and name on a billboard: somebody else's text (CITY-73). A held ticker stands on no billboard. */
+/** A creator's ticker and name on a billboard: somebody else's text. A held ticker stands on no billboard. */
 function coinOf(token: string, row: Pick<LaunchMarketRow, 'symbol' | 'name'>): HallRow['coin'] | null {
   const symbol = shownText(row.symbol, 'symbol', 32);
   return symbol ? { token, symbol, name: shownText(row.name, 'name') ?? symbol } : null;
@@ -608,7 +608,7 @@ function readTally(value: unknown): HallTally | null {
 /**
  * The Hall as the browser reads it from `/api/city/hall`: every row whole — a type, a period, a proof on Solscan and a
  * read time — or the answer is not the Hall at all. A row that misses one of them is never drawn. A board without a
- * span is the week's (an answer from before CITY-230); a span the Hall does not know refuses the answer.
+ * span is the week's; a span the Hall does not know refuses the answer.
  */
 export function readHallView(body: unknown): HallView | null {
   if (!isObject(body) || body.v !== 1 || (body.network !== 'solana:devnet' && body.network !== 'solana:mainnet')) return null;

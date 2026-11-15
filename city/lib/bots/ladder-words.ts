@@ -3,12 +3,12 @@ import type { LadderNetwork } from '../../../lib/bots/ladder/network.ts';
 import type { Words } from './words.ts';
 
 /**
- * The ladder's words by network (CITY-219). On devnet the window says what CITY-135 said — «Place on devnet», the
- * Devnet chip; on mainnet the ladder is real: «Place ladder», the fee said as it is (Ryntra takes none on a ladder; the
+ * The ladder's words by network. On devnet the window says what it said from the start — «Place
+ * on devnet», the Devnet chip; on mainnet the ladder is real: «Place ladder», the fee said as it is (Ryntra takes none on a ladder; the
  * network's fees and the order's rent, back on cancel), the sum, what every step gives and each step's price shown
  * before the signature, and the cap while it stands.
  *
- * CITY-233: the sheet says its network in one word before the signature — «Real SOL» on mainnet, «Test SOL» on devnet;
+ * The sheet says its network in one word before the signature — «Real SOL» on mainnet, «Test SOL» on devnet;
  * a cancellation that took back only part says so in its own words, with «Cancel the rest»; a ladder this wallet already
  * has on the chain, placed from somewhere else, turns «Place» into «View».
  */
@@ -82,7 +82,7 @@ const MAINNET: Readonly<Record<Lang, Omit<LadderWords, 'note' | 'view' | 'cancel
 /** Test money on devnet, said as plainly as the real thing is on mainnet. */
 const TEST_SOL: Readonly<Record<Lang, string>> = { en: 'Test SOL', uk: 'Тестові SOL' };
 
-/** The ladder's words for a network, on top of the window's own (devnet keeps CITY-135's). */
+/** The ladder's words for a network, on top of the window's own. */
 export function ladderWords(lang: Lang, network: LadderNetwork, w: Words): LadderWords {
   const shared = SHARED[lang];
   const devnet: LadderWords = {

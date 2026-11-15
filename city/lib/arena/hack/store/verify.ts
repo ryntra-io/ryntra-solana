@@ -1,5 +1,5 @@
 /**
- * The server's check of the protocol owner's permission (CITY-226) — the `PermissionVerifier` the library takes from
+ * The server's check of the protocol owner's permission — the `PermissionVerifier` the library takes from
  * outside (`../permission.ts`). The owner's wallet signs the grant's canonical text (`grantText(body)`, UTF-8) as a
  * message — the wallet's own `signMessage`, the one screen a page cannot paint over — and the server checks that the
  * signature is the signer's Ed25519 signature over exactly those bytes, with node's own crypto.

@@ -6,7 +6,7 @@ import { venueName, type Market, type Side } from './markets.ts';
  * where the venues differ, verbatim. A settled or closed market keeps its page; nothing is bought on it.
  *
  * An event of several markets — the Fed's brackets, a party per seat, a date per deadline — lists every one of them
- * as a row with its own chance and its own Yes and No (CITY-77): the page shows the row picked, and the ticket buys it.
+ * as a row with its own chance and its own Yes and No: the page shows the row picked, and the ticket buys it.
  */
 
 /** One market of an event as a row of its page. */

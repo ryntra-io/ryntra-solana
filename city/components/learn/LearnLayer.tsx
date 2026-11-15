@@ -18,7 +18,7 @@ const renderLearn = () => <LearnBody />;
 const closeLearn = () => useLearn.getState().hide();
 
 /**
- * «Learn» (CITY-202) in the city's one window frame (CITY-65): a window on a computer, the bottom sheet on a phone.
+ * «Learn» in the city's one window frame: a window on a computer, the bottom sheet on a phone.
  * Opened from the menu (☰) and from the command line («how does the agent work»); Escape and «Close» close it.
  */
 export function LearnLayer() {

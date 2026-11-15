@@ -1,5 +1,5 @@
 /**
- * The discount on Ryntra's fee for a person a partner brought (CITY-182).
+ * The discount on Ryntra's fee for a person a partner brought.
  *
  * The rate is the fee table's, less the partner programme's discount, rounded down to a whole basis point — always in
  * the person's favour, never above what the table charges. It is decided once, when the order the wallet will sign is

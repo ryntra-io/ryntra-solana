@@ -1,6 +1,6 @@
 import { words } from '../i18n/dict.ts';
 
-/** The words «Scouts» writes outside the window: how long ago, and the post a scout shares on X (CITY-79). */
+/** The words «Scouts» writes outside the window: how long ago, and the post a scout shares on X. */
 export const SCOUTS_LINE = words(
   {
     now: 'now',

@@ -1,4 +1,4 @@
-// «Launched on Ryntra» (CITY-185) for review: `/launches` opened on its window — the list of people's launches, the
+// «Launched on Ryntra» for review: `/launches` opened on its window — the list of people's launches, the
 // empty state with Ryntra's test launches apart (the same feed with every launch marked a test), the tests opened, and
 // «Trade» flying to the tower — at 1440×900 and 375×812 → <out>/launched-<state>-<size>-<locale>.jpg
 //   node city/lib/launch/launched-shots.mjs [out] [baseUrl]      (npm run dev running; PRESS_CHROME may point at a Chromium)

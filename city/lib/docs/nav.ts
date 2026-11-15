@@ -4,7 +4,7 @@ import { DOC_GROUPS, DOC_NAMES, GROUP_WORDS, NAV_LAYOUT, PAGE_NAMES, type DocGro
 import { sectionSoon, type DocsStatus } from './status.ts';
 
 /**
- * The documentation's one menu, in a language (CITY-180): the sections and the pages that stand in the same frame — Developers, AI
+ * The documentation's one menu, in a language: the sections and the pages that stand in the same frame — Developers, AI
  * chats, Help, the legal documents — by group, with each section's «Soon». No section's words here: the city's window reads it too.
  */
 export type NavItem = Readonly<{ key: string; href: string; title: string; line: string; soon: boolean }>;

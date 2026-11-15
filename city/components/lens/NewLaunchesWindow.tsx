@@ -24,7 +24,7 @@ const closeList = () => useNewLaunches.getState().setList(false);
 const TAB_WORD = { fresh: 'tabFresh', near: 'tabNear', graduated: 'tabGraduated' } as const;
 
 /**
- * «New launches on Solana» (CITY-191) — every new launch of the network as a terminal, inside the city's window frame:
+ * «New launches on Solana» — every new launch of the network as a terminal, inside the city's window frame:
  * Just born · Final stretch · Graduated side by side, one ring at a time behind three tabs where the window is narrow.
  * A row is the coin's logo, ticker, market cap, age, launchpad, holders, volume and its change — the curve's way to
  * the DEX on the final stretch — and «Buy», the trade card in one tap. The wider the window, the more of a row it

@@ -133,7 +133,7 @@ export function DraftsDesk() {
   }, []);
   useEffect(() => {
     if (door !== 'open' || !queue || working.current) return;
-    // A studio post (CITY-38) is filmed by the studio's batch script, which sends its clip itself.
+    // A studio post is filmed by the studio's batch script, which sends its clip itself.
     const next = queue.drafts.find((x) => x.status === 'filming' && x.kind !== 'studio' && !tried.current.has(x.id));
     if (!next) return;
     working.current = true;

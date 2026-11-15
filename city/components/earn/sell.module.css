@@ -1,4 +1,4 @@
-/* Sell Higher · Buy Lower · the Wheel (CITY-97): the Earn window's own language — violet for what is chosen, amber for
+/* Sell Higher · Buy Lower · the Wheel: the Earn window's own language — violet for what is chosen, amber for
    the one action, mint for what an order brought — with the city's tokens from city/styles/city.module.css. */
 
 .head {
@@ -92,7 +92,7 @@
   font-variant-numeric: tabular-nums;
 }
 
-/* The amount's unit, coin or dollars (CITY-190): two quiet halves inside the field, the chosen one warm. */
+/* The amount's unit, coin or dollars: two quiet halves inside the field, the chosen one warm. */
 .units {
   flex: none;
   display: flex;

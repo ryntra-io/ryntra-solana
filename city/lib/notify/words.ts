@@ -1,6 +1,6 @@
 import { words } from '../i18n/dict.ts';
 
-/** What the centre's own notes say (CITY-87): one short line each, the coin by its ticker. */
+/** What the centre's own notes say: one short line each, the coin by its ticker. */
 export const NOTES = words(
   {
     bought: (coin: string) => `Bought ${coin}`,

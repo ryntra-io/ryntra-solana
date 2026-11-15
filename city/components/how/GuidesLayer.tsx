@@ -23,7 +23,7 @@ const renderGuides = () => <GuidesBody />;
 const closeGuides = () => useGuides.getState().hide();
 
 /**
- * «How it works» (CITY-43) in the city's one window frame (CITY-65): a window on a computer, the bottom sheet on a
+ * «How it works» in the city's one window frame: a window on a computer, the bottom sheet on a
  * phone. Opened from the menu (☰), only while there is a lesson to show. It also opens the window `?try=<id>` asks for
  * — the page's own «Try» (`/how-it-works`) — once the city stands.
  */

@@ -1,6 +1,5 @@
 /**
- * The one interface every model call in Ryntra City goes through (CITY-45,
- * decision 72): a Vault's guard (CITY-47) and a Ring's agent (CITY-50) both
+ * The one interface every model call in Ryntra City goes through: a Vault's guard and a Ring's agent both
  * hold a `ModelGateway` and call it the same way. The names here are the
  * contract `lib/models/README.md` describes; a stub of the gateway keeps them.
  *

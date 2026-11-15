@@ -18,7 +18,7 @@ import { num, useWords, type TextKey } from '@/city/lib/i18n/dict';
 const STEP_NAMES: Record<Step, TextKey<typeof RING_UI>> = { body: 'body', brain: 'brain', script: 'script' };
 
 /**
- * The marks that tell two brains of one shortened name apart (CITY-240), for the list and for the line that names the
+ * The marks that tell two brains of one shortened name apart, for the list and for the line that names the
  * pick: the catalog's brains, and the agent's own when the list no longer offers it.
  */
 function useTwinMarks(): ReadonlyMap<string, string> {
@@ -28,23 +28,23 @@ function useTwinMarks(): ReadonlyMap<string, string> {
 }
 
 /**
- * The screen that makes or changes an agent (CITY-50): body, brain, script — three steps, one amber action. The brain
+ * The screen that makes or changes an agent: body, brain, script — three steps, one amber action. The brain
  * is any model of OpenRouter's live catalog, sorted into weight classes, each with its price for a match before it is
  * picked; a pick is pinned to one provider by the server and its own price, class and formats shown before saving.
- * Over the city from a garage's sheet; `inline` inside the Arena's window, on its «Agent» tab (CITY-217).
+ * Over the city from a garage's sheet; `inline` inside the Arena's window, on its «Agent» tab.
  */
 export function RingEditor({ inline = false }: { inline?: boolean } = {}) {
   const editor = useRing((st) => st.editor);
   const quotes = useRing((st) => st.quotes);
   const ready = useRing((st) => canSave(st.editor, st.quotes));
   const w = useWords(RING_UI);
-  // The brain's name as its catalog writes it, and the provider it is pinned to: behind one quiet «i» (CITY-236).
+  // The brain's name as its catalog writes it, and the provider it is pinned to: behind one quiet «i».
   const [about, setAbout] = useState(false);
   const marks = useTwinMarks();
 
   // Escape closes this screen and nothing under it: the quarter's own Escape (back to the city) waits for the next press.
   // A panel of the top bar open over the screen — the events', the wallet's — closes first, alone, and the draft stays
-  // (CITY-240: this listener hears the key before the panel's own).
+  // (this listener hears the key before the panel's own).
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => {
       if (event.key !== 'Escape' || event.defaultPrevented) return;
@@ -57,7 +57,7 @@ export function RingEditor({ inline = false }: { inline?: boolean } = {}) {
     return () => window.removeEventListener('keydown', onKey, true);
   }, []);
 
-  // «Back» of a phone and of a browser is a step of this screen (CITY-236): script → brain → body, then the screen
+  // «Back» of a phone and of a browser is a step of this screen: script → brain → body, then the screen
   // itself — the Arena's window, or the garage's sheet, stays. While the agent is being saved «Back» waits.
   useBackPanel('ring-editor', editor !== null, () => {
     const ring = ringStore.getState();
@@ -175,12 +175,12 @@ function BrainStep() {
   const quotes = useRing((st) => st.quotes);
   const list = useRef<HTMLDivElement>(null);
   const words = useWords(RING_UI);
-  // Two brains of one name keep the catalog's mark beside it — a date, a size; never its raw «free» or «batch» (CITY-239).
+  // Two brains of one name keep the catalog's mark beside it — a date, a size; never its raw «free» or «batch».
   const marks = useTwinMarks();
   if (!editor) return null;
   const st = ringStore.getState();
   const counts = classCounts(models.list);
-  // The agent's own brain stands first, whatever the tab and whether the list still offers it (CITY-240).
+  // The agent's own brain stands first, whatever the tab and whether the list still offers it.
   const own = ownBrainRow(editor);
   const { shown, more } = visibleModels(models.list, editor.weight, editor.search, 40, own?.id ?? null);
 
@@ -205,7 +205,7 @@ function BrainStep() {
         ))}
       </div>
       <input className={r.search} type="search" placeholder={words.searchModels} aria-label={words.searchModels} value={editor.search} onChange={(e) => st.setSearch(e.target.value)} />
-      {/* The list's room, and the list cut to whole rows inside it (CITY-240, ring.module.css). */}
+      {/* The list's room, and the list cut to whole rows inside it (ring.module.css). */}
       <div className={r.models}>
         <div className={r.modelList} ref={list}>
           {own && <ModelRow model={own} picked={editor.model === own.id} quote={quotes[own.id]} mark={marks.get(own.id) ?? ''} away={own.weight === editor.weight ? '' : WEIGHT_NAMES[own.weight]} />}
@@ -248,7 +248,7 @@ function ModelRow({ model, picked, quote, mark, away = '' }: { model: BrainRow; 
         <span className={r.pinned}>
           {quote.status === 'read' ? (
             <>
-              {/* The provider it is pinned to is the catalog's own word: behind «i» in the summary below (CITY-236). */}
+              {/* The provider it is pinned to is the catalog's own word: behind «i» in the summary below. */}
               {quote.quote.weight !== model.weight && <span className={r.moved}>{WEIGHT_NAMES[quote.quote.weight]}</span>}
               <span className={r.formats}>
                 {quote.quote.formats.map((f) => (

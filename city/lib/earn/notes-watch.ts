@@ -24,7 +24,7 @@ import {
 import type { ScaledConfig } from './stocks.ts';
 
 /**
- * Ryntra's server watching Earn for the phone and Telegram (CITY-100, spec E9 «сервер-спостерігач»): every wallet that
+ * Ryntra's server watching Earn for the phone and Telegram: every wallet that
  * asked under its own proof (`registerEarnWatch`, from the city once the wallet has something in Earn) is read now and
  * then — its pool positions, the stocks it holds or pools, its loans once Earn reads them — judged by the same
  * `notes.ts` as the city, and what is new becomes a note in the engine's own inbox with one delivery per channel the

@@ -1,4 +1,4 @@
-# The notification centre (CITY-87)
+# The notification centre
 
 `docs/research/ryntra-city-helm-2026-10-29/SPEC.md` §10. One way for the city to tell something — `notify(note)` — and
 one window where the person decides where each kind goes: **City** (a banner, or the live feed for a market kind),
@@ -37,7 +37,7 @@ itself tells Telegram about it, `door` where something in the deployment can say
 in `city/components/settings/words.ts` (`kind_<id>`, both languages), and a source that says it — beside the others in
 `sources.ts`, or in the line's own code. The window lists it by itself.
 
-**Earn (CITY-100)** did exactly that: `range`, `weekend`, `dividend` in the `earn` group and `loan` in `safety`
+**Earn** did exactly that: `range`, `weekend`, `dividend` in the `earn` group and `loan` in `safety`
 (locked; listed once Earn reads a loan — `EARN_LOANS`, E10). Their source is Earn's own (`city/lib/earn/notes-source.ts`),
 and Ryntra's server tells the phone and Telegram about them through the engine's inbox (`city/lib/earn/notes-watch.ts`);
 a tap on their banner or the computer's notification opens Earn on «Mine» (`openKind`). That they may come late is
@@ -50,7 +50,7 @@ said behind the section's «i», never on the screen.
 | `kinds.ts` | The kinds, their places, their start, their cap; the liquidation risk locked. |
 | `prefs.ts` | The person's centre on this device (`ryntra.city.notify`): routes, caps, banners' corner, the feed's side, the flashes' size, quiet hours, «Mute all». |
 | `gate.ts` | One note at the gate: a banner, the computer, or nowhere — and why. Pure. |
-| `store.ts` | The page's state and `notify()`. A market kind's on/off and the flashing on/off stay the live feed's switches (CITY-66). |
+| `store.ts` | The page's state and `notify()`. A market kind's on/off and the flashing on/off stay the live feed's switches. |
 | `channels.ts` | `/api/v1/notifications/telegram` and `/api/v1/notifications/devices`, unchanged, under the wallet's proof. |
 | `channels-store.ts` | Telegram connected in its row (the bot's link, then the chat once Start is pressed), the phones. |
 | `desk.ts` | The browser's own notifications, on a computer only. |

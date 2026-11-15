@@ -79,8 +79,9 @@ export function partOf(amountRaw: bigint, share: number, totalShare: number): bi
 /**
  * The city's «Share earnings» — the creator types the other
  * wallets and their parts on Classic or Protected, and the launch writes the same vault «Спільнота» and a crew write.
- * False: closed on mainnet, open on the devnet stand. The engine (`../../launch/flow.server.ts`) and the city's door
- * (`city/lib/launch/share.ts`) read this one value. Flipped here alone.
+ * False: closed on mainnet, open on the devnet stand.
+ * The engine (`../../launch/flow.server.ts`) and the city's door
+ * (`city/lib/launch/share.ts`) read this one value. Flipped here.
  */
 export const TYPED_SHARES_OWNER_WORD = true; // Fork 24/24, devnet 25/25
 

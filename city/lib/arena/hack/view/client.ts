@@ -1,7 +1,7 @@
 import type { FindingView, HackRole, OrderDetail, OrderView, RunFeed, TakeView } from './contract.ts';
 
 /**
- * Hack on the server, as the city's windows call it (CITY-227): `/api/arena/hack` on the same origin (CITY-226). The
+ * Hack on the server, as the city's windows call it: `/api/arena/hack` on the same origin. The
  * wallet's session travels in its HttpOnly cookie, so this client never sees it; every write carries an
  * `Idempotency-Key`, and a retry of the same write sends the same one. A refusal comes back as `HackClientError` with
  * the route's own code; a lost connection, an answer the city does not read, a missing route — codes of their own.
@@ -16,7 +16,7 @@ export interface HackClient {
   finding(id: string): Promise<{ finding: FindingView }>;
   /** The live run of an agent on an order; `null` when there is none (no machine plays runs on this deployment). */
   run(order: string, hunter: string): Promise<{ run: RunFeed | null }>;
-  /** `run` — whether the server started the agent's run on the take, and why not (CITY-238). */
+  /** `run` — whether the server started the agent's run on the take, and why not. */
   take(order: string, hunter: string, role: HackRole, key: string): Promise<{ take: TakeView; again: boolean; run?: { started: boolean; reason?: string } }>;
   confirm(finding: string, verdict: Verdict, key: string): Promise<{ finding: FindingView }>;
   move(order: string, move: OwnerMove, key: string): Promise<{ order: OrderView }>;

@@ -1,7 +1,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 
-// A window going out onto another screen and back (CITY-75), over a browser stand-in: a screen, a storage, Document
+// A window going out onto another screen and back, over a browser stand-in: a screen, a storage, Document
 // Picture-in-Picture, window.open and a BroadcastChannel, each with the behaviour of a real one that matters here.
 
 const items = new Map();

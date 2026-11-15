@@ -2,9 +2,9 @@ import type { NewLaunch, Rings } from './launches.ts';
 import { STAGES } from './launches.ts';
 
 /**
- * «Маяк» (CITY-142, launch strategy §8): the one new coin that is hot right now, by people, not by money — the most
+ * «Маяк» (launch strategy §8): the one new coin that is hot right now, by people, not by money — the most
  * different wallets that bought above the minimum buy, the wallets one source funded counted once. The count is the
- * engine's flow of the launch (CITY-140, `GET /api/v1/launch/{mint}/flow` → `buyers.independent`), read only. Nothing
+ * engine's flow of the launch (`GET /api/v1/launch/{mint}/flow` → `buyers.independent`), read only. Nothing
  * else ranks a coin here: no market cap, no volume, no place for sale, no hand. A coin whose buyers the engine did not
  * count is not ranked — never ranked on a guess — and Ryntra's own technical launches never wear the beacon.
  */

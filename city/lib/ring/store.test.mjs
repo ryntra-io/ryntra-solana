@@ -11,7 +11,7 @@ const { FORMAT_NAMES, WEIGHT_NAMES, charCount, classSpan, gamesLine, perMatch, p
 const { ARCHETYPES, FORMATS, WEIGHTS } = await import("../../../lib/ring/contract.ts");
 
 /**
- * CITY-50 «Ринг · агенти» in the city: the garage's agent read once, the screen's draft — body, brain, script — with the
+ * «Ринг · агенти» in the city: the garage's agent read once, the screen's draft — body, brain, script — with the
  * brain quoted before a save, a save that carries one key per draft (a retry after a lost connection is the same
  * request), a version that moved coming back as the agent is now with the draft kept, and the switch-off.
  */
@@ -200,7 +200,7 @@ test("the brain picker: one class at a time, cheapest first as the server sent t
   assert.deepEqual(visibleModels(MODELS, "light", "", 1), { shown: [MODELS[0]], more: 1 });
 });
 
-/* CITY-240: a person who opens «Brain» to change an agent did not see what it thinks with now — when the list no
+/* A person who opens «Brain» to change an agent did not see what it thinks with now — when the list no
    longer offered that brain, when the catalog kept it in another class than the agent is pinned in, or when it stood
    past the first rows; on a phone the line that names the pick is put away on this step. */
 test("changing an agent: its own brain is the first row, whatever the tab shows and whether the list still offers it", () => {

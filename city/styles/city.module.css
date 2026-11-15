@@ -19,7 +19,7 @@
   --glass: rgba(11, 10, 20, 0.78);
   --glass-edge: rgba(153, 69, 255, 0.55);
   --cut: 14px;
-  /* The side margin, wider where a phone held sideways has its notch (CITY-6a). */
+  /* The side margin, wider where a phone held sideways has its notch. */
   --gutter: max(16px, env(safe-area-inset-left), env(safe-area-inset-right));
   --type-micro: 11px;
   --type-caption: 12px;
@@ -38,7 +38,7 @@
   overflow: hidden;
   overscroll-behavior: none;
   /* A finger scrolls a sheet but never zooms the page: the city's own pinch belongs to the canvas, whose touch-action
-     is none (CITY-6a). No double-tap zoom either, so a tap answers at once. */
+     is none. No double-tap zoom either, so a tap answers at once. */
   touch-action: pan-x pan-y;
   color-scheme: dark;
   background: var(--ink-deep);
@@ -49,7 +49,7 @@
   -webkit-font-smoothing: antialiased;
 }
 
-/* A language other than the server's English (CITY-79): the boot script hides the city's words for the frame before
+/* A language other than the server's English: the boot script hides the city's words for the frame before
    they are painted in it (city/lib/i18n/langs.ts), so no English flashes first. The city itself stays in view. */
 :global(html.city-lang-wait) .root :is([data-city-top], [data-city-feed], nav) {
   visibility: hidden;

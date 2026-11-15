@@ -1,7 +1,7 @@
 import type { Coin, Side } from '../command/parse.ts';
 
 /**
- * What the agent reads from one sentence (CITY-176): a regular purchase, or an order that waits for a price — a limit
+ * What the agent reads from one sentence: a regular purchase, or an order that waits for a price — a limit
  * the venue fills by itself, or a stop the engine watches. Pure data: the reader fills what was said, the card asks for
  * the rest with taps, and nothing here signs, sends or holds anything.
  */

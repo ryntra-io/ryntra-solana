@@ -81,7 +81,7 @@ export const STUB_PRESETS_ANSWER: LaunchPresetsResponse = {
     { id: '6m-12m', cliffDays: 180, vestDays: 365 },
   ],
   limits: { nameMax: 32, symbolMax: 10, descriptionMax: 280, imageMaxBytes: 262144, imageTypes: ['image/png', 'image/jpeg', 'image/webp', 'image/gif'], launchesPerDay: 3 },
-  /* CITY-212: the stand serves early access with the devnet stand's own bounds (`DEVNET_EARLY_ACCESS_BOUNDS`). */
+  /* The stand serves early access with the devnet stand's own bounds (`DEVNET_EARLY_ACCESS_BOUNDS`). */
   formats: {
     advanced: null,
     earlyAccess: {
@@ -163,7 +163,7 @@ type StubLaunch = Readonly<{ token: string; name: string; symbol: string; launch
 /** The stand's youngest coin is always in the last two minutes of its launch fee's fall, so the fee is seen falling live. */
 const YOUNG_CYCLE = 2 * MINUTE;
 
-/** The stand's coins. Spark and Moth are the stub wallet's own, so «Мій причал» (CITY-141) has a test launch on the curve and one in its pool. */
+/** The stand's coins. Spark and Moth are the stub wallet's own, so «Мій причал» has a test launch on the curve and one in its pool. */
 function standLaunches(now: number): StubLaunch[] {
   const at = (ago: number) => now - ago;
   return [
@@ -173,7 +173,7 @@ function standLaunches(now: number): StubLaunch[] {
     { token: stubAddress('MOTH'), name: 'Moth', symbol: 'MOTH', launchedAt: at(12 * DAY), creator: STUB_CREATOR, progressBps: () => 10_000, migrated: true, holders: 214, checks: ['alive', 'young', 'young'], liquidityUsd: 31_200, preset: 'classic', locked: true },
     { token: stubAddress('OWL'), name: 'Night Owl', symbol: 'OWL', launchedAt: at(96 * DAY), creator: stubAddress('creator:owl'), progressBps: () => 10_000, migrated: true, holders: 862, checks: ['alive', 'alive', 'alive'], liquidityUsd: 88_400, sold: true },
     { token: stubAddress('DUSK'), name: 'Dusk', symbol: 'DUSK', launchedAt: at(9 * DAY), creator: stubAddress('creator:dusk'), progressBps: () => 800, migrated: false, holders: 6, checks: ['quiet', 'young', 'young'], liquidityUsd: null, sold: true },
-    /* Two graduations below the city's rule (CITY-144): one filled its curve in minutes, one with too few buyers. */
+    /* Two graduations below the city's rule: one filled its curve in minutes, one with too few buyers. */
     { token: stubAddress('ZIP'), name: 'Zipline', symbol: 'ZIP', launchedAt: at(2 * DAY), creator: stubAddress('creator:zip'), progressBps: () => 10_000, migrated: true, holders: 64, checks: ['young', 'young', 'young'], liquidityUsd: 22_800, sold: true },
     { token: stubAddress('REEF'), name: 'Reef', symbol: 'REEF', launchedAt: at(10 * DAY), creator: stubAddress('creator:reef'), progressBps: () => 10_000, migrated: true, holders: 140, checks: ['alive', 'young', 'young'], liquidityUsd: 26_500, preset: 'classic', locked: true },
     /* A coin Ryntra took down: its tower stands without its picture, the chain keeps it. */
@@ -258,7 +258,7 @@ function marketOf(launch: StubLaunch, now: number, preset: LaunchPresetView): La
 
 /**
  * The stand's made-up trades of a coin, newest first. Night Owl's carry the stub wallet's own buy 42 seconds after its
- * birth, under the launch fee, so the stand can sell it in the pool and show the round trip's card (CITY-145); the
+ * birth, under the launch fee, so the stand can sell it in the pool and show the round trip's card; the
  * other wallets' trades are there so the card is seen to count only the wallet's own.
  */
 function standTrades(launch: StubLaunch, preset: LaunchPresetView): LaunchMarketResponse['trades'] {
@@ -494,7 +494,7 @@ export function stubEngine(options: StubOptions = {}): StubEngine {
   const refuse = { ...(options.refuse ?? {}) };
   const calls: string[] = [];
   const builds = new Map<string, { request: LaunchBuildRequest; token: string; wire: string; name: string; symbol: string; used: boolean; feeVault: string | null }>();
-  /* CITY-212: early-access creations built on the stand. */
+  /* Early-access creations built on the stand. */
   const earlies = new Map<string, { creator: string; mint: string; pool: string; vault: string; wires: readonly string[]; name: string; symbol: string; used: boolean }>();
   /* Trades and claims built on the stand: their bytes, who may send them, what they move. */
   const deals = new Map<string, { token: string; wallet: string; wires: string[]; side: 'buy' | 'sell' | 'claim'; inRaw: string; outRaw: string; used: boolean }>();
@@ -532,7 +532,7 @@ export function stubEngine(options: StubOptions = {}): StubEngine {
         return { ok: true, data: { metadataUri: `https://stand.example.org/api/launch/metadata/${sha}`, imageUrl: `https://stand.example.org/api/launch/image/${hex(`image:${sha}`, 64)}`, name: check.clean.name, symbol: check.clean.symbol } };
       }),
     build: async (body) => {
-      /* A launch's bytes are laid out as the engine's, so the sheet's read of them runs here too (CITY-212, CITY-220). */
+      /* A launch's bytes are laid out as the engine's, so the sheet's read of them runs here too. */
       const layout = await import('./split-stub.ts');
       const splitter = body.feeShares?.length ? layout : null;
       return answer('build', () => {

@@ -1,5 +1,5 @@
 /**
- * What prepared actions need on this deployment (CITY-161), or why they are not served.
+ * What prepared actions need on this deployment, or why they are not served.
  *
  * `RYNTRA_INTENTS`:
  * - `open` — the Postgres table in

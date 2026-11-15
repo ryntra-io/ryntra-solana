@@ -1,4 +1,4 @@
-// «Consultant and agents» (CITY-205) for review: desk and phone, English and Ukrainian, twice — without a wallet and with
+// «Consultant and agents» for review: desk and phone, English and Ukrainian, twice — without a wallet and with
 // a devnet test wallet — on the real GPU.
 //   node city/components/crew/crew-shots.mjs [out=docs/shots/city-205] [baseUrl=http://localhost:3045]   (npm run dev running,
 //   with NEXT_PUBLIC_RYNTRA_CITY_MANDATE / _AUTOPILOT = devnet, _PILOT / _EARN = open, NEXT_PUBLIC_RYNTRA_AGENT_CARE = devnet)

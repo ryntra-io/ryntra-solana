@@ -1,4 +1,4 @@
-// The trade card's amount (CITY-74) for review, at 390×844 and 1440×860 → <out>/size-<state>-<size>.png
+// The trade card's amount for review, at 390×844 and 1440×860 → <out>/size-<state>-<size>.png
 //   node city/lib/trade/size-shots.mjs [out] [baseUrl]      (npm run dev running)
 // Buying and selling: where the card opens, each chip, the slider in the middle, an amount of your own. No wallet and
 // no keys: a stub wallet registers through the Wallet Standard events (it signs nothing, and nothing here is pressed),

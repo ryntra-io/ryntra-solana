@@ -13,7 +13,7 @@ import { SparkGlyph } from '../assistant/AssistantLayer';
 import s from './crew.module.css';
 
 /**
- * The first sentences (CITY-222): two or three things a person can say to the agent, each one tap — the line (⌘K,
+ * The first sentences: two or three things a person can say to the agent, each one tap — the line (⌘K,
  * «Ask Ryntra», the first screen's action) and «Your agents» show them where nothing is typed yet. A tap is the person
  * saying it: the agent's card opens with the budget and «Sign», as if typed.
  */

@@ -1,4 +1,4 @@
--- Ryntra: «Like the Captain» — the ledger of strategy copies and their daily record (CITY-99).
+-- Ryntra: «Like the Captain» — the ledger of strategy copies and their daily record.
 --
 -- PREPARED 2026-10-31 as a file only. Not applied to any Supabase project:
 -- production migrations are applied through MCP Supabase, only when the project's owner says so.

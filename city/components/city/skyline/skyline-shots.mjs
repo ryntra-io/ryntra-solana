@@ -1,4 +1,4 @@
-// The skyline's graphics pass (CITY-56): the same frames before and after, on the real GPU.
+// The skyline's graphics pass: the same frames before and after, on the real GPU.
 //   node city/components/city/skyline/skyline-shots.mjs [out] [baseUrl]   (npm run dev running)
 // → <out>/home-<size>.png with the HUD, clean-<size>.png without it at 1440×900, 390×844 and 360×740, and close-ups at
 // 1440×900 without the HUD: a tall tower, the Sol Spire, a stepped avenue tower, the docks, a street and the water.
@@ -42,7 +42,7 @@ for (const s of SIZES) {
   page.on("console", (m) => m.type() === "error" && !/Failed to load resource/.test(m.text()) && errors.push(m.text()));
   await page.goto(`${base}/${quality}`, { waitUntil: "domcontentloaded" });
   await page.waitForFunction(() => (window.__city?.getState().layout.towers.length ?? 0) > 0, null, { timeout: 120_000 });
-  // The skyline's models arrive after the first frame; before CITY-56 there is no such flag and the wait just runs out.
+  // The skyline's models arrive after the first frame.
   await page.waitForFunction(() => window.__skyline?.ready === true, null, { timeout: Number(process.env.SKYLINE_WAIT ?? 60_000) }).catch(() => {});
   if (pin) await page.evaluate((q) => window.__city.getState().setQuality(q), pin);
   // The reflection cube is drawn in a quiet moment a few seconds after the skyline appears.

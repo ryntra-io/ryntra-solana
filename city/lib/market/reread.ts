@@ -2,7 +2,7 @@ import { WEATHER } from '../city/events.ts';
 import type { CitySnapshot } from './types.ts';
 
 /**
- * When the page reads `/api/city` again (CITY-221). The top bar read «Delayed 01:19» for minutes: an edge whose cache
+ * When the page reads `/api/city` again. The top bar read «Delayed 01:19» for minutes: an edge whose cache
  * had gone cold answered with the city prerendered at the build (01:19), and the page then waited a whole minute to ask
  * again — longer when the regeneration behind it failed, or when the phone had slept with the tab open. Now an answer
  * that is not live and fresh is asked again within seconds (the stale answer is what starts the edge's regeneration),

@@ -1,5 +1,5 @@
 /**
- * CITY-194 — the agent's day: what it did for the person in a span of time, from its own trades in the book. Every
+ * The agent's day: what it did for the person in a span of time, from its own trades in the book. Every
  * figure is the book's or the venue's: the trades that landed, the budget they spent, the coins they brought, and what
  * those coins are worth at the price the venue answers now. Nothing is estimated forward and nothing is promised; a
  * figure that was not read is null, never zero. Pure, so the tests read it and the city, the cron and the route agree.
@@ -24,9 +24,9 @@ export type AgentDay = Readonly<{
   worthRaw: string | null;
   /** worth − spent, lamports; null with the worth. */
   earnedRaw: string | null;
-  /** CITY-197: after every fee — the exit's and the network's share too (`./net.ts`); null — not read; absent — not counted. */
+  /** After every fee — the exit's and the network's share too (`./net.ts`); null — not read; absent — not counted. */
   netRaw?: string | null;
-  /** CITY-197: plain holding of the same SOL, after the same fees; null — cannot be priced. */
+  /** Plain holding of the same SOL, after the same fees; null — cannot be priced. */
   holdRaw?: string | null;
 }>;
 
@@ -77,7 +77,7 @@ export function usdOf(lamports: string | null, solUsd: number | null): number | 
 }
 
 /**
- * CITY-245 — the day checked against the chain: how many of the agent's trades the chain shows (the budget's account,
+ * The day checked against the chain: how many of the agent's trades the chain shows (the budget's account,
  * moving the coin bought) that the book does not hold under any status. Null — the chain was not read.
  */
 export function unbookedTrades(chain: readonly string[] | null, trades: readonly AgentTrade[]): number | null {

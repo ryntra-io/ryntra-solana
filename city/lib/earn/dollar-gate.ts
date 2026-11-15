@@ -1,5 +1,5 @@
 /**
- * The Dollar Saver's own switch in the city (CITY-192): `NEXT_PUBLIC_RYNTRA_CITY_EARN_DOLLAR=open` turns its card on
+ * The Dollar Saver's own switch in the city: `NEXT_PUBLIC_RYNTRA_CITY_EARN_DOLLAR=open` turns its card on
  * the Shelf into an action — an amount, «Put in» and «Take back». Anything else, and unset, is closed: the card stands
  * with its live rate and «tell me when it opens», and the sentence «put my USDC to work» opens nothing.
  *

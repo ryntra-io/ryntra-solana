@@ -1,4 +1,4 @@
-/* The Lens (CITY-86): one capsule of dark glass centred in the top bar, the picked chip lit violet with its count. On a
+/* The Lens: one capsule of dark glass centred in the top bar, the picked chip lit violet with its count. On a
    narrow screen the capsule becomes a strip under the top bar that scrolls sideways. No backdrop blur over the live
    canvas, no amber here: amber is the one action of a screen, the lens is a way of looking. */
 
@@ -28,14 +28,13 @@
   -webkit-overflow-scrolling: touch;
 }
 
-/* Chips past the screen's edge fade out rather than end on a cut letter, and the last one scrolls clear of the fade
-   (CITY-188). */
+/* Chips past the screen's edge fade out rather than end on a cut letter, and the last one scrolls clear of the fade. */
 .away {
   opacity: 0;
   pointer-events: none;
 }
 
-/* Under a window that covers most of it (CITY-243): the strip steps aside, so no sliver of it stands over the window's
+/* Under a window that covers most of it: the strip steps aside, so no sliver of it stands over the window's
    top edge. It comes back as the window goes. */
 .covered {
   opacity: 0;
@@ -156,7 +155,7 @@
   }
 }
 
-/* «New»'s toggle: the rings or the list (CITY-142), grown out of the picked chip, its own violet a shade quieter. */
+/* «New»'s toggle: the rings or the list, grown out of the picked chip, its own violet a shade quieter. */
 .toggle {
   display: inline-grid;
   place-items: center;

@@ -3,10 +3,10 @@ import { wordsNow } from '../i18n/dict.ts';
 import { RING } from './words.ts';
 
 /**
- * An agent's body (CITY-50) — the interface the characters line fills (CITY-57): six archetypes, a light visor for a
+ * An agent's body — the interface the characters line fills: six archetypes, a light visor for a
  * face, four states. Until the characters come, the body is a stand-in drawn from the numbers below
  * (`city/components/ring/AgentBody.tsx`): one silhouette per archetype on a 120 × 160 grid, the feet on y = 156, so the
- * six read apart at a glance. CITY-57 keeps `AgentBodyProps` and swaps the drawing for the real character.
+ * six read apart at a glance.
  *
  *   ready    — the visor glows steady; the body breathes
  *   thinking — a scan runs across the visor: a model is reading

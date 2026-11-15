@@ -13,7 +13,7 @@ import c from './care.module.css';
 export const careOpen = () => CARE_MODE !== 'closed';
 
 /**
- * «Your agent looks after it» on the pier card (CITY-203): one switch, the stop as three chips, one line of safety. The
+ * «Your agent looks after it» on the pier card: one switch, the stop as three chips, one line of safety. The
  * how stays behind «Details». On, the card's one action becomes «Give it to my agent».
  */
 export function CareSwitch({ busy }: { busy: boolean }) {

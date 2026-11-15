@@ -1,5 +1,5 @@
 /**
- * CITY-175 — the agent's book: the mandates it works for, each with the strategy the person chose and the trades the
+ * The agent's book: the mandates it works for, each with the strategy the person chose and the trades the
  * agent made. Kept in the Guard store's `agentMandates` (a value in the same column; no DDL), keyed
  * `m:<cluster>:<policy>`. Public data only: addresses, numbers, signatures, the person's own words — never a key.
  *
@@ -7,7 +7,7 @@
  * is this agent, the person is the account's settings signer, and the vault and the budget's account are the ones the
  * program derives. Its numbers are one of the city's presets, so the agent never trades by numbers the person did not
  * choose; the chain holds the very same caps again. And its coin is no coin of Ryntra's launchpad and none of the
- * person's own (CITY-196, `./ryntra-coins.server.ts`) — the signer asks the same again before every trade.
+ * person's own (`./ryntra-coins.server.ts`) — the signer asks the same again before every trade.
  */
 
 import { Connection, PublicKey } from "@solana/web3.js";
@@ -37,9 +37,9 @@ export type BookEntry = Readonly<{
   record: MandateRecord;
   preset: BudgetPresetId;
   strategy: StrategyId;
-  /** CITY-193: the strategy with its numbers (`./plans.ts` `planText`); absent on an entry of before — the steady one. */
+  /** The strategy with its numbers (`./plans.ts` `planText`); absent on an entry of before — the steady one. */
   plan?: string;
-  /** The prices the agent saw for a dip or a grid, oldest first, the last day's (CITY-193). */
+  /** The prices the agent saw for a dip or a grid, oldest first, the last day's. */
   marks?: readonly Mark[];
   /** A grid's first price: its levels stand under it. */
   anchor?: number;
@@ -163,7 +163,7 @@ export async function registerMandate(
   } catch {
     return { ok: false, code: "UNAVAILABLE", reason: "The coin the agent buys is not readable." };
   }
-  /* CITY-196: Ryntra's agent buys no coin of Ryntra's launchpad, and none the person launched. */
+  /* Ryntra's agent buys no coin of Ryntra's launchpad, and none the person launched. */
   const origin = await (deps.screen ?? storeScreen(deps.store, gate.network)).origin(receive.toBase58()).catch(() => null);
   if (!origin) return { ok: false, code: "UNAVAILABLE", reason: "Ryntra's launch registry is not readable." };
   if (origin.launchedHere) return { ok: false, code: "REFUSED", reason: origin.creator === input.record.owner ? "The agent does not buy your own coin." : "The agent does not buy coins launched on Ryntra." };
@@ -204,7 +204,7 @@ export async function writeEntry(store: GuardStore, entry: BookEntry): Promise<v
   await bookOf(store).set(entryKey(entry.cluster, entry.record.policy), entry);
 }
 
-/** The strategy the entry trades by: its plan, or — an entry of before CITY-193, or one not read — the steady one. */
+/** The strategy the entry trades by: its plan, or the steady one. */
 export function planOfEntry(entry: Pick<BookEntry, "plan" | "strategy">): StrategyPlan {
   const plan = entry.plan === undefined ? null : planFrom(entry.plan);
   return plan && plan.id === entry.strategy ? plan : STEADY;

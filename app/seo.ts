@@ -16,7 +16,7 @@ export const SITE = "https://ryntra.io";
  * The share card's address carries the card's own fingerprint. Link caches
  * (X, Telegram, LinkedIn, Slack) key on this string for days; a redrawn
  * card at an unchanged address kept the retired brand on every post until
- * the cache chose to expire. Since CITY-158 (31.10) every card is the city's:
+ * the cache chose to expire. Every card is the city's:
  * the live city's frame, the mark and one line (`city/lib/share/card.ts`).
  */
 export const OG_IMAGE = `${SITE}/opengraph-image?v=${cityCardVersion()}`;
@@ -167,7 +167,7 @@ export function openGraphLocales(path: string, localeInput: string): Readonly<{ 
 }
 
 /**
- * A page's share card, as metadata names it. Since CITY-158 every page shows the city's card in its language — the
+ * A page's share card, as metadata names it. Every page shows the city's card in its language — the
  * old pages' own titles are the old product's words — so the key and the page's card words no longer change the
  * picture; `/og/…` still answers the addresses older posts name.
  */
@@ -264,7 +264,7 @@ export function buildMissionControlMetadata(
 
 /**
  * Ryntra City, the home at `/` since decision 70 (2026-10-26): the live Solana market as a night city. The words
- * say what the city does today and grow with it; the share card is the city's own (CITY-158): a frame of the live 3D
+ * say what the city does today and grow with it; the share card is the city's own: a frame of the live 3D
  * city, the mark and the line, 1200 × 630 — the shape Open Graph and X draw a large card at.
  */
 export const CITY_WORDS = {
@@ -379,11 +379,11 @@ export function buildMetadata(locale: string): Metadata {
 }
 
 /**
- * The city's pages at their own addresses (CITY-157): Docs, Developers, AI chats (`/connector`, CITY-170), Help (at
+ * The city's pages at their own addresses: Docs, Developers, AI chats (`/connector`), Help (at
  * `/support` and `/feedback`), About,
  * the Terms and the Privacy Policy — the same contents the city's menu opens as windows. Each names its own address;
- * `/feedback` is the same Help and points the index at `/support`. The share card is the city's still (CITY-64) until
- * the previews of every page are redrawn (CITY-158).
+ * `/feedback` is the same Help and points the index at `/support`. The share card is the city's still until
+ * the previews of every page are redrawn.
  */
 export const CITY_PAGE_WORDS: Readonly<Record<CityPageId, Readonly<{ title: string; description: string }>>> = {
   docs: {

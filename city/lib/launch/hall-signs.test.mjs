@@ -5,7 +5,7 @@ import test from 'node:test';
 import { hallSignsPlan, ledBoards, MASTS, SIGN } from './hall-signs.ts';
 
 /*
- * CITY-241: the Hall of Fame in the city carries no empty sign and no bare mast. A sign stands only on a board with a
+ * The Hall of Fame in the city carries no empty sign and no bare mast. A sign stands only on a board with a
  * leader and shows the leader's number; a mast stands only under a sign, as tall as its top sign; the empty board's one
  * action stays in the Hall's panel.
  */

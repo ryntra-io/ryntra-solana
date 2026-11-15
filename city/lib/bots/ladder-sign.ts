@@ -8,7 +8,7 @@ import type { LadderLeg, LadderPool, LegPlan, Rung } from '../../../lib/bots/lad
 import { housekeepingIssue, readLadderTransaction } from '../../../lib/bots/ladder/tx.ts';
 
 /**
- * Placing and cancelling a ladder from the browser (B5, CITY-135; mainnet CITY-219) — loaded on the tap, never in the
+ * Placing and cancelling a ladder from the browser — loaded on the tap, never in the
  * city's first frame.
  *
  * Who signs what:
@@ -27,7 +27,7 @@ import { housekeepingIssue, readLadderTransaction } from '../../../lib/bots/ladd
  * bins and amounts are the plan's (`checkUnsigned`). If the server's cost line is higher than the one on the screen,
  * the wallet is not asked: the new line is shown and one more tap goes on.
  *
- * Once everything is signed, the ladder is the window's before it is the relay's (CITY-231): `onSigned` hands over
+ * Once everything is signed, the ladder is the window's before it is the relay's: `onSigned` hands over
  * every leg — its order account and its signature, read from the signed bytes — before the relay is asked. A relay
  * that answers with a timeout, a dropped connection or a closed tab cannot leave orders on the chain the window does
  * not know of: they are kept as `sent`, and the window's reading of the chain says which landed (`unsure`).

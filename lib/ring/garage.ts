@@ -4,7 +4,7 @@ import type { WorldStore } from "../world/store.ts";
 import type { GarageCheck } from "./engine.ts";
 
 /**
- * The Arena's own garage (CITY-217): every account has one bay in the Arena, so a person makes an agent the moment the
+ * The Arena's own garage: every account has one bay in the Arena, so a person makes an agent the moment the
  * Arena opens — no quarter to claim, no level to reach before the quarter's garage (from level 3, `lib/world/catalog`).
  * One agent lives in it; more live in the garages of the quarter. Its address is the account's alone and tells nobody
  * which account it is: a hash, never the account's id.
@@ -20,7 +20,7 @@ export const isBay = (quarterId: string): boolean => BAY.test(quarterId);
 
 /**
  * Whether a garage slot is this account's to put an agent in. The account's own bay in the Arena always is. Otherwise
- * the world's word, read and never changed (`lib/world`, CITY-14): the account's resident owns the quarter, and the
+ * the world's word, read and never changed (`lib/world`): the account's resident owns the quarter, and the
  * building on that slot is a garage. A world that does not answer is `unavailable`; nothing is assumed in its place.
  */
 export async function garageOf(world: Pick<WorldStore, "resident" | "quarter">, input: { accountId: string; quarterId: string; slot: number }): Promise<GarageCheck> {

@@ -7,7 +7,7 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 /**
- * RFC 7591 dynamic client registration for the connector (CITY-154).
+ * RFC 7591 dynamic client registration for the connector.
  *
  * Registration grants nothing: a client id is a name. Every scope comes later, from a person signing with their
  * wallet at `/connect`, so a thousand registrations are a thousand names and zero access. Clients that publish a

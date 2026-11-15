@@ -54,7 +54,7 @@ export const AGENT_REPORT = words(
     spent: (amount: string) => `Spent ${amount} SOL`,
     bought: (symbol: string) => `bought ${symbol}`,
     worth: (amount: string) => `worth ${amount} SOL now`,
-    /** CITY-197: every figure is after all fees; beside it, plain holding of the same SOL. */
+    /** Every figure is after all fees; beside it, plain holding of the same SOL. */
     afterFees: 'after all fees',
     vsHold: (figure: string) => `holding: ${figure}`,
     total: (figure: string) => `since start ${figure}`,
@@ -72,7 +72,7 @@ export const AGENT_REPORT = words(
     toldOff: 'Daily report off',
     toldOn: 'Daily report on',
     notYours: 'Connect this Telegram in Ryntra first',
-    /** CITY-204: the money autopilot's week, and its hold. */
+    /** The money autopilot's week, and its hold. */
     pilotWeek: (figure: string) => `Autopilot this week ${figure}`,
     pilotHeld: 'trading paused: market fell',
   },
@@ -106,8 +106,7 @@ export const AGENT_REPORT = words(
 );
 
 /**
- * Lamports as SOL, signed: «+0.012 SOL», «−0,003 SOL». Counted in whole lamports, never in floats, and never flattering
- * (CITY-197): a gain is rounded down, a loss up.
+ * Lamports as SOL, signed: «+0.012 SOL», «−0,003 SOL». Counted in whole lamports, never in floats, and never flattering: a gain is rounded down, a loss up.
  */
 export function solFigure(raw: string, lang: Lang): string {
   const value = BigInt(raw);
@@ -129,7 +128,7 @@ export function usdFigure(usd: number, lang: Lang): string {
 }
 
 /**
- * What the span did for her, lamports: after every fee when the book counted them (CITY-197), else what the trades did
+ * What the span did for her, lamports: after every fee when the book counted them, else what the trades did
  * at the price now; null — not read. A span without its fees counted is never shown as after them.
  */
 export const resultRaw = (day: Pick<AgentDay, 'earnedRaw' | 'netRaw'>): string | null => (day.netRaw !== undefined ? day.netRaw : day.earnedRaw);
@@ -165,7 +164,7 @@ export function daySummary(day: AgentDay, lang: Lang, solUsd: number | null = nu
 
 /**
  * «Spent 0.3 SOL · bought BONK · after all fees · holding: +0.004 SOL · since start −0.001 SOL» — the quiet line under
- * it. CITY-197: once the fees are counted, the line says so and puts plain holding beside the result, and the whole
+ * it. Once the fees are counted, the line says so and puts plain holding beside the result, and the whole
  * mandate's result after them when given; before, the worth now. A figure not read is left out.
  */
 export function dayDetail(day: AgentDay, lang: Lang, symbol: string | null, total: Readonly<{ netRaw: string | null }> | null = null): string {

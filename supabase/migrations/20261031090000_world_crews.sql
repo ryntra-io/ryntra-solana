@@ -1,6 +1,6 @@
--- Ryntra City: crews are streets (CITY-20, decision 71), on top of `world_v1`.
+-- Ryntra City: crews are streets, on top of `world_v1`.
 --
--- PREPARED 2026-10-29 as a file only. Not applied to any Supabase project:
+-- PREPARED 2026-10-29 as a file only. Not applied to any Supabase project.
 -- Checked as text by `lib/world/crew-sql.test.mjs`; on a throwaway local
 -- PostgreSQL 16 with the Supabase roles when WORLD_TEST_DATABASE_URL is set.
 --
@@ -24,7 +24,7 @@
 --
 -- WHAT IT DOES NOT DO
 --   No money, no transaction, no points paid: a gift moves nothing but the
---   headquarters' units. The week's score (CITY-21) is counted by the server
+--   headquarters' units. The week's score is counted by the server
 --   from the members' builds, visits and gifts it returns; nothing is bought.
 --
 -- UNTIL IT IS APPLIED

@@ -11,7 +11,7 @@ export const dynamic = 'force-dynamic';
 export const maxDuration = 30;
 
 /**
- * The Review of a SOL pier's Zap from the city (CITY-198): SOL into a new position in one approval, or «Take the rest»
+ * The Review of a SOL pier's Zap from the city: SOL into a new position in one approval, or «Take the rest»
  * of a Zap that landed in part. The Harbor's own door stands in front, as for every pier add (`../review/route.ts`):
  * new money only where the Harbor admits this wallet, only on a SOL pier, only when the SOL put in is within the
  * ceiling at the venue's own price; «Take the rest» wherever the Harbor is not closed to the wallet — the stop never

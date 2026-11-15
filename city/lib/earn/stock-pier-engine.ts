@@ -5,7 +5,7 @@ import type { StockPierStates } from './stock-pier-gate.ts';
 import { readStockPierList, type StockBuildBody, type StockPierList } from './stock-pier.ts';
 
 /**
- * The Stock Pier's line to the server (CITY-98): the verified pairs (`/api/city/earn/stock-piers`), what one wallet may
+ * The Stock Pier's line to the server: the verified pairs (`/api/city/earn/stock-piers`), what one wallet may
  * do (`/admit`), the city's door in front of the engine's Review (`/review`), and the Harbor's own line for the engine's
  * relay and the chain's word on a signature. The window only asks and shows; the engine builds and decides.
  */

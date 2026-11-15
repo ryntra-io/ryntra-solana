@@ -11,7 +11,7 @@ import s from './loading.module.css';
 const LEAVE_MS = 1_100;
 
 /**
- * The dusk and the mark painted on the page itself, from the very first frame (CITY-243): the page streams, and in 4 of
+ * The dusk and the mark painted on the page itself, from the very first frame: the page streams, and in 4 of
  * 9 loads on ryntra.io the browser painted the body's flat blue for 0.2–0.8 s before this component's markup arrived.
  * React hoists this sheet into the page's head, so it applies before any of the body is drawn: the body wears the same
  * dusk, horizon, ring and mark at the same place, and the component's own layer lands on it without a seam. The
@@ -42,8 +42,8 @@ const DUSK = [
 export const DUSK_SHEET = `html:root > body { background: ${DUSK}; background-attachment: fixed; }`;
 
 /**
- * While the scene builds (CITY-241): the city's dusk and its mark with a turning ring of light, never a black screen.
- * Drawn on the server's page, so it is there from the first paint, before the canvas's code arrives — and since CITY-243
+ * While the scene builds: the city's dusk and its mark with a turning ring of light, never a black screen.
+ * Drawn on the server's page, so it is there from the first paint, before the canvas's code arrives — and
  * the page's body wears the same dusk from its head, before this markup has arrived at all. It stands under the canvas,
  * which fades in over it once the city stands in its final form (or the procedural one does), and under the HUD. No
  * words on the screen; a screen reader hears that the city is loading.

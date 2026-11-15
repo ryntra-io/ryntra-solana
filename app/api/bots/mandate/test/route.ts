@@ -8,7 +8,7 @@ export const dynamic = "force-dynamic";
 export const maxDuration = 20;
 
 /**
- * CITY-193 — the agent's strategy tested before money moves.
+ * The agent's strategy tested before money moves.
  *
  * `GET ?coin=<mint>&plan=<plan>&preset=small|medium|large` — the strategy run on the coin's history (about twelve days
  * of hours) against plain holding. `&since=<ms>` — the practice without money: the same rules on the candles since that

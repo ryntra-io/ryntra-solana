@@ -64,8 +64,7 @@ export function figuresOf(priced: Priced, outputDecimals: number, kind: 'quote' 
 
 /**
  * The friend's discount on this order, as the card prints it beside the fee — «−10%» — or null. Read, not computed:
- * the order the wallet will sign states the discounted rate of exactly the fee the card quoted for the same swap
- * (CITY-182). Any other difference between the two, or the switch off, prints nothing.
+ * the order the wallet will sign states the discounted rate of exactly the fee the card quoted for the same swap. Any other difference between the two, or the switch off, prints nothing.
  */
 export function friendDiscountOf(
   quote: Pick<QuoteBody['order'], 'ryntraFee'> | null,

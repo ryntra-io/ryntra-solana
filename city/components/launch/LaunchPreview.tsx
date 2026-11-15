@@ -6,13 +6,13 @@ import { useLang } from '@/city/lib/i18n/lang';
 import { launchWindowNow, windowAnyTime, windowLine } from '@/city/lib/launch/launch-window';
 import s from './launch.module.css';
 
-/** Our own docks, filmed from the live city (CITY-64): where the tower will rise. */
+/** Our own docks, filmed from the live city: where the tower will rise. */
 const DOCKS = districtFrame('launch');
 
 /**
- * The live preview of the tower (CITY-143): the docks of our own city and the coin's face rising over them as the sheet
+ * The live preview of the tower: the docks of our own city and the coin's face rising over them as the sheet
  * fills — the picture in its ring, the ticker and the name as they are typed, one step higher for each. With a mouse the
- * whole preview is the picture's button (`children` — the file input); with a finger (`doors`, CITY-168) it holds two
+ * whole preview is the picture's button (`children` — the file input); with a finger (`doors`) it holds two
  * big doors to the picture, the camera and the gallery, which fold to two small ones once there is a picture. It is a
  * preview only: the tower itself rises in the docks once the launch lands.
  */
@@ -107,7 +107,7 @@ const GalleryGlyph = () => (
 );
 
 /**
- * The launch windows' clock (CITY-143): the published schedule, ticking on this device. A show only — a launch goes out
+ * The launch windows' clock: the published schedule, ticking on this device. A show only — a launch goes out
  * whenever its creator signs; nothing waits for a window and no window promises a fairer start.
  */
 function WindowClock() {
@@ -126,7 +126,7 @@ function WindowClock() {
         <i aria-hidden="true" />
         {windowLine(now)}
       </span>
-      {/* The clock is a show, never a gate (CITY-243): said under it, so «in 15:14» is not read as «wait 15:14». */}
+      {/* The clock is a show, never a gate: said under it, so «in 15:14» is not read as «wait 15:14». */}
       <span className={s.clockAny}>{windowAnyTime()}</span>
     </span>
   );

@@ -1,5 +1,5 @@
 /**
- * The hidden stretch of a Market Replay (CITY-51): a window of real candles from Ryntra's market-data gateway (the same
+ * The hidden stretch of a Market Replay: a window of real candles from Ryntra's market-data gateway (the same
  * read the bots' backtests use, `lib/bots/backtest/candles.server.ts`), picked at random, rebased so it opens at 100
  * and without its times. The agents get only the bars; where and when the stretch was stays with the match and is shown
  * after it — never before, so no model looks it up in what it remembers.

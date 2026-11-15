@@ -7,7 +7,7 @@ import { LOST } from "@/city/components/open/words";
 import { LANG_BOOT_SCRIPT } from "@/city/lib/i18n/langs";
 import { PALETTE } from "@/city/lib/palette";
 
-/* The root layout itself broke: this page stands in for the whole document (CITY-159), so it brings its own <html>
+/* The root layout itself broke: this page stands in for the whole document, so it brings its own <html>
    and <body> — the city's 500 alone, its language picked before the first paint as in the city. */
 
 export default function GlobalError({ error }: { error: Error & { digest?: string } }) {

@@ -22,7 +22,7 @@ import {
   writeOutMemory,
 } from "./detach.ts";
 
-// The rules of a window going out onto another screen (CITY-75), with no browser in them.
+// The rules of a window going out onto another screen, with no browser in them.
 
 const MINT = "DezXAZ8z7PnrnRJjz3wXBoRgixCa6xjnB7YaB1pPB263";
 const DESK = { desk: true, app: false, pip: true, pipBusy: false, popup: true };

@@ -1,4 +1,4 @@
-// Ryntra City, the Vault without money (CITY-47, opened to people by CITY-218): the way in from the Deck's Arena, the
+// Ryntra City, the Vault without money (opened to people): the way in from the Deck's Arena, the
 // room before a word, a guard's slip, a screened cipher, a crack and the next level; with REST=1 the guards resting for
 // guests and the way on through a wallet. Desk 1440×900 and phone 390×844, English and Ukrainian, at twice the pixels
 // → <out>/<state>-<desk|phone>-<en|uk>.jpg

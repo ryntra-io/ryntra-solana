@@ -163,14 +163,14 @@ test("a range keeps the places that tell its two prices apart", () => {
   assert.equal(unitsShort(1_586_923_748n, 9), "1.587");
 });
 
-test("a range is one mark, written out, for two positions of one pair (CITY-243)", () => {
+test("a range is one mark, written out, for two positions of one pair", () => {
   assert.equal(rangeMark(1.25829, 1.26232), "1.2583 – 1.2623");
   assert.equal(rangeMark(3.7e-7, 4.1e-7), "0.00000037 – 0.00000041");
   assert.equal(rangeMark(null, 2), null);
   assert.equal(rangeMark(2, 2), null);
 });
 
-test("a goal is a shape the engine builds, and even stays the body it always was (CITY-210)", async () => {
+test("a goal is a shape the engine builds, and even stays the body it always was", async () => {
   const { GOAL_SHAPE, PIER_GOALS, defaultGoal, pierZapBody } = await import("./pier.ts");
   const { LIQUIDITY_SHAPES } = await import("../../../lib/liquidity/studio/contract.ts");
   for (const goal of PIER_GOALS) assert.ok(LIQUIDITY_SHAPES.includes(GOAL_SHAPE[goal]));

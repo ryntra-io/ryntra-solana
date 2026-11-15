@@ -1,4 +1,4 @@
-/* The agent's card and «My instructions» (CITY-176), in the city's own words: dark glass, thin edges, warm figures,
+/* The agent's card and «My instructions», in the city's own words: dark glass, thin edges, warm figures,
    chamfered corners, one action. The window frame brings the head; the body fills it and scrolls. */
 
 .pending {
@@ -24,7 +24,7 @@
   --edge: rgba(255, 178, 63, 0.26);
   --chamfer: linear-gradient(135deg, transparent calc(50% - 0.75px), var(--edge) calc(50% - 0.75px), var(--edge) calc(50% + 0.75px), transparent calc(50% + 0.75px));
   padding: 16px;
-  /* The thin edge goes round the cut corners too (CITY-201): the clip alone left the frame open at both of them. */
+  /* The thin edge goes round the cut corners too: the clip alone left the frame open at both of them. */
   background:
     var(--chamfer) 0 0 / var(--cut) var(--cut) no-repeat,
     var(--chamfer) 100% 100% / var(--cut) var(--cut) no-repeat,
@@ -167,7 +167,7 @@
   color: var(--warm);
 }
 
-/* The limits, the fee and the one action follow the card straight on (CITY-201): the window stands taller than the card
+/* The limits, the fee and the one action follow the card straight on: the window stands taller than the card
    in a bay and on a phone, and a dock pushed to its foot left a dark hole under the plan. */
 .dock {
   display: grid;

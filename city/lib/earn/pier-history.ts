@@ -4,7 +4,7 @@ import type { Pier, PierStyle } from './pier.ts';
 import { STYLE_HALF } from './pier.ts';
 
 /**
- * «Past 30 days» (CITY-93): what a style would have done had the position opened thirty days ago — a picture from the
+ * «Past 30 days»: what a style would have done had the position opened thirty days ago — a picture from the
  * past, never a forecast. The price path is the engine's own candle read (`/api/spot/candles`, four-hour bars) of the
  * pier's coins in dollars, turned into the pool's price (Y per X): SOL–USDC is SOL's own line; LST–SOL is the LST's
  * line over SOL's, bar by bar at the same hour. From it: the band the style takes around the price on day one, the

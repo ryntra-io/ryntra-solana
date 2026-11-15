@@ -135,7 +135,7 @@
   cursor: default;
 }
 
-/* ---------- The coin: price, key figures, tags (CITY-78) ---------- */
+/* ---------- The coin: price, key figures, tags ---------- */
 
 /* The price, the day's move and the chart, on one line under the head. */
 .coinPrice {
@@ -206,7 +206,7 @@
   font-variant-numeric: tabular-nums;
 }
 
-/* Ukrainian names the four figures in longer words (CITY-79: «Капіталізація», «Трейдери за 1 год»): a label takes a
+/* Ukrainian names the four figures in longer words: a label takes a
    second line rather than an ellipsis, the figures stand level at the cells' foot, and a phone sets the cells two by
    two, so no word is cut. */
 :global(html:lang(uk)) .fact {
@@ -228,7 +228,7 @@
   }
 }
 
-/* The ticket beside the chart is at most 380 px wide on every desk (CITY-242): a quarter of it holds 70 px of a label,
+/* The ticket beside the chart is at most 380 px wide on every desk: a quarter of it holds 70 px of a label,
    and «Капіталізація», «Ліквідність» are single words of 75–90 px — no line to break them on, so they were cut. The
    cells stand two by two there too, as on a phone. */
 @container window (min-width: 760px) {
@@ -504,7 +504,7 @@
 /* ---------- How much: the field, the four shares, the slider ---------- */
 
 .size {
-  /* The brand's orange (CITY-11): the slider's fill, its thumb and a lit share. */
+  /* The brand's orange: the slider's fill, its thumb and a lit share. */
   --accent: #ff681c;
   display: grid;
   /* Never wider than the card: a long coin name shortens, the field never pushes the card sideways. */
@@ -852,7 +852,7 @@
   bottom: 0;
   z-index: 1;
   padding-top: 14px;
-  /* Solid from its fourth pixel: a figure scrolled under the pinned lines never reads through them (CITY-150). */
+  /* Solid from its fourth pixel: a figure scrolled under the pinned lines never reads through them. */
   background: linear-gradient(to bottom, rgba(10, 8, 19, 0), #0a0813 4px);
   /* The same ground over the card's bottom padding (short of its 2 px rim), so nothing shows under the pinned action. A shadow takes no
      room: a card that fits keeps its layout and never scrolls for it. */
@@ -863,7 +863,7 @@
   margin-top: 0;
 }
 
-/* What you get, in the dock while the ticket's own figure is out of sight (CITY-189): folded to nothing otherwise, so
+/* What you get, in the dock while the ticket's own figure is out of sight: folded to nothing otherwise, so
    the dock that shows it not is the dock as it was — the next line keeps no margin of its own after it. */
 .dockGet {
   display: grid;
@@ -893,7 +893,7 @@
   padding-bottom: 6px;
 }
 
-/* Its row's label still in sight above the dock (CITY-221): the figure alone, under that row's own chips, right. */
+/* Its row's label still in sight above the dock: the figure alone, under that row's own chips, right. */
 .dockGetBare {
   justify-content: flex-end;
 }
@@ -1046,7 +1046,7 @@
   color: var(--ice);
 }
 
-/* The quiet line under «Open in Phantom» (CITY-237): the other wallets on the left, «Back» on the right — both inside
+/* The quiet line under «Open in Phantom»: the other wallets on the left, «Back» on the right — both inside
    the card on a 390 px phone, where the old row beside the action pushed «Back» over the card's edge. */
 .walletWays {
   display: flex;
@@ -1198,7 +1198,7 @@
   }
 }
 
-/* A window in its bay is as narrow as a phone (CITY-200: «$SOL» read «$S…» beside two worded buttons at 1440 px): the
+/* A window in its bay is as narrow as a phone («$SOL» read «$S…» beside two worded buttons at 1440 px): the
    head's buttons keep only their glyphs while the window, not the screen, is narrow, so the coin's name stays whole. */
 @container window (max-width: 520px) {
   .shareTower {
@@ -1644,7 +1644,7 @@
     padding-right: 2px;
   }
 
-  /* The ticket's foot while more of it waits under the window's edge (CITY-243, a MINOR of CITY-242): on a desk 900 px
+  /* The ticket's foot while more of it waits under the window's edge: on a desk 900 px
      tall the tops of the next row of facts stood cut by the edge. A short fade of the card's own ground stands there
      instead, while the column can still scroll down; at its end, or in a column that fits, it is not there. Under the
      pinned dock (z-index 1), never over it. Where a browser has no scroll timeline, the column ends as it did. */
@@ -1669,7 +1669,7 @@
   }
 }
 
-/* The ticket's foot fades out as the column reaches its end (CITY-243). */
+/* The ticket's foot fades out as the column reaches its end. */
 @keyframes ticketFoot {
   0%,
   94% {
@@ -1681,13 +1681,13 @@
   }
 }
 
-/* A desk 900 px tall (CITY-239): the window is 25 px shorter than the ticket was drawn for, so the «You get about»
+/* A desk 900 px tall: the window is 25 px shorter than the ticket was drawn for, so the «You get about»
    figure went under the pinned dock, the dock took it in with its label, grew by that line and covered half of the
    row that names it — the same words twice, one cut in half. The ticket's own rows stand a little closer there, and
    the figure stands whole above the dock again. Only the ticket beside the chart, only on a short screen with a
    pointer: nothing of a phone's sheet, of a taller desk or of what a finger presses on a tablet moves.
 
-   Limit and Stop (CITY-240) have a price row and its field more than Market, and Stop's dock holds two lines of terms:
+   Limit and Stop have a price row and its field more than Market, and Stop's dock holds two lines of terms:
    there the dock's edge cut the price field in half before any scroll — with a price typed, the dock took in the «you
    get» line and covered the field whole — and Limit's «You get» stood under the dock. The rows and the dock stand
    closer still, and where the ticket has a price field the fine slider gives way to the four shares above it, which

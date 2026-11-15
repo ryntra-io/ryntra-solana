@@ -9,7 +9,7 @@ export const dynamic = "force-dynamic";
 export const maxDuration = 60;
 
 /**
- * CITY-203 — the agent looks after the piers people gave it (vercel.json, every ten minutes): for each care in its
+ * The agent looks after the piers people gave it (vercel.json, every ten minutes): for each care in its
  * book, the one step its rules say — open, claim, reinvest, keep the range around the price, leave at the person's
  * stop — inside the person's two policies on chain. It runs only where `RYNTRA_AGENT_CARE` names the network and the
  * agent's key is there; anywhere else it sits still and says why. Called by Vercel's cron with `CRON_SECRET`.

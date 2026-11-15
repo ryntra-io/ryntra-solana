@@ -1,5 +1,5 @@
 /**
- * A prepared action (CITY-161, contract 1.90.0): what an agent, a chat or a partner site may ask a person to sign —
+ * A prepared action: what an agent, a chat or a partner site may ask a person to sign —
  * a swap or a transfer, with its coin, amount, side and a deadline — and what Ryntra keeps of it.
  *
  * The intent is a request, never an authority. It carries no transaction, no text for the person to read and no

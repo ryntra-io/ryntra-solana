@@ -34,7 +34,7 @@ const geist = Geist({ subsets: ["latin", "cyrillic"], display: "swap", variable:
 const geistMono = Geist_Mono({ subsets: ["latin", "cyrillic"], weight: ["400", "500", "600"], display: "swap", variable: "--font-geist-mono" });
 const sora = Unbounded({ subsets: ["latin"], weight: ["400", "600", "700"], display: "swap", variable: "--font-sora" });
 
-/* The words a page without its own say: the city's (CITY-158), as `/` says them. */
+/* The words a page without its own say: the city's, as `/` says them. */
 export const metadata: Metadata = {
   metadataBase: new URL(SITE),
   title: CITY_WORDS.title,
@@ -56,7 +56,7 @@ const jsonLd = [
     name: "Ryntra",
     url: SITE,
     /* The logo a search engine may show beside the name: the city's mark on
-       the night tile at 512 px (CITY-158) — a square raster, which is what the
+       the night tile at 512 px — a square raster, which is what the
        logo guidelines ask for; the SVG favicon is too small a promise for a
        knowledge panel. The mark with the word is the `image`. */
     logo: SITE + "/brand/city/icon-512.png",

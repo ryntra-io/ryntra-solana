@@ -1,4 +1,4 @@
-// The Dollar Saver's screens for review (CITY-192), desk 1440×900 and phone 390×844, English and Ukrainian:
+// The Dollar Saver's screens for review, desk 1440×900 and phone 390×844, English and Ukrainian:
 //   NEXT_PUBLIC_RYNTRA_CITY_EARN=open NEXT_PUBLIC_RYNTRA_CITY_EARN_DOLLAR=open npm run build && npm start, then
 //   node city/lib/earn/dollar-shots.mjs <out> [baseUrl] [before|after]
 // «before» stops at the screens a build without the Saver's switch has (the Shelf and the calm card). No wallet and no
@@ -25,7 +25,7 @@ const market = (mint, symbol, decimals, rate, price, minimumRaw) => ({
   id: mint,
   asset: { mint, symbol, decimals },
   share: { mint: mint === USDC ? "9BEcn9aPEmhSPbPQeFGjidRiEKki46fVQDyPpSQXPA2D" : "2uQsyo1fXXQkDtcpXnLofWy88PxcvnfH2L8FPSE62FVU", symbol: `jl${symbol}`, decimals },
-  // «before»: what ryntra.io serves today — Jupiter's bps read as per cent, past the ceiling, so no rate (#1483).
+  // «before»: what ryntra.io serves today — Jupiter's bps read as per cent, past the ceiling, so no rate.
   rateAnnualPercent: phase === "before" ? null : rate,
   suppliedRaw: "512000000000000",
   liquidRaw: "40000000000000",

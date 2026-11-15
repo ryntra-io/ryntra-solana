@@ -12,8 +12,7 @@ import type {
 import { engineCall, type Answer } from './engine.ts';
 
 /**
- * «Мій причал» — the creator's berth in the city (L4 · CITY-141, `docs/research/ryntra-launch-2026-10-29/SPEC.md`
- * «Кабінет творця»): what the creator's side of each launch earned by its three streams, «Забрати» through the engine's
+ * «Мій причал» — the creator's berth in the city: what the creator's side of each launch earned by its three streams, «Забрати» through the engine's
  * own claim, the days the tower has stood and its two cards. The city reads and shows; it counts no money of its own:
  * every amount is a program's counter or a claim's receipt as the engine reads them, and every rate is the preset the
  * engine serves. Pure, so the tests read it.

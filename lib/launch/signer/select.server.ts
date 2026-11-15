@@ -1,5 +1,5 @@
 /**
- * CITY-162 — which adapter holds each of Launch's keys, by one switch: `RYNTRA_LAUNCH_SIGNER`.
+ * Which adapter holds each of Launch's keys, by one switch: `RYNTRA_LAUNCH_SIGNER`.
  *
  * - unset or `env` — the key in the environment, as before (`RYNTRA_LAUNCH_POOL_PAYER_SECRET`,
  *   `RYNTRA_LAUNCH_EXECUTOR_SECRET`). Production does not change until the operator sets the switch.

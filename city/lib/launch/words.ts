@@ -2,7 +2,7 @@ import { dateText, num, pl, words } from '../i18n/dict.ts';
 
 const EN_MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 
-/** The Hall of Fame's words: its boards, the span each reaches back over, what each number is, the tally and why a board is empty (CITY-79, CITY-230). */
+/** The Hall of Fame's words: its boards, the span each reaches back over, what each number is, the tally and why a board is empty. */
 export const HALL_WORDS = words(
   {
     nameCatch: 'Biggest ×',
@@ -16,7 +16,7 @@ export const HALL_WORDS = words(
     wordMultiple: 'multiple',
     wordFee: 'fee',
     emptyShort: 'First place is open',
-    /* CITY-230: the span a board reaches back over, said on its sign; an empty board is one action. */
+    /* The span a board reaches back over, said on its sign; an empty board is one action. */
     spanWeek: 'This week',
     spanMonth: 'This month',
     spanAll: 'All time',
@@ -92,7 +92,7 @@ export const HALL_WORDS = words(
 );
 
 /**
- * What a launch signs up to (CITY-79): the lines under the fields, the review's rows, and — the launch sheet of CITY-143 —
+ * What a launch signs up to: the lines under the fields, the review's rows, and — the launch sheet —
  * the cost line, the one line before the signature, the bot shield's schedule, the two facts and the windows' clock.
  */
 export const TERMS_WORDS = words(
@@ -149,7 +149,7 @@ export const TERMS_WORDS = words(
     windowEveningNext: (clock: string) => `Evening window in ${clock}`,
     windowOpen: (clock: string) => `Launch window open · ${clock}`,
     windowEveningOpen: (clock: string) => `Evening window open · ${clock}`,
-    /* Under the clock (CITY-243): a window is a show, never a gate — a launch goes out whenever its creator signs. */
+    /* Under the clock: a window is a show, never a gate — a launch goes out whenever its creator signs. */
     windowAnyTime: 'You can launch any time',
     seconds: (n: string) => `${n} s`,
     minutes: (n: string) => `${n} min`,
@@ -218,7 +218,7 @@ export const TERMS_WORDS = words(
 );
 
 /**
- * Why a launch stopped (CITY-79, CITY-181): what happened in one sentence, whether any money moved in one more, and the
+ * Why a launch stopped: what happened in one sentence, whether any money moved in one more, and the
  * one way on. The words a person reads; the engine's own text stays behind «Details» (`refusal.ts`).
  */
 export const REFUSAL_WORDS = words(
@@ -346,7 +346,7 @@ export const REFUSAL_WORDS = words(
   },
 );
 
-/** Why a trade or the creator's claim on a launch's tower stopped, in two short sentences at most (CITY-139). */
+/** Why a trade or the creator's claim on a launch's tower stopped, in two short sentences at most. */
 export const CURVE_FAILURE_WORDS = words(
   {
     closed: 'Trading launches from the city opens soon. Nothing was sent.',
@@ -401,7 +401,7 @@ export const CURVE_FAILURE_WORDS = words(
 );
 
 /**
- * A launch's flow on its tower (L3, CITY-140): facts of the chain in a few words, never a verdict. Counts and shares come
+ * A launch's flow on its tower: facts of the chain in a few words, never a verdict. Counts and shares come
  * in already written for the language; `n` only picks the word's form.
  */
 export const TRUST_WORDS = words(
@@ -464,7 +464,7 @@ export const TRUST_WORDS = words(
 );
 
 /**
- * The silhouette and the rings on a launch's tower (CITY-144, L7): where the tower stands after its graduation, in a
+ * The silhouette and the rings on a launch's tower: where the tower stands after its graduation, in a
  * word or two, and behind its «i» the rule and that a status is not advice.
  */
 export const SILHOUETTE_WORDS = words(
@@ -490,7 +490,7 @@ export const SILHOUETTE_WORDS = words(
   },
 );
 
-/** A launch's moments, as the whole city sees them (CITY-79). */
+/** A launch's moments, as the whole city sees them. */
 export const LAUNCH_MOMENTS = words(
   {
     newTower: 'New tower',
@@ -548,7 +548,7 @@ export function retellLaunchMoment(text: string, lang: 'en' | 'uk'): string | nu
 
 
 /**
- * The words of Buy and Sell on a launch's tower (CITY-138, L1), in the city's dictionaries (CITY-79): a name, a number,
+ * The words of Buy and Sell on a launch's tower, in the city's dictionaries: a name, a number,
  * an action — everything else behind «i». The formatters that fill them are `./trade-words.ts`.
  */
 export const LAUNCH_TRADE = words(
@@ -719,7 +719,7 @@ export const LAUNCH_TRADE = words(
 );
 
 /**
- * «Мій причал» — the creator's berth (L4 · CITY-141): the three streams by $1,000, «Забрати», the days and the two
+ * «Мій причал» — the creator's berth: the three streams by $1,000, «Забрати», the days and the two
  * cards. One action, few words; how each figure is made sits behind «i».
  */
 export const BERTH = words(
@@ -745,7 +745,7 @@ export const BERTH = words(
     minutes: 'min',
     dayRing: (days: number, next: number | null) => `${days} ${days === 1 ? 'day' : 'days'}${next ? ` · next check on day ${next}` : ''}`,
     checkPassed: (day: number) => `Day ${day} check passed`,
-    /* The ring's own words beside it (CITY-243): what its days count and what the ticks are. */
+    /* The ring's own words beside it: what its days count and what the ticks are. */
     ringSince: 'Since launch',
     ringNext: (day: number) => `Check on day ${day}`,
     ringPassed: (passed: number) => `${passed} of 3 checks passed`,
@@ -766,7 +766,7 @@ export const BERTH = words(
     honest: (amount: string) => `≈ ${amount} to you`,
     oneSignature: 'one signature',
     networkCost: (sol: string) => `network ≈ ${sol} SOL`,
-    /* One line before the signature when the network's fee comes close to the sum (CITY-243). */
+    /* One line before the signature when the network's fee comes close to the sum. */
     feeNear: 'The network fee is close to the sum',
     feeOver: 'The network fee is more than the sum',
     moved: 'The pool position is in another wallet now: its fees go there.',
@@ -912,7 +912,7 @@ export const BERTH = words(
 );
 
 /**
- * The launch's share cards (L8 · CITY-145): the words on the card — a kicker, the figure, one line — and the words the
+ * The launch's share cards: the words on the card — a kicker, the figure, one line — and the words the
  * post carries beside it. The figures are the engine's (`cards.ts`); these only say them.
  */
 export const SHARE_CARD = words(
@@ -940,12 +940,12 @@ export const SHARE_CARD = words(
     postBorn: (coin: string) => `$${coin} is born on Ryntra.`,
     postGraduated: (coin: string, flew: string) => `$${coin} graduated on Ryntra${flew ? ` ${flew}` : ''}.`,
     postRound: (multiple: string, coin: string, how: string) => `${multiple} on $${coin}. ${how} On Ryntra.`,
-    // The agent's card (CITY-175): what the person's agent did, from its own trades.
+    // The agent's card: what the person's agent did, from its own trades.
     agentKicker: 'My agent trades for me.',
     agentLine: (coin: string, trades: string, paid: string, worth: string) => `$${coin} · ${trades} · ${paid} → ${worth}`,
     agentTrades: (n: number) => `${n} ${n === 1 ? 'trade' : 'trades'}`,
     postAgent: (multiple: string, coin: string) => `My agent on Ryntra: ${multiple} on $${coin}. I said it once — it does the rest.`,
-    // The agent's day (CITY-194): the same card over today, or over the time the person was away.
+    // The agent's day: the same card over today, or over the time the person was away.
     agentToday: 'My agent today.',
     agentAway: 'While I was away, my agent traded.',
     postAgentToday: (summary: string, coin: string) => `My agent on Ryntra today: ${summary} on $${coin}. I said it once — it does the rest.`,
@@ -986,7 +986,7 @@ export const SHARE_CARD = words(
   },
 );
 
-/** «Launched on Ryntra» (CITY-185): the list of every coin launched on the launchpad, and its empty state. */
+/** «Launched on Ryntra»: the list of every coin launched on the launchpad, and its empty state. */
 export const LAUNCHED = words(
   {
     title: 'Ryntra launches',
@@ -1020,7 +1020,7 @@ export const LAUNCHED = words(
   },
 );
 
-/** Launch Night's words (CITY-146, L9): the card that opens the show, the acts, the stage and what sits behind «i». */
+/** Launch Night's words: the card that opens the show, the acts, the stage and what sits behind «i». */
 export const LAUNCH_NIGHT = words(
   {
     title: 'Launch Night',

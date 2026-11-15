@@ -1,8 +1,8 @@
 import { pl, words } from '../../i18n/dict.ts';
 
 /**
- * The words of Hack as the city will write them (CITY-223, spec `docs/research/city-hack-2026-11-08/SPEC.md`). Only
- * words here — the windows that use them are CITY-227. Both halves (English and Ukrainian) carry the same keys; the
+ * The words of Hack as the city will write them (spec `docs/research/city-hack-2026-11-08/SPEC.md`).
+ * Both halves (English and Ukrainian) carry the same keys; the
  * i18n test (`city/lib/i18n/i18n.test.mjs`) checks every dictionary again.
  *
  * Technical words never reach a person: «fork», «LiteSVM», program ids, RPC — those live behind «Details», not in this

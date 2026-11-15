@@ -1,4 +1,4 @@
-// Ryntra City, «While you were away» (CITY-18): the reel over the city when a signed-in wallet comes back — each line
+// Ryntra City, «While you were away»: the reel over the city when a signed-in wallet comes back — each line
 // with the camera over its change (the quarter, the coin its tower shows, the newcomers' street, the risers), and the
 // consent switches turned on, at 1440×860, 390×844 and 360×740 → <out>/away-<line>-<size>.png
 //   node city/components/quarter/away-shots.mjs [out] [baseUrl]      (npm run dev running; PRESS_CHROME may point at a Chromium)

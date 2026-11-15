@@ -1,7 +1,7 @@
-/* `/partners` (CITY-177): the partner page of the site — a still of our own city at the head with the one sentence, the
+/* `/partners`: the partner page of the site — a still of our own city at the head with the one sentence, the
    offer and «Copy my link» right under it, three steps, the calculator, the rules behind «Details». No block is taller
    than what it holds: every row is its own height, and the page ends where its words end. Tokens from
-   city/styles/city.module.css (CITY-11); the pieces are the partner window's (partners.module.css). */
+   city/styles/city.module.css; the pieces are the partner window's (partners.module.css). */
 
 .page {
   position: relative;
@@ -13,7 +13,7 @@
   color: var(--ice);
 }
 
-/* A language other than English: the words wait for the frame the boot script hides them in (CITY-79). */
+/* A language other than English: the words wait for the frame the boot script hides them in. */
 :global(html.city-lang-wait) .page [data-words] {
   visibility: hidden;
 }

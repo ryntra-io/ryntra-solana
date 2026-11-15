@@ -210,7 +210,7 @@ export async function buildDlmmPlace(
 
 /**
  * Cancel every open bin and close the account: the deposit, what converted and the rent come back in one signature.
- * One close, never two (CITY-231): the SDK's `cancelLimitOrder` (1.9.14) already ends with `close_limit_order_if_empty`,
+ * One close, never two: the SDK's `cancelLimitOrder` (1.9.14) already ends with `close_limit_order_if_empty`,
  * and a second close after it finds the account gone and fails the whole transaction. An order with no open bin left
  * is only closed.
  */
@@ -280,10 +280,10 @@ export type DlmmOrderRow = Readonly<{
 /**
  * A token amount in base units from the SDK's reading of an order. The SDK (1.9.14, `parseInfo`) answers every amount
  * of a limit order in whole tokens — «0.288514314» SOL, «29.7» USDC, «1e-9» for one lamport (Decimal's own notation) —
- * while the rows here, the Hangar and the reconciler count base units (CITY-231: a part-filled order made `BigInt`
+ * while the rows here, the Hangar and the reconciler count base units (a part-filled order made `BigInt`
  * throw and «My bots» / «My orders» lose the order). Exact: decimal digits shifted, never a float.
  *
- * A form it does not recognise is null, never «0» (CITY-233): a zero would show an order holding money as empty.
+ * A form it does not recognise is null, never «0»: a zero would show an order holding money as empty.
  */
 export function rawOfUi(ui: string, decimals: number): string | null {
   const match = /^(\d*)(?:\.(\d*))?(?:e([+-]?\d+))?$/i.exec(ui.trim());
@@ -359,7 +359,7 @@ export async function listDlmmOrders(
             feeX: x(data.totalFeeAmountX),
             feeY: y(data.totalFeeAmountY),
           };
-          /* An amount in a form not recognised: the wallet's orders are not read this time — never shown as empty (CITY-233). */
+          /* An amount in a form not recognised: the wallet's orders are not read this time — never shown as empty. */
           const unread = Object.entries(amounts).find(([, raw]) => raw === null);
           if (unread) return { ok: false, code: "UNREADABLE_AMOUNT", reason: `An amount of order ${key} is not readable (${unread[0]}).` };
           const raw = amounts as Readonly<Record<keyof typeof amounts, string>>;

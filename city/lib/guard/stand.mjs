@@ -1,5 +1,5 @@
 /**
- * The Guard window's stand (CITY-152): four transactions — real wire bytes compiled by `@solana/kit` — and the chain
+ * The Guard window's stand: four transactions — real wire bytes compiled by `@solana/kit` — and the chain
  * they meet: the accounts before, and what the simulation of each exact transaction reports after. `stand-rpc.mjs`
  * serves this chain as JSON-RPC so the engine's own route (`POST /api/v1/ward/check`) runs end to end on the stand;
  * `shots.mjs` pastes the transactions into the window.

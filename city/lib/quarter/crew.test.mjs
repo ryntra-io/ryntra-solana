@@ -10,7 +10,7 @@ const { WorldError } = await import("./types.ts");
 const { useLangStore } = await import("../i18n/lang.ts");
 
 /**
- * Crews in the city (CITY-20): the device's crews answer by the server's rules and move the device's own quarter onto
+ * Crews in the city: the device's crews answer by the server's rules and move the device's own quarter onto
  * the crew's street; the server's client sends keyed writes and reads refusals; the store keeps one sheet, one line
  * for a refusal and one retry with the same key; an invite travels as a link with a code and nothing else.
  */
@@ -181,7 +181,7 @@ test("a write that met no answer is tried once more with the same key; a refusal
   assert.equal(crewLine(new Error("x")), "The city could not be reached. Try again.");
 });
 
-test("a refusal is said in the language on screen (CITY-79)", () => {
+test("a refusal is said in the language on screen", () => {
   useLangStore.setState({ lang: "uk" });
   try {
     assert.equal(crewLine(new WorldError(409, "CREW_REFUSED", { reason: "full" })), "Цей екіпаж повний.");

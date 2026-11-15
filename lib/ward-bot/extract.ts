@@ -1,5 +1,5 @@
 /**
- * What in a chat message the pre-sign check can read (CITY-166): a transaction, a link, an address (a wallet or a
+ * What in a chat message the pre-sign check can read: a transaction, a link, an address (a wallet or a
  * token's mint — a «CA»; the engine tells which), or a sent transaction's signature (which it cannot check).
  *
  * Only the first such thing in a message is taken: one message, at most one check, at most one reply. A web address is

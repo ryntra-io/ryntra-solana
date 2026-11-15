@@ -50,7 +50,7 @@ import { LIMITS, STOPS } from './words.ts';
  * sign. All of it stands behind `NEXT_PUBLIC_RYNTRA_CITY_SPOT` (`gates.ts`): shut, nothing here asks the engine for
  * an order, places one, or watches a stop.
  *
- * Since CITY-149, behind `NEXT_PUBLIC_RYNTRA_CITY_STOPS`, a new stop is the engine's: the wallet proves itself with one
+ * Behind `NEXT_PUBLIC_RYNTRA_CITY_STOPS`, a new stop is the engine's: the wallet proves itself with one
  * signed message (no transaction), the engine keeps the stop under the wallet, watches it around the clock and tells
  * the person when it is reached — Telegram, the browser's push. The device keeps a copy for «My orders», and the city
  * still asks the quote while it is open. A reached stop is offered once on this device: the one a note's link names
@@ -106,7 +106,7 @@ export type SpotEnv = Readonly<{
   refreshHoldings: (delaysMs?: readonly number[]) => void;
   later: (run: () => void, ms: number) => void;
   id: () => string;
-  /** CITY-149: the engine's stops, the wallet's proof for a change, and the switch that puts stops in the engine. */
+  /** The engine's stops, the wallet's proof for a change, and the switch that puts stops in the engine. */
   stops: StopsApi;
   prove: (connection: Connection) => Promise<ProofOutcome>;
   engineStops: boolean;
@@ -251,7 +251,7 @@ type SpotStore = {
   reviewOrder: (intent: LimitIntent) => Promise<void>;
   /** The wallet signs the Review on screen; the engine relays it once. `words` name the coin and its price's unit. */
   placeOrder: (intent: LimitIntent, words?: Readonly<{ coin: string; unit: string }>) => Promise<void>;
-  /** Set a stop: the engine's under the wallet (CITY-149), or this device's while that switch is shut. `nowOutRaw` is the engine's quote for its amount now. */
+  /** Set a stop: the engine's under the wallet, or this device's while that switch is shut. `nowOutRaw` is the engine's quote for its amount now. */
   setStop: (input: Omit<StopInput, 'owner'>, nowOutRaw: string | null) => Promise<void>;
   /** The ticket back to its fields, for another order. */
   again: () => void;

@@ -1,4 +1,4 @@
-// The launch sheet (L6 · CITY-143) for review: the Deck's «Launch» → the sheet with the cost line first and the live
+// The launch sheet for review: the Deck's «Launch» → the sheet with the cost line first and the live
 // preview of the tower; the fields filled, the face risen; the engine's refusal of a picture said on the form at once;
 // the rules (bot shield, two facts, the one line) before and after the wallet — the cost simulated; «i»; the wallet's
 // prompt; the liftoff — at 1440×860 and 375×812 → <out>/sheet-<state>-<size>-<locale>.jpg

@@ -22,9 +22,9 @@ export interface RingClient {
   models(): Promise<ModelsResponse>;
   quote(id: string): Promise<QuoteResponse>;
   garage(quarterId: string, slot: number): Promise<GarageResponse>;
-  /** The asker's agents and their garage in the Arena (CITY-217). */
+  /** The asker's agents and their garage in the Arena. */
   mine(): Promise<MineResponse>;
-  /** A format's board, best first (CITY-217). */
+  /** A format's board, best first. */
   board(format: RingFormat): Promise<BoardResponse>;
   create(quarterId: string, slot: number, draft: Draft, key?: string): Promise<AgentResponse>;
   change(agent: string, version: number, draft: Draft, key?: string): Promise<AgentResponse>;

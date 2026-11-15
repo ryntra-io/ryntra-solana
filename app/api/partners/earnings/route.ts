@@ -10,7 +10,7 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 /**
- * `/api/partners/earnings?address=` (CITY-128) — a partner's own figures under decision 93: counted, paid, owed. Behind
+ * `/api/partners/earnings?address=` — a partner's own figures under decision 93: counted, paid, owed. Behind
  * the same proof `/api/rewards` asks: how much somebody earned is not public. Read from the weekly statements and the
  * running week's snapshot; nothing here counts or pays.
  */

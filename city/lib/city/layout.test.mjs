@@ -1,6 +1,5 @@
-// The island plan stands every tower it is given (CITY-86): a full district grows a second ring, no tower is dropped in
-// silence. A tower's plot comes from its mint, and a plan grown from the one on screen moves no tower that stands in both
-// (CITY-148).
+// The island plan stands every tower it is given: a full district grows a second ring, no tower is dropped in
+// silence. A tower's plot comes from its mint, and a plan grown from the one on screen moves no tower that stands in both.
 //   node --test city/lib/city/layout.test.mjs
 import { test } from "node:test";
 import assert from "node:assert/strict";
@@ -105,7 +104,7 @@ const stands = (layout, towers) => {
   assert.deepEqual(ids(layout), new Set(towers.map((t) => t.id)));
 };
 
-test("the bundled city replaced by the live read: no tower that stands in both moves (CITY-148)", () => {
+test("the bundled city replaced by the live read: no tower that stands in both moves", () => {
   const bundled = layoutCity(snapshot.towers);
   const next = nextRead(snapshot.towers);
   const live = layoutCity(next, bundled);

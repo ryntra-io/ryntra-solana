@@ -14,7 +14,7 @@ import { logWorldSink } from "./world";
 /**
  * The vault as the deployed server runs it: the account session the rest of Ryntra uses (read, never changed), the
  * server's signing secret, the database through the secret-gated `public.vault_*` functions (`ready.ts` says when),
- * the model gateway of CITY-45 with the vault's key (`guard-model.ts`) and the day's dollar ceiling on it. A
+ * the model gateway with the vault's key (`guard-model.ts`) and the day's dollar ceiling on it. A
  * developer's machine and a stand play the scripted guards (`stub.ts`) unless they have a key.
  *
  * Production opens to people only when everything is there — the switch, the database, the key and the ceiling — and

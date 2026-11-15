@@ -1,5 +1,5 @@
 /**
- * CITY-70 — «Freeze»: the person's own switch that stops the agent's new actions at once, with no transaction. The agent
+ * «Freeze»: the person's own switch that stops the agent's new actions at once, with no transaction. The agent
  * still reads back what is already on its way (a trade being confirmed is settled by its signature), it only starts
  * nothing new; «Resume» takes the switch off. Her money and her policy stay where they are: to take the budget back is
  * «Withdraw», one signature of hers.

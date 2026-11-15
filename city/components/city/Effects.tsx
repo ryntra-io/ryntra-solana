@@ -17,7 +17,7 @@ import { onRunEvent, runLive } from '@/city/lib/run/bus';
  * night to grey; ACES keeps the windows gold and the haze violet. The bloom threshold stays at 0.62: lower, the bloom
  * picks up the facades' window grid and it shimmers in motion (skyline-flicker.mjs, orbit 0.7 % → 8 %).
  * The cheapest tier keeps bloom, tone mapping and vignette, and drops the grain, the fringe and the shockwave.
- * High and Balanced start with SMAA on the scene, so the skyline's thin fins, masts and rails keep clean edges (CITY-56);
+ * High and Balanced start with SMAA on the scene, so the skyline's thin fins, masts and rails keep clean edges;
  * the grain stays faint, so it never sits on the lights as sand.
  */
 export function Effects({ quality }: { quality: Quality }) {
@@ -28,7 +28,7 @@ export function Effects({ quality }: { quality: Quality }) {
   const layout = useCity((s) => s.layout);
 
   useCityEvents((event) => {
-    // «Flashing effects» off (CITY-66): no shockwave and no colour kick for the city's moments.
+    // «Flashing effects» off: no shockwave and no colour kick for the city's moments.
     if (!flashingOn()) return;
     if (event.kind === 'pump') {
       kick.current = Math.max(kick.current, 0.35);

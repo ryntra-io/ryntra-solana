@@ -1,6 +1,6 @@
 import { pl, words } from '../../lib/i18n/dict.ts';
 
-/** The words of the Money window: its head, Portfolio, Activity, Top up, Send and Bridge (CITY-79). */
+/** The words of the Money window: its head, Portfolio, Activity, Top up, Send and Bridge. */
 export const MONEY = words(
   {
     money: 'Money',
@@ -296,7 +296,7 @@ export const MONEY = words(
   },
 );
 
-/** The words of the whole portfolio (CITY-206): where the money is, and the one action that takes it out. */
+/** The words of the whole portfolio: where the money is, and the one action that takes it out. */
 export const PORTFOLIO = words(
   {
     total: 'Total',

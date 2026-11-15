@@ -61,7 +61,7 @@ const CLOSE: Readonly<Record<WindowName, () => void>> = {
   how: () => howStore.getState().hide(),
   guides: () => useGuides.getState().hide(),
   moments: () => useMoments.setState({ sheet: null }),
-  // The sheet, unless a launch is under way; or an early launch's window for its people (CITY-236), unless a step of
+  // The sheet, unless a launch is under way; or an early launch's window for its people, unless a step of
   // its own is in the wallet or on its way.
   launch: () => {
     const sheet = useLaunch.getState();
@@ -83,7 +83,7 @@ type Layer = Readonly<{ id: string; open: () => boolean; close: () => void }>;
 
 /**
  * The layers «Back» closes, besides the windows: the Play layer under everything (Back returns from it to City once
- * nothing over it is open — CITY-150), the tower's card, your quarter, the run, the «While you were away» reel. Bottom
+ * nothing over it is open), the tower's card, your quarter, the run, the «While you were away» reel. Bottom
  * first: opened together (a coin's link opens its tower and its trade card), the one listed later stands on top.
  */
 const EXTRA_BELOW: readonly Layer[] = [
@@ -95,8 +95,8 @@ const EXTRA_BELOW: readonly Layer[] = [
 ];
 /**
  * Over the windows: a page inside one (a market of Predict: Back returns to the list, not out of Predict; the launch's
- * review: Back returns to its fields, as its own arrow does — CITY-236), a window on the whole screen, the Map of Play
- * and the events under the bell (CITY-150). The steps of the windows that load later — a bot's page, the Ring's new
+ * review: Back returns to its fields, as its own arrow does), a window on the whole screen, the Map of Play
+ * and the events under the bell. The steps of the windows that load later — a bot's page, the Ring's new
  * agent — stand as panels of their own (`useBackPanel`, `city/lib/back/panels.ts`).
  */
 const EXTRA_ABOVE: readonly Layer[] = [
@@ -118,7 +118,7 @@ function read(): string[] {
   return [
     ...EXTRA_BELOW.filter((l) => l.open()).map((l) => l.id),
     ...openWindows(windowSources()),
-    // The windows of the frame no name above speaks for (CITY-213): Earn, Bots, the agent's card, Guard, Learn and whatever comes next.
+    // The windows of the frame no name above speaks for: Earn, Bots, the agent's card, Guard, Learn and whatever comes next.
     ...frameLayers(useWindows.getState().layout.windows.map((w) => w.id)),
     ...EXTRA_ABOVE.filter((l) => l.open()).map((l) => l.id),
     ...useBackPanels.getState().open.map((id) => PANEL + id),
@@ -144,7 +144,7 @@ const STORES: readonly { subscribe: (listener: () => void) => () => void }[] = [
 ];
 
 /**
- * «Back» closes the city's top layer (CITY-6e): the system «Back» of the Ryntra app on Android and a browser's «Back»
+ * «Back» closes the city's top layer: the system «Back» of the Ryntra app on Android and a browser's «Back»
  * alike. On the city's own view «Back» leaves, as before (`city/lib/back/stack.ts`).
  */
 export function useBackLayers(): void {

@@ -31,7 +31,7 @@ export async function GET(request: Request) {
           id: newest.id,
           title: (newest.text?.[newest.locale]?.title ?? newest.title).slice(0, 200),
           body: (newest.text?.[newest.locale]?.reason ?? newest.reason).slice(0, 400),
-          /* A reached stop (CITY-149) opens the city on its sale, an Earn note (CITY-100) Earn; every other note its own page. */
+          /* A reached stop opens the city on its sale, an Earn note Earn; every other note its own page. */
           href: isStopNote(newest) || isEarnNote(newest) ? newest.href : `/app/alerts/open?n=${encodeURIComponent(newest.id)}`,
         }
       : null,

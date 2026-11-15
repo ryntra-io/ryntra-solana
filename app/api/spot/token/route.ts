@@ -61,7 +61,7 @@ export async function GET(request: Request) {
   const { ok: _ok, ...body } = read;
   void _ok;
   const [maxAge, stale] = CACHE[part as Part];
-  /* A held copy (CITY-208) is kept at the edge briefly, so the fresh read reaches people as soon as there is one. */
+  /* A held copy is kept at the edge briefly, so the fresh read reaches people as soon as there is one. */
   const held = "stale" in body && body.stale === true;
   return Response.json(body, { headers: { ...(held ? publicCacheHeaders(5, 30) : publicCacheHeaders(maxAge, stale)), ...rateLimitHeaders(rate) } });
 }

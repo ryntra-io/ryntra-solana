@@ -1,4 +1,4 @@
-/** The agent's glyphs in the window's head (CITY-176): a spark with a path — the agent at work — and a list of what it set. */
+/** The agent's glyphs in the window's head: a spark with a path — the agent at work — and a list of what it set. */
 
 export const AgentGlyph = () => (
   <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">

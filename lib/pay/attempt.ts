@@ -58,8 +58,8 @@ export async function readPaymentAttempt(store: GuardStore, requestId: string): 
  * Whether an attempt may still land: sent and not yet seen. Only the chain may say a sent payment is dead — block height
  * or `isBlockhashValid` on two independent nodes (`lib/solana/blockhash-life.ts`, row AG-1), not built here yet — and a
  * clock never does: a slow or halted network keeps old bytes valid past any wall-clock margin, and a request payable
- * again then is a second payment. So a sent attempt stays in flight until it is seen or the node refused it (supervisor
- * 25.10, critic MAJOR on PR #889); `_now` stays for the chain check that will use `deadAt`.
+ * again then is a second payment. So a sent attempt stays in flight until it is seen or the node refused it (the review
+ * of 25.10); `_now` stays for the chain check that will use `deadAt`.
  */
 export function attemptInFlight(attempt: PaymentAttempt | null, _now: Date): boolean {
   return attempt !== null && attempt.state === "SUBMITTED_UNKNOWN";

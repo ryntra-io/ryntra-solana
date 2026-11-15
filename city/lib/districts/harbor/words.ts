@@ -1,6 +1,6 @@
 import { pl, words } from '../../i18n/dict.ts';
 
-/** The words of the Harbor: its sheet, the add card, your positions and how an action ended (CITY-79). */
+/** The words of the Harbor: its sheet, the add card, your positions and how an action ended. */
 export const HARBOR = words(
   {
     harbor: 'Harbor',

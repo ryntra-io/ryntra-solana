@@ -6,7 +6,7 @@ import { useBeacons } from "../beacon/store.ts";
 import { useFeed } from "../feed/store.ts";
 import { useSpot } from "../trade/spot-store.ts";
 
-/* CITY-87: what the city already knows is said through the centre — only what changed after the page opened. */
+/* What the city already knows is said through the centre — only what changed after the page opened. */
 
 const feedEvent = (id, kind = "gainers") => ({ id, key: `k${id}`, kind, tone: "up", title: `T${id}`, line: `L${id}`, image: null, at: Date.now(), source: "Jupiter", detail: null, spark: null, target: { tower: `M${id}` } });
 

@@ -1,5 +1,5 @@
 /**
- * CITY-162 — the `kms` adapter: Ryntra Launch's keys in Google Cloud KMS.
+ * The `kms` adapter: Ryntra Launch's keys in Google Cloud KMS.
  *
  * Each key is a KMS key of purpose `ASYMMETRIC_SIGN`, algorithm `EC_SIGN_ED25519` — Solana's own key type. The private
  * key never leaves KMS; the server asks KMS's REST API for each signature and checks what comes back:

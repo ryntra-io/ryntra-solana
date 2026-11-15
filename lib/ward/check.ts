@@ -1,5 +1,5 @@
 /**
- * The pre-sign check (CITY-152, phase 1; working name «ward»): one transaction — or one payment link — in, one of
+ * The pre-sign check (phase 1; working name «ward»): one transaction — or one payment link — in, one of
  * three words out (`allow` · `warn` · `block`) with the reasons that put it there.
  *
  * What is read, in order:
@@ -901,7 +901,7 @@ export async function checkWard(request: WardRequest, reads: WardReads): Promise
 }
 
 
-/* ---------------------------------------------------------------- one bare address (CITY-166) */
+/* ---------------------------------------------------------------- one bare address */
 
 /** A token's mint, judged as the token a person would come to hold. */
 export type WardTokenResult = Readonly<{
@@ -937,7 +937,7 @@ function isAddress(text: string): boolean {
 }
 
 /**
- * One bare address, as a chat pastes it (CITY-166, the Telegram bot): a token's mint — a «CA» — is judged as the token
+ * One bare address, as a chat pastes it (the Telegram bot): a token's mint — a «CA» — is judged as the token
  * a person would come to hold, with the same token reasons a transaction gets for what arrives; any other address is
  * judged as the recipient a person would pay, by the link path. `known` are addresses the asker has seen (a chat's
  * recent ones): a look-alike of one of them is how address poisoning reaches a group. Reads only, like the rest.

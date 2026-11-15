@@ -1,6 +1,6 @@
 import { words } from '../../lib/i18n/dict.ts';
 
-/** The words of the scout's card: the rule, the status, a find (CITY-79). */
+/** The words of the scout's card: the rule, the status, a find. */
 export const AGENT = words(
   {
     close: 'Close',

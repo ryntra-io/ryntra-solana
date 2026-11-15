@@ -1,4 +1,4 @@
-// Earn's screens for review (CITY-92), at 1440×860 and 390×844 → <out>/earn-<state>-<size>.png
+// Earn's screens for review, at 1440×860 and 390×844 → <out>/earn-<state>-<size>.png
 //   NEXT_PUBLIC_RYNTRA_CITY_EARN=open npm run dev, then: node city/lib/earn/shots.mjs [out] [baseUrl]
 // LANG=en for the English words (Ukrainian by default). No wallet and no keys are needed: a stub wallet registers
 // through the Wallet Standard events and signs nothing real. The engine's routes answer from recorded transcripts and

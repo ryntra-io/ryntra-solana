@@ -3,7 +3,7 @@ import type { PageId } from '../pages/pages.ts';
 import { DOC_IDS, type DocId, type Localized } from './model.ts';
 
 /**
- * The documentation's table of contents (CITY-180): one menu of sections and of the site's pages that stand in the same frame, with
+ * The documentation's table of contents: one menu of sections and of the site's pages that stand in the same frame, with
  * each one's name and one line, in English and Ukrainian, and the frame of our own live city at each head. Small on purpose: the
  * city's «Docs» window lists these without loading a word of the sections themselves.
  */

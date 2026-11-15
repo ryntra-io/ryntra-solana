@@ -1,9 +1,9 @@
--- Ryntra City: studio posts in the queue of post drafts for X (task CITY-38).
+-- Ryntra City: studio posts in the queue of post drafts for X.
 --
 -- PREPARED 2026-10-28 as a file only. Not applied to any Supabase project:
 -- production migrations are applied as a deliberate, separate step, through MCP Supabase,
--- after `20261027150000_city_moments_drafts_v1.sql` (CITY-3), which it needs.
--- The CITY-3 file stays as it was merged, so this one works whether or not
+-- after `20261027150000_city_moments_drafts_v1.sql`, which it needs.
+-- The file stays as it was merged, so this one works whether or not
 -- that one has been applied already.
 --
 -- WHAT THIS FILE DOES

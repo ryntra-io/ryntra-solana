@@ -1,6 +1,5 @@
 /**
- * One subject through the pre-sign check (CITY-152's engine, `lib/ward/check.ts`) and back as what the bot says
- * (CITY-166). The engine is called in-process with the same reads `POST /api/v1/ward/check` uses; nothing here judges on
+ * One subject through the pre-sign check (the engine, `lib/ward/check.ts`) and back as what the bot says. The engine is called in-process with the same reads `POST /api/v1/ward/check` uses; nothing here judges on
  * its own — the verdict and every reason are the engine's, the bot only chooses which reason leads its one line.
  *
  * Pure apart from the injected reads.

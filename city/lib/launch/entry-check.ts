@@ -3,7 +3,7 @@ import type { Network } from './engine.ts';
 import type { EntryAction } from './entry.ts';
 
 /**
- * A step of early access, read before the wallet sees it (CITY-220): coming in with USDC, taking it back, the one buy
+ * A step of early access, read before the wallet sees it: coming in with USDC, taking it back, the one buy
  * for everyone, the tokens, the rest of the USDC. The engine builds each one for this wallet alone — its fee payer and
  * only signer — and compares the signed bytes with the built ones before it sends; this is the city's own look, so a
  * transaction for another vault, another wallet or another amount never reaches the person's wallet:

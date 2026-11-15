@@ -165,7 +165,7 @@ export function useWallet() {
   )
 
   /**
-   * Connect as `connect` does, for a caller that answers someone else — the city's page (CITY-6c): the account the
+   * Connect as `connect` does, for a caller that answers someone else — the city's page: the account the
    * wallet chose comes back, and a cancel or a failure is thrown as the wallet said it, not kept as the hook's line.
    */
   const connectAccount = useCallback(async (): Promise<Readonly<{ address: string; label: string | null }>> => {

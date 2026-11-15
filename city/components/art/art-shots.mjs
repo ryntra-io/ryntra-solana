@@ -1,4 +1,4 @@
-// Ryntra City's frames (CITY-64): the first second of `/` (the intro still instead of black, then the live city), the
+// Ryntra City's frames: the first second of `/` (the intro still instead of black, then the live city), the
 // home with Home's frame on its card, the Market's card, each district that opens soon, and «How the city works» with
 // its rules opened, at 1440×900 and 390×844 → <out>/art-<state>-<size>.png; with REDUCED=1 the same with reduced motion.
 //   npm run dev   (or a production build: npm run build && npm start)

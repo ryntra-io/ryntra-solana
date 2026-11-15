@@ -13,7 +13,7 @@ export const maxDuration = 30;
 const digest = (text: string) => createHash("sha256").update(text).digest();
 
 /**
- * Whether this deployment reaches its KMS keys (CITY-163): the public keys read, nothing signed, no coin and no
+ * Whether this deployment reaches its KMS keys: the public keys read, nothing signed, no coin and no
  * transaction (`lib/launch/signer/check.server.ts`). There is no such route without `RYNTRA_LAUNCH_SIGNER_CHECK_TOKEN`,
  * which is set on one deployment for one check and never in the project's variables.
  */

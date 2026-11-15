@@ -12,7 +12,7 @@ import { layoutClient, isLayoutError, type LayoutClient } from './client.ts';
 import { dirToLocal, pieceAt, snap, toLocal, type Target, type V3 } from './grid.ts';
 
 /**
- * Free building on my quarter (CITY-55): which piece is in hand, its turn, the pieces on the lot, the steps back,
+ * Free building on my quarter: which piece is in hand, its turn, the pieces on the lot, the steps back,
  * and the save behind every change. A piece lands the moment it is placed; the whole layout is saved a moment
  * later, at the version this device saw. A refusal takes the change back and says why in one line; a layout changed
  * on another device wins and is shown as it is. Nothing here pays points or touches money.

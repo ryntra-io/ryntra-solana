@@ -1,10 +1,10 @@
 /**
- * Who a model call is for (CITY-45; `hack-agent` — CITY-238). One list, read by the gateway's call, its journal and the
+ * Who a model call is for (`hack-agent`). One list, read by the gateway's call, its journal and the
  * key manager, so a new caller of models is named in one place:
  *
- *   vault-guard — a Vault's guard (CITY-47);
- *   ring-agent  — a Ring's agent in a duel (CITY-50, CITY-51);
- *   hack-agent  — an Arena agent working a Hack order's copy (CITY-225): the same agent and its own key, journaled
+ *   vault-guard — a Vault's guard;
+ *   ring-agent  — a Ring's agent in a duel;
+ *   hack-agent  — an Arena agent working a Hack order's copy: the same agent and its own key, journaled
  *                 apart so a day's spend on Hack is told from the Ring's.
  *
  * Pure: no store, no clock, no network.

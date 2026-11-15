@@ -5,7 +5,7 @@ import { DEMAND_WEEK_ENV, demandMessage, demandTrigger, demandWeekSends, lastClo
 import { readDemandWeek } from "./demand-week.server.ts";
 
 /**
- * The owner's week of demand in Telegram (CITY-197): once a week, the week that has just closed, to the owner's own chat
+ * The owner's week of demand in Telegram: once a week, the week that has just closed, to the owner's own chat
  * (`ALERT_TELEGRAM_ID`, the one the engine's alerts reach), with one button to the page in the admin. Claimed once per
  * week (`monitoringTriggers`), so two passes never tell it twice; a send that fails gives the claim back for the next
  * pass. Shut unless `RYNTRA_DEMAND_WEEK=on`. Reads, and sends one message; it moves nothing.

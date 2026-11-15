@@ -1,5 +1,5 @@
 /**
- * The beacons' switch for a deployment (CITY-72): `NEXT_PUBLIC_RYNTRA_CITY_BEACONS`, closed when not set.
+ * The beacons' switch for a deployment: `NEXT_PUBLIC_RYNTRA_CITY_BEACONS`, closed when not set.
  *
  * - `closed` (not set, or anything else) — no beacon in the city; `/api/world/beacons` answers 404 and the cron
  *   checks nothing and tells nobody.

@@ -29,7 +29,7 @@ type EarnData = {
   feed: Loaded<LstFeed>;
   piers: Loaded<Readonly<{ pools: readonly HarborPool[]; at: string | null }>>;
   lend: Loaded<LendRates>;
-  /** «Like the Captain»: the strategies with a proven record (CITY-99). */
+  /** «Like the Captain»: the strategies with a proven record. */
   captain: Loaded<CaptainAnswer>;
   positions: Owned<readonly PositionView[]>;
   stocks: Owned<readonly ScaledConfig[]>;

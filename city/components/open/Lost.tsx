@@ -13,7 +13,7 @@ import { LOST } from './words';
 import s from './lost.module.css';
 
 /**
- * The city's own page where there is none (CITY-159): an address that never was (404) or a page that broke (500). The
+ * The city's own page where there is none: an address that never was (404) or a page that broke (500). The
  * island under the eclipse, filmed from the live city, behind one line and one way back — to the city's home, a full
  * load, so whatever broke starts again clean. The mark stands where the city's top bar has it; nothing else is on the
  * screen. `app/not-found.tsx`, `app/error.tsx` and `app/global-error.tsx` show it.
@@ -21,7 +21,7 @@ import s from './lost.module.css';
 export function Lost({ kind }: { kind: LostKind }) {
   const w = useWords(LOST);
 
-  // The person's language before the first paint, as in the city (CITY-79).
+  // The person's language before the first paint, as in the city.
   useLayoutEffect(() => void hydrateLang(), []);
 
   // The tab says what happened, in the person's language — also where the page that broke, or the section whose page

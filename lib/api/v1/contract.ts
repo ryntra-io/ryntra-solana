@@ -1289,7 +1289,7 @@
  * `DEV_ORIGIN_REFUSED` · `DEV_SCOPE_REFUSED` 403, `DEV_LIMIT` · `DEV_CHANGED` 409, `DEV_KEY_INVALID` 401,
  * `DEV_QUOTA_EXCEEDED` 429. A client that does not show the console needs no release.
  *
- * **1.88.0 — the pre-sign check (CITY-152 phase 1, 2026-10-31; working name «ward», never «Guard»).** Additive: one
+ * **1.88.0 — the pre-sign check.** Additive: one
  * route. `POST /api/v1/ward/check` — `{ transaction | link, signer?, intent? | intentText?, known?, network? }`: an
  * unsigned transaction (canonical base64 of a wire transaction or of its message) or a payment link in; one of three
  * words out — `allow` · `warn` · `block` — with the reasons that put it there, heaviest first, each naming its check
@@ -1305,7 +1305,7 @@
  * that is neither a transaction nor a link is `VALIDATION_ERROR`. A client that does not show the check needs no
  * release.
  *
- * **1.89.0 — a launch's flow (Launch strategy L3, CITY-140, line A, 2026-10-29).** Additive: one public read. `GET
+ * **1.89.0 — a launch's flow (Launch strategy L3, line A, 2026-10-29).** Additive: one public read. `GET
  * /api/v1/launch/{mint}/flow` — the facts of who bought a launch and how, each resting on a transaction: the buys in
  * the creation's own block (count, share of supply), same-slot bundles grouped with what tied them (one transaction,
  * one payer, one funding cluster), what the creator's wallet bought, sold and holds and how many wallets are of their
@@ -1315,7 +1315,7 @@
  * proof checked against the creator's party, and the creator's earlier Ryntra coins with what became of each. No
  * verdict, and whatever was not read is said as not read. A client that does not show it needs no release.
  *
- * **1.90.0 — prepared actions (CITY-161, line A, 2026-10-31).** Additive: the intents. `POST /api/v1/intents` — an
+ * **1.90.0 — prepared actions.** Additive: the intents. `POST /api/v1/intents` — an
  * agent, a chat or a partner prepares a swap for a person to sign, with no wallet and no key, and gets Ryntra's own https
  * link, a QR and the creator's key shown once; `GET /api/v1/intents/{id}` reads it; claim, release, signed, receipt and
  * cancel are the person's and the creator's steps. The fields are frozen under a SHA-256 digest every step names; an
@@ -1639,7 +1639,7 @@ export const ERROR_CODES = [
   "TEAM_LAST_OWNER",
   /** The team changed while this was decided, three times over; read it again. */
   "TEAM_CHANGED",
-  /** Not a Squads v4 multisig on this network, or the operator's wallet is not one of its members. */
+  /** Not a Squads v4 multisig on this network, or the team Owner's wallet is not one of its members. */
   "TEAM_TREASURY_REFUSED",
   /* 1.86.0 — the developer console (DEV-2) */
   /** No such project, key or endpoint for this wallet — the same answer whether it is not there or the wallet's team does not own it. */
@@ -1658,7 +1658,7 @@ export const ERROR_CODES = [
   "DEV_SCOPE_REFUSED",
   /** The project has spent a quota window whose number this deployment states; the answer says when it starts again. */
   "DEV_QUOTA_EXCEEDED",
-  /** 1.90.0 (CITY-161): no intent has this id. */
+  /** 1.90.0: no intent has this id. */
   "INTENT_NOT_FOUND",
   /** 1.90.0: the intent's deadline passed before anyone claimed it. */
   "INTENT_EXPIRED",
@@ -13928,7 +13928,7 @@ export const LaunchMarketRowSchema = z
     /** Whether the creator sold any of the token; null when their trades were not read whole and no sale was seen. */
     creatorSold: z.boolean().nullable(),
     /**
-     * 1.87.0 (CITY-139) — Ryntra took the token's picture, description and links down (MC-1, `takedown.server.ts`): they
+     * 1.87.0 — Ryntra took the token's picture, description and links down (MC-1, `takedown.server.ts`): they
      * are not served, the name and the ticker stay, and the chain keeps the token and its trading. Absent when not.
      */
     hidden: z.literal(true).optional(),
@@ -14907,7 +14907,8 @@ const DevQuotaWindowSchema = z
 /**
  * `GET /api/v1/developer/plan` (1.86.0, DEV-2) — what the console is made of, before anything is made in it: the two
  * environments, the scopes a credential may hold, the events an endpoint may subscribe to, the operational bounds,
- * the quota windows with whichever numbers this deployment states, and the *shape* a tariff has. Public.
+ * the quota windows with whichever numbers this deployment states, and the *shape* a tariff has.
+ * Public.
  */
 export const DevPlanResponseSchema = z
   .object({
@@ -15149,10 +15150,10 @@ export type DevUsageResponse = z.infer<typeof DevUsageResponseSchema>;
 export const DevEventsResponseSchema = z.object({ deliveries: z.array(DevDeliverySchema).max(DEV_LIMITS.deliveriesKept) }).strict();
 export type DevEventsResponse = z.infer<typeof DevEventsResponseSchema>;
 
-/* ---------------------------------------------------------------- 1.88.0 (CITY-152): the pre-sign check */
+/* ---------------------------------------------------------------- 1.88.0: the pre-sign check */
 
 /**
- * `POST /api/v1/ward/check` (1.88.0, CITY-152 phase 1; working name «ward») — one unsigned transaction (base64, a
+ * `POST /api/v1/ward/check` — one unsigned transaction (base64, a
  * wire transaction or a bare message) or one payment link in, one of three words out. Public and read-only: it
  * simulates, reads accounts and asks the security sources the engine already reads; it holds no key, signs, sends
  * and keeps nothing.
@@ -15253,7 +15254,7 @@ export const WardCheckResponseSchema = z
   .strict();
 export type WardCheckResponse = z.infer<typeof WardCheckResponseSchema>;
 
-/* ------------------------------------------------------------ intents (1.90.0, CITY-161) */
+/* ------------------------------------------------------------ intents */
 
 /**
  * 1.90.0: a prepared action — what an agent, a chat or a partner site asks a person to sign. A swap with its coin, raw

@@ -1,4 +1,4 @@
-// The Hack sandbox's real copy: a `ForkEngine` (`../sandbox/engine.ts`) over LiteSVM (CITY-224; here since CITY-238, where
+// The Hack sandbox's real copy: a `ForkEngine` (`../sandbox/engine.ts`) over LiteSVM (here, where
 // the machine with no network runs it — `entry.mjs`, `README.md`).
 //
 // LiteSVM is not a dependency of the repository (it is a native binary for Linux): the machine's image installs it

@@ -4,7 +4,7 @@ import assert from "node:assert/strict";
 import { addUsd, ago, figure, flaggedMints, linkText, MAX_FLAGS, scoutsOf, screenOf, solPrice, xIntent } from "./view.ts";
 import { openScouts, setScoutsEnv, useScouts } from "./store.ts";
 
-// «Scouts» (CITY-8): the Growth engine's link, friends and shares, shown «$ ≈ SOL» (decision 73), and a flag on the
+// «Scouts»: the Growth engine's link, friends and shares, shown «$ ≈ SOL» (decision 73), and a flag on the
 // towers the people you brought trade. No network: `/api/rewards` is a stub with the engine's own shape.
 
 const OWNER = "4EeXQa4MKrBSwDj9pHEoZXjiiUaZmWzveGq5X9dUKPGW";

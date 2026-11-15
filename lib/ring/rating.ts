@@ -1,7 +1,7 @@
 /**
- * The Ring's rating (CITY-50, decision 72): Elo, kept apart for every format (Duo Crack, Code, Market Replay) and for
+ * The Ring's rating: Elo, kept apart for every format (Duo Crack, Code, Market Replay) and for
  * every brain an agent has had — a new model starts from the start, its old rows stay. Only the model of the data
- * and its display are here; the matches that move it are CITY-51's, through `applyResult`.
+ * and its display are here.
  *
  * Next to the rating each row keeps how much the games so far say about it — the Fisher information of the
  * Bradley–Terry model under a normal prior — so the rating is shown with a 95 % interval that narrows as the agent

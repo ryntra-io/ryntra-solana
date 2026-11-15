@@ -1,5 +1,5 @@
 /**
- * Who may build or moor at a Stock Pier from the city (CITY-98), on top of Earn's own switch and the engine's gate
+ * Who may build or moor at a Stock Pier from the city, on top of Earn's own switch and the engine's gate
  * (`lib/liquidity/studio/gate.ts`, read alongside, never changed — its relay asks it again). The product's own switch,
  * from `NEXT_PUBLIC_RYNTRA_CITY_STOCK_PIER`:
  *

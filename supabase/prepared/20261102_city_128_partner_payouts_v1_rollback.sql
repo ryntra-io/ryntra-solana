@@ -1,4 +1,4 @@
--- CITY-128 — rollback of 20261102_city_128_partner_payouts_v1.sql. PREPARED ONLY; the operator applies it.
+-- Rollback of 20261102_city_128_partner_payouts_v1.sql. PREPARED ONLY; the operator applies it.
 -- Removes the refusal to rewrite a partner payout statement; the statements themselves stay as they are.
 
 set lock_timeout = '5s';

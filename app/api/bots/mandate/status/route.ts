@@ -5,7 +5,7 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 /**
- * CITY-174 — what stands now: `GET ?policy=…&vault=…` → whether the agent may act, and the budget left. CITY-196: only of
+ * What stands now: `GET ?policy=…&vault=…` → whether the agent may act, and the budget left. Only of
  * a real mandate of this agent — any other policy or vault is 404.
  */
 export async function GET(request: Request) {

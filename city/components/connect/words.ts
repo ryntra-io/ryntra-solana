@@ -1,6 +1,6 @@
 import { words } from '../../lib/i18n/dict.ts';
 
-/** The words of the connect window (CITY-154): the consent an AI chat asks for, and the page that shows how to add Ryntra. */
+/** The words of the connect window: the consent an AI chat asks for, and the page that shows how to add Ryntra. */
 export const CONNECT = words(
   {
     connectTitle: (client: string) => `Connect ${client}`,

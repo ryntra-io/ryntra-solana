@@ -1,6 +1,6 @@
 /**
- * The agent's own payers in the copy, and the transactions the harness puts together for it (CITY-238, over the step
- * runner of CITY-225; spec `docs/research/city-hack-2026-11-08/SPEC.md` — the tool «зібрати tx у форк»).
+ * The agent's own payers in the copy, and the transactions the harness puts together for it (over the step
+ * runner; spec `docs/research/city-hack-2026-11-08/SPEC.md` — the tool «зібрати tx у форк»).
  *
  * A model cannot sign: it can only say which instructions it wants. So the harness holds the agent's payers for one run
  * — fresh Ed25519 keys made here, in the server's memory, that exist nowhere but in the copy (the sandbox funds them

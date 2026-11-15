@@ -1,8 +1,8 @@
 import { openExternal, shareThroughApp } from '../app-bridge/page.ts';
 
 /**
- * A card out of the city in one tap (the swap's way since #1212, the launch's cards since CITY-145): in the Ryntra app,
- * its own share sheet (CITY-6b); on a phone, the system's; on a computer — where the system's panel is closed more
+ * A card out of the city in one tap (the swap's way, and the launch's cards): in the Ryntra app,
+ * its own share sheet; on a phone, the system's; on a computer — where the system's panel is closed more
  * often than it posts — the card is saved and X opens with the words and the link. Nothing is filmed and nothing is
  * sent anywhere by the city: the person picks where it goes.
  */

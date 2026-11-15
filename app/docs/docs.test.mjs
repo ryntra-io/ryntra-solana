@@ -158,7 +158,8 @@ test("the documentation speaks only of what is built, and the page count follows
     en: /[Ii]n development|\bPlanned\b|being built|[Cc]oming soon|\bSoon\b|on the way|not built yet|in the future|will be (built|added|available)/,
     uk: /Розробляється|[Уу] розробці|Заплановано|заплановані|будуються|будується|Скоро|Незабаром|незабаром|на підході|згодом|у майбутньому|в майбутньому|поки не збудован/,
   };
-  /* One page is allowed the word: «Teams, agents and developers. Every other page speaks only of what is built. */
+  /* One page is allowed the word — «Teams, agents and developers — soon» — with no
+     date and no feature. Every other page speaks only of what is built. */
   for (const page of DOC_PAGES) {
     if (page.slug === "soon") continue;
     for (const locale of LOCALES) {
@@ -324,7 +325,7 @@ test("the navigation is the menu's sections with every page once, and the develo
   assert.match(dynamic, /dynamicParams = false/);
   assert.match(dynamic, /generateStaticParams/);
   assert.match(dynamic, /notFound\(\)/);
-  /* `/docs` and its sections are the city's documentation since CITY-180; these chapters' addresses lead there. */
+  /* `/docs` and its sections are the city's documentation; these chapters' addresses lead there. */
   assert.match(read("app/docs/page.tsx"), /<CityDocument id="docs" \/>/);
   /* Reading order is a line: every page but the ends has a neighbour on each side. */
   const inner = DOC_PAGES.slice(1, -1);

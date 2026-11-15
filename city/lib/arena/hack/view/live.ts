@@ -5,8 +5,8 @@ import type { MyAgent } from './contract.ts';
 import { createHackStore, type HackState } from './store.ts';
 
 /**
- * The city's own Hack window (CITY-227), wired to the Arena: the agent that goes on orders is the person's Ring agent
- * (the Arena's own read of «my agent», CITY-217), the sign-in is the Arena's (the city's wallet), and a first agent is
+ * The city's own Hack window, wired to the Arena: the agent that goes on orders is the person's Ring agent
+ * (the Arena's own read of «my agent»), the sign-in is the Arena's (the city's wallet), and a first agent is
  * made in the Arena's garage.
  */
 

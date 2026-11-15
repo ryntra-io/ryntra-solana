@@ -15,11 +15,11 @@ import { agentReportSends, AGENT_REPORT_SEND_ENV } from './report';
 import { runReportPass, type ReportPass, type ReportRead } from './report-watch';
 
 /**
- * The production side of the agent's daily report (CITY-194): what the agent did comes from its own book and the
+ * The production side of the agent's daily report: what the agent did comes from its own book and the
  * venue's price through `agentResult` — the very read the city's card shows — the coin's ticker and SOL's dollar price
  * from Jupiter's catalogue, and the note goes through the monitoring delivery (Telegram, the phone's push, the
  * browser's push, quiet hours, retries). Shut unless `RYNTRA_AGENT_REPORT=on` and the mandate's gate stands open.
- * CITY-245: on mainnet the day is checked against the chain — a trade the chain shows that the book does not hold
+ * On mainnet the day is checked against the chain — a trade the chain shows that the book does not hold
  * leaves the day's result unsaid (`checkedDay`); the count and the spend stay the book's.
  */
 
@@ -35,7 +35,7 @@ export async function runAgentReport(env: Env, guard: Readonly<{ store: GuardSto
   if (!gate.open) return { ran: false, why: 'no-agent' };
   if (!guard.writes.allowed) return { ran: false, why: 'read-only' };
   const named = env[AGENT_SYMBOL_ENV]?.trim() ?? null;
-  /* CITY-245: the trades the book holds for her under any of her mandates — one budget account serves them all. */
+  /* The trades the book holds for her under any of her mandates — one budget account serves them all. */
   let book: Promise<readonly BookEntry[]> | null = null;
   const hers = async (owner: string) => (await (book ??= readBook(guard.store, gate.network))).filter((entry) => entry.record.owner === owner).flatMap((entry) => entry.trades);
   const read = async (entry: Parameters<Parameters<typeof runReportPass>[0]['read']>[0], since: number, until: number): Promise<ReportRead> => {
@@ -48,7 +48,7 @@ export async function runAgentReport(env: Env, guard: Readonly<{ store: GuardSto
     const catalog = await fetchTokenCatalog([WRAPPED_SOL_MINT, entry.receiveMint], 5_000).catch(() => null);
     const sol = catalog?.ok ? Number(catalog.byMint[WRAPPED_SOL_MINT]?.usdPrice ?? NaN) : NaN;
     const ticker = view.symbol ?? (catalog?.ok ? (catalog.byMint[entry.receiveMint]?.symbol ?? null) : null);
-    /* CITY-204: her money autopilot's week, when this mandate is its trade. */
+    /* Her money autopilot's week, when this mandate is its trade. */
     const pilot = await readPilot(guard.store, gate.network, entry.record.owner).catch(() => null);
     const ours = pilot && pilot.status === 'working' && pilot.policy === entry.record.policy ? { weekUsd: pilot.care?.weekUsd ?? null, held: pilot.held?.why ?? null } : null;
     return { day, symbol: ticker && SYMBOL.test(ticker) ? ticker : null, solUsd: Number.isFinite(sol) && sol > 0 ? sol : null, total: view.net ? { netRaw: unbooked ? null : view.net.netRaw } : null, pilot: ours };

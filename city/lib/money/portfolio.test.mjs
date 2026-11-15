@@ -109,7 +109,7 @@ test("a place still reading is named as such, so a short total never passes for 
   assert.deepEqual(view.unread, []);
 });
 
-/* CITY-209: when one engine read does not answer, every other place still stands, the unread one is named, and the
+/* When one engine read does not answer, every other place still stands, the unread one is named, and the
    total never passes for the whole. One failure at a time, each source of the portfolio. */
 const failing = {
   wallet: { assets: [], walletState: "failed" },

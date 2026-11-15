@@ -51,7 +51,7 @@ async function cardFacts(launch: LaunchShort, network: LaunchNetwork): Promise<L
   return token ? launchShareFacts(token, null) : launchShareFactsOfRecord(launch, `solana:${network.cluster}`);
 }
 
-/* The preview page carries the city's logo on the night ground (CITY-158: the mark is never set on a light one), never a
+/* The preview page carries the city's logo on the night ground (the mark is never set on a light one), never a
    lettered tile (SOL-C3). A path on the host the page answers from: the page's CSP lets an image come from itself only. */
 const BRAND_LOCKUP = "/brand/city/logo-transparent.png";
 
@@ -113,7 +113,7 @@ export async function serveLaunchShort(req: NextRequest, slug: string, rawCode: 
 }
 
 /**
- * `/t/<slug>/image`: the token's card — its tower's card in the city (CITY-158), the same picture as `/c/<mint>`'s, with
+ * `/t/<slug>/image`: the token's card — its tower's card in the city, the same picture as `/c/<mint>`'s, with
  * the price and the day's move the engine reads now. The card keeps itself as long as its price stays worth showing.
  */
 export async function serveLaunchCard(_req: NextRequest, slug: string): Promise<Response> {

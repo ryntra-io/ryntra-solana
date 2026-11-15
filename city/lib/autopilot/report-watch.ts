@@ -21,11 +21,11 @@ import {
   type ReportSettings,
 } from './report.ts';
 
-/** CITY-204: a day without a trade is still told when her autopilot has a week to tell. */
+/** A day without a trade is still told when her autopilot has a week to tell. */
 const pilotWorth = (read: NonNullable<ReportRead>) => Boolean(read.pilot && read.pilot.weekUsd !== null);
 
 /**
- * The agent's daily report on Ryntra's server (CITY-194): once an hour the cron reads every person whose hour has come
+ * The agent's daily report on Ryntra's server: once an hour the cron reads every person whose hour has come
  * on her own clock, takes what her agent did since the last report (at most a day) from its book, and — when it
  * traded — writes one note in the engine's own inbox with one delivery per channel her preferences carry: Telegram
  * where her account has a chat, the Ryntra app's push, the browser's push. The engine's delivery keeps the quiet hours
@@ -84,9 +84,9 @@ export type ReportRead = Readonly<{
   day: AgentDay;
   symbol: string | null;
   solUsd: number | null;
-  /** CITY-197: the whole mandate after every fee. */
+  /** The whole mandate after every fee. */
   total?: Readonly<{ netRaw: string | null }> | null;
-  /** CITY-204: her money autopilot — what it earned over the week, USD, and whether the agent holds its trading for the market. */
+  /** Her money autopilot — what it earned over the week, USD, and whether the agent holds its trading for the market. */
   pilot?: Readonly<{ weekUsd: number | null; held: 'market' | 'balance' | null }> | null;
 }> | null;
 
@@ -109,7 +109,7 @@ const hash = (text: string) => createHash('sha256').update(text).digest('hex').s
 export function reportNote(owner: string, identity: string, read: NonNullable<ReportRead>, locale: Lang, nowMs: number): InboxRecord {
   const say = (lang: Lang) => {
     const w = AGENT_REPORT[lang];
-    /* CITY-204: the autopilot's week in one more part; on a day without a trade it is the whole title. */
+    /* The autopilot's week in one more part; on a day without a trade it is the whole title. */
     const week = read.pilot && read.pilot.weekUsd !== null ? w.pilotWeek(usdFigure(read.pilot.weekUsd, lang)) : null;
     const held = read.pilot?.held === 'market' ? w.pilotHeld : null;
     const traded = read.day.trades > 0;

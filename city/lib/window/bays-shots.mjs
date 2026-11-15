@@ -1,4 +1,4 @@
-// CITY-84 review shots → docs/shots/city-84/: the bays, the tray, the tabs and the layouts, on a desk (1440) and a
+// Review shots → docs/shots/city-84/: the bays, the tray, the tabs and the layouts, on a desk (1440) and a
 // phone (390), with the deployment's own switches (no wallet: the honest no-wallet states). Against a running build:
 //   npx next build && npx next start -p 3200   (with the stand's file store)
 //   node city/lib/window/bays-shots.mjs docs/shots/city-84 http://localhost:3200 [desk|phone|all]
@@ -48,7 +48,7 @@ const state = (page) => page.evaluate(() => [...document.querySelectorAll("[data
 if (only === "all" || only === "desk") {
   const desk = { name: "desk", width: 1440, height: 900, mobile: false };
   const { ctx, page } = await open(desk);
-  // The layouts live in the top bar's menu (CITY-241).
+  // The layouts live in the top bar's menu.
   await tap(page, "[data-city-menu] > button");
   await tap(page, "[data-city-menu-layouts]");
   await page.waitForTimeout(800);

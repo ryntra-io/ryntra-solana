@@ -8,7 +8,7 @@ export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
 /**
- * What one wallet may do at a Stock Pier now (CITY-98): the product's own switch — closed, canary or open, its ceiling
+ * What one wallet may do at a Stock Pier now: the product's own switch — closed, canary or open, its ceiling
  * and its stop — joined with the engine's gate, which this route only reads. To a wallet the canary does not name, the
  * answer is the same as when closed.
  */

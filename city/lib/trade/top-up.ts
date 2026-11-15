@@ -1,7 +1,7 @@
 import type { AmountProblem } from './amount.ts';
 
 /**
- * A connected wallet with nothing to buy with (CITY-237, CITY-239): the ticket's one action is the way to get some —
+ * A connected wallet with nothing to buy with: the ticket's one action is the way to get some —
  * Money's top-up — on the market ticket, a limit and a stop alike, where a dead «Not enough SOL» or a dead «Review
  * order» stood. Selling spends the coin itself, and an empty Sell has its own line. With Money shut on this deployment
  * there is nowhere to send the person: the ticket says what it said before.

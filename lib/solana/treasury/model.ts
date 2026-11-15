@@ -58,7 +58,7 @@ export function assetOfMint(mint: string, network: TreasuryNetwork): TreasuryAss
 /**
  * Where the treasury is served: the deployment names the network (`NEXT_PUBLIC_RYNTRA_TREASURY_NETWORK`), else it is
  * not served at all. Devnet first; mainnet is the operator's canary (the registry's SOL-4 row) — one variable, set by the
- * Owner, and the same one draws the menu's row.
+ * operator, and the same one draws the menu's row.
  */
 export function treasuryNetworkFrom(value: string | undefined | null): TreasuryNetwork | null {
   const named = value?.trim().toLowerCase();

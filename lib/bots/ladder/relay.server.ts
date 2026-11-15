@@ -22,8 +22,7 @@
  *
  * Every transaction of a bundle is checked before the first is sent: a bundle
  * with one bad transaction sends nothing. Once sent, each lands or not on its
- * own. The relay answers as soon as the last one is handed to the node
- * (CITY-231): `sent` with its signature, or `failed` where the node refused it.
+ * own. The relay answers as soon as the last one is handed to the node: `sent` with its signature, or `failed` where the node refused it.
  * It never waits for the confirmation — a wait could outlast the function, and
  * a ladder already on the chain would come back to the window as an error.
  * Whether each landed is the window's own later reading (`readLadderOrders`:

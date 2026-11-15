@@ -2,7 +2,7 @@ import { langNow, useLang } from './lang.ts';
 import { LANG_LOCALE, type Lang } from './langs.ts';
 
 /**
- * The city's dictionaries (CITY-79). Each district keeps its own words beside its components (a `words.ts` there), so
+ * The city's dictionaries. Each district keeps its own words beside its components (a `words.ts` there), so
  * a window's text and its translation change in one place; this file only gives the shape and the reading.
  *
  * An entry is a string or a function of the numbers and names it carries (`(n) => …`), so word order and plural forms

@@ -1,6 +1,6 @@
 {
   "format": "ryntra-hack-scenario/1",
-  "note": "CITY-224 stand: a made-up program on the toy engine; one finding that reproduces and one that does not.",
+  "note": "Sandbox stand: a made-up program on the toy engine; one finding that reproduces and one that does not.",
   "target": {
     "kind": "fork",
     "program": "NVcjry6DLTahpw4BJRYfnu29GPWdksz7EMUbiqx5CKSZ",
@@ -41,7 +41,7 @@
     "format": "ryntra-hack-snapshot/1",
     "source": {
       "kind": "recorded",
-      "label": "CITY-224 stand: the made-up tally program",
+      "label": "Sandbox stand: the made-up tally program",
       "recordedAt": "2026-11-08T12:00:00.000Z"
     },
     "slot": 250000000,

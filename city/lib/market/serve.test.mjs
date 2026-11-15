@@ -4,7 +4,7 @@ import { readFileSync } from "node:fs";
 
 import { cityAnswer, LAST_GOOD_MS } from "./serve.ts";
 
-/* CITY-200: on ryntra.io the top bar read «Delayed 15:55» for minutes — a failed Jupiter read stored the bundle as the answer. */
+/* On ryntra.io the top bar read «Delayed 15:55» for minutes — a failed Jupiter read stored the bundle as the answer. */
 const NOW = Date.parse("2026-11-05T00:30:00.000Z");
 const city = (at, source = "live") => ({ towers: [{ id: "x" }], fetchedAt: new Date(at).toISOString(), source });
 const BUNDLE = city(Date.parse("2026-11-04T13:55:00.000Z"), "snapshot");

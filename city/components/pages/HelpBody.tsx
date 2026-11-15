@@ -11,7 +11,7 @@ import s from './pages.module.css';
 import { HELP } from './words';
 
 /**
- * «Help» (CITY-157): Support and Feedback in one form, on the engine's inbox (`POST /api/feedback`). Pick what it is,
+ * «Help»: Support and Feedback in one form, on the engine's inbox (`POST /api/feedback`). Pick what it is,
  * write, send — one amber action. The answer is the inbox's reference. What to know before writing, the email and what
  * the phone keeps are behind one quiet «Before you write».
  */

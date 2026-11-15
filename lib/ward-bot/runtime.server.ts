@@ -1,5 +1,5 @@
 /**
- * The bot on a real chain and a real Telegram (CITY-166). Server only.
+ * The bot on a real chain and a real Telegram. Server only.
  *
  * Environment — values are the owner's and never live in the repository:
  * - `TELEGRAM_WARD_BOT_TOKEN` — the bot's token from @BotFather;

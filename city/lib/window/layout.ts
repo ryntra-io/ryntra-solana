@@ -31,11 +31,11 @@ import {
 } from './geometry.ts';
 
 /**
- * The open windows of the city as one plain value (CITY-65): where each stands, which one is on the whole screen,
+ * The open windows of the city as one plain value: where each stands, which one is on the whole screen,
  * which one is on top. The store (`store.ts`) keeps it and the frames draw it; every change is a function here, so
  * the rules are tested without a page (`layout.test.mjs`).
  *
- * Since CITY-84 (helm §4) a window stands in one of two bays — the workspace's left and right side, the city in the
+ * A window stands in one of two bays — the workspace's left and right side, the city in the
  * middle — or floats; windows dropped on each other's head share one frame as tabs (a «stack»). `seat` keeps every
  * layout true to that: one frame per bay, a stack's windows on one place. Whatever the system arranges by itself — a
  * first place, a layout, «Snap together», a stretch, a pop out — leaves the city at least 40 % of the screen
@@ -560,7 +560,7 @@ export function dropIn(layout: Layout, id: string, drop: Drop): Layout {
 }
 
 /**
- * An open window placed again, as a layout asks (CITY-84): out of the frame it shared, into its bay, as a tab of another
+ * An open window placed again, as a layout asks: out of the frame it shared, into its bay, as a tab of another
  * window, or at its place — keeping the order it was opened in.
  */
 export function placeIn(layout: Layout, id: string, recall: Recall): Layout {

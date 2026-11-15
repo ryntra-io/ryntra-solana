@@ -2,16 +2,16 @@ import { FEE_SHARE_MAX_RECIPIENTS, FEE_SHARE_MIN_BPS, FEE_SHARE_TOTAL_BPS, TYPED
 import type { Network } from './engine.ts';
 
 /**
- * «Share earnings» in the city's launch (CITY-212): the creator's fees split between the creator and one to four more
+ * «Share earnings» in the city's launch: the creator's fees split between the creator and one to four more
  * wallets, written once at launch and never changed after — Meteora's Dynamic Fee Sharing, the engine's own vault and
  * handover (`lib/core/venues/meteora-dbc/fee-sharing.server.ts`). The city only says who gets what: it types the other
  * wallets and their parts, the creator keeps the rest, and the rule is the engine's (`feeShareProblems`).
  *
- * A door behind two locks (CITY-220), both shut by default:
+ * A door behind two locks, both shut by default:
  * - the city's switch, `NEXT_PUBLIC_RYNTRA_CITY_SHARE=open` — closed unless a deployment opens it, so the door can be
  *   shut again without a code change;
- * - the network: the devnet stand, and mainnet only on typed shares — the very value the engine
- *   reads (`TYPED_SHARES_OWNER_WORD`), so the door and the engine never disagree. The crews' word is another one.
+ * - the network: the devnet stand, and mainnet only where the engine opens typed shares — the very value the engine
+ *   reads (`TYPED_SHARES_OWNER_WORD`), so the door and the engine never disagree. The crews' value is another one.
  *
  * Pure and client-safe.
  */

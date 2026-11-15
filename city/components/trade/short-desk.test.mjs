@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { test } from "node:test";
 
-/* CITY-239: the tower's ticket on a desk 900 px tall. The window opens 640 px tall where the screen has room and 615 px
+/* The tower's ticket on a desk 900 px tall. The window opens 640 px tall where the screen has room and 615 px
    on a 900 px screen; the ticket was drawn for 640. There the «You get about» figure went under the pinned dock, the
    dock took it in with its label and grew over half of the row that names it. The ticket's rows stand closer on a
    short screen, by more than the window lost. Layout only: no figure, no rule of the ticket changes. */
@@ -44,8 +44,8 @@ test("on a short desk the ticket beside the chart stands closer, by more than th
   ];
   for (const gain of gains) assert.ok(gain > 0, `every row gives a little: ${gains}`);
   const given = gains.reduce((sum, gain) => sum + gain, 0);
-  // The window: 640 px by its own size (TradeLayer), 615 px on a 900 px screen — measured on the stand. Since CITY-242
-  // its first size follows the screen (`firstSize`): on a 900 px desk it is the workspace's whole height, more room than
+  // The window: 640 px by its own size (TradeLayer), 615 px on a 900 px screen — measured on the stand.
+  // Its first size follows the screen (`firstSize`): on a 900 px desk it is the workspace's whole height, more room than
   // the 615 px these rows were tightened for, which they keep for a window the person made shorter.
   const layer = readFileSync(new URL("./TradeLayer.tsx", import.meta.url), "utf8");
   assert.match(layer, /id: 'spot',[^\n]*size: spotSize/u);
@@ -61,14 +61,14 @@ test("only the ticket beside the chart, only on a short screen", () => {
   // Nothing in the short-screen rule stands outside the wide window's own query: a phone's sheet is never «wide».
   assert.equal(short.replace(/@container window \(min-width: 760px\) \{/u, "").replace(wide, "").replace(/[\s}]/g, ""), "");
   for (const rule of wide.matchAll(/([^{}]+)\{/gu)) assert.match(rule[1].trim(), /^\.spotTicket(:has\(\.priceField\))?( \.\w+(:has\(\.\w+\))?)+$/u, "each rule names a piece of the ticket's column");
-  // The dock's own «you get» line and the rule that drops its label are as they were (CITY-189, CITY-221).
+  // The dock's own «you get» line and the rule that drops its label are as they were.
   const dock = readFileSync(new URL("./DockGet.tsx", import.meta.url), "utf8");
   assert.match(dock, /const hidden = at\.top < seen\.top - 2 \|\| at\.bottom > floor \+ 2;/u);
   assert.match(dock, /\{!bare && <span className=\{s\.label\}>\{label\}<\/span>\}/u);
 });
 
-/* CITY-240: Limit and Stop on the same desk. They have a price row and its field more than Market, and Stop's dock
-   holds two lines of terms. Measured on the stand at 1440×900 with the rules of CITY-239 — the column is 493 px:
+/* Limit and Stop on the same desk. They have a price row and its field more than Market, and Stop's dock
+   holds two lines of terms. Measured on the stand at 1440×900 with the rules — the column is 493 px:
    - Stop reached its price field's lower edge at 380 px and its dock took 127 px: the field was cut by 14 px before
      any scroll;
    - with a price typed the price's row takes a second line («5% above») — 402 px — and the dock takes in the «you
@@ -78,7 +78,7 @@ test("on a short desk a Stop ticket's price field stands whole above the dock, a
   const short = block(css, "@media (max-height: 940px) and (pointer: fine)");
   const wide = block(short, "@container window (min-width: 760px)");
   const ticket0 = readFileSync(new URL("./SpotTicket.tsx", import.meta.url), "utf8");
-  // What CITY-239's rules had already set; the rest is read against the ticket's plain rules.
+  // What the rules had already set; the rest is read against the ticket's plain rules.
   const was = { sides: 10, row: 12, slider: 36 };
   const rows =
     px(css, ".modes", "margin-top") - px(wide, ".spotTicket .modes", "margin-top") +
@@ -100,7 +100,7 @@ test("on a short desk a Stop ticket's price field stands whole above the dock, a
   // Nothing a pointer presses gets small: the action, the price field, a share and Market's slider keep their room.
   assert.ok(px(wide, ".spotTicket .action", "height") >= 52 && px(wide, ".spotTicket .priceField", "height") >= 44 && px(wide, ".spotTicket .share", "height") >= 40);
   assert.ok(px(wide, ".spotTicket .slider", "height") >= px(css, ".thumb", "height") + 8, "the thumb and its glow fit the slider's row");
-  // The dock's own «you get» line is as it was (CITY-189, CITY-221): with it the dock's edge stands on the row it hides.
+  // The dock's own «you get» line is as it was: with it the dock's edge stands on the row it hides.
   assert.doesNotMatch(wide, /dockGet/u);
   // Stop's last row starts under the dock's edge, not across it: 16 px more than a row's own gap, measured.
   assert.ok(Number(/\.spotTicket \.row:has\(\.expiries\) \{\s*margin-top: (\d+)px;/u.exec(wide)?.[1]) >= px(wide, ".spotTicket .row", "margin-top") + 16);

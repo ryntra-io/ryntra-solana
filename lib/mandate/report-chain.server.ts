@@ -1,5 +1,5 @@
 /**
- * CITY-245 — the agent's trades of a span as the chain shows them, for the daily report to check its book against:
+ * The agent's trades of a span as the chain shows them, for the daily report to check its book against:
  * the successful transactions in which the Smart Account program acted on the mandate's budget account and the coin the
  * agent buys moved — a stranger's transaction that only names the budget is not one of them. Found through
  * Helius's Parsed Events Scan, one request, on mainnet where the node is Helius; elsewhere — devnet, another provider,

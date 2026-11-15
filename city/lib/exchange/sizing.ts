@@ -5,7 +5,7 @@ import { countTicksOf, SHARES, sizeLotsOf, type Draft } from './ticket.ts';
 
 /**
  * How the ticket's two dials read and move: the leverage on one slider, and the size — chips of the free collateral, a
- * slider of the same share and the dollars in the field — as one figure seen three ways (the card of trade 2, CITY-74).
+ * slider of the same share and the dollars in the field — as one figure seen three ways (the card of trade 2).
  * Nothing here is a figure of the city's own: the share is of the engine's most at this leverage (`maxLots`, Phoenix's
  * SDK — the free collateral at the leverage, its fees out), and a share's dollars are the engine's own notional
  * (`notionalMicroOf`) at the price the order is counted at. Pure.

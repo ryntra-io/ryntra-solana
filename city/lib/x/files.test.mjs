@@ -5,6 +5,7 @@ import { mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { test } from "node:test";
+import { needsDevelopmentRepository } from "../../../lib/development-repository.mjs";
 import { readStudioEvent } from "./event.ts";
 import { launchNight } from "./facts.ts";
 import { installClock } from "./clock.mjs";
@@ -41,7 +42,7 @@ test("a real encode: JPEG frames in, an MP4 ffprobe reads as X wants it", { skip
   }
 });
 
-test("a devnet rehearsal’s evidence becomes a flight log: the launch and the graduation, each its transaction", () => {
+test("a devnet rehearsal’s evidence becomes a flight log: the launch and the graduation, each its transaction", { skip: needsDevelopmentRepository("a devnet rehearsal's record under docs/research/") }, () => {
   const j = journalFromRehearsal(JSON.parse(readFileSync(REHEARSAL, "utf8")));
   assert.equal(j.network, "solana:devnet");
   assert.deepEqual(j.events.map((e) => e.kind), ["LAUNCHED", "GRADUATED"]);

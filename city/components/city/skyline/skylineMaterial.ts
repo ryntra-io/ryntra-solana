@@ -9,7 +9,7 @@ import { KIT_FLOOR } from './plan';
 export const SURFACE = { frame: 0, slab: 1, glass: 2, stone: 3, accent: 4, louvre: 5, lobby: 6, lamp: 7, roof: 8, rail: 9, lattice: 10, body: 11 } as const;
 
 /**
- * One material for every module of every tower and low-rise block (CITY-56), so the skyline is a handful of instanced
+ * One material for every module of every tower and low-rise block, so the skyline is a handful of instanced
  * draws of one program. What a face is comes from the kit (aKit.g, the surface id); how it is lit, partly too (aKit.r
  * baked occlusion, aKit.b the module's own lamps, both baked in Blender). The rest is the night:
  *  · glass shows a room behind every window (interior mapping on the atlas rendered in Blender: offices, flats,
@@ -23,7 +23,7 @@ export const SURFACE = { frame: 0, slab: 1, glass: 2, stone: 3, accent: 4, louvr
  *
  * Per instance: instanceMatrix; aTower (index into uTowers); aFloor (first floor, floors per uv unit, 1 when the
  * module has no geometric fins). uTowers rows per tower: 0 accent rgb + activity, 1 event glow rgb + level,
- * 2 build + height + seed + kind, 3 x + z + width + the Lens's level (CITY-86).
+ * 2 build + height + seed + kind, 3 x + z + width + the Lens's level.
  * `lowrise` draws the blocks between the towers: their windows sit on a world grid like the old boxes'.
  */
 export function createSkylineMaterial({ lowrise = false } = {}) {

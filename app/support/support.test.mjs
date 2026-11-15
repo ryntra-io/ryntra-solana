@@ -72,7 +72,7 @@ test("the privacy policy's Android section says what stays on the phone, the wal
   assert.match(words, /Google Firebase Cloud Messaging/);
   assert.equal(en.pointer, null, "an English reader needs no pointer");
   assert.ok(uk.pointer, "a Ukrainian reader of the English policy is shown where the section is");
-  /* The published policy as data (CITY-157: the city's page draws it): the section second, in the reader's language,
+  /* The published policy as data (the city's page draws it): the section second, in the reader's language,
      numbered in order, and the processor named where the processors are. */
   for (const locale of LOCALES) {
     const policy = privacyPolicy(locale);
@@ -119,7 +119,7 @@ test("the Terms carry the content rules a launch agrees to, in both languages (r
   assert.match(JSON.stringify(uk), /може сховати його картинку, опис і посилання/);
   assert.equal(en.pointer, null);
   assert.ok(uk.pointer);
-  /* The published Terms as data (CITY-157): the section tenth, in the reader's language, the report going to the inbox. */
+  /* The published Terms as data: the section tenth, in the reader's language, the report going to the inbox. */
   for (const locale of LOCALES) {
     const terms = termsOfUse(locale);
     const launch = terms.sections[9];
@@ -138,7 +138,7 @@ test("both pages are in the footer, the support page at both of its addresses; o
   assert.ok(hasUkAddress("/support"));
   assert.equal(localizedPath("/support", "uk"), "/uk/support");
   assert.equal(localizedPath("/legal/privacy", "uk"), "/legal/privacy", "the policy has one address; the cookie keeps the language");
-  /* Both stay at their addresses (the Android app's store listing names them) and are the city's pages since CITY-157:
+  /* Both stay at their addresses (the Android app's store listing names them) and are the city's pages:
      offered to the index in English, never held out as old pages. */
   const urls = sitemapEntries().map((entry) => entry.url);
   for (const url of ["https://ryntra.io/support", "https://ryntra.io/legal/privacy"]) assert.ok(urls.includes(url), `${url} is offered to the index`);

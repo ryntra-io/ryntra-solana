@@ -1,5 +1,5 @@
 /**
- * CITY-220 · the three doors of the city's launch on mainnet's recorded state — no network is reached.
+ * The three doors of the city's launch on mainnet's recorded state — no network is reached.
  *
  * Mainnet's preset configs as the audit of 18.10 read them (`lib/core/venues/meteora-dbc/fixtures/
  * mainnet-dbc-accounts-2026-10-18.json`; a DBC config never changes once created), and the engine's own launch venue

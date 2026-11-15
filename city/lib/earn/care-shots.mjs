@@ -1,7 +1,7 @@
-// «Your agent looks after it» (CITY-203), at 1440×900 and 390×844 → <out>/care-<state>-<size>-<lang>.png
+// «Your agent looks after it», at 1440×900 and 390×844 → <out>/care-<state>-<size>-<lang>.png
 //   NEXT_PUBLIC_RYNTRA_CITY_EARN=open NEXT_PUBLIC_RYNTRA_CITY_HARBOR=open NEXT_PUBLIC_RYNTRA_AGENT_CARE=devnet npm run dev, then:
 //   LANG_EARN=uk node city/lib/earn/care-shots.mjs [out] [baseUrl]      (LANG_EARN=en for English)
-// The same stub wallet and fixtures as the Zap's screens (CITY-198); the care's own door answers from a fixture too.
+// The same stub wallet and fixtures as the Zap's screens; the care's own door answers from a fixture too.
 // No wallet and no keys: a stub wallet registers through the Wallet Standard events and never signs. The routes answer
 // from fixtures — the engine's recorded SOL–USDC pools (16.10), a JitoSOL–SOL pool written by hand, and the Zap's Review
 // shaped like the engine's (`pier-fixtures.mjs` `zapReview`). The figures on these screens are fixtures.

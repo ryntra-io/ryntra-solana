@@ -1,4 +1,4 @@
-// CITY-238 · what the machine with no network runs. One job per process:
+// What the machine with no network runs. One job per process:
 //
 //   node entry.mjs <job.json> <answer.json> [rig.mjs]
 //

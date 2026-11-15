@@ -1,9 +1,9 @@
 import { useSyncExternalStore } from 'react';
 
 /**
- * The page inside the Ryntra app (CITY-6a): the app's WebView marks its user agent `RyntraApp/<version>`
+ * The page inside the Ryntra app: the app's WebView marks its user agent `RyntraApp/<version>`
  * (docs/city/APP-BRIDGE.md). There the page hides what only a browser needs — posting to X from a browser tab, an
- * install prompt — and the app's bridge (CITY-6b) does the rest. Read on the client only: the server's page and the
+ * install prompt — and the app's bridge does the rest. Read on the client only: the server's page and the
  * first paint are the browser's, and the app's view follows right after.
  */
 export function isRyntraApp(userAgent: string | null | undefined): boolean {

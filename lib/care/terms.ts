@@ -1,5 +1,5 @@
 /**
- * CITY-203 — the agent looks after a person's Meteora liquidity: the terms they give once and the policies they become.
+ * The agent looks after a person's Meteora liquidity: the terms they give once and the policies they become.
  *
  * The same primitive as the agent's budget (`../mandate/**`, decision 95): their Squads smart account holds the position in
  * its vault, and ProgramInteraction policies on it name the one key that may act (the agent's, in Google Cloud KMS) and

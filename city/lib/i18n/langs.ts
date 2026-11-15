@@ -1,6 +1,6 @@
 /**
  * The languages of the city and the one rule that picks among them, with nothing of React in it: the route entry's
- * boot script, the server page and the tests read it as it is (CITY-79). The store and the hooks are `./lang.ts`.
+ * boot script, the server page and the tests read it as it is. The store and the hooks are `./lang.ts`.
  */
 
 export const LANGS = ['en', 'uk'] as const;

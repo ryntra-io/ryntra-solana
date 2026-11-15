@@ -1,6 +1,6 @@
-/* The Money window's contents (CITY-63): one amber action per screen, mint only for money that arrived, flare only when
-   something is wrong. The glass, the head and the moving are the city's one window frame (CITY-65), a window on a
-   computer and the bottom sheet on a phone. Tokens and the type scale from city/styles/city.module.css (CITY-11). */
+/* The Money window's contents: one amber action per screen, mint only for money that arrived, flare only when
+   something is wrong. The glass, the head and the moving are the city's one window frame, a window on a
+   computer and the bottom sheet on a phone. Tokens and the type scale from city/styles/city.module.css. */
 
 .display {
   font-family: var(--font-display, system-ui), system-ui, sans-serif;
@@ -11,7 +11,7 @@
   text-transform: uppercase;
 }
 
-/* ---------- In the city's window frame (CITY-65) ----------
+/* ---------- In the city's window frame ----------
    The frame brings the glass, the head with «Money», the moving and the whole screen; the contents fill its body. */
 
 .framed {
@@ -22,7 +22,7 @@
   padding: 12px 16px 14px;
 }
 
-/* CITY-209: the window stands as tall as its contents (`fit`), up to its place — no empty glass under a short tab. The
+/* The window stands as tall as its contents (`fit`), up to its place — no empty glass under a short tab. The
    contents then stand in the flow and shrink to the frame's ceiling, the tabs stay put and the tab's body scrolls. On the
    whole screen the window is not `fit` and the contents fill it as before. */
 :global([data-window-fit]) .framed {
@@ -113,7 +113,7 @@
   margin-top: 12px;
 }
 
-/* Ukrainian names are longer («Поповнити», CITY-79): each tab takes the room its name needs and the rest is shared,
+/* Ukrainian names are longer: each tab takes the room its name needs and the rest is shared,
    so no name is cut on a phone. */
 :global(html:lang(uk)) .tabs {
   grid-template-columns: repeat(5, auto);
@@ -1161,7 +1161,7 @@
   white-space: nowrap;
 }
 
-/* ---------- Pay link (CITY-155): the link made, whole, with its copy and share ---------- */
+/* ---------- Pay link: the link made, whole, with its copy and share ---------- */
 
 .payMade {
   display: grid;

@@ -9,7 +9,7 @@ import { isExitPolicy } from '../../../lib/bots/ladder/exit.ts';
 import { ladderOf, type BotDraft } from './draft.ts';
 
 /**
- * The ladder composer in the bots window (B5, CITY-135; mainnet CITY-219): a buy or an exit ladder — or Smart DCA's
+ * The ladder composer in the bots window: a buy or an exit ladder — or Smart DCA's
  * ladder leg — placed as DLMM limit orders, signed once in the person's own wallet.
  *
  * The window shows this only on the network the deployment names, `NEXT_PUBLIC_RYNTRA_CITY_LADDER=devnet` or
@@ -30,7 +30,7 @@ export type LadderPoolInfo = Readonly<{
   takesLimitOrders: boolean;
   existingArrays: readonly number[];
   bitmapExtension: boolean;
-  /** The chain's rent and priority the cost line stands on; CITY-135's constants when absent. */
+  /** The chain's rent and priority the cost line stands on; the constants when absent. */
   terms?: ChainTerms;
   /** The most one ladder may place on this network, dollars; null or absent — no cap. */
   maxUsd?: number | null;
@@ -125,7 +125,7 @@ export type LiveLadder = Readonly<{
   legs: readonly PlacedLeg[];
   placedAt: number;
   closedAt: number | null;
-  /** When the person sent its cancellation: the ladder closes once the chain shows every order gone (CITY-231). */
+  /** When the person sent its cancellation: the ladder closes once the chain shows every order gone. */
   cancelSentAt?: number | null;
 }>;
 
@@ -143,14 +143,13 @@ export const isLiveLadder = (value: unknown, network: LadderNetwork = LADDER_NET
   isRecord(value.draft) &&
   isExitPolicy((value.draft as Record<string, unknown>).exit);
 
-/** What the window's action is doing now, one at a time; `check` — reading the chain before «Place» (CITY-233). */
+/** What the window's action is doing now, one at a time; `check` — reading the chain before «Place». */
 export type Busy = Readonly<{ kind: 'check' | 'place' | 'cancel' | 'finish'; id: string | null }> | null;
 
 /**
  * The last answer the person sees under the action, in a word the window translates. `checking` — sent, and the relay's
- * answer was lost: the chain is being read for what landed (CITY-231). `rest` — a cancellation took back part, the rest
- * waits for one more prompt; `elsewhere` — this wallet already has a ladder in the pool, placed from somewhere else
- * (CITY-233). `bot` — the answer belongs to a bot read from the chain, shown under that bot.
+ * answer was lost: the chain is being read for what landed. `rest` — a cancellation took back part, the rest
+ * waits for one more prompt; `elsewhere` — this wallet already has a ladder in the pool, placed from somewhere else. `bot` — the answer belongs to a bot read from the chain, shown under that bot.
  */
 export type LadderNoteKind = 'placed' | 'cancelled' | 'partly' | 'costsChanged' | 'walletNo' | 'refused' | 'unreachable' | 'overCap' | 'checking' | 'rest' | 'elsewhere';
 export type LadderNote = Readonly<{ kind: LadderNoteKind; at: number; reason?: string; bot?: string }> | null;
@@ -179,9 +178,9 @@ type LadderState = {
   note: LadderNote;
   /** The cost line shown before the last tap, when the server's reading came back higher: shown again, one more tap. */
   shownCosts: LadderCosts | null;
-  /** A rebuild waiting for the chain to close the old ladder (CITY-233). */
+  /** A rebuild waiting for the chain to close the old ladder. */
   rebuild: Rebuild;
-  /** A ladder of this wallet's from elsewhere in the pool being composed (CITY-233). */
+  /** A ladder of this wallet's from elsewhere in the pool being composed. */
   elsewhere: Elsewhere;
   /** Orders from elsewhere the person has looked at: «Place» beside them is a choice now, not a slip. */
   seen: ReadonlySet<string>;

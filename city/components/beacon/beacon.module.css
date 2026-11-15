@@ -1,4 +1,4 @@
-/* Beacons (CITY-72): the editor over the tower card and the button on it, in the city's glass. One amber action;
+/* Beacons: the editor over the tower card and the button on it, in the city's glass. One amber action;
    everything else is quiet glass and violet edges. Tokens from city/styles/city.module.css. */
 
 .layer {
@@ -424,7 +424,7 @@
   }
 }
 
-/* The tower window in its bay (CITY-200): only the glyph while the window is narrow, as on a phone. */
+/* The tower window in its bay: only the glyph while the window is narrow, as on a phone. */
 @container window (max-width: 520px) {
   .action {
     width: 44px;

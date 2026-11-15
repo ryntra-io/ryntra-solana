@@ -18,7 +18,7 @@ import { POST as revokeRoute } from "../api/connect/revoke/route.ts";
 import { POST as tokenRoute } from "../api/connect/token/route.ts";
 
 /**
- * The connector exercised the way a chat reaches it (CITY-154): a real `@modelcontextprotocol/client` over the real
+ * The connector exercised the way a chat reaches it: a real `@modelcontextprotocol/client` over the real
  * Streamable HTTP transport, the real OAuth routes and the real consent signature by an Ed25519 wallet, routed
  * in-process. Only the engine is a stand-in — the tools' routes answer from a fixture, so the test proves the
  * connector, not the market. The browser half (the consent page with a wallet extension) is proved separately on a
@@ -210,7 +210,7 @@ test("refresh through the token route rotates the pair", async () => {
   assert.equal((await again.json()).error, "invalid_grant");
 });
 
-test("the catalog's address (CITY-170): the same consent, its own resource, twelve read-only tools and no Launch", async () => {
+test("the catalog's address: the same consent, its own resource, twelve read-only tools and no Launch", async () => {
   const { wallet, access_token, refresh_token, client_id } = await connect(testWallet(), CATALOG_URL);
   const client = await mcpClient(access_token, CATALOG_URL);
   assert.match(client.getInstructions() ?? "", /prepares and signs no transaction/);

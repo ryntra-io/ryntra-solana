@@ -1,4 +1,4 @@
-// The handle registry (CITY-41): no unchecked, stale, uninvolved or unapproved tag gets into a post.
+// The handle registry: no unchecked, stale, uninvolved or unapproved tag gets into a post.
 //   node --test "city/lib/x/*.test.mjs"
 import assert from 'node:assert/strict';
 import test from 'node:test';

@@ -3,7 +3,7 @@
 //   node city/lib/districts/predict/shots.mjs [out] [baseUrl]
 // No wallet and no keys: the window's reads are answered here with fixtures shaped as Predictions' routes answer
 // (test-fixtures.mjs), and Practice keeps its book on the device. The questions and figures on these screens are
-// fixtures, not a read of AGG; the live pass on the stand is the overseer's. Real screens appear only where the dev
+// fixtures, not a read of AGG; the live pass on the stand is made apart from this. Real screens appear only where the dev
 // server has the real switch open, with a fixture account behind a fake wallet proof.
 import { chromium } from "playwright";
 import { mkdirSync } from "node:fs";

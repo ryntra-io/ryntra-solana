@@ -1,12 +1,12 @@
 /**
- * CITY-174 — what the person signs: turn the agent on, stop it, take the rest back. Each is one transaction and one
+ * What the person signs: turn the agent on, stop it, take the rest back. Each is one transaction and one
  * signature of her wallet; nothing here holds or asks for a key.
  *
  * - **Enable.** Her smart account (created in the same transaction when she has none), the budget moved into its vault,
  *   and the agent's policy — the terms of `./terms.ts` — at once. She pays the policy's rent, and it comes back to her
  *   when the policy goes.
  * - **Stop.** The policy removed: from the next block the agent can sign whatever it likes — nothing it signs moves the
- *   budget. A trade it prepared before falls on chain (CITY-136 §2, §7).
+ *   budget. A trade it prepared before falls on chain.
  * - **Withdraw.** As the smart account's settings signer she moves the rest to her wallet herself: no policy, no agent,
  *   no Ryntra in the way. SOL comes back unwrapped.
  */
@@ -59,7 +59,7 @@ export type SmartAccount = Readonly<{ kind: "absent"; config: ProgramConfig }> |
  */
 export type EnablePlan = Readonly<{ mandate: Mandate; transactions: readonly (readonly TransactionInstruction[])[] }>;
 
-/** The owner's canonical account of `mint` under the coin's token program — Token's unless named (CITY-184). */
+/** The owner's canonical account of `mint` under the coin's token program — Token's unless named. */
 export const tokenAccountOf = (owner: PublicKey, mint: PublicKey, program: PublicKey = TOKEN_PROGRAM_ID) => getAssociatedTokenAddressSync(mint, owner, true, program);
 
 /** A token the agent buys for her: its mint, and its program when it is not Token's (a coin of Token-2022). */
@@ -171,7 +171,7 @@ export function planWithdraw(mandate: Mandate, balance: bigint, options: Readonl
   const mint = mandate.terms.budgetMint;
   const program = budgetProgramOf(mandate.terms);
   const inner: TransactionInstruction[] = [];
-  /* CITY-195: a coin's account a working agent still routes its buys through stays open — it is emptied, not closed. */
+  /* A coin's account a working agent still routes its buys through stays open — it is emptied, not closed. */
   const keep = Boolean(options.keepOpen) && !mint.equals(NATIVE_MINT);
   if (!mint.equals(NATIVE_MINT) && balance > 0n) {
     inner.push(createTransferCheckedInstruction(mandate.budgetAccount, mint, tokenAccountOf(human, mint, program), mandate.vault, balance, budgetDecimalsOf(mandate.terms), [], program));

@@ -72,7 +72,7 @@ export type CashRow = Readonly<{
 
 export type Mine = Readonly<{
   rows: readonly MineRow[];
-  /** SOL and the dollar coins, first in the panel and in the total (CITY-150: «Mine» said $0.74 beside Money's $37.63). */
+  /** SOL and the dollar coins, first in the panel and in the total («Mine» said $0.74 beside Money's $37.63). */
   cash: readonly CashRow[];
   /** The sum of the rows and the cash that have a value; null when none has. */
   totalUsd: number | null;

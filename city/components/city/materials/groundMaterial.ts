@@ -7,7 +7,7 @@ import { GLSL_LIGHT, shareLight } from '../skyline/light';
 import { QUAY_LAMPS } from '../skyline/Quay';
 
 /**
- * The obsidian island (the water round it is `skyline/Water.tsx`). Since CITY-56 the streets are asphalt from the
+ * The obsidian island (the water round it is `skyline/Water.tsx`). The streets are asphalt from the
  * Blender tile, with wet patches that mirror the city, pale pavements and kerbs, soft capped pools under the street
  * lights and a paved promenade along the quay. Roads follow the same plan as the layout (ring roads and
  * spokes from the plaza) and are drawn as rows of amber street lights, so from above the city reads as a

@@ -12,7 +12,7 @@ export const dynamic = "force-dynamic";
 export const maxDuration = 30;
 
 /**
- * CITY-204 — the money autopilot: `GET ?owner=` — the wallet's plan and what the agent did with it (the shares now, what
+ * The money autopilot: `GET ?owner=` — the wallet's plan and what the agent did with it (the shares now, what
  * it earned over the week, its last holds); `POST` — the plan the person just signed joins the book: its trade's mandate
  * from the agent's book, its legs' signatures from the chain (`lib/pilot/book.server.ts`). Public data only; this route
  * holds no key, builds nothing and signs nothing. Closed unless `RYNTRA_MONEY_PILOT=on` over the mandate's switch.

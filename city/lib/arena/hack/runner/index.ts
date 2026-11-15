@@ -1,10 +1,10 @@
 /**
- * The Hack step runner (CITY-225) in one import: the attacker/defender over the pinned-copy sandbox (CITY-224). An
+ * The Hack step runner in one import: the attacker/defender over the pinned-copy sandbox. An
  * agent works an order's copy through four tools — read an account, assemble an input, run it, submit a finding — with
- * its brain on the one model gateway (CITY-45), under the class ceiling and a time wall. The sandbox runs in a worker
+ * its brain on the one model gateway, under the class ceiling and a time wall. The sandbox runs in a worker
  * with no network, off the routes process.
  *
- * No routes (CITY-226), no windows (CITY-227), no money (CITY-229) here. See `README.md`.
+ * No routes, no windows, no money here. See `README.md`.
  */
 
 export type { ProveArgs, ProveWindow, SandboxBackend, SandboxExecution, Stamp, InProcessBackendDeps } from "./backend.ts";

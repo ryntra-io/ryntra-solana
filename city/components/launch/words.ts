@@ -3,7 +3,7 @@ import { words } from '../../lib/i18n/dict.ts';
 /** A share in basis points as the eye reads it: 50 → «0.5%», 250 → «2.5%». */
 const sharePct = (bps: number) => `${Number((bps / 100).toFixed(2))}%`;
 
-/** The words of Launch — the sheet, the launch tower's card — and of the Hall of Fame (CITY-79). */
+/** The words of Launch — the sheet, the launch tower's card — and of the Hall of Fame. */
 export const LAUNCH = words(
   {
     raise: 'Raise your tower',
@@ -103,7 +103,7 @@ export const LAUNCH = words(
     seeTx: 'See the transaction',
     seeAccount: 'See the account',
     signStub: 'STUB DATA',
-    /* CITY-212: «Share earnings» — the creator's fees split between wallets, fixed at launch. */
+    /* «Share earnings» — the creator's fees split between wallets, fixed at launch. */
     shareTitle: 'Share earnings',
     shareOnlyYou: 'Only you',
     shareYou: 'You',
@@ -125,7 +125,7 @@ export const LAUNCH = words(
     shareDetails: 'Earnings split',
     shareFixed: 'Written once at launch: nobody can change it, not even Ryntra.',
     shareClaims: 'Each wallet claims its own part.',
-    /* CITY-212: «Your people first» — early access before public trading. */
+    /* «Your people first» — early access before public trading. */
     earlyTitle: 'Your people first',
     earlyOff: 'Everyone at once',
     earlyBring: 'They bring up to',
@@ -142,7 +142,7 @@ export const LAUNCH = words(
     openedTitle: (symbol: string) => `$${symbol} is set`,
     openedLine: (opens: string, everyone: string) => `Your people get in at ${opens} · everyone at ${everyone}`,
     openedPending: 'Solana is still confirming it.',
-    /* CITY-220: the creator calls their people with one link. */
+    /* The creator calls their people with one link. */
     openedInvite: 'Invite your people',
     openedCopied: 'Link copied',
     openedOpen: 'Open',
@@ -289,7 +289,7 @@ export const LAUNCH = words(
 );
 
 /**
- * The people's early-access window (CITY-220): one thing to do at each moment — come in with USDC, start the one buy
+ * The people's early-access window: one thing to do at each moment — come in with USDC, start the one buy
  * for everyone, take the tokens and what was not spent. How it holds is behind «i».
  */
 export const ENTRY = words(

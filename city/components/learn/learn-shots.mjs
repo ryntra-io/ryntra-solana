@@ -1,4 +1,4 @@
-// «Learn» (CITY-202) for review: every chapter of the window, desk and phone, English and Ukrainian, on the real GPU.
+// «Learn» for review: every chapter of the window, desk and phone, English and Ukrainian, on the real GPU.
 //   node city/components/learn/learn-shots.mjs [out=docs/shots/city-202] [baseUrl=http://localhost:3000]   (npm run dev running)
 // → <out>/<lang>-<size>-<nn>-<slug>.png, plus the list on a phone and «How it works inside» open on the agent's chapter.
 // The window opens through the development hook window.__learn (`city/lib/learn/store.ts`); the city's controls never change.

@@ -6,7 +6,7 @@ import { BASE_FEE_LAMPORTS, CLASSIC_MINTS, TOKEN_ACCOUNT_RENT_LAMPORTS } from '.
 import { cleanAmount } from '../money/amount.ts';
 
 /**
- * The payer's page in the city (CITY-156), the rules alone: what the window says for each state the engine reports, the
+ * The payer's page in the city, the rules alone: what the window says for each state the engine reports, the
  * costs it shows before the wallet, and the one payment — built by the engine, signed by the person's wallet, sent once
  * by the engine. The engine is `lib/pay/**` behind `/api/pay/<id>`, `/api/pay/<id>/transaction` and
  * `/api/pay/<id>/submit`, exactly as it was: the same bodies, the same order, nothing decided here about money. No

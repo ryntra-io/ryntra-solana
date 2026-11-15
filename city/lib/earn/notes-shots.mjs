@@ -1,4 +1,4 @@
-// Earn's notes for review (CITY-100) → <out>/notes-<state>-<lang>-<size>.jpg.
+// Earn's notes for review → <out>/notes-<state>-<lang>-<size>.jpg.
 //   NEXT_PUBLIC_RYNTRA_CITY_EARN=open npm run dev, then
 //   node city/lib/earn/notes-shots.mjs [out=docs/shots/city-100] [baseUrl=http://localhost:3000] [--fresh]
 // A desk (1440) and a phone (375), in English and Ukrainian: Settings → Notifications with the «Earn» group, its «i»

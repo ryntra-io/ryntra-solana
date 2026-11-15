@@ -1,4 +1,4 @@
-// Ryntra City, free building on my quarter (CITY-55): the way in, the dock over a built-up lot, a sign in focus with
+// Ryntra City, free building on my quarter: the way in, the dock over a built-up lot, a sign in focus with
 // its words, a refused piece, and the lot from the city — at 1440×860 and 390×844 → <out>/<state>-<size>.png
 //   node city/components/quarter/kit/free/free-shots.mjs [out] [baseUrl]   (npm run dev running; PRESS_CHROME may point at a Chromium)
 // The world answers from the fixtures below through Playwright's routing, so the screens are the same on every machine.

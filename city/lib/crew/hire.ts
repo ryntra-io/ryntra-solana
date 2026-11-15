@@ -12,12 +12,12 @@ import type { Book } from '../command/parse.ts';
 import type { CrewGates, Role } from './read.ts';
 
 /**
- * «Hire» (CITY-205): each agent's own card, opened where it already lives — the Trader's budget on top of «Bots», the
+ * «Hire»: each agent's own card, opened where it already lives — the Trader's budget on top of «Bots», the
  * Autopilot's plan card, the pool keeper on Earn's piers, the Launcher's prepared launch. A hire only opens a card: the
  * person reads it there and signs once in their own wallet; nothing here builds, signs or sends anything.
  */
 
-/** The pool keeper's switch (CITY-203, `city/lib/earn/care.ts`), read here without the care window's signing half. */
+/** The pool keeper's switch (`city/lib/earn/care.ts`), read here without the care window's signing half. */
 const CARE_OPEN = ['devnet', 'mainnet'].includes(process.env.NEXT_PUBLIC_RYNTRA_AGENT_CARE?.trim().toLowerCase() ?? '');
 
 /** The agents open on this deployment, by the switches their cards already read. */

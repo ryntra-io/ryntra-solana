@@ -1,6 +1,6 @@
 /**
  * What the bots hub may ask Ryntra's bot tools, and the draft they answer
- * with (CITY-133, B3).
+ * with.
  *
  * Every field is a choice, a number or an address — there is no free text
  * anywhere in a request, so nothing a person or a post writes can become a

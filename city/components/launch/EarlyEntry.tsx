@@ -38,7 +38,7 @@ function tokens(raw: string | null | undefined): string {
 }
 
 /**
- * «Your people first» for the people (CITY-220): the creator's link opens this window on the early launch. One number
+ * «Your people first» for the people: the creator's link opens this window on the early launch. One number
  * and one action at each moment — come in with USDC while the window is open, start the one buy for everyone in the
  * hour before trading, take the tokens, take back what was not spent. The one line under it says what holds; the rest is
  * behind «i». The engine builds every byte for this wallet alone; the city reads it back before the wallet opens.

@@ -1,18 +1,18 @@
 /**
- * CITY-174 — the agent's route through Jupiter: Swap API V2 `/build` (Metis), for the vault as taker.
+ * The agent's route through Jupiter: Swap API V2 `/build` (Metis), for the vault as taker.
  *
  * `/build` answers with raw instructions and the agent assembles the transaction itself (`./agent.ts`), so the swap can
  * run inside the person's policy; `/execute` accepts only what `/order` built and is never asked (skill
  * `jupiter-truth`). The request is shaped for the mandate: the vault is the taker, the agent pays fees and rent, the
  * output goes straight to the person's token account, SOL stays wrapped (the budget is wSOL), slippage is the policy's,
- * Ryntra's fee is the platform fee into Ryntra's fee account at the table's rate for the pair (CITY-183, `./fee.ts`) —
+ * Ryntra's fee is the platform fee into Ryntra's fee account at the table's rate for the pair (`./fee.ts`) —
  * a person's swap's lane exactly — and the route is held to 40–50 accounts — the wrapper adds 3–4 accounts and 140–200
- * bytes (CITY-136 §4).
+ * bytes.
  *
  * The answer is read and bounded: one Jupiter `route_v2` or `shared_accounts_route_v2` whose authority is the vault and
  * whose output lands on the person's account, the requested amount and fee, setup that only opens token accounts the
- * agent pays for, no cleanup, no tip, nothing else. Nothing here signs or sends. Jupiter is not deployed on devnet: this lane is mainnet's (CITY-186) — the
- * agent's buys (`jupiterVenue`) and, with CITY-195, the person's sales of what it bought (`jupiterSaleVenue`).
+ * agent pays for, no cleanup, no tip, nothing else. Nothing here signs or sends. Jupiter is not deployed on devnet: this lane is mainnet's — the
+ * agent's buys (`jupiterVenue`) and the person's sales of what it bought (`jupiterSaleVenue`).
  */
 
 import { createAssociatedTokenAccountIdempotentInstruction } from "@solana/spl-token";
@@ -34,7 +34,7 @@ const ASSOCIATED_TOKEN_PROGRAM = "ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL";
 export const AGENT_MAX_ACCOUNTS = Object.freeze({ min: 40, max: 50, default: 48 });
 
 /**
- * The venues the vault cannot trade through (CITY-201), by Jupiter's labels, asked as `excludeDexes`. Manifest's swap
+ * The venues the vault cannot trade through, by Jupiter's labels, asked as `excludeDexes`. Manifest's swap
  * writes to its taker (rent for the trader's seat), and Jupiter lists the taker read-only, trusting it to be the
  * transaction's writable fee payer; the vault signs through the policy's CPI with exactly the privileges listed, so
  * a route through Manifest ends in `PrivilegeEscalation` and the agent's buy or the person's sale never lands. Found on
@@ -228,7 +228,7 @@ async function routeUnderMandate(
 export function jupiterVenue(connection: Connection, selection: JupiterSwapEndpointSelection, dependencies: JupiterDependencies = {}): Venue {
   return {
     async buy(mandate, amount, receiver, coin) {
-      /* CITY-184: a coin of Token-2022 on either side only with every feature of its mint on the agent's list — said before a route is asked. */
+      /* A coin of Token-2022 on either side only with every feature of its mint on the agent's list — said before a route is asked. */
       const [coinMint, budgetMint] = await connection.getMultipleAccountsInfo([coin, mandate.terms.budgetMint], "confirmed");
       /* A transfer fee's rate is the epoch's: read once, for the judgement here and the signer's count. */
       const epoch = [coinMint, budgetMint].some((info) => info?.owner.equals(TOKEN_2022_PROGRAM_ID)) ? BigInt((await connection.getEpochInfo("confirmed")).epoch) : undefined;
@@ -267,8 +267,8 @@ export type JupiterSale = Readonly<{
 }>;
 
 /**
- * CITY-195 — the person's sale through Jupiter on mainnet: the coin from her vault, SOL to her own account of wSOL, Ryntra's
- * fee in that SOL inside the route (CITY-184) — the same lane, the same rules and the same fee account as every buy.
+ * The person's sale through Jupiter on mainnet: the coin from her vault, SOL to her own account of wSOL, Ryntra's
+ * fee in that SOL inside the route — the same lane, the same rules and the same fee account as every buy.
  */
 export type JupiterSaleVenue = Readonly<{
   kind: "jupiter";

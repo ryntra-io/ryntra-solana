@@ -1,4 +1,4 @@
-// «Learn» (CITY-202) from the command line: a question about how Ryntra works opens the guide on its chapter.
+// «Learn» from the command line: a question about how Ryntra works opens the guide on its chapter.
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { learnAsk } from "./ask.ts";

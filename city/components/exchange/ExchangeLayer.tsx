@@ -29,7 +29,7 @@ const HISTORY_MS = 30_000;
 const SETTLE_MS = 350;
 const FIGURES_MS = 10_000;
 
-/** The page is seen: its tab, or the window out in Picture-in-Picture while the tab is behind another (CITY-75). */
+/** The page is seen: its tab, or the window out in Picture-in-Picture while the tab is behind another. */
 const visible = () => cityInView();
 
 /** Every `ms` while `on` and the page is in view, the read runs again. */
@@ -46,8 +46,7 @@ function useEvery(on: boolean, ms: number, read: () => void) {
 /**
  * The Exchange in the city: closed for people until the switch says `open` (or `exit`, closing out). Open, it follows
  * the connected wallet, keeps Phoenix's markets, the funding, the account and the history recent while the window is
- * open, asks the engine for the ticket's figures once the typing settles, and stands in the city's one window frame
- * (CITY-65). A run or building your quarter owns the screen, unless a signature holds the window — and holds it in the
+ * open, asks the engine for the ticket's figures once the typing settles, and stands in the city's one window frame. A run or building your quarter owns the screen, unless a signature holds the window — and holds it in the
  * frame too.
  */
 export function ExchangeLayer() {
@@ -93,7 +92,7 @@ function OpenExchange() {
   const address = useWallet((st) => st.connection?.address ?? null);
   const running = useRun((st) => st.phase !== 'off');
   const building = useQuarter((st) => st.mode !== 'city');
-  // Out on a page of its own (CITY-75) the window reads there: the city's copy waits, so nothing is read twice.
+  // Out on a page of its own the window reads there: the city's copy waits, so nothing is read twice.
   const away = useWindows((st) => st.out.exchange?.via === 'tab');
 
   useEffect(() => startWallets(), []);
@@ -161,7 +160,7 @@ function OpenExchange() {
     () =>
       useCity.subscribe((city, before) => {
         const exchange = useExchange.getState();
-        // Out on another screen (CITY-75) the window is not over the city: home leaves it there.
+        // Out on another screen the window is not over the city: home leaves it there.
         if (!exchange.open || LOCKED.has(exchange.phase) || useWindows.getState().out.exchange) return;
         if (city.homeAt !== before.homeAt) return exchange.hide();
         if (city.selectedId && city.selectedId !== before.selectedId && !useWindows.getState().desk) exchange.hide();
@@ -176,7 +175,7 @@ function OpenExchange() {
   // The frame holds the window while a signature is out: its «Close» waits, as the window's own close does. Its title
   // follows the language: a switch sends the frame the new word.
   const held = LOCKED.has(phase);
-  // Out on another screen (CITY-75) its own page opens on the same market. Its title follows the language (CITY-79).
+  // Out on another screen its own page opens on the same market. Its title follows the language.
   const title = w.exchange;
   const spec = useMemo(
     () => ({

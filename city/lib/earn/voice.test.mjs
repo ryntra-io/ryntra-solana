@@ -1,4 +1,4 @@
-// CITY-201: the city speaks to the person as «ти» in Ukrainian — the agent («Твій агент»), the hint («Торкнись»), Money,
+// The city speaks to the person as «ти» in Ukrainian — the agent («Твій агент»), the hint («Торкнись»), Money,
 // the quarter. Earn, the Guard, Partners and Connect said «ви» («Ваш заробіток», «Підключіть гаманець») beside it.
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";

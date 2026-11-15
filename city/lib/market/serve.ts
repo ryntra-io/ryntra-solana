@@ -1,7 +1,7 @@
 import type { CitySnapshot } from './types.ts';
 
 /**
- * What `/api/city` answers (CITY-200). The route is regenerated at the edge once a minute (`revalidate = 60`); a
+ * What `/api/city` answers. The route is regenerated at the edge once a minute (`revalidate = 60`); a
  * regeneration whose Jupiter read failed (a 429 on the shared key) used to store the bundled skyline as the next
  * minute's answer, so every visitor saw «Delayed 15:55» — the bundle's afternoon — until a later read came through.
  * Now a failed read answers with the last live city this server read while it is recent; with none, it refuses, and

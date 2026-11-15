@@ -646,7 +646,7 @@ export function lockedPositions(read: Pick<MarketRead, "record">, network: Healt
   const creatorRoles = new Set([read.record.creator, ...(read.record.feeSharing?.vault ? [read.record.feeSharing.vault] : [])]);
   /* Ryntra's side of the exit: the config's partner (its fee claimer) and, on Micro and the demo market, the executor. An exit
      NFT anyone else holds now is neither's share by name — its liquidity is still locked for ever, said plainly. */
-  /* Ryntra's earlier executor (CITY-163: its key moved to KMS at a new address) keeps the positions it already holds. */
+  /* Ryntra's earlier executor (its key moved to KMS at a new address) keeps the positions it already holds. */
   const partners = new Set([network.referralOwner, launchExecutorAddress(network), launchRetiredExecutorAddress(network)].filter((address): address is string => Boolean(address)));
   const ownerOf = (address: string) => (creatorRoles.has(address) ? ("creator" as const) : partners.has(address) ? ("partner" as const) : ("other" as const));
   return (view?.receipt?.graduated?.positions ?? []).map((position) => ({ position: position.position, owner: ownerOf(position.owner), address: position.owner }));

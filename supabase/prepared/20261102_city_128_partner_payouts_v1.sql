@@ -1,4 +1,4 @@
--- CITY-128 — the partners' weekly payout statements. PREPARED ONLY; the operator applies it (a production database migration).
+-- The partners' weekly payout statements. PREPARED ONLY; the operator applies it (a production database migration).
 --
 -- Where: the Postgres the Guard store's DATABASE_URL names — the database that holds public.guard_objects.
 -- Not a new table: the statements live in guard_objects as the collection partnerPayoutWeeks (lib/partner-payouts/),

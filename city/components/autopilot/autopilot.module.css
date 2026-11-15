@@ -1,4 +1,4 @@
-/* The agent on its word (CITY-175): what the agent card of CITY-176 does not already draw — a picked chip, the one big
+/* The agent on its word: what the agent card does not already draw — a picked chip, the one big
    figure of what the agent earned, the coin it prepared, a quiet second action, and its row in «Mine». The card's own
    body, hero, chips, dock and details are `../instruct/instruct.module.css`. */
 
@@ -211,7 +211,7 @@
   color: var(--flare);
 }
 
-/* ---------- «Your agent holds» in the tower's window (CITY-187) ---------- */
+/* ---------- «Your agent holds» in the tower's window ---------- */
 
 .sell {
   display: grid;
@@ -361,7 +361,7 @@
   color: var(--flare);
 }
 
-/* ---------------------------------------------------------------- the agent's day (CITY-194) */
+/* ---------------------------------------------------------------- the agent's day */
 
 /* «While you were away»: one card under the HUD's top, dark glass with the agent's amber edge. */
 .away {
@@ -370,7 +370,7 @@
   top: calc(max(12px, env(safe-area-inset-top)) + 70px);
   left: 50%;
   transform: translateX(-50%);
-  /* As wide as its line and its button (CITY-201): a fixed 420 px cut «+0,008 SOL» to «+0,008 S…» beside «Опублікувати в X». */
+  /* As wide as its line and its button: a fixed 420 px cut «+0,008 SOL» to «+0,008 S…» beside «Опублікувати в X». */
   width: max-content;
   min-width: min(420px, calc(100vw - 32px));
   max-width: calc(100vw - 32px);
@@ -658,7 +658,7 @@
   }
 }
 
-/* CITY-193 — the strategy in one line, the practice's own kicker, a quiet second action, the run on history. */
+/* The strategy in one line, the practice's own kicker, a quiet second action, the run on history. */
 .plan {
   margin: 2px 0 0;
   font-size: var(--type-small, 14px);
@@ -708,7 +708,7 @@
   opacity: 0.6;
 }
 
-/* CITY-70 — the mission at the top: one state, toned; then three controls, each its own, each one tap. */
+/* The mission at the top: one state, toned; then three controls, each its own, each one tap. */
 .state {
   display: inline-flex;
   align-items: center;

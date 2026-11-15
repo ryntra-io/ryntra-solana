@@ -1,9 +1,9 @@
-// «Sell» in the tower's window (CITY-187) for review: the tower whose coin the agent bought → the share priced → 50 % →
+// «Sell» in the tower's window for review: the tower whose coin the agent bought → the share priced → 50 % →
 // how it works → sold, one line → not sold, with the way back; on a desk (1440×900) and a phone (375×812 — 390 with
 // NETWORK=mainnet), in English and Ukrainian → <out>/<lang>-<size>-<n>-<step>.jpg
 //   NEXT_PUBLIC_RYNTRA_CITY_AUTOPILOT=devnet NEXT_PUBLIC_RYNTRA_CITY_MANDATE=devnet NEXT_PUBLIC_RYNTRA_CITY_TRADE=open npm run dev -- -p 3187
 //   node city/lib/autopilot/sell-shots.mjs [out] [baseUrl]          LANGS=en,uk  SIZES=desk,phone  PRESS_CHROME=<chromium>
-// CITY-195 — mainnet, through Jupiter (the deployment's switches at `mainnet`, NETWORK=mainnet here):
+// Mainnet, through Jupiter (the deployment's switches at `mainnet`, NETWORK=mainnet here):
 //   NETWORK=mainnet node city/lib/autopilot/sell-shots.mjs docs/shots/city-195 http://localhost:3195
 //
 // Every figure is a fixture: the city's read is the bundled snapshot; the agent's book says it bought Bonk for this wallet;

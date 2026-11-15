@@ -1,7 +1,7 @@
 import { createHash } from "node:crypto";
 
 /**
- * Hashing shared by commitments, the dice stream and log digests (CITY-69). SHA-256 from `node:crypto`; strings are
+ * Hashing shared by commitments, the dice stream and log digests. SHA-256 from `node:crypto`; strings are
  * hashed as UTF-8, results are lowercase hex, so anyone with a log derives the same bytes.
  */
 

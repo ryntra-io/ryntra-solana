@@ -6,7 +6,7 @@ import { advance, directionOf, emptyFeed, FEED, fallOf, freshRead, gainers, infl
 import { ago, money, move } from "./format.ts";
 import { FEED_KINDS } from "./settings.ts";
 
-/* CITY-66: the home's live event feed — what it picks, in what order, from which reads, and what it never says. */
+/* The home's live event feed — what it picks, in what order, from which reads, and what it never says. */
 
 const NOW = Date.parse("2026-10-28T12:00:00Z");
 const MIN = 60_000;
@@ -410,7 +410,7 @@ test("time reads short: now, minutes, hours, days; a clock ahead is now", () => 
   assert.equal(money(NaN), "$0");
 });
 
-test("a pool with no money in it is no news: «New pool · $0 liquidity» never stands in the feed (CITY-200)", () => {
+test("a pool with no money in it is no news: «New pool · $0 liquidity» never stands in the feed", () => {
   const empty = tower({ district: "docks", verified: false, liquidity: 0, launchedAt: new Date(NOW - 10 * MIN).toISOString() });
   const unread = tower({ district: "docks", verified: false, liquidity: undefined, launchedAt: new Date(NOW - 10 * MIN).toISOString() });
   const real = tower({ district: "docks", verified: false, liquidity: 5_000, launchedAt: new Date(NOW - 10 * MIN).toISOString() });

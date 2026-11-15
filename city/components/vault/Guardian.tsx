@@ -8,7 +8,7 @@ import type { GuardianState } from '@/city/lib/vault/store';
 import { createArmourMaterial, glow } from './materials';
 
 /**
- * The guard at the Vault's door: a simple stand-in until the characters line brings the hero guard (CITY-57) — a robot
+ * The guard at the Vault's door: a simple stand-in until the characters line brings the hero guard — a robot
  * of separate armoured parts with a light visor for a face. This is the point where that guard plugs in: the same
  * `<Guardian state=… />`, the same four states the characters line names.
  *

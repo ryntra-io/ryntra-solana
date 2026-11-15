@@ -33,6 +33,7 @@ export const VENUE_IDS = [
   "pump",
   "meteora-dbc",
   "meteora-dlmm",
+  "meteora-dlmm-pro",
   "meteora-damm2",
   "launchlab",
   "phoenix",

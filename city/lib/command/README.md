@@ -1,4 +1,4 @@
-# The command line and Ryntra in every window (CITY-85)
+# The command line and Ryntra in every window
 
 Helm SPEC §1, §8–9 (`docs/research/ryntra-city-helm-2026-10-29/SPEC.md`): Ryntra lives in the command line and in every
 window. The line **only opens a filled window and never signs**; Ryntra **only advises**.
@@ -52,8 +52,8 @@ Over an open window «buy 50», «sell all» and «stop 0.8» mean that window's
   written as one («$ME», «ME»). A price said aloud is dollars: the window is put on USDC first, and the price is
   written once, into exactly the field it was said for — another side, way or command, and it is let go.
 - **Not an order.** A condition («buy JUP if it drops»), a refusal («не купуй JUP») or an agent («запусти бота») goes to
-  Ryntra as a question — unless the agent's one-sentence instructions are open (CITY-176,
-  `NEXT_PUBLIC_RYNTRA_CITY_ONE_SENTENCE`): then «buy $20 of SOL every week», «buy JUP if it drops to 0.7» or «stop on JUP
+  Ryntra as a question — unless the agent's one-sentence instructions are open
+  (`NEXT_PUBLIC_RYNTRA_CITY_ONE_SENTENCE`): then «buy $20 of SOL every week», «buy JUP if it drops to 0.7» or «stop on JUP
   at 0.8» put the agent's row first, which opens its card (`city/lib/instruct/`) — the card shows what will be set, and
   the person signs there. The line itself still opens only; it signs nothing.
 - **Only open windows.** A window whose switch is shut here is not offered (`fit`); a limit where Spot is shut opens
@@ -67,7 +67,7 @@ Over an open window «buy 50», «sell all» and «stop 0.8» mean that window's
 | File | What |
 | --- | --- |
 | `parse.ts` | Pure: the sentence → a `Command`; `fit` to the deployment's switches; `suggest` — the rows under the field; `bookOf` — the coins a command can name (verified towers, SOL, USDC). |
-| `run.ts` | Pure: a `Command` → calls on `Doors`, and the list of doors (open, fill, ask — nothing else; since CITY-176 `openInstruction` and `openInstructions` open the agent's card and «My instructions»). |
+| `run.ts` | Pure: a `Command` → calls on `Doors`, and the list of doors (open, fill, ask — nothing else; `openInstruction` and `openInstructions` open the agent's card and «My instructions»). |
 | `doors.ts` | The city's doors on its own stores; what is on screen (`contextNow`, `towerForWindow`) and the switches (`gatesNow`). |
 | `store.ts` | Whether the line is open. Dev hook: `window.__openCommand()`. |
 | `keys.ts` | ⌘K / Ctrl+K and Escape, installed once before any panel's own keys. |

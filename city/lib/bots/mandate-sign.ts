@@ -6,7 +6,7 @@ import { checkUnsigned, sameMessage } from './mandate-check.ts';
 import { MANDATE_CHAIN, MANDATE_NET, useMandate, type MandateRecord, type MandateStatus } from './mandate.ts';
 
 /**
- * Turning the agent on and stopping it from the browser (CITY-174) — loaded on the tap, never in the city's first frame.
+ * Turning the agent on and stopping it from the browser — loaded on the tap, never in the city's first frame.
  *
  * The person's wallet signs every transaction, in one prompt, on the deployment's network, through the city's one door
  * to a signature (`app-bridge/route.ts`; the Ryntra app's wallet signs on mainnet only, so on devnet it refuses). The server builds and relays;
@@ -78,19 +78,19 @@ export async function readStatus(record: MandateRecord, fetcher: Fetcher = (url,
 }
 
 /**
- * The signed mandate joins the agent's book (CITY-175): from then on the agent trades by itself, on the strategy the
+ * The signed mandate joins the agent's book: from then on the agent trades by itself, on the strategy the
  * person chose. The server checks the mandate on chain before it takes it; a miss here leaves the mandate standing and
  * the next open of the window asks again.
  */
 export async function joinAgent(record: MandateRecord, ask: AgentAskOf & Readonly<{ coin?: string | null }>, fetcher: Fetcher = (url, init) => fetch(url, init)): Promise<boolean> {
-  /* CITY-193: the strategy's plan travels as its text; the steady one without numbers is sent as before. */
+  /* The strategy's plan travels as its text; the steady one without numbers is sent as before. */
   const plan = ask.plan && ask.plan !== 'steady' ? { plan: ask.plan } : {};
   const joined = await post<{ status: string }>(fetcher, '/api/bots/mandate/agent', ask.coin ? { record, strategy: ask.strategy, said: ask.said, coin: ask.coin, ...plan } : { record, strategy: ask.strategy, said: ask.said, ...plan });
   return joined.ok;
 }
 
 /** The window's taps: busy while the wallet is out, one line after. `said` — the person's words, when asked in words. */
-/** The strategy the person chose (CITY-193): its id and its plan's text (`lib/mandate/plans.ts` `planText`). */
+/** The strategy the person chose: its id and its plan's text (`lib/mandate/plans.ts` `planText`). */
 type AgentAskOf = Readonly<{ strategy: StrategyId; plan?: string; said: string | null }>;
 
 export async function tapEnable(who: Who, ask: AgentAskOf = { strategy: 'steady', said: null }): Promise<MandateRecord | null> {

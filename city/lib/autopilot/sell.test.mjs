@@ -1,4 +1,4 @@
-/* CITY-187 — «Sell» in the tower's window: the engine's figures, one wallet prompt, the agent's sale and its receipt,
+/* «Sell» in the tower's window: the engine's figures, one wallet prompt, the agent's sale and its receipt,
    the way back, and the words. The engine is a stand-in answering the routes; the wallet signs with a key made here. */
 import { test } from 'node:test';
 import assert from 'node:assert/strict';

@@ -11,7 +11,7 @@ import { useEarn } from './open.ts';
 import { earnWords } from './words.ts';
 
 /**
- * The SOL Saver (CITY-94): SOL into an LST in one signature, through the city trade card's own engine and flow — the
+ * The SOL Saver: SOL into an LST in one signature, through the city trade card's own engine and flow — the
  * same quote, the same exact order with the engine's checks, the same signature record shared with every trade
  * surface, the same read-back by signature. Nothing new moves money here: this store only picks the pair (SOL → the
  * LST) and keeps what the window shows.

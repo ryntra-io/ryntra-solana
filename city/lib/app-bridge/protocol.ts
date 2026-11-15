@@ -1,5 +1,5 @@
 /**
- * The words the city and the Ryntra app say to each other (`docs/city/APP-BRIDGE.md`, CITY-6b / CITY-6c). Both sides
+ * The words the city and the Ryntra app say to each other (`docs/city/APP-BRIDGE.md`). Both sides
  * read every message through a parser here and drop what they do not know: a message that is not one of these, a field
  * of the wrong shape, an unknown `type` or `code`. Only the fields named below are kept; anything else in a message is
  * left behind, never passed on.
@@ -247,7 +247,7 @@ function readFields(type: RequestType, m: Json): unknown {
 }
 
 /**
- * The app reads what the page asks (CITY-6c, and the fake app of the tests and the stand). The answer to null is
+ * The app reads what the page asks (and the fake app of the tests and the stand). The answer to null is
  * `invalid` when the message still carried an id, nothing otherwise.
  */
 export function parsePageRequest(data: unknown): PageRequest | null {

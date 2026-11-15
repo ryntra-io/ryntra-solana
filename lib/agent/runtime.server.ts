@@ -210,7 +210,7 @@ export function createMarketDataReaders(): Pick<AgentReaders, "dexPairs" | "toke
 export function createAgentModel(env: Readonly<Record<string, string | undefined>> = process.env): AgentModel | null {
   const config = resolveAgentBudgetConfig(env);
   if (!config.modelEnabled) return null;
-  // CITY-205: OpenAI, or Anthropic or OpenRouter when the deployment names it, holds its key and names its models.
+  // OpenAI, or Anthropic or OpenRouter when the deployment names it, holds its key and names its models.
   return createProviderAgentModel({ env });
 }
 

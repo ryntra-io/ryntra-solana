@@ -302,7 +302,7 @@ export function createWorldApi(deps: WorldDeps) {
       if (name !== undefined && (typeof name !== "string" || !/^[\p{L}\p{N} ._-]{1,32}$/u.test(name.trim()))) {
         return failure(400, "BAD_REQUEST", "A display name is 1 to 32 letters, digits, spaces or ._-");
       }
-      /* A name every visitor reads: no disguised word, no order to a model (CITY-73). */
+      /* A name every visitor reads: no disguised word, no order to a model. */
       if (typeof name === "string" && !cleanResidentName(name).ok) return failure(400, "BAD_REQUEST", "Pick another display name.");
       const displayName = typeof name === "string" ? name.trim() : null;
       if (who.resident) {

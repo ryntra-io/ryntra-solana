@@ -1,5 +1,5 @@
 /**
- * The agent's funnel in the admin (CITY-246): the city's moments from `/api/track` (`city/lib/crew/funnel.ts`), counted
+ * The agent's funnel in the admin: the city's moments from `/api/track` (`city/lib/crew/funnel.ts`), counted
  * by day and device — visits that reached each moment, never people, never wallets. Robots' visits (our own walks and
  * shots, the word `bot`) are left out by the store's read and counted apart. Pure: the route reads the store, the page
  * draws this table, the tests read both.
@@ -95,7 +95,7 @@ export function funnelRows(value: unknown): FunnelCount[] {
 }
 
 /**
- * The store's count (`public.admin_agent_funnel`, CITY-246): an unapplied function is «not collected yet», a failing
+ * The store's count (`public.admin_agent_funnel`): an unapplied function is «not collected yet», a failing
  * store «unavailable» — never a zero.
  */
 export async function readAgentFunnel(days: number): Promise<FunnelRead> {

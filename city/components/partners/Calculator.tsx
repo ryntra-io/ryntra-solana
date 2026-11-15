@@ -14,7 +14,7 @@ const VOLUME = { min: 100, max: 100_000 } as const;
 const MIX_WORD = { majors: 'mixMajors', mixed: 'mixMixed', memes: 'mixMemes' } as const satisfies Record<MixId, keyof PartnersWords>;
 
 /**
- * The referrer's calculator (CITY-126): five guesses in, twelve months out on the operator's terms (decision 93) — the
+ * The referrer's calculator: five guesses in, twelve months out on the operator's terms (decision 93) — the
  * month-12 figure, the year, what the friends kept by their discount, and the months as bars, the first share's months
  * lit. The model's rules sit behind «i».
  */

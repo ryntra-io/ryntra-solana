@@ -12,7 +12,7 @@ import { LEARN_WORDS } from './words';
 const pad = (n: number) => String(n).padStart(2, '0');
 
 /**
- * «Learn» (CITY-202): the chapters on the left, the chapter on the right — its reading time, a real frame of the live
+ * «Learn»: the chapters on the left, the chapter on the right — its reading time, a real frame of the live
  * city, one plain comparison, four steps, the chapter in one row, and «How it works inside» behind one quiet control.
  * A narrow window (the phone's sheet) shows one at a time: the list first, then the chapter with «All chapters».
  */

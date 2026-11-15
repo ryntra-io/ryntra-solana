@@ -3,7 +3,7 @@ import type { FeeShare } from '../../../lib/core/launch/fee-shares.ts';
 import { BONDING_CURVE_PROGRAM, FEE_SHARING_PROGRAM } from './split-check.ts';
 
 /**
- * The development stand-in's bytes for a launch (CITY-212, CITY-220) — never in a production bundle (`stub.ts` loads it).
+ * The development stand-in's bytes for a launch — never in a production bundle (`stub.ts` loads it).
  * A creation and a sharing laid out as the engine lays them (`lib/core/venues/meteora-dbc/fee-sharing.server.ts`), with
  * made-up keys and no signatures, so the sheet's read of the sharing (`split-check.ts`) runs on the stand as on a
  * network. Nothing here is ever sent.
@@ -76,7 +76,7 @@ const wire = (tx: Transaction) => toBase64(tx.serialize({ requireAllSignatures: 
 export const STUB_PAYER_COVERED = 7_350_240;
 
 /**
- * A creation laid out as the engine lays it (CITY-220): Ryntra's pool payer pays; the creator hands it the rent; the
+ * A creation laid out as the engine lays it: Ryntra's pool payer pays; the creator hands it the rent; the
  * bonding curve's `initialize_virtual_pool_with_token2022` names the config, the creator and the new mint — so the
  * sheet's read of the creation (`create-check.ts`) runs on the stand as on a network.
  */

@@ -11,7 +11,7 @@ import { WorldStoreUnavailable, type WorldStore } from "./store";
 import type { AccountRead } from "./api";
 
 /**
- * The routes of a quarter's free layout (CITY-55), written against plain `Request` and `Response` like the world's
+ * The routes of a quarter's free layout, written against plain `Request` and `Response` like the world's
  * own (`api.ts`), with the same guarantees: same site only, limited per address and per resident, an
  * `Idempotency-Key` on every save, and a save written only at the layout version the person saw.
  *

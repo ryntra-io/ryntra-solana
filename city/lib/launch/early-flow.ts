@@ -12,7 +12,7 @@ import { BUILD_AGED, BUILD_UNEXPECTED, CITY_CLOSED, EARLY_PARTIAL, WALLET_REFUSE
 import { REFUSAL_WORDS } from './words.ts';
 
 /**
- * A launch with early access from the city (CITY-212), start to end: the picture and the words go to the engine's
+ * A launch with early access from the city, start to end: the picture and the words go to the engine's
  * store as for any launch; the engine builds the creation — the mint, the pool, the vault — from the rules the sheet
  * made of the creator's goal (`early.ts`); the city reads the bytes back (`early-check.ts`); the creator's wallet signs
  * all three in one prompt; the engine sends them one after the other. Nothing here signs, counts or sends by itself.

@@ -1,5 +1,5 @@
 /**
- * Rows that would read the same, told apart (CITY-243): three «SOL · USDC» among the Piers, three «STAIR-USDC» in Earn's
+ * Rows that would read the same, told apart: three «SOL · USDC» among the Piers, three «STAIR-USDC» in Earn's
  * «Mine», two «$THUMB» tabs in «My tower». A row whose name is its own needs nothing more. Where names repeat, every one
  * of the namesakes takes the first of its marks — a fee, a range, a day — that tells them all apart; where no mark does,
  * its place among them («2»). Pure: the windows and the tests read it alike.

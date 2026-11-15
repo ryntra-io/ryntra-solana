@@ -4,7 +4,7 @@ import { readFileSync } from "node:fs";
 
 import { chartOwns, GESTURE_SLOP_PX, HOLD_MS, wayOf } from "./gesture.ts";
 
-// CITY-215: on a phone the chart took every drag, and the window under it never scrolled to the amount and
+// On a phone the chart took every drag, and the window under it never scrolled to the amount and
 // Market · Limit · Stop. Up or down over the candles is now the window's; across, a pinch and a held finger stay the
 // chart's. The browser pass with real touches is `phone-shots.mjs`.
 

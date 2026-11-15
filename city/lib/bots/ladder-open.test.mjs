@@ -1,6 +1,6 @@
 // Run from repo root: node --test city/lib/bots/ladder-open.test.mjs
 //
-// CITY-233 — the ladder before mainnet opens: what the overseer found reviewing plavutskyi/ryntra#1571 and #1575.
+// The ladder before mainnet opens: what the review before the release found.
 //
 // 1. The sheet says its network before the signature: «Real SOL» on mainnet, test SOL on devnet — the chip on the sheet
 //    and the first word of the line above «Place». On mainnet both used to be empty.
@@ -159,7 +159,7 @@ test("1 · the sheet's network in one word: «Real SOL» on mainnet, test SOL on
     assert.equal(dev.net, expected[lang].devnet);
     assert.equal(main.chip, null, "a placed ladder's row in «My bots» stays clean on mainnet");
     assert.ok((main.chip ?? main.net).length > 0, "the sheet's chip is never empty on mainnet any more");
-    assert.equal(dev.chip ?? dev.net, WORDS[lang].devnet, "devnet's chip is CITY-135's");
+    assert.equal(dev.chip ?? dev.net, WORDS[lang].devnet, "devnet's chip is the ladder's own");
   }
 });
 

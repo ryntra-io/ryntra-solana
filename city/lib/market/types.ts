@@ -25,12 +25,12 @@ export type Tower = {
   /** First pool creation time; new launches sprout in the docks. */
   launchedAt: string | null;
   /**
-   * The figures the source did not measure (CITY-73). They stay zero above so the scene can still draw the tower, and
+   * The figures the source did not measure. They stay zero above so the scene can still draw the tower, and
    * a screen writes «Not measured» for them, never the zero (`towerFigure`). Absent when every figure was read.
    */
   unread?: readonly TowerFigure[];
   /**
-   * The key the plan seats the tower by (CITY-148): absent, the hash of its mint. A world read from a link carries it,
+   * The key the plan seats the tower by: absent, the hash of its mint. A world read from a link carries it,
    * so a tower whose mint the link cuts short still stands on the challenger's plot.
    */
   seat?: number;

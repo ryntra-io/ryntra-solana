@@ -1,14 +1,14 @@
 /**
- * Hack on the server (CITY-226): what the routes do, on the store (`contract.ts`) and the library's rules (CITY-223),
+ * Hack on the server: what the routes do, on the store (`contract.ts`) and the library's rules,
  * without HTTP — so every rule is tested in node, and the routes (`api.ts`) only read requests and write answers.
  *
  *   open    — a protocol opens an order on a copy of its own contract, with its owner's signed permission;
  *   take    — an agent of another owner takes it, as an attacker or a defender (one owner plays one side);
  *   submit  — the attacker files a finding: the rules over the judge decide it, the store files it once, under a lock;
  *   move    — the protocol owner pauses, resumes, closes or settles; the deadline is the system's, applied on the way;
- *   resolve: confirm or reject.
+ *   resolve — the protocol owner's word on a finding under review: confirm or reject.
  *
- * A finding's proof comes from the sandbox (`prove`, CITY-224), never from the agent: until a sandbox answers, a
+ * A finding's proof comes from the sandbox (`prove`), never from the agent: until a sandbox answers, a
  * finding waits for review and only the owner's rejection moves it. Nothing here moves money: `payable` is only «the
  * rules would allow a reward».
  */
@@ -37,7 +37,7 @@ import {
 /** The person behind a request: the wallet they proved, and the Ryntra account their agents live under. */
 export type HackCaller = { readonly wallet: string; readonly account: string | null };
 
-/** Whose agent a hunter is (the Ring's agents, CITY-50): `a:<account id>` and whether it plays; `null` — no such agent. */
+/** Whose agent a hunter is (the Ring's agents): `a:<account id>` and whether it plays; `null` — no such agent. */
 export type AgentRead = { readonly account: string; readonly active: boolean } | null;
 
 export type HackServiceDeps = {
@@ -45,14 +45,14 @@ export type HackServiceDeps = {
   /** The owner's signature check (`verify.ts` on the server; a fake in tests). */
   verify: PermissionVerifier;
   /**
-   * The sandbox's verdict on a finding's run in the fork (CITY-224). `null` while no sandbox answers: the finding then
+   * The sandbox's verdict on a finding's run in the fork. `null` while no sandbox answers: the finding then
    * waits for review (`NO_EVIDENCE`) and counts only when a deterministic run proves it.
    */
   prove: (input: { order: Order; finding: Finding }) => Promise<HackProof | null>;
   /** Whose agent a hunter is. Absent only on a developer's stand, where agents are names. */
   agentOf?: (hunter: string) => Promise<AgentRead>;
   /**
-   * Whether a copy is kept for an order's target (`../ranges/range.ts`), so its runs can be played at all (CITY-238).
+   * Whether a copy is kept for an order's target (`../ranges/range.ts`), so its runs can be played at all.
    * Absent — not asked: an order on any copy opens, as before.
    */
   playable?: (target: Order["target"]) => boolean;
@@ -376,6 +376,7 @@ export function createHackService(deps: HackServiceDeps) {
       }
     },
 
+    /** The protocol owner's word on a finding under review. */
     async resolve(caller: HackCaller, input: ResolveInput): Promise<Outcome<{ finding: FindingView }>> {
       if (!isFindingId(input.finding) || (input.verdict !== "confirm" && input.verdict !== "reject")) return fail("BAD_REQUEST", "The body is { finding, verdict: confirm | reject }.");
       const filed = await db.filed(input.finding);

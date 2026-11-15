@@ -35,7 +35,7 @@ import {
 } from "./layout.ts";
 import { parseMemory, recall, remember, serializeMemory } from "./memory.ts";
 
-// The bays of CITY-84 (helm §4): two sides of the workspace, the city in the middle, at least 40 % of it always in view.
+// The bays: two sides of the workspace, the city in the middle, at least 40 % of it always in view.
 
 const DESK = { width: 1440, height: 900 };
 const right = (r) => r.x + r.width;

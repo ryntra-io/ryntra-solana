@@ -3,7 +3,7 @@ import { readFileSync } from "node:fs";
 import test from "node:test";
 
 /*
- * CITY-241: the first screen's one action stands over the Deck, by the Agents — never over the sky and the coin over
+ * The first screen's one action stands over the Deck, by the Agents — never over the sky and the coin over
  * the central tower — and waits while anything else stands in the bottom of the screen. While the scene builds, the
  * city's dusk and mark stand under the canvas instead of a black screen.
  */

@@ -1,6 +1,6 @@
 // Run from repo root: node --test city/lib/arena/hack/runs/runs.test.mjs
 /*
- * CITY-238: an agent's run on the server. The store's rules on memory — and on the real migration on a throwaway
+ * An agent's run on the server. The store's rules on memory — and on the real migration on a throwaway
  * PostgreSQL when HACK_TEST_DATABASE_URL names a local server (for example <local Postgres URL>); the run service over
  * the real step runner, the real sandbox and the library's rules; the routes: a take starts the run, the run's own
  * route serves the journal as the viewer may see it, a retried take never starts a second run — also with the sandbox

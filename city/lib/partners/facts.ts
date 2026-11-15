@@ -3,11 +3,11 @@ import { presetTerms } from '../../../lib/core/launch/preset-terms.ts';
 import { PARTNER_TERMS, type PartnerTerms } from './terms.ts';
 
 /**
- * «Ryntra Partners» (CITY-126) as the city reads it. The partner's terms are the operator's — decision 93, in
+ * «Ryntra Partners» as the city reads it. The partner's terms are the operator's — decision 93, in
  * `city/lib/partners/terms.ts`, the one place the partner page `/partners` reads them from too — so the city and the
  * page never say two different numbers. Ryntra's fees come from the fee policy, a creator's share from the launch
  * preset's terms; nothing here is typed by hand and nothing here pays. The creator partner's share (D-P1) is still the
- * Owner's to decide and is not drawn. No React, no three.js: the tests run it in Node.
+ * operator's to decide and is not drawn. No React, no three.js: the tests run it in Node.
  */
 
 /** The partner's offer as the window prints it, in per cent and days; null while the terms are not set. */

@@ -21,7 +21,7 @@ export async function POST(request: Request) {
   const oauth = createConnectorOAuthServer(getGuardRuntime().store);
   const grantType = form.grant_type ?? "";
   /* RFC 8707: a token request may name its resource or not. Named, it must be the one the grant was made for; not named,
-     the grant's own — `/mcp` or the catalog's `/mcp/read` (CITY-170) — is what the token is bound to. */
+     the grant's own — `/mcp` or the catalog's `/mcp/read` — is what the token is bound to. */
   const resource = form.resource ? form.resource : null;
   try {
     const pair =

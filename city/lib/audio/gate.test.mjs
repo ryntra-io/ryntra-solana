@@ -4,7 +4,7 @@ import { readFileSync } from "node:fs";
 
 import { mayAssemble } from "./gate.ts";
 
-test("the score waits for the first frame and for the person's first gesture (CITY-200)", () => {
+test("the score waits for the first frame and for the person's first gesture", () => {
   assert.equal(mayAssemble(false, { hasBeenActive: true }), false, "never before the city's first frame");
   assert.equal(mayAssemble(true, { hasBeenActive: false }), false, "an untouched page makes no AudioContext: it would stay suspended and warn per node");
   assert.equal(mayAssemble(true, { hasBeenActive: true }), true);

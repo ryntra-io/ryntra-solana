@@ -11,7 +11,7 @@ import s from '../duel/duel.module.css';
 import a from './arena.module.css';
 
 /**
- * The Arena's «Rating» tab (CITY-217): the board of a format — rank, body, name, class and brain, Elo and the record
+ * The Arena's «Rating» tab: the board of a format — rank, body, name, class and brain, Elo and the record
  * — your agent lit. Only rated fights between agents of different owners move it; sparring with the house does not.
  */
 export function BoardTab() {

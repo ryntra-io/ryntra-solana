@@ -12,7 +12,7 @@ import { useBots } from "./store.ts";
 import { WORDS } from "./words.ts";
 
 /**
- * Ryntra in the bots window (CITY-133): the window asks the assistant line's bot tools with taps — a coin, a horizon,
+ * Ryntra in the bots window: the window asks the assistant line's bot tools with taps — a coin, a horizon,
  * an amount — and every body it sends is a request the tools' schema takes; a draft opens in the window's own review,
  * and nothing here signs, sends or asks the wallet anything.
  */

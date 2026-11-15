@@ -5,7 +5,7 @@ import test from "node:test";
 import { CITY_ITEMS, GAME_ITEMS, GAME_WORDS, resetLayer, shownItems, useLayer } from "./layer.ts";
 import { DISTRICT_FRAME, districtViews, mapPoint, MOVERS, resetGameMap, topMovers, useGameMap } from "./map.ts";
 
-/* CITY-81, the «Play» layer: the first screen is money; the game is a layer. */
+/* The «Play» layer: the first screen is money; the game is a layer. */
 
 const read = (path) => readFileSync(new URL(path, import.meta.url), "utf8");
 
@@ -19,7 +19,7 @@ test("every visit starts in City; the switch goes to Play and back", () => {
   resetLayer();
 });
 
-test("Play is the bottom layer of the city's «Back», not a history entry of its own (CITY-150)", () => {
+test("Play is the bottom layer of the city's «Back», not a history entry of its own", () => {
   const hook = read("../../components/hud/useBackLayers.ts");
   const below = hook.slice(hook.indexOf("const EXTRA_BELOW"), hook.indexOf("];", hook.indexOf("const EXTRA_BELOW")));
   assert.match(below.split("\n").find((line) => line.includes("id: '")) ?? "", /id: 'play'/, "Play is listed first, under every other layer");
@@ -111,7 +111,7 @@ test("the city's first screen has no game card, no «Soon», no Market tour; Pla
   assert.doesNotMatch(hud, /QuarterCard|ResidentCard|ClaimCard/, "the quarter's card is not on the city view");
   assert.doesNotMatch(hud, /Soon|soon|LockedCard|dockLocked/, "a closed district is simply not drawn");
   assert.doesNotMatch(hud, /label="Market"|label="Home"|label="Run"/, "Market, Home and Run left the city's dock");
-  // After Play's card, only Launch Night's (CITY-146) — behind its own switch, and only with a show of confirmed launches.
+  // After Play's card, only Launch Night's — behind its own switch, and only with a show of confirmed launches.
   assert.match(hud, /play \? \(\s*<GameSlot \/>\s*\) : nightCard \? \(\s*<NightCard \/>\s*\) : null/);
   assert.match(read("../launch/night-store.ts"), /if \(!switchOpen\) \{\s*useNight\.setState\(\{ status: 'off' \}\);/);
   assert.doesNotMatch(hud, /<HotCard \/>/, "what moves is in the events under the bell, not a card on the city (30.10)");
@@ -134,7 +134,7 @@ test("the Predictions billboard carries live figures: it reads the trending list
   assert.doesNotMatch(board, /fetch\(|placeOrder|buy\(|setAmount/, "a read through the store only — never a bet");
 });
 
-test("the Vault's tower and its name open the room from the city, as «Arena → Vault» does (CITY-241)", () => {
+test("the Vault's tower and its name open the room from the city, as «Arena → Vault» does", () => {
   const vault = read("../../components/vault/VaultTower.tsx");
   const tap = read("../vault/tap.ts");
   const enter = read("../vault/enter.ts");

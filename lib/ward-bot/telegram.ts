@@ -1,5 +1,5 @@
 /**
- * The bot's own Telegram client (CITY-166). A bot of its own, with its own token: the assistant's client
+ * The bot's own Telegram client. A bot of its own, with its own token: the assistant's client
  * (`lib/telegram/api.ts`) reads the assistant bot's token at load, so this one takes its token as an argument and shares
  * nothing with it. Plain text only — no `parse_mode`, so nothing foreign can become markup.
  *

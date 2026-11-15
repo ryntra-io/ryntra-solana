@@ -7,9 +7,9 @@ import { beaconsMode } from '../../../lib/world/beacons/switch.ts';
 import { FILMS, type Films, type GuideFilm } from './films.ts';
 
 /**
- * «How it works» (CITY-43): one lesson a function, each with its film, one line under it and «Try», which opens that
+ * «How it works»: one lesson a function, each with its film, one line under it and «Try», which opens that
  * function's own window in the city. A lesson stands only when two things hold: its film is here (`films.ts` — the
- * lessons of CITY-42, from our own domain) and its function is live on this deployment — open to everyone, or behind a
+ * lessons, from our own domain) and its function is live on this deployment — open to everyone, or behind a
  * switch of the city that is open now, read by the same rules the menu at the bottom, the tower card and the windows
  * read. No lesson, no card: never an empty place, never a «soon». The words wait in `city/components/how/words.ts`.
  * No React and no stores here: the tests run it in Node.
@@ -139,5 +139,5 @@ export function withoutTry(pathname: string, search: string, hash: string): stri
   return `${pathname}${rest ? `?${rest}` : ''}${hash}`;
 }
 
-/** The page of its own (CITY-43): the same lessons outside the city, for a link. */
+/** The page of its own: the same lessons outside the city, for a link. */
 export const HOW_PATH = '/how-it-works';

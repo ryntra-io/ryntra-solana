@@ -1,5 +1,5 @@
 /**
- * The city's bridge (CITY-6c, `docs/city/APP-BRIDGE.md`): the page `https://ryntra.io` in the City tab's WebView and
+ * The city's bridge (`docs/city/APP-BRIDGE.md`): the page `https://ryntra.io` in the City tab's WebView and
  * the app speak only these messages, JSON on both sides. The page asks; the app answers each request by its `id` and
  * tells the page two things of its own — that it is the app (`app.ready`) and which wallet it holds (`wallet.changed`).
  *
@@ -222,7 +222,7 @@ const walletOf = (value: unknown): BridgeWallet | null | undefined => {
 
 /**
  * What the app said, read as the page reads it: an event or a response, or null for anything else. The page's own
- * reader lives with the page (CITY-6b); this one holds the app to the same contract in its tests.
+ * reader lives with the page; this one holds the app to the same contract in its tests.
  */
 export function parseAppMessage(raw: unknown): AppMessage | null {
   const message = envelope(raw, MAX_RAW)

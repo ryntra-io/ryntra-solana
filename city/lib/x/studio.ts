@@ -8,7 +8,7 @@ import { studioLink, studioText } from './post.ts';
 import { ASPECTS, STEP_HZ, checkStoryboard, frameTimes, storyboard, type Aspect, type Cue, type Storyboard } from './timeline.ts';
 
 /**
- * The studio (CITY-38), inside the page: picks a template's facts from the city the page shows, directs the take in the
+ * The studio, inside the page: picks a template's facts from the city the page shows, directs the take in the
  * live city on the studio's clock (`city/lib/x/clock.mjs`), and draws each kept frame for 4:5 and 1:1 from the
  * frame the scene renders (`streamFrames`). The batch script (`city/lib/x/film.mjs`) asks for one frame at a time
  * and makes the files. Development builds only: it hangs on `window.__xstudio` like the city's other screenshot hooks

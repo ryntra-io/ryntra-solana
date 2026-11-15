@@ -1,7 +1,7 @@
 import type { StopsStore } from "./store.ts";
 
 /**
- * When stops live in the engine, and on which store (CITY-149). Pure, so the rules are tested without a server;
+ * When stops live in the engine, and on which store. Pure, so the rules are tested without a server;
  * `server.ts` applies them to the deployment's own settings.
  */
 

@@ -5,9 +5,9 @@ import { hallAction, type HallBoardId } from './hall.ts';
 import { useHall } from './hall-store.ts';
 
 /**
- * A tap on a Hall of Fame sign in the city (CITY-230). The signs stand in the scene as meshes; the city's own tap
+ * A tap on a Hall of Fame sign in the city. The signs stand in the scene as meshes; the city's own tap
  * (`CameraRig`) asks here first whether the ray meets one nearer than the tower it would pick, and a sign met does its
- * board's one action. A sign stands only on a board with a leader (CITY-241), so from the city that is the Hall's panel
+ * board's one action. A sign stands only on a board with a leader, so from the city that is the Hall's panel
  * on that board; `actOnBoard` is the panel's action too, where a board nobody is on opens a launch from the city.
  */
 

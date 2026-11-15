@@ -1,5 +1,5 @@
 /**
- * Foreign text, cleaned before anything reads it (CITY-166).
+ * Foreign text, cleaned before anything reads it.
  *
  * In a group everything but the bot's own words is someone else's: the message, a token's self-chosen name and
  * description, a payment request's label. None of it is trusted. Two passes:

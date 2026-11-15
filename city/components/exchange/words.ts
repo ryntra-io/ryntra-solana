@@ -1,6 +1,6 @@
 import { pl, words } from '../../lib/i18n/dict.ts';
 
-/** The Exchange window's words (CITY-79): its head and tabs, the dock, the picker, the account, the book and the ticket. */
+/** The Exchange window's words: its head and tabs, the dock, the picker, the account, the book and the ticket. */
 export const EX = words(
   {
     exchange: 'Exchange',

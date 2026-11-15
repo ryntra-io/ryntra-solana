@@ -2,7 +2,7 @@ import { create } from 'zustand';
 import { startDistrict, useLaunch } from './district.ts';
 
 /**
- * «Launched on Ryntra» as a window of the city (CITY-185): whether it is open. Its list is the Launch district's own
+ * «Launched on Ryntra» as a window of the city: whether it is open. Its list is the Launch district's own
  * feed (`district.ts`), started here when it has not been yet; the window reads, it never signs.
  */
 type LaunchedState = {

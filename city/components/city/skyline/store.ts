@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 
 /**
- * The skyline kit's state (CITY-56):
+ * The skyline kit's state:
  *  · ready — the kit's towers are on the screen; the procedural towers and capsule walkers step aside then;
  *  · lit — the city's reflection is captured (or this tier has none), so glass and water look as they will stay;
  *  · fallback — the kit failed or is too slow: the procedural towers stand instead.

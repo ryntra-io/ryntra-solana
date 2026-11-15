@@ -1,8 +1,8 @@
-// CITY-238 · the machine's own rig: LiteSVM and the ranges that came with the image. `entry.mjs` loads it unless a test
+// The machine's own rig: LiteSVM and the ranges that came with the image. `entry.mjs` loads it unless a test
 // names another.
 //
 // LiteSVM is found the way node finds any package from here — the image installs it in a folder above this one
-// (`image.mjs`) — or in the folder a stand names (`RYNTRA_HACK_SVM`, as `CITY224_SVM` on the CITY-224 stand).
+// (`image.mjs`) — or in the folder a stand names (`RYNTRA_HACK_SVM`, as `CITY224_SVM` on the stand).
 import { existsSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";

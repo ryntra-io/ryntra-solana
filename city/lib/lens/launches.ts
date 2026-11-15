@@ -6,7 +6,7 @@ import { spotIcon } from '../search/rank.ts';
 import type { NewStage } from './lens.ts';
 
 /**
- * «New» over the whole of Solana (CITY-142, launch strategy §7): every new launch of the network — pump.fun, Bags,
+ * «New» over the whole of Solana (launch strategy §7): every new launch of the network — pump.fun, Bags,
  * Meteora, LaunchLab, bonk.fun and the rest, Ryntra's own among them — read from the engine's Pulse, the same public
  * read Markets uses (`GET /api/spot/pulse`, no wallet, no key on this side). Its three feeds are the three rings: «Нові»
  * (first pool within the hour), «Майже на DEX» (a curve a quarter of the way or further, read from the curve's own
@@ -32,7 +32,7 @@ export const NEAR_MIN_PCT = 25;
 
 export type NewLaunch = Readonly<{
   mint: string;
-  /** The ticker as the city may show it; null when held (CITY-73) or passing for a famous coin it is not. */
+  /** The ticker as the city may show it; null when held or passing for a famous coin it is not. */
   symbol: string | null;
   name: string | null;
   /** Same-origin only: Ryntra's checked picture, or the coin's logo through the engine's icon route. */
@@ -182,7 +182,7 @@ export function stagesOf(rings: Rings): Map<string, NewStage> {
   return out;
 }
 
-/* ---------------------------------------------------------------- the window's order and filter (CITY-191) */
+/* ---------------------------------------------------------------- the window's order and filter */
 
 /** How a ring's list is ordered: as the engine gives it (newest, furthest, latest out), or by one figure, largest first. */
 export type LaunchSort = 'feed' | 'cap' | 'volume' | 'holders';
@@ -277,8 +277,8 @@ export function dockLaunches(rings: Rings, present: ReadonlySet<string>): NewLau
 
 /**
  * A launch as a tower of the Docks: the engine's figures, zero for the ones it did not read — and those named in
- * `unread`, so a screen writes «Not measured» for them, never the zero (CITY-73). It stands in the Docks whatever its
- * ring: the skyline is the city's own rule (CITY-144), not a launchpad's. Unverified, it stands as an anonymous pool.
+ * `unread`, so a screen writes «Not measured» for them, never the zero. It stands in the Docks whatever its
+ * ring: the skyline is the city's own rule, not a launchpad's. Unverified, it stands as an anonymous pool.
  */
 export function towerOfLaunch(launch: NewLaunch): Tower {
   const read: Record<TowerFigure, number | null> = {

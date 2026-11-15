@@ -19,7 +19,7 @@ const renderDuels = () => <DuelsWindow />;
 const closeDuels = () => arenaStore.getState().close();
 
 /**
- * The Arena's Ring window (CITY-51, CITY-217) in the city's one window frame (CITY-65), opened by the Arena's «Ring»
+ * The Arena's Ring window in the city's one window frame, opened by the Arena's «Ring»
  * door and the Agents' «Hangar». Only where the Ring's switch is open (`RING_OPEN`); its «Fight» tab only where the
  * duels' own is too. Otherwise nothing mounts and the doors are not shown.
  */

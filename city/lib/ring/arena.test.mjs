@@ -4,7 +4,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 
 /**
- * CITY-217 «Арена»: the Arena's window state — «my agent» read when it opens (no garage visit), a first agent made in
+ * «Арена»: the Arena's window state — «my agent» read when it opens (no garage visit), a first agent made in
  * the account's own garage in the Arena after a sign-in when one is needed, a closed Ring that shows nothing and asks
  * nothing again, and the board of a format.
  */
@@ -202,7 +202,7 @@ test("picking another mode clears a finished fight from the stage; a live one st
   assert.equal(useDuels.getState().duel, live);
 });
 
-/* CITY-239: a wallet connected but not signed in read «Connect wallet» on the Ring's one button. */
+/* A wallet connected but not signed in read «Connect wallet» on the Ring's one button. */
 test("the one button for a person not signed in: a connected wallet is asked to sign in, never to connect again", async () => {
   assert.equal(entryWord(false, false), "connect");
   assert.equal(entryWord(false, true), "connecting");
@@ -231,7 +231,7 @@ test("the one button for a person not signed in: a connected wallet is asked to 
   assert.match(read("../../components/quarter/WalletChip.tsx"), /const signIn = \(\) => void cityAccount\.getState\(\)\.begin\(null, 'top'\);/u);
 });
 
-/* CITY-240: after a sign-in the wallet refused, the Ring's button stayed «Check your wallet», switched off, for as long
+/* After a sign-in the wallet refused, the Ring's button stayed «Check your wallet», switched off, for as long
    as «my agent» took to answer — seconds on the site. A «no» changed nothing: the button is back at once. */
 test("a refused sign-in gives the button back at once; one that worked still waits for «my agent»", async () => {
   const { client, state } = fake({ signedIn: false });

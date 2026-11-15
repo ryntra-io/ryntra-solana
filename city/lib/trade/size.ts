@@ -78,7 +78,7 @@ export function amountText(raw: bigint, decimals: number): string {
 }
 
 export type Chip = Readonly<{
-  /** 25, 50, 75, 100 — or the person's own sale chips (CITY-87, `city/lib/settings/trade.ts`). */
+  /** 25, 50, 75, 100 — or the person's own sale chips (`city/lib/settings/trade.ts`). */
   share: number;
   /** 25%, 50%, 75%, MAX. */
   label: string;
@@ -100,7 +100,7 @@ export type Sizing = Readonly<{
 
 /**
  * The chips and the slider for an amount (raw, or null when the field holds none) against the most. `shares`: the
- * chips' shares — the person's own sale chips when selling (CITY-87); 25, 50, 75, MAX otherwise.
+ * chips' shares — the person's own sale chips when selling; 25, 50, 75, MAX otherwise.
  */
 export function sizingOf(max: bigint | null, amountRaw: string | null, shares: readonly number[] = SHARES): Sizing {
   const w = wordsNow(SIZE);
@@ -119,8 +119,7 @@ export function sizingOf(max: bigint | null, amountRaw: string | null, shares: r
 /**
  * Where the amount starts. Selling, all of it. Buying with SOL or USDC, a small first amount — 0.1 SOL, 10 USDC —
  * while the wallet covers it or is not known yet, else a quarter of what it can spend; buying with any other coin of
- * the wallet, a quarter of it. Nothing when there is nothing to spend. `solStart`: the person's ⚡ amount in lamports
- * (CITY-87), in place of 0.1 SOL.
+ * the wallet, a quarter of it. Nothing when there is nothing to spend. `solStart`: the person's ⚡ amount in lamports, in place of 0.1 SOL.
  */
 export function startAmount(side: Side, pay: PayAsset, max: bigint | null, solStart?: bigint): bigint {
   if (side === 'sell') return max ?? 0n;

@@ -80,7 +80,7 @@ export function teamLaunchStepByKey(key: string): TeamLaunchStep | null {
 /* -------------------------------------------------------------- the switch */
 
 /**
- * «Спочатку owner/whitelist canary, потім progressive rollout»).
+ * The owner's switch, in the moment of the action (D6: the owner's whitelist first, then a wider rollout).
  * Nothing about Team Launch is open on any deployment until the owner sets `RYNTRA_TEAM_LAUNCH=open`; the canary is
  * the whitelist beside it — while `RYNTRA_TEAM_LAUNCH_WALLETS` names wallets, the server serves those and nobody else,
  * and the progressive rollout is clearing that list.

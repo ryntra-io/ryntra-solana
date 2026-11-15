@@ -6,7 +6,7 @@ import { emptyRating, ratingView } from "./rating.ts";
 import { RingStoreUnavailable, type AgentRecord, type Changed, type RingStore } from "./store.ts";
 
 /**
- * The Ring's agents (CITY-50, decision 72): make one in a garage of your quarter, change its body, brain or script,
+ * The Ring's agents: make one in a garage of your quarter, change its body, brain or script,
  * switch it off. Written against plain values so every rule is tested without a server; `api.ts` puts it on HTTP.
  *
  * - One active agent to a garage slot; the slot must be a garage of the asker's own quarter (the world's word).
@@ -28,7 +28,7 @@ export type RingEngineDeps = {
   models: RingModels;
   keys: RingKeys;
   garage: (input: { accountId: string; quarterId: string; slot: number }) => Promise<GarageCheck>;
-  /** The account's own garage in the Arena (CITY-217, `garage.ts`); absent, the Arena offers none. */
+  /** The account's own garage in the Arena (`garage.ts`); absent, the Arena offers none. */
   bay?: (accountId: string) => { quarterId: string; slot: number };
   now?: () => number;
   newId?: () => string;
@@ -143,7 +143,7 @@ export function createRingEngine(deps: RingEngineDeps) {
 
     quote: (id: string) => deps.models.quote(id),
 
-    /** The asker's agents as their owner sees them, and their garage in the Arena (CITY-217). */
+    /** The asker's agents as their owner sees them, and their garage in the Arena. */
     async mine(accountId: string | null): Promise<MineResponse> {
       if (!accountId) return { signedIn: false, agents: [], bay: null };
       const records = await deps.store.mine(ownerOf(accountId));

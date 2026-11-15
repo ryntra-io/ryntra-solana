@@ -65,7 +65,7 @@ export function usePortfolio(): Readonly<{ owner: string | null; view: Portfolio
       void useExchange.getState().loadAccount();
     }
     useMandate.getState().hydrate();
-    /* CITY-207: the wallet's agents from the engine — the browser's note is only a cache of them. */
+    /* The wallet's agents from the engine — the browser's note is only a cache of them. */
     if (MANDATE_NET || CARE_MODE !== 'closed') void syncAgents(owner);
   }, [owner]);
 

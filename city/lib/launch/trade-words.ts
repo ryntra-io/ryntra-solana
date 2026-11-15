@@ -4,7 +4,7 @@ import { BUILD_AGED, BUILD_UNEXPECTED, TRADE_CLOSED, WALLET_REFUSED, type TradeF
 import { LAUNCH_TRADE } from './words.ts';
 
 /**
- * How Buy and Sell on a launch's tower say the engine's figures, in the language on screen (CITY-79): figures to receive
+ * How Buy and Sell on a launch's tower say the engine's figures, in the language on screen: figures to receive
  * rounded down, figures to pay rounded up, so neither ever reads better than it is. The words are `LAUNCH_TRADE`.
  */
 
@@ -37,7 +37,7 @@ export function unitsText(value: number, round: 'down' | 'up', lang: Lang): stri
   else if (value >= 1) text = cut(value, 2).toFixed(2);
   else if (value === 0) text = '0';
   else {
-    // Written out in full (CITY-243): `String` writes anything under a millionth as «3.7e-7», which read «$3,7E-7» in
+    // Written out in full: `String` writes anything under a millionth as «3.7e-7», which read «$3,7E-7» in
     // «My tower». Two figures after the leading zeros, down to twelve places.
     const places = Math.min(12, Math.max(2, 1 - Math.floor(Math.log10(value))));
     text = cut(value, places).toFixed(places).replace(/\.?0+$/, '');

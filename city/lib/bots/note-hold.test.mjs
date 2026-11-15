@@ -1,6 +1,6 @@
 // Run from repo root: node --test city/lib/bots/note-hold.test.mjs
 //
-// CITY-237 (CITY-235's phone pass, ask 3): «Stopped before your wallet — nothing was sent» stood under the ladder's two
+// «Stopped before your wallet — nothing was sent» stood under the ladder's two
 // quiet buttons — below the edge of a phone's half-screen window — and went after eight seconds, before a person
 // scrolled to it. A «no» now stands right under its action, comes into view when said and stays half a minute.
 import assert from "node:assert/strict";

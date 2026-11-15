@@ -1,8 +1,8 @@
 import { words } from '../../lib/i18n/dict.ts';
 
 /**
- * The words of «How it works» (CITY-43): the window, the page, and each lesson's name, its one line and the two or
- * three steps behind «Details» (CITY-79). Short: what you get, then what you tap — the film shows the rest.
+ * The words of «How it works»: the window, the page, and each lesson's name, its one line and the two or
+ * three steps behind «Details». Short: what you get, then what you tap — the film shows the rest.
  */
 export const GUIDE_WORDS = words(
   {

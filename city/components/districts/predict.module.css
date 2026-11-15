@@ -1,5 +1,5 @@
-/* Predictions over the city (CITY-67, the mocks P1–P3 of docs/city/design/2026-10-28/): one window in the city's frame
-   (CITY-65, city/components/window/) — on a desk a window that floats, sticks and stretches, on a phone the frame's
+/* Predictions over the city (the mocks P1–P3 of docs/city/design/2026-10-28/): one window in the city's frame
+   (city/components/window/) — on a desk a window that floats, sticks and stretches, on a phone the frame's
    bottom sheet; its contents lay out for the window's own width (`@container window`). Cards with the event's
    picture, a split bar of the chance, Yes in mint and No in rose, one orange action. Every figure from the engine.
    Tokens from city/styles/city.module.css. */
@@ -1560,7 +1560,7 @@
   }
 }
 
-/* ---------- CITY-77: search, tabs with glyphs, your positions everywhere ---------- */
+/* ---------- Search, tabs with glyphs, your positions everywhere ---------- */
 
 .tabsRow {
   flex: 1 1 0;

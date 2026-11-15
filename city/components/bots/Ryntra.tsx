@@ -14,7 +14,7 @@ import { useWords } from './hooks';
 import s from './bots.module.css';
 
 /**
- * Ryntra in the bots window (CITY-133): the assistant line's bot tools, asked with taps — the coin, the horizon, the
+ * Ryntra in the bots window: the assistant line's bot tools, asked with taps — the coin, the horizon, the
  * amount — never with words, so the window keeps no second ask box. On «Start» Ryntra names the week's bot with one
  * line and does the setting up: «Set it up for me» opens its draft in the window's own review, where «Start» is the
  * person's tap, on paper. The reasons, the alternative and the replay over 7, 30 and 180 days wait behind «Details».

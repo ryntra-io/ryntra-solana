@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// The Stock Pier on devnet (CITY-98): the exact build, door and engine path the city uses, run against devnet with a
+// The Stock Pier on devnet: the exact build, door and engine path the city uses, run against devnet with a
 // devnet test key — never mainnet. The key signs only devnet bytes, here in this process; it never enters a page.
 //
 //   RYNTRA_STOCK_PIER_QA_KEY=~/keys/devnet-owner.json node city/lib/earn/stock-pier-devnet.mjs --step all

@@ -1,6 +1,6 @@
 // Run from repo root: node --test city/lib/trade/holdings-watch.test.mjs
 //
-// CITY-237 (the supervisor's review): «Add SOL» now stands on three cards — the agent's, the tower's ticket, the money
+// «Add SOL» now stands on three cards — the agent's, the tower's ticket, the money
 // autopilot — and each read the wallet's balance every 15 s by its own timer, in a hidden tab too. One watch for all:
 // a hidden tab reads nothing, two cards share one timer, a return to the page is one read.
 import assert from "node:assert/strict";

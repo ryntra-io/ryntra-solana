@@ -5,14 +5,14 @@ import { useEffect, useRef } from 'react';
 
 /** A frame that held the page's thread longer than this leaves the next screen refresh free. */
 const HEAVY_MS = 50;
-/** Behind windows (CITY-84) the city draws about this many frames a second. */
+/** Behind windows the city draws about this many frames a second. */
 const LEAN_FPS = 30;
 
 /**
- * The city's frame loop (CITY-6a): one frame per screen refresh, except after a frame that held the page's thread
+ * The city's frame loop: one frame per screen refresh, except after a frame that held the page's thread
  * longer than `HEAVY_MS` — then one refresh is left free, so a tap waiting behind that frame is answered before the
  * next one is drawn. A device that keeps up never skips; one that cannot draws half as often and still answers the
- * finger. Starts when `on` (the shaders are ready, `Warmup`). `lean` — the city is behind windows (CITY-84): about
+ * finger. Starts when `on` (the shaders are ready, `Warmup`). `lean` — the city is behind windows: about
  * thirty frames a second, whatever the screen refreshes at.
  */
 export function Pacer({ on, lean = false }: { on: boolean; lean?: boolean }) {

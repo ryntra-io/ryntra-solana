@@ -21,7 +21,7 @@ import s from './earn.module.css';
 const POSITIONS_MS = 60_000;
 
 /**
- * The Piers (CITY-93): the Harbor inside the Earn window. Your positions moored as boats — lit while they earn, dim
+ * The Piers: the Harbor inside the Earn window. Your positions moored as boats — lit while they earn, dim
  * out of range — and the SOL piers, Meteora DLMM pools of SOL against an LST or USDC, with what they paid in a day in
  * SOL. A tap opens the pier's card (amount, style, the month gone, one line, one signature) or the boat's.
  */
@@ -52,7 +52,7 @@ export function Piers({ words, owner, piers: rows }: { words: Words; owner: stri
 
   const piers = useMemo(() => (list.status === 'ready' ? solPiers(list.value.pools) : []), [list]);
   const views: readonly PositionView[] = positions && positions.owner === owner && positions.value.status === 'ready' ? positions.value.value : [];
-  // Namesakes told apart (CITY-243): piers of one pair by their fee, boats of one pair by their range.
+  // Namesakes told apart: piers of one pair by their fee, boats of one pair by their range.
   // Written in the language on screen, so read again with each render: a few rows, no cost.
   const pierMarks = apart(piers.map((pier) => ({ name: pierName(pier), marks: [feeText(pier), depthText(pier)] })));
   const boatMarks = apart(views.map((view) => ({ name: view.name, marks: [rangeOf(view)] })));

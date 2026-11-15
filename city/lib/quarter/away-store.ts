@@ -30,7 +30,7 @@ export const AWAY_CHANNELS: readonly Readonly<{ id: AwayChannel; label: string }
 ];
 
 /**
- * The channels to offer here (CITY-6e): inside the Ryntra app there is no push — the app registers none — so its switch
+ * The channels to offer here: inside the Ryntra app there is no push — the app registers none — so its switch
  * is not shown there; a browser keeps both.
  */
 export function awayChannels(inApp: boolean): readonly Readonly<{ id: AwayChannel; label: string }>[] {

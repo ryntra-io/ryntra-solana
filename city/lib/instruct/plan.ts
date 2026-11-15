@@ -6,7 +6,7 @@ import { SOL, USDC } from '../trade/tiles.ts';
 import { missingOf, type Cadence, type Instruction, type Missing } from './types.ts';
 
 /**
- * From a read instruction and what the engines say now to the exact request each existing engine takes (CITY-176).
+ * From a read instruction and what the engines say now to the exact request each existing engine takes.
  * Pure: the price, the wallet's holding, the clock and the time zone are arguments; nothing here asks, signs or sends.
  *
  * Every instruction runs on an engine Ryntra already has, and pays exactly what that engine's path pays:
@@ -15,7 +15,7 @@ import { missingOf, type Cadence, type Instruction, type Missing } from './types
  * | --- | --- | --- |
  * | a regular purchase | «Регулярна купівля» rules (`/api/v1/rules`): a reminder on the schedule | once to set it (a message, no money); each purchase in their wallet |
  * | a limit | the spot limits engine (`/api/solana/limits`): a Jupiter Trigger V1 order, the coins in a program account of that order alone | once: the order |
- * | a stop | the engine's stops (CITY-149, `/api/v1/stops`): watched with the swap quote, the person told when reached | once to set it (a message); the sale in their wallet |
+ * | a stop | the engine's stops (`/api/v1/stops`): watched with the swap quote, the person told when reached | once to set it (a message); the sale in their wallet |
  *
  * Jupiter's own recurring orders are not used: Recurring V1 is no longer maintained, and its successor keeps the coins
  * in Jupiter's custodial vault and pays no integrator fee — neither keeps the money in the person's own hands.

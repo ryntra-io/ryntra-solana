@@ -1,7 +1,7 @@
 import type { ModelCall, ModelGateway, ModelReply } from "./model";
 
 /**
- * The stand-in for the model gateway until CITY-45 is in master: the same interface, no network, no cost. It reads
+ * The stand-in for the model gateway: the same interface, no network, no cost. It reads
  * only what a model would read — the rules and the one fenced message — and plays each practice guard by a short
  * script, so the vaults can be played end to end on a stand: Pip gives the phrase to a polite visitor or recites his
  * orders, Brass lets it slip inside a story, Onyx answers in pig latin, and the daily guard in a shifted alphabet. A

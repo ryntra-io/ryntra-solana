@@ -1,6 +1,6 @@
-/* «How it works» (CITY-43): the lessons, in a window of the city (the frame of CITY-65: a window on a computer, the
+/* «How it works»: the lessons, in a window of the city (the frame: a window on a computer, the
    bottom sheet on a phone) and as a page of its own (`/how-it-works`). A still of our own city at the head, a film per
-   lesson in dark glass with cut corners, one amber action each. Tokens from city/styles/city.module.css (CITY-11). */
+   lesson in dark glass with cut corners, one amber action each. Tokens from city/styles/city.module.css. */
 
 .display {
   font-family: var(--font-display, system-ui), system-ui, sans-serif;
@@ -11,7 +11,7 @@
   text-transform: uppercase;
 }
 
-/* A language other than English: the words wait for the frame the boot script hides them in (CITY-79). */
+/* A language other than English: the words wait for the frame the boot script hides them in. */
 :global(html.city-lang-wait) .body [data-words] {
   visibility: hidden;
 }

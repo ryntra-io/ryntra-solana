@@ -74,7 +74,8 @@ test("the homepage is the frozen landing, and two earlier landings are parked ra
   /* There are now two superseded landings, not one. `app/home-client.tsx` was
      the original; `app/site/home.tsx` was the Decision Circuit redesign that
      replaced it and was itself replaced when the frozen Quiet Intelligence
-     landing took `/` in `65c4f21`. Both stay in source and neither may be routed. */
+     landing took `/` in `65c4f21`. Both stay in source
+     and neither may be routed. */
   assert.doesNotMatch(ROUTE, /^import .*home-client/m);
   assert.doesNotMatch(ROUTE, /from "@?\/?\.*site\/home"/m);
 
@@ -139,10 +140,7 @@ test("every navigation target resolves to a route that exists or an anchor the p
 
     const clean = path.replace(/\/$/, "");
     const routeFile = `app${clean}/page.tsx`;
-    /* A redirect source is a destination too. `/app` is the product root and
-       has had no page of its own made Portfolio the overview;
-       it opens there through `lib/product/customer-routing.ts`, which is a real
-       answer to a click rather than a 404. */
+    /* A redirect source is a destination too. */
     const redirected = read("lib/product/customer-routing.ts").includes(`["${clean}", "/app`);
     assert.ok(exists(routeFile) || redirected, `${item.label}: ${clean} has no route at ${routeFile}`);
 
@@ -375,7 +373,7 @@ test("the shared chrome carries its own tokens, because not every page wraps it"
   for (const [file, wrapped] of [
     ["app/beta/page.tsx", false],
     /* The old legal shell, for the pages it still serves (the licences); the Terms and the Privacy Policy are the
-       city's own pages since CITY-157. */
+       city's own pages. */
     ["app/legal/(frozen)/layout.tsx", false],
   ]) {
     const source = read(file);
@@ -412,7 +410,7 @@ test("the consolidated routes redirect rather than disappearing", () => {
        anchor stays and points at the page, because reversing a 308 does not
        un-cache it. `lib/site/security.test.mjs` asserts that pair. */
     /* `/roadmap` was here until 2026-10-31: it is a page again — the public
-       roadmap in the city's language (CITY-173, `app/roadmap/`). */
+       roadmap in the city's language (`app/roadmap/`). */
     /* `/guard` and `/proof` lead into the Guard reference and the verifier; their
        redirects are asserted beside that reference, in its own test. */
   ];
@@ -428,7 +426,8 @@ test("the consolidated routes redirect rather than disappearing", () => {
   }
 
   /* The redirects used to promise Handbook anchors, and this loop checked that
-     the Handbook mounted them. The
+     the Handbook mounted them.
+     The
      obligation is stronger in its new form: the destination must be a route
      that serves, not an id that happens to exist. */
   for (const [, destination] of expected) {
@@ -1089,7 +1088,7 @@ test("every retained public composition mounts one chrome and a focusable skip t
     assert.match(mains[0], /tabIndex=\{-1\}/, `${route} skip target must accept focus`);
     assert.doesNotMatch(source, /className=["'][^"']*\b(?:rx-skip|lp-skip-link)\b/, `${route} must not draw a second skip link`);
   }
-  /* `/docs`, `/developers`, `/support` and the legal documents are the city's pages since CITY-157: one bar of the
+  /* `/docs`, `/developers`, `/support` and the legal documents are the city's pages: one bar of the
      city's own, one main, none of the old site's chrome. */
   const cityPage = read("city/components/pages/DocumentPage.tsx");
   assert.equal((cityPage.match(/<main\b/g) ?? []).length, 1, "the city's page has one main landmark");

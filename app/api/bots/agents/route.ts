@@ -8,7 +8,7 @@ export const maxDuration = 30;
 const Base58 = /^[1-9A-HJ-NP-Za-km-z]{32,44}$/u;
 
 /**
- * CITY-207 — a wallet's agents, for any browser and the phone: `POST {owner}` → its mandates (the vault, the budget,
+ * A wallet's agents, for any browser and the phone: `POST {owner}` → its mandates (the vault, the budget,
  * what is at work, the state, the autopilot on it), its autopilot and the piers its agent looks after — mainnet and
  * devnet apart, from the agent's book and the chain. Read only: this route builds, signs and moves nothing.
  *

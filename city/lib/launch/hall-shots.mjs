@@ -3,7 +3,7 @@
 //   node city/lib/launch/hall-shots.mjs [out] [baseUrl]
 //   (NEXT_PUBLIC_RYNTRA_CITY_HALL=open npm run dev running; PRESS_CHROME may point at a Chromium)
 // The boards with rows run on the development stand-in (`?hall=stub`, made-up coins, every screen saying «Stub data»);
-// `?hall=empty` is a Hall nobody is on (CITY-230: its signs and panel are «Launch yours»; `hall-230-shots.mjs` shoots the
+// `?hall=empty` is a Hall nobody is on (its signs and panel are «Launch yours»; `hall-230-shots.mjs` shoots the
 // spans and the action); the last state reads the real `/api/city/hall` of the stand.
 import { chromium } from "playwright";
 import { mkdirSync } from "node:fs";

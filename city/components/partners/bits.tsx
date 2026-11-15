@@ -34,7 +34,7 @@ export function Info({ open, label, onToggle, className }: { open: boolean; labe
   );
 }
 
-/** Where payouts stand: counted from today and paid weekly in USDC once the weekly pass runs (CITY-128). */
+/** Where payouts stand: counted from today and paid weekly in USDC once the weekly pass runs. */
 export function Status({ open = PAYOUTS === 'open', weekly = false }: { open?: boolean; weekly?: boolean }) {
   const w = useWords(PARTNERS);
   return (

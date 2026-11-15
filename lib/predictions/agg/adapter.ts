@@ -196,7 +196,7 @@ function mapProfile(user: { id: string; username: string | null; externalId: str
  * An outcome's bars. AGG answers `/charts/bars` with no bars and a state of its own (`warming`, `unsupported`) for a
  * series it serves another way: its finalized history is published as files it signs with their SHA-256, which the
  * SDK fetches and checks (`loadImmutableHistory`), and the bars after them come from `/charts/bars` again. Found
- * 29.10 (CITY-77): the busiest markets answered empty bars at every resolution, and the chart drew nothing. The files
+ * 29.10: the busiest markets answered empty bars at every resolution, and the chart drew nothing. The files
  * are a second way and never a promise — any doubt about them leaves the first answer as it was.
  */
 async function readChart(outcomeId: string, resolution: "1m" | "5m" | "1h" | "1d", countBack: number, to: number): Promise<PredictionChart> {

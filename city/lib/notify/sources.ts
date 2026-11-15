@@ -14,13 +14,13 @@ import { notify } from './store.ts';
 import { NOTES } from './words.ts';
 
 /**
- * What the city already knows, said through the centre (CITY-87). Each source tells only what changed after the page
+ * What the city already knows, said through the centre. Each source tells only what changed after the page
  * opened — the first read of a visit is taken as known, never told:
  *
- * - the live feed (CITY-66): a new event of a market kind the person sends to the computer;
+ * - the live feed: a new event of a market kind the person sends to the computer;
  * - the trade window: a trade that settled or did not go through;
- * - the stops (CITY-149): a stop the engine or the city found reached;
- * - the beacons (CITY-72): a beacon that fired;
+ * - the stops: a stop the engine or the city found reached;
+ * - the beacons: a beacon that fired;
  * - the Exchange (Phoenix's margin view): the account entering the critical grade or liquidation — Guard's, never off,
  *   and told even when it was already there at the first read.
  *

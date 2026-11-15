@@ -1,4 +1,4 @@
-// CITY-62's screens for review — any coin for any coin, a limit order, a stop and «My orders» — at 390×844 and
+// The screens for review — any coin for any coin, a limit order, a stop and «My orders» — at 390×844 and
 // 1440×900 → <out>/<state>-<size>.jpg
 //   NEXT_PUBLIC_RYNTRA_CITY_SPOT=open npm run dev     then     node city/lib/trade/spot-shots.mjs [out] [baseUrl]
 // No wallet and no keys: a stub wallet registers through the Wallet Standard events (it signs nothing real), the swap

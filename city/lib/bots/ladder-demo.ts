@@ -5,7 +5,7 @@ import { defaultDraft, type BotDraft } from './draft.ts';
 import type { LadderPoolInfo, LadderStatus, LiveLadder } from './ladder.ts';
 
 /**
- * The review stand of the ladder (CITY-135; mainnet CITY-219) — fixtures for `ladder-shots.mjs` only: a SOL/USDC pool
+ * The review stand of the ladder — fixtures for `ladder-shots.mjs` only: a SOL/USDC pool
  * at the city's SOL price on the network asked for, a review wallet's public address, and three ladders it placed —
  * one working, one whose bundle half-landed, one filled. On mainnet the stand carries the chain's terms and the cap
  * as the engine answers them. Public facts only: addresses and steps, never a key.

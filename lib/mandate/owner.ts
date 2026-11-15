@@ -1,5 +1,5 @@
 /**
- * CITY-207 — a wallet's agents as the engine knows them, for any browser and any phone: the mandates the agent works
+ * A wallet's agents as the engine knows them, for any browser and any phone: the mandates the agent works
  * for (its book, `./book.server.ts`), the money autopilot standing on one of them (`../pilot/book.server.ts`) and the
  * piers it looks after (`../care/service.server.ts`), each network apart. Before this, only the browser that signed a
  * mandate knew where it was; now the book is the truth and the browser's note only a cache.
@@ -45,7 +45,7 @@ export type OwnerMandate = Readonly<{
   trades: number;
   /** The money autopilot's trade part stands on this mandate. */
   pilot: boolean;
-  /** CITY-70: her «Freeze» is on — the agent starts nothing new. */
+  /** Her «Freeze» is on — the agent starts nothing new. */
   frozen: boolean;
   createdAt: number;
   updatedAt: number;

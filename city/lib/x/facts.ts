@@ -1,7 +1,7 @@
 import { isNamed, type CitySnapshot, type District, type Tower } from '../market/types.ts';
 
 /**
- * The facts of the studio's posts for X (CITY-38). Every number a clip or a card shows is picked here from a real read —
+ * The facts of the studio's posts for X. Every number a clip or a card shows is picked here from a real read —
  * the city's market read (Jupiter, with the time it was read) or the Launch engine's flight log (the chain, with each
  * transaction) — and carries where it came from and when. Nothing here guesses, rounds a figure up, or names a coin the
  * city has not verified. A template with no fact worth saying returns null: no post.

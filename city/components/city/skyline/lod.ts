@@ -2,7 +2,7 @@
 const HYSTERESIS = 0.15;
 
 /**
- * The skyline's level of detail for a storey `pixels` tall on screen (CITY-56), keeping the previous level near a
+ * The skyline's level of detail for a storey `pixels` tall on screen, keeping the previous level near a
  * threshold. `at` is the quality tier's `lod` (`city/lib/city/quality.ts`, BUDGET): measured by the storey, not the
  * tower, so a close-up of a tall tower still draws its neighbours cheaply.
  */

@@ -250,10 +250,10 @@ test("the two discovery documents describe this deployment and only S256", async
   assert.equal(asm.issuer, ORIGIN);
   assert.deepEqual(asm.code_challenge_methods_supported, ["S256"]);
   assert.deepEqual(asm.token_endpoint_auth_methods_supported, ["none"]);
-  /* Since CITY-154 (31.10) the origin's authorization server is the Solana connector's — its consent `/connect`
-     replaced `/agents/connect`, which has led into the city since CITY-13. Agent Control's own OAuth routes keep
+  /* The origin's authorization server is the Solana connector's — its consent `/connect`
+     replaced `/agents/connect`, which has led into the city. Agent Control's own OAuth routes keep
      answering exactly as before, and its own document still names them; where its hosted MCP goes next is the
-     owner's question in the CITY-154 PR. */
+     owner's question in the PR. */
   assert.equal(asm.registration_endpoint, `${ORIGIN}/api/connect/register`);
   const own = authorizationServerMetadata(new Request(`${ORIGIN}/`, { headers: HEADERS }));
   assert.equal(own.registration_endpoint, `${ORIGIN}/api/agents/oauth/register`);

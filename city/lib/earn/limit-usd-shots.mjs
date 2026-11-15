@@ -1,4 +1,4 @@
-// The amount in dollars and the price to the cent in Sell Higher (CITY-190) — screens for review, driven by taps alone
+// The amount in dollars and the price to the cent in Sell Higher — screens for review, driven by taps alone
 // (no dev hooks), so the same pass reads the live site («before») and a production build of the branch («after»):
 //   node city/lib/earn/limit-usd-shots.mjs <out> [baseUrl]      (PRESS_CHROME may point at a Chrome; SIZES, LOCALES)
 // → <out>/<nn>-<state>-<size>-<locale>.jpg. No wallet and no keys: a stub wallet registers through the Wallet Standard

@@ -5,7 +5,7 @@ import { ByteReader, ByteWriter } from './bytes.ts';
 /**
  * The frozen city of the day, small enough for a link, so a friend runs the very same skyline.
  *
- * The plan of the city depends only on each tower's district, the key it is seated by (the hash of its mint, CITY-148)
+ * The plan of the city depends only on each tower's district, the key it is seated by (the hash of its mint)
  * and its market cap and liquidity (its height and width), so that is what travels, with the crown's light (the day's
  * move) and the traders behind the window lights. A verified coin carries the first six letters of its mint; the friend's device finds the coin in
  * its own reads and names it only if it can verify it itself — a link can never make the city name a coin.
@@ -27,7 +27,7 @@ const BASE58 = /^[1-9A-HJ-NP-Za-km-z]+$/;
 
 /** 0: market cap and liquidity as float32, 1: as float64 — for the rare city where float32 changes a tower. */
 type Precision = 0 | 1;
-/** Set on the precision byte: every tower carries its seat. A link without it is from before CITY-148. */
+/** Set on the precision byte: every tower carries its seat. */
 const F_SEATS = 2;
 
 function writeAmount(w: ByteWriter, v: number, precision: Precision) {

@@ -2,7 +2,7 @@ import { create } from 'zustand';
 import { readSettings, type StorageLike } from './settings.ts';
 
 /**
- * «Flashing effects» for the whole city (CITY-66): the one question the city's banners, white flashes, shockwaves, the
+ * «Flashing effects» for the whole city: the one question the city's banners, white flashes, shockwaves, the
  * eclipse's ring and the camera's shake ask before they move. The feed's store (`./store.ts`) owns the switch and tells
  * this module each change; the city's scene imports only this small module, never the feed. Asked before the feed has
  * read the device, it reads the kept switch itself — and a device asking for reduced motion has the flashing off.

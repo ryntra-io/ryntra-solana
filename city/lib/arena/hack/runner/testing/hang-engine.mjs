@@ -1,4 +1,4 @@
-// CITY-225 · test-only: the made-up engine with one step that never ends — a single long synchronous step that the
+// Test-only: the made-up engine with one step that never ends — a single long synchronous step that the
 // sandbox's between-steps time check cannot interrupt. Only the worker's hard wall stops it (`../worker.ts`).
 import "../../../../../../lib/world/testing/hooks.mjs";
 

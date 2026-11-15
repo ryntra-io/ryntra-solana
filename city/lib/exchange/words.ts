@@ -1,6 +1,6 @@
 import { words } from '../i18n/dict.ts';
 
-/* The Exchange's words outside its window (CITY-79): what its formatters, tables and moments say on screen. */
+/* The Exchange's words outside its window: what its formatters, tables and moments say on screen. */
 
 /** The funding's period and who pays it. */
 export const EX_FORMAT = words(

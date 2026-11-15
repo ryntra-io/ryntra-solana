@@ -19,7 +19,7 @@ import s from './bots.module.css';
 import l from './ladder.module.css';
 
 /**
- * The ladder in the bots window (B5, CITY-135; mainnet CITY-219): under a ladder's settings the sum, what every step
+ * The ladder in the bots window: under a ladder's settings the sum, what every step
  * gives and each step's price, the one line of costs and «Place»; the placed ladders at the top of «My bots». Shown
  * only on the network the deployment names (`LADDER_NET`) while the engine has a pool of the coin there; otherwise
  * the window stays practice, as before.
@@ -31,7 +31,7 @@ function useLadderWords(): Readonly<{ w: Words; lw: LadderWords; lang: Lang }> {
   return { w, lang, lw: ladderWords(lang, LADDER_NET ?? 'devnet', w) };
 }
 
-/** The network's chip on the ladder's sheet: «Devnet» on devnet; «Real SOL» on mainnet, where the money is real (CITY-233). */
+/** The network's chip on the ladder's sheet: «Devnet» on devnet; «Real SOL» on mainnet, where the money is real. */
 export function LadderNetChip() {
   const { lw } = useLadderWords();
   const network = LADDER_NET ?? 'devnet';
@@ -70,7 +70,7 @@ function useSolUsd(): number | null {
 }
 
 /**
- * The one line before the signature: the network first — real SOL or test SOL (CITY-233) — then the fee, the network's
+ * The one line before the signature: the network first — real SOL or test SOL — then the fee, the network's
  * fees, rent back, the SOL kept in the wallet; the pool's kept rent only when there is one.
  */
 export function LiveCostLine({ costs, lw, lang }: Readonly<{ costs: LadderCosts; lw: LadderWords; lang: Lang }>) {
@@ -121,12 +121,12 @@ export function LadderStart({ draft, pool, paperIssue, canPractice, onSave, save
   const busy = useLadder((st) => st.busy);
   const note = useLadder((st) => st.note);
   const shown = useLadder((st) => st.shownCosts);
-  /* A ladder of this wallet's from another device stands in this pool: «View» in place of a second one (CITY-233). */
+  /* A ladder of this wallet's from another device stands in this pool: «View» in place of a second one. */
   const elsewhere = useLadder((st) => (st.elsewhere?.pool === pool.facts.pool ? st.elsewhere : null));
   const [picking, setPicking] = useState(false);
   const composed = useMemo(() => composeLadder(draft, pool, solUsd), [draft, pool, solUsd]);
   // A changed draft is a new line: the server's earlier reading no longer stands for it — nor does a «no» said to the
-  // ladder as it was (it stays half a minute now, CITY-237, and must not sit under different settings).
+  // ladder as it was (it stays half a minute now, and must not sit under different settings).
   useEffect(() => {
     const st = useLadder.getState();
     st.setShownCosts(null);
@@ -171,7 +171,7 @@ export function LadderStart({ draft, pool, paperIssue, canPractice, onSave, save
           {busy?.kind === 'place' ? w.placing : who ? lw.place : w.connect}
         </button>
       )}
-      {/* The action's answer stands right under it and comes into view when said (CITY-237): under the two quiet
+      {/* The action's answer stands right under it and comes into view when said: under the two quiet
           buttons it landed below the edge of a phone's half-screen window. «A ladder here already» stands above its
           «View» while it holds; not said twice here. */}
       {note && !note.bot && note.kind !== 'elsewhere' ? (

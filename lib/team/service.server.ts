@@ -380,7 +380,7 @@ export async function linkTreasury(deps: TeamDeps, input: Readonly<{ id: string;
       if (code === "TREASURY_NOT_FOUND" || code === "TREASURY_NOT_SQUADS") return fail("TREASURY_REFUSED", "This address is not a Squads v4 multisig on this network.");
       return fail("UNAVAILABLE", "The multisig could not be read now; try again.");
     }
-    /* The operator links a treasury they can propose on: a member who may initiate, read on chain. */
+    /* The team's Owner links a treasury they can propose on: a member who may initiate, read on chain. */
     if (!signers.some((row) => row.address === input.actor && row.initiate)) return fail("TREASURY_REFUSED", "Your wallet is not a member of this multisig who may propose.");
     const changed = await change(deps, input.id, (state, at) => {
       const actor = decideLink(state);

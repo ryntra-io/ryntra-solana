@@ -4,20 +4,20 @@ import type { PierGoal, PierStyle } from './pier.ts';
 import type { ClosePlan, StepKind } from './stock-pier-hours.ts';
 
 /**
- * Earn's words in English and Ukrainian, in one small object until the city's dictionaries (CITY-79,
- * `city/lib/i18n/**`) land — then these move there as they are. The language follows the browser's: Ukrainian for a
+ * Earn's words in English and Ukrainian, in one small object until the city's dictionaries
+ * (`city/lib/i18n/**`) land — then these move there as they are. The language follows the browser's: Ukrainian for a
  * Ukrainian browser, English otherwise.
  */
 
 export type Lang = 'en' | 'uk';
 
-/** `context` names the card's one big number — what it is (CITY-243: «5.03%» alone was a riddle) — before its unit. */
+/** `context` names the card's one big number — what it is («5.03%» alone was a riddle) — before its unit. */
 type ProductWords = Readonly<{ name: string; line: string; action: string; context: string }>;
 
-/** One word of Earn and its one-line hint behind the window's «i» (CITY-243). */
+/** One word of Earn and its one-line hint behind the window's «i». */
 export type Term = Readonly<{ word: string; hint: string }>;
 
-/** The Dollar Saver's card (CITY-192). */
+/** The Dollar Saver's card. */
 export type DollarWords = Readonly<{
   deposit: string;
   withdraw: string;
@@ -141,7 +141,7 @@ export type Words = Readonly<{
     rent: string;
     rentBack: string;
     network: string;
-    /** One approval of the wallet, however many transactions it signs (CITY-198). */
+    /** One approval of the wallet, however many transactions it signs. */
     approval: (n: number) => string;
     dayFees: string;
     venue: string;
@@ -164,7 +164,7 @@ export type Words = Readonly<{
     toPiers: string;
     explorer: string;
     take: string;
-    /** One line before the signature when the network's fee comes close to the fees taken (CITY-243). */
+    /** One line before the signature when the network's fee comes close to the fees taken. */
     feeNear: string;
     feeOver: string;
     leave: string;
@@ -178,7 +178,7 @@ export type Words = Readonly<{
     stopped: string;
     get: (symbol: string) => string;
     fresh: string;
-    /** The Zap (CITY-198): SOL in, one approval. */
+    /** The Zap: SOL in, one approval. */
     put: string;
     swapFee: (pct: string) => string;
     swap: string;
@@ -1002,7 +1002,7 @@ export function langOf(languages: readonly string[] | undefined): Lang {
   return (languages ?? []).some((l, i) => i === 0 && /^uk\b/i.test(l)) ? 'uk' : 'en';
 }
 
-/** Earn's words in the city's language (CITY-79): the menu's switch, a `?lang=` link, else the browser's. */
+/** Earn's words in the city's language: the menu's switch, a `?lang=` link, else the browser's. */
 export function earnWords(lang: Lang = langNow()): Words {
   return WORDS[lang] ?? EN;
 }

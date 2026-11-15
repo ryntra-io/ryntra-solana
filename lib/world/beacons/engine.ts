@@ -1,5 +1,5 @@
 /**
- * The rules engine of the city's beacons (CITY-72, decision 74). It began as
+ * The rules engine of the city's beacons. It began as
  * the price-alert engine of a trading terminal and came over whole: it never
  * read a chain, so nothing was cut.
  *

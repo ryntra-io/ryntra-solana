@@ -12,7 +12,7 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 /**
- * `GET /api/v1/intents/{id}/qr` (1.90.0, CITY-161) — an SVG QR code of the intent's page, for a person to scan with
+ * `GET /api/v1/intents/{id}/qr` — an SVG QR code of the intent's page, for a person to scan with
  * their phone. It encodes only Ryntra's own `https://…/i/<id>`, built from the id, never anything the creator sent.
  */
 export async function GET(request: Request, { params }: { params: Promise<{ id: string }> }) {

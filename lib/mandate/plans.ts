@@ -1,10 +1,10 @@
 /**
- * CITY-193 — the agent's tested strategies: what it buys and when, inside the very mandate the person
+ * The agent's tested strategies: what it buys and when, inside the very mandate the person
  * signed. Pure, one source for all three places that use them: the agent at work (`./strategy.ts`, `./tick.server.ts`),
  * the run on history (`./backtest.ts`) and the practice without money (`./backtest.ts` `paperRun`). The same rules, the
  * same numbers: what the history shows is what the agent would have done.
  *
- * - `steady` — regular buys: the day's budget in equal buys of the trade cap across the day (CITY-175).
+ * - `steady` — regular buys: the day's budget in equal buys of the trade cap across the day.
  * - `dip` — a buy only when the price is at least `dropBps` under its high of the last day.
  * - `grid` — levels `stepBps` apart under the price it started at; one buy at each level the price comes down to. A level
  *   bought is held; where the engine can sell, the coins of a level are offered for sale one step up.
@@ -12,7 +12,7 @@
  *   rhythm while the launch is young (`maxAgeH`).
  * - an exit on any of them — `takeBps` («фіксуй +20 %»): the agent stops buying once what it bought is worth that much
  *   more than it paid; `stopBps`: it stops once it is worth that much less. Where the engine can sell, the stop or the take
- *   is offered as a sale; on mainnet the agent does not sell yet (CITY-195) — it stops buying and holds.
+ *   is offered as a sale; on mainnet the agent does not sell yet — it stops buying and holds.
  *
  * What a strategy never changes: the amount of a buy (the trade cap), the day's cap, the rhythm's spacing (no strategy
  * buys more often than the steady one), the venues, the end of the mandate and the agent's own autostop (`AUTOSTOP`,
@@ -26,7 +26,7 @@ export type PlanId = (typeof PLAN_IDS)[number];
 export type PlanExit = Readonly<{ takeBps: number | null; stopBps: number | null }>;
 
 /**
- * CITY-197 — the plan's pace: at most this many buys a day, however many the day's cap would allow. A ceiling under the
+ * The plan's pace: at most this many buys a day, however many the day's cap would allow. A ceiling under the
  * rhythm, never over it: a slower agent trades less, pays fewer fees and makes the budget last. Absent — the rhythm of
  * the mandate's caps, as before.
  */
@@ -47,12 +47,12 @@ export const PLAN_BOUNDS = Object.freeze({
   takeBps: { min: 300, max: 50_000 },
   /** The person's stop may be tighter than the autostop's 15 %, never looser: a looser one is the autostop. */
   stopBps: { min: 300, max: 1_500 },
-  /** CITY-197: buys a day at most. */
+  /** Buys a day at most. */
   pace: { min: 1, max: 24 },
 });
 
 /**
- * CITY-197 — the pace a new agent starts at in the city: regular buys once a day; a strategy that waits for its moment —
+ * The pace a new agent starts at in the city: regular buys once a day; a strategy that waits for its moment —
  * a dip, a grid's level, a young launch — at most twice. The default strategies trade little: the fees stay small and the
  * budget lasts. The caps the person signs do not change; the pace only spaces the buys inside them.
  */

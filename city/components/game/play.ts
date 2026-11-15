@@ -16,7 +16,7 @@ import { vaultStore } from '@/city/lib/vault/store';
 import { windowOpenNow } from '../hud/useWindowOpen';
 
 /**
- * What the Play layer does to the rest of the city (CITY-81). Leaving Play shuts the game's own places — the Map, the
+ * What the Play layer does to the rest of the city. Leaving Play shuts the game's own places — the Map, the
  * Hall's boards, the Vault's room, your quarter — and the camera comes home; the money windows (Predict, Harbor,
  * Exchange, Money) stay as they are in both layers. A phone's Back and Escape return from Play to City.
  */
@@ -73,7 +73,7 @@ function leaveGame(): void {
 
 /**
  * Escape, after the city's own panels had theirs (city/components/hud/Hud.tsx): the Map, then the Hall's boards close —
- * in the City layer too, where a link (`/?open=hall`) and the boards over the towers open the Hall (CITY-236: Escape did
+ * in the City layer too, where a link (`/?open=hall`) and the boards over the towers open the Hall (Escape did
  * nothing there). In Play, a window that closes itself is left to it; with nothing left open, back to City. True when it
  * took the press.
  */
@@ -118,7 +118,7 @@ export function goQuarter(): void {
   }
 }
 
-/** The Ring: into your quarter, on the garage where your agent lives (CITY-50). No quarter yet, the claim first. */
+/** The Ring: into your quarter, on the garage where your agent lives. No quarter yet, the claim first. */
 export function goRing(): void {
   const quarter = quarterStore.getState();
   const garage = quarter.me?.buildings.find((b) => linkKindOf(b.kind) === 'agent');

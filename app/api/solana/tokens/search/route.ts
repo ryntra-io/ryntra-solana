@@ -24,7 +24,7 @@ export const dynamic = "force-dynamic";
  * recommendation; `isVerified` and `isSuspicious` are Jupiter's claims and
  * travel labelled as such.
  *
- * CITY-208: the read goes through the shared read layer — the same query at
+ * The read goes through the shared read layer — the same query at
  * once is one call, an answer is kept half a minute here and a minute for
  * every instance, and after Jupiter's `429` the last good answer is served
  * with `stale: true` and its time. `GET ?query=&limit=` answers the same and

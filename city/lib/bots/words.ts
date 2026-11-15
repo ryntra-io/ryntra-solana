@@ -12,9 +12,9 @@ import type { ExitAction, ExitTrigger } from '../../../lib/bots/ladder/exit.ts';
 import type { LiveState } from '../../../lib/bots/ladder/orders.ts';
 
 /**
- * Every word of the bots window, in English and Ukrainian, in one dictionary of the city's kind (CITY-79).
- * The language is the city's own (CITY-79, `city/lib/i18n/lang.ts`). Short on purpose: the name, the number, the action —
- * the rest behind «Details». The bots' own place is «My bots»: «Hangar» on the Deck is the agent's home (CITY-50).
+ * Every word of the bots window, in English and Ukrainian, in one dictionary of the city's kind.
+ * The language is the city's own (`city/lib/i18n/lang.ts`). Short on purpose: the name, the number, the action —
+ * the rest behind «Details». The bots' own place is «My bots»: «Hangar» on the Deck is the agent's home.
  */
 
 export type { Lang };
@@ -215,7 +215,7 @@ const EN = {
   looseEnds: (n: number) => `Unfinished orders · ${n}`,
   chainNone: 'No bots from this wallet yet',
   chainError: 'Your wallet’s bots could not be read',
-  /** «Cancel» on a DLMM order or ladder read from the chain: everything it holds back to the wallet (CITY-231). */
+  /** «Cancel» on a DLMM order or ladder read from the chain: everything it holds back to the wallet. */
   chainCancel: 'Cancel',
   // The strategies.
   bucket: { week: 'This week', month: 'Under a month', quarter: '1–3 months', older: 'Over 3 months' } satisfies Record<AgeBucket, string>,
@@ -236,7 +236,7 @@ const EN = {
   noStrategies: 'No strategies yet',
   // The history.
   csv: 'Download CSV',
-  // CITY-237: a tab of trades, not of receipts (decision 91: a receipt is never a heading), and never a dead end.
+  // A tab of trades, not of receipts (decision 91: a receipt is never a heading), and never a dead end.
   noReceipts: 'No trades yet',
   side: { buy: 'Bought', sell: 'Sold' },
   ryntra: {
@@ -261,7 +261,7 @@ const EN = {
     whyLabel: (name: string) => `Why: ${name}`,
   },
 
-  // The agent with a budget (CITY-174): the budget, the limits in one line, one signature; «Stop» — one more.
+  // The agent with a budget: the budget, the limits in one line, one signature; «Stop» — one more.
   mandate: {
     title: 'Your agent',
     budget: 'Budget',
@@ -289,7 +289,7 @@ const EN = {
     coin: 'Coin',
   },
 
-  // The ladder on devnet (CITY-135): placed once from the wallet, cancelled from «My bots».
+  // The ladder on devnet: placed once from the wallet, cancelled from «My bots».
   devnet: 'Devnet',
   mainnet: 'Mainnet',
   place: 'Place on devnet',

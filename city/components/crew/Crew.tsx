@@ -21,7 +21,7 @@ import s from './crew.module.css';
 type State = 'hire' | 'working' | 'soon';
 
 /**
- * «Your agents» on top of «Bots → Start» (CITY-205): the workers a person hires — the Trader, the Autopilot, the pool
+ * «Your agents» on top of «Bots → Start»: the workers a person hires — the Trader, the Autopilot, the pool
  * keeper, the Launcher — each one job, its state in one word, one tap to its own card. What each may do (its skills),
  * how it is paid (a fee inside its trades, never credits) and that rules decide wait behind «How agents work». The
  * consultant is not here: it is Ryntra in the top bar.
@@ -35,7 +35,7 @@ export function Crew() {
     return Boolean(record && st.status[record.policy]?.active);
   });
   const pilotOn = usePilot((st) => st.view?.status === 'working');
-  /* CITY-207: the piers the agent looks after, from the engine's answer for the wallet. */
+  /* The piers the agent looks after, from the engine's answer for the wallet. */
   const keeperOn = useAgents((st) => (owner && CARE_MODE !== 'closed' ? (st.byOwner[owner]?.networks[CARE_MODE].cares ?? []).some((c) => c.status === 'working') : false));
   const focus = useCrew((st) => st.focus);
   const at = useCrew((st) => st.at);
@@ -49,7 +49,7 @@ export function Crew() {
     if (owner && gates.pilot) void readPilot(owner);
   }, [owner, gates.pilot]);
 
-  // CITY-207: the wallet's agents from the engine, so a new browser or the phone sees the agent hired elsewhere.
+  // The wallet's agents from the engine, so a new browser or the phone sees the agent hired elsewhere.
   useEffect(() => {
     if (owner && (MANDATE_NET || CARE_MODE !== 'closed')) void syncAgents(owner);
   }, [owner]);
@@ -103,7 +103,7 @@ export function Crew() {
           );
         })}
       </div>
-      {/* CITY-222: or say it — the agent's card opens with the budget and «Sign». */}
+      {/* Or say it — the agent's card opens with the budget and «Sign». */}
       {traderOn ? null : (
         <Says
           onSay={(say) => {

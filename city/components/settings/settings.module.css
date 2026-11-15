@@ -1,7 +1,7 @@
-/* The settings window's contents (CITY-87): the city's dark glass, thin edges, violet for what is chosen, amber only for
+/* The settings window's contents: the city's dark glass, thin edges, violet for what is chosen, amber only for
    the one action (connect, sign in), flare only for Guard. A rail of sections where the window is wide; tabs over the
-   section in a phone's sheet. The frame (CITY-65) brings the glass, the head and the moving. Tokens and type from
-   city/styles/city.module.css (CITY-11). */
+   section in a phone's sheet. The frame brings the glass, the head and the moving. Tokens and type from
+   city/styles/city.module.css. */
 
 .root {
   position: absolute;
@@ -973,7 +973,7 @@ button.kindName[aria-expanded='true']::after {
     overflow-x: auto;
     overflow-y: hidden;
     box-shadow: inset 0 -1px 0 rgba(238, 241, 255, 0.07);
-    /* The tabs past the edge fade out rather than end on a cut word (CITY-188); the last one scrolls clear of it. */
+    /* The tabs past the edge fade out rather than end on a cut word; the last one scrolls clear of it. */
     padding-right: 32px;
     mask-image: linear-gradient(to right, #000 calc(100% - 32px), transparent);
   }
@@ -994,7 +994,7 @@ button.kindName[aria-expanded='true']::after {
     padding: 14px 14px 22px;
   }
 
-  /* Wide enough for «Desktop» whole in the column's head (CITY-188). */
+  /* Wide enough for «Desktop» whole in the column's head. */
   .table {
     --place: 68px;
   }

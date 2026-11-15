@@ -14,7 +14,7 @@ import type { Words } from '@/city/lib/i18n/dict';
 import { CARD_WORDS, type CardLine } from './words';
 
 /**
- * The city's share card, 1200×630 (CITY-158): a frame of our own live city behind (`SHARE_SCENE`), the mark and RYNTRA
+ * The city's share card, 1200×630: a frame of our own live city behind (`SHARE_SCENE`), the mark and RYNTRA
  * at the top, and the city's line at the foot, in the page's language. No page's own words: the old pages' titles are
  * the old product's, and the card says only what the city is. The mark is the city's
  * (`city/components/hud/Mark.tsx`), the colours AFTERGLOW, the type Hubot Sans and Mona Sans, with Geist under them for
@@ -89,7 +89,7 @@ export type CityCardInput = Readonly<{ lang?: Lang; line?: Words<CardLine> }>;
 
 /**
  * The card. Its address carries `cityCardVersion()`, so the edge keeps it for a long time. A page of the city's own may
- * give its own line (`/launches`, CITY-185) on the same frame of the live city; every other page shows the city's.
+ * give its own line (`/launches`) on the same frame of the live city; every other page shows the city's.
  */
 export async function cityCard({ lang = 'en', line = CARD_WORDS }: CityCardInput = {}): Promise<ImageResponse> {
   const [faces, city] = await Promise.all([cityFonts(), sceneUri()]);

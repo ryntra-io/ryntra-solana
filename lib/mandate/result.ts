@@ -1,5 +1,5 @@
 /**
- * CITY-179 — «the money did not reach you, so the trade does not happen», written into the trade.
+ * «the money did not reach you, so the trade does not happen», written into the trade.
  *
  * Every venue checks its own minimum: Jupiter its quote less the slippage, DLMM its `min_amount_out`. Neither measures
  * the person's account: the number is the venue's own count. So every agent trade ends with one more instruction, after
@@ -84,7 +84,7 @@ export function tradeTerms(instruction: Readonly<{ programId: PublicKey; account
   return null;
 }
 
-/** Ryntra's fee as a Jupiter route carries it (CITY-183): its rate, its positive-slippage share and the fee slot's account. */
+/** Ryntra's fee as a Jupiter route carries it: its rate, its positive-slippage share and the fee slot's account. */
 export type RouteFee = Readonly<{ bps: number; positiveSlippageBps: number; account: PublicKey | null }>;
 
 const u16At = (data: Uint8Array, offset: number): number | null => (offset + 2 <= data.length ? data[offset]! | (data[offset + 1]! << 8) : null);

@@ -1,4 +1,4 @@
-/** The Ring's duels (CITY-51): the public face of `lib/ring/duel`. See `README.md`. */
+/** The Ring's duels: the public face of `lib/ring/duel`. See `README.md`. */
 
 export { FAULTS, SEATS, THOUGHT_MAX, faultEnding, isFault, readRound, type Ending, type Fault, type Pair, type RoundInput, type Seat } from "./rounds.ts";
 export { PHRASE_LENGTH, PHRASE_WORDS, drawPhrase, normalizePhrase } from "./phrases.ts";

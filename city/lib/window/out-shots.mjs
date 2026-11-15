@@ -1,4 +1,4 @@
-// A window of the city on another screen (CITY-75) for review → <out>/out-<state>.jpg: the city with its chart out and
+// A window of the city on another screen for review → <out>/out-<state>.jpg: the city with its chart out and
 // the window beside it, both ways — Document Picture-in-Picture (Chrome, Edge) and a page of its own (Firefox, Safari;
 // here Chromium with Picture-in-Picture taken away) — the window brought back, and the phone with no way out.
 //   NEXT_PUBLIC_RYNTRA_CITY_EXCHANGE=open npm run dev, then

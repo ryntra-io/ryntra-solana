@@ -1,4 +1,4 @@
-// «New» over the whole of Solana and «Маяк» (CITY-142): the engine's three Pulse feeds as three rings, the launches
+// «New» over the whole of Solana and «Маяк»: the engine's three Pulse feeds as three rings, the launches
 // that stand in the Docks, the city with them laid in, and the one coin the beacon names.
 //   node --test city/lib/lens/launches.test.mjs
 import { test } from "node:test";

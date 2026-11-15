@@ -1,5 +1,5 @@
 /**
- * What a reached stop tells the person (CITY-149), in both of the city's languages — one dictionary, so the note, the
+ * What a reached stop tells the person, in both of the city's languages — one dictionary, so the note, the
  * phone's push, the browser's push and Telegram all say the same short line: «Стоп SOL досягнуто — продати?». The
  * note opens the city on the stop's coin with the stop named (`stopHref`); the city opens the sale's exact order there
  * and the person's wallet signs it. A note is never permission to trade.

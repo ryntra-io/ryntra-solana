@@ -190,6 +190,74 @@ export const CAPABILITY_REGISTRY: readonly CapabilityRow[] = Object.freeze([
   },
   {
     network: "solana",
+    venue: "meteora-dlmm-pro",
+    capability: "swap",
+    /*
+     * Meteora's tick-based program, a beta since 2026-11-12: built, and rehearsed on the program's own binary; closed to
+     * people (`./venues/meteora-dlmm-pro/gate.ts`). No rate and no identity until a surface opens on it: a swap's referral is
+     * a token account and a pool's partner a config Meteora grants — neither is a kind this registry has yet.
+     */
+    state: "BUILDING",
+    lane: null,
+    fee: PLANNED_FEE,
+    attribution: null,
+    pipeline: null,
+    authority: [],
+    note: "Swaps in DLMM Pro pools: a quote and an unsigned swap with the referral account of the fee coin; in the engine, on no route.",
+  },
+  {
+    network: "solana",
+    venue: "meteora-dlmm-pro",
+    capability: "launch",
+    /*
+     * Meteora's tick-based program, a beta since 2026-11-12: built, and rehearsed on the program's own binary; closed to
+     * people (`./venues/meteora-dlmm-pro/gate.ts`). No rate and no identity until a surface opens on it: a swap's referral is
+     * a token account and a pool's partner a config Meteora grants — neither is a kind this registry has yet.
+     */
+    state: "BUILDING",
+    lane: null,
+    fee: PLANNED_FEE,
+    attribution: null,
+    pipeline: null,
+    authority: [],
+    note: "A launch pool of DLMM Pro: no curve and no migration, a fee that falls with the price, an opening time; in the engine, on no route.",
+  },
+  {
+    network: "solana",
+    venue: "meteora-dlmm-pro",
+    capability: "liquidity",
+    /*
+     * Meteora's tick-based program, a beta since 2026-11-12: built, and rehearsed on the program's own binary; closed to
+     * people (`./venues/meteora-dlmm-pro/gate.ts`). No rate and no identity until a surface opens on it: a swap's referral is
+     * a token account and a pool's partner a config Meteora grants — neither is a kind this registry has yet.
+     */
+    state: "BUILDING",
+    lane: null,
+    fee: PLANNED_FEE,
+    attribution: null,
+    pipeline: null,
+    authority: [],
+    note: "Positions of many ranges from a shape, a permanent lock, a delegate, pool rewards; in the engine, on no route.",
+  },
+  {
+    network: "solana",
+    venue: "meteora-dlmm-pro",
+    capability: "limit",
+    /*
+     * Meteora's tick-based program, a beta since 2026-11-12: built, and rehearsed on the program's own binary; closed to
+     * people (`./venues/meteora-dlmm-pro/gate.ts`). No rate and no identity until a surface opens on it: a swap's referral is
+     * a token account and a pool's partner a config Meteora grants — neither is a kind this registry has yet.
+     */
+    state: "BUILDING",
+    lane: null,
+    fee: PLANNED_FEE,
+    attribution: null,
+    pipeline: null,
+    authority: [],
+    note: "Limit-order ladders that rest in the pool and earn a share of the fee; in the engine, on no route.",
+  },
+  {
+    network: "solana",
     venue: "meteora-damm2",
     capability: "liquidity",
     state: "PLANNED",

@@ -9,7 +9,7 @@ import { CITY_FONTS } from "@/city/styles/fonts";
 
 import { SITE, SITE_NAME, TWITTER } from "../seo";
 
-/* `/partners` — how partners earn, as one short page of the site (CITY-177): the share and the friend's discount on top,
+/* `/partners` — how partners earn, as one short page of the site: the share and the friend's discount on top,
    «Copy my link» at once, three steps, the calculator, the rules behind «Details». Not a deck any more: the numbers are
    decision 93's (`city/lib/partners/terms.ts`), the same the city's «Partners» window prints. The preview card is the
    page's own head, filmed by `scripts/decks/export-live.mjs`. */

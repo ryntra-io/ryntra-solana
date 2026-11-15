@@ -97,7 +97,7 @@ function deps(): ActionDeps {
   };
 }
 
-/** A Zap's Review (CITY-198): SOL into a new position of a SOL pier in one approval, or «Take the rest» of one. */
+/** A Zap's Review: SOL into a new position of a SOL pier in one approval, or «Take the rest» of one. */
 export function reviewZapAction(body: unknown) {
   return reviewZap(body, deps());
 }
@@ -106,7 +106,7 @@ export function reviewLiquidityAction(body: unknown) {
   return review(body, deps());
 }
 
-/** A limit order's Review (CITY-97): place, cancel, or roll a filled order into the other side. */
+/** A limit order's Review: place, cancel, or roll a filled order into the other side. */
 export function reviewLimitAction(body: unknown) {
   return reviewLimit(body, deps());
 }

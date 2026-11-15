@@ -1,5 +1,5 @@
 /**
- * CITY-162 — the journal of Launch's signatures: one row for every signature the pool payer or the executor made, and
+ * The journal of Launch's signatures: one row for every signature the pool payer or the executor made, and
  * for every request it refused — the role, the address, the adapter (`env` or `kms`) and the KMS key version, what the
  * message does (read from its bytes), what it acts on, the message's sha256, the signature and when.
  *

@@ -1,5 +1,5 @@
 /**
- * Who takes a finger on the tower chart (CITY-215). On a phone the chart stands inside the window's sheet, and a chart
+ * Who takes a finger on the tower chart. On a phone the chart stands inside the window's sheet, and a chart
  * that keeps every drag leaves the amount and Market · Limit · Stop under it out of reach. So a finger that goes up or
  * down over the candles scrolls the window; one that goes sideways moves the candles, two fingers pinch them, and a
  * finger held still first is the crosshair's. Pure: the hook in `use-gesture.ts` reads the touches and asks here.

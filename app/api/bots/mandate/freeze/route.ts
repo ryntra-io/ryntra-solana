@@ -9,7 +9,7 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 /**
- * CITY-70 — «Freeze» and «Resume»: `POST {owner, policy, frozen}` — the person's own switch over her agent's new actions.
+ * «Freeze» and «Resume»: `POST {owner, policy, frozen}` — the person's own switch over her agent's new actions.
  * On, the agent starts nothing new (a trade already on its way is still read back); off, it works again. Only the proven
  * wallet that owns the mandate turns it — the wallet's proof is one signed message, never a transaction. Writes one row of
  * the agent's book; signs, sends and moves nothing.

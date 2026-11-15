@@ -38,7 +38,7 @@ test("the default preset is one line, and the other is one switch away; a choice
   assert.deepEqual(cityPresets(null), { classic: null, protected: null });
 });
 
-test("devnet is open; mainnet opens, given in this one value", () => {
+test("devnet is open; mainnet opens by this one value", () => {
   assert.equal(CITY_LAUNCH_MAINNET, true);
   assert.equal(cityLaunchOpen("solana:devnet", undefined, true), true);
   assert.equal(cityLaunchOpen("solana:mainnet", undefined, true), true);
@@ -116,7 +116,7 @@ test("figures read short and are never rounded into more than they are", () => {
   assert.equal(sinceLaunch(null, at), null);
 });
 
-/* ---------------------------------------------------------------- the launch sheet (CITY-143) */
+/* ---------------------------------------------------------------- the launch sheet */
 
 const line = (preset) => reviewRows(preset, "solana:devnet").find((row) => row.id === "line").lines;
 const PROTECTED = cityPreset(DEVNET);

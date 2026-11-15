@@ -10,7 +10,7 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 /**
- * `GET /api/v1/intents/{id}` (1.90.0, CITY-161) — the intent and where it stands, for whoever holds the id (the city's
+ * `GET /api/v1/intents/{id}` — the intent and where it stands, for whoever holds the id (the city's
  * sheet). The receipt — the wallet and signature that ended it — only with the creator's key in `X-Ryntra-Intent-Key`.
  */
 export async function GET(request: Request, { params }: { params: Promise<{ id: string }> }) {

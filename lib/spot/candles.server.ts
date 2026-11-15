@@ -85,7 +85,7 @@ export type SpotCandlesFailure = Readonly<{
     | "UNREACHABLE"
     | "MALFORMED";
   reason: string;
-  /** After a refusal for rate: how long the source's reads pause in this instance (CITY-208). */
+  /** After a refusal for rate: how long the source's reads pause in this instance. */
   retryAfterMs?: number | null;
 }>;
 
@@ -112,7 +112,7 @@ function takeCall(priority: "chart" | "page"): boolean {
 
 /** One read of GeckoTerminal inside this instance's minute budget — the chart, the pools and the trades share it. */
 export async function getJson(url: string, priority: "chart" | "page" = "chart"): Promise<{ ok: true; body: unknown } | SpotCandlesFailure> {
-  /* CITY-208: after the source refused for rate, nothing is asked of it until its pause ends — a refused minute is not spent twice. */
+  /* After the source refused for rate, nothing is asked of it until its pause ends — a refused minute is not spent twice. */
   const paused = ratePauseLeftMs("geckoterminal");
   if (paused > 0) return { ok: false, code: "RATE_LIMITED", reason: "The chart source is pausing after a refusal for rate; the last read is shown.", retryAfterMs: paused };
   if (!takeCall(priority)) return { ok: false, code: "RATE_LIMITED", reason: "The chart source's minute budget is spent; the last read is shown." };
@@ -146,7 +146,7 @@ export async function getJson(url: string, priority: "chart" | "page" = "chart")
   }
 }
 
-/** One read per key in flight: everyone asking the same thing at once waits on the same answer (CITY-208). */
+/** One read per key in flight: everyone asking the same thing at once waits on the same answer. */
 const flying = new Map<string, Promise<unknown>>();
 function once<T>(key: string, read: () => Promise<T>): Promise<T> {
   const pending = flying.get(key);
@@ -173,7 +173,7 @@ export async function readTokenPoolsBody(mint: string, priority: "chart" | "page
   const hit = poolBodies.get(mint);
   const now = Date.now();
   if (hit && now - hit.readAt < POOL_BODY_TTL_MS) return { ok: true, body: hit.body, observedAt: new Date(hit.readAt).toISOString() };
-  /* The chart and the page's pools ask for the same mint at once: one read (CITY-208). */
+  /* The chart and the page's pools ask for the same mint at once: one read. */
   const read = await once(`pools:${mint}`, () => getJson(`${BASE}/tokens/${encodeURIComponent(mint)}/pools?page=1`, priority));
   if (!read.ok) {
     if (hit) return { ok: true, body: hit.body, observedAt: new Date(hit.readAt).toISOString() };
@@ -219,7 +219,7 @@ export async function readSpotCandles(mint: string, timeframe: SpotTimeframe, pr
   const key = `${mint}:${timeframe}`;
   const hit = reads.get(key);
   if (hit && Date.now() - hit.readAt < TIMEFRAME_TTL_MS[timeframe]) return hit.value;
-  /* Every chart of this market and interval opened at once is one read (CITY-208). */
+  /* Every chart of this market and interval opened at once is one read. */
   return once(`candles:${key}`, () => readSpotCandlesNow(mint, timeframe, priority));
 }
 

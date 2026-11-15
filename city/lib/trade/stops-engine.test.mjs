@@ -8,7 +8,7 @@ import { setTradeEnv, useTrade } from "./store.ts";
 import { OWNER, scriptedLimits, stubWallet, USDC_MINT, WIF } from "./limit-fixtures.mjs";
 import { memoryAttempts, QUOTE, scriptedEngine } from "./test-fixtures.mjs";
 
-// CITY-149 — the city's stops in the engine, end to end over stubs: the engine's stop routes answer from a script, the
+// The city's stops in the engine, end to end over stubs: the engine's stop routes answer from a script, the
 // wallet's proof is a stand-in, the device's storage is a map. A new stop is the engine's once the wallet proved
 // itself; a stop the engine reached opens its sale once on this device — a note's own stop (`?stop=`) first; a cancel
 // and a settled sale reach the engine. Nothing here touches a network or a real wallet.

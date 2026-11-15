@@ -126,13 +126,13 @@ test("storage: written and read under one key; missing, refusing or broken stora
   assert.equal(readMemory(junk), null);
 });
 
-/* CITY-242: Spot, Earn and «My tower» got sizes for a large desk. Every place is remembered, the system's own first
+/* Spot, Earn and «My tower» got sizes for a large desk. Every place is remembered, the system's own first
    place too — a device that ever opened Spot would keep the old small window for good. The system's old first place is
    not the person's; anything the person did to the window is. */
 test("a window's old first place is forgotten once; a place the person set stays", () => {
   const screen = { width: 1440, height: 900 };
   const area = areaOf(screen);
-  // Where the frame first put Spot before CITY-242: 980 wide, 85 % of the workspace's height, in the middle.
+  // Where the frame first put Spot under its old rule: 980 wide, 85 % of the workspace's height, in the middle.
   const height = Math.round(area.height * 0.85);
   const first = { x: Math.round(area.x + (area.width - 980) / 2), y: Math.round(area.y + (area.height - height) / 2), width: 980, height };
   const memory = { area, places: { spot: { rect: first, full: false } } };

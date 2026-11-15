@@ -1,11 +1,11 @@
 /**
- * The bot tools' readers bound to the engine (CITY-133, B3), server side:
+ * The bot tools' readers bound to the engine, server side:
  *
  * - candles — the chart's own read of a coin (`readSpotCandles`, the deepest pool's OHLCV), the same bars the bots
  *   window tries a draft on; in dollars, so the backtest's quote is one dollar;
  * - the symbol — the spot market's row (Jupiter's list);
  * - safety — the bots' token filter on the gateway's chain facts (`mintSafety`);
- * - the Hangar — the chain's public read of a wallet's own bots (`readHangar`, CITY-131), without reminder rules:
+ * - the Hangar — the chain's public read of a wallet's own bots (`readHangar`), without reminder rules:
  *   nothing that needs the wallet's proof.
  *
  * Reads only: these are the engine's read seams, each answering `null` when its source did not. The tools that take

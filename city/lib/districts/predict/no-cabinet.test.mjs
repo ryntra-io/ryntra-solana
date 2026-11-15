@@ -52,7 +52,7 @@ test("only the engine module asks the network, and only Predictions' own routes"
   }
 });
 
-test("the window stands in the city's one frame (CITY-65), held while real money is on its way, and counts as open", () => {
+test("the window stands in the city's one frame, held while real money is on its way, and counts as open", () => {
   const layer = readFileSync(path.join(components, "PredictLayer.tsx"), "utf8");
   assert.match(layer, /import \{ useCityWindow \} from '\.\.\/window\/useCityWindow';/);
   assert.match(layer, /id: 'predict', title, icon: <PredictGlyph \/>/);

@@ -1,15 +1,14 @@
 /**
- * CITY-187 — the person sells what her agent bought, from the tower's window. Three steps, each its own route. On devnet
- * through the gate's DLMM pool; with CITY-195 on mainnet through Jupiter's `/build` (`./jupiter.server.ts`
+ * The person sells what her agent bought, from the tower's window. Three steps, each its own route. On devnet
+ * through the gate's DLMM pool; on mainnet through Jupiter's `/build` (`./jupiter.server.ts`
  * `jupiterSaleVenue`) by the very rules of the agent's buys: SOL only to her own account, «the money did not reach you, so
- * the trade does not happen», Ryntra's fee at the table's rate for the pair (CITY-183) — in the SOL she receives — and her
+ * the trade does not happen», Ryntra's fee at the table's rate for the pair — in the SOL she receives — and her
  * floor held on chain. Her next signature tidies up after a sale (`./tidy.ts`): sold sales' mandates removed, their rent
  * back to her.
  *
- *
  * 1. **Review** (`reviewSale`) — the share she picked of what the agent holds for her (`./sale.ts`), Ryntra's fee at the
  *    table's rate for the pair, the pool's quote and her floor; her one unsigned transaction: the coin into her own
- *    vault under a sale's mandate of CITY-184 (`./terms.ts` `budgetCoin`) — exactly that much, once, for at least her
+ *    vault under a sale's mandate (`./terms.ts` `budgetCoin`) — exactly that much, once, for at least her
  *    floor in SOL, to her wallet, within a day. The sale waits in the agent's book until she signs.
  * 2. **Go** (`goSale`) — once the chain has her mandate, the agent sells straight away: the pool's swap for the vault,
  *    Ryntra's fee the transfer just before it, judged and signed by the agent's own signer (`./signer.server.ts`), sent and
@@ -45,7 +44,7 @@ import { NO_TIDY, withTidy, type EmptyAccount, type Tidy } from "./tidy.ts";
 import { EXTENSION, TOKEN_2022_PROGRAM_ID, afterTransferFee, isTokenProgram, mintExtensions, readCoin } from "./token-2022.ts";
 import { receivedIn, settled, tradeOf } from "./tick.server.ts";
 
-/** The agent sells on the gate's network: devnet through its pool (CITY-187), mainnet through Jupiter (CITY-195). */
+/** The agent sells on the gate's network: devnet through its pool, mainnet through Jupiter. */
 export type SaleGate = OpenGate;
 
 /** A sale as the agent's book keeps it: public addresses and numbers. */
@@ -61,7 +60,7 @@ export type SaleRow = Readonly<{
   decimals: number;
   /** The coin's token program when it is not Token's (a coin of Token-2022 sold through Jupiter); absent — Token's. */
   program?: string;
-  /** The coin withholds a fee on transfers (CITY-184): the vault holds less than left her wallet. */
+  /** The coin withholds a fee on transfers: the vault holds less than left her wallet. */
   transferFee?: boolean;
   share: SaleShare;
   /** The coin that left her wallet for the sale. */
@@ -437,7 +436,7 @@ export type SaleWorkDeps = Readonly<{
   key: KeySigner | null;
   journal: AgentJournal;
   venue: SaleVenue;
-  /** CITY-196: what the agent never buys and whom it never trades with; the store's own registry when not handed in. */
+  /** What the agent never buys and whom it never trades with; the store's own registry when not handed in. */
   screen?: AgentScreen;
   now?: () => number;
   trade?: typeof agentTrade;
@@ -590,7 +589,7 @@ export async function runSalePass(deps: SaleWorkDeps): Promise<readonly Readonly
   return lines;
 }
 
-/* ------------------------------------------------------------------ tidying up (CITY-195) */
+/* ------------------------------------------------------------------ tidying up */
 
 /** Whether a mint is a coin of Token-2022 that withholds a fee on transfers — by its extension, whatever the rate; null — unreadable. */
 function withholds(mint: Readonly<{ owner: PublicKey; data: Uint8Array }>): boolean | null {

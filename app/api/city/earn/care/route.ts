@@ -7,7 +7,7 @@ export const dynamic = 'force-dynamic';
 export const maxDuration = 60;
 
 /**
- * «Your agent looks after it» (CITY-203): one door for the window. Every action is the wallet's own — `review` builds the
+ * «Your agent looks after it»: one door for the window. Every action is the wallet's own — `review` builds the
  * care's transactions, `submit` relays the ones the wallet signed, `stop` builds everything back, `status` reads the
  * wallet's cares. The session's wallet must be the action's; the switch closed answers 404.
  */

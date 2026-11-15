@@ -19,9 +19,9 @@ import { PAGES } from './words';
 import { PAGE_NAMES } from '@/city/lib/docs/sections';
 
 /**
- * One of the city's pages at its own address (CITY-157): `/docs`, `/developers`, `/support` and `/feedback`, `/about`,
+ * One of the city's pages at its own address: `/docs`, `/developers`, `/support` and `/feedback`, `/about`,
  * `/legal/terms`, `/legal/privacy`. The same contents as the window the menu opens, standing alone — the mark and the
- * way back into the city on top, the language, the documentation's one menu beside it (CITY-180), the other pages at the foot. The server paints English with every
+ * way back into the city on top, the language, the documentation's one menu beside it, the other pages at the foot. The server paints English with every
  * word in the page (a store's reviewer and a search engine read it whole); the person's language follows at once.
  */
 export function DocumentPage({ id, frame }: { id: PageId; frame: DocsFrame }) {
@@ -40,12 +40,12 @@ export function DocumentPage({ id, frame }: { id: PageId; frame: DocsFrame }) {
 
 /**
  * The page around a city page's contents: the bar with the mark, the language and the way back into the city, and the
- * other pages at the foot — «What we're building», «Partners» and the roadmap first (CITY-177), then the city's pages.
- * «How it works» (CITY-43, `/how-it-works`) stands in the same shell, with no page current; «What we're building» and
+ * other pages at the foot — «What we're building», «Partners» and the roadmap first, then the city's pages.
+ * «How it works» (`/how-it-works`) stands in the same shell, with no page current; «What we're building» and
  * the partner page stand in it with their own.
  */
 export function DocumentShell({ doc, current, wide = false, children }: { doc: string; current?: PageId | SiteDocId; wide?: boolean | 'docs'; children: ReactNode }) {
-  // The person's language before the first paint after hydration (CITY-79).
+  // The person's language before the first paint after hydration.
   useLayoutEffect(() => void hydrateLang(), []);
   const w = useWords(PAGES);
   const lang = useLang();

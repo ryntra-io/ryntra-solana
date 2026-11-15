@@ -175,7 +175,7 @@ async function readCoin(mint: string, ctx: ReadContext): Promise<ObjectRead> {
   if (view.status === 404) return { state: 'gone' };
   const v = view.body;
   if (view.status !== 200 || !v || !isStr(v.name) || !isStr(v.symbol)) return { state: 'unavailable' };
-  /* A creator's name and ticker, shown to every visitor of the quarter: somebody else's text (CITY-73). */
+  /* A creator's name and ticker, shown to every visitor of the quarter: somebody else's text. */
   const symbol = shownText(v.symbol, 'symbol', 32);
   if (!symbol) return { state: 'unavailable' };
   const name = shownText(v.name, 'name') ?? symbol;

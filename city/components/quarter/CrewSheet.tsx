@@ -26,7 +26,7 @@ const tick = () => {
 };
 
 /**
- * The crew's one sheet (CITY-20), at the bottom like the quarter's own: start a street with a name and a colour, type a
+ * The crew's one sheet, at the bottom like the quarter's own: start a street with a name and a colour, type a
  * code, join the street behind an invite, or — in a crew — invite, give to the headquarters and leave with one tap.
  * One amber action on each face; the rest stays behind «Details». Over the city (an invite by a link) it stands where
  * the city's one card does, above the menu.

@@ -4,7 +4,7 @@ import test from "node:test";
 import { DEFAULT_SETTINGS, defaultSettings, FEED_KINDS, migrateSettings, readSettings, SETTINGS_GROUPS, SETTINGS_KEY, SETTINGS_VERSION, shownKinds, SWITCHES, toggled, touchedIn, writeSettings } from "./settings.ts";
 import { flashingOn, hydrateFeed, resetFeed, useFeed } from "./store.ts";
 
-/* CITY-66: «Show on home» — five kinds and the flashing, each a switch kept on this device. */
+/* «Show on home» — five kinds and the flashing, each a switch kept on this device. */
 
 const memoryStorage = (initial = {}) => {
   const data = new Map(Object.entries(initial));
@@ -103,7 +103,7 @@ test("the store's step makes events only for the kinds switched on", () => {
   resetFeed();
 });
 
-/* «Arrivals» — «what is it, I cannot turn it off». CITY-81 (29.10): the game left the first
+/* «Arrivals» — «what is it, I cannot turn it off». The game left the first
    screen, so the card starts off on every device, and a choice kept before is dropped once. */
 
 const v2 = (kept) => JSON.stringify({ v: SETTINGS_VERSION, ...kept });

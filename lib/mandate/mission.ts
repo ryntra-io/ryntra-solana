@@ -1,5 +1,5 @@
 /**
- * CITY-70 — the agent's mission as the person sees it, and its money as the chain and the book agree on it. Pure: the
+ * The agent's mission as the person sees it, and its money as the chain and the book agree on it. Pure: the
  * view (`./agent-service.server.ts`) and the agent's pass (`./tick.server.ts`) read the chain and the book, ask here.
  *
  * - **A trade's state** (`tradeState`): done, refused by the chain, refused by the agent's own signer, a wait for the

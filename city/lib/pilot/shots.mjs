@@ -1,4 +1,4 @@
-// CITY-204 for review: the money autopilot's card — the sentence in the command line, one plan for the whole budget, its
+// For review: the money autopilot's card — the sentence in the command line, one plan for the whole budget, its
 // details, the practice on paper, the agent at work with the week's figure, and its pause when SOL fell — on a desk
 // (1440×900) and a phone (390×844), in English and Ukrainian → <out>/<lang>-<size>-<n>-<step>.jpg
 //   NEXT_PUBLIC_RYNTRA_CITY_PILOT=open NEXT_PUBLIC_RYNTRA_CITY_AUTOPILOT=mainnet NEXT_PUBLIC_RYNTRA_CITY_MANDATE=mainnet npm run dev -- -p 3204

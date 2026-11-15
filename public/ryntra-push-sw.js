@@ -3,7 +3,7 @@
  * reads the wallet's newest note from Ryntra itself (the wallet's cookie, the
  * same origin) and shows it. No words travel through the push service. A
  * click opens the note in Ryntra — the tab already open, or a new one. The
- * icon and the badge are the city's mark (CITY-158); a push without a note
+ * icon and the badge are the city's mark; a push without a note
  * opens the city's assistant.
  */
 

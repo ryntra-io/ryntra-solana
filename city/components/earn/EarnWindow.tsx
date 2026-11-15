@@ -31,7 +31,7 @@ const DOLLARS = new Set(['EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v', 'Es9vMF
 
 /**
  * The Earn window's contents: «Earned» and «Vs holding» side by side at the same size, then Shelf · Piers · Mine. The
- * frame (CITY-65) brings the head, the moving and the whole screen on a computer and the bottom sheet on a phone;
+ * frame brings the head, the moving and the whole screen on a computer and the bottom sheet on a phone;
  * while a signature is out it holds the window on that signature.
  */
 export default function EarnWindow() {
@@ -45,7 +45,7 @@ export default function EarnWindow() {
   const mine = useMine(owner);
   // A pier or a boat open on the Piers stands alone, like a product of the Shelf: its own figures, no headline above.
   const docked = usePier((st) => (st.pool !== null && st.copy === null) || st.boat !== null);
-  // Earn's own words — Shelf, Pier, Boats, Saver, Captain — behind one quiet «i» beside the tabs (CITY-243).
+  // Earn's own words — Shelf, Pier, Boats, Saver, Captain — behind one quiet «i» beside the tabs.
   const [terms, setTerms] = useState(false);
 
   // The window's reads: the feeds for everybody, the wallet's own for its owner.

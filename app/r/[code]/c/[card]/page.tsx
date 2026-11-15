@@ -71,7 +71,7 @@ export async function generateMetadata({ params }: { params: Params }): Promise<
   const word = cardWords(card.locale);
   const base = await origin();
   const title = word.tradeLine(card.token.symbol, figureOf(card), daysOf(card));
-  /* The preview is the traded coin's tower card in the city (CITY-158), the picture `/c/<mint>` shares; the card's own
+  /* The preview is the traded coin's tower card in the city, the picture `/c/<mint>` shares; the card's own
      still stays the page's poster. */
   const image = { url: `${coinLink(card.token.mint)}/opengraph-image`, ...CITY_CARD_SIZE, alt: word.alt(card.token.symbol, figureOf(card)) };
   return {

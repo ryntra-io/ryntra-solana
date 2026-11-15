@@ -4,7 +4,7 @@ import { shortAddress } from './format.ts';
 import { ISSUER } from './words.ts';
 
 /**
- * What the coin's issuer can still do to it (CITY-78): mint more of it, or freeze a holder's account. Read from the
+ * What the coin's issuer can still do to it: mint more of it, or freeze a holder's account. Read from the
  * mint's passport the engine's price carries (`/api/solana/swap/quote` → `passports`, read live from the chain); the
  * city never guesses it. A power the chain did not answer for stays unread and the window says nothing about it.
  */

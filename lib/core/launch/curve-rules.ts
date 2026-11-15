@@ -32,7 +32,7 @@
  *
  * Nothing here is offered to anyone yet. The preset needs `RYNTRA_LAUNCH_CURVE_RULES=open`, the audited program's
  * address and the audit's report, all three of the operator's giving, and the flag opens only after the independent audit
- * (SEC-3) and the operator's own word. Default — closed.
+ * (SEC-3). Default — closed.
  *
  * Pure and client-safe: the set, its bounds, the refusals, the reference semantics and the timeline read from a mint.
  * The venue builds no hook config until the

@@ -466,7 +466,8 @@ export function splitRuleLines(rule: SplitRule, facts: Readonly<{ since: number;
 }
 
 /**
- * False: closed there — rules, steps and payouts alike —, whatever
- * else is configured: money a creator gives away and programs a creator's money goes into open to people on mainnet alone, flipped here then — the server and the cabinet read this one value. The devnet stand is open.
+ * Whether the creator's split is open on mainnet. False: closed there — rules, steps and payouts
+ * alike — whatever else is configured. Flipped here when it opens; the server and the cabinet read this
+ * one value. The devnet stand is open.
  */
 export const CREATOR_SPLIT_OWNER_WORD = false;

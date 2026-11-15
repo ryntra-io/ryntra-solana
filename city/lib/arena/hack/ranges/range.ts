@@ -1,5 +1,5 @@
 /**
- * A range: the copy an order's runs play on, and the checks they may claim to break (CITY-238; spec
+ * A range: the copy an order's runs play on, and the checks they may claim to break (spec
  * `docs/research/city-hack-2026-11-08/SPEC.md` — «тренувальні замовлення Ryntra, форк-цілі з відкритих контрактів»).
  *
  * The sandbox needs three things an order does not carry: the recorded state of its copy (`Snapshot`), the pin of that

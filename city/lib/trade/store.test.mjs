@@ -69,7 +69,7 @@ test("the card opens on a price, before any wallet", async () => {
   assert.equal(routes("order").length, 0);
 });
 
-test("a launch's tower opens the same window and asks Jupiter for nothing: the Launch engine prices it (CITY-138)", async () => {
+test("a launch's tower opens the same window and asks Jupiter for nothing: the Launch engine prices it", async () => {
   const { routes } = scene({});
   useTrade.getState().openFor({ ...TOWER, verified: false }, "buy", { launch: true });
   await flush();

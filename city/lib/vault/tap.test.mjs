@@ -6,7 +6,7 @@ import { placeVault, vaultUnder } from "./tap.ts";
 import { GUARD_SPOT, ISLET_RADIUS, TOWER, VAULT_SPOT } from "./place.ts";
 
 /*
- * CITY-241: the Vault's tower opens its room from the city. The city's tap meets the tower's own body — a finger's
+ * The Vault's tower opens its room from the city. The city's tap meets the tower's own body — a finger's
  * slack around its armour — never the whole islet, and only while the tower stands in the scene.
  */
 

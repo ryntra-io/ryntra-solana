@@ -23,10 +23,10 @@ const AUTO_REVIEW_MS = 450;
 
 /**
  * One SOL pier: the amount in SOL, the style, the month gone as a picture, the one line before the signature and the
- * one amber action — «Put in». The engine's Zap (CITY-198) swaps the part of the SOL the other coin needs and opens the
+ * one amber action — «Put in». The engine's Zap swaps the part of the SOL the other coin needs and opens the
  * position in one approval of the wallet; the person signs in their own wallet; the result is said in SOL.
  *
- * A copy of «Like the Captain» (CITY-99) is the same card on the strategy's pier: its style fixed, its record in place
+ * A copy of «Like the Captain» is the same card on the strategy's pier: its style fixed, its record in place
  * of the month gone, the same one approval from SOL.
  */
 export function PierCard({ words, pier, copy = null }: { words: Words; pier: Pier; copy?: ProvenStrategy | null }) {
@@ -56,7 +56,7 @@ export function PierCard({ words, pier, copy = null }: { words: Words; pier: Pie
   const busy = PIER_BUSY.has(phase);
   const range = pierRange(pier, style);
   const prices = rangePrices(range.low, range.high);
-  // CITY-203: with the care on, the agent opens and looks after the position — the card's one action becomes the care's.
+  // With the care on, the agent opens and looks after the position — the card's one action becomes the care's.
   const caring = useCare((st) => st.on) && careOpen() && !copy;
 
   // Opened from the Shelf (a copy) the Piers tab has not asked what this wallet may do here: asked once.

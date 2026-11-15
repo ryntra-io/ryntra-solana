@@ -1,4 +1,4 @@
-/** The Ring's judge and match receipt (CITY-68): the public face of `lib/ring/judge`. See `README.md`. */
+/** The Ring's judge and match receipt: the public face of `lib/ring/judge`. See `README.md`. */
 
 export { canonicalJson, firstDifference, hashOf, isWellFormed, sha256Hex, HEX32, type Difference } from "./hash.ts";
 export {

@@ -13,8 +13,8 @@ export const dynamic = "force-dynamic";
 export const maxDuration = 60;
 
 /**
- * CITY-187 — the person signed her sale: `POST` her wallet and the sale's mandate; once the chain has it, the agent sells
- * now — on devnet the pool's swap with Ryntra's fee before it, on mainnet Jupiter's route with the fee inside (CITY-195) —
+ * The person signed her sale: `POST` her wallet and the sale's mandate; once the chain has it, the agent sells
+ * now — on devnet the pool's swap with Ryntra's fee before it, on mainnet Jupiter's route with the fee inside —
  * judged and signed by the agent's own signer, and the answer is the receipt. Where the deployment has no agent key, the
  * sale waits for the cron's pass. Public data only.
  */

@@ -2,7 +2,7 @@ import { COMMAND_MAX, findCoin, isBase, LINE_WORDS, parse, tokens, type Book, ty
 import { boundedPlan, type PlanId, type StrategyPlan } from '../../../lib/mandate/plans.ts';
 
 /**
- * The agent on its word (CITY-175): one sentence — «торгуй на 1 SOL на день», «trade 1 SOL a day», «запусти бота на
+ * The agent on its word: one sentence — «торгуй на 1 SOL на день», «trade 1 SOL a day», «запусти бота на
  * 0,5 SOL», «запусти мені токен», «launch me a coin called Neon Fox» — read into what the agent is asked to do. English
  * and Ukrainian, with the Russian a Ukrainian phone often types. Pure: no store, no wallet, no network.
  *
@@ -12,9 +12,9 @@ import { boundedPlan, type PlanId, type StrategyPlan } from '../../../lib/mandat
  *
  * It reads the command line's way (`../command/parse.ts`): the same tokens and numbers, a word is never guessed into
  * money, and a question or a refusal is never an ask. A sentence that is not one of the two answers null and the line
- * reads it as before — a standing instruction («buy $20 of SOL every week») is CITY-176's reader's, not this one's.
+ * reads it as before — a standing instruction («buy $20 of SOL every week») belongs to the one-sentence reader (`../instruct/read.ts`), not to this one.
  *
- * CITY-193 — the strategy, from the same sentence:
+ * The strategy, from the same sentence:
  * «купуй BONK на просіданнях», «buy the dip −10 %», «торгуй сіткою», «grid BONK 5 %», «фіксуй +20 %», «stop loss 10 %»,
  * «купуй нові запуски». Words become a plan (`lib/mandate/plans.ts`), its numbers drawn into the strategies' bounds; the
  * plan only decides when a buy the mandate allows is made — the budget stays what was said.
@@ -28,7 +28,7 @@ export type AgentAsk =
       perDaySol: string | null;
       /** The coin the agent is to buy, when the sentence names a tower («торгуй BONK на 0,1 SOL на день»); never SOL or USDC. */
       coin?: Coin | null;
-      /** CITY-193: the strategy said, with its numbers; absent — the steady one. */
+      /** The strategy said, with its numbers; absent — the steady one. */
       plan?: StrategyPlan;
     }>
   | Readonly<{
@@ -57,7 +57,7 @@ const FOR_ME = /^(me|myself|мене|мені|мне|меня|сам|сама|с
 
 const has = (list: readonly Token[], re: RegExp) => list.some((t) => re.test(t.text));
 
-/* -------------------------------------------------- CITY-193: the strategy's words */
+/* -------------------------------------------------- The strategy's words */
 
 /** «Buy» as a person tells an agent: «купуй на просіданнях», «buy the dip». */
 const BUY = LINE_WORDS.VERBS.buy;
@@ -177,7 +177,7 @@ export function readAsk(input: string, book: Book): AgentAsk | null {
   const agent = has(list, AGENT);
   const trade = has(list, TRADE);
   const put = has(list, PUT) || has(list, VERBS.launch);
-  /* CITY-193: a strategy said with a buy, a trade, the agent — or an exit on its own («фіксуй +20 %») — is the agent's. */
+  /* A strategy said with a buy, a trade, the agent — or an exit on its own («фіксуй +20 %») — is the agent's. */
   const plan = planSaid(list);
   const strategyAsk = plan !== null && (trade || agent || has(list, BUY) || (plan.id === 'steady' && plan.exit !== null) || plan.id === 'grid');
 

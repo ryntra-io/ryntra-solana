@@ -1,7 +1,6 @@
-// CITY-191's screens for review: «New launches on Solana» as the city's window — as it opens from the «New» chip's list
+// The screens for review: «New launches on Solana» as the city's window — as it opens from the «New» chip's list
 // toggle, on the whole screen and stretched wide by its corner on a desk; on a phone the sheet, its other rings and the
 // whole screen — in English and Ukrainian, at 1440×900 and 390×844 → <out>/<state>-<size>-<lang>.jpg, report.json.
-// Before CITY-191 the list was a fixed panel: the same pass takes what it can of it (the list alone).
 //   node city/lib/lens/new-window-shots.mjs [out] [baseUrl]      (PRESS_CHROME may point at a Chromium; SIZES, LANGS; QUERY=launch=stub on a dev stand)
 // Read-only: the engine's own public Pulse; nothing is signed or sent.
 import { chromium } from "playwright";

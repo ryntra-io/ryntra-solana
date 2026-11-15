@@ -29,7 +29,7 @@ export function useShelfContext(): Readonly<Record<ProductId, Big>> {
   const captainRead = useEarnData((st) => st.captain);
   const towers = useCity((st) => st.layout.towers);
   const stockList = useStockPier((st) => st.list);
-  // The figures are written in the language on screen (CITY-243: «5.03%» beside «$7,4K»): a switch writes them again.
+  // The figures are written in the language on screen («5.03%» beside «$7,4K»): a switch writes them again.
   const lang = useLang();
 
   return useMemo(() => {
@@ -71,7 +71,7 @@ export function useShelfContext(): Readonly<Record<ProductId, Big>> {
 const waiting = (status: string | undefined): boolean => status === undefined || status === 'idle' || status === 'loading';
 
 /**
- * Which products' big numbers are still on their way (CITY-209): their cards hold the number's place with a quiet bone
+ * Which products' big numbers are still on their way: their cards hold the number's place with a quiet bone
  * of the same height, so the Shelf does not jump when the figures land. A source that answered — with a number or
  * without — is no longer waited on.
  */

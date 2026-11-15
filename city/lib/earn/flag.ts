@@ -1,5 +1,5 @@
 /**
- * Earn in the city (CITY-92, `docs/research/ryntra-earn-2026-10-29/SPEC.md`): one window with three tabs — the Shelf
+ * Earn in the city (`docs/research/ryntra-earn-2026-10-29/SPEC.md`): one window with three tabs — the Shelf
  * of products, the Piers and Mine. It opens to people only where the deployment's switch says `open`
  * (`NEXT_PUBLIC_RYNTRA_CITY_EARN`), after the owner's eyes and the SOL Saver's canary with a small sum (spec §18.3).
  * Until then nothing of Earn is drawn and its routes answer «closed».
@@ -15,7 +15,7 @@ export function earnOpen(value: string | undefined): boolean {
 export const EARN_OPEN = earnOpen(process.env.NEXT_PUBLIC_RYNTRA_CITY_EARN);
 
 /**
- * Whether Earn reads a loan of the wallet. None yet: the first loan read — Kamino's, for «Dollars for Stocks»: Kamino is not wired. Loan health (CITY-100) stands ready behind it: its judge and words
+ * Whether Earn reads a loan of the wallet. None yet: the first loan read — Kamino's, for «Dollars for Stocks»: Kamino is not wired. Loan health stands ready behind it: its judge and words
  * (`notes.ts`), the city's source and the server's watch read loans as soon as there is a reader; until then the
  * notification window does not list it.
  */
@@ -27,7 +27,7 @@ export function isEarnTab(value: unknown): value is EarnTab {
 
 /**
  * The products of the Shelf, in the order the spec names them. The SOL Pier
- * opens the Harbor's own flow where the Harbor's switch is open; the Stock Pier (CITY-98) builds where its own switch
+ * opens the Harbor's own flow where the Harbor's switch is open; the Stock Pier builds where its own switch
  * is open (`NEXT_PUBLIC_RYNTRA_CITY_STOCK_PIER`) and otherwise shows its verified pairs with «tell me when it opens»;
  * the rest stand as real cards with live context and one «tell me when it opens».
  */

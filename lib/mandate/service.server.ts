@@ -1,12 +1,12 @@
 /**
- * CITY-174 — the agent's budget behind the city's window, on devnet; on mainnet.
+ * The agent's budget behind the city's window, on devnet and on mainnet.
  *
  * The window asks for three things and each is a transaction the person's wallet signs and this server only relays:
  * turn the agent on with a budget (`review`), stop it and take the rest back (`stop`), and what stands now (`status`).
  * This server holds no key and signs nothing; the agent's own key and its trading are the engine's (`./run.server.ts`).
  *
  * The switch goes by the release protocol, as the ladder's does (decision 92): devnet → a release with a point to roll
- * back to → the operator tries it himself. Mainnet is this change of code (CITY-186), merged after the
+ * back to → the operator tries it himself. Mainnet is this change of code, merged after the
  * audit of Squads' policy layer; before it, no value of the switch opened mainnet.
  * - `RYNTRA_AGENT_MANDATE` — `devnet` or `mainnet` opens the routes; anything else closes them (they answer 404).
  * - `RYNTRA_AGENT_MANDATE_POOL` — the devnet DLMM pool the agent buys in (Jupiter is not deployed on devnet).
@@ -129,7 +129,7 @@ export type ReviewResult = Readonly<{ ok: true; record: MandateRecord; transacti
 /**
  * The chain's clock, in seconds, at its newest confirmed slot — or null when the node cannot say. A node often has no
  * block for the very newest slot yet («Block not available for slot», -32004) and throws rather than answering null;
- * that is the same «cannot say» as a null, and the caller's wall-clock fallback stands for both (CITY-246: a budget's
+ * that is the same «cannot say» as a null, and the caller's wall-clock fallback stands for both (a budget's
  * review was refused on this throw).
  */
 export async function chainSeconds(connection: Pick<Connection, "getSlot" | "getBlockTime">): Promise<number | null> {
@@ -164,7 +164,7 @@ export async function reviewEnable(
   if (owner.equals(gate.agent)) return { ok: false, code: "VALIDATION_ERROR", reason: "The agent is not the person." };
   const named = gate.network === "mainnet" ? addressOf(input.coin ?? undefined) : null;
   if (gate.network === "mainnet" && (!named || named.equals(NATIVE_MINT))) return { ok: false, code: "VALIDATION_ERROR", reason: "Name the coin the agent buys." };
-  /* CITY-196: before she signs anything — a coin of Ryntra's launchpad, or her own, is never the agent's to buy. */
+  /* Before she signs anything — a coin of Ryntra's launchpad, or her own, is never the agent's to buy. */
   if (named) {
     const origin = await (dependencies.origin ?? storeScreen(getGuardRuntime().store, gate.network).origin)(named.toBase58()).catch(() => null);
     if (!origin) return { ok: false, code: "UNAVAILABLE", reason: "Ryntra's launch registry is not readable." };
@@ -228,7 +228,7 @@ export async function reviewEnable(
 }
 
 /**
- * What the stop's transaction also tidies (CITY-195, `./tidy.ts`): read by the caller from the agent's book and the chain —
+ * What the stop's transaction also tidies (`./tidy.ts`): read by the caller from the agent's book and the chain —
  * her sold sales' mandates, the vault's empty account of the coin, her wSOL.
  */
 export type StopTidy = (mandate: Readonly<{ owner: PublicKey; settings: PublicKey; vault: PublicKey; policy: PublicKey }>) => Promise<Tidy>;
@@ -283,7 +283,7 @@ export type MandateStatus = Readonly<{ active: boolean; budgetLamports: string |
 export type MandateStatusRead = Readonly<{ ok: true; status: MandateStatus }> | Readonly<{ ok: false; code: "not-addresses" | "not-found" }>;
 
 /**
- * What stands now — only of a real mandate of this agent (CITY-196): a policy on chain must be a Squads Smart Account
+ * What stands now — only of a real mandate of this agent: a policy on chain must be a Squads Smart Account
  * policy whose one signer is the agent, at the address its settings and seed derive, and the vault must be that account's.
  * A policy no longer on chain (a stop removed it) is known only from the agent's book, with the same vault. Anything else
  * — any other address, the System Program — is not found.
@@ -326,7 +326,7 @@ export type RelayResult = Readonly<{ ok: true; signatures: readonly string[] }> 
 /**
  * Send the person's signed transactions in order, each confirmed before the next. Each is read first: the person pays
  * and is the only signer, her signature is real, and it calls nothing but the smart account, token and system programs —
- * Token-2022's among them, where a coin she sells is one of it (CITY-187).
+ * Token-2022's among them, where a coin she sells is one of it.
  */
 export async function relayMandate(input: Readonly<{ owner: string; items: readonly string[] }>, network: MandateNetwork = "devnet", connection: Connection = mandateConnection(network)): Promise<RelayResult> {
   if (!(await onNetwork(connection, network))) return { ...notNetwork(network), signatures: [] };

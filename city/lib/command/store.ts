@@ -3,7 +3,7 @@ import { useAssistant } from '../assistant/store.ts';
 import { useRun } from '../run/store.ts';
 
 /**
- * Whether the city's command line is open (CITY-85): ⌘K or Ctrl+K on a computer, Ryntra's spark in the top bar
+ * Whether the city's command line is open: ⌘K or Ctrl+K on a computer, Ryntra's spark in the top bar
  * anywhere — on a phone, its own way in. One thing in front at a time: Ryntra's panel steps aside while it is open, and
  * neither a run nor the building of a quarter has it.
  */

@@ -3,7 +3,7 @@ import { AGENT_REPORT, readReportCallback, reportCallback, type Lang } from './r
 import { keepReport, readReport } from './report-watch.ts';
 
 /**
- * The daily report's one button in Telegram (CITY-194): «Turn off daily report» — and, once off, «Turn it back on» in
+ * The daily report's one button in Telegram: «Turn off daily report» — and, once off, «Turn it back on» in
  * its place. A press counts only from the chat the wallet's own account bound: the chat's account (the assistant's
  * binding, `lib/assistant/telegram/link.ts`) must be the account the report's wallet belongs to; any other chat
  * changes nothing. The only write is the report's one switch.

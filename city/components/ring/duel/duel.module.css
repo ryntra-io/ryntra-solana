@@ -1,7 +1,7 @@
-/* The Ring's duels (CITY-51): two agents in their corners under a cold spotlight, the rounds landing between them.
+/* The Ring's duels: two agents in their corners under a cold spotlight, the rounds landing between them.
    Dark glass and fine violet edges, the visor's amber for the left corner and violet for the right, one amber action.
-   The frame (CITY-65) brings the glass and the head; the contents lay out for the window's own width (@container
-   window), the same on a computer and in the phone's bottom sheet. Tokens from city/styles/city.module.css (CITY-11). */
+   The frame brings the glass and the head; the contents lay out for the window's own width (@container
+   window), the same on a computer and in the phone's bottom sheet. Tokens from city/styles/city.module.css. */
 
 .framed {
   position: absolute;

@@ -12,7 +12,7 @@ import { moduleGeometry, releaseModule, restoreModule, type Kit } from './skylin
 
 /**
  * The low-rise city between the towers: one instanced box per block, one draw call for all of them. Once the skyline
- * kit is on the screen (CITY-56) the blocks are drawn from it instead: walls with rooms behind every window and shop
+ * kit is on the screen the blocks are drawn from it instead: walls with rooms behind every window and shop
  * fronts on the ground floor, and one of three Blender roofs (parapet and plant, a water tank, a penthouse) on each.
  */
 export function Fillers({ fillers }: { fillers: Filler[] }) {
@@ -59,7 +59,7 @@ function LowRise({ kit, fillers }: { kit: Kit; fillers: Filler[] }) {
 }
 
 /**
- * What kind of block a filler is (CITY-56), the same on every device: brick walk-ups are the short ones (up to ten
+ * What kind of block a filler is, the same on every device: brick walk-ups are the short ones (up to ten
  * storeys), glass offices the tall ones, concrete blocks in between and here and there.
  * 0 glass office · 1 brick walk-up · 2 concrete block.
  */

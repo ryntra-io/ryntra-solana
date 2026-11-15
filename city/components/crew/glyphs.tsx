@@ -1,7 +1,7 @@
 import type { Role } from '@/city/lib/crew/read';
 
 /**
- * The agents' glyphs (CITY-205), drawn for 24 px like the HUD's: the Trader's candles, the Autopilot's split budget, the
+ * The agents' glyphs, drawn for 24 px like the HUD's: the Trader's candles, the Autopilot's split budget, the
  * pool keeper's two rings, the Launcher's rocket. `CrewGlyph` — the crew together, for the command line's row.
  */
 export function RoleGlyph({ role, size = 22 }: Readonly<{ role: Role | null; size?: number }>) {

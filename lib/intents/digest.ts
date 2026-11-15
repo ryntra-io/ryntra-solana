@@ -1,5 +1,5 @@
 /**
- * The digest of an intent's frozen fields (CITY-161): SHA-256 over their canonical JSON — keys sorted at every level,
+ * The digest of an intent's frozen fields: SHA-256 over their canonical JSON — keys sorted at every level,
  * no whitespace — in lower-case hex. The same body always gives the same digest wherever it is computed, and any change
  * to a coin, an amount, a side, a recipient, a deadline or the origin gives another.
  *

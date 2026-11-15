@@ -1,5 +1,5 @@
 /**
- * CITY-204 — how the agent looks after the plan by itself, between the person's visits. Pure: one reading in, what to do
+ * How the agent looks after the plan by itself, between the person's visits. Pure: one reading in, what to do
  * out; the server's pass (`./pass.server.ts`) reads the chain and the venues, this decides, the pass writes it down.
  *
  * What the agent does alone is only what the person's signed policy lets its key do — trade SOL for her coin, inside the
@@ -12,7 +12,7 @@
  * - **the person's own exit** — «take +20 %», «stop −10 %» — is the trade's plan (`lib/mandate/plans.ts`), kept by the agent
  *   on every pass; a pause of the plan's own is never lifted here;
  * - **interest** — Jupiter Lend adds it to the position by itself (the jlToken's worth rises): nothing to claim, nothing to
- *   re-invest; the pier's fees are claimed and put back by the pier's own care (CITY-203's interface).
+ *   re-invest; the pier's fees are claimed and put back by the pier's own care.
  *
  * A figure not read never moves anything: a hold stands until the agent can see it is over.
  */
@@ -134,7 +134,7 @@ export function weekOf(snaps: readonly Snap[], now: number, earnedUsdNow: number
 }
 
 /**
- * The plan's result since it started, USD: what the agent's trading made after every fee (CITY-197 `net`), the interest
+ * The plan's result since it started, USD: what the agent's trading made after every fee, the interest
  * the savings earned, and the pier's worth less what went in. A part not read leaves the whole unread — never a partial
  * figure shown as the whole.
  */

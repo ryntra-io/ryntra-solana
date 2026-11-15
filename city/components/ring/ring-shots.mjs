@@ -1,4 +1,4 @@
-// Ryntra City, the Ring's agents (CITY-50): a garage in my quarter with no agent yet, the screen that makes one — body,
+// Ryntra City, the Ring's agents: a garage in my quarter with no agent yet, the screen that makes one — body,
 // brain, script — the agent in its garage, and an agent that has played, at 1440×900 and 390×844 → <out>/ring-<state>-<size>.png
 //   NEXT_PUBLIC_RYNTRA_CITY_RING=open RYNTRA_RING_MODELS=stub npm run dev
 //   node city/components/ring/ring-shots.mjs [out] [baseUrl]      (PRESS_CHROME may point at a Chromium)

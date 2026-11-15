@@ -92,7 +92,7 @@ export const SIGN_HALF = { x: 62, y: 30 } as const;
 const SIGN_TOP = 128;
 
 /**
- * Where the Vault's sign stands on the screen (CITY-243): where its tower is, but never under the Deck — on a phone a
+ * Where the Vault's sign stands on the screen: where its tower is, but never under the Deck — on a phone a
  * drag of the city brought the Vault right in front of the camera and its sign read through the Deck — and never off the
  * screen: on a phone the Vault stands outside the first frame (the Sol Spire and the Eclipse keep the middle), on a desk
  * the idle sway carries it past the edge, so its sign waits at the edge on the Vault's side, an arrow on it (`side`), and

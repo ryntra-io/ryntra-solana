@@ -40,7 +40,7 @@ const pct = (bps: number) => `${Number((bps / 100).toFixed(2))}%`;
 const quoteText = (units: bigint, quote: StockQuote) => `${digits(solShort(Number(units) / 10 ** QUOTE[quote].decimals))} ${QUOTE[quote].symbol}`;
 
 /**
- * The Stock Pier (CITY-98): the person picks a verified stock and SOL or USDC, types what they put in, chooses what
+ * The Stock Pier: the person picks a verified stock and SOL or USDC, types what they put in, chooses what
  * happens at the exchange's close, and builds the pair's pier with the first liquidity in one signature — or moors
  * beside it where it stands. Their boats in stock piers ride at the top. One line before the signature; the rest
  * behind its «i».

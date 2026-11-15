@@ -50,7 +50,7 @@ export async function GET(request: Request) {
   const ttl = Math.max(5, Math.floor(TIMEFRAME_TTL_MS[timeframe] / 1000));
   return Response.json(
     { timeframe: read.timeframe, candles: limit === null ? read.candles : read.candles.slice(-limit), pool: read.pool, observedAt: read.observedAt, stale: read.stale, source: read.source, ...(limit === null ? {} : { limit, available: read.candles.length }) },
-    /* A held copy (CITY-208: the source refused, the last good read is answered with its own time) is kept at the edge briefly. */
+    /* A held copy (the source refused, the last good read is answered with its own time) is kept at the edge briefly. */
     { headers: { ...(read.stale ? publicCacheHeaders(5, 30) : publicCacheHeaders(ttl, ttl * 6)), ...rateLimitHeaders(rate) } },
   );
 }

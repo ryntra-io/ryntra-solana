@@ -1,5 +1,5 @@
 /* The city's search: an icon in the top bar and one compact panel under it, in the HUD's own glass; on a phone held
-   upright the panel is a sheet at the bottom, under the thumb (CITY-6a). */
+   upright the panel is a sheet at the bottom, under the thumb. */
 
 .wrap {
   display: contents;

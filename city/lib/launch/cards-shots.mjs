@@ -1,4 +1,4 @@
-// The launch's share cards (L8 · CITY-145) for review: the stub wallet sells its Night Owl, bought 42 s after birth, in
+// The launch's share cards for review: the stub wallet sells its Night Owl, bought 42 s after birth, in
 // the pool — the round trip and «Share» under the sale; «Мій причал» on Moth with its two cards one tap to share; and
 // the three cards themselves, as the share sheet gets them — at 1440×860 and 390×844
 //   → <out>/cards-<state>-<size>-<locale>.jpg and <out>/card-<kind>-<size>-<locale>.png

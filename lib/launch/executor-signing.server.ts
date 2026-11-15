@@ -7,7 +7,7 @@
  * - Meteora DAMM v2: the fees of a position it owns, and the cent's purchase a DLMM pool asks its creator for — a swap of
  *   at most `PROOF_SWAP_MAX_RAW`, between the executor's own accounts, with no referral account, and only as that proof:
  *   the same message opens the DLMM pool after it, and the swap buys that pool's coin into the executor's own account
- *   (CITY-196 — Ryntra's keys buy no coin of Ryntra's launchpad; the proof is Meteora's price of opening a pool, not a buy);
+ *   (Ryntra's keys buy no coin of Ryntra's launchpad; the proof is Meteora's price of opening a pool, not a buy);
  * - Meteora DLMM: its own pool, position and steps — open, add, remove, move, close;
  * - the compute budget, and the opening of its own token accounts.
  * Every token account a Meteora instruction pays into must be one of the executor's own (its associated accounts of
@@ -111,7 +111,7 @@ export function executorSigningRefusal(instructions: readonly TransactionInstruc
   const self = new PublicKey(executor);
   const wallets = [self, ...payees.map((payee) => new PublicKey(payee))];
   const PROGRAMS = programs(dlmm);
-  /* CITY-196: the pools this message opens, by position and coin — a swap is signed only as the proof of one after it. */
+  /* The pools this message opens, by position and coin — a swap is signed only as the proof of one after it. */
   const openings = instructions.flatMap((ix, index) => {
     if (ix.programId.toBase58() !== dlmm.address) return [];
     const head = [...ix.data.subarray(0, 8)];

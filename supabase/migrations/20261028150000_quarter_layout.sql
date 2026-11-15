@@ -1,13 +1,13 @@
--- Ryntra City: a quarter's free layout (CITY-55, decision 72), on top of `world_v1`.
+-- Ryntra City: a quarter's free layout, on top of `world_v1`.
 --
--- PREPARED 2026-10-28 as a file only. Not applied to any Supabase project:
+-- PREPARED 2026-10-28 as a file only. Not applied to any Supabase project.
 -- Checked on a throwaway local PostgreSQL 16 with the Supabase roles and a
 -- hostile default-grant posture, after `world_v1` and `world_away` (see
 -- `lib/world/layout-sql.test.mjs`).
 --
 -- The file's name leaves out «world» on purpose: `lib/world/sql.test.mjs` lists
 -- the world's migration files by that word, and that list belongs to an open
--- pull request (CITY-19). Its table and functions are `world_` like the rest.
+-- pull request. Its table and functions are `world_` like the rest.
 --
 -- WHAT THIS FILE DOES
 --   * `private.world_layouts` keeps one layout per quarter: the pieces as the
@@ -21,8 +21,7 @@
 --
 -- WHAT IT DOES NOT DO
 --   No points, no task of the day, no money: a layout is how a quarter looks.
---   A sign's words are kept for the owner; the server leaves them out of what
---   anyone else reads until CITY-73 cleans foreign text.
+--   A sign's words are kept for the owner.
 --
 -- UNTIL IT IS APPLIED
 --   The rest of the world works as before; the layout routes answer 503 and

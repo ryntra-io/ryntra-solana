@@ -11,7 +11,7 @@ import s from './partners.module.css';
 import { PARTNERS } from './words';
 
 /**
- * The friend's landing (CITY-126): who invited them, the friend's offer — a discount on Ryntra's fee, decision 93 — and
+ * The friend's landing: who invited them, the friend's offer — a discount on Ryntra's fee, decision 93 — and
  * one button into the city. The engine binds the invitation when the friend's wallet proves itself — no form, no extra
  * step.
  */

@@ -1,4 +1,4 @@
-// Ryntra City, the Arena open (CITY-217): the whole way of a person through the Ring window over the live city, on a
+// Ryntra City, the Arena open: the whole way of a person through the Ring window over the live city, on a
 // stand — the door, signed out, the first agent made in the Arena's own garage (body, brain, script), its card, a
 // sparring fight with the house, a rated fight with a rival the server draws, the rating's move and the board (Market
 // Replay is not offered: this machine has no market-data gateway, and the city offers no format it cannot play) — at

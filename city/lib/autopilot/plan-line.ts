@@ -3,7 +3,7 @@ import { solText } from './plan.ts';
 import type { AUTOPILOT } from './words.ts';
 
 /**
- * CITY-193 — the agent's strategy as the card says it: one line on the card, the rules behind «Details», and the run on
+ * The agent's strategy as the card says it: one line on the card, the rules behind «Details», and the run on
  * history in one line. Pure: the words in, the lines out — the tests read them in both languages.
  */
 
@@ -25,7 +25,7 @@ export function planLine(plan: StrategyPlan | null, w: W, lang: 'en' | 'uk'): st
 }
 
 /**
- * CITY-216 — the agent's budget on its card as the person said it: the day's budget in the headline («up to 0.1 SOL a
+ * The agent's budget on its card as the person said it: the day's budget in the headline («up to 0.1 SOL a
  * day»), one trade's size on its own line under it («0.02 SOL a trade · 1 buy a day»). The calm pace spaces the buys
  * inside the day's budget; it never shrinks the headline to one trade. A strategy's buys a day are a ceiling, the steady
  * rhythm's are what it does. Without a budget — the ask, no size.

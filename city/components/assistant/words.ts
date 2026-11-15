@@ -1,6 +1,6 @@
 import { words } from '../../lib/i18n/dict.ts';
 
-/** The words of Ryntra's panel in the city (CITY-79): the button, the panel and what waits behind «Details». */
+/** The words of Ryntra's panel in the city: the button, the panel and what waits behind «Details». */
 export const ASSISTANT = words(
   {
     ask: 'Ask Ryntra',

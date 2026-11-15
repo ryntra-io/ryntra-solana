@@ -1,7 +1,7 @@
 import { words } from '../i18n/dict.ts';
 
 /**
- * The agent's card and «My instructions» (CITY-176), English and Ukrainian. Few words: what the agent will do, the one
+ * The agent's card and «My instructions», English and Ukrainian. Few words: what the agent will do, the one
  * figure that matters, the fee in one line, the button. Everything else is behind «Details».
  */
 

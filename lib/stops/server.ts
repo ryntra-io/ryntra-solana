@@ -1,5 +1,5 @@
 /**
- * Stops as the deployed server runs them (CITY-149): the database through the secret-gated `public.spot_stops_*`
+ * Stops as the deployed server runs them: the database through the secret-gated `public.spot_stops_*`
  * functions where `ready.ts` says so, the switch the city reads, and the swap engine's quote. Server only.
  */
 

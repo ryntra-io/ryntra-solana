@@ -9,11 +9,11 @@ import { planText, type StrategyPlan } from '../../../lib/mandate/plans.ts';
 import type { PilotPlanData, PilotSplit } from '../../../lib/pilot/plan.ts';
 
 /**
- * «Go live · sign once» (CITY-204) — loaded on the tap, never in the city's first frame. Every part the network moves money
+ * «Go live · sign once» — loaded on the tap, never in the city's first frame. Every part the network moves money
  * into is built by its own engine and door, as when the person does it by hand:
- * - the trade — the mandate of CITY-174/186 (`/api/bots/mandate/review`), read here from its own bytes (`checkUnsigned`);
+ * - the trade — the mandate (`/api/bots/mandate/review`), read here from its own bytes (`checkUnsigned`);
  * - the savings — Jupiter Lend through SOL-3 (`/api/solana/earn/review`), sealed;
- * - the pool — a SOL pier's Zap of CITY-198 (`/api/city/earn/piers/zap`), behind the Harbor's door, sealed.
+ * - the pool — a SOL pier's Zap (`/api/city/earn/piers/zap`), behind the Harbor's door, sealed.
  * Then one wallet prompt signs them all; each part goes to its own relay, the trade's mandate joins the agent's book with
  * her plan, and the plan joins the autopilot's book (`/api/bots/pilot`) with the signatures that landed. A part whose build
  * or relay did not go is left out — its money stays in her wallet — and the card says so in one line.

@@ -9,13 +9,13 @@ import { HACK_LIMITS, isHackRole, type HackDb } from "./contract.ts";
 import type { HackCaller, HackErrorCode, HackService, Outcome } from "./service.ts";
 
 /**
- * Hack's routes (CITY-226), on plain `Request` and `Response` so every rule is tested without a server; `server.ts`
+ * Hack's routes, on plain `Request` and `Response` so every rule is tested without a server; `server.ts`
  * hands in the real session, store and signature check, and `app/api/arena/hack/[action]` only passes the request on.
  *
  *   GET  /api/arena/hack/orders?status=&protocol=   → { orders }
  *   GET  /api/arena/hack/order?id=                  → { order, takes, findings }
  *   GET  /api/arena/hack/finding?id=                → { finding }
- *   GET  /api/arena/hack/run?order=&hunter=         → { run }   the agent's run on the order, live (CITY-238)
+ *   GET  /api/arena/hack/run?order=&hunter=         → { run }   the agent's run on the order, live
  *   POST /api/arena/hack/open     { order, grant }                         → 201 { order }
  *   POST /api/arena/hack/take     { order, hunter, role }                  → 200 { take, again, run }
  *   POST /api/arena/hack/submit   { id?, order, hunter, target, vulnClass, severity, title, logHash? } → 201 { finding, outcome }
@@ -28,7 +28,7 @@ import type { HackCaller, HackErrorCode, HackService, Outcome } from "./service.
  * (the day's limits per wallet and per agent are the store's, under its lock). A store that cannot be reached is a 503
  * that did nothing, never a 500.
  *
- * A take starts the agent's run (CITY-238, `../runs/service.ts`): once the take is written, the server launches the
+ * A take starts the agent's run (`../runs/service.ts`): once the take is written, the server launches the
  * agent on the machine with no network and answers at once — `run.started`, or why not. The run's own route serves its
  * journal as the viewer may see it: the agent's owner and the protocol's owner all of it, anyone else only how each
  * step came out.

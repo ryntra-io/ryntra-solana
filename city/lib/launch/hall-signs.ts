@@ -2,7 +2,7 @@ import type { HallBoardId, HallView } from './hall.ts';
 import { shownBoards } from './hall-words.ts';
 
 /**
- * Where the Hall of Fame stands in the city (CITY-241): a sign only on a board that has a leader, showing the leader's
+ * Where the Hall of Fame stands in the city: a sign only on a board that has a leader, showing the leader's
  * number, and a mast only under a sign. A board nobody is on has no sign (its one action, «Launch yours», stays in the
  * Hall's panel), and a mast with no sign on it is not there at all.
  */

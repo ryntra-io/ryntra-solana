@@ -1,9 +1,9 @@
 // Run from repo root: node --test city/lib/arena/hack/view/view.test.mjs
 /*
- * CITY-227: Hack's windows, under the markup — the order's phase and time left, the scope in one name, the run's
+ * Hack's windows, under the markup — the order's phase and time left, the scope in one name, the run's
  * journal as steps a person reads (the real runner's journal), a finding's level and where it stands, the board; the
- * client against the real routes of CITY-226 on the stand; the window's store walked the whole way: the orders, an
- * order, «Send an agent» (signed out, no agent, refused, sent), the run live, the owner's stop.
+ * client against the real routes on the stand; the window's store walked the whole way: the orders, an
+ * order, «Send an agent» (signed out, no agent, refused, sent), the run live, the protocol owner's word, the owner's stop.
  */
 import { createStand, OWNER_A, OWNER_B, PROTOCOL, OWNER_C, A5, A7, A8, A9 } from "./stand.mjs";
 import assert from "node:assert/strict";
@@ -377,7 +377,7 @@ test("a retry after a lost connection sends the first try's key; a refusal for g
   assert.deepEqual(sent, ["key-1-retry", "key-1-retry"]);
 });
 
-test("Confirm a run left for review; the owner's stop and start", async () => {
+test("the protocol owner's word: confirm a run left for review; the owner's stop and start", async () => {
   const stand = await createStand();
   stand.as(PROTOCOL);
   const { store } = storeOn(stand, { agent: null });
@@ -423,7 +423,7 @@ test("the board reads the newest orders and survives one it cannot read", async 
   assert.deepEqual(board.value.map((d) => d.order.id).sort(), ["swap-rounding", "vault-audit"], "the 3 newest, less the one that failed");
 });
 
-test("a take whose run did not start says why: the day is done, or the agent has no key — never a run that seems to go on (CITY-238)", async () => {
+test("a take whose run did not start says why: the day is done, or the agent has no key — never a run that seems to go on", async () => {
   const stand = await createStand();
   stand.as(OWNER_A);
   let run = { started: true };

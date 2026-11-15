@@ -12,13 +12,13 @@ import { LAUNCHED } from '@/city/lib/launch/words';
 import { CoinIcon } from '../chart/CoinIcon';
 import s from './launched.module.css';
 
-/** The Docks as our own live city filmed them (CITY-64): behind the window's head and its empty state. */
+/** The Docks as our own live city filmed them: behind the window's head and its empty state. */
 const DOCKS = districtFrame('launch').files[1]!.src;
 /** A launchpad with no launch yet says so after this long, rather than wait for ever. */
 const SETTLE_MS = 6_000;
 
 /**
- * «Launched on Ryntra» (CITY-185): every coin launched on the launchpad, one card each — its picture, ticker, market
+ * «Launched on Ryntra»: every coin launched on the launchpad, one card each — its picture, ticker, market
  * cap, the curve's way to the pool or «In pool», its holders — and one action, «Trade», which flies to its tower. One
  * amber «Launch yours» on top. Ryntra's own technical launches stand apart behind one quiet disclosure; with no
  * launch by people yet, the window is the Docks with «Be the first tower».

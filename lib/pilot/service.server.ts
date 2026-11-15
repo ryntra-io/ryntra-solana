@@ -1,5 +1,5 @@
 /**
- * CITY-204 — the money autopilot wired to the deployment: its switch, the reads its care takes (the agent's book, Jupiter
+ * The money autopilot wired to the deployment: its switch, the reads its care takes (the agent's book, Jupiter
  * Lend, Meteora, SOL's price) and the pass the agent's cron runs before it trades. Holds no key, signs nothing, sends
  * nothing: the money moves only in the person's own signed transactions and through the agent's signed policy.
  *

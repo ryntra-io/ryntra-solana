@@ -5,12 +5,12 @@ import { FEED_KINDS, type FeedKind } from '../feed/settings.ts';
 import { SPOT_OPEN, STOPS_ENGINE } from '../trade/gates.ts';
 
 /**
- * The notification centre's kinds (CITY-87, `docs/research/ryntra-city-helm-2026-10-29/SPEC.md` §10): every kind of
+ * The notification centre's kinds (`docs/research/ryntra-city-helm-2026-10-29/SPEC.md` §10): every kind of
  * note the city can tell, where each may go and where it starts. A kind is listed only where something real says it:
  *
- * - the market's five (the live feed, CITY-66) — the city reads them itself;
- * - your trades (the trade window), your stops (CITY-149) and your beacons (CITY-72) — the city sees them;
- * - Earn's four (CITY-100, `../earn/notes.ts`): a pool position out of range, the stock exchange's weekend, a dividend
+ * - the market's five (the live feed) — the city reads them itself;
+ * - your trades (the trade window), your stops and your beacons — the city sees them;
+ * - Earn's four (`../earn/notes.ts`): a pool position out of range, the stock exchange's weekend, a dividend
  *   date — and a loan's health, Guard's like the liquidation risk — listed where Earn is open;
  * - the liquidation risk of a futures position (Phoenix's margin view, the Exchange) — Guard's (decision 88): never off,
  *   listed where the Exchange stands at all.
@@ -51,7 +51,7 @@ export type KindSpec = Readonly<{
   cap: Cap;
   /** Never off, never muted, never held by quiet hours or a cap: the liquidation risk (decision 88). */
   locked: boolean;
-  /** «In the city» for a market kind is the live feed (CITY-66), whose switch keeps whether it shows at all. */
+  /** «In the city» for a market kind is the live feed, whose switch keeps whether it shows at all. */
   feed: FeedKind | null;
   /** In this build Ryntra's server can also tell a connected Telegram about it, whatever is chosen here. */
   telegram: boolean;
@@ -67,7 +67,7 @@ export const KINDS: readonly KindSpec[] = [
   { id: 'stops', group: 'yours', places: ['city', 'desk', 'off'], start: 'city', cap: 'all', locked: false, feed: null, telegram: STOPS_ENGINE, door: SPOT_OPEN },
   // A beacon tells Telegram only when its own switch is on (`BeaconSheet`): the window asks the rules too.
   { id: 'beacons', group: 'yours', places: ['city', 'desk', 'off'], start: 'city', cap: 'all', locked: false, feed: null, telegram: BEACONS === 'open', door: BEACONS !== 'closed' },
-  // Earn (CITY-100): the city tells them while Ryntra is open (`../earn/notes-source.ts`); Ryntra's server reads the
+  // Earn: the city tells them while Ryntra is open (`../earn/notes-source.ts`); Ryntra's server reads the
   // wallet now and then and tells the phone and Telegram (`../earn/notes-watch.ts`) — late at times, said in the «i».
   { id: 'range', group: 'earn', places: ['city', 'desk', 'off'], start: 'city', cap: 'all', locked: false, feed: null, telegram: EARN_OPEN, door: EARN_OPEN },
   { id: 'weekend', group: 'earn', places: ['city', 'desk', 'off'], start: 'city', cap: 'all', locked: false, feed: null, telegram: EARN_OPEN, door: EARN_OPEN },

@@ -1,5 +1,5 @@
 /**
- * The city's own answer where there is no page (CITY-159): an address that never was (404) and a page that broke while
+ * The city's own answer where there is no page: an address that never was (404) and a page that broke while
  * it was being drawn (500). Pure data, no React: the walk (`scripts/city/old-addresses.mjs`) and the tests read it as
  * it is, and the page is `city/components/open/Lost.tsx`.
  */

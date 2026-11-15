@@ -32,7 +32,7 @@ const PILLARS = 8;
 /**
  * The Vault in the city, once its flag is open: an armoured octagonal tower on its own islet, a core of stored sun
  * showing between the plates, the door turned to the city and the guard beside it, its name over it. A tap on the
- * tower or its name opens the room — the same room as «Arena → Vault» (CITY-241); the camera flies to the door and
+ * tower or its name opens the room — the same room as «Arena → Vault»; the camera flies to the door and
  * gives the city its view back when the room closes. Each attempt sends a pulse of light from the vault across the
  * city; a crack throws a beam into the sky.
  */
@@ -125,7 +125,7 @@ function VaultSign() {
   const filming = useMoments((st) => st.filming !== null);
   const away = useQuarter((st) => st.mode !== 'city');
   const quiet = inside || running || filming || away;
-  // Where the sign stands (CITY-243): over its tower, never under the Deck, and at the screen's edge on the Vault's side
+  // Where the sign stands: over its tower, never under the Deck, and at the screen's edge on the Vault's side
   // while the tower is outside the frame — an arrow on it says which way.
   const deck = useDeckBox();
   const sign = useRef<HTMLButtonElement>(null);

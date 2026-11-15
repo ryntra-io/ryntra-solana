@@ -1,6 +1,6 @@
 import { words } from '../i18n/dict.ts';
 
-/** The tower chart's own words outside the window (CITY-79): the age and source under the chart, why a coin has none. */
+/** The tower chart's own words outside the window: the age and source under the chart, why a coin has none. */
 export const CHART_READ = words(
   {
     seconds: (n: number) => `${n}s`,
@@ -8,7 +8,7 @@ export const CHART_READ = words(
     hours: (n: number) => `${n}h`,
     ago: (when: string) => `${when} ago`,
     delayed: 'Delayed',
-    /* The chart's «Delayed» said with how long (CITY-243): the engine holds a read of each interval this long at most. */
+    /* The chart's «Delayed» said with how long: the engine holds a read of each interval this long at most. */
     delayedSeconds: (n: number) => `Delay ≤ ${n} s`,
     delayedMinutes: (n: number) => `Delay ≤ ${n} min`,
     NO_POOL: 'No pool prices this coin yet.',

@@ -61,7 +61,7 @@ export type EarnDeps = Readonly<{
    */
   signableWindowMs: (startedAtMs: number) => Promise<number>;
   /**
-   * The wallet's native SOL, lamports, or null when it was not read (CITY-192). Jupiter Lend's SOL market supplies
+   * The wallet's native SOL, lamports, or null when it was not read. Jupiter Lend's SOL market supplies
    * wrapped SOL and its deposit wraps the native balance itself, so a SOL deposit is checked against both; without
    * this reader only SOL already wrapped counts.
    */

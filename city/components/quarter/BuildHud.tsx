@@ -147,7 +147,7 @@ function Picker({ slot }: { slot: number }) {
   }
 
   const here = me.buildings.find((b) => b.slot === slot) ?? null;
-  // The garage opens its agent's window (CITY-29), unless the Ring is open: then its sheet keeps the garage (CITY-50).
+  // The garage opens its agent's window, unless the Ring is open: then its sheet keeps the garage.
   // Any other building on the engine opens on the object it shows, not on the build tiles.
   if (here?.kind === 'garage' && GARAGE_OPEN && !RING_OPEN) return <GarageOpener key={slot} building={here} />;
   if (here && onEngine(here.kind)) return <BuildingSheet key={slot} building={here} />;

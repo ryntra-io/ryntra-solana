@@ -35,7 +35,7 @@ const GUARDED = {
 }
 
 /**
- * The city's bridge (CITY-6c) hands the wallet bytes the page built and sends nothing: the page asked the engine for
+ * The city's bridge hands the wallet bytes the page built and sends nothing: the page asked the engine for
  * them, signs through the app and sends them itself, so it — like the web (AG-1) — keeps their life. The app only relays
  * and must never send or build them.
  */

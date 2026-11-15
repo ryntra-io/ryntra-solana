@@ -192,7 +192,7 @@ export type TriggerFeePlan = Readonly<{
  * leaves the order with Jupiter's own fee and no Ryntra fee: never a guessed
  * account a keeper could not pay into.
  *
- * A partner's friend pays the rate less their discount (`discountBps`, CITY-182),
+ * A partner's friend pays the rate less their discount (`discountBps`),
  * never below the program's floor: a major coin's 10 bps less 10 % is under it,
  * so that order pays the full rate.
  */

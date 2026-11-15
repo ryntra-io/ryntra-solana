@@ -6,7 +6,7 @@ import test from "node:test";
 const { VAULT } = await import("./words.ts");
 const { guardOf, VAULT_IDS } = await import("../../../lib/vault/levels.ts");
 
-/** CITY-218: what the server says in English — a guard's line on the door, a feed tag — reads in the language on screen. */
+/** What the server says in English — a guard's line on the door, a feed tag — reads in the language on screen. */
 
 const guards = new Map();
 for (const id of VAULT_IDS) for (let d = 1; d <= 7; d += 1) {

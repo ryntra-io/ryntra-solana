@@ -24,7 +24,7 @@ const PLATE_SIZES = '(min-width: 1000px) 380px, (min-width: 640px) 50vw, 100vw';
 const FEATURE_SIZES = '(min-width: 1000px) 700px, 100vw';
 
 /**
- * «How the city works» (CITY-64), opened from the menu: the city's districts in their cinematic frames, what each is
+ * «How the city works», opened from the menu: the city's districts in their cinematic frames, what each is
  * and what you do there, open or soon as the city stands right now. The rules by which the city reads the market wait
  * behind one quiet control at the end. A window over the city, the whole screen on a phone; Escape or its close button
  * closes it.
@@ -36,7 +36,7 @@ export function HowItWorks() {
 
 function HowWindow() {
   const launchOpen = useLaunch(launchOpenHere);
-  // «Open» is what the plate's words say: the agent with a budget, the Ring with its rated fights (CITY-236).
+  // «Open» is what the plate's words say: the agent with a budget, the Ring with its rated fights.
   const opened: Record<DistrictId, boolean> = {
     market: true,
     launch: launchOpen,

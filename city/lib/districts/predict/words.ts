@@ -1,7 +1,7 @@
 import { pl, words } from '../../i18n/dict.ts';
 
 /**
- * The Predictions window's words (CITY-79): the frame's head, the cards, a market's page, the ticket, positions and
+ * The Predictions window's words: the frame's head, the cards, a market's page, the ticket, positions and
  * money. The markets' titles, questions and outcomes are the venues' own and stay as they come; only the generic
  * Yes and No are said in the language on screen.
  */

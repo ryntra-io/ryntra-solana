@@ -1,6 +1,6 @@
-/* The Arena's Ring window (CITY-217): its three tabs, the fight's mode, the latest fights, the agent's card and the
+/* The Arena's Ring window: its three tabs, the fight's mode, the latest fights, the agent's card and the
    board. Dark glass, fine violet edges, the visor's amber for what is yours, one amber action per tab — the same tokens
-   as the fight (city/styles/city.module.css, CITY-11) and the window's own width (@container window). */
+   as the fight (city/styles/city.module.css) and the window's own width (@container window). */
 
 /* ---------- Tabs ---------- */
 
@@ -365,7 +365,7 @@
   white-space: nowrap;
 }
 
-/* A brain's name is never cut mid-word: a long one takes a second line (CITY-236). */
+/* A brain's name is never cut mid-word: a long one takes a second line. */
 .cardBrain {
   color: var(--ice);
   font-size: var(--type-body);

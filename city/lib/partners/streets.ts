@@ -1,7 +1,7 @@
 import { PLAZA_RADIUS, RING_ROADS, SPOKES } from '../city/layout.ts';
 
 /**
- * The partner's network as lit streets (CITY-127): from the plaza to every tower the people they brought trade, along
+ * The partner's network as lit streets: from the plaza to every tower the people they brought trade, along
  * the city's own roads — out along the nearest avenue (one of the `SPOKES`), round the ring road inside the tower
  * (`RING_ROADS`), then in to the tower — so it reads as the city's streets lighting up, not lines through the towers.
  * Seen only by the partner, and only when they choose to show it. Pure: points in, segments out.

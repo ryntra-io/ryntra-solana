@@ -18,7 +18,7 @@ test("the bell: the visit's first events are seen, a newer one lights the dot, o
   assert.equal(useFeedPanel.getState().open, false);
 });
 
-test("a card without a spark lets its line run into the spark's column (CITY-200)", async () => {
+test("a card without a spark lets its line run into the spark's column", async () => {
   const { readFileSync } = await import("node:fs");
   const css = readFileSync(new URL("../../components/feed/feed.module.css", import.meta.url), "utf8");
   assert.match(css, /\.card:not\(:has\(\.spark\)\) \.line \{\s*grid-column: 2 \/ 4;\s*\}/);
@@ -26,7 +26,7 @@ test("a card without a spark lets its line run into the spark's column (CITY-200
   assert.match(css, /\.feed:not\(\[data-open\]\) \.card \.line \{\s*grid-area: line;/, "the collapsed strip keeps its own row");
 });
 
-/* CITY-239: the events' panel stayed open under the agent's card (a phone's sheet rose over it) and did not close on
+/* The events' panel stayed open under the agent's card (a phone's sheet rose over it) and did not close on
    Escape after the bell's own click. */
 test("a window of the frame that comes folds the panel; one that closes, or the same ones in another order, does not", () => {
   assert.equal(windowCame([], ["autopilot"]), true, "the agent's card, opened by a sentence");
@@ -43,7 +43,7 @@ test("the bell watches the frame's windows, and Escape closes the panel with the
   const bell = read("../../components/feed/EventsBell.tsx");
   assert.match(bell, /useWindows\.subscribe\(\(\) => \{\s+const now = ids\(\);\s+if \(windowCame\(before, now\)\) useFeedPanel\.getState\(\)\.close\(\);\s+before = now;/u);
   // The windows the home names itself, as before: one coming folds the panel. Pressed while one is open, the bell's
-  // panel stands over it (CITY-242), so nothing is left «open» unseen.
+  // panel stands over it, so nothing is left «open» unseen.
   assert.match(bell, /useEffect\(\(\) => \{\s+if \(hidden\) useFeedPanel\.getState\(\)\.close\(\);\s+\}, \[hidden\]\);/u);
   const feed = read("../../components/feed/LiveFeed.tsx");
   assert.match(feed, /!feedRef\.current\?\.contains\(focus\) && !focus\.closest\('\[data-feed-bell\]'\)\) return;/u, "the bell is the panel's own control");
@@ -68,14 +68,14 @@ test("Escape is the panel's while it is open and nothing else holds the keyboard
   const hud = read("../../components/hud/Hud.tsx");
   const guard = hud.indexOf("if (feedTakesEscape(useFeedPanel.getState().open, document)) return;");
   assert.ok(guard > 0 && guard < hud.indexOf("if (useCity.getState().selectedId) return useCity.getState().select(null);"));
-  // CITY-242: a bell pressed over an open window opens the panel over it — no press is swallowed — and a window coming
+  // A bell pressed over an open window opens the panel over it — no press is swallowed — and a window coming
   // folds the panel, never a window that was already there.
   const bell = read("../../components/feed/EventsBell.tsx");
   assert.match(bell, /onClick=\{\(\) => \{\s+if \(useCity\.getState\(\)\.sound\) playTick\(\);\s+useFeedPanel\.getState\(\)\.toggle\(newest \?\? 0\);/u);
   assert.match(bell, /useEffect\(\(\) => \{\s+if \(hidden\) useFeedPanel\.getState\(\)\.close\(\);\s+\}, \[hidden\]\);/u);
 });
 
-/* CITY-242: opened over the Ring or the bots, the panel was drawn under the window (the HUD's layer is under the
+/* Opened over the Ring or the bots, the panel was drawn under the window (the HUD's layer is under the
    windows' layer, whatever z-index the panel had inside it). It stands in a layer of its own over the windows. */
 test("the bell's panel stands in a layer of its own over the city's windows", async () => {
   const { readFileSync } = await import("node:fs");
@@ -93,7 +93,7 @@ test("the bell's panel stands in a layer of its own over the city's windows", as
   assert.match(read("../../components/hud/Hud.tsx"), /\{feedOpen && <LiveFeed panel \/>\}/u);
 });
 
-/* CITY-240: the panel's heading in Ukrainian read as small letters beside «EVENTS». The wide face has no Cyrillic, so
+/* The panel's heading in Ukrainian read as small letters beside «EVENTS». The wide face has no Cyrillic, so
    «ПОДІЇ» is drawn in the interface face — a narrower cut, five letters that look the same small and capital. */
 test("the events' panel is headed in capitals in both languages, and the Ukrainian ones are a size up", async () => {
   const { readFileSync } = await import("node:fs");

@@ -14,7 +14,7 @@
     "start": "next start",
     "typecheck": "next typegen && tsc --noEmit",
     "lint": "eslint app lib packages",
-    "test": "node --test \"app/**/*.test.mjs\" \"lib/**/*.test.mjs\" \"packages/**/*.test.mjs\""
+    "test": "node --test \"app/**/*.test.mjs\" \"city/**/*.test.mjs\" \"lib/**/*.test.mjs\" \"packages/**/*.test.mjs\""
   },
   "dependencies": {
     "@agg-build/auth": "^4.17.2",
@@ -27,6 +27,7 @@
     "@meteora-ag/alpha-vault": "1.1.16",
     "@meteora-ag/cp-amm-sdk": "1.5.1",
     "@meteora-ag/dlmm": "1.9.14",
+    "@meteora-ag/dlmm-pro-sdk": "0.1.2",
     "@meteora-ag/dynamic-bonding-curve-sdk": "1.5.13",
     "@meteora-ag/dynamic-bonding-curve-sdk-v2": "npm:@meteora-ag/dynamic-bonding-curve-sdk@2.0.0",
     "@meteora-ag/dynamic-fee-sharing-sdk": "1.1.0",

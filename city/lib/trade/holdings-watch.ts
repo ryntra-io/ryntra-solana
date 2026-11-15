@@ -1,5 +1,5 @@
 /**
- * One watch of the wallet's balance for every card that asks for funds (CITY-222: the agent's card; CITY-237: the
+ * One watch of the wallet's balance for every card that asks for funds (the agent's card; the
  * tower's ticket and the money autopilot).
  *
  * While a card says «Add SOL», the balance is read again — every 15 s and on return to the page — so a top-up turns the

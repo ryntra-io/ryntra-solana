@@ -1,5 +1,5 @@
 /**
- * Whether the city's first frame is on the screen (CITY-6a). The scene sets it after its first composed frame; a tap
+ * Whether the city's first frame is on the screen. The scene sets it after its first composed frame; a tap
  * before it has nothing to pick, and work that can wait (the score) waits for it. No three.js here, so the page's own
  * bundle can ask.
  */
@@ -24,7 +24,7 @@ export function markDrawn(): void {
   }
 }
 
-/** Once, when the first frame is drawn — at once if it already is (CITY-246: the funnel's «the city was seen»). Returns the undo. */
+/** Once, when the first frame is drawn — at once if it already is (the funnel's «the city was seen»). Returns the undo. */
 export function onDrawn(heard: () => void): () => void {
   if (drawn) {
     heard();

@@ -1,4 +1,4 @@
-// Sell Higher · Buy Lower · the Wheel — screens for review (CITY-97), at 1440×900 and 375×812 → <out>/<state>-<size>-<lang>.png
+// Sell Higher · Buy Lower · the Wheel — screens for review, at 1440×900 and 375×812 → <out>/<state>-<size>-<lang>.png
 //   NEXT_PUBLIC_RYNTRA_CITY_EARN=open NEXT_PUBLIC_RYNTRA_CITY_EARN_LIMITS=open npm run dev, then:
 //   LANG_EARN=en node city/lib/earn/limit-shots.mjs [out] [baseUrl]      (and LANG_EARN=uk)
 // No wallet and no keys: a stub wallet registers through the Wallet Standard events and never signs. The routes answer

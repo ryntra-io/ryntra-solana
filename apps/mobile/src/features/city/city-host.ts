@@ -1,5 +1,5 @@
 /**
- * The app's half of the city's bridge (CITY-6c): it reads what the page asks, does it with the app's own wallet, the
+ * The app's half of the city's bridge: it reads what the page asks, does it with the app's own wallet, the
  * system's share sheet and browser, and answers by the request's `id`. Pure — the wallet, the sheet, the browser, the
  * WebView and the clock are handed in, so the same host runs under the app and under a test with doubles.
  *

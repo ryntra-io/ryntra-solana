@@ -1,6 +1,6 @@
 // Run from repo root: node --test city/lib/arena/hack/store/api.test.mjs
 /*
- * CITY-226: Hack's routes on plain requests, over the memory store and the library's rules — the switch, the site, the
+ * Hack's routes on plain requests, over the memory store and the library's rules — the switch, the site, the
  * request key, the wallet, the limits; open, take, submit, move, confirm and the reads; the views that keep a finding's
  * place sealed from strangers; the deadline the system applies on the way; a store that fails is a 503 that did nothing.
  */
@@ -415,6 +415,7 @@ test("the deadline is the system's: an order read past its window is closed, and
   assert.equal((await call(listed.api, "orders", get("orders"))).body.orders.find((x) => x.id === p.id).status, "closed", "the list applies it too");
 });
 
+// --------------------------------------------------------------------------------- the protocol owner's word --
 
 test("move: the protocol owner's alone — pause, resume, close, settle; never the deadline or a reopening", async () => {
   const h = setup();
@@ -435,7 +436,7 @@ test("move: the protocol owner's alone — pause, resume, close, settle; never t
   assert.deepEqual([(await call(h.api, "move", post("move", { order: "nope", move: "pause" }, { wallet: PROTOCOL }))).status], [404]);
 });
 
-test("One without a run only rejects", async () => {
+test("confirm: the protocol owner's word on a finding under review — a run it confirms counts; one without a run only rejects", async () => {
   let next = { verdict: "NEEDS_REVIEW" };
   const h = setup({ prove: ({ finding }) => makeProof({ logHash: finding.logHash, ...next }) });
   const o = await hunted(h);

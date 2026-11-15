@@ -70,7 +70,7 @@ export type SpotSourceFailure = Readonly<{
   ok: false;
   code: "RATE_LIMITED" | "REFUSED" | "UNREACHABLE" | "MALFORMED";
   reason: string;
-  /** After a refusal for rate: how long reads of Jupiter pause in this instance (CITY-208). */
+  /** After a refusal for rate: how long reads of Jupiter pause in this instance. */
   retryAfterMs?: number | null;
 }>;
 
@@ -81,8 +81,8 @@ function baseOf(tier: JupiterTier): string {
 }
 
 /* A keyless catalogue read that is refused as too frequent is asked once
-   more after the provider's own pause, with a little jitter — since CITY-208
-   only by the first read refused, and only when that pause is short. Measured on production on
+   more after the provider's own pause, with a little jitter — only by the
+   first read refused, and only when that pause is short. Measured on production on
    2026-09-14: a cold instance answering the page's first list, its second
    list and its market detail at once — nine catalogue calls inside one
    second — had all of them refused, and the person saw an empty market
@@ -150,7 +150,7 @@ async function getRows(
 /** One Tokens V2 list as Jupiter answered it — the rows not yet read into any shape. */
 async function getRawRows(path: string, ceiling: number, timeoutMs: number): Promise<{ ok: true; raw: readonly unknown[] } | SpotSourceFailure> {
   const endpoint = resolveJupiterCatalogEndpoint();
-  /* CITY-208: after a refusal for rate every catalogue read of this instance pauses for the provider's own wait — asking a spent window only keeps it spent. */
+  /* After a refusal for rate every catalogue read of this instance pauses for the provider's own wait — asking a spent window only keeps it spent. */
   const paused = ratePauseLeftMs("jupiter");
   if (paused > 0) return rateFailureOf("jupiter", paused);
   let response: Response;
@@ -166,7 +166,7 @@ async function getRawRows(path: string, ceiling: number, timeoutMs: number): Pro
     noteJupiterResponse(response.headers);
     if (response.status !== 429) break;
     await response.body?.cancel();
-    /* CITY-208: every read of this instance waits out the provider's pause. Only the first read refused asks again, once,
+    /* Every read of this instance waits out the provider's pause. Only the first read refused asks again, once,
        and only when the pause is short; a read refused while another already paused — the burst that spent the window —
        answers at once with the wait, and its caller serves what it holds. */
     const alreadyPaused = ratePauseLeftMs("jupiter") > 0;
@@ -528,7 +528,7 @@ export async function listScreenerCoins(limit: Readonly<{ meme: number; crypto: 
   };
 }
 
-/* ---------------------------------------------------- the shared reads (CITY-208) */
+/* ---------------------------------------------------- the shared reads */
 
 /* A search answer is the same for everyone who typed the same words: half a minute in memory, a minute in the platform's
    data cache (every instance), and up to ten minutes held, stated stale, when Jupiter refuses. */
@@ -640,7 +640,7 @@ async function readDetailNow(mint: string): Promise<{ ok: true; value: Detail } 
  * caches shortest (ten seconds), so this is as live as its price gets without
  * a stream; the header polls it.
  *
- * CITY-208: a coin's window asks for the same mint from several reads at once
+ * A coin's window asks for the same mint from several reads at once
  * (the header, the chart's price check, the overview, «Ризик»); they are one
  * read, shared with every other instance through the data cache, and after a
  * refusal for rate the last good read is answered, stated stale, with its time.

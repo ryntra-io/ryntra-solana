@@ -3,7 +3,7 @@ import type { MyTower } from './mine.ts';
 import type { Topic } from './settings.ts';
 
 /**
- * The garage agent's report (CITY-29): what changed on your towers since you last looked. Every line is the city's own
+ * The garage agent's report: what changed on your towers since you last looked. Every line is the city's own
  * read against the read it kept when you last looked — a price and a liquidity with the moment they were read. A figure
  * the source did not measure is never compared, and an old or saved read reports nothing: the agent waits for live
  * prices rather than tell a change that did not happen.

@@ -1,5 +1,5 @@
 /**
- * CITY-162 — what a launch signer is asked to sign, read from the bytes themselves.
+ * What a launch signer is asked to sign, read from the bytes themselves.
  *
  * A signer of Ryntra's (the pool payer, the executor) is handed a transaction's message and nothing else: whatever the
  * caller says the bytes do, the signer reads them again here — the fee payer, every signer, every instruction with its

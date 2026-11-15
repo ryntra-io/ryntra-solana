@@ -3,7 +3,7 @@ import type { BudgetPresetId } from '../../../lib/mandate/presets.ts';
 import type { RunResult } from '../../../lib/mandate/backtest.ts';
 
 /**
- * CITY-193 — the card's two reads for a strategy: its run on the coin's history or on paper since a moment
+ * The card's two reads for a strategy: its run on the coin's history or on paper since a moment
  * (`GET /api/bots/mandate/test`), and an early plan's launch picked from the city's Pulse through the same filter the
  * agent's book checks again on the server. Pure but for the fetcher handed in.
  */

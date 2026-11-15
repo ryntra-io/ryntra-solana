@@ -15,7 +15,7 @@ import { readPartnerBindings } from "./network-store.ts";
 import { mondayStart, projectDemand, WEEK_MS, type AgentIn, type Arrival, type DemandInputs, type DemandWeek, type LaunchIn, type SaleIn } from "./demand-week.ts";
 
 /**
- * The store reads behind the owner's week of demand (CITY-197), and nothing else: the action ledger and the fees as
+ * The store reads behind the owner's week of demand, and nothing else: the action ledger and the fees as
  * «Аналітика» reads them (`readBusinessInputs`, `projectBusiness`), the launches, the agents' book and sales, the
  * partners' links and launches, the week's partner statement, and SOL's price. Each read that fails leaves its figures
  * unread; nothing here throws into a route or the cron. Reads only.

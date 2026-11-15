@@ -1,11 +1,11 @@
 import { CAPS, KINDS, kindOf, PLACES, type Cap, type NoteKind, type Place } from './kinds.ts';
 
 /**
- * The person's notification centre, kept on this device (CITY-87): where each kind goes and how often, where the
+ * The person's notification centre, kept on this device: where each kind goes and how often, where the
  * banners stand, which side the live feed opens on, how big a flash is, the quiet hours and «Mute all». Everything
  * starts where the kinds say (`./kinds.ts`); a value this version cannot read is its start again, never an error.
  *
- * Two choices stay where they were made before this centre (CITY-66), so a choice kept on a device still reads: whether
+ * Two choices stay where they were made before this centre, so a choice kept on a device still reads: whether
  * a market kind shows at all, and whether the city flashes at all — the feed's switches (`../feed/settings.ts`). Here
  * a market kind keeps only «in the city» or «on the computer», and the flash only its size.
  *

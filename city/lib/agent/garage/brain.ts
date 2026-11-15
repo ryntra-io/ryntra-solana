@@ -7,9 +7,9 @@ import type { MyTower } from './mine.ts';
 import type { Change } from './report.ts';
 
 /**
- * The garage agent's advice (CITY-29): one question to Ryntra's assistant (CITY-10) through its guest seam — the same
+ * The garage agent's advice: one question to Ryntra's assistant through its guest seam — the same
  * intent, reads, verifier, model and day's allowance as a person's own question; the city adds no tool. The question is
- * built from your towers and what the report found, every foreign word cleaned on its way (CITY-73), and the answer
+ * built from your towers and what the report found, every foreign word cleaned on its way, and the answer
  * comes back as towers: only towers of yours, the camera flies to them and they light up.
  *
  * Advice only. The agent cannot sign, trade or hold a key: nothing here prepares, signs or sends a transaction.

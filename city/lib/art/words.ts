@@ -1,8 +1,8 @@
 import { words } from '../i18n/dict.ts';
 
 /**
- * «How the city works» (CITY-64) in both languages (CITY-79): each district's name, what it is and what you do there,
- * the rules behind their own control, and the window's own words. The agent is the city's face: the lead and the Agents' plate say what it does for a person, with safety in one line (CITY-236).
+ * «How the city works» in both languages: each district's name, what it is and what you do there,
+ * the rules behind their own control, and the window's own words. The agent is the city's face: the lead and the Agents' plate say what it does for a person, with safety in one line.
  * Present tense and plain, no line speaks of profit (the brandbook's voice, `docs/city/brand/BRANDBOOK.md` §4);
  * `./districts.ts` reads the shapes out of it.
  */

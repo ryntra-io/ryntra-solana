@@ -9,7 +9,7 @@ import { markDrawn } from '@/city/lib/city/drawn';
 const WARMUP_MS = 4000;
 
 /**
- * Compiles the city's shaders before its first frame (CITY-6a). With `KHR_parallel_shader_compile` (most phones and
+ * Compiles the city's shaders before its first frame. With `KHR_parallel_shader_compile` (most phones and
  * desks) the browser compiles them in parallel off the page's thread, which stays free for the visitor's first taps,
  * instead of one long frozen first frame. The programs are built for a render target, as the post-processing composer
  * draws the scene, so the first real frame finds them ready. `onReady` starts the frame loop; after `WARMUP_MS` it

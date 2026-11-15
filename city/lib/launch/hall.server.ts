@@ -14,7 +14,7 @@ import { hallCandidates, hallReachesBack, hallTrades, hallView, type HallMarketR
  * `…/{mint}/stats` answer with — the engine's own functions, read-only — the creator role's all-time earnings on the
  * chain's counters from the same kept read (`readLaunchEarnedAll`), and every trade of the week put to the honest count
  * with the Growth line's real cluster check (`lib/city-economy/clusters.server.ts`). Only when a board's week counts
- * nobody are the older trades read put to it too, the newest first, inside the same budget (CITY-230).
+ * nobody are the older trades read put to it too, the newest first, inside the same budget.
  *
  * One Hall is worked out at a time and kept for a few minutes for every visitor: the week does not change by the
  * second, and the cluster check reads the chain. The whole work keeps one budget (`HALL_WORK_MS`), so it never runs

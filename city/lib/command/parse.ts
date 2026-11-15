@@ -7,7 +7,7 @@ import { learnAsk } from '../learn/ask.ts';
 import { SOL, USDC } from '../trade/tiles.ts';
 
 /**
- * The city's command line (CITY-85; helm SPEC §1, §8–9): what a person says — «buy SOL for 50», «стоп на JUP», «my
+ * The city's command line: what a person says — «buy SOL for 50», «стоп на JUP», «my
  * portfolio» — read into the window to open and the fields to fill in it. Pure: no store, no wallet, no network.
  *
  * A command only ever names a window and what to write in its fields; the person reads them and confirms there, in the
@@ -45,19 +45,19 @@ export type Command =
   | Readonly<{ kind: 'money'; place: MoneyPlace; send: Readonly<{ to: string | null; amount: string | null; asset: Coin | null }> | null }>
   | Readonly<{ kind: 'earn' }>
   | Readonly<{ kind: 'launch'; symbol: string | null; name: string | null }>
-  /** The agent's card (CITY-176): a regular purchase, a limit or a stop read from the sentence — the person signs there. */
+  /** The agent's card: a regular purchase, a limit or a stop read from the sentence — the person signs there. */
   | Readonly<{ kind: 'instruct'; instruction: Instruction }>
-  /** What the agent set from sentences, with their state and «Cancel» (CITY-176). */
+  /** What the agent set from sentences, with their state and «Cancel». */
   | Readonly<{ kind: 'instructions' }>
-  /** The agent on its word (CITY-175): «trade 1 SOL a day» — a budget and one signature; «launch me a token» — a launch it prepared. */
+  /** The agent on its word: «trade 1 SOL a day» — a budget and one signature; «launch me a token» — a launch it prepared. */
   | Readonly<{ kind: 'autopilot'; ask: AgentAsk }>
-  /** The Dollar Saver on its word (CITY-192): «put my USDC to work» — its card with the coin and the amount; the person signs there. */
+  /** The Dollar Saver on its word: «put my USDC to work» — its card with the coin and the amount; the person signs there. */
   | Readonly<{ kind: 'dollar'; ask: DollarAsk }>
-  /** The money autopilot on its word (CITY-204): «work with my 2 SOL and 100 USDC: some into savings, trade some, some into pools» — one plan; the person signs in its card. */
+  /** The money autopilot on its word: «work with my 2 SOL and 100 USDC: some into savings, trade some, some into pools» — one plan; the person signs in its card. */
   | Readonly<{ kind: 'pilot'; ask: PilotAsk }>
-  /** A job for an agent (CITY-205): «trade for me», «доглядай мій пул», «запусти бота» — that agent's card, or the crew in «Bots». */
+  /** A job for an agent: «trade for me», «доглядай мій пул», «запусти бота» — that agent's card, or the crew in «Bots». */
   | Readonly<{ kind: 'hire'; ask: HireAsk }>
-  /** «Learn» (CITY-202): the guide, on the chapter the sentence names (null — the list of chapters). */
+  /** «Learn»: the guide, on the chapter the sentence names (null — the list of chapters). */
   | Readonly<{ kind: 'learn'; chapter: string | null }>
   /** Everything else: a question for Ryntra, who reads the market and advises — and does nothing else. */
   | Readonly<{ kind: 'ask'; question: string }>;
@@ -548,12 +548,12 @@ export type Gates = Readonly<{
   earn: boolean;
   launch: boolean;
   instruct: boolean;
-  /** The agent on its word (CITY-175): trading within a budget — its switch and the mandate's — and preparing launches. */
+  /** The agent on its word: trading within a budget — its switch and the mandate's — and preparing launches. */
   agentTrade?: boolean;
   agentLaunch?: boolean;
-  /** The Dollar Saver (CITY-192): Earn's window and the Saver's own switch, both open. */
+  /** The Dollar Saver: Earn's window and the Saver's own switch, both open. */
   dollar?: boolean;
-  /** The money autopilot (CITY-204): its switch over the agent's and the mandate's. */
+  /** The money autopilot: its switch over the agent's and the mandate's. */
   pilot?: boolean;
 }>;
 
@@ -698,8 +698,8 @@ export function aboutSubject(question: string, symbol: string): boolean {
 /* ------------------------------------------------------------------------------------------------ For the agent's reader */
 
 /**
- * The line's own words and readers, for the agent's reader of one-sentence instructions (CITY-176,
- * `city/lib/instruct/read.ts`): the same tokens, coins and units, so the two never read a word two ways.
+ * The line's own words and readers, for the agent's reader of one-sentence instructions
+ * (`city/lib/instruct/read.ts`): the same tokens, coins and units, so the two never read a word two ways.
  */
 export const LINE_WORDS = { VERBS, QUESTION, FILLER, AT, IF, NOT, AGENT, CURRENCY, SHARE, DOLLARS, SOLS, NUMBER, NUMBER_UNIT, BASE58 } as const;
 export { tokens, findCoin, known, bare, isBase, type Token };

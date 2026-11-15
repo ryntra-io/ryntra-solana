@@ -4,7 +4,7 @@ import assert from "node:assert/strict";
 import { clearChartLayer, layersOf, mergeLayers, setChartLayer, toggleChartLayer, useChartLayers } from "./layers.ts";
 import { fetchMarks, marketLayer, marketMarks, readMarks } from "./marks.ts";
 
-// Layers over a tower's chart: the coin's market marks, «Your entry», and whatever a district adds (CITY-5d's perps
+// Layers over a tower's chart: the coin's market marks, «Your entry», and whatever a district adds (the perps
 // next). Each is a chip that turns it off and on; the chart takes them all as the core chart's marks and levels.
 
 const POPCAT = "7GCihgDB8fe6KNjn2MYtkzZcRjQy3t9GHdC8uHYmW2hr";

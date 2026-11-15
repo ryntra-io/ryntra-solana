@@ -1,6 +1,6 @@
 /**
  * Somebody else's text in the city — a coin's name and ticker, a launch's name, a quarter's sign, an island's name, a
- * crew's name, a resident's name — cut to what a reader sees, with the reason for every cut (CITY-73, decision 74).
+ * crew's name, a resident's name — cut to what a reader sees, with the reason for every cut.
  *
  * The rules, the same as for any text an agent catalogue shows a model: characters a reader
  * does not see but a model reads are deleted, direction overrides are deleted, markup and control characters become
@@ -187,11 +187,11 @@ export const shownText = (raw: unknown, kind: TextKind, max?: number): string | 
 
 export const cleanSymbol = (raw: unknown, max?: number): Cleaned => cleanText(raw, "symbol", max);
 export const cleanName = (raw: unknown, max?: number): Cleaned => cleanText(raw, "name", max);
-/** A quarter's sign (CITY-55): shown only after this and the moderation queue. */
+/** A quarter's sign: shown only after this and the moderation queue. */
 export const cleanSign = (raw: unknown): Cleaned => cleanText(raw, "sign");
-/** An island's name (CITY-54) — ready for the islands; nothing calls it until they are built. */
+/** An island's name — ready for the islands; nothing calls it until they are built. */
 export const cleanIslandName = (raw: unknown): Cleaned => cleanText(raw, "island");
-/** A crew's name (CITY-20, CITY-54). */
+/** A crew's name. */
 export const cleanCrewName = (raw: unknown): Cleaned => cleanText(raw, "crew");
 /** A resident's display name on the world. */
 export const cleanResidentName = (raw: unknown): Cleaned => cleanText(raw, "resident");

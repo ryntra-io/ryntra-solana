@@ -40,7 +40,7 @@ export function ladderFailure(status: number, code: string, message: string, rat
 
 /**
  * The network's switch and the rate limit; closed or limited answers here and the route stops. A request that names
- * no network is devnet's, as CITY-135 was: mainnet is only ever asked for by name.
+ * no network is devnet's: mainnet is only ever asked for by name.
  */
 export function openLadder(request: Request, route: string, network: LadderNetwork | null = "devnet", env: Env = process.env, takeBack = false): OpenGate | Response {
   const rate = LIMITER.consume(`bots-ladder:${route}:${clientIp(request.headers)}`);

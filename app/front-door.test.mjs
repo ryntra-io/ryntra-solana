@@ -136,7 +136,7 @@ test("Home has words of its own as the app's page, at both of its addresses, wit
     assert.equal(metadata.openGraph?.url, pair[locale]);
     assert.equal(metadata.openGraph?.locale, locale === "uk" ? "uk_UA" : "en_US");
     assert.equal(metadata.openGraph?.images?.[0]?.url, landingOgImage(locale), "the landing's card in the page's language (plan §6)");
-    assert.equal(metadata.openGraph?.images?.[0]?.alt, CARD_WORDS[locale].alt, "the alt is the city card's own words (CITY-158)");
+    assert.equal(metadata.openGraph?.images?.[0]?.alt, CARD_WORDS[locale].alt, "the alt is the city card's own words");
     assert.equal(metadata.twitter?.card, "summary_large_image");
     assert.equal(metadata.twitter?.title, HOME_WORDS[locale].title);
     assert.equal(metadata.twitter?.description, description);
@@ -151,7 +151,7 @@ test("Home has words of its own as the app's page, at both of its addresses, wit
   assert.equal(HOMEPAGE_CATEGORY, "Tokenized stock investing on Solana");
 });
 
-test("the manifest, the share card and the structured data say the city's line (CITY-158)", () => {
+test("the manifest, the share card and the structured data say the city's line", () => {
   const app = manifest();
   assert.equal(app.description, CITY_WORDS.description);
   assert.equal(app.start_url, "/", "an installed app opens the city");
@@ -231,7 +231,7 @@ test("the sitemap and robots name only what is live", async () => {
   } else {
     assert.ok(!entries.some((entry) => entry.url === SITE || entry.url === SITE + "/uk"), "the landing is not advertised while it leads into the app");
   }
-  /* The old interface leads into the city since CITY-13 (decision 75): none of its pages is offered to the index. */
+  /* The old interface leads into the city: none of its pages is offered to the index. */
   for (const path of [APP_HOME_PATH, "/app/markets", "/app/stocks/NVDAx"]) {
     for (const url of [SITE + path, `${SITE}/uk${path}`]) assert.equal(entries.find((entry) => entry.url === url), undefined, `${url} is an old address`);
   }
@@ -241,8 +241,8 @@ test("the sitemap and robots name only what is live", async () => {
     const path = entry.url.replace(SITE, "") || "/";
     assert.ok(!redirected.has(path), `${path} redirects and must not be advertised`);
   }
-  /* Since CITY-159 the sitemap names only the city's live addresses: the site's old public pages (`/company` among
-     them) stay reachable, out of the index, until the city takes each over at its own address (CITY-157). */
+  /* The sitemap names only the city's live addresses: the site's old public pages (`/company` among
+     them) stay reachable, out of the index, until the city takes each over at its own address. */
   assert.deepEqual(entries.map((entry) => entry.url.replace(SITE, "") || "/"), CITY_PAGES.map((page) => page.path), "the city's live addresses, nothing else");
   for (const gone of ["/en", "/ua", "/company", "/uk/company", "/docs/developers", "/docs/developers/guard", "/docs/developers/agent-control", "/app/portfolio", "/uk/legal/terms", "/launch", "/trade"]) {
     assert.equal(entries.find((entry) => entry.url === SITE + gone), undefined, `${gone} is not advertised`);

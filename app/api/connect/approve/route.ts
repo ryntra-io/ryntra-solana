@@ -9,7 +9,7 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 /**
- * The signed consent comes back; the way back to the app goes out (CITY-154).
+ * The signed consent comes back; the way back to the app goes out.
  *
  * The nonce is checked, the signature verified against the address and the exact message issued for it, the nonce
  * spent, and only then one short-lived authorization code is minted, bound to the wallet that signed. The answer is

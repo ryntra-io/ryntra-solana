@@ -15,14 +15,14 @@ import type { Paper, RunResult } from '../../../lib/mandate/backtest.ts';
 import { pickLaunch, readRun } from './runs.ts';
 
 /**
- * The agent on its word (CITY-175): the card a sentence opens, and what the agent did since.
+ * The agent on its word: the card a sentence opens, and what the agent did since.
  *
  * - **Trade.** The card proposes the budget a day from the words said (never more than said), the rhythm the agent
- *   keeps and the limits in one line; «Sign once» is the mandate of CITY-174 — the person's wallet signs once, her
+ *   keeps and the limits in one line; «Sign once» is the mandate — the person's wallet signs once, her
  *   budget moves into her own smart account's vault under a policy the chain holds — and the mandate joins the agent's
  *   book with her words, so the agent trades by itself from then on. «Stop» is one more signature.
  * - **Launch.** The card proposes a name, a ticker and a picture the agent made (`emblem.ts`), with the launch sheet's
- *   own rules; «Launch» fills CITY-143's sheet and opens it on its review, where the person's wallet signs the launch.
+ *   own rules; «Launch» fills the sheet and opens it on its review, where the person's wallet signs the launch.
  *
  * The signing is the mandate's own (`../bots/mandate-sign.ts`), loaded on the tap: nothing here holds a key or builds a
  * transaction. What the agent did is read from the agent's book (`/api/bots/mandate/agent`) while the card or «Mine»
@@ -32,29 +32,29 @@ import { pickLaunch, readRun } from './runs.ts';
 /** The agent's view of a mandate, as the book answers it (`lib/mandate/agent-service.server.ts` `AgentView`). */
 export type AgentView = Readonly<{
   status: 'working' | 'stopped' | 'ended' | 'spent' | 'paused';
-  /** Why it paused itself (`lib/mandate/strategy.ts` `PauseReason`); CITY-193: `take`, `stop`, `late` — the person's own exit. */
+  /** Why it paused itself (`lib/mandate/strategy.ts` `PauseReason`); `take`, `stop`, `late` — the person's own exit. */
   pausedBy?: string | null;
   strategy: string;
-  /** CITY-193: the strategy with its numbers (`lib/mandate/plans.ts` `planText`). */
+  /** The strategy with its numbers (`lib/mandate/plans.ts` `planText`). */
   plan?: string;
   receiveMint: string;
   symbol?: string | null;
   everyMs: number;
   result: Readonly<{ trades: number; spentRaw: string; boughtRaw: string; worthRaw: string | null; earnedRaw: string | null; multiple: number | null }>;
-  /** CITY-70: `state` — `unknown` is a trade being confirmed, never a failure; absent on an engine of before. */
+  /** `state` — `unknown` is a trade being confirmed, never a failure; absent on an engine of before. */
   last: readonly Readonly<{ at: number; ok: boolean; state?: TradeState; signature: string | null; spentRaw: string; receivedRaw: string | null }>[];
-  /** CITY-70: what the agent is doing now, her «Freeze», and the money — budget = spent + left. */
+  /** What the agent is doing now, her «Freeze», and the money — budget = spent + left. */
   mission?: Mission;
   frozen?: boolean;
   books?: Books;
   updatedAt: number;
-  /** CITY-187: what the agent still holds for her of its coin, and her last sale through it. */
+  /** What the agent still holds for her of its coin, and her last sale through it. */
   heldRaw?: string;
   lastSale?: Readonly<{ policy: string; status: 'review' | 'signed' | 'sold' | 'failed'; signature: string | null; soldRaw: string; receivedRaw: string | null; reason: string | null }> | null;
-  /** CITY-194: its last day, and — when asked with `since` — what it did since the person last looked. */
+  /** Its last day, and — when asked with `since` — what it did since the person last looked. */
   day?: AgentDay;
   away?: AgentDay;
-  /** CITY-197: the whole mandate after every fee, and plain holding beside it. */
+  /** The whole mandate after every fee, and plain holding beside it. */
   net?: AgentNet;
 }>;
 
@@ -71,7 +71,7 @@ const isNet = (value: unknown): value is AgentNet => {
   return typeof v.trades === 'number' && typeof v.spentRaw === 'string' && rawOrNull(v.netRaw) && rawOrNull(v.holdRaw) && rawOrNull(v.feesRaw);
 };
 
-/** CITY-70: the engine's mission and books (`lib/mandate/mission.ts`), as the card reads them. */
+/** The engine's mission and books (`lib/mandate/mission.ts`), as the card reads them. */
 export type TradeState = 'ok' | 'failed' | 'refused' | 'unknown' | 'held';
 export type Mission = Readonly<{ state: 'working' | 'confirming' | 'waiting' | 'frozen' | 'paused' | 'done' | 'stopped'; reason: string | null; nextAt: number | null }>;
 export type Books = Readonly<{ state: 'exact' | 'settling' | 'more' | 'off' | 'unread' | 'closed'; budgetRaw: string; spentRaw: string; leftRaw: string | null; pendingRaw: string; gapRaw: string }>;
@@ -101,7 +101,7 @@ export const isAgentView = (value: unknown): value is AgentView => {
 
 type Fetcher = (url: string, init?: RequestInit) => Promise<Response>;
 
-/** What the agent did for this mandate; null when the book does not answer or does not know it. With `since` (CITY-194), what it did since then too. */
+/** What the agent did for this mandate; null when the book does not answer or does not know it. With `since`, what it did since then too. */
 export async function readAgentView(record: MandateRecord, fetcher: Fetcher = (url, init) => fetch(url, init), since: number | null = null): Promise<AgentView | null> {
   try {
     const response = await fetcher(`/api/bots/mandate/agent?policy=${record.policy}&owner=${record.owner}${since !== null ? `&since=${Math.floor(since)}` : ''}`, { cache: 'no-store' });
@@ -131,7 +131,7 @@ type AutopilotState = {
   drawing: boolean;
   /** What the agent did, by policy. */
   views: Readonly<Record<string, AgentView>>;
-  /** CITY-193 — the strategy said, with its numbers; null — the steady one. */
+  /** The strategy said, with its numbers; null — the steady one. */
   plan: StrategyPlan | null;
   /** An early plan's pick: being found, none passes, or the launch with its birth. */
   launch: Readonly<{ state: 'picking' | 'none' } | { state: 'picked'; bornAt: number }> | null;
@@ -150,7 +150,7 @@ type AutopilotState = {
   setPaper: (paper: Paper | null, run?: RunResult | null) => void;
 };
 
-/* ---------------------------------------------------------------- CITY-193: test, practice, pick */
+/* ---------------------------------------------------------------- Test, practice, pick */
 
 const PAPER_KEY = 'ryntra.city.agentPaper';
 
@@ -249,7 +249,7 @@ export const useAutopilot = create<AutopilotState>((set, get) => ({
 }));
 
 /** The plan the card proposes: the one said, or the steady one. */
-/** CITY-197: the strategy at the city's calm pace — few trades, small fees — unless it names its own. */
+/** The strategy at the city's calm pace — few trades, small fees — unless it names its own. */
 const planNow = (): StrategyPlan => calmPlan(useAutopilot.getState().plan ?? { id: 'steady', exit: null });
 export const planShown = planNow;
 const bornNow = (): number | null => {
@@ -301,7 +301,7 @@ export async function signTrade(who: Readonly<{ wallet: string; owner: string }>
   if (!st.preset || st.ask?.kind !== 'trade') return null;
   useMandate.getState().setPreset(st.preset);
   const { tapEnable } = await import('../bots/mandate-sign.ts');
-  // CITY-193: the plan said — or the practice's, when the person goes live from paper — travels with the mandate.
+  // The plan said — or the practice's, when the person goes live from paper — travels with the mandate.
   const plan = planNow();
   const record = await tapEnable(who, { strategy: plan.id, plan: planText(plan), said: st.ask.said });
   if (record) useAutopilot.getState().setPaper(null);
@@ -327,7 +327,7 @@ export function launchProposal(): boolean {
   }
   const fields = { name: st.proposal.name, symbol: st.proposal.symbol, picture: st.picture };
   useLaunch.getState().setDraft(fields);
-  // The review hands the fields to the engine's store and simulates the launch itself (CITY-143).
+  // The review hands the fields to the engine's store and simulates the launch itself.
   useLaunch.getState().setStep('review');
   useAutopilot.getState().close();
   return true;

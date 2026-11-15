@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 
 import { entryLayer, entryMove, entryPrice, knownBasis, readEntryBasis } from "./entry.ts";
 
-// «Your entry» on the chart: the average cost of the coins the wallet holds, from «Mine»'s measure (CITY-7) of the
+// «Your entry» on the chart: the average cost of the coins the wallet holds, from «Mine»'s measure of the
 // engine's record of the wallet's own trades. Only when it covers the whole balance; reading only. No network.
 
 const OWNER = "4EeXQa4MKrBSwDj9pHEoZXjiiUaZmWzveGq5X9dUKPGW";

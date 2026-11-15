@@ -41,7 +41,7 @@ test("figures: never more than they are", () => {
   assert.equal(unitsText(3.509, "down", "uk"), "3,50");
   assert.equal(unitsText(0.004219, "down", "en"), "0.0042");
   assert.equal(unitsText(0, "down", "en"), "0");
-  // CITY-243: «$3,7E-7» in «My tower» — a price under a millionth is written out, never in scientific form.
+  // «$3,7E-7» in «My tower» — a price under a millionth is written out, never in scientific form.
   assert.equal(unitsText(3.7e-7, "down", "en"), "0.00000037");
   assert.equal(unitsText(3.7e-7, "down", "uk"), "0,00000037");
   assert.equal(unitsText(5.04e-9, "down", "en"), "0.000000005");

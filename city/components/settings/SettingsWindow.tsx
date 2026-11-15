@@ -22,7 +22,7 @@ const ICON: Readonly<Record<Section, () => React.JSX.Element>> = {
 };
 
 /**
- * The settings window's contents (CITY-87, `docs/research/ryntra-city-helm-2026-10-29/SPEC.md` §10): eight sections —
+ * The settings window's contents (`docs/research/ryntra-city-helm-2026-10-29/SPEC.md` §10): eight sections —
  * a rail on the side where the window is wide, a row of tabs over the section where it is narrow (a phone's sheet).
  * Every choice is kept at once, on this device; nothing here signs or moves money.
  */
@@ -37,7 +37,7 @@ export default function SettingsWindow({ onSound }: { onSound: (on: boolean) => 
   // Another section starts at its top. A block, never the call's answer: a newer browser's scrollTo returns a promise.
   useEffect(() => {
     if (body.current) body.current.scrollTop = 0;
-    // CITY-237: on a phone the sections are one row that scrolls sideways — the open section's tab comes to the row's
+    // On a phone the sections are one row that scrolls sideways — the open section's tab comes to the row's
     // middle. «Notifications», opened from the menu or the bell's gear, stood cut by the sheet's edge («Сповіще»). The
     // row alone is moved: `scrollIntoView` would move every clipped ancestor too, the city's page among them.
     const row = rail.current;

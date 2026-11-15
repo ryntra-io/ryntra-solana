@@ -110,7 +110,7 @@ test("every icon artifact embeds the canonical geometry", { skip: needsDevelopme
   assert.match(script, /app\/brand\/mark\.ts/);
   assert.match(script, /traceMark\(/, "the render script traces the mark from the master on every run");
   assert.doesNotMatch(script, /LOGO1?\.png|LOGO2\.png/, "the retired masters are not read");
-  assert.match(read("app/manifest.ts"), /\/brand\/city\/icon-192\.png[\s\S]*\/brand\/city\/icon-512\.png/, "the manifest carries the city's home-screen icons (CITY-158)");
+  assert.match(read("app/manifest.ts"), /\/brand\/city\/icon-192\.png[\s\S]*\/brand\/city\/icon-512\.png/, "the manifest carries the city's home-screen icons");
 });
 
 test("the wordmark is one traced geometry with the ground's ink", { skip: needsDevelopmentRepository("the traced brand geometry under scripts/brand/") }, () => {
@@ -172,7 +172,7 @@ test("no chrome draws a logo of its own", () => {
   }
 });
 
-test("the share card is the city's (CITY-158): the live city's frame and the city's mark, not the R", () => {
+test("the share card is the city's: the live city's frame and the city's mark, not the R", () => {
   const og = read("app/opengraph-image.tsx");
   assert.match(og, /from "@\/city\/lib\/share\/card\.server"/);
   assert.match(og, /return cityCard\(/);

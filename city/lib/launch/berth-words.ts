@@ -7,7 +7,7 @@ import { unitsText } from './trade-words.ts';
 import { BERTH } from './words.ts';
 
 /**
- * How the berth says the engine's figures, in the language on screen (CITY-79): money earned and received rounded down
+ * How the berth says the engine's figures, in the language on screen: money earned and received rounded down
  * to the cent, so nothing ever reads better than it is; a dollar pair as dollars, any other by its ticker. The words are
  * `BERTH`.
  */

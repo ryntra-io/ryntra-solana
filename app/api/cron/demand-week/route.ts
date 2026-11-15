@@ -11,7 +11,7 @@ export const dynamic = "force-dynamic";
 export const maxDuration = 60;
 
 /**
- * The owner's week of demand (CITY-197), every Monday: the week that has just closed, to the owner's Telegram. Internal
+ * The owner's week of demand, every Monday: the week that has just closed, to the owner's Telegram. Internal
  * — the cron's bearer only. Shut unless `RYNTRA_DEMAND_WEEK=on`. Reads and sends one message; it moves nothing.
  */
 export async function GET(req: NextRequest) {

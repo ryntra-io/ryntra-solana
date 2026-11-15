@@ -1,4 +1,4 @@
-// Ryntra City, my quarter with buildings on the engine (CITY-17): the lot in build mode with its kit buildings and
+// Ryntra City, my quarter with buildings on the engine: the lot in build mode with its kit buildings and
 // their tags, a linked coin tower's sheet, a building with nothing linked, a harbor waiting for its wallet and the
 // garage that cannot be linked yet, at 1440×860, 390×844 and 360×740 → <out>/<state>-<size>.png
 //   node city/components/quarter/quarter-shots.mjs [out] [baseUrl]      (npm run dev running; PRESS_CHROME may point at a Chromium)

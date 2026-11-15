@@ -1,5 +1,5 @@
 /**
- * How long the line an action answers with stays on screen (CITY-237; CITY-235's phone pass, ask 3).
+ * How long the line an action answers with stays on screen.
  *
  * A «yes» is seen at a glance and the window moves on — eight seconds. A «no» is read: «Stopped before your wallet —
  * nothing was sent» stood under the ladder for the same eight seconds, below the edge of a phone's half-screen window,

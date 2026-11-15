@@ -1,8 +1,8 @@
 /**
- * The order registry of Hack (CITY-223): a clean storage interface and an in-memory implementation, and the thin glue
+ * The order registry of Hack: a clean storage interface and an in-memory implementation, and the thin glue
  * that opens orders, moves them and takes findings through the rules (`rules.ts`). The storage is kept behind an
  * interface so the real store — a database, with routes, limits and idempotency — can be dropped in without touching
- * the rules: that store is CITY-226. Nothing here reaches a network, a database or money.
+ * the rules. Nothing here reaches a network, a database or money.
  *
  * `HackRegistry` is for tests and for the in-memory path; it holds no keys and does no crypto — the permission check is
  * the injected verifier (`permission.ts`), the same one the server will hand in. Owner-only moves (pause, resume,
@@ -19,7 +19,7 @@ import { canMove, checkOrder, moveOrder, type Order, type OrderMove, type OrderS
 /** An order with the owner's permission grant that opened it. */
 export type StoredOrder = { readonly order: Order; readonly grant: PermissionGrant };
 
-/** The storage Hack needs, as an interface: CITY-226 implements it over a database. All async, so a DB fits as-is. */
+/** The storage Hack needs, as an interface. All async, so a DB fits as-is. */
 export interface HackStore {
   putOrder(stored: StoredOrder): Promise<void>;
   getOrder(id: string): Promise<StoredOrder | null>;
@@ -30,7 +30,7 @@ export interface HackStore {
   findingsForOrder(orderId: string): Promise<Finding[]>;
 }
 
-/** An in-memory `HackStore`: Maps, no persistence. The registry's default; a database replaces it in CITY-226. */
+/** An in-memory `HackStore`: Maps, no persistence. The registry's default. */
 export function createMemoryHackStore(): HackStore {
   const orders = new Map<string, StoredOrder>();
   const findings = new Map<string, Finding>();

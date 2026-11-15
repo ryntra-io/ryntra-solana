@@ -1,5 +1,5 @@
 /**
- * The words of the pre-sign check (CITY-152, working name «ward»; never «Guard», never «Safe»).
+ * The words of the pre-sign check (working name «ward»; never «Guard», never «Safe»).
  *
  * Three verdicts and nothing between them: `allow` — nothing known stands against the transaction and every core
  * reading happened; `warn` — something a person should look at, or a core reading that did not happen; `block` — a

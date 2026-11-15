@@ -11,8 +11,8 @@ export const dynamic = "force-dynamic";
 export const maxDuration = 30;
 
 /**
- * CITY-174 — stop the agent and take the rest back: `POST` the person's wallet, her smart account and the policy; the
- * answer is one unsigned transaction of hers. With CITY-195 the same transaction tidies up: her sold sales' mandates
+ * Stop the agent and take the rest back: `POST` the person's wallet, her smart account and the policy; the
+ * answer is one unsigned transaction of hers. The same transaction tidies up: her sold sales' mandates
  * removed, the vault's empty account of the coin closed, her wSOL unwrapped — every rent back to her. This route never signs.
  */
 

@@ -1,5 +1,5 @@
 /**
- * A bot's settings as Ryntra sizes them (CITY-133, B3): relative to the price
+ * A bot's settings as Ryntra sizes them: relative to the price
  * the bot starts at, so the same plan replays honestly on any past window —
  * «had you started this a month ago» — and becomes a draft at today's price.
  *

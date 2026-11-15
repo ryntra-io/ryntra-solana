@@ -3,7 +3,7 @@ import { browserFetch, type FetchLike } from '../money/engine.ts';
 import { askCheck, readInput, type WardCheckResponse } from './check.ts';
 
 /**
- * The Guard window (CITY-152): whether it is open, what was pasted, what the agent said, and the engine's answer. One
+ * The Guard window: whether it is open, what was pasted, what the agent said, and the engine's answer. One
  * check at a time; a new paste clears the last verdict, so a verdict on screen is always the verdict of what is in the
  * field.
  */

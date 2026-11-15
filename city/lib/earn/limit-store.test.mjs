@@ -94,7 +94,7 @@ test("the Wheel's next order sits on the other side, a step past the fill, never
   assert.equal(priceField(210.123456), "210.12");
   assert.equal(priceField(12.5), "12.5");
   assert.equal(priceField(0.000123456), "0.00012346");
-  // In dollars, to the cent from a dollar up (CITY-190): +2% on $96.006 is 97.93, not 97.9261.
+  // In dollars, to the cent from a dollar up: +2% on $96.006 is 97.93, not 97.9261.
   assert.equal(priceField(96.006 * 1.02, true), "97.93");
   assert.equal(priceField(12.5, true), "12.50");
   assert.equal(priceField(1840.336, true), "1840.34");

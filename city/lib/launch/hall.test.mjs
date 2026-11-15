@@ -367,7 +367,7 @@ test('the Hall shows only boards with a public source, and an empty board says i
   for (const word of Object.values(BOARD_WORDS)) assert.match(word, /^[a-z]+$/, 'a billboard carries one word for its number');
 });
 
-test('a creator\'s words are somebody else\'s text (CITY-73): a held ticker stands on no billboard, a held name gives way', () => {
+test('a creator\'s words are somebody else\'s text: a held ticker stands on no billboard, a held name gives way', () => {
   const held = [{ row: row({ symbol: '‮NEMUL' }), market: market([trade(1, { marketCapPair: 10_000 })]), stats: stats(), weekFee: { raw: '4210000000', atLeast: false } }];
   const empty = view(held);
   assert.equal(empty.boards.catch.rows.length, 0);

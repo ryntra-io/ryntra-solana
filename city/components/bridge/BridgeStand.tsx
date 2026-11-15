@@ -134,7 +134,7 @@ export function BridgeStand() {
     <div className={b.page}>
       <h1 className={b.title}>Bridge stand</h1>
       <p className={b.note}>
-        CITY-6b · <code>docs/city/APP-BRIDGE.md</code>. App: {ready ?? 'waiting for app.ready…'} · wallet:{' '}
+        <code>docs/city/APP-BRIDGE.md</code>. App: {ready ?? 'waiting for app.ready…'} · wallet:{' '}
         {connection ? `${connection.wallet} ${shortAddress(connection.address)}` : 'none'} · sign-in: {readiness}
         {step ? ` (${step})` : ''}
         {accountError ? ` · ${accountError}` : ''}

@@ -3,7 +3,7 @@ import { create } from 'zustand';
 /**
  * «A window is open» — one question for the whole home. While any window or panel is open, the HUD's own pieces give way: the event
  * feed and its gear hide, the moment banners wait, the card above the dock and the first-visit hint step aside. Each
- * window keeps its own store; this only reads them. The window frame of CITY-65 can ask the same question.
+ * window keeps its own store; this only reads them. The window frame can ask the same question.
  */
 
 export type WindowName =
@@ -47,18 +47,18 @@ export type WindowSources = Readonly<{
   hall?: Readonly<{ panel: boolean }>;
   berth?: Readonly<{ open: boolean }>;
   agent?: Readonly<{ panel: string }>;
-  /** The garage agent (CITY-29): its window, or its towers shown with the window stepped aside. */
+  /** The garage agent: its window, or its towers shown with the window stepped aside. */
   garage?: Readonly<{ open: boolean }>;
   beacon?: Readonly<{ openFor: string | null }>;
   assistant?: Readonly<{ open: boolean }>;
   how?: Readonly<{ open: boolean }>;
-  /** «How it works»: the lessons (CITY-43). */
+  /** «How it works»: the lessons. */
   guides?: Readonly<{ open: boolean }>;
   moments?: Readonly<{ sheet: unknown }>;
-  /** The launch sheet, or an early launch's window for its people (CITY-220): the same slot, one at a time. */
+  /** The launch sheet, or an early launch's window for its people: the same slot, one at a time. */
   launch?: Readonly<{ sheet: boolean; entry?: string | null }>;
   build?: Readonly<{ on: boolean }>;
-  /** The city's pages open as windows: Docs, Developers, Help, About, the Terms, the Privacy Policy (CITY-157). */
+  /** The city's pages open as windows: Docs, Developers, Help, About, the Terms, the Privacy Policy. */
   pages?: Readonly<{ open: readonly string[] }>;
   hud?: Readonly<{ menu: boolean; settings: boolean }>;
 }>;
@@ -110,7 +110,7 @@ export function windowOpen(src: WindowSources): boolean {
 }
 
 /**
- * The HUD's menu (☰) and the settings window opened from it (CITY-87). One at a time: opening one closes the other.
+ * The HUD's menu (☰) and the settings window opened from it. One at a time: opening one closes the other.
  */
 type HudPanels = Readonly<{
   menu: boolean;

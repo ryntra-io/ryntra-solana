@@ -4,7 +4,7 @@ import { CityDocument } from "@/city/components/pages/CityDocument";
 import { PALETTE } from "@/city/lib/palette";
 import { buildCityPageMetadata } from "@/app/seo";
 
-/* `/feedback` — the same Help as `/support` (CITY-157: Support and Feedback are one form); out of the index, its canonical is `/support`. */
+/* `/feedback` — the same Help as `/support` (Support and Feedback are one form); out of the index, its canonical is `/support`. */
 
 export const metadata: Metadata = buildCityPageMetadata("help", "/feedback");
 

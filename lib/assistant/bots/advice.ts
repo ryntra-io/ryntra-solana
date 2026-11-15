@@ -1,5 +1,5 @@
 /**
- * The rules Ryntra's bot tools follow (CITY-133, B3). Pure: every figure
+ * The rules Ryntra's bot tools follow. Pure: every figure
  * comes in from the engine — its weather, its backtest on its own candles,
  * its Hangar — and what is decided here is which of the engine's bots to
  * name for a horizon, whether the costs eat the amount, and what a bot's

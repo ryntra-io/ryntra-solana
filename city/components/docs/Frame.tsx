@@ -15,7 +15,7 @@ import { DOCS_UI } from './words';
 export type Art = Readonly<{ src: string; srcSet: string; position?: string }>;
 
 /**
- * The one frame of the documentation (CITY-180), the way a company's docs read: a still of our own city across the top, the same menu
+ * The one frame of the documentation, the way a company's docs read: a still of our own city across the top, the same menu
  * at the left of every page, the text in the middle, the page's own contents at the right of a wide desk. On a phone, the same menu
  * behind one button. Sections, the hub and the site's own pages (Developers, AI chats, Help, the legal documents) all stand in it.
  */

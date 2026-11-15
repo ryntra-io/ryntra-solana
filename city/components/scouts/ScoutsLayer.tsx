@@ -19,7 +19,7 @@ const renderScouts = () => <ScoutsWindow />;
 const closeScouts = () => useScouts.getState().close();
 
 /**
- * «Scouts» (CITY-8) in the city's one window frame (CITY-65): your link, the people you brought and your share, from
+ * «Scouts» in the city's one window frame: your link, the people you brought and your share, from
  * the Growth engine. Opened from the menu and from «Mine» (`openScouts`). It also keeps the wallet's scouts read once
  * the wallet is connected, so the flags on the towers your friends trade stand without the window open — a read only,
  * never a signature: a wallet that has not proved itself to Ryntra simply has no flags until it signs in here.

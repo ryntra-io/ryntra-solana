@@ -26,7 +26,7 @@ export function Embers({ count = 1400 }: { count?: number }) {
       blending: THREE.AdditiveBlending,
       uniforms: {
         uTime: SHARED.uTime,
-        // Faint sparks of stored sun (CITY-56: quieter, so the night reads as a city, not a particle field).
+        // Faint sparks of stored sun (quieter, so the night reads as a city, not a particle field).
         uAmber: { value: new THREE.Color(PALETTE.amber).multiplyScalar(1.1) },
         uViolet: { value: new THREE.Color(PALETTE.violet).multiplyScalar(1) },
         uPixel: { value: 1 },

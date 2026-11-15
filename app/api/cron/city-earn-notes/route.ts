@@ -11,7 +11,7 @@ export const dynamic = 'force-dynamic';
 export const maxDuration = 60;
 
 /**
- * Earn's notes (CITY-100), every five minutes: the wallets that asked to be watched, a few per pass, each read at most
+ * Earn's notes, every five minutes: the wallets that asked to be watched, a few per pass, each read at most
  * every quarter hour — positions out of range, the exchange's weekend, dividend dates — and the person told through the
  * engine's inbox and delivery: Telegram, the phone's push, the browser's push. Internal — the cron's bearer only. Shut
  * where Earn is closed. Signs, sends money and trades nothing.

@@ -13,7 +13,7 @@ const READY_TRIES = 200
  * again.
  *
  * A link that opens the app cold is read before the navigator has mounted, and navigating then throws — the app closed
- * on the link (CITY-235). The word is dropped once the navigator is ready; the city has already opened on the link.
+ * on the link. The word is dropped once the navigator is ready; the city has already opened on the link.
  */
 export default function CityRoute() {
   const router = useRouter()

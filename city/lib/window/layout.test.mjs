@@ -88,7 +88,7 @@ test("the grid sticks every window together in the order they opened (macet M2),
   const grid = gridIn(fullIn(four(), "spot"));
   assert.equal(grid.full, null);
   const [chart, swap, spot, futures] = ["chart", "swap", "spot", "futures"].map((id) => placed(grid, id).rect);
-  // The room: the workspace's whole height, 60 % of the screen's width in its middle (CITY-84).
+  // The room: the workspace's whole height, 60 % of the screen's width in its middle.
   const room = gridRoomIn(four());
   assert.deepEqual(room, { x: grid.area.x + (grid.area.width - 864) / 2, y: grid.area.y, width: 864, height: grid.area.height });
   assert.ok(chart.width > swap.width && swap.x === spot.x && futures.width === room.width && futures.x === room.x);

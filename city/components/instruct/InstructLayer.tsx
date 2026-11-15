@@ -21,7 +21,7 @@ const closeCard = () => useInstruct.getState().close();
 const closeList = () => useInstruct.getState().closeList();
 
 /**
- * The agent's one-sentence instructions in the city's one window frame (CITY-176): the card — what the agent will set,
+ * The agent's one-sentence instructions in the city's one window frame: the card — what the agent will set,
  * the fee in a line, «Sign» — and «My instructions». Both open from the command line and «Ask Ryntra»; a run owns the
  * whole screen and a clip being filmed keeps the frame clean, unless a signature is mid-way, which the frame holds.
  */

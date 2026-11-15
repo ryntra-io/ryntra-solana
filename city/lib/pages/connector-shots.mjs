@@ -1,4 +1,4 @@
-// «AI chats» for review (CITY-170): the menu with its new row, the page as a window over the city (and with
+// «AI chats» for review: the menu with its new row, the page as a window over the city (and with
 // «Technical details» open), Developers with its door to it, and the page at its own address — on a desk (1440×900)
 // and a phone (375×812), English and Ukrainian → <out>/<name>.jpg
 //   npm run dev      then      node city/lib/pages/connector-shots.mjs [out] [baseUrl]

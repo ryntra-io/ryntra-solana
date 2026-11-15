@@ -1,9 +1,9 @@
 /**
- * CITY-128 — the partners' weekly payout: what each partner is owed for the week, counted from the engine's own records.
+ * The partners' weekly payout: what each partner is owed for the week, counted from the engine's own records.
  *
  * The terms are `PARTNER_TERMS` (decision 93): a share of Ryntra's own fee on what the people a partner brought did —
  * 40 % for each person's first 90 days with the partner, 30 % after —, the smallest payout $5, paid weekly in USDC. The
- * currency and the first week are the supervisor's call of 2.11 (D-P2: USDC; D-P5: the week that
+ * currency and the first week are the supervisor's call (D-P2: USDC; D-P5: the week that
  * began on Monday 2.11.2026, 00:00 UTC).
  *
  * - **What counts.** An operation the operations ledger confirmed and the chain attributed to Ryntra (`VERIFIED`) — a
@@ -18,9 +18,9 @@
  * - **The minimum and the rest.** A partner is paid when what they are owed — this week's share plus what was carried —
  *   reaches $5; less is carried to the next week, for as long as it takes. A partner the sanctions source lists is held
  *   and carried, never paid; so is one the source did not answer for — held as a listing is, under a
- *   reason of its own, and screened again the next week (CITY-196: the screening fails closed). One proposal pays at most `MAX_PAYOUTS_PER_WEEK` partners, the largest
+ *   reason of its own, and screened again the next week (the screening fails closed). One proposal pays at most `MAX_PAYOUTS_PER_WEEK` partners, the largest
  *   first; the others are carried, so the week keeps one proposal.
- * - **Guarded (CITY-125).** A share is counted only for a pair the referral guard lets pay (`lib/growth/referral-guard.ts`):
+ * - **Guarded.** A share is counted only for a pair the referral guard lets pay (`lib/growth/referral-guard.ts`):
  *   the partner and the person were checked and are not one person — no second own wallet, no shared device, no money
  *   between them, no common funder — or a person cleared them after a review. A pair not checked yet, or under review,
  *   waits: its operations stay uncredited and are counted the first week after it clears. A pair a person stopped never
@@ -164,7 +164,7 @@ export function pairsOf(events: readonly FeeEvent[], accounts: ReadonlyMap<strin
 
 /* ------------------------------------------------------------------ the statement */
 
-/** Why a partner owed something is not paid this week. `UNSCREENED` — the sanctions source did not answer for them (CITY-196). */
+/** Why a partner owed something is not paid this week. `UNSCREENED` — the sanctions source did not answer for them. */
 export type Held = "MINIMUM" | "SANCTIONS" | "UNSCREENED" | "OVERFLOW";
 
 export type StatementLine = Readonly<{
@@ -223,7 +223,7 @@ export type PrepareInput = Readonly<{
   voided: readonly Statement[];
   /** Partners the sanctions source lists. */
   sanctioned: ReadonlySet<string>;
-  /** Partners the sanctions source did not answer for: held like a listing, carried to the next week (CITY-196). */
+  /** Partners the sanctions source did not answer for: held like a listing, carried to the next week. */
   unscreened?: ReadonlySet<string>;
   /** The referral guard's word on the pairs and the partners' own trades. */
   guard: PayoutGuard;

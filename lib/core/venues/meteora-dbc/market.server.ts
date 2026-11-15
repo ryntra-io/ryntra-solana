@@ -16,7 +16,7 @@
  *   the largest accounts, where the node answers them — a wallet that received
  *   the token without trading it is found that way.
  *
- * The signature lists come from Helius's Parsed Events Scan where the history node is Helius on mainnet (CITY-245):
+ * The signature lists come from Helius's Parsed Events Scan where the history node is Helius on mainnet:
  * one request filtered to the token's transactions, newest first, back to the account's start. Elsewhere, or when the
  * scan fails, they are paged from the node as before. Either way the transactions are read and decoded here.
  *
@@ -55,7 +55,7 @@ const SWAP_ACCOUNTS = {
   [DAMM_V2_PROGRAM]: { input: 2, output: 3, payer: 8 },
 } as const;
 
-/** A signature as an account's list gives it — the node's page or the scan's (CITY-245). */
+/** A signature as an account's list gives it — the node's page or the scan's. */
 type Listed = Readonly<{ signature: string; slot: number; err: unknown; memo: string | null; blockTime?: number | null }>;
 
 /** How many of the newest signatures of each of the curve and the pool are read; beyond it the history is said to be partial. */
@@ -340,7 +340,7 @@ function sideConnection(url: string): Connection {
  * node reads as whole to anyone who trusts its length. `archive`: the endpoint asked for a transaction the main one no
  * longer keeps. `referralOwner`: the address Ryntra's referral token accounts belong to — what a transaction moved into its
  * account in the pair currency is Meteora's referral paid to Ryntra, and is Ryntra's part of the trade's fee. `scan`:
- * the history node's Parsed Events Scan (CITY-245) — where given, an account's signatures are found through it first.
+ * the history node's Parsed Events Scan — where given, an account's signatures are found through it first.
  */
 export function createLaunchMarketReader(
   connection: Connection,
@@ -704,7 +704,7 @@ export function createLaunchMarketReader(
 
   /**
    * The same, and whether the endpoint with the whole history gave it — a short list from any other proves nothing.
-   * The scan first (CITY-245): the account's successful transactions in which the curve's or the pool's program ran —
+   * The scan first: the account's successful transactions in which the curve's or the pool's program ran —
    * every swap however it was routed, the creation, the migration, the pool's liquidity and its positions' splits —
    * newest first; a short list from it is the account's start, or of the window from `since` (unix seconds). It has
    * until `until` (ms) to be whole; past it the node is paged as before.
@@ -733,7 +733,7 @@ export function createLaunchMarketReader(
 
   async function trades({ token, state: market, creationSignature, limit = TRADE_HISTORY_LIMIT, budgetMs = HISTORY_BUDGET_MS }: Parameters<LaunchMarketReader["trades"]>[0]): Promise<TradeHistory> {
     const until = Date.now() + budgetMs;
-    /* The scan has half the budget to list; the rest is the transactions' (CITY-245). */
+    /* The scan has half the budget to list; the rest is the transactions'. */
     const listUntil = Date.now() + budgetMs / 2;
     /* The curve's list and the pool's are two independent reads: asked at once (SOL-P1). */
     const [curveSignatures, poolSignatures] = await Promise.all([

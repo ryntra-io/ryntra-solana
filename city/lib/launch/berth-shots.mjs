@@ -1,4 +1,4 @@
-// «Мій причал» (L4 · CITY-141) for review: the way in from the launch sheet's head, the berth on Moth (in its pool: all
+// «Мій причал» for review: the way in from the launch sheet's head, the berth on Moth (in its pool: all
 // three streams, both cards), «i», Spark (on its curve: the exit and the pool ahead), «Забрати» done, and the way in
 // from the creator's own tower — at 1440×860 and 390×844 → <out>/berth-<state>-<size>-<locale>.jpg
 //   node city/lib/launch/berth-shots.mjs [out] [baseUrl]      (npm run dev running; PRESS_CHROME may point at a Chromium)
@@ -35,7 +35,7 @@ for (const locale of LOCALES) {
       throw error;
     };
 
-    // The language by the city's own link (CITY-79).
+    // The language by the city's own link.
     await page.goto(`${base}/?launch=stub&lang=${locale}`, { waitUntil: "domcontentloaded" });
     await page.waitForFunction(() => window.__city?.getState().layout.towers.some((t) => t.tower.symbol === "MOTH"), null, { timeout: 180_000 });
     await page.waitForTimeout(3000);

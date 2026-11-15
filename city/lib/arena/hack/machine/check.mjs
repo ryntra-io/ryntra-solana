@@ -1,4 +1,4 @@
-// CITY-238 · one real run of each training range on a real machine with no network — for whoever opens the door and
+// One real run of each training range on a real machine with no network — for whoever opens the door and
 // wants to see the machine work before people do, and for the stand (`docs/research/city-238-hack-open/stand.mjs`).
 // The check itself is `selftest.ts`; the deployed server plays the same one on its own machine
 // (`GET /api/arena/hack/machine`).

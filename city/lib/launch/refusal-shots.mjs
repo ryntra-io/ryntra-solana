@@ -1,4 +1,4 @@
-// A stopped launch (CITY-181) for review: the sheet's refusal — one sentence, the money, one action, «Details» — for
+// A stopped launch for review: the sheet's refusal — one sentence, the money, one action, «Details» — for
 // Ryntra's co-signer that did not sign, a wallet short of SOL, a person who declined in the wallet, and a send with no
 // answer; at 1440×860 and 375×812 → <out>/refusal-<state>-<size>-<locale>.jpg, and one with «Details» open.
 //   node city/lib/launch/refusal-shots.mjs [out] [baseUrl]      (npm run dev running; PRESS_CHROME may point at a Chromium)

@@ -21,7 +21,7 @@ const ROUTES = [
   ["version/[id]/route.ts", "GET", "version(req, (await params).id)"],
 ];
 
-/* The beacons (CITY-72) hand the request to their own API in `lib/world/beacons/`. */
+/* The beacons hand the request to their own API in `lib/world/beacons/`. */
 const BEACON_ROUTES = [["beacons/route.ts", "GET", "list(req)", "POST", "save(req)"]];
 
 for (const [file, ...pairs] of ROUTES) {
@@ -55,7 +55,7 @@ for (const [file, ...pairs] of BEACON_ROUTES) {
   });
 }
 
-/* Crews (CITY-20) hand the request to their own API, closed unless the deployment opens them. */
+/* Crews hand the request to their own API, closed unless the deployment opens them. */
 const CREW_ROUTES = [
   ["crew/route.ts", "GET", "mine(req)", "POST", "create(req)"],
   ["crew/join/route.ts", "POST", "join(req)"],

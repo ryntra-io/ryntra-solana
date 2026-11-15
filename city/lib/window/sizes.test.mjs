@@ -41,7 +41,7 @@ test("the frame opens the window at that size, whole, without shrinking it for t
   }
 });
 
-/* The review of CITY-242: the chips of folded windows stood over the diamond, in a layer over the windows, and a window
+/* The review: the chips of folded windows stood over the diamond, in a layer over the windows, and a window
    as tall as the workspace has its foot there — its one action under a chip. On a wide desk they stand on the Deck's
    row, under the workspace's bottom edge, so no window reaches them. */
 test("on a wide desk the folded windows' chips stand under the workspace, beside the Deck", async () => {
@@ -58,7 +58,7 @@ test("on a wide desk the folded windows' chips stand under the workspace, beside
 });
 
 // Narrower than that the chips stand over the diamond, at the workspace's foot: a window the system places leaves
-// their band clear (the second review of CITY-242: a 960 px browser, Spot's action under a chip).
+// their band clear (the second review: a 960 px browser, Spot's action under a chip).
 test("on a narrower desk the windows the system places leave the chips' band clear", async () => {
   const { CHIP_ROOM, CHIPS_BESIDE_FROM, openRect, tallestIn } = await import("./geometry.ts");
   const narrow = areaOf(at(960, 1040));

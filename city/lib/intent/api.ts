@@ -2,7 +2,7 @@ import { ask, V1, type FetchLike } from '../money/engine.ts';
 import { readIntent, type Intent } from './check.ts';
 
 /**
- * The city's line to the intents of the engine (CITY-161, contract 1.90.0): read one, and the person's steps — claim
+ * The city's line to the intents of the engine: read one, and the person's steps — claim
  * when they press, the mark (the wallet's signed bytes, before the swap engine may send them), release when the wallet
  * said no before anything was signed, receipt once the transaction went out. Every step names the digest the sheet was
  * shown; the routes refuse any other.

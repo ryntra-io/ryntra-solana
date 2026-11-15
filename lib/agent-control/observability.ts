@@ -23,9 +23,7 @@ import type { AgentPrincipal } from "./tenancy.ts";
  * secret it belongs to is not stored anywhere, let alone logged.
  *
  * The counters are deliberately minimal: requests, outcomes, status classes and
- * a duration total per route. Anything richer is a metrics product, and this
- * packet needs the four numbers that answer *is it up, is it refusing, what is
- * it refusing, and is it slow*.
+ * a duration total per route.
  */
 
 export const AGENT_CONTROL_LOG_KIND = "ryntra.agent-control.request" as const;

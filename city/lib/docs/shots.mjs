@@ -1,4 +1,4 @@
-// The documentation for review (CITY-180): the hub and every section whole, on a desk (1440) and a phone (375), English and
+// The documentation for review: the hub and every section whole, on a desk (1440) and a phone (375), English and
 // Ukrainian → <out>/<name>.jpg, with the phone's menu and the search. It also says what the eyes should not have to find: a page
 // wider than its screen, a block wider than its column, a word cut, an error in the console.
 //   npm run dev      then      node city/lib/docs/shots.mjs [out] [baseUrl]

@@ -22,7 +22,7 @@ import s from './bots.module.css';
 /**
  * «My bots»: the bots the connected wallet really runs, read from the engine's Hangar, then the practice bots, the
  * ones that need you first; a tap on a practice bot opens its controls. A DLMM order or ladder read from the chain
- * carries «Cancel» (CITY-231): one prompt in the person's own wallet takes back everything it holds — from any device,
+ * carries «Cancel»: one prompt in the person's own wallet takes back everything it holds — from any device,
  * the app included, with nothing kept in this browser.
  */
 export function Hangar() {
@@ -118,7 +118,7 @@ function ChainItem({ bot, wallet }: Readonly<{ bot: HangarBot; wallet: string }>
   const connection = useWallet((st) => st.connection);
   const busy = useLadder((st) => st.busy);
   const note = useLadder((st) => (st.note?.bot === bot.id ? st.note : null));
-  /* Part of it already taken back (more than one prompt's orders, CITY-233): the action is «Cancel the rest». */
+  /* Part of it already taken back (more than one prompt's orders): the action is «Cancel the rest». */
   const rest = useLadder((st) => Boolean(st.rest[bot.id]));
   const lw = ladderWords(lang, CHAIN_NETWORK, w);
   /* «Cancel» only for the wallet this read is of: the prompt is that wallet's own. */

@@ -24,7 +24,7 @@
  * market can pay out now, as two figures rather than one optimistic one ({@link withdrawPlan}).
  */
 
-/** The providers this corner knows, Kamino second. */
+/** The providers this corner knows: Jupiter Lend first, Kamino second. */
 export const EARN_PROVIDER_IDS = ["jupiter", "kamino"] as const;
 export type EarnProviderId = (typeof EARN_PROVIDER_IDS)[number];
 

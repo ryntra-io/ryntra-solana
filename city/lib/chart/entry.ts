@@ -5,7 +5,7 @@ import { CHART_MARKS } from './words.ts';
 
 /**
  * «Your entry» on a tower's chart: what the coins the wallet holds now cost on average, in dollars. It is the cost
- * «Mine» (CITY-7) measures — `basisOf` over the engine's record of the wallet's own Ryntra trades — and it is said only
+ * «Mine» measures — `basisOf` over the engine's record of the wallet's own Ryntra trades — and it is said only
  * when that record covers the whole balance; a coin that also came from elsewhere has no entry here, never a guessed
  * one. Reading only: the chart never asks the wallet to prove itself; without the proof there is no entry.
  */

@@ -23,7 +23,7 @@ const LIGHT: Record<(typeof DAYS)[number], THREE.Color> = {
 type Ring = Readonly<{ x: number; y: number; z: number; r: number; day: (typeof DAYS)[number]; seed: number }>;
 
 /**
- * The survival rings on the crowns of Ryntra's launches (L7, CITY-144): a ring for each of days 7, 30 and 90 the coin
+ * The survival rings on the crowns of Ryntra's launches: a ring for each of days 7, 30 and 90 the coin
  * lived through, lit only when the trade that proves it was not one of the creator's own party (`crownRings`). Day 7 is
  * the lowest, day 90 the highest and brightest, so a ninety-day tower reads from across the city. No figure and no
  * word: the window says what each ring is.

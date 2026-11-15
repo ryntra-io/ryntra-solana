@@ -1,4 +1,4 @@
-// L7 (CITY-144): a launch's tower joins the skyline only when its graduation passed the city's rule — enough
+// L7: a launch's tower joins the skyline only when its graduation passed the city's rule — enough
 // independent buyers filled its curve and it spent enough time on it; below the bar it stays in the Docks as a «Fast
 // exit» or «Graduated with N buyers». The rings of days 7, 30 and 90 burn on its crown only on a trade traced outside
 // the creator's party. Read on fixed engine answers (`silhouette.fixture.json`): made-up, in the shape of

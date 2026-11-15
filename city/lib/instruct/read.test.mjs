@@ -5,7 +5,7 @@ import { bookOf, SOL_COIN } from "../command/parse.ts";
 import { coinChoices, readInstruction } from "./read.ts";
 import { missingOf } from "./types.ts";
 
-/* CITY-176: the agent reads one sentence into a standing instruction — and only what it is sure of. */
+/* The agent reads one sentence into a standing instruction — and only what it is sure of. */
 
 const JUP_MINT = "JUPyiwrYJFskUPiHa7hkeR8VUtAeFoSYbKedZNsDvCN";
 const BONK_MINT = "DezXAZ8z7PnrnRJjz3wXBoRgixCa6xjnB7YaB1pPB263";

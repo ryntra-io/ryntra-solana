@@ -1,5 +1,5 @@
 /**
- * Somebody else's text in Ryntra City (CITY-73, decision 74): coin names and tickers, launch names, quarter signs,
+ * Somebody else's text in Ryntra City: coin names and tickers, launch names, quarter signs,
  * island and crew names, everything the city hands to the assistant or a model. See `README.md`.
  */
 export {

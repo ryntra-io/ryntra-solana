@@ -1,6 +1,6 @@
--- Ryntra: stops on spot under the wallet's account (CITY-149).
+-- Ryntra: stops on spot under the wallet's account.
 --
--- PREPARED 2026-10-29 as a file only. Not applied to any Supabase project:
+-- PREPARED 2026-10-29 as a file only. Not applied to any Supabase project.
 -- Stops do not open in production without it: `lib/stops/ready.ts` keeps the
 -- routes and the cron shut on one instance's memory, and the city keeps its
 -- stops on the device until `NEXT_PUBLIC_RYNTRA_CITY_STOPS` says `open`.

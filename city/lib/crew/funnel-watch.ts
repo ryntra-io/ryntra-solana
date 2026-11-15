@@ -12,9 +12,9 @@ import type { FunnelWord } from './funnel.ts';
 export { funnelSay } from './funnel-say.ts';
 
 /**
- * The first action's funnel in the page (CITY-222): each moment sent once a visit to `/api/track` (`funnel-say.ts`), read
+ * The first action's funnel in the page: each moment sent once a visit to `/api/track` (`funnel-say.ts`), read
  * from the stores the path already moves — the city's first frame, the line, the agent's card, the wallet, the mandate's
- * signature, a trade's signature (CITY-246). Nothing here changes how any of them works; nothing here reads an address
+ * signature, a trade's signature. Nothing here changes how any of them works; nothing here reads an address
  * or an amount. Installed once by the first screen (`FirstAction`).
  */
 

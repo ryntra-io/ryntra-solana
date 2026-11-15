@@ -10,10 +10,10 @@ export const dynamic = "force-dynamic";
 export const maxDuration = 30;
 
 /**
- * CITY-175 — the agent's book, on devnet. `POST` — the mandate the person just signed joins the agent's book with her
+ * The agent's book, on devnet. `POST` — the mandate the person just signed joins the agent's book with her
  * strategy (checked on chain first: the policy, its one signer the agent, the person's account); `GET ?policy=&owner=`
  * — what the agent did for her: its state, its trades, what it spent and bought, and what that is worth now; with
- * `&since=<ms>` (CITY-194) also what it did since then, and always its last day.
+ * `&since=<ms>` also what it did since then, and always its last day.
  * Public data only; this route holds no key and signs nothing.
  */
 
@@ -27,7 +27,7 @@ export async function POST(request: Request) {
   if (gate instanceof Response) return gate;
   const body = await readMandateBody(request, BodySchema, gate.rate);
   if (body instanceof Response) return body;
-  /* CITY-193: the strategy's numbers, as the plan's text; none — the strategy's own defaults are not guessed, steady is. */
+  /* The strategy's numbers, as the plan's text; none — the strategy's own defaults are not guessed, steady is. */
   const plan = body.plan ? planFrom(body.plan) : null;
   if ((body.plan && !plan) || (plan && plan.id !== body.strategy) || (!plan && body.strategy !== "steady")) return mandateFailure(422, "REFUSED", "Not a strategy the agent runs.", gate.rate);
   const joined = await joinBook({ record: body.record, strategy: body.strategy, plan, said: body.said ?? null, coin: body.coin ?? null }, gate);
@@ -42,7 +42,7 @@ export async function GET(request: Request) {
   const policy = Base58.safeParse(url.searchParams.get("policy"));
   const owner = Base58.safeParse(url.searchParams.get("owner"));
   if (!policy.success || !owner.success) return mandateFailure(400, "VALIDATION_ERROR", "Not addresses.", gate.rate);
-  /* CITY-194: `since` — when this browser last saw the agent, ms; the answer then says what it did since. */
+  /* `since` — when this browser last saw the agent, ms; the answer then says what it did since. */
   const sinceText = url.searchParams.get("since");
   const since = sinceText && /^\d{12,14}$/u.test(sinceText) ? Number(sinceText) : null;
   const view = await agentResult({ policy: policy.data, owner: owner.data, since }, gate, { symbol: process.env[AGENT_SYMBOL_ENV] ?? null }).catch(() => undefined);

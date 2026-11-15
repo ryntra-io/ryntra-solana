@@ -15,7 +15,7 @@ import type { TowerState } from './state';
 import { useSkyline } from './store';
 
 /**
- * The kit waits for the city's first frame on the screen (`cityDrawn`, CITY-6a), then this long and an idle moment.
+ * The kit waits for the city's first frame on the screen (`cityDrawn`), then this long and an idle moment.
  * Since 28.10 the canvas is held out until the kit stands (`store.ts`), so nothing waits for it: it loads at once.
  */
 const LOAD_AFTER_MS = 0;
@@ -68,7 +68,7 @@ export function useKit(): Kit | null {
 }
 
 /**
- * The skyline of Ryntra City built from the Blender kit (CITY-56). Until the kit arrives the procedural towers stand;
+ * The skyline of Ryntra City built from the Blender kit. Until the kit arrives the procedural towers stand;
  * once its shaders are compiled (in parallel, off the page's thread where the browser can) the kit's towers take
  * their place. When the market redraws the city (every live read) the new skyline is built and compiled behind the
  * one on the screen and replaces it in one frame, so nothing flickers. Taps, signs, crowns and moments are untouched:

@@ -1,5 +1,5 @@
 /**
- * The Hack sandbox (CITY-224), in one import: the pin of a copy, the limits of a run, the wall against the network, the
+ * The Hack sandbox, in one import: the pin of a copy, the limits of a run, the wall against the network, the
  * engine a run drives, the run as a game the judge replays, and the sandbox that runs, replays and proves. The made-up
  * engine of the tests (`toy.ts`) is imported on its own. See `README.md`.
  */

@@ -1,6 +1,6 @@
 // Run from repo root: node --test city/lib/arena/hack/runner/assemble.test.mjs
 /*
- * CITY-238: the harness puts a transaction together for an agent that cannot sign — with the agent's own payers of the
+ * The harness puts a transaction together for an agent that cannot sign — with the agent's own payers of the
  * copy and nothing else. The payers' keys sign only what names them; no other signature is ever made; the bounds hold.
  * And the session takes `{ instructions }` wherever it takes an input, and the brain without a model files a run the
  * judge cannot decide when its plan says so.

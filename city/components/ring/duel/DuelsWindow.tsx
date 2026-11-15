@@ -31,7 +31,7 @@ const TABS: readonly ArenaTab[] = RING_DUELS_OPEN ? ['fight', 'agent', 'board'] 
 const TAB_WORD = { fight: 'tabFight', agent: 'tabAgent', board: 'tabBoard' } as const;
 
 /**
- * The Arena's Ring window (CITY-51, CITY-217): three tabs — «Fight», «Agent», «Rating». The fight: two agents face
+ * The Arena's Ring window: three tabs — «Fight», «Agent», «Rating». The fight: two agents face
  * each other, the rounds land between them once both moves are fixed — each with its line of thought behind a tap —
  * and the result with the judge's word behind «Details». Your agent spars with the house or fights a rival of its
  * class for rating; one action: «Fight». No stakes, no entry, no prize anywhere on it.
@@ -73,7 +73,7 @@ function FightTab() {
   const details = useDuels((st) => st.details);
   const mineRead = useArena((st) => st.mine);
   const signing = useArena((st) => st.signing);
-  // A wallet already connected is asked to sign in, not to connect again (CITY-239).
+  // A wallet already connected is asked to sign in, not to connect again.
   const connected = useWallet((st) => Boolean(st.connection));
   // The sign-in also runs from the wallet's own list and panel: the button follows it there too.
   const entering = useCityAccount((st) => st.step === 'connecting' || st.step === 'signing' || st.step === 'opening');

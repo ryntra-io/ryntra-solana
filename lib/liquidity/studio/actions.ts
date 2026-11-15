@@ -107,7 +107,7 @@ export type ActionDeps = Readonly<{
   chainReader?: (connection: Connection) => ChainReader;
   /** DLMM's limit orders on an endpoint (`limit-orders.ts`); without it no limit order is built. */
   limitVenueFor?: (connection: Connection) => LimitVenue;
-  /** The Zap on an endpoint (`zap.ts`, CITY-198); without it no Zap is built. */
+  /** The Zap on an endpoint (`zap.ts`); without it no Zap is built. */
   zapVenueFor?: (connection: Connection) => ZapVenue;
   /** Ryntra's fee on a Zap's Jupiter leg from SOL into `outputMint` (fee policy v2's `/build` lane), or null for none. */
   zapFeeFor?: (outputMint: string) => Promise<ZapFee | null>;
@@ -381,7 +381,7 @@ export type ZapReviewInput =
   | Readonly<{ action: "zap_in"; venue: "meteora-dlmm"; request: ZapInRequest }>
   | Readonly<{ action: "zap_rest"; venue: "meteora-dlmm"; request: ZapRestRequest }>;
 
-/** A Zap's Review (CITY-198): the same seal as a pool action's, with the Zap's own preview and the swap leg's reference. */
+/** A Zap's Review: the same seal as a pool action's, with the Zap's own preview and the swap leg's reference. */
 export type ZapReview = Readonly<{
   preview: ZapPreview;
   transactions: readonly UnsignedLiquidityTx[];

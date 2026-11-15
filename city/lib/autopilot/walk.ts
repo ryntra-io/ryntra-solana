@@ -1,5 +1,5 @@
 /**
- * CITY-70 — the agent walks the city: between the person's quarter and the towers of the coins it trades for her, so its
+ * The agent walks the city: between the person's quarter and the towers of the coins it trades for her, so its
  * work is seen without a word. Pure: the scene (`city/components/autopilot/AgentWalker.tsx`) asks where to be; this says.
  *
  * - **at work** (working, waiting) — it goes from stop to stop: home, then each tower it trades, a few seconds at each;

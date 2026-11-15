@@ -219,7 +219,7 @@ function Done() {
 }
 
 /**
- * The agent's card (CITY-176): what it will set from the sentence — the coin, the amount, how often or at what price —
+ * The agent's card: what it will set from the sentence — the coin, the amount, how often or at what price —
  * the fee and the least in one line, and one button. A missing word is one question with taps. The person signs in
  * their own wallet; the card never presses anything by itself.
  */

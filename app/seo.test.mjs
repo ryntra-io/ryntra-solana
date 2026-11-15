@@ -112,17 +112,17 @@ test("SEO locale registry is exact and every public surface has canonical hrefla
 });
 
 /**
- * What the sitemap advertises, by name: the city's live addresses and nothing else (CITY-159).
+ * What the sitemap advertises, by name: the city's live addresses and nothing else.
  *
  * Asserted by name rather than by count so a route cannot join the sitemap without someone deciding it should be
  * indexed. Until 2026-10-31 it named 103 addresses and 102 were pages of the old site, drawn in the old interface
- * nobody is to see (decision 75); each comes back here when the city takes it over at its own address (CITY-157).
+ * nobody is to see (decision 75); each comes back here when the city takes it over at its own address.
  */
 const ADVERTISED_PATHS = ["/", "/launches", "/roadmap", "/build", "/partners", "/docs", ...DOC_IDS.map((id) => `/docs/${id}`), "/developers", "/connector", "/support", "/about", "/legal/terms", "/legal/privacy"];
 
 /**
  * The site's old public pages: reachable at their addresses, never in the sitemap, and answering noindex until the
- * city draws them. The old handbook left this list with CITY-180: its addresses lead to the documentation's sections.
+ * city draws them. The old handbook left this list: its addresses lead to the documentation's sections.
  */
 const WAITING_PATHS = [
   "/company",
@@ -148,7 +148,7 @@ const NEVER_ADVERTISED = [
   "/en", "/ua", "/ru", "/app", "/docs/developers", "/docs/developers/guard", "/docs/developers/agent-control",
   "/docs/trade/tokenized-stocks", "/docs/reference/security",
   "/stellar", "/robinhood",
-  /* The short addresses lead into the city (CITY-159); the partner Terms are the Growth line's page. */
+  /* The short addresses lead into the city; the partner Terms are the Growth line's page. */
   "/launch", "/trade", "/rewards", "/terms", "/privacy", "/promo/partners/terms",
 ];
 /* 27: the prediction demo's page left with the demo; 33 since the new site (2026-09-26). */
@@ -161,7 +161,7 @@ test("the sitemap advertises the city's live addresses alone, each a page that a
   assert.deepEqual(CITY_PAGES.map((page) => page.path), ADVERTISED_PATHS, "the advertised addresses are exactly these, in this order");
   assert.equal(entries.length, ADVERTISED_PATHS.length, "one entry per address: the city's address has no Ukrainian twin");
   assert.equal(new Set(entries.map((entry) => entry.url)).size, entries.length);
-  /* The old interface leads into the city since CITY-13: nothing of it is offered to the index. */
+  /* The old interface leads into the city: nothing of it is offered to the index. */
   assert.ok(!entries.some((entry) => /^\/(?:uk\/)?(?:app|solana|mission|live)(?:[/?]|$)/.test(entry.url.replace(SITE, ""))), "no address of the old interface");
 
   /* No entry may be an address the app redirects: neither a customer
@@ -191,7 +191,7 @@ test("the sitemap advertises the city's live addresses alone, each a page that a
   }
 });
 
-test("the site's old public pages stay reachable but answer noindex until the city takes each over (CITY-157)", async () => {
+test("the site's old public pages stay reachable but answer noindex until the city takes each over", async () => {
   const headers = await nextConfig.headers();
   const noindex = (source) => headers.some((row) => row.source === source && !row.has && row.headers.some((header) => header.key === "X-Robots-Tag" && /noindex/.test(header.value)));
   for (const source of awaitingSources()) assert.ok(noindex(source), `${source} answers noindex`);
@@ -233,7 +233,7 @@ test("robots keeps the public documents crawlable while blocking private, API, a
 
   assert.deepEqual(rule.allow, ["/"]);
   assert.ok(disallow.includes("/api/"));
-  /* The old interface only leads into the city since CITY-13: crawlable, so a crawler sees the 308 and drops it. */
+  /* The old interface only leads into the city: crawlable, so a crawler sees the 308 and drops it. */
   for (const old of ["/app", "/uk/app", "/solana", "/uk/solana", "/mission", "/live"]) {
     assert.ok(!disallow.some((path) => String(path).startsWith(old)), `${old} must stay crawlable so robots can observe its redirect`);
   }
@@ -379,7 +379,7 @@ test("the Handbook and structured data consume the product's own facts without i
   assert.match(handbook, /getSiteTruth\(\)/);
   assert.match(handbook, /truth\.capabilities/);
   assert.doesNotMatch(layout, /\bfeatureList\b/, "static root JSON-LD must not freeze drift-prone capability claims");
-  assert.match(layout, /CITY_WORDS/, "the root's words and structured data are the city's (CITY-158)");
+  assert.match(layout, /CITY_WORDS/, "the root's words and structured data are the city's");
   assert.doesNotMatch(layout, /PRODUCT_CANON\.(shippedLoopBoundary|northStar|arcusBoundary)/);
   assert.doesNotMatch(layout, /offers:\s*\{/);
   /* The landing's graph is the page's own words: the
@@ -401,7 +401,7 @@ test("the Handbook and structured data consume the product's own facts without i
   assert.doesNotMatch(graphCode, /InternalCapabilityEvidence|evidence:\s*\{/);
   /* The share card used to stage a mock risk panel, which is why it carried
      "NOT A LIVE VERDICT" and "planned, not shipped" — disclaimers for a
-     fabricated example. Since CITY-158 it is the city's card: the live city's
+     fabricated example. It is the city's card: the live city's
      frame, the mark and one line, with no verdict to disclaim. */
   assert.match(og, /cityCard\(/);
   assert.match(og, /CARD_WORDS/);

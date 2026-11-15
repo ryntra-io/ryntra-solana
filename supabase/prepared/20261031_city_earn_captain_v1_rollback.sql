@@ -1,4 +1,4 @@
--- Rollback of `supabase/migrations/20261031120000_city_earn_captain_v1.sql` (CITY-99).
+-- Rollback of `supabase/migrations/20261031120000_city_earn_captain_v1.sql`.
 -- PREPARED 2026-10-31 as a file only; run only when the project's owner says so. It drops the
 -- ledger of strategy copies and their daily record: public positions read from
 -- the chain, never money. The city then shows no strategy card.

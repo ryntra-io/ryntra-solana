@@ -9,7 +9,7 @@ import { readAsk } from "./read.ts";
 import { AUTOPILOT } from "./words.ts";
 
 /*
- * CITY-216: the agent's card says the budget as the person said it. «trade 0.1 SOL a day on JUP» is a day's budget of
+ * The agent's card says the budget as the person said it. «trade 0.1 SOL a day on JUP» is a day's budget of
  * 0.1 SOL; 0.02 SOL is one trade. The headline carries the day's budget, one trade's size stands on its own line.
  */
 

@@ -36,8 +36,9 @@ Pictures from the live site, except the coin's window, which is the devnet stand
 ## Meteora in the code
 
 Meteora SDKs, pinned exactly in `package.json`: `@meteora-ag/dynamic-bonding-curve-sdk` 1.5.13 and 2.0.0 side by side,
-`cp-amm-sdk` 1.5.1, `dlmm` 1.9.14, `alpha-vault` 1.1.16, `dynamic-fee-sharing-sdk` 1.1.0, `met-lock-sdk` 1.0.1,
-`zap-sdk` 1.3.2 and 2.0.0 side by side. One DBC and one DAMM v2 client per connection: `lib/core/venues/meteora-clients.server.ts`.
+`cp-amm-sdk` 1.5.1, `dlmm` 1.9.14, `dlmm-pro-sdk` 0.1.2, `alpha-vault` 1.1.16, `dynamic-fee-sharing-sdk` 1.1.0,
+`met-lock-sdk` 1.0.1, `zap-sdk` 1.3.2 and 2.0.0 side by side. One DBC and one DAMM v2 client per connection:
+`lib/core/venues/meteora-clients.server.ts`; one DLMM Pro client per connection: `lib/core/venues/meteora-dlmm-pro/sdk.server.ts`.
 
 ## The launch lifecycle on DBC
 
@@ -129,8 +130,9 @@ rebuilds a range in the same shape.
 
 In progress. Meteora opened the DLMM Pro beta on 12 November 2026 — program `dPro1D5wiqnGMH8vMDG23jh35btTHoWdyqXjqkqxe8n`,
 SDK `@meteora-ag/dlmm-pro-sdk`. It is a program of its own, not a new DLMM shape, so Ryntra is adding it as a venue of
-its own beside DBC, DAMM v2 and DLMM. Nothing in this section is live yet. When it is, the section is rewritten file by
-file, like the rest of this page.
+its own beside DBC, DAMM v2 and DLMM. Since 14 November 2026 the venue is in the engine and has been rehearsed end to
+end on the program's deployed binary. **None of it is open to people yet:** no route, window or agent tool reaches it,
+and the capability registry lists it as `BUILDING`. The live Launch on DBC is unchanged.
 
 | Being built | What it stands on in DLMM Pro |
 |---|---|
@@ -141,6 +143,45 @@ file, like the rest of this page.
 
 Wave, the fourth liquidity preset Meteora announced for DLMM Pro, is not in the SDK yet (0.1.2 has Spot, Curve, BidAsk and
 Custom). Ryntra adds it when it is published and does not imitate a shape that is not.
+
+### In the engine
+
+All paths under `lib/core/venues/meteora-dlmm-pro/`. The SDK is pinned to 0.1.2 exactly.
+
+| What | How | Files |
+|---|---|---|
+| Pools | Found by the pool account's discriminator and read only through `fetchPoolWithExtensions`: a pool has a dynamic tail (activation rules, rewards) that a read of its head drops. The model carries both coins, the price, tick spacing, the pool type, the partner, the extensions, the fee right now (the schedule's step plus the volatility part) and whether a given wallet may swap or deposit yet. | `pools.server.ts`, `fee.ts`, `activation.ts` |
+| Launch pool | `initializeLaunchPool` with a fee that falls as the market cap grows or with time, collected in one coin, opening times and early wallets. The build says the fee the schedule really settles at: its steps are whole basis points, so with hundreds of steps it settles above the fee asked for. A coin the program takes only with Meteora's token badge is refused before a signature, or built with the badge where it has one. | `pools.server.ts` |
+| Swap | `quoteExactIn`, then `swap` with the minimum taken from the fresh quote. Ryntra's referral account is added only where it exists for the coin the fee is paid in. A swap of SOL wraps it out of the wallet and unwraps what is left in the same transaction. | `swap.server.ts` |
+| Limit orders | A ladder built from a liquidity shape, relative ticks with a band, collecting part or all, closing. The program emits no event when an order fills, so each tick's fill is read from the tick itself. An order names Ryntra's referral wallet, and the build and the order's model say so — for the line a person reads before signing; a collect pays the referral only where its account can be paid and the collect with it passes a simulation, so a referral never holds a collect up. A collect says what reaches the owner — after the referral and after a coin's own transfer fee. | `limit-orders.server.ts`, `orders.ts`, `shapes.server.ts` |
+| Position | Open from Spot, Curve, Bid-Ask or custom weights; add, remove, claim, `compoundFees`, lock for ever, delegate permissions. A deposit and a removal name a band of the price: inside it they land, outside it the program refuses them. Fees earned in one coin are compounded into the nearest range that takes that coin alone anywhere in the band. A deposit or an order beyond a pool's own tick-array bitmap makes the bitmap's extension first. A position of many ranges is split into transactions that fit. | `positions.server.ts`, `ticks.ts` |
+| Rewards | Set up a reward slot, fund an emission, claim — the build says what a position has already accrued — and withdraw what was not earned. | `rewards.server.ts` |
+| Events | Swap, order and position events decoded from a transaction's inner instructions with the SDK's own coder; the two events the program writes to the log are read from the log. | `events.server.ts` |
+| Transactions | Every builder returns an unsigned version-0 transaction that carries its own compute budget, and says what it costs: the network fee, the rent of what it creates, and the part of that rent that comes back in the same transaction. A wallet that cannot pay for it — the amount, the fee and the rent together, at the chain's own threshold — is refused before a signature. The person's wallet is the only payer; the one other signer is the fresh NFT mint key of a new position or order. No Ryntra key signs. | `tx.server.ts`, `venue.server.ts`, `pools.server.ts` |
+| Closed to people | One constant; a test holds it together with the registry's state and fails if anything outside the venue's folder imports it. | `gate.ts`, `sdk.test.mjs`, `lib/core/capabilities.ts` |
+
+### Rehearsed, with no write to mainnet
+
+The program's binary as deployed, read from its programdata account, ran in a local SVM with mainnet's feature set and
+rent. Six paths:
+
+- a Token-2022 coin, a launch pool whose fee falls from 50 % to 1 % and that opens at a set time, the supply as a
+  one-sided position of 45 ranges locked for ever, swaps before and after the opening, a swap with the referral,
+  limit-order ladders filled and collected;
+- a second pool with liquidity mining;
+- a third launch whose locked liquidity is two position NFTs;
+- a pool that takes its fee in the coin it pays out, with a deposit of two coins while real trades move the price;
+- a coin with a transfer fee of its own against SOL, and a launch priced in SOL;
+- what review found stated and never run: a removal and a one-coin compound with trades between their build and their
+  landing, a fee that falls with time on a pool with SOL as its first coin and three opening times, a coin that needs
+  Meteora's badge, a swap's minimum after a coin's transfer fee, a swap across more than three tick arrays, a priority
+  fee, an even position over the whole of a pool's prices, a frozen token account.
+
+353 transactions landed; 58 were refused on purpose — 28 by the venue before a signature, 30 by the chain when the
+venue was walked around. Every number the venue said before a signature was held to what the chain then did, the
+network fee and the rent of every build among them: 2 026 checks, none off. A pool and one locked position of 45
+ranges took 0.122 SOL of rent and 511 462 compute units, in three signatures after the coin; a launch priced in SOL
+with 15 ranges took 0.062 SOL and two. The state that run left is the fixture the tests replay.
 
 ## Agents
 
@@ -155,13 +196,15 @@ Custom). Ryntra adds it when it is published and does not imitate a shape that i
 
 ## How to check it
 
-Node 22.18 or later. Counts measured on 14 November 2026.
+Node 22.18 or later. Counts measured on 14–15 November 2026.
 
 ```bash
 npm ci
 
 # 61 pass: presets, receipt, market, exit positions, SDK comparison
 node --test lib/core/venues/meteora-dbc/*.test.mjs
+# 91 pass: fee, opening, orders, ticks, SDK comparison, mainnet pools
+node --test lib/core/venues/meteora-dlmm-pro/*.test.mjs
 # 109 pass, Zap and limit orders included
 node --test lib/liquidity/*.test.mjs lib/liquidity/catalog/*.test.mjs lib/liquidity/studio/*.test.mjs
 # 264 pass: launch rules, ladder, budget, early access, transfer fee
@@ -194,6 +237,12 @@ node --test lib/agent-control/external/router.test.mjs
   - `lib/liquidity/studio/fixtures/dlmm.tape.json.gz`, `damm-v2.tape.json.gz` — recorded mainnet RPC answers replayed
     by `lib/liquidity/studio/rpc-cassette.ts`, so the real SDK code decodes, quotes and builds offline.
   - `lib/liquidity/catalog/fixtures/` and `lib/liquidity/meteora/fixtures/` — pages of Meteora's Data APIs as recorded.
+  - `lib/core/venues/meteora-dlmm-pro/fixtures/mainnet-pools-2026-11-14.json.gz` — every DLMM Pro pool on mainnet as
+    read on 14 November 2026, with the tick arrays a swap of either direction would walk.
+  - `lib/core/venues/meteora-dlmm-pro/fixtures/rehearsal.json.gz` — the rehearsal's state at ten moments and its
+    transactions as a node would return them: what mainnet does not have yet (a pool with activation rules and a
+    market-cap fee, limit orders in every state, a reward that runs, a pool priced in SOL). `fixture-kit.mjs` answers a real `Connection`
+    from them and fails on any request it does not know, so the SDK's own code decodes, quotes and builds offline.
 
 ## Status, honestly
 
@@ -214,4 +263,6 @@ node --test lib/agent-control/external/router.test.mjs
 - The care agent runs behind its own switches (`RYNTRA_AGENT_CARE`, `NEXT_PUBLIC_RYNTRA_AGENT_CARE`); the cron is `/api/cron/agent-care`.
   Its paths are proven on devnet and a mainnet fork; no person has yet handed it a position on mainnet.
 - DBC SDK 1.5.13 is the default; `RYNTRA_DBC_SDK=2` moves every client call to 2.0.0, and removing it rolls back.
-- DLMM Pro is in progress: none of it is open to people yet (see [DLMM Pro](#dlmm-pro)).
+- DLMM Pro is in progress: the venue is in the engine and rehearsed on the program's deployed binary, it has sent
+  nothing to mainnet, and none of it is open to people yet (see [DLMM Pro](#dlmm-pro)). `DLMM_PRO_OPEN_TO_PEOPLE` in
+  `lib/core/venues/meteora-dlmm-pro/gate.ts` is the one value.

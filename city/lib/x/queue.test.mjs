@@ -1,5 +1,5 @@
 // Run from repo root: node --test "city/lib/x/*.test.mjs"
-// A studio post through the real drafts queue (CITY-3): the machine key sends the facts and the clip, the server writes
+// A studio post through the real drafts queue: the machine key sends the facts and the clip, the server writes
 // the words, a person decides. Nothing reaches the network.
 import assert from 'node:assert/strict';
 import { afterEach, beforeEach, test } from 'node:test';

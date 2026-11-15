@@ -1,5 +1,5 @@
 /**
- * The sandbox backend of the step runner (CITY-225, spec `docs/research/city-hack-2026-11-08/SPEC.md`). The runner's
+ * The sandbox backend of the step runner (spec `docs/research/city-hack-2026-11-08/SPEC.md`). The runner's
  * tools (`session.ts`) never touch the sandbox directly: they hand an attempt to a `SandboxBackend`, which plays it on
  * a pinned copy and, when asked, proves it. The backend is where the sandbox's offline wall and its heavy compute
  * live, so the brain's model calls (the network) and the sandbox run (no network) stay apart.
@@ -13,7 +13,7 @@
  * `prove` carries only numbers across the boundary (`at`, the order's window, the agent's model spend): the stamp key
  * is the harness's, read where the backend runs. The proof the judge gives back is plain data (`HackProof`).
  *
- * Pure contract: no store, no keys, no money here. The money is CITY-229.
+ * Pure contract: no store, no keys, no money here.
  */
 
 import type { Judgement } from "../../../../../lib/ring/judge/index.ts";

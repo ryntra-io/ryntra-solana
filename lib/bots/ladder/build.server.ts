@@ -1,5 +1,5 @@
 /**
- * The ladder composer (B5, CITY-135; mainnet CITY-219) — the server's part:
+ * The ladder composer — the server's part:
  * read a pool, build a ladder's `place_limit_order` transactions for the
  * person's wallet to sign, build the cancellations that take the money back,
  * read the orders back.
@@ -127,7 +127,7 @@ export function mintFacts(mint: Mint, program: PublicKey): Facts {
     transfer_fee: has(ExtensionType.TransferFeeConfig) ? { in_force: null, in_force_why: "extension" } : null,
   };
 }
-/** CITY-135's name for it. */
+/** The name this read had first. */
 export const devnetMintFacts = mintFacts;
 
 const pools = new Map<string, Readonly<{ at: number; dlmm: DLMM }>>();
@@ -514,7 +514,7 @@ export async function buildLadderCancel(
 export type LandedState = "confirmed" | "failed";
 
 /**
- * Which of a ladder's sent transactions the chain knows (CITY-231): the relay answers as soon as it sends, and this
+ * Which of a ladder's sent transactions the chain knows: the relay answers as soon as it sends, and this
  * reading is the confirmation. A transaction that failed on chain is `failed`; one not yet seen is left out, and the
  * window waits for it to show — or for its blockhash to run out.
  */

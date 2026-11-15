@@ -81,7 +81,7 @@ export const HangarGlyph = () => (
   </svg>
 );
 
-/** Garage: the agent's garage with its roll-up door, an antenna on the roof — it reports in (CITY-29). */
+/** Garage: the agent's garage with its roll-up door, an antenna on the roof — it reports in. */
 export const GarageGlyph = () => (
   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
     <path d="M3 21V10l9-4 9 4v11" />

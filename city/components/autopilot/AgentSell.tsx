@@ -25,14 +25,14 @@ const QUIET: ReadonlySet<string> = new Set(['NOTHING', 'TOO_SMALL']);
 const solOf = (raw: string, lang: 'en' | 'uk', round: 'down' | 'nearest' = 'down') => digits(formatUnits(raw, 9, round), lang);
 
 /**
- * «Your agent holds» in the tower's window (CITY-187): where the person's agent bought this tower's coin for her, one
+ * «Your agent holds» in the tower's window: where the person's agent bought this tower's coin for her, one
  * press sells a share of it — 25 %, 50 % or all. Before the press: what she gets at least and Ryntra's fee, one line each;
  * how it works behind «i». The press is her one signature, then the agent sells; the receipt is one line, with the sale
  * one tap away. Only where the agent's switch and the mandate's are open, and only for a wallet whose agent this browser
  * turned on.
  */
 export function AgentSell({ mint, symbol }: { mint: string; symbol: string }) {
-  // Devnet through its pool (CITY-187), mainnet through Jupiter (CITY-195): wherever the agent's switch and the mandate's are open.
+  // Devnet through its pool, mainnet through Jupiter: wherever the agent's switch and the mandate's are open.
   if (!AUTOPILOT_NET || !MANDATE_NET) return null;
   return <AgentSellBlock mint={mint} symbol={symbol} />;
 }

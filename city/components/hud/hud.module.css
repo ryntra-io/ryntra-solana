@@ -15,8 +15,8 @@
   pointer-events: auto;
 }
 
-/* The HUD stays under the city's windows whatever is open in it (CITY-239). The wallet's panel, which answers a tap
-   inside a window and must stand over it (CITY-236), has a layer of its own (quarter/wallet.module.css): lifting this
+/* The HUD stays under the city's windows whatever is open in it. The wallet's panel, which answers a tap
+   inside a window and must stand over it, has a layer of its own (quarter/wallet.module.css): lifting this
    whole layer for it laid the event slab and the home's cards on the window too. */
 
 .display {
@@ -134,7 +134,7 @@
   }
 }
 
-/* «Flashing effects» off in the feed's «Show on home» (CITY-66): the live dot and the Hot-now dot stay lit, still. */
+/* «Flashing effects» off in the feed's «Show on home»: the live dot and the Hot-now dot stay lit, still. */
 :global(html[data-city-flash='off']) .dot,
 :global(html[data-city-flash='off']) .pulse {
   animation: none;
@@ -168,7 +168,7 @@
   display: contents;
 }
 
-/* The menu's panel stands in a layer of its own over the city's windows (CITY-241, `MenuOver` in Menu.tsx), as the
+/* The menu's panel stands in a layer of its own over the city's windows (`MenuOver` in Menu.tsx), as the
    wallet's does (quarter/wallet.module.css): the layouts in it are wanted most while windows stand in both bays. The
    layer itself takes no tap; the panel stands under its button, by the button's own place on the screen. */
 .menuLayer {
@@ -194,7 +194,7 @@
   padding: 8px;
   --cut: 14px;
   color: var(--ice);
-  /* Denser glass than the bar's: the lens strip under it never reads through the rows (CITY-188). */
+  /* Denser glass than the bar's: the lens strip under it never reads through the rows. */
   background: linear-gradient(160deg, rgba(20, 16, 36, 0.97), rgba(8, 7, 15, 0.98));
   animation: rise 200ms ease-out both;
 }
@@ -233,7 +233,7 @@
   transition: transform 160ms ease-out;
 }
 
-/* A row that unfolds in place (the layouts, CITY-241): its chevron turns down while open. */
+/* A row that unfolds in place: its chevron turns down while open. */
 .menuChevronDown {
   transform: translate(-2px, -2px) rotate(45deg);
 }
@@ -264,7 +264,7 @@
   background: var(--mint);
 }
 
-/* The language: one quiet pair, the language on screen lit (CITY-79). Each half is a full-height target. */
+/* The language: one quiet pair, the language on screen lit. Each half is a full-height target. */
 .menuLang {
   display: flex;
   align-items: center;
@@ -311,7 +311,7 @@
   background: var(--ice);
 }
 
-/* The city's pages (CITY-157): four doors in two columns, each opening its own window over the city. */
+/* The city's pages: four doors in two columns, each opening its own window over the city. */
 .menuLinks {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -335,8 +335,8 @@
   text-decoration: none;
 }
 
-/* An odd last door (five since «AI chats», CITY-170) takes the whole row, so the grid never ends on a gap. */
-/* «What we're building» first, across the panel: its words never break over two lines (CITY-188); the rest in pairs. */
+/* An odd last door (five since «AI chats») takes the whole row, so the grid never ends on a gap. */
+/* «What we're building» first, across the panel: its words never break over two lines; the rest in pairs. */
 .menuLink:first-child,
 .menuLink:last-child:nth-child(even) {
   grid-column: 1 / -1;
@@ -463,7 +463,7 @@
 
 /* ---------- The first-visit hint ---------- */
 
-/* The first screen's one action stands over the Deck, by its Agents (CITY-241): the sky and the coin over the central
+/* The first screen's one action stands over the Deck, by its Agents: the sky and the coin over the central
    tower stay clear, and it is where the thumb is. High enough that the Deck's own hints pass under it. */
 .firstHint {
   --deck-h: 78px;
@@ -923,8 +923,8 @@
   }
 }
 
-/* The flashing off (CITY-66), until the settings are read: the slab stands still — it fades in and out, nothing flies
-   or glows. Once read, «Flashes: off» (CITY-87, below) takes the slab away. */
+/* The flashing off, until the settings are read: the slab stands still — it fades in and out, nothing flies
+   or glows. Once read, «Flashes: off» takes the slab away. */
 :global(html[data-city-flash='off']) .cutinSlab {
   transform: skewX(-6deg);
   animation: cutinStill 2300ms linear both;
@@ -945,7 +945,7 @@
   }
 }
 
-/* «Flashes» in Settings (CITY-87): off — no slab at all; small — a short call-out under the top bar instead of the slab
+/* «Flashes» in Settings: off — no slab at all; small — a short call-out under the top bar instead of the slab
    across the screen. */
 :global(html[data-city-flash-size='off']) .cutin {
   display: none;
@@ -1130,7 +1130,7 @@
   text-transform: uppercase;
 }
 
-/* Ukrainian words run longer: a little less air between the capitals keeps each label on one line (CITY-79). */
+/* Ukrainian words run longer: a little less air between the capitals keeps each label on one line. */
 .cellLabel:lang(uk) {
   letter-spacing: 0.06em;
   white-space: nowrap;
@@ -1284,7 +1284,7 @@
 }
 
 /* A phone held upright: the search is a sheet above the dock, where the one card stands; while it is open the card
-   steps aside, so the two never cross (CITY-6a). */
+   steps aside, so the two never cross. */
 @media (max-width: 560px) and (orientation: portrait) {
   .layer:has([data-city-search]) .slot {
     visibility: hidden;
@@ -1292,7 +1292,7 @@
 }
 
 /* The same for the live event feed's open list on a phone held upright, which owns the frame like a tower card
-   (CITY-66, city/components/feed). The bell's panel stands in a layer of its own over the windows (CITY-242), so the
+   (city/components/feed). The bell's panel stands in a layer of its own over the windows, so the
    page is asked, not the HUD's layer. */
 @media not all and (min-aspect-ratio: 1/1) {
   :global(body:has([data-city-feed][data-open])) .slot,

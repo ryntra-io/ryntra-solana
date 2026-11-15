@@ -7,7 +7,7 @@ import { hallTrades, hallView, type HallMarketRead, type HallView } from './hall
  * stand, the coins and wallets made up, run through the same `hallView` the server runs, with a few trades judged
  * inside one cluster or not checked so the share left out shows. Opened with `?hall=stub` in a development build —
  * `?hall=month` for a quiet week that reaches back over 30 days, `?hall=all` for one that reaches back over all time,
- * `?hall=empty` for a Hall nobody is on (CITY-230); never part of a production bundle, and every screen says «Stub data».
+ * `?hall=empty` for a Hall nobody is on; never part of a production bundle, and every screen says «Stub data».
  */
 
 /** Which week the stand-in plays: a full one, a quiet one reaching back over 30 days or all time, or nobody at all. */

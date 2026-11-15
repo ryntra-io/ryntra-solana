@@ -8,7 +8,7 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 /**
- * `POST /api/v1/intents/{id}/cancel` (1.90.0, CITY-161) — its creator withdraws the intent while nobody holds it, with
+ * `POST /api/v1/intents/{id}/cancel` — its creator withdraws the intent while nobody holds it, with
  * the key it was given once (`X-Ryntra-Intent-Key`). The link then says so and never opens a sheet again; a claim in
  * progress is not interrupted (`INTENT_BUSY`).
  */

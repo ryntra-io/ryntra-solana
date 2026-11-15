@@ -39,7 +39,7 @@ const closePredict = () => {
 };
 
 /**
- * Predictions over the city, once the district is open, in the city's one window frame (CITY-65): one window — the markets, a market's page, your positions and
+ * Predictions over the city, once the district is open, in the city's one window frame: one window — the markets, a market's page, your positions and
  * money. While it is open the cards and the open page stay recent reads and practice holdings settle. It gives way to
  * the rest of the city at once — Escape, a tower picked, a run, your quarter, another district's panel — unless an
  * order or a withdrawal is on its way, which is always shown to its end.

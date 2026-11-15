@@ -1,5 +1,5 @@
 /**
- * The Ring's judge (CITY-68, decision 74): one verdict on one agent's submission and claim, by fixed rules, in a fixed
+ * The Ring's judge: one verdict on one agent's submission and claim, by fixed rules, in a fixed
  * order, the same on every machine. Three levels of evidence:
  *
  *   L1 — the submission itself: its media type, its size, its hash, the harness's signed time stamp; the rules' hash;

@@ -3,7 +3,7 @@ import { walletReadKey } from "@/lib/connector/ledger";
 import { readWindowHeaders } from "@/lib/http-control";
 
 /**
- * The connector's reader of the engine (CITY-154): each tool's route handler, called in this process.
+ * The connector's reader of the engine: each tool's route handler, called in this process.
  *
  * The connector reads exactly what ryntra.io serves — the same route handlers, with their own validation, caches,
  * errors and read windows — without a second network hop and without a deployment's protection standing between a
@@ -30,7 +30,7 @@ const LOADERS: Readonly<Record<EngineRouteKey, () => Promise<RouteModule>>> = {
   "money.recipient": () => import("@/app/api/v1/money/recipient/route"),
   "research.evidence": () => import("@/app/api/v1/research/evidence/route"),
   "research.addressEvidence": () => import("@/app/api/v1/research/address-evidence/route"),
-  /* The pre-sign check (CITY-152): POST, because a transaction does not fit a query; it reads and keeps nothing. */
+  /* The pre-sign check: POST, because a transaction does not fit a query; it reads and keeps nothing. */
   "ward.check": () => import("@/app/api/v1/ward/check/route"),
 };
 

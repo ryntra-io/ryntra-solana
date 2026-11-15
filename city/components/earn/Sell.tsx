@@ -44,7 +44,7 @@ const solOf = (lamports: bigint) => digits(`${Number((Number(lamports) / 1e9).to
 const tokens = (amount: Amount) => Number(amount.units) / 10 ** amount.decimals;
 
 /**
- * Sell Higher · Buy Lower · the Wheel (CITY-97): pick the side and the market, set your price and the amount, read the
+ * Sell Higher · Buy Lower · the Wheel: pick the side and the market, set your price and the amount, read the
  * one line, sign once. The order is the pool's own limit order: it fills only at your price or better and stays filled.
  * Prices per share follow the token's live multiplier; on the eve of a corporate action an order near the price waits.
  * Below the action, your orders: what filled, what it brought, take it back, or turn the Wheel in one tap.
@@ -138,7 +138,7 @@ export function Sell({ words }: { words: Words }) {
   const reserve = costs ? costs.lostLamports + costs.keptLamports : SOL_RESERVE_LAMPORTS;
   const held = heldFor(market, intent, holdings, reserve);
   const max = held !== null && held > 0n ? (sell && market.multiplier.current !== 1 ? amountTextShares(held, market) : amountText(held, sell ? market.asset.decimals : market.quote.decimals)) : null;
-  // The amount in dollars (CITY-190): the field shows dollars, the order stays in the coin, said once under the field.
+  // The amount in dollars: the field shows dollars, the order stays in the coin, said once under the field.
   const unit: AmountUnit = depositInDollars(market, intent) ? 'coin' : unitChosen;
   const typed = unit === 'usd' ? usdTyped : amount;
   const coinValue = Number(amount.replace(',', '.'));

@@ -24,7 +24,7 @@ import s from './settings.module.css';
 const SettingsWindow = dynamic(() => import('./SettingsWindow'), { ssr: false, loading: () => <div className={s.pending} aria-busy="true" /> });
 
 /**
- * Settings and the notification centre (CITY-87) in the city's one window frame (CITY-65): the window opens from the
+ * Settings and the notification centre in the city's one window frame: the window opens from the
  * avatar and the menu (`openSettings`), on a phone as the bottom sheet. Mounted once in `CityApp`, it also reads the
  * person's centre after the first paint, starts the sources that tell through it, and stands the banners.
  */
@@ -41,7 +41,7 @@ export function SettingsLayer({ onSound }: { onSound: (on: boolean) => void }) {
     hydrateFeed();
     setNotifyEnv({
       open: (tower) => standsInCity(tower) && openTower(tower),
-      // Earn's notes are about no tower: the computer's notification opens Earn's «Mine» (CITY-100).
+      // Earn's notes are about no tower: the computer's notification opens Earn's «Mine».
       openKind: (kind) => {
         if (EARN_OPEN && isEarnNoteKind(kind)) openEarn('mine');
       },

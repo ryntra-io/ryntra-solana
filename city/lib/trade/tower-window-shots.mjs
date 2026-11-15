@@ -1,4 +1,4 @@
-// The tower's one window (CITY-78) for review, at 390×844 and 1440×860 → <out>/window-<state>-<size>.jpg
+// The tower's one window for review, at 390×844 and 1440×860 → <out>/window-<state>-<size>.jpg
 //   node city/lib/trade/tower-window-shots.mjs [out] [baseUrl]      (npm run dev running)
 // A tower picked the way a tap picks it (the city's development hook), then: the one window, its Details, Buy, Sell
 // with the coin in the wallet, Sell without it, and Sell before a wallet. No keys: a stub wallet registers through the

@@ -71,7 +71,7 @@ export function Fx() {
       (u.uColor!.value as THREE.Color[])[b2]!.set(PALETTE.amber).multiplyScalar(3.6);
     }
 
-    // «Flashing effects» off (the feed's «Show on home», CITY-66): the sparks still fly, nothing flashes or pulses.
+    // «Flashing effects» off (the feed's «Show on home»): the sparks still fly, nothing flashes or pulses.
     // The camera's shake is held in the city's store for every caller.
     const flash = flashingOn();
 
@@ -118,7 +118,7 @@ export function Fx() {
       (u.uColor!.value as THREE.Color[])[b]!.copy(color).multiplyScalar(3.4);
       (u.uScale!.value as number[])[b] = 0.2;
       (u.uSpread!.value as number[])[b] = 0.22;
-      // Every caller's white flash (the run, the quarter) waits for «Flashing effects» (CITY-66).
+      // Every caller's white flash (the run, the quarter) waits for «Flashing effects».
       if (flash > 0 && flashingOn()) {
         const f = nextFlash.current++ % FLASHES;
         const mesh = flashes.meshes[f]!;

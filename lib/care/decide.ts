@@ -1,5 +1,5 @@
 /**
- * CITY-203 — what the agent does with a position it looks after, now. Pure: a snapshot of the position read from the
+ * What the agent does with a position it looks after, now. Pure: a snapshot of the position read from the
  * chain and the person's terms in, one action out. The policies (`./terms.ts`) hold what the agent may do at all; this
  * file only picks the moment, so that it neither churns the range nor pays a network fee for a claim worth less.
  *

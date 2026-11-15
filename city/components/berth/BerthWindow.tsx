@@ -41,7 +41,7 @@ const DOCKS = districtFrame('launch').files[0]!.src;
 const SKYLINE = districtFrame('market').files[0]!.src;
 
 /**
- * «Моя вежа» inside the window frame (CITY-141, CITY-168): the launch's head on a frame of our own docks — the one figure,
+ * «Моя вежа» inside the window frame: the launch's head on a frame of our own docks — the one figure,
  * what the wallet's part earned, and the days its tower has stood — the coin's price and holders as the engine reads
  * them, the two cards and the one amber action, «Забрати». The city frames the tower itself above the sheet. The three
  * streams by $1,000, what the claim takes pocket by pocket and the receipts sit behind «i».
@@ -358,7 +358,7 @@ function Strip({ rows, token }: { rows: readonly LaunchCabinetRow[]; token: stri
   const w = useWords(BERTH);
   const lang = useLang();
   const busy = useBerth((st) => st.busy);
-  // Two launches of one ticker read the same (CITY-243: two «$THUMB» tabs): each says its day, and its hour if need be.
+  // Two launches of one ticker read the same (two «$THUMB» tabs): each says its day, and its hour if need be.
   const marks = useMemo(
     () =>
       apart(
@@ -394,7 +394,7 @@ function DayRing({ count, lang }: { count: DayCount; lang: Lang }) {
   const passed = count.checks.filter((check) => check.state === 'alive').length;
   return (
     <div className={s.ringWrap}>
-      {/* What the ring counts, said beside it (CITY-243): it was only in the screen reader's words. */}
+      {/* What the ring counts, said beside it: it was only in the screen reader's words. */}
       <span className={s.ringWords} aria-hidden="true">
         <b className={s.display}>{w.ringSince}</b>
         <span>{count.next ? w.ringNext(count.next) : w.ringPassed(passed)}</span>
@@ -458,7 +458,7 @@ function RateTile({ stream, pair, lang, children }: { stream: Stream; pair: Read
 
 /**
  * «Народилась» and «Вийшла» on frames of our own city: the docks, then the skyline the tower joins. A card whose moment
- * came is one tap to share (CITY-145): the card is drawn from the same frame and the engine's figures; where it rests on
+ * came is one tap to share: the card is drawn from the same frame and the engine's figures; where it rests on
  * the chain sits behind «i».
  */
 function Card({ card, row, lang, making, onShare, label }: { card: BerthCard; row: LaunchCabinetRow; lang: Lang; making: boolean; onShare: (() => void) | null; label: string }) {
@@ -595,7 +595,7 @@ function ClaimDock({ row, review, wallet, network, open, unlisted, details, onDe
   useEffect(() => () => useBerth.getState().setBusy(false), []);
 
   const ready = claimReady(row, review);
-  // The network's fee against the sum, both in SOL (CITY-243): a show only — the claim is the engine's as built.
+  // The network's fee against the sum, both in SOL: a show only — the claim is the engine's as built.
   const solUsd = useCity((st) => solPrice(st.layout.towers.map((placed) => placed.tower)));
   const near = ready.can ? feeNear(pairLamports(ready.expectedRaw, row.pair, solUsd), ready.networkLamports) : null;
   const claim = async () => {

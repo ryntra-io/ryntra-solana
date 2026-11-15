@@ -1,7 +1,7 @@
 import { pl, words } from '../i18n/dict.ts';
 
 /**
- * The trade's own words outside the screens (CITY-79): what the formatters, the amount field, the stops, «My orders»,
+ * The trade's own words outside the screens: what the formatters, the amount field, the stops, «My orders»,
  * the engine's refusals and the trade's steps say. The screens' words are in `city/components/trade/words.ts`.
  */
 
@@ -431,13 +431,13 @@ export const QUOTE = words(
   },
 );
 
-/** The issuer's powers on the tower window (CITY-78): the tags, at most two words each, and «Details». */
+/** The issuer's powers on the tower window: the tags, at most two words each, and «Details». */
 export const ISSUER = words(
   { fixedSupply: 'Fixed supply', canMint: 'Can mint', noFreeze: 'No freeze', canFreeze: 'Can freeze', nobody: 'Nobody', notRead: 'Not read' },
   { fixedSupply: 'Фіксована емісія', canMint: 'Є емісія', noFreeze: 'Без заморозки', canFreeze: 'Є заморозка', nobody: 'Ніхто', notRead: 'Не прочитано' },
 );
 
-/** The Sell tab's one line when there is nothing to sell (CITY-78). */
+/** The Sell tab's one line when there is nothing to sell. */
 export const SELL_LINE = words(
   {
     connect: (coin: string) => `Connect a wallet to sell ${coin}.`,

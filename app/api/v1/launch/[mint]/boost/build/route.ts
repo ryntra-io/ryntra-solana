@@ -11,7 +11,8 @@ export const dynamic = "force-dynamic";
 export const maxDuration = 60;
 
 /**
- * `POST /api/v1/launch/{mint}/boost/build` the whole budget into Met Lock's escrow from the creator to the
+ * `POST /api/v1/launch/{mint}/boost/build` — a creator's campaign for buyers: the rules checked against the operator's
+ * bounds, and the commitment for the creator to sign — the whole budget into Met Lock's escrow from the creator to the
  * creator, unlocking when the campaign and its hold are over, which nobody may cancel or redirect. The creator signs
  * first; the escrow's fresh base key waits sealed for the submit. Ryntra takes 0.
  */

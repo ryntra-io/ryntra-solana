@@ -1,8 +1,7 @@
 /**
- * CITY-174 — the devnet venue: one Meteora DLMM pool's `swap2`, for the vault, its output straight to the person.
+ * The devnet venue: one Meteora DLMM pool's `swap2`, for the vault, its output straight to the person.
  *
- * Jupiter is not deployed on devnet, so the mandate's devnet pass buys through a DLMM pool directly, as CITY-136 did
- * (report §7): the same policy rules, the program pinned to DLMM and the pool to one address. DLMM takes the person's
+ * Jupiter is not deployed on devnet, so the mandate's devnet pass buys through a DLMM pool directly: the same policy rules, the program pinned to DLMM and the pool to one address. DLMM takes the person's
  * token account as `user_token_out`, so the output reaches her in the same instruction. Nothing here signs or sends.
  */
 
@@ -59,7 +58,7 @@ export async function dlmmBuy(
 }
 
 /**
- * CITY-175 — what `amount` of the pool's other token would bring back in the budget's token at the pool's price now:
+ * What `amount` of the pool's other token would bring back in the budget's token at the pool's price now:
  * the quote of selling exactly the coins the agent bought, no slippage taken off. Read only; nothing is built or sent.
  */
 export async function dlmmWorth(

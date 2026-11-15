@@ -9,7 +9,7 @@ import { buildConsentInput, cleanClientName, consentMessageText, consentStatemen
 import { CONNECTOR_SCOPES, IGNORED_SCOPES, connectorResource, isConnectorResource, isConnectorScope, type ConnectorScope } from "./metadata.ts";
 
 /**
- * The connector's authorization server: who may connect, and what a connection may do (CITY-154).
+ * The connector's authorization server: who may connect, and what a connection may do.
  *
  * The shape is the one Agent Control's hosted MCP proved in August (`lib/agent-control/oauth/server.ts`) — public
  * clients with PKCE S256, a token bound to the resource it was minted for, revocation read before expiry, nothing
@@ -404,7 +404,7 @@ export function createConnectorOAuthServer(store: GuardStore, options: Connector
     if ((params.code_challenge_method ?? "") !== "S256") return back("invalid_request", "PKCE with the S256 method is required.");
     if (!/^[A-Za-z0-9_-]{43,128}$/.test(challenge)) return back("invalid_request", "The code challenge is missing or malformed.");
     const resource = params.resource && params.resource.length > 0 ? params.resource : connectorResource(origin);
-    /* `/mcp` or the catalog's `/mcp/read` (CITY-170): the grant names the one it was asked for, and a token for one is
+    /* `/mcp` or the catalog's `/mcp/read`: the grant names the one it was asked for, and a token for one is
        refused at the other. */
     if (!isConnectorResource(origin, resource)) return back("invalid_target", "This server issues tokens for its own MCP endpoints only.");
     let scopes: ConnectorScope[];

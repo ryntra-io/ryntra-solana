@@ -1,4 +1,4 @@
-// The settings window and the notification centre for review (CITY-87) → <out>/settings-<state>-<size>.jpg.
+// The settings window and the notification centre for review → <out>/settings-<state>-<size>.jpg.
 //   npm run dev, then
 //   node city/lib/settings/shots.mjs [out=docs/shots/city-87] [baseUrl=http://localhost:3000]
 // With the switches as on production — NEXT_PUBLIC_RYNTRA_CITY_SPOT=open, NEXT_PUBLIC_RYNTRA_CITY_EXCHANGE=exit — and

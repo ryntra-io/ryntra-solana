@@ -13,7 +13,7 @@ import s from './beacon.module.css';
 const GLOW_REFRESH_MS = 60_000;
 
 /**
- * Beacons in the city (CITY-72): the device's beacons load at once, the account's follow a wallet sign-in, every
+ * Beacons in the city: the device's beacons load at once, the account's follow a wallet sign-in, every
  * market read of the city checks them, and the editor stands over the tower card while it is open. A run owns the
  * whole screen. Escape closes the editor before anything else.
  */

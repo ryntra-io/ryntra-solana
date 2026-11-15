@@ -5,7 +5,7 @@ import { LIGHT } from '../skyline/light';
 
 /**
  * Night sky on a sphere that follows the camera: violet gradient, a thin amber horizon, stars, the moon and a layer
- * of clouds (CITY-56) whose bellies the city lights amber and whose edges the moon silvers. The moon's direction is
+ * of clouds whose bellies the city lights amber and whose edges the moon silvers. The moon's direction is
  * the skyline's moonlight (`skyline/light.ts`).
  */
 export function createSkyMaterial() {

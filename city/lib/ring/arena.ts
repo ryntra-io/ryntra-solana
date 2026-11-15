@@ -7,7 +7,7 @@ import { RING_DUELS_OPEN, useDuels } from './duels.ts';
 import { ringStore } from './store.ts';
 
 /**
- * The Arena's Ring window (CITY-217): three tabs over one window — «Fight», «Agent», «Rating». Opened by the Arena's
+ * The Arena's Ring window: three tabs over one window — «Fight», «Agent», «Rating». Opened by the Arena's
  * «Ring» door and by the Agents' «Hangar». It reads the person's own agents once it opens (`/api/ring/mine`), so the
  * fight knows whose agent stands in the left corner without a visit to a garage; a first agent is made right here, in
  * the account's own garage in the Arena (no quarter, no level first); the board of a format comes from
@@ -64,7 +64,7 @@ export function fighterOf(mine: MineRead): AgentView | null {
 }
 
 /**
- * What the Ring's one button asks of a person who is not signed in (CITY-239). A wallet that is already connected is
+ * What the Ring's one button asks of a person who is not signed in. A wallet that is already connected is
  * not asked to «Connect wallet» again: what is left is the sign-in message, and the button says so — the same sign-in
  * the wallet's own panel offers (`cityAccount.begin`). With no wallet connected the words are as they were.
  */
@@ -148,7 +148,7 @@ export function createArenaStore(deps: ArenaDeps = {}) {
       try {
         const ok = (await deps.signIn?.().catch(() => false)) ?? false;
         // A «no» in the wallet, or a sign-in that failed, changed nothing: the button says «Sign in» again at once
-        // (CITY-240 — it stayed «Check your wallet», switched off, for as long as «my agent» took to answer). The read
+        // (it stayed «Check your wallet», switched off, for as long as «my agent» took to answer). The read
         // still goes, behind the button: a sign-in that landed another way is seen.
         if (!ok) {
           set({ signing: false });

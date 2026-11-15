@@ -1,6 +1,6 @@
 -- Ryntra City: the living world on the server.
 --
--- PREPARED 2026-10-27 as a file only. Not applied to any Supabase project:
+-- PREPARED 2026-10-27 as a file only. Not applied to any Supabase project.
 -- Checked on a throwaway local PostgreSQL 16 with the Supabase roles and a
 -- hostile default-grant posture (see `lib/world/sql.test.mjs`).
 --

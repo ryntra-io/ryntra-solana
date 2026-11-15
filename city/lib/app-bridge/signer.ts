@@ -70,7 +70,7 @@ export function externalSigner(bridge: AppBridge): ExternalSigner {
   const holds = (address: string) => bridge.wallet()?.address === address;
 
   const signTransactions: ExternalSigner['signTransactions'] = async ({ address, unsignedWireBase64 }) => {
-    // The app takes four at a time (CITY-213): a plan of more is signed in two windows, and nothing is sent before the last.
+    // The app takes four at a time: a plan of more is signed in two windows, and nothing is sent before the last.
     const signed: string[] = [];
     let at = 0;
     do {

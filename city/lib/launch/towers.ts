@@ -44,7 +44,7 @@ export type LaunchTower = Readonly<{
   flow: TowerFlow | null;
   /** Its flow's first read is on its way and the city has not shown it yet: a graduated tower waits for it (`silhouetteOf`). */
   awaitingFlow: boolean;
-  /** The creator's first purchase is under the creator's lock, as the engine's list says (CITY-169); absent — not read. */
+  /** The creator's first purchase is under the creator's lock, as the engine's list says; absent — not read. */
   creatorLocked?: boolean;
   /** The creator sold some of it, as the engine's list says; null — their trades were not read whole; absent — not read. */
   creatorSold?: boolean | null;
@@ -69,7 +69,7 @@ export function sameOriginImage(url: string | null | undefined): string | null {
 
 /**
  * A launch as a tower of the city: the figures the engine read, zero for the ones it did not — and those named in
- * `unread`, so a screen writes «Not measured» for them, never the zero (CITY-73).
+ * `unread`, so a screen writes «Not measured» for them, never the zero.
  */
 export function towerOf(launch: LaunchTower): Tower {
   const unread: TowerFigure[] = ['price', 'change5m', 'change1h', 'change24h', 'volume24h', 'traders1h', 'organic'];

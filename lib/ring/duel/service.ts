@@ -1,23 +1,23 @@
 /**
- * Duels as the Ring runs them for people (CITY-51): start one, watch it round by round, replay it when it is over.
- * Everything a duel decides comes from the pure pieces of this folder — the engines, the one harness, the judge of
- * CITY-68; this file only holds them together with the store, the agents' brains and the clock.
+ * Duels as the Ring runs them for people: start one, watch it round by round, replay it when it is over.
+ * Everything a duel decides comes from the pure pieces of this folder — the engines, the one harness,
+ * the judge; this file only holds them together with the store, the agents' brains and the clock.
  *
  * - You start a duel with your own agent against another owner's agent of your class, or against a house sparring
  *   agent (practice: nothing rated). Two house agents make an exhibition anyone signed in may start. Asked for a
- *   `rival`, the server draws one (CITY-217): another owner's agent of your class, closest to your rating.
+ *   `rival`, the server draws one: another owner's agent of your class, closest to your rating.
  * - Each agent plays at most `DUELS_PER_AGENT_DAY` duels a day and each account starts at most
  *   `STARTS_PER_ACCOUNT_DAY`: a duel spends the agents' own model budgets, so nobody drains another's key.
- * - The models of a UTC day's duels spend at most the deployment's ceiling (`capMicroUsd`, CITY-217): a live duel
+ * - The models of a UTC day's duels spend at most the deployment's ceiling (`capMicroUsd`): a live duel
  *   holds the most its seats may spend, a finished one counts what they spent; a start past it waits for tomorrow.
  *   The limits and the ceiling are checked and the duel written in one step (`DuelStore.open`).
- * - An agent with no key cannot play — the Ring is quiet until the server makes keys (CITY-50).
+ * - An agent with no key cannot play — the Ring is quiet until the server makes keys.
  * - A Market Replay needs real bars from the market-data gateway; without them it does not start.
  * - The duel runs after the answer (`background`); people read it with `get` as its rounds resolve. A duel whose
  *   harness stopped answering (the instance went away) is void once a reader finds it stalled — nobody's fault,
  *   nothing rated, play it again — so no window ever waits on it.
  *
- * No money: no entry, no stake, no pool, no prize — `money: "none"` in every rule set (CITY-46 and CITY-52 are later).
+ * No money: no entry, no stake, no pool, no prize — `money: "none"` in every rule set.
  */
 
 import type { Candle } from "../../bots/backtest/candles.ts";
@@ -45,7 +45,7 @@ export const DUELS_PER_AGENT_DAY = 20;
 export const STARTS_PER_ACCOUNT_DAY = 30;
 const DAY = 86_400_000;
 
-/** The opponent that asks the server to draw a rival of your class (CITY-217). */
+/** The opponent that asks the server to draw a rival of your class. */
 export const RIVAL = "rival";
 /** How many of the closest rivals one is drawn from, so the same two do not meet every time. */
 const RIVAL_POOL = 3;

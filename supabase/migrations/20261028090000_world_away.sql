@@ -1,6 +1,6 @@
--- Ryntra City: «While you were away» (CITY-18), on top of `world_v1`.
+-- Ryntra City: «While you were away», on top of `world_v1`.
 --
--- PREPARED 2026-10-27 as a file only. Not applied to any Supabase project:
+-- PREPARED 2026-10-27 as a file only. Not applied to any Supabase project.
 -- Checked on a throwaway local PostgreSQL 16 with the Supabase roles and a
 -- hostile default-grant posture, after `world_v1` (see `lib/world/sql.test.mjs`
 -- and `lib/world/store.test.mjs`).

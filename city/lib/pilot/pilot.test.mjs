@@ -1,4 +1,4 @@
-/* CITY-204 — the money autopilot in the city: the sentence in both languages, what it never takes from the other readers,
+/* The money autopilot in the city: the sentence in both languages, what it never takes from the other readers,
    the line's door, and «Go live · sign once» on a stand-in server and wallet. No network, no key. */
 import assert from "node:assert/strict";
 import test from "node:test";

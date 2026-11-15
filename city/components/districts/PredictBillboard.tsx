@@ -20,7 +20,7 @@ const TEX_H = Math.round((TEX_W * BOARD.height) / BOARD.width);
 
 /**
  * The Predictions district in the city, once it is open: a billboard on its own islet over the water, its face to the
- * city. Scenery with live figures (CITY-81): it shows the day's most traded market with its chance, from the same read
+ * city. Scenery with live figures: it shows the day's most traded market with its chance, from the same read
  * the window uses (one store, one request in flight), and the district's name until the first read lands. Predictions
  * has one door, «Predict» in the dock, so a tap on the billboard opens nothing and passes on like a tap on the water.
  */

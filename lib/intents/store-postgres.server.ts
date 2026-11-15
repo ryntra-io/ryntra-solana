@@ -1,5 +1,5 @@
 /**
- * Prepared actions on Postgres (CITY-161): the one table of `db/migrations/20261031120000_city_161_intents.sql`, in
+ * Prepared actions on Postgres: the one table of `db/migrations/20261031120000_city_161_intents.sql`, in
  * the database `DATABASE_URL` names — the same one `guard_objects`, the team and the developer tables live in, over
  * the same verified-TLS pool settings (`postgresGuardPoolConfig`). Requests never run DDL: the shape is checked once
  * per process with a `LIMIT 0` read, and until the migration has run every call throws
@@ -67,7 +67,7 @@ export function createPostgresIntentStore(options: Readonly<{ connectionString: 
       ready = null;
       /* 42P01 undefined_table, 42703 undefined_column: the migration has not run (or not this one). */
       const code = codeOf(error);
-      if (code === "42P01" || code === "42703") throw new IntentStoreUnavailable("NOT_PROVISIONED", "The intents table is not provisioned; apply the CITY-161 migration first.");
+      if (code === "42P01" || code === "42703") throw new IntentStoreUnavailable("NOT_PROVISIONED", "The intents table is not provisioned; apply the intents migration first.");
       throw new IntentStoreUnavailable("UNREACHABLE", "The intents store did not answer.");
     });
     return ready;

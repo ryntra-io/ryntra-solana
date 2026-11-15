@@ -3,7 +3,7 @@ import type { Scope } from '../scope.ts';
 import type { FindingView, MyAgent, OrderDetail, OrderView, RunFeed, TakeView, TurnRecord } from './contract.ts';
 
 /**
- * What Hack's windows show, worked out from the routes' views (CITY-227): an order's phase and time left, its scope in
+ * What Hack's windows show, worked out from the routes' views: an order's phase and time left, its scope in
  * one name, a finding's level and where it stands, the run's journal as steps a person reads, and the board. Pure — no
  * words, no clock, no store — so every line is tested (`view.test.mjs`); the windows put the words on it.
  *
@@ -80,7 +80,7 @@ const BODIES = ['engineer', 'tactician', 'scout', 'fighter', 'guardian'] as cons
 /**
  * How an agent on an order looks: the person's own agent by its name and body; anyone else's by the Ring's way of
  * naming (a body and four characters of its id — no free text anyone reads), the attacker as an engineer and the
- * defender as a tactician until the characters of CITY-228 stand in.
+ * defender as a tactician until the characters stand in.
  */
 export type Look = { readonly name: string; readonly archetype: string; readonly mine: boolean };
 
@@ -139,7 +139,7 @@ export function canReject(finding: FindingView, order: Pick<OrderView, 'protocol
   return !!me && me === order.protocol && order.status !== 'settled' && finding.status === 'needs_review' && !finding.sealed;
 }
 
-/** Findings newest first. */
+/** Findings newest first; the ones that wait for the protocol owner's word on top for the owner. */
 export function sortFindings(findings: readonly FindingView[], ownerView: boolean): FindingView[] {
   return [...findings].sort((a, b) => {
     if (ownerView) {

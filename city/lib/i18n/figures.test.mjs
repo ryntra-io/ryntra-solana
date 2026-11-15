@@ -3,7 +3,7 @@ import test from "node:test";
 
 import { fieldText, fieldValue, plainFigure, shortFigures } from "./figures.ts";
 
-// CITY-150: the operator's pass on the Seeker — «1,2e-7 BTC» in the Exchange's history, «0,099796891 SOL» in Money's.
+// The operator's pass on the Seeker — «1,2e-7 BTC» in the Exchange's history, «0,099796891 SOL» in Money's.
 
 test("a figure is never written with an exponent", () => {
   assert.equal(plainFigure(1.2e-7), "0.00000012");

@@ -8,7 +8,7 @@ import { ChevronGlyph } from './glyphs';
 import s from './pages.module.css';
 
 /**
- * The pieces every page of the city is made of (CITY-157). A page's contents are written once: inside a window of the
+ * The pieces every page of the city is made of. A page's contents are written once: inside a window of the
  * city (a window on a computer, the bottom sheet on a phone) and as a page of its own at its address. `Where` tells a
  * piece which one it stands in, so a link to another page opens that page's window in the city, or goes to its
  * address on a page. At its address a page stands in the documentation's frame (`doc`), whose head is plain words.

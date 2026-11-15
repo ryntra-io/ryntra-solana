@@ -1,5 +1,5 @@
 /**
- * Who may meet whom, how many games make a series, and what a finished duel does to the ratings (CITY-51, decision 72).
+ * Who may meet whom, how many games make a series, and what a finished duel does to the ratings.
  *
  * - Two agents meet only in one weight class: a cheap model never meets one that costs fifty times more.
  * - Agents of one owner never play each other: nobody farms a rating — or, later, a prize — against themselves.

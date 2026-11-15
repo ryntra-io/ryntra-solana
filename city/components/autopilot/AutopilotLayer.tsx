@@ -19,14 +19,14 @@ import i from '../instruct/instruct.module.css';
 
 // The card loads the first time it opens: the city's first frame carries none of it.
 const AutopilotCard = dynamic(() => import('./AutopilotCard'), { ssr: false, loading: () => <div className={i.pending} aria-busy="true" /> });
-// «While you were away» for the agent (CITY-194): loaded only once there is something to tell.
+// «While you were away» for the agent: loaded only once there is something to tell.
 const AgentAway = dynamic(() => import('./AgentAway'), { ssr: false });
 
 const renderCard = () => <AutopilotCard />;
 const closeCard = () => useAutopilot.getState().close();
 
 /**
- * The agent on its word in the city's one window frame (CITY-175): «trade 1 SOL a day» or «launch me a token» from the
+ * The agent on its word in the city's one window frame: «trade 1 SOL a day» or «launch me a token» from the
  * command line or «Ask Ryntra» opens it. A run owns the whole screen and a clip being filmed keeps the frame clean,
  * unless the wallet is mid-way, which the frame holds. Shut unless `NEXT_PUBLIC_RYNTRA_CITY_AUTOPILOT=devnet`.
  */
@@ -57,7 +57,7 @@ export function AutopilotLayer() {
 }
 
 /**
- * The agent's day on the person's return (CITY-194): the wallet's mandate read once with when this browser last saw it,
+ * The agent's day on the person's return: the wallet's mandate read once with when this browser last saw it,
  * and the card «While you were away» when it traded since. It waits for the quarter's own reel, a run and a clip.
  */
 function AgentReturn({ quiet }: { quiet: boolean }) {

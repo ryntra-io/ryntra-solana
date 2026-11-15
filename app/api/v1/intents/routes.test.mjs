@@ -1,5 +1,5 @@
 /*
- * `/api/v1/intents` end to end through the route files themselves (CITY-161), on the stand's memory store
+ * `/api/v1/intents` end to end through the route files themselves, on the stand's memory store
  * (`RYNTRA_INTENTS=memory`): an agent prepares a transfer with no wallet and no key, the person's city reads it,
  * claims it from Ryntra's own origin, sends the receipt, and the agent reads the signature back; the link never opens a
  * second time. Each route only hands the request to `lib/intents` (tested step by step in `lib/intents/*.test.mjs`).

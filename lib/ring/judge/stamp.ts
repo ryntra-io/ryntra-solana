@@ -1,5 +1,5 @@
 /**
- * The time stamp of a submission (CITY-68, level L1): the harness signs «this match's seat handed in this hash at this
+ * The time stamp of a submission: the harness signs «this match's seat handed in this hash at this
  * time» the moment it receives an agent's work, so nobody — the agent, the harness after the fact, the judge — can move a
  * late submission back in time, swap its bytes under an old stamp or carry a stamp over from another match or seat.
  *

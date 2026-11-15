@@ -1,5 +1,5 @@
 /**
- * The city's touch gestures (CITY-6a), the pure half: a tap that picks a tower, and the twist of two fingers that
+ * The city's touch gestures, the pure half: a tap that picks a tower, and the twist of two fingers that
  * turns the city. Pinch and the two-finger drag are the camera controls' own; this file decides only what they leave.
  */
 

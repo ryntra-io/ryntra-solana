@@ -3,7 +3,7 @@ import type { RingState } from '../../../lib/launch/flow/counts.ts';
 import type { CheckState } from '../../../lib/mission-control/types.ts';
 
 /**
- * Silhouette and rings (L7, CITY-144; `docs/research/ryntra-launch-2026-10-29/SPEC.md` §4 and §6).
+ * Silhouette and rings (L7; `docs/research/ryntra-launch-2026-10-29/SPEC.md` §4 and §6).
  *
  * **A graduation means something.** A launch's tower joins the city's skyline only when its coin moved to its pool on
  * the chain *and* had `minBuyers` independent buyers fill its curve *and* spent `minCurveMinutes` on that curve.
@@ -25,7 +25,8 @@ import type { CheckState } from '../../../lib/mission-control/types.ts';
 /**
  * The thresholds: display only.
  *
- * ⚠ PROPOSAL — the numbers are the session's proposal from SPEC §4 (≥ 50 buyers, ≥ 15 min). `ownerWord` turns true only with it.
+ * ⚠ PROPOSAL — the numbers are the session's proposal from SPEC §4 (≥ 50 buyers, ≥ 15 min).
+ * `ownerWord` turns true only with it.
  */
 export const SILHOUETTE_RULE = Object.freeze({
   version: 'silhouette-0.1.0',
@@ -53,7 +54,7 @@ export type TowerFlow = Readonly<{
   /** The count is a floor: some buyers' starts or trades were not read. */
   atLeast: boolean;
   survival: readonly [RingProof, RingProof, RingProof];
-  /** What the creator's wallet bought here, of the supply, when every trade of it was read; null — not read whole (CITY-169). */
+  /** What the creator's wallet bought here, of the supply, when every trade of it was read; null — not read whole. */
   creatorBoughtBps?: number | null;
 }>;
 

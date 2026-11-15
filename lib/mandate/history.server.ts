@@ -1,5 +1,5 @@
 /**
- * CITY-193 — a strategy tested before a lamport moves: on history, or on paper since a moment (`./backtest.ts`). The
+ * A strategy tested before a lamport moves: on history, or on paper since a moment (`./backtest.ts`). The
  * candles are the city's own chart's (`lib/spot/candles.server.ts`: the deepest pool, in dollars, GeckoTerminal's public
  * OHLCV), read with its cache and its rate discipline; a coin without them is not tested — never on bars from somewhere
  * else, never on a guess.

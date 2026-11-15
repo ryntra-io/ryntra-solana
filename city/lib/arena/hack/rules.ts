@@ -1,5 +1,5 @@
 /**
- * The rules over the judge (CITY-223, over CITY-68): one decision on one finding, by fixed rules, in a fixed order, the
+ * The rules over the judge: one decision on one finding, by fixed rules, in a fixed order, the
  * same on every machine. The judge (`lib/ring/judge`) already says whether a sandbox run reproduced the fault in the
  * fork — PASS / FAIL / BLOCKED / NEEDS_REVIEW. These rules sit on top of it and answer the Hack questions the judge
  * does not:
@@ -14,9 +14,8 @@
  *
  * The checks run in a fixed order and the first failure decides, so a forged permission is caught before a replay is
  * trusted and an out-of-scope target before severity is read. Determinism is the basis of the verdict: only a
- * deterministic proof (a replay or hidden tests — the «verified» class, CITY-68) can make a counted, reward-eligible
- * finding; a model's score (the «show» class) describes a finding and never counts or pays it. No money moves here —
- * `payable` is only «the rules would allow a reward», and the reward pool and payout are CITY-229.
+ * deterministic proof (a replay or hidden tests — the «verified» class) can make a counted, reward-eligible
+ * finding; a model's score (the «show» class) describes a finding and never counts or pays it.
  *
  * Pure: no store, no clock, no network, no keys, no money.
  */
@@ -59,7 +58,7 @@ export const MIN_REWARDED: Severity = "low";
 
 /** The judge's verdict on the sandbox run, and whether it was decided by code. */
 export type HackProof = {
-  /** The judge's verdict (CITY-68) on the run that proves — or fails to prove — the fault. */
+  /** The judge's verdict on the run that proves — or fails to prove — the fault. */
   readonly judgement: Judgement;
   /**
    * `true` when a replay or hidden tests decided it (the «verified» class): deterministic, and the only kind that can
@@ -79,7 +78,7 @@ export type Assessment = {
   readonly first: boolean;
   /** The key that makes two findings the same vulnerability. */
   readonly dedupeKey: string;
-  /** The rules would allow a reward: counted, first, and at least `low`. Money itself is CITY-229. */
+  /** The rules would allow a reward: counted, first, and at least `low`. */
   readonly payable: boolean;
   readonly detail: string;
 };

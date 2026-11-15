@@ -1,5 +1,5 @@
 /**
- * Ryntra's tools for the bots hub (CITY-133, B3, bots spec «Помічник Ryntra»):
+ * Ryntra's tools for the bots hub:
  *
  * - `bots.weather` — the market's weather for bots and how each bot fits it;
  * - `bots.suggest` — one bot and one alternative for a horizon and an amount, three reasons each, with the cost check;

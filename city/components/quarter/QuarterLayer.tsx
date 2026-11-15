@@ -69,7 +69,7 @@ export function QuarterLayer({ children, onSound }: { children: ReactNode; onSou
 }
 
 /**
- * The crew follows the quarter (CITY-20): read when a place is mine, forgotten when it is not, the sheet closed when a
+ * The crew follows the quarter: read when a place is mine, forgotten when it is not, the sheet closed when a
  * plot is picked or the city comes back; and an invite in the address (`?crew=CODE`) is read once, then taken out of
  * the address so a reload or a shared screenshot does not carry it.
  */

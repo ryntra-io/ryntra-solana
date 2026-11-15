@@ -1,5 +1,5 @@
 /**
- * Hack's runs in the database (CITY-238): one call to one `public.hack_run_*` function per step, each gated by the app
+ * Hack's runs in the database: one call to one `public.hack_run_*` function per step, each gated by the app
  * secret and each one transaction under its lock (`supabase/migrations/20261110120000_hack_v2_runs.sql`). Every server
  * instance reads the same runs, so a run started on one instance is watched from another, and the day's ceiling on
  * Hack's models is checked and written under one lock.

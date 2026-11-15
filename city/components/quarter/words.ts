@@ -1,7 +1,7 @@
 import { pl, words } from '../../lib/i18n/dict.ts';
 
 /* The quarter's screens: the wallet in the top bar, the Arrivals card, build mode and a plot's picker, the sheet of a
-   building on the engine and its small sign, «While you were away» and free building (CITY-79). Words that change by
+   building on the engine and its small sign, «While you were away» and free building. Words that change by
    the kind of object or piece are functions of that kind, so each language keeps its own cases. */
 
 const EN_OBJECT: Readonly<Record<string, string>> = {
@@ -425,7 +425,7 @@ const UK_COLOUR: Readonly<Record<string, string>> = {
   pearl: 'Перловий',
 };
 
-/* The crew (CITY-20): the sheet that starts a street, finds one by its code, joins it behind an invite and, in a crew,
+/* The crew: the sheet that starts a street, finds one by its code, joins it behind an invite and, in a crew,
    invites, gives to the headquarters and leaves; and the sign over each crew's headquarters. */
 export const CREW = words(
   {

@@ -1,6 +1,6 @@
 import { words } from '../../lib/i18n/dict.ts';
 
-/** The tower chart window's words (CITY-79): its head, the interval row, the facts and its one action. */
+/** The tower chart window's words: its head, the interval row, the facts and its one action. */
 export const CHART = words(
   {
     chart: 'Chart',

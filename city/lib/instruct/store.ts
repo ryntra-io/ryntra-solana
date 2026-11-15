@@ -17,13 +17,13 @@ import type { Instruction } from './types.ts';
 import { INSTRUCT_LINES } from './words.ts';
 
 /**
- * The agent's card and «My instructions» (CITY-176). The card holds one instruction read from a sentence; the taps fill
+ * The agent's card and «My instructions». The card holds one instruction read from a sentence; the taps fill
  * what was missing; the engines say the price, the coin's decimals and the fee; and «Sign» hands the exact request to
  * the engine that already does it — the person's wallet signs, Ryntra holds nothing and signs nothing for them:
  *
  * - a limit: the spot limits engine builds the Jupiter Trigger V1 order, the card shows its fee, the wallet signs the
  *   order once (`../trade/limits.ts`, the same calls the Spot ticket makes);
- * - a stop: the wallet proves itself with one message, the engine keeps the stop and watches it (CITY-149);
+ * - a stop: the wallet proves itself with one message, the engine keeps the stop and watches it;
  * - a regular purchase: the wallet proves itself with one message, the engine keeps the rule and reminds on schedule;
  *   every purchase is the wallet's own signature.
  *
@@ -105,7 +105,7 @@ export const isLive = (live: Live): boolean => !['ended', 'filled', 'unknown'].i
 
 export type InstructEnv = Readonly<{
   open: boolean;
-  /** Stops kept by the engine (CITY-149); shut, the card says stops are coming and sets none. */
+  /** Stops kept by the engine; shut, the card says stops are coming and sets none. */
   stopsEngine: boolean;
   limits: LimitsApi;
   stops: StopsApi;

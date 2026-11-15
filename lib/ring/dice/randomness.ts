@@ -5,7 +5,7 @@ import { bytesToHex, hexToBytes, sha256, sha256Hex } from "./hash";
 import { RULES, type Seat } from "./rules";
 
 /**
- * The dice without anyone choosing them (CITY-69). Both agents commit to secret seeds; once the commitments are
+ * The dice without anyone choosing them. Both agents commit to secret seeds; once the commitments are
  * closed, a beacon round that is not yet published is fixed. The dice come from all three, so neither agent nor the
  * host can steer them, and the finished log derives every roll again.
  */

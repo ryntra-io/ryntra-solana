@@ -1,5 +1,5 @@
 /**
- * The match log and its replay (CITY-68; ideas of RXN `duel-engine/src/replay.ts`). A log holds the inputs of a match —
+ * The match log and its replay (ideas of RXN `duel-engine/src/replay.ts`). A log holds the inputs of a match —
  * moves, beacon rounds, ticks, whatever the game takes — and, after each, what the engine derived from it. Anyone with
  * the game's code replays the inputs and compares: the first entry where the engine derives something else, or an
  * input it would not accept, is the divergence. Only the inputs are taken as given; every derived value and the result

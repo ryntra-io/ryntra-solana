@@ -1,5 +1,5 @@
 /**
- * CITY-197 — the agent's honest result: what it did for the person after every fee, and beside it what plain holding
+ * The agent's honest result: what it did for the person after every fee, and beside it what plain holding
  * would have done. Pure, so the card, the daily report, the cron and the tests say the same figures.
  *
  * After every fee means:

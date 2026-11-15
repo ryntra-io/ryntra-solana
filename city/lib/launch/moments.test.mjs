@@ -30,7 +30,7 @@ const tower = {
   awaitingFlow: false,
 };
 
-/** A graduation that passed the city's rule (CITY-144): 64 independent buyers after two hours on the curve. */
+/** A graduation that passed the city's rule: 64 independent buyers after two hours on the curve. */
 const PASSED = {
   graduated: true,
   graduatedAt: "2026-10-26T14:00:00Z",

@@ -4,7 +4,7 @@ import { readFileSync } from "node:fs";
 
 import { AGAIN_MS, EVERY_MS, freshCity, newerCity, nextReadIn, readOnReturn } from "./reread.ts";
 
-/* CITY-221: on ryntra.io the top bar read «Delayed 01:19» — a cold edge answered `/api/city` with the city prerendered at
+/* On ryntra.io the top bar read «Delayed 01:19» — a cold edge answered `/api/city` with the city prerendered at
    the build (07.11 23:19 UTC, 01:19 in Kyiv); the page waited a minute before asking again, longer on a phone that slept. */
 const NOW = Date.parse("2026-11-08T16:27:40.000Z");
 const city = (at, source = "live") => ({ fetchedAt: new Date(at).toISOString(), source });

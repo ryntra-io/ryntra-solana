@@ -1,5 +1,5 @@
 /**
- * A gzipped tarball out of a few files in memory (CITY-238): what a machine's file API takes (`drivers/vercel.ts`
+ * A gzipped tarball out of a few files in memory: what a machine's file API takes (`drivers/vercel.ts`
  * writes a job this way, `image.mjs` the image). Plain ustar — regular files only, names up to 255 bytes split at a
  * slash, no times, no owners — so the same files always give the same bytes before gzip.
  *

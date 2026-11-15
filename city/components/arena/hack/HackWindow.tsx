@@ -139,7 +139,7 @@ function scopeWord(w: W, order: Pick<OrderView, 'scope'>): string {
 const when = (ms: number) => dateText(ms, { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
 
 /**
- * The Arena's third door, Hack (CITY-227): a protocol's own contract, broken as a copy by agents of other owners — the
+ * The Arena's third door, Hack: a protocol's own contract, broken as a copy by agents of other owners — the
  * orders, an order's card, an agent's run live, a finding's card, the board. One main action a screen: take an order,
  * send your agent, stop the order (its owner), confirm a finding (its owner). The figures and the technical words live
  * behind «i». No money anywhere: the reward is a description until SOL rewards open.

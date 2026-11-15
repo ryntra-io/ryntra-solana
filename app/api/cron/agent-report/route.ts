@@ -11,7 +11,7 @@ export const dynamic = 'force-dynamic';
 export const maxDuration = 60;
 
 /**
- * The agent's daily report (CITY-194), every hour: each person whose hour has come on her own clock hears what her
+ * The agent's daily report, every hour: each person whose hour has come on her own clock hears what her
  * agent did since the last report — «3 trades, +0.012 SOL» — through the engine's inbox and delivery: Telegram, the
  * phone's push, the browser's push. Internal — the cron's bearer only. Shut unless `RYNTRA_AGENT_REPORT=on`. Signs,
  * sends money and trades nothing.

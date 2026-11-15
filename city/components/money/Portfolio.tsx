@@ -147,7 +147,7 @@ function RowLine({ row, place }: { row: Row; place: PlaceKind }) {
   );
 }
 
-/** A place that did not answer: one quiet line and a quiet «Try again» — the rest of the portfolio stands (CITY-209). */
+/** A place that did not answer: one quiet line and a quiet «Try again» — the rest of the portfolio stands. */
 function Unread({ reread }: { reread: () => void }) {
   const pw = useWords(PORTFOLIO);
   const w = useWords(MONEY);
@@ -245,7 +245,7 @@ function Rewards({ owner }: { owner: string }) {
 }
 
 /**
- * Portfolio (CITY-206): where every dollar of the wallet is — the wallet's coins, savings, pools, agents, orders and
+ * Portfolio: where every dollar of the wallet is — the wallet's coins, savings, pools, agents, orders and
  * what is left on Phoenix — with the total, the day's move and one bar of where it sits; each row carries the one action
  * that takes the money out, through the card that already signs it. Below, the rewards. Every figure is the engine's;
  * what was not read is «—», never zero, and «Details» says why.

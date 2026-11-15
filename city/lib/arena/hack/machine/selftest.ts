@@ -1,5 +1,5 @@
 /**
- * One real run of each training range on a machine with no network (CITY-238): what `check.mjs` plays from a
+ * One real run of each training range on a machine with no network: what `check.mjs` plays from a
  * developer's computer and what the deployed server plays on its own machine when the operator asks
  * (`GET /api/arena/hack/machine`, `../store/server.ts`) — before the door opens to people.
  *

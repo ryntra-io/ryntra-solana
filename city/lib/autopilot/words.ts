@@ -1,7 +1,7 @@
 import { pl, words } from '../i18n/dict.ts';
 
 /**
- * The agent on its word (CITY-175), English and Ukrainian. One headline, one figure, one button; the limits in one line;
+ * The agent on its word, English and Ukrainian. One headline, one figure, one button; the limits in one line;
  * the rest behind «Details». No promise of profit anywhere: what the agent earned is shown from its own trades.
  */
 export const AUTOPILOT = words(
@@ -9,10 +9,10 @@ export const AUTOPILOT = words(
     title: 'Your agent',
     kicker: 'Agent',
     // Trading.
-    /** CITY-216: the day's budget as she said it — never one trade's size. */
+    /** The day's budget as she said it — never one trade's size. */
     trades: (perDay: string) => `Trades up to ${perDay} SOL a day for you`,
     tradesAsk: 'Trades for you within a budget',
-    /** CITY-216: one trade's size, apart from the day's budget; a strategy's buys are a ceiling («up to»). */
+    /** One trade's size, apart from the day's budget; a strategy's buys are a ceiling («up to»). */
     size: (perTrade: string, buys: number, upTo: boolean) => `${perTrade} SOL a trade · ${upTo ? 'up to ' : ''}${buys} ${buys === 1 ? 'buy' : 'buys'} a day`,
     budget: 'Budget a day',
     amount: (value: string) => `${value} SOL`,
@@ -33,7 +33,7 @@ export const AUTOPILOT = words(
     earnedNone: 'First trade in a few minutes',
     tradesDone: (n: number) => `${n} ${n === 1 ? 'trade' : 'trades'}`,
     spentBought: (spent: string, worth: string) => `${spent} SOL in · worth ${worth} SOL now`,
-    /** CITY-197: the result after every fee, plain holding beside it; the fees counted behind «Details». */
+    /** The result after every fee, plain holding beside it; the fees counted behind «Details». */
     earnedNet: 'Earned after fees',
     netLine: (spent: string, hold: string | null) => (hold ? `${spent} SOL in · holding ${hold}` : `${spent} SOL in`),
     factNet: "Every result is after all fees: Ryntra's fee on each buy and on selling back, and the SOL you put in for network fees",
@@ -46,7 +46,7 @@ export const AUTOPILOT = words(
     share: 'Share',
     postOnX: 'Post on X',
     saved: 'Card saved — X is open',
-    // CITY-70: the mission — what the agent is doing now — and its three controls.
+    // The mission — what the agent is doing now — and its three controls.
     missionConfirming: 'Confirming a trade',
     missionFrozen: 'Frozen',
     missionPaused: 'Paused',
@@ -98,7 +98,7 @@ export const AUTOPILOT = words(
     noteRefused: 'Stopped before your wallet — nothing was sent',
     noteUnreachable: 'The network didn’t answer — try again',
     mineRow: 'My agent',
-    // Selling what the agent bought, in the tower's window (CITY-187).
+    // Selling what the agent bought, in the tower's window.
     sellHolds: 'Your agent holds',
     sellAll: 'All',
     sellGo: (share: number) => (share === 100 ? 'Sell all' : `Sell ${share}%`),
@@ -118,7 +118,7 @@ export const AUTOPILOT = words(
     sellFact2: (floor: string) => `Never for less than ${floor} SOL — held on chain`,
     sellFact3: 'Ryntra’s fee is taken inside the sale; what reaches you is after it',
     sellFact4: 'SOL lands in your wallet · your keys stay with you',
-    // Strategies (CITY-193): one line on the card, the rest behind «Details».
+    // Strategies: one line on the card, the rest behind «Details».
     planDip: (pct: string) => `Buys on dips of ${pct}%`,
     planGrid: (levels: number, pct: string) => `Grid · ${levels} levels ${pct}% apart`,
     planEarly: 'New launches that pass the check',

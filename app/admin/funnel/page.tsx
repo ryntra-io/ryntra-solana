@@ -14,7 +14,7 @@ export const dynamic = "force-dynamic";
 const DAYS = 14;
 
 /**
- * «Воронка» (CITY-246): where a visit stops on the way from the city's first screen to money — the agent's budget
+ * «Воронка»: where a visit stops on the way from the city's first screen to money — the agent's budget
  * signed or a trade landed — by day, on the web and in the Ryntra app apart. Visits, not people; robots left out. Admin
  * only; read only.
  */

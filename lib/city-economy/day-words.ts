@@ -2,7 +2,7 @@ import { pl, words } from '../../city/lib/i18n/dict.ts';
 import type { DailyTaskKind } from '../world/contract.ts';
 
 /**
- * The words of the day's panel over your quarter, in the city's languages (CITY-150, the operator's pass on the Seeker of
+ * The words of the day's panel over your quarter, in the city's languages (the operator's pass on the Seeker of
  * 29.10: «TODAY» and «PTS» in English on a Ukrainian screen). Points are «очки», as the product's dictionary says
  * (lib/words/dictionary.ts). The task lines follow the server's kinds.
  */

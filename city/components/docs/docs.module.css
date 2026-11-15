@@ -1,7 +1,7 @@
-/* The documentation (CITY-180): a place for reading in the city's language. A still of our own city at the head, the sections
+/* The documentation: a place for reading in the city's language. A still of our own city at the head, the sections
    beside the text on a desk, one menu over it on a phone. Dark glass with cut corners, thin frames, one amber action, Geist.
    Text is large enough to read and never grey: a step, a figure and a risk each stand in their own block. Tokens from
-   city/styles/city.module.css (CITY-11). */
+   city/styles/city.module.css. */
 
 .display {
   font-family: var(--font-display, system-ui), system-ui, sans-serif;
@@ -12,7 +12,7 @@
   text-transform: uppercase;
 }
 
-/* A language other than English: the words wait for the frame the boot script hides them in (CITY-79). */
+/* A language other than English: the words wait for the frame the boot script hides them in. */
 :global(html.city-lang-wait) .frame [data-words] {
   visibility: hidden;
 }

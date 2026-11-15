@@ -2,7 +2,7 @@ import * as THREE from 'three';
 import { PALETTE } from '../palette.ts';
 
 /**
- * What the Lens tells the towers' shaders (CITY-86). Each tower's own level (1 looked at, −1 sunk, 0 untouched) rides
+ * What the Lens tells the towers' shaders. Each tower's own level (1 looked at, −1 sunk, 0 untouched) rides
  * with the tower: row 3, w of the skyline's tower texture, `aLens` on the procedural towers. These uniforms are shared by
  * reference: `uLensMove` 0 keeps every tower where it stands (reduced motion: the light changes, nothing moves),
  * `uLensMix` is how far the lens is on (the rails dim with it).

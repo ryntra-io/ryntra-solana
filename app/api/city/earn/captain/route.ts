@@ -6,7 +6,7 @@ export const dynamic = 'force-dynamic';
 export const maxDuration = 15;
 
 /**
- * «Like the Captain» (CITY-99): the strategies with a proven record — at least thirty days of it and copies from at
+ * «Like the Captain»: the strategies with a proven record — at least thirty days of it and copies from at
  * least five wallets, the deepest fall beside the result — from the ledger the daily pass keeps against the chain.
  * Read-only. Where the ledger is not counting yet (production before its migration) the list is empty, never made up.
  */

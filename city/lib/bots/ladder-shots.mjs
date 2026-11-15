@@ -1,4 +1,4 @@
-// The ladder in the bots window (CITY-135; mainnet CITY-219), at 1440×900, 390×844 and 375×812 → <out>/ladder-<state>-<lang>-<size>.jpg
+// The ladder in the bots window, at 1440×900, 390×844 and 375×812 → <out>/ladder-<state>-<lang>-<size>.jpg
 //   NEXT_PUBLIC_RYNTRA_CITY_AGENTS=open NEXT_PUBLIC_RYNTRA_CITY_LADDER=devnet npm run dev -- -p 3137
 //   node city/lib/bots/ladder-shots.mjs [out] [baseUrl]          LANGS=uk,en  SIZES=1440,375  STATES=buy,smart,hangar
 //   NET=mainnet — the same on mainnet (the dev server with NEXT_PUBLIC_RYNTRA_CITY_LADDER=mainnet): the stand answers

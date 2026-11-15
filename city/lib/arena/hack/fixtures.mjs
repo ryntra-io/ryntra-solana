@@ -1,4 +1,4 @@
-// Shared fixtures for the Hack library's tests (CITY-223). Not a test file itself (no `.test.mjs`), so the runner
+// Shared fixtures for the Hack library's tests. Not a test file itself (no `.test.mjs`), so the runner
 // never executes it; the test files import it. It registers the world's TypeScript hooks before loading the library,
 // so a test may import it first and then the `.ts` modules resolve.
 import "../../../../lib/world/testing/hooks.mjs";

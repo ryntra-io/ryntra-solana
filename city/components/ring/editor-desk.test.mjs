@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { test } from "node:test";
 
-/* CITY-240: the list of brains on a desk. In the Arena's window on a screen 900 px tall (the window is 615 px there)
+/* The list of brains on a desk. In the Arena's window on a screen 900 px tall (the window is 615 px there)
    the list showed two rows and half of a third: its room was 120 px, less the 5 px the pane ran over, and three rows
    take 132. The list is now a box inside its room, cut to whole rows — so no edge halves a row before the first scroll
    at any height of the window — and a short desk gives the room its third row. Layout only; measured on the stand
@@ -45,7 +45,7 @@ test("the list is cut to whole rows: its height is its room rounded down to a ro
   const row = block(css, "\n.model {");
   assert.match(row, /min-height: var\(--row, 40px\);/u);
   assert.doesNotMatch(row, /(?:^|\s)height:|overflow: hidden/u);
-  // …and the list sizes each row by what it holds (the review of CITY-240). In a list of a set height a row with a
+  // …and the list sizes each row by what it holds. In a list of a set height a row with a
   // least height of its own is laid at that least: the picked row stayed 40 px on a desk, and its line — what the brain
   // can play, why the server refused it — was drawn outside the row and cut away by the row's own corners.
   assert.match(list, /grid-auto-rows: max-content;/u);

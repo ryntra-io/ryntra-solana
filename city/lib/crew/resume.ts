@@ -1,12 +1,12 @@
 /**
- * Back to the agent's card (CITY-222): a person who taps «Connect wallet» on the card with no wallet in this browser
+ * Back to the agent's card: a person who taps «Connect wallet» on the card with no wallet in this browser
  * leaves to get one — the install page on a computer, the wallet app's own browser on a phone. Coming back should land on
  * the card they left, not on the plain city.
  *
  * - **The same browser** (a wallet installed on the computer, the page opened again): the card is kept here for two
  *   hours — the sentence said and the coin picked, nothing else — and the city opens it again on the next visit.
  * - **The wallet app's browser** (a phone: «Open in Phantom»): another browser keeps nothing of this one, so the link
- *   itself asks for the card — `/?open=agent`, the agent's own address (CITY-194).
+ *   itself asks for the card — `/?open=agent`, the agent's own address.
  *
  * Kept in the viewer's own storage, read by nothing else; a refused storage keeps nothing and the card is one sentence
  * away as before. Pure but for the storage handed in.

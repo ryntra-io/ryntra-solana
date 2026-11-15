@@ -1,4 +1,4 @@
-// CITY-215 — the tower window on a phone, in a real browser: a finger up or down over the chart scrolls the window to
+// The tower window on a phone, in a real browser: a finger up or down over the chart scrolls the window to
 // the amount and Market · Limit · Stop; across and a pinch stay the chart's; the first read refused for rate (429 with
 // Retry-After) is tried again in silence. Screens at 390×844 → <out>/tower-<lang>-<state>.jpg, the checks →
 // <out>/checks.json; a failed check exits 1.
@@ -21,7 +21,7 @@ const golden = JSON.parse(readFileSync(new URL("../../../app/api/solana/swap/gol
 const SOL_MINT = "So11111111111111111111111111111111111111112";
 const solPrice = snapshot.towers.find((t) => t.id === SOL_MINT).price;
 const SECONDS = { "1m": 60, "5m": 300, "15m": 900, "1h": 3_600, "4h": 14_400, "1d": 86_400 };
-/** The first reads of the candles are refused for rate, as on the phone pass of CITY-214; then the bars come. */
+/** The first reads of the candles are refused for rate, as on the phone pass; then the bars come. */
 const REFUSED = Number(process.env.REFUSED ?? 3);
 const RETRY_AFTER_S = Number(process.env.RETRY_AFTER_S ?? 2);
 

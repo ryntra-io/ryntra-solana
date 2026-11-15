@@ -10,9 +10,9 @@ export const dynamic = "force-dynamic";
 export const maxDuration = 30;
 
 /**
- * CITY-187 — a sale that did not go, taken back: `POST` the person's wallet and the sale's mandate; the answer is one
+ * A sale that did not go, taken back: `POST` the person's wallet and the sale's mandate; the answer is one
  * unsigned transaction of hers — the mandate removed and the coin back to her wallet, her sold sales' mandates removed and
- * her wSOL unwrapped with it (CITY-195). On devnet and on mainnet. This route never signs.
+ * her wSOL unwrapped with it. On devnet and on mainnet. This route never signs.
  */
 
 const Base58 = z.string().regex(/^[1-9A-HJ-NP-Za-km-z]{32,44}$/);

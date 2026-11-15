@@ -21,7 +21,7 @@ import s from './exchange.module.css';
 const ticketShown = (kind: AccountKind): boolean => kind !== 'invite' && kind !== 'frozen';
 
 /**
- * The Exchange's contents: Phoenix's perpetuals in one window, a terminal with no stills (30.10). The city's one window frame (CITY-65) brings the head
+ * The Exchange's contents: Phoenix's perpetuals in one window, a terminal with no stills (30.10). The city's one window frame brings the head
  * with «Exchange», the moving, the sticking and the whole screen; inside, in a window wide enough the account and the
  * book on the left under the market's price chart and the ticket on the right, and in a narrow one — the phone's bottom sheet, or a window pulled
  * narrow among others — five tabs. The market's order book is a tab of its own. A signature holds the frame open.

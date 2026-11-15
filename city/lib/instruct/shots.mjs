@@ -1,4 +1,4 @@
-// The agent's one-sentence instructions (CITY-176) for review: phrase → card → «My instructions», on a desk (1440×900)
+// The agent's one-sentence instructions for review: phrase → card → «My instructions», on a desk (1440×900)
 // and a phone (375×812), in English and Ukrainian → <out>/<lang>-<size>-<step>.jpg
 //   NEXT_PUBLIC_RYNTRA_CITY_ONE_SENTENCE=open NEXT_PUBLIC_RYNTRA_CITY_SPOT=open NEXT_PUBLIC_RYNTRA_CITY_STOPS=open npm run dev
 //   node city/lib/instruct/shots.mjs [out] [baseUrl]      (ONLY=desk|phone, LANGS=en,uk; PRESS_CHROME may point at a Chromium)

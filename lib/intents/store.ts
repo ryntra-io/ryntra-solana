@@ -1,5 +1,5 @@
 /**
- * Where prepared actions live (CITY-161): the port and the memory adapter. Production is Postgres
+ * Where prepared actions live: the port and the memory adapter. Production is Postgres
  * (`./store-postgres.server.ts`) — one table a separately authorized migration provisions
  * (`db/migrations/20261031120000_city_161_intents.sql`); memory serves the tests and a local stand on one instance,
  * and says so (`durability`).

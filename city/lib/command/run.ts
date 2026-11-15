@@ -6,7 +6,7 @@ import type { Instruction } from '../instruct/types.ts';
 import type { Base, Coin, Command, MoneyPlace, Side, View } from './parse.ts';
 
 /**
- * What a command may do in the city (CITY-85): open a window and write into its fields — nothing else. Every door
+ * What a command may do in the city: open a window and write into its fields — nothing else. Every door
  * here opens or fills; none of them presses a window's button, builds an order, opens the wallet or sends anything.
  * The person reads the filled window and confirms it there, then signs in their own wallet (helm SPEC §8: «⌘K only
  * opens a filled window and never signs»). Ryntra's door only asks a question; Ryntra only advises.
@@ -38,19 +38,19 @@ export type Doors = Readonly<{
   openLaunch: (draft: Readonly<{ symbol: string | null; name: string | null }>) => void;
   /** Ryntra's panel, asking the question: advice only. */
   askRyntra: (question: string) => void;
-  /** The agent's card with the instruction read (CITY-176): it shows what will be set; the person signs there. */
+  /** The agent's card with the instruction read: it shows what will be set; the person signs there. */
   openInstruction: (instruction: Instruction) => void;
   /** «My instructions»: what the agent set from sentences. */
   openInstructions: () => void;
-  /** The agent on its word (CITY-175): the card with the budget or the launch it prepared; the person signs there. */
+  /** The agent on its word: the card with the budget or the launch it prepared; the person signs there. */
   openAutopilot: (ask: AgentAsk) => void;
-  /** «Learn» (CITY-202): the guide on a chapter (null — the list); it only explains. */
+  /** «Learn»: the guide on a chapter (null — the list); it only explains. */
   openLearn: (chapter: string | null) => void;
-  /** The Dollar Saver's card with the coin, the side and the amount said (CITY-192); the person signs there. */
+  /** The Dollar Saver's card with the coin, the side and the amount said; the person signs there. */
   openDollar: (ask: DollarAsk) => void;
-  /** The money autopilot's card with the plan read (CITY-204); the person practises and signs there. */
+  /** The money autopilot's card with the plan read; the person practises and signs there. */
   openPilot: (ask: PilotAsk) => void;
-  /** A job for an agent (CITY-205): that agent's own card, or the crew in «Bots» (null); the person signs in the card. */
+  /** A job for an agent: that agent's own card, or the crew in «Bots» (null); the person signs in the card. */
   openCrew: (role: Role | null) => void;
 }>;
 

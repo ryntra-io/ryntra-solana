@@ -6,13 +6,13 @@ import { useWindows } from '../../window/store.ts';
 import { useGarage } from './store.ts';
 
 /**
- * How the garage agent shows a tower: through the city's own seam for towers an answer is about (CITY-10) — the
+ * How the garage agent shows a tower: through the city's own seam for towers an answer is about — the
  * camera flies to each in turn, then frames them together (`CameraRig`), and a column of light rises from each roof
  * (`Beacons`). The agent sets which towers; the city does the flying and the light, the same as for Ryntra's answers.
  * A tower card picked, the logo's way home or Ryntra's own panel takes the towers back.
  */
 
-/** The garage agent's window in the city's frame (CITY-65): one id for the frame, its layouts and the tray (CITY-84). */
+/** The garage agent's window in the city's frame: one id for the frame, its layouts and the tray. */
 export const GARAGE_WINDOW = 'garage';
 
 /** Fly to these towers and light them; out of the quarter first, the city's view is where towers stand. */
@@ -30,7 +30,7 @@ export function showTowers(towers: readonly Tower[]): void {
 
 /**
  * Whether the agent's window covers the city: a phone's bottom sheet, or the window on the whole screen. In a bay on a
- * computer (CITY-84) at least 40 % of the city stays in view beside it, so the window stays where it stands.
+ * computer at least 40 % of the city stays in view beside it, so the window stays where it stands.
  */
 export function windowCoversCity(st: Readonly<{ desk: boolean; layout: Readonly<{ full: string | null }> }> = useWindows.getState()): boolean {
   return !st.desk || st.layout.full === GARAGE_WINDOW;

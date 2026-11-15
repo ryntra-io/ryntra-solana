@@ -5,8 +5,8 @@
  *   production; `closed` puts the cards back to «soon» without a code change. Swapping any coin for any coin rides on
  *   it: it is the same engine route and the same signature.
  * - `NEXT_PUBLIC_RYNTRA_CITY_SPOT` — limit and stop orders and «My orders»: a new path for money, so shut until the
- *   Owner opens it with `open` after a canary of a small amount. Anything else keeps the card on the market price only.
- * - `NEXT_PUBLIC_RYNTRA_CITY_STOPS` — stops kept by the engine under the wallet (CITY-149): watched around the clock,
+ *   operator opens it with `open` after a canary of a small amount. Anything else keeps the card on the market price only.
+ * - `NEXT_PUBLIC_RYNTRA_CITY_STOPS` — stops kept by the engine under the wallet: watched around the clock,
  *   the person told when one is reached. Shut until the operator applies the stops' migration and opens it with `open`
  *   after the canary; shut, a stop stays on this device and is watched while Ryntra is open, as before. The engine's
  *   routes and cron read the same switch (`lib/stops/ready.ts`).

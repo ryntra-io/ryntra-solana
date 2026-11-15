@@ -4,15 +4,15 @@ import { localizedUrl } from "./seo.ts";
 
 /**
  * The sitemap is where the site says what it wants found — and only that: the live addresses of the city
- * (`city/lib/open/site-map.ts`, CITY-159).
+ * (`city/lib/open/site-map.ts`).
  *
  * On 2026-10-31 it still named 103 addresses, and 102 of them were pages of the old site — the documentation at both of
  * its addresses, About, Contact, Security, Stats, the legal texts, the partner Terms — drawn in the old interface nobody
  * is to see (decision 75). They stay reachable for whoever holds a link, out of the index (`X-Robots-Tag: noindex`,
- * `next.config.ts`), until the city takes each over at its own address (CITY-157), when it comes back here.
+ * `next.config.ts`), until the city takes each over at its own address, when it comes back here.
  *
  * What is deliberately absent: the old interface (`/app/*`, the Solana workspace, Mission Control), which only leads
- * into the city since CITY-13; the short addresses (`/launch`, `/trade` …), which only lead into it since CITY-159; a
+ * into the city; the short addresses (`/launch`, `/trade` …), which only lead into it; a
  * coin's tower `/c/<mint>`, shared but never offered to the index. `lastModified` is the date the page last changed
  * what it is — not a build time, which would tell a crawler every page changed on every deploy.
  */

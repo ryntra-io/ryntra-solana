@@ -1,6 +1,6 @@
 /**
  * The city's search of Jupiter's catalogue (`/api/solana/tokens/search`), read
- * through the shared read layer (CITY-208).
+ * through the shared read layer.
  *
  * The same words typed by several people, or by one person's search box as it
  * re-asks, were each a call against the one shared key — and after a refusal

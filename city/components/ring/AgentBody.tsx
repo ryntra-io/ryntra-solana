@@ -7,7 +7,7 @@ import r from './ring.module.css';
 import { RING_UI } from './words';
 
 /**
- * An agent's body as a stand-in until the characters line brings the real ones (CITY-57): a robot of separate dark
+ * An agent's body as a stand-in until the characters line brings the real ones: a robot of separate dark
  * plates with a visor of light for a face, one silhouette per archetype (`city/lib/ring/body.ts`). This is the point
  * where the characters plug in — the same `<AgentBody archetype state />`, the same four states.
  */

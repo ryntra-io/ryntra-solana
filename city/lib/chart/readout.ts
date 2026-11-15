@@ -3,7 +3,7 @@ import type { NormalizedCandle } from '../../../lib/chart/types.ts';
 import { dateText } from '../i18n/dict.ts';
 
 /**
- * The city's own readout of the bar under the pointer (CITY-5a), in place of the core chart's legend: the core chart
+ * The city's own readout of the bar under the pointer, in place of the core chart's legend: the core chart
  * tells where its crosshair stands on a channel of the city's own, and the window says that bar's time, close and move
  * in the city's words — only while a hand is on the chart. Pure, but for the channel.
  */

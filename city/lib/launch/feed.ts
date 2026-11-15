@@ -14,7 +14,7 @@ import { sameOriginImage, shownLaunches, type LaunchTower } from './towers.ts';
  * towers someone looks at. No wallet. A read that fails keeps the last towers, and an event is only what changed
  * between two reads.
  *
- * L7 (CITY-144): the flow (`GET /api/v1/launch/{mint}/flow`) of each tower that graduated or passed a check and can
+ * L7: the flow (`GET /api/v1/launch/{mint}/flow`) of each tower that graduated or passed a check and can
  * stand in the city — the towers someone looks at, the newest ones, the day-90 candidates and the ones shown — read in
  * turn, a few per read, says where the tower stands and which rings burn on its crown (`silhouette.ts`). A graduated tower the city has not drawn yet waits for its first flow rather than
  * standing in the Docks and jumping to the skyline a read later. The move into the skyline is the city's moment only
@@ -107,7 +107,7 @@ export function startLaunchFeed(options: LaunchFeedOptions): LaunchFeed {
     return asked === undefined || now() - asked < HOLD_MS;
   };
 
-  /* A launch whose ticker is held back (CITY-73) stands no tower: the city never shows a launch it cannot name. Only a
+  /* A launch whose ticker is held back stands no tower: the city never shows a launch it cannot name. Only a
      tower whose flow will be asked is held back for it. */
   const towersOf = (snapshot: SceneSnapshot): LaunchTower[] => {
     if (!current) return [];
@@ -339,7 +339,7 @@ export function startLaunchFeed(options: LaunchFeedOptions): LaunchFeed {
 
 /**
  * One market of the engine's list, with the scene's reading of it, as a tower of the city. The creator's name and
- * ticker are somebody else's text (CITY-73): a held ticker is empty and the caller leaves the tower out; a held name
+ * ticker are somebody else's text: a held ticker is empty and the caller leaves the tower out; a held name
  * gives way to the ticker.
  */
 export function launchTowerOf(mission: SceneMission, row: LaunchMarketRow | undefined, network: Network, graduation: ReadonlyMap<string, number> | null): LaunchTower {

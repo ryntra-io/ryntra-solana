@@ -1,5 +1,5 @@
 /**
- * Liquidity Studio's limit orders on Meteora DLMM (CITY-97, spec E6): the
+ * Liquidity Studio's limit orders on Meteora DLMM: the
  * program's own limit order — not a one-sided range. An order sits in one bin
  * or spread over up to fifty bins on one side of the price; a trade that walks
  * through those bins fills it at the bin's price, and a filled order stays

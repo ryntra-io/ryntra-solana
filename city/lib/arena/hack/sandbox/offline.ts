@@ -1,10 +1,9 @@
 /**
- * No network inside a run (CITY-224, spec «How the sandbox works» → «Never»: «a way out to the network from the
- * sandbox»). The copy is loaded from a recorded snapshot and nothing in a run may reach outside: not the engine, not a
+ * No network inside a run. The copy is loaded from a recorded snapshot and nothing in a run may reach outside: not the engine, not a
  * program, not a protocol's check.
  *
  * Two walls. The first is the machine: a run of an agent's work belongs on a machine with no network and no secrets
- * (Vercel Sandbox or the like — the deployment's part, CITY-225/226). This is the second, inside the process: while a
+ * (Vercel Sandbox or the like — the deployment's part). This is the second, inside the process: while a
  * run executes, every way out Node offers — `fetch`, `WebSocket`, `net`, `tls`, `http(s)`, `http2`, `dns`, `dgram`,
  * child processes and worker threads — throws `NetworkRefused`. A run is synchronous (the engine is), so nothing else
  * in the process runs while the wall is up, and it comes down the moment the run returns.

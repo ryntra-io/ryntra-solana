@@ -13,7 +13,7 @@
  * (`releaseCrew`). A crew flies on the scene only once its vault holds the curve's creator role on chain — the launch's
  * own record says SHARED — and with the vault's own rows, by wallet.
  *
- * On mainnet every write is closed.
+ * On mainnet every write is closed (`CREW_OWNER_WORD`).
  */
 
 import { randomBytes } from "node:crypto";

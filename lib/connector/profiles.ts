@@ -2,10 +2,10 @@ import { CONNECTOR_CATALOG_MCP_PATH, CONNECTOR_MCP_PATH, type ConnectorMcpPath, 
 import { CONNECTOR_TOOLS, ENGINE_ROUTES, type ConnectorTool, type EngineRouteKey } from "./tools.ts";
 
 /**
- * The connector's two profiles (CITY-170): one server, two addresses, two sets of tools.
+ * The connector's two profiles: one server, two addresses, two sets of tools.
  *
  * - **`full`** — `https://ryntra.io/mcp`, the custom connector a person adds by hand: every tool in the catalogue,
- *   and — once confirmation links (CITY-161) reach the connector — the tools that prepare an action for the person to
+ *   and — once confirmation links reach the connector — the tools that prepare an action for the person to
  *   sign on ryntra.io.
  * - **`catalog`** — `https://ryntra.io/mcp/read`, the address a connector directory lists: the Solana market and the
  *   check before signing, reads only. A directory does not take software that moves money or crypto, and the
@@ -120,7 +120,7 @@ const RYNTRA_HOSTS = ["ryntra.io", "www.ryntra.io"];
 
 /**
  * Whether a text carries a link that opens something for a wallet to sign: a Ryntra confirmation link
- * (`https://ryntra.io/i/<id>`, CITY-161) or the intents API, on Ryntra's own hosts or this deployment's.
+ * (`https://ryntra.io/i/<id>`) or the intents API, on Ryntra's own hosts or this deployment's.
  */
 export function carriesSigningLink(text: string, origin: string): boolean {
   let own: string | null = null;

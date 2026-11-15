@@ -1,5 +1,5 @@
 /**
- * CITY-163 — proof that this deployment reaches its KMS keys, with no coin and no transaction: each role's public key read
+ * Proof that this deployment reaches its KMS keys, with no coin and no transaction: each role's public key read
  * through the same way in a signature takes (Vercel's OIDC token → Google's STS → the service account → `GetPublicKey`),
  * compared with the address the deployment names and the one the attribution registry publishes. It reads public data and
  * nothing else: no call here can ask KMS to sign, and the signer's bounds are not touched.

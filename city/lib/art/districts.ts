@@ -2,7 +2,7 @@ import { DISTRICT_IDS, type DistrictId } from './frames.ts';
 import { HOW } from './words.ts';
 
 /**
- * The words of each district for «How the city works» (CITY-64), in the language on screen (`./words.ts`, CITY-79):
+ * The words of each district for «How the city works», in the language on screen (`./words.ts`):
  * what it is, and what you do there, a short sentence each. Present tense and plain; a district that is not open says «Soon» on its own chip
  * rather than promising anything in its words, and no line speaks of profit (the brandbook's voice,
  * `docs/city/brand/BRANDBOOK.md` §4). The facts are the city's own (`docs/city/HOW-IT-WORKS.md`); the rules wait

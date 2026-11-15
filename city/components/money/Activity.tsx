@@ -104,7 +104,7 @@ export function Activity({ owner }: { owner: string }) {
 }
 
 /**
- * A receipt, read in the window (CITY-150, the operator's pass on the Seeker: «Receipt» opened nothing — the app's WebView
+ * A receipt, read in the window (the operator's pass on the Seeker: «Receipt» opened nothing — the app's WebView
  * saves no file). What happened, where it stands, when, and its transaction on the chain; a browser can also save the
  * engine's signed copy.
  */

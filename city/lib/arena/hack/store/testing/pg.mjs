@@ -1,7 +1,7 @@
 /*
- * A throwaway PostgreSQL database for checking Hack's SQL (CITY-226): a fresh database with the parts of Supabase the
+ * A throwaway PostgreSQL database for checking Hack's SQL: a fresh database with the parts of Supabase the
  * migration stands on (the world line's `bootstrap.sql`: the roles, the `private` schema, the secret check and
- * Supabase's generous default grants), the Hack migrations applied in order (the orders, then the runs of CITY-238),
+ * Supabase's generous default grants), the Hack migrations applied in order (the orders, then the runs),
  * and their functions called the way PostgREST does — by name, with typed arguments and the app secret.
  *
  * Used only by tests, and only when HACK_TEST_DATABASE_URL names a local server. Never point it at a real project: it

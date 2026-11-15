@@ -1,6 +1,6 @@
 import { pl, words, type TextKey } from '../../lib/i18n/dict.ts';
 
-/** The words of the trade card, its coin picker, the wallet's line, «Mine» and «My orders» (CITY-79). */
+/** The words of the trade card, its coin picker, the wallet's line, «Mine» and «My orders». */
 export const TRADE = words(
   {
     // The card and its tabs.
@@ -536,7 +536,7 @@ export const MINE = words(
   },
 );
 
-/** The tower window's facts (CITY-78): the price line, the four cells, the tags, «Details» and «Share». */
+/** The tower window's facts: the price line, the four cells, the tags, «Details» and «Share». */
 export const COIN = words(
   {
     h24: '24H',

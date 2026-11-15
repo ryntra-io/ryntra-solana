@@ -1,8 +1,8 @@
 /**
- * CITY-187 — the person sells what her agent bought, from the tower's window: one press, a share of it — 25, 50 or 100 %.
+ * The person sells what her agent bought, from the tower's window: one press, a share of it — 25, 50 or 100 %.
  * Pure and client-safe, so the window says the very numbers the engine writes (`./sale.server.ts` builds and runs it).
  *
- * A sale is a mandate of CITY-184 (`./terms.ts` `budgetCoin`): her coin moves into her own vault under a policy that lets
+ * A sale is a mandate (`./terms.ts` `budgetCoin`): her coin moves into her own vault under a policy that lets
  * the agent sell exactly that much, once, for at least her floor in SOL, to her wallet, within a day. Ryntra's fee is the
  * table's share of the coin sold (`./fee.ts`); the floor is the pool's quote for the rest less the slippage the mandate
  * allows — the least SOL that reaches her, held on chain.
@@ -31,7 +31,7 @@ export function saleAmount(held: bigint, share: SaleShare): bigint {
 export const saleFloor = (quoteOut: bigint, slippageBps: number = SALE_SLIPPAGE_BPS): bigint => (quoteOut * BigInt(10_000 - slippageBps)) / 10_000n;
 
 /**
- * CITY-195 — the room a sale through Jupiter leaves the price between her signature and the agent's sale, basis points.
+ * The room a sale through Jupiter leaves the price between her signature and the agent's sale, basis points.
  * Jupiter's route names its own quote, and her mandate holds that quote to at least her floor plus the slippage
  * (`./terms.ts` `jupiterQuoteFloor`): a floor of the quote less the slippage alone would refuse every sale whose price
  * moved by a lamport. With this room the price may fall 1 % before the agent refuses to send; she still gets her floor.

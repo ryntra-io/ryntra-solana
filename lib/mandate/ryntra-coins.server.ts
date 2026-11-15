@@ -1,5 +1,5 @@
 /**
- * CITY-196 — what Ryntra's agent never buys, and whom it never trades with: read every time, before its key is asked.
+ * What Ryntra's agent never buys, and whom it never trades with: read every time, before its key is asked.
  *
  * - **No coin of Ryntra's launchpad.** A coin Launch's own record names (`launches`, `../launch/record-key.ts` — the one
  *   registry `/launches` reads), in any state, is never bought by the agent: Ryntra's keys do not lift Ryntra's coins.

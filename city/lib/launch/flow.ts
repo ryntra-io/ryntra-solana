@@ -14,11 +14,11 @@ export { BUILD_AGED, BUILD_UNEXPECTED, CITY_CLOSED, WALLET_REFUSED, causeOf, fai
 /**
  * One launch from the city, start to end: the picture and the words go to the engine's store, the engine builds the
  * creation, the creator's wallet signs it, the engine sends it. One transaction, no first purchase, no lock: the three
- * fields and nothing else — or, when the review showed the creator's fees shared (CITY-212), a second transaction the
+ * fields and nothing else — or, when the review showed the creator's fees shared, a second transaction the
  * same wallet signs in the same prompt, read back first (`split-check.ts`) so it is exactly the shares shown. The bytes live about thirty seconds, so a signature that comes back after them is not sent —
  * the engine builds once more and the wallet is asked again (`signFreshBytes`).
  *
- * The sheet may have done the first two steps ahead of the press (CITY-143, `prepare.ts`): the store's answer for these
+ * The sheet may have done the first two steps ahead of the press (`prepare.ts`): the store's answer for these
  * very fields is taken instead of storing them again, and a build of exactly this launch is taken instead of the first
  * build — only while a wallet may still be opened on its bytes.
  */
@@ -48,7 +48,7 @@ export type Liftoff = Readonly<{
   sharing: Readonly<{ state: 'SHARED' | 'PENDING' | 'FAILED'; shares: readonly FeeShare[] }> | null;
 }>;
 
-/** An early-access launch, set on chain (CITY-212): unix seconds for its two moments. */
+/** An early-access launch, set on chain: unix seconds for its two moments. */
 export type Opened = Readonly<{ mint: string; name: string; symbol: string; picture: string; network: Network; state: 'PENDING' | 'OPEN'; opensAt: number; publicAt: number }>;
 
 export type Phase =
@@ -57,7 +57,7 @@ export type Phase =
   | Readonly<{ step: 'sign'; wallet: string; costLamports: string | null; again: boolean; shared?: boolean; early?: boolean }>
   | Readonly<{ step: 'send' }>
   | Readonly<{ step: 'done'; liftoff: Liftoff }>
-  /** CITY-212: an early-access launch is set — its people get in at `opensAt`, everyone trades from `publicAt`. */
+  /** An early-access launch is set — its people get in at `opensAt`, everyone trades from `publicAt`. */
   | Readonly<{ step: 'opened'; opened: Opened }>
   | Readonly<{ step: 'failed'; failure: LaunchFailure }>;
 
@@ -87,11 +87,11 @@ export async function runLaunch(args: Readonly<{
   stored?: Promise<Answer<LaunchMetadataResponse>> | null;
   /** The build the sheet made ahead for its cost, handed over once when it is exactly this launch. */
   takePrebuilt?: (request: LaunchBuildRequest, network: Network) => Prebuilt | null;
-  /** CITY-212: the other wallets and their parts of the creator's fees, as the review showed them; the creator keeps the rest. */
+  /** The other wallets and their parts of the creator's fees, as the review showed them; the creator keeps the rest. */
   others?: readonly FeeShare[];
   /** The reader of the sharing's bytes; loaded on the press when a launch shares (`split-check.ts`). */
   checkSplit?: SplitChecker;
-  /** CITY-220: the reader of the creation's bytes; loaded on the press (`create-check.ts`). */
+  /** The reader of the creation's bytes; loaded on the press (`create-check.ts`). */
   checkCreation?: CreationChecker;
   /** The city's own otherwise. */
   shareSwitch?: boolean;
@@ -105,7 +105,7 @@ export async function runLaunch(args: Readonly<{
     return phase;
   };
   if (!cityLaunchOpen(network, args.ownerWord, args.switchOpen)) return fail(CITY_CLOSED);
-  /* A split asked where its door is shut is not sent to be built (CITY-220): the switch, the network. */
+  /* A split asked where its door is shut is not sent to be built: the switch, the network. */
   if (args.others?.length && !shareOpen(network, args.shareWord, args.shareSwitch)) return fail(CITY_CLOSED);
 
   onPhase({ step: 'upload' });
@@ -137,7 +137,7 @@ export async function runLaunch(args: Readonly<{
          of fees are not this launch, and are never put before the wallet. */
       if (built.data.network !== network) return { ok: false, code: BUILD_UNEXPECTED, message: 'The engine built for another network.' };
       if (!asReviewed(built.data, network, shares !== null)) return { ok: false, code: BUILD_UNEXPECTED, message: shares ? 'The engine did not build the sharing the review showed.' : 'The engine built more than the launch.' };
-      /* CITY-220: the creation itself — this coin, this creator, the preset's own curve, nothing bought; the name, ticker
+      /* The creation itself — this coin, this creator, the preset's own curve, nothing bought; the name, ticker
          and metadata the review showed (review 8.11). */
       const coin = { name: stored.data.name, symbol: stored.data.symbol, uri: stored.data.metadataUri };
       const creation = created({ wire: built.data.unsignedWireBase64, network, preset: preset.id, creator: signer.address, token: built.data.token, payerCoveredLamports: built.data.payerCoveredLamports, coin });

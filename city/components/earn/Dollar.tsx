@@ -12,12 +12,12 @@ import { explorerTxUrl } from '@/lib/solana/explorer';
 import { BackGlyph, Coin, Line, Notify, RiskDots, Wallets } from './bits';
 import s from './earn.module.css';
 
-/** The card's figures in the language on screen (CITY-243). */
+/** The card's figures in the language on screen. */
 const dollarText = (raw: bigint, asset: DollarAsset) => digits(dollarRaw(raw, asset));
 const rateText = (rate: number) => digits(rateRaw(rate));
 
 /**
- * The Dollar Saver (CITY-192): pick USDC or SOL, «Put in» or «Take back», type the amount, read the one line — the
+ * The Dollar Saver: pick USDC or SOL, «Put in» or «Take back», type the amount, read the one line — the
  * rate, the minimum, Ryntra's 0 % and the risk — and tap once: the server builds it at Jupiter Lend, the wallet signs.
  * The position and what it earned stand at the top and in «Mine». Where the engine does not take actions for this
  * wallet the card stays a calm card with its live rate and «tell me when it opens».

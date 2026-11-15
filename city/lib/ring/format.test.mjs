@@ -4,7 +4,7 @@ import test from "node:test";
 
 import { brainLabel, brainMark, brainNamed, catalogName, listMark, twinLabels, twinMarks } from "./format.ts";
 
-// CITY-236: a brain's name as a person reads it. The catalog's own name («Google: Gemma 4 26B A4B (free)») did not fit
+// A brain's name as a person reads it. The catalog's own name («Google: Gemma 4 26B A4B (free)») did not fit
 // a phone's line and was cut mid-word; the screens show the model's name, and the catalog's stays behind «i».
 
 test("the maker in front and the catalog's marks in brackets are left out", () => {
@@ -37,12 +37,12 @@ test("two brains of one name keep the catalog's mark beside it, without the brac
   assert.equal(brainMark("OpenAI: GPT-4o"), "", "the plain one has none");
   assert.equal(brainMark("Meta: Llama 3.3 (70B) Instruct"), "", "brackets inside a name are the name");
   const editor = readFileSync(new URL("../../components/ring/RingEditor.tsx", import.meta.url), "utf8");
-  // CITY-240: the marks come from one rule for the list and for the line that names the pick (`twinMarks`).
+  // The marks come from one rule for the list and for the line that names the pick (`twinMarks`).
   assert.match(editor, /mark=\{marks\.get\(m\.id\) \?\? ''\}/, "the list marks only the twins");
   assert.match(editor, /\{mark \? <i className=\{r\.modelMark\}> · \{mark\}<\/i> : null\}/);
 });
 
-/* CITY-240: two brains of one shortened name read the same once picked — «Command R (08-2024)» and «Command R» were
+/* Two brains of one shortened name read the same once picked — «Command R (08-2024)» and «Command R» were
    both «Command R · Light · <$0.01 a match» in the line that says what is being made. */
 const brain = (id, name, matchMicroUsd = 7_800) => ({ id, name, matchMicroUsd });
 
@@ -99,7 +99,7 @@ test("two makers' brains of one name and one price take their makers' names; one
   assert.equal(twinMarks([]).size, 0);
 });
 
-// CITY-239: the list never says the catalog's raw English words. «free» is said by the row's price, in the language on
+// The list never says the catalog's raw English words. «free» is said by the row's price, in the language on
 // screen; a «batch» twin is not offered at all. A date or a size is the same in any language and stays.
 test("the list's mark beside a twin: a date or a size, never a raw «free» or «batch»", () => {
   assert.equal(listMark("Google: Gemma 4 26B A4B (free)"), "");
@@ -108,7 +108,7 @@ test("the list's mark beside a twin: a date or a size, never a raw «free» or �
   assert.equal(listMark("OpenAI: GPT-4o (2024-11-20)"), "2024-11-20");
   assert.equal(listMark("Lab: Model (8B) (free)"), "8B", "what tells two brains apart stays, the raw word goes");
   assert.equal(listMark("OpenAI: GPT-4o"), "");
-  // The catalog's own name is still what «i» shows once a brain is picked — without the raw word too (CITY-240).
+  // The catalog's own name is still what «i» shows once a brain is picked — without the raw word too.
   assert.equal(brainMark("Google: Gemma 4 26B A4B (free)"), "free");
   const editor = readFileSync(new URL("../../components/ring/RingEditor.tsx", import.meta.url), "utf8");
   assert.doesNotMatch(editor, /brainMark\(/, "no screen of the editor writes the raw mark");
@@ -133,7 +133,7 @@ test("every screen of the Ring names a brain through it, and none cuts the name 
   }
 });
 
-/* CITY-240: behind «i» on the script step a Ukrainian reader met the catalog's raw English «(free)» — «Google: Gemma 4
+/* Behind «i» on the script step a Ukrainian reader met the catalog's raw English «(free)» — «Google: Gemma 4
    26B A4B (free) · DeepInfra» under a line that already says «Безкоштовно». The name is the model's, not its price:
    one rule for both languages. */
 test("behind «i»: the brain as its catalog names it, without the raw «(free)» and «(batch)»", () => {

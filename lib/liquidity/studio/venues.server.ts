@@ -39,12 +39,12 @@ export const DLMM_LIMIT_SDK: DlmmLimitSdk = { DLMM, createProgram, getPriceOfBin
 export const ZAP_SDK: ZapSdk = { Zap, estimateDlmmDirectSwap, createDlmmSwapPayload, AMOUNT_IN_DLMM_OFFSET };
 export const ZAP_DLMM_SDK: ZapDlmmSdk = { ...DLMM_SDK, getBinArraysRequiredByPositionRange, deriveOracle, deriveEventAuthority, deriveBinArrayBitmapExtension };
 
-/** The Zap (CITY-198) on the caller's connection, asking Jupiter with the server's key; `newKeypair` as for the venues. */
+/** The Zap on the caller's connection, asking Jupiter with the server's key; `newKeypair` as for the venues. */
 export function zapVenue(connection: Connection, jupiter: Readonly<{ apiUrl: string; apiKey: string }> | null, newKeypair?: () => Keypair): ZapVenue {
   return createZapVenue({ connection, sdk: ZAP_SDK, dlmm: ZAP_DLMM_SDK, jupiter, ...(newKeypair ? { newKeypair } : {}) });
 }
 
-/** DLMM's limit orders on the caller's connection (CITY-97); `newKeypair` as for the venues. */
+/** DLMM's limit orders on the caller's connection; `newKeypair` as for the venues. */
 export function limitVenue(connection: Connection, newKeypair?: () => Keypair): LimitVenue {
   return createLimitVenue({ connection, sdk: DLMM_LIMIT_SDK, ...(newKeypair ? { newKeypair } : {}) });
 }

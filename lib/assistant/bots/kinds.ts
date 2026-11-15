@@ -1,7 +1,7 @@
 /**
- * The bots Ryntra names in the bots hub (CITY-133, B3) — the ones the engine
- * reads and replays end to end: its weather rates them (`lib/bots/weather`,
- * CITY-132) and its backtest plays them with their costs
+ * The bots Ryntra names in the bots hub — the ones the engine
+ * reads and replays end to end: its weather rates them (`lib/bots/weather`)
+ * and its backtest plays them with their costs
  * (`lib/bots/backtest`). A bot the engine does not replay (a rebalancer, an
  * alert, a signal) is never suggested or simulated here: Ryntra says it does
  * not read it, rather than guess.

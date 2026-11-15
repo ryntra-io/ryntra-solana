@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-/* CITY-100: Earn's notes in the city — what the city reads of the wallet, told through the notification centre while
+/* Earn's notes in the city — what the city reads of the wallet, told through the notification centre while
    Ryntra is open; each told once per device. Earn is switched open for this file's process. */
 
 process.env.NEXT_PUBLIC_RYNTRA_CITY_EARN = "open";

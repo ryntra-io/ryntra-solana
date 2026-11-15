@@ -1,5 +1,5 @@
 /**
- * Where a tray of the Deck stands (CITY-242): over the place that was pressed — Spot's doors over Spot, the Arena's over
+ * Where a tray of the Deck stands: over the place that was pressed — Spot's doors over Spot, the Arena's over
  * the Arena — not in the Deck's middle whatever was pressed. Its middle stands over the place's middle, moved in only as
  * far as it takes to keep the whole tray on the screen with the city's edge around it (a phone's Spot is near the edge).
  *

@@ -29,12 +29,12 @@ export function EventsBell({ hidden = false }: { hidden?: boolean }) {
     if (newest !== null) useFeedPanel.getState().settle(newest);
   }, [newest]);
   // A window opening folds the panel away: the feed never comes over a window by itself. The bell pressed while a
-  // window is already open opens the panel over it (CITY-242), in its own layer — the person asked for it, as the
+  // window is already open opens the panel over it, in its own layer — the person asked for it, as the
   // wallet's chip does; it folds on Escape, «Back», the bell or a tap anywhere else.
   useEffect(() => {
     if (hidden) useFeedPanel.getState().close();
   }, [hidden]);
-  // So does a window of the frame that `hidden` does not speak for — Earn, Bots, the agent's card, the Ring (CITY-239).
+  // So does a window of the frame that `hidden` does not speak for — Earn, Bots, the agent's card, the Ring.
   useEffect(() => {
     const ids = () => useWindows.getState().layout.windows.map((win) => win.id);
     let before = ids();
@@ -45,7 +45,7 @@ export function EventsBell({ hidden = false }: { hidden?: boolean }) {
     });
   }, []);
   const news = hasNews(seen, newest);
-  // «Event feed: hidden» in Settings (CITY-87): no bell; the feed still reads, for what goes to the computer.
+  // «Event feed: hidden» in Settings: no bell; the feed still reads, for what goes to the computer.
   const side = useNotify((st) => st.prefs.feed);
   useEffect(() => {
     if (side === 'hidden') useFeedPanel.getState().close();

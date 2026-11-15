@@ -32,7 +32,7 @@ import {
 import { earnWords } from './words.ts';
 
 /**
- * The Stock Pier's state in the Earn window (CITY-98): the verified pairs, the stock and the quote coin chosen, the
+ * The Stock Pier's state in the Earn window: the verified pairs, the stock and the quote coin chosen, the
  * amount, the plan for the exchange's close, what the city and the engine let this wallet do, the engine's Review of
  * exactly what is on screen, and where an action is — building the pier (or mooring beside it), taking a boat's fees,
  * leaving. A Review is built as soon as a wallet is here and admitted, so every figure the person signs stands on the

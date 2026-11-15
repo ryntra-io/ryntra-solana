@@ -1,5 +1,5 @@
 /**
- * A brain without a model for tests and the stand (CITY-225) — never production, like the Ring's stub brain
+ * A brain without a model for tests and the stand — never production, like the Ring's stub brain
  * (`lib/ring/duel/stub-brain.ts`, reached only off the live catalog). It plays the same loop through the same four
  * tools (`session.ts`), so the whole way — read the copy, assemble an input, run it, submit the finding — is walked on a
  * stand with no network and no key, and every tool and every limit is exercised deterministically.
@@ -24,7 +24,8 @@ export type StubPlan = {
   /** What the stub names when it submits. */
   readonly finding: { readonly target: FindingTarget; readonly vulnClass: string; readonly severity: Severity; readonly title: string };
   /**
-   * Without it the stub stops there.
+   * Submit also when the run could not be decided (the claimed check did not hold in the pinned copy): the judge leaves
+   * such a run for the protocol owner's word. Without it the stub stops there.
    */
   readonly undecided?: boolean;
 };

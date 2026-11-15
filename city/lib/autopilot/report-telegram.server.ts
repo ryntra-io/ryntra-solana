@@ -8,7 +8,7 @@ import { answerCallback, editReplyMarkup, type InlineKeyboard } from '@/lib/tele
 import { AGENT_REPORT, AGENT_REPORT_HREF, REPORT_CALLBACK } from './report';
 import { pressReport, type ReportPress } from './report-telegram';
 
-/** The bot's side of the report's button (CITY-194): `lib/telegram/handlers.ts` hands it every `agr:` press. */
+/** The bot's side of the report's button: `lib/telegram/handlers.ts` hands it every `agr:` press. */
 export async function handleReportPress(press: ReportPress): Promise<boolean> {
   if (!press.data?.startsWith(REPORT_CALLBACK)) return false;
   const bot = assistantBotDeps();

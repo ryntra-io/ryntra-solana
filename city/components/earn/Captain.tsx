@@ -15,7 +15,7 @@ import { PierCard, StyleGlyph } from './PierCard';
 import s from './earn.module.css';
 
 /**
- * «Like the Captain» (CITY-99): strategies with a proven record — the city's own pier recipes, each with at least
+ * «Like the Captain»: strategies with a proven record — the city's own pier recipes, each with at least
  * thirty days of record and copies from at least five wallets. A card shows the record against holding at full size,
  * its deepest fall always beside it, how many copied it and for how long, and one action: copy. Copying opens the
  * strategy's pier with its style fixed; the person chooses the amount and signs in their own wallet. Until a strategy

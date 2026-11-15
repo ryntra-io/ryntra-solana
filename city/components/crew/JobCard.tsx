@@ -7,7 +7,7 @@ import { CrewGlyph, RoleGlyph } from './glyphs';
 import s from './crew.module.css';
 
 /**
- * «This is a job for an agent» (CITY-205): what the consultant shows instead of words when a sentence hands money work
+ * «This is a job for an agent»: what the consultant shows instead of words when a sentence hands money work
  * over — the agent who does it, and «Hire», which opens that agent's own card. With no agent named: the crew.
  */
 export function JobCard({ role, onHire }: Readonly<{ role: Role | null; onHire: () => void }>) {

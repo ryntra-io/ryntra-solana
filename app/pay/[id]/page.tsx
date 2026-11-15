@@ -18,12 +18,12 @@ export const revalidate = 0;
 export const viewport: Viewport = { themeColor: PALETTE.inkDeep, colorScheme: "dark", viewportFit: "cover" };
 
 /**
- * `/pay/:id` — the page a person opens when somebody asks them for money, as one window of Ryntra City (CITY-156).
+ * `/pay/:id` — the page a person opens when somebody asks them for money, as one window of Ryntra City.
  *
  * The engine is the one it was: the public read (`lib/pay/public.ts`) draws the first paint, and the window pays
  * through `/api/pay/:id/transaction` and `/api/pay/:id/submit` and follows the status through `/api/pay/:id`. A link
  * is never offered to the index. The server writes English; the page repaints in the person's language before it is
- * seen (CITY-79).
+ * seen.
  */
 export async function generateMetadata({ params }: { params: Promise<{ id: string }> }): Promise<Metadata> {
   const { id } = await params;

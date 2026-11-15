@@ -1,5 +1,5 @@
 /**
- * The first action's funnel (CITY-222): where a newcomer stops on the way from the first screen to the first signature
+ * The first action's funnel: where a newcomer stops on the way from the first screen to the first signature
  * of the agent's budget. Seven moments, each counted at most once per visit (a tab's session), so the count of a moment
  * is the count of visits that reached it — no visitor id, no cookie, no wallet address in any form, no amount.
  *
@@ -8,7 +8,7 @@
  * page was sent to). It rides on `/api/track` into the `events` table the admin already reads — no new table, no
  * migration. Pure: the page (`funnel-watch.ts`) and the route read the same names and the same shapes.
  *
- * CITY-246 widened it to the whole way to money: the city drawn (a visit that leaves while it loads is told apart from one
+ * It reaches the whole way to money: the city drawn (a visit that leaves while it loads is told apart from one
  * that saw the city), a sentence said, any wallet connected, the wallet's sign-in, and a trade's own signature and its
  * landing. A visit driven by a browser robot (`navigator.webdriver` — our own walks and shots) says `bot` in place of its
  * word, so the admin's count is people's.

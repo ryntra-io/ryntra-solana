@@ -71,7 +71,7 @@ export const MIN_POOL_USD_MICROS = 10_000_000_000n;
 /** Verified visitors one host's day can pay for, the earliest first. */
 export const VISITORS_PER_DAY = 10;
 
-/** The free vaults (CITY-47): three practice levels once ever, the daily vault once a day. Every other vault is paid. */
+/** The free vaults: three practice levels once ever, the daily vault once a day. Every other vault is paid. */
 export const FREE_VAULTS = ["practice-1", "practice-2", "practice-3", "daily"] as const;
 export type FreeVault = (typeof FREE_VAULTS)[number];
 
@@ -153,7 +153,7 @@ export const STEP_RULES: Readonly<Record<PointsReason, StepRule>> = {
   coop_contribution: {
     points: POINTS.coop_contribution,
     step: "a build on your crew's shared headquarters, with a crew member outside your cluster",
-    checkedBy: "world — the build and the crew (CITY-20); Growth — the wallets",
+    checkedBy: "world — the build and the crew; Growth — the wallets",
     key: "coop_contribution:<day>",
     caps: [{ max: 1, per: "day" }],
     honest: true,

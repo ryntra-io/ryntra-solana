@@ -11,8 +11,7 @@ import type { LaunchTower } from './towers.ts';
  * (a treasury under rules) is not this: it is the headline only of agents' coins and raises for a project.
  *
  * The numbers are the engine's (`lib/core/venues/meteora-dbc/presets.ts`); this file only names which served preset the
- * shield is and refuses to claim it when the engine serves anything else. The preset, the schedule and the default on
- * mainnet change only — each is one line here, or one variable of the deployment.
+ * shield is and refuses to claim it when the engine serves anything else.
  */
 export const CITY_SHIELD = Object.freeze({
   /** The engine's preset the shield launches on: Classic carries exactly the schedule below. */

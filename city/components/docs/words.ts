@@ -1,6 +1,6 @@
 import { words } from '../../lib/i18n/dict.ts';
 
-/** The words around the documentation's sections (CITY-180): its head, its search and its way from section to section. */
+/** The words around the documentation's sections: its head, its search and its way from section to section. */
 export const DOCS_UI = words(
   {
     kicker: 'Docs',

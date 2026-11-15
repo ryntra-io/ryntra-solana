@@ -2,7 +2,7 @@ import { readAction } from './corporate.ts';
 import type { ScaledConfig } from './stocks.ts';
 
 /**
- * Earn's notes (CITY-100, spec E9 — `docs/research/ryntra-earn-2026-10-29/SPEC.md`): the four things Earn tells a
+ * Earn's notes (spec E9 — `docs/research/ryntra-earn-2026-10-29/SPEC.md`): the four things Earn tells a
  * person, judged the same way in the city (a banner, the computer) and on Ryntra's server (the phone's push and
  * Telegram, through the engine's own inbox and delivery):
  *

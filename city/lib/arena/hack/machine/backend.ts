@@ -1,5 +1,5 @@
 /**
- * The sandbox backend on a machine with no network (CITY-238; the first wall of `../sandbox/README.md` and
+ * The sandbox backend on a machine with no network (the first wall of `../sandbox/README.md` and
  * `../runner/README.md` «Межі»). It keeps the runner's `SandboxBackend` shape (`../runner/backend.ts`), so the four
  * tools do not know where a run plays:
  *

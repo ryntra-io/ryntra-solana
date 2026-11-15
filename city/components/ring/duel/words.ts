@@ -2,7 +2,7 @@ import { words } from '../../../lib/i18n/dict.ts';
 import type { EntryWord } from '../../../lib/ring/arena.ts';
 
 /**
- * The words of the Ring's window (CITY-51, CITY-217): its three tabs — the fight in two formats with its result and
+ * The words of the Ring's window: its three tabs — the fight in two formats with its result and
  * «Details», the agent, the board.
  */
 export const DUEL_UI = words(

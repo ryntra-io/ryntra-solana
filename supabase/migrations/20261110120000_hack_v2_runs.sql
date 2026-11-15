@@ -1,6 +1,6 @@
--- Ryntra City: the Arena's third door, Hack — the agents' runs on the server (CITY-238).
+-- Ryntra City: the Arena's third door, Hack — the agents' runs on the server.
 --
--- PREPARED 2026-11-10 as a file only. Not applied to any Supabase project:
+-- PREPARED 2026-11-10 as a file only. Not applied to any Supabase project.
 -- It stands on `20261108180000_hack_v1.sql` (the orders and the takes) and on
 -- `private.beta_check_secret`. Without it no agent's run starts: a take stands
 -- and its run answers «unavailable». The operator's check of the machine

@@ -10,7 +10,7 @@ import { STEP_RULES, type Award } from "./points.ts";
  * draws the server's `tasks` of `GET /api/world/me` (`dayTasks`). A task joins the day only when the server can
  * check it from a world event: a floor and a light from a build, visits from the visit itself. A run joins when a
  * finished run reaches the server as a
- * checked fact, a shared build when crews build together (CITY-20); until then nobody could finish them, so nobody is
+ * checked fact, a shared build when crews build together; until then nobody could finish them, so nobody is
  * given them. While three are live, everyone has those three; when more are, each person's three are drawn for the day
  * from the person and the day alone, so the same person sees the same three all day on every device.
  *

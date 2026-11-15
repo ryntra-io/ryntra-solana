@@ -3,7 +3,7 @@ import type { CityLayout, PlacedTower } from '../city/layout.ts';
 import { isNamed, type District } from '../market/types.ts';
 
 /**
- * The Map of the Play layer (CITY-81): the city seen from above — every tower a point where it stands, every district
+ * The Map of the Play layer: the city seen from above — every tower a point where it stands, every district
  * named where its towers are — and a tap flies the camera there: a district framed whole, or one of the towers moving
  * most today. It only moves the camera (city/components/city/CameraRig.tsx reads `view`); nothing opens, nothing is
  * bought. The figures are the city's own read.

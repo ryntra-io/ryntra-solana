@@ -169,7 +169,7 @@ test("the page is on the frozen chrome, follows the reader's language, is in the
   assert.match(content, /ledger\.summaries\[product\]\[range\]/, "the totals are the server's, for the same filter");
   assert.match(content, /row\.links\[0\]/, "every row carries its proof link");
   assert.doesNotMatch(content, /\d{2,}\.\d+ ?(USDC|SOL)/, "no figure typed into the markup");
-  /* Out of the sitemap and the index while it is the old page (CITY-159), until the city's Stats window takes it over. */
+  /* Out of the sitemap and the index while it is the old page, until the city's Stats window takes it over. */
   assert.ok(!CITY_PAGES.some((entry) => entry.path === "/stats"), "the sitemap does not list /stats yet");
   assert.ok(AWAITING_CITY.includes("/stats"), "it answers noindex meanwhile");
   for (const locale of ["en", "uk"]) {

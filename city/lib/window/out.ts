@@ -5,7 +5,7 @@ import { placed } from './layout.ts';
 import { outSizeOf, useWindows, windowWasOut } from './store.ts';
 
 /**
- * The windows out on another screen, in the browser (CITY-75; the rules are `detach.ts`): opening the window out
+ * The windows out on another screen, in the browser (the rules are `detach.ts`): opening the window out
  * there, copying the city's styles into a Picture-in-Picture window, watching it close, and speaking to a window on its
  * own page over the channel. The store says what is out; this file holds the browser windows themselves.
  */

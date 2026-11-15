@@ -209,7 +209,7 @@ function Ticket() {
       <div className={s.foot}>
         {connection && block === null && view.issue === 'SIDE' && phase !== 'reviewing' ? (
           // No side yet: Long and Short are the foot's own two buttons, never «choose long or short» under the fold of a
-          // phone's half sheet (CITY-150).
+          // phone's half sheet.
           <div className={s.sideActs} role="radiogroup" aria-label={w.side}>
             {(['long', 'short'] as const).map((side) => (
               <button key={side} role="radio" aria-checked={false} className={`${s.display} ${s.sideAct} ${s[side]} ${s.choiceOn}`} disabled={busy} onClick={() => setDraft({ side })}>

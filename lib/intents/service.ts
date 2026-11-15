@@ -1,5 +1,5 @@
 /**
- * The life of a prepared action (CITY-161): made by an agent, a chat or a partner; read by the city's sheet; claimed by
+ * The life of a prepared action: made by an agent, a chat or a partner; read by the city's sheet; claimed by
  * the one wallet that presses (the bound one, when the intent names a wallet); ended by that wallet's receipt — or let
  * go when the wallet said no and nothing was signed, or withdrawn by its creator before anyone claimed it. Every step
  * after the read names the digest the sheet was shown, so a person only ever acts on exactly what they saw, and every

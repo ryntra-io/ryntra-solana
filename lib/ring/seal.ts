@@ -1,11 +1,11 @@
 /**
- * An agent's OpenRouter key at rest (CITY-50): OpenRouter shows a key once, so the Ring keeps it — sealed. The store
+ * An agent's OpenRouter key at rest: OpenRouter shows a key once, so the Ring keeps it — sealed. The store
  * holds only the sealed text; the seal's own secret lives in the server's environment by name, so a copy of the database alone opens nothing.
  *
  *   sealed = v1.<iv>.<ciphertext>.<tag>     AES-256-GCM, key = HKDF-SHA256(secret, "ryntra-ring", "agent-key:v1"),
  *                                           the agent's id as associated data — a sealed key opens for its agent only
  *
- * Opening is for the matches (CITY-51); nothing in CITY-50 reads a key back.
+ * Opening is for the matches.
  */
 
 import { createCipheriv, createDecipheriv, hkdfSync, randomBytes } from "node:crypto";

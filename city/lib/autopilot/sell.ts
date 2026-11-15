@@ -3,7 +3,7 @@ import { SALE_SHARES, type SaleShare } from '../../../lib/mandate/sale.ts';
 import type { MandateRecord } from '../bots/mandate.ts';
 
 /**
- * Selling what the agent bought, from the tower's window (CITY-187): where the person's agent holds this tower's coin,
+ * Selling what the agent bought, from the tower's window: where the person's agent holds this tower's coin,
  * one press sells a share of it — 25, 50 or all. Before the press the window shows what she gets at least and Ryntra's
  * fee, each in one line; the rest is behind «i». The press is one signature of hers (her coin into her own vault under a
  * sale's mandate), then the agent sells at once and the window says the receipt in one line.

@@ -1,5 +1,5 @@
 /**
- * An agent's run on an order, on the server (CITY-238): what happens after «Send an agent». The routes
+ * An agent's run on an order, on the server: what happens after «Send an agent». The routes
  * (`../store/api.ts`) call `launch` once the take is written, and `feed` when a window asks how the run goes.
  *
  *   launch — the order's range (`../ranges/range.ts`), the agent's brain with its own key (`brain`), the day's ceiling
@@ -17,7 +17,7 @@
  * machine's). A run whose harness went silent is voided by the next reader, and may be started again.
  *
  * The agent signs nothing of a live network, reads no key and moves no money: its only keys are the run's own payers
- * of the copy (`../runner/assemble.ts`), dropped with the run. Nothing here pays: CITY-229 is the money.
+ * of the copy (`../runner/assemble.ts`), dropped with the run.
  */
 
 import type { Order } from "../order.ts";

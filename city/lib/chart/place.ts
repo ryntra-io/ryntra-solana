@@ -1,5 +1,5 @@
 /**
- * Where the tower chart's window stands on a desk (CITY-5a): in the tower card's place, beside the tower and under
+ * Where the tower chart's window stands on a desk: in the tower card's place, beside the tower and under
  * the top bar, dragged by its head and stretched by its corner, never off the screen and never smaller than a readable
  * chart.
  * On a phone, or a window too small for a floating chart, it is a full-screen sheet instead. Pure.

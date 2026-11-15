@@ -1,5 +1,5 @@
 /**
- * CITY-162 — the `env` adapter: the key in the deployment's environment, as Launch has always held it
+ * The `env` adapter: the key in the deployment's environment, as Launch has always held it
  * (`RYNTRA_LAUNCH_POOL_PAYER_SECRET`, `RYNTRA_LAUNCH_EXECUTOR_SECRET`: a JSON array of 64 numbers, or the base58 string
  * a wallet exports). It stays the fallback until the operator switches to `kms`, and it is the rollback after.
  *

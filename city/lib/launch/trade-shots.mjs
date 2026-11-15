@@ -1,4 +1,4 @@
-// Buy and Sell on a launch's tower (L1 · CITY-138), in the tower's one window (CITY-78), for review: before graduation on the curve with the launch fee
+// Buy and Sell on a launch's tower, in the tower's one window, for review: before graduation on the curve with the launch fee
 // falling, its details behind «i», a buy done with the position at once, the sale; after graduation in DAMM v2 —
 // at 1440×860 and 390×844 → <out>/trade-<state>-<size>-<locale>.jpg
 //   node city/lib/launch/trade-shots.mjs [out] [baseUrl]      (npm run dev running; PRESS_CHROME may point at a Chromium)
@@ -33,10 +33,10 @@ for (const locale of LOCALES) {
         st.select(st.layout.towers.find((t) => t.tower.symbol === symbol).tower.id);
       }, symbol);
     const t = (en, uk) => (locale === "uk" ? uk : en);
-    // The tower's one window (CITY-78) only: the city's header has its own «Connect wallet».
+    // The tower's one window only: the city's header has its own «Connect wallet».
     const card = page.locator("[role=dialog]").filter({ has: page.getByRole("progressbar") });
 
-    // The language by the city's own link (CITY-79).
+    // The language by the city's own link.
     await page.goto(`${base}/?launch=stub&lang=${locale}`, { waitUntil: "domcontentloaded" });
     await page.waitForFunction(() => window.__city?.getState().layout.towers.some((t) => t.tower.symbol === "SPARK"), null, { timeout: 180_000 });
     await page.waitForTimeout(3000);

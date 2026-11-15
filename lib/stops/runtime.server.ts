@@ -1,5 +1,5 @@
 /**
- * The production side of the stops' cron (CITY-149): the stops' database, the swap engine's quote on mainnet, the
+ * The production side of the stops' cron: the stops' database, the swap engine's quote on mainnet, the
  * Guard store the monitoring engine reads, and the monitoring delivery for the notes (Telegram, the phone's push, the
  * browser's push, quiet hours, retries). Reads and writes notes only.
  */

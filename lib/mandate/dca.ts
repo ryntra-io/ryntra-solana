@@ -1,9 +1,9 @@
 /**
- * CITY-174 — a regular buy of a fixed size with its price held on chain (decision 95 (b)).
+ * A regular buy of a fixed size with its price held on chain (decision 95 (b)).
  *
  * The person says: buy this much every so often, never above this price. The policy then pins the input to exactly the
  * size, the output's mint, and the minimum it must bring — so the highest price she pays is the size over the floor,
- * whoever holds the agent's key (CITY-136 §2, «межа ціни»). The day's cap is one buy per period times the buys a day.
+ * whoever holds the agent's key. The day's cap is one buy per period times the buys a day.
  *
  * Here: the floor from a price, and the agent's decision on each tick — buy when the market is under the ceiling, wait
  * when it is not (a buy above it would fall on chain anyway, and the agent never pays the fee for that).

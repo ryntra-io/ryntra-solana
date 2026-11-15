@@ -68,7 +68,7 @@ function fromCity(): boolean {
 }
 
 /**
- * One window of the city on a page of its own (CITY-75, `/window?id=chart&tower=<mint>`): the way out onto another
+ * One window of the city on a page of its own (`/window?id=chart&tower=<mint>`): the way out onto another
  * screen where the browser has no Document Picture-in-Picture (Firefox, Safari). No 3D city — only the window, through
  * the same store, the same wallet adapter and the same reads as in the city. It tells the city it is here and when it
  * closes, follows the city when another tower is picked, and closes when the city takes it back — over a
@@ -79,7 +79,7 @@ export function OutPage({ initial }: { initial: CitySnapshot }) {
   const [route, setRoute] = useState<ReturnType<typeof parseDetachUrl> | undefined>(undefined);
   const [ready, setReady] = useState(false);
 
-  // The person's language before the first paint, as in the city (CITY-79).
+  // The person's language before the first paint, as in the city.
   useLayoutEffect(() => void hydrateLang(), []);
 
   // The page's window is never the city's layout; the window stands as on a computer, whatever this page's width.

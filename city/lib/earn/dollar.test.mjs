@@ -1,6 +1,6 @@
 // Run from repo root: node --test city/lib/earn/dollar.test.mjs
 //
-// The Dollar Saver (CITY-192): the sentence, the engine's answer read into the card, the amount checked before the tap,
+// The Dollar Saver: the sentence, the engine's answer read into the card, the amount checked before the tap,
 // and the one tap end to end — review, the wallet's signature, the relay — with the engine and the wallet stood in.
 // No network, no key and no wallet of anybody's.
 import assert from "node:assert/strict";

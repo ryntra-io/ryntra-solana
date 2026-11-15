@@ -103,7 +103,7 @@ function Row({ entry, now }: { entry: Entry; now: number }) {
 }
 
 /**
- * «My instructions» (CITY-176): what the agent set from sentences, each with its state from its engine — the next
+ * «My instructions»: what the agent set from sentences, each with its state from its engine — the next
  * purchase, the price an order waits for, a stop watched or reached — and «Cancel» in one tap.
  */
 export default function Instructions() {

@@ -17,7 +17,7 @@ import { useWallet } from '@/city/lib/trade/wallet';
 import { useHoldingsWatch, WalletPicker } from '../trade/WalletParts';
 
 /**
- * The wallet from the agent's card (CITY-222). With no wallet in this browser the person leaves to get one; the card
+ * The wallet from the agent's card. With no wallet in this browser the person leaves to get one; the card
  * waits for them — kept in this browser for a computer's install, asked for by the link a phone's wallet app opens
  * (`/?open=agent`) — so the way back lands on the card, not on the plain city.
  */
@@ -67,7 +67,7 @@ const BUY_NOW_MIN = 6_000_000n;
 const solText = (lamports: bigint) => (Number((lamports / 100_000n) * 100_000n) / 1e9).toString();
 
 /**
- * CITY-246: a wallet short of the agent's budget still holds SOL — the agent's first buy now, by hand, while the budget
+ * A wallet short of the agent's budget still holds SOL — the agent's first buy now, by hand, while the budget
  * waits for «Add SOL». The coin's own trade window opens on Buy, paid in SOL, with the plan's size per trade written in
  * (all the wallet can spend when that is less); the window shows the route and the fee, and the wallet signs as always.
  * Shown only when the card names a coin, trading is open here, and the wallet's SOL was read.

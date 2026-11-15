@@ -49,7 +49,7 @@ function PendingPane({ failed }: { failed: boolean }) {
 const closeChart = () => useTowerChart.getState().close();
 
 /**
- * A tower's chart over the city (CITY-5a), in the city's one window frame (CITY-65). It opens from the tower card's
+ * A tower's chart over the city, in the city's one window frame. It opens from the tower card's
  * «Chart», follows the picked tower while it is open — another tower picked, its chart, in the same window — and closes
  * with the card, at home, in the quarter, during a run and while a clip is filmed. Escape closes it first; the trade
  * card, when open over it, closes before it.
@@ -101,7 +101,7 @@ export function ChartLayer() {
   }, [mint]);
 
   // The frame follows the tower: its contents change with it, the window keeps its place — in the city or out on
-  // another screen (CITY-75), where its own page opens on the same tower. Its title follows the language (CITY-79).
+  // another screen, where its own page opens on the same tower. Its title follows the language.
   const render = useCallback(() => (tower ? <ChartWindow tower={tower} /> : null), [tower]);
   const towerId = tower?.id ?? null;
   const title = w.chart;

@@ -2,7 +2,7 @@ import type { District, Tower } from '../market/types.ts';
 
 /**
  * The island plan, computed the same way for every visitor: SOL is the spire at the centre, each district
- * is a sector around it. A tower's plot comes from its own mint (CITY-148), never from its place in the list or its
+ * is a sector around it. A tower's plot comes from its own mint, never from its place in the list or its
  * height, so a coin that arrives, leaves or grows moves no other tower; a plan grown from the one on screen keeps every
  * tower that stands in both on its plot.
  * Angles are measured from north (-Z, where the Eclipse hangs) clockwise; x = sin(a)·r, z = -cos(a)·r.
@@ -129,7 +129,7 @@ export function onRoad(x: number, z: number, pad = 0): boolean {
 
 /**
  * Lays the island out. Every tower takes the first free plot of its own walk through its district's band, the walk
- * seeded by its mint; a full band sends it on to the district's second ring (CITY-86), then to the free plot of the
+ * seeded by its mint; a full band sends it on to the district's second ring, then to the free plot of the
  * island nearest the district. With `keep` (the plan on screen), a tower that stood there in the same district keeps
  * its plot and the others walk around them: no tower moves for one that arrives, leaves or changes height.
  */
@@ -305,7 +305,7 @@ function layoutFillers(blocks: { x: number; z: number; r: number }[]): Filler[] 
   for (let gx = -ISLAND_RADIUS; gx <= ISLAND_RADIUS; gx += cell) {
     for (let gz = -ISLAND_RADIUS; gz <= ISLAND_RADIUS; gz += cell) {
       // Every cell draws its numbers whether it builds or not, so a tower that arrives or leaves changes only the
-      // low buildings on its own plot (CITY-148).
+      // low buildings on its own plot.
       const [jx, jz, park, w, d, h, tall, seed] = [random(), random(), random(), random(), random(), random(), random(), random()];
       const x = gx + (jx - 0.5) * 0.9;
       const z = gz + (jz - 0.5) * 0.9;
@@ -329,7 +329,7 @@ function layoutRails(towers: PlacedTower[]): Rail[] {
   const rails: Rail[] = [];
   const sol = towers[0];
   const anchor = (t: PlacedTower, f: number): [number, number, number] => [t.x, t.height * f, t.z];
-  // Each rail draws from the two towers it ties, so a rail stays as it was while its towers stand (CITY-148).
+  // Each rail draws from the two towers it ties, so a rail stays as it was while its towers stand.
   const between = (a: PlacedTower, b: PlacedTower) => rng(Math.imul(seatOf(a.tower), 0x9e3779b1) ^ seatOf(b.tower));
   const byDistrict = new Map<District, PlacedTower[]>();
   for (const t of towers.slice(1)) {

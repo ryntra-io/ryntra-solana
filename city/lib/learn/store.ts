@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 
 /**
- * Whether «Learn» (CITY-202) is open over the city, and on which chapter. The menu (☰) opens it on the list, the command
+ * Whether «Learn» is open over the city, and on which chapter. The menu (☰) opens it on the list, the command
  * line on the chapter a question names («how does the agent work» → the agent); the window lives in the city's one frame
  * and closes as every window does. `chapter` null is the list of chapters (on a phone, the first screen).
  */

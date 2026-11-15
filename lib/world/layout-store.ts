@@ -3,7 +3,7 @@ import { WorldStoreUnavailable, type WorldStore } from "./store";
 import type { WorldRpc } from "./supabase-store";
 
 /**
- * Where a quarter's free layout is kept (CITY-55). Two stores answer the same way, like the world's own: the database
+ * Where a quarter's free layout is kept. Two stores answer the same way, like the world's own: the database
  * through the server's secret-gated functions, and memory for tests and local work. A save is one atomic step,
  * written only if the layout is still at the version the person saw and only by the quarter's owner.
  */

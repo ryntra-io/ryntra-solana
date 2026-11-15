@@ -24,7 +24,7 @@ import { PARTNERS } from './words';
 const ART = artOf('district-home');
 
 /**
- * `/partners` (CITY-177): how partners earn, as one short page of the site — not a deck. On top the one thing: the
+ * `/partners`: how partners earn, as one short page of the site — not a deck. On top the one thing: the
  * partner's share of Ryntra's fee and the friend's discount (decision 93, `city/lib/partners/terms.ts`), and «Copy my
  * link» at once. Below, three steps, the calculator, and the rules behind «Details». The city's «Partners» window
  * carries the same button and the same numbers.

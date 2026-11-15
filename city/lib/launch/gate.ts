@@ -13,7 +13,7 @@ export type CityPresetId = (typeof CITY_PRESETS)[number];
 export const CITY_DEFAULT_PRESET: CityPresetId = 'protected';
 
 /**
- * Given (CITY-163). False would keep the city on the devnet stand,
+ * Given. False would keep the city on the devnet stand,
  * and its Launch district on mainnet saying it opens soon; the dock, the sheet and the flow all read this one value.
  */
 export const CITY_LAUNCH_MAINNET = true;

@@ -1,7 +1,6 @@
 /**
- * The memo a match leaves on Solana (CITY-68): one short ASCII line with the log's hash and the receipt's hash, ready
- * for the Memo program. Building it is all this file does — writing it to a chain belongs to the pools program
- * (CITY-46, CITY-52), and on mainnet it moves real money.
+ * The memo a match leaves on Solana: one short ASCII line with the log's hash and the receipt's hash, ready
+ * for the Memo program. Building it is all this file does — writing it to a chain belongs to the pools program, and on mainnet it moves real money.
  *
  *   ryntra-ring/1|<matchId>|<logHash>|<receiptHash>      at most 256 bytes
  */

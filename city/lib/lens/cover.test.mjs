@@ -4,7 +4,7 @@ import test from "node:test";
 
 import { coveredShare, underWindow } from "./cover.ts";
 
-// CITY-243 (a MINOR of CITY-242): on a 1440 × 900 desk the Lens's strip stood at y 67–115, Spot and Earn opened at y 72
+// On a 1440 × 900 desk the Lens's strip stood at y 67–115, Spot and Earn opened at y 72
 // and covered all of it but a 4 px sliver of violet over their edge. Launch stands under the strip (y 114).
 const strip = { x: 480, y: 67, width: 480, height: 48 };
 

@@ -25,16 +25,16 @@ function units(value: number): string {
  * «Mine»: what the wallet holds in Earn, read only — staked SOL valued in SOL with what it earned since it went in
  * through Earn, the piers with their status and SOL-2b's result, and each stock's dividend line read from its
  * multiplier (a split is never a dividend). No wallet: one way to connect. Nothing yet: where to start. Either action
- * follows its line straight on (CITY-201): pushed to the window's foot it left a dark hole of 400 px under the line.
+ * follows its line straight on: pushed to the window's foot it left a dark hole of 400 px under the line.
  */
 export function Mine({ words, owner, mine }: { words: Words; owner: string | null; mine: MineFigures }) {
   const w = words.mine;
-  // CITY-203: a pier the agent looks after is something the wallet has in Earn — «Mine» is not empty with one.
+  // A pier the agent looks after is something the wallet has in Earn — «Mine» is not empty with one.
   const cared = useCare((st) => (st.cares ?? []).some((row) => row.status === 'working'));
   useEffect(() => {
     if (owner && careOpen()) void useCare.getState().load(owner);
   }, [owner]);
-  // Two positions of one pair read the same (CITY-243: three «STAIR-USDC»): each is told apart by its range.
+  // Two positions of one pair read the same (three «STAIR-USDC»): each is told apart by its range.
   const pierMarks = useMemo(() => apart(mine.piers.map((row) => ({ name: row.pair, marks: [rangeMark(row.lower, row.upper)] }))), [mine.piers]);
   if (!owner) {
     return (

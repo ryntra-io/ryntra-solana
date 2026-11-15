@@ -1,5 +1,5 @@
 /**
- * CITY-232 · the devnet pass of the launch's doors (review 8.11): the owner's steps name every switch the stand's
+ * The devnet pass of the launch's doors (review 8.11): the owner's steps name every switch the stand's
  * doors read, so a pass on the stand never misses «Share earnings» behind a closed switch.
  */
 

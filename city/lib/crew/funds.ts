@@ -1,7 +1,7 @@
 import { budgetPreset, type BudgetPresetId } from '../../../lib/mandate/presets.ts';
 
 /**
- * Enough SOL for the agent's budget (CITY-222): the signature moves the budget into the person's own vault and the SOL
+ * Enough SOL for the agent's budget: the signature moves the budget into the person's own vault and the SOL
  * for the agent's network fees to the agent (`lib/mandate/human.ts`), and opens a few accounts besides. A wallet with
  * less than the budget and the agent's fees cannot sign it at all — the card offers «Add SOL» there instead of a «Sign»
  * the wallet would refuse. Above that floor the card never stands in the way: the wallet itself is the last word.

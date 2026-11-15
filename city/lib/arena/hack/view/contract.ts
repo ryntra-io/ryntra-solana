@@ -3,14 +3,14 @@ import type { HackRole } from '../store/contract.ts';
 import type { FindingView, OrderView, TakeView } from '../store/service.ts';
 
 /**
- * What Hack's windows read (CITY-227): the routes' own views (CITY-226, `../store/service.ts`) and one more — the live
- * run of an agent on an order, as the harness journals it (CITY-225, `../runner/brain.ts`). Types only: the windows
+ * What Hack's windows read: the routes' own views (`../store/service.ts`) and one more — the live
+ * run of an agent on an order, as the harness journals it (`../runner/brain.ts`). Types only: the windows
  * import nothing of the server.
  *
  *   GET /api/arena/hack/orders                 → { orders: OrderView[] }
  *   GET /api/arena/hack/order?id=              → { order: OrderView, takes: TakeView[], findings: FindingView[] }
  *   GET /api/arena/hack/finding?id=            → { finding: FindingView }
- *   GET /api/arena/hack/run?order=&hunter=     → { run: RunFeed | null }      (the run's own route, CITY-238)
+ *   GET /api/arena/hack/run?order=&hunter=     → { run: RunFeed | null }      (the run's own route)
  *   POST /api/arena/hack/take · confirm · move
  *
  * Where no run is served — a deployment with no machine to play on, a defender's take — the window follows the agent
@@ -41,5 +41,5 @@ export type RunFeed = {
   readonly startedAt: number;
 };
 
-/** The person's agent that goes on an order: the Ring's agent (CITY-50), by its id, name and body. */
+/** The person's agent that goes on an order: the Ring's agent, by its id, name and body. */
 export type MyAgent = { readonly id: string; readonly name: string; readonly archetype: string };

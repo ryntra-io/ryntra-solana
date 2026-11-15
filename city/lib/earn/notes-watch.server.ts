@@ -16,7 +16,7 @@ import { MAX_STOCK_MINTS } from './stocks';
 import { readScaledConfigs } from './stocks.server';
 
 /**
- * The production side of Earn's server watch (CITY-100): the wallet's pool positions through SOL-2b's own chain read
+ * The production side of Earn's server watch: the wallet's pool positions through SOL-2b's own chain read
  * (`readWalletPositions`, its short cache), the Token-2022 coins it holds and the Scaled UI configuration of each through
  * the stocks engine's mint read (`stocks.server.ts`), the tickers from the stocks universe, and the monitoring delivery
  * for the notes it writes (Telegram, the phone's push, the browser's push, quiet hours, retries). Loans join once Earn
@@ -118,7 +118,7 @@ export async function readEarnWallet(owner: string): Promise<EarnWalletRead> {
       stocks = { configs, held, exposed };
     }
   }
-  // No loan is read yet: E10 (CITY-101) brings Kamino's read, and with it `EARN_LOANS`.
+  // No loan is read yet: E10 brings Kamino's read, and with it `EARN_LOANS`.
   return { positions: pools?.reads ?? null, stocks, loans: null };
 }
 

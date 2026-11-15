@@ -1,5 +1,5 @@
 /**
- * The windows of the one frame «Back» closes by themselves (CITY-213). Android's «Back» left the app from every window
+ * The windows of the one frame «Back» closes by themselves. Android's «Back» left the app from every window
  * no one had added by hand to the list of layers: Earn, Bots, the agent's card, the Autopilot, Guard, Learn. So the rule
  * is now the other way round: a window in the frame stands on «Back» unless a named layer already speaks for it.
  *

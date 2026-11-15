@@ -117,7 +117,7 @@ function Verdict({ result }: { result: WardCheckResponse }) {
 }
 
 /**
- * The Guard window's contents (CITY-152): paste a transaction or a link — one field, one action — and read the
+ * The Guard window's contents: paste a transaction or a link — one field, one action — and read the
  * verdict in one word and one line; the reasons, the changes and the sources wait behind «Details». The engine's
  * pre-sign check only reads: nothing here asks the wallet for anything.
  */

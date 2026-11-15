@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { test } from "node:test";
 
-/* CITY-237: on a phone the settings' sections are one row that scrolls sideways. A section opened from elsewhere —
+/* On a phone the settings' sections are one row that scrolls sideways. A section opened from elsewhere —
    «Notifications» from the menu or the bell's gear — stood cut by the sheet's edge («Сповіще»); the open section's tab
    now comes into view whole. */
 test("the open section's tab is brought into view in the row", () => {

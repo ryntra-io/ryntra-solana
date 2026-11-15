@@ -1,4 +1,4 @@
-// CITY-233 · the ladder before mainnet opens, at 1440×900 and 390×844 → <out>/<state>-<lang>-<size>.jpg
+// The ladder before mainnet opens, at 1440×900 and 390×844 → <out>/<state>-<lang>-<size>.jpg
 //   NEXT_PUBLIC_RYNTRA_CITY_AGENTS=open NEXT_PUBLIC_RYNTRA_CITY_LADDER=mainnet npm run dev -- -p 3137
 //   node city/lib/bots/ladder-open-shots.mjs [out] [baseUrl]          LANGS=uk,en  SIZES=1440,390  STATES=sheet,view,my-bots
 // States:
@@ -115,7 +115,7 @@ for (const size of SIZES) {
       },
       { seed, answer, ladders: demo.ladders, wallet: REVIEW_WALLET },
     );
-    /* Full screen, as the reviews of CITY-219 and CITY-231: a DOM click — the frame need not hold still for it. */
+    /* Full screen, as the reviews: a DOM click — the frame need not hold still for it. */
     await page.evaluate(() => document.querySelector("[data-window='bots'] button[aria-label='Full screen'], [data-window='bots'] button[aria-label='На весь екран']")?.click());
     await page.waitForTimeout(800);
     const shot = async (state) => {

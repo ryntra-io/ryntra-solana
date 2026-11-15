@@ -1,4 +1,4 @@
-// CITY-231 · «My bots» with «Cancel» on the DLMM bots read from the chain, at 1440×900 and 390×844 → <out>/<state>-<lang>-<size>.jpg
+// «My bots» with «Cancel» on the DLMM bots read from the chain, at 1440×900 and 390×844 → <out>/<state>-<lang>-<size>.jpg
 //   NEXT_PUBLIC_RYNTRA_CITY_AGENTS=open NEXT_PUBLIC_RYNTRA_CITY_LADDER=mainnet npm run dev -- -p 3137
 //   node city/lib/bots/take-back-shots.mjs [out] [baseUrl]          LANGS=uk,en  SIZES=1440,390
 // The window is opened as a person opens it: the Deck's «Agents», then «Bots», then «My bots». This browser keeps no
@@ -120,7 +120,7 @@ for (const size of SIZES) {
     );
     await page.evaluate(() => window.__openBots("hangar"));
     await page.locator("[data-chain-cancel]").first().waitFor({ timeout: 60_000 });
-    /* Full screen, as the review of CITY-219: a DOM click — the frame need not hold still for it. */
+    /* Full screen, as the review: a DOM click — the frame need not hold still for it. */
     await page.evaluate(() => document.querySelector("[data-window='bots'] button[aria-label='Full screen'], [data-window='bots'] button[aria-label='На весь екран']")?.click());
     await page.waitForTimeout(1_500);
     const shot = async (state) => {

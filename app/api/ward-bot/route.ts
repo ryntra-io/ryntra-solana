@@ -15,7 +15,7 @@ export const maxDuration = 30;
 const UPDATES = ["message", "my_chat_member"] as const;
 
 /**
- * The pre-sign check's Telegram bot — webhook (CITY-166; `lib/ward-bot/**`). A bot of its own, beside the assistant's
+ * The pre-sign check's Telegram bot — webhook (`lib/ward-bot/**`). A bot of its own, beside the assistant's
  * (`/api/telegram`): someone pastes an address, a CA, a link or a transaction, the bot answers with the engine's verdict
  * in one line. It reads only.
  *

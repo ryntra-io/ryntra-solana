@@ -83,7 +83,7 @@ export function Rails({ rails, hidden }: { rails: Rail[]; hidden?: readonly numb
           float pulse = smoothstep(0.0, 0.04, t) * (1.0 - smoothstep(0.04, 0.16, t));
           vec3 pulseColor = h(vRail + 2.0) > 0.82 ? uMint : uAmber;
           vec3 col = uViolet * 0.32 + pulseColor * pulse * 4.0;
-          // A lens on (CITY-86): the rails step back into the haze with the towers they tie.
+          // A lens on: the rails step back into the haze with the towers they tie.
           float fade = smoothstep(420.0, 120.0, vDepth) * (1.0 - 0.8 * uLensMix);
           gl_FragColor = vec4(col * fade, 1.0);
         }

@@ -6,7 +6,7 @@ import type { LimitMarket } from './limit.ts';
 import type { LimitStates } from './limit-gate.ts';
 
 /**
- * Sell Higher's line to the server (CITY-97): the markets that passed every check, what one wallet may do, the
+ * Sell Higher's line to the server: the markets that passed every check, what one wallet may do, the
  * wallet's orders as the chain holds them, and the city's door in front of the engine's limit-order Review. The relay
  * and the chain's word on a signature are the engine's own routes, as for the Piers. The window asks and shows; the
  * engine builds and decides.

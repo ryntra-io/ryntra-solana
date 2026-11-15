@@ -1,6 +1,6 @@
--- Ryntra City: the Ring's agents (CITY-50) on the server.
+-- Ryntra City: the Ring's agents on the server.
 --
--- PREPARED 2026-10-27 as a file only. Not applied to any Supabase project:
+-- PREPARED 2026-10-27 as a file only. Not applied to any Supabase project.
 -- The Ring does not open in production without it: `lib/ring/ready.ts`
 -- refuses to open on one instance's memory.
 --
@@ -16,12 +16,11 @@
 --     creates at once give the slot to one. A change or a switch-off takes
 --     the agent's row lock and happens only at the version its owner saw.
 --   * Ratings are kept per agent, format and brain (model and provider): a new
---     brain starts from the start and the old rows stay. Matches (CITY-51)
+--     brain starts from the start and the old rows stay. Matches
 --     write them; this file only reads them.
 --
 -- WHAT IT DOES NOT DO
---   No money, no match, no stake. No function here returns a sealed key:
---   nothing in CITY-50 reads a key back.
+--   No money, no match, no stake. No function here returns a sealed key.
 
 begin;
 

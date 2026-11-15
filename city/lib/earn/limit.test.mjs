@@ -188,7 +188,7 @@ test("an order set through one multiplier and read through another is offered ag
   assert.equal(readRecord({ ...record, order: "x" }), null);
 });
 
-/* ------------------------------------------------------- dollars on the card (CITY-190) */
+/* ------------------------------------------------------- dollars on the card */
 
 test("dollars typed become the coin at the venue's price, rounded down; the coin reads back in cents", () => {
   const sol = { ...stockMarket(), asset: { mint: "So11111111111111111111111111111111111111112", symbol: "SOL", decimals: 9, kind: "sol", name: null }, multiplier: { current: 1, pending: null, effectiveAt: null }, priceUsd: 186.4, quoteUsd: 1 };

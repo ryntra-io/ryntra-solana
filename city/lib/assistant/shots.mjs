@@ -1,4 +1,4 @@
-// Ryntra in the city (CITY-10) for review: the button, the panel's ready questions, an answer that flies the camera to
+// Ryntra in the city for review: the button, the panel's ready questions, an answer that flies the camera to
 // the towers it names and lights them, its Details, a question about the picked tower, and the city's own read while
 // Ryntra cannot answer — at 1440×860 and 390×844 → <out>/assistant-<state>-<size>.jpg
 //   node city/lib/assistant/shots.mjs [out] [baseUrl]      (npm run dev running; PRESS_CHROME may point at a Chromium)

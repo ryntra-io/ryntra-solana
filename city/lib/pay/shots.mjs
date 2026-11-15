@@ -1,4 +1,4 @@
-// The payer's page for review (CITY-156), at 1440×900 and 390×844 → <out>/pay-<state>-<size>.png, and one test payment
+// The payer's page for review, at 1440×900 and 390×844 → <out>/pay-<state>-<size>.png, and one test payment
 // through the page end to end.
 //
 //   node city/lib/pay/shots.mjs seed <dir>                       — write the fixture requests into a file store
@@ -169,8 +169,6 @@ async function open(size, { wallet = false, lang = "en" } = {}) {
 
 /**
  * Whether anything of the old face reaches the person: the words and pictures on the page, the tab, the preview tags.
- * The root layout's JSON-LD (the organisation's logo and line, for search engines) is the whole site's and is left to
- * CITY-158; it is not drawn.
  */
 const oldFace = (page) =>
   page.evaluate(() => {

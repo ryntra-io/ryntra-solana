@@ -1,8 +1,8 @@
-/* The Arena's Hack window (CITY-227): the orders, an order's card, an agent's run live, a finding's card, the board.
-   The Ring's language (CITY-217) — dark glass, fine violet edges, the visor's amber for what is yours, one amber action
-   a screen — with the levels of a finding in their own colours. The frame (CITY-65) brings the glass and the head; the
+/* The Arena's Hack window: the orders, an order's card, an agent's run live, a finding's card, the board.
+   The Ring's language — dark glass, fine violet edges, the visor's amber for what is yours, one amber action
+   a screen — with the levels of a finding in their own colours. The frame brings the glass and the head; the
    contents lay out for the window's own width (@container window), the same on a computer and in the phone's sheet.
-   Tokens from city/styles/city.module.css (CITY-11). */
+   Tokens from city/styles/city.module.css. */
 
 .pendingWindow {
   position: absolute;

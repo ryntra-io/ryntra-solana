@@ -1,7 +1,7 @@
 import type { Lang } from '../i18n/langs.ts';
 
 /**
- * «Learn» (CITY-202): the guide «Ryntra from A to Z» as the city's window reads it. The chapters are written once, as
+ * «Learn»: the guide «Ryntra from A to Z» as the city's window reads it. The chapters are written once, as
  * Markdown in `docs/learn/{en,uk}/`; `scripts/learn/build.mjs` turns them into `guide.generated.ts` — plain data, so the
  * window draws every word with its own components and nothing arrives as HTML.
  */

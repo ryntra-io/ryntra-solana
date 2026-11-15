@@ -36,7 +36,7 @@ export function useLaunchFlow(token: string): Readonly<{ flow: LaunchFlowRespons
 }
 
 /**
- * The launch's flow on its tower (L3, CITY-140): a few facts as pills and the creator's strip, the method behind one
+ * The launch's flow on its tower: a few facts as pills and the creator's strip, the method behind one
  * «i». While the engine reads, the place is held so the window does not jump; a flow the engine could not read leaves
  * nothing.
  */

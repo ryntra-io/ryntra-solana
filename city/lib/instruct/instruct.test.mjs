@@ -9,7 +9,7 @@ import { answer, linePrice, modeOf, planOf, priceText, scheduleOf, toRaw } from 
 import { readInstruction } from "./read.ts";
 import { entriesKey, liveOf, NO_READS, parseEntries, setInstructEnv, useInstruct } from "./store.ts";
 
-/* CITY-176: the agent's card hands each instruction to the engine that already does it — and only the person signs. */
+/* The agent's card hands each instruction to the engine that already does it — and only the person signs. */
 
 const JUP_MINT = "JUPyiwrYJFskUPiHa7hkeR8VUtAeFoSYbKedZNsDvCN";
 const BONK_MINT = "DezXAZ8z7PnrnRJjz3wXBoRgixCa6xjnB7YaB1pPB263";

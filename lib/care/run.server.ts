@@ -1,5 +1,5 @@
 /**
- * CITY-203 — one action of the agent on a position it looks after, end to end: wrap the build in the care's policy,
+ * One action of the agent on a position it looks after, end to end: wrap the build in the care's policy,
  * read the accounts the rules look into, have the agent's signer judge and sign, send through our own RPC, read back.
  *
  * As the agent's trades (`../mandate/run.server.ts`): it never sends what its signer refused, never re-sends on its own,

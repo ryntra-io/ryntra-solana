@@ -20,7 +20,7 @@ const renderHack = () => <HackWindow />;
 const closeHack = () => hackStore.getState().close();
 
 /**
- * The Arena's third door, Hack (CITY-227), in the city's one window frame (CITY-65): the Arena's «Hack» door opens it.
+ * The Arena's third door, Hack, in the city's one window frame: the Arena's «Hack» door opens it.
  * Only where the deployment's switch is open (`HACK_OPEN`); otherwise nothing mounts and the door is not shown. A run
  * owns the whole screen and a clip being filmed keeps the frame clean.
  */

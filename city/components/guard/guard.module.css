@@ -1,6 +1,6 @@
-/* The Guard window's contents (CITY-152): one field, one orange action, one verdict — mint when nothing stands
+/* The Guard window's contents: one field, one orange action, one verdict — mint when nothing stands
    against it, amber when a person should look, flare when it stops. The glass, the head and the moving are the city's
-   one window frame (CITY-65). Tokens and the type scale from city/styles/city.module.css (CITY-11). */
+   one window frame. Tokens and the type scale from city/styles/city.module.css. */
 
 .display {
   font-family: var(--font-display, system-ui), system-ui, sans-serif;
@@ -11,7 +11,7 @@
   text-transform: uppercase;
 }
 
-/* In the flow, as tall as the window or as its contents (CITY-201): the frame fits the Guard to them, and the window's
+/* In the flow, as tall as the window or as its contents: the frame fits the Guard to them, and the window's
    own body scrolls a long verdict under the sticky dock. */
 .framed {
   --accent: #ff681c;

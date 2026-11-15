@@ -36,13 +36,13 @@ import { lamportsFromText } from './saver.ts';
 import { earnWords } from './words.ts';
 
 /**
- * The SOL Pier's state in the Earn window (CITY-93): the pier open on the Piers tab with its style and its amount in
+ * The SOL Pier's state in the Earn window: the pier open on the Piers tab with its style and its amount in
  * SOL, the boat open (a position, to take its fees or leave), what the city and the engine let this wallet do, the
  * engine's Review of exactly what is on screen, and where an action is. A Review is built as soon as a wallet is here
  * and admitted, so every figure the person signs stands on the card before the one amber tap; a tap on a Review too
  * old to sign builds it again and shows it first. While the wallet signs or bytes are on their way, the window holds.
  *
- * CITY-198: a pier takes SOL alone. The add is the engine's Zap — the swap of the part the other coin needs and the
+ * A pier takes SOL alone. The add is the engine's Zap — the swap of the part the other coin needs and the
  * deposit, in one approval of the wallet (several transactions signed together). When only part of it lands, the card
  * says so plainly and offers «Take back as SOL»: one more approval, and what the Zap left in the wallet comes back.
  */
@@ -130,7 +130,7 @@ export function targetKey(owner: string, target: Exclude<PierTarget, { kind: 'ad
   return `${target.kind}:${owner}:${target.position.address}`;
 }
 
-/** A position that landed through the city, for «Like the Captain»'s ledger (CITY-99): the chain is asked, not believed. */
+/** A position that landed through the city, for «Like the Captain»'s ledger: the chain is asked, not believed. */
 export type LandedAdd = Readonly<{ owner: string; position: string; pool: string; style: PierStyle }>;
 
 export type PierEnv = Readonly<{
@@ -202,7 +202,7 @@ type Store = {
   rest: PierRest | null;
   candles: Readonly<Record<string, Loaded<ReadonlyMap<number, number>>>>;
   openPier: (pool: HarborPool) => void;
-  /** The same card on a strategy's pier, its style fixed (CITY-99). */
+  /** The same card on a strategy's pier, its style fixed. */
   openCopy: (pool: HarborPool, copy: PierCopy) => void;
   openBoat: (position: PositionView) => void;
   /** Back to the list: never while a signature is out. */

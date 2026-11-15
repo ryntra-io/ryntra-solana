@@ -7,7 +7,7 @@ import { proveWallet } from "../trade/proof.ts";
 import { resetWalletFactForTests, walletFact } from "../../../lib/account/wallet-proof-store.client.ts";
 import { buildSiwsInput, siwsMessageText, verifySiws } from "../../../lib/auth/siws.ts";
 
-// CITY-6b: Ryntra's Sign In With Solana from the city in the app. The server's own builder writes the message and its
+// Ryntra's Sign In With Solana from the city in the app. The server's own builder writes the message and its
 // own verifier checks the signature (`lib/auth/siws.ts`, as `/api/auth/solana` uses them); between the two, the
 // city's `proveWallet` hands the exact bytes to a fake app's wallet through the bridge. Only `fetch` is a stub.
 

@@ -78,7 +78,7 @@
   background: var(--warm);
 }
 
-/* The span a board's rows are of: the week, or how far a quiet week reached back (CITY-230). */
+/* The span a board's rows are of: the week, or how far a quiet week reached back. */
 .tagSpan {
   color: var(--amber);
   background: rgba(255, 178, 63, 0.12);
@@ -148,7 +148,7 @@
 /* ---------- The boards ---------- */
 
 /* As many equal columns as boards are shown (three until the scouts' board has its source): a fourth, empty column
- left «Найбільший ×» too little room on a phone and its × fell to a second line (CITY-236). */
+ left «Найбільший ×» too little room on a phone and its × fell to a second line. */
 .tabs {
   display: grid;
   grid-auto-flow: column;
@@ -352,7 +352,7 @@
 }
 
 /* A wide screen: the panel stands beside the city, the skyline stays in view — and above the Deck, as the Vault's room
-   and every window do (`INSET.bottom` in city/lib/window/geometry.ts): on a 1440 screen it stood over «Money» (CITY-236). */
+   and every window do (`INSET.bottom` in city/lib/window/geometry.ts): on a 1440 screen it stood over «Money». */
 @media (min-aspect-ratio: 1/1) {
   .sheet {
     left: auto;

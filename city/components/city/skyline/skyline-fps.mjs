@@ -1,4 +1,4 @@
-// The skyline's frame rate per quality tier (CITY-56), measured once the kit is on the screen, on the real GPU:
+// The skyline's frame rate per quality tier, measured once the kit is on the screen, on the real GPU:
 //   node city/components/city/skyline/skyline-fps.mjs [baseUrl] [--seconds 6]   (npm run dev running)
 // A phone (390×844, DPR 2, touch) with the CPU slowed ×4 — DevTools' stand-in for a mid Android — and a desk at
 // 1440×900. For each tier (High, Balanced = mid, Lite = low) it pins the tier, waits for it to settle, counts frames for

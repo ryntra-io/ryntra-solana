@@ -12,7 +12,7 @@ import { WorldStoreUnavailable, type WorldStore } from "./store";
 import { shownText } from "./text-safety/clean";
 
 /**
- * The routes of crews (CITY-20), written against plain `Request` and `Response` like the world's own (`api.ts`), with
+ * The routes of crews, written against plain `Request` and `Response` like the world's own (`api.ts`), with
  * the same guarantees: same site only, limited per address and per resident, an `Idempotency-Key` on every write.
  *
  *   GET  /api/world/crew                my crew: its street, people, invite, headquarters, score; null when none

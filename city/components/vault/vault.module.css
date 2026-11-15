@@ -1,4 +1,4 @@
-/* The Vault's room over the city (CITY-47): the HUD's dark glass and chamfered corners, the guard's words at the
+/* The Vault's room over the city: the HUD's dark glass and chamfered corners, the guard's words at the
    centre, one amber action. On a desk the room stands at the right and the vault is framed at the left; on a phone
    it is a sheet over the lower part and the vault stands above it. Tokens from city/styles/city.module.css. */
 
@@ -433,7 +433,7 @@
   }
 }
 
-/* The vault's name over its tower in the city (CITY-241): the plate of the city's signs, one tap into the room. The
+/* The vault's name over its tower in the city: the plate of the city's signs, one tap into the room. The
    button is the whole target (44 px); the chamfered plate inside it is what is drawn. */
 .sign {
   display: grid;
@@ -488,7 +488,7 @@
   transform: scale(0.97);
 }
 
-/* The sign waiting at a phone's edge while its tower is outside the frame (CITY-243): an arrow toward the Vault's side. */
+/* The sign waiting at a phone's edge while its tower is outside the frame: an arrow toward the Vault's side. */
 .signArrow {
   display: none;
   width: 7px;

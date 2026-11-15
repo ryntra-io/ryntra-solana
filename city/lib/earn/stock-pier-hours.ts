@@ -2,7 +2,7 @@ import { ACTIVATION_WINDOW_MS } from '../../../lib/stocks/units.ts';
 import { readAction } from './corporate.ts';
 
 /**
- * What a Stock Pier knows about the exchange (CITY-98, spec E7 «Причали, що знають години біржі»): when the
+ * What a Stock Pier knows about the exchange: when the
  * reference exchange opens and closes — from the issuer's own trading period, never from a «Monday to Friday» rule
  * (`lib/stocks/session.ts`) — the person's plan for the close, and the guard around a corporate step of the token's
  * multiplier (a reinvested dividend, a split).

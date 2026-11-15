@@ -1,5 +1,5 @@
 /**
- * How the City tab holds `https://ryntra.io` in its WebView (CITY-6c): which address it opens, what may load in it, who
+ * How the City tab holds `https://ryntra.io` in its WebView: which address it opens, what may load in it, who
  * may speak over the bridge, and what a link from outside opens. Pure — no React Native here, so the rules are tested as
  * they are.
  */
@@ -16,7 +16,7 @@ export const CITY_ORIGIN = 'https://ryntra.io'
 export const CITY_AT_PARAM = 'at'
 
 /**
- * What a link to the city may ask of it on arrival, kept when the link opens the app (CITY-235) — the same words the
+ * What a link to the city may ask of it on arrival, kept when the link opens the app — the same words the
  * site reads in a browser: the window to open (`open`, with its `tab`, `market` or `page` — the agent's card
  * `/?open=agent`, Money, Earn, the Hall), a creator's early-access link (`early=<mint>`), a crew's invite (`crew`), a
  * friend's code (`ref`, its sub-ID `s`) and a campaign's tags (`utm_*`), the home's tower (`coin`) and the language
@@ -143,7 +143,7 @@ export function cityRouteOfLink(link: string): string {
  * page has a step to go back to — the standard Navigation API's `canGoBack`, at load and at every move of its history.
  * Android's `WebView.canGoBack()` skips an entry the page added before the person touched it (Chromium's history
  * intervention): a window a link opened (`/?open=money`, a coin's tower) stood on such an entry, and Back left the app
- * instead of closing it (CITY-235). The page's own `history.back()` walks every entry. Silent where the API is missing:
+ * instead of closing it. The page's own `history.back()` walks every entry. Silent where the API is missing:
  * the app then goes by the WebView alone, as before.
  */
 export const PAGE_BACK_SCRIPT = `(function () {

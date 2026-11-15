@@ -1,11 +1,11 @@
 import type { DuelStore } from "./service.ts";
 
 /**
- * When the duels answer people (CITY-51). Pure, so the rule is tested without a server; `server.ts` applies it.
+ * When the duels answer people. Pure, so the rule is tested without a server; `server.ts` applies it.
  *
  * The duels' own switch must say `open` (`NEXT_PUBLIC_RYNTRA_CITY_RING_DUELS`, closed by default) on top of the
  * Ring's. In production the duel store must also be one every instance shares: the database
- * (`supabase/migrations/20261108120100_ring_v2_arena.sql`, CITY-217); on one instance's memory production stays closed.
+ * (`supabase/migrations/20261108120100_ring_v2_arena.sql`); on one instance's memory production stays closed.
  */
 export function duelsReady(store: Pick<DuelStore, "durable">, flag: string | undefined, mode: string | undefined): boolean {
   return flag?.trim() === "open" && (store.durable || mode !== "production");
@@ -20,7 +20,7 @@ export const MARKET_POOL_ENV = "RYNTRA_RING_MARKET_POOL";
 /** SOL/USDC on Orca, the pool Ryntra's fixtures name; a deployment may name another. */
 export const DEFAULT_MARKET_POOL = "Czfq3xZZDmsdGdUyrNLtRhGc47cXcZtLG4crryfu44zE";
 
-/** The day's ceiling on what the duels' models spend, in dollars (CITY-217). */
+/** The day's ceiling on what the duels' models spend, in dollars. */
 export const DAILY_CAP_ENV = "RYNTRA_RING_DAILY_USD";
 
 /** The ceiling where the deployment names none, and the most it may name. */

@@ -2,7 +2,7 @@ import { create } from 'zustand';
 import { isMandateRecord, MANDATE_NET, useMandate, type MandateNetwork, type MandateRecord, type MandateStatus } from './mandate.ts';
 
 /**
- * A wallet's agents from the engine (CITY-207): any browser, any phone sees the agent the person hired somewhere else.
+ * A wallet's agents from the engine: any browser, any phone sees the agent the person hired somewhere else.
  * `POST /api/bots/agents` answers from the agent's book and the chain — the mandates, mainnet and devnet apart, the
  * autopilot on one of them, the piers it looks after. The book is the truth; the note this browser keeps
  * (`mandate.ts`) stays only as a cache, written over by the engine's answer.
@@ -16,7 +16,7 @@ export type EngineMandate = Readonly<{
   active: boolean;
   trades: number;
   pilot: boolean;
-  /** CITY-70: her «Freeze» is on — the agent starts nothing new. */
+  /** Her «Freeze» is on — the agent starts nothing new. */
   frozen: boolean;
   createdAt: number;
 }>;

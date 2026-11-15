@@ -13,7 +13,7 @@ export const dynamic = "force-dynamic";
 /* Anonymous site clicks only. `workspace_cta_click` is fired by the site chrome
    and was once refused here, so the admin never saw it. Seeker Connect's count
    (SKR-1) is three more names: worked, cancelled, did not connect. Perps' moments
-   (PERP-4, spec §18) are nine more, each with a market's symbol and one word. The agent's first action (CITY-222) is
+   (PERP-4, spec §18) are nine more, each with a market's symbol and one word. The agent's first action is
    nine more: the moments from the city's first screen to the budget signed, each with the device and at most one word. */
 const SEEKER_EVENTS: ReadonlySet<string> = new Set(SEEKER_CONNECT_EVENT_NAMES);
 const PERPS_EVENTS: ReadonlySet<string> = new Set(PERPS_EVENT_NAMES);

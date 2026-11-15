@@ -3,7 +3,7 @@ import { create } from 'zustand';
 import { PRICE_BASIS, onTick } from '../../../app/solana/workspace/spot/core-chart-source.ts';
 
 /**
- * Layers over a tower's chart (CITY-5a): marks at moments and levels across the chart, each layer a chip the person
+ * Layers over a tower's chart: marks at moments and levels across the chart, each layer a chip the person
  * turns on and off. The chart has two of its own — the coin's market marks and «Your entry» — and any district adds
  * its own with one call, without touching the chart's files:
  *

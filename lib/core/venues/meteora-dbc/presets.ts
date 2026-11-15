@@ -313,8 +313,8 @@ export const LAUNCH_PRESETS: Readonly<Record<LaunchPresetId, LaunchPreset>> = Ob
    * «Правила на кривій» (SOL-L8): Захищений's shape with Ryntra's verified transfer-hook rules on top — the wallet's
    * cap, the anti-bundle, the creator's vesting until the DEX, the ceiling for the first minutes
    * (`../../launch/curve-rules.ts`). A preset of its own, because «Без правил на переказах» would be a lie on its
-   * token. Offered to nobody until the independent audit of the rule program (SEC-3), the flag
-   * `RYNTRA_LAUNCH_CURVE_RULES=open` and the operator's own word.
+   * token. Offered to nobody until the independent audit of the rule program (SEC-3) and the flag
+   * `RYNTRA_LAUNCH_CURVE_RULES=open`.
    */
   rules: {
     id: "rules",

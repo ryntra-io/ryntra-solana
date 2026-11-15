@@ -1,5 +1,5 @@
 /**
- * Market Replay (CITY-51, decision 72): both agents trade the same hidden stretch of Solana's market history on paper,
+ * Market Replay: both agents trade the same hidden stretch of Solana's market history on paper,
  * step by step, seeing only the bars up to now. Whoever ends with more wins. The bars come from Ryntra's market-data
  * gateway (`segment.ts`), rebased so the stretch opens at 100 and stripped of its times, so a model cannot look the
  * stretch up in its memory; which stretch it was is shown once the match is over.

@@ -10,9 +10,9 @@ import type { LayerMark } from './layers.ts';
 import type { Basis } from '../trade/mine.ts';
 import { cityInView } from '../window/out.ts';
 
-/** The tower chart's reads (CITY-5a): the bars, the coin's marks and the wallet's entry, each while the window is open. */
+/** The tower chart's reads: the bars, the coin's marks and the wallet's entry, each while the window is open. */
 
-/** The page is seen: its tab, or the chart out in Picture-in-Picture while the tab is behind another (CITY-75). */
+/** The page is seen: its tab, or the chart out in Picture-in-Picture while the tab is behind another. */
 const visible = () => cityInView();
 
 /**

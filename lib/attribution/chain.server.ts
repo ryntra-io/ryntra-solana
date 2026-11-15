@@ -23,7 +23,7 @@
  * (`historyIsComplete`). A reader that cannot prove completeness says so on
  * the page instead of publishing a smaller number as the whole.
  *
- * ## The scan first (CITY-245)
+ * ## The scan first
  *
  * Where the primary node is Helius on mainnet, each fee account's signatures are found through its Parsed Events Scan:
  * one request per account, filtered to the transactions that moved the account's own mint through it, back to the

@@ -8,7 +8,7 @@ export const dynamic = "force-dynamic";
 
 type Params = Readonly<{ params: Promise<{ stopId: string }> }>;
 
-/** Let the wallet's stop go (CITY-149). A change: the wallet's own signature (Sign In With Solana). */
+/** Let the wallet's stop go. A change: the wallet's own signature (Sign In With Solana). */
 export async function DELETE(request: Request, { params }: Params) {
   const refused = apiMajorRefusal(request.headers);
   if (refused) return refused;

@@ -18,7 +18,7 @@ function grouped(value: number, digits: number): string {
 
 /**
  * A price per unit of the asset: cents from a dollar up — three places read as thousands with a comma for the point
- * («$97,350» beside the Spot's «$97,48», CITY-150) — and as many places as the price needs below one.
+ * («$97,350» beside the Spot's «$97,48») — and as many places as the price needs below one.
  */
 export function price(value: number | null | undefined): string {
   if (!finite(value) || value <= 0) return DASH;

@@ -1,7 +1,7 @@
 /* The bots window (B4): dark glass, fine violet edges, one amber action per screen, mint only for value that grew,
-   flare only for a loss. The frame (CITY-65) brings the glass, the head and the moving; the contents lay out for the
+   flare only for a loss. The frame brings the glass, the head and the moving; the contents lay out for the
    window's own width (`@container window`), the same on a computer and in the phone's bottom sheet. Tokens and the
-   type scale from city/styles/city.module.css (CITY-11). */
+   type scale from city/styles/city.module.css. */
 
 .framed {
   position: absolute;
@@ -881,7 +881,7 @@ button.card:hover {
   text-transform: uppercase;
 }
 
-/* «If the price leaves the range» — the last field of the settings' own card (CITY-243). */
+/* «If the price leaves the range» — the last field of the settings' own card. */
 .exitField {
   display: grid;
   gap: 7px;
@@ -898,7 +898,7 @@ button.card:hover {
   margin-top: 1px;
 }
 
-/* A desk 900 px tall, the page in two columns (CITY-243): the settings and the start pinned under them stand whole —
+/* A desk 900 px tall, the page in two columns: the settings and the start pinned under them stand whole —
    «If the price leaves the range» was under the pinned start, its title alone in sight. The rows stand closer and a
    mouse's controls are a little lower; nothing a finger presses changes (`pointer: fine`). */
 @media (max-height: 940px) and (pointer: fine) {
@@ -1635,7 +1635,7 @@ button.card:hover {
   }
 }
 
-/* ---------- Ryntra (CITY-133): the assistant's pick on «Start», its «Why?» on the wallet's bots ---------- */
+/* ---------- Ryntra: the assistant's pick on «Start», its «Why?» on the wallet's bots ---------- */
 
 .ryntra {
   position: relative;
@@ -1952,7 +1952,7 @@ button.card:hover {
   }
 }
 
-/* ---------- The ladder on devnet (CITY-135) ---------- */
+/* ---------- The ladder on devnet ---------- */
 
 /* The test network's mark: violet like the window's own chips, never the amber of the one action. */
 .devnet {
@@ -2008,7 +2008,7 @@ button.card:hover {
   color: var(--warm);
 }
 
-/* A «no» is read, not skimmed (CITY-237): it was small grey text under the fold. «Nothing was signed» is the person's
+/* A «no» is read, not skimmed: it was small grey text under the fold. «Nothing was signed» is the person's
    own choice and keeps the line's calm colour; a stop before the wallet and a silent network are in the warm one. */
 .liveNote[data-kind='refused'],
 .liveNote[data-kind='unreachable'],
@@ -2016,7 +2016,7 @@ button.card:hover {
   color: var(--warm);
 }
 
-/* ---------- The agent with a budget (CITY-174) ---------- */
+/* ---------- The agent with a budget ---------- */
 
 /* «Your agent»: the first card of Start — the budget, the limits in one line, one signature. */
 .agentBudget {

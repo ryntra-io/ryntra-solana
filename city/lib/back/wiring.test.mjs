@@ -4,7 +4,7 @@ import test from "node:test";
 
 import { WINDOWS } from "../city/windows.ts";
 
-// CITY-6e in the city: the stack (`stack.ts`) is mounted once on the city's page, and every window the city knows,
+// In the city: the stack (`stack.ts`) is mounted once on the city's page, and every window the city knows,
 // besides the tower's card, your quarter, the run, the «While you were away» reel and a window on the whole screen, is a
 // layer «Back» closes.
 
@@ -36,13 +36,13 @@ test("a window its frame holds (a signature, real money on its way) is not close
   assert.ok(guard < close.indexOf("CLOSE[id as WindowName]()"), "before any window's own close");
 });
 
-test("the panels with an «open» of their own stand on Back: the search, the wallet's menu, the Deck's tray (CITY-150)", () => {
+test("the panels with an «open» of their own stand on Back: the search, the wallet's menu, the Deck's tray", () => {
   assert.match(read("../../components/search/CitySearch.tsx"), /useBackPanel\('search', open,/);
   assert.match(read("../../components/quarter/WalletChip.tsx"), /useBackPanel\('wallet', showing, close\)/);
   assert.match(read("../../components/deck/Deck.tsx"), /useBackPanel\('tray', tray !== null,/);
 });
 
-// CITY-236 (CITY-235's asks 1–2): the early launch's window stands on «Back», and «Back» from a step inside a window
+// The early launch's window stands on «Back», and «Back» from a step inside a window
 // returns a step instead of closing the whole window.
 
 test("the early launch's window is the launch's layer: asked, followed and closed as its own «Close»", () => {
@@ -59,7 +59,7 @@ test("the launch's review is a layer over the sheet: Back returns to the fields"
   assert.ok(above.includes("'launch-review'"), "over the windows, so it closes before the sheet does");
   // Escape on a desk steps the same way, before the sheet's own close.
   const hud = read("../../components/hud/Hud.tsx");
-  // CITY-242: the sheet is a window of the frame; it hears Escape when it is the window in front, and takes the press.
+  // The sheet is a window of the frame; it hears Escape when it is the window in front, and takes the press.
   // Before the windows behind it — a trade card's own early stand-down waits for it — and the press is taken even
   // while a launch is under way, so nothing behind closes in its place.
   assert.match(hud, /const launchFront = framed && top\(layout\)\?\.id === 'launch';/);

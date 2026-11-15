@@ -9,7 +9,7 @@ import { readAsk } from "./read.ts";
 import { pickLaunch, readRun } from "./runs.ts";
 import { AUTOPILOT } from "./words.ts";
 
-/* CITY-193: the strategy said in a sentence, read into a plan, and said back on the card in one line. */
+/* The strategy said in a sentence, read into a plan, and said back on the card in one line. */
 
 const BONK = "DezXAZ8z7PnrnRJjz3wXBoRgixCa6xjnB7YaB1pPB263";
 const BOOK = bookOf([{ id: BONK, symbol: "BONK", name: "Bonk", icon: null, mcap: 1e9, liquidity: 1e6, verified: true }]);
@@ -58,7 +58,6 @@ test("a question, a refusal, a stop with no figure or a plain list is not a stra
     const read = ask(said);
     assert.ok(read === null || read.plan === undefined, said);
   }
-  // CITY-176's standing purchases stay CITY-176's.
   assert.notEqual(readInstruction("купуй SOL на $20 щотижня", BOOK, { subject: null }), null);
 });
 

@@ -8,7 +8,7 @@ import { blockedWords, doneNotice, practiceView, realView, reviewLine } from "./
 import { eventBody, fedEventBody, liveBody, quoteBody } from "./test-fixtures.mjs";
 
 /*
- * The ticket's one orange button and the one line under it, in every state it can be in (CITY-77). Practice is taken at
+ * The ticket's one orange button and the one line under it, in every state it can be in. Practice is taken at
  * once and never charges; real money goes wallet → proof → account → USDC → the engine's Review, whose fee and payout
  * stand in one line before anything is signed, → the order confirmed on it.
  */

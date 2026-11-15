@@ -50,7 +50,7 @@ export type LaunchTradePanelProps = Readonly<{
   onBusy?: (busy: boolean) => void;
   /** A coin Ryntra took down (MC-1): its holders can still sell, nobody is offered to buy it. */
   sellOnly?: boolean;
-  /** The launch's time as the city's feed has it: a buy in its first minutes was bought «at birth» (CITY-145). */
+  /** The launch's time as the city's feed has it: a buy in its first minutes was bought «at birth». */
   launchedAt?: string | null;
   /** Whether the engine serves the coin's picture, for its logo on the share card. */
   logo?: boolean;
@@ -62,7 +62,7 @@ type Quote = Readonly<{ key: string; quote: LaunchTradeQuoteResponse }> | Readon
 /**
  * Buy and Sell for a launch's tower (L1): the way to the DEX, the live fee with its fall, the chips, the price the
  * engine quotes, one honest line, one signature, the receipt and the position at once. Self-contained — it reads the
- * engine and the city's one wallet itself — so the tower's card mounts it today and the tower's one window (CITY-78)
+ * engine and the city's one wallet itself — so the tower's card mounts it today and the tower's one window
  * can mount it as it is. The button never waits on the 3D city: everything here is the engine's reads.
  */
 export function LaunchTradePanel({ token, symbol, fallback, onBusy, sellOnly = false, launchedAt = null, logo = false }: LaunchTradePanelProps) {
@@ -237,7 +237,7 @@ export function LaunchTradePanel({ token, symbol, fallback, onBusy, sellOnly = f
   const blocked = verdict === 'BLOCKED';
 
   /* After a sale: the wallet's round trip on this coin, counted only from the market's own trades, the city's own fills
-     and the balance the chain shows — no card when it does not add up (CITY-145). */
+     and the balance the chain shows — no card when it does not add up. */
   const sold = phase?.step === 'done' && phase.done.side === 'sell';
   const address = connection?.address ?? null;
   const sale = sold ? phase.done.signature : null;
@@ -313,7 +313,7 @@ export function LaunchTradePanel({ token, symbol, fallback, onBusy, sellOnly = f
           )}
 
           {/* The live fee, the fee and least received, the risk and the one action stand in the pinned dock (the city's
-              rule since CITY-79): whatever the window holds above them scrolls under it, never these lines. */}
+              rule): whatever the window holds above them scrolls under it, never these lines. */}
           <div className={s.dock}>
             <div className={s.feeRow}>
               <span className={`${s.feeLine} ${fee?.endBps !== null && fee?.endBps !== undefined ? s.feeFalling : ''}`} aria-live="polite">

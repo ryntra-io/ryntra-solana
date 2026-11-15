@@ -20,8 +20,8 @@
  * (`RYNTRA_SOLANA_LAUNCH_STATE`, fail-closed), and a launch needs Ryntra's pool
  * payer too: its key comes through `RYNTRA_LAUNCH_POOL_PAYER_SECRET` (a JSON
  * array of 64 numbers, or the base58 string a wallet exports) — or, once the
- * Owner switches `RYNTRA_LAUNCH_SIGNER` to `kms`, stays in Google Cloud KMS and
- * only signs there (CITY-162, `./signer/`). On mainnet the
+ * operator switches `RYNTRA_LAUNCH_SIGNER` to `kms`, stays in Google Cloud KMS and
+ * only signs there (`./signer/`). On mainnet the
  * key must be the pool payer the attribution registry publishes, or nothing
  * launches: a pool Ryntra opens is always one a counter can attribute. The key
  * is never in the repository and never printed.
@@ -419,7 +419,7 @@ export function launchExecutor(env: NodeJS.ProcessEnv = process.env, network: La
   return boundedSigner(key.key, { role: "executor", address: key.address, cluster: network.cluster, bounds: executorBounds(key.address, options.dlmm ?? null), journal: options.journal ?? NO_JOURNAL });
 }
 
-/** The executor mainnet had before its key moved to KMS (CITY-163): it signs nothing now, and what it already holds is still Ryntra's. */
+/** The executor mainnet had before its key moved to KMS: it signs nothing now, and what it already holds is still Ryntra's. */
 export function launchRetiredExecutorAddress(network: LaunchNetwork): string | null {
   return network.cluster === "mainnet" ? (ATTRIBUTION_REGISTRY.find((row) => row.id === "solana-launch-executor-env")?.address ?? null) : null;
 }

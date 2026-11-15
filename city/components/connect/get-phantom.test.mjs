@@ -5,7 +5,7 @@ import { join, relative } from "node:path";
 import { fileURLToPath } from "node:url";
 import { test } from "node:test";
 
-/* CITY-239: the way to a wallet when the browser has none read «Встанови Phantom» in the wallet's list of the top bar
+/* The way to a wallet when the browser has none read «Встанови Phantom» in the wallet's list of the top bar
    and «Встановити Phantom» on the agent's card — two forms of one button. Every place of the city says it one way. */
 
 const city = fileURLToPath(new URL("../..", import.meta.url));

@@ -1,4 +1,4 @@
-// CITY-201: «While you were away» on a desk. A fixed 420 px cut «+0,008 SOL» to «+0,008 S…» beside the Ukrainian
+// «While you were away» on a desk. A fixed 420 px cut «+0,008 SOL» to «+0,008 S…» beside the Ukrainian
 // «Опублікувати в X», and with the lens as a strip under the top bar the card lay over its chips.
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";

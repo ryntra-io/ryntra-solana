@@ -196,7 +196,7 @@ export function jupiterLendAdapter(deps: JupiterLendDeps): EarnAdapter {
       if (!apiWire) {
         return { ok: false, code: "UNREADABLE", reason: "Jupiter Lend answered without a transaction to sign.", status: 502 };
       }
-      /* CITY-204: the API's deposit takes accounts a first deposit does not have yet — the jlToken account, and wrapped SOL
+      /* The API's deposit takes accounts a first deposit does not have yet — the jlToken account, and wrapped SOL
          for SOL. They go into the same bytes, before the deposit (`deposit-setup.ts`). */
       let wireBase64 = apiWire;
       if (request.action === "deposit") {

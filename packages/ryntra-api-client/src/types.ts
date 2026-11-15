@@ -151,7 +151,7 @@ export type ApiErrorCode =
   | "DEV_ORIGIN_REFUSED"
   | "DEV_SCOPE_REFUSED"
   | "DEV_QUOTA_EXCEEDED"
-  /* 1.90.0 — prepared actions (CITY-161) */
+  /* 1.90.0 — prepared actions */
   | "INTENT_NOT_FOUND"
   | "INTENT_EXPIRED"
   | "INTENT_USED"
@@ -6519,7 +6519,7 @@ export type TeamMemberChangeRequest = Readonly<{ action: "accept" }> | Readonly<
 /** The team after a member change, or null once the wallet left it. */
 export type TeamMemberChangeResponse = Readonly<{ team: Team | null }>;
 
-/** `POST /api/v1/teams/{id}/treasury` (1.75.0) — a Squads v4 multisig the operator's wallet is on, linked once. */
+/** `POST /api/v1/teams/{id}/treasury` (1.75.0) — a Squads v4 multisig the team Owner's wallet is on, linked once. */
 export type TeamTreasuryRequest = Readonly<{ multisig: string }>;
 
 /** `GET /api/v1/teams/{id}/check` (1.75.0) — the server's decision for the proven wallet and one right. */
@@ -6538,7 +6538,7 @@ export type TeamCheckResponse = Readonly<{
   squadsPermission: "initiate" | "vote" | null;
 }>;
 
-/* ---- 1.88.0 — the pre-sign check (CITY-152; working name «ward»): allow · warn · block with every reason, never a score */
+/* ---- 1.88.0 — the pre-sign check (working name «ward»): allow · warn · block with every reason, never a score */
 
 export type WardVerdict = "allow" | "warn" | "block";
 export type WardLevel = "block" | "warn" | "unknown" | "info";
@@ -6645,7 +6645,7 @@ export type WardCheckResponse = Readonly<{
   checkedAt: string;
 }>;
 
-/* ------------------------------------------------------------ prepared actions (1.90.0, CITY-161) */
+/* ------------------------------------------------------------ prepared actions */
 
 export const INTENT_STATUSES = ["OPEN", "CLAIMED", "DONE", "EXPIRED", "LAPSED", "CANCELLED"] as const;
 export type IntentStatus = (typeof INTENT_STATUSES)[number];

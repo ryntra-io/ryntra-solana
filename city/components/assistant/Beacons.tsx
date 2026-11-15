@@ -12,7 +12,7 @@ import { PALETTE } from '@/city/lib/palette';
 const TONE: Record<Tone, string> = { up: PALETTE.mint, down: PALETTE.flare, flat: PALETTE.amber };
 
 /**
- * The towers Ryntra's answer is about (CITY-10): a light column rises from each roof and a halo breathes around it,
+ * The towers Ryntra's answer is about: a light column rises from each roof and a halo breathes around it,
  * the first one brightest, so the answer reads on the skyline before a word of it.
  */
 export function Beacons() {

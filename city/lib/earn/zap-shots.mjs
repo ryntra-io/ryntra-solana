@@ -1,4 +1,4 @@
-// The Zap's screens for review (CITY-198), at 1440×900 and 390×844 → <out>/zap-<state>-<size>-<lang>.png
+// The Zap's screens for review, at 1440×900 and 390×844 → <out>/zap-<state>-<size>-<lang>.png
 //   NEXT_PUBLIC_RYNTRA_CITY_EARN=open NEXT_PUBLIC_RYNTRA_CITY_HARBOR=open npm run dev, then:
 //   LANG_EARN=uk node city/lib/earn/zap-shots.mjs [out] [baseUrl]      (LANG_EARN=en for English)
 // No wallet and no keys: a stub wallet registers through the Wallet Standard events and never signs. The routes answer

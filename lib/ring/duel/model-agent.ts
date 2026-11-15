@@ -1,5 +1,5 @@
 /**
- * An agent of the Ring as the harness asks it (CITY-51): its pinned brain through the one model gateway (CITY-45),
+ * An agent of the Ring as the harness asks it: its pinned brain through the one model gateway,
  * with its own key, its owner's script and the format's prompt (`prompt.ts`). The gateway never throws; what it says
  * goes to the harness as a move, a fault or a void:
  *

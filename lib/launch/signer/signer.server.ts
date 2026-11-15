@@ -1,5 +1,5 @@
 /**
- * CITY-162 — one signer for each of Ryntra Launch's keys: the pool payer and the executor.
+ * One signer for each of Ryntra Launch's keys: the pool payer and the executor.
  *
  * A signer signs a transaction's message and gives back the signature; it never hands its key out. Under it stands one
  * of two adapters (`./select.server.ts`):

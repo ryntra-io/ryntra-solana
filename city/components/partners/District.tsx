@@ -28,7 +28,7 @@ const PRODUCT_WORD = { swap: 'swap', launch: 'launch' } as const satisfies Recor
 const usd = (text: string, lang: Lang) => digits(figure(text, null).usd, lang);
 
 /**
- * «Мій район» (CITY-127): the partner's own figures from the engine — accrued, claimable, paid, the people brought —
+ * «Мій район»: the partner's own figures from the engine — accrued, claimable, paid, the people brought —
  * the funnel where the engine counts it, the link kit with its QR, channel marks and a card from the live city, the
  * share by product, the season board and the partner's network lit on the map for their eyes only. The history and its
  * CSV wait behind one quiet toggle: what the partner earns is the headline, never the paperwork.

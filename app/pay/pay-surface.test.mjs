@@ -23,7 +23,7 @@ test("the payer page and its status route read only the public projection", () =
   }
   assert.match(code("app/api/pay/[id]/route.ts"), /loadPublicPaymentRequest/);
   assert.match(code("app/pay/[id]/page.tsx"), /loadPublicPaymentRequest/);
-  /* CITY-156: the page and its «not found» take their tab and preview from one place. */
+  /* The page and its «not found» take their tab and preview from one place. */
   assert.match(code("app/pay/[id]/page.tsx"), /return payMetadata\(await loadPublicPaymentRequest\(/);
   assert.match(code("app/pay/[id]/not-found.tsx"), /export const metadata: Metadata = payMetadata\(null\);/);
   assert.match(code("city/lib/pay/meta.ts"), /robots: \{ index: false, follow: false \}/, "a payment link is never indexed");

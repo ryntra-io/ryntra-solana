@@ -1,7 +1,7 @@
 import { isLive, KEEP_FINISHED_MS, type EngineStop } from "./model.ts";
 
 /**
- * What the engine keeps of stops (CITY-149): each wallet's stops, and for the cron the watched ones and the reached
+ * What the engine keeps of stops: each wallet's stops, and for the cron the watched ones and the reached
  * ones not yet told. A deployment keeps them in the database (`supabase-store.ts`,
  * `supabase/migrations/*_spot_stops_v1.sql`) so every server instance and every cron pass sees the same rows and a
  * stop is reached once. This file also has the memory store — for tests and a developer's machine only: it lives as

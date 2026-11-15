@@ -1,4 +1,4 @@
-// CITY-225 · test-only: the order's check for the made-up program, as a module the worker imports by path. Its default
+// Test-only: the order's check for the made-up program, as a module the worker imports by path. Its default
 // export builds the checks from the snapshot and a plain argument — here `{ vault }`, the vault the check reads.
 import "../../../../../../lib/world/testing/hooks.mjs";
 

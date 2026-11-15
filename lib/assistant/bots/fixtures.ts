@@ -1,5 +1,5 @@
 /**
- * Fixtures of the bot tools (CITY-133) — for the tests and the review's
+ * Fixtures of the bot tools — for the tests and the review's
  * screens only, never a production read: candles of a ranging and a
  * trending market drawn from a seeded walk, readers over them, and a
  * wallet's Hangar answer as the engine gives it. Deterministic: the same

@@ -161,7 +161,7 @@ function Propose() {
   const onPaper = phase === 'paper' || phase === 'signing';
   const short = walletShort(split.legs, PILOT_NET, holdings);
   // The proposal's sums are the plan's, not the wallet's: the budget the sentence named, or the card's own, at SOL's
-  // price now. A wallet that cannot fund the plan read «$20 to put to work» beside «Not enough SOL» (CITY-240) — money
+  // price now. A wallet that cannot fund the plan read «$20 to put to work» beside «Not enough SOL» — money
   // it does not hold, down to «Wallet 25% · $5». There the card keeps the plan's shares and says no sum: the line that
   // is true, and its one way on, «Add SOL». The plan and its figures are as they were; they are back once it is funded.
   const sums = !short;
@@ -199,8 +199,8 @@ function Propose() {
       ) : null}
       {split.preset && PILOT_NET === 'mainnet' && !coin ? <p className={i.notice}>{w.pickCoin}</p> : null}
       {short ? <p className={i.problem} data-pilot-short={short}>{w.short(short)}</p> : null}
-      {/* CITY-237: «not enough» had no way on but practice — one quiet tap to Money's top-up, as on the agent's card.
-          CITY-239: a button with a frame, not words that read as one more caption under the line. */}
+      {/* «not enough» had no way on but practice — one quiet tap to Money's top-up, as on the agent's card.
+          A button with a frame, not words that read as one more caption under the line. */}
       {short && MONEY_OPEN ? (
         <button type="button" className={s.add} onClick={() => openMoney('topup')} data-pilot-topup="">
           {w.add(short)}

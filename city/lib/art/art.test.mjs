@@ -25,7 +25,7 @@ import {
   srcSet,
 } from "./frames.ts";
 
-/* CITY-64: the city's still frames — which one a screen gets, how the intro moves (and stands still for reduced
+/* The city's still frames — which one a screen gets, how the intro moves (and stands still for reduced
    motion), the district frames and their words, and the share card of `/`. */
 
 const PUBLIC = new URL("../../../public", import.meta.url);
@@ -237,7 +237,7 @@ test("every district says what it is and what you do there, in one or two plain 
 });
 
 test("the share card of `/` is the city's card over a frame of the live scene, 1200 × 630, for Open Graph and X alike", () => {
-  // CITY-158: the frame is our own 3D city (scripts/city/card.mjs through window.__cityView), never a generated one.
+  // The frame is our own 3D city (scripts/city/card.mjs through window.__cityView), never a generated one.
   assert.deepEqual(size(read(SHARE_SCENE.src)), { width: 1200, height: 630 });
   assert.throws(() => read("/city/art/og-1200x630.jpg"), "the generated city of 28.10 is gone");
   const meta = buildCityMetadata();

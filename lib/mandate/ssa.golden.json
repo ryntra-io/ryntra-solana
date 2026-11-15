@@ -1,5 +1,5 @@
 {
- "about": "CITY-174: instruction data from the IDL Borsh coder (Anchor 0.29, squads smart-account-program main 0e51082); ssa.test.mjs encodes the same inputs by hand and must match byte for byte.",
+ "about": "Instruction data from the IDL Borsh coder (Anchor 0.29, squads smart-account-program main 0e51082); ssa.test.mjs encodes the same inputs by hand and must match byte for byte.",
  "inputs": {
   "createSmartAccount": {
    "ix": "createSmartAccount",

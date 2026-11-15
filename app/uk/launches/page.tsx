@@ -4,7 +4,7 @@ import { PALETTE } from "@/city/lib/palette";
 
 import { LaunchesPage, launchesMetadata } from "../../launches/launches-page";
 
-/* `/uk/launches` — «Запущено на Ryntra» in Ukrainian (CITY-185): the same city and window, its card and words in Ukrainian. */
+/* `/uk/launches` — «Запущено на Ryntra» in Ukrainian: the same city and window, its card and words in Ukrainian. */
 
 export const metadata: Metadata = launchesMetadata("uk");
 

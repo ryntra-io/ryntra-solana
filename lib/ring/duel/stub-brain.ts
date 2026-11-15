@@ -1,5 +1,5 @@
 /**
- * A brain without a model for a developer's machine (CITY-217): when the Ring reads the fixture catalog
+ * A brain without a model for a developer's machine: when the Ring reads the fixture catalog
  * (`RYNTRA_RING_MODELS=stub`, never in production — `catalogKind`), an agent plays through this instead of OpenRouter,
  * so the whole way — make an agent, spar, a rated duel, the board — is walked on a stand without a network or a key.
  *

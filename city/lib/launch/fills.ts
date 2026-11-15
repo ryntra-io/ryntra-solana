@@ -1,7 +1,7 @@
 import type { Leg } from './cards.ts';
 
 /**
- * The wallet's own launch trades made in this browser (L8 · CITY-145): each the engine's own `filled` from the program's
+ * The wallet's own launch trades made in this browser: each the engine's own `filled` from the program's
  * event, kept by signature, so the round trip's card still finds the buy at birth once the market's newest rows have
  * moved past it. A fill only adds a trade the rows may be missing; the card is made only when the trades found add up
  * to the balance the chain shows (`roundTrip`), so a fill kept here can never make a round trip read better than it was.

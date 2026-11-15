@@ -21,7 +21,7 @@ const LaunchSheet = dynamic(() => import('./LaunchSheet').then((m) => m.LaunchSh
   loading: () => <div className={s.framedLoading} aria-busy="true" />,
 });
 
-/* CITY-220: the people's early-access window loads only when a creator's link opens it. */
+/* The people's early-access window loads only when a creator's link opens it. */
 const EarlyEntry = dynamic(() => import('./EarlyEntry').then((m) => m.EarlyEntry), {
   ssr: false,
   loading: () => <div className={`${s.sheet} ${s.sheetLoading}`} aria-busy="true" />,
@@ -29,7 +29,7 @@ const EarlyEntry = dynamic(() => import('./EarlyEntry').then((m) => m.EarlyEntry
 
 /**
  * The Launch district for the HUD: whether the dock's Launch opens here, whether the district owns the card slot now —
- * its sheet is open, or a launch's tower is picked (its Buy and Sell stand in the tower's one window, CITY-138) — and
+ * its sheet is open, or a launch's tower is picked (its Buy and Sell stand in the tower's one window) — and
  * the tap that opens it. A second tap closes the sheet, as Earn's and Money's do, unless a launch is under way.
  */
 export function useLaunchDistrict(): Readonly<{ open: boolean; showing: boolean; start: () => void }> {
@@ -51,7 +51,7 @@ function toggleSheet(): void {
 }
 
 /**
- * What the district shows in the card slot: an early launch's window for its people (CITY-220), opened by a creator's
+ * What the district shows in the card slot: an early launch's window for its people, opened by a creator's
  * link. The launch sheet is a window of the frame (`LaunchLayer`); a launch tower picked opens the tower's window
  * (`TradeLayer`).
  */
@@ -64,7 +64,7 @@ const renderSheet = () => <LaunchSheet />;
 const closeSheet = () => useLaunch.getState().closeSheet();
 
 /**
- * «Raise your tower» in the city's one window frame (CITY-242), as the Deck's other places open: in the middle of a desk
+ * «Raise your tower» in the city's one window frame, as the Deck's other places open: in the middle of a desk
  * or the phone's sheet, the Deck where it is, no longer a panel of its own that took the Deck's place. The frame stands
  * as tall as the step it shows; «Close» waits while a launch is under way (between the upload and the send). A run owns
  * the whole screen and a clip being filmed keeps the frame clean — unless a launch is under way, which stays in view.

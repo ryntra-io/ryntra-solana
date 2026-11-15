@@ -10,7 +10,7 @@ import { DOCKS_MAX, SKYLINE_MAX, launchesKey, sameOriginImage, shownLaunches, to
 const BUNDLED_CITY = JSON.parse(readFileSync(new URL("../market/snapshot.json", import.meta.url), "utf8"));
 const SHA = "a".repeat(64);
 let n = 0;
-/** A graduation that passed the city's rule (CITY-144): 64 independent buyers after two hours on its curve. */
+/** A graduation that passed the city's rule: 64 independent buyers after two hours on its curve. */
 const PASSED = {
   graduated: true,
   graduatedAt: "2026-10-20T14:00:00Z",

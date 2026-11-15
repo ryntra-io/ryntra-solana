@@ -1,4 +1,4 @@
-// Shared fixtures for the Hack sandbox's tests and the recorded scenario (CITY-224). Not a test file itself (no
+// Shared fixtures for the Hack sandbox's tests and the recorded scenario. Not a test file itself (no
 // `.test.mjs`), so the runner never executes it. It loads the Hack library's fixtures first (they register the world's
 // TypeScript hooks), then the sandbox and the made-up engine.
 import { generateKeyPairSync } from "node:crypto";
@@ -29,7 +29,7 @@ export const CHECK = toy.conservedCheck(VAULT);
 export function makeSnapshot(over = {}) {
   return {
     format: sb.SNAPSHOT_FORMAT,
-    source: { kind: "recorded", label: "CITY-224 stand: the made-up tally program", recordedAt: RECORDED_AT },
+    source: { kind: "recorded", label: "Sandbox stand: the made-up tally program", recordedAt: RECORDED_AT },
     slot: SLOT,
     unixTimestamp: UNIX,
     programs: [{ address: PROGRAM, bytes: Buffer.from(toy.TALLY_BYTES).toString("base64") }],

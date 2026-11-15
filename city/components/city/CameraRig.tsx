@@ -36,7 +36,7 @@ const INTRO_SHIFT = 0.17;
 /** How far the city slides from under Ryntra's panel: left on a desk, up on a phone, where the sheet covers its lower half. */
 const ASSISTANT_SHIFT = 0.12;
 const ASSISTANT_LIFT = 0.16;
-/** A tower framed for a window, on a phone: into the strip of city between the top bar and the sheet (CITY-168). */
+/** A tower framed for a window, on a phone: into the strip of city between the top bar and the sheet. */
 const SHEET_LIFT = 0.25;
 /** Up to this width a screen held upright shows Ryntra's panel as a sheet at the bottom (assistant.module.css). */
 const SHEET_MAX_WIDTH = 560;
@@ -70,12 +70,12 @@ export function CameraRig({ world }: { world: RefObject<THREE.Group | null> }) {
     base.current = { azimuth: c.azimuthAngle, polar: c.polarAngle };
   }, [camera, preset]);
 
-  // Fly to the selected tower; with none, through the towers Ryntra's answer is about (CITY-10) — each in turn, then
+  // Fly to the selected tower; with none, through the towers Ryntra's answer is about — each in turn, then
   // all of them in one frame; else back to the establishing shot (also when the logo asks for it with nothing picked).
   // A tour plays once per answer: the market's refresh every minute rebuilds the layout but never restarts it.
   const shown = useAssistant((s) => s.shown);
   const focusAt = useAssistant((s) => s.focusAt);
-  // The Play layer's Map (CITY-81): a district or a mover framed, with nothing picked.
+  // The Play layer's Map: a district or a mover framed, with nothing picked.
   const view = useGameMap((s) => s.view);
   const viewed = useRef(0);
   const toured = useRef(0);
@@ -140,12 +140,12 @@ export function CameraRig({ world }: { world: RefObject<THREE.Group | null> }) {
     c.enabled = true;
   }, [running, camera, preset]);
 
-  // Tap to pick a tower: one short press that did not drag. Two fingers are a gesture, never a tap (CITY-6a): the
+  // Tap to pick a tower: one short press that did not drag. Two fingers are a gesture, never a tap: the
   // controls pinch to zoom and drag to rotate, and a twist of the two fingers turns the city like a map.
   useEffect(() => {
     const el = gl.domElement;
     const press = new Press();
-    // The tap that opened a tower's window does not also press what the window put under the finger (CITY-200).
+    // The tap that opened a tower's window does not also press what the window put under the finger.
     const ghost = ghostGuard();
     const fingers = new Map<number, Point>();
     const raycaster = new THREE.Raycaster();
@@ -185,14 +185,14 @@ export function CameraRig({ world }: { world: RefObject<THREE.Group | null> }) {
       const hit = pickTower(raycaster.ray, state.layout.towers);
       const towerAt = hit ? Math.hypot(hit.x - raycaster.ray.origin.x, hit.z - raycaster.ray.origin.z) : Infinity;
       const sign = signUnder(raycaster.ray);
-      // The Vault's tower standing nearer than the tower behind it — and than any sign — opens its room (CITY-241).
+      // The Vault's tower standing nearer than the tower behind it — and than any sign — opens its room.
       const vault = vaultUnder(raycaster.ray);
       if (vault && vault.distance < towerAt && (!sign || vault.distance < sign.distance)) {
         ghost.arm(e.pointerType);
         enterVault();
         return;
       }
-      // A Hall of Fame sign standing nearer than the tower behind it takes the tap: its board's one action (CITY-230).
+      // A Hall of Fame sign standing nearer than the tower behind it takes the tap: its board's one action.
       if (sign && sign.distance < towerAt) {
         ghost.arm(e.pointerType);
         actOnBoard(sign.board);
@@ -233,12 +233,12 @@ export function CameraRig({ world }: { world: RefObject<THREE.Group | null> }) {
       return;
     }
     // Title-screen framing slides back to centre once the visitor enters.
-    // On a desk Ryntra's panel stands on the right, so the city steps left of it while the panel is open (CITY-10).
+    // On a desk Ryntra's panel stands on the right, so the city steps left of it while the panel is open.
     const open = useAssistant.getState().open;
     const sheet = portrait && size.width <= SHEET_MAX_WIDTH;
     const goal = !state.entered && !portrait ? INTRO_SHIFT : open && !sheet ? -ASSISTANT_SHIFT : 0;
     shift.current += (goal - shift.current) * Math.min(1, dt * 2.2);
-    // A phone held upright with Ryntra's sheet open: the city slides up into the sky above the sheet (CITY-10).
+    // A phone held upright with Ryntra's sheet open: the city slides up into the sky above the sheet.
     const liftGoal = !sheet ? 0 : open ? ASSISTANT_LIFT : useGameMap.getState().view?.aboveSheet ? SHEET_LIFT : 0;
     lift.current += (liftGoal - lift.current) * Math.min(1, dt * 2.2);
     if (Math.abs(shift.current) > 0.001 || Math.abs(lift.current) > 0.001) camera.setViewOffset(size.width, size.height, -size.width * shift.current, size.height * lift.current, size.width, size.height);

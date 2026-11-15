@@ -1,4 +1,4 @@
-// The real screens the documentation's sections show (CITY-180): filmed from the live site, never drawn, one file per language →
+// The real screens the documentation's sections show: filmed from the live site, never drawn, one file per language →
 // public/city/docs/<screen>-<lang>.webp. It only looks: no wallet is connected and nothing is signed.
 //   node city/lib/docs/screens.mjs [out] [baseUrl]
 import { chromium } from "playwright";

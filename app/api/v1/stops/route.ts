@@ -9,7 +9,7 @@ export const dynamic = "force-dynamic";
 export const maxDuration = 30;
 
 /**
- * The proven wallet's stops on spot (CITY-149): the list, and a new one. A read takes the wallet's proof; a new stop
+ * The proven wallet's stops on spot: the list, and a new one. A read takes the wallet's proof; a new stop
  * takes the wallet's own signature (Sign In With Solana) — never a linked wallet. The engine keeps the intent and
  * watches it with the swap engine's quote; when it is reached the person is told, and their wallet signs the sale.
  * Nothing here signs, sends or holds a key.

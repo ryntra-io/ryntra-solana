@@ -1,4 +1,4 @@
-// «How it works» for review (CITY-43): the menu (☰), the lessons' window over the city, a lesson's details, a film
+// «How it works» for review: the menu (☰), the lessons' window over the city, a lesson's details, a film
 // playing, «Try» opening its function, and the page /how-it-works — on a desk (1440×900) and a phone (375×812), English
 // and Ukrainian → <out>/<name>.jpg
 //   npm run dev      then      node city/components/how/how-shots.mjs [out] [baseUrl]

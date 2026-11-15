@@ -7,11 +7,11 @@ import { SOL_MINT } from './lst.ts';
 import type { StockSession, StockStep } from './stock-pier-hours.ts';
 
 /**
- * The Stock Pier («Причал акцій», CITY-98, `docs/research/ryntra-earn-2026-10-29/SPEC.md` E7): a person builds their own
+ * The Stock Pier («Причал акцій», `docs/research/ryntra-earn-2026-10-29/SPEC.md` E7): a person builds their own
  * pool of a verified stock against SOL or USDC — a Meteora DAMM v2 pool made from one template that knows the
  * exchange's hours — and puts the first liquidity in with the same signature. Where the pair's pier already stands,
  * the person moors beside it (the engine's own add). The name sits beside the Shelf's «SOL Pier»; «Мій причал» is the
- * creator's window of the Launch (CITY-141) and stays its own.
+ * creator's window of the Launch and stays its own.
  *
  * Verified means three things the server checks before a pair is offered: the issuer's catalogue and Jupiter name the
  * mint, the venue accepts it as it is (a Token-2022 mint whose extensions need a badge is offered only where the badge

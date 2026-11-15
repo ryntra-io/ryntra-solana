@@ -42,7 +42,7 @@ const local = () => window.localStorage;
 const session = () => window.sessionStorage;
 
 /**
- * The card left for a wallet comes back (CITY-222, `resume.ts`): the sentence read again into the agent's card, or the
+ * The card left for a wallet comes back (`resume.ts`): the sentence read again into the agent's card, or the
  * card with nothing said; the coin that was picked, picked again.
  */
 function resumeCard(): void {
@@ -58,10 +58,10 @@ function resumeCard(): void {
 }
 
 /**
- * The city's first screen, one action (CITY-222; decision 91: «Say it. Your agent does the rest.»): a newcomer sees the
+ * The city's first screen, one action: a newcomer sees the
  * city and one line that hands the work to the agent — a tap opens the line with ready sentences, and a sentence opens
  * the agent's card. It replaces the old «tap a tower» hint: the tower still opens with a tap, but the first thing asked
- * of a person is now the agent. It stands over the Deck, by the Agents (CITY-241): the sky and the coin over the central
+ * of a person is now the agent. It stands over the Deck, by the Agents: the sky and the coin over the central
  * tower stay clear. Gone with its ✕ or once an agent is signed here; while any window, card or panel is in front, it
  * waits. It also starts the first action's funnel and brings back a card left for a wallet.
  */
@@ -74,7 +74,7 @@ export function FirstAction({ hidden }: Readonly<{ hidden: boolean }>) {
   const owner = useWallet((st) => st.connection?.address ?? null);
   const record = useMandate((st) => (owner ? (st.records[owner] ?? null) : null));
   const hired = record !== null;
-  // CITY-222: after the signature the same place says the agent is at work — read from the chain, not assumed.
+  // After the signature the same place says the agent is at work — read from the chain, not assumed.
   const working = useMandate((st) => (record ? st.status[record.policy]?.active === true : false));
 
   const done = useCallback(() => {

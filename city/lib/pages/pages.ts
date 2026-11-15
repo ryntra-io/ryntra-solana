@@ -1,5 +1,5 @@
 /**
- * The city's pages (CITY-157): Docs, Developers, AI chats (the connector's documentation, CITY-170), Help, About, the
+ * The city's pages: Docs, Developers, AI chats (the connector's documentation), Help, About, the
  * Terms and the Privacy Policy. Each one is a window of
  * the city, opened from the menu (☰) over the live city, and the same contents stand as a page of their own at the
  * address the site always had — the address a store, a search engine or a post needs (`/legal/privacy`, `/support`).
@@ -16,7 +16,7 @@ export type PageId = (typeof PAGE_IDS)[number];
 export const PAGE_PATHS: Readonly<Record<PageId, readonly string[]>> = {
   docs: ['/docs'],
   developers: ['/developers'],
-  // Ryntra in AI chats: how to connect, what it reads and checks, privacy, limits, support (CITY-170).
+  // Ryntra in AI chats: how to connect, what it reads and checks, privacy, limits, support.
   connector: ['/connector'],
   help: ['/support', '/feedback'],
   about: ['/about'],
@@ -40,7 +40,7 @@ export function pageOfHref(href: string): Readonly<{ id: PageId; hash: string }>
 }
 
 /**
- * The site's three documents that stand at their own address only, never as a window (CITY-177): «What we're
+ * The site's three documents that stand at their own address only, never as a window: «What we're
  * building» — how Ryntra works, in full, with its PDF; the partner page with «Copy my link»; and the public roadmap. The
  * menu (☰) and the foot of every page of the site lead to them.
  */
@@ -61,7 +61,7 @@ export const MENU_PAGES: readonly PageId[] = ['docs', 'developers', 'connector',
 export const MENU_LEGAL: readonly PageId[] = ['terms', 'privacy'];
 
 /**
- * The still at the head of each page: a frame filmed from our own live 3D city (`public/city/art/`, CITY-64) — never a
+ * The still at the head of each page: a frame filmed from our own live 3D city (`public/city/art/`) — never a
  * generated city that is not ours. It carries no coin, logo, price or figure. Two widths:
  * the narrow one for a window and a phone, the wide one for a desk page.
  */

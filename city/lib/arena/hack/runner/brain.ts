@@ -1,9 +1,9 @@
 /**
- * The step runner's loop and its brain (CITY-225, spec `docs/research/city-hack-2026-11-08/SPEC.md`). An agent plays an
+ * The step runner's loop and its brain (spec `docs/research/city-hack-2026-11-08/SPEC.md`). An agent plays an
  * order's copy through the four tools (`session.ts`); a `HackBrain` chooses the next tool, and `runAgent` runs it, feeds
  * the result back, and holds the agent to its limits:
  *
- *   • the class ceiling on model spend (CITY-45) — before a move that could push the agent's spend past the ceiling, the
+ *   • the class ceiling on model spend — before a move that could push the agent's spend past the ceiling, the
  *     agent is out of budget, as the Ring holds each seat to the match cap (`lib/ring/duel/harness.ts`);
  *   • a timeout is charged the full pinned move price, so a model that stalls still spends toward the ceiling and the
  *     agent is not free to stall forever;
@@ -14,7 +14,7 @@
  * malformed answer) and lose, or nobody's (the network, the provider) and void the run. A stub brain without a model is
  * `stub-brain.ts`, for tests and the stand only.
  *
- * The agent never signs, never reads a key, never moves money. It hands a finding to the store (CITY-226); whether the
+ * The agent never signs, never reads a key, never moves money. It hands a finding to the store; whether the
  * finding counts is the rules over the judge (`../rules.ts`), not decided here.
  */
 
@@ -26,7 +26,7 @@ import { HACK_TOOLS, readAction, runnerMessages, quote } from "./prompt.ts";
 import type { FindingMeta, HackSeat, HackSession, OpenRunResult, ReadResult, AssembleResult, SubmitResult } from "./session.ts";
 
 /**
- * Hack's agents call models as their own subject of the gateway (`lib/models/subject.ts`, CITY-238): the same Arena
+ * Hack's agents call models as their own subject of the gateway (`lib/models/subject.ts`): the same Arena
  * agent and its own key as in the Ring, journaled apart, so a day's spend on Hack is told from the Ring's.
  */
 export const HACK_SUBJECT_KIND = "hack-agent" as const;
@@ -92,7 +92,7 @@ export type ModelBrainInput = {
   readonly maxTokens?: number;
 };
 
-/** The brain over the one model gateway (CITY-45). Never throws: a gateway failure becomes a fault or a void. */
+/** The brain over the one model gateway. Never throws: a gateway failure becomes a fault or a void. */
 export function modelBrain(input: ModelBrainInput): HackBrain {
   const { gateway, agent } = input;
   return {
@@ -134,7 +134,7 @@ export type RunAgentOptions = {
   readonly view: RunnerView;
   /** At most this many brain turns; a brain that never submits still ends. */
   readonly maxTurns: number;
-  /** The class ceiling on the agent's model spend, micro-dollars (CITY-45). */
+  /** The class ceiling on the agent's model spend, micro-dollars. */
   readonly classCeilingMicroUsd: number;
   /** The pinned per-move price, the worst case of one move; it gates the ceiling and is charged on a timeout. */
   readonly moveMicroUsd: number;

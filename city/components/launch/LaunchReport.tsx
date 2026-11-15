@@ -14,7 +14,7 @@ const REASON_WORD: Readonly<Record<ReportReason, TextKey<typeof LAUNCH>>> = {
   other: 'reasonOther',
 };
 
-/** The flag in a launch tower's head that opens «Report» (CITY-139). */
+/** The flag in a launch tower's head that opens «Report». */
 export function ReportFlag({ on, onToggle }: { on: boolean; onToggle: () => void }) {
   const w = useWords(LAUNCH);
   return (

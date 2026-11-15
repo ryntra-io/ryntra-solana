@@ -352,7 +352,8 @@ const SOLANA_ROWS = [
 
 /**
  * Казна (SOL-4, decision 47): the person's own Squads multisig. A row of the core's group «Казна» only where the
- * deployment names the treasury's network; elsewhere its page is not served and the row is not drawn.
+ * deployment names the treasury's network (`NEXT_PUBLIC_RYNTRA_TREASURY_NETWORK`: devnet first, mainnet by the operator's
+ * canary); elsewhere its page is not served and the row is not drawn.
  */
 export const TREASURY_IN_MENU = treasuryNamed(process.env.NEXT_PUBLIC_RYNTRA_TREASURY_NETWORK);
 
@@ -386,7 +387,7 @@ export function earnNamed(value: string | undefined): boolean {
 }
 
 /**
- * Казна on mainnet is open to every wallet of 21.10 and early (SOL-C2, decision 63; UX-003, UX-703):
+ * Казна on mainnet is open to every wallet and early (SOL-C2, decision 63; UX-003, UX-703):
  * its group in the menu says «Beta», its page the network and «Beta». No new gate — the deployment's variable still
  * decides whether the row is drawn at all.
  */

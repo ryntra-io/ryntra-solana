@@ -1,6 +1,6 @@
 // Run from repo root: node --test city/lib/bots/take-back.test.mjs
 //
-// CITY-231 — the person can always take back what is theirs.
+// The person can always take back what is theirs.
 //
 // Flaw 2: the ladder used to be kept only after a successful `/submit`. The relay then waited ~25 s for confirmations;
 // a 504, a dropped connection or a closed tab left orders on the chain the window never knew of, and one more «Place»

@@ -1,4 +1,4 @@
-// The silhouette and the crown's rings for review (L7, CITY-144), from the live 3D scene on the development stand-in
+// The silhouette and the crown's rings for review, from the live 3D scene on the development stand-in
 // (`?launch=stub`), in English through the city's own link (`?lang=en`), at 1440×900 and 390×844:
 //   <out>/crown-<size>.png       Night Owl's crown, three rings (days 7, 30 and 90), the HUD hidden
 //   <out>/skyline-<size>.png     from above: Night Owl, which passed the rule, in the skyline with its rings, the HUD hidden

@@ -1,4 +1,4 @@
-// CITY-70 — the agent's mission on its card, its three controls and its walk between towers.
+// The agent's mission on its card, its three controls and its walk between towers.
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 

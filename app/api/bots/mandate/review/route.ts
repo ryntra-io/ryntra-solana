@@ -9,7 +9,7 @@ export const dynamic = "force-dynamic";
 export const maxDuration = 30;
 
 /**
- * CITY-174 — turn the agent on, on the gate's network: `POST` the person's wallet, a budget preset and — on mainnet — the
+ * Turn the agent on, on the gate's network: `POST` the person's wallet, a budget preset and — on mainnet — the
  * coin the agent buys; the answer is her unsigned
  * transactions (one wallet approval) and the mandate's public addresses. This route never signs: it has no key.
  */

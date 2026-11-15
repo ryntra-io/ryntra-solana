@@ -3,7 +3,7 @@ import type { Block, DocAction, DocId, Part, Row } from '../model.ts';
 import type { DocsStatus } from '../status.ts';
 
 /**
- * What a section's words are written with (CITY-180). A section is a function of the facts, the build's status and the
+ * What a section's words are written with. A section is a function of the facts, the build's status and the
  * language's way of writing a figure; it types no percent and no dollar figure of its own (`docs.test.mjs`).
  */
 export type Ctx = Readonly<{ f: DocsFacts; s: DocsStatus; say: Say }>;

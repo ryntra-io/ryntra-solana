@@ -1,11 +1,11 @@
 /**
- * When Hack answers people (CITY-226), on which store, and as whom on a developer's stand. Pure, so the rules are tested
+ * When Hack answers people, on which store, and as whom on a developer's stand. Pure, so the rules are tested
  * without a server; `server.ts` applies them to the deployment's own settings.
  *
  * Closed by default: every `/api/arena/hack/**` route is a 404 until `NEXT_PUBLIC_RYNTRA_CITY_HACK` says `open`, as the
  * Ring's duels wait for theirs. In production the store must also be the database every instance shares
  * (`supabase/migrations/20261108180000_hack_v1.sql`): on one instance's memory production stays closed, whatever the
- * switch says. And since CITY-238 production opens only with the machine that plays the runs: a sandbox with no
+ * switch says. And production opens only with the machine that plays the runs: a sandbox with no
  * network to start from, and the harness's stamp key (`machineSetup`). Without them the door stays shut — Hack is
  * never opened on a sandbox that is only a thread of the routes' own process.
  */
@@ -34,7 +34,7 @@ export function hackReady(store: { readonly durable: boolean }, flag: string | u
   return flag?.trim() === "open" && (mode !== "production" || (store.durable && machine));
 }
 
-/** The settings of the machine that plays the runs (CITY-238). Names only: the values live in the deployment. */
+/** The settings of the machine that plays the runs. Names only: the values live in the deployment. */
 export const HACK_ENV = {
   /** The image's snapshot in Vercel Sandbox (`machine/image.mjs --vercel` prints it). */
   snapshot: "RYNTRA_HACK_SANDBOX_SNAPSHOT",

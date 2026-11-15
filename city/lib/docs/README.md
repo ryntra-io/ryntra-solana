@@ -1,4 +1,4 @@
-# The documentation (CITY-180)
+# The documentation
 
 `ryntra.io/docs` — one documentation in one frame: the same menu at the left of every page, the text in the middle, the page's contents at the right. Each section stands at its own address, `/docs/start` … `/docs/help`, and Developers, AI chats, Help, About and the legal documents stand in the same frame at theirs. `/partners` stays its own selling page; the menu links to it.
 English and Ukrainian, server-painted English, the person's language at once (the city's language switch and `?lang=`).

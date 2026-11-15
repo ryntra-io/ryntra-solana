@@ -1,5 +1,5 @@
 /**
- * CITY-204 — the agent looks after each plan: one pass over the autopilots of the network. For each, it reads what the
+ * The agent looks after each plan: one pass over the autopilots of the network. For each, it reads what the
  * parts hold now — the trade from the agent's book, the savings from Jupiter Lend, the pier from Meteora, SOL's price —
  * asks the care (`./care.ts`) and writes down what it did: a hold of the trade's buys, a hold lifted, a drift noted, what
  * the plan earned. The only thing it moves is the trade's own switch in the agent's book (`paused` · `market` / `balance`,

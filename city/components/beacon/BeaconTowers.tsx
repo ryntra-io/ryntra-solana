@@ -13,7 +13,7 @@ import { PALETTE } from '@/city/lib/palette';
 const MAX = 48;
 
 /**
- * Beacons on towers (CITY-72). A tower with a beacon carries a small amber lamp on its roof; when the beacon fires,
+ * Beacons on towers. A tower with a beacon carries a small amber lamp on its roof; when the beacon fires,
  * the lamp becomes a lighthouse — two beams sweep the skyline and a column of light stands over it — for half an
  * hour. Nothing here is a figure: the light only says a person's own rule held.
  */

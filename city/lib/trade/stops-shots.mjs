@@ -1,4 +1,4 @@
-// CITY-149's screens for review — a stop the engine keeps: the ticket's line, its «i», «Stop set», and the tap on the
+// The screens for review — a stop the engine keeps: the ticket's line, its «i», «Stop set», and the tap on the
 // reached stop's note landing on its sale — at 390×844 and 1440×900 → <out>/<state>-<size>.jpg
 //   NEXT_PUBLIC_RYNTRA_CITY_SPOT=open NEXT_PUBLIC_RYNTRA_CITY_STOPS=open npm run dev
 //   node city/lib/trade/stops-shots.mjs [out] [baseUrl]     (SIZES=phone,laptop · PARTS=ticket,tap · LANG_CITY=en|uk)

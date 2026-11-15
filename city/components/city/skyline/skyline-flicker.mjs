@@ -1,4 +1,4 @@
-// Flicker in motion (CITY-56, after the frame-time fix #1041): reads every frame the renderer puts on the screen
+// Flicker in motion (after the frame-time fix): reads every frame the renderer puts on the screen
 // (60 fps) and counts, per pixel, how often its brightness turns direction; ≥ 4 turns in K frames is a flickering pixel.
 //   node city/components/city/skyline/skyline-flicker.mjs <out> [baseUrl]   (npm run dev running)
 //   env: W H QUALITY K, MODE=orbit,frozen,hold,pan

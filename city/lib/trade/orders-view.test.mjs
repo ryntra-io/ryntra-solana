@@ -66,7 +66,7 @@ test("a stop of this device says what it does, when, and until when", () => {
   assert.equal(stopRow(stop, now + 8 * 86_400_000).view, "expired");
 });
 
-test("trading stays open unless switched off;", () => {
+test("trading stays open unless switched off", () => {
   assert.equal(tradeOpen(undefined), true);
   assert.equal(tradeOpen("open"), true);
   assert.equal(tradeOpen("closed"), false);

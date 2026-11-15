@@ -235,7 +235,7 @@ async function handleCallback(cb: TgCallback) {
     return;
   }
   if (await assistantCallback(assistantBotDeps(), cb)) return;
-  /* CITY-194: the agent's daily report — «Turn off daily report» and back on (`agr:…`). */
+  /* The agent's daily report — «Turn off daily report» and back on (`agr:…`). */
   if (await handleReportPress(cb)) return;
   const state = (await getState(user.id)) ?? (await ensureState(user));
   const lang = langOf(state, user.language_code);

@@ -18,7 +18,7 @@ const LIGHT = new THREE.Color(PALETTE.amber).multiplyScalar(1.1);
 type Halo = Readonly<{ x: number; z: number; r: number; h: number; seed: number }>;
 
 /**
- * The halo of the shielded launch (CITY-169): a soft veil of light around a launch tower born on the shield — bots paid
+ * The halo of the shielded launch: a soft veil of light around a launch tower born on the shield — bots paid
  * the shield's fee at its start, the creator held nothing to dump — and a ring of light on the ground at its foot. It
  * fades upward, so the crown and its survival rings stay clear. A sale by the creator puts it out (`towerHalo`). No
  * figure and no word: the tower's window says what the halo is.

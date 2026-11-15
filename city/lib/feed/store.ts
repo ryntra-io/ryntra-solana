@@ -52,7 +52,7 @@ export function hydrateFeed(env?: Readonly<{ storage: StorageLike | null; reduce
   const reduced = env ? env.reducedMotion : prefersReducedMotion();
   const phone = env ? env.phone === true : isPhone();
   storage = env ? env.storage : browserStorage();
-  // A value kept before the current version is brought up to it once (CITY-81: «Arrivals» off everywhere).
+  // A value kept before the current version is brought up to it once («Arrivals» off everywhere).
   migrateSettings(storage);
   useFeed.setState({ settings: readSettings(storage, reduced, phone), touched: touchedIn(storage), reducedMotion: reduced, ready: true });
   if (!env) watchMotion();

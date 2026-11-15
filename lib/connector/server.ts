@@ -5,7 +5,7 @@ import { carriesSigningLink, CONNECTOR_PROFILES, profileTool, profileToolsFor, t
 import { runConnectorTool, type EngineRead, type ToolEnvelope } from "./tools.ts";
 
 /**
- * The connector's MCP server, built fresh for one authenticated request (CITY-154).
+ * The connector's MCP server, built fresh for one authenticated request.
  *
  * The pattern is Agent Control's hosted server (`lib/agent-control/mcp/hosted-server.ts`): `tools/list` is built from
  * the token's scopes, and every `tools/call` goes through one handler that admits the call again before anything
@@ -34,7 +34,7 @@ export type ConnectorCallOutcome = Readonly<{ toolName: string; admitted: boolea
 export type ConnectorMeter = () => Promise<Readonly<{ allowed: boolean; retryAfterSeconds: number }>>;
 
 export type ConnectorServerOptions = Readonly<{
-  /** Which tools this address serves (CITY-170): the full connector at `/mcp`, the catalog's at `/mcp/read`. */
+  /** Which tools this address serves: the full connector at `/mcp`, the catalog's at `/mcp/read`. */
   profile?: ConnectorProfile;
   scopes: readonly ConnectorScope[];
   read: EngineRead;

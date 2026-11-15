@@ -1,5 +1,5 @@
 /**
- * A Hack run as a game the judge can replay (CITY-224 over CITY-68). The judge's «verified» class decides by code: the
+ * A Hack run as a game the judge can replay. The judge's «verified» class decides by code: the
  * harness writes the log as the run plays (`sandbox.ts`), and anyone with the same pin, the same engine and the
  * protocol's check replays it input by input — the first entry where the copy derives something else is the
  * divergence (`lib/ring/judge/replay.ts`).

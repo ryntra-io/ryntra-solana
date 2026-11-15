@@ -1,5 +1,5 @@
 /**
- * CITY-207 — what a looked-after position is worth in dollars, at the venue's prices: the same pool record and the same
+ * What a looked-after position is worth in dollars, at the venue's prices: the same pool record and the same
  * sum Earn's «Mine» shows for a person's own position (`../liquidity/catalog/positions.ts` `positionView`). Pure.
  *
  * Each side is matched to the record by its mint; a side without its price or its decimals makes the figure unknown —

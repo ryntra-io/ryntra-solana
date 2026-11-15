@@ -13,8 +13,8 @@ import { WINDOW } from './words';
 import s from './window.module.css';
 
 /**
- * The windows on a phone (CITY-65): the front window is a bottom sheet that can take the whole screen; nothing floats
- * or sticks. With more than one open, a row of tabs under the head switches between them. «Minimise» (CITY-84) folds
+ * The windows on a phone: the front window is a bottom sheet that can take the whole screen; nothing floats
+ * or sticks. With more than one open, a row of tabs under the head switches between them. «Minimise» folds
  * the sheet's window into the tray over the Deck — that window alone — the city in full view again.
  */
 export function WindowSheet() {

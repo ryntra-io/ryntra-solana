@@ -22,8 +22,8 @@ export type Asked =
 const MINT = /^[1-9A-HJ-NP-Za-km-z]{32,44}$/;
 
 /**
- * The body of a question: the person's words, the language Ryntra answers in (the city's, CITY-79), and the tower asked
- * about as its context — its symbol cleaned (CITY-73).
+ * The body of a question: the person's words, the language Ryntra answers in, and the tower asked
+ * about as its context — its symbol cleaned.
  */
 export function guestBody(text: string, subject: Pick<Tower, 'id' | 'symbol'> | null, lang: Lang = langNow()) {
   const symbol = subject ? questionSymbol(subject.symbol) : null;

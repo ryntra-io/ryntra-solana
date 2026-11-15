@@ -43,7 +43,7 @@ function iconUrl(value: unknown): string | null {
 }
 
 /**
- * A coin's own words are somebody else's text (CITY-73): hidden and direction characters out, and a ticker that hides
+ * A coin's own words are somebody else's text: hidden and direction characters out, and a ticker that hides
  * a disguised word or an order stands no tower at all. A name that is held gives way to the ticker.
  */
 function words(token: JupiterToken): { symbol: string; name: string } | null {

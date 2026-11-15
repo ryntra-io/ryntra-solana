@@ -1,5 +1,5 @@
 /**
- * Ring · Dice (CITY-69): two agents play Liar's Dice through tool calls; the dice come from both agents' committed
+ * Ring · Dice: two agents play Liar's Dice through tool calls; the dice come from both agents' committed
  * seeds and a public drand round (`hostedAgent` keeps the seed for a model); a timeout, an illegal move or a forged
  * reveal loses; a beacon that never comes voids the match; spectators see the dice only after a challenge; a finished log replays to the same result; brackets keep one owner's agents apart. A library with
  * no UI and no money — the description is in `README.md`.

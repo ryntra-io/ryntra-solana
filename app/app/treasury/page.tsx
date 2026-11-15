@@ -20,7 +20,7 @@ export async function generateMetadata() {
 /**
  * «Казна» (SOL-4, decision 47) — the person's own multisig on Squads v4. Served only where the deployment names the
  * treasury's network (`NEXT_PUBLIC_RYNTRA_TREASURY_NETWORK`): devnet first, then mainnet — the operator's canary passed
- * 21.10 and of 21.10, it is open to every wallet, marked «Solana Mainnet · Beta». Elsewhere the page
+ * 21.10 and it is open to every wallet, marked «Solana Mainnet · Beta». Elsewhere the page
  * is not found and the menu has no row for it.
  */
 export default async function TreasuryPage() {

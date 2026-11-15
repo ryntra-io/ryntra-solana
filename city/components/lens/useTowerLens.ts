@@ -15,7 +15,7 @@ import { useLensContext } from './useLensSet';
 export type LensApply = (levels: Float32Array, move: number) => void;
 
 /**
- * The Lens on the towers (CITY-86): each tower eases from where it stood to its new level in about 700 ms — the towers
+ * The Lens on the towers: each tower eases from where it stood to its new level in about 700 ms — the towers
  * looked at rise a little in violet light, the rest sink into the ink haze. With «Flashing effects» off or the device
  * asking for reduced motion, nothing moves: only the light changes. A picked tower always stands out of the haze; a run
  * has the whole skyline. The levels live in a ref: the towers' own frame loop reads them for what moves on its own (a

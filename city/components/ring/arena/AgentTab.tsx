@@ -16,10 +16,10 @@ import s from '../duel/duel.module.css';
 import a from './arena.module.css';
 
 /**
- * The Arena's «Agent» tab (CITY-217): your agent — body, brain, class and price, a rating per format — with one way to
+ * The Arena's «Agent» tab: your agent — body, brain, class and price, a rating per format — with one way to
  * the fight; or, with none yet, one button that makes it right here, in your garage in the Arena (body → brain →
- * script, the screen of CITY-50 laid in the tab). Signed out: one button — «Connect wallet», or «Sign in» for a wallet
- * that is already connected (CITY-239).
+ * script, the screen laid in the tab). Signed out: one button — «Connect wallet», or «Sign in» for a wallet
+ * that is already connected.
  */
 export function AgentTab() {
   const w = useWords(DUEL_UI);

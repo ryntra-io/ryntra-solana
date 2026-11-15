@@ -53,7 +53,7 @@ export async function askRyntra(
       credentials: 'omit',
       body: JSON.stringify({
         text: adviceQuestion(tower, facts),
-        // Ryntra answers in the language on screen (CITY-79); the question itself stays as the engine reads it.
+        // Ryntra answers in the language on screen; the question itself stays as the engine reads it.
         locale: langNow(),
         context: { kind: 'asset', mint: tower.id, symbol: tower.symbol.replace(/^\$/, '').slice(0, 32) },
       }),

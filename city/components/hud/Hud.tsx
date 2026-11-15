@@ -73,8 +73,8 @@ type Play = (from: 'home' | 'city') => void;
 
 /**
  * Ryntra's home over the live city (decision 70): the top bar, one card above the dock — the hot tower or a
- * challenge — and the district dock. A tower picked opens its one window, the trade card (CITY-78, `TradeLayer`); only a
- * pool without a name keeps a small card here. A run owns the whole screen. In the Play layer (CITY-81) the dock and the
+ * challenge — and the district dock. A tower picked opens its one window, the trade card (`TradeLayer`); only a
+ * pool without a name keeps a small card here. A run owns the whole screen. In the Play layer the dock and the
  * card are the game's: your quarter, the Ring, the Vault, the Hall, the Run, the Map.
  */
 export function Hud({ onPlay, onSound }: { onPlay: Play; onSound: (on: boolean) => void }) {
@@ -100,21 +100,21 @@ export function Hud({ onPlay, onSound }: { onPlay: Play; onSound: (on: boolean) 
   // The scout's card, once its flag is open: its rule, its status, or a find.
   const agentCard = useAgentCard() && AGENTS_OPEN;
   const hall = useHall((state) => state.panel);
-  // Launch Night (CITY-146): its card takes the empty slot while a show stands ready; while it plays, the stage owns
+  // Launch Night: its card takes the empty slot while a show stands ready; while it plays, the stage owns
   // the bottom of the screen and the menu steps aside.
   const nightCard = useNightCard();
   const nightPlaying = useNightPlaying();
-  // The agent's «While you were away» stands where the first hint would (CITY-194): the hint waits for it.
+  // The agent's «While you were away» stands where the first hint would: the hint waits for it.
   const agentAway = useAgentReport((st) => st.away !== null);
   // The Launch district owns the card slot while its sheet is open or a launch's tower is picked.
   const launch = useLaunchDistrict();
-  // An early launch's window for its people (CITY-220) is the one panel of the district that still keeps the bottom.
+  // An early launch's window for its people is the one panel of the district that still keeps the bottom.
   const entry = useLaunch((st) => st.entry !== null);
-  // The tower's window owns the bottom of the screen while it is open (CITY-78): nothing of the home stands under it.
-  // The tower's chart takes its place the same way (CITY-5a).
+  // The tower's window owns the bottom of the screen while it is open: nothing of the home stands under it.
+  // The tower's chart takes its place the same way.
   const trading = useTrade((st) => st.open);
   const charting = useChartOpen();
-  // The first hint stands over the Deck (CITY-241): it waits while the Deck's doors open there, while folded windows
+  // The first hint stands over the Deck: it waits while the Deck's doors open there, while folded windows
   // stand in their tray in the same place, and while a card or the Hall's sheet stands in the bottom of the screen.
   const doors = useBackPanels((st) => st.open.includes('tray'));
   const folded = useWindows((st) => st.chips.length > 0);
@@ -136,9 +136,9 @@ export function Hud({ onPlay, onSound }: { onPlay: Play; onSound: (on: boolean) 
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => {
       if (event.key !== 'Escape' || event.defaultPrevented) return;
-      // The Deck's open tray stands over everything (CITY-242) and closes itself with this press, alone.
+      // The Deck's open tray stands over everything and closes itself with this press, alone.
       if (document.querySelector('[data-deck-tray]')) return;
-      // The launch sheet is a window of the frame (CITY-242). In front, it is what this press is for — the windows behind
+      // The launch sheet is a window of the frame. In front, it is what this press is for — the windows behind
       // it (a trade card, Earn, Money) wait their turn, also while a launch is under way and nothing closes.
       const sheet = useLaunch.getState();
       const layout = useWindows.getState().layout;
@@ -148,7 +148,7 @@ export function Hud({ onPlay, onSound }: { onPlay: Play; onSound: (on: boolean) 
       // of the frame behind the Launch window (the trade card, the chart, the lessons) waits.
       if (useHarbor.getState().open || useMoments.getState().sheet || howStore.getState().open) return;
       if (!launchFront && (useTrade.getState().open || useGuides.getState().open || chartOpen())) return;
-      // The events' panel under the bell closes itself with this press, and nothing under it goes with it (CITY-239).
+      // The events' panel under the bell closes itself with this press, and nothing under it goes with it.
       if (feedTakesEscape(useFeedPanel.getState().open, document)) return;
       // A window on the whole screen takes this Escape back from the whole screen itself (city/components/window).
       if (document.querySelector('[data-window-full]')) return;
@@ -172,7 +172,7 @@ export function Hud({ onPlay, onSound }: { onPlay: Play; onSound: (on: boolean) 
       if (sheet.entry) return sheet.entryBusy ? undefined : sheet.closeEntry();
       if (useCity.getState().selectedId) return useCity.getState().select(null);
       if (useAgent.getState().panel !== 'none') return useAgent.getState().closePanel();
-      // Last, the Play layer: its Map and Hall, then back to City (CITY-81).
+      // Last, the Play layer: its Map and Hall, then back to City.
       playEscape();
     };
     // Capture: decided before the panels' own handlers change what is open.
@@ -195,15 +195,15 @@ export function Hud({ onPlay, onSound }: { onPlay: Play; onSound: (on: boolean) 
   return (
     // `data-window`: the pieces styled elsewhere (the moments' button on a narrow phone) give way by CSS as well.
     <div className={s.layer} data-window={windowOpen ? '' : undefined} data-top-hidden={topShown ? undefined : ''} data-deck-hidden={deckShown ? undefined : ''}>
-      {/* First, so the top bar's menus and the cut-in stand over it (CITY-66). */}
-      {/* The bell's panel: opened over a window it stands over it, in a layer of its own (CITY-242). */}
+      {/* First, so the top bar's menus and the cut-in stand over it. */}
+      {/* The bell's panel: opened over a window it stands over it, in a layer of its own. */}
       {feedOpen && <LiveFeed panel />}
       <TopBar onSound={onSound} onHome={home} windowOpen={windowOpen} />
       <TopHandle />
       <CutIn hidden={windowOpen} />
       <HoverLabel />
-      {/* The first screen's one action (CITY-222): «Say it. Your agent does the rest.» — over the Deck's Agents, clear
-          of the sky and the coin over the central tower (CITY-241). */}
+      {/* The first screen's one action: «Say it. Your agent does the rest.» — over the Deck's Agents, clear
+          of the sky and the coin over the central tower. */}
       <FirstAction hidden={windowOpen || trading || !!selectedId || launch.showing || nightPlaying || agentAway || hintAway} />
       {trading || charting ? null : launch.showing ? (
         <LaunchSlot />
@@ -211,7 +211,7 @@ export function Hud({ onPlay, onSound }: { onPlay: Play; onSound: (on: boolean) 
         <PoolCard />
       ) : (
         <>
-          {/* One panel at a time: the Hall's sheet stands where the card would (CITY-9); an open window keeps the
+          {/* One panel at a time: the Hall's sheet stands where the card would; an open window keeps the
               home's own card out of its way. */}
           {menu || settings || hall ? null : agentCard ? (
             <AgentCard />
@@ -226,7 +226,7 @@ export function Hud({ onPlay, onSound }: { onPlay: Play; onSound: (on: boolean) 
         </>
       )}
       {/* The menu stays under every window of the frame and under a picked tower (30.10): Spot stands as the Exchange
-          does, and so does Launch, a window of the frame since CITY-242. An early launch's window and Play's own dock,
+          does, and so does Launch, a window of the frame. An early launch's window and Play's own dock,
           where its switch is open, keep the bottom for themselves. */}
       {!playDock && !entry && !nightPlaying && (
         <Deck />
@@ -237,7 +237,7 @@ export function Hud({ onPlay, onSound }: { onPlay: Play; onSound: (on: boolean) 
 
 /**
  * The launch sheet closes unless a launch is under way (between the upload and the send). An early launch that is set
- * (`opened`) is not under way: its card closes as the sheet's own «Close» closes it (CITY-236: «Back» and Escape did
+ * (`opened`) is not under way: its card closes as the sheet's own «Close» closes it («Back» and Escape did
  * nothing on it).
  */
 export const closable = (phase: ReturnType<typeof useLaunch.getState>['phase']) => sheetClosable(phase);
@@ -371,7 +371,7 @@ function CutIn({ hidden }: { hidden: boolean }) {
     const timer = setTimeout(() => setEvent(null), 2300);
     return () => clearTimeout(timer);
   }, [event]);
-  // An open tower card owns the frame. «Flashing effects» off (CITY-66) keeps the slab, still (hud.module.css).
+  // An open tower card owns the frame. «Flashing effects» off keeps the slab, still (hud.module.css).
   if (!event || selectedId || hidden) return null;
   const value = cutValue(event.value, w, lang);
   return (

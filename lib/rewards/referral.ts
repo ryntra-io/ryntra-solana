@@ -31,7 +31,8 @@ import { REFERRAL_SUB_PATTERN } from "./referral-sub.ts";
  *
  * ## What binds, and when
  *
- * Opening a link binds nothing by itself. No registration wall, no automatic wallet prompt, no
+ * Opening a link binds nothing by itself.
+ * No registration wall, no automatic wallet prompt, no
  * account created by a click. The code is held in the
  * browser, and the attribution is written on its own the first time that
  * browser proves a wallet — no button to find (08.10: two

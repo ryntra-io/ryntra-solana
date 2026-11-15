@@ -3,9 +3,9 @@
  * so they may carry invisible characters or words that pretend to be orders. Every such word passes here before it
  * joins a question the assistant reads.
  *
- * CITY-73 (decision 74) owns the city's cleaning of foreign text. Until it lands, this is the marked call site: a
- * strict interim that drops control, format and bidi characters, folds whitespace and keeps a symbol short. When
- * CITY-73 merges, `foreignWord` calls its cleaner and this body goes.
+ * The city's cleaner of foreign text owns this. Until that cleaner lands, this is the marked
+ * call site: a strict interim that drops control, format and bidi characters, folds whitespace and keeps a symbol
+ * short. When the cleaner merges, `foreignWord` calls it and this body goes.
  */
 
 /** Control characters, zero-width and bidi marks, the BOM, tag characters and variation selectors: nothing a reader sees. */

@@ -1,7 +1,7 @@
 /**
  * The ticket's pinned dock — the order's terms and its one action — stands over the bottom of a card that is taller
  * than its room; the rows scroll under it. Switching the ticket to Stop makes the dock a line taller (its terms take two
- * lines), and its top edge then cut a row in half: on a phone, «You pay SOL USDC · You have 0 SOL» (CITY-242, Д3).
+ * lines), and its top edge then cut a row in half: on a phone, «You pay SOL USDC · You have 0 SOL».
  *
  * How far the card moves so that no row is cut by the dock's edge: the row the edge crosses comes up whole above the
  * dock, as long as the tabs the person just pressed stay in sight; otherwise it goes whole under the dock. Positive

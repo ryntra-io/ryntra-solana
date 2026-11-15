@@ -36,7 +36,7 @@
   background: linear-gradient(160deg, rgba(20, 16, 36, 0.92), rgba(8, 7, 15, 0.95));
 }
 
-/* «Raise your tower» in the city's one window frame (CITY-242), as every other place of the Deck: the frame brings the
+/* «Raise your tower» in the city's one window frame, as every other place of the Deck: the frame brings the
    glass, the title and «Close», on a desk and in a phone's sheet; the sheet brings only what is inside. */
 .framed {
   padding: 14px 18px 18px;
@@ -143,7 +143,7 @@
   cursor: default;
 }
 
-/* ---------- The cost line: first on both steps (CITY-143) ---------- */
+/* ---------- The cost line: first on both steps ---------- */
 
 .cost {
   display: flex;
@@ -383,7 +383,7 @@
   gap: 7px;
 }
 
-/* Under the clock, in plain words: the launch goes whenever its creator signs (CITY-243). */
+/* Under the clock, in plain words: the launch goes whenever its creator signs. */
 .clockAny {
   font-size: var(--type-caption);
   font-weight: 700;
@@ -417,13 +417,13 @@
   cursor: pointer;
 }
 
-/* A finger's two doors to the picture (CITY-168): big and side by side until there is a picture, then two small ones up
+/* A finger's two doors to the picture: big and side by side until there is a picture, then two small ones up
    the preview's edge, out of the way of the coin and its ticker. Each is a label: a tap anywhere on it is a tap on its file input. */
 .doors {
   position: absolute;
   left: 12px;
   right: 12px;
-  /* Under the clock's two lines (CITY-243), never over them. */
+  /* Under the clock's two lines, never over them. */
   top: 64px;
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -734,7 +734,7 @@
   background: var(--ink);
 }
 
-/* The shielded launch (CITY-169): the halo is on, no switch — a ring of the tower's own light before the label. */
+/* The shielded launch: the halo is on, no switch — a ring of the tower's own light before the label. */
 .halo {
   justify-content: flex-start;
   gap: 12px;
@@ -1151,7 +1151,7 @@
   margin-left: auto;
 }
 
-/* A long status (CITY-144: «Graduated with ≥22 buyers») wraps the time onto its own line rather than past the edge. */
+/* A long status wraps the time onto its own line rather than past the edge. */
 .kicker {
   display: flex;
   flex-wrap: wrap;
@@ -1224,7 +1224,7 @@
   color: var(--warm);
 }
 
-/* The creator's own tower: a quiet tag that opens «Мій причал» (CITY-141) — amber stays the window's one action. */
+/* The creator's own tower: a quiet tag that opens «Мій причал» — amber stays the window's one action. */
 .tagBerth {
   display: inline-flex;
   align-items: center;
@@ -1291,7 +1291,7 @@
   text-decoration: line-through rgba(238, 241, 255, 0.35);
 }
 
-/* The status's «i» closes the row of rings (CITY-144): the rule and «not advice» open under it. */
+/* The status's «i» closes the row of rings: the rule and «not advice» open under it. */
 .checksInfo {
   align-self: center;
   margin-left: 4px;
@@ -1574,7 +1574,7 @@
   }
 }
 
-/* ---------- The launch's two doors (CITY-212) ---------- */
+/* ---------- The launch's two doors ---------- */
 
 /* A door is a quiet row like the shield: its name, what holds now, and a plus to open it. */
 .shareRow {
@@ -1862,7 +1862,7 @@
   width: calc(100% + 28px);
 }
 
-/* ---------- CITY-220: the people's early-access window — one number, one action at each moment ---------- */
+/* ---------- The people's early-access window — one number, one action at each moment ---------- */
 
 .entryHero {
   display: grid;

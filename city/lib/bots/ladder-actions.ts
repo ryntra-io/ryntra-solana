@@ -11,15 +11,15 @@ import type { Fetcher, RelayLegAnswer, ReviewAnswer, SignMany } from './ladder-s
 
 /**
  * The ladder's actions in the bots window — place, take back, finish — on top of the composer's store (`ladder.ts`)
- * and the window's (`store.ts`); and «Cancel» on a DLMM bot read from the chain (CITY-231). The signing module loads
+ * and the window's (`store.ts`); and «Cancel» on a DLMM bot read from the chain. The signing module loads
  * on the tap. One action at a time; every answer ends as one short line under the action, in the window's words.
  *
- * The chain is the truth of what landed (CITY-231): a ladder is kept the moment its legs are signed, before the relay
+ * The chain is the truth of what landed: a ladder is kept the moment its legs are signed, before the relay
  * is asked, with every leg `sent` and its signature; the relay answers as soon as it sends, and the window's reading
  * of the order accounts and the signatures turns each leg `confirmed` or `failed`. A cancellation marks the ladder as
  * being taken back; it is closed when the chain shows every order gone.
  *
- * Before mainnet opens (CITY-233, the overseer's review of #1571 and #1575): «Take back and rebuild» opens the new
+ * Before mainnet opens (the review before the release): «Take back and rebuild» opens the new
  * ladder only once the chain shows the old one closed; «Place» first reads «My bots» for a ladder of this wallet in the
  * pool placed from another device, and offers «View» instead of a second one; a chain bot of more than one prompt's
  * orders is taken back part by part, said as «part taken back» with «Cancel the rest».
@@ -97,7 +97,7 @@ export async function readLive(owner: string, fetcher: Fetcher = (url, init) => 
         if (gone) useLadder.getState().say({ kind: 'cancelled', at });
         else if (wasSent && !stillSent && ladder.cancelSentAt == null) useLadder.getState().say({ kind: legs.some((leg) => leg.state === 'failed') ? 'partly' : 'placed', at });
       }
-      /* «Take back and rebuild»: the new ladder opens on this reading, the one that shows the old one closed (CITY-233). */
+      /* «Take back and rebuild»: the new ladder opens on this reading, the one that shows the old one closed. */
       if (gone) rebuildIfWaiting(ladder, at);
     }
   } catch {
@@ -222,7 +222,7 @@ export const CHAIN_RECHECK_MS = 20_000;
 
 /**
  * This wallet's orders in the pool that the chain still holds working and this browser placed no ladder for — a ladder
- * placed from another device, the app, or a browser that forgot it (CITY-233). Read from «My bots» (the Hangar, read
+ * placed from another device, the app, or a browser that forgot it. Read from «My bots» (the Hangar, read
  * again when stale) and confirmed order by order through the orders route. Only on mainnet, the network «My bots»
  * reads; orders the person already looked at («View») count no more. Nothing read — nothing found: the check never
  * stands between the person and «Place» on a read that failed.
@@ -279,7 +279,7 @@ export function viewElsewhere(): void {
 /**
  * «Cancel orders» and every exit proposal's first step: whatever the ladder's order accounts hold comes back in one
  * prompt. A rebuild then opens the same settings around the price now, for the person to place again — once the chain
- * shows the old ladder closed, not on the cancellation's send (CITY-233).
+ * shows the old ladder closed, not on the cancellation's send.
  */
 export async function takeBack(ladder: LiveLadder, who: Who, then: 'none' | 'rebuild' = 'none', deps: ActionDeps = {}): Promise<void> {
   const st = useLadder.getState();
@@ -387,12 +387,12 @@ export function chainCancellable(bot: Pick<HangarBot, 'venue' | 'kind' | 'status
 }
 
 /**
- * «Cancel» on a DLMM bot read from the chain (CITY-231): the same cancellation as a ladder's, built from the bot's own
+ * «Cancel» on a DLMM bot read from the chain: the same cancellation as a ladder's, built from the bot's own
  * order accounts — nothing kept in this browser is needed, so it works from the app, from another device and after
  * the browser forgot everything. The orders are read first, and only those still on the chain are taken back, at most
  * eight in one prompt; everything they hold comes back to the wallet, the rent too.
  *
- * More than eight, or a leg the network refused (CITY-233): part comes back, the bot says «part taken back» and its
+ * More than eight, or a leg the network refused: part comes back, the bot says «part taken back» and its
  * action reads «Cancel the rest» — there is no «Finish» on a chain bot. An order whose cancellation was just sent is
  * not built again while the chain catches up.
  */

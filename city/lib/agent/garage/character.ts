@@ -1,7 +1,7 @@
 import type { AdviceState, Showing } from './store.ts';
 
 /**
- * What the agent's body does in the garage (CITY-29), with the characters line's states (CITY-57) — and only what
+ * What the agent's body does in the garage, with the characters line's states — and only what
  * really happened: it thinks while a question is with Ryntra, acts while it shows towers, nods once an answer came,
  * greets when its window opens, and otherwise stands ready. An agent that is off is not there at all.
  */

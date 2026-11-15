@@ -53,7 +53,7 @@ test("tryRun: an honest run does not reproduce; a run has no proof of its own", 
   assert.equal(run.reproduced, false);
 });
 
-test("submit: `run` + `prove` builds a CITY-223 finding with the judge's logHash and a PASS", async () => {
+test("submit: `run` + `prove` builds a finding with the judge's logHash and a PASS", async () => {
   const s = session(inProc());
   const out = await s.submit(EXPLOIT, { ...FINDING_META, costMicroUsd: 1_500 });
   assert.equal(out.ok, true);
@@ -63,7 +63,7 @@ test("submit: `run` + `prove` builds a CITY-223 finding with the judge's logHash
   assert.equal(out.finding.order, "order-1");
   assert.equal(out.finding.hunter, "agent-7");
   assert.equal(out.finding.target.instruction, "split");
-  // The finding is well-formed for the rules over the judge (CITY-223).
+  // The finding is well-formed for the rules over the judge.
   assert.equal(f.hack.checkFinding(out.finding).length, 0);
 });
 

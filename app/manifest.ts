@@ -5,7 +5,7 @@ import { PALETTE } from "../city/lib/palette.ts";
 import { CITY_WORDS } from "./seo.ts";
 
 /**
- * The web app manifest — Ryntra City's (CITY-158). The icons are the city's
+ * The web app manifest — Ryntra City's. The icons are the city's
  * mark on the night tile (`scripts/city/brand.mjs` → `public/brand/city/`):
  * the tile at 192 and 512, and a maskable 512 with the night ground to the
  * edges and the mark inside the safe circle. The colours are the city's ink,

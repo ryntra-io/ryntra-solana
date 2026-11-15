@@ -7,7 +7,7 @@ import { markAll, readMarks, report, type Marks, type Report } from './report.ts
 import { agentName, DEFAULT_SETTINGS, readSettings, type GarageSettings, type Topic } from './settings.ts';
 
 /**
- * The agent in the garage of your quarter (CITY-29): a character without money. It keeps, on this device, its name,
+ * The agent in the garage of your quarter: a character without money. It keeps, on this device, its name,
  * what it reports on, whether it is on, the read of your towers from when you last looked and its count of model
  * answers for the day. It holds no key and no wallet, and nothing it does moves money or signs anything: a tower in
  * its report or its advice only makes the camera fly there and the tower light up.
@@ -208,7 +208,7 @@ export const useGarage = create<GarageState>((set, get) => ({
 }));
 
 /**
- * The garage agent as «a window is open» reads it (CITY-29): while its window is open, and while it shows towers with
+ * The garage agent as «a window is open» reads it: while its window is open, and while it shows towers with
  * the window stepped aside — the feed and the banners keep giving way until the person is done with the towers.
  */
 export function garageView(st: Readonly<{ open: boolean; away: boolean; showing: unknown }>): Readonly<{ open: boolean }> {

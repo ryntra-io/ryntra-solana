@@ -1,5 +1,5 @@
 /**
- * CITY-175 — the agent as a service, on devnet and —, CITY-186 — on mainnet: what the cron and the
+ * The agent as a service, on devnet and on mainnet: what the cron and the
  * window's routes call.
  *
  * - `agentMinute` — one pass of the agent over its book (`./tick.server.ts`), every few minutes (vercel.json).
@@ -8,8 +8,8 @@
  *
  * The switches are the mandate's own (`./service.server.ts`): `RYNTRA_AGENT_MANDATE=devnet` with its pool and its
  * agent's address. The agent works only with its key there too, and only with a store that survives a cold start;
- * anything else and it sits still. The key — CITY-179, one switch `RYNTRA_AGENT_MANDATE_SIGNER`, the same interface as
- * Launch's keys (CITY-162):
+ * anything else and it sits still. The key — one switch `RYNTRA_AGENT_MANDATE_SIGNER`, the same interface as
+ * Launch's keys:
  * - unset or `env` — `RYNTRA_AGENT_MANDATE_KEY`, the devnet key whose public half is the gate's agent;
  * - `kms` — `RYNTRA_AGENT_MANDATE_KMS_KEY`, a Google Cloud KMS key version that must be the gate's agent, reached the way
  *   Launch's are (`RYNTRA_LAUNCH_KMS_*`); the environment's key is never read then;
@@ -84,7 +84,7 @@ export function agentKeyFor(env: Env, gate: OpenGate, options: KeyOptions = {}):
 export function dlmmVenue(connection: Connection, gate: Extract<OpenGate, { network: "devnet" }>, dependencies: Parameters<typeof dlmmBuy>[2] = {}): Venue {
   return {
     async buy(mandate, amount, receiver, coin) {
-      /* CITY-184: a coin of Token-2022 only with every feature of its mint on the agent's list. */
+      /* A coin of Token-2022 only with every feature of its mint on the agent's list. */
       const mint = await connection.getAccountInfo(coin, "confirmed");
       const epoch = mint?.owner.equals(TOKEN_2022_PROGRAM_ID) ? BigInt((await connection.getEpochInfo("confirmed")).epoch) : undefined;
       const bought = readCoin(coin, mint, epoch);
@@ -99,7 +99,7 @@ export function dlmmVenue(connection: Connection, gate: Extract<OpenGate, { netw
       const buy = await dlmmBuy(connection, { pool: gate.pool, budgetMint: NATIVE_MINT, vault: mandate.vault, budgetAccount: mandate.budgetAccount, receiver, amount: amount - fee, slippageBps: mandate.terms.slippageBps }, dependencies);
       /*
        * The SDK's own setup is for a wallet that signs: it wraps SOL and opens accounts from `user`, the vault, which signs
-       * only inside the policy (the agent's signer rightly refuses it; seen on devnet, CITY-179). The budget is wrapped
+       * only inside the policy (the agent's signer rightly refuses it; seen on devnet). The budget is wrapped
        * already; all a first buy may need is the person's account, at the agent's cost.
        */
       const hers = (await connection.getAccountInfo(receiver, "confirmed")) !== null;
@@ -133,7 +133,7 @@ export async function agentMinute(env: Env, deps: Readonly<{ store?: GuardStore;
   const key = agentKeyFor(env, gate, options);
   if (!key) return { ran: false, why: "no-key" };
   /*
-   * The pass reads every mandate against the gate's agent and ends those signed for another (CITY-186). In KMS the key's
+   * The pass reads every mandate against the gate's agent and ends those signed for another. In KMS the key's
    * address is known only by asking Google, so it is asked first: a key that is not the gate's agent, or one Google does
    * not answer for, runs no pass and touches no mandate.
    */
@@ -153,8 +153,8 @@ export async function agentMinute(env: Env, deps: Readonly<{ store?: GuardStore;
   }
   const journal = agentJournal(() => store);
   const lines = await runAgentPass({ gate, store, connection, key, journal, venue: venueOf(connection, gate), ...(deps.now ? { now: deps.now } : {}) });
-  /* CITY-187: the sales a person signed that a request did not finish — the agent sells them, or reads what they brought:
-     through the devnet pool, or Jupiter on mainnet (CITY-195). */
+  /* The sales a person signed that a request did not finish — the agent sells them, or reads what they brought:
+     through the devnet pool, or Jupiter on mainnet. */
   const sales = await runSalePass({ gate, store, connection, key, journal, venue: saleVenueOf(connection, gate), ...(deps.now ? { now: deps.now } : {}) }).catch(() => []);
   return { ran: true, lines, sales };
 }
@@ -173,7 +173,7 @@ export async function launchFactsOf(mint: string): Promise<LaunchFacts | null> {
 
 /**
  * The mandate the person just signed, into the agent's book: on mainnet with the coin she named, on devnet the pool's.
- * CITY-193: with her strategy's plan. An early plan's launch is checked again here, by the city's filter on Pulse's facts
+ * With her strategy's plan. An early plan's launch is checked again here, by the city's filter on Pulse's facts
  * now — the city's pick is never taken on its word; on devnet, whose coin no Pulse reads, the launch is the mandate's start.
  */
 export async function joinBook(
@@ -208,7 +208,7 @@ export async function joinBook(
 }
 
 /**
- * What the window and «Mine» show: the agent's state, its rhythm, the result, and its last few trades; with CITY-187, what
+ * What the window and «Mine» show: the agent's state, its rhythm, the result, and its last few trades; what
  * it holds for her of its coin and her last sale through it — the result then counts what her sales brought.
  */
 export type AgentView = Readonly<{
@@ -216,39 +216,39 @@ export type AgentView = Readonly<{
   /** Why it paused itself, when `status` is `paused`. */
   pausedBy: PauseReason | null;
   strategy: StrategyId;
-  /** CITY-193: the strategy with its numbers (`./plans.ts` `planText`). */
+  /** The strategy with its numbers (`./plans.ts` `planText`). */
   plan: string;
   receiveMint: string;
   /** The coin's ticker, as the deployment names its devnet pool's coin (`RYNTRA_AGENT_MANDATE_SYMBOL`); null — not named. */
   symbol: string | null;
   everyMs: number;
   result: AgentResult;
-  /** CITY-197: the whole mandate after every fee, and plain holding beside it (`./net.ts`). */
+  /** The whole mandate after every fee, and plain holding beside it (`./net.ts`). */
   net?: AgentNet;
-  /** CITY-70: `state` — done, failed, refused, held for the day's budget, or unknown: sent and being confirmed, never «failed». */
+  /** `state` — done, failed, refused, held for the day's budget, or unknown: sent and being confirmed, never «failed». */
   last: readonly Readonly<{ at: number; ok: boolean; state: TradeState; signature: string | null; spentRaw: string; receivedRaw: string | null }>[];
-  /** CITY-70: what it is doing now; whether her «Freeze» is on; the money — budget = spent + left, from the chain and the book. */
+  /** What it is doing now; whether her «Freeze» is on; the money — budget = spent + left, from the chain and the book. */
   mission?: Mission;
   frozen?: boolean;
   books?: Books;
   /** When the agent last did anything, ms. */
   updatedAt: number;
-  /** CITY-194: its last day, from its own trades, priced now. */
+  /** Its last day, from its own trades, priced now. */
   day?: AgentDay;
-  /** CITY-194: since the person last looked (`?since=`), the same way; absent when not asked. */
+  /** Since the person last looked (`?since=`), the same way; absent when not asked. */
   away?: AgentDay;
 }> &
   Partial<SalesView>;
 
 export type ViewSpans = Readonly<{ now: number; since?: number | null }>;
 
-/** CITY-197: Ryntra's fee on selling the coin back, the table's rate; null — not read (the highest rate is counted). */
+/** Ryntra's fee on selling the coin back, the table's rate; null — not read (the highest rate is counted). */
 export type ViewCosts = Readonly<{ exitBps: number | null }>;
 
 /** The SOL she put in for the agent's network fees with this mandate's budget (`./presets.ts`). */
 export const networkOf = (entry: Pick<BookEntry, "preset">): string => (BUDGET_PRESETS[entry.preset]?.agentFee ?? 0n).toString();
 
-/** CITY-70: what the chain and her switch say now — the vault's budget left, the policy, her «Freeze»; null fields — not read. */
+/** What the chain and her switch say now — the vault's budget left, the policy, her «Freeze»; null fields — not read. */
 export type ViewNow = Readonly<{ frozen: boolean | null; leftRaw: bigint | null; live: boolean | null }>;
 
 /** The mission, her switch and the money, as the view tells them (`./mission.ts`). */
@@ -266,7 +266,7 @@ export function viewOf(entry: BookEntry, worthRaw: bigint | null, symbol: string
   const result = resultOf(entry.trades, worthRaw);
   /* The span's coins are priced as a share of what the worth was read for: what it holds for her, or all it bought. */
   const holding = { heldRaw: sales?.heldRaw ?? result.boughtRaw, worthRaw: worthRaw === null ? null : worthRaw.toString() };
-  /* CITY-197: every figure after every fee, plain holding beside it. */
+  /* Every figure after every fee, plain holding beside it. */
   const priced = { trades: entry.trades, heldRaw: holding.heldRaw, worthRaw: holding.worthRaw, exitBps: costs?.exitBps ?? null, networkRaw: networkOf(entry) };
   const honest = (day: AgentDay): AgentDay => {
     const net = netOf({ ...priced, span: { since: day.since, until: day.until } });
@@ -312,7 +312,7 @@ export async function agentResult(
   const sales = salesView(boughtOf(entry.trades), await readSales(store, input.policy, gate.network), wallet);
   /* What it still holds for her is worth the venue's price; what her sales brought is SOL already in her wallet. */
   const read = gate.network === "mainnet" ? (amount: bigint) => jupiterWorth({ coin, budgetMint: NATIVE_MINT, amount }, resolveJupiterSwapEndpoint()) : (amount: bigint) => dlmmWorth(connection, { pool: gate.pool, budgetMint: NATIVE_MINT, amount });
-  /* CITY-70: the vault's budget left and the policy, read from the chain; her switch from the book — none of them guessed. */
+  /* The vault's budget left and the policy, read from the chain; her switch from the book — none of them guessed. */
   const [worth, exitBps, leftRaw, policyInfo, frozen] = await Promise.all([
     (deps.worth ?? read)(BigInt(sales.heldRaw)).catch(() => null),
     (deps.exitBps ?? ((mint: PublicKey) => exitFeeBps(mint, gate.network)))(coin).catch(() => null),
@@ -331,7 +331,7 @@ export async function agentResult(
 }
 
 /**
- * CITY-197 — Ryntra's fee on selling the coin back into SOL, the table's rate for the pair as a sale reads it; devnet's
+ * Ryntra's fee on selling the coin back into SOL, the table's rate for the pair as a sale reads it; devnet's
  * coins by their mint alone. Null when the catalogue does not answer: the result then counts the highest rate.
  */
 export async function exitFeeBps(coin: PublicKey, network: "devnet" | "mainnet"): Promise<number | null> {

@@ -3,7 +3,7 @@ import { AGENT_FEE_CEILING_BPS, AGENT_FEE_FLOOR_BPS } from '../../../lib/mandate
 import type { Lang } from './format.ts';
 
 /**
- * Ryntra's fee on the agent's trades as the agent's windows say it (CITY-183): the range in one line before the
+ * Ryntra's fee on the agent's trades as the agent's windows say it: the range in one line before the
  * signature, the rates by kind of coin behind «Details». The numbers are the engine's own — fee policy v2, the table a
  * person's swap pays by — never typed here.
  */

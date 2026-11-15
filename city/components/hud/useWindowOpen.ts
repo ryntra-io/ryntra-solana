@@ -26,7 +26,7 @@ import { useTrade } from '@/city/lib/trade/store';
 import { vaultStore } from '@/city/lib/vault/store';
 import { useWindows } from '@/city/lib/window/store';
 
-/** Every window's store as it stands now. A window out on another screen (CITY-75) is not over the city. */
+/** Every window's store as it stands now. A window out on another screen is not over the city. */
 export function windowSources(): WindowSources {
   const out = useWindows.getState().out;
   return {

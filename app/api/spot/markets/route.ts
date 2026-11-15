@@ -57,7 +57,7 @@ export async function GET(request: Request) {
   if (mints !== undefined) {
     const list = mints.split(",").map((mint) => mint.trim()).filter((mint) => BASE58.test(mint));
     if (list.length === 0) return Response.json({ rows: [], observedAt: new Date().toISOString(), stale: false }, { headers: headers(rate, 15) });
-    /* When Jupiter refuses, the last good read of this set (CITY-208), stated stale with the time it was read; `missing` is that read's. */
+    /* When Jupiter refuses, the last good read of this set, stated stale with the time it was read; `missing` is that read's. */
     const read = await readSpotMarketsByMint(list, 8_000, { held: true });
     if (!read.ok) return failure(read.code === "RATE_LIMITED" ? 429 : 503, `MARKETS_${read.code}`, read.reason, rate, read.retryAfterMs);
     const rows = list.map((mint) => read.byMint.get(mint)).filter((market) => market !== undefined).map(toListRow);

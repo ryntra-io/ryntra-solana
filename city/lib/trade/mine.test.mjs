@@ -200,7 +200,7 @@ test("the engine is asked about a bounded number of coins", async () => {
   assert.equal(stub.asked.length, MAX_BASIS_COINS);
 });
 
-test("a dollar coin with no tower is money at a dollar, not a coin «elsewhere» (CITY-150: $0.74 beside $37.63)", () => {
+test("a dollar coin with no tower is money at a dollar, not a coin «elsewhere»", () => {
   const holdings = holdingsOf(OWNER, [ROWS[0], ROWS[1], { kind: "TOKEN", mint: USDC.mint, spendableRaw: "26100000", decimals: 6 }], true);
   const mine = mineOf(holdings, TOWERS.filter((t) => t.id !== USDC.mint));
   assert.deepEqual(mine.cash.map((row) => [row.symbol, row.valueUsd]), [["SOL", 360], ["USDC", 26.1]]);

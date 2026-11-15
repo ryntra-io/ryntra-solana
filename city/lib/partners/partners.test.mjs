@@ -14,7 +14,7 @@ import { devAskOf, invitationOf } from "./landing.ts";
 import { streetPoints, streetsTo } from "./streets.ts";
 import { setPartnersEnv, usePartners } from "./store.ts";
 
-// «Ryntra Partners» (CITY-126, CITY-127): the operator's terms (decision 93, `lib/decks/partner-terms.ts`), the fees from
+// «Ryntra Partners»: the operator's terms (decision 93, `lib/decks/partner-terms.ts`), the fees from
 // the fee policy and the launch preset, the referrer's calculator, «Мій район» from `/api/rewards`, the friend's landing.
 // No network: the engine is a stub with its shape.
 
@@ -267,7 +267,7 @@ test("the window reads the proven wallet's district, asks for one signature on a
   assert.equal(usePartners.getState().open, true);
 });
 
-test("the weekly payout's figures (CITY-128) stand over the Rewards answer once it runs: counted, owed, paid", async () => {
+test("the weekly payout's figures stand over the Rewards answer once it runs: counted, owed, paid", async () => {
   const v = districtOf(ANSWER);
   assert.equal(withEarnings(v, { ok: true, on: false }), v, "off: the Rewards view as it was");
   assert.equal(withEarnings(v, { ok: true, on: true, accrued: "x", pending: "1.00", paid: "0.00", swap: "0.00", launch: "0.00" }), v, "a figure that is not one: nothing changes");

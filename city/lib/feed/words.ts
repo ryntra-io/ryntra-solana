@@ -1,6 +1,6 @@
 import { digits, words } from '../i18n/dict.ts';
 
-/** The names of the switches in «Show on home», by switch (CITY-79). */
+/** The names of the switches in «Show on home», by switch. */
 export const FEED_SWITCHES = words(
   {
     gainers: 'Gainers',
@@ -82,7 +82,7 @@ const RETELL_UK: readonly (readonly [RegExp, string | ((...m: string[]) => strin
   // The more particular phrase first: «Unverified · … liquidity» before «… liquidity».
   [/^Unverified · (.+) liquidity$/, (_, v) => `Не перевірено · ${v} ліквідності`],
   [/^(.+) liquidity$/, (_, v) => `${v} ліквідності`],
-  // «New pool» before «… pool», or it reads «Пул New» (CITY-188).
+  // «New pool» before «… pool», or it reads «Пул New».
   [/^New coin$/, 'Нова монета'],
   [/^New pool$/, 'Новий пул'],
   [/^(.+) pool$/, (_, pair) => `Пул ${pair}`],

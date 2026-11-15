@@ -1,4 +1,4 @@
-// CITY-225 · the sandbox worker's entry. One job per worker: the backend (`worker.ts`) starts a worker with the whole job
+// The sandbox worker's entry. One job per worker: the backend (`worker.ts`) starts a worker with the whole job
 // in `workerData`, this script plays it and posts the result once, then the backend terminates the worker.
 //
 // A worker has its own globals and its own module registry, so the offline wall (`../sandbox/offline.ts`) swaps this

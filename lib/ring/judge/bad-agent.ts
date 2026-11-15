@@ -1,7 +1,7 @@
 /**
- * «Поганий агент» (CITY-68): a public set of cheats the judge must catch. Each takes an honest match and does one bad
+ * «Поганий агент»: a public set of cheats the judge must catch. Each takes an honest match and does one bad
  * thing — claims a win it did not get, swaps a hash, rewrites or makes up the log, skips a test, goes over a limit — and
- * names the exact reason the judge blocks it with. The tests run every one; Fight Night (CITY-60) can show them live.
+ * names the exact reason the judge blocks it with. The tests run every one; Fight Night can show them live.
  *
  * The honest matches (`demoKit`) are played on the demo game `race.ts`: a replay contest where seat 0 honestly lost,
  * and a code contest where the submission honestly passes all three hidden tests. Both play for stakes, so both are

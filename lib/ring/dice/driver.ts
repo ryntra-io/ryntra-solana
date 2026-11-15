@@ -4,7 +4,7 @@ import type { Seat } from "./rules";
 import type { MatchConfig } from "./schema";
 
 /**
- * Runs a match against live agents (CITY-69): asks whoever owes a move, keeps the clock, fetches the beacon round once
+ * Runs a match against live agents: asks whoever owes a move, keeps the clock, fetches the beacon round once
  * it is published. The engine itself never calls a model; an agent is anything that turns a view into a tool call.
  */
 

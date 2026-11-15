@@ -1,4 +1,4 @@
-# Vault guardian (CITY-57)
+# Vault guardian
 
 Built by `node assets-source/characters/guardian/build.mjs` from the Blender scripts in `assets-source/characters/guardian/` —
 do not edit by hand. `guardian.glb` holds three meshes (hero, standard, crowd: 59298 / 19622 / 4740 triangles) in the

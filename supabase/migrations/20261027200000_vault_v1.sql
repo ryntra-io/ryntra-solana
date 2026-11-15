@@ -1,6 +1,6 @@
--- Ryntra City: the Vault's practice (CITY-47) on the server.
+-- Ryntra City: the Vault's practice on the server.
 --
--- PREPARED 2026-10-27 as a file only. Not applied to any Supabase project:
+-- PREPARED 2026-10-27 as a file only. Not applied to any Supabase project.
 -- The vault does not open in production without it: `lib/vault/server.ts`
 -- refuses to open on one instance's memory.
 --

@@ -19,7 +19,7 @@ export type ReadOptions = Readonly<{ fetch?: Fetcher; signal?: AbortSignal }>;
 export type CoinFacts = Readonly<{ mint: string; symbol: string; name: string; icon: string | null; launch: boolean; verified: boolean | null }>;
 
 const text = (value: unknown, max: number): string | null => (typeof value === 'string' && value.trim() && value.length <= max ? value.trim() : null);
-/** A coin's own words, somebody else's text (CITY-73): hidden characters out, a disguised word or an order held. */
+/** A coin's own words, somebody else's text: hidden characters out, a disguised word or an order held. */
 const words = (value: unknown, kind: 'symbol' | 'name', max: number): string | null => (typeof value === 'string' && value.length <= max ? shownText(value, kind, max) : null);
 /** A ticker that passes for a known coin it is not is never vouched for. */
 const ownTicker = (symbol: string, mint: string): boolean => lookalikeOf(symbol, mint) === null;
@@ -108,7 +108,7 @@ export async function searchCatalog(query: string, options: ReadOptions = {}): P
   const trimmed = query.trim();
   if (!trimmed || trimmed.length > 64) return [];
   return parseCatalog(
-    /* GET, so the edge keeps the answer: the same words typed anywhere are one read (CITY-208). */
+    /* GET, so the edge keeps the answer: the same words typed anywhere are one read. */
     await json(options.fetch ?? browserFetch, `/api/solana/tokens/search?${new URLSearchParams({ query: trimmed, limit: '8' })}`, {
       headers: { accept: 'application/json' },
       signal: options.signal,

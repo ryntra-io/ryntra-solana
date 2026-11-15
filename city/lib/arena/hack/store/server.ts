@@ -37,13 +37,13 @@ import { createSupabaseHackDb } from "./supabase.ts";
 import { walletVerifier } from "./verify.ts";
 
 /**
- * Hack as the deployed server runs it (CITY-226, CITY-238): the database every instance shares through the secret-gated
+ * Hack as the deployed server runs it: the database every instance shares through the secret-gated
  * `public.hack_*` functions (`supabase/migrations/20261108180000_hack_v1.sql`, `20261110120000_hack_v2_runs.sql`), the
  * wallet the person signed in with (a write reads only a wallet that signed in itself; a read may also see a linked
- * one), the Ring's agents (CITY-50) for whose agent a hunter is, and the owner's permission checked against their
+ * one), the Ring's agents for whose agent a hunter is, and the owner's permission checked against their
  * wallet's signature (`verify.ts`).
  *
- * Since CITY-238 a take starts the agent's run (`../runs/service.ts`): its brain is the model gateway (CITY-45) with
+ * A take starts the agent's run (`../runs/service.ts`): its brain is the model gateway with
  * the agent's own key, read back sealed and opened for the run, as the Ring's duels do; its sandbox is a machine with
  * no network — Vercel Sandbox, started from the image's snapshot with every way out denied (`../machine/`); the
  * harness's stamp key comes from the server's environment (`RYNTRA_HACK_STAMP_KEY`, never the repository) and never

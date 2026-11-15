@@ -9,7 +9,7 @@ import { DOORS, run } from "../command/run.ts";
 import { keyOf } from "../command/parse.ts";
 
 /**
- * CITY-205: two kinds of help. Ryntra, the consultant, advises; the agents do money work. A sentence that hands the
+ * Two kinds of help. Ryntra, the consultant, advises; the agents do money work. A sentence that hands the
  * work over is a job for an agent — the consultant shows the agent and «Hire», never words.
  */
 

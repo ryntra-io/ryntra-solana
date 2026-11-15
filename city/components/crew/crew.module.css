@@ -1,4 +1,4 @@
-/* The two kinds of help (CITY-205): the consultant's word in its panel, the job card, and the crew on top of «Bots». */
+/* The two kinds of help: the consultant's word in its panel, the job card, and the crew on top of «Bots». */
 
 .consultant {
   display: inline-flex;
@@ -304,7 +304,7 @@
   }
 }
 
-/* ---------- The city's first screen, one action (CITY-222): «Say it. Your agent does the rest.» ---------- */
+/* ---------- The city's first screen, one action: «Say it. Your agent does the rest.» ---------- */
 
 .first {
   padding: 4px;
@@ -373,7 +373,7 @@
   transform: translateX(2px);
 }
 
-/* ---------- The first sentences (CITY-222): one tap says it, the agent's card opens ---------- */
+/* ---------- The first sentences: one tap says it, the agent's card opens ---------- */
 
 .says {
   display: grid;

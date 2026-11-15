@@ -1,7 +1,7 @@
 import { words } from '../../lib/i18n/dict.ts';
 
 /**
- * The words of the city's pages (CITY-157): the windows' heads, the page around a document, and each page's own few
+ * The words of the city's pages: the windows' heads, the page around a document, and each page's own few
  * lines. New words, written for the city — nothing is taken from the old site's pages. The legal documents themselves
  * are not here: they are the published texts (`lib/legal/texts/*`), English with their Ukrainian parts.
  */
@@ -65,8 +65,8 @@ export const DOCS = words(
 );
 
 /** «Developers»: connect an agent in three steps; the addresses behind «Technical details». Project keys (DEV-2) wait
- * for their migration and switch, pay-per-call for x402: «soon», never a step. The AI-chat connector (CITY-154) is
- * live: a door to its own page (CITY-170). */
+ * for their migration and switch, pay-per-call for x402: «soon», never a step. The AI-chat connector is
+ * live: a door to its own page. */
 export const DEVS = words(
   {
     kicker: 'Developers',
@@ -119,7 +119,7 @@ export const DEVS = words(
 );
 
 /**
- * «AI chats» (CITY-170): Ryntra in a person's AI chat — how to connect in three steps, what it reads and checks, what
+ * «AI chats»: Ryntra in a person's AI chat — how to connect in three steps, what it reads and checks, what
  * it keeps and what it never does, where to get help. The addresses and each chat's own menus are behind «Technical
  * details». No chat's site is linked: a person adds Ryntra from inside their chat.
  */

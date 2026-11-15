@@ -1,5 +1,5 @@
 /**
- * The one way the vault speaks to a model: the shape of the model gateway (CITY-45, `lib/models`) as the vault needs
+ * The one way the vault speaks to a model: the shape of the model gateway (`lib/models`) as the vault needs
  * it. A deployment speaks through `guard-model.ts`, which hands each call to that gateway; a developer's machine and the
  * stand play the scripted guards of `stub.ts`, which have exactly this interface (`server.ts` picks).
  *

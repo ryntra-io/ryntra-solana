@@ -7,7 +7,7 @@ import type { CitySnapshot } from '@/city/lib/market/types';
 // One shared read a minute for every visitor; Jupiter's keyless limit is 0.5 requests a second.
 export const revalidate = 60;
 
-/** The last live city this instance read: a failed read answers with it (CITY-200, `city/lib/market/serve.ts`). */
+/** The last live city this instance read: a failed read answers with it (`city/lib/market/serve.ts`). */
 let kept: CitySnapshot | null = null;
 
 export async function GET() {

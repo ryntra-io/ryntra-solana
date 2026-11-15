@@ -8,7 +8,7 @@ import { PALETTE } from "@/city/lib/palette";
 import { buildCityMetadata } from "./seo";
 
 /* Every address that is not a page — one that never was, or one a page answers with `notFound()` — is the city's own
-   404 (CITY-159): the island, one line, one way back to the city. Never offered to the index; a shared link to it
+   404: the island, one line, one way back to the city. Never offered to the index; a shared link to it
    carries the city's card, not a stale one. The short addresses (`/launch`, `/trade` …) and the old interface's lead
    into the city before they get here (`city/lib/open/old-addresses.ts`). */
 

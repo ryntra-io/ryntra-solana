@@ -4,14 +4,14 @@ import type { StrategyPlan } from '../../../lib/mandate/plans.ts';
 import type { WorkPart } from '../../../lib/pilot/plan.ts';
 
 /**
- * The money autopilot on its word (CITY-204): one sentence for the whole budget — «працюй з моїми 2 SOL і 100 USDC:
+ * The money autopilot on its word: one sentence for the whole budget — «працюй з моїми 2 SOL і 100 USDC:
  * частину в скарбничку, частину торгуй BONK і JUP, частину в пули», «put my 2 SOL and 100 USDC on autopilot», «розподіли
  * 3 SOL: 40 % у скарбничку, 30 % у пули, решту торгуй». English and Ukrainian, with the Russian a phone often types.
  * Pure: no store, no wallet, no network.
  *
  * It is the autopilot's only when the sentence gives money — SOL or USDC, said so — and either names two places for it or
  * says to spread it («частину», «розподіли», «autopilot», «працюй з моїми»). A budget a day («торгуй на 1 SOL на день») is
- * the agent's of CITY-175; one place alone («поклади 50 USDC під відсоток») is the Dollar Saver's of CITY-192; a question
+ * the agent's; one place alone («поклади 50 USDC під відсоток») is the Dollar Saver's; a question
  * or a refusal is no ask. A word is never guessed into money.
  */
 
@@ -24,7 +24,7 @@ export type PilotAsk = Readonly<{
   named: Readonly<Partial<Record<WorkPart, number | true>>>;
   /** The coins the trade is to buy, as named, first first. */
   coins: readonly Coin[];
-  /** A strategy or an exit said for the trade (CITY-193), or null. */
+  /** A strategy or an exit said for the trade, or null. */
   plan: StrategyPlan | null;
 }>;
 
@@ -41,7 +41,7 @@ const WITH = /^(з|із|зі|с|with)$/u;
 const MY = /^(my|моїми|моїм|моєю|мої|мій|мою|моими|мои|мой)$/u;
 /** «… заробляти», «… earn»: with both SOL and USDC given, said plainly, the whole budget is put to work. */
 const EARN = /^(заробляти|заробляй|зароби|заработай|зарабатывать|earn|earning)$/u;
-/** A budget a day, or another span: the agent of CITY-175, not a whole budget. */
+/** A budget a day, or another span: the agent, not a whole budget. */
 const SPAN = /^(day|days|daily|день|дня|щодня|щоденно|ежедневно|week|weekly|тиждень|щотижня|month|monthly|місяць|щомісяця|hour|hourly|годину|щогодини)$/u;
 
 /** The words of an exit, whose per cent is not a share. */

@@ -8,7 +8,7 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 /**
- * `POST /api/v1/intents/{id}/release` (1.90.0, CITY-161) — the wallet said no, or the engine refused before anything was
+ * `POST /api/v1/intents/{id}/release` — the wallet said no, or the engine refused before anything was
  * signed: the claiming wallet lets the intent go, and it is open again for the rest of its time.
  */
 export async function POST(request: Request, { params }: { params: Promise<{ id: string }> }) {

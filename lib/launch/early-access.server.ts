@@ -81,10 +81,10 @@ import { quotePaused } from "./quote-watch.server.ts";
 /* ------------------------------------------------------------- gating */
 
 /**
- * False: closed, whatever the bounds configured — the format
- * opens on mainnet alone, flipped here then.
+ * Whether early access is open to people on mainnet. False: closed, whatever the bounds
+ * configured; flipped here when the format opens.
  */
-export const EARLY_ACCESS_OWNER_WORD = true; // Fork 24/24, devnet 25/25; bounds — RYNTRA_LAUNCH_EARLY_ACCESS_BOUNDS, CITY-220 report §6
+export const EARLY_ACCESS_OWNER_WORD = true; // Fork 24/24, devnet 25/25; bounds — RYNTRA_LAUNCH_EARLY_ACCESS_BOUNDS
 
 export const EARLY_ACCESS_BOUNDS_ENV = "RYNTRA_LAUNCH_EARLY_ACCESS_BOUNDS";
 

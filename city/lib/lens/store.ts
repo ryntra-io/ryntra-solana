@@ -3,7 +3,7 @@ import { keepLens, readLens, type LensId, type LensStorage } from './lens.ts';
 import { readStockMints } from './stocks.ts';
 
 /**
- * The Lens's state (CITY-86): the chip the viewer picked, kept in this browser, and the engine's listed companies, read
+ * The Lens's state: the chip the viewer picked, kept in this browser, and the engine's listed companies, read
  * once the first time «Stocks» is picked. `ready` is false until the kept chip is read, so the server's page and the
  * first paint agree.
  */

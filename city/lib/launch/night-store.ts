@@ -5,8 +5,9 @@ import { launchEngine, useLaunch } from './district.ts';
 import { dueMarketReads, dueNightReads, nightCandidates, nightOpen, nightShow, nightStartOf, nightSwitch, sameLineup, withCaps, type KeptCap, type KeptStart, type NightShow } from './night.ts';
 
 /**
- * Launch Night in the browser (CITY-146): the night's show worked out from the Launch district's towers and the flows
- * of the night's launches, read a few at a time — the flows the feed already holds are taken as they are. A development build stands it in with `?night=open`
+ * Launch Night in the browser: the night's show worked out from the Launch district's towers and the flows
+ * of the night's launches, read a few at a time — the flows the feed already holds are taken as they are.
+ * A development build stands it in with `?night=open`
  * beside the Launch stand-in (`?launch=stub`).
  *
  * The stage moves on by itself every few seconds, by hand only where the device asks for less motion. While the show

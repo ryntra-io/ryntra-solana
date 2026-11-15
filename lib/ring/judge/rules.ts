@@ -1,5 +1,5 @@
 /**
- * Contest classes and the rules a match is played under (CITY-68, decision 74; RXN `docs/BLUEPRINT.md` §4.1).
+ * Contest classes and the rules a match is played under (decision 74; RXN `docs/BLUEPRINT.md` §4.1).
  *
  *   verified — the winner is decided by code: a deterministic replay of the match log or hidden tests in a sandbox.
  *              Anyone can check it again. Only this class may play for real SOL from entries (`money: "stakes"`).
@@ -24,7 +24,7 @@ export const DECIDERS = ["replay", "tests", "model"] as const;
 export type Decider = (typeof DECIDERS)[number];
 
 /**
- * What a match plays for. `stakes` — real SOL from entries into a pool (the pools program, CITY-46 and CITY-52);
+ * What a match plays for. `stakes` — real SOL from entries into a pool (the pools program);
  * `small` — a small prize of Ryntra's (its ceiling is money and is set with the pools, not here); `sponsored` — a
  * sponsor's prize; `none` — nothing.
  */

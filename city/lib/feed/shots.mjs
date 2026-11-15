@@ -1,4 +1,4 @@
-// The live event feed's screens for review (CITY-66), at 1440×860 and 390×844 → <out>/feed-<state>-<size>.jpg
+// The live event feed's screens for review, at 1440×860 and 390×844 → <out>/feed-<state>-<size>.jpg
 //   NEXT_PUBLIC_RYNTRA_CITY_HARBOR=open npm run dev, then: node city/lib/feed/shots.mjs [out] [baseUrl]
 // The figures on these screens are fixtures: the city's read is the bundled snapshot (26.10) served as a live read
 // stamped now, with the docks' pools dated in the last hour; the launches are the development stand-in (`?launch=stub`);

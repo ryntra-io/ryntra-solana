@@ -1,12 +1,12 @@
 import { pl, words } from '../i18n/dict.ts';
 
-/** The Lens's chips (CITY-86), in the language on screen (CITY-79). */
+/** The Lens's chips, in the language on screen. */
 export const LENS = words(
   { label: 'Towers', all: 'All', crypto: 'Crypto', memes: 'Memes', stocks: 'Stocks', new: 'New', mine: 'Mine' },
   { label: 'Вежі', all: 'Усі', crypto: 'Крипто', memes: 'Меми', stocks: 'Акції', new: 'Нові', mine: 'Мої' },
 );
 
-/** «New» over the whole of Solana (CITY-142): the rings' list and the beacon, in the language on screen. */
+/** «New» over the whole of Solana: the rings' list and the beacon, in the language on screen. */
 export const NEW_WORDS = words(
   {
     list: 'Show as a list',

@@ -3,7 +3,7 @@ import type { AgentView } from "./match";
 import { commitmentFor, randomSeed } from "./randomness";
 
 /**
- * A model as a dice agent (CITY-69). A language model cannot be trusted to hash, and its view never carries a seed to
+ * A model as a dice agent. A language model cannot be trusted to hash, and its view never carries a seed to
  * reveal, so the platform plays commit and reveal for it: a fresh seed from the CSPRNG per match and seat, its
  * commitment, then the seed itself. The model only ever sees the play phase and calls `bid` or `challenge`
  * (`PLAY_TOOLS`).

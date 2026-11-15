@@ -4,13 +4,13 @@ import type { OrderRow, PositionRow } from './account.ts';
 import { EX_LAYERS } from './words.ts';
 
 /**
- * The perpetual's layers for a price chart (CITY-5d → CITY-5a): where a position was entered, where Phoenix would
+ * The perpetual's layers for a price chart: where a position was entered, where Phoenix would
  * liquidate it, its take profit and its stop loss, and the orders resting in the book — every price the engine's.
  *
- * The chart of a tower is CITY-5a's (`city/components/chart/**`, the core chart). Until its layer API is merged the
- * Exchange keeps its layers here, in the chart's neutral shape — a price, a kind, a label, a tone of the brandbook —
- * and draws them itself on the window's own level strip. Once CITY-5a exports its layer type, the one adapter is
- * `perpLayers(...)` mapped to it; nothing else of the Exchange changes.
+ * The chart of a tower is the core chart (`city/components/chart/**`). Until the chart's layer API is merged
+ * the Exchange keeps its layers here, in the chart's neutral shape — a price, a kind, a label, a tone of the brandbook —
+ * and draws them itself on the window's own level strip. Once the chart exports its layer type, the one
+ * adapter is `perpLayers(...)` mapped to it; nothing else of the Exchange changes.
  */
 
 export type LayerKind = 'entry' | 'liquidation' | 'tp' | 'sl' | 'order';

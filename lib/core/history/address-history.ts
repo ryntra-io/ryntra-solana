@@ -1,5 +1,5 @@
 /**
- * CITY-245 — an address's history from the chain through Helius's Parsed Events Scan: one request that Helius filters
+ * An address's history from the chain through Helius's Parsed Events Scan: one request that Helius filters
  * on its side, instead of «a page of signatures → every transaction → our own filter».
  *
  * It only finds signatures (`returnShape: "signatures"`): which transactions of the address match. Reading them,

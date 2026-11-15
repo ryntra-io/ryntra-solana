@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { test } from "node:test";
 
-/* CITY-239: the Ring's making screen in the Arena's window. On a phone's half sheet the list of brains showed one row
+/* The Ring's making screen in the Arena's window. On a phone's half sheet the list of brains showed one row
    — the screen's own rows took the rest — and a name of two lines was cut by the list's edge. With «i» open on a desk
    the script's counter stood half out of the pane. Layout only; the three rows are measured on the stand
    (docs/research/city-239-polish). */
@@ -49,8 +49,8 @@ test("while a brain is picked on a phone the summary line steps aside, and only 
 
 test("the rows above the list stand closer on a phone, and nothing under a finger is smaller than 44 px", () => {
   const sizes = [...phone.matchAll(/\.editorInline \.(\w+) \{[^}]*?\b(?:min-)?height: (\d+)px;/gu)].map((m) => [m[1], Number(m[2])]);
-  // CITY-240: «Close» and the search had gone down to 40 px to make room for the list's third row.
-  // CITY-242: the steps' tabs (38 px) and the list's rows (40 px) too.
+  // «Close» and the search had gone down to 40 px to make room for the list's third row.
+  // The steps' tabs (38 px) and the list's rows (40 px) too.
   const touch = sizes.filter(([name]) => ["head", "close", "step", "classTab", "search", "go"].includes(name));
   assert.equal(touch.length, 6, JSON.stringify(sizes));
   for (const [name, size] of touch) assert.ok(size >= 44, `${name}: ${size}px`);
@@ -59,7 +59,7 @@ test("the rows above the list stand closer on a phone, and nothing under a finge
   const gap = (name) => Number(new RegExp(`\\.editorInline \\.${name} \\{[^}]*?margin-top: (\\d+)px;`, "u").exec(phone)?.[1]);
   for (const name of ["steps", "pane", "search", "models", "go"]) assert.ok(gap(name) <= 6, `${name}: ${gap(name)}px above it`);
   assert.doesNotMatch(phone, /\.editorInline \.model \{/u, "a row of the list is as it was");
-  // One scroll under the finger, the pane's: the list keeps no height or scroll of its own on a phone (CITY-240: the
+  // One scroll under the finger, the pane's: the list keeps no height or scroll of its own on a phone (the
   // list is a box inside its room; a desk cuts it to whole rows, a phone lets it run).
   assert.match(phone, /\.editorInline \.modelList \{[^}]*height: auto;[^}]*overflow: visible;[^}]*\}/u, "one scroll under the finger: the pane's");
   assert.match(phone, /\.editorInline \.models \{[^}]*flex: none;[^}]*container-type: normal;[^}]*\}/u, "and its room is the list's own height");
@@ -70,7 +70,7 @@ test("a brain's name wraps inside its row; the row is never a fixed height", () 
   assert.match(head, /overflow-wrap: anywhere;/u);
   assert.doesNotMatch(head, /white-space: nowrap|text-overflow/u);
   const row = /\n\.model \{([^}]*)\}/u.exec(css)?.[1] ?? "";
-  // A least height is not a fixed one (CITY-240: a row of one line is the list's step): a longer name still grows the row.
+  // A least height is not a fixed one (a row of one line is the list's step): a longer name still grows the row.
   assert.doesNotMatch(row, /(?<![-\w])height:|overflow: hidden/u);
 });
 

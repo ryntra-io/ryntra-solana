@@ -419,7 +419,8 @@ export function postMoments(mission: Pick<SceneMission, "id" | "ticker" | "phase
 }
 
 /**
- * A post for X through its web intent — the person posts it themselves; Ryntra's account posts only. No hashtags bought, no reward for the post (X's rules since 15.01.2026).
+ * A post for X through its web intent — the person posts it themselves.
+ * No hashtags bought, no reward for the post (X's rules since 15.01.2026).
  */
 export function postIntentUrl(text: string, url: string): string {
   return `https://x.com/intent/tweet?${new URLSearchParams({ text, url }).toString()}`;

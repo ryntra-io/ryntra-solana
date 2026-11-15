@@ -7,7 +7,7 @@ import { momentFromAgentFind, momentFromBigX, momentFromWorldEvent, type Moment,
  * Launch (a launch, its move into the skyline at $75K), a trade read back from the chain (a big x), an agent of the
  * city (a find). The event carries everything its words need, so the server needs no market read to make the draft:
  * the coin, whether the city may name it, and the fact with its source time. A draft is never made from anything else.
- * A fifth kind, `studio`, is the studio's posts for X (CITY-38, `../../x/`): a template and its facts, filmed by the
+ * A fifth kind, `studio`, is the studio's posts for X (`../../x/`): a template and its facts, filmed by the
  * studio's batch script, which also sends the clip.
  */
 

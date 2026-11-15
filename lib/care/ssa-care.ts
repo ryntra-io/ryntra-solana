@@ -1,5 +1,5 @@
 /**
- * CITY-203 — the smart account's executions for the care vault.
+ * The smart account's executions for the care vault.
  *
  * The person's smart account may already hold the agent's trading budget in its first vault (index 0, `../mandate/**`).
  * The positions the agent looks after live in a vault of their own — index 1 of the same smart account — so that no

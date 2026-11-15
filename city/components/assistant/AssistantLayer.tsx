@@ -33,7 +33,7 @@ import s from './assistant.module.css';
 import { ASSISTANT } from './words';
 
 /**
- * Ryntra in the city (CITY-10): one button in the top bar (`AssistantButton`), one glass panel. A question goes to the assistant; the answer is the towers
+ * Ryntra in the city: one button in the top bar (`AssistantButton`), one glass panel. A question goes to the assistant; the answer is the towers
  * — the camera flies to them and they light up — with one short line. Why, the risks, what to check and the sources
  * wait behind «Details». Advice only: a tower in the answer opens that tower's own card, where the person decides.
  */
@@ -54,7 +54,7 @@ export function AssistantLayer() {
   useEffect(() => {
     if ((running || building) && useAssistant.getState().open) useAssistant.getState().hide();
   }, [running, building]);
-  // A window of the city's frame (CITY-65) opened over the city: the panel steps aside, one thing in front at a time.
+  // A window of the city's frame opened over the city: the panel steps aside, one thing in front at a time.
   useEffect(
     () =>
       useWindows.subscribe((st, before) => {
@@ -75,8 +75,8 @@ const close = () => {
 };
 
 /**
- * «Ask Ryntra» in the city's top bar, beside the search: the spark, and its words where the bar has room. Since CITY-85
- * it opens the command line (helm SPEC §1: Ryntra lives in the command line) — say what to open, or ask; on a phone it
+ * «Ask Ryntra» in the city's top bar, beside the search: the spark, and its words where the bar has room.
+ * It opens the command line (helm SPEC §1: Ryntra lives in the command line) — say what to open, or ask; on a phone it
  * is the line's own way in, on a computer ⌘K is the other. A second tap closes the line, or Ryntra's panel.
  */
 export function AssistantButton() {
@@ -138,7 +138,7 @@ function Panel() {
   const w = useWords(ASSISTANT);
   const [text, setText] = useState('');
   const [more, setMore] = useState(false);
-  // A job for an agent said to the consultant (CITY-205): the agent and «Hire» instead of words.
+  // A job for an agent said to the consultant: the agent and «Hire» instead of words.
   const [job, setJob] = useState<{ role: Role | null } | null>(null);
   const c = useWords(CREW_WORDS);
   const input = useRef<HTMLInputElement>(null);
@@ -147,11 +147,11 @@ function Panel() {
 
   const send = (q: string) => {
     if (!q.trim()) return;
-    // CITY-246: a sentence said to Ryntra — the funnel counts that one was, never what it said.
+    // A sentence said to Ryntra — the funnel counts that one was, never what it said.
     funnelSay('agent_said');
-    // «Trade 1 SOL a day», «launch me a token» said to Ryntra is the agent on its word (CITY-175): the card opens.
+    // «Trade 1 SOL a day», «launch me a token» said to Ryntra is the agent on its word: the card opens.
     const gates = gatesNow();
-    // «Поклади 0,2 SOL і 5 USDC працювати» said to Ryntra opens the money autopilot's card (CITY-204), as from the line.
+    // «Поклади 0,2 SOL і 5 USDC працювати» said to Ryntra opens the money autopilot's card, as from the line.
     const pilot = gates.pilot ? readPilotAsk(q, bookNow()) : null;
     if (pilot && fit({ kind: 'pilot', ask: pilot }, gates)) {
       setText('');
@@ -159,7 +159,7 @@ function Panel() {
       cityDoors.openPilot(pilot);
       return;
     }
-    // «Put my USDC to work», «поклади 50 USDC під відсоток» said to Ryntra opens the Dollar Saver's card (CITY-192).
+    // «Put my USDC to work», «поклади 50 USDC під відсоток» said to Ryntra opens the Dollar Saver's card.
     const saver = gates.dollar ? readDollarAsk(q) : null;
     if (saver) {
       setText('');
@@ -174,7 +174,7 @@ function Panel() {
       useAutopilot.getState().show(withCoinOnScreen(ask));
       return;
     }
-    // «Buy $20 of SOL every week» said to Ryntra is the agent's card (CITY-176): Ryntra steps aside, the card opens.
+    // «Buy $20 of SOL every week» said to Ryntra is the agent's card: Ryntra steps aside, the card opens.
     const instruction = ONE_SENTENCE_OPEN && gatesNow().instruct ? readInstruction(q, bookNow(), contextNow()) : null;
     if (instruction) {
       setText('');

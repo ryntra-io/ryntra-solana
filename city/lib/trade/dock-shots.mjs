@@ -1,4 +1,4 @@
-// CITY-189's screens for review: the tower's window on a phone, as it opens — is what you get in sight beside the one
+// The screens for review: the tower's window on a phone, as it opens — is what you get in sight beside the one
 // action? Buy, sell and a limit, in English and Ukrainian, at 390×844, 360×740 and on a desk at 1440×860
 //   → <out>/<state>-<lang>-<size>.jpg
 //   NEXT_PUBLIC_RYNTRA_CITY_SPOT=open npm run dev     then     node city/lib/trade/dock-shots.mjs [out] [baseUrl]

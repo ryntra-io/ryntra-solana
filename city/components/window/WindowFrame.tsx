@@ -36,11 +36,11 @@ const HANDLE_CLASS: Record<Handle, string> = {
 };
 
 /**
- * One window over the city on a computer (CITY-65, macets M2 and M3): the head with its title and its buttons, dragged
+ * One window over the city on a computer: the head with its title and its buttons, dragged
  * by the head and stretched by every edge and corner; on the whole screen, the head of M3 with «Exit full screen».
  * What is inside comes from the window's own `render` and is not drawn again while the frame moves.
  *
- * Since CITY-84: in a bay the frame stretches by its inner edge only; dragged by the head out of the bay it floats,
+ * In a bay the frame stretches by its inner edge only; dragged by the head out of the bay it floats,
  * near the screen's side it docks, over another frame's head it becomes its tab — the place it would land lights up.
  * Windows sharing a frame show their tabs in the head; «Minimise» folds the window into the tray (a window the city can
  * open again by itself: `openers.ts`). A tab not in front keeps its frame, out of sight, so what was typed in it is
@@ -71,7 +71,7 @@ export function WindowFrame({ id, z }: { id: string; z: number }) {
 
   if (!spec || !win) return null;
   const rect = full ? fullRect(viewport) : win.rect;
-  // A window that fits its contents stands as tall as they are, up to its place's height (CITY-201).
+  // A window that fits its contents stands as tall as they are, up to its place's height.
   const fit = Boolean(spec.fit) && !full;
   const actions = useWindows.getState();
   const tabIds = tabs.split(' ');
@@ -84,7 +84,7 @@ export function WindowFrame({ id, z }: { id: string; z: number }) {
       <FoldGlyph />
     </button>
   ) : null;
-  // Onto another screen (CITY-75): a window that says how to open on its own, in a browser that can.
+  // Onto another screen: a window that says how to open on its own, in a browser that can.
   const out = spec.detach && !app && canGoOut() ? (
     <button type="button" className={s.tool} aria-label={w.goOut} title={w.goOut} onClick={() => void goOut(id)}>
       <OutGlyph />

@@ -38,7 +38,7 @@ test("the flight to the door starts and ends where it should and never jumps", (
   assert.ok(ms >= 1200 && ms <= 2400, `${ms} ms`);
 });
 
-test("the sign never stands under the Deck, and on an upright phone never off the screen (CITY-243)", async () => {
+test("the sign never stands under the Deck, and on an upright phone never off the screen", async () => {
   const { signOnScreen, SIGN_HALF } = await import("./place.ts");
   const phone = { width: 390, height: 844, deck: { left: 16, right: 374, top: 755 }, edge: true };
   // The eye pass of 11.11: the first frame put the sign at x 838, a drag at 45 × 797 — under the Deck.

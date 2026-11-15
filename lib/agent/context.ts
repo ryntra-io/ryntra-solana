@@ -12,7 +12,7 @@ export function parseContextParam(raw: string | null): AgentContext | null {
   if (!raw) return null;
   const [kind, ...rest] = raw.split(":");
   if (kind === "asset" && rest[0] && BASE58.test(rest[0])) {
-    /* The ticker in a link is anyone's text (CITY-73): a held one is dropped, the mint still names the coin. */
+    /* The ticker in a link is anyone's text: a held one is dropped, the mint still names the coin. */
     const symbol = rest[1] ? shownText(rest[1], "symbol", 32) : null;
     const parsed = AgentContextSchema.safeParse({ kind: "asset", mint: rest[0], ...(symbol ? { symbol } : {}) });
     return parsed.success ? parsed.data : null;

@@ -4,7 +4,7 @@ import { readFileSync } from "node:fs";
 
 import { watchContext } from "./context-loss.ts";
 
-/* CITY-200: on ryntra.io a lost WebGL context left the city white, the dock gone, with no way back but a reload. */
+/* On ryntra.io a lost WebGL context left the city white, the dock gone, with no way back but a reload. */
 
 function fakeTimers() {
   const due = [];

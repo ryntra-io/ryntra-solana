@@ -9,10 +9,10 @@ moved counts as new. Generated at every update from the development history.
 
 | Since the tag | Files |
 |---|---|
-| New | 5,359 |
+| New | 5,366 |
 | Changed | 899 |
 | Unchanged | 825 |
-| Lines added / removed | +1,121,053 / −28,064 |
+| Lines added / removed | +1,126,609 / −28,157 |
 
 ## New since the tag
 
@@ -2340,12 +2340,10 @@ moved counts as new. Generated at every update from the development history.
 - `city/lib/app-bridge/signer.ts`
 - `city/lib/app-bridge/siws.test.mjs`
 - `city/lib/app-mode.ts`
-- `city/lib/arena/hack/README.md`
 - `city/lib/arena/hack/finding.test.mjs`
 - `city/lib/arena/hack/finding.ts`
 - `city/lib/arena/hack/fixtures.mjs`
 - `city/lib/arena/hack/index.ts`
-- `city/lib/arena/hack/machine/README.md`
 - `city/lib/arena/hack/machine/backend.ts`
 - `city/lib/arena/hack/machine/check.mjs`
 - `city/lib/arena/hack/machine/drivers/process.ts`
@@ -2367,7 +2365,6 @@ moved counts as new. Generated at every update from the development history.
 - `city/lib/arena/hack/order.ts`
 - `city/lib/arena/hack/permission.test.mjs`
 - `city/lib/arena/hack/permission.ts`
-- `city/lib/arena/hack/ranges/README.md`
 - `city/lib/arena/hack/ranges/catalogue.ts`
 - `city/lib/arena/hack/ranges/checks.ts`
 - `city/lib/arena/hack/ranges/practice.ts`
@@ -2379,7 +2376,6 @@ moved counts as new. Generated at every update from the development history.
 - `city/lib/arena/hack/registry.ts`
 - `city/lib/arena/hack/rules.test.mjs`
 - `city/lib/arena/hack/rules.ts`
-- `city/lib/arena/hack/runner/README.md`
 - `city/lib/arena/hack/runner/assemble.test.mjs`
 - `city/lib/arena/hack/runner/assemble.ts`
 - `city/lib/arena/hack/runner/backend.ts`
@@ -2399,14 +2395,12 @@ moved counts as new. Generated at every update from the development history.
 - `city/lib/arena/hack/runner/worker-entry.mjs`
 - `city/lib/arena/hack/runner/worker.test.mjs`
 - `city/lib/arena/hack/runner/worker.ts`
-- `city/lib/arena/hack/runs/README.md`
 - `city/lib/arena/hack/runs/contract.ts`
 - `city/lib/arena/hack/runs/memory.ts`
 - `city/lib/arena/hack/runs/runs.test.mjs`
 - `city/lib/arena/hack/runs/service.ts`
 - `city/lib/arena/hack/runs/sql.test.mjs`
 - `city/lib/arena/hack/runs/supabase.ts`
-- `city/lib/arena/hack/sandbox/README.md`
 - `city/lib/arena/hack/sandbox/determinism.test.mjs`
 - `city/lib/arena/hack/sandbox/engine.ts`
 - `city/lib/arena/hack/sandbox/fixtures.mjs`
@@ -2425,7 +2419,6 @@ moved counts as new. Generated at every update from the development history.
 - `city/lib/arena/hack/sandbox/toy.ts`
 - `city/lib/arena/hack/scope.test.mjs`
 - `city/lib/arena/hack/scope.ts`
-- `city/lib/arena/hack/store/README.md`
 - `city/lib/arena/hack/store/api.test.mjs`
 - `city/lib/arena/hack/store/api.ts`
 - `city/lib/arena/hack/store/contract.ts`
@@ -2440,7 +2433,6 @@ moved counts as new. Generated at every update from the development history.
 - `city/lib/arena/hack/store/testing/pg.mjs`
 - `city/lib/arena/hack/store/verify.test.mjs`
 - `city/lib/arena/hack/store/verify.ts`
-- `city/lib/arena/hack/view/README.md`
 - `city/lib/arena/hack/view/client.ts`
 - `city/lib/arena/hack/view/contract.ts`
 - `city/lib/arena/hack/view/flag.ts`
@@ -2596,7 +2588,6 @@ moved counts as new. Generated at every update from the development history.
 - `city/lib/characters/math.ts`
 - `city/lib/characters/pose.ts`
 - `city/lib/characters/rig.ts`
-- `city/lib/chart/README.md`
 - `city/lib/chart/candles.test.mjs`
 - `city/lib/chart/candles.ts`
 - `city/lib/chart/chrome.test.mjs`
@@ -3423,7 +3414,6 @@ moved counts as new. Generated at every update from the development history.
 - `city/lib/window/store.test.mjs`
 - `city/lib/window/store.ts`
 - `city/lib/window/wiring.test.mjs`
-- `city/lib/x/README.md`
 - `city/lib/x/api.ts`
 - `city/lib/x/calendar.test.mjs`
 - `city/lib/x/calendar.ts`
@@ -3432,15 +3422,12 @@ moved counts as new. Generated at every update from the development history.
 - `city/lib/x/clock.mjs`
 - `city/lib/x/config.ts`
 - `city/lib/x/connect.ts`
-- `city/lib/x/drafts-week.test.mjs`
-- `city/lib/x/drafts-week.ts`
 - `city/lib/x/event.ts`
 - `city/lib/x/facts.test.mjs`
 - `city/lib/x/facts.ts`
 - `city/lib/x/fake-x.mjs`
 - `city/lib/x/files.mjs`
 - `city/lib/x/files.test.mjs`
-- `city/lib/x/film.mjs`
 - `city/lib/x/handles.test.mjs`
 - `city/lib/x/handles.ts`
 - `city/lib/x/ledger.ts`
@@ -3462,8 +3449,6 @@ moved counts as new. Generated at every update from the development history.
 - `city/lib/x/supabase-ledger.ts`
 - `city/lib/x/timeline.test.mjs`
 - `city/lib/x/timeline.ts`
-- `city/lib/x/vision-drafts.test.mjs`
-- `city/lib/x/vision-drafts.ts`
 - `city/styles/brand.ts`
 - `city/styles/city.module.css`
 - `city/styles/fonts.ts`
@@ -3912,6 +3897,32 @@ moved counts as new. Generated at every update from the development history.
 - `lib/core/venues/meteora-dbc/sdk.server.ts`
 - `lib/core/venues/meteora-dbc/trade-receipt.ts`
 - `lib/core/venues/meteora-dbc/trade.server.ts`
+- `lib/core/venues/meteora-dlmm-pro/activation.test.mjs`
+- `lib/core/venues/meteora-dlmm-pro/activation.ts`
+- `lib/core/venues/meteora-dlmm-pro/events.server.ts`
+- `lib/core/venues/meteora-dlmm-pro/fee.test.mjs`
+- `lib/core/venues/meteora-dlmm-pro/fee.ts`
+- `lib/core/venues/meteora-dlmm-pro/fixture-kit.mjs`
+- `lib/core/venues/meteora-dlmm-pro/fixtures/mainnet-pools-2026-11-14.json.gz`
+- `lib/core/venues/meteora-dlmm-pro/fixtures/rehearsal.json.gz`
+- `lib/core/venues/meteora-dlmm-pro/gate.ts`
+- `lib/core/venues/meteora-dlmm-pro/limit-orders.server.ts`
+- `lib/core/venues/meteora-dlmm-pro/mainnet.test.mjs`
+- `lib/core/venues/meteora-dlmm-pro/orders.test.mjs`
+- `lib/core/venues/meteora-dlmm-pro/orders.ts`
+- `lib/core/venues/meteora-dlmm-pro/owned.server.ts`
+- `lib/core/venues/meteora-dlmm-pro/pools.server.ts`
+- `lib/core/venues/meteora-dlmm-pro/positions.server.ts`
+- `lib/core/venues/meteora-dlmm-pro/rewards.server.ts`
+- `lib/core/venues/meteora-dlmm-pro/sdk-compare.test.mjs`
+- `lib/core/venues/meteora-dlmm-pro/sdk.server.ts`
+- `lib/core/venues/meteora-dlmm-pro/sdk.test.mjs`
+- `lib/core/venues/meteora-dlmm-pro/shapes.server.ts`
+- `lib/core/venues/meteora-dlmm-pro/swap.server.ts`
+- `lib/core/venues/meteora-dlmm-pro/ticks.test.mjs`
+- `lib/core/venues/meteora-dlmm-pro/ticks.ts`
+- `lib/core/venues/meteora-dlmm-pro/tx.server.ts`
+- `lib/core/venues/meteora-dlmm-pro/venue.server.ts`
 - `lib/core/venues/meteora-dlmm/floor.server.ts`
 - `lib/debridge/quote-api.test.mjs`
 - `lib/debridge/quote-api.ts`
@@ -4320,7 +4331,6 @@ moved counts as new. Generated at every update from the development history.
 - `lib/mission-control/survival.test.mjs`
 - `lib/mission-control/types.ts`
 - `lib/mission-control/words.ts`
-- `lib/models/README.md`
 - `lib/models/call-city45.test.mjs`
 - `lib/models/call.ts`
 - `lib/models/catalog-city45.test.mjs`
@@ -4580,13 +4590,11 @@ moved counts as new. Generated at every update from the development history.
 - `lib/rewards/rules-2-1.test.mjs`
 - `lib/rewards/rules.ts`
 - `lib/rewards/swap-settlement.ts`
-- `lib/ring/README.md`
 - `lib/ring/agent.test.mjs`
 - `lib/ring/agent.ts`
 - `lib/ring/api.test.mjs`
 - `lib/ring/api.ts`
 - `lib/ring/contract.ts`
-- `lib/ring/dice/README.md`
 - `lib/ring/dice/beacon.ts`
 - `lib/ring/dice/driver.test.mjs`
 - `lib/ring/dice/driver.ts`
@@ -4608,7 +4616,6 @@ moved counts as new. Generated at every update from the development history.
 - `lib/ring/dice/testing/helpers.mjs`
 - `lib/ring/dice/tournament.test.mjs`
 - `lib/ring/dice/tournament.ts`
-- `lib/ring/duel/README.md`
 - `lib/ring/duel/api.ts`
 - `lib/ring/duel/code.ts`
 - `lib/ring/duel/crack.test.mjs`
@@ -4639,7 +4646,6 @@ moved counts as new. Generated at every update from the development history.
 - `lib/ring/engine.test.mjs`
 - `lib/ring/engine.ts`
 - `lib/ring/garage.ts`
-- `lib/ring/judge/README.md`
 - `lib/ring/judge/bad-agent.test.mjs`
 - `lib/ring/judge/bad-agent.ts`
 - `lib/ring/judge/hash.ts`
@@ -5030,7 +5036,6 @@ moved counts as new. Generated at every update from the development history.
 - `lib/world/testing/bootstrap.sql`
 - `lib/world/testing/hooks.mjs`
 - `lib/world/testing/pg.mjs`
-- `lib/world/text-safety/README.md`
 - `lib/world/text-safety/clean.ts`
 - `lib/world/text-safety/for-model.ts`
 - `lib/world/text-safety/index.ts`
@@ -5312,6 +5317,8 @@ moved counts as new. Generated at every update from the development history.
 - `public/showcase/earn-piers.jpg`
 - `public/showcase/earn.jpg`
 - `public/showcase/hero.jpg`
+- `public/showcase/how-it-fits-phone.jpg`
+- `public/showcase/how-it-fits.jpg`
 - `public/showcase/launch.jpg`
 - `public/showcase/phones.jpg`
 - `public/showcase/trade.jpg`

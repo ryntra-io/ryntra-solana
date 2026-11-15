@@ -2,11 +2,11 @@ import { hackApi, hackMachineCheck } from "@/city/lib/arena/hack/store/server";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
-/* A take starts the agent's run, which plays after the answer has gone (CITY-238): the function lives as long as a run may. */
+/* A take starts the agent's run, which plays after the answer has gone: the function lives as long as a run may. */
 export const maxDuration = 300;
 
 /*
- * The Arena's third door, Hack (CITY-226, CITY-238), in one handler — GET /orders, /order, /finding, /run; POST /open,
+ * The Arena's third door, Hack, in one handler — GET /orders, /order, /finding, /run; POST /open,
  * /take, /submit, /move, /confirm. The rules live in `city/lib/arena/hack/store/` (`api.ts`, `service.ts`) and
  * `city/lib/arena/hack/runs/`; instances do not share memory, so a deployment keeps orders, takes, findings, runs and
  * request keys in the database (`supabase/migrations/20261108180000_hack_v1.sql`, `20261110120000_hack_v2_runs.sql`).

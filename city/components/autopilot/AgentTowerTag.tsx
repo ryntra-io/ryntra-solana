@@ -14,7 +14,7 @@ import { useWallet } from '@/city/lib/trade/wallet';
 import s from './autopilot.module.css';
 
 /**
- * The quiet line over the agent's tower (CITY-194): the tower of the coin the person's agent buys says its day — «Today
+ * The quiet line over the agent's tower: the tower of the coin the person's agent buys says its day — «Today
  * · 3 trades · +0.012 SOL» — from the agent's own book. Nothing when the agent did not trade today, when its coin has
  * no tower in the city, or where the report is shut. It never takes a touch; the tower under it does.
  */
@@ -33,7 +33,7 @@ function TowerTag() {
   const tower = useMemo(() => (view ? (layout.towers.find((t) => t.tower.id === view.receiveMint) ?? null) : null), [layout, view]);
   const day = view?.day;
   if (running || !tower || !worthTelling(day)) return null;
-  /* CITY-197: after every fee, when the book counted them. */
+  /* After every fee, when the book counted them. */
   const raw = resultRaw(day);
   return (
     <Html position={[tower.x, tower.height + tower.width * 1.6 + 4, tower.z]} center zIndexRange={[4, 0]} pointerEvents="none" className={s.towerWrap}>

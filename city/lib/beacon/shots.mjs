@@ -1,4 +1,4 @@
-// Beacons' screens for review (CITY-72), at 390×844 and 1440×900 → <out>/beacon-<state>-<size>.jpg
+// Beacons' screens for review, at 390×844 and 1440×900 → <out>/beacon-<state>-<size>.jpg
 //   node city/lib/beacon/shots.mjs [out] [baseUrl]      (the app running: npm run dev, or next start)
 // No wallet and no keys. The city's market read answers with the bundled snapshot marked live and fresh, so the
 // beacons' engine runs on it; the account's beacons answer «sign in first», as for a visitor. The lit tower is a beacon

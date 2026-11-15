@@ -141,7 +141,7 @@ export const WARD_LINK_HOSTS = ["ryntra.io", "www.ryntra.io"] as const;
 
 /**
  * The link classifier the transfer builder uses (`/api/v1/money/recipient`), on a real chain and the payment links'
- * store — one wiring for `POST /api/v1/ward/check` and the Telegram bot (CITY-166). It reads links; it writes nothing.
+ * store — one wiring for `POST /api/v1/ward/check` and the Telegram bot. It reads links; it writes nothing.
  */
 export function recipientRead(handle: SolanaRpcHandle, args: Readonly<{ origin: string; store: GuardStore }>): NonNullable<WardReads["recipient"]> {
   const { origin, store } = args;

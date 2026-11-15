@@ -7,7 +7,7 @@ import { payMetadata } from "@/city/lib/pay/meta";
 import { CITY_FONTS } from "@/city/styles/fonts";
 import s from "@/city/styles/city.module.css";
 
-/* A wrong or retired payment link (CITY-156): the city's window says so in the city's words and leads into the city.
+/* A wrong or retired payment link: the city's window says so in the city's words and leads into the city.
    Its tab carries the same words, never the site's old line. */
 
 export const metadata: Metadata = payMetadata(null);

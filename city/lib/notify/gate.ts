@@ -2,7 +2,7 @@ import { CAP_WINDOW_MS, kindOf, type NoteKind, type Place } from './kinds.ts';
 import { inQuiet, type NotifyPrefs } from './prefs.ts';
 
 /**
- * One note at the centre's gate (CITY-87): whether it stands as a banner in the city, goes to the computer's own
+ * One note at the centre's gate: whether it stands as a banner in the city, goes to the computer's own
  * notifications, or nowhere — and why. Pure, so the rules read in tests:
  *
  * - the liquidation risk always stands in the city, and on the computer too where the person chose so: «Mute all», the
@@ -10,7 +10,7 @@ import { inQuiet, type NotifyPrefs } from './prefs.ts';
  * - otherwise «off», «Mute all», the quiet hours and the kind's cap hold it, in that order;
  * - «on the computer» without the browser's permission falls back to a banner, so a note is never lost by a choice the
  *   browser refused;
- * - a market kind «in the city» is the live feed itself (CITY-66): no banner on top of it;
+ * - a market kind «in the city» is the live feed itself: no banner on top of it;
  * - a note the city already shows on screen (the trade window with its own result) needs no banner over itself.
  */
 

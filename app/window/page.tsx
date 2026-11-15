@@ -9,7 +9,7 @@ import s from "@/city/styles/city.module.css";
 
 import { buildCityMetadata } from "../seo";
 
-/* `/window?id=chart&tower=<mint>` — one window of the city on a page of its own (CITY-75: a
+/* `/window?id=chart&tower=<mint>` — one window of the city on a page of its own (a
    chart onto the second monitor). Where the browser has no Document Picture-in-Picture, the city opens its window
    here: the window alone, no 3D city, the same wallet and reads. Never offered to the index. */
 

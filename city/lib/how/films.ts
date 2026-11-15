@@ -1,8 +1,8 @@
 import manifest from './films.json' with { type: 'json' };
 
 /**
- * Where «How it works» takes its lessons from (CITY-43). The lessons are made by the video factory (`apps/video`,
- * CITY-61; the lessons themselves are CITY-42) and placed in `public/city/how/` by
+ * Where «How it works» takes its lessons from. The lessons are made by the video factory
+ * and placed in `public/city/how/` by
  * `node scripts/city/how-films.mjs <guide> <lesson out folder>`, which writes their entry in `films.json`. Every file
  * is served from our own domain — no player and no host of anyone else's. A function without its film has no card:
  * a lesson appears when its film is here, never an empty place or a «soon». No React here: the tests run it in Node.

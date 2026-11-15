@@ -1,5 +1,5 @@
 /**
- * CITY-128 — the weekly statements, kept and moved: prepared once a week has closed, bound to the Squads proposal that
+ * The weekly statements, kept and moved: prepared once a week has closed, bound to the Squads proposal that
  * pays them, settled against what the chain shows. Server-only; the counting is `week.ts`.
  *
  * - **Prepared once.** A week's statement is created by compare-and-set on its key (`<cluster>:<week>`): a second run,
@@ -50,13 +50,13 @@ export type PrepareDeps = Readonly<{
   /** The Rewards record of a wallet: who brought it, since when. */
   readAccount: (wallet: string) => Promise<Account | null>;
   /**
-   * The sanctions source's word for a wallet. CITY-196 — fails closed: only `clean` pays; `sanctioned` is held; anything
+   * The sanctions source's word for a wallet. Fails closed: only `clean` pays; `sanctioned` is held; anything
    * else — no answer, an error, `unknown`, a word it does not read — holds the payout as a listing does, under its own
    * reason, carried to the next week and screened again then. As Send reads it (`lib/ward`): only `clean` is «not listed».
    */
   screen: (wallet: string) => Promise<string>;
   /**
-   * The referral guard's word on each pair a pass would count (CITY-125), checking first the pairs that need it; a pair
+   * The referral guard's word on each pair a pass would count, checking first the pairs that need it; a pair
    * it does not name waits. A guard that does not answer pays nobody this pass: every share waits for the next.
    */
   pairs: (pairs: readonly Readonly<{ partner: string; person: string }>[], now: string) => Promise<ReadonlyMap<string, PairEffect>>;
@@ -94,7 +94,7 @@ export async function accountsOf(events: readonly FeeEvent[], read: PrepareDeps[
 
 export type Screening = "clear" | "sanctioned" | "unscreened";
 
-/** The source's word as the payout reads it (CITY-196): only `clean` is clear. */
+/** The source's word as the payout reads it: only `clean` is clear. */
 export function screeningOf(word: string): Screening {
   if (word === "sanctioned") return "sanctioned";
   return word === "clean" ? "clear" : "unscreened";

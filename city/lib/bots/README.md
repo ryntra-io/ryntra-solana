@@ -1,6 +1,6 @@
-# The bots hub in the city (CITY-134, B4)
+# The bots hub in the city
 
-One window over the city — Start · My bots · Strategies · History — in the city's frame (CITY-65, CITY-75). The way in is
+One window over the city — Start · My bots · Strategies · History — in the city's frame. The way in is
 the Deck's «Agents» tray (decision 86: Agents — Hangar · Bots): its «Bots» door opens and closes the window. Anything
 else opens it the same way, without loading the hub:
 
@@ -10,23 +10,23 @@ import { openBots } from '@/city/lib/bots/open';
 openBots('launch'); // or 'hangar', 'strategies', 'history'; without a tab — where it was
 ```
 
-The old addresses of the bots, the strategies and the agents (`/app/bots`, `/app/strategies`, `/agents` … → `/?open=agents`,
-CITY-13) open it too, behind the same switch as the door (`NEXT_PUBLIC_RYNTRA_CITY_AGENTS=open`).
+The old addresses of the bots, the strategies and the agents (`/app/bots`, `/app/strategies`, `/agents` … → `/?open=agents`)
+open it too, behind the same switch as the door (`NEXT_PUBLIC_RYNTRA_CITY_AGENTS=open`).
 
 **Practice, and live ladders.** The practice bots sign nothing; «Cancel orders» and «Withdraw all» stand in them
-switched off with one honest line. The one live path is the ladder composer (CITY-135, below): a buy or an exit ladder,
+switched off with one honest line. The one live path is the ladder composer: a buy or an exit ladder,
 or Smart DCA's ladder leg, placed as DLMM limit orders, signed once in the person's own wallet — on the network
-`NEXT_PUBLIC_RYNTRA_CITY_LADDER` names (`devnet`, or `mainnet` behind its own server switch, CITY-219); practice only
+`NEXT_PUBLIC_RYNTRA_CITY_LADDER` names (`devnet`, or `mainnet` behind its own server switch); practice only
 otherwise. A ladder is kept in this browser the moment it is signed, before the relay is asked, and the chain's reading
-says which legs landed (CITY-231). Taking back never depends on this browser: on a mainnet window every DLMM order or
+says which legs landed. Taking back never depends on this browser: on a mainnet window every DLMM order or
 ladder the Hangar reads from the chain carries «Cancel» — from the app, another device, a cleared browser.
 
-**Reconciled with the Deck.** «Hangar» on the Deck is the agent's home in the quarter (CITY-50); the bots' own place in
+**Reconciled with the Deck.** «Hangar» on the Deck is the agent's home in the quarter; the bots' own place in
 the window says «My bots», so the tray never shows two different «Hangars». The scout — the city's own read-only agent —
 is one of the bots in the catalogue: its card opens the scout's rule, as the Deck's door did before. One assistant in the
-city: the window keeps no second ask box; the bots' assistant tools are the assistant line's (CITY-133).
+city: the window keeps no second ask box; the bots' assistant tools are the assistant line's.
 
-**Ryntra in the window (CITY-133).** On «Start», under the weather, Ryntra names the week's bot for the coin in one line
+**Ryntra in the window.** On «Start», under the weather, Ryntra names the week's bot for the coin in one line
 and what it did against holding; the horizon and the amount are taps, never words. «Set it up for me» asks the tools for
 a draft and opens it in the window's own review — «Start» there stays the person's tap, on paper. Behind «Details»: the
 reasons, the alternative and the replay over 7, 30 and 180 days. On «My bots», over the wallet's bots on the chain,
@@ -37,13 +37,13 @@ Ryntra's report in a line or two, and «Why?» on each bot. The tools are `POST 
 
 | Engine | What the window takes |
 | --- | --- |
-| `lib/bots/weather/**` (CITY-132) | The week's weather — trend, range or chop — and each bot's fit, on the same hourly bars a draft is tried on. |
-| `lib/bots/hangar/**` (CITY-131), `GET /api/bots/hangar?wallet=` | The connected wallet's own bots on the chain — status, against holding, last fill's receipt, loose ends — at the top of «My bots». |
+| `lib/bots/weather/**` | The week's weather — trend, range or chop — and each bot's fit, on the same hourly bars a draft is tried on. |
+| `lib/bots/hangar/**`, `GET /api/bots/hangar?wallet=` | The connected wallet's own bots on the chain — status, against holding, last fill's receipt, loose ends — at the top of «My bots». |
 | `/api/spot/candles` (the chart's read) | The hourly week. A coin without one says so: no price is ever made up. |
 
 The live grid of B10 (`lib/bots/grid.ts`) is not touched.
 
-## The ladder on devnet (CITY-135, B5)
+## The ladder on devnet
 
 The engine is `lib/bots/ladder/**` and `app/api/bots/ladder/**` (each route answers 404 while `RYNTRA_BOTS_LADDER` is not
 `devnet`). The plan and the cost line are the engine's pure modules, shared by the window and the server:
@@ -71,7 +71,7 @@ for a local session: `docs/city/bots/LADDER-DEVNET.md`. Shots: `ladder-shots.mjs
 | --- | --- |
 | `open.ts` | The light store: open, tab, the running count for the drones. The Deck and the frame's layer import only this. |
 | `kinds.ts` | The bots of stage A and «Next», the four goals, where each bot's money sits (a position, orders on the chain, the wallet — never a custodial vault), whether it works without Ryntra. |
-| `words.ts`, `format.ts` | Every word in English and Ukrainian, in the city's language (CITY-79, `city/lib/i18n/lang.ts`); numbers. |
+| `words.ts`, `format.ts` | Every word in English and Ukrainian, in the city's language (`city/lib/i18n/lang.ts`); numbers. |
 | `path.ts` | The week a draft is tried on: the engine's hourly candles. |
 | `weather.ts` | The engine's weather in the hub's words, each bot's fit, and the week's own size (day's move, low, high). |
 | `draft.ts` | A bot's settings, defaults from the week, what is wrong with them, levels and the band. |

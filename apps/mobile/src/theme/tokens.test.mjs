@@ -102,7 +102,7 @@ test('no colour escapes the token layer', () => {
   const offenders = []
   for (const file of walk(src)) {
     if (file.startsWith(here)) continue
-    // The city's own look (decision 75, brand CITY-11) is its one palette: the night, the flare, the pearl.
+    // The city's own look is its one palette: the night, the flare, the pearl.
     if (file.endsWith(join('features', 'city', 'city-look.ts'))) continue
     const text = readFileSync(file, 'utf8')
     if (palette.test(text)) offenders.push(`${file}: default Tailwind palette`)

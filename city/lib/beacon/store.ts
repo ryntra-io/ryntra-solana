@@ -4,7 +4,7 @@ import type { CitySnapshot } from '../market/types.ts';
 import { BEACONS } from './switch.ts';
 
 /**
- * The city's beacons (CITY-72): the rules a person put on towers, and which of them are lit.
+ * The city's beacons: the rules a person put on towers, and which of them are lit.
  *
  * The rules live on the device at once and, once the wallet signed in, on the server under the account
  * (`/api/world/beacons`), where the server's check tells Telegram. The city runs the same engine on every market read

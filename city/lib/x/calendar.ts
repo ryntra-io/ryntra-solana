@@ -2,8 +2,8 @@ import { X_MAX, xLength } from '../moments/drafts/post.ts';
 import { rawMentions, type Involvement } from './handles.ts';
 
 /**
- * The X calendar of Ryntra as data (CITY-41): a week of slots in UTC, each with the format it posts, the template the
- * card factory (CITY-38) renders it with, the rule that picks the event it shows, and the words with room for the real
+ * The X calendar of Ryntra as data: a week of slots in UTC, each with the format it posts, the template the
+ * card factory renders it with, the rule that picks the event it shows, and the words with room for the real
  * numbers. The playbook that explains it: docs/city/x/PLAYBOOK.md. Nothing here posts; it only plans and checks.
  */
 
@@ -34,7 +34,7 @@ export type Media = 'card-4x5' | 'clip-9x16' | 'image-16x9' | 'live' | 'none';
 export interface PickRule {
   /** Where candidates come from: market reads, the Launch engine, the world, agents, a release, or a person's pick. */
   from: 'market' | 'launch' | 'world' | 'agent' | 'release' | 'editorial';
-  /** Event kinds that qualify (CITY-3/CITY-26 moment kinds for the engine, `tower` for market reads). */
+  /** Event kinds that qualify. */
   kinds: readonly string[];
   /** How far back a candidate may be, in minutes. */
   maxAgeMinutes: number;
@@ -53,7 +53,7 @@ export interface PickRule {
 
 export interface Format {
   id: FormatId;
-  /** Template id in the card factory (CITY-38). A string on purpose: the factory owns the template. */
+  /** Template id in the card factory. A string on purpose: the factory owns the template. */
   template: string;
   media: Media;
   /** What the format is for, in one line. */

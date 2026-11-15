@@ -3,7 +3,7 @@ import { EARLY_ACCESS_TIMING, earlyAccessProblems, earlyAccessSchedule, type Ear
 import type { Network } from './engine.ts';
 
 /**
- * «Your people first» — early access in the city's launch (CITY-212), the engine's Alpha Vault format (SOL-L5,
+ * «Your people first» — early access in the city's launch, the engine's Alpha Vault format (SOL-L5,
  * `lib/launch/early-access.server.ts`): the creator's people put USDC in for an hour before anyone else can trade, the
  * vault buys for all of them at one price, and public trading opens after. The creator says the goal — how much their
  * people may bring — and the city fills in the rest of the rules from the engine's own bounds; the engine checks them

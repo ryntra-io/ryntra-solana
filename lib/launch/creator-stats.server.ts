@@ -161,7 +161,7 @@ export async function readLaunchStats(deps: MarketDeps, token: string): Promise<
  * What a launch's creator role earned over all time, raw in the pair currency, on the chain's own counters — the
  * cabinet's figure (`creatorEarnings(…).role.earnedRaw`) — from the same kept read of the creator fees `readLaunchStats`
  * makes, so asked right after it the chain is not read again. Null when the launch or its fees could not be read: never
- * a zero. Read-only; the Hall of Fame's all-time creators (CITY-230).
+ * a zero. Read-only; the Hall of Fame's all-time creators.
  */
 export async function readLaunchEarnedAll(deps: MarketDeps, token: string): Promise<Readonly<{ raw: string; at: string }> | null> {
   const record = await readLaunchRecord(deps, deps.network.cluster, token);

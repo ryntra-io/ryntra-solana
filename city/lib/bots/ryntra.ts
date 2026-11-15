@@ -7,7 +7,7 @@ import { useBotsWindow } from './open.ts';
 import { useBots, type Coin } from './store.ts';
 
 /**
- * Ryntra in the bots window (CITY-133): the assistant line's bot tools (`POST /api/v1/assistant/bots`) — the week's
+ * Ryntra in the bots window: the assistant line's bot tools (`POST /api/v1/assistant/bots`) — the week's
  * pick for the coin with its alternative and reasons, the replay over 7, 30 and 180 days, two lines on a bot of the
  * wallet's own, the wallet's report, and the draft «set it up for me» opens in the window's own review.
  *

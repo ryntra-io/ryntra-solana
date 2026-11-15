@@ -3,7 +3,7 @@ import { citySigner } from '../app-bridge/route.ts';
 import { langNow } from '../i18n/lang.ts';
 
 /**
- * «Your agent looks after it» on a SOL pier (CITY-203): the person says it once, signs once, and walks away — the agent
+ * «Your agent looks after it» on a SOL pier: the person says it once, signs once, and walks away — the agent
  * claims the fees, keeps the range around the price and leaves at the person's stop. The engine is `lib/care/**`; this
  * file is the window's half: the switch, the stop, the one approval, the cares the wallet has. Safety stays under the
  * hood in one line; the rest is behind «Details».
@@ -120,7 +120,7 @@ export type CareRow = Readonly<{
   status: 'signing' | 'working' | 'stopped';
   inRange: boolean | null;
   day: Readonly<{ claimedInY: number; reinvestedInY: number; rebalances: number }>;
-  /** CITY-207: the position at the venue's prices, USD — the engine's; null or absent — not priced, shown «—». */
+  /** The position at the venue's prices, USD — the engine's; null or absent — not priced, shown «—». */
   valueUsd?: number | null;
   unclaimedUsd?: number | null;
 }>;
@@ -133,7 +133,7 @@ type Store = {
   phase: CarePhase;
   notice: CareNotice;
   cares: readonly CareRow[] | null;
-  /** The last status read did not answer: `cares` is what was read before it (or none), not a fresh «none» (CITY-209). */
+  /** The last status read did not answer: `cares` is what was read before it (or none), not a fresh «none». */
   caresFailed: boolean;
   setOn: (on: boolean) => void;
   setStop: (stop: CareStop) => void;

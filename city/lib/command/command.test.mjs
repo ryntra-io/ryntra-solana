@@ -6,7 +6,7 @@ import { aboutSubject, bookOf, cleanNumber, COMMAND_MAX, fit, keyOf, parse, ROWS
 import { DOORS, run } from "./run.ts";
 import { isCommandKey, typingIn } from "./keys.ts";
 
-/* CITY-85: the command line reads a sentence into a window and its fields — and nothing it reads ever signs. */
+/* The command line reads a sentence into a window and its fields — and nothing it reads ever signs. */
 
 const JUP_MINT = "JUPyiwrYJFskUPiHa7hkeR8VUtAeFoSYbKedZNsDvCN";
 const BONK_MINT = "DezXAZ8z7PnrnRJjz3wXBoRgixCa6xjnB7YaB1pPB263";
@@ -371,17 +371,17 @@ const REVIEWED = new Set([
   "openSheet", "setDraft", "closeSheet", "open", "close", "select", "show", "hide", "ask", "closePanel",
   // the doors, the words and the line's own state
   "openTrade", "openCoin", "openChart", "openMint", "openMoney", "openEarn", "openLaunch", "askRyntra",
-  // the agent's card and «My instructions» (CITY-176): they open and show; the person signs in the card
+  // the agent's card and «My instructions»: they open and show; the person signs in the card
   "openInstruction", "openInstructions", "openList", "readInstruction",
-  // the agent on its word (CITY-175): it reads the ask and opens its card; the person signs in the card
+  // the agent on its word: it reads the ask and opens its card; the person signs in the card
   "openAutopilot", "readAsk", "presetFor", "rhythmOf", "wordsNow", "trades",
-  // the Dollar Saver on its word (CITY-192): it reads the coin and the amount and opens the card; the person signs there
+  // the Dollar Saver on its word: it reads the coin and the amount and opens the card; the person signs there
   "openDollar", "readDollarAsk", "fromAsk", "rateText", "earnWords",
-  // the money autopilot on its word (CITY-204): it reads the plan and opens the card; the person practises and signs there
+  // the money autopilot on its word: it reads the plan and opens the card; the person practises and signs there
   "openPilot", "readPilotAsk", "solPrice", "agentCoins", "filter", "Boolean",
-  // «Learn» (CITY-202): the guide on a chapter — it only explains
+  // «Learn»: the guide on a chapter — it only explains
   "openLearn",
-  // a job for an agent (CITY-205): that agent's card or the crew in «Bots» — they open; the person signs in the card
+  // a job for an agent: that agent's card or the crew in «Bots» — they open; the person signs in the card
   "openCrew",
   "fillPay", "fillAmount", "fillShare", "fillPrice", "fillSend", "gatesNow",
   "buy", "sell", "order", "chart", "share", "launchAs",

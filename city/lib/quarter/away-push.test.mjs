@@ -9,7 +9,7 @@ import test from "node:test";
 const { AWAY_CHANNELS, awayChannels } = await import("./away-store.ts");
 const { isRyntraApp } = await import("../app-mode.ts");
 
-// CITY-6e: the Ryntra app 1.18.0 registers no push, so inside the app the city shows no «Push» switch; a browser keeps
+// The Ryntra app 1.18.0 registers no push, so inside the app the city shows no «Push» switch; a browser keeps
 // it as it was.
 
 const APP = "Mozilla/5.0 (Linux; Android 14; Seeker) AppleWebKit/537.36 Chrome/140.0.0.0 Mobile Safari/537.36 RyntraApp/1.18.0";
@@ -38,7 +38,7 @@ test("no other switch in the city offers push", () => {
     }
   };
   walk(root);
-  // The push's name lives in the away reel's dictionary (CITY-79); only the reel's channel list reads it.
+  // The push's name lives in the away reel's dictionary; only the reel's channel list reads it.
   const offering = files.filter((path) => /label: ['"]Push['"]|push: ['"]Push['"]|>\s*Push\s*</.test(readFileSync(path, "utf8")));
   assert.deepEqual(offering.map((path) => path.slice(root.length).replaceAll("\\", "/")), ["lib/quarter/words.ts"]);
   const readers = files.filter((path) => /AWAY_WORDS\)\.push\b/.test(readFileSync(path, "utf8")));

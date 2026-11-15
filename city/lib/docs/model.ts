@@ -1,7 +1,7 @@
 import type { Lang } from '../i18n/langs.ts';
 
 /**
- * The documentation's shape (CITY-180): a section is a title, a lead and its parts; a part is blocks a person reads. Pure
+ * The documentation's shape: a section is a title, a lead and its parts; a part is blocks a person reads. Pure
  * data, no React: the server builds it, the page draws it and the tests read it in Node.
  *
  * Text is plain with two marks and nothing else: `**bold**`, and `[[where|words]]` for a link — `where` is another section

@@ -168,12 +168,12 @@ export type ClaimFeesRequest = Readonly<{ position: string; owner: string }>;
 /**
  * SOL besides the deposit: rent of an account a build opens (`pay`) or closes (`return`). A position's own rent comes
  * back when it is closed; a DLMM bin array is the pool's, shared by everyone, and its rent does not come back. A new
- * pool's own accounts (`pool` — a DAMM v2 pool and its two vaults, paid by whoever makes it: the city's Stock Pier,
- * CITY-98) stay the pool's and do not come back either.
+ * pool's own accounts (`pool` — a DAMM v2 pool and its two vaults, paid by whoever makes it: the city's Stock Pier)
+ * stay the pool's and do not come back either.
  */
 export type RentCost = Readonly<{
   /**
-   * A Zap (CITY-198) may also open the wallet's own account of the pier's other coin (`token_account`, the wallet's to
+   * A Zap may also open the wallet's own account of the pier's other coin (`token_account`, the wallet's to
    * close) and finds or leaves the Zap program's ledger (`ledger`, the wallet's own; it comes back when closed).
    */
   what: "position" | "bin_arrays" | "bitmap_extension" | "pool" | "token_account" | "ledger";

@@ -19,7 +19,7 @@ const renderLaunched = () => <LaunchedWindow />;
 const closeLaunched = () => useLaunched.getState().close();
 
 /**
- * «Launched on Ryntra» (CITY-185) in the city's one window frame (CITY-65): every coin launched on the launchpad. Opened
+ * «Launched on Ryntra» in the city's one window frame: every coin launched on the launchpad. Opened
  * by its own address, `/launches`, and by `/?open=launches`. A run owns the whole screen and a clip being filmed keeps
  * the frame clean; a tower picked in the city takes the screen, and the window steps aside.
  */

@@ -3,7 +3,7 @@ import type { Layout, Recall } from './layout.ts';
 import { cleanParams, type Params } from './detach.ts';
 
 /**
- * The layouts of the windows (CITY-84, helm §4): four of Ryntra's own — «Trader», «Futures», «Predictions», «Money» —
+ * The layouts of the windows: four of Ryntra's own — «Trader», «Futures», «Predictions», «Money» —
  * and four of the person's, each a tap away. A layout says which windows stand where: in a bay, as a tab of another,
  * or at a place of their own. The person's four are kept on this device under the connected wallet (a guest's under
  * «guest») and the one in use saves itself with every change the person makes, so a layout is never «saved» by hand.
@@ -23,7 +23,7 @@ export type PresetWindow = Readonly<{ id: string; bay: Bay; optional?: boolean }
 
 /**
  * Ryntra's four (design A of the helm research), as the city's windows stand together: the trader's card — the coin's
- * chart beside its ticket (the tower's own chart stands in the card's place, CITY-78) — with the wallet's holdings
+ * chart beside its ticket (the tower's own chart stands in the card's place) — with the wallet's holdings
  * beside it; the futures beside the chart; predictions beside the futures where they are open (helm §3: «щоб стояти
  * поруч із ф'ючерсами»); money on its own.
  */
@@ -76,7 +76,7 @@ export function shotOf(layout: Layout, params: (id: string) => Params | undefine
 }
 
 /**
- * The layout in use, kept up with what is on the screen (CITY-84): the windows on the screen as they stand, and every
+ * The layout in use, kept up with what is on the screen: the windows on the screen as they stand, and every
  * window it had that is not on the screen now — folded into the tray, closed by its owner for a run or a clip — kept as
  * it was, unless the person closed it themselves (`closed`). Null when nothing would be left; the caller then keeps
  * what it had.

@@ -5,7 +5,7 @@ import { readAgentView, useAutopilot } from './store.ts';
 import { QUOTE_FRESH_MS, isSaleReceipt, readSaleQuote, useSell, type SaleReceipt, type SellNote } from './sell.ts';
 
 /**
- * The press of «Sell» in the tower's window (CITY-187) — loaded on the press. A fresh review when the one on screen is
+ * The press of «Sell» in the tower's window — loaded on the press. A fresh review when the one on screen is
  * old, the check of her transaction and the wallet's one prompt (the mandate's own, `../bots/mandate-sign.ts`), the relay;
  * then the agent sells and the window keeps its receipt. «Take it back» is one more signature of hers, the same way.
  */

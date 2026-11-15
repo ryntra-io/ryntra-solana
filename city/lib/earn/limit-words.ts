@@ -3,7 +3,7 @@ import type { Intent, LimitForm } from './limit.ts';
 import type { Lang } from './words.ts';
 
 /**
- * Sell Higher's words in English and Ukrainian (CITY-97), beside Earn's own until the city's dictionaries land. On the
+ * Sell Higher's words in English and Ukrainian, beside Earn's own until the city's dictionaries land. On the
  * screen: the side, the market's price, your price, the amount, what arrives if it all fills, one line before the
  * signature and one action. Everything else sits behind «Details».
  */

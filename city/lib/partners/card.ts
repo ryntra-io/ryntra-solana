@@ -6,7 +6,7 @@ import { PALETTE } from '../palette.ts';
 export type CardWords = Readonly<{ big: string; line: string; tag: string }>;
 
 /**
- * The partner's share card (CITY-127): a frame of the live city as it stands on the partner's screen — our own scene,
+ * The partner's share card: a frame of the live city as it stands on the partner's screen — our own scene,
  * never a generated one — with the friend's offer (decision 93: a discount on Ryntra's fee), the link and its QR.
  * 1080 × 1350 (4:5): it fills a phone feed. Browser only: the scene hands over its next frame (`requestFrame`).
  */

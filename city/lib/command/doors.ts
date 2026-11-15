@@ -37,7 +37,7 @@ export { agentCoins };
 import type { Doors } from './run.ts';
 
 /**
- * The command line's doors in the city (CITY-85): each opens a window through the store that window already listens to,
+ * The command line's doors in the city: each opens a window through the store that window already listens to,
  * or writes into a field through the same setter the person's own typing uses. The trade window, Money and the launch
  * sheet each refuse a change while their signature is out, and a fill reaches only the window this command opened — a
  * card under a signature for another coin is never written into. Nothing here presses a button, builds an order, asks
@@ -309,7 +309,7 @@ export function gatesNow(): Gates {
     launch: launchOpenHere(useLaunch.getState()),
     // The agent's instructions trade through the trade window's engines: shut with them.
     instruct: ONE_SENTENCE_OPEN && TRADE_OPEN,
-    // The agent on its word (CITY-175): trading rides on the mandate's devnet switch, launches on the launch district's.
+    // The agent on its word: trading rides on the mandate's devnet switch, launches on the launch district's.
     agentTrade: AUTOPILOT_NET !== null && MANDATE_NET !== null,
     agentLaunch: AUTOPILOT_NET !== null,
     dollar: EARN_OPEN && DOLLAR_OPEN,

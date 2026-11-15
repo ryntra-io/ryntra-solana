@@ -8,7 +8,7 @@ export const dynamic = 'force-dynamic';
 export const maxDuration = 30;
 
 /**
- * The city's word that a pier add landed (CITY-99): the position, its wallet, its pier and its style. Nothing about it
+ * The city's word that a pier add landed: the position, its wallet, its pier and its style. Nothing about it
  * is believed until the chain shows it — the wallet's own position, in that pool, exactly that style's width; then its
  * amounts at that read are where its record starts. Only a SOL pier, only the session's own wallet, a few a day.
  * Read-only on the chain: nothing is built, signed or sent.

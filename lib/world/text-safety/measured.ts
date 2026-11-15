@@ -1,5 +1,5 @@
 /**
- * A figure nobody measured is «not measured», never a zero (CITY-73): a probe that never ran is `NOT_MEASURED` — a
+ * A figure nobody measured is «not measured», never a zero: a probe that never ran is `NOT_MEASURED` — a
  * different fact from a failure and from a zero. A source that leaves a field out, or sends text, `NaN` or `Infinity`, measured nothing; a source that
  * sends `0` measured zero.
  *

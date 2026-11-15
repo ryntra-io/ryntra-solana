@@ -21,12 +21,12 @@ import s from './window.module.css';
 const Demo = process.env.NODE_ENV === 'production' ? null : dynamic(() => import('./WindowDemo').then((m) => m.WindowDemo), { ssr: false });
 
 /**
- * The city's windows (CITY-65), over the city and under the trade card: on a computer the frames, the seams' grips,
+ * The city's windows, over the city and under the trade card: on a computer the frames, the seams' grips,
  * the orange guides of a drag and «Snap together»; on a phone the bottom sheet. Nothing is drawn while no window is
- * open. Escape brings a window back from the whole screen. A window out on another screen (CITY-75) is drawn there,
+ * open. Escape brings a window back from the whole screen. A window out on another screen is drawn there,
  * and a quiet button in the city brings it back.
  *
- * Since CITY-84 (helm §4): the two bays, the place a dragged window would land, the tray of folded windows over the
+ * The two bays, the place a dragged window would land, the tray of folded windows over the
  * Deck, the layouts low on the left, and the city stepping back — dimmed, drawn more cheaply — while both bays hold a
  * window. The connected wallet's layouts are the ones in use.
  */
@@ -44,10 +44,10 @@ export function WindowLayer() {
 
   useEffect(() => setDemo(Boolean(windowsDemo())), []);
 
-  // The windows out on another screen (CITY-75): their browser windows are watched from here.
+  // The windows out on another screen: their browser windows are watched from here.
   useEffect(() => startOut(), []);
 
-  // The layouts in use are the connected wallet's, a guest's before one connects (CITY-84).
+  // The layouts in use are the connected wallet's, a guest's before one connects.
   useEffect(() => {
     const sync = () => useWindows.getState().setOwner(useWallet.getState().connection?.address ?? null);
     sync();

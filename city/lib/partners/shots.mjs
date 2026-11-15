@@ -1,4 +1,4 @@
-// «Ryntra Partners» screens for review (CITY-126, CITY-127): desk 1440×900 and phone 375×812 (2×), English and
+// «Ryntra Partners» screens for review: desk 1440×900 and phone 375×812 (2×), English and
 // Ukrainian → <out>/<state>-<lang>-<size>.jpg
 //   npm run dev      then      node city/lib/partners/shots.mjs [out] [baseUrl]
 // No wallet and no keys: a stub wallet registers through the Wallet Standard events and comes back silently, as a wallet
@@ -51,7 +51,7 @@ const REWARDS = {
   started: true,
 };
 
-/** `/api/partners/earnings` once the weekly payout runs (CITY-128): counted, owed, paid; `PAYOUTS=off` answers it off. */
+/** `/api/partners/earnings` once the weekly payout runs: counted, owed, paid; `PAYOUTS=off` answers it off. */
 const EARNINGS = process.env.PAYOUTS === "off" ? { ok: true, on: false } : { ok: true, on: true, accrued: "41.60", swap: "36.80", launch: "4.80", pending: "6.80", paid: "34.80", lastPaidWeek: "2026-11-02" };
 
 const gl = ["--use-gl=angle", "--use-angle=swiftshader", "--ignore-gpu-blocklist"];

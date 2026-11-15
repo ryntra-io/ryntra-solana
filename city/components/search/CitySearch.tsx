@@ -49,7 +49,7 @@ export function CitySearch() {
     setOpen(false);
     if (focusButton) button.current?.focus();
   };
-  // «Back» closes it, as it closes a window (CITY-150).
+  // «Back» closes it, as it closes a window.
   useBackPanel('search', open, () => setOpen(false));
   // A tap anywhere else closes it, as the city's other panels do.
   useEffect(() => {

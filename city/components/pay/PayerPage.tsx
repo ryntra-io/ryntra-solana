@@ -76,7 +76,7 @@ const short = (address: string) => (address.length > 12 ? `${address.slice(0, 4)
 const BACKDROP = { small: '/city/art/district-harbor-800.webp', large: '/city/art/district-harbor-1600.webp' } as const;
 
 /**
- * The payer's page (CITY-156): `/pay/<id>` as one window of the city. It says what is asked — the sum and the coin, for
+ * The payer's page: `/pay/<id>` as one window of the city. It says what is asked — the sum and the coin, for
  * what, to whom (the `.skr` name when the wallet chose one) — the status the engine reports, and offers one amber
  * action: pay from the wallet in this browser. A computer also shows the page's code for a phone; a phone without a
  * wallet opens the page in one. Once paid, the window is the receipt. Everything on it comes from the engine's public

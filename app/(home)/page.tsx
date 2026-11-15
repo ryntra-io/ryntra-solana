@@ -12,7 +12,7 @@ import { buildCityMetadata, CITY_WORDS } from "../seo";
 /* The route entry for `/` — Ryntra City (decision 70, 2026-10-26): the Solana market as a living 3D night city,
    every coin a tower, and Ryntra's engine (swaps, launches, agents) behind the city as its districts open. The
    bundled city paints the skyline in the first frame and the live read replaces it (`/api/city`). The city speaks
-   English and Ukrainian (CITY-79, docs/city/LANGUAGES.md); the boot script picks the language before the first paint.
+   English and Ukrainian (docs/city/LANGUAGES.md); the boot script picks the language before the first paint.
    The old home (Mission Control, decision 68) and the landing stay in the code until the city replaces their last
    pages. Fonts and colours are the city's own (`city/styles/fonts.ts`, `city/styles/city.module.css`). */
 

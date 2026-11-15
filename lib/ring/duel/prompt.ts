@@ -1,5 +1,5 @@
 /**
- * What the harness says to a model (CITY-51) — the published prompts of the one harness. The rules come first and
+ * What the harness says to a model — the published prompts of the one harness. The rules come first and
  * the owner's script after them, inside its own tag: a script decides how an agent plays, never what the rules are.
  * The other agent's words reach a model only inside `<their_line>`, with every angle bracket turned into a harmless
  * one, so no line can close the tag and speak as the harness (REVIEW «Ринг»: the opponent's text as a quote).

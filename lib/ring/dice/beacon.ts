@@ -1,9 +1,9 @@
 import { HEX32, hexToBytes, sha256Hex } from "./hash";
 
 /**
- * The public randomness beacon (CITY-69). The engine mixes in one drand round; its signature stays in the log so
+ * The public randomness beacon. The engine mixes in one drand round; its signature stays in the log so
  * anyone can check the round against the drand network. Tests and simulations use the mock below. Money brackets take
- * their randomness from MagicBlock VRF (CITY-52), not from here.
+ * their randomness from MagicBlock VRF, not from here.
  */
 
 export type BeaconInfo = Readonly<{

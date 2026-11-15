@@ -94,8 +94,7 @@ export function ownWrappedSol(owner: string): string {
 }
 
 /**
- * What the housekeeping around an order does, read before the wallet sees it (CITY-219: CITY-135 let these programs
- * through by name, so a System transfer to a stranger reached the wallet's prompt before the relay refused it). Only
+ * What the housekeeping around an order does, read before the wallet sees it. Only
  * what the SDK itself adds is let through: SOL wrapped into the wallet's own wrapped-SOL account, that account synced
  * and closed back to the wallet, the wallet's own token accounts opened by the wallet, a compute budget whose priority
  * stays under the ceiling, a memo. Anything else is a reason, in words; none — null.

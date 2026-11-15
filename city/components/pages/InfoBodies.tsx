@@ -16,7 +16,7 @@ import s from './pages.module.css';
 import { ABOUT, DEVS, DOCS, PAGES } from './words';
 
 /**
- * «Docs» as a window of the city (CITY-157, CITY-180): the opening and every section, each one a door to its own address, where
+ * «Docs» as a window of the city: the opening and every section, each one a door to its own address, where
  * the documentation stands in full; and the city's own film. Which sections say «Soon» is read from this build's doors.
  */
 export function DocsBody() {
@@ -53,9 +53,9 @@ export function DocsBody() {
 }
 
 /**
- * «Developers» (CITY-157): connect an agent in three steps — sign in with Solana, read what is open, prepare then sign —
+ * «Developers»: connect an agent in three steps — sign in with Solana, read what is open, prepare then sign —
  * and one action, the API's address to the clipboard. The addresses themselves are behind «Technical details». The
- * AI-chat connector is live (CITY-154): a door to its own page (CITY-170).
+ * AI-chat connector is live: a door to its own page.
  */
 export function DevelopersBody() {
   const w = useWords(DEVS);
@@ -124,7 +124,7 @@ export function DevelopersBody() {
 }
 
 /**
- * «About» (CITY-157): Ryntra in one line, three things it stands on, how to reach it; one action, Help.
+ * «About»: Ryntra in one line, three things it stands on, how to reach it; one action, Help.
  */
 export function AboutBody() {
   const w = useWords(ABOUT);

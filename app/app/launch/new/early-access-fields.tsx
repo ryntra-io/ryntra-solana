@@ -14,7 +14,7 @@ import styles from "../launch.module.css";
 /**
  * «Ранній доступ» in «Розширені параметри» (SOL-L5): a launch of its own kind — no curve — whose pool is made and locked
  * first and whose vault buys first. The fields make its rules; the lines are what a buyer will read before depositing.
- * Drawn only where the network offers it (the stand; on mainnet after the operator's bounds and word).
+ * Drawn only where the network offers it.
  */
 
 export type EarlyDraft = Readonly<{ mode: EarlyAccessMode; startIn: string; minutes: string; cap: string; perWallet: string; vesting: string; startCap: string }>;

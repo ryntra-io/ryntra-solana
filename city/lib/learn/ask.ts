@@ -1,5 +1,5 @@
 /**
- * «Learn» (CITY-202) from the command line: «how does the agent work», «як працює запуск», «навчання» open the guide on
+ * «Learn» from the command line: «how does the agent work», «як працює запуск», «навчання» open the guide on
  * the chapter the sentence names — a question about how Ryntra works is the guide's, not Ryntra's market read. Pure: the
  * command line's parser (`city/lib/command/parse.ts`) and its tests read it as it is.
  */

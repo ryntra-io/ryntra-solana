@@ -1,10 +1,10 @@
 /**
- * CITY-174 — the agent's trade: one venue instruction, wrapped in the person's policy, in a transaction the agent alone
+ * The agent's trade: one venue instruction, wrapped in the person's policy, in a transaction the agent alone
  * signs and pays for.
  *
- * Every trade carries what CITY-136 measured it needs (report §4, §8): a compute limit of 1.4 million units and a heap
- * of 256 KB — the smart account's allocator gives 32 KB without asking, and a three-hop Jupiter route needs more. The
- * venue instruction moves the vault's budget; the program signs for the vault only inside the policy's bounds.
+ * Every trade carries what it was measured to need: a compute limit of 1.4 million units and
+ * a heap of 256 KB — the smart account's allocator gives 32 KB without asking, and a three-hop Jupiter route needs more.
+ * The venue instruction moves the vault's budget; the program signs for the vault only inside the policy's bounds.
  */
 
 import { ComputeBudgetProgram, PublicKey, TransactionInstruction } from "@solana/web3.js";
@@ -27,7 +27,7 @@ export const AGENT_UNIT_PRICE_MAX = (AGENT_PRIORITY_FEE_CEILING_LAMPORTS * 1_000
  * and pays for), the venue instruction inside the policy — after Ryntra's fee transfer where the venue does not carry the
  * fee itself (devnet, `./fee.ts`) — and the rule that the money reached the person (`./result.ts`): her account holds
  * `holding` — what it held before — plus the trade's minimum, or nothing happened. A coin bought that withholds a
- * transfer fee (CITY-184, `transferFee`) reaches her less that fee on each transfer, at the epoch's rate: the rule asks
+ * transfer fee (`transferFee`) reaches her less that fee on each transfer, at the epoch's rate: the rule asks
  * what is left.
  */
 export function agentTradeInstructions(

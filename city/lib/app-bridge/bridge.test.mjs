@@ -22,7 +22,7 @@ import { MAINNET_ONLY, routeSigner } from "./route.ts";
 import { attachAppBridge, detachAppBridge, fromApp, looksLikeApp, webViewTransport } from "./page.ts";
 import { shareNameOf } from "./protocol.ts";
 
-// CITY-6b: the city's side of the bridge to the Ryntra app (`docs/city/APP-BRIDGE.md`), end to end against a fake app
+// The city's side of the bridge to the Ryntra app (`docs/city/APP-BRIDGE.md`), end to end against a fake app
 // that reads every request with the app's parser and signs with a throwaway key. Nothing here touches a network.
 
 const ADDRESS = "4EeXQa4MKrBSwDj9pHEoZXjiiUaZmWzveGq5X9dUKPGW";
@@ -211,7 +211,7 @@ test("signTransactions gives back each transaction signed, in order, and nothing
   assert.equal(await verifyAsync(out.subarray(1, 65), one.message, publicKey), true);
 });
 
-test("more than the app's four go in two windows, in order; a no in the second gives back nothing signed (CITY-213)", async () => {
+test("more than the app's four go in two windows, in order; a no in the second gives back nothing signed", async () => {
   const { app, bridge, publicKey } = await paired();
   await bridge.request("wallet.connect", {});
   const address = bridge.wallet().address;

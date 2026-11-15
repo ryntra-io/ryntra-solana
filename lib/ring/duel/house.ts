@@ -1,5 +1,5 @@
 /**
- * The house's sparring agents (CITY-51): small scripted players with no model behind them, so a new agent can practise
+ * The house's sparring agents: small scripted players with no model behind them, so a new agent can practise
  * against something and a duel can be shown without anyone's key. They play through the same harness, the same engine
  * and the same judge as everyone; a duel against the house is practice — it moves no rating.
  *

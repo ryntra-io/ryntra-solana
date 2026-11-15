@@ -1,7 +1,7 @@
 import type { PlacedTower } from '../../../lib/city/layout.ts';
 
 /**
- * How a coin's tower is put together from the kit's modules (CITY-56). Pure and seeded: the same tower is the same
+ * How a coin's tower is put together from the kit's modules. Pure and seeded: the same tower is the same
  * building on every device. The market decides the tower exactly as before — the top of its crown is `height`
  * (market cap within what liquidity carries), its plan fits `width`, its district picks the style — and this only
  * decides the architecture: plan shape, podium, floors, mechanical floors, setbacks with terraces and a crown.

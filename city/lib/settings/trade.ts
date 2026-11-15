@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 
 /**
- * The person's trading choices, kept on this device (CITY-87, `docs/research/ryntra-city-helm-2026-10-29/SPEC.md`
+ * The person's trading choices, kept on this device (`docs/research/ryntra-city-helm-2026-10-29/SPEC.md`
  * §8, §10): the ⚡ amount — what a buy paid in SOL starts at — the four sale chips, and the style. Only the trade
  * window's own figures change: the amount on the ticket and its chips. What is signed is still exactly what the
  * ticket shows, built by the engine, as before; nothing here signs or sends.

@@ -16,7 +16,7 @@ export const FRAME_MAX = { width: 760, height: 980 } as const;
 /** The window never comes closer than this to the screen's edge. */
 export const EDGE = 8;
 
-/** v2 (CITY-78): the window is the tower's one window now, taller with the coin's figures on top; v1's size is let go. */
+/** v2: the window is the tower's one window now, taller with the coin's figures on top; v1's size is let go. */
 export const FRAME_KEY = 'ryntra.city.trade-window.v2';
 
 const RIGHT = 16;

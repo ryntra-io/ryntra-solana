@@ -52,7 +52,7 @@ export type InsightsModel = {
 
 /**
  * Events `/api/track` accepts: site clicks, Seeker Connect's count (SKR-1) and the agent's first action in the city
- * (CITY-222: each moment once a visit, from the first screen to the budget signed; CITY-246: the city drawn, a sentence
+ * (each moment once a visit, from the first screen to the budget signed; the city drawn, a sentence
  * said, any wallet, the sign-in, a trade signed and landed). All anonymous; none is a person.
  */
 export const FIRST_PARTY_EVENT_CATALOG = [

@@ -1,4 +1,4 @@
-// The shielded launch (CITY-169) for review, with the shield open on the deployment
+// The shielded launch for review, with the shield open on the deployment
 // (`NEXT_PUBLIC_RYNTRA_CITY_SHIELD=open` for `npm run dev`): the halo on the launch towers in the docks, the tower's
 // window with its halo and the line behind «i», the launch sheet's review with the halo, the cost line and the one line
 // before the signature, and «i» with the halo's row — at 1440×860 and 375×812 → <out>/shield-<state>-<size>-<locale>.jpg

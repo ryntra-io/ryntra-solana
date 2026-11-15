@@ -1,6 +1,5 @@
 /**
- * Every mint checked before Sell Higher offers it (CITY-97; spec: «лише перевірені mint», «сумісність перевіряємо до
- * запуску»). Three gates, all of them, for every market:
+ * Every mint checked before Sell Higher offers it. Three gates, all of them, for every market:
  *
  * 1. **Who it is.** SOL and USDC are named by their mints. A stock must be a row of the stock universe
  *    (`lib/stocks/universe.server.ts`): named by its issuer's own catalogue, a listed share (never a pre-IPO token,

@@ -8,7 +8,7 @@ import { APP_WALLET, startWallets, useWallet } from "../trade/wallet.ts";
 import { EXECUTED, memoryAttempts, ORDER, QUOTE, scriptedEngine, signWire, T0, TAKER, testClock, USDT } from "../trade/test-fixtures.mjs";
 import { TAKER_PRIVATE_KEY_PKCS8 } from "../../../app/api/solana/swap/golden/fixtures.mjs";
 
-// CITY-6b in the city itself: with the page in the app, the trade card's own signing path (the store's default, not a
+// In the city itself: with the page in the app, the trade card's own signing path (the store's default, not a
 // stub) reaches the app's wallet through the bridge, and the city's wallet store is the app's. The fake app holds the
 // golden transcripts' test key, so it signs exactly the bytes the engine's recorded order expects.
 

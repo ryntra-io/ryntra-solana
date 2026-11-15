@@ -13,8 +13,8 @@ import { createConnectorServer, type ConnectorCallOutcome } from "./server.ts";
 import type { EngineRead } from "./tools.ts";
 
 /**
- * `/mcp` — Ryntra's Solana connector, the address a person pastes into a chat (CITY-154) — and `/mcp/read`, the same
- * connector with the catalog's read-only profile, the address a directory lists (CITY-170). Each address is its own
+ * `/mcp` — Ryntra's Solana connector, the address a person pastes into a chat — and `/mcp/read`, the same
+ * connector with the catalog's read-only profile, the address a directory lists. Each address is its own
  * resource: a token minted for one is `invalid_token` at the other.
  *
  * The order is the argument: authenticate, serve, and inside each tool call meter and record.

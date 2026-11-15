@@ -4,7 +4,7 @@ import { langNow } from '../i18n/lang.ts';
 import { funnelDevice, funnelEvent, funnelWord, onceStore, type FunnelName, type FunnelWord } from './funnel.ts';
 
 /**
- * The funnel's one way out (CITY-222, CITY-246): a moment sent once a visit to `/api/track`. Kept apart from the stores'
+ * The funnel's one way out: a moment sent once a visit to `/api/track`. Kept apart from the stores'
  * watcher (`funnel-watch.ts`) so the wallet's sign-in and the command line can say their moment without loading the
  * agent's stores. Nothing here reads an address or an amount.
  */

@@ -2,8 +2,8 @@ import { type BeaconRule, type BeaconStates } from '../../../../lib/world/beacon
 import type { Tower } from '../../market/types.ts';
 
 /**
- * The garage agent's reminders (CITY-29) on your rules: the beacons on your towers (CITY-72) — one that fired, one
- * that ends soon, a one-time beacon that already fired and stopped, one that is off — and the scout (CITY-4) — paused
+ * The garage agent's reminders on your rules: the beacons on your towers — one that fired, one
+ * that ends soon, a one-time beacon that already fired and stopped, one that is off — and the scout — paused
  * for the week, or a find waiting. Each is read from those features' own state; the agent changes none of it.
  */
 

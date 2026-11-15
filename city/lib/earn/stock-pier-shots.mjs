@@ -1,4 +1,4 @@
-// The Stock Pier's screens for review (CITY-98), at 1440×900 and 375×812 → <out>/<state>-<size>-<lang>.png
+// The Stock Pier's screens for review, at 1440×900 and 375×812 → <out>/<state>-<size>-<lang>.png
 //   NEXT_PUBLIC_RYNTRA_CITY_EARN=open NEXT_PUBLIC_RYNTRA_CITY_STOCK_PIER=open npm run dev, then:
 //   node city/lib/earn/stock-pier-shots.mjs [out] [baseUrl]
 // LANG_EARN=en for the English words (Ukrainian by default). No wallet and no keys: a stub wallet registers through the

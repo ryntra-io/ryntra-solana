@@ -3,8 +3,8 @@ import type { BotKind } from './kinds.ts';
 import { HOUR_MS, type Bar } from './path.ts';
 
 /**
- * The week's weather for a tower, in one line, and how each bot suits it: the engine's reading (CITY-132,
- * `lib/bots/weather/weather.ts` — trend, range or chop from ADX, ATR against its norm and the time inside a band), on the
+ * The week's weather for a tower, in one line, and how each bot suits it: the engine's reading
+ * (`lib/bots/weather/weather.ts` — trend, range or chop from ADX, ATR against its norm and the time inside a band), on the
  * same hourly bars a draft is tried on. A reading of the past, never a forecast. Beside it, the week's own size — a
  * typical day's move and the week's low and high — which sizes a draft's range and steps.
  */

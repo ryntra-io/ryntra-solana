@@ -521,7 +521,7 @@
   box-shadow: 0 0 10px var(--mint);
 }
 
-/* ---------- The round trip after a sale (CITY-145) ---------- */
+/* ---------- The round trip after a sale ---------- */
 
 .round {
   display: flex;

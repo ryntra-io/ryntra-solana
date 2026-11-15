@@ -1,5 +1,5 @@
 /**
- * CITY-220 · «Your people first» from the people's side: the window's one step at each moment, the amounts, the read of
+ * «Your people first» from the people's side: the window's one step at each moment, the amounts, the read of
  * each step's bytes against Meteora's Alpha Vault IDL, and each step through the flow on the stand. No network.
  */
 

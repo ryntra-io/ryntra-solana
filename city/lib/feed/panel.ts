@@ -30,7 +30,7 @@ export function hasNews(seen: number | null, newest: number | null): boolean {
 }
 
 /**
- * Whether a window of the city's frame came since the last look (CITY-239): an id that was not there before. The bell's
+ * Whether a window of the city's frame came since the last look: an id that was not there before. The bell's
  * panel folds then, as it does for the windows the home names itself (`hidden`): Earn, Bots, the agent's card and the
  * Ring are windows of the frame only, and a card opened by a sentence comes with no tap that would fold the panel — on
  * a phone its sheet rose over the open events. A window that closes, or the same windows in another order, is no news.
@@ -40,7 +40,7 @@ export function windowCame(before: readonly string[], now: readonly string[]): b
 }
 
 /**
- * Whether the open panel under the bell is what Escape closes now (CITY-239) — the rule its own listener goes by
+ * Whether the open panel under the bell is what Escape closes now — the rule its own listener goes by
  * (`LiveFeed`): no modal window over the city, and the focus on nothing, on the bell or inside the panel. The HUD asks
  * the same question before its own Escape, so one press closes the panel and nothing under it, as «Back» does.
  */

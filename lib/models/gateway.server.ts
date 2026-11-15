@@ -1,5 +1,5 @@
 /**
- * The model gateway on a deployment (CITY-45): the server's environment, the
+ * The model gateway on a deployment: the server's environment, the
  * runtime's `fetch`, one catalog per instance. Server-only — the keys are read
  * here and nowhere a browser can reach.
  */

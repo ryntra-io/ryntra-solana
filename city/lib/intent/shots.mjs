@@ -1,4 +1,4 @@
-// The confirm sheet of a prepared action (CITY-161, phase 1) on a stand, end to end, at 1440×860 and 390×844 → <out>/<state>-<size>.jpg
+// The confirm sheet of a prepared action on a stand, end to end, at 1440×860 and 390×844 → <out>/<state>-<size>.jpg
 //   RYNTRA_INTENTS=memory RYNTRA_PUBLIC_ORIGIN=http://localhost:3000 npm run dev
 //   node city/lib/intent/shots.mjs [out] [baseUrl]     (PRESS_CHROME=<chromium> where the pinned Playwright has no browser of its own)
 //   One size per fresh stand (SIZES=laptop, then restart, SIZES=phone): the golden signature answers one intent only,

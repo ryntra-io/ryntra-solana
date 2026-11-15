@@ -1,5 +1,5 @@
 /**
- * One read layer for the market data the city shows (CITY-208).
+ * One read layer for the market data the city shows.
  *
  * Why (2026-11-06, `docs/research/city-200-qa/REPORT.md` item 13): the city's
  * first open, a change of the chart's interval, a search and a coin's window
@@ -33,7 +33,7 @@
  * instances is the edge cache of the routes (`CDN-Cache-Control` with
  * `stale-while-revalidate`) and, for the reads that are keyed narrowly
  * enough, the platform's data cache (`lib/stocks/shared-read.ts`); the report
- * of CITY-208 says which read uses which.
+ * says which read uses which.
  *
  * Reads only. Quotes, orders and swaps never pass through here.
  */

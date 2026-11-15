@@ -269,9 +269,9 @@ export const ATTRIBUTION_REGISTRY: readonly RegistryEntry[] = Object.freeze([
      the same multisig's vault 0 its fee claimer; read back from the chain whole — 167 fields as the rehearsal's. */
   { ...place("solana-launch-config-community-jup", "LAUNCH_CONFIG", "DBC_CONFIG", ["launch"], "FEES"), mint: "JUPyiwrYJFskUPiHa7hkeR8VUtAeFoSYbKedZNsDvCN", address: "6PmbsMGNeFifnshbBYn2MC5mNhxexzfqVQceGJ2bv9qC" },
   { ...place("solana-launch-fee-claimer", "LAUNCH_FEE_CLAIMER", "DBC_FEE_CLAIMER", ["launch"], "NONE"), address: "22BZNVD9FuZPQvGwALBwhopSyxUCTuNNeTW1Lr1KsSvA" },
-  /* Its key is made in Google Cloud KMS and never leaves it (CITY-162); a launch pays it back in its own transaction. */
+  /* Its key is made in Google Cloud KMS and never leaves it; a launch pays it back in its own transaction. */
   { ...place("solana-launch-pool-payer", "LAUNCH_POOL_PAYER", "LAUNCH_POOL_PAYER", ["launch"], "NONE"), address: "7KUPNJRr6hmUDZXCL6AxJiHy4VYEVnEqwNkyJsbhbdKh" },
-  /* The executor: a wallet of its own with a small budget, its key in Google Cloud KMS (CITY-162). It sends graduations
+  /* The executor: a wallet of its own with a small budget, its key in Google Cloud KMS. It sends graduations
      and holds the Fee-Funded Liquidity Ladder; on mainnet only a key for this address is used. */
   { ...place("solana-launch-executor", "LAUNCH_EXECUTOR", "LAUNCH_EXECUTOR", ["launch"], "NONE"), address: "9o6PpWvnkoxeGHvKddzV6UgfzVxqBPimT9Q619bWYow6" },
   /* Micro and the demo market on the new executor: a config never changes, so the move to KMS made new ones. Their
@@ -303,7 +303,7 @@ export const ATTRIBUTION_REGISTRY: readonly RegistryEntry[] = Object.freeze([
      through it — post-only orders stay Phoenix's own and pay none — and moves it into the builder's trader account. */
   { ...place("solana-perps-builder", "PERPS_BUILDER", "PHOENIX_FLIGHT_BUILDER", ["perps"], "FEES"), address: "AAsopcXAB2WzeaTtCfuPS7nanGod8EefReaeVQCSopyN" },
   { ...place("solana-perps-builder-trader", "PERPS_BUILDER", "PHOENIX_BUILDER_TRADER_ACCOUNT", ["perps"], "FEES"), parent: "solana-perps-builder", address: "4e2gmdF9VF4dLJB6DiLKmEfnYSJJMiDY8vUriroj6nqB" },
-  /* The agent with a budget (CITY-186): its key made in Google Cloud KMS by the operator on 2026-11-02 (`agent-mandate`,
+  /* The agent with a budget: its key made in Google Cloud KMS by the operator on 2026-11-02 (`agent-mandate`,
      version 1) and never leaving it. Every person's mandate names this one address as its signer; it pays its own network
      fees from SOL the person moved to it, and Ryntra's fee goes to the fee wallet, never here. On devnet now; on mainnet
      only a key for this address is used. */
@@ -431,8 +431,7 @@ export const UNPUBLISHED_ROLES: ReadonlySet<RegistryRole> = new Set(["PAYOUT_FRI
  * exists on chain before people can use its product is held here and named on
  * a public page when the product opens — the address is never written twice.
  * Ryntra Launch's identities were held so until it opened on 2026-10-06; the
- * agent's key, until its mainnet opened to people of
- * 2026-11-04 (CITY-186). None waits now.
+ * agent's key, until its mainnet opened to people. None waits now.
  */
 export const NOT_YET_OPEN_ROLES: ReadonlySet<RegistryRole> = new Set<RegistryRole>([]);
 

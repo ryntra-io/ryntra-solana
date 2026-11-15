@@ -43,7 +43,7 @@ export async function resolveExchangeSide(ref: Readonly<{ network: SwapNetwork; 
   return { network: resolved.network, asset: resolved.solanaMint ?? token.address, symbol: token.symbol, decimals: token.decimals, native: false, verified: token.verified };
 }
 
-/** The five executors, then Relay, deBridge, Mayan. */
+/** The five executors: same network first, then Relay, deBridge, Mayan. */
 export function exchangeSources(): readonly ExchangeQuoteSource[] {
   const selection = resolveJupiterSwapEndpoint({ access: "production" });
   const handle = createSolanaRpcHandle({ network: "mainnet" });

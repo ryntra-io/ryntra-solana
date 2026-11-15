@@ -1,4 +1,4 @@
-// Free building on my quarter (CITY-55): the grid and its snapping, pieces fitted to their neighbours, the device's
+// Free building on my quarter: the grid and its snapping, pieces fitted to their neighbours, the device's
 // layout with the server's rules, and the flow of the store — place, turn, erase, step back, save, conflicts.
 //   node --test city/lib/quarter/kit/free/
 import '../../../../../lib/world/testing/hooks.mjs';

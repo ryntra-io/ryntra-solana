@@ -1,6 +1,6 @@
--- Ryntra City: beacons on towers (CITY-72, decision 74), on top of `world_v1`.
+-- Ryntra City: beacons on towers, on top of `world_v1`.
 --
--- PREPARED 2026-10-28 as a file only. Not applied to any Supabase project:
+-- PREPARED 2026-10-28 as a file only. Not applied to any Supabase project.
 -- Checked on a throwaway local PostgreSQL 16 with the Supabase roles, after
 -- `world_v1` and `world_away` (see `lib/world/beacons/store.test.mjs`).
 --

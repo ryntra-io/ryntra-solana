@@ -1,7 +1,7 @@
 import { OFFER, receivedPer1000, type MixId, type Offer } from './facts.ts';
 
 /**
- * The referrer's calculator (CITY-126): what twelve months of brought people could pay, on the operator's terms
+ * The referrer's calculator: what twelve months of brought people could pay, on the operator's terms
  * (decision 93, `lib/decks/partner-terms.ts`). A model, not a promise — the person's own guesses in, the terms and the
  * fee policy's rates through it:
  *

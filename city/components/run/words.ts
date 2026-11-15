@@ -13,7 +13,7 @@ const HIT_UK: Readonly<Record<string, string>> = {
   'the glass': 'скло',
 };
 
-/** The words of the Skyline Run's HUD: the controls, the clock, the hints and the result (CITY-79). */
+/** The words of the Skyline Run's HUD: the controls, the clock, the hints and the result. */
 export const RUN = words(
   {
     mute: 'Mute',

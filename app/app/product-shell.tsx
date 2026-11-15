@@ -65,8 +65,7 @@ void SAME_COOKIES;
 const APP = "/app";
 
 /**
- * Where the rows the core reads by a product's id open from here. The menu names Solana only: «Мережа» and «Інші продукти» are off its foot for now — brings them back, their wiring
- * (decision 55) is in the history of this file, not drawn.
+ * Where the rows the core reads by a product's id open from here. The menu names Solana only: «Мережа» and «Інші продукти» are off its foot for now.
  *
  * - Perps of Торгівля are Phoenix's, inside Solana at `/app/perps` (decision 56, B7; PERP-1), the core's `futures` row;
  *   Ryntra Futures, the Hyperliquid terminal, is paused (decision 58) and is linked from nowhere here.

@@ -1,5 +1,5 @@
 /**
- * A machine as a process on this computer (CITY-238) — for the stand and the tests, never production. Each job is one
+ * A machine as a process on this computer — for the stand and the tests, never production. Each job is one
  * `node entry.mjs job answer` in a fresh process, killed past the wall.
  *
  * On its own a process shares this computer's network, so it is **not** a machine with no network: `isolated` is what

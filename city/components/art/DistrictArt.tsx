@@ -5,7 +5,7 @@ import { CARD_SIZES, districtFrame, srcSet, type DistrictId } from '@/city/lib/a
 import a from './art.module.css';
 
 /**
- * A district's frame at the head of its card above the dock (CITY-64): the cinematic still of the district, full
+ * A district's frame at the head of its card above the dock: the cinematic still of the district, full
  * bleed across the card's top and fading into its glass where the card's words begin. `tone="warm"` gives it the warm
  * edge of a card that opens soon. Decorative: the card's own words name the district. The same element on a phone,
  * where the card is the bottom sheet.

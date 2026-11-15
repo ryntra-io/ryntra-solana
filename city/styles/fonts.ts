@@ -3,7 +3,7 @@ import { Geist, Hubot_Sans, Mona_Sans } from 'next/font/google';
 
 /**
  * The city's two faces (brandbook: Hubot Sans for the big words, Mona Sans for the sentences) and the Cyrillic beneath
- * them (CITY-79). Hubot and Mona have no Cyrillic, so a Ukrainian letter falls to Geist — the brand's interface face,
+ * them. Hubot and Mona have no Cyrillic, so a Ukrainian letter falls to Geist — the brand's interface face,
  * which has it — before the metric fallback; Latin letters keep their own faces. Geist's files are the ones the root
  * layout already preloads, so the Cyrillic costs no extra download.
  */

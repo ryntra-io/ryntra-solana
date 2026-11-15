@@ -1,5 +1,5 @@
-/* The Earn window's contents (CITY-92): one amber action per screen, mint for SOL gained and flare for SOL lost at the
-   same size, violet for what is chosen. The glass, the head and the moving are the city's one window frame (CITY-65),
+/* The Earn window's contents: one amber action per screen, mint for SOL gained and flare for SOL lost at the
+   same size, violet for what is chosen. The glass, the head and the moving are the city's one window frame,
    a window on a computer and the bottom sheet on a phone. Tokens and the type scale from city/styles/city.module.css. */
 
 .display {
@@ -19,7 +19,7 @@
   padding: 12px 16px 14px;
 }
 
-/* CITY-209: the window stands as tall as its contents (`fit`), up to its place — no empty glass under a short tab. The
+/* The window stands as tall as its contents (`fit`), up to its place — no empty glass under a short tab. The
    contents then stand in the flow and shrink to the frame's ceiling, the tabs stay put and the tab's body scrolls. On the
    whole screen the window is not `fit` and the contents fill it as before. */
 :global([data-window-fit]) .framed {
@@ -127,7 +127,7 @@
 
 /* ---------- Tabs ---------- */
 
-/* The tabs and Earn's words beside them (CITY-243): one quiet «i» at the row's end opens a hint for each word. */
+/* The tabs and Earn's words beside them: one quiet «i» at the row's end opens a hint for each word. */
 .tabsRow {
   display: flex;
   align-items: center;
@@ -271,7 +271,7 @@
   }
 }
 
-/* A desk 900 px tall (CITY-242): the window is as tall as the workspace, and the Shelf's three rows stood 15 px taller
+/* A desk 900 px tall: the window is as tall as the workspace, and the Shelf's three rows stood 15 px taller
    than it — the last card's action under the edge. The lines inside each card stand a little closer, so every card of
    the Shelf is whole without a scroll; nothing a pointer presses gets smaller. A desk's three columns only. */
 @media (max-height: 940px) and (pointer: fine) {
@@ -349,7 +349,7 @@
   color: var(--text-dim);
 }
 
-/* A big number on its way (CITY-209): its place held at its own height, so the Shelf does not jump when it lands. */
+/* A big number on its way: its place held at its own height, so the Shelf does not jump when it lands. */
 .boneBig,
 .boneSmall {
   display: block;
@@ -402,7 +402,7 @@
   flex: none;
 }
 
-/* The dots' own word (CITY-243): three dots alone read as a menu or a loader, never as a risk. */
+/* The dots' own word: three dots alone read as a menu or a loader, never as a risk. */
 .riskWord {
   margin-right: 2px;
   font-size: var(--type-micro);
@@ -1067,7 +1067,7 @@
   white-space: nowrap;
 }
 
-/* What tells two rows of one name apart (CITY-243): a pier's fee, a position's range — the name's own size, quieter. */
+/* What tells two rows of one name apart: a pier's fee, a position's range — the name's own size, quieter. */
 .names b .nameMark,
 .boatTile .nameMark {
   font-size: inherit;
@@ -1081,7 +1081,7 @@
   white-space: nowrap;
 }
 
-/* A pier's depth and fee wrap onto a second line rather than end on «Trade fe…» (CITY-188). */
+/* A pier's depth and fee wrap onto a second line rather than end on «Trade fe…». */
 .pierRow .names span {
   white-space: normal;
   text-wrap: balance;
@@ -1147,7 +1147,7 @@
   }
 }
 
-/* ---------- The Piers (CITY-93): boats at the pier, the SOL piers, one pier's card ---------- */
+/* ---------- The Piers: boats at the pier, the SOL piers, one pier's card ---------- */
 
 .dock {
   display: grid;
@@ -1484,7 +1484,7 @@
   }
 }
 
-/* ---------- The Stock Pier (CITY-98) ---------- */
+/* ---------- The Stock Pier ---------- */
 
 .hours {
   display: inline-flex;
@@ -1667,7 +1667,7 @@
   box-shadow: inset 2px 0 0 var(--amber);
 }
 
-/* ---------- Like the Captain (CITY-99): strategies with a proven record ---------- */
+/* ---------- Like the Captain: strategies with a proven record ---------- */
 
 .captainList {
   display: grid;

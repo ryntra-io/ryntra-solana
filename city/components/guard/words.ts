@@ -1,7 +1,7 @@
 import { words } from '../../lib/i18n/dict.ts';
 
 /**
- * The Guard window's words (CITY-152): the verdict in one word and one line, the paste field, and a short title for
+ * The Guard window's words: the verdict in one word and one line, the paste field, and a short title for
  * every reason the engine gives — what the person reads first. The engine's own sentence, with its amounts and
  * addresses, waits behind «Details». No word here says «safe», promises protection or scores anything.
  */

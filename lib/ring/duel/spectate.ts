@@ -1,5 +1,5 @@
 /**
- * What people watching a duel see (CITY-51): the rounds as they resolve, from the harness's own log. A round is shown
+ * What people watching a duel see: the rounds as they resolve, from the harness's own log. A round is shown
  * only once both its moves are fixed — with each agent's line of thought — never a move alone. While the match is on,
  * a Duo Crack seat's own phrase words are hidden in what it says and thinks, and a right guess shows as hidden; once it
  * is over everything shows, the phrases with it. The same view serves a replay: a finished log is the whole duel.

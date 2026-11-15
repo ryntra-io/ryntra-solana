@@ -15,7 +15,7 @@ export const maxDuration = 45;
  * the wallet pays, every signature is present and real, only the order's own instructions, a pool open to ladders
  * for a placement (and on mainnet the cap), the money back to the wallet for a cancellation — then simulated as
  * signed and judged by what the person gets against what was promised. The answer comes as soon as each is handed to
- * the node — `sent` with its signature, or `failed` — never after waiting for the confirmation (CITY-231): the window
+ * the node — `sent` with its signature, or `failed` — never after waiting for the confirmation: the window
  * has already kept the ladder, and its reading of the order accounts and the signatures says which landed.
  *
  * This route never signs: it has no key to sign with.

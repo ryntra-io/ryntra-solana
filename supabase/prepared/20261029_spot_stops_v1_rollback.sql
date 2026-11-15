@@ -1,4 +1,4 @@
--- Rollback of `supabase/migrations/20261029200000_spot_stops_v1.sql` (CITY-149).
+-- Rollback of `supabase/migrations/20261029200000_spot_stops_v1.sql`.
 -- PREPARED 2026-10-29 as a file only.
 -- It drops every stop kept under a wallet: an intent, never money.
 

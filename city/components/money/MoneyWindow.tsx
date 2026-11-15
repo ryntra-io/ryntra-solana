@@ -21,7 +21,7 @@ import s from './money.module.css';
 
 /**
  * The Money window's contents: Top up, Send, Pay link, Activity and Portfolio in one place in the city, on Ryntra's own
- * money engine. The city's one window frame (CITY-65) brings the head, the moving, the sticking and the whole screen on
+ * money engine. The city's one window frame brings the head, the moving, the sticking and the whole screen on
  * a computer and the bottom sheet on a phone; while a signature is out the frame holds the window, on that transfer.
  */
 export default function MoneyWindow() {
@@ -52,7 +52,7 @@ export default function MoneyWindow() {
           </span>
         </div>
       ) : null}
-      {/* Without a wallet every tab is the same «Connect wallet» (CITY-221): the window shows that one action alone, and
+      {/* Without a wallet every tab is the same «Connect wallet»: the window shows that one action alone, and
           the tabs come with the wallet. */}
       {owner ? (
         <nav className={s.tabs} role="tablist" aria-label={w.money}>

@@ -1,6 +1,6 @@
-/* «Моя вежа» (CITY-141, CITY-168): the launch's head on a frame of our own docks with the one figure on it and the day
+/* «Моя вежа»: the launch's head on a frame of our own docks with the one figure on it and the day
    ring, the coin's price and holders, two cards on frames of the live city, and the one amber action in a pinned dock. The
-   glass, the head and the moving are the city's window frame (CITY-65) — a window on a computer, the bottom sheet on a
+   glass, the head and the moving are the city's window frame — a window on a computer, the bottom sheet on a
    phone. Mint is value only; amber is the one action; red only for a real problem. Tokens: city/styles/city.module.css. */
 
 .display {
@@ -27,7 +27,7 @@
   flex: none;
 }
 
-/* In a frame that fits its contents (CITY-242): the window stands as tall as what is inside, up to its place, so a
+/* In a frame that fits its contents: the window stands as tall as what is inside, up to its place, so a
    large desk shows no empty glass under the cards; more than fits scrolls here. On the whole screen it fills as before. */
 :global([data-window-fit]) .framed {
   position: relative;
@@ -144,7 +144,7 @@
   box-shadow: inset 0 0 0 1.5px var(--amber);
 }
 
-/* Two launches of one ticker: the day each was born, quieter than the ticker (CITY-243). */
+/* Two launches of one ticker: the day each was born, quieter than the ticker. */
 .chipMark {
   font-size: inherit;
   font-weight: 700;
@@ -424,7 +424,7 @@
 
 /* ---------- The day ring ---------- */
 
-/* The ring and its words (CITY-243): what its days count and the next check, each on its line under the ring, right
+/* The ring and its words: what its days count and the next check, each on its line under the ring, right
    under it — beside it they squeezed the earned figure and broke in two. */
 .ringWrap {
   display: flex;
@@ -962,7 +962,7 @@ button.card:active {
   background: rgba(238, 241, 255, 0.05);
 }
 
-/* The network's fee close to the sum (CITY-243): one amber line before the signature, in the dock's own type. */
+/* The network's fee close to the sum: one amber line before the signature, in the dock's own type. */
 .feeNear {
   margin: 4px 0 0;
   font-size: var(--type-small);

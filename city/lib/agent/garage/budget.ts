@@ -1,5 +1,5 @@
 /**
- * The garage agent's budget for words (CITY-29). Its advice comes from Ryntra's assistant (CITY-10), whose guest seam
+ * The garage agent's budget for words. Its advice comes from Ryntra's assistant, whose guest seam
  * spends at most one model answer per question and counts the day's answers (`guest.day`). The agent counts the same
  * unit and always the worst case: before a question leaves, one whole answer is taken from the agent's day; a question
  * that failed or was cut off is not given back — the model may have been paid for it — and the count the seam

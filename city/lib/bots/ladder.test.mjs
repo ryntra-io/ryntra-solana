@@ -1,6 +1,6 @@
 // Run from repo root: node --test city/lib/bots/ladder.test.mjs
 //
-// The ladder composer in the window (CITY-135): the plan and its one cost line from the draft, and the browser's part
+// The ladder composer in the window: the plan and its one cost line from the draft, and the browser's part
 // of «no path signs for the person» — the wallet is asked once, on devnet, for exactly the reviewed transactions; the
 // order accounts' keys never leave the browser; anything changed or unsigned stops before it is sent.
 import assert from "node:assert/strict";
@@ -313,7 +313,7 @@ test("in the browser the only signing call is the order account's own key, made 
   }
 });
 
-/* ---------------------------------------------------------------- mainnet (CITY-219) */
+/* ---------------------------------------------------------------- mainnet */
 
 test("mainnet: one tap, the wallet asked once on solana:mainnet; every request names mainnet", async () => {
   const server = engine();
@@ -335,7 +335,7 @@ test("mainnet: a review for another network, over the cap, or slipping a transfe
     assert.equal(person.calls.length, 0, `the wallet never saw ${JSON.stringify(tamper)}`);
     assert.equal(server.submitted.length, 0);
   }
-  /* The same holds on devnet: CITY-135 let a System transfer reach the wallet's prompt. */
+  /* The same holds on devnet. */
   const server = engine({ transfer: true });
   const person = wallet();
   assert.equal((await placeLadder({ wallet: "Phantom", owner: OWNER, pool: POOL, legs: [LEG], shown: await shownFor() }, { fetch: server.fetch, sign: person.sign })).kind, "refused");
@@ -417,7 +417,7 @@ test("the Ryntra app's wallet signs a mainnet ladder and still refuses a devnet 
   assert.deepEqual(await signer.signTransactions({ wallet: "app", address: OWNER, unsignedWireBase64: ["AQ=="], chain: "solana:devnet" }), { ok: false, reason: MAINNET_ONLY });
 });
 
-test("the window's words: on mainnet no chip, «Place ladder», the fee said as it is; devnet keeps CITY-135's", () => {
+test("the window's words: on mainnet no chip, «Place ladder», the fee said as it is; devnet keeps its own", () => {
   for (const lang of ["en", "uk"]) {
     const main = ladderWords(lang, "mainnet", WORDS[lang]);
     const dev = ladderWords(lang, "devnet", WORDS[lang]);

@@ -6,7 +6,7 @@ import { AUTOPILOT } from "./words.ts";
 import { dayDetail, daySummary, holdFigure, resultFigure, resultRaw, shareWorth, toneOf } from "./report.ts";
 import { rhythmOf } from "./plan.ts";
 
-/* CITY-197: the agent's day and card say the result after every fee, with plain holding beside it — no rate a day, no promise. */
+/* The agent's day and card say the result after every fee, with plain holding beside it — no rate a day, no promise. */
 
 const DAY = { since: 0, until: 1, trades: 3, spentRaw: "30000000", boughtRaw: "3000", worthRaw: "42000000", earnedRaw: "12000000" };
 const NET = { ...DAY, netRaw: "-1200000", holdRaw: "4000000" };

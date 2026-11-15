@@ -1,5 +1,5 @@
 /**
- * «Claim» when the network's fee comes close to what it brings (CITY-243): one line before the signature says so. Only
+ * «Claim» when the network's fee comes close to what it brings: one line before the signature says so. Only
  * a show — the claim, its sum and its transaction stay as the engine builds them. Pure: the windows and the tests read
  * it alike.
  */

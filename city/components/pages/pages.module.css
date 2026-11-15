@@ -1,7 +1,7 @@
-/* The city's pages (CITY-157): Docs, Developers, Help, About, the Terms and the Privacy Policy. The same contents stand
-   in a window of the city (the frame of CITY-65: a window on a computer, the bottom sheet on a phone) and as a page of
+/* The city's pages: Docs, Developers, Help, About, the Terms and the Privacy Policy. The same contents stand
+   in a window of the city (the frame: a window on a computer, the bottom sheet on a phone) and as a page of
    their own at their address (`DocumentPage`). A still of our own city at the head, monumental words on it, dark glass
-   with cut corners below, one amber action. Tokens from city/styles/city.module.css (CITY-11). */
+   with cut corners below, one amber action. Tokens from city/styles/city.module.css. */
 
 .display {
   font-family: var(--font-display, system-ui), system-ui, sans-serif;
@@ -12,7 +12,7 @@
   text-transform: uppercase;
 }
 
-/* A language other than English: the words wait for the frame the boot script hides them in (CITY-79). */
+/* A language other than English: the words wait for the frame the boot script hides them in. */
 :global(html.city-lang-wait) .body [data-words],
 :global(html.city-lang-wait) .scroller [data-words] {
   visibility: hidden;
@@ -59,7 +59,7 @@
   gap: 20px;
 }
 
-/* A page at its address, in the documentation's frame (CITY-180): the frame draws the still; the words stand in its column. */
+/* A page at its address, in the documentation's frame: the frame draws the still; the words stand in its column. */
 .body[data-where='doc'] {
   width: 100%;
   max-width: 740px;
@@ -943,12 +943,12 @@ textarea.field {
   padding: 8px var(--gutter) max(28px, env(safe-area-inset-bottom));
 }
 
-/* A wide document (CITY-177: «What we're building», the partner page) keeps its foot as wide as its column. */
+/* A wide document («What we're building», the partner page) keeps its foot as wide as its column. */
 .foot[data-wide] {
   width: min(1120px, 100%);
 }
 
-/* The documentation's column (CITY-180). */
+/* The documentation's column. */
 .foot[data-wide='docs'] {
   width: min(1280px, 100%);
 }

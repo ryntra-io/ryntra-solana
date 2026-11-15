@@ -1,5 +1,5 @@
 /**
- * CITY-162 — the bounds of Ryntra's launch signers: what each key signs, read from the message itself
+ * The bounds of Ryntra's launch signers: what each key signs, read from the message itself
  * (`./message.ts`), whoever asks. Anything else is refused with its reason, before the key — in the environment or in
  * KMS — is asked for a signature.
  *

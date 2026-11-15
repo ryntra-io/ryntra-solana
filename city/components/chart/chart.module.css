@@ -1,4 +1,4 @@
-/* The tower chart (CITY-5a): the core chart and one amber action, in the city's one window frame (CITY-65) — a window
+/* The tower chart: the core chart and one amber action, in the city's one window frame — a window
    that moves, sticks and stretches on a desk, the frame's bottom sheet on a phone. Tokens from
    city/styles/city.module.css; the core's own colours are redrawn below in the city's, inside the window only. */
 
@@ -83,7 +83,7 @@
   animation: open 220ms ease-out both;
 }
 
-/* In the city's one window frame (CITY-65): the frame brings the glass, the head with «Chart», the place, the moving and
+/* In the city's one window frame: the frame brings the glass, the head with «Chart», the place, the moving and
    the whole screen; the chart fills the frame's body. */
 .frame.framed {
   position: absolute;
@@ -304,7 +304,7 @@
   min-height: 0;
 }
 
-/* CITY-215: the core's engine keeps every touch on its canvas (an inline `touch-action: none`). On a phone the chart
+/* The core's engine keeps every touch on its canvas (an inline `touch-action: none`). On a phone the chart
    stands inside the window's sheet, so the browser may pan up and down over it: a finger that goes up or down scrolls
    the window, and `useScrollThrough` keeps that gesture away from the engine; across and a pinch stay the chart's. With
    the drawing tools open every touch is the chart's again. */
@@ -684,12 +684,12 @@
   display: block;
 }
 
-/* A bar without volume does not name it (CITY-243: «Vol no volume» on every forming bar); a bar with volume shows it. */
+/* A bar without volume does not name it («Vol no volume» on every forming bar); a bar with volume shows it. */
 .tooled .chart .core :global(.ryntra-chart__figure[data-city-empty]) {
   display: none;
 }
 
-/* «Delayed» says how long (CITY-243): the window gives the words (`--chart-delay`, the engine's cache of the interval),
+/* «Delayed» says how long: the window gives the words (`--chart-delay`, the engine's cache of the interval),
    the badge keeps its dot and its tone. Only the delayed badge: «Stale» keeps the core's own word. */
 .tooled .chart .core :global(.ryntra-chart__state--info) {
   font-size: 0;
@@ -700,7 +700,7 @@
   font-size: var(--ryntra-type-caption-size, 12px);
 }
 
-/* One control for the chart's period (CITY-242). Where the chart is wide enough for the core's row of quick intervals
+/* One control for the chart's period. Where the chart is wide enough for the core's row of quick intervals
    (its own 640 px, as in a large spot window), the row alone — the core put the list of every interval beside it, the
    same six periods twice; the list only where the chart is narrower and the row steps aside. */
 @container (min-width: 641px) {

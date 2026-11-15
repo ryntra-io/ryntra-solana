@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { test } from "node:test";
 
-/* CITY-237: the bell's panel is a column that scrolls as a whole. Its list was left to shrink (the strip's `min-height:
+/* The bell's panel is a column that scrolls as a whole. Its list was left to shrink (the strip's `min-height:
    0`), so with more events than the panel is tall the last ones hung out of the list's box and «Clips of this visit»,
    the row after the list, was drawn over them — words over words on ryntra.io. */
 test("in the bell's panel the list keeps its height, so «Clips of this visit» stands under the last event", () => {

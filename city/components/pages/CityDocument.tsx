@@ -7,8 +7,8 @@ import { DocsView } from '../docs/DocsView';
 import { DocumentPage } from './DocumentPage';
 
 /**
- * The route entry of a city page at its address (CITY-157): the city's faces and colours, the language boot script,
- * then the page in the documentation's frame (CITY-180). The same root as the city's own routes (`app/(home)/page.tsx`, `app/window/page.tsx`); nothing of
+ * The route entry of a city page at its address: the city's faces and colours, the language boot script,
+ * then the page in the documentation's frame. The same root as the city's own routes (`app/(home)/page.tsx`, `app/window/page.tsx`); nothing of
  * the old site's chrome.
  */
 export function CityDocument({ id }: { id: PageId }) {

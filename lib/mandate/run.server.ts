@@ -1,5 +1,5 @@
 /**
- * CITY-174 — one trade of the agent, end to end: assemble it under the mandate, read the accounts its rules look into,
+ * One trade of the agent, end to end: assemble it under the mandate, read the accounts its rules look into,
  * have the agent's signer judge and sign it, send it through our own RPC and read back what the chain said.
  *
  * The agent never sends a trade its own signer refused, and never retries one on its own: a trade that landed and failed
@@ -105,7 +105,7 @@ export async function agentTrade(
     fee?: TransactionInstruction | undefined;
     setup?: readonly TransactionInstruction[];
     lookupTables?: readonly AddressLookupTableAccount[];
-    /** The coin bought, as the venue read it, and the chain's epoch when it withholds a transfer fee (CITY-184). */
+    /** The coin bought, as the venue read it, and the chain's epoch when it withholds a transfer fee. */
     coin?: Coin | undefined;
     epoch?: bigint | undefined;
     skipPreflight?: boolean;

@@ -43,7 +43,7 @@ function ago(at: number, now: number, w: Words): string {
 const TOPIC_WORD = { moves: 'moves', liquidity: 'liquidity', beacons: 'beacons', scout: 'scout' } as const satisfies Record<Topic, keyof Words>;
 
 /**
- * The garage agent's window (CITY-29), inside the city's one window frame (CITY-65, in a bay since CITY-84): what changed
+ * The garage agent's window, inside the city's one window frame: what changed
  * on your towers since you last looked, a few heads-ups on your beacons and the scout, and one action — ask the agent,
  * then show its towers. Every tower here flies the camera to itself and lights up; nothing here buys, sells or signs.
  * Its name, what it reports on and its switch wait behind the gear.
@@ -51,7 +51,7 @@ const TOPIC_WORD = { moves: 'moves', liquidity: 'liquidity', beacons: 'beacons',
 export function GarageWindow({ mine, live, reminders }: { mine: readonly MyTower[]; live: boolean; reminders: readonly Reminder[] }) {
   const view = useGarage((st) => st.view);
   const on = useGarage((st) => st.settings.on);
-  // With no towers the window stands as tall as its words and its one button (`fit`, CITY-221), not as an empty pane.
+  // With no towers the window stands as tall as its words and its one button (`fit`), not as an empty pane.
   return (
     <div className={`${s.framed} ${mine.length ? '' : s.flow}`}>
       {view === 'settings' ? <Settings /> : on ? <Home mine={mine} live={live} reminders={reminders} /> : <Off />}
@@ -69,7 +69,7 @@ function fly(towers: readonly Tower[]) {
 const BODIES = ['ready', 'thinking', 'acting', 'done'] as const;
 
 /**
- * The agent itself at the head of its window: stills of the characters line's robot (CITY-57), rendered from the model
+ * The agent itself at the head of its window: stills of the characters line's robot, rendered from the model
  * in its own studio, one for each state; the one shown is what the agent is doing now (`useBody`), crossfaded.
  */
 function Portrait({ line, live }: { line: string; live: boolean }) {
@@ -295,7 +295,7 @@ function AdviceBlock({ advice, name }: { advice: AdviceState; name: string }) {
 function Action({ mine, advice, name }: { mine: readonly MyTower[]; advice: AdviceState; name: string }) {
   const w = useWords(GARAGE);
   const left = useGarage((st) => st.answersLeft());
-  // No towers yet: the one way on is to get one — Ryntra's line takes «buy SOL» or «launch a token» (CITY-221: the
+  // No towers yet: the one way on is to get one — Ryntra's line takes «buy SOL» or «launch a token» (the
   // window used to end on its empty words with nothing to press).
   if (!mine.length) {
     return (

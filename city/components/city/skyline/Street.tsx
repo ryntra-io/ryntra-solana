@@ -18,7 +18,7 @@ const WALK = 2.15;
 const LAMP_STEP = 2.6;
 
 /**
- * Life on the streets (CITY-56), all moved on the GPU: cars with headlights that throw light ahead on the asphalt
+ * Life on the streets, all moved on the GPU: cars with headlights that throw light ahead on the asphalt
  * and amber tail lights, on four lanes of every ring road and spoke; street lights on both kerbs where the ground
  * shader lays their pools of light; and people — impostors from the Blender atlas, walking the pavements in four
  * frames — who fade out before they are smaller than a pixel. Counts follow the quality tier's BUDGET (people are its

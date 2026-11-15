@@ -2,7 +2,7 @@ import type { Holdings } from '../trade/wallet.ts';
 import { PARTS_LIVE, type PilotLegs, type PilotNetwork } from '../../../lib/pilot/plan.ts';
 
 /**
- * CITY-204 — whether the wallet holds what the plan moves, before the wallet is asked: the SOL that goes into the trade,
+ * Whether the wallet holds what the plan moves, before the wallet is asked: the SOL that goes into the trade,
  * the savings and the pier on this network (the reserve stays where it is; the engine's spendable already keeps the
  * network's fees back), and the USDC that goes into the savings. A balance not read is no refusal — the engines refuse
  * again before anything is built. Pure.

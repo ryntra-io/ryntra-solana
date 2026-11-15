@@ -7,9 +7,9 @@ import type { PierStates } from './pier-gate.ts';
 import { HISTORY_BARS, HISTORY_TIMEFRAME } from './pier-history.ts';
 
 /**
- * The SOL Pier's line to the server (CITY-93): the Harbor's own engine line for the relay and the chain's word on a
+ * The SOL Pier's line to the server: the Harbor's own engine line for the relay and the chain's word on a
  * signature, with the city's door in front of the Review (`/api/city/earn/piers/review`), what one wallet may do
- * (`/api/city/earn/piers/admit`), the city's door in front of the engine's Zap (`/api/city/earn/piers/zap`, CITY-198: SOL
+ * (`/api/city/earn/piers/admit`), the city's door in front of the engine's Zap (`/api/city/earn/piers/zap`, SOL
  * in, one approval; and «Take the rest»), and the engine's candle read for the «Past 30 days» picture. The window only
  * asks and shows; the engine builds and decides.
  */

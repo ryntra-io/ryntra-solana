@@ -19,7 +19,7 @@ import { useWords } from '@/city/lib/i18n/dict';
 export { RING_OPEN };
 
 /**
- * A garage's sheet in my quarter, once the Ring is open (CITY-50): the agent that lives here — its body, brain, class,
+ * A garage's sheet in my quarter, once the Ring is open: the agent that lives here — its body, brain, class,
  * price and ratings — with the one way to change it; or, empty, the one way to make one. The screen that makes or
  * changes an agent opens over the city from here.
  */

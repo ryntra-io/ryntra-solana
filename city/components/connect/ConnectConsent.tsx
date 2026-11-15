@@ -15,7 +15,7 @@ import { CONNECT } from './words';
 import s from './connect.module.css';
 
 /**
- * The connect window (CITY-154): an AI chat asks to read the Solana market for a person, and the person approves with
+ * The connect window: an AI chat asks to read the Solana market for a person, and the person approves with
  * their wallet — one signed message, no transaction. One action on the window, the honest line visible before it, the
  * rest behind «Details». The server checked the request before this rendered; it checks it again when the wallet signs.
  */
@@ -57,7 +57,7 @@ function LockIcon() {
 }
 
 function Frame({ children }: { children: React.ReactNode }) {
-  // The person's language before the first paint after hydration (CITY-79), as the city's document pages read it.
+  // The person's language before the first paint after hydration, as the city's document pages read it.
   useLayoutEffect(() => void hydrateLang(), []);
   return (
     <div className={s.stage}>

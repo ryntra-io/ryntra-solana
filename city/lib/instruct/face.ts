@@ -5,7 +5,7 @@ import type { Instruction } from './types.ts';
 import { INSTRUCT } from './words.ts';
 
 /**
- * How the card and the list say an instruction (CITY-176): one headline — what the agent will do, with the amount and
+ * How the card and the list say an instruction: one headline — what the agent will do, with the amount and
  * how often or at what price — and one line with the fee and the least. Pure: the words of the language on screen are
  * an argument, so English and Ukrainian are read the same way in the tests.
  */

@@ -1,4 +1,4 @@
-/** The Guard window's glyphs (CITY-152), drawn in `currentColor` like every glyph of the city. */
+/** The Guard window's glyphs, drawn in `currentColor` like every glyph of the city. */
 
 /** The window's head: a shield with its mark — the Deck's own Guard glyph. */
 export const ShieldGlyph = () => (

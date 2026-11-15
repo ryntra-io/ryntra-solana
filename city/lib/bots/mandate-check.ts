@@ -1,7 +1,7 @@
 import { VersionedTransaction } from '@solana/web3.js';
 
 /**
- * The checks the window makes on the mandate's transactions (CITY-174), before the wallet and after it — loaded with
+ * The checks the window makes on the mandate's transactions, before the wallet and after it — loaded with
  * `mandate-sign.ts` on the tap.
  */
 

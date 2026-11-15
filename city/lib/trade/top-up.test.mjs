@@ -7,7 +7,7 @@ import { offersTopUp, problemLine } from "./top-up.ts";
 
 const read = (file) => readFileSync(new URL(file, import.meta.url), "utf8").replace(/\r\n/g, "\n");
 
-/* CITY-239: an empty wallet on the tower's ticket. «Add SOL» stood beside «Up to 0 SOL: the rest pays the network.»
+/* An empty wallet on the tower's ticket. «Add SOL» stood beside «Up to 0 SOL: the rest pays the network.»
    and «You have 0 USDC. Type that or less.»; Limit and Stop kept a dead button. */
 
 test("the top-up is offered to a connected wallet that buys with nothing, and to no one else", () => {

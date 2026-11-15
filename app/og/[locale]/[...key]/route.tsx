@@ -7,7 +7,7 @@ export const runtime = "nodejs";
 export const maxDuration = 30;
 
 /**
- * The share card older posts of a page name: since CITY-158 the city's card
+ * The share card older posts of a page name: the city's card
  * (`city/lib/share/card.server.tsx`) in the page's language — the pages now
  * name `/opengraph-image` themselves (`pageCardImage` in `app/seo.ts`) — for
  *

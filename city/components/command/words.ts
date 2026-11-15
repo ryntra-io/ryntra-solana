@@ -1,6 +1,6 @@
 import { words } from '../../lib/i18n/dict.ts';
 
-/** The words of the command line and of Ryntra's button in every window (CITY-85), English and Ukrainian. */
+/** The words of the command line and of Ryntra's button in every window, English and Ukrainian. */
 export const COMMAND = words(
   {
     ryntra: 'Ryntra',

@@ -16,7 +16,7 @@ import { useWords } from './hooks';
 import s from './bots.module.css';
 
 /**
- * «Your agent» on top of the bots window's Start (CITY-174): the budget in one tap, the limits in one line, «Sign».
+ * «Your agent» on top of the bots window's Start: the budget in one tap, the limits in one line, «Sign».
  * The person's wallet signs once and the agent trades by itself inside limits the chain holds; while it works, the
  * budget left and «Stop» — one more signature, the rest back to her wallet. Behind `NEXT_PUBLIC_RYNTRA_CITY_MANDATE`
  * (devnet, or mainnet with 0.1 SOL a day and the coin she picks); the signing loads on the tap (`mandate-sign.ts`).
@@ -41,7 +41,7 @@ export function AgentBudget() {
     useMandate.getState().hydrate();
   }, []);
 
-  // CITY-207: the engine's book over this browser's note — the agent hired on another device shows here too.
+  // The engine's book over this browser's note — the agent hired on another device shows here too.
   useEffect(() => {
     if (owner && MANDATE_NET) void syncAgents(owner);
   }, [owner]);
@@ -65,7 +65,7 @@ export function AgentBudget() {
 
   useEffect(() => {
     if (!note) return;
-    // A «no» stays long enough to be read (CITY-237), counted from when it was said: a card opened again later does
+    // A «no» stays long enough to be read, counted from when it was said: a card opened again later does
     // not bring an old line back.
     const timer = setTimeout(() => {
       if (useMandate.getState().note === note) useMandate.getState().say(null);
@@ -79,7 +79,7 @@ export function AgentBudget() {
     if (said && saysNo(said.kind)) useMandate.getState().say(null);
   }, [preset, coin]);
 
-  // CITY-222: the Trader's card in view, not yet at work — the agent's card on the first action's way.
+  // The Trader's card in view, not yet at work — the agent's card on the first action's way.
   const shown = Boolean(MANDATE_NET) && !(record && status?.active);
   useEffect(() => {
     if (shown) funnelSay('agent_card');
@@ -160,7 +160,7 @@ export function AgentBudget() {
           <p className={s.cost} data-mandate-fee="">
             <span>{m.fee(fee.low, fee.high)}</span>
           </p>
-          {/* CITY-222: no wallet here — the way out to get one comes back to this agent's card; too little SOL — «Add SOL». */}
+          {/* No wallet here — the way out to get one comes back to this agent's card; too little SOL — «Add SOL». */}
           {picking && !connection ? (
             <CardWalletPicker said="" onBack={() => setPicking(false)} />
           ) : connection && funds.short && funds.about && busy === null ? (
@@ -173,7 +173,7 @@ export function AgentBudget() {
         </>
       )}
 
-      {/* The action's answer right under it, brought into view when said (CITY-237) — it stood under «Details». */}
+      {/* The action's answer right under it, brought into view when said — it stood under «Details». */}
       {note ? (
         <NoteLine kind={note.kind === 'on' || note.kind === 'stopped' ? 'placed' : note.kind} at={note.at}>
           {m.note[note.kind]}

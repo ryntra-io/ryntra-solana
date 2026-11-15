@@ -4,7 +4,7 @@ import { SOL_MINT } from './lst.ts';
 import { isPierStyle, PIER_STYLES, STYLE_HALF, type PierStyle } from './pier.ts';
 
 /**
- * «Like the Captain» (CITY-99, `docs/research/ryntra-earn-2026-10-29/SPEC.md` E8): strategies with a record people can
+ * «Like the Captain» (`docs/research/ryntra-earn-2026-10-29/SPEC.md` E8): strategies with a record people can
  * copy. A **strategy** is one of the city's own pier recipes — a SOL pier (a Meteora DLMM pool) and a style (its bins on
  * each side of the price, spread evenly); the recipe is an internal format and never a screen of its own. A **copy** is
  * a position opened through the city with that recipe; the chain says it exists, whose it is, in which pool and how wide.

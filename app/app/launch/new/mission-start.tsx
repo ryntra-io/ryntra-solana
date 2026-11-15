@@ -86,7 +86,7 @@ export function MissionStart({
   disabled: boolean;
   windowId: string | null;
   onWindow: (id: string | null) => void;
-  /** Crews may be made here — the devnet stand; mainnet. */
+  /** Crews may be made here — the devnet stand. */
   crewOn: boolean | null;
   onCrewOn: (on: boolean) => void;
   crew: CrewView | null;

@@ -1,5 +1,5 @@
 /**
- * The Exchange (CITY-5d) on Phoenix, by the deployment's switch (`NEXT_PUBLIC_RYNTRA_CITY_EXCHANGE`):
+ * The Exchange on Phoenix, by the deployment's switch (`NEXT_PUBLIC_RYNTRA_CITY_EXCHANGE`):
  *
  * - `open` — the whole Exchange: the window, «Trade futures» on a tower card, the address `?open=exchange`.
  * - `exit` — futures have gone to RXN: nothing of the Exchange is shown, except to a wallet

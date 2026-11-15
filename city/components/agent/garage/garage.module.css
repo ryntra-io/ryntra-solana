@@ -1,6 +1,6 @@
-/* The garage agent's window (CITY-29) inside the city's one frame (CITY-65): the frame brings the glass and the head,
+/* The garage agent's window inside the city's one frame: the frame brings the glass and the head,
    this only what is inside. One amber action per screen, mint only for a figure that grew, flare only for one that fell.
-   Tokens and the type scale from city/styles/city.module.css (CITY-11). */
+   Tokens and the type scale from city/styles/city.module.css. */
 
 .framed {
   position: absolute;
@@ -10,7 +10,7 @@
   padding: 10px 16px 14px;
 }
 
-/* No towers yet (CITY-221): in the flow, so the frame that fits its contents stands as tall as the portrait, the empty
+/* No towers yet: in the flow, so the frame that fits its contents stands as tall as the portrait, the empty
    words and the one button; longer settings scroll in the window's own body. */
 .flow {
   position: relative;

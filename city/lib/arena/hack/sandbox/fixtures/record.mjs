@@ -1,4 +1,4 @@
-// Writes the recorded scenario of the Hack sandbox's stand (CITY-224): `scenario.json` beside this file — the copy
+// Writes the recorded scenario of the Hack sandbox's stand: `scenario.json` beside this file — the copy
 // (snapshot), the order's target and check, and two attempts with what they were recorded to give: «the finding
 // reproduces» and «the finding does not reproduce». The tests (`../stand.test.mjs`) and the stand
 // (`docs/research/city-224-hack-sandbox/stand.mjs`) replay it and compare the log hashes on any machine.
@@ -24,7 +24,7 @@ const attempts = [
 
 const scenario = {
   format: "ryntra-hack-scenario/1",
-  note: "CITY-224 stand: a made-up program on the toy engine; one finding that reproduces and one that does not.",
+  note: "Sandbox stand: a made-up program on the toy engine; one finding that reproduces and one that does not.",
   target: f.TARGET,
   pin,
   check: { ...f.CLAIM, vault: f.VAULT },

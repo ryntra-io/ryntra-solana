@@ -27,12 +27,11 @@ import s from './lens.module.css';
 const MINE_WAIT_MS = 120_000;
 
 /**
- * The Lens (CITY-86): a row of chips centred in the top bar — on a phone a strip under it that scrolls sideways — that
+ * The Lens: a row of chips centred in the top bar — on a phone a strip under it that scrolls sideways — that
  * picks the kind of tower to look at. The picked chip says how many towers it found; the city does the rest. «Mine»
  * with no wallet here opens the wallet first and lights once it is connected; with one, it lights your towers and opens
  * your coins and orders under the bar — the one place for them.
- * «New» picked grows a toggle beside it: the three rings over the city, or the same launches of all Solana as a list
- * (CITY-142) — the city's window «New launches on Solana» since CITY-191.
+ * «New» picked grows a toggle beside it: the three rings over the city, or the same launches of all Solana as a list — the city's window «New launches on Solana».
  */
 export function LensBar() {
   const lens = useLens((st) => st.lens);
@@ -50,11 +49,11 @@ export function LensBar() {
   const row = useRef<HTMLDivElement>(null);
   const nav = useRef<HTMLElement>(null);
   const place = usePlace(nav, row);
-  // The phone's strip steps away under the open menu, so its chips never read through the menu's rows (CITY-188).
+  // The phone's strip steps away under the open menu, so its chips never read through the menu's rows.
   const menuOpen = useHudPanels((st) => st.menu);
-  // The strip under a window that covers most of it steps aside, never a sliver over the window's edge (CITY-243).
+  // The strip under a window that covers most of it steps aside, never a sliver over the window's edge.
   const covered = useUnderWindow(row, place === null);
-  // A strip wider than the screen fades at its edge (CITY-188).
+  // A strip wider than the screen fades at its edge.
   const [overflows, setOverflows] = useState(false);
   useEffect(() => {
     const strip = nav.current;
@@ -68,7 +67,7 @@ export function LensBar() {
   }, [place]);
   useEffect(() => {
     useLens.getState().hydrate();
-    // Every new launch of Solana, read once the city is up: the Docks fill, «New» has its rings (CITY-142).
+    // Every new launch of Solana, read once the city is up: the Docks fill, «New» has its rings.
     startNewLaunches();
   }, []);
   // The picked chip stays in view on a phone's strip — with «New»'s toggle beside it.
@@ -165,7 +164,7 @@ export function LensBar() {
 }
 
 /**
- * Whether the strip under the bar stands under a window of the desk (CITY-243): a window as wide as Spot or Earn opens
+ * Whether the strip under the bar stands under a window of the desk: a window as wide as Spot or Earn opens
  * 5 px under the strip's top and covered all of it but a sliver over its own edge. Measured on the strip's capsule
  * against the windows' places; a window on the whole screen covers it too. Never on a phone: its windows are sheets.
  */

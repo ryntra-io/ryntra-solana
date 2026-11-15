@@ -27,7 +27,7 @@ test("a tray wider than the screen keeps the screen's middle", () => {
   assert.equal(trayCentre(0, 40, 500, 400, 16), 200);
 });
 
-// A window as tall as the workspace (CITY-242) reaches the Deck's top: the tray, inside the HUD's layer, stood under it.
+// A window as tall as the workspace reaches the Deck's top: the tray, inside the HUD's layer, stood under it.
 test("the open tray stands in a layer of its own over the city's windows", async () => {
   const { readFileSync } = await import("node:fs");
   const read = (file) => readFileSync(new URL(file, import.meta.url), "utf8").replace(/\r\n/g, "\n").replace(/\/\*[\s\S]*?\*\//g, "");

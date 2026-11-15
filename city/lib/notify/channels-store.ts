@@ -2,7 +2,7 @@ import { create } from 'zustand';
 import { createChannels, withProof, type BotLink, type ChannelFailure, type ChannelsApi, type Device, type TelegramView } from './channels.ts';
 
 /**
- * Telegram and the phones as the settings window shows them (CITY-87), read from the engine for the connected wallet.
+ * Telegram and the phones as the settings window shows them, read from the engine for the connected wallet.
  * `signedOut`: the wallet has not proved itself to Ryntra yet — the window offers the one message from a tap, and
  * never asks the wallet by itself.
  */

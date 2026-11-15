@@ -1,5 +1,5 @@
 /**
- * The Hack sandbox (CITY-224, spec `docs/research/city-hack-2026-11-08/SPEC.md` «How the sandbox works»): it runs an
+ * The Hack sandbox (spec `docs/research/city-hack-2026-11-08/SPEC.md` «How the sandbox works»): it runs an
  * agent's attempt on a pinned copy, writes the log itself, and hands back the proof the rules over the judge consume
  * (`HackProof`, `../rules.ts`).
  *
@@ -8,11 +8,11 @@
  *                   crashes. A run that tried to reach the network is refused whole.
  *   replay(log)   — anyone plays the same log again on the same pin: the same `logHash`, or the first divergence.
  *   rules(run, w) — the judge's rules for the run: class «verified», decided by replay, nothing to win here.
- *   prove(run, …) — the harness stamps the log and asks the judge (CITY-68); the verdict and `deterministic: true` are
+ *   prove(run, …) — the harness stamps the log and asks the judge; the verdict and `deterministic: true` are
  *                   the `HackProof` that `assessFinding` takes. The finding carries the same `logHash`.
  *
  * This is the shape of the Ring's `CodeSandbox` (`lib/ring/duel/code.ts`) for a contract: `run` alone is its `runOpen`
- * (try inputs on the copy and read what happened — the agent's tool, CITY-225), `run` + `prove` is its `runHidden` (the
+ * (try inputs on the copy and read what happened — the agent's tool), `run` + `prove` is its `runHidden` (the
  * run that counts, judged by code). A Hack run is decided by replay, not hidden tests: the protocol's checks read the
  * copy after the inputs, and the log lets anyone play it again.
  *
@@ -101,7 +101,7 @@ export type ProveContext = {
   readonly at: number;
   /** The order's window: a log stamped outside it is early or late. */
   readonly window: { readonly opensAt: number; readonly closesAt: number };
-  /** The agent's model spend on the run, as the runner measured it (CITY-225); 0 when no model ran. */
+  /** The agent's model spend on the run, as the runner measured it; 0 when no model ran. */
   readonly costMicroUsd?: number;
 };
 

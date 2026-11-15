@@ -2,7 +2,7 @@ import type { LaunchCabinetRow, LaunchMarketResponse } from '../../../lib/api/v1
 import type { Network } from './engine.ts';
 
 /**
- * The launch's share cards (L8 · CITY-145, `docs/research/ryntra-launch-2026-10-29/SPEC.md` §9): «Народилась» and
+ * The launch's share cards: «Народилась» and
  * «Вийшла» for the creator, and the trader's round trip — «купив на народженні — продав на виході». Every figure on a
  * card is the engine's: the cabinet's launch time and curve, the chart's mark of the move to the DEX, the feed's
  * holders, the market's own trades and the wallet's balance as the chain reads them. Nothing is estimated, rounded up
@@ -237,7 +237,7 @@ export function legOf(done: Readonly<{ signature: string; side: 'buy' | 'sell'; 
 /* ---------------------------------------------------------------- shared */
 
 /**
- * The agent's card (CITY-175): what the person's agent bought for her, from its own trades in the agent's book — what
+ * The agent's card: what the person's agent bought for her, from its own trades in the agent's book — what
  * it spent, and what the coins it bought are worth at the pool's price now. Every figure is the engine's; a card is made
  * only once the agent traded and the worth was read.
  */
@@ -254,7 +254,7 @@ export type AgentCard = Readonly<{
   /** worth ÷ spent. */
   multiple: number;
   tag: CardTag;
-  /** CITY-194: the card over a span — today, or while the person was away; absent, all the agent did. */
+  /** The card over a span — today, or while the person was away; absent, all the agent did. */
   span?: AgentSpan;
 }>;
 

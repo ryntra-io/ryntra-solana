@@ -1,6 +1,6 @@
 // Run from repo root: node --test city/lib/arena/hack/store/store.test.mjs
 /*
- * CITY-226: one behaviour for both of Hack's stores. The same cases run against memory every time and against the
+ * One behaviour for both of Hack's stores. The same cases run against memory every time and against the
  * real migration on a throwaway PostgreSQL when HACK_TEST_DATABASE_URL names a local server (for example
  * postgres://postgres@127.0.0.1:5432/postgres). Never point it at a real project: the test creates and drops its own
  * database there. On PostgreSQL the atomic rules are also raced: calls at once on their own connections, as PostgREST
@@ -241,7 +241,7 @@ function suite(name, makeFixture, { skip = false, concurrent = false } = {}) {
       assert.deepEqual(await file({ hunter: "agent-8" }), { ok: false, reason: "RATE_LIMITED" }, "the wallet's day");
     });
 
-    test("The protocol owner alone, a confirmation only of a run, and who first again", async () => {
+    test("the protocol owner's word on a finding under review: theirs alone, a confirmation only of a run, and who first again", async () => {
       const r = await ready();
       const owner = r.order.protocol;
       const unclear = r.finding();

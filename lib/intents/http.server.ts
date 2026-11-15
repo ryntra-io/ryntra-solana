@@ -1,5 +1,5 @@
 /**
- * The intent routes' shared steps (CITY-161, contract 1.90.0): whether intents are served here, the windows that bound
+ * The intent routes' shared steps: whether intents are served here, the windows that bound
  * them, the same-site rule for the steps a person takes, and a refusal said in the contract's own codes.
  *
  * Making an intent needs no wallet and no key — anyone may prepare a request, and only the person's own wallet can act

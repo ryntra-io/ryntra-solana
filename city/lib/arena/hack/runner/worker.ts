@@ -1,5 +1,5 @@
 /**
- * The worker backend of the step runner (CITY-225, sandbox README «Межі (рев'ю наглядача 9.11)»). The sandbox's `run`
+ * The worker backend of the step runner. The sandbox's `run`
  * and `prove` belong off the routes process: while a run executes, the offline wall (`../sandbox/offline.ts`) swaps the
  * process globals (`fetch`, sockets, child processes), and a single long synchronous step cannot be interrupted
  * between steps. So each run goes to a `worker_threads` worker that:
@@ -35,7 +35,7 @@ export type WorkerBackendConfig = {
   readonly enginePath: string;
   /**
    * A module whose default export builds the order's checks: `(snapshot, arg) => Invariant[]`. The checks are code
-   * that only reads the copy; a store holds them per order (CITY-226).
+   * that only reads the copy; a store holds them per order.
    */
   readonly invariantsPath: string;
   /** An argument the checks module needs (e.g. the vault address) — plain data only. */
@@ -95,7 +95,7 @@ export function createWorkerBackend(config: WorkerBackendConfig): SandboxBackend
               ok: false,
               runId: attempt.runId,
               refusal: "ENGINE",
-              detail: `hard-timeout: the run was stopped after ${wall} ms (CITY-225 worker wall)`,
+              detail: `hard-timeout: the run was stopped after ${wall} ms (the worker's wall)`,
             } as HackRun,
             proof: null,
           }),

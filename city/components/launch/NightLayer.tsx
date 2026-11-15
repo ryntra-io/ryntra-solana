@@ -16,7 +16,7 @@ import { useWindowOpen } from '../hud/useWindowOpen';
 import s from './night.module.css';
 
 /**
- * Launch Night over the city (CITY-146): the show of the night's confirmed launches. The camera frames one launch at a
+ * Launch Night over the city: the show of the night's confirmed launches. The camera frames one launch at a
  * time in the Docks (`NightSpot` lights it); the stage below says its coin, its market cap and one line, with one amber
  * action — Buy, which opens the tower's own window. The acts run as segments along the top. The rule the show keeps sits
  * behind one quiet «i». Nothing of it exists until the night has enough confirmed launches (`night.ts`).

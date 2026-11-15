@@ -4,7 +4,7 @@ import { figuresOf } from '../trade/figures.ts';
 import { lamportsOf, type SolRate } from './lst.ts';
 
 /**
- * The SOL Saver's one line before the signature (CITY-94): SOL in, an LST out, through the very swap route the city's
+ * The SOL Saver's one line before the signature: SOL in, an LST out, through the very swap route the city's
  * trade card uses (`/api/solana/swap/*`, the engine's fee policy — no new route, no new fee). Every figure here is the
  * engine's quote or order, or the LST's worth read from its pool; this file only puts them side by side in SOL.
  *

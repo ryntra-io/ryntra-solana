@@ -1,5 +1,5 @@
 /**
- * The training ranges' recorded states (CITY-238). WRITTEN BY `record.mjs` — do not edit by hand: a changed byte is a
+ * The training ranges' recorded states. WRITTEN BY `record.mjs` — do not edit by hand: a changed byte is a
  * new pin. What each range is, in words — `record.mjs` and `README.md`.
  */
 
@@ -21,7 +21,7 @@ export const RECORDED: readonly RangeRecord[] = [
       "format": "ryntra-hack-snapshot/1",
       "source": {
         "kind": "recorded",
-        "label": "CITY-198 tape: Meteora DLMM SOL-USDC, mainnet",
+        "label": "Recorded tape: Meteora DLMM SOL-USDC, mainnet",
         "recordedAt": "2026-10-16T17:47:44.476Z"
       },
       "slot": 457726301,

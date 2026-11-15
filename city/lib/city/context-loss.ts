@@ -1,5 +1,5 @@
 /**
- * The city's drawing surface comes back after the browser takes it (CITY-200). A phone under memory pressure, a GPU
+ * The city's drawing surface comes back after the browser takes it. A phone under memory pressure, a GPU
  * driver reset or a shader compile that runs out of memory loses the WebGL context; the city then stood white with no
  * way back but a reload. Now the loss is claimed (`preventDefault`, so the browser may give the context back), the city
  * holds its night colour, and a fresh canvas is mounted once the context is restored — or after `waitMs` if it never is.

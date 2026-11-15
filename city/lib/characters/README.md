@@ -1,4 +1,4 @@
-# Characters (CITY-57)
+# Characters
 
 Agents in the city are characters, not icons. The first is the **vault guardian**: a sleek humanoid sentinel about
 1.97 m tall (simple, in the spirit of the film robots — our own design, not a copy of any), drawn
@@ -93,7 +93,7 @@ default path or `BLENDER=…`) rebuilds it from nothing:
    files beside it (the site's CSP refuses the `blob:` URLs a loader makes for embedded images).
 
 The standard level is the hero simplified (Decimate) and the crowd the standard simplified, so their UVs come with
-them; the crowd reads its textures a few mip levels down. The city's quality ladder (CITY-6a, `city/lib/city/quality.ts`)
+them; the crowd reads its textures a few mip levels down. The city's quality ladder (`city/lib/city/quality.ts`)
 sets what a character spends: `CHARACTER_BUDGET` in `lod.ts` — on low the hero is never drawn and the crowd and the
 picture come sooner, the contact shadow only on high.
 
@@ -125,8 +125,8 @@ contact sheet, the video and the measurements: `city/components/characters/shots
 ## Licences
 
 Everything here is written in this repository: no third-party models, rigs, textures or animation files; the model is
-made by Blender from our own scripts, its stencils in Blender's built-in font. When outside clips come
-(registry CITY-57): Mixamo animations may be used in the product but their raw files are never redistributed; Meshy only
+made by Blender from our own scripts, its stencils in Blender's built-in font. When outside clips come:
+Mixamo animations may be used in the product but their raw files are never redistributed; Meshy only
 on a paid plan; free Tripo models are not for commercial use; Quaternius animations are CC0.
 
 ## Next archetypes

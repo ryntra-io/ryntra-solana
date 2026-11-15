@@ -1,5 +1,5 @@
 /**
- * Who may act on a SOL pier from the city (CITY-93): the Harbor's own switch, on top of the engine's gate
+ * Who may act on a SOL pier from the city: the Harbor's own switch, on top of the engine's gate
  * (`lib/liquidity/studio/gate.ts`, which this file only reads alongside, never changes). Three states, from
  * `NEXT_PUBLIC_RYNTRA_CITY_HARBOR`:
  *

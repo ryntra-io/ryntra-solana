@@ -16,10 +16,10 @@ import { createSupabaseRingStore } from "./supabase-store.ts";
 import { stubCatalogFetch } from "./stub-catalog.ts";
 
 /**
- * The Ring as the deployed server runs it (CITY-50): the account session the rest of Ryntra uses (read, never
+ * The Ring as the deployed server runs it: the account session the rest of Ryntra uses (read, never
  * changed), the world's word on whose garage a slot is (`lib/world`, read only), the database through the
  * secret-gated `public.ring_*` functions (`ready.ts` says when), OpenRouter's live catalog and the gateway's key
- * manager (CITY-45). Without `OPENROUTER_MANAGEMENT_KEY` and `RYNTRA_RING_SEAL_SECRET` the Ring is quiet: agents are
+ * manager. Without `OPENROUTER_MANAGEMENT_KEY` and `RYNTRA_RING_SEAL_SECRET` the Ring is quiet: agents are
  * kept with no key and nothing is called.
  */
 

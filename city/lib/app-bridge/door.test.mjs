@@ -4,7 +4,7 @@ import { readdirSync, readFileSync, statSync } from "node:fs";
 import { join, relative } from "node:path";
 import { fileURLToPath } from "node:url";
 
-// CITY-6b: in the app the city must never sign outside the bridge. The router (`route.ts`) is the city's only door to
+// In the app the city must never sign outside the bridge. The router (`route.ts`) is the city's only door to
 // a wallet's signature; this keeps every other city file from reaching Wallet Standard's signing functions directly,
 // and keeps the system share sheet behind the app's own.
 

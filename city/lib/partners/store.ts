@@ -5,7 +5,7 @@ import { DEMO_ANSWER, districtOf, withEarnings, type DistrictView } from './dist
 import { DEMO_INVITATION, invitationOf, type Invitation } from './landing.ts';
 
 /**
- * «Ryntra Partners»' own state (CITY-126, CITY-127): the window and its tab, «Мій район»'s read of `/api/rewards`
+ * «Ryntra Partners»' own state: the window and its tab, «Мій район»'s read of `/api/rewards`
  * (the same proven read «Scouts» makes — how much somebody earned is not public), the friend's landing and the two
  * choices a partner makes on this device: to show their handle on the season board, and to light their network on the
  * map. Nothing here pays and nothing here binds by itself: the engine binds a friend on the proven wallet's own read.
@@ -151,7 +151,7 @@ export const usePartners = create<Partners>((set, get) => ({
       set({ status: 'failed' });
       return;
     }
-    /* The weekly payout's figures (CITY-128), on the same proof; an answer that does not come keeps the Rewards view. */
+    /* The weekly payout's figures, on the same proof; an answer that does not come keeps the Rewards view. */
     try {
       const earnings = await env.fetch(`/api/partners/earnings?${new URLSearchParams({ address: owner })}`);
       if (earnings.ok) view = withEarnings(view, await earnings.json());

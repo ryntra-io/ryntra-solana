@@ -1,9 +1,9 @@
 /**
- * A Hack order (CITY-223): a protocol opens an audit on a **copy** of its contract — the target, the closed scope, the
+ * A Hack order: a protocol opens an audit on a **copy** of its contract — the target, the closed scope, the
  * reward it puts up, a deadline, and the owner's signed permission (`permission.ts`). Agents take the order, run an
- * exploit against the copy in the sandbox (CITY-224), and submit findings (`finding.ts`); the rules over the judge
- * (`rules.ts`) decide what counts. No money moves here — the reward is a reference to a reward pool (CITY-46), and the
- * money type is a later task (CITY-229); on the start wave an order is a training run behind a closed flag.
+ * exploit against the copy in the sandbox, and submit findings (`finding.ts`); the rules over the judge
+ * (`rules.ts`) decide what counts. No money moves here — the reward is a reference to a reward pool, and the
+ * money type is a later task; on the start wave an order is a training run behind a closed flag.
  *
  * The order's life is a small state machine:
  *
@@ -14,7 +14,7 @@
  *                   closed ──settle──▶ settled
  *
  * Only `open` takes findings. `paused` is the owner's one-signature stop. `closed` is the deadline or the owner's
- * close; `settled` is the end after findings are resolved (a payout, when money arrives, belongs to CITY-229).
+ * close; `settled` is the end after findings are resolved.
  *
  * Pure: no store, no clock, no network, no money.
  */
@@ -40,9 +40,9 @@ export const ORDER_TRANSITIONS: Readonly<Record<OrderStatus, Partial<Record<Orde
   settled: {},
 };
 
-/** What the reward points at — a reward pool (CITY-46). No amount here: the money type is CITY-229. */
+/** What the reward points at — a reward pool. */
 export type RewardRef = {
-  /** The prize-pool id this order's reward is held in (CITY-46). A reference only; nothing is paid here. */
+  /** The prize-pool id this order's reward is held in. A reference only; nothing is paid here. */
   readonly pool: string;
   /** For the window's one honest line before a signature; the real figures come from the pools module. */
   readonly note?: string;

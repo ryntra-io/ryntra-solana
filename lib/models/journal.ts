@@ -1,5 +1,5 @@
 /**
- * The journal of model calls (CITY-45): one record per call — who it was
+ * The journal of model calls: one record per call — who it was
  * for, which model was asked for and which answered, the tokens, the cost in
  * micro-dollars and the outcome. The default writes one line to the runtime
  * log, the way the assistant's `[assistant.cost]` line does; a game hands its

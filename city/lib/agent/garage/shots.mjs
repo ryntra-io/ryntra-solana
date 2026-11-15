@@ -1,4 +1,4 @@
-// The garage agent (CITY-29) for review: a desk at 1440×900 and a phone at 375×812, in English and Ukrainian →
+// The garage agent for review: a desk at 1440×900 and a phone at 375×812, in English and Ukrainian →
 // <out>/garage-<state>-<lang>-<size>.jpg
 //   NEXT_PUBLIC_RYNTRA_CITY_GARAGE=open NEXT_PUBLIC_RYNTRA_CITY_AGENTS=open npm run dev
 //   node city/lib/agent/garage/shots.mjs [out] [baseUrl]      (SIZES=1440,375 LANGS=en,uk STATES=… PRESS_CHROME=…)

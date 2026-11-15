@@ -43,8 +43,7 @@ import {
 } from './desks.ts';
 
 /**
- * The city's windows (CITY-65): one frame for every window over the city — the swap and the spot (CITY-62), the chart
- * (CITY-5a), the futures (CITY-5d), the money (CITY-63). A window plugs in with one line:
+ * The city's windows: one frame for every window over the city — the swap and the spot, the chart, the futures, the money. A window plugs in with one line:
  *
  *   openWindow({ id: 'swap', title: 'Swap', icon: <SwapGlyph />, render: () => <SwapPanel />, min: { width: 360, height: 420 } });
  *
@@ -67,7 +66,7 @@ export type WindowSpec = Readonly<{
   /** Its size the first time it opens on this device; 560 × 440 when not given. */
   size?: Size;
   /**
-   * The frame stands as tall as what is inside it, never taller than its place (CITY-201): a card that says one thing —
+   * The frame stands as tall as what is inside it, never taller than its place: a card that says one thing —
    * the agent's — in a bay or on a phone's sheet shows no empty glass under its last line; more than fits scrolls.
    */
   fit?: boolean;
@@ -79,13 +78,13 @@ export type WindowSpec = Readonly<{
   /** Called after the person closes the window from its frame; not on `closeWindow`, whose caller already knows. */
   onClose?: () => void;
   /**
-   * The window can go out onto another screen (CITY-75): what its own page needs to show the same thing — `{ tower }`
+   * The window can go out onto another screen: what its own page needs to show the same thing — `{ tower }`
    * for a tower's chart, `{}` when nothing. Without it the frame has no «Open in a new window». A layout of the person's
-   * keeps it too (CITY-84), so the window opens on the same thing again.
+   * keeps it too, so the window opens on the same thing again.
    */
   detach?: Params;
   /**
-   * The live figure on the window's chip in the tray while it is folded (CITY-84): a price, a balance — an element of a
+   * The live figure on the window's chip in the tray while it is folded: a price, a balance — an element of a
    * small component of the window's own that reads its own store, given the title for when there is nothing to show
    * yet and what the window showed (`Chip.params`). Without it the chip shows the window's title.
    */
@@ -93,7 +92,7 @@ export type WindowSpec = Readonly<{
 }>;
 
 /**
- * A window folded into the tray (CITY-84): closed as its own «Close» would close it, its chip keeping what is needed to
+ * A window folded into the tray: closed as its own «Close» would close it, its chip keeping what is needed to
  * open it again on the same thing — the tower, the market, the tab — where it stood.
  */
 export type Chip = Readonly<{ id: string; title: string; icon?: ReactNode; figure?: WindowSpec['figure']; params: Params }>;
@@ -109,18 +108,18 @@ type State = {
   specs: Readonly<Record<string, WindowSpec>>;
   /** The orange lines while a window is dragged near an edge. */
   guides: readonly Guide[];
-  /** The place a dragged window would land if let go now (CITY-84): a bay, or another frame's head. */
+  /** The place a dragged window would land if let go now: a bay, or another frame's head. */
   landing: Drop | null;
   /** A frame is being dragged: what the city does behind the windows waits for the drag to end (`base` until then). */
   moving: boolean;
   viewport: Viewport;
   /** The windows float and stick (a computer) or stand as the bottom sheet (a phone). */
   desk: boolean;
-  /** The windows out on another screen (CITY-75), and how: their specs stay here, the city draws no frame for them. */
+  /** The windows out on another screen, and how: their specs stay here, the city draws no frame for them. */
   out: Readonly<Record<string, Out>>;
   /** The page is one window on its own (`/window`): nothing it does is remembered as the city's layout. */
   alone: boolean;
-  /** Whose layouts are in use (CITY-84): the connected wallet's address, or «guest». */
+  /** Whose layouts are in use: the connected wallet's address, or «guest». */
   owner: string;
   /** That wallet's four layouts and the one in use in this visit. */
   desks: OwnDesks;
@@ -484,7 +483,7 @@ export function layout(arrange?: 'grid'): WindowPlace[] {
   return now.windows.map((w) => ({ id: w.id, rect: w.rect, full: now.full === w.id, front: w.id === front }));
 }
 
-/** Whether the person had this window out on another screen the last time it was open (CITY-75). */
+/** Whether the person had this window out on another screen the last time it was open. */
 export function windowWasOut(id: string): boolean {
   return outMemoryNow().out.includes(id);
 }
@@ -495,7 +494,7 @@ export function outSizeOf(id: string): Size | null {
 }
 
 /**
- * The page is one window on its own (`/window`, CITY-75): it opens its one window through the same store, but nothing
+ * The page is one window on its own (`/window`): it opens its one window through the same store, but nothing
  * it does is remembered as the city's layout — the city's own places stay as the person set them.
  */
 export function standAlone(): void {

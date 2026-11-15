@@ -1,6 +1,6 @@
 import { words } from '../../lib/i18n/dict.ts';
 
-/** The words of the home's HUD: the top bar, the dock, the cards above it, the tower card, the menu (CITY-79). */
+/** The words of the home's HUD: the top bar, the dock, the cards above it, the tower card, the menu. */
 export const HUD = words(
   {
     home: 'Ryntra home',
@@ -69,7 +69,7 @@ export const HUD = words(
     cutFlare: 'SOLAR FLARE',
     cutNewTower: 'NEW TOWER',
     cutWindow: (n: string, unit: string) => `${n}${unit}`,
-    // Read by a screen reader while the scene builds; nothing is written on the screen (CITY-241).
+    // Read by a screen reader while the scene builds; nothing is written on the screen.
     cityLoading: 'The city is loading',
   },
   {

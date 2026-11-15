@@ -10,7 +10,7 @@ import type { Run } from '@/city/lib/bots/sim';
 import { WORDS, type Words } from '@/city/lib/bots/words';
 import type { Lang } from '@/city/lib/bots/format';
 
-/** The window's words in the city's language (CITY-79): the switch in the menu repaints them in place. */
+/** The window's words in the city's language: the switch in the menu repaints them in place. */
 export function useWords(): Readonly<{ w: Words; lang: Lang }> {
   const lang = useLang();
   return { w: WORDS[lang], lang };

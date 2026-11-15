@@ -72,7 +72,7 @@ const ADDRESS = /^[1-9A-HJ-NP-Za-km-z]{32,44}$/;
  * short run of plain characters: no line breaks, no markup, no quotes, cut to
  * `max`. Every external label the assistant says passes through here. A label
  * that hides a disguised word, or reads as an order to a model, is not said at
- * all (CITY-73): the fallback stands in for it.
+ * all: the fallback stands in for it.
  */
 export function label(value: unknown, fallback = "?", max = 24): string {
   if (typeof value !== "string" || disguised(value) || instructionLike(value)) return fallback;

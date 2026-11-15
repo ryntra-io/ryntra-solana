@@ -1,4 +1,4 @@
-// CITY-216 for review: the agent's card says the day's budget as the person said it — «trade 0.1 SOL a day» → the
+// For review: the agent's card says the day's budget as the person said it — «trade 0.1 SOL a day» → the
 // phrase row → the card (0.1 SOL a day in the headline, 0.02 SOL a trade under it) → a grid on 0.1 a day → the agent at
 // work on the small budget, on a desk (1440×900) and a phone (375×812), in English and Ukrainian →
 // <out>/<lang>-<size>-<n>-<step>.jpg
@@ -29,7 +29,7 @@ const SAY = {
   uk: { trade: "торгуй на 0,1 SOL на день", grid: "торгуй BONK сіткою на 0,1 SOL на день" },
 };
 
-/* A mandate as the window keeps it after the one signature: public addresses from CITY-174's devnet pass, the small budget. */
+/* A mandate as the window keeps it after the one signature: public addresses from the devnet pass, the small budget. */
 const RECORD = {
   owner: WALLET,
   settings: "4GYqmkrEEs1x2SXaFMAh299dskoD5VWLDe4dVVbusQj2",

@@ -1,5 +1,5 @@
 /**
- * What the server and the machine with no network say to each other (CITY-238). One job in, one answer out, both plain
+ * What the server and the machine with no network say to each other. One job in, one answer out, both plain
  * JSON in files — a machine has no socket to speak through.
  *
  *   run    — play an attempt on the range that holds its pin (`../ranges/range.ts`): the machine's own recorded state

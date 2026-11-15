@@ -1,7 +1,7 @@
 import type { DocId } from './model.ts';
 
 /**
- * What is open in this build, as the documentation reads it (CITY-180). Nothing here is written by hand: the doors are the
+ * What is open in this build, as the documentation reads it. Nothing here is written by hand: the doors are the
  * deployment's own switches (`doors.ts`, the same the city's menu and the roadmap read). So opening a door in a release opens its
  * section on its own, and what is shut stands as «Soon», never described as working.
  */

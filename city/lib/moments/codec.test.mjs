@@ -109,7 +109,7 @@ test('world: the bundled city travels and lays out to the very same plan, exact'
   const w = new ByteWriter();
   writeWorld(w, city);
   const bytes = w.done();
-  // Every tower carries the three bytes of its seat (CITY-148).
+  // Every tower carries the three bytes of its seat.
   assert.ok(bytes.length < 1800, `a city of ${city.towers.length} towers in ${bytes.length} bytes`);
   const { world, exact } = readWorld(new ByteReader(bytes), city.towers);
   assert.equal(exact, true);
@@ -160,7 +160,7 @@ test('world: two towers a hair apart in cap stand on the same plots from float32
   const w = new ByteWriter();
   writeWorld(w, snapshot);
   const bytes = w.done();
-  // A plot comes from the seat, never from the order of heights (CITY-148): float32 is enough.
+  // A plot comes from the seat, never from the order of heights: float32 is enough.
   assert.equal(bytes[0] & 1, 0, 'float32');
   const { world, exact } = readWorld(new ByteReader(bytes), snapshot.towers);
   assert.equal(exact, true);

@@ -41,11 +41,11 @@ const indicatorWorker = () => new Worker(new URL('./indicator-worker.ts', import
 const NO_INDICATORS: readonly [] = [];
 
 /**
- * A tower's live chart (CITY-5a): the core chart (`@ryntra/core/chart`, CH-17) on the engine's candles of the coin —
+ * A tower's live chart: the core chart (`@ryntra/core/chart`, CH-17) on the engine's candles of the coin —
  * candles and volume at every interval the engine reads, the last bar closed at the tower's live price — with the
  * person's entry when the wallet holds the coin, the coin's market marks, and any layer a district adds
  * (`city/lib/chart/layers.ts`). Under it the risk facts the engine already gives, and one amber action: Buy, which
- * opens the trade card the tower card opens. The city's one window frame (CITY-65) brings the head with «Chart», the
+ * opens the trade card the tower card opens. The city's one window frame brings the head with «Chart», the
  * moving, the sticking and the whole screen on a desk, and the bottom sheet on a phone; these are its contents.
  */
 export function ChartWindow({ tower }: { tower: Tower }) {
@@ -179,7 +179,7 @@ export function ChartWindow({ tower }: { tower: Tower }) {
             type="button"
             className={`${c.display} ${c.buy}`}
             onClick={() => {
-              // The tower's window stands in the chart's place again, on buying (CITY-78).
+              // The tower's window stands in the chart's place again, on buying.
               useTrade.getState().openFor(tower, 'buy');
               useTowerChart.getState().close();
             }}
@@ -226,7 +226,7 @@ export function TradeChart({ tower }: { tower: Tower }) {
   const heal = useHeal(pane, data);
   useScrollThrough(pane);
   useNoEmptyVolume(pane, lang);
-  // The core chart's «Delayed» badge says how long (CITY-243); the window's sheet writes it in (chart.module.css).
+  // The core chart's «Delayed» badge says how long; the window's sheet writes it in (chart.module.css).
   const delay = { ['--chart-delay' as string]: JSON.stringify(delayLine(timeframe)) };
   // Our chart whole (30.10): its own intervals, styles, scales, indicators and drawings over the candles.
   return (
@@ -292,7 +292,7 @@ function ChartBody({
       </div>
     );
   }
-  // The first tries that failed are quiet (CITY-215): the frame waits, as for a first read, while the chart asks again.
+  // The first tries that failed are quiet: the frame waits, as for a first read, while the chart asks again.
   if (data.status === 'unavailable' && !data.last) return <div className={`${c.state} ${c.artLoading}`} aria-busy="true" />;
   if (!feed) return <div className={`${c.state} ${c.artLoading}`} aria-busy="true" />;
   const readout = data.last ? readoutOf(data.last.candles, hover, livePrice) : null;
@@ -353,7 +353,7 @@ function useHover(channel: ReturnType<typeof crosshairChannel>): number | null {
  */
 /**
  * The core chart's line under the crosshair names the volume even on a bar that has none — «Vol no volume», on the
- * forming bar every time (CITY-243). Such a figure is marked and steps aside (chart.module.css); a bar with volume
+ * forming bar every time. Such a figure is marked and steps aside (chart.module.css); a bar with volume
  * shows it as before. Only the window's own pane is watched, and only its words.
  */
 function useNoEmptyVolume(pane: Readonly<{ current: HTMLElement | null }>, lang: Lang): void {

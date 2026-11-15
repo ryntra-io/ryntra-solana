@@ -1,7 +1,7 @@
 import type { HangarAnswer, HangarBot } from '../../../lib/bots/hangar/hangar.ts';
 
 /**
- * The bots a wallet really runs, read from the engine's Hangar (CITY-131, `GET /api/bots/hangar?wallet=`): its pool
+ * The bots a wallet really runs, read from the engine's Hangar (`GET /api/bots/hangar?wallet=`): its pool
  * positions, its limit orders and ladders at DLMM and Jupiter Trigger V1, each with its status, its result against
  * holding and its last fill's receipt, and the wallet's loose ends — bundles that did not all land, orders left behind.
  *

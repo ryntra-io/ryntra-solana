@@ -51,7 +51,7 @@ export function Sky() {
 
   // Every flare and launch lights the diamond ring.
   useCityEvents((event) => {
-    // «Flashing effects» off (CITY-66): the eclipse's diamond ring does not flash.
+    // «Flashing effects» off: the eclipse's diamond ring does not flash.
     if (event.kind !== 'pump' && flashingOn()) eclipse.corona.uniforms.uDiamond!.value = 1;
   });
 

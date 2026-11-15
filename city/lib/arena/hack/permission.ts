@@ -1,11 +1,11 @@
 /**
- * The owner's permission for a Hack order (CITY-223). An audit runs only with the protocol owner's written consent:
+ * The owner's permission for a Hack order. An audit runs only with the protocol owner's written consent:
  * the owner signs «this protocol lets agents attack this copy, within this scope, during this window». Without a valid
  * grant there is no order — the rules refuse every finding (`rules.ts`, `NO_PERMISSION`).
  *
  * The signed text is the canonical JSON of the grant body (the judge's `canonicalJson`, so every machine names the same
  * bytes). This file does not verify a signature itself — a Solana wallet signature needs base58 and ed25519 that belong
- * to the sandbox and the server (CITY-224/226). It defines the shape, the canonical text, and an injected verifier, the
+ * to the sandbox and the server. It defines the shape, the canonical text, and an injected verifier, the
  * same way the Ring's judge takes its stamp check from outside. So the library stays pure and holds no keys.
  *
  * Pure: no store, no clock, no network, no keys.

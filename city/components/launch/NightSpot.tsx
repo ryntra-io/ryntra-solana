@@ -8,7 +8,7 @@ import { useNight } from '@/city/lib/launch/night-store';
 import { PALETTE } from '@/city/lib/palette';
 
 /**
- * Launch Night's stage light (CITY-146): while the show plays, a searchlight falls from the sky onto the launch on the
+ * Launch Night's stage light: while the show plays, a searchlight falls from the sky onto the launch on the
  * stage, a ring of light runs round its foot and the beam sways a little, as a stage light does. It is light only —
  * nothing is said on the tower, and nothing stands on any other tower.
  */

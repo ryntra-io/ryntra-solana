@@ -15,7 +15,7 @@ export const dynamic = 'force-dynamic';
 export const maxDuration = 60;
 
 /*
- * CITY-245 — the check of the history scan against the node, on a deployment's own address only: the same account's
+ * The check of the history scan against the node, on a deployment's own address only: the same account's
  * signatures through Helius's Parsed Events Scan and through the node's pages, side by side, and whether Helius knows
  * the Meteora programs by name. It answers only on the deployment's own generated address (`VERCEL_URL`), which
  * Vercel's deployment protection keeps to the team — never on ryntra.io, nor on the project's public `*.vercel.app`

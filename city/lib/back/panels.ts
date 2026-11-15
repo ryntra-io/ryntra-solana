@@ -3,7 +3,7 @@ import { create } from 'zustand';
 
 /**
  * The small panels that keep their own «open» (the search in the top bar, the wallet's menu, the Deck's Trade tray):
- * while one is open it stands here with its close, so «Back» closes it like any window (CITY-150, the operator's pass on
+ * while one is open it stands here with its close, so «Back» closes it like any window (the operator's pass on
  * the Seeker of 29.10: «Back» on an open search left the app). The panel's own state stays the truth; this follows it.
  */
 type BackPanels = Readonly<{

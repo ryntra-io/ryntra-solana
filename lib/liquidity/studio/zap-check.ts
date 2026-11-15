@@ -1,5 +1,5 @@
 /**
- * CITY-198 — what a Zap may do, read instruction by instruction before anyone is asked to sign it.
+ * What a Zap may do, read instruction by instruction before anyone is asked to sign it.
  *
  * A Zap is several programs in a row: the wallet's own token-account plumbing, a swap (Jupiter's router, or the pier's
  * own DLMM pool), Meteora's Zap program (`zapvX9M3…Miz`) with its ledger, and the DLMM program it calls. The Zap SDK
@@ -8,7 +8,7 @@
  * wallet, moves only through the pier's pool and Jupiter's router, and ends in the wallet** — and refuses anything else:
  *
  * - Jupiter: only `route_v2` and `shared_accounts_route_v2`; the wallet is the authority, spends from its own account
- *   and receives on its own account of a coin of the pier; Ryntra's fee (CITY-198 §2) is exactly the rate asked, in
+ *   and receives on its own account of a coin of the pier; Ryntra's fee is exactly the rate asked, in
  *   exactly the fee wallet's account, with no share of positive slippage; the least the route accepts is at least the
  *   Review's own floor (`swapFloor`, held against the reference price by `againstReference`).
  * - DLMM: `swap2` on the pier's own pool between the wallet's own accounts of its two coins, no host fee, at least the
@@ -53,7 +53,7 @@ export const ZAP_IX = Object.freeze({
   zapOut: anchor("zap_out"),
 });
 
-/** Jupiter's two routes (on-chain IDL, CITY-136 §4 and CITY-183) and DLMM's own instructions. */
+/** Jupiter's two routes and DLMM's own instructions. */
 export const ROUTE_V2 = anchor("route_v2");
 export const SHARED_ACCOUNTS_ROUTE_V2 = anchor("shared_accounts_route_v2");
 export const DLMM_SWAP2 = anchor("swap2");
@@ -280,7 +280,7 @@ function zapOutTerms(instruction: TransactionInstruction, ctx: ZapCheckContext, 
 }
 
 /**
- * The swap leg against a price of its own (CITY-198 §3): the SDK takes Jupiter's or the pool's quote as it comes, and a
+ * The swap leg against a price of its own: the SDK takes Jupiter's or the pool's quote as it comes, and a
  * route's slippage bounds the fill against that quote only. The least the swap accepts must stand within the fee, the
  * slippage and one per cent of what the venue's dollar prices say the input is worth in the output coin. A leg without
  * a price on both sides is refused, never guessed.

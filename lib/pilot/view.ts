@@ -1,4 +1,4 @@
-/** CITY-204 — the plan as the city reads it (`GET /api/bots/pilot`): public data only. Pure. */
+/** The plan as the city reads it (`GET /api/bots/pilot`): public data only. Pure. */
 
 import type { PilotEntry } from "./book.server.ts";
 

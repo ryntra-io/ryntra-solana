@@ -23,7 +23,7 @@ export type LadderOrderRead = Readonly<{
 
 /**
  * One transaction of a placed ladder: its order account, how it stands — `sent` from the moment it is signed, before
- * the relay is even asked (CITY-231), then `confirmed` or `failed` by the chain's own word — its signature, read from
+ * the relay is even asked, then `confirmed` or `failed` by the chain's own word — its signature, read from
  * the signed bytes, and the steps it holds.
  */
 export type PlacedLeg = Readonly<{

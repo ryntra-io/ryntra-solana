@@ -1,5 +1,5 @@
 /**
- * The shapes of `/api/ring` (CITY-50, decision 72): what the routes take and give, for the server and the city alike.
+ * The shapes of `/api/ring`: what the routes take and give, for the server and the city alike.
  *
  *   GET  /api/ring/models                                   → ModelsResponse
  *   GET  /api/ring/model?id=                                → QuoteResponse
@@ -7,17 +7,17 @@
  *   POST /api/ring/create  CreateRequest  + Idempotency-Key → AgentResponse (201)
  *   POST /api/ring/change  ChangeRequest  + Idempotency-Key → AgentResponse
  *   POST /api/ring/off     OffRequest     + Idempotency-Key → AgentResponse
- *   GET  /api/ring/mine                                     → MineResponse   (CITY-217: the Arena's «my agent»)
- *   GET  /api/ring/board?format=                            → BoardResponse  (CITY-217: the board of a format)
+ *   GET  /api/ring/mine                                     → MineResponse   (the Arena's «my agent»)
+ *   GET  /api/ring/board?format=                            → BoardResponse  (the board of a format)
  *
  * Errors are `{ error: { code, message } }`, as in `/api/v1`. An agent is a body (an archetype), a brain (one model
  * of OpenRouter's catalog pinned to one provider) and a script of up to 2 000 characters; it lives in a garage of its
- * owner's quarter, one agent to a garage slot. Matches (CITY-51) and money (CITY-52) are not here.
+ * owner's quarter, one agent to a garage slot. Matches and money are not here.
  *
  * Pure: types and lists only.
  */
 
-/** The six bodies of decision 72; the characters line (CITY-57) draws them, the Ring keeps only the name. */
+/** The six bodies of decision 72; the characters line draws them, the Ring keeps only the name. */
 export const ARCHETYPES = ["guardian", "fighter", "tactician", "scout", "engineer", "host"] as const;
 export type Archetype = (typeof ARCHETYPES)[number];
 
@@ -133,7 +133,7 @@ export type GarageResponse = {
 export type AgentResponse = { agent: AgentView };
 
 /**
- * The asker's agents, as their owner sees them, and the Arena's garage where a first one is made (CITY-217): one bay
+ * The asker's agents, as their owner sees them, and the Arena's garage where a first one is made: one bay
  * per account, so nobody needs a quarter before the Ring. Not signed in: no agents, no bay.
  */
 export type MineResponse = { signedIn: boolean; agents: AgentView[]; bay: { quarter: string; slot: number } | null };

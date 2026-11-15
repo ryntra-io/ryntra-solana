@@ -11,7 +11,7 @@ export const dynamic = "force-dynamic";
 export const maxDuration = 60;
 
 /**
- * Stops on spot (CITY-149), every minute: every watched stop asked about with the swap engine's quote, «reached»
+ * Stops on spot, every minute: every watched stop asked about with the swap engine's quote, «reached»
  * written once, the person told — the inbox, Telegram, the phone's and the browser's push; stops past their time
  * expire. Internal — the cron's bearer only. Shut until stops are open (`lib/stops/ready.ts`). Signs, sends money and
  * trades nothing: the sale is the person's to sign.

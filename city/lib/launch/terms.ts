@@ -29,7 +29,7 @@ export function ruleLines(preset: LaunchPresetView): readonly string[] {
 export type ReviewRow = Readonly<{ id: 'line' | 'fees' | 'halo' | 'yours' | 'pool' | 'forever' | 'route' | 'cost' | 'network'; label: string; lines: readonly string[] }>;
 
 /**
- * The one line before the signature (CITY-143), in parts the sheet joins with « · »: the fee after the bots' window, who
+ * The one line before the signature, in parts the sheet joins with « · »: the fee after the bots' window, who
  * receives it, the move to the DEX, and the risk. The split is the one of a trade through Ryntra — the city trades a
  * launch through Ryntra's own route (`curveSplitThroughRyntra`); another app's route is the review's «route» row, behind
  * «i». From an engine without the split, only the creator's share is said.
@@ -63,7 +63,7 @@ function routeLines(preset: LaunchPresetView): readonly string[] | null {
 }
 
 /**
- * The cost line, first on the sheet (CITY-143): no launch fee where the preset takes none, then the network's cost —
+ * The cost line, first on the sheet: no launch fee where the preset takes none, then the network's cost —
  * the engine's simulation once a build has said it («≈», rounded up), else only that the network takes its fee.
  */
 export function costLine(preset: LaunchPresetView, costLamports: string | null = null): readonly [string, string] {
@@ -91,7 +91,7 @@ export function launchFacts(preset: LaunchPresetView): readonly Fact[] {
 /**
  * The review: first the one line before the signature (its parts), then the rows behind «i», at most two lines a row.
  * `costLamports` — the engine's simulated cost, once a build has said it; `halo` — the launch goes on the shield
- * (CITY-169, `shield.ts`), so «i» says what keeps the halo on its tower.
+ * (`shield.ts`), so «i» says what keeps the halo on its tower.
  */
 export function reviewRows(preset: LaunchPresetView, network: Network, costLamports: string | null = null, halo = false): readonly ReviewRow[] {
   const w = wordsNow(TERMS_WORDS);

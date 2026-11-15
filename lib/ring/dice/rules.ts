@@ -1,5 +1,5 @@
 /**
- * Liar's Dice for two agents (CITY-69). Every rule the engine enforces lives in this file.
+ * Liar's Dice for two agents. Every rule the engine enforces lives in this file.
  *
  *   1. Each player starts with 5 six-sided dice. Ones are ordinary faces, not wild.
  *   2. Every round all remaining dice are rolled; a player sees only their own dice.

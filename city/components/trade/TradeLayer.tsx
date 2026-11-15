@@ -38,7 +38,7 @@ const SPOT_HEIGHT = 900;
 
 /**
  * Trading in the city: the wallet comes back by itself if this site was granted it, a signature left open before a
- * reload is read back, and a tap on a tower opens its one window — the trade card with the coin on top (CITY-78); the
+ * reload is read back, and a tap on a tower opens its one window — the trade card with the coin on top; the
  * window closed lets the tower go. The tower's chart and its beacon's editor stand in the window's place while they are
  * open, and so does a run, unless a trade is mid-way. «Mine» — the wallet's own towers and orders — lives here too,
  * and so does the watch over the stops kept on this device: a reached stop opens its sale on the card, for the wallet
@@ -73,7 +73,7 @@ export function TradeLayer() {
     const trade = useTrade.getState();
     const tower = useCity.getState().layout.towers.find((placed) => placed.tower.id === picked)?.tower;
     if (!tower || (trade.open && trade.tower?.mint === picked)) return;
-    // A launch's tower trades on its own curve or pool through the Launch engine (CITY-138), never through Jupiter.
+    // A launch's tower trades on its own curve or pool through the Launch engine, never through Jupiter.
     trade.openFor(tower, 'buy', { launch: launchTowerIn(useLaunch.getState(), picked) !== null });
   }, [picked]);
 
@@ -115,7 +115,7 @@ export function TradeLayer() {
       const first = reached[0];
       const trade = useTrade.getState();
       // A card in use is never taken over: the reached stop waits in «My orders», the «Mine» pill marked. The stop's own
-      // coin open — a note's link opens the city on it (CITY-149) — is where its sale belongs.
+      // coin open — a note's link opens the city on it — is where its sale belongs.
       if (!first || (trade.open && trade.tower?.mint !== first.base.mint) || useRun.getState().phase !== 'off') return;
       const city = useCity.getState();
       city.select(city.layout.towers.some((placed) => placed.tower.id === first.base.mint) ? first.base.mint : null);
@@ -195,13 +195,13 @@ export function TradeLayer() {
     return () => clearTimeout(timer);
   }, [open, review, phase]);
 
-  // The card stands in the city's one window frame (CITY-65), as the Exchange does: Swap a narrow window, Spot a wide one
+  // The card stands in the city's one window frame, as the Exchange does: Swap a narrow window, Spot a wide one
   // with the chart beside the ticket. A trade mid-way or a signature out holds the frame's «Close».
   const w = useWords(TRADE);
   const view = useTrade((st) => (st.view === 'swap' && !st.launch ? 'swap' : 'spot'));
   const shown = open && !((running || aside) && !BUSY.has(phase) && !held);
   const hold = BUSY.has(phase) || held;
-  // Spot's first size follows the screen (CITY-242): the ticket and the wallet's line whole beside the chart, a larger
+  // Spot's first size follows the screen: the ticket and the wallet's line whole beside the chart, a larger
   // window on a larger desk. A place the person gave it is kept by the frame.
   const viewport = useWindows((st) => st.viewport);
   const spotSize = useMemo(() => firstSize(viewport, SPOT_WIDTHS, SPOT_HEIGHT), [viewport]);

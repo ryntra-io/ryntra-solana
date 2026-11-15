@@ -39,11 +39,11 @@ export const LANDING_REDIRECTS = [
   { source: "/en", destination: LANDING_ADDRESSES.en, permanent: true },
   { source: "/ua", destination: LANDING_ADDRESSES.uk, permanent: true },
   ...PARKED_LANGUAGE_ADDRESSES.map((source) => ({ source, destination: LANDING_ADDRESSES.en, permanent: false })),
-  /* `/uk/app` led to Home at its Ukrainian address until CITY-13: it is an old address of the cabinet now, and
+  /* `/uk/app` once led to Home at its Ukrainian address: it is an old address of the cabinet now, and
      opens the city with the rest of them (`OLD_ADDRESS_REDIRECTS` below). */
 ];
 
-/* The old interface is closed (decision 75, CITY-13): every address of the cabinet, of its Solana workspace, of
+/* The old interface is closed: every address of the cabinet, of its Solana workspace, of
    Mission Control and of the aliases that led into them opens the district or window of the city that does the same
    work, for good, in one hop — the table and its reasons are `city/lib/open/old-addresses.ts` and
    `docs/city/OLD-ADDRESSES.md`. On app.ryntra.io the cabinet's `/solana/…` addresses lead to the city on ryntra.io. */
@@ -86,7 +86,7 @@ const CSP = [
      the same host under connect-src. No frame, no other Telegram host.
      `'wasm-unsafe-eval'` lets the city compile WebAssembly and nothing else (no
      JavaScript eval): the skyline's Meshopt decoder and the guardian's model
-     need it (CITY-56, CITY-57). «Дозволяю». */
+     need it. */
   `script-src 'self' 'unsafe-inline' 'wasm-unsafe-eval' https://oauth.telegram.org${isDev ? " 'unsafe-eval'" : ""}`,
   "style-src 'self' 'unsafe-inline'",
   /* `i.ytimg.com` is the embedded player's own poster host. It is requested
@@ -244,10 +244,9 @@ const nextConfig: NextConfig = {
          and the event covers, for this route and its markets only. */
       ...atBothAddresses("/app/predictions", [{ key: "Content-Security-Policy", value: PREDICTIONS_CSP }]),
       ...atBothAddresses("/app/predictions/:path*", [{ key: "Content-Security-Policy", value: PREDICTIONS_CSP }]),
-      /* The old interface's addresses only redirect now (CITY-13); a crawler that still holds one drops it. */
+      /* The old interface's addresses only redirect now; a crawler that still holds one drops it. */
       ...OLD_PREFIXES.flatMap((prefix) => [prefix, `${prefix}/:path*`]).map((source) => ({ source, headers: [{ key: "X-Robots-Tag", value: "noindex, nofollow" }] })),
-      /* The site's public pages still drawn in the old interface, until the city takes each over at its own address
-         (CITY-159 → CITY-157): reachable, out of the sitemap, and out of the index (`city/lib/open/site-map.ts`). */
+      /* The site's public pages still drawn in the old interface, until the city takes each over at its own address: reachable, out of the sitemap, and out of the index (`city/lib/open/site-map.ts`). */
       ...awaitingSources().map((source) => ({ source, headers: [{ key: "X-Robots-Tag", value: "noindex, nofollow" }] })),
       /* predict.ryntra.io only leads into the section (NAV-6c): nothing on it is
          a page to index. */
@@ -327,7 +326,7 @@ const nextConfig: NextConfig = {
          true. */
       { source: "/capabilities", destination: "/docs", permanent: true },
       { source: "/status", destination: "/docs", permanent: true },
-      /* `/roadmap` left this list on 2026-10-31 (CITY-173): it is the public
+      /* `/roadmap` left this list on 2026-10-31: it is the public
          roadmap in the city's language again. A browser that followed the old
          308 keeps landing on `/docs` until its own cache expires. `/updates`
          leads to it; a 307, because `/updates` may yet become a page of its own
@@ -420,12 +419,11 @@ const nextConfig: NextConfig = {
          ryntra.io. Right after the landing's language map, ahead of every other row. Only the host's own rows: the old
          product shell `/predict` on the other hosts is an old address now, and the city's table leads it to the Oracle. */
       ...predictHostRedirects().filter((row) => row.has),
-      /* The old interface and the short addresses, ahead of every row that still names one of their pages (CITY-13,
-         CITY-159). The rows below that answer under one of its prefixes, or at an address it answers as it is
+      /* The old interface and the short addresses, ahead of every row that still names one of their pages. The rows below that answer under one of its prefixes, or at an address it answers as it is
          (`/status`, `/home`), are never reached, so they are left out: what is left leads to the city in one hop. */
       ...OLD_ADDRESS_REDIRECTS,
       /* The old handbook's chapters lead to the documentation's sections, in one hop, ahead of the rows that chained them
-         from one old chapter to another (CITY-180). */
+         from one old chapter to another. */
       ...oldChapterRedirects(),
       ...[
         /* The application's own host, and — once it is live — the old
@@ -445,7 +443,7 @@ const nextConfig: NextConfig = {
   async rewrites() {
     return {
       beforeFiles: [...appHostRewrites()],
-      /* «Ryntra from A to Z» (CITY-202): a static page in public/learn/, built by scripts/learn/build.mjs. */
+      /* «Ryntra from A to Z»: a static page in public/learn/, built by scripts/learn/build.mjs. */
       afterFiles: [
         { source: "/learn", destination: "/learn/index.html" },
         { source: "/learn/uk", destination: "/learn/uk.html" },

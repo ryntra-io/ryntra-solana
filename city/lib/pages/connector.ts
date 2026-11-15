@@ -1,8 +1,8 @@
 import { CONNECTOR_CATALOG_MCP_PATH, CONNECTOR_MCP_PATH } from '../../../lib/connector/metadata.ts';
 
 /**
- * «AI chats» behind «Technical details» (CITY-170): where a chat connects to Ryntra, as the connector serves it today
- * (`lib/connector/**`, CITY-154). Addresses and commands are code, the same in every language; what each row is comes
+ * «AI chats» behind «Technical details»: where a chat connects to Ryntra, as the connector serves it today
+ * (`lib/connector/**`). Addresses and commands are code, the same in every language; what each row is comes
  * from the window's words (`CONNECTOR.row…`). The page names no chat's own site: a person adds Ryntra from inside
  * their chat, and nothing here links out to one.
  *

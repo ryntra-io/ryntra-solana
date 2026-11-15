@@ -1,4 +1,4 @@
-// CITY-201 quality pass B: the agent's card walked as a person walks it — every sentence the agent takes, in English and
+// Quality pass B: the agent's card walked as a person walks it — every sentence the agent takes, in English and
 // Ukrainian, on a desk (1440×900) and a phone (390×844) — with the card's tightness measured: the largest empty stretch
 // between two of its blocks, which the owner saw as a dark hole under «trade BONK with 0.1 SOL a day».
 // → <out>/<lang>-<size>-<n>-<step>.jpg and <out>/walk.json (gaps, page errors, failed requests).

@@ -10,7 +10,7 @@ import { SPOT_OPEN, STOPS_ENGINE, TRADE_OPEN } from '../trade/gates.ts';
 import { docsStatus, type DocsDoors, type DocsStatus } from './status.ts';
 
 /**
- * Whether each of the city's doors is open in this build, for the documentation (CITY-180): the deployment's own switches, the ones
+ * Whether each of the city's doors is open in this build, for the documentation: the deployment's own switches, the ones
  * the city's menu and the roadmap read (`lib/roadmap/roadmap.test.mjs` holds this table to the roadmap's). Launching from the city
  * follows the deployment's switch and the word in `city/lib/launch/gate.ts`, so the release that opens it opens its section.
  */

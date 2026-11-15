@@ -1,5 +1,5 @@
 /**
- * Sell Higher · Buy Lower · the Wheel (CITY-97, spec E6) — the city's arithmetic on top of the engine's DLMM limit
+ * Sell Higher · Buy Lower · the Wheel — the city's arithmetic on top of the engine's DLMM limit
  * orders (`lib/liquidity/studio/limit-orders.ts`). A person thinks in their own units: a price per share (an xStock)
  * or per SOL, and an amount of shares or SOL. The pool thinks in raw units: Y per X of base tokens, in bins of a fixed
  * step. This file turns one into the other and back, and nothing else decides a figure.
@@ -139,7 +139,7 @@ export function depositUnits(market: LimitMarket, intent: Intent, typed: string)
   return raw > 0n ? raw : null;
 }
 
-/* ------------------------------------------------------- dollars on the card (CITY-190) */
+/* ------------------------------------------------------- dollars on the card */
 
 /** Whether the market's prices are dollars: a USDC quote. */
 export function quotedInDollars(market: Pick<LimitMarket, 'quote'>): boolean {

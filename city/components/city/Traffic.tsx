@@ -10,7 +10,7 @@ import { useSkyline } from './skyline/store';
 /**
  * Life in the city, computed entirely on the GPU: drones circle the skyline on lanes at different heights,
  * and agents walk the streets as small points of light. No per-frame CPU work; one draw call each. Once the
- * skyline kit is on the screen the streets carry cars and people instead (`skyline/Street.tsx`, CITY-56).
+ * skyline kit is on the screen the streets carry cars and people instead (`skyline/Street.tsx`).
  */
 export function Traffic({ drones = 360, walkers = 900 }: { drones?: number; walkers?: number }) {
   const droneMesh = useMemo(() => createDrones(drones), [drones]);

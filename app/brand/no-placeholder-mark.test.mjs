@@ -107,10 +107,10 @@ test("no line-A route outside the shell draws an «R» in a square, through any 
   assert.deepEqual(failures, [], "a page outside the shell draws the mark from app/brand/, never a lettered tile");
 });
 
-test("the payment link, the credits it sells and its «not found» carry the city's mark (CITY-156)", () => {
+test("the payment link, the credits it sells and its «not found» carry the city's mark", () => {
   /* The assistant's credits are bought on the same `/pay/<id>` page (AI-12): one page, one identity. */
   assert.match(code(read("lib/assistant/credits/order-view.ts")), /\/pay\/\$\{/, "credits are paid on the payment page");
-  /* Since CITY-156 the page is a window of Ryntra City: the mark is the city's own (the brandbook, CITY-11), and nothing
+  /* The page is a window of Ryntra City: the mark is the city's own, and nothing
      of the old face — its lockup, its tile, the core's shell — is reached from either route. */
   for (const route of ["app/pay/[id]/page.tsx", "app/pay/[id]/not-found.tsx"]) {
     const reached = graph(route);
@@ -122,7 +122,7 @@ test("the payment link, the credits it sells and its «not found» carry the cit
   assert.match(page, /export function Missing\(\)[\s\S]*?<Frame>/, "a wrong link still says whose page it is");
 });
 
-test("the short launch address's preview names Ryntra with the city's logo and icon (CITY-158)", () => {
+test("the short launch address's preview names Ryntra with the city's logo and icon", () => {
   const serve = code(read("app/t/serve.ts"));
   assert.match(serve, /const BRAND_LOCKUP = "\/brand\/city\/logo-transparent\.png"/);
   assert.ok(existsSync(join(ROOT, "public/brand/city/logo-transparent.png")), "the logo the preview names is published");

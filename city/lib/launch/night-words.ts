@@ -4,7 +4,7 @@ import { NIGHT_RULE, type NightActId, type NightEntry } from './night.ts';
 import { LAUNCH_NIGHT } from './words.ts';
 
 /**
- * How Launch Night says its figures (CITY-146): a name, the main number and one line — in the language on screen
+ * How Launch Night says its figures: a name, the main number and one line — in the language on screen
  * (`./words.ts`), each time rounded down so it never reads as more than it is.
  */
 

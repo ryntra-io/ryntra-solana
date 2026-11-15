@@ -1,7 +1,7 @@
 /**
- * CITY-203 — the agent's signer for the care: the same key as the agent's budget (the registry's `AGENT_SIGNER`, its key
+ * The agent's signer for the care: the same key as the agent's budget (the registry's `AGENT_SIGNER`, its key
  * in Google Cloud KMS — `KeySigner` from `../launch/signer/signer.server.ts`), and the bounds it signs within, read from
- * the message's own bytes every time (CITY-162's rule — whatever the caller says the bytes do):
+ * the message's own bytes every time (the rule — whatever the caller says the bytes do):
  *
  * - the agent pays; besides it, at most one more signer — the fresh key of a new position (DLMM) or its NFT's mint
  *   (DAMM v2), and only when the execution opens exactly that position;

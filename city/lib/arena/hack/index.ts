@@ -1,10 +1,11 @@
 /**
- * Hack — the Arena's third door (CITY-223): the library behind it, in one import. A protocol brings its own contract
- * and signs a permission; agents break a **copy** of it in a fork (the sandbox is CITY-224); the judge (CITY-68) says
+ * Hack — the Arena's third door: the library behind it, in one import. A protocol brings its own contract
+ * and signs a permission; agents break a **copy** of it in a fork; the judge says
  * whether the fault reproduced; these rules say what counts, what is a duplicate, how severe, and who was first.
  *
- * No network, no database, no money live here. The storage is an interface (`HackStore`) a database fills in CITY-226;
- * the sandbox and the step runner are CITY-224/225; the windows are CITY-227; the money is CITY-229. See `README.md`.
+ * No network, no database, no money live here. The storage is an interface (`HackStore`) a database fills in;
+ * the sandbox and the step runner, the windows and the money are modules of
+ * their own. See `README.md`.
  */
 
 export {

@@ -1,4 +1,4 @@
-/* A district's frame at the head of the card above the dock (CITY-64). It bleeds over the card's padding (`.slot` in
+/* A district's frame at the head of the card above the dock. It bleeds over the card's padding (`.slot` in
    city/components/hud/hud.module.css: 18px 20px 20px) and under the card's first words: z-index -1 inside the card's
    own stacking context (its clip-path) paints it over the card's glass and under its text. The mask fades the frame
    and its edge into the glass, so the kicker sits on the last of the picture. */

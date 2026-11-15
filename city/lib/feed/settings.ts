@@ -1,8 +1,9 @@
 /**
- * What the home's live event feed shows. Five kinds of events and the flashing, each a switch the person
+ * What the home's live event feed shows: the person ticks what she wants to see, since not everyone wants
+ * the home to flash. Five kinds of events and the flashing, each a switch the person
  * sets; the choice is kept on this device. Everything starts on, except the flashing on a device that asks for reduced
  * motion — there it starts off, and the person may still turn it on — and the «Arrivals» card, which starts off on
- * every device since the game left the first screen (CITY-81).
+ * every device since the game left the first screen.
  */
 
 export type FeedKind = 'gainers' | 'losers' | 'inflows' | 'coins' | 'pools';
@@ -24,7 +25,7 @@ export const SWITCHES: readonly Readonly<{ id: FeedSwitch; label: string }>[] = 
   { id: 'flashing', label: 'Flashing effects' },
   // The «Hot now» card above the dock.
   { id: 'hot', label: 'Hot now card' },
-  // The «Arrivals» card — a free quarter of your own in the city. Off on every device (CITY-81); turned on, it stands in the Play layer until closed.
+  // The «Arrivals» card — a free quarter of your own in the city. Off on every device; turned on, it stands in the Play layer until closed.
   { id: 'arrivals', label: 'Arrivals card' },
 ];
 
@@ -34,7 +35,7 @@ export const SETTINGS_GROUPS: readonly (readonly FeedSwitch[])[] = [[...FEED_KIN
 export const SETTINGS_KEY = 'ryntra.city.feed';
 
 /**
- * The kept value's version. 2 (CITY-81): «Arrivals» starts off everywhere, so a choice kept before (a desk that never
+ * The kept value's version. 2: «Arrivals» starts off everywhere, so a choice kept before (a desk that never
  * closed the card, or one that turned it on) is dropped once and the switch follows its new default.
  */
 export const SETTINGS_VERSION = 2;

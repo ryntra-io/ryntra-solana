@@ -26,7 +26,7 @@ type CityState = {
   layout: CityLayout;
   /**
    * The layout is the snapshot's own plan, as every device lays it out (a run's course is built on it). Otherwise it
-   * grew from the city on screen: every tower that stood there keeps its plot (CITY-148).
+   * grew from the city on screen: every tower that stood there keeps its plot.
    */
   exact: boolean;
   selectedId: string | null;
@@ -74,7 +74,7 @@ export const useCity = create<CityState>((set) => ({
   setSound: (sound) => set({ sound }),
   setQuality: (quality) => set({ quality }),
   play: (event) => set((state) => ({ feed: [{ ...event, id: nextId++, at: Date.now() }, ...state.feed].slice(0, 8) })),
-  // «Flashing effects» off in the feed's «Show on home» holds the camera still for every caller (CITY-66).
+  // «Flashing effects» off in the feed's «Show on home» holds the camera still for every caller.
   shake: (amount) => set((state) => (flashingOn() ? { trauma: Math.min(1, state.trauma + amount) } : {})),
   touch: () => set({ touchedAt: Date.now() }),
   home: () => set({ selectedId: null, homeAt: Date.now() }),

@@ -1,6 +1,6 @@
 import { words } from '../../lib/i18n/dict.ts';
 
-/** The settings window's words (CITY-87): one name per thing, the rest behind «i». */
+/** The settings window's words: one name per thing, the rest behind «i». */
 export const SETTINGS = words(
   {
     settings: 'Settings',

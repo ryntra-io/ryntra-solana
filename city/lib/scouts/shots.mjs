@@ -1,4 +1,4 @@
-// «Scouts» screens for review (CITY-8), at 1440×860 and 390×844 → <out>/scouts-<state>-<size>.png
+// «Scouts» screens for review, at 1440×860 and 390×844 → <out>/scouts-<state>-<size>.png
 //   npm run dev      then      node city/lib/scouts/shots.mjs [out] [baseUrl]
 // No wallet and no keys: a stub wallet registers through the Wallet Standard events and comes back silently, as a wallet
 // this site was granted does; it signs nothing. `/api/rewards` answers with a fixture in the Growth engine's own shape,

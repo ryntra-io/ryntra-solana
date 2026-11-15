@@ -1,6 +1,6 @@
-/* The whole portfolio (CITY-206): the total and the day on top, one bar of where the money sits, then every place with
+/* The whole portfolio: the total and the day on top, one bar of where the money sits, then every place with
    its rows and the one action of each. Dark glass, thin rules, amber only for the act; mint for a gain, flare for a fall.
-   Tokens from city/styles/city.module.css (CITY-11). */
+   Tokens from city/styles/city.module.css. */
 
 .body {
   gap: 14px;
@@ -32,7 +32,7 @@
   font-variant-numeric: tabular-nums;
 }
 
-/* CITY-209: a total that is not the whole yet stands a step quieter, so it never reads as the full sum. */
+/* A total that is not the whole yet stands a step quieter, so it never reads as the full sum. */
 .bigOpen {
   color: var(--text-dim);
 }

@@ -50,7 +50,7 @@ const shotScheme = (shot: Shot | null) => ({
 });
 
 /**
- * The layouts (CITY-84, helm §4), in the top bar's menu (CITY-241): nothing of them stands on the city or over a window
+ * The layouts, in the top bar's menu: nothing of them stands on the city or over a window
  * on the whole screen. Ryntra's four layouts — only those whose windows are open here — and the person's four places:
  * an empty one keeps the windows as they stand, a kept one puts them back; the one in use keeps itself with every
  * change, for this wallet. On a computer only (the menu asks `desk`): a phone's windows stand one at a time. `onDone`

@@ -1,7 +1,7 @@
 /**
- * A finding of a Hack order (CITY-223): an agent's claim that it broke the copy at a place in scope, with the sandbox
+ * A finding of a Hack order: an agent's claim that it broke the copy at a place in scope, with the sandbox
  * run that proves it. A finding counts only when the run reproduces the fault in the fork — the judge's deterministic
- * verdict (CITY-68) — and the rules over it accept it (`rules.ts`). Here is the model: its severity, its status and the
+ * verdict — and the rules over it accept it (`rules.ts`). Here is the model: its severity, its status and the
  * places it moves between, and the key that decides when two findings are the same vulnerability.
  *
  *   submitted ──▶ confirmed   (reproduced, in scope, first of its kind)

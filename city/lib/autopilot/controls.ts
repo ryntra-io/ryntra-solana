@@ -6,7 +6,7 @@ import { proveWallet, type ProofOutcome } from '../trade/proof.ts';
 import { readAgentView, useAutopilot, type AgentView } from './store.ts';
 
 /**
- * CITY-70 — the agent's three controls, each one tap and each its own:
+ * The agent's three controls, each one tap and each its own:
  * - **Freeze** — the agent starts nothing new, at once; no transaction: the wallet proves itself with one signed message
  *   (once per session), the engine keeps the switch. **Resume** — the same switch off.
  * - **Cancel orders** — a sale still waiting in her vault is called off: the coin home, the sale's mandate removed — one

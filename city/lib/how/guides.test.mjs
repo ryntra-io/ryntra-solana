@@ -4,7 +4,7 @@ import test from "node:test";
 
 import { CITY_GUIDE_FLAGS, GUIDE_ACTION, GUIDE_IDS, GUIDE_NEEDS, guideFlags, isGuideId, lessons, liveGuides, tryHref, tryParam, withoutTry } from "./guides.ts";
 
-/* CITY-43: «How it works» shows a lesson only when its film is here and its function is live on this deployment — open
+/* «How it works» shows a lesson only when its film is here and its function is live on this deployment — open
    to everyone, or behind a switch of the city that is open, read by the city's own rules. No film, no card. */
 
 const ids = (flags) => liveGuides(flags);

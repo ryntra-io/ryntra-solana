@@ -1,5 +1,5 @@
 /**
- * The secret phrases of Duo Crack (CITY-51): three plain English words drawn by the harness — never by an agent, never
+ * The secret phrases of Duo Crack: three plain English words drawn by the harness — never by an agent, never
  * by its owner — from a fixed list of 256, so 16.7 million phrases, each word easy for any model to say back exactly.
  * The draw takes its randomness from outside (`node:crypto`'s `randomInt` on the server, a seeded one in tests).
  *

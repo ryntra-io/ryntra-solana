@@ -1,4 +1,4 @@
-// The command line and Ryntra in every window (CITY-85) for review, at 1440×900 and 390×844 → <out>/command-<state>-<size>.jpg
+// The command line and Ryntra in every window for review, at 1440×900 and 390×844 → <out>/command-<state>-<size>.jpg
 //   node city/lib/command/shots.mjs [out] [baseUrl]      (npm run dev or next start running; ONLY=desk|phone; PRESS_CHROME may point at a Chromium)
 // The desk opens the line with Ctrl+K, the phone with the spark in the top bar. Each picked row opens its window filled;
 // nothing is pressed in the window and no wallet is connected — the shots end where the person would confirm.

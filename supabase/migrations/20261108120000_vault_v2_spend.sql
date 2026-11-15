@@ -1,8 +1,8 @@
--- Ryntra City: the Vault opens to people without money (CITY-218) — the
+-- Ryntra City: the Vault opens to people without money — the
 -- day's ceiling on what the guards' model may spend, and a guest's progress
 -- handed to the wallet they sign in with.
 --
--- PREPARED 2026-11-08 as a file only. Not applied to any Supabase project:
+-- PREPARED 2026-11-08 as a file only. Not applied to any Supabase project.
 -- It stands on `20261027200000_vault_v1.sql` (applied 28.10) and changes
 -- nothing in it. The vault does not open in production without it: every
 -- attempt that asks a guard sets its worst case aside here first.

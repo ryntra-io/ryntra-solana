@@ -29,12 +29,12 @@ export function WalletChip() {
   const error = useCityAccount((st) => (st.from === 'top' ? st.error : null));
   const [open, setOpen] = useState(false);
   const wrap = useRef<HTMLDivElement>(null);
-  // The panel stands in a layer of its own, outside the chip's box (CITY-239): a tap inside it is not a tap «outside».
+  // The panel stands in a layer of its own, outside the chip's box: a tap inside it is not a tap «outside».
   const panel = useRef<HTMLDivElement>(null);
   const t = useWords(QUARTER);
 
   // A tap outside or Escape closes the menu; a list of wallets left open closes with it. Escape is heard on its way
-  // down and marked as taken (CITY-240): the panel stands over a window — the Ring, the Vault — and that window's own
+  // down and marked as taken: the panel stands over a window — the Ring, the Vault — and that window's own
   // Escape, which reads the mark, waits for the next press. The panel itself closes on any Escape, as it always has.
   const showing = open || step === 'pick' || Boolean(error);
   const close = () => {
@@ -43,7 +43,7 @@ export function WalletChip() {
     a.cancel();
     if (a.from === 'top' && a.error) cityAccount.setState({ error: null });
   };
-  // «Back» closes the menu first, in the city and in Play alike (CITY-150).
+  // «Back» closes the menu first, in the city and in Play alike.
   useBackPanel('wallet', showing, close);
   useEffect(() => {
     if (!showing) return;
@@ -125,7 +125,7 @@ export function WalletChip() {
             {signed ? t.signedIn : ready === 'checking' ? t.checking : t.notSignedIn}
           </div>
           {error ? <div className={`${w.note} ${w.error}`}>{error}</div> : null}
-          {/* The avatar's window (CITY-87): wallet, trading, notifications, layouts, language, sound, display, security. */}
+          {/* The avatar's window: wallet, trading, notifications, layouts, language, sound, display, security. */}
           <button
             className={w.settings}
             aria-haspopup="dialog"
@@ -162,7 +162,7 @@ export function WalletChip() {
 }
 
 /**
- * The wallet's panel in a layer of its own over the city's windows (CITY-239). The panel answers a tap inside a window
+ * The wallet's panel in a layer of its own over the city's windows. The panel answers a tap inside a window
  * («Connect wallet» in the Ring, «Sign in» in the Vault), so it stands over that window; the top bar it belongs to stays
  * under the windows with everything else of the home — the city's event slab, the home's cards, the Deck. Drawn into the
  * city's own root, where its tokens are, and placed under its chip by the chip's place on the screen.
@@ -194,7 +194,7 @@ function Over({ chip, panel, children }: { chip: RefObject<HTMLDivElement | null
       if (box?.contains(document.activeElement)) button?.focus({ preventScroll: true });
     };
   }, [shown, chip, panel]);
-  // The keyboard's order through the panel, kept by hand since the panel left its chip's place in the page (CITY-240):
+  // The keyboard's order through the panel, kept by hand since the panel left its chip's place in the page:
   // chip → the panel's controls → what follows the chip in the top bar, and back the same way (`tabTo`). No trap.
   useEffect(() => {
     if (!shown) return;
@@ -231,7 +231,7 @@ function Over({ chip, panel, children }: { chip: RefObject<HTMLDivElement | null
 function WalletList() {
   const wallets = useWallet((st) => st.wallets);
   const t = useWords(QUARTER);
-  // A phone's browser has no wallet of its own: Ryntra opens inside Phantom's, as Money and Earn do (CITY-221); a
+  // A phone's browser has no wallet of its own: Ryntra opens inside Phantom's, as Money and Earn do; a
   // computer gets the wallet. One button under the finger, not a link inside a line.
   const [phone, setPhone] = useState(false);
   useEffect(() => setPhone(isPhoneUserAgent(navigator.userAgent)), []);

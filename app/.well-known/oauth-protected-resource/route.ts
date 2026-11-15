@@ -5,7 +5,7 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 /**
- * RFC 9728 protected-resource metadata for the connector (CITY-154) at the origin root, for clients
+ * RFC 9728 protected-resource metadata for the connector at the origin root, for clients
  * that read the root form rather than `/.well-known/oauth-protected-resource/mcp`. Public: a client cannot authenticate
  * until it has read this.
  */

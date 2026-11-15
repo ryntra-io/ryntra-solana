@@ -1,4 +1,4 @@
-// L9 (CITY-146): Launch Night shows the night's launches only when the start of each is confirmed by the timestamp of
+// L9: Launch Night shows the night's launches only when the start of each is confirmed by the timestamp of
 // its DBC creation's block (the flow's `launchSlot.at`), the engine's record agrees with it, and the night has enough of
 // them; an act with nobody in it is not shown, and without enough confirmed launches there is no show at all. The
 // stand's answers are made-up in the shape of the v1 contract (devnet); nothing here reached a real engine.
@@ -49,7 +49,7 @@ function tower(symbol, ago, over = {}) {
 const start = (t, over = {}) => ({ createdAt: t.launchedAt, graduated: false, graduatedAt: null, ...over });
 const startsOf = (...pairs) => new Map(pairs.map(([t, s]) => [t.token, s ?? start(t)]));
 
-test("the switch: closed unless `open`;", () => {
+test("the switch: closed unless `open`", () => {
   assert.equal(nightSwitch(undefined), false);
   assert.equal(nightSwitch("true"), false);
   assert.equal(nightSwitch("open"), true);

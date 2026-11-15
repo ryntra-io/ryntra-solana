@@ -22,11 +22,11 @@ export type Role = (typeof CREW)[number];
  * engine's table, never credits.
  */
 export const ROLE_FACTS: Readonly<Record<Role, Readonly<{ skills: readonly string[]; paid: 'trade-fee' | 'none' | 'launch-fee' }>>> = {
-  /** CITY-136/174/186: buys and sells one coin by a tested strategy, in the day's and the trade's limits. */
+  /** Buys one coin by a tested strategy, in the day's and the trade's limits; sells what it bought when the person asks. */
   trader: { skills: ['buy', 'sell', 'dayLimit', 'autostop'], paid: 'trade-fee' },
-  /** CITY-204: one plan for the whole budget — savings on Jupiter Lend, a share traded, a share in pools. */
+  /** One plan for the whole budget — savings on Jupiter Lend, a share traded, a share in pools. */
   pilot: { skills: ['save', 'trade', 'pool', 'rebalance'], paid: 'trade-fee' },
-  /** CITY-203: a Meteora pier looked after — fees claimed, the range kept around the price, out at the person's stop. */
+  /** A Meteora pier looked after — fees claimed, the range kept around the price, out at the person's stop. */
   keeper: { skills: ['claim', 'range', 'exit'], paid: 'none' },
   /** The launch prepared from one sentence: name, ticker, picture — the person signs once (Meteora's curve). */
   launcher: { skills: ['prepare', 'curve', 'tower'], paid: 'launch-fee' },

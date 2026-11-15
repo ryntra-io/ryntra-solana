@@ -1,4 +1,4 @@
-// «Like the Captain»'s screens for review (CITY-99), at 1440×900 and 375×812 → <out>/captain-<state>-<size>.png
+// «Like the Captain»'s screens for review, at 1440×900 and 375×812 → <out>/captain-<state>-<size>.png
 //   NEXT_PUBLIC_RYNTRA_CITY_EARN=open NEXT_PUBLIC_RYNTRA_CITY_HARBOR=open npm run dev, then:
 //   node city/lib/earn/captain-shots.mjs [out] [baseUrl]
 // LANG_EARN=en for the English words (Ukrainian by default). No wallet and no keys: a stub wallet registers through the

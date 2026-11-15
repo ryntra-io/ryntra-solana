@@ -1,4 +1,4 @@
-// Fixtures for the SOL Pier (CITY-93): the engine's recorded SOL–USDC DLMM pool (16.10) and a JitoSOL–SOL DLMM pool
+// Fixtures for the SOL Pier: the engine's recorded SOL–USDC DLMM pool (16.10) and a JitoSOL–SOL DLMM pool
 // shaped like the engine's catalogue answers it. The recorded catalogue carries no LST pool (it is the top 120 by
 // volume of one morning), so this one is written by hand for the tests and the screenshot stand — never shown live.
 import { harborPools } from "../districts/harbor/pools.ts";
@@ -42,7 +42,7 @@ export function closes(start, end, bars = 180, wave = 0.01, t0 = 1_759_000_000) 
 }
 
 /**
- * A Zap's Review as the engine answers it (CITY-198): 1 SOL into the JitoSOL pier, about half of it swapped through
+ * A Zap's Review as the engine answers it: 1 SOL into the JitoSOL pier, about half of it swapped through
  * Jupiter with Ryntra's 0.1 %, two transactions for one approval. `rest` — «Take the rest» of one that landed in part.
  */
 export function zapReview(changes = {}, { rest = false, route = "jupiter" } = {}) {

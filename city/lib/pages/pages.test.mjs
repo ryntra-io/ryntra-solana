@@ -9,7 +9,7 @@ import { MENU_LEGAL, MENU_PAGES, MENU_SITE_DOCS, PAGE_ART, PAGE_IDS, PAGE_PATHS,
 import { CITY_PAGES } from "../open/site-map.ts";
 import { openPage, usePages } from "./store.ts";
 
-/* CITY-157: the menu's six old pages — Docs, Developers, Support, Feedback, Terms, Privacy — became the city's own
+/* The menu's six old pages — Docs, Developers, Support, Feedback, Terms, Privacy — became the city's own
    windows, and the same addresses answer with the city's pages. Nothing of the old site's pages stands behind them,
    and no link of the menu leads to an old page. */
 
@@ -77,7 +77,7 @@ test("the menu opens the city's windows: no link of it leads to an old page", ()
   assert.match(menu, /MENU_LEGAL\.map/);
   assert.match(menu, /openPage\(id\)/);
   assert.deepEqual([...MENU_PAGES, ...MENU_LEGAL].sort(), [...PAGE_IDS].sort(), "every page has its row");
-  // Two links leave the window frame: the site's own documents at their address (CITY-177) and the city's own X.
+  // Two links leave the window frame: the site's own documents at their address and the city's own X.
   assert.equal((menu.match(/href=/g) ?? []).length, 2);
   assert.match(menu, /href=\{CONTACTS\.companyX\}/);
   assert.match(menu, /MENU_SITE_DOCS\.map[\s\S]*href=\{SITE_DOC_PATHS\[id\]\}/);
@@ -198,7 +198,7 @@ test("security.txt: a contact, an expiry ahead, its own address; the contact is 
   assert.ok(pageOfHref(new URL(field("Contact")).pathname), "the stand-in leads to a page of the city");
 });
 
-test("AI chats (CITY-170): the connector's own addresses, its real limit, one action, and no chat's site linked", async () => {
+test("AI chats: the connector's own addresses, its real limit, one action, and no chat's site linked", async () => {
   const { CONNECTOR_CATALOG_MCP_PATH, CONNECTOR_DOCS_PATH, CONNECTOR_MCP_PATH } = await import("../../../lib/connector/metadata.ts");
   const { CONNECTOR_QUOTA_PER_MINUTE } = await import("../../../lib/connector/ledger.ts");
   const { CALLS_A_MINUTE, CATALOG_URL, CONNECTOR_ROWS, CONNECTOR_URL } = await import("./connector.ts");

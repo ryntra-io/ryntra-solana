@@ -1,4 +1,4 @@
-// The Money window's screens for review (CITY-63), at 1440×860 and 390×844 → <out>/money-<state>-<size>.png
+// The Money window's screens for review, at 1440×860 and 390×844 → <out>/money-<state>-<size>.png
 //   NEXT_PUBLIC_RYNTRA_CITY_MONEY=open npm run dev      then      node city/lib/money/shots.mjs [out] [baseUrl]
 //   CLOSED=1 node city/lib/money/shots.mjs [out]         — against a server without the switch: Send and Bridge closed
 // No wallet and no keys: a stub wallet registers through the Wallet Standard events and comes back silently, as a wallet

@@ -779,11 +779,11 @@ export type TeamClientChecks = [
 
 export const teamClientChecks: TeamClientChecks = [true, true, true, true, true, true, true, true, true];
 
-/* 1.88.0 — the pre-sign check (CITY-152): the request and the verdict, both directions. */
+/* 1.88.0 — the pre-sign check: the request and the verdict, both directions. */
 export type WardChecks = [Same<z.input<typeof WardCheckRequestSchema>, Client.WardCheckRequest>, Same<z.output<typeof WardCheckResponseSchema>, Client.WardCheckResponse>];
 export const wardChecks: WardChecks = [true, true];
 
-/* 1.90.0 — prepared actions (CITY-161). */
+/* 1.90.0 — prepared actions. */
 export type IntentClientChecks = [
   Same<z.output<typeof IntentSchema>, Client.Intent>,
   Same<z.output<typeof IntentResponseSchema>, Client.IntentResponse>,

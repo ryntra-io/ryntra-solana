@@ -21,7 +21,7 @@ import { holdPlaces, onPlacesFree, placesHeld } from './place-hold.ts'
 
 const TABS = fileURLToPath(new URL('../../app/(tabs)/', import.meta.url))
 
-test('«Місто» first (CITY-6c), then Menu 3’s five, the core’s own (decision 55): Головна · Торгівля · Гроші · Портфель · Меню', () => {
+test('«Місто» first, then Menu 3’s five, the core’s own (decision 55): Головна · Торгівля · Гроші · Портфель · Меню', () => {
   assert.deepEqual(
     SHELL.map((entry) => TAB_TITLES.uk[entry.tab]),
     ['Місто', 'Головна', 'Торгівля', 'Гроші', 'Портфель', 'Меню'],

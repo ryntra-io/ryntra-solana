@@ -81,7 +81,7 @@ export type ActivityState = Readonly<{
   status: 'none' | 'reading' | 'ready' | 'failed';
   opening: string | null;
   line: Line | null;
-  /** The receipt open over the rows (CITY-150): a WebView downloads nothing, so it is shown, not saved. */
+  /** The receipt open over the rows: a WebView downloads nothing, so it is shown, not saved. */
   shown: ShownReceipt | null;
 }>;
 

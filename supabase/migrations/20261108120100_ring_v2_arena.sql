@@ -1,6 +1,6 @@
--- Ryntra City: the Arena opens — the Ring's duels and ratings on the server (CITY-217).
+-- Ryntra City: the Arena opens — the Ring's duels and ratings on the server.
 --
--- PREPARED 2026-11-08 as a file only. Not applied to any Supabase project:
+-- PREPARED 2026-11-08 as a file only. Not applied to any Supabase project.
 -- It stands on `20261027230000_ring_v1.sql` (apply that one first). Without
 -- both, production keeps the Ring and its duels closed: `lib/ring/ready.ts`
 -- and `lib/ring/duel/ready.ts` refuse to open on one instance's memory.

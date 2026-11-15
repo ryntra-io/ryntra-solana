@@ -1,14 +1,15 @@
 /**
- * CITY-175 — what the agent does with the budget a person gave it, on its own, tick after tick. Pure: the service
+ * What the agent does with the budget a person gave it, on its own, tick after tick. Pure: the service
  * (`./tick.server.ts`) reads the chain and the agent's book, asks here, and does what this says.
  *
  * The rhythm is the steady strategy's: the day's budget is spread into equal
  * buys of the trade cap across the day, the first one at once, so the person sees the agent at work in minutes. Every
  * buy is inside the policy the person signed; the chain holds the same caps again and refuses what breaks them. The other
- * strategies (CITY-193, `./plans.ts`) ride on the same rhythm: a buy it allows they may hold back, never add one.
+ * strategies (`./plans.ts`) ride on the same rhythm: a buy it allows they may hold back, never add one.
  *
  * The agent stops on its own when it should: the mandate ended or was taken back, the budget is spent, the last trades
- * failed in a row (the chain or the pool keeps saying no — it does not keep paying fees to hear it), or — CITY-179. 5 — what it bought is losing (`autostop`). The chain knows nothing of this pause: it is the agent keeping its
+ * failed in a row (the chain or the pool keeps saying no — it does not keep paying fees to hear it), or
+ * what it bought is losing (`autostop`). The chain knows nothing of this pause: it is the agent keeping its
  * own hands off; what the chain holds is the caps.
  */
 
@@ -63,16 +64,16 @@ export type AgentTrade = Readonly<{
   reason: string | null;
   /** The day's budget was spent by the chain's own count: a wait, never a failure. */
   allowance?: boolean;
-  /** A grid's buy: the level it bought (CITY-193). */
+  /** A grid's buy: the level it bought. */
   level?: number;
 }>;
 
 /**
- * Why the agent paused itself. CITY-193: `take` and `stop` — the person's own exit was reached; `late` — an early plan's
+ * Why the agent paused itself. `take` and `stop` — the person's own exit was reached; `late` — an early plan's
  * launch is past its first hours. None of them sells anything: the agent stops buying and holds.
- * CITY-204: `market` and `balance` — the money autopilot's care (`lib/pilot/care.ts`): SOL fell sharply, or the trade's
+ * `market` and `balance` — the money autopilot's care (`lib/pilot/care.ts`): SOL fell sharply, or the trade's
  * part outgrew its share. Only that care lifts them; the tick never does.
- * CITY-70: `mismatch` — the vault holds less than the agent's book can explain (`./mission.ts` `reconcile`): it spends
+ * `mismatch` — the vault holds less than the agent's book can explain (`./mission.ts` `reconcile`): it spends
  * nothing more; nothing lifts it, her withdraw takes what is there.
  */
 export type PauseReason = "failing" | "loss" | "losses" | "short" | "unread" | "take" | "stop" | "late" | "market" | "balance" | "mismatch";
@@ -87,7 +88,7 @@ export type StrategyInput = Readonly<{
   /** What the vault still holds of the budget, base units; null when not read. */
   budgetLeft: bigint | null;
   now: number;
-  /** CITY-197: the plan's pace — buys a day at most (`./plans.ts`); absent — the caps' rhythm. */
+  /** The plan's pace — buys a day at most (`./plans.ts`); absent — the caps' rhythm. */
   pace?: number | null;
 }>;
 
@@ -99,7 +100,7 @@ export type Decision =
 /** How many buys a day the steady strategy makes, and how far apart. */
 export function steadyRhythm(perTrade: bigint, perDay: bigint, pace?: number | null): Readonly<{ buys: number; everyMs: number }> {
   const allowed = Math.max(1, perTrade > 0n ? Number(perDay / perTrade) : 0);
-  /* CITY-197: the plan's pace is a ceiling under the caps' rhythm, never over it. */
+  /* The plan's pace is a ceiling under the caps' rhythm, never over it. */
   const buys = typeof pace === "number" && Number.isInteger(pace) && pace >= 1 ? Math.min(allowed, pace) : allowed;
   return { buys, everyMs: Math.floor(DAY_MS / buys) };
 }
@@ -111,7 +112,7 @@ export function decide(input: StrategyInput): Decision {
   if (input.budgetLeft !== null && input.budgetLeft < perTrade) return { action: "end", reason: "spent" };
   let failures = 0;
   for (const trade of [...input.trades].reverse()) {
-    /* CITY-70: a trade whose fate is unknown is no failure — it is read again by its signature before anything is bought. */
+    /* A trade whose fate is unknown is no failure — it is read again by its signature before anything is bought. */
     if (trade.unsettledRaw !== undefined) continue;
     if (trade.status === "ok" || trade.allowance) break;
     failures += 1;

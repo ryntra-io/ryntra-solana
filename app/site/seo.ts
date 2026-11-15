@@ -46,7 +46,7 @@ export function sitePageMetadata({
   const canonical = localizedUrl(path, locale);
   const languages = index ? languageAlternates(path) : undefined;
   const category = audience === "guard" ? PRODUCT_CANON.guardCategory : HOMEPAGE_CATEGORY;
-  /* The city's card (CITY-158), where a page has none of its own, and its own words as the alt. */
+  /* The city's card, where a page has none of its own, and its own words as the alt. */
   const card = image ?? { url: landingOgImage(locale), alt: cardAltFor(locale) };
 
   return {

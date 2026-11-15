@@ -1,7 +1,7 @@
 /**
- * The shell as a value — pure. «Місто» first (CITY-6c, decision 70: Ryntra City is Ryntra's face — the page
+ * The shell as a value — pure. «Місто» first (decision 70: Ryntra City is Ryntra's face — the page
  * `https://ryntra.io` in a WebView, the app's own wallet behind it), then the phone's bar of Menu 3, the core's own `PHONE_BAR` with C1's glyphs and brand bar: Головна · Торгівля · Гроші ·
- * Портфель · Меню. The app opens on «Місто»; the older places stay until CITY-13 clears them.
+ * Портфель · Меню. The app opens on «Місто».
  * «Торгівля» opens on Ринки, the screener; Buy, Sell and Swap open over the bar as `/trade` from an asset, Home's
  * «Обмін» or a link. «Гроші» holds the four large actions Поповнити · Надіслати · Отримати · Між мережами. «Меню»
  * opens Menu 3 — the same groups as the web, with the rows that live in the phone. The places older shells

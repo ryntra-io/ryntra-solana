@@ -4,7 +4,7 @@ import { readFileSync } from "node:fs";
 
 const read = (rel) => readFileSync(new URL(rel, import.meta.url), "utf8");
 
-/* CITY-221: «Агенти → Гараж» with no towers ended on «No towers of yours yet» and nothing to press, in a 640 px pane
+/* «Агенти → Гараж» with no towers ended on «No towers of yours yet» and nothing to press, in a 640 px pane
    two-thirds empty (ryntra.io, 8.11, desk and phone). */
 test("the garage with no towers has its one action: Ryntra's line, to buy or launch", () => {
   const win = read("./GarageWindow.tsx");

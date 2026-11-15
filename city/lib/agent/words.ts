@@ -1,6 +1,6 @@
 import { words } from '../i18n/dict.ts';
 
-/** The scout's rule as the city says it: the signals, the districts, the facts of a find, Ryntra's word (CITY-79). */
+/** The scout's rule as the city says it: the signals, the districts, the facts of a find, Ryntra's word. */
 export const AGENT_RULE = words(
   {
     rise1h: 'Rising this hour',

@@ -1,7 +1,7 @@
 import type { Intent, IntentSpec, IntentSwapSpec, IntentTransferSpec } from '../../../packages/ryntra-api-client/src/types.ts';
 
 /**
- * The prepared action in the city (CITY-161), believed only in the shape the contract gives it, and the checks that
+ * The prepared action in the city, believed only in the shape the contract gives it, and the checks that
  * stand between it and the person's wallet: what the engine built must be exactly what was prepared — the same coins,
  * the same amount, the same recipient, the person's own wallet as the signer. Anything else is refused before the
  * wallet opens. The sheet never shows the intent's own words: only the engine's quote, the real recipient and who

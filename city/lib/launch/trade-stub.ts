@@ -146,7 +146,7 @@ export function stubTradeEngine(options: StubTradeOptions): LaunchTradeEngine & 
     return market.ok ? market.data : null;
   };
 
-  /* The stand's made-up history: a wallet starts with what its own trades in the market's rows left it (CITY-145). */
+  /* The stand's made-up history: a wallet starts with what its own trades in the market's rows left it. */
   const seeding = new Map<string, Promise<void>>();
   const holding = async (wallet: string, token: string) => {
     const key = `${wallet}:${token}`;

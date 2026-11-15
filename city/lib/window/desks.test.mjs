@@ -26,7 +26,7 @@ import {
   writeDesks,
 } from "./desks.ts";
 
-// The layouts of CITY-84: Ryntra's four presets and the person's four, kept on the device per wallet.
+// The layouts: Ryntra's four presets and the person's four, kept on the device per wallet.
 
 const DESK = { width: 1440, height: 900 };
 const WALLET = "7xKXtg2CW87d97TXJSDpbD5jBkheTqA83TZRuJosgAsU";

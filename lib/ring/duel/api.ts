@@ -8,13 +8,13 @@ import { DUEL_FORMATS, isDuelFormat, type DuelFormat } from "./harness.ts";
 import type { DuelErrorCode, DuelService, StartRequest } from "./service.ts";
 
 /**
- * The duels' routes (CITY-51), on plain `Request` and `Response` like the rest of `/api/ring`:
+ * The duels' routes, on plain `Request` and `Response` like the rest of `/api/ring`:
  *
  *   GET  /api/ring/duel?id=                         → { duel: DuelView }
  *   GET  /api/ring/duels                            → { duels: DuelView[], formats }   the latest, newest first, and
- *                                                     the formats this server can play now (CITY-217)
+ *                                                     the formats this server can play now
  *   POST /api/ring/fight  { format, agent, opponent } + Idempotency-Key → 202 { duel: DuelView }
- *                         opponent `rival`: the server draws another owner's agent of your class (CITY-217)
+ *                         opponent `rival`: the server draws another owner's agent of your class
  *
  * Closed (404) until both switches say `open`: the Ring's (`NEXT_PUBLIC_RYNTRA_CITY_RING`) and the duels' own
  * (`NEXT_PUBLIC_RYNTRA_CITY_RING_DUELS`). A start needs the account signed in with a wallet, comes from this site only

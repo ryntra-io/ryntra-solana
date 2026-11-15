@@ -1,6 +1,6 @@
 /**
- * Where the wallet's panel stands (CITY-239). The panel answers a tap inside a window — «Connect wallet» in the Ring,
- * «Sign in» in the Vault — so it must stand over that window (CITY-236). It used to do so by lifting the whole layer of
+ * Where the wallet's panel stands. The panel answers a tap inside a window — «Connect wallet» in the Ring,
+ * «Sign in» in the Vault — so it must stand over that window. It used to do so by lifting the whole layer of
  * the top bar over the windows, and the city's event slab and the home's cards came up with it and lay on the window.
  * Now the panel alone stands in a layer of its own, over the windows, and is placed under its chip by the chip's own
  * place on the screen; the top bar's layer stays where it was, under every window.
@@ -26,7 +26,7 @@ export function menuPlace(chip: Readonly<{ bottom: number; right: number }>, scr
 }
 
 /**
- * The keyboard's way through the open panel (CITY-240). The panel is drawn at the end of the page, in a layer of its
+ * The keyboard's way through the open panel. The panel is drawn at the end of the page, in a layer of its
  * own, so the page's own order no longer leads from the chip into it: Tab from the chip went on along the top bar and
  * reached the panel last, and Shift+Tab from the panel's first button went to whatever stands before the page's end.
  * The order a person expects is the one the panel had while it hung under its chip: the chip, the panel's controls,

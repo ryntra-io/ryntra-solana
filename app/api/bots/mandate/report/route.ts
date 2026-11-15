@@ -10,7 +10,7 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 /**
- * CITY-194 — the agent's daily report, as the person keeps it: `GET ?owner=` — whether it is on and at which hour of her
+ * The agent's daily report, as the person keeps it: `GET ?owner=` — whether it is on and at which hour of her
  * day; `POST` — the city keeps her clock and language, and her one tap on or off (or another hour). Only the proven
  * wallet changes its own; a proof of another wallet changes nothing. Writes one row; signs, sends and trades nothing.
  * Closed where the city does not show the report (`NEXT_PUBLIC_RYNTRA_CITY_AGENT_REPORT=open`) or the mandate is shut.

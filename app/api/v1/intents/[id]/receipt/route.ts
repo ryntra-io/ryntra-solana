@@ -8,7 +8,7 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 /**
- * `POST /api/v1/intents/{id}/receipt` (1.90.0, CITY-161) — the claiming wallet's transaction signature ends the intent
+ * `POST /api/v1/intents/{id}/receipt` — the claiming wallet's transaction signature ends the intent
  * for good. Where intents are open on mainnet the transaction must have landed, paid by that wallet; one signature
  * answers one intent.
  */

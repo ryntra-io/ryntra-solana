@@ -28,7 +28,7 @@ import { cleanParams, type Params } from '@/city/lib/window/detach';
 import { useWindows } from '@/city/lib/window/store';
 
 /**
- * The windows a layout can open (CITY-84), each through its own owner — exactly as a tap in the city opens it: the
+ * The windows a layout can open, each through its own owner — exactly as a tap in the city opens it: the
  * chart through the chart's store, the swap through the trade card's, Money through `openMoney`. Each says whether it
  * can open here (its switch, a tower to show) and opens on what the layout kept (a tower, a market) or on the tower in
  * front of the person. Nothing here signs, reads a wallet or moves money.
@@ -59,7 +59,7 @@ function subject(params?: Params): Tower | null {
 /**
  * The trade card on a coin, as the plain swap or as spot. A card folded into the tray comes back on its own coin —
  * named or not, standing in the city or not — and a launch's coin on its own curve or pool through the Launch engine,
- * never through Jupiter (CITY-138), as a tap on its tower opens it. A layout opens it on the tower in front of the
+ * never through Jupiter, as a tap on its tower opens it. A layout opens it on the tower in front of the
  * person, else Solana.
  */
 function openTrade(view: View, params?: Params): void {
@@ -109,10 +109,10 @@ export const OPENERS: Readonly<Record<string, Opener>> = {
   money: { can: () => true, open: (params) => openMoney(isMoneyAsk(params?.tab) ? params.tab : undefined), showing: () => ({ tab: useMoney.getState().tab }) },
   bots: { can: () => AGENTS_OPEN, open: (params) => openBots(isBotTab(params?.tab) ? params.tab : undefined), showing: () => ({ tab: useBotsWindow.getState().tab }) },
   earn: { can: () => EARN_OPEN, open: () => openEarn() },
-  // The garage agent (CITY-29): folded into the tray or kept in a layout, it opens again as the Deck's door opens it.
+  // The garage agent: folded into the tray or kept in a layout, it opens again as the Deck's door opens it.
   garage: { can: () => GARAGE_OPEN, open: () => openGarage() },
   guard: { can: () => GUARD_OPEN, open: () => openGuard() },
-  // «New launches on Solana» (CITY-191): the list belongs to «New», so its chip picks «New» and opens the list.
+  // «New launches on Solana»: the list belongs to «New», so its chip picks «New» and opens the list.
   'new-launches': {
     can: () => true,
     open: () => {
@@ -158,7 +158,7 @@ export function shutOutside(wanted: ReadonlySet<string>): void {
 }
 
 /**
- * «Minimise» (CITY-84): the window folds into the tray with what it shows now, closed as its own «Close» closes it —
+ * «Minimise»: the window folds into the tray with what it shows now, closed as its own «Close» closes it —
  * nothing of it stays over the city, its owner knows it is closed.
  */
 export function foldWindow(id: string): void {

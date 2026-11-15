@@ -16,7 +16,7 @@ import { LAUNCH } from './words';
 type W = Same<(typeof LAUNCH)['en']>;
 
 /**
- * The launch's two doors (CITY-212). Each is one quiet row in the review until the creator opens it, and each says the
+ * The launch's two doors. Each is one quiet row in the review until the creator opens it, and each says the
  * goal, not the protocol: «Share earnings» splits the creator's fees between wallets for ever; «Your people first» lets
  * the creator's people in before everyone. What holds them — the vault, the program, the window's arithmetic — is in
  * the review's «i»; the bytes are the engine's and the city reads them back before the wallet opens.
@@ -256,7 +256,7 @@ export function EarlyFacts({ rules }: { rules: EarlyAccessRules }) {
 
 /**
  * The early launch is set: when the creator's people get in, when everyone does, and one way on — the link that calls
- * them, copied (CITY-220). «Open» shows the creator the window their people see.
+ * them, copied. «Open» shows the creator the window their people see.
  */
 export function OpenedCard({ opened, onClose }: { opened: Opened; onClose: () => void }) {
   const w = useWords(LAUNCH);

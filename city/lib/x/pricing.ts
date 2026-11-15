@@ -1,6 +1,6 @@
 /**
  * What a post costs on X API's pay-per-use plan: $0.015 for a post, $0.20 for a post with a link. These are the
- * figures of the CITY-39 brief (the X marketing research of 27.10); the owner checks them against the Developer
+ * figures of the brief (the X marketing research of 27.10); the owner checks them against the Developer
  * Console (Billing → usage) before the first post, and a change is one line here. Every city draft carries a link back
  * to its tower, so a city post is counted at the link price; 4 posts a day ≈ $0.80, a 30-day month ≈ $24.
  */

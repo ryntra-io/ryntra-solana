@@ -19,9 +19,9 @@ const renderBots = () => <BotsWindow />;
 const closeBots = () => useBotsWindow.getState().close();
 
 /**
- * The bots hub (B4) in the city's one window frame (CITY-65): Start · My bots · Strategies · History. The Deck's
+ * The bots hub (B4) in the city's one window frame: Start · My bots · Strategies · History. The Deck's
  * «Agents» tray opens it with its «Bots» door (`openBots(tab)` from `city/lib/bots/open`), its icon the door's own.
- * The frame holds while the agent's budget waits on the wallet (CITY-174): a signature out is never closed away.
+ * The frame holds while the agent's budget waits on the wallet: a signature out is never closed away.
  */
 export function BotsLayer() {
   const open = useBotsWindow((st) => st.open);

@@ -26,7 +26,7 @@ import { kaminoLendAdapter } from "./kamino-adapter.ts";
 import { EARN_REVIEW_WINDOW_MS } from "./model.ts";
 import { jupiterLendKey, kaminoOn } from "./providers.ts";
 
-/** Both providers, Kamino Lend second and off until it is turned on. */
+/** Both providers: Jupiter Lend first, Kamino Lend second and off until it is turned on. */
 export function earnAdapters(env: NodeJS.ProcessEnv = process.env): readonly EarnAdapter[] {
   return [
     jupiterLendAdapter({ key: jupiterLendKey(env), readHeld }),

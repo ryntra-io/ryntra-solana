@@ -1,5 +1,5 @@
 /**
- * The friend's landing (CITY-126): somebody opened a partner's link. The address layer has already turned `?ref=` into
+ * The friend's landing: somebody opened a partner's link. The address layer has already turned `?ref=` into
  * the counted `/r/<code>`, which keeps the code in this browser (first touch) — so the city asks the engine what this
  * browser carries (`GET /api/rewards/referral`) and, when it carries an invitation not bound yet, greets the friend
  * with who invited them and the friend's offer. Binding is the engine's: the proven wallet's own read binds it.

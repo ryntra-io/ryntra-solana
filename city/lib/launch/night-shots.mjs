@@ -1,4 +1,4 @@
-// Launch Night (L9 · CITY-146) for review: the card that opens the show over the city, the stage on the first launch,
+// Launch Night for review: the card that opens the show over the city, the stage on the first launch,
 // the next act and the rule behind «i» — at 1440×900 and 375×812, in Ukrainian and English
 //   → <out>/night-<state>-<size>-<locale>.jpg
 //   node city/lib/launch/night-shots.mjs [out] [baseUrl]      (npm run dev running; PRESS_CHROME may point at a Chromium)

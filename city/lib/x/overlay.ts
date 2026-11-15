@@ -5,7 +5,7 @@ import { pct, usd, type BillboardFacts } from './facts.ts';
 import type { Caption, Hook, Storyboard } from './timeline.ts';
 
 /**
- * What the studio draws over a frame of the city (CITY-38), on the moments' own chrome (`../moments/draw.ts`): the mark
+ * What the studio draws over a frame of the city, on the moments' own chrome (`../moments/draw.ts`): the mark
  * and RYNTRA top left, the source chip top right, the hook — one big figure — under them, the captions low in the frame,
  * the footnote and the address at the bottom. Sizes are in units of a 720-wide frame, so 4:5 and 1:1 at 1080 share one
  * layout and only the height differs.

@@ -1,4 +1,4 @@
-// The bots window's screens for review (B4; Ryntra's tools in it — CITY-133), at 1440×900 and 375×812 → <out>/bots-<state>-<lang>-<size>.jpg
+// The bots window's screens for review (B4; Ryntra's tools in it), at 1440×900 and 375×812 → <out>/bots-<state>-<lang>-<size>.jpg
 //   NEXT_PUBLIC_RYNTRA_CITY_AGENTS=open npm run dev -- -p 3137      then      node city/lib/bots/shots.mjs [out] [baseUrl]
 //   LANGS=uk,en  SIZES=1440,375  STATES=deck,hub,detail,…  narrow it down.
 // The window is opened as a person opens it: the Deck's «Agents» diamond, then its «Bots» door. Every figure here is a
@@ -144,7 +144,7 @@ for (const size of SIZES) {
     const full = async () => {
       if (fullDone) return;
       fullDone = true;
-      // The frame speaks the city's language (CITY-79).
+      // The frame speaks the city's language.
       await page.getByRole("button", { name: /^(Full screen|На весь екран)$/ }).first().click();
       await page.waitForTimeout(600);
     };

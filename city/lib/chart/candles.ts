@@ -4,7 +4,7 @@ import { wordsNow } from '../i18n/dict.ts';
 import { CHART_READ } from './words.ts';
 
 /**
- * The tower chart's candles (CITY-5a): the engine's own read of a market, `/api/spot/candles` — the deepest pool's
+ * The tower chart's candles: the engine's own read of a market, `/api/spot/candles` — the deepest pool's
  * OHLCV from GeckoTerminal, the same read the core chart draws on the Solana spot page (CH-17). The city adds nothing
  * to the numbers: this file checks what came back, says why a market has no chart, and keeps the last good read on
  * screen when the source blinks. Pure; the fetch is passed in.
@@ -32,7 +32,7 @@ export function refreshMs(timeframe: Timeframe): number {
 }
 
 /**
- * A read that failed is tried again quietly (CITY-215): first this soon, then twice as long each time up to
+ * A read that failed is tried again quietly: first this soon, then twice as long each time up to
  * `RETRY_MAX_MS`, and never sooner than the engine's own `Retry-After` — a source that asked for a pause gets it.
  */
 export const RETRY_MS = 2_000;
@@ -222,7 +222,7 @@ export function ageText(ms: number): string {
 }
 
 /**
- * The spot chart's «Delayed», with how long (CITY-243: a bare «Delayed» was a riddle): the bars are as old as the
+ * The spot chart's «Delayed», with how long (a bare «Delayed» was a riddle): the bars are as old as the
  * engine's cache of their interval at most — 20 s for a minute's bars, 10 min for a day's. The last bar still closes
  * at the live price.
  */

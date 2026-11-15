@@ -16,7 +16,7 @@ const WIDTH = 3;
 const LIFT = 1.1;
 
 /**
- * The partner's network as lit streets (CITY-127): orange runs along the city's own roads from the plaza to every
+ * The partner's network as lit streets: orange runs along the city's own roads from the plaza to every
  * tower the people they brought trade, breathing slowly. Drawn only for the partner, only when they switched it on in
  * «Мій район» — never a figure, never a name, and nobody else's screen ever shows it.
  */

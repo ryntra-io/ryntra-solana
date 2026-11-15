@@ -9,7 +9,7 @@ export const dynamic = 'force-dynamic';
 export const maxDuration = 60;
 
 /**
- * «Like the Captain»'s daily pass (CITY-99): every copy held to the chain once — confirmed, measured with SOL-2b's
+ * «Like the Captain»'s daily pass: every copy held to the chain once — confirmed, measured with SOL-2b's
  * arithmetic, closed or dropped — and today's point of every strategy written. Internal — the cron's bearer only.
  * Reads the chain; signs, sends and trades nothing.
  */

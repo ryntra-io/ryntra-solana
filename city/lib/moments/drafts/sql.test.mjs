@@ -14,7 +14,7 @@ const migrations = new URL('../../../../supabase/migrations/', import.meta.url);
 const files = readdirSync(migrations).filter((f) => f.includes('moments'));
 const sql = readFileSync(new URL('20261027150000_city_moments_drafts_v1.sql', migrations), 'utf8');
 const code = sql.replace(/^\s*--.*$/gm, '');
-// CITY-38: the fifth kind, `studio`, in a file of its own, so the CITY-3 file stays as merged.
+// The fifth kind, `studio`, in a file of its own, so the first file stays as merged.
 const studioSql = readFileSync(new URL('20261027160000_city_moments_drafts_studio_v1.sql', migrations), 'utf8');
 const studioCode = studioSql.replace(/^\s*--.*$/gm, '');
 
@@ -33,7 +33,7 @@ test('the queue’s migration files, each one transaction, not applied anywhere 
   assert.doesNotMatch(code, /world_/, 'the world’s tables are the world line’s');
 });
 
-test('the studio file (CITY-38) only widens the kind check: no table, grant, policy or function', () => {
+test('the studio file only widens the kind check: no table, grant, policy or function', () => {
   assert.match(studioSql, /^begin;$/m);
   assert.match(studioSql, /^commit;$/m);
   assert.match(studioSql, /Not applied to any Supabase project/);
@@ -45,7 +45,7 @@ test('the studio file (CITY-38) only widens the kind check: no table, grant, pol
     'commit',
   ]);
   const before = [...code.match(/kind text not null check \(kind in \(([^)]+)\)\)/)[1].matchAll(/'([^']+)'/g)].map((m) => m[1]);
-  assert.deepEqual([...before, 'studio'], [...POST_KINDS], 'the CITY-3 file keeps its four kinds; the studio file adds the fifth');
+  assert.deepEqual([...before, 'studio'], [...POST_KINDS], 'the first file keeps its four kinds; the studio file adds the fifth');
 });
 
 test('every table is private, with row level security forced, no policy and no grant', () => {
@@ -218,7 +218,7 @@ test('the real store against a throwaway database', { skip: url ? false : 'MOMEN
     assert.equal((await store.delivered({ id: c.draft.id, delivery: { status: 'sent', note: 'x' }, now })).status, 'rejected', 'only a claimed draft moves');
   });
 
-  await t.test('a studio post (CITY-38) goes in, its largest facts within the table’s 4 KB', async () => {
+  await t.test('a studio post goes in, its largest facts within the table’s 4 KB', async () => {
     const { createMomentsApi } = await import('./api.ts');
     const { NO_SENDER } = await import('./sender.ts');
     const api = createMomentsApi({ store, sender: NO_SENDER, now: () => now, authorize: async () => ({ ok: true, by: 'key', actor: null }) });

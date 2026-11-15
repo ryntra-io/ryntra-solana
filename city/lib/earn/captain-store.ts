@@ -2,7 +2,7 @@ import { isPierStyle } from './pier.ts';
 import { isAddress, readRecipeId, type CopyEntry, type CopyRecord, type CopyResult, type StrategyPoint } from './captain.ts';
 
 /**
- * What «Like the Captain» keeps (CITY-99): the copies the city reported and what the chain made of them, and one point
+ * What «Like the Captain» keeps: the copies the city reported and what the chain made of them, and one point
  * a day per strategy. A deployment keeps it in the database (`captain-db.ts`,
  * `supabase/migrations/20261031120000_city_earn_captain_v1.sql`) so every server instance and the daily pass see one
  * ledger. This file also has the memory store — tests and a developer's machine only: it lives as long as one warm

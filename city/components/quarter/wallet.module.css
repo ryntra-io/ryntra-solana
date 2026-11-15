@@ -43,10 +43,10 @@
   font-variant-numeric: tabular-nums;
 }
 
-/* The wallet's panel stands in a layer of its own, over the city's windows (CITY-239). It answers a tap inside a window
-   — «Connect wallet» in the Ring, «Sign in» in the Vault — so it is never under that window (CITY-236). Only the panel:
+/* The wallet's panel stands in a layer of its own, over the city's windows. It answers a tap inside a window
+   — «Connect wallet» in the Ring, «Sign in» in the Vault — so it is never under that window. Only the panel:
    the top bar it belongs to stays under the windows (hud.module.css), and with it the city's event slab, the home's
-   cards and the Deck, which the rule of CITY-236 lifted over the window too. At every width: a phone's window on the
+   cards and the Deck, which the rule lifted over the window too. At every width: a phone's window on the
    whole screen hid the list of wallets the same way. The layer itself takes no tap. */
 .over {
   position: fixed;
@@ -71,7 +71,7 @@
   --cut: 14px;
 }
 
-/* Solid, not the bar's glass: nothing of the city or a hint under it reads through the wallet (CITY-150). Above the
+/* Solid, not the bar's glass: nothing of the city or a hint under it reads through the wallet. Above the
    HUD's panel rule whichever stylesheet loads first. */
 .over > .menu {
   background: linear-gradient(160deg, #161226, #09080f);
@@ -104,7 +104,7 @@
   margin-top: 12px;
 }
 
-/* Settings (CITY-87): one quiet row of the menu, the gear and the word. */
+/* Settings: one quiet row of the menu, the gear and the word. */
 .settings {
   display: flex;
   align-items: center;
@@ -146,7 +146,7 @@
   opacity: 0.6;
 }
 
-/* The way to a wallet when this browser has none (CITY-221): the same button, as a link. */
+/* The way to a wallet when this browser has none: the same button, as a link. */
 .actLink {
   display: grid;
   place-items: center;

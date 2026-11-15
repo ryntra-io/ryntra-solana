@@ -81,7 +81,7 @@ function DetailBody({
   run: Run | null;
 }>) {
   const { w, lang } = useWords();
-  // A ladder on a coin the engine has a pool for on the window's network is placed live (CITY-135, CITY-219); anything else stays practice.
+  // A ladder on a coin the engine has a pool for on the window's network is placed live; anything else stays practice.
   const pool = useLadderPool(placesLive(draft) ? draft.pair.mint : null);
   const save = () => void (own ? useBots.getState().saveVersion() : useBots.getState().saveAsStrategy(`${w.kind[draft.kind]} · ${draft.pair.symbol}`));
 
@@ -145,7 +145,7 @@ function DetailBody({
         <div className={s.detailSide}>
           <section className={s.panel} aria-label={w.settings}>
             <Fields draft={draft} set={set} current={current} w={w} lang={lang} />
-            {/* What happens when the price leaves the range: the last of the settings, in their own card (CITY-243). On
+            {/* What happens when the price leaves the range: the last of the settings, in their own card. On
                 its own card under them, a desk 900 px tall put it under the pinned start — its title alone in sight. */}
             {KIND_FACTS[draft.kind].ranged ? (
               <section className={s.exitField} aria-label={w.exitTitle}>

@@ -1,11 +1,11 @@
-// CITY-238 · writes the training ranges' recorded states (`recorded.ts`). The same bytes every time: nothing is fetched,
+// Writes the training ranges' recorded states (`recorded.ts`). The same bytes every time: nothing is fetched,
 // no clock is read. Run it again only to change a range — a changed state is a new pin, so orders on the old one stop
 // running (the machine refuses a pin it does not hold).
 //
 //   node city/lib/arena/hack/ranges/record.mjs
 //
 // Three ranges, all on the SPL Token program that comes with the engine:
-//   • usdc-mint — the USDC mint as mainnet answered on 16.10.2026 (the tape CITY-198 recorded, read from disk). The
+//   • usdc-mint — the USDC mint as mainnet answered on 16.10.2026. The
 //     honest range: nobody takes its authorities, and an agent that says otherwise is shown wrong.
 //   • open-multisig — a practice vault Ryntra made, not recorded from mainnet: a token account under a multisig whose
 //     threshold was left at zero. A real class of fault (a misconfigured authority) on the real token program, so an
@@ -62,7 +62,7 @@ function usdcMint() {
     watch: [USDC],
     snapshot: {
       format: "ryntra-hack-snapshot/1",
-      source: { kind: "recorded", label: "CITY-198 tape: Meteora DLMM SOL-USDC, mainnet", recordedAt: tape.recordedAt },
+      source: { kind: "recorded", label: "Recorded tape: Meteora DLMM SOL-USDC, mainnet", recordedAt: tape.recordedAt },
       slot,
       unixTimestamp: Math.floor(Date.parse(tape.recordedAt) / 1_000),
       programs: [],
@@ -131,7 +131,7 @@ const rangesNow = () => [
 
 /** `recorded.ts` as this script writes it: the same text every time. */
 export const renderRecorded = (ranges = rangesNow()) => `/**
- * The training ranges' recorded states (CITY-238). WRITTEN BY \`record.mjs\` — do not edit by hand: a changed byte is a
+ * The training ranges' recorded states. WRITTEN BY \`record.mjs\` — do not edit by hand: a changed byte is a
  * new pin. What each range is, in words — \`record.mjs\` and \`README.md\`.
  */
 

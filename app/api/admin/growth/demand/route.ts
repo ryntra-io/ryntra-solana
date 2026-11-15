@@ -10,7 +10,7 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 /**
- * The owner's week of demand (CITY-197): `GET ?week=YYYY-MM-DD` — a closed week (a Monday, UTC; the last one by
+ * The owner's week of demand: `GET ?week=YYYY-MM-DD` — a closed week (a Monday, UTC; the last one by
  * default). An operator's session only; reads and nothing else.
  */
 const json = (body: Record<string, unknown>, status = 200) => NextResponse.json(body, { status, headers: privateNoStoreHeaders() });

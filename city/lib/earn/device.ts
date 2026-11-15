@@ -13,7 +13,7 @@ import { readRecord, type PlacedRecord } from './limit.ts';
  * - the Scaled UI multiplier steps seen for each stock, so the dividend history grows with every visit;
  * - the products the person asked to hear about when they open;
  * - SOL-2b's entries per wallet (`ryntra.pools.entries.v1:`), read only — written where the pool position was opened;
- * - the Stock Pier's plan for the exchange's close, per wallet and pier (CITY-98): stay, or step out before it.
+ * - the Stock Pier's plan for the exchange's close, per wallet and pier: stay, or step out before it.
  */
 
 const LOTS = 'ryntra.city.earn.saver.v1:';
@@ -105,7 +105,7 @@ const PLACED = 'ryntra.city.earn.limits.v1:';
 const MAX_PLACED = 100;
 
 /**
- * Sell Higher's orders placed here (CITY-97), per wallet, by order: the target per unit and the multiplier they were
+ * Sell Higher's orders placed here, per wallet, by order: the target per unit and the multiplier they were
  * set at — the chain keeps neither, and «set it again» needs both once the multiplier moves.
  */
 export function placedOf(owner: string): ReadonlyMap<string, PlacedRecord> {

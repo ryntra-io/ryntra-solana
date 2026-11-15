@@ -1,5 +1,5 @@
 /**
- * The corporate-action reader for xStocks (CITY-95): an xStock is a Token-2022 mint with the Scaled UI Amount
+ * The corporate-action reader for xStocks: an xStock is a Token-2022 mint with the Scaled UI Amount
  * extension, so its raw balance never moves on a corporate event — the issuer moves a multiplier instead, and a
  * dividend (reinvested into more of the same token) and a split both arrive as a step of it. This reads each step
  * for what it is, so a split is never shown as a dividend:

@@ -8,8 +8,7 @@ import { MENU_GAP, MENU_TOP_MIN, menuPlace, TABBABLE, tabTo } from "./wallet-men
 const read = (file) => readFileSync(new URL(file, import.meta.url), "utf8").replace(/\r\n/g, "\n");
 const css = (file) => read(file).replace(/\/\*[\s\S]*?\*\//g, "");
 
-/* CITY-239: only the wallet's panel stands over the windows. CITY-236 lifted the whole layer of the top bar while the
-   panel was open, and the city's event slab («NEW TOWER · NEW POOL») and the home's cards lay on the Ring's window. */
+/* Only the wallet's panel stands over the windows. */
 
 test("the panel stands under its chip, its right edge on the chip's", () => {
   assert.deepEqual(menuPlace({ bottom: 56, right: 1316 }, 1440), { top: 56 + MENU_GAP, right: 124 });
@@ -42,7 +41,7 @@ test("the wallet's panel has a layer of its own over the windows, on a desk and 
   const frames = Math.max(...[...windows.matchAll(/\.(?:layer|sheet) \{[^}]*z-index: (\d+);/gu)].map((m) => Number(m[1])));
   assert.equal(frames, 12, "the frame's windows and the phone's sheet");
   assert.ok(z > frames, `the panel's layer (${z}) is over the windows (${frames})`);
-  // No width decides it: the rule of CITY-236 held from 900 px up only, and a phone's whole-screen window hid the list.
+  // No width decides it: the rule held from 900 px up only, and a phone's whole-screen window hid the list.
   assert.doesNotMatch(wallet, /@media[^{]*\{\s*\.over \{/u);
   assert.match(wallet, /\.menu \{[^}]*position: fixed;[^}]*top: var\(--wallet-top/u);
 });
@@ -63,7 +62,7 @@ test("the chip draws its panel into that layer, at the chip's place, and a tap i
   assert.match(chip, /useBackPanel\('wallet', showing, close\)/u, "«Back» closes the panel first, as before");
 });
 
-/* CITY-240: the panel is drawn at the end of the page, so the page's own order no longer leads from the chip into it.
+/* The panel is drawn at the end of the page, so the page's own order no longer leads from the chip into it.
    Tab from the chip went along the top bar and reached the panel last; Shift+Tab from the panel's first button went to
    whatever stands before the page's end. */
 test("Tab goes chip → the panel's controls → what follows the chip; Shift+Tab walks the same way back", () => {
@@ -99,6 +98,6 @@ test("the panel keeps that order by hand, and only while it is open", () => {
   assert.match(chip, /if \(!shown\) return;\s+const stops = /u, "no listener without a panel");
   // What Tab can stop on: nothing switched off, nothing taken out of the order.
   for (const piece of ["a[href]", "button:not([disabled])", '[tabindex]:not([tabindex="-1"])']) assert.ok(TABBABLE.includes(piece), piece);
-  // Escape still hands the keyboard back to the chip (CITY-239).
+  // Escape still hands the keyboard back to the chip.
   assert.match(chip, /if \(box\?\.contains\(document\.activeElement\)\) button\?\.focus\(/u);
 });

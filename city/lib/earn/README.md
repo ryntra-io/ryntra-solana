@@ -1,6 +1,6 @@
-# Earn in the city (CITY-92, with CITY-93 Piers, CITY-94, CITY-95 first pass, CITY-97 Sell Higher, CITY-98 Stock Pier, CITY-99 Like the Captain and CITY-192 Dollar Saver)
+# Earn in the city
 
-One window on the city's frame (CITY-65) with three tabs — **Shelf · Piers · Mine** (UA: Полиця · Причали · Моє) —
+One window on the city's frame with three tabs — **Shelf · Piers · Mine** (UA: Полиця · Причали · Моє) —
 for the owner's Earn strategy (`docs/research/ryntra-earn-2026-10-29/SPEC.md`, decision 77). Results are said in SOL
 and always against just holding. This first pass changes no engine and no money logic: the one product that moves money, the
 SOL Saver, is the trade card's own swap.
@@ -15,7 +15,7 @@ openEarn('mine');           // a tab: shelf · piers · mine
 openEarn('shelf', 'saver'); // a product of the Shelf
 ```
 
-The one door for every entry: the ☰ menu row, the Harbor in the dock (on Piers), and the Helm's «Earn» verb (CITY-89).
+The one door for every entry: the ☰ menu row, the Harbor in the dock (on Piers), and the Helm's «Earn» verb.
 While a signature is out the window stays on it and its frame holds.
 
 **Switch:** `NEXT_PUBLIC_RYNTRA_CITY_EARN=open` (exactly). Closed, nothing of Earn is drawn — no menu row, the Harbor
@@ -27,11 +27,11 @@ keeps its own behaviour — and the routes below answer 404.
 | --- | --- | --- |
 | SOL Saver (SOL-скарбничка) | acts: SOL → JupSOL / INF / JitoSOL | the best LST's last-epoch rate |
 | SOL Pier | the Piers tab (below): acts where the Harbor's switch admits the wallet | the top SOL pier's fees, 24 h |
-| Dollar Saver | acts where its own switch is open and the engine admits the wallet (CITY-192, below); else a calm window | USDC lending rate from SOL-3's read |
-| Sell Higher | acts where its own switch admits the wallet (CITY-97, below); else a calm window | SOL's price from the city's tower |
+| Dollar Saver | acts where its own switch is open and the engine admits the wallet; else a calm window | USDC lending rate from SOL-3's read |
+| Sell Higher | acts where its own switch admits the wallet; else a calm window | SOL's price from the city's tower |
 | Stock Pier (Причал акцій) | builds where its own switch admits the wallet (below); else its verified pairs and «Tell me when it opens» | the busiest verified stock's 7 days of trading |
-| Dollars for Stocks | calm window (CITY-101 — paused 4.11: «лишаємося в Юпітері», Kamino is not wired) | the most traded stock tower's price |
-| Like the Captain | strategies with a proven record (CITY-99, below); calm window until one has it | the best proven record against holding |
+| Dollars for Stocks | calm window | the most traded stock tower's price |
+| Like the Captain | strategies with a proven record; calm window until one has it | the best proven record against holding |
 
 A calm window is a real card: a frame of the live 3D city, the live context, and one switch «Tell me when it opens»
 kept on the device. A number that was not read is hidden — never a made-up rate, never «Soon».
@@ -46,7 +46,7 @@ account deposit apart, the cost on the way in and the spread back to SOL now (a 
 rewards, the route, and how the rate is read. A landed purchase with its amounts is kept on the device as a lot
 (`ryntra.city.earn.saver.v1:<owner>`) so «Mine» can say what it earned; a signature read back by recovery never is.
 
-## The Dollar Saver (CITY-192)
+## The Dollar Saver
 
 USDC or SOL lent at Jupiter Lend's floating rate (spec E5), on SOL-3's engine as it stands (`lib/earn`,
 `app/api/solana/earn/**`). `dollar-store.ts`: `GET /api/solana/earn?owner=` (the markets, the wallet's position read
@@ -73,7 +73,7 @@ the slot time the network kept lately (`getRecentPerformanceSamples`). The pool 
 updated this epoch or the last. INF (a pool of LSTs, not a stake pool): Sanctum's public `apy/latest` and
 `sol-value/current`. A figure that fails is null and hidden.
 
-## The Piers (CITY-93)
+## The Piers
 
 The Harbor inside the window (spec E2). A **pier** is a Meteora DLMM pool of SOL against an LST of the SOL Saver
 (JupSOL, INF, JitoSOL) or against USDC (`pier.ts`); `GET /api/city/earn/piers` lists them from the engine's catalogue
@@ -82,7 +82,7 @@ The Harbor inside the window (spec E2). A **pier** is a Meteora DLMM pool of SOL
 - **Amount in SOL, three styles.** Half the worth goes in as SOL, half as the other coin at the pool's price. Calm ·
   Balanced · Dense are 34 · 16 · 5 bins each side of the price — the engine's own `range.half`. Risk dots follow the
   style.
-- **A goal, not a shape (CITY-210).** Even · Near price · Catch moves are the engine's `spot` · `curve` · `bid_ask`, for
+- **A goal, not a shape.** Even · Near price · Catch moves are the engine's `spot` · `curve` · `bid_ask`, for
   the Zap and for the agent's care alike. Until the person picks, a staked SOL pair stands near the price and SOL
   against dollars even. A copy of «Like the Captain» stays even: a recipe is a pool and a style.
 - **Past 30 days** (`pier-history.ts`): the engine's candle read (`/api/spot/candles`, 4 h) as the pool's price; the
@@ -92,7 +92,7 @@ The Harbor inside the window (spec E2). A **pier** is a Meteora DLMM pool of SOL
   rent and the network, from the Review — at most a twentieth) · out of range → stops earning. Its «i» holds the range
   prices, bins, the account deposit and whether it comes back, the network, slippage, the trade fee, the day gone's
   share of fees for this amount, and how fees are counted.
-- **SOL alone is enough (CITY-198)**: the add is the engine's Zap (`lib/liquidity/studio/zap.ts`, Meteora's Zap program
+- **SOL alone is enough**: the add is the engine's Zap (`lib/liquidity/studio/zap.ts`, Meteora's Zap program
   through `@meteora-ag/zap-sdk` 2.0.0) — the part of the SOL the other coin needs is swapped (Jupiter `/swap/v2/build`
   with Ryntra's fee of the table, or the pool itself with none, whichever brings more) and the position opened, in one
   approval of the wallet for up to three version-0 transactions. The city's door is `POST /api/city/earn/piers/zap`; the
@@ -119,7 +119,7 @@ The Harbor inside the window (spec E2). A **pier** is a Meteora DLMM pool of SOL
 an add only where the Harbor admits the wallet, only on a SOL pier, only under the ceiling, and the ticket dropped if
 the Review's coins are not the ones priced. The relay and the chain's word are the engine's own routes.
 
-## Like the Captain (CITY-99)
+## Like the Captain
 
 Spec E8: copy a strategy with a proven record. A **strategy** is one of the city's own pier recipes — a SOL pier and a
 style (`captain.ts`, `recipeId`); the recipe is internal and never a screen. A **copy** is a position opened through the
@@ -147,7 +147,7 @@ city with that recipe; any add that lands from the Piers or from a copy is one.
   that says when one will show, and «Tell me when».
 - **Copy** (`PierCard` with `copy`, `pier-store.openCopy`): the strategy's pier with its style fixed and its record in
   place of the month gone; the person types the amount in SOL; the same Harbor door, the engine's Zap Review, one
-  approval — the same Zap from SOL as every pier add (CITY-198).
+  approval — the same Zap from SOL as every pier add.
 
 | | Where | What |
 | --- | --- | --- |
@@ -155,7 +155,7 @@ city with that recipe; any add that lands from the Piers or from a copy is one.
 | Store | `supabase/migrations/20261031120000_city_earn_captain_v1.sql` (prepared, **not applied**) | Production counts only on the database (`captainReady`); rollback `supabase/prepared/20261031_city_earn_captain_v1_rollback.sql`. A developer's machine keeps it in memory (`RYNTRA_CITY_CAPTAIN_STORE=database` to use the database there). |
 | Stop | the Harbor's `RYNTRA_CITY_HARBOR_STOP` | Stops the add of a copy as it stops every pier add; the record keeps being read. |
 
-## Sell Higher · Buy Lower · the Wheel (CITY-97)
+## Sell Higher · Buy Lower · the Wheel
 
 Spec E6. A real Meteora DLMM **limit order** — it sits in the pool, fills only at the person's price or better and stays
 filled (a one-sided range would buy back when the price returns). Built by the engine's new Studio action
@@ -186,12 +186,12 @@ pool action (`reviewLimitAction` → ticket → the wallet's one prompt → `/ap
 | Stop | `RYNTRA_CITY_EARN_LIMITS_STOP` set to anything | new orders stop at once; taking orders back stays open |
 
 Routes: `GET /api/city/earn/limits` (the checked markets), `…/admit?owner=`, `…/orders?owner=`, `POST …/review`. The
-devnet pass and the release steps: `docs/city/earn/CITY-97-DEVNET.md`.
+devnet pass and the release steps are kept with the development records.
 
-## The Stock Pier (CITY-98)
+## The Stock Pier
 
-Spec E7 («Мій причал» in the spec's table). In the city the name «Мій причал» is the creator's window of the Launch
-(CITY-141, live), so this product is the **Stock Pier** — «Причал акцій» — beside the Shelf's «SOL Pier». A person
+Spec E7 («Мій причал» in the spec's table). In the city the name «Мій причал» is the creator's window of the Launch,
+live already, so this product is the **Stock Pier** — «Причал акцій» — beside the Shelf's «SOL Pier». A person
 builds their own pool of a verified stock against SOL or USDC, with the first liquidity, in one signature — or moors
 beside the pair's pier where it already stands.
 
@@ -257,7 +257,7 @@ position out and closes it). The journal of signatures goes to `docs/shots/city-
 - **The headline** adds only SOL figures: «Earned» (lots' gain, piers' fees) and «Vs holding» (lots' gain, piers'
   SOL-2b net), the same size, mint for a gain and flare for a loss; nothing ticks between real reads.
 
-## Notes (CITY-100)
+## Notes
 
 Spec E9: four things Earn tells — **out of range** (a pool position stopped earning), the **stock exchange's weekend**
 (a stock the wallet holds or pools can jump when the exchange opens on Monday; from Friday noon in New York to Sunday's
@@ -267,7 +267,7 @@ collateral; Guard's, never off). One judge for every path: `notes.ts`.
 
 | Path | How |
 | --- | --- |
-| The city | `notes-source.ts`, started by `EarnLayer` after the first paint: the wallet's positions (through this store, every 5 min — 30 for a wallet with none — while in view) and its stocks (once a visit, hourly while the window is closed) → `notify()` (CITY-87), where the person chose: a banner, the computer, off. What was told is kept per wallet on the device (`ryntra.city.earn.told.v1:<owner>`). |
+| The city | `notes-source.ts`, started by `EarnLayer` after the first paint: the wallet's positions (through this store, every 5 min — 30 for a wallet with none — while in view) and its stocks (once a visit, hourly while the window is closed) → `notify()`, where the person chose: a banner, the computer, off. What was told is kept per wallet on the device (`ryntra.city.earn.told.v1:<owner>`). |
 | The phone and Telegram | The city asks the server to watch the proven wallet once it has something in Earn (`POST /api/city/earn/notes`, the wallet's own proof; never asks the wallet itself). `/api/cron/city-earn-notes` every 5 min reads a few watches, each at most every 15 min (`notes-watch.ts`, `notes-watch.server.ts`): SOL-2b's positions, the Token-2022 coins and their Scaled UI configuration. What is new becomes a note in the engine's inbox with one delivery per channel the wallet's preferences carry — Telegram, the Ryntra app's push, the browser's push — quiet hours and retries the engine's (`lib/monitoring/deliver.ts`). The first positions read is known; a watch with nothing for 30 days ends. |
 | Where it opens | `/?open=earn&tab=mine` — the banner, the computer's notification, Telegram's button and the phone. |
 
@@ -280,7 +280,7 @@ screen. All of it is closed with `NEXT_PUBLIC_RYNTRA_CITY_EARN`. Loan health wai
 | --- | --- |
 | `flag.ts` | The switch, the tabs, the products and their risk dots. |
 | `open.ts` | The window's store and `openEarn(tab, product)`. |
-| `words.ts` | English and Ukrainian, until CITY-79's dictionaries. |
+| `words.ts` | English and Ukrainian, until the city's dictionaries. |
 | `lst.ts`, `stake-pool.ts`, `feed.ts`, `feed.server.ts` | The LSTs, the pool decoder, the feed and its server read. |
 | `saver.ts`, `saver-store.ts` | The Saver's line and its flow over the trade engine. |
 | `mine.ts`, `corporate.ts`, `stocks.ts`, `stocks.server.ts` | «Mine» in SOL, the corporate-action reader, the multipliers. |

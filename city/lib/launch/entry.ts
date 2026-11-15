@@ -12,7 +12,7 @@ import type {
 import { engineCall, type Answer } from './engine.ts';
 
 /**
- * «Your people first» from the people's side (CITY-220): the creator's link opens one window on the early launch, and
+ * «Your people first» from the people's side: the creator's link opens one window on the early launch, and
  * the window has one thing to do at each moment — come in with USDC while the window is open, start the one buy for
  * everyone in the hour before trading, then take the tokens and whatever the vault did not spend. The engine reads the
  * vault on chain and builds every byte (`/api/v1/launch/{mint}/early-access/*`, SOL-L5); the city reads the bytes back

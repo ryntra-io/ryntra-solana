@@ -1,5 +1,5 @@
 /**
- * CITY-203 — what the person signs: give the agent the position to look after, stop it, take everything back. Each is
+ * What the person signs: give the agent the position to look after, stop it, take everything back. Each is
  * signed by their wallet once (one approval, at most three transactions); nothing here holds or asks for a key.
  *
  * - **Enable.** Their smart account (made in the same approval when they have none), what they put in moved into its care

@@ -9,7 +9,7 @@ import { isWorldError, type CrewColour, type CrewStreet, type GiftRequest, type 
 import { CREW_WORDS } from './words.ts';
 
 /**
- * My crew in the city (CITY-20): whether I am in one, every crew street on the terrace, the one sheet that makes,
+ * My crew in the city: whether I am in one, every crew street on the terrace, the one sheet that makes,
  * joins, invites to and leaves a crew, and an invite that came in by a link. A step that moves my quarter (make, join,
  * leave) reads my place and the terrace again, so the camera and the street follow at once.
  */

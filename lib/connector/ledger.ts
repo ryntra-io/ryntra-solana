@@ -5,7 +5,7 @@ import { z } from "zod";
 import type { GuardStore } from "../guard/store.ts";
 
 /**
- * The connector's two durable books (CITY-154): each wallet's quota window, and one receipt per tool call.
+ * The connector's two durable books: each wallet's quota window, and one receipt per tool call.
  *
  * **Quota by wallet, not by address.** Every user of one AI chat reaches `/mcp` from that chat's few egress addresses, so a
  * per-address window would make all of them one caller. The grant names the wallet that signed, and that wallet is the

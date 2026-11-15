@@ -1,7 +1,7 @@
 import type { Tower } from '../market/types.ts';
 
 /**
- * The coin's logo in the chart's head (CITY-5a). The engine serves a coin's logo from the URL Jupiter lists for it
+ * The coin's logo in the chart's head. The engine serves a coin's logo from the URL Jupiter lists for it
  * (`/api/icon/<mint>`), and answers «no logo» for a minute when the logo's gateway is busy. So: the first try; on a
  * failure, the coin's first letter while a moment passes; one more try past the busy minute's cached answer; then the
  * letter for good. A coin the engine lists without a logo wears its letter from the start. Pure.

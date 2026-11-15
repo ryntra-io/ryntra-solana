@@ -1,7 +1,7 @@
 import { words } from '../i18n/dict.ts';
 
 /**
- * The money autopilot (CITY-204), English and Ukrainian. One card, one big figure, one button; the parts as a bar;
+ * The money autopilot, English and Ukrainian. One card, one big figure, one button; the parts as a bar;
  * honesty in one line before the signature; everything else behind «Details». No promise of profit: the figure is what
  * the plan earned, read from the engine, a minus as a minus.
  */
@@ -18,7 +18,7 @@ export const PILOT = words(
     on_save: 'Jupiter Lend',
     on_pool: 'Meteora pier',
     on_reserve: 'Stays with you',
-    // CITY-237: the proposal's sum — nothing is at work before the signature (an empty wallet read «$17 at work»).
+    // The proposal's sum — nothing is at work before the signature (an empty wallet read «$17 at work»).
     total: (usd: string) => `${usd} to put to work`,
     // The one honest line before a signature.
     risk: 'Can end in minus · stop anytime · keys stay yours',

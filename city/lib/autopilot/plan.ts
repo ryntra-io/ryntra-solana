@@ -2,7 +2,7 @@ import { BUDGET_PRESET_IDS, BUDGET_PRESETS, type BudgetPresetId } from '../../..
 import { steadyRhythm } from '../../../lib/mandate/strategy.ts';
 
 /**
- * What the agent proposes from the person's words (CITY-175), worked out before anything is signed. Pure, so the tests
+ * What the agent proposes from the person's words, worked out before anything is signed. Pure, so the tests
  * read it: the budget a day from the amount said, the rhythm the agent keeps, and a launch's name, ticker and picture
  * seed when the person left them to the agent.
  */
@@ -30,7 +30,7 @@ export function lamports(sol: string): bigint {
 /** How the agent spends a budget: so many buys a day, this far apart, each this big (SOL). */
 export function rhythmOf(id: BudgetPresetId, pace: number | null = null): Readonly<{ buys: number; everyHours: number; perTrade: number; perDay: number; days: number }> {
   const preset = BUDGET_PRESETS[id];
-  /* CITY-197: the plan's pace spaces the buys inside the caps. */
+  /* The plan's pace spaces the buys inside the caps. */
   const { buys, everyMs } = steadyRhythm(preset.perTrade, preset.perDay, pace);
   return { buys, everyHours: Math.round((everyMs / 3_600_000) * 10) / 10, perTrade: Number(preset.perTrade) / 1e9, perDay: Number(preset.perDay) / 1e9, days: preset.days };
 }

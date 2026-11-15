@@ -180,7 +180,7 @@ export async function submitLimit(
         const ask = order.limitOrderData.limitOrderBinData.some((bin) => bin.isAskSide);
         const data = order.limitOrderData;
         /* The SDK says these amounts in whole coins (as `listDlmmOrders` reads them): base units by each coin's decimals. */
-        /* An amount not readable writes no claim rather than a wrong one (CITY-233). */
+        /* An amount not readable writes no claim rather than a wrong one. */
         const units = (ui: string, decimals: number) => {
           const raw = rawOfUi(String(ui), decimals);
           if (raw === null) throw new Error("UNREADABLE_AMOUNT");

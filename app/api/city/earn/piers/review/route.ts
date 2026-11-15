@@ -10,7 +10,7 @@ export const dynamic = 'force-dynamic';
 export const maxDuration = 30;
 
 /**
- * The Review of a SOL pier action from the city (CITY-93): the Harbor's own door in front of the engine's. An add is
+ * The Review of a SOL pier action from the city: the Harbor's own door in front of the engine's. An add is
  * let through only where the Harbor admits this wallet (closed · canary · open, and the stop), only on a SOL pier, and
  * only when the most it can put in is within the ceiling of its venue at the venue's own prices; taking fees and
  * leaving pass wherever the Harbor is not closed to the wallet — the stop never holds money in. Past the door it is

@@ -13,7 +13,7 @@ import { ownedMints, useWallet } from '@/city/lib/trade/wallet';
 /**
  * What the Lens reads from the rest of the city: the engine's listed companies, the coins of the connected wallet (as
  * «Mine» in the trade card reads them, a buy of a moment ago included), Ryntra's own launches with their curves, and
- * the rings of every new launch of the network (CITY-142).
+ * the rings of every new launch of the network.
  */
 export function useLensContext(): LensContext {
   const stocks = useLens((st) => st.stocks);

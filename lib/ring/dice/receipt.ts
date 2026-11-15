@@ -6,7 +6,7 @@ import { MatchConfigSchema, MatchLogSchema, type MatchConfig } from "./schema";
 import { logDigest, verify, type Divergence } from "./replay";
 
 /**
- * The dice receipt (CITY-69): what a finished match proves, in the shape the Ring's judge (CITY-68) reads. In dice the
+ * The dice receipt: what a finished match proves, in the shape the Ring's judge reads. In dice the
  * code decides, no model does, so the receipt reaches two levels of proof: the log's format and digest, and a
  * deterministic replay of every input. There is no third level to ask a model.
  *
@@ -22,7 +22,7 @@ import { logDigest, verify, type Divergence } from "./replay";
  * "unchecked"`), and moves and their times are as the host recorded them (`moves: "host_recorded"`). Before any SOL
  * rides on a match, moves are signed by the agents and the signature is checked.
  *
- * Anchoring the digest (a Solana memo), the «verified» seal and any payout are the judge's, after CITY-68; nothing here
+ * Anchoring the digest (a Solana memo), the «verified» seal and any payout are the judge's; nothing here
  * moves money.
  */
 

@@ -2,7 +2,7 @@ import { bare, cleanNumber, COMMAND_MAX, findCoin, isBase, known, LINE_WORDS, to
 import type { Cadence, Instruction, Trigger } from './types.ts';
 
 /**
- * The agent's reader (CITY-176): one sentence — «купуй SOL на $20 щотижня», «buy JUP if it drops to 0.7», «продай
+ * The agent's reader: one sentence — «купуй SOL на $20 щотижня», «buy JUP if it drops to 0.7», «продай
  * половину BONK, якщо впаде на 10 %», «стоп на JUP по 0,8» — read into an instruction for the card. English and
  * Ukrainian, with the Russian a Ukrainian phone often types. Pure: no store, no wallet, no network.
  *
@@ -212,9 +212,9 @@ export function readInstruction(input: string, book: Book, context: Context = { 
   // A question, a refusal or a condition that means the opposite is Ryntra's to answer.
   if (QUESTION.test(list[0]!.text) || /\?\s*$/u.test(said)) return null;
   if (list.some((t) => NOT.test(t.text) || UNLESS.test(t.text))) return null;
-  // «Launch a bot that buys…» is the agent with a budget (CITY-175), not an order set here.
+  // «Launch a bot that buys…» is the agent with a budget, not an order set here.
   if (list.some((t) => VERBS.launch.test(t.text) || VERBS.create.test(t.text)) && list.some((t) => AGENT.test(t.text))) return null;
-  // «Торгуй на 1 SOL щодня» is the agent trading by itself within a budget (CITY-175), not a regular purchase.
+  // «Торгуй на 1 SOL щодня» is the agent trading by itself within a budget, not a regular purchase.
   if (list.some((t) => VERBS.trade.test(t.text))) return null;
   if (list.some((t) => strangeTicker(t, book))) return null;
 

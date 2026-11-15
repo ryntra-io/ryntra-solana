@@ -12,7 +12,7 @@ import { useEarnData } from '@/city/lib/earn/store';
 import type { Words } from '@/city/lib/earn/words';
 import s from './earn.module.css';
 
-/** Risk as 1 to 3 dots, filled amber for each step, with its word beside them (CITY-243: three dots alone were a riddle). */
+/** Risk as 1 to 3 dots, filled amber for each step, with its word beside them (three dots alone were a riddle). */
 export function RiskDots({ dots, words }: { dots: 1 | 2 | 3; words: Words }) {
   return (
     <span className={s.risk} role="img" aria-label={words.riskLabel(dots)} title={words.riskLabel(dots)}>
@@ -79,7 +79,7 @@ export function Notify({ product, words }: { product: ProductId; words: Words })
 /** A coin's logo through Ryntra's icon route, as every window of the city draws it. */
 /**
  * A coin's logo over its first letter: while the logo loads, and for a coin the engine has no logo for, the letter
- * stands in its circle — never an empty one (CITY-188).
+ * stands in its circle — never an empty one.
  */
 export function Coin({ mint, size = 28, symbol }: { mint: string; size?: number; symbol?: string }) {
   const [failed, setFailed] = useState(false);

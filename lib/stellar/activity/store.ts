@@ -14,7 +14,8 @@ import {
  * ## The decision, and why it is this one
  *
  * **This browser, and nowhere else.** Not a Ryntra server, not an account, not a
- * synced profile. The answer follows from what this product already is.
+ * synced profile.
+ * The answer follows from what this product already is.
  *
  * Ryntra holds no key, has no account for this workspace, and keeps no
  * server-side record of anyone using it. Adding a server-side history of who

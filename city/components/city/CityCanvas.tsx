@@ -22,7 +22,7 @@ const KIT_WAIT_MS = 12_000;
 const REVEAL_MS = 900;
 
 /** What this device says about itself; the canvas mounts on the client only, so the browser is there. */
-/** The city is behind windows on a computer (CITY-84): drawn lean. */
+/** The city is behind windows on a computer: drawn lean. */
 const leanNow = () => useWindows.getState().desk && leanIn(settledLayout(useWindows.getState()));
 
 function readDevice(): Device {
@@ -37,14 +37,14 @@ function readDevice(): Device {
 }
 
 /**
- * The canvas and its budget (CITY-6a): one ladder of quality rungs (`city/lib/city/quality.ts`). A phone starts at
+ * The canvas and its budget: one ladder of quality rungs (`city/lib/city/quality.ts`). A phone starts at
  * mid × 1.25, a desk at the top; the measured frame rate moves the city a rung at a time — the pixel ratio (the
  * composer renders at the canvas's size), then bloom, particles, traffic and the full-screen touches.
  * `?quality=high|mid|low` pins the start for a test. The frame loop starts once the shaders are compiled (`Warmup`) and
  * leaves the page's thread a breath after a heavy frame, so a tap is answered (`Pacer`).
  * WebGL2 for every phone in 2026; WebGPU later.
  *
- * Behind windows (CITY-84, helm §4) — both bays taken, or one window on the whole screen — the city is drawn lean: at
+ * Behind windows — both bays taken, or one window on the whole screen — the city is drawn lean: at
  * a pixel ratio of 1 and half as often (`Pacer`), and the frame rate it then shows moves no rung.
  */
 export function CityCanvas() {
@@ -67,7 +67,7 @@ export function CityCanvas() {
   };
   // The frame loop waits for the shaders: compiled in parallel, then the first frame draws without a long freeze.
   const [warm, setWarm] = useState(false);
-  // A lost WebGL context (CITY-200): the night colour holds, and a fresh canvas comes back when the browser allows.
+  // A lost WebGL context: the night colour holds, and a fresh canvas comes back when the browser allows.
   const [generation, setGeneration] = useState(0);
   const unwatch = useRef<(() => void) | null>(null);
   useEffect(() => () => unwatch.current?.(), []);

@@ -1,8 +1,8 @@
 // Run from repo root: node --test city/lib/arena/hack/store/ready.test.mjs
 /*
- * CITY-226: when Hack answers people. Closed by default; open only when the switch says `open`; in production only on
- * the shared database, never on one instance's memory; the stand's wallet only on a developer's machine. CITY-238:
- * production opens only with the machine that plays the runs set up — the image's snapshot, the project, the stamp key.
+ * When Hack answers people. Closed by default; open only when the switch says `open`; in production only on
+ * the shared database, never on one instance's memory; the stand's wallet only on a developer's machine.
+ * Production opens only with the machine that plays the runs set up — the image's snapshot, the project, the stamp key.
  */
 import "../../../../../lib/world/testing/hooks.mjs";
 import assert from "node:assert/strict";

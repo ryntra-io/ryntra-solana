@@ -11,7 +11,7 @@ import { connectorOrigin, connectorResource } from "@/lib/connector/metadata";
 import { createConnectorOAuthServer, errorRedirect, type AuthorizationParams } from "@/lib/connector/oauth";
 import { getGuardRuntime } from "@/lib/guard/runtime";
 
-/* `/connect` — the consent of Ryntra's Solana connector (CITY-154), the authorization endpoint an AI chat opens.
+/* `/connect` — the consent of Ryntra's Solana connector, the authorization endpoint an AI chat opens.
    The request is checked here, on the server, before anything is drawn: an unknown client or an unregistered return
    address is answered on this page and never redirected; any other refusal goes back to the client's verified address.
    With no request at all the page shows how to add Ryntra to a chat. Never offered to the index. */

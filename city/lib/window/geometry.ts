@@ -1,5 +1,5 @@
 /**
- * The city's windows on a computer, as geometry (CITY-65). Every window — the swap, the spot, the chart, the futures,
+ * The city's windows on a computer, as geometry. Every window — the swap, the spot, the chart, the futures,
  * the money — is a rectangle inside the workspace: the screen under the top bar and above the dock. Dragged near
  * another window or the workspace's edge, a window sticks to it; two windows that stick leave a thin seam between them,
  * and pulling that seam stretches one and shrinks the other. Nothing here draws or touches the page: safe anywhere,
@@ -43,8 +43,7 @@ export const INSET = { top: 72, right: 16, bottom: 104, left: 16 } as const;
 /** A popped-out window steps this far from where it stood, so it no longer sticks to anything. */
 export const STEP = 32;
 /**
- * From this screen width the folded windows' chips stand beside the Deck, on its row, under the workspace (CITY-242,
- * `Tray`). A narrower desk has no room there: the chips stand over the diamond, at the workspace's foot.
+ * From this screen width the folded windows' chips stand beside the Deck, on its row, under the workspace. A narrower desk has no room there: the chips stand over the diamond, at the workspace's foot.
  */
 export const CHIPS_BESIDE_FROM = 1100;
 /** The chips' band at the workspace's foot on a narrower desk: a window the system places leaves it clear. */
@@ -55,7 +54,7 @@ const right = (r: Rect) => r.x + r.width;
 const bottom = (r: Rect) => r.y + r.height;
 
 /**
- * The bays (CITY-84, helm §4): the workspace's left and right side, where windows stand the workspace's whole height
+ * The bays: the workspace's left and right side, where windows stand the workspace's whole height
  * at the bay's width — the city stays in the middle. A bay holds one frame; more windows there are its tabs.
  */
 export type Bay = 'left' | 'right';
@@ -479,7 +478,7 @@ export function popOutRect(rect: Rect, others: readonly Rect[], area: Rect, min:
 }
 
 /**
- * The tallest a window the system places stands on this workspace (CITY-242): all of it, between the top bar and the
+ * The tallest a window the system places stands on this workspace: all of it, between the top bar and the
  * Deck, where the chips of folded windows stand beside the Deck; on a narrower desk all but the chips' band at its foot.
  */
 export function tallestIn(area: Rect): number {
@@ -488,7 +487,7 @@ export function tallestIn(area: Rect): number {
 
 /**
  * Where a new window first opens: its size, near the middle, each next one a step down and right of the last. A window
- * may take the workspace's whole height — between the top bar and the Deck — when it asks for it (CITY-242: on a desk
+ * may take the workspace's whole height — between the top bar and the Deck — when it asks for it (on a desk
  * 900 px tall the spot window stood 109 px shorter than the room it had, and its form scrolled inside); its width keeps
  * the city in view on both sides.
  */

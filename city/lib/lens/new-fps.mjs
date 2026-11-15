@@ -1,4 +1,4 @@
-// Do the network's launches in the Docks (CITY-142) cost the phone frames? One page, the same camera, twice: with the
+// Do the network's launches in the Docks cost the phone frames? One page, the same camera, twice: with the
 // launches laid into the Docks, then with them let go — frames per second, the 95th-percentile frame and the draws.
 //   npm run dev      then      node city/lib/lens/new-fps.mjs [baseUrl] [--seconds 6]
 // A phone (375×812, DPR 2, touch, the CPU slowed ×4) and a desk at 1440×900, on the development stand-in

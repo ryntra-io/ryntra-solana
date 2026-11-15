@@ -4,7 +4,7 @@ import { CITY_LAUNCH_MAINNET } from './gate.ts';
 import type { LaunchTower } from './towers.ts';
 
 /**
- * Launch Night (L9, CITY-146; `docs/research/ryntra-launch-2026-10-29/SPEC.md` §10): the night's launches as a show in
+ * Launch Night (L9; `docs/research/ryntra-launch-2026-10-29/SPEC.md` §10): the night's launches as a show in
  * the city — the camera flies tower to tower through the Docks, one coin on the stage at a time, one tap to buy it.
  *
  * ## Only a start the chain confirmed
@@ -28,7 +28,8 @@ import type { LaunchTower } from './towers.ts';
 /**
  * The night's rules.
  *
- * ⚠ PROPOSAL — the numbers are the session's proposal from SPEC §10; `ownerWord` turns true only with it.
+ * ⚠ PROPOSAL — the numbers are the session's proposal from SPEC §10;
+ * `ownerWord` turns true only with it.
  */
 export const NIGHT_RULE = Object.freeze({
   version: 'launch-night-0.1.0',

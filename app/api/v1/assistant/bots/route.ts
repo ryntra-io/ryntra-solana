@@ -12,7 +12,7 @@ export const maxDuration = 30;
 const limiter = new FixedWindowLimiter({ limit: 30, windowMs: 60_000, maxKeys: 5_000 });
 
 /**
- * `POST /api/v1/assistant/bots` — Ryntra's tools for the bots hub (CITY-133):
+ * `POST /api/v1/assistant/bots` — Ryntra's tools for the bots hub:
  * `weather`, `suggest`, `simulate`, `explain` and `draft`. A body is a choice,
  * numbers and addresses (`lib/assistant/bots/schema.ts`, any other key
  * refused); every figure is read here from the engine — the chart's candles,

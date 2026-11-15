@@ -1,5 +1,5 @@
 /**
- * Money in the city (CITY-63): five tabs on Ryntra's own money engine. Three paths move money — Send, Bridge, and Top
+ * Money in the city: five tabs on Ryntra's own money engine. Three paths move money — Send, Bridge, and Top
  * up's address on another network (a deposit Relay fills into this wallet) — and open to people only where the
  * deployment's switch says `open` (`NEXT_PUBLIC_RYNTRA_CITY_MONEY`), after the owner's canary with a small amount
  * (spec §18.3). Until then Send and Bridge say they open soon, Top up shows only the wallet's own Solana address, and

@@ -24,7 +24,7 @@ const shapeOf = (layout: CityLayout) =>
   layout.towers.map((t) => `${t.tower.id}:${Math.round(t.x)}:${Math.round(t.z)}:${Math.round(t.height / 4)}`).join('|');
 
 /**
- * The city's reflection (CITY-56): a cube drawn from inside the skyline once it stands, and again when the city
+ * The city's reflection: a cube drawn from inside the skyline once it stands, and again when the city
  * changes shape (at most every five minutes), which every glass, metal and water surface samples through a sphere
  * round the island (`light.ts`), so a facade reflects the sky, the moon and its neighbours' lit windows. While the
  * cube is drawn the materials reflect the analytic sky (no surface samples the cube it is drawn into) and every tower

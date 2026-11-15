@@ -16,7 +16,7 @@ import { useCityWindow } from '../window/useCityWindow';
 import { EarnGlyph } from './bits';
 import s from './earn.module.css';
 
-// The window's contents never ride with the city's first frame. Since CITY-209 they are fetched once the city is drawn
+// The window's contents never ride with the city's first frame. They are fetched once the city is drawn
 // and the page is idle, so the first tap on «Earn» does not wait for them (2.8–5.5 s on the first open before).
 /** Earn's first width: two columns of the Shelf at the least, three at the most (`earn.module.css`, 980 px). */
 const EARN_WIDTHS = { least: 680, most: 1012 } as const;
@@ -47,7 +47,7 @@ function warmEarnWindow(): () => void {
 }
 
 /**
- * The window's reads start with the tap, side by side with its code, not after it (CITY-209): the feed, the Piers, the
+ * The window's reads start with the tap, side by side with its code, not after it: the feed, the Piers, the
  * lending markets, the Captain's records and the Stock Pier list. Each store keeps a fresh answer and skips a second
  * call, so the window's own start of the same reads costs nothing.
  */
@@ -66,9 +66,9 @@ const renderEarn = () => <EarnWindow />;
 const closeEarn = () => useEarn.getState().close();
 
 /**
- * Earn in the city (CITY-92), in the city's one window frame (CITY-65): closed until `NEXT_PUBLIC_RYNTRA_CITY_EARN`
+ * Earn in the city, in the city's one window frame: closed until `NEXT_PUBLIC_RYNTRA_CITY_EARN`
  * says `open`. Any entry opens it with `openEarn(tab)` from `city/lib/earn/open` — the menu, the Harbor, the Helm's
- * «Earn» (CITY-89). A run owns the whole screen and a clip being filmed keeps the frame clean, unless a signature is
+ * «Earn». A run owns the whole screen and a clip being filmed keeps the frame clean, unless a signature is
  * out, which always stays in view and which the frame holds open.
  */
 export function EarnLayer() {
@@ -91,7 +91,7 @@ function OpenEarn() {
 
   useEffect(() => warmEarnWindow(), []);
 
-  // Earn's notes (CITY-100) — out of range, the exchange's weekend, dividend dates — told through the notification
+  // Earn's notes — out of range, the exchange's weekend, dividend dates — told through the notification
   // centre while Ryntra is open; loaded after the first paint, never with the city's first frame.
   useEffect(() => {
     let stop: (() => void) | null = null;
@@ -124,8 +124,7 @@ function OpenEarn() {
       title: earnWords(lang).title,
       icon: <EarnGlyph />,
       render: renderEarn,
-      // CITY-242: one height for every tab — the window no longer jumps as the tabs change (CITY-209 made it as tall as
-      // the tab) — and wide enough for the Shelf's three columns, so a large desk shows every card of it.
+      // One height for every tab — the window no longer jumps as the tabs change — and wide enough for the Shelf's three columns, so a large desk shows every card of it.
       size: earnSize,
       min: { width: 380, height: 480 },
       held: busy,

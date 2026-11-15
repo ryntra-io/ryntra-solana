@@ -18,7 +18,7 @@ const renderBerth = () => <BerthWindow />;
 const closeBerth = () => useBerth.getState().close();
 
 /**
- * «Мій причал» (L4 · CITY-141) in the city's one window frame (CITY-65): the creator's launches, their three streams,
+ * «Мій причал» in the city's one window frame: the creator's launches, their three streams,
  * «Забрати», the days and the two cards. Opened from the launch sheet's head and from the creator's own tower
  * (`openBerth`). A run owns the whole screen and a clip being filmed keeps the frame clean — unless a claim is mid-way,
  * which always stays in view, and which the frame holds open.
@@ -49,7 +49,7 @@ export function BerthLayer() {
       title,
       icon: <BerthGlyph />,
       render: renderBerth,
-      // CITY-242: as tall as what is inside, up to its place — no empty glass under the cards on a large desk.
+      // As tall as what is inside, up to its place — no empty glass under the cards on a large desk.
       fit: true,
       size: { width: 760, height: 900 },
       min: { width: 380, height: 520 },

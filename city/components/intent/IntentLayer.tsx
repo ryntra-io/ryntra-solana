@@ -27,7 +27,7 @@ function SealGlyph() {
 }
 
 /**
- * `ryntra.io/i/<id>` (CITY-161): the city with one window — the confirm sheet of an action an agent, a chat or a partner
+ * `ryntra.io/i/<id>`: the city with one window — the confirm sheet of an action an agent, a chat or a partner
  * prepared. The page reads the intent on the server and hands it here; the window opens over the city at once, held
  * while the wallet or a transaction is mid-way, and closing it leaves just the city.
  */

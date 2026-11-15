@@ -1,6 +1,6 @@
--- Ryntra City: the Arena's third door, Hack — orders, takes and findings on the server (CITY-226).
+-- Ryntra City: the Arena's third door, Hack — orders, takes and findings on the server.
 --
--- PREPARED 2026-11-08 as a file only. Not applied to any Supabase project:
+-- PREPARED 2026-11-08 as a file only. Not applied to any Supabase project.
 -- It stands on nothing but `private.beta_check_secret`. Without it production
 -- keeps Hack closed: `city/lib/arena/hack/store/ready.ts` refuses to open on
 -- one instance's memory, and every `/api/arena/hack/**` route stays a 404.
@@ -26,7 +26,7 @@
 --       - an owner's move (pause, resume, close, settle) is the protocol
 --         owner's alone, along the order's state machine; the deadline only
 --         after the window; settle only when no finding waits for review;
---       The protocol owner
+--       - the owner's word on a finding under review: the protocol owner
 --         alone, a confirmation only for a deterministic run the judge could
 --         not tell, and «who first» again.
 --   * Every server function is gated by the app secret
@@ -34,8 +34,8 @@
 --     granted to `anon` alone, as in `ring_v2_arena`.
 --
 -- WHAT IT DOES NOT DO
---   No money: a reward is a reference to a reward pool (CITY-46); payouts are
---   CITY-229. No sandbox and no live mainnet target: an
+--   No money: a reward is a reference to a reward pool.
+--   No sandbox and no live mainnet target: an
 --   order's target is a copy (a fork pinned at a slot, or devnet). No IP
 --   address is kept: a network is counted under a keyed hash the server
 --   makes. Nothing is deleted but request-key answers and hour counts past
@@ -90,7 +90,7 @@ create table private.hack_findings (
   reason text not null check (reason ~ '^[A-Z_]{2,32}$'),
   -- The severity it counts at; null when it does not count.
   severity text check (severity is null or severity in ('critical', 'high', 'medium', 'low', 'info')),
-  -- The rules would allow a reward. Nothing is paid here (CITY-229).
+  -- The rules would allow a reward. Nothing is paid here.
   payable boolean not null default false,
   -- The finding as the agent handed it in, with the server's clock and the hunter's wallet.
   record jsonb not null check (jsonb_typeof(record) = 'object' and pg_column_size(record) <= 16384),
@@ -537,7 +537,8 @@ begin
 end;
 $$;
 
--- A rejection, or a confirmation — only of a deterministic run the
+-- The protocol owner's word on a finding under review, under the order's
+-- lock: a rejection, or a confirmation — only of a deterministic run the
 -- judge could not tell (a finding without a run is not a finding), and the
 -- first confirmed of its vulnerability counts.
 create function public.hack_finding_resolve(

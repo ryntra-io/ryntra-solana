@@ -2,7 +2,7 @@ import { CITY_CARD_SIZE } from "@/city/lib/share/card";
 import { cityCard } from "@/city/lib/share/card.server";
 import { CARD_WORDS } from "@/city/lib/share/words";
 
-/* The share card of the Ukrainian addresses: the city's card (CITY-158) with its line in Ukrainian. It lives outside
+/* The share card of the Ukrainian addresses: the city's card with its line in Ukrainian. It lives outside
    the landing's route group on purpose: Next gives a metadata image inside a group (`app/(home)/uk/…`) a hashed
    address, and the pages name their card at the plain `/uk/opengraph-image` (`landingOgImage` in `app/seo.ts`). */
 export const runtime = "nodejs";

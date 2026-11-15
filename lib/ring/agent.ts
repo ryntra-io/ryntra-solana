@@ -1,5 +1,5 @@
 /**
- * What an agent is (CITY-50, decision 72): a body, a brain and a script, in one garage slot of its owner's quarter.
+ * What an agent is: a body, a brain and a script, in one garage slot of its owner's quarter.
  * The rules every route checks before the store is asked anything.
  *
  * Pure: no store, no clock, no network.
@@ -8,8 +8,7 @@
 import { FORMATS, SCENARIO_MAX, isArchetype, type Archetype, type RingFormat } from "./contract.ts";
 
 /**
- * What the published harness of a format asks of a brain (CITY-51 owns the harness; this is what the Ring checks now,
- * so the picker can say which formats a model can play): Duo Crack is plain text; Code calls tools that run the open
+ * What the published harness of a format asks of a brain: Duo Crack is plain text; Code calls tools that run the open
  * tests; a Market Replay move is a strict JSON order.
  */
 export const FORMAT_NEEDS: Readonly<Record<RingFormat, Readonly<{ tools?: boolean; structuredOutputs?: boolean }>>> = {

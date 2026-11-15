@@ -4,7 +4,7 @@ import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 
-// The windows in the one frame (CITY-65): the chart (CITY-5a), the Exchange (CITY-5d) and Money (CITY-63) open in the
+// The windows in the one frame: the chart, the Exchange and Money open in the
 // city's frame, with no frame of their own beside it; a signature holds the frame; Escape gives the whole screen back
 // first and closes one window per press.
 
@@ -21,7 +21,7 @@ test("each window opens in the city's one frame, under its own id and title", ()
   for (const w of WINDOWS) {
     const layer = read(w.layer);
     assert.match(layer, /import \{ useCityWindow \} from '\.\.\/window\/useCityWindow';/, w.layer);
-    // The title comes from the district's words (CITY-79): its English half names the window as before.
+    // The title comes from the district's words: its English half names the window as before.
     assert.match(layer, new RegExp(`id: '${w.id}',\\s*title[,\\s]`), w.layer);
     const key = layer.match(/const title = w\.(\w+);/)?.[1];
     assert.ok(key, `${w.layer}: the title from the words`);
@@ -70,12 +70,12 @@ test("the frame follows a window's data without bringing it forward", () => {
   assert.match(hook, /if \(shown\) updateWindow\(spec\)/);
 });
 
-test("onto another screen (CITY-75): the chart and the Exchange say how; the frame's quiet button, never on a phone", () => {
+test("onto another screen: the chart and the Exchange say how; the frame's quiet button, never on a phone", () => {
   assert.match(read("city/components/chart/ChartLayer.tsx"), /detach: towerId \? \{ tower: towerId \} : undefined/);
   assert.match(read("city/components/exchange/ExchangeLayer.tsx"), /detach: \(symbol \? \{ symbol \} : \{\}\) as Params/);
   const frame = read("city/components/window/WindowFrame.tsx");
   assert.match(frame, /spec\.detach && !app && canGoOut\(\)/);
-  // The button's words live in the frame's dictionary (CITY-79).
+  // The button's words live in the frame's dictionary.
   assert.match(frame, /aria-label=\{w\.goOut\}/);
   assert.match(read("city/components/window/words.ts"), /goOut: 'Open in a new window'/);
   assert.doesNotMatch(read("city/components/window/WindowSheet.tsx"), /goOut|Open in a new window/, "the phone's sheet has no way out");
@@ -115,7 +115,7 @@ test("a window on its own page keeps the city's switches and its signature; the 
   assert.match(hud, /exchange: \{ open: exchange && !exchangeOut \}/);
 });
 
-// ---------- CITY-84: the bays, the tray, the layouts, the city behind the windows ----------
+// ---------- The bays, the tray, the layouts, the city behind the windows ----------
 
 test("behind both bays (or one window on the whole screen) the city is drawn lean, and its frame rate then moves no rung", () => {
   const canvas = read("city/components/city/CityCanvas.tsx");
@@ -184,7 +184,7 @@ test("a folded trade card comes back on its own coin, through the Launch engine 
   assert.match(read("city/components/window/WindowLayer.tsx"), /togetherIn\(st\.layout\) \|\| gridRoomIn\(st\.layout\) === null/);
 });
 
-test("the layouts live in the top bar's menu on a computer, never in a corner of the city or over a window on the whole screen (CITY-241)", () => {
+test("the layouts live in the top bar's menu on a computer, never in a corner of the city or over a window on the whole screen", () => {
   // Nothing of them stands on the window layer, whose pieces lie over the frames.
   const layer = read("city/components/window/WindowLayer.tsx");
   assert.doesNotMatch(layer, /Layouts/);

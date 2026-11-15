@@ -44,12 +44,12 @@ const TradeChart = dynamic(() => import('../chart/ChartWindow').then((m) => m.Tr
 });
 
 /**
- * The tower's one window (CITY-78): a tap on a tower opens it straight away, with no card of its own beside it. On top
+ * The tower's one window: a tap on a tower opens it straight away, with no card of its own beside it. On top
  * the coin — its price, the day's move, the chart, its key figures, whether it is verified and what its issuer can do,
  * the rest behind «Details»; under them Buy and Sell, always both. The amount is a share of the balance or typed;
  * before the one amber tap it shows what you get, Ryntra's fee, the route, the least you get and the price impact —
  * every figure from the engine. The person signs in their own wallet. No game motion inside the card: the city
- * celebrates outside it. It stands in the city's one window frame (CITY-65, `TradeLayer`): moved, stretched by any edge,
+ * celebrates outside it. It stands in the city's one window frame (`TradeLayer`): moved, stretched by any edge,
  * the whole screen on a computer, the bottom sheet on a phone. Spot in a wide window puts the chart left of the ticket.
  */
 export function TradeSheet() {
@@ -74,7 +74,7 @@ export function TradeSheet() {
           {live && <BeaconAction tower={live} />}
         </div>
       )}
-      {/* CITY-187: where the person's agent holds this coin, she sells a share of it right here. */}
+      {/* Where the person's agent holds this coin, she sells a share of it right here. */}
       <AgentSell mint={tower.mint} symbol={ticker(tower.symbol)} />
       {phase === 'done' ? <DonePanel /> : phase === 'failed' ? <FailedPanel /> : phase === 'unknown' ? <UnknownPanel /> : <TradeBody tower={tower} coin={live} rank={rank} />}
     </div>
@@ -109,7 +109,7 @@ function TradeBody({ tower, coin, rank }: { tower: TowerRef; coin: Tower | null;
   const launch = useTrade((st) => st.launch);
   const [picking, setPicking] = useState<Picking | null>(null);
 
-  // A Ryntra launch's tower: its Buy and Sell on its own curve or pool, through the Launch engine (CITY-138).
+  // A Ryntra launch's tower: its Buy and Sell on its own curve or pool, through the Launch engine.
   if (launch) return <LaunchTowerBody token={tower.mint} onBusy={holdWindow} />;
 
   const choice = choiceOf(tower, side, holdings, { pay, typed, other });
@@ -322,7 +322,7 @@ function MarketPart({ tower, choice, getChips }: { tower: TowerRef; choice: Choi
   const [picking, setPicking] = useState(false);
   const [details, setDetails] = useState(false);
   const getRef = useRef<HTMLDivElement>(null);
-  // The row that names it: while it shows above the dock, the dock's line carries only the figure (CITY-221).
+  // The row that names it: while it shows above the dock, the dock's line carries only the figure.
   const getRowRef = useRef<HTMLDivElement>(null);
 
   const shown = review && review.key === choice.key ? review : null;
@@ -334,7 +334,7 @@ function MarketPart({ tower, choice, getChips }: { tower: TowerRef; choice: Choi
     if (shown) return figuresOf(shown.order.order, outputDecimals, 'order');
     return priced ? figuresOf(priced.order, outputDecimals, 'quote') : null;
   }, [shown, priced, outputDecimals]);
-  /* A partner's friend: the order the wallet signs states the discounted fee of the one the card quoted (CITY-182). */
+  /* A partner's friend: the order the wallet signs states the discounted fee of the one the card quoted. */
   const off = shown ? friendDiscountOf(priced?.order ?? null, shown.order.order) : null;
 
   // A wallet that connects closes the list of wallets.
@@ -350,7 +350,7 @@ function MarketPart({ tower, choice, getChips }: { tower: TowerRef; choice: Choi
     else setPicking(true);
   };
 
-  // An empty wallet: the action is «Add SOL», and the balance's own sentence is not said beside it (CITY-239).
+  // An empty wallet: the action is «Add SOL», and the balance's own sentence is not said beside it.
   const topUp = offersTopUp({ connected: Boolean(connection), side, max: choice.sizing.max, moneyOpen: MONEY_OPEN });
   const problem = problemLine(choice.problem, topUp);
 
@@ -479,7 +479,7 @@ function Terms({ figures, off, exact, getSymbol, open, onInfo }: { figures: Figu
           w.noRyntraFee
         )}
         {/* The venues («Raydium CLMM + 2 more») wait behind «i» with the rest of the breakdown: the line before the press
-            is the fee, the least you get and the impact (CITY-221). */}
+            is the fee, the least you get and the impact. */}
         {exact && (
           <>
             {' · '}
@@ -596,7 +596,7 @@ function Action({
   else if (phase === 'sending') [label, disabled, waiting] = [w.sending, true, true];
   else if (phase === 'checking') [label, disabled, waiting] = [w.readingNetwork, true, true];
   else if (connecting) [label, disabled, waiting] = [w.connecting, true, true];
-  // A connected wallet with nothing to buy with (CITY-237): «Not enough SOL» stood there as a dead button — the one
+  // A connected wallet with nothing to buy with: «Not enough SOL» stood there as a dead button — the one
   // action is now the way to get some, Money's top-up. Money shut on this deployment: the old words, as before.
   else if (empty) return (
     <button className={`${s.display} ${s.action}`} onClick={() => openMoney('topup')} data-trade-topup="">
@@ -673,7 +673,7 @@ function MomentShare({ towerId, symbol, sold, kicker, got, unit, line }: { tower
   const w = useWords(TRADE);
   const address = useWallet((st) => st.connection?.address ?? null);
   const [state, setState] = useState<'ready' | 'making' | 'shared' | 'saved'>('ready');
-  // In the Ryntra app the card goes to the app's own share sheet through the bridge (CITY-6b); on a phone, to the
+  // In the Ryntra app the card goes to the app's own share sheet through the bridge; on a phone, to the
   // system's. Either way the button says Share; a computer posts on X.
   const app = useRyntraApp();
   const phone = useMemo(touchScreen, []);

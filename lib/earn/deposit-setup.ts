@@ -1,5 +1,5 @@
 /**
- * CITY-204 — what a first deposit into Jupiter Lend needs around the Lend API's own instruction.
+ * What a first deposit into Jupiter Lend needs around the Lend API's own instruction.
  *
  * `POST /lend/v1/earn/deposit` answers one legacy transaction with one instruction — the program's `Deposit` — and nothing
  * else (read live 5.11.2026 for USDC and for SOL: 714 bytes, no lookup tables). That instruction expects two token

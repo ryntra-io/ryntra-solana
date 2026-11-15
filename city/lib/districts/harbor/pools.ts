@@ -171,7 +171,7 @@ function priceText(p: number): string {
   if (p >= 1000) return p.toLocaleString('en-US', { maximumFractionDigits: 0 });
   if (p >= 1) return Number(p.toFixed(p >= 100 ? 1 : 2)).toString();
   if (p >= 0.01) return Number(p.toFixed(4)).toString();
-  // Three figures after the leading zeros, written out: a price under a millionth is never «3.7e-7» (CITY-243).
+  // Three figures after the leading zeros, written out: a price under a millionth is never «3.7e-7».
   return plainFigure(p, { significant: 3 });
 }
 

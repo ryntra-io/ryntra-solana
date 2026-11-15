@@ -11,9 +11,9 @@ import { MAX_STOCK_MINTS, type ScaledConfig } from './stocks.ts';
 import { useEarnData } from './store.ts';
 
 /**
- * Earn's notes in the city (CITY-100): what the city reads of the connected wallet — its pool positions (SOL-2b's read,
+ * Earn's notes in the city: what the city reads of the connected wallet — its pool positions (SOL-2b's read,
  * through Earn's store, which the window shares), the stocks it holds (the Scaled UI multipliers) — judged by
- * `notes.ts` and told through the notification centre (`notify()`, CITY-87), where the person chose: a banner, the
+ * `notes.ts` and told through the notification centre (`notify()`), where the person chose: a banner, the
  * computer, or nowhere. Loan health joins once Earn reads a loan (`EARN_LOANS`).
  *
  * What was told is kept on this device per wallet, so a reload never tells it twice: a position out of range is told

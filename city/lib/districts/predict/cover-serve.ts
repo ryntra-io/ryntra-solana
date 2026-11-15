@@ -1,7 +1,7 @@
 import { isCover } from './cover.ts';
 
 /**
- * A Predictions cover, served from the city's own origin (CITY-77; the route is `app/api/city/predict/cover`). The
+ * A Predictions cover, served from the city's own origin (the route is `app/api/city/predict/cover`). The
  * covers live on `assets.agg.market`; the city's page carries the site's policy, which does not name that host, so
  * the browser refused every cover and each card showed its emblem.
  * Widening the site's `img-src` for one district is the wrong trade (`lib/security-headers.test.mjs` pins it), so the

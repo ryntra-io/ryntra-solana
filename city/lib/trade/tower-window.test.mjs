@@ -16,7 +16,7 @@ const towers = [
 test("a tap on a named tower or a launch's tower opens its window; a pool without a name does not", () => {
   assert.equal(windowTower(towers, "WIF", false), towers[1]);
   assert.equal(windowTower(towers, "pool", false), null);
-  assert.equal(windowTower(towers, "pool", true), towers.find((t) => t.tower.id === "pool"), "a launch's tower is never verified, and still trades (CITY-138)");
+  assert.equal(windowTower(towers, "pool", true), towers.find((t) => t.tower.id === "pool"), "a launch's tower is never verified, and still trades");
   assert.equal(windowTower(towers, null, false), null);
   assert.equal(windowTower(towers, "gone", false), null);
 });
@@ -59,7 +59,7 @@ test("one window: the tower card is gone, the trade window carries the coin, Buy
   assert.match(sheet, /<div className=\{s\.sides\} role="tablist" aria-label=\{w\.buyOrSell\}>/);
   assert.match(sheet, /<NothingToSell line=\{nothing\}/);
 
-  // The words come from the window's dictionary (CITY-79): the same English, and Ukrainian beside it.
+  // The words come from the window's dictionary: the same English, and Ukrainian beside it.
   const facts = read("city/components/trade/CoinFacts.tsx");
   const words = read("city/components/trade/words.ts");
   for (const [key, label] of [["mktCap", "Mkt cap"], ["liquidity", "Liquidity"], ["traders1h", "Traders 1h"], ["rank", "Rank"]]) {
@@ -72,7 +72,7 @@ test("one window: the tower card is gone, the trade window carries the coin, Buy
 
   const layer = read("city/components/trade/TradeLayer.tsx");
   assert.match(layer, /windowTower\(towers, selectedId, launchTower\)/, "a tap on a tower opens the window");
-  assert.match(layer, /trade\.openFor\(tower, 'buy', \{ launch: launchTowerIn\(useLaunch\.getState\(\), picked\) !== null \}\)/, "a launch's tower opens the same window, on the Launch engine (CITY-138)");
+  assert.match(layer, /trade\.openFor\(tower, 'buy', \{ launch: launchTowerIn\(useLaunch\.getState\(\), picked\) !== null \}\)/, "a launch's tower opens the same window, on the Launch engine");
   assert.match(sheet, /if \(launch\) return <LaunchTowerBody token=\{tower\.mint\} onBusy=\{holdWindow\} \/>;/, "the window shows a launch's Buy and Sell on its curve or pool");
   assert.match(layer, /if \(city\.selectedId === before\.tower\.mint\) city\.select\(null\);/, "the window closed lets the tower go");
 });
@@ -122,7 +122,7 @@ test("a figure the source did not measure is a calm dash in the window's cells, 
   assert.ok(facts.includes("{cell(tower, 'price', formatPrice)}"), "the price line too");
 });
 
-test("what you get stays in sight beside the action: the dock carries it while the ticket's own figure is out of view (CITY-189)", () => {
+test("what you get stays in sight beside the action: the dock carries it while the ticket's own figure is out of view", () => {
   // On a phone the tower's window is half the screen and the pinned dock stood over «You get about» until the card was
   // scrolled to its end. Both tickets give the dock the figure as its first line, measured against the ticket's own.
   const sheet = read("city/components/trade/TradeSheet.tsx");
@@ -168,7 +168,7 @@ test("the fee, the least you get and any warning are read before the press: they
   assert.doesNotMatch(read("city/components/money/money.module.css"), /\.cta \{[^}]*position: sticky/, "Money's button is not pinned alone");
 });
 
-test("the coin's name stays whole in a narrow window: Share and the beacon drop their words by the window's width (CITY-200)", () => {
+test("the coin's name stays whole in a narrow window: Share and the beacon drop their words by the window's width", () => {
   const trade = read("city/components/trade/trade.module.css");
   const beacon = read("city/components/beacon/beacon.module.css");
   assert.match(trade, /@container window \(max-width: 520px\) \{\s*\.shareTower \{[^}]*width: 44px;[^}]*\}\s*\.shareTowerWord \{\s*display: none;/);

@@ -3,7 +3,7 @@ import type { Lang } from '../i18n/langs.ts';
 import { addUsd } from '../scouts/view.ts';
 
 /**
- * «Мій район» (CITY-127): the partner's own figures, read from the same `/api/rewards` answer «Scouts» reads, and
+ * «Мій район»: the partner's own figures, read from the same `/api/rewards` answer «Scouts» reads, and
  * nothing the engine does not say. A partner earns on one level (decision 93): what the people they brought traded —
  * the engine's `REFERRAL_L1` — and nothing else; a person's own cashback and a second level are not a partner's.
  * Where the engine has no figure yet (link clicks by channel, first trades, active people) the field is null and the
@@ -29,7 +29,7 @@ export const FUNNEL: readonly FunnelStep[] = ['clicks', 'wallets', 'firstTrade',
 export type DistrictView = Readonly<{
   /**
    * COUNTED while nothing may be claimed; OPEN once the engine says a claim may be made; WEEKLY once the weekly payout
-   * runs (CITY-128): the figures are then decision 93's, from `/api/partners/earnings`, and «claimable» is what the next
+   * runs: the figures are then decision 93's, from `/api/partners/earnings`, and «claimable» is what the next
    * weekly payout owes.
    */
   state: 'COUNTED' | 'OPEN' | 'WEEKLY';
@@ -97,7 +97,7 @@ export function districtOf(body: unknown): DistrictView | null {
 }
 
 /**
- * The weekly payout's own figures over the Rewards answer (CITY-128): counted, owed and paid under decision 93's
+ * The weekly payout's own figures over the Rewards answer: counted, owed and paid under decision 93's
  * terms. Anything but a running payout's answer leaves the view as it was.
  */
 export function withEarnings(view: DistrictView, body: unknown): DistrictView {

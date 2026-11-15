@@ -2,9 +2,9 @@ import { defineMatch, DiceError, type EndReason, type MatchResult, type MatchSet
 import type { MatchConfig } from "./schema";
 
 /**
- * Single-elimination brackets for dice tournaments, and per-match records for a rating system (CITY-69). Entrants come
+ * Single-elimination brackets for dice tournaments, and per-match records for a rating system. Entrants come
  * in seed order (index 0 is the top seed); byes go to the top seeds; one owner's agents never share a bracket. Money
- * brackets draw their order from MagicBlock VRF (CITY-52); this file only keeps the seeding it is handed.
+ * brackets draw their order from MagicBlock VRF; this file only keeps the seeding it is handed.
  */
 
 export interface Entrant {

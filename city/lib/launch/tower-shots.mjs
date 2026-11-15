@@ -1,4 +1,4 @@
-// «Запуск за 30 секунд» → «Моя вежа» → «Кишеня доходів» (CITY-168) for review: the two doors to the picture, a photo as
+// «Запуск за 30 секунд» → «Моя вежа» → «Кишеня доходів» for review: the two doors to the picture, a photo as
 // the coin's face, the review, the wallet, the liftoff that opens «Моя вежа», the way in from the menu and «Забрати» — at
 // 375×812 and 1440×860 → <out>/tower-<state>-<size>-<locale>.jpg
 //   node city/lib/launch/tower-shots.mjs [out] [baseUrl]      (npm run dev running; PRESS_CHROME may point at a Chromium)

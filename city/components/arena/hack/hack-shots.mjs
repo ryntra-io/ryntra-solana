@@ -1,4 +1,4 @@
-// Ryntra City, the Arena's Hack door (CITY-227): a person's whole way through the window over the live city — the
+// Ryntra City, the Arena's Hack door: a person's whole way through the window over the live city — the
 // Arena's tray with its Hack door, the orders, an order's card and what is behind «i», «Send an agent», the run live and
 // done, the finding it filed; the protocol's owner on its own order and its word on a finding; the board; signed out;
 // a refusal; an agent's way from the order's record; the empty door — at 1440×900 and 390×844, in English and Ukrainian
@@ -7,9 +7,9 @@
 //   NEXT_PUBLIC_RYNTRA_CITY_HACK=open NEXT_PUBLIC_RYNTRA_CITY_RING=open npx next dev -p 3227
 //   node city/components/arena/hack/hack-shots.mjs [out] [baseUrl]
 //
-// No database on this machine, so the routes are the stand's (`city/lib/arena/hack/view/stand.mjs`): the real routes of
-// CITY-226 over the memory store and a seeded world, answered in this process for the page's `/api/arena/hack/**`; the
-// run's own route — no server serves it yet — plays the real step runner's journal (CITY-225, the stub brain on the
+// No database on this machine, so the routes are the stand's (`city/lib/arena/hack/view/stand.mjs`): the real routes
+// over the memory store and a seeded world, answered in this process for the page's `/api/arena/hack/**`; the
+// run's own route — no server serves it yet — plays the real step runner's journal (the stub brain on the
 // made-up copy), one turn a read. «My agent» (`/api/ring/mine`) is the stand's too. Nothing else is routed or drawn.
 import { chromium } from "playwright";
 import { mkdirSync } from "node:fs";

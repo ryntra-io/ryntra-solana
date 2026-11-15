@@ -1,5 +1,5 @@
-// The studio's files (CITY-38): H.264 clips through ffmpeg, their check with ffprobe, the city's reads kept for the
-// week's billboard, a flight log from a devnet rehearsal's evidence, and the hand-off to the drafts queue (CITY-3).
+// The studio's files: H.264 clips through ffmpeg, their check with ffprobe, the city's reads kept for the
+// week's billboard, a flight log from a devnet rehearsal's evidence, and the hand-off to the drafts queue.
 // Used by city/lib/x/film.mjs; tested by city/lib/x/files.test.mjs.
 import { spawn, spawnSync } from "node:child_process";
 import { existsSync, mkdirSync, readdirSync, readFileSync, statSync, writeFileSync } from "node:fs";

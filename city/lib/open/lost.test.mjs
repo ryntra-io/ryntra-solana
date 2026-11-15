@@ -9,7 +9,7 @@ import { LANGS } from "../i18n/langs.ts";
 import { pick } from "../art/frames.ts";
 import { LOST_CODE, LOST_FRAME, LOST_HOME, LOST_KINDS, LOST_MARK, LOST_SIZES } from "./lost.ts";
 
-/* CITY-159: an address that never was and a page that broke are the city's own pages — the island, one line, one way
+/* An address that never was and a page that broke are the city's own pages — the island, one line, one way
    back — never the framework's bare 404 and 500 on the old root. */
 
 const REPO = fileURLToPath(new URL("../../../", import.meta.url));

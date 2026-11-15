@@ -1,6 +1,6 @@
 import { pl, words } from '../../lib/i18n/dict.ts';
 
-/** The words of the «Scouts» window: your link, friends, shares of the fee, cashback and the history (CITY-79). */
+/** The words of the «Scouts» window: your link, friends, shares of the fee, cashback and the history. */
 export const SCOUTS = words(
   {
     scouts: 'Scouts',

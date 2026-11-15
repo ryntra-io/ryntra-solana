@@ -13,7 +13,7 @@ import { checkLimitPool, checkMintFacts, checkStockRow, LIMIT_QUOTES } from './l
 import { SOL_MINT } from './lst';
 
 /**
- * The markets Sell Higher offers (CITY-97): SOL against USDC, and the most traded listed stocks, each on its deepest
+ * The markets Sell Higher offers: SOL against USDC, and the most traded listed stocks, each on its deepest
  * Meteora DLMM pool against SOL or USDC that takes limit orders — and only where every gate of `limit-check.ts` passes:
  * the stock universe names the mint, the chain shows a mint a limit order is safe with, and the pool is the program's
  * own and takes limit orders now. The live multiplier is the chain's; a new one the issuer has announced for later is

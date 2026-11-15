@@ -1,4 +1,4 @@
-// CITY-230 for review: the Hall of Fame without empty signs — a quiet week reaching back over 30 days and all time,
+// For review: the Hall of Fame without empty signs — a quiet week reaching back over 30 days and all time,
 // and a Hall nobody is on, whose signs and panel are one action, «Launch yours». The plaza's two billboard towers, the
 // panel a tap on a sign opens, the details behind the «i», and a tap on an empty sign opening the launch sheet — at
 // 1440×900 and 390×844, in English and Ukrainian → <out>/<state>-<desk|phone>-<en|uk>.jpg

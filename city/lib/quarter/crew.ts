@@ -9,7 +9,7 @@ import type { CrewColour, CrewResponse, CrewsResponse, CrewStreet, CrewWriteResp
 import { WorldError, isWorldError } from './types.ts';
 
 /**
- * Crews, as the city talks to them (CITY-20): one method per route of /api/world/crew (docs/city/WORLD-CONTRACT.md),
+ * Crews, as the city talks to them: one method per route of /api/world/crew (docs/city/WORLD-CONTRACT.md),
  * every write with an idempotency key. Two answer the same way: the server's, and this device's for a look before the
  * migration is applied — the same rules (`lib/world/crew.ts`), only this device's own quarter on its street.
  */

@@ -151,7 +151,7 @@ test("severity: an info-level reproduction counts but is never reward-eligible; 
   assert.equal(assess({ finding: { severity: "critical" } }).payable, true);
 });
 
-test("over the real CITY-68 judge: a genuine PASS verdict makes a counted finding", async () => {
+test("over the real judge: a genuine PASS verdict makes a counted finding", async () => {
   const judge = await import("../../../../lib/ring/judge/index.ts");
   const { demoKit } = await import("../../../../lib/ring/judge/bad-agent.ts");
   const harness = generateKeyPairSync("ed25519").privateKey;

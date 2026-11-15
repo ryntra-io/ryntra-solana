@@ -21,7 +21,7 @@ import { goneOfCode, goneOfStatus, orderFitsIntent, planFitsIntent, swapLeg, typ
 import { INTENT_LINES } from './words.ts';
 
 /**
- * The sheet a prepared action opens in the city (CITY-161): `ryntra.io/i/<id>`. It shows who prepared it, the engine's
+ * The sheet a prepared action opens in the city: `ryntra.io/i/<id>`. It shows who prepared it, the engine's
  * own live quote (a swap) or the real recipient with the engine's checks (a transfer), and one action. The press claims
  * the intent for this wallet, has the engine build the exact transaction, refuses anything that is not what was
  * prepared, and opens the person's wallet — the same swap and transfer flows every other window of the city runs, so

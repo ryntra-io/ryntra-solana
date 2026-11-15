@@ -2,7 +2,7 @@ import type { AgentView, Books, TradeState } from './store.ts';
 import type { AUTOPILOT } from './words.ts';
 
 /**
- * CITY-70 — the mission on the agent's card, in its words: one state at the top (working, confirming a trade, frozen,
+ * The mission on the agent's card, in its words: one state at the top (working, confirming a trade, frozen,
  * paused, done, stopped), the money in one line behind «Details», each of its last trades by what it really is. A trade
  * whose fate is unknown reads «Confirming» — never «Didn't go through». Pure: the card and the tests share it.
  */

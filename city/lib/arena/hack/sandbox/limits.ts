@@ -1,5 +1,5 @@
 /**
- * The ceilings of a Hack run (CITY-224, spec «How the sandbox works» → «Limits»): steps (as Code — 20), compute units
+ * The ceilings of a Hack run: steps (as Code — 20), compute units
  * per step and per run, and wall time. Going over a ceiling is the seat's loss, never a crash: the harness stops
  * feeding inputs, the log ends there, and the result says why (`sandbox.ts`).
  *
@@ -9,8 +9,8 @@
  *               Compute is deterministic, so this ceiling is inside the replayed game.
  *   ms        — wall time of the run, measured by the harness between steps. Time is not deterministic, so it only
  *               stops the run; the log never carries it.
- *   costMicroUsd — the ceiling of the agent's model spend for the run (the class's ceiling, CITY-45). The runner
- *               measures it (CITY-225); the judge enforces it from the rules.
+ *   costMicroUsd — the ceiling of the agent's model spend for the run (the class's ceiling). The runner
+ *               measures it; the judge enforces it from the rules.
  *
  * Pure: no store, no clock, no network.
  */

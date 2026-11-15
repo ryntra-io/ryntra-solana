@@ -8,7 +8,7 @@ import { resolveInboxLink } from "../../../lib/monitoring/inbox.ts";
 import { listInbox, outboxOf, preferencesOf } from "../../../lib/monitoring/store.ts";
 import { earnIdentity, earnWatchesOf, earnWatchKey, judgeRead, registerEarnWatch, runEarnWatchPass, DROP_MS, EVERY_MS } from "./notes-watch.ts";
 
-/* CITY-100: Ryntra's server watches Earn for the phone and Telegram — the wallets that asked under their own proof, read
+/* Ryntra's server watches Earn for the phone and Telegram — the wallets that asked under their own proof, read
    now and then, told through the engine's own inbox and delivery, each note once. */
 
 const OWNER = "7xKXtg2CW87d97TXJSDpbD5jBkheTqA83TZRuJosgAsU";

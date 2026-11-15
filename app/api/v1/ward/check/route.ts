@@ -13,7 +13,7 @@ export const dynamic = "force-dynamic";
 export const maxDuration = 30;
 
 /**
- * `POST /api/v1/ward/check` — the pre-sign check (contract 1.87.0, CITY-152 phase 1; working name «ward»): one
+ * `POST /api/v1/ward/check` — the pre-sign check: one
  * transaction or one payment link in, `allow` · `warn` · `block` out, with the reasons that put it there. Public and
  * wallet-free, on the Solana read budget. It simulates and reads; it holds no key, signs, sends and stores nothing —
  * not even the bytes it was given.

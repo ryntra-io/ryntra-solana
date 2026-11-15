@@ -1,5 +1,5 @@
 /**
- * Hashing for the Ring's judge (CITY-68): one canonical form of a JSON value and its SHA-256, so the judge, a replay on
+ * Hashing for the Ring's judge: one canonical form of a JSON value and its SHA-256, so the judge, a replay on
  * anyone's machine and a memo on Solana all name the same bytes.
  *
  * Canonical JSON is `JSON.stringify` with object keys sorted (by UTF-16 code units, as `Array.prototype.sort` does) and

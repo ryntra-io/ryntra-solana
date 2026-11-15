@@ -14,7 +14,7 @@ import { httpVault, VaultClientError, type VaultClient } from './client.ts';
  * closed, never as a connection that failed; signing in or out reads the vaults again under the new person.
  */
 
-/** The guard's state, as the characters line names it (CITY-57): ready · thinking · acting · done. */
+/** The guard's state, as the characters line names it: ready · thinking · acting · done. */
 export type GuardianState = 'ready' | 'thinking' | 'acting' | 'done';
 
 export type Phase =

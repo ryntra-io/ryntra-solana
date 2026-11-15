@@ -1,5 +1,5 @@
 /**
- * The «City / Play» switch and Play's own dock (CITY-81) stand only where the deployment's switch says `open`
+ * The «City / Play» switch and Play's own dock stand only where the deployment's switch says `open`
  * (`NEXT_PUBLIC_RYNTRA_CITY_PLAY`). Since decision 86 the city has one menu of seven places: the Ring and
  * the Vault stand in the Arena, the garage in Agents, and the rest of Play — the Studio's Run and the players' own
  * districts — waits. The layer itself still holds the places of play opened from the

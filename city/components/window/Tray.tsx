@@ -25,7 +25,7 @@ function stripOf(layout: Layout, desk: boolean): string {
 }
 
 /**
- * The tray over the Deck (CITY-84, helm §4): every folded window as one glass chip — its glyph and its live figure (a
+ * The tray over the Deck: every folded window as one glass chip — its glyph and its live figure (a
  * price, a balance), the title when there is none yet. A tap opens the window again on what it showed, where it stood.
  * On a computer it keeps to the city between the bays; on a phone it stands over the sheet when one is up. It steps
  * aside while nothing is folded, while a window has the whole screen and while the Deck's doors are open over it.
@@ -38,7 +38,7 @@ export function Tray() {
   const strip = useWindows((st) => stripOf(st.layout, st.desk));
   const doors = useBackPanels((st) => st.open.includes('tray'));
   const deck = useChrome((st) => st.bottom);
-  // From 1100 px the chips stand beside the Deck, right of it, on its row (CITY-242): a window as tall as the workspace
+  // From 1100 px the chips stand beside the Deck, right of it, on its row: a window as tall as the workspace
   // reaches the Deck, and chips over the diamond lay on its foot. Narrower, they stand over the diamond, and the windows
   // the system places leave their band clear (`tallestIn`).
   const beside = useWindows((st) => st.desk && st.viewport.width >= CHIPS_BESIDE_FROM) && deck;

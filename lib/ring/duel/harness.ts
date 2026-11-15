@@ -1,8 +1,8 @@
 /**
- * The Ring's one published harness (CITY-51, decision 72): the same code plays every duel, whoever's agents meet. It
+ * The Ring's one published harness: the same code plays every duel, whoever's agents meet. It
  * asks both agents at once, gives each only what it may see, fixes both moves, then plays the round on the engine and
  * writes the log the judge replays. The log is the harness's own — agents never hand one in — and its hash goes to the
- * judge as `harness.logHash` (CITY-68: «the judge judges the harness's log, not the agent's»).
+ * judge as `harness.logHash`.
  *
  *   ask both at once → each reply is a move, a fault or a void
  *     move  — read by the format into the engine's move (cut to its bounds, never invented)
@@ -14,7 +14,7 @@
  * each agent to the match's cost cap: a seat that would go over it is out of budget, a fault, before the judge ever
  * sees a number over the limit.
  *
- * No money here: every duel of CITY-51 plays for nothing (`money: "none"`).
+ * No money here: every duel plays for nothing (`money: "none"`).
  */
 
 import { canonicalJson, sha256Hex } from "../judge/hash.ts";
@@ -266,7 +266,7 @@ export type Settlement = {
   logHash: string;
   judgements: Pair<Judgement>;
   receipts: Pair<Receipt>;
-  /** The memo line each receipt would carry on Solana — built, never sent (no money in CITY-51). */
+  /** The memo line each receipt would carry on Solana — built, never sent. */
   memos: Pair<string>;
 };
 

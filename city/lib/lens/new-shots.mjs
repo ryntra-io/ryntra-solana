@@ -1,4 +1,4 @@
-// «New» over the whole of Solana and «Маяк» (CITY-142) for review: the rings over the city with the network's launches in
+// «New» over the whole of Solana and «Маяк» for review: the rings over the city with the network's launches in
 // the Docks and the beacon's light, then the same launches as a list (the beacon on top, every launchpad, Ryntra's own
 // marked), and the «i» behind it — at 1440×900 and 375×812, on the development stand-in (`?launch=stub`, made-up
 // launches only; nothing is read from or sent to the network) → <out>/new-<view>-<size>[-<lang>].png

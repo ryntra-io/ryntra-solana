@@ -18,7 +18,7 @@ import { QUOTE, STOCK_CANDIDATES, STOCK_QUOTES, baseUsd, verifyStock, volume7d, 
 import { createStockPierVenue, stockPierAddress, type StockBuildPlan } from './stock-pier-venue';
 
 /**
- * The Stock Pier's reads on the server (CITY-98): the verified pairs the window offers, and the engine's Review wired
+ * The Stock Pier's reads on the server: the verified pairs the window offers, and the engine's Review wired
  * with the Stock Pier's venue. Reading only, except the Review, which builds bytes for the person's wallet and signs
  * nothing that holds money.
  *

@@ -1,5 +1,5 @@
 /**
- * The one error of the model gateway (CITY-45, decision 72). Every failure —
+ * The one error of the model gateway. Every failure —
  * a missing key, a spent budget, a provider that did not answer in time — is a
  * `ModelGatewayError` with a `kind` the caller can switch on: the Vault refunds
  * an entry on a model's failure, the Ring replays a match on a network's, and

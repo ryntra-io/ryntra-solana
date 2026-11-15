@@ -38,7 +38,7 @@ test("the deployed door: the key for machines, a session for people, a fresh fac
   assert.match(server, /import \{ requireFreshMfa \} from '@\/lib\/admin\/auth';/);
   assert.match(server, /appendAdminAudit/);
   assert.match(server, /fresh: async \(\) => \{\s+const gate = await requireFreshMfa\(\);/);
-  assert.match(server, /createMomentsApi\(\{ store: draftStore\(\), authorize, audit, sender: xSender\(\) \}\)/, "x-sender (CITY-39), off until the owner's switch and keys");
+  assert.match(server, /createMomentsApi\(\{ store: draftStore\(\), authorize, audit, sender: xSender\(\) \}\)/, "x-sender, off until the owner's switch and keys");
   assert.match(server, /^import \{ xSender \} from '@\/city\/lib\/x\/connect';$/m);
   assert.doesNotMatch(server, /headers\.get\(.authorization/i, "the bearer rule lives in door.ts alone");
   const api = readFileSync(new URL("../../../city/lib/moments/drafts/api.ts", import.meta.url), "utf8");

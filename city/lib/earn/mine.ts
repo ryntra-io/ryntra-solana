@@ -4,7 +4,7 @@ import type { LstFeed } from './feed.ts';
 import { lamportsOf, LST_BY_MINT, LSTS, type LstId } from './lst.ts';
 
 /**
- * «Mine» in SOL (CITY-95): what the wallet holds in Earn and how it stands against just holding SOL.
+ * «Mine» in SOL: what the wallet holds in Earn and how it stands against just holding SOL.
  *
  * - **LST balances** valued in SOL at the token's worth read from its pool.
  * - **The SOL Saver's lots** — what went in through Earn, kept on this device (the chain keeps no record of a
@@ -96,7 +96,7 @@ export type PierRow = Readonly<{
   feesLamports: bigint | null;
   /** SOL-2b's net against holding the same tokens, lamports at today's SOL price; null without an entry or prices. */
   vsHoldLamports: bigint | null;
-  /** The position's price bounds, Y per X (null on the plain curve): what tells two positions of one pair apart (CITY-243). */
+  /** The position's price bounds, Y per X (null on the plain curve): what tells two positions of one pair apart. */
   lower: number | null;
   upper: number | null;
 }>;

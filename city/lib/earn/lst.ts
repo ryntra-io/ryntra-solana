@@ -1,5 +1,5 @@
 /**
- * The SOL Saver's three liquid-staking tokens (CITY-94) and the arithmetic that keeps every figure in SOL: what one
+ * The SOL Saver's three liquid-staking tokens and the arithmetic that keeps every figure in SOL: what one
  * token is worth in SOL, what a balance is worth, and the yield of the last epoch as a year's rate. Pure: the page,
  * the server's feed and the tests import it alike. Nothing here invents a figure — a rate that was not read is null,
  * and a null is hidden on the screen, never drawn as a zero.

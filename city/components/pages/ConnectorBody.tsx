@@ -9,7 +9,7 @@ import s from './pages.module.css';
 import { CONNECTOR } from './words';
 
 /**
- * «AI chats» (CITY-170): Ryntra in a person's AI chat. Three steps to connect and one action — the connector's address
+ * «AI chats»: Ryntra in a person's AI chat. Three steps to connect and one action — the connector's address
  * to the clipboard; what it does in four tiles; one line on what it never does, a door to what it keeps (the Privacy
  * Policy) and a door to Help. The addresses, each chat's own menus, the limits and the way out are behind «Technical
  * details». The page links to no chat's site.

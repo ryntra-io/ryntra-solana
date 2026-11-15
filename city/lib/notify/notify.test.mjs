@@ -9,7 +9,7 @@ import { createChannels, withProof } from "./channels.ts";
 import { liveLink, resetChannels, setChannelsEnv, useChannels } from "./channels-store.ts";
 import { hydrateFeed, resetFeed, useFeed } from "../feed/store.ts";
 
-/* CITY-87: the notification centre — every kind to the city, the computer, Telegram or nowhere, kept on this device;
+/* The notification centre — every kind to the city, the computer, Telegram or nowhere, kept on this device;
    the liquidation risk is never off (decision 88). */
 
 const memoryStorage = (initial = {}) => {
@@ -34,7 +34,7 @@ function freshPage({ storage = memoryStorage(), desk = "default", shown = [] } =
 test("the kinds: the market's five, yours three, Earn's three, and Guard's two — which have no «off»", async () => {
   assert.deepEqual(kindsIn("market").map((k) => k.id), ["gainers", "losers", "inflows", "coins", "pools"]);
   assert.deepEqual(kindsIn("yours").map((k) => k.id), ["trades", "stops", "beacons"]);
-  // CITY-100: out of range, the exchange's weekend, dividend dates — and a loan's health, Guard's.
+  // Out of range, the exchange's weekend, dividend dates — and a loan's health, Guard's.
   assert.deepEqual(kindsIn("earn").map((k) => k.id), ["range", "weekend", "dividend"]);
   assert.deepEqual(kindsIn("safety").map((k) => k.id), ["liquidation", "loan"]);
   for (const id of ["liquidation", "loan"]) {
@@ -46,7 +46,7 @@ test("the kinds: the market's five, yours three, Earn's three, and Guard's two �
   assert.ok(KINDS.every((k) => !k.places.includes("telegram")));
   // Only where this build's server keeps them: stops on the engine, beacons on the server (the window also asks each
   // beacon's own Telegram switch).
-  // CITY-100: Earn's, where Earn is open — Ryntra's server watches them for the phone and Telegram.
+  // Earn's, where Earn is open — Ryntra's server watches them for the phone and Telegram.
   const { STOPS_ENGINE } = await import("../trade/gates.ts");
   const { BEACONS } = await import("../beacon/switch.ts");
   const { EARN_LOANS, EARN_OPEN } = await import("../earn/flag.ts");
@@ -86,7 +86,7 @@ test("anything unreadable is the start, never an error; a device that will not k
   assert.deepEqual(odd.quiet, defaultPrefs().quiet);
 });
 
-test("a loan's health is Guard's like the liquidation risk: never off, never capped, never muted (CITY-100)", () => {
+test("a loan's health is Guard's like the liquidation risk: never off, never capped, never muted", () => {
   const prefs = defaultPrefs();
   assert.equal(setRoute(prefs, "loan", "off"), prefs);
   assert.equal(setCap(prefs, "loan", "rare"), prefs);
@@ -151,7 +151,7 @@ test("a market kind's «off» is the feed's own switch, so the feed and its old 
   useNotify.getState().setRoute("losers", "off");
   assert.equal(useFeed.getState().settings.losers, false);
   assert.equal(routeNow("losers"), "off");
-  assert.equal(JSON.parse(storage.data.get("ryntra.city.feed")).losers, false, "kept where CITY-66 keeps it");
+  assert.equal(JSON.parse(storage.data.get("ryntra.city.feed")).losers, false, "kept where the live feed keeps it");
   useNotify.getState().setRoute("losers", "desk");
   assert.equal(useFeed.getState().settings.losers, true);
   assert.equal(routeNow("losers"), "desk");

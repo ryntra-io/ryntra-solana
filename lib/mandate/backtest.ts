@@ -1,5 +1,5 @@
 /**
- * CITY-193 — a strategy of the agent run on history, and the practice without money. Pure: candles in, figures out; the reads are the route's.
+ * A strategy of the agent run on history, and the practice without money. Pure: candles in, figures out; the reads are the route's.
  *
  * The run is the agent itself, pass by pass at each candle's close: the same caps and rhythm (`./strategy.ts`), the same
  * rule of the plan (`./plans.ts` `ruleOf`), the same autostop thresholds (`AUTOSTOP`). Every buy is the trade cap, its
@@ -10,8 +10,8 @@
  * - a picture of what the rules would have done on those candles, never a promise of what they will do;
  * - prices are the deepest pool's in dollars (`lib/spot/candles.server.ts`), so SOL's own move is left out;
  * - a candle shows four prices, not every trade in it: the agent is taken to see the close only;
- * - `sells` — where the engine can sell, an exit or a grid's step up sells at that close; where it cannot (mainnet today,
- *   CITY-195), the agent stops buying and holds, and the run does the same.
+ * - `sells` — where the engine can sell, an exit or a grid's step up sells at that close; where it cannot (mainnet today),
+ *   the agent stops buying and holds, and the run does the same.
  *
  * Floats: a picture, never a sum a transaction is sized from.
  */

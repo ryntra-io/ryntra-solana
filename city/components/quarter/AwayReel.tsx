@@ -160,7 +160,7 @@ function Consent() {
   const busy = useAway((st) => st.consentBusy);
   const error = useAway((st) => st.consentError);
   const w = useWords(QUARTER);
-  // In the Ryntra app: Telegram only, the app registers no push (CITY-6e).
+  // In the Ryntra app: Telegram only, the app registers no push.
   const channels = awayChannels(useRyntraApp());
   if (!consent?.canConsent) return null;
   return (

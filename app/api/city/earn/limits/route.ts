@@ -7,7 +7,7 @@ export const dynamic = 'force-dynamic';
 export const maxDuration = 30;
 
 /**
- * Sell Higher's markets (CITY-97): SOL against USDC and the most traded listed stocks, each on a verified Meteora DLMM
+ * Sell Higher's markets: SOL against USDC and the most traded listed stocks, each on a verified Meteora DLMM
  * pool that takes limit orders, with the live Scaled UI multiplier and any new one scheduled. Read-only. While the
  * product's switch is closed there is nothing to list.
  */

@@ -7,7 +7,7 @@ const HOW = 'How to do it';
 const COST = 'What it costs';
 const WRONG = 'What can go wrong';
 
-/** The documentation in English (CITY-180). The product's facts come; every figure comes from `facts.ts`. */
+/** The documentation in English. The product's facts come; every figure comes from `facts.ts`. */
 export const EN: Sections = {
   start: ({ f, say }) => ({
     lead: 'Ryntra is your AI agent on Solana, and the whole market is a live 3D city. In a few minutes you can connect a wallet and make your first trade.',

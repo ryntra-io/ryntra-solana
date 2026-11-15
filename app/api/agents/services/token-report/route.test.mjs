@@ -2,7 +2,7 @@
 //
 // The seller's endpoint. Two states matter and both are tested here: the one it
 // is in today — not for sale, with the reasons — and the one it is in once the
-// Owner supplies a facilitator and AGH-1 supplies a report.
+// operator supplies a facilitator and AGH-1 supplies a report.
 import { test } from "node:test";
 import assert from "node:assert/strict";
 

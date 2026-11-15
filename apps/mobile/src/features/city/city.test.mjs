@@ -622,7 +622,7 @@ test('every link opens the city: a coin’s tower on its tower, anything else th
     assert.equal(cityRouteOfLink(link), '/', link)
 })
 
-test('a link keeps what it asks of the city: the window, the early-access coin, the invite, the code (CITY-235)', () => {
+test('a link keeps what it asks of the city: the window, the early-access coin, the invite, the code', () => {
   const route = (path) => `/?at=${encodeURIComponent(path)}`
   // The agent's card a wallet's browser and the agent's report come back to; Money's tab; Earn's; the Hall.
   assert.equal(cityRouteOfLink('https://ryntra.io/?open=agent'), route('/?open=agent'))
@@ -660,7 +660,7 @@ test('a link keeps what it asks of the city: the window, the early-access coin, 
   assert.equal(cityRouteOfLink('https://ryntra.io.evil.example/?open=agent'), '/')
 })
 
-test('a reached stop’s note opens that very stop; a lesson’s «Try» opens its function (CITY-235)', () => {
+test('a reached stop’s note opens that very stop; a lesson’s «Try» opens its function', () => {
   const route = (path) => `/?at=${encodeURIComponent(path)}`
   const at = (link) => decodeURIComponent(cityRouteOfLink(link).slice('/?at='.length))
   // The engine's id of a stop (`stp_` and twenty hex digits), on the coin's tower — the note's own address (`stopHref`).
@@ -707,7 +707,7 @@ test('a reached stop’s note opens that very stop; a lesson’s «Try» opens i
   assert.equal(cityRouteOfLink(`https://ryntra.io/c/not-a-mint?stop=${STOP}`), '/')
 })
 
-test('half of a surrogate pair in a value is dropped, never thrown (CITY-235)', () => {
+test('half of a surrogate pair in a value is dropped, never thrown', () => {
   const HIGH = String.fromCharCode(0xd83d)
   const LOW = String.fromCharCode(0xde00)
   for (const lone of [HIGH, LOW, `a${HIGH}`, `${LOW}a`, `${LOW}${HIGH}`]) {
@@ -724,7 +724,7 @@ test('half of a surrogate pair in a value is dropped, never thrown (CITY-235)', 
   assert.equal(cityQueryOf('ref=%F0%9F%98%80'), 'ref=%F0%9F%98%80')
 })
 
-test('a cold link: the route drops the link’s word only once the navigator is ready, one wait at a time (CITY-235)', () => {
+test('a cold link: the route drops the link’s word only once the navigator is ready, one wait at a time', () => {
   const route = readFileSync(new URL('../../app/index.tsx', import.meta.url), 'utf8')
   // Navigating before the root layout mounts closed the app on a cold link: the word is dropped behind `isReady()`.
   assert.match(route, /const navigation = useNavigationContainerRef\(\)/)
@@ -742,7 +742,7 @@ test('a cold link: the route drops the link’s word only once the navigator is 
   assert.match(route, /<CityScreen at=\{at \|\| null\} onAtSeen=\{onAtSeen\} \/>/)
 })
 
-test('Back: the page says whether it has a step back; only its exact word is read (CITY-235)', () => {
+test('Back: the page says whether it has a step back; only its exact word is read', () => {
   assert.equal(pageBackOf('{"ryntraAppBack":true}'), true)
   assert.equal(pageBackOf('{"ryntraAppBack":false}'), false)
   for (const data of [
@@ -829,7 +829,7 @@ test('the screen holds the rules: the user agent, Back through the page’s hist
   assert.match(screen, /useSafeAreaInsets\(\)/)
   assert.match(screen, /hardwareBackPress/)
   assert.match(screen, /view\.current\?\.goBack\(\)/)
-  // The page's own step back first: a link's window stands on an entry the WebView's canGoBack skips (CITY-235).
+  // The page's own step back first: a link's window stands on an entry the WebView's canGoBack skips.
   assert.match(screen, /injectedJavaScript=\{PAGE_BACK_SCRIPT\}/)
   assert.match(screen, /view\.current\?\.injectJavaScript\(PAGE_GO_BACK\)/)
   assert.match(screen, /const back = pageBackOf\(event\.nativeEvent\.data\)/)

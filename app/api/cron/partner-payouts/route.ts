@@ -9,7 +9,7 @@ export const dynamic = "force-dynamic";
 export const maxDuration = 60;
 
 /**
- * The partners' weekly payout (CITY-128): every closed week counted once into its statement, every bound proposal
+ * The partners' weekly payout: every closed week counted once into its statement, every bound proposal
  * settled against the chain, and the running week's share so far for «Мій район». Internal — the cron's bearer only.
  * Off unless `RYNTRA_PARTNER_PAYOUTS=on`. Signs, sends and pays nothing: the operator's wallet signs the week's proposal.
  */

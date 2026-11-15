@@ -14,7 +14,7 @@ import { PARTNERS } from './words';
 const COPIED_MS = 1_800;
 
 /**
- * «Copy my link» (CITY-177): the partner's own link in one tap, on the partner page `/partners` and at the head of the
+ * «Copy my link»: the partner's own link in one tap, on the partner page `/partners` and at the head of the
  * city's «Partners» window. No wallet — «Connect wallet» (a wallet this site was granted before comes back silently).
  * A wallet — the same proven read «My district» makes (`/api/rewards`, one signature, no transaction), which carries
  * the person's own link; then the tap copies it. Nothing here pays, binds or writes beyond that read.

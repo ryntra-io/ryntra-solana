@@ -48,7 +48,7 @@ export function catalogKind(env: Env): "live" | "stub" {
 export const STAND_COOKIE = "ryntra-ring-stand";
 
 /**
- * A developer's stand only (CITY-217): the account a stand pass plays as, named by the `ryntra-ring-stand` cookie
+ * A developer's stand only: the account a stand pass plays as, named by the `ryntra-ring-stand` cookie
  * (`stand-<letters>`), when `RYNTRA_RING_STAND=1` — so the whole way, two owners and a rated duel included, is walked
  * without a wallet's session. Never in production: there it is always `null` and the session decides, as everywhere.
  */

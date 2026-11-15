@@ -16,7 +16,7 @@ import { projectIntent, publicIntentOrigin, type IntentView } from "@/lib/intent
 
 import { buildCityMetadata, CITY_WORDS } from "../../seo";
 
-/* `/i/<id>` — the link to confirm an action an agent, a chat or a partner prepared (CITY-161, contract 1.90.0). The
+/* `/i/<id>` — the link to confirm an action an agent, a chat or a partner prepared. The
    same city as `/`, opened with one sheet: who prepared it, the engine's live quote or the real recipient, and «Confirm
    in wallet». The intent is read here on the server and handed to the sheet; the page carries nothing of it in its
    preview or its title, and is never offered to the index. Where intents are not served the address is just the city. */

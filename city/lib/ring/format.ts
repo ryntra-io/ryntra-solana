@@ -36,7 +36,7 @@ export const FORMAT_NAMES: Readonly<Record<RingFormat, string>> = {
 };
 
 /**
- * A brain's name as a person reads it (CITY-236): the catalog's «Google: Gemma 4 26B A4B (free)» without the maker in
+ * A brain's name as a person reads it: the catalog's «Google: Gemma 4 26B A4B (free)» without the maker in
  * front and the catalog's own marks in brackets at the end — «Gemma 4 26B A4B». On a phone the whole of the catalog's
  * name did not fit a line and was cut mid-word. The catalog's name stays one tap away, behind «i», where a brain is
  * picked. A name that would be left empty is kept as it is.
@@ -66,11 +66,11 @@ export function brainMark(name: string): string {
   return marks.join(' · ');
 }
 
-/** The catalog's marks a row of the list never says as words (CITY-239). */
+/** The catalog's marks a row of the list never says as words. */
 const UNSAID: ReadonlySet<string> = new Set(['free', 'batch']);
 
 /**
- * The mark a row of the list shows beside a name that stands in it twice (CITY-239): the catalog's own, without its raw
+ * The mark a row of the list shows beside a name that stands in it twice: the catalog's own, without its raw
  * English words. «free» is already said by the row's price — «Free a match», in the language on screen — and a «batch»
  * twin is not offered at all (`lib/ring/models.ts`); a date or a size («2024-11-20», «8B») is the same in any language
  * and stays. The catalog's whole name is one tap away, behind «i», once the brain is picked.
@@ -83,7 +83,7 @@ export function listMark(name: string): string {
 }
 
 /**
- * A brain as its catalog names it, behind «i» (CITY-240): the whole name — the maker in front, a date or a size in its
+ * A brain as its catalog names it, behind «i»: the whole name — the maker in front, a date or a size in its
  * brackets — without the catalog's raw «(free)» and «(batch)». The line above it already says «Free a match» in the
  * language on screen, and a Ukrainian reader met an English «(free)» in the middle of it. One rule for both languages:
  * the name is the model's, not its price. A name that would be left empty is kept as it is.
@@ -118,7 +118,7 @@ function makerOf(name: string): string {
 }
 
 /**
- * The mark of every brain whose shortened name stands for more than one (CITY-240), by the brain's id. Two brains of
+ * The mark of every brain whose shortened name stands for more than one, by the brain's id. Two brains of
  * one name must read apart wherever they are named — in the list and, once picked, in the line that says what is being
  * made: «Command R (08-2024)» and «Command R» both read «Command R» there. A twin keeps its catalog's mark, a date or a
  * size (`listMark`); two that still read the same on a row — one name, one mark, one price — take their makers' names

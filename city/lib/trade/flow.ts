@@ -49,7 +49,7 @@ export type FlowDeps = Readonly<{
   /**
    * Called once the wallet's signed bytes passed every check here and just before they go to the engine; a refusal
    * stops the trade there and nothing is sent. A surface that must record the signature before any bytes can leave (a
-   * prepared action's mark, CITY-161) does it here. Absent: nothing changes.
+   * prepared action's mark) does it here. Absent: nothing changes.
    */
   beforeSend?: (signed: Readonly<{ signedWireBase64: string; signature: string; requestId: string }>) => Promise<Readonly<{ ok: true }> | Readonly<{ ok: false; message: string }>>;
 }>;

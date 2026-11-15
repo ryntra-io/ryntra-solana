@@ -7,7 +7,7 @@ import { fileURLToPath } from "node:url";
 import { askedSum, buildStop, costsOf, isView, noteOf, payRequest, readRequest, shownStatus, signStop, sol, stillOpen, submitStop, typedAmount } from "./flow.ts";
 import { PAY } from "./words.ts";
 
-/* CITY-156: the payer's page as a window of the city. The rules are pure and run here as they are; the payment runs
+/* The payer's page as a window of the city. The rules are pure and run here as they are; the payment runs
    end to end against a stub engine and a stub wallet — the same routes, bodies and order the page uses, nothing sent
    anywhere. The live pass with a real wallet on mainnet is the owner's canary. */
 

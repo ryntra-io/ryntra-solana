@@ -141,7 +141,7 @@ export type Fact = Readonly<{ label: string; value: string; note: string }>;
  */
 export function explain(tower: Tower, rule: Rule): Fact[] {
   const s = SIGNALS[rule.signal];
-  /* A figure the source did not measure reads «Not measured», never a zero (CITY-73). */
+  /* A figure the source did not measure reads «Not measured», never a zero. */
   return [
     { label: `Move ${s.window}`, value: towerFigure(tower, rule.signal === 'rise1h' ? 'change1h' : 'change24h', signed, 'en'), note: rule.signal === 'dip24h' ? `≤ −${rule.move}%` : `≥ +${rule.move}%` },
     { label: 'Liquidity', value: towerFigure(tower, 'liquidity', usd, 'en'), note: `≥ ${usd(rule.liquidity)}` },

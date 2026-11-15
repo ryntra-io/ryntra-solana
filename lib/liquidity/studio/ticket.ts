@@ -46,7 +46,7 @@ export const TICKET_KEY_ENV = "BETA_TOKEN_SECRET";
 export const TICKET_TTL_MS = BLOCKHASH_LIFE_MS;
 const PURPOSE = "liquidity.review.v1";
 
-/** A Zap (CITY-198, `zap.ts`): SOL into a pier in one approval, or what a half-landed one left taken back as SOL. */
+/** A Zap (`zap.ts`): SOL into a pier in one approval, or what a half-landed one left taken back as SOL. */
 export type ZapAction = "zap_in" | "zap_rest";
 
 /** What a ticket seals: a pool action, a limit order (`limit-orders.ts`), or a Zap (`zap.ts`). */

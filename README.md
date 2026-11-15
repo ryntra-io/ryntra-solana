@@ -19,8 +19,10 @@
 ---
 
 Tell your agent what you want — *“launch me a coin”*, *“trade BONK with 0.1 SOL a day”* — sign its budget once in
-your own wallet, and it does the work: launches the coin, buys and sells inside your limits, puts idle dollars to work
-and reports back every day. Every coin on Solana is a tower in the city, and yours rises live as people buy.
+your own wallet, and it does the work: launches the coin, buys inside your limits, puts idle dollars to work and
+reports back every day. When your take-profit or your stop is reached, it stops buying; what it bought is already in
+your wallet, and you sell it with one signature. The agent selling on its own, without your signature, is coming. Every
+coin on Solana is a tower in the city, and yours rises live as people buy.
 
 ## What runs today
 
@@ -29,8 +31,8 @@ and reports back every day. Every coin on Solana is a tower in the city, and you
     <td width="50%" valign="top">
       <img src="public/showcase/agent.jpg" alt="Your agent, from one sentence">
       <h4>🤖 Your agent</h4>
-      One sentence becomes a plan — steady buys, dips, grids, new launches, take-profit and stop. Practise on paper,
-      then sign the budget once; the agent trades by itself and stops when you say.
+      One sentence becomes a plan — steady buys, dips, grids, new launches, each with an optional take-profit and stop.
+      Practise on paper, then sign the budget once; the agent buys by itself and stops when you say.
     </td>
     <td width="50%" valign="top">
       <img src="public/showcase/launch.jpg" alt="Raise your tower: launch a coin">
@@ -60,8 +62,9 @@ positions an agent looks after — in progress; see [Ryntra on Meteora](METEORA.
 
 **Partners** bring people to the city and earn a share of Ryntra's fee, paid weekly in USDC.
 
-Keys stay with you: every transaction is shown and signed in your own wallet, the agent's limits live on-chain, and one
-signature stops it.
+Your keys stay with you: every transaction of yours is shown and signed in your own wallet. The agent signs its trades
+with its own key — Ryntra's, held in Google Cloud KMS — only inside limits that live on-chain, and one signature of
+yours stops it.
 
 ## On your phone
 
@@ -72,22 +75,15 @@ Phantom, Solflare or the Seeker's own wallet. The same city runs in any phone br
 
 ## How it fits together
 
-```mermaid
-flowchart LR
-  P(["You<br/>one sentence · one signature"]) --> C["Ryntra City<br/>web · Android"]
-  C --> E["Engine<br/>versioned API"]
-  E --> A["Your agent<br/>budget and limits on-chain<br/>Squads smart account"]
-  E --> J["Jupiter<br/>swap · limits · lend"]
-  E --> M["Meteora<br/>DBC → DAMM v2 · DLMM"]
-  A --> J
-  A --> M
-  J --> S[("Solana mainnet")]
-  M --> S
-  W["Your wallet<br/>keys never leave it"] -. signs .-> S
-```
+<p align="center">
+  <picture>
+    <source media="(max-width: 640px)" srcset="public/showcase/how-it-fits-phone.jpg">
+    <img src="public/showcase/how-it-fits.jpg" alt="How Ryntra fits together. You say one sentence and sign once. Ryntra City, on the web and on Android, talks to the engine's versioned API. The engine and your agent — its budget and limits on-chain in a Squads smart account — reach Jupiter (swap, limits, lend) and Meteora (DBC to DAMM v2, DLMM), which settle on Solana mainnet. Your wallet signs, and its keys never leave it." width="100%">
+  </picture>
+</p>
 
-The engine builds every transaction unsigned; you sign it in your wallet. The agent acts only inside the budget you
-signed for it, from a key it never sees, and only toward your own wallet.
+The engine builds your transactions unsigned, and you sign them in your wallet. The agent acts only inside the budget
+you signed for it: it never sees your key, and what it buys can only arrive in your own wallet.
 
 ## Inside this repository
 
@@ -101,8 +97,8 @@ signed for it, from a key it never sees, and only toward your own wallet.
 | [`supabase/`](supabase) | The database schema, migration by migration |
 | [`public/`](public) | Static assets, the city's models and these pictures |
 
-7,083 files, each test beside the code it tests. Every update of this repository is one commit named for what
-shipped; the latest is from 2026-11-14.
+7,090 files, each test beside the code it tests. Every update of this repository is one commit named for what
+shipped; the latest is from 2026-11-15.
 
 **Built with** Next.js 15 · React 19 · TypeScript · Three.js and React Three Fiber · Solana Kit and web3.js · Jupiter ·
 Meteora DBC, DAMM v2 and DLMM · Squads · Supabase · Expo and React Native · Vercel.
@@ -165,11 +161,11 @@ It lands in `apps/mobile/dist/`; sign it with your own key (`apksigner sign --ks
 ## Built during the hackathon
 
 The code as it stood before the hackathon is tagged `pre-hackathon-baseline-2026-09-11` in the development repository (commit `7fc5776f`,
-2026-09-11). Since then, for the 7,083 files here:
+2026-09-11). Since then, for the 7,090 files here:
 
 | New | Changed | Unchanged | Lines |
 |:---:|:---:|:---:|:---:|
-| 5,359 | 899 | 825 | +1,121,053 / −28,064 |
+| 5,366 | 899 | 825 | +1,126,609 / −28,157 |
 
 [BOUNDARY.md](BOUNDARY.md) lists every new and every changed file.
 

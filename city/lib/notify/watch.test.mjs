@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test, { mock } from "node:test";
 
-/* CITY-87: the liquidation risk is Guard's — the centre reads the futures account itself whenever nobody read it in the
+/* The liquidation risk is Guard's — the centre reads the futures account itself whenever nobody read it in the
    last minute: the Exchange's window closed, or open but behind another tab (its own reads pause there). */
 
 process.env.NEXT_PUBLIC_RYNTRA_CITY_EXCHANGE = "exit";

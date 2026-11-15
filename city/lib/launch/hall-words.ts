@@ -10,7 +10,7 @@ import { HALL_WORDS } from './words.ts';
 
 type Key = keyof (typeof HALL_WORDS)['en'];
 
-/** A table by board whose words are read in the language of the moment they are read (CITY-79). */
+/** A table by board whose words are read in the language of the moment they are read. */
 function byBoard(keys: Readonly<Record<HallBoardId, Key>>): Readonly<Record<HallBoardId, string>> {
   const out = {} as Record<HallBoardId, string>;
   for (const id of HALL_BOARDS) Object.defineProperty(out, id, { enumerable: true, get: () => wordsNow(HALL_WORDS)[keys[id]] as string });

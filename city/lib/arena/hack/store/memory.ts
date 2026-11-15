@@ -1,5 +1,5 @@
 /**
- * Hack's store in one instance's memory (CITY-226): a developer's machine, the stand and the tests. Every step is the
+ * Hack's store in one instance's memory: a developer's machine, the stand and the tests. Every step is the
  * database's own step (`supabase/migrations/20261108180000_hack_v1.sql`) rule for rule — each method's body runs
  * without an `await`, so in one process a step is as atomic as under the database's lock. It is not `durable`:
  * production never opens on it (`ready.ts`), since two instances would each keep their own orders.

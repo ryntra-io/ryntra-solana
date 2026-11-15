@@ -1,5 +1,5 @@
 /**
- * The bot's words (CITY-166), in English and Ukrainian: the verdict in one word, one short line per reason the engine
+ * The bot's words, in English and Ukrainian: the verdict in one word, one short line per reason the engine
  * gives, and the few sentences the bot ever says besides a verdict. The best verdict is «No known blockers» — no word
  * here says «safe», promises protection or scores anything. Every line names what was found, not how it was read.
  */

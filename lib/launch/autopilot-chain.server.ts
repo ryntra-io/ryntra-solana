@@ -3,8 +3,7 @@
  * the curve, the graduated pool and the DLMM steps, the partner's fees where
  * the executor is the config's fee claimer, the executor's signer —
  * only what its list allows (`./executor-signing.server.ts`), its key in the
- * environment or in KMS, every signature in the journal (CITY-162,
- * `./signer/`) —, one send per transaction and the chain's own word on each.
+ * environment or in KMS, every signature in the journal —, one send per transaction and the chain's own word on each.
  *
  * `autopilotDeps()` gives the executor's pass everything it needs here, or the
  * reason it does not run: no network, Launch's operator stop closed, or no
@@ -52,7 +51,7 @@ const PRIORITY_MICRO_LAMPORTS = 50_000;
 export function autopilotDeps(): AutopilotDeps | Readonly<{ paused: AutopilotPaused }> {
   const network = launchNetwork();
   const store = getGuardRuntime().store;
-  /* The executor's signer: its list with DLMM's IDL, and every signature written to the journal in this store first (CITY-162). */
+  /* The executor's signer: its list with DLMM's IDL, and every signature written to the journal in this store first. */
   const executor = network ? launchExecutor(process.env, network, { dlmm: DlmmIdl as unknown as Idl, journal: storeJournal(() => store) }) : null;
   const paused = executorPaused({ network, laneOpen: launchOpen(), writesHere: network ? launchWritesHere(network) : false, sharedStore: storeSupportsConcurrentInstances(store), key: executor !== null });
   if (paused || !network || !executor) return { paused: paused ?? "NO_EXECUTOR" };

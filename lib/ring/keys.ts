@@ -1,13 +1,13 @@
 /**
- * Each agent's own OpenRouter key with a dollar limit (CITY-50, decision 72), through the gateway's key manager
- * (CITY-45, `OPENROUTER_MANAGEMENT_KEY`) — on the server only. A spent limit stops that one agent, never another.
+ * Each agent's own OpenRouter key with a dollar limit, through the gateway's key manager
+ * (`OPENROUTER_MANAGEMENT_KEY`) — on the server only. A spent limit stops that one agent, never another.
  *
  * - `make` asks OpenRouter for a key named `ryntra:ring-agent:<id>` with the class's monthly limit and seals the
  *   secret at once (`seal.ts`); the secret is never logged, returned or kept unsealed.
  * - `retire` switches a key off when its agent is switched off or gets a brain of another class.
  *
  * Without the management key or the seal's secret the Ring is quiet: no key is made and an agent is kept with
- * `key: quiet` — nothing is called, nothing is spent; the matches (CITY-51) make the key once the server has both.
+ * `key: quiet` — nothing is called, nothing is spent; the matches make the key once the server has both.
  */
 
 import { ModelGatewayError } from "../models/errors.ts";

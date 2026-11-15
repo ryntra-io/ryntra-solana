@@ -7,7 +7,7 @@ import { topPanelTakesEscape, WALLET_PANEL, walletPanelOpen } from "./top-panels
 
 const read = (file) => readFileSync(new URL(file, import.meta.url), "utf8").replace(/\r\n/g, "\n");
 
-/* CITY-240: Escape with a panel of the top bar open over a window closed more than the panel. With «Events» open over
+/* Escape with a panel of the top bar open over a window closed more than the panel. With «Events» open over
    the Ring's making screen the screen closed, and the draft with it — its listener hears the key before the panel's;
    the same on a bot's page. With the wallet's panel over the Ring or the Vault, the panel and the window went together. */
 
@@ -58,6 +58,6 @@ test("the wallet's panel hears Escape first and marks it taken: the window under
   assert.match(chip, /data-wallet-menu=""/u, "the mark the rule looks for");
   assert.match(read("../../components/ring/duel/DuelsLayer.tsx"), /if \(event\.key !== 'Escape' \|\| event\.defaultPrevented\) return;\s+arenaStore\.getState\(\)\.close\(\);/u);
   assert.match(read("../../components/vault/VaultLayer.tsx"), /if \(event\.key === 'Escape' && !event\.defaultPrevented\) leave\(\);/u);
-  // «Back» is as it was: the panel is one layer of its own (CITY-150).
+  // «Back» is as it was: the panel is one layer of its own.
   assert.match(chip, /useBackPanel\('wallet', showing, close\);/u);
 });

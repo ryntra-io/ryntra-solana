@@ -247,7 +247,7 @@ type TradeStore = {
   mode: Mode;
   view: View;
   /**
-   * A Ryntra launch's tower (CITY-138): the window shows its Buy and Sell on its own curve or pool, through the Launch
+   * A Ryntra launch's tower: the window shows its Buy and Sell on its own curve or pool, through the Launch
    * engine (`city/components/launch/LaunchTradePanel.tsx`), and this card asks Jupiter for nothing.
    */
   launch: boolean;

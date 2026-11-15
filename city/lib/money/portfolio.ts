@@ -68,7 +68,7 @@ export type PortfolioView = Readonly<{
   unread: readonly PlaceKind[];
   /** Places still being read: the total may grow by them. */
   reading: readonly PlaceKind[];
-  /** Every place that holds money answered: only then is the total the whole of it (CITY-209). */
+  /** Every place that holds money answered: only then is the total the whole of it. */
   complete: boolean;
   /** One segment per place with a value, its share of the total, in the order of `PLACE_ORDER`. */
   bar: readonly Readonly<{ kind: PlaceKind; usd: number; share: number }>[];
@@ -87,7 +87,7 @@ export type PierInput = Readonly<{
   lockedBps: number;
 }>;
 
-/** A pier the agent looks after; `usd` — the engine's worth of it (CITY-207), null — not priced. */
+/** A pier the agent looks after; `usd` — the engine's worth of it, null — not priced. */
 export type CareInput = Readonly<{ key: string; pool: string; name: string | null; inRange: boolean; usd?: number | null; unclaimedUsd?: number | null }>;
 
 export type AgentInput = Readonly<{
@@ -96,7 +96,7 @@ export type AgentInput = Readonly<{
   /** On the network this city signs for: a devnet vault is shown, never added to anyone's money. */
   mainnet: boolean;
   working: boolean;
-  /** The agent's whole mandate after fees, lamports (CITY-197); null without it. */
+  /** The agent's whole mandate after fees, lamports; null without it. */
   netLamports: bigint | null;
   trades: number | null;
   symbol: string | null;
@@ -113,7 +113,7 @@ export type OrderInput = Readonly<{
   leftRaw: bigint;
   decimals: number | null;
   canCancel: boolean;
-  /** A pool limit order (CITY-97), cancelled through the pool card. */
+  /** A pool limit order, cancelled through the pool card. */
   pool: boolean;
 }>;
 
@@ -155,7 +155,7 @@ export function shortUnits(value: number): string {
   if (value === 0) return '0';
   if (value >= 1_000) return Math.round(value).toLocaleString('en-US');
   if (value >= 1) return Number(value.toFixed(2)).toLocaleString('en-US');
-  // Never in scientific form (CITY-243): under a millionth `toString` writes «1.2e-7».
+  // Never in scientific form: under a millionth `toString` writes «1.2e-7».
   return plainFigure(value, { significant: 2 });
 }
 
@@ -244,7 +244,7 @@ export function portfolioView(input: PortfolioInput): PortfolioView {
       action: { kind: 'trade', mint: asset.mint as string },
       second: null,
     }));
-  /* Savings stand on two reads — Lend and the wallet's LSTs: the place is whole only when both answered (CITY-209). */
+  /* Savings stand on two reads — Lend and the wallet's LSTs: the place is whole only when both answered. */
   const savingsState: ReadState = input.lend.state === 'off' ? input.walletState : both(input.lend.state, input.walletState);
 
   /* Pools: the person's own positions, then the ones an agent looks after from its vault. */

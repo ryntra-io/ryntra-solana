@@ -4,7 +4,7 @@ import { cityAnswers, cityLine, detailsOf, intentOf, pickTowers, shortLine, type
 import { askGuest, type Asked } from './ask.ts';
 
 /**
- * Ryntra in the city (CITY-10): the panel, the question in flight, and the answer as towers. The camera reads `shown`
+ * Ryntra in the city: the panel, the question in flight, and the answer as towers. The camera reads `shown`
  * and `focusAt` (city/components/city/CameraRig.tsx) and the scene lights `shown` (city/components/assistant/Beacons.tsx).
  * It holds no wallet and no key, and nothing it does moves money: a tower in an answer only opens that tower's card.
  */
@@ -73,7 +73,7 @@ export const useAssistant = create<AssistantState>((set, get) => ({
     if (id !== asked) return;
     inFlight = null;
     // The city as it stands now: a live read that came while Ryntra thought replaces the one the question was asked over
-    // (CITY-221: a cold start's city — the bundle, or the build's — answered «what is rising» with an old day's movers).
+    // (a cold start's city — the bundle, or the build's — answered «what is rising» with an old day's movers).
     const city = typeof towers === 'function' ? towers() : towers;
     if (answer.ok) {
       const shown = pickTowers(answer.turn, city, intent, subject);

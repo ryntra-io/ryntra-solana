@@ -57,7 +57,7 @@ test('both languages carry every word of the new Home, «ти» and neutral to g
 })
 
 test('«Купити» opens «Що купити» — the search, the popular coins and companies — and a pick opens its purchase', () => {
-  // The operator’s word of 2026-10-17: the popular companies live in the «Купити» sheet, not as a grid of cards on Home.
+  // The popular companies live in the «Купити» sheet, not as a grid of cards on Home.
   assert.match(HOME, /action === 'buy' \? setPicking\(true\)/)
   assert.match(HOME, /<BuyPickSheet visible=\{picking\} onClose=\{\(\) => setPicking\(false\)\} \/>/)
   assert.doesNotMatch(HOME, /usePopularCompanies|TileGrid|ShelfTile|RulesBlock/)

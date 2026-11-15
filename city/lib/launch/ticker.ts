@@ -1,5 +1,5 @@
 /**
- * A ticker from the coin's name (CITY-200): the launch sheet showed «$KITE», its placeholder, over a coin named «QA Moon»
+ * A ticker from the coin's name: the launch sheet showed «$KITE», its placeholder, over a coin named «QA Moon»
  * and then refused «Give it a ticker.» A name typed is a ticker offered — its letters and digits, Latin, up to the
  * engine's ten (`SYMBOL_MAX`, lib/launch/form.ts) — and the person's own ticker is never written over.
  */

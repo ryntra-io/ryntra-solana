@@ -52,12 +52,12 @@ const ArrowGlyph = () => (
 );
 
 /**
- * The one menu of the top bar (☰): «My tower» — the creator's coin and earnings (CITY-168), «Scouts» — your link and your friends (CITY-8), «Partners» — the programme and
- * «Мій район» (CITY-126, CITY-127), «How it works» — a film for every live function, shown only while there is one
- * (CITY-43, city/components/how), how the city works (its own window, city/components/art), the window layouts on a
- * computer (CITY-241, unfolded in place), the settings, the sound,
- * the language, and the city's pages — «What we're building» and the roadmap at their own addresses (CITY-177), then
- * Docs, Developers, Help, About, the Terms and the Privacy Policy, each its own window over the city (CITY-157). Everything that is not a district lives here, so the bar keeps four things: the
+ * The one menu of the top bar (☰): «My tower» — the creator's coin and earnings, «Scouts» — your link and your friends, «Partners» — the programme and
+ * «Мій район», «How it works» — a film for every live function, shown only while there is one
+ * (city/components/how), how the city works (its own window, city/components/art), the window layouts on a
+ * computer (unfolded in place), the settings, the sound,
+ * the language, and the city's pages — «What we're building» and the roadmap at their own addresses, then
+ * Docs, Developers, Help, About, the Terms and the Privacy Policy, each its own window over the city. Everything that is not a district lives here, so the bar keeps four things: the
  * status, the search, the wallet and this.
  */
 export function CityMenu({ onSound }: { onSound: (on: boolean) => void }) {
@@ -66,7 +66,7 @@ export function CityMenu({ onSound }: { onSound: (on: boolean) => void }) {
   const button = useRef<HTMLButtonElement>(null);
   const panel = useRef<HTMLDivElement>(null);
   const w = useWords(MENU);
-  // A tap anywhere else closes it, as the city's other panels do. Settings is a window of its own (CITY-87): a tap in
+  // A tap anywhere else closes it, as the city's other panels do. Settings is a window of its own: a tap in
   // it never closes it. The panel stands in its own layer (`MenuOver`), outside the button's box.
   useEffect(() => {
     if (!open) return;
@@ -93,7 +93,7 @@ export function CityMenu({ onSound }: { onSound: (on: boolean) => void }) {
 }
 
 /**
- * The menu's panel in a layer of its own over the city's windows (CITY-241), as the wallet's panel is (CITY-239): the
+ * The menu's panel in a layer of its own over the city's windows, as the wallet's panel is: the
  * layouts live in it and are wanted most while windows stand in both bays, which the top bar's layer stays under. Drawn
  * into the city's own root, where its tokens are, under its button by the button's place on the screen; the keyboard
  * goes from the button into the panel and on along the top bar, and the same way back (`tabTo`).
@@ -215,7 +215,7 @@ function MenuPanel({ ref, onSound, onClose }: { ref: RefObject<HTMLDivElement | 
         </span>
         <span className={s.menuChevron} aria-hidden="true" />
       </button>
-      {/* «Learn» (CITY-202): every function from A to Z, chapter by chapter. */}
+      {/* «Learn»: every function from A to Z, chapter by chapter. */}
       <button
         className={s.menuRow}
         aria-haspopup="dialog"
@@ -231,7 +231,7 @@ function MenuPanel({ ref, onSound, onClose }: { ref: RefObject<HTMLDivElement | 
         </span>
         <span className={s.menuChevron} aria-hidden="true" />
       </button>
-      {/* The lessons (CITY-43): the row stands once there is a lesson to watch — never an empty window. */}
+      {/* The lessons: the row stands once there is a lesson to watch — never an empty window. */}
       {lessons > 0 && (
         <button
           className={s.menuRow}
@@ -257,7 +257,7 @@ function MenuPanel({ ref, onSound, onClose }: { ref: RefObject<HTMLDivElement | 
           howStore.getState().show();
         }}
       >
-        {/* Every row of the menu carries its glyph (CITY-243): «How the city works» and «Settings» stood bare. */}
+        {/* Every row of the menu carries its glyph: «How the city works» and «Settings» stood bare. */}
         <span className={s.menuSound}>
           <CityGlyph />
           {w.how}
@@ -280,8 +280,8 @@ function MenuPanel({ ref, onSound, onClose }: { ref: RefObject<HTMLDivElement | 
         <span className={`${s.menuState} ${sound ? s.menuStateOn : ''}`}>{sound ? w.on : w.off}</span>
       </button>
       <LanguageRow />
-      {/* The city's pages open as its own windows, over the city (CITY-157): never a tab of the old site. «What we're
-          building» and the roadmap are documents of their own address, first among them (CITY-177). */}
+      {/* The city's pages open as its own windows, over the city: never a tab of the old site. «What we're
+          building» and the roadmap are documents of their own address, first among them. */}
       <div className={s.menuLinks}>
         {MENU_SITE_DOCS.map((id) => (
           <a key={id} className={s.menuLink} href={SITE_DOC_PATHS[id]} data-city-menu-doc={id}>
@@ -312,7 +312,7 @@ function MenuPanel({ ref, onSound, onClose }: { ref: RefObject<HTMLDivElement | 
 }
 
 /**
- * The window layouts (CITY-84) live here, not in a corner of the city (CITY-241): one row on a computer that unfolds
+ * The window layouts live here, not in a corner of the city: one row on a computer that unfolds
  * Ryntra's layouts and the person's four places under it. A phone's windows stand one at a time: no row there.
  */
 function LayoutsRow({ onClose }: { onClose: () => void }) {

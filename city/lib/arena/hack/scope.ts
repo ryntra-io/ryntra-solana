@@ -1,7 +1,7 @@
 /**
- * The target and the scope of a Hack order (CITY-223, spec `docs/research/city-hack-2026-11-08/SPEC.md`). A protocol
+ * The target and the scope of a Hack order (spec `docs/research/city-hack-2026-11-08/SPEC.md`). A protocol
  * brings its own contract and the audit runs on a **copy**, never on a live mainnet address: the target is either a
- * mainnet fork pinned at a slot (deterministic — a LiteSVM fork, CITY-70/204/D3) or a fresh devnet deploy. The type
+ * mainnet fork pinned at a slot or a fresh devnet deploy. The type
  * cannot even name a mainnet target, so no order can point an agent at live money.
  *
  * The scope is a closed allowlist: the programs (and, if given, the instructions and accounts) an agent may touch in

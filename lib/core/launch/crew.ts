@@ -34,10 +34,10 @@ export const CREW_PRESETS = ["classic", "protected"] as const;
 export type CrewPreset = (typeof CREW_PRESETS)[number];
 
 /**
- * False: closed there — a crew moves a part of the creator's money to other
- * wallets through a program, and that opens to people on mainnet alone, after the
- * devnet pass and the canary (`docs/research/ryntra-launch-2026-10-25/MC-2.md`). The devnet stand is open. Flipped here, then — the
- * server, the form and the crew's page read this one value.
+ * Whether crews are open on mainnet. False: closed there — a crew moves a part of the creator's
+ * money to other wallets through a program, so it opens to people on mainnet only after the devnet pass and the
+ * canary. The devnet stand is open. Flipped here,
+ * then — the server, the form and the crew's page read this one value.
  */
 export const CREW_OWNER_WORD = false;
 

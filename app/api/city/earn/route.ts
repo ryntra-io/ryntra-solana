@@ -8,7 +8,7 @@ export const maxDuration = 15;
 const CLOSED = { error: { code: 'EARN_CLOSED', message: 'Earn is closed here.' } };
 
 /**
- * The SOL Saver's yield feed (CITY-94): each LST's worth in SOL and its last epoch's yield, from the stake pools on
+ * The SOL Saver's yield feed: each LST's worth in SOL and its last epoch's yield, from the stake pools on
  * chain and Sanctum's public figures. Read-only, kept a minute for every visitor, and closed while Earn is.
  */
 export async function GET() {

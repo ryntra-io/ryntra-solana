@@ -1,4 +1,4 @@
-// CITY-225 · test-only: the made-up engine whose step tries to reach the network. The offline wall inside the worker
+// Test-only: the made-up engine whose step tries to reach the network. The offline wall inside the worker
 // refuses it, and the whole run is refused (`NETWORK`), even though the step swallows the error.
 import "../../../../../../lib/world/testing/hooks.mjs";
 

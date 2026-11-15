@@ -2,7 +2,7 @@ import { PublicKey, VersionedTransaction } from '@solana/web3.js';
 import type { FeeShare } from '../../../lib/core/launch/fee-shares.ts';
 
 /**
- * The sharing of a launch's fees, read before the wallet sees it (CITY-212). The review showed who gets what; the
+ * The sharing of a launch's fees, read before the wallet sees it. The review showed who gets what; the
  * engine built a second transaction for it. Before the creator's wallet is opened, the city reads those bytes back and
  * signs nothing that is not exactly what the review showed:
  *

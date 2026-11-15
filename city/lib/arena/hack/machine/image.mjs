@@ -1,4 +1,4 @@
-// CITY-238 · the machine's image: everything the machine with no network needs to play a run, and nothing else.
+// The machine's image: everything the machine with no network needs to play a run, and nothing else.
 //
 //   app/…            the files `entry.mjs` loads, at their paths in the repository — this folder, the sandbox, the
 //                    ranges, the Ring's judge — found by following its imports (`closure`)

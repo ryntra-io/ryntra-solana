@@ -1,6 +1,6 @@
-/* «Scouts» (CITY-8): a still of our own city at the head, the one figure on it, three quiet tiles, the link and its
-   one amber action, the flags and the history. The glass, the head and the moving are the city's window frame (CITY-65),
-   a window on a computer and the bottom sheet on a phone. Tokens from city/styles/city.module.css (CITY-11). */
+/* «Scouts»: a still of our own city at the head, the one figure on it, three quiet tiles, the link and its
+   one amber action, the flags and the history. The glass, the head and the moving are the city's window frame,
+   a window on a computer and the bottom sheet on a phone. Tokens from city/styles/city.module.css. */
 
 .display {
   font-family: var(--font-display, system-ui), system-ui, sans-serif;
